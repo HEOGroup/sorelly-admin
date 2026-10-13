@@ -6,13 +6,13 @@ var CAMPOS_CNPJ = [
   ["cidade","Cidade"], ["estado","Estado"], ["cep","CEP"], ["email","E-mail"], ["socio","Sócio"], ["cpf","CPF do sócio"]];
 var CNPJS0 = [
   {id:"34", num:"34", nome:"Sorelly Atacadista", cor:"#B8892B", razao:"SORELLY COMERCIO ATACADISTA DE SEMIJOIAS LTDA", cnpj:"34.753.252/0001-03", ie:"90882691-41",
-    endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 501)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"ANAMARIA HESS DE OLIVEIRA", cpf:"491.563.229-68"},
+    endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 501)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"ANAMARIA HESS DE OLIVEIRA", cpf:""},
   {id:"46", num:"46", nome:"Mayz Comércio de Moda", cor:"#BE185D", razao:"MAYZ COMERCIO DE MODA PRAIA, LINGERIES E ACESSORIOS LTDA", cnpj:"46.873.285/0001-76", ie:"90951966-72",
-    endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 703)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"MARCUS VINICIUS HESS DE OLIVEIRA", cpf:"085.772.129-12"},
+    endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 703)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"MARCUS VINICIUS HESS DE OLIVEIRA", cpf:""},
   {id:"59", num:"59", nome:"Serenity", cor:"#0F766E", razao:"SERENITY PORTA JOIAS E ACESSORIOS LTDA", cnpj:"59.146.403/0001-96", ie:"91121910-78",
-    endereco:"RUA MARECHAL DEODORO - N° 857 (SALA 1401)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"serenetyportajoias@gmail.com", socio:"MARCO ANTONIO DE OLIVEIRA", cpf:"404.792.189-00"},
+    endereco:"RUA MARECHAL DEODORO - N° 857 (SALA 1401)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"serenetyportajoias@gmail.com", socio:"MARCO ANTONIO DE OLIVEIRA", cpf:""},
   {id:"67", num:"67", nome:"Axis", cor:"#1D4ED8", razao:"AXIS COMÉRCIO DE JOIAS E ACESSÓRIOS LTDA", cnpj:"67.702.461/0001-87", ie:"91240996-14",
-    endereco:"RUA VINTE E QUATRO DE MAIO, 412 - CJ 50", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"82800-260", email:"axisjoiasoficial@gmail.com", socio:"LUCAS OLIVEIRA DA ROCHA", cpf:"101.589.189-67"},
+    endereco:"RUA VINTE E QUATRO DE MAIO, 412 - CJ 50", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"82800-260", email:"axisjoiasoficial@gmail.com", socio:"LUCAS OLIVEIRA DA ROCHA", cpf:""},
   {id:"ho", num:"", nome:"H&O Apps", cor:"#6D28D9", razao:"", cnpj:"", ie:"", endereco:"", bairro:"", cidade:"", estado:"", cep:"", email:"", socio:"", cpf:""}];
 // Dados fiscais por CNPJ. Cada lançamento é uma "foto" do resumo fiscal numa data (acumulado do ano até aquela data);
 // o valor atual é o lançamento de data mais recente. Lucas lança; a futura tela do Fiscal vai ler e gravar no mesmo lugar (state.fiscal.hist).
