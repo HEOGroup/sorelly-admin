@@ -10,6 +10,9 @@ import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { internoDeAgendada } from "@/apps/montagem/domain/revendedoras-internas";
+import { passoAtual } from "@/apps/montagem/domain/kit-novo-entrega";
+import { aplicaFila } from "@/apps/montagem/domain/retornos";
+import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 
@@ -17,11 +20,15 @@ function reducer(s, a){
   var k, agora = Date.now();
   switch(a.type){
     case "VISAO": return com(s, {visao:a.v, bipadora:a.b||s.bipadora});
+    // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      return com(s, {usuario:a.id, aba: pp==="montadora" || pp==="bipadora" || pp==="listagens" ? "painel" : pp==="kitnovo" ? "kitnovo" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : s.aba,
-        celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
+      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "celbip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
+      return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
+    case "SAIR": return com(s, {logado:false});
+    case "ACESSO_SET": { var ac = Object.assign({}, s.acessos); if(a.abas) ac[a.papel] = a.abas; else delete ac[a.papel]; return com(s, {acessos:ac}, a.abas ? "Acessos salvos" : "Acessos voltaram ao padrão"); }
+    case "ACESSO_BLOCO": { var ab = Object.assign({}, s.acessosBlocos); if(a.grupos) ab[a.chave] = a.grupos; else delete ab[a.chave]; return com(s, {acessosBlocos:ab}); }
     case "ABA": return com(s, {aba:a.aba, breveNome: a.breve || s.breveNome});
     case "ABRIR_CALC": return com(s, {aba:"calc", calcKit:a.id});
     case "VISAO_MENU": return com(s, {visaoMenu:a.v});
@@ -35,6 +42,20 @@ function reducer(s, a){
       if(a.revendedoras>0){ var rd = Object.assign({}, s.revendedorasDiario); rd[a.data] = a.revendedoras; patchFat.revendedorasDiario = rd; }
       return com(s, patchFat, "Lançamento de "+a.data.split("-").reverse().join("/")+" salvo");
     }
+    // FIXAR O DIA: terminou o atendimento e o valor de hoje está certo. Vira o registro OFICIAL de hoje (o "Hoje" provisório sai) e o faturado do dia sobe sozinho em Contas a pagar → Diário.
+    case "FAT_FIXAR": {
+      var fdF = Object.assign({}, s.faturamentoDiario), rvF = Object.keys(s.revendedorasDiario||{}).sort();
+      fdF[a.data] = {recebido:a.recebido||0, acertos:a.acertos||0, revendedoras:rvF.length ? s.revendedorasDiario[rvF[rvF.length-1]] : 0, fixadoEm:agora};
+      return com(s, {faturamentoDiario:fdF, fatHoje:null}, "Faturamento de "+a.data.split("-").reverse().slice(0,2).join("/")+" fixado");
+    }
+    case "FAT_REABRIR": {
+      var fdR = Object.assign({}, s.faturamentoDiario), regR = fdR[a.data]; if(!regR) return s; delete fdR[a.data];
+      return com(s, {faturamentoDiario:fdR, fatHoje:{data:a.data, recebido:regR.recebido, acertos:regR.acertos, em:agora}}, "Dia reaberto para atualizar");
+    }
+    // Faturamento de HOJE (acumulado do mês até agora), só para acompanhar durante o dia: atualiza média e previsão, mas NÃO mexe no
+    // registro oficial do dia anterior. No dia seguinte deixa de valer (ver fatEfetivo em financeiro.js).
+    case "FAT_HOJE":
+      return com(s, {fatHoje:{data:a.data, recebido:a.recebido||0, acertos:a.acertos||0, em:agora}}, "Faturamento de hoje atualizado");
     // Lançamento diário da quantidade de revendedoras (total geral), sempre referente ao dia anterior. Fonte: DevMaster/admin.
     case "REV_LANCAR": {
       // a.unico: atualização do dia, só UMA por dia (a segunda é ignorada)
@@ -48,6 +69,12 @@ function reducer(s, a){
       cpd[a.data] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, cpd[a.data]);
       if(a.cnpj) cpd[a.data].cnpjs[a.cnpj] = a.valor; else cpd[a.data][a.campo] = a.valor;
       return com(s, {contasPagasDiario:cpd}, "Lançamento de "+a.data.split("-").reverse().join("/")+" salvo");
+    }
+    // Inadimplência (financeiro): dívida e valor recuperado por mês; compras internas: vendido e pago por mês. ano é string, mes 0-11.
+    case "INAD_SET": case "COMPRAS_SET": {
+      var campoE = a.type==="INAD_SET" ? "inadFin" : "comprasInt", mapa = JSON.parse(JSON.stringify(s[campoE]||{}));
+      mapa[a.ano] = mapa[a.ano] || {}; mapa[a.ano][a.mes] = Object.assign({}, mapa[a.ano][a.mes]); mapa[a.ano][a.mes][a.campo] = a.valor;
+      var patchI = {}; patchI[campoE] = mapa; return com(s, patchI);
     }
     // Meta mensal do Agendamento: revendedoras com kit no início do mês e acertos previstos para o mês
     case "META_SET": {
@@ -405,6 +432,7 @@ function reducer(s, a){
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, recebimento:null,
+        vendaDigitada:a.vendaDigitada!=null ? a.vendaDigitada : a.vendaBruta, trocas:a.trocas||[], tagsDanificadas:a.tagsDanificadas||0, tagsValor:a.tagsValor||0,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
         pecasADevolver:a.pecasADevolver!=null?a.pecasADevolver:null, condicionaisSelecionadas:a.condicionaisSelecionadas||[],
         pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
@@ -417,15 +445,23 @@ function reducer(s, a){
     }
     // Consolidado das representantes: o setor de agendamento confere o dinheiro e dá o OK de recebimento (libera a comissão)
     case "CONSREP_RECEBER": {
-      return com(s, {acertosConsignado:(s.acertosConsignado||[]).map(function(r){
+      return aplicaFila(com(s, {acertosConsignado:(s.acertosConsignado||[]).map(function(r){
         if(r.id!==a.id) return r;
         var atual = r.recebimento || {};
         var novo = Object.assign({}, atual, a.patch||{});
         if(a.patch && a.patch.ok===true && !atual.ok) novo.em = new Date(agora).toISOString();
-        if(a.patch && a.patch.ok===false){ novo.em = null; }
+        if(a.patch && a.patch.ok===false){ novo.em = null; novo.bip = null; }
         return Object.assign({}, r, {recebimento:novo});
-      })}, a.patch && a.patch.ok===true ? "Recebimento conferido: falta o OK do financeiro para liberar a comissão" : null);
+      })}, a.patch && a.patch.ok===true ? "Recebimento conferido: falta o OK do financeiro para liberar a comissão" : null));
     }
+    // Retorno bipado: quem bipa (marcado no Configurador geral) dá o OK em cada acerto que o agendamento já recebeu. a.desfazer tira o OK.
+    case "RETORNO_BIPAR": {
+      return aplicaFila(com(s, {acertosConsignado:(s.acertosConsignado||[]).map(function(r){
+        if(r.id!==a.id || !r.recebimento || !r.recebimento.ok) return r;
+        return Object.assign({}, r, {recebimento:Object.assign({}, r.recebimento, {bip:a.desfazer ? null : {por:a.por, porId:a.porId||null, ts:agora}})});
+      })}, a.desfazer ? null : "Retorno bipado por "+a.por));
+    }
+    case "BIPA_RETORNO_SET": return com(s, {bipaRetorno:a.ids}, "Quem bipa os retornos foi atualizado");
     // Financeiro dá o OK de uma linha (pagamento "0","1"… ou comissão fixa "k") e diz em que conta o dinheiro entrou (desfazer = ok:false).
     // Pix representante: a.rep é a representante que recebeu o Pix — já conta como comissão paga direto a ela.
     case "COMIS_FIN": {
@@ -465,6 +501,13 @@ function reducer(s, a){
     }
     // Configurador de comissões: representantes (%, grupo), ciclos, corte, kit novo, promissória
     // Preço médio da gasolina comum no Paraná (ANP): um valor só, com data e quem atualizou
+    // Negociação do Pix direto (só a diretoria edita, na tela Regras dos representantes): por representante, % ou valor, vigência e extra
+    case "NEGPIX_SET": { var np = Object.assign({}, s.negPix||{}); np[a.rep] = Object.assign({modo:"pct", valor:0, vigencia:"mes", mes:isoDia(new Date(agora)).slice(0,7), extra:0, extraTxt:""}, np[a.rep]||{}, a.patch); return com(s, {negPix:np}); }
+    case "NEGPIX_DEL": { var nd = Object.assign({}, s.negPix||{}); delete nd[a.rep]; return com(s, {negPix:nd}, "Negociação removida"); }
+    case "REV_COND_ADD": { var pr = Object.assign({}, s.perfisRev||{}), per = Object.assign({}, pr[a.rev]||{}), lista = (per.condicionaisAbertas||[]).slice();
+      if(!a.numero || lista.some(function(x){ return x.numero===a.numero; })) return s;
+      lista.push({numero:a.numero, pecas:a.pecas||0, manual:true}); per.condicionaisAbertas = lista; pr[a.rev] = per; return com(s, {perfisRev:pr}, "Condicional "+a.numero+" adicionada"); }
+    case "COMIS_GAS_VISTO": return com(s, {comis:Object.assign({}, s.comis, {gasolinaVisto:Object.assign({}, (s.comis||{}).gasolinaVisto||{}, {[a.rep]:((s.comis||{}).gasolinaPR||{}).em})})});
     case "COMIS_GAS": return com(s, {comis:Object.assign({}, s.comis, {v2:true, corteHora:a.corteHora, kmPorLitro:a.kmPorLitro, gasolinaPR:{valor:a.valor, em:new Date(agora).toISOString(), por:a.por}, gasolinaHist:[{valor:a.valor, em:new Date(agora).toISOString(), por:a.por}].concat((s.comis||{}).gasolinaHist||[])})}, "Preço da gasolina atualizado");
     // Compras de joias das representantes (básico): compra com valor negociado e os pagamentos feitos dentro dela
     case "COMPRA_REP_ADD": return com(s, {comprasRep:[Object.assign({id:"CJ"+agora, pagamentos:[], por:a.por, criada:new Date(agora).toISOString()}, a.compra)].concat(s.comprasRep||[])}, "Compra registrada");
@@ -597,10 +640,15 @@ function reducer(s, a){
     // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).
     case "REPOSICAO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
-      var comissaoFixa = a.especial ? (a.comissaoManual||0) : (a.comExpositor ? 35 : 20);
+      var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0};
-      return com(s, {kits: mapKit(s, a.id, function(){ return {reposicaoEntregue:true, comissaoFixa:comissaoFixa, status:"acertado"}; })},
+        tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
+        hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null};
+      // a condicional assinada entregue na reposição sobe nas condicionais em aberto da revendedora
+      var prR = Object.assign({}, s.perfisRev||{}), perR = Object.assign({}, prR[k.rev]||{}), abR = (perR.condicionaisAbertas||[]).slice();
+      condicionaisDoKit(k).forEach(function(c){ if(!abR.some(function(x){ return x.numero===c.numero; })) abR.push({numero:c.numero, pecas:totaisDe(c).pecas}); });
+      perR.condicionaisAbertas = abR; prR[k.rev] = perR;
+      return com(s, {perfisRev:prR, acertosConsignado:[registroRep].concat(s.acertosConsignado||[]), kits: mapKit(s, a.id, function(){ return {reposicaoEntregue:true, comissaoFixa:comissaoFixa, status:"acertado"}; })},
         "Reposição de "+k.rev+" entregue"+(comissaoFixa ? " · comissão "+BK(comissaoFixa) : ""));
     }
     // Entrega de kit novo pela representante: condicionais enviadas, conferência das peças (divergência), regras lidas uma a uma
@@ -611,8 +659,75 @@ function reducer(s, a){
         tipo:"kit_novo_entrega", tipoKit:k.tipoKit||"kit_novo", data:new Date(agora).toISOString().slice(0,10), condicionais:a.condicionais||[], pecasTotal:a.pecasTotal||0,
         pecasFaltaram:a.pecasFaltaram||0, obsDivergencia:a.obsDivergencia||"", regrasLidas:a.regrasLidas||[], assinatura:a.assinatura||null};
       return com(s, {kits: mapKit(s, a.id, function(){ return {kitNovoEntregue:regEntrega, status:"acertado"}; }),
+        montadoras: (regEntrega.pecasFaltaram>0 && k.montId) ? ajustaDiv(s, k.montId, 1) : s.montadoras,
         acertosConsignado:[regEntrega].concat(s.acertosConsignado||[])},
         "Kit novo de "+k.rev+" entregue e assinado"+(regEntrega.pecasFaltaram ? " · "+regEntrega.pecasFaltaram+" peça(s) em falta" : ""));
+    }
+    // Entrega do kit novo feita junto (app da representante + app da revendedora): a representante inicia; cada etapa só libera a próxima com o check das DUAS.
+    case "KN_ENT_INICIAR": {
+      k = kitDe(s, a.kitId); if(!k) return s;
+      var entAtual = s.entregasKN || {};
+      if(entAtual[k.id]) return s;
+      var repKN = (function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l ? l.rep : null; })();
+      var novaEnt = {};
+      novaEnt[k.id] = {kitId:k.id, rev:k.rev, rep:repKN, inicio:agora, montou:k.montId ? nomeDe(k.montId) : null, bipou:k.bipId ? nomeDe(k.bipId) : null,   // fica salvo quem montou e quem bipou o kit
+        checks:{}, semCelular:false, temExpositor:false, fotoExpositor:null, assinatura:null, status:"andamento"};
+      return com(s, {entregasKN:Object.assign({}, entAtual, novaEnt)}, "Entrega do kit novo de "+k.rev+" iniciada");
+    }
+    case "KN_ENT_CHECK": {
+      var entC = (s.entregasKN||{})[a.kitId]; if(!entC || entC.status==="concluida") return s;
+      if(a.n > passoAtual(entC)) return s;                       // não dá para marcar uma etapa à frente
+      var chN = Object.assign({}, entC.checks[a.n]); chN[a.quem] = chN[a.quem] ? null : agora;
+      var chTodos = Object.assign({}, entC.checks); chTodos[a.n] = chN;
+      var entN = {}; entN[a.kitId] = Object.assign({}, entC, {checks:chTodos});
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entN)}, null);
+    }
+    case "KN_ENT_SEMCEL": {
+      var entS = (s.entregasKN||{})[a.kitId]; if(!entS) return s;
+      var entSN = {}; entSN[a.kitId] = Object.assign({}, entS, {semCelular:!!a.v});
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entSN)}, a.v ? "Revendedora sem celular: confirmação só pela representante" : null);
+    }
+    case "KN_ENT_EXPOSITOR": {
+      var entE = (s.entregasKN||{})[a.kitId]; if(!entE) return s;
+      var entEN = {}; entEN[a.kitId] = Object.assign({}, entE, {temExpositor:!!a.v, fotoExpositor:a.v ? entE.fotoExpositor : null});
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entEN)}, null);
+    }
+    case "KN_ENT_FOTO": {
+      var entP = (s.entregasKN||{})[a.kitId]; if(!entP) return s;
+      var entPN = {}; entPN[a.kitId] = Object.assign({}, entP, {fotoExpositor:a.foto, fotoNome:a.nome||"", fotoEm:agora});
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entPN)}, "Foto do expositor anexada");
+    }
+    // Conferência das peças com a câmera (kit novo e acerto + kit): liberar → começar a bipar → bipar cada peça → finalizar. O que faltou ou veio
+    // a mais sobe como ERRO de quem bipou o kit na empresa (Consolidado, Listagem, desconto da bipadora e histórico da revendedora).
+    case "CONF_LIBERAR": case "CONF_INICIAR": case "CONF_REINICIAR": {
+      var cb0 = Object.assign({}, s.confBip||{}), anC = cb0[a.kitId] || {};
+      if(a.type==="CONF_LIBERAR") cb0[a.kitId] = Object.assign({}, anC, {lib:agora});
+      else if(a.type==="CONF_INICIAR") cb0[a.kitId] = Object.assign({}, anC, {ini:agora, lidos:{}, erros:[], ultimo:null});
+      else delete cb0[a.kitId];
+      return com(s, {confBip:cb0}, a.type==="CONF_LIBERAR" ? "Kit liberado: pode começar a bipar" : null);
+    }
+    case "CONF_BIPAR": {
+      var kB = kitDe(s, a.kitId), cfB = (s.confBip||{})[a.kitId]; if(!kB || !cfB || !cfB.ini || cfB.fim) return s;
+      var cbB = Object.assign({}, s.confBip); cbB[a.kitId] = biparConf(condicionaisDoKit(kB), cfB, a.codigo);
+      return com(s, {confBip:cbB}, null);
+    }
+    case "CONF_FINALIZAR": {
+      var kF = kitDe(s, a.kitId), cfF = (s.confBip||{})[a.kitId]; if(!kF || !cfF || !cfF.ini || cfF.fim) return s;
+      var resF = resultadoConf(condicionaisDoKit(kF), cfF), lF = s.listagens.find(function(x){ return x.id===kF.lid; });
+      var regF = {id:"EB"+agora, kitId:kF.id, rev:kF.rev, rep:lF ? lF.rep : "", data:isoDia(new Date(agora)), em:agora, bipId:kF.bipId||null, bipadora:kF.bipId ? nomeDe(kF.bipId) : "—",
+        montadora:kF.montId ? nomeDe(kF.montId) : "—", condicionais:resF.conds, esperadas:resF.esperadas, lidas:resF.lidas, faltas:resF.faltas, nFaltas:resF.nFaltas, sobras:resF.sobras, nSobras:resF.nSobras, erros:resF.erros};
+      var cbF = Object.assign({}, s.confBip); cbF[a.kitId] = Object.assign({}, cfF, {fim:agora, resultado:resF});
+      var pF = Object.assign({}, s.perfisRev), perfF = Object.assign({}, pF[kF.rev]);
+      perfF.conferenciasKit = [{em:agora, erros:resF.erros, faltas:resF.nFaltas, sobras:resF.nSobras, bipadora:regF.bipadora}].concat(perfF.conferenciasKit||[]); pF[kF.rev] = perfF;
+      return com(s, {confBip:cbF, perfisRev:pF,
+        errosBipagem:resF.erros>0 ? [regF].concat(s.errosBipagem||[]) : (s.errosBipagem||[]),
+        kits:resF.erros>0 ? s.kits.map(function(x){ return x.id===kF.id ? Object.assign({}, x, {errosBip:(x.errosBip||0)+resF.erros, erroBipId:regF.id}) : x; }) : s.kits},
+        resF.erros>0 ? "Conferência registrada: "+resF.erros+" erro(s) de bipagem de "+regF.bipadora : "Conferência concluída sem erros");
+    }
+    case "KN_ENT_CONCLUIR": {
+      var entF = (s.entregasKN||{})[a.kitId]; if(!entF) return s;
+      var entFN = {}; entFN[a.kitId] = Object.assign({}, entF, {assinatura:a.assinatura||"assinado", status:"concluida", fim:agora});
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entFN)}, null);
     }
     // Formas de pagamento editáveis (Representantes → Configurações): nome, se pede parcelas e a lista de descrições.
     case "FORMAS_PAGAMENTO_SET": return com(s, {formasPagamento:a.formas}, "Formas de pagamento atualizadas");

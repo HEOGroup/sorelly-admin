@@ -17,7 +17,7 @@ function AbaCelularRev(){
   var sl = useState(null), kid = sl[0], setKid = sl[1];
   var k = ks.find(function(x){return x.id===kid;}) || ks[0];
   return e(React.Fragment,null,
-    e(PageHead,{t:"App da revendedora", sub:"Modelo do app da revendedora (sistema à parte): quando o kit chega, ela confirma o recebimento, se as peças conferem e se gostou do kit."}),
+    e(PageHead,{t:"App da revendedora", sub:"Modelo do app da revendedora (sistema à parte, nas lojas de aplicativos): tela inicial e o bloco Kit novo, que ela abre junto com a representante."}),
     !k ? e(Vazio,{txt:"Nenhum kit entregue ainda. Assim que um kit for bipado ou retirado, a revendedora aparece aqui."}) :
     e("div",{className:"flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center"},
       e(AppRevendedora,{key:k.id, k:k}),

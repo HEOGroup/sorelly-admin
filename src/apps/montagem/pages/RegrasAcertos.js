@@ -1,7 +1,7 @@
 // Sorelly Admin — pages/RegrasAcertos.js
 // Representantes → Regras dos acertos: regras do acerto da REVENDEDORA (régua, taxa, remarcação, pagamento, brindes). A comissão da representante fica em RegrasRepresentantes.js. Tudo que a representante precisa saber, descrito e alinhado, sempre com os números em vigor
 // (régua, taxa, remarcação, pagamento, formas de pagamento). Só leitura: quem edita é Representantes → Configurações.
-import { PECAS_PROX_PADRAO, formasPagamentoPadrao, reais, textoRegrasPrata, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { AVISO_BB, PECAS_PROX_PADRAO, formasPagamentoPadrao, reais, textoRegrasPrata, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -68,7 +68,7 @@ function AbaRegrasAcertos(){
       bloco("Como lançar os brindes","presente","Depois de pagar, a representante lança peça por peça (código e valor).",[
         passos([
           e(React.Fragment,null,v("Brinde Normal: ")," peças comuns do kit. Aceita código normal ou BB."),
-          e(React.Fragment,null,v("Brinde Select (BB): ")," o código só começa com ",v("BB")," — ou ",v("BB + 1 ou 2 letras")," (BBA, BBCL, BBP, BBT) — e termina sempre com ",v("4 números"),". Ex.: BB0001, BBA0001."),
+          e(React.Fragment,null,v("Brinde Select (BB): "),v(AVISO_BB)," O código só começa com ",v("BB")," — ou ",v("BB + 1 ou 2 letras")," (BBA, BBCL, BBP, BBT) — e termina sempre com ",v("4 números"),". Ex.: BB0001, BBA0001."),
           "O que passar do Select abate do saldo do Normal. Passou de tudo: o excedente entra no total a pagar."])]),
       bloco("Formas de pagamento aceitas","coins","Na hora de lançar o pagamento: forma, descrição (código da conta), data e valor.",[
         e("div",{key:"f", className:"flex flex-col gap-2"}, formas.map(function(f){ return e("div",{key:f.k, className:"flex items-start justify-between gap-3 border-b border-border/60 pb-2 last:border-0 last:pb-0"},

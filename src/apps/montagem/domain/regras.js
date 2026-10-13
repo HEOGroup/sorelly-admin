@@ -47,7 +47,7 @@ function resumoBipadora(b, s){
   var n = b.mes.n, en = b.mes.e;
   hojeK.forEach(function(k){ if(k.valor > c.limiteBipEspecial) en++; else n++; });
   // peças faltando: as do mês até ontem + as apontadas hoje pelas representantes nos kits que ela bipou
-  var faltas = b.mes.faltas + hojeK.reduce(function(t,k){return t+(k.aval ? k.aval.faltas : 0);},0);
+  var faltas = b.mes.faltas + hojeK.reduce(function(t,k){return t+(k.aval ? k.aval.faltas : 0)+(k.errosBip||0);},0);   // + erros achados na conferência com a câmera (faltou ou veio peça errada)
   var bruto = n*c.valorBipNormal + en*c.valorBipEspecial, perda = faltas*c.perdaFalta;
   return {b:b, n:n, e:en, total:n+en, hoje:hojeK.length, hojeK:hojeK, bruto:bruto, faltas:faltas, perda:perda,
     liquido:Math.max(0, bruto-perda), tempo:tempoMedioB(hojeK), divs:hojeK.filter(function(k){return k.divReg;}).length,

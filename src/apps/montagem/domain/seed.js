@@ -29,33 +29,24 @@ function kit(lid, rev, bairro, alvo, prio, ex){
 function novoDia(){
   seq = 0;
   var dataHoje = isoDia(new Date());
-  // Base de demonstração (2026-10-06, a pedido do Marcus): 1 listagem por representante em cada um dos 3 dias
-  // (hoje, amanhã e depois), 5 revendedoras fictícias cada, nada montado nem bipado, pra testar o fluxo do zero.
-  var REPS = [["Dayanne","10:00"],["Lysie","10:00"],["Marcus Hess","12:00"],["Jessica","15:00"],["Priscila","09:00"],["Rosana","14:00"]];
-  var NOMES1 = ["Adriana","Beatriz","Carolina","Débora","Eliane","Flávia","Gabriela","Heloísa","Isabela","Jaqueline","Karina","Letícia","Mônica","Natália","Olívia","Paula","Quitéria","Rafaela","Sabrina","Tereza","Úrsula","Vivian","Wanessa","Yasmin"];
-  var SOBRE = ["Almeida","Barbosa","Cardoso","Dias","Esteves","Ferraz","Gomes","Hoffmann","Ito","Jardim","Klein","Machado","Nogueira","Oliveira","Pereira","Ramalho","Santos","Teixeira","Vasques","Zanetti"];
+  // Base de demonstração (08/10/2026, pedido do Marcus): 4 representantes reais (Dayanne, Lysie, Jessica e Thalita), 1 listagem de hoje cada,
+  // com 3 acertos A REALIZAR por representante (12 no total). Nada montado nem bipado, pra testar o fluxo do zero.
+  // Cada representante fecha 10 revendedoras de demonstração: 5 acertos feitos + 3 a realizar + 2 kits novos (acertos-demo.js).
+  var REPS = [["Dayanne","10:00"],["Lysie","10:00"],["Jessica","15:00"],["Thalita","11:00"]];
   var BAIRROS = ["Tatuquara","Cabral","Cristo Rei","Uberaba","Boa Vista","Portão","Água Verde","Xaxim","Boqueirão","Batel","Santa Felicidade","Bacacheri"];
-  var VALORES = [8000,6000,10000,7000,9000,12000];
-  // as primeiras revendedoras do dia de hoje são as que já têm perfil/endereço nos apps de demonstração
+  // as revendedoras a realizar de cada representante (nome, bairro, valor do kit, prioridade, endereço) — as da Dayanne têm perfil/endereço nos apps de demonstração
   var FIXOS = {
-    Dayanne:[["Andrielle Taborda","Tatuquara",12000,1,"Rua Enette Dubard, 1150 - Tatuquara, Curitiba - PR"],["Silvana Ramos","Sítio Cercado",8000,1,"Rua Padre Anchieta, 1785 - Bigorrilho, Curitiba - PR"],
-      ["Fernanda Lopes","Cabral",9000,0,"Rua General Carneiro, 480 - Cabral, Curitiba - PR"],["Juliana Prado","Cristo Rei",7000,0,"Rua Mateus Leme, 900 - Cristo Rei, Curitiba - PR"],
-      ["Camila Duarte","Uberaba",8500,0,"Rua Doutor Faivre, 620 - Uberaba, Curitiba - PR"]],
-    Lysie:[["Rosana Kaminski","Portão",10000,1,null],["Cláudia Wosniak","Água Verde",20000,1,null]],
-    Jessica:[["Elisângela Faria","Boqueirão",12000,1,null],["Rosângela Pinto","Xaxim",8000,1,null]]
+    Dayanne:[["Andrielle Taborda","Tatuquara",12000,1,"Rua Enette Dubard, 1150 - Tatuquara, Curitiba - PR"],["Silvana Ramos","Sítio Cercado",8000,1,"Rua Padre Anchieta, 1785 - Bigorrilho, Curitiba - PR"]],   // a 3ª da Dayanne é a Beatriz Nogueira (kit novo, mais abaixo)
+    Lysie:[["Ronice Kaminski","Portão",10000,1,null],["Cláudia Wosniak","Água Verde",20000,1,null],["Vera Lúcia Moraes","Cabral",9000,0,null],["Daniele Ribas","Boa Vista",9000,1,null]],
+    Jessica:[["Elisângela Faria","Boqueirão",12000,1,null],["Rosângela Pinto","Xaxim",8000,1,null],["Tânia Brandão","Uberaba",7000,0,null],["Priscila Menezes","Cristo Rei",11000,0,null]],
+    Thalita:[["Alana Couto","Batel",8000,1,null],["Bárbara Siqueira","Bacacheri",10000,0,null],["Dalila Vieira","Santa Felicidade",9000,0,null]]
   };
   var L = [], K = [], g = 0;
-  [0,1,2].forEach(function(di){
-    var dt = isoDia(new Date(Date.now() + di*86400000));
-    REPS.forEach(function(r, ri){
-      var id = "L"+(ri+1)+(di ? "-D"+di : "");
-      L.push({id:id, rep:r[0], destino:"Curitiba", viagem:false, horario:r[1], data:dt, fechada:false, retiradas:[]});
-      for(var j=0;j<5;j++){
-        var fx = di===0 && FIXOS[r[0]] ? FIXOS[r[0]][j] : null;
-        if(fx) K.push(kit(id, fx[0], fx[1], fx[2], fx[3], fx[4] ? {endereco:fx[4]} : {}));
-        else K.push(kit(id, NOMES1[g%24]+" "+SOBRE[(g*7+3)%20], BAIRROS[g%12], VALORES[g%6], j===0 ? 1 : 0));
-        g++;
-      }
+  REPS.forEach(function(r, ri){
+    var id = "L"+(ri+1);
+    L.push({id:id, rep:r[0], destino:"Curitiba", viagem:false, horario:r[1], data:dataHoje, fechada:false, retiradas:[]});
+    FIXOS[r[0]].forEach(function(fx){
+      K.push(kit(id, fx[0], fx[1] || BAIRROS[g%12], fx[2], fx[3], fx[4] ? {endereco:fx[4]} : {})); g++;
     });
   });
   K.forEach(function(k){ var l=L.find(function(x){return x.id===k.lid;}); l.n=(l.n||0)+1; k.ordem=l.n; });
@@ -73,7 +64,7 @@ function novoDia(){
   //   k.tempoM = k.fimM - k.iniM; nb++; } });
   K.forEach(function(k, i){ if(k.status==="montando"){ k.iniM = Date.now() - (6 + i%14)*60000; } if(k.status==="bipando"){ k.iniB = Date.now() - (2 + i%5)*60000; } });
   // Tipo de cada item da listagem e condicionais (números vêm da DevMaster; por enquanto digitados)
-  var CICLO = ["acerto_kit","acerto_kit","kit_novo","acerto_kit","acerto_kit_exp","acerto_kit","kit_novo_exp","condicional"];
+  var CICLO = ["acerto_kit","acerto_kit","acerto_kit","acerto_kit_exp","acerto_kit","acerto_kit"];   // só acertos a realizar (os kits novos têm a lista deles em acertos-demo.js)
   K.forEach(function(k, i){
     var livre = k.status==="pendente" || k.status==="semvalor";
     k.tipoKit = CICLO[i % CICLO.length];
@@ -109,14 +100,31 @@ function novoDia(){
   var precisamAnalise = 2;
   K.forEach(function(k){ if(precisamAnalise>0 && k.status==="pendente" && k.valor>2500 && (k.tipoKit||"").indexOf("kit_novo")!==0){
     k.analiseVendas = {obrigatoria:true, enviada:false, media:k.valor}; precisamAnalise--; } });
+  // A 3ª da Dayanne é uma revendedora NOVA (Beatriz Nogueira), com o kit novo liberado para entregar: serve para testar a entrega feita junto com a revendedora
+  var l1 = L.find(function(x){ return x.id==="L1"; });
+  if(l1){ var kn = kit("L1", "Beatriz Nogueira", "Centro", 7000, 0, {endereco:"Rua Fictícia S, 210 - Centro, Curitiba - PR", tipo:"ac_kit"});
+    l1.n = (l1.n||0)+1;
+    Object.assign(kn, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["094501","094502"], pegas:true, chkB:{"094501":true, "094502":true}, impressas:{}, novas:[]}, tipoKit:"kit_novo", status:"retirado", ordem:l1.n, retEm:Date.now()-3600000, retPor:11, horaAtend:"11:30", fone:"(41) 00000-0088", vendas:[]});
+    K.push(kn);
+    // Vanessa Prado: REPOSIÇÃO pronta (montada, bipada e retirada) para a Dayanne entregar pelo app: conta as peças, a condicional assinada sobe nas condicionais da revendedora e a comissão é de R$ 15,00
+    var kr = kit("L1", "Vanessa Prado", "Portão", 2500, 0, {endereco:"Rua Fictícia R, 88 - Portão, Curitiba - PR", tipo:"ac_kit"});
+    l1.n = (l1.n||0)+1;
+    Object.assign(kr, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["094601"], pegas:true, chkB:{"094601":true}, impressas:{}, novas:[]}, tipoKit:"reposicao", status:"retirado", ordem:l1.n, retEm:Date.now()-3000000, retPor:11, horaAtend:"12:00", fone:"(41) 00000-0099", vendas:[]});
+    K.push(kr); }
+  // Maria Eduarda de Almeida: kit novo de teste da CONFERÊNCIA DAS PEÇAS COM A CÂMERA (condicional 00558 real + 2 inventadas; ver domain/conferencia-pecas.js).
+  // Bipado na empresa pela Sthefany (id 14) e montado pela Jenifer (id 5), como no impresso.
+  if(l1){ var km = kit("L1", "Maria Eduarda de Almeida", "Cajuru", 7000, 0, {endereco:"Rua Major Antonio Ribeiro Vidal, 34 - Cajuru, Curitiba - PR", tipo:"ac_kit"});
+    l1.n = (l1.n||0)+1;
+    Object.assign(km, {montId:5, bipId:14, iniB:"11:05", fimB:"11:20", cond:{nums:["00558"], pegas:true, chkB:{"00558":true}, impressas:{}, novas:[]}, tipoKit:"kit_novo", status:"retirado", ordem:l1.n, retEm:Date.now()-3600000, retPor:11, horaAtend:"13:00", fone:"(41) 00000-0099", vendas:[]});
+    K.push(km); }
   return {listagens:L, kits:K};
 }
 var REGISTROS0 = [
-  {tipo:"aval", montId:8, rev:"Veridiana Lemke", nota:1, obs:"Mandaram um monte de anel do 7 ao 12, serve pra quem? Minha maleta t\u00e1 muito inferior.", dia:"22/09"},
+  {tipo:"aval", montId:8, rev:"Valdirene Lemke", nota:1, obs:"Mandaram um monte de anel do 7 ao 12, serve pra quem? Minha maleta t\u00e1 muito inferior.", dia:"22/09"},
   {tipo:"aval", montId:4, rev:"Nat\u00e1lia Prestes", nota:2, obs:"N\u00e3o veio nada do que pedi nas encomendas.", dia:"21/09"},
   {tipo:"aval", montId:7, rev:"Gisele Andrade", nota:2, obs:"Pedi 80% prata e veio quase tudo dourado.", dia:"20/09"},
   {tipo:"aval", montId:8, rev:"Tain\u00e1 Rocha", nota:2, obs:"Marquei sem religioso no app e vieram 5 pe\u00e7as religiosas.", dia:"19/09"},
-  {tipo:"aval", montId:2, rev:"Priscila Martins", nota:3, obs:"Pedi pe\u00e7as de luxo e s\u00f3 veio ponto de luz.", dia:"18/09"},
+  {tipo:"aval", montId:2, rev:"Patrícia Martins", nota:3, obs:"Pedi pe\u00e7as de luxo e s\u00f3 veio ponto de luz.", dia:"18/09"},
   {tipo:"div", montId:8, rev:"Luciana Ribeiro", esperado:8000, real:11400, pct:42.5, dia:"23/09"},
   {tipo:"div", montId:4, rev:"Aline Castro", esperado:10000, real:12600, pct:26, dia:"23/09"},
   {tipo:"div", montId:7, rev:"Cleide Barros", esperado:12000, real:9100, pct:-24.2, dia:"22/09"},
@@ -125,8 +133,8 @@ var REGISTROS0 = [
 var CONSOLIDADO_REPS = [
   {rep:"Dayanne", kits:142, nota:4.3, top:"Pamela"},
   {rep:"Lysie", kits:128, nota:4.1, top:"Paula"},
-  {rep:"Marcus Hess", kits:196, nota:4.4, top:"Eduarda"},
   {rep:"Jessica", kits:118, nota:3.9, top:"Ivanete"},
+  {rep:"Thalita", kits:104, nota:4.2, top:"Paula"},
   {rep:"Demais 21 representantes", kits:462, nota:4.0, top:"Pamela"}
 ];
 var HISTORICO0 = [
@@ -134,11 +142,11 @@ var HISTORICO0 = [
   {mes:"Julho de 2026", total:2810.20, pagoEm:"15/08/2026", situacao:"Pago"}
 ];
 function histDemo(){
-  var reps = [["Dayanne","Curitiba",false,"10:00",5],["Lysie","Curitiba",false,"10:00",4],["Marcus Hess","Ponta Grossa",true,"12:00",1],
-              ["Jessica","Curitiba",false,"15:00",5],["Priscila","Londrina",true,"09:00",4],["Rosana","Curitiba",false,"14:00",4]];
+  var reps = [["Dayanne","Curitiba",false,"10:00",5],["Lysie","Curitiba",false,"10:00",4],
+              ["Jessica","Curitiba",false,"15:00",5],["Thalita","Curitiba",false,"11:00",4]];
   var nomes = ["Ana Paula Ribeiro","Bianca Moraes","Cristiane Lopes","Daiane Freitas","Edna Carvalho","Fabiana Rocha","Gislaine Prado","Helena Duarte",
     "Ingrid Macedo","Joana Pires","Kelly Andrade","Luciane Brito","Marta Siqueira","Neide Fontes","Olga Teles","Patrícia Nunes","Raquel Viana","Sandra Melo",
-    "Tatiana Rezende","Vanessa Goulart","Priscila Amaral","Roberta Cunha","Simone Dias","Larissa Queiroz"];
+    "Tatiana Rezende","Valéria Goulart","Pietra Amaral","Roberta Cunha","Simone Dias","Larissa Queiroz"];
   var tamanhos = [5,7,8,12], valores = [5000,6000,8000,10000,12000,15000,17000,20000];
   var out = [], hoje0 = new Date(); hoje0.setHours(0,0,0,0);
   var hm = function(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
@@ -146,7 +154,7 @@ function histDemo(){
     for(var n=0; n<r[4]; n++){
       var dias = 2 + n*4 + i;                     // uma listagem a cada ~4 dias
       var dt = new Date(hoje0.getTime() - dias*86400000); if(dt.getDay()===0) dt = new Date(dt.getTime() - 86400000);
-      var qtd = r[0]==="Marcus Hess" ? 12 : tamanhos[(n+i)%tamanhos.length], hh = +r[3].split(":")[0], base = dt.getTime() + (hh-3)*3600000, ks = [];
+      var qtd = tamanhos[(n+i)%tamanhos.length], hh = +r[3].split(":")[0], base = dt.getTime() + (hh-3)*3600000, ks = [];
       for(var j=0;j<qtd;j++){
         var v = valores[(n*3+i*2+j*5)%valores.length], tm = (22 + (n+j*3)%25)*60000, tb = (3 + (i+j)%6)*60000;
         var fimM = base + j*18*60000 + tm, fimB = fimM + 10*60000 + tb, div = (n+i+j)%13===0;

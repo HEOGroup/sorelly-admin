@@ -43,7 +43,7 @@ function AbaRevendedorasDiarias(){
               e("span",{className:"flex items-center gap-2"},
                 e("b",{className:MONO}, v),
                 delta!==null && e("span",{className:MONO+" text-[11px] "+(delta>0?"text-success":delta<0?"text-destructive":"text-muted-foreground")}, (delta>=0?"+":"")+delta))); })))),
-    e(BlocoBarra,{t:"Crescimento de revendedoras — história completa", sub:"o mesmo gráfico que aparece na Previsão de faturamento"},
+    e(BlocoBarra,{t:"Crescimento de revendedoras — história completa", sub:"o mesmo gráfico que aparece na tela Faturamento"},
       e("div",{className:"p-3"}, e(GraficoColunasRevendedoras,{pontos:pontosRevendedoras(s, {tudo:true})}))));
 }
 

@@ -11,12 +11,17 @@ import { e } from "@/shared/react";
 
 var BARRAS = {ouro:"bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]", azul:"bg-linear-to-r from-[#1E4E8C] via-[#3B82F6] to-[#BFDBFE] text-white",
   roxo:"bg-linear-to-r from-[#5B2A86] via-[#8B5CF6] to-[#DDD6FE] text-white",
-  prata:"bg-linear-to-r from-[#64748B] via-[#CBD5E1] to-[#F1F5F9] text-[#1B1409]"};
+  prata:"bg-linear-to-r from-[#64748B] via-[#CBD5E1] to-[#F1F5F9] text-[#1B1409]",
+  vermelho:"bg-linear-to-r from-[#991B1B] via-[#EF4444] to-[#FECACA] text-white"};
+// p.ir = nome da aba: põe no canto da barra um botão "Abrir ›" que leva à tela do bloco. p.compacto = barra baixa e sem subtítulo.
 function BlocoBarra(p){
+  var d = use().dispatch;
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
-    e("div",{className:"flex flex-col items-center px-4 py-2.5 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+BARRAS[p.cor||"ouro"]},
-      e("h2",{className:"font-heading text-[16px] font-bold leading-tight"}, p.t),
-      p.sub && e("p",{className:"mt-0.5 text-[12px] font-medium opacity-85"}, p.sub)),
+    e("div",{className:"relative flex flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-4 py-2.5 ")+BARRAS[p.cor||"ouro"]},
+      e("h2",{className:"font-heading font-bold leading-tight "+(p.compacto ? "text-[14px]" : "text-[16px]")}, p.t),
+      p.sub && !p.compacto && e("p",{className:"mt-0.5 text-[12px] font-medium opacity-85"}, p.sub),
+      p.ir && e("button",{onClick:function(){ d({type:"ABA", aba:p.ir}); }, title:"Abrir a tela completa",
+        className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
     p.children);
 }
 function ResumoCategorias(p){

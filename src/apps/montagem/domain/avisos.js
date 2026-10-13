@@ -4,7 +4,8 @@
 import { AGENDAMENTO, BIPADORAS, DIRETORIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, SUPERVISORA } from "@/apps/montagem/domain/equipe";
 
 var TIPOS = [
-  {k:"media_alta", t:"Média de vendas acima do limite", desc:"Na Atendimento Sorelly, quando a média das vendas da revendedora passa do limite do Configurador geral (limite do Marcus, hoje R$ 4.000). O alerta sai uma vez por atendimento.", padrao:[SUPERVISORA.id, 16, 17]}
+  {k:"media_alta", t:"Média de vendas acima do limite", desc:"Na Atendimento Sorelly, quando a média das vendas da revendedora passa do limite do Configurador geral (limite do Marcus, hoje R$ 4.000). O alerta sai uma vez por atendimento.", padrao:[SUPERVISORA.id, 16, 17]},
+  {k:"fila_retorno", t:"Fila de retornos para bipar", desc:"Quando a fila de kits que voltaram das representantes e ainda faltam bipar passa de 20, 30, 40 e 50. Cada degrau novo gera um alerta mais vermelho: acione cadastro, Deysiane e encomendas para ajudar a bipar.", padrao:[11,16,17,28,29,27,24,26]}
 ];
 var GRUPOS_PESSOAS = [
   {t:"Diretoria", ps:DIRETORIA},

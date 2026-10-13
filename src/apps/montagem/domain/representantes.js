@@ -1,10 +1,10 @@
 // Sorelly Admin · montagem e bipagem — domain/representantes.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 
-var REPS_AVAL = ["Dayanne","Lysie","Marcus Hess","Jessica","Priscila","Rosana"];
+var REPS_AVAL = ["Dayanne","Lysie","Jessica","Thalita"];
 function avalRepDemo(){
   var revs = ["Ana Paula","Bianca","Cristiane","Daiane","Edna","Fabiana","Gislaine","Helena","Ingrid","Joana","Kelly","Luciane","Marta","Neide"];
-  var base = {Dayanne:[5,4,5], Lysie:[4,5,4], "Marcus Hess":[5,5,5], Jessica:[3,4,3], Priscila:[4,4,5], Rosana:[3,3,4]}, out = [];
+  var base = {Dayanne:[5,4,5], Lysie:[4,5,4], Jessica:[3,4,3], Thalita:[4,5,4]}, out = [];
   REPS_AVAL.forEach(function(r, i){ var n = 8 + (i*3)%7, b = base[r];
     for(var j=0;j<n;j++){ var v = function(x, q){ return Math.max(1, Math.min(5, x + ((i+j+q)%5===0 ? -1 : (i+j+q)%7===0 ? 1 : 0))); };
       out.push({rep:r, rev:revs[(i*5+j)%revs.length], data:String(1+(j*3+i)%23).padStart(2,"0")+"/09", pont:v(b[0],0), expl:v(b[1],1), whats:v(b[2],2),
@@ -12,8 +12,8 @@ function avalRepDemo(){
   return out;
 }
 var RECUSAS0 = [{rep:"Jessica", rev:"Gabriela Lemos", data:"05/09", motivo:"Recusou pelo app"},{rep:"Jessica", rev:"Sônia Prates", data:"16/09", motivo:"Disse que não tem horário"},
-  {rep:"Rosana", rev:"Marli Teixeira", data:"11/09", motivo:"Recusou pelo app"}];
-var VIRADA0 = {Dayanne:{ultimo:30, volta:4}, Lysie:{ultimo:30, volta:2}, "Marcus Hess":{ultimo:29, volta:5}, Jessica:{ultimo:30, volta:1}, Priscila:{ultimo:28, volta:3}, Rosana:{ultimo:29, volta:4}};
+  {rep:"Thalita", rev:"Marli Teixeira", data:"11/09", motivo:"Recusou pelo app"}];
+var VIRADA0 = {Dayanne:{ultimo:30, volta:4}, Lysie:{ultimo:30, volta:2}, Jessica:{ultimo:30, volta:1}, Thalita:{ultimo:29, volta:3}};
 function diasParados(v){ return v ? (31 - v.ultimo) + (v.volta - 1) : 0; }
 function resumoRep(rep, s){
   var c = s.cfg, av = (s.avalRep||[]).filter(function(a){return a.rep===rep;});

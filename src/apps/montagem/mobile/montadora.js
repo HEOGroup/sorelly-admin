@@ -7,6 +7,7 @@ import { proximoPara, resumoMontadora } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { STATUS_LB, STATUS_TP } from "@/apps/montagem/domain/status";
 import { BK, N1 } from "@/apps/montagem/lib/format";
+import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { Avatar, PONTO_CEL, corDe } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -63,22 +64,8 @@ function CelProximo(){
             prox.pulou && e("p",{className:"text-[12px] text-[#8E8E93]"},"Kits acima de "+BK(s.cfg.limiteMelhores)+" ficam com as "+s.cfg.topN+" montadoras mais bem avaliadas."))
         : e(Vazio,{txt: semValor ? semValor+" kits aguardam a Deysiane definir o valor." : "Todos os kits do dia estão montados ou em andamento."}));
 }
-function CelLogin(p){
-  var us = useState(""), usuario = us[0], setUsuario = us[1];
-  var ps = useState(""), senha = ps[0], setSenha = ps[1];
-  return e("div",{className:"flex h-full flex-col items-center justify-center gap-6 px-2 text-center"},
-    e("div",{className:"grid size-16 place-items-center rounded-2xl bg-linear-to-br from-[#B8862B] via-[#E8B84B] to-[#F1E4C6]"}, e(Icon,{n:"gem", s:28, className:"text-[#1B1409]"})),
-    e("div",null, e("p",{className:"font-heading text-2xl font-bold"},"Sorelly Joias"), e("p",{className:"text-[13px] text-[#8E8E93]"},"App da montagem")),
-    e("div",{className:"flex w-full flex-col gap-3"},
-      e("label",{className:"flex flex-col gap-1 text-left"}, e("span",{className:"text-[12px] text-[#8E8E93]"},"Usuário"),
-        e("input",{value:usuario, onChange:function(ev){setUsuario(ev.target.value);}, placeholder:"seu nome",
-          className:"h-11 rounded-xl bg-[#1C1C1E] px-3 text-[14px] text-white outline-none ring-1 ring-white/10 focus:ring-primary"})),
-      e("label",{className:"flex flex-col gap-1 text-left"}, e("span",{className:"text-[12px] text-[#8E8E93]"},"Senha"),
-        e("input",{type:"password", value:senha, onChange:function(ev){setSenha(ev.target.value);}, placeholder:"••••••",
-          className:"h-11 rounded-xl bg-[#1C1C1E] px-3 text-[14px] text-white outline-none ring-1 ring-white/10 focus:ring-primary"})),
-      e("button",{onClick:p.onEntrar, className:"mt-2 h-12 rounded-xl bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[15px] font-semibold text-[#1B1409] active:translate-y-px"},"Entrar")),
-    e("p",{className:"text-[11.5px] text-[#8E8E93]"},"Modelo do app — qualquer usuário e senha entra"));
-}
+// tela de entrada (a mesma do painel): o usuário digitado abre a montadora correspondente
+function CelLogin(p){ return e(TelaLogin,{compacto:true, titulo:"App da montagem", teste:false, onEntrar:p.onEntrar}); }
 function CelResultados(){
   var s = use().state, id = s.celular;
   var m = s.montadoras.find(function(x){return x.id===id;}), r = resumoMontadora(m, s);
@@ -121,13 +108,13 @@ function CelListagens(){
           e("span",{className:"text-[12px] text-[#8E8E93]"}, STATUS_LB[k.status])); })));
   }));
 }
-function Celular(){
+function Celular(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
-  var lg = useState(false), logado = lg[0], setLogado = lg[1];
+  var lg = useState(false), logado = p && p.logado!==undefined ? p.logado : lg[0], setLogado = p && p.setLogado ? p.setLogado : lg[1];   // a página pode controlar (lista "Conectar como")
   var idx = s.montadoras.findIndex(function(x){return x.id===s.celular;}), m = s.montadoras[idx];
   var seg = function(t, lb){ return e("button",{onClick:function(){d({type:"TELACEL", t:t});},
     className:"flex-1 rounded-lg py-1.5 text-[12.5px] font-semibold transition-colors "+(s.telaCel===t?"bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409] shadow":"text-[#8E8E93]")}, lb); };
-  if(!logado) return e(IPhone15,null, e(CelLogin,{onEntrar:function(){ setLogado(true); d({type:"TELACEL", t:"resultados"}); }}));
+  if(!logado) return e(IPhone15,null, e(CelLogin,{onEntrar:function(pes){ setLogado(true); if(pes && s.montadoras.some(function(x){ return x.id===pes.id; })) d({type:"CEL", id:pes.id}); d({type:"TELACEL", t:"resultados"}); }}));
   return e(IPhone15,null,
     e("div",{className:"mb-4 flex items-center gap-3"},
       e(Avatar,{nome:m.nome, i:idx}),

@@ -25,8 +25,8 @@ function AvisoAlertas(p){
   if(!pend.length) return null;
   return e("div",{className:"fixed bottom-36 right-5 z-50 flex w-80 flex-col gap-2"}, pend.slice(0,3).map(function(a){
     var lido = function(){ d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); };
-    return e("div",{key:a.id, role:"alert", className:"flex items-start gap-3 rounded-xl border border-destructive/60 bg-popover p-3.5 shadow-2xl ring-1 ring-black/40"},
-      e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-destructive text-white"}, e(Icon,{n:"warning", s:17})),
+    return e("div",{key:a.id, role:"alert", className:"flex items-start gap-3 rounded-xl border border-destructive/60 bg-popover p-3.5 shadow-2xl ring-1 ring-black/40", style:a.cor ? {borderColor:a.cor, boxShadow:"0 0 0 2px "+a.cor+"66"} : undefined},
+      e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-destructive text-white", style:a.cor ? {background:a.cor} : undefined}, e(Icon,{n:"warning", s:17})),
       e("span",{className:"min-w-0 flex-1"},
         e("b",{className:"block text-[13.5px]"}, a.titulo || "Alerta"),
         e("span",{className:"block text-[12.5px] text-muted-foreground"}, a.texto),

@@ -5,7 +5,7 @@
 import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva } from "@/apps/montagem/domain/consignado";
 import { BK } from "@/apps/montagem/lib/format";
 
-var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas:null, pecasBrinde:null, pecasTrocas:null,
+var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas:null, pecasBrinde:null, pecasTrocas:null, trocas:[], tagsDanificadas:0,
   motivoProxRemarcacao:"", condicionaisSelecionadas:[], pagamentos:[], acordoParcelas:[], acordoSalvo:false, recusouNegociar:false, brindes:[], atrasoDias:0, pecasProxCodigos:[], kitNovoOk:false, expositoresMarcados:[], fechado:false};
 
 // versaoBase: versão de regras carimbada no kit/atendimento · modalidade: "padrao" | "prata" · vez: remarcações com multa
@@ -16,7 +16,12 @@ function derivarAcerto(p){
   var gerais = versao ? versao.gerais : {};
   var totalPagoAtual = totalPago(form.pagamentos);
   var acordoSoma = form.acordoParcelas.filter(function(x){return x.data && x.valor>0;}).reduce(function(t,x){return t+x.valor;},0);
-  var entrada = function(pago){ return {vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0, vez:p.vez||0, valorPago:pago, atrasoDias:ehPrata ? (form.atrasoDias||0) : 0, semTaxa:!!p.semTaxa}; };
+  // Trocas (app da representante): peça deste kit = a nova entra na venda pelo valor cheio; peça de outro mês (já paga) = só a diferença (nova − antiga, pode ser negativa)
+  var trocas = form.trocas || [], r2c = function(n){ return Math.round(n*100)/100; };
+  var trocasAjuste = r2c(trocas.reduce(function(t,x){ return t + (x.tipo==="anterior" ? (x.novaValor||0)-(x.antigaValor||0) : (x.novaValor||0)); }, 0));
+  var nTrocasMes = trocas.filter(function(x){ return x.tipo!=="anterior"; }).length, nTrocasAnt = trocas.length-nTrocasMes;
+  var vendaEfetiva = form.vendaBruta==null ? null : Math.max(0, r2c(form.vendaBruta + trocasAjuste));
+  var entrada = function(pago){ return {vendaBruta:vendaEfetiva, devolvida:0, garantia:form.garantia||0, vez:p.vez||0, valorPago:pago, atrasoDias:ehPrata ? (form.atrasoDias||0) : 0, semTaxa:!!p.semTaxa}; };
   var previaBase = versao && form.vendaBruta!=null ? calcularAcerto(entrada(totalPagoAtual), versao) : null;
   var faltaAtual = previaBase ? Math.max(0, previaBase.valorDevido-totalPagoAtual) : 0;
   var quitado = !!previaBase && faltaAtual<=0.009;
@@ -28,8 +33,12 @@ function derivarAcerto(p){
 
   var conds = p.condicionais || [];
   var pecasCondSelecionadas = conds.filter(function(c){ return form.condicionaisSelecionadas.indexOf(c.numero)>=0; }).reduce(function(t,c){ return t+c.pecas; }, 0);
-  var pecasADevolver = (form.pecasVendidas||form.pecasBrinde||form.pecasTrocas)
-    ? pecasCondSelecionadas - ((form.pecasVendidas||0)+(form.pecasBrinde||0)+(form.pecasTrocas||0)) : null;
+  // App da representante (autoPecas): brindes e trocas vêm das listas lançadas. A peça nova de cada troca deste kit fica com a revendedora (uma a menos para devolver);
+  // a de outro mês entra no lugar da quebrada que ela traz, então não muda a conta.
+  var pecasADevolver = p.autoPecas
+    ? ((form.pecasVendidas!=null || form.brindes.length || trocas.length) ? pecasCondSelecionadas - ((form.pecasVendidas||0)+form.brindes.length+nTrocasMes) : null)
+    : ((form.pecasVendidas||form.pecasBrinde||form.pecasTrocas)
+      ? pecasCondSelecionadas - ((form.pecasVendidas||0)+(form.pecasBrinde||0)+(form.pecasTrocas||0)) : null);
 
   // Kit novo: % do acerto realmente pago (acordo não conta) e, no Prata, vendas mínimas para renovar.
   var kitNovoMin = gerais.kitNovoMinPct || 80;
@@ -55,12 +64,14 @@ function derivarAcerto(p){
   var libN = previaAcerto ? Math.round(previaAcerto.brindeNormal*fatorBrinde) : 0, libS = previaAcerto ? Math.round(previaAcerto.brindeSelect*fatorBrinde) : 0;
   var confBrinde = conferirBrindes(form.brindes, libN, libS);
   var excedenteBrinde = brindeLiberado ? confBrinde.excedente : 0;
-  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde)*100)/100 : 0;
+  // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda
+  var valorTag = gerais.taxaTagExtraviada!=null ? gerais.taxaTagExtraviada : 5, tagsValor = Math.round((form.tagsDanificadas||0)*valorTag*100)/100;
+  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor)*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar-totalPagoAtual)*100)/100) : 0;
 
   // Peças liberadas para o próximo mês (quantidade pelo valor da venda, reduzida pelo % em aberto)
   var pecasProx = previaBase ? pecasProximoMes(previaBase.vendaLiquida, previaBase.valorDevido, faltaAtual, versao.pecasProx) : null;
-  return {pecasProx:pecasProx, versao:versao, gerais:gerais, ehPrata:ehPrata, totalPagoAtual:totalPagoAtual, acordoSoma:acordoSoma, previaBase:previaBase, faltaAtual:faltaAtual, quitado:quitado,
+  return {tagsValor:tagsValor, valorTag:valorTag, trocasAjuste:trocasAjuste, vendaEfetiva:vendaEfetiva, nTrocasMes:nTrocasMes, nTrocasAnt:nTrocasAnt, pecasProx:pecasProx, versao:versao, gerais:gerais, ehPrata:ehPrata, totalPagoAtual:totalPagoAtual, acordoSoma:acordoSoma, previaBase:previaBase, faltaAtual:faltaAtual, quitado:quitado,
     acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,

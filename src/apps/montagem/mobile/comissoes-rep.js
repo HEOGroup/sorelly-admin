@@ -4,6 +4,7 @@
 //   · Meses de pagamento → "Dia 11/10" (dropdown) → atendimentos daquele pagamento, a linha de total e o km.
 //   · COMBUSTÍVEL: ela informa só o KM TOTAL DO PERÍODO, em cada data de pagamento, até o corte (13h do dia anterior). Sem km no prazo, paga só o valor fixo do Configurador.
 //   · Aba "Entrega na empresa": ela abre junto com a funcionária e marca o que entregou (dinheiro e condicionais).
+import { FORMA_LABEL } from "@/apps/montagem/domain/consignado";
 import { chaveFech, comisEfetiva, datasDoMes, fmtDataBR, grupoDaRep, itensComissao, janelaDe, pctDaRep, resumoSituacao } from "@/apps/montagem/domain/comissoes";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -42,7 +43,7 @@ function Km(p){
 // Uma data de pagamento (dropdown)
 function Situacao(p){
   var rs = p.rs, ab = p.aberta, c = p.c, jan = janelaDe(c, grupoDaRep(c, p.rep), p.data);
-  var status = rs.paga ? "Paga" : rs.itens.length===0 ? "Sem atendimentos" : rs.aposCorte ? "A pagar" : "Antes do corte";
+  var status = rs.paga ? "Paga" : rs.itens.length===0 ? "Sem atendimentos" : "a pagar";
   return e("div",{className:CARD},
     e("button",{onClick:p.alt, "aria-expanded":ab, className:"flex w-full items-center gap-2 px-3 py-2.5 text-left", style:ab ? OURO_CLARO : undefined},
       e("span",{className:"text-[#A67C12]"}, e(Icon,{n:ab ? "chevrondown" : "chevron", s:14})),
@@ -50,17 +51,18 @@ function Situacao(p){
       e("span",{className:"text-right"}, e("b",{className:MONO+" block text-[13px] text-[#A67C12]"}, BK(rs.comissaoTotal)), e("span",{className:"block text-[10.5px] text-[#6B7280]"}, status))),
     ab && e("div",{className:"flex flex-col"},
       rs.itens.length>0 ? rs.itens.slice().sort(function(a,b){ return a.r.data.localeCompare(b.r.data); }).map(function(it){
-        var venda = it.r.tipo==="acerto" ? it.r.vendaLiquida : 0, direto = !!it.pixRep;
-        return e("div",{key:it.id, className:"flex items-center gap-2 border-t border-[#E9DDBB] px-3 py-2"},
-          e("div",{className:"min-w-0 flex-1"}, e("p",{className:"truncate text-[13px] text-[#111827]"}, it.rev),
-            e("p",{className:"truncate text-[11px] text-[#9A8B63]"}, dm(it.data)+" · "+it.status+(venda>0 ? " · venda "+BK(venda) : "")+(direto ? " · Pix direto" : ""))),
-          e("div",{className:"shrink-0 text-right"}, e("p",{className:MONO+" text-[12.5px] font-semibold text-[#A67C12]"}, BK(direto ? it.valorPago : it.comissao)),
-            e("p",{className:"text-[10.5px] text-[#6B7280]"}, direto ? "pago direto" : it.confirmado ? "✓ confirmado" : "previsto")));
+        var direto = !!it.pixRep, forma = it.forma ? (FORMA_LABEL[it.forma] || it.forma) : (it.tipo==="kitnovo" ? "Kit novo" : it.tipo==="repos" ? "Reposição" : "");
+        // 2 etapas que a representante acompanha: o agendamento receber (✓ Agend.) e o financeiro confirmar (✓ Finan.)
+        var etapa = function(ok, nome){ return e("span",{className:"font-semibold "+(ok ? "text-[#15803D]" : "text-[#B45309]")}, (ok ? "✓ " : "○ ")+nome); };
+        return e("div",{key:it.id, className:"flex flex-col gap-0.5 border-t border-[#E9DDBB] px-3 py-2"},
+          e("div",{className:"flex items-baseline justify-between gap-2"}, e("p",{className:"min-w-0 flex-1 truncate text-[13px] font-semibold text-[#111827]"}, it.rev),
+            e("b",{className:MONO+" shrink-0 text-[13px] "+(it.confirmado || direto ? "text-[#15803D]" : "text-[#A67C12]")}, BK(direto ? it.valorPago : it.comissao))),
+          e("div",{className:"flex items-baseline justify-between gap-2 text-[11px] text-[#6B7280]"},
+            e("span",{className:"min-w-0 truncate"}, dm(it.data)+(forma ? " · "+forma : "")+(it.valorPago>0 ? " · pagou "+BK(it.valorPago) : "")),
+            e("span",{className:"shrink-0 font-semibold "+(it.confirmado || direto ? "text-[#15803D]" : "text-[#B45309]")}, direto ? "pago direto" : it.confirmado ? "confirmada" : "pendente")),
+          !direto && e("div",{className:"flex flex-wrap items-center gap-x-3 text-[10.5px]"}, etapa(it.conferido, "Agendamento"), etapa(!!it.fin, "Financeiro"),
+            it.conferido && !it.confirmado && it.motivo && e("span",{className:"text-[#B45309]"}, it.motivo)));
       }) : e("p",{className:"border-t border-[#E9DDBB] px-3 py-2.5 text-[12px] text-[#6B7280]"},"Nenhuma comissão neste pagamento ainda."),
-      // linha final do bloco
-      e("div",{className:"flex flex-wrap items-center justify-between gap-x-3 border-t border-[#E9DDBB] bg-[#FBF4E0] px-3 py-2 text-[11.5px] text-[#6B7280]"},
-        e("span",null,"Comissão ", e("b",{className:MONO+" text-[#111827]"}, BK(rs.comissaoTotal))), e("span",null,"+ Combustível ", e("b",{className:MONO+" text-[#111827]"}, BK(rs.comb))),
-        e("span",null,"= A pagar ", e("b",{className:MONO+" text-[#A67C12]"}, BK(rs.aPagar))), rs.pagos>0.009 && e("span",null,"Pago ", e("b",{className:MONO+" text-[#111827]"}, BK(rs.pagos)))),
       e(Km,{rs:rs, d:p.d, rep:p.rep, data:p.data, fixo:p.fixo})));
 }
 
@@ -116,11 +118,14 @@ function ComissoesRep(p){
   var meses = {}; meses[mesAtual] = true; itens.filter(function(i){ return i.dest===rep; }).forEach(function(i){ meses[i.dataRem.slice(0,7)] = true; });
   var dados = Object.keys(meses).sort().reverse().map(function(m){
     var rss = datasDoMes(c, g, m).map(function(dt){ return {data:dt, rs:resumoSituacao(c, itens, rep, dt, agora)}; });
-    return {mes:m, datas:rss, pagar:rss.reduce(function(a,x){ return a+Math.max(0, x.rs.falta); }, 0)}; });
+    var som = function(f){ return Math.round(rss.reduce(function(a,x){ return a+f(x.rs); }, 0)*100)/100; };
+    var com = som(function(r){ return r.comissaoTotal; }), comb = som(function(r){ return r.comb; }), pagos = som(function(r){ return r.pagos; });
+    return {mes:m, datas:rss, com:com, comb:comb, pagar:Math.round((com+comb)*100)/100, pagos:pagos, falta:Math.max(0, Math.round((com+comb-pagos)*100)/100)}; });
   var mesAberto = aMes!==undefined ? aMes : mesAtual;
   var sitPadrao = (function(){ var cur = dados.find(function(m){ return m.mes===mesAberto; }); return cur ? (cur.datas.find(function(x){ return x.rs.itens.length>0 && !x.rs.paga; }) || {}).data : null; })();
   var sitAberta = aSit!==undefined ? aSit : sitPadrao;
 
+  var avisoGas = !!(c.gasolinaPR && c.gasolinaPR.valor>0 && c.gasolinaPR.em && (c.gasolinaVisto||{})[rep]!==c.gasolinaPR.em);   // aviso do preço da gasolina ainda não visto por ela
   var nPend = atend.filter(function(r){ return (r.tipo==="acerto" || r.tipo==="kit_novo_entrega") && !(r.recebimento && r.recebimento.ok); }).length;
   var abas = e("div",{className:"flex gap-1.5"}, [["com","Comissões"],["entrega","Entrega na empresa"]].map(function(o){ var a = aba===o[0];
     return e("button",{key:o[0], onClick:function(){ setAba(o[0]); }, "aria-pressed":a, className:"rounded-full px-3 py-1.5 text-[12px] font-bold whitespace-nowrap "+(a ? "bg-[#C9A13B] txt-branco" : "bg-[#1C1C1E] text-[#8E8E93]")}, o[1], o[0]==="entrega" && nPend>0 && " · "+nPend); }));
@@ -129,6 +134,10 @@ function ComissoesRep(p){
     naoIdent.length>0 && e("div",{className:"flex flex-col gap-1 rounded-2xl border border-[#FECACA] bg-[#FEF2F2] p-3"},
       e("b",{className:"text-[13px] text-[#B91C1C]"},"Pagamento não identificado"),
       naoIdent.map(function(x,i){ return e("p",{key:i, className:"text-[12px] leading-snug text-[#B91C1C]"}, "O financeiro não encontrou o pagamento de "+x.rev+" ("+BK(x.valor)+", acerto de "+dm(x.data)+"). Envie o comprovante para o financeiro."); })),
+    avisoGas && e("div",{className:"flex flex-col gap-1 rounded-2xl border border-[#E9DDBB] bg-[#FFF8E1] p-3"},
+      e("b",{className:"text-[13px] text-[#111827]"},"⛽ Combustível atualizado"),
+      e("p",{className:"text-[12px] leading-snug text-[#6B7280]"},"O financeiro atualizou o preço da gasolina para "+BK(c.gasolinaPR.valor)+" por litro ("+quando(c.gasolinaPR.em)+"). O combustível dos seus períodos foi recalculado."),
+      e("button",{onClick:function(){ d({type:"COMIS_GAS_VISTO", rep:rep}); }, className:"h-9 self-start rounded-xl bg-[#C9A13B] px-4 text-[12px] font-bold txt-branco"},"Entendi")),
     // cartão do mês
     e("div",{className:"flex flex-col gap-1.5 rounded-2xl border border-[#E9DDBB] p-3", style:OURO_CLARO},
       e("div",{className:"flex items-center justify-between gap-2"},
@@ -145,7 +154,13 @@ function ComissoesRep(p){
           e("span",{className:"text-[#A67C12]"}, e(Icon,{n:abM ? "chevrondown" : "chevron", s:14})), e("b",{className:"flex-1 text-[13.5px] text-[#111827]"}, "Pagamentos de "+nomeMes(m.mes)),
           e("span",{className:MONO+" text-[12px] font-semibold text-[#A67C12]"}, BK(m.pagar))),
         abM && m.datas.map(function(x){ var aberta = sitAberta===x.data;
-          return e(Situacao,{key:x.data, rs:x.rs, c:c, rep:rep, data:x.data, aberta:aberta, alt:function(){ setASit(aberta ? null : x.data); }, d:d, fixo:c.combSemEnvio}); })); }));
+          return e(Situacao,{key:x.data, rs:x.rs, c:c, rep:rep, data:x.data, aberta:aberta, alt:function(){ setASit(aberta ? null : x.data); }, d:d, fixo:c.combSemEnvio}); }),
+        // consolidado do mês: a comissão total em tempo real + o combustível (km total de cada período) = o que a empresa paga; depois o pago e o restante
+        abM && e("div",{className:CARD},
+          e("div",{className:"px-3 py-2", style:OURO_CLARO}, e("b",{className:"text-[13.5px] text-[#111827]"},"Consolidado de "+nomeMes(m.mes))),
+          e("div",{className:"grid grid-cols-3 gap-px bg-[#E9DDBB]"}, [["Comissão",m.com],["+ Combustível",m.comb],["= A pagar",m.pagar,"text-[#A67C12] font-extrabold"],["Já pago",m.pagos],["Restante",m.falta]].map(function(x){
+            return e("div",{key:x[0], className:"flex flex-col items-center bg-[#FBF4E0] px-1 py-1.5 text-center"}, e("span",{className:"text-[10px] font-semibold uppercase tracking-wide text-[#6B7280]"}, x[0]), e("b",{className:MONO+" text-[12px] "+(x[2]||"text-[#111827]")}, BK(x[1]))); })),
+          e("p",{className:"bg-[#FBF4E0] px-3 pb-2 pt-1 text-[10.5px] leading-snug text-[#6B7280]"},"A comissão aparece em tempo real, mesmo antes de o financeiro confirmar. O combustível vem do km total que você informa no fim de cada período."))); }));
 }
 
 export { ComissoesRep };

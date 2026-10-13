@@ -24,7 +24,7 @@ function AbaPainelAcertos(){
   var soLeitura = function(lb, v){ return e("div",{className:"flex flex-col items-center gap-1 rounded-xl bg-card px-3 py-3 text-center ring-1 ring-border"},
     e("span",{className:"text-[11px] font-semibold uppercase tracking-wide"}, lb), e("b",{className:MONO+" text-lg text-success"}, v)); };
   return e(React.Fragment,null,
-    e(PageHead,{t:"Painel dos acertos", sub:"Único lugar onde a base do mês e os acertos previstos são editados. Os realizados vêm do lançamento diário da Previsão de faturamento."}),
+    e(PageHead,{t:"Painel dos acertos", sub:"Único lugar onde a base do mês e os acertos previstos são editados. Os realizados vêm do lançamento diário da tela Faturamento."}),
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-3"},
       editavel("Revendedoras c/ kit (início do mês)", meta.base, function(v){setMeta("base",v);}),
       editavel("Acertos previstos (mês)", meta.previstos, function(v){setMeta("previstos",v);}),

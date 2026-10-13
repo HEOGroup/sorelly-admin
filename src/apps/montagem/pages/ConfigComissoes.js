@@ -23,7 +23,7 @@ function AbaConfigComissoes(props){
   var embutido = !!(props && props.embutido);   // dentro de Comissões (botão Configurar): sem título de página
   var cx = use(), s = cx.state, d = cx.dispatch, atual = comisEfetiva(s);
   var base = function(){ return {reps:repsEfetivas(s).map(function(x){ return {nome:x.nome, pct:x.pct, grupo:x.grupo}; }), pctPadrao:atual.pctPadrao,
-    A:diasTxt(atual.ciclos.A), B:diasTxt(atual.ciclos.B), corteHora:atual.corteHora, corteDias:atual.corteDias, kitNovo:atual.kitNovo, kitNovoExpo:atual.kitNovoExpo, exigirProm:atual.exigirProm, kmPorLitro:atual.kmPorLitro, combSemEnvio:atual.combSemEnvio, gasolina:copia(atual.gasolina||{})}; };
+    A:diasTxt(atual.ciclos.A), B:diasTxt(atual.ciclos.B), corteHora:atual.corteHora, corteDias:atual.corteDias, kitNovo:atual.kitNovo, kitNovoExpo:atual.kitNovoExpo, reposicao:atual.reposicao, exigirProm:atual.exigirProm, kmPorLitro:atual.kmPorLitro, combSemEnvio:atual.combSemEnvio, gasolina:copia(atual.gasolina||{})}; };
   var st = useState(base), f = st[0], setF = st[1];
   var nn = useState(""), novoNome = nn[0], setNovoNome = nn[1];
   var alterou = JSON.stringify(f) !== JSON.stringify(base());
@@ -43,7 +43,7 @@ function AbaConfigComissoes(props){
     var A = lerDias(f.A), B = lerDias(f.B);
     if(!A.length || !B.length) return d({type:"AVISO", txt:"Cada grupo precisa de pelo menos um dia de pagamento"});
     d({type:"COMIS_CONFIG", aviso:"Configurador de comissões salvo", patch:{reps:f.reps.map(function(x){ return {nome:x.nome, pct:x.pct, grupo:x.grupo}; }), pctPadrao:f.pctPadrao, ciclos:{A:A, B:B},
-      corteHora:f.corteHora, corteDias:f.corteDias, kitNovo:f.kitNovo, kitNovoExpo:f.kitNovoExpo, exigirProm:f.exigirProm, kmPorLitro:f.kmPorLitro, combSemEnvio:f.combSemEnvio, gasolina:f.gasolina, v2:true}});
+      corteHora:f.corteHora, corteDias:f.corteDias, kitNovo:f.kitNovo, kitNovoExpo:f.kitNovoExpo, reposicao:f.reposicao, exigirProm:f.exigirProm, kmPorLitro:f.kmPorLitro, combSemEnvio:f.combSemEnvio, gasolina:f.gasolina, v2:true}});
   };
   var cfgPrev = Object.assign({}, atual, {ciclos:{A:lerDias(f.A), B:lerDias(f.B)}, corteHora:f.corteHora, corteDias:f.corteDias});
   var agora = Date.now(), nA = f.reps.filter(function(x){ return x.grupo==="A"; }).length, nB = f.reps.length-nA;
@@ -94,6 +94,7 @@ function AbaConfigComissoes(props){
             lb("Comissão padrão (% para quem não tem)", e(NumInput,{value:f.pctPadrao, step:"0.5", label:"Comissão padrão", className:"h-9! w-24 text-sm!", onChange:function(v){ muda({pctPadrao:v}); }})),
             lb("Kit novo com termo assinado", e(MoneyInput,{value:f.kitNovo, label:"Kit novo", sm:true, className:"w-36", onChange:function(v){ muda({kitNovo:v}); }})),
             lb("Kit novo + expositor", e(MoneyInput,{value:f.kitNovoExpo, label:"Kit novo com expositor", sm:true, className:"w-36", onChange:function(v){ muda({kitNovoExpo:v}); }})),
+            lb("Reposição entregue (com condicional assinada)", e(MoneyInput,{value:f.reposicao, label:"Comissão da reposição", sm:true, className:"w-36", onChange:function(v){ muda({reposicao:v}); }})),
             e("p",{className:"-mt-1 text-[12px] text-warning"},"R$ 20 e R$ 35 são valores provisórios: confirmar."),
             e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.exigirProm, className:"size-4", onChange:function(ev){ muda({exigirProm:ev.target.checked}); }}),
               "Exigir promissória assinada para liberar a comissão"))),

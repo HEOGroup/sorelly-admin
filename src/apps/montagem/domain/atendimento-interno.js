@@ -17,13 +17,19 @@ export { TOLERANCIA_CHEGADA_MIN, DESCONTO_BRINDE_ATRASO, TEMPO_ESCOLHA_KIT, temp
 
 // Pagamentos enviados ao financeiro: cada linha (forma + valor) é dividida em "partes" (uma por conta). Estado da linha:
 // aguardando (falta definir as contas) → conta (contas definidas, falta comprovante/OK) → ok (tudo conferido) · ou isento (só diferença de brinde).
-function statusLinhaFin(l){
-  if(l.isento) return "isento";
+// O financeiro define as contas e dá "OK, enviar ao atendimento" (l.enviada); só então o atendimento vê as contas e anexa os comprovantes.
+// Mexeu nas contas depois de enviar = volta a precisar de novo OK. Linhas antigas, já com comprovante ou OK, valem como enviadas.
+function contasDefinidas(l){
   var ps = l.partes || [];
   var soma = ps.reduce(function(t,p){ return t+(p.valor||0); }, 0);
-  if(!ps.length || ps.some(function(p){ return !p.descricao; }) || Math.abs(soma-l.valor)>0.009) return "aguardando";
-  return ps.every(function(p){ return p.ok; }) ? "ok" : "conta";
+  return ps.length>0 && !ps.some(function(p){ return !p.descricao; }) && Math.abs(soma-l.valor)<=0.009;
+}
+function contasEnviadas(l){ return l.enviada===true || (l.partes||[]).some(function(p){ return p.comprovante || p.ok; }); }
+function statusLinhaFin(l){
+  if(l.isento) return "isento";
+  if(!contasDefinidas(l) || !contasEnviadas(l)) return "aguardando";
+  return (l.partes||[]).every(function(p){ return p.ok; }) ? "ok" : "conta";
 }
 function lancamentoConferido(linhas){ return linhas.length>0 && linhas.every(function(l){ var s = statusLinhaFin(l); return s==="ok" || s==="isento"; }); }
 
-export { statusLinhaFin, lancamentoConferido };
+export { statusLinhaFin, lancamentoConferido, contasDefinidas, contasEnviadas };

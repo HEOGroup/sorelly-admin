@@ -2,8 +2,9 @@
 // Extraído de sorelly_admin_montagem_bipagem.html; depois com a janela/meta reaproveitadas na tabela anual, a cadeia de
 // cálculo em cartões (em vez de texto corrido) e a projeção do gráfico podendo passar de dezembro, com a queda de janeiro.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { TabelaCrescimento } from "@/apps/montagem/components/tabela-crescimento";
 import { GraficoColunasRevendedoras } from "@/apps/montagem/components/grafico-revendedoras";
-import { CRESCIMENTO_REVENDEDORAS, FATOR_SAZONAL, JANELAS_GRAFICO_REV, MESES_LONGO, QUEDA_JANEIRO, isoOntem, pontosRevendedoras, projetarAno, projetarVariosAnos } from "@/apps/montagem/domain/financeiro";
+import { CRESCIMENTO_REVENDEDORAS, contasDoMes, fatEfetivo, FATOR_SAZONAL, JANELAS_GRAFICO_REV, MESES_LONGO, QUEDA_JANEIRO, isoOntem, pontosRevendedoras, projetarAno, projetarVariosAnos } from "@/apps/montagem/domain/financeiro";
 import { BK, N1 } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -18,18 +19,29 @@ import React from "react";
 var jLb = function(lb){ return lb.indexOf("Último")===0 ? "Últ. mês" : lb.replace(" dias","d"); };
 
 function AbaPrevisaoFaturamento(){
-  var cx = use(), s = cx.state, d = cx.dispatch, c = s.cfg;
+  var cx = use(), sReal = cx.state, d = cx.dispatch, c = sReal.cfg;
+  // s = com o faturamento de HOJE (se lançado) para as contas e a previsão; sReal = só o registro oficial do dia anterior
+  var s = Object.assign({}, sReal, {faturamentoDiario:fatEfetivo(sReal)});
   var hoje = new Date(), ano = hoje.getFullYear(), mes = hoje.getMonth(), anoStr = String(ano);
-  var entradas = Object.keys(s.faturamentoDiario||{}).sort();
-  var doMes = entradas.filter(function(k){ return k.slice(0,7)===anoStr+"-"+String(mes+1).padStart(2,"0"); });
+  var entradas = Object.keys(sReal.faturamentoDiario||{}).sort();
+  var doMes = Object.keys(s.faturamentoDiario||{}).sort().filter(function(k){ return k.slice(0,7)===anoStr+"-"+String(mes+1).padStart(2,"0"); });
   var ultimaMes = doMes.length ? s.faturamentoDiario[doMes[doMes.length-1]] : null;
   // quantidade de revendedoras é lançada aqui mesmo, junto com o faturamento (1 lançamento só, sempre do dia anterior)
   var revDatas = Object.keys(s.revendedorasDiario||{}).sort();
   var revendedoras = revDatas.length ? s.revendedorasDiario[revDatas[revDatas.length-1]] : 0;
   var fdata = useState(isoOntem()), dataForm = fdata[0], setDataForm = fdata[1];
-  var frec = useState(ultimaMes ? ultimaMes.recebido : 0), recForm = frec[0], setRecForm = frec[1];
-  var face = useState(ultimaMes ? ultimaMes.acertos : 0), aceForm = face[0], setAceForm = face[1];
+  var isoHoje = (function(){ var n = new Date(); return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0"); })();
+  var ultOficial = (function(){ var k = entradas.filter(function(x){ return x.slice(0,7)===anoStr+"-"+String(mes+1).padStart(2,"0"); }); return k.length ? {data:k[k.length-1], v:sReal.faturamentoDiario[k[k.length-1]]} : null; })();
+  var frec = useState(ultOficial ? ultOficial.v.recebido : 0), recForm = frec[0], setRecForm = frec[1];
+  var face = useState(ultOficial ? ultOficial.v.acertos : 0), aceForm = face[0], setAceForm = face[1];
   var frev = useState(revendedoras), revForm = frev[0], setRevForm = frev[1];
+  // faturamento de HOJE (acumulado do mês até agora): só pra acompanhar durante o dia, sem mexer no registro oficial de ontem
+  var hojeSalvo = sReal.fatHoje && sReal.fatHoje.data===isoHoje ? sReal.fatHoje : null;
+  var fhr = useState(hojeSalvo ? hojeSalvo.recebido : (ultOficial ? ultOficial.v.recebido : 0)), recHoje = fhr[0], setRecHoje = fhr[1];
+  var fha = useState(hojeSalvo ? hojeSalvo.acertos : (ultOficial ? ultOficial.v.acertos : 0)), aceHoje = fha[0], setAceHoje = fha[1];
+  var salvarHoje = function(){ d({type:"FAT_HOJE", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
+  var diaFixado = !!(sReal.faturamentoDiario||{})[isoHoje];   // hoje já virou registro oficial
+  var fixarDia = function(){ d({type:"FAT_FIXAR", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
   var mp = useState(95), metaPct = mp[0], setMetaPct = mp[1];   // meta usada na previsão: 94/95/96%, padrão 95 (o meio do caminho)
   var jc = useState(2), janela = jc[0], setJanela = jc[1];   // janela de crescimento escolhida (índice em CRESCIMENTO_REVENDEDORAS; 2 = 30 dias)
   var ad = useState(false), abrirDetalhe = ad[0], setAbrirDetalhe = ad[1];
@@ -43,11 +55,11 @@ function AbaPrevisaoFaturamento(){
   var faturamentoPrevisto = metaAlvo*mediaAcerto;
   var aReceber = Math.max(0, faturamentoPrevisto-recebidoMes);
   // vem direto da tela Contas a pagar — o mesmo dado, sempre batendo
-  var cpMes = Object.assign({pago:0, apagar:0}, ((s.contasPagar||{})[anoStr]||{})[mes]);
+  var cpMes = contasDoMes(s, anoStr, mes);
   var resultadoAgora = recebidoMes - cpMes.pago;
   var resultadoMes = faturamentoPrevisto - (cpMes.pago+cpMes.apagar);
-  var totAnoContas = [0,1,2,3,4,5,6,7,8,9,10,11].reduce(function(t,i){ var m = Object.assign({pago:0,apagar:0}, ((s.contasPagar||{})[anoStr]||{})[i]); return t+m.pago+m.apagar; },0);
-  var totPagoAno = [0,1,2,3,4,5,6,7,8,9,10,11].reduce(function(t,i){ var m = Object.assign({pago:0,apagar:0}, ((s.contasPagar||{})[anoStr]||{})[i]); return t+m.pago; },0);
+  var totAnoContas = [0,1,2,3,4,5,6,7,8,9,10,11].reduce(function(t,i){ var m = contasDoMes(s, anoStr, i); return t+m.pago+m.apagar; },0);
+  var totPagoAno = [0,1,2,3,4,5,6,7,8,9,10,11].reduce(function(t,i){ var m = contasDoMes(s, anoStr, i); return t+m.pago; },0);
   var totAPagarAno = totAnoContas - totPagoAno;
   // proporções médias, ponderadas pelo tamanho de cada mês, calculadas em cima de todos os meses FECHADOS (Jan até o mês anterior);
   // a conversão previstos→realizados dos meses futuros usa a meta (94/95/96%) escolhida acima, não mais só a média histórica
@@ -113,7 +125,7 @@ function AbaPrevisaoFaturamento(){
     return e("button",{key:x, onClick:function(){setMetaPct(x);},
       className:"rounded-md px-2 py-1 text-[11px] font-bold "+(metaPct===x?"bg-warning text-black":"ring-1 ring-border hover:bg-muted/40")}, x+"%"); })); };
   return e(React.Fragment,null,
-    e(PageHead,{t:"Previsão de faturamento", sub:"Lançamento diário, sempre referente ao dia anterior. A Amanda preenche toda manhã; se ela faltar, o Lucas preenche."}),
+    e(PageHead,{t:"Faturamento", sub:"O registro oficial é sempre do dia anterior (a Amanda preenche toda manhã; se faltar, o Lucas). Durante o dia, atualize o campo \"Hoje\" para acompanhar a média e a previsão."}),
     e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-3"},
       e(BlocoBarra,{t:"Lançar o dia anterior", sub:"digite o total acumulado do mês até ontem — não o valor do dia"},
         e("div",{className:"flex flex-col items-center gap-3 p-4"},
@@ -126,7 +138,23 @@ function AbaPrevisaoFaturamento(){
           e("label",{className:rotulo+" w-full"},"Quantidade de revendedoras (total geral)",
             e(NumInput,{value:revForm, onChange:setRevForm, className:"w-full! text-center!"})),
           e(Btn,{v:"primary", ic:"save", className:"w-full", onClick:salvar},"Salvar lançamento"),
-          entradas.length>0 && e("p",{className:"text-[12px]"},"Último lançamento: "+entradas[entradas.length-1].split("-").reverse().join("/")))),
+          ultOficial && e("div",{className:"flex w-full flex-col items-center rounded-lg bg-black/15 px-2 py-1.5 text-center text-[12px]"},
+            e("span",{className:"font-semibold text-white/70"},"Registro fixo · atualizado até "+ultOficial.data.split("-").reverse().slice(0,2).join("/")),
+            e("b",{className:MONO+" text-[13px]"}, ultOficial.v.acertos+" acertos · "+BK(ultOficial.v.recebido))),
+          // lançamento do DIA (acompanhamento): atualiza a média e a previsão, e amanhã o oficial de hoje entra no campo de cima
+          e("div",{className:"my-1 h-px w-full bg-border"}),
+          e("b",{className:"text-[13px]"},"Hoje · "+isoHoje.split("-").reverse().slice(0,2).join("/")+" (acompanhar durante o dia)"),
+          e("label",{className:rotulo+" w-full"},"Recebido do mês até agora",
+            e(MoneyInput,{value:recHoje, onChange:setRecHoje, className:"w-full text-center!"})),
+          e("label",{className:rotulo+" w-full"},"Acertos do mês até agora",
+            e(NumInput,{value:aceHoje, onChange:setAceHoje, className:"w-full! text-center!"})),
+          diaFixado ? e("div",{className:"flex w-full flex-col items-center gap-1 rounded-lg bg-success/10 px-2 py-2 text-center"},
+            e("b",{className:"text-[13px] text-success"},"✓ Dia fixado: o faturado de hoje já subiu em Contas a pagar"),
+            e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"FAT_REABRIR", data:isoHoje}); }},"Reabrir para atualizar"))
+          : e("div",{className:"flex w-full flex-col gap-1.5"},
+              e(Btn,{v:"secondary", ic:"check", className:"w-full", onClick:salvarHoje},"Atualizar hoje (provisório)"),
+              e(Btn,{v:"primary", ic:"save", className:"w-full", onClick:fixarDia},"Fixar o dia (valor certo)")),
+          hojeSalvo && e("p",{className:"text-[11.5px] text-success"},"Hoje já entrou na média e na previsão (atualizado às "+new Date(hojeSalvo.em).toTimeString().slice(0,5)+")."))),
       e(BlocoBarra,{cor:"azul", t:MESES_LONGO[mes]+" ao vivo", sub:"o total mais recente do mês + o mês atual da tela Contas a pagar"},
         e("div",{className:"flex flex-col gap-2 p-3"},
           e("div",{className:"grid grid-cols-2 gap-1.5 rounded-lg bg-black/10 p-2"},
@@ -166,34 +194,8 @@ function AbaPrevisaoFaturamento(){
               e("b",{className:"text-[13px] "+(resultadoAno<0?"text-destructive":"text-success")},"Resultado final do ano"),
               e("b",{className:MONO+" text-[15px] "+(resultadoAno<0?"text-destructive":"text-success")}, BK(resultadoAno)))),
           e("p",{className:"text-[11px]"},"Contas a pagar: os 12 meses já lançados de verdade. Faturamento: "+(mesesFaltando.length ? "faltam lançar "+mesesFaltando.join(", ")+"; " : "todos os meses fechados já foram lançados; ")+MESES_LONGO[(mes+1)%12]+" a "+MESES_LONGO[11]+" são projeção, pela janela de crescimento escolhida abaixo.")))),
+    e(TabelaCrescimento,{s:s, ano:ano}),
     e(BlocoBarra,{t:"Crescimento de revendedoras", sub:"histórico do ano até agora + o gráfico dia a dia embaixo"},
-      e("div",{className:"flex flex-col gap-2.5 p-3"},
-        // histórico do ano até agora (meses fechados), a linha de média (base pra prever os próximos meses) e o mês atual em andamento
-        e(Tabela,{semLimite:true, min:"min-w-[36rem]", cols:[{t:"Mês",c:true},{t:"Revendedoras",c:true},{t:"% previstos",c:true},{t:"Previstos",c:true},{t:"% realizados",c:true},{t:"Realizados",c:true}]},
-          (function(){
-            var fechadasRows = linhasHistorico.filter(function(h){ return !h.atual; });
-            var atualRow = linhasHistorico.filter(function(h){ return h.atual; })[0];
-            var linha2 = function(h,i,destaque){ var sit = h.atual ? SIT.atual : SIT.real;
-              var pctP = h.base>0 ? h.previstos/h.base*100 : 0, pctR = h.previstos>0 ? h.realizados/h.previstos*100 : 0;
-              return e("tr",{key:i, className:TR},
-                e(TD,{c:true, className:"font-semibold "+sit.cor, title:sit.lb}, MESES_LONGO[h.mes]),
-                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.base)),
-                e(TD,{c:true, className:MONO+" text-primary"}, N1(pctP)+"%"),
-                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.previstos)),
-                e(TD,{c:true, className:MONO+" text-primary"}, N1(pctR)+"%"),
-                e(TD,{c:true, className:MONO+" text-foreground"}, num(h.realizados))); };
-            var mediaPctP = fechadasRows.length ? fechadasRows.reduce(function(t,h){ return t+(h.base>0?h.previstos/h.base*100:0); },0)/fechadasRows.length : 0;
-            var mediaPctR = fechadasRows.length ? fechadasRows.reduce(function(t,h){ return t+(h.previstos>0?h.realizados/h.previstos*100:0); },0)/fechadasRows.length : 0;
-            var linhaMedia = e("tr",{key:"media", className:TR+" bg-black/10"},
-              e(TD,{c:true, className:"font-semibold text-foreground"}, "Média"),
-              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"),
-              e(TD,{c:true, className:MONO+" font-semibold text-primary"}, N1(mediaPctP)+"%"),
-              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"),
-              e(TD,{c:true, className:MONO+" font-semibold text-primary"}, N1(mediaPctR)+"%"),
-              e(TD,{c:true, className:MONO+" text-muted-foreground"}, "—"));
-            return fechadasRows.map(function(h,i){ return linha2(h,i); }).concat([linhaMedia]).concat(atualRow ? [linha2(atualRow,"atual")] : []);
-          })()),
-        proj.fechados.length<3 && e("p",{className:"text-[11.5px] text-warning"},"Ainda só "+proj.fechados.length+" mês(es) fechado(s) — quanto mais meses forem lançados, mais confiável fica a % usada na previsão.")),
       e("div",{className:"border-t border-border p-3"},
         e("button",{onClick:function(){setAbrirGrafico(!abrirGrafico);}, className:"flex w-full items-center justify-between gap-2 text-left"},
           e("span",{className:"text-[13px] font-semibold"},"Crescimento de revendedoras — em colunas"),
@@ -220,7 +222,7 @@ function AbaPrevisaoFaturamento(){
         e(Tabela,{semLimite:true, cols:[{t:"Mês",c:true},{t:"Revendedoras",c:true},{t:"Acertos realizados",c:true},{t:"Contas a pagar",c:true},{t:"Faturamento",c:true},{t:"Resultado",c:true}]
           .concat(abrirDetalhe ? [{t:"Vendido na ponta (c/ brindes)",c:true},{t:"Vendido na ponta (s/ brinde)",c:true},{t:"Custo (c/ brindes)",c:true},{t:"Custo (s/ brinde)",c:true}] : [])},
           projAnos.porMes.map(function(pm, linha){
-            var anoDaLinha = String(pm.ano), cpI = Object.assign({pago:0,apagar:0}, ((s.contasPagar||{})[anoDaLinha]||{})[pm.mes]), cpTotal = cpI.pago+cpI.apagar;
+            var anoDaLinha = String(pm.ano), cpI = contasDoMes(s, anoDaLinha, pm.mes), cpTotal = cpI.pago+cpI.apagar;
             var fatI = pm.tipo==="atual" ? faturamentoPrevisto : pm.valor;
             var resultadoI = fatI - cpTotal;
             var vp = ((s.vendidoPonta||{})[anoDaLinha]||{})[pm.mes];

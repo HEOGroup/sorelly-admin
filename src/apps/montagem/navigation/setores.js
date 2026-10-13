@@ -13,9 +13,9 @@ var SETORES = [
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", areas:[
     G("CNPJs", [["CNPJs", [I("cnpjs","CNPJs",["Cadastro das 5 empresas da Sorelly (34, 46, 59, 67 e H&O Apps)"]),
       I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"])]]]),
-    G("Faturamento e Contas a Pagar", [
-      ["Faturamento vs contas a pagar", [I("previsaofat","Previsão de faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"]),
-        I("contaspagar","Contas a pagar",["Faturamento vs Contas a Pagar → Contas a pagar (refeita: lançamento manual de Pago e A pagar por mês, visão Total e por CNPJ)"]),
+    G("Faturamento &\ncontas a pagar", [
+      ["Faturamento &\ncontas a pagar", [I("previsaofat","Faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"]),
+        I("contaspagar","Contas a pagar",["Faturamento vs Contas a Pagar → Contas a pagar (refeita: lançamento manual de Pago e A pagar por mês, visão Total e por CNPJ)"]), T("inadfin","Inadimplência"),
         E("Histórico de contas",["Faturamento vs Contas a Pagar → Histórico de contas"])]]]),
     G("Saldos Bancários", [
       ["Saldos Bancários", [E("Visão geral",["Saldo das Contas → Visão geral","Saldo das Contas → Lançamento diário","Saldo das Contas → Histórico","Saldo das Contas → Gráficos","Saldo das Contas → Relatório"]),
@@ -23,10 +23,10 @@ var SETORES = [
     G("Fiscal", [
       ["Fiscal", [E("Visão geral fiscal",["Fiscal → Visão geral"]), E("Entradas",["Fiscal → Entradas"]), E("Saídas",["Fiscal → Saídas"]),
         E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]]]),
-    G("Recebimentos e Leilão", [
+    G("Recebimentos &\nleilão", [
       ["Recebimentos", [B("Link de pagamento"), B("Maquininhas")]],
       ["Leilão", [B("Leilão")]]]),
-    G("Financeiro familiar", [["Financeiro familiar", [E("Home",["Financeiro Familiar → Home"]), E("Alertas",["Financeiro Familiar → Alertas"]), E("Contas a pagar da família",["Financeiro Familiar → Contas a Pagar"]),
+    G("Financeiro\nfamiliar", [["Financeiro\nfamiliar", [E("Home",["Financeiro Familiar → Home"]), E("Alertas",["Financeiro Familiar → Alertas"]), E("Contas a pagar da família",["Financeiro Familiar → Contas a Pagar"]),
       E("Contas pagas",["Financeiro Familiar → Contas Pagas"]), E("PIX revendedoras",["Financeiro Familiar → PIX Revendedoras"]), E("Prestadores",["Financeiro Familiar → Prestadores"]),
       E("Pró-labores",["Financeiro Familiar → Pró-labores"]), E("Relatório da família",["Financeiro Familiar → Relatório"]), E("Configurações da família",["Financeiro Familiar → Configurações"])]]]),
     {nome:"Cobrança", telas:[E("Visão geral da cobrança",["Cobrança → Visão Geral"]), E("Devendo",["Cobrança → Devendo"]), E("Quitados",["Cobrança → Quitados"]),
@@ -43,7 +43,7 @@ var SETORES = [
       E("Registros do cadastro", ["Cadastro de revendedoras → Registros"])]},
     {nome:"Kits novos", telas:[
       Object.assign(T("kitnovo","Kits novos"), {adm:true, origem:["Cadastro, liberação, direcionamento e entrega — planilha Curitiba"]}),
-      T("knpendencias","Pendências"), T("knconsolidado","Consolidado"), T("knregras","Regras"), T("knconfigurador","Configurador")]},
+      T("knpendencias","Pendências"), T("knconsolidado","Consolidado"), T("knregras","Regras")]},
     {nome:"Indicações", telas:[
       E("Indicações", ["Indicações → Indicações"]),
       E("Resgates e retiradas", ["Indicações → Fila de resgates, Agendamentos e Retiradas do dia"])]},
@@ -51,29 +51,35 @@ var SETORES = [
       E("Avaliações: visão geral", ["Avaliações → Visão geral"]),
       E("Avaliação dos kits", ["Avaliações → Kits"]),
       Object.assign(T("avalrep","Avaliação das representantes"), {adm:true, origem:["Avaliações → Representantes"]})]}]},
+  // Kits = só a montagem. Representantes e Atendimento interno viraram setores próprios (decisão de 13/10/2026).
   {id:"kits", nome:"Kits", ic:"caixa", cor:"#22C55E", areas:[
-    {nome:"Atendimento interno", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]},
     {nome:"Listagens & Kits", telas:[T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
       E("Metas", ["Sistema de metas do admin (vendas dos meses anteriores + regras)"]),
       T("equipe"), T("registros"), T("relatorios")]},
-    {nome:"Representantes", telas:[
-      T("celrep","App da Representante"), T("consrep","Consolidado atendimentos de representantes"), T("placar","Placar das representantes"), T("comissoes","Comissões"),
-      T("inadimp","Inadimplência"), T("comprasrep","Compras de joias"), T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("configrep","Configurações")]},
     {nome:"Produção", telas:[B("Produção Sorelly"), B("Produção Serenity")]}]},
+  {id:"representantes", nome:"Representantes", ic:"representante", cor:"#8B5CF6", areas:[
+    {nome:"Operação", telas:[T("celrep","App da Representante"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
+    {nome:"Financeiro", telas:[T("comissoes","Comissões"), T("pixdireto","Pix direto a enviar"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
+    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
+    {nome:"Desempenho", telas:[T("placar","Placar das representantes")]}]},
+  {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", areas:[
+    {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", areas:[
     {nome:"Estoque de peças", telas:[E("Estoque Sorelly", ["Estoque Sorelly → Resumo geral e Preenchimento (estoque geral de peças)"]), B("Cadastro de peças")]},
     {nome:"Estoque de materiais", telas:[B("Estoque de materiais")]},
     {nome:"Compras", telas:[B("Compras Sorelly"), B("Fornecedores de banho"), B("Fornecedores de brutos")]}]},
   {id:"encomendas", nome:"Encomendas e reposições", ic:"caminhao", cor:"#14B8A6", areas:[
-    {nome:"Encomendas e reposições", telas:[B("Encomendas"), B("Reposições")]},
+    {nome:"Encomendas e reposições", telas:[T("regreposicao","Regras"), B("Encomendas"), B("Reposições")]},
     {nome:"Entregas", telas:[B("Entregas")]},
-    {nome:"Expositores", telas:[B("Controle de expositores")]}]},
+    {nome:"Expositores", telas:[T("expositores","Controle de expositores")]}]},
   {id:"garantia", nome:"Garantia & Pós-venda", ic:"escudo", cor:"#A855F7", areas:[
     {nome:"Garantias", telas:[B("Garantias")]},
     {nome:"Pós-vendas", telas:[B("Pós-vendas")]}]},
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", areas:[
-    {nome:"Pessoas", telas:[B("Funcionários"), B("Ponto e horas extras")]}]},
+    {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("acessos","Acessos por setor"), B("Ponto e horas extras")]}]},
+  {id:"diretoria", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", areas:[
+    {nome:"Empresa", telas:[T("fluxo","Fluxo da empresa"), B("Comissões e desempenho")]}]},
   {id:"servicos", nome:"Segurança e limpeza", ic:"vassoura", cor:"#64748B", areas:[
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},

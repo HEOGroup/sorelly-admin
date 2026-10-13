@@ -34,7 +34,7 @@ function fatorBrindePagamento(pctFaltante, tabela){
 }
 
 // Taxa de deslocamento: cobrada em venda líquida abaixo de "taxaAbaixoDe" (gerais), pela faixa. Soma no que ela paga.
-var TAXA_BAIXA_VENDA = [{min:300, taxa:20}, {min:0, taxa:35}];
+var TAXA_BAIXA_VENDA = [{min:0, taxa:35}];   // 07/10/2026 (Marcus): taxa só abaixo de R$ 300, R$ 35 fixo; a faixa de R$ 20 saiu
 function taxaBaixaVenda(vendaLiquida, versao){
   var g = (versao && versao.gerais) || REGRAS_GERAIS_OFICIAIS;
   if(vendaLiquida >= (g.taxaAbaixoDe!=null ? g.taxaAbaixoDe : 500)) return 0;   // venda 0 (informada) também paga a taxa; quem não informou venda nem chega aqui (ver calcularAcerto)
@@ -87,7 +87,7 @@ function totalPago(pagamentos){ return (pagamentos||[]).reduce(function(t,p){ret
 
 var REGRAS_GERAIS_OFICIAIS = {
   minRenovar:300,          // abaixo disso não existe faixa: comissão zero
-  taxaAbaixoDe:500,        // venda líquida abaixo disso paga taxa de deslocamento (ver TAXA_BAIXA_VENDA)
+  taxaAbaixoDe:300,        // venda líquida abaixo disso paga taxa de deslocamento (ver TAXA_BAIXA_VENDA)
   kitNovoMinPct:80,        // % do acerto já pago a partir do qual o kit novo sai sem autorização do financeiro
   taxaTagExtraviada:5,     // por tag riscada ou extraviada
   pecaSemEtiquetaVendida:true // peça sem etiqueta é considerada vendida
@@ -134,7 +134,7 @@ function pecasProximoMes(venda, valorAcerto, emAberto, cfg){
   if(emAberto>0.01){ var r = cfg.reducao.slice().sort(function(a,b){return a.ate-b.ate;}).find(function(x){return pct<=x.ate;}); fator = r ? r.fator : 0; }
   return {base:base, pctAberto:pct, fator:fator, liberadas:Math.floor(base*fator+1e-9)};
 }
-var SCHEMA_REGRAS = 6;   // 6 = taxa de 300 a 499,99 passou de R$ 25 para R$ 20
+var SCHEMA_REGRAS = 7;   // 7 = taxa só abaixo de R$ 300 (R$ 35); antes 6 = faixa de R$ 20 de 300 a 499,99
 
 function copia(x){ return JSON.parse(JSON.stringify(x)); }
 function novaVersaoRegras(campos, anteriorId){
@@ -157,7 +157,8 @@ function novaVersaoRegras(campos, anteriorId){
 // Antes disso as versões eram só o padrão, então são trocadas inteiras pelo padrão atual.
 function normalizarVersao(v){
   if(v && v.schema===SCHEMA_REGRAS) return v;
-  var corrigeTaxa = function(x){ return Object.assign({}, x, {taxaBaixa:(x.taxaBaixa||[]).map(function(t){ return t.min===300 && t.taxa===25 ? {min:300, taxa:20} : t; })}); };
+  var corrigeTaxa = function(x){ return Object.assign({}, x, {taxaBaixa:copia(TAXA_BAIXA_VENDA), gerais:Object.assign({}, x.gerais, {taxaAbaixoDe:300})}); };
+  if(v && v.schema===6) return corrigeTaxa(Object.assign({}, v, {schema:SCHEMA_REGRAS}));
   if(v && v.schema===5) return corrigeTaxa(Object.assign({}, v, {schema:SCHEMA_REGRAS}));
   if(v && v.schema===4) return corrigeTaxa(Object.assign({}, v, {schema:SCHEMA_REGRAS, pecasProx:copia(PECAS_PROX_PADRAO)}));
   if(v && v.schema===3) return corrigeTaxa(Object.assign({}, v, {schema:SCHEMA_REGRAS, prata:copia(PRATA_PADRAO), pecasProx:copia(PECAS_PROX_PADRAO)}));
@@ -227,13 +228,19 @@ function calcularAcerto(entrada, versao){
     podeRenovar: !(versao.gerais.exigeMinimoRenovar) || !!faixa};
 }
 
+// BB NÃO é só brinco: é o PREFIXO do código. Toda peça que começa com BB (brinco, anel, colar, pulseira...) é brinde Select. Frase única, usada em todas as telas.
+var AVISO_BB = "BB não é só brinco: toda peça cujo código começa com BB (brinco, anel, colar, pulseira…) é brinde Select.";
+
 // Código de brinde. Select (BB) só aceita BB, ou BB + 1 ou 2 letras (BBA, BBCL, BBP, BBT...), e sempre 4 números no final.
 // Normal aceita qualquer código (pode ser peça normal ou BB).
 function normalizarCodigo(c){ return String(c||"").toUpperCase().replace(/[^A-Z0-9]/g,""); }
+// Código de peça: no máximo 4 letras seguidas de no máximo 7 números (o que passar disso é cortado enquanto digita)
+function limitarCodigo(c){ var m = normalizarCodigo(c).match(/^([A-Z]{0,4})([0-9]{0,7})/); return m ? m[1]+m[2] : ""; }
+function codigoPecaValido(c){ return /^[A-Z]{1,4}[0-9]{1,7}$/.test(normalizarCodigo(c)); }
 function codigoBrindeValido(cat, codigo){
   var c = normalizarCodigo(codigo);
-  if(cat==="bb") return /^BB[A-Z]{0,2}\d{4}$/.test(c);
-  return c.length>=3;
+  if(cat==="bb") return /^BB[A-Z]{0,2}\d{1,7}$/.test(c);
+  return codigoPecaValido(c);
 }
 // Confere os brindes lançados contra o que foi liberado. O que passa do Select (BB) é abatido do Normal (o Normal aceita BB também);
 // o que passa do Normal inteiro é excedente e entra no total a pagar.
@@ -270,7 +277,7 @@ function textoRegras(v, modalidade){
     {t:"Remarcação", x:"Remarcar o acerto tira comissão e brinde — "+rem+". Remarcação com motivo justificado não conta."},
     {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Se faltar, o brinde diminui — "+(pag||"sem desconto")+" · faltou mais de "+teto+"%: sem brinde."},
     {t:"Negociação", x:"Faltando valor, dá para negociar parcelas que fechem o valor exato. Se não quiser negociar: sem brinde e a nota promissória é executada em 48h úteis."},
-    {t:"Brinde", x:"O brinde só é entregue depois do pagamento. O que passar do valor liberado soma no total a pagar."},
+    {t:"Brinde", x:"Existem o brinde Normal e o Select (BB). BB não é só brinco: toda peça cujo código começa com BB (brinco, anel, colar, pulseira…) é Select. O brinde só é entregue depois do pagamento e precisa ser retirado com a representante NA HORA DO ACERTO: peça que não estiver nesse momento é considerada vendida. O que passar do valor liberado soma no total a pagar."},
     {t:"Kit novo", x:"Com "+g.kitNovoMinPct+"% ou mais do acerto pago, o kit novo é liberado. Abaixo disso precisa de autorização do financeiro."},
     {t:"Peças", x:(g.pecaSemEtiquetaVendida ? "Peça sem etiqueta é considerada vendida. " : "")+"Cada tag riscada ou extraviada custa "+reais(g.taxaTagExtraviada)+". O que não foi vendido volta para a empresa."}
   ];
@@ -306,6 +313,6 @@ function diffVersoes(atual, anterior){
   return {faixas:faixas, gerais:gerais};
 }
 
-export { FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
-  faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
+export { AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
+  faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
   formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };
