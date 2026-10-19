@@ -18,6 +18,9 @@ Acesso é por setor (ver CLAUDE.md da raiz). Nomes de pessoas aqui são só quem
 - Concluída a listagem, vai para o Consolidado (histórico por representante, filtros por período; registro de quantos kits de cada valor foram bipados).
 - A supervisão do setor monta (inclusive kits maiores), manda funcionária iniciar e bipa ela mesma. "Mais kits montados" e "Mais bem avaliadas" ficam na aba Equipe, com comissão e valor a receber em tempo real.
 - Kit acima de R$ 12 mil: só as 2 melhores montadoras (após 100 kits no mês). Acima de R$ 15 mil: conferência da supervisão.
+- **Montar na listagem (19/10/2026):** botão Montar na linha do kit (`components/fila.js`, `janela-montar.js`) para a supervisão e as montadoras; a janela mostra preferências da revendedora (Preferências do Kit, por nome; nada inventado), condicionais e inicia/conclui a montagem. Montadora enxerga a listagem sem valores em dinheiro.
+- **Kit acima de R$ 4.000 (`cfg.limiteEncomendas`, venda atual OU média):** só o setor Encomendas monta (Elen, Agatha, Eduarda Gabriela); selo "Só Encomendas"; Marcus e Deysiane liberam exceção. Vem antes da regra de R$ 12 mil.
+- **Quem montou é obrigatório:** o reducer recusa avançar kit sem montador válido ("Informe quem montou este kit"); kit sem montador tem selo vermelho e não conta na comissão da bipadora.
 - Divergência de bipagem acima de 20% registra divergência. Pedido com 48 h de antecedência; fora do prazo = atrasado.
 
 ## Calculadora de kits

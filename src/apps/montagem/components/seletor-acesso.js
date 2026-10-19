@@ -8,9 +8,9 @@ import { e, useState } from "@/shared/react";
 
 // ordem da lista: sócios primeiro, depois cada setor
 var SETORES_LOGIN = function(){
-  var socios = [16,29,28].map(function(i){ return DIRETORIA.concat(ACESSO_TOTAL).find(function(x){ return x.id===i; }); });
+  var socios = [16,29,28,37,38,32].map(function(i){ return DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M]).find(function(x){ return x.id===i; }); });
   return [["supervisao", socios], ["familia", DIRECAO_FAMILIA.concat(FAMILIA)], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
-    ["inadimplencia", [AMANDA_M]], ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]]]; };
+    ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]]]; };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); };
 
 function SeletorAcesso(){

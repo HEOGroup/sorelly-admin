@@ -114,8 +114,8 @@ function AbaIntListagens(){
       var feitos = lista.filter(function(x){ return x.status==="acertado"; }).length, total = lista.reduce(function(t,x){ return t+vendaDe(x); }, 0), ac = aberto(dt);
       var C = "text-center!", vazio = e("span",{className:"text-muted-foreground"},"—"), TINTA = "text-[#1B1409]";
       var chip = function(txt, cls){ return e("span",{className:"inline-flex max-w-full items-center gap-1 truncate rounded-md px-2 py-0.5 text-[13px] font-semibold "+(cls||"bg-black/15 "+TINTA)}, txt); };
-      var LARG = [36,56,170,128,92,92,58,104,70,64,64,58,64,128,80,96];
-      var COLUNAS = ["Ord.","Hora","Nome","Tipo","Condicional","Venda","Chegou","Escolha do kit","Encom.","Bipou","Atendeu","Kit novo","Termo","Remarc. / multa","Situação",""];
+      var LARG = [36,56,92,230,128,92,92,58,104,70,64,64,58,64,128,80,44];
+      var COLUNAS = ["Ord.","Hora","Atender","Nome","Tipo","Condicional","Venda","Chegou","Escolha do kit","Encom.","Bipou","Montou","Kit novo","Termo","Remarc. / multa","Situação",""];
       var BLOCO = "[&_tr.kit>*:first-child]:border-l-2! [&_tr.kit>*:last-child]:border-r-2! [&_tr.kit>*:first-child]:border-l-[#D9A63A]! [&_tr.kit>*:last-child]:border-r-[#D9A63A]! "+
         "[&_tr.fim>td]:border-b-2! [&_tr.fim>td]:border-b-[#D9A63A]! [&_tr.fim>td:first-child]:rounded-bl-xl [&_tr.fim>td:last-child]:rounded-br-xl";
       var linhas = [e("tr",{key:"f"},
@@ -126,14 +126,16 @@ function AbaIntListagens(){
             chip("Total vendido "+BK(total)))))];
       if(ac && lista.length===0) linhas.push(e("tr",{key:"v"}, e("td",{colSpan:LARG.length, className:"bg-card py-6 text-center text-[13px] text-muted-foreground"},"Ninguém na agenda desse dia. Use \"Montar listagem\".")));
       if(ac && lista.length>0){
-        linhas.push(e("tr",{key:"cab", className:"kit bg-sidebar"}, COLUNAS.map(function(c,i){ return e(TH,{key:i, className:C+" text-[12px]! tracking-normal! px-1! "+(i===3||i===4 ? "text-warning!" : "")}, c); })));
+        linhas.push(e("tr",{key:"cab", className:"kit bg-sidebar"}, COLUNAS.map(function(c,i){ return e(TH,{key:i, className:C+" text-[12px]! tracking-normal! px-1! "+(i===4||i===5 ? "text-warning!" : "")}, c); })));
         lista.forEach(function(x, j){
           var st = STATUS[x.status] || STATUS.agendado, venda = vendaDe(x), feito = x.status==="acertado", conds = (x.condicionais||[]).map(function(c){ return c.numero; }).join(", ");
           var rem = x.remarcacoesLista||[], multas = rem.filter(function(r){ return !r.isenta; }).length;
           linhas.push(e("tr",{key:x.id, className:"kit transition-colors "+(feito ? "bg-success/10 hover:bg-success/15" : "bg-card hover:bg-muted/40")+(j===lista.length-1 ? " fim" : "")},
             e(TD,{className:C+" "+MONO+" text-muted-foreground"}, (j+1)+"º"),
             e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, x.hora || vazio),
-            e(TD,{className:C+" truncate font-medium", title:x.nome}, x.nome, modalidadeDe(s, x.nome)==="prata" && e("span",{className:"ml-1.5"}, e(Selo))),
+            e(TD,{className:C},
+              e(Btn,{v:"primary", sm:true, ic:"calc", disabled:feito, onClick:function(){ d({type:"INT_ABRIR", id:x.id}); }}, feito ? "Feito" : "Atender")),
+            e(TD,{className:C+" whitespace-normal! break-words font-semibold leading-tight", title:x.nome}, x.nome, modalidadeDe(s, x.nome)==="prata" && e("span",{className:"ml-1.5"}, e(Selo))),
             e(TD,{className:C},
               (function(){ var tp = TIPOS_ATEND.find(function(o){ return o[0]===(x.tipo||"acerto"); }) || TIPOS_ATEND[0];
                 return e("select",{value:tp[0], disabled:feito, "aria-label":"Tipo de atendimento de "+x.nome, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:x.id, patch:{tipo:ev.target.value}}); },
@@ -159,7 +161,6 @@ function AbaIntListagens(){
             e(TD,{className:C}, e("span",{className:"rounded-md px-2 py-0.5 text-[11.5px] font-semibold "+st[1]}, st[0])),
             e(TD,{className:C},
               e("span",{className:"inline-flex items-center gap-1"},
-                e(Btn,{v:"primary", sm:true, ic:"calc", disabled:feito, onClick:function(){ d({type:"INT_ABRIR", id:x.id}); }}, feito ? "Feito" : "Atender"),
                 e("button",{onClick:function(){ if(window.confirm("Remover "+x.nome+" da agenda?")) d({type:"INT_REMOVER", id:x.id}); }, "aria-label":"Remover "+x.nome,
                   className:"grid size-7 place-items-center rounded-full bg-muted text-base font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"},"×")))));
           if(x.obs) linhas.push(e("tr",{key:x.id+"o", className:"kit "+(feito ? "bg-success/5" : "bg-card")+(j===lista.length-1 ? " fim" : "")}, e("td",{colSpan:LARG.length, className:"text-center text-[12px] text-muted-foreground"}, "Obs.: "+x.obs)));

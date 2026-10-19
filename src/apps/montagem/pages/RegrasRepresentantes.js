@@ -47,7 +47,7 @@ function NegociacaoPix(p){
       e("div",{className:"flex flex-wrap items-center gap-2"},
         e("span",{className:"text-[12px] text-white/70"},"Valor extra:"), e(MoneyInput,{value:x.extra, label:"Valor extra", sm:true, className:"w-28", onChange:function(val){ set(n, {extra:val||0}); }}),
         e("input",{value:x.extraTxt||"", placeholder:"Motivo do extra (opcional)", "aria-label":"Motivo do extra", onChange:function(ev){ set(n, {extraTxt:ev.target.value}); }, className:"h-9 min-w-0 flex-1 rounded-lg border border-border bg-black/30 px-2 text-[13px] text-white placeholder:text-white/40"}))); };
-  return bloco("Negociação do Pix direto","banco","Combine com cada representante quanto da comissão dela vai por Pix direto da revendedora. O financeiro acompanha em Representantes → Financeiro → Pix direto a enviar. Só a diretoria edita.",[
+  return bloco("Negociação do Pix direto","banco","Combine com cada representante quanto da comissão dela vai por Pix direto da revendedora. O financeiro acompanha em Representantes & Kits → Financeiro → Pix representantes. Só a diretoria edita.",[
     e("div",{key:"l", className:"flex flex-col gap-2"},
       lista.length===0 && e("p",{className:"text-[13px] text-muted-foreground"},"Nenhuma negociação ainda."), lista.map(linha),
       livres.length>0 && e("select",{value:"", "aria-label":"Adicionar representante", className:sel+" self-start", onChange:function(ev){ if(ev.target.value) set(ev.target.value, {modo:"pct", valor:0, vigencia:"mes", mes:mesAtual}); }},

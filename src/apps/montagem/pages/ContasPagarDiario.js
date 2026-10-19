@@ -24,7 +24,9 @@ function ContasPagarDiario(){
   var aa = useState(hoje.getFullYear()), ano = aa[0], setAno = aa[1];
   var dados = s.contasPagasDiario || {};
   var ehAtual = ano===hoje.getFullYear() && mes===hoje.getMonth();
-  var ultimoDia = ehAtual ? hoje.getDate() : new Date(ano, mes+1, 0).getDate();
+  // no mês atual a lista vai até hoje, ou até o último dia futuro que já tem baixa lançada (ex.: dias 20 e 30)
+  var ym = ano+"-"+String(mes+1).padStart(2,"0"), ultLancado = Object.keys(s.contasPagasDiario||{}).filter(function(k){ var x = s.contasPagasDiario[k]; return k.slice(0,7)===ym && ((x.contasPorFora||0)>0 || Object.keys(x.cnpjs||{}).some(function(c){ return x.cnpjs[c]>0; })); }).reduce(function(m,k){ return Math.max(m, +k.slice(8)); }, 0);
+  var ultimoDia = ehAtual ? Math.max(hoje.getDate(), ultLancado) : new Date(ano, mes+1, 0).getDate();
   var dias = []; for(var i=ultimoDia; i>=1; i--) dias.push(iso(ano, mes, i));   // mais novo em cima, como nos relatórios
   // faturado e acertos do dia sobem SOZINHOS do faturamento (acumulado do mês − o que já foi somado nos dias anteriores); dia sem acumulado fica digitável
   var autoDia = ehAtual ? faturadoPorDia(s, ano, mes) : {};

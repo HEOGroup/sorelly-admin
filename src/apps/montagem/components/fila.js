@@ -1,12 +1,13 @@
 // Sorelly Admin · montagem e bipagem — components/fila.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { CondCampo, LinhaFinalizar } from "@/apps/montagem/components/condicionais";
+import { JanelaMontar } from "@/apps/montagem/components/janela-montar";
 import { KitValor, LinhaTempo } from "@/apps/montagem/components/kit-valor";
 import { MenuAcoes } from "@/apps/montagem/components/menu-acoes";
 import { condNovas } from "@/apps/montagem/domain/condicionais";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
-import { filaMontagem } from "@/apps/montagem/domain/regras";
+import { ehEncomendas, filaMontagem, nomesEncomendas, semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, SITUACOES, StatusBadge, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { media3 } from "@/apps/montagem/domain/vendas";
 import { BK, hora, isoDia, minutos } from "@/apps/montagem/lib/format";
@@ -26,6 +27,7 @@ var FAIXA_GRADE = "grid items-center gap-2.5 grid-cols-[9rem_11rem_7.5rem_8rem_4
 function Fila(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var la = useState(null), linhaAb = la[0], setLinhaAb = la[1];   // kit que a Deysiane está finalizando na linha
+  var jm = useState(null), janelaKit = jm[0], setJanelaKit = jm[1];   // kit aberto na janela de montagem (botão Montar)
   var fila = filaMontagem(s);
   // Listagens concluídas saem do Painel (ficam no Consolidado)
   var hojeISO = isoDia(new Date());
@@ -36,14 +38,27 @@ function Fila(p){
   var mostrados = 0;
   // Perfil logado: supervisão vê as ações; bipadora vê o botão de bipar nos kits aguardando bipagem
   var sup = papelDe(s.usuario)==="supervisao", euBip = papelDe(s.usuario)==="bipadora" ? s.usuario : null;
+  var euMont = papelDe(s.usuario)==="montadora", podeMontar = sup || euMont;   // quem vê o botão Montar na linha: supervisão, diretoria e montadoras
   var euBipando = euBip && s.kits.some(function(k){return k.bipId===euBip && k.status==="bipando";});
   var COLS = 13;
   var vazio = e("span",{className:"text-muted-foreground"},"—");
+  // Montar direto na linha (19/10/2026): abre a janela do kit (preferências, condicionais e iniciar). Selo vermelho = kit sem montador informado.
+  var celMont = function(k){
+    var sem = semMontador(k), grande = soEncomendas(k, s.cfg), proibido = euMont && grande && !ehEncomendas(s, s.usuario);
+    var btn = function(txt, ic, off, titulo){ return e("button",{onClick:function(){ setJanelaKit(k.id); }, disabled:off, title:titulo,
+      className:"inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#E8B84B] px-2 text-[12px] font-bold text-[#1B1409] hover:bg-[#F3D98B] disabled:bg-muted disabled:text-muted-foreground"}, e(Icon,{n:ic, s:12}), txt); };
+    if(sem) return e("span",{className:"inline-flex items-center rounded-md bg-[#7A1F1F] px-1.5 py-0.5 text-[11.5px] font-bold text-white", title:"Este kit não tem montador informado. A bipagem e a comissão da bipadora só valem com montador."}, "Sem montador");
+    if(k.status==="pendente" || k.status==="ajuste") return podeMontar ? btn("Montar", "play", proibido || (k.status==="pendente" && !!k.designada && k.designada!==s.usuario && !sup),
+      proibido ? "Kit acima do limite: só o setor Encomendas monta ("+nomesEncomendas(s)+")" : k.designada && k.designada!==s.usuario && !sup ? "Pedido para "+nomeDe(k.designada) : "Abrir a janela do kit e iniciar a montagem") : vazio;
+    if(k.montId) return e("span",{className:"inline-flex max-w-full items-center justify-center gap-1"}, e("span",{className:"truncate"}, nomeDe(k.montId)),
+      k.status==="montando" && (k.montId===s.usuario || sup) && btn("Abrir", "chevron", false, "Abrir a janela deste kit"));
+    return vazio;
+  };
   var C = "text-center!";
   // Colunas na ordem do fluxo: kit → montagem → condicionais pegas → bipagem → nova condicional
   // Dinheiro (média de venda e valor do kit) só aparece para a supervisão; montadora e bipadora não veem valores
   // todas as colunas com largura: a tabela distribui o espaço proporcionalmente (o nome não fica gigante)
-  var LARG = [36,52,108,148].concat(sup ? [70,86] : []).concat([112,76,76,76,76,76,70,34]);
+  var LARG = [36,52,140,120].concat(sup ? [70,86] : []).concat([112,124,76,76,76,76,70,34]);
   COLS = LARG.length;
   var TINTA = "text-[#1B1409]";
   var chip = function(txt, ic, cls, titulo){ return e("span",{title:titulo, className:"inline-flex max-w-full items-center gap-1 truncate rounded-md px-2 py-0.5 text-[13px] font-semibold "+(cls||"bg-black/15 "+TINTA)}, ic && e(Icon,{n:ic, s:13}), txt); };
@@ -73,8 +88,9 @@ function Fila(p){
       : e("span",{title:tit, className:"text-[13px] font-semibold "+(hora_de_pegar?"text-warning":"text-muted-foreground")}, "○ "+n.length);
   };
   return e("div",{className:"overflow-hidden rounded-xl"},
+    janelaKit && e(JanelaMontar,{key:janelaKit, kitId:janelaKit, fechar:function(){ setJanelaKit(null); }}),
     e("div",{className:"max-h-[44rem] overflow-auto"},
-      e("table",{className:"w-full min-w-[66rem] table-fixed border-separate border-spacing-0 text-sm [&_td]:px-1.5! [&_td]:py-2! [&_th]:px-1.5! [&_tr.kit_span.rounded-md.border]:text-[12px]! [&_tr.kit_span.rounded-md.border]:px-1.5! [&_tr.kit>td]:border-b [&_tr.kit>td]:border-border "+BLOCO},
+      e("table",{className:"w-full min-w-[70rem] table-fixed border-separate border-spacing-0 text-sm [&_td]:px-1.5! [&_td]:py-2! [&_th]:px-1.5! [&_tr.kit_span.rounded-md.border]:text-[12px]! [&_tr.kit_span.rounded-md.border]:px-1.5! [&_tr.kit>td]:border-b [&_tr.kit>td]:border-border "+BLOCO},
         e("colgroup",null, LARG.map(function(w,i){ return e("col",{key:i, style:w?{width:w}:undefined}); })),
         e("tbody",null, lists.map(function(l){
           // Aguardando condicional (precond) não conta pra montagem ainda: some daqui até a funcionária de condicionais liberar
@@ -127,7 +143,8 @@ function Fila(p){
               e(TD,{className:C+" truncate font-medium"}, e("span",{title:k.rev+(k.atrasado?" · pedido fora do prazo":"")+(k.autorizadoPor?" · autorizado por "+nomeDe(k.autorizadoPor):"")},
                 k.prio && e("span",{className:"text-primary", title:"Prioritário"},"★ "), k.rev),
                 k.atrasado && e("span",{className:"ml-1 rounded bg-[#9A4A00]/85 px-1 py-px text-[10px] font-semibold text-white", title:"Pedido fora do prazo"},"atras."),
-                modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1 rounded bg-slate-600 px-1 py-px text-[10px] font-bold text-white", title:"Kit 100% Prata"},"PRATA")),
+                modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1 rounded bg-slate-600 px-1 py-px text-[10px] font-bold text-white", title:"Kit 100% Prata"},"PRATA"),
+                soEncomendas(k, s.cfg) && e("span",{className:"ml-1 rounded bg-[#7C3AED] px-1 py-px text-[10px] font-bold text-white", title:"Kit acima do limite de Encomendas: só "+nomesEncomendas(s)+" montam"+(k.excecaoEnc ? " (exceção liberada por "+nomeDe(k.excecaoEnc)+")" : "")},"Só Encomendas")),
               e(TD,{className:C}, e("span",{title:tipo[0], className:"inline-block max-w-full truncate rounded-md border px-1.5 py-0.5 text-[11.5px] font-semibold "+BADGE[tipo[2]]}, tipo[1])),
               sup && e(TD,{className:C+" "+MONO}, semKit ? vazio
                 : k.tipoKit.indexOf("kit_novo")===0 ? e("span",{className:"text-muted-foreground", title:"Revendedora nova (valor definido pelo setor Kit novo)"},"nova")
@@ -138,7 +155,7 @@ function Fila(p){
                 : k.status==="semvalor" ? gbtn("Definir","calc",function(){d({type:"ABRIR_CALC", id:k.id});}, true, false, "w-[5.5rem]", "Ir para a Calculadora de kits")
                 : e(KitValor,{k:k, ro:!sup, key:k.id+":"+k.valor+":"+k.status})),
               e(TD,{className:C}, e(StatusBadge,{k:k})),
-              e(TD,{className:C+" truncate"}, k.montId ? nomeDe(k.montId) : vazio),
+              e(TD,{className:C+" truncate"}, celMont(k)),
               e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, k.status==="montando"
                 ? (k.pausadoEm ? e("span",{className:"text-warning"},"pausado") : e(Relogio,{k:k, curto:true, className:"font-semibold text-purple"}))
                 : tempoFim(k.tempoM, k.fimM) || vazio),

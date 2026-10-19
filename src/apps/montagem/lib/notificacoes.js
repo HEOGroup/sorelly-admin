@@ -1,0 +1,13 @@
+// Sorelly Admin — lib/notificacoes.js
+// Liga e desliga as notificações (aviso na tela e som) do admin e do SorellyChat. Começam DESLIGADAS; a escolha fica guardada neste navegador.
+import { useEffect, useState } from "@/shared/react";
+
+var CHAVE = "sorelly_notificacoes_v1", ouvintes = [];
+var est = (function(){ try{ var j = JSON.parse(localStorage.getItem(CHAVE)); if(j) return {admin:!!j.admin, chat:!!j.chat}; }catch(x){} return {admin:false, chat:false}; })();
+
+function ler(){ return est; }
+function mudar(o){ est = Object.assign({}, est, o); try{ localStorage.setItem(CHAVE, JSON.stringify(est)); }catch(x){} ouvintes.forEach(function(f){ f(); }); }
+function assinar(f){ ouvintes.push(f); return function(){ ouvintes = ouvintes.filter(function(x){ return x!==f; }); }; }
+function useNotif(){ var st = useState(est), set = st[1]; useEffect(function(){ return assinar(function(){ set(est); }); }, []); return st[0]; }
+
+export { ler, mudar, assinar, useNotif };

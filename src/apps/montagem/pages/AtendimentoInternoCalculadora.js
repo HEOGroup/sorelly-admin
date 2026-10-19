@@ -5,7 +5,7 @@
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
-import { BIPADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
+import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
 import { AssinaturaDigital, CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
@@ -15,6 +15,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
+import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -39,6 +40,7 @@ function e(tipo, props){
   return eBase.apply(null, args);
 }
 
+var QUEM_MONTA = [ATENDENTE_PECAS].concat(MONTADORAS);   // quem acompanha a revendedora na montagem do kit: Leci e as meninas da produção
 var LANC_VAZIO = {forma:"", descricao:"", parcelas:1, data:isoDia(new Date()), valor:null, anexo:null};
 var BRINDE_VAZIO = {cat:"normal", codigo:"", valor:null, origem:"nova"};
 var COND_VAZIO = {numero:"", valor:null, pecas:"", vendidas:""};
@@ -168,11 +170,18 @@ function AtendimentoInterno(){
   var jaFeito = !!sel && sel.status==="acertado";
   // média das vendas: venda de agora (vem da tela) + até 2 anteriores digitadas; divide pelas que existem. Só a venda de agora = ela é a média.
   var cfg = s.cfg || {}, estoqueAtivo = cfg.tabelaAtiva==="baixo" ? "baixo" : "alto";
+  var MESES_CURTO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
   var tabKit = ((estoqueAtivo==="baixo" ? cfg.tabelaKitBaixo : cfg.tabelaKit) || []).slice().sort(function(a,b){ return b.min-a.min; });
   var vendasAnt = (sel && sel.vendasAnt) || [null, null];
-  var vendasMedia = [form.vendaBruta].concat(vendasAnt).filter(function(v){ return v>0; });
-  var mediaVendas = vendasMedia.length ? vendasMedia.reduce(function(a,b){ return a+b; }, 0)/vendasMedia.length : null;
-  var faixaKit = mediaVendas!==null ? tabKit.find(function(x){ return mediaVendas>=x.min; }) : null;
+  // histórico de vendas da revendedora (aba Revendedoras): média dos últimos 5 meses, mínimo R$ 500, duas seguidas abaixo de R$ 500 bloqueiam
+  var rInt = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId || r.nome===sel.nome; }) : null;
+  var temHist = !!rInt && rInt.hist.some(function(h){ return h.data && h.venda>0; });
+  var histFallback = vendasAnt.map(function(v, i){ var dt = new Date(hoje+"T12:00:00"); dt.setMonth(dt.getMonth()-(i+1)); return {data:dt.toISOString().slice(0,10), venda:v}; });
+  var temAnt = vendasAnt.some(function(v){ return v>0; });
+  var avKit = avaliarKit(temHist ? rInt.hist : temAnt ? histFallback : (sel ? histDemoDe(sel.nome) : histFallback), form.vendaBruta, cfg, hoje.slice(0,7));   // toda revendedora tem vendas anteriores para a média
+  var vendasMedia = avKit.lista;
+  var mediaVendas = avKit.media;
+  var faixaKit = avKit.liberado ? tabKit.find(function(x){ return mediaVendas>=x.min; }) : null;
   var kitLiberado = faixaKit ? faixaKit.kit : null;
   // média acima do limite do Marcus: não aparece aviso na tela, vai alerta direto para quem estiver em Tecnologia → Avisos (uma vez por atendimento)
   useEffect(function(){
@@ -230,47 +239,7 @@ function AtendimentoInterno(){
       return e("button",{key:o[0], onClick:function(){ escolherMod(o[0]); }, "aria-pressed":on, disabled:!!sel && jaFeito,
         className:"h-9 rounded-lg px-4 text-[13.5px] font-bold disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "text-muted-foreground hover:bg-muted/60")}, (on ? "✓ " : "")+o[1]); })));
   var colAgenda = e("aside",{className:"flex flex-col gap-3"},
-    e(BlocoRecolhivel,{cor:modTab==="prata" ? "prata" : "ouro", aberto:agendaAberta, onToggle:function(){ setAgendaAberta(!agendaAberta); }, t:"Agenda de hoje", sub:fmtData(hoje)+" · "+feitosDia+" de "+agenda.length+" atendidas"},
-      agenda.length===0
-        ? e("p",{className:"p-5 text-center text-[13px] text-muted-foreground"},"Ninguém agendado para hoje. A listagem é montada em Atendimento interno · Listagens.")
-        : e("div",{className:"max-h-[calc(100vh-24rem)] min-h-[8rem] overflow-y-auto"},
-            // colunas: hora · nome · chegada (a funcionária marca) · atraso · feito · quem bipou · quem atendeu
-            e("div",{className:"sticky top-0 z-10 grid "+COLS_AGENDA+" items-center gap-1.5 border-b border-border bg-sidebar px-2.5 py-1.5 text-center text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground"},
-              e("span",null,"Hora"), e("span",null,"Nome"), e("span",{title:"Horário em que a revendedora chegou"},"Chegada"), e("span",null,"Situação"), e("span",{title:"Hora em que o atendimento começou"},"Início"), e("span",{title:"Quanto tempo esperou até começar"},"Espera"), e("span",{title:"Atendimento feito"},"Feito"), e("span",null,"Bipou"), e("span",null,"Atendeu")),
-            agenda.map(function(x){
-              var on = sel && sel.id===x.id, feito = x.status==="acertado", conds = (x.condicionais||[]).map(function(c){ return c.numero; }).join(", ");
-              var atraso = minutosAtraso(x.hora, x.chegada), inicio = x.inicio || (x.inicioTs ? hhmmDeTs(x.inicioTs) : ""), espera = minutosEspera(x.chegada, inicio);
-              var marcarChegada = function(v){ d({type:"INT_ATUALIZAR", id:x.id, patch:{chegada:v}}); };
-              return e("div",{key:x.id, role:"button", tabIndex:0, onClick:function(){ d({type:"INT_SEL", id:x.id}); }, onKeyDown:function(ev){ if(ev.target===ev.currentTarget && (ev.key==="Enter" || ev.key===" ")){ ev.preventDefault(); d({type:"INT_SEL", id:x.id}); } },
-                className:"grid w-full cursor-pointer "+COLS_AGENDA+" items-center gap-1.5 border-b border-border px-2.5 py-2 text-center last:border-0 "+(on ? "bg-primary/15 ring-1 ring-inset ring-primary/60" : feito ? "bg-success/8 hover:bg-success/12" : "hover:bg-muted/40")},
-                e("span",{className:MONO+" text-[13px] font-bold "+(on ? "text-primary" : "text-muted-foreground")}, x.hora || "—"),
-                e("span",{className:"min-w-0 text-left"},
-                  e("b",{className:"block break-words text-[13.5px] leading-tight", title:x.nome}, x.nome, modalidadeDe(s, x.nome)==="prata" && e("span",{className:"ml-1 align-middle"}, e(Selo,{children:"P"}))),
-                  conds && e("span",{className:"block truncate text-[11px] text-muted-foreground"}, "cond. "+conds)),
-                // chegada: um check; ao tocar, vira o horário (não dá para digitar)
-                e("span",{className:"flex items-center justify-center", onClick:function(ev){ ev.stopPropagation(); }},
-                  x.chegada ? e("b",{className:MONO+" text-[13px]"}, x.chegada)
-                    : feito ? e("span",{className:"text-muted-foreground"},"—")
-                    : e("button",{type:"button", title:"Check: a revendedora chegou agora", "aria-label":"Marcar chegada de "+x.nome, onClick:function(){ marcarChegada(horaAgora()); }, className:"grid size-8 place-items-center rounded-lg bg-primary/20 text-primary hover:bg-primary/30"}, e(Icon,{n:"check", s:16}))),
-                !x.chegada ? e("span",{className:"text-[11px] text-muted-foreground"},"Aguardando")
-                  : atraso>TOLERANCIA_CHEGADA_MIN ? e("span",{className:"rounded-md bg-destructive/15 px-1 py-0.5 text-[11.5px] font-bold text-destructive", title:"Chegou "+atraso+" min depois do horário (tolerância de "+TOLERANCIA_CHEGADA_MIN+" min)"},"Atrasou "+atraso+"min")
-                  : e("span",{className:"rounded-md bg-success/15 px-1 py-0.5 text-[11.5px] font-bold text-success"},"No horário"),
-                e("span",{className:MONO+" text-[12px] "+(inicio ? "font-semibold" : "text-muted-foreground")}, inicio || "—"),
-                e("span",{className:MONO+" text-[12px] "+(espera===null ? "text-muted-foreground" : espera>30 ? "font-bold text-destructive" : "font-semibold")}, espera===null ? "—" : espera+"min"),
-                feito ? e("span",{className:"mx-auto grid size-5 place-items-center rounded-full bg-success/25 text-success"}, e(Icon,{n:"check", s:12})) : e("span",{className:"mx-auto size-2.5 rounded-full bg-warning"}),
-                e("span",{className:"truncate text-[11.5px] "+(x.bipou ? "font-semibold" : "text-muted-foreground")}, x.bipou ? primeiro(x.bipou) : "—"),
-                e("span",{className:"truncate text-[11.5px] "+(x.atendeu ? "font-semibold" : "text-muted-foreground")}, x.atendeu ? primeiro(x.atendeu) : "—"));
-            })),
-      // incluir alguém à mão
-      e("div",{className:"border-t border-border p-2.5"},
-        !mAberto ? e(Btn,{v:"ghost", sm:true, className:"w-full", onClick:function(){ setMAberto(true); }}, "+ Adicionar atendimento à mão")
-        : e("div",{className:"flex flex-col gap-2"},
-            e("input",{value:mForm.nome, placeholder:"Nome da revendedora", "aria-label":"Nome da revendedora", className:CP, onChange:function(ev){ setMForm(Object.assign({}, mForm, {nome:ev.target.value})); }}),
-            e("div",{className:"grid grid-cols-2 gap-2"},
-              e("input",{type:"time", value:mForm.hora, "aria-label":"Horário", className:CP, onChange:function(ev){ setMForm(Object.assign({}, mForm, {hora:ev.target.value})); }}),
-              e("input",{value:mForm.cond, placeholder:"Nº condicional", "aria-label":"Número da condicional", className:CP+" "+MONO, onChange:function(ev){ setMForm(Object.assign({}, mForm, {cond:ev.target.value})); }})),
-            e("div",{className:"flex gap-2"}, e(Btn,{v:"primary", sm:true, className:"flex-1", disabled:!manualOk, onClick:addManual}, "Adicionar"), e(Btn,{v:"ghost", sm:true, onClick:function(){ setMAberto(false); }}, "Cancelar")))),
-      ),
+    // a agenda de hoje fica em Listagens (Atender abre aqui); nesta coluna só a tabela do kit
     // tabela de comissões: barrinha deslizante Kit Normal / Kit 100% Prata (começa no kit da revendedora)
     // a barrinha deslizante é o cabeçalho do bloco (encostada, igual à da agenda) e tem botão para fechar/abrir
     e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
@@ -280,9 +249,10 @@ function AtendimentoInterno(){
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"Atendimento interno: escolha quem está sendo atendida na agenda de hoje."}), seletorKit),
+    e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"Atendimento interno: abra um atendimento pela Listagens."}), seletorKit),
     e("div",{className:"grid grid-cols-1 items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(36rem,42%)]"},
-      e("div",{className:"grid place-items-center rounded-xl border border-dashed border-border p-16 text-center text-[14px] text-muted-foreground"},"Selecione uma revendedora da agenda para começar."), colAgenda));
+      e("div",{className:"flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-16 text-center text-[14px] text-muted-foreground"},
+        "Para atender, escolha a revendedora na Listagens e toque em Atender.", e(Btn,{v:"primary", ic:"calc", onClick:function(){ d({type:"ABA", aba:"intlist"}); }}, "Ir para a Listagens")), colAgenda));
 
   // ── 1 · Condicionais: SÓ número, valor e quantidade de peças, tudo digitado à mão pela funcionária ──
   var condsSel = formD.condicionaisSelecionadas;
@@ -335,12 +305,16 @@ function AtendimentoInterno(){
     e("span",{"aria-hidden":true, className:"absolute inset-x-0 top-0 h-1.5", style:{background:"linear-gradient(90deg,"+COR_BARRA+","+COR_BARRA+"00)"}}),
     e("h2",{className:"text-center font-heading text-[14px] font-bold"}, "Média das vendas e valor do kit"),
     linhaMedia("Venda atual", e("input",{readOnly:true, value:form.vendaBruta>0 ? din(form.vendaBruta) : "", placeholder:"vem de Vendas", "aria-label":"Venda atual", className:CP+" text-center! "+MONO+" text-primary!"})),
-    linhaMedia("Venda anterior", e(CampoDinheiro,{value:vendasAnt[0], disabled:jaFeito, label:"Venda anterior", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(0, v); }})),
-    linhaMedia("Venda mais antiga", e(CampoDinheiro,{value:vendasAnt[1], disabled:jaFeito, label:"Venda mais antiga", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(1, v); }})),
+    temHist
+      ? vendasMedia.filter(function(x){ return !x.atual; }).map(function(x){ return linhaMedia(MESES_CURTO[+x.mes.slice(5,7)-1]+"/"+x.mes.slice(2,4), e("input",{readOnly:true, value:din(x.venda), "aria-label":"Venda de "+x.mes, className:CP+" text-center! "+MONO+" text-white!"})); })
+      : [linhaMedia("Venda anterior", e(CampoDinheiro,{key:"a0", value:vendasAnt[0], disabled:jaFeito, label:"Venda anterior", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(0, v); }})),
+         linhaMedia("Venda mais antiga", e(CampoDinheiro,{key:"a1", value:vendasAnt[1], disabled:jaFeito, label:"Venda mais antiga", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(1, v); }}))],
     e("div",{className:"flex flex-col items-center gap-0.5 border-t border-border/50 pt-2 text-center"},
-      e("span",{className:"text-[12px] font-bold uppercase tracking-wide"}, "Média ("+vendasMedia.length+(vendasMedia.length===1 ? " venda" : " vendas")+")"), e("b",{className:MONO+" text-[20px] text-primary"}, mediaVendas!==null ? din(mediaVendas) : "—")),
+      e("span",{className:"text-[12px] font-bold uppercase tracking-wide"}, "Média ("+vendasMedia.length+(vendasMedia.length===1 ? " mês" : " meses")+" · até "+avKit.nMeses+")"), e("b",{className:MONO+" text-[20px] text-primary"}, mediaVendas!==null ? din(mediaVendas) : "—"),
+      !temHist && e("span",{className:"text-[11.5px] text-muted-foreground"},"Cadastre as vendas anteriores em Revendedoras para a média ficar automática")),
     e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg "+GRAD_BARRA+" px-3 py-2 text-center text-[#1B1409]"},
-      e("span",{className:"text-[12px] font-extrabold uppercase tracking-wide"}, "Kit a liberar"), e("b",{className:MONO+" text-[22px]"}, kitLiberado ? din(kitLiberado) : "•••")),
+      e("span",{className:"text-[12px] font-extrabold uppercase tracking-wide"}, "Kit a liberar"), e("b",{className:MONO+" text-[22px]"}, kitLiberado ? din(kitLiberado) : avKit.motivo ? "Não libera" : "•••")),
+    avKit.motivo && mediaVendas!==null && e("p",{className:"rounded-lg bg-destructive/15 px-3 py-1.5 text-center text-[12.5px] font-bold text-destructive"}, avKit.motivo),
     avisoMedia && e("p",{className:"rounded-lg bg-destructive/15 px-3 py-1.5 text-center text-[12.5px] font-bold text-destructive"}, avisoMedia));
 
   // ── 2 · Vendas e pagamentos ──
@@ -611,7 +585,9 @@ function AtendimentoInterno(){
   // situação de cada seção: ✓ concluída
   var feitoPasso = [condicionais.length>0 && condicionais.every(function(c){ return c.pecas>0; }), form.vendaBruta>0, !!dv.previaBase && (dv.quitado || dv.acordoValido || form.recusouNegociar), !!pa && (!!dv.brindeBloqueio || form.brindes.length>0), !!continuaEf && (continuaEf!=="sim" || !!form.novaCond), jaFeito];
   var nFeitos = feitoPasso.filter(Boolean).length;
-  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime(), atendeu:nomeDe(s.usuario)}}); };
+  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime()}}); };
+  // cada funcionária está na sua sessão: quem bipou é quem abriu o atendimento, sem escolher
+  useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
   // relógio da escolha do kit: a funcionária dá OK quando a revendedora começa a escolher; o tempo máximo depende do valor do kit
   var maxEscolhaMin = tempoMaxEscolhaMin(kitLiberado);
   var escolhendo = !!sel.escolhaIni && !sel.escolhaFim, decorridoSeg = sel.escolhaIni ? Math.max(0, Math.floor(((sel.escolhaFim || Date.now())-sel.escolhaIni)/1000)) : 0;
@@ -661,9 +637,10 @@ function AtendimentoInterno(){
           sel.inicioTs ? e("span",{className:"rounded-md bg-black/15 px-2 py-0.5 text-[12px] font-semibold"},"Início "+hhmmDeTs(sel.inicioTs))
             : !jaFeito && e("button",{onClick:iniciar, className:"rounded-md bg-[#1B1409] px-2.5 py-0.5 text-[12px] font-bold text-white hover:opacity-90"},"▶ Iniciar atendimento"),
           sel.devmaster && e("span",{className:"text-[12px] font-medium opacity-80"},"DevMaster "+sel.devmaster),
-          e("label",{className:"flex items-center gap-1.5 text-[12px] font-semibold"}, "Quem bipou",
-            e("select",{value:sel.bipou||"", disabled:jaFeito, "aria-label":"Quem bipou", className:"h-7 rounded-md border-0 bg-black/20 px-1.5 text-[12px] font-semibold text-white outline-none", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:ev.target.value}}); }},
-              e("option",{value:""},"—"), BIPADORAS.map(function(b){ return e("option",{key:b.id, value:b.nome}, b.nome); }))),
+          !sel.chegada && !jaFeito && e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{chegada:horaAgora()}}); }, title:"A revendedora chegou agora", className:"rounded-md bg-[#1B1409] px-2.5 py-0.5 text-[12px] font-bold text-white hover:opacity-90"},"✓ Chegou agora"),
+          e("label",{className:"flex items-center gap-1.5 text-[12px] font-semibold"}, "Quem montou",
+            e("select",{value:sel.atendeu||"", disabled:jaFeito, "aria-label":"Quem montou o kit", className:"h-7 rounded-md border-0 bg-black/20 px-1.5 text-[12px] font-semibold text-white outline-none", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{atendeu:ev.target.value}}); }},
+              e("option",{value:""},"—"), QUEM_MONTA.map(function(b){ return e("option",{key:b.id, value:b.nome}, b.nome); }))),
           // escolha do kit: OK quando começa; o relógio anda e mostra o limite
           !sel.escolhaIni ? !jaFeito && e("button",{onClick:iniciarEscolha, title:"A revendedora começou a escolher o kit", className:"rounded-md bg-[#1B1409] px-2.5 py-0.5 text-[12px] font-bold text-white hover:opacity-90"},"⏱ Começou a escolher o kit")
             : e("span",{className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[12px] font-bold "+(estourou ? "bg-destructive text-white" : "bg-black/20")},

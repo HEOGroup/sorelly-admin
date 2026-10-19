@@ -214,7 +214,7 @@ function conteudoPasso(n, ctx){
       par("É uma ferramenta de apoio na hora da venda: você fecha a venda e a cliente paga pelo link, com mais segurança e agilidade no recebimento. Você solicita direto no aplicativo.", "l1"),
       lista(["Não tem nenhuma taxa para a revendedora.","O valor pago pelo link já conta como pagamento: abate o seu acerto.","Use com cautela."])]),
     cartao("lista","#4F46E5","Regras para gerar o link",[
-      tabela(["Regra","Valor"], [["Valor mínimo do link", R(LK.valorMinimo)], ["Parcela mínima", R(LK.parcelaMinima)], ["Parcelamento", "até "+LK.parcelasMax+"x sem juros"], ["Validade", LK.validadeHoras+" horas depois de gerado"], ["Pagamento recusado", "até "+LK.tentativasPorDia+" tentativas por dia"]], "1.4fr 1fr"),
+      tabela(["Regra","Valor"], [["Valor mínimo do link", R(LK.valorMinimo)], ["Parcela mínima", R(LK.parcelaMinima)], ["Até R$ 80,00", "1x"], ["De R$ 80,01 a R$ 400,00", "até 4x sem juros"], ["De R$ 400,01 a R$ 1.500,00", "até 6x sem juros"], ["Acima de R$ 1.500,00", "até "+LK.parcelasMax+"x sem juros"], ["Validade", LK.validadeHoras+" horas depois de gerado"], ["Pagamento recusado", "até "+LK.tentativasPorDia+" tentativas por dia"]], "1.4fr 1fr"),
       par("Depois que o link expira (ou o pagamento é negado e as tentativas acabam), é preciso pedir um novo.")]),
     cartao("calendario","#EA580C","Link e fechamento do acerto",[
       lista(["Só são descontados os links emitidos e pagos até o dia anterior ao acerto.","No dia do acerto, se precisar gerar um link, só a representante pode emitir (os sistemas são diferentes)."])]),

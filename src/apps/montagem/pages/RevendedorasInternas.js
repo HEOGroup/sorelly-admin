@@ -3,12 +3,13 @@
 // tabela (ciclo, vendas, próxima data, situação) e calendário em tela cheia com o que está agendado por dia.
 // A agendadora trabalha por aqui: contata, agenda, confirma na véspera e manda o lembrete (textos prontos).
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
-import { CICLOS, SITUACOES, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
+import { CICLOS, SITUACOES, avaliarKit, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
+import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -46,6 +47,40 @@ function Par(p){   // venda e acerto de um mês, lado a lado
 
 function copiar(txt){ try { navigator.clipboard.writeText(txt); } catch(err){ /* sem permissão: o texto continua na caixa para copiar à mão */ } }
 
+// Histórico de vendas da cliente: SEM limite (serve para anos). Cada acerto novo entra aqui e a média dos últimos 5 meses sai sozinha na Atendimento Sorelly.
+function Historico(p){
+  var r = p.r, d = p.d, f0 = useState({data:"", venda:null, acerto:null}), f = f0[0], setF = f0[1], ed0 = useState(null), editando = ed0[0], setEditando = ed0[1];   // editando = posição da linha em edição
+  var lista = r.hist.map(function(h, i){ return {h:h, i:i}; }).filter(function(x){ return x.h.data || x.h.venda!=null; });
+  var av = avaliarKit(r.hist, 0, p.cfg, p.hojeIso.slice(0,7));
+  var ok = f.data && f.venda>0;
+  var add = function(){ if(!ok) return; d({type:"REVINT_VENDA_ADD", id:r.id, data:f.data, venda:f.venda, acerto:f.acerto}); setF({data:"", venda:null, acerto:null}); };
+  var CP = INPUT+" h-9! text-sm! text-center! "+MONO;
+  return e("div",{className:"flex flex-col gap-2 rounded-xl bg-card p-3 ring-1 ring-border md:col-span-2 xl:col-span-4"},
+    e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
+      e("b",{className:"text-[12.5px] uppercase tracking-wide text-primary"}, "Histórico de vendas ("+lista.length+")"),
+      e("span",{className:"text-[12.5px] "+(av.motivo ? "text-destructive" : "text-muted-foreground")}, av.media!==null ? "Média dos últimos meses anteriores: "+BK(av.media)+(av.motivo ? " · "+av.motivo : "") : "Sem vendas cadastradas")),
+    e("div",{className:"grid gap-3 lg:grid-cols-[minmax(0,1fr)_20rem]"},
+      e("div",{className:"max-h-60 overflow-y-auto rounded-lg border border-border/60"},
+        lista.length===0 ? e("p",{className:"p-3 text-[13px] text-muted-foreground"},"Nenhuma venda ainda: lance as últimas vendas (pode ser quantas quiser) para a média ficar automática.")
+        : e("table",{className:"w-full border-collapse text-[13.5px]"},
+            e("thead",null, e("tr",{className:"bg-sidebar"}, ["Data","Valor de venda","Valor de acerto",""].map(function(t){ return e("th",{key:t, className:"px-3 py-2 text-center text-[12px] font-semibold uppercase"}, t); }))),
+            e("tbody",null, lista.map(function(x){ var set = function(patch){ d({type:"REVINT_VENDA_SET", id:r.id, idx:x.i, patch:patch}); }, CE = INPUT+" h-8! w-32 text-[13px]! text-center! "+MONO, on = editando===x.i;
+              return e("tr",{key:x.i, className:"border-t border-border/50 "+(on ? "bg-primary/10" : "")},
+                e("td",{className:"px-3 py-1.5 text-center "+MONO}, on ? e("input",{type:"date", value:x.h.data||"", "aria-label":"Data da venda", className:INPUT+" h-8! w-36 text-[13px]! "+MONO, onChange:function(ev){ set({data:ev.target.value||null}); }}) : fmtDataBR(x.h.data)),
+                e("td",{className:"px-3 py-1.5 text-center "+MONO}, on ? e(CampoDinheiro,{value:x.h.venda, label:"Valor de venda", className:CE, onChange:function(v){ set({venda:v}); }}) : dinheiro(x.h.venda)),
+                e("td",{className:"px-3 py-1.5 text-center "+MONO+" text-primary"}, on ? e(CampoDinheiro,{value:x.h.acerto, label:"Valor de acerto", className:CE+" text-primary!", onChange:function(v){ set({acerto:v}); }}) : dinheiro(x.h.acerto)),
+                e("td",{className:"whitespace-nowrap px-2 py-1.5 text-center"},
+                  on ? e("button",{type:"button", onClick:function(){ setEditando(null); d({type:"REVINT_VENDA_ORDENAR", id:r.id}); }, className:"h-8 rounded-lg bg-primary px-3 text-[12.5px] font-bold text-primary-foreground"}, "OK")
+                     : e("button",{type:"button", onClick:function(){ setEditando(x.i); }, className:"h-8 rounded-lg bg-white/10 px-3 text-[12.5px] font-semibold hover:bg-white/15"}, "Editar"),
+                  e("button",{type:"button", "aria-label":"Remover venda", onClick:function(){ if(on) setEditando(null); d({type:"REVINT_VENDA_DEL", id:r.id, idx:x.i}); }, className:"ml-1 px-1.5 text-[13px] text-muted-foreground hover:text-destructive"}, "×"))); })))),
+      e("div",{className:"flex flex-col gap-2"},
+        e("span",{className:"text-[12px] text-muted-foreground"},"Acrescentar venda anterior"),
+        e("input",{type:"date", value:f.data, "aria-label":"Data da venda", className:CP, onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }}),
+        e(CampoDinheiro,{value:f.venda, label:"Valor de venda", className:CP, onChange:function(v){ setF(Object.assign({}, f, {venda:v})); }}),
+        e(CampoDinheiro,{value:f.acerto, label:"Valor de acerto", className:CP, onChange:function(v){ setF(Object.assign({}, f, {acerto:v})); }}),
+        e("button",{type:"button", disabled:!ok, onClick:add, className:"h-9 rounded-lg bg-primary px-3 text-[13px] font-bold text-primary-foreground disabled:opacity-50"}, "Adicionar ao histórico"))));
+}
+
 function Detalhes(p){
   var r = p.r, cx = p.cx, s = cx.state, d = cx.dispatch, hojeIso = p.hojeIso;
   var ms = useState(null), msgAberta = ms[0], setMsgAberta = ms[1];
@@ -60,7 +95,9 @@ function Detalhes(p){
     bloco("Cadastro da cliente", e(React.Fragment,null,
       e("div",{className:"flex flex-col gap-1 text-[13.5px]"}, e("span",{className:"text-[12px] text-muted-foreground"},"Contatos de referência"),
         r.contatos.map(function(c,i){ return e("span",{key:i}, e("b",null,c.nome+": "), e("span",{className:MONO}, c.fone)); })),
-      e("div",{className:"flex flex-col gap-1"}, e("span",{className:"text-[12px] text-muted-foreground"},"Kit da revendedora"),
+      e("div",{className:"flex flex-col gap-1"}, e("span",{className:"text-[12px] text-muted-foreground"},"Kit (acerto, kit novo ou reposição)"),
+        e("div",{className:"flex gap-2"}, ["Acerto","Kit novo","Reposição"].map(function(t){ var on = (r.tipo||"Acerto")===t; return e("button",{key:t, type:"button", onClick:function(){ set({tipo:t}); }, className:btn(on,"bg-primary/20 text-primary ring-primary/50")}, t); }))),
+      e("div",{className:"flex flex-col gap-1"}, e("span",{className:"text-[12px] text-muted-foreground"},"Modalidade (Normal ou 100% Prata)"),
         e("div",{className:"flex gap-2"},
           e("button",{type:"button", onClick:function(){ if(prata) d({type:"SET_MODALIDADE", chave:r.nome, modalidade:"padrao", por:"agendamento", origem:"interno"}); }, className:btn(!prata,"bg-primary/20 text-primary ring-primary/50")}, "Normal"),
           e("button",{type:"button", onClick:function(){ if(!prata) d({type:"SET_MODALIDADE", chave:r.nome, modalidade:"prata", por:"agendamento", origem:"interno"}); }, className:btn(prata,"bg-slate-300/25 text-slate-100 ring-slate-300/60")}, "100% Prata")))
@@ -88,28 +125,36 @@ function Detalhes(p){
         return e("div",{className:"flex flex-col gap-2"},
           e("textarea",{readOnly:true, value:m.x, rows:5, className:INPUT+" h-auto! py-2 text-[13px]!"}),
           e("button",{type:"button", onClick:function(){ copiar(m.x); setCopiado(true); }, className:"h-9 rounded-lg bg-primary px-3 text-[13px] font-bold text-primary-foreground"}, copiado ? "✓ Copiado" : "Copiar mensagem")); })()
-    )));
+    )),
+    e(Historico,{r:r, d:d, cfg:s.cfg, hojeIso:hojeIso}));
 }
 
 function Tabela(p){
   var s = p.s, d = p.d, hojeIso = p.hojeIso, cx = p.cx;
   var ab = useState(null), aberto = ab[0], setAberto = ab[1];
   var lista = p.lista;
-  var tabela = e("div",{className:"overflow-x-auto rounded-xl border border-border bg-card"},
+  // arrastar a planilha para o lado: clica no meio, segura e arrasta
+  var scrollRef = React.useRef(null), arr = React.useRef({x:0, sl:0, down:false, moved:false});
+  var aoPressionar = function(ev){ if(ev.button!==0 || /INPUT|SELECT|TEXTAREA/.test(ev.target.tagName) || !scrollRef.current) return; arr.current = {x:ev.clientX, sl:scrollRef.current.scrollLeft, down:true, moved:false}; };
+  var aoMover = function(ev){ var a = arr.current; if(!a.down || !scrollRef.current) return; var dx = ev.clientX-a.x; if(Math.abs(dx)>5 && !a.moved){ a.moved = true; scrollRef.current.style.userSelect = "none"; } if(a.moved) scrollRef.current.scrollLeft = a.sl-dx; };
+  var aoSoltar = function(){ arr.current.down = false; if(scrollRef.current) scrollRef.current.style.userSelect = ""; };
+  var aoClicar = function(ev){ if(arr.current.moved){ ev.preventDefault(); ev.stopPropagation(); arr.current.moved = false; } };
+  var tabela = e("div",{ref:scrollRef, onMouseDown:aoPressionar, onMouseMove:aoMover, onMouseUp:aoSoltar, onMouseLeave:aoSoltar, onClickCapture:aoClicar, title:"Clique no meio, segure e arraste para o lado", className:"cursor-grab overflow-x-auto rounded-xl border border-border bg-card active:cursor-grabbing"},
     e("table",{className:"w-full min-w-max border-collapse"},
       e("thead",{className:"sticky top-0 z-10"}, e("tr",{className:"bg-sidebar"},
-        ["Revendedora","Kit","Ciclo","Última venda","Último acerto","Data do último acerto","Mês anterior (venda · acerto)","Outro mês (venda · acerto)","Próximo acerto","Faltam","Situação"].map(th))),
+        ["Data do acerto","Hora","Nome","Cód. DevMaster","Telefone / WhatsApp","Kit","Ciclo","Data última venda","Última venda","Último acerto","Penúltima venda","Penúltimo acerto","Próximo acerto","Faltam","Situação"].map(th))),
       e("tbody",null, lista.map(function(r){
         var prox = proximoAcerto(r), dias = diasEntre(hojeIso, prox), alerta = emAlerta(r, hojeIso), sit = SITUACOES.find(function(x){ return x.k===r.situacao; });
-        var h0 = r.hist[0], h1 = r.hist[1], h2 = r.hist[2], on = aberto===r.id;
+        var h0 = r.hist[0] || {}, h1 = r.hist[1], h2 = r.hist[2], on = aberto===r.id;
         var corDias = dias<0 ? "bg-destructive/20 text-destructive ring-destructive/50" : dias<=5 ? "bg-warning/20 text-warning ring-warning/50" : "bg-muted/50 text-foreground ring-border";
         return e(React.Fragment,{key:r.id},
           e("tr",{onClick:function(){ setAberto(on ? null : r.id); }, className:"cursor-pointer border-b border-border/60 hover:bg-muted/30 "+(on ? "bg-primary/10 " : "")+(alerta ? "bg-destructive/10" : "")},
+            td(fmtDataBR(r.agend ? r.agend.data : null), MONO), td(r.agend ? r.agend.hora : dash, MONO),
             td(e("span",{className:"flex items-center gap-2 font-bold"}, e("span",{className:"text-[11px] text-muted-foreground"}, on ? "▼" : "▶"), r.nome)),
-            td(e(IconeKit,{prata:modalidadeDe(s, r.nome)==="prata"})), td(e(IconeCiclo,{n:r.ciclo, manual:!!r.proximoManual})),
-            td(dinheiro(h0.venda), MONO+" font-semibold"), td(dinheiro(h0.acerto), MONO+" font-semibold text-primary"), td(fmtDataBR(h0.data), MONO),
-            td(e("span",{className:"flex items-center justify-center gap-2"}, e(Par,{h:h1}), e(Variacao,{novo:h0.venda, ant:h1 && h1.venda}))),
-            td(e("span",{className:"flex items-center justify-center gap-2"}, e(Par,{h:h2}), e(Variacao,{novo:h1 && h1.venda, ant:h2 && h2.venda}))),
+            td(r.devmaster || dash, MONO), td((r.contatos[0] && r.contatos[0].fone) || dash, MONO),
+            td(e("span",{className:"rounded-full bg-primary/15 px-2.5 py-1 text-[12px] font-bold text-primary ring-1 ring-primary/40"}, r.tipo || "Acerto")), td(e(IconeCiclo,{n:r.ciclo, manual:!!r.proximoManual})),
+            td(fmtDataBR(h0.data), MONO), td(e("span",{className:"flex items-center justify-center gap-2"}, e("span",{className:MONO+" font-semibold"}, dinheiro(h0.venda)), e(Variacao,{novo:h0.venda, ant:h1 && h1.venda}))), td(dinheiro(h0.acerto), MONO+" font-semibold text-primary"),
+            td(dinheiro(h1 && h1.venda), MONO), td(dinheiro(h1 && h1.acerto), MONO+" text-primary"),
             td(e("b",{className:MONO}, fmtDataBR(prox))),
             td(e("span",{className:"inline-block rounded-md px-2 py-0.5 text-[12.5px] font-bold ring-1 "+corDias}, dias<0 ? Math.abs(dias)+" d atrasada" : dias===0 ? "hoje" : dias+" d")),
             td(e("span",{className:"inline-flex flex-col items-center gap-0.5"},

@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — pages/Config.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { ehSugPeca } from "@/apps/montagem/components/tabela-pecas-ver";
+import { nomesEncomendas } from "@/apps/montagem/domain/regras";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { badge } from "@/apps/montagem/ui/badge";
@@ -99,6 +100,8 @@ function AbaConfig(){
           e(Campo,{l:"Alerta de saída abaixo de", campo:"alertaVermelho", v:c.alertaVermelho, step:"0.1"}))),
       coluna(
         e(Bloco,{t:"Kits de alto valor", ic:"alert"},
+          e(Campo,{l:"Só Encomendas monta acima de (venda atual ou média)", campo:"limiteEncomendas", v:c.limiteEncomendas, money:true}),
+          e("p",{className:"text-center text-[12px] text-muted-foreground"}, "Setor Encomendas: "+(nomesEncomendas(s)||"ninguém marcado")+". Marcus e Deysiane liberam exceção."),
           e(Campo,{l:"Só as melhores montam acima de", campo:"limiteMelhores", v:c.limiteMelhores, money:true}),
           e(Campo,{l:"Conferência obrigatória acima de", campo:"limiteAtencao", v:c.limiteAtencao, money:true}),
           e(Campo,{l:"Restrição ativa após", campo:"minKitsRestricao", v:c.minKitsRestricao, u:"kits"}),

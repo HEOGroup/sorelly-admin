@@ -22,7 +22,7 @@ export { TOLERANCIA_CHEGADA_MIN, DESCONTO_BRINDE_ATRASO, TEMPO_ESCOLHA_KIT, temp
 function contasDefinidas(l){
   var ps = l.partes || [];
   var soma = ps.reduce(function(t,p){ return t+(p.valor||0); }, 0);
-  return ps.length>0 && !ps.some(function(p){ return !p.descricao; }) && Math.abs(soma-l.valor)<=0.009;
+  return ps.length>0 && !ps.some(function(p){ return !p.descricao || p.pend===true; }) && Math.abs(soma-l.valor)<=0.009;   // pend = conta ainda não confirmada na tela do financeiro
 }
 function contasEnviadas(l){ return l.enviada===true || (l.partes||[]).some(function(p){ return p.comprovante || p.ok; }); }
 function statusLinhaFin(l){
@@ -32,4 +32,22 @@ function statusLinhaFin(l){
 }
 function lancamentoConferido(linhas){ return linhas.length>0 && linhas.every(function(l){ var s = statusLinhaFin(l); return s==="ok" || s==="isento"; }); }
 
-export { statusLinhaFin, lancamentoConferido, contasDefinidas, contasEnviadas };
+// etapa de uma linha do ponto de vista de quem acompanha o pedido
+function etapaLinhaFin(l){
+  if(l.isento) return "isento";
+  if(!contasDefinidas(l)) return "definir";
+  if(statusLinhaFin(l)==="ok") return "ok";
+  if(!contasEnviadas(l)) return "enviar";
+  return (l.partes||[]).every(function(q){ return q.comprovante; }) ? "recebido" : "enviado";
+}
+// status do pedido inteiro, na ordem do fluxo: aguardando conta → conta definida → aguardando pagamento → comprovante enviado → pagamento confirmado (ou cancelado)
+function statusPedidoFin(lf){
+  if(lf.cancelado) return {k:"cancelado", t:"Cancelado", cor:"#9CA3AF"};
+  if(lf.conferido) return {k:"confirmado", t:"Pagamento confirmado", cor:"#22C55E"};
+  var et = lf.linhas.filter(function(l){ return !l.isento; }).map(etapaLinhaFin);
+  if(et.indexOf("definir")>=0) return {k:"definir", t:"Aguardando definição de conta", cor:"#F59E0B"};
+  if(et.indexOf("enviar")>=0) return {k:"definida", t:"Conta definida", cor:"#A78BFA"};
+  if(et.indexOf("enviado")>=0) return {k:"pagamento", t:"Aguardando pagamento", cor:"#38BDF8"};
+  return {k:"comprovante", t:"Comprovante enviado", cor:"#38BDF8"};
+}
+export { etapaLinhaFin, statusPedidoFin, statusLinhaFin, lancamentoConferido, contasDefinidas, contasEnviadas };

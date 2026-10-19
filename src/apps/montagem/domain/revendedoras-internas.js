@@ -1,3 +1,4 @@
+import { revInternasReais } from "@/apps/montagem/domain/revendedoras-reais";
 // Sorelly Admin — domain/revendedoras-internas.js
 // Kits → Atendimento interno → Revendedoras internas. Controle das revendedoras que acertam na própria Sorelly:
 // ciclo de acerto (30/45/60 dias), próxima data, agendamento (feito pela agendadora) e mensagens prontas.
@@ -19,7 +20,8 @@ function somaDias(iso, n){ var d = parteData(iso); d.setDate(d.getDate()+n); ret
 function diasEntre(deIso, ateIso){ return Math.round((parteData(ateIso).getTime() - parteData(deIso).getTime())/86400000); }
 function fmtDataBR(iso){ return iso ? iso.split("-").reverse().join("/") : ""; }
 
-function proximoAcerto(r){ return r.proximoManual || somaDias(r.hist[0].data, r.ciclo); }
+// sem histórico (revendedora nova): vale a data da agenda; ao acertar, o sistema passa a calcular último + ciclo
+function proximoAcerto(r){ if(r.proximoManual) return r.proximoManual; var h = r.hist && r.hist[0]; if(h && h.data) return somaDias(h.data, r.ciclo); return r.agend ? r.agend.data : isoDe(new Date()); }
 function emAlerta(r, hojeIso){ return r.situacao==="contatar" && diasEntre(hojeIso, proximoAcerto(r)) <= DIAS_ALERTA; }
 function primeiroNome(nome){ var p = (nome||"").trim().split(/\s+/)[0] || ""; return p.charAt(0).toUpperCase()+p.slice(1).toLowerCase(); }
 
@@ -34,32 +36,27 @@ function mensagens(r, hojeIso){
   ];
 }
 
-// 8 revendedoras internas (lista passada pelo Marcus em 06/10/2026). Vendas/acertos dos meses anteriores são simulados.
-var BASE = [
-  ["MARIA LUYSA CANDIDO OTTOMAIER", 3081.00, 1905.00, "2026-10-05", 30, false],
-  ["LARYSSA FLAVIA SOARES ANDRADE", 308.00, 261.80, "2026-10-05", 30, false],
-  ["VITORIA ADAMSKI FARIA DA SILVA", 1755.80, 1094.60, "2026-10-05", 45, false],
-  ["LAIS GUEDIN RODRIGUES DE MELO", 2795.40, 1469.50, "2026-10-02", 60, false],
-  ["KATIA REGINA DA ROCHA SANTOS", 937.40, 674.00, "2026-10-02", 30, false],
-  ["EDUARDA CRISTINE PORTELLA", 3526.00, 2175.60, "2026-10-03", 30, true],
-  ["BRUNA MAYARA BARBOZA DE CARVALHO", 2230.80, 1421.60, "2026-09-11", 30, false],
-  ["KETLYN LACERDAS DA LUZ", 5836.00, 3111.25, "2026-09-02", 30, true]
-];
-var FATOR = [[0.88, 0.91], [1.12, 1.07]];          // mês anterior e o outro mês, em relação ao último (só demonstração)
-var PARENTES = ["Mãe","Irmã","Marido","Amiga","Filha","Cunhada","Pai","Prima"];
-function revInternasDemo(){
-  return BASE.map(function(b, i){
-    var hist = [{data:b[3], venda:b[1], acerto:b[2]}];
-    for(var m=0;m<2;m++) hist.push({data:somaDias(b[3], -b[4]*(m+1)), venda:Math.round(b[1]*FATOR[m][(i+m)%2]*100)/100, acerto:Math.round(b[2]*FATOR[m][(i+m+1)%2]*100)/100});
-    var fone = function(q){ return "(41) 9"+String(8100+i*131+q*47).slice(0,4)+"-"+String(2000+i*377+q*91).slice(-4); };
-    var r = {id:"RI"+(i+1), nome:b[0], ciclo:b[4], proximoManual:null, situacao:"contatar", agend:null, hist:hist,
-      contatos:[{nome:PARENTES[i%8], fone:fone(0)}, {nome:PARENTES[(i+3)%8], fone:fone(1)}], prata:b[5]};
-    return r;
-  }).map(function(r){
-    if(r.nome.indexOf("EDUARDA")===0){ r.situacao = "agendada"; r.agend = {data:"2026-11-02", hora:"15:00"}; }
-    if(r.nome.indexOf("KATIA")===0){ r.situacao = "contato"; }
-    return r;
-  });
+// Revendedoras internas: agora com dados REAIS (planilha de 14/10/2026), carregados de revendedoras-reais.js; sem o arquivo local a lista fica vazia.
+function revInternasDemo(){ return revInternasReais(); }
+
+// Regra do kit novo pela média (14/10/2026): média dos últimos 5 meses (a venda de agora + os 4 meses anteriores; vendas do mesmo mês somam),
+// mínimo de R$ 500 de média, e duas vendas seguidas abaixo de R$ 500 já bloqueiam mesmo com média alta. Números vêm do Configurador (cfg.mediaMeses / cfg.mediaMinima).
+// Histórico de demonstração (5 meses) para a revendedora que ainda não tem vendas lançadas: valores estáveis a partir do nome. Quando a DevMaster/app informar, vale o real.
+function histDemoDe(nome){
+  var h = 0; String(nome||"").split("").forEach(function(ch){ h = (h*31 + ch.charCodeAt(0)) % 100003; });
+  var base = 1800 + (h%2400), out = [], d = new Date();
+  for(var i=1;i<=5;i++){ var m = new Date(d.getFullYear(), d.getMonth()-i, 15); out.push({data:m.toISOString().slice(0,10), venda:Math.round((base*(0.8+((h>>i)%9)/20))/10)*10, demo:true}); }
+  return out;
+}
+function avaliarKit(hist, vendaAtual, cfg, mesAtual){
+  cfg = cfg || {}; var nMeses = cfg.mediaMeses || 5, minimo = cfg.mediaMinima || 500;
+  var porMes = {}; (hist||[]).forEach(function(h){ if(h && h.data && h.venda>0 && h.data.slice(0,7)!==mesAtual) porMes[h.data.slice(0,7)] = (porMes[h.data.slice(0,7)]||0)+h.venda; });
+  var meses = Object.keys(porMes).sort().reverse();                       // do mais recente para o mais antigo
+  var lista = (vendaAtual>0 ? [{mes:mesAtual, venda:vendaAtual, atual:true}] : []).concat(meses.map(function(m){ return {mes:m, venda:porMes[m]}; })).slice(0, nMeses);
+  var media = lista.length ? lista.reduce(function(t,x){ return t+x.venda; }, 0)/lista.length : null;
+  var duasSeguidas = lista.length>=2 && lista[0].venda<minimo && lista[1].venda<minimo;
+  var motivo = media===null ? "Sem vendas para calcular" : duasSeguidas ? "Duas vendas seguidas abaixo de "+minimo+": não libera, mesmo com média alta" : media<minimo ? "Média abaixo de "+minimo+": não libera" : null;
+  return {lista:lista, media:media, liberado:media!==null && !motivo, motivo:motivo, minimo:minimo, nMeses:nMeses};
 }
 
 // Item da agenda da Atendimento Sorelly criado a partir de uma agendada (a condicional vem da DevMaster; aqui é inventada para testar a calculadora)
@@ -83,4 +80,4 @@ function agendaHojeDemo(lista, hojeIso, versaoId, agora){
   return itens;
 }
 
-export { internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo };
+export { histDemoDe, avaliarKit,  internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo };

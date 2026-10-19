@@ -23,7 +23,7 @@ function resumoRep(rep, s){
   var desc = rec*c.perdaRecusa + Math.max(0, parados - c.diasParadosTolerancia)*c.perdaDiaParado;
   var pontos = media===null ? null : Math.max(0, media - desc);
   return {rep:rep, n:av.length, pont:pont, expl:expl, whats:whats, media:media, rec:rec, vir:vir, parados:parados, desc:desc, pontos:pontos,
-    bonus: pontos!==null && pontos>=c.bonusNotaMin, bloqueada: !!(s.bloqueioNovas||{})[rep]};
+    bloqueada: !!(s.bloqueioNovas||{})[rep]};
 }
 var NOVAS0 = [
   {id:"N1", nome:"Camila Ferreira", cidade:"Curitiba", bairro:"Água Verde", endereco:"Rua José Loureiro, 812 - Água Verde, Curitiba - PR",
@@ -31,6 +31,13 @@ var NOVAS0 = [
     disp:"Manhãs, de segunda a sexta", rep:"Dayanne", status:"direcionada", cadastro:"29/09"},
   {id:"N2", nome:"Patrícia Nunes", cidade:"Curitiba", bairro:"Batel", endereco:"Rua Brigadeiro Franco, 2200 - Batel, Curitiba - PR",
     fone:"(41) 99876-5432", valor:9000, expositor:true, profissao:"Cabeleireira", trab:"Salão Nunes Hair", trabEnd:"Avenida Sete de Setembro, 3400 - Batel, Curitiba - PR",
-    disp:"Tardes, a partir das 14h", rep:"Dayanne", status:"direcionada", cadastro:"29/09"}];
+    disp:"Tardes, a partir das 14h", rep:"Dayanne", status:"direcionada", cadastro:"29/09"},
+  // 2 kits novos aguardando a Lysie (demonstração de 15/10/2026)
+  {id:"N3", nome:"Jéssica Padilha", cidade:"Curitiba", bairro:"Portão", endereco:"Rua Fictícia AD, 410 - Portão, Curitiba - PR",
+    fone:"(41) 99211-3344", valor:7000, expositor:false, profissao:"Esteticista", trab:"Clínica Padilha", trabEnd:"Avenida República Argentina, 1200 - Água Verde, Curitiba - PR",
+    disp:"Manhãs, de terça a sábado", rep:"Lysie", status:"direcionada", cadastro:"13/10"},
+  {id:"N4", nome:"Mônica Teixeira", cidade:"Curitiba", bairro:"Cabral", endereco:"Rua Fictícia AE, 77 - Cabral, Curitiba - PR",
+    fone:"(41) 99322-4455", valor:8000, expositor:true, profissao:"Professora", trab:"Escola Aprender", trabEnd:"Rua Mateus Leme, 900 - Centro Cívico, Curitiba - PR",
+    disp:"Tardes, depois das 15h", rep:"Lysie", status:"direcionada", cadastro:"14/10"}];
 
 export { REPS_AVAL, avalRepDemo, RECUSAS0, VIRADA0, diasParados, resumoRep, NOVAS0 };

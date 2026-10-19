@@ -2,3 +2,14 @@ node_modules
 dist
 .vite
 *.local
+
+# dados reais de saldos (repositório é público)
+src/apps/montagem/domain/*.local.js
+
+# anotações com números reais (ex.: CAIXA-FINANCEIRO.local.md)
+*.local.md
+
+# planilhas com dados de clientes (repositório é público)
+*.local.xlsx
+
+*.local.csv

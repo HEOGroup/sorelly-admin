@@ -10,7 +10,7 @@ var KIT_NOVO_REGRAS = {
 };
 // Link de pagamento: ferramenta de VENDA (a cliente final paga pelo link); o valor pago abate o acerto
 var LINK_PAGAMENTO = {
-  valorMinimo:100, parcelaMinima:50, parcelasMax:6, validadeHoras:12, tentativasPorDia:3
+  valorMinimo:80, parcelaMinima:50, parcelasMax:10, validadeHoras:12, tentativasPorDia:3
 };
 
 export { KIT_NOVO_REGRAS, LINK_PAGAMENTO };

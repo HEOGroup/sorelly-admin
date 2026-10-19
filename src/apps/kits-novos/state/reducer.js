@@ -16,6 +16,7 @@ function reducer(s, a){
       if(a.f.busca){ ab3 = {}; ETAPAS.concat([{k:"cancelado"}]).forEach(function(x){ ab3[x.k]=true; }); }
       return com(s, {filtro:Object.assign({}, s.filtro, a.f), abertos:ab3}); }
     case "DIALOGO": return com(s, {dialogo:a.d});
+    case "AVISO": return com(s, {}, a.txt, "atencao");
     case "LIMPAR_AVISO": return com(s, {aviso:null});
     case "AVANCAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c || !aberto(c)) return s;
@@ -50,6 +51,12 @@ function reducer(s, a){
         tipo:d.tipo||"Vendedora", op:quem(s), ent:d.ent||"", entId:"", obs2:d.obs2||"", desm:0,
         hist:[{em:Date.now(), quem:quem(s), txt:"Cadastrada no sistema"}]};
       return com(s, {dados:[n].concat(s.dados), dialogo:null}, n.nome+" cadastrada");
+    }
+    // Representante recusou a revendedora (WhatsApp): tira a representante e mantém a etapa; a recusa em si é gravada pelo diálogo (lib/bridge-montagem)
+    case "RECUSOU": {
+      c = s.dados.find(function(x){return x.id===a.id;}); if(!c || !c.rep) return s;
+      return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({rep:""}, reg(x, s, c.rep+" recusou a revendedora: "+a.motivo)); }), dialogo:null},
+        c.rep+" recusou "+c.nome+(a.bloqueou ? ". Com "+a.total+" recusas, a representante fica bloqueada para novos kits" : a.registrada===false ? ". Recusa não registrada na avaliação (abra o app de montagem uma vez)" : ". Recusa registrada"), a.bloqueou||a.registrada===false ? "alerta" : "atencao");
     }
     case "DESMARCOU": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c) return s;

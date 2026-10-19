@@ -26,6 +26,13 @@ function kit(lid, rev, bairro, alvo, prio, ex){
   if(ex.st){ Object.assign(k, ex.st); if(k.fimM && k.iniM) k.tempoM = k.fimM - k.iniM; }
   return k;
 }
+// Márcia Camargo (Dayanne): acerto normal ("Acerto + kit", não é visita de kit novo), para testar a calculadora com venda de R$ 12.268,00
+function kitNormalDayanne(l){
+  var k = kit(l.id, "Márcia Camargo", "Batel", 14000, 0, {endereco:"Rua Fictícia T, 77 - Batel, Curitiba - PR", tipo:"ac_kit"}); k.id = "KDAY1"; l.n = (l.n||0)+1;
+  Object.assign(k, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["093801","093802"], pegas:true, chkB:{"093801":true, "093802":true}, impressas:{}, novas:[]}, tipoKit:"acerto_kit", status:"retirado", ordem:l.n, retEm:Date.now()-3000000, retPor:11, horaAtend:"10:30", fone:"(41) 00000-0077", vendas:[]});
+  return k;
+}
+var PERFIL_MARCIA = {profissao:"Lojista", enderecoTrabalho:"Loja Márcia Acessórios · Rua XV de Novembro, 640 - Centro, Curitiba - PR", condicionaisAbertas:[{numero:"093801", pecas:140}, {numero:"093802", pecas:90}]};
 function novoDia(){
   seq = 0;
   var dataHoje = isoDia(new Date());
@@ -37,7 +44,7 @@ function novoDia(){
   // as revendedoras a realizar de cada representante (nome, bairro, valor do kit, prioridade, endereço) — as da Dayanne têm perfil/endereço nos apps de demonstração
   var FIXOS = {
     Dayanne:[["Andrielle Taborda","Tatuquara",12000,1,"Rua Enette Dubard, 1150 - Tatuquara, Curitiba - PR"],["Silvana Ramos","Sítio Cercado",8000,1,"Rua Padre Anchieta, 1785 - Bigorrilho, Curitiba - PR"]],   // a 3ª da Dayanne é a Beatriz Nogueira (kit novo, mais abaixo)
-    Lysie:[["Ronice Kaminski","Portão",10000,1,null],["Cláudia Wosniak","Água Verde",20000,1,null],["Vera Lúcia Moraes","Cabral",9000,0,null],["Daniele Ribas","Boa Vista",9000,1,null]],
+    Lysie:[["Ronice Kaminski","Portão",10000,1,"Rua Fictícia W, 140 - Portão, Curitiba - PR"],["Cláudia Wosniak","Água Verde",12000,1,"Rua Fictícia W, 260 - Água Verde, Curitiba - PR"]],   // 2 acertos a realizar; os kits novos e a reposição da Lysie vêm mais abaixo
     Jessica:[["Elisângela Faria","Boqueirão",12000,1,null],["Rosângela Pinto","Xaxim",8000,1,null],["Tânia Brandão","Uberaba",7000,0,null],["Priscila Menezes","Cristo Rei",11000,0,null]],
     Thalita:[["Alana Couto","Batel",8000,1,null],["Bárbara Siqueira","Bacacheri",10000,0,null],["Dalila Vieira","Santa Felicidade",9000,0,null]]
   };
@@ -110,13 +117,23 @@ function novoDia(){
     var kr = kit("L1", "Vanessa Prado", "Portão", 2500, 0, {endereco:"Rua Fictícia R, 88 - Portão, Curitiba - PR", tipo:"ac_kit"});
     l1.n = (l1.n||0)+1;
     Object.assign(kr, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["094601"], pegas:true, chkB:{"094601":true}, impressas:{}, novas:[]}, tipoKit:"reposicao", status:"retirado", ordem:l1.n, retEm:Date.now()-3000000, retPor:11, horaAtend:"12:00", fone:"(41) 00000-0099", vendas:[]});
-    K.push(kr); }
+    K.push(kr);
+    K.push(kitNormalDayanne(l1)); }
   // Maria Eduarda de Almeida: kit novo de teste da CONFERÊNCIA DAS PEÇAS COM A CÂMERA (condicional 00558 real + 2 inventadas; ver domain/conferencia-pecas.js).
   // Bipado na empresa pela Sthefany (id 14) e montado pela Jenifer (id 5), como no impresso.
   if(l1){ var km = kit("L1", "Maria Eduarda de Almeida", "Cajuru", 7000, 0, {endereco:"Rua Major Antonio Ribeiro Vidal, 34 - Cajuru, Curitiba - PR", tipo:"ac_kit"});
     l1.n = (l1.n||0)+1;
     Object.assign(km, {montId:5, bipId:14, iniB:"11:05", fimB:"11:20", cond:{nums:["00558"], pegas:true, chkB:{"00558":true}, impressas:{}, novas:[]}, tipoKit:"kit_novo", status:"retirado", ordem:l1.n, retEm:Date.now()-3600000, retPor:11, horaAtend:"13:00", fone:"(41) 00000-0099", vendas:[]});
     K.push(km); }
+  // Lysie (L2): 2 KITS NOVOS e 1 REPOSIÇÃO já retirados da empresa, prontos para ela entregar pelo app (mesmo caminho da Beatriz e da Vanessa, da Dayanne)
+  var l2 = L.find(function(x){ return x.id==="L2"; });
+  if(l2){
+    [["Sabrina Lopes","Portão",7000,"Rua Fictícia X, 310 - Portão, Curitiba - PR","kit_novo","11:00",["094701","094702"],"(41) 00000-0101"],
+     ["Kátia Moreira","Água Verde",7000,"Rua Fictícia Y, 55 - Água Verde, Curitiba - PR","kit_novo_exp","11:30",["094711","094712"],"(41) 00000-0102"],
+     ["Vera Lúcia Moraes","Cabral",2500,"Rua Fictícia Z, 88 - Cabral, Curitiba - PR","reposicao","12:00",["094721"],"(41) 00000-0103"]].forEach(function(x){
+      var kk = kit("L2", x[0], x[1], x[2], 0, {endereco:x[3], tipo:"ac_kit"}); l2.n = (l2.n||0)+1;
+      Object.assign(kk, {montId:MONTADORAS[1].id, bipId:BIPADORAS[1].id, cond:{nums:x[6], pegas:true, chkB:x[6].reduce(function(o, n){ o[n] = true; return o; }, {}), impressas:{}, novas:[]}, tipoKit:x[4], status:"retirado", ordem:l2.n, retEm:Date.now()-3000000, retPor:11, horaAtend:x[5], fone:x[7], vendas:[]});
+      K.push(kk); }); }
   return {listagens:L, kits:K};
 }
 var REGISTROS0 = [
@@ -179,4 +196,4 @@ function histDemo(){
   return out;
 }
 
-export { AROS, OURO, EVITAR, seq, kit, novoDia, REGISTROS0, CONSOLIDADO_REPS, HISTORICO0, histDemo };
+export { kitNormalDayanne, PERFIL_MARCIA, AROS, OURO, EVITAR, seq, kit, novoDia, REGISTROS0, CONSOLIDADO_REPS, HISTORICO0, histDemo };

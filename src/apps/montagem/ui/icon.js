@@ -20,7 +20,7 @@ var P = {
   menu:["M4 12h16","M4 6h16","M4 18h16"],
   inbox:["M22 12h-6l-2 3h-4l-2-3H2","M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"],
   chevron:["m9 18 6-6-6-6"],
-  chevrondown:["m6 9 6 6 6-6"],
+  chevrondown:["m6 9 6 6 6-6"], chevronup:["m18 15-6-6-6 6"],
   alert:["m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z","M12 9v4","M12 17h.01"],
   scan:["M3 7V5a2 2 0 0 1 2-2h2","M17 3h2a2 2 0 0 1 2 2v2","M21 17v2a2 2 0 0 1-2 2h-2","M7 21H5a2 2 0 0 1-2-2v-2","M7 12h10"],
   phone:["M7 2h10a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z","M12 18h.01"],
@@ -40,7 +40,7 @@ var P = {
 };
 var PH = {gem:"diamond", grid:"clipboard-text", chart:"chart-bar", wallet:"wallet", list:"list-checks", settings:"gear-six", clock:"clock",
   star:"star", check:"check-circle", x:"x-circle", pause:"pause-circle", play:"play-circle", undo:"arrow-counter-clockwise", sunmoon:"moon-stars",
-  menu:"list", inbox:"archive", chevron:"caret-right", chevrondown:"caret-down", alert:"warning", scan:"barcode", phone:"device-mobile",
+  menu:"list", inbox:"archive", chevron:"caret-right", chevrondown:"caret-down", chevronup:"caret-up", alert:"warning", scan:"barcode", phone:"device-mobile",
   plus:"plus-circle", search:"magnifying-glass", lock:"lock-simple", unlock:"lock-simple-open", user:"user-circle", send:"paper-plane-tilt",
   box:"package", coins:"coins", pencil:"pencil-simple", trash:"trash", history:"clock-counter-clockwise", save:"floppy-disk", book:"book-open-text",
   users:"users-three", equipe:"users-three", trofeu:"trophy", registro:"notebook", novas:"user-plus", montadora:"hand-heart", bipagem:"barcode",

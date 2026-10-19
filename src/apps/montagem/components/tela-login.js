@@ -47,13 +47,8 @@ function corpoLogin(p){
       e("p",{className:"text-center text-[14px] text-[#ffffffd9]"},"Não tem conta? ",
         e("button",{type:"button", onClick:function(){ setCriar(!criar); }, className:"font-bold text-[#fff] underline-offset-2 hover:underline"},"Criar agora")),
       criar && e("p",{className:"rounded-xl bg-[#ffffff0d] px-4 py-3 text-center text-[13px] text-[#ffffffd9]"},"O acesso é criado pelo RH ou pela diretoria. Peça a liberação do seu usuário."),
-      // atalho de teste (protótipo): entrar como qualquer pessoa da equipe sem digitar
-      p.teste !== false && e("div",{className:"flex flex-col gap-2 border-t border-white/10 pt-4"},
-        e("button",{type:"button", onClick:function(){ setTeste(!teste); }, className:"text-[12.5px] font-semibold text-[#E8B84B]"}, teste ? "Esconder" : "Entrar como… (teste, sem digitar)"),
-        teste && SETORES_LOGIN().map(function(g){ return e("div",{key:g[0], className:"flex flex-col gap-1"},
-          e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-[#ffffff99]"}, PAPEL_LB[g[0]]),
-          e("div",{className:"flex flex-wrap gap-1.5"}, g[1].map(function(x){ return e("button",{type:"button", key:x.id, onClick:function(){ p.onEntrar(x); },
-            className:"rounded-full bg-[#ffffff1a] px-3 py-1 text-[12.5px] font-semibold hover:bg-[#ffffff33]"}, x.nome); }))); }))),
+      // atalho de teste (protótipo): um botão só, entra sempre como o Marcus
+      p.teste !== false && e("button",{type:"button", onClick:function(){ var marcus = todasPessoas().find(function(x){ return x.id===16; }); if(marcus) p.onEntrar(marcus); }, className:"h-12 rounded-full border border-dashed border-[#E8B84B] text-[15px] font-bold text-[#E8B84B]"}, "Entrar como TESTE")),
     e("p",{className:"pb-6 text-center text-[14px] text-[#ffffffcc]"},"© 2026 Sorelly Joias"));
 }
 

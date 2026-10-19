@@ -2,6 +2,7 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { listagemDe } from "@/apps/montagem/domain/regras";
 import { STATUS_LB } from "@/apps/montagem/domain/status";
+import { AtalhosAdmin, ATALHOS_REVENDEDORA } from "@/apps/montagem/components/atalhos-admin";
 import { AppRevendedora } from "@/apps/montagem/mobile/revendedora";
 import { Avatar } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -20,7 +21,7 @@ function AbaCelularRev(){
     e(PageHead,{t:"App da revendedora", sub:"Modelo do app da revendedora (sistema à parte, nas lojas de aplicativos): tela inicial e o bloco Kit novo, que ela abre junto com a representante."}),
     !k ? e(Vazio,{txt:"Nenhum kit entregue ainda. Assim que um kit for bipado ou retirado, a revendedora aparece aqui."}) :
     e("div",{className:"flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center"},
-      e(AppRevendedora,{key:k.id, k:k}),
+      e("div",{className:"flex flex-col items-center gap-3"}, e(AppRevendedora,{key:k.id, k:k}), e(AtalhosAdmin,{titulo:"O que este app gera no admin", itens:ATALHOS_REVENDEDORA})),
       e(Card,{className:"flex w-full max-w-sm flex-col gap-1 p-2!"},
         e("p",{className:"px-2 pb-1 pt-1 text-sm font-semibold uppercase tracking-wide text-muted-foreground"},"Conectar como"),
         ks.map(function(x){ var on = x.id===k.id; return e("button",{key:x.id, onClick:function(){setKid(x.id);},

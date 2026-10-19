@@ -2,7 +2,7 @@
 // Representantes → Configurações: onde se EDITA tudo do consignado e das representantes. A tela "Regras" só mostra.
 //   · Regras do consignado: régua de comissão e brinde, taxa, remarcação, pagamento (cria nova versão)
 //   · Formas de pagamento: adicionar/retirar formas e as descrições (códigos das contas) de cada uma
-//   · Regras internas: prazos, bloqueios e bônus das representantes
+//   · Regras internas: prazos e bloqueios das representantes (representante NÃO tem bônus, decisão de 19/10/2026)
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { formasPagamentoPadrao } from "@/apps/montagem/domain/consignado";
 import { Din, EditorRegrasConsignado } from "@/apps/montagem/pages/RegrasConsignado";
@@ -77,16 +77,16 @@ var INTERNAS = [
     {c:"reposicaoMax", t:"Valor máximo de reposição", tipo:"din", dica:"Provisório."}]},
   {grupo:"Avaliação e bloqueio", itens:[
     {c:"recusasBloqueio", t:"Recusas de kit novo para bloquear", u:"recusas", tipo:"num", dica:"Depois disso ela deixa de receber revendedoras novas."},
-    {c:"bonusNotaMin", t:"Nota média mínima para bônus", tipo:"num", step:"0.1"},
-    {c:"bonusValor", t:"Valor do bônus", tipo:"din"},
     {c:"perdaRecusa", t:"Desconto na nota por recusa", tipo:"num", step:"0.1"},
     {c:"perdaDiaParado", t:"Desconto na nota por dia parado", tipo:"num", step:"0.1"},
     {c:"diasParadosTolerancia", t:"Dias parados tolerados", u:"dias", tipo:"num"}]}
 ];
-function EditorInternas(){
+var GRUPO_AVAL = "Avaliação e bloqueio";
+function EditorInternas(p){
+  p = p || {};
   var cx = use(), s = cx.state, d = cx.dispatch, c = s.cfg;
   var muda = function(campo, v){ d({type:"CFG", campo:campo, valor:v}); };
-  return e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-2"}, INTERNAS.map(function(g){
+  return e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-2"}, INTERNAS.filter(function(g){ return p.so ? g.grupo===p.so : g.grupo!==GRUPO_AVAL; }).map(function(g){
     return e(BlocoBarra,{key:g.grupo, t:g.grupo, sub:"valores usados pelo app da representante"},
       e("div",{className:"flex flex-col divide-y divide-border p-2"}, g.itens.map(function(it){
         return e("div",{key:it.c, className:"grid grid-cols-[1fr_9rem] items-center gap-3 px-2 py-2.5"},
@@ -112,4 +112,6 @@ function AbaConfigRepresentantes(){
     aba==="internas" && e(EditorInternas,null));
 }
 
-export { AbaConfigRepresentantes };
+// as regras da avaliação (nota, bônus, bloqueio) moram na área Avaliações, não no Configurador
+function EditorRegrasAvaliacao(){ return e(EditorInternas,{so:GRUPO_AVAL}); }
+export { AbaConfigRepresentantes, EditorRegrasAvaliacao };

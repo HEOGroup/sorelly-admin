@@ -38,10 +38,23 @@ function ConfigKitNovo(){
   return Comp ? e(Comp) : e("p",{className:"p-4 text-center text-[13px] text-white/70"},"Carregando o configurador do kit novo…");
 }
 
-var SECOES = [["montagem","Montagem e bipagem", AbaConfig], ["rep","Representantes", AbaConfigRepresentantes], ["kn","Kit novo", ConfigKitNovo], ["avisos","Avisos e alertas", AbaConfigAvisos], ["bipa","Quem bipa os retornos", ConfigQuemBipa]];
+// Previsão de faturamento: quanto a média por acerto de novembro e dezembro sobe em relação à média atual do mês (só esses meses; os próximos usam a média histórica)
+function ConfigPrevisao(){
+  var cx = use(), s = cx.state, d = cx.dispatch, MESES = [[10,"Novembro",5],[11,"Dezembro",15]];
+  var valor = function(i, padrao){ var a = s.altaMedia; if(a && Object.prototype.hasOwnProperty.call(a, i)) return a[i]===null ? "" : Math.round(a[i]*100); return padrao; };
+  return e(BlocoBarra,{cor:"ouro", t:"Previsão de faturamento", sub:"alta da média por acerto sobre a média atual do mês · só novembro e dezembro"},
+    e("div",{className:"flex flex-col gap-3 p-4"},
+      MESES.map(function(x){ return e("label",{key:x[0], className:"flex items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-2 text-[14px]"},
+        e("span",null, e("b",null, x[1]), e("span",{className:"ml-2 text-[12px] text-white/65"}, "média atual do mês + o percentual ao lado (vazio = sem alta)")),
+        e("span",{className:"flex items-center gap-1"}, "+", e("input",{type:"number", min:0, max:100, step:1, defaultValue:valor(x[0], x[2]), "aria-label":"Alta da média de "+x[1]+" em porcentagem", className:"h-9 w-20 rounded-lg border border-border bg-black/30 px-2 text-center outline-none focus:border-primary",
+          onBlur:function(ev){ d({type:"ALTA_MEDIA_SET", mes:x[0], pct:ev.target.value}); }}), "%")); }),
+      e("p",{className:"text-[12.5px] text-white/65"}, "Padrão combinado: novembro +5% e dezembro +15%. A Visão geral e a Previsão de faturamento usam estes valores na hora.")));
+}
+
+var SECOES = [["previsao","Previsão de faturamento", ConfigPrevisao], ["montagem","Montagem e bipagem", AbaConfig], ["rep","Representantes", AbaConfigRepresentantes], ["kn","Kit novo", ConfigKitNovo], ["avisos","Avisos e alertas", AbaConfigAvisos], ["bipa","Quem bipa os retornos", ConfigQuemBipa]];
 
 function AbaConfiguradorGeral(){
-  var sc = useState("montagem"), sec = sc[0], setSec = sc[1], atual = SECOES.find(function(x){ return x[0]===sec; }) || SECOES[0];
+  var sc = useState(function(){ try{ var h = sessionStorage.getItem("sorelly_cfg_secao"); if(h){ sessionStorage.removeItem("sorelly_cfg_secao"); return h; } }catch(x){} return "montagem"; }), sec = sc[0], setSec = sc[1], atual = SECOES.find(function(x){ return x[0]===sec; }) || SECOES[0];
   return e(React.Fragment,null,
     e(PageHead,{t:"Configurador geral", sub:"Um só para todos os setores: escolha o setor abaixo."}),
     e("div",{className:"flex flex-wrap gap-1.5"}, SECOES.map(function(x){ return e("button",{key:x[0], onClick:function(){ setSec(x[0]); },
@@ -49,4 +62,4 @@ function AbaConfiguradorGeral(){
     e(atual[2], {key:sec}));
 }
 
-export { AbaConfiguradorGeral };
+export { AbaConfiguradorGeral, ConfigQuemBipa, ConfigKitNovo, ConfigPrevisao };

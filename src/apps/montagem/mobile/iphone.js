@@ -31,7 +31,7 @@ function IPhone15(p){
       e("div",{className:"barra-status flex h-[54px] shrink-0 items-center justify-between bg-[#0D0D0F] px-8 pt-1 text-[15px] font-semibold"},
         e("span",null, hora(agora)), e(IconesStatus)),
       e("div",{id:"app-screen", className:"flex-1 overflow-y-auto px-4 pb-10 pt-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"}, p.children),
-      e("span",{className:"absolute bottom-2 left-1/2 h-[5px] w-[124px] -translate-x-1/2 rounded-full bg-[#111]"})));
+      !p.semIndicador && e("span",{className:"absolute bottom-2 left-1/2 h-[5px] w-[124px] -translate-x-1/2 rounded-full bg-[#111]"})));
 }
 // Moldura do iPhone 17 Pro Max (tela 6,9", proporção mais alongada que o 15): usada no app da representante.
 function IPhone17ProMax(p){

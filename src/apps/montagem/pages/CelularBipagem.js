@@ -15,7 +15,7 @@ import React from "react";
 function AbaCelularBip(){
   var s = use().state, sup = papelDe(s.usuario)==="supervisao";
   var sl = useState(BIPADORAS.some(function(b){ return b.id===s.usuario; }) ? s.usuario : BIPADORAS[0].id), bid = sl[0], setBid = sl[1];
-  var lg = useState(!sup), logado = lg[0], setLogado = lg[1];
+  var lg = useState(true), logado = lg[0], setLogado = lg[1];
   var bip = BIPADORAS.find(function(b){return b.id===bid;});
   return e(React.Fragment,null,
     e(PageHead,{t:"Celular da bipagem", sub:"Modelo do app da bipadora que faz a retirada com as representantes, em paralelo com o balcão. A retirada só vale depois que a representante confirma no app dela."}),

@@ -7,22 +7,33 @@ import { use } from "@/apps/montagem/state/context";
 import { BADGE } from "@/apps/montagem/ui/badge";
 import { MONO, brl } from "@/apps/montagem/ui/input";
 import { TD, TH, TR } from "@/apps/montagem/ui/table";
-import { e } from "@/shared/react";
+import { Icon } from "@/apps/montagem/ui/icon";
+import { e, useState } from "@/shared/react";
 
 var BARRAS = {ouro:"bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]", azul:"bg-linear-to-r from-[#1E4E8C] via-[#3B82F6] to-[#BFDBFE] text-white",
   roxo:"bg-linear-to-r from-[#5B2A86] via-[#8B5CF6] to-[#DDD6FE] text-white",
   prata:"bg-linear-to-r from-[#64748B] via-[#CBD5E1] to-[#F1F5F9] text-[#1B1409]",
-  vermelho:"bg-linear-to-r from-[#991B1B] via-[#EF4444] to-[#FECACA] text-white"};
-// p.ir = nome da aba: põe no canto da barra um botão "Abrir ›" que leva à tela do bloco. p.compacto = barra baixa e sem subtítulo.
+  vermelho:"bg-linear-to-r from-[#991B1B] via-[#EF4444] to-[#FECACA] text-white",
+  verde:"bg-linear-to-r from-[#166534] via-[#22C55E] to-[#DCFCE7] text-white", laranja:"bg-linear-to-r from-[#C2410C] via-[#F97316] to-[#FED7AA] text-white",
+  rosa:"bg-linear-to-r from-[#9D174D] via-[#EC4899] to-[#FBCFE8] text-white", turquesa:"bg-linear-to-r from-[#0E7490] via-[#06B6D4] to-[#CFFAFE] text-white"};
+var ANEL = {ouro:"ring-[#E8B84B]/45", azul:"ring-[#3B82F6]/45", roxo:"ring-[#8B5CF6]/45", prata:"ring-[#94A3B8]/45", vermelho:"ring-[#EF4444]/45", verde:"ring-[#22C55E]/45", laranja:"ring-[#F97316]/45", rosa:"ring-[#EC4899]/45", turquesa:"ring-[#06B6D4]/45"};
+var CORPO = {ouro:"bg-linear-to-b from-[#E8B84B]/12 to-transparent", azul:"bg-linear-to-b from-[#3B82F6]/12 to-transparent", roxo:"bg-linear-to-b from-[#8B5CF6]/12 to-transparent", prata:"bg-linear-to-b from-[#94A3B8]/12 to-transparent",
+  vermelho:"bg-linear-to-b from-[#EF4444]/12 to-transparent", verde:"bg-linear-to-b from-[#22C55E]/12 to-transparent", laranja:"bg-linear-to-b from-[#F97316]/12 to-transparent", rosa:"bg-linear-to-b from-[#EC4899]/12 to-transparent", turquesa:"bg-linear-to-b from-[#06B6D4]/12 to-transparent"};
+// blocos fechados: o sistema lembra neste navegador
+var FECHADOS = (function(){ try{ return JSON.parse(localStorage.getItem("sorelly_blocos_fechados")||"{}"); }catch(x){ return {}; } })();
+// Clicar na barra abre/fecha o bloco (o conteúdo só fica escondido, não perde o que foi digitado). p.dir = valor no canto direito. p.ir = botão "Abrir ›" para a tela completa. p.compacto = barra baixa e sem subtítulo.
 function BlocoBarra(p){
-  var d = use().dispatch;
-  return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
-    e("div",{className:"relative flex flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-4 py-2.5 ")+BARRAS[p.cor||"ouro"]},
-      e("h2",{className:"font-heading font-bold leading-tight "+(p.compacto ? "text-[14px]" : "text-[16px]")}, p.t),
-      p.sub && !p.compacto && e("p",{className:"mt-0.5 text-[12px] font-medium opacity-85"}, p.sub),
-      p.ir && e("button",{onClick:function(){ d({type:"ABA", aba:p.ir}); }, title:"Abrir a tela completa",
+  var d = use().dispatch, cor = p.cor || "ouro", chave = typeof p.t==="string" ? p.t : null, st = useState(!!(chave && FECHADOS[chave])), fechado = st[0], setFechado = st[1];
+  var alternar = function(){ var v = !fechado; setFechado(v); if(chave){ if(v) FECHADOS[chave] = 1; else delete FECHADOS[chave]; try{ localStorage.setItem("sorelly_blocos_fechados", JSON.stringify(FECHADOS)); }catch(x){} } };
+  return e("section",{className:"overflow-hidden rounded-xl bg-card ring-2 "+ANEL[cor]},
+    e("div",{onClick:alternar, title:fechado ? "Abrir o bloco" : "Fechar o bloco", className:"relative flex cursor-pointer select-none flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-12 py-2.5 ")+BARRAS[cor]},
+      e("span",{className:"absolute left-3 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-black/25 p-1 text-white"}, e(Icon,{n:"chevrondown", s:13, className:"transition-transform "+(fechado ? "-rotate-90" : "")})),
+      e("h2",{className:"font-heading font-bold leading-tight "+(p.compacto ? "text-[14px]" : "text-[16px]")}, typeof p.t==="string" ? p.t.charAt(0).toUpperCase()+p.t.slice(1) : p.t),
+      p.sub && !p.compacto && e("p",{className:"mt-0.5 text-[12px] font-medium opacity-85"}, typeof p.sub==="string" ? p.sub.charAt(0).toUpperCase()+p.sub.slice(1) : p.sub),
+      p.dir && e("span",{className:"absolute top-1/2 -translate-y-1/2 rounded-lg bg-black/25 px-2.5 py-1 font-mono text-[14px] font-bold text-white "+(p.ir ? "right-20" : "right-3")}, p.dir),
+      p.ir && e("button",{onClick:function(ev){ ev.stopPropagation(); d({type:"ABA", aba:p.ir}); }, title:"Abrir a tela completa",
         className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
-    p.children);
+    e("div",{className:CORPO[cor]+(fechado ? " hidden" : "")}, p.children));
 }
 function ResumoCategorias(p){
   var ks = [];

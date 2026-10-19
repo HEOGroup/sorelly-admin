@@ -1,5 +1,9 @@
 // Sorelly Admin · montagem e bipagem — mobile/representante.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
+import { MensagensRep } from "@/apps/montagem/mobile/mensagens-rep";
+import { api, efem, totalNaoLidas, useChat } from "@/apps/montagem/domain/chat-store";
+import { contatoDaRepresentante, registrarRevendedora } from "@/apps/montagem/domain/chat-contatos";
 import { codigoRetirada } from "@/apps/montagem/components/dialogos";
 import { ETAPA } from "@/apps/montagem/components/fila";
 import { KitsNovosRep, foraDoPrazo } from "@/apps/montagem/components/kits-novos-rep";
@@ -11,6 +15,7 @@ import { vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
 import { ComissoesRep } from "@/apps/montagem/mobile/comissoes-rep";
 import { TelaAssinatura } from "@/apps/montagem/mobile/assinatura";
 import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
+import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
 import { EntregaKNRep } from "@/apps/montagem/mobile/kn-entrega-rep";
 import { ConfPecas } from "@/apps/montagem/mobile/conf-pecas";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
@@ -20,12 +25,14 @@ import { badge } from "@/apps/montagem/ui/badge";
 import { comissaoRev, sugerido } from "@/apps/montagem/domain/vendas";
 import { N1, hoje, hora, isoDia } from "@/apps/montagem/lib/format";
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
+import { plim } from "@/apps/montagem/components/aviso-pagamentos";
+import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
 // Moeda com centavos (,00) sempre visíveis: usada só no app da representante — o BK() global (lib/format) fica arredondado pras outras telas do admin.
@@ -54,7 +61,11 @@ var CARTEIRA_DEMO = {
     revDemo("Gabriela Mendes","(41) 00000-0007","Rua Fictícia D, 107","Curitiba/PR",1600,2,"10:30"),
     revDemo("Helena Barros","(41) 00000-0023","Rua Fictícia M, 123","Curitiba/PR",900,3,"15:00"),
     revDemo("Bruna Teixeira","(41) 00000-0026","Rua Fictícia P, 126","Curitiba/PR",1400,4,"10:00"),
-    revDemo("Mirela Santos","(41) 00000-0028","Rua Fictícia R, 128","Curitiba/PR",800,5,"11:30")],
+    revDemo("Mirela Santos","(41) 00000-0028","Rua Fictícia R, 128","Curitiba/PR",800,5,"11:30"),
+    // 1 agendada (data e hora no cadastro dela, ver store.js) e 2 a agendar (sem data ainda)
+    revDemo("Simone Prestes","(41) 00000-0041","Rua Fictícia AA, 141 - Portão, Curitiba - PR","Curitiba/PR",1800,2,"10:00"),
+    revDemo("Taís Fontoura","(41) 00000-0042","Rua Fictícia AB, 242 - Cabral, Curitiba - PR","Curitiba/PR",1500,3,null),
+    revDemo("Rosana Linhares","(41) 00000-0043","Rua Fictícia AC, 343 - Boa Vista, Curitiba - PR","Curitiba/PR",2100,5,null)],
   Jessica:[
     revDemo("Larissa Almeida","(41) 00000-0011","Rua Fictícia F, 111","São José dos Pinhais/PR",2200,1,"09:00"),
     revDemo("Mariana Costa","(41) 00000-0012","Rua Fictícia F, 212","São José dos Pinhais/PR",1900,2,"10:15"),
@@ -90,6 +101,7 @@ function carteiraRep(s, rep){
 }
 function AppRepresentante(p){
   var cx = use(), s = cx.state, d = cx.dispatch, l = p.l;
+  var chatSt = useChat(), chatCid = contatoDaRepresentante(l.rep), chatNaoLidas = chatCid && chatSt.config.representantes ? totalNaoLidas(chatCid) : 0;
   var tb = useState("inicio"), tela = tb[0], setTela = tb[1];
   var cvv = useState("calcacerto"), confVolta = cvv[0], setConfVolta = cvv[1];   // para onde a conferência das peças volta (entrega do kit novo ou acerto)
   var ms = useState(0), mes = ms[0], setMes = ms[1];
@@ -150,7 +162,10 @@ function AppRepresentante(p){
   if(l.rep==="Dayanne"){ vendidoTotal = 125215; acertoTotal = 70120.40; comissaoRepTotal = 5609.63; } // valores fictícios de demonstração pedidos pro perfil da Dayanne
   var nPagNI = (s.acertosConsignado||[]).reduce(function(t,r){ return r.origem==='interno' || r.rep!==l.rep ? t : t+Object.keys(r.divs||{}).filter(function(i){ return r.divs[i].tipo==='nao_ident' && !(r.fin && r.fin[i]); }).length; }, 0);
   var minhasL = s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada;});
+  // conversa com a revendedora no próprio chat do app (em vez de abrir o WhatsApp)
+  var abrirChat = function(nome){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(nome); if(!cr) return; efem({conversaSel:api.openChannel(rv, "r_rep", [cr])}); setTela("mensagens"); };
   var LISTA_INICIO = [
+    {tela:"mensagens", titulo:"SorellyChat", sub: chatNaoLidas ? chatNaoLidas+(chatNaoLidas===1 ? " mensagem não lida" : " mensagens não lidas") : "Fale com os setores da Sorelly", icone:"whats", cor:"#C9A13B", logo:true, ativo:true},
     {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
@@ -178,8 +193,7 @@ function AppRepresentante(p){
           modalidadeDe(s, r.rev)==="prata" && e("span",{className:"shrink-0 rounded-full bg-slate-700 px-1.5 py-px text-[9px] font-black tracking-wider "+BR}, "100% PRATA")),
         e("div",{className:"flex shrink-0 items-center gap-1.5"},
           e("span",{className:"text-[13px] font-medium text-[#4B5563]"}, r.fone||"—"),
-          r.fone && e("a",{href:"https://wa.me/55"+r.fone.replace(/\D/g,""), target:"_blank", rel:"noreferrer", onClick:function(ev){ev.stopPropagation();},
-            "aria-label":"WhatsApp de "+r.rev, className:"grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:12})))),
+          r.fone && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abrirChat(r.rev); }, "aria-label":"Conversar com "+r.rev+" no chat", title:"Conversar no chat", className:"grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:12})))),
       e("div",{className:"grid grid-cols-3 divide-x divide-[#E9DDBB] border-t "+LINHA_CARD+" py-2 text-center"},
         col("VENDIDO", BK(vd), "#15803D"), col("ACERTO", BK(acerto), "#2563EB"), col("COMISSÃO", BK(comissaoRep), "#A67C12")),
       e("div",{className:"flex items-start justify-between gap-2 border-t "+LINHA_CARD+" px-2.5 py-1.5"},
@@ -225,6 +239,18 @@ function AppRepresentante(p){
   var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true});
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
+  // Pagamento: a representante só informa FORMA + VALOR e o pedido de conta segue em segundo plano (Controle de pagamentos); o app nunca espera.
+  var estPag = function(pg){ return pg.pid && kitSel ? estadoPagRep(s.lancFin, kitSel.id, pg.pid) : null; };
+  var rotPag = function(pg){ var es = estPag(pg); return es && es.aguardando ? formaDe(pg.forma).label+(pg.forma==="credito" && pg.parcelas>1 ? " "+pg.parcelas+"x" : "") : rotuloPagamento(es ? Object.assign({}, pg, {descricao:es.conta}) : pg); };
+  var avc = useState(null), avisoConta = avc[0], setAvisoConta = avc[1], esperandoConta = useRef({});
+  useEffect(function(){   // conta que estava aguardando e chegou: aviso com som no app dela
+    var chegou = null;
+    acertoForm.pagamentos.forEach(function(pg){ var es = estPag(pg); if(!es) return;
+      if(es.aguardando) esperandoConta.current[pg.pid] = true;
+      else if(esperandoConta.current[pg.pid]){ delete esperandoConta.current[pg.pid]; chegou = {valor:pg.valor, conta:es.conta}; } });
+    if(chegou){ plim(); setAvisoConta(chegou); }
+  }, [s.lancFin, acertoForm.pagamentos]);
+  useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
   useEffect(function(){ if(!p.abrir) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(alvo){ setSel(alvo.id); setPendAbrir(p.abrir.n); } }, [p.abrir && p.abrir.n]);
   useEffect(function(){
     if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
@@ -329,7 +355,7 @@ function AppRepresentante(p){
       excedenteBrinde>0 && linhaCons("x", "Excedente de brinde:", BK(excedenteBrinde), {cor:"text-red-400"}),
       dv.tagsValor>0 && linhaCons("tg", "Tags danificadas:", BK(dv.tagsValor), {cor:"text-red-400"}),
       acertoForm.pagamentos.length>pagsTopo.length && e("p",{key:"mais", className:"text-[10.5px] text-[#8E8E93]"}, "+ "+(acertoForm.pagamentos.length-pagsTopo.length)+" pagamento(s) anterior(es)"),
-      pagsTopo.map(function(x){ return linhaCons("p"+x.n, "Pag. "+x.n+":", BK(x.p.valor)+" "+rotuloPagamento(x.p), {cor:"text-red-400", rotCor:"text-red-400/80", peq:true}); }),
+      pagsTopo.map(function(x){ return linhaCons("p"+x.n, "Pag. "+x.n+":", BK(x.p.valor)+" "+rotPag(x.p), {cor:"text-red-400", rotCor:"text-red-400/80", peq:true}); }),
       linhaCons("r", e("span",null,"Valor restante:", restanteTotal<=0.009 && e("span",{className:"ml-1.5 text-[10.5px] font-semibold text-emerald-300"},"✓ acerto quitado")), restanteTotal>0.009 ? BK(restanteTotal) : "R$ 0,00", {topo:true, cor:restanteTotal>0.009 ? "text-amber-200" : "text-emerald-300", rotCor:"text-[#E5E5EA]"}))));
 
   // Payload único do acerto (usado na assinatura)
@@ -479,14 +505,19 @@ function AppRepresentante(p){
                 e("b",{className:MONO+" text-[11.5px] "+(c[1]>0 ? c[2] : "text-[#8E8E93]")}, c[1]>0 ? BK(c[1]) : "—")); })),
           e("div",{key:"dev", className:"flex items-center justify-between gap-2 pt-1 text-[13px] font-bold"},
             e("span",null,"Total a pagar"), e("span",{className:MONO}, BK(totalAPagar))),
+          e(LinksDoAcerto,{key:"lkacerto", rev:sel.rev, pagamentos:acertoForm.pagamentos, falta:faltaAtual, formasLink:formaDe("link").descricoes, onUsar:function(lin){ setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([lin])})); }}),
           acertoForm.pagamentos.length>0 && e("div",{key:"lanc0", className:"flex flex-col gap-1.5"},
             acertoForm.pagamentos.map(function(p,i){ return e("div",{key:i,
                 className:"flex items-center gap-2 rounded-lg bg-white/5 px-2.5 py-1.5"},
               e("div",{className:"min-w-0 flex-1"},
-                e("p",{className:"truncate text-[12.5px] font-semibold "+BR}, "Pag. "+(i+1)+" · "+rotuloPagamento(p)),
-                e("p",{className:"text-[11px] text-[#8E8E93]"}, formaDe(p.forma).label+" · "+p.data.split("-").reverse().join("/")+(p.anexo ? " · 📎 "+p.anexo.nome : ""))),
+                e("p",{className:"truncate text-[12.5px] font-semibold "+BR}, "Pag. "+(i+1)+" · "+rotPag(p)),
+                e("p",{className:"text-[11px] text-[#8E8E93]"}, formaDe(p.forma).label+" · "+p.data.split("-").reverse().join("/")+(p.jaPagoLink ? " · já pago por link" : "")+(p.anexo ? " · 📎 "+p.anexo.nome : "")),
+                estPag(p) && (estPag(p).aguardando
+                  ? e("p",{className:"text-[11px] font-semibold text-amber-300"}, "⏳ Conta solicitada, aguardando (pode seguir)")
+                  : e("p",{className:"text-[11px] font-semibold text-emerald-300"}, (estPag(p).pago ? "✓ Já pago · " : "✓ Conta: ")+estPag(p).conta))),
               e("span",{className:MONO+" shrink-0 text-[13px] font-bold text-emerald-300"}, BK(p.valor)),
-              e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
+              e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
+                  setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                 "aria-label":"Remover lançamento", className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70 hover:bg-white/20"}, "×")); })),
           !lancAberto ? e("button",{key:"lanc1", onClick:function(){ setLancAberto(true); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#DB2777"}}, "+ Lançar pagamento")
             : e("div",{key:"lanc2", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
@@ -494,10 +525,8 @@ function AppRepresentante(p){
                     className:campo+" w-full"},
                   e("option",{value:""},"Selecione..."),
                   formas.map(function(f){ return e("option",{key:f.k, value:f.k}, f.label); })),
-                lancForm.forma && e("select",{value:lancForm.descricao, onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {descricao:ev.target.value})); },
-                    className:campo+" w-full"},
-                  e("option",{value:""},"Selecione a descrição..."),
-                  formaDe(lancForm.forma).descricoes.map(function(c){ return e("option",{key:c, value:c}, c); })),
+                lancForm.forma && pedeConta(lancForm.forma) && e("p",{className:"rounded-lg bg-white/5 px-2.5 py-1.5 text-[11.5px] leading-snug text-[#B5B5BA]"},
+                  "Informe só o valor. A conta é solicitada ao financeiro em seguida; você não precisa esperar, siga com os brindes e o resto do acerto."),
                 lancForm.forma && formaDe(lancForm.forma).parcelas && e("div",{className:"flex items-center justify-between gap-2 text-[12px] text-[#8E8E93]"},
                   e("span",null,"Parcelas"),
                   e("select",{value:lancForm.parcelas, onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); },
@@ -521,8 +550,11 @@ function AppRepresentante(p){
                 e("div",{className:"flex gap-2"},
                   e("button",{onClick:function(){ setLancAberto(false); setLancForm(LANC_VAZIO); },
                     className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#374151"}}, "‹ Cancelar"),
-                  e("button",{disabled:!(lancForm.forma && lancForm.descricao && lancForm.data && lancForm.valor>0), onClick:function(){
-                      setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([lancForm])}));
+                  e("button",{disabled:!(lancForm.forma && lancForm.data && lancForm.valor>0), onClick:function(){
+                      var pedir = pedeConta(lancForm.forma), pid = pedir ? "p"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36) : null;
+                      var novoPag = Object.assign({}, lancForm, pedir ? {descricao:"", pid:pid} : {descricao:(formaDe(lancForm.forma).descricoes||[])[0] || formaDe(lancForm.forma).label});   // dinheiro, loja e Pix representante não pedem conta
+                      if(pedir && kitSel) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pid, forma:lancForm.forma, valor:lancForm.valor, parcelas:lancForm.parcelas||1, data:lancForm.data, anexo:lancForm.anexo});
+                      setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([novoPag])}));
                       if(totalPagoAtual+lancForm.valor >= previaBase.valorDevido-0.009) setBlocoAberto(4);   // acerto quitado: abre os brindes
                       setLancAberto(false); setLancForm(LANC_VAZIO); },
                     className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#DB2777"}}, "Lançar pagamento"))),
@@ -731,8 +763,7 @@ function AppRepresentante(p){
       e("button",{onClick:function(){ copiarEndereco(id, fone); }, "aria-label":"Copiar "+label,
         className:"grid size-8 shrink-0 place-items-center rounded-full "+(copiadoId===id ? "bg-emerald-500 text-white" : "bg-black/10 text-[#6B5A2E]")},
         e(Icon,{n: copiadoId===id ? "check" : "copiar", s:13})),
-      e("a",{href:"https://wa.me/55"+fone.replace(/\D/g,""), target:"_blank", rel:"noreferrer", "aria-label":label,
-        className:"grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:14})))); };
+      e("button",{type:"button", onClick:function(){ abrirChat(sel.rev); }, "aria-label":"Conversar no chat", title:"Conversar no chat", className:"grid size-8 shrink-0 place-items-center rounded-full bg-emerald-500 text-white"}, e(Icon,{n:"whats", s:14})))); };
   var blocoNome = sel && e("div",{className:"overflow-hidden rounded-2xl border "+LINHA_CARD, style:{background:"linear-gradient(135deg,#FFFFFF 0%,#F5E6BE 100%)"}},
     e("div",{className:"flex items-center justify-between gap-2 px-3.5 py-3"},
       e("b",{className:"min-w-0 truncate text-[19px] font-extrabold tracking-tight text-[#111827]"}, sel.rev),
@@ -882,8 +913,9 @@ function AppRepresentante(p){
         setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(3); setTela("calcacerto"); return; }
       if(sel.hoje){ if(!jaAcertado && kitSel){
           // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
-          var demoAndrielle = sel.rev==="Andrielle Taborda";
-          setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : {}));
+          var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
+          var pgsPedidos = pagamentosDoPedido(s.lancFin, kitSel.id);   // pagamentos que ela já lançou e pediu conta antes de sair da tela
+          setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : demoMarcia ? {vendaBruta:12268, condicionaisSelecionadas:["093801","093802"]} : {}, pgsPedidos.length ? {pagamentos:pgsPedidos} : {}));
           if(demoAndrielle && !(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""});
           setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(0); setTela("calcacerto"); } }
       else { setMostrarSolicitar(true); } }},
@@ -1005,12 +1037,12 @@ function AppRepresentante(p){
       })));
   var listaInicio = e("div",{className:"mt-3.5 flex flex-col gap-2.5"}, LISTA_INICIO.map(function(m){
     var conteudo = [
-      e("span",{key:"ic", className:"grid size-11 shrink-0 place-items-center rounded-2xl", style:{background:m.cor+"1F", color:m.cor}}, e(Icon,{n:m.icone, s:20, peso:"fill"})),
+      e("span",{key:"ic", className:"grid size-11 shrink-0 place-items-center rounded-2xl", style:m.logo ? {background:"#24180a"} : {background:m.cor+"1F", color:m.cor}}, m.logo ? e(LogoChat,{s:28}) : e(Icon,{n:m.icone, s:20, peso:"fill"})),
       e("div",{key:"tx", className:"min-w-0 flex-1"}, e("b",{className:"block text-[15px] text-[#111827]"}, m.titulo), e("span",{className:"block truncate text-[12.5px] text-[#6B7280]"}, m.sub)),
       m.ativo ? e(Icon,{key:"ch", n:"chevron", s:16, className:"shrink-0 text-[#9CA3AF]"})
         : e("span",{key:"ch", className:"shrink-0 rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10.5px] font-semibold text-[#9CA3AF]"}, "Em breve")];
     return m.ativo
-      ? e("button",{key:m.tela, onClick:function(){setTela(m.tela);}, style:{background:claro(m.cor,.2)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 text-left shadow-sm active:scale-[.99]"}, conteudo)
+      ? e("button",{key:m.tela, onClick:function(){ if(m.tela==="mensagens") efem({conversaSel:null}); setTela(m.tela); }, style:{background:claro(m.cor,.2)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 text-left shadow-sm active:scale-[.99]"}, conteudo)
       : e("div",{key:m.tela, style:{background:claro(m.cor,.12)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 opacity-70"}, conteudo); }));
   // ── Tela de regras: as mesmas regras da calculadora, lidas da versão do kit (ou da vigente). Quem edita é o admin (Regras do consignado). ──
   var vr = versaoVigente(s) || versaoSel;
@@ -1075,9 +1107,12 @@ function AppRepresentante(p){
           return linha("pf"+i, prox ? BK0(f.min).replace(",00","")+" a "+BK0(prox.min-0.01) : BK0(f.min).replace(",00","")+" ou mais", f.pct+"%", "R$ "+f.bn, "R$ "+f.bb); }))
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
-  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
+  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
   return e(IPhone17ProMax,null,
     tela==="calcacerto" && headerCalc,
+    tela==="calcacerto" && avisoConta && e("button",{key:"avisoConta", type:"button", role:"alert", onClick:function(){ setAvisoConta(null); },
+      className:"absolute inset-x-3 top-16 z-50 flex items-center gap-2 rounded-xl bg-[#16A34A] px-3 py-2 text-left text-white shadow-xl ring-1 ring-black/30"},
+      e("span",{className:"text-[18px]"}, "💳"), e("span",{className:"min-w-0 flex-1 text-[12px] leading-tight"}, e("b",{className:"block"}, "Conta recebida: "+BK(avisoConta.valor)), e("span",{className:"block truncate"}, avisoConta.conta))),
     tela==="calcacerto" && calcAcertoScreen,
     tela==="assinaracerto" && telaAssinarAcerto,
     tela==="fechamento" && telaFechamento,
@@ -1111,6 +1146,7 @@ function AppRepresentante(p){
           e("b",{className:"min-w-0 flex-1 truncate text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Entregar o kit e conferir as peças")),
         e("p",{className:"truncate text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfPecas,{s:s, d:d, k:kitSel, onContinuar:function(){ setTela(confVolta); }}))),
+    tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
     tela==="regras" && headerRegras,
     tela==="regras" && telaRegras,
     tela==="inicio" && headerInicio,

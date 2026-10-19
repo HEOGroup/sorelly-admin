@@ -4,6 +4,12 @@
 var CAMPOS_CNPJ = [
   ["razao","Razão social"], ["cnpj","CNPJ"], ["ie","Inscrição estadual"], ["endereco","Endereço"], ["bairro","Bairro"],
   ["cidade","Cidade"], ["estado","Estado"], ["cep","CEP"], ["email","E-mail"], ["socio","Sócio"], ["cpf","CPF do sócio"]];
+// campos extras, só na tela cheia de cada CNPJ
+var CAMPOS_EXTRA = [["contrato","Contrato social"], ["im","Inscrição municipal"], ["abertura","Data de abertura"], ["regime","Regime tributário"], ["cnae","Atividade (CNAE)"], ["telefone","Telefone"], ["contador","Contador (nome e contato)"], ["alvaraVal","Validade do alvará"], ["certVal","Validade do certificado digital"]];
+// documentos que cada CNPJ deve ter anexados
+var DOCS_CNPJ = ["Alvará de funcionamento", "Contrato social", "Cartão CNPJ", "Inscrição estadual", "Inscrição municipal", "Certidões negativas", "Certificado digital", "Procuração", "Outros"];
+// CPF e e-mail dos sócios: arquivo local (fora do Git)
+var SOCIOS = (function(){ var m = import.meta.glob("./cnpjs-socios.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : {}; })();
 var CNPJS0 = [
   {id:"34", num:"34", nome:"Sorelly Atacadista", cor:"#B8892B", razao:"SORELLY COMERCIO ATACADISTA DE SEMIJOIAS LTDA", cnpj:"34.753.252/0001-03", ie:"90882691-41",
     endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 501)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"ANAMARIA HESS DE OLIVEIRA", cpf:""},
@@ -50,7 +56,25 @@ function projecaoCnpj(id, f, contasCnpj){
   return {contas:contas, projetado:projetado, pct:pct, sobra:SUBLIMITE_ANUAL-projetado, porMes: nMeses ? Math.max(0, SUBLIMITE_ANUAL-(f.fatAnual||0))/nMeses : 0,
     nivel: pct>100 ? "vermelho" : pct>VERDE_ATE_PCT ? "amarelo" : "verde"};
 }
-function cnpjsDe(editados){
-  return CNPJS0.map(function(c){ return Object.assign({}, c, (editados||{})[c.id]); });
+// textos já bonitos para a mensagem pronta (maiúsculas e minúsculas) e dados que o Marcus sempre envia aos bancos
+var COMUM = {contador:"Vanzella Contabilidade (contato a informar)", regime:"Simples Nacional (a confirmar com a contabilidade)"};
+var MSG0 = {
+  "34": {razaoMsg:"Sorelly Comércio Atacadista de Semijoias Ltda", endMsg:"Rua Marechal Deodoro, 950 - Sala 501, Centro, Curitiba/PR", socioMsg:"Anamaria Hess de Oliveira", socioRot:"Sócia", semEmailMsg:true},
+  "46": {razaoMsg:"Mayz Comércio de Moda Praia, Lingerie e Acessórios Ltda", endMsg:"Rua Marechal Deodoro, 950 - Sala 703, Centro, Curitiba/PR", socioMsg:"Marcus Vinícius Hess de Oliveira", socioRot:"Sócio", im:"17 02 1.028.774-3", telefone:"(41) 3366-9676", contrato:"alteração nº 6, assinada em 24/08/2026 (protocolo PRP2617311333)"},
+  "59": {razaoMsg:"Serenity Porta Joias e Acessórios Ltda", endMsg:"Rua Marechal Deodoro, 857 - Sala 1401, Centro, Curitiba/PR", socioMsg:"Marco Antonio de Oliveira", socioRot:"Sócio"},
+  "67": {razaoMsg:"Axis Comércio de Joias e Acessórios Ltda", endMsg:"Rua Vinte e Quatro de Maio, 412 - Cj 50, Centro, Curitiba/PR", socioMsg:"Lucas Oliveira da Rocha", socioRot:"Sócio"}};
+// mensagem pronta para copiar e colar (WhatsApp): cabeçalho com nome e CNPJ e as palavras importantes entre * (ficam em negrito)
+function mensagemCnpj(c){
+  var m = Object.assign({}, MSG0[c.id], {}), v = function(k){ return c[k] || m[k] || ""; };
+  if(!c.cnpj) return "";
+  var lin = function(rot, val){ return val ? "*"+rot+":* "+val : null; };
+  return ["🏢 *"+c.nome+"* · CNPJ "+c.cnpj, "",
+    lin("Razão social", m.razaoMsg || c.razao), lin("CNPJ", c.cnpj), lin("Inscrição Estadual", c.ie), lin("Inscrição Municipal", v("im")),
+    lin("Endereço", m.endMsg || [c.endereco, c.bairro, c.cidade && c.estado ? c.cidade+"/"+c.estado : ""].filter(Boolean).join(", ")), lin("CEP", c.cep),
+    m.semEmailMsg ? null : lin("E-mail", c.email), lin("Telefone", v("telefone")), lin(m.socioRot || "Sócio", m.socioMsg || c.socio), lin("Contrato social", v("contrato"))]
+    .filter(function(x){ return x!==null; }).join("\n");
 }
-export { CAMPOS_CNPJ, CNPJS0, COLUNAS_CONTAS, CONTAS_CNPJ0, FISCAL0, SUBLIMITE_ANUAL, VERDE_ATE_PCT, cnpjsDe, fiscalAtual, indicadoresFiscais, projecaoCnpj };
+function cnpjsDe(editados){
+  return CNPJS0.map(function(c){ var so = SOCIOS[c.id] || {}, base = Object.assign({}, c, (c.num ? COMUM : {}), {im:(MSG0[c.id]||{}).im, telefone:(MSG0[c.id]||{}).telefone, contrato:(MSG0[c.id]||{}).contrato}); if(so.cpf) base.cpf = so.cpf; if(so.email) base.email = so.email; return Object.assign(base, (editados||{})[c.id]); });
+}
+export { mensagemCnpj, CAMPOS_EXTRA, DOCS_CNPJ, CAMPOS_CNPJ, CNPJS0, COLUNAS_CONTAS, CONTAS_CNPJ0, FISCAL0, SUBLIMITE_ANUAL, VERDE_ATE_PCT, cnpjsDe, fiscalAtual, indicadoresFiscais, projecaoCnpj };

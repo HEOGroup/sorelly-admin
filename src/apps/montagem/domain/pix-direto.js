@@ -1,7 +1,7 @@
 // Sorelly Admin — domain/pix-direto.js
 // NEGOCIAÇÃO DO PIX DIRETO: o Marcus combina com cada representante quanto da comissão dela será paga por Pix direto da revendedora para ela
 // (forma "Pix representante"). Pode ser uma PORCENTAGEM da comissão do mês ou um VALOR em reais, só naquele mês ou fixo, e aceita um valor EXTRA
-// com descrição. Só a diretoria edita (Regras dos representantes). O financeiro acompanha em Representantes → Financeiro → Pix direto a enviar:
+// com descrição. Só a diretoria edita (Regras dos representantes). O financeiro acompanha em Representantes & Kits → Financeiro → Pix representantes:
 // a meta sobe durante o mês conforme a comissão cresce, e o "enviado" é o que já entrou como Pix representante (OK do financeiro).
 // Fica em s.negPix = { "<representante>": {modo:"pct"|"valor", valor, vigencia:"mes"|"fixo", mes:"AAAA-MM", extra, extraTxt} }.
 import { datasDoMes, fmtDataBR, grupoDaRep, itensComissao } from "@/apps/montagem/domain/comissoes";

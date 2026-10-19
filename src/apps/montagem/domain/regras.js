@@ -2,12 +2,29 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { tempoMedioB } from "@/apps/montagem/components/barra-bipadora";
 import { kit } from "@/apps/montagem/domain/seed";
+import { montadorValido, nomeDe, podeLiberarExcecao } from "@/apps/montagem/domain/equipe";
 import { hoje, minutos } from "@/apps/montagem/lib/format";
 import { e } from "@/shared/react";
 
 function ehEspecial(v,c){ return v > c.limiteEspecial; }
 function ehAtencao(v,c){ return v > c.limiteAtencao; }
 function soMelhores(v,c){ return v > (c.limiteMelhores!==undefined ? c.limiteMelhores : c.limiteAtencao); }
+// Kit grande (19/10/2026): se a venda atual (app, `vendas[0]`) OU o valor calculado do kit (`valor`, a média) passar do limite de Encomendas
+// (`cfg.limiteEncomendas`, Configurador), só montam as montadoras marcadas como Encomendas. Marcus e Deysiane liberam exceção.
+function valorRefEncomendas(k){ return Math.max(k.valor||0, (k.vendas && k.vendas[0]) || 0); }
+function soEncomendas(k, c){ var lim = c.limiteEncomendas; return lim>0 && valorRefEncomendas(k) > lim; }
+function ehEncomendas(s, id){ var m = (s.montadoras||[]).find(function(x){ return x.id===id; }); return !!(m && m.encomendas); }
+function nomesEncomendas(s){ return (s.montadoras||[]).filter(function(x){ return x.encomendas; }).map(function(x){ return x.nome; }).join(", "); }
+// Quem monta é obrigatório: kit sem montador válido (de etapa montando em diante) é "sem montador" e não conta para a comissão da bipadora
+var ETAPAS_COM_MONT = ["montando","supervisao","montado","bipando","bipado","retirado"];
+function semMontador(k){ return ETAPAS_COM_MONT.indexOf(k.status)>=0 && !montadorValido(k.montId); }
+// Texto do motivo se a pessoa NÃO pode montar este kit (vazio = pode). excecao = Marcus/Deysiane liberando.
+function motivoNaoMonta(s, k, id, excecao){
+  if(!montadorValido(id)) return "Informe quem vai montar este kit";
+  if(soEncomendas(k, s.cfg) && !ehEncomendas(s, id) && !(excecao && podeLiberarExcecao(s.usuario)))
+    return "Kit acima de R$ "+s.cfg.limiteEncomendas.toLocaleString("pt-BR",{minimumFractionDigits:2})+": só o setor Encomendas monta ("+nomesEncomendas(s)+")";
+  return "";
+}
 function pecasPara(valor, c){
   if(!c.pecasKit || !valor) return null;
   var l = c.pecasKit.slice().sort(function(a,b){return b.kit-a.kit;}).find(function(x){return valor>=x.kit;});
@@ -43,7 +60,8 @@ function resumoMontadora(m, s){
     faltamBloco: c.divBloco - (m.mes.div % c.divBloco)};
 }
 function resumoBipadora(b, s){
-  var c = s.cfg, hojeK = s.kits.filter(function(k){return k.bipId===b.id && k.fimB;});
+  // bipadora só ganha por kit com montador informado (kit "sem montador" não conta)
+  var c = s.cfg, hojeK = s.kits.filter(function(k){return k.bipId===b.id && k.fimB && !semMontador(k);});
   var n = b.mes.n, en = b.mes.e;
   hojeK.forEach(function(k){ if(k.valor > c.limiteBipEspecial) en++; else n++; });
   // peças faltando: as do mês até ontem + as apontadas hoje pelas representantes nos kits que ela bipou
@@ -81,7 +99,9 @@ function proximoPara(id, s){
   if(ped) return {kit:ped, tipo:"pedido"};
   var fila = filaMontagem(s), pulou = false;
   for(var i=0;i<fila.length;i++){
-    if(soMelhores(fila[i].valor, s.cfg) && !podeAtencao(id, s)){ pulou = true; continue; }
+    // regra nova primeiro: kit acima do limite de Encomendas só para elas; senão vale a antiga (acima de 12 mil, só as melhores)
+    if(soEncomendas(fila[i], s.cfg)){ if(!ehEncomendas(s, id)){ pulou = true; continue; } }
+    else if(soMelhores(fila[i].valor, s.cfg) && !podeAtencao(id, s)){ pulou = true; continue; }
     return {kit:fila[i], tipo:"fila", posicao:i+1, pulou:pulou};
   }
   return {kit:null, pulou:pulou};
@@ -98,4 +118,4 @@ function dataPagamento(c){
 function nomeMes(){ var s = new Date().toLocaleDateString("pt-BR",{month:"long", year:"numeric"});
   return s.charAt(0).toUpperCase()+s.slice(1); }
 
-export { ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, MAX_LISTAGEM, capacidadeListagem, kitsNaListagem, listagemCheia, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };
+export { soEncomendas, ehEncomendas, semMontador, motivoNaoMonta, valorRefEncomendas, nomesEncomendas, ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, MAX_LISTAGEM, capacidadeListagem, kitsNaListagem, listagemCheia, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };

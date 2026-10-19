@@ -9,6 +9,7 @@ import { chaveFech, comisEfetiva, datasDoMes, fmtDataBR, grupoDaRep, itensComiss
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
+import { codigoDinheiro } from "@/apps/montagem/domain/dinheiro";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -86,7 +87,7 @@ function EntregaEmpresa(p){
       e("div",{className:"flex items-center justify-between gap-2 px-3 py-2.5", style:OURO_CLARO},
         e("div",{className:"min-w-0"}, e("b",{className:"block truncate text-[13.5px] text-[#111827]"}, r.rev), e("span",{className:"block text-[11px] text-[#9A8B63]"}, dm(r.data)+" · "+(kitNovo ? "Kit novo" : "Acerto"))),
         e("span",{className:"shrink-0 text-[11px] font-semibold text-[#6B7280]"}, conf ? "✓ Conferido" : rec.inicioTs ? "Funcionária conferindo" : "Aguardando")),
-      dinTot>0 && linha("Dinheiro "+BK(dinTot), din.ok ? "Empresa: ✓ recebeu"+(diverge ? " "+BK(din.contado) : "") : "Empresa: ainda não marcou", !!(rp.din && rp.din.ok), function(){ marca(r, "din", !(rp.din && rp.din.ok)); }, conf, "Entreguei o dinheiro"),
+      dinTot>0 && linha("Dinheiro "+BK(dinTot), din.ok ? "Empresa: ✓ recebeu"+(diverge ? " "+BK(din.contado) : "") : "Código para a funcionária digitar: "+codigoDinheiro("R"+r.id, 1), !!(rp.din && rp.din.ok), function(){ marca(r, "din", !(rp.din && rp.din.ok)); }, conf, "Entreguei o dinheiro"),
       diverge && e("p",{className:"border-t border-[#E9DDBB] bg-[#FEF2F2] px-3 py-2 text-[11.5px] font-semibold leading-snug text-[#B91C1C]"},"Divergência: você lançou "+BK(dinTot)+" e a empresa contou "+BK(din.contado)+". A diferença de "+BK(dinTot-din.contado)+" ficou em aberto."),
       (kitNovo || nums.length>0) && linha("Condicionais"+(nums.length ? " · "+nums.join(", ") : ""), rec.prom && rec.prom.ok ? "Empresa: ✓ assinatura confirmada" : "Empresa: assinatura ainda não confirmada", !!(rp.cond && rp.cond.ok), function(){ marca(r, "cond", !(rp.cond && rp.cond.ok)); }, conf, "Entreguei as condicionais"),
       dinTot<=0 && !(kitNovo || nums.length>0) && e("p",{className:"border-t border-[#E9DDBB] px-3 py-2 text-[11.5px] text-[#6B7280]"},"Nada a entregar neste atendimento."));

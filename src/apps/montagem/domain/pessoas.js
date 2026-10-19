@@ -18,7 +18,7 @@ var FUNCIONARIOS_POR_SETOR = [
   ["Financeiro", [["Bruna Rigos","","46"], ["Nayale Emanuele Calixto","","46"]]],
   ["Inadimplência", [["Amanda de Miranda Gonçalves","","46"], ["Amanda Thimoteo Coelho","","67"]]],
   ["Kits novos e indicação", [["Michele Brito Lima Cassemiro","","34"]]],
-  ["Marketing", [["Beatriz Mascencio Gomes","","34"], ["Julia da Silva Zambonin","","46"], ["Rebeca Marques Melo","","34"]]],
+  ["Marketing", [["Beatriz Mascencio Gomes","","34"]]],   // Julia e Rebeca saíram em 15/10/2026
   ["Montagem de kits", [["Eduarda Helena França de Lima","","59"], ["Ivanete Silva dos Reis","","59"], ["Jenifer Mariah Linhares Martins","","67"],
     ["Larissa Vitoria Cordeiro Skirzinski","","59"], ["Leticia Laastsch Carvalho","","46"], ["Maria Vitória da Silva Moreira","","59"],
     ["Pamela Leticia Alves Mateus Gomes","","46"], ["Paula Melissa Lopes Clazer","","59"], ["Rakiely Polli de Andrade","","67"],
@@ -39,12 +39,12 @@ var FUNCIONARIOS_POR_SETOR = [
   ["PJ · prestadores", [["Leonardo","","ho","Desenvolvedor (H&O Apps)"], ["Juan","","ho","Desenvolvedor (H&O Apps)"], ["Diego Franco","","","Gestor de tráfego"]]]];
 var VINCULO_DO_SETOR = {"Sócios e família":"socio", "PJ · prestadores":"pj"};
 
-// Representantes atualizadas por enquanto (CPF e CNPJ de cada uma o Marcus manda depois).
+// Representantes atualizadas por enquanto (CPF e CNPJ de cada uma o Marcus manda depois). Sabrina e Julia G. saíram da empresa (19/10/2026): fora da lista.
 // `tambemFunc`: já está na lista de funcionários, por isso não entra de novo na contagem de representantes.
 var REPRESENTANTES0 = ["Ana Claudia Adriano", "Ana Maria Divino da Silva", "Anne Asley de Souza Crispim", "Bruna Ribeiro dos Santos", "Dayanne Ferreira Scapin",
   "Edlaine Goncalves Guerra", "Fabila Kerolaine Serra Sales", "Francieli de Almeida", "Jessica Castro Reis", "Leticia Adrielle Moroz",
   "Leticia Alves de Oliveira Bariveira", "Lysie Karine Lencioni", "Marciane Silva de Castro", "Maria Eduarda Antunes", "Mariana Ribeiro Amaral",
-  "Mayara Heloise Cruz de Almeida", "Nagela Eliney Hess", "Nayale Emanuele Calixto", "Rayssa Alessandra Ingatain Teixeira", "Sabrina da Silva Nascimento",
+  "Mayara Heloise Cruz de Almeida", "Nagela Eliney Hess", "Nayale Emanuele Calixto", "Rayssa Alessandra Ingatain Teixeira",
   "Thaina Cristina Idalgo", "Thalita Torazzi Arndt", "Vanessa Alves Lapa", "Veridiana da Rosa Lemke Fausto"];
 var TAMBEM_FUNCIONARIA = ["Ana Maria Divino da Silva", "Nayale Emanuele Calixto", "Rayssa Alessandra Ingatain Teixeira", "Thalita Torazzi Arndt"];
 var REPRESENTANTES = REPRESENTANTES0.map(function(n){ return {nome:n, cpf:"", cnpj:"", tambemFunc:TAMBEM_FUNCIONARIA.indexOf(n)>=0}; });

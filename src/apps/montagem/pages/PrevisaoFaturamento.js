@@ -4,7 +4,7 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { TabelaCrescimento } from "@/apps/montagem/components/tabela-crescimento";
 import { GraficoColunasRevendedoras } from "@/apps/montagem/components/grafico-revendedoras";
-import { CRESCIMENTO_REVENDEDORAS, contasDoMes, fatEfetivo, FATOR_SAZONAL, JANELAS_GRAFICO_REV, MESES_LONGO, QUEDA_JANEIRO, isoOntem, pontosRevendedoras, projetarAno, projetarVariosAnos } from "@/apps/montagem/domain/financeiro";
+import { CRESCIMENTO_REVENDEDORAS, metaDoMes, contasDoMes, fatEfetivo, FATOR_SAZONAL, JANELAS_GRAFICO_REV, MESES_LONGO, QUEDA_JANEIRO, isoOntem, pontosRevendedoras, projetarAno, projetarVariosAnos } from "@/apps/montagem/domain/financeiro";
 import { BK, N1 } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -12,13 +12,15 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO, MoneyInput, NumInput } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { TD, TR, Tabela } from "@/apps/montagem/ui/table";
+import { AbaConsolidadoFaturamento } from "@/apps/montagem/pages/ConsolidadoFaturamento";
+import { ConfigPrevisao } from "@/apps/montagem/pages/ConfiguradorGeral";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
 // abreviação do rótulo da janela ("7 dias" → "7d", "Último mês (ago)" → "Últ. mês"), pra caber num botão pequeno
 var jLb = function(lb){ return lb.indexOf("Último")===0 ? "Últ. mês" : lb.replace(" dias","d"); };
 
-function AbaPrevisaoFaturamento(){
+function AbaPrevisaoFaturamentoBase(){
   var cx = use(), sReal = cx.state, d = cx.dispatch, c = sReal.cfg;
   // s = com o faturamento de HOJE (se lançado) para as contas e a previsão; sReal = só o registro oficial do dia anterior
   var s = Object.assign({}, sReal, {faturamentoDiario:fatEfetivo(sReal)});
@@ -41,17 +43,22 @@ function AbaPrevisaoFaturamento(){
   var fha = useState(hojeSalvo ? hojeSalvo.acertos : (ultOficial ? ultOficial.v.acertos : 0)), aceHoje = fha[0], setAceHoje = fha[1];
   var salvarHoje = function(){ d({type:"FAT_HOJE", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
   var diaFixado = !!(sReal.faturamentoDiario||{})[isoHoje];   // hoje já virou registro oficial
+  var fmYm = anoStr+"-"+String(mes+1).padStart(2,"0"), fmSalvo = (sReal.fechaMes||{})[fmYm] || {};
+  var far = useState(fmSalvo.aRealizar||0), aRealizarForm = far[0], setARealizarForm = far[1];
+  var fca = useState(fmSalvo.carregar||0), carregarForm = fca[0], setCarregarForm = fca[1];
+  var salvarARealizar = function(){ d({type:"FECHA_MES_SET", ym:fmYm, aRealizar:aRealizarForm, carregar:carregarForm}); };
   var fixarDia = function(){ d({type:"FAT_FIXAR", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
-  var mp = useState(95), metaPct = mp[0], setMetaPct = mp[1];   // meta usada na previsão: 94/95/96%, padrão 95 (o meio do caminho)
+  var mp = useState(sReal.metaPct||97), metaPct = mp[0], setMetaPctLocal = mp[1], setMetaPct = function(v){ setMetaPctLocal(v); d({type:"META_PCT_SET", pct:v}); };   // meta usada na previsão: 94/95/96%, padrão 97 (19/10/2026: 96/97/98)
   var jc = useState(2), janela = jc[0], setJanela = jc[1];   // janela de crescimento escolhida (índice em CRESCIMENTO_REVENDEDORAS; 2 = 30 dias)
   var ad = useState(false), abrirDetalhe = ad[0], setAbrirDetalhe = ad[1];
   var salvar = function(){ d({type:"FAT_LANCAR", data:dataForm, recebido:recForm, acertos:aceForm, revendedoras:revForm}); };
   var recebidoMes = ultimaMes ? ultimaMes.recebido : 0, acertosRealizados = ultimaMes ? ultimaMes.acertos : 0;
   // meta mensal vem do Agendamento: quantas revendedoras tinham kit no início do mês e quantos acertos eles previram para o mês
-  var meta = Object.assign({base:0, previstos:0}, ((s.metaMensal||{})[anoStr]||{})[mes]);
+  // total do mês = feitos + vendas do Carregar sem valor + a realizar (digitado à mão); sem isso vale a meta do Agendamento
+  var meta = metaDoMes(s, anoStr, mes, acertosRealizados);
   var metaAlvo = Math.round(meta.previstos*metaPct/100);   // o que a Financeiro assume que vai realmente acontecer este mês
-  var restantes = Math.max(0, metaAlvo-acertosRealizados);
-  var mediaAcerto = acertosRealizados>0 ? recebidoMes/acertosRealizados : 0;
+  var restantes = Math.max(0, metaAlvo-acertosRealizados-meta.carregar);
+  var mediaAcerto = acertosRealizados>0 ? recebidoMes/acertosRealizados : 0;   // média só dos acertos que têm valor (sem as vendas do Carregar)
   var faturamentoPrevisto = metaAlvo*mediaAcerto;
   var aReceber = Math.max(0, faturamentoPrevisto-recebidoMes);
   // vem direto da tela Contas a pagar — o mesmo dado, sempre batendo
@@ -121,7 +128,7 @@ function AbaPrevisaoFaturamento(){
   var pillJanela = function(compacto){ return e("div",{className:"flex flex-wrap gap-1"}, CRESCIMENTO_REVENDEDORAS.map(function(x,i){
     return e("button",{key:i, onClick:function(){setJanela(i);}, title:x.lb,
       className:"rounded-md px-2 py-1 text-[11px] font-semibold ring-1 "+(janela===i?"bg-primary/15 ring-2 ring-primary":"bg-card ring-border hover:bg-muted/40")}, jLb(x.lb)); })); };
-  var pillMeta = function(){ return e("div",{className:"flex gap-1"}, [94,95,96].map(function(x){
+  var pillMeta = function(){ return e("div",{className:"flex gap-1"}, [96,97,98].map(function(x){
     return e("button",{key:x, onClick:function(){setMetaPct(x);},
       className:"rounded-md px-2 py-1 text-[11px] font-bold "+(metaPct===x?"bg-warning text-black":"ring-1 ring-border hover:bg-muted/40")}, x+"%"); })); };
   return e(React.Fragment,null,
@@ -148,6 +155,11 @@ function AbaPrevisaoFaturamento(){
             e(MoneyInput,{value:recHoje, onChange:setRecHoje, className:"w-full text-center!"})),
           e("label",{className:rotulo+" w-full"},"Acertos do mês até agora",
             e(NumInput,{value:aceHoje, onChange:setAceHoje, className:"w-full! text-center!"})),
+          e("label",{className:rotulo+" w-full"},"Vendas no Carregar sem valor (contam como feitas)",
+            e(NumInput,{value:carregarForm, onChange:setCarregarForm, className:"w-full! text-center!"})),
+          e("label",{className:rotulo+" w-full"},"Acertos que ainda faltam realizar no mês",
+            e(NumInput,{value:aRealizarForm, onChange:setARealizarForm, className:"w-full! text-center!"})),
+          e(Btn,{v:"secondary", ic:"save", className:"w-full", onClick:salvarARealizar},"Salvar acertos a realizar"),
           diaFixado ? e("div",{className:"flex w-full flex-col items-center gap-1 rounded-lg bg-success/10 px-2 py-2 text-center"},
             e("b",{className:"text-[13px] text-success"},"✓ Dia fixado: o faturado de hoje já subiu em Contas a pagar"),
             e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"FAT_REABRIR", data:isoHoje}); }},"Reabrir para atualizar"))
@@ -158,16 +170,16 @@ function AbaPrevisaoFaturamento(){
       e(BlocoBarra,{cor:"azul", t:MESES_LONGO[mes]+" ao vivo", sub:"o total mais recente do mês + o mês atual da tela Contas a pagar"},
         e("div",{className:"flex flex-col gap-2 p-3"},
           e("div",{className:"grid grid-cols-2 gap-1.5 rounded-lg bg-black/10 p-2"},
-            stat("Revendedoras c/ kit (início do mês)", meta.base), stat("Acertos previstos (Agendamento)", meta.previstos)),
-          e("p",{className:"text-center text-[11px] italic"},"Esses 2 números só editam em Agendamento → Painel dos acertos."),
+            stat("Revendedoras c/ kit (início do mês)", meta.base), stat(meta.manual ? "Total de acertos do mês (feitos + a realizar)" : "Acertos previstos (Agendamento)", meta.previstos)),
+          e("p",{className:"text-center text-[11px] italic"}, meta.manual ? "Total = "+acertosRealizados+" feitos + "+meta.carregar+" do Carregar + "+meta.aRealizar+" a realizar (o Agendamento previa "+meta.previstosAgend+")." : "Esses 2 números só editam em Agendamento → Painel dos acertos."),
           e("div",{className:"grid grid-cols-5 gap-1.5"},
             stat("Revendedoras", revendedoras), stat("Meta "+metaPct+"%", metaAlvo, "text-warning"),
-            stat("Realizados", acertosRealizados), stat("Restam", restantes, restantes?"text-warning":"text-success"),
+            stat("Realizados", acertosRealizados+meta.carregar), stat("Restam", restantes, restantes?"text-warning":"text-success"),
             stat("Média/acerto", BK(mediaAcerto))),
           e("div",{className:"flex flex-col items-center gap-1 rounded-lg bg-warning/10 px-2 py-1.5 text-center text-[11.5px] font-semibold text-warning"},
-            e("span",null, "Meta sobre os "+meta.previstos+" previstos"),
-            e("div",{className:"flex gap-1.5"}, [94,95,96].map(function(x){ return e("button",{key:x, onClick:function(){setMetaPct(x);}, className:"rounded px-2 py-0.5 "+(metaPct===x?"bg-warning text-black":"opacity-60 hover:opacity-100")}, x+"%"); })),
-            e("span",{className:"text-[10.5px] font-normal opacity-80"}, "95% é o meio do caminho")),
+            e("span",null, "Meta sobre os "+meta.previstos+(meta.manual ? " acertos do mês" : " previstos")),
+            e("div",{className:"flex gap-1.5"}, [96,97,98].map(function(x){ return e("button",{key:x, onClick:function(){setMetaPct(x);}, className:"rounded px-2 py-0.5 "+(metaPct===x?"bg-warning text-black":"opacity-60 hover:opacity-100")}, x+"%"); })),
+            e("span",{className:"text-[10.5px] font-normal opacity-80"}, "97% é o padrão")),
           // 3 blocos: até agora (recebido/pago) · o que falta (a receber/a pagar) · total do mês (faturamento/contas a pagar/resultado)
           e("div",{className:"flex flex-col rounded-lg bg-black/10 px-2.5 py-1.5"},
             linha("Valor recebido", BK(recebidoMes), "text-success"), linha("Valor pago", BK(cpMes.pago), "text-destructive"),
@@ -180,7 +192,7 @@ function AbaPrevisaoFaturamento(){
             e("div",{className:"flex items-center justify-between gap-3 py-0.5"},
               e("b",{className:"text-[13px] "+(resultadoMes<0?"text-destructive":"text-success")},"Resultado mês"),
               e("b",{className:MONO+" text-[15px] "+(resultadoMes<0?"text-destructive":"text-success")}, BK(resultadoMes)))))),
-      e(BlocoBarra,{cor:"roxo", t:"Resumo do ano "+ano, sub:"mesmo cálculo do mês, só que pro ano inteiro"},
+      e(BlocoBarra,{cor:"azul", t:"Resumo do ano "+ano, sub:"mesmo cálculo do mês, só que pro ano inteiro"},
         e("div",{className:"flex flex-col gap-2 p-3"},
           e("div",{className:"flex flex-col rounded-lg bg-black/10 px-2.5 py-1.5"},
             linha("Valor recebido (até agora)", BK(recebidoAnoAteAgora), "text-success"), linha("Valor pago", BK(totPagoAno), "text-destructive"),
@@ -247,4 +259,9 @@ function AbaPrevisaoFaturamento(){
         e("p",{className:"mt-1 text-[11px] text-muted-foreground"}, "Faltam os números reais de "+(ano+1)+" (meta mensal e contas a pagar de janeiro e fevereiro em diante) — entram assim que você mandar; até lá, aparecem como projeção."))));
 }
 
+// a configuração da previsão (alta da média de novembro e dezembro) fica aqui embaixo, só para o Marcus
+function AbaPrevisaoFaturamento(){
+  var s = use().state;
+  return e(React.Fragment,null, e(AbaConsolidadoFaturamento), s.usuario===16 && e(ConfigPrevisao));
+}
 export { AbaPrevisaoFaturamento };

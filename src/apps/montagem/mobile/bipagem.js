@@ -20,7 +20,7 @@ function AppBipagemRetirada(p){
   var pend = l && (s.retPend||[]).find(function(r){return r.lid===l.id;});
   var ids = prontos.filter(function(k){return sel[k.id];}).map(function(k){return k.id;});
   var escolher = function(id){ var o = {}; s.kits.forEach(function(k){ if(k.lid===id && k.status==="bipado") o[k.id] = true; }); setSel(o); setLid(id); };
-  return e(IPhone15,null,
+  return e(p.semMoldura ? React.Fragment : IPhone15,null,
     e("div",{className:"mb-3 flex items-center gap-3"},
       e(Avatar,{nome:bip.nome, i:0}),
       e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Bipagem · retirada"), e("p",{className:"truncate text-xl font-bold"}, bip.nome))),

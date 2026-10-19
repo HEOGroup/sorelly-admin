@@ -14,6 +14,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { BlocoErrosBipagem } from "@/apps/montagem/components/erros-bipagem";
 import { PageHead } from "@/apps/montagem/ui/page";
+import { PainelDia } from "@/apps/montagem/components/painel-dia";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -37,6 +38,7 @@ function AbaPainel(){
     e(PageHead,{t:"Listagens do dia", sub: papelDe(s.usuario)==="bipadora"
       ? "Inicie a bipagem pelo bot\u00e3o abaixo (pr\u00f3ximo da fila) ou pelo Bipar na linha do kit. O cron\u00f4metro come\u00e7a na hora."
       : "Fila \u00fanica por hor\u00e1rio de retirada, com os priorit\u00e1rios na frente desde o in\u00edcio do dia."}),
+    e(PainelDia,{s:s}),
     e(BlocoErrosBipagem),
     papelDe(s.usuario)==="bipadora" && e(BarraBipadora),
     e("div",{className:"flex flex-col gap-3"},

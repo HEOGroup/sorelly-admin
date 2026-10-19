@@ -15,7 +15,7 @@ function AbaCelular(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   // Montadora logada vê só o próprio celular; a supervisão pode ver o de qualquer uma
   var sup = papelDe(s.usuario)==="supervisao";
-  var lg = useState(!sup), logado = lg[0], setLogado = lg[1];   // a montadora que entrou pelo site já cai no app dela; a supervisão começa na tela de entrada do celular
+  var lg = useState(true), logado = lg[0], setLogado = lg[1];   // a montadora que entrou pelo site já cai no app dela; a supervisão começa na tela de entrada do celular
   return e(React.Fragment,null,
     e(PageHead,{t:"Celular da montadora", sub: sup ? "Simulação do app que cada montadora usa. Escolha quem está conectada." : "Seu app de montagem: próximo kit, cronômetro e resultado do dia."}),
     e("div",{className:"flex flex-col items-center gap-6 lg:flex-row lg:items-start lg:justify-center"},

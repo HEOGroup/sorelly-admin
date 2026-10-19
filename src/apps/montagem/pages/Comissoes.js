@@ -4,8 +4,10 @@
 // Cada valor tem um check do financeiro com o nome de quem confirmou; o que o agendamento ainda não conferiu no Consolidado aparece como pendente.
 // Em cada data: combustível (km × gasolina do dia, que a Nayale preenche no Configurador), ajuste do fechamento anterior e o pagamento, tudo ali do lado.
 import { relatorioTaxas, chaveFech, comisEfetiva, datasDoMes, dataHora, faltaDe, janelaDe, fmtDataBR, grupoDaRep, itensComissao, pagoDe, pctDaRep, quemNome, repsEfetivas, resumoSituacao } from "@/apps/montagem/domain/comissoes";
+import { relatorioPix, textoNegociacao } from "@/apps/montagem/domain/pix-direto";
 import { podeConfigComissao, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { AbaConfigComissoes } from "@/apps/montagem/pages/ConfigComissoes";
+import { AbaRegrasRepresentantes } from "@/apps/montagem/pages/RegrasRepresentantes";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -212,6 +214,7 @@ function PixRepresentante(p){
   var s = p.s, d = p.d, fin = p.fin, itens = p.itens, nomes = p.nomes;
   var ft = useState("todos"), filtro = ft[0], setFiltro = ft[1];
   var es = useState({}), escolha = es[0], setEscolha = es[1];            // representante escolhida, esperando o OK
+  var metas = relatorioPix(comisEfetiva(s), s, isoDia(new Date()).slice(0,7), Date.now(), nomes);
   var lista = itens.filter(function(i){ return i.pixRep; }).filter(function(i){ return filtro==="todos" || !i.dest; })
     .sort(function(a,b){ return (a.dest ? 1 : 0)-(b.dest ? 1 : 0) || b.r.data.localeCompare(a.r.data); });
   var nMarcar = itens.filter(function(i){ return i.pixRep && !i.dest; }).length, soma = lista.reduce(function(t,i){ return t+i.valorPago; }, 0);
@@ -221,8 +224,11 @@ function PixRepresentante(p){
   return e("section",{className:"flex min-h-0 flex-col overflow-hidden rounded-xl bg-black ring-1 ring-[#E8B84B]/40"},
     e("div",{className:"flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2"},
       e("h2",{className:"font-heading text-[14px] font-bold"},"Pix representante", nMarcar>0 && e("span",{className:"ml-2 rounded-md bg-warning/20 px-1.5 py-0.5 text-[11.5px] font-bold text-warning"}, nMarcar+" a marcar")),
-      e("select",{value:filtro, "aria-label":"Filtro do Pix representante", className:INPUT+" h-8! w-44 cursor-pointer text-[12.5px]!", onChange:function(ev){ setFiltro(ev.target.value); }},
-        e("option",{value:"todos"},"Todos"), e("option",{value:"marcar"},"Pendentes"))),
+      e("div",{className:"flex items-center gap-2"},
+        e(Btn,{v:"secondary", sm:true, ic:"wallet", onClick:function(){ d({type:"ABA", aba:"pixdireto"}); }}, "Metas do Pix direto"),
+        e("select",{value:filtro, "aria-label":"Filtro do Pix representante", className:INPUT+" h-8! w-36 cursor-pointer text-[12.5px]!", onChange:function(ev){ setFiltro(ev.target.value); }},
+          e("option",{value:"todos"},"Todos"), e("option",{value:"marcar"},"Pendentes")))),
+    metas.length>0 && e("div",{className:"flex flex-wrap gap-1.5 border-b border-border px-3 py-2"}, metas.map(function(x){ return e("span",{key:x.rep, title:textoNegociacao(x.neg), className:"inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11.5px] font-semibold "+(x.falta<=0.009 ? "bg-success/15 text-success" : "bg-warning/15 text-warning")}, x.rep+" · meta "+BK(x.meta)+" · "+(x.falta<=0.009 ? "completo" : "falta "+BK(x.falta))); })),
     e("div",{className:"max-h-72 overflow-auto"}, lista.length===0
       ? e("p",{className:"px-3 py-4 text-center text-[13px] text-muted-foreground"}, "Nenhum Pix representante nesse filtro.")
       : e("table",{className:"w-full border-collapse"},
@@ -285,7 +291,7 @@ function RelatorioTaxas(p){
           }))))));
 }
 
-function AbaComissoes(){
+function AbaComissoesBase(p){
   var cx = use(), s = cx.state, d = cx.dispatch, c = comisEfetiva(s), fin = podeFinanceiro(s.usuario), agora = Date.now();
   var hoje = new Date(agora), mesAtual = isoDia(hoje).slice(0,7);
   var fr = useState("todas"), repF = fr[0], setRepF = fr[1];
@@ -293,7 +299,7 @@ function AbaComissoes(){
   var mm = useState(mesAtual.slice(5)), mesN = mm[0], setMesN = mm[1];   // "" = o ano todo
   var noPeriodo = function(ym){ return (ym||"").slice(0,4)===anoSel && (mesN==="" || (ym||"").slice(5,7)===mesN); };
   var rotuloPeriodo = mesN==="" ? "Ano "+anoSel : MESES[+mesN-1]+"/"+anoSel;
-  var cf = useState(false), cfgAberto = cf[0], setCfgAberto = cf[1];
+  var mu = useState(false), modoUma = mu[0], setModoUma = mu[1], iu = useState(0), idxUma = iu[0], setIdxUma = iu[1], es2 = useState("mes"), escopo = es2[0], setEscopo = es2[1];
   var ab = useState({}), abertos = ab[0], setAbertos = ab[1];
   var alt = function(k, v){ var o = Object.assign({}, abertos); o[k] = v; setAbertos(o); };
   var contas = []; (s.formasPagamento||[]).forEach(function(f){ f.descricoes.forEach(function(x){ if(contas.indexOf(x)<0) contas.push(x); }); });
@@ -312,7 +318,7 @@ function AbaComissoes(){
   var nAtend = function(n){ return (s.acertosConsignado||[]).filter(function(r){ return r.rep===n && r.origem!=="interno"; }).length; };
 
   // totais por representante (todos os meses): confirmado, pendente, combustível, a pagar em aberto — todas as que temos, mesmo sem valores ainda
-  var dadosRep = reps.map(function(n){
+  var dadosTodos = reps.map(function(n){
     var meses2 = {}; meses2[mesAtual] = true; if(mesN!=="") meses2[anoSel+"-"+mesN] = true;
     itens.filter(function(i){ return i.dest===n; }).forEach(function(i){ meses2[i.dataRem.slice(0,7)] = true; });
     var lista = Object.keys(meses2).filter(noPeriodo).sort().reverse().map(function(m){
@@ -323,12 +329,21 @@ function AbaComissoes(){
     var t2 = function(k){ return lista.reduce(function(a,m){ return a+m[k]; }, 0); };
     return {nome:n, meses:lista, km:t2("km"), at:t2("at"), comis:t2("comis"), pend:t2("pend"), apagar:t2("apagar"), pago:t2("pago"), rest:t2("rest"), n:t2("n")};
   });
-  var kmGeral = dadosRep.reduce(function(a,r){ return a+r.km; }, 0), atGeral = dadosRep.reduce(function(a,r){ return a+r.at; }, 0), mediaGeral = atGeral>0 ? kmGeral/atGeral : null;
+  var qtd = dadosTodos.length, idx = Math.min(idxUma, Math.max(0, qtd-1)), dadosRep = modoUma && qtd ? [dadosTodos[idx]] : dadosTodos;
+  var kmGeral = dadosTodos.reduce(function(a,r){ return a+r.km; }, 0), atGeral = dadosTodos.reduce(function(a,r){ return a+r.at; }, 0), mediaGeral = atGeral>0 ? kmGeral/atGeral : null;
   var mediaDe = function(x){ return x.at>0 ? x.km/x.at : null; };
   var dias = function(g){ return (c.ciclos[g]||[]).join("/"); };
   var abertaRep = function(n){ var a = abertos["r:"+n]; return a!==undefined ? a : repF!=="todas"; };
   var todasAbertas = dadosRep.length>0 && dadosRep.every(function(r){ return abertaRep(r.nome); });
   var alternaTodas = function(){ var o = Object.assign({}, abertos); dadosRep.forEach(function(r){ o["r:"+r.nome] = !todasAbertas; }); setAbertos(o); };
+  var hojeIsoB = isoDia(hoje), somaB = {comis:0, pago:0, falta:0};
+  dadosRep.forEach(function(r){
+    if(escopo==="mes"){ somaB.comis += r.comis; somaB.pago += r.pago; somaB.falta += r.rest; return; }
+    var mAtual = r.meses.find(function(x){ return x.mes===mesAtual; }); if(!mAtual) return;
+    var dt = mAtual.datas.find(function(x){ return x.data>=hojeIsoB; }) || mAtual.datas[mAtual.datas.length-1]; if(!dt) return;
+    somaB.comis += dt.rs.comissaoTotal; somaB.pago += dt.rs.pagos; somaB.falta += dt.rs.falta;
+  });
+  var pctB = somaB.comis>0 ? Math.min(100, Math.max(0, somaB.pago/somaB.comis*100)) : 0;
   var mini = function(t, v, cor){ return e("div",{className:"flex flex-col rounded-lg bg-black px-3 py-2 ring-1 ring-[#E8B84B]/25"},
     e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground"}, t), e("b",{className:MONO+" text-[17px] "+(cor||"")}, v)); };
   return e(React.Fragment,null,
@@ -341,31 +356,45 @@ function AbaComissoes(){
           e("option",{value:""},"Ano todo"), MESES.map(function(m,i){ return e("option",{key:m, value:String(i+1).padStart(2,"0")}, m); })),
         e("select",{value:anoSel, "aria-label":"Ano", className:SEL, onChange:function(ev){ setAnoSel(ev.target.value); }}, anos.map(function(a){ return e("option",{key:a, value:a}, a); })),
         e(Btn,{v:"ghost", sm:true, onClick:alternaTodas}, todasAbertas ? "Fechar todas" : "Abrir todas"),
-        podeConfigComissao(s.usuario) && e(Btn,{v:cfgAberto ? "primary" : "secondary", sm:true, ic:"config", onClick:function(){ setCfgAberto(!cfgAberto); }}, cfgAberto ? "Fechar configuração" : "Configurar comissões"))),
-    cfgAberto && podeConfigComissao(s.usuario) && e("section",{className:"rounded-xl bg-card p-3 ring-2 ring-[#E8B84B]/40"}, e(AbaConfigComissoes,{embutido:true})),
+        podeConfigComissao(s.usuario) && e(Btn,{v:"secondary", sm:true, ic:"config", onClick:p.aoConfig}, "Configurar comissões"))),
     !fin && e("p",{className:"rounded-lg bg-warning/10 px-3 py-2 text-[12.5px] font-semibold text-warning"},"Você só consulta: os checks e pagamentos são do financeiro."),
     e(AvisoGasolina,{s:s, d:d, c:c, fin:fin}),
-    e("div",{className:"grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,35rem)_minmax(0,1fr)]"},
-      e(PixRepresentante,{s:s, d:d, fin:fin, itens:itens, nomes:todasReps}),
-      e("div",{className:"flex flex-col gap-3"},
-        e("div",{className:"grid grid-cols-2 gap-2 md:grid-cols-5"},
+        e("div",{className:"grid grid-cols-2 gap-2 md:grid-cols-3 xl:grid-cols-6"},
           mini("Total vendido", BK(tVendido)), mini("Total acerto", BK(tAcerto), "text-success"), mini("Total pago", BK(tPago), "text-[#F3D98B]"),
           mini("Total inadimplência", BK(tInad), tInad>0.009 ? "text-destructive" : ""),
           mini("Km por atendimento"+(repF!=="todas" ? " · média geral "+(mediaGeral!=null ? arred(mediaGeral) : "—") : ""), (repF==="todas" ? mediaGeral : mediaDe(dadosRep[0]||{km:0,at:0}))!=null ? arred(repF==="todas" ? mediaGeral : mediaDe(dadosRep[0])) : "—", repF==="todas" ? "" : corMedia(mediaDe(dadosRep[0]||{km:0,at:0}), mediaGeral)),
           mini("Representantes", String(todasReps.length))),
+        e(RelatorioTaxas,{s:s, noPeriodo:noPeriodo, repF:repF, rotulo:rotuloPeriodo}),
+    e("div",{className:"grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]"},
+      e(PixRepresentante,{s:s, d:d, fin:fin, itens:itens, nomes:todasReps}),
         // valor que entrou em cada conta (antes ficava no Consolidado)
         e("section",{className:"overflow-hidden rounded-xl bg-black ring-1 ring-[#E8B84B]/25"},
           e("div",{className:"flex items-center justify-between border-b border-border px-3 py-1.5"}, e("h2",{className:"font-heading text-[14px] font-bold"},"Recebido por conta"),
             e("span",{className:"text-[12px] text-muted-foreground"}, rotuloPeriodo+" · pago "+BK(tPago))),
-          e("div",{className:"flex max-h-56 flex-col gap-1 overflow-y-auto p-3"},
+          e("div",{className:"flex max-h-[30rem] flex-col gap-1 overflow-y-auto p-3"},
             barras.length===1 && tPago<=0 ? e("p",{className:"text-[13px] text-muted-foreground"},"Nenhum pagamento lançado no mês.") : null,
             barras.map(function(x){
               return e("div",{key:x.nome, className:"grid grid-cols-[minmax(8rem,15rem)_minmax(0,1fr)_7.5rem] items-center gap-3"},
                 e("span",{className:"truncate text-[12.5px] font-semibold "+(x.inad ? "text-destructive" : ""), title:x.nome}, x.nome),
                 e("div",{className:"h-3.5 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded "+(x.inad ? "bg-destructive" : "bg-linear-to-r from-[#B8862B] to-[#E8B84B]"), style:{width:Math.max(x.v>0 ? 1.5 : 0, x.v/maxBarra*100)+"%"}})),
-                e("b",{className:MONO+" text-right text-[12.5px] "+(x.inad ? "text-destructive" : "")}, BK(x.v))); }))))),
-        e(RelatorioTaxas,{s:s, noPeriodo:noPeriodo, repF:repF, rotulo:rotuloPeriodo}),
+                e("b",{className:MONO+" text-right text-[12.5px] "+(x.inad ? "text-destructive" : "")}, BK(x.v))); })))),
     e(Legenda,null),
+    e("section",{className:"flex flex-col gap-2 rounded-xl bg-black p-3 ring-1 ring-[#E8B84B]/25"},
+      e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
+        e("h2",{className:"font-heading text-[14px] font-bold"}, "Comissões pagas e o que falta"),
+        e("div",{className:"flex items-center gap-1.5"},
+          [["periodo","Período atual"],["mes","Mês"]].map(function(x){ return e("button",{key:x[0], onClick:function(){ setEscopo(x[0]); }, className:"rounded-lg px-3 py-1 text-[12px] font-semibold ring-1 "+(escopo===x[0] ? "bg-primary/15 ring-2 ring-primary" : "bg-card ring-border hover:bg-muted/40")}, x[1]); }),
+          e("span",{className:"mx-1 h-5 w-px bg-border"}),
+          [[false,"Todas"],[true,"Uma por uma"]].map(function(x){ return e("button",{key:String(x[0]), onClick:function(){ setModoUma(x[0]); }, className:"rounded-lg px-3 py-1 text-[12px] font-semibold ring-1 "+(modoUma===x[0] ? "bg-primary/15 ring-2 ring-primary" : "bg-card ring-border hover:bg-muted/40")}, x[1]); }),
+          modoUma && qtd>1 && e("span",{className:"flex items-center gap-1"},
+            e("button",{onClick:function(){ setIdxUma((idx-1+qtd)%qtd); }, "aria-label":"Anterior", className:"grid size-7 place-items-center rounded-lg bg-card ring-1 ring-border hover:bg-muted/40"}, "‹"),
+            e("b",{className:"min-w-24 text-center text-[12.5px]"}, (dadosRep[0] ? dadosRep[0].nome : "")+" ("+(idx+1)+"/"+qtd+")"),
+            e("button",{onClick:function(){ setIdxUma((idx+1)%qtd); }, "aria-label":"Próxima", className:"grid size-7 place-items-center rounded-lg bg-card ring-1 ring-border hover:bg-muted/40"}, "›")))),
+      e("div",{className:"h-3.5 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded bg-linear-to-r from-[#B8862B] to-[#E8B84B]", style:{width:pctB+"%"}})),
+      e("div",{className:"flex flex-wrap items-center justify-between gap-x-4 text-[12.5px]"},
+        e("span",null, "Já pago ", e("b",{className:MONO+" text-success"}, BK(somaB.pago))),
+        e("span",null, "Falta pagar ", e("b",{className:MONO+" "+(somaB.falta>0.009 ? "text-destructive" : "text-success")}, BK(somaB.falta))),
+        e("span",{className:"text-muted-foreground"}, "Comissão total "+BK(somaB.comis)+" · "+(escopo==="mes" ? rotuloPeriodo : "próximo pagamento de cada representante")+(modoUma ? "" : " · "+dadosRep.length+" representantes")))),
     e("div",{className:"flex flex-col gap-3"}, dadosRep.map(function(r){
       var kRep = "r:"+r.nome, abRep = abertaRep(r.nome);
       return e("div",{key:r.nome, className:"overflow-hidden rounded-xl ring-2 ring-[#8C6A3F]/70"},
@@ -379,7 +408,30 @@ function AbaComissoes(){
             abM && e("div",{className:"flex flex-col gap-2 p-2"}, m.datas.map(function(x, ix){
               return e(Situacao,{key:x.data, n:ix+1, s:s, d:d, c:c, rs:x.rs, fin:fin, contas:contas, rep:r.nome, data:x.data, ab:abertos, alt:alt}); })));
         })));
-    })));
+    })),
+    e(PainelRegras,{usuario:s.usuario, aoConfig:p.aoConfig}));
 }
 
+// Regras das comissões: abrem aqui embaixo, na própria tela. O Configurador (só o Marcus) abre em OUTRA tela, com as regras em cima e as configurações embaixo.
+function PainelRegras(p){
+  var a = useState(false), aberto = a[0], setAberto = a[1], dono = podeConfigComissao(p.usuario);
+  return e("section",{className:"flex flex-col gap-3 rounded-xl border border-[#E8B84B]/40 bg-card p-3"},
+    e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
+      e("div",null, e("h2",{className:"font-heading text-[16px] font-bold"}, "Regras das comissões"), e("p",{className:"text-[12px] text-muted-foreground"}, dono ? "Para mudar um número, abra o Configurador." : "Todas as regras de como a comissão é calculada e paga. Só o Marcus altera.")),
+      e("div",{className:"flex gap-2"},
+        dono && e(Btn,{v:"secondary", sm:true, ic:"config", onClick:p.aoConfig}, "Configurador"),
+        e(Btn,{v:aberto ? "ghost" : "secondary", sm:true, onClick:function(){ setAberto(!aberto); }}, aberto ? "Fechar regras" : "Abrir regras"))),
+    aberto && e("div",{className:"flex flex-col gap-3"}, e(AbaRegrasRepresentantes)));
+}
+
+// A tela das Comissões dos representantes e, em outra tela, as regras (em cima) e as configurações (embaixo)
+function AbaComissoes(){
+  var t = useState(false), conf = t[0], setConf = t[1], s = use().state;
+  if(conf && podeConfigComissao(s.usuario)) return e(React.Fragment,null,
+    e("div",{className:"flex items-center gap-3"}, e(Btn,{v:"secondary", sm:true, onClick:function(){ setConf(false); }}, "← Voltar às comissões")),
+    e(PageHead,{t:"Configurar comissões dos representantes", sub:"As regras ficam em cima e, embaixo, as configurações para mexer. Só o Marcus altera; o texto das regras muda sozinho."}),
+    e(AbaRegrasRepresentantes),
+    e("section",{className:"rounded-xl bg-card p-3 ring-2 ring-[#E8B84B]/40"}, e(AbaConfigComissoes,{embutido:true})));
+  return e(AbaComissoesBase,{aoConfig:function(){ setConf(true); }});
+}
 export { AbaComissoes };

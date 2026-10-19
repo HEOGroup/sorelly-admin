@@ -13,7 +13,7 @@ function Modal(p){
   },[p.open]);
   return e("dialog",{ref:ref, onClose:p.onClose,
       className:"m-auto rounded-xl bg-popover p-0 text-popover-foreground ring-1 ring-foreground/10 backdrop:bg-black/60"},
-    p.open && e("div",{className:"flex w-[min(34rem,92vw)] flex-col gap-4 p-5"},
+    p.open && e("div",{className:(p.largo ? "w-[min(72rem,95vw)]" : "w-[min(34rem,92vw)]")+" flex flex-col gap-4 p-4 sm:p-5"},
       e("div",{className:"flex items-start justify-between gap-3"},
         e("div",null, e("h3",{className:"font-heading text-lg font-semibold tracking-wide"}, p.titulo),
           p.sub && e("p",{className:"text-sm text-muted-foreground"}, p.sub)),

@@ -3,7 +3,8 @@
 import { CondLista, NovasCond, novasOk } from "@/apps/montagem/components/condicionais";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { MOTIVOS } from "@/apps/montagem/domain/config";
-import { BIPADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
+import { BIPADORAS, nomeDe, podeLiberarExcecao } from "@/apps/montagem/domain/equipe";
+import { semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { BK } from "@/apps/montagem/lib/format";
@@ -33,11 +34,26 @@ function MenuAcoes(p){
   // A supervisão pode fazer tudo pela listagem: montar ela mesma, pôr uma montadora para começar, concluir, bipar
   var livresM = s.montadoras.filter(function(m){ return !s.kits.some(function(x){return x.montId===m.id && x.status==="montando";}); });
   var livresB = BIPADORAS.filter(function(b){ return !s.kits.some(function(x){return x.bipId===b.id && x.status==="bipando";}); });
+  // Kit grande (acima do limite de Encomendas): só o setor Encomendas; fora dele é EXCEÇÃO e só Marcus e Deysiane liberam
+  var grande = soEncomendas(k, s.cfg), podeExc = podeLiberarExcecao(s.usuario);
+  var listaMont = function(pref, fonte, acaoDe, marcada){
+    var out = [], enc = fonte.filter(function(m){ return m.encomendas; }), outros = fonte.filter(function(m){ return !m.encomendas; });
+    var it = function(m, exc){ return item(pref+m.id, m.nome, fazer(acaoDe(m, exc)), marcada && marcada(m) ? "font-semibold text-primary" : ""); };
+    if(!grande) return fonte.map(function(m){ return it(m, false); });
+    out.push(titulo(pref+"te","Setor Encomendas (kit acima de "+BK(s.cfg.limiteEncomendas)+")"));
+    enc.forEach(function(m){ out.push(it(m, false)); });
+    if(podeExc){ out.push(titulo(pref+"tx","Exceção liberada por "+nomeDe(s.usuario))); outros.forEach(function(m){ out.push(it(m, true)); }); }
+    return out;
+  };
   if(k.status==="pendente" || k.status==="ajuste"){
-    itens.push(item("eu","▶ Montar eu mesma ("+nomeDe(s.usuario)+")", fazer({type:"INICIAR_M", id:k.id, montId:s.usuario, forcar:true}), "font-semibold text-purple"));
-    itens.push(titulo("tm","Começar a montagem com"));
-    livresM.forEach(function(m){ itens.push(item("im"+m.id, m.nome, fazer({type:"INICIAR_M", id:k.id, montId:m.id, forcar:true}))); });
+    itens.push(titulo("tq","Quem vai montar"));
+    if(!grande || podeExc) itens.push(item("eu","▶ Montar eu mesma ("+nomeDe(s.usuario)+")"+(grande ? " · exceção" : ""), fazer({type:"INICIAR_M", id:k.id, montId:s.usuario, forcar:true, excecao:grande}), "font-semibold text-purple"));
+    itens.push(titulo("tm","Ou escolher quem começa a montagem"));
+    listaMont("im", livresM, function(m, exc){ return {type:"INICIAR_M", id:k.id, montId:m.id, forcar:true, excecao:exc}; }).forEach(function(x){ itens.push(x); });
   }
+  // Kit sem montador (antigo ou de demonstração): a supervisão informa quem montou, senão ele não segue
+  if(semMontador(k)){ itens.push(titulo("tsm","Informar quem montou"));
+    s.montadoras.forEach(function(m){ itens.push(item("sm"+m.id, m.nome, fazer({type:"INFORMAR_MONT", id:k.id, montId:m.id, excecao:true}), "text-[#F87171]")); }); }
   if(k.status==="montando") itens.push(item("cm", condNums(k).length && !condOk(k,"m") ? "✓ Concluir montagem (marca as condicionais como pegas)" : "✓ Concluir montagem", fazer({type:"CONCLUIR_M", id:k.id, condPegas:true}), "font-semibold text-success"));
   if(k.status==="montado"){
     itens.push(item("be","▶ Bipar eu mesma ("+nomeDe(s.usuario)+")", fazer({type:"INICIAR_B", id:k.id, bipId:s.usuario}), "font-semibold text-info"));
@@ -48,7 +64,7 @@ function MenuAcoes(p){
   if(k.status==="pendente"){
     if(k.designada) itens.push(item("dev","Devolver à fila", fazer({type:"DESIGNAR", id:k.id, montId:null})));
     itens.push(titulo("t1","Designar para"));
-    s.montadoras.forEach(function(m){ itens.push(item("m"+m.id, m.nome, fazer({type:"DESIGNAR", id:k.id, montId:m.id}), k.designada===m.id?"font-semibold text-primary":"")); });
+    listaMont("m", s.montadoras, function(m, exc){ return {type:"DESIGNAR", id:k.id, montId:m.id, excecao:exc}; }, function(m){ return k.designada===m.id; }).forEach(function(x){ itens.push(x); });
   }
   if(k.status==="semvalor") itens.push(item("sug","Usar sugerido, "+BK(sugerido(k.vendas, s.cfg)), fazer({type:"DEFINIR_VALOR", id:k.id, valor:sugerido(k.vendas, s.cfg)})));
   if((k.status==="semvalor" || k.status==="pendente") && !SEM_KIT[k.tipoKit]) itens.push(item("calc","Calcular na calculadora de kits", fazer({type:"ABRIR_CALC", id:k.id}), "text-primary"));

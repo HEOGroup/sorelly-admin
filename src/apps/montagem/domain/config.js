@@ -4,7 +4,7 @@ import { kit } from "@/apps/montagem/domain/seed";
 
 var CFG0 = {
   valorNormal:1.80, valorEspecial:2.80,
-  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000,
+  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000, limiteEncomendas:4000,
   // Bipadoras: valor por kit bipado, kit maior e desconto por peça faltando apontada pela representante
   valorBipNormal:1.50, valorBipEspecial:2.50, limiteBipEspecial:15000, perdaFalta:10,
   // Peças por kit (caminho 1, tabelado): quantidade de cada categoria conforme o valor do kit. null = ainda não levantado.
@@ -31,8 +31,8 @@ var CFG0 = {
   alertaAmarelo:4.0, alertaVermelho:3.0,
   minKitsRestricao:100, topN:2, minAvalRanking:20,
   diaPagamento:15, kitInicial:7000, minVendaApp:500, reposicaoMax:2500, // sem vendas: kit de R$ 7.000 a confirmar · reposição: valor máximo liberado (provisório, regras a definir)
-  // Avaliação da representante (provisório, regras a definir): nota média das 3 perguntas menos descontos
-  bonusNotaMin:4.5, bonusValor:200, perdaRecusa:0.3, recusasBloqueio:2, perdaDiaParado:0.2, diasParadosTolerancia:1,
+  // Avaliação da representante (provisório, regras a definir): nota média das 3 perguntas menos descontos. SEM bônus para representante (decisão de 19/10/2026)
+  perdaRecusa:0.3, recusasBloqueio:2, perdaDiaParado:0.2, diasParadosTolerancia:1,
   // Pedido da representante: precisa chegar com esta antecedência; depois disso conta como atrasado
   prazoPedidoHoras:48,
   // Duas tabelas de kit: estoque alto (mais peças) e estoque baixo (menos peças). A ativa vale para a sugestão.

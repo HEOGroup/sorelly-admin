@@ -13,7 +13,7 @@ import React from "react";
 
 function AbaCelularCond(){
   var s = use().state, sup = papelDe(s.usuario)==="supervisao";
-  var lg = useState(!sup), logado = lg[0], setLogado = lg[1], qp = useState(sup ? null : s.usuario), quem = qp[0], setQuem = qp[1];
+  var lg = useState(true), logado = lg[0], setLogado = lg[1], qp = useState(sup ? LISTAGENS_RESP.id : s.usuario), quem = qp[0], setQuem = qp[1];
   var pessoas = [LISTAGENS_RESP, SUPERVISORA];   // quem tem o app das condicionais liberado (setor de condicionais e supervisão)
   var nome = (pessoas.find(function(x){ return x.id===quem; })||{}).nome;
   return e(React.Fragment,null,

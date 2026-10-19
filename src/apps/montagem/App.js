@@ -4,48 +4,99 @@
 // A única diferença: a tela ativa deixou de ser escolhida por um mapa
 // `aba -> componente` aqui dentro e passou a vir da rota — o conteúdo entra
 // pelo <Outlet/>, e cada página é um chunk carregado sob demanda.
+import { isoDia } from "@/apps/montagem/lib/format";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
+import { ACESSO_FF } from "@/apps/montagem/domain/financeiro-familiar";
+import { ACESSO_COBRANCA_BASE } from "@/apps/montagem/domain/cobranca-func";
 import { e, useEffect, useState, useReducer } from "@/shared/react";
 import React from "react";
 import "@/apps/montagem/styles/montagem.css";
 import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
-import { AvisoPagamentos } from "@/apps/montagem/components/aviso-pagamentos";
+import { definirAutorizacoes } from "@/apps/montagem/domain/autorizacoes";
+import { BuscaTela } from "@/apps/montagem/components/busca-tela";
+import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
+import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
 import { SeletorAcesso } from "@/apps/montagem/components/seletor-acesso";
+import { IrPara } from "@/apps/montagem/components/ir-para";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
+import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
+import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial } from "@/apps/montagem/state/store";
 import { Ctx } from "@/apps/montagem/state/context";
 import { reducer } from "@/apps/montagem/state/reducer";
 import { Icon } from "@/apps/montagem/ui/icon";
+import { ChatGlobal, ChatMini, useEu } from "@/apps/montagem/components/chat/chat-app";
+import { ehDirecao } from "@/apps/montagem/domain/chat-contatos";
+import { api, efem } from "@/apps/montagem/domain/chat-store";
+import { contato } from "@/apps/montagem/domain/chat-contatos";
+import * as sons from "@/apps/montagem/lib/sons";
 
+// cor de cada botão da barra de cima (mais cores em degradê para achar rápido); sem cor aqui, vale a cor do setor
+var ACESSO_COB = ACESSO_COBRANCA_BASE.concat([32]);   // sócios + Amanda de Miranda (id 32): quem opera a cobrança de funcionárias
+var COR_AREA = {};   // Financeiro usa uma cor só (a do setor); cores diferentes ficam só para estado (pago, atrasado...)
+// agrupa os botões da barra do topo (áreas com "grupo"): o nome do grupo fica em cima dos botões; sem grupo, lista simples
+function botoesAgrupados(areas, fazer, cor){
+  if(!areas.some(function(a){ return a.grupo; })) return areas.map(fazer);
+  var ordem = [], mapa = {};
+  areas.forEach(function(ar, i){ var g = ar.grupo || "Outros"; if(!mapa[g]){ mapa[g] = []; ordem.push(g); } mapa[g].push(fazer(ar, i)); });
+  return ordem.map(function(g){ return e("div",{key:g, className:"flex flex-col gap-0.5"},
+    e("span",{className:"px-1 text-[10px] font-bold uppercase leading-none tracking-[.14em]", style:{color:cor+"cc"}}, g),
+    e("div",{className:"flex flex-wrap items-center gap-1"}, mapa[g])); });
+}
 function App(){
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   var navigate = useNavigate();
+  var euChat = useEu(s.usuario);
+  useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
+  // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
+  useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
+  // virada do mês do Agendamento: fecha o mês que passou com o que valia no último dia e abre o novo (confere ao abrir e a cada 10 minutos)
+  useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
+  useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
+  useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)
   var loc = useLocation();
   var naURL = abaDoCaminho(loc.pathname), abaURL = naURL.aba, breveURL = naURL.breve;
   var mn = useState(false), menu = mn[0], setMenu = mn[1];
   // menu lateral recolhido (quem passa o dia numa tela só ganha espaço); lembra a escolha neste navegador
   var rcs = useState(function(){ try{ return localStorage.getItem("sorelly_menu_recolhido")==="1"; }catch(x){ return false; } }), recolhido = rcs[0], setRecolhido = rcs[1];
+  // largura do menu lateral: arrastar a borda direita aumenta ou diminui; lembra a escolha neste navegador
+  var mws = useState(function(){ try{ var n = Number(localStorage.getItem("sorelly_menu_largura")); return n>=200 && n<=480 ? n : 232; }catch(x){ return 232; } }), menuW = mws[0], setMenuW = mws[1];
+  var arr = useState(false), arrastando = arr[0], setArrastando = arr[1];
+  var arrastarMenu = function(ev){
+    ev.preventDefault(); setArrastando(true);
+    var ultimo = menuW;
+    var mover = function(m){ ultimo = Math.max(200, Math.min(480, m.clientX)); setMenuW(ultimo); };
+    var soltar = function(){ window.removeEventListener("mousemove", mover); window.removeEventListener("mouseup", soltar); setArrastando(false); try{ localStorage.setItem("sorelly_menu_largura", String(ultimo)); }catch(x){} };
+    window.addEventListener("mousemove", mover); window.addEventListener("mouseup", soltar);
+  };
   var alternarMenu = function(v){ setRecolhido(v); if(v) setColArea(null); try{ localStorage.setItem("sorelly_menu_recolhido", v ? "1" : "0"); }catch(x){} };
   var ga = useState({}), gruposAb = ga[0], setGruposAb = ga[1];
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
+  // barra do topo aberta 100% (todas as telas do setor à vista) ou recolhida (listas suspensas); lembra a escolha neste navegador
+  var ba = useState(function(){ try{ return localStorage.getItem("sorelly_barra_aberta")!=="0"; }catch(x){ return true; } }), barraAberta = ba[0], setBarraAberta = ba[1];
+  var alternarBarra = function(v){ setBarraAberta(v); setAreaTopo(null); try{ localStorage.setItem("sorelly_barra_aberta", v ? "1" : "0"); }catch(x){} };
+  var at = useState(null), areaTopo = at[0], setAreaTopo = at[1];   // lista de telas aberta na barra do topo ({i, x, y})
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
   useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(Object.assign({}, s, {aviso:null}))); }catch(x){} }, [s]);
   useEffect(function(){ document.documentElement.classList.add("app-montagem");
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
+  definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
   definirBlocos(s.acessosBlocos);   // partes de cada tela que o RH liberou por grupo
   var papel = grupoDe(s.usuario), permitidas = abasDoPapel(papel, s.acessos);
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
+  if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);   // o SorellyChat é de todo mundo
+  if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);   // a página Apps está liberada para todos por enquanto (o Marcus bloqueia na versão oficial)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
@@ -53,7 +104,8 @@ function App(){
   var onde = ondeEsta(aba);
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
   var visao = s.visaoMenu==="sistema" ? "sistema" : "tudo";   // só dois modos: Completo ou HTML
-  var pode = function(t){ if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var gerAg = podeGerirAgend(s.usuario, s.agend);
+  var pode = function(t){ if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && ACESSO_FF.indexOf(s.usuario)<0) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
@@ -62,25 +114,20 @@ function App(){
     return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean);
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
-  var tileSetor = function(st, on){ return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
+  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
+    return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
     e(Icon,{n:st.ic, s:15, peso: on ? "fill" : "duotone"})); };
-  var linhaSetor = function(st){ var aberto = setorAb===st.id, ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
-    return e("div",{key:st.id, className:"flex flex-col"},
-      e("button",{"aria-expanded": st.direto ? undefined : aberto,
-          onClick:function(){ if(st.direto){ abrirTela(st.direto); setSetorAb(null); return; } setSetorAb(aberto ? null : st.id); setColArea(null); },
-          className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-1.5 py-0.5 text-left text-[13px] leading-tight "+(ativo || aberto ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
-        tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome),
-        !st.direto && e(Icon,{n: aberto ? "chevrondown" : "chevron", s:13, className:"text-foreground/50"})),
-      !st.direto && aberto && e("div",{className:"ml-[1.1rem] mt-0.5 mb-1 flex flex-col gap-0.5 border-l border-sidebar-border pl-2.5"},
-        st.areas.map(function(ar, i){ var sel = colArea && colArea.setor===st.id && colArea.i===i, temAtiva = ar.telas.some(ativaTela);
-          // área com uma única tela: abre ela direto, sem passar pela coluna de escolha
-          var unica = ar.telas.length===1 ? ar.telas[0] : null;
-          return e("button",{key:i, onClick:function(){ if(unica){ abrirTela(unica); setSetorAb(null); return; } setColArea(sel ? null : {setor:st.id, i:i}); setGrupoAb(0); },
-            className:"flex min-h-8 w-full items-center gap-2 rounded-md px-2 py-0.5 text-left text-[12.5px] leading-tight "+(sel ? "bg-primary/15 font-semibold text-primary" : temAtiva ? "font-semibold text-foreground" : "text-foreground/80 hover:bg-white/5")},
-            e("span",{className:"size-1.5 shrink-0 rounded-full", style:{background: temAtiva || sel ? st.cor : "#ffffff33"}}),
-            e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, ar.nome),
-            e("span",{className:"flex shrink-0 gap-0.5"}, Object.keys(MARCAS).filter(function(k){ return ar.telas.some(function(t){ return marcaDe(t)===k; }); }).map(function(k){
-              return e(MarcaTela,{key:k, k:k, mini:true}); }))); }))); };
+  // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
+  var primeiraTela = function(st){ var todas = [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return todas.find(function(t){ return !t.breve; }) || todas[0]; };
+  var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
+    return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
+      className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-1.5 py-0.5 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
+      tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
+  var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
+  var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
+  // setor da tela aberta (para a barra do topo)
+  var setorAtual = (function(){ var ach = []; setoresV.forEach(function(st){ if(st.direto) return; var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
+    return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
   var colSt = colArea && setoresV.find(function(x){return x.id===colArea.setor;}), colAr = colSt && colSt.areas[colArea.i];
   // largura da coluna pelo maior texto (tela, sistema ou título), entre 13 e 22 rem
   var colW = colAr ? 216 : 0;   // coluna estreita: os nomes longos quebram em duas linhas (ex.: "Faturamento & / contas a pagar")
@@ -97,9 +144,9 @@ function App(){
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
     e(Aviso));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
-  if(!s.logado) return e(Ctx.Provider,{value:{state:s, dispatch:d}}, e(TelaLogin,{onEntrar:function(pes){ d({type:"LOGIN", id:pes.id}); }}));
+  // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
-    e("aside",{className:"fixed inset-y-0 left-0 z-40 w-[14.5rem] flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex")},
+    e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
       e("div",{className:"relative flex h-28 items-center justify-center border-b border-sidebar-border px-4"},
         e("img",{src:(import.meta.env.BASE_URL||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
@@ -108,58 +155,54 @@ function App(){
         [["tudo","Completo","Completo: o que já existe e o que vamos criar"],["sistema","HTML","Só o que já está pronto aqui no HTML"]].map(function(x){
           return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
-        setoresV.map(linhaSetor),
+        setoresV.filter(function(st){ return !soBreve(st); }).concat(setoresV.filter(soBreve)).map(linhaSetor),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && SETORES_BAIXO.filter(function(st){ return pode(st.direto); }).map(linhaSetor),
-        false && Object.keys(GRUPOS_MENU).map(function(g){
-          var itens = abas.filter(function(a){return a[3]===g;}); if(!itens.length) return null;
-          var aberto = gruposAb[g]!==false, ativo = itens.some(function(a){return a[0]===aba;});
-          return e("div",{key:g, className:"flex flex-col gap-0.5 pb-1"},
-            e("button",{onClick:function(){ var o = Object.assign({}, gruposAb); o[g] = !aberto; setGruposAb(o); }, "aria-expanded":aberto,
-                className:"mt-2 flex h-8 w-full items-center gap-2 rounded-lg px-2.5 text-left text-xs font-semibold uppercase tracking-wider hover:bg-muted/40 "+(ativo?"text-primary":"text-muted-foreground")},
-              e(Icon,{n:GRUPOS_MENU[g][1], s:14}), e("span",{className:"flex-1"}, GRUPOS_MENU[g][0]), e(Icon,{n: aberto?"chevrondown":"chevron", s:14})),
-            aberto && e("div",{className:"ml-3 flex flex-col gap-0.5 border-l border-sidebar-border pl-2"},
-              itens.map(function(a){ return navItem(a[0], a[1], a[2], aba===a[0], function(){d({type:"ABA", aba:a[0]}); setMenu(false);}); })));
-        }),
-        !permitidas && e("div",{className:"sticky bottom-0 -mx-3 mt-auto grid grid-cols-2 gap-x-2 gap-y-1.5 border-t border-sidebar-border bg-sidebar px-4 py-2.5"},
-          Object.keys(MARCAS).map(function(k){ var m = MARCAS[k];
-            return e("div",{key:k, title:m.lb+" · "+m.sub, className:"flex items-center gap-1.5 whitespace-nowrap text-[11.5px] font-semibold"}, e(MarcaTela,{k:k, mini:true}), e("span",{style:{color:m.cor}}, m.lb)); })),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
-    colAr && e("div",{className:"fixed inset-y-0 left-[14.5rem] z-40 hidden flex-col border-r border-sidebar-border bg-sidebar md:flex", style:{width:colW}},
-      e("div",{className:"flex h-14 items-center gap-2 border-b border-sidebar-border px-4"},
-        tileSetor(colSt, true),
-        e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[10.5px] font-bold uppercase leading-tight tracking-wider", style:{color:colSt.cor}}, colSt.nome), e("p",{className:"whitespace-pre-line text-[13px] font-semibold leading-tight"}, colAr.nome)),
-        e("button",{onClick:function(){ setColArea(null); }, "aria-label":"Fechar", className:"grid size-7 place-items-center rounded-md hover:bg-white/10"}, e(Icon,{n:"fechar", s:14}))),
-      e("div",{className:"flex flex-col gap-0.5 overflow-y-auto p-3"}, (colAr.grupos && colAr.grupos.length>1 ? [].concat.apply([], colAr.grupos.map(function(g, gi){
-          // cada sistema abre para baixo; abrir um fecha o outro
-          var ab = grupoAb===gi;
-          var cab = e("button",{key:"g"+gi, onClick:function(){ setGrupoAb(ab ? -1 : gi); }, "aria-expanded":ab,
-            className:"flex min-h-9 w-full items-center gap-2 rounded-lg px-2 py-1 text-left text-[11.5px] font-bold uppercase leading-tight tracking-wider "+(gi ? "mt-1 " : "")+(ab ? "bg-white/5" : "hover:bg-white/5"), style:{color:colSt.cor}},
-            e(Icon,{n: ab ? "chevrondown" : "chevron", s:13}), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, g.titulo),
-            e("span",{className:"rounded-full bg-white/10 px-1.5 text-[10.5px] text-foreground/80"}, g.telas.length));
-          return [cab].concat(ab ? g.telas.map(function(t){ return {t:t, k:gi+t.nome, dentro:true}; }) : []); })) : colAr.telas.map(function(t){ return {t:t, k:t.nome}; })).map(function(x, i){
-        if(!x.t) return x; var t = x.t, on = ativaTela(t);
-        return e("button",{key:x.k, onClick:function(){ abrirTela(t); },
-          className:"flex min-h-10 w-full items-center gap-2.5 rounded-lg py-1 text-left text-[13px] leading-tight "+(x.dentro ? "pl-6 pr-2 " : "px-2 ")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
-          e(MarcaTela,{t:t}),
-          e("span",{className:"min-w-0 flex-1"+(t.breve ? " text-foreground/85" : "")}, t.nome)); }))),
-    e("div",{className:"transition-[margin] duration-200 "+(recolhido ? "md:ml-0" : "md:ml-[14.5rem]"), style: colAr && !recolhido && window.innerWidth>=768 ? {marginLeft:232+colW} : undefined},
-      e("header",{className:"sticky top-0 z-30 flex h-14 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
+    !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",
+      className:"group fixed inset-y-0 z-50 hidden w-2 cursor-col-resize md:block", style:{left:menuW-4}},
+      e("div",{className:"mx-auto h-full w-0.5 transition-colors "+(arrastando ? "bg-primary" : "group-hover:bg-primary/70")})),
+    e("div",{className:(arrastando ? "" : "transition-[margin] duration-200 ")+(recolhido ? "md:ml-0" : "md:ml-[var(--mw)]"), style:{"--mw":menuW+"px"}},
+      e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
+        window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
         e("span",{className:"min-w-0 flex-1 truncate text-sm text-muted-foreground whitespace-nowrap"}, onde ? onde.setor.nome : "Sorelly", onde && e(React.Fragment,null, e("span",{className:"mx-1.5"},"/"), onde.area.nome), e("span",{className:"mx-1.5"},"/"), e("span",{className:"text-foreground"}, titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
-        e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !permitidas || permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
+        e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
           return e("button",{key:x[0], title:x[1], onClick:function(){ navigate(caminhoDaAba(x[0])); setColArea(null); },
             className:"flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-bold transition-transform hover:-translate-y-px", style: on ? {background:x[3], color:"#fff", boxShadow:"0 2px 10px "+x[3]+"66"} : {background:x[3]+"26", color:x[3], boxShadow:"inset 0 0 0 1px "+x[3]+"55"}},
             e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
 
+        e(IrPara,{navigate:navigate}),
+        e(BotaoNotificacoes),
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
+      setorAtual && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+(setorAtual.st.areas.some(function(a){ return a.grupo; }) ? "flex-wrap items-start py-1.5 md:sticky md:top-12" : "sticky top-12 items-center overflow-x-auto py-2 [scrollbar-width:none]")},
+        e("span",{className:"mr-1 flex shrink-0 items-center gap-2 pr-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap sm:inline"}, setorAtual.st.nome.replace("\n"," "))),
+        botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
+          return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },
+            style:{background:"linear-gradient(135deg,"+cc+(ativa ? "66" : "33")+","+cc+(ativa ? "26" : "0d")+")", boxShadow:"inset 0 0 0 1px "+cc+(ativa ? "bb" : "55")},
+            className:(ar.grupo ? "flex h-9 shrink-0 items-center justify-center gap-1 whitespace-pre-line rounded-md px-2.5 text-center text-[11.5px] leading-[1.15] " : "flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13.5px] ")+"leading-tight transition hover:brightness-125 "+(ativa ? "font-bold text-white" : "text-foreground/90")},
+            ar.grupo ? ar.nome : ar.nome.replace(/\n/g," "), !unica && e(Icon,{n:"chevrondown", s:11, className:"opacity-60"})); }, setorAtual.st.cor),
+        (APPS_SETOR[setorAtual.st.id]||[]).map(function(k){ var ap = APPS_TOPO.find(function(x){ return x[0]===k; }); if(!ap) return null;
+          return e("button",{key:k, onClick:function(){ navigate(caminhoDaAba(k)); }, title:ap[1], className:"flex shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-2 py-1 text-[11.5px] font-bold", style:{background:ap[3]+"26", color:ap[3], boxShadow:"inset 0 0 0 1px "+ap[3]+"55"}}, e(Icon,{n:ap[2], s:12, peso:"fill"}), ap[1]); }),
+        null),   // o total de revendedoras fica só na Visão geral e na Base de revendedoras (Cadastro); saiu da barra de cima a pedido do Marcus (19/10/2026)
+      setorAtual && areaTopo && (function(){ var ar = setorAtual.st.areas[areaTopo.i]; if(!ar) return null;
+        var itens = ar.grupos && ar.grupos.length>1 ? [].concat.apply([], ar.grupos.map(function(g){ return [{titulo:g.titulo}].concat(g.telas.map(function(t){ return {t:t}; })); })) : ar.telas.map(function(t){ return {t:t}; });
+        return e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAreaTopo(null); }},
+          e("div",{className:"absolute max-h-[70vh] w-80 overflow-y-auto rounded-2xl border bg-card p-2 shadow-2xl", style:{left:Math.min(areaTopo.x, window.innerWidth-340), top:areaTopo.y, borderColor:setorAtual.st.cor+"66", boxShadow:"0 18px 40px -12px rgba(0,0,0,.6), 0 0 0 1px "+setorAtual.st.cor+"22"}, onClick:function(ev){ ev.stopPropagation(); }},
+            e("p",{className:"mb-1 flex items-center gap-2 border-b border-border px-2.5 pb-2 pt-1 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, e("span",{className:"size-2 rounded-full", style:{background:setorAtual.st.cor}}), ar.nome.replace(/\n/g," ")),
+            itens.map(function(x, k){ if(x.titulo) return e("p",{key:"g"+k, className:"px-2.5 pb-0.5 pt-2 text-[10.5px] font-bold uppercase tracking-wider", style:{color:setorAtual.st.cor}}, x.titulo.replace(/\n/g," "));
+              var t = x.t, on = ativaTela(t);
+              return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
+                t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
-    e(Aviso),
-    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }}),
-    e(AvisoPagamentos,{abrir:function(){ navigate(caminhoDaAba("visaogeral")); setColArea(null); }, abrirAtendimento:function(){ navigate(caminhoDaAba("intcalc")); setColArea(null); }}));
+    e(Aviso), e(BuscaTela),
+    aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
+    e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
+    // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar
+    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }}));
 }
 
 export default App;

@@ -35,7 +35,7 @@ function AvisoPagamentos(p){
     total = itens.reduce(function(t,x){ return t+x.linhas.reduce(function(a,l){ return l.isento ? a : a+l.valor; }, 0); }, 0);
   } else if(modo==="bip"){
     // contas já definidas pelo financeiro, falta o comprovante: valor em aberto
-    itens = lancs.filter(function(x){ return x.linhas.some(function(l){ return statusLinhaFin(l)==="conta" && (l.partes||[]).some(function(q){ return q.descricao && !q.comprovante; }); }); });
+    itens = lancs.filter(function(x){ return x.origem!=="rep" && x.linhas.some(function(l){ return statusLinhaFin(l)==="conta" && (l.partes||[]).some(function(q){ return q.descricao && !q.comprovante; }); }); });
     total = itens.reduce(function(t,x){ return t+x.linhas.reduce(function(a,l){ return a+(l.isento ? 0 : (l.partes||[]).reduce(function(b,q){ return b+(q.descricao && !q.comprovante ? (q.valor||0) : 0); }, 0)); }, 0); }, 0);
   } else { itens = []; total = 0; }
   var usuarioRef = useRef(null);
@@ -52,7 +52,7 @@ function AvisoPagamentos(p){
   if(!modo || !aberto || !itens.length) return null;
   var ultimo = itens[0], bip = modo==="bip";
   return e("button",{type:"button", role:"alert", onClick:function(){ setAberto(false); (bip ? p.abrirAtendimento : p.abrir)(); },
-    className:"fixed bottom-5 right-5 z-50 flex w-80 items-start gap-3 rounded-xl border border-[#E8B84B]/60 bg-popover p-3.5 text-left shadow-2xl ring-1 ring-black/40 hover:-translate-y-0.5"},
+    className:"fixed bottom-5 left-5 z-50 flex w-80 items-start gap-3 rounded-xl border border-[#E8B84B]/60 bg-popover p-3.5 text-left shadow-2xl ring-1 ring-black/40 hover:-translate-y-0.5"},
     e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-[#E8B84B] text-[#1B1409]"}, e(Icon,{n:"wallet", s:17})),
     e("span",{className:"min-w-0 flex-1"},
       e("b",{className:"block text-[13.5px]"}, bip ? (itens.length===1 ? "Contas definidas: anexe o comprovante" : itens.length+" acertos esperando comprovante") : (itens.length===1 ? "1 pagamento para conferir" : itens.length+" pagamentos para conferir")),
@@ -61,4 +61,4 @@ function AvisoPagamentos(p){
       e("span",{className:"text-[11.5px] font-semibold text-primary"}, bip ? "Clique para abrir o atendimento" : "Clique para abrir na Visão geral")));
 }
 
-export { AvisoPagamentos };
+export { AvisoPagamentos, plim };
