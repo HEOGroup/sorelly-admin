@@ -12,9 +12,9 @@ var FUNCIONARIOS_POR_SETOR = [
   ["Cadastro de revendedoras", [["Camilly de Sousa Maciel","","46"], ["Thaylianny Aparecida Jacob","","67"]]],
   ["Compras", [["Helen Garmier da Silva","","59"]]],
   ["Condicionais", [["Majorry Prost Fermino dos Santos","","34"]]],
-  ["Encomendas", [["Agatha Kristye Lencioni Mota","","46"], ["Eduarda Gabriela Henrique Lima","","46"], ["Elen Vitoria Lourenço de Bonfim","","34"]]],
+  ["Encomendas", [["Agatha Kristye Lencioni Mota","","46"], ["Eduarda Gabriela Henrique Lima","","46"], ["Elen Vitoria Lourenço de Bonfim","","34"], ["Joao Guilherme de Oliveira","","46"]]],
   ["Equipe direção", [["Nickolas Gabriel Leal Neves","","46"], ["Nicole de Oliveira Ferreira","","46"], ["Priscila Schmidt Pinheiro","","46"]]],
-  ["Facilities", [["Higor Fernando Goulart de Oliveira","","34"], ["Ines Scupura de Gouvea","","46"], ["Joao Guilherme de Oliveira","","46"]]],
+  ["Facilities", [["Higor Fernando Goulart de Oliveira","","34"], ["Ines Scupura de Gouvea","","46"]]],
   ["Financeiro", [["Bruna Rigos","","46"], ["Nayale Emanuele Calixto","","46"]]],
   ["Inadimplência", [["Amanda de Miranda Gonçalves","","46"], ["Amanda Thimoteo Coelho","","67"]]],
   ["Kits novos e indicação", [["Michele Brito Lima Cassemiro","","34"]]],
@@ -35,7 +35,7 @@ var FUNCIONARIOS_POR_SETOR = [
   ["Trocas", [["Ana Paula Slovinski","","59"], ["Giovanna Franco Rodrigues","","67"]]],
   // fora da lista de funcionários (CLT): sócios e família (CNPJ = empresa da qual é sócio) e PJs que trabalham para a Sorelly (H&O Apps = "ho")
   ["Sócios e família", [["Anamaria Hess de Oliveira","","34","Sócia"], ["Marcus Vinicius Hess de Oliveira","","46","Sócio (dono)"], ["Marco Antonio de Oliveira","","59","Sócio"],
-    ["Lucas Oliveira da Rocha","","67","Sócio"], ["Ana Beatriz Hess de Oliveira","","","Família"]]],
+    ["Lucas Oliveira da Rocha","","67","Sócio"], ["Ana Beatriz Hess de Oliveira","","","Sócia"]]],
   ["PJ · prestadores", [["Leonardo","","ho","Desenvolvedor (H&O Apps)"], ["Juan","","ho","Desenvolvedor (H&O Apps)"], ["Diego Franco","","","Gestor de tráfego"]]]];
 var VINCULO_DO_SETOR = {"Sócios e família":"socio", "PJ · prestadores":"pj"};
 

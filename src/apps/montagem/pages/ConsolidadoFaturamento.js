@@ -7,11 +7,9 @@
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contasDoMes, fatEfetivo, MESES_LONGO, resumoMensalRevendedoras } from "@/apps/montagem/domain/financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
-import { Faixa, Indicador, Pagina } from "@/apps/montagem/components/padrao";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO, MoneyInput } from "@/apps/montagem/ui/input";
-import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
 var BK = function(v){ return v<0 ? "−"+BKC(-v) : BKC(v); };   // negativo com o sinal na frente: −R$ 1.000,00
@@ -20,7 +18,7 @@ var ultimoDia = function(ano, m){ return ano+"-"+String(m+1).padStart(2,"0")+"-"
 
 // colunas: grupo (linha de cima) + nome (linha de baixo) + explicação que aparece ao passar o mouse
 var GRUPOS = [
-  {g:"Mês", cols:[{n:"Mês", i:"Mês do ano. Cadeado verde = mês fechado e travado pelo Marcus."}]},
+  {g:"Mês", cols:[{n:"Mês", i:"Mês do ano. Cadeado = mês fechado e travado pelo Marcus."}]},
   {g:"Revendedoras", cols:[
     {n:"Início", i:"Quantas revendedoras o mês começou (total do dia 1)."},
     {n:"Fim", i:"Quantas revendedoras o mês terminou (último lançamento do mês; no mês atual, a de hoje)."},
@@ -48,9 +46,10 @@ var TH_G = "whitespace-nowrap px-2 pt-1.5 pb-0 text-center text-[10px] font-extr
 var TH_N = "whitespace-nowrap px-2 pb-1.5 pt-0 text-center text-[11.5px] font-bold uppercase tracking-wide text-white";
 var TD_N = "whitespace-nowrap px-2 py-1.5 text-center align-middle text-[13px] ";
 
-function AbaConsolidadoFaturamento(){
+function AbaConsolidadoFaturamento(p){
+  p = p || {};
   var cx = use(), s = cx.state, d = cx.dispatch, hoje = new Date(), anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth();
-  var an = useState(anoAtual), ano = an[0], setAno = an[1], anoStr = String(ano);
+  var an = useState(anoAtual), ano = p.ano || an[0], setAno = an[1], anoStr = String(ano);
   var ed = useState(false), editando = ed[0], setEditando = ed[1];
   var pode = temAutorizacao("faturamento_edita", s.usuario), modoEdit = pode && editando;
   var fd = fatEfetivo(s), rv = resumoMensalRevendedoras(s, ano);
@@ -78,44 +77,38 @@ function AbaConsolidadoFaturamento(){
     e("td",{className:TD_N+MONO+" font-bold", style:{color:"#4ADE80"}}, BK(tot.fat)), e("td",{className:TD_N+MONO+" font-bold"}, tot.acertos>0 ? BK(tot.fat/tot.acertos) : "—"),
     e("td",{className:TD_N+MONO+" font-bold"}, BK(tot.pago)), e("td",{className:TD_N+MONO+" font-bold"}, BK(tot.apagar)),
     e("td",{className:TD_N+MONO+" font-extrabold", style:{color:corRes(r, true)}}, BK(r))); };
-  return e(Pagina,null,
-    e(PageHead,{t:"Consolidado do faturamento", sub:"O ano inteiro, mês a mês. O mês atual e a atualização do dia ficam na Visão geral."},
-      e("div",{className:"flex items-center gap-2"},
-        e("div",{className:"flex items-center gap-1"},
-          e(Btn,{v:"ghost", sm:true, onClick:function(){ setAno(ano-1); }}, "‹"),
-          e("span",{className:"grid h-9 min-w-[4.5rem] place-items-center rounded-lg border border-primary/40 bg-primary/10 px-3 text-sm font-bold"}, ano),
-          e(Btn,{v:"ghost", sm:true, onClick:function(){ setAno(ano+1); }}, "›")),
-        pode && e(Btn,{v:modoEdit ? "primary" : "secondary", ic:modoEdit ? "check" : "edit", sm:true, onClick:function(){ setEditando(!editando); }}, modoEdit ? "Concluir edição" : "Editar"))),
-    e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-3 2xl:grid-cols-6"},
-      e(Indicador,{t:"Revendedoras (fim)", v:num(ultimaRev) || "—", cor:"total", sub:"último lançamento do ano", titulo:"Quantas revendedoras o ano tem no último lançamento"}),
-      e(Indicador,{t:"Acertos no ano", v:num(tot.acertos), cor:"info", sub:"previstos "+num(tot.previstos), titulo:"Acertos feitos no ano, contra o que o Agendamento previu"}),
-      e(Indicador,{t:"Faturamento do ano", v:BK(tot.fat), cor:"ok", titulo:"Tudo que foi recebido no ano"}),
-      e(Indicador,{t:"Média por acerto", v:tot.acertos>0 ? BK(tot.fat/tot.acertos) : "—", cor:"cian", titulo:"Faturamento do ano dividido pelos acertos feitos"}),
-      e(Indicador,{t:"Contas do ano", v:BK(tot.contas), cor:"ruim", sub:"pago "+BK(tot.pago), titulo:"Contas pagas e a pagar do ano inteiro"}),
-      e(Indicador,{t:"Resultado do ano", v:BK(tot.fat-tot.contas), cor:tot.fat-tot.contas>=0 ? "ok" : "ruim", titulo:"Faturamento menos as contas do ano"})),
-    e("div",{className:"overflow-x-auto rounded-xl ring-1 ring-[#3B82F6]/40", style:{background:"linear-gradient(180deg,#3B82F61f,#3B82F608)"}},
-      e("table",{className:"w-full min-w-[64rem] border-collapse"},
-        e("thead",{style:{background:"linear-gradient(180deg,#3B82F666,#3B82F628)"}},
-          e("tr",null, GRUPOS.map(function(g){ return e("th",{key:g.g, colSpan:g.cols.length, className:TH_G+(g.cols.length>1 ? " border-b border-white/15" : "")}, g.g); })),
-          e("tr",null, GRUPOS.map(function(g){ return g.cols.map(function(c){ return e("th",{key:g.g+c.n, title:c.i, className:TH_N+" cursor-help"}, g.cols.length>1 ? c.n : ""); }); }))),
-        e("tbody",null, linhas.map(function(x){ var bloqueioMes = x.travado, ro = x.atual || x.futuro || bloqueioMes;
-          var fundo = x.atual ? "linear-gradient(90deg,#FBBF2428,transparent 85%)" : x.travado ? "linear-gradient(90deg,#4ADE8020,transparent 85%)" : undefined;
-          return e("tr",{key:x.m, className:"border-t border-white/10 "+(x.futuro ? "opacity-55" : ""), style:fundo ? {background:fundo} : undefined},
-            e("td",{className:TD_N+"text-left! font-bold"}, e("span",{className:"inline-flex items-center gap-1.5"}, MESES_LONGO[x.m],
-              x.atual && e("span",{className:"rounded bg-warning/20 px-1.5 py-px text-[10px] font-bold text-warning", title:"O mês atual é atualizado na Visão geral"}, "ao vivo"),
-              x.travado && e("button",{type:"button", title:s.usuario===16 ? "Mês fechado e travado. Clique para destravar" : "Mês fechado e travado pelo Marcus", disabled:s.usuario!==16, onClick:function(){ if(window.confirm("Destravar "+MESES_LONGO[x.m]+"?")) d({type:"FAT_TRAVAR", data:ultimoDia(ano, x.m), travado:false}); }, className:"rounded bg-success/20 px-1.5 py-px text-[10px] font-bold text-success"}, "🔒 fechado"))),
-            e("td",{className:TD_N+MONO+" text-white/70"}, num(x.ini) || "—"),
-            cel(x.fim ? num(x.fim) : "—", e(Inteiro,{value:x.fim, label:MESES_LONGO[x.m]+" revendedoras no fim", onChange:function(v){ salvaRev(x, v); }}), ro),
-            cel(x.base ? num(x.base) : "—", e(Inteiro,{value:x.base, label:MESES_LONGO[x.m]+" revendedoras com kit no início", onChange:function(v){ salvaMeta(x, "base", v); }}), bloqueioMes),
-            cel(x.previstos ? num(x.previstos) : "—", e(Inteiro,{value:x.previstos, label:MESES_LONGO[x.m]+" acertos previstos", onChange:function(v){ salvaMeta(x, "previstos", v); }}), bloqueioMes),
-            cel(x.acertos ? num(x.acertos) : "—", e(Inteiro,{value:x.acertos, label:MESES_LONGO[x.m]+" acertos feitos", onChange:function(v){ salvaFat(x, "acertos", v); }}), ro),
-            cel(x.fat>0 ? BK(x.fat) : "—", e(MoneyInput,{value:x.fat, sm:true, className:"w-36 text-center!", label:MESES_LONGO[x.m]+" faturamento", onChange:function(v){ salvaFat(x, "recebido", v); }}), ro, x.fat>0 ? "#4ADE80" : undefined),
-            e("td",{className:TD_N+MONO}, x.media>0 ? BK(x.media) : "—"),
-            cel(x.pago>0 ? BK(x.pago) : "—", e(MoneyInput,{value:x.pago, sm:true, className:"w-32 text-center!", label:MESES_LONGO[x.m]+" contas pagas", onChange:function(v){ salvaConta(x, "pago", v); }}), x.fixado || bloqueioMes),
-            cel(x.apagar>0 ? BK(x.apagar) : "—", e(MoneyInput,{value:x.apagar, sm:true, className:"w-32 text-center!", label:MESES_LONGO[x.m]+" contas a pagar", onChange:function(v){ salvaConta(x, "apagar", v); }}), x.fixado || bloqueioMes),
-            e("td",{className:TD_N+MONO+" font-bold", style:{color:corRes(x.res, x.fat>0)}}, x.fat>0 || x.contas>0 ? BK(x.res) : "—")); }),
-          linhaTotal()))),
-    modoEdit && e("p",{className:"rounded-xl bg-black/20 px-4 py-2 text-center text-[12px] text-white/70"},
-      "Modo edição ligado. Meses fechados (cadeado) e o mês ao vivo não editam aqui. Clique em Concluir edição para voltar só aos valores."));
+  // Aba "Mês a mês" da tela Faturamento: detalhe do ano (revendedoras, acertos, faturamento, contas) com modo de edição para quem tem a autorização faturamento_edita.
+  // Meses fechados e o mês ao vivo não editam. O ano vem da tela (p.ano); sem ele, usa as setas daqui.
+  var tabela = (
+      e("div",{className:"overflow-x-auto rounded-xl ring-1 ring-[#3B82F6]/40", style:{background:"linear-gradient(180deg,#3B82F61f,#3B82F608)"}},
+        e("table",{className:"w-full min-w-[64rem] border-collapse"},
+          e("thead",{style:{background:"linear-gradient(180deg,#3B82F666,#3B82F628)"}},
+            e("tr",null, GRUPOS.map(function(g){ return e("th",{key:g.g, colSpan:g.cols.length, className:TH_G+(g.cols.length>1 ? " border-b border-white/15" : "")}, g.g); })),
+            e("tr",null, GRUPOS.map(function(g){ return g.cols.map(function(c){ return e("th",{key:g.g+c.n, title:c.i, className:TH_N+" cursor-help"}, g.cols.length>1 ? c.n : ""); }); }))),
+          e("tbody",null, linhas.map(function(x){ var bloqueioMes = x.travado, ro = x.atual || x.futuro || bloqueioMes;
+            var fundo = x.atual ? "linear-gradient(90deg,#FBBF2428,transparent 85%)" : undefined;   // mês fechado não fica verde: verde é cor de estado (21/10/2026)
+            return e("tr",{key:x.m, className:"border-t border-white/10 "+(x.futuro ? "opacity-55" : ""), style:fundo ? {background:fundo} : undefined},
+              e("td",{className:TD_N+"text-left! font-bold"}, e("span",{className:"inline-flex items-center gap-1.5"}, MESES_LONGO[x.m],
+                x.atual && e("span",{className:"rounded bg-warning/20 px-1.5 py-px text-[10px] font-bold text-warning", title:"O mês atual é atualizado na Visão geral"}, "ao vivo"),
+                x.travado && e("button",{type:"button", title:s.usuario===16 ? "Mês fechado e travado. Clique para destravar" : "Mês fechado e travado pelo Marcus", disabled:s.usuario!==16, onClick:function(){ if(window.confirm("Destravar "+MESES_LONGO[x.m]+"?")) d({type:"FAT_TRAVAR", data:ultimoDia(ano, x.m), travado:false}); }, className:"rounded bg-white/10 px-1.5 py-px text-[10px] font-bold text-white/80"}, "🔒 fechado"))),
+              e("td",{className:TD_N+MONO+" text-white/70"}, num(x.ini) || "—"),
+              cel(x.fim ? num(x.fim) : "—", e(Inteiro,{value:x.fim, label:MESES_LONGO[x.m]+" revendedoras no fim", onChange:function(v){ salvaRev(x, v); }}), ro),
+              cel(x.base ? num(x.base) : "—", e(Inteiro,{value:x.base, label:MESES_LONGO[x.m]+" revendedoras com kit no início", onChange:function(v){ salvaMeta(x, "base", v); }}), bloqueioMes),
+              cel(x.previstos ? num(x.previstos) : "—", e(Inteiro,{value:x.previstos, label:MESES_LONGO[x.m]+" acertos previstos", onChange:function(v){ salvaMeta(x, "previstos", v); }}), bloqueioMes),
+              cel(x.acertos ? num(x.acertos) : "—", e(Inteiro,{value:x.acertos, label:MESES_LONGO[x.m]+" acertos feitos", onChange:function(v){ salvaFat(x, "acertos", v); }}), ro),
+              cel(x.fat>0 ? BK(x.fat) : "—", e(MoneyInput,{value:x.fat, sm:true, className:"w-36 text-center!", label:MESES_LONGO[x.m]+" faturamento", onChange:function(v){ salvaFat(x, "recebido", v); }}), ro, x.fat>0 ? "#4ADE80" : undefined),
+              e("td",{className:TD_N+MONO}, x.media>0 ? BK(x.media) : "—"),
+              cel(x.pago>0 ? BK(x.pago) : "—", e(MoneyInput,{value:x.pago, sm:true, className:"w-32 text-center!", label:MESES_LONGO[x.m]+" contas pagas", onChange:function(v){ salvaConta(x, "pago", v); }}), x.fixado || bloqueioMes),
+              cel(x.apagar>0 ? BK(x.apagar) : "—", e(MoneyInput,{value:x.apagar, sm:true, className:"w-32 text-center!", label:MESES_LONGO[x.m]+" contas a pagar", onChange:function(v){ salvaConta(x, "apagar", v); }}), x.fixado || bloqueioMes),
+              e("td",{className:TD_N+MONO+" font-bold", style:{color:corRes(x.res, x.fat>0)}}, x.fat>0 || x.contas>0 ? BK(x.res) : "—")); }),
+            linhaTotal())))
+
+  );
+  return e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"flex min-h-8 items-center justify-between gap-2"},
+      e("h3",{className:"text-[13px] font-semibold text-foreground"}, "Detalhe por mês · "+ano),
+      pode && e("button",{type:"button", onClick:function(){ setEditando(!editando); }, className:"h-8 min-w-24 truncate rounded-md border px-3.5 text-[13px] "+(modoEdit ? "border-primary bg-primary/20 font-semibold text-primary" : "border-border bg-card text-foreground hover:bg-white/10")}, modoEdit ? "Concluir edição" : "Editar")),
+    tabela,
+    modoEdit && e("p",{className:"text-[13px] text-foreground"}, "Modo edição ligado. Meses fechados (cadeado) e o mês ao vivo não editam aqui."));
 }
 export { AbaConsolidadoFaturamento };

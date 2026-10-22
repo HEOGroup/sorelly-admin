@@ -6,6 +6,7 @@ import { Mosaico } from "@/apps/montagem/components/padrao";
 import { contasDefinidas, contasEnviadas, statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { formasPagamentoPadrao } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { cnpjDaConta } from "@/apps/montagem/domain/pix-regras";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { MONO } from "@/apps/montagem/ui/input";
@@ -37,7 +38,7 @@ function PagamentosAConferir(p){
   var maisAntigo = function(ls, x){ return ls.reduce(function(m, l){ return Math.min(m, l.pedidoTs || x.enviadoTs || Date.now()); }, Date.now()); };
   var txtEsp = function(ts){ var m = minEsp(ts); return m<1 ? "agora" : m<60 ? "há "+m+" min" : "há "+Math.floor(m/60)+" h "+(m%60)+" min"; };
   // etapas do ponto de vista do financeiro: definir contas → OK, enviar ao atendimento → (atendimento anexa) → confirmar
-  var SK = {definir:["Definir as contas","#F59E0B"], enviar:["Pronto: enviar ao atendimento","#A78BFA"], enviado:["Enviado ao atendimento","#38BDF8"], recebido:["Comprovante recebido","#38BDF8"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
+  var SK = {definir:["Definir as contas","#F59E0B"], enviar:["Pronto: enviar ao atendimento","#E5E7EB"], enviado:["Enviado ao atendimento","#E5E7EB"], recebido:["Comprovante recebido","#E5E7EB"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
   var etapaFin = function(l){
     if(l.isento) return "isento";
     if(!contasDefinidas(l)) return "definir";
@@ -46,8 +47,11 @@ function PagamentosAConferir(p){
     return (l.partes||[]).every(function(q){ return q.comprovante; }) ? "recebido" : "enviado";
   };
   // todas as formas de pagamento com todas as contas (a da própria linha vem primeiro)
-  var opcoesContas = function(forma){ var ordem = formas.filter(function(fm){ return fm.k===forma; }).concat(formas.filter(function(fm){ return fm.k!==forma; }));
-    return ordem.map(function(fm){ return e("optgroup",{key:fm.k, label:fm.label}, (fm.descricoes||[]).map(function(c){ return e("option",{key:fm.k+c, value:c}, c); })); }); };
+  // Pix: se a venda tem link ou cartão, o Pix tem de cair no MESMO CNPJ (aparecem só as contas desse CNPJ)
+  var cnpjsDaVenda = function(x){ var o = {}; x.linhas.forEach(function(l){ if(l.forma==='link' || l.forma==='credito' || l.forma==='debito') (l.partes||[]).forEach(function(q){ var c = q.descricao ? cnpjDaConta(s.px, q.descricao) : ''; if(c) o[c] = 1; }); }); return Object.keys(o); };
+  var opcoesContas = function(forma, x){ var cn = forma==='pix' && x ? cnpjsDaVenda(x) : [], serve = function(c){ return !cn.length || cn.indexOf(cnpjDaConta(s.px, c))>=0; };
+    var ordem = formas.filter(function(fm){ return fm.k===forma; }).concat(formas.filter(function(fm){ return fm.k!==forma; }));
+    return ordem.map(function(fm){ return e("optgroup",{key:fm.k, label:fm.label}, (fm.descricoes||[]).filter(serve).map(function(c){ return e("option",{key:fm.k+c, value:c}, c); })); }).filter(function(g){ return g.props.children.length>0; }); };
   // uma linha enviada (ex.: Pix R$ 7.000) pode ser dividida em várias contas; o comprovante quem anexa é a funcionária que bipa
   var linha = function(x, l, i){
     var sk = etapaFin(l), brinde = l.tipo==="brinde", ps = l.partes || [];
@@ -60,10 +64,11 @@ function PagamentosAConferir(p){
     return e("div",{key:i, className:"flex flex-col gap-1.5 rounded-lg px-3 py-2 text-left text-[13px]", style:{background:SK[sk][1]+"1F", boxShadow:"inset 4px 0 0 "+SK[sk][1]}},
       e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1"},
         e("b",{className:"text-[14px]"}, brinde ? "Diferença do brinde" : formaDe(l.forma).label+(l.forma==="credito" && l.parcelas>1 ? " "+l.parcelas+"x" : "")), e("b",{className:MONO+" text-[15px] text-primary"}, BK(l.valor)),
-        x.origem==="rep" && l.pedidoTs && e("span",{className:"text-[11.5px] text-muted-foreground"}, "pedido às "+hm(l.pedidoTs)+(sk==="definir" ? " · aguarda "+txtEsp(l.pedidoTs) : "")),
+        x.origem==="rep" && l.pedidoTs && e("span",{className:"text-[11.5px] text-foreground"}, "pedido às "+hm(l.pedidoTs)+(sk==="definir" ? " · aguarda "+txtEsp(l.pedidoTs) : "")),
         e("span",{className:"rounded-md px-2 py-0.5 text-[11.5px] font-bold", style:{background:SK[sk][1]+"26", color:SK[sk][1]}}, SK[sk][0]),
         brinde && sk!=="ok" && e(Btn,{v:l.isento ? "secondary" : "ghost", sm:true, onClick:function(){ linhaPatch({isento:!l.isento}); }}, l.isento ? "Desfazer isenção" : "Isentar")),
-      l.auto && !l.manual && e("span",{className:"text-[11.5px] font-semibold text-[#93C5FD]"}, "⚡ Conta definida sozinha · "+l.auto),
+      l.forma==='pix' && cnpjsDaVenda(x).length>0 && !l.isento && e("span",{className:"text-[11.5px] font-semibold text-foreground"}, "Pix só nas contas do CNPJ "+cnpjsDaVenda(x).join(" e ")+" (o mesmo do link ou cartão desta venda)"),
+      l.auto && !l.manual && e("span",{className:"text-[11.5px] font-semibold text-foreground"}, "⚡ Conta definida sozinha · "+l.auto),
       !l.isento && ps.map(function(q,j){ var fechado = q.ok || ro, edit = !fechado && (q.pend===true || !q.descricao);
         // conta e valor na MESMA linha; "Confirmar conta" sobe o valor. Se sobrou, nasce outra linha pendente com o resto até fechar o total
         var outras = ps.reduce(function(t,z,k){ return k===j ? t : t+(z.valor||0); }, 0), resto = Math.round((l.valor-outras)*100)/100, cabe = q.valor>0 && q.valor<=resto+0.009;
@@ -72,11 +77,11 @@ function PagamentosAConferir(p){
         return e("div",{key:j, className:"flex min-w-0 flex-col gap-1.5 rounded-lg bg-black/20 p-2"},
           edit ? e("div",{className:"flex min-w-0 flex-wrap items-center gap-2"},
               e("select",{value:q.descricao||"", "aria-label":"Conta de entrada", className:CP+" min-w-48 flex-1", onChange:function(ev){ partePatch(j, {descricao:ev.target.value, pend:true}); }},
-                e("option",{value:""},"Definir a conta…"), opcoesContas(l.forma || (formas[0] && formas[0].k))),
+                e("option",{value:""},"Definir a conta…"), opcoesContas(l.forma || (formas[0] && formas[0].k), x)),
               e("div",{className:"w-36 shrink-0"}, e(CampoDinheiro,{value:q.valor, label:"Valor desta conta", className:CP+" font-mono", onChange:function(v){ partePatch(j, {valor:v||0, pend:true}); }})),
-              ro ? e("span",{className:"text-[12px] text-muted-foreground"}, "Aguardando a definição da conta")
+              ro ? e("span",{className:"text-[12px] text-foreground"}, "Aguardando a definição da conta")
                 : e(Btn,{v:"primary", sm:true, ic:"check", disabled:!(q.descricao && cabe), onClick:confirmarConta}, "Confirmar conta"),
-              !ro && ps.length>1 && e("button",{onClick:function(){ linhaPatch(Object.assign({partes:ps.filter(function(z,k){ return k!==j; })}, marca())); }, "aria-label":"Remover esta conta", className:"grid size-7 place-items-center rounded-full bg-muted text-base font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"},"×"),
+              !ro && ps.length>1 && e("button",{onClick:function(){ linhaPatch(Object.assign({partes:ps.filter(function(z,k){ return k!==j; })}, marca())); }, "aria-label":"Remover esta conta", className:"grid size-7 place-items-center rounded-full bg-muted text-base font-bold text-foreground hover:bg-destructive/20 hover:text-destructive"},"×"),
               !ro && q.descricao && q.valor>0 && !cabe && e("span",{className:"w-full text-[12px] font-semibold text-destructive"}, "O valor passa do que falta ("+BK(Math.max(0,resto))+")."))
             : e("div",{className:"flex min-w-0 flex-wrap items-center gap-2"},
               e("b",{className:"min-w-0 flex-1 text-[13px]"}, q.descricao), e("b",{className:MONO+" text-[14px] text-primary"}, BK(q.valor)),
@@ -97,24 +102,19 @@ function PagamentosAConferir(p){
   };
   // cada acerto é um dropdown fechado (resumo na linha); clica para abrir e definir as contas
   // situação de cada conta (para o resumo do bloco fechado)
-  var sitParte = function(l, q){ return q.ok ? ["Conferido", "#22C55E"] : !q.descricao || q.pend===true ? ["Falta definir", "#F59E0B"] : q.comprovante ? ["Comprovante recebido", "#38BDF8"] : contasEnviadas(l) ? ["Aguardando comprovante", "#38BDF8"] : ["Conta definida · falta enviar", "#A78BFA"]; };
+  var sitParte = function(l, q){ return q.ok ? ["Conferido", "#22C55E"] : !q.descricao || q.pend===true ? ["Falta definir", "#F59E0B"] : q.comprovante ? ["Comprovante recebido", "#E5E7EB"] : contasEnviadas(l) ? ["Aguardando comprovante", "#E5E7EB"] : ["Conta definida · falta enviar", "#E5E7EB"]; };
   var card = function(x, aberto){
     var nDef = x.linhas.filter(function(l){ return etapaFin(l)==="definir"; }).length, nEnv = x.linhas.filter(function(l){ return etapaFin(l)==="enviar"; }).length;
     var nCmp = x.linhas.filter(function(l){ return etapaFin(l)==="enviado"; }).length;
     var total = x.linhas.reduce(function(t,l){ return l.isento ? t : t+l.valor; },0);
-    return e("details",{key:x.id, open:aberto || undefined, className:"group rounded-xl ring-1 ring-[#E8B84B]/30", style:{background:"#E8B84B10"}},
+    return e("details",{key:x.id, open:aberto || undefined, className:"group rounded-xl border border-border bg-card/60"},
       e("summary",{className:"flex cursor-pointer list-none flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 [&::-webkit-details-marker]:hidden"},
         e("span",{className:"text-primary transition-transform group-open:rotate-90"},"▶"), e("b",{className:"text-[14px]"}, x.nome),
-        x.origem==="rep" && e("span",{className:"rounded-md bg-primary/20 px-2 py-0.5 text-[11.5px] font-bold text-primary"}, "Representante "+(x.por||"")),
-        x.origem==="func" && e("span",{className:"rounded-md bg-[#EF4444]/20 px-2 py-0.5 text-[11.5px] font-bold text-[#FCA5A5]"}, "Cobrança de funcionária"),
-        x.origem==="rep" ? e("span",{className:"text-[12px] text-muted-foreground"}, "pedido às "+hm(maisAntigo(x.linhas, x))+(nDef>0 ? " · aguarda "+txtEsp(maisAntigo(x.linhas.filter(function(l){ return etapaFin(l)==="definir"; }), x)) : ""))
-          : e("span",{className:"text-[12px] text-muted-foreground"},"enviado às "+hm(x.enviadoTs)+(x.por ? " por "+x.por : "")),
-        nDef>0 && e("span",{className:"rounded-md bg-warning/20 px-2 py-0.5 text-[11.5px] font-bold text-warning"}, nDef+(nDef===1 ? " forma sem conta" : " formas sem conta")),
-        nEnv>0 && e("span",{className:"rounded-md bg-primary/20 px-2 py-0.5 text-[11.5px] font-bold text-primary"}, "falta enviar ao atendimento"),
-        nCmp>0 && e("span",{className:"rounded-md bg-info/20 px-2 py-0.5 text-[11.5px] font-bold text-info"}, "com o atendimento"),
-        x.cancelado ? e("span",{className:"rounded-md bg-destructive/20 px-2 py-0.5 text-[11.5px] font-bold text-destructive"},"cancelado")
-          : x.conferido ? e("span",{className:"rounded-md bg-success/20 px-2 py-0.5 text-[11.5px] font-bold text-success"},"✓ conferido")
-          : e("span",{className:"rounded-md px-2 py-0.5 text-[11.5px] font-bold "+(x.finalizado ? "bg-primary/20 text-primary" : "bg-white/10 text-muted-foreground")}, x.finalizado ? "Pronto para conferir" : "Bipagem ainda não finalizou"),
+        x.origem==="rep" && e("span",{className:"rounded-md bg-white/10 px-2 py-0.5 text-[11.5px] font-bold text-foreground"}, "Representante "+(x.por||"")),
+        x.origem==="func" && e("span",{className:"rounded-md bg-white/10 px-2 py-0.5 text-[11.5px] font-bold text-foreground"}, "Cobrança de funcionária"),
+        x.origem==="rep" ? e("span",{className:"text-[12px] text-foreground"}, "pedido às "+hm(maisAntigo(x.linhas, x))+(nDef>0 ? " · aguarda "+txtEsp(maisAntigo(x.linhas.filter(function(l){ return etapaFin(l)==="definir"; }), x)) : ""))
+          : e("span",{className:"text-[12px] text-foreground"},"enviado às "+hm(x.enviadoTs)+(x.por ? " por "+x.por : "")),
+        (function(){ var sel = x.cancelado ? ["cancelado", "bg-destructive/20 text-destructive"] : x.conferido ? ["✓ conferido", "bg-success/20 text-success"] : nDef>0 ? [nDef+(nDef===1 ? " forma sem conta" : " formas sem conta"), "bg-warning/20 text-warning"] : nEnv>0 ? ["falta enviar ao atendimento", "bg-white/10 text-foreground"] : nCmp>0 ? ["com o atendimento", "bg-white/10 text-foreground"] : x.finalizado ? ["Pronto para conferir", "bg-white/10 text-foreground"] : ["Bipagem ainda não finalizou", "bg-white/10 text-foreground"]; return e("span",{className:"rounded-md px-2 py-0.5 text-[11.5px] font-bold "+sel[1]}, sel[0]); })(),
         e("b",{className:MONO+" ml-auto text-primary"}, BK(total)),
         // com o bloco fechado: cada conta com valor e situação; avisa se houve mudança depois do envio
         e("div",{className:"flex w-full flex-wrap gap-1.5 pt-0.5"},
@@ -122,8 +122,8 @@ function PagamentosAConferir(p){
             return e("span",{key:i+"-"+j, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] font-semibold", style:{background:st[1]+"22", boxShadow:"inset 0 0 0 1px "+st[1]+"55"}},
               e("span",null, formaDe(l.forma).label+" · "+(q.descricao||"sem conta")+" · "+BK(q.valor)), e("b",{style:{color:st[1]}}, st[0])); }); }),
           x.linhas.some(function(l){ return l.alterado; }) && e("span",{className:"rounded-md bg-warning/25 px-2 py-0.5 text-[11.5px] font-bold text-warning"}, "Houve mudança: enviar de novo"),
-          !x.linhas.some(function(l){ return l.alterado; }) && x.linhas.some(function(l){ return l.reenviadoEm; }) && e("span",{className:"rounded-md bg-info/20 px-2 py-0.5 text-[11.5px] font-bold text-info"}, "Reenviado com mudança às "+hm(Math.max.apply(null, x.linhas.map(function(l){ return l.reenviadoEm||0; })))),
-          x.obs && e("span",{className:"w-full text-[12px] italic text-white/80"}, "Obs.: "+x.obs))),
+          !x.linhas.some(function(l){ return l.alterado; }) && x.linhas.some(function(l){ return l.reenviadoEm; }) && e("span",{className:"rounded-md bg-white/10 px-2 py-0.5 text-[11.5px] font-bold text-foreground"}, "Reenviado com mudança às "+hm(Math.max.apply(null, x.linhas.map(function(l){ return l.reenviadoEm||0; })))),
+          x.obs && e("span",{className:"w-full text-[12px] italic text-foreground"}, "Obs.: "+x.obs))),
       e("div",{className:"flex flex-col gap-1.5 px-2.5 pb-2.5"}, x.linhas.map(function(l,i){ return linha(x,l,i); }),
         // observação do financeiro sobre este pagamento (aparece no resumo do bloco fechado)
         e("input",{key:"obs"+(x.obs||""), defaultValue:x.obs||"", placeholder:"Observação (ex.: cliente vai pagar o resto amanhã)", "aria-label":"Observação do pagamento", disabled:ro, className:CP+" text-[12.5px]!", onBlur:function(ev){ if(ev.target.value!==(x.obs||"")) d({type:"FIN_ETAPA", id:x.id, patch:{obs:ev.target.value.trim()}}); }}),
@@ -133,7 +133,7 @@ function PagamentosAConferir(p){
   var corpo = e("div",{className:"flex min-w-0 flex-col gap-2 "+(p.soId ? "p-1" : "p-2")},
     !p.soId && e("p",{className:"text-center text-[13px] font-semibold"}, pend.length ? pend.length+(pend.length===1 ? " acerto pendente" : " acertos pendentes") : "Nada pendente por enquanto."),
     p.soId ? pend.map(function(x){ return card(x, true); }) : pend.length ? e(Mosaico,{min:"20rem"}, pend.map(function(x){ return card(x, false); })) : null);
-  if(p.soId) return corpo;
+  if(p.soId || p.simples) return corpo;
   // p.dentro: faz parte do bloco do Atendimento interno (mesmo setor), só com uma faixa de título; senão, bloco próprio
   if(p.dentro) return e("div",{className:"flex flex-col border-t border-[#E8B84B]/30"},
     e("div",{className:"flex flex-col items-center bg-black/25 px-3 py-1.5 text-center"}, e("b",{className:"font-heading text-[14px] leading-tight text-primary"},"Pagamentos para conferir"),

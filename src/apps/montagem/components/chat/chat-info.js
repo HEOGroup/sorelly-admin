@@ -105,7 +105,7 @@ function HorarioPessoa(p){
     e("p",{className:"flex items-center gap-2 text-[13px] font-semibold", style:{color:W.ouro}}, e(Ph,{n:"clock", s:16, fill:true}), "Horário de trabalho", h.proprio && e("span",{className:"rounded px-1.5 text-[10.5px] font-normal", style:{background:"#3a2f12"}}, "ajustado")),
     e("div",{className:"grid grid-cols-4 gap-2"}, cel("Entrada","ini"), cel("Almoço de","almIni"), cel("Almoço até","almFim"), cel("Saída","fim")),
     e("div",{className:"grid grid-cols-4 gap-2"}, cel("Sexta: entrada","sexIni"), e("span"), e("span"), cel("Sexta: saída","sexFim")),
-    h.proprio && p.pode && e("button",{onClick:function(){ api.clearSchedule(p.cid); }, className:"self-start text-[12px] underline", style:{color:W.sec}}, "Voltar ao horário padrão"));
+    h.proprio && p.pode && e("button",{onClick:function(){ api.clearSchedule(p.cid); }, className:"self-start text-[12px] underline", style:{color:W.sec}}, h.temRh ? "Voltar ao horário do RH" : "Voltar ao horário padrão"));
 }
 function InfoConversa(p){
   var st = useChat(), conv = st.convs.find(function(c){ return c.id===p.conv.id; }) || p.conv, eu = p.eu;

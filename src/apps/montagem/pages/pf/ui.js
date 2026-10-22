@@ -29,7 +29,7 @@ function op(c, nome, extra){ c.d(Object.assign({type:"PF", op:nome, por:c.por}, 
 function opc(c, nome, extra){ var a = Object.assign({type:"PF", op:nome, por:c.por}, extra), r = pfReduz(c.s, a); if(r.confirmar){ if(!window.confirm(r.msg+" Continuar mesmo assim?")) return; a.forcar = true; } c.d(a); }
 function aviso(c, txt, tom){ c.d({type:"AVISO", txt:txt, tom:tom||"ok"}); }
 function Campo(p){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(p.className||"")}, p.rot, p.children); }
-function Sel(p){ return e("select",{value:p.value, "aria-label":p.label, className:INPUT+" h-10! cursor-pointer "+(p.className||"w-48"), onChange:function(ev){ p.onChange(ev.target.value); }}, p.children); }
+function Sel(p){ return e("select",{value:p.value, "aria-label":p.label, className:INPUT+" h-10! cursor-pointer "+(p.className||"w-48"), onChange:function(ev){ p.onChange(ev.target.value); }, style:{colorScheme:"dark"}}, p.children); }
 function Txt(p){ return e("input",{value:p.value, type:p.type||"text", placeholder:p.ph||"", "aria-label":p.label, disabled:p.disabled, className:INPUT+" h-10! "+(p.className||"w-full"), onChange:function(ev){ p.onChange(ev.target.value); }, onKeyDown:p.onEnter ? function(ev){ if(ev.key==="Enter") p.onEnter(); } : undefined}); }
 function Tile(p){ return e(Indicador,{t:p.t, v:p.v, cor:p.cor, sub:p.sub}); }   // padrão único: components/padrao.js
 // selo colorido: <Chip cor="green">Quitado</Chip>; aceita o objeto {texto, cor} que as funções de domain/pf.js devolvem
@@ -42,4 +42,9 @@ function Modal(p){
 // botão pequeno de ícone (editar, excluir...)
 function IconBtn(p){ return e("button",{type:"button", onClick:p.onClick, title:p.titulo, "aria-label":p.titulo, disabled:p.disabled, className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground "+(p.perigo ? "hover:bg-destructive/20 hover:text-destructive" : "hover:bg-white/15 hover:text-white")+(p.disabled ? " opacity-40" : "")}, e(Ph,{n:p.ic, s:15})); }
 
-export { COR, brl, dbr, num, fmtN, th, TD, CARD, usePf, mut, op, opc, aviso, Campo, Sel, Txt, Tile, Chip, Modal, IconBtn };
+// COR FIXA DE CADA FORNECEDOR (pedido do Nickolas, 20/10/2026): em qualquer tela o fornecedor aparece com a mesma etiqueta colorida, nome em branco. "barra" = cor do BlocoBarra.
+var FORN_CORES = [["art ello", {hex:"#A855F7", barra:"roxo"}], ["ellos", {hex:"#EF4444", barra:"vermelho"}], ["mega sul", {hex:"#22C55E", barra:"verde"}], ["point", {hex:"#F97316", barra:"laranja"}], ["pontual", {hex:"#3B82F6", barra:"azul"}], ["xangai", {hex:"#14B8A6", barra:"turquesa"}]];
+var CORES_FORN = false;   // 20/10/2026: o Marcus não quer nada colorido nas telas de fornecedor; a regra de cores do Nickolas fica guardada (FORN_CORES) e liga com true
+function corForn(nome){ if(!CORES_FORN) return null; var n = (nome||"").toLowerCase(); for(var i = 0; i<FORN_CORES.length; i++) if(n.indexOf(FORN_CORES[i][0])>=0) return FORN_CORES[i][1]; return null; }
+function Etiqueta(p){ var c = corForn(p.nome); return e("span",{className:"inline-flex w-fit items-center whitespace-nowrap rounded-md font-bold text-white "+(p.g ? "px-3 py-1 text-[15px]" : "px-2 py-0.5 text-[12.5px]"), style:{background:c ? c.hex : "transparent", boxShadow:c ? "none" : "inset 0 0 0 1px rgba(255,255,255,.25)"}}, p.nome); }
+export { COR, corForn, Etiqueta, brl, dbr, num, fmtN, th, TD, CARD, usePf, mut, op, opc, aviso, Campo, Sel, Txt, Tile, Chip, Modal, IconBtn };

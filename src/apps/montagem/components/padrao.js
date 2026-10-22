@@ -27,7 +27,7 @@ function Indicador(p){
   var cor = ESTADO[p.cor] || p.cor || ESTADO.total, d = use().dispatch;
   return e(p.ir ? "button" : "div",{type:p.ir ? "button" : undefined, onClick:p.ir ? function(){ d({type:"ABA", aba:p.ir}); } : undefined, className:"flex min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-center "+(p.ir ? "cursor-pointer transition hover:bg-black/45 hover:ring-white/30 " : "")+(p.className||""), title:p.titulo || (p.ir ? "Abrir a tela" : undefined), style:degrade(p.cor)},
     e("b",{className:MONO+" whitespace-nowrap text-[19px] leading-none", style:{color:cor}}, p.v),
-    e("span",{className:"mt-1 text-[10.5px] font-bold uppercase leading-tight tracking-wide text-white/75"}, p.t),
+    e("span",{className:"mt-1 text-[10.5px] font-bold leading-tight text-white/75 "+(p.normal ? "" : "uppercase tracking-wide")}, p.t),
     p.sub && e("span",{className:"text-[10.5px] leading-tight text-white/50"}, cap(p.sub)));
 }
 // Faixa: indicadores lado a lado (2 em tela estreita, n em tela larga)
@@ -41,7 +41,7 @@ function Faixa(p){
 var TH_P = "whitespace-nowrap px-2 py-1 text-center text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground";
 function Tab(p){
   return e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse "+(p.className||"")},
-    e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, className:TH_P}, c); }))),
+    e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, className:p.normal ? TH_P.replace("uppercase ", "").replace("tracking-wide ", "") : TH_P}, c); }))),
     e("tbody",null, p.children)));
 }
 // Td: p.dinheiro = fonte de número; p.cor = cor de estado; p.forte = negrito

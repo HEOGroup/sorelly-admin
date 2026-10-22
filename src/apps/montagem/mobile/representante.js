@@ -1119,7 +1119,7 @@ function AppRepresentante(p){
     tela==="entregakit" && kitSel && e(EntregaKNRep,{key:kitSel.id, s:s, d:d, k:kitSel, versao:versaoSel || versaoVigente(s),
       onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }}),
     tela==="reposicao" && kitSel && (function(){
-      var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15;
+      var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 20;
       return e("div",{key:"rep", className:"flex flex-col gap-3 pb-4"},
         e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"}, e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})), e("b",{className:douradoTitulo},"Entregar reposição")),
         e("p",{className:"truncate text-[17px] font-extrabold "+BR}, kitSel.rev),

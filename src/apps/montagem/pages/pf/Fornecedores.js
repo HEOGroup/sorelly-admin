@@ -100,4 +100,4 @@ function ListaCad(p){
 }
 function AbaPfForn(){ return e(ListaCad,{prest:false}); }
 function AbaPfPrest(){ return e(ListaCad,{prest:true}); }
-export { AbaPfForn, AbaPfPrest };
+export { AbaPfForn, AbaPfPrest, ModalForn };

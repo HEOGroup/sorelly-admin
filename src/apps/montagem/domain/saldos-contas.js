@@ -21,6 +21,10 @@ var CONTAS_LISTA = [
   ["retido_safra_34","Retido Safra 34","BLOQ","PJ",true], ["retido_safra_46","Retido Safra 46","BLOQ","PJ",true]];
 // Dados reais (contas, limites e saldos) ficam num arquivo só deste computador, fora do GitHub; sem ele, vale a lista genérica abaixo.
 var LOCAL = (function(){ var m = import.meta.glob("./saldos-iniciais.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();
+// atualização lida do admin antigo (saldos e contas pagas dos dias mais novos): vale por cima do arquivo base e dos dias digitados antes
+var ATU = (function(){ try { var m = import.meta.glob("./saldos-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+if(LOCAL && ATU){ LOCAL.saldos = Object.assign({}, LOCAL.saldos, ATU.saldos); LOCAL.pagos = Object.assign({}, LOCAL.pagos, ATU.pagos); }
+var ATU_DIAS = ATU ? Object.keys(ATU.saldos) : [];
 var FAT_NF_LOCAL = LOCAL && LOCAL.fatNF ? LOCAL.fatNF : null;
 var FAT_DIA_LOCAL = LOCAL && LOCAL.fatDia ? LOCAL.fatDia : null;
 var RECEBER_LOCAL = LOCAL && LOCAL.receber ? LOCAL.receber : null;
@@ -84,4 +88,4 @@ function provaDoMes(sc, ano, mes, recebido, pago, hoje){
     esperado:resultado+somaAj, divergencia: variacao===null ? null : variacao - (resultado+somaAj)};
 }
 
-export { RECEBER_LOCAL, RECEBER_MAPA_LOCAL, FAT_DIA_LOCAL, acumularFaturamento, FAT_NF_LOCAL, PAGOS_LOCAL, FERIADOS, BLOCOS0, TIPOS_CONTA, CONTAS_LISTA, saldosContas0, isoDia, chaveMes, datasLancadas, saldoConta, posicaoEm, dataReferencia, totalReal, saldoInicioMes, saldoFimMes, provaDoMes };
+export { ATU_DIAS, RECEBER_LOCAL, RECEBER_MAPA_LOCAL, FAT_DIA_LOCAL, acumularFaturamento, FAT_NF_LOCAL, PAGOS_LOCAL, FERIADOS, BLOCOS0, TIPOS_CONTA, CONTAS_LISTA, saldosContas0, isoDia, chaveMes, datasLancadas, saldoConta, posicaoEm, dataReferencia, totalReal, saldoInicioMes, saldoFimMes, provaDoMes };

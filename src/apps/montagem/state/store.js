@@ -2,18 +2,20 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { aplicaFila, filaRetornos } from "@/apps/montagem/domain/retornos";
 import { VERSAO_DEMO, acertosDemo } from "@/apps/montagem/domain/acertos-demo";
+import { rotDemo, rotMigrar } from "@/apps/montagem/domain/rotina";
 import { pkSemearDemo } from "@/apps/montagem/domain/preferencias-rev";
 import { VERSAO_INTERNOS, feitos19, internosDemo, termosDemo } from "@/apps/montagem/domain/internos-demo";
 import { COMIS0 } from "@/apps/montagem/domain/comissoes";
-import { CFG0 } from "@/apps/montagem/domain/config";
+import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
 import { formasPagamentoPadrao, normalizarVersao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
 import { agendDemo } from "@/apps/montagem/domain/agendamento";
-import { rhDemo } from "@/apps/montagem/domain/rh";
-import { cpDemo } from "@/apps/montagem/domain/controle-pagamentos";
-import { pxDemo, pxMigrar } from "@/apps/montagem/domain/pix-regras";
-import { pfInicial, pfMigrar } from "@/apps/montagem/domain/pf";
+import { RH_STAMP, rhAplicarAdmin, rhDemo } from "@/apps/montagem/domain/rh";
+import { metasPadrao } from "@/apps/montagem/domain/metas-setor";
+import { cpAjustar, cpDemo } from "@/apps/montagem/domain/controle-pagamentos";
+import { TEM_CHAVES_ADMIN, cpAplicarExtras, pxAplicarChavesAdmin, pxDemo, pxMigrar } from "@/apps/montagem/domain/pix-regras";
+import { TEM_ATU_PF, pfInicial, pfMigrar } from "@/apps/montagem/domain/pf";
 import { cfDemo, cfMigrar } from "@/apps/montagem/domain/cobranca-func";
 import { clDemo } from "@/apps/montagem/domain/cadastro-leads";
 import { indDemo } from "@/apps/montagem/domain/indicacoes";
@@ -30,9 +32,11 @@ import { grDemo, grMigrar } from "@/apps/montagem/domain/garantias-rev";
 import { esDemo, esMigrar } from "@/apps/montagem/domain/estoque-sorelly";
 import { avDemo, avMigrar } from "@/apps/montagem/domain/avaliacoes";
 import { prDemo, prMigrar } from "@/apps/montagem/domain/producao";
+import { cpcDemo, cpcMigrar } from "@/apps/montagem/domain/cadastro-pecas";
+import { bonusNickolas } from "@/apps/montagem/domain/contas-empresa";
 import { ffDemo, ffLocal } from "@/apps/montagem/domain/financeiro-familiar";
 import { HISTORICO0, PERFIL_MARCIA, REGISTROS0, histDemo, kitNormalDayanne, novoDia } from "@/apps/montagem/domain/seed";
-import { FAT_DIA_LOCAL, acumularFaturamento, FAT_NF_LOCAL, PAGOS_LOCAL, saldosContas0 } from "@/apps/montagem/domain/saldos-contas";
+import { ATU_DIAS, FAT_DIA_LOCAL, acumularFaturamento, FAT_NF_LOCAL, PAGOS_LOCAL, saldosContas0 } from "@/apps/montagem/domain/saldos-contas";
 import { CONTAS_CNPJ0, FISCAL0 } from "@/apps/montagem/domain/cnpjs";
 import { INAD_FIN0, COMPRAS_INT0 } from "@/apps/montagem/domain/inadimplencia-fin";
 import { VERSAO_CPD, CONTAS_PAGAR_DEMO, CONTAS_PAGAS_DIARIO_DEMO, FATURAMENTO_DIARIO_DEMO, META_MENSAL_DEMO, VENDIDO_PONTA_DEMO } from "@/apps/montagem/domain/financeiro";
@@ -54,6 +58,44 @@ function semearRevInternas(st){
 var VERSAO_LISTAGENS = 12; // 9 = 4 representantes (Dayanne, Lysie, Jessica e Thalita), 3 acertos a realizar cada, nada bipado
 var VERSAO_REPS = 2; // 2 = só 4 representantes (Dayanne, Lysie, Jessica e Thalita) nas avaliações, recusas e virada do mês
 var CHAVE = "sorelly_montagem_v9"; // v4: tipos de item, condicionais, kit novo e retirada pelo app
+// 20/10/2026 (Marcus): acumulado do mês dia 1 a 15 = 791 acertos e R$ 630.605,94; dia 1 a 16 = 868 e R$ 689.631,19; dia 19 = 1.008 e R$ 789.350,24 (17 e 18 foram fim de semana). O "Hoje" provisório sai: vale o fixado. Registro em FATURAMENTO-DIARIO.md
+function aplicaFat20(s){
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, fd = Object.assign({}, s.faturamentoDiario), cpd = Object.assign({}, s.contasPagasDiario);
+  var ACU = {"2026-10-15":[630605.94, 791], "2026-10-16":[689631.19, 868], "2026-10-17":[689631.19, 868], "2026-10-18":[689631.19, 868], "2026-10-19":[789350.24, 1008]}, DIA = {"2026-10-15":[100029.55, 123], "2026-10-16":[59025.25, 77], "2026-10-17":[0, 0], "2026-10-18":[0, 0], "2026-10-19":[99719.05, 140]};
+  Object.keys(ACU).forEach(function(k){ fd[k] = Object.assign({}, fd[k], {recebido:ACU[k][0], acertos:ACU[k][1], revendedoras:(fd[k]||{}).revendedoras || rvN, fixadoEm:Date.now()}); cpd[k] = Object.assign({cnpjs:{}, contasPorFora:0}, cpd[k], {faturado:DIA[k][0], acertos:DIA[k][1]}); });
+  s.faturamentoDiario = fd; s.contasPagasDiario = cpd; s.fatHoje = null; s.fatHoje19V = Math.max(s.fatHoje19V||0, 3); s.fechaMes = Object.assign({"2026-10":{aRealizar:908, carregar:16}}, s.fechaMes); s.metaPct = s.metaPct || 97;   // previstos do Marcus: 16 do Carregar + 908 a realizar; previsão a 96/97/98%, valendo 97
+  return s;
+}
+// 20/10/2026, "Hoje" (acompanhamento, passado pelo Marcus): 1.120 acertos, R$ 887.486,78 acumulado do mês, média R$ 792,40; 7 vendas no Carregar sem valor (contam como feitas, fora da média); 783 acertos a realizar. Total do mês = 1.120 + 7 + 783 = 1.910. Previsão a 97%. Registro em FATURAMENTO-DIARIO.md
+// 21/10/2026 (Marcus): 20/10 FIXADO = 1.124 acertos e R$ 888.787,53 acumulados no mês (média R$ 790,74); dia 20 = 116 acertos e R$ 99.437,29. O "Hoje" provisório de 20/10 sai. Carregar (7) e a realizar (783) seguem valendo até ele mandar outros.
+// 22/10/2026 (Marcus): 21/10 FECHADO = 1.176 acertos e R$ 928.995,38 acumulados no mês (média R$ 789,96); dia 21 = 52 acertos e R$ 40.207,85. O "Hoje" provisório sai. Carregar (7) e a realizar (783) seguem os últimos que ele passou. Registro em FATURAMENTO-DIARIO.md
+function aplicaFat21(s){
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, k = "2026-10-21";
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:928995.38, acertos:1176, revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now()});
+  s.contasPagasDiario = Object.assign({}, s.contasPagasDiario); s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:40207.85, acertos:52});
+  if(s.fatHoje && s.fatHoje.data<=k) s.fatHoje = null;
+  return s;
+}
+function aplicaFat20b(s){
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, k = "2026-10-20";
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:888787.53, acertos:1124, revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now()});
+  s.contasPagasDiario = Object.assign({}, s.contasPagasDiario); s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:99437.29, acertos:116});
+  if(s.fatHoje && s.fatHoje.data<=k) s.fatHoje = null;
+  return s;
+}
+function aplicaHoje20(s){
+  s.fatHoje = {data:"2026-10-20", recebido:887486.78, acertos:1120, em:Date.now()};
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:783, carregar:7}}); s.metaPct = s.metaPct || 97;
+  return s;
+}
+// 20/10/2026: contas pagas de TODOS os dias de outubro iguais à tela contas-diario do admin antigo (total R$ 810.459,59). Vale sobre o que veio de outras fontes.
+function aplicaPagosAdmin(s){
+  if(!PAGOS_LOCAL) return s;
+  var cpd = Object.assign({}, s.contasPagasDiario);
+  Object.keys(PAGOS_LOCAL).forEach(function(d){ var p = PAGOS_LOCAL[d]; cpd[d] = Object.assign({cnpjs:{}, contasPorFora:0}, cpd[d], {cnpjs:Object.assign({}, p.cnpjs), contasPorFora:p.contasPorFora}); });
+  Object.keys(cpd).forEach(function(d){ if(d>"2026-10-19" && d<"2026-11" && !PAGOS_LOCAL[d]) delete cpd[d]; });   // dias de exemplo depois do último dia pago no admin (20 e 30/10) saem
+  s.contasPagasDiario = cpd; return s;
+}
 function novo(){
   var d = novoDia();
   var rv0 = novaVersaoRegras();
@@ -76,7 +118,7 @@ function novo(){
     faturamentoDiario:JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO)), metaMensal:JSON.parse(JSON.stringify(META_MENSAL_DEMO)),
     revendedorasDiario:JSON.parse(JSON.stringify(REVENDEDORAS_DIARIO_DEMO)), vendidoPonta:JSON.parse(JSON.stringify(VENDIDO_PONTA_DEMO)),
     contasPagasDiario:JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO)), inadFin:JSON.parse(JSON.stringify(INAD_FIN0)), comprasInt:JSON.parse(JSON.stringify(COMPRAS_INT0)), cpdV:VERSAO_CPD, negPix:{Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}}, fatHojeV:8, fatHoje:null, fat14FixV:2, rev14V:1, fatHoje14V:1, revAtualizadoEm:{"2026-10-14":1792022400000},
-    saldosContas:saldosContas0(), saldosV:8,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
+    saldosContas:saldosContas0(), saldosV:9,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
     avisosCfg:{media_alta:[11,16,17]}, alertas:[],
     mesFechado:null, visao:"supervisao", bipadora:9, usuario:16, logado:true, aba:"painel", celular:1, telaCel:"proximo",
     abertas:{L1:true, L2:true}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null, demoAcertos:VERSAO_DEMO, demoListagens:VERSAO_LISTAGENS, lysieDemoV:1, lysieNovasV:1, dayanneNormalV:1};
@@ -85,6 +127,7 @@ function novo(){
   st.fatHoje = {data:"2026-10-15", recebido:603200.74, acertos:755, em:Date.now()}; st.fat15V = 1;   // hoje (15/10), acompanhamento do dia
   st.datasPag = {geral:15, setores:{}};   // dia do mês em que as comissões são pagas (Financeiro → Comissões → Datas de pagamento)
   st.pf = pfInicial();   // Pagamentos a fornecedores: dados reais do arquivo local (ou vazio)
+  st.rot = rotDemo();   // Rotina do dia: combinados por pessoa e checks
   st.cf = cfDemo();   // Cobrança de funcionárias (vazio)
   st.cl = clDemo();   // Aprovação de cadastros (vazio; dados reais só no arquivo local)
   st.ind = indDemo();   // Indicações (vazio; dados reais só no arquivo local)
@@ -100,15 +143,22 @@ function novo(){
   st.pk = pkDemo();   // Preferências do Kit (vazio; dados reais só no arquivo local)
   st.av = avDemo();   // Avaliações (vazio; dados reais só no arquivo local)
   st.es = esDemo();   // Estoque Sorelly (geral de peças; vazio, dados reais só no arquivo local)
+  st.cpc = cpcDemo();   // Cadastro de peças (lotes, custo e preço; vazio, dados de teste só no arquivo local)
   st.pr = prDemo();   // Produção de peças (vazio; dados reais só no arquivo local)
   st.px = pxDemo();   // Chaves Pix e regras (contas automáticas do atendimento interno)
-  st.cp = cpDemo();   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.cp = cpAjustar(cpDemo()); st.cpV3 = 1;   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.cpe = {classe:{}, lanc:bonusNickolas()};   // Contas a pagar: o que o Marcus marcou como Sorelly ou Família em cada conta do DevMaster
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
+  st.metasSet = metasPadrao();   // metas mensais do Cadastro e da Inadimplência (Financeiro → Comissões)
   st.agend = agendDemo(st);   // setor de Agendamento: meses fechados, mês aberto, cotas e saldos de demonstração
   var di = internosDemo(st); st.internos = di.internos; st.acertosConsignado = st.acertosConsignado.concat(di.acertos); st.lancFin = di.lancFin; st.intAbas = []; st.intSel = null; st.demoInternos = VERSAO_INTERNOS; var tdn = termosDemo(st); Object.keys(tdn).forEach(function(n){ st.perfisRev[n] = Object.assign({}, st.perfisRev[n], tdn[n]); });   // listagem do atendimento interno (02/10 feita, 05/10 agenda)
   semearRevInternas(st);   // depois dos internos de demonstração: coloca 4 atendimentos marcados para hoje
   st.pk = pkSemearDemo(st).pk;   // Preferências do kit: ~65% das revendedoras já preenchidas (demonstração)
+  if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
+  if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
+  aplicaPagosAdmin(st); st.cpdAdminV = 1; st.cpdLocalV = 2;
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1;   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -117,7 +167,12 @@ function inicial(){
     // listagens de demonstração antigas são trocadas pelas novas (dias 6, 7 e 8, nada bipado)
     if(s.demoListagens!==VERSAO_LISTAGENS){ var dn = novoDia(); s.listagens = dn.listagens; s.kits = dn.kits; s.retPend = []; s.entregasKN = {}; s.abertas = {L1:true, L2:true}; s.kitAberto = null; s.demoListagens = VERSAO_LISTAGENS; s.perfisRev = Object.assign({}, s.perfisRev, {"Beatriz Nogueira":{profissao:"Nail Designer", enderecoCasa:"Rua Fictícia S, 210 - Centro, Curitiba - PR", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR", fone1:"(41) 00000-0088", fone2:"(41) 99900-0088", refs:[{nome:"Maria Aparecida", rel:"Mãe", fone:"(41) 99812-3344"}, {nome:"João Carlos", rel:"Esposo", fone:"(41) 98745-6120"}, {nome:"Rosângela Silva", rel:"Irmã", fone:"(41) 99133-8870"}]}}); }
     // campos novos da configuração entram com o padrão em dados já salvos
-    ["tabelaAtiva","tabelaKitBaixo","minVendaApp","limiteMelhores","categorias","pecasKit","pecasSugCat","reposicaoMax","limiteMarcus","limiteAnaliseVendas","comissoesRev","limiteEncomendas"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = JSON.parse(JSON.stringify(CFG0[f])); });
+    ["tabelaAtiva","tabelaKitBaixo","minVendaApp","limiteMelhores","categorias","pecasKit","pecasSugCat","reposicaoMax","limiteMarcus","limiteAnaliseVendas","comissoesRev","limiteEncomendas","limiteMesaMaior"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = JSON.parse(JSON.stringify(CFG0[f])); });
+    // 20/10/2026: setor Encomendas acabou; as 3 montam de R$ 3.000 para cima e a mesa maior (Agatha) fica com vendas acima de R$ 4.000 (uma vez só, depois o Configurador manda)
+    if(!s.cfg.encMesa20){ s.cfg.limiteEncomendas = CFG0.limiteEncomendas; s.cfg.limiteMesaMaior = CFG0.limiteMesaMaior; s.cfg.encMesa20 = true; }
+    aplicaFaixas(s.cfg);   // 20/10/2026: anéis em faixa (mínimo a máximo)
+    // 20/10/2026: no estoque baixo, vendas a partir de R$ 4.000 mantêm o valor do estoque alto (uma vez só, depois o Configurador manda)
+    if(!s.cfg.baixoAlto4000){ (s.cfg.tabelaKitBaixo||[]).forEach(function(b){ if(b.min>=4000){ var a = (s.cfg.tabelaKit||[]).find(function(x){ return x.min===b.min; }); if(a) b.kit = a.kit; } }); s.cfg.baixoAlto4000 = true; }
     // 19/10/2026: as 3 montadoras do setor Encomendas (Elen, Agatha, Eduarda Gabriela) entram em quem já tem estado salvo
     MONTADORAS.filter(function(m){ return m.encomendas; }).forEach(function(m){ var ex = (s.montadoras||[]).find(function(x){ return x.id===m.id; }); if(!ex) s.montadoras.push(JSON.parse(JSON.stringify(m))); else ex.encomendas = true; });
     ["valorBipNormal","valorBipEspecial","limiteBipEspecial","perdaFalta"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = CFG0[f]; });
@@ -143,7 +198,7 @@ function inicial(){
     if(s.cpMesV!==2){ s.cpMesV = 2; s.contasPagar = s.contasPagar || {}; s.contasPagar["2026"] = JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO["2026"])); }   // outubro/2026 da Nayale
     if(s.setembroTravadoV!==1){ s.setembroTravadoV = 1; var r30 = (s.faturamentoDiario||{})["2026-09-30"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-09-30":Object.assign({}, r30, {recebido:1427724.88, acertos:1778, revendedoras:r30.revendedoras||2023, travado:true})}); }   // Setembro travado
     if(FAT_NF_LOCAL && s.fatNFV!==1){ s.fatNFV = 1; Object.keys(FAT_NF_LOCAL).forEach(function(d){ if(s.faturamentoDiario && s.faturamentoDiario[d]) s.faturamentoDiario[d] = Object.assign({}, s.faturamentoDiario[d], {recebido:FAT_NF_LOCAL[d]}); }); }   // faturamento de setembro = relatório de notas fiscais
-    if(PAGOS_LOCAL && s.cpdLocalV!==1){ s.cpdLocalV = 1; s.contasPagasDiario = s.contasPagasDiario || {}; Object.keys(PAGOS_LOCAL).forEach(function(d){ s.contasPagasDiario[d] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, s.contasPagasDiario[d], {cnpjs:Object.assign({}, PAGOS_LOCAL[d].cnpjs), contasPorFora:PAGOS_LOCAL[d].contasPorFora}); }); }   // contas pagas de 01 a 13/10 conferidas (arquivo local)
+    if(PAGOS_LOCAL && s.cpdLocalV!==2){ s.cpdLocalV = 2; s.contasPagasDiario = s.contasPagasDiario || {}; Object.keys(PAGOS_LOCAL).forEach(function(d){ s.contasPagasDiario[d] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, s.contasPagasDiario[d], {cnpjs:Object.assign({}, PAGOS_LOCAL[d].cnpjs), contasPorFora:PAGOS_LOCAL[d].contasPorFora}); }); }   // contas pagas de 01 a 13/10 conferidas (arquivo local)
     if(s.cpdV!==VERSAO_CPD){ s.cpdV = VERSAO_CPD; Object.keys(CONTAS_PAGAS_DIARIO_DEMO).filter(function(k){ return k>="2026-10-01"; }).forEach(function(k){ s.contasPagasDiario[k] = JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO[k])); }); s.faturamentoDiario["2026-10-08"] = Object.assign({}, FATURAMENTO_DIARIO_DEMO["2026-10-08"]); }   // o faturamento de hoje NÃO é mexido aqui: vem da migração fatHojeV (13/10: R$ 355.743,30 e 473 acertos)
     // faturamento de hoje (13/10/2026, passado pelo Marcus): R$ 355.743,30 e 473 acertos (média R$ 752,10); provisório até fixar o dia
     if(s.fatHojeV!==8){ s.fatHojeV = 8; s.fatHoje = {data:"2026-10-14", recebido:475034.23, acertos:600, em:Date.now()}; s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-13":2069}); }   // 13/10 fechado: R$ 426.110,24, 526 acertos, 2.069 revendedoras
@@ -158,23 +213,58 @@ function inicial(){
     // 19/10/2026, nova atualização do "Hoje" (passada pelo Marcus): R$ 776.012,44 · 980 acertos · média R$ 791,85
     if(!s.fatHoje19V){ s.fatHoje19V = 2; s.fatHoje = {data:"2026-10-19", recebido:776012.44, acertos:980, em:Date.now()}; s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-19":2082}); s.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm||{}, {"2026-10-19":Date.now()}); }
     // 19/10/2026 (Marcus): 997 acertos, R$ 785.494,64, média R$ 787,86; 16 vendas do Carregar sem valor (contam como feitas) e 908 acertos a realizar no mês. Total do mês = 997+16+908 = 1.921 (no lugar dos 1.976 do Agendamento). Previsão por 96/97/98%, padrão 97.
-    if(s.fatHoje19V!==3){ s.fatHoje19V = 3; s.fatHoje = {data:"2026-10-19", recebido:785494.64, acertos:997, em:Date.now()}; s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:908, carregar:16}}); s.metaPct = 97; }
+    if(s.fatHoje19V!==3){ s.fatHoje19V = 3; s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:908, carregar:16}}); s.metaPct = 97; }
     // 13/10/2026 fechou em R$ 426.110,24 e 526 acertos (passado pelo Marcus): vale este acumulado, e o dia 14/10 sai pela diferença (R$ 104.463,15 e 142 acertos)
     if(s.fat13FixV!==1){ s.fat13FixV = 1; var r13 = (s.faturamentoDiario||{})["2026-10-13"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-10-13":Object.assign({}, r13, {recebido:426110.24, acertos:526, revendedoras:2069})}); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-14":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-14"], {faturado:104463.15, acertos:142})}); }
+    // 19/10/2026 (Marcus): acumulado do mês FIXADO até o dia 19: 1.008 acertos e R$ 789.350,24 (média R$ 783,09). Registro diário em FATURAMENTO-DIARIO.md
+    if(s.fat19FixV!==1){ s.fat19FixV = 1; var fd19 = Object.assign({}, s.faturamentoDiario), ant19 = Object.keys(fd19).filter(function(k){ return k>="2026-10-01" && k<"2026-10-19"; }).sort(), rv19 = Object.keys(s.revendedorasDiario||{}).sort(); fd19["2026-10-19"] = Object.assign({}, fd19["2026-10-19"], {recebido:789350.24, acertos:1008, revendedoras:rv19.length ? s.revendedorasDiario[rv19[rv19.length-1]] : ((fd19["2026-10-19"]||{}).revendedoras||0), fixadoEm:Date.now()}); s.faturamentoDiario = fd19; if(ant19.length){ var p19 = fd19[ant19[ant19.length-1]]; s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-19":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-19"], {faturado:Math.round((789350.24-(p19.recebido||0))*100)/100, acertos:1008-(p19.acertos||0)})}); } }
+    // 20/10/2026 (Marcus): acumulado do mês dia 1 a 15 = 791 acertos e R$ 630.605,94; dia 1 a 16 = 868 e R$ 689.631,19; dia 19 = 1.008 e R$ 789.350,24 (17 e 18 foram fim de semana). O "Hoje" provisório de 19/10 sai: vale o fixado.
+    if(s.fat20FixV!==1){ s.fat20FixV = 1; aplicaFat20(s); }
+    if(s.hoje20V!==1){ s.hoje20V = 1; aplicaHoje20(s); }
+    if(s.fat20bV!==1){ s.fat20bV = 1; aplicaFat20b(s); }
+    if(s.fat21V!==1){ s.fat21V = 1; aplicaFat21(s); }
+    if(s.cpdAdminV!==1){ s.cpdAdminV = 1; aplicaPagosAdmin(s); }
+    if(TEM_CHAVES_ADMIN && s.pixAdminV!==2 && s.px && s.saldosContas){ s.pixAdminV = 2; s.px = pxAplicarChavesAdmin(JSON.parse(JSON.stringify(s.px)), s.saldosContas.contas, "Marcus", Date.now()); }
+    if(TEM_CHAVES_ADMIN && s.pixExtrasV!==2 && s.cp){ s.pixExtrasV = 2; s.cp = cpAplicarExtras(s.cp, "Marcus", Date.now()); }
+    if(RH_STAMP && s.rhAdminStamp!==RH_STAMP && s.rh){ s.rh = rhAplicarAdmin(s.rh); s.rhAdminStamp = RH_STAMP; }
     // valor correto do fechamento de 14/10 (Marcus, 15/10): R$ 530.576,39 e 668 acertos, média R$ 794,28; o dia sai pela diferença do 13/10 (R$ 104.466,15 e 142 acertos). Sem arredondar.
     if(s.fat14FixV!==2){ s.fat14FixV = 2; var r14 = (s.faturamentoDiario||{})["2026-10-14"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-10-14":Object.assign({}, r14, {recebido:530576.39, acertos:668, revendedoras:2077, fixadoEm:r14.fixadoEm||Date.now()})}); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-14":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-14"], {faturado:104466.15, acertos:142})}); if(s.fatHoje && s.fatHoje.data==="2026-10-14") s.fatHoje = null; }
     if(s.fat15V!==1){ s.fat15V = 1; s.fatHoje = {data:"2026-10-15", recebido:603200.74, acertos:755, em:Date.now()}; }   // hoje (15/10): 755 acertos, R$ 603.200,74 recebido, média R$ 798,94 (o fechamento do dia 14 já está: 668 acertos, R$ 530.576,39)
     if(!s.rh) s.rh = rhDemo();
+    if(!s.metasSet) s.metasSet = metasPadrao();
+    if(!s.cpe) s.cpe = {classe:{}, lanc:[]}; if(!s.cpe.lanc) s.cpe.lanc = [];
+    if(!s.cpeNick){ s.cpeNick = true; var ja = s.cpe.lanc.map(function(x){ return x.id; }); s.cpe = Object.assign({}, s.cpe, {lanc:s.cpe.lanc.concat(bonusNickolas().filter(function(x){ return ja.indexOf(x.id)<0; }))}); }   // bônus mensal do Nickolas (19/10/2026)
+    if(!s.cpeNick2){ s.cpeNick2 = true; var vn = s.cpe.lanc.filter(function(x){ return !/^nick-/.test(x.id); }), jn = vn.map(function(x){ return x.id; }); s.cpe = Object.assign({}, s.cpe, {lanc:vn.concat(bonusNickolas().filter(function(x){ return jn.indexOf(x.id)<0; }))}); }   // dia 10 e 23, e o de 10/10 pago em dinheiro (20/10/2026)
+    if(s.ff && !s.ffImp4){ s.ffImp4 = true; var ffZ = ffLocal(); if(ffZ){ var tira = ffZ.removerDividas||[]; s.ff.dividas = (s.ff.dividas||[]).filter(function(x){ return tira.indexOf(x.id)<0; });
+      (ffZ.dividas||[]).filter(function(x){ return /^x_/.test(x.id) && !s.ff.dividas.some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.dividas.push(x); });
+      (ffZ.repasses||[]).filter(function(x){ return /^x_/.test(x.id) && !(s.ff.repasses||[]).some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.repasses.push(x); }); } }   // 68 Gang (3 orçamentos), Amanda e demais ajustes passados pelo Marcus
+    if(s.ff && !s.ffImp6){ s.ffImp6 = true; var ffV = ffLocal(); if(ffV && ffV.sync1){ var sy = ffV.sync1;   // atualização do admin antigo (21/10/2026): pagamentos de agosto e outubro e o Pix do Marcus passam a bater com o admin antigo
+      (ffV.contas||[]).forEach(function(c){ if((sy.novas||[]).indexOf(c.id)>=0 && !s.ff.contas.some(function(k){ return k.id===c.id; })) s.ff.contas.push(c); });
+      (sy.pares||[]).forEach(function(pr){ (ffV.contas||[]).filter(function(c){ return c.personaId===pr[0]; }).forEach(function(c){ var par = (ffV.parcelas[c.id]||{})[pr[1]]; if(par){ s.ff.parcelas[c.id] = s.ff.parcelas[c.id]||{}; s.ff.parcelas[c.id][pr[1]] = par; } }); });
+      Object.keys(sy.contaCat||{}).forEach(function(id){ var cc = s.ff.contas.find(function(k){ return k.id===id; }); if(cc) cc.categoria = sy.contaCat[id]; });
+      (sy.remover||[]).forEach(function(r){ if(s.ff.parcelas[r[0]]) delete s.ff.parcelas[r[0]][r[1]]; });
+      (sy.pixAdd||[]).forEach(function(x){ if(!s.ff.pix.some(function(k){ return k.id===x.id; })) s.ff.pix.push(x); });
+      if(!(s.ff.categorias||[]).some(function(c){ return c.chave==="PIX_ITAU_BLACK"; })) s.ff.categorias.push({chave:"PIX_ITAU_BLACK", nome:"Pix Itaú Black"});
+      (sy.pixSet||[]).forEach(function(x){ var p = s.ff.pix.find(function(k){ return k.id===x.id; }); if(p) p.valor = x.valor; }); } }
+    if(s.ff && !s.ffImp5){ s.ffImp5 = true; var ffW = ffLocal(); if(ffW){   // 68 Gang por código do orçamento (21/10/2026): cada dívida ganha código/título e cada envio aponta para a sua dívida
+      (ffW.dividas||[]).filter(function(x){ return x.codigo || x.divId; }).forEach(function(x){ var at = (s.ff.dividas||[]).find(function(k){ return k.id===x.id; }); if(at) Object.assign(at, x); else s.ff.dividas.push(x); });
+      (ffW.repasses||[]).filter(function(x){ return x.divId; }).forEach(function(x){ var at = (s.ff.repasses||[]).find(function(k){ return k.id===x.id; }); if(at) at.divId = x.divId; else s.ff.repasses.push(x); }); } }
+    if(s.ff && !s.ffImp3){ s.ffImp3 = true; s.ff.pixMeta =Object.assign({}, s.ff.pixMeta, {"anabeatriz|2026-10":7000}); }   // Marcus (19/10/2026): meta de Pix revendedoras da Ana Beatriz sobe para R$ 7.000
     if(!s.ff) s.ff = ffDemo(); else if(!s.ffImp1){ s.ffImp1 = true; var ffR = ffLocal(); if(ffR && !(s.ff.contas||[]).length && !(s.ff.pix||[]).length) s.ff = ffR; }   // dados reais do familiar (só entra se o familiar ainda estiver vazio)
+    if(s.ff && !s.ffImp3){ s.ffImp3 = true; var ffY = ffLocal(); if(ffY){ (ffY.dividas||[]).filter(function(x){ return /^x_/.test(x.id) && !(s.ff.dividas||[]).some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.dividas.push(x); var pr = (s.ff.prest||[]).find(function(q){ return q.id===x.prestId; }); if(pr) pr.ativo = true; }); } }   // dívidas que o Marcus passou à mão (ex.: Amanda, total R$ 350)
     if(s.ff && !s.ffImp2){ s.ffImp2 = true; var ffX = ffLocal(); if(ffX){ ffX.contas.filter(function(c){ return /^x_/.test(c.id) && !s.ff.contas.some(function(k){ return k.id===c.id; }); }).forEach(function(c){ s.ff.contas.push(c); s.ff.parcelas[c.id] = ffX.parcelas[c.id]; }); } }   // contas que o Marcus passou e não existem no admin antigo (ex.: aluguel Uphills)
     if(!s.cp) s.cp = cpDemo();
+    if(s.cp && s.cpV3!==1){ s.cp = cpAjustar(s.cp); s.cpV3 = 1; }
     if(!s.px) s.px = pxDemo();
     s.px = pxMigrar(s.px, s);   // traz as contas Pix reais (sem chave) do arquivo local, uma vez
+    s.rot = rotMigrar(s.rot);   // Rotina do dia
     s.cf = cfMigrar(s.cf);   // Cobrança de funcionárias: cria ou completa com os dados do arquivo local
     if(!s.cl) s.cl = clDemo();
     if(!s.ind) s.ind = indDemo();
     s.ex = exMigrar(s.ex);   // Expositores: cria vazio ou completa campos novos
-    s.lp = lpMigrar(s.lp);   // Link de pagamento e maquininhas: cria vazio ou completa campos novos
+    s.lp = lpMigrar(s.lp);
+    // meta do Link de pagamento de OUTUBRO/2026 (Helen): Bronze 70 mil = R$ 300 até Diamante 88 mil = R$ 1.000 (substitui as faixas antigas da planilha)
+    if(s.lpMetaV!==1){ s.lpMetaV = 1; s.lp.config = Object.assign({}, s.lp.config, {bonus:{faixas:[{min:88000, valor:1000}, {min:82500, valor:800}, {min:78000, valor:600}, {min:75000, valor:450}, {min:70000, valor:300}], obs:"Meta de outubro/2026 (Bronze, Prata, Ouro, Platina e Diamante). A meta muda todo mês: ajuste aqui."}}); }   // Link de pagamento e maquininhas: cria vazio ou completa campos novos
     s.er = erMigrar(s.er);   // Encomendas e reposições: cria vazio ou completa campos novos
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
@@ -185,13 +275,15 @@ function inicial(){
     s.pk = pkMigrar(s.pk);   // Preferências do Kit: cria vazio ou completa campos novos
     s.av = avMigrar(s.av);   // Avaliações: cria vazio ou completa campos novos
     s.es = esMigrar(s.es);   // Estoque Sorelly: cria vazio ou completa campos novos
+    s.cpc = cpcMigrar(s.cpc);   // Cadastro de peças: cria com os dados de teste ou completa campos novos
     s.pr = prMigrar(s.pr);   // Produção de peças: cria vazio ou completa campos novos
-    if(!s.pf) s.pf = pfInicial(); else if(!s.pf.prestSemeados || !s.pf.helcioSemeado || !s.pf.elloSemeado || !s.pf.mqImp2 || !s.pf.lcAjustado || s.pf.fornecedores.some(function(f){ return !f.tipo; })) s.pf = pfMigrar(JSON.parse(JSON.stringify(s.pf)));
+    if(!s.pf) s.pf = pfInicial(); else if(!s.pf.prestSemeados || !s.pf.helcioSemeado || !s.pf.elloSemeado || !s.pf.mqImp2 || (!s.pf.atuV1 && TEM_ATU_PF) || (!s.pf.atuV2c && TEM_ATU_PF) || (!s.pf.atuV5 && TEM_ATU_PF) || (!s.pf.atuV10 && TEM_ATU_PF) || (!s.pf.atuV11 && TEM_ATU_PF) || (!s.pf.atuV3 && TEM_ATU_PF) || !s.pf.lcAjustado || s.pf.fornecedores.some(function(f){ return !f.tipo; })) s.pf = pfMigrar(JSON.parse(JSON.stringify(s.pf)));
     if(s.rh && !s.rh.contratos){ s.rh.contratos = []; s.rh.modelos = []; s.rh.colunasRep = []; }   // Contratos do RH chegaram depois
     if(!s.datasPag) s.datasPag = {geral:15, setores:{}};
     if(!s.agend) s.agend = agendDemo(s);
     if(s.agend && !s.agend.remarc){ s.agend.remarc = []; s.agend.diario = undefined; s.agend.v = 2; }   // v2: acertos realizados vêm do faturamento; remarcações entram   // Agendamento (acertos) chegou depois: monta com o que já existe
     if(s.agend && s.agend.config && !s.agend.sabrinaSaiu){ s.agend.sabrinaSaiu = true; (s.agend.config.representantes||[]).forEach(function(r){ if(/^Sabrina da Silva/.test(r.nome)) r.ativo = false; }); }   // Sabrina saiu da empresa (19/10/2026): fica no histórico, sem cota
+    if(s.reposV!==1){ s.reposV = 1; if(s.comis && s.comis.reposicao===15) s.comis.reposicao = 20; }   // reposição entregue passou de R$ 15 para R$ 20 (20/10/2026); quem já salvou outro valor não muda
     if(s.dayanneNormalV!==1){ s.dayanneNormalV = 1; var lDay = (s.listagens||[]).find(function(x){ return x.rep==="Dayanne"; });
       if(lDay && !(s.kits||[]).some(function(k){ return k.rev==="Márcia Camargo"; })){ var lDay2 = Object.assign({}, lDay), kDay = kitNormalDayanne(lDay2); s.listagens = s.listagens.map(function(x){ return x.id===lDay.id ? lDay2 : x; }); s.kits = (s.kits||[]).concat([kDay]); }
       s.perfisRev = Object.assign({}, s.perfisRev, {"Márcia Camargo":Object.assign({}, PERFIL_MARCIA, (s.perfisRev||{})["Márcia Camargo"])}); }
@@ -206,7 +298,7 @@ function inicial(){
     if(s.perfisRev && s.perfisRev["Andrielle Taborda"] && !s.perfisRev["Andrielle Taborda"].expositores)
       s.perfisRev["Andrielle Taborda"].expositores = [{id:"exp-acrilico", nome:"Expositor acrílico grande", qtd:1},{id:"exp-pulseira", nome:"Expositor de pulseira", qtd:1}];
     if(!s.fiscal || !s.fiscal.hist) s.fiscal = JSON.parse(JSON.stringify(FISCAL0));
-    if(!s.saldosContas || s.saldosV!==8){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 8; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-13") scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v2: contas, limites e saldos reais de 30/09 e 13/10
+    if(!s.saldosContas || s.saldosV!==9){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 9; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-13" && ATU_DIAS.indexOf(k)<0) scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v2: contas, limites e saldos reais de 30/09 e 13/10
     if(!s.contasCnpj) s.contasCnpj = JSON.parse(JSON.stringify(CONTAS_CNPJ0));
     if(!s.acertosConsignado) s.acertosConsignado = [];
     if(!s.internos) s.internos = [];

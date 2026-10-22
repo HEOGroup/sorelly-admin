@@ -113,7 +113,7 @@ function novoDia(){
     l1.n = (l1.n||0)+1;
     Object.assign(kn, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["094501","094502"], pegas:true, chkB:{"094501":true, "094502":true}, impressas:{}, novas:[]}, tipoKit:"kit_novo", status:"retirado", ordem:l1.n, retEm:Date.now()-3600000, retPor:11, horaAtend:"11:30", fone:"(41) 00000-0088", vendas:[]});
     K.push(kn);
-    // Vanessa Prado: REPOSIÇÃO pronta (montada, bipada e retirada) para a Dayanne entregar pelo app: conta as peças, a condicional assinada sobe nas condicionais da revendedora e a comissão é de R$ 15,00
+    // Vanessa Prado: REPOSIÇÃO pronta (montada, bipada e retirada) para a Dayanne entregar pelo app: conta as peças, a condicional assinada sobe nas condicionais da revendedora e a comissão é de R$ 20,00
     var kr = kit("L1", "Vanessa Prado", "Portão", 2500, 0, {endereco:"Rua Fictícia R, 88 - Portão, Curitiba - PR", tipo:"ac_kit"});
     l1.n = (l1.n||0)+1;
     Object.assign(kr, {montId:MONTADORAS[0].id, bipId:BIPADORAS[0].id, cond:{nums:["094601"], pegas:true, chkB:{"094601":true}, impressas:{}, novas:[]}, tipoKit:"reposicao", status:"retirado", ordem:l1.n, retEm:Date.now()-3000000, retPor:11, horaAtend:"12:00", fone:"(41) 00000-0099", vendas:[]});

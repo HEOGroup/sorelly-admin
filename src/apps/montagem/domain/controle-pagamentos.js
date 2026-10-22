@@ -15,6 +15,21 @@ function cpDemo(){
     d("Marcus PF", "FAMILIA"), d("Pontual", "FORNECEDOR"), d("Point", "FORNECEDOR"), d("Office Graf", "FORNECEDOR"), d("Ellos Galvânica", "FORNECEDOR"), d("Mega Sul", "FORNECEDOR"), d("Art Ello Bruto", "FORNECEDOR"),
     d("Devmaster", "FORNECEDOR"), d("Linda", "FORNECEDOR"), d("Tucano", "FORNECEDOR"), d("Charme", "FORNECEDOR"), d("Higor (segurança)", "PRESTADOR"), d("Camilly", "PRESTADOR")]};
 }
+// Pix para representantes e para os sócios (21/10/2026): representantes viram destinos; "Marcus PF" vira um destino por sócio (cada um ligado à persona do Financeiro familiar) e as orientações do dia entram do arquivo local
+var HOJE_LOCAL = (function(){ try { var m = import.meta.glob("./controle-hoje.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var SOCIOS_FAM = [["Marcus", "marcus"], ["Anamaria", "anamaria"], ["Ana Beatriz", "anabeatriz"], ["Marco Antonio", "marco"]];
+function cpAjustar(cp){
+  cp = JSON.parse(JSON.stringify(cp));
+  var tem = function(n){ return cp.destinos.find(function(x){ return x.nome===n; }); };
+  var novo = function(nome, tipo, extra){ cp.destinos.push(Object.assign({id:uid("d"), nome:nome, tipo:tipo, cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true}, extra||{})); };
+  var pf = tem("Marcus PF"); if(pf){ pf.nome = "Marcus"; pf.personaId = "marcus"; }
+  SOCIOS_FAM.forEach(function(s){ var d = tem(s[0]); if(d){ d.personaId = s[1]; d.tipo = "FAMILIA"; } else novo(s[0], "FAMILIA", {personaId:s[1]}); });
+  if(HOJE_LOCAL){
+    HOJE_LOCAL.orientacoes.forEach(function(x){ if(!tem(x.destino)) novo(x.destino, "REPRESENTANTE"); });
+    if(!(cp.orientacoes||[]).some(function(o){ return o.chaveSemente===HOJE_LOCAL.chave; })) HOJE_LOCAL.orientacoes.forEach(function(x){ var d = tem(x.destino); cp.orientacoes.push({id:uid("o"), destinoId:d.id, valor:x.valor, ate:x.ate, obs:x.obs, por:"Marcus", em:Date.now(), status:"aberta", lanc:[], chaveSemente:HOJE_LOCAL.chave}); });
+  }
+  return cp;
+}
 var direcionado = function(o){ return r2((o.lanc||[]).reduce(function(t, x){ return t+x.valor; }, 0)); };
 var faltaDe = function(o){ return r2(Math.max(0, o.valor-direcionado(o))); };
 // sugestão para um Pix que chegou: primeiro o que está atrasado, depois a data mais próxima, depois o maior valor em aberto
@@ -30,6 +45,9 @@ function cpReduz(s, a){
   var orient = function(id){ return cp.orientacoes.find(function(o){ return o.id===id; }); };
   switch(a.op){
     case "destino_add": { var nm = String(a.nome||"").trim(); if(!nm || !TIPOS_DESTINO[a.tipo]) return recusa("Informe o nome e o tipo."); cp.destinos.push({id:uid("d"), nome:nm, tipo:a.tipo, cnpjId:a.cnpjId||"", banco:a.banco||"", chavePix:a.chavePix||"", obs:a.obs||"", ativo:true}); return ok("Destino criado"); }
+    case "func_set": { var nmf = String(a.nome||"").trim(); if(!nmf) return recusa("Informe o nome."); cp.func = cp.func||{}; cp.func[nmf] = Object.assign({chave:"", vinculo:""}, cp.func[nmf], a.patch||{}); return ok(a.novo ? "Prestador cadastrado" : undefined); }
+    case "chave_set": { var idc = String(a.id||""); if(!idc) return recusa("Chave sem identificação."); cp.chaves = cp.chaves||{}; cp.chaves[idc] = Object.assign({}, cp.chaves[idc], a.base||{}, a.patch||{}); return ok(); }
+    case "func_del": { if(cp.func && cp.func[a.nome] && cp.func[a.nome].extra) delete cp.func[a.nome]; return ok("Removido"); }
     case "destino_set": { var ds = cp.destinos.find(function(x){ return x.id===a.id; }); if(!ds) return recusa("Destino não encontrado."); Object.assign(ds, a.patch); return ok(); }
     case "destino_del": { if(cp.orientacoes.some(function(o){ return o.destinoId===a.id; })) return recusa("Há orientações para este destino. Desative em vez de excluir."); cp.destinos = cp.destinos.filter(function(x){ return x.id!==a.id; }); return ok("Destino excluído"); }
     case "orient_add": { var v = r2(a.valor); if(!a.destinoId || !(v>0)) return recusa("Escolha o destino e informe o valor."); cp.orientacoes.push({id:uid("o"), destinoId:a.destinoId, valor:v, ate:a.ate||"", obs:String(a.obs||"").trim(), por:por, em:Date.now(), status:"aberta", lanc:[]}); return ok("Orientação criada"); }
@@ -43,4 +61,4 @@ function cpReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { TIPOS_DESTINO, cpDemo, cpReduz, direcionado, faltaDe, sugestoes, hojeIso as hojeIsoCp };
+export { TIPOS_DESTINO, cpAjustar, SOCIOS_FAM, cpDemo, cpReduz, direcionado, faltaDe, sugestoes, hojeIso as hojeIsoCp };

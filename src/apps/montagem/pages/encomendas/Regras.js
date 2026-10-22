@@ -21,21 +21,20 @@ function Texto(p){
 
 function AbaErRegras(){
   var E = useEr(), cfg = E.cfg, pode = E.pode;
-  var st = useState(function(){ return JSON.parse(JSON.stringify({faixas:cfg.faixas, expositor:cfg.expositor, bloqueio:cfg.bloqueio})); }), d = st[0];
+  var st = useState(function(){ return JSON.parse(JSON.stringify({reposicao:cfg.reposicao, pix:cfg.pix, expositor:cfg.expositor, bloqueio:cfg.bloqueio})); }), d = st[0];
   var mut = function(fn){ st[1](function(o){ var n = JSON.parse(JSON.stringify(o)); fn(n); return n; }); };
-  var sujo = JSON.stringify(d)!==JSON.stringify({faixas:cfg.faixas, expositor:cfg.expositor, bloqueio:cfg.bloqueio});
+  var sujo = JSON.stringify(d)!==JSON.stringify({reposicao:cfg.reposicao, pix:cfg.pix, expositor:cfg.expositor, bloqueio:cfg.bloqueio});
   var salvar = function(){ E.exec("config_salvar", {config:d}); };
-  var descartar = function(){ st[1](JSON.parse(JSON.stringify({faixas:cfg.faixas, expositor:cfg.expositor, bloqueio:cfg.bloqueio}))); };
+  var descartar = function(){ st[1](JSON.parse(JSON.stringify({reposicao:cfg.reposicao, pix:cfg.pix, expositor:cfg.expositor, bloqueio:cfg.bloqueio}))); };
   var din = function(val, onChange, rot){ return e(Dinheiro,{value:val, label:rot, disabled:!pode, className:"w-36", onChange:onChange}); };
-  var faixas = e("div",{className:"flex flex-col gap-2 p-2.5"},
-    e(Tab,{cols:["A partir da média", "Reposições por mês", "Limite por reposição", "Taxa", ""]}, d.faixas.map(function(f, i){
-      return e("tr",{key:i, className:LINHA},
-        e(Td,null, i===0 ? e("b",{className:"font-mono"}, formatarReais(0)) : din(f.de, function(x){ mut(function(n){ n.faixas[i].de = x; }); }, "A partir da média")),
-        e(Td,null, e("input",{type:"number", min:0, step:1, disabled:!pode, value:f.qtd, onChange:function(ev){ mut(function(n){ n.faixas[i].qtd = Number(ev.target.value)||0; }); }, className:NUM})),
-        e(Td,null, f.qtd>0 ? din(f.limite, function(x){ mut(function(n){ n.faixas[i].limite = x; }); }, "Limite") : "—"),
-        e(Td,null, f.qtd>0 ? din(f.taxa, function(x){ mut(function(n){ n.faixas[i].taxa = x; }); }, "Taxa") : "—"),
-        e(Td,null, i>0 && pode && e(BtMini,{ic:"trash", titulo:"Remover a faixa", onClick:function(){ mut(function(n){ n.faixas.splice(i, 1); }); }}, "Remover"))); })),
-    pode && e("div",{className:"flex justify-center"}, e(Bt,{ic:"plus", onClick:function(){ mut(function(n){ var u = n.faixas[n.faixas.length-1]; n.faixas.push({de:(u ? u.de : 0)+500, qtd:u ? u.qtd : 1, limite:u ? u.limite : 0, taxa:u ? u.taxa : 0}); }); }}, "Adicionar faixa")));
+  var txt = function(chave, rot){ return e(Campo,{rot:rot}, e("input",{type:"text", disabled:!pode, value:d.pix[chave], onChange:function(ev){ mut(function(n){ n.pix[chave] = ev.target.value; }); }, className:CAMPO})); };
+  var reposicao = e("div",{className:"grid grid-cols-1 gap-2 p-2.5 sm:grid-cols-2"},
+    e(Campo,{rot:"Taxa da reposição (paga pela revendedora do Top 50, sem exceção)"}, din(d.reposicao.taxa, function(x){ mut(function(n){ n.reposicao.taxa = x; }); }, "Taxa")),
+    e(Campo,{rot:"Valor pago à representante que leva a reposição"}, din(d.reposicao.taxaRepresentante, function(x){ mut(function(n){ n.reposicao.taxaRepresentante = x; }); }, "Valor da representante")),
+    e(Campo,{rot:"Média de vendas mínima para ir à empresa"}, din(d.reposicao.mediaMinima, function(x){ mut(function(n){ n.reposicao.mediaMinima = x; }); }, "Média mínima")),
+    e(Campo,{rot:"Reposições por semana (por representante)"}, e("input",{type:"number", min:1, step:1, disabled:!pode, value:d.reposicao.repPorSemana, onChange:function(ev){ mut(function(n){ n.reposicao.repPorSemana = Number(ev.target.value)||0; }); }, className:CAMPO})),
+    e(Campo,{rot:"Minutos para escolher as peças na empresa"}, e("input",{type:"number", min:1, step:1, disabled:!pode, value:d.reposicao.minutosEscolha, onChange:function(ev){ mut(function(n){ n.reposicao.minutosEscolha = Number(ev.target.value)||0; }); }, className:CAMPO})));
+  var pix = e("div",{className:"grid grid-cols-1 gap-2 p-2.5 sm:grid-cols-2"}, txt("recebedor", "Quem recebe a entrega (João)"), txt("tipo", "Tipo da chave"), txt("chave", "Chave Pix"), txt("titular", "Nome do titular da conta"));
   var expositor = e("div",{className:"grid grid-cols-1 gap-2 p-2.5"},
     e(Campo,{rot:"Média exigida nos 3 meses"}, din(d.expositor.media3m, function(x){ mut(function(n){ n.expositor.media3m = x; }); }, "Média exigida")),
     e(Campo,{rot:"Ou ao menos uma venda de"}, din(d.expositor.vendaMinima, function(x){ mut(function(n){ n.expositor.vendaMinima = x; }); }, "Venda mínima")),
@@ -49,7 +48,9 @@ function AbaErRegras(){
     aviso,
     pode && sujo && e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-[#14B8A6]/15 px-3 py-2 ring-1 ring-[#14B8A6]/50"}, e("b",{className:"text-[12.5px]"}, "Há alterações não salvas"),
       e(Bt,{tipo:"forte", ic:"floppy-disk", onClick:salvar}, "Salvar regras"), e(Bt,{ic:"x", onClick:descartar}, "Descartar")),
-    e(BlocoBarra,{cor:"turquesa", t:"Faixas de reposição", sub:"Pela média de vendas dos últimos 3 meses.", compacto:true}, faixas),
+    e(Mosaico,{min:"22rem"},
+      e(BlocoBarra,{cor:"turquesa", t:"Reposição", sub:"Top 50 por entrega; média acima do mínimo vai à empresa.", compacto:true}, reposicao),
+      e(BlocoBarra,{cor:"turquesa", t:"Pix da taxa", sub:"Para onde a revendedora paga os R$ 15,00.", compacto:true}, pix)),
     e(Mosaico,{min:"22rem"},
       e(BlocoBarra,{cor:"turquesa", t:"Expositor", compacto:true}, expositor),
       e(BlocoBarra,{cor:"turquesa", t:"Bloqueio de reposição", compacto:true}, bloqueio),

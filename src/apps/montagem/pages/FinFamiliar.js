@@ -11,6 +11,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Indicador } from "@/apps/montagem/components/padrao";
+import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -22,7 +23,7 @@ var TD = "px-3 py-2 text-[13.5px]";
 var CARD = "rounded-xl bg-linear-to-br from-[#3B82F6]/20 via-card to-card px-3 py-2 ring-1 ring-[#3B82F6]/40";
 var AVISO = "flex items-start gap-2 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-2.5 text-[13.5px] font-medium text-destructive";
 
-function useFF(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, ff:s.ff, por:nomeDe(s.usuario), pode:ACESSO_FF.indexOf(s.usuario)>=0}; }
+function useFF(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, ff:s.ff, por:nomeDe(s.usuario), pode:temAutorizacao("financeiro_familia", s.usuario)}; }
 function acao(c, op, extra){ c.d(Object.assign({type:"FF", op:op, por:c.por}, extra)); }
 function Guarda(p){ return p.c.pode ? p.children : e("div",{className:"flex flex-col gap-3"}, e(PageHead,{t:"Financeiro Familiar", sub:"Finanças pessoais dos sócios."}), e("p",{className:"rounded-xl bg-muted/30 px-4 py-6 text-center text-[14px] text-muted-foreground"}, "Só os sócios abrem o Financeiro Familiar.")); }
 function Campo(p){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(p.className||"")}, p.rot, p.children); }

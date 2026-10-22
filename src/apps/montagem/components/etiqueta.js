@@ -46,9 +46,9 @@ function Etiqueta(p){
           k.ultimaHora && e(Selinho,{cor:"#EA580C"}, "Última hora"))),
       conds.length>0 && !ativo && e(Bloco,{t:conds.length>1 ? conds.length+" condicionais para pegar" : "1 condicional para pegar"},
         e(CondChips,{k:k, papel:"m"}), e("p",{className:"text-[13px] text-[#6B7280]"}, "Só dá para marcar depois de iniciar a montagem.")),
-      pecas && e(Bloco,{t:"O que enviar · "+total+" peças no total"},
+      pecas && e(Bloco,{t:"O que enviar · "+pecas.totalTxt+" peças no total"},
         e("div",{className:"grid grid-cols-2 gap-2"}, pecas.itens.map(function(x){ return e("div",{key:x.nome, className:"flex items-center gap-2.5 rounded-xl bg-white px-2.5 py-2 "+BORDA},
-          e("span",{className:MONO+" grid size-8 shrink-0 place-items-center rounded-lg bg-[#E7F6EC] text-[15px] font-extrabold text-[#15803D]"}, x.q),
+          e("span",{className:MONO+" grid h-8 min-w-8 shrink-0 place-items-center whitespace-nowrap rounded-lg bg-[#E7F6EC] px-1.5 font-extrabold text-[#15803D] "+(String(x.txt).length>2?"text-[12.5px]":"text-[15px]")}, x.txt),
           e("span",{className:"text-[14px] font-semibold capitalize leading-tight text-[#111827]"}, x.nome.toLowerCase())); }))),
       e(Bloco,{t:"Preferências da revendedora"},
         prefsReais.length===0 ? e("p",{className:"text-[14px] text-[#6B7280]"}, "Ela ainda não informou as preferências do kit.")

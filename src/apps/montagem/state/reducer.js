@@ -18,10 +18,12 @@ import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultado
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { agendReduz } from "@/apps/montagem/domain/agendamento";
 import { rhReduz } from "@/apps/montagem/domain/rh";
+import { metasReduz } from "@/apps/montagem/domain/metas-setor";
 import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { pfReduz } from "@/apps/montagem/domain/pf";
+import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
 import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
 import { indReduz } from "@/apps/montagem/domain/indicacoes";
@@ -39,6 +41,7 @@ import { grReduz } from "@/apps/montagem/domain/garantias-rev";
 import { esReduz } from "@/apps/montagem/domain/estoque-sorelly";
 import { avReduz } from "@/apps/montagem/domain/avaliacoes";
 import { prReduz } from "@/apps/montagem/domain/producao";
+import { cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 
@@ -126,6 +129,18 @@ function reducer(s, a){
       if(i5>=0) sc5.blocos[i5] = a.bloco; else sc5.blocos.push(a.bloco); return com(s, {saldosContas:sc5}, "Bloco salvo"); }
     case "SALDO_AJUSTE": { var sc6 = JSON.parse(JSON.stringify(s.saldosContas)), l6 = sc6.ajustes[a.mes] || (sc6.ajustes[a.mes] = []);
       if(a.remover) sc6.ajustes[a.mes] = l6.filter(function(x){ return x.id!==a.remover; }); else l6.push(a.ajuste); return com(s, {saldosContas:sc6}); }
+    case "CPE_LANC_ADD": return com(s, {cpe:Object.assign({}, s.cpe, {lanc:((s.cpe||{}).lanc||[]).concat(a.itens)})}, a.itens.length>1 ? a.itens.length+" parcelas lançadas" : "Conta lançada");
+    case "CPE_BAIXA": { var bx = (((s.cpe||{}).baixas)||[]).concat(a.baixas), hx = (((s.cpe||{}).hist)||[]).concat(a.baixas.map(function(b){ return {ts:b.em, por:b.por, acao:"Deu baixa", chave:b.chave, desc:b.desc_txt||"", valor:b.principal}; }));
+      return com(s, {cpe:Object.assign({}, s.cpe, {baixas:bx, hist:hx})}, a.baixas.length>1 ? a.baixas.length+" pagamentos registrados" : "Pagamento registrado"); }
+    case "CPE_BAIXA_DESFAZ": { var b0 = (((s.cpe||{}).baixas)||[]).filter(function(x){ return x.id===a.id; })[0]; if(!b0) return s;
+      var bx2 = (((s.cpe||{}).baixas)||[]).filter(function(x){ return x.id!==a.id; }), hx2 = (((s.cpe||{}).hist)||[]).concat([{ts:Date.now(), por:a.por, acao:"Desfez pagamento", chave:b0.chave, desc:b0.desc_txt||"", valor:b0.principal}]);
+      return com(s, {cpe:Object.assign({}, s.cpe, {baixas:bx2, hist:hx2})}, "Pagamento desfeito"); }
+    case "CPE_FORN_SET": { var fl = ((s.cpe||{}).forn||[]).filter(function(x){ return x.id!==a.forn.id; }).concat([a.forn]); return com(s, {cpe:Object.assign({}, s.cpe, {forn:fl})}, "Fornecedor salvo"); }
+    case "CHAVESPIX_IR": return com(s, {aba:"chavespixbanco", cpxFoco:{aba:a.aba||"func", busca:a.busca||""}});
+    case "CHAVESPIX_LIMPA": return Object.assign({}, s, {cpxFoco:null});
+    case "EMP_ABRIR": return com(s, {emp:Object.assign({}, s.emp, {aberto:a.chave}), aba:"emprestimos"});
+    case "EMP_SET": { var ct = Object.assign({}, (s.emp||{}).contratos); ct[a.chave] = Object.assign({}, ct[a.chave], a.patch); return com(s, {emp:Object.assign({}, s.emp, {contratos:ct})}); }
+    case "CPE_CLASSE": { var cl = Object.assign({}, (s.cpe||{}).classe); if(a.valor) cl[a.chave] = a.valor; else delete cl[a.chave]; return com(s, {cpe:Object.assign({}, s.cpe, {classe:cl})}, a.valor==="familia" ? "Conta marcada como Família" : a.valor==="sorelly" ? "Conta marcada como Sorelly" : "Marcação removida"); }
     case "CPD_SET": {
       var cpd = JSON.parse(JSON.stringify(s.contasPagasDiario||{}));
       cpd[a.data] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, cpd[a.data]);
@@ -159,12 +174,15 @@ function reducer(s, a){
       return com(s, {contasPagar:cp2}, cp2[a.ano][a.mes].fixado ? "Mês fixado" : "Mês reaberto");
     }
     // Setor de Agendamento (acertos): todas as ações ficam em domain/agendamento.js
+    case "SYNC_MODULO": return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
+    case "ROT": { var rRot = rotReduz(s, a); return com(s, rRot.patch, rRot.msg); }   // Rotina do dia
     case "CF": { var rCf = cfReduz(s, a), pCf = rCf.patch;
       if(a.op==="pag_add" && pCf && pCf.cf){ var pgNovo = pCf.cf.pagamentos[pCf.cf.pagamentos.length-1], fnNovo = pCf.cf.funcionarias.find(function(x){ return x.id===pgNovo.funcId; });
         pCf = Object.assign({}, pCf, {lancFin:[pxAplicar(s.px, lancFinDoPagamento(pgNovo, fnNovo, a.por), s.lancFin)].concat(s.lancFin||[])}); }   // todo pagamento vai para o Controle de pagamentos
       return com(s, pCf, rCf.msg); }
     case "CL": { var rCl = clReduz(s, a); return com(s, rCl.patch, rCl.msg); }
     case "IND": { var rInd = indReduz(s, a); return com(s, rInd.patch, rInd.msg); }   // Indicações (funil, resgates de prêmio, moedas)
+    case "CPC": { var rCpc = cpcReduz(s, a); return com(s, rCpc.patch, rCpc.msg); }   // Cadastro de peças (lotes, custo, preço sugerido, pedidos à DevMaster)
     case "PR": { var rPr = prReduz(s, a); return com(s, rPr.patch, rPr.msg); }   // Produção de peças (lançamento diário, painel, bônus)
     case "EX": { var rEx = exReduz(s, a); return com(s, rEx.patch, rEx.msg); }   // Expositores (fila, montagem, devolução, danificados, estoque de expositores)
     case "AV": { var rAv = avReduz(s, a); return com(s, rAv.patch, rAv.msg); }   // Avaliações (revendedoras, sistema, montagem, funcionários)
@@ -184,6 +202,7 @@ function reducer(s, a){
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
       if(a.setor){ if(a.dia) dp.setores[a.setor] = a.dia; else delete dp.setores[a.setor]; } else if(a.dia) dp.geral = a.dia; return com(s, {datasPag:dp}, "Data de pagamento salva"); }
+    case "METAS": { var rMt = metasReduz(s, a); return com(s, rMt.patch, rMt.msg); }
     case "RH": { var rRh = rhReduz(s, a); return com(s, rRh.patch, rRh.msg); }
     case "AG": { var rAg = agendReduz(s, a, agora); return com(s, rAg.patch, rAg.msg); }
     case "CNPJ_DOC_ADD": { var dc = Object.assign({}, s.cnpjDocs||{}); dc[a.id] = (dc[a.id]||[]).concat([a.doc]); return com(s, {cnpjDocs:dc}); }
@@ -689,12 +708,21 @@ function reducer(s, a){
       return com(s, Object.assign({internos:[novoI].concat(s.internos||[])}, patchI), novoI.nome+" entrou na agenda do atendimento interno");
     }
     // ── Revendedoras internas (controle de ciclo e agendamento da agendadora) ──
+    // Revendedoras vindas da DevMaster (servidor → /devmaster/revendedoras): entram só as que ainda não existem (mesmo código da DevMaster ou mesmo nome), como "A contatar", ciclo de 30 dias
+    case "REVINT_ADD_LOTE": {
+      var nm = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };
+      var jaR = s.revInternas||[], chv = {}; jaR.forEach(function(r){ chv[nm(r.nome)] = 1; if(r.devmaster) chv["c"+r.devmaster] = 1; });
+      var novosR = (a.itens||[]).filter(function(i){ if(chv["c"+i.codigo] || chv[nm(i.nome)]) return false; chv["c"+i.codigo] = 1; chv[nm(i.nome)] = 1; return true; }).map(function(i){
+        return {id:"RD"+i.codigo, nome:i.nome, ciclo:30, proximoManual:null, situacao:"contatar", agend:null, internoId:null, hist:[{data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}],
+          contatos:i.celular ? [{nome:"WhatsApp da revendedora", fone:i.celular}] : [], prata:false, devmaster:i.codigo, obs:""}; });
+      return com(s, {revInternas:jaR.concat(novosR)}, novosR.length+(novosR.length===1 ? " revendedora nova" : " revendedoras novas")+" da DevMaster ("+(a.itens||[]).length+" encontradas)");
+    }
     case "REVINT_SET": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, a.patch); })});
     // ── Avisos: quem recebe cada alerta (Tecnologia → Avisos) e os alertas disparados (um por chave) ──
     case "AVISO_CFG": return com(s, {avisosCfg:Object.assign({}, s.avisosCfg||{}, {[a.tipo]:a.ids})});
     case "ALERTA_ADD": {
       if((s.alertas||[]).some(function(x){ return x.chave===a.chave; })) return s;
-      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:destinosDe(s, a.tipo), ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
+      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, cor:a.cor||null, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
     }
     case "ALERTA_LIDO": return com(s, {alertas:(s.alertas||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {lidoPor:(x.lidoPor||[]).concat([a.usuario])}); })});
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
@@ -810,7 +838,7 @@ function reducer(s, a){
     // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).
     case "REPOSICAO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
-      var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
+      var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 20);   // R$ 20 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
         hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null};
@@ -909,7 +937,7 @@ function reducer(s, a){
         "Regras do consignado atualizadas: vale a partir do próximo kit de cada revendedora");
     }
     case "PECAS": {
-      var cp = JSON.parse(JSON.stringify(s.cfg)); cp.pecasKit[a.i].q[a.j] = a.valor; return com(s, {cfg:cp});
+      var cp = JSON.parse(JSON.stringify(s.cfg)); if(a.max){ var lk = cp.pecasKit[a.i]; lk.qmax = lk.qmax || {}; lk.qmax[a.j] = a.valor; } else cp.pecasKit[a.i].q[a.j] = a.valor; return com(s, {cfg:cp});
     }
     case "RESET": try{ localStorage.removeItem(CHAVE); }catch(x){} return com(novo(), {}, "Dados de demonstra\u00e7\u00e3o restaurados");
     default: return s;

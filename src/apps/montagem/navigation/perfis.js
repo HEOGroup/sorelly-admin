@@ -8,9 +8,9 @@ var TODAS = ABAS.map(function(a){ return a[0]; });
 var CONFIGURADORES = ["config","comconfig","knconfigurador","configrep","rhconfig"];
 var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","calc","condicionais","consolidado","intrevs","intlist","intcalc","intcons","consrep","controlekits","celbip"],   // listagens (representantes e internas), calculadora, condicionais, consolidados; Equipe e Registros só Deysiane e Diretoria montadora:["painel","celular"],
   kitnovo:["kitnovo","knpendencias","knconsolidado","knregras","knconfigurador","aprovacaocad","desempenhocad","indicacoes"], listagens:["painel","kitnovo","condicionais","celcond"],
-  agendamento:["agpainel","agremarc","agreps","agabertura","agconfig","aganalises","aghistorico","consrep","controlekits","inadimp","dinheiro"], financeiro:["cpagamentos","ctapagar","chavespix","adquirentes","comlink","compras","estoquesorelly","linkrel","cfregras","pfresumo","pflanc","pfneg","pfmaq","pfforn","pfprest","dinheiro","comisstodos","agbonus","agmetas","comdatas","comisbip","comismont","comisint","consrep","controlekits","placar","comissoes","pixdireto","inadimp","inadfin","caixa"],
-  familia:TODAS.filter(function(k){ return CONFIGURADORES.indexOf(k)<0; }),
-  supervisora:TODAS.filter(function(k){ return k!=="fluxo"; }),                       // Deysiane: como era (tudo)
+  agendamento:["agpainel","agremarc","agreps","agabertura","agconfig","aganalises","aghistorico","consrep","controlekits","inadimp","dinheiro"], financeiro:["cpagamentos","ctapagar","ctalista","chavespixbanco","emprestimos","chavespix","adquirentes","comlink","compras","cadpecas","estoquesorelly","linkrel","cfregras","pfresumo","pflanc","pfneg","pfmaq","pfforn","pfprest","dinheiro","comisstodos","agbonus","agmetas","comdatas","comisbip","comismont","comisint","comcad","cominad","consrep","controlekits","placar","comissoes","pixdireto","inadimp","inadfin","caixa"],
+  familia:TODAS.filter(function(k){ return CONFIGURADORES.indexOf(k)<0 && k.indexOf("marcus")!==0; }),
+  supervisora:TODAS.filter(function(k){ return k!=="fluxo" && k.indexOf("marcus")!==0; }),                       // Deysiane: como era (tudo)
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"]};
 var PAPEL_LB = {supervisao:"Sócios (acesso total)", familia:"Direção e família (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",

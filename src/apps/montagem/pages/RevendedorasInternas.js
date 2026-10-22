@@ -10,6 +10,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -230,6 +231,13 @@ function Calendario(p){
 
 function AbaRevendedorasInternas(){
   var cx = use(), s = cx.state, hojeIso = isoDia(new Date());
+  // DevMaster: busca no servidor as revendedoras da representante Sorelly (código 02) e cadastra aqui as que ainda não existem
+  var sdm = useState(""), msgDm = sdm[0], setMsgDm = sdm[1], cdm = useState(false), buscandoDm = cdm[0], setBuscandoDm = cdm[1];
+  var buscarDm = function(){
+    if(!apiAtiva()){ setMsgDm("Precisa do servidor ligado (veja com o Leonardo)."); return; }
+    setBuscandoDm(true); setMsgDm("Buscando na DevMaster…");
+    chamar("GET", "/devmaster/revendedoras?vendedor=02&atualizar=1").then(function(r){ cx.dispatch({type:"REVINT_ADD_LOTE", itens:r.itens}); setMsgDm(r.total+" na DevMaster (Sorelly 02)"); }).catch(function(x){ setMsgDm(x.message); }).finally(function(){ setBuscandoDm(false); });
+  };
   var vs = useState("tabela"), visao = vs[0], setVisao = vs[1];
   var bs = useState(""), busca = bs[0], setBusca = bs[1];
   var fs = useState("todas"), fSit = fs[0], setFSit = fs[1];
@@ -243,7 +251,9 @@ function AbaRevendedorasInternas(){
   return e(React.Fragment,null,
     e("div",{className:"flex flex-wrap items-end justify-between gap-3"},
       e(PageHead,{t:"Revendedoras internas", sub:"Quem acerta aqui na Sorelly: ciclo, próxima data, agendamento e mensagens prontas"}),
-      e("div",{className:"flex flex-wrap items-center gap-2"}, aba("tabela","Tabela","lista"), aba("calendario","Calendário","calendario"))),
+      e("div",{className:"flex flex-wrap items-center gap-2"}, aba("tabela","Tabela","lista"), aba("calendario","Calendário","calendario"),
+        e("button",{type:"button", disabled:buscandoDm, onClick:buscarDm, title:"Busca na DevMaster as revendedoras da representante Sorelly (código 02) e cadastra as que faltam", className:"flex h-10 items-center gap-2 rounded-lg bg-white/10 px-4 text-[14px] font-bold hover:bg-white/15 disabled:opacity-50"}, "↻ Buscar da DevMaster"),
+        msgDm && e("span",{className:"text-[12.5px] text-white/80"}, msgDm))),
     visao==="tabela" && e("div",{className:"flex flex-wrap items-center gap-2"},
       e("div",{className:"relative"}, e(Icon,{n:"search", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"}),
         e("input",{className:INPUT+" h-10! w-60 pl-9 text-sm!", placeholder:"Buscar revendedora", value:busca, onChange:function(ev){ setBusca(ev.target.value); }})),

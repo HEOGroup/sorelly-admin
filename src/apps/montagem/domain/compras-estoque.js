@@ -21,6 +21,8 @@ import { CNPJS0 } from "./cnpjs";
 
 var LOCAL = (function(){ try { var m = import.meta.glob("./compras-estoque.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
+var SYNC = (function(){ try { var m = import.meta.glob("./compras-estoque-sync.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(e){ return []; } })();   // atualização dos pedidos do admin antigo (22/10/2026)
+
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
@@ -136,8 +138,18 @@ function ceDemo(){
     s.regras = LOCAL.regras||""; s.motivosNegativa = (LOCAL.motivosNegativa||[]).slice();
     ["fornecedores", "setores", "categorias", "catalogo", "contas", "matCategorias", "materiais", "movimentos", "solicitacoes", "logMateriais"].forEach(function(k){ (LOCAL[k]||[]).forEach(function(d){ var o = clone(d); o.id = proximoId(s, o); s[k].push(o); }); });
     (LOCAL.pedidos||[]).forEach(function(d){ s.pedidos.push(novoPedido(s, d, agoraSP(), "arquivo", true)); });
+    s.syncV = 1; aplicarSync(s);
   }
   return s;
+}
+// atualização do admin antigo: acha o pedido pelo título e dia da solicitação; só troca se ninguém mexeu nele aqui (todo o histórico veio do admin antigo); o que não existe entra como novo
+function aplicarSync(s){
+  (SYNC||[]).forEach(function(d){
+    var k = norm(d.titulo), dia = diaDe(d.solicitadoEm), i = s.pedidos.findIndex(function(p){ return norm(p.titulo)===k && diaDe(p.solicitadoEm)===dia; });
+    if(i<0){ s.pedidos.push(novoPedido(s, d, agoraSP(), "arquivo", true)); return; }
+    var ex = s.pedidos[i]; if(!(ex.eventos||[]).every(function(e){ return e.por==="Admin antigo" || e.por==="arquivo"; })) return;
+    s.pedidos[i] = novoPedido(s, Object.assign({}, d, {id:ex.id}), agoraSP(), "arquivo", true);
+  });
 }
 // confere o estado salvo (migração: campos novos entram com o padrão)
 function ceMigrar(ce){
@@ -147,6 +159,14 @@ function ceMigrar(ce){
   ce.acessos = ce.acessos||{}; ce.acessos.compras = ce.acessos.compras||{}; ce.acessos.estoque = ce.acessos.estoque||{};
   // v3 (16/10/2026): etapa "Liberada para compra". Pedidos antigos em APROVADA continuam APROVADA (o financeiro libera); só ganham o campo liberacao vazio
   (ce.pedidos||[]).forEach(function(p){ if(p.liberacao===undefined) p.liberacao = null; });
+  // carga do admin antigo (arquivo local, 21/10/2026): entra uma vez no estado salvo, sem apagar o que já foi lançado aqui
+  if(LOCAL && ce.importV!==1){
+    ["setores", "categorias", "contas"].forEach(function(k){ (base[k]||[]).forEach(function(x){ if(!(ce[k]||[]).some(function(y){ return mesmoId(y.id, x.id); })) ce[k].push(x); }); });
+    (base.motivosNegativa||[]).forEach(function(m){ if(ce.motivosNegativa.indexOf(m)<0) ce.motivosNegativa.push(m); });
+    (base.pedidos||[]).forEach(function(p){ if(!ce.pedidos.some(function(q){ return q.titulo===p.titulo && q.solicitadoEm===p.solicitadoEm; })){ var n = clone(p); n.id = ++ce.seq; ce.pedidos.push(n); } });
+    ce.importV = 1;
+  }
+  if(SYNC && SYNC.length && ce.syncV!==1){ aplicarSync(ce); ce.syncV = 1; }
   ce.v = 3;
   return ce;
 }

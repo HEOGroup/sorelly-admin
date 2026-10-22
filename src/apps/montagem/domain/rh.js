@@ -68,6 +68,32 @@ function colaboradoresRh(s){
 }
 var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
 
+// ---------- presença lida do admin antigo (arquivo local rh-atualizacao.local.js, gerado todo dia 3h30 pela tarefa agendada) ----------
+// formato: {stamp, presenca:{"AAAA-MM-DD":{"NOME COMPLETO":"P" | "P|08:43" | "F" ...}}}. O nome do admin é casado com o do sistema (igual, ou 60% das palavras em comum).
+var ATU_RH = (function(){ try { var m = import.meta.glob("./rh-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var RH_STAMP = ATU_RH ? String(ATU_RH.stamp||"x") : "";
+var normNome = function(n){ return String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim(); };
+var palavras = function(n){ return normNome(n).split(" ").filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
+var ALIAS_ADMIN = {"michelle brito lima":"michele-brito-lima-cassemiro", "thalita tozzi ardnt":"thalita-torazzi-arndt"};
+function rhAplicarAdmin(rh){
+  if(!ATU_RH || !ATU_RH.presenca) return rh;
+  var cand = funcionarios().filter(function(f){ return f.vinculo==="clt"; }).map(function(f){ return {id:slug(f.nome), nome:f.nome}; }).concat(LOCAIS.map(function(x){ return {id:ALIAS_PLANILHA[x.id]||x.id, nome:x.nome}; }));
+  var cache = {}, achar = function(nome){
+    if(cache[nome]!==undefined) return cache[nome];
+    var nn = normNome(nome); if(ALIAS_ADMIN[nn]) return (cache[nome] = ALIAS_ADMIN[nn]);   // escritas diferentes entre o admin antigo e a lista de Pessoas
+    var ex = cand.find(function(c){ return normNome(c.nome)===nn; }); if(ex) return (cache[nome] = ex.id);
+    var pa = palavras(nome), melhor = null, mp = 0;
+    cand.forEach(function(c){ var pc = palavras(c.nome), comuns = pc.filter(function(w){ return pa.indexOf(w)>=0; }).length, sc = comuns/Math.max(pc.length, pa.length, 1); if(sc>mp){ mp = sc; melhor = c; } });
+    return (cache[nome] = (melhor && mp>=0.6) ? melhor.id : null);
+  };
+  var pres = Object.assign({}, rh.presenca), semPar = {};
+  Object.keys(ATU_RH.presenca).forEach(function(iso){
+    var dia = Object.assign({}, pres[iso]); var o = ATU_RH.presenca[iso];
+    Object.keys(o).forEach(function(nome){ var id = achar(nome); if(!id){ semPar[nome] = 1; return; } var par = String(o[nome]).split("|"); var reg = {}; if(par[0]) reg.c = par[0]; if(par[1]) reg.atraso = par[1]; if(reg.c || reg.atraso) dia[id] = reg; });
+    pres[iso] = dia;
+  });
+  return Object.assign({}, rh, {presenca:pres, semParAdmin:Object.keys(semPar)});
+}
 // ---------- presença ----------
 var presencaDe = function(rh, id, iso){ var d = (rh.presenca||{})[iso]; return d && d[id] ? d[id] : null; };
 function feriadoNoDia(rh, cnpj, iso){ return (rh.config.feriados||[]).some(function(f){ return f.data===iso && (!f.cnpj || f.cnpj===cnpj); }); }
@@ -249,6 +275,10 @@ function rhReduz(s, a){
         : a.lista==="tiposHE" ? rh.horas.some(function(x){ return x.tipoId===a.id; }) : a.lista==="planos" ? Object.keys(rh.colab).some(function(k){ return rh.colab[k].planoId===a.id; }) : false;
       if(emUso) return recusa("Está em uso: não dá para excluir."); cfg[a.lista] = l3.filter(function(x){ return x.id!==a.id; }); return ok("Excluído"); }
     case "cfg_geral": { Object.assign(cfg, a.patch); return ok(); }
+    // escala nova de 42h (planejamento por pessoa; não mexe na escala atual): eq = "A" | "B" | "P", ou "" para voltar ao sugerido
+    case "esc42_set": { rh.escala42 = rh.escala42 || {}; if(a.eq) rh.escala42[a.id] = a.eq; else delete rh.escala42[a.id]; return ok(); }
+    case "esc42_setor": { rh.escala42 = rh.escala42 || {}; var dosetor = colaboradoresRh(s).filter(function(x){ return x.setor===a.setor && x.status!=="DESLIGADO"; }).sort(function(p, q){ return p.nome.localeCompare(q.nome, "pt-BR"); });
+      dosetor.forEach(function(x, i){ var v = a.modo==="dividir" ? (i%2===0 ? "A" : "B") : a.modo==="tres" ? ["A","B","C"][i%3] : a.modo; if(v) rh.escala42[x.id] = v; else delete rh.escala42[x.id]; }); return ok("Equipes de "+a.setor+" atualizadas"); }
   }
   return recusa("Ação desconhecida.");
 }
@@ -263,6 +293,45 @@ function horariosParaChat(){
   });
 }
 
-export { negocPadrao, negocEfetiva, horariosParaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
+// ---------- SorellyChat ao vivo (20/10/2026) ----------
+// Horário e presença saem direto do cadastro do RH: mudou lá, muda no chat. O cálculo da lista fica guardado enquanto o RH não muda (s.rh é o mesmo objeto).
+var memoRh = {rh:null, colabs:null, hor:null};
+function colabsMemo(s){ if(memoRh.rh!==s.rh){ memoRh.rh = s.rh; memoRh.colabs = colaboradoresRh(s); memoRh.hor = null; } return memoRh.colabs; }
+// horário de cada colaborador ativo: entrada do cadastro; saída = jornada CLT de 44h por semana dividida nos dias da escala + 1h de almoço (5 dias = 9h48, 6 dias = 8h20)
+function horariosDoRh(s){
+  if(!s.rh) return [];
+  var cs = colabsMemo(s);
+  if(!memoRh.hor) memoRh.hor = cs.filter(function(x){ return !x.deslig && x.status!=="DESLIGADO" && minutosDe(x.entrada)!==null && x.escalaDias.length; }).map(function(x){
+    var ini = minutosDe(x.entrada), fim = ini + Math.round(44*60/x.escalaDias.length) + 60, nome = titulo(x.nome);
+    return {nome:ALIAS_CHAT[nome.toLowerCase()]||x.nome, ini:x.entrada, fim:p2(Math.floor(fim/60))+":"+p2(fim%60), dias:x.escalaDias.slice()}; });
+  return memoRh.hor;
+}
+// bolinhas dos últimos 10 dias de trabalho e resumo do mês de um colaborador (nome completo, como no chat). null = não é colaborador CLT ativo do RH.
+// Dia de trabalho = o que o RH escala (sem domingo, feriado, férias e folga). O dia de hoje só entra se o RH já lançou algo.
+var ABREV_DIA = ["dom","seg","ter","qua","qui","sex","sáb"];
+function diaPresenca(rh, c, iso){
+  if(!diaEscalado(rh, c, iso)) return null;
+  var p = presencaDe(rh, c.id, iso), dia = ABREV_DIA[diaSem(iso)];
+  var o = {iso:iso, rotulo:dia.charAt(0).toUpperCase()+dia.slice(1)+" "+br(iso).slice(0,5)};
+  if(!p || (!p.c && !p.atraso)) return Object.assign(o, {k:"vazio", r:"Sem registro do RH"});
+  if(p.c==="F") return Object.assign(o, {k:"falta", r:"Falta sem atestado"});
+  if(p.c==="AJ") return Object.assign(o, {k:"aviso", r:"Falta com aviso"});
+  if(p.c==="AT") return Object.assign(o, {k:"atestado", r:"Falta com atestado"});
+  if(p.c==="AF") return Object.assign(o, {k:"afast", r:"Afastamento"});
+  if(p.atraso){ var a = minutosDe(p.atraso), e0 = minutosDe(c.entrada), m = (a!==null && e0!==null && a>e0) ? a-e0 : null; return Object.assign(o, {k:"atraso", r:(m ? "Atraso de "+m+" min" : "Atraso")+" (chegou "+p.atraso+")"}); }
+  return Object.assign(o, {k:"ok", r:"Presente"});
+}
+function presencaChat(s, nome, hoje){
+  if(!s.rh) return null;
+  var id = slug(nome), c = colabsMemo(s).filter(function(x){ return x.id===id; })[0];
+  if(!c || c.status==="DESLIGADO" || c.deslig) return null;
+  var rh = s.rh, h = hoje||hojeIso(), dias = [], d, iso, x;
+  for(d=0; d<70 && dias.length<10; d++){ iso = somaDias(h, -d); x = diaPresenca(rh, c, iso); if(x && (d>0 || x.k!=="vazio")) dias.unshift(x); }
+  var mes = {atrasos:0, atestados:0, faltas:0, avisos:0, registrados:0, nome:MESES[Number(h.slice(5,7))-1], ate:Number(h.slice(8,10))};
+  for(d=1; d<=mes.ate; d++){ x = diaPresenca(rh, c, h.slice(0,8)+p2(d)); if(!x) continue; if(x.k!=="vazio") mes.registrados++; if(x.k==="atraso") mes.atrasos++; else if(x.k==="atestado") mes.atestados++; else if(x.k==="falta") mes.faltas++; else if(x.k==="aviso") mes.avisos++; }
+  return {dias:dias, mes:mes};
+}
+
+export { RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
   advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, rhReduz };

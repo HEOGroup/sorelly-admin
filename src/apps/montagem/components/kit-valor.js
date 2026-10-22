@@ -34,7 +34,7 @@ function LinhaTempo(p){
   ev.push(["Vendas", k.vendas.length ? k.vendas.map(function(v,i){return ORIGEM[i]+" "+BK(v);}).join(", ")+". M\u00e9dia "+BK(media3(k.vendas))+", tabela de estoque "+(s.cfg.tabelaAtiva==="baixo"?"baixo":"alto")+", sugerido "+BK(sug)+"."
     +(k.vendas[0] < s.cfg.minVendaApp ? " Venda do m\u00eas abaixo de "+BK(s.cfg.minVendaApp)+": a representante pode informar o valor manualmente." : "") : "Revendedora nova, sem vendas"]);
   var pc = pecasPara(k.valor, s.cfg);
-  if(k.valor) ev.push(["O que enviar", pc ? pc.itens.map(function(x){return x.q+" "+x.nome.toLowerCase();}).join(", ")+" (tabela do kit de "+BK(pc.kit)+")" : "Tabela de peças ainda não preenchida para este valor"]);
+  if(k.valor) ev.push(["O que enviar", pc ? pc.itens.map(function(x){return x.txt+" "+x.nome.toLowerCase();}).join(", ")+" (tabela do kit de "+BK(pc.kit)+")" : "Tabela de peças ainda não preenchida para este valor"]);
   if(k.valor) ev.push(["Valor definido", BK(k.valor)+" por "+nomeDe(k.defPor)+" \u00e0s "+hora(k.defEm)+(k.manual?", diferente da sugest\u00e3o":"")]);
   if(k.designada) ev.push(["Designado","Para "+nomeDe(k.designada)]);
   if(k.iniM) ev.push(["Montagem", nomeDe(k.montId)+", in\u00edcio "+hora(k.iniM)+(k.fimM?", fim "+hora(k.fimM)+", "+durCurta(k.tempoM)+(k.pausaMs>60000?" (pausa de "+durCurta(k.pausaMs)+")":""):", em andamento")]);

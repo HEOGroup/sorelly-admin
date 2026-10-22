@@ -4,6 +4,7 @@
 // (dá para fechar qualquer dia com o ✕). Saldo base = último dia do mês anterior (no dia 1º já se pagam contas).
 // Guarda em s.saldosContas (reducer SALDO_*). Regras em domain/saldos-contas.js.
 import { MESES_LONGO, contasDoMes, fatEfetivo } from "@/apps/montagem/domain/financeiro";
+import { ChavePixCaixa } from "@/apps/montagem/components/chave-pix-caixa";
 import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
 import { pixDaCaixa } from "@/apps/montagem/domain/pix-regras";
 import { RECEBER_LOCAL, RECEBER_MAPA_LOCAL, FERIADOS, chaveMes, datasLancadas, isoDia, posicaoEm, provaDoMes } from "@/apps/montagem/domain/saldos-contas";
@@ -24,12 +25,14 @@ var neg = function(v){ return v<0 ? "text-destructive" : ""; };
 var SEM = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
 var diaSem = function(k){ return new Date(k+"T12:00:00").getDay(); };
 var fimSem = function(k){ var d = diaSem(k); return d===0 || d===6 || !!FERIADOS[k]; };   // fim de semana e feriado: mesma cor
-var COR_BLOCO = {"34":"#B8892B","46":"#BE185D","59":"#0F766E","67":"#1D4ED8","HO":"#6D28D9","PART":"#64748B","DIN":"#15803D","BLOQ":"#B45309","ITM":"#0E7490","FORN":"#9333EA"};
+// nome completo de cada CNPJ (o nome salvo do bloco é curto)
+var NOME_CNPJ = {"34":"CNPJ 34 · Sorelly Atacadista", "46":"CNPJ 46 · Mayz Comércio de Moda", "59":"CNPJ 59 · Serenity Porta Joias", "67":"CNPJ 67 · Axis Comércio de Joias", "HO":"H&O Apps"};
+var COR_BLOCO = {"34":"#64748B","46":"#64748B","59":"#64748B","67":"#64748B","HO":"#64748B","PART":"#64748B","DIN":"#64748B","BLOQ":"#64748B","ITM":"#64748B","FORN":"#64748B"};   // 21/10/2026: uma cor neutra só (o Marcus não quer a tela colorida)
 // cor do CNPJ misturada com branco: mesma família de cores, só mais clara
 var clara = function(hex){ var n = parseInt(hex.slice(1), 16), m = function(c){ return Math.round(c+(255-c)*0.4); }; return "#"+[m(n>>16), m((n>>8)&255), m(n&255)].map(function(x){ return x.toString(16).padStart(2,"0"); }).join(""); };
-var CAB = "sticky left-0 z-20 w-60 min-w-60 px-2 py-1.5 text-left text-[13px] shadow-[12px_0_16px_-8px_rgba(0,0,0,0.75)]";
+var CAB = "sticky left-0 z-10 w-60 min-w-60 px-2 py-1.5 text-left text-[13px] shadow-[12px_0_16px_-8px_rgba(0,0,0,0.75)]";
 var GRADE = "border border-border/50";
-var STICKY_VAR = "sticky right-0 z-20 bg-linear-to-l from-[#33291a] to-[#211c11] shadow-[-12px_0_16px_-8px_rgba(0,0,0,0.75)] ";
+var STICKY_VAR = "sticky right-0 z-10 bg-linear-to-l from-[#1b1e25] to-[#14161b] shadow-[-12px_0_16px_-8px_rgba(0,0,0,0.75)] ";
 
 function recebidoDoMes(s, ano, mes){
   var pref = chaveMes(ano, mes), fd = fatEfetivo(s), ks = Object.keys(fd).filter(function(k){ return k.slice(0,7)===pref; }).sort();
@@ -54,8 +57,8 @@ function useCorrendo(alvo){
 }
 function Corre(p){ var v = useCorrendo(p.v); return e("span",{className:p.className}, p.f ? p.f(v) : BK(v)); }
 
-var FUNDO = {ouro:"from-[#E8B84B]/30 via-[#E8B84B]/10 to-card ring-[#E8B84B]/35", verde:"from-emerald-500/35 via-emerald-500/10 to-card ring-emerald-500/45",
-  azul:"from-sky-500/30 via-sky-500/10 to-card ring-sky-500/40", verm:"from-red-500/30 via-red-500/10 to-card ring-red-500/40"};
+var NEUTRO = "from-white/[0.06] via-white/[0.03] to-card ring-white/10";
+var FUNDO = {ouro:NEUTRO, verde:NEUTRO, azul:NEUTRO, verm:NEUTRO};
 // cartão em degradê: título, número grande que corre, e a variação do período numa etiqueta (▲ sobe / ▼ desce)
 function Cartao(p){
   var d = p.delta===null || p.delta===undefined ? p.delta : Math.round(p.delta*100)/100;
@@ -101,11 +104,18 @@ function LancarTela(p){
   var inicial = function(){ var o = {}; sc.contas.forEach(function(c){ var v = (sc.saldos[data]||{})[c.id]; if(v===undefined) v = efetivo(sc, ds, c.id, data); o[c.id] = v===null||v===undefined ? 0 : v; }); return o; };
   var vl = useState(inicial), vals = vl[0], setVals = vl[1];
   var apS = useState({bloco:"34", valor:0, desc:""}), ap = apS[0], setAp = apS[1];
+  var fS = useState(""), fil = fS[0], setFil = fS[1];   // CNPJ escolhido no topo (vazio = todos)
+  var abS = useState({}), abertos = abS[0], setAbertos = abS[1];
+  var contasF = sc.contas.filter(function(c){ return !fil || c.bloco===fil; });
+  var qS = useState(""), busca = qS[0], setBusca = qS[1];   // campo de busca: CNPJ (34, 46...), nome do banco ou da conta
+  var nq = function(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); };
+  var casaB = function(b){ return !busca || nq((NOME_CNPJ[b.id] || "")+" "+b.nome+" "+b.id).indexOf(nq(busca))>=0; };
+  var casaC = function(c){ return !busca || nq(c.nome).indexOf(nq(busca))>=0; };
   var guardado = function(id){ var v = (sc.saldos[data]||{})[id]; if(v===undefined) v = efetivo(sc, ds, id, data); return v===null||v===undefined ? 0 : v; };
   var trocar = function(d){ if(d && d<=hoje){ setData(d); var o = {}; sc.contas.forEach(function(c){ var v = (sc.saldos[d]||{})[c.id]; if(v===undefined) v = efetivo(sc, ds, c.id, d); o[c.id] = v===null||v===undefined ? 0 : v; }); setVals(o); } };
   var andar = function(n){ var d2 = new Date(data+"T12:00:00"); d2.setDate(d2.getDate()+n); trocar(isoDia(d2)); };
-  var total = sc.contas.filter(function(c){ return !c.bloqueada; }).reduce(function(t,c){ return t+(vals[c.id]||0); },0);
-  var limite = sc.contas.filter(function(c){ return !c.bloqueada; }).reduce(function(t,c){ return t+(c.limite||0); },0);
+  var total = contasF.filter(function(c){ return !c.bloqueada; }).reduce(function(t,c){ return t+(vals[c.id]||0); },0);
+  var limite = contasF.filter(function(c){ return !c.bloqueada; }).reduce(function(t,c){ return t+(c.limite||0); },0);
   var fechar = function(ids, fechado){ cx.dispatch({type:"SALDO_FECHAR", data:data, blocos:ids, valores:vals, fechado:fechado}); };
   var todos = blocos.map(function(b){ return b.id; });
   var fdia = (cx.state.fatDia||{})[data] || {acertos:0, recebido:0};
@@ -113,7 +123,7 @@ function LancarTela(p){
   var cpd = (cx.state.contasPagasDiario||{})[data] || {}, pagoDoDia = function(id){ return id==="fora" ? (cpd.contasPorFora||0) : ((cpd.cnpjs||{})[id]||0); };
   var pagTotal = ["34","46","59","67","fora"].reduce(function(x,id){ return x+pagoDoDia(id); },0);
   return e("div",{"data-lancar":"1", className:"flex flex-col gap-3"},
-    e("div",{className:"flex flex-wrap items-center gap-2 rounded-xl bg-linear-to-b from-[#E8B84B]/30 to-[#E8B84B]/10 px-3 py-2"},
+    e("div",{className:"flex flex-wrap items-center gap-2 rounded-xl bg-white/[0.06] px-3 py-2"},
       e("h2",{className:"mr-1 font-heading text-[16px] font-bold"}, "Lançar saldos do dia"),
       e(Btn,{onClick:function(){ andar(-1); }}, "‹"),
       e("input",{type:"date", value:data, max:hoje, "aria-label":"Data do lançamento", className:INPUT+" h-9! w-44", onChange:function(ev){ trocar(ev.target.value); }}),
@@ -125,9 +135,45 @@ function LancarTela(p){
     e("div",{className:"flex flex-wrap items-center gap-2 text-[13px]"}, e("span",{className:"font-bold"}, "Hoje a Nayale lança:"),
       [["Saldos das contas", nFech===blocos.length, nFech+"/"+blocos.length+" CNPJs"], ["Pagamentos do dia", !!(cx.state.contasPagasDiario||{})[data], ""], ["Faturamento do dia", !!(cx.state.fatDia||{})[data], ""]].map(function(x){
         return e("span",{key:x[0], className:"rounded-full px-3 py-1 font-semibold ring-1 "+(x[1] ? "bg-emerald-500/25 ring-emerald-400/60 text-emerald-200" : "bg-card ring-border")}, (x[1] ? "✓ " : "○ ")+x[0]+(x[2] && !x[1] ? " · "+x[2] : "")); })),
+    e("div",{className:"flex flex-wrap items-center gap-1.5"}, e("span",{className:"mr-1 text-[12.5px] font-bold text-foreground/80"}, "Ver só:"), [["", "Todos os CNPJs", "#64748B"]].concat(blocos.map(function(b){ return [b.id, NOME_CNPJ[b.id] || b.nome, COR_BLOCO[b.id]||"#64748B"]; })).map(function(x){ var on = fil===x[0]; return e("button",{key:x[0]||"todos", type:"button", onClick:function(){ setFil(x[0]); }, className:"h-8 rounded-lg px-3 text-[12px] font-bold ring-1 transition "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"), style:on ? {background:"linear-gradient(135deg,"+x[2]+"cc,"+x[2]+"55)", boxShadow:"inset 0 0 0 1px "+x[2]} : {boxShadow:"inset 3px 0 0 "+x[2]}}, x[1]); }), e("input",{type:"search", value:busca, placeholder:"Buscar CNPJ, banco ou conta", "aria-label":"Buscar CNPJ, banco ou conta", className:INPUT+" ml-auto h-8! w-64 text-[12.5px]!", onChange:function(ev){ setBusca(ev.target.value); }})),
+    e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-3"},
+      e(Cartao,{l:"Total do dia", v:total, cor:total<0 ? "text-red-400" : "", fundo:"ouro", sub:"saldo sem as bloqueadas"}),
+      e(Cartao,{l:"Disponível", v:total+limite, cor:"", fundo:"verde", sub:"saldo + limite de crédito"}),
+      e("div",{className:"col-span-2 flex items-center justify-center rounded-xl bg-card px-3 py-2 text-center text-[12.5px] text-foreground/80 ring-1 ring-border lg:col-span-1"},
+        "O que ela digita fica salvo na hora, pode sair e voltar depois. Fechar o CNPJ confirma o saldo dele; para corrigir é só tocar em Editar.")),
+    e("div",{className:"flex flex-col gap-2"}, blocos.filter(function(b){ return (!fil || b.id===fil) && (casaB(b) || sc.contas.some(function(c){ return c.bloco===b.id && casaC(c); })); }).map(function(b){
+      var cs = sc.contas.filter(function(c){ return c.bloco===b.id; }), cor = COR_BLOCO[b.id]||"#64748B", fechado = !!fm[b.id], ab = abertos[b.id]!==false || !!fil || !!busca;
+      var sub = cs.reduce(function(t,c){ return t+(vals[c.id]||0); },0), lim = cs.reduce(function(t,c){ return t+(c.limite||0); },0), usado = cs.reduce(function(t,c){ return t+((vals[c.id]||0)<0 ? -(vals[c.id]||0) : 0); },0);
+      var semChave = cs.filter(function(c){ return c.tipo!=="CAIXA" && !(cx.state.px && (cx.state.px.contas||[]).some(function(k){ return k.caixaId===c.id && k.chave; })); }).length;
+      return e("div",{key:b.id, className:"overflow-hidden rounded-xl bg-card ring-1 "+(fechado ? "ring-emerald-500/50" : "ring-border")},
+        e("div",{onClick:function(){ var o = Object.assign({}, abertos); o[b.id] = !(o[b.id]!==false); setAbertos(o); }, className:"flex cursor-pointer flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 hover:brightness-110", style:{background:"linear-gradient(90deg,"+clara(cor)+"66,"+clara(cor)+"1f)"}},
+          e("span",{className:"text-[14px] font-bold"}, (ab ? "▲ " : "▾ ")+(NOME_CNPJ[b.id] || b.nome)), e("span",{className:"text-[13px] font-bold "+MONO+" "+neg(sub)}, num(sub)),
+          lim>0 && e("span",{className:"text-[11.5px] text-white/70"}, "limite "+BK(lim)+" · usado "+BK(usado)+" · folga "+BK(Math.max(0, lim-usado))),
+          semChave>0 && e("span",{className:"text-[11.5px] font-semibold", style:{color:"#FBBF24"}}, semChave+" sem chave Pix"),
+          e("span",{className:"ml-auto rounded-full px-2.5 py-0.5 text-[11.5px] font-bold "+(fechado ? "bg-emerald-500/30 text-emerald-100" : "bg-black/30")}, fechado ? "✓ Fechado" : "Em aberto"),
+          fechado ? e(Btn,{onClick:function(ev){ ev.stopPropagation(); fechar([b.id], false); }}, "Editar") : e("button",{onClick:function(ev){ ev.stopPropagation(); fechar([b.id], true); }, className:"rounded-lg bg-primary px-3 py-1 text-[12.5px] font-bold text-primary-foreground hover:brightness-110"}, "Fechar CNPJ")),
+        ab && cs.filter(function(c){ return casaB(b) || casaC(c); }).map(function(c){ return e("label",{key:c.id, className:"flex flex-wrap items-center justify-between gap-2 border-t border-border/40 px-3 py-1.5"},
+          e("span",{className:"min-w-0 flex-1 truncate text-[13.5px]"}, c.nome, c.limite ? e("span",{className:"ml-2 text-[11px] text-muted-foreground"}, "limite "+BK(c.limite)) : null),
+          pixDaCaixa(cx.state.px, c.id) ? e(CopiarChave,{texto:pixDaCaixa(cx.state.px, c.id).chave}) : null,
+          c.tipo!=="CAIXA" && e(ChavePixCaixa,{caixa:[c.id, c.nome, c.bloco], edita:!fechado, className:"w-44"}),
+          e("input",{"data-saldo":"1", disabled:fechado, inputMode:"numeric", value:(vals[c.id]<0?"-":"")+num(Math.abs(vals[c.id]||0)), "aria-label":"Saldo de "+c.nome,
+            className:"h-9 w-40 rounded-md border border-input bg-input/30 px-2 text-center text-[15px] outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 "+MONO+" "+neg(vals[c.id]),
+            onFocus:function(ev){ ev.target.select(); },
+            onBlur:function(){ if((vals[c.id]||0)!==guardado(c.id)) cx.dispatch({type:"SALDO_CEL", data:data, conta:c.id, valor:vals[c.id]||0}); },
+            onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); var all = [].slice.call(ev.target.closest("[data-lancar]").querySelectorAll("input[data-saldo]:not([disabled])")), i = all.indexOf(ev.target); if(all[i+1]) all[i+1].focus(); else ev.target.blur(); } },
+            onChange:function(ev){ var raw = ev.target.value, n = (raw.match(/-/g)||[]).length%2===1, dg = raw.replace(/\D/g,"").slice(0,12), o = Object.assign({}, vals); o[c.id] = (n?-1:1)*Number(dg||0)/100; setVals(o); }})); }));
+    })),
+    e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"},
+      e("h3",{className:"mb-2 font-heading text-[14px] font-bold"}, "Aporte de sócio", e("span",{className:"ml-2 text-[12px] font-normal text-foreground/70"}, "dinheiro que o sócio manda para um CNPJ (não é faturamento)")),
+      e("div",{className:"flex flex-wrap items-center gap-2"},
+        e("select",{value:ap.bloco, className:INPUT+" h-9!", onChange:function(ev){ setAp(Object.assign({}, ap, {bloco:ev.target.value})); }}, blocos.map(function(b){ return e("option",{key:b.id, value:b.id}, b.nome); })),
+        e(MoneyInput,{sm:true, value:ap.valor, label:"Valor do aporte", onChange:function(v){ setAp(Object.assign({}, ap, {valor:v})); }}),
+        e("input",{value:ap.desc, placeholder:"Quem mandou / observação", className:INPUT+" h-9! min-w-48 flex-1", onChange:function(ev){ setAp(Object.assign({}, ap, {desc:ev.target.value})); }}),
+        e(Btn,{onClick:function(){ if(!ap.valor) return; cx.dispatch({type:"SALDO_APORTE", data:data, aporte:{id:"ap"+Date.now(), bloco:ap.bloco, valor:ap.valor, desc:ap.desc.trim()}}); setAp({bloco:ap.bloco, valor:0, desc:""}); }}, "Lançar aporte")),
+      ((sc.aportes||{})[data]||[]).map(function(x){ return e("div",{key:x.id, className:"mt-1.5 flex items-center gap-3 text-sm"}, e("span",{className:"flex-1 truncate"}, ((sc.blocos.filter(function(b){ return b.id===x.bloco; })[0]||{}).nome||x.bloco)+(x.desc ? " · "+x.desc : "")), e("b",{className:MONO+" text-emerald-300"}, "+ "+BK(x.valor)), e(Btn,{onClick:function(){ cx.dispatch({type:"SALDO_APORTE", data:data, remover:x.id}); }}, "Remover")); })),
     e("div",{className:"grid gap-3 lg:grid-cols-2"},
       e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"},
-        e("h3",{className:"mb-2 font-heading text-[14px] font-bold"}, "Faturado e recebido do dia"),
+        e("h3",{className:"mb-2 font-heading text-[14px] font-bold"}, "Recebido do dia", fil ? e("span",{className:"ml-2 text-[12px] font-normal text-foreground/70"}, "vale para todos os CNPJs (o recebido não é separado por CNPJ)") : null),
         e("div",{className:"flex flex-wrap items-center gap-3"},
           e("label",{className:"flex items-center gap-2 text-[13px]", title:"Relatório de notas fiscais (lista de acertos do dia)"}, "Notas fiscais (R$)", e(MoneyInput,{sm:true, value:fdia.nf||0, label:"Notas fiscais do dia", onChange:function(v){ cx.dispatch({type:"FAT_DIA", data:data, acertos:fdia.acertos||0, recebido:fdia.recebido||0, loja:fdia.loja||0, recup:fdia.recup||0, nf:v}); }})),
           e("label",{className:"flex items-center gap-2 text-[13px]"}, "Acertos", e(NumInput,{value:fdia.acertos||0, label:"Acertos do dia", onChange:function(v){ cx.dispatch({type:"FAT_DIA", data:data, nf:(fdia.nf||0), acertos:Math.round(v), recebido:fdia.recebido||0, loja:fdia.loja||0, recup:fdia.recup||0}); }})),
@@ -137,47 +183,17 @@ function LancarTela(p){
           e("label",{className:"flex items-center gap-2 text-[13px]", title:"Inadimplência paga hoje: ENTROU na conta"}, "Inadimplência recuperada (entrou)", e(MoneyInput,{sm:true, value:fdia.recup||0, label:"Inadimplência recuperada", onChange:function(v){ cx.dispatch({type:"FAT_DIA", data:data, nf:(fdia.nf||0), acertos:fdia.acertos||0, recebido:fdia.recebido||0, loja:fdia.loja||0, recup:v}); }}))),
         e("p",{className:"mt-2 text-[12px] text-foreground/75"}, "Acumulado do mês até este dia: "+acumA+" acertos · "+BK(acumR)+(acumA ? " · média "+BK(acumR/acumA)+" por acerto" : ""))),
       e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"},
-        e("div",{className:"mb-2 flex items-center justify-between"}, e("h3",{className:"font-heading text-[14px] font-bold"}, "Pagamentos do dia"), e("span",{className:"text-[13px] font-bold "+MONO}, BK(pagTotal))),
-        e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1.5"}, [["34","CNPJ 34"],["46","CNPJ 46"],["59","CNPJ 59"],["67","CNPJ 67"],["fora","Contas por fora"]].map(function(c){
+        e("div",{className:"mb-2 flex items-center justify-between"}, e("h3",{className:"font-heading text-[14px] font-bold"}, "Pagamentos do dia"+(fil ? " · "+((NOME_CNPJ[fil])||fil) : "")), e("span",{className:"text-[13px] font-bold "+MONO}, BK(fil ? pagoDoDia(fil) : pagTotal))),
+        e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1.5"}, [["34","CNPJ 34"],["46","CNPJ 46"],["59","CNPJ 59"],["67","CNPJ 67"],["fora","Contas por fora"]].filter(function(c){ return !fil || c[0]===fil; }).map(function(c){
           return e("label",{key:c[0], className:"flex items-center justify-between gap-2 text-[13px]"}, c[1], e(MoneyInput,{sm:true, value:pagoDoDia(c[0]), label:"Pago "+c[1], onChange:function(v){ cx.dispatch(c[0]==="fora" ? {type:"CPD_SET", data:data, campo:"contasPorFora", valor:v} : {type:"CPD_SET", data:data, cnpj:c[0], valor:v}); }})); })))),
-    e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"},
-      e("h3",{className:"mb-2 font-heading text-[14px] font-bold"}, "Aporte de sócio", e("span",{className:"ml-2 text-[12px] font-normal text-foreground/70"}, "dinheiro que o sócio manda para um CNPJ (não é faturamento)")),
-      e("div",{className:"flex flex-wrap items-center gap-2"},
-        e("select",{value:ap.bloco, className:INPUT+" h-9!", onChange:function(ev){ setAp(Object.assign({}, ap, {bloco:ev.target.value})); }}, blocos.map(function(b){ return e("option",{key:b.id, value:b.id}, b.nome); })),
-        e(MoneyInput,{sm:true, value:ap.valor, label:"Valor do aporte", onChange:function(v){ setAp(Object.assign({}, ap, {valor:v})); }}),
-        e("input",{value:ap.desc, placeholder:"Quem mandou / observação", className:INPUT+" h-9! min-w-48 flex-1", onChange:function(ev){ setAp(Object.assign({}, ap, {desc:ev.target.value})); }}),
-        e(Btn,{onClick:function(){ if(!ap.valor) return; cx.dispatch({type:"SALDO_APORTE", data:data, aporte:{id:"ap"+Date.now(), bloco:ap.bloco, valor:ap.valor, desc:ap.desc.trim()}}); setAp({bloco:ap.bloco, valor:0, desc:""}); }}, "Lançar aporte")),
-      ((sc.aportes||{})[data]||[]).map(function(x){ return e("div",{key:x.id, className:"mt-1.5 flex items-center gap-3 text-sm"}, e("span",{className:"flex-1 truncate"}, ((sc.blocos.filter(function(b){ return b.id===x.bloco; })[0]||{}).nome||x.bloco)+(x.desc ? " · "+x.desc : "")), e("b",{className:MONO+" text-emerald-300"}, "+ "+BK(x.valor)), e(Btn,{onClick:function(){ cx.dispatch({type:"SALDO_APORTE", data:data, remover:x.id}); }}, "Remover")); })),
-    e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-3"},
-      e(Cartao,{l:"Total do dia", v:total, cor:total<0 ? "text-red-400" : "", fundo:"ouro", sub:"saldo sem as bloqueadas"}),
-      e(Cartao,{l:"Disponível", v:total+limite, cor:"text-emerald-400", fundo:"verde", sub:"saldo + limite de crédito"}),
-      e("div",{className:"col-span-2 flex items-center justify-center rounded-xl bg-card px-3 py-2 text-center text-[12.5px] text-foreground/80 ring-1 ring-border lg:col-span-1"},
-        "O que ela digita fica salvo na hora, pode sair e voltar depois. Fechar o CNPJ confirma o saldo dele; para corrigir é só tocar em Editar.")),
-    e("div",{className:"grid gap-3 lg:grid-cols-2"}, blocos.map(function(b){
-      var cs = sc.contas.filter(function(c){ return c.bloco===b.id; }), cor = COR_BLOCO[b.id]||"#64748B", fechado = !!fm[b.id];
-      var sub = cs.reduce(function(t,c){ return t+(vals[c.id]||0); },0);
-      return e("div",{key:b.id, className:"overflow-hidden rounded-xl bg-card ring-1 "+(fechado ? "ring-emerald-500/50" : "ring-border")},
-        e("div",{className:"flex flex-wrap items-center gap-2 px-3 py-2", style:{background:"linear-gradient(90deg,"+clara(cor)+"66,"+clara(cor)+"1f)"}},
-          e("span",{className:"text-[14px] font-bold"}, b.nome), e("span",{className:"text-[13px] font-bold "+MONO+" "+neg(sub)}, num(sub)),
-          e("span",{className:"ml-auto rounded-full px-2.5 py-0.5 text-[11.5px] font-bold "+(fechado ? "bg-emerald-500/30 text-emerald-100" : "bg-black/30")}, fechado ? "✓ Fechado" : "Em aberto"),
-          fechado ? e(Btn,{onClick:function(){ fechar([b.id], false); }}, "Editar") : e("button",{onClick:function(){ fechar([b.id], true); }, className:"rounded-lg bg-primary px-3 py-1 text-[12.5px] font-bold text-primary-foreground hover:brightness-110"}, "Fechar CNPJ")),
-        cs.map(function(c){ return e("label",{key:c.id, className:"flex items-center justify-between gap-2 border-t border-border/40 px-3 py-1.5"},
-          e("span",{className:"min-w-0 flex-1 truncate text-[13.5px]"}, c.nome, c.limite ? e("span",{className:"ml-2 text-[11px] text-muted-foreground"}, "limite "+BK(c.limite)) : null),
-          pixDaCaixa(cx.state.px, c.id) ? e(CopiarChave,{texto:pixDaCaixa(cx.state.px, c.id).chave}) : null,
-          e("input",{"data-saldo":"1", disabled:fechado, inputMode:"numeric", value:(vals[c.id]<0?"-":"")+num(Math.abs(vals[c.id]||0)), "aria-label":"Saldo de "+c.nome,
-            className:"h-9 w-40 rounded-md border border-input bg-input/30 px-2 text-center text-[15px] outline-none focus:ring-2 focus:ring-primary disabled:opacity-60 "+MONO+" "+neg(vals[c.id]),
-            onFocus:function(ev){ ev.target.select(); },
-            onBlur:function(){ if((vals[c.id]||0)!==guardado(c.id)) cx.dispatch({type:"SALDO_CEL", data:data, conta:c.id, valor:vals[c.id]||0}); },
-            onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); var all = [].slice.call(ev.target.closest("[data-lancar]").querySelectorAll("input[data-saldo]:not([disabled])")), i = all.indexOf(ev.target); if(all[i+1]) all[i+1].focus(); else ev.target.blur(); } },
-            onChange:function(ev){ var raw = ev.target.value, n = (raw.match(/-/g)||[]).length%2===1, dg = raw.replace(/\D/g,"").slice(0,12), o = Object.assign({}, vals); o[c.id] = (n?-1:1)*Number(dg||0)/100; setVals(o); }})); }));
-    })));
+    null);
 }
 
 // ── "Como ler": como a conta fecha, o que se lança todo dia, quem lança e quando (recolhido por padrão) ──
 function ComoLer(p){
   var fl = p.fl || {}, atraso = function(u){ if(!u) return null; var d = Math.round((new Date(p.ontem+"T12:00:00")-new Date(u+"T12:00:00"))/86400000); return d<=0 ? 0 : d; };
   var passo = function(n, t, d){ return e("div",{className:"flex gap-2"}, e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[12px] font-bold text-primary-foreground"}, n), e("div",{className:"text-[13px] leading-snug"}, e("b",{}, t), d ? " — "+d : "")); };
-  return e("section",{className:"flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-[#E8B84B]/40"},
+  return e("section",{className:"flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-white/10"},
     e("h2",{className:"font-heading text-[16px] font-bold"}, "Como ler o Caixa"),
     e("div",{className:"grid gap-3 lg:grid-cols-2"},
       e("div",{className:"flex flex-col gap-2"},
@@ -213,6 +229,58 @@ function ComoLer(p){
         e("li",{}, "A divergência por CNPJ usa a natureza do relatório (ex.: PIX SICREDI ATACADISTA = CNPJ 34): é uma aproximação."),
         e("li",{}, "Em breve: puxar as formas de pagamento direto da Calculadora de acertos e o PIX para representantes do Consolidado.")))
   );
+}
+
+// ── Posição das contas (visão simples): saldo do início do mês × agora, por CNPJ e por conta, com saldo real, cheque especial e disponível ──
+var verde = "#4ADE80", ambar = "#FBBF24", verm = "#F87171";
+var corSaldo = function(v){ return v<0 ? verm : verde; };
+var corUso = function(p){ return p>=85 ? verm : p>=50 ? ambar : verde; };
+function PosicaoContas(p){
+  var sc = p.sc, ab = useState({}), abertos = ab[0], setAbertos = ab[1];
+  var ds = datasLancadas(sc), fimMesAnt = isoDia(new Date(p.ano, p.mes, 0)), fimMes = isoDia(new Date(p.ano, p.mes+1, 0));
+  var dI = ds.filter(function(k){ return k<=fimMesAnt; }).pop() || null, dN = ds.filter(function(k){ return k<=(p.hoje<fimMes ? p.hoje : fimMes); }).pop() || null;
+  if(!dN) return null;
+  var pI = dI ? posicaoEm(sc, dI) : null, pN = posicaoEm(sc, dN);
+  var contaDe = function(pos, id){ var r = null; if(pos) pos.blocos.forEach(function(b){ b.contas.forEach(function(x){ if(x.conta.id===id) r = x; }); }); return r; };
+  var limTotal = 0, usado = 0;
+  pN.blocos.forEach(function(b){ b.contas.forEach(function(x){ if(x.conta.bloqueada) return; var l = x.conta.limite||0; limTotal += l; if(x.saldo<0) usado += Math.min(l, -x.saldo); }); });
+  var iniReal = pI ? pI.real : null, varReal = iniReal===null ? null : pN.real-iniReal;
+  var card = function(tit, v, sub, cor, extra){ return e("div",{className:"flex flex-col items-center justify-center gap-1 rounded-xl px-3 py-3 text-center", style:{background:"rgba(255,255,255,.05)", boxShadow:"inset 0 0 0 1px rgba(255,255,255,.12)"}}, e("span",{className:"text-[12.5px] font-bold uppercase tracking-wide text-white"}, tit), e("b",{className:MONO+" text-[28px] leading-tight", style:{color:v<0 ? verm : "#fff"}}, BK(v)), e("span",{className:"text-[13px] font-semibold text-white"}, sub), extra || null); };
+  var cab = e("div",{className:"grid grid-cols-[minmax(0,1fr)_repeat(5,minmax(5.5rem,7.5rem))] items-center gap-2 px-3 py-1.5 text-center text-[12px] font-bold uppercase tracking-wide text-[#F3D98B]"}, e("span",null, "Conta"), ["Início do mês", "Agora", "Variação", "Cheque especial", "Disponível"].map(function(h){ return e("span",{key:h, className:"text-center"}, h); }));
+  var blocos = pN.blocos.filter(function(b){ return b.contas.length; }).sort(function(x, y){ return (x.id==="BLOQ" ? 1 : 0)-(y.id==="BLOQ" ? 1 : 0); });   // o bloqueado / retido vai sempre na última linha
+  var todasContas = []; pN.blocos.forEach(function(b){ b.contas.forEach(function(x){ todasContas.push(x); }); });
+  var iniTudo = pI ? pI.blocos.reduce(function(t, b){ return t+b.real; }, 0) : null, agoraTudo = pN.blocos.reduce(function(t, b){ return t+b.real; }, 0), limTudo = todasContas.reduce(function(t, x){ return t+(x.conta.bloqueada ? 0 : (x.conta.limite||0)); }, 0), dispTudo = pN.blocos.reduce(function(t, b){ return t+b.disp; }, 0);
+  var colunas = "grid grid-cols-[minmax(0,1fr)_repeat(5,minmax(5.5rem,7.5rem))] items-center gap-2 px-3";
+  var totalLinha = e("div",{className:colunas+" py-2.5", style:{background:"linear-gradient(90deg,rgba(255,255,255,.14),rgba(255,255,255,.05))", boxShadow:"inset 0 0 0 1px #E8B84Bcc"}},
+    e("span",{className:"text-left text-[15px] font-bold uppercase tracking-wide text-white"}, "Total de tudo"),
+    e("span",{className:MONO+" text-center text-[15px] font-bold text-white"}, iniTudo===null ? "—" : num(iniTudo)),
+    e("span",{className:MONO+" text-center text-[16px] font-bold", style:{color:corSaldo(agoraTudo)}}, num(agoraTudo)),
+    e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:iniTudo===null ? "#fff" : (agoraTudo-iniTudo)>=0 ? verde : verm}}, iniTudo===null ? "—" : ((agoraTudo-iniTudo)>=0 ? "+" : "−")+num(Math.abs(agoraTudo-iniTudo))),
+    e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:"#93C5FD"}}, num(limTudo)),
+    e("span",{className:MONO+" text-center text-[16px] font-bold", style:{color:dispTudo<0 ? verm : verde}}, num(dispTudo)));
+  return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-white/10"},
+    e("div",{className:"flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 bg-white/[0.06] px-3 py-2 text-center"}, e("h2",{className:"font-heading text-[17px] font-bold"}, "Posição das contas"), e("span",{className:"text-[13.5px] font-semibold text-white"}, "início do mês ("+(dI ? dc(dI) : "sem lançamento")+") × agora ("+dc(dN)+")")),
+    e("div",{className:"grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-4"},
+      card("Saldo real das contas", pN.real, iniReal===null ? "sem saldo do início do mês" : "início "+BK(iniReal)+" · "+(varReal>=0 ? "+" : "−")+" "+BK(Math.abs(varReal)), corSaldo(pN.real)),
+      card("Cheque especial", limTotal, "usado "+BK(usado)+" · folga "+BK(Math.max(0, limTotal-usado)), "#60A5FA", e("div",{className:"mt-1 h-1.5 w-full overflow-hidden rounded-full bg-white/10"}, e("div",{className:"h-full rounded-full", style:{width:Math.min(100, limTotal ? usado/limTotal*100 : 0)+"%", background:corUso(limTotal ? usado/limTotal*100 : 0)}}))),
+      card("Disponível para pagar", pN.disp, "saldo real + cheque especial", verde),
+      card("Bloqueado / a receber", pN.bloq, "retido fora do saldo", ambar)),
+    e("div",{className:"flex flex-col gap-2 px-3 pb-3"}, cab, blocos.map(function(b){
+      var cor = COR_BLOCO[b.id]||"#64748B", ab1 = abertos[b.id]!==false, contas = b.id==="BLOQ" ? b.contas : b.contas.filter(function(x){ return !x.conta.bloqueada; });
+      var bI = pI ? pI.blocos.find(function(x){ return x.id===b.id; }) : null, lim = contas.reduce(function(t, x){ return t+(x.conta.limite||0); }, 0), us = contas.reduce(function(t, x){ return t+(x.saldo<0 ? Math.min(x.conta.limite||0, -x.saldo) : 0); }, 0), pct = lim ? us/lim*100 : 0;
+      var linha = function(rot, ini, ag, limite, disp, o){ o = o || {}; var dv = ini===null ? null : ag-ini;
+        return e("div",{key:o.key, className:"grid grid-cols-[minmax(0,1fr)_repeat(5,minmax(5.5rem,7.5rem))] items-center gap-2 px-3 "+(o.cls||"py-1")},
+          e("span",{className:"min-w-0 truncate text-left "+(o.forte ? "text-[15px] font-bold" : "pl-5 text-[13.5px] font-semibold")}, rot),
+          e("span",{className:MONO+" text-center text-[14px] text-white"}, ini===null ? "—" : num(ini)),
+          e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:corSaldo(ag)}}, num(ag)),
+          e("span",{className:MONO+" text-center text-[14px] font-semibold", style:{color:dv===null ? "#fff" : dv>=0 ? verde : verm}}, dv===null ? "—" : (dv>=0 ? "+" : "−")+num(Math.abs(dv))),
+          e("span",{className:MONO+" text-center text-[14px]", style:{color:"#93C5FD"}}, limite>0 ? num(limite) : "—"),
+          e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:disp<0 ? verm : verde}}, num(disp))); };
+      return e("div",{key:b.id, className:"overflow-hidden rounded-lg", style:{boxShadow:"inset 0 0 0 1px "+cor+"88"}},
+        e("div",{onClick:function(){ var o = Object.assign({}, abertos); o[b.id] = !(o[b.id]!==false); setAbertos(o); }, className:"cursor-pointer hover:brightness-110", style:{background:"linear-gradient(90deg,"+cor+"88,"+cor+"22)"}},
+          linha((ab1 ? "▲ " : "▾ ")+(NOME_CNPJ[b.id] || (b.id==="BLOQ" ? "Bloqueado / retido (a receber)" : b.nome)), bI ? bI.real : null, b.real, lim, b.id==="BLOQ" ? 0 : b.real+lim, {forte:true, cls:"py-1.5", key:"h"})),
+        ab1 && e("div",{className:"bg-black/30"}, contas.map(function(x, i){ var xi = contaDe(pI, x.conta.id); return e("div",{key:x.conta.id, className:"py-0.5 "+(i%2 ? "bg-black/20" : "")}, linha(x.conta.nome, xi ? xi.saldo : null, x.saldo, x.conta.limite||0, x.disp, {key:x.conta.id})); })));
+    }), totalLinha));
 }
 
 function AbaCaixa(){
@@ -264,6 +332,7 @@ function AbaCaixa(){
   var fecharDia = function(k){ if(vcols.length<=1) return; var o = Object.assign({}, ocultos); o[k] = 1; setOcultos(o); };
   var apenasUltimos = function(){ var o = {}; cols.forEach(function(k,i){ if(i<cols.length-2) o[k] = 1; }); setOcultos(o); };
   var dd = useState(false), diasAberto = dd[0], setDiasAberto = dd[1];
+  var dd2 = useState(false), diaADia = dd2[0], setDiaADia = dd2[1];   // a planilha com todos os dias fica fechada: o padrão é a posição simples (início do mês × agora)
   var feriadosVis = vcols.filter(function(k){ return FERIADOS[k]; });
   // arrastar a planilha para o lado: clica no meio, segura e arrasta
   var aoPressionar = function(ev){ if(ev.button!==0 || ev.target.tagName==="INPUT" || !scrollRef.current) return; arr.current = {x:ev.clientX, sl:scrollRef.current.scrollLeft, down:true, moved:false}; };
@@ -310,11 +379,11 @@ function AbaCaixa(){
   var aporteCnpj = filtro==="todos" ? 0 : diasDe(dA||hoje, dB||hoje).reduce(function(x,k){ return x+aporteDia(k, filtro); },0), recCnpjP = filtro==="todos" ? 0 : somaRec(filtro), espCnpj = posA.real+recCnpjP+aporteCnpj-pagoCnpjP, difCnpj = posB.real-espCnpj, okCnpj = Math.abs(difCnpj)<1000;
   var colTh = function(k){
     var f = fechs[k], nf = f ? blocos.filter(function(b){ return f[b.id]; }).length : 0, parcial = f && nf<blocos.length;
-    return e("th",{key:k, className:"min-w-32 px-2 py-1 text-center "+GRADE+" "+(fimSem(k) ? "bg-violet-500/35" : "")+(k===hoje ? " text-primary" : "")},
-      e("div",{className:"flex items-center justify-center gap-1"},
-        e("span",{className:"text-[12px] font-bold uppercase tracking-wide "+(fimSem(k) ? "text-violet-200" : "")}, SEM[diaSem(k)]),
-        vcols.length>1 && e("button",{onClick:function(){ fecharDia(k); }, title:"Fechar este dia (sai da planilha e da variação)", className:"grid size-7 place-items-center rounded-md bg-black/35 text-[14px] font-bold hover:bg-red-500/50"}, "✕")),
-      e("div",{className:"text-[14px] font-bold"}, dc(k)+(k===hoje ? " · hoje" : "")),
+    return e("th",{key:k, className:"min-w-28 px-1.5 py-1 text-center align-middle "+GRADE+" "+(fimSem(k) ? "bg-violet-500/35" : "")+(k===hoje ? " text-primary" : "")},
+      e("div",{className:"flex items-center justify-center gap-1.5 whitespace-nowrap"},
+        e("span",{className:"text-[10.5px] font-semibold uppercase tracking-wide opacity-80 "+(fimSem(k) ? "text-violet-200" : "")}, SEM[diaSem(k)].slice(0, 3)),
+        e("span",{className:"text-[12.5px] font-bold"}, dc(k)+(k===hoje ? " · hoje" : "")),
+        vcols.length>1 && e("button",{onClick:function(){ fecharDia(k); }, title:"Fechar este dia (sai da planilha e da variação)", className:"grid size-5 place-items-center rounded bg-black/35 text-[11px] font-bold hover:bg-red-500/50"}, "✕")),
       FERIADOS[k] && e("div",{className:"text-[10.5px] font-semibold text-violet-200"}, "Feriado"),
       parcial && e("div",{className:"text-[10.5px] font-semibold text-amber-300"}, nf+"/"+blocos.length+" CNPJs fechados"));
   };
@@ -337,8 +406,8 @@ function AbaCaixa(){
     ler && e(ComoLer,{fontes:fontes, ontem:ontemIso, fl:fl, dA:dA, dB:dB}),
     cfg && e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"}, e(ConfigContas,{})),
     // resumo: compara o primeiro e o último dia em aberto
-    e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/30"},
-      e("div",{className:"flex flex-wrap items-center gap-2 bg-linear-to-b from-[#E8B84B]/30 to-[#E8B84B]/10 px-3 py-2"},
+    e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-white/10"},
+      e("div",{className:"flex flex-wrap items-center gap-2 bg-white/[0.06] px-3 py-2"},
         e("h2",{className:"mr-1 font-heading text-[15px] font-bold"}, "Resumo das contas"),
         e("span",{className:"text-sm"}, dA && dA!==dB ? "primeiro e último dia em aberto: "+dp(dA)+" → "+dp(dB) : "só um dia em aberto"),
         e("span",{className:"ml-auto flex flex-wrap items-center gap-1.5 text-xs"}, "Período: de",
@@ -347,13 +416,13 @@ function AbaCaixa(){
           (fx.de || fx.ate) && e(Btn,{onClick:function(){ setFx({de:"", ate:""}); }}, "Voltar ao mês"))),
       e("div",{className:"grid grid-cols-2 gap-2 p-3 lg:grid-cols-4"},
         e(Cartao,{l:"Saldo das contas bancárias", v:posB.real, cor:posB.real<0 ? "text-red-400" : "", delta:posB.real-posA.real, fundo:"ouro", sub:filtro==="todos" ? "soma de todas as contas bancárias" : "contas de "+nomeFiltro}),
-        e(Cartao,{l:"Disponível", v:posB.disp, cor:"text-emerald-400", delta:posB.disp-posA.disp, fundo:"verde", sub:"saldo das contas + cheque especial"}),
+        e(Cartao,{l:"Disponível", v:posB.disp, cor:"", delta:posB.disp-posA.disp, fundo:"verde", sub:"saldo das contas + cheque especial"}),
         e(Cartao,{l:"Cheque especial total", v:limB, delta:limB-limA, fundo:"azul", sub:"limite liberado pelos bancos"}),
         e(Cartao,{l:"Bloqueado / a receber", v:posB.bloq, delta:posB.bloq-posA.bloq, fundo:"ouro", sub:"retido fora do saldo"})),
       filtro!=="todos" ? e("div",{className:"flex flex-col gap-2 px-3 pb-3"},
         e("div",{className:"flex flex-wrap items-stretch justify-center gap-1.5 xl:flex-nowrap"},
           e(Caixinha,{l:"Saldo no início", sub:dA ? "contas de "+nomeFiltro+" em "+dc(dA) : "—", v:posA.real}), e(Op,{t:"+"}),
-          e(Caixinha,{l:"Recebido", sub:["de "+(dA?dc(dA):"—")+" a "+(dB?dc(dB):"—"),"contas a receber"+(aporteCnpj ? " + aporte "+BK(aporteCnpj) : "")], v:recCnpjP+aporteCnpj, cor:"text-emerald-400"}), e(Op,{t:"−"}),
+          e(Caixinha,{l:"Recebido", sub:["de "+(dA?dc(dA):"—")+" a "+(dB?dc(dB):"—"),"contas a receber"+(aporteCnpj ? " + aporte "+BK(aporteCnpj) : "")], v:recCnpjP+aporteCnpj, cor:""}), e(Op,{t:"−"}),
           e(Caixinha,{l:"Pago", sub:"Contas a pagar deste CNPJ", v:pagoCnpjP, cor:"text-red-400"}), e(Op,{t:"="}),
           e(Caixinha,{l:"Saldo esperado", sub:"início + recebido − pago", v:espCnpj, forte:true}), e(Op,{t:"vs"}),
           e(Caixinha,{l:"Saldo real", sub:dB ? "contas em "+dc(dB) : "—", v:posB.real, forte:true}), e(Op,{t:"→"}),
@@ -364,7 +433,7 @@ function AbaCaixa(){
       e("div",{className:"flex flex-col gap-2 px-3 pb-3"},
         e("div",{className:"flex flex-wrap items-stretch justify-center gap-1.5 xl:flex-nowrap"},
           e(Caixinha,{l:"Saldo no início", sub:dA ? "dinheiro nas contas em "+dc(dA) : "—", v:fl.ini}), e(Op,{t:"+"}),
-          e(Caixinha,{l:"Recebido nas contas", sub:dA ? ["de "+dc(dA)+" a "+dc(dB),"baixas "+BK(fl.baixas||0)+" − loja "+BK(fl.loja||0)+" − diretos "+BK(fl.dir||0)+(fl.aporte ? " + aporte "+BK(fl.aporte) : "")] : "—", v:dA<dB ? fl.fat : null, cor:"text-emerald-400"}), e(Op,{t:"−"}),
+          e(Caixinha,{l:"Recebido nas contas", sub:dA ? ["de "+dc(dA)+" a "+dc(dB),"baixas "+BK(fl.baixas||0)+" − loja "+BK(fl.loja||0)+" − diretos "+BK(fl.dir||0)+(fl.aporte ? " + aporte "+BK(fl.aporte) : "")] : "—", v:dA<dB ? fl.fat : null, cor:""}), e(Op,{t:"−"}),
           e(Caixinha,{l:"Contas pagas", sub:dA ? ["pago de "+dc(dA)+" a "+dc(dB),"− diretos a fornecedores "+BK(fl.dir||0)] : "—", v:dA<dB ? fl.pago : null, cor:"text-red-400", ir:function(){ cx.dispatch({type:"ABA", aba:"contaspagar"}); }}), e(Op,{t:"="}),
           e(Caixinha,{l:"Saldo esperado", sub:"início + faturamento − pago", v:fl.esperado, forte:true}), e(Op,{t:"vs"}),
           e(Caixinha,{l:"Saldo real", sub:dB ? "o que está nas contas de verdade em "+dc(dB) : "—", v:fl.fim, forte:true}), e(Op,{t:"→"}),
@@ -373,13 +442,16 @@ function AbaCaixa(){
             sub:dif===null ? "falta saldo" : ok ? "o saldo real é igual ao esperado" : dif>0 ? ["Tem "+BK(Math.abs(dif))+" A MAIS nas contas","do que o fluxo previa (saldo real − esperado)"] : ["Faltam "+BK(Math.abs(dif))+" nas contas","saiu mais dinheiro do que o fluxo mostra"]})),
         e("p",{className:"text-center text-[12px] text-foreground/75"}, "Obs.: durante o mês as vendas já pagas e ainda não fechadas no Carregar não entram no faturamento; por isso a prova real só fica confiável no fechamento do mês."),
         somaPagos>0 && Math.abs(somaPagos-pago)>1 && e("p",{className:"rounded-lg bg-amber-500/15 px-3 py-2 text-center text-[12.5px] font-semibold text-amber-200"}, "Conferir o Pago do mês: Contas a pagar (Nayale) "+BK(pago)+" · soma dos pagamentos diários "+BK(somaPagos)+" · diferença "+BK(Math.abs(pago-somaPagos))+"."))),
+    e(PosicaoContas,{sc:sc, ano:ano, mes:mes, hoje:hoje}),
+    e("button",{type:"button", onClick:function(){ setDiaADia(!diaADia); }, className:"self-center rounded-lg bg-card px-4 py-2 text-[13px] font-bold ring-1 ring-white/10 hover:bg-primary/10"}, diaADia ? "▲ Esconder o saldo dia a dia" : "▾ Ver o saldo dia a dia (planilha)"),
+    diaADia && e("div",{className:"flex flex-col gap-3"},
     // planilha em grade: contas nas linhas, dias lançados nas colunas; total logo abaixo do cabeçalho; CNPJs fechados mostram só o subtotal
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
       e("h2",{className:"font-heading text-[15px] font-bold"}, "Saldo do fim de cada dia"),
       e("div",{className:"flex flex-wrap items-center gap-2"},
         e("div",{className:"relative"},
-          e("button",{onClick:function(){ setDiasAberto(!diasAberto); }, className:"rounded-lg bg-card px-3 py-1.5 text-sm font-bold ring-1 ring-[#E8B84B]/50 hover:bg-primary/10"}, "📅 Dias: "+vcols.length+" de "+cols.length+(diasAberto ? " ▴" : " ▾")),
-          diasAberto && e("div",{className:"absolute right-0 top-full z-30 mt-1 w-72 rounded-xl bg-card p-3 shadow-2xl ring-1 ring-[#E8B84B]/40"},
+          e("button",{onClick:function(){ setDiasAberto(!diasAberto); }, className:"rounded-lg bg-card px-3 py-1.5 text-sm font-bold ring-1 ring-white/10 hover:bg-primary/10"}, "📅 Dias: "+vcols.length+" de "+cols.length+(diasAberto ? " ▴" : " ▾")),
+          diasAberto && e("div",{className:"absolute right-0 top-full z-30 mt-1 w-72 rounded-xl bg-card p-3 shadow-2xl ring-1 ring-white/10"},
             e("div",{className:"mb-2 flex gap-2"}, e(Btn,{onClick:function(){ setOcultos({}); }}, "Todos"), e(Btn,{onClick:apenasUltimos}, "Só os 2 últimos"), e(Btn,{onClick:function(){ setDiasAberto(false); }}, "Fechar")),
             e("div",{className:"flex max-h-72 flex-col gap-0.5 overflow-y-auto"}, cols.map(function(k){ var marcado = !ocultos[k];
               return e("label",{key:k, className:"flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-primary/10 "+(fimSem(k) ? "text-violet-300" : "")},
@@ -387,12 +459,12 @@ function AbaCaixa(){
                 e("span",{className:"w-20 font-semibold"}, SEM[diaSem(k)].slice(0,3)), e("span",{className:MONO}, dp(k)), FERIADOS[k] && e("span",{className:"text-[11px]"}, "feriado")); })))),
         e(Btn,{onClick:function(){ abrirTodos(true); }}, "Abrir CNPJs"), e(Btn,{onClick:function(){ abrirTodos(false); }}, "Fechar CNPJs"))),
     e("div",{ref:scrollRef, onMouseDown:aoPressionar, onMouseMove:aoMover, onMouseUp:aoSoltar, onMouseLeave:aoSoltar, onClickCapture:aoClicar, title:"Clique no meio, segure e arraste para o lado",
-        className:"cursor-grab overflow-x-auto rounded-xl bg-card ring-1 ring-[#E8B84B]/25 active:cursor-grabbing"},
+        className:"cursor-grab overflow-x-auto rounded-xl bg-card ring-1 ring-white/10 active:cursor-grabbing"},
       e("table",{className:"w-full border-collapse text-[13px]"},
-        e("thead",{}, e("tr",{className:"bg-linear-to-b from-[#E8B84B]/35 to-[#E8B84B]/10 text-center"},
+        e("thead",{}, e("tr",{className:"bg-white/[0.06] text-center"},
           e("th",{className:CAB+" "+GRADE+" bg-[#3a3118] text-[11px] font-bold uppercase tracking-wide"}, "Conta"),
           vcols.map(colTh),
-          e("th",{className:"sticky right-0 z-20 min-w-[10.5rem] whitespace-nowrap bg-linear-to-l from-[#4a3d1c] to-[#352c15] px-2 py-1 text-center text-[12px] shadow-[-12px_0_16px_-8px_rgba(0,0,0,0.75)] "+GRADE, title:"Do primeiro ao último dia em aberto"}, e("div",{className:"font-bold uppercase"}, "Variação"), e("div",{className:"text-[13px]"}, dA ? dc(dA)+" → "+dc(dB) : "")))),
+          e("th",{className:"sticky right-0 z-10 min-w-[10.5rem] whitespace-nowrap bg-linear-to-l from-[#262a33] to-[#1b1e25] px-2 py-1 text-center text-[12px] shadow-[-12px_0_16px_-8px_rgba(0,0,0,0.75)] "+GRADE, title:"Do primeiro ao último dia em aberto"}, e("div",{className:"font-bold uppercase"}, "Variação"), e("div",{className:"text-[13px]"}, dA ? dc(dA)+" → "+dc(dB) : "")))),
         e("tbody",{},
           filtro==="todos" && linhaTotal("TOTAL · saldo (sem bloqueadas)", totalDia, "", "bg-[#4a3d1c]"),
           filtro==="todos" && linhaTotal("DISPONÍVEL · saldo + limite", function(k){ return totalDia(k)+limiteTotal; }, "text-emerald-400", "bg-[#123c2d]"),
@@ -413,6 +485,8 @@ function AbaCaixa(){
                   e("td",{className:VARC+" "+neg(dv)}, vb===null && vu===null ? "—" : sinal(dv)));
               })];
           }),
+          filtro==="todos" && linhaTotal("SALDO REAL DAS CONTAS (sem bloqueadas)", totalDia, "", "bg-[#4a3d1c]", "real-fim"),
+          filtro==="todos" && linhaTotal("SALDO COM CHEQUE ESPECIAL (saldo + limite)", function(k){ return totalDia(k)+limiteTotal; }, "text-emerald-400", "bg-[#123c2d]", "disp-fim"),
           vcols.length>0 && e("tr",{key:"pag-t", className:"bg-[#2b2416]"}, e("td",{className:CAB+" "+GRADE+" bg-[#2b2416] text-[12px] font-bold uppercase tracking-wide text-primary"}, "Pagamentos do dia"), e("td",{className:GRADE+" text-[12px] font-semibold text-foreground/70", colSpan:vcols.length+1}, e("button",{onClick:function(){ cx.dispatch({type:"ABA", aba:"contaspagar"}); }, className:"rounded-lg bg-primary px-3 py-1 text-[12.5px] font-bold text-primary-foreground hover:brightness-110"}, "Abrir Contas a pagar › Diário"), e("span",{className:"ml-3"}, "o que foi pago em cada dia (lançamento e conferência ficam lá)"))),
           pagLinhas.map(function(l){ var soma = somaId(l.id);
             return e("tr",{key:"pg"+l.id, className:"hover:bg-muted/20"},
@@ -447,7 +521,7 @@ function AbaCaixa(){
           ))),
     cols.length===0 && e("p",{className:"text-center text-sm text-muted-foreground"}, "Nenhum dia lançado neste mês ainda. Use a visão “Lançar saldos”."),
     feriadosVis.length>0 && e("p",{className:"text-center text-[12px] font-semibold text-violet-300"}, "Obs.: "+feriadosVis.map(function(k){ return dc(k)+" feriado ("+FERIADOS[k]+")"; }).join(" · ")+" — sem trabalho, mesma cor do fim de semana."),
-    e("p",{className:"text-center text-[11px] text-muted-foreground"}, "Cada coluna é o saldo do FIM do dia. Clique no meio da planilha, segure e arraste para o lado. Use o ✕ do dia para fechá-lo: a variação passa a ser do primeiro ao último dia em aberto. Número fraco = vem do último lançamento; forte = lançado no dia."));
+    e("p",{className:"text-center text-[11px] text-muted-foreground"}, "Cada coluna é o saldo do FIM do dia. Clique no meio da planilha, segure e arraste para o lado. Use o ✕ do dia para fechá-lo: a variação passa a ser do primeiro ao último dia em aberto. Número fraco = vem do último lançamento; forte = lançado no dia.")));
 }
 
 export { AbaCaixa };

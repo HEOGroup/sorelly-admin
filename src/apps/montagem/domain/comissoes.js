@@ -18,7 +18,7 @@ var pad = function(n){ return String(n).padStart(2,"0"); };
 var isoData = function(a, m, dia){ return a+"-"+pad(m+1)+"-"+pad(dia); };
 
 var COMIS0 = {pctPadrao:8, reps:[], ciclos:{A:[1,11,21], B:[6,16,26]}, corteHora:13, corteDias:1,
-  kitNovo:20, kitNovoExpo:35, reposicao:15, exigirProm:true, termos:{}, kmPorLitro:11, combSemEnvio:200, fixoV:2, gasolinaPR:null, gasolina:{}, fech:{}, kmDia:{}};
+  kitNovo:20, kitNovoExpo:35, reposicao:20, exigirProm:true, termos:{}, kmPorLitro:11, combSemEnvio:200, fixoV:2, gasolinaPR:null, gasolina:{}, fech:{}, kmDia:{}};
 
 function comisEfetiva(s){
   var c = Object.assign({}, COMIS0, s.comis || {});
@@ -152,7 +152,7 @@ function itensComissao(c, s, agora){
     }
     if(r.tipo==="kit_novo_entrega" || r.tipo==="acerto" && r.kitNovoOk || r.tipo==="reposicao" || r.tipo==="reposicao_especial"){
       var fin = r.fin && r.fin.k ? r.fin.k : null, repos = r.tipo.indexOf("reposicao")===0, expo = r.tipoKit==="kit_novo_exp" || (r.expositoresMarcados||[]).length>0;
-      var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 15 (Configurador), com a condicional assinada
+      var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 20 (Configurador), com a condicional assinada
       var man = c.termos[r.id], termo = repos ? true : !!(r.assinatura || man), condOk = !!(rec.prom && rec.prom.ok);   // kit novo só é pago com a condicional assinada
       var libera = fin && conferido && termo && condOk ? Math.max(tsIso(fin.ts), tsIso(rec.em)) : null;
       if(valor>0) poe({id:r.id+"#k", chave:"k", tipo:repos ? "repos" : "kitnovo", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:r.tipo==="acerto" ? (expo ? "Kit novo + expositor" : "Kit novo") : st, forma:"", conta:fin ? fin.conta : "",

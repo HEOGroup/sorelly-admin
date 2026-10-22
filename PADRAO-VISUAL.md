@@ -54,3 +54,27 @@ Fica pronto para copiar em **Tecnologia → Padrão visual** (botão "Copiar pro
 
 ## Situação (16/10/2026)
 Já no padrão: Lançamento de pagamentos (fornecedores), Controle de pagamentos (indicadores), indicadores do Financeiro familiar e da Cobrança. Falta migrar: Resumo do mês, Negociações, Maquininha, Fornecedores, Comissões, Cobrança e Financeiro familiar (tabelas) e demais telas.
+
+## Cor fixa de cada fornecedor (pedido do Nickolas, 20/10/2026)
+Identificar os fornecedores com etiquetas coloridas: o nome do fornecedor em branco sobre o fundo da cor. Sempre que o fornecedor aparecer no sistema mantém a MESMA cor, com o nome visível, para facilitar a conferência:
+- Pontual = azul · Mega Sul = verde · Point = laranja · Art Ello = roxo · Ellos Galv. = vermelho · Xangai = verde-água (turquesa).
+- Ao selecionar um fornecedor, ele fica no ALTO da tela (etiqueta grande) e as barras principais usam a cor dele.
+- No código: `corForn` e `Etiqueta` em `pages/pf/ui.js` (lista `FORN_CORES`). Fornecedor sem cor definida aparece com contorno simples; para um novo fornecedor ter cor, acrescentar uma linha em `FORN_CORES`.
+
+## REGRA FIXA · compacto e alinhado (Marcus, 21/10/2026) — vale para TODA tela nova ou mexida
+1. **Bloco compacto.** Se o conteúdo é pouco, o bloco ENCOLHE. Nunca linha alta (py-2, py-3) com um valor só, nem uma lista de 5 linhas onde cabem 2 colunas. Resumos de rótulo + valor vão em GRADE de 2 colunas (ou faixa horizontal), linhas de `py-1.5` no máximo. Menos espaço vazio, menos rolagem.
+2. **O texto sempre cabe dentro do campo ou do bloco.** Proibido texto cortado ("Minha conta (não inform…"), botão com rótulo estourando, número saindo da célula. A largura do campo é a do MAIOR texto que ele pode ter; rótulo de opção é encurtado ("Não informar", não "Minha conta (não informar)"); nome comprido recebe `truncate` + `title`, nunca estoura o bloco.
+3. **Tudo alinhado.** Formulários em grade: mesma altura (h-9), rótulos pequenos em cima, campos e botão na MESMA linha, nada solto nem degrau. Tabelas: nome à esquerda, números centralizados ou à direita sempre na mesma coluna.
+4. **Conferir antes de entregar:** abrir a tela no navegador, olhar a largura comum (~1000 px) e a larga, e só entregar se nada cortar, nada ficar espaçado demais e nada desalinhar.
+
+## REGRA FIXA · padrão do Financeiro: filtros no topo, tamanhos fixos, R$ em todo valor (Marcus, 22/10/2026)
+0. **Fonte: Inter (escolhida pelo Marcus em 22/10/2026), corpo de 13 px nas telas do Financeiro.** Números na mesma fonte, com algarismos tabulares (`tabular-nums`). Títulos na Inter (a fonte mono saiu dos títulos). Segunda tela de referência: `pages/ContasPagarLista.js`.
+Aprovado pelo Marcus. Vale para toda tela nova ou mexida (começando pelo Financeiro). Estudo completo: `DESIGN-SYSTEM-ESTUDO-COMPLETO.md` e `GUIA-DE-ESCRITA-E-TIPOGRAFIA.md`; peças em `components/padrao-fin.js`; tela de referência: `pages/Faturamento.js`.
+1. **Filtros no topo da tela**, num bloco "Filtros" logo abaixo do título, em **grade de 4 colunas iguais** (2 no celular), rótulo em cima do campo. Busca ocupa 2 colunas; botões Limpar e Filtrar à direita da última linha. Nada de filtro na lateral, em gaveta ou espalhado. Sem seletor Sorelly/Família na barra (isso é do menu). Tela sem filtro não mostra o bloco.
+2. **Tamanhos fixos.** Campo, seleção, busca e botão: altura **32 px** (`h-8`); botão largura mínima 96 px. Texto 13 px. Linha de tabela 32 px, cabeçalho 30 px (11 px, caixa alta). Rótulo de campo: 11 px, uma linha, até 18 letras.
+3. **O espaço manda no texto.** Texto que não cabe corta com "…" em uma linha e aparece inteiro ao passar o mouse (`title`); campo, bloco e botão não crescem nem quebram de linha. Coluna de data 90 px; coluna de valor 130 px (nunca corta: a coluna cresce); coluna de texto ocupa o que sobra.
+4. **Todo valor em reais leva "R$"**, em frase, indicador, tabela e célula (R$ 99.719,05 · −R$ 83.307,03). Acertos e percentuais não levam R$. Números **à direita** nas tabelas, texto à esquerda, fonte tabular. (Cancela "tudo centralizado" para tabelas; a faixa de totais continua centralizada.)
+5. **Faixa de totais, não cartões:** indicador = rótulo + valor, células iguais numa linha só, centralizadas, sem subtexto cinza, sem espaço vazio, sem degradê.
+6. **Cor só no valor:** verde entra, vermelho sai, saldo e acumulado pela cor do sinal, amarelo só atraso. Letras brancas (nunca cinza); cor do setor só em aba ativa e botão principal.
+7. **Telas com várias visões usam abas visíveis** (Dia a dia | Mês a mês | Previsão | Lançar) e segmented control para 2 a 5 opções; dropdown só com 6 ou mais.
+8. **Realizado e previsto separados:** previsão em aba ou bloco próprio, rotulada; nunca na mesma tabela do que já aconteceu.

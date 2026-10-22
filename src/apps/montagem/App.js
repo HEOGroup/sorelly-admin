@@ -6,6 +6,11 @@
 // pelo <Outlet/>, e cada página é um chunk carregado sob demanda.
 import { isoDia } from "@/apps/montagem/lib/format";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { rotAlertas } from "@/apps/montagem/domain/rotina";
+import * as srv from "@/apps/montagem/lib/api";
+import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
+import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
 import { ACESSO_FF } from "@/apps/montagem/domain/financeiro-familiar";
 import { ACESSO_COBRANCA_BASE } from "@/apps/montagem/domain/cobranca-func";
@@ -15,7 +20,9 @@ import "@/apps/montagem/styles/montagem.css";
 import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
-import { definirAutorizacoes } from "@/apps/montagem/domain/autorizacoes";
+import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
+import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
+import { BarraPerguntas, SubAbas } from "@/apps/montagem/components/barra-perguntas";
 import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
@@ -36,7 +43,8 @@ import { reducer } from "@/apps/montagem/state/reducer";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { ChatGlobal, ChatMini, useEu } from "@/apps/montagem/components/chat/chat-app";
 import { ehDirecao } from "@/apps/montagem/domain/chat-contatos";
-import { api, efem } from "@/apps/montagem/domain/chat-store";
+import { api, efem, definirHorariosRh } from "@/apps/montagem/domain/chat-store";
+import { horariosDoRh } from "@/apps/montagem/domain/rh";
 import { contato } from "@/apps/montagem/domain/chat-contatos";
 import * as sons from "@/apps/montagem/lib/sons";
 
@@ -44,6 +52,17 @@ import * as sons from "@/apps/montagem/lib/sons";
 var ACESSO_COB = ACESSO_COBRANCA_BASE.concat([32]);   // sócios + Amanda de Miranda (id 32): quem opera a cobrança de funcionárias
 var COR_AREA = {};   // Financeiro usa uma cor só (a do setor); cores diferentes ficam só para estado (pago, atrasado...)
 // agrupa os botões da barra do topo (áreas com "grupo"): o nome do grupo fica em cima dos botões; sem grupo, lista simples
+// menu em cascata montado das áreas do setor: área com uma tela só vira botão direto; área com grupos abre grupo → tela; as demais abrem a lista de telas
+function menuAuto(st){
+  var nm = function(t){ return String(t||"").replace(/\n/g, " "); };
+  var tela = function(t){ return t.breve ? {nome:nm(t.nome), breve:true} : {nome:nm(t.nome), aba:t.aba}; };
+  return st.areas.map(function(ar){
+    var nome = nm(ar.nome);
+    if(ar.telas.length===1) return Object.assign(tela(ar.telas[0]), {nome:nome});
+    if(ar.grupos && ar.grupos.length>1) return {nome:nome, itens:ar.grupos.map(function(g){ return g.telas.length===1 ? tela(g.telas[0]) : {nome:nm(g.titulo), itens:g.telas.map(tela)}; })};
+    return {nome:nome, itens:ar.telas.map(tela)};
+  });
+}
 function botoesAgrupados(areas, fazer, cor){
   if(!areas.some(function(a){ return a.grupo; })) return areas.map(fazer);
   var ordem = [], mapa = {};
@@ -56,16 +75,30 @@ function App(){
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   var navigate = useNavigate();
   var euChat = useEu(s.usuario);
+  // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
+  var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
+  useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
+      Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
+  useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão)
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
   // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
   useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
   // virada do mês do Agendamento: fecha o mês que passou com o que valia no último dia e abre o novo (confere ao abrir e a cada 10 minutos)
+  // Rotina do dia: a cada minuto confere se algum item seu passou do horário sem o check e avisa (um alerta por item por dia)
+  useEffect(function(){ var t = function(){ if(!s.logado || !s.rot) return; var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); };
+      rotAlertas(s.rot, s.usuario, n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate()), p(n.getHours())+":"+p(n.getMinutes())).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [s.rot, s.usuario, s.logado]);
   useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)
   var loc = useLocation();
   var naURL = abaDoCaminho(loc.pathname), abaURL = naURL.aba, breveURL = naURL.breve;
   var mn = useState(false), menu = mn[0], setMenu = mn[1];
+  // botão flutuante do SorellyChat: desligado por padrão; só aparece depois que o Marcus liga no botão do topo (lembra a escolha)
+  var cbs = useState(function(){ try{ return localStorage.getItem("sorelly_chat_botao")==="1"; }catch(x){ return false; } }), chatBotao = cbs[0], setChatBotao = cbs[1];
+  var alternaChatBotao = function(){ var v = !chatBotao; setChatBotao(v); try{ localStorage.setItem("sorelly_chat_botao", v ? "1" : "0"); }catch(x){} };
   // menu lateral recolhido (quem passa o dia numa tela só ganha espaço); lembra a escolha neste navegador
   var rcs = useState(function(){ try{ return localStorage.getItem("sorelly_menu_recolhido")==="1"; }catch(x){ return false; } }), recolhido = rcs[0], setRecolhido = rcs[1];
   // largura do menu lateral: arrastar a borda direita aumenta ou diminui; lembra a escolha neste navegador
@@ -92,10 +125,12 @@ function App(){
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
   definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
   definirBlocos(s.acessosBlocos);   // partes de cada tela que o RH liberou por grupo
+  definirHorariosRh(horariosDoRh(s));   // horário de trabalho do SorellyChat = entrada e escala do cadastro do RH
   var papel = grupoDe(s.usuario), permitidas = abasDoPapel(papel, s.acessos);
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
-  if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);   // o SorellyChat é de todo mundo
+  if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
+  if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
   if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);   // a página Apps está liberada para todos por enquanto (o Marcus bloqueia na versão oficial)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
@@ -103,16 +138,20 @@ function App(){
   var titulo = aba==="breve" ? (breveURL||s.breveNome||"Em breve") : ABAS.find(function(a){return a[0]===aba;})[1];
   var onde = ondeEsta(aba);
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
-  var visao = s.visaoMenu==="sistema" ? "sistema" : "tudo";   // só dois modos: Completo ou HTML
+  var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // dois modos: Admin (a Sorelly) e Marcus (sistema particular, só ele)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && ACESSO_FF.indexOf(s.usuario)<0) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);
-    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean);
+    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : st.id.indexOf("marcus")!==0; }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
+  // menu em cascata (Financeiro): Contas a pagar leva junto o modo escolhido (Sorelly, Família ou Sorelly + Família)
+  var abrirMenu = function(n){ if(n.modo){ try{ sessionStorage.setItem("cta_sel", n.modo); }catch(x){} window.dispatchEvent(new CustomEvent("cta-modo", {detail:n.modo})); } abrirTela({aba:n.aba, nome:n.nome, breve:n.breve}); };
+  var podeMenu = function(n){ return n.perm ? temAutorizacao(n.perm, s.usuario) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
+  var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
   var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
     return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
@@ -128,6 +167,7 @@ function App(){
   // setor da tela aberta (para a barra do topo)
   var setorAtual = (function(){ var ach = []; setoresV.forEach(function(st){ if(st.direto) return; var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
+  var navPerg = !!(setorAtual && setorAtual.st.menu);   // Financeiro: perguntas no topo + abas dentro (components/barra-perguntas.js)
   var colSt = colArea && setoresV.find(function(x){return x.id===colArea.setor;}), colAr = colSt && colSt.areas[colArea.i];
   // largura da coluna pelo maior texto (tela, sistema ou título), entre 13 e 22 rem
   var colW = colAr ? 216 : 0;   // coluna estreita: os nomes longos quebram em duas linhas (ex.: "Faturamento & / contas a pagar")
@@ -138,6 +178,7 @@ function App(){
     e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
   // App da bipagem no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
+  if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); recarregar(); }});
   if(s.logado && aba==="celbip") return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
@@ -151,13 +192,14 @@ function App(){
       e("div",{className:"relative flex h-28 items-center justify-center border-b border-sidebar-border px-4"},
         e("img",{src:(import.meta.env.BASE_URL||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
-      !permitidas && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
-        [["tudo","Completo","Completo: o que já existe e o que vamos criar"],["sistema","HTML","Só o que já está pronto aqui no HTML"]].map(function(x){
-          return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
+      !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
+        [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"]].map(function(x){
+          return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
         setoresV.filter(function(st){ return !soBreve(st); }).concat(setoresV.filter(soBreve)).map(linhaSetor),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
-        !permitidas && SETORES_BAIXO.filter(function(st){ return pode(st.direto); }).map(linhaSetor),
+        !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
+        urlAdminAntigo() && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
     !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",
@@ -167,6 +209,7 @@ function App(){
       e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
+        navPerg ? e("div",{className:"flex min-w-0 flex-1 items-center gap-3"}, e("span",{className:"flex shrink-0 items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap xl:inline"}, setorAtual.st.nome.replace("\n"," "))), e(BarraPerguntas,{menu:setorAtual.st.menu, cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) :
         e("span",{className:"min-w-0 flex-1 truncate text-sm text-muted-foreground whitespace-nowrap"}, onde ? onde.setor.nome : "Sorelly", onde && e(React.Fragment,null, e("span",{className:"mx-1.5"},"/"), onde.area.nome), e("span",{className:"mx-1.5"},"/"), e("span",{className:"text-foreground"}, titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
@@ -177,10 +220,12 @@ function App(){
         e(IrPara,{navigate:navigate}),
         e(BotaoNotificacoes),
         e(SeletorAcesso),
+        e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
-      setorAtual && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+(setorAtual.st.areas.some(function(a){ return a.grupo; }) ? "flex-wrap items-start py-1.5 md:sticky md:top-12" : "sticky top-12 items-center overflow-x-auto py-2 [scrollbar-width:none]")},
+      navPerg && e(SubAbas,{menu:setorAtual.st.menu, cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      setorAtual && !navPerg && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         e("span",{className:"mr-1 flex shrink-0 items-center gap-2 pr-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap sm:inline"}, setorAtual.st.nome.replace("\n"," "))),
-        botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
+        e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}), false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },
             style:{background:"linear-gradient(135deg,"+cc+(ativa ? "66" : "33")+","+cc+(ativa ? "26" : "0d")+")", boxShadow:"inset 0 0 0 1px "+cc+(ativa ? "bb" : "55")},
             className:(ar.grupo ? "flex h-9 shrink-0 items-center justify-center gap-1 whitespace-pre-line rounded-md px-2.5 text-center text-[11.5px] leading-[1.15] " : "flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13.5px] ")+"leading-tight transition hover:brightness-125 "+(ativa ? "font-bold text-white" : "text-foreground/90")},
@@ -199,10 +244,10 @@ function App(){
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
     e(Aviso), e(BuscaTela),
-    aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
+    chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar
-    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }}));
+    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }, abrirTela:function(aba){ navigate(caminhoDaAba(aba)); setColArea(null); }}));
 }
 
 export default App;

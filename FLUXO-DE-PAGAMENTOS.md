@@ -47,3 +47,34 @@ A Sorelly tem 4 CNPJs (34, 46, 59, 67). Ela paga fornecedores, funcionários e p
 ## Onde está no código (base criada em 16/10/2026)
 - `domain/controle-pagamentos.js` e `pages/ControlePagamentos.js`, estado `s.cp` (destinos, orientações, lançamentos). Aba `cpagamentos`, rota `/montagem/controle-de-pagamentos`.
 - A definição de contas dos pagamentos do atendimento interno usa o componente `components/pagamentos-conferir.js` (também aparece no cartão do pedido no SorellyChat).
+
+## Regras do Pix (20/10/2026)
+As regras de para onde vai cada Pix ficam em `REGRAS-DE-PIX.md` (documento vivo, atualizar a cada regra nova) e no botão "Regras do Pix" do Controle de pagamentos.
+
+## Geral dos fornecedores e importação da planilha (20/10/2026)
+- A tela **Geral** (Financeiro → Pagamentos a fornecedores) é o "RESUMO MÊS" da planilha "Pag Fornecedores Nova 2026.xlsx", ao vivo. A pagar vem das Negociações (pedidos e parcelas), o pago vem dos Pix de revendedora e dos descontos do cartão (maquininha). Status sai sozinho.
+- Sócios NÃO entram na Geral: o Pix de revendedora deles é lançado no Financeiro familiar.
+- Importação por fornecedor, conferindo mês a mês com o RESUMO MÊS: **Pontual feita** (Pix de set e out, passadas de cartão de out, fechamento do cartão de set). Falta: Office Graf, Point, Devmaster, Ellos, Art Ello, MegaSul, Linda/Tucano/Charme e os prestadores (Higor, Lucas Castilho, Izadora, Priscila...) com os pagamentos de outubro. Arquivo local `domain/pf-atualizacao.local.js` (gitignored), aplicado em `pfMigrar` sem duplicar.
+- Próxima etapa: encaixar as compras (ex.: R$ 100 mil = R$ 30 mil com nota + R$ 70 mil em Pix de revendedora) ligadas a cada fornecedor.
+
+## Pontual: como funciona a negociação (texto do Marcus, 20/10/2026)
+- Pontual = principal empresa de banho (ouro e prata). Maior volume de pagamentos. Fatura por 2 CNPJs: **Pontual Prestação de Serviços 32.206.541/0001-67** (principal, quase todos os boletos) e **CHP Indústria e Comércio de Semijoias 01.885.264/0001-32**. Quem paga (pagador) muda por pedido: Serenity 59.146.403/0001-96, Mayz (antiga Sorelly Comércio) 46.873.285/0001-76, Axis 67.702.461/0001-87, Sorelly Atacadista 34.753.252/0001-03.
+- **Divisão do pedido:** parte COM nota = BOLETO; parte SEM nota = PIX. % varia por pedido (comuns 20/80, 25/75, 30/70). Ex.: R$ 10.000 em 30/70 = boleto R$ 3.000 + Pix R$ 7.000.
+- **Boleto:** padrão 6 parcelas a 30/60/90/120/150/180 dias; 1º vence 30 dias após o pedido (às vezes 45, 60 ou 90); seguintes no mesmo dia dos meses seguintes; parcelas iguais (só a última varia centavos); vêm em PDF (Sicredi) numerados com a NF (ex.: 11660/1, 11660/2). Sempre conferir boleto real x combinado; diferença de centavos se ajusta no Pix para fechar o total da NF. **Acordo especial (set/2026, com o Valdir):** 1ª parcela em 60 dias e 5 parcelas; de outubro volta ao padrão (30 dias / 6 parcelas).
+- **Pix:** faixas de 10 em 10 dias, vence DENTRO do próprio período (pedido de 01 a 10 → Pix até dia 10; 11 a 20 → dia 20; 21 a 30/31 → dia 30/31 do mesmo mês). Nos pedidos mais recentes o Pix também é parcelado nos mesmos meses do boleto (ex.: 6x de Pix junto com os 6 boletos).
+- **Passo a passo de pedido novo:** 1) Pontual envia NF/fatura; 2) define % boleto e Pix; 3) confere boletos reais (valores e datas); 4) calcula o Pix (valor e meses); 5) verifica impacto no TETO MENSAL de fornecedores; 6) lança tudo no controle.
+
+## Cor fixa de cada fornecedor (pedido do Nickolas, 20/10/2026)
+Identificar os fornecedores com etiquetas coloridas: o nome do fornecedor em branco sobre o fundo da cor. Sempre que o fornecedor aparecer no sistema mantém a MESMA cor, com o nome visível, para facilitar a conferência:
+- Pontual = azul · Mega Sul = verde · Point = laranja · Art Ello = roxo · Ellos Galv. = vermelho · Xangai = verde-água (turquesa).
+- Ao selecionar um fornecedor, ele fica no ALTO da tela (etiqueta grande) e as barras principais usam a cor dele.
+- No código: `corForn` e `Etiqueta` em `pages/pf/ui.js` (lista `FORN_CORES`). Fornecedor sem cor definida aparece com contorno simples; para um novo fornecedor ter cor, acrescentar uma linha em `FORN_CORES`.
+
+## Limite mensal de fornecedores (regra do Marcus, 21/10/2026; IMPLEMENTADO em 21/10/2026: domain/pf-limite.js e pages/pf/Limite.js)
+- Teto mensal R$ 300.000 para TODOS os fornecedores somados (PIX + Boleto + Cheque/Debito). Nao e por fornecedor.
+- Mes de cada pagamento: Boleto/Cheque/Debito = mes do VENCIMENTO; PIX = mes em que foi NEGOCIADO (mes de referencia).
+- Semaforo (% do teto): verde ate 80% · amarelo 80-90% (atencao) · laranja 90-100% (so com aprovacao) · vermelho acima de 100% (nao fecha nada novo no mes).
+- Fora do teto (controlados a parte): Socios, Casa e Midia (Facebook e Google).
+- Limite por tipo (dentro dos 300 mil): Banho (Pontual, Ellos...) R$ 150.000 · Bruto (Point, Mega Sul, Art Ello, Xangai...) R$ 100.000 · Servicos e produtos (grafica, acrilicos, tintas, sistema, prestadores, eventos...) R$ 50.000. Categoria que estoura nao pega a sobra da outra sem aprovacao.
+- Evitar boleto e cheque nos dias de contas fixas: 1, 5, 10, 11, 13, 20, 21, 23, 25 e 5o dia util. Dia 20 e o pior. Espalhar vencimentos.
+- Fechar negociacao nova: ver folga do mes e da categoria; se nao couber, jogar PIX/parcelas para meses com folga; so fica LANCADO depois de aprovado (ate la, PENDENTE); nada e PAGO sem confirmacao.

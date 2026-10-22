@@ -36,6 +36,7 @@ function AvisoAlertas(p){
         e("b",{className:"block text-[13.5px]"}, a.titulo || "Alerta"),
         e("span",{className:"block text-[12.5px] text-muted-foreground"}, a.texto),
         e("span",{className:"mt-2 flex gap-2"},
+          a.aba && e("button",{type:"button", onClick:function(){ lido(); p.abrirTela(a.aba); }, className:"rounded-md bg-primary px-2.5 py-1 text-[12px] font-bold text-primary-foreground"},"Abrir tela"),
           a.ref && e("button",{type:"button", onClick:function(){ lido(); p.abrirAtendimento(a.ref); }, className:"rounded-md bg-primary px-2.5 py-1 text-[12px] font-bold text-primary-foreground"},"Abrir atendimento"),
           e("button",{type:"button", onClick:lido, className:"rounded-md bg-white/10 px-2.5 py-1 text-[12px] font-semibold hover:bg-white/15"},"Entendi"))));
   }));

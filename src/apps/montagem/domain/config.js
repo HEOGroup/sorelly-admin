@@ -4,7 +4,7 @@ import { kit } from "@/apps/montagem/domain/seed";
 
 var CFG0 = {
   valorNormal:1.80, valorEspecial:2.80,
-  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000, limiteEncomendas:4000,
+  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000, limiteEncomendas:3000, limiteMesaMaior:4000,
   // Bipadoras: valor por kit bipado, kit maior e desconto por peça faltando apontada pela representante
   valorBipNormal:1.50, valorBipEspecial:2.50, limiteBipEspecial:15000, perdaFalta:10,
   // Peças por kit (caminho 1, tabelado): quantidade de cada categoria conforme o valor do kit. null = ainda não levantado.
@@ -40,7 +40,8 @@ var CFG0 = {
   tabelaKit:[{min:5000,kit:20000},{min:4000,kit:17000},{min:2500,kit:15000},{min:1600,kit:12000},
              {min:1000,kit:10000},{min:700,kit:8000},{min:400,kit:6000},{min:0,kit:5000}],
   // Valores provisórios: substituir pela tabela real de estoque baixo da Sorelly
-  tabelaKitBaixo:[{min:5000,kit:17000},{min:4000,kit:15000},{min:2500,kit:12000},{min:1600,kit:10000},
+  // 20/10/2026 (Marcus): vendas a partir de R$ 4.000 mantêm o valor da tabela de estoque alto
+  tabelaKitBaixo:[{min:5000,kit:20000},{min:4000,kit:17000},{min:2500,kit:12000},{min:1600,kit:10000},
              {min:1000,kit:8000},{min:700,kit:7000},{min:400,kit:5000},{min:0,kit:5000}],
   // Calculadora de kits: média acima deste valor → chamar o Marcus
   limiteMarcus:4000,
@@ -50,8 +51,18 @@ var CFG0 = {
   comissoesRev:[{min:7000,pct:45,bn:442,bb:282},{min:5000,pct:45,bn:368,bb:232},{min:2500,pct:40,bn:312,bb:188},{min:1600,pct:40,bn:196,bb:144},
     {min:1000,pct:35,bn:118,bb:122},{min:700,pct:30,bn:88,bb:96},{min:500,pct:25,bn:48,bb:68},{min:300,pct:15,bn:0,bb:0}]
 };
+// 20/10/2026 (Marcus): Anéis (categoria 11) não tem número fechado: a tabela dá uma FAIXA ("10 a 12"). q = mínimo, qmax = máximo.
+var FAIXA_CAT = [11];
+// Marcus (20/10/2026): R$ 5 mil = 6 a 7 anéis (ajustado depois de 7 a 9); máximo de 35 anéis (kit de R$ 25 mil). Resto proporcional (sugestão a confirmar).
+// 20/10/2026: o Marcus voltou atrás: anéis é NÚMERO FIXO (min = max), sobe de 7 (R$ 5 mil) até 35 (R$ 25 mil)
+var ANEIS_FAIXA = {5000:[7,7], 6000:[8,8], 7000:[10,10], 8000:[11,11], 9000:[13,13], 10000:[14,14], 12000:[17,17], 14000:[20,20], 16000:[23,23], 18000:[26,26], 20000:[29,29], 25000:[35,35]};
+// aneisV2 = marca de que a faixa nova já entrou (depois disso o que o Configurador editar vale)
+function aplicaFaixas(c){ var novo = c.aneisV2!==4; (c.pecasKit||[]).forEach(function(l){ if(!l.qmax) l.qmax = {}; var f = ANEIS_FAIXA[l.kit]; if(novo && f){ l.q[11] = f[0]; l.qmax[11] = f[1]; } }); c.aneisV2 = 4; return c; }
+aplicaFaixas(CFG0);
+// texto de uma célula da tabela de peças: "10 a 12" quando tem faixa, senão o número
+function textoPeca(l, j){ var q = l.q[j], mx = l.qmax && l.qmax[j]; return q===null||q===undefined ? "—" : (mx!==undefined && mx!==null && mx>q ? q+" a "+mx : String(q)); }
 function tabelaAtual(c){ return c.tabelaAtiva==="baixo" && c.tabelaKitBaixo ? c.tabelaKitBaixo : c.tabelaKit; }
 var MOTIVOS = ["Aro fora do pedido","Metal fora da propor\u00e7\u00e3o pedida","Faltou encomenda",
   "Pe\u00e7a que a revendedora n\u00e3o quer","Valor acima do kit","Valor abaixo do kit"];
 
-export { CFG0, tabelaAtual, MOTIVOS };
+export { CFG0, tabelaAtual, MOTIVOS, FAIXA_CAT, aplicaFaixas, textoPeca };

@@ -26,14 +26,14 @@ function BlocoBarra(p){
   var d = use().dispatch, cor = p.cor || "ouro", chave = typeof p.t==="string" ? p.t : null, st = useState(!!(chave && FECHADOS[chave])), fechado = st[0], setFechado = st[1];
   var alternar = function(){ var v = !fechado; setFechado(v); if(chave){ if(v) FECHADOS[chave] = 1; else delete FECHADOS[chave]; try{ localStorage.setItem("sorelly_blocos_fechados", JSON.stringify(FECHADOS)); }catch(x){} } };
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-2 "+ANEL[cor]},
-    e("div",{onClick:alternar, title:fechado ? "Abrir o bloco" : "Fechar o bloco", className:"relative flex cursor-pointer select-none flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-12 py-2.5 ")+BARRAS[cor]},
-      e("span",{className:"absolute left-3 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-black/25 p-1 text-white"}, e(Icon,{n:"chevrondown", s:13, className:"transition-transform "+(fechado ? "-rotate-90" : "")})),
+    e("div",{onClick:p.fixo ? undefined : alternar, title:p.fixo ? undefined : (fechado ? "Abrir o bloco" : "Fechar o bloco"), className:"relative flex "+(p.fixo ? "" : "cursor-pointer select-none ")+"flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-12 py-2.5 ")+BARRAS[cor]},
+      !p.fixo && e("span",{className:"absolute left-3 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-black/25 p-1 text-white"}, e(Icon,{n:"chevrondown", s:13, className:"transition-transform "+(fechado ? "-rotate-90" : "")})),
       e("h2",{className:"font-heading font-bold leading-tight "+(p.compacto ? "text-[14px]" : "text-[16px]")}, typeof p.t==="string" ? p.t.charAt(0).toUpperCase()+p.t.slice(1) : p.t),
       p.sub && !p.compacto && e("p",{className:"mt-0.5 text-[12px] font-medium opacity-85"}, typeof p.sub==="string" ? p.sub.charAt(0).toUpperCase()+p.sub.slice(1) : p.sub),
-      p.dir && e("span",{className:"absolute top-1/2 -translate-y-1/2 rounded-lg bg-black/25 px-2.5 py-1 font-mono text-[14px] font-bold text-white "+(p.ir ? "right-20" : "right-3")}, p.dir),
+      p.dir && !p.fixo && e("span",{className:"absolute top-1/2 -translate-y-1/2 rounded-lg bg-black/25 px-2.5 py-1 font-mono text-[14px] font-bold text-white "+(p.ir ? "right-20" : "right-3")}, p.dir),
       p.ir && e("button",{onClick:function(ev){ ev.stopPropagation(); d({type:"ABA", aba:p.ir}); }, title:"Abrir a tela completa",
         className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
-    e("div",{className:CORPO[cor]+(fechado ? " hidden" : "")}, p.children));
+    e("div",{className:CORPO[cor]+(fechado && !p.fixo ? " hidden" : "")}, p.children));
 }
 function ResumoCategorias(p){
   var ks = [];

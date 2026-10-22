@@ -10,9 +10,29 @@ function Bi(nome, ic, cor){ return Object.assign(B(nome), {ic:ic, icCor:cor}); }
 function E(nome, origem){ return {breve:true, enviar:true, nome:nome, origem:origem||[]}; }
 function G(nome, grupos){ return {nome:nome, grupos:grupos.map(function(g){ return {titulo:g[0], telas:g[1]}; }), telas:[].concat.apply([], grupos.map(function(g){ return g[1]; }))}; }
 function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:true, origem:origem||[]}); }   // veio do admin e já foi integrado
+// Navegação do Financeiro (22/10/2026): 5 perguntas no topo (Hoje, Entradas, Saídas, Resultado, Família); dentro, abas visíveis das telas (components/barra-perguntas.js). Antes: modelo DevMaster em cascata. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
+var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
+var MENU_FINANCEIRO = [
+  {nome:"Hoje", itens:[
+    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // o Financeiro abre direto no saldo das contas (Marcus, 21/10/2026)
+    M("Pagamentos","cpagamentos")]},
+  {nome:"Entradas", itens:[
+    {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons"), M("Estoque Sorelly","estoquesorelly")]},
+    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp")]},
+    M("Link de pagamento","linkrel"),
+    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]}]},
+  {nome:"Saídas", itens:[
+    M("Contas a pagar","ctalista"),
+    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Fornecedores","pfforn"), M("Prestadores de serviço","pfprest")]},
+    {nome:"Comissões", itens:[M("Visão geral","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
+  {nome:"Resultado", itens:[
+    {nome:"Análise de custos", itens:[M("Sorelly","ctapagar",{modo:"sorelly"}), M("Família","ctapagar",{modo:"familia", perm:"financeiro_familia"}), M("Sorelly + Família","ctapagar",{modo:"junto", perm:"financeiro_familia"}), M("Funcionários e representantes","ctapagar",{modo:"pessoas"})]}]},
+  {nome:"Família", itens:[M("Home da família","ffhome"), M("Alertas","ffalertas"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")].map(function(n){ return Object.assign(n, {perm:"financeiro_familia"}); })}
+];
 var SETORES = [
   {id:"whats", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", nome:"Visão geral", ic:"grid4", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
+  {id:"rotina", nome:"Rotina do dia", ic:"calendario", cor:"#22C55E", direto:T("rotina","Rotina do dia")},
   {id:"apps", nome:"Apps", ic:"phone", cor:"#8B5CF6", direto:T("apps","Apps")},
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#06B6D4", areas:[
@@ -21,15 +41,20 @@ var SETORES = [
         E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]]])
   ]},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
-  {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", areas:[
+  {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
+    G("Saldo das\ncontas", [
+      ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
+      ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Chaves Pix e regras")]],
+      ["Dinheiro", [T("dinheiro","Dinheiro")]],
+      ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
     {nome:"Controle de\npagamentos", telas:[T("cpagamentos","Controle de pagamentos")]},
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
-      ["Contas a pagar", [T("ctapagar","Contas a pagar")]],
+      ["Contas a pagar", [T("ctalista","Contas a pagar"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
       ["Financeiro familiar", [T("ffhome","Home da família"), T("ffalertas","Alertas da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras")]],
-      ["Família: gestão e análise", [T("ffprest","Prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
+      ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [
-      ["Principal", [T("pfresumo","Resumo do mês"), T("pflanc","Lançamento de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
+      ["Principal", [T("pfresumo","Geral"), T("pflanc","Lançamento de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
       ["Cadastros", [T("pfforn","Fornecedores"), T("pfprest","Prestadores de serviço")]]]),
     G("Faturamento &\ncontas a pagar", [
       ["Faturamento", [I("previsaofat","Consolidado do faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"])]],
@@ -38,13 +63,8 @@ var SETORES = [
       ["Inadimplência", [T("inadfin","Inadimplência")]],
       ["Interno e estoque", [T("intcons","Consolidado interno"), T("estoquesorelly","Estoque Sorelly")]]]),
     {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), T("inadimp","Inadimplência dos representantes")]},
-    {nome:"Comissões", telas:[Ti("comisstodos","Visão geral","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Bi("Cadastro de revendedoras","cadastro","#F97316"), Bi("Inadimplência","alert","#EF4444"),
+    {nome:"Comissões", telas:[Ti("comisstodos","Visão geral","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
-    G("Bancos e\nchaves Pix", [
-      ["Chaves Pix", [T("chavespix","Chaves Pix e regras")]],
-      ["Dinheiro", [T("dinheiro","Dinheiro")]],
-      ["Saldos Bancários", [I("caixa","Caixa",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
-      ["Adquirentes e taxas", [T("adquirentes","Adquirentes e taxas")]]]),
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", areas:[
@@ -83,8 +103,9 @@ var SETORES = [
   {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", areas:[
     {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", areas:[
-    {nome:"Compras e estoque de material", telas:[T("compras","Compras e estoque de material")]},
-    {nome:"Cadastro de peças", telas:[B("Cadastro de peças")]}]},
+    {nome:"Compras e estoque de material", telas:[T("compras","Compras e estoque de material")]}]},
+  // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
+  {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", direto:T("cadpecas","Cadastro de peças")},
   {id:"encomendas", nome:"Encomendas & Reposições", ic:"caminhao", cor:"#14B8A6", areas:[
     {nome:"Encomendas & Reposições", telas:[T("encomendas","Encomendas e reposições"), T("regreposicao","Regras")]},
     {nome:"Entregas", telas:[B("Entregas")]},
@@ -95,12 +116,22 @@ var SETORES = [
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", areas:[
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
-    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhexp","Controle de experiência"), T("rhadv","Advertências"), T("rhhoras","Horas extras"), T("rhnegoc","Negociações")]},
+    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhexp","Controle de experiência"), T("rhadv","Advertências"), T("rhhoras","Horas extras"), T("rhnegoc","Negociações"), T("rhescala42","Escala 42h")]},
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
   {id:"diretoria", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", areas:[
     {nome:"Empresa", telas:[T("fluxo","Fluxo da empresa"), B("Comissões e desempenho")]}]},
+  // Sistema particular do Marcus (20/10/2026): só aparece no modo "Marcus" do botão do alto do menu, e só para ele
+  // Sistema particular do Marcus (20/10/2026): cada tela é um item do menu lateral, só aparece no modo "Marcus" (ids começam com "marcus")
+  {id:"marcus", nome:"Resumo", ic:"grid4", cor:"#D9A63A", direto:T("marcus","Resumo")},
+  {id:"marcusfat", nome:"Faturamento", ic:"grafico", cor:"#D9A63A", direto:T("marcusfat","Faturamento")},
+  {id:"marcuspat", nome:"Patrimônio e dívidas", ic:"banco", cor:"#D9A63A", direto:T("marcuspat","Patrimônio e dívidas")},
+  {id:"marcuscontas", nome:"Contas do mês", ic:"calendario", cor:"#D9A63A", direto:T("marcuscontas","Contas do mês")},
+  {id:"marcusextratos", nome:"Extratos", ic:"banco", cor:"#D9A63A", direto:T("marcusextratos","Extratos")},
+  {id:"marcusativ", nome:"Atividades", ic:"caixa", cor:"#D9A63A", direto:T("marcusativ","Atividades")},
+  {id:"marcusacessos", nome:"Acessos e senhas", ic:"escudo", cor:"#D9A63A", direto:T("marcusacessos","Acessos e senhas")},
+  {id:"marcusdados", nome:"Dados", ic:"users", cor:"#D9A63A", direto:T("marcusdados","Dados")},
   // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em JURIDICO-COBRANCA.md
   {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
@@ -116,7 +147,7 @@ var SETORES = [
 ];
 // Barra do topo em grupos (padrão visual, opção D): o nome do grupo aparece em cima dos botões. Setor sem "grupo" nas áreas segue com a barra simples.
 var GRUPO_BARRA = {"financeiro":{"Controle de\npagamentos":"Pagamentos", "Contas a\npagar":"Pagamentos", "Pagamentos a\nfornecedores":"Pagamentos", "Faturamento &\ncontas a pagar":"Faturamento", 
-  "Representantes":"Pessoas", "Comissões":"Pessoas", "Cobrança":"Pessoas", "Bancos e\nchaves Pix":"Bancos", "Link de\npagamento":"Relatórios"}};
+  "Representantes":"Pessoas", "Comissões":"Pessoas", "Cobrança":"Pessoas", "Saldo das\ncontas":"Bancos", "Link de\npagamento":"Relatórios"}};
 SETORES.forEach(function(st){ var g = GRUPO_BARRA[st.id]; if(g) (st.areas||[]).forEach(function(ar){ if(g[ar.nome]) ar.grupo = g[ar.nome]; }); });
 var APPS_TOPO = [["celrep","App representante","representante","#8B5CF6"],["celrev","App revendedora","revendedora","#EC4899"],["celular","App montagem","montadora","#F59E0B"],["celbip","App bipagem","bipagem","#0EA5E9"],["celcond","App condicionais","scan","#D97706"]];
 var SETORES_BAIXO = [];   // Equipes passou para o RH (16/10/2026)

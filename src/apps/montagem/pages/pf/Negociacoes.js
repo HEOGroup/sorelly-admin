@@ -12,6 +12,7 @@ import { PageHead } from "@/apps/montagem/ui/page";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { e, useState } from "@/shared/react";
 import { PointPainel } from "./Point";
+import { PainelPontual } from "./Resumo";
 import { CARD, COR, Campo, Chip, Modal, TD, Tile, Txt, aviso, brl, dbr, opc, th, usePf } from "./ui";
 
 // ---------- pequenas peças de desenho ----------
@@ -61,6 +62,7 @@ function AbaPfNeg(){
   var spc = useState(null), parc = spc[0], setParc = spc[1];  // janela "Lançar parcela"
   var sd = useState(null), detId = sd[0], setDetId = sd[1];   // janela "detalhe do pedido"
   var sac = useState(null), ac = sac[0], setAc = sac[1];      // janela "Datas limite"
+  var sab = useState({}), abPt = sab[0], setAbPt = sab[1], alPt = function(k, atual){ var o = Object.assign({}, abPt); o[k] = !atual; setAbPt(o); };   // linhas abertas da tela da Pontual
   if(!pf || !pf.fornecedores) return e("p",{className:"p-6"}, "Carregando…");
 
   var fId = fornF ? parseInt(fornF) : null, fo = fId ? forn(pf, fId) : null, ehPoint = fId===PT_FORN;
@@ -94,6 +96,7 @@ function AbaPfNeg(){
   ];
 
   if(ehPoint) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PointPainel,{c:c}), modais);
+  if(fId===pf.mqFornId) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt}), modais);
 
   // ---------- dados da tela ----------
   var ags = agregar(pf, coletar(pf, filtro, fId)), tot = painelTotais(ags);
@@ -500,4 +503,4 @@ function JanelaAcerto(p){
       e(Btn,{g:true, neutro:true, onClick:fechar}, "Cancelar"), e(Btn,{g:true, disabled:!c.edita, onClick:salvar}, "Salvar datas")));
 }
 
-export { AbaPfNeg };
+export { AbaPfNeg, JanelaPedido, pedidoNovo };

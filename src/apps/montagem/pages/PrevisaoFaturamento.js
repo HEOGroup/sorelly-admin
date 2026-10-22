@@ -12,7 +12,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO, MoneyInput, NumInput } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { TD, TR, Tabela } from "@/apps/montagem/ui/table";
-import { AbaConsolidadoFaturamento } from "@/apps/montagem/pages/ConsolidadoFaturamento";
+import { AbaFaturamento } from "@/apps/montagem/pages/Faturamento";
 import { ConfigPrevisao } from "@/apps/montagem/pages/ConfiguradorGeral";
 import { e, useState } from "@/shared/react";
 import React from "react";
@@ -262,6 +262,6 @@ function AbaPrevisaoFaturamentoBase(){
 // a configuração da previsão (alta da média de novembro e dezembro) fica aqui embaixo, só para o Marcus
 function AbaPrevisaoFaturamento(){
   var s = use().state;
-  return e(React.Fragment,null, e(AbaConsolidadoFaturamento), s.usuario===16 && e(ConfigPrevisao));
+  return e(AbaFaturamento,{extraPrevisao:s.usuario===16 && e(ConfigPrevisao)});   // tela de referência do padrão do Financeiro (22/10/2026)
 }
 export { AbaPrevisaoFaturamento };

@@ -24,4 +24,22 @@ function resumoInterno(s, mes){
   });
   return Object.keys(out).map(function(k){ var o = out[k]; o.media = o.nNotas ? o.notas/o.nNotas : null; return o; }).sort(function(a, b){ return b.total-a.total; });
 }
-export { PADRAO, regra, comissaoAtendimento, resumoInterno };
+// ---------- atendimento (quem acompanha a revendedora na montagem do kit), regra de 20/10/2026 (Marcus) ----------
+//  · R$ 5,00 FIXO por atendimento; venda acima de R$ 4.000,00 paga R$ 10,00;
+//  · qualquer funcionária que atender recebe; por enquanto quem atende de fato são Maria Aparecida e Leci (lista informativa em "quem").
+// Valores em cfg.atendInterno quando o Configurador passar a editar; até lá valem os padrões abaixo.
+var PADRAO_ATEND = {valor:5, valorAlto:10, limiteAlto:4000, quem:["Leci Nunes da Rosa", "Maria Aparecida Barreto dos Santos"]};
+function regraAtend(cfg){ return Object.assign({}, PADRAO_ATEND, (cfg && cfg.atendInterno) || {}); }
+function vendaDoAtendimento(it){ if(it.vendaApp!=null) return it.vendaApp; var a = it.acerto || {}; return a.vendaLiquida || a.vendaBruta || 0; }
+function valorAtendimento(it, cfg){ var c = regraAtend(cfg), v = vendaDoAtendimento(it); return {venda:v, alta:v>c.limiteAlto, valor:v>c.limiteAlto ? c.valorAlto : c.valor}; }
+// quem atendeu cada atendimento interno acertado no mês: {nome: {n, nAlta, total, itens}}
+function resumoAtendimento(s, mes){
+  var out = {};
+  (s.internos || []).forEach(function(it){
+    if(it.status!=="acertado" || !it.atendeu || (mes && String(it.data||"").slice(0, 7)!==mes)) return;
+    var v = valorAtendimento(it, s.cfg), o = out[it.atendeu] || (out[it.atendeu] = {nome:it.atendeu, n:0, nAlta:0, total:0, itens:[]});
+    o.n++; if(v.alta) o.nAlta++; o.total = r2(o.total+v.valor); o.itens.push({it:it, v:v});
+  });
+  return Object.keys(out).map(function(k){ return out[k]; }).sort(function(a, b){ return b.total-a.total; });
+}
+export { PADRAO, regra, comissaoAtendimento, resumoInterno, PADRAO_ATEND, regraAtend, valorAtendimento, resumoAtendimento };

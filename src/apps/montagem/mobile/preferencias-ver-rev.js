@@ -33,7 +33,7 @@ function corpoDoBloco(it){
   if(x.ouroPct!=null) f.push(e(BarraMetal,{key:"b", ouro:x.ouroPct}));
   var linhasMetal = x.linhas.filter(function(l){ return l.metal && !l.valores.length; }), outras = x.linhas.filter(function(l){ return !(l.metal && !l.valores.length); });
   // quando o bloco só tem UM metal "solto" (ex.: Tornozeleira) mostra o rótulo e a pílula; vários (letras, filhos) viram linhas
-  if(linhasMetal.length===1 && !outras.length && it.bloco.type!=="letras" && it.bloco.type!=="filhos" && it.bloco.type!=="vendmetal") f.push(Rotulo("Qual metal"), e("div",{key:"m"}, e(PontoMetal,{m:linhasMetal[0].metal})));
+  if(linhasMetal.length===1 && it.bloco.type!=="letras" && it.bloco.type!=="filhos" && it.bloco.type!=="vendmetal") f.push(Rotulo("Qual metal"), e("div",{key:"m"}, e(PontoMetal,{m:linhasMetal[0].metal})));
   else linhasMetal.forEach(function(l){ f.push(e("div",{key:"l"+l.rotulo, className:"flex items-center justify-between border-t border-[#F3F4F6] py-2 first:border-0"}, e("span",{className:"text-[15px] text-[#111827]"}, l.rotulo), e(PontoMetal,{m:l.metal}))); });
   outras.forEach(function(l){
     if(l.metal) f.push(Rotulo(l.rotulo), e("div",{key:"om"+l.rotulo}, e(PontoMetal,{m:l.metal})));

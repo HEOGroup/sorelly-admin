@@ -2,6 +2,7 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { tempoMedioB } from "@/apps/montagem/components/barra-bipadora";
 import { kit } from "@/apps/montagem/domain/seed";
+import { textoPeca } from "@/apps/montagem/domain/config";
 import { montadorValido, nomeDe, podeLiberarExcecao } from "@/apps/montagem/domain/equipe";
 import { hoje, minutos } from "@/apps/montagem/lib/format";
 import { e } from "@/shared/react";
@@ -13,6 +14,8 @@ function soMelhores(v,c){ return v > (c.limiteMelhores!==undefined ? c.limiteMel
 // (`cfg.limiteEncomendas`, Configurador), só montam as montadoras marcadas como Encomendas. Marcus e Deysiane liberam exceção.
 function valorRefEncomendas(k){ return Math.max(k.valor||0, (k.vendas && k.vendas[0]) || 0); }
 function soEncomendas(k, c){ var lim = c.limiteEncomendas; return lim>0 && valorRefEncomendas(k) > lim; }
+// Mesa maior (20/10/2026): kit com venda/média acima de `cfg.limiteMesaMaior` é montado só na mesa da Agatha (aviso, não trava)
+function mesaMaior(k, c){ var lim = c.limiteMesaMaior; return lim>0 && valorRefEncomendas(k) > lim; }
 function ehEncomendas(s, id){ var m = (s.montadoras||[]).find(function(x){ return x.id===id; }); return !!(m && m.encomendas); }
 function nomesEncomendas(s){ return (s.montadoras||[]).filter(function(x){ return x.encomendas; }).map(function(x){ return x.nome; }).join(", "); }
 // Quem monta é obrigatório: kit sem montador válido (de etapa montando em diante) é "sem montador" e não conta para a comissão da bipadora
@@ -29,8 +32,9 @@ function pecasPara(valor, c){
   if(!c.pecasKit || !valor) return null;
   var l = c.pecasKit.slice().sort(function(a,b){return b.kit-a.kit;}).find(function(x){return valor>=x.kit;});
   if(!l) return null;
-  var itens = c.categorias.map(function(nome,i){ return {nome:nome, q:l.q[i]}; }).filter(function(x){return x.q!==null && x.q!==undefined && x.q!=="";});
-  return itens.length ? {kit:l.kit, itens:itens} : null;
+  var itens = c.categorias.map(function(nome,i){ var mx = l.qmax && l.qmax[i]; return {nome:nome, q:l.q[i], max:(mx>l.q[i] ? mx : l.q[i]), txt:textoPeca(l, i)}; }).filter(function(x){return x.q!==null && x.q!==undefined && x.q!=="";});
+  var tMin = itens.reduce(function(t,x){return t+x.q;},0), tMax = itens.reduce(function(t,x){return t+x.max;},0);
+  return itens.length ? {kit:l.kit, itens:itens, total:tMin, totalTxt: tMax>tMin ? tMin+" a "+tMax : String(tMin)} : null;
 }
 function tempoMont(k, agora){
   if(!k.iniM) return 0; if(k.fimM && k.tempoM!==null) return k.tempoM;
@@ -118,4 +122,4 @@ function dataPagamento(c){
 function nomeMes(){ var s = new Date().toLocaleDateString("pt-BR",{month:"long", year:"numeric"});
   return s.charAt(0).toUpperCase()+s.slice(1); }
 
-export { soEncomendas, ehEncomendas, semMontador, motivoNaoMonta, valorRefEncomendas, nomesEncomendas, ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, MAX_LISTAGEM, capacidadeListagem, kitsNaListagem, listagemCheia, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };
+export { soEncomendas, mesaMaior, ehEncomendas, semMontador, motivoNaoMonta, valorRefEncomendas, nomesEncomendas, ehEspecial, ehAtencao, soMelhores, pecasPara, tempoMont, conta, listagemDe, MAX_LISTAGEM, capacidadeListagem, kitsNaListagem, listagemCheia, resumoMontadora, resumoBipadora, rankingNota, podeAtencao, filaMontagem, proximoPara, filaBipagem, dataPagamento, nomeMes };

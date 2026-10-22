@@ -7,7 +7,7 @@ import { MenuAcoes } from "@/apps/montagem/components/menu-acoes";
 import { condNovas } from "@/apps/montagem/domain/condicionais";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
-import { ehEncomendas, filaMontagem, nomesEncomendas, semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
+import { ehEncomendas, filaMontagem, mesaMaior, nomesEncomendas, semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, SITUACOES, StatusBadge, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { media3 } from "@/apps/montagem/domain/vendas";
 import { BK, hora, isoDia, minutos } from "@/apps/montagem/lib/format";
@@ -144,7 +144,8 @@ function Fila(p){
                 k.prio && e("span",{className:"text-primary", title:"Prioritário"},"★ "), k.rev),
                 k.atrasado && e("span",{className:"ml-1 rounded bg-[#9A4A00]/85 px-1 py-px text-[10px] font-semibold text-white", title:"Pedido fora do prazo"},"atras."),
                 modalidadeDe(s, k.rev)==="prata" && e("span",{className:"ml-1 rounded bg-slate-600 px-1 py-px text-[10px] font-bold text-white", title:"Kit 100% Prata"},"PRATA"),
-                soEncomendas(k, s.cfg) && e("span",{className:"ml-1 rounded bg-[#7C3AED] px-1 py-px text-[10px] font-bold text-white", title:"Kit acima do limite de Encomendas: só "+nomesEncomendas(s)+" montam"+(k.excecaoEnc ? " (exceção liberada por "+nomeDe(k.excecaoEnc)+")" : "")},"Só Encomendas")),
+                soEncomendas(k, s.cfg) && e("span",{className:"ml-1 rounded bg-[#7C3AED] px-1 py-px text-[10px] font-bold text-white", title:"Kit acima do limite de Encomendas: só "+nomesEncomendas(s)+" montam"+(k.excecaoEnc ? " (exceção liberada por "+nomeDe(k.excecaoEnc)+")" : "")},"Só Encomendas"),
+                mesaMaior(k, s.cfg) && e("span",{className:"ml-1 rounded bg-[#B45309] px-1 py-px text-[10px] font-bold text-white", title:"Venda acima de "+BK(s.cfg.limiteMesaMaior)+": montar só na mesa maior (mesa da Agatha)"},"Mesa maior")),
               e(TD,{className:C}, e("span",{title:tipo[0], className:"inline-block max-w-full truncate rounded-md border px-1.5 py-0.5 text-[11.5px] font-semibold "+BADGE[tipo[2]]}, tipo[1])),
               sup && e(TD,{className:C+" "+MONO}, semKit ? vazio
                 : k.tipoKit.indexOf("kit_novo")===0 ? e("span",{className:"text-muted-foreground", title:"Revendedora nova (valor definido pelo setor Kit novo)"},"nova")

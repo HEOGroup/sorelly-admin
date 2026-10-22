@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem e bipagem — pages/Config.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { ehSugPeca } from "@/apps/montagem/components/tabela-pecas-ver";
+import { FAIXA_CAT } from "@/apps/montagem/domain/config";
 import { nomesEncomendas } from "@/apps/montagem/domain/regras";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -40,6 +41,12 @@ function TabelaPecas(){
   var cel = function(i, j, v){ return e("input",{type:"number", min:0, value:(v===null||v===undefined)?"":v, placeholder:"—", "aria-label":c.categorias[j]+", kit "+BK(c.pecasKit[i].kit),
     className:INPUT+" h-8! w-full px-2! text-center text-sm! "+MONO,
     onChange:function(ev){ var t = ev.target.value; d({type:"PECAS", i:i, j:j, valor: t==="" ? null : Math.max(0, parseInt(t,10)||0)}); }}); };
+  // Anéis: faixa (de … até …), dois campos na mesma célula
+  var celFaixa = function(i, j, l){ var campo = function(max){ var v = max ? (l.qmax||{})[j] : l.q[j];
+    return e("input",{type:"number", min:0, value:(v===null||v===undefined)?"":v, placeholder:max?"até":"de", "aria-label":c.categorias[j]+(max?" máximo":" mínimo")+", kit "+BK(l.kit),
+      className:INPUT+" h-8! w-1/2 px-1! text-center text-sm! "+MONO,
+      onChange:function(ev){ var t = ev.target.value; d({type:"PECAS", i:i, j:j, max:max, valor: t==="" ? null : Math.max(0, parseInt(t,10)||0)}); }}); };
+    return e("div",{className:"flex gap-0.5"}, campo(false), campo(true)); };
   var faltam = c.pecasKit.reduce(function(t,l){ return t + l.q.filter(function(x){return x===null||x===undefined;}).length; },0);
   return e(Bloco,{t:"Peças por kit", ic:"box"},
     e("div",{className:"mb-2 flex flex-wrap items-center justify-between gap-2"},
@@ -51,7 +58,7 @@ function TabelaPecas(){
         e("thead",null, e("tr",null, e(TH,{className:"py-2! text-left! text-[12px]! tracking-normal!"},"Peça"), c.pecasKit.map(function(l){ return e(TH,{key:l.kit, className:"py-2! text-center! text-[12px]! tracking-normal!"+(l.sug?" text-warning!":"")}, (l.kit/1000)+" mil"+(l.sug?" *":"")); }))),
         e("tbody",null, c.categorias.map(function(nome, j){ return e("tr",{key:nome, className:TR},
           e(TD,{className:"py-1.5! text-left! font-medium"+((c.pecasSugCat||[]).indexOf(j)>=0?" text-warning":"")}, nome),
-          c.pecasKit.map(function(l,i){ return e(TD,{key:l.kit, className:"px-1! py-1!"+(ehSugPeca(c,l,j)?" [&_input]:text-warning":"")}, cel(i,j,l.q[j])); })); })))));
+          c.pecasKit.map(function(l,i){ return e(TD,{key:l.kit, className:"px-1! py-1!"+(ehSugPeca(c,l,j)?" [&_input]:text-warning":"")}, FAIXA_CAT.indexOf(j)>=0 ? celFaixa(i,j,l) : cel(i,j,l.q[j])); })); })))));
 }
 function TabelasKit(){
   var cx = use(), c = cx.state.cfg, d = cx.dispatch;
@@ -101,6 +108,7 @@ function AbaConfig(){
       coluna(
         e(Bloco,{t:"Kits de alto valor", ic:"alert"},
           e(Campo,{l:"Só Encomendas monta acima de (venda atual ou média)", campo:"limiteEncomendas", v:c.limiteEncomendas, money:true}),
+          e(Campo,{l:"Montar na mesa maior (Agatha) acima de (venda atual ou média)", campo:"limiteMesaMaior", v:c.limiteMesaMaior, money:true}),
           e("p",{className:"text-center text-[12px] text-muted-foreground"}, "Setor Encomendas: "+(nomesEncomendas(s)||"ninguém marcado")+". Marcus e Deysiane liberam exceção."),
           e(Campo,{l:"Só as melhores montam acima de", campo:"limiteMelhores", v:c.limiteMelhores, money:true}),
           e(Campo,{l:"Conferência obrigatória acima de", campo:"limiteAtencao", v:c.limiteAtencao, money:true}),

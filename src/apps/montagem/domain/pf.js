@@ -5,6 +5,12 @@
 // Dados reais (valores, revendedoras) ficam em pf-dados.local.js (gitignored); sem esse arquivo o estado nasce vazio.
 // Funções que no HTML devolviam HTML (badge, prazoTxt...) aqui devolvem DADOS ({texto, cor}); cor: gray|green|red|orange|blue|purple|cyan|yellow.
 
+import { impactoPedido, motivoImpacto } from "@/apps/montagem/domain/pf-limite";
+import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
+
+// pagamentos novos que estão na planilha "Pag. Fornecedores Nova 2026" e ainda não estavam no sistema (arquivo local gitignored)
+var ATU_PF = (function(){ try { var m = import.meta.glob("./pf-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var TEM_ATU_PF = !!(ATU_PF && ATU_PF.lancamentos && ATU_PF.lancamentos.length);
 var LOCAL = (function(){ try { var m = import.meta.glob("./pf-dados.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 // ---------- constantes (HTML 1300-1307, 3111-3116, 4045, 4152-4163, 4791, 5366, 5613) ----------
@@ -124,6 +130,103 @@ function pfMigrar(pf){
       parcelas:[{forma:"cartao", venc:"2026-10-20", valor:1080, conta:"Cartão de crédito à vista · CNPJ 46 Mayz", status:"Pendente"}, {forma:"pix_revendedora", venc:"2026-11-01", valor:2520, conta:"", status:"Pendente"}]});
     invalidar(pf); pf.elloSemeado = true;
   }
+  // pagamentos novos da planilha (Pontual, setembro e outubro/2026): entra só o que ainda não existe (mesmo fornecedor, data e valor), sem duplicar
+  if(!pf.atuV1 && ATU_PF && Array.isArray(ATU_PF.lancamentos)){
+    var temL = {}; pf.lancamentos.forEach(function(l){ var k = l.fornId+"|"+l.data+"|"+l.valor.toFixed(2); temL[k] = (temL[k]||0)+1; });
+    ATU_PF.lancamentos.forEach(function(x){ var k = x.fornId+"|"+x.data+"|"+x.valor.toFixed(2); if(temL[k]>0){ temL[k]--; return; }
+      pf.lancamentos.push({id:pf.seq.L++, fornId:x.fornId, mes:x.limite.slice(0,7), limite:x.limite, chave:x.fornId+"|"+x.limite, data:x.data, revendedora:x.revendedora, valor:x.valor, conta:x.conta||"", arqNome:"", arqTipo:"", arqData:"", conferido:false, conferidoEm:""}); });
+    if(Array.isArray(ATU_PF.mqPassadas)){ var temP = {}; pf.mqPassadas.forEach(function(p){ var k = p.rev.toLowerCase().trim()+"|"+p.valor; temP[k] = (temP[k]||0)+1; });
+      ATU_PF.mqPassadas.forEach(function(x){ var k = x.rev.toLowerCase().trim()+"|"+x.valor; if(temP[k]>0){ temP[k]--; return; } pf.mqPassadas.push(Object.assign({id:pf.seq.mqP++}, x)); }); }
+    if(ATU_PF.mqFech) Object.keys(ATU_PF.mqFech).forEach(function(m){ if(!pf.mqFech[m]) pf.mqFech[m] = Object.assign({}, ATU_PF.mqFech[m]); });
+    // o desconto de cartão de setembro (R$ 37.537,50) nasceu como "baixado" e por isso não entrava nas janelas; a planilha o conta como pago na 1ª dezena e no resto: tira a baixa automática para ele se distribuir sozinho
+    pf.mqBaixas = pf.mqBaixas.filter(function(b){ return !(b.mes==="2026-09" && b.forma==="Desconto em conta" && b.conta==="Abatido na conta do banho" && !b.arqNome); });
+    pf.atuV1 = true; invalidar(pf);
+  }
+  // Pontual, de nov/2026 em diante: a planilha "Pontual - Negociações PAG. 1.0" tem a relação completa de Pix e boleto por dia; troca as parcelas que ainda estão pendentes (as já pagas ficam)
+  if(!pf.atuV2c && ATU_PF && Array.isArray(ATU_PF.parcelasPontualV2)){
+    var pontF = pf.fornecedores.filter(function(f){ return f.nome==="Pontual"; })[0], MMM = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
+    if(pontF){
+      var porMes = {}; ATU_PF.parcelasPontualV2.forEach(function(x){ (porMes[x.mes] = porMes[x.mes]||[]).push(x); });
+      Object.keys(porMes).sort().forEach(function(m){
+        var num = "Pontual "+MMM[parseInt(m.slice(5), 10)-1]+"/"+m.slice(0,4), pd = pf.pedidos.filter(function(p){ return p.fornId===pontF.id && p.numero===num; })[0];
+        if(!pd){ var molde = pf.pedidos.filter(function(p){ return p.fornId===pontF.id && /^Pontual /.test(p.numero); }).pop();
+          pd = Object.assign({}, molde, {id:pf.seq.P++, numero:num, data:m+"-01", total:0, comNF:0, semNF:0, parcelas:[], obs:"Acerto mensal "+num+" (planilha de negociação da Pontual). Nao inclui desconto de cartao (aba maquininhas)"}); pf.pedidos.push(pd); }
+        var fica = pd.parcelas.filter(function(q){ return q.status!=="Pendente"; }), novas = porMes[m].filter(function(x){ var i = fica.findIndex(function(q){ return q.venc===x.venc && Math.abs(q.valor-x.valor)<0.005 && (q.forma==="boleto")===(x.forma==="boleto"); }); if(i>=0){ fica.splice(i, 1); return false; } return true; });
+        var mantidas = pd.parcelas.filter(function(q){ return q.status!=="Pendente"; });
+        pd.parcelas = mantidas.concat(novas.map(function(x){ return {forma:x.forma, venc:x.venc, valor:x.valor, conta:x.forma==="boleto" ? "Boleto — CNPJ 46" : "Pix revendedora", status:"Pendente"}; })).sort(function(a, b){ return a.venc.localeCompare(b.venc); });
+        pd.comNF = r2(soma(pd.parcelas.filter(function(q){ return q.forma==="boleto"; }), function(q){ return q.valor; })); pd.semNF = r2(soma(pd.parcelas.filter(function(q){ return q.forma!=="boleto"; }), function(q){ return q.valor; })); pd.total = r2(pd.comNF+pd.semNF);
+        pd.obs = "Acerto mensal "+num+" — "+pd.parcelas.filter(function(q){ return q.forma!=="boleto"; }).length+" pix revendedora + "+pd.parcelas.filter(function(q){ return q.forma==="boleto"; }).length+" boletos (planilha de negociação da Pontual, 20/10/2026). Nao inclui desconto de cartao (aba maquininhas)";
+      });
+    }
+    // parcelas soltas (ex.: Pix de junho que estava com data inexistente na planilha e já tinha sido pago) e cartões passados depois
+    (ATU_PF.parcelasPontualExtra||[]).forEach(function(x){
+      var pd = pf.pedidos.filter(function(p){ return p.fornId===(pontF && pontF.id) && p.numero==="Pontual "+MMM[parseInt(x.mes.slice(5), 10)-1]+"/"+x.mes.slice(0,4); })[0]; if(!pd) return;
+      if(pd.parcelas.some(function(q){ return q.venc===x.venc && Math.abs(q.valor-x.valor)<0.005 && (q.forma==="boleto")===(x.forma==="boleto"); })) return;
+      pd.parcelas.push({forma:x.forma, venc:x.venc, valor:x.valor, conta:x.forma==="boleto" ? "Boleto — CNPJ 46" : "Pix revendedora", status:x.status||"Pendente"});
+      pd.parcelas.sort(function(a, b){ return a.venc.localeCompare(b.venc); });
+      pd.comNF = r2(soma(pd.parcelas.filter(function(q){ return q.forma==="boleto"; }), function(q){ return q.valor; })); pd.semNF = r2(soma(pd.parcelas.filter(function(q){ return q.forma!=="boleto"; }), function(q){ return q.valor; })); pd.total = r2(pd.comNF+pd.semNF);
+    });
+    if(Array.isArray(ATU_PF.mqPassadasV4)){ var temP4 = {}; pf.mqPassadas.forEach(function(p){ var k = p.rev.toLowerCase().trim()+"|"+p.valor; temP4[k] = (temP4[k]||0)+1; });
+      ATU_PF.mqPassadasV4.forEach(function(x){ var k = x.rev.toLowerCase().trim()+"|"+x.valor; if(temP4[k]>0){ temP4[k]--; return; } pf.mqPassadas.push(Object.assign({id:pf.seq.mqP++}, x)); }); }
+    pf.atuV2c = true; invalidar(pf);
+  }
+  // Prestadores de outubro/2026 (resumo do mês da planilha): Higor, Lucas Castilho, Izadora e Priscila, tudo em pix de revendedora. Dados reais só no arquivo local.
+  if(!pf.atuV3 && ATU_PF && Array.isArray(ATU_PF.prestadoresOut)){
+    ATU_PF.prestadoresOut.forEach(function(x){
+      var fo = pf.fornecedores.filter(function(g){ return g.nome.toLowerCase().indexOf(x.nome.toLowerCase())===0; })[0];
+      if(!fo){ fo = {id:pf.seq.F++, nome:x.nome, tipo:"prestador", vinculo:x.vinculo||"externo", cat:x.cat||"Prestador de serviço", cnpj:"", formas:Object.keys(FORMAS), ciclo:{periodicidade:"mensal", cortes:[31], prazoDias:0}}; pf.fornecedores.push(fo); }
+      var num = fo.nome+" · "+x.mes.slice(5)+"/"+x.mes.slice(0,4);
+      if(pf.pedidos.some(function(p){ return p.fornId===fo.id && p.numero===num; })) return;
+      var pd = {id:pf.seq.P++, fornId:fo.id, numero:num, data:x.mes+"-01", total:r2(soma(x.parcelas, function(q){ return q.valor; })), nfTipo:"sem", comNF:0, semNF:r2(soma(x.parcelas, function(q){ return q.valor; })), cnpj:"Sem NF", nfNum:"", descricao:x.obs||"", limite:x.parcelas[x.parcelas.length-1].venc, pixMin:0,
+        parcelas:x.parcelas.map(function(q){ return {forma:"pix_revendedora", venc:q.venc, valor:q.valor, conta:"Pix revendedora", status:q.pago ? "Pago" : "Pendente"}; })};
+      pf.pedidos.push(pd); invalidar(pf);
+      pd.parcelas.forEach(function(q){ if(q.status==="Pago"){ logPagamento(pf, pd, q, FORMAS[q.forma], q.conta); lancarBaixaAuto(pf, pd, q); } });
+    });
+    pf.atuV3 = true; invalidar(pf);
+  }
+  // Point (planilha, 20/10/2026): pedidos de setembro (conta corrente), boleto e Pix pagos e os Pix de revendedora de setembro e outubro; entra só o que ainda não existe
+  if(!pf.atuV5 && ATU_PF && (ATU_PF.pointSep || ATU_PF.lancamentosPoint)){
+    var ptF = pf.fornecedores.filter(function(g){ return g.nome==="Point"; })[0];
+    if(ptF){
+      var S = ATU_PF.pointSep, pdS = S && pf.pedidos.filter(function(p){ return p.fornId===ptF.id && p.numero==="Point set/2026"; })[0];
+      if(pdS && !(pdS.itens||[]).length){ pdS.itens = S.itens.map(function(i){ return {cod:i.cod, data:i.data, valor:i.valor}; }); if(S.pix && pdS.parcelas[0]) pdS.parcelas[0].valor = S.pix; pf.ptAberto[pdS.id] = false; ptSync(pdS); }
+      if(S && S.boleto) Object.keys(S.boleto).forEach(function(m){ if(!pf.ptBoleto[m]) pf.ptBoleto[m] = S.boleto[m]; });
+      var temPt = {}; pf.lancamentos.filter(function(l){ return l.fornId===ptF.id; }).forEach(function(l){ var k = l.data+"|"+l.valor.toFixed(2); temPt[k] = (temPt[k]||0)+1; });
+      (ATU_PF.lancamentosPoint||[]).forEach(function(x){ var k = x.data+"|"+x.valor.toFixed(2); if(temPt[k]>0){ temPt[k]--; return; }
+        pf.lancamentos.push({id:pf.seq.L++, fornId:ptF.id, mes:x.limite.slice(0,7), limite:x.limite, chave:ptF.id+"|"+x.limite, data:x.data, revendedora:x.revendedora, valor:x.valor, conta:x.conta||"", arqNome:"", arqTipo:"", arqData:"", conferido:false, conferidoEm:""}); });
+    }
+    pf.atuV5 = true; invalidar(pf);
+  }
+  // pedidos novos lançados à mão pelo Marcus (ex.: Pontual NF 11660): entram como pedido próprio; se o Pix já estava dentro do pedido do mês, sai de lá para não contar duas vezes
+  if(!pf.atuV10 && ATU_PF && Array.isArray(ATU_PF.pedidosNovos)){
+    (ATU_PF.removerParcelas||[]).forEach(function(r){ var fo0 = pf.fornecedores.filter(function(g){ return g.nome===r.fornNome; })[0]; if(!fo0) return;
+      for(var pi = 0; pi<pf.pedidos.length; pi++){ var p0 = pf.pedidos[pi]; if(p0.fornId!==fo0.id) continue; var i0 = p0.parcelas.findIndex(function(z){ return z.status==="Pendente" && z.forma===r.forma && z.venc===r.venc && Math.abs(z.valor-r.valor)<0.005; });
+        if(i0>=0){ p0.parcelas.splice(i0, 1); p0.comNF = r2(soma(p0.parcelas.filter(function(z){ return z.forma!=="pix_revendedora" && z.forma!=="pix_empresa"; }), function(z){ return z.valor; })); p0.semNF = r2(soma(p0.parcelas.filter(function(z){ return z.forma==="pix_revendedora" || z.forma==="pix_empresa"; }), function(z){ return z.valor; })); p0.total = r2(p0.comNF+p0.semNF); break; } } });
+    ATU_PF.pedidosNovos.forEach(function(x){
+      var fo = pf.fornecedores.filter(function(g){ return g.nome===x.fornNome; })[0]; if(!fo) return;
+      if(pf.pedidos.some(function(p){ return p.fornId===fo.id && p.numero===x.numero; })) return;
+      if(!x.semDedupe) x.parcelas.filter(function(q){ return q.forma!=="boleto"; }).forEach(function(q){
+        pf.pedidos.forEach(function(p){ if(p.fornId!==fo.id || /^(NF|Pontual NF)/.test(p.numero)) return;
+          var i = p.parcelas.findIndex(function(z){ return z.forma!=="boleto" && z.status==="Pendente" && z.venc===q.venc && Math.abs(z.valor-q.valor)<0.005; }); if(i<0 || q.__tirou) return;
+          p.parcelas.splice(i, 1); q.__tirou = true;
+          p.comNF = r2(soma(p.parcelas.filter(function(z){ return z.forma==="boleto"; }), function(z){ return z.valor; })); p.semNF = r2(soma(p.parcelas.filter(function(z){ return z.forma!=="boleto"; }), function(z){ return z.valor; })); p.total = r2(p.comNF+p.semNF); }); });
+      pf.pedidos.push({id:pf.seq.P++, fornId:fo.id, numero:x.numero, data:x.data, total:x.total, nfTipo:"misto", comNF:x.comNF, semNF:x.semNF, cnpj:x.cnpj, nfNum:x.nfNum||"", descricao:x.descricao||"", limite:x.parcelas[x.parcelas.length-1].venc,
+        parcelas:x.parcelas.map(function(q){ return {forma:q.forma, venc:q.venc, valor:q.valor, conta:q.forma==="boleto" ? "Boleto — "+x.cnpj : (q.forma==="cheque" ? "Cheque — "+x.cnpj : "Pix revendedora"), status:"Pendente"}; })});
+    });
+    pf.atuV10 = true; invalidar(pf);
+  }
+  // Pix de revendedora pagos a outros fornecedores (Mega Sul, Office Graf, Devmaster...) que a planilha tem e o sistema não; cai na dezena/quinzena do mês do pagamento
+  if(!pf.atuV11 && ATU_PF && Array.isArray(ATU_PF.lancamentosForn)){
+    invalidar(pf);
+    var temF = {}; pf.lancamentos.forEach(function(l){ var k = l.fornId+"|"+l.data+"|"+l.valor.toFixed(2); temF[k] = (temF[k]||0)+1; });
+    ATU_PF.lancamentosForn.forEach(function(x){
+      var fo2 = pf.fornecedores.filter(function(g){ return g.nome===x.fornNome; })[0]; if(!fo2) return;
+      var k = fo2.id+"|"+x.data+"|"+x.valor.toFixed(2); if(temF[k]>0){ temF[k]--; return; }
+      var js = janelasDoForn(pf, fo2.id).filter(function(j){ return j.mes===x.mes; }), hint = x.limiteHint || x.data, jj = js.filter(function(j){ return j.limite>=hint; })[0] || js[js.length-1];
+      var lim = jj ? jj.limite : diaISO(x.mes, 31);
+      pf.lancamentos.push({id:pf.seq.L++, fornId:fo2.id, mes:x.mes, limite:lim, chave:fo2.id+"|"+lim, data:x.data, revendedora:x.revendedora, valor:x.valor, conta:x.conta||"", arqNome:"", arqTipo:"", arqData:"", conferido:false, conferidoEm:""}); });
+    pf.atuV11 = true; invalidar(pf);
+  }
   // passadas da maquininha de setembro e outubro (planilha "Pag. Fornecedores 2026", colunas L a Q, 19/10/2026): entra só o que ainda não existe (mesma revendedora e valor), sem duplicar
   if(!pf.mqImp2 && LOCAL && Array.isArray(LOCAL.mqExtra)){
     var chavesX = {}; LOCAL.mqExtra.forEach(function(x){ var k = x.rev.toLowerCase()+"|"+x.valor; chavesX[k] = (chavesX[k]||0)+1; });
@@ -206,7 +309,7 @@ function calcJanelasDoForn(pf, fid){
   var f = forn(pf, fid); if(!f) return [];
   var porMes = {};
   pf.pedidos.forEach(function(pd){
-    if(pd.fornId!==fid) return;
+    if(pd.fornId!==fid || pd.aprov==="pendente") return;   // pendente de aprovação (limite mensal) ainda não está lançado
     pd.parcelas.forEach(function(p, idx){
       if(FORMAS[p.forma].nf!=="sem") return;   // só sem NF / Pix entra na conta
       var mes = p.venc.slice(0,7);
@@ -890,8 +993,11 @@ function pfReduz(s, a){
       var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
       if(ePrest2){ novoPd.limite = a.limite; novoPd.pixMin = pixMin; }
+      var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);   // limite mensal de fornecedores: estourou o teto do mês ou da categoria = pendente até aprovar
+      if(impLim.length){ novoPd.aprov = "pendente"; novoPd.aprovMotivo = motivoImpacto(impLim); }
       pf.pedidos.push(novoPd); invalidar(pf);
-      parcelas.forEach(function(p){ if(p.status==="Pago"){ logPagamento(pf, novoPd, p, FORMAS[p.forma], p.conta); if(FORMAS[p.forma].nf==="sem") lancarBaixaAuto(pf, novoPd, p); } });
+      if(!impLim.length) parcelas.forEach(function(p){ if(p.status==="Pago"){ logPagamento(pf, novoPd, p, FORMAS[p.forma], p.conta); if(FORMAS[p.forma].nf==="sem") lancarBaixaAuto(pf, novoPd, p); } });
+      if(impLim.length) return ok("PENDENTE de aprovação: "+novoPd.aprovMotivo+". Não conta como lançado até o Marcus aprovar.");
       return ok("Pedido lançado — "+brl(tot)+" e "+parcelas.length+" parcela(s) em "+F(fid2).nome);
     }
     case "pedido_set": {
@@ -904,6 +1010,8 @@ function pfReduz(s, a){
       ["numero","data","cnpj","nfNum","nfTipo","obs","descricao","limite","pixMin"].forEach(function(k){ if(q[k]!==undefined) pd1[k] = q[k]; });
       pd1.total = t2; pd1.comNF = c2; pd1.semNF = s3; return ok("Pedido atualizado");
     }
+    case "pedido_aprovar": { var pda = ped(a.id); if(!pda) return recusa("Pedido não encontrado."); if(!temAutorizacao("pf_limite_aprova", s.usuario)) return recusa("Só quem tem a autorização de aprovar o limite pode aprovar."); pda.aprov = "aprovado"; pda.aprovPor = a.por||""; pda.aprovEm = hojeIso(); return ok("Pedido aprovado e lançado — "+brl(pda.total)); }
+    case "limite_set": { if(!temAutorizacao("pf_limite_aprova", s.usuario)) return recusa("Só quem tem a autorização de aprovar o limite pode mudar o limite."); var lim = pf.limite = pf.limite || {}, pa = a.patch||{}; if(pa.teto!==undefined) lim.teto = num(pa.teto); if(pa.cat) lim.cat = Object.assign({}, lim.cat||{}, pa.cat); if(pa.classe) lim.classe = Object.assign({}, lim.classe||{}, pa.classe); return ok("Limite salvo"); }
     case "pedido_del": { if(!ped(a.id)) return recusa("Pedido não encontrado."); pf.pedidos = pf.pedidos.filter(function(p){ return p.id!==a.id; }); return ok("Pedido excluído — conta recalculada"); }
     case "parcela_add": {
       var pd2 = ped(a.pedId); if(!pd2) return recusa("Pedido não encontrado.");
@@ -1056,6 +1164,7 @@ function pfReduz(s, a){
 }
 
 export {
+  TEM_ATU_PF,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,

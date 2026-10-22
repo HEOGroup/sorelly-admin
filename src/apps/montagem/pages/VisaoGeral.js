@@ -7,7 +7,7 @@ import { BlocoInternoHoje, resumoInterno } from "@/apps/montagem/components/inte
 import { TabelaCrescimento } from "@/apps/montagem/components/tabela-crescimento";
 import { GraficoColunasRevendedoras } from "@/apps/montagem/components/grafico-revendedoras";
 import { mesAberto, nomeMes, painelDe, proximoMes } from "@/apps/montagem/domain/agendamento";
-import { JANELAS_GRAFICO_REV, MESES_LONGO, fatEfetivo, pontosRevendedoras, projetarAno, resumoMensalRevendedoras } from "@/apps/montagem/domain/financeiro";
+import { JANELAS_GRAFICO_REV, metaDoMes, MESES_LONGO, fatEfetivo, pontosRevendedoras, projetarAno, resumoMensalRevendedoras } from "@/apps/montagem/domain/financeiro";
 import { comprasDoMes, inadDoMes } from "@/apps/montagem/domain/inadimplencia-fin";
 import { proximosMeses, resumoFinanceiro, tabelaMeses } from "@/apps/montagem/domain/resumo-financeiro";
 import { cnpjsDe, fiscalAtual, indicadoresFiscais, projecaoCnpj } from "@/apps/montagem/domain/cnpjs";
@@ -208,12 +208,13 @@ function BlocoAcertosMes(p){
   var s = p.s, d = p.d, ag = s.agend, ym = ag ? mesAberto(ag) : null, st = useState({qtd:"", quem:"Marcus"}), f = st[0], setF = st[1];
   var pr = ym ? painelDe(ag, ym, undefined, fatEfetivo(s)) : null;
   if(!pr) return null;
+  var mp = metaDoMes(s, ym.slice(0,4), Number(ym.slice(5))-1, pr.realizado), prev = mp.manual ? mp.previstos : pr.previstos, feitosTot = pr.realizado+(mp.carregar||0), falta = Math.max(0, prev-feitosTot);   // previstos novos que o Marcus lançou (feitos + Carregar + a realizar); sem lançamento, valem os do Agendamento
   var pode = podeGerirAgend(s.usuario, ag), prox = proximoMes(ym), n = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
-  var pctReal = pr.previstos>0 ? Math.min(100, pr.realizado/pr.previstos*100) : 0, passou = Number(f.qtd)>0;
+  var pctReal = prev>0 ? Math.min(100, feitosTot/prev*100) : 0, passou = Number(f.qtd)>0;
   var cx = function(t, v, cor, sub){ return e("div",{key:t, className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[28px] leading-none", style:{color:cor}}, v), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"}, t), sub && e("span",{className:"text-[10.5px] text-white/60"}, sub)); };
   return e(BlocoBarra,{cor:"roxo", t:"Acertos de "+nomeMes(ym), sub:"realizados × o que falta · metas 94, 95 e 96%"},
     e("div",{className:"flex flex-col gap-2 p-2"},
-      e("div",{className:"grid grid-cols-4 gap-2"}, cx("Realizados", n(pr.realizado), "#4ADE80"), cx("Faltam", n(pr.restante), "#F3D98B"), cx("Previstos", n(pr.previstos), "#C084FC"), cx("Do mês", pctReal.toFixed(1).replace(".",",")+"%", "#60A5FA")),
+      e("div",{className:"grid grid-cols-4 gap-2"}, cx("Realizados", n(pr.realizado), "#4ADE80"), cx("Faltam", n(falta), "#F3D98B"), cx("Previstos", n(prev), "#C084FC", mp.manual ? "Agendamento: "+n(pr.previstos) : null), cx("Do mês", pctReal.toFixed(1).replace(".",",")+"%", "#60A5FA")),
       e("div",{className:"relative mt-1 h-3 rounded-full bg-black/40"},
         e("div",{className:"h-full rounded-full bg-success", style:{width:pctReal+"%"}}),
         pr.metas.map(function(m){ return e("span",{key:m.id, title:m.pct+"%", className:"absolute top-[-3px] h-[18px] w-0.5 bg-white/80", style:{left:Math.min(100,m.pct)+"%"}}); })),

@@ -10,7 +10,9 @@ import { AbaConfig } from "@/apps/montagem/pages/Config";
 import { ConfigQuemBipa } from "@/apps/montagem/pages/ConfiguradorGeral";
 import { Btn } from "@/apps/montagem/ui/button";
 import { itensComissao, comisEfetiva } from "@/apps/montagem/domain/comissoes";
-import { resumoInterno } from "@/apps/montagem/domain/comissao-interno";
+import { resumoInterno, resumoAtendimento, regraAtend } from "@/apps/montagem/domain/comissao-interno";
+import { resumoMeta } from "@/apps/montagem/domain/metas-setor";
+import { bonusDoValor, indicadoresLp } from "@/apps/montagem/domain/link-pagamento";
 import { resumoBipadora, resumoMontadora } from "@/apps/montagem/domain/regras";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -83,10 +85,26 @@ function CartoesSetores(p){
       e(CartaoSetor,{t:"Bipagem de envio", ic:"bipagem", cor:"#0EA5E9", aba:"comisbip", valor:p.totBip, rotulo:"Líquido do mês", info:p.nBip+" bipadoras com kits no mês", data:"pagamento dia "+dia("bipagem")+" · próximo "+proxPag(dia("bipagem"))}),
       e(CartaoSetor,{t:"Montagem de kits", ic:"montadora", cor:"#F59E0B", aba:"comismont", valor:p.totMont, rotulo:"Líquido do mês", info:p.nMont+" montadoras com kits no mês", data:"pagamento dia "+dia("montagem")+" · próximo "+proxPag(dia("montagem"))}),
       e(CartaoSetor,{t:"Atendimento interno", ic:"calendario", cor:"#E8B84B", aba:"comisint", valor:p.totInt, rotulo:"Total do mês", info:p.nInt+" bipadoras com atendimentos", data:"pagamento dia "+dia("interno")+" · próximo "+proxPag(dia("interno"))}),
-      e(CartaoSetor,{t:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", info:"Ganha por metas. Entra quando o módulo for trazido."}),
-      e(CartaoSetor,{t:"Inadimplência", ic:"alert", cor:"#EF4444", info:"Ganha por metas. Entra quando o módulo for trazido."}),
-      e(CartaoSetor,{t:"Link de pagamento", ic:"coins", cor:"#14B8A6", info:"Ganha por metas. Entra quando o módulo for trazido."})),
+      cartaoMeta(p.s, "cadastro", "Cadastro de revendedoras", "cadastro", "comcad", function(v){ return Math.round(v).toLocaleString("pt-BR"); }),
+      cartaoMeta(p.s, "inad", "Inadimplência", "alert", "cominad", function(v){ return BK(v); }),
+      cartaoLink(p.s)),
     e(BlocoMetasAg,{ag:ag, dia:dia("agendamento")}));
+}
+
+// cartões das metas mensais (Cadastro e Inadimplência) e do bônus do Link de pagamento, sempre do mês de hoje
+function cartaoMeta(s, setor, titulo, ic, aba, fmt){
+  var h = new Date(), ym = h.getFullYear()+"-"+String(h.getMonth()+1).padStart(2,"0"), r = resumoMeta(s, setor, ym);
+  if(!r) return e(CartaoSetor,{t:titulo, ic:ic, cor:"#3B82F6", aba:aba, info:"Sem meta neste mês. Abra para criar."});
+  var ini = setor==="cadastro" ? r.inicio : 0, topo = r.faixas.length ? r.faixas[r.faixas.length-1].alvo : 1;
+  return e(CartaoSetor,{t:titulo, ic:ic, cor:"#3B82F6", aba:aba, valor:r.total, rotulo:"Bônus agora (máx. "+BK(r.max)+")", barra:{pct:topo>ini ? (r.medido-ini)/(topo-ini)*100 : 0, txt:""},
+    info:r.prox ? "Faltam "+fmt(r.falta)+" para a próxima faixa" : "Todas as faixas batidas", data:r.meta.pagamento ? "pagamento "+r.meta.pagamento : "fecha em "+(r.meta.fechamento||"—")});
+}
+function cartaoLink(s){
+  var h = new Date(), ym = h.getFullYear()+"-"+String(h.getMonth()+1).padStart(2,"0"), lp = s.lp, ind = lp ? indicadoresLp(s, ym) : null;
+  if(!lp || !ind) return e(CartaoSetor,{t:"Link de pagamento", ic:"coins", cor:"#3B82F6", aba:"comlink", info:"Ainda não há links registrados."});
+  var fx = ((lp.config.bonus||{}).faixas||[]).slice().sort(function(a, b){ return a.min-b.min; }), b = bonusDoValor(lp.config, ind.valorCoorte), topo = fx.length ? fx[fx.length-1] : null, prox = fx.find(function(x){ return x.min>ind.valorCoorte; });
+  return e(CartaoSetor,{t:"Link de pagamento", ic:"coins", cor:"#3B82F6", aba:"comlink", valor:b.valor, rotulo:"Bônus agora"+(topo ? " (máx. "+BK(topo.valor)+")" : ""), barra:{pct:topo ? ind.valorCoorte/topo.min*100 : 0, txt:""},
+    info:prox ? "Pago "+BK(ind.valorCoorte)+" · faltam "+BK(prox.min-ind.valorCoorte)+" para a próxima faixa" : "Pago "+BK(ind.valorCoorte), data:"fecha no fim do mês"});
 }
 
 function AbaComissoesTodos(props){
@@ -100,7 +118,7 @@ function AbaComissoesTodos(props){
   // bipagem de envio e montagem (cálculo do setor)
   var bip = BIPADORAS.map(function(b){ return resumoBipadora(b, s); }).filter(function(r){ return r.total>0; }), totBip = r2(bip.reduce(function(t, r){ return t+r.liquido; }, 0));
   var mont = (s.montadoras || []).map(function(m){ return resumoMontadora(m, s); }).filter(function(r){ return r.total>0; }), totMont = r2(mont.reduce(function(t, r){ return t+r.liquido; }, 0));
-  var inte = resumoInterno(s, mes), totInt = r2(inte.reduce(function(t, o){ return t+o.total; }, 0));
+  var inte = resumoInterno(s, mes), totBipInt = r2(inte.reduce(function(t, o){ return t+o.total; }, 0)), aten = resumoAtendimento(s, mes), totAt = r2(aten.reduce(function(t, o){ return t+o.total; }, 0)), ra = regraAtend(s.cfg), totInt = r2(totBipInt+totAt);
   var geral = r2(totRep+totBip+totMont+totInt);
   return e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:foco==="bip" ? "Comissões da bipagem" : foco==="mont" ? "Comissões da montagem" : foco==="int" ? "Comissões do atendimento interno" : "Comissões de todos", sub:foco==="todos" ? "Tudo o que é pago em comissões e bônus em "+MESES[+mes.slice(5, 7)-1]+": clique num cartão para abrir o setor, ou numa linha das tabelas para ver a quem se refere. Os blocos abrem e fecham." : "Mês de "+MESES[+mes.slice(5, 7)-1]+". Clique numa linha para ver a quem se refere. A comissão dos representantes tem tela própria, em Comissões → Representantes."}),
@@ -110,13 +128,16 @@ function AbaComissoesTodos(props){
         detalhe:o.itens.map(function(i){ return fmt(i.data)+" · "+i.rev+" · "+(i.status||"")+" · "+BK(i.comissao)+(i.confirmado ? " (confirmada)" : " (pendente)"); })}; })}),
     (foco==="todos" || foco==="bip") && e(Bloco,{cor:"azul", t:"Bipagem de envio de kits", sub:"kits bipados × valor, menos o desconto por peça faltando", total:totBip, colunas:["Bipadora","Kits","Bruto","Descontos","Líquido"],
       linhas:bip.map(function(r){ return {chave:"b"+r.b.id, nome:r.b.nome, cels:[r.total, BK(r.bruto), "− "+BK(r.perda), BK(r.liquido)], detalhe:["Normais: "+r.n+" · Especiais: "+r.e+" · peças faltando: "+r.faltas]}; })}),
-    (foco==="todos" || foco==="int") && e(Bloco,{cor:"azul", t:"Bipagem interna (atendimento à revendedora)", sub:"R$ 10 por atendimento, menos R$ 5 a cada contagem errada marcada pela revendedora, mais bônus pela nota (provisório)", total:totInt, vazio:"Nenhum atendimento interno acertado neste mês ainda.",
+    (foco==="todos" || foco==="int") && e(Bloco,{cor:"azul", t:"Bipagem interna (atendimento à revendedora)", sub:"R$ 10 por atendimento, menos R$ 5 a cada contagem errada marcada pela revendedora, mais bônus pela nota (provisório)", total:totBipInt, vazio:"Nenhum atendimento interno acertado neste mês ainda.",
       colunas:["Bipadora","Atendimentos","Base","Perda por erro","Bônus da nota","Nota média","Total"],
       linhas:inte.map(function(o){ return {chave:"i"+o.nome, nome:o.nome, cels:[o.n, BK(o.base), "− "+BK(o.perda), BK(o.bonus), o.media===null ? "—" : o.media.toFixed(1).replace(".", ","), BK(o.total)],
         detalhe:o.itens.map(function(x){ return fmt(x.it.data)+" · "+x.it.nome+" · nota "+(x.c.nota || "—")+" · "+x.c.erros+" contagem(ns) errada(s) · "+BK(x.c.total); })}; })}),
+    (foco==="todos" || foco==="int") && e(Bloco,{cor:"azul", t:"Atendimento (acompanha a revendedora)", sub:"R$ "+ra.valor+" fixo por atendimento; venda acima de R$ "+ra.limiteAlto.toLocaleString("pt-BR")+" paga R$ "+ra.valorAlto+". Qualquer funcionária que atender recebe; hoje atendem Leci e Maria Aparecida.", total:totAt, vazio:"Nenhum atendimento acertado neste mês ainda.",
+      colunas:["Funcionária","Atendimentos","Acima de R$ "+ra.limiteAlto.toLocaleString("pt-BR"),"Total"],
+      linhas:aten.map(function(o){ return {chave:"a"+o.nome, nome:o.nome, cels:[o.n, o.nAlta, BK(o.total)], detalhe:o.itens.map(function(x){ return fmt(x.it.data)+" · "+x.it.nome+" · venda "+BK(x.v.venda)+" · "+BK(x.v.valor); })}; })}),
     (foco==="todos" || foco==="mont") && e(Bloco,{cor:"azul", t:"Montagem de kits", sub:"kits montados × valor, ajustado pela avaliação e pelas divergências", total:totMont, colunas:["Montadora","Kits","Bruto","Ajuste","Líquido"],
       linhas:mont.map(function(r){ return {chave:"m"+r.m.id, nome:r.m.nome, cels:[r.total, BK(r.bruto), "− "+BK(r.bruto-r.liquido), BK(r.liquido)], detalhe:["Média da avaliação: "+r.media.toFixed(1).replace(".", ",")+" · divergências: "+r.div]}; })}),
-    foco==="todos" && e("p",{className:"rounded-xl bg-muted/30 px-4 py-3 text-[12.5px] text-muted-foreground"}, "A trazer: metas com bônus da Inadimplência, do Cadastro de revendedoras e do Link de pagamento, e a comissão de quem monta o kit junto com a revendedora no atendimento interno."));
+    foco==="todos" && e("p",{className:"rounded-xl bg-muted/30 px-4 py-3 text-[12.5px] text-muted-foreground"}, "A trazer: metas com bônus da Inadimplência, do Cadastro de revendedoras e do Link de pagamento."));
 }
 // Cada comissão tem, no fim da tela, o botão "Regras e configurações" (só o Marcus): abre OUTRA tela com as regras e, embaixo, os campos para mexer.
 function ComConfig(p){

@@ -13,3 +13,8 @@ src/apps/montagem/domain/*.local.js
 *.local.xlsx
 
 *.local.csv
+
+# servidor: variáveis secretas
+.env
+servidor/.env
+.env.local

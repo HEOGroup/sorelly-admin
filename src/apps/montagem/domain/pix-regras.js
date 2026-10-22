@@ -134,6 +134,12 @@ function pxReduz(s, a){
       return ok("Conta criada", fp ? {formasPagamento:fp} : null); }
     case "conta_set": { var c = contaPorLabel(px, a.id); if(!c) return recusa("Conta não encontrada."); Object.assign(c, a.patch);
       if(a.patch.padrao){ px.contas.forEach(function(o){ if(o!==c && o.cnpj===c.cnpj) o.padrao = false; }); } return ok(); }
+    case "caixa_chave": { var cc = (px.contas||[]).find(function(x){ return x.caixaId===a.caixaId; });
+      if(!cc){ cc = {id:"PIX - "+a.nome, label:"PIX - "+a.nome, cnpj:/^(34|46|59|67)$/.test(a.cnpj) ? a.cnpj : "", tipo:"empresa", banco:"", chave:"", caixaId:a.caixaId, padrao:false, ativa:true}; px.contas.push(cc); }
+      var mudou = a.chave!==undefined && a.chave!==(cc.chave||""), tmudou = !!a.tipo && a.tipo!==(cc.chaveTipo||"");
+      if(a.chave!==undefined) cc.chave = a.chave; if(a.tipo!==undefined) cc.chaveTipo = a.tipo;
+      if(mudou || tmudou){ cc.chaveEm = a.em || 0; cc.chavePor = a.por || ""; }   // data e quem alterou a chave
+      return ok(a.chave ? "Chave Pix salva" : mudou ? "Chave Pix removida" : undefined); }
     case "maq_set": { px.maquininha = Object.assign({}, px.maquininha, a.patch); return ok(); }
     case "rep_set": { px.reps = px.reps||[]; var nm0 = String(a.representante||"").trim(); if(!nm0) return recusa("Escolha a representante.");
       var rp0 = px.reps.find(function(x){ return x.representante===nm0; }); if(!rp0){ rp0 = {representante:nm0, cnpj:"", contaPix:"", obs:""}; px.reps.push(rp0); }
@@ -146,6 +152,30 @@ function pxReduz(s, a){
   }
   return recusa("Ação desconhecida.");
 }
+// chaves Pix das contas bancárias lidas do admin antigo (arquivo local gitignored): entram com a data de hoje e "alterado por Marcus"
+var CHAVES_ADMIN = (function(){ try { var m = import.meta.glob("./pix-chaves-admin.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var TEM_CHAVES_ADMIN = !!(CHAVES_ADMIN && CHAVES_ADMIN.chaves && CHAVES_ADMIN.chaves.length);
+var normConta = function(n){ return String(n||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/serenety/g,"serenity").replace(/[^a-z0-9&]/g,""); };
+function pxAplicarChavesAdmin(px, contasCaixa, por, agora){
+  if(!TEM_CHAVES_ADMIN || !px) return px;
+  CHAVES_ADMIN.chaves.forEach(function(x){
+    var conta = (contasCaixa||[]).find(function(c){ return normConta(c.nome)===normConta(x[0]); }); if(!conta) return;
+    var cc = (px.contas||[]).find(function(k){ return k.caixaId===conta.id; });
+    if(!cc){ cc = {id:"PIX - "+conta.nome, label:"PIX - "+conta.nome, cnpj:/^(34|46|59|67)$/.test(conta.bloco) ? conta.bloco : "", tipo:"empresa", banco:"", chave:"", caixaId:conta.id, padrao:false, ativa:true}; px.contas.push(cc); }
+    if(cc.chaveEm) return;   // já preenchida ou editada: não sobrescreve
+    cc.chave = x[2]; cc.chaveTipo = x[1]; cc.chaveEm = agora; cc.chavePor = por;
+  });
+  return px;
+}
+// chaves de pessoal (família), prestador da empresa e fornecedores: ficam em s.cp.chaves (id → {grupo, nome, banco, servico, chave, chaveTipo, chaveEm, chavePor})
+function cpAplicarExtras(cp, por, agora){
+  if(!cp || !CHAVES_ADMIN || !CHAVES_ADMIN.extras) return cp;
+  var mapa = Object.assign({}, cp.chaves);
+  delete mapa["forn|Beaté Cosméticos"]; delete mapa["pes|Marco Antonio|Itaú cpf"];   // mudaram de lugar
+  CHAVES_ADMIN.extras.forEach(function(x){ if(mapa[x[0]] && mapa[x[0]].chaveEm) return; mapa[x[0]] = Object.assign({}, mapa[x[0]], {grupo:x[1], nome:x[2], banco:x[3], servico:x[4], chaveTipo:x[5], chave:x[6], chaveEm:agora, chavePor:por}); });
+  return Object.assign({}, cp, {chaves:mapa});
+}
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
+function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado };
+export {cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado };

@@ -252,9 +252,12 @@ base.horarios = base.horarios || {};
 if(base.horarioAgendV!==1){ base.horarioAgendV = 1; base.horarios = Object.assign({}, base.horarios);
   [["Ana Maria Divino",{ini:"07:00", fim:"17:00", sexIni:"08:00", sexFim:"17:00", almIni:"11:30", almFim:"12:30"}], ["Mariana",{ini:"08:00", fim:"18:00", sexIni:"08:00", sexFim:"17:00", almIni:"13:30", almFim:"14:30"}], ["Tamara",{ini:"07:30", fim:"17:30", sexIni:"08:00", sexFim:"17:00", almIni:"12:30", almFim:"13:30"}]]
     .forEach(function(x){ var cid = idPorNome(x[0]); if(cid) base.horarios[cid] = x[1]; }); }
-// horários de todo o RH (19/10/2026): entrada da planilha dos funcionários; quem já tem horário próprio (Agendamento, ajuste da Direção) não é mexido
-if(base.horarioRhV!==1){ base.horarioRhV = 1; base.horarios = Object.assign({}, base.horarios);
-  horariosParaChat().forEach(function(x){ var ct = CONTATOS.find(function(c){ return sem(c.completo)===sem(x.nome); }); if(ct && !base.horarios[ct.id]) base.horarios[ct.id] = {ini:x.ini, fim:x.fim, sexIni:x.ini, sexFim:x.fim, dias:x.dias}; }); }
+// horário do RH ao vivo (20/10/2026): o horário que a planilha tinha gravado aqui (19/10) sai, porque agora vale direto o cadastro do RH (definirHorariosRh);
+// ajuste feito à mão pela Direção e horários do Agendamento ficam
+if(base.horarioRhV!==2){ var antesRh = base.horarioRhV; base.horarioRhV = 2;
+  if(antesRh===1){ base.horarios = Object.assign({}, base.horarios);
+    horariosParaChat().forEach(function(x){ var ct = CONTATOS.find(function(c){ return sem(c.completo)===sem(x.nome); }), h = ct && base.horarios[ct.id];
+      if(h && h.ini===x.ini && h.fim===x.fim && h.sexIni===x.ini && h.sexFim===x.fim && !h.almIni && !h.almFim && String(h.dias)===String(x.dias)) delete base.horarios[ct.id]; }); } }
 // grupo "Preço das Peças" (peça nova + cartão de preço) também para quem já tem dados salvos
 if(!base.convs.some(function(c){ return c.id==="c_preco"; })){ var semente = semearPreco(); base.convs = base.convs.concat([semente.conv]); base.msgs = Object.assign({}, base.msgs); base.msgs.c_preco = semente.msgs; base.lido = Object.assign({}, base.lido); }
 var estado = Object.assign({}, base, {efem:{digitando:{}, aberta:null, toasts:[], conversaSel:null, mini:false}});
@@ -294,9 +297,17 @@ function tempoUtil(ini, fim, cid){
 }
 // horário de trabalho de cada pessoa: o padrão do Configurador (expediente + almoço) ou o que a Direção ajustou para ela
 var ALMOCO_PADRAO = {ini:"12:00", fim:"13:00"};
+// horário que vem do cadastro do RH (entrada e escala de cada colaborador); App.js atualiza a cada mudança do RH. Vale para quem não tem ajuste próprio.
+var HOR_RH = {}, HOR_RH_LISTA = null;
+function definirHorariosRh(lista){
+  if(lista===HOR_RH_LISTA) return; HOR_RH_LISTA = lista; var m = {}, porNome = {};
+  CONTATOS.forEach(function(c){ porNome[sem(c.completo)] = c.id; });
+  (lista||[]).forEach(function(x){ var cid = porNome[sem(x.nome)]; if(cid) m[cid] = {ini:x.ini, fim:x.fim, dias:x.dias}; });
+  HOR_RH = m;
+}
 function horarioDe(cid){
-  var ex = estado.config.expediente, al = ex.almoco || ALMOCO_PADRAO, h = (estado.horarios||{})[cid] || {};
-  return {ini:h.ini||ex.ini, fim:h.fim||ex.fim, sexIni:h.sexIni||h.ini||ex.ini, sexFim:h.sexFim||h.fim||ex.fim, almIni:h.almIni||al.ini, almFim:h.almFim||al.fim, dias:h.dias||ex.dias, proprio:!!(estado.horarios||{})[cid]};
+  var ex = estado.config.expediente, al = ex.almoco || ALMOCO_PADRAO, proprio = (estado.horarios||{})[cid], h = proprio || HOR_RH[cid] || {};
+  return {ini:h.ini||ex.ini, fim:h.fim||ex.fim, sexIni:h.sexIni||h.ini||ex.ini, sexFim:h.sexFim||h.fim||ex.fim, almIni:h.almIni||al.ini, almFim:h.almFim||al.fim, dias:h.dias||ex.dias, proprio:!!proprio, temRh:!!HOR_RH[cid]};
 }
 function minDe(t){ var p = String(t).split(":"); return (+p[0])*60 + (+p[1]||0); }
 /** como a pessoa está agora: trabalhando, em almoço, fora do expediente ou de folga (domingo/dia sem expediente) */
@@ -309,7 +320,7 @@ function situacaoAgora(cid){
   if(agora>=minDe(h.fim)) return {tipo:"fora", texto:"Expediente encerrado"};
   return {tipo:"trabalhando", texto:"Em horário de trabalho"};
 }
-function setHorario(cid, patch){ mudar(function(s){ var o = Object.assign({}, s.horarios); o[cid] = Object.assign({}, o[cid], patch); return Object.assign({}, s, {horarios:o}); }); }
+function setHorario(cid, patch){ mudar(function(s){ var o = Object.assign({}, s.horarios); o[cid] = Object.assign({}, o[cid] || HOR_RH[cid], patch); return Object.assign({}, s, {horarios:o}); }); }
 function limparHorario(cid){ mudar(function(s){ var o = Object.assign({}, s.horarios); delete o[cid]; return Object.assign({}, s, {horarios:o}); }); }
 function prazoDe(cid){ var c = estado.config, st = contato(cid).setor; return (c.prazos[st]!=null ? c.prazos[st] : c.prazoPadrao); }
 
@@ -603,7 +614,7 @@ function setFundo(cid, id){ mudar(function(s){ var u = Object.assign({}, s.usuar
 function fundoDe(cid){ var u = estado.usuarios[cid]; return (u && u.fundo) || "joias-ouro"; }
 function setFoto(cid, url){ mudar(function(s){ var u = Object.assign({}, s.usuarios); u[cid] = Object.assign({}, u[cid], {foto:url}); return Object.assign({}, s, {usuarios:u}); }); }
 // fotos oficiais já salvas no projeto (public/fotos); a troca feita na tela vale por cima delas
-var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg"};
+var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg", f_anabeatrizhessdeoliveira:"fotos/ana-beatriz.jpg"};
 function fotoDe(cid){ var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? (import.meta.env.BASE_URL||"/")+FOTOS_PADRAO[cid] : null; }
 function setOcupado(cid, ligado){
   mudar(function(s){ var o = Object.assign({}, s.ocupado), a = o[cid] || {desde:null, periodos:[]}, agora = Date.now();
@@ -704,4 +715,4 @@ var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:veri
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && import.meta.env.DEV) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
-export { FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };
+export { FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };

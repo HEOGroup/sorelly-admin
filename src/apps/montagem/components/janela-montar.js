@@ -7,7 +7,7 @@ import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe, podeLiberarExcecao } from "@/apps/montagem/domain/equipe";
 import { AVISO_CONFIANCA, ROTULO_FONTE, formatarDataHora, pkDetalhe } from "@/apps/montagem/domain/preferencias-kit";
-import { listagemDe, motivoNaoMonta, nomesEncomendas, pecasPara, semMontador, soEncomendas, ehEncomendas } from "@/apps/montagem/domain/regras";
+import { listagemDe, mesaMaior, motivoNaoMonta, nomesEncomendas, pecasPara, semMontador, soEncomendas, ehEncomendas } from "@/apps/montagem/domain/regras";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { BK } from "@/apps/montagem/lib/format";
 import { RespostaView } from "@/apps/montagem/pages/preferencias-kit/resposta";
@@ -61,6 +61,7 @@ function JanelaMontar(p){
       k.prio && selo("Prioritário", "#E8B84B"),
       k.ultimaHora && selo("Última hora", "#FB923C"),
       grande && selo("Só Encomendas", "#A78BFA", "Kit acima do limite de Encomendas"),
+      mesaMaior(k, s.cfg) && selo("Mesa maior (Agatha)", "#F59E0B", "Venda acima de "+BK(s.cfg.limiteMesaMaior)+": montar só na mesa maior"),
       semMontador(k) && SELO_SEM),
     k.status==="ajuste" && e("p",{className:"rounded-lg bg-[#EF4444]/20 px-2 py-1 text-[12.5px] font-bold text-[#F87171]"}, "Voltou para ajuste: "+k.motivo),
     sup && e("div",{className:"flex items-center justify-center gap-4 text-[12.5px]"},
@@ -68,8 +69,8 @@ function JanelaMontar(p){
       e("span",null, "Venda atual ", e("b",null, k.vendas && k.vendas[0]!==undefined ? BK(k.vendas[0]) : "—"))),
     grande && e("p",{className:"rounded-lg bg-[#A78BFA]/15 px-2 py-1 text-[12px] font-bold text-[#C4B5FD]"}, "Kit acima do limite: só o setor Encomendas monta ("+nomesEncomendas(s)+")."+(k.excecaoEnc ? " Exceção liberada por "+nomeDe(k.excecaoEnc)+"." : "")),
     pecas && e("div",{className:"flex flex-col gap-1 rounded-lg bg-white/5 p-2"},
-      e("b",{className:"text-[12px] uppercase tracking-wide text-white/75"}, "O que enviar · "+pecas.itens.reduce(function(t, x){ return t+x.q; }, 0)+" peças"),
-      e("div",{className:"flex flex-wrap justify-center gap-1"}, pecas.itens.map(function(x){ return e("span",{key:x.nome, className:"rounded-full bg-white/10 px-2 py-0.5 text-[11.5px]"}, e("b",null, x.q), " "+x.nome.toLowerCase()); }))));
+      e("b",{className:"text-[12px] uppercase tracking-wide text-white/75"}, "O que enviar · "+pecas.totalTxt+" peças"),
+      e("div",{className:"flex flex-wrap justify-center gap-1"}, pecas.itens.map(function(x){ return e("span",{key:x.nome, className:"rounded-full bg-white/10 px-2 py-0.5 text-[11.5px]"}, e("b",null, x.txt), " "+x.nome.toLowerCase()); }))));
 
   var colPref = e(Painel,{key:"p", t:"Preferências da revendedora", ic:"list-checks"},
     !prefs ? e("p",{className:"text-[13px] font-semibold text-white/70"}, "Sem preferências informadas")

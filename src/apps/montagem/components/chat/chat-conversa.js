@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — components/chat/chat-conversa.js
 // Tela de uma conversa (estilo WhatsApp): mensagens, áudio, anexos, responder, reagir, fixar, encaminhar, editar, apagar e cobrança de resposta.
 import { tempoCurto as tempoCurtoStore } from "@/apps/montagem/components/chat/chat-ui";
-import { abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, efem, euAgora, fotoDe, fundoDe, horarioDe, situacaoAgora, lerMidia, mencaoAtraso, prazoDe, tempoUtil, tituloDe, useChat, online, MIN, textoPrevia } from "@/apps/montagem/domain/chat-store";
+import { abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, efem, euAgora, fotoDe, fundoDe, lerMidia, mencaoAtraso, prazoDe, tempoUtil, tituloDe, useChat, online, MIN, textoPrevia } from "@/apps/montagem/domain/chat-store";
 import { CONTATOS, contato, presenca, rotuloCurto } from "@/apps/montagem/domain/chat-contatos";
 import { BRL, TAGS_PECA, lerReais, markup, pct } from "@/apps/montagem/domain/preco-pecas";
 import { estiloFundo, tema } from "@/apps/montagem/components/chat/chat-fundos";
@@ -11,7 +11,8 @@ import { use } from "@/apps/montagem/state/context";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { Compositor } from "@/apps/montagem/components/chat/chat-compositor";
-import { InfoConversa, HorarioPessoa } from "@/apps/montagem/components/chat/chat-info";
+import { InfoConversa } from "@/apps/montagem/components/chat/chat-info";
+import { CartaoHorario } from "@/apps/montagem/components/chat/chat-horario";
 import { Avatar, CORES_ESPERA, EtiquetaEspera, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, diaRotulo, duracao, hora, mesmoDia, tamanho, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
@@ -294,27 +295,6 @@ function BarraRepresentantes(p){
             th && th.estado==="aberta" ? e(EtiquetaEspera,{t:th}) : th && th.estado==="aguardando" ? e("span",{className:"shrink-0 text-[11px]", style:{color:"#53bdeb"}}, "aguardando") : th && th.estado==="resolvida" ? e(Ph,{n:"check-circle", s:16, fill:true, style:{color:"#25d366"}}) : null); }))));
 }
 // o grupo Agendamento mostra a barra de representantes em cima; escolhida uma, a conversa dela ocupa a tela
-// Bloco do horário de trabalho da pessoa com quem se conversa: situação agora, dias da semana, entrada/saída e almoço
-var NOMES_DIA = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];
-function diasTexto(d){ var o = d.slice().sort(function(x, y){ return x-y; }); if(o.join()==="1,2,3,4,5") return "Segunda a sexta"; if(o.join()==="1,2,3,4,5,6") return "Segunda a sábado"; return o.map(function(i){ return NOMES_DIA[i]; }).join(", "); }
-function CartaoHorario(p){
-  var ed = useState(false), editando = ed[0], setEditando = ed[1], h = horarioDe(p.cid), sit = situacaoAgora(p.cid), cor = sit.tipo==="trabalhando" ? "#25d366" : sit.tipo==="almoco" ? "#f5c542" : "#8696a0";
-  var difSex = h.dias.indexOf(5)>=0 && (h.sexIni!==h.ini || h.sexFim!==h.fim);
-  var bloco = function(ic, tit, txt){ return e("div",{className:"flex min-w-0 flex-1 flex-col gap-0.5 rounded-lg px-2.5 py-1.5", style:{background:W.campo}},
-    e("span",{className:"flex items-center gap-1 text-[10.5px] font-extrabold uppercase tracking-wide", style:{color:W.ouro}}, e(Ph,{n:ic, s:13, fill:true}), tit),
-    e("span",{className:"truncate text-[13.5px] font-bold"}, txt)); };
-  return e("div",{className:"flex shrink-0 flex-col gap-1.5 px-3 py-2", style:{background:W.painel, borderBottom:"1px solid "+W.borda, borderLeft:"4px solid "+cor}},
-    e("div",{className:"flex items-center gap-2 text-[12.5px]"},
-      e("span",{className:"flex items-center gap-1.5 rounded-full px-2.5 py-0.5 font-bold", style:{background:cor, color:"#0b141a"}}, e(Ph,{n:sit.tipo==="almoco" ? "fork-knife" : "clock", s:14, fill:true}), sit.texto),
-      sit.volta && e("span",{style:{color:W.sec}}, (sit.tipo==="almoco" ? "volta" : "começa")+" às "+sit.volta),
-      e("span",{className:"ml-auto flex items-center gap-1.5 font-bold", style:{color:W.texto}}, e(Ph,{n:"calendar-check", s:15, fill:true, style:{color:W.ouro}}), diasTexto(h.dias)),
-      p.pode && e("button",{onClick:function(){ setEditando(true); }, "aria-label":"Ajustar horário", title:"Ajustar horário", className:"grid size-7 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"pencil-simple", s:15, style:{color:W.sec}}))),
-    e("div",{className:"flex gap-1.5"},
-      bloco("sun-horizon", difSex ? "Seg a qui" : "Dia de trabalho", h.ini+" às "+h.fim),
-      difSex && bloco("sun-horizon", "Sexta", h.sexIni+" às "+h.sexFim),
-      bloco("fork-knife", "Almoço", h.almIni+" às "+h.almFim)),
-    editando && e(Janela,{titulo:"Horário de trabalho", fechar:function(){ setEditando(false); }, largura:440}, e(HorarioPessoa,{cid:p.cid, pode:true})));
-}
 
 function Conversa(p){
   var st = useChat(), rp = useState(null), rep = rp[0], setRep = rp[1];
