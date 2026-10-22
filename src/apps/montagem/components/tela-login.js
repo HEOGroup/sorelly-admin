@@ -30,7 +30,7 @@ function corpoLogin(p){
   var er = useState(""), erro = er[0], setErro = er[1], cr = useState(false), criar = cr[0], setCriar = cr[1], ts = useState(false), teste = ts[0], setTeste = ts[1];
   var entrar = function(ev){ if(ev && ev.preventDefault) ev.preventDefault();
     var pes = acharPessoa(usuario); if(!pes || senha!==SENHA_PADRAO){ setErro("Usuário ou senha incorretos."); return; } p.onEntrar(pes); };
-  var logo = (import.meta.env.BASE_URL||"/")+"logo-sorelly.png";
+  var logo = ("/"||"/")+"logo-sorelly.png";
   return e("div",{className:"flex flex-col bg-[#070707] text-[#fff] "+(p.compacto ? "w-[calc(100%+2rem)] h-[679px] -mx-4 -mt-2 -mb-10 overflow-y-auto" : "w-full min-h-screen"), style:{fontFamily:"inherit"}},
     e("div",{className:"flex flex-col items-center gap-3 px-6 pb-8 pt-10", style:{background:"radial-gradient(ellipse at 50% 35%, #3a2d12 0%, #0b0a08 60%)"}},
       e("img",{src:logo, alt:"Sorelly Joias", draggable:false, className:(p.compacto ? "h-24" : "h-32")+" w-auto select-none"}),

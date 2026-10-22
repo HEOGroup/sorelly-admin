@@ -6,12 +6,12 @@ var lista = function(t){ return String(t || "").split(",").map(function(x){ retu
 function guardado(chave){ try { return localStorage.getItem(chave) || ""; } catch(x){ return ""; } }
 
 function setoresLigados(){
-  var l = lista(guardado("sorelly_setores") || (import.meta.env && import.meta.env.VITE_SETORES_LIGADOS));
+  var l = lista(guardado("sorelly_setores") || (process.env.NEXT_PUBLIC_SETORES_LIGADOS));
   return l.length ? l : null;
 }
 // endereço do admin antigo (passado pelo Marcus em 22/10/2026); pode ser trocado pela variável ou pelo localStorage
 var ADMIN_ANTIGO = "https://admin.sorellyjoias.com.br/";
 function urlAdminAntigo(){
-  return String(guardado("sorelly_admin_antigo") || (import.meta.env && import.meta.env.VITE_ADMIN_ANTIGO_URL) || ADMIN_ANTIGO).trim();
+  return String(guardado("sorelly_admin_antigo") || (process.env.NEXT_PUBLIC_ADMIN_ANTIGO_URL) || ADMIN_ANTIGO).trim();
 }
 export { setoresLigados, urlAdminAntigo };

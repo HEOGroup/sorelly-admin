@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/link-pagamento.js
 // Financeiro → Link de pagamento e maquininhas (ESBOÇO; contexto e regras em LINK-DE-PAGAMENTO.md). Módulo novo: não existe no SorellyAdmin.
 // A revendedora pede um link (app ou WhatsApp), alguém do atendimento (ou a representante) gera, a cliente paga, o valor abate o acerto da revendedora e o comprovante vai no dia seguinte ao grupo da representante.
@@ -14,7 +15,7 @@ import { hojeSP, agoraSP, somaDias, diasEntre } from "./cadastro-leads";
 import { CNPJS0 } from "./cnpjs";
 
 import { ADQ, aplicarTaxasAdq, taxasDaFicha } from "@/apps/montagem/domain/adquirentes";
-var LOCAL = (function(){ try { var m = import.meta.glob("./link-pagamento.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/link-pagamento.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };
@@ -53,7 +54,7 @@ var MAX_PARCELAS = 12;   // limite técnico da tabela de taxas (o limite sem jur
 var PRAZO_PADRAO = {primeira:30, intervalo:30, antecipado:1};   // dias para o crédito sem antecipação (1ª parcela, entre parcelas) e com antecipação
 var CONFIG_PADRAO = {horaLimite:18, minimo:80, parcelaMinima:50, maxParcelasSemJuros:10, faixas:[{ate:80, max:1}, {ate:400, max:4}, {ate:1500, max:6}], validadeHoras:12, tentativasDia:3, antecipaPadrao:true, bonus:{faixas:[], obs:""}};   // bonus.faixas = [{min, valor}]: valor pago no mês >= min dá o bônus do setor (editável em Análises)
 // Lista de maquininhas por representante (19/10/2026): uma linha por máquina física. Dados reais só em domain/maquininhas.local.js (gitignored); sem o arquivo, nada muda.
-var MAQ = (function(){ try { var m = import.meta.glob("./maquininhas.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var MAQ = (function(){ try { var m = globLocal("apps/montagem/domain/maquininhas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var ROTULO_STATUS_FN = function(s){ return ROTULO_STATUS[s] || s; };
 
 // ---------- criação e migração do estado ----------

@@ -45,7 +45,7 @@ function JanelaPix(p){
         e("div",{className:"min-w-0 md:col-span-2"}, e(Rotulo,{t:"Revendedora", id:"pix-o"}), e("input",{id:"pix-o", type:"text", value:origem, onChange:function(ev){ setOrigem(ev.target.value); }, placeholder:"Opcional", className:CAMPO})),
         e("div",{className:"flex items-end"}, e(Botao,{principal:true, desabilitado:!(valor>0) || (contasSocio.length>0 && !conta), onClick:registra}, "Registrar")),
         contasSocio.length>0 && e(CampoSel,{t:"Para onde foi o dinheiro", id:"pix-c", value:conta, cls:"col-span-2 md:col-span-4", onChange:setConta, opcoes:[["", "Escolha a conta"]].concat(contasSocio.map(function(x){ return [x.id, "Pix "+d.nome+" · "+String(x.nome).replace(/^Contas+/i, "")+(x.banco ? " ("+x.banco+")" : "")]; }))})),
-      o.lanc.length ? e(TabelaP,{minW:480, cols:[{t:"Data", w:80},{t:"Revendedora"},{t:"Quem", w:120},{t:"Valor", n:true, w:130},{t:"", w:90}]},
+      o.lanc.length ? e(TabelaP,{minW:580, cols:[{t:"Data", w:80},{t:"Revendedora"},{t:"Quem", w:120},{t:"Valor", n:true, w:130},{t:"", w:90}]},
         o.lanc.slice().reverse().map(function(x){ return e(Tr,{key:x.id}, e(Td,null, br(x.data)), e(Td,null, x.origem || "—"), e(Td,null, x.por), e(Td,{n:true}, BKC(x.valor)),
           e("td",{className:"h-8 border-b border-border px-2 text-right"}, c.edita ? e("button",{type:"button", onClick:function(){ acao(c, "lanc_del", {id:o.id, lancId:x.id}); }, className:"h-7 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Remover") : null)); }))
         : e("p",{className:"rounded-lg border border-border px-4 py-4 text-center text-[13px] text-foreground"}, "Nenhum Pix registrado nesta orientação.")));
@@ -69,7 +69,7 @@ function AbaOrient(p){
       e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Revendedora", id:"cp-orig"}), e("input",{id:"cp-orig", type:"text", value:origem, onChange:function(ev){ setOrigem(ev.target.value); }, placeholder:"Opcional", className:CAMPO})),
       e("div",{className:"col-span-2 min-w-0 md:col-span-4"},
         sug.length===0 ? e("p",{className:"rounded-lg border border-border px-4 py-3 text-center text-[13px] text-foreground"}, "Nenhuma orientação em aberto. Crie uma orientação abaixo.") :
-        e(TabelaP,{minW:640, cols:[{t:"Destino"},{t:"Tipo", w:170},{t:"Até", w:80},{t:"Falta", n:true, w:130},{t:"", w:210}]},
+        e(TabelaP,{minW:780, cols:[{t:"Destino"},{t:"Tipo", w:170},{t:"Até", w:80},{t:"Falta", n:true, w:130},{t:"", w:210}]},
           sug.slice(0, 6).map(function(s, i){ var d = destinoDe(cp, s.o.destinoId);
             return e(Tr,{key:s.o.id}, e(Td,{forte:true}, (i===0 ? "★ " : "")+d.nome), e(Td,null, tipoNome(d.tipo)), e(Td,{cor:s.atrasada ? "text-warning" : ""}, br(s.o.ate)), e(Td,{n:true}, BKC(s.falta)),
               e("td",{className:"h-8 border-b border-border px-2 text-right"}, e("button",{type:"button", disabled:!(restante>0), onClick:function(){ direcionar(s); }, className:"h-7 max-w-full truncate rounded-md border px-2 text-[12px] "+(i===0 ? "border-primary bg-primary/20 text-primary" : "border-border text-foreground")+(restante>0 ? " hover:bg-white/10" : " opacity-50")}, restante>0 ? "Direcionar "+BKC(Math.min(restante, s.falta)) : "Digite o valor"))); })))),
@@ -81,7 +81,7 @@ function AbaOrient(p){
       e("div",{className:"flex items-end md:justify-end"}, e(Botao,{principal:true, desabilitado:!nova.destinoId || !(nova.valor>0), onClick:function(){ acao(c, "orient_add", {destinoId:nova.destinoId, valor:nova.valor, ate:nova.ate, obs:nova.obs}); setNova({valor:0, obs:""}); }}, "Criar orientação"))),
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"}, e(Segmentado,{opcoes:[["aberta","Em aberto"],["concluida","Concluídas"],["cancelada","Canceladas"],["todas","Todas"]], atual:filtro, onMudar:setFiltro}), e("span",{className:"text-[13px] text-foreground"}, lista.length+(lista.length===1 ? " orientação" : " orientações"))),
     lista.length===0 ? e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhuma orientação neste filtro.") :
-    e(TabelaP,{minW:960, cols:[{t:"Destino"},{t:"Tipo", w:170},{t:"Até", w:80},{t:"Valor", n:true, w:120},{t:"Direcionado", n:true, w:120},{t:"Falta", n:true, w:120},{t:"Situação", w:100},{t:"", w:c.edita ? 250 : 0}].filter(function(x){ return x.w!==0; })},
+    e(TabelaP,{minW:1140, cols:[{t:"Destino"},{t:"Tipo", w:170},{t:"Até", w:80},{t:"Valor", n:true, w:120},{t:"Direcionado", n:true, w:120},{t:"Falta", n:true, w:120},{t:"Situação", w:100},{t:"", w:c.edita ? 250 : 0}].filter(function(x){ return x.w!==0; })},
       lista.map(function(o){ var d = destinoDe(cp, o.destinoId), sit = situacaoDe(o, hoje), falta = faltaDe(o);
         return e(Tr,{key:o.id, apagado:o.status!=="aberta"}, e(Td,{forte:true, title:o.obs ? d.nome+" · "+o.obs : d.nome}, d.nome), e(Td,null, tipoNome(d.tipo)), e(Td,null, br(o.ate)), e(Td,{n:true}, BKC(o.valor)), e(Td,{n:true}, BKC(direcionado(o))), e(Td,{n:true}, falta>0.004 ? BKC(falta) : "—"), e(Td,{cor:sit[1]}, sit[0]),
           c.edita && e("td",{className:"h-8 border-b border-border px-2"}, e("div",{className:"flex items-center justify-end gap-1.5"},

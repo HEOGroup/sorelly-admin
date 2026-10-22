@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.13.0", data:"2026-10-22", titulo:"Migração para Next.js (servidor dentro do sistema)", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"O sistema saiu do Vite e passou para Next.js 14, com o servidor (login, estado dos módulos, Rotina do dia, DevMaster) dentro do mesmo projeto, em app/api. Telas, regras e dados ficaram iguais: as 148 telas foram abertas uma a uma, sem erro. O projeto antigo ficou inteiro na pasta backup."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Variáveis da tela passaram de VITE_* para NEXT_PUBLIC_*. Para ligar o login e a gravação no servidor: NEXT_PUBLIC_API_URL=/api."},
+  ]},
+  {v:"0.12.30", data:"2026-10-22", titulo:"Financeiro: menu estilo DevMaster", itens:[
+    {tipo:"melhoria", area:"Financeiro · Navegação", txt:"Menu do Financeiro refeito no estilo DevMaster (opção 3 que o Marcus aprovou): palavras em texto, listas que abrem alinhadas (1ª embaixo da palavra, sublista colada ao lado na mesma linha, linhas de 30 px com divisória), abas das telas abertas (máx. 5) e busca de tela para escrever e achar. Voltaram as 11 palavras originais; Análise de custos abre direto, com Sorelly/Família escolhidos dentro da tela. Palavras que não cabem vão para Mais."},
+  ]},
   {v:"0.12.29", data:"2026-10-22", titulo:"Pagamentos (Controle) no padrão do Financeiro", itens:[
     {tipo:"melhoria", area:"Financeiro · Pagamentos", txt:"Tela refeita sem cores soltas nem cartões em degradê: faixa de totais, abas visíveis (Orientações, Atendimento, Destinos) e tabelas no padrão. Orientações: 'Chegou um Pix?' mostra o destino sugerido em tabela com botão Direcionar; nova orientação em bloco de campos alinhados; cada orientação tem janela de Pix (registrar e remover), situação e excluir. Atendimento: mesma conferência de pagamentos, com cores calmas (amarelo só em 'falta definir', verde em conferido) e textos em branco. Destinos: busca, tipo, novo destino e lista com Ativo."},
   ]},

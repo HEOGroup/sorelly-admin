@@ -23,7 +23,7 @@ function guardarMidia(url){
   try{ midiasSalvas[k] = url; localStorage.setItem(CHAVE_MIDIA, JSON.stringify(midiasSalvas)); }catch(x){ delete midiasSalvas[k]; }   // cheio: fica só até recarregar
   return k;
 }
-function lerMidia(k){ if(k && String(k).indexOf("fotos/")===0) return (import.meta.env.BASE_URL||"/")+k; return midiasMem[k] || midiasSalvas[k] || null; }
+function lerMidia(k){ if(k && String(k).indexOf("fotos/")===0) return ("/"||"/")+k; return midiasMem[k] || midiasSalvas[k] || null; }
 
 // ---------- dados de demonstração ----------
 function semear(){
@@ -615,7 +615,7 @@ function fundoDe(cid){ var u = estado.usuarios[cid]; return (u && u.fundo) || "j
 function setFoto(cid, url){ mudar(function(s){ var u = Object.assign({}, s.usuarios); u[cid] = Object.assign({}, u[cid], {foto:url}); return Object.assign({}, s, {usuarios:u}); }); }
 // fotos oficiais já salvas no projeto (public/fotos); a troca feita na tela vale por cima delas
 var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg", f_anabeatrizhessdeoliveira:"fotos/ana-beatriz.jpg"};
-function fotoDe(cid){ var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? (import.meta.env.BASE_URL||"/")+FOTOS_PADRAO[cid] : null; }
+function fotoDe(cid){ var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? ("/"||"/")+FOTOS_PADRAO[cid] : null; }
 function setOcupado(cid, ligado){
   mudar(function(s){ var o = Object.assign({}, s.ocupado), a = o[cid] || {desde:null, periodos:[]}, agora = Date.now();
     if(ligado && !a.desde) a = {desde:agora, periodos:a.periodos};
@@ -714,5 +714,5 @@ function consolidadoSetores(filtro){
 var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, pendencia:pendenciaDe, markPending:marcarPendente,
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
-if(typeof window!=="undefined" && import.meta.env.DEV) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
+if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
 export { FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };

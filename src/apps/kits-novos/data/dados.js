@@ -10,7 +10,7 @@
 // preenchido depois que carregarDados() resolve.
 export let DADOS = [];
 
-const ARQUIVO = import.meta.env.BASE_URL + "dados/kits-novos-curitiba.json";
+const ARQUIVO = "/" + "dados/kits-novos-curitiba.json";
 
 let promessa = null;
 

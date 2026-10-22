@@ -1,0 +1,65 @@
+/* Ícones Phosphor: só este app usa. Ficam aqui, e não no index.html,
+   para o app de kits novos (que desenha SVG inline) não baixar as fontes. */
+@import url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/duotone/style.css");
+@import url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css");
+
+/* Único token de tema em que o app de montagem/bipagem difere do de kits novos.
+   No HTML original: "textos secundários quase brancos, a pedido".
+   Escopado no container do app para os dois conviverem no mesmo projeto. */
+/* A classe entra no <html> enquanto este app está montado (ver App.js). */
+html.dark.app-montagem { --muted-foreground: oklch(0.86 0 0); }
+
+/* Rolagem lateral do gráfico de crescimento de revendedoras, só quando a janela (história completa) nem no fio mínimo cabe inteira */
+/* Firefox não tem ::-webkit-scrollbar; no Chrome, scrollbar-color desligaria o estilo abaixo, por isso fica só aqui */
+@supports (-moz-appearance: none) { .rolagem-grafico { scrollbar-width: thin; scrollbar-color: #D9A63A color-mix(in oklch, var(--muted) 70%, transparent); } }
+.rolagem-grafico::-webkit-scrollbar { height: 10px; }
+.rolagem-grafico::-webkit-scrollbar-track { background: color-mix(in oklch, var(--muted) 70%, transparent); border-radius: 9999px; }
+.rolagem-grafico::-webkit-scrollbar-thumb { background: linear-gradient(90deg, #B8862B, #E8B84B); border-radius: 9999px; border: 2px solid transparent; background-clip: padding-box; }
+.rolagem-grafico::-webkit-scrollbar-thumb:hover { background: linear-gradient(90deg, #C9973A, #F1C95C); background-clip: padding-box; }
+
+  /* ── Padrão visual dos apps (montadora, bipagem, representante, revendedora), conforme os prints do app da representante ──
+     conteúdo claro com cartões brancos; o primeiro bloco da tela vira o cabeçalho escuro */
+  .app-claro .barra-status { color:#fff; }
+  .app-claro #app-screen > :first-child { background:#0D0D0F; color:#fff; margin:-8px -16px 14px; padding:8px 16px 18px; border-radius:0 0 26px 26px; }
+  .app-claro #app-screen > :first-child .text-\[\#8E8E93\] { color:#A1A1AA; }
+  .app-claro #app-screen > :first-child .bg-\[\#1C1C1E\] { background:#26262B; border:0; box-shadow:none; }
+  .app-claro #app-screen > :first-child .text-amber-200 { color:#F3D98B; }
+  .app-claro .bg-\[\#1C1C1E\] { background:#FFFFFF; border:1px solid #E5E7EB; box-shadow:0 1px 2px rgba(17,24,39,.04); }
+  .app-claro .bg-black\/50, .app-claro .bg-black\/40 { background:#F4F5F7; }
+  .app-claro .bg-white\/10 { background:#F1F2F4; color:#1F2937; }
+  .app-claro .text-white, .app-claro .text-white\/80, .app-claro .text-white\/75 { color:#1F2937; }
+  .app-claro .text-white\/70, .app-claro .text-white\/60 { color:#4B5563; }
+  .app-claro .text-white\/25, .app-claro .text-white\/20 { color:#D1D5DB; }
+  .app-claro .text-\[\#8E8E93\] { color:#6B7280; }
+  .app-claro .text-amber-200, .app-claro .text-amber-300 { color:#A67C12; }
+  .app-claro .text-emerald-200, .app-claro .text-emerald-300 { color:#15803D; }
+  .app-claro .text-rose-200, .app-claro .text-rose-300 { color:#DC2626; }
+  .app-claro .text-sky-300 { color:#2563EB; }
+  .app-claro .text-violet-200, .app-claro .text-violet-300 { color:#7C3AED; }
+  .app-claro .bg-amber-400\/15, .app-claro .bg-amber-400\/20 { background:#FEF5DC; }
+  .app-claro .bg-emerald-400\/10, .app-claro .bg-emerald-400\/15, .app-claro .bg-emerald-400\/20 { background:#E7F6EC; }
+  .app-claro .bg-rose-500\/15, .app-claro .bg-rose-500\/25 { background:#FDECEC; }
+  .app-claro .bg-violet-500\/15 { background:#F1EAFE; }
+  .app-claro .border-white\/5, .app-claro .border-white\/10 { border-color:#EEF0F2; }
+  .app-claro [class*="ring-white"] { --tw-ring-color:#E5E7EB; }
+  .app-claro textarea, .app-claro input:not([type=checkbox]) { background:#F4F5F7; color:#111827; }
+  .app-claro .placeholder\:text-\[\#8E8E93\]::placeholder { color:#9CA3AF; }
+  /* Apps no padrão dos prints: cores sólidas e vivas, sem degradê */
+  .app-claro [class*="bg-linear"] { background-image:none !important; }
+  .app-claro [class*="from-[#B8862B]"], .app-claro [class*="from-amber-300"] { background-color:#C9A13B !important; }
+  .app-claro [class*="from-emerald-400"], .app-claro [class*="from-emerald-500"] { background-color:#16A34A !important; }
+  .app-claro [class*="from-sky-500"] { background-color:#2563EB !important; }
+  .app-claro [class*="from-amber-500"] { background-color:#C9A13B !important; }
+  .app-claro [class*="from-rose-500"] { background-color:#DC2626 !important; }
+  .app-claro [class*="from-[#B8862B]"], .app-claro [class*="from-[#B8862B]"] *, .app-claro [class*="from-emerald-4"], .app-claro [class*="from-emerald-4"] *,
+  .app-claro [class*="from-sky-500"], .app-claro [class*="from-sky-500"] *, .app-claro [class*="from-amber-500"], .app-claro [class*="from-amber-500"] *,
+  .app-claro [class*="from-rose-500"], .app-claro [class*="from-rose-500"] *, .app-claro .txt-branco, .app-claro .txt-branco * { color:#fff !important; }
+  .app-claro [class*="from-sky-500"], .app-claro [class*="from-amber-500"], .app-claro [class*="from-rose-500"], .app-claro [class*="from-emerald-500"] { --tw-ring-color:transparent; box-shadow:0 2px 6px rgba(17,24,39,.12); }
+  .app-claro [class*="shadow-amber-500"] { box-shadow:0 4px 12px rgba(201,161,59,.35) !important; }
+
+/* Registro de ação (components/aviso.js): sobe e aparece */
+@keyframes toast-sobe { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.toast-sobe { animation: toast-sobe .22s ease-out; }
+
+/* App da representante, tela Comissões: textos brancos sobre cartões escuros/coloridos (o tema claro do app muda só a classe text-white) */
+.cr-b { color:#fff; } .cr-b90 { color:rgba(255,255,255,.9); } .cr-b80 { color:rgba(255,255,255,.8); } .cr-b70 { color:rgba(255,255,255,.7); } .cr-b60 { color:rgba(255,255,255,.6); }

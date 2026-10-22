@@ -1,0 +1,537 @@
+<title>Estudo de Design System Sorelly</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Serif:wght@500;600&display=swap">
+<style>
+/* Layout: coluna de leitura de ~70ch com exemplos vivos em caixas de largura cheia; sumário fixo no topo em telas largas */
+:root{
+  --bg:#f7f6f3; --surface:#ffffff; --surface-2:#f0eee9; --fg:#1d1c1a; --fg-2:#5b5852; --fg-3:#8a867d;
+  --line:#e2dfd7; --line-2:#cdc9bf;
+  --accent:#2457a8; --accent-bg:#e8eef9;
+  --in:#1b7a45; --in-bg:#e6f3ea; --out:#b3261e; --out-bg:#f8e7e5; --warn:#8a5a00; --warn-bg:#fbf0d6;
+  --gold:#b8862b;
+  --font-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  --font-display:"IBM Plex Serif",Georgia,serif;
+  --radius:6px; --measure:70ch;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141518; --surface:#1c1e23; --surface-2:#24272d; --fg:#ececea; --fg-2:#b4b3ae; --fg-3:#84837e;
+  --line:#2e3138; --line-2:#3c4048; --accent:#7ea6ea; --accent-bg:#1f2b43; --in:#5fcf8a; --in-bg:#17301f; --out:#f28b84; --out-bg:#3a1d1b; --warn:#f0c15a; --warn-bg:#3a2e12; --gold:#e8b84b; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#141518; --surface:#1c1e23; --surface-2:#24272d; --fg:#ececea; --fg-2:#b4b3ae; --fg-3:#84837e;
+  --line:#2e3138; --line-2:#3c4048; --accent:#7ea6ea; --accent-bg:#1f2b43; --in:#5fcf8a; --in-bg:#17301f; --out:#f28b84; --out-bg:#3a1d1b; --warn:#f0c15a; --warn-bg:#3a2e12; --gold:#e8b84b; color-scheme:dark }
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--font-body);font-size:16px;line-height:1.6;margin:0;padding-block:0 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1040px;margin:0 auto}
+header.hero{padding:40px 0 24px;border-bottom:1px solid var(--line)}
+.eyebrow{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-3);font-weight:600}
+h1{font-family:var(--font-display);font-weight:600;font-size:clamp(28px,4vw,40px);line-height:1.15;margin:8px 0 12px;text-wrap:balance}
+h2{font-family:var(--font-display);font-weight:600;font-size:26px;line-height:1.2;margin:56px 0 12px;padding-top:16px;border-top:1px solid var(--line);text-wrap:balance}
+h3{font-size:18px;font-weight:600;margin:28px 0 8px;text-wrap:balance}
+h4{font-size:14px;font-weight:600;margin:16px 0 6px;color:var(--fg-2);text-transform:uppercase;letter-spacing:.06em}
+p,li{max-width:var(--measure)}
+p{margin:8px 0}
+ul,ol{padding-left:22px;margin:8px 0}
+li{margin:4px 0}
+a{color:var(--accent)}
+code{font-family:var(--font-mono);font-size:.92em;background:var(--surface-2);padding:1px 5px;border-radius:4px}
+.lead{font-size:18px;color:var(--fg-2);max-width:var(--measure)}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:4px 20px;padding:16px 0;margin:0;list-style:none}
+.toc li{margin:0;max-width:none}
+.toc a{text-decoration:none;color:var(--fg);display:block;padding:4px 0;border-bottom:1px dotted var(--line-2)}
+.toc a span{color:var(--fg-3);font-family:var(--font-mono);font-size:12px;margin-right:8px}
+.ex{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:16px;margin:16px 0;max-width:none}
+.ex .cap{font-size:12px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:10px}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:16px}
+.duo>div{min-width:0}
+.tag{display:inline-block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:999px;margin-bottom:8px}
+.tag.ruim{background:var(--out-bg);color:var(--out)}
+.tag.bom{background:var(--in-bg);color:var(--in)}
+.note{border-left:3px solid var(--accent);background:var(--accent-bg);padding:10px 14px;border-radius:0 var(--radius) var(--radius) 0;margin:14px 0;max-width:var(--measure)}
+.note b{color:var(--accent)}
+.src{font-size:13px;color:var(--fg-3);max-width:var(--measure)}
+.src a{color:var(--fg-2)}
+/* tabelas de exemplo */
+table{border-collapse:collapse;width:100%;font-size:14px}
+.tbl th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line-2);text-align:left;background:var(--surface-2)}
+.tbl td{padding:8px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl .n,.tbl th.n{text-align:right;font-family:var(--font-mono);font-variant-numeric:tabular-nums}
+.tbl tr.tot td{font-weight:600;border-top:2px solid var(--line-2);background:var(--surface-2)}
+.in{color:var(--in)} .out{color:var(--out)} .warn{color:var(--warn)}
+.tblx{overflow-x:auto}
+/* o "antes": centralizado, degradê, cores soltas */
+.ruimtbl th,.ruimtbl td{text-align:center;padding:8px}
+.ruimtbl th{background:linear-gradient(90deg,#b8862b,#e8b84b,#f1e4c6);color:#1b1409}
+.ruimtbl td{border-bottom:1px solid var(--line)}
+.ruimcard{border-radius:14px;padding:14px;text-align:center;background:linear-gradient(135deg,#2457a866,#2457a811);box-shadow:inset 0 0 0 1px #2457a8aa;margin:6px 0}
+.ruimcard b{font-size:24px;display:block;font-family:var(--font-mono)}
+/* componentes de exemplo (o "depois") */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.kpi{background:var(--surface-2);border-radius:var(--radius);padding:10px 12px}
+.kpi .l{font-size:11px;color:var(--fg-3);text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+.kpi .v{font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:20px;font-weight:500;margin-top:2px;white-space:nowrap}
+.kpi .s{font-size:12px;color:var(--fg-3)}
+.seg{display:inline-flex;border:1px solid var(--line-2);border-radius:var(--radius);overflow:hidden}
+.seg button{background:transparent;border:0;border-right:1px solid var(--line-2);padding:6px 12px;font:inherit;font-size:13px;color:var(--fg-2);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line-2)}
+.tabs button{background:none;border:0;border-bottom:2px solid transparent;padding:8px 12px;font:inherit;font-size:14px;color:var(--fg-2);cursor:pointer;margin-bottom:-1px}
+.tabs button[aria-selected="true"]{color:var(--fg);border-bottom-color:var(--accent);font-weight:600}
+.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);border-radius:999px;padding:3px 10px;font-size:13px;background:var(--surface)}
+.chip.on{background:var(--accent-bg);border-color:var(--accent);color:var(--accent)}
+.badge{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px}
+.badge.ok{background:var(--in-bg);color:var(--in)} .badge.bad{background:var(--out-bg);color:var(--out)} .badge.warn{background:var(--warn-bg);color:var(--warn)} .badge.neu{background:var(--surface-2);color:var(--fg-2)}
+.dot{width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.sq{width:8px;height:8px;background:currentColor;display:inline-block}
+.tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-bottom:9px solid currentColor;display:inline-block}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line-2);background:var(--surface);color:var(--fg);padding:7px 14px;border-radius:var(--radius);font:inherit;font-size:14px;cursor:pointer}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.btn.ghost{border-color:transparent;color:var(--fg-2)}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.toggle{display:inline-flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.toggle i{width:36px;height:20px;border-radius:999px;background:var(--line-2);position:relative;display:inline-block;transition:background .15s}
+.toggle i::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+.toggle input{position:absolute;opacity:0;width:0;height:0}
+.toggle input:checked+i{background:var(--in)} .toggle input:checked+i::after{left:18px}
+.toggle input:focus-visible+i{outline:2px solid var(--accent);outline-offset:2px}
+.crumb{font-size:13px;color:var(--fg-3)} .crumb a{color:var(--fg-2);text-decoration:none} .crumb span{margin:0 6px}
+.filterbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:8px;border:1px solid var(--line);border-radius:var(--radius);background:var(--surface-2)}
+.filterbar select,.filterbar input{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-2);border-radius:var(--radius);background:var(--surface);color:var(--fg);height:32px}
+.shell{display:grid;grid-template-columns:180px 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:220px;font-size:13px}
+.shell .side{background:var(--surface-2);border-right:1px solid var(--line);padding:10px}
+.shell .side div{padding:6px 8px;border-radius:4px;color:var(--fg-2)}
+.shell .side div.on{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.shell .top{display:flex;gap:2px;padding:8px;border-bottom:1px solid var(--line);background:var(--surface)}
+.shell .top span{padding:5px 10px;border-radius:4px;color:var(--fg-2)}
+.shell .top span.on{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.shell .main{padding:10px}
+.shell .status{border-top:1px solid var(--line);padding:5px 10px;font-size:12px;color:var(--fg-3);display:flex;gap:14px;background:var(--surface-2)}
+@media (max-width:560px){.shell{grid-template-columns:1fr}.shell .side{display:flex;flex-wrap:wrap;gap:4px;border-right:0;border-bottom:1px solid var(--line)}}
+.modal{background:var(--surface);border:1px solid var(--line-2);border-radius:8px;padding:16px;max-width:380px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.toast{display:inline-flex;align-items:center;gap:10px;background:var(--fg);color:var(--bg);padding:10px 14px;border-radius:var(--radius);font-size:14px}
+.skel{height:12px;border-radius:4px;background:linear-gradient(90deg,var(--surface-2),var(--line),var(--surface-2));background-size:200% 100%;animation:sk 1.2s infinite;margin:8px 0}
+@keyframes sk{0%{background-position:200% 0}100%{background-position:-200% 0}}
+@media (prefers-reduced-motion:reduce){.skel{animation:none}}
+.empty{border:1px dashed var(--line-2);border-radius:8px;padding:24px;text-align:center;color:var(--fg-2)}
+.empty b{display:block;color:var(--fg);font-size:15px;margin-bottom:4px}
+.swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px}
+.sw{border-radius:var(--radius);padding:10px;border:1px solid var(--line);font-size:12px}
+.sw b{display:block;font-family:var(--font-mono);font-size:11px;margin-top:4px}
+.scale{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.scale div{background:var(--accent-bg);border:1px solid var(--accent);border-radius:3px}
+.spacers{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end}
+.spacers div{background:var(--accent-bg);border:1px dashed var(--accent)}
+.spacers span{display:block;font-family:var(--font-mono);font-size:11px;color:var(--fg-3);text-align:center;margin-top:4px}
+.type p{margin:4px 0;max-width:none}
+.dark-ex{background:#121212;border-radius:8px;padding:14px;color:#e1e1e1;font-size:13px}
+.dark-ex .lv{padding:8px 10px;border-radius:4px;margin:6px 0;display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:12px}
+.glossary dt{font-weight:600;margin-top:14px}
+.glossary dd{margin:2px 0 0 0;color:var(--fg-2);max-width:var(--measure)}
+.rules{counter-reset:r;list-style:none;padding:0}
+.rules li{counter-increment:r;padding:10px 12px 10px 44px;border:1px solid var(--line);border-radius:var(--radius);margin:6px 0;position:relative;max-width:none;background:var(--surface)}
+.rules li::before{content:counter(r,decimal-leading-zero);position:absolute;left:12px;top:10px;font-family:var(--font-mono);font-size:12px;color:var(--accent);font-weight:600}
+.rules b{display:block}
+.hid{display:none}
+.kbd{font-family:var(--font-mono);font-size:12px;border:1px solid var(--line-2);border-bottom-width:2px;border-radius:4px;padding:0 5px;background:var(--surface-2)}
+footer{margin-top:48px;border-top:1px solid var(--line);padding-top:16px;font-size:13px;color:var(--fg-3)}
+</style>
+
+<div class="wrap">
+<header class="hero">
+  <div class="eyebrow">Sorelly Admin · estudo para leitura · 22/10/2026</div>
+  <h1>Estudo de Design System: como os grandes sistemas são desenhados e o que a Sorelly deve copiar</h1>
+  <p class="lead">Um guia para ler antes de reorganizar o sistema inteiro. Cada regra vem de um sistema de design publicado (IBM Carbon, Shopify Polaris, Atlassian, Material, GOV.UK, Stripe) ou de um estudo de usabilidade, com exemplo ao vivo e a ligação com o que está errado hoje nas nossas telas.</p>
+  <ol class="toc">
+    <li><a href="#o-que-e"><span>01</span>O que é um design system</a></li>
+    <li><a href="#vocabulario"><span>02</span>Vocabulário: o nome de cada peça</a></li>
+    <li><a href="#fundacoes"><span>03</span>Fundações: tokens, cor, tipo, espaço</a></li>
+    <li><a href="#escuro"><span>04</span>Tema escuro bem feito</a></li>
+    <li><a href="#tabelas"><span>05</span>Tabelas: a peça principal</a></li>
+    <li><a href="#escolha"><span>06</span>Cartão, lista, tabela ou grade</a></li>
+    <li><a href="#navegacao"><span>07</span>Navegação e arquitetura</a></li>
+    <li><a href="#filtros"><span>08</span>Filtros e período</a></li>
+    <li><a href="#paineis"><span>09</span>Painéis e indicadores</a></li>
+    <li><a href="#feedback"><span>10</span>Estados, avisos e erros</a></li>
+    <li><a href="#formularios"><span>11</span>Formulários</a></li>
+    <li><a href="#ideologias"><span>12</span>Ideologias: as escolas de pensamento</a></li>
+    <li><a href="#acessibilidade"><span>13</span>Acessibilidade</a></li>
+    <li><a href="#diagnostico"><span>14</span>Diagnóstico da Sorelly hoje</a></li>
+    <li><a href="#regras"><span>15</span>As 20 regras propostas</a></li>
+    <li><a href="#referencias"><span>16</span>Onde estudar mais</a></li>
+  </ol>
+</header>
+
+<h2 id="o-que-e">01 · O que é um design system</h2>
+<p>Um design system é um conjunto de decisões tomadas <b>uma vez</b> e repetidas em todas as telas: quais cores existem e o que cada uma significa, quais tamanhos de letra, quanto espaço entre as coisas, como é uma tabela, um botão, um aviso. A Atlassian define a unidade básica, o <i>token</i>, como "um par nome e valor que representa uma decisão de design pequena e repetível" (<a href="https://atlassian.design/foundations/design-tokens">Atlassian</a>).</p>
+<p>O problema que você sente hoje ("cada tela de um jeito, só dropdown e degradê") é exatamente o que acontece quando as decisões são tomadas tela por tela. A solução não é desenhar melhor cada tela: é parar de decidir tela por tela.</p>
+<div class="note"><b>Camadas de um design system.</b> 1) Fundações: tokens de cor, tipografia, espaço, raio, elevação. 2) Componentes: botão, tabela, aba, filtro, aviso, cada um com regra de quando usar. 3) Padrões: como montar uma tela inteira (lista, detalhe, painel, formulário). 4) Conteúdo: como escrever rótulos, erros e títulos. 5) Documentação viva: a tela de referência que todo mundo copia.</div>
+<p>Dois jeitos de encarar: a IBM, a Shopify e a Atlassian publicam sistemas enormes e documentados, com equipe dedicada. O Linear, por outro lado, diz que "não tem equipe de design system" e mantém um sistema simples, "principalmente cores, tipo e componentes básicos", porque "o app em si é o design de verdade" (<a href="https://x.com/karrisaarinen/status/1715085201653805116">Karri Saarinen, Linear</a>). Para a Sorelly, o caminho do Linear é o certo: poucas regras, bem fixas, e uma tela de referência que é o próprio sistema.</p>
+
+<h2 id="vocabulario">02 · Vocabulário: o nome de cada peça</h2>
+<p>Você disse que só conhece dropdown e degradê. Aqui estão as peças que todo sistema usa, com exemplo real e a regra de quando usar. Saber o nome certo é metade do caminho, porque aí você consegue pedir "quero segmented control, não dropdown".</p>
+
+<h3>Peças para escolher entre opções</h3>
+<div class="ex">
+  <div class="cap">Segmented control · 2 a 5 opções, sempre visíveis, trocam a visão do mesmo conteúdo</div>
+  <div class="seg" role="group" aria-label="Visão">
+    <button type="button" aria-pressed="true" data-seg="fat">Faturamento</button>
+    <button type="button" aria-pressed="false" data-seg="con">Contas a pagar</button>
+    <button type="button" aria-pressed="false" data-seg="vs">Faturamento vs Contas</button>
+  </div>
+  <p style="font-size:13px;color:var(--fg-2);margin-top:8px" id="segout">Mostrando: Faturamento.</p>
+</div>
+<div class="ex">
+  <div class="cap">Tabs (abas) · seções independentes de uma mesma tela, cada uma é um destino</div>
+  <div class="tabs" role="tablist">
+    <button role="tab" aria-selected="true">Quando vence</button><button role="tab" aria-selected="false">Por natureza</button><button role="tab" aria-selected="false">Pagas</button><button role="tab" aria-selected="false">Lista de títulos</button>
+  </div>
+</div>
+<div class="ex">
+  <div class="cap">Dropdown (lista suspensa) · 6 ou mais opções, ou rótulos longos. Esconde as opções: use só quando não cabem</div>
+  <select aria-label="Mês" style="font:inherit;font-size:14px;padding:6px 10px;border:1px solid var(--line-2);border-radius:6px;background:var(--surface);color:var(--fg)"><option>Outubro/2026</option><option>Setembro/2026</option><option>Agosto/2026</option><option>Julho/2026</option></select>
+</div>
+<div class="ex">
+  <div class="cap">Chips (fichas) · várias opções ao mesmo tempo, filtros ligados e desligados</div>
+  <span class="chip on">CNPJ 34 ✕</span> <span class="chip on">CNPJ 59 ✕</span> <span class="chip">CNPJ 46</span> <span class="chip">CNPJ 67</span> <span class="chip">Por fora</span>
+</div>
+<div class="ex">
+  <div class="cap">Toggle (chave) · uma configuração ligada ou desligada, vale na hora</div>
+  <label class="toggle"><input type="checkbox" id="tg1" checked><i></i> Mostrar contas bloqueadas</label>
+</div>
+<p class="src">Regras de escolha entre segmented control, tabs, dropdown, toggle e chips: <a href="https://dx-playbook-prev.toyota-europe.com/cds/components/forms/segmented-control/">Toyota CDS</a>, <a href="https://spark.genesys.com/latest/components/forms-and-inputs/segmented-control/usage-PLofObXx">Genesys Spark</a>, <a href="https://modus.trimble.com/components/in-field/segmented-controls/">Trimble Modus</a>.</p>
+
+<h3>Peças de status e identificação</h3>
+<div class="ex">
+  <div class="cap">Badge (etiqueta de estado) · cor + forma + palavra, nunca só a cor</div>
+  <span class="badge ok"><i class="dot"></i>Pago</span> &nbsp; <span class="badge warn"><i class="tri"></i>Vence hoje</span> &nbsp; <span class="badge bad"><i class="sq"></i>Atrasado 12 dias</span> &nbsp; <span class="badge neu">Fechado 🔒</span>
+  <p class="src" style="margin-top:10px">A IBM usa "ícone, forma, cor e rótulo descritivo juntos", e as formas servem para "varrer grandes quantidades de dados" em tabelas. E adverte: sem ação a tomar, use texto simples em vez de indicador (<a href="https://www.carbondesignsystem.com/patterns/status-indicator-pattern">Carbon, status indicator</a>).</p>
+</div>
+<div class="ex">
+  <div class="cap">Breadcrumb (trilha) · onde a pessoa está na hierarquia; a página atual não é link</div>
+  <div class="crumb"><a href="#">Financeiro</a><span>/</span><a href="#">Saídas</a><span>/</span><a href="#">Contas a pagar</a><span>/</span>Outubro 2026</div>
+  <p class="src" style="margin-top:8px">Atlassian: breadcrumbs servem a "experiências hierárquicas de página inteira", e a página atual fica sem link (<a href="https://developer.atlassian.com/platform/forge/ui-kit/components/breadcrumbs/">Atlassian Forge</a>).</p>
+</div>
+
+<h3>Peças que abrem por cima da tela</h3>
+<div class="duo">
+  <div class="ex">
+    <div class="cap">Modal (diálogo) · interrompe para uma decisão curta; centralizado, com uma ação principal</div>
+    <div class="modal"><b>Destravar setembro?</b><p style="font-size:14px;color:var(--fg-2)">Os valores do mês voltam a aceitar edição. Você pode travar de novo depois.</p><div style="display:flex;gap:8px;justify-content:flex-end"><button class="btn ghost" type="button">Cancelar</button><button class="btn pri" type="button">Destravar</button></div></div>
+  </div>
+  <div class="ex">
+    <div class="cap">Drawer / side sheet (gaveta lateral) · detalhe de um item sem sair da lista; usar com moderação</div>
+    <div style="border:1px solid var(--line-2);border-radius:8px;overflow:hidden;display:grid;grid-template-columns:1fr 150px;min-height:120px;font-size:12px"><div style="padding:10px;color:var(--fg-3)">lista de títulos…</div><div style="border-left:1px solid var(--line-2);background:var(--surface-2);padding:10px"><b>Boleto Pontual</b><div>Vence 24/10</div><div class="n" style="font-family:var(--font-mono)">R$ 7.158,53</div><div style="margin-top:8px"><span class="badge warn"><i class="tri"></i>A vencer</span></div></div></div>
+    <p class="src" style="margin-top:8px">Primer (GitHub): side sheets ocupam a altura toda e "devem ser usados com parcimônia"; diálogos centrais viram bottom sheet no celular (<a href="https://primer.style/product/components/dialog/guidelines">Primer</a>).</p>
+  </div>
+</div>
+<div class="ex">
+  <div class="cap">Toast / snackbar · confirmação curta, some sozinha, embaixo da tela</div>
+  <span class="toast">✓ Lançamento salvo <button class="btn ghost" type="button" style="color:var(--bg);padding:2px 8px">Desfazer</button></span>
+  <p class="src" style="margin-top:8px">Material: snackbars são "mensagens breves sobre processos do app, na parte de baixo da tela" (<a href="https://m2.material.io/components">Material</a>).</p>
+</div>
+
+<h3>Peças de espera e de vazio</h3>
+<div class="duo">
+  <div class="ex"><div class="cap">Skeleton (esqueleto) · mostra a forma do que vai carregar, em vez de uma rodinha</div><div class="skel" style="width:60%"></div><div class="skel"></div><div class="skel" style="width:80%"></div></div>
+  <div class="ex"><div class="cap">Empty state (estado vazio) · diz o que vai aparecer e como começar; nunca "nada aqui"</div><div class="empty"><b>Nenhuma conta lançada em outubro</b>Lance o primeiro dia em Contas a pagar → Por dia, ou importe do admin antigo.<div style="margin-top:10px"><button class="btn pri" type="button">Lançar dia</button></div></div></div>
+</div>
+
+<h3>Outros termos que você vai ver</h3>
+<dl class="glossary">
+  <dt>Data table × data grid</dt><dd>Tabela é para ler e comparar; grade é para editar muito, com seleção em lote. Quando a edição é pequena e isolada, tabela; quando o objetivo é manipular dados, grade (<a href="https://www.setproduct.com/blog/data-table-ui-design">guia de tabelas</a>).</dd>
+  <dt>Master-detail (lista e detalhe)</dt><dd>Lista à esquerda, detalhe do item selecionado à direita. O que o Consolidado das representantes tenta fazer com linhas que abrem.</dd>
+  <dt>KPI tile / stat (indicador)</dt><dd>Um número com rótulo. Útil no topo de um painel; não serve para substituir a tabela.</dd>
+  <dt>Toolbar da tabela</dt><dd>Faixa acima da tabela com busca, filtros, botão principal e densidade (Carbon).</dd>
+  <dt>Densidade</dt><dd>Quanto cabe por tela. A Carbon oferece cinco alturas de linha; sistemas financeiros preferem denso (<a href="https://carbondesignsystem.com/components/data-table/usage/">Carbon, data table</a>).</dd>
+  <dt>Progressive disclosure (divulgação progressiva)</dt><dd>Mostrar primeiro o essencial e deixar o avançado para um segundo nível. Dropdown e acordeão são formas disso, e por isso escondem.</dd>
+  <dt>Elevação</dt><dd>A sensação de "em cima" (sombra ou superfície mais clara). Só para o que realmente está por cima: menu aberto, modal.</dd>
+  <dt>Tabular figures (algarismos tabulares)</dt><dd>Dígitos com a mesma largura, para as colunas de números ficarem alinhadas. Em código: <code>font-variant-numeric: tabular-nums</code>.</dd>
+  <dt>Command palette</dt><dd>Caixa de busca de comandos (<span class="kbd">Ctrl</span>+<span class="kbd">K</span>) para ir a qualquer tela. O nosso "Colar endereço" é uma versão simples disso.</dd>
+</dl>
+
+<h2 id="fundacoes">03 · Fundações: tokens, cor, tipo, espaço</h2>
+<h3>Tokens: as decisões com nome</h3>
+<p>Na Atlassian o nome do token conta a história: <code>color.background.danger.bold.hovered</code> = cor, de fundo, de perigo, forte, ao passar o mouse. Com nomes assim, uma tela nunca inventa "um vermelhinho": ela usa o token de perigo. A Shopify faz igual (<code>--p-bg-surface-error</code>) (<a href="https://www.uxpin.com/studio/blog/best-design-system-examples/">UXPin, exemplos</a>).</p>
+<div class="ex">
+  <div class="cap">Os tokens de cor que a Sorelly precisa (e nenhum a mais)</div>
+  <div class="swatches">
+    <div class="sw" style="background:var(--surface)">Superfície<b>surface</b></div>
+    <div class="sw" style="background:var(--surface-2)">Superfície 2 (cabeçalho, zebra)<b>surface-2</b></div>
+    <div class="sw" style="background:var(--accent-bg);color:var(--accent)">Setor (uma cor por setor)<b>setor.bg / setor.fg</b></div>
+    <div class="sw" style="background:var(--in-bg);color:var(--in)">Entrada de dinheiro<b>entrada</b></div>
+    <div class="sw" style="background:var(--out-bg);color:var(--out)">Saída de dinheiro<b>saida</b></div>
+    <div class="sw" style="background:var(--warn-bg);color:var(--warn)">Atenção / atraso<b>atencao</b></div>
+    <div class="sw" style="background:var(--surface);color:var(--fg)">Texto<b>texto</b></div>
+    <div class="sw" style="background:var(--surface);color:var(--fg-3)">Texto secundário<b>texto-2</b></div>
+    <div class="sw" style="background:var(--surface);border-color:var(--line-2)">Linha<b>linha</b></div>
+  </div>
+  <p class="src" style="margin-top:10px">Regra de semântica fixa: <b class="in">verde = entra</b>, <b class="out">vermelho = sai</b>, resultado e saldo pela cor do sinal, <b class="warn">amarelo só atraso</b>, branco para totais e quantidades. A cor do setor é só de identificação (barra, aba ativa), nunca de valor.</p>
+</div>
+
+<h3>Tipografia</h3>
+<div class="ex type">
+  <div class="cap">Escala de tipo: poucos tamanhos, usados sempre nos mesmos lugares</div>
+  <p style="font-family:var(--font-display);font-size:26px;font-weight:600">Título de tela · 26 px</p>
+  <p style="font-size:18px;font-weight:600">Título de bloco · 18 px</p>
+  <p style="font-size:14px">Texto de tabela e corpo · 14 px (16 px em texto corrido)</p>
+  <p style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3);font-weight:600">Rótulo e cabeçalho de coluna · 11 px, caixa alta, espaçada</p>
+  <p style="font-family:var(--font-mono);font-variant-numeric:tabular-nums;font-size:14px">R$ 1.067.118,19 · 1.176 acertos · números em fonte tabular</p>
+  <p class="src">Os sistemas usam 16 px para leitura com altura de linha 24 px (múltiplo de 8) e 14 px em tabelas densas; a American Express parte de 16 px "por legibilidade" (<a href="https://designinternet-qaeusw1green.americanexpress.com/guidelines/spacing/overview">Amex</a>, <a href="https://www.ls.graphics/ideas/why-8pt-grid-the-math-behind-clean-ui">ls.graphics</a>). A Stripe "ensinou uma geração" a mostrar dinheiro com "numerais alinhados à direita, algarismos tabulares, linhas de grade discretas" (<a href="https://adminlte.io/blog/fintech-dashboard-design-examples/">análise de painéis fintech</a>).</p>
+</div>
+
+<h3>Espaço: a grade de 8 pontos</h3>
+<div class="ex">
+  <div class="cap">Todo espaço é múltiplo de 8 (ou 4 para detalhes). Botões, alturas de linha e margens saem da mesma lista</div>
+  <div class="spacers">
+    <div style="width:4px;height:24px"><span>4</span></div><div style="width:8px;height:24px"><span>8</span></div><div style="width:16px;height:24px"><span>16</span></div><div style="width:24px;height:24px"><span>24</span></div><div style="width:32px;height:24px"><span>32</span></div><div style="width:48px;height:24px"><span>48</span></div>
+  </div>
+  <p class="src" style="margin-top:10px">A Atlassian expõe isso como <code>space.100</code> (8 px), <code>space.200</code> (16 px) etc. (<a href="https://superdesign.dev/blog/atlassian-design-system">análise do sistema Atlassian</a>). O ganho é que nada fica "quase alinhado".</p>
+</div>
+
+<h3>Raio, borda e elevação</h3>
+<p>A Stripe usa raios contidos de 4 a 8 px e bordas suaves, e prefere "tipografia e espaço em branco, não cor, para criar hierarquia" (<a href="https://www.925studios.co/blog/stripe-dashboard-design-breakdown">análise do painel da Stripe</a>). Regra prática: um raio só (6 px) para controles, um para cartões (8 px), sombra só no que flutua.</p>
+<div class="ex">
+  <div class="duo">
+    <div><span class="tag ruim">Como está hoje</span><div class="ruimcard">RECEBIDO<b>R$ 928.995,38</b>até agora</div><div class="ruimcard" style="background:linear-gradient(135deg,#1b7a4566,#1b7a4511);box-shadow:inset 0 0 0 1px #1b7a45aa">A RECEBER<b>R$ 577.462,26</b>previsto</div></div>
+    <div><span class="tag bom">No padrão</span><div class="kpis"><div class="kpi"><div class="l">Recebido</div><div class="v in">R$ 928.995,38</div><div class="s">até 21/10</div></div><div class="kpi"><div class="l">Contas pagas</div><div class="v out">R$ 1.067.118,19</div><div class="s">15 dias</div></div><div class="kpi"><div class="l">Resultado</div><div class="v out">−R$ 138.122,81</div><div class="s">até o dia 21</div></div></div></div>
+  </div>
+  <p class="src" style="margin-top:10px">O degradê e o anel colorido em cada cartão são "tinta sem dado": Tufte chama de <i>chartjunk</i> tudo que é "só decoração: fundos, sombras, molduras" (<a href="https://analyticsdemystified.com/excel-tips/stephen-fews-derivation-of-tufte-the-data-pixel-ratio/">Few sobre Tufte</a>). Repare que no padrão a cor está só no número, e o número diz tudo.</p>
+</div>
+
+<h2 id="escuro">04 · Tema escuro bem feito</h2>
+<p>O Sorelly Admin é escuro, e tema escuro tem regras próprias. O erro mais comum é "inverter": pegar as cores do claro e virar. Um estudo de caso descreve "indicadores verde e vermelho vibrando agressivamente contra a superfície escura" depois de uma inversão direta (<a href="https://uxmagic.ai/blog/dark-mode-ui-design-guide">guia de dark mode</a>). É exatamente o que acontece nos nossos cartões coloridos.</p>
+<div class="ex">
+  <div class="cap">As três regras do Material para tema escuro</div>
+  <div class="dark-ex">
+    <div class="lv" style="background:#121212"><span>Fundo · nível 0</span><span>#121212 (cinza escuro, não preto)</span></div>
+    <div class="lv" style="background:#1e1e1e"><span>Cartão · nível 1</span><span>+5% branco</span></div>
+    <div class="lv" style="background:#2d2d2d"><span>Menu aberto · nível 2</span><span>+11% branco</span></div>
+    <div class="lv" style="background:#1e1e1e;color:#e1e1e1"><span>Texto principal</span><span>#e1e1e1, não branco puro</span></div>
+    <div class="lv" style="background:#1e1e1e"><span style="color:#5fcf8a">Entrada R$ 99.719,05</span><span style="color:#f28b84">Saída R$ 32.425,52</span></div>
+  </div>
+  <ol>
+    <li><b>Profundidade por clareza, não por sombra.</b> Quanto mais "em cima", mais clara a superfície: o Material usa um véu branco de 0% no fundo até 16% no nível mais alto (<a href="https://m2.material.io/design/color/dark-theme">Material, dark theme</a>). Sombras somem no escuro.</li>
+    <li><b>Cor de destaque limitada e dessaturada.</b> O Material pede "cor de destaque limitada, para a maior parte da tela ficar escura". Verde e vermelho puros ofuscam; a versão clara e menos saturada (como acima) lê bem. Um caso fintech mapeou o azul da marca para um azul mais claro só no escuro, e atingiu 5,2:1 de contraste.</li>
+    <li><b>Contraste.</b> Texto branco sobre as superfícies escuras do Material dá "pelo menos 15,8:1". Texto cinza secundário precisa de 4,5:1 (WCAG). Cinza claro demais em cima de dourado quase nunca passa.</li>
+  </ol>
+  <p class="src">O degradê dourado em barras e o degradê por cartão quebram a regra 1 (a clareza deixa de significar "em cima") e a regra 2 (cor em toda parte).</p>
+</div>
+
+<h2 id="tabelas">05 · Tabelas: a peça principal de um sistema financeiro</h2>
+<p>"Usuários financeiros precisam de tabelas para filtrar, ordenar e comparar números lado a lado; painéis de cartões com número grande funcionam para demonstração" (<a href="https://blog.deeflect.com/valk-06-data-tables-hardest-problem/">VALK</a>). Na Stripe "o gráfico é o resumo e a tabela é a verdade". Então a tabela precisa ser perfeita.</p>
+<div class="ex">
+  <div class="duo">
+    <div><span class="tag ruim">Como está hoje</span>
+      <div class="tblx"><table class="ruimtbl"><thead><tr><th>Dia</th><th>Recebido</th><th>Pago</th><th>Saldo</th></tr></thead><tbody>
+        <tr><td>19/10</td><td style="color:#4ADE80">R$ 99.719,05</td><td style="color:#EF4444">R$ 32.425,52</td><td style="color:#4ADE80">R$ 67.293,53</td></tr>
+        <tr><td>20/10</td><td style="color:#4ADE80">R$ 99.437,29</td><td style="color:#EF4444">R$ 182.744,32</td><td style="color:#EF4444">−R$ 83.307,03</td></tr>
+        <tr><td>21/10</td><td style="color:#4ADE80">R$ 40.207,85</td><td style="color:#EF4444">R$ 73.914,28</td><td style="color:#EF4444">−R$ 33.706,43</td></tr>
+      </tbody></table></div></div>
+    <div><span class="tag bom">No padrão Polaris / Carbon</span>
+      <div class="tblx"><table class="tbl"><thead><tr><th>Dia</th><th class="n">Recebido</th><th class="n">Pago</th><th class="n">Saldo do dia</th><th class="n">Acumulado</th></tr></thead><tbody>
+        <tr><td>19/10 · seg</td><td class="n in">99.719,05</td><td class="n out">32.425,52</td><td class="n in">67.293,53</td><td class="n out">−21.109,35</td></tr>
+        <tr><td>20/10 · ter</td><td class="n in">99.437,29</td><td class="n out">182.744,32</td><td class="n out">−83.307,03</td><td class="n out">−104.416,38</td></tr>
+        <tr><td>21/10 · qua</td><td class="n in">40.207,85</td><td class="n out">73.914,28</td><td class="n out">−33.706,43</td><td class="n out">−138.122,81</td></tr>
+        <tr class="tot"><td>Total do mês</td><td class="n in">928.995,38</td><td class="n out">1.067.118,19</td><td class="n out">−138.122,81</td><td class="n out">−138.122,81</td></tr>
+      </tbody></table></div></div>
+  </div>
+  <ul style="margin-top:12px">
+    <li><b>Número à direita, texto à esquerda, cabeçalho acompanha o dado, nunca centralizar.</b> Polaris: "Numérico = alinhado à direita; texto = à esquerda; não centralize" (<a href="https://polaris.shopify.com/components/tables/data-table">Shopify Polaris</a>). Centralizar "causa movimentos de olho desnecessários" (<a href="https://medium.com/design-bootcamp/data-table-design-patterns-4e38188a0981">padrões de tabela</a>).</li>
+    <li><b>Unidade no cabeçalho, não em cada célula.</b> "R$" repetido 300 vezes é tinta sem dado. Diga "R$" uma vez no título da coluna.</li>
+    <li><b>Linha de total.</b> Polaris recomenda "uma linha de resumo para mostrar os totais das colunas".</li>
+    <li><b>Cabeçalho cinza discreto, linhas de grade finas, zebra opcional.</b> Nada de barra em degradê.</li>
+    <li><b>Toolbar em cima:</b> busca, filtros, botão principal e densidade (Carbon). Ordenação por clique no cabeçalho; paginação em vez de rolagem infinita, porque a rolagem infinita "tira os pontos de referência" (pesquisa NN/g citada em <a href="https://www.setproduct.com/blog/data-table-ui-design">setproduct</a>).</li>
+    <li><b>Linhas expansíveis e ações em lote</b> quando a tabela é de trabalho (Carbon). Tabela sempre na área principal, "nunca em modal ou container pequeno".</li>
+  </ul>
+</div>
+
+<h2 id="escolha">06 · Cartão, lista, tabela ou grade: como escolher</h2>
+<div class="tblx"><table class="tbl"><thead><tr><th>Peça</th><th>Serve para</th><th>Ponto fraco</th><th>Na Sorelly</th></tr></thead><tbody>
+<tr><td><b>Tabela</b></td><td>Comparar muitos registros nos mesmos atributos; responde "qual linha tem o maior valor" mais rápido</td><td>Celular</td><td>Tudo que é dinheiro por período, por CNPJ, por natureza</td></tr>
+<tr><td><b>Lista</b></td><td>Varredura vertical rápida de itens de uma linha, só leitura</td><td>Não compara</td><td>Avisos, histórico, atividade recente</td></tr>
+<tr><td><b>Cartão</b></td><td>Itens diferentes entre si, cada um "um objeto"</td><td>Esconde ordem e importância; "difícil discernir o ranking"</td><td>Kanban (kits novos, aprovação), apps de celular. Nunca para números comparáveis</td></tr>
+<tr><td><b>Grade (data grid)</b></td><td>Editar muito, selecionar em lote</td><td>Pesada</td><td>Lançamento diário de contas, lançar saldos</td></tr>
+</tbody></table></div>
+<p class="src">Fontes: <a href="https://www.setproduct.com/blog/data-table-ui-design">setproduct</a>, <a href="https://www.webdesignerdepot.com/2017/01/cards-vs-lists-how-they-impact-ux/">cards vs lists</a>. "O princípio é escolher pela tarefa e pela densidade, não pela aparência."</p>
+<div class="note"><b>Tradução para a nossa dor:</b> os seis cartões coloridos de "Resultado do mês e do ano" são números comparáveis (recebido, a receber, total, contas, resultado). Comparável = tabela ou uma linha de indicadores iguais, nunca cartões cada um de uma cor.</div>
+
+<h2 id="navegacao">07 · Navegação e arquitetura da informação</h2>
+<p>A Atlassian moveu a navegação de produto da barra de cima para uma <b>barra lateral</b>, "alinhando ao que os usuários já esperam de ferramentas como Slack e Google Workspace", com o objetivo de "repetir os mesmos padrões em todos os produtos" (<a href="https://www.atlassian.com/blog/design/designing-atlassians-new-navigation">Atlassian, nova navegação</a>). O modelo que você escolheu (lateral = setores, topo = áreas do setor, abas = telas abertas) está certo. O que falta é regra para o que entra em cada nível.</p>
+<div class="ex">
+  <div class="cap">A casca do sistema: 3 níveis, cada um com um papel só</div>
+  <div class="shell">
+    <div class="side"><div>Visão geral</div><div class="on">Financeiro</div><div>Agendamento</div><div>Cadastro</div><div>Representantes</div><div>RH</div></div>
+    <div>
+      <div class="top"><span class="on">Hoje</span><span>Entradas</span><span>Saídas</span><span>Resultado</span><span>Contas</span><span>Família</span></div>
+      <div class="main"><div class="crumb" style="margin-bottom:8px"><a href="#">Financeiro</a><span>/</span>Hoje</div><div class="kpis"><div class="kpi"><div class="l">Disponível</div><div class="v">R$ 266.298,24</div></div><div class="kpi"><div class="l">Vence hoje</div><div class="v out">R$ 12.779,28</div></div><div class="kpi"><div class="l">Atrasadas</div><div class="v warn">R$ 336.237,66</div></div></div></div>
+      <div class="status"><span>Marcus</span><span>Financeiro</span><span>22/10/2026 · 09:40</span><span>v0.12.23</span></div>
+    </div>
+  </div>
+  <ul style="margin-top:12px">
+    <li><b>Lateral: setores.</b> Nunca mais de 12. Um ícone, uma cor, um nome curto.</li>
+    <li><b>Topo: perguntas do setor.</b> 4 a 7 palavras, uma linha, sem dropdown na barra. Dropdown só quando o item tem subtelas.</li>
+    <li><b>Dentro da tela: abas.</b> Visões da mesma coisa viram abas ou segmented control, não telas separadas no menu.</li>
+    <li><b>Breadcrumb</b> em cima do conteúdo, para saber onde está e voltar.</li>
+    <li><b>Linha de status</b> embaixo: quem, onde, quando, versão.</li>
+  </ul>
+  <p class="src">"Uma única navegação raramente serve finanças, operações, vendas e suprimentos da mesma forma": o objetivo é ir "de um indicador alto para a visão por trás dele com pouco atrito" (<a href="https://fanruan.com/en/blog/dashboard-navigation-best-practices">FanRuan</a>). Por isso no Financeiro a barra de cima deve ser por pergunta (Hoje, Entradas, Saídas, Resultado) e não por nome de módulo.</p>
+</div>
+<h3>Divulgação progressiva: o motivo de o dropdown parecer errado</h3>
+<p>A ideia de esconder o avançado veio de Jakob Nielsen em 1995, para "reduzir erros em aplicações complexas". Mas "conteúdo escondido recebe menos atenção que conteúdo visível", e a regra é "manter fora de painéis fechados a informação que a pessoa precisa o tempo todo" (<a href="https://thedecisionlab.com/reference-guide/design/progressive-disclosure">The Decision Lab</a>). Dropdown é para lista de opções temporária; acordeão é para FAQ. Nenhum dos dois é para navegação principal nem para número que você olha todo dia.</p>
+
+<h2 id="filtros">08 · Filtros e seletor de período</h2>
+<div class="ex">
+  <div class="cap">Barra de filtros única, no topo da tela, na mesma altura, com estado visível e "Limpar"</div>
+  <div class="filterbar">
+    <select aria-label="Período"><option>Outubro/2026</option><option>Setembro/2026</option><option>Este ano</option></select>
+    <div class="seg" role="group" aria-label="Empresa"><button type="button" aria-pressed="true">Sorelly</button><button type="button" aria-pressed="false">Família</button><button type="button" aria-pressed="false">Sorelly + Família</button></div>
+    <input type="search" placeholder="Buscar fornecedor, natureza ou valor" aria-label="Buscar" style="flex:1;min-width:160px">
+    <span class="chip on">2 filtros ativos</span>
+    <button class="btn ghost" type="button">Limpar</button>
+  </div>
+  <ul style="margin-top:12px">
+    <li><b>Filtro global</b> (período, Sorelly/Família) vale para todos os blocos da tela e fica no topo; filtro local fica no bloco (<a href="https://www.aufaitux.com/blog/dashboard-filter-design-guide/">guia de filtros</a>).</li>
+    <li><b>Período com presets</b> ("este mês", "mês passado", "este ano") e seletor livre com limite; no máximo cinco presets (<a href="https://help.tago.io/portal/en/kb/articles/dashboard-period-preset">Tago</a>).</li>
+    <li><b>Estado visível:</b> um indicador de quantos filtros estão ativos, lista ao passar o mouse e "Limpar tudo" (<a href="https://help-center-sm.neobrain.io/en/articles/11626044-how-to-use-filters-effectively-in-a-dashboard">Neobrain</a>). Hoje o mês do Consolidado, do dia a dia e do Caixa são escolhidos em três lugares diferentes.</li>
+    <li>Evite "muitos filtros globais" e campos com milhares de valores como dropdown (<a href="https://www.inetsoft.com/company/advanced_dashboard_filtering">InetSoft</a>): busca por texto resolve.</li>
+  </ul>
+</div>
+
+<h2 id="paineis">09 · Painéis e indicadores</h2>
+<ul>
+  <li><b>Resumo antes do detalhe, indicadores principais no alto à esquerda, uma página só.</b> "Elementos demais poluem o painel" (<a href="https://help.planful.com/v1/docs/dashboards-end-user-guide-best-practices">Planful</a>).</li>
+  <li><b>A pergunta primeiro.</b> A Stripe constrói a home em volta de "receita, saldo e status do repasse", e cada número abre as transações por trás, "em vez de mostrar um número e esperar que você investigue depois" (<a href="https://adminlte.io/blog/fintech-dashboard-design-examples/">análise fintech</a>).</li>
+  <li><b>Faça a conta pela pessoa.</b> Mostre a diferença para a meta e o percentual ao lado do valor, "para o usuário não ter que fazer a aritmética" (<a href="https://hub.packtpub.com/dashboard-design-best-practices">Packt</a>).</li>
+  <li><b>Maximize a tinta de dado.</b> Tufte: "cada pedaço de tinta exige um motivo, e o motivo quase sempre deve ser apresentar informação nova". Few traduz para tela: tinta vira pixel; fundos cinza, molduras e degradês são os primeiros a sair (<a href="https://analyticsdemystified.com/excel-tips/stephen-fews-derivation-of-tufte-the-data-pixel-ratio/">Few</a>).</li>
+  <li><b>Gráfico resume, tabela prova.</b> Um gráfico de barras do mês ao lado da tabela, nunca no lugar dela.</li>
+</ul>
+<div class="ex">
+  <div class="cap">Indicadores no padrão: iguais entre si, cor só no valor, subtítulo com a conta já feita</div>
+  <div class="kpis">
+    <div class="kpi"><div class="l">Faturamento</div><div class="v in">R$ 928.995,38</div><div class="s">1.176 acertos · média 789,96</div></div>
+    <div class="kpi"><div class="l">Contas pagas</div><div class="v out">R$ 1.067.118,19</div><div class="s">15 dias com pagamento</div></div>
+    <div class="kpi"><div class="l">Resultado até 21/10</div><div class="v out">−R$ 138.122,81</div><div class="s">pior dia 06/10 · −116.215,81</div></div>
+    <div class="kpi"><div class="l">Falta pagar em outubro</div><div class="v out">R$ 420.533,10</div><div class="s">27,8% do mês</div></div>
+    <div class="kpi"><div class="l">Atrasadas</div><div class="v warn">R$ 336.237,66</div><div class="s">159 títulos</div></div>
+  </div>
+</div>
+
+<h2 id="feedback">10 · Estados, avisos e erros</h2>
+<p>Das dez heurísticas de Nielsen, três resolvem a maior parte das reclamações de sistema interno (<a href="https://www.simonwhatley.co.uk/writing/jakob-nielsen-ten-usability-heuristics/">resumo das heurísticas</a>):</p>
+<ol>
+  <li><b>Visibilidade do estado do sistema.</b> Salvou? Diga (toast). Está carregando? Mostre (skeleton). Está fechado? Marque (cadeado).</li>
+  <li><b>Consistência e padrões.</b> "A mesma palavra ou ação não deve significar coisas diferentes em lugares diferentes." Hoje "Contas a pagar" aparece em cinco lugares com conteúdos diferentes.</li>
+  <li><b>Reconhecer em vez de lembrar.</b> "Deixe objetos, ações e opções visíveis." Dropdown fechado obriga a lembrar.</li>
+</ol>
+<div class="ex">
+  <div class="cap">Erro no padrão: o que aconteceu e como resolver, sem "Erro:" e sem pedido de desculpa</div>
+  <div style="border-left:3px solid var(--out);background:var(--out-bg);padding:10px 14px;border-radius:0 6px 6px 0;max-width:520px"><b class="out">O valor de 21/10 é menor que o de 20/10.</b><div style="font-size:14px;color:var(--fg-2)">O acumulado do mês não pode diminuir. Confira se digitou o total do mês e não só o do dia.</div></div>
+</div>
+
+<h2 id="formularios">11 · Formulários</h2>
+<ul>
+  <li><b>Comece com uma coisa por página.</b> O GOV.UK, depois de anos de teste, recomenda "começar dividindo as perguntas em páginas separadas": usuários inseguros acham mais fácil, funciona no celular e trata erros melhor (<a href="https://designnotes.blog.gov.uk/2015/07/03/one-thing-per-page/">GOV.UK, one thing per page</a>). Não é "sempre uma": é "comece com uma" e junte quando a pesquisa mostrar que pode.</li>
+  <li><b>Sem acordeão em formulário.</b> O GOV.UK tirou o acordeão da lista de opções (<a href="https://userresearch.blog.gov.uk/2015/08/13/no-more-accordions-how-to-choose-a-form-structure/">No more accordions</a>).</li>
+  <li><b>Saiba por que pede cada campo.</b> O processo deles: saber por que pergunta, desenhar para o caso comum, uma coisa por página.</li>
+  <li>Validação na hora, erro ao lado do campo, botão principal único por tela. Dinheiro "subindo os dígitos" (que já temos) é um bom padrão de campo.</li>
+</ul>
+<div class="note"><b>Para a Sorelly:</b> o lançamento diário (faturamento, saldos, contas pagas) é um formulário repetido todo dia. Ele merece uma tela própria, curta, uma pergunta por linha, com o valor de ontem ao lado para comparar. Não um cartão no meio de um painel.</div>
+
+<h2 id="ideologias">12 · Ideologias: as escolas de pensamento</h2>
+<dl class="glossary">
+  <dt>Tufte e Few: tinta de dado</dt><dd>Tudo na tela que não é dado deve justificar sua existência. Decoração é inimiga de leitura. Tela financeira boa parece "vazia" de enfeite e cheia de número.</dd>
+  <dt>Nielsen: heurísticas e divulgação progressiva</dt><dd>Mostre estado, seja consistente, deixe visível o que importa; esconda só o avançado.</dd>
+  <dt>GOV.UK: pesquisa com usuário acima de opinião</dt><dd>Cada padrão deles vem de teste com gente. "Começar com uma coisa por página" e "sem acordeão" são conclusões de pesquisa, não gosto.</dd>
+  <dt>Atlassian, IBM, Shopify: tokens e semântica</dt><dd>Cor e espaço com nome e significado. Ninguém inventa um valor; todo mundo usa o token.</dd>
+  <dt>Material: tema escuro e elevação tonal</dt><dd>No escuro, "em cima" é mais claro; cor de destaque limitada; contraste medido.</dd>
+  <dt>Stripe: a tabela é a verdade</dt><dd>Hierarquia por tipografia e espaço, não por cor; densidade controlada; cada número abre o que está por trás.</dd>
+  <dt>Linear: o app é o design</dt><dd>Sistema mínimo (cor, tipo, componentes básicos), sem equipe de sistema, consistência por disciplina. É o modelo que cabe na Sorelly.</dd>
+  <dt>Carbon: status com múltiplos sinais</dt><dd>Cor, forma, ícone e palavra juntos; indicador só quando há ação.</dd>
+</dl>
+
+<h2 id="acessibilidade">13 · Acessibilidade (e por que ela melhora para todo mundo)</h2>
+<ul>
+  <li><b>Contraste 4,5:1</b> para texto normal (WCAG). Cinza em cima de dourado e amarelo em cima de branco costumam reprovar. Teste antes de aprovar uma cor.</li>
+  <li><b>Cor nunca sozinha.</b> Quem não distingue verde de vermelho (8% dos homens) precisa do sinal de menos, do ícone ou da palavra. Por isso "−R$ 138.122,81" tem o sinal além do vermelho.</li>
+  <li><b>Foco visível</b> ao navegar por teclado; cabeçalhos de tabela alcançáveis por Tab e ordenáveis por Enter (Carbon, acessibilidade).</li>
+  <li><b>Alvo de toque de 44 px</b> no celular; os apps simulados precisam disso.</li>
+  <li><b>Movimento reduzido</b> respeitado: números "correndo" e setas animadas desligam quando o sistema pede.</li>
+</ul>
+
+<h2 id="diagnostico">14 · Diagnóstico da Sorelly hoje</h2>
+<div class="tblx"><table class="tbl"><thead><tr><th>O que vemos</th><th>Qual regra quebra</th><th>Troca por</th></tr></thead><tbody>
+<tr><td>Dropdown em quase toda escolha (mês, visão, CNPJ, modo)</td><td>Divulgação progressiva mal aplicada; reconhecer em vez de lembrar</td><td>Segmented control para 2 a 5 opções visíveis; dropdown só para 6+ (lista de meses)</td></tr>
+<tr><td>Degradê dourado em barras e degradê por cartão</td><td>Tinta sem dado (Tufte); elevação tonal (Material): clareza deixa de significar "em cima"</td><td>Barra chapada discreta na cor do setor; cartões em <code>surface-2</code> sem anel colorido</td></tr>
+<tr><td>Cada cartão de uma cor (ouro, verde, vermelho, azul, ciano)</td><td>Semântica de cor; "painel não é arco-íris"</td><td>Cor só no valor, pela regra entra/sai/atenção</td></tr>
+<tr><td>Números centralizados e "R$" em todas as células</td><td>Polaris: números à direita; unidade no cabeçalho</td><td>Alinhar à direita com fonte tabular; "R$" uma vez</td></tr>
+<tr><td>Mês escolhido em três lugares diferentes na mesma tela</td><td>Filtro global × local; consistência</td><td>Uma barra de filtros no topo que vale para a tela toda</td></tr>
+<tr><td>"Contas a pagar" em cinco lugares do menu com conteúdos diferentes</td><td>Consistência e padrões (Nielsen)</td><td>Um nome, um lugar; as visões viram abas dentro dele</td></tr>
+<tr><td>11 itens na barra e 60+ telas no Financeiro, organizados por módulo</td><td>Navegação por pergunta, não por módulo</td><td>6 grupos: Hoje, Entradas, Saídas, Resultado, Contas, Família</td></tr>
+<tr><td>Blocos que abrem e fecham, lembrando estado no navegador</td><td>Conteúdo escondido recebe menos atenção</td><td>Tudo aberto; o que é secundário vai para outra aba, não para um bloco fechado</td></tr>
+<tr><td>Mês fechado em verde</td><td>Verde é estado (entrada/ok), não "travado"</td><td>Cadeado e texto "fechado", cor neutra</td></tr>
+<tr><td>Previsão misturada com realizado no mesmo bloco</td><td>Stripe/Few: realizado e previsto lado a lado, diferenciados</td><td>Colunas separadas e previsto visualmente apagado (ou bloco próprio)</td></tr>
+</tbody></table></div>
+
+<h2 id="regras">15 · As 20 regras propostas para o Sorelly Admin</h2>
+<p>É isto que vira o <code>PADRAO-VISUAL.md</code> novo depois da sua aprovação. Poucas regras, sem exceção, e uma tela de referência que todas copiam.</p>
+<ol class="rules">
+  <li><b>Tokens, não valores.</b> Nove tokens de cor (superfície, superfície 2, setor, entrada, saída, atenção, texto, texto 2, linha). Nenhuma tela usa cor fora deles.</li>
+  <li><b>Semântica fixa de cor.</b> Verde entra, vermelho sai, resultado e saldo pela cor do sinal, amarelo só atraso, cor do setor só em identificação (barra, aba, ícone), branco no resto.</li>
+  <li><b>Sem degradê, sem anel colorido, sem sombra em bloco parado.</b> Elevação só no que flutua (menu aberto, modal), e no escuro é por clareza.</li>
+  <li><b>Números à direita, texto à esquerda, cabeçalho acompanha.</b> Fonte tabular. Nada centralizado em tabela.</li>
+  <li><b>Unidade uma vez.</b> "R$" no cabeçalho da coluna ou no rótulo do indicador, não em cada célula.</li>
+  <li><b>Toda tabela tem linha de total</b> quando as colunas somam, e cabeçalho discreto (cinza, caixa alta 11 px).</li>
+  <li><b>Tabela é a verdade; indicador é resumo; gráfico é apoio.</b> Nunca cartões para números comparáveis.</li>
+  <li><b>Escala de tipo fixa:</b> 26 título de tela, 18 título de bloco, 14 corpo e tabela, 16 texto corrido, 11 rótulo em caixa alta. Nada fora disso.</li>
+  <li><b>Espaço em múltiplos de 8</b> (4 para detalhes). Alturas de controle: 32 px (denso) e 40 px (normal).</li>
+  <li><b>Raio único:</b> 6 px em controles, 8 px em blocos. Borda de 1 px na cor "linha".</li>
+  <li><b>2 a 5 opções = segmented control ou abas, sempre visíveis.</b> Dropdown só com 6 ou mais, ou rótulos longos.</li>
+  <li><b>Nada fechado por padrão.</b> O que é secundário vai para outra aba. Bloco que abre e fecha só em listas longas, e começa aberto.</li>
+  <li><b>Uma barra de filtros por tela,</b> no topo, mesma altura em tudo, com contagem de filtros ativos e "Limpar". Período e Sorelly/Família são globais.</li>
+  <li><b>Navegação em três níveis:</b> lateral = setor, topo = pergunta (4 a 7 palavras, sem dropdown na barra), dentro = abas. Breadcrumb em cima e linha de status embaixo.</li>
+  <li><b>Um nome, um lugar.</b> A mesma palavra significa a mesma coisa no sistema todo. Visões de uma coisa viram abas, não telas de menu.</li>
+  <li><b>Status com cor + forma + palavra.</b> Indicador só quando há ação a tomar; senão, texto simples.</li>
+  <li><b>Realizado e previsto nunca na mesma célula.</b> Previsto em bloco próprio ou coluna própria, visualmente apagado e rotulado.</li>
+  <li><b>Estados obrigatórios em toda tela:</b> carregando (skeleton), vazio (o que vai aparecer e como começar), erro (o que houve e como resolver), salvo (toast).</li>
+  <li><b>Formulário de rotina é tela própria,</b> curta, uma pergunta por linha, com o valor anterior ao lado. Começa com uma coisa por página.</li>
+  <li><b>Tela de referência manda.</b> Existe uma tela aprovada por módulo (a primeira é o Fluxo mensal). Tela nova copia a referência; nunca é desenhada do zero. Quem quebra a regra refaz.</li>
+</ol>
+
+<h2 id="referencias">16 · Onde estudar mais (todos abertos e gratuitos)</h2>
+<ul>
+  <li><a href="https://carbondesignsystem.com/components/data-table/usage/">IBM Carbon</a>: o mais completo para sistema interno; estude Data table, Status indicator, Data visualization.</li>
+  <li><a href="https://polaris.shopify.com/components/tables/data-table">Shopify Polaris</a>: regras de tabela e de escrita; é um sistema de loja, parecido com o seu negócio.</li>
+  <li><a href="https://atlassian.design/foundations/design-tokens">Atlassian Design</a>: tokens explicados do zero; navegação lateral.</li>
+  <li><a href="https://m2.material.io/design/color/dark-theme">Material Design, dark theme</a>: as regras de tema escuro.</li>
+  <li><a href="https://designnotes.blog.gov.uk/2015/07/03/one-thing-per-page/">GOV.UK Design System</a>: formulários e padrões testados com pessoas.</li>
+  <li><a href="https://primer.style/product/components/dialog/guidelines">GitHub Primer</a>: diálogos, gavetas e quando usar cada um.</li>
+  <li><a href="https://www.925studios.co/blog/stripe-dashboard-design-breakdown">Análises do painel da Stripe</a> e <a href="https://adminlte.io/blog/fintech-dashboard-design-examples/">de nove painéis fintech</a>: para ver o que "denso e limpo" significa em dinheiro.</li>
+  <li>Livros: Edward Tufte, <i>The Visual Display of Quantitative Information</i> (1983); Stephen Few, <i>Information Dashboard Design</i>.</li>
+  <li>Ferramenta de apoio que eu tenho aqui: as 28 Leis de UX (Fitts, Hick, Miller, Gestalt…), que servem de checklist para revisar cada tela.</li>
+</ul>
+
+<h2>Próximos passos</h2>
+<ol>
+  <li>Você lê este estudo e aprova (ou corrige) as 20 regras.</li>
+  <li>Eu gravo as regras no <code>PADRAO-VISUAL.md</code> e crio os tokens no código (<code>padrao.js</code>), de uma vez.</li>
+  <li>Faço o <b>Fluxo mensal</b> como tela de referência do Financeiro, no padrão, e você aprova.</li>
+  <li>Auditoria do Financeiro inteiro: lista de tudo que está fora, e migração tela por tela.</li>
+  <li>Depois, os outros setores, na mesma ordem.</li>
+</ol>
+
+<footer>Estudo preparado para Marcus (Sorelly Joias) em 22/10/2026. Fontes citadas no corpo. As regras marcadas como "propostas" só valem depois da sua aprovação.</footer>
+</div>
+<script>
+(function(){
+  var out=document.getElementById('segout'), names={fat:'Faturamento',con:'Contas a pagar',vs:'Faturamento vs Contas a pagar'};
+  document.querySelectorAll('[data-seg]').forEach(function(b){ b.addEventListener('click',function(){
+    document.querySelectorAll('[data-seg]').forEach(function(x){ x.setAttribute('aria-pressed','false'); });
+    b.setAttribute('aria-pressed','true'); out.textContent='Mostrando: '+names[b.dataset.seg]+'. A troca é no lugar, sem recarregar e sem esconder as outras opções.'; }); });
+  document.querySelectorAll('[role=tablist] [role=tab]').forEach(function(t){ t.addEventListener('click',function(){
+    t.parentNode.querySelectorAll('[role=tab]').forEach(function(x){ x.setAttribute('aria-selected','false'); }); t.setAttribute('aria-selected','true'); }); });
+  var h=location.hash.replace('#',''); if(h){ var el=document.getElementById(h); if(el) el.scrollIntoView(); }
+})();
+</script>

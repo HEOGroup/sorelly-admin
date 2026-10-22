@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/financeiro-familiar.js
 // Financeiro Familiar trazido do SorellyAdmin: finanças pessoais/familiares dos sócios. Por pessoa (sócio ou "Casa/Família"): contas a pagar (parcelas, pagamento parcial), pró-labore,
 // PIX das revendedoras, prestadores (dívidas e repasses), transferências, alertas, relatório mensal com fechamento e histórico. Estado s.ff, SÓ neste navegador (dados pessoais: nunca vão para o GitHub).
@@ -6,7 +7,7 @@
 var MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 var FORMAS = ["PIX","Dinheiro","Cartão de crédito","Cartão de débito","Transferência","Boleto","Débito em conta","PIX revendedoras","A confirmar"];
 // dados reais importados do admin antigo (arquivo local, fora do GitHub); sem o arquivo o sistema nasce vazio
-var LOCAL = (function(){ try { var m = import.meta.glob("./ff-dados.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/ff-dados.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 function ffLocal(){ if(!LOCAL) return null; var o = JSON.parse(JSON.stringify(LOCAL)), tira = o.removerDividas||[]; if(tira.length) o.dividas = o.dividas.filter(function(x){ return tira.indexOf(x.id)<0; }); return o; }
 var FORMAS_REPASSE = ["PIX","Dinheiro","Cartão de crédito"];
 var TIPOS_REGRA = [["CONTAS_MES_ACIMA","Contas do mês acima de (R$)"], ["ATRASADAS_ACIMA","Contas atrasadas acima de (R$)"], ["PIX_ABAIXO_META","PIX abaixo da meta (%)"], ["SALDO_PRESTADOR_ACIMA","Saldo de prestador acima de (R$)"]];

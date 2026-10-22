@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/controle-pagamentos.js
 // Controle de pagamentos (Financeiro, primeira aba): para onde vai o Pix das revendedoras. O Financeiro (Nayale) cria ORIENTAÇÕES ("direcionar R$ X para tal conta até tal data"),
 // o sistema acompanha quanto falta e SUGERE o destino de cada Pix que chega; quem direciona (Lucas) confirma ou troca. Contexto completo em FLUXO-DE-PAGAMENTOS.md.
@@ -16,7 +17,7 @@ function cpDemo(){
     d("Devmaster", "FORNECEDOR"), d("Linda", "FORNECEDOR"), d("Tucano", "FORNECEDOR"), d("Charme", "FORNECEDOR"), d("Higor (segurança)", "PRESTADOR"), d("Camilly", "PRESTADOR")]};
 }
 // Pix para representantes e para os sócios (21/10/2026): representantes viram destinos; "Marcus PF" vira um destino por sócio (cada um ligado à persona do Financeiro familiar) e as orientações do dia entram do arquivo local
-var HOJE_LOCAL = (function(){ try { var m = import.meta.glob("./controle-hoje.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var HOJE_LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/controle-hoje.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var SOCIOS_FAM = [["Marcus", "marcus"], ["Anamaria", "anamaria"], ["Ana Beatriz", "anabeatriz"], ["Marco Antonio", "marco"]];
 function cpAjustar(cp){
   cp = JSON.parse(JSON.stringify(cp));

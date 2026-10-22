@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/garantia.js
 // Garantia, trazido do SorellyAdmin (docs/modulos/garantia.md). NO ORIGINAL NÃO EXISTE MÓDULO: é só um atalho do menu para o site externo de garantias (Garantify).
 // O Admin de produção não guarda nada de garantia (sem tela, tabela, rota ou setor). Por isso aqui também só existe o mínimo honesto:
@@ -8,7 +9,7 @@
 
 import { agoraSP } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./garantia.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/garantia.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var LINK_PADRAO = "https://sorellyjoias.garantify.com.br";   // GARANTIA_HREF do original
 var trim = function(v){ return String(v==null ? "" : v).trim(); };

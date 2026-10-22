@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/indicacoes.js
 // Indicações (setor Cadastro de revendedoras: Michele, supervisor Nickolas), trazido do SorellyAdmin (docs/modulos/indicacoes.md).
 // A revendedora indica alguém no "Indique & Ganhe" e pede prêmio com moedas; aqui a empresa avança a indicação pelo funil, atende o resgate (fila → agendar → retirar) e dá moedas.
@@ -9,7 +10,7 @@
 
 import { hojeSP, agoraSP, somaDias, diasEntre, listaDias, janela } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./indicacoes.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/indicacoes.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };

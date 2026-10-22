@@ -9,7 +9,7 @@ import { useEffect, useRef } from "@/shared/react";
 var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "cpc", "mk", "gr"];
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
-  if(!t) t = String((import.meta.env && import.meta.env.VITE_MODULOS_SERVIDOR) || "");
+  if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
   var l = t.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
   return l.length ? l : PADRAO;
 }

@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/saldos-contas.js
 // Saldos das contas bancárias (o "Contas Bancárias" do admin de produção) e a prova real do caixa mês a mês.
 // A funcionária lança TODO DIA o saldo de cada conta, por CNPJ. Conta sem lançamento no dia vale o último saldo conhecido (carry-forward).
@@ -20,9 +21,9 @@ var CONTAS_LISTA = [
   ["dinheiro_sorelly","Dinheiro Sorelly","DIN","CAIXA",false], ["dinheiro_caixa_seguro","Dinheiro Caixa Seguro","DIN","CAIXA",false],
   ["retido_safra_34","Retido Safra 34","BLOQ","PJ",true], ["retido_safra_46","Retido Safra 46","BLOQ","PJ",true]];
 // Dados reais (contas, limites e saldos) ficam num arquivo só deste computador, fora do GitHub; sem ele, vale a lista genérica abaixo.
-var LOCAL = (function(){ var m = import.meta.glob("./saldos-iniciais.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();
+var LOCAL = (function(){ var m = globLocal("apps/montagem/domain/saldos-iniciais.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();
 // atualização lida do admin antigo (saldos e contas pagas dos dias mais novos): vale por cima do arquivo base e dos dias digitados antes
-var ATU = (function(){ try { var m = import.meta.glob("./saldos-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var ATU = (function(){ try { var m = globLocal("apps/montagem/domain/saldos-atualizacao.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 if(LOCAL && ATU){ LOCAL.saldos = Object.assign({}, LOCAL.saldos, ATU.saldos); LOCAL.pagos = Object.assign({}, LOCAL.pagos, ATU.pagos); }
 var ATU_DIAS = ATU ? Object.keys(ATU.saldos) : [];
 var FAT_NF_LOCAL = LOCAL && LOCAL.fatNF ? LOCAL.fatNF : null;

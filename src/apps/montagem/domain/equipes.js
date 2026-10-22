@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/equipes.js
 // Equipes / Departamentos (organograma), trazido do SorellyAdmin (docs/modulos/equipes.md, aba "Departamentos").
 // No original o organograma é só um mapa mental: estar num departamento NÃO dá acesso a nada; o vínculo com o setor de acesso é só informativo.
@@ -10,7 +11,7 @@
 import { hojeSP, agoraSP } from "./cadastro-leads";
 import { funcionarios, FUNCIONARIOS_POR_SETOR } from "./pessoas";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./equipes.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/equipes.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
 var trim = function(v){ return String(v==null ? "" : v).replace(/\s+/g, " ").trim(); };

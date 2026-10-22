@@ -1,0 +1,71 @@
+# Faturamento diário e posição financeira (registro fixo, sem banco de dados)
+
+Documento vivo. **Todo dia que o Marcus passar os números, entra aqui e no sistema.** Assim temos o histórico mesmo antes do servidor existir. Os valores abaixo são o ACUMULADO DO MÊS fixado em cada data.
+
+## Faturamento acumulado do mês (fixado)
+| Data | Acertos (acum.) | Faturamento (acum.) | Média por acerto | Observação |
+|---|---|---|---|---|
+| 08/10/2026 | 291 | R$ 207.855,36 | R$ 714,28 | registro oficial (dia anterior) |
+| 13/10/2026 | 526 | R$ 426.110,24 | R$ 810,10 | ajuste do Marcus |
+| 14/10/2026 | 668 | R$ 530.576,39 | R$ 794,28 | |
+| 15/10/2026 | 791 | R$ 630.605,94 | R$ 797,23 | dia: 123 acertos, R$ 100.029,55 |
+| 16/10/2026 | 868 | R$ 689.631,19 | R$ 794,52 | dia: 77 acertos, R$ 59.025,25 |
+| 17 e 18/10 | 868 | R$ 689.631,19 | R$ 794,52 | fim de semana, sem faturamento |
+| **19/10/2026** | **1.008** | **R$ 789.350,24** | **R$ 783,09** | dia: 140 acertos, R$ 99.719,05 (fixado em 20/10/2026) |
+| 20/10/2026 | 1.124 | R$ 888.787,53 | R$ 790,74 | dia: 116 acertos, R$ 99.437,29 (fixado em 21/10/2026) |
+| **21/10/2026** | **1.176** | **R$ 928.995,38** | **R$ 789,96** | dia: 52 acertos, R$ 40.207,85 (fixado em 22/10/2026) |
+
+**Previsão de outubro (Marcus, 20/10/2026):** 1.120 feitos + 7 vendas no Carregar sem valor (contam como feitas, fora da média) + 783 a realizar = **1.910 acertos no mês**; previsão a 97% = 1.853 acertos. Em 21/10 o dia 20 foi fixado em 1.124 acertos (o Carregar e o a realizar seguem os mesmos até o Marcus mandar outros). Em 19/10 eram 997 + 16 + 908 = 1.921 (a diferença é o que já foi feito e passado para frente).
+
+Fechamento de setembro/2026: 2.023 revendedoras, R$ 1.446.262,20 e 1.809 acertos.
+
+## Posição das contas bancárias em 21/10/2026 (admin antigo, lido em 22/10)
+Total das contas: **−R$ 187.055,12** (sem as contas bloqueadas: −R$ 194.826,69). Em relação a 20/10 só o Itaú Black mudou (de −R$ 19.886,97 para −R$ 18.207,90). O admin ainda não tem saldo de 22/10.
+
+## Posição das contas bancárias em 20/10/2026 (lida do admin antigo em 21/10; o admin ainda não tem saldo de 21/10)
+Total das contas: **−R$ 188.734,19** (sem as contas bloqueadas: −R$ 196.505,76). Por empresa, com o limite de cada uma:
+- CNPJ 34: −R$ 147.131,41 (limite R$ 185.000, folga R$ 37.868,59) · CNPJ 46: −R$ 50.444,58 (limite R$ 75.200, folga R$ 24.755,42) · CNPJ 59: −R$ 29.878,41 (limite R$ 134.000, folga R$ 104.121,59) · CNPJ 67: −R$ 54,41.
+- Itaú Black (particular): −R$ 19.886,97 (limite R$ 68.604) · H&O App: +R$ 1.052,37 · Dinheiro: R$ 49.837,65 (Sorelly R$ 26.538,40 + Caixa Seguro R$ 23.299,25) · Retidos (bloqueados): R$ 7.771,57.
+- Em 19/10 o total era −R$ 51.501,62: a queda de R$ 137 mil em um dia veio de Sicredi 59 (de +R$ 32.966 para −R$ 32.617) e Sicredi 46 (de +R$ 31.570 para −R$ 11.837), entre outras.
+
+## Posição das contas bancárias (lida do admin antigo, 19/10/2026)
+- CNPJ 34: −R$ 138.121 (Rotativo Sicredi com R$ 71 de folga) · CNPJ 46: −R$ 7.038 · CNPJ 59: +R$ 34.800 · CNPJ 67: +R$ 16.680.
+- Dias 14, 15, 16 e 19/10 carregados no Caixa (arquivo local `saldos-atualizacao.local.js`, fora do GitHub).
+
+## Contas pagas por dia (tela contas-diario do admin antigo, R$)
+Total de outubro até 21/10: **R$ 1.067.118,19** (soma dos dias do admin antigo; 20/10 = R$ 182.744,32 e 21/10 = R$ 73.914,28, lidos em 22/10. Atenção: na leitura de 21/10 o R$ 181.832,42 estava lançado em 21/10, e o admin depois corrigiu a data para 20/10). Até 19/10 eram R$ 810.459,59 em 14 dias. Dia a dia:
+
+| Data | Total pago | Data | Total pago |
+|---|---|---|---|
+| 01/10 | 117.602,76 | 10/10 | 36.010,82 |
+| 02/10 | 15.796,55 | 13/10 | 155.576,99 |
+| 03/10 | 83,20 | 14/10 | 69.765,84 |
+| 05/10 | 66.384,13 | 15/10 | 64.339,42 |
+| 06/10 | 151.454,74 | 16/10 | 34.836,87 |
+| 07/10 | 10.354,46 | 19/10 | 32.425,52 |
+| 08/10 | 31.407,88 | 20/10 | 182.744,32 |
+| 09/10 | 24.420,41 | 21/10 | 73.914,28 |
+
+A divisão por CNPJ e "por fora" de cada dia está no arquivo local `saldos-atualizacao.local.js` (fora do GitHub).
+
+Totais do mês no admin antigo (`faturamento_contas_mes`, atualizado em 21/10 à noite): outubro pago R$ 1.093.623,64 e a pagar R$ 420.533,10 (total R$ 1.514.156,74, contra R$ 1.515.154,53 do relatório da DevMaster de 19/10: diferença de R$ 997,79); novembro a pagar R$ 1.437.523,70; dezembro a pagar R$ 1.490.624,35; setembro pago R$ 1.422.665,77. Atenção: a soma dos dias de outubro (R$ 1.067.118,19) é R$ 26.505,45 menor que o "pago" do mês no admin (R$ 1.093.623,64): falta lançamento diário ou o mês tem pagamento sem dia.
+
+## Regra fixa: tudo que o Marcus passa no chat vira código e documento (20/10/2026)
+O que o Marcus manda no chat (faturamento acumulado, acertos, "carregar", "a realizar", percentuais) **nunca fica só na conversa nem só no navegador dele**. Em toda atualização, o Claude grava, no mesmo dia:
+1. no código, em `src/apps/montagem/state/store.js`, numa função própria que roda no estado novo e no salvo (padrão `aplicaFat20` para dias fixados e `aplicaHoje20` para o "Hoje"; ao mudar o dia, copiar o padrão com o novo nome e a nova chave de versão);
+2. neste arquivo (tabela acima);
+3. em `domain/versoes.js` (Tecnologia → Versões) e em `DECISOES.md`.
+A leitura do admin antigo (saldos, contas pagas, totais do mês) segue o procedimento de `.claude/commands/atualizar.md` (comando `/atualizar`). Sem o admin antigo disponível, faz-se só a parte do chat e avisa-se o que faltou.
+
+## Como atualizar todo dia
+1. O Marcus passa: acertos e faturamento acumulados até o dia, e (se quiser) o saldo das contas.
+2. Atualizar esta tabela, a migração em `src/apps/montagem/state/store.js` (padrão `fat19FixV`) e `domain/versoes.js`.
+
+## Atualização automática (desde 20/10/2026)
+Tarefa agendada "Atualizar Sorelly Admin" roda todo dia por volta das 3h (03:13): copia saldos das contas e contas pagas do admin antigo (procedimento em `.claude/commands/atualizar.md`) e atualiza esta tabela. **Precisa do computador ligado e do app do Claude aberto**; se estiver fechado, roda quando o app abrir. O faturamento e os previstos continuam entrando só quando o Marcus manda no chat. Para rodar na hora: `/atualizar`.
+
+## Conferência dos saldos (20/10/2026)
+Saldos de 30/09, 01/10, 13/10 e 19/10 conferidos conta a conta com o admin antigo: 0 diferenças nas 29 contas. Totais: 30/09 −R$ 88.321,47 (sem bloqueado −R$ 96.093,04); 01/10 −R$ 164.083,87; 13/10 −R$ 169.529,90; 19/10 −R$ 51.501,62 (sem bloqueado −R$ 59.273,19). Início do mês = 30/09 (decisão do Marcus: o dia 1 só atualiza no fim da tarde).
+
+## Atualização automática de 21/10/2026
+Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 46 −R$ 11.836,97; Dinheiro Caixa Seguro R$ 23.299,25). Contas pagas: o admin antigo ainda não tem o dia 20/10; seguem os 14 dias lançados (01 a 19/10), total pago no mês R$ 810.459,59 nas contas diárias (o total do mês no admin mostra pagas R$ 946.917,85 e a pagar R$ 571.780,33; a diferença vem de lançamentos que não estão no diário por dia).

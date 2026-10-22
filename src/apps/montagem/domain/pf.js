@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/pf.js
 // Pagamentos a Fornecedores (portado do app HTML "PAG FORNECEDORES"): só cálculo e regras, nada de tela.
 // Estado: um objeto `pf` (s.pf) com a mesma forma das variáveis do HTML. Todas as funções recebem o `pf` e NÃO mexem nele, exceto as marcadas "muda o pf" (sincronizar*, semear*, pt*Sync, tokenAcerto).
@@ -9,9 +10,9 @@ import { impactoPedido, motivoImpacto } from "@/apps/montagem/domain/pf-limite";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 
 // pagamentos novos que estão na planilha "Pag. Fornecedores Nova 2026" e ainda não estavam no sistema (arquivo local gitignored)
-var ATU_PF = (function(){ try { var m = import.meta.glob("./pf-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var ATU_PF = (function(){ try { var m = globLocal("apps/montagem/domain/pf-atualizacao.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 var TEM_ATU_PF = !!(ATU_PF && ATU_PF.lancamentos && ATU_PF.lancamentos.length);
-var LOCAL = (function(){ try { var m = import.meta.glob("./pf-dados.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/pf-dados.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 // ---------- constantes (HTML 1300-1307, 3111-3116, 4045, 4152-4163, 4791, 5366, 5613) ----------
 var FORMAS = {

@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/fiscal.js
 // Fiscal (Financeiro), trazido do SorellyAdmin (docs/modulos/fiscal.md; calc.ts e usecases/fiscal). SÓ A LÓGICA: telas vêm depois.
 // Controle dos CNPJs do grupo no Simples Nacional, por CNPJ e por ano: ILF (lastro ÷ venda), consumo do sublimite anual e se o que ainda cabe cobre as contas dos meses restantes.
@@ -12,7 +13,7 @@
 //   e senão do lançamento manual antigo (s.fiscal.hist). Contas a pagar por CNPJ: valor do s.fx vale; sem ele, lê s.contasCnpj (mesma fonte da tela Contas a pagar). Nada é lançado em dobro.
 // Dinheiro em reais (números); ILF e metas como razão (0,30 = 30%). Datas ISO no fuso America/Sao_Paulo.
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./fiscal.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/fiscal.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };
