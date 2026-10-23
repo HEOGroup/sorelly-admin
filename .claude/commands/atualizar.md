@@ -9,7 +9,7 @@ Atualização diária do Sorelly Admin enquanto o servidor não existe. Faça TU
    - Contas pagas por dia: `faturamento_contas_diario` (`valores` com `cnpj-34`, `cnpj-46`, `cnpj-59`, `cnpj-67`, `contas-por-fora`).
    - Totais do mês: `faturamento_contas_mes`.
 2. **Gravar**: regenerar `saldos-atualizacao.local.js` (script modelo: `atualiza.mjs` do histórico, mapeando nome da conta → id por nome normalizado; gitignored). Se faltar dia ou conta, avisar.
-3. **O que o Marcus mandou no chat** (faturamento acumulado, previstos, percentuais, "carregar", a realizar): gravar FIXO no código (função `aplicaFat20` em `state/store.js` ou uma nova no mesmo padrão, que roda no estado novo e no salvo) E no `FATURAMENTO-DIARIO.md` E em `domain/versoes.js` E em `DECISOES.md`. Nunca deixar algo só na memória da conversa ou só no navegador dele.
+3. **O que o Marcus mandou no chat** (faturamento acumulado, previstos, percentuais, "carregar", a realizar): gravar FIXO no código (função `aplicaFat20` em `state/store.js` ou uma nova no mesmo padrão, que roda no estado novo e no salvo) E no `docs/negocio/FATURAMENTO-DIARIO.md` E em `domain/versoes.js` E em `docs/DECISOES.md`. Nunca deixar algo só na memória da conversa ou só no navegador dele.
 4. **Conferir no navegador** com estado limpo: Visão geral (faturamento, acertos, média, previstos) e Caixa (saldos e recebido nas contas) devem mostrar o mesmo faturamento. Limpar o localStorage (`sorelly_montagem_v9`) no fim.
 5. Responder curto: o que foi atualizado, as datas e as diferenças encontradas.
 

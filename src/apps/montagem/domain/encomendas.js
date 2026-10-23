@@ -1,6 +1,6 @@
 import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/encomendas.js
-// Encomendas e Reposições (ESBOÇO, 16/10/2026; contexto e regras em ENCOMENDAS-REPOSICOES.md). Módulo novo: não existe no SorellyAdmin.
+// Encomendas e Reposições (ESBOÇO, 16/10/2026; contexto e regras em docs/negocio/ENCOMENDAS-REPOSICOES.md). Módulo novo: não existe no SorellyAdmin.
 // Controle INTERNO dos pedidos que hoje chegam bagunçados pelo WhatsApp: reposição, liberação de expositor e encomenda. (Decisão de 07/10/2026: reposição NÃO é oferecida às revendedoras por ora.)
 // Estado s.er (só neste navegador). Nasce VAZIO (repositório é público). Dados reais, se existirem, vêm só de domain/encomendas.local.js (gitignored):
 //   export default {config:{...parcial}, revendedoras:[{nome, representante, media3m, maiorVenda}], pedidos:[...]}

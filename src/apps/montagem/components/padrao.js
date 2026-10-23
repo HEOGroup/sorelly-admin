@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — components/padrao.js
-// PADRÃO VISUAL ÚNICO (modelo: Visão geral). Toda tela nova usa estas peças; regras escritas em PADRAO-VISUAL.md (raiz) e vista ao vivo em Tecnologia → Padrão visual.
+// PADRÃO VISUAL ÚNICO (modelo: Visão geral). Toda tela nova usa estas peças; regras escritas em docs/design/PADRAO-VISUAL.md e vista ao vivo em Tecnologia → Padrão visual.
 // Mudou aqui, muda no sistema inteiro. Nada avulso: número sempre dentro de um Indicador ou de uma célula centralizada.
 import { useContagemNaTela } from "@/apps/montagem/lib/contagem-tela";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";

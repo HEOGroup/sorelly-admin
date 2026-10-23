@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — pages/FluxoEmpresa.js
 // Diretoria → Fluxo da empresa: mapa da empresa em blocos robustos, com zoom (roda do mouse) e arrasto, estilo TradingView.
 // Modos: Fluxo geral (todos os setores) e 4 fluxos passo a passo (Kit novo representante / interno, Acerto + kit representante / empresa),
-// cada um uma fila de etapas numeradas (INÍCIO → FIM) com a Revendedora dentro. Regras e líderes: FLUXO-DA-EMPRESA.md (raiz).
+// cada um uma fila de etapas numeradas (INÍCIO → FIM) com a Revendedora dentro. Regras e líderes: docs/negocio/FLUXO-DA-EMPRESA.md.
 // Zoom afastado = bloco compacto (nome, quantidade, líder, progresso); zoom perto = bloco completo. Clicar abre embaixo as telas do setor e os nomes.
 // Os bonequinhos são SEMPRE a quantidade real de pessoas (domain/pessoas.js). Progresso e telas do setor: lista TELAS abaixo (manter em dia com navigation/setores.js).
 // Ainda sem números ao vivo (filas, gargalos). Só sócios, direção e família abrem esta tela por padrão.

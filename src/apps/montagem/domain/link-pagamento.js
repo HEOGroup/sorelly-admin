@@ -1,6 +1,6 @@
 import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/link-pagamento.js
-// Financeiro → Link de pagamento e maquininhas (ESBOÇO; contexto e regras em LINK-DE-PAGAMENTO.md). Módulo novo: não existe no SorellyAdmin.
+// Financeiro → Link de pagamento e maquininhas (ESBOÇO; contexto e regras em docs/negocio/LINK-DE-PAGAMENTO.md). Módulo novo: não existe no SorellyAdmin.
 // A revendedora pede um link (app ou WhatsApp), alguém do atendimento (ou a representante) gera, a cliente paga, o valor abate o acerto da revendedora e o comprovante vai no dia seguinte ao grupo da representante.
 // Estado s.lp (só neste navegador). Nasce VAZIO (repositório é público). Dados reais, se existirem, vêm só de domain/link-pagamento.local.js (gitignored):
 //   export default {config:{...}, meios:[], vinculos:[], revendedoras:[], solicitacoes:[]}

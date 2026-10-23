@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem — pages/Encomendas.js
 // Encomendas e reposições: uma tela só, com abas (Quadro de pedidos, Calculadora de direito, Regras e configuração). ESBOÇO com as regras que temos por enquanto.
-// Corpos em pages/encomendas/. Regras e contas em domain/encomendas.js (estado s.er). Contexto em ENCOMENDAS-REPOSICOES.md. Controle INTERNO (reposição não é oferecida às revendedoras por ora).
+// Corpos em pages/encomendas/. Regras e contas em domain/encomendas.js (estado s.er). Contexto em docs/negocio/ENCOMENDAS-REPOSICOES.md. Controle INTERNO (reposição não é oferecida às revendedoras por ora).
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { AbaErCalculadora } from "@/apps/montagem/pages/encomendas/Calculadora";
 import { AbaErQuadro } from "@/apps/montagem/pages/encomendas/Quadro";

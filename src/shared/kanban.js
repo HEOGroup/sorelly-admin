@@ -1,6 +1,6 @@
 // Sorelly Admin — shared/kanban.js
 // KANBAN PADRÃO: colunas por etapa, cartões que se arrastam de uma coluna para outra (ou "Mover para…" no celular).
-// Peça única do padrão visual (PADRAO-VISUAL.md): todo fluxo por etapas (aprovação de cadastros, kits novos...) usa esta peça.
+// Peça única do padrão visual (docs/design/PADRAO-VISUAL.md): todo fluxo por etapas (aprovação de cadastros, kits novos...) usa esta peça.
 //
 //   e(Kanban, {
 //     colunas: [{k, titulo, cor, itens:[{id, arrastavel?: false, ...}], limite?, dica?, aceita?: bool ou function(item, de) (false = não aceita soltar)}],

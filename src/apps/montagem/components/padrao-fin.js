@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — components/padrao-fin.js
-// PEÇAS DO PADRÃO DO FINANCEIRO (regra fixa do Marcus, 22/10/2026; texto no fim de PADRAO-VISUAL.md). Toda tela do Financeiro nova ou mexida usa só estas peças:
+// PEÇAS DO PADRÃO DO FINANCEIRO (regra fixa do Marcus, 22/10/2026; texto no fim de docs/design/PADRAO-VISUAL.md). Toda tela do Financeiro nova ou mexida usa só estas peças:
 //  · BlocoFiltros / Campo / CampoSel: filtros NO TOPO, grade de 4 colunas iguais (2 no celular), rótulo em cima, controle de 32 px (h-8), texto 13 px que corta com "…".
 //  · FaixaTotais: indicadores numa linha só, células iguais, centralizadas, rótulo + valor (sem nota cinza).
 //  · AbasTela / Segmentado: visões sempre visíveis (abas para destinos, segmentado para 2 a 5 opções da mesma tabela).

@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem — pages/LinkPagamento.js
 // Link de pagamento e maquininhas: uma tela só, com abas (Solicitações, Histórico, Análises, Comprovantes, Taxas e recebimentos, Meios e acessos, Representantes).
-// Os corpos ficam em pages/link-pagamento/. Regras e contas em domain/link-pagamento.js (estado s.lp). Contexto em LINK-DE-PAGAMENTO.md.
+// Os corpos ficam em pages/link-pagamento/. Regras e contas em domain/link-pagamento.js (estado s.lp). Contexto em docs/negocio/LINK-DE-PAGAMENTO.md.
 import { AbaLpAnalises } from "@/apps/montagem/pages/link-pagamento/Analises";
 import { AbaLpComprovantes } from "@/apps/montagem/pages/link-pagamento/Comprovantes";
 import { AbaLpHistorico } from "@/apps/montagem/pages/link-pagamento/Historico";

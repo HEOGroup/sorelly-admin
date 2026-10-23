@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — mobile/links-pagamento-app.js
-// Link de pagamento nos apps de celular (19/10/2026; regras em LINK-DE-PAGAMENTO.md, lógica em domain/link-pagamento.js):
+// Link de pagamento nos apps de celular (19/10/2026; regras em docs/negocio/LINK-DE-PAGAMENTO.md, lógica em domain/link-pagamento.js):
 //  · TelaLinksRev: app da REVENDEDORA — botão "Solicitar link" (valor + parcelas) e "Meus links" com o andamento de cada pedido.
 //  · LinksDoAcerto: app da REPRESENTANTE — mostra os links PAGOS da revendedora (botão "Usar como pagamento" lança a linha no acerto) e avisa dos cancelados/com erro.
 // Dados reais ficam no estado s.lp (nunca neste arquivo). Estilo do app: cartões brancos, cores sólidas, sem degradê.

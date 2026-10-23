@@ -2,7 +2,7 @@
 // Financeiro → Hoje → Pagamentos. REFEITA no padrão do Financeiro (22/10/2026, regra fixa do Marcus; sem cores soltas, sem cartões em degradê): título · faixa de totais · abas visíveis ·
 // tabelas de layout fixo (R$ em todo valor, números à direita, linhas de 32 px). Cor só no estado: Atrasada em amarelo, Completa em verde.
 // Para onde vai o Pix das revendedoras: o Financeiro cria orientações ("direcionar R$ X para tal conta até tal data"), o sistema mostra quanto falta e sugere o destino de cada Pix que chega;
-// o Lucas confirma ou troca. Também é aqui que se define a conta dos pagamentos do atendimento interno (aba Atendimento). Contexto: FLUXO-DE-PAGAMENTOS.md. Versão antiga guardada fora do projeto.
+// o Lucas confirma ou troca. Também é aqui que se define a conta dos pagamentos do atendimento interno (aba Atendimento). Contexto: docs/negocio/FLUXO-DE-PAGAMENTOS.md. Versão antiga guardada fora do projeto.
 import { AbasTela, BlocoFiltros, Botao, CAMPO, CampoSel, FaixaTotais, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { PagamentosAConferir } from "@/apps/montagem/components/pagamentos-conferir";
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp, sugestoes } from "@/apps/montagem/domain/controle-pagamentos";
