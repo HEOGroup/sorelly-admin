@@ -1,10 +1,11 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/marcus-extratos.js
 // Sistema pessoal do Marcus → Extratos (22/10/2026). Lê o CSV do extrato do banco (por ora o da Nubank: Data, Valor, Identificador, Descrição),
 // separa ENTRADAS e SAÍDAS, junta tudo por pessoa/estabelecimento e soma (ex.: quanto foi enviado a cada pessoa no mês).
 // Os extratos ficam SÓ neste navegador (localStorage), nunca no GitHub nem no Admin da empresa. Subir o mesmo mês de novo substitui (sem duplicar).
 var CHAVE = "marcus_extratos_v1";
 // extratos que já vieram do Marcus (arquivo local, gitignored): entram sozinhos; um mês só é preenchido se ainda não existir
-var SEMENTE = (function(){ try { var m = import.meta.glob("./marcus-extratos.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var SEMENTE = (function(){ try { var m = globLocal("apps/montagem/domain/marcus-extratos.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var norm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase().replace(/\s+/g, " ").trim(); };
 // quem é família/próprio e quem é a empresa (entradas): a lista dá para ajustar na tela

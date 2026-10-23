@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/producao.js
 // Produção de peças (fábrica), trazido do SorellyAdmin (docs/modulos/producao.md). NÃO é a Montagem de kits nem a Premiação da montagem.
 // Registro diário do que cada funcionária fabricou (código, quantidade, valor unitário, unidade Sorelly/Serenity); painel por período, categoria
@@ -9,7 +10,7 @@
 
 import { hojeSP, somaDias, ultimoDiaDoMes } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./producao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/producao.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };

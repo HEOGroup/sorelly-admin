@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/catalogo-rev.js
 // Peças do Catálogo do app da revendedora (19/10/2026). Teste com 10 peças; o código e o preço também estão escritos na própria foto.
 // As fotos ficam em public/fotos/catalogo/<código>.jpg. Quando o cadastro de peças existir, esta lista passa a vir de lá.
@@ -26,6 +27,6 @@ function tipoDoCodigo(codigo){
 }
 
 // Clientes de teste do app (nomes e telefones reais passados pelo Marcus): só no arquivo local gitignored domain/clientes-rev.local.js; sem ele a lista começa vazia.
-var CLIENTES_TESTE = (function(){ try { var m = import.meta.glob("./clientes-rev.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(x){ return []; } })();
+var CLIENTES_TESTE = (function(){ try { var m = globLocal("apps/montagem/domain/clientes-rev.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(x){ return []; } })();
 
 export { CATALOGO_REV, CLIENTES_TESTE, tipoDoCodigo };

@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/rh.js
 // Recursos Humanos trazido do SorellyAdmin: presença diária, ABS (absenteísmo) e TO (turnover), relatório diário para o WhatsApp,
 // advertências, controle de experiência e horas extras. As regras ficam aqui; as telas em pages/RH.js. Estado: s.rh (só neste navegador por enquanto).
@@ -50,7 +51,7 @@ function rhDemo(){
 
 // ---------- colaboradores ----------
 // Dados pessoais e de folha vêm da planilha FUNCIONARIOS - CONTROLE 2026, guardada num arquivo LOCAL (fora do GitHub). Sem o arquivo, o cadastro começa vazio e o RH preenche na tela.
-var LOCAIS = (function(){ var m = import.meta.glob("./rh-funcionarios.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : []; })();
+var LOCAIS = (function(){ var m = globLocal("apps/montagem/domain/rh-funcionarios.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : []; })();
 var ALIAS_PLANILHA = {"sthefany-marques-de-aquino-correa":"sthafany-marques-de-aquino-correa"};   // a planilha escreve Sthefany; a lista de Pessoas, Sthafany
 var LOCAL_POR_ID = {}; LOCAIS.forEach(function(x){ LOCAL_POR_ID[ALIAS_PLANILHA[x.id]||x.id] = x; });
 var titulo = function(t){ return String(t||"").toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/\s(Da|De|Do|Das|Dos|E)\s/g, function(m){ return m.toLowerCase(); }); };
@@ -70,7 +71,7 @@ var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
 
 // ---------- presença lida do admin antigo (arquivo local rh-atualizacao.local.js, gerado todo dia 3h30 pela tarefa agendada) ----------
 // formato: {stamp, presenca:{"AAAA-MM-DD":{"NOME COMPLETO":"P" | "P|08:43" | "F" ...}}}. O nome do admin é casado com o do sistema (igual, ou 60% das palavras em comum).
-var ATU_RH = (function(){ try { var m = import.meta.glob("./rh-atualizacao.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var ATU_RH = (function(){ try { var m = globLocal("apps/montagem/domain/rh-atualizacao.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var RH_STAMP = ATU_RH ? String(ATU_RH.stamp||"x") : "";
 var normNome = function(n){ return String(n||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim(); };
 var palavras = function(n){ return normNome(n).split(" ").filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };

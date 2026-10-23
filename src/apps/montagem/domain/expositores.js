@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/expositores.js
 // Expositores (Kits & Produção → Expositores), trazido do SorellyAdmin (docs/modulos/expositores.md).
 // "Condicional" aqui NÃO é a condicional do consignado: é o EXPOSITOR (peça de exposição) que a Sorelly empresta a uma cliente/revendedora,
@@ -11,7 +12,7 @@
 
 import { hojeSP, agoraSP, diasEntre } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./expositores.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/expositores.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };

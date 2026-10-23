@@ -1,0 +1,147 @@
+<title>Teste de fontes Sorelly</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Inter:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto:wght@400;500;700&family=JetBrains+Mono:wght@400;500&family=IBM+Plex+Mono:wght@400;500&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: barra de controles no topo e quatro cartões de fonte lado a lado (empilham no celular); cada cartão mostra a mesma tela real */
+:root{
+  --bg:#f4f4f2; --card:#ffffff; --card2:#f0efec; --fg:#1d1c1a; --fg2:#5b5852; --fg3:#6b675f; --line:#e1dfd8; --line2:#c9c5ba;
+  --in:#1b7a45; --out:#b3261e; --out-bg:#f8e7e5; --accent:#2457a8; --accent-bg:#e8eef9;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#141518; --card:#1c1e23; --card2:#24272d; --fg:#ececea; --fg2:#b4b3ae; --fg3:#8f8e89; --line:#2e3138; --line2:#3c4048;
+  --in:#5fcf8a; --out:#f28b84; --out-bg:#3a1d1b; --accent:#7ea6ea; --accent-bg:#1f2b43; color-scheme:dark } }
+:root[data-theme="dark"]{
+  --bg:#141518; --card:#1c1e23; --card2:#24272d; --fg:#ececea; --fg2:#b4b3ae; --fg3:#8f8e89; --line:#2e3138; --line2:#3c4048;
+  --in:#5fcf8a; --out:#f28b84; --out-bg:#3a1d1b; --accent:#7ea6ea; --accent-bg:#1f2b43; color-scheme:dark }
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,sans-serif;font-size:14px;line-height:1.5;padding-block:0 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:1280px;margin:0 auto}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);border-bottom:1px solid var(--line);padding:12px 0;display:flex;flex-wrap:wrap;gap:12px 24px;align-items:center}
+.top h1{font-size:18px;margin:0;font-weight:600}
+.grp{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--fg2)}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden}
+.seg button{background:transparent;border:0;border-right:1px solid var(--line2);padding:6px 12px;font:inherit;font-size:13px;color:var(--fg2);cursor:pointer}
+.seg button:last-child{border-right:0}
+.seg button[aria-pressed="true"]{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.seg button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.intro{max-width:78ch;color:var(--fg2);margin:16px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px;min-width:0}
+.card .tag{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--fg3);font-weight:600}
+.card h2{margin:2px 0 2px;font-size:22px;font-weight:600;line-height:1.2}
+.card .sub{color:var(--fg2);font-size:var(--tam,14px);margin:0 0 12px}
+.faixa{display:flex;flex-wrap:wrap;border:1px solid var(--line2);border-radius:6px;overflow:hidden;background:var(--card2);margin-bottom:12px}
+.faixa>div{flex:1 1 120px;padding:6px 10px;text-align:center;border-right:1px solid var(--line2);min-width:0}.faixa>div:last-child{border-right:0}
+.faixa small{display:block;font-size:11px;letter-spacing:.06em;text-transform:uppercase;font-weight:600}
+.faixa b{display:block;font-size:16px;font-weight:500;white-space:nowrap;font-variant-numeric:tabular-nums}
+.num-mono .faixa b{font-family:var(--fnum)}
+body{--fg2:var(--fg);--fg3:var(--fg)}   /* letras brancas, nunca cinza (regra do Marcus, 22/10/2026) */
+.kpi{background:var(--card2);border-radius:6px;padding:8px 10px;min-width:0}
+.kpi .l{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);font-weight:600}
+.kpi .v{font-size:19px;font-weight:500;margin-top:2px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:12px;color:var(--fg3)}
+.tw{overflow-x:auto;border:1px solid var(--line);border-radius:6px}
+table{border-collapse:collapse;width:100%;font-size:var(--tam,14px)}
+th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);font-weight:600;padding:8px 10px;background:var(--card2);border-bottom:1px solid var(--line2);text-align:left;white-space:nowrap}
+td{padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+.n{text-align:right;font-variant-numeric:tabular-nums}
+th.n{text-align:right}
+.num-mono .n,.num-mono .kpi .v{font-family:var(--fnum)}
+.in{color:var(--in)} .out{color:var(--out)}
+tr.def td{background:var(--out-bg)}
+tr.tot td{font-weight:600;border-top:2px solid var(--line2);background:var(--card2)}
+.amostra{margin-top:12px;display:grid;gap:6px}
+.amostra .t{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--fg3);font-weight:600}
+.amostra p{margin:0;font-size:var(--tam,14px)}
+.chars{font-size:20px;letter-spacing:.04em;font-variant-numeric:tabular-nums}
+.pesos{display:flex;gap:16px;flex-wrap:wrap;font-size:var(--tam,14px)}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:1px solid var(--line2);background:var(--card);color:var(--fg);padding:7px 14px;border-radius:6px;font:inherit;font-size:var(--tam,14px)}
+.btn.pri{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:4px;background:var(--out-bg);color:var(--out)}
+.nota{font-size:12.5px;color:var(--fg3);margin-top:8px;max-width:70ch}
+.f-geist{font-family:"Geist",system-ui,sans-serif;--fnum:"JetBrains Mono",ui-monospace,monospace}
+.f-inter{font-family:"Inter",system-ui,sans-serif;--fnum:"IBM Plex Mono",ui-monospace,monospace}
+.f-plex{font-family:"IBM Plex Sans",system-ui,sans-serif;--fnum:"IBM Plex Mono",ui-monospace,monospace}
+.f-roboto{font-family:"Roboto",system-ui,sans-serif;--fnum:"Roboto Mono",ui-monospace,monospace}
+.atual-titulo h2{font-family:"JetBrains Mono",ui-monospace,monospace;font-weight:500;font-size:20px}
+.dica{background:var(--accent-bg);border-left:3px solid var(--accent);padding:10px 14px;border-radius:0 6px 6px 0;max-width:78ch;margin:12px 0;color:var(--fg)}
+
+</style>
+
+<div class="wrap">
+<div class="top">
+  <h1>Teste de fontes · tela Faturamento</h1>
+  <div class="grp">Tamanho <div class="seg" role="group" aria-label="Tamanho do texto"><button type="button" data-tam="13px" aria-pressed="true">13 px</button><button type="button" data-tam="14px" aria-pressed="false">14 px</button></div></div>
+  <div class="grp">Números <div class="seg" role="group" aria-label="Fonte dos números"><button type="button" data-num="sans" aria-pressed="true">Mesma fonte</button><button type="button" data-num="mono" aria-pressed="false">Fonte mono</button></div></div>
+  <div class="grp">Tema <div class="seg" role="group" aria-label="Tema"><button type="button" data-tema="dark" aria-pressed="false">Escuro</button><button type="button" data-tema="light" aria-pressed="false">Claro</button></div></div>
+</div>
+
+<p class="intro">A mesma tela do Faturamento nas quatro fontes. Agora com a faixa de totais (opção A), "R$" em todos os valores e texto sem cinza. Compare o desenho dos números, o alinhamento das colunas e o título. Troque o tamanho (13 ou 14 px), os números (na mesma fonte do texto ou em uma fonte mono) e o tema. As fontes vêm do Google Fonts; o cartão <b>Geist hoje</b> mostra como está o sistema agora, com o título em fonte de código.</p>
+
+<div class="dica"><b>O que olhar:</b> 1) o <b>0</b> e o <b>O</b>, o <b>1</b> e o <b>l</b> na linha de teste; 2) se as colunas de dinheiro alinham os centavos; 3) se o título parece "código" ou "sistema"; 4) o vermelho no escuro com cada fonte; 5) se 13 px ainda lê bem.</div>
+
+<div class="grid" id="grade"></div>
+<p class="nota">Texto de apoio e números em cada cartão usam a fonte do cartão. Em "Fonte mono", só os números mudam para a mono da mesma família (JetBrains Mono, IBM Plex Mono ou Roboto Mono). O Inter não tem uma mono própria; foi pareado com a IBM Plex Mono.</p>
+</div>
+
+<template id="modelo">
+  <div class="card">
+    <div class="tag"></div>
+    <h2>Faturamento</h2>
+    <p class="sub">Outubro/2026</p>
+    <div class="faixa">
+      <div><small>Recebido</small><b class="in">R$ 928.995,38</b></div>
+      <div><small>Pago</small><b class="out">R$ 1.067.118,19</b></div>
+      <div><small>Resultado</small><b class="out">−R$ 138.122,81</b></div>
+      <div><small>Acertos</small><b>1.176</b></div>
+      <div><small>Média</small><b>R$ 789,96</b></div>
+    </div>
+    <div class="tw"><table>
+      <thead><tr><th>Dia</th><th class="n">Faturamento</th><th class="n">Contas pagas</th><th class="n">Saldo do dia</th><th class="n">Acumulado</th></tr></thead>
+      <tbody>
+        <tr><td>14/10 · ter</td><td class="n in">R$ 97.906,49</td><td class="n out">R$ 69.765,84</td><td class="n in">R$ 28.140,65</td><td class="n out">−R$ 96.482,07</td></tr>
+        <tr><td>15/10 · qua</td><td class="n in">R$ 100.029,55</td><td class="n out">R$ 64.339,42</td><td class="n in">R$ 35.690,13</td><td class="n out">−R$ 60.791,94</td></tr>
+        <tr><td>16/10 · qui</td><td class="n in">R$ 59.025,25</td><td class="n out">R$ 34.836,87</td><td class="n in">R$ 24.188,38</td><td class="n out">−R$ 36.603,56</td></tr>
+        <tr><td>19/10 · seg</td><td class="n in">R$ 99.719,05</td><td class="n out">R$ 32.425,52</td><td class="n in">R$ 67.293,53</td><td class="n out">−R$ 21.109,35</td></tr>
+        <tr class="def"><td>20/10 · ter</td><td class="n in">R$ 99.437,29</td><td class="n out">R$ 182.744,32</td><td class="n out">−R$ 83.307,03</td><td class="n out">−R$ 104.416,38</td></tr>
+        <tr class="def"><td>21/10 · qua</td><td class="n in">R$ 40.207,85</td><td class="n out">R$ 73.914,28</td><td class="n out">−R$ 33.706,43</td><td class="n out">−R$ 138.122,81</td></tr>
+        <tr class="tot"><td>Total do mês</td><td class="n in">R$ 928.995,38</td><td class="n out">R$ 1.067.118,19</td><td class="n out">−R$ 138.122,81</td><td class="n out">−R$ 138.122,81</td></tr>
+      </tbody></table></div>
+    <div class="amostra">
+      <div class="t">Teste de caracteres parecidos</div>
+      <p class="chars">0 O o · 1 l I · 5 S · 8 B · 6 G · R$ 7.000,00</p>
+      <div class="t">Pesos: 400 · 500 · 600</div>
+      <div class="pesos"><span style="font-weight:400">Contas a pagar</span><span style="font-weight:500">Contas a pagar</span><span style="font-weight:600">Contas a pagar</span></div>
+      <div class="t">Botões e estado</div>
+      <div class="btnrow"><button class="btn pri" type="button">Lançar dia</button><button class="btn" type="button">Exportar planilha</button><span class="badge">Atrasada · 12 dias</span></div>
+      <div class="t">Frase de erro</div>
+      <p>O valor de 21/10 é menor que o de 20/10. Confira se digitou o total do mês, não só o do dia.</p>
+    </div>
+  </div>
+</template>
+
+<script>
+(function(){
+  var FONTES=[
+    {c:"f-geist", n:"Geist · como está hoje (título em fonte de código)", atual:true},
+    {c:"f-geist", n:"Geist · título na mesma fonte"},
+    {c:"f-inter", n:"Inter"},
+    {c:"f-plex", n:"IBM Plex Sans"},
+    {c:"f-roboto", n:"Roboto"}
+  ];
+  var grade=document.getElementById('grade'), mod=document.getElementById('modelo');
+  FONTES.forEach(function(f){
+    var el=mod.content.cloneNode(true).firstElementChild;
+    el.classList.add(f.c); if(f.atual) el.classList.add('atual-titulo');
+    el.querySelector('.tag').textContent=f.n;
+    grade.appendChild(el);
+  });
+  function setPressed(attr,val){ document.querySelectorAll('['+attr+']').forEach(function(b){ b.setAttribute('aria-pressed', b.getAttribute(attr)===val ? 'true':'false'); }); }
+  document.querySelectorAll('[data-tam]').forEach(function(b){ b.addEventListener('click',function(){ document.documentElement.style.setProperty('--tam', b.dataset.tam); setPressed('data-tam', b.dataset.tam); }); });
+  document.querySelectorAll('[data-num]').forEach(function(b){ b.addEventListener('click',function(){ grade.classList.toggle('num-mono', b.dataset.num==='mono'); setPressed('data-num', b.dataset.num); }); });
+  document.querySelectorAll('[data-tema]').forEach(function(b){ b.addEventListener('click',function(){ document.documentElement.setAttribute('data-theme', b.dataset.tema); setPressed('data-tema', b.dataset.tema); }); });
+  var escuro=window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches; setPressed('data-tema', escuro ? 'dark':'light');
+  document.documentElement.style.setProperty('--tam','13px');
+})();
+</script>

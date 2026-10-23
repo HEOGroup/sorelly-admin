@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/marketing.js
 // Marketing (setor Marketing), trazido do SorellyAdmin (docs/modulos/marketing.md): Mural de Criativos, Divulgação e Erros em Produtos.
 // Mural de Novidades e Notificações têm doc própria e NÃO estão aqui.
@@ -12,7 +13,7 @@
 
 import { hojeSP, agoraSP } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./marketing.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/marketing.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };

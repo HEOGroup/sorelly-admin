@@ -1,3 +1,5 @@
+import { ehFam, itensEmpresa, setBaixas, setClasse, setLancamentos, setPf } from "@/apps/montagem/domain/contas-empresa";
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/fiscal.js
 // Fiscal (Financeiro), trazido do SorellyAdmin (docs/modulos/fiscal.md; calc.ts e usecases/fiscal). SÓ A LÓGICA: telas vêm depois.
 // Controle dos CNPJs do grupo no Simples Nacional, por CNPJ e por ano: ILF (lastro ÷ venda), consumo do sublimite anual e se o que ainda cabe cobre as contas dos meses restantes.
@@ -12,7 +14,7 @@
 //   e senão do lançamento manual antigo (s.fiscal.hist). Contas a pagar por CNPJ: valor do s.fx vale; sem ele, lê s.contasCnpj (mesma fonte da tela Contas a pagar). Nada é lançado em dobro.
 // Dinheiro em reais (números); ILF e metas como razão (0,30 = 30%). Datas ISO no fuso America/Sao_Paulo.
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./fiscal.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/fiscal.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };
@@ -36,13 +38,13 @@ function yearMonth(ano, mes1){ return ano+"-"+p2(mes1); }
 function periodoDoDia(dia){ var d = Number(String(dia).slice(8,10)); return d<=10 ? 0 : d<=20 ? 1 : 2; }
 
 // ---------- configuração ----------
-var CONFIG_PADRAO = {sublimiteAnual:3600000, metaIlf:0.30, criticoIlf:0.15,
+var CONFIG_PADRAO = {sublimiteAnual:3600000, metaIlf:0.25, criticoIlf:0.15,
   minimoAtivo:1000,      // CNPJ com venda no ano abaixo disso = "sem movimento" (não dispara aviso)
   riscoPct:0.9,          // projeção acima de 90% do sublimite = ATENÇÃO
   usoLimitePct:0.85};    // contas futuras ≥ 85% do que ainda cabe = NO LIMITE
 
 function fxDemo(){
-  var s = {v:1, seq:0, config:clone(CONFIG_PADRAO), empresas:[], notas:[], saidas:[], contas:[], log:[]};
+  var s = {v:2, seq:0, config:clone(CONFIG_PADRAO), empresas:[], notas:[], saidas:[], contas:[], log:[]};
   if(LOCAL){
     if(LOCAL.config) Object.assign(s.config, LOCAL.config);
     (LOCAL.empresas||[]).forEach(function(d){ var o = clone(d); if(o.id==null) o.id = "e"+(++s.seq); o.cnpjId = o.cnpjId||""; s.empresas.push(o); });
@@ -57,7 +59,8 @@ function fxMigrar(fx){
   if(!fx) return fxDemo(); var base = fxDemo();
   Object.keys(base).forEach(function(k){ if(fx[k]===undefined) fx[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(fx.config[k]===undefined) fx.config[k] = CONFIG_PADRAO[k]; });
-  fx.v = 1; return fx;
+  if((fx.v||1)<2 && fx.config.metaIlf===0.3) fx.config.metaIlf = 0.25;   // meta de ILF passou a 25% (23/10/2026)
+  fx.v = 2; return fx;
 }
 
 // ---------- regras puras ----------
@@ -107,7 +110,7 @@ function empCalc(fx, empresa, ano, dec, contaFallback){
   else sub = {cls:"ok", txt:"OK"};
   var contasMes = [0,1,2,3,4,5,6,7,8,9,10,11].map(function(i){
     var ym = yearMonth(ano, i+1), c = fx.contas.filter(function(x){ return x.empresaId===empresa.id && x.yearMonth===ym; })[0];
-    if(c) return c.total; var f = contaFallback ? contaFallback(empresa, ym) : undefined; return f==null ? 0 : f;
+    var f = contaFallback ? contaFallback(empresa, ym) : undefined; if(f!=null) return f; return c ? c.total : 0;
   });
   var contas = r2(contasMes.reduce(function(t,v){ return t+v; }, 0)), contasDec = r2(contasMes.slice(0, dec).reduce(function(t,v){ return t+v; }, 0)), contasFut = r2(contas-contasDec);
   var sobra = r2(acum-contasDec), cobertura = contasDec>0 ? acum/contasDec : 0;
@@ -129,8 +132,15 @@ function anoPadrao(s){ var fx = s.fx; var anos = {}; fx.saidas.forEach(function(
 // anos que têm lançamento (mais o atual), do mais novo ao mais antigo
 function anosDisponiveis(s){ var fx = s.fx, a = {}; a[hojeSP().slice(0,4)] = 1; fx.saidas.forEach(function(x){ a[String(x.yearMonth).slice(0,4)] = 1; }); fx.notas.forEach(function(n){ a[String(n.data).slice(0,4)] = 1; }); fx.contas.forEach(function(c){ a[String(c.yearMonth).slice(0,4)] = 1; });
   return Object.keys(a).filter(Boolean).sort().reverse().map(Number); }
-// contas a pagar da tela antiga (s.contasCnpj[ano][cnpjId][mes 0-11]) como fonte de reserva
-function fallbackContas(s){ return function(emp, ym){ var id = emp.cnpjId; if(!id) return undefined; var an = (s.contasCnpj||{})[ym.slice(0,4)]; var v = an && an[id] ? an[id][Number(ym.slice(5,7))-1] : undefined; return v; }; }
+// contas a pagar de cada CNPJ vindas do FINANCEIRO (Contas a pagar da empresa, pago + falta pagar, sem o que é da família). Fonte oficial desde 23/10/2026.
+// Sem dado do Financeiro naquele mês/CNPJ, vale o lançado à mão no Fiscal e, por último, a tela antiga Contas a pagar por CNPJ (s.contasCnpj[ano][cnpjId][mes 0-11]).
+function fallbackContas(s){
+  var cx = s.cpe||{}; setClasse(cx.classe); setLancamentos(cx.lanc); setBaixas(cx.baixas); setPf(s.pf);
+  var fin = {}; itensEmpresa().forEach(function(i){ if(ehFam(i)) return; var k = i.filial+"|"+i.mes; fin[k] = r2((fin[k]||0)+i.valor); });
+  var f = function(emp, ym){ var id = emp.cnpjId; if(!id) return undefined; var k = id+"|"+ym; if(fin[k]!=null) return fin[k]; var an = (s.contasCnpj||{})[ym.slice(0,4)]; return an && an[id] ? an[id][Number(ym.slice(5,7))-1] : undefined; };
+  f.doFinanceiro = function(emp, ym){ return !!emp.cnpjId && fin[emp.cnpjId+"|"+ym]!=null; };
+  return f;
+}
 
 // visão geral por CNPJ e consolidado do grupo
 function fxVisaoGeral(s, ano){
@@ -187,7 +197,7 @@ function fxSaidasDoMes(s, empresaId, ym){
 function fxGradeContas(s, ano){
   var fb = fallbackContas(s); ano = ano||anoPadrao(s);
   return s.fx.empresas.map(function(emp){ var meses = [0,1,2,3,4,5,6,7,8,9,10,11].map(function(i){ var ym = yearMonth(ano, i+1), c = s.fx.contas.filter(function(x){ return x.empresaId===emp.id && x.yearMonth===ym; })[0]; var f = fb(emp, ym);
-    return {mes:i+1, ym:ym, valor: c ? c.total : (f==null ? 0 : f), origem: c ? "fiscal" : (f!=null ? "contas-a-pagar" : "vazio")}; });
+    var fin = f!=null && fb.doFinanceiro(emp, ym); return {mes:i+1, ym:ym, valor: f!=null ? f : (c ? c.total : 0), origem: fin ? "financeiro" : c ? "fiscal" : (f!=null ? "contas-a-pagar" : "vazio")}; });
     return {empresaId:emp.id, nome:emp.nome, meses:meses, total:r2(meses.reduce(function(t,m){ return t+m.valor; }, 0))}; });
 }
 // quantos lançamentos o CNPJ tem (a tela avisa antes de apagar)

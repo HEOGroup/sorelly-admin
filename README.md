@@ -3,6 +3,8 @@
 Os dois HTMLs de página única viraram um projeto Vite + React + React Router,
 com rotas de verdade, uma página por arquivo e carregamento sob demanda.
 
+> **22/10/2026: migrado para Next.js 14 com o servidor dentro do Next** (rotas `app/api/*`). A versão Vite + servidor Fastify está inteira em `backup/`. Comandos: `npm run dev` (http://localhost:3000), `npm run build`, `npm run start`. Variáveis: `.env.exemplo`. O texto abaixo conta a história da migração dos HTMLs para Vite; a tela e as regras continuam as mesmas.
+
 **Nada mudou na tela.** O DOM renderizado das 20 telas foi comparado caractere a
 caractere com o dos HTMLs originais: idêntico (só variam relógios e cronômetros).
 
@@ -37,7 +39,8 @@ seja idêntico — e não impede escrever as telas novas em JSX, os dois convive
 
 ```
 src/
-├─ main.js                    entrada: monta o router
+├─ cliente.js                 entrada no navegador: monta o router (chamada por app/[[...slug]]/)
+├─ server/                    servidor (login, estado, rotina, DevMaster) usado por app/api/*
 ├─ router/
 │  ├─ rotas.js                TABELA DE ROTAS — uma linha por página
 │  └─ use-rota-aba.js         sincroniza URL <-> state.aba dos dois apps

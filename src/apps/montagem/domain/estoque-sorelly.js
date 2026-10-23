@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Estoque Sorelly (Financeiro): estoque GERAL de peças (joias prontas), interno + com revendedoras, preenchido mês a mês.
 // Trazido do SorellyAdmin (docs/modulos/estoque.md). NÃO é o estoque de materiais (esse é compras-estoque.js).
 // Estado s.es = {config, posicoes[], fechamentos[]}. Nasce VAZIO; dados reais só em domain/estoque-sorelly.local.js (gitignored):
@@ -10,7 +11,7 @@
 
 import { hojeSP, agoraSP } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./estoque-sorelly.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/estoque-sorelly.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };

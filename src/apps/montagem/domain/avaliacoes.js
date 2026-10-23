@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/avaliacoes.js
 // Área Avaliações, trazida do SorellyAdmin (docs/modulos/avaliacoes.md). Quatro frentes:
 //  1) representantes avaliadas pelas REVENDEDORAS (perguntas configuráveis, com peso; as respostas vêm do app da revendedora, que NÃO está ligado: entram à mão);
@@ -12,7 +13,7 @@
 import { hojeSP, agoraSP, somaDias, listaDias } from "./cadastro-leads";
 import { resumoRep } from "./representantes";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./avaliacoes.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/avaliacoes.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };

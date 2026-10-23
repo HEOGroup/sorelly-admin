@@ -8,21 +8,21 @@ import { COR, Aviso, Bt, Selo, Vazio, corCls, fmt, useFx } from "@/apps/montagem
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
 
-var ORIGEM = {"contas-a-pagar":"Valor vindo de Contas a pagar por CNPJ. Edite aqui para sobrepor.", fiscal:"Valor lançado no Fiscal."};
+var ORIGEM = {financeiro:"Valor vindo do Financeiro (Contas a pagar, pago mais falta pagar). Não se edita aqui.", "contas-a-pagar":"Valor vindo de Contas a pagar por CNPJ. Edite aqui para sobrepor.", fiscal:"Valor lançado no Fiscal."};
 
 // ───────────── Contas a pagar ─────────────
 function AbaFxContas(p){
   var f = useFx(), ano = p.ano, grade = fxGradeContas(f.s, ano);
   var ed = useState(null), rascunho = useState(0);
   if(!grade.length) return e(Vazio,{ic:"buildings", acao:e(Bt,{tipo:"forte", ic:"gear", onClick:function(){ p.ir("config"); }}, "Cadastrar empresas")}, "Cadastre ao menos uma empresa para lançar contas.");
-  var abrir = function(emp, m){ ed[1]({id:emp.empresaId, ym:m.ym}); rascunho[1](m.valor); };
+  var abrir = function(emp, m){ if(m.origem==="financeiro") return; ed[1]({id:emp.empresaId, ym:m.ym}); rascunho[1](m.valor); };
   var salvar = function(){ f.envia({op:"conta_set", empresaId:ed[0].id, yearMonth:ed[0].ym, total:Number(rascunho[0])||0}); ed[1](null); };
   var totalMes = function(i){ return Math.round(grade.reduce(function(t, g){ return t+g.meses[i].valor; }, 0)*100)/100; };
   var totalGeral = Math.round(grade.reduce(function(t, g){ return t+g.total; }, 0)*100)/100;
-  var vindas = grade.some(function(g){ return g.meses.some(function(m){ return m.origem==="contas-a-pagar"; }); });
+  var vindas = grade.some(function(g){ return g.meses.some(function(m){ return m.origem==="financeiro" || m.origem==="contas-a-pagar"; }); });
   return e("div",{className:"flex flex-col gap-2.5"},
     e(Faixa,{n:2}, e(Indicador,{t:"Contas do ano", v:fmt.brl(totalGeral), cor:"cian", sub:"Todas as empresas, "+ano}), e(Indicador,{t:"Empresas", v:grade.length, cor:"total"})),
-    vindas && e(Aviso,{cor:"info", ic:"info"}, "As células com o ícone de vínculo vêm de Contas a pagar por CNPJ e não precisam ser digitadas de novo."),
+    vindas && e(Aviso,{cor:"info", ic:"info"}, "As células com o ícone de vínculo vêm do Financeiro (Contas a pagar da empresa, sem a família) e se atualizam sozinhas. Só os meses sem dado do Financeiro aceitam lançamento à mão."),
     e(BlocoBarra,{cor:"turquesa", t:"Contas a pagar por empresa e mês", compacto:true},
       e("div",{className:"p-2"}, e(Tab,{cols:["Mês"].concat(grade.map(function(g){ return g.nome; }), ["Total do mês"])},
         MESES.map(function(m, i){
@@ -33,7 +33,7 @@ function AbaFxContas(p){
                 e(Bt,{tipo:"forte", rotulo:"Salvar valor", ic:"check-circle", onClick:salvar, className:"h-8 px-2"}), e(Bt,{rotulo:"Cancelar", ic:"x", onClick:function(){ ed[1](null); }, className:"h-8 px-2"})));
               return e(Td,{key:g.empresaId, dinheiro:true},
                 e("button",{type:"button", onClick:function(){ abrir(g, c); }, title:ORIGEM[c.origem] || "Clique para lançar", "aria-label":"Editar contas de "+g.nome+" em "+m, className:"inline-flex items-center justify-center gap-1 rounded-md px-2 py-0.5 hover:bg-white/10 "+(c.valor>0 ? "" : "text-white/40")},
-                  c.origem==="contas-a-pagar" && e(Ph,{n:"link-simple", s:12, style:{color:ESTADO.info}}), c.valor>0 ? fmt.brl(c.valor) : "—")); }),
+                  (c.origem==="financeiro" || c.origem==="contas-a-pagar") && e(Ph,{n:"link-simple", s:12, style:{color:ESTADO.info}}), c.valor>0 ? fmt.brl(c.valor) : "—")); }),
             e(Td,{dinheiro:true, forte:true}, fmt.brl(totalMes(i)))); }),
         e("tr",{className:LINHA+" bg-white/5"}, e(Td,{forte:true}, "Total do ano"), grade.map(function(g){ return e(Td,{key:g.empresaId, dinheiro:true, forte:true}, fmt.brl(g.total)); }), e(Td,{dinheiro:true, forte:true, cor:"cian"}, fmt.brl(totalGeral)))))));
 }

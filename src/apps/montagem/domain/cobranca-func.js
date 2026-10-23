@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/cobranca-func.js
 // Cobrança de Funcionárias, trazida do SorellyAdmin ("Crédito de Peças"): joias que funcionárias compram a crédito, com desconto, da própria Sorelly. Operada pelo setor de Cobranças (Amanda).
 // Lança-se a compra, o desconto sai sozinho; os pagamentos abatem o SALDO DEVEDOR TOTAL; o sistema mostra quem deve, quem quitou, quem está em atraso, as negociações e o relatório mensal.
@@ -13,7 +14,7 @@ var CONFIG_PADRAO = {descontoAte200:40, desconto200a300:45, desconto300a400:50, 
   pagamentoMinimoAte99:50, pagamentoMinimo100a199:75, pagamentoMinimo200a299:100, pagamentoMinimo300a399:125, pagamentoMinimo400a500:150};
 
 // dados reais (credito_peca_* do admin antigo) só no arquivo local gitignored domain/cobranca-func.local.js; sem ele, nasce vazio
-var LOCAL = (function(){ try { var m = import.meta.glob("./cobranca-func.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/cobranca-func.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 function cfDemo(){
   var cf = {v:1, importV:0, config:Object.assign({}, CONFIG_PADRAO), funcionarias:[], compras:[], pagamentos:[], negociacoes:[]};
   if(LOCAL){ var c = JSON.parse(JSON.stringify(LOCAL)); Object.assign(cf.config, c.config||{}); cf.funcionarias = c.funcionarias||[]; cf.compras = c.compras||[]; cf.pagamentos = c.pagamentos||[]; cf.negociacoes = c.negociacoes||[]; cf.importV = 1; }

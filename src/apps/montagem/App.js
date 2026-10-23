@@ -22,7 +22,7 @@ import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
-import { BarraPerguntas, SubAbas } from "@/apps/montagem/components/barra-perguntas";
+import { MenuSetor } from "@/apps/montagem/components/barra-menu";
 import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
@@ -167,7 +167,7 @@ function App(){
   // setor da tela aberta (para a barra do topo)
   var setorAtual = (function(){ var ach = []; setoresV.forEach(function(st){ if(st.direto) return; var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
-  var navPerg = !!(setorAtual && setorAtual.st.menu);   // Financeiro: perguntas no topo + abas dentro (components/barra-perguntas.js)
+  var navPerg = !!(setorAtual && setorAtual.st.menu);   // setor com menu em texto (Financeiro): MenuSetor = menu + abas abertas + busca (components/barra-menu.js)
   var colSt = colArea && setoresV.find(function(x){return x.id===colArea.setor;}), colAr = colSt && colSt.areas[colArea.i];
   // largura da coluna pelo maior texto (tela, sistema ou título), entre 13 e 22 rem
   var colW = colAr ? 216 : 0;   // coluna estreita: os nomes longos quebram em duas linhas (ex.: "Faturamento & / contas a pagar")
@@ -190,7 +190,7 @@ function App(){
     e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
       e("div",{className:"relative flex h-28 items-center justify-center border-b border-sidebar-border px-4"},
-        e("img",{src:(import.meta.env.BASE_URL||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
+        e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
       !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
         [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"]].map(function(x){
@@ -209,7 +209,6 @@ function App(){
       e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
-        navPerg ? e("div",{className:"flex min-w-0 flex-1 items-center gap-3"}, e("span",{className:"flex shrink-0 items-center gap-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap xl:inline"}, setorAtual.st.nome.replace("\n"," "))), e(BarraPerguntas,{menu:setorAtual.st.menu, cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) :
         e("span",{className:"min-w-0 flex-1 truncate text-sm text-muted-foreground whitespace-nowrap"}, onde ? onde.setor.nome : "Sorelly", onde && e(React.Fragment,null, e("span",{className:"mx-1.5"},"/"), onde.area.nome), e("span",{className:"mx-1.5"},"/"), e("span",{className:"text-foreground"}, titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
@@ -222,7 +221,7 @@ function App(){
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
-      navPerg && e(SubAbas,{menu:setorAtual.st.menu, cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         e("span",{className:"mr-1 flex shrink-0 items-center gap-2 pr-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap sm:inline"}, setorAtual.st.nome.replace("\n"," "))),
         e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}), false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;

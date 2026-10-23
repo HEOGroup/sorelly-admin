@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/cadastro-leads.js
 // Aprovação de cadastros, trazida do SorellyAdmin (docs/modulos/aprovacao-cadastros.md): fila de candidatas a revendedora, aprovar (escolhendo como recebe o kit) ou reprovar,
 // métricas das decisões, funil "Desempenho", campanhas de anúncio, origem por tag e histórico (Registros).
@@ -5,7 +6,7 @@
 // Nasce VAZIO (repositório é público). Dados reais, se existirem, vêm só de domain/cadastro-leads.local.js (gitignored): export default {leads:[...], campanhas:[...]}.
 // Datas em ISO no fuso America/Sao_Paulo ("2026-10-16" ou "2026-10-16T14:30:00"), sem depender de UTC.
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./cadastro-leads.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/cadastro-leads.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r1 = function(n){ return Math.round((n||0)*10)/10; };
 var r2 = function(n){ return Math.round((n||0)*100)/100; };

@@ -1,10 +1,11 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/marcus.js
 // Sistema PARTICULAR do Marcus: estado próprio (não mistura com o do admin), guardado no navegador em "sorelly_marcus_v1".
 // Os dados reais (senhas, CPF, patrimônio) ficam SÓ em marcus.local.js (gitignored: o repositório é público); sem esse arquivo o sistema abre vazio.
 import { useSyncExternalStore } from "react";
 
 var CHAVE = "sorelly_marcus_v1";
-var LOCAL = (function(){ try { var m = import.meta.glob("./marcus.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/marcus.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var VAZIO = {recebimentos:{}, bens:[], dividas:[], contas:[], pagos:{}, acessos:[], planilhas:[], credito:[], atividades:[], empresas:[], carros:[], pessoais:[]};
 
 function inicial(){

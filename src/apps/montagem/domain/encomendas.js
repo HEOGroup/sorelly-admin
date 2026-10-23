@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/encomendas.js
 // Encomendas e Reposições (ESBOÇO, 16/10/2026; contexto e regras em ENCOMENDAS-REPOSICOES.md). Módulo novo: não existe no SorellyAdmin.
 // Controle INTERNO dos pedidos que hoje chegam bagunçados pelo WhatsApp: reposição, liberação de expositor e encomenda. (Decisão de 07/10/2026: reposição NÃO é oferecida às revendedoras por ora.)
@@ -10,7 +11,7 @@
 import { hojeSP, agoraSP, somaDias } from "./cadastro-leads";
 import { DIRETORIA } from "./equipe";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./encomendas.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/encomendas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };

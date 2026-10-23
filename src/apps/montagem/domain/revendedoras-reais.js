@@ -1,8 +1,9 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/revendedoras-reais.js
 // Revendedoras do atendimento interno com dados REAIS. Os dados (nome, telefone, código da DevMaster) ficam em revendedoras-internas.local.js,
 // fora do Git porque o repositório é público; aqui só mora o código que transforma a lista em agenda, controle e pedidos de pagamento.
 // Sem o arquivo local, as telas ficam vazias (nada de dados de mentira). Quando existir servidor, a lista vem de lá.
-var LOCAL = (function(){ var m = import.meta.glob("./revendedoras-internas.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();
+var LOCAL = (function(){ var m = globLocal("apps/montagem/domain/revendedoras-internas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();
 var LINHAS = LOCAL && LOCAL.linhas ? LOCAL.linhas : [];
 var PEDIDOS = LOCAL && LOCAL.pedidosHoje ? LOCAL.pedidosHoje : [];
 function tem(){ return LINHAS.length>0; }

@@ -59,7 +59,7 @@ function Seletor(p){
 
 // entrada de cada app: só login (usuário, senha e o botão Entrar como TESTE)
 function Entrada(p){
-  var logo = (import.meta.env.BASE_URL||"/")+"logo-sorelly.png", campo = "h-11 w-full rounded-full border border-white/15 bg-[#121212] px-5 text-[14px] text-white outline-none placeholder:text-white/45";
+  var logo = ("/"||"/")+"logo-sorelly.png", campo = "h-11 w-full rounded-full border border-white/15 bg-[#121212] px-5 text-[14px] text-white outline-none placeholder:text-white/45";
   return e("div",{className:"-mx-4 -mt-2 -mb-10 flex flex-col bg-[#070707] text-white", style:{height:p.altura||679}},
     e("div",{className:"flex flex-col items-center gap-2 px-6 pb-6 pt-10", style:{background:"radial-gradient(ellipse at 50% 35%, #3a2d12 0%, #0b0a08 60%)"}},
       e("img",{src:logo, alt:"Sorelly Joias", draggable:false, className:"h-20 w-auto select-none"}),

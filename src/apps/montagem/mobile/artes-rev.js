@@ -7,7 +7,7 @@ import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useState } from "@/shared/react";
 
-var base = function(){ return import.meta.env.BASE_URL || "/"; };
+var base = function(){ return "/" || "/"; };
 var urlDe = function(u){ return /^(https?:|data:|blob:)/.test(u) ? u : base()+String(u).replace(/^\//, ""); };
 var dia = function(iso){ var a = String(iso||"").split("-"); return a.length>=3 ? a[2].slice(0,2)+"/"+a[1] : ""; };
 var botao = "flex h-11 flex-1 items-center justify-center rounded-xl text-[14px] font-bold active:scale-[.98]";

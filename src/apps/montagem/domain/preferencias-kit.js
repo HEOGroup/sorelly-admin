@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/preferencias-kit.js
 // Preferências do Kit (trazido do SorellyAdmin, docs/modulos/preferencias-kit.md).
 // DUAS coisas: (1) a ESTRUTURA do formulário que a revendedora preenche no app (blocos: Anéis, Brincos, Cores, Letras...) e
@@ -12,7 +13,7 @@
 
 import { hojeSP, agoraSP } from "./cadastro-leads";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./preferencias-kit.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/preferencias-kit.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var r1 = function(n){ return Math.round((n||0)*10)/10; };
 var r2 = function(n){ return Math.round((n||0)*100)/100; };

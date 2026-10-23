@@ -10,25 +10,22 @@ function Bi(nome, ic, cor){ return Object.assign(B(nome), {ic:ic, icCor:cor}); }
 function E(nome, origem){ return {breve:true, enviar:true, nome:nome, origem:origem||[]}; }
 function G(nome, grupos){ return {nome:nome, grupos:grupos.map(function(g){ return {titulo:g[0], telas:g[1]}; }), telas:[].concat.apply([], grupos.map(function(g){ return g[1]; }))}; }
 function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:true, origem:origem||[]}); }   // veio do admin e já foi integrado
-// Navegação do Financeiro (22/10/2026): 5 perguntas no topo (Hoje, Entradas, Saídas, Resultado, Família); dentro, abas visíveis das telas (components/barra-perguntas.js). Antes: modelo DevMaster em cascata. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
+// Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  {nome:"Hoje", itens:[
-    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // o Financeiro abre direto no saldo das contas (Marcus, 21/10/2026)
-    M("Pagamentos","cpagamentos")]},
-  {nome:"Entradas", itens:[
-    {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons"), M("Estoque Sorelly","estoquesorelly")]},
-    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp")]},
-    M("Link de pagamento","linkrel"),
-    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]}]},
-  {nome:"Saídas", itens:[
-    M("Contas a pagar","ctalista"),
-    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Fornecedores","pfforn"), M("Prestadores de serviço","pfprest")]},
-    {nome:"Comissões", itens:[M("Visão geral","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
-  {nome:"Resultado", itens:[
-    {nome:"Análise de custos", itens:[M("Sorelly","ctapagar",{modo:"sorelly"}), M("Família","ctapagar",{modo:"familia", perm:"financeiro_familia"}), M("Sorelly + Família","ctapagar",{modo:"junto", perm:"financeiro_familia"}), M("Funcionários e representantes","ctapagar",{modo:"pessoas"})]}]},
-  {nome:"Família", itens:[M("Home da família","ffhome"), M("Alertas","ffalertas"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")].map(function(n){ return Object.assign(n, {perm:"financeiro_familia"}); })}
+  {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // 1º item da barra: o Financeiro abre direto no saldo das contas (Marcus, 21/10/2026)
+  M("Pagamentos","cpagamentos"),
+  {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Fornecedores","pfforn"), M("Prestadores de serviço","pfprest")]},
+  M("Contas a pagar","ctalista"),
+  M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela (Marcus, 22/10/2026)
+  {nome:"Financeiro familiar", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Alertas","ffalertas"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
+  {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons"), M("Estoque Sorelly","estoquesorelly")]},
+  {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp")]},
+  {nome:"Comissões", itens:[M("Visão geral","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
+  {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
+  M("Link de pagamento","linkrel")
 ];
+
 var SETORES = [
   {id:"whats", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", nome:"Visão geral", ic:"grid4", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
@@ -37,8 +34,7 @@ var SETORES = [
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#06B6D4", areas:[
     G("Fiscal", [
-      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), E("Visão geral fiscal",["Fiscal → Visão geral"]), E("Entradas",["Fiscal → Entradas"]), E("Saídas",["Fiscal → Saídas"]),
-        E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]]])
+      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])])]]])
   ]},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[

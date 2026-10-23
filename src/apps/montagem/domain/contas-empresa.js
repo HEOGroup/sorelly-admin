@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/contas-empresa.js
 // Contas a pagar da EMPRESA por filial (CNPJ 34, 46, 59, 67 Axis e "Por fora"), a partir dos relatórios do DevMaster (por filial, passados pelo Marcus em 19/10/2026):
 // "Baixas a Pagar por Natureza" = o que JÁ FOI PAGO e "Contas a Pagar por Natureza" = o que FALTA PAGAR (saldo). Dados reais em contas-empresa.local.js (fora do GitHub).
@@ -8,8 +9,8 @@ import { parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { funcionarios } from "@/apps/montagem/domain/pessoas";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
-var FUTURAS = (function(){ try { var m = import.meta.glob("./contas-empresa-meses.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
-var LOCAL = (function(){ try { var m = import.meta.glob("./contas-empresa.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var FILIAIS = [["34","CNPJ 34","Sorelly Atacadista"], ["46","CNPJ 46","Mayz Comércio"], ["59","CNPJ 59","Serenity"], ["67","CNPJ 67","Axis Joias"], ["ho","H&O Apps","Empresa de aplicativos"], ["fora","Por fora","Pessoal, Pix e fora dos CNPJs"]];
 var G = {folha:"Folha e pessoal", enc:"Encargos da folha", bruto:"Bruto", banho:"Banho", grafico:"Material gráfico e embalagem", outros:"Outros fornecedores", prest:"Prestadores de serviço", rep:"Representantes", comfunc:"Comissões de funcionários", seg:"Segurança", socios:"Sócios e despesas pessoais", mkt:"Sistemas e tecnologia", trafego:"Marketing e tráfego pago", fin:"Financeiro (empréstimos, juros)", imp:"Impostos", adm:"Administrativo", axis:"Axis e H&O"};

@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/cnpjs.js
 // Cadastro das empresas (CNPJs) da Sorelly. O que for editado na tela fica em state.cnpjs e vale sobre este padrão.
 // Não guardar aqui senhas nem códigos de acesso (ex.: código do e-CAC).
@@ -9,7 +10,7 @@ var CAMPOS_EXTRA = [["contrato","Contrato social"], ["im","Inscrição municipal
 // documentos que cada CNPJ deve ter anexados
 var DOCS_CNPJ = ["Alvará de funcionamento", "Contrato social", "Cartão CNPJ", "Inscrição estadual", "Inscrição municipal", "Certidões negativas", "Certificado digital", "Procuração", "Outros"];
 // CPF e e-mail dos sócios: arquivo local (fora do Git)
-var SOCIOS = (function(){ var m = import.meta.glob("./cnpjs-socios.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : {}; })();
+var SOCIOS = (function(){ var m = globLocal("apps/montagem/domain/cnpjs-socios.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : {}; })();
 var CNPJS0 = [
   {id:"34", num:"34", nome:"Sorelly Atacadista", cor:"#B8892B", razao:"SORELLY COMERCIO ATACADISTA DE SEMIJOIAS LTDA", cnpj:"34.753.252/0001-03", ie:"90882691-41",
     endereco:"RUA MARECHAL DEODORO - N° 950 (SALA 501)", bairro:"CENTRO", cidade:"CURITIBA", estado:"PARANÁ", cep:"80060-010", email:"", socio:"ANAMARIA HESS DE OLIVEIRA", cpf:""},

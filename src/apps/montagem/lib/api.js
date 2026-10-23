@@ -5,7 +5,7 @@ var CHAVE_TOKEN = "sorelly_token";
 
 function base(){
   try { var o = localStorage.getItem("sorelly_api_url"); if(o) return o.replace(/\/$/, ""); } catch(x){}
-  return String((import.meta.env && import.meta.env.VITE_API_URL) || "").replace(/\/$/, "");
+  return String((process.env.NEXT_PUBLIC_API_URL) || "").replace(/\/$/, "");
 }
 function apiAtiva(){ return !!base(); }
 function token(){ try { return localStorage.getItem(CHAVE_TOKEN) || ""; } catch(x){ return ""; } }

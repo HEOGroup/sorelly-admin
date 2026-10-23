@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/compras-estoque.js
 // Materiais & Estoque: "Compras" + "Estoque interno (materiais)", trazidos do SorellyAdmin (docs/modulos/compras.md e estoque-interno.md) e ampliados por decisão do Marcus (16/10/2026).
 // NÃO é o "Estoque Sorelly" (estoque geral de joias mês a mês): esse é outro módulo e vai para o Financeiro.
@@ -19,9 +20,9 @@ import { hojeSP, agoraSP, somaDias, diasEntre, ultimoDiaDoMes } from "./cadastro
 import { temAutorizacao } from "./autorizacoes";
 import { CNPJS0 } from "./cnpjs";
 
-var LOCAL = (function(){ try { var m = import.meta.glob("./compras-estoque.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/compras-estoque.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
-var SYNC = (function(){ try { var m = import.meta.glob("./compras-estoque-sync.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(e){ return []; } })();   // atualização dos pedidos do admin antigo (22/10/2026)
+var SYNC = (function(){ try { var m = globLocal("apps/montagem/domain/compras-estoque-sync.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(e){ return []; } })();   // atualização dos pedidos do admin antigo (22/10/2026)
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };

@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/pix-regras.js
 // Chaves Pix e regras do Financeiro: decidem SOZINHAS a conta de cada pagamento do atendimento interno (a funcionária só informa forma e valor).
 // Ordem: dinheiro e maquininha única entram já como pagos · Pix: 1) mesmo CNPJ do link/cartão da venda, 2) regras do Financeiro (em ordem), 3) sem resposta = fila para o Lucas/diretoria definirem.
@@ -6,9 +7,9 @@ import { CONTAS_PAGAMENTO } from "@/apps/montagem/domain/consignado";
 import { contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
 
 // Contas Pix reais do SorellyAdmin antigo (sem as chaves), só no arquivo local gitignored: preenche banco, CNPJ, favorecido e tipo das contas
-var LOCAL_CONTAS = (function(){ try { var m = import.meta.glob("./pix-contas.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL_CONTAS = (function(){ try { var m = globLocal("apps/montagem/domain/pix-contas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 // chaves Pix reais (só no arquivo local gitignored)
-var LOCAL_CHAVES = (function(){ try { var m = import.meta.glob("./pix-chaves.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var LOCAL_CHAVES = (function(){ try { var m = globLocal("apps/montagem/domain/pix-chaves.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 // liga cada conta Pix à conta bancária do Caixa (Saldos bancários): serve para mostrar a chave lá e, depois, sugerir a conta pelo saldo mais negativo
 var CAIXA_DE_PIX = {"PIX - SICREDI - SORELLY - 34":"sicredi_34", "PIX - ITAÚ - 34":"itau_emp_34", "PIX - CAIXA - 34":"caixa_34", "PIX - SAFRA - 34":"safra_34", "PIX - UNICRED - 34":"unicred_34", "PIX - SICREDI - SHOPPING 46":"sicredi_46", "PIX - STONE - 46":"stone_46", "PIX - BRADESCO - 46":"bradesco_46", "PIX - CAIXA - 46":"caixa_46", "PIX - SAFRA - SHOPPING - 46":"safra_46", "PIX - UNICRED - 46":"unicred_46", "PIX - SICREDI - SERENITY - 59":"sicredi_59", "PIX - SAFRA - SERENITY - 59":"safra_59", "PIX - BRADESCO - SERENITY - 59":"bradesco_59", "PIX - SICREDI - H&O":"sicredi_ho_app"};
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
@@ -153,7 +154,7 @@ function pxReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 // chaves Pix das contas bancárias lidas do admin antigo (arquivo local gitignored): entram com a data de hoje e "alterado por Marcus"
-var CHAVES_ADMIN = (function(){ try { var m = import.meta.glob("./pix-chaves-admin.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
+var CHAVES_ADMIN = (function(){ try { var m = globLocal("apps/montagem/domain/pix-chaves-admin.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var TEM_CHAVES_ADMIN = !!(CHAVES_ADMIN && CHAVES_ADMIN.chaves && CHAVES_ADMIN.chaves.length);
 var normConta = function(n){ return String(n||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/serenety/g,"serenity").replace(/[^a-z0-9&]/g,""); };
 function pxAplicarChavesAdmin(px, contasCaixa, por, agora){

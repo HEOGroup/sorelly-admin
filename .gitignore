@@ -1,20 +1,21 @@
 node_modules
+**/node_modules
 dist
 .vite
+.next
+out
 *.local
 
-# dados reais de saldos (repositório é público)
-src/apps/montagem/domain/*.local.js
+# dados reais (repositório é público): qualquer arquivo .local em qualquer pasta (inclusive backup/)
+**/*.local.*
+**/*.local
 
-# anotações com números reais (ex.: CAIXA-FINANCEIRO.local.md)
-*.local.md
-
-# planilhas com dados de clientes (repositório é público)
-*.local.xlsx
-
-*.local.csv
-
-# servidor: variáveis secretas
+# variáveis secretas
 .env
-servidor/.env
 .env.local
+.env.*.local
+servidor/.env
+**/servidor/.env
+next-env.d.ts
+*.tsbuildinfo
+src/generated/

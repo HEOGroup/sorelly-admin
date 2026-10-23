@@ -1,3 +1,4 @@
+import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/cadastro-pecas.js
 // Cadastro de peças (Rayssa): custo e preço sugerido de cada peça, por LOTE (= uma aba da planilha Bruto/Ouro 2026), comparação de fornecedores
 // e pedidos de alteração para a DevMaster. Estado s.cpc (só neste navegador). Nasce VAZIO (repositório é público); dados de teste, se existirem,
@@ -9,7 +10,7 @@
 //   a Sorelly recebe 54,86% do preço de venda (config.recebido); markup = (recebido − custo) ÷ custo. O markup do lote é ponderado pela quantidade.
 //   preço sugerido = o menor preço que bate o markup alvo do lote, arredondado para cima (terminando em 8, se config.arred8).
 //   banho sugerido por tipo de peça (config.banhoPadrao): anéis Ouro 4, colares/braceletes/pulseiras/correntes Ouro 3, prata só "Prata"; verniz em todo ouro da Pontual.
-var LOCAL = (function(){ try { var m = import.meta.glob("./cadastro-pecas.local.js", {eager:true}); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/cadastro-pecas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var GALVANICAS = {pontual:"Pontual", ellos:"Ellos"};
 // Status do pedido de bruto (Marcus, 21/10/2026). "Banhado" entra sozinho quando uma fatura de banho é lançada para o pedido.
