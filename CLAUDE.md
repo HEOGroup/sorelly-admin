@@ -11,7 +11,7 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - Se o Marcus escrever "no padrão STE", corrigir a resposta para esse estilo.
 
 ## Stack e comandos
-**Next.js 14 (App Router)** + React 18 + React Router 6 + Tailwind 4. Alias `@` = `src/`. Sem testes automatizados. Migrado do Vite em 22/10/2026; o projeto antigo (Vite + servidor Fastify) está inteiro em `backup/` (só consulta; nunca editar lá).
+**Next.js 14 (App Router)** + React 18 + React Router 6 + Tailwind 4. Alias `@` = `src/`. Sem testes automatizados. Migrado do Vite em 22/10/2026; o projeto antigo (Vite + servidor Fastify) fica no histórico do Git, na tag `vite-final` (consulta: `git show vite-final:caminho/do/arquivo`).
 - O sistema roda inteiro no navegador (`app/[[...slug]]/` monta `src/cliente.js` com o mesmo React Router). O servidor é o próprio Next: rotas em `app/api/*`, código em `src/server/*` (login, estado dos módulos, Rotina do dia, DevMaster). Variáveis em `.env.local` (modelo em `.env.exemplo`); a tela lê `NEXT_PUBLIC_*` (antes `VITE_*`).
 - Dados reais `*.local.js`: `scripts/gerar-locais.mjs` (roda sozinho antes de dev/build) lista os que existem em `src/generated/locais.js`, e `lib/glob-local.js` os entrega no lugar do antigo `import.meta.glob`. Criou um `.local.js` novo? Reinicie o `npm run dev`.
 - `npm run dev` (http://localhost:3000, config em `.claude/launch.json`, porta automática), `npm run build`, `npm run start`. NÃO rode dev e build ao mesmo tempo (os dois escrevem em `.next/`).
