@@ -16,6 +16,10 @@ import { ACESSO_FF } from "@/apps/montagem/domain/financeiro-familiar";
 import { ACESSO_COBRANCA_BASE } from "@/apps/montagem/domain/cobranca-func";
 import { e, useEffect, useState, useReducer } from "@/shared/react";
 import React from "react";
+// Ícones Phosphor (pacote npm, mesma versão 2.1.1 que vinha do CDN): só este app usa, por isso o import fica aqui
+// e o app de kits novos (que desenha SVG inline) não baixa as fontes. Servidos pelo próprio sistema, sem depender do jsDelivr.
+import "@phosphor-icons/web/duotone";
+import "@phosphor-icons/web/fill";
 import "@/apps/montagem/styles/montagem.css";
 import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";

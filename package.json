@@ -18,6 +18,7 @@
     "semear-rotina": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/semear-rotina.mjs"
   },
   "dependencies": {
+    "@phosphor-icons/web": "2.1.1",
     "jose": "^5.9.6",
     "next": "14.2.35",
     "pg": "^8.13.0",
