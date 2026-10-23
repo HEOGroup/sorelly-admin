@@ -5,7 +5,7 @@
 var VERSOES = [
   {v:"0.13.1", data:"2026-10-23", titulo:"Organização do projeto: mais rápido e mais seguro, mesmas telas", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"Fontes e ícones agora vêm do próprio sistema (antes vinham do Google e do jsDelivr). A tela abre sem esperar outros sites. Visual igual: 152 telas comparadas, nenhuma diferença."},
-    {tipo:"correção", area:"Atendimento interno", txt:"Escolher a revendedora na calculadora podia derrubar a tela (hook do React fora de ordem). Corrigido também no Configurador do Agendamento e na barra da bipadora."},
+    {tipo:"correção", area:"Atendimento interno", txt:"Fechar a aba do atendimento com a calculadora aberta derrubava a tela inteira (erro do React). Corrigido; o mesmo tipo de erro foi corrigido no Configurador do Agendamento e na barra da bipadora."},
     {tipo:"melhoria", area:"Tecnologia", txt:"Cada mudança enviada ao GitHub passa por uma conferência automática (lint e build). Um erro como o do menu Fiscal (sistema sem abrir) é barrado antes de entrar."},
     {tipo:"melhoria", area:"Tecnologia", txt:"Documentos organizados na pasta docs/ por assunto; README e arquitetura reescritos para quem for mexer no código."}]},
   {v:"0.12.27", data:"2026-10-23", titulo:"Pedir peças: da produção ao cadastro, com aviso de volta", itens:[

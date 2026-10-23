@@ -248,7 +248,7 @@ function AtendimentoInterno(){
           className:"grid w-11 shrink-0 place-items-center text-[16px] font-bold text-[#1B1409] shadow-[inset_0_1px_0_rgba(255,255,255,.35)] "+GRAD_BARRA}, kitAberto ? "▾" : "▸")),
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
-  // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela ao escolher a revendedora.
+  // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela (erro #300 do React) ao fechar a aba do atendimento.
   useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
     e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"Atendimento interno: abra um atendimento pela Listagens."}), seletorKit),
