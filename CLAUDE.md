@@ -11,10 +11,10 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - Se o Marcus escrever "no padrão STE", corrigir a resposta para esse estilo.
 
 ## Stack e comandos
-**Next.js 14 (App Router)** + React 18 + React Router 6 + Tailwind 4. Alias `@` = `src/`. Sem testes automatizados. Migrado do Vite em 22/10/2026; o projeto antigo (Vite + servidor Fastify) fica no histórico do Git, na tag `vite-final` (consulta: `git show vite-final:caminho/do/arquivo`).
+**Next.js 14 (App Router)** + React 18 + React Router 6 + Tailwind 4. Alias `@` = `src/`. Sem testes automatizados; `npm run lint` (ESLint do Next) e o CI do GitHub conferem o código. Mapa e funcionamento: `README.md` e `docs/ARQUITETURA.md`; índice dos documentos: `docs/README.md`. Migrado do Vite em 22/10/2026; o projeto antigo (Vite + servidor Fastify) fica no histórico do Git, na tag `vite-final` (consulta: `git show vite-final:caminho/do/arquivo`).
 - O sistema roda inteiro no navegador (`app/[[...slug]]/` monta `src/cliente.js` com o mesmo React Router). O servidor é o próprio Next: rotas em `app/api/*`, código em `src/server/*` (login, estado dos módulos, Rotina do dia, DevMaster). Variáveis em `.env.local` (modelo em `.env.exemplo`); a tela lê `NEXT_PUBLIC_*` (antes `VITE_*`).
 - Dados reais `*.local.js`: `scripts/gerar-locais.mjs` (roda sozinho antes de dev/build) lista os que existem em `src/generated/locais.js`, e `lib/glob-local.js` os entrega no lugar do antigo `import.meta.glob`. Criou um `.local.js` novo? Reinicie o `npm run dev`.
-- `npm run dev` (http://localhost:3000, config em `.claude/launch.json`, porta automática), `npm run build`, `npm run start`. NÃO rode dev e build ao mesmo tempo (os dois escrevem em `.next/`).
+- `npm run dev` (http://localhost:3000, config em `.claude/launch.json`, porta automática), `npm run build`, `npm run start`, `npm run lint`, `npm run verificar` (lint + build, o mesmo que o CI roda). NÃO rode dev e build ao mesmo tempo (os dois escrevem em `.next/`).
 - Verificar mudança: abrir no navegador embutido, exercitar o fluxo, checar o console. Mostrar o sistema rodando, nunca mostrar código.
 - Depois de testar, limpar o localStorage (`sorelly_montagem_v9`) e não deixar acertos de teste em revendedoras de demonstração. Não abrir este projeto e os HTMLs antigos no mesmo navegador (mesma chave).
 
@@ -33,7 +33,7 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 
 ## Economia de tokens
 - NÃO leia arquivos grandes inteiros: Grep e depois Read com `offset`/`limit`. Maiores: `mobile/representante.js` (104 KB), `reducer.js` (37 KB), `AtendimentoInternoCalculadora.js` (36 KB), `PrevisaoFaturamento.js` (25 KB), `revendedoras-diario.js` (21 KB), `consignado.js` (20 KB).
-- NUNCA abra `referencia/` (HTMLs originais de 1,2 MB), `public/dados/*.json`, `dist/` nem `node_modules/`.
+- NUNCA abra `public/dados/*.json`, `src/styles/fontes/`, `.next/` nem `node_modules/`.
 - Prefira Edit em trechos pequenos. Não reescreva arquivos.
 
 ## Pessoas e setores
@@ -107,4 +107,4 @@ Hoje a peça chega por foto e texto no WhatsApp (modelo, custo, quantidade, forn
 - Visual: letras brancas (não cinza), tema dourado. Apps: cores sólidas, sem degradê. Admin: degradê dourado leve. Dinheiro como `R$ 7.000,00`; campo de dinheiro digitado "subindo" os dígitos.
 
 ## Git
-Branch `master`, 2 commits e várias alterações não commitadas. Só commitar quando o Marcus pedir.
+Branch `master`. O GitHub Actions (`.github/workflows/ci.yml`) roda lint e build em todo PR e push: com X vermelho, não fazer merge. Rodar `npm run verificar` antes de subir. Só commitar quando o Marcus pedir.
