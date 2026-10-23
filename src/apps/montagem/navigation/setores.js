@@ -34,7 +34,7 @@ var SETORES = [
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#06B6D4", areas:[
     G("Fiscal", [
-      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])])]]])
+      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])]]])
   ]},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
@@ -128,7 +128,7 @@ var SETORES = [
   {id:"marcusativ", nome:"Atividades", ic:"caixa", cor:"#D9A63A", direto:T("marcusativ","Atividades")},
   {id:"marcusacessos", nome:"Acessos e senhas", ic:"escudo", cor:"#D9A63A", direto:T("marcusacessos","Acessos e senhas")},
   {id:"marcusdados", nome:"Dados", ic:"users", cor:"#D9A63A", direto:T("marcusdados","Dados")},
-  // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em JURIDICO-COBRANCA.md
+  // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em docs/negocio/JURIDICO-COBRANCA.md
   {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
     {nome:"Salas comerciais", telas:[B("Contratos de salas comerciais")]},

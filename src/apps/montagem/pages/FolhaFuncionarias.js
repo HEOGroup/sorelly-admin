@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — pages/FolhaFuncionarias.js
 // Contas a pagar → "Funcionários e representantes" (menu do topo). Duas partes: Funcionários (salário base do RH, salário + adiantamento, VR, VT, 13º, bônus, hora extra do RH, negociação de cada um) e Representantes (comissão do consignado + combustível).
 // Só a supervisão vê (tem salário). Dados: contas da folha do DevMaster (domain/contas-empresa.js) + cadastro e horas extras do RH (domain/rh.js).
-// INSS e IRRF por funcionária NÃO existem no sistema (o DevMaster só tem a guia total): vêm do holerite, que o RH precisa mandar. Ver RELATORIO-DE-CUSTOS.md.
+// INSS e IRRF por funcionária NÃO existem no sistema (o DevMaster só tem a guia total): vêm do holerite, que o RH precisa mandar. Ver docs/negocio/RELATORIO-DE-CUSTOS.md.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Abas, Faixa, Indicador, Pagina, Tab, Td, LINHA, ESTADO } from "@/apps/montagem/components/padrao";
 import { G, NEGOCIACOES, filtrar, itensEmpresa, meses, setClasse, setBaixas, setLancamentos, setPf, totais } from "@/apps/montagem/domain/contas-empresa";

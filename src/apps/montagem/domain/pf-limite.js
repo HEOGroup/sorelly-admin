@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — domain/pf-limite.js
-// LIMITE MENSAL de fornecedores (regra do Marcus, 21/10/2026; texto completo em FLUXO-DE-PAGAMENTOS.md).
+// LIMITE MENSAL de fornecedores (regra do Marcus, 21/10/2026; texto completo em docs/negocio/FLUXO-DE-PAGAMENTOS.md).
 // Teto de R$ 300.000 por mês para TODOS os fornecedores somados (Pix + boleto + cheque/cartão), dividido por tipo: Banho 150 mil, Bruto 100 mil, Serviços e produtos 50 mil.
 // Cada parcela conta no mês do seu vencimento (para o Pix, o vencimento é o mês de referência da negociação). Sócios, Casa e Mídia ficam FORA do teto.
 // Pedido que estoura o teto do mês ou da categoria fica PENDENTE (`aprov:"pendente"`) até quem tem a autorização aprovar; pendente não entra no que está lançado.

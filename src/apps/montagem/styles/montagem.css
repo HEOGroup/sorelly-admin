@@ -1,8 +1,3 @@
-/* Ícones Phosphor: só este app usa. Ficam aqui, e não no index.html,
-   para o app de kits novos (que desenha SVG inline) não baixar as fontes. */
-@import url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/duotone/style.css");
-@import url("https://cdn.jsdelivr.net/npm/@phosphor-icons/web@2.1.1/src/fill/style.css");
-
 /* Único token de tema em que o app de montagem/bipagem difere do de kits novos.
    No HTML original: "textos secundários quase brancos, a pedido".
    Escopado no container do app para os dois conviverem no mesmo projeto. */

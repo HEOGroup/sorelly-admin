@@ -4,6 +4,7 @@ import { useContext } from "@/shared/react";
 import React from "react";
 
 var Ctx = React.createContext(null);
+// eslint-disable-next-line react-hooks/rules-of-hooks -- "use" é o hook do app (chamado em todas as telas); renomear mexeria em centenas de arquivos
 function use(){ return useContext(Ctx); }
 
 export { Ctx, use };

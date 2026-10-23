@@ -6,7 +6,7 @@ dist
 out
 *.local
 
-# dados reais (repositório é público): qualquer arquivo .local em qualquer pasta (inclusive backup/)
+# dados reais (repositório é público): qualquer arquivo .local em qualquer pasta
 **/*.local.*
 **/*.local
 

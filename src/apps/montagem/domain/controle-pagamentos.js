@@ -1,7 +1,7 @@
 import { globLocal } from "@/lib/glob-local";
 // Sorelly Admin · montagem — domain/controle-pagamentos.js
 // Controle de pagamentos (Financeiro, primeira aba): para onde vai o Pix das revendedoras. O Financeiro (Nayale) cria ORIENTAÇÕES ("direcionar R$ X para tal conta até tal data"),
-// o sistema acompanha quanto falta e SUGERE o destino de cada Pix que chega; quem direciona (Lucas) confirma ou troca. Contexto completo em FLUXO-DE-PAGAMENTOS.md.
+// o sistema acompanha quanto falta e SUGERE o destino de cada Pix que chega; quem direciona (Lucas) confirma ou troca. Contexto completo em docs/negocio/FLUXO-DE-PAGAMENTOS.md.
 // Estado s.cp. Chaves Pix e contas ficam só no navegador (o repositório é público).
 
 var TIPOS_DESTINO = {CNPJ:["Conta da empresa","#3B82F6"], FAMILIA:["Família / sócio","#EC4899"], FORNECEDOR:["Fornecedor","#F59E0B"], REPRESENTANTE:["Representante","#8B5CF6"], PRESTADOR:["Prestador / funcionário","#14B8A6"]};

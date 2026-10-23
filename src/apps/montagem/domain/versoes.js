@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.13.1", data:"2026-10-23", titulo:"Organização do projeto: mais rápido e mais seguro, mesmas telas", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"Fontes e ícones agora vêm do próprio sistema (antes vinham do Google e do jsDelivr). A tela abre sem esperar outros sites. Visual igual: 152 telas comparadas, nenhuma diferença."},
+    {tipo:"correção", area:"Atendimento interno", txt:"Fechar a aba do atendimento com a calculadora aberta derrubava a tela inteira (erro do React). Corrigido; o mesmo tipo de erro foi corrigido no Configurador do Agendamento e na barra da bipadora."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Cada mudança enviada ao GitHub passa por uma conferência automática (lint e build). Um erro como o do menu Fiscal (sistema sem abrir) é barrado antes de entrar."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Documentos organizados na pasta docs/ por assunto; README e arquitetura reescritos para quem for mexer no código."}]},
   {v:"0.12.27", data:"2026-10-23", titulo:"Pedir peças: da produção ao cadastro, com aviso de volta", itens:[
     {tipo:"novo", area:"Kits", txt:"Kits (interno) → Pedir peças (Deysiane e Milene): pedido com peça, banho, público, quantos modelos (1, 2, 3, 5 ou 10), urgência e texto livre. Mostra a resposta do cadastro e os avisos."},
     {tipo:"novo", area:"Cadastro de peças", txt:"Nova aba Solicitações, a primeira do setor (Rayssa e Graziella): fila por urgência, botões OK (vai produzir), Pronto e Não temos (com motivo curto). A aba mostra quantos pedidos novos há. Quem responde se ajusta em Configurações."},

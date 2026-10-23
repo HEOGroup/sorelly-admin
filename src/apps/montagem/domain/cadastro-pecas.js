@@ -4,7 +4,7 @@ import { globLocal } from "@/lib/glob-local";
 // e pedidos de alteração para a DevMaster. Estado s.cpc (só neste navegador). Nasce VAZIO (repositório é público); dados de teste, se existirem,
 // vêm só de domain/cadastro-pecas.local.js (gitignored): export default {lotes:[{id, nome, galvanica:"pontual"|"ellos", tabela:[{tipo, rg}], linhas:[{data, fornecedor, codigo, qtd, bruto, peso, banho, descPedra, preco, codDev}]}]}
 //
-// Regras (decididas com o Marcus em 20/10/2026, ver DECISOES.md):
+// Regras (decididas com o Marcus em 20/10/2026, ver docs/DECISOES.md):
 //   banho unitário = peso × R$/g do tipo de banho (tabela da fatura da galvânica, já com +10%); desconto da pedra (%) abate só o banho.
 //   custo = preço bruto do romaneio + banho. Etiqueta (R$ 0,04) e embalagem (R$ 0,10) entram só na DevMaster.
 //   a Sorelly recebe 54,86% do preço de venda (config.recebido); markup = (recebido − custo) ÷ custo. O markup do lote é ponderado pela quantidade.
