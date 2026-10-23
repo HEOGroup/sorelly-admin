@@ -34,8 +34,7 @@ var SETORES = [
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#06B6D4", areas:[
     G("Fiscal", [
-      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), E("Visão geral fiscal",["Fiscal → Visão geral"]), E("Entradas",["Fiscal → Entradas"]), E("Saídas",["Fiscal → Saídas"]),
-        E("Contas a pagar fiscal",["Fiscal → Contas a pagar"]), E("Dashboard anual",["Fiscal → Dashboard anual"])]]])
+      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])])]]])
   ]},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[

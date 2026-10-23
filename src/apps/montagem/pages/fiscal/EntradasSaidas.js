@@ -42,7 +42,7 @@ function JanelaNota(p){
 
 function AbaFxEntradas(p){
   var f = useFx(), s = f.s, ano = p.ano, emps = f.fx.empresas;
-  var fi = useState({emp:"", mes:"", cl:"", q:""}), filtro = fi[0], setF = function(o){ fi[1](Object.assign({}, filtro, o)); setVer(30); };
+  var fi = useState({emp:p.emp||"", mes:p.mes0||"", cl:"", q:""}), filtro = fi[0], setF = function(o){ fi[1](Object.assign({}, filtro, o)); setVer(30); };
   var vs = useState(30), ver = vs[0], setVer = vs[1];
   var jn = useState(false), cf = useState(null);
   // a confirmação de exclusão some sozinha depois de 4 segundos
@@ -65,7 +65,7 @@ function AbaFxEntradas(p){
       e(Indicador,{t:"Entradas", v:fmt.brl(tot), cor:"cian", sub:"Total do filtro"}), e(Indicador,{t:"Lastro", v:fmt.brl(lastro), cor:"ok"}),
       e(Indicador,{t:"Não lastro", v:fmt.brl(Math.round((tot-lastro)*100)/100), cor:"neutro"}), e(Indicador,{t:"Notas", v:lista.length, cor:"total"})),
     e(BarraFiltros,{ativo:ativo, onLimpar:function(){ fi[1]({emp:"", mes:"", cl:"", q:""}); setVer(30); }},
-      e(Chip,{on:!filtro.emp, onClick:function(){ setF({emp:""}); }, ic:"buildings"}, "Todas"), emps.map(function(x){ return e(Chip,{key:x.id, on:filtro.emp===x.id, onClick:function(){ setF({emp:x.id}); }}, x.nome); }),
+      !p.emp && e(Chip,{on:!filtro.emp, onClick:function(){ setF({emp:""}); }, ic:"buildings"}, "Todas"), !p.emp && emps.map(function(x){ return e(Chip,{key:x.id, on:filtro.emp===x.id, onClick:function(){ setF({emp:x.id}); }}, x.nome); }),
       e("input",{type:"month", value:filtro.mes, "aria-label":"Mês", onChange:function(ev){ setF({mes:ev.target.value}); }, className:INPUT+" h-9! w-40 text-center text-[13px]!"}),
       CLASSIFICACOES.map(function(c){ return e(Chip,{key:c, on:filtro.cl===c, onClick:function(){ setF({cl:filtro.cl===c ? "" : c}); }}, rotCl(c)); }),
       e("div",{className:"relative min-w-44 max-w-xs flex-1 basis-48"}, e(Ph,{n:"magnifying-glass", s:15, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-white/60"}),

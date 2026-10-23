@@ -3,6 +3,16 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.12.27", data:"2026-10-23", titulo:"Pedir peças: da produção ao cadastro, com aviso de volta", itens:[
+    {tipo:"novo", area:"Kits", txt:"Kits (interno) → Pedir peças (Deysiane e Milene): pedido com peça, banho, público, quantos modelos (1, 2, 3, 5 ou 10), urgência e texto livre. Mostra a resposta do cadastro e os avisos."},
+    {tipo:"novo", area:"Cadastro de peças", txt:"Nova aba Solicitações, a primeira do setor (Rayssa e Graziella): fila por urgência, botões OK (vai produzir), Pronto e Não temos (com motivo curto). A aba mostra quantos pedidos novos há. Quem responde se ajusta em Configurações."},
+    {tipo:"novo", area:"App da montadora", txt:"Nova aba Pedir peça: a montadora pede e vê a resposta. Alerta com som e número na aba quando o cadastro responde. Rótulos das abas foram encurtados para caberem quatro."}]},
+  {v:"0.12.27", data:"2026-10-23", titulo:"Fiscal: contas de cada CNPJ vêm do Financeiro", itens:[
+    {tipo:"melhoria", area:"Fiscal", txt:"O total mensal de contas a pagar de cada CNPJ (34, 46, 59, 67) vem sozinho do Financeiro (Contas a pagar da empresa: pago mais falta pagar, sem o que é da família). Alimenta o Painel (contas, folga e sobra) e a aba Contas a pagar do Fiscal, onde esses meses ficam marcados com o ícone de vínculo e não se editam. Só os meses sem dado do Financeiro aceitam lançamento à mão."}]},
+  {v:"0.12.26", data:"2026-10-23", titulo:"Fiscal: painel novo com 4 blocos, Ano | Mês e notas dentro do CNPJ", itens:[
+    {tipo:"novo", area:"Fiscal", txt:"Fiscal entrou no menu (Fiscal → Painel e notas). Barra de totais do grupo com o botão Ano | Mês, que muda tudo de uma vez. Um bloco por CNPJ, 2 em 2, na ordem de quem mais precisa de nota de entrada (maior falta de lastro). Cada bloco mostra o CNPJ inteiro, o faturamento, a parte ILF (lastro × meta) e a parte Contas (quanto ainda cabe)."},
+    {tipo:"novo", area:"Fiscal", txt:"Clicar no bloco abre só aquele CNPJ: os outros somem, o relatório aparece e as notas de entrada (lançar, buscar, filtrar) surgem aos poucos embaixo. Botão Voltar mostra os 4 blocos de novo."},
+    {tipo:"melhoria", area:"Fiscal", txt:"Meta de ILF passou de 30% para 25% (padrão e dados salvos)."}]},
   {v:"0.13.0", data:"2026-10-22", titulo:"Migração para Next.js (servidor dentro do sistema)", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"O sistema saiu do Vite e passou para Next.js 14, com o servidor (login, estado dos módulos, Rotina do dia, DevMaster) dentro do mesmo projeto, em app/api. Telas, regras e dados ficaram iguais: as 148 telas foram abertas uma a uma, sem erro. O projeto antigo ficou inteiro na pasta backup."},
     {tipo:"melhoria", area:"Tecnologia", txt:"Variáveis da tela passaram de VITE_* para NEXT_PUBLIC_*. Para ligar o login e a gravação no servidor: NEXT_PUBLIC_API_URL=/api."},

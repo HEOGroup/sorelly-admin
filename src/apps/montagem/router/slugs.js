@@ -123,6 +123,7 @@ export const SLUG_DA_ABA = {
   cnpjs: "cnpjs",
   caixa: "caixa",
   limitefat: "limite-de-faturamento",
+  fiscal: "fiscal",
   painelacertos: "painel-dos-acertos",
   visaogeral: "visao-geral",
   rotina: "rotina-do-dia",

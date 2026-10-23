@@ -154,6 +154,7 @@ const montagem = {
     pagina("rotina-do-dia", () => import("@/apps/montagem/pages/Rotina"), "AbaRotina"),
     pagina("cnpjs", () => import("@/apps/montagem/pages/Cnpjs"), "AbaCnpjs"),
     pagina("limite-de-faturamento", () => import("@/apps/montagem/pages/LimiteFaturamento"), "AbaLimiteFaturamento"),
+    pagina("fiscal", () => import("@/apps/montagem/pages/Fiscal"), "AbaFiscal"),
     pagina("contas-a-pagar", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),
