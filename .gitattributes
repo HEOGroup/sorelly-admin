@@ -1,0 +1,13 @@
+# Quebra de linha LF no repositório e no disco, em Windows, Mac ou Linux.
+# Evita diffs "fantasmas" de CRLF/LF quando pessoas diferentes mexem no mesmo arquivo.
+* text=auto eol=lf
+
+# Binários: nunca converter.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
