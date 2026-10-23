@@ -248,6 +248,8 @@ function AtendimentoInterno(){
           className:"grid w-11 shrink-0 place-items-center text-[16px] font-bold text-[#1B1409] shadow-[inset_0_1px_0_rgba(255,255,255,.35)] "+GRAD_BARRA}, kitAberto ? "▾" : "▸")),
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
+  // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela ao escolher a revendedora.
+  useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
     e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"Atendimento interno: abra um atendimento pela Listagens."}), seletorKit),
     e("div",{className:"grid grid-cols-1 items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(36rem,42%)]"},
@@ -587,7 +589,6 @@ function AtendimentoInterno(){
   var nFeitos = feitoPasso.filter(Boolean).length;
   var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime()}}); };
   // cada funcionária está na sua sessão: quem bipou é quem abriu o atendimento, sem escolher
-  useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
   // relógio da escolha do kit: a funcionária dá OK quando a revendedora começa a escolher; o tempo máximo depende do valor do kit
   var maxEscolhaMin = tempoMaxEscolhaMin(kitLiberado);
   var escolhendo = !!sel.escolhaIni && !sel.escolhaFim, decorridoSeg = sel.escolhaIni ? Math.max(0, Math.floor(((sel.escolhaFim || Date.now())-sel.escolhaIni)/1000)) : 0;

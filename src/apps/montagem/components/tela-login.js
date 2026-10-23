@@ -25,7 +25,7 @@ function acharPessoa(texto){
 
 var CAMPO = "h-[52px] w-full rounded-full border border-white/15 bg-[#121212] px-6 text-[16px] text-[#fff] outline-none placeholder:text-[#ffffff73] focus:border-[#E8B84B]";
 var ESTILO_CAMPO = {background:"#121212", color:"#fff"};
-function corpoLogin(p){
+function useCorpoLogin(p){
   var us = useState(p.usuarioInicial||""), usuario = us[0], setUsuario = us[1], ps = useState(p.senhaInicial||""), senha = ps[0], setSenha = ps[1];
   var er = useState(""), erro = er[0], setErro = er[1], cr = useState(false), criar = cr[0], setCriar = cr[1], ts = useState(false), teste = ts[0], setTeste = ts[1];
   var entrar = function(ev){ if(ev && ev.preventDefault) ev.preventDefault();
@@ -53,6 +53,6 @@ function corpoLogin(p){
 }
 
 // dentro do celular o tema claro estiliza o PRIMEIRO filho da tela (cabeçalho escuro com margens): um span escondido recebe esse estilo no lugar da tela de entrada
-function TelaLogin(p){ var tela = corpoLogin(p); return p.compacto ? e(React.Fragment,null, e("span",{className:"hidden"}), tela) : tela; }
+function TelaLogin(p){ var tela = useCorpoLogin(p); return p.compacto ? e(React.Fragment,null, e("span",{className:"hidden"}), tela) : tela; }
 
 export { TelaLogin, acharPessoa, todasPessoas, usuarioDe, SENHA_PADRAO };

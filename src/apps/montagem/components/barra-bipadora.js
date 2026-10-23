@@ -16,13 +16,16 @@ import React from "react";
 function tempoMedioB(ks){ var t = ks.filter(function(k){return k.fimB && k.iniB;}); return t.length ? t.reduce(function(a,k){return a+(k.fimB-k.iniB);},0)/t.length : 0; }
 function BarraBipadora(){
   var cx = use(), s = cx.state, d = cx.dispatch, id = s.usuario;
-  var b = BIPADORAS.find(function(x){return x.id===id;}); if(!b) return null;
-  var r = resumoBipadora(b, s), minha = r.atual, prox = filaBipagem(s)[0];
+  var b = BIPADORAS.find(function(x){return x.id===id;});
+  // Hooks antes do "if(!b) return null": trocar de pessoa no seletor do topo não pode mudar a ordem dos hooks.
+  var r = b ? resumoBipadora(b, s) : null, minha = r ? r.atual : undefined;
   // A bipadora não vê o valor esperado: digita o total que a bipagem deu (campo começa vazio)
   var vr = useState(0), valor = vr[0], setValor = vr[1];
   // número da nova condicional (o kit sai em consignação com uma condicional nova)
   var nc = useState([""]), novas = nc[0], setNovas = nc[1];
   useEffect(function(){ setValor(0); setNovas([""]); }, [minha && minha.id]);
+  if(!b) return null;
+  var prox = filaBipagem(s)[0];
   var dif = minha && valor>0 ? (valor - minha.valor)/minha.valor*100 : null, fora = dif!==null && Math.abs(dif) > s.cfg.divPct;
   var novaOk = novasOk(novas), condsOk = !minha || condOk(minha, "b");
   var ult = r.hojeK.slice().sort(function(a,c){return c.fimB-a.fimB;})[0];
