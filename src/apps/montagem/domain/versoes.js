@@ -593,4 +593,8 @@ var VERSOES = [
     {tipo:"melhoria", area:"Controle de pagamentos", txt:"Blocos em mosaico, Destinos com busca e filtro por tipo, textos formais."},
     {tipo:"correção", area:"Menu lateral", txt:"O menu não cobre mais a tela ao redimensionar a janela."}]},
   {v:"0.8", data:"2026-10-15", titulo:"Módulos trazidos do SorellyAdmin", itens:[
-    
+    {tipo:"novo", area:"RH e Contratos", txt:"Controle de RH, Contratos e modelos em Word."},
+    {tipo:"novo", area:"Agendamento", txt:"Painel, representantes, abertura do mês, bônus e metas."},
+    {tipo:"novo", area:"Financeiro", txt:"Financeiro familiar, Cobrança de funcionárias, Controle de pagamentos e Pagamentos a fornecedores."}]}
+];
+export { VERSOES };
