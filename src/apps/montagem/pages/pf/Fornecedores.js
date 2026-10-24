@@ -98,6 +98,14 @@ function ListaCad(p){
         e("tbody",null, linhas)))),
     modal && e(ModalForn,{key:modal.f ? modal.f.id : "novo", c:c, f:modal.f, prest:prest, fechar:function(){ st[1](null); }}));
 }
+// Cadastro único (22/10/2026, pedido do Marcus): fornecedores e prestadores de serviço juntos; o tipo é escolhido dentro da tela
+function AbaPfCadastro(){
+  var st = useState("forn"), tipo = st[0], setTipo = st[1];
+  return e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"flex items-center gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Tipo"), e("div",{role:"group", className:"inline-flex overflow-hidden rounded-md border border-border"}, [["forn","Fornecedores"],["prest","Prestadores de serviço"]].map(function(o, i){ var on = o[0]===tipo;
+      return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ setTipo(o[0]); }, className:"h-8 whitespace-nowrap px-3 text-[13px] "+(i ? "border-l border-border " : "")+(on ? "bg-primary/20 font-semibold text-primary" : "text-foreground hover:bg-white/10")}, o[1]); }))),
+    e(ListaCad,{key:tipo, prest:tipo==="prest"}));
+}
 function AbaPfForn(){ return e(ListaCad,{prest:false}); }
 function AbaPfPrest(){ return e(ListaCad,{prest:true}); }
-export { AbaPfForn, AbaPfPrest, ModalForn };
+export { AbaPfForn, AbaPfPrest, AbaPfCadastro, ModalForn };

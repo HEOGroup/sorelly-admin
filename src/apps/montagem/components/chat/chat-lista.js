@@ -110,21 +110,21 @@ function ListaConversas(p){
   var linha = function(x){
     var u = x.ultima, ativa = st.efem.conversaSel===x.conv.id, minha = u && u.de===eu, outro = x.conv.tipo==="dm" ? (x.conv.membros.find(function(i){ return i!==eu; }) || x.conv.membros[0]) : x.conv.tipo==="setor" ? x.conv.repId : null;
     var dig = (st.efem.digitando[x.conv.id]||[]).filter(function(i){ return i!==eu; });
-    return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, onContextMenu:function(ev){ if(p.leitura) return; ev.preventDefault(); setCtx({px:ev.clientX, py:ev.clientY, it:x}); }, className:"flex w-full items-start gap-3 px-3 py-2 text-left", style:{background:x.pendentes ? (W.painel==="#FFFFFF" ? (ativa ? "#FFE9B8" : "#FFF4DC") : (ativa ? "#3d2d0f" : "#2a2010")) : ativa ? W.sel : "transparent", borderBottom:"1px solid "+W.borda, boxShadow:x.pendentes ? "inset 4px 0 0 #f59e0b" : "none"}},
-      x.conv.tipo==="grupo" ? e(Avatar,{grupo:true, nome:x.conv.nome, foto:x.conv.foto, s:46}) : e(Avatar,{id:outro, s:46, presenca:true}),
+    return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, onContextMenu:function(ev){ if(p.leitura) return; ev.preventDefault(); setCtx({px:ev.clientX, py:ev.clientY, it:x}); }, className:"flex w-full items-center gap-2.5 px-3 py-2 text-left", style:{background:x.pendentes ? (W.painel==="#FFFFFF" ? (ativa ? "#FFE9B8" : "#FFF4DC") : (ativa ? "#3d2d0f" : "#2a2010")) : ativa ? W.sel : "transparent", borderBottom:"1px solid "+W.borda, boxShadow:x.pendentes ? "inset 4px 0 0 #f59e0b" : "none"}},
+      x.conv.tipo==="grupo" ? e(Avatar,{grupo:true, nome:x.conv.nome, foto:x.conv.foto, s:44}) : e(Avatar,{id:outro, s:44, presenca:true}),
       e("span",{className:"min-w-0 flex-1"},
-        e("span",{className:"flex items-baseline gap-2"}, e("span",{className:"min-w-0 flex-1 truncate text-[14.5px] font-medium"}, x.titulo, x.conv.tipo==="setor" && !x.conv.atendente && e("span",{className:"ml-1.5 rounded px-1 text-[10px] font-semibold", style:{background:"#4a3410", color:"#f5c542"}}, "na fila"), mostrarTodas && !x.membro && e("span",{className:"ml-1.5 rounded px-1 text-[10px] font-normal", style:{background:"#3a2f12", color:W.ouro}}, "só leitura")),
+        e("span",{className:"flex items-baseline gap-2"}, e("span",{className:"min-w-0 flex-1 truncate text-[14px] font-semibold"}, x.titulo, x.conv.tipo==="setor" && !x.conv.atendente && e("span",{className:"ml-1.5 rounded px-1 text-[10px] font-semibold", style:{background:"#4a3410", color:"#f5c542"}}, "na fila"), mostrarTodas && !x.membro && e("span",{className:"ml-1.5 rounded px-1 text-[10px] font-normal", style:{background:"#3a2f12", color:W.ouro}}, "só leitura")),
           u && e("span",{className:"shrink-0 text-[11.5px]", style:{color:x.naoLidas ? W.verde : W.sec}}, horaLista(u.t))),
         e("span",{className:"mt-0.5 flex items-start gap-1"},
           dig.length ? e("span",{className:"min-w-0 flex-1 truncate text-[13px]", style:{color:W.verde}}, "digitando…") :
-          e("span",{className:"flex min-w-0 flex-1 items-start gap-1 text-[13px] leading-snug", style:{color:W.sec}},
+          e("span",{className:"flex min-w-0 flex-1 items-start gap-1 text-[12.5px] leading-snug", style:{color:W.sec}},
             minha && u.apag!=="todos" && e("span",{className:"mt-0.5"}, e(Tique,{status:u.status})),
             e("span",{className:"line-clamp-2 break-words"}, u ? ((x.conv.tipo!=="dm" && u.de!==eu && u.tipo!=="sistema" ? contato(u.de).nome.split(" ")[0]+": " : "")+textoPrevia(u)) : "Conversa nova")),
           x.fixa && e(Ph,{n:"push-pin", s:15, fill:true, style:{color:W.sec}}),
           x.marcado && e("span",{className:"grid size-5 place-items-center rounded-full text-[11px] font-bold text-white", style:{background:W.verde}, title:"Marcou você"}, "@"),
           devo(x) && e(EtiquetaEspera,{t:thDe[x.conv.id]}),
           x.pendentes>0 && e("span",{className:"flex items-center gap-1 rounded-full px-2 text-[11.5px] font-extrabold", style:{background:"#f59e0b", color:"#24180a", height:20}, title:"Aguardando a sua decisão"}, e(Ph,{n:"clock-countdown", s:12, fill:true}), x.pendentes),
-          x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[11.5px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas))));
+          x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas))));
   };
   var rolou = function(ev){ var a = ev.target; if(a.scrollHeight-a.scrollTop-a.clientHeight<120 && limite<filtrada.length) setLimite(limite+40); };
   var pg = p.paginas;
@@ -133,22 +133,25 @@ function ListaConversas(p){
   return e("div",{className:"flex h-full min-h-0 flex-col", style:{background:W.painel, color:W.texto}},
     !p.semBarra && e(BarraChat,{eu:eu, euReal:euReal, leitura:p.leitura, direcao:p.direcao, paginas:p.paginas, aoVoltarApp:p.aoVoltarApp, abrirCompleto:p.abrirCompleto, compacto:p.compacto, ajuda:p.ajuda, arqOn:filtro==="arq", arqN:arqs.length, aoArquivadas:function(){ setFiltro(filtro==="arq" ? "todas" : "arq"); setLimite(40); }}),
     // meu perfil (ou de quem a Direção está vendo)
-    e("div",{className:"relative flex shrink-0 items-center gap-3 px-3 py-2", style:{background:W.cab}},
-      e("button",{onClick:function(){ if(!p.leitura){ setPerfil(!perfil); } }, "aria-label":p.leitura ? "Foto" : "Meu perfil", className:"relative rounded-full"}, e(Avatar,{id:eu, s:42, presenca:true}), estaOcupado(eu) && e("span",{className:"absolute -left-0.5 -top-0.5 grid size-4 place-items-center rounded-full", style:{background:"#f59e0b"}}, e(Ph,{n:"minus", s:10, style:{color:"#fff"}}))),
-      perfil && e(Perfil,{eu:eu, fechar:function(){ setPerfil(false); }}),
-      e("div",{className:"min-w-0 flex-1 leading-tight"}, e("p",{className:"truncate text-[14.5px] font-semibold"}, contato(eu).nome), e("p",{className:"truncate text-[11.5px]", style:{color:W.sec}}, mostrarTodas ? "Todas as conversas da empresa" : contato(eu).setorCurto)),
-      p.leitura && e("button",{onClick:function(){ efem({verComo:null, conversaSel:null}); }, className:"rounded-full px-3 py-1 text-[12px] font-semibold", style:{background:OURO, color:OURO_TXT}}, "Voltar ao meu"),
-      e("button",{onClick:function(){ setOrdem(ordem==="antigas" ? "recentes" : "antigas"); }, title:ordem==="antigas" ? "Mais antigas em cima (clique para mudar)" : "Mais recentes em cima (clique para mudar)", "aria-label":"Mudar a ordem das conversas", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:ordem==="antigas" ? "arrow-up" : "arrow-down", s:22, fill:true, style:{color:ordem==="antigas" ? W.ouro : W.sec}})),
-      e("button",{onClick:function(){ setNova(true); }, "aria-label":"Nova conversa", title:"Nova conversa", disabled:!!p.leitura, className:"grid size-9 place-items-center rounded-full hover:bg-white/10 disabled:opacity-30"}, e(Ph,{n:"chat-circle-text", s:22, fill:true, style:{color:W.sec}}))),
+    // cabeçalho no estilo do WhatsApp: título grande "Conversas", foto de perfil à esquerda, botões redondos à direita (+ preto = nova conversa)
+    e("div",{className:"relative shrink-0 px-3 pb-1 pt-2", style:{background:W.painel}},
+      e("div",{className:"flex items-center justify-between gap-2"},
+        e("button",{onClick:function(){ if(!p.leitura){ setPerfil(!perfil); } }, "aria-label":p.leitura ? "Foto" : "Meu perfil", title:contato(eu).nome+" · "+(mostrarTodas ? "Todas as conversas da empresa" : contato(eu).setorCurto), className:"relative rounded-full"}, e(Avatar,{id:eu, s:32, presenca:true}), estaOcupado(eu) && e("span",{className:"absolute -left-0.5 -top-0.5 grid size-4 place-items-center rounded-full", style:{background:"#f59e0b"}}, e(Ph,{n:"minus", s:10, style:{color:"#fff"}}))),
+        perfil && e(Perfil,{eu:eu, fechar:function(){ setPerfil(false); }}),
+        e("div",{className:"flex items-center gap-2"},
+          p.leitura && e("button",{onClick:function(){ efem({verComo:null, conversaSel:null}); }, className:"rounded-full px-3 py-1 text-[12px] font-semibold", style:{background:OURO, color:OURO_TXT}}, "Voltar ao meu"),
+          e("button",{onClick:function(){ setOrdem(ordem==="antigas" ? "recentes" : "antigas"); }, title:ordem==="antigas" ? "Mais antigas em cima (clique para mudar)" : "Mais recentes em cima (clique para mudar)", "aria-label":"Mudar a ordem das conversas", className:"grid size-8 place-items-center rounded-full", style:{background:W.campo}}, e(Ph,{n:ordem==="antigas" ? "arrow-up" : "arrow-down", s:16, fill:true, style:{color:ordem==="antigas" ? W.ouro : W.texto}})),
+          e("button",{onClick:function(){ setNova(true); }, "aria-label":"Nova conversa", title:"Nova conversa", disabled:!!p.leitura, className:"grid size-8 place-items-center rounded-full disabled:opacity-30", style:{background:W.texto}}, e(Ph,{n:"plus", s:18, fill:true, style:{color:W.painel}})))),
+      e("h1",{className:"mt-1 text-[26px] font-extrabold leading-none tracking-tight"}, "Conversas")),
     p.leitura && e("div",{className:"flex shrink-0 items-center gap-2 px-3 py-1.5 text-[12px]", style:{background:"#3a2f12", color:W.ouro}}, e(Ph,{n:"eye", s:15, fill:true}), "Você está vendo o SorellyChat de "+contato(eu).nome+" (leitura; nas conversas das representantes com as revendedoras você pode responder)"),
     mostrarTodas && e("div",{className:"flex shrink-0 items-center gap-2 px-3 py-1.5 text-[12px]", style:{background:"#3a2f12", color:W.ouro}}, e(Ph,{n:"eye", s:15, fill:true}), "Todas as conversas da empresa (somente leitura)"),
     e("div",{className:"shrink-0 px-3 pb-1 pt-2"},
-      e("div",{className:"flex h-9 items-center gap-3 rounded-lg px-3", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:17, style:{color:W.sec}}),
-        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Pesquisar conversas e mensagens", "aria-label":"Pesquisar", className:"min-w-0 flex-1 bg-transparent text-[14px] outline-none", style:{color:W.texto}}),
+      e("div",{className:"flex h-9 items-center gap-2 rounded-full px-3", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:16, style:{color:W.sec}}),
+        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Pesquisar", "aria-label":"Pesquisar", className:"min-w-0 flex-1 bg-transparent text-[14px] outline-none", style:{color:W.texto}}),
         busca && e("button",{onClick:function(){ setBusca(""); }, "aria-label":"Limpar busca"}, e(Ph,{n:"x", s:15, style:{color:W.sec}})))),
-    !q && e("div",{className:"grid shrink-0 grid-cols-3 gap-1.5 px-3 pb-2 pt-1"},
+    !q && e("div",{className:"flex shrink-0 gap-1.5 overflow-x-auto px-3 pb-2 pt-1"},
       [["todas","Todas","stack",0],["decidir","Decidir","clock-countdown",urgentesTotal],["espera","Espera","hourglass-medium",aguardando],["marcado","Marcado","at",marcadoTotal],["arq","Arquivadas","archive-box",arqs.length],["grupos","Grupos","users-three",0]].map(function(f){ var on = filtro===f[0], dec = f[0]==="decidir";
-        return e("button",{key:f[0], onClick:function(){ setFiltro(on && f[0]!=="todas" ? "todas" : f[0]); setLimite(40); }, className:"flex h-9 min-w-0 items-center justify-center gap-1.5 rounded-lg px-1.5 text-[12.5px] font-bold", style:{background:on ? (dec ? "#f59e0b" : OURO) : W.campo, color:on ? OURO_TXT : dec && f[3]>0 ? "#f5c542" : W.texto}},
+        return e("button",{key:f[0], onClick:function(){ setFiltro(on && f[0]!=="todas" ? "todas" : f[0]); setLimite(40); }, className:"flex h-7 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-full px-3 text-[12.5px] font-medium", style:{background:on ? (dec ? "#f59e0b" : OURO) : "transparent", border:on ? "1px solid transparent" : "1px solid "+W.borda, color:on ? OURO_TXT : dec && f[3]>0 ? "#f5c542" : W.texto}},
           e("span",{className:"truncate"}, f[1]),
           f[3]>0 && e("span",{className:"grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10.5px] font-extrabold leading-none", style:{background:on ? "rgba(36,24,10,.9)" : dec ? "#f59e0b" : W.verde, color:on ? "#f6dc8c" : dec ? "#24180a" : "#0b141a"}}, f[3])); })),
     filtro==="arq" && !q && e("p",{className:"shrink-0 px-4 pb-1 text-[12px] font-semibold", style:{color:W.ouro}}, "Conversas arquivadas. Abra uma e use \"Tirar das arquivadas\" nos dados dela."),
@@ -161,7 +164,7 @@ function ListaConversas(p){
           e("span",{className:"line-clamp-2 text-[13px]", style:{color:W.sec}}, (r.m.de===eu ? "Você: " : contato(r.m.de).nome.split(" ")[0]+": ")+r.m.texto)); }),
         !porNome.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
       !filtrada.length ? e(Vazio,{n:filtro==="naolidas" ? "checks" : "chat-circle-dots"}, filtro==="marcado" ? "Ninguém marcou você sem resposta." : filtro==="arq" ? "Nenhuma conversa arquivada." : filtro==="naolidas" ? "Nenhuma mensagem não lida." : "Nenhuma conversa ainda. Toque no ícone de mensagem para começar.") :
-      e("div",null, filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[12px]", style:{color:W.sec}}, "Role para ver mais…"))),
+      e("div",null, filtro==="todas" && arqs.length>0 && e("button",{onClick:function(){ setFiltro("arq"); setLimite(40); }, className:"flex w-full items-center gap-3 px-3 py-2 text-left", style:{borderBottom:"1px solid "+W.borda}}, e("span",{className:"grid size-6 place-items-center"}, e(Ph,{n:"archive-box", s:18, style:{color:W.sec}})), e("span",{className:"flex-1 text-[13.5px] font-medium", style:{color:W.sec}}, "Arquivadas"), e("span",{className:"text-[12px]", style:{color:W.sec}}, arqs.length)), filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[12px]", style:{color:W.sec}}, "Role para ver mais…"))),
     ctx && (function(){
       var it = ctx.it, arq = !!it.arq, motivo = it.pendencia, soDec = /decis/.test(motivo || ""), id = it.conv.id;
       var fecha = function(){ setCtx(null); };

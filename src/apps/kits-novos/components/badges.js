@@ -8,7 +8,7 @@ import { MONO } from "@/apps/kits-novos/ui/input";
 import { e } from "@/shared/react";
 import React from "react";
 
-var ST_TP = {cadastrada:"muted", liberado:"purple", solicitado:"primary", bipado:"info", entregue:"success", cancelado:"destructive"};
+var ST_TP = {cadastrada:"muted", liberado:"purple", solicitado:"primary", aceito:"primary", contato:"info", agendado:"purple", montando:"warning", bipado:"info", retirado:"primary", entregue:"success", devolvido:"success", cancelado:"destructive"};
 function StBadge(p){ var c = p.c; if(c.st==="cancelado") return badge("Cancelado","destructive","ban"); var et = etapaDe(c); return badge(et.nome, ST_TP[c.st], et.ic); }
 function EntBadge(p){ var s = use().state, c = p.c, n = nomeEntrada(c, s.cfg);
   var tp = c.ent==="Indica\u00e7\u00e3o"?"purple":c.ent==="P\u00f3s venda"?"info":c.ent==="An\u00fancio"?"primary":c.ent?"muted":"muted"; return badge(n||"\u2014", tp); }

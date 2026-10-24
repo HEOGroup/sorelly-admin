@@ -38,13 +38,15 @@ var LISTAGENS_RESP = {id:23, nome:"Majorry"};
 var SUPERVISORA = {id:11, nome:"Deysiane"};
 var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}, {id:28, nome:"Lucas"}];
 var KITNOVO = {id:18, nome:"Michele"};
+// Cadastro de peças (23/10/2026): Rayssa (supervisora) e Graziella lançam as peças e respondem os pedidos da produção (Cadastro de peças → Solicitações)
+var CADASTRO_PECAS = [{id:42, nome:"Rayssa"}, {id:43, nome:"Graziella"}];
 // Agendamento confere o dinheiro e a promissória do acerto; financeiro dá o OK de cada pagamento (Ana Maria faz os dois)
 var AGENDAMENTO = [{id:24, nome:"Ana Maria"}, {id:25, nome:"Mariana"}, {id:26, nome:"Tamara"}];
 var FINANCEIRO = [{id:27, nome:"Nayale"}, {id:36, nome:"Bruna"}];   // Bruna faz o faturamento e vê as comissões
 // Agendamento (acertos): todos do setor lançam; gerenciam (abrir/fechar o mês e configurar) a Diretoria e quem estiver marcado no Configurador (padrão: Ana Maria)
 function podeGerirAgend(id, ag){ return DIRETORIA.some(function(x){ return x.id===id; }) || (((ag && ag.config && ag.config.gerentes) || [24]).indexOf(id)>=0); }
 var ACAO_AGENDAMENTO = [24,25,26], ACAO_FINANCEIRO = [27,36];
-var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[KITNOVO],[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
+var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[KITNOVO],CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
 // Quem pode ser montador de um kit: pessoa que existe na equipe e é da montagem ou da supervisão/diretoria (bipadora, financeiro etc. não montam)
 function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORAS.some(function(m){ return m.id===id; }) || papelDe(id)==="supervisao"); }
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
@@ -54,6 +56,7 @@ function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return
 function papelDe(id){
   if(id===SUPERVISORA.id || DIRETORIA.some(function(x){return x.id===id;})) return "supervisao";
   if(id===KITNOVO.id) return "kitnovo";
+  if(CADASTRO_PECAS.some(function(x){return x.id===id;})) return "cadastropecas";
   if(id===LISTAGENS_RESP.id) return "listagens";
   if(FAMILIA.some(function(x){return x.id===id;})) return "familia";
   if(id===AMANDA_M.id) return "inadimplencia";
@@ -100,4 +103,4 @@ function podeFinanceiro(id){ return veBloco(id,"conciliar"); }
 // quem bipa os retornos por padrão (editável em Configurador geral → Quem bipa): bipadoras, atendente de peças, Michele (kits novos) e Deysiane
 var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b.id; }).concat([ATENDENTE_PECAS.id, KITNOVO.id, SUPERVISORA.id]); };
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
-export { ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };
+export { CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };

@@ -18,90 +18,133 @@
 import { condEstado, condVisiveisPre, condOkPre } from "@/apps/montagem/domain/condicionais";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { use } from "@/apps/montagem/state/context";
-import { badge } from "@/apps/montagem/ui/badge";
-import { Btn } from "@/apps/montagem/ui/button";
-import { KPI, Vazio } from "@/apps/montagem/ui/card";
+import { Vazio } from "@/apps/montagem/ui/card";
+import { Bloco, Botao, CAMPO, CampoSel, FaixaTotais, Rotulo } from "@/apps/montagem/components/padrao-fin";
+import { ComCelular } from "@/apps/montagem/components/visao-celular";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
-import { TD, TH, TR } from "@/apps/montagem/ui/table";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
-var COR = {ok:"#16A34A", falta:"#DC2626", imp:"#7C3AED", pend:"#D97706"};
-function Chip(p){
-  var cx = use(), s = cx.state, d = cx.dispatch, k = p.k, n = p.n, st = condEstado(k, n);
-  var cor = st.p ? COR.ok : st.falta ? COR.falta : st.imp ? COR.imp : COR.pend;
-  // Clique no número = confirma (achei no armário) ou desfaz; o "!" separado é quem marca falta, pra não confundir uma coisa com a outra.
-  var confirmar = function(){ d({type:"COND_CHK_PRE", id:k.id, num:n, v:!st.p}); };
-  var faltar = function(){ d({type:"COND_FALTA", id:k.id, num:n, por:s.usuario}); };
-  return e("span",{key:n, className:"inline-flex items-center overflow-hidden rounded-md text-[12px] font-bold text-white txt-branco"},
-    e("button",{onClick:confirmar,
-        title: st.p ? n+" · conferida (clique para desfazer)" : st.falta ? n+" · falta, aguardando impressão (clique quando a Deysiane imprimir)" : n+" · clique quando achar no armário",
-        className:"inline-flex h-7 items-center gap-1.5 px-2 hover:brightness-110"},
-      e("span",{className:"grid size-4 place-items-center rounded-full", style:{background:cor}}, st.p ? e(Icon,{n:"check", s:10}) : st.falta ? "!" : ""),
-      e("span",{className:MONO}, n)),
-    !st.p && e("button",{onClick:faltar, disabled:st.falta, title:st.falta?"Já marcada como falta":"Não achei essa condicional",
-      className:"grid h-7 w-6 place-items-center bg-black/25 hover:bg-destructive disabled:opacity-40"},"!"));
+var CEL = "border-b border-border px-2.5 align-middle ";
+// Mesma cor (dourado) para todas as representantes: faixa na esquerda e tom leve na linha da listagem
+var CORES = ["#E8B84B"];
+function Linha(p){
+  var cx = use(), s = cx.state, d = cx.dispatch, k = p.k, ab = useState(null), aberto = ab[0]===null ? !!p.proxima : ab[0], setAberto = ab[1], vs = useState(""), v = vs[0], setV = vs[1];
+  var nums = condVisiveisPre(k), tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, ok = condOkPre(k), lib = k.status!=="precond";
+  var feitas = nums.filter(function(n){ return condEstado(k,n).p; }).length, faltas = nums.filter(function(n){ return condEstado(k,n).falta; }).length;
+  var faixa = {borderLeft:"4px solid "+p.cor};
+  var achar = function(){ nums.forEach(function(n){ var st = condEstado(k,n); if(!st.p && !st.falta) d({type:"COND_CHK_PRE", id:k.id, num:n, v:true}); }); };
+  var add = function(){ if(!v.trim()) return; d({type:"COND_ADD_NUM", id:k.id, num:v.trim()}); setV(""); };
+  var liberar = function(){ d({type:"LIBERAR_COND", ids:[k.id], por:s.usuario}); };
+  var situ = lib ? "Liberada" : faltas ? faltas+" falta"+(faltas>1?"m":"") : ok ? "Conferida" : "A conferir";
+  var corSitu = lib ? "text-success" : faltas ? "text-destructive" : ok ? "text-success" : "text-warning";
+  var fechar = function(){ setAberto(false); };
+  var proxN = !lib && nums.filter(function(n){ var st = condEstado(k,n); return !st.p && !st.falta; })[0];   // a condicional que a funcionária pega agora
+  if(!aberto){
+    return e("tr",{onClick:function(){ setAberto(true); }, className:"h-9 cursor-pointer hover:bg-white/5 "+(lib?"opacity-60":"")+(p.proxima?" bg-primary/10":"")},
+      e("td",{style:faixa, className:CEL+"text-center text-muted-foreground"}, e(Icon,{n:"chevron", s:14})),
+      e("td",{className:CEL+"text-center tabular-nums"}, k.horaAtend || "—"),
+      e("td",{className:CEL+"truncate", title:k.rev+" · "+(k.bairro||"")}, p.proxima && e("span",{className:"mr-1.5 rounded bg-primary/25 px-1.5 text-[11px] font-bold text-primary"}, "▶ PRÓXIMA"), k.prio && e("span",{className:"text-primary"},"★ "), e("b",{className:"font-medium"}, k.rev), e("span",{className:"text-muted-foreground"}, k.bairro ? " · "+k.bairro : "")),
+      e("td",{className:CEL+"truncate", title:tipo[0]}, tipo[1]),
+      e("td",{className:CEL+"py-1"}, e("div",{className:"flex flex-wrap gap-x-2.5 gap-y-0.5"}, nums.map(function(n){ var st = condEstado(k,n);
+        return e("span",{key:n, title:st.p?"Conferida":st.falta?"Falta":"A conferir", className:MONO+" text-[12.5px] font-bold tabular-nums "+(st.p?"text-success":st.falta?"text-destructive":"text-foreground")}, (st.p?"✓ ":st.falta?"! ":"")+n); }))),
+      e("td",{className:CEL+"truncate text-center font-semibold "+corSitu, title:feitas+" de "+nums.length+" conferidas"}, situ),
+      e("td",{className:CEL+"text-center", onClick:function(ev){ ev.stopPropagation(); }}, !lib && e(Botao,{principal:true, desabilitado:!ok, title: ok ? "" : "Confira todas antes de liberar", onClick:liberar}, "Liberar")));
+  }
+  // Aberto = formato planilha: nome, horário e tipo ocupam o bloco inteiro (rowSpan) e as condicionais ficam ao lado, uma por linha
+  var span = nums.length + (lib ? 0 : 1), bg = p.proxima ? "bg-primary/10 " : "bg-white/5 ";
+  var linhas = nums.map(function(n, i){
+    var st = condEstado(k, n), prev = (k.cond.prev||{})[n], exp = prev && (new Date(prev).getTime()-Date.now())/86400000 > 365;
+    return e("tr",{key:n, className:"h-9 "+bg},
+      i===0 && e("td",{rowSpan:span, style:faixa, onClick:fechar, title:"Clique para fechar", className:"cursor-pointer border-b border-border text-center align-middle text-muted-foreground"}, e(Icon,{n:"chevrondown", s:14})),
+      i===0 && e("td",{rowSpan:span, className:CEL+"border-r text-center align-middle tabular-nums"}, k.horaAtend || "—"),
+      i===0 && e("td",{rowSpan:span, className:"border-b border-r border-border px-2.5 text-center align-middle"},
+        p.proxima && e("div",{className:"mb-0.5 text-[11px] font-bold uppercase tracking-wide text-primary"}, "▶ Próxima"), e("div",{className:"font-semibold"}, k.prio && e("span",{className:"text-primary"},"★ "), k.rev), e("div",{className:"text-muted-foreground"}, k.bairro||""), e("div",{className:"mt-1 text-[12px] "+corSitu+" font-semibold"}, situ+" · "+feitas+"/"+nums.length)),
+      i===0 && e("td",{rowSpan:span, className:"border-b border-r border-border px-2.5 text-center align-middle"}, tipo[1]),
+      e("td",{className:CEL+"tabular-nums "+MONO+" font-bold "+(n===proxN?"text-primary":"")}, (n===proxN?"▶ ":"")+n, n===proxN && e("span",{className:"ml-1.5 text-[11px] font-semibold"}, "pegue agora"), exp && e("span",{className:"ml-1.5 text-[11px] font-normal text-muted-foreground"}, "expositor")),
+      e("td",{className:CEL+"truncate text-center font-semibold "+(st.p?"text-success":st.imp?"text-primary":st.falta?"text-destructive":"text-warning")},
+        st.p ? "✓ Conferida" : st.imp ? "Impressa" : st.falta ? "Falta" : "A conferir"),
+      e("td",{className:CEL+"text-center"}, !lib && e("div",{className:"flex items-center justify-center gap-1"},
+        e(Botao,{principal:n===proxN, onClick:function(){ d({type:"COND_CHK_PRE", id:k.id, num:n, v:!st.p}); }}, st.p ? "Desfazer" : "Achei"),
+        !st.p && e(Botao,{desabilitado:st.falta, onClick:function(){ d({type:"COND_FALTA", id:k.id, num:n, por:s.usuario}); }}, st.falta ? "Pedida" : "Falta"))));
+  });
+  if(!lib) linhas.push(e("tr",{key:"acoes", className:"h-10 "+bg},
+    e("td",{colSpan:2, className:CEL},
+      e("div",{className:"flex items-center gap-1.5"},
+        e("input",{value:v, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") add(); }, placeholder:"Nº à mão", className:CAMPO+" w-28"}),
+        e(Botao,{desabilitado:!v.trim(), onClick:add}, "Adicionar"))),
+    e("td",{className:CEL+"text-center"}, e("div",{className:"flex items-center justify-center gap-1"}, !ok && e(Botao,{onClick:achar}, "Achei todas"), e(Botao,{principal:true, desabilitado:!ok, onClick:liberar}, "Liberar")))));
+  return e(React.Fragment,null, linhas);
 }
-function AddNum(p){
-  var d = use().dispatch, k = p.k, vs = useState(""), v = vs[0], setV = vs[1];
-  var enviar = function(){ if(!v.trim()) return; d({type:"COND_ADD_NUM", id:k.id, num:v.trim()}); setV(""); };
-  return e("div",{className:"flex items-center gap-1"},
-    e("input",{value:v, onChange:function(ev){setV(ev.target.value);}, onKeyDown:function(ev){ if(ev.key==="Enter") enviar(); },
-      placeholder:"nº manual", className:"h-7 w-20 rounded-md border border-border bg-input/30 px-1.5 text-[11.5px] "+MONO+" outline-none focus:border-primary"}),
-    e("button",{onClick:enviar, disabled:!v.trim(), title:"Adicionar condicional digitada na mão",
-      className:"grid size-7 shrink-0 place-items-center rounded-md border border-dashed border-border text-muted-foreground hover:border-primary hover:text-primary disabled:opacity-40"}, e(Icon,{n:"plus", s:13})));
-}
-function LinhaRev(p){
-  var cx = use(), s = cx.state, d = cx.dispatch, k = p.k;
-  var nums = condVisiveisPre(k), tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, ok = condOkPre(k);
-  var liberada = k.status!=="precond";
-  return e("tr",{className:TR+(liberada?" opacity-70":"")},
-    e(TD,{c:true, className:MONO+" text-muted-foreground"}, p.pos+"º"),
-    e(TD,{c:true, className:MONO+" text-[12.5px]!"}, k.horaAtend || "—"),
-    e(TD,{className:"font-medium"}, k.prio && e("span",{className:"text-primary"},"★ "), k.rev, e("p",{className:"text-[12px] font-normal text-muted-foreground"}, k.bairro)),
-    e(TD,null, e("span",{title:tipo[0], className:"inline-block max-w-full truncate rounded-md border px-1.5 py-0.5 text-[11.5px] font-semibold"}, tipo[1])),
-    e(TD,{className:"whitespace-normal"}, e("div",{className:"flex flex-wrap items-center gap-1.5"}, nums.map(function(n){ return e(Chip,{key:n, k:k, n:n}); }), !liberada && e(AddNum,{key:"add", k:k}))),
-    e(TD,{c:true}, liberada
-      ? e("span",{className:"inline-flex items-center gap-1 text-[12.5px] font-semibold text-success"}, e(Icon,{n:"check", s:13}), "Liberada")
-      : e(Btn,{v:"primary", sm:true, ic:"check", disabled:!ok, title: ok ? "" : "Confira todas as condicionais antes de liberar",
-          onClick:function(){ d({type:"LIBERAR_COND", ids:[k.id], por:s.usuario}); }}, "Liberar")));
-}
-function GrupoListagem(p){
-  var x = p.x, ab = useState(true), aberto = ab[0], setAberto = ab[1];
-  var pendentes = x.ks.filter(function(k){return k.status==="precond";});
-  var ok = pendentes.every(function(k){ return condOkPre(k); });
-  var cor = ok ? "bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]" : "bg-linear-to-r from-[#7A1F1F] via-[#B23A3A] to-[#D98080] text-white";
-  return e("div",{className:"overflow-hidden rounded-xl"},
-    e("button",{onClick:function(){ setAberto(!aberto); }, "aria-expanded":aberto,
-        className:"flex w-full items-center gap-2 px-3.5 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,.35)] "+cor+" "+(aberto?"rounded-t-xl":"rounded-xl")},
-      e(Icon,{n: aberto?"chevrondown":"chevron", s:16}),
-      e("b",{className:"font-heading text-[15px] font-bold"}, x.l.rep), badge(x.l.horario, "muted"),
-      pendentes.length===0 ? badge("tudo liberado","success") : ok ? badge("tudo conferido","success") : badge(pendentes.length+" aguardando","warning"),
-      x.ks.length>pendentes.length && badge((x.ks.length-pendentes.length)+" já liberada"+(x.ks.length-pendentes.length>1?"s":""), "muted")),
-    aberto && e("div",{className:"overflow-x-auto rounded-b-xl border border-t-0 border-border bg-card"},
-      e("table",{className:"w-full min-w-[54rem] border-collapse text-sm"},
-        e("thead",null, e("tr",{className:"bg-sidebar"},
-          e(TH,{c:true},"Ordem"), e(TH,{c:true},"Horário"), e(TH,null,"Nome"), e(TH,null,"Tipo"), e(TH,null,"Condicionais"), e(TH,{c:true},"Situação"))),
-        e("tbody",null, x.ks.map(function(k,i){ return e(LinhaRev,{key:k.id, k:k, pos:i+1}); })))));
+function Grupo(p){
+  var x = p.x, ab = useState(true), aberto = ab[0], setAberto = ab[1], d = p.d;
+  var pend = x.ks.filter(function(k){ return k.status==="precond"; }), prontas = pend.filter(condOkPre);
+  return e(React.Fragment,null,
+    e("tr",{onClick:function(){ setAberto(!aberto); }, className:"h-8 cursor-pointer", style:{background:p.cor+"26"}},
+      e("td",{colSpan:7, style:{borderLeft:"4px solid "+p.cor}, className:"border-b border-border px-2.5 text-[13px]"}, e("div",{className:"flex items-center gap-2"},
+        e(Icon,{n: aberto?"chevrondown":"chevron", s:14}), e("b",{className:"font-semibold", style:{color:p.cor}}, x.l.rep), e("span",{className:"text-muted-foreground"}, x.l.horario+" · "+x.ks.length+" revendedora"+(x.ks.length>1?"s":"")+" · "+pend.length+" aguardando"),
+        prontas.length>0 && e("span",{className:"ml-auto", onClick:function(ev){ ev.stopPropagation(); }}, e(Botao,{onClick:function(){ d({type:"LIBERAR_COND", ids:prontas.map(function(k){return k.id;}), por:p.por}); }}, "Liberar prontas ("+prontas.length+")"))))),
+    aberto && x.ks.map(function(k){ return e(Linha,{key:k.id, k:k, cor:p.cor, proxima:k.id===p.proximaId}); }));
 }
 function AbaCondicionais(){
   var cx = use(), s = cx.state;
-  // Consolidado do dia: continua na tela até a listagem inteira fechar — a que ainda tá conferindo e a que já foi liberada hoje
   var doDia = s.kits.filter(function(k){ return k.status==="precond" || (k.cond && k.cond.liberadoEm); });
   var pend = doDia.filter(function(k){ return k.status==="precond"; });
   var faltando = pend.reduce(function(t,k){ return t + condVisiveisPre(k).filter(function(n){ return condEstado(k,n).falta; }).length; }, 0);
-  var porListagem = s.listagens.filter(function(l){ return !l.fechada; }).map(function(l){
-    return {l:l, ks: doDia.filter(function(k){return k.lid===l.id;}).sort(function(a,b){return a.ordem-b.ordem;})}; }).filter(function(x){return x.ks.length>0;});
-  return e(React.Fragment,null,
-    e(PageHead,{t:"Condicionais", sub:"Confira as condicionais de cada revendedora antes de liberar para a fila de montagem. Saída leva a condicional de tudo, inclusive expositor; acerto (com ou sem kit novo) só traz o que vence nos próximos 90 dias. Fica tudo aqui até a listagem inteira concluir."}),
-    e("div",{className:"grid grid-cols-2 gap-3 md:grid-cols-3"},
-      e(KPI,{l:"Revendedoras aguardando", v:pend.length, tom: pend.length?"text-warning":""}),
-      e(KPI,{l:"Condicionais faltando", v:faltando, tom: faltando?"text-destructive":"", sub:"aguardando impressão"}),
-      e(KPI,{l:"Listagens com pendência", v:porListagem.filter(function(x){return x.ks.some(function(k){return k.status==="precond";});}).length})),
-    porListagem.length===0 ? e(Vazio,{txt:"Nenhuma revendedora esperando conferência. Tudo liberado para a fila."}) :
-    e("div",{className:"flex flex-col gap-4"}, porListagem.map(function(x){ return e(GrupoListagem,{key:x.l.id, x:x}); })));
+  var fs = useState(""), busca = fs[0], setBusca = fs[1], ts = useState("todos"), tipo = ts[0], setTipo = ts[1], ss = useState("todas"), sit = ss[0], setSit = ss[1], ls = useState("todas"), lis = ls[0], setLis = ls[1];
+  var passa = function(k){
+    if(busca && (k.rev||"").toLowerCase().indexOf(busca.toLowerCase())<0) return false;
+    if(tipo!=="todos" && k.tipoKit!==tipo) return false;
+    if(lis!=="todas" && k.lid!==lis) return false;
+    var tf = condVisiveisPre(k).some(function(n){ return condEstado(k,n).falta; });
+    if(sit==="falta") return k.status==="precond" && tf;
+    if(sit==="aguardando") return k.status==="precond";
+    if(sit==="liberadas") return k.status!=="precond";
+    return true; };
+  var abertas = s.listagens.filter(function(l){ return !l.fechada; });
+  var grupos = abertas.slice().sort(function(a,b){ return String(a.horario).localeCompare(String(b.horario)); }).map(function(l){ return {l:l, ks: doDia.filter(function(k){ return k.lid===l.id && passa(k); }).sort(function(a,b){return a.ordem-b.ordem;})}; }).filter(function(x){ return x.ks.length>0; });
+  var proximaId = null; grupos.forEach(function(x){ x.ks.forEach(function(k){ if(!proximaId && k.status==="precond" && condVisiveisPre(k).some(function(n){ var st = condEstado(k,n); return !st.p && !st.falta; })) proximaId = k.id; }); });
+  if(!proximaId) grupos.forEach(function(x){ x.ks.forEach(function(k){ if(!proximaId && k.status==="precond") proximaId = k.id; }); });
+  var prox = proximaId && s.kits.find(function(k){ return k.id===proximaId; });
+  var proxL = prox && abertas.find(function(l){ return l.id===prox.lid; });
+  var proxNums = prox ? condVisiveisPre(prox).filter(function(n){ return !condEstado(prox,n).p; }) : [];
+  var prontas = []; grupos.forEach(function(x){ x.ks.forEach(function(k){ if(k.status==="precond" && condOkPre(k)) prontas.push(k); }); });
+  var fila = [];
+  pend.forEach(function(k){ condVisiveisPre(k).forEach(function(n){ if(condEstado(k,n).falta) fila.push({k:k, n:n, f:((k.cond||{}).faltas||{})[n]||{}}); }); });
+  var opT = [["todos","Todos"]].concat(Object.keys(TIPO_KIT).map(function(c){ return [c, TIPO_KIT[c][1]]; }));
+  var opL = [["todas","Todas"]].concat(abertas.map(function(l){ return [l.id, l.rep+" "+l.horario]; }));
+  return e(ComCelular,{app:"condicionais"},
+    e(PageHead,{t:"Condicionais", sub:"Abra a revendedora, confira cada condicional e libere para a montagem."}),
+    e(FaixaTotais,{itens:[
+      {t:"Aguardando", v:String(pend.length), cor: pend.length?"text-warning":""},
+      {t:"Faltando", v:String(faltando), cor: faltando?"text-destructive":""},
+      {t:"Prontas p/ liberar", v:String(prontas.length), cor: prontas.length?"text-success":""}]}),
+    e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-5"},
+      e("div",{className:"min-w-0"}, e(Rotulo,{t:"Revendedora", id:"cd-busca"}), e("input",{id:"cd-busca", type:"search", value:busca, placeholder:"Nome", onChange:function(ev){ setBusca(ev.target.value); }, className:CAMPO})),
+      e(CampoSel,{id:"cd-lis", t:"Listagem", value:lis, onChange:setLis, opcoes:opL}),
+      e(CampoSel,{id:"cd-tipo", t:"Tipo", value:tipo, onChange:setTipo, opcoes:opT}),
+      e(CampoSel,{id:"cd-sit", t:"Situação", value:sit, onChange:setSit, opcoes:[["todas","Todas"],["aguardando","Aguardando"],["falta","Com falta"],["liberadas","Liberadas"]]}),
+      e(Botao,{principal:true, desabilitado:prontas.length===0, title:"Libera todas as já conferidas", onClick:function(){ cx.dispatch({type:"LIBERAR_COND", ids:prontas.map(function(k){return k.id;}), por:s.usuario}); }}, "Liberar prontas ("+prontas.length+")")),
+    prox && e("div",{className:"destaque-novo flex h-10 items-center gap-3 rounded-lg border border-primary bg-primary/10 px-3 text-[13px]"},
+      e("b",{className:"text-primary"}, "▶ Próxima"), e("span",{className:"font-semibold"}, prox.rev), e("span",{className:"text-muted-foreground"}, (proxL?proxL.rep+" · ":"")+(prox.horaAtend||"")),
+      e("span",{className:MONO+" ml-auto truncate font-bold"}, proxNums.length ? "Pegar: "+proxNums.join("  ") : "Tudo conferido: liberar")),
+    fila.length>0 && e(Bloco,{t:"Aguardando impressão", dir:e("span",{className:"text-muted-foreground"}, fila.length+" pedida"+(fila.length>1?"s":""))},
+      e("div",{className:"flex flex-col divide-y divide-border"}, fila.map(function(x){
+        var min = x.f.em ? Math.max(0, Math.round((Date.now()-new Date(x.f.em).getTime())/60000)) : null;
+        return e("div",{key:x.k.id+x.n, className:"flex h-9 items-center gap-3 text-[13px]"},
+          e("span",{className:MONO+" w-24 truncate font-bold text-destructive"}, x.n),
+          e("span",{className:"w-28 truncate font-semibold text-primary"}, (abertas.find(function(l){ return l.id===x.k.lid; })||{}).rep||""),
+          e("span",{className:"min-w-0 flex-1 truncate"}, x.k.rev),
+          e("span",{className:"w-20 truncate text-right text-muted-foreground"}, min===null?"":min<60?min+" min":Math.floor(min/60)+" h"),
+          e(Botao,{onClick:function(){ cx.dispatch({type:"COND_IMPRESSA", id:x.k.id, num:x.n, por:s.usuario}); }}, "Impressa")); }))),
+    grupos.length===0 ? e(Vazio,{txt:"Nenhuma revendedora com esse filtro."}) :
+    e("div",{className:"destaque-novo overflow-x-auto rounded-lg border border-border"},
+      e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:"48rem"}},
+        e("colgroup",null, ["2.5rem","4rem","14rem","10rem",null,"6.5rem","15rem"].map(function(w,i){ return e("col",{key:i, style:w?{width:w}:undefined}); })),
+        e("thead",null, e("tr",null, ["","Horário","Revendedora","Tipo","Condicionais","Situação",""].map(function(c,i){ return e("th",{key:i, className:"h-[30px] truncate border-b border-border bg-white/5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(i===2||i===3?"text-left":"text-center")}, c); }))),
+        e("tbody",null, grupos.map(function(x, gi){ return e(Grupo,{key:x.l.id, proximaId:proximaId, cor:CORES[gi%CORES.length], x:x, d:cx.dispatch, por:s.usuario}); })))));
 }
 
 export { AbaCondicionais };

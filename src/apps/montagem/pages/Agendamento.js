@@ -12,6 +12,7 @@ import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
+import { ListagemLeitura } from "@/apps/montagem/pages/encomendas/ListagemDia";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -101,6 +102,7 @@ function AbaAgPainel(){
   var copiar = function(){ try{ navigator.clipboard.writeText(p.texto); c.d({type:"AVISO", txt:"Texto copiado! Já pode colar no WhatsApp."}); }catch(x){} };
   var saiu = p.saidasPropositais+p.saidasOutras;
   return e("div",{className:"flex flex-col gap-4"},
+    e(ListagemLeitura,{er:c.s.er}),
     e("div",{className:"flex flex-wrap items-center justify-between gap-3"},
       e("div",{className:"flex items-center gap-3"}, e("h1",{className:"font-heading text-2xl font-bold"}, nomeMes(ym)+" "+anoDe(ym)), e("span",{className:"rounded-full px-2.5 py-0.5 text-[12px] font-bold "+(p.aoVivo ? "bg-success/20 text-success" : "bg-muted text-muted-foreground")}, p.aoVivo ? "Ao vivo" : "Fechado")),
       e("div",{className:"flex flex-wrap items-center gap-2"},

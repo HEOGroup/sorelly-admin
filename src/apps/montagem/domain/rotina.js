@@ -21,7 +21,8 @@ var SEMENTE = [
   {id:"r_compras", nome:"Decidir pedidos de compra", setor:"Financeiro", quem:[27], hora:"14:00", dias:SEG_SEX, rota:"compras"},
   {id:"r_passadas", nome:"Passadas para o próximo mês (Agendamento)", setor:"Agendamento", quem:[24], hora:"17:00", dias:SEG_SAB, rota:"visaogeral"},
   {id:"r_contas", nome:"Contas pagas do dia por CNPJ", setor:"Financeiro", quem:[27], hora:"17:30", dias:SEG_SEX, rota:"contaspagar"},
-  {id:"r_inad", nome:"Registrar inadimplência recuperada", setor:"Inadimplência", quem:[32], hora:"16:30", dias:SEG_SEX, rota:"inadimp"}
+  {id:"r_inad", nome:"Registrar inadimplência recuperada", setor:"Inadimplência", quem:[32], hora:"16:30", dias:SEG_SEX, rota:"inadimp"},
+  {id:"r_enc_lista", nome:"Enviar a listagem de horários da ida na empresa ao Agendamento", setor:"Encomendas", quem:[40], hora:"08:30", dias:SEG_SAB, rota:"encida"}
 ];
 
 function rotDemo(){ return {v:1, itens:clone(SEMENTE), reg:{}}; }
@@ -29,6 +30,7 @@ function rotMigrar(r){
   if(!r || typeof r!=="object") return rotDemo();
   if(!Array.isArray(r.itens)) r.itens = clone(SEMENTE);
   if(!r.reg || typeof r.reg!=="object") r.reg = {};
+  if(!r.encLista){ if(!r.itens.some(function(i){ return i.id==="r_enc_lista"; })) r.itens.push(clone(SEMENTE.find(function(i){ return i.id==="r_enc_lista"; }))); r.encLista = true; }   // 23/10/2026: entra uma vez nos dados já salvos
   return r;
 }
 var diaDaSemana = function(iso){ return new Date(iso+"T12:00:00").getDay(); };

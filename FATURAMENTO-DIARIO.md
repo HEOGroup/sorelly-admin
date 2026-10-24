@@ -14,6 +14,7 @@ Documento vivo. **Todo dia que o Marcus passar os números, entra aqui e no sist
 | **19/10/2026** | **1.008** | **R$ 789.350,24** | **R$ 783,09** | dia: 140 acertos, R$ 99.719,05 (fixado em 20/10/2026) |
 | 20/10/2026 | 1.124 | R$ 888.787,53 | R$ 790,74 | dia: 116 acertos, R$ 99.437,29 (fixado em 21/10/2026) |
 | **21/10/2026** | **1.176** | **R$ 928.995,38** | **R$ 789,96** | dia: 52 acertos, R$ 40.207,85 (fixado em 22/10/2026) |
+| 22/10/2026 (Hoje, acompanhamento) | 1.241 | R$ 982.434,43 | R$ 791,65 | dia: 65 acertos, R$ 53.439,05 sobre o fechamento de 21/10 (Marcus, 22/10 à noite; vira oficial quando ele fechar o dia) |
 
 **Previsão de outubro (Marcus, 20/10/2026):** 1.120 feitos + 7 vendas no Carregar sem valor (contam como feitas, fora da média) + 783 a realizar = **1.910 acertos no mês**; previsão a 97% = 1.853 acertos. Em 21/10 o dia 20 foi fixado em 1.124 acertos (o Carregar e o a realizar seguem os mesmos até o Marcus mandar outros). Em 19/10 eram 997 + 16 + 908 = 1.921 (a diferença é o que já foi feito e passado para frente).
 
@@ -69,3 +70,10 @@ Saldos de 30/09, 01/10, 13/10 e 19/10 conferidos conta a conta com o admin antig
 
 ## Atualização automática de 21/10/2026
 Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 46 −R$ 11.836,97; Dinheiro Caixa Seguro R$ 23.299,25). Contas pagas: o admin antigo ainda não tem o dia 20/10; seguem os 14 dias lançados (01 a 19/10), total pago no mês R$ 810.459,59 nas contas diárias (o total do mês no admin mostra pagas R$ 946.917,85 e a pagar R$ 571.780,33; a diferença vem de lançamentos que não estão no diário por dia).
+
+## Atualização de 22/10/2026 (noite)
+- Hoje (acompanhamento): 1.241 acertos, R$ 982.434,43, média R$ 791,65. Código: `aplicaHoje22` em `state/store.js` (flag `hoje22V`).
+- Contas a pagar lidas do admin antigo (`faturamento_contas_mes`, 22/10 20:21): outubro pagas R$ 1.141.034,30 e a pagar R$ 379.495,29 (total R$ 1.520.529,59); novembro a pagar R$ 1.451.402,56; dezembro a pagar R$ 1.500.553,11. Código: `aplicaContas22` (flag `cp22V`). Antes (13/10): outubro total R$ 1.485.588,64, nov R$ 1.457.779,93, dez R$ 1.479.278,78.
+- Contas pagas por dia (`faturamento_contas_diario`) e saldos das 29 contas até 22/10: já estavam iguais ao admin, nada a gravar. Dia 22 pago: R$ 45.938,34 (34: 21,50 · 46: 31.258,26 · 59: 201,19 · 67: 801,35 · por fora: 13.656,04).
+- Diferença: soma dos dias lançados em outubro = R$ 1.113.056,53; o admin mostra pagas R$ 1.141.034,30 (R$ 27.977,77 de lançamentos fora do diário). A tela usa a soma dos dias.
+- A lista de títulos do Contas a pagar (DevMaster) não está no banco do admin: só muda quando o Marcus passar novos relatórios.

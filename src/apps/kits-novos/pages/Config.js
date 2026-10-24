@@ -21,7 +21,7 @@ function AbaConfig(){
   return e(React.Fragment,null,
     e(PageHead,{t:"Configurador", sub:"Prazos, meta, motivos, nomes das campanhas."}),
     e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-2"},
-      e(Bloco,{t:"Prazos e meta (dias)"}, ETAPAS.slice(0,4).map(function(et){ return linha(et.nome+" at\u00e9 "+ETAPAS[et.n].nome.toLowerCase(), e(NumInput,{value:cfg.prazos[et.k], label:et.nome, onChange:function(v){d({type:"CFG", prazo:et.k, valor:v});}})); }),
+      e(Bloco,{t:"Prazos e meta (dias)"}, ETAPAS.slice(0, ETAPAS.length-1).map(function(et){ return linha(et.nome+" at\u00e9 "+ETAPAS[et.n].nome.toLowerCase(), e(NumInput,{value:cfg.prazos[et.k], label:et.nome, onChange:function(v){d({type:"CFG", prazo:et.k, valor:v});}})); }),
         linha("Meta do cadastro \u00e0 entrega", e(NumInput,{value:cfg.metaDias, label:"Meta", onChange:function(v){d({type:"CFG", campo:"metaDias", valor:v});}})),
         linha("Desmarca\u00e7\u00f5es antes de cancelar", e(NumInput,{value:cfg.maxDesmarcacoes, label:"Desmarca\u00e7\u00f5es", onChange:function(v){d({type:"CFG", campo:"maxDesmarcacoes", valor:v});}})),
         linha("Ocultar entregues e canceladas ap\u00f3s", e(NumInput,{value:cfg.ocultarApos, label:"Dias", onChange:function(v){d({type:"CFG", campo:"ocultarApos", valor:v});}}))),

@@ -8,6 +8,8 @@ import { kit } from "@/apps/montagem/domain/seed";
 import { STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { BK, N1 } from "@/apps/montagem/lib/format";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
+import { avisosDe } from "@/apps/montagem/domain/pedidos-pecas";
+import { CelPedir } from "@/apps/montagem/mobile/montadora-pedido";
 import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { Avatar, PONTO_CEL, corDe } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -110,6 +112,7 @@ function CelListagens(){
 function Celular(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var lg = useState(false), logado = p && p.logado!==undefined ? p.logado : lg[0], setLogado = p && p.setLogado ? p.setLogado : lg[1];   // a página pode controlar (lista "Conectar como")
+  var avisosPeca = avisosDe(s.pp, s.celular).length;   // respostas do cadastro ainda não vistas
   var idx = s.montadoras.findIndex(function(x){return x.id===s.celular;}), m = s.montadoras[idx];
   var seg = function(t, lb){ return e("button",{onClick:function(){d({type:"TELACEL", t:t});},
     className:"flex-1 rounded-lg py-1.5 text-[12.5px] font-semibold transition-colors "+(s.telaCel===t?"bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409] shadow":"text-[#8E8E93]")}, lb); };
@@ -119,8 +122,8 @@ function Celular(p){
       e(Avatar,{nome:m.nome, i:idx}),
       e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Conectada como"), e("p",{className:"truncate text-xl font-bold"}, m.nome)),
       e("button",{onClick:function(){setLogado(false);}, title:"Sair", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"user", s:18, className:"text-[#8E8E93]"}))),
-    e("div",{className:"mb-4 flex gap-1 rounded-xl bg-[#1C1C1E] p-1"}, seg("resultados","Meus resultados"), seg("proximo","Próximo kit"), seg("listagens","Listagens do dia")),
-    s.telaCel==="proximo" ? e(CelProximo) : s.telaCel==="listagens" ? e(CelListagens) : e(CelResultados));
+    e("div",{className:"mb-4 flex gap-1 rounded-xl bg-[#1C1C1E] p-1"}, seg("resultados","Resultados"), seg("proximo","Próximo kit"), seg("listagens","Listagens"), seg("pedir", avisosPeca ? "Peça ("+avisosPeca+")" : "Pedir peça")),
+    s.telaCel==="proximo" ? e(CelProximo) : s.telaCel==="listagens" ? e(CelListagens) : s.telaCel==="pedir" ? e(CelPedir) : e(CelResultados));
 }
 
 export { CelProximo, CelListagens, CelResultados, CelLogin, Celular };

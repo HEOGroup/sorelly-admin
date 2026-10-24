@@ -293,8 +293,10 @@ function FaixaRevendedoras(p){
     e("div",{className:"flex flex-wrap gap-x-8 gap-y-1"},
       e("button",{type:"button", title:"Abrir o histórico de revendedoras", onClick:function(){ d({type:"ABA", aba:"revendedoras"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
         numero("Revendedoras · total hoje", num(total), "text-primary", (delta!==null && delta!==undefined ? (delta>=0 ? "+" : "")+num(delta)+" no mês · " : "")+(quando ? "em "+quando : ""), true)),
-      numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.acertos), "acertos"), destaque(BK(m.mediaAcerto), "de média")), true),
-      numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true)),
+      e("button",{type:"button", title:"Abrir a tela Faturamento", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},   // clicar no faturamento abre a tela Faturamento (Marcus, 24/10/2026)
+        numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.acertos), "acertos"), destaque(BK(m.mediaAcerto), "de média")), true)),
+      e("button",{type:"button", title:"Abrir a tela Faturamento (previsão)", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
+        numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true))),
     e("div",{className:"ml-auto flex flex-1 flex-wrap justify-end gap-1 [&_button]:whitespace-nowrap"},
       e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarHoje,{s:s, d:d, m:m})),
       papelDe(s.usuario)==="supervisao" && e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarRevendedoras,{s:s, d:d}))));

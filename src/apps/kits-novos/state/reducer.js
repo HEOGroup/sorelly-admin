@@ -16,6 +16,10 @@ function reducer(s, a){
       if(a.f.busca){ ab3 = {}; ETAPAS.concat([{k:"cancelado"}]).forEach(function(x){ ab3[x.k]=true; }); }
       return com(s, {filtro:Object.assign({}, s.filtro, a.f), abertos:ab3}); }
     case "DIALOGO": return com(s, {dialogo:a.d});
+    case "SUBREP": return com(s, {subRep:a.sub});
+    // mudança nos blocos de região (Representantes › Regiões): grava na hora e sem aviso a cada clique
+    case "PERFIL_REGIAO": { var pr = Object.assign({}, s.perfis); pr[a.nome] = a.perfil; return com(s, {perfis:pr}); }
+    case "PERFIL_SALVAR": { var pf = Object.assign({}, s.perfis); pf[a.nome] = a.perfil; return com(s, {perfis:pf, dialogo:null}, "Mapa de "+a.nome+" salvo"); }
     case "AVISO": return com(s, {}, a.txt, "atencao");
     case "LIMPAR_AVISO": return com(s, {aviso:null});
     case "AVANCAR": {
@@ -46,7 +50,7 @@ function reducer(s, a){
     }
     case "NOVA": {
       var d = a.dados, n = {id:"N"+Date.now(), mes:MESES[new Date().getMonth()], cad:hojeISO(), lib:null, sol:null, bip:null, ret:null, st:"cadastrada",
-        nome:d.nome.trim(), cid:d.cid||"", bai:d.bai||"", rep:d.rep||"", mod:d.mod||"Misto", val:d.val||s.cfg.valorPadrao, retirada:"", trab:d.trab||"", trabEnd:d.trabEnd||"",
+        nome:d.nome.trim(), cid:d.cid||"", bai:d.bai||"", prof:d.prof||"", rep:d.rep||"", mod:d.mod||"Misto", val:d.val||s.cfg.valorPadrao, retirada:"", trab:d.trab||"", trabEnd:d.trabEnd||"",
         disp:d.disp||"", obs:d.obs||"", c1:false, c2:false, c3:false, c1n:d.c1n||"", c1t:d.c1t||"", c1r:d.c1r||"", c2n:"", c2t:"", c2r:"", c3n:"", c3t:"", c3r:"",
         tipo:d.tipo||"Vendedora", op:quem(s), ent:d.ent||"", entId:"", obs2:d.obs2||"", desm:0,
         hist:[{em:Date.now(), quem:quem(s), txt:"Cadastrada no sistema"}]};

@@ -22,7 +22,7 @@ function AbaConsolidado(p){
   var s = use().state, ds = s.dados, cfg = s.cfg;
   var mesesCom = MESES.filter(function(m){ return ds.some(function(c){return mesDe(c)===m;}); });
   var porMes = mesesCom.map(function(m){ return {l:m.slice(0,3), v:ds.filter(function(c){return mesDe(c)===m;}).length}; });
-  var linha = function(g){ var en = g.filter(function(c){return c.st==="entregue";}), ca = g.filter(function(c){return c.st==="cancelado";});
+  var linha = function(g){ var en = g.filter(function(c){return c.st==="entregue" || c.st==="devolvido";}), ca = g.filter(function(c){return c.st==="cancelado";});
     var t = en.filter(function(c){return c.cad&&c.ret;}).map(function(c){return diasEntre(c.cad,c.ret);});
     return {n:g.length, en:en.length, ca:ca.length, ab:g.filter(aberto).length, atr:g.filter(function(c){return atrasado(c,cfg);}).length, t:t.length?t.reduce(function(a,b){return a+b;},0)/t.length:0}; };
   var tab = function(t, chave, lista, fmt){ return e(Secao,{t:t}, e(Tabela,{min:"min-w-[44rem]", cols:[{t:t.replace("Por ","")},{t:"Entradas",r:1},{t:"Entregues",r:1},{t:"Canceladas",r:1},{t:"Em aberto",r:1},{t:"Atrasadas",r:1},{t:"Tempo m\u00e9dio",r:1}]},
@@ -33,7 +33,7 @@ function AbaConsolidado(p){
   return e(React.Fragment,null,
     e(PageHead,{t:"Consolidado", sub:"Curitiba e regi\u00e3o metropolitana, 2026 at\u00e9 hoje."}),
     e("div",{className:"grid grid-cols-2 gap-3 lg:grid-cols-4"},
-      e(KPI,{l:"Entradas no ano", v:ds.length}), e(KPI,{l:"Entregues", v:ds.filter(function(c){return c.st==="entregue";}).length, tom:"text-success", sub:N1(ds.filter(function(c){return c.st==="entregue";}).length/ds.length*100)+"%"}),
+      e(KPI,{l:"Entradas no ano", v:ds.length}), e(KPI,{l:"Entregues", v:ds.filter(function(c){return c.st==="entregue" || c.st==="devolvido";}).length, tom:"text-success", sub:N1(ds.filter(function(c){return c.st==="entregue";}).length/ds.length*100)+"%"}),
       e(KPI,{l:"Canceladas", v:canc, tom:"text-warning", sub:N1(canc/ds.length*100)+"%"}), e(KPI,{l:"Melhor m\u00eas", v:porMes.slice().sort(function(a,b){return b.v-a.v;})[0].l, sub:"mais entradas"})),
     e(Secao,{t:"Entradas por m\u00eas"}, e(Card,null, e(Barras,{dados:porMes, label:"Entradas por m\u00eas"}))),
     e("div",{className:"grid grid-cols-1 gap-5 xl:grid-cols-2"}, tab("Por entrada", function(c){return c.ent;}, p.listas.ents.slice(0,10)), tab("Por campanha", function(c){return c.entId;}, campanhas, function(id){ return nomeEntrada({ent:"An\u00fancio", entId:id}, cfg); })),

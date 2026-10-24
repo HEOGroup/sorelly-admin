@@ -32,7 +32,12 @@ Código das peças: `src/apps/montagem/components/padrao.js` (Pagina, Indicador,
 
 ## Menu, barra do topo e cores (módulo novo)
 - Setor = item da barra lateral; área = botão da barra de cima; tela = item do menu da área. Tudo em `navigation/setores.js` (helpers T, G, Ti), nomes em `abas.js`, endereço em `router/slugs.js` e `src/router/rotas.js`, acesso por setor em `navigation/perfis.js`. Passo a passo no README.md.
-- Barra do topo com muitos botões: agrupe por assunto (opção D). Em `navigation/setores.js`, `GRUPO_BARRA` diz o grupo de cada área; o nome do grupo aparece em cima dos botões, que são pequenos e quebram de linha sozinhos. Setor sem grupo mantém a barra simples.
+- **MENU DO SETOR, padrão de 22/10/2026 (opção 3, aprovada pelo Marcus; já valem Financeiro, Cadastro de revendedoras e Encomendas e reposições).** Cada setor tem o campo `menu` em `navigation/setores.js`: lista de nós `{nome, aba?, itens?, perm?}` (ajudante `M(nome, aba)`). A peça é `components/barra-menu.js`. De cima para baixo:
+  1. **Faixa do sistema:** botão Voltar, ícone do setor e nome da tela aberta.
+  2. **Telas abertas:** chips das últimas telas (máximo 5, com ×); a tela atual fica dourada.
+  3. **Menu em texto:** palavras com listas em cascata (linhas de 30 px, item aberto dourado) e a busca "Buscar tela…" na ponta.
+  4. **Tela:** título + subtítulo à esquerda; à direita o seletor de visão (Segmentado) e UM botão principal.
+- **Regras do menu:** (a) as palavras seguem a **ordem do fluxo** do setor; (b) setor com poucas telas usa palavras diretas, **sem lista e sem a faixa de telas abertas** (campo `semAbas:true` no setor; ex.: Encomendas e reposições = 6 palavras sempre visíveis, então não precisa de chips); (c) setor com muitas telas agrupa em listas, no máximo 2 níveis; (d) **nada de botões coloridos por área**: a cor do setor aparece só no ícone; (e) setor sem `menu` cai no menu automático das áreas (`menuAuto` em App.js: área com uma tela só vira palavra direta). O agrupamento antigo `GRUPO_BARRA` (opção D) não vale para setor com `menu`.
 - Cor: UMA por setor (campo `cor` do setor). Não inventar cor por área nem por tela.
 
 ## Como terceirizar (funcionário criando um sistema do zero)
@@ -78,3 +83,10 @@ Aprovado pelo Marcus. Vale para toda tela nova ou mexida (começando pelo Financ
 6. **Cor só no valor:** verde entra, vermelho sai, saldo e acumulado pela cor do sinal, amarelo só atraso. Letras brancas (nunca cinza); cor do setor só em aba ativa e botão principal.
 7. **Telas com várias visões usam abas visíveis** (Dia a dia | Mês a mês | Previsão | Lançar) e segmented control para 2 a 5 opções; dropdown só com 6 ou mais.
 8. **Realizado e previsto separados:** previsão em aba ou bloco próprio, rotulada; nunca na mesma tabela do que já aconteceu.
+
+## Funil de etapas (Kits novos e Encomendas e reposições, 23/10/2026)
+Tela de funil segue sempre esta ordem, igual aos Kits novos: **PageHead** (título, subtítulo, Segmentado Quadro | Planilha e botão principal) → **faixa de totais** (6 células, vermelho só em atraso, verde só em concluído) → **bloco Filtros** (4 colunas iguais, botão Limpar) → **Kanban** (`src/shared/kanban.js`).
+- Coluna: nome, "N pedidos" e prazo ("prazo 24 h · 2 atrasados"), borda na cor da etapa. Colunas vazias continuam visíveis.
+- Cartão (modelo "faixa do canal"): faixa colorida no topo com o canal à esquerda e o tempo na etapa à direita; **nome e sobrenome completos**; telefone; dois quadros (média e máximo); taxa/comprovante; responsável; botão de avançar (`h-8`, "Concluir ›"); "Mover para…". Botão travado fica cinza e diz o motivo (ex.: "Aguardando comprovante").
+- Cada canal tem o seu caminho de etapas e o cartão só anda dentro dele. Trava por regra (sem conferir, sem comprovante) fica no domínio, não na tela.
+- Telas de apoio do setor (agenda, lista, representantes) usam `FaixaTotais`, `Bloco` e `TabelaP` de `padrao-fin.js`, na mesma ordem: título → totais → filtros → tabela.

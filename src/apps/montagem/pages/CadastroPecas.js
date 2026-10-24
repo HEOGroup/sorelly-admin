@@ -10,23 +10,26 @@ import { AbaFaturas, AbaRetirarOuro } from "@/apps/montagem/pages/cadpecas/Fatur
 import { AbaLotes } from "@/apps/montagem/pages/cadpecas/Lotes";
 import { AbaConfigCad, AbaDevMaster, AbaFornecedores } from "@/apps/montagem/pages/cadpecas/Outras";
 import { AbaPedidos } from "@/apps/montagem/pages/cadpecas/Pedidos";
+import { AbaSolicitacoes } from "@/apps/montagem/pages/cadpecas/Solicitacoes";
+import { contagem } from "@/apps/montagem/domain/pedidos-pecas";
+import { use } from "@/apps/montagem/state/context";
 import { COR } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS = [["ped","Pedidos de bruto"], ["ctrl","Controle do mês"], ["fp","Faturas Pontual"], ["fe","Faturas Ellos"], ["ouro","Retirar ouro"], ["banho","Tabela do banho"], ["lotes","Planilhas de cadastro"], ["calc","Calculadora"], ["forn","Fornecedores"], ["dev","DevMaster"], ["config","Configurações"]];
+var ABAS = [["sol","Solicitações"], ["ped","Pedidos de bruto"], ["ctrl","Controle do mês"], ["fp","Faturas Pontual"], ["fe","Faturas Ellos"], ["ouro","Retirar ouro"], ["banho","Tabela do banho"], ["lotes","Planilhas de cadastro"], ["calc","Calculadora"], ["forn","Fornecedores"], ["dev","DevMaster"], ["config","Configurações"]];
 
 function AbaCadastroPecas(){
-  var st = useState({aba:"ped", lote:""}), v = st[0];
+  var st = useState({aba:"sol", lote:""}), v = st[0], novos = contagem(use().state.pp).aberto;
   var ir = function(aba, lote){ st[1]({aba:aba, lote:lote!==undefined ? lote : v.lote}); };
-  var corpo = v.aba==="forn" ? e(AbaFornecedores,null) : v.aba==="dev" ? e(AbaDevMaster,null) : v.aba==="config" ? e(AbaConfigCad,null)
+  var corpo = v.aba==="sol" ? e(AbaSolicitacoes,null) : v.aba==="forn" ? e(AbaFornecedores,null) : v.aba==="dev" ? e(AbaDevMaster,null) : v.aba==="config" ? e(AbaConfigCad,null)
     : v.aba==="ctrl" ? e(AbaControle,null) : v.aba==="fp" ? e(AbaFaturas,{galv:"pontual"}) : v.aba==="fe" ? e(AbaFaturas,{galv:"ellos"}) : v.aba==="ouro" ? e(AbaRetirarOuro,null) : v.aba==="banho" ? e(AbaBanho,null)
     : v.aba==="calc" ? e(AbaCalculadora,{loteId:v.lote, onLote:function(id){ ir("calc", id); }})
     : v.aba==="lotes" ? e(AbaLotes,{onAbrir:function(id){ ir("calc", id); }})
     : e(AbaPedidos,null);
   return e("div",{className:"flex flex-col gap-2.5"},
-    e(PageHead,{t:"Cadastro de peças", sub:"Pedidos de bruto, faturas de banho, controle do mês, custo e preço das peças e pedidos para a DevMaster."}),
-    e(Abas,{abas:ABAS, atual:v.aba, onMudar:function(a){ ir(a); }, cor:COR}),
+    e(PageHead,{t:"Cadastro de peças", sub:"Solicitações da produção, pedidos de bruto, faturas de banho, controle do mês, custo e preço das peças e pedidos para a DevMaster."}),
+    e(Abas,{abas:ABAS.map(function(a){ return a[0]==="sol" && novos ? [a[0], a[1]+" ("+novos+")"] : a; }), atual:v.aba, onMudar:function(a){ ir(a); }, cor:COR}),
     corpo);
 }
 export { AbaCadastroPecas };

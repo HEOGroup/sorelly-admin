@@ -24,6 +24,16 @@ function linhaInfoNova(label, valor, primeiro){
     valor ? e("p",{className:"text-[13px] font-semibold leading-snug text-[#111827]"}, valor)
           : e("p",{className:"text-[12.5px] font-semibold text-amber-700"}, "Pendente"));
 }
+// Mensagem de apresentação que a representante manda à revendedora nova assim que aceita o kit (abre no SorellyChat)
+function mensagemApresentacao(n, rep){
+  var nome = String(n.nome||"").split(" ")[0];
+  return ["Oi, "+nome+"! Tudo bem? 💛", "",
+    "Aqui é a "+rep+", sua representante da *Sorelly Joias*. Vou levar o seu kit de semijoias e te acompanhar daqui pra frente.", "",
+    "Pra combinar a entrega, me diz:",
+    "*1.* Qual o melhor *dia e horário* pra te atender?",
+    "*2.* Prefere que eu vá na sua *casa* ou no *trabalho*?", "",
+    "Qualquer dúvida é só me chamar aqui. 😊"].join(String.fromCharCode(10));
+}
 function fmtDataISO(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]; }
 function CardListagemEscolha(p){
   var n = p.n, l = p.l, s = p.s, d = p.d, onIncluir = p.onIncluir;
@@ -47,7 +57,7 @@ function CardListagemEscolha(p){
 function CardNova(p){
   var n = p.n, d = p.d, s = p.s, minhasL = p.minhasL;
   var ab = useState(false), aberto = ab[0], setAberto = ab[1];
-  var onIncluir = function(l, fora){ d({type:"NOVA_INCLUIR", id:n.id, lid:l.id, foraPrazo:fora, quem:"rep"}); setAberto(false); };
+  var onIncluir = function(l, fora){ d({type:"NOVA_INCLUIR", id:n.id, lid:l.id, foraPrazo:fora, quem:"rep"}); setAberto(false); if(p.onAceitou) p.onAceitou(n, mensagemApresentacao(n, p.rep)); };
   return e("div",{className:"overflow-hidden rounded-2xl border "+LINHA_CARD, style:{background:GRAD_OURO}},
     e("div",{className:"flex items-center justify-between gap-2 px-3.5 py-3"},
       e("div",{className:"min-w-0 flex-1"},
@@ -81,8 +91,8 @@ function KitsNovosRep(p){
   var minhasL = s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada;});
   if(!minhas.length) return e("div",{className:"rounded-2xl bg-[#1C1C1E] p-4 text-center text-[13px] text-[#8E8E93]"},"Nenhuma revendedora nova direcionada para você.");
   return e("div",{className:"flex flex-col gap-2.5"},
-    minhas.map(function(n){ return e(CardNova,{key:n.id, n:n, d:d, s:s, minhasL:minhasL}); }),
+    minhas.map(function(n){ return e(CardNova,{key:n.id, n:n, d:d, s:s, minhasL:minhasL, rep:l.rep, onAceitou:p.onAceitou}); }),
     minhas.some(function(n){return n.status==="direcionada";}) && e("p",{className:"px-1 text-[11.5px] text-[#8E8E93]"},"Recusar kit novo entra na sua avaliação. Com "+s.cfg.recusasBloqueio+" recusas você deixa de receber revendedoras novas."));
 }
 
-export { foraDoPrazo, KitsNovosRep };
+export { foraDoPrazo, KitsNovosRep, mensagemApresentacao };

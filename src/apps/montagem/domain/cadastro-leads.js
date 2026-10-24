@@ -1,4 +1,5 @@
 import { globLocal } from "@/lib/glob-local";
+import { leadsDemo, leadsHistorico, CAMPANHAS_DEMO } from "@/apps/montagem/domain/cadastro-leads-demo";
 // Sorelly Admin · montagem — domain/cadastro-leads.js
 // Aprovação de cadastros, trazida do SorellyAdmin (docs/modulos/aprovacao-cadastros.md): fila de candidatas a revendedora, aprovar (escolhendo como recebe o kit) ou reprovar,
 // métricas das decisões, funil "Desempenho", campanhas de anúncio, origem por tag e histórico (Registros).
@@ -57,7 +58,18 @@ var CONFIG_PADRAO = {kitCasaPadrao:5000, kitEmpresaPadrao:8000, tagsFacebook:"FA
 function clDemo(){
   var s = {v:1, leads:[], campanhas:[], etapasFunil:clone(ETAPAS_FUNIL), saidasFunil:clone(SAIDAS_FUNIL), config:Object.assign({}, CONFIG_PADRAO), seq:0};
   if(LOCAL){ (LOCAL.leads||[]).forEach(function(l){ s.leads.push(novoLead(s, l, true)); }); (LOCAL.campanhas||[]).forEach(function(c){ s.campanhas.push(novaCampanha(s, c)); }); }
-  return s;
+  return clSemear(s);
+}
+// 20 candidatas de demonstração na fila (23/10/2026), uma vez só (flag demo20): serve para testar Cadastro → Kits novos. Estado antigo também recebe.
+function clSemear(s){
+  if(!s || (s.demo20 && s.demo50)) return s;
+  var out = clone(s); out.leads = (out.leads||[]).slice(); out.campanhas = (out.campanhas||[]).slice(); out.seq = out.seq||0;
+  if(!out.demo20){ out.demo20 = 1; leadsDemo(hojeSP(), somaDias).forEach(function(d){ out.leads.push(novoLead(out, Object.assign({}, d, {id:undefined}))); }); }
+  if(!out.demo50){ out.demo50 = 1;   // mais 30 candidatas com histórico (funil, origem, decisões) e 3 campanhas, para analisar o Desempenho do cadastro
+    var cfg = out.config || CONFIG_PADRAO;
+    leadsHistorico(hojeSP(), somaDias, {casa:cfg.kitCasaPadrao, empresa:cfg.kitEmpresaPadrao}).forEach(function(d){ out.leads.push(novoLead(out, Object.assign({}, d, {id:undefined}))); });
+    CAMPANHAS_DEMO.forEach(function(k){ out.campanhas.push(novaCampanha(out, k)); }); }
+  return out;
 }
 
 // ---------- kit (portado de lib/cadastro/kit-opcao.ts) ----------
@@ -255,7 +267,7 @@ function clReduz(s, a){
   }
 }
 
-export { clDemo, clReduz, hojeSP, agoraSP, somaDias, diasEntre, ultimoDiaDoMes, listaDias, janela,
+export { clDemo, clSemear, clReduz, hojeSP, agoraSP, somaDias, diasEntre, ultimoDiaDoMes, listaDias, janela,
   KIT_OPCOES, rotuloKit, kitNaEmpresa, valorDoKit, formatarValorKit, mensagemKit,
   ETAPAS_FUNIL, SAIDAS_FUNIL, CONFIG_PADRAO,
   fila, adiar, filaComAdiados, resumoDia, tagsDisponiveis, metricas, origemPorTag, funilDesempenho, maiorQueda, campanhas, anunciosDa, registros };

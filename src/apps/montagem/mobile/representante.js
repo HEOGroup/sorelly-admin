@@ -13,6 +13,7 @@ import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/c
 import { vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
   AVISO_BB, codigoBrindeValido, normalizarCodigo, limitarCodigo, codigoPecaValido, formasPagamentoPadrao, textoRegras, textoRegrasPrata, versaoEfetiva, modalidadeDe, MODALIDADE_LB } from "@/apps/montagem/domain/consignado";
 import { ComissoesRep } from "@/apps/montagem/mobile/comissoes-rep";
+import { PedidoDataRep } from "@/apps/montagem/mobile/pedido-data-rep";
 import { TelaAssinatura } from "@/apps/montagem/mobile/assinatura";
 import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
 import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
@@ -24,6 +25,8 @@ import { SEM_KIT, STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/
 import { badge } from "@/apps/montagem/ui/badge";
 import { comissaoRev, sugerido } from "@/apps/montagem/domain/vendas";
 import { N1, hoje, hora, isoDia } from "@/apps/montagem/lib/format";
+import { infNaoLidos } from "@/apps/montagem/domain/informativos";
+import { FolderAoAbrir, TelaInformativos } from "@/apps/montagem/mobile/informativos-app";
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
 import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
@@ -95,9 +98,11 @@ function carteiraRep(s, rep){
   var mesAtual = isoDia(new Date()).slice(0,7);
   var feito = function(rev){ return (s.acertosConsignado||[]).find(function(a){ return a.tipo==="acerto" && a.rev===rev && (a.data||"").slice(0,7)===mesAtual; }); };
   var comFeito = function(c){ var a = feito(c.rev); return a ? Object.assign({}, c, {vendas:[a.vendaBruta].concat((c.vendas||[]).slice(1)), realizado:{data:dmISO(a.data), mes:MESES_CHEIOS[+a.data.slice(5,7)-1]}}) : c; };
+  var peds = (s.p45 && s.p45.pedidos) || [];
+  var comPedido = function(c){ if(c.hoje) return c; var pd = peds.filter(function(x){ return (x.status==="registrada" || x.status==="aprovada") && x.nome.toLowerCase()===c.rev.toLowerCase(); }).slice(-1)[0]; return pd ? Object.assign({}, c, {data:dmISO(pd.novaData)}) : c; };
   return hojeK.map(comFeito).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
     var ag = (perfis[c.rev]||{}).agendado;
-    return comFeito(Object.assign({id:"C"+i, hoje:false, data: ag && ag.data ? dmISO(ag.data) : dm(dt), hora: ag ? (ag.hora||null) : c.hora}, c)); }));
+    return comPedido(comFeito(Object.assign({id:"C"+i, hoje:false, data: ag && ag.data ? dmISO(ag.data) : dm(dt), hora: ag ? (ag.hora||null) : c.hora}, c))); }));
 }
 function AppRepresentante(p){
   var cx = use(), s = cx.state, d = cx.dispatch, l = p.l;
@@ -164,12 +169,16 @@ function AppRepresentante(p){
   var minhasL = s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada;});
   // conversa com a revendedora no próprio chat do app (em vez de abrir o WhatsApp)
   var abrirChat = function(nome){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(nome); if(!cr) return; efem({conversaSel:api.openChannel(rv, "r_rep", [cr])}); setTela("mensagens"); };
+  // aceitou o kit novo: abre a conversa com a revendedora no SorellyChat já com a mensagem de apresentação enviada
+  var aceitouKitNovo = function(n, texto){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(n.nome); if(!cr) return; var conv = api.openChannel(rv, "r_rep", [cr]); api.sendMessage({conv:conv, eu:cr, texto:texto}); efem({conversaSel:conv}); setTela("mensagens"); };
+  var nInfoNovos = infNaoLidos(s, "representante", l.rep);   // informativos que ela ainda não abriu
   var LISTA_INICIO = [
     {tela:"mensagens", titulo:"SorellyChat", sub: chatNaoLidas ? chatNaoLidas+(chatNaoLidas===1 ? " mensagem não lida" : " mensagens não lidas") : "Fale com os setores da Sorelly", icone:"whats", cor:"#C9A13B", logo:true, ativo:true},
     {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
     {tela:"comissoes", titulo:"Comissões", sub: nPagNI ? "⚠ "+nPagNI+(nPagNI===1 ? " pagamento não identificado" : " pagamentos não identificados") : "Minhas comissões e quilometragem", icone:"coins", cor:"#CA8A04", ativo:true},
+    {tela:"informativos", titulo:"Informativos", sub: nInfoNovos ? nInfoNovos+(nInfoNovos===1 ? " novo" : " novos")+" para ler" : "Regras, avisos e novidades", icone:"book", cor:"#9A7424", ativo:true},
     {tela:"desempenho", titulo:"Desempenho", sub:"Em breve", icone:"trofeu", cor:"#16A34A", ativo:false},
     {tela:"indique", titulo:"Indique & Ganhe", sub:"Em breve", icone:"presente", cor:"#CA8A04", ativo:false}];
   var voltar = e("div",{className:"flex items-center gap-2"},
@@ -938,8 +947,9 @@ function AppRepresentante(p){
   var linhaAtendimento = sel && e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"grid grid-cols-2 gap-2"}, botaoAgendar, botaoRealizar),
     blocoAgendaForm, painelRealizar);
+  var botaoPedidoData = sel && !sel.realizado && e("button",{onClick:function(){ setTela("pedidodata"); }, className:"h-10 w-full rounded-2xl border border-[#C9A13B]/50 bg-white text-[12.5px] font-extrabold text-[#8A6A12]"}, "Alterar data do acerto");
   var telaRev = sel && e("div",{className:"mt-3 flex flex-col gap-2"},
-    blocoNome, blocoStatusHoje, blocoModalidade, linhaAtendimento, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
+    blocoNome, blocoStatusHoje, blocoModalidade, linhaAtendimento, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
   var ponto = function(k){ return e("span",{className:"size-2 shrink-0 rounded-full "+PONTO_CEL[STATUS_TP[k.status]]}); };
   var fmtDataISO = function(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]; };
   var hojeISOStr = isoDia(new Date());
@@ -1107,7 +1117,7 @@ function AppRepresentante(p){
           return linha("pf"+i, prox ? BK0(f.min).replace(",00","")+" a "+BK0(prox.min-0.01) : BK0(f.min).replace(",00","")+" ou mais", f.pct+"%", "R$ "+f.bn, "R$ "+f.bb); }))
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
-  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
+  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens","informativos"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
   return e(IPhone17ProMax,null,
     tela==="calcacerto" && headerCalc,
     tela==="calcacerto" && avisoConta && e("button",{key:"avisoConta", type:"button", role:"alert", onClick:function(){ setAvisoConta(null); },
@@ -1146,7 +1156,9 @@ function AppRepresentante(p){
           e("b",{className:"min-w-0 flex-1 truncate text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Entregar o kit e conferir as peças")),
         e("p",{className:"truncate text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfPecas,{s:s, d:d, k:kitSel, onContinuar:function(){ setTela(confVolta); }}))),
+    tela==="pedidodata" && sel && e("div",{className:"mt-3 flex flex-col gap-2"}, e("button",{onClick:function(){ setTela("rev"); }, className:"self-start rounded-full bg-amber-200/10 px-3 py-1.5 text-[12px] font-bold text-[#E8B84B]"}, "‹ Voltar"), e(PedidoDataRep,{s:s, d:d, l:l, rev:sel})),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
+    tela==="informativos" && e(TelaInformativos,{key:"inf", publico:"representante", quem:l.rep, onVoltar:function(){ setTela("inicio"); }}),
     tela==="regras" && headerRegras,
     tela==="regras" && telaRegras,
     tela==="inicio" && headerInicio,
@@ -1197,7 +1209,7 @@ function AppRepresentante(p){
     tela==="revs" && e("div",{className:"mt-3 flex flex-col gap-2.5"},
       filtradas.map(cartao)),
     tela==="rev" && telaRev,
-    tela==="novos" && e("div",{className:"mt-3"}, e(KitsNovosRep,{l:l})),
+    tela==="novos" && e("div",{className:"mt-3"}, e(KitsNovosRep,{l:l, onAceitou:aceitouKitNovo})),
     tela==="comissoes" && e(ComissoesRep,{s:s, d:d, l:l}),
     tela==="listagens" && telaListagens,
     tela==="retirada" && e("div",{className:"flex flex-col gap-2.5"},
@@ -1229,7 +1241,8 @@ function AppRepresentante(p){
                 e("button",{onClick:function(){mudaFalta(k,1);}, className:"size-7 rounded-lg bg-white/10 font-bold"},"+"))),
             e("button",{disabled:!nt, onClick:function(){ d({type:"AVALIAR", id:k.id, nota:nt, faltas:faltasDe(k)}); },
               className:"h-9 rounded-xl text-[13px] font-semibold disabled:opacity-40 "+ouro},"Enviar avaliação"));
-        })));
+        })),
+    e(FolderAoAbrir,{key:"folder", publico:"representante", quem:l.rep}));
 }
 
 export { MESES_ABR, mesesApp, PCT_REVENDEDORA, CARTEIRA_DEMO, REF_NOMES, REF_REL, refsDe, carteiraRep, AppRepresentante };

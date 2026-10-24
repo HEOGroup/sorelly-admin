@@ -1,11 +1,12 @@
 // Sorelly Admin · montagem — pages/ContasPagarLista.js
 // Financeiro → Contas a pagar. SEGUNDA tela no padrão do Financeiro (regra fixa do Marcus, 22/10/2026; copia pages/Faturamento.js): título + botão de ação · bloco Filtros no topo
 // (grade de 4 colunas, 32 px) · faixa de totais · abas visíveis (Quando vence | A pagar | Pagas | Todas) · tabela de layout fixo, R$ em todo valor, números à direita, texto que corta com "…".
-// Só a Sorelly: a família fica em Análise de custos e no Financeiro familiar (menu). Dados do DevMaster (domain/contas-empresa.js); aqui só a leitura em lista e os filtros.
+// Empresa + pró-labore e retiradas juntos (Total), como a tela Análise de custos (Marcus, 22/10/2026). Dados do DevMaster (domain/contas-empresa.js); aqui só a leitura em lista e os filtros.
 import { AbasTela, BlocoFiltros, Botao, COR, CampoBusca, CampoSel, FaixaTotais, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { FILIAIS, filtrar, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
 import { RegistrarPagamento } from "@/apps/montagem/components/registrar-pagamento";
 import { hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { BKC } from "@/apps/montagem/lib/format";
@@ -42,10 +43,10 @@ function AbaCtaLista(){
   var a = useState("quando"), aba = a[0], setAba = a[1], b = useState(ini), mes = b[0], setMes = b[1];
   var c = useState(""), per = c[0], setPer = c[1], f = useState(""), filial = f[0], setFilial = f[1], g = useState(""), nota = g[0], setNota = g[1], h = useState(""), busca = h[0], setBusca = h[1];
   var i2 = useState(""), nat = i2[0], setNat = i2[1], o = useState("venc"), ord = o[0], setOrd = o[1], l = useState(100), lim = l[0], setLim = l[1], n = useState(false), nova = n[0], setNova = n[1];
-  var sl = useState([]), sel = sl[0], setSel = sl[1], rg = useState(false), regPag = rg[0], setRegPag = rg[1], av = useState(""), aviso = av[0], setAviso = av[1];
+  var sa = useState(null), aberta = sa[0], setAberta = sa[1], sl = useState([]), sel = sl[0], setSel = sl[1], rg = useState(false), regPag = rg[0], setRegPag = rg[1], av = useState(""), aviso = av[0], setAviso = av[1];
   var podePagar = temAutorizacao("pagamento_registra", s.usuario);
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
-  var quem = "sorelly";
+  var quem = "";   // tudo junto: empresa + pró-labore e retiradas
   var limpar = function(){ setPer(""); setFilial(""); setNota(""); setBusca(""); setNat(""); setLim(100); };
   var filtrado = !!(per || filial || nota || busca || nat);
   // faixa de totais: o que está nos filtros de mês, CNPJ, nota e busca (ignora a aba e o período)
@@ -86,14 +87,20 @@ function AbaCtaLista(){
     barraSel,
     e(TabelaP,{minW:960+(colCheck ? 40 : 0)+(colAcao ? 110 : 0), cols:(colCheck ? [{t:"", w:40}] : []).concat([{t:"Vence", w:90},{t:"CNPJ", w:80},{t:"Número", w:130},{t:"Parcela", w:80},{t:"Fornecedor"},{t:"Natureza", w:230},{t:"Valor", n:true, w:140},{t:"Situação", w:160}], colAcao ? [{t:"", w:110}] : [])},
       vis.map(function(i){ var num = ((i.pref||"")+" "+(i.num||"")).trim() || "—";
-        return e(Tr,{key:i.id}, colCheck && e("td",{className:"h-8 border-b border-border px-2.5 text-center"}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null), e(Td,{title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e(Td,null, nomeFilial(i.filial)), e(Td,null, num), e(Td,null, i.parc||"—"), e(Td,{forte:true}, i.nome), e(Td,{title:i.nat+" "+i.natNome}, i.natNome),
-          e(Td,{n:true}, BKC(i.valor)), e(Td,{cor:i.status==="apagar" && i.atraso>0 ? "text-warning" : (i.status==="pago" ? "text-success" : ""), title:i.bx ? ("Pago por "+nomeDe(i.bx.por)+" · "+i.bx.contaNome+(i.bx.obs ? " · "+i.bx.obs : "")) : (i.obs||undefined)}, situacao(i)), colAcao && e("td",{className:"h-8 border-b border-border px-2 text-right"}, i.bx ? e("button",{type:"button", onClick:function(){ if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:i.bx.id, por:s.usuario}); }, className:"h-7 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Desfazer") : null)); }),
+        return e(Tr,{key:i.id, onClick:function(){ setAberta(i); }, title:"Abrir a conta"}, colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2.5 text-center"}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null), e(Td,{title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e(Td,null, nomeFilial(i.filial)), e(Td,null, num), e(Td,null, i.parc||"—"), e(Td,{forte:true}, i.nome), e(Td,{title:i.nat+" "+i.natNome}, i.natNome),
+          e(Td,{n:true}, BKC(i.valor)), e(Td,{cor:i.status==="apagar" && i.atraso>0 ? "text-warning" : (i.status==="pago" ? "text-success" : ""), title:i.bx ? ("Pago por "+nomeDe(i.bx.por)+" · "+i.bx.contaNome+(i.bx.obs ? " · "+i.bx.obs : "")) : (i.obs||undefined)}, situacao(i)), colAcao && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2 text-right"}, i.bx ? e("button",{type:"button", onClick:function(){ if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:i.bx.id, por:s.usuario}); }, className:"h-7 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Desfazer") : null)); }),
       vis.length ? e(Tr,{key:"t", total:true}, colCheck && e(Td,null, ""), e(Td,null, "Total"), e(Td,null, ""), e(Td,null, ""), e(Td,null, ""), e(Td,null, base.length+" títulos"), e(Td,null, ""), e(Td,{n:true}, BKC(totLista)), e(Td,null, ""), colAcao && e(Td,null, "")) : null),
     !vis.length && e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhuma conta neste filtro."),
     ls.length>vis.length && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ setLim(lim+200); }}, "Mostrar mais ("+(ls.length-vis.length)+")")));
+  // bloco em cima o PAGO, embaixo o A PAGAR: total e cada CNPJ; clicar no CNPJ filtra
+  var cartao = function(rot, v, cor, on, fn, sub){ return e("button",{key:rot, type:"button", onClick:fn, disabled:!fn, className:"flex min-w-0 flex-col items-center rounded-lg border px-2 py-1.5 text-center "+(on ? "border-primary bg-primary/15 " : "border-border bg-card ")+(fn ? "hover:bg-[#B8862B] " : "")}, e("span",{className:"text-[11px] font-bold uppercase text-foreground"}, rot), e("b",{className:"tabular-nums text-[14px] "+(cor||"text-foreground")}, BKC(v)), sub ? e("span",{className:"text-[11px] text-foreground"}, sub) : null); };
+  var blocoCnpj = function(titulo, lista, cor, sub, atras){ return e("div",{key:titulo, className:"flex flex-col gap-1.5"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, titulo),
+    e("div",{className:"grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"}, cartao("Total", soma(lista), cor, false, null, sub), atras ? cartao("Atrasadas", soma(atras), atras.length ? "text-warning" : "", false, null, atras.length+" contas") : null,
+      FILIAIS.map(function(fi){ var l = lista.filter(function(i){ return i.filial===fi[0]; }); return cartao(fi[0]==="fora" ? "Por fora" : fi[1], soma(l), cor, filial===fi[0], function(){ setFilial(filial===fi[0] ? "" : fi[0]); setLim(100); }, l.length+" contas"); }))); };
   var titulo = ABAS.filter(function(x){ return x[0]===aba; })[0][1];
   return e("div",{className:"flex flex-col gap-3"},
     nova && e(NovaConta,{fechar:function(){ setNova(false); }}),
+    aberta && e(PagamentoConta,{key:aberta.id, s:s, item:aberta, lista:ls, podePagar:podePagar, fechar:function(){ setAberta(null); }, ir:function(x){ if(x) setAberta(x); }, salvar:function(b){ cx.dispatch({type:"CPE_BAIXA", baixas:[b]}); setAberta(null); }, desfazer:function(id){ cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:id, por:s.usuario}); setAberta(null); }}),
     regPag && todasItens.length>0 && e(RegistrarPagamento,{s:s, itens:todasItens, fechar:function(){ setRegPag(false); }, salvar:function(baixas){ cx.dispatch({type:"CPE_BAIXA", baixas:baixas}); setRegPag(false); setSel([]); setAviso(""); }}),
     e("div",{className:"flex h-10 items-center justify-between gap-2"}, e("h1",{className:"truncate text-[16px] font-semibold text-foreground"}, "Contas a pagar"), e(Botao,{principal:true, onClick:function(){ setNova(true); }}, "Lançar conta")),
     e(BlocoFiltros,{onLimpar:filtrado ? limpar : null},
@@ -104,7 +111,9 @@ function AbaCtaLista(){
       e(CampoSel,{t:"Natureza", id:"cp-nat", value:nat, onChange:function(v){ setNat(v); setLim(100); }, opcoes:[["", "Todas"]].concat(nats.map(function(x){ return [x, x]; }))}),
       e(CampoSel,{t:"Ordenar por", id:"cp-ord", value:ord, onChange:setOrd, opcoes:ORDENS}),
       e(CampoBusca,{t:"Buscar", id:"cp-busca", value:busca, placeholder:"Fornecedor, natureza ou valor", onChange:function(v){ setBusca(v); setLim(100); }})),
-    e(FaixaTotais,{itens:[{t:"Total", v:BKC(soma(todos))},{t:"Pago", v:BKC(soma(pagos))},{t:"A pagar", v:BKC(soma(abertos))},{t:"Atrasadas", v:BKC(soma(atrasadas)), cor:atrasadas.length ? "text-warning" : ""},{t:"Títulos", v:String(todos.length)}]}),
+    e("p",{className:"text-[13px] font-semibold text-foreground"}, "Total do mês ", e("b",null, BKC(soma(todos))), " · "+todos.length+" títulos"),
+    blocoCnpj("Pago", pagos, "text-success", pagos.length+" pagamentos"),
+    blocoCnpj("A pagar", abertos, "text-warning", abertos.length+" contas", atrasadas),
     e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setLim(100); if(k==="quando"){ setPer(""); } }}),
     aba==="quando" ? e("div",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, "Em aberto por dia, semana e CNPJ · clique no valor para ver a lista"), quando) : lista);
 }

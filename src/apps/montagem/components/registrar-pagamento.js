@@ -16,7 +16,7 @@ var nomeFilial = function(id){ var f = FILIAIS.filter(function(x){ return x[0]==
 var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7) : "—"; };
 
 // contas de saída do CNPJ (as do bloco dele + dinheiro); sem bloco próprio (67, Por fora...) mostra todas as de empresa
-function contasDe(s, filial){
+export function contasDe(s, filial){
   var lista = ((s.saldosContas||{}).contas || []).length ? s.saldosContas.contas.map(function(c){ return {id:c.id, nome:c.nome, bloco:c.bloco, bloqueada:c.bloqueada}; }) : CONTAS_LISTA.map(function(c){ return {id:c[0], nome:c[1], bloco:c[2], bloqueada:c[4]}; });
   lista = lista.filter(function(c){ return !c.bloqueada && c.bloco!=="BLOQ"; });
   var proprias = lista.filter(function(c){ return c.bloco===filial || c.bloco==="DIN"; });

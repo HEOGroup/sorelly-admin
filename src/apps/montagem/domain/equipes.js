@@ -26,7 +26,7 @@ var ROTULO_PAPEL = {SUPERVISOR:"Supervisão", FUNCIONARIO:"Funcionário(a)"};
 // Grupos de acesso do sistema (espelha PAPEL_LB de navigation/perfis.js; manter igual). É o "setor" que o departamento pode apontar (vínculo só informativo).
 var SETORES_ACESSO = [["supervisao","Sócios (acesso total)"], ["familia","Direção e família (sem Configuradores)"], ["supervisora","Supervisão da montagem"], ["agendamento","Agendamento"],
   ["financeiro","Financeiro"], ["inadimplencia","Inadimplência"], ["bipadora","Atendimento e bipagem"], ["montadora","Montagem de kits"], ["listagens","Listagens e condicionais"],
-  ["kitnovo","Kit novo"], ["representante","Representantes"]];
+  ["kitnovo","Kit novo"], ["cadastropecas","Cadastro de peças"], ["representante","Representantes"]];
 // cor por posição do departamento de 1º nível (como no mapa mental do original)
 var CORES = ["#D9A63A", "#3B82F6", "#A855F7", "#14B8A6", "#EC4899", "#F59E0B", "#22C55E", "#EF4444", "#0EA5E9", "#8B5CF6"];
 // quem pode editar o organograma (original: só ADMIN). Aqui: diretoria + Anamaria (mesmos que editam Acessos). Compara pela 1ª palavra do nome.

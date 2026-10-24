@@ -96,7 +96,7 @@ function novoDia(){
     k.cond = {nums:nums, prev:prev, pegas: pronto && nc>0, chkM:{}, chkB:chkB, chkP: fechado ? nums.reduce(function(o,n){o[n]=true; return o;},{}) : {}, faltas:{}, impressas:{}, novas:novas};
     // ainda não começou e tem condicional pra conferir: fica esperando a funcionária de condicionais liberar
     // (quem já tem valor calculado — metade par — já passou por tudo isso hoje, não gate de novo)
-    if(!SEM_KIT[k.tipoKit] && livre && nc>0 && i%2!==0) k.status = "precond";
+    if(!SEM_KIT[k.tipoKit] && livre && nc>0) k.status = "precond";
     if(SEM_KIT[k.tipoKit]){ k.status = "condicional"; k.valor = null; k.prio = false; k.vendas = []; }
     // horário de atendimento da revendedora (a representante organiza pelo app): a partir das 13:00, de 30 em 30 min
     var min = 13*60 + (k.ordem-1)*30; k.horaAtend = String(Math.floor(min/60)).padStart(2,"0")+":"+String(min%60).padStart(2,"0");

@@ -4,7 +4,7 @@
 // Regras e dados em domain/cadastro-leads.js (estado s.cl); aqui só o desenho. Só quem pode decidir (podeDecidirCadastro) aprova, reprova e desfaz.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro, Pagina } from "@/apps/montagem/components/padrao";
-import { KIT_OPCOES, diasEntre, formatarValorKit, hojeSP, mensagemKit, rotuloKit } from "@/apps/montagem/domain/cadastro-leads";
+import { KIT_OPCOES, diasEntre, formatarValorKit, hojeSP, mensagemKit, rotuloKit, valorDoKit } from "@/apps/montagem/domain/cadastro-leads";
 import { nomeDe, podeDecidirCadastro } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
@@ -48,7 +48,7 @@ function DialogoDecisao(p){
   var msg = tipo==="aprovar" && v.opcao ? mensagemKit(v.opcao, v.vc, v.ve) : "";
   var copiar = function(){ try{ navigator.clipboard.writeText(msg).then(function(){ set("copiado", true); }); }catch(x){} };
   var ok = tipo!=="aprovar" || !!v.opcao;
-  var titulo = tipo==="aprovar" ? "Aprovar cadastro" : tipo==="reprovar" ? "Reprovar cadastro" : "Desfazer decisão";
+  var titulo = tipo==="aprovar" ? "Aprovar cadastro" : tipo==="reprovar" ? "Reprovar cadastro" : "Voltar à análise";
   return e(Janela,{t:titulo, sub:l.nome, fechar:p.fechar, largo:tipo==="aprovar"},
     tipo==="desfazer" && e("p",{className:"text-[13.5px]"}, "O cadastro de "+l.nome+" ("+(l.reviewStatus==="APPROVED" ? "aprovado" : "reprovado")+") volta para a etapa Em análise."),
     tipo==="reprovar" && e("p",{className:"text-[13.5px]"}, "Confirma a reprovação do cadastro de "+l.nome+"?"),
@@ -67,7 +67,7 @@ function DialogoDecisao(p){
     e("div",{className:"flex flex-wrap justify-center gap-2"},
       e(Bt,{onClick:p.fechar}, "Cancelar"),
       e(Bt,{tipo:tipo==="reprovar" ? "perigo" : "ok", ic:tipo==="reprovar" ? "x-circle" : tipo==="aprovar" ? "check-circle" : "arrow-counter-clockwise", disabled:!ok, onClick:function(){ p.confirmar(v); }},
-        tipo==="aprovar" ? "Confirmar aprovação" : tipo==="reprovar" ? "Confirmar reprovação" : "Desfazer decisão")));
+        tipo==="aprovar" ? "Confirmar aprovação" : tipo==="reprovar" ? "Confirmar reprovação" : "Voltar à análise")));
 }
 
 // ───────────── janela de novo lead (lançamento manual) ─────────────
@@ -177,25 +177,31 @@ function AbaAprovacaoCadastros(){
     return {k:d.slug, titulo:d.nome, cor:COR_COL[d.slug] || PALETA[i%PALETA.length], itens:porCol[d.slug]||[], aceita:decide ? pode : true};
   });
 
+  // Cartão: nome, cidade e profissão, origem, telefone, tempo na etapa e (se aprovada) o kit. Um botão principal por vez; "Voltar à análise" só aparece em cadastro já decidido
+  // (desfaz a aprovação ou a reprovação: o cadastro volta para Em análise, para corrigir um erro).
   var card = function(l, col){
     var c = col.k, dec = l.reviewStatus!=="PENDING", nx = proximo(l, c);
     var base = String(l.etapaCriadaEm || l.entrouNaFilaEm || l.criadoEm || "").slice(0,10), dias = base ? Math.max(0, diasEntre(base, hoje)) : 0;
-    var ind = nomeIndicadora(l);
-    return e("div",{className:"flex flex-col items-center gap-1.5"},
-      e("button",{type:"button", title:"Abrir os dados do cadastro", onClick:function(){ setDet(l.id); }, className:"font-heading text-[14.5px] font-bold leading-tight hover:underline"}, l.nome),
-      l.cidade && e("span",{className:"flex items-center gap-1 text-[12px] text-white/80"}, e(Ph,{n:"map-pin", s:12}), l.cidade),
+    var ind = nomeIndicadora(l), atraso = !dec && dias>=3, kit = l.reviewStatus==="APPROVED" && l.kitOpcao ? rotuloKit(l.kitOpcao)+" · "+formatarValorKit(valorDoKit(l.kitOpcao, l.kitValorCasa, l.kitValorEmpresa)) : "";
+    var local = [l.cidade, l.profissao].filter(Boolean).join(" · ");
+    return e("div",{className:"flex w-full flex-col items-center gap-1.5"},
+      e("button",{type:"button", title:"Abrir os dados do cadastro", onClick:function(){ setDet(l.id); }, className:"w-full truncate font-heading text-[14px] font-bold leading-tight hover:underline"}, l.nome),
+      local && e("span",{className:"flex w-full items-center justify-center gap-1 text-[12px] text-white/80", title:local}, e(Ph,{n:"map-pin", s:12}), e("span",{className:"truncate"}, local)),
       e("div",{className:"flex flex-wrap items-center justify-center gap-1"},
         l.tags.length ? l.tags.map(function(t){ return e(Selo,{key:t.id, cor:corTag(t)}, t.name); }) : e(Selo,null, "Sem origem"),
         ind && e(Selo,{cor:"#F59E0B"}, "Indicada por "+ind)),
-      l.telefone && e("span",{className:"flex items-center gap-1 text-[12px] text-white/80"}, e(Ph,{n:"phone", s:12}), l.telefone),
-      e("span",{className:"flex items-center gap-1 text-[11.5px] text-white/60"}, e(Ph,{n:"clock", s:12}), dias===0 ? "Na etapa desde hoje" : dias+(dias===1 ? " dia" : " dias")+" na etapa"),
+      e("div",{className:"flex w-full items-center justify-center gap-3 text-[11.5px] text-white/70"},
+        l.telefone && e("span",{className:"flex items-center gap-1", title:"Telefone"}, e(Ph,{n:"phone", s:12}), l.telefone),
+        e("span",{className:"flex items-center gap-1 "+(atraso ? "font-semibold text-[#F87171]" : ""), title:atraso ? "Parado há "+dias+" dias nesta etapa" : "Tempo nesta etapa"}, e(Ph,{n:"clock", s:12}), dias===0 ? "hoje" : dias+(dias===1 ? " dia" : " dias"))),
+      kit && e("span",{className:"w-full truncate text-center text-[11.5px] text-white/85", title:kit}, kit),
       dec && l.reviewedAt && e("span",{className:"text-[11px] text-white/60"}, dbr(l.reviewedAt)+(l.reviewedBy ? " · "+l.reviewedBy : "")),
+      c==="cadastradas" && e(Selo,{cor:"#4ADE80"}, "Já está com a Michele"),
       e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
         nx && (nx.decide
           ? (pode && e(Bt,{tipo:"ok", ic:"check-circle", onClick:function(){ abrir("aprovar", l); }, className:"px-2.5! py-1.5!"}, "Aprovar"))
           : e(Bt,{tipo:"forte", onClick:function(){ setEtapa(l, nx.sl); }, className:"px-2.5! py-1.5!"}, nx.t+" ›")),
-        !dec && pode && e(Bt,{tipo:"perigo", ic:"x-circle", onClick:function(){ abrir("reprovar", l); }, className:"px-2.5! py-1.5!"}, "Reprovar"),
-        dec && pode && e(Bt,{ic:"arrow-counter-clockwise", onClick:function(){ abrir("desfazer", l); }, className:"px-2.5! py-1.5!"}, "Desfazer")));
+        !dec && pode && e(Bt,{tipo:"perigo", ic:"x-circle", onClick:function(){ abrir("reprovar", l); }, className:"px-2.5! py-1.5!"}, "Reprovar")),
+      dec && pode && e("button",{type:"button", onClick:function(){ abrir("desfazer", l); }, title:"Desfaz a decisão: o cadastro volta para Em análise (use se aprovou ou reprovou por engano)", className:"text-[11px] text-white/55 underline decoration-dotted hover:text-white"}, "Voltar à análise"));
   };
 
   return e(Pagina,null,

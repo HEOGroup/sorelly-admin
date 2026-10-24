@@ -14,10 +14,11 @@ import { agendDemo } from "@/apps/montagem/domain/agendamento";
 import { RH_STAMP, rhAplicarAdmin, rhDemo } from "@/apps/montagem/domain/rh";
 import { metasPadrao } from "@/apps/montagem/domain/metas-setor";
 import { cpAjustar, cpDemo } from "@/apps/montagem/domain/controle-pagamentos";
+import { dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { TEM_CHAVES_ADMIN, cpAplicarExtras, pxAplicarChavesAdmin, pxDemo, pxMigrar } from "@/apps/montagem/domain/pix-regras";
 import { TEM_ATU_PF, pfInicial, pfMigrar } from "@/apps/montagem/domain/pf";
 import { cfDemo, cfMigrar } from "@/apps/montagem/domain/cobranca-func";
-import { clDemo } from "@/apps/montagem/domain/cadastro-leads";
+import { clDemo, clSemear } from "@/apps/montagem/domain/cadastro-leads";
 import { indDemo } from "@/apps/montagem/domain/indicacoes";
 import { ceDemo, ceMigrar } from "@/apps/montagem/domain/compras-estoque";
 import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
@@ -25,14 +26,17 @@ import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
 import { erDemo, erMigrar } from "@/apps/montagem/domain/encomendas";
+import { p45Migrar, p45Vazio } from "@/apps/montagem/domain/plano45-60";
 import { exDemo, exMigrar } from "@/apps/montagem/domain/expositores";
 import { eqDemo, eqMigrar } from "@/apps/montagem/domain/equipes";
+import { infDemo, infMigrar } from "@/apps/montagem/domain/informativos";
 import { pkDemo, pkMigrar } from "@/apps/montagem/domain/preferencias-kit";
 import { grDemo, grMigrar } from "@/apps/montagem/domain/garantias-rev";
 import { esDemo, esMigrar } from "@/apps/montagem/domain/estoque-sorelly";
 import { avDemo, avMigrar } from "@/apps/montagem/domain/avaliacoes";
 import { prDemo, prMigrar } from "@/apps/montagem/domain/producao";
 import { cpcDemo, cpcMigrar } from "@/apps/montagem/domain/cadastro-pecas";
+import { ppDemo, ppMigrar } from "@/apps/montagem/domain/pedidos-pecas";
 import { bonusNickolas } from "@/apps/montagem/domain/contas-empresa";
 import { ffDemo, ffLocal } from "@/apps/montagem/domain/financeiro-familiar";
 import { HISTORICO0, PERFIL_MARCIA, REGISTROS0, histDemo, kitNormalDayanne, novoDia } from "@/apps/montagem/domain/seed";
@@ -83,6 +87,17 @@ function aplicaFat20b(s){
   if(s.fatHoje && s.fatHoje.data<=k) s.fatHoje = null;
   return s;
 }
+// 22/10/2026 (Marcus, à noite): "Hoje" (acompanhamento) = 1.241 acertos, R$ 982.434,43 acumulados no mês, média R$ 791,65 (dia 22 = 65 acertos e R$ 53.439,05 sobre o fechamento de 21/10). Vira o oficial do dia 22 quando o Marcus fechar. Carregar (7) e a realizar (783) seguem os últimos que ele passou. Registro em FATURAMENTO-DIARIO.md
+function aplicaHoje22(s){
+  s.fatHoje = {data:"2026-10-22", recebido:982434.43, acertos:1241, em:Date.now()};
+  return s;
+}
+// 22/10/2026: previsto de contas a pagar lido do admin antigo (faturamento_contas_mes, atualizado 22/10 20:21): outubro pagas R$ 1.141.034,30 + a pagar R$ 379.495,29; novembro a pagar R$ 1.451.402,56; dezembro a pagar R$ 1.500.553,11. O pago de outubro na tela continua sendo a soma dos dias lançados (regra de 09/10).
+function aplicaContas22(s){
+  s.contasPagar = Object.assign({}, s.contasPagar); var a = Object.assign({}, s.contasPagar["2026"] || {});
+  a[9] = {pago:1141034.30, apagar:379495.29, fixado:false}; a[10] = {pago:0, apagar:1451402.56, fixado:false}; a[11] = {pago:0, apagar:1500553.11, fixado:false};
+  s.contasPagar["2026"] = a; return s;
+}
 function aplicaHoje20(s){
   s.fatHoje = {data:"2026-10-20", recebido:887486.78, acertos:1120, em:Date.now()};
   s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:783, carregar:7}}); s.metaPct = s.metaPct || 97;
@@ -118,7 +133,7 @@ function novo(){
     faturamentoDiario:JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO)), metaMensal:JSON.parse(JSON.stringify(META_MENSAL_DEMO)),
     revendedorasDiario:JSON.parse(JSON.stringify(REVENDEDORAS_DIARIO_DEMO)), vendidoPonta:JSON.parse(JSON.stringify(VENDIDO_PONTA_DEMO)),
     contasPagasDiario:JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO)), inadFin:JSON.parse(JSON.stringify(INAD_FIN0)), comprasInt:JSON.parse(JSON.stringify(COMPRAS_INT0)), cpdV:VERSAO_CPD, negPix:{Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}}, fatHojeV:8, fatHoje:null, fat14FixV:2, rev14V:1, fatHoje14V:1, revAtualizadoEm:{"2026-10-14":1792022400000},
-    saldosContas:saldosContas0(), saldosV:9,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
+    saldosContas:saldosContas0(), saldosV:10,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
     avisosCfg:{media_alta:[11,16,17]}, alertas:[],
     mesFechado:null, visao:"supervisao", bipadora:9, usuario:16, logado:true, aba:"painel", celular:1, telaCel:"proximo",
     abertas:{L1:true, L2:true}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null, demoAcertos:VERSAO_DEMO, demoListagens:VERSAO_LISTAGENS, lysieDemoV:1, lysieNovasV:1, dayanneNormalV:1};
@@ -134,19 +149,22 @@ function novo(){
   st.ex = exDemo();   // Expositores (vazio; dados reais só no arquivo local)
   st.lp = lpDemo();   // Link de pagamento e maquininhas (vazio; dados reais só no arquivo local)
   st.er = erDemo();   // Encomendas e reposições (vazio; dados reais só no arquivo local)
+  st.p45 = p45Vazio();   // Agendamento → Plano 45/60 (vazio; dados reais só no arquivo local)
   st.ga = gaDemo();   // Garantia (só o link do site externo)
   st.mk = mkDemo();   // Marketing (vazio; dados reais só no arquivo local)
   st.ce = ceDemo();   // Compras e Estoque interno de materiais (vazio; dados reais só no arquivo local)
   st.fx = fxDemo();   // Fiscal (vazio; dados reais só no arquivo local)
+  st.inf = infDemo();   // Folders e informativos dos apps da revendedora e da representante
   st.eq = eqDemo();   // Equipes: departamentos sem pessoas (pessoas reais só no arquivo local)
   st.gr = grDemo();   // Garantias e condicionais do app da revendedora (reclamações; chave das condicionais)
   st.pk = pkDemo();   // Preferências do Kit (vazio; dados reais só no arquivo local)
   st.av = avDemo();   // Avaliações (vazio; dados reais só no arquivo local)
   st.es = esDemo();   // Estoque Sorelly (geral de peças; vazio, dados reais só no arquivo local)
   st.cpc = cpcDemo();   // Cadastro de peças (lotes, custo e preço; vazio, dados de teste só no arquivo local)
+  st.pp = ppDemo();   // Pedidos de peças da produção ao cadastro (vazio)
   st.pr = prDemo();   // Produção de peças (vazio; dados reais só no arquivo local)
   st.px = pxDemo();   // Chaves Pix e regras (contas automáticas do atendimento interno)
-  st.cp = cpAjustar(cpDemo()); st.cpV3 = 1;   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.dp = dpDemo(); st.cp = cpAjustar(cpDemo()); st.cpV3 = 1;   // Controle de pagamentos (Financeiro): destinos e orientações
   st.cpe = {classe:{}, lanc:bonusNickolas()};   // Contas a pagar: o que o Marcus marcou como Sorelly ou Família em cada conta do DevMaster
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
@@ -157,8 +175,8 @@ function novo(){
   st.pk = pkSemearDemo(st).pk;   // Preferências do kit: ~65% das revendedoras já preenchidas (demonstração)
   if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
   if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
-  aplicaPagosAdmin(st); st.cpdAdminV = 1; st.cpdLocalV = 2;
-  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1;   // faturamento fixado até 19/10 (também no estado novo)
+  aplicaPagosAdmin(st); st.cpdAdminV = 2; st.cpdLocalV = 2;
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaContas22(st); st.cp22V = 1;   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -223,7 +241,9 @@ function inicial(){
     if(s.hoje20V!==1){ s.hoje20V = 1; aplicaHoje20(s); }
     if(s.fat20bV!==1){ s.fat20bV = 1; aplicaFat20b(s); }
     if(s.fat21V!==1){ s.fat21V = 1; aplicaFat21(s); }
-    if(s.cpdAdminV!==1){ s.cpdAdminV = 1; aplicaPagosAdmin(s); }
+    if(s.hoje22V!==1){ s.hoje22V = 1; aplicaHoje22(s); }
+    if(s.cp22V!==1){ s.cp22V = 1; aplicaContas22(s); }
+    if(s.cpdAdminV!==2){ s.cpdAdminV = 2; aplicaPagosAdmin(s); }
     if(TEM_CHAVES_ADMIN && s.pixAdminV!==2 && s.px && s.saldosContas){ s.pixAdminV = 2; s.px = pxAplicarChavesAdmin(JSON.parse(JSON.stringify(s.px)), s.saldosContas.contas, "Marcus", Date.now()); }
     if(TEM_CHAVES_ADMIN && s.pixExtrasV!==2 && s.cp){ s.pixExtrasV = 2; s.cp = cpAplicarExtras(s.cp, "Marcus", Date.now()); }
     if(RH_STAMP && s.rhAdminStamp!==RH_STAMP && s.rh){ s.rh = rhAplicarAdmin(s.rh); s.rhAdminStamp = RH_STAMP; }
@@ -254,28 +274,33 @@ function inicial(){
     if(s.ff && !s.ffImp3){ s.ffImp3 = true; var ffY = ffLocal(); if(ffY){ (ffY.dividas||[]).filter(function(x){ return /^x_/.test(x.id) && !(s.ff.dividas||[]).some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.dividas.push(x); var pr = (s.ff.prest||[]).find(function(q){ return q.id===x.prestId; }); if(pr) pr.ativo = true; }); } }   // dívidas que o Marcus passou à mão (ex.: Amanda, total R$ 350)
     if(s.ff && !s.ffImp2){ s.ffImp2 = true; var ffX = ffLocal(); if(ffX){ ffX.contas.filter(function(c){ return /^x_/.test(c.id) && !s.ff.contas.some(function(k){ return k.id===c.id; }); }).forEach(function(c){ s.ff.contas.push(c); s.ff.parcelas[c.id] = ffX.parcelas[c.id]; }); } }   // contas que o Marcus passou e não existem no admin antigo (ex.: aluguel Uphills)
     if(!s.cp) s.cp = cpDemo();
+    if(!s.dp) s.dp = dpDemo();   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
     if(s.cp && s.cpV3!==1){ s.cp = cpAjustar(s.cp); s.cpV3 = 1; }
     if(!s.px) s.px = pxDemo();
     s.px = pxMigrar(s.px, s);   // traz as contas Pix reais (sem chave) do arquivo local, uma vez
     s.rot = rotMigrar(s.rot);   // Rotina do dia
     s.cf = cfMigrar(s.cf);   // Cobrança de funcionárias: cria ou completa com os dados do arquivo local
     if(!s.cl) s.cl = clDemo();
+    s.cl = clSemear(s.cl);   // 20 candidatas de demonstração na fila de aprovação (uma vez só)
     if(!s.ind) s.ind = indDemo();
     s.ex = exMigrar(s.ex);   // Expositores: cria vazio ou completa campos novos
     s.lp = lpMigrar(s.lp);
     // meta do Link de pagamento de OUTUBRO/2026 (Helen): Bronze 70 mil = R$ 300 até Diamante 88 mil = R$ 1.000 (substitui as faixas antigas da planilha)
     if(s.lpMetaV!==1){ s.lpMetaV = 1; s.lp.config = Object.assign({}, s.lp.config, {bonus:{faixas:[{min:88000, valor:1000}, {min:82500, valor:800}, {min:78000, valor:600}, {min:75000, valor:450}, {min:70000, valor:300}], obs:"Meta de outubro/2026 (Bronze, Prata, Ouro, Platina e Diamante). A meta muda todo mês: ajuste aqui."}}); }   // Link de pagamento e maquininhas: cria vazio ou completa campos novos
     s.er = erMigrar(s.er);   // Encomendas e reposições: cria vazio ou completa campos novos
+    s.p45 = p45Migrar(s.p45);   // Agendamento → Plano 45/60: cria vazio ou completa campos novos
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos
+    s.inf = infMigrar(s.inf);   // Folders e informativos: cria com as regras do acerto ou completa campos novos
     s.eq = eqMigrar(s.eq);  // Equipes (organograma): cria com a estrutura ou completa campos novos
     s.gr = grMigrar(s.gr);   // Garantias do app da revendedora: cria vazio ou completa campos novos
     s.pk = pkMigrar(s.pk);   // Preferências do Kit: cria vazio ou completa campos novos
     s.av = avMigrar(s.av);   // Avaliações: cria vazio ou completa campos novos
     s.es = esMigrar(s.es);   // Estoque Sorelly: cria vazio ou completa campos novos
     s.cpc = cpcMigrar(s.cpc);   // Cadastro de peças: cria com os dados de teste ou completa campos novos
+    s.pp = ppMigrar(s.pp);   // Pedidos de peças: cria vazio ou completa campos novos
     s.pr = prMigrar(s.pr);   // Produção de peças: cria vazio ou completa campos novos
     if(!s.pf) s.pf = pfInicial(); else if(!s.pf.prestSemeados || !s.pf.helcioSemeado || !s.pf.elloSemeado || !s.pf.mqImp2 || (!s.pf.atuV1 && TEM_ATU_PF) || (!s.pf.atuV2c && TEM_ATU_PF) || (!s.pf.atuV5 && TEM_ATU_PF) || (!s.pf.atuV10 && TEM_ATU_PF) || (!s.pf.atuV11 && TEM_ATU_PF) || (!s.pf.atuV3 && TEM_ATU_PF) || !s.pf.lcAjustado || s.pf.fornecedores.some(function(f){ return !f.tipo; })) s.pf = pfMigrar(JSON.parse(JSON.stringify(s.pf)));
     if(s.rh && !s.rh.contratos){ s.rh.contratos = []; s.rh.modelos = []; s.rh.colunasRep = []; }   // Contratos do RH chegaram depois
@@ -298,7 +323,7 @@ function inicial(){
     if(s.perfisRev && s.perfisRev["Andrielle Taborda"] && !s.perfisRev["Andrielle Taborda"].expositores)
       s.perfisRev["Andrielle Taborda"].expositores = [{id:"exp-acrilico", nome:"Expositor acrílico grande", qtd:1},{id:"exp-pulseira", nome:"Expositor de pulseira", qtd:1}];
     if(!s.fiscal || !s.fiscal.hist) s.fiscal = JSON.parse(JSON.stringify(FISCAL0));
-    if(!s.saldosContas || s.saldosV!==9){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 9; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-13" && ATU_DIAS.indexOf(k)<0) scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v2: contas, limites e saldos reais de 30/09 e 13/10
+    if(!s.saldosContas || s.saldosV!==10){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 10; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-13" && ATU_DIAS.indexOf(k)<0) scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v2: contas, limites e saldos reais de 30/09 e 13/10
     if(!s.contasCnpj) s.contasCnpj = JSON.parse(JSON.stringify(CONTAS_CNPJ0));
     if(!s.acertosConsignado) s.acertosConsignado = [];
     if(!s.internos) s.internos = [];

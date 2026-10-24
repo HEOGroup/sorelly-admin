@@ -246,68 +246,57 @@ function TabelaCustos(p){
     }).concat([totalLinha]))));
 }
 
-// ───────────── Visão por dia: o que vence no dia, o que está atrasado, o que foi pago no dia e antes, e os próximos dias ─────────────
+// ───────────── Por vencimento: todos os dias do mês escolhido, cada dia abre e fecha; um botão abre ou fecha todos ─────────────
 function PorDia(p){
   var d = use().dispatch;
-  var sd = useState(p.hoje), dia = sd[0], setDia = sd[1];
-  var sa = useState({}), ab = sa[0], setAb = sa[1];
-  var aberto = function(k, padrao){ return k in ab ? ab[k] : padrao; };
-  var alterna = function(k, padrao){ var o = Object.assign({}, ab); o[k] = !aberto(k, padrao); setAb(o); };
-  var mover = function(n){ var dt = new Date(dia+"T12:00:00"); dt.setDate(dt.getDate()+n); setDia(dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0")); };
-  var fim7 = (function(){ var dt = new Date(dia+"T12:00:00"); dt.setDate(dt.getDate()+7); return dt.getFullYear()+"-"+String(dt.getMonth()+1).padStart(2,"0")+"-"+String(dt.getDate()).padStart(2,"0"); })();
-  var it = p.itens;
-  var doDia = it.filter(function(i){ return i.status==="apagar" && i.venc===dia; });
-  var atrasadas = it.filter(function(i){ return i.status==="apagar" && i.venc<dia; });
-  var pagasDia = it.filter(function(i){ return i.status==="pago" && i.baixa===dia; });
-  var pagasAntes = it.filter(function(i){ return i.status==="pago" && i.baixa<dia; });
-  var proximos = it.filter(function(i){ return i.status==="apagar" && i.venc>dia && i.venc<=fim7; });
+  var st0 = useState(false), todos = st0[0], setTodos = st0[1];   // false = todos os dias fechados, true = todos abertos
+  var sa = useState({}), ab = sa[0], setAb = sa[1];             // dia aberto ou fechado só naquele dia (vale mais que o botão geral)
+  var aberto = function(k){ return k in ab ? ab[k] : todos; };
+  var alterna = function(k){ var o = Object.assign({}, ab); o[k] = !aberto(k); setAb(o); };
+  var geral = function(v){ setTodos(v); setAb({}); };
+  var it = p.itens, ini = p.mes ? p.mes+"-01" : "";
   var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 0)); };
   var nomeFilial = function(id){ return (FILIAIS.find(function(f){ return f[0]===id; })||[])[1] || id; };
-  var linhaItem = function(i, mostraDia){
-    var pago = i.status==="pago", atr = !pago && i.atraso>0, fam = ehFam(i);
+  var linhaItem = function(i){
+    var pago = i.status==="pago", fam = ehFam(i);
     return e("tr",{key:i.id, className:LINHA+" bg-black/20"},
-      e(Td,null, pago ? chip("Pago", "ok") : i.venc<dia ? chip("Atrasada", "ruim") : chip("A pagar", "alerta")),
-      e(Td,{className:"text-left"}, e("div",{className:"max-w-[30rem] truncate text-[12.5px]"}, i.nome), e("div",{className:"text-[11px] text-white/50"}, i.natNome+" · "+i.pref+(mostraDia ? (pago ? " · pago em "+br(i.baixa) : " · vence "+br(i.venc)) : ""))),
+      e(Td,null, pago ? chip("Pago", "ok") : i.venc<p.hoje ? chip("Atrasada", "ruim") : chip("A pagar", "alerta")),
+      e(Td,{className:"text-left"}, e("div",{className:"max-w-[30rem] truncate text-[12.5px]"}, i.nome), e("div",{className:"text-[11px] text-white/50"}, i.natNome+" · "+i.pref+(pago ? " · pago em "+br(i.baixa) : ""))),
       e(Td,null, nomeFilial(i.filial)),
       e(Td,{dinheiro:true, forte:true}, BK(i.valor)),
       e(Td,null, p.edita ? e("select",{value:fam ? "familia" : "sorelly", "aria-label":"De quem é esta conta", className:INPUT+" h-8! w-28 cursor-pointer px-2! text-[12px]!", onChange:function(ev){ var v = ev.target.value; d({type:"CPE_CLASSE", chave:i.chave, valor:(v==="familia")===i.pessoalPadrao ? "" : v}); }}, e("option",{value:"sorelly"}, "Sorelly"), e("option",{value:"familia"}, "Família")) : (fam ? "Família" : "Sorelly")));
   };
-  var porData = function(l, campo){ var o = {}; l.forEach(function(i){ (o[i[campo]] = o[i[campo]] || []).push(i); }); return Object.keys(o).sort(function(a, b){ return campo==="baixa" ? b.localeCompare(a) : a.localeCompare(b); }).map(function(k){ return {data:k, lista:o[k]}; }); };
-  var secao = function(chave, titulo, lista, cor, padrao, agrupaCampo){
-    var ok = aberto(chave, padrao), out = [];
-    out.push(e("tr",{key:chave, onClick:function(){ alterna(chave, padrao); }, className:"cursor-pointer border-t-2 border-white/15 bg-white/5 hover:bg-white/10"},
-      e("td",{colSpan:5, className:"px-2 py-2 text-left"}, e("span",{className:"text-[13.5px] font-bold", style:{color:cor}}, (ok ? "▲ " : "▾ ")+titulo), e("span",{className:"ml-3 text-[12px] text-white/55"}, lista.length+" contas"), e("span",{className:MONO+" float-right text-[14px] font-bold"}, BK(soma(lista))))));
-    if(ok && !lista.length) out.push(e("tr",{key:chave+"v"}, e("td",{colSpan:5, className:"px-2 py-3 text-left text-[12.5px] text-white/55"}, "Nada neste grupo.")));
-    if(ok && lista.length){
-      if(!agrupaCampo) lista.slice().sort(function(a, b){ return b.valor-a.valor; }).forEach(function(i){ out.push(linhaItem(i, false)); });
-      else porData(lista, agrupaCampo).forEach(function(g){ var kd = chave+"|"+g.data, okd = aberto(kd, false);
-        out.push(e("tr",{key:kd, onClick:function(){ alterna(kd, false); }, className:LINHA+" cursor-pointer bg-black/25 hover:bg-white/5"}, e("td",{colSpan:5, className:"px-2 py-1.5 text-left"}, e("span",{className:"text-[12.5px] font-semibold"}, (okd ? "▲ " : "▾ ")+br(g.data)), e("span",{className:"ml-3 text-[11.5px] text-white/50"}, g.lista.length+" contas"), e("span",{className:MONO+" float-right text-[13px]"}, BK(soma(g.lista))))));
-        if(okd) g.lista.slice().sort(function(a, b){ return b.valor-a.valor; }).forEach(function(i){ out.push(linhaItem(i, false)); }); });
-    }
-    return out;
-  };
-  var dtBr = function(iso){ var dt = new Date(iso+"T12:00:00"); return dt.toLocaleDateString("pt-BR", {weekday:"long", day:"2-digit", month:"long", year:"numeric"}); };
-  var btn = "h-9 rounded-lg bg-white/10 px-3 text-[13px] font-bold hover:bg-white/20";
+  var anteriores = ini ? it.filter(function(i){ return i.status==="apagar" && i.venc<ini; }) : [];
+  var doMes = it.filter(function(i){ return anteriores.indexOf(i)<0; });
+  var porData = {}; doMes.forEach(function(i){ (porData[i.venc] = porData[i.venc] || []).push(i); });
+  var dias = Object.keys(porData).sort();
+  var grupos = (anteriores.length ? [{k:"anterior", titulo:"Vencidas de meses anteriores", lista:anteriores, atrasada:true}] : []).concat(dias.map(function(dt){
+    var w = new Date(dt+"T12:00:00").toLocaleDateString("pt-BR", {weekday:"short"}).replace(".", "");
+    return {k:dt, titulo:w.charAt(0).toUpperCase()+w.slice(1)+" "+br(dt), lista:porData[dt], atrasada:dt<p.hoje && porData[dt].some(function(i){ return i.status==="apagar"; })};
+  }));
+  var falta = it.filter(function(i){ return i.status==="apagar"; }), pagas = it.filter(function(i){ return i.status==="pago"; }), atras = it.filter(function(i){ return i.status==="apagar" && i.venc<p.hoje; });
+  var linhas = [];
+  grupos.forEach(function(g){
+    var ok = aberto(g.k), fl = g.lista.filter(function(i){ return i.status==="apagar"; }), pg = g.lista.filter(function(i){ return i.status==="pago"; });
+    linhas.push(e("tr",{key:"g"+g.k, onClick:function(){ alterna(g.k); }, className:"cursor-pointer border-t-2 border-white/15 bg-white/5 hover:bg-[#B8862B]"},
+      e("td",{colSpan:5, className:"px-2 py-2 text-left"}, e("span",{className:"text-[13.5px] font-bold", style:{color:g.atrasada ? ESTADO.ruim : "#fff"}}, (ok ? "▲ " : "▾ ")+g.titulo), e("span",{className:"ml-3 text-[12px] text-white"}, g.lista.length+" contas"),
+        pg.length>0 && e("span",{className:"ml-3 text-[12px]", style:{color:ESTADO.ok}}, "Pago "+BK(soma(pg))), fl.length>0 && e("span",{className:"ml-3 text-[12px]", style:{color:ESTADO.ruim}}, "Falta "+BK(soma(fl))),
+        e("span",{className:MONO+" float-right text-[14px] font-bold"}, BK(soma(g.lista))))));
+    if(ok) g.lista.slice().sort(function(a, b){ return b.valor-a.valor; }).forEach(function(i){ linhas.push(linhaItem(i)); });
+  });
+  var btn = "h-9 rounded-lg bg-white/10 px-3 text-[13px] font-bold text-white hover:bg-[#B8862B]";
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-black/25 px-3 py-2 ring-1 ring-white/10"},
-      e("button",{type:"button", className:btn, onClick:function(){ mover(-1); }, "aria-label":"Dia anterior"}, "‹"),
-      e("input",{type:"date", value:dia, "aria-label":"Dia", className:INPUT+" h-9! w-44 text-center", onChange:function(ev){ if(ev.target.value) setDia(ev.target.value); }}),
-      e("button",{type:"button", className:btn, onClick:function(){ mover(1); }, "aria-label":"Próximo dia"}, "›"),
-      e("button",{type:"button", className:btn, onClick:function(){ setDia(p.hoje); }}, "Hoje"),
-      e("span",{className:"ml-2 text-[13px] text-white/70"}, dtBr(dia))),
-    e(Faixa,{n:5},
-      e(IndicadorN,{t:"A pagar no dia", v:BK(soma(doDia)), cor:"alerta", sub:doDia.length+" contas"}),
-      e(IndicadorN,{t:"Vencidas até ontem", v:BK(soma(atrasadas)), cor:atrasadas.length ? "ruim" : "neutro", sub:atrasadas.length+" contas"}),
-      e(IndicadorN,{t:"Pagas no dia", v:BK(soma(pagasDia)), cor:"ok", sub:pagasDia.length+" pagamentos"}),
-      e(IndicadorN,{t:"Pagas em dias anteriores", v:BK(soma(pagasAntes)), cor:"info", sub:pagasAntes.length+" pagamentos"}),
-      e(IndicadorN,{t:"Próximos 7 dias", v:BK(soma(proximos)), cor:"total", sub:proximos.length+" contas"})),
-    e(BlocoBarra,{cor:"azul", compacto:true, t:"Contas por dia", dir:BK(soma(doDia)+soma(atrasadas))}, e("div",{className:"p-2"},
-      e(TabN,{cols:["Situação", "Conta", "CNPJ", "Valor", "De quem é"]}, [].concat(
-        secao("dia", "A pagar no dia", doDia, ESTADO.alerta, true),
-        secao("atraso", "Vencidas até ontem", atrasadas, ESTADO.ruim, false),
-        secao("pagasdia", "Pagas no dia", pagasDia, ESTADO.ok, true),
-        secao("antes", "Pagas em dias anteriores", pagasAntes, ESTADO.info, false, "baixa"),
-        secao("prox", "Próximos 7 dias", proximos, "#F3D98B", false, "venc"))))));
+    e(Faixa,{n:4},
+      e(IndicadorN,{t:"Total do mês", v:BK(soma(it)), cor:"total", sub:it.length+" contas"}),
+      e(IndicadorN,{t:"Falta pagar", v:BK(soma(falta)), cor:falta.length ? "ruim" : "neutro", sub:falta.length+" contas"}),
+      e(IndicadorN,{t:"Vencidas", v:BK(soma(atras)), cor:atras.length ? "#F97316" : "neutro", sub:atras.length+" contas"}),
+      e(IndicadorN,{t:"Pago", v:BK(soma(pagas)), cor:"ok", sub:pagas.length+" pagamentos"})),
+    e(BlocoBarra,{cor:"azul", compacto:true, t:"Por vencimento · "+(p.mes ? rotMes(p.mes) : "Todos os meses"), dir:BK(soma(it))}, e("div",{className:"flex flex-col gap-2 p-2"},
+      e("div",{className:"flex flex-wrap items-center gap-2"},
+        e("button",{type:"button", className:btn, onClick:function(){ geral(true); }}, "Abrir todos os dias"),
+        e("button",{type:"button", className:btn, onClick:function(){ geral(false); }}, "Fechar todos os dias"),
+        e("span",{className:"text-[12.5px] text-white"}, grupos.length+" dias com vencimento · clique no dia para abrir ou fechar")),
+      grupos.length ? e(TabN,{cols:["Situação", "Conta", "CNPJ", "Valor", "De quem é"]}, linhas) : e("p",{className:"py-4 text-center text-[13px] text-white"}, "Nenhuma conta neste filtro."))));
 }
 
 
@@ -426,8 +415,8 @@ function Empresa(p){
   var lista = filtrar(mes, filial, busca, status, "sorelly", nota), fs = porFilial(mes, busca, status, "sorelly", nota);
   if(tira) lista = lista.filter(function(i){ return !ehSocioFolha(i); });
   var listaFamBruta = filtrar(mes, "", busca, status, "familia").concat(tira ? filtrar(mes, "", busca, status, "sorelly").filter(ehSocioFolha) : []);
-  var listaFam = listaFamBruta.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; });
   var metaAna = ff && mes ? ((ff.pixMeta||{})["anabeatriz|"+mes]||0) : 0, recAna = ff && mes ? pixDoMes(ff, "anabeatriz", mes) : 0;
+  var listaFam = metaAna>0 ? listaFamBruta.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; }) : listaFamBruta;   // a Ana Beatriz só troca as contas dela pela meta de Pix quando existe meta; sem meta, valem as contas do DevMaster (senão o total não bate com o relatório)
   var anaT = metaAna>0 && (!busca || /ana|beatriz|pix|revend/i.test(busca)) ? {pago:recAna, apagar:r2(Math.max(0, metaAna-recAna)), total:metaAna, nPago:recAna>0 ? 1 : 0, nApagar:metaAna>recAna ? 1 : 0, n:1} : null;   // a Ana Beatriz só tem Pix revendedoras: vale a meta do mês
   var TE = totais(filtrar(mes, "", busca, status, "sorelly", nota).filter(function(i){ return !(juntar && ehSocioFolha(i)); })), TF = anaT ? somaT(totais(listaFam), anaT) : totais(listaFam), TG = somaT(TE, TF);
   var T = filial==="" && juntar ? somaT(totais(lista), TF) : totais(lista);
@@ -435,7 +424,7 @@ function Empresa(p){
   var atras = function(l){ return l.filter(function(i){ return i.status==="apagar" && i.atraso>0; }); };
   var atrasoTotal = soma(atras(lista)) + (filial==="" && juntar ? soma(atras(listaFam)) : 0);
   var pagoOutro = lista.filter(function(i){ return i.status==="pago" && i.outroMes; });
-  var filNome = filial ? (FILIAIS.find(function(f){ return f[0]===filial; })||[])[1] : (juntar ? "Sorelly + família" : "Sorelly");
+  var filNome = filial ? (FILIAIS.find(function(f){ return f[0]===filial; })||[])[1] : (juntar ? "Total" : "Empresa");
   var alterna = function(k){ var o = Object.assign({}, abertas); o[k] = !o[k]; setAbertas(o); };
   var card = function(id, nome, desc, t, tom){
     var on = filial===id, cor = tom || AZUL;
@@ -454,13 +443,26 @@ function Empresa(p){
   var onP = filial==="";
   var principal = e("button",{type:"button", onClick:function(){ setFilial(""); }, title:"Abrir tudo da Sorelly", className:"w-full rounded-xl px-3 py-2 text-center transition hover:brightness-125 "+(onP ? "ring-2 ring-[#3B82F6]" : "ring-1 ring-white/10"), style:degrade(onP ? AZUL : "neutro")},
     e("div",{className:"mb-1.5 text-[11px] font-bold text-white/85"}, "Principal · "+rotMes(mes)),
-    e("div",{className:"grid grid-cols-1 gap-2 "+(juntar ? "sm:grid-cols-3" : "")}, bloco("Sorelly", TE, "empresa, sem as contas da família", "e"), juntar && bloco("Família", TF, "contas da família", "f"), juntar && bloco("Total do mês", TG, "Sorelly + família", "j")));
+    e("div",{className:"grid grid-cols-1 gap-2 "+(juntar ? "sm:grid-cols-3" : "")}, bloco("Empresa", TE, "sem pró-labore e retiradas", "e"), juntar && bloco("Pró-labore e retiradas", TF, "Anamaria, Marcus, Marco Antonio", "f"), juntar && bloco("Total do mês", TG, "empresa + pró-labore e retiradas", "j")));
   var cnpjs = fs.filter(function(f){ return f.id!=="fora"; }).map(function(f){ return card(f.id, f.nome, f.desc, f, COR_CNPJ[f.id]); }).concat([card("fora", "Por fora", "Pagamentos fora dos CNPJs", fs.filter(function(f){ return f.id==="fora"; })[0], "#22D3EE")]);
   var linhaCards = e("div",{className:"flex flex-col gap-2"}, principal, e("div",{className:"grid grid-cols-2 gap-2 sm:grid-cols-6"}, cnpjs));
-  // todos os meses lado a lado: total e quanto falta; clicar troca o mês
-  var tiraMeses = e("div",{className:"grid grid-cols-3 gap-1.5 sm:grid-cols-6 xl:grid-cols-12"}, ms.map(function(m){ var tm = totais(filtrar(m, "", "", "", "sorelly", nota)), on = m===mes;
-    return e("button",{key:m, type:"button", onClick:function(){ setMes(m); }, title:"Ver "+rotMes(m), className:"flex flex-col items-center rounded-lg px-1 py-1.5 text-center ring-1 transition hover:brightness-125 "+(on ? "ring-2 ring-[#3B82F6]" : "ring-white/10"), style:degrade(on ? AZUL : "neutro")},
-      e("span",{className:"text-[11px] font-bold text-white/85"}, rotMes(m).slice(0, 3)+"/"+m.slice(2, 4)), e("b",{className:MONO+" text-[12.5px] leading-tight"}, BK(tm.total)), e("span",{className:"text-[10px] leading-tight", style:{color:tm.apagar>0 ? ESTADO.ruim : "rgba(255,255,255,.5)"}}, "Falta "+BK(tm.apagar))); }));
+  // todos os meses lado a lado: total e quanto falta (mesma conta dos blocos de cima: Empresa ou Total); clicar troca o mês
+  var totMes = function(m){
+    var te = totais(filtrar(m, "", "", "", "sorelly", nota).filter(function(i){ return !(juntar && ehSocioFolha(i)); }));
+    if(!juntar) return te;
+    var fam = filtrar(m, "", "", "", "familia").concat(filtrar(m, "", "", "", "sorelly").filter(ehSocioFolha)), mAna = ff ? ((ff.pixMeta||{})["anabeatriz|"+m]||0) : 0;
+    if(mAna>0){ var rAna = pixDoMes(ff, "anabeatriz", m); return somaT(te, somaT(totais(fam.filter(function(i){ return donoDe(i)!=="Ana Beatriz"; })), {pago:rAna, apagar:r2(Math.max(0, mAna-rAna)), total:mAna, nPago:rAna>0 ? 1 : 0, nApagar:mAna>rAna ? 1 : 0, n:1})); }
+    return somaT(te, totais(fam));
+  };
+  var anoMes = (mes>"" ? mes : hojeYm()).slice(0, 4), jm = ms.filter(function(m){ return m.slice(0, 4)===anoMes; }), tms = jm.map(totMes);   // o ano inteiro do mês escolhido, de janeiro a dezembro
+  // dois blocos, um para o PAGO e outro para o A PAGAR, com os meses em colunas (letra branca normal, sem marcar o mês atual); clicar troca o mês
+  var blocoMeses = function(titulo, campo){ return e("div",{key:titulo, className:"overflow-x-auto"}, e("div",{className:"min-w-[1100px] overflow-hidden rounded-lg border border-border bg-card/60"},
+    e("div",{className:"flex items-center justify-between border-b border-border px-3 py-1 text-[12px] font-semibold text-white"}, e("span",null, titulo), e("span",{className:"tabular-nums"}, "Soma dos meses mostrados "+BK(r2(tms.reduce(function(s, x){ return s+x[campo]; }, 0))))),
+    e("div",{className:"grid", style:{gridTemplateColumns:"repeat("+jm.length+", minmax(0, 1fr))"}}, jm.map(function(m, k){
+      return e("button",{key:m, type:"button", onClick:function(){ setMes(m); }, title:"Ver "+rotMes(m), className:"min-w-0 whitespace-nowrap px-1 py-1.5 text-center transition hover:bg-[#B8862B] "+(k ? "border-l border-border" : "")},
+        e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-white"}, rotMes(m).slice(0, 3)+"/"+m.slice(2, 4)),
+        e("div",{className:"text-[12.5px] font-medium tabular-nums text-white"}, BK(tms[k][campo]))); })))); };
+  var tiraMeses = e("div",{className:"flex flex-col gap-2"}, blocoMeses("Pago", "pago"), blocoMeses("A pagar", "apagar"));
   return e("div",{className:"flex flex-col gap-2.5"},
     novaAberta && e(NovaConta,{fechar:function(){ setNovaAberta(false); }}),
     tiraMeses,
@@ -473,7 +475,7 @@ function Empresa(p){
         e("label",{className:"flex flex-col gap-0.5"}, e("span",{className:"text-[11px] font-bold uppercase tracking-wide text-white/70"}, "Buscar"), e("input",{value:busca, placeholder:"Título, valor, funcionária ou setor", "aria-label":"Buscar", className:INPUT+" h-9! w-full", onChange:function(ev){ setBusca(ev.target.value); }}))),
       e("div",{className:"grid w-full grid-cols-2 gap-2 sm:grid-cols-4"},
         btnBarra(porSetor, porSetor ? "Ver por grupos" : "Ver por setores", function(){ setPorSetor(!porSetor); }, "Troca o relatório: em vez de grupos de custo, mostra quanto cada setor (Encomendas, Montagem, Bipagem...) custa em pessoal; clique no setor para ver cada funcionária"),
-        btnBarra(vista==="dia", vista==="dia" ? "Ver lista de contas" : "Ver contas por dia", function(){ setVista(vista==="dia" ? "lista" : "dia"); }, "Embaixo da análise: a lista de contas (como no DevMaster) ou a agenda por dia (o que vence, o que está atrasado e o que foi pago)"),
+        btnBarra(vista==="dia", vista==="dia" ? "Ver lista de contas" : "Ver por vencimento", function(){ setVista(vista==="dia" ? "lista" : "dia"); }, "Embaixo da análise: a lista de contas (como no DevMaster) ou todos os dias de vencimento do mês, cada um abrindo e fechando"),
         e("button",{type:"button", onClick:function(){ setNovaAberta(true); }, className:"h-9 w-full rounded-lg px-3 text-[12.5px] font-bold text-white", style:{background:AZUL}}, "+ Lançar conta"),
         (busca || filial || status || nota) ? e("button",{type:"button", onClick:function(){ setBusca(""); setFilial(""); setStatus(""); setNota(""); }, className:"h-9 w-full rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, "Limpar filtros") : e("span",{key:"vz"}))),
     e(Fragment,null,
@@ -486,7 +488,7 @@ function Empresa(p){
     resumo ? e(TabelaCustos,{porSetor:porSetor, lista:lista, listaFam:listaFam, ana:anaT, ff:ff, mes:mes, familia:(juntar && filial==="") ? TF : null, ordem:ordem, pref:mes+"|"+filial, abertas:abertas, alterna:alterna, edita:vejaFamilia, titulo:(juntar && filial==="") ? "Análise de custos: Sorelly + família" : "Análise de custos: "+filNome})
       : [e(GruposTabela,{key:"a", lista:lista, pref:mes+"|"+filial, resumo:false, abertas:abertas, alterna:alterna, edita:vejaFamilia, vazio:"Nenhuma conta da Sorelly neste filtro."}),
          juntar && filial==="" && e(GruposTabela,{key:"b", lista:listaFam, pref:mes+"|fam", resumo:false, abertas:abertas, alterna:alterna, edita:vejaFamilia, sufixo:" · família", vazio:"Nenhuma conta da família no DevMaster neste filtro."})],
-    vista==="dia" ? e(PorDia,{itens:filtrar("", filial, busca, "", juntar ? "" : "sorelly"), hoje:hojeIso(), edita:vejaFamilia})
+    vista==="dia" ? e(PorDia,{itens:lista.concat(juntar && filial==="" ? listaFam : []), mes:mes, hoje:hojeIso(), edita:vejaFamilia})
       : e(ListaContas,{itens:lista.concat(juntar && filial==="" ? listaFam : []), titulo:"Contas a pagar · "+filNome+" · "+rotMes(mes)})));
 }
 
@@ -562,7 +564,7 @@ function Conciliacao(p){
 
 function AbaCtaPagar(){
   var cx = use(), s = cx.state, vejaFamilia = temAutorizacao("financeiro_familia", s.usuario);
-  var inicial = "sorelly"; try{ var g = sessionStorage.getItem("cta_sel"); if(g==="familia" || g==="junto" || g==="pessoas") inicial = g; sessionStorage.removeItem("cta_sel"); }catch(x){}
+  var inicial = "junto"; try{ var g = sessionStorage.getItem("cta_sel"); if(g==="familia" || g==="junto" || g==="pessoas") inicial = g; sessionStorage.removeItem("cta_sel"); }catch(x){}
   var sm = useState(inicial), modo0 = sm[0], setModo = sm[1], sc = useState(""), sel = sc[0], setSel = sc[1];
   var modo = (vejaFamilia || modo0==="pessoas") ? modo0 : "sorelly";
   // o modo é escolhido no menu do topo (Contas a pagar → Sorelly / Família / Sorelly + Família); o menu avisa pelo evento "cta-modo"
@@ -571,9 +573,9 @@ function AbaCtaPagar(){
   if(modo==="pessoas") return e(PessoasRep);   // aba Funcionários e representantes (tela própria, em pages/FolhaFuncionarias.js)
   var trocar = function(m){ setModo(m); setSel(""); try{ sessionStorage.setItem("cta_modo_atual", m); }catch(x){} };
   var seletorModo = e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-black/25 px-3 py-2 ring-1 ring-white/10"}, e("span",{className:"mr-1 text-[12px] font-bold uppercase tracking-wide text-white/70"}, "Ver"),
-    [["sorelly", "Sorelly"], ["familia", "Família"], ["junto", "Sorelly + Família"]].filter(function(x){ return vejaFamilia || x[0]==="sorelly"; }).map(function(x){ var on = modo===x[0]; return e("button",{key:x[0], type:"button", onClick:function(){ trocar(x[0]); }, className:"h-10 rounded-lg px-5 text-[14px] font-bold ring-1 transition "+(on ? "text-white ring-[#3B82F6]" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"), style:on ? {background:"linear-gradient(135deg,"+AZUL+"77,"+AZUL+"22)"} : undefined}, x[1]); }));
+    [["sorelly", "Empresa"], ["familia", "Pró-labore e retiradas"], ["junto", "Total"]].filter(function(x){ return vejaFamilia || x[0]==="sorelly"; }).map(function(x){ var on = modo===x[0]; return e("button",{key:x[0], type:"button", onClick:function(){ trocar(x[0]); }, className:"h-10 rounded-lg px-5 text-[14px] font-bold ring-1 transition "+(on ? "text-white ring-[#3B82F6]" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"), style:on ? {background:"linear-gradient(135deg,"+AZUL+"77,"+AZUL+"22)"} : undefined}, x[1]); }));
   return e(Pagina,null,
-    e(PageHead,{t:"Contas a pagar · "+(modo==="familia" ? "Família" : modo==="junto" ? "Sorelly + Família" : "Sorelly"), sub:modo==="familia" ? "Contas da família" : modo==="junto" ? "A Sorelly com o que só está no financeiro da família" : "Contas da empresa por CNPJ"}),
+    e(PageHead,{t:"Contas a pagar · "+(modo==="familia" ? "Pró-labore e retiradas" : modo==="junto" ? "Total" : "Empresa"), sub:modo==="familia" ? "Pró-labore e retirada de lucros dos sócios" : modo==="junto" ? "Empresa mais pró-labore e retiradas: o total que a empresa paga" : "Contas da empresa por CNPJ, sem pró-labore e retiradas"}),
     seletorModo,
     modo==="familia" ? e(Familia) : e(Empresa,{modo:modo, setModo:setModo, sel:sel, setSel:setSel, vejaFamilia:vejaFamilia}));
 }

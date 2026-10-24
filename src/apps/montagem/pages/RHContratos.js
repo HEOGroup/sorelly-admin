@@ -6,7 +6,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
-import { STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, br, colaboradoresRh, hojeIso, diasEntre } from "@/apps/montagem/domain/rh";
+import { STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, bancosDe, br, colaboradoresRh, hojeIso, diasEntre } from "@/apps/montagem/domain/rh";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { baixarBlob, htmlParaDocx, mesclarVariaveis } from "@/apps/montagem/lib/docx-mini";
 import { BKC as BK } from "@/apps/montagem/lib/format";
@@ -23,7 +23,7 @@ var fmtN = function(v){ return v ? Number(v).toLocaleString("pt-BR",{minimumFrac
 var th = function(t, c){ return e("th",{key:t, className:"whitespace-nowrap border-b border-border px-3 py-2 text-left text-[11.5px] font-semibold uppercase tracking-wide "+(c||"")}, t); };
 var TD = "px-2 py-1.5 text-[13.5px] align-top";
 var CARD = "rounded-xl bg-linear-to-br from-[#8B5CF6]/20 via-card to-card px-4 py-3 ring-1 ring-[#8B5CF6]/40";
-var STATUS_COR = {antigo:"#EF4444", feito:"#F59E0B", assinado:"#22C55E", encerrado:"#94A3B8", nao_revisado:"#EF4444", em_revisao:"#F59E0B", atualizado:"#22C55E", ativo:"#22C55E"};
+var STATUS_COR = {antigo:"#EF4444", feito:"#F59E0B", assinado:"#22C55E", encerrado:"#94A3B8", nao_revisado:"#EF4444", em_revisao:"#F59E0B", atualizado:"#22C55E", ativo:"#22C55E", quitado:"#22C55E", contemplado:"#3B82F6"};
 var slugKey = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); };
 
 function useRh(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), sensivel:grupoDe(s.usuario)==="supervisao"}; }
@@ -123,8 +123,10 @@ function AbaRhContrFunc(){
       [{h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}, {h:"Observação", cel:function(ct){ return e(Texto,{v:ct.obs, save:function(v){ save(c, ct, {obs:v}); }}); }},
        {h:"Contrato", cel:function(ct){ return e("div",{className:"flex flex-col gap-1"}, e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}), e(CelulaGerado,{c:c, ct:ct})); }}, {h:"Aditivos", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"ADITIVO"}); }}]); }});
 }
-function Terceiros(tipo, titulo, sub, addRotulo, restrito){
-  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, restrito:restrito,
+// Terceiros que já temos (23/10/2026, pedido do Marcus): Leonardo (H&O Apps), Lucas Castilho (prestador dentro da empresa) e Igor (função a confirmar). Nomes só; o contrato assinado entra pelo Anexar.
+var TERCEIROS_INICIAIS = [{nome:"Leonardo", documento:"Desenvolvedor (H&O Apps)", cnpj:"H&O Apps"}, {nome:"Lucas Castilho", documento:"Prestador dentro da empresa"}, {nome:"Igor", documento:"A confirmar", obs:"Função e empresa a confirmar"}];
+function Terceiros(tipo, titulo, sub, addRotulo, restrito, lote){
+  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, restrito:restrito, lote:lote ? function(){ return lote; } : undefined, loteRotulo:"Trazer Leonardo, Castilho e Igor",
     alerta:function(ct){ return avencer(ct); },
     statExtra:function(todos){ return e(Tile,{key:"venc", t:"Vencendo (≤30 dias)", v:int(todos.filter(avencer).length), cor:"#EF4444"}); },
     colunas:function(c){ return [{h:"Nome", cel:function(ct){ return e(Texto,{v:ct.nome, save:function(v){ save(c, ct, {nome:v}); }}); }}, {h:"Função", cel:function(ct){ return e(Texto,{v:ct.documento, ph:"Função", save:function(v){ save(c, ct, {documento:v}); }}); }},
@@ -134,8 +136,50 @@ function Terceiros(tipo, titulo, sub, addRotulo, restrito){
        {h:"Termo de encerramento", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"ENCERRAMENTO", dica:ct.status==="encerrado" ? null : "só se encerrado"}); }}]); }});
 }
 var avencer = function(ct){ if(ct.status!=="ativo" || !ct.vigenciaFim) return false; var d = diasEntre(hojeIso(), ct.vigenciaFim); return d>=0 && d<=30; };
-function AbaRhContrTerc(){ return Terceiros("TERCEIRO", "Contratos de terceiros", "Prestadores de serviço e parceiros. O sistema avisa quando a vigência vence em até 30 dias.", "+ Novo terceiro", false); }
+function AbaRhContrTerc(){ return Terceiros("TERCEIRO", "Contratos de terceiros", "Prestadores de serviço e parceiros. O sistema avisa quando a vigência vence em até 30 dias.", "+ Novo terceiro", false, TERCEIROS_INICIAIS); }
 function AbaRhContrMarcus(){ return Terceiros("PARTICULAR", "Contratos particulares do Marcus", "Contratos pessoais (casa, prestadores particulares). Só os sócios abrem.", "+ Novo contrato", true); }
+
+// ───────────────── Crédito bancário, aluguéis e consórcios (23/10/2026) ─────────────────
+// Mesma tabela dos outros contratos; o PDF fica no Drive (link na coluna "Drive") e a tela guarda os números. Só os sócios abrem (tem valor).
+function colExtra(c, h, chave, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:(ct.extra||{})[chave], ph:ph||"", save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }}; }
+function colDin(c, h, chave){ return {h:h, cel:function(ct){ return e(Dinheiro,{v:(ct.extra||{})[chave], save:function(v){ acao(c, "contr_extra", {id:ct.id, chave:chave, valor:v}); }}); }}; }
+function colFim(c){ return {h:"Fim", cel:function(ct){ var dias = ct.vigenciaFim ? diasEntre(hojeIso(), ct.vigenciaFim) : null; return e("div",{className:"flex items-center gap-2"}, e("input",{type:"date", value:ct.vigenciaFim||"", "aria-label":"Fim", className:INPUT+" h-9! w-40", onChange:function(ev){ save(c, ct, {vigenciaFim:ev.target.value}); }}), avencer(ct) && e("span",{className:"text-[12.5px] font-bold text-destructive"}, "⚠ "+dias+"d")); }}; }
+function colNome(c, h, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.nome, ph:ph||"", save:function(v){ save(c, ct, {nome:v}); }}); }}; }
+function colDoc(c, h, ph){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.documento, ph:ph||"", save:function(v){ save(c, ct, {documento:v}); }}); }}; }
+function colEmp(c, h){ return {h:h, cel:function(ct){ return e(Texto,{v:ct.cnpj, ph:"Empresa ou pessoa", save:function(v){ save(c, ct, {cnpj:v}); }}); }}; }
+function colValor(c, h){ return {h:h, cel:function(ct){ return e(Dinheiro,{v:ct.valor, save:function(v){ save(c, ct, {valor:v}); }}); }}; }
+function colArq(c){ return [{h:"Contrato", cel:function(ct){ return e(CelulaAnexo,{c:c, ct:ct, tipo:"CONTRATO"}); }}, colExtra(c, "Drive", "drive", "link")]; }
+var soma = function(todos, chave){ return todos.reduce(function(t, x){ return t + (Number((x.extra||{})[chave])||0); }, 0); };
+function Dinheiros(tipo, titulo, sub, addRotulo, addPergunta, colunas, extraStat, topo){
+  return e(Pagina,{tipo:tipo, titulo:titulo, sub:sub, addRotulo:addRotulo, addPergunta:addPergunta, restrito:true, alerta:function(ct){ return avencer(ct); }, topo:topo,
+    statExtra:function(todos){ return [e(Tile,{key:"venc", t:"Vencendo (≤30 dias)", v:int(todos.filter(avencer).length), cor:"#EF4444"})].concat(extraStat ? extraStat(todos) : []); },
+    colunas:function(c){ return colunas(c); }});
+}
+function Gerentes(c){
+  var lista = bancosDe(c.rh), campo = function(b, chave, ph, mono){ return e(Texto,{v:b[chave], ph:ph, mono:mono, cls:"w-full "+(chave==="telefone" ? "min-w-[11rem]" : chave==="banco" ? "min-w-[9rem]" : "min-w-[12rem]"), save:function(v){ acao(c, "banco_set", {id:b.id, patch:(function(){ var o = {}; o[chave] = v; return o; })()}); }}); };
+  return e(BlocoBarra,{cor:"roxo", t:"Gerentes dos bancos", sub:"contatos para pedir contrato, parcelas e saldo", dir:String(lista.length)},
+    e("div",{className:"flex flex-col gap-2 p-3"}, e("div",{className:"flex justify-end"}, e(Btn,{v:"ghost", onClick:function(){ var n = window.prompt("Nome do banco:"); if(n && n.trim()) acao(c, "banco_add", {banco:n}); }}, "+ Banco")),
+      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, ["Banco","Contato","Cargo","Telefone","Observação",""].map(function(h){ return th(h); }))),
+        e("tbody",null, lista.map(function(b){ return e("tr",{key:b.id, className:"border-b border-border/60"}, e("td",{className:TD}, campo(b,"banco","Banco")), e("td",{className:TD}, campo(b,"contato","Contato")), e("td",{className:TD}, campo(b,"cargo","Cargo")), e("td",{className:TD}, campo(b,"telefone","+55 …",true)), e("td",{className:TD}, campo(b,"obs","—")),
+          e("td",{className:TD}, e("button",{onClick:function(){ if(window.confirm("Remover "+b.banco+"?")) acao(c, "banco_del", {id:b.id}); }, "aria-label":"Remover", className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"trash", s:15})))); }))))));
+}
+function AbaRhContrCredito(){
+  return Dinheiros("CREDITO", "Crédito bancário", "Empréstimos e financiamentos. O PDF fica no Drive; aqui ficam os números e o link.", "+ Novo crédito", "Banco e tipo (ex.: Santander capital de giro):",
+    function(c){ return [colNome(c, "Banco", "Banco e tipo"), colDoc(c, "Nº contrato", "Número"), colEmp(c, "Empresa"), colValor(c, "Valor"), colDin(c, "Parcela", "parcela"), colDin(c, "Saldo devedor", "saldo"), colFim(c),
+      {h:"Pronampe", cel:function(ct){ return e(Sel,{value:(ct.extra||{}).pronampe||"", label:"Pronampe", className:"h-8! w-36", onChange:function(v){ acao(c, "contr_extra", {id:ct.id, chave:"pronampe", valor:v}); }}, e("option",{value:""}, "A perguntar"), e("option",{value:"sim"}, "Sim"), e("option",{value:"nao"}, "Não"), e("option",{value:"analise"}, "Em análise")); }},
+      {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c), [colExtra(c, "Observação", "obs2", "—")]); },
+    function(todos){ return [e(Tile,{key:"saldo", t:"Saldo devedor", v:"R$ "+(fmtN(soma(todos, "saldo"))||"0,00"), cor:"#F59E0B"})]; }, Gerentes);
+}
+function AbaRhContrAluguel(){
+  return Dinheiros("ALUGUEL", "Aluguéis", "Contratos de imóveis e salas. O sistema avisa quando a vigência vence em até 30 dias.", "+ Novo aluguel", "Imóvel ou sala:",
+    function(c){ return [colNome(c, "Imóvel", "Imóvel ou sala"), colDoc(c, "Locador", "Locador"), colEmp(c, "Empresa"), colValor(c, "Valor mensal"), colExtra(c, "Reajuste", "reajuste", "mês"), colFim(c), {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c)); },
+    function(todos){ return [e(Tile,{key:"mensal", t:"Total mensal", v:"R$ "+(fmtN(todos.filter(function(x){ return x.status==="ativo"; }).reduce(function(t, x){ return t+(Number(x.valor)||0); }, 0))||"0,00"), cor:"#F59E0B"})]; });
+}
+function AbaRhContrConsorcio(){
+  return Dinheiros("CONSORCIO", "Consórcios", "Cotas de consórcio (Ademicon e outros). Marque quando a cota for contemplada.", "+ Novo consórcio", "Administradora e bem (ex.: Ademicon, celular do Marcus):",
+    function(c){ return [colNome(c, "Consórcio", "Administradora e bem"), colDoc(c, "Cota", "Nº da cota"), colEmp(c, "Quem contratou"), colValor(c, "Valor da carta"), colDin(c, "Parcela", "parcela"), colDin(c, "Saldo", "saldo"), colFim(c), {h:"Status", cel:function(ct){ return e(CelulaStatus,{c:c, ct:ct}); }}].concat(colArq(c)); },
+    function(todos){ return [e(Tile,{key:"saldo", t:"Saldo a pagar", v:"R$ "+(fmtN(soma(todos, "saldo"))||"0,00"), cor:"#F59E0B"})]; });
+}
 
 // ───────────────── Modelos de contrato (editor) ─────────────────
 function Editor(p){
@@ -180,4 +224,4 @@ function AbaRhContrModelos(){
     e("style",null, ESTILO_DOC));
 }
 
-export { AbaRhContrRep, AbaRhContrFunc, AbaRhContrTerc, AbaRhContrMarcus, AbaRhContrModelos };
+export { AbaRhContrRep, AbaRhContrFunc, AbaRhContrTerc, AbaRhContrMarcus, AbaRhContrCredito, AbaRhContrAluguel, AbaRhContrConsorcio, AbaRhContrModelos };

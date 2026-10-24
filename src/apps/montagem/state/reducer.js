@@ -17,9 +17,11 @@ import { aplicaFila } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { agendReduz } from "@/apps/montagem/domain/agendamento";
+import { p45Reduz } from "@/apps/montagem/domain/plano45-60";
 import { rhReduz } from "@/apps/montagem/domain/rh";
 import { metasReduz } from "@/apps/montagem/domain/metas-setor";
 import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
+import { dpReduz } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { pfReduz } from "@/apps/montagem/domain/pf";
@@ -35,6 +37,7 @@ import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montage
 import { erReduz } from "@/apps/montagem/domain/encomendas";
 import { exReduz } from "@/apps/montagem/domain/expositores";
 import { eqReduz } from "@/apps/montagem/domain/equipes";
+import { infReduz } from "@/apps/montagem/domain/informativos";
 import { pkReduz } from "@/apps/montagem/domain/preferencias-kit";
 import { pkSalvarDoApp } from "@/apps/montagem/domain/preferencias-rev";
 import { grReduz } from "@/apps/montagem/domain/garantias-rev";
@@ -42,6 +45,7 @@ import { esReduz } from "@/apps/montagem/domain/estoque-sorelly";
 import { avReduz } from "@/apps/montagem/domain/avaliacoes";
 import { prReduz } from "@/apps/montagem/domain/producao";
 import { cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
+import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 
@@ -52,7 +56,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
+      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="cadastropecas" ? "cadpecas" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
@@ -180,9 +184,11 @@ function reducer(s, a){
       if(a.op==="pag_add" && pCf && pCf.cf){ var pgNovo = pCf.cf.pagamentos[pCf.cf.pagamentos.length-1], fnNovo = pCf.cf.funcionarias.find(function(x){ return x.id===pgNovo.funcId; });
         pCf = Object.assign({}, pCf, {lancFin:[pxAplicar(s.px, lancFinDoPagamento(pgNovo, fnNovo, a.por), s.lancFin)].concat(s.lancFin||[])}); }   // todo pagamento vai para o Controle de pagamentos
       return com(s, pCf, rCf.msg); }
-    case "CL": { var rCl = clReduz(s, a); return com(s, rCl.patch, rCl.msg); }
+    case "CL": { var rCl = clReduz(s, a);
+      return com(s, rCl.patch, rCl.msg); }
     case "IND": { var rInd = indReduz(s, a); return com(s, rInd.patch, rInd.msg); }   // Indicações (funil, resgates de prêmio, moedas)
     case "CPC": { var rCpc = cpcReduz(s, a); return com(s, rCpc.patch, rCpc.msg); }   // Cadastro de peças (lotes, custo, preço sugerido, pedidos à DevMaster)
+    case "PP": { var rPp = ppReduz(s, a); return com(s, rPp.patch, rPp.msg); }   // Pedidos de peças da produção ao Cadastro de peças (pedir, OK, pronto, não temos, aviso)
     case "PR": { var rPr = prReduz(s, a); return com(s, rPr.patch, rPr.msg); }   // Produção de peças (lançamento diário, painel, bônus)
     case "EX": { var rEx = exReduz(s, a); return com(s, rEx.patch, rEx.msg); }   // Expositores (fila, montagem, devolução, danificados, estoque de expositores)
     case "AV": { var rAv = avReduz(s, a); return com(s, rAv.patch, rAv.msg); }   // Avaliações (revendedoras, sistema, montagem, funcionários)
@@ -193,18 +199,21 @@ function reducer(s, a){
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
     case "FX": { var rFx = fxReduz(s, a); return com(s, rFx.patch, rFx.msg); }   // Fiscal (ILF, sublimite, entradas, saídas, contas por CNPJ)
     case "EQ": { var rEq = eqReduz(s, a); return com(s, rEq.patch, rEq.msg); }   // Equipes: organograma de departamentos
+    case "INF": { var rInf = infReduz(s, a); return com(s, rInf.patch, rInf.msg); }   // Folders e informativos dos apps
     case "GR": { var rGr = grReduz(s, a); return com(s, rGr.patch, rGr.msg); }   // Garantias e condicionais do app da revendedora
     case "PK": { var rPk = a.op==="app_salvar" ? pkSalvarDoApp(s, a) : pkReduz(s, a); return com(s, rPk.patch, rPk.msg); }   // Preferências do Kit (blocos do formulário e respostas das revendedoras)
     case "ES": { var rEs = esReduz(s, a); return com(s, rEs.patch, rEs.msg); }   // Estoque Sorelly (geral de peças, Financeiro)
     case "PF": { var rPf = pfReduz(s, a); return com(s, rPf.patch, rPf.msg); }
     case "PX": { var rPx = pxReduz(s, a); return com(s, rPx.patch, rPx.msg); }
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
+    case "DP": { var rDp = dpReduz(s, a); return com(s, rDp.patch, rDp.msg); }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
       if(a.setor){ if(a.dia) dp.setores[a.setor] = a.dia; else delete dp.setores[a.setor]; } else if(a.dia) dp.geral = a.dia; return com(s, {datasPag:dp}, "Data de pagamento salva"); }
     case "METAS": { var rMt = metasReduz(s, a); return com(s, rMt.patch, rMt.msg); }
     case "RH": { var rRh = rhReduz(s, a); return com(s, rRh.patch, rRh.msg); }
     case "AG": { var rAg = agendReduz(s, a, agora); return com(s, rAg.patch, rAg.msg); }
+    case "P45": { var rP45 = p45Reduz(s, a); return com(s, rP45.patch, rP45.msg, rP45.patch && rP45.patch.p45 ? "ok" : "atencao"); }   // Agendamento → Plano 45/60 (indicações, aprovação; aprovada mudando de mês ajusta a meta)
     case "CNPJ_DOC_ADD": { var dc = Object.assign({}, s.cnpjDocs||{}); dc[a.id] = (dc[a.id]||[]).concat([a.doc]); return com(s, {cnpjDocs:dc}); }
     case "CNPJ_DOC_DEL": { var dc2 = Object.assign({}, s.cnpjDocs||{}); dc2[a.id] = (dc2[a.id]||[]).filter(function(x){ return x.id!==a.docId; }); return com(s, {cnpjDocs:dc2}); }
     case "CNPJ_SET": {

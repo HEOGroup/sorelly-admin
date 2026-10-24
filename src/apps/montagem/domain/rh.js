@@ -11,9 +11,12 @@ var STATUS = [["ATIVO","Ativo"], ["FERIAS","Férias"], ["AFASTADO","Afastado"], 
 var TIPOS_DESLIG = ["Pedido de demissão", "Sem justa causa", "Justa causa", "Término de contrato", "Acordo", "Outro"];
 var DIAS_SEMANA = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
 // contratos: o vocabulário de status varia por tipo
-var STATUS_BY_TIPO = {REPRESENTANTE:["antigo","feito","assinado","encerrado"], CLT:["nao_revisado","em_revisao","atualizado"], TERCEIRO:["ativo","encerrado"], PARTICULAR:["ativo","encerrado"]};
-var STATUS_LB = {antigo:"Contrato antigo", feito:"Novo feito", assinado:"Assinado e anexado", nao_revisado:"Não revisado", em_revisao:"Em revisão", atualizado:"Atualizado e assinado", ativo:"Ativo", encerrado:"Encerrado"};
-var TIPOS_CONTRATO = {REPRESENTANTE:"Representantes", CLT:"Funcionários (CLT)", TERCEIRO:"Terceiros", PARTICULAR:"Particulares do Marcus"};
+var STATUS_BY_TIPO = {REPRESENTANTE:["antigo","feito","assinado","encerrado"], CLT:["nao_revisado","em_revisao","atualizado"], TERCEIRO:["ativo","encerrado"], PARTICULAR:["ativo","encerrado"], CREDITO:["ativo","quitado"], ALUGUEL:["ativo","encerrado"], CONSORCIO:["ativo","contemplado","quitado"]};
+var STATUS_LB = {antigo:"Contrato antigo", feito:"Novo feito", assinado:"Assinado e anexado", nao_revisado:"Não revisado", em_revisao:"Em revisão", atualizado:"Atualizado e assinado", ativo:"Ativo", encerrado:"Encerrado", quitado:"Quitado", contemplado:"Contemplado"};
+var TIPOS_CONTRATO = {REPRESENTANTE:"Representantes", CLT:"Funcionários (CLT)", TERCEIRO:"Terceiros", PARTICULAR:"Particulares do Marcus", CREDITO:"Crédito bancário", ALUGUEL:"Aluguéis", CONSORCIO:"Consórcios"};
+// gerentes dos bancos (23/10/2026): lista inicial vem do arquivo local rh-bancos.local.js (telefones, fora do GitHub); depois de editar na tela, vale o que está salvo em rh.bancos
+var BANCOS_LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/rh-bancos.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : []; } catch(x){ return []; } })();
+var bancosDe = function(rh){ return rh.bancos || BANCOS_LOCAL; };
 var MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
 
 // ---------- datas (sempre texto AAAA-MM-DD, sem fuso) ----------
@@ -255,6 +258,9 @@ function rhReduz(s, a){
     case "contr_anexo_add": { var ca = rh.contratos.find(function(x){ return x.id===a.id; }); if(!ca) return recusa("Contrato não encontrado."); ca.anexos = ca.anexos.filter(function(x){ return x.tipo!==a.anexo.tipo; }).concat([Object.assign({}, a.anexo, {em:Date.now(), por:por})]); return ok("Arquivo anexado"); }
     case "contr_anexo_del": { var cd = rh.contratos.find(function(x){ return x.id===a.id; }); if(!cd) return recusa("Contrato não encontrado."); cd.anexos = cd.anexos.filter(function(x){ return x.id!==a.anexoId; }); return ok("Arquivo removido"); }
     case "contr_gerar": { var nmg = String((a.dados||{}).nome||"").trim(); if(!STATUS_BY_TIPO[a.tipo] || !nmg) return recusa("Informe o nome."); rh.contratos.push(Object.assign({id:novoId("ct-"), tipo:a.tipo, status:STATUS_BY_TIPO[a.tipo][0], cpf:"", cnpj:"", documento:"", valor:null, vigenciaInicio:"", vigenciaFim:"", obs:"", extra:{}, anexos:[], criadoEm:Date.now(), por:por}, a.dados, {modeloId:a.modeloId||"", documentoId:a.docId||""})); return ok("Contrato gerado"); }
+    case "banco_add": { var nb = String(a.banco||"").trim(); if(!nb) return recusa("Informe o banco."); rh.bancos = (rh.bancos || BANCOS_LOCAL).map(function(x){ return Object.assign({}, x); }); rh.bancos.push({id:novoId("bk-"), banco:nb, contato:"", cargo:"", telefone:"", obs:""}); return ok("Banco incluído"); }
+    case "banco_set": { rh.bancos = (rh.bancos || BANCOS_LOCAL).map(function(x){ return x.id===a.id ? Object.assign({}, x, a.patch) : Object.assign({}, x); }); return ok(); }
+    case "banco_del": { rh.bancos = (rh.bancos || BANCOS_LOCAL).filter(function(x){ return x.id!==a.id; }); return ok("Removido"); }
     case "contr_coluna_add": { var nc = String(a.nome||"").trim(); if(!nc) return recusa("Informe o nome da coluna."); rh.colunasRep = rh.colunasRep||[]; if(rh.colunasRep.indexOf(nc)<0) rh.colunasRep.push(nc); return ok("Coluna criada"); }
     case "modelo_save": { var nmm = String(a.nome||"").trim(); if(!nmm) return recusa("Dê um nome ao modelo."); if(!STATUS_BY_TIPO[a.tipo]) return recusa("Escolha o tipo de contrato."); var md = a.id ? rh.modelos.find(function(x){ return x.id===a.id; }) : null;
       if(!md){ md = {id:novoId("md-")}; rh.modelos.push(md); } Object.assign(md, {tipo:a.tipo, nome:nmm, conteudo:a.conteudo||"", variaveis:a.variaveis||[], atualizadoEm:Date.now(), por:por}); return ok("Modelo salvo"); }
@@ -333,6 +339,6 @@ function presencaChat(s, nome, hoje){
   return {dias:dias, mes:mes};
 }
 
-export { RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
+export { bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
   advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, rhReduz };

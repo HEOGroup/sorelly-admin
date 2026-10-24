@@ -53,6 +53,18 @@ export function montagemDisponivel() {
 
 export { CHAVE_MONTAGEM };
 
+/** Revendedoras de cada representante, lidas do AGENDAMENTO do app de montagem (a cota do mês atual; sem ela, a do último mês que tiver). {nomeCompleto: quantidade}; vazio se não der para ler. */
+export function revendedorasPorRep() {
+  try {
+    var raw = localStorage.getItem(CHAVE_MONTAGEM); if (!raw) return {};
+    var s = JSON.parse(raw), ag = s && s.agend; if (!ag || !ag.config) return {};
+    var h = new Date(), ym = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0"), meses = Object.keys(ag.cotas || {}).sort();
+    var cotas = (ag.cotas || {})[ym] || (ag.cotas || {})[meses[meses.length - 1]] || {}, out = {};
+    (ag.config.representantes || []).forEach(function (r) { if (cotas[r.id] > 0) out[r.nome] = cotas[r.id]; });
+    return out;
+  } catch (x) { return {}; }
+}
+
 /** Hoje no fuso de São Paulo, "YYYY-MM-DD". */
 function hojeIsoSP() { return new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }); }
 

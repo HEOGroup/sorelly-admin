@@ -13,17 +13,76 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // 1º item da barra: o Financeiro abre direto no saldo das contas (Marcus, 21/10/2026)
-  M("Pagamentos","cpagamentos"),
-  {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Fornecedores","pfforn"), M("Prestadores de serviço","pfprest")]},
-  M("Contas a pagar","ctalista"),
-  M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela (Marcus, 22/10/2026)
-  {nome:"Financeiro familiar", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Alertas","ffalertas"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
-  {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons"), M("Estoque Sorelly","estoquesorelly")]},
-  {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp")]},
-  {nome:"Comissões", itens:[M("Visão geral","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
-  {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
-  M("Link de pagamento","linkrel")
+  M("Direcionar Pix","direcionar"),   // 1º do menu e tela que abre o Financeiro (Marcus, 23/10/2026): o Lucas direciona os Pix do dia
+  {nome:"Saldos e análises", itens:[
+    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
+    M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
+    M("Estoque Sorelly","estoquesorelly")]},
+  {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
+    M("Contas a pagar","ctalista"),
+    M("Pagamentos","cpagamentos"),
+    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
+    {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
+  {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
+    {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
+    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Inadimplência dos representantes","inadimp")]},
+    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
+    M("Link de pagamento","linkrel")]},
+  {nome:"Fiscal", itens:[M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat")]},   // Fiscal dentro do Financeiro (23/10/2026, pedido do Marcus)
+  {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Alertas","ffalertas"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]}
+];
+
+// Menu do Cadastro de revendedoras (23/10/2026): mesmo estilo do Financeiro (palavras no topo, listas em cascata, abas abertas e busca), na ORDEM DO FLUXO: Cadastro (aprovar) → Kits novos (liberar, solicitar, entregar) → Desempenho.
+var MENU_CADASTRO = [
+  {nome:"Cadastro", itens:[M("Aprovação de cadastros","aprovacaocad"), M("Base de revendedoras","revendedoras")]},
+  {nome:"Kits novos", itens:[M("Kits novos","kitnovo"), M("Pendências","knpendencias"), M("Consolidado","knconsolidado"), M("Regras","knregras")]},
+  {nome:"Desempenho", itens:[M("Desempenho do cadastro","desempenhocad"), M("Indicações","indicacoes"), M("Avaliações","avaliacoes")]},
+  M("Representantes","repcad"),
+  M("Mensagens prontas","msgcad")
+];
+
+// Menu das Encomendas e reposições (23/10/2026): mesmo estilo do Financeiro e do Cadastro. Poucas telas = palavras diretas no topo (sem lista), na ORDEM DO FLUXO: pedido → ida na empresa → Top 50 → representantes → expositores → regras.
+var MENU_ENCOMENDAS = [
+  M("Funil de pedidos","encomendas"),
+  M("Ida na empresa","encida"),
+  M("Top 50","enctop50"),
+  M("Representantes","encrep"),
+  M("Expositores","expositores"),
+  M("Regras e mensagens","encregras")
+];
+
+// Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
+var MENU_AGENDAMENTO = [
+  M("Painel","agpainel"),
+  {nome:"Plano 45/60", itens:[M("Indicações","p45ind"), M("Aprovação","p45apr"), M("Acompanhamento","p45acomp"), M("Mensagens","p45msg"), M("Painel do plano","p45pnl")]},
+  M("Remarcações","agremarc"),
+  M("Representantes","agreps"),
+  {nome:"Análises", itens:[M("Análises","aganalises"), M("Histórico","aghistorico")]},
+  {nome:"Gestão do mês", itens:[M("Abertura do mês","agabertura"), M("Configurador","agconfig")]}
+];
+
+// Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
+var MENU_REPRESENTANTES = [
+  {nome:"Kits", itens:[
+    {nome:"Montagem", itens:[M("Produção","producao"), M("Listagens","painel"), M("Condicionais","condicionais"), M("Calculadora de kits","calc"), M("Análise de vendas","vendas"), M("Preferências do kit","prefkit"), M("Pedir peças","pedirpecas")]},
+    {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp")]},
+    {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]}]},
+  {nome:"Representantes", itens:[M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
+  {nome:"Financeiro", itens:[M("Comissões","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência","inadimp"), M("Compras de joias","comprasrep")]},
+  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto"), M("Folders e informativos","informativos")]}
+];
+
+// Menu do RH (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o dia → pessoas → contratos → acessos → configurar. Nenhuma tela saiu: só mudou de lugar. Contratos ganhou Crédito bancário, Aluguéis e Consórcios.
+var MENU_RH = [
+  M("Visão geral","rhvisao"),
+  {nome:"Presença", itens:[M("Presença diária","rhpresenca"), M("Relatório diário","rhrelatorio")]},
+  {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab"), M("Controle de experiência","rhexp"), M("Advertências","rhadv"), M("Horas extras","rhhoras"), M("Negociações","rhnegoc"), M("Escala 42h","rhescala42")]},
+  {nome:"Contratos", itens:[
+    {nome:"Pessoas", itens:[M("Representantes","rhcrep"), M("Funcionários (CLT)","rhcfunc"), M("Terceiros","rhcterc")]},
+    {nome:"Empresa", itens:[M("Crédito bancário","rhccred"), M("Aluguéis","rhcalug"), M("Consórcios","rhcconsor")]},
+    M("Particulares do Marcus","rhcmarcus"), M("Modelos de contrato","rhcmodelos")]},
+  {nome:"Pessoas", itens:[M("Funcionários e representantes","pessoas"), M("Equipes","equipes"), M("Acessos e autorizações","acessos")]},
+  M("Configurador","rhconfig")
 ];
 
 var SETORES = [
@@ -32,17 +91,16 @@ var SETORES = [
   {id:"rotina", nome:"Rotina do dia", ic:"calendario", cor:"#22C55E", direto:T("rotina","Rotina do dia")},
   {id:"apps", nome:"Apps", ic:"phone", cor:"#8B5CF6", direto:T("apps","Apps")},
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
-  {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#06B6D4", areas:[
-    G("Fiscal", [
-      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])])]]])
-  ]},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
+    {nome:"Direcionar\nPix", telas:[T("direcionar","Direcionar Pix")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Chaves Pix e regras")]],
       ["Dinheiro", [T("dinheiro","Dinheiro")]],
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
+    G("Fiscal", [
+      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])]]]),
     {nome:"Controle de\npagamentos", telas:[T("cpagamentos","Controle de pagamentos")]},
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
@@ -51,7 +109,7 @@ var SETORES = [
       ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [
       ["Principal", [T("pfresumo","Geral"), T("pflanc","Lançamento de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],
-      ["Cadastros", [T("pfforn","Fornecedores"), T("pfprest","Prestadores de serviço")]]]),
+      ["Cadastros", [T("pfcadastro","Cadastro"), T("pfforn","Fornecedores"), T("pfprest","Prestadores de serviço")]]]),
     G("Faturamento &\ncontas a pagar", [
       ["Faturamento", [I("previsaofat","Consolidado do faturamento",["Faturamento vs Contas a Pagar → Painel (refeita: lançamento diário só do dia anterior, ligada à Contas a pagar)"])]],
       ["Contas a pagar", [I("contaspagar","Contas a pagar",["Faturamento vs Contas a Pagar → Contas a pagar (refeita: lançamento manual de Pago e A pagar por mês, visão Total e por CNPJ)"]),
@@ -63,12 +121,12 @@ var SETORES = [
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
-  {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", areas:[
-    {nome:"Acertos", telas:[T("agpainel","Painel")]}, {nome:"Remarcações", telas:[T("agremarc","Remarcações")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
+  {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, areas:[
+    {nome:"Acertos", telas:[T("agpainel","Painel")]}, {nome:"Plano 45/60", telas:[T("p45ind","Indicações do plano 45/60"), T("p45apr","Aprovação do plano 45/60"), T("p45acomp","Acompanhamento do plano 45/60"), T("p45msg","Mensagens do plano 45/60"), T("p45pnl","Painel do plano 45/60")]}, {nome:"Remarcações", telas:[T("agremarc","Remarcações")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
     {nome:"Análises", telas:[T("aganalises","Análises")]}, {nome:"Histórico", telas:[T("aghistorico","Histórico")]}, {nome:"Gestão do mês", telas:[T("agabertura","Abertura do mês"), T("agconfig","Configurador")]}]},
-  // Fiscal separado do Financeiro (14/10/2026), logo abaixo dele na barra do topo
+  // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto
-  {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", areas:[
+  {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", menu:MENU_CADASTRO, areas:[
     {nome:"Base de revendedoras", telas:[
       Object.assign(T("revendedoras","Base de revendedoras"), {adm:true, origem:["Revendedoras diárias: histórico dia a dia, entradas, saídas e saldo"]})]},
     {nome:"Aprovação de cadastros", telas:[
@@ -77,6 +135,10 @@ var SETORES = [
       T("desempenhocad","Desempenho do cadastro")]},
     {nome:"Indicações", telas:[
       T("indicacoes","Indicações")]},
+    {nome:"Representantes", telas:[
+      T("repcad","Representantes")]},
+    {nome:"Mensagens prontas", telas:[
+      T("msgcad","Mensagens prontas")]},
     {nome:"Avaliações", telas:[
       T("avaliacoes","Avaliações")]},
     {nome:"Kits novos", telas:[
@@ -84,14 +146,14 @@ var SETORES = [
       T("knpendencias","Pendências"), T("knconsolidado","Consolidado"), T("knregras","Regras")]}]},
   // Kits = só a montagem. Representantes e Atendimento interno viraram setores próprios (decisão de 13/10/2026).
   // Representantes & Kits num setor só (decisão de 15/10/2026): as áreas de Representantes (campo) e de Kits (interno) ficam separadas lá dentro; o financeiro vai chegar às comissões por aqui e pela aba Financeiro
-  {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", areas:[
+  {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
-    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
+    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("informativos","Folders e informativos")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
-      T("prefkit","Preferências do kit"),
+      T("prefkit","Preferências do kit"), T("pedirpecas","Pedir peças"),
       T("equipe"), T("registros"), T("relatorios")]},
     {nome:"Produção", telas:[T("producao","Produção")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
@@ -102,18 +164,21 @@ var SETORES = [
     {nome:"Compras e estoque de material", telas:[T("compras","Compras e estoque de material")]}]},
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
   {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", direto:T("cadpecas","Cadastro de peças")},
-  {id:"encomendas", nome:"Encomendas & Reposições", ic:"caminhao", cor:"#14B8A6", areas:[
-    {nome:"Encomendas & Reposições", telas:[T("encomendas","Encomendas e reposições"), T("regreposicao","Regras")]},
-    {nome:"Entregas", telas:[B("Entregas")]},
-    {nome:"Expositores", telas:[T("expositores","Expositores")]}]},
+  {id:"encomendas", nome:"Encomendas & Reposições", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
+    {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
+    {nome:"Ida na empresa", telas:[T("encida","Ida na empresa")]},
+    {nome:"Top 50", telas:[T("enctop50","Top 50")]},
+    {nome:"Representantes", telas:[T("encrep","Representantes")]},
+    {nome:"Expositores", telas:[T("expositores","Expositores")]},
+    {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
   {id:"garantia", nome:"Garantia & Pós-venda", ic:"escudo", cor:"#A855F7", areas:[
     {nome:"Garantias", telas:[T("garantia","Garantia")]},
     {nome:"Pós-vendas", telas:[B("Pós-vendas")]}]},
-  {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", areas:[
+  {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
     {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhexp","Controle de experiência"), T("rhadv","Advertências"), T("rhhoras","Horas extras"), T("rhnegoc","Negociações"), T("rhescala42","Escala 42h")]},
-    {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhcmodelos","Modelos de contrato")]},
+    {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
   {id:"diretoria", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", areas:[

@@ -191,7 +191,21 @@ function agendReduz(s, a, agora){
       var qL = Math.round(Number(a.qtd)); if(!(qL>0)) return recusa("Informe quantas revendedoras foram passadas."); if(!a.destino || a.destino===ym) return recusa("Escolha o mês para onde elas vão (diferente do mês atual).");
       ag.remarc = (ag.remarc||[]).concat([{id:"rm"+Date.now(), nome:"Lote de "+qL+" · "+String(a.data||em).slice(8,10)+"/"+String(a.data||em).slice(5,7), qtd:qL, tipo:a.tipo||"outro", autorizadoPor:a.autorizadoPor, origem:ym, destino:a.destino, obs:String(a.obs||"").trim(), por:por, em:em}]);
       return {patch:{agend:ag, metaMensal:sincMeta([ym, a.destino])}, msg:qL+" revendedora"+(qL===1 ? "" : "s")+" passada"+(qL===1 ? "" : "s")+" por "+a.autorizadoPor+" para "+nomeMes(a.destino)}; }
-    case "remarc_del": { var rx = (ag.remarc||[]).find(function(x){ return x.id===a.id; }); if(!rx) return recusa("Remarcação não encontrada.");
+    // PLANO 45/60: o plano (domain/plano45-60.js) decide quem sai da meta; aqui só se grava a remarcação (uma por revendedora, ligada pelo planoId) e se acerta a meta do Financeiro.
+    // Não pede mês aberto: a origem pode ser um mês futuro (ex.: novembro para dezembro) e o mês ainda não aberto só recebe o ajuste quando abrir.
+    case "remarc_plano": {
+      var novasP = (a.itens||[]).filter(function(x){ return x.origem && x.destino && x.origem!==x.destino && !(ag.remarc||[]).some(function(r){ return r.planoId===x.planoId; }); });
+      if(!novasP.length) return recusa("Nada novo para ajustar na meta.");
+      ag.remarc = (ag.remarc||[]).concat(novasP.map(function(x){ return {id:"rp"+x.planoId, planoId:x.planoId, nome:x.nome, tipo:x.tipo, autorizadoPor:x.autorizadoPor, origem:x.origem, destino:x.destino, obs:"Plano 45/60", por:por, em:em}; }));
+      var msP = {}; novasP.forEach(function(x){ msP[x.origem] = 1; msP[x.destino] = 1; });
+      return {patch:{agend:ag, metaMensal:sincMeta(Object.keys(msP))}, msg:novasP.length+" revendedora"+(novasP.length===1 ? "" : "s")+" do plano 45/60 ajustada"+(novasP.length===1 ? "" : "s")+" na meta do Agendamento"}; }
+    case "remarc_plano_del": {
+      var idsP = a.ids||[], tiraP = (ag.remarc||[]).filter(function(x){ return x.planoId && idsP.indexOf(x.planoId)>=0 && !(ag.mes[x.origem] && ag.mes[x.origem].fechadoEm); });
+      if(!tiraP.length) return {patch:{}, msg:""};
+      ag.remarc = ag.remarc.filter(function(x){ return tiraP.indexOf(x)<0; });
+      var msQ = {}; tiraP.forEach(function(x){ msQ[x.origem] = 1; msQ[x.destino] = 1; });
+      return {patch:{agend:ag, metaMensal:sincMeta(Object.keys(msQ))}, msg:""}; }
+    case "remarc_del": { var rx =(ag.remarc||[]).find(function(x){ return x.id===a.id; }); if(!rx) return recusa("Remarcação não encontrada.");
       var mfx = ag.mes[rx.origem]; if(mfx && mfx.fechadoEm) return recusa("O mês de origem está fechado. Reabra para desfazer.");
       ag.remarc = ag.remarc.filter(function(x){ return x.id!==a.id; }); return {patch:{agend:ag, metaMensal:sincMeta([rx.origem, rx.destino])}, msg:"Remarcação desfeita"}; }
     // VIRADA DO MÊS (automática): fecha o mês que ficou para trás com o que valia no último dia e abre o mês novo com as revendedoras do fim do mês anterior

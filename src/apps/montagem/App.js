@@ -12,6 +12,7 @@ import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
+import { p45Alertas } from "@/apps/montagem/domain/plano45-60";
 import { ACESSO_FF } from "@/apps/montagem/domain/financeiro-familiar";
 import { ACESSO_COBRANCA_BASE } from "@/apps/montagem/domain/cobranca-func";
 import { e, useEffect, useState, useReducer } from "@/shared/react";
@@ -23,6 +24,7 @@ import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { BarraCascata } from "@/apps/montagem/components/barra-cascata";
 import { MenuSetor } from "@/apps/montagem/components/barra-menu";
+import { setPlano } from "@/apps/montagem/lib/estilo-plano";
 import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
@@ -91,6 +93,8 @@ function App(){
   useEffect(function(){ var t = function(){ if(!s.logado || !s.rot) return; var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); };
       rotAlertas(s.rot, s.usuario, n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate()), p(n.getHours())+":"+p(n.getMinutes())).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [s.rot, s.usuario, s.logado]);
   useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
+  // Plano 45/60: aprovada sem contato em 24 h e nova data sem venda lançada (um alerta por tipo por dia)
+  useEffect(function(){ var t = function(){ if(!s.logado || !s.p45) return; p45Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.p45, s.logado]);
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)
   var loc = useLocation();
@@ -167,7 +171,11 @@ function App(){
   // setor da tela aberta (para a barra do topo)
   var setorAtual = (function(){ var ach = []; setoresV.forEach(function(st){ if(st.direto) return; var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
-  var navPerg = !!(setorAtual && setorAtual.st.menu);   // setor com menu em texto (Financeiro): MenuSetor = menu + abas abertas + busca (components/barra-menu.js)
+  setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
+  var navPerg = !!(setorAtual && setorAtual.st.menu);
+  // caminho no topo = o caminho REAL do menu (ex.: Financeiro / Contas / Fornecedores / Cadastro), não a organização antiga das áreas
+  if(navPerg){ var achaTrilha = function(nos, pre){ for(var q = 0; q<nos.length; q++){ var no = nos[q]; if(no.itens){ var r = achaTrilha(no.itens, pre.concat([no.nome])); if(r) return r; } else if(ativoMenu(no)) return pre.concat([no.nome]); } return null; };
+    var trilhaMenu = achaTrilha(setorAtual.st.menu, []); if(trilhaMenu){ onde = {setor:setorAtual.st, area:{nome:trilhaMenu.slice(0, -1).join(" / ") || setorAtual.st.nome}}; titulo = trilhaMenu[trilhaMenu.length-1]; } }   // setor com menu em texto (Financeiro): MenuSetor = menu + abas abertas + busca (components/barra-menu.js)
   var colSt = colArea && setoresV.find(function(x){return x.id===colArea.setor;}), colAr = colSt && colSt.areas[colArea.i];
   // largura da coluna pelo maior texto (tela, sistema ou título), entre 13 e 22 rem
   var colW = colAr ? 216 : 0;   // coluna estreita: os nomes longos quebram em duas linhas (ex.: "Faturamento & / contas a pagar")
@@ -209,7 +217,7 @@ function App(){
       e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
-        e("span",{className:"min-w-0 flex-1 truncate text-sm text-muted-foreground whitespace-nowrap"}, onde ? onde.setor.nome : "Sorelly", onde && e(React.Fragment,null, e("span",{className:"mx-1.5"},"/"), onde.area.nome), e("span",{className:"mx-1.5"},"/"), e("span",{className:"text-foreground"}, titulo)),
+        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true), e("span",{className:"truncate"}, titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
           return e("button",{key:x[0], title:x[1], onClick:function(){ navigate(caminhoDaAba(x[0])); setColArea(null); },
@@ -221,10 +229,9 @@ function App(){
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
-      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
-      setorAtual && !navPerg && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
-        e("span",{className:"mr-1 flex shrink-0 items-center gap-2 pr-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:setorAtual.st.cor}}, tileSetor(setorAtual.st, true), e("span",{className:"hidden whitespace-nowrap sm:inline"}, setorAtual.st.nome.replace("\n"," "))),
-        e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}), false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
+      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:!!setorAtual.st.semAbas, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
+        false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },
             style:{background:"linear-gradient(135deg,"+cc+(ativa ? "66" : "33")+","+cc+(ativa ? "26" : "0d")+")", boxShadow:"inset 0 0 0 1px "+cc+(ativa ? "bb" : "55")},
             className:(ar.grupo ? "flex h-9 shrink-0 items-center justify-center gap-1 whitespace-pre-line rounded-md px-2.5 text-center text-[11.5px] leading-[1.15] " : "flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl px-4 text-[13.5px] ")+"leading-tight transition hover:brightness-125 "+(ativa ? "font-bold text-white" : "text-foreground/90")},

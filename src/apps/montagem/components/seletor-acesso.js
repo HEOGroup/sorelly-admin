@@ -1,6 +1,6 @@
 // Sorelly Admin — components/seletor-acesso.js
 // Simulação do login: escolher quem está usando o sistema. Pessoas agrupadas por setor, com busca; cada setor com cor e ícone.
-import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
+import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -10,7 +10,7 @@ import { e, useState } from "@/shared/react";
 var SETORES_LOGIN = function(){
   var socios = [16,29,28,37,38,32].map(function(i){ return DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M]).find(function(x){ return x.id===i; }); });
   return [["supervisao", socios], ["familia", DIRECAO_FAMILIA.concat(FAMILIA)], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
-    ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]]]; };
+    ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]], ["cadastropecas", CADASTRO_PECAS]]; };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); };
 
 function SeletorAcesso(){
