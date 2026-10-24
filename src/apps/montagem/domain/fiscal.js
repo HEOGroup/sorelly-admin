@@ -43,6 +43,12 @@ var CONFIG_PADRAO = {sublimiteAnual:3600000, metaIlf:0.25, criticoIlf:0.15,
   riscoPct:0.9,          // projeção acima de 90% do sublimite = ATENÇÃO
   usoLimitePct:0.85};    // contas futuras ≥ 85% do que ainda cabe = NO LIMITE
 
+// atualização até 23/10/2026 (Marcus mandou o faturado e o ILF por CNPJ): vendas de Outubro dia 21–31 e uma nota de lastro de ajuste por CNPJ. Entra uma vez só (marca s.ajuste23).
+function aplicaAjustes(s){
+  var a = LOCAL && LOCAL.ajustes; if(!a || s.ajuste23) return; s.ajuste23 = true;
+  (a.saidas||[]).forEach(function(d){ s.saidas.push(clone(d)); });
+  (a.notas||[]).forEach(function(d){ var o = clone(d); o.id = "n"+(++s.seq); s.notas.push(o); });
+}
 function fxDemo(){
   var s = {v:2, seq:0, config:clone(CONFIG_PADRAO), empresas:[], notas:[], saidas:[], contas:[], log:[]};
   if(LOCAL){
@@ -51,6 +57,7 @@ function fxDemo(){
     (LOCAL.notas||[]).forEach(function(d){ var o = clone(d); o.id = "n"+(++s.seq); s.notas.push(o); });
     (LOCAL.saidas||[]).forEach(function(d){ s.saidas.push(clone(d)); });
     (LOCAL.contas||[]).forEach(function(d){ s.contas.push(clone(d)); });
+    aplicaAjustes(s);
   }
   return s;
 }
@@ -60,6 +67,7 @@ function fxMigrar(fx){
   Object.keys(base).forEach(function(k){ if(fx[k]===undefined) fx[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(fx.config[k]===undefined) fx.config[k] = CONFIG_PADRAO[k]; });
   if((fx.v||1)<2 && fx.config.metaIlf===0.3) fx.config.metaIlf = 0.25;   // meta de ILF passou a 25% (23/10/2026)
+  aplicaAjustes(fx);
   fx.v = 2; return fx;
 }
 

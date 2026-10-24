@@ -8,10 +8,17 @@ import { JanelaResumo } from "@/apps/montagem/pages/fiscal/VisaoGeral";
 import { Bt, Chip, Grade, Selo, corCls, copiar, fmt, useFx } from "@/apps/montagem/pages/fiscal/visual";
 import { fxResumoTexto } from "@/apps/montagem/domain/fiscal";
 import { MONO } from "@/apps/montagem/ui/input";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var r2 = function(v){ return Math.round(v*100)/100; };
 var GRAU = {grey:0, ok:1, amber:2, red:3};
+
+// brilho dourado (classe destaque-novo, igual ao resto do sistema) quando os números mudam: trocar Ano/Mês, lançar nota, dado novo. Não brilha na primeira vez que a tela abre.
+function useBrilho(chave){
+  var on = useState(0), ant = useRef(chave);
+  useEffect(function(){ if(ant.current===chave) return; ant.current = chave; on[1](function(n){ return n+1; }); var t = setTimeout(function(){ on[1](0); }, 6200); return function(){ clearTimeout(t); }; }, [chave]);
+  return on[0] ? "destaque-novo" : "";
+}
 
 // aparece aos poucos (opacidade e leve subida) depois de um atraso
 function Revela(p){
@@ -57,9 +64,9 @@ function Painel2(p){
 
 // bloco de um CNPJ: cabeçalho com CNPJ inteiro, faturamento do período e as duas partes
 function BlocoCnpj(p){
-  var x = p.x, d = p.d, pior = GRAU[d.ilfSt.cls] >= GRAU[d.capSt.cls] ? d.ilfSt : d.capSt, geral = pior.cls==="grey" ? "neutro" : corCls(pior.cls);
+  var x = p.x, d = p.d, brilho = useBrilho([d.fat, d.lastro, d.contas, d.folga].join("|")), pior = GRAU[d.ilfSt.cls] >= GRAU[d.capSt.cls] ? d.ilfSt : d.capSt, geral = pior.cls==="grey" ? "neutro" : corCls(pior.cls);
   return e("div",{onClick:p.aberto ? undefined : p.onAbrir, role:p.aberto ? undefined : "button", tabIndex:p.aberto ? undefined : 0, onKeyDown:p.aberto ? undefined : function(ev){ if(ev.key==="Enter") p.onAbrir(); },
-    title:p.aberto ? undefined : "Abrir notas de entrada deste CNPJ", className:"flex flex-col gap-2 rounded-2xl p-3 ring-1 transition "+(p.aberto ? "ring-[#06B6D4]/70" : "cursor-pointer ring-white/10 hover:ring-[#06B6D4]/60"), style:degrade("cian")},
+    title:p.aberto ? undefined : "Abrir notas de entrada deste CNPJ", className:brilho+" flex flex-col gap-2 rounded-2xl p-3 ring-1 transition "+(p.aberto ? "ring-[#06B6D4]/70" : "cursor-pointer ring-white/10 hover:ring-[#06B6D4]/60"), style:degrade("cian")},
     e("div",{className:"flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5 text-center"},
       e("h3",{className:"font-heading text-[16px] font-bold"}, x.empresa.nome),
       e(Selo,{cor:geral}, p.pos+"º na fila de notas"),
@@ -83,7 +90,8 @@ function AbaFxPainel(p){
   var copia = function(){ copiar(fxResumoTexto(s, ano), function(ok){ f.aviso(ok ? "Resumo fiscal copiado. Já pode colar no WhatsApp." : "Não foi possível copiar. Use a janela de conferência.", ok ? "ok" : "alerta"); }); set({resumo:true}); };
   var aberto = v.aberto ? lista.filter(function(y){ return y.x.empresa.id===v.aberto; })[0] : null;
   var rotPeriodo = v.modo==="ano" ? "Ano "+ano : fmt.cap(MESES[v.mes-1])+" de "+ano;
-  var barra = e("div",{className:"flex flex-col gap-2 rounded-2xl p-2.5 ring-1 ring-[#06B6D4]/40", style:degrade("cian")},
+  var brilhoBarra = useBrilho([tot.fat, tot.lastro, tot.contas, tot.folga].join("|"));
+  var barra = e("div",{className:brilhoBarra+" flex flex-col gap-2 rounded-2xl p-2.5 ring-1 ring-[#06B6D4]/40", style:degrade("cian")},
     e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
       e(Chip,{on:v.modo==="ano", onClick:function(){ set({modo:"ano"}); }, ic:"calendar", className:"w-24"}, "Ano"),
       e(Chip,{on:v.modo==="mes", onClick:function(){ set({modo:"mes"}); }, ic:"calendar-blank", className:"w-24"}, "Mês"),
@@ -104,7 +112,7 @@ function AbaFxPainel(p){
     e(Revela,{key:"b"+aberto.x.empresa.id, atraso:30}, e(BlocoCnpj,{x:aberto.x, d:aberto.d, meta:meta, pos:lista.indexOf(aberto)+1, aberto:true})),
     e(Revela,{key:"n"+aberto.x.empresa.id, atraso:600}, e(AbaFxEntradas,{ano:ano, ir:p.ir, emp:aberto.x.empresa.id, mes0:v.modo==="mes" ? ano+"-"+("0"+v.mes).slice(-2) : ""})));
   else corpo = e("div",{className:"grid gap-2.5", style:{gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 22rem), 1fr))"}},
-    lista.map(function(y, i){ return e(Revela,{key:y.x.empresa.id+v.modo, atraso:30+i*90, fora:v.saindo}, e(BlocoCnpj,{x:y.x, d:y.d, meta:meta, pos:i+1, aberto:false, onAbrir:function(){ abrir(y.x.empresa.id); }})); }));
+    lista.map(function(y, i){ return e(Revela,{key:y.x.empresa.id, atraso:30+i*90, fora:v.saindo}, e(BlocoCnpj,{x:y.x, d:y.d, meta:meta, pos:i+1, aberto:false, onAbrir:function(){ abrir(y.x.empresa.id); }})); }));
   return e("div",{className:"flex flex-col gap-2.5"}, barra, corpo, v.resumo && e(JanelaResumo,{f:f, ano:ano, mesInicial:vg.dec, fechar:function(){ set({resumo:false}); }}));
 }
 export { AbaFxPainel };

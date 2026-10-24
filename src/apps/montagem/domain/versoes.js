@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.12.43", data:"2026-10-24", titulo:"Fiscal: dados até 23/10 e brilho nas mudanças", itens:[
+    {tipo:"melhoria", area:"Fiscal", txt:"Faturado e ILF de cada CNPJ atualizados até 23/10/2026 (Atacadista, Serenity, Mayz e Axis). A venda que faltava entrou em Outubro, dia 21–31, e cada CNPJ ganhou uma nota de lastro \"Ajuste até 23/10\" (o ILF veio com 1 casa decimal, então o lastro é aproximado). Troque pelas notas reais quando tiver."},
+    {tipo:"melhoria", area:"Fiscal", txt:"O Painel usa o brilho dourado de \"acabou de mudar\" (classe destaque-novo): a barra de totais e o bloco do CNPJ piscam quando os números mudam (Ano/Mês, nota lançada)."}]},
   {v:"0.12.27", data:"2026-10-23", titulo:"Pedir peças: da produção ao cadastro, com aviso de volta", itens:[
     {tipo:"novo", area:"Kits", txt:"Kits (interno) → Pedir peças (Deysiane e Milene): pedido com peça, banho, público, quantos modelos (1, 2, 3, 5 ou 10), urgência e texto livre. Mostra a resposta do cadastro e os avisos."},
     {tipo:"novo", area:"Cadastro de peças", txt:"Nova aba Solicitações, a primeira do setor (Rayssa e Graziella): fila por urgência, botões OK (vai produzir), Pronto e Não temos (com motivo curto). A aba mostra quantos pedidos novos há. Quem responde se ajusta em Configurações."},
