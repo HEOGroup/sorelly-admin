@@ -10,6 +10,7 @@ Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O có
 | [`design/`](design/) | Padrão visual obrigatório, estudo de design system, guia de escrita e diagramas. |
 | [`prompts/`](prompts/) | Prompts usados para gerar sistemas e módulos (o `PROMPT-MESTRE.md` aparece na tela Tecnologia → Padrão visual). |
 | [`operacao/`](operacao/) | Como subir o sistema para a equipe (servidor, banco, pessoas, fases). |
+| [`devmaster/`](devmaster/) | Spec OpenAPI da API 2 do DevMaster (ERP): tabelas, fotos e relatórios (`DEVMASTER_API_URL_V2`). |
 
 ## Negócio (`negocio/`)
 

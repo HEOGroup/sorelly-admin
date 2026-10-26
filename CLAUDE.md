@@ -26,6 +26,12 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - Estado: reducer + `localStorage`; `state.aba` é a tela ativa e a URL acompanha. Mudou o formato do estado? Suba a versão salva.
 - Números e regras ficam em `apps/montagem/domain/` e no Configurador; nunca valor fixo dentro de tela. O que muda no admin muda no app.
 
+## DevMaster (ERP): duas APIs diferentes
+- **API 1 (`DEVMASTER_API_URL` + `DEVMASTER_API_KEY`):** rotas próprias da Sorelly, sem spec. Hoje só `GET /appsorelly/revendedoras` (lista de revendedoras, em `src/server/devmaster.js`).
+- **API 2 (`DEVMASTER_API_URL_V2` + `DEVMASTER_API_KEY_V2`):** a API genérica do DevMaster, documentada em `docs/devmaster/openapi.yaml` (v2.12.0, 1.600+ linhas). Consulte antes de criar ou mudar qualquer chamada a ela. Não leia inteiro: Grep pela rota (ex.: `^  /dmaam`) ou pelo schema e depois Read com `offset`/`limit`. Ainda não há código usando a API 2.
+- Resumo da API 2: `GET /{codigo}` lê qualquer tabela (`dmaam` clientes, `dmaaa` produtos, `dmabh` pedidos de venda), com `filtro`, `campos`, `ordem` e paginação no corpo JSON do GET; `GET /{codigo}/fotos` traz fotos em base64; `GET /relatorios/{nome}` gera relatórios. Token JWT no cabeçalho `Token`, liberado por tabela (sem a tabela no token, `403`). Estrutura das tabelas: dicionário `dmzag`/`dmzae`.
+- Os POST da API 2 gravam no ERP de verdade: nunca chamar sem a diretoria aprovar. As chaves ficam só no `.env.local` do servidor, nunca no front nem no Git.
+
 ## Regras detalhadas (carregadas só quando você trabalha na pasta)
 - `src/apps/montagem/domain/CLAUDE.md`: faturamento, acerto, brindes, taxas, Kit 100% Prata, peças do próximo mês.
 - `src/apps/montagem/pages/CLAUDE.md`: menu de Kits, listagens, calculadora, análise de vendas, condicionais, peças por kit.
