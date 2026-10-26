@@ -15,15 +15,24 @@ function rotulo(nome){
   return String(nome).toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a+b.toUpperCase(); });
 }
 // só o que falta (saldo maior que zero), fornecedores e prestadores (sócios não), pela data limite
-function fornecedoresDoMes(cp){
+function fornecedoresDoMes(cp, todos){   // todos = true: também os já pagos do mês (botão "Todos do mês")
   if(!LOCAL) return [];
-  return LOCAL.itens.filter(function(i){ return i.tipo==="fornecedor" && i.saldo>0.005; }).map(function(i, k){
+  return LOCAL.itens.filter(function(i){ return i.tipo==="fornecedor" && (todos || i.saldo>0.005) && ALIAS.some(function(a){ return a[0].test(i.nome); }); }).map(function(i, k){
     var al = ALIAS.filter(function(a){ return a[0].test(i.nome); })[0], d = al && cp ? cp.destinos.filter(function(z){ return z.ativo && z.nome.indexOf(al[1])===0; })[0] : null;
-    return {id:"fm"+k, nome:rotulo(i.nome), saldo:i.saldo, ate:i.ate||"", obs:i.obs||"", destinoId:d ? d.id : "", pontual:/pontual/i.test(i.nome)};
+    return {id:"fm"+k, nome:rotulo(i.nome), aPagar:i.aPagar||0, pago:i.pago||0, saldo:i.saldo, ate:i.ate||"", obs:i.obs||"", destinoId:d ? d.id : "", pontual:/pontual/i.test(i.nome)};
   }).sort(function(a, b){ return (a.ate||"9999").localeCompare(b.ate||"9999") || b.saldo-a.saldo; });
+}
+// Devedores (24/10/2026): quem mais recebe da Sorelly no mês e ainda falta pagar — prestadores pequenos e sócios. Mesma planilha, linhas que não são fornecedor de peça.
+function devedoresDoMes(cp){
+  if(!LOCAL) return [];
+  var cap = function(n){ return String(n).toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a+b.toUpperCase(); }); };
+  return LOCAL.itens.filter(function(i){ return i.saldo>0.005 && !(i.tipo==="fornecedor" && ALIAS.some(function(a){ return a[0].test(i.nome); })); }).map(function(i, k){
+    var pri = String(i.nome).toLowerCase().split(" ")[0], d = cp ? cp.destinos.filter(function(z){ return z.ativo && z.tipo!=="FORNECEDOR" && z.tipo!=="CNPJ" && String(z.nome).toLowerCase().split(" ")[0]===pri; })[0] : null;
+    return {id:"dv"+k, nome:cap(i.nome), grupo:i.tipo==="socio" ? "Sócio" : "Prestador", saldo:i.saldo, ate:i.ate||"", obs:i.obs||"", destinoId:d ? d.id : ""};
+  }).sort(function(a, b){ return a.grupo.localeCompare(b.grupo) || b.saldo-a.saldo; });
 }
 var mesDosDados = function(){ return LOCAL ? LOCAL.mes : ""; };
 var geradoEm = function(){ return LOCAL ? LOCAL.geradoEm : ""; };
 // desconto estimado do cartão da Pontual (média dos 3 últimos meses da aba de negociações)
 var descontoCartao = function(){ return LOCAL && LOCAL.cartao ? LOCAL.cartao.mediaUltimos3 : 10; };
-export { fornecedoresDoMes, descontoCartao, mesDosDados, geradoEm };
+export { devedoresDoMes, fornecedoresDoMes, descontoCartao, mesDosDados, geradoEm };

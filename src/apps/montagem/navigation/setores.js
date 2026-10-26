@@ -13,7 +13,7 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  M("Direcionar Pix","direcionar"),   // 1º do menu e tela que abre o Financeiro (Marcus, 23/10/2026): o Lucas direciona os Pix do dia
+  M("Direcionar pagamento","direcionar"),   // 1º do menu e tela que abre o Financeiro (Marcus, 23/10/2026): o Lucas direciona os Pix do dia
   {nome:"Saldos e análises", itens:[
     {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
     M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
@@ -54,7 +54,7 @@ var MENU_ENCOMENDAS = [
 // Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
 var MENU_AGENDAMENTO = [
   M("Painel","agpainel"),
-  {nome:"Plano 45/60", itens:[M("Indicações","p45ind"), M("Aprovação","p45apr"), M("Acompanhamento","p45acomp"), M("Mensagens","p45msg"), M("Painel do plano","p45pnl")]},
+  M("Plano 45/60","p45pnl",{tambem:["p45ind","p45apr","p45acomp","p45alin","p45msg"]}),   // uma palavra só; as cinco visões são abas dentro da tela
   M("Remarcações","agremarc"),
   M("Representantes","agreps"),
   {nome:"Análises", itens:[M("Análises","aganalises"), M("Histórico","aghistorico")]},
@@ -93,7 +93,7 @@ var SETORES = [
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
-    {nome:"Direcionar\nPix", telas:[T("direcionar","Direcionar Pix")]},
+    {nome:"Direcionar\nPix", telas:[T("direcionar","Direcionar pagamento")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Chaves Pix e regras")]],
@@ -121,8 +121,8 @@ var SETORES = [
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
-  {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, areas:[
-    {nome:"Acertos", telas:[T("agpainel","Painel")]}, {nome:"Plano 45/60", telas:[T("p45ind","Indicações do plano 45/60"), T("p45apr","Aprovação do plano 45/60"), T("p45acomp","Acompanhamento do plano 45/60"), T("p45msg","Mensagens do plano 45/60"), T("p45pnl","Painel do plano 45/60")]}, {nome:"Remarcações", telas:[T("agremarc","Remarcações")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
+  {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
+    {nome:"Acertos", telas:[T("agpainel","Painel")]}, {nome:"Plano 45/60", telas:[T("p45ind","Indicações do plano 45/60"), T("p45apr","Aprovação do plano 45/60"), T("p45acomp","Acompanhamento do plano 45/60"), T("p45alin","Alinhamento do plano 45/60"), T("p45msg","Mensagens do plano 45/60"), T("p45pnl","Painel do plano 45/60")]}, {nome:"Remarcações", telas:[T("agremarc","Remarcações")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
     {nome:"Análises", telas:[T("aganalises","Análises")]}, {nome:"Histórico", telas:[T("aghistorico","Histórico")]}, {nome:"Gestão do mês", telas:[T("agabertura","Abertura do mês"), T("agconfig","Configurador")]}]},
   // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto

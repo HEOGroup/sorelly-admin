@@ -159,7 +159,7 @@ function App(){
   // menu em cascata (Financeiro): Contas a pagar leva junto o modo escolhido (Sorelly, Família ou Sorelly + Família)
   var abrirMenu = function(n){ if(n.modo){ try{ sessionStorage.setItem("cta_sel", n.modo); }catch(x){} window.dispatchEvent(new CustomEvent("cta-modo", {detail:n.modo})); } abrirTela({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var podeMenu = function(n){ return n.perm ? temAutorizacao(n.perm, s.usuario) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
-  var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
+  var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
   var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
     return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
@@ -199,9 +199,9 @@ function App(){
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
-    e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col border-r border-sidebar-border bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
+    e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col sombra-lado bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
-      e("div",{className:"relative flex h-28 items-center justify-center border-b border-sidebar-border px-4"},
+      e("div",{className:"relative flex h-28 items-center justify-center sombra-baixo px-4"},
         e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
       !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
@@ -218,7 +218,7 @@ function App(){
       className:"group fixed inset-y-0 z-50 hidden w-2 cursor-col-resize md:block", style:{left:menuW-4}},
       e("div",{className:"mx-auto h-full w-0.5 transition-colors "+(arrastando ? "bg-primary" : "group-hover:bg-primary/70")})),
     e("div",{className:(arrastando ? "" : "transition-[margin] duration-200 ")+(recolhido ? "md:ml-0" : "md:ml-[var(--mw)]"), style:{"--mw":menuW+"px"}},
-      e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 border-b border-border bg-background/80 px-4 backdrop-blur md:px-6"},
+      e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
         setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true), e("span",{className:"truncate"}, titulo)),
@@ -234,7 +234,7 @@ function App(){
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:!!setorAtual.st.semAbas, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
-      setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 border-b border-border bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
+      setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },
             style:{background:"linear-gradient(135deg,"+cc+(ativa ? "66" : "33")+","+cc+(ativa ? "26" : "0d")+")", boxShadow:"inset 0 0 0 1px "+cc+(ativa ? "bb" : "55")},

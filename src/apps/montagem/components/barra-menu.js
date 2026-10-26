@@ -196,7 +196,7 @@ function MenuSetor(p){
     if(!de) de = retangulo(document.querySelector('input[type="search"][aria-label^="Buscar tela"]'));
     var r = p.abrir(n, ev); voar(n.nome, de); return r;
   };
-  return e("div",{className:"sticky top-12 z-20 border-b border-border bg-background/95 backdrop-blur"},
+  return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:64}},
     !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor}),
     e("div",{className:"flex items-stretch", style:{height:LIN}},
       e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo}),

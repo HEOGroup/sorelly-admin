@@ -1,9 +1,4 @@
-# Faturamento diário e posição financeira (registro fixo, sem banco de dados)
-
-Documento vivo. **Todo dia que o Marcus passar os números, entra aqui e no sistema.** Assim temos o histórico mesmo antes do servidor existir. Os valores abaixo são o ACUMULADO DO MÊS fixado em cada data.
-
-## Faturamento acumulado do mês (fixado)
-| Data | Acertos (acum.) | Faturamento (acum.) | Média por acerto | Observação |
+— | — undefined| — undefined| — undefined| — undefined| — undefined| — undefined| — undefined| — undefined| Data | Acertos (acum.) | Faturamento (acum.) | Média por acerto | Observação |
 |---|---|---|---|---|
 | 08/10/2026 | 291 | R$ 207.855,36 | R$ 714,28 | registro oficial (dia anterior) |
 | 13/10/2026 | 526 | R$ 426.110,24 | R$ 810,10 | ajuste do Marcus |
@@ -12,11 +7,65 @@ Documento vivo. **Todo dia que o Marcus passar os números, entra aqui e no sist
 | 16/10/2026 | 868 | R$ 689.631,19 | R$ 794,52 | dia: 77 acertos, R$ 59.025,25 |
 | 17 e 18/10 | 868 | R$ 689.631,19 | R$ 794,52 | fim de semana, sem faturamento |
 | **19/10/2026** | **1.008** | **R$ 789.350,24** | **R$ 783,09** | dia: 140 acertos, R$ 99.719,05 (fixado em 20/10/2026) |
-| 20/10/2026 | 1.124 | R$ 888.787,53 | R$ 790,74 | dia: 116 acertos, R$ 99.437,29 (fixado em 21/10/2026) |
-| **21/10/2026** | **1.176** | **R$ 928.995,38** | **R$ 789,96** | dia: 52 acertos, R$ 40.207,85 (fixado em 22/10/2026) |
-| 22/10/2026 (Hoje, acompanhamento) | 1.241 | R$ 982.434,43 | R$ 791,65 | dia: 65 acertos, R$ 53.439,05 sobre o fechamento de 21/10 (Marcus, 22/10 à noite; vira oficial quando ele fechar o dia) |
+| 20/10/2026 | 1.120 | R$ 885.617,53 | R$ 790,73 | dia: 112 acertos, R$ 96.267,29 (CORRIGIDO pelo Marcus em 26/10/2026; antes 1.124 e R$ 888.787,53) |
+| **21/10/2026** | **1.175** | **R$ 928.551,38** | **R$ 790,26** | dia: 55 acertos, R$ 42.933,85 (CORRIGIDO em 26/10/2026; antes 1.176 e R$ 928.995,38) |
+| **22/10/2026** | **1.240** | **R$ 982.180,43** | **R$ 792,08** | dia: 65 acertos, R$ 53.629,05 (fechado pelo Marcus em 24/10/2026 e reconfirmado em 26/10; substitui o provisório de 1.241 e R$ 982.434,43) |
+| **23/10/2026** | **1.330** | **R$ 1.049.731,83** | **R$ 789,27** | dia: 90 acertos, R$ 67.551,40 (fechado pelo Marcus em 24/10/2026; em 26/10 ele escreveu 1.130 acertos, mas o acumulado não cai: vale 1.330) |
+| 24/10/2026 (sáb) | 1.330 | R$ 1.049.731,83 | R$ 789,27 | sem faturamento e sem contas pagas (Marcus, 26/10/2026; a funcionária ainda vai atualizar) |
+| 25/10/2026 (dom) | 1.330 | R$ 1.049.731,83 | R$ 789,27 | sem faturamento e sem contas pagas |
 
 **Previsão de outubro (Marcus, 20/10/2026):** 1.120 feitos + 7 vendas no Carregar sem valor (contam como feitas, fora da média) + 783 a realizar = **1.910 acertos no mês**; previsão a 97% = 1.853 acertos. Em 21/10 o dia 20 foi fixado em 1.124 acertos (o Carregar e o a realizar seguem os mesmos até o Marcus mandar outros). Em 19/10 eram 997 + 16 + 908 = 1.921 (a diferença é o que já foi feito e passado para frente).
+
+## Previsão de outubro e Carregar — TRAVADO (26/10/2026)
+O **Carregar** (vendas já feitas, sem valor lançado) é gravado sempre aqui, junto com o "a realizar". Total do mês = acertos feitos + Carregar + a realizar. Média por acerto usa só os feitos com valor.
+
+| Data | Acertos feitos | Recebido no mês | Carregar (vendas) | A realizar | Total do mês | A 97% |
+|---|---|---|---|---|---|---|
+| 20/10/2026 | 1.120 | R$ 887.486,78 | 7 | 783 | 1.910 | 1.853 |
+| **26/10/2026** | **1.347** | **R$ 1.062.977,38** | **34** | **513 (até 31/10)** | **1.894** | **1.837** |
+
+Resultado no sistema em 26/10: média R$ 789,14; faturamento previsto do mês R$ 1.449.658,09 (a receber R$ 386.680,71); contas do mês R$ 1.485.588,64; resultado previsto −R$ 35.930,55. Código: `aplicaHoje26` em `state/store.js` (flag `hoje26V`). O dia 26 ainda é acompanhamento ("Hoje"); vira oficial quando o Marcus fechar o dia.
+
+**Regra do Carregar (Marcus, 26/10/2026):** as vendas do Carregar NÃO estão dentro dos acertos realizados. Somam por fora (total do mês = feitos + Carregar + a realizar). O sistema tem uma coluna **Carregar** no Dia a dia (Faturamento) e o bloco "Carregar · início do mês × agora" na Previsão, para comparar com o início do mês quantas já saíram para o mês seguinte. Código: `s.carregarDia` (por dia), `s.carregarInicio` (por mês), ação `CARREGAR_INICIO`. Início de outubro: 12 vendas (informado em 26/10/2026). **Toda atualização do Marcus precisa trazer o Carregar** (regra dele): o Claude pergunta se não vier.
+
+**Visão geral → Faturamento → "Como o mês começou × agora" (26/10/2026):** revendedoras no início do mês (2.023), acertos previstos no início (1.976), previsão nova (1.894), acertos a menos (−82), Carregar no início (12) e agora (34), vendas adiadas para o próximo mês (+22). Previsão a 96/97/98%, valendo 97%: 96% = 1.818 acertos, R$ 1.434.664,35 · **97% = 1.837, R$ 1.449.658,09** · 98% = 1.856, R$ 1.464.651,83.
+
+| Data | Carregar |
+|---|---|
+| 01/10/2026 (início do mês) | 12 |
+| 20/10/2026 | 7 |
+| 26/10/2026 | 34 |
+
+## Revendedoras (total) — pontos gravados
+26/10/2026: **2.105** revendedoras (Marcus). Último dia do sistema antes disso: 19/10/2026 = 2.082. Os dias 20 a 25/10 ainda NÃO foram lidos do admin antigo (conector indisponível em 26/10): pendente puxar `revendedoras` por dia do admin antigo.
+
+## Outubro/2026 · dia a dia (gravado em 26/10/2026)
+Acumulado do mês até cada data, conferido com o Marcus. Dia = diferença entre os acumulados. Contas pagas: tela contas-diario do admin antigo.
+
+| Data | Acertos no dia | Faturado no dia | Acertos acum. | Faturamento acum. | Contas pagas |
+|---|---|---|---|---|---|
+| 01/10 | 12 | R$ 9.148,95 | — | — | R$ 117.602,76 |
+| 02/10 | 24 | R$ 15.395,15 | — | — | R$ 15.796,55 |
+| 03/10 | 0 | R$ 0,00 | — | — | R$ 83,20 |
+| 05/10 | 47 | R$ 33.268,30 | — | — | R$ 66.384,13 |
+| 06/10 | 49 | R$ 35.238,93 | — | — | R$ 151.454,74 |
+| 07/10 | 105 | R$ 75.664,91 | — | — | R$ 10.354,46 |
+| 08/10 | 58 | R$ 49.631,99 | 291 | R$ 207.855,36 | R$ 31.407,88 |
+| 09/10 | 98 | R$ 71.973,97 | — | — | R$ 24.420,41 |
+| 10/10 | 68 | R$ 51.516,95 | — | — | R$ 36.010,82 |
+| 13/10 | 65 | R$ 84.271,09 | 526 | R$ 426.110,24 | R$ 155.576,99 |
+| 14/10 | 142 | R$ 104.466,15 | 668 | R$ 530.576,39 | R$ 69.765,84 |
+| 15/10 | 123 | R$ 100.029,55 | 791 | R$ 630.605,94 | R$ 64.339,42 |
+| 16/10 | 77 | R$ 59.025,25 | 868 | R$ 689.631,19 | R$ 34.836,87 |
+| 19/10 | 140 | R$ 99.719,05 | 1.008 | R$ 789.350,24 | R$ 32.425,52 |
+| 20/10 | 112 | R$ 96.267,29 | 1.120 | R$ 885.617,53 | R$ 182.744,32 |
+| 21/10 | 55 | R$ 42.933,85 | 1.175 | R$ 928.551,38 | R$ 73.914,28 |
+| 22/10 | 65 | R$ 53.629,05 | 1.240 | R$ 982.180,43 | R$ 45.938,34 |
+| 23/10 | 90 | R$ 67.551,40 | 1.330 | R$ 1.049.731,83 | — |
+| 24/10 (sáb) | 0 | R$ 0,00 | 1.330 | R$ 1.049.731,83 | R$ 0,00 |
+| 25/10 (dom) | 0 | R$ 0,00 | 1.330 | R$ 1.049.731,83 | R$ 0,00 |
+
+Sem lançamento (sem faturamento): 04, 11, 12, 17 e 18/10. Contas pagas de 23/10: ainda não lançadas no admin. Dias 1 a 12: os valores por dia vêm do sistema e não fecham com o acumulado oficial (08/10 = 291 acertos, R$ 207.855,36; 13/10 = 526, R$ 426.110,24): pendência já conhecida, por isso o acumulado desses dias fica em branco.
 
 Fechamento de setembro/2026: 2.023 revendedoras, R$ 1.446.262,20 e 1.809 acertos.
 

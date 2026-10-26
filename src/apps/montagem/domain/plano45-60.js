@@ -111,13 +111,17 @@ function cicloDe(l, hojeIso){ return l.vendaCiclo!=null ? "avaliada" : (mesDe(l.
 var hojeIsoLocal = function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); };
 var diasEntre = function(a, b){ return mesDe(a) && mesDe(b) ? Math.round((new Date(b+"T12:00:00Z")-new Date(a+"T12:00:00Z"))/864e5) : null; };
 
+// números que a Diretoria acompanha à mão (resumo de 24/10/2026): acertos de outubro que SAÍRAM, confirmados, e quantos ainda podem entrar (em análise e saídas da empresa, listas novas, linhas fora da planilha)
+var ALINHA_PADRAO = {confirmadas:92, analise:7, novas:2, extra:1, nota:""};
+
 // ---------- estado ----------
-function p45Vazio(){ return {v:2, seq:0, linhas:[], pedidos:[], config:clone(CONFIG_PADRAO), log:[]}; }
+function p45Vazio(){ return {v:2, seq:0, linhas:[], pedidos:[], alinha:clone(ALINHA_PADRAO), config:clone(CONFIG_PADRAO), log:[]}; }
 function p45Migrar(p){
   if(!p) return p45Vazio();
   var base = p45Vazio();
   Object.keys(base).forEach(function(k){ if(p[k]===undefined) p[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(p.config[k]===undefined) p.config[k] = clone(CONFIG_PADRAO[k]); });
+  p.alinha = Object.assign(clone(ALINHA_PADRAO), p.alinha||{});
   p.linhas.forEach(function(l){ if(l.canal===undefined) l.canal = "representante"; if(l.fixo===undefined) l.fixo = false; });
   return p;
 }
@@ -304,6 +308,13 @@ function p45Reduz(s, a){
       }
       var oD = mesDe(pe.dataAtual), nD = mesDe(pe.novaData), rmD = oD!==nD && oD>=hojeYm && !(ag.mes[oD] && ag.mes[oD].fechadoEm) ? agendReduz(s, {op:"remarc_plano", por:por, itens:[{planoId:"pd"+pe.id, nome:pe.nome, tipo:"outro", autorizadoPor:por, origem:oD, destino:nD}]}) : null;
       return ok(pe.nome+": pedido aprovado, nova data "+fmtData(pe.novaData)+" sem multa"+(rmD && rmD.patch.agend ? ". Saiu da meta de "+nomeMes(oD)+" e entrou em "+nomeMes(nD) : ""), rmD && rmD.patch.agend ? rmD.patch : null);
+    }
+    case "alinha": {   // números informados da conversa de alinhamento (Alinhamento)
+      if(!podeAprovar(s.usuario)) return recusa("Só a Diretoria muda os números do alinhamento.");
+      var an = a.dados || {}, nn = function(v){ var n = Math.round(Number(v)); return n>=0 ? n : null; };
+      ["confirmadas", "analise", "novas", "extra"].forEach(function(k){ if(an[k]!==undefined){ var n = nn(an[k]); if(n!==null) p.alinha[k] = n; } });
+      if(an.nota!==undefined) p.alinha.nota = trim(an.nota);
+      return ok("Números do alinhamento salvos");
     }
     case "config": {   // parâmetros do plano (Configurador geral)
       if(!podeAprovar(s.usuario)) return recusa("Só a Diretoria muda os parâmetros do plano 45/60.");

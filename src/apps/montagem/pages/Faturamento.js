@@ -5,7 +5,7 @@
 // Os números vêm das mesmas fontes de sempre (faturamentoDiario, contasPagasDiario, contasPagar, fechaMes), então batem com a Visão geral. Quem edita: autorização faturamento_edita.
 import { AbasTela, BlocoFiltros, Botao, COR, CampoSel, FaixaTotais, Rotulo, corSinal, brl } from "@/apps/montagem/components/padrao-fin";
 import { FluxoMensal } from "@/apps/montagem/components/fluxo-mensal";
-import { PrevisaoMeses, ResumoMesAno } from "@/apps/montagem/components/previsao-meses";
+import { CarregarMes, PrevisaoMeses, ResumoMesAno } from "@/apps/montagem/components/previsao-meses";
 import { DiaADia } from "@/apps/montagem/components/tabela-faturamento-dia";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contasDoMes, fatEfetivo, MESES_LONGO } from "@/apps/montagem/domain/financeiro";
@@ -61,11 +61,11 @@ function AbaFaturamento(p){
     aba!=="lanc" && e(BlocoFiltros,{onLimpar:limpar ? function(){ setRef({ano:agora.getFullYear(), mes:agora.getMonth()}); } : null},
       e(CampoSel,{t:"Mês", id:"f-mes", value:String(ref.mes), onChange:function(v){ setRef({ano:ref.ano, mes:Number(v)}); }, opcoes:MESES_LONGO.map(function(m, i){ return [String(i), m]; })}),
       e(CampoSel,{t:"Ano", id:"f-ano", value:String(ref.ano), onChange:function(v){ setRef({ano:Number(v), mes:ref.mes}); }, opcoes:anos.map(function(a){ return [String(a), String(a)]; })})),
-    e(FaixaTotais,{itens:[{t:"Recebido", v:BKC(rec), cor:COR.entra},{t:"Pago", v:BKC(pago), cor:COR.sai},{t:"Resultado", v:brl(res), cor:corSinal(res)},{t:"Acertos", v:n0(ace)},{t:"Média", v:ace>0 ? BKC(rec/ace) : "—"}]}),
+    e(FaixaTotais,{itens:[{t:"Recebido", v:BKC(rec), cor:COR.entra},{t:"Pago", v:BKC(pago), cor:COR.sai},{t:"Resultado", v:brl(res), cor:corSinal(res)},{t:"Acertos", v:n0(ace)},{t:"Carregar", v:n0(((s.fechaMes||{})[pref]||{}).carregar||0), cor:"text-warning"},{t:"Média", v:ace>0 ? BKC(rec/ace) : "—"}]}),
     e(AbasTela,{abas:abas, atual:aba, onMudar:setAba}),
     aba==="dia" && e(DiaADia,{s:s, ano:ref.ano, mes:ref.mes}),
     aba==="mes" && e("div",{className:"flex flex-col gap-3"}, e(FluxoMensal,{s:s, ano:ref.ano}), e(AbaConsolidadoFaturamento,{ano:ref.ano})),
-    aba==="prev" && e("div",{className:"flex flex-col gap-3"}, e(ResumoMesAno,{s:s}), e(PrevisaoMeses,{s:s}), p.extraPrevisao),
+    aba==="prev" && e("div",{className:"flex flex-col gap-3"}, e(ResumoMesAno,{s:s}), e(CarregarMes,{s:s, d:pode ? d : null}), e(PrevisaoMeses,{s:s}), p.extraPrevisao),
     aba==="lanc" && pode && e(Lancar,{s:s, d:d}));
 }
 

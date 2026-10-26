@@ -55,6 +55,7 @@ const montagem = {
     pagina("plano-45-60-indicacoes", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Ind"),
     pagina("plano-45-60-aprovacao", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Apr"),
     pagina("plano-45-60-acompanhamento", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Acomp"),
+    pagina("plano-45-60-alinhamento", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Alin"),
     pagina("plano-45-60-mensagens", () => import("@/apps/montagem/pages/Plano4560Msgs"), "AbaP45Msg"),
     pagina("plano-45-60-painel", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Pnl"),
     pagina("agendamento-representantes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgReps"),

@@ -27,7 +27,7 @@ export const PUT = rota(async (req, { eu }) => {
     await consulta(
       `insert into sorelly.rotina_registro (item_id, data, feito, user_id, feito_em, por_nome, pessoa_id) values ($1, $2, true, $3, now(), $4, $5)
        on conflict (item_id, data) do update set feito = true, user_id = excluded.user_id, feito_em = now(), por_nome = excluded.por_nome, pessoa_id = excluded.pessoa_id`,
-      [itemId, data, eu.id, eu.nome, eu.pessoaId ?? null]);
+      [itemId, data, eu.conta ? null : eu.id, eu.nome, eu.pessoaId ?? null]);   // conta nova não existe na tabela user (chave estrangeira): fica só o nome e a pessoa
   } else {
     await consulta("delete from sorelly.rotina_registro where item_id = $1 and data = $2", [itemId, data]);
   }

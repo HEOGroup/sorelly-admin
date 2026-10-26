@@ -46,7 +46,7 @@
     --destructive: oklch(0.58 0.22 27); --success: oklch(0.6 0.15 155);
     --warning: oklch(0.66 0.14 75); --info: oklch(0.55 0.15 255);
     --purple: oklch(0.52 0.18 305);
-    --border: oklch(0.9 0.004 95); --input: oklch(0.88 0.004 95);
+    --border: oklch(0.9 0.004 95); --input: oklch(0.88 0.004 95); --linha-forte: oklch(0.6 0.01 95);
     --ring: oklch(0.78 0.14 95); --radius: 0.5rem;
     --sidebar: oklch(0.97 0.004 95); --sidebar-foreground: oklch(0.2 0 0);
     --sidebar-accent: oklch(0.78 0.14 95 / 12%);
@@ -64,7 +64,7 @@
     --destructive: oklch(0.63 0.19 27); --success: oklch(0.78 0.17 155);
     --warning: oklch(0.76 0.14 75); --info: oklch(0.7 0.14 255);
     --purple: oklch(0.72 0.16 305);
-    --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 14%);
+    --border: oklch(1 0 0 / 10%); --input: oklch(1 0 0 / 14%); --linha-forte: oklch(1 0 0 / 50%);
     --ring: oklch(0.83 0.14 95);
     --sidebar: oklch(0.16 0 0); --sidebar-foreground: oklch(0.95 0 0);
     --sidebar-accent: oklch(0.83 0.14 95 / 10%);
@@ -86,3 +86,9 @@
 /* Brilho de "acabou de mudar" (24/10/2026): piscar dourado por 6 s no que foi editado, para o Marcus ver. Classe: destaque-novo. */
 @keyframes destaque-novo { 0%,100% { box-shadow: 0 0 0 0 rgba(232,184,75,0); } 15%,70% { box-shadow: 0 0 0 2px rgba(232,184,75,.95), 0 0 18px 4px rgba(232,184,75,.55); } }
 .destaque-novo { animation: destaque-novo 2s ease-in-out 3; border-radius: 8px; }
+
+/* Divisões da moldura (24/10/2026): em vez de linha dura, um fio dourado bem suave + sombra curta que dá profundidade. */
+.sombra-lado { box-shadow: inset -1px 0 0 rgba(232,184,75,.22), 10px 0 24px -12px rgba(0,0,0,.75); }
+.sombra-baixo { box-shadow: inset 0 -1px 0 rgba(232,184,75,.22), 0 10px 20px -12px rgba(0,0,0,.75); }
+:root[data-theme="light"] .sombra-lado, :root:not(.dark):not([data-theme="dark"]) .sombra-lado { box-shadow: inset -1px 0 0 rgba(0,0,0,.12), 8px 0 20px -12px rgba(0,0,0,.25); }
+:root[data-theme="light"] .sombra-baixo, :root:not(.dark):not([data-theme="dark"]) .sombra-baixo { box-shadow: inset 0 -1px 0 rgba(0,0,0,.12), 0 8px 18px -12px rgba(0,0,0,.25); }

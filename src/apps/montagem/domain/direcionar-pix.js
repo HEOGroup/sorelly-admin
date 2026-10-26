@@ -18,8 +18,8 @@ var REGRAS0 = [
 // pagos: o que a revendedora já pagou por outras formas {forma:"dinheiro"|"link"|"getnet"|"credito"|"pix", valor, cnpj?, parc?, obs?}; valor = o Pix que falta definir a conta
 function dpDemo(){
   var agora = Date.now(), min = function(m){ return agora-m*60000; };
-  var it = function(quem, atend, vendas, aPagar, pagos, valor, mAtras, obs){ return {id:uid("p"), origem:"interno", atendente:atend, quem:quem, vendas:vendas, aPagar:aPagar, pagos:pagos, valor:valor, obs:obs||"", recebidoEm:min(mAtras), status:"fila", divisoes:[]}; };
-  var rp = function(quem, maq, valor, mAtras, repOrigem){ return {id:uid("p"), origem:"rep", atendente:"", quem:quem, repOrigem:repOrigem, vendas:0, aPagar:valor, pagos:[], valor:valor, maq:maq, obs:"", recebidoEm:min(mAtras), status:"fila", divisoes:[]}; };
+  var it = function(quem, atend, vendas, aPagar, pagos, valor, mAtras, obs){ return {id:uid("p"), origem:"interno", atendente:atend, quem:quem, vendas:vendas, aPagar:aPagar, pagos:pagos, valor:valor, obs:obs||"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
+  var rp = function(quem, maq, valor, mAtras, repOrigem){ return {id:uid("p"), origem:"rep", atendente:"", quem:quem, repOrigem:repOrigem, vendas:0, aPagar:valor, pagos:[], valor:valor, maq:maq, obs:"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
   return {v:1, regras:JSON.parse(JSON.stringify(REGRAS0)), pix:[
     it("Ingrid Martins dos Santos", "Edna", 1556.00, 1011.40, [{forma:"dinheiro", valor:190}], 821.40, 52),
     it("Bianka dos Santos Sutil", "Kawany", 1838.00, 1102.80, [], 1102.80, 47),
@@ -30,6 +30,8 @@ function dpDemo(){
     it("Tatiane Cristina Pinati", "Kawany", 2270.00, 1362.00, [{forma:"getnet", valor:112}], 1250.00, 24),
     it("Josiele Azevedo Trindade", "Kawany", 252.00, 252.00, [{forma:"dinheiro", valor:110}], 142.00, 19, "Não vai renovar o kit: está fraco e ela não quer peças paradas em casa."),
     it("Jhenifer Vitória de Morais Jacob", "Sthefany", 1714.00, 1028.00, [{forma:"link", valor:468, cnpj:"59"}, {forma:"credito", valor:360.40, parc:2}], 200.00, 12, "Vai pausar as vendas deste mês (mudança de estúdio) e volta no mês que vem."),
+    Object.assign(it("Ana Paula Ribeiro Lima", "Edna", 6200.00, 3720.00, [], 3000.00, 15, "Cliente quer passar o valor no cartão (não vai de Pix)."), {forma:"maquininha"}),
+    Object.assign(it("Karina Moraes Duarte", "Kawany", 4100.00, 2460.00, [{forma:"dinheiro", valor:300}], 2160.00, 8, "Vai pagar por link de pagamento."), {forma:"link"}),
     rp("Representante Thalita", "maquininha do CNPJ 46", 3700.00, 18, "Thalita"),
     rp("Representante Marciane", "maquininha do CNPJ 34", 1900.00, 9, "Marciane"),
     rp("Representante Nagela", "maquininha do CNPJ 59", 533.75, 5, "Nagela")]};
@@ -88,7 +90,7 @@ function dpReduz(s, a){
   var dp = JSON.parse(JSON.stringify(s.dp || dpDemo())), por = a.por || "—", recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{dp:dp}, msg:msg}; };
   var pix = function(id){ return dp.pix.find(function(x){ return x.id===id; }); };
   switch(a.op){
-    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0}; }); return ok(); }
+    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix"}; }); return ok(); }
     case "confirma": { var p2 = pix(a.id); if(!p2) return recusa("Pix não encontrado."); var soma = r2((p2.divisoes||[]).reduce(function(t, d){ return t+d.valor; }, 0));
       if(!p2.divisoes.length) return recusa("Escolha pelo menos um destino."); if(Math.abs(soma-p2.valor)>0.009) return recusa("A soma dos destinos precisa fechar com "+brl(p2.valor)+"."); p2.status = "direcionado"; p2.confirmadoPor = por; p2.confirmadoEm = Date.now(); return ok("Pix direcionado"); }
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }

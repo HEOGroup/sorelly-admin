@@ -8,7 +8,7 @@ import { COR, FaixaTotais, TabelaP, Td, Tr, corSinal, brl } from "@/apps/montage
 import { contasDoMes, fatEfetivo, MESES_LONGO, projetarAno } from "@/apps/montagem/domain/financeiro";
 import { resumoFinanceiro } from "@/apps/montagem/domain/resumo-financeiro";
 import { BKC } from "@/apps/montagem/lib/format";
-import { e } from "@/shared/react";
+import { e, useState } from "@/shared/react";
 
 var n0 = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
 var titulo = function(t){ return e("h3",{className:"text-[13px] font-semibold text-foreground"}, t); };
@@ -16,12 +16,22 @@ var titulo = function(t){ return e("h3",{className:"text-[13px] font-semibold te
 function ResumoMesAno(p){
   var r = resumoFinanceiro(p.s), m = r.mes, a = r.ano;
   return e("div",{className:"flex flex-col gap-2"},
-    titulo(m.nome+" · "+n0(m.acertos)+" acertos feitos de "+n0(m.previstos)+" no mês · previsão a "+m.metaPct+"%"),
+    titulo(m.nome+" · "+n0(m.feitos)+" acertos feitos + "+n0(m.carregar)+" no Carregar de "+n0(m.previstos)+" no mês · previsão a "+m.metaPct+"%"),
     e(FaixaTotais,{itens:[{t:"Recebido", v:BKC(m.recebido), cor:COR.entra},{t:"A receber", v:BKC(m.aReceber), cor:COR.entra},{t:"Total do mês", v:BKC(m.recebido+m.aReceber), cor:COR.entra},{t:"Contas do mês", v:BKC(m.contasTotal), cor:COR.sai},{t:"Resultado do mês", v:brl(m.resultadoEsperado), cor:corSinal(m.resultadoEsperado)}]}),
     titulo("Ano "+a.ano),
     e(FaixaTotais,{itens:[{t:"Recebido", v:BKC(a.recebido), cor:COR.entra},{t:"A receber", v:BKC(a.aReceber), cor:COR.entra},{t:"Total do ano", v:BKC(a.previsto), cor:COR.entra},{t:"Contas do ano", v:BKC(a.contasTotal), cor:COR.sai},{t:"Resultado do ano", v:brl(a.resultadoEsperado), cor:corSinal(a.resultadoEsperado)}]}));
 }
 
+// Carregar: vendas já feitas que ainda não viraram acerto com valor. Compara o do início do mês (o Marcus informa) com o de agora e mostra quantas já saíram.
+function CarregarMes(p){
+  var s = p.s, hoje = new Date(), ym = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0"), agora = Number(((s.fechaMes||{})[ym]||{}).carregar)||0, ini = (s.carregarInicio||{})[ym];
+  var sv = useState(ini===undefined ? "" : String(ini)), v = sv[0], setV = sv[1];
+  var tem = ini!==undefined, dif = tem ? agora-ini : null;
+  return e("div",{className:"flex flex-col gap-2"},
+    titulo("Carregar · início do mês × agora"),
+    e(FaixaTotais,{itens:[{t:"Início do mês", v:tem ? n0(ini) : "—"},{t:"Agora", v:n0(agora)},{t:"Diferença", v:tem ? (dif>0 ? "+" : "")+n0(dif) : "—", cor:!tem ? "" : dif>0 ? COR.sai : dif<0 ? COR.entra : ""},{t:"Já saíram do início", v:tem ? n0(Math.max(0, ini-agora)) : "—", cor:tem && ini>agora ? COR.entra : ""}]}),
+    p.d && e("div",{className:"flex flex-wrap items-center gap-2"}, e("label",{htmlFor:"car-ini", className:"text-[13px] text-foreground"}, "Carregar no início do mês"), e("input",{id:"car-ini", type:"number", min:0, value:v, onChange:function(ev){ setV(ev.target.value); }, className:"h-8 w-24 rounded-md border border-border bg-transparent px-2 text-center text-[13px]"}), e("button",{type:"button", disabled:v==="", onClick:function(){ p.d({type:"CARREGAR_INICIO", ym:ym, n:v}); }, className:"h-8 rounded-md border border-border px-3 text-[13px] hover:bg-white/10 disabled:opacity-40"}, "Salvar")));
+}
 function PrevisaoMeses(p){
   var s = p.s, hoje = new Date(), ano = hoje.getFullYear(), mes = hoje.getMonth(), anoStr = String(ano);
   var m = resumoFinanceiro(s).mes;
@@ -40,4 +50,4 @@ function PrevisaoMeses(p){
       e(Tr,{key:"t", total:true}, e(Td,null, "Total"), e(Td,null, ""), e(Td,null, ""), e(Td,null, ""), e(Td,null, ""), e(Td,{n:true, cor:COR.entra}, BKC(tot.fat)), e(Td,{n:true, cor:COR.sai}, BKC(tot.contas)), e(Td,{n:true, cor:corSinal(tot.fat-tot.contas)}, brl(tot.fat-tot.contas)))));
 }
 
-export { ResumoMesAno, PrevisaoMeses };
+export { CarregarMes, ResumoMesAno, PrevisaoMeses };

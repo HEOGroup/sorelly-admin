@@ -37,6 +37,8 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - NUNCA abra `public/dados/*.json`, `src/styles/fontes/`, `.next/` nem `node_modules/`.
 - Prefira Edit em trechos pequenos. Não reescreva arquivos.
 
+- **Mapa das representantes (26/10/2026):** regiões, horários, viagens e o que falta de cada uma estão em `MAPA-DAS-REPRESENTANTES.md` (raiz). Ler antes de mexer em Kits novos › Representantes; atualizar ao receber dados novos. Código: `src/apps/kits-novos/domain/regioes-rep.js` e `viagens-rep.js`.
+
 ## Pessoas e setores
 **Acesso é por setor/perfil, não por pessoa.** Cada setor enxerga só o que é dele. No código use perfil/setor; o nome é só quem ocupa o cargo hoje e pode mudar (ex.: condicionais era Gabi, agora Marjory).
 - **Diretoria:** Marcus (dono), Nickolas, Lucas. Veem tudo. Definem preço de peças.

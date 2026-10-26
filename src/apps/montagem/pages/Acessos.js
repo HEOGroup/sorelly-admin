@@ -2,7 +2,7 @@
 // RH → Acessos por setor: marca quais telas cada setor abre e, dentro de algumas telas (Consolidado, Comissões), quais partes cada um vê.
 // Vale na hora (state.acessos e state.acessosBlocos sobre o padrão de navigation/perfis.js e domain/equipe.js). Só os sócios e o Nickolas mexem.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, BLOCOS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
+import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, BLOCOS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
 import { ABAS } from "@/apps/montagem/navigation/abas";
 import { GRUPOS_EDITAVEIS, PAPEL_LB, VISUAL, abasDoPapel } from "@/apps/montagem/navigation/perfis";
 import { SETORES, ondeEsta } from "@/apps/montagem/navigation/setores";
@@ -18,7 +18,7 @@ var nomes = function(l){ return l.map(function(x){ return x.nome; }); };
 var QUEM = {
   supervisao: ["Marcus","Anamaria","Lucas"],
   familia: nomes(DIRECAO_FAMILIA).concat(nomes(FAMILIA)), supervisora: [SUPERVISORA.nome], agendamento: nomes(AGENDAMENTO), financeiro: nomes(FINANCEIRO),
-  inadimplencia: [AMANDA_M.nome], bipadora: nomes(BIPADORAS).concat([ATENDENTE_PECAS.nome]), montadora: nomes(MONTADORAS), listagens: [LISTAGENS_RESP.nome], kitnovo: [KITNOVO.nome],
+  inadimplencia: [AMANDA_M.nome], bipadora: nomes(BIPADORAS).concat([ATENDENTE_PECAS.nome]), montadora: nomes(MONTADORAS), listagens: [LISTAGENS_RESP.nome], kitnovo: [KITNOVO.nome], cadastropecas: nomes(CADASTRO_PECAS),
   representante: ["24 representantes (ainda sem login)"]};
 
 function AbaAcessos(){

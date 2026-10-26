@@ -2,7 +2,7 @@
 // Agendamento → Plano 45/60 dias (23/10/2026), FASE 1: Indicações, Aprovação e Painel. Regras e contas em domain/plano45-60.js (estado s.p45).
 // Padrão do Financeiro: título → faixa de totais → filtros → tabela de layout fixo; abas visíveis; cor só no estado. Aprovada e mudando de mês ajusta a meta do Agendamento (remarcação).
 import { Pagina } from "@/apps/montagem/components/padrao";
-import { AbasTela, Bloco, BlocoFiltros, Botao, CAMPO, CampoBusca, CampoSel, FaixaTotais, Rotulo, TabelaP, Td, Tr, brl, inteiro } from "@/apps/montagem/components/padrao-fin";
+import { AbasTela, Segmentado, Bloco, BlocoFiltros, Botao, CAMPO, CampoBusca, CampoSel, FaixaTotais, Rotulo, TabelaP, Td, Tr, brl, inteiro } from "@/apps/montagem/components/padrao-fin";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { tipoDe } from "@/apps/montagem/domain/agendamento";
 import { CONTATOS, DECISOES, MOTIVOS, ORIGENS, cicloDe, crescimento, decisaoDe, decisaoFinal, diasEntre, hojeIsoLocal, ORDEM_SIT, SITUACOES, efeitoMeta, fmtData, minimoSugerido, naMeta, norm, novaCalculada, origemLocal, p45Reduz, pendencias, podeAprovar, podeLancar, repCurto, resumoPlano, rotuloMes, temLocal } from "@/apps/montagem/domain/plano45-60";
@@ -17,6 +17,10 @@ var BTN_MINI = "h-6 rounded border border-border px-2 text-[12px] hover:bg-white
 var chaveMesHoje = function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0"); };
 
 // estado, pessoa logada e ações do plano; exec devolve true se o domínio aceitou (a recusa aparece no aviso do sistema)
+// as cinco visões do plano ficam como abas dentro da tela (padrão: menos telas, mais abas); cada aba tem o seu endereço
+var ABAS_PLANO = [["p45pnl", "Painel"], ["p45alin", "Alinhamento"], ["p45ind", "Indicações"], ["p45apr", "Aprovação"], ["p45acomp", "Acompanhamento"], ["p45msg", "Mensagens"]];
+function AbasPlano(p){ var cx = use(); return e(AbasTela,{abas:ABAS_PLANO, atual:p.atual, onMudar:function(k){ cx.dispatch({type:"ABA", aba:k}); }}); }
+
 function useP45(){
   var cx = use(), s = cx.state, por = nomeDe(s.usuario);
   var exec = function(op, extra){ var a = Object.assign({type:"P45", op:op, por:por}, extra||{}); var r = p45Reduz(s, a); cx.dispatch(a); return !!(r.patch && r.patch.p45); };
@@ -117,6 +121,7 @@ function AbaP45Ind(){
     e(PageHead,{t:"Indicações do plano 45/60", sub:"Revendedoras indicadas para 45 ou 60 dias. Nome completo e nova data são obrigatórios."},
       c.aprova && temLocal() && e(Botao,{onClick:importar}, "Importar planilha"),
       c.lanca && e(Botao,{principal:true, onClick:function(){ fm[1]({l:null}); }}, "Nova indicação")),
+    e(AbasPlano,{atual:"p45ind"}),
     e(FaixaTotais,{itens:[{t:"No plano", v:inteiro(p.linhas.length)}, {t:"Em análise", v:inteiro(r.porSit.analise)}, {t:"Aprovadas", v:inteiro(r.porSit.aprovada), cor:"text-success"},
       {t:"Encerradas", v:inteiro(r.porSit.reprovada+r.porSit.sem_interesse+r.porSit.saiu)}, {t:"Com pendência", v:inteiro(comPend), cor:comPend>0 ? "text-warning" : ""},
       {t:"Abaixo do mínimo", v:inteiro(abaixo), cor:abaixo>0 ? "text-warning" : ""}]}),
@@ -175,10 +180,11 @@ function AbaP45Apr(){
   var cols = aba==="aprovada" ? COLS_LINHA.concat([{t:"", w:90}]) : aba==="outras" ? COLS_LINHA.concat([{t:"", w:130}]) : COLS_LINHA;
   return e(Pagina,null,
     e(PageHead,{t:"Aprovação do plano 45/60", sub:"A Diretoria decide e fixa o mínimo de vendas. Aprovada e mudando de mês, sai da meta de um mês e entra no outro."}),
+    e(AbasPlano,{atual:"p45apr"}),
     e(FaixaTotais,{itens:[{t:"Em análise", v:inteiro(analise.length), cor:analise.length>0 ? "text-warning" : ""}, {t:"Aprovadas", v:inteiro(aprovadas.length), cor:"text-success"}, {t:"Mínimos somados", v:brl(r.minimoTotal)},
       {t:"Saem de "+rotuloMes(r.ym), v:inteiro(r.saiMes)}, {t:"Fora da meta ainda", v:inteiro(r.pend.fora_meta), cor:r.pend.fora_meta>0 ? "text-warning" : ""}, {t:"Pedidos do app", v:inteiro(r.pedAnalise), cor:r.pedAnalise>0 ? "text-warning" : ""}]}),
     !c.aprova && e("p",{className:"rounded-lg border border-border bg-card/60 px-3 py-2 text-[13px]"}, "Só a Diretoria aprova. Você pode consultar a fila."),
-    e(AbasTela,{abas:[["analise", "Em análise ("+analise.length+")"], ["aprovada", "Aprovadas ("+aprovadas.length+")"], ["pedidos", "Pedidos do app ("+r.pedAnalise+")"], ["outras", "Reprovadas e saídas ("+outras.length+")"]], atual:aba, onMudar:function(k){ ab[1](k); sl[1](null); lm[1](POR_PAGINA); }}),
+    e(Segmentado,{opcoes:[["analise", "Em análise ("+analise.length+")"], ["aprovada", "Aprovadas ("+aprovadas.length+")"], ["pedidos", "Pedidos do app ("+r.pedAnalise+")"], ["outras", "Reprovadas e saídas ("+outras.length+")"]], atual:aba, onMudar:function(k){ ab[1](k); sl[1](null); lm[1](POR_PAGINA); }}),
     aba==="aprovada" && c.aprova && r.pend.fora_meta>0 && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[13px]"},
       e("span",null, r.pend.fora_meta+" aprovada"+(r.pend.fora_meta===1 ? "" : "s")+" mudam de mês e ainda não estão na meta do Agendamento."), e(Botao,{principal:true, onClick:function(){ ajustarMeta(c, r.pend.fora_meta); }}, "Ajustar a meta")),
     atual && aba==="analise" && c.aprova && e(Decisao,{key:atual.id, c:c, l:atual, onFim:function(){ sl[1](null); }}),
@@ -226,6 +232,7 @@ function AbaP45Acomp(){
   var atual = form && c.p.linhas.filter(function(l){ return l.id===form; })[0], reps = {}; aprovadas.forEach(function(l){ reps[l.rep] = 1; });
   return e(Pagina,null,
     e(PageHead,{t:"Acompanhamento do plano 45/60", sub:"Contato, entrega do kit e venda de cada aprovada. A venda do ciclo decide: mantém o prazo ou volta a 30 dias."}),
+    e(AbasPlano,{atual:"p45acomp"}),
     e(FaixaTotais,{itens:[{t:"Aprovadas", v:inteiro(ci.aprovadas)}, {t:"Aguardando", v:inteiro(ci.aguardando)}, {t:"A lançar", v:inteiro(ci.vencidas), cor:ci.vencidas>0 ? "text-warning" : ""}, {t:"Avaliadas", v:inteiro(ci.avaliadas)},
       {t:"Mantêm", v:inteiro(ci.mantem), cor:"text-success"}, {t:"Voltam a 30", v:inteiro(ci.volta30), cor:ci.volta30>0 ? "text-destructive" : ""}, {t:"Manutenção", v:ci.taxa===null ? "—" : ci.taxa.toLocaleString("pt-BR", {maximumFractionDigits:0})+"%"}]}),
     atual && c.lanca && e(FormAcomp,{key:atual.id, c:c, l:atual, onFechar:function(){ fm[1](null); }}),
@@ -241,6 +248,51 @@ function AbaP45Acomp(){
         e(Td,{n:true}, l.minimo ? brl(l.minimo) : "—"), e(Td,{n:true}, l.vendaCiclo!=null ? brl(l.vendaCiclo) : "—"), e(Td,{n:true, cor:cr===null ? "" : cr>0 ? "text-success" : cr<0 ? "text-destructive" : ""}, pc1(cr)),
         e(Td,{cor:dec==="mantem" ? "text-success" : dec ? "text-destructive" : "", title:l.decisaoManual ? "Decidido à mão pela Diretoria" : ""}, dec ? DECISOES[dec].lb+(l.decisaoManual ? " *" : "") : "—")); })) : e(Vazio,{ic:"check-circle"}, aprovadas.length ? "Nenhuma aprovada com este filtro." : "Nenhuma aprovada ainda. Aprove em Aprovação."),
     lista.length>lim && e("div",{className:"flex items-center justify-center gap-3 text-[13px]"}, e("span",null, "Mostrando "+vis.length+" de "+lista.length), e(Botao,{onClick:function(){ lm[1](lim+POR_PAGINA); }}, "Ver mais")));
+}
+
+// ---------- Alinhamento: a conta da meta em números grandes ----------
+// Mostra o que a Diretoria acompanha (confirmadas, ainda podem entrar, previsto de outubro) ao lado do que o sistema calcula e do que o Agendamento tem agora.
+function Grande(p){
+  return e("div",{className:"flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border border-border bg-card/60 px-3 py-3 text-center"},
+    e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t),
+    e("b",{className:"text-[34px] font-semibold leading-tight tabular-nums "+(p.cor||"")}, p.v),
+    p.sub && e("span",{className:"text-[12px]"}, p.sub));
+}
+var Sinal = function(t){ return e("span",{key:"s"+t, className:"hidden shrink-0 self-center text-[28px] font-semibold xl:block"}, t); };
+function AbaP45Alin(){
+  var c = useP45(), r = resumoPlano(c.s, null), al = c.p.alinha, cfg = c.cfg;
+  var st = useState({confirmadas:String(al.confirmadas), analise:String(al.analise), novas:String(al.novas), extra:String(al.extra), nota:al.nota||""}), f = st[0], set = function(k, v){ var o = Object.assign({}, f); o[k] = v; st[1](o); };
+  var base = r.base, conf = Number(f.confirmadas)||0, an = Number(f.analise)||0, nv = Number(f.novas)||0, ex = Number(f.extra)||0;
+  var cen = [["Confirmadas", conf], ["Com análise e saídas da empresa", conf+an], ["Com as listas novas", conf+an+nv], ["Com a linha que faltava", conf+an+nv+ex]];
+  var salvar = function(){ c.exec("alinha", {dados:f}); };
+  var agora = r.ajustados, previstoInf = base!==null ? base-conf : null, dif = agora!==null && previstoInf!==null ? agora-previstoInf : null;
+  var cor = dif===null ? "" : dif===0 ? "text-success" : "text-warning";
+  var numInput = function(k, t, id){ return e("div",{className:"min-w-0"}, e(Rotulo,{t:t, id:id}), e("input",{id:id, inputMode:"numeric", value:f[k], disabled:!c.aprova, onChange:function(ev){ set(k, ev.target.value.replace(/\D/g, "").slice(0, 4)); }, className:CAMPO+" text-right tabular-nums"})); };
+  return e(Pagina,null,
+    e(PageHead,{t:"Alinhamento do plano 45/60", sub:"A conta da meta de "+rotuloMes(r.ym)+" em números grandes: o que saiu, o que ainda pode sair e o previsto."}),
+    e(AbasPlano,{atual:"p45alin"}),
+    base===null ? e(Vazio,{ic:"calendar-check"}, "Nenhum mês aberto no Agendamento. Abra o mês em Gestão do mês → Abertura do mês.") : e("div",{className:"flex flex-col gap-2.5"},
+      e("div",{className:"flex flex-col gap-2 xl:flex-row"},
+        e(Grande,{t:"Previsto na abertura", v:inteiro(base)}), Sinal("−"),
+        e(Grande,{t:"Saíram de "+rotuloMes(r.ym).split("/")[0], v:inteiro(conf), sub:"confirmadas (informado)", cor:"text-destructive"}), Sinal("="),
+        e(Grande,{t:"Previsto de outubro", v:inteiro(previstoInf), sub:"pelo informado"})),
+      e("div",{className:"flex flex-col gap-2 xl:flex-row"},
+        e(Grande,{t:"Previsto no Agendamento agora", v:inteiro(agora), cor:cor, sub:dif===0 ? "bate com o informado" : dif>0 ? "falta tirar "+inteiro(dif)+" para bater" : "tirou "+inteiro(-dif)+" a mais que o informado"}),
+        e(Grande,{t:"Saídas pelo plano no sistema", v:inteiro(r.saemPlano), sub:"da planilha, aprovadas e já ajustadas"}),
+        e(Grande,{t:"Saídas lançadas à mão", v:inteiro(r.outrasSaidas), sub:"em Remarcações"}))),
+    base!==null && dif!==null && dif!==0 && e("p",{className:"rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-[13px]"},
+      dif>0 ? "O Agendamento ainda tem "+inteiro(dif)+" acertos a mais que o informado. Se as saídas já foram tiradas à mão, não clique em Ajustar a meta. Se não foram, ajuste pela Aprovação." : "O Agendamento tirou "+inteiro(-dif)+" acertos a mais que o informado. Confira se alguma revendedora foi contada duas vezes."),
+    e(Bloco,{t:"Cenários do previsto de "+rotuloMes(r.ym)},
+      base===null ? e("p",{className:"text-[13px]"}, "Sem mês aberto.") : e(TabelaP,{cols:[{t:"Cenário"}, {t:"Saídas", w:80, n:true}, {t:"Previsto", w:90, n:true}, {t:"Alvo 94%", w:90, n:true}, {t:"Alvo 95%", w:90, n:true}, {t:"Alvo 96%", w:90, n:true}]}, cen.map(function(x, i){
+        var pv = base-x[1]; return e(Tr,{key:i, total:i===0}, e(Td,null, x[0]), e(Td,{n:true}, inteiro(x[1])), e(Td,{n:true, forte:true}, inteiro(pv)), e(Td,{n:true}, inteiro(Math.ceil(pv*0.94))), e(Td,{n:true}, inteiro(Math.ceil(pv*0.95))), e(Td,{n:true}, inteiro(Math.ceil(pv*0.96)))); })),
+      e("p",{className:"mt-2 text-[12px]"}, "O alvo de cada faixa (94, 95 e 96%) e o bônus das funcionárias seguem o previsto. Quanto mais saídas, menor o alvo.")),
+    r.fluxo.length>0 && e(Bloco,{t:"Para onde vão (pelo sistema)"},
+      e(TabelaP,{cols:[{t:"Acerto original"}, {t:"Nova data"}, {t:"Aprovadas", w:90, n:true}, {t:"Situação", w:190}]}, r.fluxo.map(function(x){
+        return e(Tr,{key:x.origem+x.destino}, e(Td,null, rotuloMes(x.origem)), e(Td,null, rotuloMes(x.destino)), e(Td,{n:true, forte:true}, inteiro(x.aprovadas)), e(Td,{cor:x.tipo==="atrasada" ? "text-warning" : ""}, x.tipo==="mesmo" ? "Continua na meta do mês" : x.tipo==="atrasada" ? "Mês anterior, confirmar" : x.naMeta===x.aprovadas ? "Meta ajustada" : "Falta ajustar a meta")); }))),
+    e(BlocoFiltros,{titulo:"Números informados (da conversa de alinhamento)", onLimpar:null},
+      numInput("confirmadas", "Saídas confirmadas", "p45acf"), numInput("analise", "+ em análise e saídas", "p45aan"), numInput("novas", "+ listas novas", "p45anv"), numInput("extra", "+ linha que faltava", "p45aex"),
+      e("div",{className:"col-span-2 min-w-0 md:col-span-3"}, e(Rotulo,{t:"Nota", id:"p45anota"}), e("input",{id:"p45anota", value:f.nota, disabled:!c.aprova, placeholder:"Ex.: Ana Maria confirmou 72 em 24/10", onChange:function(ev){ set("nota", ev.target.value); }, className:CAMPO})),
+      c.aprova && e("div",{className:"flex items-end justify-end"}, e(Botao,{principal:true, onClick:salvar}, "Salvar"))));
 }
 
 // ---------- Painel do plano ----------
@@ -267,6 +319,7 @@ function AbaP45Pnl(){
   var minimo = cfg.minimoPorRep;
   return e(Pagina,null,
     e(PageHead,{t:"Painel do plano 45/60", sub:"Quem entrou, quem saiu da meta e a previsão de "+rotuloMes(r.ym)+" já sem as adiadas."}),
+    e(AbasPlano,{atual:"p45pnl"}),
     e(FaixaTotais,{itens:[{t:"No plano", v:inteiro(r.total)}, {t:"Aprovadas", v:inteiro(r.porSit.aprovada), cor:"text-success"}, {t:"Em análise", v:inteiro(r.porSit.analise), cor:r.porSit.analise>0 ? "text-warning" : ""},
       {t:"Encerradas", v:inteiro(r.porSit.reprovada+r.porSit.sem_interesse+r.porSit.saiu)}, {t:"Saem de "+rotuloMes(r.ym), v:inteiro(r.saiMes)}, {t:"Mínimos somados", v:brl(r.minimoTotal)}]}),
     !p.linhas.length && e(Vazio,{ic:"calendar-check"}, "O plano ainda está vazio. Lance as indicações ou importe a planilha em Indicações."),
@@ -312,4 +365,4 @@ function AbaP45Pnl(){
             e(Td,{cor:x.total===0 ? "" : falta>0 ? "text-warning" : "text-success"}, x.total===0 ? "Sem lista" : falta>0 ? "Falta "+falta : "Cumprido")); })))));
 }
 
-export { AbaP45Ind, AbaP45Apr, AbaP45Acomp, AbaP45Pnl };
+export { AbaP45Alin, AbasPlano, AbaP45Ind, AbaP45Apr, AbaP45Acomp, AbaP45Pnl };

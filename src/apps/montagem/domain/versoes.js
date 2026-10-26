@@ -3,6 +3,70 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.13.3", data:"2026-10-26", titulo:"Financeiro familiar: Pix e repasses até 26/10", itens:[
+    {tipo:"melhoria", area:"Financeiro familiar · Pix revendedoras", txt:"16 Pix novos (22 a 26/10) e 2 repasses de prestador (21 e 22/10) lidos direto do banco do admin antigo. Faltam trazer 36 pagamentos de contas e 10 contas novas que já estão no admin antigo: a descrição se repete para pessoas diferentes sem um código que identifique cada uma, então não dá para saber com segurança qual conta cada pagamento fecha (ver DECISOES.md)."},
+  ]},
+  {v:"0.13.2", data:"2026-10-26", titulo:"Login com criação de conta e liberação pela Diretoria", itens:[
+    {tipo:"novo", area:"Login", txt:"Na tela de entrada há o botão Criar conta (nome, e-mail e senha de 8 letras ou mais). A conta nasce Aguardando e só entra depois que a Diretoria libera."},
+    {tipo:"novo", area:"RH · Acessos e autorizações", txt:"Nova aba Contas: a Diretoria vê quem criou conta, liga a conta a uma pessoa do sistema, escolhe os setores e libera, bloqueia ou reativa. Liberar, bloquear ou trocar setor vale na hora."},
+    {tipo:"novo", area:"Servidor", txt:"Tabela sorelly.conta, rotas de cadastro e de contas, e scripts migrar-contas e criar-admin (primeira conta da Diretoria). A tabela user do admin antigo não é tocada."},
+    {tipo:"correção", area:"RH · Acessos e autorizações", txt:"A aba Quem vê o quê abria com erro por falta do grupo Cadastro de peças na lista de quem é cada perfil."},
+  ]},
+  {v:"0.12.59", data:"2026-10-26", titulo:"Caixa: histórico completo de saldos e contas pagas (01/09 a 23/10)", itens:[
+    {tipo:"correção", area:"Financeiro · Caixa", txt:"Saldo das contas bancárias e contas pagas por dia lidos DIRETO do banco do admin antigo (tabelas finance_balance e faturamento_contas_diario), dia a dia, de 01/09 a 23/10 (saldo) e 01/09 a 22/10 (contas pagas) — antes só havia alguns dias soltos, estimados à mão. Esses números substituem as estimativas antigas. ACHADO: o pago de 01 a 13/10 pela leitura direta do banco é R$ 609.091,94; o relatório que o Marcus conferiu em 13/10 somava R$ 530.060,74 (diferença de R$ 79.031,20 — ver DECISOES.md). Corrigido também um bug: a tela guardava os saldos no navegador e só buscava dias novos quando a versão interna mudava, por isso o saldo de um dia antigo continuava aparecendo como 'agora' mesmo com o dado novo já salvo."},
+  ]},
+  {v:"0.12.41", data:"2026-10-24", titulo:"Plano 45/60: aba Alinhamento", itens:[
+    {tipo:"novo", area:"Agendamento · Plano 45/60", txt:"Nova aba Alinhamento com números grandes: previsto na abertura − saídas confirmadas = previsto do mês, o previsto que o Agendamento tem agora (com aviso se não bate), saídas pelo plano e saídas lançadas à mão. Cenários (confirmadas, com análise e saídas da empresa, com listas novas, com a linha que faltava) com o alvo de 94, 95 e 96%. Números informados da conversa (92, 7, 2, 1) ficam salvos."},
+  ]},
+  {v:"0.12.57", data:"2026-10-26", titulo:"Revendedoras 26/10 e Carregar no Faturamento", itens:[
+    {tipo:"correção", area:"Financeiro · Faturamento", txt:"Revendedoras em 26/10 = 2.105. A faixa de totais do Faturamento mostra o Carregar (vendas pendentes). Dias 20 a 25/10 de revendedoras ainda faltam puxar do admin antigo."}
+  ]},
+  {v:"0.12.56", data:"2026-10-26", titulo:"Visão geral: como o mês começou × agora, com Carregar", itens:[
+    {tipo:"melhoria", area:"Visão geral · Faturamento", txt:"Bloco novo com revendedoras e acertos previstos no início do mês, previsão nova, acertos a menos, Carregar no início e agora, e vendas adiadas. Acertos realizados e Carregar aparecem separados. Carregar de 01/10 = 12."}
+  ]},
+  {v:"0.12.55", data:"2026-10-26", titulo:"Coluna Carregar e comparativo do início do mês", itens:[
+    {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"Coluna Carregar no Dia a dia e bloco Carregar na Previsão (início do mês, agora, diferença e quantas já saíram). O Carregar não entra nos acertos feitos: soma por fora."}
+  ]},
+  {v:"0.12.54", data:"2026-10-26", titulo:"Previsão de outubro atualizada e Carregar travado", itens:[
+    {tipo:"correção", area:"Financeiro · Previsão", txt:"Hoje (26/10): 1.347 acertos e R$ 1.062.977,38. A realizar 513 até 31/10 e 34 vendas no Carregar. Total do mês 1.894 (97% = 1.837). Carregar gravado no FATURAMENTO-DIARIO.md."}
+  ]},
+  {v:"0.12.53", data:"2026-10-26", titulo:"Faturamento de outubro corrigido até 25/10", itens:[
+    {tipo:"correção", area:"Financeiro · Faturamento", txt:"Acumulado do mês corrigido: 20/10 = 1.120 acertos e R$ 885.617,53; 21/10 = 1.175 e R$ 928.551,38; 22/10 = 1.240 e R$ 982.180,43; 23/10 = R$ 1.049.731,83. 24 e 25/10 sem faturamento. O dia a dia e a previsão recalculam sozinhos."}
+  ]},
+  {v:"0.12.52", data:"2026-10-24", titulo:"Direcionar pagamento: o que fatura não mistura com o que não fatura", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar pagamento", txt:"A sugestão do sistema não mistura conta de CNPJ (fatura) com fornecedor ou representante (não fatura). Venda paga no link de um CNPJ volta para o mesmo CNPJ. Divisão manual mista mostra aviso. Opções de conta única e regras usadas viram tabela, uma linha cada. Fila sem abreviação (Interno, Representante, Maquininha)."}
+  ]},
+  {v:"0.12.51", data:"2026-10-24", titulo:"Direcionar: Pix, maquininha ou link, com sugestão de divisão", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"Cada pedido tem uma forma (Pix, Maquininha ou Link), mostrada na fila. O bloco Direcionar ficou simples: o sistema sugere a divisão, o botão Usar esta divisão aplica, e OK enviar confirma. Dividir abre uma segunda conta. Maquininha e link vão para um CNPJ."}
+  ]},
+  {v:"0.12.50", data:"2026-10-24", titulo:"Direcionar Pix: fila enxuta, cores dos fornecedores, contas do mesmo banco juntas", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"Fila com menos colunas (Hora, Quem, Tipo, Vendas, Pix a direcionar, Espera) e Vendas e Pix em letra grande (Pix em dourado). Fornecedores: A pagar em branco, Pago em verde, Falta em destaque (amarelo se vencido) e Situação em selo (Vencido, Em aberto, Pago). Contas negativas: as do mesmo banco e CNPJ ficam juntas (Sicredi Rotativo 34 e Sicredi Sorelly 34), marcadas com barra dourada."},
+  ]},
+  {v:"0.12.49", data:"2026-10-24", titulo:"Direcionar Pix: fornecedores e saldo das contas lado a lado", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"Embaixo da fila e do pedido ficam dois blocos lado a lado: Fornecedores (botão Vencido e o que falta | Todos do mês; colunas A pagar, Pago, Falta, Limite e Situação) e Saldo das contas negativas (uma linha por conta, com saldo, limite e disponível). Clicar numa conta negativa adiciona o CNPJ dela como destino, com o nome da conta. Saiu o bloco Por CNPJ."},
+  ]},
+  {v:"0.12.48", data:"2026-10-24", titulo:"Direcionar Pix: fila com mais colunas, nomes curtos e bordas douradas", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"Na fila o nome aparece só com o primeiro e o segundo nome (inteiro no pedido aberto). A fila ganhou as colunas Vendas, A pagar e Obs. (ponto amarelo quando a atendente deixou observação) e ficou mais larga. As bordas dos blocos da tela viraram douradas e mais grossas (3 px). BlocoBarra aceita borda:ouro."},
+  ]},
+  {v:"0.12.47", data:"2026-10-24", titulo:"Direcionar Pix: fila em tabela mais larga e alinhada", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"A fila de pedidos ficou mais larga e virou tabela alinhada (hora, quem, tipo, atendente, já pago, Pix e espera), sem textos soltos. Os números do pedido aberto foram reduzidos para caberem sem cortar."},
+  ]},
+  {v:"0.12.46", data:"2026-10-24", titulo:"Direcionar Pix em 3 blocos alinhados", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"Tela em 3 blocos: Fila de pedidos e Direcionar este Pix lado a lado, com a mesma altura e a fila com rolagem; embaixo, Falta para fechar o mês · fornecedores, em tabela alinhada (clicar adiciona como destino). Saíram os blocos Devedores e Destinos que ainda faltam."},
+  ]},
+  {v:"0.12.40", data:"2026-10-24", titulo:"Agendamento: Plano 45/60 em uma tela com abas e mensagens em listagem", itens:[
+    {tipo:"melhoria", area:"Agendamento · Menu", txt:"O menu do Agendamento ficou sem a faixa de telas abertas (padrão dos setores com poucas telas) e com Plano 45/60 como uma palavra só. Painel, Indicações, Aprovação, Acompanhamento e Mensagens são abas visíveis dentro da tela do plano; a Aprovação usa botões de seleção para Em análise, Aprovadas, Pedidos do app e Reprovadas."},
+    {tipo:"melhoria", area:"Agendamento · Plano 45/60", txt:"Mensagens prontas agora em listagem (uma linha por mensagem, como em Cadastro → Mensagens prontas): filtro por destino e busca, clicar na linha mostra o texto, Copiar na linha."},
+  ]},
+  {v:"0.12.43", data:"2026-10-24", titulo:"Faturamento: 23/10 fechado", itens:[
+    {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"23/10 fechado: 1.330 acertos, R$ 1.049.731,83 no mês, média R$ 789,27 (dia 23 = 90 acertos e R$ 67.551,40)."}
+  ]},
+  {v:"0.12.42", data:"2026-10-24", titulo:"Faturamento: 22/10 fechado e colunas Acertos e Média", itens:[
+    {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"22/10 fechado: 1.240 acertos, R$ 982.180,43 no mês, média R$ 792,08 (dia 22 = 64 acertos e R$ 53.185,05). Na visão Faturamento vs Contas a pagar entraram as colunas Acertos e Média ao lado do Dia, antes do Faturamento."}
+  ]},
+  {v:"0.12.45", data:"2026-10-24", titulo:"Direcionar Pix: lista Falta para fechar o mês no topo e bloco Devedores", itens:[
+    {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"O bloco Falta para fechar o mês saiu de dentro do pedido e subiu para o topo da tela, em lista (fornecedor, falta, data limite, situação). Embaixo dele há o bloco novo Devedores, também em lista: prestadores e sócios com saldo no mês. Clicar numa linha adiciona como destino do Pix aberto."},
+  ]},
   {v:"0.12.44", data:"2026-10-24", titulo:"Direcionar Pix volta ao layout anterior", itens:[
     {tipo:"melhoria", area:"Financeiro · Direcionar Pix", txt:"O Marcus preferiu o layout de antes (fila ao lado, pedido aberto à direita, fornecedores em cartões no topo do pedido e Destinos que ainda faltam embaixo). A opção A (tudo empilhado em tabelas) foi desfeita. A faixa de fornecedores continua lendo o que falta para fechar o mês."},
   ]},

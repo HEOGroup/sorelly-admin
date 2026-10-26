@@ -1,5 +1,6 @@
 // Peças comuns das rotas da API (substituem o Fastify do servidor antigo): resposta JSON, erro, login obrigatório e leitura do corpo.
 import { SignJWT, jwtVerify } from "jose";
+import { consulta } from "./db.js";
 
 export const json = (corpo, status = 200) => Response.json(corpo, { status });
 export const erro = (msg, status) => json({ erro: msg }, status);
@@ -18,6 +19,12 @@ export async function usuarioDe(req) {
   if (!t) return null;
   try {
     const { payload } = await jwtVerify(t, segredo(), { algorithms: ["HS256"] });
+    if (payload.conta) {
+      // conta do sistema novo: vale o que está no banco agora (liberar, bloquear ou mudar setores tem efeito na hora)
+      const r = (await consulta("select id, nome, email, status, perfil, setores, pessoa_id from sorelly.conta where id::text = $1", [String(payload.id)])).rows[0];
+      if (!r || r.status !== "ativo") return null;
+      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true };
+    }
     return { id: payload.id, nome: payload.nome, email: payload.email, perfil: payload.perfil, setores: payload.setores || [], pessoaId: payload.pessoaId ?? null };
   } catch (e) {
     if (e && e.statusCode === 503) throw e;

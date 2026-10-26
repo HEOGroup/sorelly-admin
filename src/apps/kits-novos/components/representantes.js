@@ -6,6 +6,7 @@ import { RepFluxo } from "@/apps/kits-novos/components/rep-fluxo";
 import { RepHorarios } from "@/apps/kits-novos/components/rep-horarios";
 import { RepIndicar } from "@/apps/kits-novos/components/rep-indicar";
 import { RepRegioes } from "@/apps/kits-novos/components/rep-regioes";
+import { RepViagens } from "@/apps/kits-novos/components/rep-viagens";
 import { atrasado, entregou, mesDe } from "@/apps/kits-novos/domain/etapas";
 import { diasEntre } from "@/apps/kits-novos/lib/datas";
 import { recusasDaRep, recusasPorRep } from "@/apps/kits-novos/lib/bridge-montagem";
@@ -15,7 +16,7 @@ import { Vazio } from "@/apps/kits-novos/ui/card";
 import { Modal } from "@/apps/kits-novos/ui/modal";
 import { e, useState } from "@/shared/react";
 
-var SUBS = [["controle","Controle"], ["fluxo","Fluxo"], ["regioes","Regiões"], ["horarios","Horários"], ["indicar","Indicação"]];
+var SUBS = [["controle","Controle"], ["fluxo","Fluxo"], ["regioes","Regiões"], ["horarios","Horários"], ["viagens","Viagens"], ["indicar","Indicação"]];
 
 function estatisticas(s){
   var f = s.filtro, b = f.busca.toLowerCase(), rec = recusasPorRep(f.mes), m = {};
@@ -62,7 +63,7 @@ function Representantes(p){
   return e("div",{className:"flex flex-col gap-3"},
     e(AbasTela,{abas:SUBS, atual:sub, onMudar:function(k){ d({type:"SUBREP", sub:k}); }}),
     (sub==="controle" || sub==="fluxo") && e(Filtros,{listas:p.listas, ocultar:["rep","cid","ent","so"], placeholder:"Buscar representante"}),
-    sub==="controle" ? e(Controle) : sub==="fluxo" ? e(RepFluxo) : sub==="regioes" ? e(RepRegioes) : sub==="horarios" ? e(RepHorarios) : e(RepIndicar));
+    sub==="controle" ? e(Controle) : sub==="fluxo" ? e(RepFluxo) : sub==="regioes" ? e(RepRegioes) : sub==="horarios" ? e(RepHorarios) : sub==="viagens" ? e(RepViagens) : e(RepIndicar));
 }
 
 export { Representantes, estatisticas, SUBS };

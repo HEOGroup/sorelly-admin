@@ -37,8 +37,8 @@ function folderRegras(s){
       abaNova(s, "Comissões", [blocoNovo(s, {tipo:"faixas", titulo:"Comissão e brindes"})]),
       abaNova(s, "Regras", [
         blocoNovo(s, {tipo:"linhas", titulo:"Venda mínima", linhas:[{a:"Acerto com a representante", b:BKC(500)}, {a:"Acerto na Sorelly", b:BKC(700)}]}),
-        blocoNovo(s, {titulo:"Taxa de deslocamento", valor:taxa, texto:"Vendeu menos que o valor mínimo? Paga a taxa, somada no acerto."}),
-        blocoNovo(s, {titulo:"Cancelar o kit", valor:taxa, texto:"Quer cancelar o kit e vendeu menos que o valor mínimo? Não importa: paga a taxa do mesmo jeito."}),
+        blocoNovo(s, {titulo:"Taxa de deslocamento", valor:taxa, texto:"Vendeu menos de R$ 300? Paga a taxa, somada no acerto."}),
+        blocoNovo(s, {titulo:"Cancelar o kit", valor:taxa, texto:"Quer cancelar o kit e vendeu menos de R$ 300? Não importa: paga a taxa do mesmo jeito."}),
         blocoNovo(s, {tipo:"linhas", titulo:"Remarcação do acerto", linhas:rem, texto:"Motivo justificado não conta. A contagem recomeça a cada kit novo."}),
         blocoNovo(s, {tipo:"linhas", titulo:"Falta de pagamento", linhas:pag}),
         blocoNovo(s, {titulo:"Kit novo", texto:"Liberado com pelo menos 80% do acerto pago."})])]};

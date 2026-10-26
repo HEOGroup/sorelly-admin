@@ -105,7 +105,8 @@ function reducer(s, a){
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
     case "META_PCT_SET": return com(s, {metaPct:[96,97,98].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 97});   // 19/10/2026: 96/97/98, padrão 97 (acertos já passados para frente)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
-    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; return com(s, {fechaMes:fmk}, "Acertos a realizar do mês salvos"); }
+    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; return com(s, {fechaMes:fmk, carregarDia:cdk}, "Acertos a realizar do mês salvos"); }
+    case "CARREGAR_INICIO": { var cik = Object.assign({}, s.carregarInicio||{}); cik[a.ym] = Number(a.n)||0; return com(s, {carregarInicio:cik}, "Carregar do início do mês salvo"); }
     case "REV_REABRIR": { var raR = Object.assign({}, s.revAtualizadoEm||{}); delete raR[a.data]; return com(s, {revAtualizadoEm:raR}, "Revendedoras reabertas para atualizar"); }
     case "INT_CANCELAR": return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:a.cancelar ? "cancelado" : "agendado"}); })});
     // Contas pagas: lançamento diário por CNPJ (foto do dia, não mexe na grade mensal de Contas a pagar).

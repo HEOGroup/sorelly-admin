@@ -17,6 +17,7 @@ export const SLUG_DA_ABA = {
   p45ind: "plano-45-60-indicacoes",
   p45apr: "plano-45-60-aprovacao",
   p45acomp: "plano-45-60-acompanhamento",
+  p45alin: "plano-45-60-alinhamento",
   p45msg: "plano-45-60-mensagens",
   p45pnl: "plano-45-60-painel",
   agreps: "agendamento-representantes",

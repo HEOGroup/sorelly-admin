@@ -15,7 +15,9 @@
     "lint": "next lint",
     "verificar": "npm run lint && npm run build",
     "definir-senha": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/definir-senha.mjs",
-    "semear-rotina": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/semear-rotina.mjs"
+    "semear-rotina": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/semear-rotina.mjs",
+    "migrar-contas": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrar-contas.mjs",
+    "criar-admin": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/criar-admin.mjs"
   },
   "dependencies": {
     "@phosphor-icons/web": "2.1.1",
