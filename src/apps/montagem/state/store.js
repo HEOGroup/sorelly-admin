@@ -62,7 +62,7 @@ function semearRevInternas(st){
 var VERSAO_LISTAGENS = 12; // 9 = 4 representantes (Dayanne, Lysie, Jessica e Thalita), 3 acertos a realizar cada, nada bipado
 var VERSAO_REPS = 2; // 2 = só 4 representantes (Dayanne, Lysie, Jessica e Thalita) nas avaliações, recusas e virada do mês
 var CHAVE = "sorelly_montagem_v9"; // v4: tipos de item, condicionais, kit novo e retirada pelo app
-// 20/10/2026 (Marcus): acumulado do mês dia 1 a 15 = 791 acertos e R$ 630.605,94; dia 1 a 16 = 868 e R$ 689.631,19; dia 19 = 1.008 e R$ 789.350,24 (17 e 18 foram fim de semana). O "Hoje" provisório sai: vale o fixado. Registro em FATURAMENTO-DIARIO.md
+// 20/10/2026 (Marcus): acumulado do mês dia 1 a 15 = 791 acertos e R$ 630.605,94; dia 1 a 16 = 868 e R$ 689.631,19; dia 19 = 1.008 e R$ 789.350,24 (17 e 18 foram fim de semana). O "Hoje" provisório sai: vale o fixado. Registro em docs/negocio/FATURAMENTO-DIARIO.md
 function aplicaFat20(s){
   var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, fd = Object.assign({}, s.faturamentoDiario), cpd = Object.assign({}, s.contasPagasDiario);
   var ACU = {"2026-10-15":[630605.94, 791], "2026-10-16":[689631.19, 868], "2026-10-17":[689631.19, 868], "2026-10-18":[689631.19, 868], "2026-10-19":[789350.24, 1008]}, DIA = {"2026-10-15":[100029.55, 123], "2026-10-16":[59025.25, 77], "2026-10-17":[0, 0], "2026-10-18":[0, 0], "2026-10-19":[99719.05, 140]};
@@ -70,9 +70,9 @@ function aplicaFat20(s){
   s.faturamentoDiario = fd; s.contasPagasDiario = cpd; s.fatHoje = null; s.fatHoje19V = Math.max(s.fatHoje19V||0, 3); s.fechaMes = Object.assign({"2026-10":{aRealizar:908, carregar:16}}, s.fechaMes); s.metaPct = s.metaPct || 97;   // previstos do Marcus: 16 do Carregar + 908 a realizar; previsão a 96/97/98%, valendo 97
   return s;
 }
-// 20/10/2026, "Hoje" (acompanhamento, passado pelo Marcus): 1.120 acertos, R$ 887.486,78 acumulado do mês, média R$ 792,40; 7 vendas no Carregar sem valor (contam como feitas, fora da média); 783 acertos a realizar. Total do mês = 1.120 + 7 + 783 = 1.910. Previsão a 97%. Registro em FATURAMENTO-DIARIO.md
+// 20/10/2026, "Hoje" (acompanhamento, passado pelo Marcus): 1.120 acertos, R$ 887.486,78 acumulado do mês, média R$ 792,40; 7 vendas no Carregar sem valor (contam como feitas, fora da média); 783 acertos a realizar. Total do mês = 1.120 + 7 + 783 = 1.910. Previsão a 97%. Registro em docs/negocio/FATURAMENTO-DIARIO.md
 // 21/10/2026 (Marcus): 20/10 FIXADO = 1.124 acertos e R$ 888.787,53 acumulados no mês (média R$ 790,74); dia 20 = 116 acertos e R$ 99.437,29. O "Hoje" provisório de 20/10 sai. Carregar (7) e a realizar (783) seguem valendo até ele mandar outros.
-// 22/10/2026 (Marcus): 21/10 FECHADO = 1.176 acertos e R$ 928.995,38 acumulados no mês (média R$ 789,96); dia 21 = 52 acertos e R$ 40.207,85. O "Hoje" provisório sai. Carregar (7) e a realizar (783) seguem os últimos que ele passou. Registro em FATURAMENTO-DIARIO.md
+// 22/10/2026 (Marcus): 21/10 FECHADO = 1.176 acertos e R$ 928.995,38 acumulados no mês (média R$ 789,96); dia 21 = 52 acertos e R$ 40.207,85. O "Hoje" provisório sai. Carregar (7) e a realizar (783) seguem os últimos que ele passou. Registro em docs/negocio/FATURAMENTO-DIARIO.md
 function aplicaFat21(s){
   var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, k = "2026-10-21";
   s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:928995.38, acertos:1176, revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now()});
@@ -234,7 +234,7 @@ function inicial(){
     if(s.fatHoje19V!==3){ s.fatHoje19V = 3; s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:908, carregar:16}}); s.metaPct = 97; }
     // 13/10/2026 fechou em R$ 426.110,24 e 526 acertos (passado pelo Marcus): vale este acumulado, e o dia 14/10 sai pela diferença (R$ 104.463,15 e 142 acertos)
     if(s.fat13FixV!==1){ s.fat13FixV = 1; var r13 = (s.faturamentoDiario||{})["2026-10-13"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-10-13":Object.assign({}, r13, {recebido:426110.24, acertos:526, revendedoras:2069})}); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-14":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-14"], {faturado:104463.15, acertos:142})}); }
-    // 19/10/2026 (Marcus): acumulado do mês FIXADO até o dia 19: 1.008 acertos e R$ 789.350,24 (média R$ 783,09). Registro diário em FATURAMENTO-DIARIO.md
+    // 19/10/2026 (Marcus): acumulado do mês FIXADO até o dia 19: 1.008 acertos e R$ 789.350,24 (média R$ 783,09). Registro diário em docs/negocio/FATURAMENTO-DIARIO.md
     if(s.fat19FixV!==1){ s.fat19FixV = 1; var fd19 = Object.assign({}, s.faturamentoDiario), ant19 = Object.keys(fd19).filter(function(k){ return k>="2026-10-01" && k<"2026-10-19"; }).sort(), rv19 = Object.keys(s.revendedorasDiario||{}).sort(); fd19["2026-10-19"] = Object.assign({}, fd19["2026-10-19"], {recebido:789350.24, acertos:1008, revendedoras:rv19.length ? s.revendedorasDiario[rv19[rv19.length-1]] : ((fd19["2026-10-19"]||{}).revendedoras||0), fixadoEm:Date.now()}); s.faturamentoDiario = fd19; if(ant19.length){ var p19 = fd19[ant19[ant19.length-1]]; s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-19":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-19"], {faturado:Math.round((789350.24-(p19.recebido||0))*100)/100, acertos:1008-(p19.acertos||0)})}); } }
     // 20/10/2026 (Marcus): acumulado do mês dia 1 a 15 = 791 acertos e R$ 630.605,94; dia 1 a 16 = 868 e R$ 689.631,19; dia 19 = 1.008 e R$ 789.350,24 (17 e 18 foram fim de semana). O "Hoje" provisório de 19/10 sai: vale o fixado.
     if(s.fat20FixV!==1){ s.fat20FixV = 1; aplicaFat20(s); }

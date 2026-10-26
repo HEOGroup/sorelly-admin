@@ -2,6 +2,9 @@
   "name": "sorelly-admin",
   "private": true,
   "version": "2.0.0",
+  "engines": {
+    "node": ">=22.9"
+  },
   "scripts": {
     "gerar-locais": "node scripts/gerar-locais.mjs",
     "predev": "node scripts/gerar-locais.mjs",
@@ -9,10 +12,13 @@
     "prebuild": "node scripts/gerar-locais.mjs",
     "build": "next build",
     "start": "next start",
-    "definir-senha": "node --env-file-if-exists=.env.local scripts/definir-senha.mjs",
-    "semear-rotina": "node --env-file-if-exists=.env.local scripts/semear-rotina.mjs"
+    "lint": "next lint",
+    "verificar": "npm run lint && npm run build",
+    "definir-senha": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/definir-senha.mjs",
+    "semear-rotina": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/semear-rotina.mjs"
   },
   "dependencies": {
+    "@phosphor-icons/web": "2.1.1",
     "jose": "^5.9.6",
     "next": "14.2.35",
     "pg": "^8.13.0",
@@ -22,6 +28,8 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
+    "eslint": "^8.57.1",
+    "eslint-config-next": "14.2.35",
     "postcss": "^8.5.0",
     "tailwindcss": "^4.1.13"
   }

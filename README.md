@@ -1,164 +1,94 @@
 # Sorelly Admin
 
-Os dois HTMLs de página única viraram um projeto Vite + React + React Router,
-com rotas de verdade, uma página por arquivo e carregamento sob demanda.
+Painel interno da Sorelly Joias (semijoias em consignação): financeiro, kits, representantes, cadastro de revendedoras, RH, agendamento e os apps de celular simulados. Next.js 14 (App Router) + React 18 + React Router 6 + Tailwind 4, com o servidor dentro do próprio Next.
 
-> **22/10/2026: migrado para Next.js 14 com o servidor dentro do Next** (rotas `app/api/*`). A versão Vite + servidor Fastify está inteira em `backup/`. Comandos: `npm run dev` (http://localhost:3000), `npm run build`, `npm run start`. Variáveis: `.env.exemplo`. O texto abaixo conta a história da migração dos HTMLs para Vite; a tela e as regras continuam as mesmas.
+## Rodar
 
-**Nada mudou na tela.** O DOM renderizado das 20 telas foi comparado caractere a
-caractere com o dos HTMLs originais: idêntico (só variam relógios e cronômetros).
+Requisitos: Node 22.9+ (`.nvmrc`) e npm.
 
 ```bash
 npm install
-npm run dev      # http://localhost:5173
-npm run build    # gera dist/
-npm run preview  # serve o dist/
+npm run dev          # http://localhost:3000
 ```
 
----
+Sem `.env`, o sistema abre em modo local: sem login, dados de demonstração guardados no navegador.
 
-## O que mudou, e por quê
+Para ligar o servidor, copie `.env.exemplo` para `.env.local` e preencha:
 
-| Antes | Agora |
+| Variável | Para quê |
 |---|---|
-| React 18 minificado colado dentro do HTML (~300 KB por arquivo, duas cópias) | `react` do npm, num chunk separado que o navegador cacheia uma vez |
-| Tailwind compilado **no navegador** a cada carregamento (`@tailwindcss/browser`) | Tailwind compilado no build: um `.css` de 76 KB (12 KB gzip) |
-| 2.005 registros da planilha numa linha de 1 MB dentro do HTML | `public/dados/kits-novos-curitiba.json`, buscado só quando alguém abre o app de kits |
-| Todas as telas no mesmo arquivo, carregadas juntas | Uma página por arquivo, cada uma num chunk próprio |
-| Tela ativa = `state.aba` (string no localStorage), sem URL | Rota real: `/montagem/consolidado`, `/kits-novos/pendencias` — dá para linkar, favoritar e voltar |
-| 1 arquivo de 3.619 linhas + 1 de 1.030 | 101 arquivos, o maior com ~250 linhas |
+| `DATABASE_URL` | Postgres (schema `sorelly`, estrutura em `banco/schema.sql`). |
+| `JWT_SECRET` | Texto longo e aleatório para assinar o login. |
+| `DEVMASTER_API_URL` / `DEVMASTER_API_KEY` | Leitura de revendedoras do DevMaster (opcional). |
+| `NEXT_PUBLIC_API_URL` | `/api` liga o login e a sincronização com o servidor. Vazio = modo local. |
+| `NEXT_PUBLIC_MODULOS_SERVIDOR`, `NEXT_PUBLIC_SETORES_LIGADOS`, `NEXT_PUBLIC_ADMIN_ANTIGO_URL` | Quais módulos sincronizam, quais setores aparecem no menu e o atalho para o admin antigo. |
 
-O corpo das funções não foi reescrito: elas continuam em `React.createElement`,
-recortadas dos originais e movidas para módulos ES. O que se acrescentou foram
-os `import`/`export` e a camada de rotas. Isso é o que garante que o resultado
-seja idêntico — e não impede escrever as telas novas em JSX, os dois convivem.
+`NEXT_PUBLIC_*` são lidas na hora do build: mudou, gere de novo.
 
----
+## Comandos
 
-## Mapa do projeto
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Sistema em modo de desenvolvimento. |
+| `npm run build` / `npm run start` | Build de produção e servidor de produção. |
+| `npm run lint` | ESLint (padrão `next/core-web-vitals`). |
+| `npm run verificar` | Lint + build: o mesmo que o CI roda em cada PR. |
+| `npm run definir-senha -- email "senha" <idDaPessoa> <setor1,setor2>` | Cria ou troca a senha de uma pessoa. |
+| `npm run semear-rotina` | Carrega os itens da Rotina do dia no banco. |
+
+Não rode `dev` e `build` ao mesmo tempo: os dois escrevem em `.next/`.
+
+## Mapa
 
 ```
+app/                  entrada do Next: layout, casca do sistema e rotas da API (app/api)
 src/
-├─ cliente.js                 entrada no navegador: monta o router (chamada por app/[[...slug]]/)
-├─ server/                    servidor (login, estado, rotina, DevMaster) usado por app/api/*
-├─ router/
-│  ├─ rotas.js                TABELA DE ROTAS — uma linha por página
-│  └─ use-rota-aba.js         sincroniza URL <-> state.aba dos dois apps
-├─ styles/theme.css           @theme, :root e .dark (copiados do HTML original)
-├─ shared/react.js            `e = React.createElement` e os hooks
-└─ apps/
-   ├─ montagem/               montagem e bipagem — 15 telas
-   │  ├─ App.js               casca: menu por setores, cabeçalho, <Outlet/>
-   │  ├─ pages/               UMA TELA POR ARQUIVO
-   │  ├─ components/          pedaços reusados entre telas (Fila, diálogos, …)
-   │  ├─ mobile/              os apps de celular simulados
-   │  ├─ ui/                  Icon, Btn, Modal, Card, KPI, tabela…
-   │  ├─ domain/              equipe, regras, configuração, dados de exemplo
-   │  ├─ state/               Ctx, store, reducer
-   │  ├─ navigation/          abas, setores, marcas, perfis
-   │  ├─ router/slugs.js      aba <-> pedaço da URL
-   │  └─ styles/montagem.css  CSS dos apps de celular (`.app-claro`)
-   └─ kits-novos/             kits novos Curitiba — 5 telas (mesma estrutura)
-      └─ data/dados.js        busca o .json da planilha
-referencia/                   os dois HTMLs originais, intactos
+├─ cliente.js         React Router no navegador
+├─ router/rotas.js    tabela de rotas: uma linha por tela
+├─ apps/montagem/     app principal (todos os setores)
+├─ apps/kits-novos/   app de Kits novos (Curitiba)
+├─ server/            login, permissões, estado dos módulos, Rotina do dia, DevMaster
+├─ shared/            peças dos dois apps
+└─ styles/            tema (Tailwind) e fontes
+scripts/              gerar-locais (antes do dev/build), definir-senha, semear-rotina
+banco/schema.sql      estrutura do banco
+docs/                 negócio, padrão visual, decisões e operação
 ```
 
-**Por que cada app tem seu próprio `ui/`:** os dois kits são quase iguais, mas
-não são iguais. O `Icon` do montagem usa Phosphor; o do kits desenha SVG inline.
-`KPI` e `TH` também divergem. Unificar hoje mudaria o visual de um dos dois —
-então ficaram separados, e a unificação é um passo à parte, quando fizer sentido.
+Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
 
----
+## Criar uma tela
 
-## Criar uma página nova
-
-1. `src/apps/montagem/pages/MinhaTela.js`:
+1. Crie `src/apps/montagem/pages/MinhaTela.js` usando as peças de `components/padrao.js` (leia antes [`docs/design/PADRAO-VISUAL.md`](docs/design/PADRAO-VISUAL.md)):
 
    ```js
    import { e } from "@/shared/react";
+   import { Pagina } from "@/apps/montagem/components/padrao";
    import { PageHead } from "@/apps/montagem/ui/page";
 
-   export function MinhaTela() {
-     return e(PageHead, { t: "Minha tela", s: "Descrição" });
+   export function AbaMinhaTela() {
+     return e(Pagina, null, e(PageHead, { t: "Minha tela", sub: "Uma linha que diz para que serve." }));
    }
    ```
-
-   (ou em JSX, se preferir — renomeie para `.jsx`.)
 
 2. Uma linha em `src/router/rotas.js`:
 
    ```js
-   pagina("minha-tela", () => import("@/apps/montagem/pages/MinhaTela"), "MinhaTela"),
+   pagina("minha-tela", () => import("@/apps/montagem/pages/MinhaTela"), "AbaMinhaTela"),
    ```
 
-3. Para ela aparecer no menu: acrescente a aba em
-   `src/apps/montagem/navigation/abas.js`, o slug em
-   `src/apps/montagem/router/slugs.js` e a tela no setor certo em
-   `navigation/setores.js`.
+   Isso já deixa `/montagem/minha-tela` funcionando.
 
-O passo 2 sozinho já deixa `/montagem/minha-tela` funcionando — útil para
-páginas dedicadas que não entram no menu.
+3. Para aparecer no menu: a aba em `navigation/abas.js`, o slug em `router/slugs.js` e a tela no setor certo em `navigation/setores.js`.
 
----
+4. Registre o que mudou em `domain/versoes.js` (Tecnologia → Versões) e a decisão em [`docs/DECISOES.md`](docs/DECISOES.md).
 
-## Como as rotas conversam com o estado
+## Qualidade e entrega
 
-O reducer dos dois apps continua guardando `state.aba`, porque várias ações
-trocam a tela por conta própria (`LOGIN` manda a montadora para Listagens,
-`ABRIR_CALC` abre a calculadora). `useRotaAba` mantém os dois lados alinhados:
+- Todo PR e push no `master` passa pelo GitHub Actions (`.github/workflows/ci.yml`): `npm ci`, lint e build. Com X vermelho, não faça merge.
+- Rode `npm run verificar` antes de abrir o PR.
+- O repositório é público: dados reais ficam só em arquivos `*.local.js` (fora do Git) e segredos só no `.env.local`.
 
-- **URL manda na montagem.** Um link aberto do zero ganha da última aba salva
-  no localStorage.
-- **Menu, Voltar e Avançar** mudam a URL, e o estado segue.
-- **Ações do reducer** que trocam a aba empurram a URL junto.
-- **Aba sem permissão** para o perfil logado: a URL é corrigida com `replace`,
-  sem sujar o histórico.
+## Documentação
 
-## Conferir contra o original
-
-`referencia/` tem os dois HTMLs como estavam. Abra um no navegador, abra a
-versão nova ao lado e compare. Em desenvolvimento, `window.__router` deixa
-navegar pelo console sem recarregar:
-
-```js
-await window.__router.navigate("/montagem/equipe");
-```
-
----
-
-## Notas da migração
-
-**Duas funções chamadas `B`.** No HTML do montagem havia `function B(n)` (formata
-moeda, linha 177) e, 2.700 linhas depois, `function B(nome)` (monta um item "em
-breve" do menu). No mesmo escopo, a segunda apagava a primeira — ou seja, a de
-moeda nunca era chamada. Em módulos separados o conflito deixa de existir: a de
-moeda está em `apps/montagem/lib/format.js` e a do menu em `navigation/setores.js`.
-Nenhum comportamento mudou; só vale saber que `B` de moeda continua sem uso.
-
-**Um token de tema divergia.** No escuro, `--muted-foreground` era
-`oklch(0.86 0 0)` no montagem ("textos secundários quase brancos, a pedido") e
-`oklch(0.68 0 0)` no kits. O tema base ficou com o valor do kits e o montagem
-sobrescreve o token via `html.dark.app-montagem`, classe que o `App.js` daquele
-app põe e tira do `<html>`.
-
-**Phosphor só no montagem.** Os ícones Phosphor (~320 KB de fonte) são carregados
-pelo CSS do app de montagem, não pelo `index.html`. O app de kits desenha SVG
-inline e não baixa nada disso — como no HTML original dele.
-
-## Medições
-
-Mesmo servidor, com gzip, cache limpo, 1440x900:
-
-| | HTML original | Projeto novo |
-|---|---|---|
-| **montagem**, `domInteractive` | 279 ms | 77 ms |
-| **montagem**, carregamento completo | 311 ms | 240 ms |
-| **kits novos**, `domInteractive` | 346 ms | 89 ms |
-| **kits novos**, carregamento completo | 454 ms | 160 ms |
-| **kits novos**, total transferido | 311 KB | 278 KB (118 KB são o .json) |
-
-O salto no `domInteractive` vem de não compilar mais o Tailwind no navegador.
-O total transferido cai pouco na primeira visita porque fontes e ícones
-dominam; na segunda visita a diferença é maior, já que agora os pedaços são
-arquivos com hash e o navegador só rebaixa o que mudou — antes, qualquer
-alteração invalidava o HTML inteiro.
+Índice em [`docs/README.md`](docs/README.md): decisões, regras do negócio, padrão visual, prompts e como subir o sistema. A história da migração dos HTMLs para Vite está em [`docs/operacao/historico-migracao.md`](docs/operacao/historico-migracao.md); a versão Vite inteira está na tag `vite-final` do Git.

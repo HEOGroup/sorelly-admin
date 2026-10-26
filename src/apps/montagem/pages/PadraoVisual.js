@@ -1,13 +1,13 @@
 // Sorelly Admin · montagem — pages/PadraoVisual.js
 // Tecnologia → Padrão visual. Duas visões (abas): "Prompt para novos sistemas" (UM botão copia o texto completo) e "Padrão visual" (as peças ao vivo: cores, degradês, indicadores, tabela, kanban, janela).
-// O texto do prompt vem dos arquivos da raiz: PROMPT-MESTRE.md (prompt geral de criação de sistemas) + PADRAO-VISUAL.md (anexo com as regras e as peças).
+// O texto do prompt vem dos arquivos de docs/: docs/prompts/PROMPT-MESTRE.md (prompt geral de criação de sistemas) + docs/design/PADRAO-VISUAL.md (anexo com as regras e as peças).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { Abas, BarraFiltros, ESTADO, Faixa, Indicador, Janela, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 import { Kanban } from "@/shared/kanban";
-import PROMPT_MESTRE from "../../../../PROMPT-MESTRE.md?raw";
-import PADRAO_MD from "../../../../PADRAO-VISUAL.md?raw";
+import PROMPT_MESTRE from "../../../../docs/prompts/PROMPT-MESTRE.md?raw";
+import PADRAO_MD from "../../../../docs/design/PADRAO-VISUAL.md?raw";
 
 // O mega texto: prompt geral + anexo com o padrão visual completo (tudo o que está escrito aqui, num clique)
 var TEXTO_COMPLETO = PROMPT_MESTRE.trim() + "\n\n════════════════════════════════════════\nANEXO · PADRAO-VISUAL.md (regras e peças do padrão visual, texto integral)\n════════════════════════════════════════\n" + PADRAO_MD.trim() + "\n";

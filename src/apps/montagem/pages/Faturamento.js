@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — pages/Faturamento.js
-// TELA DE REFERÊNCIA do padrão do Financeiro (regra fixa do Marcus, 22/10/2026; texto no fim de PADRAO-VISUAL.md). Toda tela do Financeiro copia esta estrutura:
+// TELA DE REFERÊNCIA do padrão do Financeiro (regra fixa do Marcus, 22/10/2026; texto no fim de docs/design/PADRAO-VISUAL.md). Toda tela do Financeiro copia esta estrutura:
 //   título + botão de ação · bloco Filtros (grade de 4 colunas, 32 px) · faixa de totais (rótulo + valor) · abas visíveis · tabela(s) no padrão (components/padrao-fin.js).
 // Abas: Dia a dia (faturamento × contas, só resultado) · Mês a mês (12 meses lado a lado + detalhe editável) · Previsão (tudo previsão, separada) · Lançar (formulário do dia).
 // Os números vêm das mesmas fontes de sempre (faturamentoDiario, contasPagasDiario, contasPagar, fechaMes), então batem com a Visão geral. Quem edita: autorização faturamento_edita.

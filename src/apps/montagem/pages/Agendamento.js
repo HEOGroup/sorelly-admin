@@ -262,8 +262,9 @@ function AbaAgAbertura(){
 function AbaAgConfig(){
   var c = useAg(), ag = c.ag, cfg = ag.config, nf = useState({pct:"", bonus:""}), novaF = nf[0], setNovaF = nf[1], nn = useState(""), novaFn = nn[0], setNovaFn = nn[1], nr = useState({codigo:"", nome:""}), novaR = nr[0], setNovaR = nr[1];
   var aberto = mesAberto(ag), pg = aberto ? Object.assign({prevista:null, confirmada:null, por:null}, ag.mes[aberto].pagamento) : null;
+  var jr = useState({pri:"", dup:""}), jun = jr[0], setJun = jr[1];   // antes do return: hooks sempre na mesma ordem
   if(!c.gerente) return e(Sem,{t:"Configurador do Agendamento", sub:"Representantes e quem gerencia o setor.", msg:"Só quem gerencia o setor (Diretoria e Ana Maria) mexe no Configurador."});
-  var jr = useState({pri:"", dup:""}), jun = jr[0], setJun = jr[1], par = parecidas(ag);
+  var par = parecidas(ag);
   var campoTxt = function(v, label, onSalvar, cls){ return e("input",{key:v, defaultValue:v, "aria-label":label, className:INPUT+" h-9! "+(cls||"w-full"), onBlur:function(ev){ if(ev.target.value!==v) onSalvar(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }}); };
   var del = function(fn){ return e("button",{onClick:fn, "aria-label":"Excluir", className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"trash", s:15})); };
   var chk = function(on, onChange, txt){ return e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:on, onChange:function(ev){ onChange(ev.target.checked); }, className:"size-4"}), txt); };
