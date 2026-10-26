@@ -16,7 +16,7 @@ import { BKC } from "@/apps/montagem/lib/format";
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var hm = function(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2, "0")+":"+String(d.getMinutes()).padStart(2, "0"); };
@@ -69,6 +69,15 @@ function contasNegativas(s){
   l.forEach(function(x){ x.junto = tot[x.grupo]>1; });
   return l.sort(function(a, b){ return (minimo[a.grupo]-minimo[b.grupo]) || (a.grupo<b.grupo ? -1 : a.grupo>b.grupo ? 1 : 0) || a.saldo-b.saldo; });
 }
+// todas as contas por CNPJ (sem bloqueadas e sem aplicações), para o botão "Ver todas as contas" e para trocar o Rotativo pela conta Sicredi do mesmo CNPJ
+function contasTodas(s){
+  var sc = s.saldosContas; if(!sc) return [];
+  var ref = dataReferencia(sc, hojeIsoCp()); if(!ref) return [];
+  return posicaoEm(sc, ref).blocos.map(function(b){ return {id:b.id, contas:b.contas.filter(function(x){ return !x.conta.bloqueada && x.conta.tipo!=="CAIXA"; }).map(function(x){ return {id:x.conta.id, nome:x.conta.nome, saldo:r2(x.saldo), limite:x.conta.limite||0, disp:r2(x.disp)}; })}; }).filter(function(b){ return b.contas.length; });
+}
+var ehRotativo = function(n){ return /rotativo/i.test(String(n||"")); };
+// Pix não vai para o Rotativo (Marcus, 26/10/2026): ele fica dentro do Sicredi do mesmo CNPJ; para liquidar o Rotativo o Pix vai para o Sicredi
+function contaPixDe(blocos, bloco, nome){ if(!ehRotativo(nome)) return nome; var b = blocos.filter(function(z){ return z.id===bloco; })[0], alvo = b && b.contas.filter(function(x){ return /sicredi/i.test(x.nome) && !ehRotativo(x.nome); })[0]; return alvo ? alvo.nome : nome; }
 function contextoCnpj(s){
   setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
   var hoje = hojeIsoCp(), amanha = (function(){ var d = new Date(hoje+"T12:00:00"); d.setDate(d.getDate()+1); return d.toISOString().slice(0, 10); })();
@@ -96,6 +105,9 @@ function AbaDirecionar(){
   var c = useDP(), s = c.s, cp = c.cp, dp = c.dp, ctxCnpj = contextoCnpj(s);
   var so = useState("todos"), orig = so[0], setOrig = so[1], ss = useState(null), selId = ss[0], setSelId = ss[1], sd = useState({}), drafts = sd[0], setDrafts = sd[1], se = useState("");
   var erro = se[0], setErro = se[1];
+  // H&O também recebe Pix (Marcus, 26/10/2026): cria o destino uma vez, se ainda não existir (o estado vem do servidor e não passa pela migração)
+  var semHO = c.edita && !cp.destinos.some(function(d){ return d.cnpjId==="HO"; });
+  useEffect(function(){ if(semHO) c.d({type:"CP", op:"destino_add", nome:"CNPJ H&O · H&O Apps", tipo:"CNPJ", cnpjId:"HO"}); }, [semHO]);   // eslint-disable-line react-hooks/exhaustive-deps
   var limAlto = dp.limiteAlto || 7000;
   // valor alto passa na frente da fila; depois, o mais antigo (24/10/2026)
   var fila = dp.pix.filter(function(x){ return x.status==="fila" && (orig==="todos" || x.origem===orig); }).sort(function(a, b){ var ha = a.valor>=limAlto, hb = b.valor>=limAlto; if(ha!==hb) return ha ? -1 : 1; return a.recebidoEm-b.recebidoEm; });
@@ -135,8 +147,8 @@ function AbaDirecionar(){
   ctxCnpj.forEach(function(x){ var d = cp.destinos.filter(function(z){ return z.cnpjId===x.id; })[0]; if(d && (x.hoje+x.amanha)>0) faltam.push({id:d.id, nome:d.nome, tipo:"CNPJ", falta:r2(x.hoje+x.amanha), info:"vencem hoje e amanhã"}); });
   var sfm = useState("falta"), modoForn = sfm[0], setModoForn = sfm[1];
   var veFam = ACESSO_FF.indexOf(s.usuario)>=0 && !!(s.ff && s.ff.dividas), dividasFam = veFam ? dividasDaFamilia(s.ff, cp, hojeIsoCp()) : [], totalFam = r2(dividasFam.reduce(function(tt, x){ return tt+x.falta; }, 0)), famVenc = dividasFam.filter(function(x){ return x.dias<0; }).length;
-  var fornLista = fornecedoresDoMes(cp, modoForn==="mes"), negativas = contasNegativas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
-  var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
+  var fornLista = fornecedoresDoMes(cp, modoForn==="mes"), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
+  var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1], spv = useState({}), pendV = spv[0], setPendV = spv[1], sva = useState(false), verTodas = sva[0], setVerTodas = sva[1], sab = useState({}), abertosC = sab[0], setAbertosC = sab[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
   var optsDe = function(f){ var l = [["", f==="pix" ? "Escolha a conta" : "Escolha o CNPJ", ""]];
     if(f==="pix") Object.keys(TIPOS_DESTINO).forEach(function(tp){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).forEach(function(d){ l.push([d.id, d.nome, tipoNome(tp)]); }); });
     else cp.destinos.filter(function(d){ return d.ativo && d.tipo==="CNPJ"; }).forEach(function(d){ l.push([d.id, d.nome, f==="link" ? "Link de pagamento do CNPJ" : "Maquininha do CNPJ"]); });
@@ -164,7 +176,7 @@ function AbaDirecionar(){
     // 2) nada disso serviu: tudo no MESMO CNPJ, o mais no negativo, nas contas negativas dele
     var comCnpj = negativas.filter(function(x){ return cp.destinos.some(function(z){ return z.cnpjId===x.bloco; }); });
     if(comCnpj.length){ var bl = comCnpj[0].bloco, dn = cp.destinos.filter(function(z){ return z.cnpjId===bl; })[0], mesmas = comCnpj.filter(function(x){ return x.bloco===bl; });
-      mesmas.forEach(function(x, k){ if(rest>0.004) push(dn.id, k===mesmas.length-1 ? rest : -x.saldo, "CNPJ "+bl+": "+x.nome+" está no negativo (−"+BKC(-x.saldo)+")", 7, x.nome); }); }
+      mesmas.forEach(function(x, k){ if(rest>0.004) push(dn.id, k===mesmas.length-1 ? rest : -x.saldo, "CNPJ "+bl+": "+x.nome+" está no negativo (−"+BKC(-x.saldo)+")"+(ehRotativo(x.nome) ? " · o Pix vai para o Sicredi, que liquida o Rotativo" : ""), 7, contaPixDe(todasC, bl, x.nome)); }); }
     else if(fz && fz.opcoes[0]) push(fz.opcoes[0].destinoId, rest, fz.opcoes[0].motivo, fz.opcoes[0].regra);
     return rows;
   };
@@ -178,9 +190,10 @@ function AbaDirecionar(){
   var ROT = "mb-1 text-[11px] font-medium uppercase tracking-[.05em]", OURO = {color:"#f5c14b"};
   var estado = !div.length ? "" : restante>0.009 ? "falta "+BKC(restante) : restante<-0.009 ? "passou "+BKC(-restante) : "fechado";
   // Vendas: linhas aparecem conforme os pedidos chegam
-  var blocoVendas = Painel("Vendas", "Na fila", fila.length ? fila.length+" · "+BKC(soma(fila.map(function(x){ return {valor:x.valor}; }))) : "0", "#4ade80", fila.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:340, cols:[{t:"Revendedora"},{t:"Forma", w:108},{t:"Direcionar", n:true, w:100},{t:"Espera", w:68}]}, fila.map(function(x){ var on = sel && sel.id===x.id, esp = COR_ESPERA[nivelEspera(x.recebidoEm)];
+  var blocoVendas = Painel("Vendas", "Na fila", fila.length ? fila.length+" · "+BKC(soma(fila.map(function(x){ return {valor:x.valor}; }))) : "0", "#4ade80", fila.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:440, cols:[{t:"Revendedora"},{t:"Origem", w:92},{t:"Forma", w:100},{t:"Direcionar", n:true, w:100},{t:"Espera", w:68}]}, fila.map(function(x){ var on = sel && sel.id===x.id, esp = COR_ESPERA[nivelEspera(x.recebidoEm)];
     return e("tr",{key:x.id, onClick:function(){ setSelId(x.id); setErro(""); }, className:"cursor-pointer "+(on ? "bg-[#1f3a6e]" : "hover:bg-white/10"), style:{boxShadow:"inset 4px 0 0 "+esp}, title:"Chegou às "+hm(x.recebidoEm)+" · "+(x.origem==="interno" ? "Interno Sorelly · atendida por "+x.atendente : "Representante"+(x.maq ? " · "+x.maq : ""))+(x.vendas>0 ? " · vendas "+BKC(x.vendas) : "")+(x.valor>=limAlto ? " · valor alto" : "")},
-      e("td",{className:"h-8 whitespace-normal break-words border-b border-border px-2.5 py-1 text-left font-semibold leading-snug"}, doisNomes(String(x.quem).replace(/^Representante\s+/, ""))+(x.valor>=limAlto ? " ↑" : "")),
+      e("td",{className:"h-8 whitespace-normal break-words border-b border-border px-2.5 py-1 text-left font-semibold leading-snug"}, (x.origem==="rep" ? (x.revendedora ? doisNomes(x.revendedora) : "—") : doisNomes(x.quem))+(x.valor>=limAlto ? " ↑" : "")),
+      e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-left font-semibold", title:x.origem==="rep" ? "Representante "+(x.repOrigem||"") : "Interno Sorelly"}, x.origem==="rep" ? doisNomes(x.repOrigem || String(x.quem).replace(/^Representante\s+/, "")) : "Interno"),
       e("td",{className:"h-8 whitespace-normal border-b border-border px-2.5 py-1 text-left leading-snug "+(partesDe(x).some(function(q){ return q.forma!=="pix"; }) ? "font-semibold text-warning" : "")}, partesDe(x).map(function(q){ return formaPalavra(q.forma); }).join(" + ")),
       e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-right font-bold tabular-nums", style:{color:"#f5c14b"}}, BKC(x.valor)),
       e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-left font-semibold tabular-nums", style:{color:esp}}, curto(x.recebidoEm))); })))
@@ -202,12 +215,20 @@ function AbaDirecionar(){
         return e(Tr,{key:x.id, apagado:x.saldo<=0.005, onClick:pode ? function(){ addDest(x.destinoId, Math.min(restPix(), x.saldo), 0, "", "Conta a pagar · falta "+BKC(x.saldo), "pix"); } : undefined, title:pode ? "Adicionar "+x.nome+" como destino do Pix aberto" : undefined},
           e(TdN,{forte:true, title:x.nome}, x.nome), modoForn==="mes" && e(Td,{n:true}, BKC(x.aPagar)), modoForn==="mes" && e(Td,{n:true, cor:x.pago>0.005 ? "text-success" : "", forte:true}, BKC(x.pago)), falta, limite, situacao); })))
       : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Sem saldo de fornecedores. Rode scripts/planilha-fornecedores.mjs com a planilha."),
-    modoForn!=="familia" && e("details",{className:"border-t border-border px-3 py-1.5 text-[13px] text-foreground"}, e("summary",{className:"cursor-pointer"}, "Como o Pix quita"), e("p",{className:"pt-1"}, "Pontual: o Pix quita a parcela aberta mais antiga e o que passar vai para a próxima. Cartão quita o 1 a 10 do mês seguinte, com desconto estimado de "+String(descontoCartao()).replace(".", ",")+"% (média dos últimos 3 meses). Planilha de "+(geradoEm() ? geradoEm().slice(8,10)+"/"+geradoEm().slice(5,7) : "—")+"."))));
+    null));
   // Contas negativas
-  var blocoNegativas = Painel("Contas negativas", negativas.length+(negativas.length===1 ? " conta" : " contas"), negativas.length ? "−"+BKC(-totalNeg) : "R$ 0,00", "#f87171", negativas.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:330, cols:[{t:"Conta"},{t:"Saldo", n:true, w:118},{t:"Disponível", n:true, w:112}]}, negativas.map(function(x){ var d = cp.destinos.filter(function(z){ return z.cnpjId===x.bloco; })[0], pode = c.edita && d && sel && restante>0.004;
-      return e("tr",{key:x.id, onClick:pode ? function(){ addDest(d.id, Math.min(restante, -x.saldo), 7, x.nome, "Conta negativa · saldo −"+BKC(-x.saldo)); } : undefined, title:(pode ? "Enviar Pix para "+x.nome+" · " : "")+"Limite "+(x.limite ? BKC(x.limite) : "—"), className:pode ? "cursor-pointer hover:bg-white/10" : "", style:x.junto ? {boxShadow:"inset 4px 0 0 #d9a63a"} : undefined},
-        e(TdN,{forte:true, title:x.nome}, x.nome), e(Td,{n:true, cor:"text-destructive"}, "−"+BKC(-x.saldo)), e(Td,{n:true, cor:x.disp<0 ? "text-destructive" : ""}, x.disp<0 ? "−"+BKC(-x.disp) : BKC(x.disp))); })))
-    : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Nenhuma conta negativa agora."));
+  var dinheiroC = function(v){ return v<0 ? "−"+BKC(-v) : BKC(v); };
+  var nomeCnpj = function(id){ var d = cp.destinos.filter(function(z){ return z.cnpjId===id; })[0]; return d ? d.nome : id==="HO" ? "CNPJ H&O · H&O Apps" : id; };
+  var todasCnpj = todasC.filter(function(b){ return /^(34|46|59|67|HO)$/.test(b.id); });
+  var linhaConta = function(x, bloco, negativa){ var d = cp.destinos.filter(function(z){ return z.cnpjId===bloco; })[0], pode = c.edita && d && sel && restante>0.004, conta = contaPixDe(todasC, bloco, x.nome), v = negativa ? Math.min(restante, -x.saldo) : restante;
+    return e("tr",{key:x.id, onClick:pode ? function(){ addDest(d.id, v, 7, conta, (negativa ? "Conta negativa · saldo −"+BKC(-x.saldo) : "Conta de "+nomeCnpj(bloco))+(conta!==x.nome ? " · Pix vai para "+conta+" (liquida o Rotativo)" : "")); } : undefined, title:(pode ? "Enviar Pix para "+conta+" · " : "")+"Limite "+(x.limite ? BKC(x.limite) : "—"), className:pode ? "cursor-pointer hover:bg-white/10" : "", style:x.junto ? {boxShadow:"inset 4px 0 0 #d9a63a"} : undefined},
+      negativa && e(Td,{forte:true, title:nomeCnpj(bloco)}, bloco), e(TdN,{forte:true, title:x.nome}, x.nome), e(Td,{n:true, cor:x.saldo<0 ? "text-destructive" : ""}, dinheiroC(x.saldo)), e(Td,{n:true, cor:x.disp<0 ? "text-destructive" : ""}, dinheiroC(x.disp))); };
+  var botaoTodas = e("div",{className:"flex items-center justify-end border-b border-border px-3 py-1.5"}, e("button",{type:"button", onClick:function(){ setVerTodas(!verTodas); }, className:"h-7 rounded-md border px-2.5 text-[13px] hover:bg-white/10 "+(verTodas ? "border-primary bg-primary/20 font-semibold text-primary" : "border-border")}, verTodas ? "Só negativas" : "Ver todas as contas"));
+  var corpoTodas = e("div",{className:"flex flex-col"}, todasCnpj.map(function(b){ var ab = !!abertosC[b.id], tot = r2(b.contas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
+    return e("div",{key:b.id, className:"min-w-0"}, e("button",{type:"button", onClick:function(){ var n = Object.assign({}, abertosC); n[b.id] = !ab; setAbertosC(n); }, className:"flex h-8 w-full items-center justify-between gap-2 border-b border-border bg-white/5 px-3 text-left text-[13px] font-semibold hover:bg-white/10"}, e("span",{className:"min-w-0 truncate"}, (ab ? "▾ " : "▸ ")+nomeCnpj(b.id)+" · "+b.contas.length+(b.contas.length===1 ? " conta" : " contas")), e("span",{className:"shrink-0 tabular-nums "+(tot<0 ? "text-destructive" : "")}, dinheiroC(tot))),
+      ab && e(TabelaP,{minW:330, cols:[{t:"Conta"},{t:"Saldo", n:true, w:118},{t:"Disponível", n:true, w:112}]}, b.contas.map(function(x){ return linhaConta(Object.assign({}, x, {junto:false}), b.id, false); }))); }));
+  var blocoNegativas = Painel("Contas negativas", negativas.length+(negativas.length===1 ? " conta" : " contas"), negativas.length ? "−"+BKC(-totalNeg) : "R$ 0,00", "#f87171", e("div",{className:"flex flex-col"}, botaoTodas, verTodas ? corpoTodas : negativas.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:400, cols:[{t:"CNPJ", w:60},{t:"Conta"},{t:"Saldo", n:true, w:118},{t:"Disponível", n:true, w:112}]}, negativas.map(function(x){ return linhaConta(x, x.bloco, true); })))
+    : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Nenhuma conta negativa agora.")));
   // Pedido aberto: cabeçalho, 4 valores em uma linha e 3 colunas (Sugestão | Para onde vai | Confirmar)
   // ── PEDIDO ABERTO · modelo 3B (Marcus, 26/10/2026): Valores em linhas | Para onde enviar (sugestão do sistema ou lista fechada com Editar e ✕) | Confirmar
   // ── PEDIDO ABERTO · versão 2 (Marcus, 26/10/2026): resumo dos valores à esquerda e, à direita, uma linha baixa por pagamento (destino numa seleção, motivo embaixo, estado à direita). Dividir e Editar só aparecem quando precisam.
@@ -220,40 +241,79 @@ function AbaDirecionar(){
   var temSugestao = partes.some(function(p){ return !divDe(p.id).length && (planos[p.id]||[]).length>0; });
   var usarTodas = function(){ var novo = div.slice(); partes.forEach(function(p){ if(divDe(p.id).length) return; (planos[p.id]||[]).forEach(function(x){ novo.push({destinoId:x.destinoId, valor:x.valor, regra:x.regra, conta:x.conta, via:p.forma, parte:p.id, motivo:x.motivo}); }); }); setDiv(novo); setDividindo(""); };
   var btn = "h-7 rounded-md border border-border px-2.5 text-[13px] hover:bg-white/10";
-  var COLP = "min-[1100px]:grid-cols-[156px_minmax(0,1fr)]", COLS = "min-[1100px]:grid-cols-[240px_104px_minmax(0,1fr)_64px]";
+  var COLP = "min-[1100px]:grid-cols-[104px_116px_minmax(0,1fr)]", COLS = "min-[1100px]:grid-cols-[240px_104px_minmax(0,1fr)_72px]";
   var LINHA = "grid grid-cols-1 items-center gap-x-2 gap-y-1 border-b border-border/60 py-1 min-h-10 last:border-b-0 "+COLS;
   var linha = function(k, a, b, c2, d2, e2){ return e("div",{key:k, className:LINHA}, b || e("div"), c2 || e("div"), d2 || e("div"), e2 || e("div")); };
   // contas bancárias de cada sócio vêm do Financeiro familiar (só quem abre o Financeiro familiar vê); a lista abre em cascata: grupo > nome > conta
   var contasDe = function(d){ if(!veFam || d.tipo!=="FAMILIA" || !d.personaId) return []; return ((s.ff||{}).contasBanc||[]).filter(function(cb){ return cb.personaId===d.personaId && cb.ativo!==false; }).map(function(cb){ return cb.nome; }); };
   // contas bancárias de cada CNPJ (Saldo das contas); clicar no CNPJ abre as contas dele
-  var contasPorCnpj = (function(){ var m = {}, sc = s.saldosContas; if(!sc) return m; var ref = dataReferencia(sc, hojeIsoCp()); if(!ref) return m; posicaoEm(sc, ref).blocos.forEach(function(b){ m[b.id] = b.contas.filter(function(x){ return !x.conta.bloqueada && x.conta.tipo!=="CAIXA"; }).map(function(x){ return x.conta.nome; }); }); return m; })();
+  var contasPorCnpj = (function(){ var m = {}, sc = s.saldosContas; if(!sc) return m; var ref = dataReferencia(sc, hojeIsoCp()); if(!ref) return m; posicaoEm(sc, ref).blocos.forEach(function(b){ m[b.id] = b.contas.filter(function(x){ return !x.conta.bloqueada && x.conta.tipo!=="CAIXA" && !ehRotativo(x.conta.nome); }).map(function(x){ return x.conta.nome; }); }); return m; })();
   var comContas = function(d, cs){ return cs.length ? {nome:d.nome, itens:cs.map(function(n){ return {nome:n, id:d.id, conta:n}; })} : {nome:d.nome, id:d.id, conta:""}; };
   // lista em níveis: grupo > nome > conta (cresce sozinha com o que for cadastrado)
   var arvoreDe = function(f){
     var cnpjs = cp.destinos.filter(function(d){ return d.ativo && d.tipo==="CNPJ"; }).map(function(d){ return f==="pix" ? comContas(d, contasPorCnpj[d.cnpjId] || []) : {nome:d.nome, id:d.id, conta:""}; });
-    if(f!=="pix") return cnpjs;
-    return Object.keys(TIPOS_DESTINO).map(function(tp){ return {nome:tipoNome(tp), itens:tp==="CNPJ" ? cnpjs : cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).map(function(d){ return comContas(d, contasDe(d)); })}; }).filter(function(g){ return g.itens.length; }); };
+    if(f!=="pix"){
+      // cartão: Maquininha ou Link de pagamento (meios cadastrados em Link de pagamento; Getnet é da Pontual)
+      var lpm = ((s.lp||{}).meios||[]).filter(function(m){ return m.ativo!==false; });
+      var pont = cp.destinos.filter(function(d){ return d.ativo && /^Pontual/.test(d.nome); })[0];
+      var destDe = function(m){ if(m.cnpjId) return cp.destinos.filter(function(d){ return d.ativo && d.tipo==="CNPJ" && d.cnpjId===m.cnpjId; })[0]; return m.dono ? pont : null; };
+      var folhaC = function(rot, m){ var d = destDe(m); return d ? {nome:d.nome+" "+m.nome, cols:[d.nome, m.nome], w:[40, 60], heads:["Destino", rot], id:d.id, conta:rot+" · "+m.nome} : null; };
+      var porNome = function(a, b2){ return a.cols[0].localeCompare(b2.cols[0]) || a.cols[1].localeCompare(b2.cols[1]); };
+      // regra (Marcus, 26/10/2026): acerto de representante só mostra a maquininha e o link DELA (Link de pagamento → vínculo); acerto interno só as maquininhas de uso interno (Sorelly)
+      var rep = sel && sel.origem==="rep", lpAll = s.lp || {}, vin = rep ? (vinculoDeRep(lpAll, sel.repOrigem) || (lpAll.vinculos||[]).filter(function(x){ return mesmaRep(x.representante, sel.repOrigem); })[0]) : null;
+      var daRep = function(m){ return !!vin && (m.id===vin.maquininhaId || m.id===vin.linkId); }, interna = function(m){ return /sorelly|interno/i.test(String(m.uso||"")); };
+      var maqs = lpm.filter(function(m){ return m.tipo==="MAQUININHA" && (rep ? daRep(m) : interna(m)); }).map(function(m){ return folhaC("Maquininha", m); }).filter(Boolean).sort(porNome);
+      var links = lpm.filter(function(m){ return m.tipo==="LINK" && (rep ? daRep(m) : true); }).map(function(m){ return folhaC("Link", m); }).filter(Boolean).sort(porNome);
+      if(pont && !rep) links.push({nome:pont.nome+" Getnet link", cols:[pont.nome, "Getnet · pedir valor, parcelas e bandeira"], w:[40, 60], heads:["Destino", "Link"], id:pont.id, conta:"Link · Getnet"});
+      return [{nome:"Maquininha", itens:maqs}, {nome:"Link de pagamento", itens:links}].filter(function(g){ return g.itens.length; });
+    }
+    // contas da empresa em duas colunas: CNPJ e banco (o nome da conta sem o final do CNPJ, ex.: "Unicred 34" = Unicred)
+    var banco = function(n){ return String(n).replace(/\s+\d{2,3}$/, ""); };
+    var cnpjsCol = cnpjs.reduce(function(a, n){ return a.concat(n.itens ? n.itens.map(function(it){ return {nome:n.nome+" "+it.conta, cols:[n.nome, banco(it.conta)], w:[46, 54], heads:["CNPJ", "Banco"], id:it.id, conta:it.conta}; }) : [{nome:n.nome, cols:[n.nome, "—"], w:[46, 54], heads:["CNPJ", "Banco"], id:n.id, conta:""}]); }, []);
+    // só aparece quem tem valor pendente (Marcus, 26/10/2026): orientações abertas e fornecedores com saldo; mostra o devido e o prazo
+    var pend = {};
+    cp.orientacoes.forEach(function(o){ if(o.status!=="aberta") return; var fl = faltaDe(o); if(!(fl>0)) return; var q = pend[o.destinoId] || (pend[o.destinoId] = {valor:0, prazo:""}); q.valor = r2(q.valor+fl); if(o.ate && (!q.prazo || o.ate<q.prazo)) q.prazo = o.ate; });
+    fornAbertos.forEach(function(x){ if(x.destinoId && x.total>0) pend[x.destinoId] = {valor:x.total, prazo:x.dMin||""}; });
+    var dm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "—"; };
+    var folhaDev = function(nome, valor, prazo, id, conta){ return {nome:nome, cols:[nome, BKC(valor), dm(prazo)], w:[46, 30, 24], heads:["Nome", "Devido", "Prazo"], id:id, conta:conta||""}; };
+    var ff = s.ff || {};
+    // sócio: um divisor "Contas" e um divisor "Prestadores de serviço" (só os que têm valor devido), vindos do Financeiro familiar
+    var socio = function(d){
+      if(!veFam || !d.personaId) return {nome:d.nome, id:d.id, conta:""};
+      var curto = d.nome.replace(/\s+PF$/i, "");
+      var contas = (ff.contasBanc||[]).filter(function(cb){ return cb.personaId===d.personaId && cb.ativo!==false && !cb.prestadorId; }).map(function(cb){ return {nome:cb.nome, id:d.id, conta:cb.nome}; });
+      var prests = (ff.prest||[]).filter(function(pr){ return pr.ativo && pr.responsavelId===d.personaId; }).map(function(pr){
+        var bx = baixaDividas(ff, pr.id), falta = r2(bx.falta); if(!(falta>0.005)) return null;
+        var prazo = (ff.dividas||[]).filter(function(dv){ var b = bx.porId[dv.id]; return dv.prazo && dv.valor>0 && b && b.falta>0.005; }).map(function(dv){ return dv.prazo; }).sort()[0] || "";
+        var cb = (ff.contasBanc||[]).filter(function(c){ return c.prestadorId===pr.id && c.ativo!==false; })[0];
+        return folhaDev(pr.nome, falta, prazo, d.id, cb ? cb.nome : pr.nome); }).filter(Boolean);
+      var itens = []; if(contas.length) itens.push({nome:"Contas "+curto, itens:contas}); if(prests.length) itens.push({nome:"Prestadores de serviço", itens:prests});
+      return itens.length ? {nome:d.nome, itens:itens} : {nome:d.nome, id:d.id, conta:""}; };
+    var devedores = function(tp){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp && pend[d.id]; }).map(function(d){ return folhaDev(d.nome, pend[d.id].valor, pend[d.id].prazo, d.id); }); };
+    return Object.keys(TIPOS_DESTINO).map(function(tp){ return {nome:tp==="CNPJ" ? "Empresa" : tipoNome(tp), itens:tp==="CNPJ" ? cnpjsCol : tp==="FAMILIA" ? cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).map(socio) : devedores(tp)}; }).filter(function(g){ return g.itens.length; }); };
   var renderParte = function(p){
     var id = p.id, f = p.forma, ld = divDe(id), rest = restDe(id), pl = planos[id] || [], dest = optsDe(f), sug = !ld.length;
     var toDiv = function(x, valor){ return {destinoId:x.destinoId, valor:valor==null ? x.valor : valor, regra:x.regra, conta:x.conta, via:f, parte:id, motivo:x.motivo}; };
     // lista de contas mostrada: o que já foi definido; se nada foi definido e o sistema sugere várias contas, as sugestões aparecem como linhas editáveis
     var lista = ld.length ? ld : (pl.length>1 ? pl.map(function(x){ return toDiv(x); }) : []);
     var restL = r2(p.valor-soma(lista));
+    var pk = sel.id+"|"+id, pv = pendV[pk] || [];   // pv = valores das linhas de conta nova que ainda não têm conta escolhida
+    var setPv = function(a){ var n = Object.assign({}, pendV); n[pk] = a; setPendV(n); };
     var dividir = lista.length>1 || dividindo===id;
     var estadoP = sug ? (pl.length ? "" : "falta definir") : rest>0.009 ? "falta "+BKC(rest) : rest<-0.009 ? "passou "+BKC(-rest) : "";
     var corP = (sug || Math.abs(rest)>0.009) ? "#f5c14b" : "#4ade80";
     var aceita = function(){ setDivDe(id, pl.map(function(x){ return toDiv(x); })); setDividindo(""); };
     var aceitaBtn = function(){ return e("button",{type:"button", onClick:aceita, title:"Aceitar a sugestão", "aria-label":"Aceitar a sugestão", className:"grid h-7 w-7 place-items-center justify-self-center rounded-md border border-primary bg-primary/20 text-[13px] font-bold text-primary hover:bg-primary/30"}, "✓"); };
     var muda = function(m){
-      if(m==="inteiro"){ if(lista.length>1) setDivDe(id, [Object.assign({}, lista[0], {valor:p.valor})]); setDividindo(""); setEdKey(""); return; }
+      if(m==="inteiro"){ if(lista.length>1) setDivDe(id, [Object.assign({}, lista[0], {valor:p.valor})]); setPv([]); setDividindo(""); setEdKey(""); return; }
       var base = lista.length ? lista : (pl.length ? [toDiv(pl[0], p.valor)] : []);
-      if(base.length===1){ var meio = r2(base[0].valor/2); setDivDe(id, [Object.assign({}, base[0], {valor:r2(base[0].valor-meio)})]); }
+      if(base.length===1){ var meio = r2(base[0].valor/2); setDivDe(id, [Object.assign({}, base[0], {valor:r2(base[0].valor-meio)})]); setPv([meio]); }
       else if(base.length>1) setDivDe(id, base);
+      else { var m1 = r2(p.valor/2); setPv([m1, r2(p.valor-m1)]); }
       setDividindo(id); };
-    var chave = c.edita ? e("div",{className:"inline-flex w-fit overflow-hidden rounded-md border border-border"}, [["inteiro","Inteiro"],["dividir","Dividir"]].map(function(o, n){ var on = (dividir ? "dividir" : "inteiro")===o[0];
-      return e("button",{key:o[0], type:"button", onClick:function(){ muda(o[0]); }, className:"h-6 px-2 text-[11px] "+(n ? "border-l border-border " : "")+(on ? "bg-primary/20 font-bold text-primary" : "hover:bg-white/10")}, o[1]); })) : null;
-    var celPag = e("div",{className:"flex flex-col items-center gap-0.5 text-center"}, e("b",{className:"text-[13px] font-semibold leading-snug"}, rotuloParte(p)), e("div",{className:"flex flex-wrap items-center justify-center gap-x-2 gap-y-0.5"}, chave, estadoP ? e("span",{className:"text-[13px] font-semibold", style:{color:corP}}, estadoP) : null));
-    var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? d.nome+(contaAtual ? " · "+contaAtual : "") : primeiro; return c.edita ? e(SeletorConta,{nos:arvoreDe(f), texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
+    var chave = c.edita ? e(SeletorConta,{nos:[{nome:"Inteiro", id:"inteiro", conta:""}, {nome:"Dividir", id:"dividir", conta:""}], texto:dividir ? "Dividir" : "Inteiro", rotulo:"Inteiro ou dividir "+rotuloParte(p), titulo:"Pagamento", larg:150, onEscolher:function(v){ muda(v); }}) : e("span",{className:NOME}, dividir ? "Dividir" : "Inteiro");
+    var celPag = e("div",{className:"flex flex-col items-center gap-0.5 text-center"}, e("b",{className:"text-[13px] font-semibold leading-snug"}, rotuloParte(p)), estadoP ? e("span",{className:"text-[13px] font-semibold", style:{color:corP}}, estadoP) : null);
+    var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? d.nome+(contaAtual ? " · "+contaAtual : "") : primeiro; return c.edita ? e(SeletorConta,{nos:arvoreDe(f), larg:580, texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
     var txtValor = function(v){ return e("div",{className:"flex justify-center"}, e("span",{className:"inline-flex h-7 items-center rounded-md border border-border bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"}, BKC(v))); };
     var fmtSug = function(x, k){ var tx = String(x.motivo||""), ix = tx.indexOf(" · "), l1 = ix>=0 ? tx.slice(0, ix+2) : tx, l2 = ix>=0 ? tx.slice(ix+3) : ""; return e("span",{key:k, className:"block"}, destinoDe(x.destinoId).nome+" — "+l1, l2 ? e("br") : null, l2); };
     var sugTxt = pl.length ? e("div",{className:"flex flex-col gap-1"}, pl.map(function(x, k){ return fmtSug(x, k); })) : "Nenhuma sugestão serviu. Escolha a conta.";
@@ -265,25 +325,28 @@ function AbaDirecionar(){
       linhas.push(linha("u", celPag, seletor(un ? un.destinoId : "", un ? (un.conta||"") : "", function(v, cta){ setDivDe(id, [{destinoId:v, valor:p.valor, regra:0, conta:cta, via:f, parte:id, motivo:(un && un.destinoId===v && !cta) ? un.motivo : "Escolhida por você"}]); }, primeiroRot, "Conta para "+rotuloParte(p)),
         txtValor(p.valor), txtSug(sugTxt), sug && pl.length>0 && c.edita ? aceitaBtn() : null));
     } else {
-      lista.forEach(function(x, n){ var d = destinoDe(x.destinoId), k = sel.id+"|"+id+"|"+n, edita = edKey===k;
-        linhas.push(linha(k, n===0 ? celPag : null, seletor(x.destinoId, x.conta||"", function(v, cta){ var l = lista.slice(); l[n] = Object.assign({}, x, {destinoId:v, conta:cta, motivo:"Escolhida por você"}); setDivDe(id, l); }, primeiroRot, "Conta "+(n+1)+" de "+rotuloParte(p)),
-          edita ? e(CampoDinheiro,{value:x.valor || null, label:"Valor para "+d.nome, disabled:!c.edita, className:CAMPO+" text-right tabular-nums", onChange:function(v){ var l = lista.slice(), nv = r2(Math.min(v || 0, p.valor)); l[n] = Object.assign({}, x, {valor:nv}); if(l.length===2){ var o2 = 1-n; l[o2] = Object.assign({}, l[o2], {valor:r2(p.valor-nv)}); } setDivDe(id, l); }}) : txtValor(x.valor),
-          txtSug(pl.length>1 ? (pl[n] ? fmtSug(pl[n], n) : "") : (n===0 ? sugTxt : "")),
-          !c.edita ? null : sug ? (n===0 ? aceitaBtn() : null) : e("div",{className:"flex justify-center gap-1.5"}, e("button",{type:"button", title:"Editar o valor", "aria-label":"Editar o valor", onClick:function(){ setEdKey(edita ? "" : k); }, className:"h-7 rounded-md border px-2 text-[13px] hover:bg-white/10 "+(edita ? "border-primary bg-primary/20 font-semibold text-primary" : "border-border")}, edita ? "OK" : "✎"),
-            e("button",{type:"button", "aria-label":"Tirar "+d.nome, onClick:function(){ var l = lista.filter(function(z, kk){ return kk!==n; }); if(l.length===1) l[0] = Object.assign({}, l[0], {valor:p.valor}); setDivDe(id, l); setEdKey(""); if(l.length<2) setDividindo(""); }, className:"h-7 w-7 rounded-md border border-border text-[13px] hover:bg-white/10"}, "✕")))); });
-      if(!sug) linhas.push(linha("add", null, seletor("", "", function(v, cta){
-          var l = lista.slice();
-          if(restL>0.004) l.push({destinoId:v, valor:restL, regra:0, conta:cta, via:f, parte:id, motivo:"Escolhida por você"});
-          else if(l.length){ var ult = l[l.length-1], meio = r2(ult.valor/2); l[l.length-1] = Object.assign({}, ult, {valor:r2(ult.valor-meio)}); l.push({destinoId:v, valor:meio, regra:0, conta:cta, via:f, parte:id, motivo:"Escolhida por você"}); }
-          else l.push({destinoId:v, valor:p.valor, regra:0, conta:cta, via:f, parte:id, motivo:"Escolhida por você"});
-          setDivDe(id, l); setDividindo(""); }, "Adicionar conta", "Adicionar conta em "+rotuloParte(p)), null,
-        txtSug((sug ? "Sugestão: " : "Soma ")+BKC(soma(lista))+(sug ? "" : " · "+(restL>0.009 ? "falta "+BKC(restL) : restL<-0.009 ? "passou "+BKC(-restL) : "fechado"))),
-        c.edita && ld.length>0 ? e("button",{type:"button", onClick:function(){ setDivDe(id, []); setDividindo(""); setEdKey(""); }, className:btn+" justify-self-center", title:"Volta para a sugestão do sistema"}, "Sugestão") : null));
+      // Dividir: cada linha tem conta e valor editável; a linha nova já nasce com valor, mesmo sem conta. O + fica só na última linha.
+      var rs = lista.map(function(x){ return {x:x, val:x.valor}; }).concat(pv.map(function(v){ return {val:v}; }));
+      var grava = function(a){ setDivDe(id, a.filter(function(q){ return q.x; }).map(function(q){ return Object.assign({}, q.x, {valor:q.val}); })); setPv(a.filter(function(q){ return !q.x; }).map(function(q){ return q.val; })); };
+      var copia = function(){ return rs.map(function(q){ return {x:q.x, val:q.val}; }); };
+      var tira = function(k){ var a = copia(), saiu = a[k].val; a.splice(k, 1);
+        if(a.length<2){ if(a.length && a[0].x) setDivDe(id, [Object.assign({}, a[0].x, {valor:p.valor})]); else setDivDe(id, []); setPv([]); setDividindo(""); setEdKey(""); return; }
+        a[a.length-1].val = r2(a[a.length-1].val+saiu); grava(a); };
+      var mais = function(){ var a = copia(), falta = r2(p.valor-a.reduce(function(tt, q){ return tt+q.val; }, 0));
+        if(falta>0.004) a.push({val:falta}); else { var u = a[a.length-1], meio = r2(u.val/2); u.val = r2(u.val-meio); a.push({val:meio}); } grava(a); };
+      var muda1 = function(k, v){ var a = copia(), nv = r2(Math.min(v || 0, p.valor)); a[k].val = nv; if(a.length===2) a[1-k].val = r2(p.valor-nv); grava(a); };
+      rs.forEach(function(q, k){ var x = q.x, d = x ? destinoDe(x.destinoId) : null, ultima = k===rs.length-1, rotC = "Conta "+(k+1)+" de "+rotuloParte(p);
+        var contaCel = x ? seletor(x.destinoId, x.conta||"", function(v, cta){ var a = copia(); a[k].x = Object.assign({}, x, {destinoId:v, conta:cta, motivo:"Escolhida por você"}); grava(a); }, primeiroRot, rotC)
+          : seletor("", "", function(v, cta){ var a = copia(); a[k].x = {destinoId:v, valor:q.val, regra:0, conta:cta, via:f, parte:id, motivo:"Escolhida por você"}; grava(a); }, primeiroRot, rotC);
+        var valCel = c.edita ? e(CampoDinheiro,{value:q.val || null, label:"Valor da conta "+(k+1), disabled:!c.edita, className:CAMPO+" text-right tabular-nums", onChange:function(v){ muda1(k, v); }}) : txtValor(q.val);
+        var acoes = !c.edita ? null : (sug && x && k===0) ? aceitaBtn() : e("div",{className:"flex justify-center gap-1"}, e("button",{type:"button", "aria-label":"Tirar a conta "+(k+1), onClick:function(){ tira(k); }, className:"h-7 w-7 rounded-md border border-border text-[13px] hover:bg-white/10"}, "✕"),
+          ultima ? e("button",{type:"button", title:"Adicionar mais uma conta", "aria-label":"Adicionar mais uma conta", onClick:mais, className:"h-7 w-7 rounded-md border border-primary bg-primary/20 text-[13px] font-bold text-primary hover:bg-primary/30"}, "+") : null);
+        linhas.push(linha(sel.id+"|"+id+"|"+k, null, contaCel, valCel, txtSug(k===0 ? sugTxt : ""), acoes)); });
     }
-    return e("div",{key:id, className:"grid flex-1 grid-cols-1 content-center items-start gap-x-2 border-b-2 border-border px-3 py-0.5 "+COLP}, e("div",{className:"flex min-h-10 items-center justify-center py-1"}, celPag), e("div",{className:"flex min-w-0 flex-col justify-center"}, linhas));
+    return e("div",{key:id, className:"grid flex-1 grid-cols-1 content-center items-start gap-x-2 border-b-2 border-border px-3 py-0.5 "+COLP}, e("div",{className:"flex min-h-10 items-center justify-center py-1"}, celPag), e("div",{className:"flex min-h-10 items-center py-1"}, e("div",{className:"w-full"}, chave)), e("div",{className:"flex min-w-0 flex-col justify-center"}, linhas));
   };
   var pedido = !sel ? null : Painel("Direcionar pagamento", "", "", "", e("div",{className:"flex flex-col"},
-    e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-border px-3 py-1.5"}, Selo(sel.origem), sel.valor>=limAlto && SeloAlto(), e("span",{className:"min-w-0 flex-1 truncate text-[16px] font-bold leading-tight text-foreground", title:sel.quem}, sel.quem),
+    e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-border px-3 py-1.5"}, Selo(sel.origem), sel.valor>=limAlto && SeloAlto(), e("span",{className:"min-w-0 flex-1 truncate text-[16px] font-bold leading-tight text-foreground", title:sel.quem}, sel.origem==="rep" ? doisNomes(sel.repOrigem || String(sel.quem).replace(/^Representante\s+/, ""))+(sel.revendedora ? " · "+sel.revendedora : "") : sel.quem),
       e("span",{className:"text-[13px] text-foreground"}, (sel.origem==="interno" ? "Atendida por "+sel.atendente : (sel.maq||""))+" · chegou às "+hmH(sel.recebidoEm)+" · pagamento aguardando há ", e("b",{style:{color:COR_ESPERA[nivelEspera(sel.recebidoEm)]}}, curto(sel.recebidoEm)))),
     sel.obs && e("p",{className:"border-b border-border px-3 py-1.5 text-[13px] text-foreground"}, "Obs.: "+sel.obs),
     e("div",{className:"grid grid-cols-1 min-[1100px]:grid-cols-[310px_minmax(0,1fr)]"},
@@ -291,7 +354,7 @@ function AbaDirecionar(){
         (sel.pagos||[]).length ? sel.pagos.map(function(p, n){ return e("div",{key:"pg"+n}, Ln(textoPago(p), BKC(p.valor), null, false, true)); }) : Ln("Nada pago ainda", "", null, false, true),
         Ln("Falta pagar", BKC(sel.valor), "#f5c14b", true)),
       e("div",{className:"flex min-w-0 flex-col"},
-        e("div",{className:"hidden gap-x-2 border-b border-border bg-white/5 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground min-[1100px]:grid "+COLP}, e("span",{className:"text-center"},"Pagamento"), e("div",{className:"grid gap-x-2 "+COLS}, e("span",{className:"text-center"},"Conta"), e("span",{className:"text-center"},"Valor"), e("span",{className:"text-center"},"Sugestão"), e("span"))),
+        e("div",{className:"hidden gap-x-2 border-b border-border bg-white/5 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground min-[1100px]:grid "+COLP}, e("span",{className:"text-center"},"Pagamento"), e("span",{className:"text-center"},"Modo"), e("div",{className:"grid gap-x-2 "+COLS}, e("span",{className:"text-center"},"Conta"), e("span",{className:"text-center"},"Valor"), e("span",{className:"text-center"},"Sugestão"), e("span"))),
         partes.map(renderParte))),
     e("div",{className:"flex flex-wrap items-center justify-end gap-2 border-t border-border bg-white/[0.04] px-3 py-1.5"},
       e("span",{className:"mr-auto flex flex-wrap items-baseline gap-x-2 text-[13px] text-foreground"}, e("b",{className:"font-semibold"}, "Falta enviar"), e("b",{className:"font-semibold tabular-nums", style:{color:!div.length ? "#f5c14b" : fechado ? "#4ade80" : "#f5c14b"}}, restante<-0.009 ? "Passou "+BKC(-restante) : BKC(Math.max(restante, 0))), e("span",null, "· "+partes.length+(partes.length===1 ? " pagamento" : " pagamentos")+" · Enviado "+BKC(soma(div)))),

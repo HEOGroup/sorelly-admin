@@ -12,6 +12,7 @@ import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
+import { ZoomTela } from "@/apps/montagem/components/zoom-tela";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
 import { p45Alertas } from "@/apps/montagem/domain/plano45-60";
 import { ACESSO_FF } from "@/apps/montagem/domain/financeiro-familiar";
@@ -235,6 +236,7 @@ function App(){
         e(BotaoNotificacoes),
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
+        e(ZoomTela),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:!!setorAtual.st.semAbas, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},

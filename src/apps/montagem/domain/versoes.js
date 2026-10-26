@@ -3,6 +3,25 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.13.29", data:"2026-10-26", titulo:"Direcionar pagamento: cartão só com a maquininha e o link de quem vendeu", itens:[
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Acerto de representante mostra só a maquininha e o link dela (vínculo em Link de pagamento). Acerto interno mostra só as maquininhas de uso interno (Getnet) e os links, com o link da Getnet. Antes aparecia a lista de todas."},
+  ]},
+  {v:"0.13.28", data:"2026-10-26", titulo:"Direcionar pagamento: cartão com maquininha e link, sem Rotativo no Pix, contas negativas com CNPJ, Vendas com origem", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Cartão agora escolhe entre Maquininha (inclui Getnet e Cielo da Pontual) e Link de pagamento (inclui o link da Getnet, que pede valor, parcelas e bandeira). A lista vem dos meios cadastrados em Link de pagamento."},
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"O Sicredi Rotativo não recebe mais Pix: ele está dentro do Sicredi do mesmo CNPJ. Clicar no Rotativo em Contas negativas, ou a sugestão do sistema, manda o Pix para o Sicredi do CNPJ. H&O entra na lista de contas da empresa (CNPJ 67 Axis também)."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Contas negativas ganhou a coluna CNPJ e o botão Ver todas as contas: abre os CNPJs fechados e cada um abre ao clicar. Vendas ganhou a coluna Origem (Interno ou o nome da representante). O texto Como o Pix quita saiu."},
+  ]},
+  {v:"0.13.27", data:"2026-10-26", titulo:"Direcionar pagamento: dividir já abre a segunda linha e lista só de quem tem valor pendente", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Ao escolher Dividir, a segunda linha já aparece com o valor editável, antes de escolher a conta. O botão + fica só na última linha; o ✕ tira a linha."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Lista de contas: Fornecedor, Representante e Prestador só aparecem com valor pendente, mostrando o devido e o prazo. Cada sócio abre divisores: Contas do sócio e Prestadores de serviço (com o devido e o prazo vindos do Financeiro familiar). Contas de prestadores (Amanda Bônus, +55, Breno...) saíram da lista de contas do sócio."},
+  ]},
+  {v:"0.13.26", data:"2026-10-26", titulo:"Direcionar pagamento: Inteiro/Dividir em lista e contas por CNPJ e banco", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A forma de pagamento (Pix, cartão) ganhou coluna própria à esquerda, e Inteiro/Dividir virou uma lista que abre e troca no mesmo lugar, igual à barra de conta."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Em Conta da empresa, a lista mostra duas colunas: CNPJ e Banco (antes misturava 'Unicred 34', 'Sicredi Srenity')."},
+  ]},
+  {v:"0.13.25", data:"2026-10-26", titulo:"Tamanho do sistema: diminuir e aumentar tudo", itens:[
+    {tipo:"novo", area:"Sistema inteiro", txt:"Controle − 100% + no topo e atalhos Ctrl −, Ctrl + e Ctrl 0 diminuem ou aumentam tudo (menu, telas e textos), de 50% a 200%. O sistema lembra a escolha neste navegador. As listas que abrem por cima (menus, seletor de conta) continuam coladas no botão."},
+  ]},
   {v:"0.13.24", data:"2026-10-26", titulo:"Direcionar pagamento: sugestão sempre numa conta só e texto da sugestão em duas linhas", itens:[
     {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A sugestão agora é sempre UMA conta só, com o valor inteiro (a conta que mais receberia): a intenção é um pagamento só, e dividir é escolha do Lucas. A regra 8 da tela Regras do Pix foi trocada para isso (antes era só abaixo de R$ 500)."},
     {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O texto da coluna Sugestão ficou no formato Conta — motivo · e o que vem depois da bolinha desce para a linha de baixo. O nome do pagamento com Inteiro e Dividir fica alinhado com a linha da conta."},
@@ -46,6 +65,11 @@ var VERSOES = [
   {v:"0.13.14", data:"2026-10-26", titulo:"Direcionar pagamento: resumo numa coluna e tabela de pagamentos com Inteiro ou Dividir", itens:[
     {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O resumo (Vendas, A pagar, Já pago com cada link em uma linha, Falta pagar, Falta enviar) ficou numa coluna só, mais larga e compacta. Os pagamentos viraram uma tabela alinhada (Pagamento, Conta, Valor, Motivo) e cada um tem a chave Inteiro ou Dividir. A sugestão é uma etiqueta dentro do motivo. Os botões ficaram numa barra no fim. O texto Obs. do exemplo saiu."},
   ]},
+  {v:"0.12.42", data:"2026-10-26", titulo:"Regras de 27/10/2026: Configurador, textos e multa no total", itens:[
+    {tipo:"novo", area:"Representantes · Configurações", txt:"Novo bloco \"Regras de 27/10/2026\" no editor das regras: média mínima (R$ 500 e R$ 700), quantas vendas entram na média, multa do valor pendente, prazo para quitar, atraso por dia e teto, dias para ir ao jurídico e a escada do acerto atrasado (comissão e brinde). Salvar cria nova versão que vale só a partir de 27/10/2026."},
+    {tipo:"melhoria", area:"Regras escritas", txt:"As frases lidas na assinatura do acerto, na entrega do kit novo e no atendimento Sorelly seguem a versão: venda mínima, acerto na data, multa e prazo, brinde por pendência. Mesmo texto para Kit Normal e Prata. A tela Regras do app da representante ganhou os cartões Acerto atrasado e Venda mínima."},
+    {tipo:"correcao", area:"Representantes · Configurações", txt:"A tela de Configurações passou a ficar dentro do menu Representantes → Regras, com a barra de cima do setor (faixa, telas abertas e menu). Todos os blocos do editor das regras ficaram na mesma cor (antes eram dourado, azul e roxo)."},
+    {tipo:"melhoria", area:"Calculadora de acertos", txt:"A multa do valor pendente agora soma no Total a pagar e no valor restante (decisão do Marcus)."}]},
   {v:"0.12.41", data:"2026-10-26", titulo:"Calculadora do acerto com as regras de 27/10/2026", itens:[
     {tipo:"melhoria", area:"Calculadora de acertos · App da representante e Atendimento Sorelly", txt:"Para revendedora com as regras novas: dias de atraso do acerto (Normal e Prata) com a perda de comissão e brinde, dias com valor pendente com a multa de 10% e a de atraso, média das 3 últimas vendas contra R$ 500 (representante) ou R$ 700 (interno), kit novo bloqueado com média abaixo, e botão Dar nova chance no app da representante. Revendedora com regras antigas vê a tela de sempre. A conta fica em domain/acerto-derivado.js, a mesma para as duas telas."}]},
   {v:"0.12.40", data:"2026-10-26", titulo:"Regras novas do acerto: cálculo e versão de 27/10/2026", itens:[

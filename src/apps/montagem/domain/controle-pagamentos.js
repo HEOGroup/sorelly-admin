@@ -24,6 +24,7 @@ function cpAjustar(cp){
   var tem = function(n){ return cp.destinos.find(function(x){ return x.nome===n; }); };
   var novo = function(nome, tipo, extra){ cp.destinos.push(Object.assign({id:uid("d"), nome:nome, tipo:tipo, cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true}, extra||{})); };
   var pf = tem("Marcus PF"); if(pf){ pf.nome = "Marcus"; pf.personaId = "marcus"; }
+  if(!tem("CNPJ H&O · H&O Apps")) novo("CNPJ H&O · H&O Apps", "CNPJ", {cnpjId:"HO"});   // H&O também recebe Pix (Marcus, 26/10/2026)
   SOCIOS_FAM.forEach(function(s){ var d = tem(s[0]); if(d){ d.personaId = s[1]; d.tipo = "FAMILIA"; } else novo(s[0], "FAMILIA", {personaId:s[1]}); });
   if(HOJE_LOCAL){
     HOJE_LOCAL.orientacoes.forEach(function(x){ if(!tem(x.destino)) novo(x.destino, "REPRESENTANTE"); });
