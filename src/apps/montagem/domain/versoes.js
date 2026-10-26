@@ -3,6 +3,124 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.13.24", data:"2026-10-26", titulo:"Direcionar pagamento: sugestão sempre numa conta só e texto da sugestão em duas linhas", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A sugestão agora é sempre UMA conta só, com o valor inteiro (a conta que mais receberia): a intenção é um pagamento só, e dividir é escolha do Lucas. A regra 8 da tela Regras do Pix foi trocada para isso (antes era só abaixo de R$ 500)."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O texto da coluna Sugestão ficou no formato Conta — motivo · e o que vem depois da bolinha desce para a linha de baixo. O nome do pagamento com Inteiro e Dividir fica alinhado com a linha da conta."},
+  ]},
+  {v:"0.13.23", data:"2026-10-26", titulo:"Direcionar pagamento: nome do pagamento ocupa as linhas dele e regra de menos de R$ 500", itens:[
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Pedidos com várias contas ficavam bagunçados: o nome do pagamento ficava solto no meio. Agora o nome (com Inteiro, Dividir) ocupa todas as linhas do pagamento, à esquerda, e as contas ficam alinhadas à direita. Enquanto é só sugestão, não aparecem as linhas extras de Adicionar conta e Soma."},
+    {tipo:"novo", area:"Financeiro · Pagamentos · Regras do Pix", txt:"Regra nova (8): valor da parte abaixo de R$ 500 = a sugestão é uma conta só, com o valor inteiro (a conta que mais receberia na sugestão)."},
+  ]},
+  {v:"0.13.22", data:"2026-10-26", titulo:"Direcionar pagamento: pedidos com várias contas sugeridas agora têm a barra de conta", itens:[
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Quando o sistema sugeria mais de uma conta (ex.: Maria Eduarda, Ingrid, Bianka, Cristiane, Jean, Josiele, Thalita) a linha não mostrava a barra para escolher a conta. Agora cada conta sugerida aparece numa linha com a sua barra (editável), o valor e a sugestão própria daquela conta. O ✓ aceita todas, e Inteiro e Dividir funcionam nesses pedidos."},
+  ]},
+  {v:"0.13.21", data:"2026-10-26", titulo:"Direcionar pagamento: sem o texto definido e coluna de ações estreita", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Saiu o texto verde definido ao lado do pagamento (só aparece o que falta, se faltar). A coluna do ✓ ficou estreita (64 px) e o botão Editar virou um ícone ✎, para sobrar mais espaço para a Sugestão."},
+  ]},
+  {v:"0.13.21", data:"2026-10-26", titulo:"Dashboard e topo padronizado em todos os setores", itens:[
+    {tipo:"melhoria", area:"Dashboard (Visão geral)", txt:"\"Visão geral\" virou \"Dashboard\" (nome e ícone, na lateral e no título da tela). Saiu o bloco \"Ver os apps\" daqui — ele já existia como setor próprio \"Apps\" na barra lateral, que já abre os 3 apps (Revendedora, Representante, App interno) juntos. O bloco \"Hoje na empresa\" foi para dentro da 1ª coluna, logo abaixo de \"Acertos de Outubro\", e ficou menor (números de 20 px em vez de 24 px, sem a coluna de 8)."},
+    {tipo:"novo", area:"Menu do setor", txt:"Os 8 setores que ainda usavam o formato antigo de topo (Atendimento interno, Materiais & Estoque, Garantia & Pós-venda, Diretoria, Jurídico, Segurança e limpeza, Marketing, Tecnologia) ganharam o `menu` padronizado (mesma peça do Financeiro/RH/Encomendas): ícone + nome do SETOR no topo, palavras do menu na ordem do fluxo, sem faixa de abas (poucas telas). Nenhuma tela mudou de lugar nem de nome."},
+  ]},
+  {v:"0.13.20", data:"2026-10-26", titulo:"Direcionar pagamento: tudo centralizado e linha única ocupa o bloco", itens:[
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Pagamento, Conta, Valor, Sugestão e ações ficaram centralizados (nome do pagamento, chave Inteiro/Dividir e estado no centro da coluna; ✓, Editar e ✕ também). Com um pagamento só, a linha cresce e ocupa o bloco inteiro; com mais, o espaço é dividido."},
+  ]},
+  {v:"0.13.19", data:"2026-10-26", titulo:"Direcionar pagamento: conta em lista que troca no mesmo lugar, sugestão fixa e pagamentos responsivos", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Escolher a conta abre uma lista com borda dourada que troca no mesmo lugar: grupos (Conta da empresa, Família / sócio, Fornecedor, Representante, Prestador), depois os nomes e depois as contas (CNPJ > contas do CNPJ; Marcus > Conta Marcus — Nubank, Caixa, Rebel Mode...). A seta ← no canto esquerdo volta um nível. Acima de 10 opções aparece uma busca e a lista rola, e ela cresce sozinha com o que for cadastrado. Saiu a opção Qualquer conta."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O texto da coluna Sugestão agora é sempre o que o sistema sugere para aquele pagamento: não muda mais quando alguém escolhe outra conta."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Os pagamentos são responsivos: com um só, ele ocupa o espaço todo do bloco; com mais, o espaço é dividido e o bloco cresce quando precisa."},
+  ]},
+  {v:"0.13.18", data:"2026-10-26", titulo:"Direcionar pagamento: uma barra só embaixo", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A linha Falta enviar e a barra de baixo viraram uma barra só: Falta enviar, o resumo dos pagamentos, Usar todas as sugestões e OK · enviar ficam juntos. O bloco perde cerca de 70 px de altura."},
+  ]},
+  {v:"0.13.17", data:"2026-10-26", titulo:"Direcionar pagamento: conta em cascata e colunas sem aperto", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Escolher a conta agora abre em cascata, não tudo de uma vez: primeiro o grupo (Conta da empresa, Família / sócio, Fornecedor, Representante, Prestador), depois o nome (Marcus, Anamaria, Ana Beatriz...) e, quando o nome tem contas, a conta (ex.: Marcus > Conta Marcus — Nubank ou Conta Rebel Mode). As contas dos sócios vêm do Financeiro familiar e só aparecem para quem abre o Financeiro familiar. Cartão e link mostram só os CNPJs."},
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"A coluna do resumo (Vendas, A pagar, Já pago) voltou a ter largura de 310 px, sem texto apertado, e a coluna Conta ficou maior (250 px)."},
+  ]},
+  {v:"0.13.16", data:"2026-10-26", titulo:"Direcionar pagamento: coluna Sugestão e sem textos amarelos soltos", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A coluna Motivo agora se chama Sugestão (no título da tabela) e saíram a etiqueta amarela Sugestão de cada linha e o texto amarelo sugerido do meio. Ficam só o estado definido (verde) e o que falta. A coluna Sugestão ficou mais larga, para o texto caber em 2 linhas."},
+  ]},
+  {v:"0.13.15", data:"2026-10-26", titulo:"Direcionar pagamento: colunas centralizadas, valor em peça e ✓ no lugar de Usar", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Conta, Valor e Motivo alinhados e centralizados (com o título de cada coluna); a conta ficou mais à esquerda e o valor mais perto dela, numa peça parecida com a etiqueta Sugestão. Linhas mais baixas: o nome do pagamento, a chave Inteiro ou Dividir e o estado ficam em duas linhas."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O botão Usar virou um ✓ para aceitar a sugestão. Usar todas as sugestões foi para baixo de Falta enviar. No alto, o texto agora diz: chegou às 14h08 · pagamento aguardando há 59 min."},
+  ]},
+  {v:"0.13.14", data:"2026-10-26", titulo:"Direcionar pagamento: resumo numa coluna e tabela de pagamentos com Inteiro ou Dividir", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O resumo (Vendas, A pagar, Já pago com cada link em uma linha, Falta pagar, Falta enviar) ficou numa coluna só, mais larga e compacta. Os pagamentos viraram uma tabela alinhada (Pagamento, Conta, Valor, Motivo) e cada um tem a chave Inteiro ou Dividir. A sugestão é uma etiqueta dentro do motivo. Os botões ficaram numa barra no fim. O texto Obs. do exemplo saiu."},
+  ]},
+  {v:"0.12.41", data:"2026-10-26", titulo:"Calculadora do acerto com as regras de 27/10/2026", itens:[
+    {tipo:"melhoria", area:"Calculadora de acertos · App da representante e Atendimento Sorelly", txt:"Para revendedora com as regras novas: dias de atraso do acerto (Normal e Prata) com a perda de comissão e brinde, dias com valor pendente com a multa de 10% e a de atraso, média das 3 últimas vendas contra R$ 500 (representante) ou R$ 700 (interno), kit novo bloqueado com média abaixo, e botão Dar nova chance no app da representante. Revendedora com regras antigas vê a tela de sempre. A conta fica em domain/acerto-derivado.js, a mesma para as duas telas."}]},
+  {v:"0.12.40", data:"2026-10-26", titulo:"Regras novas do acerto: cálculo e versão de 27/10/2026", itens:[
+    {tipo:"novo", area:"Regras do consignado", txt:"Nova versão das regras (vigente desde 27/10/2026): brinde da faixa de R$ 500 a 699 em R$ 44 e R$ 32 (Normal e Prata), multa de 10% sobre o valor pendente, prazo de 15 dias para quitar e atraso de 1% ao dia (teto 10%), atraso do acerto de 5% a 25% da comissão e do brinde com perda total aos 60 dias (jurídico), média das 3 últimas vendas contra R$ 500 e R$ 700. Prata e Normal passam a ter as mesmas regras; só a tabela é própria."},
+    {tipo:"melhoria", area:"Cálculo do acerto", txt:"calcularAcerto devolve também pendente, multas, comissão final e valor final. Versões antigas calculam como sempre (1.368 cálculos conferidos iguais). Cada revendedora usa as regras da ENTREGA do último kit dela: sem entrega depois de 27/10, regras antigas; a entrega do kit novo carimba a versão nova."}]},
+  {v:"0.13.13", data:"2026-10-26", titulo:"Direcionar pagamento: bordas de volta, cada link em uma linha e barras de conta menores", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Voltaram as bordas douradas em cada bloco da tela, com menos espaço em volta (blocos mais largos e 6 px entre eles)."},
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Já pago mostra cada pagamento em uma linha (ex.: cada link do CNPJ 59 com o seu valor), sem juntar em × 3."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Cada pagamento ficou em uma linha só: nome e valor, barra da conta (270 px, mostra só o nome da conta; o tipo vira título do grupo dentro da lista), motivo, estado e botões."},
+  ]},
+  {v:"0.13.12", data:"2026-10-26", titulo:"Direcionar pagamento: versão 2 compacta e blocos conectados", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Direcionar pagamento na versão 2: o resumo dos valores fica à esquerda (Vendas, A pagar, Já pago com os 3 links do CNPJ 59 agrupados, Falta pagar, Falta enviar) e, à direita, cada pagamento é uma linha baixa: nome e valor, conta numa seleção, motivo embaixo e estado (sugerido, definido). Há o botão Usar todas as sugestões. Dividir, Editar e ✕ só aparecem quando precisam."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Os blocos da tela ficaram conectados e ocupam quase toda a largura: sem linhas laterais nem em cima, só uma linha embaixo de cada um, com 2 px entre eles."},
+  ]},
+  {v:"0.13.11", data:"2026-10-26", titulo:"Direcionar: blocos do mesmo tamanho, sem rolagem e pagamentos em cartões", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Os blocos de baixo (Contas a pagar, Contas negativas e Vendas) têm título centralizado com o resumo embaixo (cor só no valor), a mesma largura e a mesma altura, e mostram todas as linhas, sem barra de rolagem. Sem cor por bloco: o Marcus mandou manter a versão sem cores."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Direcionar pagamento ganhou nome centralizado em ouro e saiu o Falta direcionar do cabeçalho (ele já aparece em Confirmar). Cada forma de pagamento virou um cartão neutro, com a barra de conta ao lado do título e o estado à direita."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O exemplo de 1 Pix, 2 cartões e já pago em 3 links do CNPJ 59 (Ana Paula) é o pedido mais antigo da fila e abre sozinho."},
+  ]},
+  {v:"0.13.10", data:"2026-10-26", titulo:"Direcionar: barra de conta ao lado de cada pagamento, partes separadas e topo fechado", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A barra de escolher outra conta ficou na mesma linha do título de cada pagamento (ex.: Cartão 1 · R$ 700,00), com o estado (falta definir, definido) à direita. Duas partes da mesma forma, como dois cartões, agora são separadas e cada uma tem o seu destino. Escolher outra conta numa parte já fechada divide o valor da última conta ao meio."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Exemplo novo (Ana Paula): já pagou R$ 1.720,00 em 3 links do CNPJ 59 e falta 1 Pix de R$ 800,00 e 2 cartões (R$ 700,00 e R$ 500,00). O já pago mostra CNPJ 59 por extenso."},
+    {tipo:"melhoria", area:"Menu do setor", txt:"O topo é igual em todos os setores: o nome do setor aparece na cor do ícone dele (Financeiro azul, Agendamento roxo) e o bloco das abas abertas e a barra do menu são fechados, com linha em cima, embaixo e dos lados. O menu continua na mesma posição com ou sem abas."},
+  ]},
+  {v:"0.13.9", data:"2026-10-26", titulo:"Direcionar: pedido por forma de pagamento (cartão, Pix, link) e nomes completos", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O pedido agora vem em partes por forma de pagamento, escolhidas pela revendedora (ex.: R$ 720 em dinheiro já pago, R$ 1.500 no cartão e R$ 1.500 no Pix). Cada parte tem a sua sugestão, o seu destino e o seu estado (falta definir, definido). Saiu a barra Enviar por: quem escolhe a forma é a revendedora, não o financeiro."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Cartão e link só aceitam CNPJ como destino; Pix aceita fornecedor, família, representante e contas. O OK só libera quando todas as partes fecham. Fornecedor e dívida da família só entram na parte em Pix."},
+    {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Nenhum nome de conta, fornecedor ou destino aparece abreviado: o nome completo quebra de linha em vez de cortar com reticências."},
+  ]},
+  {v:"0.13.8", data:"2026-10-26", titulo:"Direcionar: Valores com Já pago, Falta pagar e Quer pagar por; barra Enviar por padrão", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A coluna Valores mostra Vendas, A pagar, Já pago (com o como pagou logo embaixo, ex.: Dinheiro R$ 190,00), Falta pagar e Quer pagar por (Pix, Cartão ou Link). Saiu a faixa Já pagou de cima."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"A barra Enviar por (Pix, Maquininha, Link) virou uma barra única de três botões iguais, logo abaixo do título da coluna, igual ao padrão das outras telas. Em Confirmar, o campo virou Falta enviar. O motivo da sugestão agora quebra em duas linhas em vez de cortar."},
+  ]},
+  {v:"0.12.39", data:"2026-10-26", titulo:"Busca do topo com sugestões e endereço curto", itens:[
+    {tipo:"novo", area:"Barra do topo", txt:"O campo do topo agora é uma busca: a partir de 4 letras (ex.: maqui) lista embaixo as telas de TODOS os setores com aquele texto, mostrando o caminho (setor › grupo). Clicar ou Enter abre a tela. Respeita o acesso da pessoa. Colar endereço continua funcionando."},
+    {tipo:"melhoria", area:"Endereços", txt:"O endereço funciona sem o /montagem (ex.: /app-revendedora abre /montagem/app-revendedora). O prefixo é só o nome interno do app principal."}]},
+  {v:"0.12.38", data:"2026-10-26", titulo:"Regras e comissões nos apps da representante e da revendedora", itens:[
+    {tipo:"novo", area:"App da representante", txt:"Novo cartão Regras e comissões, com seletor no topo (Representante | Revendedora). A versão da representante (manual de 11 páginas) é só para ler e NÃO tem botão de salvar. A versão da revendedora tem o botão Salvar PDF para ela enviar quando a revendedora pedir as regras."},
+    {tipo:"novo", area:"App da revendedora", txt:"Novo cartão Regras e comissões com o regulamento da revendedora (8 páginas) e o botão Salvar PDF."},
+    {tipo:"novo", area:"Regras do acerto", txt:"Regulamento da revendedora e manual da representante com tabelas de comissão e brindes (Normal e Prata, brinde de R$ 44 e R$ 32 na faixa de R$ 500 a 699), taxa de R$ 35, multa de 10% do pendente, prazo de 15 dias, atraso do acerto até 60 dias com jurídico, remarcação, emergência, venda mínima e resumo rápido. Arquivos em folders/ e páginas em public/regras/."}]},
+  {v:"0.13.9", data:"2026-10-26", titulo:"Visão geral e Previsão de caixa: ajustes pedidos pelo Marcus", itens:[
+    {tipo:"melhoria", area:"Visão geral · Acertos do mês", txt:"Bloco voltou para a cor dourada do padrão (estava roxo). Entrou o cartão Carregar ao lado de Realizados e Faltam. Saiu a barra de progresso. Saiu o formulário \"Passar para Novembro\" (ficou só a linha informativa Passadas para o próximo mês, porque aqui ela não tinha efeito nenhum)."},
+    {tipo:"novo", area:"Financeiro · Previsão de caixa", txt:"Faixa nova no topo com o saldo real de HOJE de cada CNPJ (Consolidado e os 5), ao lado da faixa do pior dia — para saber de qual CNPJ a previsão está falando."},
+  ]},
+  {v:"0.13.10", data:"2026-10-26", titulo:"Faixa de cima (menu do setor) padronizada: sempre o nome do setor, nunca sobe", itens:[
+    {tipo:"correcao", area:"Menu do setor", txt:"A faixa de cima (ícone + nome, ao lado das abas abertas) mostrava o nome da TELA aberta (ex.: \"Direcionar\"). Agora mostra sempre o nome do SETOR (ex.: \"Financeiro\"); a tela aberta continua aparecendo como aba, dourada, na linha de baixo. Vale para todo setor com menu (Financeiro, Cadastro de revendedoras, Encomendas e reposições) porque é uma peça só (App.js + components/barra-menu.js) — não precisa mexer tela por tela."},
+    {tipo:"correcao", area:"Menu do setor", txt:"Conferida a regra de 22/10 \"a faixa de abas não sobe quando fecha a última\": o código já reserva o espaço (31 px) com zero abas abertas. Registrado como REGRA FIXA em PADRAO-VISUAL.md para não quebrar de novo."},
+  ]},
+  {v:"0.13.7", data:"2026-10-26", titulo:"Direcionar: pedido em 3 passos (modelo 3B) e dívidas da família", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Pedido aberto no modelo 3B: Valores em 4 linhas, Para onde enviar no meio e Confirmar à direita. A sugestão do sistema aparece com moldura amarela, o motivo de cada destino e o botão Usar sugestão (ou Tudo numa conta só). Saiu a tabela Regras usadas."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Depois de usar a sugestão, cada destino fica fechado, com R$ e os botões Editar e ✕. Editar abre o valor e vira OK. Há Voltar à sugestão, Dividir e Adicionar outra conta."},
+    {tipo:"novo", area:"Financeiro · Pagamentos · Direcionar", txt:"Contas a pagar ganhou a opção Família (só para Marcus, Lucas e Anamaria): lista as dívidas dos prestadores do Financeiro familiar que têm prazo e saldo em aberto, com Vencido ou Em N d. Clicar adiciona o prestador como destino quando ele existe em Controle de pagamentos."},
+  ]},
+  {v:"0.13.8", data:"2026-10-26", titulo:"Nova tela: Previsão de caixa (Consolidado + por CNPJ)", itens:[
+    {tipo:"novo", area:"Financeiro · Previsão de caixa", txt:"Tela nova (pedido do Marcus), palavra direta no topo do menu do Financeiro (não escondida em submenu). Parte do saldo real de hoje e desconta, dia a dia, as contas a pagar já lançadas no admin antigo (01/09 a 30/11). O previsto a receber (acertos reais de outubro por dia da semana × preço médio outubro +5%) entra em TODA visão: no Consolidado inteiro, em cada CNPJ dividido igual entre os 5 (ainda não se sabe em qual CNPJ o Pix vai cair — ajustar quando o Direcionar pagamento tiver histórico real). Linha vermelha e Situação \"Estourou\" quando passa do limite do cheque especial. Dados em domain/contas-pagar-previsto.local.js (gitignored, vem das planilhas do admin antigo — atualizar quando o Marcus mandar uma nova)."},
+  ]},
+  {v:"0.13.3", data:"2026-10-26", titulo:"Carga inicial protegida (quem manda nos dados)", itens:[
+    {tipo:"novo", area:"Servidor", txt:"Na primeira entrada da Diretoria com o servidor ligado, o sistema não troca nenhum dado até a pessoa escolher: Este navegador manda (envia o que foi digitado) ou O servidor manda. Protege o que foi lançado antes do login."},
+    {tipo:"novo", area:"Servidor", txt:"Comando npm run ver-modulos mostra quais módulos já estão no banco, a versão e o tamanho."},
+  ]},
+  {v:"0.13.6", data:"2026-10-26", titulo:"Pagamentos › Direcionar: pedido aberto em cima e 3 blocos embaixo", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Layout D1: o pedido aberto sobe para o topo, com Sugestão, Para onde vai e Confirmar em 3 colunas. Embaixo ficam, lado a lado, Contas a pagar, Contas negativas e Vendas. Cada bloco só ocupa a altura do que tem; sem pedido, os 3 blocos sobem."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Vendas deixou de ser gigante: título e números no padrão (13 px, linha de 32 px, valores de 16 px no pedido). A fila mostra Revendedora, Forma, Direcionar e Espera, e cada venda nova entra como uma linha."},
+    {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"Contas a pagar mostra só Falta, Limite e Situação (A pagar e Pago aparecem em Todos do mês). A nota sobre como o Pix quita ficou recolhida em Como o Pix quita."},
+  ]},
+  {v:"0.13.5", data:"2026-10-26", titulo:"Financeiro: menu Pagamentos com 4 telas, fontes no padrão e barra fixa", itens:[
+    {tipo:"melhoria", area:"Financeiro · Pagamentos", txt:"O primeiro item do menu virou Pagamentos, com uma lista de 4 telas: Direcionar, Contas das representantes, Regras do Pix e Controle de pagamentos (que saiu de Contas). O seletor que ficava no alto da tela Direcionar saiu."},
+    {tipo:"melhoria", area:"Financeiro · Direcionar", txt:"Fontes no padrão do Financeiro: texto de 13 px fixo (antes crescia até 18 px em tela grande), linhas de 32 px e números de até 20 px."},
+    {tipo:"correcao", area:"Menu do setor", txt:"A barra do menu não muda mais de lugar quando a primeira aba abre ou a última fecha: a faixa das abas guarda o espaço mesmo vazia."},
+  ]},
+  {v:"0.13.4", data:"2026-10-26", titulo:"Financeiro familiar: 33 pagamentos aplicados; contas a pagar de novembro; rota duplicada corrigida", itens:[
+    {tipo:"melhoria", area:"Financeiro familiar · Contas", txt:"O Marcus confirmou os 36 pagamentos de 20 a 26/10 levantados do admin antigo: 3 já estavam gravados (de uma atualização anterior), 15 entraram em contas que já existiam e 18 entraram em contas novas (c149 a c166, criadas agora com os dados do admin antigo). Total aplicado: R$ 8.255,18 em contas novas + o resto nas já existentes."},
+    {tipo:"novo", area:"Financeiro · Contas a pagar por CNPJ", txt:"Contas a pagar de novembro lançadas por CNPJ (planilha do admin antigo, relFin004_Filial): 34 R$ 281.581,17 · 46 R$ 272.164,55 · 59 R$ 342.524,75 · 67 R$ 68.587,82 · \"Sorelly/Hess & Oliveira\" R$ 505.714,22 (lançado em \"Contas sem CNPJ\", provisório — ver DECISOES.md). Total do mês R$ 1.470.572,51."},
+    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"A tela \"Contas a pagar\" (lançamento por mês e por CNPJ, antiga aba `contaspagar`) estava com o MESMO endereço de outra tela (\"Contas a pagar\" por natureza/fornecedor, aba `ctalista`) — as duas eram \"/montagem/contas-a-pagar\", então só a segunda abria. Endereço da primeira corrigido para `/montagem/contas-a-pagar-mensal`."},
+  ]},
   {v:"0.13.3", data:"2026-10-26", titulo:"Financeiro familiar: Pix e repasses até 26/10", itens:[
     {tipo:"melhoria", area:"Financeiro familiar · Pix revendedoras", txt:"16 Pix novos (22 a 26/10) e 2 repasses de prestador (21 e 22/10) lidos direto do banco do admin antigo. Faltam trazer 36 pagamentos de contas e 10 contas novas que já estão no admin antigo: a descrição se repete para pessoas diferentes sem um código que identifique cada uma, então não dá para saber com segurança qual conta cada pagamento fecha (ver DECISOES.md)."},
   ]},
@@ -17,6 +135,10 @@ var VERSOES = [
   ]},
   {v:"0.12.41", data:"2026-10-24", titulo:"Plano 45/60: aba Alinhamento", itens:[
     {tipo:"novo", area:"Agendamento · Plano 45/60", txt:"Nova aba Alinhamento com números grandes: previsto na abertura − saídas confirmadas = previsto do mês, o previsto que o Agendamento tem agora (com aviso se não bate), saídas pelo plano e saídas lançadas à mão. Cenários (confirmadas, com análise e saídas da empresa, com listas novas, com a linha que faltava) com o alvo de 94, 95 e 96%. Números informados da conversa (92, 7, 2, 1) ficam salvos."},
+  ]},
+  {v:"0.12.58", data:"2026-10-26", titulo:"Visão geral: Carregar no topo e blocos sem abre/fecha", itens:[
+    {tipo:"melhoria", area:"Visão geral", txt:"Faixa de cima mostra acertos e Carregar separados. Campo Carregar ao lado do Hoje. Blocos fixos, sem seta de abrir/fechar. Corrigido: o campo Hoje partia de acertos + Carregar."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Revendedoras por dia de 01 a 26/10 lidas do admin antigo."}
   ]},
   {v:"0.12.57", data:"2026-10-26", titulo:"Revendedoras 26/10 e Carregar no Faturamento", itens:[
     {tipo:"correção", area:"Financeiro · Faturamento", txt:"Revendedoras em 26/10 = 2.105. A faixa de totais do Faturamento mostra o Carregar (vendas pendentes). Dias 20 a 25/10 de revendedoras ainda faltam puxar do admin antigo."}

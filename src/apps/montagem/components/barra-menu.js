@@ -126,8 +126,10 @@ function AbasAbertas(p){
   var fecha = function(a, ev){ ev.stopPropagation(); var i = abas.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
     if(a.k===kAtual && resto.length) p.abrir(resto[Math.max(0, i-1)]); };
   var visiveis = abas.filter(function(a){ return todas.some(function(n){ return chaveDe(n)===a.k; }); });
-  if(!visiveis.length) return null;
-  return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-b border-border"},
+  // sem nenhuma aba aberta, a faixa continua ocupando os 30 px: a barra do menu NÃO muda de lugar quando a primeira aba abre ou a última fecha (Marcus, 26/10/2026)
+  // o bloco das abas é FECHADO: linha em cima, embaixo e dos lados (Marcus, 26/10/2026); vazio ou cheio, ocupa a mesma altura
+  if(!visiveis.length) return e("div",{"aria-hidden":true, className:"border-y border-l border-border", style:{height:LIN+2}});
+  return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
     visiveis.map(function(a){ var on = a.k===kAtual;
       return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, className:"flex shrink-0 items-center border-r border-border "+"text-white hover:bg-[#B8862B] "+(on ? "bg-[#B8862B]/45" : ""), style:{height:LIN}},
         e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"h-full whitespace-nowrap pl-3 pr-2 text-[12.5px] "+(on ? "font-medium" : "")}, a.nome),
@@ -198,7 +200,7 @@ function MenuSetor(p){
   };
   return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:64}},
     !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor}),
-    e("div",{className:"flex items-stretch", style:{height:LIN}},
+    e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
       e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo}),
       e(BuscaMenu,{menu:p.menu, pode:p.pode, abrir:abrirComVoo, setor:p.setor})),
     aviso && createPortal(e("div",{role:"alert", className:"fixed left-1/2 top-24 z-[60] max-w-[90vw] -translate-x-1/2 rounded-md border border-destructive bg-card px-4 py-2 text-[13px] text-white shadow-lg"}, aviso), document.body));

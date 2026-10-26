@@ -6,7 +6,7 @@
 //
 // Para criar uma página nova, acrescente uma linha aqui. Nada mais.
 import { e } from "@/shared/react";
-import { Navigate, useOutletContext } from "react-router-dom";
+import { Navigate, useLocation, useOutletContext } from "react-router-dom";
 
 /**
  * Rota com a página carregada sob demanda.
@@ -82,7 +82,9 @@ const montagem = {
     pagina("pf-fornecedores", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfForn"),
     pagina("pf-prestadores", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfPrest"),
     pagina("pf-cadastro", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfCadastro"),
-    pagina("direcionar-pix", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaDirecionarPix"),
+    pagina("direcionar-pix", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaDirecionar"),
+    pagina("pagamentos-contas-das-representantes", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaContasRep"),
+    pagina("pagamentos-regras-do-pix", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaRegrasPix"),
     pagina("cobranca-visao-geral", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfVisao"),
     pagina("cobranca-devendo", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfDevendo"),
     pagina("cobranca-quitadas", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfQuitados"),
@@ -171,7 +173,8 @@ const montagem = {
     pagina("cnpjs", () => import("@/apps/montagem/pages/Cnpjs"), "AbaCnpjs"),
     pagina("limite-de-faturamento", () => import("@/apps/montagem/pages/LimiteFaturamento"), "AbaLimiteFaturamento"),
     pagina("fiscal", () => import("@/apps/montagem/pages/Fiscal"), "AbaFiscal"),
-    pagina("contas-a-pagar", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
+    pagina("contas-a-pagar-mensal", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
+    pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),
     pagina("comissoes-montagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisMontagem"),
@@ -242,11 +245,17 @@ const kitsNovos = {
   ],
 };
 
+// Endereço sem /montagem: o prefixo é só o nome interno do app principal (existe também /kits-novos). Quem digita /regras-acertos cai em /montagem/regras-acertos.
+function SemPrefixo() {
+  const l = useLocation();
+  return e(Navigate, { to: "/montagem" + (l.pathname === "/" ? "" : l.pathname) + l.search + l.hash, replace: true });
+}
+
 export const rotas = [
   { path: "/", element: e(Navigate, { to: "/montagem", replace: true }) },
   montagem,
   kitsNovos,
-  { path: "*", element: e(Navigate, { to: "/montagem", replace: true }) },
+  { path: "*", element: e(SemPrefixo) },   // endereço curto (ex.: /app-revendedora) vale como /montagem/app-revendedora
 ];
 
 export default rotas;

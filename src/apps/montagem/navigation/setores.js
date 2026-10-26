@@ -13,14 +13,14 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  M("Direcionar pagamento","direcionar"),   // 1º do menu e tela que abre o Financeiro (Marcus, 23/10/2026): o Lucas direciona os Pix do dia
+  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Contas das representantes","dircontas"), M("Regras do Pix","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
+  M("Previsão de caixa","previsaocaixa"),   // palavra direta no topo (Marcus, 26/10/2026: estava escondida demais dentro de Saldos e análises › Saldo das contas)
   {nome:"Saldos e análises", itens:[
     {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
     M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
     M("Estoque Sorelly","estoquesorelly")]},
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("Contas a pagar","ctalista"),
-    M("Pagamentos","cpagamentos"),
     {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
@@ -85,15 +85,30 @@ var MENU_RH = [
   M("Configurador","rhconfig")
 ];
 
+// Menus dos setores pequenos (26/10/2026, padronização do topo): mesma peça `menu` de Financeiro/RH/Encomendas, só que com `semAbas:true`
+// (poucas telas, viram palavra direta, sem faixa de abas abertas — regra de PADRAO-VISUAL.md "MENU DO SETOR"). Nenhuma tela mudou de lugar: só ganhou a faixa padronizada.
+var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
+var MENU_ESTOQUE = [M("Compras e estoque de material","compras")];
+var MENU_GARANTIA = [M("Garantia","garantia"), M("Pós-vendas", undefined, {breve:true})];
+var MENU_DIRETORIA = [M("Fluxo da empresa","fluxo"), M("Comissões e desempenho", undefined, {breve:true})];
+var MENU_JURIDICO = [
+  {nome:"Notas promissórias", itens:[M("Execução de notas promissórias", undefined, {breve:true}), M("Inadimplência jurídica", undefined, {breve:true})]},
+  M("Contratos de salas comerciais", undefined, {breve:true}),
+  M("Marcas e patentes", undefined, {breve:true})
+];
+var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
+var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago", undefined, {breve:true})];
+var MENU_TEC = [M("App Sorelly", undefined, {breve:true}), M("Avisos","avisos"), M("Padrão visual","padrao"), M("Versões","versoes"), M("Mapa do sistema","mapa"), M("Projetos (dev)", undefined, {breve:true})];
+
 var SETORES = [
   {id:"whats", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
-  {id:"visao", nome:"Visão geral", ic:"grid4", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
+  {id:"visao", nome:"Dashboard", ic:"dashboard", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   {id:"rotina", nome:"Rotina do dia", ic:"calendario", cor:"#22C55E", direto:T("rotina","Rotina do dia")},
   {id:"apps", nome:"Apps", ic:"phone", cor:"#8B5CF6", direto:T("apps","Apps")},
   {id:"cnpjs", nome:"CNPJs", ic:"banco", cor:"#B8892B", direto:T("cnpjs","CNPJs")},
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
-    {nome:"Direcionar\nPix", telas:[T("direcionar","Direcionar pagamento")]},
+    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dircontas","Contas das representantes"), T("dirregras","Regras do Pix"), T("cpagamentos","Controle de pagamentos")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Chaves Pix e regras")]],
@@ -101,7 +116,6 @@ var SETORES = [
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
     G("Fiscal", [
       ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"])]]]),
-    {nome:"Controle de\npagamentos", telas:[T("cpagamentos","Controle de pagamentos")]},
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
       ["Contas a pagar", [T("ctalista","Contas a pagar"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
@@ -158,9 +172,9 @@ var SETORES = [
     {nome:"Produção", telas:[T("producao","Produção")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
   {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", direto:T("linkpag","Link de pagamento")},
-  {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", areas:[
+  {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", menu:MENU_ATENDIMENTO, semAbas:true, areas:[
     {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
-  {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", areas:[
+  {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", menu:MENU_ESTOQUE, semAbas:true, areas:[
     {nome:"Compras e estoque de material", telas:[T("compras","Compras e estoque de material")]}]},
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
   {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", direto:T("cadpecas","Cadastro de peças")},
@@ -171,7 +185,7 @@ var SETORES = [
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
     {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
-  {id:"garantia", nome:"Garantia & Pós-venda", ic:"escudo", cor:"#A855F7", areas:[
+  {id:"garantia", nome:"Garantia & Pós-venda", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
     {nome:"Garantias", telas:[T("garantia","Garantia")]},
     {nome:"Pós-vendas", telas:[B("Pós-vendas")]}]},
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
@@ -181,7 +195,7 @@ var SETORES = [
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
-  {id:"diretoria", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", areas:[
+  {id:"diretoria", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", menu:MENU_DIRETORIA, semAbas:true, areas:[
     {nome:"Empresa", telas:[T("fluxo","Fluxo da empresa"), B("Comissões e desempenho")]}]},
   // Sistema particular do Marcus (20/10/2026): só aparece no modo "Marcus" do botão do alto do menu, e só para ele
   // Sistema particular do Marcus (20/10/2026): cada tela é um item do menu lateral, só aparece no modo "Marcus" (ids começam com "marcus")
@@ -194,16 +208,16 @@ var SETORES = [
   {id:"marcusacessos", nome:"Acessos e senhas", ic:"escudo", cor:"#D9A63A", direto:T("marcusacessos","Acessos e senhas")},
   {id:"marcusdados", nome:"Dados", ic:"users", cor:"#D9A63A", direto:T("marcusdados","Dados")},
   // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em docs/negocio/JURIDICO-COBRANCA.md
-  {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", areas:[
+  {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", menu:MENU_JURIDICO, semAbas:true, areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
     {nome:"Salas comerciais", telas:[B("Contratos de salas comerciais")]},
     {nome:"Marcas e patentes", telas:[B("Marcas e patentes")]}]},
-  {id:"servicos", nome:"Segurança e limpeza", ic:"vassoura", cor:"#64748B", areas:[
+  {id:"servicos", nome:"Segurança e limpeza", ic:"vassoura", cor:"#64748B", menu:MENU_SERVICOS, semAbas:true, areas:[
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
-  {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", areas:[
+  {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
     {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]},
-  {id:"tec", nome:"Tecnologia", ic:"celular", cor:"#0EA5E9", areas:[
+  {id:"tec", nome:"Tecnologia", ic:"celular", cor:"#0EA5E9", menu:MENU_TEC, semAbas:true, areas:[
     {nome:"Sistema", telas:[B("App Sorelly"), T("avisos","Avisos"), T("padrao","Padrão visual"), T("versoes","Versões"), T("mapa","Mapa do sistema"), B("Projetos (dev)")]}]}
 ];
 // Barra do topo em grupos (padrão visual, opção D): o nome do grupo aparece em cima dos botões. Setor sem "grupo" nas áreas segue com a barra simples.

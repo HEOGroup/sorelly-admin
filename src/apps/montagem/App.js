@@ -10,6 +10,7 @@ import { rotAlertas } from "@/apps/montagem/domain/rotina";
 import * as srv from "@/apps/montagem/lib/api";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
 import { p45Alertas } from "@/apps/montagem/domain/plano45-60";
@@ -88,7 +89,7 @@ function App(){
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
-  useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão)
+  var modoSync = useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão); "pendente" = a Diretoria escolhe quem manda na primeira vez
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
   // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
   useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
@@ -195,7 +196,7 @@ function App(){
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
-    e(Aviso));
+    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
@@ -221,14 +222,16 @@ function App(){
       e("header",{className:"sticky top-0 z-30 flex h-12 items-center gap-3 bg-background/80 px-4 backdrop-blur md:px-6"},
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
         window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-9 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:14, className:"rotate-180"}), "Voltar"),
-        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true), e("span",{className:"truncate"}, titulo)),
+        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true),
+          // ao lado do ícone fica o NOME DO SETOR (ex.: "Financeiro"), sempre o mesmo não importa a tela aberta; a tela atual aparece como aba, não aqui (Marcus, 26/10/2026)
+          e("span",{className:"truncate"+(navPerg ? " font-semibold" : ""), style:navPerg ? {color:setorAtual.st.id==="whats" ? "#E8B84B" : setorAtual.st.cor} : undefined}, navPerg ? setorAtual.st.nome.replace("\n", " ") : titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
           return e("button",{key:x[0], title:x[1], onClick:function(){ navigate(caminhoDaAba(x[0])); setColArea(null); },
             className:"flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-bold transition-transform hover:-translate-y-px", style: on ? {background:x[3], color:"#fff", boxShadow:"0 2px 10px "+x[3]+"66"} : {background:x[3]+"26", color:x[3], boxShadow:"inset 0 0 0 1px "+x[3]+"55"}},
             e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
 
-        e(IrPara,{navigate:navigate}),
+        e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:podeMenu}),
         e(BotaoNotificacoes),
         e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
@@ -253,7 +256,7 @@ function App(){
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
-    e(Aviso), e(BuscaTela),
+    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(BuscaTela),
     chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar

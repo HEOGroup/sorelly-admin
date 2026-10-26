@@ -13,8 +13,10 @@ var REGRAS0 = [
   {id:"r4", n:4, se:"Valor acima de R$ 3.000", entao:"Pontual ou Point", ativa:true},
   {id:"r5", n:5, se:"Cartão Getnet na empresa e Pix acima de R$ 750", entao:"Pontual", ativa:true},
   {id:"r6", n:6, se:"Valor abaixo de R$ 750", entao:"Prestadores menores (Higor, Camilly)", ativa:true},
-  {id:"r7", n:7, se:"Todo o resto", entao:"CNPJ mais perto do limite do cheque especial, com mais contas para pagar hoje e amanhã", ativa:true}];
+  {id:"r7", n:7, se:"Todo o resto", entao:"CNPJ mais perto do limite do cheque especial, com mais contas para pagar hoje e amanhã", ativa:true},
+  {id:"r8", n:8, se:"Qualquer valor (inclusive abaixo de R$ 500)", entao:"A sugestão é sempre UMA conta só, com o valor inteiro (a conta que mais receberia na sugestão). Dividir em mais de uma conta é escolha do Lucas, nunca da sugestão", ativa:true}];
 
+// partes (opcional): como ela vai pagar o que falta, por forma: [{forma:"maquininha"|"link"|"pix", valor}] (soma = valor). Sem partes vale uma parte só, a forma do pedido.
 // pagos: o que a revendedora já pagou por outras formas {forma:"dinheiro"|"link"|"getnet"|"credito"|"pix", valor, cnpj?, parc?, obs?}; valor = o Pix que falta definir a conta
 function dpDemo(){
   var agora = Date.now(), min = function(m){ return agora-m*60000; };
@@ -30,7 +32,7 @@ function dpDemo(){
     it("Tatiane Cristina Pinati", "Kawany", 2270.00, 1362.00, [{forma:"getnet", valor:112}], 1250.00, 24),
     it("Josiele Azevedo Trindade", "Kawany", 252.00, 252.00, [{forma:"dinheiro", valor:110}], 142.00, 19, "Não vai renovar o kit: está fraco e ela não quer peças paradas em casa."),
     it("Jhenifer Vitória de Morais Jacob", "Sthefany", 1714.00, 1028.00, [{forma:"link", valor:468, cnpj:"59"}, {forma:"credito", valor:360.40, parc:2}], 200.00, 12, "Vai pausar as vendas deste mês (mudança de estúdio) e volta no mês que vem."),
-    Object.assign(it("Ana Paula Ribeiro Lima", "Edna", 6200.00, 3720.00, [], 3000.00, 15, "Cliente quer passar o valor no cartão (não vai de Pix)."), {forma:"maquininha"}),
+    Object.assign(it("Ana Paula Ribeiro Lima", "Edna", 6200.00, 3720.00, [{forma:"link", valor:700, cnpj:"59"}, {forma:"link", valor:500, cnpj:"59"}, {forma:"link", valor:520, cnpj:"59"}], 2000.00, 58, ""), {partes:[{forma:"pix", valor:800}, {forma:"maquininha", valor:700}, {forma:"maquininha", valor:500}]}),
     Object.assign(it("Karina Moraes Duarte", "Kawany", 4100.00, 2460.00, [{forma:"dinheiro", valor:300}], 2160.00, 8, "Vai pagar por link de pagamento."), {forma:"link"}),
     rp("Representante Thalita", "maquininha do CNPJ 46", 3700.00, 18, "Thalita"),
     rp("Representante Marciane", "maquininha do CNPJ 34", 1900.00, 9, "Marciane"),
