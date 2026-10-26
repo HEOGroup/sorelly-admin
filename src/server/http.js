@@ -10,7 +10,8 @@ function segredo() {
   return new TextEncoder().encode(process.env.JWT_SECRET);
 }
 
-export const assinar = (usuario) => new SignJWT(usuario).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("12h").sign(segredo());
+// 30 dias: a pessoa não digita a senha toda hora; conta bloqueada ou mudada pela Diretoria vale na hora (lido do banco a cada pedido)
+export const assinar = (usuario) => new SignJWT(usuario).setProtectedHeader({ alg: "HS256" }).setIssuedAt().setExpirationTime("30d").sign(segredo());
 
 // devolve o usuário do token ou null
 export async function usuarioDe(req) {

@@ -35,7 +35,7 @@ function BlocoInternoHoje(p){
     e("span",{className:"text-[9.5px] font-semibold uppercase leading-tight tracking-wide text-white/65"}, t), e("b",{className:MONO+" whitespace-nowrap text-[13.5px] leading-tight "+(cor||"")}, v)); };
   var valorDe = function(x){ if(x.acerto && x.acerto.vendaLiquida!=null) return x.acerto.vendaLiquida; if(x.vendaApp>0) return x.vendaApp;
     return (x.condicionais||[]).reduce(function(t,c){ return t+(c.valor||0); },0); };
-  return e(BlocoBarra,{cor:"ouro", t:"Atendimento interno", sub:"consolidado do mês e a listagem de hoje", ir:p.ir, compacto:p.compacto},
+  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"Atendimento interno", sub:"consolidado do mês e a listagem de hoje", ir:p.ir, compacto:p.compacto},
     e("div",{className:"flex flex-col gap-2 p-2"},
       p.semLista ? e("div",{className:"grid grid-cols-2 gap-1.5"}, cel("Faturamento do dia", BK(faturadoDoDia(s, p.dia || isoDia(new Date()))), "text-success"), cel("Faturamento do mês", BK(r.faturado), "text-primary"))
       : e("div",{className:"grid grid-cols-3 gap-1.5"},

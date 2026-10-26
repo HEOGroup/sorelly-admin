@@ -182,6 +182,7 @@ const montagem = {
     pagina("dinheiro", () => import("@/apps/montagem/pages/Dinheiro"), "AbaDinheiro"),
     pagina("apps", () => import("@/apps/montagem/pages/Apps"), "AbaApps"),
     pagina("revendedoras", () => import("@/apps/montagem/pages/BaseRevendedoras"), "AbaBaseRevendedoras"),
+    pagina("revendedoras-ativas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasAtivas"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),
     pagina("visao-geral", () => import("@/apps/montagem/pages/VisaoGeral"), "AbaVisaoGeral"),

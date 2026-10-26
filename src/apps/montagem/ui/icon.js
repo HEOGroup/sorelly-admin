@@ -47,7 +47,7 @@ var PH = {gem:"diamond", grid:"clipboard-text", chart:"chart-bar", wallet:"walle
   representante:"briefcase", revendedora:"handbag", calendario:"calendar-dots", whats:"whatsapp-logo", presente:"gift", grafico:"chart-line-up",
   lista:"clipboard-text", arquivo:"archive", config:"gear-six", celular:"device-mobile", kitnovo:"sparkle", caixa:"package",
   ia:"robot", calc:"calculator", espera:"hourglass-medium", grid4:"squares-four", chamado:"envelope-simple-open", coroa:"crown-simple", banco:"bank",
-  cubos:"cube", cadastro:"identification-card", agenda:"calendar-check", escudo:"shield-check", maleta:"briefcase", vassoura:"broom", m_admin:"database", m_pronto:"stack", m_integ:"seal-check", m_criar:"hammer", m_proto:"flask", megafone:"megaphone", caminhao:"truck", fechar:"x",
+  cubos:"cube", cadastro:"identification-card", agenda:"calendar-check", escudo:"shield-check", maleta:"briefcase", vassoura:"broom", m_admin:"database", m_pronto:"stack", m_integ:"seal-check", m_criar:"hammer", m_proto:"flask", megafone:"megaphone", caminhao:"truck", fechar:"x", dashboard:"gauge",
   seta:"arrow-right", pontilhado:"circle-dashed", sino:"bell", copiar:"copy"};
 function Icon(p){
   var nm = PH[p.n];

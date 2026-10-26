@@ -162,7 +162,8 @@ function AtendimentoInterno(){
   var remarcs = sel ? (sel.remarcacoesLista||[]) : [];
   var condicionais = sel ? (sel.condicionais||[]) : [];
   // atendimento interno: toda condicional lançada na tela vale como conferida (a funcionária digita número, valor e peças à mão)
-  var formD = Object.assign({}, form, {condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
+  var vendasAntD = (sel && sel.vendasAnt) || [null, null];   // [anterior, mais antiga]; a média das regras novas quer da mais antiga para a mais nova
+  var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, chegouMuitoAtrasada = atrasoChegada>TOLERANCIA_CHEGADA_MIN;
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
   var dv = derivarAcerto({brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true});   // atendimento interno: sem taxa de deslocamento
@@ -352,8 +353,15 @@ function AtendimentoInterno(){
       tile("Brinde que libera", pa ? e("span",{className:"flex items-center gap-3 text-[14px] font-bold"}, "Normal "+din(faixaBr ? Math.round(faixaBr.bn*fatorBr) : 0), e("span",{className:"text-muted-foreground"},"·"), "Select "+din(faixaBr ? Math.round(faixaBr.bb*fatorBr) : 0)) : numTile("—"), "#E8B84B"),
       tile("Valor a pagar", pa ? e("span",{className:"flex flex-wrap items-center gap-x-4 gap-y-0.5"}, e("b",{className:MONO+" text-[20px] leading-tight"}, din(dv.totalAPagar)),
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-extrabold text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
-    ehPrata && e("label",{className:"flex items-center justify-end gap-2 text-[12px] font-semibold text-muted-foreground"}, "Dias de atraso (Kit 100% Prata)",
+    (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[12px] font-semibold text-muted-foreground"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
       e("input",{type:"number", min:0, value:form.atrasoDias||0, "aria-label":"Dias de atraso", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({atrasoDias:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
+    dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[12px] font-semibold text-destructive"},
+      pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
+        : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
+    dv.novas && pa && dv.faltaAtual>0.009 && e("div",{className:"flex flex-col items-end gap-1"},
+      e("label",{className:"flex items-center justify-end gap-2 text-[12px] font-semibold text-muted-foreground"}, "Dias com valor pendente (prazo "+((versao.novas||{}).prazoQuitarDias||15)+")",
+        e("input",{type:"number", min:0, value:form.diasQuitacao||0, "aria-label":"Dias com valor pendente", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({diasQuitacao:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
+      e("p",{className:"text-[12px] font-semibold text-destructive"}, "Multa de "+din(pa.multaPendente)+(pa.multaAtrasoQuitacao>0 ? " + "+din(pa.multaAtrasoQuitacao)+" de atraso" : "")+" sobre "+din(pa.pendente)+" pendente. Próximo kit só depois de quitar.")),
     pa && (pa.descontoRemarcacao.comissaoPct>0 || pa.descontoRemarcacao.brindePct>0 || pa.atrasoPct>0) && e("p",{className:"text-center text-[12px] font-semibold text-destructive"},
       "Comissão −"+(pa.descontoRemarcacao.comissaoPct+pa.atrasoPct)+"%"+(pa.descontoRemarcacao.brindePct>0 ? " · brinde −"+pa.descontoRemarcacao.brindePct+"%" : "")),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
@@ -510,8 +518,11 @@ function AtendimentoInterno(){
           e("div",{className:"relative h-3 overflow-hidden rounded-full bg-black/30", role:"progressbar", "aria-valuenow":Math.round(dv.pctPagoAcerto), "aria-valuemin":0, "aria-valuemax":100},
             e("div",{className:"h-full rounded-full transition-all duration-500 "+(dv.kitNovoLiberado ? "bg-success" : "bg-destructive"), style:{width:Math.min(100, dv.pctPagoAcerto)+"%"}}),
             e("span",{className:"absolute inset-y-0 w-0.5 bg-white", style:{left:dv.kitNovoMin+"%"}, title:"Mínimo para liberar o kit novo"})),
+          dv.novas && dv.minimo.regra && e("p",{className:"text-[12.5px] font-semibold "+(dv.minimo.abaixo ? "text-destructive" : "text-success")},
+            "Média de "+dv.minimo.qtd+" venda(s): "+din(dv.minimo.media)+" · mínimo "+din(dv.minimo.ref)+(dv.minimo.abaixo ? ". Abaixo do mínimo: kit novo não liberado e cadastro bloqueado." : ".")),
           !dv.kitNovoLiberado && e("p",{className:"text-[12.5px] font-semibold text-destructive"},
-            !dv.previaBase.podeRenovar ? "Vendas abaixo de "+din(versao.gerais.minRenovar)+": não renova o kit." : "Falta pagar para liberar. Abaixo de "+dv.kitNovoMin+"% só com autorização do financeiro.")),
+            dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+"."
+            : !dv.previaBase.podeRenovar ? "Vendas abaixo de "+din(versao.gerais.minRenovar)+": não renova o kit." : "Falta pagar para liberar. Abaixo de "+dv.kitNovoMin+"% só com autorização do financeiro.")),
         e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-3"}, escolhas.map(function(x){ var on = continuaEf===x[0];
           return e("button",{key:x[0], disabled:x[3] || jaFeito, onClick:function(){ up({continua:x[0]}); }, "aria-pressed":on,
             className:"h-12 rounded-xl text-[14px] font-bold ring-1 disabled:opacity-40 "+(on ? "text-white" : "hover:bg-muted"), style:on ? {background:x[2], boxShadow:"0 0 0 1px "+x[2]} : {background:x[2]+"18", boxShadow:"inset 0 0 0 1px "+x[2]+"66"}}, x[1]); })),
@@ -537,7 +548,7 @@ function AtendimentoInterno(){
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
-      condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:ehPrata ? (form.atrasoDias||0) : 0,
+      condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
       assinatura:assinatura, regrasLidas:true, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});

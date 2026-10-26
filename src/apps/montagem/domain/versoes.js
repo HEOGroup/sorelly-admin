@@ -3,6 +3,24 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.7", data:"2026-10-27", titulo:"Dashboard: volta à grade e \"Hoje\" (faturamento) vira resumo + botão Atualizar", itens:[
+    {tipo:"correcao", area:"Dashboard", txt:"O Marcus não gostou do formato de listagem: \"Acertos de Outubro\" e \"Bipagem de retorno\" voltaram para cartões em grade e \"Hoje na empresa\" voltou para os quadradinhos (só mais enxutos). \"Solicitações para decidir\" e \"Atendimento interno\" voltaram para a tela."},
+    {tipo:"melhoria", area:"Dashboard", txt:"A caixa \"Hoje\" (recebido, acertos e carregar, na faixa de cima) fica FECHADA por padrão: mostra um resumo com os 3 números e um botão \"Atualizar\" que abre o formulário para editar. A faixa de cima (Revendedoras, Faturamento, Previsão) continua sempre visível, sem fechar."},
+  ]},
+  {v:"0.14.6", data:"2026-10-27", titulo:"Dashboard: Acertos, Hoje na empresa e Bipagem de retorno em formato de listagem", itens:[
+    {tipo:"melhoria", area:"Dashboard", txt:"\"Acertos de Outubro\", \"Hoje na empresa\" e \"Bipagem de retorno\" trocaram os cartões em grade por LISTA: uma linha por número, rótulo à esquerda e valor à direita (mesmo formato de \"Solicitações para decidir\"). Mais fácil de ler de cima para baixo, sem blocos espalhados."},
+    {tipo:"correcao", area:"Dashboard", txt:"Saíram do Dashboard os blocos \"Solicitações para decidir\" e \"Atendimento interno\" (pedido do Marcus). Solicitações continua no SorellyChat; Atendimento interno continua no setor próprio."},
+  ]},
+  {v:"0.14.5", data:"2026-10-27", titulo:"Revendedoras: Agrupar por representante vira uma linha por representante", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"Agrupar por representante agora mostra UMA linha por representante (Cód., Representante com nome inteiro, Revendedoras ativas, Atrasadas, Kits novos, Reposições e Valor em aberto). Clicar abre as revendedoras dela logo embaixo e clicar de novo fecha; começa tudo fechado. Filtros e ordem das colunas funcionam nas duas tabelas. Títulos por extenso (Representante, Situação, Condicionais, Média por kit, Previsão de devolução)."},
+  ]},
+  {v:"0.14.4", data:"2026-10-27", titulo:"Revendedoras: ficha com blocos e tabela de todas as condicionais", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A ficha da revendedora agora tem 4 blocos com listas (Em condicional: valor, peças, média e saldo; Acerto: previsão, agenda, vendedores e tipos; Devolução: próxima, vencida há quantos dias e sem previsão; Cadastro: contatos, endereço e data) e uma tabela com TODAS as condicionais (código, emissão, vendedor, tipo, peças, valor, saldo, previsão de devolução, dias e agenda), com TOTAL acima do cabeçalho, centralizada e com linhas finas. Botão Copiar resumo. Celular com máscara na lista e na ficha."},
+  ]},
+  {v:"0.14.3", data:"2026-10-27", titulo:"Revendedoras: blocos com listas, totais em cima e tabela única com condicionais somadas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"Quatro blocos no topo com lista dentro: Revendedoras por representante, Condicionais por tipo (condicionais, peças e valor), Médias (valor e peças por kit, kits por revendedora) e Devolução (vencidas, 7 dias, 30 dias, depois, sem previsão). Abas por tipo e bloco Filtros. Os números mudam com a aba e com os filtros."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"Tabela única, sem páginas, centralizada e com linhas finas: celular, situação, quantidade de condicionais, peças, valor total, média por kit, devolução e tipo. A linha TOTAL DO FILTRO fica acima do cabeçalho e cada representante tem uma linha com a soma do grupo. O servidor passou a devolver as condicionais de cada revendedora na lista."},
+  ]},
   {v:"0.14.2", data:"2026-10-26", titulo:"Faixa de telas abertas em todas as telas, inclusive fora de setor", itens:[
     {tipo:"melhoria", area:"Menu do setor", txt:"Conferidos todos os 22 setores do menu do Admin e os 8 do sistema Marcus: todos mostram a faixa de telas abertas. Telas que não estão em nenhum setor (Configurador, Configurador de comissões, Painel dos acertos, Metas do Agendamento, Regras de reposição e outras) entram na faixa com o setor Sistema."},
     {tipo:"correcao", area:"Menu do setor", txt:"A lista de abas é separada por modo: telas do sistema Marcus não aparecem no Admin e as do Admin não aparecem no Marcus."},

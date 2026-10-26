@@ -5,6 +5,7 @@ import { Botao, Bloco, CAMPO, FaixaTotais } from "@/apps/montagem/components/pad
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { EQUIPE } from "@/apps/montagem/domain/equipe";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { reabrirEscolha, restaurarCopiaAntesServidor, temCopiaAntesServidor } from "@/apps/montagem/lib/sync-modulos";
 import { e, useEffect, useState } from "@/shared/react";
 
 // mesmos nomes do servidor (src/server/permissoes.js → SETORES_VALIDOS)
@@ -53,6 +54,11 @@ function AbaContas(){
   var l = contas || [], n = function(st){ return l.filter(function(c){ return c.status===st; }).length; };
   return e(Pagina,null,
     erro && e("p",{role:"alert", className:"rounded-lg bg-destructive/15 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, erro),
+    e(Bloco,{t:"Dados deste navegador"},
+      e("div",{className:"flex flex-wrap items-center gap-2"},
+        e("span",{className:"text-[13px]"}, "Escolher de novo qual cópia dos dados vale (a deste navegador ou a do servidor)."),
+        e(Botao,{onClick:reabrirEscolha}, "Escolher de novo"),
+        temCopiaAntesServidor() && e(Botao,{onClick:restaurarCopiaAntesServidor, title:"Devolve à tela o que estava neste navegador antes de você usar o servidor"}, "Voltar a cópia de antes"))),
     e(FaixaTotais,{itens:[{t:"Aguardando", v:String(n("aguardando")), cor:n("aguardando") ? "text-warning" : undefined}, {t:"Ativas", v:String(n("ativo"))}, {t:"Bloqueadas", v:String(n("bloqueado"))}]}),
     e(Bloco,{t:"Contas"},
       contas===null && !erro ? e("p",{className:"p-3 text-[13px]"}, "Carregando…")

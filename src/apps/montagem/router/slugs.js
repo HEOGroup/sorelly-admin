@@ -133,6 +133,7 @@ export const SLUG_DA_ABA = {
   previsaocaixa: "previsao-de-caixa",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
+  revbase: "revendedoras-ativas",
   apps: "apps",
   dinheiro: "dinheiro",
   comisstodos: "comissoes-de-todos",

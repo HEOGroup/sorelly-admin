@@ -36,8 +36,8 @@ Resultado no sistema em 26/10: média R$ 789,14; faturamento previsto do mês R$
 | 20/10/2026 | 7 |
 | 26/10/2026 | 34 |
 
-## Revendedoras (total) — pontos gravados
-26/10/2026: **2.105** revendedoras (Marcus). Último dia do sistema antes disso: 19/10/2026 = 2.082. Os dias 20 a 25/10 ainda NÃO foram lidos do admin antigo (conector indisponível em 26/10): pendente puxar `revendedoras` por dia do admin antigo.
+## Revendedoras (total) — lidas do admin antigo em 26/10/2026
+01/10 2.023 · 02 2.033 · 03 2.033 · 04 2.033 · 05 2.032 · 06 2.022 · 07 2.032 · 08 2.044 · 09 2.060 · 10 2.064 · 11 2.066 · 12 2.072 · 14 2.074 · 15 2.077 · 16 2.075 · 19 2.069 · 20 2.058 · 21 2.081 · 22 2.087 · 23 2.106 · 24 2.113 · 25 2.113 · 26 **2.105** (valor do Marcus; o admin mostrava 2.110).
 
 ## Outubro/2026 · dia a dia (gravado em 26/10/2026)
 Acumulado do mês até cada data, conferido com o Marcus. Dia = diferença entre os acumulados. Contas pagas: tela contas-diario do admin antigo.
