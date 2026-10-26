@@ -1,0 +1,1644 @@
+openapi: 3.0.3
+info:
+  title: DevMaster BackEnd API
+  description: >
+    API de integração do DevMaster. Todas as rotas retornam JSON (`application/json; charset=utf-8`),
+    exceto a geração de relatórios (`GET /relatorios/{nome}`), que devolve um arquivo no formato
+    pedido (PDF por padrão; imagem, Excel, CSV, HTML, Word e outros pela query string `formato`).
+    A leitura é genérica: a rota `GET /{codigo}` lista os registros de qualquer tabela do sistema
+    (ex.: `GET /dmaam` para clientes, `GET /dmaaa` para produtos, `GET /dmabh` para pedidos de venda),
+    com as colunas cruas do banco e filtro por igualdade ou por operadores compostos (`gt`, `gte`, `lt`,
+    `lte`, `between`, `in`, `notin`, `like`, `nulo`); a rota `GET /{codigo}/fotos` devolve as fotos de um
+    registro (conteúdo dos arquivos em base64). As escritas (POST) são dedicadas por cadastro — a rota usa o próprio
+    código da tabela (ex.: `POST /dmaam` para clientes, `POST /dmaku` para endereços alternativos de
+    clientes, `POST /dmaaa` para produtos, `POST /dmaas` e
+    `POST /dmabj` para tabelas de preços, `POST /dmaae` para almoxarifados, `POST /dmaad` e
+    `POST /dmaai` para grupos e classes de produtos, `POST /dmaik` para atividades) —, com as regras
+    de negócio de cada um. O corpo dos POSTs usa os mesmos nomes de campo do banco (`aam_nome`,
+    `aaa_descricao`, `aik_assunto`); além dos campos tratados por cada rota, todos os campos do corpo que existirem na tabela são aplicados ao registro e os inexistentes são ignorados. A estrutura das
+    tabelas e campos pode ser consultada pelo próprio GET genérico no dicionário de dados (`dmzag` e
+    `dmzae`). A documentação e a
+    spec OpenAPI também são servidas pela própria API em `GET /docs` e `GET /openapi.yaml`, sem token.
+    Cada requisição (exceto `/docs` e `/openapi.yaml`) exige um token JWT (HS256) no header `Token`,
+    contendo uma claim `tabelas` com os códigos das tabelas que aquele token pode acessar; a tabela
+    exigida por cada rota (ex.: `dmaam` em `POST /dmaam`, ou a tabela informada em `GET /{codigo}` e em
+    `GET /{codigo}/fotos`)
+    precisa constar nessa lista, senão a resposta é `403`. O token é gerado pela tela de geração de
+    tokens do DevMaster, que assina com o segredo configurado no parâmetro `jwt_secret` da integração.
+    Os relatórios do sistema são gerados pelas rotas `GET /relatorios/{nome}/parametros` e
+    `GET /relatorios/{nome}` — nesta, o formato do arquivo é escolhido pela query string `formato`
+    (PDF é o padrão; aceita também imagem, Excel, CSV, HTML, Word e outros); cada relatório precisa
+    estar liberado no token como `rel:` + nome
+    (ex.: `rel:relFin001`), na mesma lista da claim `tabelas`.
+  version: "2.12.0"
+servers:
+  - url: "https://{host}"
+    description: >
+      A URL base é definida por instalação (parâmetro `url_backend` da integração).
+      Solicite ao time DevMaster a URL específica do seu ambiente.
+    variables:
+      host:
+        default: seu-servidor.exemplo.com.br:PORTA
+
+security:
+  - TokenAuth: []
+
+tags:
+  - name: Tabela
+  - name: Fotos
+  - name: Cadastros
+  - name: Relatórios
+  - name: Documentação
+
+paths:
+  /docs:
+    get:
+      tags: [Documentação]
+      security: []
+      summary: Página de documentação desta API (HTML)
+      description: >
+        Serve a página de referência (api-docs.html) embarcada no executável. Não exige token, pois
+        descreve apenas o formato e as regras das rotas.
+      responses:
+        "200":
+          description: Página de documentação
+          content:
+            text/html:
+              schema:
+                type: string
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /openapi.yaml:
+    get:
+      tags: [Documentação]
+      security: []
+      summary: Spec OpenAPI desta API (YAML)
+      description: >
+        Serve a spec OpenAPI (openapi.yaml) embarcada no executável, pronta para importar em ferramentas
+        como Swagger UI, Postman e Insomnia. Não exige token.
+      responses:
+        "200":
+          description: Spec OpenAPI
+          content:
+            application/yaml:
+              schema:
+                type: string
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /{codigo}:
+    get:
+      tags: [Tabela]
+      summary: Lista os registros de uma tabela do DevMaster
+      description: >
+        Retorna os registros da tabela informada em `{codigo}` (ex.: `GET /dmaam`, `GET /dmaaa`,
+        `GET /dmabh`), com `dm_id` e as colunas dos campos reais cadastrados para a tabela no dicionário
+        (`dmzae`), com os mesmos nomes de campo usados internamente pelo DevMaster, ordenados por `dm_id`
+        crescente (ou pela ordenação da chave `ordem` do corpo). Os registros são filtrados pela filial
+        ativa (tabelas `dmz*` de configuração/sistema não possuem filial). Todas as opções da consulta são
+        enviadas em um objeto JSON opcional no corpo do GET: `pagina` e `registros` controlam a paginação,
+        `campos` limita as colunas retornadas, `ordem` define a ordenação e `filtro` restringe os
+        registros, por igualdade ou por operadores compostos (`eq`/`igual`, `ne`/`diferente`,
+        `gt`/`maior`, `gte`/`maiorigual`, `lt`/`menor`, `lte`/`menorigual`, `between`/`entre`, `in`,
+        `notin`, `like`/`notlike` e `nulo`). As chaves especiais `empresa` e `filial` do corpo selecionam a
+        tabela física por empresa (ex.: `dmaam01`/`dmaam02`) e a filial da consulta. Campos de senha (texto com
+        máscara `*` no dicionário) são sempre retornados como `null`.
+      parameters:
+        - $ref: '#/components/parameters/CodigoTabela'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoConsultaTabela'
+            example:
+              pagina: 0
+              registros: 50
+              empresa: "01"
+              campos: [aam_codigo, aam_nome]
+              ordem: aam_nome desc,aam_codigo
+              filtro:
+                aam_ativo: true
+                aam_nome:
+                  like: "%Silva%"
+                aam_codigo:
+                  between: ["000010", "000050"]
+      responses:
+        "200":
+          description: Lista de registros da tabela
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RegistroTabela'
+              examples:
+                default:
+                  value:
+                    - dm_id: 1
+                      aam_codigo: "000001"
+                      aam_nome: "João da Silva"
+                      aam_cpfcnpj: "12345678000199"
+                campos:
+                  description: Resposta de GET /dmaam com campos=[aam_codigo, aam_nome] no corpo
+                  value:
+                    - aam_codigo: "000001"
+                      aam_nome: "João da Silva"
+        "400":
+          description: >
+            Código de tabela com formato inválido, corpo JSON inválido, campo inexistente informado
+            na chave `campos`, campo inválido informado na chave `ordem`, campo/valor/operador inválido
+            informado na chave `filtro` ou `empresa`/`filial` com formato inválido ou inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: >
+            Nenhuma tabela cadastrada com o código informado, ou tabela não criada para a empresa
+            informada no corpo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /{codigo}/fotos:
+    get:
+      tags: [Fotos]
+      summary: Devolve as fotos de um registro da tabela
+      description: >
+        Devolve as fotos de um registro da tabela informada em `{codigo}` (ex.: `GET /dmaaa/fotos`):
+        para cada campo de foto da tabela (tipo `IM` no dicionário `dmzae` — `aaa_foto`, `aaa_foto02`…,
+        campos customizados `aaa_xfoto*`) que possuir caminho gravado no registro, retorna o nome do
+        campo, o caminho do arquivo no servidor e o conteúdo do arquivo em base64 (chave `foto`; nula
+        quando o arquivo não é encontrado no servidor). Campos sem foto gravada não entram na resposta;
+        um registro sem nenhuma foto retorna uma lista vazia. O registro é localizado pelas chaves do
+        corpo JSON opcional do GET: `codigo` (código do registro, campo `xxx_codigo`) e/ou `filtro` —
+        no mesmo formato da rota `GET /{codigo}`, inclusive com operadores compostos —, além das chaves
+        especiais `empresa` e `filial`; é preciso informar `codigo` ou `filtro`. Quando mais de um
+        registro atende, as fotos do primeiro (menor `dm_id`) são devolvidas.
+      parameters:
+        - $ref: '#/components/parameters/CodigoTabela'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoConsultaFotos'
+            example:
+              codigo: "000001"
+      responses:
+        "200":
+          description: >
+            Fotos do registro (lista vazia quando o registro não tem nenhuma foto gravada)
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FotoRegistro'
+              example:
+                - campo: aaa_foto
+                  arquivo: "\\imagens\\produtos\\000001.jpg"
+                  foto: "/9j/4AAQSkZJRgABAQAAAQABAAD..."
+        "400":
+          description: >
+            Código de tabela com formato inválido, corpo JSON inválido, `codigo`/`filtro` não
+            informados, campo ou valor inválido no `filtro` ou `empresa`/`filial` com formato
+            inválido ou inexistente
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: >
+            Tabela inexistente ou nenhum registro localizado com o `codigo`/`filtro` informado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaam:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza um cliente (upsert por CPF/CNPJ)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        O cliente é localizado pelo CPF/CNPJ: se
+        existir, é atualizado; caso contrário, um novo é criado. O campo `aam_pessoa` (F/J) é definido
+        automaticamente pelo tamanho do CPF/CNPJ.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoCliente'
+            examples:
+              default:
+                value:
+                  aam_cpfcnpj: "00000000000191"
+                  aam_nome: "Empresa Exemplo LTDA"
+                  aam_fantasia: "Empresa Exemplo"
+      responses:
+        "200":
+          description: Cliente já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaCliente'
+        "201":
+          description: Cliente criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaCliente'
+        "400":
+          description: Requisição inválida (corpo ausente, ou `aam_cpfcnpj`/`aam_nome` não informados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaku:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza um endereço alternativo de cliente
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        Sem `aku_codigo`, um novo endereço é criado
+        para o cliente informado em `aku_relacao`, com sequência calculada automaticamente; com
+        `aku_codigo`, o endereço é atualizado e deve pertencer ao cliente (`400` caso contrário). O
+        `aku_municipio` e o `aku_estado` devem existir (`dmaal`/`dmaak`), assim como o cliente. Sem
+        `aku_pais`, entra `BRA`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoEnderecoAlternativo'
+            examples:
+              default:
+                value:
+                  aku_relacao: "000001"
+                  aku_descricao: "João da Silva"
+                  aku_endereco: "Av. das Flores"
+                  aku_numero: "100"
+                  aku_bairro: "Centro"
+                  aku_municipio: "4106"
+                  aku_estado: "PR"
+                  aku_cep: "80010000"
+      responses:
+        "200":
+          description: Endereço já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaEnderecoAlternativo'
+        "201":
+          description: Endereço criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaEnderecoAlternativo'
+        "400":
+          description: >
+            Requisição inválida (corpo ausente, campos obrigatórios não informados,
+            cliente/município/estado inexistentes, ou endereço não pertence ao cliente informado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: "`aku_codigo` informado não corresponde a um endereço existente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaaa:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza um produto (upsert por código)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        O produto é localizado pelo código: se
+        existir, é atualizado; caso contrário, um novo é criado (tipo `PV`, unidade `UN`, status `A`).
+        Preços por tabela de preços são gravados pelo `POST /dmabj`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoProduto'
+            examples:
+              default:
+                value:
+                  aaa_codigo: "000001"
+                  aaa_descricao: "Produto Exemplo"
+                  aaa_precovenda: 199.90
+      responses:
+        "200":
+          description: Produto já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaProduto'
+        "201":
+          description: Produto criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaProduto'
+        "400":
+          description: Requisição inválida (corpo ausente, ou `aaa_codigo`/`aaa_descricao` não informados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaaa/fotos:
+    post:
+      tags: [Cadastros]
+      summary: Salva as fotos de um produto
+      description: >
+        Grava as fotos (base64) nos campos de foto configurados no cadastro de produtos. O corpo usa os
+        nomes de campo do banco: `aaa_codigo` (obrigatório) e um campo de foto por chave (`aaa_foto`,
+        `aaa_foto02`, ... ou campos customizados `aaa_xfoto*`), com a imagem em base64 como valor. Chave
+        desconhecida (que não seja campo de foto) retorna `400`. O produto deve existir. Para ver as
+        fotos depois, use `GET /dmaaa/fotos`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoFotosProduto'
+            examples:
+              default:
+                value:
+                  aaa_codigo: "000001"
+                  aaa_foto: "<base64 da imagem>"
+                  aaa_foto02: "<base64 da imagem>"
+      responses:
+        "200":
+          description: Fotos salvas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaFotosProduto'
+        "400":
+          description: >
+            Requisição inválida (corpo ausente, `aaa_codigo` não informado, nenhum campo de foto
+            informado, campo que não é de foto ou conteúdo não é uma imagem base64 válida)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: Produto não encontrado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaas:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza uma tabela de preços (upsert por código)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        A tabela de preços é localizada pelo código:
+        se existir, é atualizada; caso contrário, uma nova é criada. Sem `aas_status`/`aas_moeda`, entram
+        os padrões do cadastro (`A` e `01`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoTabelaPreco'
+            examples:
+              default:
+                value:
+                  aas_codigo: "ATAC"
+                  aas_descricao: "Atacado"
+      responses:
+        "200":
+          description: Tabela de preços já existente foi atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaTabelaPreco'
+        "201":
+          description: Tabela de preços criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaTabelaPreco'
+        "400":
+          description: Requisição inválida (corpo ausente, ou `aas_codigo`/`aas_descricao` não informados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmabj:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza o preço de um produto em uma tabela de preços (upsert por tabela + produto)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        O item é localizado por `abj_tabela` +
+        `abj_produto`: se existir, é atualizado; caso contrário, um novo é criado. A tabela de preços e
+        o produto informados devem existir (`400` caso contrário).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoItemTabelaPreco'
+            examples:
+              default:
+                value:
+                  abj_tabela: "ATAC"
+                  abj_produto: "000001"
+                  abj_precovenda: 179.90
+      responses:
+        "200":
+          description: Item já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaItemTabelaPreco'
+        "201":
+          description: Item criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaItemTabelaPreco'
+        "400":
+          description: >
+            Requisição inválida (corpo ausente, campos obrigatórios não informados,
+            tabela de preços inexistente ou produto inexistente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaae:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza um almoxarifado (upsert por código)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        O almoxarifado é localizado pelo código: se
+        existir, é atualizado; caso contrário, um novo é criado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoAlmoxarifado'
+            examples:
+              default:
+                value:
+                  aae_codigo: "01"
+                  aae_descricao: "Almoxarifado Central"
+                  aae_local: "Galpão 1 - Rua A"
+      responses:
+        "200":
+          description: Almoxarifado já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaAlmoxarifado'
+        "201":
+          description: Almoxarifado criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaAlmoxarifado'
+        "400":
+          description: Requisição inválida (corpo ausente, ou `aae_codigo`/`aae_descricao` não informados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaad:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza um grupo de produtos (upsert por código)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        O grupo é localizado pelo código: se existir,
+        é atualizado; caso contrário, um novo é criado. Sem `aad_status`, entra o padrão do cadastro (`A`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoGrupo'
+            examples:
+              default:
+                value:
+                  aad_codigo: "0001"
+                  aad_descricao: "Anéis"
+      responses:
+        "200":
+          description: Grupo já existente foi atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaGrupo'
+        "201":
+          description: Grupo criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaGrupo'
+        "400":
+          description: Requisição inválida (corpo ausente, ou `aad_codigo`/`aad_descricao` não informados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaai:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza uma classe de produtos (upsert por código)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        A classe é localizada pelo código: se
+        existir, é atualizada; caso contrário, uma nova é criada. Quando `aai_grupo` é informado, o grupo
+        deve existir (`400` caso contrário). Sem `aai_status`, entra o padrão do cadastro (`A`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoClasse'
+            examples:
+              default:
+                value:
+                  aai_codigo: "0001"
+                  aai_descricao: "Ouro 18k"
+                  aai_grupo: "0001"
+      responses:
+        "200":
+          description: Classe já existente foi atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaClasse'
+        "201":
+          description: Classe criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaClasse'
+        "400":
+          description: Requisição inválida (corpo ausente, `aai_codigo`/`aai_descricao` não informados ou grupo inexistente)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /dmaik:
+    post:
+      tags: [Cadastros]
+      summary: Cria ou atualiza uma atividade (CRM)
+      description: >
+        O corpo usa os nomes de campo do banco; além das chaves abaixo, todos os campos do corpo que existirem na tabela são aplicados ao registro (campos inexistentes são ignorados)
+        Quando `aik_codigo` é informado e existe, a
+        atividade é atualizada; caso contrário, uma nova é criada com código sequencial.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoAtividade'
+            examples:
+              default:
+                value:
+                  aik_assunto: "Follow-up comercial"
+                  aik_descricao: "Retomar contato com o cliente"
+                  aik_cliente: "000001"
+                  aik_dataagendada: "2026-09-01T09:00:00-03:00"
+      responses:
+        "200":
+          description: Atividade já existente foi atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaAtividade'
+        "201":
+          description: Atividade criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaAtividade'
+        "400":
+          description: Requisição inválida (corpo ausente ou assunto não informado)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: "`codigo` informado não corresponde a uma atividade existente"
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /relatorios:
+    get:
+      tags: [Relatórios]
+      summary: Lista os relatórios que o token pode gerar
+      description: >
+        Retorna os relatórios liberados no token da requisição (`rel:` + código), com o código usado nas
+        rotas `/relatorios/{nome}` e o nome do relatório, ordenados pelo código. Token sem nenhum
+        relatório liberado recebe a lista vazia.
+      responses:
+        "200":
+          description: Relatórios que o token pode gerar
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RelatorioDisponivel'
+              example:
+                - codigo: relFin001
+                  nome: Relação de Cheques
+                - codigo: relVen002
+                  nome: Relatório Preços dos Produtos
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /relatorios/{nome}/parametros:
+    get:
+      tags: [Relatórios]
+      summary: Lista os parâmetros de um relatório
+      description: >
+        Retorna os parâmetros do relatório informado em `{nome}`, na ordem da tela de parâmetros do
+        DevMaster, com o valor padrão usado quando o parâmetro não é informado na geração. Parâmetros de
+        imagem e arquivo não são listados, pois não podem ser informados pela API. O relatório precisa
+        estar liberado no token como `rel:` + nome (ex.: `rel:relFin001`).
+      parameters:
+        - $ref: '#/components/parameters/NomeRelatorio'
+      responses:
+        "200":
+          description: Parâmetros do relatório
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaParametrosRelatorio'
+              example:
+                relatorio: relFin001
+                titulo: Relação de Cheques
+                modulo: Financeiro
+                parametros:
+                  - nome: emissao_de
+                    titulo: Emissão de
+                    tipo: DT
+                    tamanho: 8
+                    precisao: 0
+                    consulta: ""
+                    opcoes: []
+                    padrao: ""
+                    descricao: Data inicial da emissão
+                  - nome: tipo
+                    titulo: Tipo
+                    tipo: TV
+                    tamanho: 1
+                    precisao: 0
+                    consulta: ""
+                    opcoes:
+                      - valor: " "
+                        descricao: Todos
+                      - valor: E
+                        descricao: Emitidos
+                      - valor: R
+                        descricao: Recebidos
+                    padrao: " "
+                    descricao: Tipo do Cheque
+        "400":
+          description: >
+            Nome de relatório com formato inválido, ou nome de classe repetido (a mensagem traz os
+            nomes completos que devem ser usados)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: Nenhum relatório com o nome informado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+  /relatorios/{nome}:
+    get:
+      tags: [Relatórios]
+      summary: "Gera um relatório no formato pedido (padrão: PDF)"
+      description: >
+        Gera o relatório informado em `{nome}` e devolve o arquivo no formato pedido pela query string
+        `formato`: `pdf` (padrão e comportamento atual, `application/pdf`), `png` e `jpg` (imagem),
+        `xlsx` e `xls` (Excel), `csv`, `html`, `mht`, `docx`, `rtf` e `txt`. Os valores dos parâmetros
+        são enviados em um objeto JSON opcional no corpo do GET, no formato
+        `{ "parametro": valor }`, com os nomes retornados por `GET /relatorios/{nome}/parametros`; os
+        parâmetros não informados ficam com o valor padrão do relatório. O relatório precisa estar
+        liberado no token como `rel:` + nome (ex.: `rel:relFin001`). Relatórios que só podem ser gerados
+        pela rotina de origem (ex.: DANFE, DACTE, boletos) retornam `422`.
+      parameters:
+        - $ref: '#/components/parameters/NomeRelatorio'
+        - $ref: '#/components/parameters/FormatoRelatorio'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RequisicaoGerarRelatorio'
+            example:
+              emissao_de: "2026-01-01"
+              emissao_ate: "2026-01-31"
+              clientes: ["000001", "000002"]
+              tipo: R
+              pad_imprimirparametros: S
+      responses:
+        "200":
+          description: Arquivo do relatório gerado, no formato pedido pelo parâmetro `formato`
+          content:
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                type: string
+                format: binary
+            application/vnd.ms-excel:
+              schema:
+                type: string
+                format: binary
+            text/csv:
+              schema:
+                type: string
+                format: binary
+            text/html:
+              schema:
+                type: string
+                format: binary
+            message/rfc822:
+              schema:
+                type: string
+                format: binary
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                type: string
+                format: binary
+            application/rtf:
+              schema:
+                type: string
+                format: binary
+            text/plain:
+              schema:
+                type: string
+                format: binary
+        "400":
+          description: >
+            Nome de relatório inválido ou repetido, formato de exportação não suportado, corpo JSON
+            inválido, parâmetro inexistente no relatório, valor em formato inválido para o tipo do
+            parâmetro, ou texto com aspas simples, ponto e vírgula ou `--`
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "403":
+          $ref: '#/components/responses/NaoAutorizado'
+        "404":
+          description: Nenhum relatório com o nome informado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "422":
+          description: >
+            O relatório não gerou o documento: os parâmetros não retornaram dados, ou o relatório depende
+            da rotina de origem (ex.: DANFE, boletos). O motivo fica registrado no log do sistema.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RespostaErro'
+        "500":
+          $ref: '#/components/responses/ErroInterno'
+
+components:
+  securitySchemes:
+    TokenAuth:
+      type: apiKey
+      in: header
+      name: Token
+      description: >
+        Token JWT (HS256) gerado pela tela de geração de tokens do DevMaster, contendo a claim
+        `tabelas` com os códigos das tabelas autorizadas. A tabela exigida pela rota precisa constar
+        nessa lista, senão a resposta é `403`. Os relatórios entram na mesma lista, como `rel:` + nome
+        do relatório (ex.: `rel:relFin001`).
+
+  parameters:
+    CodigoTabela:
+      name: codigo
+      in: path
+      required: true
+      description: "Código da tabela do DevMaster (ex.: `dmaam`, `dmaaa`, `dmabh`)."
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9]{1,20}$'
+      example: dmaam
+    NomeRelatorio:
+      name: nome
+      in: path
+      required: true
+      description: >
+        Nome da classe do relatório (ex.: `relFin001`), sem diferenciar maiúsculas. Quando mais de um
+        relatório tem o mesmo nome de classe, é preciso usar o nome completo (ex.:
+        `DevMaster.Compras.Relatorios.relCom001`). Aceita relatórios do padrão e da customização do
+        cliente.
+      schema:
+        type: string
+        pattern: '^[A-Za-z0-9_.]{1,200}$'
+      example: relFin001
+    FormatoRelatorio:
+      name: formato
+      in: query
+      required: false
+      description: >
+        Formato de exportação do relatório, sem diferenciar maiúsculas. Sem o parâmetro, o relatório
+        é devolvido em PDF, que é o comportamento padrão. A imagem (`png`/`jpg`) sai em um único
+        arquivo com todas as páginas do documento.
+      schema:
+        type: string
+        enum: [pdf, png, jpg, xlsx, xls, csv, html, mht, docx, rtf, txt]
+        default: pdf
+      example: xlsx
+
+  responses:
+    NaoAutorizado:
+      description: Token ausente, inválido, expirado ou sem acesso à tabela exigida pela rota
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            erros:
+              - mensagem: "Token não possui acesso à tabela 'dmaam'."
+    ErroInterno:
+      description: Erro inesperado ao processar a requisição
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/RespostaErro'
+          example:
+            erros:
+              - mensagem: "Descrição do erro ocorrido."
+
+  schemas:
+    Erro:
+      type: object
+      properties:
+        codigo:
+          type: string
+        mensagem:
+          type: string
+
+    RespostaErro:
+      type: object
+      properties:
+        erros:
+          type: array
+          items:
+            $ref: '#/components/schemas/Erro'
+
+    RequisicaoConsultaTabela:
+      type: object
+      description: >
+        Opções da consulta de `GET /{codigo}`, enviadas no corpo do GET (objeto JSON opcional).
+        Todas as chaves são opcionais. `campos` e `ordem` aceitam um array de textos ou um único
+        texto separado por vírgulas. Aceita apenas campos reais da tabela cadastrados no dicionário
+        (`dmzae`), além de         `dm_id`; campo inválido retorna 400.
+      properties:
+        pagina:
+          description: >
+            Número da página da listagem, iniciando em `0`. O salto de registros é calculado como
+            `pagina * registros`. Padrão: `0`. Valor inválido retorna 400.
+          type: integer
+          minimum: 0
+          default: 0
+        registros:
+          description: >
+            Quantidade máxima de registros retornados por página. Padrão: `50`. Valor inválido
+            retorna 400.
+          type: integer
+          minimum: 1
+          default: 50
+        empresa:
+          description: >
+            Código da empresa (até 2 caracteres alfanuméricos, ex.: `01`) do cadastro de empresas e
+            filiais (`dmzzz`). Define a tabela física consultada (ex.: `dmaam01`/`dmaam02`). Ausente,
+            usa a empresa ativa da integração. Empresa inexistente ou sem a tabela criada retorna 404.
+          type: string
+          maxLength: 2
+          example: "01"
+        filial:
+          description: >
+            Código da filial (até 2 caracteres alfanuméricos, ex.: `01`) pertencente à empresa
+            consultada. Define a filial usada no campo de filial da consulta (só se aplica a tabelas
+            exclusivas). Ausente, usa a filial ativa da integração. Filial inexistente retorna 400.
+          type: string
+          maxLength: 2
+          example: "01"
+        campos:
+          description: >
+            Lista de campos a retornar (ex.: `["aam_codigo","aam_nome"]`). Quando informada, a
+            resposta contém somente essas colunas — caso contrário, `dm_id` e todos os campos reais
+            são retornados.
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+          example: [aam_codigo, aam_nome]
+        ordem:
+          description: >
+            Ordenação da consulta, com direção opcional `asc`/`desc` por termo
+            (ex.: `["aam_nome desc","aam_codigo"]`). Quando omitida, a listagem é ordenada por
+            `dm_id` crescente.
+          oneOf:
+            - type: array
+              items:
+                type: string
+            - type: string
+          example: aam_nome desc,aam_codigo
+        filtro:
+          type: object
+          description: >
+            Filtro dos registros: cada chave é um campo real da tabela (ou `dm_id`) e o valor pode ser
+            o valor exato comparado (igualdade, ex.: `"aam_codigo": "000000"`) ou um objeto de operadores
+            compostos (ex.: `"abr_valor": {"gte": 100, "lte": 200}`). Múltiplos campos e múltiplos
+            operadores de um mesmo campo são unidos por `and`. Operadores aceitos: `eq`/`igual`,
+            `ne`/`diferente`, `gt`/`maior`, `gte`/`maiorigual`, `lt`/`menor`, `lte`/`menorigual`,
+            `between`/`entre` (lista com dois valores), `in`/`notin` (listas), `like`/`notlike` (padrão
+            SQL, ex.: `"%Silva%"`; somente campos de texto) e `nulo` (booleano: `true` = é nulo,
+            `false` = não é nulo). Valores booleanos são convertidos para `S`/`N` (`true` vira `S`).
+            Campos numéricos (`zae_tipo` "ND") e `dm_id` exigem valor numérico (com ponto decimal) e
+            são comparados como número; data/hora aceitam o formato ISO `AAAA-MM-DD` (e
+            `AAAA-MM-DD hh:mm:ss`).
+          additionalProperties:
+            oneOf:
+              - type: string
+              - type: number
+              - type: boolean
+              - type: object
+                description: >
+                  Operadores compostos do campo (ex.: `{"gte": 100, "lte": 200}`). Cada chave é um
+                  operador e o valor é o valor comparado (lista para `between`, `in` e `notin`; booleano
+                  para `nulo`; valor simples para os demais).
+                additionalProperties: true
+          example:
+            aam_ativo: true
+            aam_nome:
+              like: "%Silva%"
+            aam_codigo:
+              between: ["000010", "000050"]
+
+    RequisicaoConsultaFotos:
+      type: object
+      description: >
+        Opções da consulta de `GET /{codigo}/fotos`, enviadas no corpo do GET (objeto JSON
+        opcional). Localiza o registro das fotos: `codigo` (código do registro, campo `xxx_codigo`) e/ou
+        `filtro` — no mesmo formato da chave `filtro` de `GET /{codigo}` —, além das chaves especiais
+        `empresa` e `filial`. É preciso informar `codigo` ou `filtro`.
+      properties:
+        codigo:
+          description: >
+            Código do registro dono das fotos (valor do campo `xxx_codigo`, ex.: `"000001"`).
+          type: string
+          example: "000001"
+        empresa:
+          description: >
+            Código da empresa (até 2 caracteres alfanuméricos, ex.: `01`) do cadastro de empresas e
+            filiais (`dmzzz`). Define a tabela física consultada (ex.: `dmaaa01`/`dmaaa02`). Ausente,
+            usa a empresa ativa da integração. Empresa inexistente ou sem a tabela criada retorna 404.
+          type: string
+          maxLength: 2
+          example: "01"
+        filial:
+          description: >
+            Código da filial (até 2 caracteres alfanuméricos, ex.: `01`) pertencente à empresa
+            consultada. Define a filial usada no campo de filial da consulta (só se aplica a tabelas
+            exclusivas). Ausente, usa a filial ativa da integração. Filial inexistente retorna 400.
+          type: string
+          maxLength: 2
+          example: "01"
+        filtro:
+          type: object
+          description: >
+            Mesmo formato da chave `filtro` de `GET /{codigo}`: igualdade (ex.:
+            `{"aam_cpfcnpj": "12345678000199"}`) ou operadores compostos (ex.: `{"aam_codigo":
+            {"between": ["000010", "000050"]}}`).
+
+    FotoRegistro:
+      type: object
+      description: >
+        Foto de um campo de imagem do registro. Só entram na resposta os campos de foto com caminho
+        gravado no registro.
+      properties:
+        campo:
+          type: string
+          description: Nome do campo de foto (ex.: `aaa_foto`).
+        arquivo:
+          type: string
+          description: Caminho do arquivo gravado no campo (ex.: `\imagens\produtos\000001.jpg`).
+        foto:
+          type: string
+          nullable: true
+          description: >
+            Conteúdo do arquivo em base64; `null` quando o arquivo não é encontrado no servidor.
+
+    RegistroTabela:
+      type: object
+      description: >
+        `dm_id` e as colunas dos campos reais da tabela, conforme cadastrados no dicionário (`dmzae`),
+        com os nomes de campo do banco (ex.: `aam_codigo`, `aam_nome`); com `campos`, apenas as
+        solicitadas. Campos de senha (texto com máscara `*` no dicionário) são sempre retornados
+        como `null`.
+      additionalProperties: true
+      properties:
+        dm_id:
+          type: integer
+          description: Identificador interno único do registro.
+
+    RelatorioDisponivel:
+      type: object
+      properties:
+        codigo:
+          type: string
+          description: Código do relatório (nome da classe), usado nas rotas `/relatorios/{nome}`.
+        nome:
+          type: string
+          description: Nome (título) do relatório. Quando o título não pode ser obtido, repete o código.
+
+    ParametroRelatorio:
+      type: object
+      properties:
+        nome:
+          type: string
+          description: Nome do parâmetro, usado como chave no corpo de `GET /relatorios/{nome}`.
+        titulo:
+          type: string
+          description: Título do parâmetro na tela de parâmetros.
+        tipo:
+          type: string
+          description: >
+            Tipo do parâmetro: `TV`=Texto, `TM`=Memorando, `ND`=Número, `DT`=Data, `DH`=Data e Hora,
+            `DR`=Hora.
+          enum: [TV, TM, ND, DT, DH, DR]
+        tamanho:
+          type: integer
+        precisao:
+          type: integer
+          description: Casas decimais, para os parâmetros numéricos.
+        consulta:
+          type: string
+          description: >
+            Código da consulta (F3) do parâmetro no DevMaster, que indica de qual cadastro vêm os códigos
+            (ex.: `dmaam2` para clientes).
+        opcoes:
+          type: array
+          description: Valores aceitos, quando o parâmetro tem lista de opções.
+          items:
+            type: object
+            properties:
+              valor:
+                type: string
+              descricao:
+                type: string
+        padrao:
+          type: string
+          description: Valor usado quando o parâmetro não é informado na geração.
+        descricao:
+          type: string
+
+    RespostaParametrosRelatorio:
+      type: object
+      properties:
+        relatorio:
+          type: string
+          description: Nome do relatório, na grafia da classe.
+        titulo:
+          type: string
+        modulo:
+          type: string
+          description: Módulo do relatório (ex.:`Financeiro`), ou `Customização` para os da DLL do cliente.
+        parametros:
+          type: array
+          items:
+            $ref: '#/components/schemas/ParametroRelatorio'
+
+    RequisicaoGerarRelatorio:
+      type: object
+      description: >
+        Valores dos parâmetros do relatório, pelo nome do parâmetro. Todas as chaves são opcionais e
+        parâmetro inexistente retorna 400. Datas (`DT`) no formato `aaaa-mm-dd`, data e hora (`DH`) em
+        `aaaa-mm-dd hh:mm:ss`, horas (`DR`) em `hh:mm` ou `hh:mm:ss` e números (`ND`) como número JSON
+        ou texto com ponto decimal. Filtros de vários códigos podem ser enviados como array ou como texto
+        separado por barra (`/`). Booleanos viram `S`/`N`, e `null` ou texto vazio deixam o parâmetro em
+        branco. O parâmetro `pad_imprimirparametros` = `S` inclui no fim do PDF a relação dos parâmetros
+        usados.
+      additionalProperties:
+        oneOf:
+          - type: string
+          - type: number
+          - type: boolean
+          - type: array
+            items:
+              oneOf:
+                - type: string
+                - type: number
+
+    RequisicaoCliente:
+      type: object
+      required: [aam_cpfcnpj, aam_nome]
+      properties:
+        aam_cpfcnpj:
+          type: string
+          description: CPF (11 dígitos) ou CNPJ (14 dígitos) do cliente, com ou sem máscara.
+        aam_nome:
+          type: string
+        aam_fantasia:
+          type: string
+
+    RespostaCliente:
+      type: object
+      properties:
+        aam_codigo:
+          type: string
+        aam_nome:
+          type: string
+
+    RequisicaoProduto:
+      type: object
+      required: [aaa_codigo, aaa_descricao]
+      properties:
+        aaa_codigo:
+          type: string
+        aaa_descricao:
+          type: string
+        aaa_precovenda:
+          type: number
+          description: Preço de venda padrão do produto.
+
+    RespostaProduto:
+      type: object
+      properties:
+        aaa_codigo:
+          type: string
+        aaa_descricao:
+          type: string
+
+    RequisicaoTabelaPreco:
+      type: object
+      required: [aas_codigo, aas_descricao]
+      properties:
+        aas_codigo:
+          type: string
+        aas_descricao:
+          type: string
+        aas_status:
+          type: string
+          description: "`A` Ativa ou `I` Inativa. Padrão: `A`."
+        aas_moeda:
+          type: string
+          description: "Código da moeda. Padrão: `01`."
+        aas_tabelabase:
+          type: string
+          description: Código da tabela base, para tabelas derivadas.
+        aas_indicetabela:
+          type: number
+          description: "Índice aplicado sobre os preços da tabela base (ex.: `1.1` +10%, `0.9` -10%)."
+        aas_integracao:
+          type: string
+        aas_canaisvendamkt:
+          type: string
+        aas_planilhacusto:
+          type: string
+        aas_linplancusto:
+          type: string
+
+    RespostaTabelaPreco:
+      type: object
+      properties:
+        aas_codigo:
+          type: string
+        aas_descricao:
+          type: string
+        aas_status:
+          type: string
+
+    RequisicaoItemTabelaPreco:
+      type: object
+      required: [abj_tabela, abj_produto, abj_precovenda]
+      properties:
+        abj_tabela:
+          type: string
+          description: Código da tabela de preços (deve existir em `dmaas`).
+        abj_produto:
+          type: string
+          description: Código do produto (deve existir em `dmaaa`).
+        abj_precovenda:
+          type: number
+        abj_precobase:
+          type: number
+          description: Preço base da tabela; calculado pelo sistema quando a tabela é derivada.
+        abj_acrescimo:
+          type: number
+        abj_desconto:
+          type: number
+        abj_planilhacusto:
+          type: string
+        abj_linplancusto:
+          type: string
+
+    RespostaItemTabelaPreco:
+      type: object
+      properties:
+        abj_tabela:
+          type: string
+        abj_produto:
+          type: string
+        abj_precovenda:
+          type: number
+
+    RequisicaoAlmoxarifado:
+      type: object
+      required: [aae_codigo, aae_descricao]
+      properties:
+        aae_codigo:
+          type: string
+          description: Código do almoxarifado (2 caracteres).
+        aae_descricao:
+          type: string
+        aae_local:
+          type: string
+          description: Localização física do almoxarifado.
+        aae_filialsped:
+          type: string
+          description: Filial usada no SPED.
+
+    RespostaAlmoxarifado:
+      type: object
+      properties:
+        aae_codigo:
+          type: string
+        aae_descricao:
+          type: string
+
+    RequisicaoEnderecoAlternativo:
+      type: object
+      required: [aku_relacao, aku_descricao, aku_endereco, aku_municipio, aku_estado]
+      properties:
+        aku_codigo:
+          type: string
+          description: Quando informado e existente, atualiza o endereço; caso contrário, cria um novo.
+        aku_relacao:
+          type: string
+          description: Código do cliente (deve existir em `dmaam`).
+        aku_descricao:
+          type: string
+          description: Nome do destinatário.
+        aku_endereco:
+          type: string
+        aku_numero:
+          type: string
+        aku_complemento:
+          type: string
+        aku_bairro:
+          type: string
+        aku_municipio:
+          type: string
+          description: Código do município (deve existir em `dmaal`).
+        aku_estado:
+          type: string
+          description: Sigla da UF (deve existir em `dmaak`).
+        aku_cep:
+          type: string
+        aku_pais:
+          type: string
+          description: "Padrão: `BRA`."
+        aku_pessoa:
+          type: string
+          description: "`F` física ou `J` jurídica."
+        aku_telefone1:
+          type: string
+        aku_celular:
+          type: string
+        aku_whatsapp:
+          type: string
+        aku_cpfcnpj:
+          type: string
+        aku_tipoendereco:
+          type: string
+        aku_principal:
+          type: string
+          description: "Endereço principal (`S`/`N`). Padrão: `N`."
+        aku_situacao:
+          type: string
+          description: "`A` Ativo ou `I` Inativo. Padrão: `A`."
+        aku_obs:
+          type: string
+          description: Observações.
+
+    RespostaEnderecoAlternativo:
+      type: object
+      properties:
+        aku_codigo:
+          type: string
+        aku_seq:
+          type: string
+          description: Sequência do endereço para o cliente.
+        aku_relacao:
+          type: string
+          description: Código do cliente.
+        aku_descricao:
+          type: string
+          description: Nome do destinatário.
+
+    RequisicaoGrupo:
+      type: object
+      required: [aad_codigo, aad_descricao]
+      properties:
+        aad_codigo:
+          type: string
+        aad_descricao:
+          type: string
+        aad_descringles:
+          type: string
+        aad_descrespanhol:
+          type: string
+        aad_status:
+          type: string
+          description: "`A` Ativo ou `I` Inativo. Padrão: `A`."
+        aad_ordemsite:
+          type: number
+          description: Ordem de exibição no site.
+        aad_cadcategoria:
+          type: string
+          description: "Categoria do site (`S`/`N`). Padrão: `N`."
+        aad_expbw:
+          type: string
+          description: "Exporta GCode (`S`/`N`). Padrão: `S`."
+        aad_descbw:
+          type: number
+          description: Desconto GCode.
+        aad_integracao:
+          type: string
+
+    RespostaGrupo:
+      type: object
+      properties:
+        aad_codigo:
+          type: string
+        aad_descricao:
+          type: string
+        aad_status:
+          type: string
+
+    RequisicaoClasse:
+      type: object
+      required: [aai_codigo, aai_descricao]
+      properties:
+        aai_codigo:
+          type: string
+        aai_descricao:
+          type: string
+        aai_grupo:
+          type: string
+          description: Código do grupo (deve existir em `dmaad`).
+        aai_descringles:
+          type: string
+        aai_descrespanhol:
+          type: string
+        aai_status:
+          type: string
+          description: "`A` Ativa ou `I` Inativa. Padrão: `A`."
+        aai_ordemsite:
+          type: number
+          description: Ordem de exibição no site.
+        aai_cadcategoria:
+          type: string
+          description: "Categoria do site (`S`/`N`). Padrão: `N`."
+        aai_prodligateor:
+          type: string
+        aai_expbw:
+          type: string
+          description: "Exporta GCode (`S`/`N`). Padrão: `S`."
+        aai_integracao:
+          type: string
+
+    RespostaClasse:
+      type: object
+      properties:
+        aai_codigo:
+          type: string
+        aai_descricao:
+          type: string
+        aai_grupo:
+          type: string
+        aai_status:
+          type: string
+
+    RequisicaoFotosProduto:
+      type: object
+      required: [aaa_codigo]
+      description: >
+        `aaa_codigo` mais um ou mais campos de foto do cadastro de produtos (`aaa_foto`,
+        `aaa_foto02` a `aaa_foto10` e campos customizados `aaa_xfoto*`), cada um com a imagem em base64.
+      properties:
+        aaa_codigo:
+          type: string
+        aaa_foto:
+          type: string
+          format: byte
+          description: Conteúdo da imagem principal em base64.
+        aaa_foto02:
+          type: string
+          format: byte
+          description: Conteúdo da imagem adicional em base64 (idem `aaa_foto03` a `aaa_foto10`).
+      additionalProperties:
+        type: string
+        format: byte
+        description: Campos de foto customizados (`aaa_xfoto*`), com a imagem em base64.
+
+    RespostaFotosProduto:
+      type: object
+      properties:
+        aaa_codigo:
+          type: string
+        fotos:
+          type: array
+          description: Nomes dos campos de foto gravados com sucesso.
+          items:
+            type: string
+
+    RequisicaoAtividade:
+      type: object
+      required: [aik_assunto]
+      properties:
+        aik_codigo:
+          type: string
+          description: Quando informado e existente, atualiza a atividade; caso contrário, cria uma nova.
+        aik_assunto:
+          type: string
+        aik_area:
+          type: string
+        aik_entidade:
+          type: string
+        aik_relacao:
+          type: string
+        aik_tipo:
+          type: string
+        aik_situacao:
+          type: string
+        aik_descricao:
+          type: string
+        aik_dataagendada:
+          type: string
+          format: date-time
+        aik_datafim:
+          type: string
+          format: date-time
+        aik_datalimite:
+          type: string
+          format: date-time
+        aik_dataconcluido:
+          type: string
+          format: date-time
+        aik_cliente:
+          type: string
+        aik_fornecedor:
+          type: string
+        aik_vendedor:
+          type: string
+        aik_contato:
+          type: string
+        aik_intencidade:
+          type: string
+
+    RespostaAtividade:
+      type: object
+      properties:
+        aik_codigo:
+          type: string
+        aik_protocolo:
+          type: integer
+        aik_area:
+          type: string
+        aik_sequencia:
+          type: integer
+        aik_entidade:
+          type: string
+        aik_relacao:
+          type: string
+        aik_tipo:
+          type: string
+        aik_situacao:
+          type: string
+        aik_assunto:
+          type: string
+        aik_descricao:
+          type: string
+        aik_dataagendada:
+          type: string
+          format: date-time
+        aik_datafim:
+          type: string
+          format: date-time
+        aik_datalimite:
+          type: string
+          format: date-time
+        aik_dataconcluido:
+          type: string
+          format: date-time
+        aik_cliente:
+          type: string
+        aik_fornecedor:
+          type: string
+        aik_vendedor:
+          type: string
+        aik_contato:
+          type: string
+        aik_intencidade:
+          type: string
