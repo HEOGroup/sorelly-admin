@@ -103,36 +103,39 @@ function BuscaMenu(p){
         : e("p",{className:"px-3 text-[12.5px] text-white", style:{height:LIN, lineHeight:LIN+"px"}}, "Nenhuma tela com esse nome")));
 }
 
-// ── Abas das telas abertas (máx. 5): clicar abre, ✕ fecha; guardadas na sessão do navegador
-var CHAVE = "sorelly_abas_abertas_", MAX = 8;
-var chaveDeNo = function(n){ return (n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
-var lerAbas = function(k){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+k) || "[]"); }catch(x){ return []; } };
+// ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
+var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
+var chaveDeNo = function(n, setor){ return setor+"|"+(n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
+var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")) || "[]"); }catch(x){ return []; } };
 function AbasAbertas(p){
   var nos = filtrar(p.menu, p.pode), todas = folhas(nos, [], []).map(function(x){ return x.no; });
-  var atual = todas.filter(function(n){ return p.ativo(n); })[0], chaveDe = function(n){ return (n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
-  var st = useState(function(){ return lerAbas(p.setor); }), abas = st[0], setAbas = st[1];
-  var kAtual = atual ? chaveDe(atual) : "";
+  var atual = todas.filter(function(n){ return p.ativo(n); })[0];
+  var st = useState(function(){ return lerAbas(p.visao); }), abas = st[0], setAbas = st[1];
+  // trocou de modo (Admin <-> Marcus): carrega a lista do outro modo
+  useEffect(function(){ setAbas(lerAbas(p.visao)); }, [p.visao]);
+  var kAtual = atual ? chaveDeNo(atual, p.setor) : "";
+  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(l)); }catch(x){} };
   useEffect(function(){
     if(!atual) return;
     setAbas(function(ant){
       if(ant.some(function(a){ return a.k===kAtual; })) return ant;
-      var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo}]);
+      var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo, breve:atual.breve, setor:p.setor, cor:p.cor}]);
       while(nova.length>MAX){ var j = nova.findIndex(function(a){ return a.k!==kAtual; }); nova.splice(j, 1); }
-      try{ sessionStorage.setItem(CHAVE+p.setor, JSON.stringify(nova)); }catch(x){}
+      try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(nova)); }catch(x){}
       return nova;
     });
   }, [kAtual]);
-  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+p.setor, JSON.stringify(l)); }catch(x){} };
   var fecha = function(a, ev){ ev.stopPropagation(); var i = abas.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
     if(a.k===kAtual && resto.length) p.abrir(resto[Math.max(0, i-1)]); };
-  var visiveis = abas.filter(function(a){ return todas.some(function(n){ return chaveDe(n)===a.k; }); });
-  // sem nenhuma aba aberta, a faixa continua ocupando os 30 px: a barra do menu NÃO muda de lugar quando a primeira aba abre ou a última fecha (Marcus, 26/10/2026)
-  // o bloco das abas é FECHADO: linha em cima, embaixo e dos lados (Marcus, 26/10/2026); vazio ou cheio, ocupa a mesma altura
-  if(!visiveis.length) return e("div",{"aria-hidden":true, className:"border-y border-l border-border", style:{height:LIN+2}});
+  var visiveis = abas;
+  // sem nenhuma aba aberta, a faixa continua ocupando a mesma altura: a barra do menu NÃO muda de lugar quando a primeira aba abre ou a última fecha (Marcus, 26/10/2026)
+  // o bloco das abas é FECHADO: linha em cima, embaixo e dos lados; vazio ou cheio, ocupa a mesma altura
+  if(!visiveis.length) return e("div",{"aria-hidden":true, className:"border-y border-l border-border", style:{height:LINA+2}});
   return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
     visiveis.map(function(a){ var on = a.k===kAtual;
-      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, className:"flex shrink-0 items-center border-r border-border "+"text-white hover:bg-[#B8862B] "+(on ? "bg-[#B8862B]/45" : ""), style:{height:LIN}},
-        e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"h-full whitespace-nowrap pl-3 pr-2 text-[12.5px] "+(on ? "font-medium" : "")}, a.nome),
+      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50"), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
+        e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
+          (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
         e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕")); }));
 }
 
@@ -186,7 +189,7 @@ function MenuSetor(p){
   //  · já com ${MAX} telas abertas: o sistema avisa e não abre; a pessoa fecha uma (✕) e tenta de novo.
   var abrirComVoo = function(n, ev){
     if(p.semAbas) return p.abrir(n, ev);   // setor sem faixa de telas abertas: as palavras do menu já mostram tudo
-    var abertas = lerAbas(p.setor), ja = abertas.some(function(a){ return a.k===chaveDeNo(n); });
+    var abertas = lerAbas(p.visao), ja = abertas.some(function(a){ return a.k===chaveDeNo(n, p.setor); });
     if(ja){ p.abrir(n, ev); brilhar(n.nome); return; }
     if(abertas.length>=MAX){
       sa[1]("Você já tem "+MAX+" telas abertas. Feche uma delas (o ✕ da aba) para abrir "+n.nome+".");
@@ -198,8 +201,8 @@ function MenuSetor(p){
     if(!de) de = retangulo(document.querySelector('input[type="search"][aria-label^="Buscar tela"]'));
     var r = p.abrir(n, ev); voar(n.nome, de); return r;
   };
-  return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:64}},
-    !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor}),
+  return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:73}},
+    !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor, cor:p.cor, visao:p.visao}),
     e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
       e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo}),
       e(BuscaMenu,{menu:p.menu, pode:p.pode, abrir:abrirComVoo, setor:p.setor})),

@@ -175,8 +175,12 @@ function App(){
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
   var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
   // setor da tela aberta (para a barra do topo)
-  var setorAtual = (function(){ var ach = []; setoresV.forEach(function(st){ if(st.direto) return; var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
+  // setor com uma tela só (Dashboard, Link de pagamento...) também tem menu e entra na faixa de telas abertas (Marcus, 26/10/2026)
+  var comoSetor = function(st){ return st.direto ? Object.assign({}, st, {menu:[{nome:st.direto.nome, aba:st.direto.aba, breve:st.direto.breve}], areas:[{nome:st.nome, telas:[st.direto]}]}) : st; };
+  var setorAtual = (function(){ var ach = []; setoresV.map(comoSetor).forEach(function(st){ var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
+  // tela que não está em nenhum setor (ex.: Configurador, Painel dos acertos): entra na faixa de telas abertas como "Sistema"
+  if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
   setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
   var navPerg = !!(setorAtual && setorAtual.st.menu);
   // caminho no topo = o caminho REAL do menu (ex.: Financeiro / Contas / Fornecedores / Cadastro), não a organização antiga das áreas
@@ -238,7 +242,7 @@ function App(){
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
         e(ZoomTela),
         e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
-      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:!!setorAtual.st.semAbas, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },

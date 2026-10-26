@@ -3,6 +3,17 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.2", data:"2026-10-26", titulo:"Faixa de telas abertas em todas as telas, inclusive fora de setor", itens:[
+    {tipo:"melhoria", area:"Menu do setor", txt:"Conferidos todos os 22 setores do menu do Admin e os 8 do sistema Marcus: todos mostram a faixa de telas abertas. Telas que não estão em nenhum setor (Configurador, Configurador de comissões, Painel dos acertos, Metas do Agendamento, Regras de reposição e outras) entram na faixa com o setor Sistema."},
+    {tipo:"correcao", area:"Menu do setor", txt:"A lista de abas é separada por modo: telas do sistema Marcus não aparecem no Admin e as do Admin não aparecem no Marcus."},
+  ]},
+  {v:"0.14.1", data:"2026-10-26", titulo:"Telas abertas de todos os setores na mesma faixa, com o setor em cima", itens:[
+    {tipo:"melhoria", area:"Menu do setor", txt:"A faixa de telas abertas agora é UMA só para todos os setores (até 8). Cada aba mostra o setor em cima e a tela embaixo, com uma barrinha na cor do setor. Dá para abrir telas de Financeiro, RH, Atendimento interno etc. e alternar entre elas. Clicar numa aba leva ao setor dela: o ícone grande do topo e o menu passam para esse setor. A aba atual fica dourada cheia, com linha clara embaixo. Vale para todo setor (inclusive Agendamento, Atendimento interno e os de uma tela só, como Dashboard), pois é uma peça só (barra-menu.js + App.js)."},
+  ]},
+  {v:"0.14.0", data:"2026-10-26", titulo:"Revendedoras: base lida da DevMaster", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Nova entrada Revendedoras no menu: lista das revendedoras com condicional aberto e previsão de devolução em 2026 (2.106 hoje), lida da DevMaster só para leitura. Colunas Cód. da representante, Representante, Revendedora e Cidade / UF; cada coluna tem filtro e ordem como planilha e a largura do maior texto; botão Agrupar por representante."},
+    {tipo:"novo", area:"Revendedoras", txt:"Ficha da revendedora em bloco inteiro: cadastro e condicionais em aberto da última para a primeira, com o tipo de cada uma (kit principal, kit novo, reposição, expositor, encomenda). Vendedor 04 (Expositor) e 91 (Encomendas) não contam como representante. Por ora só a Diretoria abre."},
+  ]},
   {v:"0.13.29", data:"2026-10-26", titulo:"Direcionar pagamento: cartão só com a maquininha e o link de quem vendeu", itens:[
     {tipo:"correcao", area:"Financeiro · Pagamentos · Direcionar", txt:"Acerto de representante mostra só a maquininha e o link dela (vínculo em Link de pagamento). Acerto interno mostra só as maquininhas de uso interno (Getnet) e os links, com o link da Getnet. Antes aparecia a lista de todas."},
   ]},

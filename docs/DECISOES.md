@@ -943,3 +943,8 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 ## 26/10/2026 · Direcionar: maquininha só de quem vendeu
 - Marcus: no cartão, acerto de representante mostra só a maquininha e o link dela (vínculo representante → meio em Link de pagamento, ex.: Mayara = Sicredi 59 · Mayara); acerto interno mostra só as maquininhas de uso interno (hoje a Getnet, uso Sorelly) e os links.
+
+## 26/10/2026 · Telas abertas: uma faixa só para todos os setores
+- Marcus: a faixa de telas abertas vale para todos os setores (até 8). Cada aba mostra o SETOR em cima e a TELA embaixo; a aba atual fica mais destacada (dourado cheio). O ícone grande do topo e o menu seguem o setor da aba atual. Peça única em components/barra-menu.js (chave de sessão sorelly_abas_globais).
+- Correção no mesmo dia: setores com semAbas (Agendamento, Atendimento interno...) e os de uma tela só (Dashboard, Link de pagamento...) também entram na faixa; antes escondiam as abas.
+- 26/10/2026 (2): faixa também nas telas fora de setor (setor "Sistema") e lista separada por modo (Admin x Marcus, para o sistema particular nunca aparecer no Admin). Conferidos 22 setores do Admin e 8 do Marcus.
