@@ -7,6 +7,7 @@ import { nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { mensagemDaVez, msAteTrocar } from "@/apps/montagem/domain/mensagens-fe";
 import { apiAtiva, chamar, ehAdmin } from "@/apps/montagem/lib/api";
 import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
+import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { ORDEM_SIT, SITUACOES, reduzirFoto, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
 import { ABAS } from "@/apps/montagem/navigation/abas";
 import { caminhoDaAba } from "@/apps/montagem/router/slugs";
@@ -125,6 +126,9 @@ function AbaInicio(){
 
   var abrirAba = function(aba){ navigate(caminhoDaAba(aba)); };
   var setores = setoresInicio();
+  var sfv = useState(0), favTick = sfv[1];
+  useEffect(function(){ var f = function(){ favTick(function(x){ return x+1; }); }; window.addEventListener("sorelly-favoritas", f); return function(){ window.removeEventListener("sorelly-favoritas", f); }; }, []);
+  var favoritas = lerFavoritas("admin").filter(function(f){ return f.aba && f.aba!=="inicio"; });
   var slot = Math.floor(agora.getHours()/2);
   var raiz = useRef(null);
   useEffect(function(){ var ajusta = function(){ var el = raiz.current; if(!el) return; var topo = el.getBoundingClientRect().top; el.style.minHeight = Math.max(480, window.innerHeight-Math.max(topo, 0))+"px"; }; ajusta(); window.addEventListener("resize", ajusta); return function(){ window.removeEventListener("resize", ajusta); }; }, []);
@@ -151,6 +155,10 @@ function AbaInicio(){
         return e("button",{key:st.id, type:"button", className:"ini-setor", onClick:function(){ if(t.breve) return; abrirAba(t.aba); }},
           e("span",{className:"ini-ic", style:{background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"66"}}, e(Icon,{n:st.ic, s:17, peso:"duotone"})),
           e("b",null, String(st.nome).replace("\n"," ")), e("small",null, t.nome || nomeAba(t.aba))); })),
+
+      // telas favoritas (estrela nas abas do topo), na ordem escolhida
+      favoritas.length>0 && e("div",null, e("div",{className:"ini-rot"}, "Minhas favoritas"),
+        e("div",{className:"ini-chips"}, favoritas.map(function(f){ return e("button",{key:f.k, type:"button", className:"ini-chip", onClick:function(){ abrirAba(f.aba); }}, e("span",{style:{color:"#F5D68A"}}, "★"), f.nome, f.setor && f.setor!==f.nome ? e("small",null, f.setor) : null); }))),
 
       // Diretoria: o que decidir hoje
       diretor && e("div",null,

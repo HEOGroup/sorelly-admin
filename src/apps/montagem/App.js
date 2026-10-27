@@ -83,7 +83,7 @@ function botoesAgrupados(areas, fazer, cor){
 function App(){
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   var navigate = useNavigate();
-  var euChat = useEu(s.usuario);
+  var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
