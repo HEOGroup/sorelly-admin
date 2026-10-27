@@ -36,7 +36,7 @@ import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
-import { SeletorAcesso } from "@/apps/montagem/components/seletor-acesso";
+import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
@@ -241,11 +241,10 @@ function App(){
             e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
 
         e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:podeMenu}),
+        e(PilulaSituacao),
         e(BotaoNotificacoes),
-        e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
-        e(ZoomTela),
-        e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
+        e(ContaMenu,{zoom:e(ZoomTela), onTema:toggleTema})),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
