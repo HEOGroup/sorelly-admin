@@ -19,9 +19,10 @@ function mesclar(lista){
 // busca só o que mudou desde a última vez (a primeira busca traz todo mundo)
 function carregar(){
   if(!apiAtiva() || !token()) return Promise.resolve();
-  var pedidos = [chamar("GET", "/perfil/equipe"+(memoria.desde ? "?desde="+encodeURIComponent(memoria.desde) : "")).then(function(r){ mesclar(r.pessoas); })];
-  if(memoria.meuId==null) pedidos.push(chamar("GET", "/auth/eu").then(function(r){ if(r.usuario && r.usuario.pessoaId!=null) memoria.meuId = r.usuario.pessoaId; }));
-  return Promise.all(pedidos).then(avisar).catch(function(){});
+  // cada pedido é independente: se a lista da equipe falhar (ex.: banco ainda sem as colunas do perfil), a barra de cima ainda sabe quem sou eu
+  var equipe = chamar("GET", "/perfil/equipe"+(memoria.desde ? "?desde="+encodeURIComponent(memoria.desde) : "")).then(function(r){ mesclar(r.pessoas); }).catch(function(){});
+  var eu = memoria.meuId!=null ? Promise.resolve() : chamar("GET", "/auth/eu").then(function(r){ if(r.usuario && r.usuario.pessoaId!=null) memoria.meuId = r.usuario.pessoaId; }).catch(function(){});
+  return Promise.all([equipe, eu]).then(avisar);
 }
 function salvarEu(patch){
   return chamar("PATCH", "/perfil/eu", patch).then(function(r){ mesclar([r.pessoa]); avisar(); return r.pessoa; });
