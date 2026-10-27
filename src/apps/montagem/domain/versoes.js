@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.7", data:"2026-10-27", titulo:"Tela de entrada nova: mosaico, estrelas e bloco com gravura", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de e-mail e senha ganhou logo grande, linhas douradas e poeira de luz. O clique abre um mosaico de diamantes a partir do ponto clicado e mostra o bloco de login sobre estrelas cintilantes que fogem do mouse e deixam rastro. O bloco tem uma gravura fina nas bordas. Tudo desenhado por código, sem biblioteca. Respeita \"reduzir movimento\" do aparelho."},
+  ]},
   {v:"0.14.6", data:"2026-10-27", titulo:"Revendedoras: expositores, modelos agrupados, quem só tem expositor e média das 3 últimas vendas", itens:[
     {tipo:"novo", area:"Revendedoras", txt:"A lista agora puxa também as condicionais de expositor (previsão no ano 3000). Aba Expositor (901 condicionais) e aba Só expositor · sem kit (59 revendedoras esquecidas com expositor, com tempo que estão com ele). A aba Todas continua só com kits."},
     {tipo:"novo", area:"Revendedoras", txt:"Bloco Expositores · grupos de modelos: todos os dois andares juntos (460 unidades, 7 modelos), mais Display e cubo, Pulseira, Colar, Bandeja, Anel, Busto, Brinco, Peças de joia e Outros. Clicar no grupo abre os modelos; clicar no modelo filtra quem está com ele. Filtros por grupo e por modelo."},
