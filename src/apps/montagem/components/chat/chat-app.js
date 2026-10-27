@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem — components/chat/chat-app.js
 // Junta lista + conversa (tela cheia ou compacta), o chat flutuante no canto e os avisos globais (menção, atraso, mensagem nova).
-import { FAIXAS_H, api, efem, definirEu, marcarAlertada, mencaoAtraso, tempoUtil, tituloDe, totalNaoLidas, useChat, convPorId, MIN, DIA } from "@/apps/montagem/domain/chat-store";
+import { FAIXAS_H, api, efem, definirEu, marcarAlertada, mencaoAtraso, tempoUtil, tituloDe, totalNaoLidas, useChat, convPorId, MIN, DIA, iniciarServidor } from "@/apps/montagem/domain/chat-store";
 import { contato, contatoDoLogin, ehDirecao } from "@/apps/montagem/domain/chat-contatos";
 import { tocar } from "@/apps/montagem/lib/sons";
 import { useNotif } from "@/apps/montagem/lib/notificacoes";
@@ -10,7 +10,7 @@ import { LogoChat, Ph, W, tempoCurto } from "@/apps/montagem/components/chat/cha
 import { e, useEffect, useState } from "@/shared/react";
 
 // quem sou eu no chat: o contato ligado a quem entrou no sistema
-function useEu(idLogin){ var cid = contatoDoLogin(idLogin); useEffect(function(){ definirEu(cid); }, [cid]); definirEu(cid); return cid; }
+function useEu(idLogin){ var cid = contatoDoLogin(idLogin); useEffect(function(){ definirEu(cid); }, [cid]); definirEu(cid); useEffect(function(){ if(cid) return iniciarServidor(); return undefined; }, [cid]); return cid; }
 
 function ChatApp(p){
   var st = useChat(), euReal = p.eu, vc = st.efem.verComo, leitura = !!(p.direcao && vc), eu = leitura ? vc : euReal;
