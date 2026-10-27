@@ -46,8 +46,8 @@ export function validarAlteracao(b) {
   return o;
 }
 
-// Login pelo nome: minúsculas, sem acento e com espaços simples ("Michele  Brito" vira "michele brito").
-export const normalizarLogin = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ._-]/g, "").replace(/\s+/g, " ").trim();
+// Login pelo nome: minúsculas, sem acento e SEM espaço ("Michele Brito" vira "michelebrito"; quem digita com espaço também entra).
+export const normalizarLogin = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9._-]/g, "");
 
 export const contaPorEmail = async (email) => (await consulta("select * from sorelly.conta where lower(email) = lower($1)", [email])).rows[0];
 // Quem entra pode digitar o e-mail ou o login (nome). Sem a coluna "login" no banco, só vale o e-mail.
