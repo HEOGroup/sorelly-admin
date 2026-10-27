@@ -1,12 +1,13 @@
 // Sorelly Admin · montagem — components/aviso-carga-inicial.js
 // Cartãozinho flutuante no alto da tela (por cima do sistema, sem ocupar espaço), só para a Diretoria, na primeira vez que ela entra com o servidor ligado:
 // escolher qual cópia dos dados vale (a deste navegador, com o que foi digitado aqui, ou a do servidor). Enquanto não escolhe, nada é trocado nem enviado (lib/sync-modulos.js).
+import { ehAdmin } from "@/apps/montagem/lib/api";
 import { enviarTudoDoNavegador, usarServidor } from "@/apps/montagem/lib/sync-modulos";
 import { e, useState } from "@/shared/react";
 
 function AvisoCargaInicial(p){
   var sb = useState(false), ocupado = sb[0], setOcupado = sb[1], sm = useState(""), msg = sm[0], setMsg = sm[1], sc = useState(false), confirma = sc[0], setConfirma = sc[1];
-  if(p.modo!=="pendente") return null;
+  if(p.modo!=="pendente" || !ehAdmin()) return null;   // só a Diretoria vê; os demais usam sempre os dados do servidor, sem pergunta nenhuma
   var subir = function(){
     if(ocupado) return;
     if(!confirma){ setConfirma(true); return; }   // segundo toque confirma (sem janela do navegador, que pode estar bloqueada)

@@ -3,6 +3,32 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.15.3", data:"2026-10-27", titulo:"Trocar a própria senha", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Menu da conta → Trocar minha senha (informa a atual e escolhe a nova, mínimo 8 letras). Cada pessoa troca a sua."},
+  ]},
+  {v:"0.15.2", data:"2026-10-27", titulo:"Entrar pelo nome e menu por pessoa", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"A tela de entrada aceita o usuário (nome, ex.: nickolas, michele brito) no lugar do e-mail. A Diretoria define o login de cada conta em RH → Acessos e autorizações → Contas. O e-mail continua valendo."},
+    {tipo:"novo", area:"Tecnologia", txt:"Menu por pessoa: cada conta pode ter só algumas telas liberadas (ou setores escondidos). Vale para o menu lateral e para os cartões do Início. Exige rodar scripts/migrar-perfil.mjs."},
+  ]},
+  {v:"0.15.1", data:"2026-10-27", titulo:"Apps só para o Marcus e barra de cima como a versão 3", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e os apps de celular simulados (ícones do topo) aparecem só para o Marcus. Os demais, inclusive Lucas e Nickolas, não veem."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Barra de cima na ordem da versão 3: busca, situação, avisos, SorellyChat e conta. Zoom, claro e escuro e Sair foram para o menu da conta."},
+  ]},
+  {v:"0.15.0", data:"2026-10-27", titulo:"Página inicial de todos, com mensagem de fé, e barra de cima com foto e situação", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Nova página Início (primeira tela de todo mundo, também da Diretoria): foto grande, \"Olá, nome. Seja bem-vindo!\", uma mensagem de fé que muda a cada 2 horas (50 versículos), os setores liberados, a rotina de hoje, comunicados da Diretoria, equipe agora e telas visitadas. A Diretoria vê também \"Para você decidir hoje\"."},
+    {tipo:"novo", area:"Tecnologia", txt:"Barra de cima: situação clicável (Disponível, Em reunião, Ausente) e foto da pessoa, guardadas no servidor para todos verem. Menu da conta com trocar e remover a foto. O nome de exibição não muda por aqui. Exige rodar scripts/migrar-perfil.mjs uma vez."},
+  ]},
+  {v:"0.14.9", data:"2026-10-27", titulo:"Entrada mais rápida e olho na senha", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de entrada já abre direto no bloco de login, sem a tela de clique e sem o mosaico (demorava e travava). As estrelas continuam fugindo do mouse, desenhadas de forma bem mais leve."},
+    {tipo:"novo", area:"Tecnologia", txt:"Campo de senha com o olho para ver e esconder o que foi digitado (no Criar conta, nos dois campos)."},
+  ]},
+  {v:"0.14.8", data:"2026-10-27", titulo:"Botão Sair no topo e troca de pessoa só para a Diretoria", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"Com o login ligado, o botão Sair fica sempre no topo e volta para a tela de entrada. Quem não é da Diretoria vê só o próprio nome, sem a lista para trocar de pessoa. A Diretoria continua podendo trocar para testar."},
+    {tipo:"correcao", area:"Tecnologia", txt:"O Sair do seletor de acesso não saía da conta do servidor. Agora sai de verdade."},
+  ]},
+  {v:"0.14.7", data:"2026-10-27", titulo:"Tela de entrada nova: mosaico, estrelas e bloco com gravura", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de e-mail e senha ganhou logo grande, linhas douradas e poeira de luz. O clique abre um mosaico de diamantes a partir do ponto clicado e mostra o bloco de login sobre estrelas cintilantes que fogem do mouse e deixam rastro. O bloco tem uma gravura fina nas bordas. Tudo desenhado por código, sem biblioteca. Respeita \"reduzir movimento\" do aparelho."},
+  ]},
   {v:"0.14.6", data:"2026-10-27", titulo:"Revendedoras: expositores, modelos agrupados, quem só tem expositor e média das 3 últimas vendas", itens:[
     {tipo:"novo", area:"Revendedoras", txt:"A lista agora puxa também as condicionais de expositor (previsão no ano 3000). Aba Expositor (901 condicionais) e aba Só expositor · sem kit (59 revendedoras esquecidas com expositor, com tempo que estão com ele). A aba Todas continua só com kits."},
     {tipo:"novo", area:"Revendedoras", txt:"Bloco Expositores · grupos de modelos: todos os dois andares juntos (460 unidades, 7 modelos), mais Display e cubo, Pulseira, Colar, Bandeja, Anel, Busto, Brinco, Peças de joia e Outros. Clicar no grupo abre os modelos; clicar no modelo filtra quem está com ele. Filtros por grupo e por modelo."},

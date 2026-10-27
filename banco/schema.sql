@@ -2575,3 +2575,7 @@ CREATE TABLE IF NOT EXISTS sorelly.conta (
   atualizado_em timestamptz NOT NULL DEFAULT now()
 );
 CREATE UNIQUE INDEX IF NOT EXISTS conta_email_uq ON sorelly.conta (lower(email));
+-- Perfil (27/10/2026): foto e situação de cada pessoa, mostradas na barra de cima e na página inicial. Rodar scripts/migrar-perfil.mjs.
+ALTER TABLE sorelly.conta ADD COLUMN IF NOT EXISTS foto text;
+ALTER TABLE sorelly.conta ADD COLUMN IF NOT EXISTS situacao text NOT NULL DEFAULT 'disponivel';
+ALTER TABLE sorelly.conta ADD COLUMN IF NOT EXISTS perfil_em timestamptz NOT NULL DEFAULT now();

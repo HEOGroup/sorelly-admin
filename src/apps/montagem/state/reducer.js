@@ -60,7 +60,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="cadastropecas" ? "cadpecas" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
+      var abaIni = "inicio";   // todo mundo começa na página inicial (27/10/2026)
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
