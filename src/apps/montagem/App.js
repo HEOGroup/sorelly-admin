@@ -136,7 +136,10 @@ function App(){
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
   definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
   definirBlocos(s.acessosBlocos);   // partes de cada tela que o RH liberou por grupo
-  definirHorariosRh(horariosDoRh(s));   // horário de trabalho do SorellyChat = entrada e escala do cadastro do RH
+  // horário de trabalho do SorellyChat = entrada e escala do cadastro do RH. Quem não tem o RH (a maioria) usa a cópia guardada no servidor, que a Diretoria envia sozinha ao abrir o sistema.
+  var horRh = horariosDoRh(s), horSrv = (s.chathor || {}).lista;
+  definirHorariosRh(horRh && horRh.length ? horRh : (horSrv || horRh));
+  useEffect(function(){ if(srv.apiAtiva() && srv.ehAdmin() && horRh && horRh.length && JSON.stringify(horRh)!==JSON.stringify(horSrv)) d({type:"SYNC_MODULO", chave:"chathor", conteudo:{lista:horRh}}); }, [horRh]);
   var papel = grupoDe(s.usuario), permitidas = abasDoPapel(papel, s.acessos);
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));

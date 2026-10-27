@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.16.6", data:"2026-10-27", titulo:"Horário dos colegas no alto da conversa do chat", itens:[
+    {tipo:"correcao", area:"Chat", txt:"A faixa com dias e horário de trabalho no alto da conversa não mostrava os horários reais no site, porque eles vêm do cadastro do RH, que fica só no computador da Diretoria. Agora a Diretoria envia sozinha ao servidor só o horário de cada pessoa (nome, entrada, saída e dias) e todos veem."},
+  ]},
   {v:"0.16.5", data:"2026-10-27", titulo:"Apps e \"atuar como\" também para Nickolas e Lucas", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e a lista \"Atuar como outra pessoa\" valem para Marcus, Nickolas e Lucas. Os demais usam somente a própria conta."},
   ]},
