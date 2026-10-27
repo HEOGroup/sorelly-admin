@@ -145,7 +145,8 @@ function App(){
   if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
-  if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
+  var veApps = soMarcus || ["17","28"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas e Lucas (27/10/2026)
+  if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início, Rotina e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
