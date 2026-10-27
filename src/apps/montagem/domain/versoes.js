@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.15.3", data:"2026-10-27", titulo:"Trocar a própria senha", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Menu da conta → Trocar minha senha (informa a atual e escolhe a nova, mínimo 8 letras). Cada pessoa troca a sua."},
+  ]},
   {v:"0.15.2", data:"2026-10-27", titulo:"Entrar pelo nome e menu por pessoa", itens:[
     {tipo:"novo", area:"Tecnologia", txt:"A tela de entrada aceita o usuário (nome, ex.: nickolas, michele brito) no lugar do e-mail. A Diretoria define o login de cada conta em RH → Acessos e autorizações → Contas. O e-mail continua valendo."},
     {tipo:"novo", area:"Tecnologia", txt:"Menu por pessoa: cada conta pode ter só algumas telas liberadas (ou setores escondidos). Vale para o menu lateral e para os cartões do Início. Exige rodar scripts/migrar-perfil.mjs."},

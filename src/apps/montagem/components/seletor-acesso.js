@@ -10,6 +10,26 @@ import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useRef, useState } from "@/shared/react";
 
+// Troca da própria senha (precisa da atual). Aparece dentro do menu da conta.
+function TrocarSenha(){
+  var so = useState(false), aberto = so[0], setAberto = so[1], sf = useState({atual:"", nova:"", repete:""}), f = sf[0], setF = sf[1], sm = useState(null), msg = sm[0], setMsg = sm[1], sb = useState(false), ocupado = sb[0], setOcupado = sb[1];
+  var campo = function(rot, k, auto){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, rot, e("input",{type:"password", autoComplete:auto, value:f[k], onChange:function(ev){ var c = Object.assign({}, f); c[k] = ev.target.value; setF(c); setMsg(null); }, className:"h-9 rounded-lg border border-border bg-black/20 px-3 text-[13px] outline-none focus:border-primary"})); };
+  var enviar = function(ev){
+    ev.preventDefault(); if(ocupado) return;
+    if(f.nova.length<8){ setMsg({ok:false, t:"A senha nova precisa ter 8 letras ou mais."}); return; }
+    if(f.nova!==f.repete){ setMsg({ok:false, t:"As duas senhas novas não são iguais."}); return; }
+    setOcupado(true);
+    srv.chamar("PATCH", "/perfil/senha", {atual:f.atual, nova:f.nova}).then(function(){ setOcupado(false); setF({atual:"", nova:"", repete:""}); setMsg({ok:true, t:"Senha trocada."}); })
+      .catch(function(x){ setOcupado(false); setMsg({ok:false, t:x.message}); });
+  };
+  return e("div",{className:"flex flex-col gap-2"},
+    e("button",{type:"button", onClick:function(){ setAberto(!aberto); setMsg(null); }, className:BOTAO_MENU}, e(Icon,{n:"lock", s:15}), "Trocar minha senha"),
+    aberto && e("form",{onSubmit:enviar, className:"flex flex-col gap-2 rounded-lg bg-black/20 p-2.5"},
+      campo("Senha atual", "atual", "current-password"), campo("Senha nova", "nova", "new-password"), campo("Repita a senha nova", "repete", "new-password"),
+      msg && e("p",{role:msg.ok ? "status" : "alert", className:"text-[12.5px] font-semibold "+(msg.ok ? "text-success" : "text-destructive")}, msg.t),
+      e("button",{type:"submit", disabled:ocupado, className:"h-9 rounded-lg bg-primary text-[13px] font-bold text-primary-foreground hover:opacity-90"}, ocupado ? "Trocando…" : "Trocar senha")));
+}
+
 // ordem da lista: sócios primeiro, depois cada setor
 var SETORES_LOGIN = function(){
   var socios = [16,29,28,37,38,32].map(function(i){ return DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M]).find(function(x){ return x.id===i; }); });
@@ -66,6 +86,7 @@ function ContaMenu(p){
       comLogin && meu && e("div",null,
         e("button",{type:"button", onClick:function(){ arq.current.click(); }, className:BOTAO_MENU}, e(Icon,{n:"pencil", s:15}), "Trocar minha foto"),
         meu.foto && e("button",{type:"button", onClick:removerFoto, className:BOTAO_MENU}, e(Icon,{n:"trash", s:15}), "Remover minha foto")),
+      comLogin && e(TrocarSenha),
       titulo("Aparência"),
       e("button",{type:"button", onClick:p.onTema, className:BOTAO_MENU}, e(Icon,{n:"sunmoon", s:15}), "Alternar claro e escuro"),
       titulo("Tamanho da tela"),
