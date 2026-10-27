@@ -87,7 +87,7 @@ function App(){
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario) srv.guardaPerfil(j.usuario.perfil); if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesP = srv.pessoaDaConta(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId); if(antesP!==String(j.usuario.pessoaId)) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
@@ -143,7 +143,10 @@ function App(){
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
-  if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);   // a página Apps está liberada para todos por enquanto (o Marcus bloqueia na versão oficial)
+  // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
+  var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
+  if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
+  else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});

@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.15.1", data:"2026-10-27", titulo:"Apps só para o Marcus e barra de cima como a versão 3", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e os apps de celular simulados (ícones do topo) aparecem só para o Marcus. Os demais, inclusive Lucas e Nickolas, não veem."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Barra de cima na ordem da versão 3: busca, situação, avisos, SorellyChat e conta. Zoom, claro e escuro e Sair foram para o menu da conta."},
+  ]},
   {v:"0.15.0", data:"2026-10-27", titulo:"Página inicial de todos, com mensagem de fé, e barra de cima com foto e situação", itens:[
     {tipo:"novo", area:"Tecnologia", txt:"Nova página Início (primeira tela de todo mundo, também da Diretoria): foto grande, \"Olá, nome. Seja bem-vindo!\", uma mensagem de fé que muda a cada 2 horas (50 versículos), os setores liberados, a rotina de hoje, comunicados da Diretoria, equipe agora e telas visitadas. A Diretoria vê também \"Para você decidir hoje\"."},
     {tipo:"novo", area:"Tecnologia", txt:"Barra de cima: situação clicável (Disponível, Em reunião, Ausente) e foto da pessoa, guardadas no servidor para todos verem. Menu da conta com trocar e remover a foto. O nome de exibição não muda por aqui. Exige rodar scripts/migrar-perfil.mjs uma vez."},

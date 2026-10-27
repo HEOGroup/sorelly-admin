@@ -23,9 +23,11 @@ async function chamar(metodo, caminho, corpo){
   return j;
 }
 // Perfil da conta que entrou (ADMIN = Diretoria). Só serve para a tela decidir se mostra a troca de pessoa; quem manda de verdade é o servidor.
-function guardaPerfil(p){ try { if(p) localStorage.setItem("sorelly_perfil", p); else localStorage.removeItem("sorelly_perfil"); } catch(x){} }
+function guardaPerfil(p, pessoaId){ try { if(p) localStorage.setItem("sorelly_perfil", p); else localStorage.removeItem("sorelly_perfil"); if(pessoaId!=null && p) localStorage.setItem("sorelly_pessoa", String(pessoaId)); else localStorage.removeItem("sorelly_pessoa"); } catch(x){} }
+// id da pessoa ligada à conta que entrou (não muda quando a Diretoria usa o sistema "como" outra pessoa)
+function pessoaDaConta(){ try { return localStorage.getItem("sorelly_pessoa") || ""; } catch(x){ return ""; } }
 function ehAdmin(){ try { return localStorage.getItem("sorelly_perfil")==="ADMIN"; } catch(x){ return false; } }
-async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); guardaPerfil(j.usuario && j.usuario.perfil); return j.usuario; }
+async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); guardaPerfil(j.usuario && j.usuario.perfil, j.usuario && j.usuario.pessoaId); return j.usuario; }
 function sair(){ guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, ehAdmin };
+export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, pessoaDaConta, ehAdmin };
