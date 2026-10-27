@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.15.0", data:"2026-10-27", titulo:"Página inicial de todos, com mensagem de fé, e barra de cima com foto e situação", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Nova página Início (primeira tela de todo mundo, também da Diretoria): foto grande, \"Olá, nome. Seja bem-vindo!\", uma mensagem de fé que muda a cada 2 horas (50 versículos), os setores liberados, a rotina de hoje, comunicados da Diretoria, equipe agora e telas visitadas. A Diretoria vê também \"Para você decidir hoje\"."},
+    {tipo:"novo", area:"Tecnologia", txt:"Barra de cima: situação clicável (Disponível, Em reunião, Ausente) e foto da pessoa, guardadas no servidor para todos verem. Menu da conta com trocar e remover a foto. O nome de exibição não muda por aqui. Exige rodar scripts/migrar-perfil.mjs uma vez."},
+  ]},
   {v:"0.14.9", data:"2026-10-27", titulo:"Entrada mais rápida e olho na senha", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"A tela de entrada já abre direto no bloco de login, sem a tela de clique e sem o mosaico (demorava e travava). As estrelas continuam fugindo do mouse, desenhadas de forma bem mais leve."},
     {tipo:"novo", area:"Tecnologia", txt:"Campo de senha com o olho para ver e esconder o que foi digitado (no Criar conta, nos dois campos)."},

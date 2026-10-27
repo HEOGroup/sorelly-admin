@@ -101,6 +101,7 @@ var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {bre
 var MENU_TEC = [M("App Sorelly", undefined, {breve:true}), M("Avisos","avisos"), M("Padrão visual","padrao"), M("Versões","versoes"), M("Mapa do sistema","mapa"), M("Projetos (dev)", undefined, {breve:true})];
 
 var SETORES = [
+  {id:"inicio", nome:"Início", ic:"coroa", cor:"#E8B84B", direto:T("inicio","Início")},   // página inicial de todos (27/10/2026): foto, mensagem de fé, setores e o dia da pessoa
   {id:"whats", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", nome:"Dashboard", ic:"dashboard", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   {id:"rotina", nome:"Rotina do dia", ic:"calendario", cor:"#22C55E", direto:T("rotina","Rotina do dia")},

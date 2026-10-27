@@ -8,6 +8,7 @@ import { isoDia } from "@/apps/montagem/lib/format";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { rotAlertas } from "@/apps/montagem/domain/rotina";
 import * as srv from "@/apps/montagem/lib/api";
+import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
@@ -140,6 +141,7 @@ function App(){
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
+  if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
   if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);   // a página Apps está liberada para todos por enquanto (o Marcus bloqueia na versão oficial)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
@@ -157,6 +159,8 @@ function App(){
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);
     return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : st.id.indexOf("marcus")!==0; }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
+  definirSetoresInicio(setoresV.filter(function(st){ return st.id!=="inicio"; }));   // a página inicial mostra os mesmos setores do menu lateral
+  useEffect(function(){ if(s.logado) registrarVisita(s.usuario, aba); }, [aba]);   // telas visitadas recentemente (página inicial)
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
   // menu em cascata (Financeiro): Contas a pagar leva junto o modo escolhido (Sorelly, Família ou Sorelly + Família)
   var abrirMenu = function(n){ if(n.modo){ try{ sessionStorage.setItem("cta_sel", n.modo); }catch(x){} window.dispatchEvent(new CustomEvent("cta-modo", {detail:n.modo})); } abrirTela({aba:n.aba, nome:n.nome, breve:n.breve}); };

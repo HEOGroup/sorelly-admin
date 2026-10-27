@@ -6,7 +6,7 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "cpc", "mk", "gr"];
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "cpc", "mk", "gr", "inicio"];
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
