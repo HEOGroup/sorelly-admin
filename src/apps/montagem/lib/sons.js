@@ -30,9 +30,21 @@ var SONS = {
   atraso:   function(c){ for(var i=0;i<3;i++){ nota(c, 440, i*0.32, 0.16, "square", 0.22); nota(c, 330, i*0.32+0.16, 0.16, "square", 0.22); } },       // sirene grave repetida
   concluir: function(c){ nota(c, 523, 0, 0.1, "sine", 0.4); nota(c, 659, 0.09, 0.1, "sine", 0.4); nota(c, 784, 0.18, 0.2, "sine", 0.4); },
   contar:   function(c){ nota(c, 1250 + Math.random()*180, 0, 0.022, "sine", 0.07); },   // tique baixinho dos números que sobem (padrão do sistema inteiro)
-  tecla:    function(c){ nota(c, 1700 + Math.random()*500, 0, 0.03, "square", 0.1); nota(c, 650, 0.004, 0.03, "triangle", 0.14); },
+  tecla:    function(c){ toc(c, 1800 + Math.random()*700, 0.035, 0.9, 150 + Math.random()*30); },   // letra e número: toc macio
+  tecla2:   function(c){ toc(c, 1200, 0.05, 1.0, 105); },                                          // espaço: mais grave e mais cheio
+  tecla3:   function(c){ toc(c, 2600, 0.03, 0.7, 190); },                                          // apagar: mais seco e agudo
   erro:     function(c){ nota(c, 200, 0, 0.22, "sawtooth", 0.28); nota(c, 150, 0.14, 0.26, "sawtooth", 0.28); }
 };
+// ruído curto filtrado: dá o "toc" de uma tecla macia (mais agradável que o bipe agudo antigo)
+function toc(c, freq, dur, g, grave){
+  var n = Math.floor(c.sampleRate*dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0), i;
+  for(i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 2.2);
+  var s = c.createBufferSource(), fl = c.createBiquadFilter(), a = c.createGain(), t0 = c.currentTime;
+  s.buffer = b; fl.type = "bandpass"; fl.frequency.value = freq; fl.Q.value = 0.9;
+  a.gain.setValueAtTime(Math.max(0.0001, g*cfg.volume), t0);
+  s.connect(fl); fl.connect(a); a.connect(c.destination); s.start(t0);
+  nota(c, grave, 0, 0.045, "sine", g*0.9);
+}
 function tocar(nome){
   if(cfg.mudo || cfg.volume<=0) return;
   if(nome==="clique" && !cfg.clique) return;
@@ -53,9 +65,9 @@ function iniciar(){
   var ultTecla = 0;
   document.addEventListener("keydown", function(ev){
     var el = ev.target; if(!el || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
-    var campo = el.tagName==="TEXTAREA" || el.isContentEditable || (el.tagName==="INPUT" && ["text","search","email","tel","url","number",""].indexOf((el.type||"").toLowerCase())>=0);
+    var campo = el.tagName==="TEXTAREA" || el.isContentEditable || (el.tagName==="INPUT" && ["text","search","email","tel","url","number","password",""].indexOf((el.type||"").toLowerCase())>=0);
     if(!campo || !(ev.key.length===1 || ev.key==="Backspace" || ev.key==="Delete")) return;
-    var t = Date.now(); if(t-ultTecla<35) return; ultTecla = t; tocar("tecla");
+    var t = Date.now(); if(t-ultTecla<35) return; ultTecla = t; tocar(ev.key===" " ? "tecla2" : (ev.key==="Backspace" || ev.key==="Delete") ? "tecla3" : "tecla");
   }, true);
   document.addEventListener("click", function(ev){
     var el = ev.target, b = el && el.closest && el.closest("button, [role=button], [role=tab], a, summary, label, select");

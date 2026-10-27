@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.9", data:"2026-10-27", titulo:"Entrada mais rápida, olho na senha e som de tecla novo", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de entrada já abre direto no bloco de login, sem a tela de clique e sem o mosaico (demorava e travava). As estrelas continuam fugindo do mouse, desenhadas de forma bem mais leve."},
+    {tipo:"novo", area:"Tecnologia", txt:"Campo de senha com o olho para ver e esconder o que foi digitado (no Criar conta, nos dois campos)."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Som de digitar novo e mais macio (toc), com som próprio para espaço e para apagar. Vale em todo o sistema, inclusive no campo de senha."},
+  ]},
   {v:"0.14.8", data:"2026-10-27", titulo:"Botão Sair no topo e troca de pessoa só para a Diretoria", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"Com o login ligado, o botão Sair fica sempre no topo e volta para a tela de entrada. Quem não é da Diretoria vê só o próprio nome, sem a lista para trocar de pessoa. A Diretoria continua podendo trocar para testar."},
     {tipo:"correcao", area:"Tecnologia", txt:"O Sair do seletor de acesso não saía da conta do servidor. Agora sai de verdade."},
