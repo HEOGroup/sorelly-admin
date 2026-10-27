@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.16.1", data:"2026-10-27", titulo:"Leonardo na lista de pessoas do sistema", itens:[
+    {tipo:"melhoria", area:"RH", txt:"O Leonardo (desenvolvedor) entra na lista de pessoas do sistema com acesso total, para poder entrar com a conta dele."},
+  ]},
   {v:"0.16.0", data:"2026-10-27", titulo:"SorellyChat de verdade e estrelas nas abas", itens:[
     {tipo:"novo", area:"Chat", txt:"O SorellyChat passa a guardar conversas e mensagens no servidor: as pessoas conversam de verdade entre computadores (mensagem, reação, edição, grupo e conversa direta). Com o servidor ligado ele começa vazio, sem as conversas de demonstração. Atualiza a cada 4 segundos. Fotos e áudios ainda não. Exige rodar scripts/migrar-chat.mjs uma vez."},
     {tipo:"novo", area:"Tecnologia", txt:"Estrelas nas abas do topo: a ☆ fixa a tela como favorita; as favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar e arrastar), e já aparecem quando o sistema abre. O Início fica sempre na frente e não fecha. A página Início mostra as favoritas."},

@@ -30,7 +30,7 @@ var BIPADORAS = [{id:9, nome:"Natasha", completo:"Natasha Ribeiro", mes:{n:180, 
 var ATENDENTE_PECAS = {id:35, nome:"Leci"};
 // Acesso total e fixo: só os sócios (Marcus, Anamaria, Lucas). Nickolas, Marco Antonio e Ana Beatriz: tudo menos os Configuradores. Amanda de Miranda: Inadimplência e Compras de joias.
 // O que cada grupo abre fica em navigation/perfis.js e se ajusta em RH → Acessos por setor.
-var ACESSO_TOTAL = [{id:29, nome:"Anamaria"}, {id:37, nome:"Priscila"}, {id:38, nome:"Maria Claudia"}];   // Priscila e Maria (RH): acesso igual ao do Marcus
+var ACESSO_TOTAL = [{id:29, nome:"Anamaria"}, {id:37, nome:"Priscila"}, {id:38, nome:"Maria Claudia"}, {id:44, nome:"Leonardo"}];   // Priscila e Maria (RH): acesso igual ao do Marcus; Leonardo (desenvolvedor, H&O Apps): acesso total (27/10/2026)
 var AMANDA_M = {id:32, nome:"Amanda de Miranda"};
 var DIRECAO_FAMILIA = [{id:17, nome:"Nickolas"}];
 var FAMILIA = [{id:31, nome:"Marco Antonio"}, {id:30, nome:"Ana Beatriz"}];
