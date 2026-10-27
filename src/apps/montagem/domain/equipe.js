@@ -30,7 +30,7 @@ var BIPADORAS = [{id:9, nome:"Natasha", completo:"Natasha Ribeiro", mes:{n:180, 
 var ATENDENTE_PECAS = {id:35, nome:"Leci"};
 // Acesso total e fixo: só os sócios (Marcus, Anamaria, Lucas). Nickolas, Marco Antonio e Ana Beatriz: tudo menos os Configuradores. Amanda de Miranda: Inadimplência e Compras de joias.
 // O que cada grupo abre fica em navigation/perfis.js e se ajusta em RH → Acessos por setor.
-var ACESSO_TOTAL = [{id:29, nome:"Anamaria"}, {id:37, nome:"Priscila"}, {id:38, nome:"Maria Claudia"}];   // Priscila e Maria (RH): acesso igual ao do Marcus
+var ACESSO_TOTAL = [{id:29, nome:"Anamaria"}, {id:37, nome:"Priscila"}, {id:38, nome:"Maria Claudia"}, {id:44, nome:"Leonardo"}];   // Priscila e Maria (RH): acesso igual ao do Marcus
 var AMANDA_M = {id:32, nome:"Amanda de Miranda"};
 var DIRECAO_FAMILIA = [{id:17, nome:"Nickolas"}];
 var FAMILIA = [{id:31, nome:"Marco Antonio"}, {id:30, nome:"Ana Beatriz"}];
@@ -38,6 +38,7 @@ var LISTAGENS_RESP = {id:23, nome:"Majorry"};
 var SUPERVISORA = {id:11, nome:"Deysiane"};
 var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}, {id:28, nome:"Lucas"}];
 var KITNOVO = {id:18, nome:"Michele"};
+var CADASTRO_REV = [{id:45, nome:"Camilly"}];   // Cadastro de revendedoras: mesmo grupo de acesso da Michele (Kits novos e Cadastro)
 // Cadastro de peças (23/10/2026): Rayssa (supervisora) e Graziella lançam as peças e respondem os pedidos da produção (Cadastro de peças → Solicitações)
 var CADASTRO_PECAS = [{id:42, nome:"Rayssa"}, {id:43, nome:"Graziella"}];
 // Agendamento confere o dinheiro e a promissória do acerto; financeiro dá o OK de cada pagamento (Ana Maria faz os dois)
@@ -46,7 +47,7 @@ var FINANCEIRO = [{id:27, nome:"Nayale"}, {id:36, nome:"Bruna"}];   // Bruna faz
 // Agendamento (acertos): todos do setor lançam; gerenciam (abrir/fechar o mês e configurar) a Diretoria e quem estiver marcado no Configurador (padrão: Ana Maria)
 function podeGerirAgend(id, ag){ return DIRETORIA.some(function(x){ return x.id===id; }) || (((ag && ag.config && ag.config.gerentes) || [24]).indexOf(id)>=0); }
 var ACAO_AGENDAMENTO = [24,25,26], ACAO_FINANCEIRO = [27,36];
-var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[KITNOVO],CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
+var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[KITNOVO],CADASTRO_REV,CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
 // Quem pode ser montador de um kit: pessoa que existe na equipe e é da montagem ou da supervisão/diretoria (bipadora, financeiro etc. não montam)
 function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORAS.some(function(m){ return m.id===id; }) || papelDe(id)==="supervisao"); }
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
@@ -55,7 +56,7 @@ function podeLiberarExcecao(id){ return PODE_EXCECAO.indexOf(id)>=0; }
 function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : "\u2014"; }
 function papelDe(id){
   if(id===SUPERVISORA.id || DIRETORIA.some(function(x){return x.id===id;})) return "supervisao";
-  if(id===KITNOVO.id) return "kitnovo";
+  if(id===KITNOVO.id || CADASTRO_REV.some(function(x){return x.id===id;})) return "kitnovo";
   if(CADASTRO_PECAS.some(function(x){return x.id===id;})) return "cadastropecas";
   if(id===LISTAGENS_RESP.id) return "listagens";
   if(FAMILIA.some(function(x){return x.id===id;})) return "familia";
@@ -103,4 +104,6 @@ function podeFinanceiro(id){ return veBloco(id,"conciliar"); }
 // quem bipa os retornos por padrão (editável em Configurador geral → Quem bipa): bipadoras, atendente de peças, Michele (kits novos) e Deysiane
 var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b.id; }).concat([ATENDENTE_PECAS.id, KITNOVO.id, SUPERVISORA.id]); };
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
-export { CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };
+// quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
+var pessoaConhecida = function(id){ return EQUIPE.some(function(p){ return p.id===id; }); };
+export { pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };

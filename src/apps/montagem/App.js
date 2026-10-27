@@ -44,7 +44,7 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial } from "@/apps/montagem/state/store";
 import { Ctx } from "@/apps/montagem/state/context";
@@ -148,6 +148,8 @@ function App(){
   if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início, Rotina e Chat sempre ficam. Vale para o menu e os cartões do Início.
+  // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
+  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","rotina","whats"];
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
