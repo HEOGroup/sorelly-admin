@@ -29,23 +29,23 @@ function primeiraTela(st){
 }
 
 var CSS = [
-  ".ini{max-width:1180px;margin:0 auto;padding:18px 16px 40px;color:#fff}",
-  ".ini-pg{background:radial-gradient(ellipse at 50% 0%,#1a1409 0%,#0a0806 60%);border:1px solid rgba(232,184,75,.22);border-radius:16px;padding:28px 22px 30px}",
-  ".ini-hero{text-align:center;padding:4px 0 6px}",
-  ".ini-foto{position:relative;display:grid;place-items:center;width:128px;height:128px;margin:0 auto 14px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a) center/cover;color:#1a1405;font-weight:800;font-size:50px;border:3px solid #E8B84B;box-shadow:0 0 0 6px rgba(232,184,75,.12),0 0 40px rgba(232,184,75,.25)}",
+  ".ini{margin:-16px;color:#fff;background:radial-gradient(ellipse at 50% 0%,#201808 0%,#0a0806 55%,#050403 100%)}@media(min-width:768px){.ini{margin:-24px}}",
+  ".ini-pg{display:flex;flex-direction:column;min-height:inherit;padding:40px 48px 56px}@media(max-width:700px){.ini-pg{padding:24px 16px 40px}}",
+  ".ini-hero{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:56vh;padding:12px 0 8px}",
+  ".ini-foto{position:relative;display:grid;place-items:center;width:160px;height:160px;margin:0 auto 18px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a) center/cover;color:#1a1405;font-weight:800;font-size:64px;border:3px solid #E8B84B;box-shadow:0 0 0 6px rgba(232,184,75,.12),0 0 40px rgba(232,184,75,.25)}",
   ".ini-foto button{position:absolute;right:0;bottom:0;width:34px;height:34px;border-radius:50%;background:#14110b;border:1px solid rgba(232,184,75,.4);color:#E8B84B;cursor:pointer;display:grid;place-items:center}",
   ".ini-selo{display:inline-flex;border:1px solid rgba(232,184,75,.3);border-radius:999px;padding:4px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#E8B84B;background:#1b1710}",
-  ".ini-nome{font-weight:700;letter-spacing:-.03em;line-height:1.08;margin:14px 0 0;font-size:44px}@media(max-width:700px){.ini-nome{font-size:30px}.ini-vtxt{font-size:17px}}",
+  ".ini-nome{font-weight:700;letter-spacing:-.03em;line-height:1.08;margin:16px 0 0;font-size:60px}@media(max-width:700px){.ini-nome{font-size:30px}.ini-vtxt{font-size:17px}}",
   ".ini-ouro{color:#E8B84B}",
-  ".ini-cruz{display:block;margin:10px auto 4px;filter:drop-shadow(0 0 14px rgba(232,184,75,.45));animation:ini-br 4s ease-in-out infinite}",
+  ".ini-cruz{display:block;margin:14px auto 8px;filter:drop-shadow(0 0 14px rgba(232,184,75,.45));animation:ini-br 4s ease-in-out infinite}",
   "@keyframes ini-br{0%,100%{filter:drop-shadow(0 0 8px rgba(232,184,75,.35))}50%{filter:drop-shadow(0 0 22px rgba(232,184,75,.8))}}",
   ".ini-vers{transition:opacity .5s}.ini-vers.some{opacity:0}",
-  ".ini-vtxt{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:21px;line-height:1.5;max-width:760px;margin:0 auto}",
+  ".ini-vtxt{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:25px;line-height:1.5;max-width:900px;margin:0 auto}",
   ".ini-ref{margin-top:10px;color:#E8B84B;font-weight:700}",
   ".ini-pontos{display:flex;justify-content:center;gap:6px;margin:14px 0 4px}.ini-pontos i{width:6px;height:6px;border-radius:50%;background:#3b3220}.ini-pontos i.on{background:#E8B84B}",
   ".ini-rot{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#E8B84B;font-weight:700;margin:26px 0 10px;display:flex;align-items:center;gap:10px}",
   ".ini-rot:after{content:'';flex:1;height:1px;background:rgba(232,184,75,.28)}",
-  ".ini-setores{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}",
+  ".ini-setores{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}",
   ".ini-setor{border:1px solid rgba(232,184,75,.28);border-radius:12px;background:#110e08;padding:14px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;text-align:left;color:#fff}",
   ".ini-setor:hover{border-color:#E8B84B}.ini-setor b{font-size:14px}.ini-setor small{color:#bdb39d}",
   ".ini-ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center}",
@@ -126,8 +126,10 @@ function AbaInicio(){
   var abrirAba = function(aba){ navigate(caminhoDaAba(aba)); };
   var setores = setoresInicio();
   var slot = Math.floor(agora.getHours()/2);
+  var raiz = useRef(null);
+  useEffect(function(){ var ajusta = function(){ var el = raiz.current; if(!el) return; var topo = el.getBoundingClientRect().top; el.style.minHeight = Math.max(480, window.innerHeight-Math.max(topo, 0))+"px"; }; ajusta(); window.addEventListener("resize", ajusta); return function(){ window.removeEventListener("resize", ajusta); }; }, []);
 
-  return e("div",{className:"ini"},
+  return e("div",{className:"ini", ref:raiz},
     e("style",{dangerouslySetInnerHTML:{__html:CSS}}),
     e("div",{className:"ini-pg"},
       // alto: foto, saudação, cruz e mensagem
