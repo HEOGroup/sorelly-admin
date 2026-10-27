@@ -87,7 +87,7 @@ function App(){
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesP = srv.pessoaDaConta(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId); if(antesP!==String(j.usuario.pessoaId)) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {abas:j.usuario.abas, ocultar:j.usuario.ocultar}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
@@ -147,6 +147,13 @@ function App(){
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
   if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
+  // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início, Rotina e Chat sempre ficam. Vale para o menu e os cartões do Início.
+  var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
+  // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
+  var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
+    (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
+  if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","rotina","whats"].indexOf(k)>=0; });
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
@@ -157,7 +164,7 @@ function App(){
   var gerAg = podeGerirAgend(s.usuario, s.agend);
   var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
-  var setoresV = SETORES.map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
+  var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);

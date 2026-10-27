@@ -18,7 +18,12 @@ export const PATCH = rota(async (req, { eu, params }) => {
   if (a.setores !== undefined) poe("setores", a.setores);
   if (a.pessoaId !== undefined) poe("pessoa_id", a.pessoaId);
   if (a.nome !== undefined) poe("nome", a.nome);
+  if (a.login !== undefined) poe("login", a.login);
+  if (a.abas !== undefined) poe("abas", a.abas);
+  if (a.ocultar !== undefined) poe("ocultar", a.ocultar);
   if (a.senha !== undefined) poe("senha_hash", await criarHash(a.senha));
-  const r = await consulta(`update sorelly.conta set ${sets.join(", ")} where id::text = $1 returning *`, v);
+  let r;
+  try { r = await consulta(`update sorelly.conta set ${sets.join(", ")} where id::text = $1 returning *`, v); }
+  catch (x) { if (x && x.code === "23505") return erro("Este login já está em uso por outra pessoa.", 409); throw x; }
   return r.rows[0] ? json({ conta: paraConta(r.rows[0]) }) : erro("Conta não encontrada.", 404);
 }, { diretoria: true });

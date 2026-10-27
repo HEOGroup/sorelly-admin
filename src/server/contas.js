@@ -7,7 +7,7 @@ import { invalido } from "./http.js";
 export const STATUS = ["aguardando", "ativo", "bloqueado"];
 export const PERFIS = ["ADMIN", "MEMBER"];
 
-export const paraConta = (r) => ({ id: r.id, nome: r.nome, email: r.email, status: r.status, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, criadoEm: r.criado_em, aprovadoPor: r.aprovado_por || "" });
+export const paraConta = (r) => ({ id: r.id, nome: r.nome, email: r.email, status: r.status, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, criadoEm: r.criado_em, aprovadoPor: r.aprovado_por || "", login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null });
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -33,10 +33,29 @@ export function validarAlteracao(b) {
   if (b.pessoaId !== undefined) { if (b.pessoaId !== null && !Number.isInteger(b.pessoaId)) throw invalido("pessoaId"); o.pessoaId = b.pessoaId; }
   if (b.nome !== undefined) { if (typeof b.nome !== "string" || b.nome.trim().length < 2) throw invalido("nome"); o.nome = b.nome.trim(); }
   if (b.senha !== undefined) { if (typeof b.senha !== "string" || b.senha.length < 8 || b.senha.length > 100) throw invalido("a senha precisa ter de 8 a 100 caracteres"); o.senha = b.senha; }
+  if (b.login !== undefined) {
+    if (b.login === null || b.login === "") o.login = null;
+    else { const l = normalizarLogin(b.login); if (l.length < 2 || l.length > 40) throw invalido("login (2 a 40 letras)"); o.login = l; }
+  }
+  for (const k of ["abas", "ocultar"]) {
+    if (b[k] === undefined) continue;
+    if (b[k] === null) { o[k] = null; continue; }
+    if (!Array.isArray(b[k]) || b[k].length > 300 || !b[k].every((x) => typeof x === "string" && /^[a-z0-9_]{1,40}$/.test(x))) throw invalido(k);
+    o[k] = [...new Set(b[k])];
+  }
   return o;
 }
 
+// Login pelo nome: minúsculas, sem acento e com espaços simples ("Michele  Brito" vira "michele brito").
+export const normalizarLogin = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ._-]/g, "").replace(/\s+/g, " ").trim();
+
 export const contaPorEmail = async (email) => (await consulta("select * from sorelly.conta where lower(email) = lower($1)", [email])).rows[0];
+// Quem entra pode digitar o e-mail ou o login (nome). Sem a coluna "login" no banco, só vale o e-mail.
+export async function contaPorIdentificador(texto) {
+  const t = String(texto || "").trim();
+  if (t.includes("@")) return contaPorEmail(t);
+  try { return (await consulta("select * from sorelly.conta where login = $1", [normalizarLogin(t)])).rows[0]; } catch (e) { return undefined; }
+}
 export const contaPorId = async (id) => (await consulta("select * from sorelly.conta where id::text = $1", [String(id)])).rows[0];
 
 // Limite simples de cadastros por endereço (memória do servidor): 5 por hora.

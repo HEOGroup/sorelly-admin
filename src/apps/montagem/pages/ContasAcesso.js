@@ -32,6 +32,8 @@ function LinhaConta(p){
       e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Pessoa do sistema",
         e("select",{className:CAMPO, value:c.pessoaId==null ? "" : String(c.pessoaId), onChange:function(ev){ muda({pessoaId:ev.target.value==="" ? null : parseInt(ev.target.value)}); }},
           e("option",{value:""}, "Escolher…"), pessoasDoSistema().map(function(x){ return e("option",{key:x.id, value:String(x.id)}, x.nome); }))),
+      e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Login (usuário)",
+        e("input",{key:c.id+"-"+(c.login||""), className:CAMPO, defaultValue:c.login||"", placeholder:"ex.: nickolas", maxLength:40, onBlur:function(ev){ var v = ev.target.value.trim(); if(v!==(c.login||"")) muda({login:v}); }})),
       e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Perfil",
         e("select",{className:CAMPO, value:c.perfil, onChange:function(ev){ muda({perfil:ev.target.value}); }},
           e("option",{value:"MEMBER"}, "Setor"), e("option",{value:"ADMIN"}, "Diretoria")))),

@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.15.2", data:"2026-10-27", titulo:"Entrar pelo nome e menu por pessoa", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"A tela de entrada aceita o usuário (nome, ex.: nickolas, michele brito) no lugar do e-mail. A Diretoria define o login de cada conta em RH → Acessos e autorizações → Contas. O e-mail continua valendo."},
+    {tipo:"novo", area:"Tecnologia", txt:"Menu por pessoa: cada conta pode ter só algumas telas liberadas (ou setores escondidos). Vale para o menu lateral e para os cartões do Início. Exige rodar scripts/migrar-perfil.mjs."},
+  ]},
   {v:"0.15.1", data:"2026-10-27", titulo:"Apps só para o Marcus e barra de cima como a versão 3", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e os apps de celular simulados (ícones do topo) aparecem só para o Marcus. Os demais, inclusive Lucas e Nickolas, não veem."},
     {tipo:"melhoria", area:"Tecnologia", txt:"Barra de cima na ordem da versão 3: busca, situação, avisos, SorellyChat e conta. Zoom, claro e escuro e Sair foram para o menu da conta."},

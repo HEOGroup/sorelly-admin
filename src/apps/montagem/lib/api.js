@@ -23,11 +23,17 @@ async function chamar(metodo, caminho, corpo){
   return j;
 }
 // Perfil da conta que entrou (ADMIN = Diretoria). Só serve para a tela decidir se mostra a troca de pessoa; quem manda de verdade é o servidor.
-function guardaPerfil(p, pessoaId){ try { if(p) localStorage.setItem("sorelly_perfil", p); else localStorage.removeItem("sorelly_perfil"); if(pessoaId!=null && p) localStorage.setItem("sorelly_pessoa", String(pessoaId)); else localStorage.removeItem("sorelly_pessoa"); } catch(x){} }
+// Conta que entrou, guardada para a tela decidir o que mostrar (ADMIN = Diretoria; abas = telas liberadas; ocultar = setores escondidos). Quem manda de verdade é o servidor.
+var CHAVE_CONTA = "sorelly_conta";
+function lerConta(){ try { return JSON.parse(localStorage.getItem(CHAVE_CONTA) || "null") || {}; } catch(x){ return {}; } }
+function guardaPerfil(p, pessoaId, extra){ try { if(!p){ localStorage.removeItem(CHAVE_CONTA); return; } localStorage.setItem(CHAVE_CONTA, JSON.stringify({perfil:p, pessoa:pessoaId==null ? "" : String(pessoaId), abas:(extra && extra.abas) || null, ocultar:(extra && extra.ocultar) || null})); } catch(x){} }
+function contaTexto(){ try { return localStorage.getItem(CHAVE_CONTA) || ""; } catch(x){ return ""; } }
 // id da pessoa ligada à conta que entrou (não muda quando a Diretoria usa o sistema "como" outra pessoa)
-function pessoaDaConta(){ try { return localStorage.getItem("sorelly_pessoa") || ""; } catch(x){ return ""; } }
-function ehAdmin(){ try { return localStorage.getItem("sorelly_perfil")==="ADMIN"; } catch(x){ return false; } }
-async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); guardaPerfil(j.usuario && j.usuario.perfil, j.usuario && j.usuario.pessoaId); return j.usuario; }
+function pessoaDaConta(){ return lerConta().pessoa || ""; }
+function ehAdmin(){ return lerConta().perfil==="ADMIN"; }
+function abasDaConta(){ var l = lerConta().abas; return Array.isArray(l) ? l : null; }
+function ocultosDaConta(){ var l = lerConta().ocultar; return Array.isArray(l) ? l : null; }
+async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar}); return j.usuario; }
 function sair(){ guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, pessoaDaConta, ehAdmin };
+export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta };
