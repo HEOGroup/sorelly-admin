@@ -1,19 +1,23 @@
 // Sorelly Admin · montagem — pages/DesempenhoCadastro.js
-// Cadastro de revendedoras → Desempenho do cadastro: uma tela só, com abas (Métricas, Funil, Campanhas, Origem, Registros). Os corpos das abas ficam em pages/cadastro/.
-import { AbaCadFunil, AbaCadCampanhas } from "@/apps/montagem/pages/cadastro/DesempenhoCampanhas";
-import { AbaCadMetricas, AbaCadOrigem, AbaCadRegistros } from "@/apps/montagem/pages/cadastro/MetricasOrigemRegistros";
-import { Abas } from "@/apps/montagem/components/padrao";
+// Cadastro de revendedoras → Desempenho do cadastro, refeito no padrão do Financeiro (23/10/2026): bloco Filtros no topo (período), faixa de totais, abas visíveis e tabelas de linhas de 32 px.
+// Abas: Métricas, Funil, Campanhas, Origem e Registros (corpos em pages/cadastro/Des*.js). O período vale para todas as abas.
+import { AbasTela } from "@/apps/montagem/components/padrao-fin";
+import { PERIODO0 } from "@/apps/montagem/pages/cadastro/des-comum";
+import { DesCampanhas } from "@/apps/montagem/pages/cadastro/DesCampanhas";
+import { DesFunil } from "@/apps/montagem/pages/cadastro/DesFunil";
+import { DesMetricas } from "@/apps/montagem/pages/cadastro/DesMetricas";
+import { DesOrigem } from "@/apps/montagem/pages/cadastro/DesOrigem";
+import { DesRegistros } from "@/apps/montagem/pages/cadastro/DesRegistros";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS_DESEMPENHO = [["metricas","Métricas",AbaCadMetricas], ["funil","Funil de desempenho",AbaCadFunil], ["campanhas","Campanhas",AbaCadCampanhas], ["origem","Origem",AbaCadOrigem], ["registros","Registros",AbaCadRegistros]];
-var COR = "#F97316";   // cor do setor Cadastro de revendedoras
+var ABAS = [["metricas","Métricas",DesMetricas], ["funil","Funil",DesFunil], ["campanhas","Campanhas",DesCampanhas], ["origem","Origem",DesOrigem], ["registros","Registros",DesRegistros]];
 
 function AbaDesempenhoCadastro(){
-  var st = useState("metricas"), aba = st[0], atual = ABAS_DESEMPENHO.filter(function(a){ return a[0]===aba; })[0] || ABAS_DESEMPENHO[0];
-  return e("div",{className:"flex flex-col gap-2.5"},
+  var ab = useState("metricas"), per = useState(PERIODO0), atual = ABAS.filter(function(a){ return a[0]===ab[0]; })[0] || ABAS[0];
+  return e("div",{className:"flex flex-col gap-3"},
     e(PageHead,{t:"Desempenho do cadastro", sub:"Métricas, funil, campanhas, origem e registros das candidatas a revendedora."}),
-    e(Abas,{abas:ABAS_DESEMPENHO.map(function(a){ return [a[0], a[1]]; }), atual:atual[0], onMudar:st[1], cor:COR}),
-    e(atual[2], {key:atual[0]}));
+    e(AbasTela,{abas:ABAS.map(function(a){ return [a[0], a[1]]; }), atual:atual[0], onMudar:ab[1]}),
+    e(atual[2], {key:atual[0], f:per[0], set:per[1]}));
 }
 export { AbaDesempenhoCadastro };

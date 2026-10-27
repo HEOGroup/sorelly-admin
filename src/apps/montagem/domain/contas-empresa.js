@@ -10,6 +10,8 @@ import { funcionarios } from "@/apps/montagem/domain/pessoas";
 
 // contas a pagar dos meses seguintes (nov/2026 a mar/2027), das planilhas do DevMaster: mesmo formato de "apagar"
 var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-meses.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
+// contas PAGAS de jan a set/2026 (relatório Baixas a Pagar por Data, 22/10/2026): mesmo formato de "itens"
+var ANO = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-ano.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
 var FILIAIS = [["34","CNPJ 34","Sorelly Atacadista"], ["46","CNPJ 46","Mayz Comércio"], ["59","CNPJ 59","Serenity"], ["67","CNPJ 67","Axis Joias"], ["ho","H&O Apps","Empresa de aplicativos"], ["fora","Por fora","Pessoal, Pix e fora dos CNPJs"]];
@@ -93,7 +95,7 @@ function decora(i){
 var _cache = null;
 function baseItens(){
   if(_cache) return _cache;
-  var pagas = ((LOCAL && LOCAL.itens) || []).map(function(x, i){
+  var pagas = (((ANO && ANO.itens) || []).concat((LOCAL && LOCAL.itens) || [])).map(function(x, i){
     return {id:"p"+i, status:"pago", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]), baixa:x[8], venc:x[9], valor:x[10], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ym(x[8]), outroMes:ym(x[9])!==ym(x[8])};
   });
   var mesRef = pagas.reduce(function(m, i){ return i.mes>m ? i.mes : m; }, "");
@@ -141,10 +143,12 @@ function setPf(pf){
   // o DevMaster junta os Pix de um fornecedor num valor só e dá a baixa depois; por isso NÃO se compara pagamento a pagamento.
   // Regra: o Pix da equipe só conta DEPOIS da última baixa de Pix daquele fornecedor no DevMaster (o que o DevMaster já registrou, vale o DevMaster).
   var ultima = {}; baseItens().forEach(function(i){ if(i.status==="pago" && i.nota==="sem" && i.baixa && i.baixa>(ultima[i.fornCanon]||"")) ultima[i.fornCanon] = i.baixa; });
+  // o que vale é o DevMaster (22/10/2026, pedido do Marcus): nada do que veio da planilha/Pagamentos a fornecedores entra até a data da última baixa do DevMaster
+  var ultimaGeral = ""; baseItens().forEach(function(i){ if(i.status==="pago" && i.baixa && i.baixa>ultimaGeral) ultimaGeral = i.baixa; });
   lanc.forEach(function(l){
     var f = fn[l.fornId]; if(!f || f.tipo==="prestador" || !l.revendedora || l.revendedora==="—" || !(l.valor>0) || !l.data) return;
     var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
-    if(l.data<=(ultima[canon]||"")) return;
+    if(l.data<=(ultima[canon]||"") || l.data<=ultimaGeral) return;
     PF_ITENS.push(decora({id:"pf"+l.id, status:"pago", filial:"fora", nat:"pf", natNome:"Pix revendedora (Pagamentos a fornecedores)", pref:"PIX", num:"", parc:"", forn:f.nome, nome:"Pix "+f.nome+" · "+l.revendedora, baixa:l.data, venc:l.data, valor:l.valor, valorTitulo:l.valor, grupo:fd ? fd[2] : G.outros, pessoalPadrao:false, mes:String(l.data).slice(0,7), outroMes:false, chave:"pf|"+l.id, origem:"pf"}));
   });
 }

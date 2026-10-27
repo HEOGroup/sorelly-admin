@@ -20,8 +20,8 @@ var CATS = [["aneis","Anéis"], ["brincos","Brincos"], ["trios","Trios"], ["cola
 // serviços de cada fatura de banho (as galvânicas cobram coisas diferentes)
 var SERV = {pontual:[["rodio","Caneta ródio"], ["verniz","Verniz"], ["tarraxa","Tarraxa"], ["flash","Flash"], ["prata","Prata"], ["ouro1","Ouro 1"], ["ouro2","Ouro 2"], ["ouro3","Ouro 3"], ["ouro4","Ouro 4"], ["ouro5","Ouro 5"], ["ouroBranco","Ouro branco"]],
   ellos:[["tarraxa","Tarraxa"], ["flash","Flash"], ["prata","Prata"], ["ouro1","Ouro 1"], ["ouro2","Ouro 2"], ["ouro3","Ouro 3"], ["ouro4","Ouro 4"]]};
-var ATIVIDADES = [["pedidos_bruto","Lançar pedidos de bruto e romaneios"], ["faturas_banho","Lançar faturas de banho e retirar ouro"], ["cadastro_pecas","Calcular custo e cadastrar peças"], ["devmaster","Pedir alterações à DevMaster"]];
-var QUEM_PADRAO = {pedidos_bruto:["Rayssa", "Graziella"], faturas_banho:["Nickolas"], cadastro_pecas:["Rayssa", "Graziella"], devmaster:["Rayssa"]};
+var ATIVIDADES = [["pedidos_bruto","Lançar pedidos de bruto e romaneios"], ["faturas_banho","Lançar faturas de banho e retirar ouro"], ["cadastro_pecas","Calcular custo e cadastrar peças"], ["devmaster","Pedir alterações à DevMaster"], ["pedidos_producao","Responder pedidos de peças da produção"]];
+var QUEM_PADRAO = {pedidos_bruto:["Rayssa", "Graziella"], faturas_banho:["Nickolas"], cadastro_pecas:["Rayssa", "Graziella"], devmaster:["Rayssa"], pedidos_producao:["Rayssa", "Graziella"]};
 // "Ouro 556-1" da Ellos é só "Ouro 1" (1 milésimo); "Prata 50" é só "Prata". Um nome só para as duas galvânicas.
 function normBanho(t){ return trim(t).replace(/^Ouro 556-(\d)$/i, "Ouro $1").replace(/^Prata 50$/i, "Prata").replace(/^Ouro (\d)\s*\+\s*Verniz$/i, "Ouro $1 + Verniz"); }
 var FORN_NOMES = {"megasul":"Mega Sul", "art ello":"Art Ello", "joias & cia":"Joias & Cia", "point":"Point", "cm3":"CM3", "cwb flanelas":"CWB Flanelas"};

@@ -55,6 +55,13 @@ function FaixaTotais(p){
       e("div",{className:"truncate text-[15px] font-medium tabular-nums "+(x.cor||"text-foreground"), title:x.v}, x.v)); }));
 }
 
+// bloco com título (barra de 32 px) e conteúdo; dir = elemento à direita do título (ex.: seletor ou contagem)
+function Bloco(p){
+  return e("section",{className:"rounded-lg border border-border bg-card/60 "+(p.cls||"")},
+    e("div",{className:"flex h-8 items-center justify-between gap-2 px-3 text-[13px] font-medium text-foreground"}, e("span",{className:"truncate", title:p.t}, p.t), p.dir),
+    e("div",{className:"px-3 pb-3"}, p.children));
+}
+
 // abas visíveis (destinos de uma mesma tela): abas = [[chave, título]]
 function AbasTela(p){
   return e("div",{role:"tablist", className:"flex flex-wrap gap-1 border-b border-border"}, p.abas.map(function(a){ var on = a[0]===p.atual;
@@ -73,15 +80,15 @@ function TabelaP(p){
   return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
     e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined}},
       e("colgroup",null, p.cols.map(function(c, i){ return e("col",{key:i, style:c.w ? {width:c.w} : undefined}); })),
-      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.t, className:"h-[30px] truncate border-b border-border bg-white/5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(c.n ? "text-right" : "text-left")}, c.t); }))),
+      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] truncate border-b border-border bg-white/5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(c.c ? "text-center" : c.n ? "text-right" : "text-left")}, c.t); }))),
       e("tbody",null, p.children)));
 }
 // célula e linha da TabelaP. valor (n:true) à direita, fonte tabular; texto à esquerda com corte "…" e title
 var TD = "h-8 border-b border-border px-2.5 ";
 function Td(p){
   var txt = typeof p.children==="string" ? p.children : undefined;
-  return e("td",{title:p.title || txt, className:TD+(p.n ? "whitespace-nowrap text-right tabular-nums " : "truncate text-left ")+(p.cor||"")+(p.forte ? " font-semibold" : "")}, p.children);
+  return e("td",{title:p.title || txt, className:TD+(p.c ? "overflow-hidden text-ellipsis whitespace-nowrap text-center tabular-nums " : p.n ? "whitespace-nowrap text-right tabular-nums " : "truncate text-left ")+(p.cor||"")+(p.forte ? " font-semibold" : "")}, p.children);
 }
-function Tr(p){ return e("tr",{className:p.total ? "border-t-2 border-border bg-white/5 font-semibold" : (p.alerta ? "bg-destructive/10" : (p.apagado ? "opacity-60" : ""))}, p.children); }
+function Tr(p){ return e("tr",{onClick:p.onClick, title:p.title, className:(p.total ? "border-t-2 border-border bg-white/5 font-semibold" : (p.alerta ? "bg-destructive/10" : (p.apagado ? "opacity-60" : "")))+(p.onClick ? " cursor-pointer hover:bg-white/10" : "")}, p.children); }
 
-export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, FaixaTotais, AbasTela, Segmentado, TabelaP, Td, Tr };
+export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, Bloco, FaixaTotais, AbasTela, Segmentado, TabelaP, Td, Tr };

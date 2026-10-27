@@ -6,7 +6,7 @@
 //
 // Para criar uma página nova, acrescente uma linha aqui. Nada mais.
 import { e } from "@/shared/react";
-import { Navigate, useOutletContext } from "react-router-dom";
+import { Navigate, useLocation, useOutletContext } from "react-router-dom";
 
 /**
  * Rota com a página carregada sob demanda.
@@ -48,10 +48,16 @@ const montagem = {
   path: "montagem",
   lazy: async () => ({ Component: (await import("@/apps/montagem/App")).default }),
   children: [
-    { index: true, element: e(Navigate, { to: "regras-reposicao", replace: true }) },   // por pedido do Marcus (07/10/2026): ao abrir o sistema aparece direto a página de regras de reposição
+    { index: true, element: e(Navigate, { to: "visao-geral", replace: true }) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
     pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
     pagina("agendamento-remarcacoes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgRemarc"),
+    pagina("plano-45-60-indicacoes", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Ind"),
+    pagina("plano-45-60-aprovacao", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Apr"),
+    pagina("plano-45-60-acompanhamento", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Acomp"),
+    pagina("plano-45-60-alinhamento", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Alin"),
+    pagina("plano-45-60-mensagens", () => import("@/apps/montagem/pages/Plano4560Msgs"), "AbaP45Msg"),
+    pagina("plano-45-60-painel", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Pnl"),
     pagina("agendamento-representantes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgReps"),
     pagina("agendamento-abertura", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgAbertura"),
     pagina("agendamento-configurador", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgConfig"),
@@ -75,6 +81,10 @@ const montagem = {
     pagina("pf-maquininha", () => import("@/apps/montagem/pages/pf/Maquininha"), "AbaPfMaq"),
     pagina("pf-fornecedores", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfForn"),
     pagina("pf-prestadores", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfPrest"),
+    pagina("pf-cadastro", () => import("@/apps/montagem/pages/pf/Fornecedores"), "AbaPfCadastro"),
+    pagina("direcionar-pix", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaDirecionar"),
+    pagina("pagamentos-contas-das-representantes", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaContasRep"),
+    pagina("pagamentos-regras-do-pix", () => import("@/apps/montagem/pages/DirecionarPix"), "AbaRegrasPix"),
     pagina("cobranca-visao-geral", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfVisao"),
     pagina("cobranca-devendo", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfDevendo"),
     pagina("cobranca-quitadas", () => import("@/apps/montagem/pages/CobrancaFunc"), "AbaCfQuitados"),
@@ -97,6 +107,7 @@ const montagem = {
     pagina("registros", () => import("@/apps/montagem/pages/Registros"), "AbaRegistros"),
     pagina("regras", () => import("@/apps/montagem/pages/Regras"), "AbaRegras"),
     pagina("regras-representantes", () => import("@/apps/montagem/pages/RegrasRepresentantes"), "AbaRegrasRepresentantes"),
+    pagina("informativos", () => import("@/apps/montagem/pages/Informativos"), "AbaInformativos"),
     pagina("regras-acertos", () => import("@/apps/montagem/pages/RegrasAcertos"), "AbaRegrasAcertos"),
     pagina("regras-reposicao", () => import("@/apps/montagem/pages/RegrasReposicao"), "AbaRegrasReposicao"),
     pagina("expositores", () => import("@/apps/montagem/pages/ExpositoresModulo"), "AbaExpositoresModulo"),   // a tela antiga (pages/Expositores.js, só fotos) virou a aba "Fotos dos kits novos"
@@ -117,6 +128,7 @@ const montagem = {
     pagina("condicionais", () => import("@/apps/montagem/pages/Condicionais"), "AbaCondicionais"),
     pagina("app-condicionais", () => import("@/apps/montagem/pages/CelularCondicionais"), "AbaCelularCond"),
     paginaKN("revendedoras-novas", "AbaKitsNovosEmbutido"),
+    paginaKN("representantes-do-setor", "AbaRepCadastroEmbutido"),
     paginaKN("kits-novos-pendencias", "AbaPendenciasEmbutido"),
     paginaKN("kits-novos-consolidado", "AbaConsolidadoKNEmbutido"),
     paginaKN("kits-novos-regras", "AbaRegrasKNEmbutido"),
@@ -125,9 +137,14 @@ const montagem = {
     pagina("estoque-sorelly", () => import("@/apps/montagem/pages/EstoqueSorelly"), "AbaEstoqueSorelly"),
     pagina("producao", () => import("@/apps/montagem/pages/Producao"), "AbaProducao"),
     pagina("cadastro-de-pecas", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaCadastroPecas"),
+    pagina("pedir-pecas", () => import("@/apps/montagem/pages/PedirPecas"), "AbaPedirPecas"),
     pagina("preferencias-do-kit", () => import("@/apps/montagem/pages/PreferenciasKit"), "AbaPreferenciasKit"),
     pagina("avaliacoes", () => import("@/apps/montagem/pages/Avaliacoes"), "AbaAvaliacoes"),
     pagina("encomendas-e-reposicoes", () => import("@/apps/montagem/pages/Encomendas"), "AbaEncomendas"),
+    pagina("ida-na-empresa", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncIda"),
+    pagina("top-50", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncTop50"),
+    pagina("reposicao-representantes", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncRep"),
+    pagina("regras-e-mensagens-reposicao", () => import("@/apps/montagem/pages/EncomendasTelas"), "AbaEncRegras"),
     pagina("marketing", () => import("@/apps/montagem/pages/Marketing"), "AbaMarketing"),
     pagina("garantia", () => import("@/apps/montagem/pages/Garantia"), "AbaGarantia"),
     pagina("adquirentes-e-taxas", () => import("@/apps/montagem/pages/Adquirentes"), "AbaAdquirentes"),
@@ -138,6 +155,7 @@ const montagem = {
     pagina("equipes", () => import("@/apps/montagem/pages/Equipes"), "AbaEquipes"),
     pagina("compras-e-estoque", () => import("@/apps/montagem/pages/ComprasEstoque"), "AbaComprasEstoque"),
     pagina("indicacoes", () => import("@/apps/montagem/pages/Indicacoes"), "AbaIndicacoes"),
+    pagina("mensagens-prontas", () => import("@/apps/montagem/pages/MensagensProntas"), "AbaMensagensProntas"),
     pagina("aprovacao-de-cadastros", () => import("@/apps/montagem/pages/AprovacaoCadastros"), "AbaAprovacaoCadastros"),
     pagina("desempenho-do-cadastro", () => import("@/apps/montagem/pages/DesempenhoCadastro"), "AbaDesempenhoCadastro"),
     pagina("versoes", () => import("@/apps/montagem/pages/Versoes"), "AbaVersoes"),
@@ -155,14 +173,16 @@ const montagem = {
     pagina("cnpjs", () => import("@/apps/montagem/pages/Cnpjs"), "AbaCnpjs"),
     pagina("limite-de-faturamento", () => import("@/apps/montagem/pages/LimiteFaturamento"), "AbaLimiteFaturamento"),
     pagina("fiscal", () => import("@/apps/montagem/pages/Fiscal"), "AbaFiscal"),
-    pagina("contas-a-pagar", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
+    pagina("contas-a-pagar-mensal", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
+    pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),
     pagina("comissoes-montagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisMontagem"),
     pagina("comissoes-atendimento-interno", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisInterno"),
     pagina("dinheiro", () => import("@/apps/montagem/pages/Dinheiro"), "AbaDinheiro"),
     pagina("apps", () => import("@/apps/montagem/pages/Apps"), "AbaApps"),
-    pagina("revendedoras", () => import("@/apps/montagem/pages/Revendedoras"), "AbaRevendedoras"),
+    pagina("revendedoras", () => import("@/apps/montagem/pages/BaseRevendedoras"), "AbaBaseRevendedoras"),
+    pagina("revendedoras-ativas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasAtivas"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),
     pagina("visao-geral", () => import("@/apps/montagem/pages/VisaoGeral"), "AbaVisaoGeral"),
@@ -195,6 +215,9 @@ const montagem = {
     pagina("rh-contratos-funcionarios", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrFunc"),
     pagina("rh-contratos-terceiros", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrTerc"),
     pagina("rh-contratos-marcus", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrMarcus"),
+    pagina("rh-contratos-credito", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrCredito"),
+    pagina("rh-contratos-alugueis", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrAluguel"),
+    pagina("rh-contratos-consorcios", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrConsorcio"),
     pagina("rh-contratos-modelos", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrModelos"),
     pagina("em-breve",() => import("@/apps/montagem/pages/Breve"), "AbaBreve"),
     pagina("em-breve/:nome", () => import("@/apps/montagem/pages/Breve"), "AbaBreve"),
@@ -223,11 +246,17 @@ const kitsNovos = {
   ],
 };
 
+// Endereço sem /montagem: o prefixo é só o nome interno do app principal (existe também /kits-novos). Quem digita /regras-acertos cai em /montagem/regras-acertos.
+function SemPrefixo() {
+  const l = useLocation();
+  return e(Navigate, { to: "/montagem" + (l.pathname === "/" ? "" : l.pathname) + l.search + l.hash, replace: true });
+}
+
 export const rotas = [
   { path: "/", element: e(Navigate, { to: "/montagem", replace: true }) },
   montagem,
   kitsNovos,
-  { path: "*", element: e(Navigate, { to: "/montagem", replace: true }) },
+  { path: "*", element: e(SemPrefixo) },   // endereço curto (ex.: /app-revendedora) vale como /montagem/app-revendedora
 ];
 
 export default rotas;

@@ -9,6 +9,8 @@ const CABECALHOS_SEGURANCA = [
 ];
 
 const nextConfig = {
+  // Pasta de saída. Padrão .next; a conferência antes do push (npm run conferir) usa outra, para não derrubar o servidor ligado na porta 3000.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
   reactStrictMode: false, // o sistema antigo não rodava em modo estrito; mantém igual
   poweredByHeader: false, // não anuncia "Next.js" no cabeçalho x-powered-by
   // O lint roda à parte (npm run lint e no CI): o build não para por aviso de estilo.

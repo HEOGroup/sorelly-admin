@@ -3,6 +3,7 @@
 import { dataPagamento, ehEspecial } from "@/apps/montagem/domain/regras";
 import { TIPO_KIT } from "@/apps/montagem/domain/status";
 import { BK, N1, dur } from "@/apps/montagem/lib/format";
+import { plano } from "@/apps/montagem/lib/estilo-plano";
 import { use } from "@/apps/montagem/state/context";
 import { BADGE } from "@/apps/montagem/ui/badge";
 import { MONO, brl } from "@/apps/montagem/ui/input";
@@ -25,6 +26,14 @@ var FECHADOS = (function(){ try{ return JSON.parse(localStorage.getItem("sorelly
 function BlocoBarra(p){
   var d = use().dispatch, cor = p.cor || "ouro", chave = typeof p.t==="string" ? p.t : null, st = useState(!!(chave && FECHADOS[chave])), fechado = st[0], setFechado = st[1];
   var alternar = function(){ var v = !fechado; setFechado(v); if(chave){ if(v) FECHADOS[chave] = 1; else delete FECHADOS[chave]; try{ localStorage.setItem("sorelly_blocos_fechados", JSON.stringify(FECHADOS)); }catch(x){} } };
+  if(plano()) return e("section",{className:"overflow-hidden rounded-lg bg-card/60 "+(p.borda==="ouro" ? "border-[3px] border-[#d9a63a]/85" : "border-2 border-[#3B82F6]/45")},   // Financeiro: borda azul de 2 px em cada bloco grande (pedido do Marcus 24/10/2026, para separar os blocos de longe): bloco liso, título em texto branco, sem degradê
+    e("div",{onClick:p.fixo ? undefined : alternar, title:p.fixo ? undefined : (fechado ? "Abrir o bloco" : "Fechar o bloco"), className:"flex "+(p.grande ? "h-14" : "h-9")+" items-center gap-2 border-b border-border px-3 "+(p.fixo ? "" : "cursor-pointer select-none ")},
+      !p.fixo && e(Icon,{n:"chevrondown", s:12, className:"shrink-0 transition-transform "+(fechado ? "-rotate-90" : "")}),
+      e("h2",{className:"min-w-0 flex-1 truncate text-foreground "+(p.grande ? "text-center text-[clamp(22px,1.5vw,36px)] font-black uppercase tracking-wide" : "text-[13px] font-medium"), title:typeof p.t==="string" ? p.t : undefined}, typeof p.t==="string" ? p.t.charAt(0).toUpperCase()+p.t.slice(1) : p.t),
+      p.sub && !p.compacto && e("span",{className:"hidden min-w-0 truncate text-[12px] text-foreground md:inline"}, typeof p.sub==="string" ? p.sub : null),
+      p.dir && !p.fixo && e("span",{className:"shrink-0 text-[13px] font-medium tabular-nums text-foreground"}, p.dir),
+      p.ir && e("button",{onClick:function(ev){ ev.stopPropagation(); d({type:"ABA", aba:p.ir}); }, title:"Abrir a tela completa", className:"h-7 shrink-0 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Abrir")),
+    e("div",{className:fechado && !p.fixo ? "hidden" : ""}, p.children));
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-2 "+ANEL[cor]},
     e("div",{onClick:p.fixo ? undefined : alternar, title:p.fixo ? undefined : (fechado ? "Abrir o bloco" : "Fechar o bloco"), className:"relative flex "+(p.fixo ? "" : "cursor-pointer select-none ")+"flex-col items-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(p.compacto ? "px-14 py-1.5 " : "px-12 py-2.5 ")+BARRAS[cor]},
       !p.fixo && e("span",{className:"absolute left-3 top-1/2 grid -translate-y-1/2 place-items-center rounded-full bg-black/25 p-1 text-white"}, e(Icon,{n:"chevrondown", s:13, className:"transition-transform "+(fechado ? "-rotate-90" : "")})),

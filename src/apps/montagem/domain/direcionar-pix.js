@@ -1,0 +1,106 @@
+// Sorelly Admin · montagem — domain/direcionar-pix.js
+// Financeiro → Contas → Pagamentos → "Direcionar" (23/10/2026). O Lucas recebe os PEDIDOS DE CONTA do Pix: os de DENTRO da Sorelly (atendimento interno; nunca têm conta fixa, sempre se define) e os das
+// REPRESENTANTES (chegam do app). Cada pedido pode ser dividido em vários destinos. O sistema SUGERE com o motivo escrito; o Lucas CONFIRMA SEMPRE (até o sistema ficar bem feito, decisão do Marcus).
+// Regras em lista, na ordem de prioridade, com liga/desliga (s.dp.regras); texto em REGRAS-DE-PIX.md. Estado s.dp = {v, pix:[...], regras:[...]}.
+// DADOS DE TESTE: os pedidos internos vieram das mensagens que as atendentes mandaram ao Marcus em 23/10/2026 (sem CPF nem chave Pix).
+var r2 = function(n){ return Math.round((n||0)*100)/100; };
+var uid = function(p){ return p+Date.now().toString(36)+Math.floor(Math.random()*46656).toString(36); };
+
+var REGRAS0 = [
+  {id:"r1", n:1, se:"Venda no link ou no cartão (CNPJ definido)", entao:"Pix vai para o mesmo CNPJ do link", ativa:true},
+  {id:"r2", n:2, se:"Pix de dentro da Sorelly (atendimento interno)", entao:"Sem conta fixa: o Lucas escolhe; o sistema só ajuda", ativa:true},
+  {id:"r3", n:3, se:"Pix de representante, com meta de Pix direto aberta em outra representante", entao:"Direciona para a outra representante, nunca para ela mesma", ativa:true},
+  {id:"r4", n:4, se:"Valor acima de R$ 3.000", entao:"Pontual ou Point", ativa:true},
+  {id:"r5", n:5, se:"Cartão Getnet na empresa e Pix acima de R$ 750", entao:"Pontual", ativa:true},
+  {id:"r6", n:6, se:"Valor abaixo de R$ 750", entao:"Prestadores menores (Higor, Camilly)", ativa:true},
+  {id:"r7", n:7, se:"Todo o resto", entao:"CNPJ mais perto do limite do cheque especial, com mais contas para pagar hoje e amanhã", ativa:true},
+  {id:"r8", n:8, se:"Qualquer valor (inclusive abaixo de R$ 500)", entao:"A sugestão é sempre UMA conta só, com o valor inteiro (a conta que mais receberia na sugestão). Dividir em mais de uma conta é escolha do Lucas, nunca da sugestão", ativa:true}];
+
+// partes (opcional): como ela vai pagar o que falta, por forma: [{forma:"maquininha"|"link"|"pix", valor}] (soma = valor). Sem partes vale uma parte só, a forma do pedido.
+// pagos: o que a revendedora já pagou por outras formas {forma:"dinheiro"|"link"|"getnet"|"credito"|"pix", valor, cnpj?, parc?, obs?}; valor = o Pix que falta definir a conta
+function dpDemo(){
+  var agora = Date.now(), min = function(m){ return agora-m*60000; };
+  var it = function(quem, atend, vendas, aPagar, pagos, valor, mAtras, obs){ return {id:uid("p"), origem:"interno", atendente:atend, quem:quem, vendas:vendas, aPagar:aPagar, pagos:pagos, valor:valor, obs:obs||"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
+  var rp = function(quem, maq, valor, mAtras, repOrigem){ return {id:uid("p"), origem:"rep", atendente:"", quem:quem, repOrigem:repOrigem, vendas:0, aPagar:valor, pagos:[], valor:valor, maq:maq, obs:"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
+  return {v:1, regras:JSON.parse(JSON.stringify(REGRAS0)), pix:[
+    it("Ingrid Martins dos Santos", "Edna", 1556.00, 1011.40, [{forma:"dinheiro", valor:190}], 821.40, 52),
+    it("Bianka dos Santos Sutil", "Kawany", 1838.00, 1102.80, [], 1102.80, 47),
+    it("Emanoelle Nicolle Dias", "Kawany", 2272.00, 1363.20, [{forma:"link", valor:648, cnpj:"59"}, {forma:"link", valor:144, cnpj:"59"}, {forma:"link", valor:164, cnpj:"59"}], 407.20, 41),
+    it("Maria Eduarda Peres Pedroso", "Edna", 1326.00, 795.60, [], 795.60, 38),
+    it("Cristiane do Rocio Skora", "Sthefany", 716.00, 501.20, [{forma:"credito", valor:301.20, parc:4}], 200.00, 33),
+    it("Jean Soares da Costa", "Kawany", 1817.00, 1090.20, [{forma:"dinheiro", valor:270}], 820.20, 29),
+    it("Tatiane Cristina Pinati", "Kawany", 2270.00, 1362.00, [{forma:"getnet", valor:112}], 1250.00, 24),
+    it("Josiele Azevedo Trindade", "Kawany", 252.00, 252.00, [{forma:"dinheiro", valor:110}], 142.00, 19, "Não vai renovar o kit: está fraco e ela não quer peças paradas em casa."),
+    it("Jhenifer Vitória de Morais Jacob", "Sthefany", 1714.00, 1028.00, [{forma:"link", valor:468, cnpj:"59"}, {forma:"credito", valor:360.40, parc:2}], 200.00, 12, "Vai pausar as vendas deste mês (mudança de estúdio) e volta no mês que vem."),
+    Object.assign(it("Ana Paula Ribeiro Lima", "Edna", 6200.00, 3720.00, [{forma:"link", valor:700, cnpj:"59"}, {forma:"link", valor:500, cnpj:"59"}, {forma:"link", valor:520, cnpj:"59"}], 2000.00, 58, ""), {partes:[{forma:"pix", valor:800}, {forma:"maquininha", valor:700}, {forma:"maquininha", valor:500}]}),
+    Object.assign(it("Karina Moraes Duarte", "Kawany", 4100.00, 2460.00, [{forma:"dinheiro", valor:300}], 2160.00, 8, "Vai pagar por link de pagamento."), {forma:"link"}),
+    rp("Representante Thalita", "maquininha do CNPJ 46", 3700.00, 18, "Thalita"),
+    rp("Representante Marciane", "maquininha do CNPJ 34", 1900.00, 9, "Marciane"),
+    rp("Representante Nagela", "maquininha do CNPJ 59", 533.75, 5, "Nagela")]};
+}
+
+// ── contexto por CNPJ (contas a pagar de hoje/amanhã/atrasadas + disponível) montado pela tela
+// ── sugestão: devolve {opcoes:[{destinoId, nome, motivo, valor}], regras:[{n, texto, estado:"usada"|"nao_se_aplica"|"info"}], semContaFixa}
+function sugerir(pix, ctx){
+  var cp = ctx.cp, regras = (ctx.regras || []).filter(function(r){ return r.ativa; }), resumo = [], opcoes = [], usada = null;
+  var dest = function(nome){ return cp.destinos.find(function(d){ return d.ativo && d.nome.indexOf(nome)===0; }); };
+  var porTipo = function(t){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }); };
+  var link = (pix.pagos||[]).filter(function(p){ return (p.forma==="link") && p.cnpj; })[0], temGetnet = (pix.pagos||[]).some(function(p){ return p.forma==="getnet"; });
+  var urg = (ctx.cnpjs || []).slice().sort(function(a, b){ return ((b.hoje+b.amanha)-b.disp) - ((a.hoje+a.amanha)-a.disp); });
+  var add = function(d, motivo, valor, n){ if(!d || opcoes.some(function(o){ return o.destinoId===d.id; })) return; opcoes.push({destinoId:d.id, nome:d.nome, motivo:motivo, valor:valor==null ? pix.valor : r2(valor), regra:n}); };
+  // conta fixa da representante (24/10/2026): a que o Lucas marcou; sem marca, o CNPJ da maquininha ou do link dela. Valor fora do normal NÃO usa conta fixa: sobe para o Lucas definir.
+  var limite = ctx.limiteAlto || 7000, alto = pix.valor>=limite;
+  if(pix.origem==="rep"){
+    if(alto) resumo.push({n:13, texto:"Valor fora do normal (R$ "+limite.toLocaleString("pt-BR")+" ou mais): o Lucas define a conta", estado:"info"});
+    else {
+      // "Thalita" (pedido) e "Thalita Torazzi" (Link de pagamento) são a mesma pessoa: o nome curto casa com o começo do completo
+      var nm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }, mesma = function(a, b){ a = nm(a); b = nm(b); return a===b || a.indexOf(b+" ")===0 || b.indexOf(a+" ")===0; };
+      var chaveFixa = Object.keys(ctx.contasRep||{}).filter(function(k){ return mesma(k, pix.repOrigem); })[0];
+      var fixa = chaveFixa ? ctx.contasRep[chaveFixa] : "", d0 = fixa ? cp.destinos.find(function(d){ return d.id===fixa && d.ativo; }) : null;
+      if(d0){ add(d0, "Conta fixa de "+pix.repOrigem+", marcada pelo Lucas.", null, 11); resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem, estado:"usada"}); }
+      else { var cn = ctx.cnpjDaRep ? ctx.cnpjDaRep(pix.repOrigem) : ""; var dc0 = cn ? dest("CNPJ "+cn) : null;
+        if(dc0){ add(dc0, "A maquininha ou o link de "+pix.repOrigem+" é do CNPJ "+cn+".", null, 12); resumo.push({n:12, texto:"Maquininha ou link de "+pix.repOrigem+": CNPJ "+cn, estado:"usada"}); } }
+    }
+  }
+  regras.forEach(function(r){
+    var antes = opcoes.length, estado = "nao_se_aplica", txt = r.se;
+    if(r.n===1 && link){ var dc = dest("CNPJ "+link.cnpj); add(dc, "A venda foi paga no link do CNPJ "+link.cnpj+": o Pix vai para o mesmo CNPJ.", null, 1); estado = "usada"; }
+    else if(r.n===2 && pix.origem==="interno"){ estado = "info"; txt = "Pix de dentro da Sorelly: não tem conta fixa, o Lucas escolhe"; }
+    else if(r.n===3 && pix.origem==="rep"){
+      var abertas = (cp.orientacoes||[]).filter(function(o){ var d = cp.destinos.find(function(x){ return x.id===o.destinoId; }); return o.status==="aberta" && d && d.tipo==="REPRESENTANTE" && d.nome!==pix.repOrigem; });
+      var rest = pix.valor; abertas.forEach(function(o){ var d = cp.destinos.find(function(x){ return x.id===o.destinoId; }), falta = r2(o.valor-(o.lanc||[]).reduce(function(t, l){ return t+l.valor; }, 0)); if(rest>0.004 && falta>0){ var v = Math.min(rest, falta); add(d, "Meta de Pix direto aberta: faltam "+brl(falta)+" para "+d.nome+" (ela não recebe o próprio Pix).", v, 3); rest = r2(rest-v); } });
+      if(opcoes.length>antes) estado = "usada";
+    }
+    else if(r.n===4 && pix.valor>3000){ add(dest("Pontual"), "Pix acima de R$ 3.000 vai para Pontual ou Point."+detPontual(pix, ctx.pontual), null, 4); add(dest("Point"), "Alternativa para Pix acima de R$ 3.000.", null, 4); if(opcoes.length>antes) estado = "usada"; }
+    else if(r.n===5 && temGetnet && pix.valor>750){ add(dest("Pontual"), "Cartão Getnet na empresa e Pix acima de R$ 750: mesmo fornecedor da maquininha."+detPontual(pix, ctx.pontual), null, 5); if(opcoes.length>antes) estado = "usada"; }
+    else if(r.n===6 && pix.valor<750){ porTipo("PRESTADOR").forEach(function(d){ add(d, "Pix abaixo de R$ 750: prestador menor.", null, 6); }); if(opcoes.length>antes) estado = "usada"; }
+    else if(r.n===7 && urg.length){ var c = urg[0], d7 = dest("CNPJ "+c.id); var fr = function(x){ return "CNPJ "+x.id+": "+((x.hoje+x.amanha)>0 ? "vencem "+brl(x.hoje+x.amanha)+" hoje e amanhã" : "nada vence hoje e amanhã")+"; disponível "+(x.disp<0 ? "−"+brl(-x.disp) : brl(x.disp))+"."; };
+      add(d7, fr(c), null, 7); if(urg[1]) add(dest("CNPJ "+urg[1].id), fr(urg[1]), null, 7); if(opcoes.length>antes) estado = "usada"; }
+    resumo.push({n:r.n, texto:txt, estado:estado});
+  });
+  return {opcoes:opcoes.slice(0, 4), regras:resumo, semContaFixa:pix.origem==="interno", alto:alto};
+}
+// Pontual: o Pix quita a parcela aberta mais antiga; o que passa vai para a próxima (Marcus, 24/10/2026)
+function detPontual(pix, parcelas){
+  var rest = pix.valor, partes = []; (parcelas||[]).forEach(function(p){ if(rest>0.004){ var v = Math.min(rest, p.total); partes.push("quita "+p.nome+" ("+brl(v)+")"); rest = r2(rest-v); } });
+  return partes.length ? " Na Pontual: "+partes.join(", depois ")+(rest>0.004 ? "; sobram "+brl(rest)+" para a próxima parcela" : "")+"." : "";
+}
+var brl = function(v){ return "R$ "+(Math.round((v||0)*100)/100).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); };
+
+// ação do reducer: {type:"DP", op, ...}
+function dpReduz(s, a){
+  var dp = JSON.parse(JSON.stringify(s.dp || dpDemo())), por = a.por || "—", recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{dp:dp}, msg:msg}; };
+  var pix = function(id){ return dp.pix.find(function(x){ return x.id===id; }); };
+  switch(a.op){
+    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix"}; }); return ok(); }
+    case "confirma": { var p2 = pix(a.id); if(!p2) return recusa("Pix não encontrado."); var soma = r2((p2.divisoes||[]).reduce(function(t, d){ return t+d.valor; }, 0));
+      if(!p2.divisoes.length) return recusa("Escolha pelo menos um destino."); if(Math.abs(soma-p2.valor)>0.009) return recusa("A soma dos destinos precisa fechar com "+brl(p2.valor)+"."); p2.status = "direcionado"; p2.confirmadoPor = por; p2.confirmadoEm = Date.now(); return ok("Pix direcionado"); }
+    case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
+    case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
+    case "fixa": { dp.contasRep = dp.contasRep || {}; if(a.destinoId) dp.contasRep[a.rep] = a.destinoId; else delete dp.contasRep[a.rep]; return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
+    case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || 7000; return ok("Valor fora do normal salvo"); }
+    case "demo": { dp.pix = dpDemo().pix; return ok("Pedidos de teste recarregados"); }
+  }
+  return recusa("Ação desconhecida.");
+}
+export { REGRAS0, dpDemo, dpReduz, sugerir };

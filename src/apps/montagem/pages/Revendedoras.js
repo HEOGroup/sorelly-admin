@@ -33,7 +33,7 @@ function linhasDe(s, de, ate){
   return out;
 }
 
-function AbaRevendedoras(){
+function AbaRevendedoras(props){
   var cx = use(), s = cx.state, hojeIso = isoLocal(new Date()), ano = new Date().getFullYear();
   var pr = useState("30"), per = pr[0], setPer = pr[1], dd = useState(""), deLivre = dd[0], setDeLivre = dd[1], aa = useState(""), ateLivre = aa[0], setAteLivre = aa[1];
   var an = useState(ano), anoMes = an[0], setAnoMes = an[1], ms = useState(false), msgAberta = ms[0], setMsgAberta = ms[1], cp = useState(false), copiado = cp[0], setCopiado = cp[1];
@@ -62,7 +62,7 @@ function AbaRevendedoras(){
   var anos = []; for(var y=+primeira.slice(0,4); y<=ano; y++) anos.push(y);
   var serie = linhas.map(function(l){ return {data:l.data, v:l.total, tipo:"real"}; });
   return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Base de revendedoras", sub:"O histórico dia a dia desde "+br(primeira)+": quanto tínhamos, quanto entrou e saiu, por período. Aqui não se preenche nada."}),
+    !(props && props.semCabecalho) && e(PageHead,{t:"Base de revendedoras", sub:"O histórico dia a dia desde "+br(primeira)+": quanto tínhamos, quanto entrou e saiu, por período. Aqui não se preenche nada."}),
     // período + ações
     e("section",{className:"flex flex-col gap-2 rounded-xl border border-[#E8B84B]/40 bg-card p-3"},
       e("div",{className:"flex flex-wrap items-center gap-1.5"},

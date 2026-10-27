@@ -2,6 +2,7 @@
 // PADRÃO VISUAL ÚNICO (modelo: Visão geral). Toda tela nova usa estas peças; regras escritas em docs/design/PADRAO-VISUAL.md e vista ao vivo em Tecnologia → Padrão visual.
 // Mudou aqui, muda no sistema inteiro. Nada avulso: número sempre dentro de um Indicador ou de uma célula centralizada.
 import { useContagemNaTela } from "@/apps/montagem/lib/contagem-tela";
+import { plano } from "@/apps/montagem/lib/estilo-plano";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -25,6 +26,13 @@ function Pagina(p){
 var cap = function(t){ return typeof t==="string" && t ? t.charAt(0).toUpperCase()+t.slice(1) : t; };
 function Indicador(p){
   var cor = ESTADO[p.cor] || p.cor || ESTADO.total, d = use().dispatch;
+  if(plano()){   // Financeiro: cartão liso, valor branco; só estado (ok, alerta, ruim) leva cor
+    var corP = ({ok:ESTADO.ok, alerta:ESTADO.alerta, ruim:ESTADO.ruim})[p.cor];
+    return e(p.ir ? "button" : "div",{type:p.ir ? "button" : undefined, onClick:p.ir ? function(){ d({type:"ABA", aba:p.ir}); } : undefined, className:"flex min-w-0 flex-col items-center justify-center rounded-lg border border-border bg-card/60 px-2 py-1.5 text-center "+(p.ir ? "cursor-pointer hover:bg-white/10 " : "")+(p.className||""), title:p.titulo || (p.ir ? "Abrir a tela" : undefined)},
+      e("span",{className:"truncate text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, p.t),
+      e("b",{className:MONO+" whitespace-nowrap text-[16px] font-medium leading-tight tabular-nums text-foreground", style:corP ? {color:corP} : undefined}, p.v),
+      p.sub && e("span",{className:"truncate text-[11px] leading-tight text-foreground"}, cap(p.sub)));
+  }
   return e(p.ir ? "button" : "div",{type:p.ir ? "button" : undefined, onClick:p.ir ? function(){ d({type:"ABA", aba:p.ir}); } : undefined, className:"flex min-w-0 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-center "+(p.ir ? "cursor-pointer transition hover:bg-black/45 hover:ring-white/30 " : "")+(p.className||""), title:p.titulo || (p.ir ? "Abrir a tela" : undefined), style:degrade(p.cor)},
     e("b",{className:MONO+" whitespace-nowrap text-[19px] leading-none", style:{color:cor}}, p.v),
     e("span",{className:"mt-1 text-[10.5px] font-bold leading-tight text-white/75 "+(p.normal ? "" : "uppercase tracking-wide")}, p.t),
@@ -40,8 +48,9 @@ function Faixa(p){
 // Tabela padrão: cabeçalho e células CENTRALIZADOS, linhas baixas. cols = ["Nome", ...]; linhas vão nos filhos (use Td).
 var TH_P = "whitespace-nowrap px-2 py-1 text-center text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground";
 function Tab(p){
+  var TH = plano() ? TH_P.replace("text-muted-foreground", "text-foreground") : TH_P;
   return e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse "+(p.className||"")},
-    e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, className:p.normal ? TH_P.replace("uppercase ", "").replace("tracking-wide ", "") : TH_P}, c); }))),
+    e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, className:p.normal ? TH.replace("uppercase ", "").replace("tracking-wide ", "") : TH}, c); }))),
     e("tbody",null, p.children)));
 }
 // Td: p.dinheiro = fonte de número; p.cor = cor de estado; p.forte = negrito
@@ -54,13 +63,15 @@ var LINHA = "border-t border-white/10";
 // Abas: várias visões dentro de UMA tela do menu (em vez de várias telas). abas = [[chave, título]], atual = chave, onMudar(chave), cor = cor do setor.
 function Abas(p){
   var cor = p.cor || "#3B82F6";
+  if(plano()) return e("div",{role:"tablist", className:"flex flex-wrap gap-1 border-b border-border"}, p.abas.map(function(a){ var on = a[0]===p.atual;   // Financeiro: abas visíveis com sublinhado
+    return e("button",{key:a[0], type:"button", role:"tab", "aria-selected":on, onClick:function(){ p.onMudar(a[0]); }, className:"-mb-px h-9 border-b-2 px-3 text-[13px] "+(on ? "border-primary font-semibold text-foreground" : "border-transparent text-foreground/80 hover:text-foreground")}, cap(a[1])); }));
   return e("div",{className:"flex flex-wrap justify-center gap-1.5"}, p.abas.map(function(a){ var on = a[0]===p.atual;
     return e("button",{key:a[0], type:"button", onClick:function(){ p.onMudar(a[0]); }, className:"rounded-lg px-4 py-1.5 text-[13px] font-bold ring-1 transition "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"),
       style:on ? {background:"linear-gradient(135deg,"+cor+"66,"+cor+"22)", boxShadow:"inset 0 0 0 1px "+cor+"cc"} : undefined}, cap(a[1])); }));
 }
 // Barra de filtros: UMA linha alinhada, centralizada, mesma altura em tudo (use h-9 nos campos). ativo = há filtro ligado; onLimpar mostra o botão Limpar.
 function BarraFiltros(p){
-  return e("div",{className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-black/25 px-3 py-2 ring-1 ring-white/10 "+(p.className||"")}, p.children,
+  return e("div",{className:"flex flex-wrap items-center justify-center gap-2 px-3 py-2 "+(plano() ? "rounded-lg border border-border bg-card/60 " : "rounded-xl bg-black/25 ring-1 ring-white/10 ")+(p.className||"")}, p.children,
     p.ativo && p.onLimpar && e("button",{type:"button", onClick:p.onLimpar, className:"h-9 rounded-lg bg-white/10 px-3 text-[12.5px] font-bold hover:bg-white/20"}, "Limpar"));
 }
 // Janela larga em COLUNAS lado a lado (detalhe, edição, novo): colunas = [elemento, ...]; 1 coluna em tela estreita, 2–3 em larga. O que já foi preenchido passa para outra coluna como concluído.

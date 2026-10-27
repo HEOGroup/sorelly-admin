@@ -366,6 +366,7 @@ function simular(convId, textoOriginal, tipo, de, aba){
     else { setTimeout(function(){ avisoSistema(convId, "Ninguém do setor está disponível agora. Sua mensagem ficou na fila e será respondida assim que possível."); }, 700); return; }
     var lista = RESPOSTAS_CANAL[conv.canal] || RESPOSTAS, n = (estado.msgs[convId]||[]).filter(function(x){ return x.de===quem; }).length;
     texto = lista[Math.min(n, lista.length-1)];
+    if(/oi chata/i.test(textoOriginal||"")) texto = "Chata é você, vá fazer acertos 😂";   // resposta combinada para a gravação de tela do Marcus (24/10/2026)
   } else if(abaFunc){
     // aba de uma funcionária: se ela escreve, quem decide responde; se escreve a direção/supervisão, ela responde
     if(de===aba){ var dec = ["Marcus","Anamaria","Lucas"].map(function(n){ return idPorNome(n); }).filter(function(x){ return x && x!==de && conv.membros.indexOf(x)>=0; }); if(!dec.length) return; quem = dec[Math.floor(Math.random()*dec.length)]; }

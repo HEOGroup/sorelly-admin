@@ -51,7 +51,7 @@ function TabelaRevendedorasMeses(p){
   var n = function(v){ return v===null || v===undefined ? "—" : Math.round(v).toLocaleString("pt-BR"); };
   var th = function(t){ return e("th",{key:t, className:"border-b border-r border-border px-2 py-2 text-center text-[11px] font-semibold uppercase tracking-wide last:border-r-0"}, t); };
   var td = function(v, c){ return e("td",{className:"border-r border-border/60 px-2 py-1.5 text-center text-[13px] last:border-r-0 "+(c||"")}, v); };
-  return e(BlocoBarra,{cor:"ouro", t:"Revendedoras mês a mês", sub:"quantas começamos e terminamos cada mês · o mês atual atualiza em tempo real"},
+  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"Revendedoras mês a mês", sub:"quantas começamos e terminamos cada mês · o mês atual atualiza em tempo real"},
     e("div",{className:"overflow-x-auto p-3"},
       e("table",{className:"w-full border-collapse"},
         e("thead",null, e("tr",{className:"bg-sidebar"}, ["Mês","Começou com","Terminou com","Aumento / queda","%"].map(th))),
@@ -70,7 +70,7 @@ function BlocoPessoas(p){
   var linha = function(lb, v, cor){ return e("div",{key:lb, className:"flex items-center justify-between gap-2 py-px text-[12px] leading-tight"},
     e("span",{className:"flex min-w-0 items-center gap-1.5"}, cor && e("span",{className:"size-2.5 shrink-0 rounded-full", style:{background:cor}}), e("span",{className:"truncate"}, lb)), e("b",{className:MONO+" shrink-0"}, v)); };
   var titulo = function(t){ return e("span",{className:"mt-1 text-[11px] font-semibold uppercase tracking-wide text-white/70"}, t); };
-  return e(BlocoBarra,{t:"Pessoas da Sorelly", sub:"funcionários e representantes"},
+  return e(BlocoBarra,{fixo:true, t:"Pessoas da Sorelly", sub:"funcionários e representantes"},
     e("div",{className:"flex flex-col gap-0.5 p-2"},
       e("div",{className:"flex flex-col rounded-lg bg-black/20 px-3 py-1.5"},
         linha("Funcionários", r.funcionarios), linha("Sócios", r.socios), linha("PJ", r.pjs), linha("Representantes", r.representantes),
@@ -110,7 +110,7 @@ function BlocoMini(p){
 function BlocoInadimp(p){
   var s = p.s, ano = new Date().getFullYear(), mes = new Date().getMonth(), i = inadDoMes(s, ano, mes), c = comprasDoMes(s, ano, mes);
   var falta = Math.max(0, i.divida-i.pago), pct = i.divida>0 ? i.pago/i.divida*100 : 0;
-  return e(BlocoBarra,{cor:"ouro", t:"Inadimplência e compras internas · "+MESES_LONGO[mes].toLowerCase(), sub:"do dia 1 até hoje"},
+  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"Inadimplência e compras internas · "+MESES_LONGO[mes].toLowerCase(), sub:"do dia 1 até hoje"},
     e("div",{className:"grid grid-cols-1 gap-2 p-2 md:grid-cols-2"},
       e(CaixaLinhas,{titulo:"Inadimplência"}, e(Linha,{ir:"inadfin", t:"Valor da dívida", v:BK(i.divida), cor:"text-destructive"}), e(Linha,{ir:"inadfin", t:"Já foi pago", v:BK(i.pago), cor:"text-success"}),
         e(Linha,{ir:"inadfin", t:"Falta receber", v:BK(falta), cor:"text-warning", forte:true}), e("div",{className:"mt-1 h-1.5 overflow-hidden rounded-full bg-black/40"}, e("div",{className:"h-full rounded-full bg-primary", style:{width:Math.min(100,pct)+"%"}})),
@@ -123,16 +123,26 @@ function BlocoInadimp(p){
 function AtualizarHoje(p){
   var s = p.s, d = p.d, iso = isoDia(new Date()), fixado = !!(s.faturamentoDiario||{})[iso];
   var r = useState(null), rec = r[0], setRec = r[1], a = useState(null), ace = a[0], setAce = a[1];
-  var vRec = rec===null ? p.m.recebido : rec, vAce = ace===null ? p.m.acertos : ace;
-  // tudo numa linha só: título pequeno, valor recebido, acertos e os dois botões
-  return e("div",{className:"flex flex-nowrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+  var vRec = rec===null ? p.m.recebido : rec, vAce = ace===null ? p.m.feitos : ace, fm = (s.fechaMes||{})[iso.slice(0,7)] || {}, c = useState(null), car = c[0], setCar = c[1], vCar = car===null ? p.m.carregar : car;
+  var ab = useState(false), aberto = ab[0], setAberto = ab[1];   // a barra fica sempre visível; só o formulário de preencher abre e fecha (pedido do Marcus, 26/10/2026)
+  if(fixado) return e("div",{className:"flex flex-nowrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
     e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
-    fixado ? e(React.Fragment,null, e("b",{className:"flex-1 text-[12px] text-success"},"✓ Dia fixado"), e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"FAT_REABRIR", data:iso}); }},"Reabrir"))
-    : e(React.Fragment,null,
-        e("div",{className:"min-w-[9.5rem] flex-1"}, e(MoneyInput,{value:vRec, onChange:setRec, sm:true, className:"w-full", label:"Recebido do mês até agora"})),
-        e("div",{className:"w-16 shrink-0"}, e(NumInput,{value:vAce, onChange:setAce, className:"w-full! text-center!", "aria-label":"Acertos do mês até agora"})),
-        e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"FAT_HOJE", data:iso, recebido:vRec, acertos:vAce}); }},"Atualizar hoje"),
-        e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"FAT_FIXAR", data:iso, recebido:vRec, acertos:vAce}); setRec(null); setAce(null); }},"Fixar")));
+    e("b",{className:"flex-1 text-[12px] text-success"},"✓ Dia fixado"), e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"FAT_REABRIR", data:iso}); }},"Reabrir"));
+  if(!aberto) return e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg bg-black/25 px-2 py-0.5"},
+    e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
+    e("span",{className:"text-[12px] text-white/85"}, "Recebido ", e("b",{className:MONO+" text-success"}, BK(vRec))),
+    e("span",{className:"text-[12px] text-white/85"}, "Acertos ", e("b",{className:MONO}, vAce)),
+    e("span",{className:"text-[12px] text-white/85"}, "Carregar ", e("b",{className:MONO+" text-warning"}, vCar)),
+    e(Btn,{v:"secondary", sm:true, className:"ml-auto", onClick:function(){ setAberto(true); }},"Atualizar"));
+  // formulário aberto: título pequeno, valor recebido, acertos, carregar e os botões
+  return e("div",{className:"flex flex-wrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+    e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
+    e("div",{className:"min-w-[9.5rem] flex-1"}, e(MoneyInput,{value:vRec, onChange:setRec, sm:true, className:"w-full", label:"Recebido do mês até agora"})),
+    e("div",{className:"w-16 shrink-0"}, e(NumInput,{value:vAce, onChange:setAce, className:"w-full! text-center!", "aria-label":"Acertos do mês até agora"})),
+    e("div",{className:"flex shrink-0 items-center gap-1"}, e("span",{className:"text-[10px] font-bold uppercase text-warning"},"Carregar"), e("div",{className:"w-14 shrink-0"}, e(NumInput,{value:vCar, onChange:setCar, className:"w-full! text-center!", "aria-label":"Vendas no Carregar"}))),
+    e(Btn,{v:"ghost", sm:true, onClick:function(){ setAberto(false); }},"Fechar"),
+    e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"FECHA_MES_SET", ym:iso.slice(0,7), aRealizar:fm.aRealizar||0, carregar:vCar}); d({type:"FAT_HOJE", data:iso, recebido:vRec, acertos:vAce}); }},"Atualizar hoje"),
+    e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"FAT_FIXAR", data:iso, recebido:vRec, acertos:vAce}); setRec(null); setAce(null); setAberto(false); }},"Fixar"));
 }
 
 // ── Blocos do meio da Visão geral (todos com BlocoBarra e o botão "Abrir ›" para a tela deles) ──
@@ -148,18 +158,22 @@ function BlocoFaturamento(p){
   var r = resumoFinanceiro(p.s, p.janela), m = r.mes, a = r.ano, t = tabelaMeses(p.s, p.janela);
   var prev = proximosMeses(p.s, p.janela, 2);
   var acertosFalta = Math.max(0, m.metaAlvo-m.acertos), fatTotal = m.recebido+m.aReceber, contasTotal = m.pago+m.aPagar;
-  return e(BlocoBarra,{cor:"ouro", t:"Faturamento", sub:m.nome.toLowerCase()+", o ano e a previsão dos próximos meses", ir:"previsaofat"},
+  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"Faturamento", sub:m.nome.toLowerCase()+", o ano e a previsão dos próximos meses", ir:"previsaofat"},
     e("div",{className:"flex flex-col gap-2 p-2"},
       e(Secao,{t:m.nome},
-        e(CaixaLinhas,{titulo:"Como o mês começou"},
-          e(LinhaFat,{t:"Revendedoras no início do mês", v:num(m.base)}), e(LinhaFat,{t:"Acertos previstos para o mês", v:num(m.previstos)})),
+        e(CaixaLinhas,{titulo:"Como o mês começou × agora"},
+          e(LinhaFat,{t:"Revendedoras no início do mês", v:num(m.base)}), e(LinhaFat,{t:"Acertos previstos no início do mês", v:num(m.previstosInicio)}),
+          e(LinhaFat,{t:"Acertos previstos agora (nova previsão)", v:num(m.previstos), forte:true}),
+          e(LinhaFat,{t:"Acertos a menos", v:(m.previstos<m.previstosInicio ? "−" : m.previstos>m.previstosInicio ? "+" : "")+num(Math.abs(m.previstos-m.previstosInicio)), cor:m.previstos<m.previstosInicio ? "text-destructive" : "text-success", forte:true}),
+          e(LinhaFat,{t:"Carregar no início do mês", v:m.carregarInicio!=null ? num(m.carregarInicio) : "—"}), e(LinhaFat,{t:"Carregar agora (não entra nos acertos)", v:num(m.carregar)}),
+          e(LinhaFat,{t:"Vendas adiadas para o próximo mês", v:m.carregarInicio!=null ? num(m.carregar-m.carregarInicio) : "—", cor:"text-warning"})),
         e(CaixaLinhas,{titulo:"Previsão do mês · escolha quantos % dos acertos previstos"},
           m.casos.map(function(c){ var on = c.pct===m.metaPct;
             return e("button",{key:c.pct, onClick:function(){ p.d({type:"META_PCT_SET", pct:c.pct}); }, "aria-pressed":on, className:"mb-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 rounded-lg px-2.5 py-1.5 text-left text-[12px] "+(on ? "bg-primary/20 ring-2 ring-primary" : "bg-black/20 ring-1 ring-border hover:bg-black/35")},
               e("b",{className:MONO+" text-[14px] "+(on ? "text-primary" : "")}, c.pct+"%"),
               e("span",{className:"flex-1 text-white/80"}, num(c.acertos)+" acertos · faltam "+num(c.faltam)), e("b",{className:MONO+" whitespace-nowrap text-success"}, BK(c.fat))); })),
         e(CaixaLinhas,{titulo:"Até o momento"},
-          e(LinhaFat,{t:"Faturamento atualizado", v:BK(m.recebido), cor:"text-success", forte:true}), e(LinhaFat,{t:"Acertos", v:num(m.acertos)}), e(LinhaFat,{t:"Média por acerto", v:BK(m.mediaAcerto)}),
+          e(LinhaFat,{t:"Faturamento atualizado", v:BK(m.recebido), cor:"text-success", forte:true}), e(LinhaFat,{t:"Acertos realizados", v:num(m.feitos)}), e(LinhaFat,{t:"Carregar (vendas, por fora)", v:num(m.carregar), cor:"text-warning"}), e(LinhaFat,{t:"Média por acerto", v:BK(m.mediaAcerto)}),
           e(LinhaFat,{t:"Contas pagas até o momento", v:BK(m.pago), cor:"text-destructive"}), e(LinhaFat,{t:"Resultado até o momento", v:neg(m.resultadoAgora), cor:crRes(m.resultadoAgora), forte:true})),
         e(CaixaLinhas,{titulo:"Ainda falta em "+m.nome.toLowerCase()+" ("+m.metaPct+"%)"},
           e(LinhaFat,{t:"Acertos esperados", v:num(m.metaAlvo)}), e(LinhaFat,{t:"Acertos que faltam", v:num(acertosFalta)}), e(LinhaFat,{t:"Faturamento previsto", v:BK(m.aReceber), cor:"text-success"}), e(LinhaFat,{t:"Contas a pagar previsto", v:BK(m.aPagar), cor:"text-destructive"})),
@@ -190,7 +204,7 @@ function BlocoIlf(p){
     return {c:c, f:f, tem:tem, ind:indicadoresFiscais(f), pr:tem ? projecaoCnpj(c.id, f, s.contasCnpj) : null}; })
     .sort(function(a,b){ return (a.tem ? a.ind.ilf : Infinity)-(b.tem ? b.ind.ilf : Infinity); });   // menor ILF primeiro, como em Limite de faturamento
   var maisFolga = lista.filter(function(x){ return x.tem; }).sort(function(a,b){ return b.ind.falta-a.ind.falta; })[0];
-  return e(BlocoBarra,{cor:"ouro", t:"ILF por CNPJ", sub:"quanto ainda pode faturar até o sublimite · ★ = mais folga para nota nova", ir:"limitefat"},
+  return e(BlocoBarra,{fixo:true, cor:"ouro", t:"ILF por CNPJ", sub:"quanto ainda pode faturar até o sublimite · ★ = mais folga para nota nova", ir:"limitefat"},
     e("div",{className:"flex flex-col gap-1.5 p-2"}, lista.map(function(x){ var nv = x.pr ? NIVEL[x.pr.nivel] : null;
       return e("div",{key:x.c.id, className:"flex flex-col gap-1 rounded-lg bg-black/20 px-3 py-1.5", style:{boxShadow:"inset 3px 0 0 "+x.c.cor}},
         e("div",{className:"flex items-center justify-between gap-2"},
@@ -211,10 +225,10 @@ function BlocoAcertosMes(p){
   var mp = metaDoMes(s, ym.slice(0,4), Number(ym.slice(5))-1, pr.realizado), prev = mp.manual ? mp.previstos : pr.previstos, feitosTot = pr.realizado+(mp.carregar||0), falta = Math.max(0, prev-feitosTot);   // previstos novos que o Marcus lançou (feitos + Carregar + a realizar); sem lançamento, valem os do Agendamento
   var pode = podeGerirAgend(s.usuario, ag), prox = proximoMes(ym), n = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
   var pctReal = prev>0 ? Math.min(100, feitosTot/prev*100) : 0, passou = Number(f.qtd)>0;
-  var cx = function(t, v, cor, sub){ return e("div",{key:t, className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[28px] leading-none", style:{color:cor}}, v), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"}, t), sub && e("span",{className:"text-[10.5px] text-white/60"}, sub)); };
+  var cx = function(t, v, cor, sub){ return e("div",{key:t, className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[20px] leading-none", style:{color:cor}}, v), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"}, t), sub && e("span",{className:"text-[10.5px] text-white/60"}, sub)); };
   return e(BlocoBarra,{cor:"roxo", t:"Acertos de "+nomeMes(ym), sub:"realizados × o que falta · metas 94, 95 e 96%"},
     e("div",{className:"flex flex-col gap-2 p-2"},
-      e("div",{className:"grid grid-cols-4 gap-2"}, cx("Realizados", n(pr.realizado), "#4ADE80"), cx("Faltam", n(falta), "#F3D98B"), cx("Previstos", n(prev), "#C084FC", mp.manual ? "Agendamento: "+n(pr.previstos) : null), cx("Do mês", pctReal.toFixed(1).replace(".",",")+"%", "#60A5FA")),
+      e("div",{className:"grid grid-cols-5 gap-2"}, cx("Realizados", n(pr.realizado), "#4ADE80"), cx("Carregar", n(mp.carregar||0), "#FBBF24"), cx("Faltam", n(falta), "#F3D98B"), cx("Previstos", n(prev), "#C084FC", mp.manual ? "Agendamento: "+n(pr.previstos) : null), cx("Do mês", pctReal.toFixed(1).replace(".",",")+"%", "#60A5FA")),
       e("div",{className:"relative mt-1 h-3 rounded-full bg-black/40"},
         e("div",{className:"h-full rounded-full bg-success", style:{width:pctReal+"%"}}),
         pr.metas.map(function(m){ return e("span",{key:m.id, title:m.pct+"%", className:"absolute top-[-3px] h-[18px] w-0.5 bg-white/80", style:{left:Math.min(100,m.pct)+"%"}}); })),
@@ -233,16 +247,16 @@ function BlocoAcertosMes(p){
 // Bipagem de retorno (URGENTE): kits bipados hoje e kits aguardando. A cada degrau (20, 30, 40, 50) fica mais vermelho e pisca mais rápido; no 50 é o máximo
 function BlocoBipagemRetorno(p){
   var hojeIso = isoDia(new Date()), dia = porDia(p.s).filter(function(x){ return x.dia===hojeIso; })[0], bipados = dia ? dia.bipados : 0, aguardando = qtdFila(p.s);
-  var nv = nivelDe(aguardando), cor = corDaFila(aguardando), tam = 44, alerta = nv>=0, pisca = [2.2,1.5,0.9,0.4][Math.max(0,nv)];   // fonte fixa; só a cor e a velocidade de piscar sobem
+  var nv = nivelDe(aguardando), cor = corDaFila(aguardando), alerta = nv>=0, pisca = [2.2,1.5,0.9,0.4][Math.max(0,nv)];   // fonte fixa; só a cor e a velocidade de piscar sobem
   return e("section",{className:"overflow-hidden rounded-xl bg-card "+(alerta ? "animate-pulse" : "ring-2 ring-[#E8B84B]/45"), style:alerta ? {animationDuration:pisca+"s", boxShadow:"0 0 0 2px "+cor+", 0 0 "+(14+nv*8)+"px "+cor+"88"} : undefined},
     e("div",{className:"relative flex flex-col items-center px-14 py-2 text-center shadow-[inset_0_1px_0_rgba(255,255,255,.3)] "+(alerta ? "text-white" : "bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[#1B1409]"), style:alerta ? {background:"linear-gradient(90deg, #7F1D1D, "+cor+")"} : undefined},
       e("h2",{className:"font-heading text-[15px] font-bold leading-tight"}, (alerta ? "⚠ " : "")+"Bipagem de retorno"),
       e("p",{className:"text-[11.5px] font-medium opacity-90"}, alerta ? "Passou de "+NIVEIS[nv]+": chame cadastro, Deysiane e encomendas para ajudar" : "kits que voltaram das representantes"),
       e("button",{onClick:function(){ p.d({type:"ABA", aba:"controlekits"}); }, title:"Abrir a tela completa", className:"absolute right-2 top-1/2 -translate-y-1/2 rounded-lg bg-black/30 px-2.5 py-1 text-[11px] font-bold text-white hover:bg-black/50"}, "Abrir ›")),
     e("div",{className:"grid grid-cols-[1fr_1.6fr] items-center gap-2 p-2"},
-      e("div",{className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[28px] leading-none text-success"}, bipados), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/70"},"Bipados hoje")),
-      e("div",{className:"flex flex-col items-center justify-center rounded-lg bg-black/35 px-2 py-1 text-center", style:alerta ? {boxShadow:"inset 0 0 0 1px "+cor+"99"} : undefined},
-        e("b",{className:MONO+" leading-none", style:{color:cor, fontSize:tam+"px"}}, aguardando), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"},"Aguardando bipagem"))));
+      e("div",{className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-2 text-center"}, e("b",{className:MONO+" text-[20px] leading-none text-success"}, bipados), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/70"},"Bipados hoje")),
+      e("div",{className:"flex flex-col items-center justify-center rounded-lg bg-black/35 px-2 py-1.5 text-center", style:alerta ? {boxShadow:"inset 0 0 0 1px "+cor+"99"} : undefined},
+        e("b",{className:MONO+" text-[20px] leading-none", style:{color:cor}}, aguardando), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"},"Aguardando bipagem"))));
 }
 
 // Total de revendedoras do dia: "Atualizar hoje" (provisório, pode mudar) e "Fixar" (fecha o dia, uma vez); "Reabrir" volta a editar
@@ -258,6 +272,31 @@ function AtualizarRevendedoras(p){
         e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"REV_LANCAR", data:iso, quantidade:v}); setEdit(null); }},"Atualizar hoje"),
         e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"REV_LANCAR", data:iso, quantidade:v, unico:true}); setEdit(null); }},"Fixar")));
 }
+// Faixa do topo (compacta): 3 totais à esquerda e, do lado direito, os campos que se preenchem todo dia.
+// O resto de outubro fica no bloco Faturamento. As colunas têm largura mínima, então nada fica um em cima do outro: se faltar espaço, quebra a linha.
+function FaixaRevendedoras(p){
+  var s = p.s, d = p.d, ano = new Date().getFullYear(), hist = s.revendedorasDiario || {}, ks = Object.keys(hist).sort();
+  var total = ks.length ? hist[ks[ks.length-1]] : 0, quando = ks.length ? ks[ks.length-1].split("-").reverse().slice(0,2).join("/") : "";
+  var mesRev = resumoMensalRevendedoras(s, ano).filter(function(l){ return l.atual; })[0], delta = mesRev ? mesRev.delta : null;
+  var m = resumoFinanceiro(s, p.janela).mes, fatTotal = m.recebido+m.aReceber;
+  var numero = function(rot, valor, cor, nota, centro){ return e("div",{className:"flex min-w-[11rem] flex-col "+(centro ? "items-center text-center" : "")},
+    e("span",{className:"text-[10px] font-bold uppercase tracking-[.12em] text-white/75"}, rot),
+    e("b",{className:MONO+" whitespace-nowrap text-[20px] leading-tight "+cor}, valor), nota && (typeof nota==="string" ? e("span",{className:"text-[10.5px] leading-tight text-white/65"}, nota) : nota)); };
+  // acertos e média do faturamento: letras maiores e fáceis de ler
+  var destaque = function(v, rot){ return e("span",{className:"flex items-baseline gap-1.5"}, e("b",{className:MONO+" whitespace-nowrap text-[15px] leading-tight text-white"}, v), e("span",{className:"text-[11px] font-medium text-white/75"}, rot)); };
+  return e("section",{className:"flex flex-wrap items-center gap-x-8 gap-y-1 rounded-xl px-3 py-1 ring-2 ring-[#E8B84B]/45", style:{background:"linear-gradient(90deg, rgba(232,184,75,.22), rgba(232,184,75,.05) 70%)"}},
+    e("div",{className:"flex flex-wrap gap-x-8 gap-y-1"},
+      e("button",{type:"button", title:"Abrir o histórico de revendedoras", onClick:function(){ d({type:"ABA", aba:"revendedoras"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
+        numero("Revendedoras · total hoje", num(total), "text-primary", (delta!==null && delta!==undefined ? (delta>=0 ? "+" : "")+num(delta)+" no mês · " : "")+(quando ? "em "+quando : ""), true)),
+      e("button",{type:"button", title:"Abrir a tela Faturamento", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},   // clicar no faturamento abre a tela Faturamento (Marcus, 24/10/2026)
+        numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.feitos), "acertos"), destaque(num(m.carregar), "no Carregar"), destaque(BK(m.mediaAcerto), "de média")), true)),
+      e("button",{type:"button", title:"Abrir a tela Faturamento (previsão)", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
+        numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true))),
+    e("div",{className:"ml-auto flex flex-1 flex-wrap justify-end gap-1 [&_button]:whitespace-nowrap"},
+      e("div",{className:"min-w-[22rem] max-w-[42rem] flex-1"}, e(AtualizarHoje,{s:s, d:d, m:m})),
+      papelDe(s.usuario)==="supervisao" && e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarRevendedoras,{s:s, d:d}))));
+}
+
 // Solicitações que esperam a decisão de quem está logado (pagamentos, preços, efetivações…): a mesma lista dos cartões do SorellyChat, num lugar só
 function BlocoSolicitacoes(p){
   useChat();
@@ -276,28 +315,6 @@ function BlocoSolicitacoes(p){
         e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block truncate"}, titulo),
           e("span",{className:"text-[11px] text-white/65"}, (lf ? statusPedidoFin(lf).t : "aguardando decisão")+" · "+contato(x.msg.de).nome.split(" ")[0]+" · "+hhmm(x.msg.t))),
         e("span",{className:"shrink-0 text-primary"},"›")); })));
-}
-// Faixa do topo (compacta): 3 totais à esquerda e, do lado direito, os campos que se preenchem todo dia.
-// O resto de outubro fica no bloco Faturamento. As colunas têm largura mínima, então nada fica um em cima do outro: se faltar espaço, quebra a linha.
-function FaixaRevendedoras(p){
-  var s = p.s, d = p.d, ano = new Date().getFullYear(), hist = s.revendedorasDiario || {}, ks = Object.keys(hist).sort();
-  var total = ks.length ? hist[ks[ks.length-1]] : 0, quando = ks.length ? ks[ks.length-1].split("-").reverse().slice(0,2).join("/") : "";
-  var mesRev = resumoMensalRevendedoras(s, ano).filter(function(l){ return l.atual; })[0], delta = mesRev ? mesRev.delta : null;
-  var m = resumoFinanceiro(s, p.janela).mes, fatTotal = m.recebido+m.aReceber;
-  var numero = function(rot, valor, cor, nota, centro){ return e("div",{className:"flex min-w-[11rem] flex-col "+(centro ? "items-center text-center" : "")},
-    e("span",{className:"text-[10px] font-bold uppercase tracking-[.12em] text-white/75"}, rot),
-    e("b",{className:MONO+" whitespace-nowrap text-[20px] leading-tight "+cor}, valor), nota && (typeof nota==="string" ? e("span",{className:"text-[10.5px] leading-tight text-white/65"}, nota) : nota)); };
-  // acertos e média do faturamento: letras maiores e fáceis de ler
-  var destaque = function(v, rot){ return e("span",{className:"flex items-baseline gap-1.5"}, e("b",{className:MONO+" whitespace-nowrap text-[15px] leading-tight text-white"}, v), e("span",{className:"text-[11px] font-medium text-white/75"}, rot)); };
-  return e("section",{className:"flex flex-wrap items-center gap-x-8 gap-y-1 rounded-xl px-3 py-1 ring-2 ring-[#E8B84B]/45", style:{background:"linear-gradient(90deg, rgba(232,184,75,.22), rgba(232,184,75,.05) 70%)"}},
-    e("div",{className:"flex flex-wrap gap-x-8 gap-y-1"},
-      e("button",{type:"button", title:"Abrir o histórico de revendedoras", onClick:function(){ d({type:"ABA", aba:"revendedoras"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
-        numero("Revendedoras · total hoje", num(total), "text-primary", (delta!==null && delta!==undefined ? (delta>=0 ? "+" : "")+num(delta)+" no mês · " : "")+(quando ? "em "+quando : ""), true)),
-      numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.acertos), "acertos"), destaque(BK(m.mediaAcerto), "de média")), true),
-      numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true)),
-    e("div",{className:"ml-auto flex flex-1 flex-wrap justify-end gap-1 [&_button]:whitespace-nowrap"},
-      e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarHoje,{s:s, d:d, m:m})),
-      papelDe(s.usuario)==="supervisao" && e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarRevendedoras,{s:s, d:d}))));
 }
 
 // ── Revendedoras que vêm à empresa (atendimento interno): média de vendas de cada uma. Puxa do APP; se o app tiver menos de R$ 500, usa a média
@@ -357,13 +374,6 @@ function AtendimentoInternoVG(p){
 }
 
 // acesso rápido à visão de cada app de celular (os apps também ficam dentro dos setores Kits e Representantes)
-function BlocoApps(p){
-  return e("section",{className:"flex flex-wrap items-center gap-1.5 rounded-xl border border-[#E8B84B]/40 bg-card px-2.5 py-1.5"},
-    e("h2",{className:"mr-1 text-[10.5px] font-extrabold uppercase tracking-[.14em] text-primary"}, "Ver os apps"),
-    [["Revendedora","revendedora","#EC4899","iOS"],["Representante","representante","#8B5CF6","iOS"],["App interno","phone","#F59E0B","Admin"]].map(function(x){ return e("button",{key:x[0], type:"button", onClick:function(){ p.d({type:"ABA", aba:"apps"}); }, className:"flex items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 py-1 text-[12px] font-bold", style:{background:x[2]+"26", color:x[2], boxShadow:"inset 0 0 0 1px "+x[2]+"55"}},
-      e(Icon,{n:x[1], s:13, peso:"fill"}), x[0], e("span",{className:"text-[10px] font-semibold opacity-75"}, x[3])); }));
-}
-
 function AbaVisaoGeral(){
   var cx = use(), s = cx.state, d = cx.dispatch, raiz = useRef(null);
   useContagemNaTela(raiz);   // ao abrir, todos os números começam em zero e correm até o valor
@@ -371,22 +381,21 @@ function AbaVisaoGeral(){
   var jg = useState(2), janelaGrafico = jg[0], setJanelaGrafico = jg[1];
   var janelaFat = Math.min(janelaGrafico, 5);   // o seletor de dias (7, 15, 30, 60, 90, mês) comanda a projeção de revendedoras e de faturamento em toda a tela
   return e("div",{ref:raiz, className:"contents"},
-    e(PageHead,{t:"Visão geral", sub:"Crescimento de revendedoras e resultado do ano, sempre atualizados."}),
-    e(BlocoApps,{d:d}),
-    e(PainelDia,{s:s}),
+    e(PageHead,{t:"Dashboard", sub:"Crescimento de revendedoras e resultado do ano, sempre atualizados."}),
     e(FaixaRevendedoras,{s:s, d:d, janela:janelaFat}),
     // 3 colunas da mesma altura (os blocos esticam pra ficar alinhados embaixo também)
     e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_1fr_0.85fr] xl:[&>div]:flex xl:[&>div]:flex-col xl:[&>div]:gap-4 xl:[&>div>*:last-child]:flex-1"},
       e("div",null,
-        // atendimento interno no topo (valores + listagem com a média), com os pagamentos para conferir logo abaixo; inadimplência fica na coluna do meio, em cima do Faturamento
+        // Acertos → Hoje na empresa → Bipagem de retorno → Solicitações → Atendimento interno
         e(BlocoAcertosMes,{s:s, d:d}),
+        e(PainelDia,{s:s, compacto:true}),
         e(BlocoBipagemRetorno,{s:s, d:d}),
         e(BlocoSolicitacoes,{s:s, d:d}),
         e(AtendimentoInternoVG,{s:s, d:d})),
       e("div",null, e(BlocoInadimp,{s:s}), e(BlocoFaturamento,{s:s, d:d, janela:janelaFat})),
       e("div",null, e(BlocoPessoas,{s:s, d:d}), e(BlocoIlf,{s:s}))),
     e("div",{className:"mt-4 grid grid-cols-1 items-start gap-4"},
-      e(BlocoBarra,{t:"Crescimento de revendedoras", sub:"escolha quantos dias mostrar — sempre com a projeção até dezembro junto"},
+      e(BlocoBarra,{fixo:true, t:"Crescimento de revendedoras", sub:"escolha quantos dias mostrar — sempre com a projeção até dezembro junto"},
         e("div",{className:"flex flex-col gap-1.5 p-2"},
           e("div",{className:"flex flex-wrap gap-1.5"},
             JANELAS_GRAFICO_REV.map(function(x,i){ return e("button",{key:i, onClick:function(){setJanelaGrafico(i);},

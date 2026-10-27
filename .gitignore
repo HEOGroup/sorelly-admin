@@ -19,3 +19,4 @@ servidor/.env
 next-env.d.ts
 *.tsbuildinfo
 src/generated/
+.next-conferencia

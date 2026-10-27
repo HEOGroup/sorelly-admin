@@ -16,6 +16,7 @@ import { USUARIOS, listaDe } from "@/apps/kits-novos/domain/config";
 import { MESES } from "@/apps/kits-novos/lib/datas";
 import { aberto, atrasado, mesDe } from "@/apps/kits-novos/domain/etapas";
 import { CHAVE, inicial } from "@/apps/kits-novos/state/store";
+import { limpar } from "@/apps/kits-novos/lib/entrada-cadastro";
 import { Ctx } from "@/apps/kits-novos/state/context";
 import { reducer } from "@/apps/kits-novos/state/reducer";
 import { Icon } from "@/apps/kits-novos/ui/icon";
@@ -28,7 +29,7 @@ function App(){
   var aba = abaDoCaminho(loc.pathname).aba;
   useRotaAba({aba:aba, abaURL:aba, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
   var mn = useState(false), menu = mn[0], setMenu = mn[1];
-  useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(Object.assign({}, s, {aviso:null, dialogo:null}))); }catch(x){} }, [s.dados, s.cfg, s.usuario, s.aba, s.modo, s.abertos]);
+  useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(Object.assign({}, s, {aviso:null, dialogo:null}))); limpar(s.dados); }catch(x){} }, [s.dados, s.cfg, s.usuario, s.aba, s.modo, s.abertos, s.perfis, s.subRep]);
   var listas = useMemo(function(){ return {reps:listaDe(s.dados,"rep"), cids:listaDe(s.dados,"cid"), ents:listaDe(s.dados,"ent"), meses:MESES.filter(function(m){return s.dados.some(function(c){return mesDe(c)===m;});})}; }, [s.dados]);
   var titulo = ABAS.find(function(a){return a[0]===aba;})[1], u = USUARIOS.find(function(x){return x.id===s.usuario;});
   var pendN = s.dados.filter(function(c){ return aberto(c) && (atrasado(c,s.cfg) || !c.rep); }).length;

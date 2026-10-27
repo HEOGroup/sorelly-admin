@@ -5,7 +5,10 @@ import { AGENDAMENTO, BIPADORAS, DIRETORIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP,
 
 var TIPOS = [
   {k:"media_alta", t:"Média de vendas acima do limite", desc:"Na Atendimento Sorelly, quando a média das vendas da revendedora passa do limite do Configurador geral (limite do Marcus, hoje R$ 4.000). O alerta sai uma vez por atendimento.", padrao:[SUPERVISORA.id, 16, 17]},
-  {k:"fila_retorno", t:"Fila de retornos para bipar", desc:"Quando a fila de kits que voltaram das representantes e ainda faltam bipar passa de 20, 30, 40 e 50. Cada degrau novo gera um alerta mais vermelho: acione cadastro, Deysiane e encomendas para ajudar a bipar.", padrao:[11,16,17,28,29,27,24,26]}
+  {k:"fila_retorno", t:"Fila de retornos para bipar", desc:"Quando a fila de kits que voltaram das representantes e ainda faltam bipar passa de 20, 30, 40 e 50. Cada degrau novo gera um alerta mais vermelho: acione cadastro, Deysiane e encomendas para ajudar a bipar.", padrao:[11,16,17,28,29,27,24,26]},
+  {k:"p45_pedido", t:"Pedido de mudança de data (app da representante)", desc:"Quando a representante pede, pelo app, uma data de acerto mais de 5 dias depois da atual. Aprovar em Agendamento → Plano 45/60 → Aprovação → Pedidos do app. Sem aprovação vale a multa de remarcação.", padrao:[16,17,28]},
+  {k:"p45_contato", t:"Plano 45/60: aprovada sem contato", desc:"Uma vez por dia, quando há revendedora aprovada no plano 45/60 há mais de 24 horas sem contato registrado.", padrao:[16,17,28,24,25,26]},
+  {k:"p45_venda", t:"Plano 45/60: nova data sem venda lançada", desc:"Uma vez por dia, quando a nova data de uma aprovada já chegou e a venda do ciclo não foi lançada.", padrao:[16,17,28,24,25,26]}
 ];
 var GRUPOS_PESSOAS = [
   {t:"Diretoria", ps:DIRETORIA},

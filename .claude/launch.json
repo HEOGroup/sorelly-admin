@@ -3,10 +3,15 @@
   "configurations": [
     {
       "name": "sorelly-admin",
+      "port": 3000,
+      "url": "http://localhost:3000"
+    },
+    {
+      "name": "iniciar-servidor-unico",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev"],
       "port": 3000,
-      "autoPort": true
+      "autoPort": false
     }
   ]
 }

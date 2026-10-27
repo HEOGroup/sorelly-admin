@@ -35,9 +35,11 @@ function Campo(p){ return e("label",{className:"flex items-center gap-2 text-[13
 
 function EditorRegrasConsignado(){
   var cx = use(), s = cx.state, d = cx.dispatch;
-  var vig = versaoVigente(s);
+  // edita a última versão com as regras de 27/10 (campo novas); sem ela, a vigente
+  var comNovas = (s.regrasConsignado.versoes||[]).filter(function(v){ return v.novas; });
+  var vig = comNovas.length ? comNovas[comNovas.length-1] : versaoVigente(s);
   var pegar = function(v){ return {faixas:copia(v.faixas), remarcacao:copia(v.remarcacao), pagamentoBrinde:copia(v.pagamentoBrinde), taxaBaixa:copia(v.taxaBaixa), gerais:copia(v.gerais)}; };
-  var ini = function(){ return Object.assign(pegar(vig), {prata:pegar(vig.prata)}); };
+  var ini = function(){ var r = Object.assign(pegar(vig), {prata:pegar(vig.prata)}); if(vig.novas) r.novas = copia(vig.novas); return r; };
   var rs = useState(ini), rasc = rs[0], setRasc = rs[1];
   var md = useState("padrao"), mod = md[0], setMod = md[1];        // qual modalidade está sendo editada: Kit padrão ou Kit 100% Prata
   var ehPrata = mod==="prata", R = ehPrata ? rasc.prata : rasc;
@@ -47,10 +49,14 @@ function EditorRegrasConsignado(){
   var add = function(chave, linha){ var n = copia(rasc); alvo(n)[chave].push(linha); setRasc(n); };
   var del = function(chave, i){ var n = copia(rasc); alvo(n)[chave].splice(i,1); setRasc(n); };
   var setG = function(campo, v){ var n = copia(rasc); alvo(n).gerais[campo] = v; setRasc(n); };
+  var setN = function(campo, v){ var n = copia(rasc); n.novas[campo] = v; setRasc(n); };
+  var setNL = function(i, campo, v){ var n = copia(rasc); n.novas.atrasoAcerto[i][campo] = v; setRasc(n); };
   var salvar = function(){
     var ord = function(a, campo){ return a.slice().sort(function(x,y){ return x[campo]-y[campo]; }); };
     var fecha = function(r){ return {faixas:ord(r.faixas,"min"), remarcacao:r.remarcacao, pagamentoBrinde:ord(r.pagamentoBrinde,"max"), taxaBaixa:ord(r.taxaBaixa,"min").reverse(), gerais:r.gerais}; };
-    d({type:"REGRAS_CONSIGNADO_ATUALIZAR", campos:Object.assign(fecha(rasc), {prata:fecha(rasc.prata)})});
+    var campos = Object.assign(fecha(rasc), {prata:fecha(rasc.prata)});
+    if(rasc.novas) campos.novas = Object.assign({}, rasc.novas, {atrasoAcerto:ord(rasc.novas.atrasoAcerto,"ate")});
+    d({type:"REGRAS_CONSIGNADO_ATUALIZAR", campos:campos});
   };
   var versoes = (s.regrasConsignado.versoes||[]).slice().reverse();
   // texto da faixa de cada linha ("R$ 300,00 a R$ 499,99"), calculado pelas outras linhas — fica certo mesmo com a tabela fora de ordem
@@ -69,7 +75,25 @@ function EditorRegrasConsignado(){
     e("div",{className:"flex w-fit gap-1 rounded-xl bg-muted p-1"}, [["padrao","Kit Padrão"],["prata","Kit 100% Prata"]].map(function(o){
       return e("button",{key:o[0], onClick:function(){ setMod(o[0]); }, "aria-pressed":mod===o[0],
         className:"rounded-lg px-4 py-1.5 text-[13px] font-semibold transition-colors "+(mod===o[0] ? "bg-card text-foreground shadow ring-1 ring-[#E8B84B]/40" : "text-muted-foreground hover:text-foreground")}, o[1]); })),
-    ehPrata && e(BlocoBarra,{cor:"azul", t:"Regras gerais do Kit 100% Prata", sub:"valem só para revendedoras no Kit 100% Prata · o Kit Padrão não muda"},
+    rasc.novas && e(BlocoBarra,{t:"Regras de 27/10/2026", sub:"valem para kits entregues a partir de 27/10/2026 · iguais no Kit Padrão e no Kit 100% Prata · acerto com representante e atendimento Sorelly"},
+      e("div",{className:"flex flex-col gap-3 p-3"},
+        e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"},
+          [["minimoRepresentante","Média mínima (representante)","din",""],["minimoInterno","Média mínima (atendimento Sorelly)","din",""],["mediaVendas","Média das últimas","num","vendas"],
+            ["multaPendentePct","Multa sobre o valor pendente","pct",""],["prazoQuitarDias","Prazo para quitar","num","dias"],["atrasoQuitacaoPctDia","Depois do prazo, por dia","pct",""],
+            ["atrasoQuitacaoTetoPct","Teto da multa de atraso","pct",""],["juridicoDias","Perde tudo e vai ao jurídico com","num","dias de atraso"]].map(function(c){
+            var val = rasc.novas[c[0]], tipo = c[2];
+            return e(Campo,{key:c[0], rotulo:c[1]}, e("div",{className:"w-32"},
+              tipo==="din" ? e(Din,{value:val, label:c[1], onChange:function(v){ setN(c[0],v); }})
+                : tipo==="pct" ? e(Pct,{value:val, step:"0.5", label:c[1], onChange:function(v){ setN(c[0],v); }})
+                : e("input",{type:"number", value:val, "aria-label":c[1], className:INPUT+" "+CELULA, onChange:function(ev){ setN(c[0], parseInt(ev.target.value,10)||0); }})),
+              c[3] && e("span",{className:"text-muted-foreground"}, c[3])); })),
+        e(Tabela,{cols:[{t:"Acerto atrasado", esq:true, w:"40%"}, {t:"Até (dias)", w:"20%"}, {t:"Comissão −", w:"20%"}, {t:"Brinde −", w:"20%"}]},
+          rasc.novas.atrasoAcerto.map(function(x,i){ return e("tr",{key:i, className:"border-b border-border/50 last:border-0"},
+            e(Td,{esq:true}, e("span",{className:MONO+" text-[12.5px] text-muted-foreground"}, (i>0 ? rasc.novas.atrasoAcerto[i-1].ate+1 : 1)+" a "+x.ate+" dias")),
+            e(Td,null, e("input",{type:"number", value:x.ate, "aria-label":"Até quantos dias", className:INPUT+" "+CELULA, onChange:function(ev){ setNL(i,"ate",parseInt(ev.target.value,10)||0); }})),
+            e(Td,null, e(Pct,{value:x.comissaoPct, label:"Comissão", onChange:function(v){ setNL(i,"comissaoPct",v); }})),
+            e(Td,null, e(Pct,{value:x.brindePct, label:"Brinde", onChange:function(v){ setNL(i,"brindePct",v); }}))); })))),
+    ehPrata && e(BlocoBarra,{t:"Regras gerais do Kit 100% Prata", sub:"valem só para revendedoras no Kit 100% Prata · o Kit Padrão não muda"},
       e("div",{className:"grid grid-cols-1 gap-3 p-3 md:grid-cols-2 xl:grid-cols-3"},
         [["atrasoPctDia","Atraso: comissão −","% por dia","pct"],["parcelaMinimaCredito","Parcela mínima no crédito","","din"],
           ["agendarAntecedenciaDias","Agendar com antecedência mínima de","dias","num"],["reagendarAntecedenciaDias","Reagendar com antecedência mínima de","dias","num"],
@@ -95,7 +119,7 @@ function EditorRegrasConsignado(){
             e(Btn,{v:"ghost", sm:true, onClick:function(){ add("faixas",{min:0,pct:0,bn:0,bb:0}); }}, "+ Adicionar faixa"),
             e(Campo,{rotulo:"Abaixo de"}, e("div",{className:"w-36"}, e(Din,{value:R.gerais.minRenovar, label:"Mínimo para ter faixa", onChange:function(v){ setG("minRenovar",v); }})), e("span",{className:"text-muted-foreground"},"não existe faixa (comissão zero)"))))),
       e("div",{className:"flex flex-col gap-4"},
-        e(BlocoBarra,{cor:"azul", t:"Taxa de deslocamento", sub:"fixa, em venda líquida abaixo do limite · soma no que a revendedora paga"},
+        e(BlocoBarra,{t:"Taxa de deslocamento", sub:"fixa, em venda líquida abaixo do limite · soma no que a revendedora paga"},
           e("div",{className:"p-3"},
             e(Tabela,{cols:[{t:"Venda líquida", esq:true, w:"46%"}, {t:"A partir de", w:"26%"}, {t:"Taxa", w:"20%"}, {t:"", w:"2.5rem"}]},
               R.taxaBaixa.map(function(t,i){ return e("tr",{key:i, className:"border-b border-border/50 last:border-0"},
@@ -106,7 +130,7 @@ function EditorRegrasConsignado(){
             e(Rodape,null,
               e(Btn,{v:"ghost", sm:true, onClick:function(){ add("taxaBaixa",{min:0,taxa:0}); }}, "+ Adicionar linha"),
               e(Campo,{rotulo:"Vale abaixo de"}, e("div",{className:"w-36"}, e(Din,{value:R.gerais.taxaAbaixoDe, label:"Taxa vale abaixo de", onChange:function(v){ setG("taxaAbaixoDe",v); }})))))),
-        e(BlocoBarra,{cor:"roxo", t:"Remarcação", sub:"desconto na comissão (pontos %) e no brinde (%, proporcional em Normal e Select) · a última linha vale dali em diante"},
+        e(BlocoBarra,{t:"Remarcação", sub:"desconto na comissão (pontos %) e no brinde (%, proporcional em Normal e Select) · a última linha vale dali em diante"},
           e("div",{className:"p-3"},
             e(Tabela,{cols:[{t:"Vez", esq:true, w:"36%"}, {t:"Comissão −", w:"26%"}, {t:"Brinde −", w:"26%"}, {t:"", w:"2.5rem"}]},
               R.remarcacao.map(function(r,i){ return e("tr",{key:i, className:"border-b border-border/50 last:border-0"},

@@ -2,11 +2,11 @@
 // Tudo que a Calculadora de acertos DERIVA do que foi digitado (prévia da comissão, quanto falta, acordo, brindes liberados, kit novo, valor restante).
 // É a mesma conta para o app da representante (celular) e para a Calculadora de acertos do atendimento interno (desktop):
 // as duas telas só desenham o resultado, nenhuma refaz regra.
-import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, conferirBrindes, pecasProximoMes, totalPago, versaoEfetiva, avaliarMinimo, kitNovoLiberado as kitNovoLiberado2 } from "@/apps/montagem/domain/consignado";
 import { BK } from "@/apps/montagem/lib/format";
 
 var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas:null, pecasBrinde:null, pecasTrocas:null, trocas:[], tagsDanificadas:0,
-  motivoProxRemarcacao:"", condicionaisSelecionadas:[], pagamentos:[], acordoParcelas:[], acordoSalvo:false, recusouNegociar:false, brindes:[], atrasoDias:0, pecasProxCodigos:[], kitNovoOk:false, expositoresMarcados:[], fechado:false};
+  motivoProxRemarcacao:"", condicionaisSelecionadas:[], pagamentos:[], acordoParcelas:[], acordoSalvo:false, recusouNegociar:false, brindes:[], atrasoDias:0, diasQuitacao:0, vendasAnteriores:[], novaChance:false, pecasProxCodigos:[], kitNovoOk:false, expositoresMarcados:[], fechado:false};
 
 // versaoBase: versão de regras carimbada no kit/atendimento · modalidade: "padrao" | "prata" · vez: remarcações com multa
 // form: no formato de FORM_ACERTO_VAZIO · condicionais: [{numero, pecas}] em aberto da revendedora
@@ -21,7 +21,8 @@ function derivarAcerto(p){
   var trocasAjuste = r2c(trocas.reduce(function(t,x){ return t + (x.tipo==="anterior" ? (x.novaValor||0)-(x.antigaValor||0) : (x.novaValor||0)); }, 0));
   var nTrocasMes = trocas.filter(function(x){ return x.tipo!=="anterior"; }).length, nTrocasAnt = trocas.length-nTrocasMes;
   var vendaEfetiva = form.vendaBruta==null ? null : Math.max(0, r2c(form.vendaBruta + trocasAjuste));
-  var entrada = function(pago){ return {vendaBruta:vendaEfetiva, devolvida:0, garantia:form.garantia||0, vez:p.vez||0, valorPago:pago, atrasoDias:ehPrata ? (form.atrasoDias||0) : 0, semTaxa:!!p.semTaxa}; };
+  var novas = !!(versao && versao.novas);   // regras de 27/10/2026: atraso vale para Normal e Prata, e entram multa e prazo de quitação
+  var entrada = function(pago){ return {vendaBruta:vendaEfetiva, devolvida:0, garantia:form.garantia||0, vez:p.vez||0, valorPago:pago, atrasoDias:(ehPrata || novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0, semTaxa:!!p.semTaxa}; };
   var previaBase = versao && form.vendaBruta!=null ? calcularAcerto(entrada(totalPagoAtual), versao) : null;
   var faltaAtual = previaBase ? Math.max(0, previaBase.valorDevido-totalPagoAtual) : 0;
   var quitado = !!previaBase && faltaAtual<=0.009;
@@ -44,6 +45,13 @@ function derivarAcerto(p){
   var kitNovoMin = gerais.kitNovoMinPct || 80;
   var pctPagoAcerto = previaBase && previaBase.valorDevido>0 ? Math.min(100, totalPagoAtual/previaBase.valorDevido*100) : 0;
   var kitNovoLiberado = pctPagoAcerto>=kitNovoMin && (!previaBase || previaBase.podeRenovar);
+  // Média das últimas vendas (2 anteriores + a do dia) contra R$ 500 (representante) ou R$ 700 (interno). Só nas regras novas.
+  var minimo = avaliarMinimo(form.vendasAnteriores||[], vendaEfetiva, versao, !!p.semTaxa);
+  var kitNovoRegra = null;
+  if(novas && previaBase){
+    kitNovoRegra = kitNovoLiberado2(previaBase, pctPagoAcerto, minimo, versao, !!form.novaChance);
+    kitNovoLiberado = kitNovoRegra.liberado && previaBase.podeRenovar;
+  }
   var pagamentoParcial = !!previaAcerto && previaAcerto.fatorPagamento>0 && previaAcerto.fatorPagamento<1;
 
   // Brindes
@@ -66,7 +74,9 @@ function derivarAcerto(p){
   var excedenteBrinde = brindeLiberado ? confBrinde.excedente : 0;
   // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda
   var valorTag = gerais.taxaTagExtraviada!=null ? gerais.taxaTagExtraviada : 5, tagsValor = Math.round((form.tagsDanificadas||0)*valorTag*100)/100;
-  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor)*100)/100 : 0;
+  // regras de 27/10/2026: a multa do valor pendente soma no total a pagar (decisão do Marcus, 26/10/2026)
+  var multasSoma = novas && previaAcerto ? (previaAcerto.multas||0) : 0;
+  var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma)*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar-totalPagoAtual)*100)/100) : 0;
 
   // Peças liberadas para o próximo mês (quantidade pelo valor da venda, reduzida pelo % em aberto)
@@ -75,7 +85,7 @@ function derivarAcerto(p){
     acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,
-    totalAPagar:totalAPagar, restanteTotal:restanteTotal};
+    totalAPagar:totalAPagar, restanteTotal:restanteTotal, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
 }
 
 export { FORM_ACERTO_VAZIO, derivarAcerto };

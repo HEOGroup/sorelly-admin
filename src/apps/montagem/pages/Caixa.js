@@ -55,7 +55,7 @@ function useCorrendo(alvo){
   }, [alvo]);
   return v;
 }
-function Corre(p){ var v = useCorrendo(p.v); return e("span",{className:p.className}, p.f ? p.f(v) : BK(v)); }
+function Corre(p){ var v = useCorrendo(p.v); return e("span",{className:p.className, style:p.style}, p.f ? p.f(v) : BK(v)); }
 
 var NEUTRO = "from-white/[0.06] via-white/[0.03] to-card ring-white/10";
 var FUNDO = {ouro:NEUTRO, verde:NEUTRO, azul:NEUTRO, verm:NEUTRO};
@@ -70,6 +70,21 @@ function Cartao(p){
     p.tag && e("span",{className:"rounded-full px-3 py-1 text-[12.5px] font-extrabold tracking-wide "+(p.tag.bom ? "bg-emerald-500/25 text-emerald-200" : "bg-red-500/25 text-red-200")}, p.tag.t),
     p.sub && e("div",{className:"mt-1 w-full border-t border-white/10 pt-1.5 text-[13px] font-medium leading-snug text-foreground/90"},
       [].concat(p.sub).map(function(l, i){ return e("div",{key:i, className:i ? "text-[12px] font-normal text-foreground/70" : ""}, l); })));
+}
+
+// Faixa de resposta (24/10/2026, pedido do Marcus: bater o olho e saber): 3 números grandes. Divergência SOBRANDO não é boa notícia: é dinheiro que o fluxo não explica, então fica âmbar e pede conferência.
+function FaixaCaixa(p){
+  var d = p.dif, ok = p.ok, sem = d===null || d===undefined;
+  var estado = sem ? {cor:"#9ca3af", t:"SEM DADO", f:"falta o saldo para comparar"} : ok ? {cor:"#4ade80", t:"BATEU", f:"o saldo real é igual ao esperado"} : d>0 ? {cor:"#f5c14b", t:"SOBRANDO", f:BK(Math.abs(d))+" a mais do que o esperado. Conferir os lançamentos."} : {cor:"#f87171", t:"FALTANDO", f:BK(Math.abs(d))+" a menos do que o esperado. Saiu mais dinheiro do que o fluxo mostra."};
+  var grande = function(l, v, cor, sub, borda){ return e("div",{className:"flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-card px-4 py-3 text-center", style:{border:"2px solid "+borda}},
+    e("span",{className:"text-[13px] font-bold uppercase tracking-wide text-foreground"}, l), e(Corre,{v:v, className:"whitespace-nowrap font-mono text-[34px] font-extrabold leading-none tabular-nums", style:{color:cor}}), e("span",{className:"text-[13px] text-foreground/90"}, sub)); };
+  return e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-3"},
+    grande("Saldo real das contas", p.real, p.real<0 ? "#f87171" : "#ffffff", p.real<0 ? "as contas estão no negativo" : "o que está nas contas agora", p.real<0 ? "#f8717166" : "#ffffff33"),
+    grande("Disponível para pagar", p.disp, "#4ade80", "saldo + cheque especial", "#4ade8066"),
+    e("div",{className:"flex min-w-0 flex-1 flex-col items-center gap-1 rounded-xl bg-card px-4 py-3 text-center", style:{border:"2px solid "+estado.cor+"88"}},
+      e("span",{className:"text-[13px] font-bold uppercase tracking-wide text-foreground"}, "Divergência"),
+      e("span",{className:"flex items-center gap-2"}, e(Corre,{v:sem ? 0 : Math.abs(d), className:"whitespace-nowrap font-mono text-[34px] font-extrabold leading-none tabular-nums", style:{color:estado.cor}}), e("span",{className:"rounded-full px-3 py-1 text-[13px] font-extrabold tracking-wide", style:{background:estado.cor+"33", color:estado.cor}}, estado.t)),
+      e("span",{className:"text-[13px] text-foreground/90"}, estado.f)));
 }
 
 function Op(p){ return e("div",{className:"grid place-items-center px-1 text-[20px] font-bold text-primary"}, p.t); }
@@ -193,7 +208,7 @@ function LancarTela(p){
 function ComoLer(p){
   var fl = p.fl || {}, atraso = function(u){ if(!u) return null; var d = Math.round((new Date(p.ontem+"T12:00:00")-new Date(u+"T12:00:00"))/86400000); return d<=0 ? 0 : d; };
   var passo = function(n, t, d){ return e("div",{className:"flex gap-2"}, e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full bg-primary text-[12px] font-bold text-primary-foreground"}, n), e("div",{className:"text-[13px] leading-snug"}, e("b",{}, t), d ? " — "+d : "")); };
-  return e("section",{className:"flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-white/10"},
+  return e("section",{className:"flex flex-col gap-3 rounded-xl bg-card p-4 ring-2 ring-[#3B82F6]/45"},
     e("h2",{className:"font-heading text-[16px] font-bold"}, "Como ler o Caixa"),
     e("div",{className:"grid gap-3 lg:grid-cols-2"},
       e("div",{className:"flex flex-col gap-2"},
@@ -258,7 +273,7 @@ function PosicaoContas(p){
     e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:iniTudo===null ? "#fff" : (agoraTudo-iniTudo)>=0 ? verde : verm}}, iniTudo===null ? "—" : ((agoraTudo-iniTudo)>=0 ? "+" : "−")+num(Math.abs(agoraTudo-iniTudo))),
     e("span",{className:MONO+" text-center text-[15px] font-bold", style:{color:"#93C5FD"}}, num(limTudo)),
     e("span",{className:MONO+" text-center text-[16px] font-bold", style:{color:dispTudo<0 ? verm : verde}}, num(dispTudo)));
-  return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-white/10"},
+  return e("section",{className:"overflow-hidden rounded-xl bg-card ring-2 ring-[#3B82F6]/45"},
     e("div",{className:"flex flex-wrap items-center justify-center gap-x-3 gap-y-0.5 bg-white/[0.06] px-3 py-2 text-center"}, e("h2",{className:"font-heading text-[17px] font-bold"}, "Posição das contas"), e("span",{className:"text-[13.5px] font-semibold text-white"}, "início do mês ("+(dI ? dc(dI) : "sem lançamento")+") × agora ("+dc(dN)+")")),
     e("div",{className:"grid grid-cols-1 gap-2 p-3 sm:grid-cols-2 lg:grid-cols-4"},
       card("Saldo real das contas", pN.real, iniReal===null ? "sem saldo do início do mês" : "início "+BK(iniReal)+" · "+(varReal>=0 ? "+" : "−")+" "+BK(Math.abs(varReal)), corSaldo(pN.real)),
@@ -348,7 +363,7 @@ function AbaCaixa(){
   var recTotalDia = function(k){ return ["34","46","59","67","HO","PART","DIN","ITM","FORN","DEF"].reduce(function(x,g){ return x+recDia(k, g); },0); };
   var aporteDia = function(k, b){ return (((sc.aportes||{})[k])||[]).reduce(function(x,a){ return x+((!b || a.bloco===b) ? a.valor : 0); },0); };   // aporte de sócio: dinheiro que o sócio manda para o CNPJ
   var rc = useState({}), recAb = rc[0], setRecAb = rc[1];
-  var lr = useState(false), ler = lr[0], setLer = lr[1];
+  var lr = useState(false), ler = lr[0], setLer = lr[1], ra = useState(false), resumoAberto = ra[0], setResumoAberto = ra[1];
   var pagoTotalDia = function(k){ return ["34","46","59","67","fora"].reduce(function(t2,id){ return t2+pagoDia(k, id); },0); };
   // ── fluxo do período escolhido: tudo acompanha as datas de/até ──
   var diasDe = function(a, b){ var out = [], d = new Date(a+"T12:00:00"), f = new Date(b+"T12:00:00"); d.setDate(d.getDate()+1); while(d<=f){ out.push(isoDia(d)); d.setDate(d.getDate()+1); } return out; };
@@ -405,8 +420,10 @@ function AbaCaixa(){
     cabecalho,
     ler && e(ComoLer,{fontes:fontes, ontem:ontemIso, fl:fl, dA:dA, dB:dB}),
     cfg && e("div",{className:"rounded-xl bg-card p-3 ring-1 ring-border"}, e(ConfigContas,{})),
+    e(FaixaCaixa,{real:posB.real, disp:posB.disp, dif:filtro!=="todos" ? difCnpj : dif, ok:filtro!=="todos" ? okCnpj : ok}),
+    e("button",{type:"button", onClick:function(){ setResumoAberto(!resumoAberto); }, className:"self-center rounded-lg bg-card px-4 py-2 text-[13px] font-bold ring-1 ring-white/10 hover:bg-primary/10"}, resumoAberto ? "▲ Esconder como chegamos nesse saldo" : "▾ Ver como chegamos nesse saldo (início + recebido − pago)"),
     // resumo: compara o primeiro e o último dia em aberto
-    e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-white/10"},
+    e("section",{className:"overflow-hidden rounded-xl bg-card ring-2 ring-[#3B82F6]/45 "+(resumoAberto ? "" : "hidden")},
       e("div",{className:"flex flex-wrap items-center gap-2 bg-white/[0.06] px-3 py-2"},
         e("h2",{className:"mr-1 font-heading text-[15px] font-bold"}, "Resumo das contas"),
         e("span",{className:"text-sm"}, dA && dA!==dB ? "primeiro e último dia em aberto: "+dp(dA)+" → "+dp(dB) : "só um dia em aberto"),

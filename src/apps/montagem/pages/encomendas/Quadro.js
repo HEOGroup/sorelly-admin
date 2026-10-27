@@ -9,61 +9,12 @@ import { CANAIS, COR_STATUS, COR_TIPO, FINAIS, FORMAS, ICONE_TIPO, ROTULO_CANAL,
 import { Bt, BtMini, Escolha, Painel, TURQ, copiar, useEr } from "@/apps/montagem/pages/encomendas/visual";
 import { Busca, Campo, Ind, Sel, Selo, Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { qtdMes, valorMaximo } from "@/apps/montagem/domain/encomendas";
 import { baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { minutosDe } from "@/apps/montagem/domain/encomendas";
 import { e, useState } from "@/shared/react";
 
 var CAMPO = INPUT+" w-full text-center";
-
-function AbaErQuadro(){
-  var E = useEr(), s = E.s, er = E.er, st = useState({busca:"", tipo:"", canal:"", status:"", representante:""}), f = st[0], md = useState(null), modal = md[0];
-  var set = function(k, v){ st[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
-  var limpar = function(){ st[1]({busca:"", tipo:"", canal:"", status:"", representante:""}); };
-  var agora = agoraSP(), ind = indicadoresEr(s), lista = listaPedidos(s, f), ativo = !!(f.busca || f.tipo || f.canal || f.status || f.representante);
-  var mover = function(x, de, para){
-    if(para==="cancelado" || para==="recusado"){ md[1]({tipo:"motivo", id:x.id}); return; }
-    if(para==="agendado" && !(x.forma && x.dataAgendada)){ md[1]({tipo:"agendar", id:x.id, mover:true}); return; }
-    E.exec("ped_mover", {id:x.id, para:para});
-  };
-  return e("div",{className:"flex flex-col gap-2.5"},
-    e(Faixa,{n:9},
-      e(Ind,{t:"Pedidos em aberto", v:ind.abertos, cor:"total", onClick:limpar, on:!ativo, titulo:"Todos os pedidos"}),
-      e(Ind,{t:"Reposições", v:ind.porTipo.reposicao, cor:COR_TIPO.reposicao, onClick:function(){ set("tipo", f.tipo==="reposicao" ? "" : "reposicao"); }, on:f.tipo==="reposicao"}),
-      e(Ind,{t:"Expositores", v:ind.porTipo.expositor, cor:COR_TIPO.expositor, onClick:function(){ set("tipo", f.tipo==="expositor" ? "" : "expositor"); }, on:f.tipo==="expositor"}),
-      e(Ind,{t:"Encomendas", v:ind.porTipo.encomenda, cor:COR_TIPO.encomenda, onClick:function(){ set("tipo", f.tipo==="encomenda" ? "" : "encomenda"); }, on:f.tipo==="encomenda"}),
-      e(Ind,{t:"Sem comprovante da taxa", v:ind.semComprovante, cor:ind.semComprovante ? "ruim" : "neutro", titulo:"Taxa de R$ 15,00 sem comprovante: não libera"}),
-      e(Ind,{t:"Top 50", v:ind.top50, cor:"info", titulo:"Abrir o cadastro de revendedoras", onClick:function(){ md[1]({tipo:"revs"}); }}),
-      e(Ind,{t:"Agendados para hoje", v:ind.agendadosHoje, cor:"info"}),
-      e(Ind,{t:"Concluídos no mês", v:ind.concluidosMes, cor:"ok"}),
-      e(Ind,{t:"Revendedoras bloqueadas", v:ind.bloqueadas, cor:ind.bloqueadas ? "ruim" : "neutro", titulo:"Abrir o cadastro de revendedoras", onClick:function(){ md[1]({tipo:"revs"}); }})),
-    e(BarraFiltros,{ativo:ativo, onLimpar:limpar},
-      e(Busca,{v:f.busca, set:function(v){ set("busca", v); }, ph:"Buscar revendedora, representante ou encomenda"}),
-      e(Sel,{v:f.tipo, set:function(v){ set("tipo", v); }, rot:"Tipo", todos:"Todos os tipos", opcoes:TIPOS}),
-      e(Sel,{v:f.representante, set:function(v){ set("representante", v); }, rot:"Representante", todos:"Todas as representantes", opcoes:representantesEr(er).map(function(n){ return [n, n]; })}),
-      e(Sel,{v:f.canal, set:function(v){ set("canal", v); }, rot:"Como recebe", todos:"Todos os canais", opcoes:CANAIS}),
-      e(Sel,{v:f.status, set:function(v){ set("status", v); }, rot:"Situação", todos:"Todas as situações", opcoes:STATUS.map(function(k){ return [k, ROTULO_STATUS[k]]; })}),
-      e("span",{className:"text-[12.5px] font-bold text-white/70"}, lista.length+(lista.length===1 ? " pedido" : " pedidos")),
-      e(Bt,{ic:"user-circle", onClick:function(){ md[1]({tipo:"revs"}); }}, "Revendedoras"),
-      e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ md[1]({tipo:"novo"}); }}, "Novo pedido")),
-    lista.length ? e(Tab,{cols:["Pedido", "Revendedora", "Representante", "Tipo", "Como recebe", "Valor", "Taxa", "Situação", "Tempo", ""]}, lista.slice(0, 200).map(function(x){
-      var prox = proximaEtapa(x), min = minutosNaEtapa(x, agora), sem = faltaComprovante(x), rev = revDe(er, x.revendedoraId);
-      return e("tr",{key:x.id, className:LINHA+" cursor-pointer", onClick:function(){ md[1]({tipo:"detalhe", id:x.id}); }},
-        e(Td,null, formatarDia(String(x.criadoEm).slice(0, 10))),
-        e(Td,{forte:true}, x.revendedora, (rev && rev.top50) && e("span",{className:"ml-1.5 align-middle"}, e(Selo,{cor:TURQ, ic:"star"}, "Top 50"))),
-        e(Td,null, x.representante || "—"),
-        e(Td,null, ROTULO_TIPO[x.tipo]),
-        e(Td,null, x.canal ? ROTULO_CANAL[x.canal] : x.forma ? ROTULO_FORMA[x.forma] : "—", x.dataAgendada ? " · "+formatarDia(x.dataAgendada) : ""),
-        e(Td,{dinheiro:true}, x.valor>0 ? formatarReais(x.valor) : "—"),
-        e(Td,{cor:sem ? "ruim" : x.taxa>0 ? "ok" : undefined}, x.taxa>0 ? (x.comprovante ? "Paga "+formatarReais(x.taxa) : "Falta "+formatarReais(x.taxa)) : x.taxaRep>0 ? "Rep. "+formatarReais(x.taxaRep) : "—"),
-        e(Td,null, e(Selo,{cor:COR_STATUS[x.status]}, ROTULO_STATUS[x.status])),
-        e(Td,null, !FINAIS[x.status] && min!=null ? textoTempo(min) : "—"),
-        e(Td,null, prox && e(BtMini,{ic:"arrow-right", disabled:prox==="separando" && sem, titulo:prox==="separando" && sem ? "Anexe o comprovante da taxa para liberar" : "Concluir etapa", onClick:function(){ mover(x, x.status, prox); }}, "Concluir ›")));
-    })) : e(Vazio,{ic:"clipboard-text"}, "Nenhum pedido encontrado."),
-    modal && modal.tipo==="novo" && e(NovoPedido,{E:E, fechar:function(){ md[1](null); }}),
-    modal && modal.tipo==="motivo" && e(Motivo,{E:E, id:modal.id, fechar:function(){ md[1](null); }}),
-    modal && modal.tipo==="agendar" && e(Agendar,{E:E, id:modal.id, mover:modal.mover, fechar:function(){ md[1](null); }}),
-    modal && modal.tipo==="detalhe" && e(Detalhe,{E:E, id:modal.id, ir:function(m){ md[1](m); }, fechar:function(){ md[1](null); }}),
-    modal && modal.tipo==="revs" && e(Revendedoras,{E:E, fechar:function(){ md[1](null); }}));
-}
 
 // Janela "Novo pedido": tipo, revendedora, representante, média dos 3 meses, valor; mostra o direito calculado e a mensagem formal de recusa.
 function NovoPedido(p){
@@ -75,13 +26,16 @@ function NovoPedido(p){
   var erro = validarPedido(s, v, agora), usadas = nome ? reposicoesDoMes(er, nome, mes) : 0;
   var rev = nome ? er.revendedoras.find(function(r){ return r.nome.trim().toLowerCase()===nome.toLowerCase(); }) : null;
   var ac = t==="reposicao" ? acessoReposicao(cfg, rev, v.media3m) : null, taxaRev = t==="reposicao" && v.canal==="entrega" ? cfg.reposicao.taxa : 0, taxaRp = t==="reposicao" && v.canal==="representante" ? cfg.reposicao.taxaRepresentante : 0;
-  var criar = function(registrarRecusa){ if(E.exec("ped_criar", {pedido:v, registrarRecusa:!!registrarRecusa})) p.fechar(); };
+  var mxv = ac ? valorMaximo(cfg, v.media3m, ac.top50) : 0, lim = ac ? qtdMes(cfg, v.media3m, ac.top50) : 0, EQUIPE = ["Agatha", "Elen", "Eduarda Gabriela"];
+  var criar = function(registrarRecusa){ if(E.exec("ped_criar", {pedido:Object.assign({}, v, {responsavel:v.responsavel || (EQUIPE.indexOf(E.por)>=0 ? E.por : "Agatha")}), registrarRecusa:!!registrarRecusa})) p.fechar(); };
   var texto = function(){ return erro ? "Prezada revendedora, informamos que não foi possível atender à sua solicitação. "+erro.msg : ""; };
-  var c1 = [e(Campo,{key:"t", rot:"Tipo do pedido"}, e(Escolha,{v:t, set:function(x){ set("tipo", x); }, ops:TIPOS})),
+  var c1 = [e(Campo,{key:"t", rot:"Tipo do pedido"}, e(Escolha,{v:t, set:function(x){ set("tipo", x); }, ops:TIPOS.filter(function(t){ return t[0]!=="expositor"; })})),
     er.revendedoras.length>0 && e(Campo,{key:"rc", rot:"Revendedora cadastrada", dica:"Opcional: preenche os dados do cadastro."}, e("select",{value:v.revendedoraId, onChange:function(ev){ if(ev.target.value) escolhe(ev.target.value); else set("revendedoraId", ""); }, className:CAMPO+" cursor-pointer"},
       [e("option",{key:"", value:""}, "Selecione")].concat(er.revendedoras.map(function(r){ return e("option",{key:r.id, value:r.id}, r.nome); })))),
     e(Campo,{key:"rv", rot:"Revendedora *"}, e("input",{type:"text", value:v.revendedora, placeholder:"Nome da revendedora", onChange:function(ev){ st[1](function(o){ return Object.assign({}, o, {revendedora:ev.target.value, revendedoraId:""}); }); }, className:CAMPO})),
     t==="reposicao" && e(Campo,{key:"cn", rot:"Como a revendedora recebe *"}, ac && ac.tem ? e(Escolha,{v:v.canal, set:function(x){ set("canal", x); }, ops:CANAIS.filter(function(c){ return ac.canais.indexOf(c[0])>=0; })}) : e("p",{className:"text-[12px] text-white/65"}, "Informe a revendedora (Top 50) ou a média de vendas.")),
+    e(Campo,{key:"rs", rot:"Responsável"}, e("select",{value:v.responsavel || (EQUIPE.indexOf(E.por)>=0 ? E.por : ""), onChange:function(ev){ set("responsavel", ev.target.value); }, className:CAMPO+" cursor-pointer"},
+      EQUIPE.map(function(n){ return e("option",{key:n, value:n}, n); }))),
     e(Campo,{key:"rp", rot:"Representante"+(v.canal==="representante" ? " *" : "")}, e("input",{type:"text", value:v.representante, placeholder:"Nome da representante", onChange:function(ev){ set("representante", ev.target.value); }, className:CAMPO}))];
   var c2 = [(t==="reposicao" || t==="expositor") && e(Campo,{key:"m", rot:"Média de vendas", dica:"Tirada pela equipe com a revendedora; vira automática quando as vendas forem exportadas."}, e(Dinheiro,{value:v.media3m==="" ? 0 : v.media3m, label:"Média dos 3 meses", onChange:function(x){ set("media3m", x); }})),
     t==="expositor" && e(Campo,{key:"mv", rot:"Maior venda"}, e(Dinheiro,{value:v.maiorVenda==="" ? 0 : v.maiorVenda, label:"Maior venda", onChange:function(x){ set("maiorVenda", x); }})),
@@ -92,8 +46,9 @@ function NovoPedido(p){
   var c3 = e(Painel,{key:"c3", t:"Direito e ações", ic:"gear"},
     rev && bloqueadaNaData(rev.bloqueadaAte) && e(Selo,{cor:"#EF4444", ic:"lock-key"}, "Bloqueada até "+formatarDia(rev.bloqueadaAte)),
     ac && e("div",{className:"grid grid-cols-2 gap-1.5"},
-      e(Ind,{t:"Top 50", v:ac.top50 ? "Sim" : "Não", cor:ac.top50 ? "info" : "neutro"}), e(Ind,{t:"Média mínima", v:ac.mediaOk ? "Atingida" : formatarReais(cfg.reposicao.mediaMinima), cor:ac.mediaOk ? "ok" : "neutro"}),
+      e(Ind,{t:"Top 50", v:ac.top50 ? "Sim" : "Não", cor:ac.top50 ? "info" : "neutro"}), e(Ind,{t:"Valor máximo", v:mxv>0 ? formatarReais(mxv) : "—", cor:mxv>0 ? "total" : "neutro"}),
       e(Ind,{t:"Taxa da revendedora", v:formatarReais(taxaRev), cor:taxaRev ? "alerta" : "neutro"}), e(Ind,{t:"Pago à representante", v:formatarReais(taxaRp), cor:taxaRp ? "info" : "neutro"})),
+    ac && ac.tem && e("p",{className:"text-[12px] text-white/70"}, usadas+" de "+lim+(lim===1 ? " reposição" : " reposições")+" no mês"),
     taxaRev>0 && e("p",{className:"rounded-lg bg-[#FBBF24]/15 px-2 py-1.5 text-[12.5px] font-bold text-[#FBBF24]"}, "Taxa de "+formatarReais(taxaRev)+" paga antes por Pix, com comprovante: sem ele a reposição não é liberada."),
     t==="reposicao" && !ac.tem && (v.media3m!=="" || rev) && e("p",{className:"text-[12px] text-white/65"}, ac.motivo),
     erro ? e("p",{role:"alert", className:"rounded-lg px-2 py-1.5 text-[12.5px] font-bold "+(erro.formal ? "bg-[#EF4444]/20 text-[#F87171]" : "bg-[#FBBF24]/15 text-[#FBBF24]")}, (erro.formal ? "Recusa formal: " : "")+erro.msg)
@@ -102,7 +57,7 @@ function NovoPedido(p){
     erro && erro.formal && e(Bt,{tipo:"perigo", ic:"prohibit", onClick:function(){ criar(true); }, titulo:"Grava o pedido já como Recusado, com o motivo"}, "Registrar recusa"),
     erro && erro.formal && e(Bt,{ic:"copy", onClick:function(){ copiar(texto()); }}, "Copiar mensagem de recusa"),
     e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"));
-  return e(Janela,{t:"Novo pedido", sub:"Reposição, expositor ou encomenda: o direito é calculado pelas regras do setor.", fechar:p.fechar,
+  return e(Janela,{t:"Novo pedido", sub:"Reposição ou encomenda: o direito é calculado pelas regras do setor.", fechar:p.fechar,
     colunas:[e(Painel,{key:"c1", t:"Pedido", ic:"clipboard-text", estado:"atual"}, c1), e(Painel,{key:"c2", t:"Valores", ic:"coins"}, c2), c3]});
 }
 
@@ -118,22 +73,42 @@ function Motivo(p){
       e(Painel,{key:"b", t:"Ações", ic:"gear"}, e(Bt,{tipo:"forte", ic:"check", disabled:!v.nota.trim(), onClick:ok}, "Confirmar"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
 }
 
-// Forma de receber e data agendada (entrega com taxa conforme a regra, retirada na empresa agendada, retirada na data do acerto pela representante)
+// Agendar: data e hora (entrega pelo João ou ida na empresa)
 function Agendar(p){
-  var x = p.E.er.pedidos.find(function(y){ return y.id===p.id; }), st = useState({forma:x ? x.forma : "", data:x ? x.dataAgendada : ""}), v = st[0];
+  var x = p.E.er.pedidos.find(function(y){ return y.id===p.id; }), st = useState({data:x ? x.dataAgendada : "", hora:x ? x.hora : ""}), v = st[0];
   if(!x) return null;
-  var taxa = x.tipo==="expositor" ? (v.forma==="entrega" ? p.E.cfg.expositor.taxaEntrega : 0) : x.taxa;
-  var ok = function(){ var r = p.mover ? p.E.exec("ped_mover", {id:p.id, para:"agendado", forma:v.forma, data:v.data}) : p.E.exec("ped_agendar", {id:p.id, forma:v.forma, data:v.data}); if(r) p.fechar(); };
-  return e(Janela,{t:"Agendar entrega ou retirada", sub:x.revendedora+" · "+ROTULO_TIPO[x.tipo], fechar:p.fechar,
-    colunas:[e(Painel,{key:"a", t:"Agendamento", ic:"calendar-check", estado:"atual"}, e(Campo,{rot:"Forma de receber *"}, e(Escolha,{v:v.forma, set:function(y){ st[1](Object.assign({}, v, {forma:y})); }, ops:FORMAS})),
+  var ok = function(){ var r = p.mover ? p.E.exec("ped_mover", {id:p.id, para:"agendado", data:v.data, hora:v.hora}) : p.E.exec("ped_agendar", {id:p.id, data:v.data, hora:v.hora}); if(r) p.fechar(); };
+  return e(Janela,{t:x.canal==="empresa" ? "Agendar ida na empresa" : "Agendar entrega", sub:x.revendedora+" · "+ROTULO_TIPO[x.tipo], fechar:p.fechar,
+    colunas:[e(Painel,{key:"a", t:"Agendamento", ic:"calendar-check", estado:"atual"},
         e(Campo,{rot:"Data *"}, e("input",{type:"date", value:v.data, min:hojeSP(), onChange:function(ev){ st[1](Object.assign({}, v, {data:ev.target.value})); }, className:CAMPO})),
-        taxa>0 && e(Selo,{cor:"#94A3B8", ic:"coins"}, "Taxa de "+formatarReais(taxa))),
-      e(Painel,{key:"b", t:"Ações", ic:"gear"}, e(Bt,{tipo:"forte", ic:"check", disabled:!v.forma || !v.data, onClick:ok}, p.mover ? "Agendar e avançar" : "Salvar agendamento"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
+        e(Campo,{rot:"Hora"}, e("input",{type:"time", value:v.hora, onChange:function(ev){ st[1](Object.assign({}, v, {hora:ev.target.value})); }, className:CAMPO})),
+        x.canal==="empresa" && e(Selo,{cor:"#94A3B8", ic:"clock"}, "Tempo máximo de "+p.E.cfg.reposicao.minutosEscolha+" minutos")),
+      e(Painel,{key:"b", t:"Ações", ic:"gear"}, e(Bt,{tipo:"forte", ic:"check", disabled:!v.data, onClick:ok}, p.mover ? "Agendar e avançar" : "Salvar agendamento"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
+}
+
+// Iniciar atendimento (ida na empresa): escolhe quem atende e começa o cronômetro
+function Atender(p){
+  var x = p.E.er.pedidos.find(function(y){ return y.id===p.id; }), st = useState(""), at = st[0];
+  if(!x) return null;
+  var lista = p.E.cfg.atendentes || [];
+  var ok = function(){ if(p.E.exec("ped_mover", {id:p.id, para:"atendimento", atendente:at})) p.fechar(); };
+  return e(Janela,{t:"Iniciar atendimento", sub:x.revendedora+" · tempo máximo de "+p.E.cfg.reposicao.minutosEscolha+" minutos", fechar:p.fechar,
+    colunas:[e(Painel,{key:"a", t:"Quem atende", ic:"user-circle", estado:"atual"}, e(Escolha,{v:at, set:st[1], ops:lista.map(function(n){ return [n, n]; })})),
+      e(Painel,{key:"b", t:"Ações", ic:"gear"}, e(Bt,{tipo:"forte", ic:"play", disabled:!at, onClick:ok}, "Iniciar cronômetro"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
+}
+
+// avançar um pedido de etapa: abre a janela certa quando a etapa pede dados (agenda, atendente, conferência)
+function avancarPedido(E, x, ir){
+  var prox = proximaEtapa(x); if(!prox) return;
+  if(x.status==="conferindo" && !x.conferido){ ir({tipo:"detalhe", id:x.id}); return; }
+  if(prox==="agendado") ir({tipo:"agendar", id:x.id, mover:true});
+  else if(prox==="atendimento") ir({tipo:"atender", id:x.id});
+  else E.exec("ped_mover", {id:x.id, para:prox});
 }
 
 // Detalhe do pedido: dados | histórico | ações (foto do local, anotação, agendamento, avaliação do bloqueio)
 function Detalhe(p){
-  var E = p.E, x = E.er.pedidos.find(function(y){ return y.id===p.id; }), st = useState({foto:"", nota:"", vendas:0}), v = st[0];
+  var E = p.E, x = E.er.pedidos.find(function(y){ return y.id===p.id; }), st = useState({foto:"", nota:"", vendas:0, media:0}), v = st[0];
   if(!x) return null;
   var set = function(k, y){ st[1](function(o){ var n = Object.assign({}, o); n[k] = y; return n; }); };
   var lin = function(r, val){ return val || val===0 ? e("div",{key:r, className:"flex flex-col items-center rounded-lg bg-black/25 px-2 py-1"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-white/65"}, r), e("b",{className:"break-words text-[13px]"}, val)) : null; };
@@ -141,7 +116,7 @@ function Detalhe(p){
     e("div",{className:"flex flex-wrap justify-center gap-1"}, e(Selo,{cor:COR_TIPO[x.tipo], ic:ICONE_TIPO[x.tipo]}, ROTULO_TIPO[x.tipo]), e(Selo,{cor:COR_STATUS[x.status]}, ROTULO_STATUS[x.status])),
     lin("Revendedora", x.revendedora), lin("Representante", x.representante), lin("Média dos 3 meses", x.media3m!=null ? formatarReais(x.media3m) : ""), lin("Maior venda", x.maiorVenda!=null ? formatarReais(x.maiorVenda) : ""),
     lin(x.tipo==="encomenda" ? "Valor estimado" : "Valor", x.valor>0 ? formatarReais(x.valor) : ""), lin("Descrição", x.descricao), lin("Observação", x.observacao),
-    lin("Como recebe", x.canal ? ROTULO_CANAL[x.canal] : x.forma ? ROTULO_FORMA[x.forma] : ""), lin("Data agendada", formatarDia(x.dataAgendada)), lin("Taxa da revendedora", x.taxa>0 ? formatarReais(x.taxa)+(x.comprovante ? " (paga)" : " (falta comprovante)") : ""), lin("Pago à representante", x.taxaRep>0 ? formatarReais(x.taxaRep) : ""), lin("Foto do local", x.fotoLocal),
+    lin("Como recebe", x.canal ? ROTULO_CANAL[x.canal] : x.forma ? ROTULO_FORMA[x.forma] : ""), lin("Responsável", x.responsavel), lin("Valor máximo", x.valorMax>0 ? formatarReais(x.valorMax) : ""), lin("Conferido", x.conferido ? x.conferido.por+" · "+formatarDataHora(x.conferido.em) : ""), lin("Data agendada", formatarDia(x.dataAgendada)+(x.hora ? " às "+x.hora : "")), lin("Atendente", x.atendente), lin("Tempo de atendimento", x.atendInicio ? (x.atendFim ? Math.max(0, Math.round((minutosDe(x.atendFim)-minutosDe(x.atendInicio)))) : "em andamento")+(x.atendFim ? " min" : "") : ""), lin("Taxa da revendedora", x.taxa>0 ? formatarReais(x.taxa)+(x.comprovante ? " (paga)" : " (falta comprovante)") : ""), lin("Pago à representante", x.taxaRep>0 ? formatarReais(x.taxaRep) : ""), lin("Foto do local", x.fotoLocal),
     lin("Motivo", x.motivo), lin("Aberto em", formatarDataHora(x.criadoEm)+" · "+x.criadoPor),
     x.bloqueio && lin("Bloqueio", x.bloqueio.bloqueia ? "Até "+formatarDia(x.bloqueio.ate)+" ("+x.bloqueio.pct.toLocaleString("pt-BR")+"%)" : "Sem bloqueio ("+x.bloqueio.pct.toLocaleString("pt-BR")+"%)"));
   var historico = e(Painel,{key:"h", t:"Histórico", ic:"clock"}, e("ol",{className:"flex flex-col gap-1.5"}, x.historico.slice().reverse().map(function(h, i){
@@ -161,7 +136,13 @@ function Detalhe(p){
         e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return; var id = "er"+Date.now().toString(36)+Math.floor(Math.random()*999).toString(36);
           salvarArquivo(id, arq).then(function(){ E.exec("ped_comprovante", {id:x.id, arquivoId:id, nome:arq.name}); }); ev.target.value = ""; }}))),
     !fim && e(Bt,{ic:"calendar-check", onClick:function(){ p.ir({tipo:"agendar", id:x.id}); }}, x.dataAgendada ? "Reagendar" : "Agendar"),
-    !fim && proximaEtapa(x) && e(Bt,{tipo:"forte", ic:"arrow-right", onClick:function(){ if(proximaEtapa(x)==="agendado" && !(x.forma && x.dataAgendada)) p.ir({tipo:"agendar", id:x.id, mover:true}); else E.exec("ped_mover", {id:x.id, para:proximaEtapa(x)}); }}, "Concluir etapa ›"),
+    x.status==="conferindo" && !fim && e("div",{className:"flex flex-col items-center gap-1.5 rounded-lg bg-black/25 p-2"},
+      e("b",{className:"text-[12px] uppercase tracking-wide text-white/75"}, x.conferido ? "Média conferida" : "Conferir média e valor"),
+      !x.conferido && e(Campo,{rot:"Média de vendas"}, e(Dinheiro,{value:v.media || (x.media3m || 0), label:"Média", onChange:function(y){ set("media", y); }})),
+      !x.conferido && e(BtMini,{ic:"check", onClick:function(){ E.exec("ped_conferir", {id:x.id, media:v.media || x.media3m}); }}, "Confirmar média e valor"),
+      x.conferido && e(Selo,{cor:"#4ADE80", ic:"check-circle"}, "Conferido por "+x.conferido.por)),
+    !fim && proximaEtapa(x) && e(Bt,{tipo:"forte", ic:"arrow-right", disabled:(x.status==="conferindo" && !x.conferido) || (x.status==="comprovante" && x.taxa>0 && !x.comprovante), onClick:function(){ avancarPedido(E, x, p.ir); }}, "Concluir etapa ›"),
+    x.status==="atendimento" && e(Selo,{cor:"#F472B6", ic:"timer"}, "Atendimento em andamento: "+x.atendente),
     !fim && e(Bt,{tipo:"perigo", ic:"prohibit", onClick:function(){ p.ir({tipo:"motivo", id:x.id}); }}, "Recusar ou cancelar"),
     e(Campo,{rot:"Anotação"}, e("textarea",{value:v.nota, rows:2, onChange:function(ev){ set("nota", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center"}),
       e(BtMini,{ic:"note-pencil", disabled:!v.nota.trim(), onClick:function(){ if(E.exec("ped_nota", {id:x.id, nota:v.nota})) set("nota", ""); }}, "Registrar anotação")),
@@ -194,4 +175,4 @@ function Revendedoras(p){
     v.id && e(Bt,{ic:"plus", onClick:novo}, "Nova"));
   return e(Janela,{t:"Revendedoras", sub:"Top 50 e média de vendas: quem pode pedir reposição, e o bloqueio de 3 meses.", fechar:p.fechar, colunas:[lista, form]});
 }
-export { AbaErQuadro, NovoPedido, Motivo, Agendar, Detalhe, Revendedoras };
+export { NovoPedido, Motivo, Agendar, Atender, Detalhe, Revendedoras, avancarPedido };

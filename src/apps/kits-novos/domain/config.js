@@ -2,7 +2,7 @@
 // Extraído de sorelly_admin_kits_novos_curitiba.html sem alterar o corpo das funções.
 
 var CFG0 = {
-  prazos:{cadastrada:1, liberado:1, solicitado:1, bipado:3},
+  prazos:{cadastrada:1, liberado:1, solicitado:1, aceito:1, contato:1, agendado:2, montando:1, bipado:3, retirado:1, entregue:3},
   motivosCancel:["Revendedora n\u00e3o responde","N\u00e3o tem mais interesse","Fica desmarcando com a representante","Cadastro reprovado","Endere\u00e7o inv\u00e1lido"],
   ocultarApos:7, valorPadrao:7000, metaDias:7, maxDesmarcacoes:3, campanhas:{}
 };

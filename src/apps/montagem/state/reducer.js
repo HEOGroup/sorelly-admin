@@ -3,7 +3,7 @@
 var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
-import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, modalidadeDe } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
 import { BIPADORAS, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
@@ -17,9 +17,11 @@ import { aplicaFila } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { agendReduz } from "@/apps/montagem/domain/agendamento";
+import { p45Reduz } from "@/apps/montagem/domain/plano45-60";
 import { rhReduz } from "@/apps/montagem/domain/rh";
 import { metasReduz } from "@/apps/montagem/domain/metas-setor";
 import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
+import { dpReduz } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { pfReduz } from "@/apps/montagem/domain/pf";
@@ -35,6 +37,7 @@ import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montage
 import { erReduz } from "@/apps/montagem/domain/encomendas";
 import { exReduz } from "@/apps/montagem/domain/expositores";
 import { eqReduz } from "@/apps/montagem/domain/equipes";
+import { infReduz } from "@/apps/montagem/domain/informativos";
 import { pkReduz } from "@/apps/montagem/domain/preferencias-kit";
 import { pkSalvarDoApp } from "@/apps/montagem/domain/preferencias-rev";
 import { grReduz } from "@/apps/montagem/domain/garantias-rev";
@@ -42,8 +45,13 @@ import { esReduz } from "@/apps/montagem/domain/estoque-sorelly";
 import { avReduz } from "@/apps/montagem/domain/avaliacoes";
 import { prReduz } from "@/apps/montagem/domain/producao";
 import { cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
+import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
+
+// Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
+// Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
+function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
 function reducer(s, a){
   var k, agora = Date.now();
@@ -52,7 +60,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
+      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="cadastropecas" ? "cadpecas" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
@@ -101,7 +109,8 @@ function reducer(s, a){
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
     case "META_PCT_SET": return com(s, {metaPct:[96,97,98].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 97});   // 19/10/2026: 96/97/98, padrão 97 (acertos já passados para frente)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
-    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; return com(s, {fechaMes:fmk}, "Acertos a realizar do mês salvos"); }
+    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; return com(s, {fechaMes:fmk, carregarDia:cdk}, "Acertos a realizar do mês salvos"); }
+    case "CARREGAR_INICIO": { var cik = Object.assign({}, s.carregarInicio||{}); cik[a.ym] = Number(a.n)||0; return com(s, {carregarInicio:cik}, "Carregar do início do mês salvo"); }
     case "REV_REABRIR": { var raR = Object.assign({}, s.revAtualizadoEm||{}); delete raR[a.data]; return com(s, {revAtualizadoEm:raR}, "Revendedoras reabertas para atualizar"); }
     case "INT_CANCELAR": return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:a.cancelar ? "cancelado" : "agendado"}); })});
     // Contas pagas: lançamento diário por CNPJ (foto do dia, não mexe na grade mensal de Contas a pagar).
@@ -180,9 +189,11 @@ function reducer(s, a){
       if(a.op==="pag_add" && pCf && pCf.cf){ var pgNovo = pCf.cf.pagamentos[pCf.cf.pagamentos.length-1], fnNovo = pCf.cf.funcionarias.find(function(x){ return x.id===pgNovo.funcId; });
         pCf = Object.assign({}, pCf, {lancFin:[pxAplicar(s.px, lancFinDoPagamento(pgNovo, fnNovo, a.por), s.lancFin)].concat(s.lancFin||[])}); }   // todo pagamento vai para o Controle de pagamentos
       return com(s, pCf, rCf.msg); }
-    case "CL": { var rCl = clReduz(s, a); return com(s, rCl.patch, rCl.msg); }
+    case "CL": { var rCl = clReduz(s, a);
+      return com(s, rCl.patch, rCl.msg); }
     case "IND": { var rInd = indReduz(s, a); return com(s, rInd.patch, rInd.msg); }   // Indicações (funil, resgates de prêmio, moedas)
     case "CPC": { var rCpc = cpcReduz(s, a); return com(s, rCpc.patch, rCpc.msg); }   // Cadastro de peças (lotes, custo, preço sugerido, pedidos à DevMaster)
+    case "PP": { var rPp = ppReduz(s, a); return com(s, rPp.patch, rPp.msg); }   // Pedidos de peças da produção ao Cadastro de peças (pedir, OK, pronto, não temos, aviso)
     case "PR": { var rPr = prReduz(s, a); return com(s, rPr.patch, rPr.msg); }   // Produção de peças (lançamento diário, painel, bônus)
     case "EX": { var rEx = exReduz(s, a); return com(s, rEx.patch, rEx.msg); }   // Expositores (fila, montagem, devolução, danificados, estoque de expositores)
     case "AV": { var rAv = avReduz(s, a); return com(s, rAv.patch, rAv.msg); }   // Avaliações (revendedoras, sistema, montagem, funcionários)
@@ -193,18 +204,21 @@ function reducer(s, a){
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
     case "FX": { var rFx = fxReduz(s, a); return com(s, rFx.patch, rFx.msg); }   // Fiscal (ILF, sublimite, entradas, saídas, contas por CNPJ)
     case "EQ": { var rEq = eqReduz(s, a); return com(s, rEq.patch, rEq.msg); }   // Equipes: organograma de departamentos
+    case "INF": { var rInf = infReduz(s, a); return com(s, rInf.patch, rInf.msg); }   // Folders e informativos dos apps
     case "GR": { var rGr = grReduz(s, a); return com(s, rGr.patch, rGr.msg); }   // Garantias e condicionais do app da revendedora
     case "PK": { var rPk = a.op==="app_salvar" ? pkSalvarDoApp(s, a) : pkReduz(s, a); return com(s, rPk.patch, rPk.msg); }   // Preferências do Kit (blocos do formulário e respostas das revendedoras)
     case "ES": { var rEs = esReduz(s, a); return com(s, rEs.patch, rEs.msg); }   // Estoque Sorelly (geral de peças, Financeiro)
     case "PF": { var rPf = pfReduz(s, a); return com(s, rPf.patch, rPf.msg); }
     case "PX": { var rPx = pxReduz(s, a); return com(s, rPx.patch, rPx.msg); }
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
+    case "DP": { var rDp = dpReduz(s, a); return com(s, rDp.patch, rDp.msg); }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
       if(a.setor){ if(a.dia) dp.setores[a.setor] = a.dia; else delete dp.setores[a.setor]; } else if(a.dia) dp.geral = a.dia; return com(s, {datasPag:dp}, "Data de pagamento salva"); }
     case "METAS": { var rMt = metasReduz(s, a); return com(s, rMt.patch, rMt.msg); }
     case "RH": { var rRh = rhReduz(s, a); return com(s, rRh.patch, rRh.msg); }
     case "AG": { var rAg = agendReduz(s, a, agora); return com(s, rAg.patch, rAg.msg); }
+    case "P45": { var rP45 = p45Reduz(s, a); return com(s, rP45.patch, rP45.msg, rP45.patch && rP45.patch.p45 ? "ok" : "atencao"); }   // Agendamento → Plano 45/60 (indicações, aprovação; aprovada mudando de mês ajusta a meta)
     case "CNPJ_DOC_ADD": { var dc = Object.assign({}, s.cnpjDocs||{}); dc[a.id] = (dc[a.id]||[]).concat([a.doc]); return com(s, {cnpjDocs:dc}); }
     case "CNPJ_DOC_DEL": { var dc2 = Object.assign({}, s.cnpjDocs||{}); dc2[a.id] = (dc2[a.id]||[]).filter(function(x){ return x.id!==a.docId; }); return com(s, {cnpjDocs:dc2}); }
     case "CNPJ_SET": {
@@ -401,7 +415,7 @@ function reducer(s, a){
       nk.horaAtend = a.hora || null;
       // Carimba a vers\u00e3o de regras de comiss\u00e3o/brinde vigente agora: o acerto deste kit sempre vai usar esta vers\u00e3o,
       // mesmo que as regras mudem antes do acerto acontecer (a mudan\u00e7a s\u00f3 vale a partir do pr\u00f3ximo kit).
-      var vv = versaoVigente(s); nk.regrasVersaoId = vv ? vv.id : null; nk.remarcacoes = 0; nk.remarcacoesLista = [];
+      var vv = versaoDaRevendedora(s, nk.rev); nk.regrasVersaoId = vv ? vv.id : null; nk.remarcacoes = 0; nk.remarcacoesLista = [];
       // revendedora que saiu (ou s\u00f3 condicional): n\u00e3o tem kit, s\u00f3 a condicional vai para a representante retirar
       if(SEM_KIT[nk.tipoKit]){ nk.status = "condicional"; nk.valor = null; nk.prio = false; }
       var txtAdd = SEM_KIT[nk.tipoKit] ? a.rev+" entrou s\u00f3 para retirar a condicional" : nk.tipoKit==="reposicao" ? "Reposi\u00e7\u00e3o de "+a.rev+" inclu\u00edda: defina o valor (at\u00e9 o m\u00e1ximo liberado)" : "Kit de \u00faltima hora inclu\u00eddo, defina o valor para ele entrar na fila";
@@ -568,7 +582,7 @@ function reducer(s, a){
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
       var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK);
       var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
-        valorPago:a.valorPago, atrasoDias:modK==="prata" ? (a.atrasoDias||0) : 0}, versaoK);
+        valorPago:a.valorPago, atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
       // Revendedora recusou negociar o que faltava: sem brinde de jeito nenhum, vira nota promissória (executada em 48h úteis).
       if(a.recusouNegociar) res = Object.assign({}, res, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
@@ -583,7 +597,7 @@ function reducer(s, a){
         assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas}, res);
       var lpU1 = usarLinksNoAcerto(s.lp, a.pagamentos, registro.id, agoraSPLp(), k.rev);   // links de pagamento usados como pagamento ficam marcados (não descontam duas vezes)
       return com(s, {kits: mapKit(s, a.id, function(){ return {acerto:res, status:"acertado", acertoAssinado:!!a.assinatura}; }),
-        acertosConsignado:[registro].concat(s.acertosConsignado||[]), lp:lpU1 || s.lp},
+        acertosConsignado:[registro].concat(s.acertosConsignado||[]), lp:lpU1 || s.lp, perfisRev:a.kitNovoOk ? carimboEntrega(s, k.rev) : s.perfisRev},
         "Acerto de "+k.rev+" registrado: "+BK(res.valorAcerto)+" (comissão "+BK(res.comissao)+")");
     }
     // Consolidado das representantes: o setor de agendamento confere o dinheiro e dá o OK de recebimento (libera a comissão)
@@ -697,7 +711,7 @@ function reducer(s, a){
     // ── Atendimento interno: revendedoras que acertam na própria Sorelly. Não são kits da montagem: a listagem é montada à mão
     // (puxada da DevMaster) e a Calculadora de acertos do admin usa a mesma conta do app da representante. ──
     case "INT_ADD": {
-      var vigI = versaoVigente(s);
+      var vigI = versaoDaRevendedora(s, (a.nome||"").trim());
       var novoI = {id:"I"+agora, tipo:a.tipo||"acerto", nome:(a.nome||"").trim(), fone:a.fone||"", devmaster:a.devmaster||"", data:a.data||isoDia(new Date(agora)), hora:a.hora||"",
         condicionais:a.condicionais||[], obs:a.obs||"", remarcacoesLista:[], status:"agendado", regrasVersaoId:vigI ? vigI.id : null, criadoPor:a.por||"", criadoEm:agora};
       if(!novoI.nome) return s;
@@ -820,7 +834,7 @@ function reducer(s, a){
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
       var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI);
       var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
-        valorPago:a.valorPago, atrasoDias:modI==="prata" ? (a.atrasoDias||0) : 0, semTaxa:true}, vEf);
+        valorPago:a.valorPago, atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
       if(a.recusouNegociar) resI = Object.assign({}, resI, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var regI = Object.assign({id:"AC"+agora, internoId:it.id, rev:it.nome, rep:"Atendimento interno", origem:"interno", tipo:"acerto",
         data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
@@ -830,7 +844,7 @@ function reducer(s, a){
         brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
-      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}});
+      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}}, a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
       return com(s, {perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
         acertosConsignado:[regI].concat(s.acertosConsignado||[])},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");
@@ -856,7 +870,7 @@ function reducer(s, a){
       var regEntrega = {id:"KN"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo:"kit_novo_entrega", tipoKit:k.tipoKit||"kit_novo", data:new Date(agora).toISOString().slice(0,10), condicionais:a.condicionais||[], pecasTotal:a.pecasTotal||0,
         pecasFaltaram:a.pecasFaltaram||0, obsDivergencia:a.obsDivergencia||"", regrasLidas:a.regrasLidas||[], assinatura:a.assinatura||null};
-      return com(s, {kits: mapKit(s, a.id, function(){ return {kitNovoEntregue:regEntrega, status:"acertado"}; }),
+      return com(s, {perfisRev:carimboEntrega(s, k.rev), kits: mapKit(s, a.id, function(){ return {kitNovoEntregue:regEntrega, status:"acertado"}; }),
         montadoras: (regEntrega.pecasFaltaram>0 && k.montId) ? ajustaDiv(s, k.montId, 1) : s.montadoras,
         acertosConsignado:[regEntrega].concat(s.acertosConsignado||[])},
         "Kit novo de "+k.rev+" entregue e assinado"+(regEntrega.pecasFaltaram ? " · "+regEntrega.pecasFaltaram+" peça(s) em falta" : ""));
@@ -925,7 +939,8 @@ function reducer(s, a){
     case "KN_ENT_CONCLUIR": {
       var entF = (s.entregasKN||{})[a.kitId]; if(!entF) return s;
       var entFN = {}; entFN[a.kitId] = Object.assign({}, entF, {assinatura:a.assinatura||"assinado", status:"concluida", fim:agora});
-      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entFN)}, null);
+      var kEntF = kitDe(s, a.kitId);
+      return com(s, {entregasKN:Object.assign({}, s.entregasKN, entFN), perfisRev:kEntF ? carimboEntrega(s, kEntF.rev) : s.perfisRev}, null);
     }
     // Formas de pagamento editáveis (Representantes → Configurações): nome, se pede parcelas e a lista de descrições.
     case "FORMAS_PAGAMENTO_SET": return com(s, {formasPagamento:a.formas}, "Formas de pagamento atualizadas");
@@ -933,6 +948,7 @@ function reducer(s, a){
     case "REGRAS_CONSIGNADO_ATUALIZAR": {
       var atualAntes = versaoVigente(s);
       var novaV = novaVersaoRegras(a.campos, atualAntes ? atualAntes.id : null);
+      if(novaV.novas && novaV.vigenciaDesde < "2026-10-27") novaV.vigenciaDesde = "2026-10-27";   // as regras novas só valem para kits entregues a partir dessa data
       return com(s, {regrasConsignado:{versoes:(s.regrasConsignado.versoes||[]).concat([novaV]), atualId:novaV.id}},
         "Regras do consignado atualizadas: vale a partir do próximo kit de cada revendedora");
     }

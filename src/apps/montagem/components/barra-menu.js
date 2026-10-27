@@ -8,7 +8,7 @@ import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
 import { e, Fragment, useEffect, useRef, useState } from "@/shared/react";
 
-var OURO = "#d9a63a", LARG = 244, LIN = 30;
+var OURO = "#B8862B", LARG = 244, LIN = 30;
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 
 function filtrar(nos, pode){
@@ -56,7 +56,7 @@ function BarraMenu(p){
         return e("button",{key:n.nome+i, type:"button",
           onMouseEnter:function(ev){ if(n.itens) abrirNivel(nivel, i, ev); else setAberto((aberto||[]).slice(0, nivel)); },
           onClick:function(ev){ if(n.itens){ abrirNivel(nivel, i, ev); return; } escolher(n, ev); },
-          className:"flex w-full items-center justify-between gap-2 border-b border-border px-3 text-left text-[12.5px] last:border-b-0 "+(sel ? "font-medium text-black" : on ? "font-semibold text-foreground" : "text-foreground/90 hover:bg-white/10"),
+          className:"flex w-full items-center justify-between gap-2 border-b border-border px-3 text-left text-[12.5px] last:border-b-0 "+"text-white hover:bg-[#B8862B] "+(sel ? "font-medium" : on ? "font-semibold" : ""),
           style:Object.assign({height:LIN}, sel ? {background:OURO} : on ? {boxShadow:"inset 3px 0 0 "+OURO} : {})},
           e("span",{className:"min-w-0 flex-1 truncate"}, n.nome), n.itens && e("span",{"aria-hidden":true}, "▸")); }));
   };
@@ -76,7 +76,7 @@ function BarraMenu(p){
       return e("button",{key:n.nome, type:"button",
         onMouseEnter:function(ev){ if(aberto && aberto.length){ if(n.itens) abrirNivel(0, i, ev); else setAberto(null); } },
         onClick:function(ev){ if(n.itens){ if(sel) fechar(); else abrirNivel(0, i, ev); return; } escolher(n, ev); },
-        className:"shrink-0 whitespace-nowrap px-3 text-[12.5px] "+(sel ? "font-medium text-black" : on ? "font-semibold text-foreground" : "text-foreground/90 hover:bg-white/10"),
+        className:"shrink-0 whitespace-nowrap px-3 text-[12.5px] "+"text-white hover:bg-[#B8862B] "+(sel ? "font-medium" : on ? "font-semibold" : ""),
         style:Object.assign({height:LIN}, sel ? {background:OURO} : on ? {boxShadow:"inset 0 -2px 0 "+OURO} : {})},
         n.nome+(n.itens ? " ▾" : "")); }),
     aberto && aberto[0] && createPortal(e(Fragment,null, e("div",{className:"fixed inset-x-0 bottom-0 z-40", style:{top:aberto[0].r.b}, onClick:fechar}), listas), document.body));
@@ -94,52 +94,119 @@ function BuscaMenu(p){
     e("input",{ref:ref, type:"search", value:q, placeholder:"Buscar tela…", "aria-label":"Buscar tela do "+p.setor, onFocus:function(){ setFoco(true); }, onBlur:function(){ setTimeout(function(){ setFoco(false); }, 150); },
       onChange:function(ev){ setQ(ev.target.value); setIdx(0); },
       onKeyDown:function(ev){ if(ev.key==="ArrowDown"){ ev.preventDefault(); setIdx(Math.min(idx+1, achadas.length-1)); } else if(ev.key==="ArrowUp"){ ev.preventDefault(); setIdx(Math.max(idx-1, 0)); } else if(ev.key==="Enter" && achadas[idx]){ abre(achadas[idx]); } else if(ev.key==="Escape"){ setQ(""); ev.target.blur(); } },
-      className:"h-6 w-48 rounded-md border border-border bg-card px-2 text-[12.5px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}),
+      className:"h-6 w-48 rounded-md border border-border bg-card px-2 text-[12.5px] text-white outline-none focus-visible:ring-2 focus-visible:ring-primary"}),
     foco && termos.length>0 && e("div",{className:"absolute right-2 top-full z-50 mt-0.5 max-h-80 w-80 overflow-y-auto border border-border bg-card"},
       achadas.length ? achadas.map(function(x, i){
         return e("button",{key:i, type:"button", onMouseDown:function(ev){ ev.preventDefault(); abre(x); }, onMouseEnter:function(){ setIdx(i); },
-          className:"flex w-full flex-col justify-center border-b border-border px-3 text-left last:border-b-0 "+(i===idx ? "font-medium text-black" : "text-foreground"), style:Object.assign({minHeight:LIN}, i===idx ? {background:OURO} : {})},
+          className:"flex w-full flex-col justify-center border-b border-border px-3 text-left last:border-b-0 "+(i===idx ? "font-medium text-white" : "text-white"), style:Object.assign({minHeight:LIN}, i===idx ? {background:OURO} : {})},
           e("span",{className:"truncate text-[12.5px]"}, x.no.nome), e("span",{className:"truncate text-[11px]"}, x.trilha.join(" › "))); })
-        : e("p",{className:"px-3 text-[12.5px] text-foreground", style:{height:LIN, lineHeight:LIN+"px"}}, "Nenhuma tela com esse nome")));
+        : e("p",{className:"px-3 text-[12.5px] text-white", style:{height:LIN, lineHeight:LIN+"px"}}, "Nenhuma tela com esse nome")));
 }
 
-// ── Abas das telas abertas (máx. 5): clicar abre, ✕ fecha; guardadas na sessão do navegador
-var CHAVE = "sorelly_abas_abertas_", MAX = 5;
-var lerAbas = function(k){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+k) || "[]"); }catch(x){ return []; } };
+// ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
+var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
+var chaveDeNo = function(n, setor){ return setor+"|"+(n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
+var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")) || "[]"); }catch(x){ return []; } };
 function AbasAbertas(p){
   var nos = filtrar(p.menu, p.pode), todas = folhas(nos, [], []).map(function(x){ return x.no; });
-  var atual = todas.filter(function(n){ return p.ativo(n); })[0], chaveDe = function(n){ return (n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
-  var st = useState(function(){ return lerAbas(p.setor); }), abas = st[0], setAbas = st[1];
-  var kAtual = atual ? chaveDe(atual) : "";
+  var atual = todas.filter(function(n){ return p.ativo(n); })[0];
+  var st = useState(function(){ return lerAbas(p.visao); }), abas = st[0], setAbas = st[1];
+  // trocou de modo (Admin <-> Marcus): carrega a lista do outro modo
+  useEffect(function(){ setAbas(lerAbas(p.visao)); }, [p.visao]);
+  var kAtual = atual ? chaveDeNo(atual, p.setor) : "";
+  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(l)); }catch(x){} };
   useEffect(function(){
     if(!atual) return;
     setAbas(function(ant){
       if(ant.some(function(a){ return a.k===kAtual; })) return ant;
-      var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo}]);
+      var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo, breve:atual.breve, setor:p.setor, cor:p.cor}]);
       while(nova.length>MAX){ var j = nova.findIndex(function(a){ return a.k!==kAtual; }); nova.splice(j, 1); }
-      try{ sessionStorage.setItem(CHAVE+p.setor, JSON.stringify(nova)); }catch(x){}
+      try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(nova)); }catch(x){}
       return nova;
     });
   }, [kAtual]);
-  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+p.setor, JSON.stringify(l)); }catch(x){} };
   var fecha = function(a, ev){ ev.stopPropagation(); var i = abas.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
     if(a.k===kAtual && resto.length) p.abrir(resto[Math.max(0, i-1)]); };
-  var visiveis = abas.filter(function(a){ return todas.some(function(n){ return chaveDe(n)===a.k; }); });
-  if(!visiveis.length) return null;
-  return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-t border-border"},
+  var visiveis = abas;
+  // sem nenhuma aba aberta, a faixa continua ocupando a mesma altura: a barra do menu NÃO muda de lugar quando a primeira aba abre ou a última fecha (Marcus, 26/10/2026)
+  // o bloco das abas é FECHADO: linha em cima, embaixo e dos lados; vazio ou cheio, ocupa a mesma altura
+  if(!visiveis.length) return e("div",{"aria-hidden":true, className:"border-y border-l border-border", style:{height:LINA+2}});
+  return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
     visiveis.map(function(a){ var on = a.k===kAtual;
-      return e("div",{key:a.k, role:"tab", "aria-selected":on, className:"flex shrink-0 items-center border-r border-border "+(on ? "bg-[#1d2a44] text-foreground" : "text-foreground/85 hover:bg-white/10"), style:{height:LIN}},
-        e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"h-full whitespace-nowrap pl-3 pr-2 text-[12.5px] "+(on ? "font-medium" : "")}, a.nome),
+      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50"), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
+        e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
+          (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
         e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕")); }));
 }
 
+// Voo (23/10/2026): ao escolher uma tela no menu ou na busca, um clone do item sai de onde foi clicado e voa até a aba dela, que pisca ao chegar. Sem movimento se a pessoa pede menos animação.
+function voar(nome, de){
+  if(typeof document==="undefined" || !de || !document.body.animate) return;
+  try{ if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return; }catch(x){}
+  var tentativas = 0;
+  var tenta = function(){
+    var alvo = [].slice.call(document.querySelectorAll('[role="tablist"] [role="tab"]')).filter(function(a){ return a.getAttribute("data-aba")===nome; })[0];
+    if(!alvo){ if(++tentativas<40) setTimeout(tenta, 60); return; }
+    // O clone NÃO é esticado (sem scale): ele muda de posição, largura e altura, com o texto no mesmo tamanho, e vai sumindo ao pousar na aba. Assim não distorce.
+    var para = alvo.getBoundingClientRect(), el = document.createElement("div"), larg = Math.max(60, de.width), alt = Math.max(20, de.height);
+    el.textContent = nome;
+    el.style.cssText = "position:fixed;left:"+de.left+"px;top:"+de.top+"px;width:"+larg+"px;height:"+alt+"px;z-index:9999;pointer-events:none;display:flex;align-items:center;padding:0 12px;box-sizing:border-box;"
+      + "background:"+OURO+";color:#fff;font-size:12.5px;font-weight:600;line-height:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:4px;box-shadow:0 6px 18px rgba(0,0,0,.45)";
+    document.body.appendChild(el);
+    var mx = (de.left+para.left)/2, my = Math.min(de.top, para.top)-34, mw = (larg+para.width)/2, mh = (alt+para.height)/2;
+    var px = function(n){ return Math.round(n*10)/10+"px"; };
+    var voo = el.animate([
+      {left:px(de.left), top:px(de.top), width:px(larg), height:px(alt), opacity:1, offset:0},
+      {left:px(mx), top:px(my), width:px(mw), height:px(mh), opacity:1, offset:.5},
+      {left:px(para.left), top:px(para.top), width:px(para.width), height:px(para.height), opacity:1, offset:.82},
+      {left:px(para.left), top:px(para.top), width:px(para.width), height:px(para.height), opacity:0, boxShadow:"0 0 0 rgba(0,0,0,0)", offset:1}], {duration:680, easing:"cubic-bezier(.3,.7,.3,1)"});
+    var fim = function(){ if(el.parentNode) el.parentNode.removeChild(el); };
+    setTimeout(function(){ try{ alvo.animate([{background:"rgba(184,134,43,.95)"}, {background:"rgba(184,134,43,0)"}], {duration:650}); }catch(x){} }, 460);
+    voo.onfinish = fim; voo.oncancel = fim;
+  };
+  setTimeout(tenta, 40);
+}
+// Brilho: a aba ganha um clarão dourado (usado ao abrir uma tela que já estava aberta)
+function brilhar(nome){
+  if(typeof document==="undefined") return;
+  var tentativas = 0;
+  var tenta = function(){
+    var alvo = [].slice.call(document.querySelectorAll('[role="tablist"] [role="tab"]')).filter(function(a){ return a.getAttribute("data-aba")===nome; })[0];
+    if(!alvo){ if(++tentativas<20) setTimeout(tenta, 60); return; }
+    try{ alvo.animate([{boxShadow:"inset 0 0 0 2px rgba(232,184,75,1), 0 0 16px 3px rgba(232,184,75,.9)", background:"rgba(184,134,43,.95)"}, {boxShadow:"inset 0 0 0 0 rgba(232,184,75,0), 0 0 0 0 rgba(232,184,75,0)", background:"rgba(184,134,43,0)"}], {duration:900, easing:"ease-out"}); }catch(x){}
+  };
+  setTimeout(tenta, 30);
+}
+var retangulo = function(el){ if(!el || !el.getBoundingClientRect) return null; var r = el.getBoundingClientRect(); return {left:r.left, top:r.top, width:r.width, height:r.height}; };
+
+// Barra do setor (2ª barra): só menus + busca de tela, sem o nome do setor (o símbolo do setor fica na barra de cima); abaixo, as abas das telas abertas
 function MenuSetor(p){
-  return e("div",{className:"sticky top-12 z-20 border-b border-border bg-background/95 backdrop-blur"},
-    e("div",{className:"flex items-stretch", style:{height:LIN}},
-      e("span",{className:"flex shrink-0 items-center gap-1.5 pl-3 pr-2 text-[11px] font-extrabold uppercase tracking-[.14em]", style:{color:p.cor}}, p.setor),
-      e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir}),
-      e(BuscaMenu,{menu:p.menu, pode:p.pode, abrir:p.abrir, setor:p.setor})),
-    e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor}));
+  var sa = useState(""), aviso = sa[0];
+  useEffect(function(){ if(!aviso) return; var id = setTimeout(function(){ sa[1](""); }, 6000); return function(){ clearTimeout(id); }; }, [aviso]);
+  // abrir pelo menu ou pela busca:
+  //  · tela que JÁ está aberta: só abre e a aba brilha (não voa);
+  //  · tela nova: um clone voa até a aba dela;
+  //  · já com ${MAX} telas abertas: o sistema avisa e não abre; a pessoa fecha uma (✕) e tenta de novo.
+  var abrirComVoo = function(n, ev){
+    if(p.semAbas) return p.abrir(n, ev);   // setor sem faixa de telas abertas: as palavras do menu já mostram tudo
+    var abertas = lerAbas(p.visao), ja = abertas.some(function(a){ return a.k===chaveDeNo(n, p.setor); });
+    if(ja){ p.abrir(n, ev); brilhar(n.nome); return; }
+    if(abertas.length>=MAX){
+      sa[1]("Você já tem "+MAX+" telas abertas. Feche uma delas (o ✕ da aba) para abrir "+n.nome+".");
+      var linha = document.querySelector('[role="tablist"]');
+      try{ if(linha) linha.animate([{transform:"translateX(0)"}, {transform:"translateX(-7px)"}, {transform:"translateX(7px)"}, {transform:"translateX(-4px)"}, {transform:"translateX(0)"}], {duration:380}); }catch(x){}
+      return;
+    }
+    var de = retangulo(ev && ev.currentTarget);
+    if(!de) de = retangulo(document.querySelector('input[type="search"][aria-label^="Buscar tela"]'));
+    var r = p.abrir(n, ev); voar(n.nome, de); return r;
+  };
+  return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:73}},
+    !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor, cor:p.cor, visao:p.visao}),
+    e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
+      e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo}),
+      e(BuscaMenu,{menu:p.menu, pode:p.pode, abrir:abrirComVoo, setor:p.setor})),
+    aviso && createPortal(e("div",{role:"alert", className:"fixed left-1/2 top-24 z-[60] max-w-[90vw] -translate-x-1/2 rounded-md border border-destructive bg-card px-4 py-2 text-[13px] text-white shadow-lg"}, aviso), document.body));
 }
 
 export { MenuSetor };

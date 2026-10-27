@@ -2559,3 +2559,19 @@ CREATE TABLE IF NOT EXISTS sorelly.estado_modulo (
 
 -- setores de cada pessoa (define quais módulos ela abre no servidor; ver servidor/src/permissoes.js)
 ALTER TABLE sorelly.usuario_login ADD COLUMN IF NOT EXISTS setores text[] NOT NULL DEFAULT '{}';
+
+-- contas de acesso do sistema novo (23/10/2026): a pessoa cria a conta, fica "aguardando"; a Diretoria libera, liga a uma pessoa do sistema e escolhe os setores
+CREATE TABLE IF NOT EXISTS sorelly.conta (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  nome text NOT NULL,
+  email text NOT NULL,
+  senha_hash text NOT NULL,
+  status text NOT NULL DEFAULT 'aguardando' CHECK (status IN ('aguardando', 'ativo', 'bloqueado')),
+  perfil text NOT NULL DEFAULT 'MEMBER' CHECK (perfil IN ('ADMIN', 'MEMBER')),
+  setores text[] NOT NULL DEFAULT '{}',
+  pessoa_id integer,
+  aprovado_por text,
+  criado_em timestamptz NOT NULL DEFAULT now(),
+  atualizado_em timestamptz NOT NULL DEFAULT now()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS conta_email_uq ON sorelly.conta (lower(email));
