@@ -6,6 +6,7 @@ var VERSOES = [
   {v:"0.14.8", data:"2026-10-27", titulo:"Botão Sair no topo e troca de pessoa só para a Diretoria", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"Com o login ligado, o botão Sair fica sempre no topo e volta para a tela de entrada. Quem não é da Diretoria vê só o próprio nome, sem a lista para trocar de pessoa. A Diretoria continua podendo trocar para testar."},
     {tipo:"correcao", area:"Tecnologia", txt:"O Sair do seletor de acesso não saía da conta do servidor. Agora sai de verdade."},
+  ]},
   {v:"0.14.7", data:"2026-10-27", titulo:"Tela de entrada nova: mosaico, estrelas e bloco com gravura", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"A tela de e-mail e senha ganhou logo grande, linhas douradas e poeira de luz. O clique abre um mosaico de diamantes a partir do ponto clicado e mostra o bloco de login sobre estrelas cintilantes que fogem do mouse e deixam rastro. O bloco tem uma gravura fina nas bordas. Tudo desenhado por código, sem biblioteca. Respeita \"reduzir movimento\" do aparelho."},
   ]},
