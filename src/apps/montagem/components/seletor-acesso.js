@@ -2,6 +2,7 @@
 // Simulação do login: escolher quem está usando o sistema. Pessoas agrupadas por setor, com busca; cada setor com cor e ícone.
 import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
+import * as srv from "@/apps/montagem/lib/api";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useState } from "@/shared/react";
@@ -18,7 +19,13 @@ function SeletorAcesso(){
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1];
   var q = semAcento(busca);
   var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); };
-  return e("div",{className:"relative"},
+  // Com o servidor ligado: o botão Sair fica sempre no topo; só a Diretoria pode trocar de pessoa (para testar). Os demais veem só o próprio nome.
+  var comLogin = srv.apiAtiva() && !!srv.token(), podeTrocar = !comLogin || srv.ehAdmin();
+  var sairDaConta = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
+  var seletor = !podeTrocar ? e("div",{className:"flex h-9 items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold"},
+      e("span",{className:"grid size-6 place-items-center rounded-md text-white", style:{background:v[0]}}, e(Icon,{n:v[1], s:13})),
+      e("span",{className:"flex flex-col items-start leading-none"}, e("span",null, nomeDe(s.usuario)), e("span",{className:"mt-0.5 text-[9.5px] font-medium opacity-70"}, PAPEL_LB[g]))) :
+    e("div",{className:"relative"},
     e("button",{onClick:function(){ setAberto(!aberto); }, "aria-label":"Acesso (simulação do login)", "aria-expanded":aberto,
         className:"flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold outline-none hover:bg-primary/15"},
       e("span",{className:"grid size-6 place-items-center rounded-md text-white", style:{background:v[0]}}, e(Icon,{n:v[1], s:13})),
@@ -36,7 +43,10 @@ function SeletorAcesso(){
           e("div",{className:"flex flex-wrap gap-1.5"}, gente.map(function(p){ var on = p.id===s.usuario;
             return e("button",{key:p.id, onClick:function(){ escolher(p.id); },
               className:"rounded-lg px-2.5 py-1 text-[12.5px] font-semibold ring-1 "+(on ? "text-white ring-2" : "bg-black/20 ring-border hover:bg-white/10"), style:on ? {background:vis[0], borderColor:vis[0]} : undefined}, p.nome); }))); }),
-      e("button",{onClick:function(){ setAberto(false); d({type:"SAIR"}); }, className:"mt-1 h-9 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"},"Sair (voltar para a tela de entrada)")));
+      e("button",{onClick:sairDaConta, className:"mt-1 h-9 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"},"Sair (voltar para a tela de entrada)")));
+  return e("div",{className:"flex items-center gap-1.5"}, seletor,
+    comLogin && e("button",{onClick:sairDaConta, "aria-label":"Sair da conta", title:"Sair da conta",
+      className:"flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border px-2.5 text-[12.5px] font-semibold outline-none hover:bg-white/10"}, e(Icon,{n:"logout", s:14}), "Sair"));
 }
 
 export { SeletorAcesso, SETORES_LOGIN };

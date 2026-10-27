@@ -86,7 +86,7 @@ function App(){
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario) srv.guardaPerfil(j.usuario.perfil); if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);

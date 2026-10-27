@@ -22,7 +22,10 @@ async function chamar(metodo, caminho, corpo){
   if(!r.ok) throw new Error(j.erro || ("Erro "+r.status));
   return j;
 }
-async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); return j.usuario; }
-function sair(){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); }
+// Perfil da conta que entrou (ADMIN = Diretoria). Só serve para a tela decidir se mostra a troca de pessoa; quem manda de verdade é o servidor.
+function guardaPerfil(p){ try { if(p) localStorage.setItem("sorelly_perfil", p); else localStorage.removeItem("sorelly_perfil"); } catch(x){} }
+function ehAdmin(){ try { return localStorage.getItem("sorelly_perfil")==="ADMIN"; } catch(x){ return false; } }
+async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); guardaPerfil(j.usuario && j.usuario.perfil); return j.usuario; }
+function sair(){ guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair };
+export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, ehAdmin };
