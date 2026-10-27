@@ -10,8 +10,12 @@ import { tocar } from "@/apps/montagem/lib/sons";
 import { ler as notifLer } from "@/apps/montagem/lib/notificacoes";
 import { canal, membrosDoCanal, RESPOSTAS_CANAL } from "@/apps/montagem/domain/chat-canais";
 import { MARKUP_ALVO, markup, precoSugerido, BRL } from "@/apps/montagem/domain/preco-pecas";
+import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 
 var CHAVE = "whatssorelly_v1", CHAVE_MIDIA = "whatssorelly_midia_v1";
+// Com o servidor ligado (27/10/2026) o chat é DE VERDADE: começa vazio (sem as conversas de demonstração), guarda em outra chave e troca mensagens pelo servidor.
+var SERVIDOR = apiAtiva(), CHAVE_SRV = "whatssorelly_srv_v1";
+var seqServidor = 0, aplicando = false, fila = [], enviando = false, timerSync = null;
 var MIN = 60000, HORA = 3600000, DIA = 86400000;
 var uid = function(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,6); };
 
@@ -260,14 +264,18 @@ if(base.horarioRhV!==2){ var antesRh = base.horarioRhV; base.horarioRhV = 2;
       if(h && h.ini===x.ini && h.fim===x.fim && h.sexIni===x.ini && h.sexFim===x.fim && !h.almIni && !h.almFim && String(h.dias)===String(x.dias)) delete base.horarios[ct.id]; }); } }
 // grupo "Preço das Peças" (peça nova + cartão de preço) também para quem já tem dados salvos
 if(!base.convs.some(function(c){ return c.id==="c_preco"; })){ var semente = semearPreco(); base.convs = base.convs.concat([semente.conv]); base.msgs = Object.assign({}, base.msgs); base.msgs.c_preco = semente.msgs; base.lido = Object.assign({}, base.lido); }
+if(SERVIDOR){   // chat de verdade: sem as conversas de demonstração; o que veio do servidor fica guardado neste navegador só para abrir rápido
+  var salvoSrv = null; try{ salvoSrv = JSON.parse(localStorage.getItem(CHAVE_SRV)||"null"); }catch(x){}
+  base = (salvoSrv && salvoSrv.v===1) ? salvoSrv : {v:1, convs:[], msgs:{}, lido:{}, mencoes:[], usuarios:{}, ocupado:{}, decisoes:{}, pagamentosPostados:{}, pecas:[], horarios:base.horarios||{}, config:base.config};
+}
 var estado = Object.assign({}, base, {efem:{digitando:{}, aberta:null, toasts:[], conversaSel:null, mini:false}});
 var ouvintes = [], eu = null, timerSalvar = null;
 
 function salvar(){
   clearTimeout(timerSalvar);
-  timerSalvar = setTimeout(function(){ try{ var o = Object.assign({}, estado); delete o.efem; localStorage.setItem(CHAVE, JSON.stringify(o)); }catch(x){} }, 250);
+  timerSalvar = setTimeout(function(){ try{ var o = Object.assign({}, estado); delete o.efem; localStorage.setItem(SERVIDOR ? CHAVE_SRV : CHAVE, JSON.stringify(o)); }catch(x){} }, 250);
 }
-function mudar(fn, persistir){ estado = fn(estado); if(persistir!==false) salvar(); ouvintes.slice().forEach(function(f){ f(); }); }
+function mudar(fn, persistir){ var antes = estado; estado = fn(estado); if(persistir!==false) salvar(); if(SERVIDOR && !aplicando) diferencas(antes, estado); ouvintes.slice().forEach(function(f){ f(); }); }
 function efem(p){ mudar(function(s){ return Object.assign({}, s, {efem:Object.assign({}, s.efem, p)}); }, false); }
 function assinar(f){ ouvintes.push(f); return function(){ ouvintes = ouvintes.filter(function(x){ return x!==f; }); }; }
 function useChat(){ return React.useSyncExternalStore(assinar, function(){ return estado; }); }
@@ -354,6 +362,7 @@ function textoPrevia(m){
 var RESPOSTAS = ["Oi! Já vi aqui 👍","Pode deixar, já resolvo.","Certo, obrigada!","Vou verificar e te aviso.","Ok! 😊","Combinado.","Um minutinho que já te respondo.","Perfeito, pode seguir.","Entendi! Vou cuidar disso agora.","Show, valeu!","Já estou vendo isso."];
 var RESP_PERG = ["Sim, pode ser.","Acho que sim, vou confirmar e te falo.","Pode, sim! 😊","Ainda não, mas já estou vendo."];
 function simular(convId, textoOriginal, tipo, de, aba){
+  if(SERVIDOR) return;   // respostas de mentira só existem na demonstração
   var conv = convPorId(convId); if(!conv || !de) return;
   var quem, texto, ehSetor = conv.tipo==="setor", abaFunc = conv.paralelas && aba && aba!=="geral";
   if(ehSetor){
@@ -446,6 +455,7 @@ function mensagens(convId, cid){ return (estado.msgs[convId]||[]).filter(functio
 
 function sendMessage(p){
   var conv = convPorId(p.conv); if(!conv) return null;
+  if(SERVIDOR && p.midia){ if(typeof window!=="undefined") window.alert("Fotos e áudios ainda não funcionam no chat. Por enquanto, só texto."); return null; }
   var msg = {id:uid("m"), de:p.eu, t:Date.now(), tipo:p.tipo||"texto", texto:p.texto||"", midia:p.midia||null, resp:p.resp||null, enc:!!p.enc, dec:p.dec||null, status:"enviado", reacoes:{}, mencoes:p.mencoes||[]};
   if(p.aba && p.aba!=="geral") msg.aba = p.aba;
   if(p.porDir) msg.porDir = p.porDir;   // a Direção respondeu no lugar da representante (marcado com quem respondeu)
@@ -617,13 +627,19 @@ function setFoto(cid, url){ mudar(function(s){ var u = Object.assign({}, s.usuar
 // fotos oficiais já salvas no projeto (public/fotos); a troca feita na tela vale por cima delas
 var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg", f_anabeatrizhessdeoliveira:"fotos/ana-beatriz.jpg"};
 function fotoDe(cid){ var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? ("/"||"/")+FOTOS_PADRAO[cid] : null; }
-function setOcupado(cid, ligado){
-  mudar(function(s){ var o = Object.assign({}, s.ocupado), a = o[cid] || {desde:null, periodos:[]}, agora = Date.now();
-    if(ligado && !a.desde) a = {desde:agora, periodos:a.periodos};
-    if(!ligado && a.desde) a = {desde:null, periodos:a.periodos.concat([[a.desde, agora]])};
+// motivo "almoco" expira sozinho 1h depois (Marcus, 27/10/2026): "Ficar ocupado" (sem motivo) fica até a pessoa voltar na mão
+function setOcupado(cid, ligado, motivo){
+  mudar(function(s){ var o = Object.assign({}, s.ocupado), a = o[cid] || {desde:null, motivo:null, ate:null, periodos:[]}, agora = Date.now();
+    if(ligado && !a.desde) a = {desde:agora, motivo:motivo||null, ate:motivo==="almoco" ? agora+HORA : null, periodos:a.periodos};
+    if(!ligado && a.desde) a = {desde:null, motivo:null, ate:null, periodos:a.periodos.concat([[a.desde, agora]])};
     o[cid] = a; return Object.assign({}, s, {ocupado:o}); });
 }
-function estaOcupado(cid){ var o = estado.ocupado[cid]; return !!(o && o.desde); }
+function estaOcupado(cid){
+  var o = estado.ocupado[cid]; if(!o || !o.desde) return false;
+  if(o.ate && Date.now()>=o.ate){ setTimeout(function(){ setOcupado(cid, false); }, 0); return false; }   // o almoço venceu: fecha sozinho na próxima leitura
+  return true;
+}
+function motivoOcupado(cid){ return estaOcupado(cid) ? (estado.ocupado[cid].motivo || "ocupado") : null; }
 function setConfig(p){ mudar(function(s){ return Object.assign({}, s, {config:Object.assign({}, s.config, p)}); }); }
 function online(cid){ return cid===eu || (presenca(cid).online && !estaOcupado(cid)); }
 function restaurarDemo(){ try{ localStorage.removeItem(CHAVE); localStorage.removeItem(CHAVE_MIDIA); }catch(x){} location.reload(); }
@@ -716,4 +732,77 @@ var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:veri
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
-export { FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };
+
+// ---------- SERVIDOR (27/10/2026): conversas e mensagens guardadas no banco, para as pessoas conversarem de verdade ----------
+// Cada mudança local (mensagem nova, reação, edição, conversa nova) vai para uma fila e é enviada ao servidor; a cada 4 segundos a tela pergunta o que veio de novo (seq = número de ordem).
+function diferencas(antes, depois){
+  if(antes===depois || !eu) return;
+  var cvAntes = {}; antes.convs.forEach(function(c){ cvAntes[c.id] = c; });
+  depois.convs.forEach(function(c){ if(cvAntes[c.id]!==c && (c.membros||[]).indexOf(eu)>=0) fila.push({t:"conv", conv:c}); });   // conversa vai antes das mensagens dela
+  Object.keys(depois.msgs).forEach(function(cid){
+    var nova = depois.msgs[cid], velha = antes.msgs[cid]; if(nova===velha) return;
+    var mapa = {}; (velha||[]).forEach(function(m){ mapa[m.id] = m; });
+    nova.forEach(function(m){ var o = mapa[m.id]; if(o===m) return; if(!o){ if(m.de===eu) fila.push({t:"msg", conv:cid, msg:m}); } else fila.push({t:"patch", conv:cid, msg:m}); });
+  });
+  if(fila.length) setTimeout(esvaziar, 60);
+}
+function esvaziar(){
+  if(enviando || !fila.length || !token()) return;
+  enviando = true;
+  var it = fila[0];
+  var req = it.t==="conv" ? chamar("POST", "/chat/conv", {conv:it.conv}) : it.t==="msg" ? chamar("POST", "/chat/msg", {conv:it.conv, msg:it.msg}) : chamar("PATCH", "/chat/msg/"+encodeURIComponent(it.msg.id), {dados:it.msg});
+  req.then(function(){ fila.shift(); enviando = false; esvaziar(); })
+    .catch(function(x){ enviando = false; if(/Sem conexão|Algo deu errado/.test(x.message||"")) setTimeout(esvaziar, 4000); else { fila.shift(); esvaziar(); } });   // sem rede: tenta de novo; recusa do servidor: descarta
+}
+function notificarRecebida(convId, msg){
+  var conv = convPorId(convId); if(!conv) return;
+  var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, aberta = estado.efem.aberta===convId && !document.hidden;
+  if(notifLer().chat){ if(meMarcou) tocar("mencao"); else tocar("receber"); }
+  if(!aberta){
+    var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou};
+    efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
+    setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);
+  } else markRead(eu, convId, msg.aba);
+}
+function aplicarServidor(r, primeira){
+  var novas = [];
+  aplicando = true;
+  try {
+    mudar(function(s){
+      var convs = s.convs.slice(), idx = {}; convs.forEach(function(c, i){ idx[c.id] = i; });
+      (r.convs||[]).forEach(function(c){ if(idx[c.id]!==undefined) convs[idx[c.id]] = c; else { idx[c.id] = convs.length; convs.push(c); } });
+      var msgs = Object.assign({}, s.msgs), lido = s.lido;
+      (r.msgs||[]).forEach(function(x){
+        var l = (msgs[x.conv]||[]).slice(), i = l.findIndex(function(m){ return m.id===x.dados.id; });
+        if(i>=0) l[i] = x.dados; else { l.push(x.dados); if(x.dados.de!==eu) novas.push({conv:x.conv, msg:x.dados}); }
+        msgs[x.conv] = l.sort(function(a, b){ return a.t-b.t; });
+      });
+      if(primeira){ var o = Object.assign({}, lido[eu]), agora = Date.now(); convs.forEach(function(c){ o[c.id] = agora; }); lido = Object.assign({}, lido); lido[eu] = o; }   // primeira vez neste navegador: o que já existia conta como lido
+      return Object.assign({}, s, {convs:convs, msgs:msgs, lido:lido, seqSrv:r.seq});
+    });
+  } finally { aplicando = false; }
+  if(!primeira) novas.forEach(function(n){ notificarRecebida(n.conv, n.msg); });
+}
+function sincronizar(){
+  if(!SERVIDOR || !token() || !eu) return Promise.resolve();
+  esvaziar();
+  return chamar("GET", "/chat/sync?desde="+seqServidor).then(function(r){
+    if(r.semContato) return;
+    var primeira = seqServidor===0;
+    aplicarServidor(r, primeira); seqServidor = r.seq;
+  }).catch(function(){});
+}
+// Liga a troca com o servidor (uma vez). Se outra pessoa entrou neste navegador, o chat começa do zero para ela.
+function iniciarServidor(){
+  if(!SERVIDOR || !token() || !eu) return function(){};
+  if(estado.contaChat && estado.contaChat!==eu){
+    aplicando = true; try{ mudar(function(s){ return Object.assign({}, s, {convs:[], msgs:{}, lido:{}, mencoes:[], seqSrv:0}); }); } finally { aplicando = false; }
+  }
+  aplicando = true; try{ mudar(function(s){ return Object.assign({}, s, {contaChat:eu}); }); } finally { aplicando = false; }
+  seqServidor = estado.seqSrv || 0;
+  if(timerSync) return function(){};
+  timerSync = setInterval(sincronizar, 4000); sincronizar();
+  return function(){ clearInterval(timerSync); timerSync = null; };
+}
+
+export { iniciarServidor, FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, motivoOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };

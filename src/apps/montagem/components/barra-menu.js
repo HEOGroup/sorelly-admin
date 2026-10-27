@@ -6,6 +6,7 @@
 // Cada nó: {nome, aba?, modo?, perm?, itens?}. Sem itens = abre a tela. Itens sem permissão somem (e a palavra some se ficar vazia).
 import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
+import { gravarFavoritas, lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { e, Fragment, useEffect, useRef, useState } from "@/shared/react";
 
 var OURO = "#B8862B", LARG = 244, LIN = 30;
@@ -107,16 +108,23 @@ function BuscaMenu(p){
 var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
 var chaveDeNo = function(n, setor){ return setor+"|"+(n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
 var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")) || "[]"); }catch(x){ return []; } };
+// Estrela (27/10/2026): clicar na ☆ fixa a aba como FAVORITA. Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
+// O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, clique na ★.
+var INICIO_ABA = {k:chaveDeNo({aba:"inicio", nome:"Início"}, "Início"), nome:"Início", aba:"inicio", setor:"Início", cor:"#E8B84B"};
 function AbasAbertas(p){
   var nos = filtrar(p.menu, p.pode), todas = folhas(nos, [], []).map(function(x){ return x.no; });
   var atual = todas.filter(function(n){ return p.ativo(n); })[0];
+  var visao = p.visao || "admin";
   var st = useState(function(){ return lerAbas(p.visao); }), abas = st[0], setAbas = st[1];
+  var sf = useState(function(){ return lerFavoritas(visao); }), favs = sf[0], setFavs = sf[1], sd = useState(null), arrastando = sd[0], setArrastando = sd[1];
   // trocou de modo (Admin <-> Marcus): carrega a lista do outro modo
-  useEffect(function(){ setAbas(lerAbas(p.visao)); }, [p.visao]);
+  useEffect(function(){ setAbas(lerAbas(p.visao)); setFavs(lerFavoritas(visao)); }, [p.visao]);
+  useEffect(function(){ var f = function(){ setFavs(lerFavoritas(visao)); }; window.addEventListener("sorelly-favoritas", f); return function(){ window.removeEventListener("sorelly-favoritas", f); }; }, [visao]);
   var kAtual = atual ? chaveDeNo(atual, p.setor) : "";
+  var eFav = function(k){ return favs.some(function(f){ return f.k===k; }); };
   var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(l)); }catch(x){} };
   useEffect(function(){
-    if(!atual) return;
+    if(!atual || atual.aba==="inicio" || eFav(kAtual)) return;
     setAbas(function(ant){
       if(ant.some(function(a){ return a.k===kAtual; })) return ant;
       var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo, breve:atual.breve, setor:p.setor, cor:p.cor}]);
@@ -125,18 +133,37 @@ function AbasAbertas(p){
       return nova;
     });
   }, [kAtual]);
-  var fecha = function(a, ev){ ev.stopPropagation(); var i = abas.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
-    if(a.k===kAtual && resto.length) p.abrir(resto[Math.max(0, i-1)]); };
-  var visiveis = abas;
-  // sem nenhuma aba aberta, a faixa continua ocupando a mesma altura: a barra do menu NÃO muda de lugar quando a primeira aba abre ou a última fecha (Marcus, 26/10/2026)
-  // o bloco das abas é FECHADO: linha em cima, embaixo e dos lados; vazio ou cheio, ocupa a mesma altura
-  if(!visiveis.length) return e("div",{"aria-hidden":true, className:"border-y border-l border-border", style:{height:LINA+2}});
+  // ordem na faixa: Início, favoritas (na ordem escolhida), depois as abertas que não são favoritas
+  var lista = [INICIO_ABA].concat(favs.filter(function(f){ return f.aba!=="inicio"; }), abas.filter(function(a){ return a.aba!=="inicio" && !eFav(a.k); }));
+  var fecha = function(a, ev){ ev.stopPropagation(); var i = lista.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
+    if(a.k!==kAtual) return;
+    p.abrir(lista[Math.max(0, i-1)]);   // volta para a aba da esquerda (no pior caso, o Início)
+  };
+  var alternaFav = function(a, ev){
+    ev.stopPropagation();
+    if(eFav(a.k)){ var tira = favs.filter(function(f){ return f.k!==a.k; }); setFavs(tira); gravarFavoritas(visao, tira); grava(abas.concat([a])); }
+    else { var poe = favs.concat([{k:a.k, nome:a.nome, aba:a.aba, modo:a.modo, breve:a.breve, setor:a.setor, cor:a.cor}]); setFavs(poe); gravarFavoritas(visao, poe); grava(abas.filter(function(z){ return z.k!==a.k; })); }
+  };
+  // segurar a aba e arrastar para trocar de lugar (favoritas entre favoritas, abertas entre abertas)
+  var soltar = function(alvo, ev){
+    ev.preventDefault(); var de = arrastando; setArrastando(null);
+    if(!de || de===alvo.k || alvo.aba==="inicio") return;
+    var ordena = function(l){ var i = l.findIndex(function(x){ return x.k===de; }), j = l.findIndex(function(x){ return x.k===alvo.k; }); if(i<0 || j<0) return l; var c = l.slice(), it = c.splice(i, 1)[0]; c.splice(j, 0, it); return c; };
+    if(eFav(de) && eFav(alvo.k)){ var nf = ordena(favs); setFavs(nf); gravarFavoritas(visao, nf); }
+    else if(!eFav(de) && !eFav(alvo.k)) grava(ordena(abas));
+  };
   return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
-    visiveis.map(function(a){ var on = a.k===kAtual;
-      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50"), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
+    lista.map(function(a){ var on = a.k===kAtual, fixo = a.aba==="inicio", fav = eFav(a.k);
+      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, draggable:!fixo, title:fixo ? undefined : "Segure e arraste para mudar de lugar",
+          onDragStart:function(ev){ setArrastando(a.k); try{ ev.dataTransfer.setData("text/plain", a.k); ev.dataTransfer.effectAllowed = "move"; }catch(x){} },
+          onDragOver:function(ev){ if(arrastando) ev.preventDefault(); }, onDrop:function(ev){ soltar(a, ev); }, onDragEnd:function(){ setArrastando(null); },
+          className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50")+(arrastando===a.k ? " opacity-40" : ""), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
         e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
           (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
-        e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕")); }));
+        !fixo && e("button",{type:"button", "aria-label":fav ? "Tirar "+a.nome+" dos favoritos" : "Fixar "+a.nome+" nos favoritos", title:fav ? "Tirar dos favoritos" : "Fixar nos favoritos", onClick:function(ev){ alternaFav(a, ev); },
+          className:"h-full px-1.5 text-[15px] leading-none "+(fav ? "text-[#F5D68A]" : "opacity-60 hover:opacity-100")}, fav ? "★" : "☆"),
+        (!fixo && !fav) && e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕"),
+        (fixo || fav) && e("span",{className:"pr-2"})); }));
 }
 
 // Voo (23/10/2026): ao escolher uma tela no menu ou na busca, um clone do item sai de onde foi clicado e voa até a aba dela, que pisca ao chegar. Sem movimento se a pessoa pede menos animação.

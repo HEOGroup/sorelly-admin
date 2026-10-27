@@ -2,7 +2,7 @@
 // Kits → Representantes → Consolidado: CONTROLE do que entrou. Tudo que a representante preenche no app (acerto, kit novo, reposição) ou o atendimento interno lança
 // aparece aqui sozinho e fica pendente até trazer na empresa: o agendamento confere e dá o OK. A comissão e as contas (Point, link…) ficam só em Comissões.
 // O agendamento vê quantidades (atendimentos, por representante) e o que precisa conferir, nunca os totais de valores. Abaixo do cabeçalho há sempre uma linha com o total do que está filtrado.
-import { STATUS_LISTA, analisar, comisEfetiva, itensComissao, pagoDe, statusDe, taxaDe } from "@/apps/montagem/domain/comissoes";
+import { STATUS_LISTA, analisar, comisEfetiva, itensComissao, pagoDe, prazoPendente, statusDe, taxaDe } from "@/apps/montagem/domain/comissoes";
 import { conferirBrindes } from "@/apps/montagem/domain/consignado";
 import { GRUPOS_CONTA, grupoDaConta } from "@/apps/montagem/domain/contas-grupos";
 import { AGENDAMENTO, BIPADORAS, FINANCEIRO, SUPERVISORA, nomeDe, podeAgendar, podeBipRetorno, veTotais } from "@/apps/montagem/domain/equipe";
@@ -29,7 +29,7 @@ var TIPOS = ["acerto","kit_novo_entrega","reposicao","reposicao_especial"];   //
 function linha(r, c){
   var pago = pagoDe(r);   // recebido de verdade (com o dinheiro contado e sem "acerto com loja")
   var ac = r.tipo==="acerto";
-  var devido = r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0) + (r.tagsValor||0));
+  var devido = r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0) + (r.tagsValor||0) + (r.multas||0));   // multas: regras de 27/10/2026, somam no total a pagar
   var falta = ac ? Math.max(0, r2(devido - pago)) : 0;
   var teorico = r.faixa ? (r.faixa.bn + r.faixa.bb) : 0;
   var descBrinde = Math.max(0, r2(teorico - ((r.brindeNormal||0) + (r.brindeSelect||0))));
@@ -130,11 +130,17 @@ function CelCond(p){
 // Multa lançada pela representante no app: remarcação "com multa" (vermelho) ou "isenta" (verde, com o motivo) e o atraso do Kit 100% Prata
 function CelMulta(p){
   var r = p.r, rem = r.remarcacoes || [], mu = rem.filter(function(x){ return !x.isenta; }), is = rem.filter(function(x){ return x.isenta; }), atr = r.atrasoDias || 0;
-  if(!rem.length && !atr) return e("span",{className:"text-muted-foreground"},"—");
+  // regras de 27/10/2026: multa do valor pendente, contagem dos 15 dias, kit novo bloqueado e jurídico
+  var pz = p.falta>0.009 ? prazoPendente(r, isoDia(new Date())) : null, multa = r.multas || 0;
+  if(!rem.length && !atr && !multa && !pz && !r.juridico) return e("span",{className:"text-muted-foreground"},"—");
   return e("span",{className:"flex flex-col items-center gap-0.5"},
     mu.length>0 && e("span",{className:"rounded bg-destructive/20 px-1.5 py-px text-[11px] font-bold text-destructive", title:"Remarcação com multa"+(p.pct>0 ? " · tirou "+p.pct+"% da comissão" : "")}, mu.length+(mu.length===1 ? " multa" : " multas")+(p.pct>0 ? " · −"+p.pct+"%" : "")),
     is.length>0 && e("span",{className:"rounded bg-success/20 px-1.5 py-px text-[11px] font-bold text-success", title:is.map(function(x){ return x.motivo || "isenta"; }).join("\n")}, is.length+(is.length===1 ? " isenta" : " isentas")),
-    atr>0 && e("span",{className:"rounded bg-destructive/20 px-1.5 py-px text-[11px] font-bold text-destructive"}, "atraso "+atr+"d"));
+    atr>0 && e("span",{className:"rounded bg-destructive/20 px-1.5 py-px text-[11px] font-bold text-destructive"}, "atraso "+atr+"d"),
+    r.juridico && e("span",{className:"rounded bg-destructive/30 px-1.5 py-px text-[11px] font-bold text-destructive", title:"60 dias de atraso: perde comissão e brinde e vai ao jurídico"}, "jurídico"),
+    multa>0 && e("span",{className:"rounded bg-destructive/20 px-1.5 py-px text-[11px] font-bold text-destructive", title:"Multa de "+(r.regrasNovas ? r.regrasNovas.multaPendentePct : 10)+"% sobre o valor pendente"}, "multa "+BK(multa)),
+    pz && e("span",{className:"rounded px-1.5 py-px text-[11px] font-bold "+(pz.atraso>0 ? "bg-destructive/20 text-destructive" : "bg-warning/20 text-warning"), title:pz.atraso>0 ? "Prazo vencido: multa de atraso de "+pz.pct+"% sobre o pendente" : "Prazo para quitar o valor pendente"}, pz.atraso>0 ? pz.atraso+"d de atraso" : pz.dias+"/"+pz.prazo+" dias"),
+    pz && e("span",{className:"rounded bg-destructive/20 px-1.5 py-px text-[11px] font-bold text-destructive", title:"Próximo kit só depois de quitar o valor pendente"}, "kit bloqueado"));
 }
 
 // Bloco de resultado do topo: total + as 3 representantes que mais fizeram; clicando abre a lista completa
@@ -488,7 +494,7 @@ function AbaConsolidadoRep(){
                   td(ac && r.excedenteBrinde>0 ? BK(r.excedenteBrinde) : dash,{r:true, c:"text-red-400 font-semibold"}),
                   td(ac && r.tagsValor>0 ? BK(r.tagsValor) : dash,{r:true, c:"text-red-400 font-semibold"}),
                   td(ac ? BK(l.devido) : dash,{r:true, c:"text-violet-300 font-bold", style:undefined}), td(ac ? BK(l.pago) : dash,{r:true, c:"text-emerald-400 font-bold"}),
-                  td(e(CelMulta,{r:r, pct:multaPct})),
+                  td(e(CelMulta,{r:r, pct:multaPct, falta:l.falta})),
                   // ── Pagamentos: Inadimplente e Dinheiro (confirmar) sempre abertos no começo, depois as contas ──
                   td(l.falta>0.009 ? BK(l.falta) : dash,{r:true, c:l.falta>0.009 ? "text-red-400 font-bold" : ""}),
                   td(e(CelDinheiro,{l:l, agenda:agenda, onOk:function(contado){ receber(r.id, {din:{ok:true, contado:contado, ts:agora(), por:s.usuario}}); }, onDesfaz:function(){ receber(r.id, {din:{ok:false}}); }}),{r:true}),

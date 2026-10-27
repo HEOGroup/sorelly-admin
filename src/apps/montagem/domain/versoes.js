@@ -3,6 +3,104 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.18", data:"2026-10-27", titulo:"SorellyChat: corrigido rolar a tela toda junto", itens:[
+    {tipo:"correcao", area:"SorellyChat", txt:"Achei a causa: a altura da tela do SorellyChat era um número fixo que não contava a faixa de abas abertas/menu (quando aparece em cima). Faltando esse tanto, a PÁGINA toda ficava um pouco mais alta que a tela e rolava junto — por isso a barra de cima e o nome da pessoa na conversa pareciam subir. Agora a altura se ajusta sozinha ao que sobra da tela; só a lista de conversas (abaixo da busca) e as mensagens (abaixo do nome da pessoa) rolam — o resto fica parado."},
+  ]},
+  {v:"0.14.17", data:"2026-10-27", titulo:"SorellyChat: barra compacta (V1) + Almoço automático", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"Barra de cima bem mais compacta: faixa dourada só com a logo e \"SorellyChat\"; saiu o ícone de perfil (MH), o título grande \"Conversas\" e a fileira de filtros (foram para um botão \"⋯\"). No lugar: uma bolinha + o nome da pessoa, e um botão \"Almoço\" — clica e marca; passou 1h, volta pra \"Disponível\" sozinho. A busca virou uma barra comum (cinza) abaixo da faixa dourada."},
+  ]},
+  {v:"0.14.16", data:"2026-10-27", titulo:"SorellyChat: saiu o quadro de horário/presença da conversa", itens:[
+    {tipo:"correcao", area:"SorellyChat", txt:"O quadro de horário e presença que aparecia no topo da conversa com um colaborador saiu (pedido do Marcus, \"não precisa, quero mais limpo\"). Arquivo components/chat/chat-horario.js removido."},
+  ]},
+  {v:"0.14.15", data:"2026-10-27", titulo:"SorellyChat: fonte 1 px menor em tudo", itens:[
+    {tipo:"correcao", area:"SorellyChat", txt:"Todos os textos do SorellyChat (lista de conversas, conversa, perfil, configurações) ficaram 1 px menores. Conferido: as faltas/atrasos de um colaborador só aparecem na conversa para quem tem a autorização \"Ver a presença dos colaboradores no chat\" (hoje Marcus, Nickolas, Lucas e Maria Claudia/RH) — já estava assim no código; o horário de trabalho continua visível para todos."},
+  ]},
+  {v:"0.14.14", data:"2026-10-27", titulo:"Início: topo e blocos de setor menores", itens:[
+    {tipo:"correcao", area:"Início", txt:"O topo (\"Boa tarde, Marcus\", foto e versículo) estava grande demais; ficou na metade do tamanho. Os blocos de setor também encolheram (ícone, texto e espaçamento menores)."},
+  ]},
+  {v:"0.14.13", data:"2026-10-27", titulo:"Fechou a última aba? Abre a Início sozinha", itens:[
+    {tipo:"melhoria", area:"Menu", txt:"Fechando a última tela aberta (o ✕ da aba), o sistema abre a Início automaticamente, mesmo que ela já tivesse sido fechada antes. Antes só acontecia se a Início por acaso fosse a última aba sobrando."},
+  ]},
+  {v:"0.14.12", data:"2026-10-27", titulo:"Previsão de faturamento: meta virou 97/98/99%, travada em 98%", itens:[
+    {tipo:"correcao", area:"Faturamento", txt:"As opções de meta da previsão do mês (\"escolha quantos % dos acertos previstos\") eram 96/97/98%; viraram 97/98/99%, com 98% como valor travado. Vale no Dashboard, na Previsão de faturamento, no Mês a mês e no Crescimento de revendedoras (todos usam o mesmo cálculo)."},
+  ]},
+  {v:"0.14.11", data:"2026-10-27", titulo:"Dashboard: faixa de cima com divisórias e ✎ no Faturamento (V1-C)", itens:[
+    {tipo:"melhoria", area:"Dashboard", txt:"A faixa de cima (Revendedoras, Faturamento, Previsão) ganhou linhas finas separando os 3 números, numa peça só. O botão de atualizar o faturamento de hoje virou um ✎ discreto no canto do número \"Faturamento até o momento\" — clicar abre o painel (Recebido, Acertos, Carregar, Atualizar hoje, Fixar) embaixo da faixa; clicar de novo ou em \"Fechar\" fecha. Escolhido entre 4 versões apresentadas ao Marcus (V1-C)."},
+  ]},
+  {v:"0.14.22", data:"2026-10-27", titulo:"Revendedoras: Cadastro, Kits e vendas e Contas a receber no menu do setor", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"As três abas saíram do alto da página e viraram palavras do menu do setor (Cadastro, Kits e vendas, Contas a receber), cada uma com o seu endereço. O título Revendedoras saiu da página e tudo subiu."},
+  ]},
+  {v:"0.14.21", data:"2026-10-27", titulo:"Revendedoras: título menor e filtros acima da tabela", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"O título Revendedoras ficou menor, na mesma linha das abas, e tudo subiu. Na aba Cadastro a barra de filtros saiu do alto e fica logo acima da tabela, depois do painel."},
+  ]},
+  {v:"0.14.20", data:"2026-10-27", titulo:"Teste do novo fluxo do kit novo: Representante Kit Novo", itens:[
+    {tipo:"novo", area:"Comissões", txt:"Teste de 60 dias (Curitiba): Configurador de comissões ganhou o bloco \"Novo fluxo\" (chave liga/desliga, entrega R$ 25, 2% para a Rep. Kit Novo e 6% para a Rep. Acerto no 1º acerto) e a lista das revendedoras marcadas com a Rep. Kit Novo de cada uma."},
+    {tipo:"novo", area:"Comissões", txt:"Revendedora marcada: a entrega do kit (condicional assinada) paga R$ 25 à Rep. Kit Novo; no 1º acerto a Rep. Acerto leva 6% e a Rep. Kit Novo 2%; do 2º acerto em diante a Rep. Acerto leva a % normal. A gasolina segue o esquema das outras representantes."},
+    {tipo:"melhoria", area:"Kits novos", txt:"O prazo da Michele conta do dia em que o cadastro chegou em Cadastradas, nunca da aprovação nem da criação do lead."},
+  ]},
+  {v:"0.14.10", data:"2026-10-27", titulo:"Dashboard: \"Hoje na empresa\" saiu; faturamento de 26/10 travado", itens:[
+    {tipo:"correcao", area:"Dashboard", txt:"O bloco \"Hoje na empresa\" saiu da tela (pedido do Marcus). Continua existindo nas telas de Listagens e Painel da bipagem, só não aparece mais aqui."},
+    {tipo:"correcao", area:"Faturamento", txt:"Travei o dia 26/10 com os números que o Marcus passou: R$ 1.160.952,55 recebido, 1.464 acertos, 2.105 revendedoras."},
+  ]},
+  {v:"0.14.20", data:"2026-10-27", titulo:"Revendedoras: painel no alto da aba Cadastro (layout A)", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Faixa com 6 números (revendedoras, idade média, cidades, tempo de casa, novas no ano, com 2 anos ou mais) e três listas com %: cidades (8 maiores e botão para ver todas, com SC, Joinville e Ponta Grossa), faixa etária e tempo de casa até mais de 5 anos. O painel acompanha os filtros da tabela."},
+  ]},
+  {v:"0.14.19", data:"2026-10-27", titulo:"Revendedoras: tempo de casa e faixa etária", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Aba Cadastro: colunas Faixa etária (até 25, 26 a 35, 36 a 45, 46 ou mais) e Tempo de casa (a partir da data de cadastro), filtro por faixa etária e média de tempo de casa no total do filtro."},
+  ]},
+  {v:"0.14.18", data:"2026-10-27", titulo:"Revendedoras: mais dados no cadastro e filtro por data", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Aba Cadastro com Idade, Nascimento, E-mail, Bairro, CEP e data de Cadastro (vindos da DevMaster; CPF e CNPJ ficam fora da tela). O total do filtro mostra a idade média."},
+    {tipo:"novo", area:"Revendedoras", txt:"Filtro por data: Cadastro (aba Cadastro) e Data do kit (aba Kits e vendas)."},
+  ]},
+  {v:"0.14.17", data:"2026-10-27", titulo:"Revendedoras em 3 abas e vendas pela data de faturamento", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"A tela agora tem três abas: Cadastro (só dados da cliente), Kits e vendas (condicionais, datas, vendas, acertos e brindes) e Contas a receber (aguardando a ligação com os pagamentos)."},
+    {tipo:"correcao", area:"Revendedoras", txt:"As vendas agora são contadas pela data de faturamento (ach_datafat), a mesma do relatório do Marcus. Dia 26/10: R$ 169.911,99 de venda e R$ 111.392,72 de acerto (relatório: R$ 169.919,30 e R$ 111.220,72)."},
+  ]},
+  {v:"0.14.16", data:"2026-10-27", titulo:"Revendedoras: acertos e valor dos acertos", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Colunas Acertos 2026 e Valor dos acertos 2026 (acerto sem brinde) por revendedora, e tabela Mês (todas as vendas) com acertos, clientes, vendas sem brinde, valor dos acertos, brindes e % de brinde. Outubro: R$ 1.798.475,79 de venda e R$ 1.167.374,78 de acertos (relatório do Marcus: R$ 1.791.275,15 e R$ 1.160.952,55)."},
+  ]},
+  {v:"0.14.15", data:"2026-10-27", titulo:"Revendedoras: venda SEM brinde, brindes e % de brinde (2026)", itens:[
+    {tipo:"correcao", area:"Revendedoras", txt:"O valor de venda da DevMaster somava brindes, trocas, indicações e premiações. Agora a venda é calculada pelos itens (TES): venda = S001, S501, S002 e S008; brinde = S009 e S503; troca = S006 e S504; indicação = S007 e S505; premiação por meta = S011; outros = o resto (ex.: S004). Conferido nos casos Esthefanny (R$ 1.042,00) e Tayane (R$ 800,00)."},
+    {tipo:"novo", area:"Revendedoras", txt:"Colunas Total vendido 2026 (sem brinde), Brindes 2026 e % de brinde; seleção para abrir uma coluna de Brinde ao lado de cada mês. A média das 3 últimas vendas passou a usar a venda sem brinde. Aviso de progresso enquanto a carga roda."},
+    {tipo:"novo", area:"Revendedoras", txt:"Ficha: nova coluna Vendas de 2026 no card (vendas fechadas, venda sem brinde, brindes, % de brinde, trocas, indicação, premiação, média e última venda) e tabela de vendas com venda bruta, brindes, trocas, indicação, premiação, venda sem brinde e % de brinde."},
+    {tipo:"novo", area:"Servidor", txt:"A composição de cada venda é guardada no banco (sorelly.venda_composicao). Venda fechada não muda: cada atualização lê só as vendas novas e os últimos 60 dias (cancelamentos). Primeira carga de 2026 (19.883 vendas) levou cerca de 6 segundos."},
+  ]},
+  {v:"0.14.14", data:"2026-10-27", titulo:"Revendedoras: linha TOTAL com tudo em todas as tabelas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A primeira linha de cada tabela é o TOTAL do que está filtrado (abas, filtros e filtros de coluna): revendedoras, condicionais, peças, valor total, expositores, média das 3 últimas vendas, total vendido no ano e cada mês. A tabela por representante ganhou as colunas Condicionais, Peças, Expositores, Média das 3 últimas vendas e as vendas por mês, e a tabela que abre dentro de cada representante também tem a linha TOTAL."},
+  ]},
+  {v:"0.14.13", data:"2026-10-27", titulo:"Revendedoras: mãozinha em toda a tabela e vendas de todo o ano em colunas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A mãozinha aparece em toda a tabela, também sobre as linhas. Ao apertar o mouse ela fecha, o texto não seleciona e a tabela anda para o lado junto com o mouse. Clique sem arrastar continua abrindo a ficha."},
+    {tipo:"novo", area:"Revendedoras", txt:"Por padrão a lista já mostra as vendas de TODO o ano (Total vendido e uma coluna por mês, de janeiro até o mês atual), indo para o lado. A seleção Vendas troca para os últimos 3 meses, todos os meses (24) ou sem colunas de vendas."},
+  ]},
+  {v:"0.14.12", data:"2026-10-27", titulo:"Revendedoras: corrigido erro ao abrir o filtro da coluna Média das 3 últimas vendas", itens:[
+    {tipo:"correcao", area:"Revendedoras", txt:"Clicar no título da coluna Média das 3 últimas vendas derrubava a tela (erro ao montar a lista de valores do filtro). Corrigido; testados os filtros das colunas de data prevista, devolução, expositores, tempo com expositor e média das vendas."},
+  ]},
+  {v:"0.14.11", data:"2026-10-27", titulo:"Revendedoras: ficha em card (opção 2) com histórico de condicionais e vendas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A ficha virou um card somente leitura, em três colunas (Quem é, Contato, Kit), sem campos de formulário. Selo Edição restrita: só quem tem acesso restrito poderá alterar (ainda não existe edição)."},
+    {tipo:"novo", area:"Revendedoras", txt:"Embaixo do card, botão para alternar entre Condicionais (todas que a revendedora já teve, abertas e fechadas, com valor, vendido, retornado, saldo, previsão, fechamento, data do acerto e agenda), Vendas (todas as vendas/acertos com valor de venda, comissão, acréscimo, valor do acerto e pagamento) e Expositores. Linha TOTAL acima do cabeçalho."},
+  ]},
+  {v:"0.14.9", data:"2026-10-27", titulo:"Faturamento do dia anterior: atualização automática pela DevMaster (10h)", itens:[
+    {tipo:"novo", area:"Faturamento", txt:"Todo dia às 10h (horário de Brasília) o servidor pergunta à DevMaster o faturamento do mês até ontem — notas fiscais EMITIDAS (não orçamento), TES S001 e S002, sem clientes do grupo Funcionários — e grava sozinho em faturamentoDiario[dia].recebido. Testado ao vivo em 27/10/2026: outubro até 26/10 deu R$ 243.746,10 (342 notas)."},
+    {tipo:"novo", area:"Servidor", txt:"Mesmo mecanismo do total de revendedoras (instrumentation.js liga os dois relógios no boot): src/server/faturamento.js (consulta a DevMaster) e src/server/faturamento-dia.js (agenda e grava em sorelly.estado_modulo, módulo \"fatdia\"). Rota manual de emergência (só Diretoria): POST /api/faturamento/dia. PRECISA REINICIAR O SERVIDOR UMA VEZ (mesma pendência do relógio das revendedoras)."},
+    {tipo:"correcao", area:"Faturamento", txt:"Só preenche o VALOR (recebido); acertos e revendedoras de cada dia continuam como já estavam — o acerto (quantidade de atendimentos) ainda não tem fonte automática definida (a confirmar com o Marcus)."},
+  ]},
+  {v:"0.14.10", data:"2026-10-27", titulo:"Revendedoras: ficha em formato de cadastro, mãozinha na tabela e vendas por mês em colunas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A ficha da revendedora agora é um CADASTRO: seções Dados cadastrais e Situação do kit com campos rotulados, depois a tabela de condicionais, vendas por mês, modelos de expositor e observações. Saíram os blocos dourados."},
+    {tipo:"novo", area:"Revendedoras", txt:"Seleção Vendas na linha de filtros: últimos 3 meses ou todos os meses (até 24) em colunas novas, com o total de cada mês na linha TOTAL DO FILTRO."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"Tabela com a mãozinha: segurar e arrastar para o lado vale em qualquer ponto, inclusive no cabeçalho e na linha de total. Clique sem arrastar continua abrindo o filtro da coluna ou a ficha."},
+  ]},
+  {v:"0.14.9", data:"2026-10-27", titulo:"Revendedoras: filtros em uma linha e média das 3 últimas vendas para todas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"Filtros em UMA linha só, junto da tabela: busca, Representante, Situação, Devolução, Por representante e atualizar (↻). Grupo e Modelo de expositor só aparecem nas abas de expositor. UF e quantidade de condicionais ficam no filtro de cada coluna."},
+    {tipo:"novo", area:"Revendedoras", txt:"A média das 3 últimas vendas (acertos fechados) agora aparece para TODAS as revendedoras, não só as de expositor. Quem tem menos de 3 vendas mostra quantas (ex.: 1 venda); sem venda nos últimos 300 dias mostra R$ 0,00. O bloco Média por revendedora ganhou a média geral das 3 últimas vendas."},
+  ]},
+  {v:"0.14.8", data:"2026-10-27", titulo:"Revendedoras: parte de cima reorganizada", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"Quatro blocos do mesmo tamanho e alinhados (Revendedoras, Condicionais por tipo, Média por revendedora, Devolução). Os blocos de expositor (grupos de modelos e só expositor) só aparecem nas abas Expositor e Só expositor. O texto de apoio saiu do título. Agrupar por representante e Atualizar foram para o bloco Filtros, junto da tabela."},
+    {tipo:"correcao", area:"Revendedoras", txt:"Cada revendedora tem UM kit só (principal, kit novo e reposição são o mesmo kit). Saíram Kits por revendedora, Valor por kit, Peças por kit e a coluna Média por kit. A média passou a ser por revendedora (valor ÷ revendedoras) e há contagem de quem tem 1 condicional e 2 ou mais."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"Mini displays e cubos e peças de joia que vêm dentro de condicionais de expositor saíram da tela principal (ficam registrados em DECISOES.md)."},
+  ]},
+  {v:"0.14.7", data:"2026-10-27", titulo:"Revendedoras: data do kit e data prevista de acerto", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Colunas Data do kit (emissão da primeira condicional dos últimos 90 dias, nunca expositor) e Data prevista de acerto (a previsão de devolução dessa mesma condicional, que já vem da DevMaster). Vermelho se já passou e amarelo se vence em até 7 dias. Os mesmos dois dados aparecem no bloco Acerto da ficha."},
+  ]},
   {v:"0.14.6", data:"2026-10-27", titulo:"Revendedoras: expositores, modelos agrupados, quem só tem expositor e média das 3 últimas vendas", itens:[
     {tipo:"novo", area:"Revendedoras", txt:"A lista agora puxa também as condicionais de expositor (previsão no ano 3000). Aba Expositor (901 condicionais) e aba Só expositor · sem kit (59 revendedoras esquecidas com expositor, com tempo que estão com ele). A aba Todas continua só com kits."},
     {tipo:"novo", area:"Revendedoras", txt:"Bloco Expositores · grupos de modelos: todos os dois andares juntos (460 unidades, 7 modelos), mais Display e cubo, Pulseira, Colar, Bandeja, Anel, Busto, Brinco, Peças de joia e Outros. Clicar no grupo abre os modelos; clicar no modelo filtra quem está com ele. Filtros por grupo e por modelo."},
@@ -103,9 +201,12 @@ var VERSOES = [
   {v:"0.13.14", data:"2026-10-26", titulo:"Direcionar pagamento: resumo numa coluna e tabela de pagamentos com Inteiro ou Dividir", itens:[
     {tipo:"melhoria", area:"Financeiro · Pagamentos · Direcionar", txt:"O resumo (Vendas, A pagar, Já pago com cada link em uma linha, Falta pagar, Falta enviar) ficou numa coluna só, mais larga e compacta. Os pagamentos viraram uma tabela alinhada (Pagamento, Conta, Valor, Motivo) e cada um tem a chave Inteiro ou Dividir. A sugestão é uma etiqueta dentro do motivo. Os botões ficaram numa barra no fim. O texto Obs. do exemplo saiu."},
   ]},
+  {v:"0.12.44", data:"2026-10-26", titulo:"Dívida anterior no acerto", itens:[
+    {tipo:"novo", area:"Calculadora de acertos · App da representante e Atendimento Sorelly", txt:"Quando a revendedora tem dívida de um acerto anterior, a calculadora mostra a Dívida anterior e o pagamento quita primeiro a dívida mais antiga; o resto vale para o acerto novo. Com dívida anterior só sai kit novo se tudo for quitado: ela não pode ficar devendo duas vezes seguidas. Ao registrar o acerto, a dívida antiga recebe a linha de pagamento e o acerto novo guarda o valor abatido."}]},
   {v:"0.12.43", data:"2026-10-26", titulo:"Regras de 27/10/2026: Consolidado e Inadimplência", itens:[
     {tipo:"melhoria", area:"Representantes · Consolidado", txt:"A coluna Multa mostra a multa do valor pendente, a contagem dos 15 dias (ou os dias de atraso), o aviso de kit bloqueado e o jurídico. O Total a pagar já soma a multa e o inadimplente é o que falta depois dela."},
     {tipo:"melhoria", area:"Financeiro · Inadimplência", txt:"Nova coluna Prazo (dias desde o acerto, de 15) com kit bloqueado. O saldo devedor soma a multa de 10% do pendente e a multa de atraso (1% ao dia, teto 10%), calculada pelo dia de hoje. Acertos de regras antigas continuam como antes."},
+    {tipo:"novo", area:"Financeiro · Inadimplência", txt:"Etapas da pendência na coluna Prazo: No prazo, Atrasado, Jurídico (60 dias), Retirar kit (veio o próximo acerto sem pagar) e Executar nota (última negociação não cumprida). Revendedora com duas pendências abertas mostra as duas juntas, com o total."},
     {tipo:"melhoria", area:"Acerto registrado", txt:"O registro do acerto guarda os dias de quitação e as regras de prazo, para a Inadimplência não depender da versão atual."}]},
   {v:"0.12.42", data:"2026-10-26", titulo:"Regras de 27/10/2026: Configurador, textos e multa no total", itens:[
     {tipo:"novo", area:"Representantes · Configurações", txt:"Novo bloco \"Regras de 27/10/2026\" no editor das regras: média mínima (R$ 500 e R$ 700), quantas vendas entram na média, multa do valor pendente, prazo para quitar, atraso por dia e teto, dias para ir ao jurídico e a escada do acerto atrasado (comissão e brinde). Salvar cria nova versão que vale só a partir de 27/10/2026."},
@@ -196,11 +297,17 @@ var VERSOES = [
     {tipo:"novo", area:"Servidor", txt:"Tabela sorelly.conta, rotas de cadastro e de contas, e scripts migrar-contas e criar-admin (primeira conta da Diretoria). A tabela user do admin antigo não é tocada."},
     {tipo:"correção", area:"RH · Acessos e autorizações", txt:"A aba Quem vê o quê abria com erro por falta do grupo Cadastro de peças na lista de quem é cada perfil."},
   ]},
+  {v:"0.12.60", data:"2026-10-27", titulo:"Saldos das contas e revendedoras até 27/10", itens:[
+    {tipo:"melhoria", area:"Financeiro · Saldos", txt:"Saldos das 29 contas de 26 e 27/10 lidos do admin antigo. Revendedoras de 27/10 = 2.106."}
+  ]},
   {v:"0.12.59", data:"2026-10-26", titulo:"Caixa: histórico completo de saldos e contas pagas (01/09 a 23/10)", itens:[
     {tipo:"correção", area:"Financeiro · Caixa", txt:"Saldo das contas bancárias e contas pagas por dia lidos DIRETO do banco do admin antigo (tabelas finance_balance e faturamento_contas_diario), dia a dia, de 01/09 a 23/10 (saldo) e 01/09 a 22/10 (contas pagas) — antes só havia alguns dias soltos, estimados à mão. Esses números substituem as estimativas antigas. ACHADO: o pago de 01 a 13/10 pela leitura direta do banco é R$ 609.091,94; o relatório que o Marcus conferiu em 13/10 somava R$ 530.060,74 (diferença de R$ 79.031,20 — ver DECISOES.md). Corrigido também um bug: a tela guardava os saldos no navegador e só buscava dias novos quando a versão interna mudava, por isso o saldo de um dia antigo continuava aparecendo como 'agora' mesmo com o dado novo já salvo."},
   ]},
   {v:"0.12.41", data:"2026-10-24", titulo:"Plano 45/60: aba Alinhamento", itens:[
     {tipo:"novo", area:"Agendamento · Plano 45/60", txt:"Nova aba Alinhamento com números grandes: previsto na abertura − saídas confirmadas = previsto do mês, o previsto que o Agendamento tem agora (com aviso se não bate), saídas pelo plano e saídas lançadas à mão. Cenários (confirmadas, com análise e saídas da empresa, com listas novas, com a linha que faltava) com o alvo de 94, 95 e 96%. Números informados da conversa (92, 7, 2, 1) ficam salvos."},
+  ]},
+  {v:"0.12.59", data:"2026-10-27", titulo:"Contas a pagar atualizadas até 27/10", itens:[
+    {tipo:"melhoria", area:"Financeiro · Contas a pagar", txt:"Lido do admin antigo: outubro pago R$ 1.330.288,27 e a pagar R$ 175.516,21; novembro R$ 1.466.105,48; dezembro R$ 1.500.381,39. Contas pagas dos dias 23, 26 e 27/10 gravadas."}
   ]},
   {v:"0.12.58", data:"2026-10-26", titulo:"Visão geral: Carregar no topo e blocos sem abre/fecha", itens:[
     {tipo:"melhoria", area:"Visão geral", txt:"Faixa de cima mostra acertos e Carregar separados. Campo Carregar ao lado do Hoje. Blocos fixos, sem seta de abrir/fechar. Corrigido: o campo Hoje partia de acertos + Carregar."},

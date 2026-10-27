@@ -15,6 +15,8 @@ function derivarAcerto(p){
   var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade) : null;
   var gerais = versao ? versao.gerais : {};
   var totalPagoAtual = totalPago(form.pagamentos);
+  // Dívida de acertos anteriores (p.dividaAnterior): o que ela paga agora quita primeiro a dívida mais antiga, o resto vai para este acerto
+  var dividaAnt = Math.max(0, p.dividaAnterior||0), abateDivida = Math.min(totalPagoAtual, dividaAnt), pagoAcerto = Math.round((totalPagoAtual-abateDivida)*100)/100;
   var acordoSoma = form.acordoParcelas.filter(function(x){return x.data && x.valor>0;}).reduce(function(t,x){return t+x.valor;},0);
   // Trocas (app da representante): peça deste kit = a nova entra na venda pelo valor cheio; peça de outro mês (já paga) = só a diferença (nova − antiga, pode ser negativa)
   var trocas = form.trocas || [], r2c = function(n){ return Math.round(n*100)/100; };
@@ -23,8 +25,8 @@ function derivarAcerto(p){
   var vendaEfetiva = form.vendaBruta==null ? null : Math.max(0, r2c(form.vendaBruta + trocasAjuste));
   var novas = !!(versao && versao.novas);   // regras de 27/10/2026: atraso vale para Normal e Prata, e entram multa e prazo de quitação
   var entrada = function(pago){ return {vendaBruta:vendaEfetiva, devolvida:0, garantia:form.garantia||0, vez:p.vez||0, valorPago:pago, atrasoDias:(ehPrata || novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0, semTaxa:!!p.semTaxa}; };
-  var previaBase = versao && form.vendaBruta!=null ? calcularAcerto(entrada(totalPagoAtual), versao) : null;
-  var faltaAtual = previaBase ? Math.max(0, previaBase.valorDevido-totalPagoAtual) : 0;
+  var previaBase = versao && form.vendaBruta!=null ? calcularAcerto(entrada(pagoAcerto), versao) : null;
+  var faltaAtual = previaBase ? Math.max(0, previaBase.valorDevido-pagoAcerto) : 0;
   var quitado = !!previaBase && faltaAtual<=0.009;
   var acordoExistente = form.acordoSalvo && form.acordoParcelas.some(function(x){return x.data && x.valor>0;});
   // Kit 100% Prata: brinde só com pagamento integral confirmado, então acordo/parcelas não liberam brinde.
@@ -43,7 +45,7 @@ function derivarAcerto(p){
 
   // Kit novo: % do acerto realmente pago (acordo não conta) e, no Prata, vendas mínimas para renovar.
   var kitNovoMin = gerais.kitNovoMinPct || 80;
-  var pctPagoAcerto = previaBase && previaBase.valorDevido>0 ? Math.min(100, totalPagoAtual/previaBase.valorDevido*100) : 0;
+  var pctPagoAcerto = previaBase && previaBase.valorDevido>0 ? Math.min(100, pagoAcerto/previaBase.valorDevido*100) : 0;
   var kitNovoLiberado = pctPagoAcerto>=kitNovoMin && (!previaBase || previaBase.podeRenovar);
   // Média das últimas vendas (2 anteriores + a do dia) contra R$ 500 (representante) ou R$ 700 (interno). Só nas regras novas.
   var minimo = avaliarMinimo(form.vendasAnteriores||[], vendaEfetiva, versao, !!p.semTaxa);
@@ -77,7 +79,10 @@ function derivarAcerto(p){
   // regras de 27/10/2026: a multa do valor pendente soma no total a pagar (decisão do Marcus, 26/10/2026)
   var multasSoma = novas && previaAcerto ? (previaAcerto.multas||0) : 0;
   var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma)*100)/100 : 0;
-  var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar-totalPagoAtual)*100)/100) : 0;
+  var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
+  // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
+  var blocoDivida = dividaAnt>0.009 && !!previaAcerto && restanteTotal>0.009 ? "Dívida anterior de "+BK(dividaAnt)+": ela não pode ficar devendo duas vezes seguidas. Kit novo só com tudo quitado." : "";
+  if(blocoDivida){ kitNovoLiberado = false; kitNovoRegra = {liberado:false, motivo:"divida", texto:blocoDivida.replace(/\.$/, "")}; }
 
   // Peças liberadas para o próximo mês (quantidade pelo valor da venda, reduzida pelo % em aberto)
   var pecasProx = previaBase ? pecasProximoMes(previaBase.vendaLiquida, previaBase.valorDevido, faltaAtual, versao.pecasProx) : null;
@@ -85,7 +90,7 @@ function derivarAcerto(p){
     acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,
-    totalAPagar:totalAPagar, restanteTotal:restanteTotal, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
+    totalAPagar:totalAPagar, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
 }
 
 export { FORM_ACERTO_VAZIO, derivarAcerto };

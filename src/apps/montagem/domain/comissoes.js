@@ -18,16 +18,30 @@ var pad = function(n){ return String(n).padStart(2,"0"); };
 var isoData = function(a, m, dia){ return a+"-"+pad(m+1)+"-"+pad(dia); };
 
 var COMIS0 = {pctPadrao:8, reps:[], ciclos:{A:[1,11,21], B:[6,16,26]}, corteHora:13, corteDias:1,
+  nf:{ativo:false, entrega:25, pctKitNovo:2, pctAcerto1:6, revs:[]},   // TESTE do novo fluxo (26/10/2026, Curitiba, 60 dias): Representante Kit Novo entrega (R$ 25 + gasolina) e leva 2% do 1º acerto; a Rep. Acerto leva 6% no 1º acerto e 8% depois. Só vale para as revendedoras marcadas em nf.revs.
   kitNovo:20, kitNovoExpo:35, reposicao:20, exigirProm:true, termos:{}, kmPorLitro:11, combSemEnvio:200, fixoV:2, gasolinaPR:null, gasolina:{}, fech:{}, kmDia:{}};
 
 function comisEfetiva(s){
   var c = Object.assign({}, COMIS0, s.comis || {});
   c.ciclos = Object.assign({}, COMIS0.ciclos, c.ciclos || {});
   if(!c.v2){ c.corteHora = 13; c.kmPorLitro = 11; }   // regra de 06/10/2026: km até 13h e 11 km por litro (vale até alguém salvar a configuração)
+  c.nf = Object.assign({}, COMIS0.nf, c.nf || {}); c.nf.revs = c.nf.revs || [];
+  c._nfPrim = nfPrimeiros(c, s);   // id do 1º acerto de cada revendedora do novo fluxo
   c.termos = c.termos || {}; c.fech = c.fech || {}; c.gasolina = c.gasolina || {}; c.kmDia = c.kmDia || {}; c.reps = c.reps || [];
   return c;
 }
 function ehInterno(r){ return r.origem==="interno"; }
+// Novo fluxo (teste): a revendedora está marcada? Devolve {rev, repKitNovo} ou null. Só vale com a chave "ativo" ligada.
+var nmNf = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); };
+function nfDe(c, rev){ if(!c.nf || !c.nf.ativo) return null; var n = nmNf(rev); return (c.nf.revs||[]).filter(function(x){ return nmNf(x.rev)===n; })[0] || null; }
+// o 1º acerto de cada revendedora marcada (o mais antigo): {idDoAcerto: entrada}. Os 2% e 6% valem só nele; do 2º em diante a Rep. Acerto leva a % normal.
+function nfPrimeiros(c, s){
+  var m = {}; if(!c.nf || !c.nf.ativo || !(c.nf.revs||[]).length) return m;
+  var vistos = {}; (s.acertosConsignado||[]).filter(function(r){ return r.tipo==="acerto" && !ehInterno(r) && nfDe(c, r.rev); })
+    .sort(function(a, b){ return (a.data||"")<(b.data||"") ? -1 : (a.data||"")>(b.data||"") ? 1 : String(a.id)<String(b.id) ? -1 : 1; })
+    .forEach(function(r){ var k = nmNf(r.rev); if(!vistos[k]){ vistos[k] = 1; m[r.id] = nfDe(c, r.rev); } });
+  return m;
+}
 function tsDe(r){ var t = new Date((r.data||"")+"T"+(r.hora||"00:00")+":00").getTime(); return isNaN(t) ? 0 : t; }
 function tsIso(x){ var t = x ? new Date(x).getTime() : 0; return isNaN(t) ? 0 : t; }
 
@@ -108,12 +122,28 @@ function valorLinha(r, i){
   if(p.forma==="dinheiro" && din && din.contado!=null){ var primeiro = (r.pagamentos||[]).findIndex(function(x){ return x.forma==="dinheiro"; }); return i===primeiro ? din.contado : 0; }
   return p.valor||0; }
 function ehLoja(r, p){ return !ehInterno(r) && p.forma==="acerto_loja"; }
-function pagoDe(r){ return r2((r.pagamentos||[]).reduce(function(t,p,i){ return ehLoja(r, p) ? t : t+valorLinha(r, i); }, 0)); }
-function devidoDe(r){ return r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0)); }
+// abatidoDivida: parte do que foi pago neste acerto que quitou dívida de acertos anteriores da mesma revendedora (o pagamento quita primeiro a dívida mais antiga)
+function pagoDe(r){ return Math.max(0, r2((r.pagamentos||[]).reduce(function(t,p,i){ return ehLoja(r, p) ? t : t+valorLinha(r, i); }, 0) - (r.abatidoDivida||0))); }
+function devidoDe(r){ return r2((r.valorDevido!=null ? r.valorDevido : r.valorAcerto||0) + (r.excedenteBrinde||0) + (r.multas||0)); }   // multas: regras de 27/10/2026 (10% do valor pendente), somam no que ela deve
+// Prazo de 15 dias para quitar o pendente (regras de 27/10/2026): dias desde o acerto, dias de atraso e % de multa de atraso (1% ao dia, teto 10%). Acerto de regras antigas: null.
+function prazoPendente(r, hoje){
+  var N = r.regrasNovas; if(!N || !r.data) return null;
+  var dias = Math.max(0, Math.floor((new Date((hoje||new Date().toISOString().slice(0,10))+"T12:00:00") - new Date(r.data+"T12:00:00"))/86400000));
+  var atraso = Math.max(0, dias-(N.prazoQuitarDias||15));
+  return {dias:dias, prazo:N.prazoQuitarDias||15, atraso:atraso, pct:Math.min(N.atrasoQuitacaoTetoPct||10, atraso*(N.atrasoQuitacaoPctDia||1))};
+}
 function faltaDe(r){ return Math.max(0, r2(devidoDe(r) - pagoDe(r))); }
+// Dívidas abertas de acertos anteriores da mesma revendedora, da mais antiga para a mais nova: [{id, falta}]
+function dividasAnteriores(lista, rev, exceto){
+  return (lista||[]).filter(function(r){ return r.tipo==="acerto" && r.rev===rev && r.id!==exceto && faltaDe(r)>0.009; })
+    .sort(function(a,b){ return (a.data||"")<(b.data||"") ? -1 : (a.data||"")>(b.data||"") ? 1 : 0; })
+    .map(function(r){ return {id:r.id, falta:faltaDe(r)}; });
+}
+function totalDividaAnterior(lista, rev, exceto){ return r2(dividasAnteriores(lista, rev, exceto).reduce(function(t,x){ return t+x.falta; }, 0)); }
 
 function analisar(c, r){
-  var rec = r.recebimento || {}, pct = ehInterno(r) ? 0 : pctDaRep(c, r.rep)/100, ehAcerto = r.tipo==="acerto";
+  var nfp = c._nfPrim && c._nfPrim[r.id];   // 1º acerto do novo fluxo: a Rep. Acerto leva só a parte dela (6%); a Rep. Kit Novo leva 2% num item à parte
+  var rec = r.recebimento || {}, pct = ehInterno(r) ? 0 : (nfp ? c.nf.pctAcerto1 : pctDaRep(c, r.rep))/100, ehAcerto = r.tipo==="acerto";
   var semCond = !!rec.semCond, promPrec = ehAcerto && !!c.exigirProm && !semCond && r.tipoKit!=="saiu", prom = rec.prom || {};
   var promOk = !promPrec || !!prom.ok, conferido = !!rec.ok;
   var restante = r.valorAcerto||0, linhas = [];
@@ -145,18 +175,21 @@ function itensComissao(c, s, agora){
     if(r.tipo==="acerto"){
       var a = analisar(c, r);
       a.linhas.forEach(function(l){ if(!(l.base>0 || l.valor>0)) return;
-        var pixRep = l.p.forma==="pix_representante";
+        var pixRep = l.p.forma==="pix_representante", nfp = c._nfPrim && c._nfPrim[r.id];
+        if(nfp && !pixRep && l.base>0) poe({id:r.id+"#"+l.idx+"n", chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:"1º acerto · Rep. Kit Novo", forma:l.p.forma, conta:l.conta, valorPago:0, valorOrig:l.valorOrig, loja:l.loja, div:l.div,
+          comissao:r2(l.base*c.nf.pctKitNovo/100), fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:!conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "", libera:l.libera, pixRep:false, rep:nfp.repKitNovo, repAcerto:r.rep, extra:l.extra, nfKitNovo:true});
         poe({id:r.id+"#"+l.idx, chave:l.idx, tipo:"pag", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:st, forma:l.p.forma, conta:l.conta, valorPago:l.valor, valorOrig:l.valorOrig, loja:l.loja, div:l.div, comissao:l.comissao,
           fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:!conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "",
           libera:l.libera, pixRep:pixRep, rep:pixRep ? (l.fin && l.fin.rep) || null : r.rep, repAcerto:r.rep, extra:l.extra}); });
     }
     if(r.tipo==="kit_novo_entrega" || r.tipo==="acerto" && r.kitNovoOk || r.tipo==="reposicao" || r.tipo==="reposicao_especial"){
       var fin = r.fin && r.fin.k ? r.fin.k : null, repos = r.tipo.indexOf("reposicao")===0, expo = r.tipoKit==="kit_novo_exp" || (r.expositoresMarcados||[]).length>0;
-      var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 20 (Configurador), com a condicional assinada
+      var nfk = !repos ? nfDe(c, r.rev) : null;
+      var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : nfk ? (r.desistencia ? 0 : c.nf.entrega) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 20 (Configurador), com a condicional assinada
       var man = c.termos[r.id], termo = repos ? true : !!(r.assinatura || man), condOk = !!(rec.prom && rec.prom.ok);   // kit novo só é pago com a condicional assinada
       var libera = fin && conferido && termo && condOk ? Math.max(tsIso(fin.ts), tsIso(rec.em)) : null;
       if(valor>0) poe({id:r.id+"#k", chave:"k", tipo:repos ? "repos" : "kitnovo", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:r.tipo==="acerto" ? (expo ? "Kit novo + expositor" : "Kit novo") : st, forma:"", conta:fin ? fin.conta : "",
-        valorPago:0, comissao:r2(valor), fin:fin, conferido:conferido, motivo:!conferido ? "Aguardando o agendamento conferir" : !termo ? "Termo do kit novo não assinado" : !condOk ? "Condicional não assinada" : "", libera:libera, rep:r.rep, repAcerto:r.rep, extra:false, termoAuto:!!r.assinatura, termoManual:man || null, termoOk:termo});
+        valorPago:0, comissao:r2(valor), fin:fin, conferido:conferido, motivo:!conferido ? "Aguardando o agendamento conferir" : !termo ? "Termo do kit novo não assinado" : !condOk ? "Condicional não assinada" : "", libera:libera, rep:nfk ? nfk.repKitNovo : r.rep, repAcerto:r.rep, nfKitNovo:!!nfk, extra:false, termoAuto:!!r.assinatura, termoManual:man || null, termoOk:termo});
     }
   });
   return itens;
@@ -204,5 +237,5 @@ function quemNome(v){ return typeof v==="number" ? nomeDe(v) : (v || "—"); }
 function dataHora(x){ var t = typeof x==="number" ? x : tsIso(x); return t ? new Date(t).toLocaleString("pt-BR",{day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) : "—"; }
 function fmtDataBR(iso){ return iso ? iso.split("-").reverse().join("/") : ""; }
 
-export { taxaDe, relatorioTaxas, remessaPorData, janelaDe, valorLinha, ehLoja, chaveKmDia, resumoKmDia, quemNome, dataHora, fmtDataBR, COMIS0, STATUS_LISTA, statusDe, comisEfetiva, repsEfetivas, pctDaRep, grupoDaRep, corteDe, remessaDe, datasDoGrupo, datasDoMes, proximasDatas,
-  pagoDe, devidoDe, faltaDe, analisar, itensComissao, chaveFech, resumoSituacao, ehInterno, tsDe, r2 };
+export { nfDe, nfPrimeiros, taxaDe, relatorioTaxas, remessaPorData, janelaDe, valorLinha, ehLoja, chaveKmDia, resumoKmDia, quemNome, dataHora, fmtDataBR, COMIS0, STATUS_LISTA, statusDe, comisEfetiva, repsEfetivas, pctDaRep, grupoDaRep, corteDe, remessaDe, datasDoGrupo, datasDoMes, proximasDatas,
+  pagoDe, devidoDe, faltaDe, prazoPendente, dividasAnteriores, totalDividaAnterior, analisar, itensComissao, chaveFech, resumoSituacao, ehInterno, tsDe, r2 };

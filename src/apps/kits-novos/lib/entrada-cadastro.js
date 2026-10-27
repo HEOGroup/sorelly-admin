@@ -13,7 +13,8 @@ function leadsCadastradas(){
 }
 
 function registroDe(l, cfg){
-  var dia = String(l.etapaCriadaEm || l.reviewedAt || l.criadoEm || "").slice(0, 10), cad = dia && diasDesde(dia)<=3 ? dia : hojeISO();   // cadastro antigo "entra" hoje no fluxo da Michele
+  // O prazo da Michele conta do dia em que o cadastro CHEGOU em Cadastradas (etapaCriadaEm), nunca da aprovação nem da criação do lead: lead em conferência de documentos ainda não é cadastrada (relato da Michele, 26/10/2026). Sem essa data, vale hoje.
+  var dia = String(l.etapaCriadaEm || "").slice(0, 10), cad = dia && diasDesde(dia)<=3 ? dia : hojeISO();   // cadastro antigo "entra" hoje no fluxo da Michele
   var empresa = kitNaEmpresa(l.kitOpcao), exp = /expositor$/.test(l.kitOpcao||"");
   return {id:"L"+l.id, mes:MESES[+cad.split("-")[1]-1], cad:cad, lib:null, sol:null, bip:null, ret:null, st:"cadastrada",
     nome:l.nome, cid:l.cidade||"", bai:bairroDe(l.endereco), prof:l.profissao||"", rep:empresa ? "Sorelly" : "", mod:"Misto", val:valorDoKit(l.kitOpcao, l.kitValorCasa, l.kitValorEmpresa) || cfg.valorPadrao, retirada:"",

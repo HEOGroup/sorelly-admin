@@ -8,6 +8,7 @@ import { codigoRetirada } from "@/apps/montagem/components/dialogos";
 import { ETAPA } from "@/apps/montagem/components/fila";
 import { KitsNovosRep, foraDoPrazo } from "@/apps/montagem/components/kits-novos-rep";
 import { derivarAcerto, FORM_ACERTO_VAZIO } from "@/apps/montagem/domain/acerto-derivado";
+import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { mensagemFechamento, mensagemEntrega, abrirPdfAcerto } from "@/apps/montagem/domain/mensagem-fechamento";
 import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
@@ -247,7 +248,7 @@ function AppRepresentante(p){
   // Toda a conta do acerto vem de domain/acerto-derivado.js (a mesma da Calculadora de acertos do atendimento interno).
   var vezAtual = kitSel ? vezCobravel(kitSel.remarcacoesLista) : 0;
   var condicionaisRev = sel ? ((s.perfisRev[sel.rev]||{}).condicionaisAbertas || []) : [];
-  var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true});
+  var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev) : 0});
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
   // Pagamento: a representante só informa FORMA + VALOR e o pedido de conta segue em segundo plano (Controle de pagamentos); o app nunca espera.
@@ -266,7 +267,7 @@ function AppRepresentante(p){
   useEffect(function(){
     if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
     var conds = condicionaisRev.slice(0,2).map(function(c){ return c.numero; }), hoje = isoDia(new Date());
-    var conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:form, condicionais:condicionaisRev, autoPecas:true}); };
+    var conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };
     var base = Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:3000, condicionaisSelecionadas:conds});
     var valor = conta(base).previaBase ? conta(base).previaBase.valorDevido : 0;
     var comPag = Object.assign({}, base, {pagamentos:[{forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:valor, anexo:null}]});
@@ -364,6 +365,7 @@ function AppRepresentante(p){
       previaAcerto.taxaDeslocamento>0 && linhaCons("t", "Taxa de deslocamento:", BK(previaAcerto.taxaDeslocamento), {cor:"text-amber-300"}),
       linhaCons("a", "Valor de Acerto:", BK(previaAcerto.valorAcerto), {cor:"text-amber-200", rotCor:"text-amber-200/80"}),
       excedenteBrinde>0 && linhaCons("x", "Excedente de brinde:", BK(excedenteBrinde), {cor:"text-red-400"}),
+      dv.dividaAnterior>0 && linhaCons("dv", "Dívida anterior:", BK(dv.dividaAnterior), {cor:"text-red-400"}),
       dv.novas && previaAcerto.multas>0 && linhaCons("mu", "Multa do valor pendente:", BK(previaAcerto.multas), {cor:"text-red-400"}),
       dv.tagsValor>0 && linhaCons("tg", "Tags danificadas:", BK(dv.tagsValor), {cor:"text-red-400"}),
       acertoForm.pagamentos.length>pagsTopo.length && e("p",{key:"mais", className:"text-[10.5px] text-[#8E8E93]"}, "+ "+(acertoForm.pagamentos.length-pagsTopo.length)+" pagamento(s) anterior(es)"),
@@ -660,7 +662,8 @@ function AppRepresentante(p){
       [!previaBase || !acertoForm.pagamentos.length
         ? e("p",{key:"k0", className:"text-[13px] text-[#8E8E93]"},"Preencha as vendas e os pagamentos para saber se o kit novo está liberado.")
         : e("p",{key:"k1", className:"text-[13px] font-semibold "+(kitNovoLiberado?"text-emerald-300":"text-red-400")},
-            dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+" ("+N1(pctPagoAcerto)+"% pago)."
+            dv.blocoDivida ? dv.blocoDivida
+            : dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+" ("+N1(pctPagoAcerto)+"% pago)."
             : kitNovoLiberado ? "Kit novo liberado — "+N1(pctPagoAcerto)+"% do acerto pago."
               : previaBase && !previaBase.podeRenovar ? "Kit novo NÃO fornecido — vendas abaixo de "+BK(versaoSel.gerais.minRenovar)+" (mínimo para renovar o Kit 100% Prata). Cobra só as peças vendidas."
               : "Kit novo não liberado — "+N1(pctPagoAcerto)+"% pago. Precisa de autorização do financeiro (mínimo "+kitNovoMin+"%)."),

@@ -25,7 +25,6 @@ import { INPUT, MoneyInput, NumInput } from "@/apps/montagem/ui/input";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
-import { PainelDia } from "@/apps/montagem/components/painel-dia";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { useContagemNaTela } from "@/apps/montagem/lib/contagem-tela";
 import { e, useRef, useState } from "@/shared/react";
@@ -119,30 +118,25 @@ function BlocoInadimp(p){
         e(Linha,{ir:"cfvisao", t:"Falta pagar", v:BK(Math.max(0, c.vendido-c.pago)), cor:"text-warning", forte:true}))));
 }
 
-// ── Atualizar o faturamento de hoje direto na primeira tela: provisório durante o dia; "Fixar o dia" quando o valor está certo (sobe sozinho em Contas a pagar → Diário) ──
-function AtualizarHoje(p){
+// ── Atualizar o faturamento de hoje: painel que abre/fecha pelo ✎ no canto do item "Faturamento até o momento" (V1-C, pedido do Marcus, 27/10/2026) ──
+// Provisório durante o dia; "Fixar o dia" quando o valor está certo (sobe sozinho em Contas a pagar → Diário).
+function PainelAtualizarHoje(p){
   var s = p.s, d = p.d, iso = isoDia(new Date()), fixado = !!(s.faturamentoDiario||{})[iso];
   var r = useState(null), rec = r[0], setRec = r[1], a = useState(null), ace = a[0], setAce = a[1];
   var vRec = rec===null ? p.m.recebido : rec, vAce = ace===null ? p.m.feitos : ace, fm = (s.fechaMes||{})[iso.slice(0,7)] || {}, c = useState(null), car = c[0], setCar = c[1], vCar = car===null ? p.m.carregar : car;
-  var ab = useState(false), aberto = ab[0], setAberto = ab[1];   // a barra fica sempre visível; só o formulário de preencher abre e fecha (pedido do Marcus, 26/10/2026)
-  if(fixado) return e("div",{className:"flex flex-nowrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+  if(fixado) return e("div",{className:"flex flex-wrap items-center gap-2 rounded-lg bg-black/25 px-3 py-1.5"},
     e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
-    e("b",{className:"flex-1 text-[12px] text-success"},"✓ Dia fixado"), e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"FAT_REABRIR", data:iso}); }},"Reabrir"));
-  if(!aberto) return e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-0.5 rounded-lg bg-black/25 px-2 py-0.5"},
-    e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
-    e("span",{className:"text-[12px] text-white/85"}, "Recebido ", e("b",{className:MONO+" text-success"}, BK(vRec))),
-    e("span",{className:"text-[12px] text-white/85"}, "Acertos ", e("b",{className:MONO}, vAce)),
-    e("span",{className:"text-[12px] text-white/85"}, "Carregar ", e("b",{className:MONO+" text-warning"}, vCar)),
-    e(Btn,{v:"secondary", sm:true, className:"ml-auto", onClick:function(){ setAberto(true); }},"Atualizar"));
-  // formulário aberto: título pequeno, valor recebido, acertos, carregar e os botões
-  return e("div",{className:"flex flex-wrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+    e("b",{className:"text-[12.5px] text-success"},"✓ Dia fixado"),
+    e(Btn,{v:"ghost", sm:true, className:"ml-auto", onClick:function(){ d({type:"FAT_REABRIR", data:iso}); }},"Reabrir"),
+    e(Btn,{v:"ghost", sm:true, onClick:p.onFechar},"Fechar"));
+  return e("div",{className:"flex flex-wrap items-center gap-1.5 rounded-lg bg-black/25 px-3 py-1.5"},
     e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Hoje"),
     e("div",{className:"min-w-[9.5rem] flex-1"}, e(MoneyInput,{value:vRec, onChange:setRec, sm:true, className:"w-full", label:"Recebido do mês até agora"})),
     e("div",{className:"w-16 shrink-0"}, e(NumInput,{value:vAce, onChange:setAce, className:"w-full! text-center!", "aria-label":"Acertos do mês até agora"})),
     e("div",{className:"flex shrink-0 items-center gap-1"}, e("span",{className:"text-[10px] font-bold uppercase text-warning"},"Carregar"), e("div",{className:"w-14 shrink-0"}, e(NumInput,{value:vCar, onChange:setCar, className:"w-full! text-center!", "aria-label":"Vendas no Carregar"}))),
-    e(Btn,{v:"ghost", sm:true, onClick:function(){ setAberto(false); }},"Fechar"),
+    e(Btn,{v:"ghost", sm:true, onClick:p.onFechar},"Fechar"),
     e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"FECHA_MES_SET", ym:iso.slice(0,7), aRealizar:fm.aRealizar||0, carregar:vCar}); d({type:"FAT_HOJE", data:iso, recebido:vRec, acertos:vAce}); }},"Atualizar hoje"),
-    e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"FAT_FIXAR", data:iso, recebido:vRec, acertos:vAce}); setRec(null); setAce(null); setAberto(false); }},"Fixar"));
+    e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"FAT_FIXAR", data:iso, recebido:vRec, acertos:vAce}); setRec(null); setAce(null); if(p.onFechar) p.onFechar(); }},"Fixar"));
 }
 
 // ── Blocos do meio da Visão geral (todos com BlocoBarra e o botão "Abrir ›" para a tela deles) ──
@@ -259,18 +253,24 @@ function BlocoBipagemRetorno(p){
         e("b",{className:MONO+" text-[20px] leading-none", style:{color:cor}}, aguardando), e("span",{className:"mt-1 text-[10.5px] font-semibold uppercase tracking-wide text-white/80"},"Aguardando bipagem"))));
 }
 
-// Total de revendedoras do dia: "Atualizar hoje" (provisório, pode mudar) e "Fixar" (fecha o dia, uma vez); "Reabrir" volta a editar
+// Total de revendedoras do dia: AUTOMÁTICO desde 27/10/2026 (às 18h o servidor pergunta à DevMaster e trava sozinho; ver src/server/revendedoras-dia.js).
+// Aqui fica só o status (✓ atualizado às... ou "ainda não chegou hoje") e um "Corrigir", fechado por padrão, para a Diretoria usar se a DevMaster cair.
 function AtualizarRevendedoras(p){
   var s = p.s, d = p.d, iso = isoDia(new Date()), hist = s.revendedorasDiario || {}, ks = Object.keys(hist).sort(), ultimo = ks.length ? hist[ks[ks.length-1]] : 0;
-  var fixado = (s.revAtualizadoEm||{})[iso], q = useState(null), edit = q[0], setEdit = q[1], v = edit===null ? (hist[iso]!==undefined ? hist[iso] : ultimo) : edit;
-  var hora = fixado ? new Date(fixado).toLocaleTimeString("pt-BR",{hour:"2-digit", minute:"2-digit"}) : "";
-  return e("div",{className:"flex flex-nowrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+  var feito = (s.revAtualizadoEm||{})[iso];
+  var ab = useState(false), aberto = ab[0], setAberto = ab[1];
+  var q = useState(null), edit = q[0], setEdit = q[1], v = edit===null ? (hist[iso]!==undefined ? hist[iso] : ultimo) : edit;
+  var hora = feito ? new Date(feito).toLocaleTimeString("pt-BR",{hour:"2-digit", minute:"2-digit"}) : "";
+  if(!aberto) return e("div",{className:"flex flex-wrap items-center gap-x-2 gap-y-0.5 rounded-lg bg-black/25 px-2 py-0.5"},
     e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Revendedoras"),
-    fixado ? e(React.Fragment,null, e("b",{className:MONO+" flex-1 text-[13px]"}, num(hist[iso])), e("b",{className:"text-[12px] text-success"},"✓ Fixado às "+hora), e(Btn,{v:"ghost", sm:true, onClick:function(){ d({type:"REV_REABRIR", data:iso}); }},"Reabrir"))
-    : e(React.Fragment,null,
-        e("div",{className:"min-w-[5rem] flex-1"}, e(NumInput,{value:v, onChange:setEdit, className:"w-full! text-center!", "aria-label":"Total de revendedoras hoje"})),
-        e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"REV_LANCAR", data:iso, quantidade:v}); setEdit(null); }},"Atualizar hoje"),
-        e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"REV_LANCAR", data:iso, quantidade:v, unico:true}); setEdit(null); }},"Fixar")));
+    feito ? e("span",{className:"text-[12px] text-success"},"✓ Atualizado às "+hora+" · automático (DevMaster)")
+          : e("span",{className:"text-[12px] text-white/70"},"Atualiza sozinho às 18h · DevMaster"),
+    e(Btn,{v:"ghost", sm:true, className:"ml-auto", onClick:function(){ setAberto(true); }},"Corrigir"));
+  return e("div",{className:"flex flex-wrap items-center gap-1.5 rounded-lg bg-black/25 px-2 py-0.5"},
+    e("b",{className:"shrink-0 text-[10px] uppercase leading-none tracking-wide text-white/70"},"Revendedoras"),
+    e("div",{className:"min-w-[5rem] flex-1"}, e(NumInput,{value:v, onChange:setEdit, className:"w-full! text-center!", "aria-label":"Total de revendedoras hoje"})),
+    e(Btn,{v:"ghost", sm:true, onClick:function(){ setAberto(false); }},"Fechar"),
+    e(Btn,{v:"primary", sm:true, ic:"save", onClick:function(){ d({type:"REV_REABRIR", data:iso}); d({type:"REV_LANCAR", data:iso, quantidade:v, unico:true}); setEdit(null); setAberto(false); }},"Corrigir e travar"));
 }
 // Faixa do topo (compacta): 3 totais à esquerda e, do lado direito, os campos que se preenchem todo dia.
 // O resto de outubro fica no bloco Faturamento. As colunas têm largura mínima, então nada fica um em cima do outro: se faltar espaço, quebra a linha.
@@ -279,22 +279,25 @@ function FaixaRevendedoras(p){
   var total = ks.length ? hist[ks[ks.length-1]] : 0, quando = ks.length ? ks[ks.length-1].split("-").reverse().slice(0,2).join("/") : "";
   var mesRev = resumoMensalRevendedoras(s, ano).filter(function(l){ return l.atual; })[0], delta = mesRev ? mesRev.delta : null;
   var m = resumoFinanceiro(s, p.janela).mes, fatTotal = m.recebido+m.aReceber;
+  var ab = useState(false), abertoFat = ab[0], setAbertoFat = ab[1];   // painel de atualizar o faturamento: abre/fecha pelo ✎ no canto do item (V1-C, 27/10/2026)
   var numero = function(rot, valor, cor, nota, centro){ return e("div",{className:"flex min-w-[11rem] flex-col "+(centro ? "items-center text-center" : "")},
     e("span",{className:"text-[10px] font-bold uppercase tracking-[.12em] text-white/75"}, rot),
     e("b",{className:MONO+" whitespace-nowrap text-[20px] leading-tight "+cor}, valor), nota && (typeof nota==="string" ? e("span",{className:"text-[10.5px] leading-tight text-white/65"}, nota) : nota)); };
   // acertos e média do faturamento: letras maiores e fáceis de ler
   var destaque = function(v, rot){ return e("span",{className:"flex items-baseline gap-1.5"}, e("b",{className:MONO+" whitespace-nowrap text-[15px] leading-tight text-white"}, v), e("span",{className:"text-[11px] font-medium text-white/75"}, rot)); };
-  return e("section",{className:"flex flex-wrap items-center gap-x-8 gap-y-1 rounded-xl px-3 py-1 ring-2 ring-[#E8B84B]/45", style:{background:"linear-gradient(90deg, rgba(232,184,75,.22), rgba(232,184,75,.05) 70%)"}},
-    e("div",{className:"flex flex-wrap gap-x-8 gap-y-1"},
-      e("button",{type:"button", title:"Abrir o histórico de revendedoras", onClick:function(){ d({type:"ABA", aba:"revendedoras"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
-        numero("Revendedoras · total hoje", num(total), "text-primary", (delta!==null && delta!==undefined ? (delta>=0 ? "+" : "")+num(delta)+" no mês · " : "")+(quando ? "em "+quando : ""), true)),
-      e("button",{type:"button", title:"Abrir a tela Faturamento", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},   // clicar no faturamento abre a tela Faturamento (Marcus, 24/10/2026)
-        numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.feitos), "acertos"), destaque(num(m.carregar), "no Carregar"), destaque(BK(m.mediaAcerto), "de média")), true)),
-      e("button",{type:"button", title:"Abrir a tela Faturamento (previsão)", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
-        numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true))),
-    e("div",{className:"ml-auto flex flex-1 flex-wrap justify-end gap-1 [&_button]:whitespace-nowrap"},
-      e("div",{className:"min-w-[22rem] max-w-[42rem] flex-1"}, e(AtualizarHoje,{s:s, d:d, m:m})),
-      papelDe(s.usuario)==="supervisao" && e("div",{className:"min-w-[27rem] max-w-[30rem] flex-1"}, e(AtualizarRevendedoras,{s:s, d:d}))));
+  return e("div",{className:"flex flex-col gap-2"},
+    e("section",{className:"flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl px-3 py-1.5 ring-2 ring-[#E8B84B]/45", style:{background:"linear-gradient(90deg, rgba(232,184,75,.22), rgba(232,184,75,.05) 70%)"}},
+      e("div",{className:"flex flex-wrap items-stretch divide-x divide-[#E8B84B]/25"},
+        e("div",{className:"pr-7"}, e("button",{type:"button", title:"Abrir o histórico de revendedoras", onClick:function(){ d({type:"ABA", aba:"revendedoras"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
+          numero("Revendedoras · total hoje", num(total), "text-primary", (delta!==null && delta!==undefined ? (delta>=0 ? "+" : "")+num(delta)+" no mês · " : "")+(quando ? "em "+quando : ""), true))),
+        e("div",{className:"relative px-7"},
+          e("button",{type:"button", title:"Abrir a tela Faturamento", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},   // clicar no faturamento abre a tela Faturamento (Marcus, 24/10/2026)
+            numero("Faturamento até o momento", BK(m.recebido), "text-success", e("div",{className:"mt-0.5 flex flex-wrap justify-center gap-x-5 gap-y-0.5"}, destaque(num(m.feitos), "acertos"), destaque(num(m.carregar), "no Carregar"), destaque(BK(m.mediaAcerto), "de média")), true)),
+          e("button",{type:"button", title:"Atualizar o faturamento de hoje", "aria-label":"Atualizar o faturamento de hoje", onClick:function(){ setAbertoFat(!abertoFat); }, className:"absolute -top-1 right-2 grid size-6 place-items-center rounded-full bg-black/30 text-[12px] text-primary ring-1 ring-primary/30 hover:bg-primary/25"}, "✎")),
+        e("div",{className:"pl-7"}, e("button",{type:"button", title:"Abrir a tela Faturamento (previsão)", onClick:function(){ d({type:"ABA", aba:"previsaofat"}); }, className:"cursor-pointer rounded-lg px-1 text-left transition-colors hover:bg-white/10"},
+          numero("Previsão de faturamento", BK(fatTotal), "text-success", m.nome.toLowerCase()+" · "+m.metaPct+"% dos previstos", true)))),
+      papelDe(s.usuario)==="supervisao" && e("div",{className:"ml-auto min-w-[22rem] max-w-[28rem] flex-1 [&_button]:whitespace-nowrap"}, e(AtualizarRevendedoras,{s:s, d:d}))),
+    abertoFat && e(PainelAtualizarHoje,{s:s, d:d, m:m, onFechar:function(){ setAbertoFat(false); }}));
 }
 
 // Solicitações que esperam a decisão de quem está logado (pagamentos, preços, efetivações…): a mesma lista dos cartões do SorellyChat, num lugar só
@@ -386,9 +389,8 @@ function AbaVisaoGeral(){
     // 3 colunas da mesma altura (os blocos esticam pra ficar alinhados embaixo também)
     e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-[1.15fr_1fr_0.85fr] xl:[&>div]:flex xl:[&>div]:flex-col xl:[&>div]:gap-4 xl:[&>div>*:last-child]:flex-1"},
       e("div",null,
-        // Acertos → Hoje na empresa → Bipagem de retorno → Solicitações → Atendimento interno
+        // Acertos → Bipagem de retorno → Solicitações → Atendimento interno ("Hoje na empresa" saiu daqui, 27/10/2026, pedido do Marcus)
         e(BlocoAcertosMes,{s:s, d:d}),
-        e(PainelDia,{s:s, compacto:true}),
         e(BlocoBipagemRetorno,{s:s, d:d}),
         e(BlocoSolicitacoes,{s:s, d:d}),
         e(AtendimentoInternoVG,{s:s, d:d})),

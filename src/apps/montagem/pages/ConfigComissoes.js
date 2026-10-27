@@ -23,9 +23,13 @@ function AbaConfigComissoes(props){
   var embutido = !!(props && props.embutido);   // dentro de Comissões (botão Configurar): sem título de página
   var cx = use(), s = cx.state, d = cx.dispatch, atual = comisEfetiva(s);
   var base = function(){ return {reps:repsEfetivas(s).map(function(x){ return {nome:x.nome, pct:x.pct, grupo:x.grupo}; }), pctPadrao:atual.pctPadrao,
-    A:diasTxt(atual.ciclos.A), B:diasTxt(atual.ciclos.B), corteHora:atual.corteHora, corteDias:atual.corteDias, kitNovo:atual.kitNovo, kitNovoExpo:atual.kitNovoExpo, reposicao:atual.reposicao, exigirProm:atual.exigirProm, kmPorLitro:atual.kmPorLitro, combSemEnvio:atual.combSemEnvio, gasolina:copia(atual.gasolina||{})}; };
+    A:diasTxt(atual.ciclos.A), B:diasTxt(atual.ciclos.B), corteHora:atual.corteHora, corteDias:atual.corteDias, kitNovo:atual.kitNovo, kitNovoExpo:atual.kitNovoExpo, reposicao:atual.reposicao, exigirProm:atual.exigirProm, kmPorLitro:atual.kmPorLitro, combSemEnvio:atual.combSemEnvio, gasolina:copia(atual.gasolina||{}), nf:copia(atual.nf)}; };
   var st = useState(base), f = st[0], setF = st[1];
-  var nn = useState(""), novoNome = nn[0], setNovoNome = nn[1];
+  var nn = useState(""), novoNome = nn[0], setNovoNome = nn[1], nr = useState(""), novaRev = nr[0], setNovaRev = nr[1], nk = useState(""), novaKit = nk[0], setNovaKit = nk[1];
+  var mudaNf = function(patch){ muda({nf:Object.assign({}, f.nf, patch)}); };
+  var revsConhecidas = (function(){ var o = {}; (s.acertosConsignado||[]).forEach(function(r){ if(r.origem!=="interno" && r.rev) o[r.rev] = 1; }); return Object.keys(o).sort(); })();
+  var addNf = function(){ var rv = novaRev.trim(), kn = (novaKit || (f.reps[0] && f.reps[0].nome) || "").trim(); if(!rv || !kn || (f.nf.revs||[]).some(function(x){ return x.rev.toLowerCase()===rv.toLowerCase(); })) return;
+    mudaNf({revs:(f.nf.revs||[]).concat([{rev:rv, repKitNovo:kn, desde:isoDia(new Date())}])}); setNovaRev(""); };
   var alterou = JSON.stringify(f) !== JSON.stringify(base());
   var muda = function(patch){ setF(Object.assign({}, f, patch)); };
   var mudaRep = function(i, patch){ var r = f.reps.slice(); r[i] = Object.assign({}, r[i], patch); muda({reps:r}); };
@@ -43,7 +47,7 @@ function AbaConfigComissoes(props){
     var A = lerDias(f.A), B = lerDias(f.B);
     if(!A.length || !B.length) return d({type:"AVISO", txt:"Cada grupo precisa de pelo menos um dia de pagamento"});
     d({type:"COMIS_CONFIG", aviso:"Configurador de comissões salvo", patch:{reps:f.reps.map(function(x){ return {nome:x.nome, pct:x.pct, grupo:x.grupo}; }), pctPadrao:f.pctPadrao, ciclos:{A:A, B:B},
-      corteHora:f.corteHora, corteDias:f.corteDias, kitNovo:f.kitNovo, kitNovoExpo:f.kitNovoExpo, reposicao:f.reposicao, exigirProm:f.exigirProm, kmPorLitro:f.kmPorLitro, combSemEnvio:f.combSemEnvio, gasolina:f.gasolina, v2:true}});
+      corteHora:f.corteHora, corteDias:f.corteDias, kitNovo:f.kitNovo, kitNovoExpo:f.kitNovoExpo, reposicao:f.reposicao, exigirProm:f.exigirProm, kmPorLitro:f.kmPorLitro, combSemEnvio:f.combSemEnvio, gasolina:f.gasolina, nf:f.nf, v2:true}});
   };
   var cfgPrev = Object.assign({}, atual, {ciclos:{A:lerDias(f.A), B:lerDias(f.B)}, corteHora:f.corteHora, corteDias:f.corteDias});
   var agora = Date.now(), nA = f.reps.filter(function(x){ return x.grupo==="A"; }).length, nB = f.reps.length-nA;
@@ -98,6 +102,25 @@ function AbaConfigComissoes(props){
             e("p",{className:"-mt-1 text-[12px] text-warning"},"R$ 20 e R$ 35 são valores provisórios: confirmar."),
             e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.exigirProm, className:"size-4", onChange:function(ev){ muda({exigirProm:ev.target.checked}); }}),
               "Exigir promissória assinada para liberar a comissão"))),
+        e(BlocoBarra,{t:"Novo fluxo (teste de 60 dias)", sub:f.nf.ativo ? (f.nf.revs||[]).length+" revendedoras marcadas" : "desligado"},
+          e("div",{className:"flex flex-col gap-3 p-3"},
+            e("label",{className:"flex cursor-pointer items-center gap-2 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:!!f.nf.ativo, className:"size-4", onChange:function(ev){ mudaNf({ativo:ev.target.checked}); }}), "Ligar o teste do novo fluxo"),
+            lb("Entrega do kit pela Rep. Kit Novo (condicional assinada)", e(MoneyInput,{value:f.nf.entrega, label:"Entrega do kit novo", sm:true, className:"w-36", onChange:function(v){ mudaNf({entrega:v}); }})),
+            e("div",{className:"flex flex-wrap items-end gap-3"},
+              lb("1º acerto · Rep. Kit Novo (%)", e(NumInput,{value:f.nf.pctKitNovo, step:"0.5", label:"Percentual da Rep. Kit Novo", className:"h-9! w-24 text-sm!", onChange:function(v){ mudaNf({pctKitNovo:v}); }})),
+              lb("1º acerto · Rep. Acerto (%)", e(NumInput,{value:f.nf.pctAcerto1, step:"0.5", label:"Percentual da Rep. Acerto no 1º acerto", className:"h-9! w-24 text-sm!", onChange:function(v){ mudaNf({pctAcerto1:v}); }}))),
+            e("p",{className:"text-[12px] text-muted-foreground"},"A gasolina segue o mesmo esquema das outras representantes. Do 2º acerto em diante a Rep. Acerto leva a % normal dela. Sem a revendedora na lista abaixo, nada muda."),
+            e("div",{className:"flex flex-col gap-1.5"},
+              (f.nf.revs||[]).length===0 && e("span",{className:"text-[12.5px] text-muted-foreground"},"Nenhuma revendedora marcada."),
+              (f.nf.revs||[]).map(function(x, i){ return e("div",{key:x.rev, className:"flex items-center justify-between gap-2 rounded-lg border border-border px-2.5 py-1.5"},
+                e("span",{className:"min-w-0 flex-1 truncate text-[13px]", title:x.rev+" · Rep. Kit Novo: "+x.repKitNovo}, e("b",null, x.rev), " · "+x.repKitNovo),
+                e("button",{type:"button", "aria-label":"Retirar "+x.rev, onClick:function(){ mudaNf({revs:f.nf.revs.filter(function(_, k){ return k!==i; })}); }, className:"grid size-7 place-items-center rounded-full bg-muted text-sm font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, "×")); })),
+            e("div",{className:"flex flex-col gap-2"},
+              e("input",{value:novaRev, list:"nf-revs", placeholder:"Revendedora do teste", className:INPUT+" h-9! text-sm!", onChange:function(ev){ setNovaRev(ev.target.value); }}),
+              e("datalist",{id:"nf-revs"}, revsConhecidas.map(function(n){ return e("option",{key:n, value:n}); })),
+              e("div",{className:"flex gap-2"},
+                e("select",{value:novaKit, "aria-label":"Representante Kit Novo", className:INPUT+" h-9! min-w-0 flex-1 text-sm!", onChange:function(ev){ setNovaKit(ev.target.value); }}, e("option",{value:""}, "Rep. Kit Novo"), f.reps.map(function(x){ return e("option",{key:x.nome, value:x.nome}, x.nome); })),
+                e(Btn,{v:"ghost", sm:true, onClick:addNf}, "+ Marcar"))))),
         e(BlocoBarra,{t:"Combustível", sub:"Preencher no dia em que a comissão é paga"},
           e("div",{className:"flex flex-col gap-3 p-3"},
             lb("Combustível sem km no prazo (valor fixo)", e(MoneyInput,{value:f.combSemEnvio, sm:true, label:"Combustível sem km no prazo", className:"w-36", onChange:function(v){ muda({combSemEnvio:v}); }})),

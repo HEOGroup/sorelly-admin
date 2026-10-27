@@ -87,6 +87,7 @@ var MENU_RH = [
 
 // Menus dos setores pequenos (26/10/2026, padronização do topo): mesma peça `menu` de Financeiro/RH/Encomendas, só que com `semAbas:true`
 // (poucas telas, viram palavra direta, sem faixa de abas abertas — regra de PADRAO-VISUAL.md "MENU DO SETOR"). Nenhuma tela mudou de lugar: só ganhou a faixa padronizada.
+var MENU_REVENDEDORAS = [M("Cadastro","revbase"), M("Kits e vendas","revkits"), M("Contas a receber","revreceber")];
 var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
 var MENU_ESTOQUE = [M("Compras e estoque de material","compras")];
 var MENU_GARANTIA = [M("Garantia","garantia"), M("Pós-vendas", undefined, {breve:true})];
@@ -101,6 +102,7 @@ var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {bre
 var MENU_TEC = [M("App Sorelly", undefined, {breve:true}), M("Avisos","avisos"), M("Padrão visual","padrao"), M("Versões","versoes"), M("Mapa do sistema","mapa"), M("Projetos (dev)", undefined, {breve:true})];
 
 var SETORES = [
+  {id:"inicio", nome:"Início", ic:"coroa", cor:"#E8B84B", direto:T("inicio","Início")},   // página inicial de todos (27/10/2026): foto, mensagem de fé, setores e o dia da pessoa
   {id:"whats", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", nome:"Dashboard", ic:"dashboard", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   {id:"rotina", nome:"Rotina do dia", ic:"calendario", cor:"#22C55E", direto:T("rotina","Rotina do dia")},
@@ -160,7 +162,8 @@ var SETORES = [
       T("knpendencias","Pendências"), T("knconsolidado","Consolidado"), T("knregras","Regras")]}]},
   // Kits = só a montagem. Representantes e Atendimento interno viraram setores próprios (decisão de 13/10/2026).
   // Representantes & Kits num setor só (decisão de 15/10/2026): as áreas de Representantes (campo) e de Kits (interno) ficam separadas lá dentro; o financeiro vai chegar às comissões por aqui e pela aba Financeiro
-  {id:"revbase", nome:"Revendedoras", ic:"users", cor:"#F59E0B", direto:T("revbase","Revendedoras")},   // base de todos os setores, lida da DevMaster (26/10/2026); por ora só Diretoria
+  {id:"revbase", nome:"Revendedoras", ic:"users", cor:"#F59E0B", menu:MENU_REVENDEDORAS, semAbas:true, areas:[
+    {nome:"Revendedoras", telas:[T("revbase","Cadastro"), T("revkits","Kits e vendas"), T("revreceber","Contas a receber")]}]},   // base de todos os setores, lida da DevMaster (26/10/2026); por ora só Diretoria
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},

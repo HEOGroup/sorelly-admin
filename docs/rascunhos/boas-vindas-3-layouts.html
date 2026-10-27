@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 3 layouts de boas-vindas</title>
+<style>
+  :root{--ouro:#E8B84B;--ouro2:#c9962f;--fundo:#0a0806;--card:#14110b;--borda:rgba(232,184,75,.28)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#050403;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:24px 16px 70px}
+  h1{font-size:18px;text-align:center;margin:0 0 4px}
+  .sub{text-align:center;color:#aaa;margin:0 0 18px}
+  .teste{display:flex;justify-content:center;align-items:center;gap:8px;margin:0 0 26px;color:#ccc}
+  .teste input{height:32px;border-radius:8px;border:1px solid #3a3a40;background:#0e0e11;color:#fff;padding:0 10px;font:inherit;width:160px}
+  .teste button,.outra{height:32px;border-radius:8px;border:1px solid var(--borda);background:#1b1710;color:var(--ouro);font:inherit;font-weight:600;padding:0 12px;cursor:pointer}
+  .bloco{max-width:1100px;margin:0 auto 46px}
+  .bloco h2{font-size:15px;margin:0 0 2px;color:var(--ouro)}
+  .bloco>p{margin:0 0 10px;color:#bbb}
+  .tela{background:var(--fundo);border:1px solid #2a2a2e;border-radius:16px;padding:22px;overflow:hidden}
+  .selo{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--borda);border-radius:999px;padding:4px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ouro);background:#1b1710}
+  .nome{font-weight:700;letter-spacing:-.03em;line-height:1.02;margin:0}
+  .ouro{color:var(--ouro)}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:1px solid var(--borda);border-radius:999px;background:#100d08;color:#fff;font-weight:600}
+  .rotulo{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);font-weight:700}
+  .vers{transition:opacity .5s}
+  .vers.some{opacity:0}
+  .ref{color:var(--ouro);font-weight:700;letter-spacing:.04em}
+  .tag{display:inline-block;margin-left:8px;border:1px solid var(--borda);border-radius:999px;padding:0 8px;font-size:11px;color:#ddd}
+  .foto{display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;position:relative;flex:none}
+  .foto i{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;background:#14110b;border:1px solid var(--borda);display:grid;place-items:center;font-style:normal;font-size:13px;color:var(--ouro);cursor:pointer}
+  .data{color:#cfcfcf}
+
+  /* A · Central com versículo em cartão dourado */
+  .a{display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:stretch}
+  @media(max-width:820px){.a{grid-template-columns:1fr}}
+  .a .esq{padding:8px 6px}
+  .a .nome{font-size:54px;margin-top:16px}
+  .a .vcard{margin:20px 0 18px;max-width:640px;border:1px solid var(--borda);border-left:3px solid var(--ouro);border-radius:12px;background:linear-gradient(90deg,rgba(232,184,75,.10),rgba(232,184,75,.02));padding:14px 18px}
+  .a .vtxt{font-size:17px;line-height:1.5;font-style:italic;color:#fff}
+  .a .dir{border-left:1px solid var(--borda);padding-left:20px;display:flex;flex-direction:column;gap:14px}
+  .a .dir .quem{display:flex;align-items:center;gap:12px}
+
+  /* B · Centralizado, versículo grande */
+  .b{text-align:center;padding:26px 10px 8px}
+  .b .foto{margin:0 auto 14px}
+  .b .nome{font-size:46px}
+  .b .linha{width:90px;height:2px;background:linear-gradient(90deg,transparent,var(--ouro),transparent);margin:18px auto}
+  .b .vtxt{font-size:22px;line-height:1.5;max-width:760px;margin:0 auto;font-family:Georgia,"Times New Roman",serif;font-style:italic;color:#fff}
+  .b .aspas{font-family:Georgia,serif;font-size:56px;line-height:.6;color:var(--ouro);opacity:.8}
+  .b .pontos{display:flex;justify-content:center;gap:6px;margin:16px 0 22px}
+  .b .pontos i{width:6px;height:6px;border-radius:50%;background:#3b3220}
+  .b .pontos i.on{background:var(--ouro)}
+  .b .chips{justify-content:center}
+
+  /* C · Faixa compacta + cartões dos setores + comunicados */
+  .c .topo{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:6px 4px 16px;border-bottom:1px solid var(--borda)}
+  .c .nome{font-size:30px}
+  .c .vbox{margin-left:auto;max-width:520px;border:1px solid var(--borda);border-radius:12px;background:#100d08;padding:10px 14px;display:flex;gap:10px;align-items:flex-start}
+  .c .cruz{font-size:22px;color:var(--ouro);line-height:1}
+  .c .vtxt{font-size:14px;font-style:italic}
+  .c .corpo{display:grid;grid-template-columns:1fr 330px;gap:20px;margin-top:18px}
+  @media(max-width:820px){.c .corpo{grid-template-columns:1fr}.c .vbox{margin-left:0}}
+  .c .grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:10px}
+  .c .setor{border:1px solid var(--borda);border-radius:12px;background:#100d08;padding:14px;display:flex;flex-direction:column;gap:8px;font-weight:700}
+  .c .setor span{color:var(--ouro);font-size:20px}
+  .c .aviso{border:1px solid var(--borda);border-top:3px solid var(--ouro);border-radius:12px;background:#100d08;padding:12px 14px;margin-top:10px}
+  .c .aviso b{display:block;margin-bottom:4px}
+  .c .aviso small{color:#cfcfcf}
+</style>
+</head>
+<body>
+<h1>Tela de boas-vindas · 3 layouts</h1>
+<p class="sub">A mensagem muda sozinha a cada 12 segundos (no sistema, muda uma por dia). Veja os 3 e escolha.</p>
+<div class="teste">Nome para testar: <input id="nome" value="Nickolas"> <button id="outra" type="button">Outra mensagem</button></div>
+
+<section class="bloco">
+  <h2>Layout A · Central com cartão de mensagem</h2>
+  <p>Igual à sua Central Sorelly. A mensagem fica logo abaixo do nome, num cartão dourado. À direita, a sua foto com o botão para trocar.</p>
+  <div class="tela a">
+    <div class="esq">
+      <span class="selo">Central Sorelly <span style="letter-spacing:0;text-transform:none;color:#ddd">· Seu ponto de partida</span></span>
+      <h3 class="nome"><span class="saud">Olá</span>, <span class="n">Nickolas</span>.<br><span class="ouro">Seja bem-vindo!</span></h3>
+      <div class="vcard vers"><div class="vtxt"></div><div style="margin-top:6px"><span class="ref"></span><span class="tag"></span></div></div>
+      <div class="rotulo" style="margin-bottom:8px">Seus setores</div>
+      <div class="chips"><span class="chip">Financeiro</span><span class="chip">Kits novos</span><span class="chip">Cadastro</span><span class="chip">RH</span></div>
+    </div>
+    <div class="dir">
+      <div class="rotulo">Sua conta</div>
+      <div class="quem"><div class="foto" style="width:64px;height:64px;font-size:24px"><b class="ini">N</b><i title="Trocar foto">✎</i></div><div><b class="n" style="font-size:15px">Nickolas</b><div class="data">Diretoria</div></div></div>
+      <div class="data" id="dataA"></div>
+      <div class="rotulo" style="margin-top:6px">Aparência</div>
+      <div class="chips"><span class="chip">Claro</span><span class="chip" style="border-color:var(--ouro)">Preto e dourado</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="bloco">
+  <h2>Layout B · Centralizado, mensagem em destaque</h2>
+  <p>Tudo no centro: foto, saudação e a mensagem grande, com letra de livro. Os pontinhos mostram que há várias mensagens. Embaixo, os setores.</p>
+  <div class="tela b">
+    <div class="foto" style="width:84px;height:84px;font-size:32px"><b class="ini">N</b><i title="Trocar foto">✎</i></div>
+    <span class="selo">Central Sorelly</span>
+    <h3 class="nome" style="margin-top:14px"><span class="saud">Olá</span>, <span class="n">Nickolas</span>. <span class="ouro">Seja bem-vindo!</span></h3>
+    <div class="linha"></div>
+    <div class="vers"><div class="aspas">“</div><div class="vtxt"></div><div style="margin-top:12px"><span class="ref"></span><span class="tag"></span></div></div>
+    <div class="pontos" id="pontos"></div>
+    <div class="chips"><span class="chip">Financeiro</span><span class="chip">Kits novos</span><span class="chip">Cadastro</span><span class="chip">RH</span></div>
+  </div>
+</section>
+
+<section class="bloco">
+  <h2>Layout C · Painel do dia, com a mensagem ao lado</h2>
+  <p>Mais prático para o dia a dia: saudação e mensagem em cima, setores em cartões e os comunicados ao lado. A mensagem não ocupa muito espaço.</p>
+  <div class="tela c">
+    <div class="topo">
+      <div class="foto" style="width:56px;height:56px;font-size:22px"><b class="ini">N</b><i title="Trocar foto">✎</i></div>
+      <div><h3 class="nome"><span class="saud">Olá</span>, <span class="n">Nickolas</span>. <span class="ouro">Seja bem-vindo!</span></h3><div class="data" id="dataC"></div></div>
+      <div class="vbox vers"><span class="cruz">✝</span><div><div class="vtxt"></div><div style="margin-top:4px"><span class="ref"></span><span class="tag"></span></div></div></div>
+    </div>
+    <div class="corpo">
+      <div><div class="rotulo">Seus setores</div>
+        <div class="grade"><div class="setor"><span>◆</span>Financeiro</div><div class="setor"><span>◆</span>Kits novos</div><div class="setor"><span>◆</span>Cadastro</div><div class="setor"><span>◆</span>RH</div></div></div>
+      <div><div class="rotulo">Comunicados</div>
+        <div class="aviso"><b>Horário dos pagamentos</b><small>O financeiro paga até as 11h. Dúvidas pelo WhatsApp do financeiro.</small></div>
+        <div class="aviso"><b>Bipagem de kits de retorno</b><small>Ao terminar de bipar, feche para deixar no Carregar.</small></div></div>
+    </div>
+  </div>
+</section>
+
+<script>
+var V = [
+ ["Posso todas as coisas em Cristo que me fortalece.","Filipenses 4:13","força"],
+ ["Não to mandei eu? Esforça-te, e tem bom ânimo; não pasmes, nem te espantes, porque o Senhor teu Deus é contigo, por onde quer que andares.","Josué 1:9","força"],
+ ["Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento.","Isaías 41:10","força"],
+ ["O Senhor é o meu pastor, nada me faltará.","Salmos 23:1","fé"],
+ ["Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas.","Provérbios 3:5-6","fé"],
+ ["Porque eu bem sei os pensamentos que penso de vós, diz o Senhor; pensamentos de paz, e não de mal, para vos dar o fim que esperais.","Jeremias 29:11","progresso"],
+ ["Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.","Mateus 11:28","Jesus"],
+ ["Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá. Não se turbe o vosso coração, nem se atemorize.","João 14:27","Jesus"],
+ ["No mundo tereis aflições, mas tende bom ânimo, eu venci o mundo.","João 16:33","Jesus"],
+ ["Buscai primeiro o reino de Deus, e a sua justiça, e todas essas coisas vos serão acrescentadas.","Mateus 6:33","Jesus"],
+ ["Pedi, e dar-se-vos-á; buscai, e encontrareis; batei, e abrir-se-vos-á.","Mateus 7:7","Jesus"],
+ ["Se tu podes crer, tudo é possível ao que crê.","Marcos 9:23","Jesus"],
+ ["Se tiverdes fé como um grão de mostarda, nada vos será impossível.","Mateus 17:20","Jesus"],
+ ["Tudo o que pedirdes, orando, crede que o recebereis, e tê-lo-eis.","Marcos 11:24","Jesus"],
+ ["O Senhor é a minha luz e a minha salvação; a quem temerei? O Senhor é a força da minha vida; de quem me recearei?","Salmos 27:1","força"],
+ ["Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia.","Salmos 46:1","força"],
+ ["Entrega o teu caminho ao Senhor; confia nele, e ele o fará.","Salmos 37:5","fé"],
+ ["Elevo os meus olhos para os montes, de onde vem o meu socorro. O meu socorro vem do Senhor, que fez os céus e a terra.","Salmos 121:1-2","fé"],
+ ["Os que esperam no Senhor renovarão as forças, subirão com asas como águias; correrão, e não se cansarão; caminharão, e não se fatigarão.","Isaías 40:31","força"],
+ ["Quando passares pelas águas, estarei contigo.","Isaías 43:2","força"],
+ ["Esforçai-vos e tende bom ânimo; não temais, porque o Senhor teu Deus é quem vai contigo; não te deixará, nem te desamparará.","Deuteronômio 31:6","força"],
+ ["Sabemos que todas as coisas contribuem juntamente para o bem daqueles que amam a Deus.","Romanos 8:28","fé"],
+ ["Se Deus é por nós, quem será contra nós?","Romanos 8:31","força"],
+ ["Alegres na esperança, fortes na tribulação, perseverantes na oração.","Romanos 12:12","força"],
+ ["Deus não nos deu o espírito de temor, mas de fortaleza, e de amor, e de moderação.","2 Timóteo 1:7","força"],
+ ["Não nos cansemos de fazer o bem, porque a seu tempo ceifaremos, se não desfalecermos.","Gálatas 6:9","progresso"],
+ ["Tudo quanto fizerdes, fazei-o de todo o coração, como ao Senhor, e não aos homens.","Colossenses 3:23","progresso"],
+ ["Confia ao Senhor as tuas obras, e os teus pensamentos serão estabelecidos.","Provérbios 16:3","progresso"],
+ ["A mão dos diligentes enriquece.","Provérbios 10:4","progresso"],
+ ["Os pensamentos do diligente tendem só para a abundância.","Provérbios 21:5","progresso"],
+ ["Sobre tudo o que se deve guardar, guarda o teu coração, porque dele procedem as saídas da vida.","Provérbios 4:23","fé"],
+ ["Tudo tem o seu tempo determinado, e há tempo para todo o propósito debaixo do céu.","Eclesiastes 3:1","progresso"],
+ ["Confirma sobre nós a obra das nossas mãos; sim, confirma a obra das nossas mãos.","Salmos 90:17","progresso"],
+ ["Este é o dia que fez o Senhor; regozijemo-nos e alegremo-nos nele.","Salmos 118:24","fé"],
+ ["As misericórdias do Senhor não têm fim; novas são cada manhã; grande é a tua fidelidade.","Lamentações 3:22-23","fé"],
+ ["Vós sois a luz do mundo.","Mateus 5:14","Jesus"],
+ ["Eis que eu estou convosco todos os dias, até à consumação dos séculos.","Mateus 28:20","Jesus"],
+ ["Eu sou a videira, vós as varas; quem está em mim, e eu nele, esse dá muito fruto.","João 15:5","Jesus"],
+ ["Eu sou a luz do mundo; quem me segue não andará em trevas, mas terá a luz da vida.","João 8:12","Jesus"],
+ ["Eu vim para que tenham vida, e a tenham em abundância.","João 10:10","Jesus"],
+ ["Para Deus nada é impossível.","Lucas 1:37","fé"],
+ ["O que é impossível aos homens é possível a Deus.","Lucas 18:27","Jesus"],
+ ["Aos homens é isto impossível, mas a Deus tudo é possível.","Mateus 19:26","Jesus"],
+ ["Não vos inquieteis pelo dia de amanhã, porque o dia de amanhã cuidará de si mesmo.","Mateus 6:34","Jesus"],
+ ["Bem está, servo bom e fiel; sobre o pouco foste fiel, sobre muito te colocarei.","Mateus 25:21","Jesus"],
+ ["Dai, e ser-vos-á dado; boa medida, recalcada, sacudida e transbordando.","Lucas 6:38","Jesus"],
+ ["A fé é o firme fundamento das coisas que se esperam, e a prova das coisas que se não veem.","Hebreus 11:1","fé"],
+ ["Estai firmes e constantes, sempre abundantes na obra do Senhor, sabendo que o vosso trabalho não é vão no Senhor.","1 Coríntios 15:58","progresso"],
+ ["A minha graça te basta, porque o meu poder se aperfeiçoa na fraqueza.","2 Coríntios 12:9","força"],
+ ["Fortalecei-vos no Senhor e na força do seu poder.","Efésios 6:10","força"]
+];
+var i = (function(){ var d = new Date(), ini = new Date(d.getFullYear(),0,0); return Math.floor((d-ini)/86400000) % V.length; })();
+function nomeAtual(){ return (document.getElementById("nome").value||"").trim() || "Nickolas"; }
+function saudacao(){ var h = new Date().getHours(); return h<12 ? "Bom dia" : h<18 ? "Boa tarde" : "Boa noite"; }
+function dataTexto(){ return new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"}); }
+function pinta(){
+  var n = nomeAtual(), v = V[i];
+  document.querySelectorAll(".n").forEach(function(x){ x.textContent = n; });
+  document.querySelectorAll(".ini").forEach(function(x){ x.textContent = n.charAt(0).toUpperCase(); });
+  document.querySelectorAll(".saud").forEach(function(x){ x.textContent = saudacao(); });
+  document.querySelectorAll(".vtxt").forEach(function(x){ x.textContent = (x.closest(".b") ? "" : "“") + v[0] + (x.closest(".b") ? "" : "”"); });
+  document.querySelectorAll(".ref").forEach(function(x){ x.textContent = v[1]; });
+  document.querySelectorAll(".tag").forEach(function(x){ x.textContent = v[2]; });
+  ["dataA","dataC"].forEach(function(id){ var x = document.getElementById(id); if(x) x.textContent = dataTexto(); });
+  var p = document.getElementById("pontos"); p.innerHTML = ""; for(var k=0;k<9;k++){ var b = document.createElement("i"); if(k===i%9) b.className = "on"; p.appendChild(b); }
+}
+function troca(){ document.querySelectorAll(".vers").forEach(function(x){ x.classList.add("some"); }); setTimeout(function(){ i = (i+1) % V.length; pinta(); document.querySelectorAll(".vers").forEach(function(x){ x.classList.remove("some"); }); }, 450); }
+document.getElementById("nome").addEventListener("input", pinta);
+document.getElementById("outra").addEventListener("click", troca);
+pinta(); setInterval(troca, 12000);
+</script>
+</body>
+</html>

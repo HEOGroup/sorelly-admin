@@ -12,8 +12,8 @@ function Cartao(p){
   return e(FotoEditavel,{pode:true, fotoAtual:p.foto, titulo:p.titulo, aoSalvar:p.aoSalvar, aoRemover:p.aoRemover, trigger:function(abrir){
     return e("button",{onClick:abrir, className:"group flex w-full flex-col items-center gap-2 rounded-xl p-3 text-center transition-colors hover:bg-white/5", style:{background:W.painel, border:"1px solid "+W.borda}, "aria-label":(tem ? "Trocar a foto de " : "Colocar foto em ")+p.nome},
       e("span",{className:"relative"}, p.avatar, e("span",{className:"absolute -bottom-1 -right-1 grid size-7 place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:tem ? "pencil-simple" : "camera", s:14, fill:true, style:{color:"#fff"}}))),
-      e("span",{className:"w-full truncate text-[13.5px] font-semibold"}, p.nome), e("span",{className:"w-full truncate text-[11.5px]", style:{color:W.sec}}, p.sub),
-      e("span",{className:"rounded-full px-2.5 py-0.5 text-[11.5px] font-semibold", style:{background:tem ? "#103529" : "#3a2f12", color:tem ? "#25d366" : W.ouro}}, tem ? "Trocar foto" : "Colocar foto")); }});
+      e("span",{className:"w-full truncate text-[12.5px] font-semibold"}, p.nome), e("span",{className:"w-full truncate text-[10.5px]", style:{color:W.sec}}, p.sub),
+      e("span",{className:"rounded-full px-2.5 py-0.5 text-[10.5px] font-semibold", style:{background:tem ? "#103529" : "#3a2f12", color:tem ? "#25d366" : W.ouro}}, tem ? "Trocar foto" : "Colocar foto")); }});
 }
 
 function FotosEquipe(){
@@ -27,16 +27,16 @@ function FotosEquipe(){
   return e("div",{className:"flex flex-col gap-4", style:{color:W.texto}},
     e("div",{className:"flex flex-wrap items-center gap-2"},
       e("div",{className:"flex h-10 min-w-56 flex-1 items-center gap-2 rounded-lg px-3", style:campo}, e(Ph,{n:"magnifying-glass", s:17, style:{color:W.sec}}),
-        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa, setor ou grupo", "aria-label":"Buscar", className:"min-w-0 flex-1 bg-transparent text-[14px] outline-none"})),
-      e("select",{value:setor, onChange:function(ev){ setSetor(ev.target.value); }, "aria-label":"Filtrar por setor", className:"h-10 rounded-lg px-3 text-[14px] outline-none", style:campo},
+        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa, setor ou grupo", "aria-label":"Buscar", className:"min-w-0 flex-1 bg-transparent text-[13px] outline-none"})),
+      e("select",{value:setor, onChange:function(ev){ setSetor(ev.target.value); }, "aria-label":"Filtrar por setor", className:"h-10 rounded-lg px-3 text-[13px] outline-none", style:campo},
         e("option",{value:"todos"}, "Todos os setores"), setores.map(function(s){ return e("option",{key:s, value:s}, s); })),
-      e("button",{onClick:function(){ setSoSem(!soSem); }, className:"flex h-10 items-center gap-2 rounded-lg px-3 text-[14px]", style:{background:soSem ? "#3a2f12" : W.campo, color:soSem ? W.ouro : W.texto}}, e(Ph,{n:soSem ? "check-square" : "square", s:17}), "Só quem está sem foto")),
-    e("p",{className:"text-[13px]", style:{color:W.sec}}, comFoto+" de "+CONTATOS.length+" pessoas já têm foto. Clique em quem quiser para colocar ou trocar; dá para arrastar e dar zoom antes de salvar."),
-    grupos.length>0 && e("section",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[12.5px] font-semibold uppercase tracking-wide", style:{color:W.ouro}}, "Grupos"),
+      e("button",{onClick:function(){ setSoSem(!soSem); }, className:"flex h-10 items-center gap-2 rounded-lg px-3 text-[13px]", style:{background:soSem ? "#3a2f12" : W.campo, color:soSem ? W.ouro : W.texto}}, e(Ph,{n:soSem ? "check-square" : "square", s:17}), "Só quem está sem foto")),
+    e("p",{className:"text-[12px]", style:{color:W.sec}}, comFoto+" de "+CONTATOS.length+" pessoas já têm foto. Clique em quem quiser para colocar ou trocar; dá para arrastar e dar zoom antes de salvar."),
+    grupos.length>0 && e("section",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[11.5px] font-semibold uppercase tracking-wide", style:{color:W.ouro}}, "Grupos"),
       e("div",{className:"grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6"}, grupos.map(function(g){
         return e(Cartao,{key:g.id, nome:g.nome, sub:g.membros.length+" participantes", foto:g.foto ? lerMidia(g.foto) : null, titulo:"Foto do grupo "+g.nome, avatar:e(Avatar,{grupo:true, nome:g.nome, foto:g.foto, s:72}),
           aoSalvar:function(u){ api.updateGroup(g.id, {foto:guardarMidia(u)}); }, aoRemover:function(){ api.updateGroup(g.id, {foto:null}); }}); }))),
-    e("section",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[12.5px] font-semibold uppercase tracking-wide", style:{color:W.ouro}}, "Equipe e representantes ("+lista.length+")"),
+    e("section",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[11.5px] font-semibold uppercase tracking-wide", style:{color:W.ouro}}, "Equipe e representantes ("+lista.length+")"),
       !lista.length ? e(Vazio,{n:"image"}, "Ninguém encontrado.") :
       e("div",{className:"grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6"}, lista.map(function(c){
         return e(Cartao,{key:c.id, nome:c.nome, sub:c.setorCurto, foto:fotoDe(c.id), titulo:"Foto de "+c.nome, avatar:e(Avatar,{id:c.id, s:72}),

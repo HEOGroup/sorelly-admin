@@ -38,9 +38,9 @@ function SeletorFundo(p){
   return e("div",{className:"grid grid-cols-2 gap-3 sm:grid-cols-3"}, TEMAS.map(function(t){ var on = atual===t.id;
     return e("button",{key:t.id, onClick:function(){ api.setFundo(eu, t.id); }, "aria-label":"Fundo "+t.nome, "aria-pressed":on, className:"text-left"},
       e("span",{className:"relative flex h-28 flex-col justify-center gap-1.5 overflow-hidden rounded-xl p-2.5", style:Object.assign({outline:on ? "3px solid "+W.ouro : "1px solid "+W.borda, outlineOffset:on ? 1 : 0}, estiloFundo(t.id))},
-        e("span",{className:"self-start rounded-md px-2 py-1 text-[11px]", style:{background:t.entrada, color:t.texto}}, "Bom dia!"),
-        e("span",{className:"self-end rounded-md px-2 py-1 text-[11px]", style:{background:t.saida, color:t.texto}}, "Já vi aqui"),
+        e("span",{className:"self-start rounded-md px-2 py-1 text-[10px]", style:{background:t.entrada, color:t.texto}}, "Bom dia!"),
+        e("span",{className:"self-end rounded-md px-2 py-1 text-[10px]", style:{background:t.saida, color:t.texto}}, "Já vi aqui"),
         on && e("span",{className:"absolute right-1.5 top-1.5 grid size-5 place-items-center rounded-full", style:{background:W.ouro, color:"#24180a"}}, e(Ph,{n:"check", s:12}))),
-      e("span",{className:"mt-1 block text-center text-[12.5px]"}, t.nome+(t.id===PADRAO ? " (padrão)" : ""))); }));
+      e("span",{className:"mt-1 block text-center text-[11.5px]"}, t.nome+(t.id===PADRAO ? " (padrão)" : ""))); }));
 }
 export { TEMAS, PADRAO, tema, estiloFundo, SeletorFundo };

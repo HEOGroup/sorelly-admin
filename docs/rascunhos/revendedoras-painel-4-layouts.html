@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revendedoras · Painel no alto · 4 layouts</title>
+<style>
+:root{--bg:#0d0d0c;--card:#181816;--card2:#1f1f1c;--line:rgba(255,255,255,.10);--txt:#fff;--mut:#cfcdc2;--ouro:#d9a441;--ouro2:#8a6420;--az:#4a90e2;--lar:#eb6834;--aq:#1baf7a;--am:#eda100;--mg:#e87ba4;--vi:#8d7de8}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:13px/1.4 Inter,Segoe UI,Arial,sans-serif;padding:16px;max-width:1280px;margin:0 auto}
+h1{font-size:18px;font-weight:600;letter-spacing:.02em}
+.sub{color:var(--mut);margin:2px 0 14px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.nav a{height:32px;display:inline-flex;align-items:center;padding:0 12px;border:1px solid var(--line);border-radius:6px;color:var(--txt);text-decoration:none}
+.nav a:hover{border-color:var(--ouro);color:var(--ouro)}
+.op{margin:0 0 34px}
+.op>h2{font-size:15px;font-weight:600;color:var(--ouro);display:flex;gap:8px;align-items:baseline;margin-bottom:2px}
+.op>p{color:var(--mut);margin-bottom:10px}
+.fb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;border:1px solid var(--line);border-radius:8px;background:var(--card);padding:6px 8px;margin-bottom:10px}
+.fb .in{height:32px;flex:1;min-width:160px;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;padding:0 10px;color:var(--mut)}
+.fb .sl{height:32px;border:1px solid var(--line);border-radius:6px;display:flex;align-items:center;padding:0 10px}
+.fb .ch{margin-left:auto;color:var(--ouro);font-weight:600}
+.cd{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.cd.o{border-top:2px solid var(--ouro)}
+.t{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.t em{font-style:normal;color:var(--ouro)}
+.kp{display:flex;flex-direction:column;gap:2px}
+.kp i{font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.kp b{font-size:20px;font-weight:600;line-height:1.1}
+.kp s{text-decoration:none;font-size:11px;color:var(--ouro)}
+.row{display:grid;gap:10px}
+.r6{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.br{display:grid;grid-template-columns:140px minmax(0,1fr) 92px;gap:8px;align-items:center;height:26px}
+.br .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br .b{height:10px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.br .b div{height:100%;background:linear-gradient(90deg,var(--ouro2),var(--ouro));border-radius:3px}
+.br .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.br .v b{color:var(--txt);font-weight:600}
+.dn{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.dn svg{flex:none}
+.lg{display:flex;flex-direction:column;gap:5px;min-width:150px;flex:1}
+.lg div{display:flex;align-items:center;gap:7px;white-space:nowrap}
+.lg i{width:10px;height:10px;border-radius:2px;display:inline-block;flex:none}
+.lg span{margin-left:auto;color:var(--mut);font-variant-numeric:tabular-nums;padding-left:8px}
+.lg span b{color:var(--txt)}
+.sb{display:flex;height:22px;border-radius:5px;overflow:hidden;gap:2px;margin:2px 0 6px}
+.sb div{height:100%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;color:#111;min-width:0;overflow:hidden}
+.lgh{display:flex;flex-wrap:wrap;gap:3px 14px;color:var(--mut);margin-bottom:10px}
+.lgh i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px}
+.tiles{display:grid;grid-template-columns:repeat(12,1fr);grid-auto-rows:52px;gap:4px}
+.tiles div{border-radius:6px;padding:6px 8px;display:flex;flex-direction:column;justify-content:space-between;overflow:hidden;color:#111;border:1px solid rgba(0,0,0,.25)}
+.tiles div b{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tiles div span{font-size:11px;font-weight:600}
+.pill{display:inline-flex;height:24px;align-items:center;padding:0 9px;border:1px solid var(--line);border-radius:12px;margin:0 6px 6px 0;white-space:nowrap}
+.pill b{color:var(--ouro);margin-left:6px;font-weight:600}
+.hero{display:grid;grid-template-columns:minmax(170px,210px) minmax(0,1fr);gap:14px}
+.hero .esq{border-right:1px solid var(--line);padding-right:14px;display:flex;flex-direction:column;gap:12px;justify-content:center}
+.hero .dir{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;min-width:0}
+.sep{height:1px;background:var(--line);margin:8px 0}
+@media(max-width:700px){.hero{grid-template-columns:1fr}.hero .esq{border-right:0;padding-right:0;border-bottom:1px solid var(--line);padding-bottom:10px}.br{grid-template-columns:110px minmax(0,1fr) 84px}}
+</style>
+</head>
+<body>
+<h1>Revendedoras · painel no alto da tela</h1>
+<p class="sub">Rascunho com números reais da DevMaster (27/10/2026): 2.165 revendedoras, 38 cidades. O painel acompanha o filtro da tabela embaixo.</p>
+<div class="nav"><a href="#a">Layout A · Faixa e listas</a><a href="#b">Layout B · Card grande</a><a href="#c">Layout C · Cidades em blocos</a><a href="#d">Layout D · Compacto</a></div>
+
+<!-- A -->
+<section class="op" id="a">
+<h2>Layout A · Faixa de números e três listas</h2>
+<p>Segue o padrão do Financeiro. Indicadores em cima, listas embaixo. Leitura limpa.</p>
+<div class="fb"><div class="in">Buscar nome, código, celular…</div><div class="sl">Representante</div><div class="sl">Situação</div><div class="sl">Faixa etária</div><div class="sl">Cadastro de … até …</div><span class="ch">Mostrando 2.165 revendedoras</span></div>
+<div class="row r6" style="margin-bottom:10px">
+<div class="cd o kp"><i>Revendedoras</i><b>2.165</b><s>32 representantes</s></div>
+<div class="cd o kp"><i>Idade média</i><b>31 anos</b><s>2.135 com nascimento</s></div>
+<div class="cd o kp"><i>Cidades</i><b>38</b><s>PR 97,2%</s></div>
+<div class="cd o kp"><i>Tempo de casa</i><b>14 meses</b><s>média</s></div>
+<div class="cd o kp"><i>Novas em 2026</i><b>1.146</b><s>53% do total</s></div>
+<div class="cd o kp"><i>Com 2 anos ou mais</i><b>479</b><s>22,1%</s></div>
+</div>
+<div class="row r3">
+<div class="cd"><div class="t">Cidades <em>% do total</em></div><div id="ac"></div></div>
+<div class="cd"><div class="t">Faixa etária <em>2.135</em></div><div id="af"></div></div>
+<div class="cd"><div class="t">Tempo de casa <em>2.165</em></div><div id="at"></div></div>
+</div>
+</section>
+
+<!-- B -->
+<section class="op" id="b">
+<h2>Layout B · Um card grande só</h2>
+<p>Tudo dentro de um bloco. Números à esquerda, gráfico de rosca da faixa etária e listas à direita.</p>
+<div class="cd o hero">
+<div class="esq">
+<div class="kp"><i>Revendedoras</i><b>2.165</b></div>
+<div class="kp"><i>Idade média</i><b>31 anos</b></div>
+<div class="kp"><i>Cidades atendidas</i><b>38</b></div>
+<div class="kp"><i>Tempo de casa</i><b>14 meses</b></div>
+</div>
+<div class="dir">
+<div><div class="t">Faixa etária</div><div class="dn"><div id="bd"></div><div class="lg" id="bl"></div></div></div>
+<div><div class="t">Cidades <em>10 maiores</em></div><div id="bc"></div></div>
+<div><div class="t">Tempo de casa</div><div id="bt"></div><div class="sep"></div><div class="t">Estados</div><span class="pill">PR<b>97,2%</b></span><span class="pill">SC<b>2,7%</b></span><span class="pill">SP<b>0,1%</b></span></div>
+</div>
+</div>
+</section>
+
+<!-- C -->
+<section class="op" id="c">
+<h2>Layout C · Cidades em blocos</h2>
+<p>Cada cidade vira um bloco do tamanho da sua parte. Curitiba domina. Faixa etária e tempo de casa ao lado.</p>
+<div class="row" style="grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);align-items:start">
+<div class="cd o"><div class="t">Cidades atendidas <em>38 · área = % do total</em></div><div class="tiles" id="ct"></div></div>
+<div style="display:flex;flex-direction:column;gap:10px">
+<div class="row" style="grid-template-columns:1fr 1fr"><div class="cd kp"><i>Revendedoras</i><b>2.165</b></div><div class="cd kp"><i>Idade média</i><b>31 anos</b></div></div>
+<div class="cd"><div class="t">Faixa etária</div><div class="dn"><div id="cd"></div><div class="lg" id="cl"></div></div></div>
+<div class="cd"><div class="t">Tempo de casa</div><div id="cc"></div></div>
+</div>
+</div>
+</section>
+
+<!-- D -->
+<section class="op" id="d">
+<h2>Layout D · Compacto, barras empilhadas</h2>
+<p>Ocupa pouca altura. Cada assunto é uma barra de 100%. Bom se a tabela precisa de espaço.</p>
+<div class="cd o">
+<div style="display:flex;flex-wrap:wrap;gap:26px;margin-bottom:12px">
+<div class="kp"><i>Revendedoras</i><b>2.165</b></div><div class="kp"><i>Idade média</i><b>31 anos</b></div><div class="kp"><i>Cidades</i><b>38</b></div><div class="kp"><i>Tempo de casa</i><b>14 meses</b></div><div class="kp"><i>Novas em 2026</i><b>1.146</b></div>
+</div>
+<div class="t">Cidades</div><div class="sb" id="d1"></div><div class="lgh" id="d1l"></div>
+<div class="t">Faixa etária</div><div class="sb" id="d2"></div><div class="lgh" id="d2l"></div>
+<div class="t">Tempo de casa</div><div class="sb" id="d3"></div><div class="lgh" id="d3l"></div>
+</div>
+</section>
+
+<script>
+var C=[["Curitiba",1179],["São José dos Pinhais",240],["Fazenda Rio Grande",116],["Araucária",103],["Colombo",85],["Pinhais",82],["Piraquara",61],["Campo Largo",40],["Ponta Grossa",38],["Almirante Tamandaré",33],["Outras 28 cidades",188]];
+var F=[["Até 25 anos",583],["26 a 35 anos",1020],["36 a 45 anos",396],["46 anos ou mais",136]];
+var T=[["Menos de 6 meses",857],["6 a 12 meses",370],["1 a 2 anos",459],["2 a 3 anos",311],["3 a 4 anos",91],["4 a 5 anos",45],["Mais de 5 anos",32]];
+var COR=["#4a90e2","#eb6834","#1baf7a","#eda100","#e87ba4","#8d7de8","#aab2bd"];
+var TOUR=["#f0c36b","#d9a441","#b9852a","#8a6420","#5e4416"];
+function pc(v,t){return (Math.round(v/t*1000)/10).toLocaleString("pt-BR")+"%"}
+function nf(v){return v.toLocaleString("pt-BR")}
+function soma(a){return a.reduce(function(s,x){return s+x[1]},0)}
+function bars(id,a,n){var t=soma(a),m=Math.max.apply(null,a.map(function(x){return x[1]})),h="";a.slice(0,n||a.length).forEach(function(x){h+='<div class="br"><span class="n" title="'+x[0]+'">'+x[0]+'</span><span class="b"><div style="width:'+(x[1]/m*100)+'%"></div></span><span class="v"><b>'+nf(x[1])+"</b> · "+pc(x[1],t)+"</span></div>"});document.getElementById(id).innerHTML=h}
+function donut(id,a,size){var t=soma(a),r=size/2-9,c=2*Math.PI*r,off=0,s='<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+" "+size+'" role="img" aria-label="Gráfico de rosca">';a.forEach(function(x,i){var len=x[1]/t*c;s+='<circle cx="'+size/2+'" cy="'+size/2+'" r="'+r+'" fill="none" stroke="'+COR[i]+'" stroke-width="16" stroke-dasharray="'+(len-2)+" "+(c-len+2)+'" stroke-dashoffset="'+(-off)+'" transform="rotate(-90 '+size/2+" "+size/2+')"/>';off+=len});s+='<text x="50%" y="48%" text-anchor="middle" fill="#fff" font-size="16" font-weight="600">'+nf(t)+'</text><text x="50%" y="62%" text-anchor="middle" fill="#cfcdc2" font-size="11">revendedoras</text></svg>';document.getElementById(id).innerHTML=s}
+function leg(id,a){var t=soma(a),h="";a.forEach(function(x,i){h+='<div><i style="background:'+COR[i]+'"></i>'+x[0]+"<span><b>"+nf(x[1])+"</b> · "+pc(x[1],t)+"</span></div>"});document.getElementById(id).innerHTML=h}
+function stack(b,l,a,cores){var t=soma(a),s="",g="";a.forEach(function(x,i){var c=cores[i%cores.length],p=x[1]/t*100;s+='<div style="width:'+p+'%;background:'+c+'" title="'+x[0]+' '+pc(x[1],t)+'">'+(p>7?pc(x[1],t):"")+"</div>";g+='<span><i style="background:'+c+'"></i>'+x[0]+" "+nf(x[1])+"</span>"});document.getElementById(b).innerHTML=s;document.getElementById(l).innerHTML=g}
+bars("ac",C,8);bars("af",F);bars("at",T);
+donut("bd",F,130);leg("bl",F);bars("bc",C,10);bars("bt",T);
+var span=[[6,5],[3,3],[2,2],[2,2],[2,2],[2,2],[1,2],[1,2],[1,2],[1,2],[2,2]];
+(function(){var t=soma(C),h="";C.forEach(function(x,i){var w=Math.max(2,Math.round(x[1]/t*12*2));w=i===0?7:i===1?3:i===2?2:i===3?2:i===4?2:2;var hh=i===0?3:i===1?2:1;h+='<div style="grid-column:span '+w+';grid-row:span '+hh+';background:'+TOUR[Math.min(i,4)]+'"><b>'+x[0]+"</b><span>"+nf(x[1])+" · "+pc(x[1],t)+"</span></div>"});document.getElementById("ct").innerHTML=h})();
+donut("cd",F,110);leg("cl",F);bars("cc",T);
+stack("d1","d1l",[C[0],C[1],C[2],C[3],C[4],["Outras",C.slice(5).reduce(function(s,x){return s+x[1]},0)]],COR);
+stack("d2","d2l",F,COR);stack("d3","d3l",T,COR);
+</script>
+</body>
+</html>

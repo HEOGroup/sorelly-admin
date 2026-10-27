@@ -6,6 +6,7 @@
 //  - Tipo da condicional: Expositor (vendedor 04 ou previsão no ano 3000), Encomenda (vendedor 91), Reposição (marca S), Kit principal (o mais antigo sem a marca),
 //    Kit novo (criado 20 dias ou mais depois do principal) e Reposição / peças do próximo mês (criado antes de 20 dias). A funcionária vai poder corrigir o tipo (etapa 3).
 import { consultarTabela, todasAsPaginas } from "./devmaster2.js";
+import { composicaoDoCliente, composicaoGeral, iniciarCargaBrindes, resumoVendas, situacaoBrindes } from "./vendas-brinde.js";
 
 const TTL = 10 * 60 * 1000;
 const DIAS_JANELA = 90;   // Marcus, 27/10/2026: condicional aberto nos últimos 90 dias, com devolução prevista para até 90 dias à frente
@@ -97,21 +98,22 @@ async function itensDeExpositor(codigos) {
 // Últimas vendas (acertos fechados, tabela dmach "Vendas") de cada revendedora: as 3 mais novas dos últimos 20 meses. Cache de 30 minutos por revendedora.
 async function vendasDe(clientes) {
   const c = (G.__sorellyVendasRev = G.__sorellyVendasRev || new Map()), agora = Date.now();
-  const faltam = [...new Set(clientes)].filter((k) => !c.has(k) || agora - c.get(k).em > 30 * 60 * 1000);
-  const desde = new Date(agora - 600 * 86400000).toISOString().slice(0, 10) + "T00:00:00";
-  for (let i = 0; i < faltam.length; i += 100) {
-    const lote = faltam.slice(i, i + 100);
+  const faltam = [...new Set(clientes)].filter((k) => !c.has(k) || agora - c.get(k).em > 30 * 60 * 1000 || !c.get(k).m);
+  const desde = new Date(agora - 760 * 86400000).toISOString().slice(0, 10) + "T00:00:00";   // 24 meses
+  const lotes = []; for (let i = 0; i < faltam.length; i += 100) lotes.push(faltam.slice(i, i + 100));
+  const um = async (lote) => {
     const r = await todasAsPaginas("dmach", { filtro: { ach_cliente: { in: lote }, ach_situacao: "F", ach_emissao: { gte: desde } }, campos: ["ach_cliente", "ach_emissao", "ach_valormerc"] });
     const por = new Map(lote.map((k) => [k, []]));
     r.forEach((x) => { const l = por.get(x.ach_cliente); if (l) l.push({ d: String(x.ach_emissao || "").slice(0, 10), v: Number(x.ach_valormerc) || 0 }); });
-    por.forEach((l, k) => c.set(k, { em: agora, v: l.sort((a, b) => b.d.localeCompare(a.d)).slice(0, 3) }));
-  }
-  const m = new Map(); clientes.forEach((k) => m.set(k, (c.get(k) || { v: [] }).v)); return m;
+    por.forEach((l, k) => { l.sort((a, b) => b.d.localeCompare(a.d)); const m = {}; l.forEach((x) => { const mes = x.d.slice(0, 7); m[mes] = Math.round(((m[mes] || 0) + x.v) * 100) / 100; }); c.set(k, { em: agora, v: l.slice(0, 3), m }); });
+  };
+  for (let k = 0; k < lotes.length; k += 4) await Promise.all(lotes.slice(k, k + 4).map(um));
+  const m = new Map(); clientes.forEach((k) => m.set(k, c.get(k) || { v: [], m: {} })); return m;
 }
 
 // A primeira leva: revendedoras com condicional aberto e previsão em 2026. Cache de 10 minutos.
-export async function listaRevendedoras({ forcar = false } = {}) {
-  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 5 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
+async function listaBase({ forcar = false } = {}) {
+  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 8 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
   const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc"];
   const [c26, cExp, vend] = await Promise.all([
     todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { between: ["2026-01-01T00:00:00", "2026-12-31T23:59:59"] } }, campos }),
@@ -123,7 +125,7 @@ export async function listaRevendedoras({ forcar = false } = {}) {
   cond.forEach((x) => { if (x.afi_cliente) (porCliente.get(x.afi_cliente) || porCliente.set(x.afi_cliente, []).get(x.afi_cliente)).push(x); });
   const codigos = [...porCliente.keys()], pessoas = new Map();
   for (let i = 0; i < codigos.length; i += 250) {
-    const lote = await consultarTabela("dmaam", { registros: 500, campos: ["aam_codigo", "aam_nome", "aam_municipio", "aam_estado", "aam_celular", "aam_whatsapp", "aam_situacao"], filtro: { aam_codigo: { in: codigos.slice(i, i + 250) } } });
+    const lote = await consultarTabela("dmaam", { registros: 500, campos: ["aam_codigo", "aam_nome", "aam_municipio", "aam_estado", "aam_celular", "aam_whatsapp", "aam_situacao", "aam_nascimento", "aam_datacadastro", "aam_email", "aam_instagram", "aam_bairro", "aam_cep", "aam_xenviaapp", "aam_pessoa"], filtro: { aam_codigo: { in: codigos.slice(i, i + 250) } } });
     lote.itens.forEach((p) => pessoas.set(p.aam_codigo, p));
   }
   const mun = await municipios([...pessoas.values()].map((p) => String(p.aam_municipio || "")));
@@ -131,19 +133,31 @@ export async function listaRevendedoras({ forcar = false } = {}) {
   const tiposPor = new Map(codigos.map((k) => [k, tiposDasCondicionais(porCliente.get(k))]));
   const expCods = [], comExp = [];
   codigos.forEach((k) => { const tp = tiposPor.get(k); let tem = false; porCliente.get(k).forEach((x) => { if (tp.get(x.afi_codigo) === "Expositor") { expCods.push(x.afi_codigo); tem = true; } }); if (tem) comExp.push(k); });
-  const [itensExp, vendas] = await Promise.all([itensDeExpositor(expCods), vendasDe(comExp)]);
+  const [itensExp, vendas] = await Promise.all([itensDeExpositor(expCods), vendasDe(codigos)]);
   const itens = codigos.map((cod) => {
     const lista = porCliente.get(cod), tipos = tiposPor.get(cod), rep = representanteDe(lista), p = pessoas.get(cod) || {}, m = mun.get(String(p.aam_municipio || "")) || {};
     // conds: cada condicional aberto, compacto (t = tipo, p = peças, v = valor, d = previsão de devolução (vazio = sem previsão ou expositor), e = emissão, it = modelos do expositor)
     const conds = lista.map((x) => { const t = tipos.get(x.afi_codigo), o = { t, p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, d: ano(x) >= 2100 ? "" : String(x.afi_prevdevol || "").slice(0, 10), e: String(x.afi_data || "").slice(0, 10) }; if (t === "Expositor") o.it = itensExp.get(x.afi_codigo) || []; return o; });
     const item = { cod, repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante", nome: nomeNormal(p.aam_nome), cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
-      celular: p.aam_celular || p.aam_whatsapp || "", situacao: p.aam_situacao === "A" ? "Ativa" : p.aam_situacao === "B" ? "Bloqueada" : "Inativa", conds };
-    if (vendas.has(cod)) item.vendas = vendas.get(cod);
+      celular: p.aam_celular || p.aam_whatsapp || "", situacao: p.aam_situacao === "A" ? "Ativa" : p.aam_situacao === "B" ? "Bloqueada" : "Inativa", conds,
+      nasc: p.aam_pessoa === "J" ? "" : String(p.aam_nascimento || "").slice(0, 10), cadastro: String(p.aam_datacadastro || "").slice(0, 10), email: String(p.aam_email || "").toLowerCase(), instagram: p.aam_instagram || "", bairro: nomeNormal(p.aam_bairro), cep: p.aam_cep || "", app: p.aam_xenviaapp === "S" };
+    if (vendas.has(cod)) { item.vendas = vendas.get(cod).v; item.vm = vendas.get(cod).m; }
     return item;
   }).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const dados = { geradoEm: new Date().toISOString(), total: itens.length, itens };
-  G.__sorellyRevs = { dados, em: Date.now(), v: 5 };
+  G.__sorellyRevs = { dados, em: Date.now(), v: 8 };
   return dados;
+}
+
+// Lista final: base da DevMaster + vendas SEM brinde de 2026 (banco). Enquanto a carga dos brindes não termina, vão as vendas brutas e o aviso "brinde.pronto = false".
+export async function listaRevendedoras({ forcar = false } = {}) {
+  const base = await listaBase({ forcar });
+  const st = await situacaoBrindes();
+  iniciarCargaBrindes({ forcar });
+  if (!st.pronto) return Object.assign({}, base, { brinde: st });
+  const comp = await composicaoGeral();
+  const itens = base.itens.map((i) => { const c = comp.get(i.cod); return Object.assign({}, i, { vendas: c ? c.v : [], vm: c ? c.vm : {}, bm: c ? c.bm : {}, tm: c ? c.tm : {}, nm: c ? c.nm : {}, am: c ? c.am : {}, liquida: true }); });
+  return Object.assign({}, base, { itens, vendasMes: await resumoVendas(), brinde: await situacaoBrindes() });
 }
 
 // Ficha: cadastro + todas as condicionais abertas (da última para a primeira), com o tipo de cada uma.
@@ -160,6 +174,22 @@ export async function fichaRevendedora(cod) {
   const tipos = tiposDasCondicionais(cond), rep = representanteDe(cond);
   const expCods = cond.filter((x) => tipos.get(x.afi_codigo) === "Expositor").map((x) => x.afi_codigo);
   const [itensExp, vendasRev] = await Promise.all([itensDeExpositor(expCods), vendasDe([cod])]);
+  // histórico completo (Marcus, 27/10/2026): todas as condicionais que a revendedora já teve e todas as vendas (acertos)
+  const [histRaw, vendasRaw] = await Promise.all([
+    todasAsPaginas("dmafi", { filtro: { afi_cliente: cod }, campos: ["afi_codigo", "afi_data", "afi_status", "afi_prevdevol", "afi_vendedor", "afi_qtditens", "afi_valormerc", "afi_valorvendido", "afi_valorretornado", "afi_valorsaldo", "afi_dtfechamento", "afi_dataacerto", "afi_codagendamento", "afi_xreposicao", "afi_obs"] }),
+    todasAsPaginas("dmach", { filtro: { ach_cliente: cod }, campos: ["ach_codigo", "ach_emissao", "ach_situacao", "ach_datacanc", "ach_vendedor", "ach_valormerc", "ach_valordesc", "ach_valoracres", "ach_valortotal", "ach_tipopag"] }),
+  ]);
+  const st = await situacaoBrindes(), comp = st.pronto ? await composicaoDoCliente(cod) : new Map(), arred = (n) => Math.round((Number(n) || 0) * 100) / 100;
+  const d10 = (v) => String(v || "").slice(0, 10), nomeSit = { A: "Aberta", F: "Fechada" };
+  const tipoHist = (x) => tipos.get(x.afi_codigo) || (x.afi_vendedor === "04" || ano(x) >= 2100 ? "Expositor" : x.afi_vendedor === "91" ? "Encomenda" : x.afi_xreposicao === "S" ? "Reposição" : "Kit");
+  const historico = histRaw.sort((a, b) => t(b.afi_data) - t(a.afi_data)).map((x) => ({
+    codigo: x.afi_codigo, emissao: d10(x.afi_data), tipo: tipoHist(x), situacao: nomeSit[x.afi_status] || String(x.afi_status || ""), vendedor: vend.get(x.afi_vendedor) || x.afi_vendedor || "",
+    pecas: Number(x.afi_qtditens) || 0, valor: Number(x.afi_valormerc) || 0, vendido: Number(x.afi_valorvendido) || 0, retornado: Number(x.afi_valorretornado) || 0, saldo: Number(x.afi_valorsaldo) || 0,
+    previsao: ano(x) >= 2100 ? "" : d10(x.afi_prevdevol), fechamento: d10(x.afi_dtfechamento), acerto: d10(x.afi_dataacerto),
+    agenda: String(x.afi_codagendamento || ""), obs: String(x.afi_obs || "").trim() }));
+  const vendasTodas = vendasRaw.sort((a, b) => String(b.ach_emissao || "").localeCompare(String(a.ach_emissao || ""))).map((x) => ({
+    codigo: x.ach_codigo, emissao: d10(x.ach_emissao), situacao: x.ach_datacanc ? "Cancelada" : x.ach_situacao === "F" ? "Fechada" : String(x.ach_situacao || ""), representante: vend.get(x.ach_vendedor) || x.ach_vendedor || "",
+    venda: Number(x.ach_valormerc) || 0, comissao: Number(x.ach_valordesc) || 0, acrescimo: Number(x.ach_valoracres) || 0, acerto: Number(x.ach_valortotal) || 0, pagamento: String(x.ach_tipopag || "") }));
   const condicionais = cond.sort((a, b) => t(b.afi_data) - t(a.afi_data)).map((x) => ({
     codigo: x.afi_codigo, emissao: String(x.afi_data || "").slice(0, 10), previsao: ano(x) >= 2100 ? null : String(x.afi_prevdevol || "").slice(0, 10),
     vendedorCod: x.afi_vendedor, vendedor: vend.get(x.afi_vendedor) || x.afi_vendedor, pecas: x.afi_qtditens, valor: x.afi_valormerc, saldo: x.afi_valorsaldo,
@@ -171,6 +201,15 @@ export async function fichaRevendedora(cod) {
     cadastradaEm: String(p.aam_datacadastro || "").slice(0, 10),
     endereco: nomeNormal(endereco), bairro: nomeNormal(p.aam_bairro), cidade: mun.nome || "", uf: mun.uf || String(p.aam_estado || "").toUpperCase(), cep: p.aam_cep || "",
     celular: p.aam_celular || "", whatsapp: p.aam_whatsapp || "", telefone: p.aam_telefone1 || "", email: String(p.aam_email || "").toLowerCase(), instagram: p.aam_instagram || "",
-    condicionais, vendas: vendasRev.get(cod) || [],
+    condicionais, ...(() => {
+      const vtE = vendasTodas.map((v) => { const c = comp.get(v.codigo); return { ...v, ...(c ? { brinde: c.brinde, troca: c.troca, indicacao: c.indicacao, premiacao: c.premiacao, outros: c.outros, liquida: c.liquida } : { brinde: null, troca: null, indicacao: null, premiacao: null, outros: null, liquida: null }) }; });
+      const f26 = vtE.filter((v) => v.situacao === "Fechada" && v.liquida !== null), vmL = {};
+      f26.forEach((v) => { const m = v.emissao.slice(0, 7); vmL[m] = arred((vmL[m] || 0) + v.liquida); });
+      const soma = (k) => arred(f26.reduce((a, v) => a + (v[k] || 0), 0)); // "bruto" = valor de venda da DevMaster (campo venda)
+      return { historico, vendasTodas: vtE, brinde: st,
+        vendas: st.pronto ? f26.slice(0, 3).map((v) => ({ d: v.emissao, v: v.liquida, b: v.brinde })) : (vendasRev.get(cod) || { v: [] }).v,
+        vendasMes: st.pronto ? vmL : (vendasRev.get(cod) || { m: {} }).m,
+        resumo2026: st.pronto ? { n: f26.length, bruto: soma("venda"), liquida: soma("liquida"), brinde: soma("brinde"), troca: soma("troca"), indicacao: soma("indicacao"), premiacao: soma("premiacao"), outros: soma("outros") } : null };
+    })(),
   };
 }

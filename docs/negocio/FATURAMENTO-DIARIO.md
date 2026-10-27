@@ -61,13 +61,17 @@ Acumulado do mês até cada data, conferido com o Marcus. Dia = diferença entre
 | 20/10 | 112 | R$ 96.267,29 | 1.120 | R$ 885.617,53 | R$ 182.744,32 |
 | 21/10 | 55 | R$ 42.933,85 | 1.175 | R$ 928.551,38 | R$ 73.914,28 |
 | 22/10 | 65 | R$ 53.629,05 | 1.240 | R$ 982.180,43 | R$ 45.938,34 |
-| 23/10 | 90 | R$ 67.551,40 | 1.330 | R$ 1.049.731,83 | — |
+| 23/10 | 90 | R$ 67.551,40 | 1.330 | R$ 1.049.731,83 | R$ 63.487,70 |
 | 24/10 (sáb) | 0 | R$ 0,00 | 1.330 | R$ 1.049.731,83 | R$ 0,00 |
 | 25/10 (dom) | 0 | R$ 0,00 | 1.330 | R$ 1.049.731,83 | R$ 0,00 |
+| 26/10 | — | — | — | — | R$ 65.623,11 |
 
-Sem lançamento (sem faturamento): 04, 11, 12, 17 e 18/10. Contas pagas de 23/10: ainda não lançadas no admin. Dias 1 a 12: os valores por dia vêm do sistema e não fecham com o acumulado oficial (08/10 = 291 acertos, R$ 207.855,36; 13/10 = 526, R$ 426.110,24): pendência já conhecida, por isso o acumulado desses dias fica em branco.
+Sem lançamento (sem faturamento): 04, 11, 12, 17 e 18/10. Dias 1 a 12: os valores por dia vêm do sistema e não fecham com o acumulado oficial (08/10 = 291 acertos, R$ 207.855,36; 13/10 = 526, R$ 426.110,24): pendência já conhecida, por isso o acumulado desses dias fica em branco.
 
 Fechamento de setembro/2026: 2.023 revendedoras, R$ 1.446.262,20 e 1.809 acertos.
+
+## Atualização automática de 27/10/2026 (3h)
+Contas pagas lidas do admin antigo: 23/10 = R$ 63.487,70 e 26/10 = R$ 65.623,11. Total de outubro até 26/10: **R$ 1.242.167,34** (soma dos dias). Atenção: o total do mês do admin (faturamento_contas_mes) mostra R$ 1.287.493,90, **R$ 45.326,56 a mais** que a soma dos dias; origem desconhecida, conferir. 24 e 25/10 sem lançamento. Saldos de 26/10 gravados (o admin não tem saldo de 24 e 25/10, fim de semana): total das contas **−R$ 182.583,44**, contra −R$ 187.055,12 em 21/10 (22 e 23/10 já estavam no arquivo).
 
 ## Posição das contas bancárias em 21/10/2026 (admin antigo, lido em 22/10)
 Total das contas: **−R$ 187.055,12** (sem as contas bloqueadas: −R$ 194.826,69). Em relação a 20/10 só o Itaú Black mudou (de −R$ 19.886,97 para −R$ 18.207,90). O admin ainda não tem saldo de 22/10.
@@ -126,3 +130,12 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Contas pagas por dia (`faturamento_contas_diario`) e saldos das 29 contas até 22/10: já estavam iguais ao admin, nada a gravar. Dia 22 pago: R$ 45.938,34 (34: 21,50 · 46: 31.258,26 · 59: 201,19 · 67: 801,35 · por fora: 13.656,04).
 - Diferença: soma dos dias lançados em outubro = R$ 1.113.056,53; o admin mostra pagas R$ 1.141.034,30 (R$ 27.977,77 de lançamentos fora do diário). A tela usa a soma dos dias.
 - A lista de títulos do Contas a pagar (DevMaster) não está no banco do admin: só muda quando o Marcus passar novos relatórios.
+
+## Atualização de 27/10/2026 (contas a pagar, lido do admin antigo)
+- Totais do mês (`faturamento_contas_mes`, 27/10 21:03): outubro pagas **R$ 1.330.288,27** e a pagar **R$ 175.516,21**; novembro a pagar R$ 1.466.105,48; dezembro a pagar R$ 1.500.381,39. Antes (22/10): outubro a pagar R$ 379.495,29, novembro R$ 1.451.402,56, dezembro R$ 1.500.553,11. Código: `aplicaContas27` em `state/store.js` (flag `cp27V`).
+- Contas pagas por dia gravadas: 23/10 R$ 63.487,70 · 26/10 R$ 73.813,04 (34: 0 · 46: 208,29 · 59: 6.844,56 · 67: 2.343,42 · por fora: 64.416,77) · 27/10 R$ 11.508,02 (34: 1.984,77 · 59: 5.432,35 · 67: 835,70 · por fora: 3.255,20). Arquivo local `saldos-atualizacao.local.js`.
+- Dia 24 e 25/10 sem pagamento. Dia 27 ainda parcial (o dia não fechou).
+
+## Saldos e revendedoras de 27/10/2026 (lidos do admin antigo)
+- Saldos das 29 contas gravados para 26/10 e 27/10 (`saldos-atualizacao.local.js`). Soma das contas bancárias (sem Retido e sem Dinheiro): 26/10 −R$ 237.662,00 · 27/10 −R$ 218.823,61. Sicredi Shopping 46 subiu de −R$ 10.102,98 (23/10) para +R$ 12.434,73 (27/10); Sicredi Serenity de −R$ 33.449,16 para −R$ 12.786,76; Itaú Black foi de −R$ 4.923,82 para −R$ 31.171,49.
+- Revendedoras: 27/10 = 2.106 (admin). Série 20 a 27/10: 2.058 · 2.081 · 2.087 · 2.106 · 2.113 · 2.113 · 2.105 (Marcus; o admin tinha 2.110) · 2.106.

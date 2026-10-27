@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · Página inicial completa</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.28);--fundo:#0a0806;--card:#110e08;--ok:#3ecf8e;--am:#f5a524;--ruim:#e5484d}
+  *{box-sizing:border-box}
+  body{margin:0;background:#050403;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:20px 14px 60px}
+  .topo{max-width:1180px;margin:0 auto 14px;display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+  .topo h1{font-size:18px;margin:0 12px 0 0}
+  .seg{display:inline-flex;border:1px solid var(--borda);border-radius:10px;overflow:hidden}
+  .seg button{height:32px;padding:0 14px;border:0;background:#100d08;color:#ddd;font:inherit;font-weight:600;cursor:pointer}
+  .seg button.on{background:var(--ouro);color:#1a1405}
+  .pg{max-width:1180px;margin:0 auto;background:radial-gradient(ellipse at 50% 0%,#1a1409 0%,var(--fundo) 55%);border:1px solid #2a2a2e;border-radius:16px;padding:28px 22px 30px}
+  .hero{text-align:center;padding:4px 0 6px}
+  .foto{display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;width:128px;height:128px;font-size:50px;border:3px solid var(--ouro);box-shadow:0 0 0 6px rgba(232,184,75,.12),0 0 40px rgba(232,184,75,.25);margin:0 auto 14px}
+  .selo{display:inline-flex;border:1px solid var(--borda);border-radius:999px;padding:4px 12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--ouro);background:#1b1710}
+  .nome{font-weight:700;letter-spacing:-.03em;line-height:1.05;margin:14px 0 0;font-size:44px}
+  .ouro{color:var(--ouro)}
+  .cruz{display:block;margin:8px auto 4px;filter:drop-shadow(0 0 14px rgba(232,184,75,.45))}
+  .vtxt{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-size:21px;line-height:1.5;max-width:760px;margin:0 auto}
+  .ref{color:var(--ouro);font-weight:700}
+  .pontos{display:flex;justify-content:center;gap:6px;margin:14px 0 4px}.pontos i{width:6px;height:6px;border-radius:50%;background:#3b3220}.pontos i.on{background:var(--ouro)}
+  .rot{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);font-weight:700;margin:26px 0 10px;display:flex;align-items:center;gap:10px}
+  .rot:after{content:"";flex:1;height:1px;background:var(--borda)}
+  .setores{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px}
+  .setor{border:1px solid var(--borda);border-radius:12px;background:var(--card);padding:14px;display:flex;flex-direction:column;gap:6px;cursor:pointer}
+  .setor:hover{border-color:var(--ouro)}
+  .setor .ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;color:#1a1405}
+  .setor b{font-size:14px}.setor small{color:#bdb39d}
+  .cols{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px}
+  @media(max-width:900px){.cols{grid-template-columns:1fr}}
+  .bx{border:1px solid var(--borda);border-radius:14px;background:var(--card);padding:14px 16px}
+  .bx h4{margin:0 0 10px;font-size:13px;display:flex;align-items:center;justify-content:space-between}
+  .bx h4 small{font-weight:500;color:#bdb39d}
+  .ck{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid rgba(232,184,75,.12)}
+  .ck:last-child{border:0}
+  .ck i{width:18px;height:18px;border-radius:5px;border:1.5px solid var(--borda);display:grid;place-items:center;font-style:normal;font-size:12px;color:#1a1405;flex:none;cursor:pointer}
+  .ck.ok i{background:var(--ok);border-color:var(--ok)}.ck.ok span{color:#8d8574;text-decoration:line-through}
+  .ck em{margin-left:auto;font-style:normal;color:#bdb39d;font-size:12px}
+  .av{display:flex;align-items:center;gap:10px;padding:6px 0}
+  .av .c{width:34px;height:34px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;display:grid;place-items:center;position:relative;flex:none}
+  .av .c u{position:absolute;right:-1px;bottom:-1px;width:11px;height:11px;border-radius:50%;border:2px solid var(--card)}
+  .av b{display:block;font-size:13px}.av small{color:#bdb39d}
+  .aviso{border:1px solid var(--borda);border-top:3px solid var(--ouro);border-radius:10px;background:#0d0a06;padding:10px 12px;margin-bottom:8px}
+  .aviso b{display:block;margin-bottom:2px}.aviso small{color:#cfcfcf}
+  .chips{display:flex;flex-wrap:wrap;gap:8px}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 14px;border:1px solid var(--borda);border-radius:999px;background:#100d08;font-weight:600;cursor:pointer}
+  .dir{display:none}.dir.on{display:block}
+  .pend{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+  .pend .p{border:1px solid var(--borda);border-radius:12px;background:var(--card);padding:12px 14px}
+  .pend .p b{display:block;font-size:22px;color:var(--ouro)}
+  .pend .p.v b{color:var(--ruim)}
+  .note{max-width:1180px;margin:16px auto 0;color:#9d9482;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="topo"><h1>Página inicial · completa</h1>
+  <span style="color:#bbb">Ver como:</span>
+  <div class="seg" id="seg"><button class="on" data-q="func">Funcionária</button><button data-q="dir">Diretoria</button></div>
+</div>
+
+<div class="pg">
+  <div class="hero">
+    <div class="foto"><b id="ini">N</b></div>
+    <span class="selo">Central Sorelly</span>
+    <h3 class="nome"><span id="saud">Olá</span>, <span id="nm">Nickolas</span>. <span class="ouro">Seja bem-vindo!</span></h3>
+    <svg class="cruz" width="40" height="56" viewBox="0 0 46 64"><use href="#cruz"/></svg>
+    <div id="vers" style="transition:opacity .5s"><div class="vtxt" id="vt"></div><div style="margin-top:10px" class="ref" id="vr"></div></div>
+    <div class="pontos" id="pontos"></div>
+  </div>
+
+  <div class="rot">Seus setores</div>
+  <div class="setores" id="setores"></div>
+
+  <div class="dir" id="dir">
+    <div class="rot">Para você decidir hoje</div>
+    <div class="pend">
+      <div class="p"><b>4</b>Contas aguardando liberação</div>
+      <div class="p"><b>3</b>Pagamentos para conferir</div>
+      <div class="p v"><b>2</b>Pagamentos vencendo hoje</div>
+      <div class="p"><b>1</b>Cadastro de revendedora para aprovar</div>
+    </div>
+  </div>
+
+  <div class="rot">Seu dia</div>
+  <div class="cols">
+    <div class="bx"><h4>Minha rotina de hoje <small id="prog">2 de 5</small></h4><div id="rotina"></div></div>
+    <div class="bx"><h4>Comunicados <small>da Diretoria</small></h4>
+      <div class="aviso"><b>Horário dos pagamentos</b><small>O financeiro paga até as 11h. Dúvidas pelo WhatsApp do financeiro.</small></div>
+      <div class="aviso"><b>Bipagem de kits de retorno</b><small>Ao terminar de bipar, feche para deixar no Carregar.</small></div></div>
+    <div class="bx"><h4>Equipe agora <small>5 disponíveis</small></h4>
+      <div class="av"><span class="c">L<u style="background:var(--ok)"></u></span><div><b>Lucas</b><small>Disponível</small></div></div>
+      <div class="av"><span class="c">M<u style="background:var(--ok)"></u></span><div><b>Michele</b><small>Disponível</small></div></div>
+      <div class="av"><span class="c">C<u style="background:var(--am)"></u></span><div><b>Camilly</b><small>Em reunião</small></div></div>
+      <div class="av"><span class="c">D<u style="background:#8b8b8b"></u></span><div><b>Deysiane</b><small>Ausente</small></div></div></div>
+  </div>
+
+  <div class="rot">Visitados recentemente</div>
+  <div class="chips"><span class="chip">Financeiro Familiar</span><span class="chip">Compras de materiais</span><span class="chip">Contas Bancárias</span><span class="chip">Financeiro Sorelly</span><span class="chip">Estoque interno</span></div>
+</div>
+<p class="note">Desenho de teste. Os números e nomes são de exemplo. As cores verde, amarelo e vermelho aparecem só para mostrar estado.</p>
+
+<svg width="0" height="0" style="position:absolute"><defs>
+  <linearGradient id="og" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffe9a8"/><stop offset=".5" stop-color="#E8B84B"/><stop offset="1" stop-color="#b8892a"/></linearGradient>
+  <symbol id="cruz" viewBox="0 0 46 64"><path d="M20 0h6v18h18v6H26v40h-6V24H2v-6h18z" fill="url(#og)"/><path d="M22.2 4h1.6v56h-1.6zM6 20.2h34v1.6H6z" fill="#fff" opacity=".28"/></symbol>
+</defs></svg>
+
+<script>
+var V = [
+ ["Posso todas as coisas em Cristo que me fortalece.","Filipenses 4:13","força"],
+ ["Não to mandei eu? Esforça-te, e tem bom ânimo; não pasmes, nem te espantes, porque o Senhor teu Deus é contigo, por onde quer que andares.","Josué 1:9","força"],
+ ["Não temas, porque eu sou contigo; não te assombres, porque eu sou o teu Deus; eu te fortaleço, e te ajudo, e te sustento.","Isaías 41:10","força"],
+ ["O Senhor é o meu pastor, nada me faltará.","Salmos 23:1","fé"],
+ ["Confia no Senhor de todo o teu coração e não te estribes no teu próprio entendimento. Reconhece-o em todos os teus caminhos, e ele endireitará as tuas veredas.","Provérbios 3:5-6","fé"],
+ ["Porque eu bem sei os pensamentos que penso de vós, diz o Senhor; pensamentos de paz, e não de mal, para vos dar o fim que esperais.","Jeremias 29:11","progresso"],
+ ["Vinde a mim, todos os que estais cansados e oprimidos, e eu vos aliviarei.","Mateus 11:28","Jesus"],
+ ["Deixo-vos a paz, a minha paz vos dou; não vo-la dou como o mundo a dá. Não se turbe o vosso coração, nem se atemorize.","João 14:27","Jesus"],
+ ["No mundo tereis aflições, mas tende bom ânimo, eu venci o mundo.","João 16:33","Jesus"],
+ ["Buscai primeiro o reino de Deus, e a sua justiça, e todas essas coisas vos serão acrescentadas.","Mateus 6:33","Jesus"],
+ ["Pedi, e dar-se-vos-á; buscai, e encontrareis; batei, e abrir-se-vos-á.","Mateus 7:7","Jesus"],
+ ["Se tu podes crer, tudo é possível ao que crê.","Marcos 9:23","Jesus"],
+ ["Se tiverdes fé como um grão de mostarda, nada vos será impossível.","Mateus 17:20","Jesus"],
+ ["Tudo o que pedirdes, orando, crede que o recebereis, e tê-lo-eis.","Marcos 11:24","Jesus"],
+ ["O Senhor é a minha luz e a minha salvação; a quem temerei? O Senhor é a força da minha vida; de quem me recearei?","Salmos 27:1","força"],
+ ["Deus é o nosso refúgio e fortaleza, socorro bem presente na angústia.","Salmos 46:1","força"],
+ ["Entrega o teu caminho ao Senhor; confia nele, e ele o fará.","Salmos 37:5","fé"],
+ ["Elevo os meus olhos para os montes, de onde vem o meu socorro. O meu socorro vem do Senhor, que fez os céus e a terra.","Salmos 121:1-2","fé"],
+ ["Os que esperam no Senhor renovarão as forças, subirão com asas como águias; correrão, e não se cansarão; caminharão, e não se fatigarão.","Isaías 40:31","força"],
+ ["Quando passares pelas águas, estarei contigo.","Isaías 43:2","força"],
+ ["Esforçai-vos e tende bom ânimo; não temais, porque o Senhor teu Deus é quem vai contigo; não te deixará, nem te desamparará.","Deuteronômio 31:6","força"],
+ ["Sabemos que todas as coisas contribuem juntamente para o bem daqueles que amam a Deus.","Romanos 8:28","fé"],
+ ["Se Deus é por nós, quem será contra nós?","Romanos 8:31","força"],
+ ["Alegres na esperança, fortes na tribulação, perseverantes na oração.","Romanos 12:12","força"],
+ ["Deus não nos deu o espírito de temor, mas de fortaleza, e de amor, e de moderação.","2 Timóteo 1:7","força"],
+ ["Não nos cansemos de fazer o bem, porque a seu tempo ceifaremos, se não desfalecermos.","Gálatas 6:9","progresso"],
+ ["Tudo quanto fizerdes, fazei-o de todo o coração, como ao Senhor, e não aos homens.","Colossenses 3:23","progresso"],
+ ["Confia ao Senhor as tuas obras, e os teus pensamentos serão estabelecidos.","Provérbios 16:3","progresso"],
+ ["A mão dos diligentes enriquece.","Provérbios 10:4","progresso"],
+ ["Os pensamentos do diligente tendem só para a abundância.","Provérbios 21:5","progresso"],
+ ["Sobre tudo o que se deve guardar, guarda o teu coração, porque dele procedem as saídas da vida.","Provérbios 4:23","fé"],
+ ["Tudo tem o seu tempo determinado, e há tempo para todo o propósito debaixo do céu.","Eclesiastes 3:1","progresso"],
+ ["Confirma sobre nós a obra das nossas mãos; sim, confirma a obra das nossas mãos.","Salmos 90:17","progresso"],
+ ["Este é o dia que fez o Senhor; regozijemo-nos e alegremo-nos nele.","Salmos 118:24","fé"],
+ ["As misericórdias do Senhor não têm fim; novas são cada manhã; grande é a tua fidelidade.","Lamentações 3:22-23","fé"],
+ ["Vós sois a luz do mundo.","Mateus 5:14","Jesus"],
+ ["Eis que eu estou convosco todos os dias, até à consumação dos séculos.","Mateus 28:20","Jesus"],
+ ["Eu sou a videira, vós as varas; quem está em mim, e eu nele, esse dá muito fruto.","João 15:5","Jesus"],
+ ["Eu sou a luz do mundo; quem me segue não andará em trevas, mas terá a luz da vida.","João 8:12","Jesus"],
+ ["Eu vim para que tenham vida, e a tenham em abundância.","João 10:10","Jesus"],
+ ["Para Deus nada é impossível.","Lucas 1:37","fé"],
+ ["O que é impossível aos homens é possível a Deus.","Lucas 18:27","Jesus"],
+ ["Aos homens é isto impossível, mas a Deus tudo é possível.","Mateus 19:26","Jesus"],
+ ["Não vos inquieteis pelo dia de amanhã, porque o dia de amanhã cuidará de si mesmo.","Mateus 6:34","Jesus"],
+ ["Bem está, servo bom e fiel; sobre o pouco foste fiel, sobre muito te colocarei.","Mateus 25:21","Jesus"],
+ ["Dai, e ser-vos-á dado; boa medida, recalcada, sacudida e transbordando.","Lucas 6:38","Jesus"],
+ ["A fé é o firme fundamento das coisas que se esperam, e a prova das coisas que se não veem.","Hebreus 11:1","fé"],
+ ["Estai firmes e constantes, sempre abundantes na obra do Senhor, sabendo que o vosso trabalho não é vão no Senhor.","1 Coríntios 15:58","progresso"],
+ ["A minha graça te basta, porque o meu poder se aperfeiçoa na fraqueza.","2 Coríntios 12:9","força"],
+ ["Fortalecei-vos no Senhor e na força do seu poder.","Efésios 6:10","força"]
+];
+var i = (function(){ var d = new Date(), ini = new Date(d.getFullYear(),0,0); return Math.floor((d-ini)/86400000) % V.length; })();
+var SET = {func:[["Kits novos","K","#E8B84B","Funil de pedidos"],["Cadastro","C","#7aa7ff","Aprovações"],["RH","R","#c58bff","Pessoas"],["Financeiro","F","#5ad1c8","Pagamentos"]],
+  dir:[["Visão geral","V","#E8B84B","Painel"],["Financeiro","F","#5ad1c8","Pagamentos"],["Kits","K","#ff9f5a","Listagens"],["Revendedoras","R","#7aa7ff","Base"],["RH","H","#c58bff","Pessoas"],["Agendamento","A","#a58bff","Metas"],["Cadastro","C","#7aa7ff","Aprovações"],["Tecnologia","T","#9aa0a6","Configurador"]]};
+var ROT = [["Bipar os retornos de ontem","08:30",true],["Conferir os kits novos da Michele","10:00",true],["Lançar o faturamento do dia","14:00",false],["Enviar o resumo para o WhatsApp","17:00",false],["Fechar o Carregar","17:30",false]];
+var quem = "func";
+function pinta(){
+  var h = new Date().getHours(); document.getElementById("saud").textContent = h<12 ? "Bom dia" : h<18 ? "Boa tarde" : "Boa noite";
+  var nm = quem==="dir" ? "Marcus" : "Nickolas"; document.getElementById("nm").textContent = nm; document.getElementById("ini").textContent = nm.charAt(0);
+  document.getElementById("vt").textContent = V[i][0]; document.getElementById("vr").textContent = V[i][1];
+  var p = document.getElementById("pontos"); p.innerHTML = ""; for(var k=0;k<9;k++){ var b = document.createElement("i"); if(k===i%9) b.className = "on"; p.appendChild(b); }
+  document.getElementById("setores").innerHTML = SET[quem].map(function(s){ return '<div class="setor"><span class="ic" style="background:'+s[2]+'">'+s[1]+'</span><b>'+s[0]+'</b><small>'+s[3]+'</small></div>'; }).join("");
+  document.getElementById("dir").classList.toggle("on", quem==="dir");
+  var r = document.getElementById("rotina"); r.innerHTML = ROT.map(function(x,j){ return '<div class="ck'+(x[2]?' ok':'')+'" data-j="'+j+'"><i>'+(x[2]?'✓':'')+'</i><span>'+x[0]+'</span><em>'+x[1]+'</em></div>'; }).join("");
+  document.getElementById("prog").textContent = ROT.filter(function(x){ return x[2]; }).length+" de "+ROT.length;
+}
+document.getElementById("rotina").addEventListener("click", function(ev){ var c = ev.target.closest(".ck"); if(!c) return; var j = +c.getAttribute("data-j"); ROT[j][2] = !ROT[j][2]; pinta(); });
+document.getElementById("seg").addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; quem = b.getAttribute("data-q"); document.querySelectorAll("#seg button").forEach(function(x){ x.classList.toggle("on", x===b); }); pinta(); });
+setInterval(function(){ var e = document.getElementById("vers"); e.style.opacity = 0; setTimeout(function(){ i = (i+1)%V.length; pinta(); e.style.opacity = 1; }, 450); }, 12000);
+pinta();
+</script>
+</body>
+</html>

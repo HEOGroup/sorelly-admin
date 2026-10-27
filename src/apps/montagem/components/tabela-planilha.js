@@ -37,7 +37,15 @@ function TabelaPlanilha(p){
   var sf = useState({}), filtros = sf[0], setFiltros = sf[1];
   var so = useState(null), ordem = so[0], setOrdem = so[1];   // {k, dir}
   var sa = useState(null), aberto = sa[0], setAberto = sa[1], sdt = useState({}), detAbertos = sdt[0], setDetAbertos = sdt[1];
-  var raiz = useRef(null);
+  var raiz = useRef(null), wrapRef = useRef(null), arr = useRef({on:false, moveu:false, x:0, l:0});
+  var desce = function(ev){ if(ev.button!==0) return; if(ev.target.closest && ev.target.closest("input, select, textarea, label, [role=dialog]")) return; var w = wrapRef.current; if(!w || w.scrollWidth<=w.clientWidth+4) return; arr.current = {on:true, moveu:false, x:ev.clientX, l:w.scrollLeft}; w.setAttribute("data-arrastando", "1"); document.body.style.userSelect = "none"; ev.stopPropagation(); };
+  var clicou = function(ev){ if(arr.current.moveu){ ev.preventDefault(); ev.stopPropagation(); arr.current.moveu = false; } };
+  useEffect(function(){
+    var mv = function(ev){ var a = arr.current; if(!a.on || !wrapRef.current) return; var dx = ev.clientX-a.x; if(!a.moveu && Math.abs(dx)<4) return; if(!a.moveu){ a.moveu = true; wrapRef.current.style.cursor = "grabbing"; document.body.style.userSelect = "none"; } wrapRef.current.scrollLeft = a.l-dx; };
+    var up = function(){ var a = arr.current; if(!a.on) return; a.on = false; if(wrapRef.current){ wrapRef.current.style.cursor = ""; wrapRef.current.removeAttribute("data-arrastando"); } document.body.style.userSelect = ""; };
+    window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up);
+    return function(){ window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); };
+  }, []);
   useEffect(function(){ var fecha = function(ev){ if(raiz.current && !raiz.current.contains(ev.target)) setAberto(null); }; document.addEventListener("pointerdown", fecha); return function(){ document.removeEventListener("pointerdown", fecha); }; }, []);
   var valores = useMemo(function(){ var r = {}; p.cols.forEach(function(c){ var m = new Map(); p.linhas.forEach(function(l){ var v = vazio(l[c.k]) ? "" : l[c.k]; m.set(v, true); }); r[c.k] = Array.from(m.keys()).sort(function(a, b){ return CMP.compare(String(a), String(b)); }); }); return r; }, [p.linhas, p.cols]);
   var linhas = useMemo(function(){
@@ -57,7 +65,7 @@ function TabelaPlanilha(p){
         : e("tr",{key:"g"+i}, e("td",{colSpan:ncols, className:"h-8 whitespace-nowrap border-b border-border bg-white/10 px-2.5 text-[13px] font-semibold"+cel}, p.rotuloGrupo ? p.rotuloGrupo(ultimo, q) : texto(ultimo)+" · "+q))); }
     var chv = p.chave ? l[p.chave] : i, aberta = !!(p.detalhe && detAbertos[chv]);
     var alterna = function(){ var n = Object.assign({}, detAbertos); if(n[chv]) delete n[chv]; else n[chv] = true; setDetAbertos(n); };
-    corpo.push(e("tr",{key:chv, onClick:p.detalhe ? alterna : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, "aria-expanded":p.detalhe ? aberta : undefined, className:(p.detalhe || p.aoClicar) ? "cursor-pointer hover:bg-white/10"+(aberta ? " bg-[#B8862B]/20" : "") : ""},
+    corpo.push(e("tr",{key:chv, onClick:p.detalhe ? alterna : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, "aria-expanded":p.detalhe ? aberta : undefined, className:(p.detalhe || p.aoClicar) ? (centro ? "cursor-grab" : "cursor-pointer")+" hover:bg-white/10"+(aberta ? " bg-[#B8862B]/20" : "") : ""},
       p.cols.map(function(c, ci){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); if(p.detalhe && ci===0) tx = (aberta ? "▾ " : "▸ ")+tx; return e("td",{key:c.k, title:c.max ? tx : undefined, style:c.max ? {maxWidth:c.max} : undefined, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px]"+cel+(c.max ? " overflow-hidden text-ellipsis" : "")+(c.cor ? " "+c.cor(l) : "")}, tx); })));
     if(aberta) corpo.push(e("tr",{key:"d"+chv}, e("td",{colSpan:ncols, className:"border-b border-border bg-black/25 p-2"}, p.detalhe(l))));
   });
@@ -65,12 +73,12 @@ function TabelaPlanilha(p){
     e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
       e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
       (nFiltros>0 || ordem) && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
-    e("div",{className:"overflow-x-auto rounded-lg border border-border"},
+    e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", className:"overflow-x-auto rounded-lg border border-border"+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
       e("table",{className:"border-collapse text-[13px]"+(centro ? " w-full" : "")},
-        e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x && x.span ? x.t : x); })), e("tr",null, p.cols.map(function(c){
+        e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), e("tr",null, p.cols.map(function(c){
           var f = !!filtros[c.k], o = ordem && ordem.k===c.k ? ordem.dir : 0;
-          return e("th",{key:c.k, className:"relative h-[30px] border-b border-border bg-white/5 p-0 "+(centro ? "text-center border-x border-border" : "text-left")},
-            e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:(centro ? "min-h-[30px] justify-center whitespace-normal py-1 leading-tight " : "h-[30px] whitespace-nowrap ")+"flex w-full items-center gap-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] hover:bg-white/10 "+(f ? "text-primary" : "text-foreground")},
+          return e("th",{key:c.k, className:"relative h-[30px] cursor-grab border-b border-border bg-white/5 p-0 "+(centro ? "text-center border-x border-border" : "text-left")},
+            e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:(centro ? "min-h-[30px] justify-center whitespace-normal py-1 leading-tight " : "h-[30px] whitespace-nowrap ")+"flex w-full items-center gap-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] cursor-grab hover:bg-white/10 "+(f ? "text-primary" : "text-foreground")},
               c.t, o!==0 && e("span",{"aria-hidden":true}, o===1 ? "▲" : "▼"), e("span",{"aria-hidden":true, className:f ? "" : "opacity-60"}, f ? "◆" : "▾")),
             aberto===c.k && e(MenuColuna,{col:c, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
               aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },

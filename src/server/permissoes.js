@@ -10,7 +10,10 @@ export const SETORES_DO_MODULO = {
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem"], cpc: ["pecas"],
-  mk: ["marketing"], gr: ["garantia"]
+  mk: ["marketing"], gr: ["garantia"],
+  inicio: ["*"],   // comunicados da página inicial (27/10/2026): todo mundo logado lê; quem publica é a Diretoria (regra da tela)
+  revdia: ["*"],   // total de revendedoras do dia (automático, DevMaster): todo mundo logado pode ler
+  fatdia: ["financeiro"],   // faturamento do dia anterior (automático, DevMaster): só financeiro (e Diretoria, que já abre tudo)
 };
 
 export function podeModulo(usuario, modulo) {

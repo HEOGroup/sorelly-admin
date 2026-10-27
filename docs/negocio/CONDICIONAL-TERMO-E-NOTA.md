@@ -61,3 +61,19 @@ De acordo com o Art. 75 da Lei Uniforme de Genebra.
 4. "Dívida líquida, certa e exigível" na cláusula 6.
 5. Multas somadas (10% do pendente + 1% ao dia + multa e juros da nota): sugestão de frase para não cobrar duas vezes sobre o mesmo valor.
 6. Limites legais de multa e juros. Critério para exigir avalista (pendente desde 16/10/2026).
+
+## Nota promissória revisada pelo advogado (recebida em 27/10/2026)
+Texto vindo do advogado. Vale no lugar da nota da minuta acima. Quando o Marcus mandar a versão final do termo, juntar aqui.
+
+NOTA PROMISSÓRIA — N.º [NÚMERO] · Valor R$ [VALOR] · Vencimento em [DATA DO ACERTO, POR EXTENSO]
+
+No dia do vencimento acima, eu, [NOME], pagarei por esta NOTA PROMISSÓRIA a [RAZÃO SOCIAL], inscrita no CNPJ sob o n.º 34.753.252/0001-03, Inscrição Estadual n.º 9088269141, com sede na Rua Marechal Deodoro, [Nº], Centro, CEP 80060-010, Curitiba-PR, ou à sua ordem, a quantia de [VALOR POR EXTENSO], em moeda corrente nacional. Pagável em Curitiba-PR.
+
+Em caso de atraso, pagarei, sobre o saldo devedor, multa de 10% (dez por cento) e juros de mora de 1% (um por cento) ao mês, calculados pro rata die a partir do vencimento, com correção monetária pelo IPCA, além das despesas de cobrança, custas e dos honorários advocatícios fixados em juízo.
+
+Local e data de emissão: [CIDADE-UF], [DATA DE EMISSÃO]
+
+EMITENTE: assinatura · nome [NOME] · CPF · RG · estado civil · endereço · cidade · CEP
+AVALISTA: assinatura · nome · CPF · RG · estado civil · endereço
+
+Mudanças do advogado: saiu a frase do Art. 75 da Lei Uniforme de Genebra (não produz efeito; os requisitos já estão no texto); saiu a autorização de protesto (o protesto não depende de autorização e já consta na cláusula 5ª do termo); a cobrança é sobre o SALDO DEVEDOR, não sobre o valor da nota, porque pode haver devolução parcial; entrou correção pelo IPCA e entraram RG e estado civil do emitente e do avalista.

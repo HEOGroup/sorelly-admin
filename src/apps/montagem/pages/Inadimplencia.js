@@ -2,7 +2,7 @@
 // Kits → Representantes → Inadimplência. Acerto em que a revendedora pagou menos do que devia: o que falta fica aqui, um bloco por representante.
 // Nada é descontado: só a comissão sobre o valor em aberto fica retida até a revendedora pagar. O pagamento feito depois vira linha extra do acerto;
 // o financeiro confirma a conta em Comissões e a comissão retida é liberada.
-import { analisar, comisEfetiva, dataHora, fmtDataBR, quemNome } from "@/apps/montagem/domain/comissoes";
+import { analisar, comisEfetiva, dataHora, fmtDataBR, prazoPendente, quemNome } from "@/apps/montagem/domain/comissoes";
 import { AGENDAMENTO, BIPADORAS, FINANCEIRO, SUPERVISORA, podeAgendar, veTotais } from "@/apps/montagem/domain/equipe";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -85,7 +85,18 @@ function AbaInadimplencia(){
   var todos = (s.acertosConsignado||[]).filter(function(r){ return r.tipo==="acerto"; }).map(function(r){ var a = analisar(c, r);
     return {r:r, a:a, quem:r.origem==="interno" ? "Atendimento interno" : (r.rep||"—"), houve:a.falta>0.009 || (r.pagamentos||[]).some(function(p){ return p.extra; }) || (r.negoc||[]).length>0}; })
     .filter(function(x){ return x.houve; });
-  todos.forEach(function(x){ x.sit = situacao(x.r, x.a, hoje); x.comRet = x.a.falta>0.009 ? r2(Math.min(x.a.falta, x.r.valorAcerto||0)*x.a.pct/100) : 0; });
+  // regras de 27/10/2026: prazo de 15 dias e multa de atraso (1% ao dia, teto 10%) sobre o que falta; a multa de 10% do pendente já está no acerto (r.multas)
+  todos.forEach(function(x){ x.pz = x.a.falta>0.009 ? prazoPendente(x.r, hoje) : null; x.multaAt = x.pz ? r2(x.a.falta*x.pz.pct/100) : 0; x.saldo = r2(x.a.falta + x.multaAt); });
+  // Etapas da pendência (Marcus, 26/10/2026): No prazo → Atrasado → Jurídico (60 dias) → Retirar kit (veio o próximo acerto e não pagou) → Executar nota (última negociação não cumprida).
+  var todosAc = (s.acertosConsignado||[]).filter(function(r){ return r.tipo==="acerto"; });
+  todos.forEach(function(x){ x.sit = situacao(x.r, x.a, hoje);
+    if(!x.pz){ x.etapa = null; return; }
+    var proximo = todosAc.some(function(o){ return o.rev===x.r.rev && o.id!==x.r.id && (o.data||"")>(x.r.data||""); }), jur = x.pz.dias>=((x.r.regrasNovas||{}).juridicoDias||60);
+    x.etapa = x.sit.k==="vencida" && (jur || proximo) ? {t:"Executar nota", tom:"text-destructive"} : proximo ? {t:"Retirar kit", tom:"text-destructive"} : jur ? {t:"Jurídico", tom:"text-destructive"} : x.pz.atraso>0 ? {t:"Atrasado", tom:"text-warning"} : {t:"No prazo", tom:"text-warning"}; });
+  // mesma revendedora com mais de uma pendência aberta: as duas ficam juntas
+  var porRev = {}; todos.forEach(function(x){ if(x.a.falta>0.009 && x.pz){ (porRev[x.r.rev] = porRev[x.r.rev] || []).push(x); } });
+  todos.forEach(function(x){ var l = porRev[x.r.rev]; x.juntas = l && l.length>1 ? {n:l.length, total:r2(l.reduce(function(t,y){ return t+y.saldo; }, 0))} : null; });
+  todos.forEach(function(x){ x.comRet = x.a.falta>0.009 ? r2(Math.min(x.a.falta, x.r.valorAcerto||0)*x.a.pct/100) : 0; });
   var b = busca.trim().toLowerCase();
   var linhas = todos.filter(function(x){
     if(repF!=="todas" && x.quem!==repF) return false;
@@ -93,10 +104,10 @@ function AbaInadimplencia(){
     if(sit==="prometidas" && x.sit.k!=="prometida") return false;
     if(sit==="quitadas" && x.sit.k!=="quitada") return false;
     if(b && (x.r.rev||"").toLowerCase().indexOf(b)<0) return false;
-    return true; }).sort(function(p,q){ return q.a.falta-p.a.falta; });
+    return true; }).sort(function(p,q){ return q.saldo-p.saldo; });
   var quemLista = todos.map(function(x){ return x.quem; }).filter(function(v,i,arr){ return arr.indexOf(v)===i; }).sort();
   var abertas = todos.filter(function(x){ return x.sit.k!=="quitada"; });
-  var totInad = abertas.reduce(function(t,x){ return t+x.a.falta; }, 0);
+  var totInad = abertas.reduce(function(t,x){ return t+x.saldo; }, 0);
   var prometido = abertas.filter(function(x){ return x.sit.k==="prometida"; }).reduce(function(t,x){ var u = (x.r.negoc||[]).slice().reverse().find(function(n){ return n.promessa; }); return t+Math.min(x.a.falta, (u && u.valor) || x.a.falta); }, 0);
   var retida = abertas.reduce(function(t,x){ return t+x.comRet; }, 0);
   var recuperado = todos.reduce(function(t,x){ return t+(x.r.pagamentos||[]).filter(function(p){ return p.extra && (p.data||"").slice(0,7)===mesAtual; }).reduce(function(u,p){ return u+(p.valor||0); }, 0); }, 0);
@@ -116,22 +127,23 @@ function AbaInadimplencia(){
       !agenda && e("span",{className:"rounded-md bg-warning/10 px-2 py-1 text-[12px] font-semibold text-warning"},"Você só consulta: negociar é com o agendamento"),
       e("span",{className:"ml-auto text-[13px] text-muted-foreground"}, linhas.length+(linhas.length===1 ? " acerto" : " acertos"))),
     grupos.length===0 && e("p",{className:"rounded-xl border border-dashed border-border p-10 text-center text-[14px] text-muted-foreground"},"Nenhuma inadimplência nesta lista. Quando uma revendedora pagar menos do que o acerto, o saldo aparece aqui."),
-    e("div",{className:"flex flex-col gap-3"}, grupos.map(function(g){ var tot = g.itens.reduce(function(t,x){ return t+x.a.falta; }, 0);
+    e("div",{className:"flex flex-col gap-3"}, grupos.map(function(g){ var tot = g.itens.reduce(function(t,x){ return t+x.saldo; }, 0);
       return e("div",{key:g.nome, className:"overflow-hidden rounded-xl ring-2 ring-[#8C6A3F]/70"},
         e("div",{className:"flex flex-wrap items-center gap-3 bg-linear-to-r from-[#3A2912] via-[#5C4322] to-[#86653A] px-4 py-3 text-[#F1E4C6] shadow-[inset_0_1px_0_rgba(255,255,255,.12)]"},
           e("span",{className:"font-heading text-base font-bold"}, g.nome),
           e("span",{className:"rounded-md bg-black/25 px-2 py-0.5 text-[13px] font-semibold"}, g.itens.length+(g.itens.length===1 ? " acerto" : " acertos")),
           e("b",{className:MONO+" ml-auto text-[15px] text-[#F3D98B]"}, "falta "+BK(tot))),
         e("div",{className:"overflow-x-auto bg-card/40"}, e("table",{className:"w-full border-collapse"},
-          e("thead",null, e("tr",{className:"bg-sidebar"}, th("Revendedora"), th("Acerto em"), th("Valor do acerto",true), th("Pago",true), th("Saldo devedor",true), th("Comissão retida",true), th("Última negociação"), th("Situação"))),
+          e("thead",null, e("tr",{className:"bg-sidebar"}, th("Revendedora"), th("Acerto em"), th("Valor do acerto",true), th("Pago",true), th("Saldo devedor",true), th("Prazo"), th("Comissão retida",true), th("Última negociação"), th("Situação"))),
           e("tbody",null, g.itens.map(function(x){ var r = x.r, ult = (r.negoc||[]).slice(-1)[0], on = aberta===r.id;
             return e(React.Fragment,{key:r.id},
               e("tr",{className:"cursor-pointer border-b border-border/60 hover:bg-muted/30", onClick:function(){ setAberta(on ? null : r.id); }},
-                td(e("span",{className:"inline-flex items-center gap-1.5 font-semibold"}, e(Icon,{n:on ? "chevrondown" : "chevron", s:14}), r.rev)), td(fmtDataBR(r.data)),
-                td(BK(r.valorAcerto),{r:true}), td(BK(x.a.pago),{r:true}), td(x.a.falta>0.009 ? BK(x.a.falta) : dash,{r:true, c:"font-semibold text-destructive"}),
+                td(e("span",{className:"inline-flex items-center gap-1.5 font-semibold"}, e(Icon,{n:on ? "chevrondown" : "chevron", s:14}), r.rev, x.juntas && e("span",{className:"rounded bg-destructive/15 px-1.5 py-px text-[11px] font-bold text-destructive", title:"A mesma revendedora tem mais de uma pendência: ficam juntas"}, x.juntas.n+" pendências · "+BK(x.juntas.total)))), td(fmtDataBR(r.data)),
+                td(BK(r.valorAcerto),{r:true}), td(BK(x.a.pago),{r:true}), td(x.saldo>0.009 ? e("span",{title:x.multaAt>0 ? "Falta "+BK(x.a.falta)+" (com a multa de 10% do pendente) + multa de atraso "+BK(x.multaAt) : ""}, BK(x.saldo)) : dash,{r:true, c:"font-semibold text-destructive"}),
+                td(x.pz ? e("span",{className:"font-semibold "+(x.pz.atraso>0 ? "text-destructive" : "text-warning")}, x.pz.atraso>0 ? x.pz.atraso+" dias de atraso · +"+x.pz.pct+"%" : x.pz.dias+"/"+x.pz.prazo+" dias", e("span",{className:"ml-1.5 rounded bg-destructive/15 px-1.5 py-px text-[11.5px] font-bold "+x.etapa.tom}, x.etapa.t), e("span",{className:"ml-1.5 text-[11.5px] font-bold text-destructive"},"kit bloqueado")) : dash),
                 td(x.comRet>0 ? BK(x.comRet) : dash,{r:true, c:"text-warning"}), td(ult ? fmtDataBR((ult.ts||"").slice(0,10))+" · "+(ult.txt||"promessa").slice(0,28) : dash),
                 td(e("span",{className:"font-semibold "+x.sit.tom}, x.sit.txt))),
-              on && e("tr",null, e("td",{colSpan:8, className:"p-0"}, e(Detalhe,{r:r, a:x.a, s:s, d:d, agenda:agenda}))));
+              on && e("tr",null, e("td",{colSpan:9, className:"p-0"}, e(Detalhe,{r:r, a:x.a, s:s, d:d, agenda:agenda}))));
           }))))); })));
 }
 

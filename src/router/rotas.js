@@ -48,7 +48,7 @@ const montagem = {
   path: "montagem",
   lazy: async () => ({ Component: (await import("@/apps/montagem/App")).default }),
   children: [
-    { index: true, element: e(Navigate, { to: "visao-geral", replace: true }) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
+    { index: true, element: e(Navigate, { to: "inicio", replace: true }) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
     pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
     pagina("agendamento-remarcacoes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgRemarc"),
@@ -183,8 +183,11 @@ const montagem = {
     pagina("apps", () => import("@/apps/montagem/pages/Apps"), "AbaApps"),
     pagina("revendedoras", () => import("@/apps/montagem/pages/BaseRevendedoras"), "AbaBaseRevendedoras"),
     pagina("revendedoras-ativas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasAtivas"),
+    pagina("revendedoras-kits-e-vendas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasKits"),
+    pagina("revendedoras-contas-a-receber", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasReceber"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),
+    pagina("inicio", () => import("@/apps/montagem/pages/Inicio"), "AbaInicio"),   // página inicial de todos (27/10/2026)
     pagina("visao-geral", () => import("@/apps/montagem/pages/VisaoGeral"), "AbaVisaoGeral"),
     pagina("funcionarios-e-representantes", () => import("@/apps/montagem/pages/Pessoas"), "AbaPessoas"),
     pagina("marcus", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcus"),

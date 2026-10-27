@@ -8,6 +8,7 @@ import { isoDia } from "@/apps/montagem/lib/format";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { rotAlertas } from "@/apps/montagem/domain/rotina";
 import * as srv from "@/apps/montagem/lib/api";
+import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
@@ -35,7 +36,7 @@ import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
-import { SeletorAcesso } from "@/apps/montagem/components/seletor-acesso";
+import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
@@ -82,11 +83,11 @@ function botoesAgrupados(areas, fazer, cor){
 function App(){
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   var navigate = useNavigate();
-  var euChat = useEu(s.usuario);
+  var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {abas:j.usuario.abas, ocultar:j.usuario.ocultar}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
@@ -140,8 +141,19 @@ function App(){
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
+  if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
-  if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);   // a página Apps está liberada para todos por enquanto (o Marcus bloqueia na versão oficial)
+  // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
+  var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
+  if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
+  else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
+  // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início, Rotina e Chat sempre ficam. Vale para o menu e os cartões do Início.
+  var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
+  // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
+  var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
+    (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
+  if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","rotina","whats"].indexOf(k)>=0; });
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
@@ -152,11 +164,13 @@ function App(){
   var gerAg = podeGerirAgend(s.usuario, s.agend);
   var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
-  var setoresV = SETORES.map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
+  var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);
     return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : st.id.indexOf("marcus")!==0; }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
+  definirSetoresInicio(setoresV.filter(function(st){ return st.id!=="inicio"; }));   // a página inicial mostra os mesmos setores do menu lateral
+  useEffect(function(){ if(s.logado) registrarVisita(s.usuario, aba); }, [aba]);   // telas visitadas recentemente (página inicial)
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
   // menu em cascata (Financeiro): Contas a pagar leva junto o modo escolhido (Sorelly, Família ou Sorelly + Família)
   var abrirMenu = function(n){ if(n.modo){ try{ sessionStorage.setItem("cta_sel", n.modo); }catch(x){} window.dispatchEvent(new CustomEvent("cta-modo", {detail:n.modo})); } abrirTela({aba:n.aba, nome:n.nome, breve:n.breve}); };
@@ -237,11 +251,10 @@ function App(){
             e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
 
         e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:podeMenu}),
+        e(PilulaSituacao),
         e(BotaoNotificacoes),
-        e(SeletorAcesso),
         e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
-        e(ZoomTela),
-        e("button",{className:"grid size-9 place-items-center rounded-lg hover:bg-muted/50", "aria-label":"Alternar tema", onClick:toggleTema}, e(Icon,{n:"sunmoon"}))),
+        e(ContaMenu,{zoom:e(ZoomTela), onTema:toggleTema})),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;

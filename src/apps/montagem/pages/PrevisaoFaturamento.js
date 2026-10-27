@@ -48,7 +48,7 @@ function AbaPrevisaoFaturamentoBase(){
   var fca = useState(fmSalvo.carregar||0), carregarForm = fca[0], setCarregarForm = fca[1];
   var salvarARealizar = function(){ d({type:"FECHA_MES_SET", ym:fmYm, aRealizar:aRealizarForm, carregar:carregarForm}); };
   var fixarDia = function(){ d({type:"FAT_FIXAR", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
-  var mp = useState(sReal.metaPct||97), metaPct = mp[0], setMetaPctLocal = mp[1], setMetaPct = function(v){ setMetaPctLocal(v); d({type:"META_PCT_SET", pct:v}); };   // meta usada na previsão: 94/95/96%, padrão 97 (19/10/2026: 96/97/98)
+  var mp = useState(sReal.metaPct||98), metaPct = mp[0], setMetaPctLocal = mp[1], setMetaPct = function(v){ setMetaPctLocal(v); d({type:"META_PCT_SET", pct:v}); };   // meta usada na previsão: 97/98/99%, padrão 98 (27/10/2026, Marcus; antes era 96/97/98 padrão 97)
   var jc = useState(2), janela = jc[0], setJanela = jc[1];   // janela de crescimento escolhida (índice em CRESCIMENTO_REVENDEDORAS; 2 = 30 dias)
   var ad = useState(false), abrirDetalhe = ad[0], setAbrirDetalhe = ad[1];
   var salvar = function(){ d({type:"FAT_LANCAR", data:dataForm, recebido:recForm, acertos:aceForm, revendedoras:revForm}); };
@@ -128,7 +128,7 @@ function AbaPrevisaoFaturamentoBase(){
   var pillJanela = function(compacto){ return e("div",{className:"flex flex-wrap gap-1"}, CRESCIMENTO_REVENDEDORAS.map(function(x,i){
     return e("button",{key:i, onClick:function(){setJanela(i);}, title:x.lb,
       className:"rounded-md px-2 py-1 text-[11px] font-semibold ring-1 "+(janela===i?"bg-primary/15 ring-2 ring-primary":"bg-card ring-border hover:bg-muted/40")}, jLb(x.lb)); })); };
-  var pillMeta = function(){ return e("div",{className:"flex gap-1"}, [96,97,98].map(function(x){
+  var pillMeta = function(){ return e("div",{className:"flex gap-1"}, [97,98,99].map(function(x){
     return e("button",{key:x, onClick:function(){setMetaPct(x);},
       className:"rounded-md px-2 py-1 text-[11px] font-bold "+(metaPct===x?"bg-warning text-black":"ring-1 ring-border hover:bg-muted/40")}, x+"%"); })); };
   return e(React.Fragment,null,
@@ -178,8 +178,8 @@ function AbaPrevisaoFaturamentoBase(){
             stat("Média/acerto", BK(mediaAcerto))),
           e("div",{className:"flex flex-col items-center gap-1 rounded-lg bg-warning/10 px-2 py-1.5 text-center text-[11.5px] font-semibold text-warning"},
             e("span",null, "Meta sobre os "+meta.previstos+(meta.manual ? " acertos do mês" : " previstos")),
-            e("div",{className:"flex gap-1.5"}, [96,97,98].map(function(x){ return e("button",{key:x, onClick:function(){setMetaPct(x);}, className:"rounded px-2 py-0.5 "+(metaPct===x?"bg-warning text-black":"opacity-60 hover:opacity-100")}, x+"%"); })),
-            e("span",{className:"text-[10.5px] font-normal opacity-80"}, "97% é o padrão")),
+            e("div",{className:"flex gap-1.5"}, [97,98,99].map(function(x){ return e("button",{key:x, onClick:function(){setMetaPct(x);}, className:"rounded px-2 py-0.5 "+(metaPct===x?"bg-warning text-black":"opacity-60 hover:opacity-100")}, x+"%"); })),
+            e("span",{className:"text-[10.5px] font-normal opacity-80"}, "98% é o padrão")),
           // 3 blocos: até agora (recebido/pago) · o que falta (a receber/a pagar) · total do mês (faturamento/contas a pagar/resultado)
           e("div",{className:"flex flex-col rounded-lg bg-black/10 px-2.5 py-1.5"},
             linha("Valor recebido", BK(recebidoMes), "text-success"), linha("Valor pago", BK(cpMes.pago), "text-destructive"),

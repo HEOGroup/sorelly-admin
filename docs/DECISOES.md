@@ -43,6 +43,8 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 ## 26/10/2026
 - **Regras do acerto de 27/10/2026, etapa 2 (Configurador e textos):** a multa do valor pendente SOMA no total a pagar (Marcus, 26/10/2026; antes ficava só como aviso). Representantes → Configurações ganhou o bloco "Regras de 27/10/2026" (média mínima, multa, prazo, atraso por dia, teto, jurídico, escada do acerto atrasado). Salvar cria nova versão com `vigenciaDesde` nunca antes de 27/10/2026 (regra no reducer), para não valer antes da data. `textoRegras` gera as frases novas (`textoRegrasNovas`), iguais em Normal e Prata. Falta: Consolidado e Inadimplência (etapa 4), histórico de vendas da DevMaster (5), informativo e PDFs (6).
+- **Dívida anterior (Marcus, 26/10/2026):** (1) Com pendência de acerto anterior NÃO sai kit novo, impossível; só sai se ela quitar tudo (dívida antiga e acerto novo). (2) O que ela paga no acerto novo quita PRIMEIRO a dívida mais antiga, o resto vale para o acerto novo (ex.: deve R$ 300, acerto de R$ 1.200 e paga R$ 1.200: R$ 300 quitam a antiga e ainda faltam R$ 300 no novo). (3) Não pode ficar devendo duas vezes seguidas. Código: `dividasAnteriores`/`totalDividaAnterior` (domain/comissoes.js), `derivarAcerto` (`dividaAnterior`, `blocoDivida`), reducer `abaterDividas`/`aplicarAbatimento` (a antiga ganha linha extra de pagamento; o acerto novo guarda `abatidoDivida` e `pagoDe` desconta). Vale para as regras antigas e novas. A conferir: a linha extra na dívida antiga nasce sem OK do financeiro, e a conciliação do dinheiro (Comissões) pode contar o mesmo valor nas duas linhas; confirmar com a Nayale/Ana Maria.
+- **Etapas da pendência (Marcus, 26/10/2026):** pendência não paga em 60 dias vira jurídico. Se não pagar até a data do próximo acerto, o kit é retirado. Se surgir nova pendência, as duas ficam juntas. Por último vem a negociação; se não for cumprida, executa a nota promissória. Na Inadimplência (coluna Prazo): No prazo → Atrasado → Jurídico → Retirar kit → Executar nota; revendedora com 2 pendências mostra "2 pendências · total". Regras de decisão em `pages/Inadimplencia.js`: "Retirar kit" = existe acerto mais novo da mesma revendedora e a pendência segue aberta; "Executar nota" = promessa da última negociação vencida e (jurídico ou próximo acerto). Falta: o que bloqueia o cadastro por média abaixo.
 - **Regras do acerto de 27/10/2026, etapa 4 (Consolidado e Inadimplência):** `devidoDe` (domain/comissoes.js) e o Consolidado somam `r.multas` no total devido. A Inadimplência calcula ao vivo o prazo de 15 dias e a multa de atraso (1% ao dia, teto 10%, sobre o que falta) com `prazoPendente`; enquanto houver pendência aparece "kit bloqueado". O registro do acerto guarda `regrasNovas` e `diasQuitacao`. NÃO FEITO (precisa de decisão do Marcus): trava de verdade na criação do próximo kit (hoje só aparece o aviso, porque o kit novo liberado com 80% pago convive com a regra "bloqueado até quitar"), cadastro bloqueado por média abaixo (a média não fica guardada no registro) e o que acontece com pendência depois dos 60 dias (jurídico só vale hoje para acerto atrasado).
 - **Menu Representantes & Kits em 2 níveis (Marcus, 26/10/2026):** regra de `docs/prompts/PROMPT-MESTRE.md` e do PADRAO-VISUAL (máximo 2 níveis, ordem do fluxo). Os grupos Montagem, Bipagem e Acompanhamento subiram para a barra; antes eram Kits → grupo → telas (3 níveis). Barra: Montagem, Bipagem, Acompanhamento, Representantes, Financeiro, Regras. Vale para TODO setor: nunca lista dentro de lista.
 - **Correção de padrão (Marcus, 26/10/2026):** a tela Representantes → Configurações estava fora do menu do setor (sem a barra de cima) e com blocos de 3 cores. Agora está em Representantes → Regras → Configurações e todos os blocos usam a cor única. Lição: ao mexer em tela de configuração, conferir se ela está no `menu` do setor e não usar `cor:` por bloco.
@@ -981,3 +983,81 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 ## 26/10/2026 · Revendedoras: expositores
 - Marcus: puxar as condicionais abertas até o ano 3000 (expositor). "Todas" continua só kits (2.106 revendedoras, R$ 20.665.969); aba Expositor e aba "Só expositor · sem kit" (59 esquecidas). Modelos agrupados: todos os dois andares juntos; abrir o grupo mostra os modelos e quem está com cada um (filtro por grupo/modelo). Média das 3 últimas vendas = acertos fechados (dmach, ach_valormerc) dos últimos 20 meses; objetivo: cobrar valor mínimo de venda de quem está com expositor (a regra de cobrança ainda NÃO existe). Esquecida: mais de 6 meses amarelo, mais de 1 ano vermelho. Itens do expositor com código fora de MP/EX/MU/PJ são joias e ficam no grupo "Peças de joia".
+
+## 27/10/2026 · Revendedoras: data do kit e data prevista de acerto
+- Marcus: Data do kit = emissão da PRIMEIRA condicional dos últimos 90 dias, nunca de expositor (conferido: 2.101 das 2.106 têm). Data prevista de acerto = a previsão de devolução dessa mesma condicional na DevMaster (a DevMaster define cerca de 1 mês depois da emissão: 31 a 45 dias em 91% dos kits). Sem condicional nos últimos 90 dias (5 revendedoras) as duas colunas ficam vazias.
+
+## 27/10/2026 · Revendedoras: parte de cima reorganizada
+- Marcus: 4 blocos iguais e alinhados; blocos de expositor só nas abas de expositor; sem texto de apoio no título; "Agrupar por representante" e "Atualizar" ficam no bloco Filtros. UMA revendedora tem UM kit (principal, kit novo e reposição são o mesmo kit): não existe "kits por revendedora", "valor por kit" nem "média por kit"; a média é por revendedora. Condicionais (principal, novo, reposição, encomenda, expositor) seguem contadas como condicionais.
+- REGISTRO (fora da tela): dentro das condicionais de expositor (vendedor 04) vêm itens que NÃO são expositor: **Display e cubo** = mini displays e cubos que algumas revendedoras têm (~998 unidades, 48 revendedoras; códigos MP0007-MP0011 etc.) e **Peças de joia** = joias de verdade (brincos, colares, pulseiras... códigos sem prefixo MP/EX/MU/PJ) que foram lançadas dentro de condicional de expositor (~409 unidades em 7 revendedoras). Os dois grupos ficam fora da tela de Revendedoras; condicional que só tem esses itens também sai da lista de expositor.
+
+## 27/10/2026 · Revendedoras: filtros em uma linha e média das 3 últimas vendas para todas
+- Marcus escolheu a opção 3 dos filtros: uma linha só (busca, Representante, Situação, Devolução; Grupo e Modelo só nas abas de expositor; Por representante e atualizar). UF e Condicionais ficam no filtro da coluna.
+- Média das 3 últimas vendas para TODAS as revendedoras (acertos fechados da DevMaster, janela de 300 dias, ach_valormerc). Hoje: 1.849 têm venda no período (1.485 com as 3 vendas) e 316 não têm nenhuma e ficam com R$ 0,00.
+
+## 27/10/2026 · Revendedoras: ficha em cadastro, mãozinha e vendas por mês
+- Marcus: a ficha NÃO usa blocos; é um cadastro (campos rotulados em seções). Tabela com mãozinha para arrastar para o lado (também no cabeçalho). "Vendas": últimos 3 meses ou todos os meses (24) em colunas novas, valor vendido por mês (acertos fechados da DevMaster, ach_valormerc).
+
+## 27/10/2026 (4) · Faturamento do dia anterior: atualização automática pela DevMaster
+- Marcus: puxar o faturamento todo dia às 10h, do dia anterior: entra em "relatório de notas fiscais", clientes (não funcionários), TES S001/S002, soma o valor do mês.
+- Testei ao vivo (consulta direta, antes de programar): tabela certa é `dmabl` (Notas Fiscais de Saída). Achado importante: a DevMaster MISTURA orçamento (série "ORC") com nota emitida de verdade na mesma tabela — `abl_nfeautorizada:"S"` é o que marca a nota realmente emitida (Marcus confirmou: "notas fiscais mistura com orc mesmo"). "Funcionário" não é um TIPO de cliente (aam_tipo é só C/R/S/E): é um GRUPO do cadastro (`aam_grupo`, tabela `dmalv`, código "0002" = "FUNCIONÁRIOS"; Marcus: "o registro fica nos clientes direto"). Outubro até 26/10: 342 notas, R$ 243.746,10 (nenhuma de funcionário neste mês).
+- Implementado: `src/server/faturamento.js` (consulta: notas emitidas do mês até a data, TES S001/S002, sem grupo Funcionários) + `src/server/faturamento-dia.js` (relógio: confere a cada 15 min, roda às 10h, 1x por dia, grava em `sorelly.estado_modulo` módulo "fatdia"). `instrumentation.js` liga os dois relógios (revendedoras e faturamento) no boot do servidor. O reducer trata `SYNC_MODULO` de "fatdia" como caso especial: junta só `recebido` em `s.faturamentoDiario[dia]`, sem mexer em `acertos`/`revendedoras` daquele dia. Rota manual de emergência (só Diretoria): `POST /api/faturamento/dia`.
+- **Em aberto:** só o VALOR do faturamento ficou automático. "Acertos" (quantidade de atendimentos do dia, que a Amanda também lançava) ainda não tem fonte automática definida — a confirmar com o Marcus se puxa de algum lugar ou continua manual.
+- **Pendente: precisa reiniciar o servidor uma vez** para os dois relógios (revendedoras e faturamento) começarem a valer.
+
+## 27/10/2026 · Ficha da revendedora em card (opção 2)
+- Marcus escolheu a opção 2: card somente leitura em 3 colunas (Quem é, Contato, Kit). Nada editável; edição só para acesso restrito (selo "Edição restrita", edição ainda não existe). Embaixo, botão para alternar Condicionais (histórico completo, abertas e fechadas) e Vendas (todos os acertos). Campos da DevMaster usados: dmafi (afi_status, afi_dtfechamento, afi_dataacerto, afi_valorvendido, afi_valorretornado) e dmach (todas as vendas do cliente). Campos que a API NÃO aceita: afi_dataagendamento, afi_xnomevendmont, afi_xnomevendbip, ach_nvendedor.
+
+## 27/10/2026 · Revendedoras: mãozinha em toda a tabela e vendas do ano
+- Marcus: a mãozinha vale no meio da tabela (linhas); apertar o mouse trava a tabela e ela anda junto. A lista abre com as vendas de todo o ano (Total vendido 2026 + janeiro até o mês atual) em colunas para o lado (padrão); a seleção Vendas troca para 3 meses, todos os meses ou nenhuma.
+
+## 27/10/2026 · Revendedoras: linha TOTAL em todas as tabelas
+- Marcus: com qualquer filtro, a primeira linha da tabela é o TOTAL de tudo que dá para somar (condicionais, peças, valor total, expositores, média das 3 últimas vendas, vendas do ano e por mês). Vale para a tabela de revendedoras, a de representantes e a que abre dentro de cada representante.
+
+## 27/10/2026 · Revendedoras: venda sem brinde (TES), brindes e % de brinde
+- Problema: o "Valor de venda" da DevMaster (dmach.ach_valormerc) soma brinde, troca, indicação e premiação. Conferido pelos itens (dmaci, campo aci_tes): Esthefanny venda 065605: DevMaster R$ 1.116,40 = venda R$ 1.042,00 (S001 R$ 677,30 + comissão R$ 364,70) + brindes S009 R$ 74,40; Tayane 065622: R$ 852,20 = R$ 800,00 + R$ 52,20.
+- TES (dmabc, saídas): VENDA = S001, S501, S002, S008; BRINDE (bonificação, brindes e prêmios) = S009, S503; TROCA = S006, S504; INDICAÇÃO = S007, S505; PREMIAÇÃO POR META = S011; OUTROS = S003, S004, S005, S010, S502. Em 2026 aparecem: S001 e S009, S006, S007 o ano todo, S011 desde 28/08, S004 de 14/01 a 16/04 (remessa para industrialização, 1 a 2 itens por venda; tratada como "outros", não é venda) e S501 só 1 item em 18/09 (expositor vendido). S502 não aparece em 2026. Atenção: o Marcus lembrava de S501 e S502 como TES de venda até março; nos dados de 2026 a venda de janeiro a março usa S001. Confirmar.
+- Fórmula: venda sem brinde = valor de venda da DevMaster − brinde − troca − indicação − premiação − outros (nas vendas de janeiro a março o acréscimo já vem embutido nos itens e sai pela mesma conta). Só 2026.
+- Carga em segundo plano, guardada no banco (sorelly.venda_composicao). Atualizar lê só vendas novas e os últimos 60 dias.
+-  0e brinde = brindes ÷ venda sem brinde. Média das 3 últimas vendas = venda sem brinde.
+
+- 27/10/2026, acertos: tela Revendedoras mostra nº de acertos e valor dos acertos (acerto da DevMaster − brinde, troca, indicação, premiação). Conferência com o relatório de 26/10 (relFat005): o relatório agrupa por DATA DA NOTA, não pela data da venda (vendas de 23 e 24/10 aparecem no dia 26). Por isso o dia não bate; o mês fecha com diferença de cerca de 0,4%. Pendente: ler a data da nota e a filial 02.
+
+- 27/10/2026, Revendedoras em 3 abas (proposta aceita pelo Marcus): 1 Cadastro (só dados da cliente), 2 Kits e vendas (condicionais, datas, vendas, acertos, brindes), 3 Contas a receber (valor do acerto, Pix, cartão, inadimplência). Regra do Marcus: venda lançada com a forma "Acerto com loja" = a revendedora NÃO pagou (inadimplente), mesmo que tenha pago depois. A fonte dos pagamentos na DevMaster ainda precisa ser confirmada.
+
+- 27/10/2026, data da venda: o relatório do Marcus usa a DATA DE FATURAMENTO (dmach.ach_datafat, quando fecha no Carregar), não a emissão. A carga das vendas passou a usar ach_datafat. Pagamentos: dmach.ach_tipopag (forma), dmabg (títulos a receber) e dmabf (baixas) são as fontes prováveis da aba Contas a receber; falta confirmar o significado dos códigos (ACE, ACI...).
+
+- 27/10/2026, Cadastro das revendedoras: colunas novas (idade, nascimento, e-mail, bairro, CEP, cadastro). Instagram vem vazio na DevMaster e o campo App é sim para todas, por isso ficaram de fora. Pendente: dashboard no alto (média de idade, cidades) e a opção Kits ativos / Total.
+
+## 27/10/2026 · Teste do novo fluxo: Representante Kit Novo (proposta do Nickolas)
+- Valores definidos pelo Marcus: entrega do kit **R$ 25** (era R$ 20) + gasolina; no **1º acerto** da revendedora a Rep. Kit Novo leva **2%** e a Rep. Acerto **6%** (soma 8%); do 2º acerto em diante a Rep. Acerto leva 8%. Gasolina no mesmo esquema das outras representantes. Representante Kit Novo do teste: **Jessica Tobias**.
+- Feito (Fase 1 a 3): valores no Configurador de comissões (`nf` em `domain/comissoes.js`, bloco "Novo fluxo"); chave liga/desliga; lista de revendedoras marcadas com a Rep. Kit Novo; R$ 25 na entrega; 2% + 6% só no 1º acerto (`nfPrimeiros`). Só vale para revendedora marcada.
+- Falta: botão Desistência (hoje só o campo `desistencia` do kit zera o R$ 25), etapa Suporte e Representante Acerto, aviso à Michele no 3º dia, ciclo de pagamento próprio (dias 11, 21 e 1º) e os controles do Nickolas.
+- Testado na tela (Comissões): Larissa Almeida marcada: 1º acerto de R$ 1.594,80 deu R$ 95,69 (6%) à Rep. Acerto e R$ 31,90 (2%) à Jessica Tobias; a entrega de R$ 25 apareceu na Jessica Tobias.
+
+## 27/10/2026 · Atualização automática das 3h
+- Leitura do admin antigo: saldos de 26/10 e contas pagas de 23/10 (R$ 63.487,70) e 26/10 (R$ 65.623,11) gravados em `saldos-atualizacao.local.js`; `cpdAdminV`/`cpdLocalV` subiram para 4 em `state/store.js`. Total pago de outubro pela soma dos dias: R$ 1.242.167,34; o total do mês do admin (R$ 1.287.493,90) tem R$ 45.326,56 a mais: a conferir. Faturamento, acertos e previstos não foram mexidos.
+
+## 27/10/2026 · Em espera (o Marcus pediu para deixar para depois)
+Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas). Ficam PARADOS, sem decisão nova:
+- **Financeiro/Pix:** aviso de Pix novo no admin (estilo Kiwify), visual novo em Pix representantes, Comissões e Controle de pagamentos, confirmar R$ 7.000 como "valor fora do normal", teste do valor alto na tela.
+- **Mapa das representantes:** falta Nagela (região e horário), Rayssa (região), Leticia Moroz e Mariana (horário); "posso atender mais", datas indisponíveis (Dayanne em novembro, Jessica Tobias 12 a 15/11) e rota por dia (Thalita) só em observação; viagens ainda não afetam a indicação; quem viaja em cada data.
+- **Organização:** mensagem ao Leonardo sobre hooks e regras obrigatórias, mover `MAPA-DAS-REPRESENTANTES.md` para `docs/negocio/`, apagar o `DECISOES.md` da raiz, commit do trabalho de hoje que ainda não está no git.
+- **Cadastradas:** pedido ao Leonardo para corrigir o critério no Admin de produção (Kommo, conferência de documentos).
+- **Mensagens prontas:** escolher o modelo padrão de apresentação ao aceitar o kit; lembrete diário no app da representante.
+
+- 27/10/2026, painel da aba Cadastro: Marcus aprovou o layout A (faixa de números + 3 listas: cidades, faixa etária, tempo de casa). Tempo de casa vai até mais de 5 anos. Cidades de viagem (Ponta Grossa, Joinville, litoral de SC) aparecem na lista de cidades; bloco próprio de viagens ficou como opção (E) e não foi feito.
+
+- 27/10/2026, Revendedoras: as 3 telas (Cadastro, Kits e vendas, Contas a receber) são palavras do menu do setor (MENU_REVENDEDORAS em setores.js), com endereços /revendedoras-ativas, /revendedoras-kits-e-vendas e /revendedoras-contas-a-receber. A página não tem mais título nem abas no alto.
+
+## 27/10/2026 · Média de vendas (regra travada)
+- Marcus aprovou: venda sem brinde; vendas do mesmo dia da mesma revendedora se juntam; dia que fecha em R$ 0 (só troca, brinde, indicação ou premiação) NÃO é venda: fica como registro no cadastro, fora da média; média das 3 últimas vendas que sobram. Regra completa e números do teste em `docs/negocio/MEDIA-DE-VENDAS.md`. Falta escrever no código e ligar à calculadora do acerto.
+- DevMaster: o token libera as tabelas dmaaa a dmafq; a venda (`dmach`) traz as formas de pagamento em `ach_xformaspagtxt`.
+
+## 27/10/2026 · Contas a pagar atualizadas
+- Marcus pediu para puxar do admin antigo. Gravado: outubro pago R$ 1.330.288,27 e a pagar R$ 175.516,21; novembro R$ 1.466.105,48; dezembro R$ 1.500.381,39; pagas dos dias 23, 26 e 27/10.
+- **TES de venda (Marcus, 27/10/2026):** até fevereiro/2026 venda = S001, S002, S501, S502; de março em diante somente S001 e S002; S008 não é usado. Registrado em `docs/negocio/MEDIA-DE-VENDAS.md`; o código (`vendas-brinde.js`) ainda não reflete.
+
+## 27/10/2026 · Saldos e revendedoras atualizados
+- Puxado do admin antigo: saldos das 29 contas (26 e 27/10) e revendedoras de 27/10 = 2.106.
+- **TES no código (27/10/2026):** `vendas-brinde.js` agora segue a regra por período (venda = S001, S002; S501 e S502 só até fevereiro; S008 fora). Composição de 2026 recarregada: 0 diferenças em 20.012 vendas, porque 2026 não tem esses TES. Cópia de antes em `sorelly.venda_composicao_antes_tes`.

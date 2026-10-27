@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Revendedoras · Painel · mais opções (base do layout A)</title>
+<style>
+:root{--bg:#0d0d0c;--card:#181816;--card2:#1f1f1c;--line:rgba(255,255,255,.10);--txt:#fff;--mut:#cfcdc2;--ouro:#d9a441;--ouro2:#8a6420;--vd:#3fb97a;--az:#4a90e2;--lar:#eb6834}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--txt);font:13px/1.4 Inter,Segoe UI,Arial,sans-serif;padding:16px;max-width:1280px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+.sub{color:var(--mut);margin:2px 0 14px}
+.nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px}
+.nav a{height:32px;display:inline-flex;align-items:center;padding:0 12px;border:1px solid var(--line);border-radius:6px;color:var(--txt);text-decoration:none}
+.nav a:hover{border-color:var(--ouro);color:var(--ouro)}
+.op{margin:0 0 34px}
+.op>h2{font-size:15px;font-weight:600;color:var(--ouro);margin-bottom:2px}
+.op>p{color:var(--mut);margin-bottom:10px}
+.cd{background:linear-gradient(180deg,var(--card2),var(--card));border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-width:0}
+.cd.o{border-top:2px solid var(--ouro)}
+.cd.v{border-top:2px solid var(--az)}
+.t{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:8px;display:flex;justify-content:space-between;gap:8px}
+.t em{font-style:normal;color:var(--ouro)}
+.kp{display:flex;flex-direction:column;gap:2px}
+.kp i{font-style:normal;font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+.kp b{font-size:20px;font-weight:600;line-height:1.1}
+.kp s{text-decoration:none;font-size:11px;color:var(--ouro)}
+.row{display:grid;gap:10px}
+.r6{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+.r3{grid-template-columns:repeat(auto-fit,minmax(290px,1fr))}
+.br{display:grid;grid-template-columns:150px minmax(0,1fr) 96px;gap:8px;align-items:center;height:26px}
+.br .n{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.br .n small{color:var(--mut);font-size:11px;margin-left:4px}
+.br .b{height:10px;background:rgba(255,255,255,.07);border-radius:3px;overflow:hidden}
+.br .b div{height:100%;background:linear-gradient(90deg,var(--ouro2),var(--ouro));border-radius:3px}
+.br.az .b div{background:linear-gradient(90deg,#235a99,var(--az))}
+.br .v{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut)}
+.br .v b{color:var(--txt);font-weight:600}
+.sep{height:1px;background:var(--line);margin:8px 0}
+.tag{display:inline-flex;height:20px;align-items:center;padding:0 7px;border-radius:10px;font-size:11px;font-weight:600;background:rgba(74,144,226,.18);color:#9cc4f5;margin-left:6px}
+.tg{display:grid;grid-template-columns:minmax(0,1.3fr) 70px 70px minmax(0,1.2fr);align-items:center;height:30px;border-bottom:1px solid var(--line);padding:0 4px}
+.tg.h{height:30px;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);background:rgba(255,255,255,.05);border-radius:4px}
+.tg .d{text-align:right;font-variant-numeric:tabular-nums}
+.tg .n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tg.tot{font-weight:600;color:var(--ouro);border-bottom:0}
+details{border-top:1px solid var(--line);margin-top:6px}
+summary{cursor:pointer;height:30px;display:flex;align-items:center;color:var(--ouro);font-weight:600;list-style:none}
+summary::-webkit-details-marker{display:none}
+.abas{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.abas button{height:32px;padding:0 12px;border:1px solid var(--line);border-radius:6px;background:transparent;color:var(--txt);font:inherit;cursor:pointer}
+.abas button.on{border-color:var(--ouro);color:var(--ouro);background:rgba(217,164,65,.12);font-weight:600}
+.pn{display:none}.pn.on{display:block}
+.rg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.rgc{border:1px solid var(--line);border-radius:8px;padding:8px 10px;background:rgba(255,255,255,.03)}
+.rgc b{font-size:20px;font-weight:600;display:block}
+.rgc span{color:var(--mut);font-size:11px;text-transform:uppercase;letter-spacing:.06em}
+.rgc div{color:var(--ouro);font-size:12px;margin-top:2px}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:10px}
+@media(max-width:700px){.br{grid-template-columns:110px minmax(0,1fr) 90px}}
+</style>
+</head>
+<body>
+<h1>Revendedoras · painel no alto · mais opções</h1>
+<p class="sub">Todas partem do layout A (faixa de números e listas). Agora com todas as cidades, SC, Joinville e Ponta Grossa à vista. Números reais da DevMaster em 27/10/2026.</p>
+<div class="nav"><a href="#e">Opção E · Viagens ao lado</a><a href="#f">Opção F · Por região</a><a href="#g">Opção G · Abas dentro do painel</a><a href="#h">Opção H · Tabela de cidades</a></div>
+
+<section class="op" id="e">
+<h2>Opção E · Bloco de viagens ao lado</h2>
+<p>As cidades de viagem têm um bloco azul próprio, com quem atende. As cidades da região de Curitiba ficam no bloco dourado.</p>
+<div class="row r6" style="margin-bottom:10px">
+<div class="cd o kp"><i>Revendedoras</i><b>2.165</b><s>32 representantes</s></div>
+<div class="cd o kp"><i>Idade média</i><b>31 anos</b><s>2.135 com nascimento</s></div>
+<div class="cd o kp"><i>Cidades</i><b>38</b><s>em 3 estados</s></div>
+<div class="cd v kp"><i>Em cidades de viagem</i><b>107</b><s>4,9% do total</s></div>
+<div class="cd o kp"><i>Tempo de casa</i><b>14 meses</b><s>média</s></div>
+<div class="cd o kp"><i>Novas em 2026</i><b>1.146</b><s>53%</s></div>
+</div>
+<div class="row r3">
+<div class="cd"><div class="t">Região de Curitiba <em>2.024 · 93,5%</em></div><div id="e1"></div></div>
+<div class="cd v"><div class="t">Cidades de viagem <em>107 · 4,9%</em></div><div id="e2"></div></div>
+<div class="cd"><div class="t">Faixa etária e tempo de casa</div><div id="e3"></div><div class="sep"></div><div id="e4"></div></div>
+</div>
+</section>
+
+<section class="op" id="f">
+<h2>Opção F · Por região, com as cidades por dentro</h2>
+<p>Quatro cartões de região em cima, com as cidades principais de cada uma. Embaixo, faixa etária, tempo de casa e estados.</p>
+<div class="row r6" style="margin-bottom:10px">
+<div class="cd o kp"><i>Revendedoras</i><b>2.165</b></div><div class="cd o kp"><i>Idade média</i><b>31 anos</b></div><div class="cd o kp"><i>Cidades</i><b>38</b></div><div class="cd o kp"><i>Tempo de casa</i><b>14 meses</b></div>
+</div>
+<div class="cd o"><div class="t">Onde estão as revendedoras <em>por região</em></div>
+<div class="rg" id="f1"></div>
+</div>
+<div class="row r3" style="margin-top:10px">
+<div class="cd"><div class="t">Faixa etária</div><div id="f2"></div></div>
+<div class="cd"><div class="t">Tempo de casa</div><div id="f3"></div></div>
+<div class="cd"><div class="t">Estados</div><div id="f4"></div></div>
+</div>
+</section>
+
+<section class="op" id="g">
+<h2>Opção G · Abas dentro do painel</h2>
+<p>A faixa de números fica fixa. Embaixo, uma aba por assunto, com a lista grande e completa. Ocupa menos altura.</p>
+<div class="row r6" style="margin-bottom:10px">
+<div class="cd o kp"><i>Revendedoras</i><b>2.165</b></div><div class="cd o kp"><i>Idade média</i><b>31 anos</b></div><div class="cd o kp"><i>Cidades</i><b>38</b></div><div class="cd v kp"><i>Cidades de viagem</i><b>107</b></div><div class="cd o kp"><i>Tempo de casa</i><b>14 meses</b></div>
+</div>
+<div class="cd o">
+<div class="abas" id="gab"><button class="on" data-p="g1">Cidades · 38</button><button data-p="g2">Cidades de viagem · 107</button><button data-p="g3">Faixa etária</button><button data-p="g4">Tempo de casa</button><button data-p="g5">Estados</button></div>
+<div class="pn on" id="g1"></div><div class="pn" id="g2"></div><div class="pn" id="g3"></div><div class="pn" id="g4"></div><div class="pn" id="g5"></div>
+</div>
+</section>
+
+<section class="op" id="h">
+<h2>Opção H · Tabela de cidades com quem atende</h2>
+<p>Duas tabelas lado a lado, no estilo planilha do sistema. Esquerda: região de Curitiba. Direita: viagens, com a representante que atende.</p>
+<div class="row r6" style="margin-bottom:10px">
+<div class="cd o kp"><i>Revendedoras</i><b>2.165</b></div><div class="cd o kp"><i>Idade média</i><b>31 anos</b></div><div class="cd o kp"><i>Cidades</i><b>38</b></div><div class="cd o kp"><i>Tempo de casa</i><b>14 meses</b></div><div class="cd o kp"><i>Novas em 2026</i><b>1.146</b></div>
+</div>
+<div class="cols">
+<div class="cd o"><div class="t">Região de Curitiba e litoral <em>2.055</em></div><div id="h1"></div></div>
+<div class="cd v"><div class="t">Viagens: Ponta Grossa, Joinville, litoral de SC <em>107</em></div><div id="h2"></div></div>
+</div>
+</section>
+
+<script>
+var TOTAL=2165;
+var METRO=[["Curitiba","PR",1179],["São José dos Pinhais","PR",240],["Fazenda Rio Grande","PR",116],["Araucária","PR",103],["Colombo","PR",85],["Pinhais","PR",82],["Piraquara","PR",61],["Campo Largo","PR",40],["Almirante Tamandaré","PR",33],["Campina Grande do Sul","PR",20],["Itaperuçu","PR",16],["Rio Branco do Sul","PR",14],["Quatro Barras","PR",11],["Campo Magro","PR",8],["Mandirituba","PR",7],["Bocaiúva do Sul","PR",3],["Contenda","PR",2],["Quitandinha","PR",1],["Balsa Nova","PR",1],["Tijucas do Sul","PR",1],["Agudos do Sul","PR",1]];
+var LITORAL=[["Paranaguá","PR",19],["Matinhos","PR",7],["Guaratuba","PR",3],["Pontal do Paraná","PR",2]];
+var VIAGEM=[["Ponta Grossa","PR",38,"Anne"],["Joinville","SC",17,"Anne e Leticia Moroz"],["Itajaí","SC",13,"Thalita SC"],["Camboriú","SC",10,"Thalita SC"],["Itapema","SC",9,"Thalita SC"],["Balneário Camboriú","SC",8,"Thalita SC"],["Maringá","PR",9,"A definir"],["Florianópolis","SC",1,"Sorelly"],["Mandaguaçu","PR",1,"A definir"],["Sarandi","PR",1,"A definir"]];
+var OUTROS=[["São Paulo e sem cidade","—",3]];
+var F=[["Até 25 anos",583],["26 a 35 anos",1020],["36 a 45 anos",396],["46 anos ou mais",136]];
+var T=[["Menos de 6 meses",857],["6 a 12 meses",370],["1 a 2 anos",459],["2 a 3 anos",311],["3 a 4 anos",91],["4 a 5 anos",45],["Mais de 5 anos",32]];
+function nf(v){return v.toLocaleString("pt-BR")}
+function pc(v,t){return (Math.round(v/t*1000)/10).toLocaleString("pt-BR")+"%"}
+function sm(a,i){return a.reduce(function(s,x){return s+x[i==null?1:i]},0)}
+function bars(id,a,o){o=o||{};var vi=o.vi==null?1:o.vi,t=o.t||sm(a,vi),m=Math.max.apply(null,a.map(function(x){return x[vi]})),h="";a.slice(0,o.n||a.length).forEach(function(x){h+='<div class="br'+(o.az?" az":"")+'"><span class="n" title="'+x[0]+'">'+x[0]+(o.uf&&x[1]!=="PR"?"<small>"+x[1]+"</small>":"")+'</span><span class="b"><div style="width:'+(x[vi]/m*100)+'%"></div></span><span class="v"><b>'+nf(x[vi])+"</b> · "+pc(x[vi],t)+"</span></div>"});document.getElementById(id).innerHTML=h}
+function tabela(id,a,cab,total){var h='<div class="tg h"><span>Cidade</span><span class="d">UF</span><span class="d">Revend.</span><span>'+cab+"</span></div>";a.forEach(function(x){h+='<div class="tg"><span class="n">'+x[0]+'</span><span class="d">'+x[1]+'</span><span class="d">'+nf(x[2])+"</span><span class='n'>"+(x[3]||pc(x[2],TOTAL))+"</span></div>"});h+='<div class="tg tot"><span>TOTAL</span><span class="d"></span><span class="d">'+nf(sm(a,2))+"</span><span>"+pc(sm(a,2),TOTAL)+"</span></div>";document.getElementById(id).innerHTML=h}
+function lista(a){return a.map(function(x){return [x[0],x[2],x[1]]})}
+bars("e1",lista(METRO),{n:8,t:TOTAL,vi:1});
+bars("e2",lista(VIAGEM),{t:TOTAL,vi:1,az:true,uf:true});
+(function(){var h="";F.forEach(function(x){h+='<div class="br"><span class="n">'+x[0]+'</span><span class="b"><div style="width:'+(x[1]/1020*100)+'%"></div></span><span class="v"><b>'+nf(x[1])+"</b> · "+pc(x[1],2135)+"</span></div>"});document.getElementById("e3").innerHTML=h;var k="";T.forEach(function(x){k+='<div class="br"><span class="n">'+x[0]+'</span><span class="b"><div style="width:'+(x[1]/857*100)+'%"></div></span><span class="v"><b>'+nf(x[1])+"</b> · "+pc(x[1],TOTAL)+"</span></div>"});document.getElementById("e4").innerHTML=k})();
+
+var REG=[["Curitiba e região",sm(METRO,2),"21 cidades","Curitiba "+pc(1179,TOTAL)],["Litoral do Paraná",sm(LITORAL,2),"4 cidades","Paranaguá 19"],["Interior do PR (viagem)",49,"Ponta Grossa, Maringá e mais","Ponta Grossa 38"],["Santa Catarina (viagem)",58,"Joinville, Itajaí, Camboriú, Itapema, Balneário Camboriú, Florianópolis","Joinville 17"]];
+(function(){var h="";REG.forEach(function(r){h+='<div class="rgc"><span>'+r[0]+'</span><b>'+nf(r[1])+'</b><div>'+pc(r[1],TOTAL)+' do total</div><span style="display:block;text-transform:none;letter-spacing:0;margin-top:4px">'+r[2]+"</span></div>"});document.getElementById("f1").innerHTML=h})();
+bars("f2",F,{t:2135});bars("f3",T,{t:TOTAL});bars("f4",[["Paraná","",2104],["Santa Catarina","",58],["São Paulo","",2],["Sem cidade","",1]],{vi:2,t:TOTAL});
+
+bars("g1",lista(METRO).concat(lista(LITORAL),lista(VIAGEM),lista(OUTROS)).sort(function(a,b){return b[1]-a[1]}),{t:TOTAL,uf:true});
+bars("g2",lista(VIAGEM),{t:TOTAL,az:true,uf:true});bars("g3",F,{t:2135});bars("g4",T,{t:TOTAL});
+bars("g5",[["Paraná","",2104],["Santa Catarina","",58],["São Paulo","",2],["Sem cidade","",1]],{vi:2,t:TOTAL});
+document.getElementById("gab").addEventListener("click",function(ev){var b=ev.target.closest("button");if(!b)return;document.querySelectorAll("#gab button").forEach(function(x){x.classList.toggle("on",x===b)});document.querySelectorAll("#g .pn").forEach(function(p){p.classList.toggle("on",p.id===b.dataset.p)})});
+
+tabela("h1",METRO.concat(LITORAL),"% do total");
+tabela("h2",VIAGEM.map(function(x){return [x[0],x[1],x[2],x[3]]}),"Atende");
+</script>
+</body>
+</html>

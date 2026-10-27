@@ -3,6 +3,7 @@
 var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
+import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
 import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
 import { BIPADORAS, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
@@ -51,6 +52,21 @@ import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/
 
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
+// Regras de 27/10/2026 que o acerto precisa lembrar depois (prazo de quitação, multa de atraso): copiadas para o registro, para a Inadimplência não depender da versão atual.
+function copiaNovas(N){ return {prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
+// Dívida de acertos anteriores (Marcus, 26/10/2026): o que a revendedora paga num acerto novo quita PRIMEIRO a dívida mais antiga; só o resto vale para o acerto novo.
+// Devolve {total, abat:{idDoAcertoAntigo: valor}}. "Acerto com loja" não é pagamento.
+function abaterDividas(s, rev, pagamentos, exceto){
+  var pago = Math.round((pagamentos||[]).reduce(function(t, p){ return p.forma==="acerto_loja" ? t : t+(p.valor||0); }, 0)*100)/100, resta = pago, abat = {}, total = 0;
+  dividasAnteriores(s.acertosConsignado, rev, exceto).forEach(function(x){ var v = Math.min(resta, x.falta); if(v>0.009){ abat[x.id] = Math.round(v*100)/100; resta -= v; total += v; } });
+  return {total:Math.round(total*100)/100, abat:abat, pago:pago};
+}
+// Cada acerto antigo que foi quitado (em parte ou todo) ganha uma linha extra de pagamento, como o pagamento feito depois na Inadimplência.
+function aplicarAbatimento(lista, ab, pag0, novoId, agora){
+  if(!ab.total) return lista;
+  return lista.map(function(r){ var v = ab.abat[r.id]; if(!v) return r;
+    return Object.assign({}, r, {pagamentos:(r.pagamentos||[]).concat([{forma:(pag0||{}).forma||"pix", descricao:(pag0||{}).descricao||"", parcelas:1, data:new Date(agora).toISOString().slice(0,10), valor:v, anexo:null, extra:true, ts:agora, por:"Abatido no acerto seguinte", deAcerto:novoId}])}); });
+}
 function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
 function reducer(s, a){
@@ -60,7 +76,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = pp==="montadora" ? "celular" : pp==="bipadora" ? "visaobip" : pp==="listagens" ? "celcond" : pp==="kitnovo" ? "kitnovo" : pp==="cadastropecas" ? "cadpecas" : pp==="agendamento" || pp==="financeiro" || pp==="agendfin" ? "consrep" : pp==="supervisao" ? "visaogeral" : s.aba;
+      var abaIni = "inicio";   // todo mundo começa na página inicial (27/10/2026)
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
@@ -107,7 +123,7 @@ function reducer(s, a){
       return com(s, {revendedorasDiario:rd, revAtualizadoEm:a.unico ? Object.assign({}, s.revAtualizadoEm||{}, {[a.data]:agora}) : s.revAtualizadoEm}, "Revendedoras de "+a.data.split("-").reverse().join("/")+" salvo");
     }
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
-    case "META_PCT_SET": return com(s, {metaPct:[96,97,98].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 97});   // 19/10/2026: 96/97/98, padrão 97 (acertos já passados para frente)
+    case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 98});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
     case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; return com(s, {fechaMes:fmk, carregarDia:cdk}, "Acertos a realizar do mês salvos"); }
     case "CARREGAR_INICIO": { var cik = Object.assign({}, s.carregarInicio||{}); cik[a.ym] = Number(a.n)||0; return com(s, {carregarInicio:cik}, "Carregar do início do mês salvo"); }
@@ -183,7 +199,22 @@ function reducer(s, a){
       return com(s, {contasPagar:cp2}, cp2[a.ano][a.mes].fixado ? "Mês fixado" : "Mês reaberto");
     }
     // Setor de Agendamento (acertos): todas as ações ficam em domain/agendamento.js
-    case "SYNC_MODULO": return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
+    // "revdia" (total de revendedoras automático, DevMaster, 27/10/2026) não guarda num módulo à parte: junta direto em revendedorasDiario/revAtualizadoEm (mesmos campos do lançamento manual antigo)
+    // "fatdia" (faturamento do dia anterior automático, DevMaster, 27/10/2026): junta só o "recebido" de cada dia em faturamentoDiario; acertos/revendedoras daquele dia continuam como já estavam
+    case "SYNC_MODULO": {
+      if(a.chave==="revdia"){
+        var pRD = {};
+        if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);
+        if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
+        return Object.assign({}, s, pRD);
+      }
+      if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
+        var fdm = Object.assign({}, s.faturamentoDiario);
+        Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
+        return Object.assign({}, s, {faturamentoDiario:fdm});
+      }
+      return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
+    }
     case "ROT": { var rRot = rotReduz(s, a); return com(s, rRot.patch, rRot.msg); }   // Rotina do dia
     case "CF": { var rCf = cfReduz(s, a), pCf = rCf.patch;
       if(a.op==="pag_add" && pCf && pCf.cf){ var pgNovo = pCf.cf.pagamentos[pCf.cf.pagamentos.length-1], fnNovo = pCf.cf.funcionarias.find(function(x){ return x.id===pgNovo.funcId; });
@@ -581,12 +612,13 @@ function reducer(s, a){
       k = kitDe(s, a.id); if(!k) return s;
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
       var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK);
+      var abK = abaterDividas(s, k.rev, a.pagamentos, null);
       var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
-        valorPago:a.valorPago, atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
+        valorPago:(a.valorPago||0) > abK.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abK.total), atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
       // Revendedora recusou negociar o que faltava: sem brinde de jeito nenhum, vira nota promissória (executada em 48h úteis).
       if(a.recusouNegociar) res = Object.assign({}, res, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:versaoK.novas ? copiaNovas(versaoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, recebimento:null,
         vendaDigitada:a.vendaDigitada!=null ? a.vendaDigitada : a.vendaBruta, trocas:a.trocas||[], tagsDanificadas:a.tagsDanificadas||0, tagsValor:a.tagsValor||0,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
@@ -597,7 +629,7 @@ function reducer(s, a){
         assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas}, res);
       var lpU1 = usarLinksNoAcerto(s.lp, a.pagamentos, registro.id, agoraSPLp(), k.rev);   // links de pagamento usados como pagamento ficam marcados (não descontam duas vezes)
       return com(s, {kits: mapKit(s, a.id, function(){ return {acerto:res, status:"acertado", acertoAssinado:!!a.assinatura}; }),
-        acertosConsignado:[registro].concat(s.acertosConsignado||[]), lp:lpU1 || s.lp, perfisRev:a.kitNovoOk ? carimboEntrega(s, k.rev) : s.perfisRev},
+        acertosConsignado:[registro].concat(aplicarAbatimento(s.acertosConsignado||[], abK, (a.pagamentos||[])[0], registro.id, agora)), lp:lpU1 || s.lp, perfisRev:a.kitNovoOk ? carimboEntrega(s, k.rev) : s.perfisRev},
         "Acerto de "+k.rev+" registrado: "+BK(res.valorAcerto)+" (comissão "+BK(res.comissao)+")");
     }
     // Consolidado das representantes: o setor de agendamento confere o dinheiro e dá o OK de recebimento (libera a comissão)
@@ -833,11 +865,12 @@ function reducer(s, a){
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
       var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI);
+      var abI = abaterDividas(s, it.nome, a.pagamentos, null);
       var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
-        valorPago:a.valorPago, atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
+        valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
       if(a.recusouNegociar) resI = Object.assign({}, resI, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var regI = Object.assign({id:"AC"+agora, internoId:it.id, rev:it.nome, rep:"Atendimento interno", origem:"interno", tipo:"acerto",
-        data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(it.remarcacoesLista||[]).length, formSnapshot:a.formSnapshot||null, recebimento:null,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null, pecasADevolver:a.pecasADevolver!=null ? a.pecasADevolver : null,
         condicionaisSelecionadas:a.condicionaisSelecionadas||[], pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
@@ -846,7 +879,7 @@ function reducer(s, a){
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
       var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}}, a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
       return com(s, {perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
-        acertosConsignado:[regI].concat(s.acertosConsignado||[])},
+        acertosConsignado:[regI].concat(aplicarAbatimento(s.acertosConsignado||[], abI, (a.pagamentos||[])[0], regI.id, agora))},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");
     }
     // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).

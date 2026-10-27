@@ -56,7 +56,7 @@ function Janela(p){
     e("div",{className:"flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl shadow-2xl", style:{maxWidth:p.largura||440, background:W.painel, color:W.texto, border:"1px solid "+W.borda}},
       e("div",{className:"flex items-center gap-2 px-4 py-3", style:{background:W.cab}},
         e("button",{onClick:p.fechar, "aria-label":"Fechar", className:"grid size-8 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"x", s:18})),
-        e("h3",{className:"flex-1 text-[16px] font-semibold"}, p.titulo)),
+        e("h3",{className:"flex-1 text-[15px] font-semibold"}, p.titulo)),
       e("div",{className:"min-h-0 flex-1 overflow-y-auto"}, p.children)));
 }
 function Popover(p){
@@ -65,18 +65,18 @@ function Popover(p){
     e("div",{className:"relative z-[61] overflow-hidden rounded-lg py-1.5 shadow-2xl", style:{background:W.cab, border:"1px solid "+W.borda, minWidth:p.largura||180}}, p.children));
 }
 function ItemMenu(p){
-  return e("button",{onClick:p.onClick, disabled:p.desligado, className:"flex w-full items-center gap-3 whitespace-nowrap px-4 py-2 text-left text-[14.5px] hover:bg-white/10 disabled:opacity-40", style:{color:p.perigo ? W.vermelho : W.texto}},
+  return e("button",{onClick:p.onClick, disabled:p.desligado, className:"flex w-full items-center gap-3 whitespace-nowrap px-4 py-2 text-left text-[13.5px] hover:bg-white/10 disabled:opacity-40", style:{color:p.perigo ? W.vermelho : W.texto}},
     p.n && e(Ph,{n:p.n, s:17}), p.children);
 }
-function Vazio(p){ return e("div",{className:"flex flex-col items-center justify-center gap-2 px-6 py-10 text-center", style:{color:W.sec}}, p.n && e(Ph,{n:p.n, s:40}), e("p",{className:"text-[14px]"}, p.children)); }
-function Carregando(){ return e("div",{className:"flex items-center justify-center gap-2 p-8 text-[14px]", style:{color:W.sec}}, e(Ph,{n:"circle-notch", s:20, className:"animate-spin"}), "Carregando…"); }
+function Vazio(p){ return e("div",{className:"flex flex-col items-center justify-center gap-2 px-6 py-10 text-center", style:{color:W.sec}}, p.n && e(Ph,{n:p.n, s:40}), e("p",{className:"text-[13px]"}, p.children)); }
+function Carregando(){ return e("div",{className:"flex items-center justify-center gap-2 p-8 text-[13px]", style:{color:W.sec}}, e(Ph,{n:"circle-notch", s:20, className:"animate-spin"}), "Carregando…"); }
 
 var textoPreviaMsg = textoPrevia;
 // quanto tempo a conversa está sem resposta: cinza até 2h, amarelo 2h, laranja 4h, vermelho 8h, vermelho forte (pisca) 24h
 var CORES_ESPERA = ["#8696a0","#f5c542","#fb923c","#ef4444","#b91c1c"];
 function EtiquetaEspera(p){
   var t = p.t, c = CORES_ESPERA[t.nivel];
-  return e("span",{className:"flex shrink-0 items-center gap-1 rounded-full px-1.5 text-[11px] font-extrabold "+(t.nivel>=4 ? "animate-pulse" : ""), style:{background:t.nivel ? c+"33" : "transparent", color:c, border:"1px solid "+c+"88", height:20},
+  return e("span",{className:"flex shrink-0 items-center gap-1 rounded-full px-1.5 text-[10px] font-extrabold "+(t.nivel>=4 ? "animate-pulse" : ""), style:{background:t.nivel ? c+"33" : "transparent", color:c, border:"1px solid "+c+"88", height:20},
     title:t.pend+(t.pend===1 ? " mensagem" : " mensagens")+" sem resposta há "+tempoCurto(t.espera)+" (só expediente)"}, e(Ph,{n:"clock-countdown", s:12, fill:true}), t.pend+" · "+tempoCurto(t.espera));
 }
 // Símbolo do SorellyChat: balão dourado com um "S" em fita e uma faísca de joia

@@ -4,6 +4,7 @@
 // resumo fixo no topo. O valor vendido vem direto do app da revendedora (campo vendaApp do atendimento).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
+import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
@@ -166,7 +167,7 @@ function AtendimentoInterno(){
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, chegouMuitoAtrasada = atrasoChegada>TOLERANCIA_CHEGADA_MIN;
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
-  var dv = derivarAcerto({brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true});   // atendimento interno: sem taxa de deslocamento
+  var dv = derivarAcerto({brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
   var pa = dv.previaAcerto, versao = dv.versao, pxm = dv.pecasProx;
   var jaFeito = !!sel && sel.status==="acertado";
   // média das vendas: venda de agora (vem da tela) + até 2 anteriores digitadas; divide pelas que existem. Só a venda de agora = ela é a média.
@@ -355,6 +356,8 @@ function AtendimentoInterno(){
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-extrabold text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
     (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[12px] font-semibold text-muted-foreground"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
       e("input",{type:"number", min:0, value:form.atrasoDias||0, "aria-label":"Dias de atraso", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({atrasoDias:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
+    dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[12px] font-semibold text-destructive"},
+      "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[12px] font-semibold text-destructive"},
       pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
         : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
@@ -521,7 +524,8 @@ function AtendimentoInterno(){
           dv.novas && dv.minimo.regra && e("p",{className:"text-[12.5px] font-semibold "+(dv.minimo.abaixo ? "text-destructive" : "text-success")},
             "Média de "+dv.minimo.qtd+" venda(s): "+din(dv.minimo.media)+" · mínimo "+din(dv.minimo.ref)+(dv.minimo.abaixo ? ". Abaixo do mínimo: kit novo não liberado e cadastro bloqueado." : ".")),
           !dv.kitNovoLiberado && e("p",{className:"text-[12.5px] font-semibold text-destructive"},
-            dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+"."
+            dv.blocoDivida ? dv.blocoDivida
+            : dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+"."
             : !dv.previaBase.podeRenovar ? "Vendas abaixo de "+din(versao.gerais.minRenovar)+": não renova o kit." : "Falta pagar para liberar. Abaixo de "+dv.kitNovoMin+"% só com autorização do financeiro.")),
         e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-3"}, escolhas.map(function(x){ var on = continuaEf===x[0];
           return e("button",{key:x[0], disabled:x[3] || jaFeito, onClick:function(){ up({continua:x[0]}); }, "aria-pressed":on,

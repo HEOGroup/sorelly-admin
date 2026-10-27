@@ -67,7 +67,7 @@ function aplicaFat20(s){
   var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, fd = Object.assign({}, s.faturamentoDiario), cpd = Object.assign({}, s.contasPagasDiario);
   var ACU = {"2026-10-15":[630605.94, 791], "2026-10-16":[689631.19, 868], "2026-10-17":[689631.19, 868], "2026-10-18":[689631.19, 868], "2026-10-19":[789350.24, 1008]}, DIA = {"2026-10-15":[100029.55, 123], "2026-10-16":[59025.25, 77], "2026-10-17":[0, 0], "2026-10-18":[0, 0], "2026-10-19":[99719.05, 140]};
   Object.keys(ACU).forEach(function(k){ fd[k] = Object.assign({}, fd[k], {recebido:ACU[k][0], acertos:ACU[k][1], revendedoras:(fd[k]||{}).revendedoras || rvN, fixadoEm:Date.now()}); cpd[k] = Object.assign({cnpjs:{}, contasPorFora:0}, cpd[k], {faturado:DIA[k][0], acertos:DIA[k][1]}); });
-  s.faturamentoDiario = fd; s.contasPagasDiario = cpd; s.fatHoje = null; s.fatHoje19V = Math.max(s.fatHoje19V||0, 3); s.fechaMes = Object.assign({"2026-10":{aRealizar:908, carregar:16}}, s.fechaMes); s.metaPct = s.metaPct || 97;   // previstos do Marcus: 16 do Carregar + 908 a realizar; previsão a 96/97/98%, valendo 97
+  s.faturamentoDiario = fd; s.contasPagasDiario = cpd; s.fatHoje = null; s.fatHoje19V = Math.max(s.fatHoje19V||0, 3); s.fechaMes = Object.assign({"2026-10":{aRealizar:908, carregar:16}}, s.fechaMes); s.metaPct = s.metaPct || 98;   // previstos do Marcus: 16 do Carregar + 908 a realizar; previsão a 97/98/99%, valendo 98 (27/10/2026)
   return s;
 }
 // 20/10/2026, "Hoje" (acompanhamento, passado pelo Marcus): 1.120 acertos, R$ 887.486,78 acumulado do mês, média R$ 792,40; 7 vendas no Carregar sem valor (contam como feitas, fora da média); 783 acertos a realizar. Total do mês = 1.120 + 7 + 783 = 1.910. Previsão a 97%. Registro em docs/negocio/FATURAMENTO-DIARIO.md
@@ -117,9 +117,15 @@ function aplicaFat26(s){
 // 26/10/2026 (Marcus), "Hoje" (acompanhamento): 1.347 acertos realizados e R$ 1.062.977,38 recebidos no mês; 513 acertos a realizar até 31/10; 34 vendas no Carregar (contam como feitas, sem valor, fora da média). Total do mês = 1.347 + 34 + 513 = 1.894; a 97% = 1.837. Trava no FATURAMENTO-DIARIO.md.
 function aplicaHoje26(s){
   s.fatHoje = {data:"2026-10-26", recebido:1062977.38, acertos:1347, em:Date.now()};
-  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:513, carregar:34}}); s.metaPct = s.metaPct || 97;
-  s.carregarDia = Object.assign({}, s.carregarDia, {"2026-10-01":12, "2026-10-20":7, "2026-10-26":34}); s.carregarInicio = Object.assign({}, s.carregarInicio, {"2026-10":12}); s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-10":2064,"2026-10-11":2066,"2026-10-12":2072,"2026-10-14":2074,"2026-10-15":2077,"2026-10-16":2075,"2026-10-19":2069,"2026-10-20":2058,"2026-10-21":2081,"2026-10-22":2087,"2026-10-23":2106,"2026-10-24":2113,"2026-10-25":2113,"2026-10-26":2105,"2026-10-01":2023,"2026-10-02":2033,"2026-10-03":2033,"2026-10-04":2033,"2026-10-05":2032,"2026-10-06":2022,"2026-10-07":2032,"2026-10-08":2044,"2026-10-09":2060});   /* admin antigo em 26/10; o dia 26 vale 2.105 (Marcus; o admin tinha 2.110) */   // 26/10: 2.105 revendedoras (Marcus)   // 01/10: 12 vendas no Carregar (Marcus, 26/10/2026)   // Carregar por dia (coluna no Dia a dia); o do início do mês entra em s.carregarInicio
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:513, carregar:34}}); s.metaPct = s.metaPct || 98;
+  s.carregarDia = Object.assign({}, s.carregarDia, {"2026-10-01":12, "2026-10-20":7, "2026-10-26":34}); s.carregarInicio = Object.assign({}, s.carregarInicio, {"2026-10":12}); s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-10":2064,"2026-10-11":2066,"2026-10-12":2072,"2026-10-14":2074,"2026-10-15":2077,"2026-10-16":2075,"2026-10-19":2069,"2026-10-20":2058,"2026-10-21":2081,"2026-10-22":2087,"2026-10-23":2106,"2026-10-24":2113,"2026-10-25":2113,"2026-10-26":2105,"2026-10-27":2106,"2026-10-01":2023,"2026-10-02":2033,"2026-10-03":2033,"2026-10-04":2033,"2026-10-05":2032,"2026-10-06":2022,"2026-10-07":2032,"2026-10-08":2044,"2026-10-09":2060});   /* admin antigo em 26/10; o dia 26 vale 2.105 (Marcus; o admin tinha 2.110) */   // 26/10: 2.105 revendedoras (Marcus)   // 01/10: 12 vendas no Carregar (Marcus, 26/10/2026)   // Carregar por dia (coluna no Dia a dia); o do início do mês entra em s.carregarInicio
   return s;
+}
+// 27/10/2026: contas a pagar lidas do admin antigo (faturamento_contas_mes, 27/10 21:03): outubro pagas R$ 1.330.288,27 e a pagar R$ 175.516,21; novembro a pagar R$ 1.466.105,48; dezembro a pagar R$ 1.500.381,39. O pago de outubro na tela segue a soma dos dias lançados.
+function aplicaContas27(s){
+  s.contasPagar = Object.assign({}, s.contasPagar); var a = Object.assign({}, s.contasPagar["2026"] || {});
+  a[9] = {pago:1330288.27, apagar:175516.21, fixado:false}; a[10] = {pago:0, apagar:1466105.48, fixado:false}; a[11] = {pago:0, apagar:1500381.39, fixado:false};
+  s.contasPagar["2026"] = a; return s;
 }
 function aplicaHoje22(s){
   s.fatHoje = {data:"2026-10-22", recebido:982434.43, acertos:1241, em:Date.now()};
@@ -133,7 +139,7 @@ function aplicaContas22(s){
 }
 function aplicaHoje20(s){
   s.fatHoje = {data:"2026-10-20", recebido:887486.78, acertos:1120, em:Date.now()};
-  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:783, carregar:7}}); s.metaPct = s.metaPct || 97;
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:783, carregar:7}}); s.metaPct = s.metaPct || 98;
   return s;
 }
 // 20/10/2026: contas pagas de TODOS os dias de outubro iguais à tela contas-diario do admin antigo (total R$ 810.459,59). Vale sobre o que veio de outras fontes.
@@ -208,8 +214,8 @@ function novo(){
   st.pk = pkSemearDemo(st).pk;   // Preferências do kit: ~65% das revendedoras já preenchidas (demonstração)
   if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
   if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
-  aplicaPagosAdmin(st); st.cpdAdminV = 3; st.cpdLocalV = 3;
-  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 5;   // faturamento fixado até 19/10 (também no estado novo)
+  aplicaPagosAdmin(st); st.cpdAdminV = 5; st.cpdLocalV = 5;
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1;   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -249,7 +255,7 @@ function inicial(){
     if(s.cpMesV!==2){ s.cpMesV = 2; s.contasPagar = s.contasPagar || {}; s.contasPagar["2026"] = JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO["2026"])); }   // outubro/2026 da Nayale
     if(s.setembroTravadoV!==1){ s.setembroTravadoV = 1; var r30 = (s.faturamentoDiario||{})["2026-09-30"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-09-30":Object.assign({}, r30, {recebido:1427724.88, acertos:1778, revendedoras:r30.revendedoras||2023, travado:true})}); }   // Setembro travado
     if(FAT_NF_LOCAL && s.fatNFV!==1){ s.fatNFV = 1; Object.keys(FAT_NF_LOCAL).forEach(function(d){ if(s.faturamentoDiario && s.faturamentoDiario[d]) s.faturamentoDiario[d] = Object.assign({}, s.faturamentoDiario[d], {recebido:FAT_NF_LOCAL[d]}); }); }   // faturamento de setembro = relatório de notas fiscais
-    if(PAGOS_LOCAL && s.cpdLocalV!==3){ s.cpdLocalV = 3; s.contasPagasDiario = s.contasPagasDiario || {}; Object.keys(PAGOS_LOCAL).forEach(function(d){ s.contasPagasDiario[d] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, s.contasPagasDiario[d], {cnpjs:Object.assign({}, PAGOS_LOCAL[d].cnpjs), contasPorFora:PAGOS_LOCAL[d].contasPorFora}); }); }   // v3: contas pagas de 01/09 a 22/10 lidas direto do admin antigo
+    if(PAGOS_LOCAL && s.cpdLocalV!==5){ s.cpdLocalV = 5; s.contasPagasDiario = s.contasPagasDiario || {}; Object.keys(PAGOS_LOCAL).forEach(function(d){ s.contasPagasDiario[d] = Object.assign({cnpjs:{}, contasPorFora:0, faturado:0}, s.contasPagasDiario[d], {cnpjs:Object.assign({}, PAGOS_LOCAL[d].cnpjs), contasPorFora:PAGOS_LOCAL[d].contasPorFora}); }); }   // v3: contas pagas de 01/09 a 22/10 lidas direto do admin antigo
     if(s.cpdV!==VERSAO_CPD){ s.cpdV = VERSAO_CPD; Object.keys(CONTAS_PAGAS_DIARIO_DEMO).filter(function(k){ return k>="2026-10-01"; }).forEach(function(k){ s.contasPagasDiario[k] = JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO[k])); }); s.faturamentoDiario["2026-10-08"] = Object.assign({}, FATURAMENTO_DIARIO_DEMO["2026-10-08"]); }   // o faturamento de hoje NÃO é mexido aqui: vem da migração fatHojeV (13/10: R$ 355.743,30 e 473 acertos)
     // faturamento de hoje (13/10/2026, passado pelo Marcus): R$ 355.743,30 e 473 acertos (média R$ 752,10); provisório até fixar o dia
     if(s.fatHojeV!==8){ s.fatHojeV = 8; s.fatHoje = {data:"2026-10-14", recebido:475034.23, acertos:600, em:Date.now()}; s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-13":2069}); }   // 13/10 fechado: R$ 426.110,24, 526 acertos, 2.069 revendedoras
@@ -264,7 +270,7 @@ function inicial(){
     // 19/10/2026, nova atualização do "Hoje" (passada pelo Marcus): R$ 776.012,44 · 980 acertos · média R$ 791,85
     if(!s.fatHoje19V){ s.fatHoje19V = 2; s.fatHoje = {data:"2026-10-19", recebido:776012.44, acertos:980, em:Date.now()}; s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-19":2082}); s.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm||{}, {"2026-10-19":Date.now()}); }
     // 19/10/2026 (Marcus): 997 acertos, R$ 785.494,64, média R$ 787,86; 16 vendas do Carregar sem valor (contam como feitas) e 908 acertos a realizar no mês. Total do mês = 997+16+908 = 1.921 (no lugar dos 1.976 do Agendamento). Previsão por 96/97/98%, padrão 97.
-    if(s.fatHoje19V!==3){ s.fatHoje19V = 3; s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:908, carregar:16}}); s.metaPct = 97; }
+    if(s.fatHoje19V!==3){ s.fatHoje19V = 3; s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:908, carregar:16}}); s.metaPct = 98; }
     // 13/10/2026 fechou em R$ 426.110,24 e 526 acertos (passado pelo Marcus): vale este acumulado, e o dia 14/10 sai pela diferença (R$ 104.463,15 e 142 acertos)
     if(s.fat13FixV!==1){ s.fat13FixV = 1; var r13 = (s.faturamentoDiario||{})["2026-10-13"] || {}; s.faturamentoDiario = Object.assign({}, s.faturamentoDiario, {"2026-10-13":Object.assign({}, r13, {recebido:426110.24, acertos:526, revendedoras:2069})}); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario, {"2026-10-14":Object.assign({cnpjs:{}, contasPorFora:0}, (s.contasPagasDiario||{})["2026-10-14"], {faturado:104463.15, acertos:142})}); }
     // 19/10/2026 (Marcus): acumulado do mês FIXADO até o dia 19: 1.008 acertos e R$ 789.350,24 (média R$ 783,09). Registro diário em docs/negocio/FATURAMENTO-DIARIO.md
@@ -279,8 +285,9 @@ function inicial(){
     if(s.fat23V!==1){ s.fat23V = 1; aplicaFat23(s); }
     if(s.cp22V!==1){ s.cp22V = 1; aplicaContas22(s); }
     if(s.fat26V!==1){ s.fat26V = 1; aplicaFat26(s); }
-    if(s.hoje26V!==5){ s.hoje26V = 5; aplicaHoje26(s); }
-    if(s.cpdAdminV!==3){ s.cpdAdminV = 3; aplicaPagosAdmin(s); }   // v3: contas pagas de 01/09 a 22/10 lidas direto do admin antigo
+    if(s.cp27V!==1){ s.cp27V = 1; aplicaContas27(s); }
+    if(s.hoje26V!==6){ s.hoje26V = 6; aplicaHoje26(s); }
+    if(s.cpdAdminV!==5){ s.cpdAdminV = 5; aplicaPagosAdmin(s); }   // v4: contas pagas de 01/09 a 26/10 lidas direto do admin antigo
     if(TEM_CHAVES_ADMIN && s.pixAdminV!==2 && s.px && s.saldosContas){ s.pixAdminV = 2; s.px = pxAplicarChavesAdmin(JSON.parse(JSON.stringify(s.px)), s.saldosContas.contas, "Marcus", Date.now()); }
     if(TEM_CHAVES_ADMIN && s.pixExtrasV!==2 && s.cp){ s.pixExtrasV = 2; s.cp = cpAplicarExtras(s.cp, "Marcus", Date.now()); }
     if(RH_STAMP && s.rhAdminStamp!==RH_STAMP && s.rh){ s.rh = rhAplicarAdmin(s.rh); s.rhAdminStamp = RH_STAMP; }
