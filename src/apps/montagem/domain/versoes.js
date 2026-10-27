@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.16.4", data:"2026-10-27", titulo:"\"Atuar como outra pessoa\" só para o Marcus", itens:[
+    {tipo:"correcao", area:"Tecnologia", txt:"A lista \"Atuar como outra pessoa\" do menu da conta aparecia para toda conta de Diretoria. Agora aparece só para o Marcus. Lucas, Leonardo e os demais usam somente a própria conta."},
+  ]},
   {v:"0.16.3", data:"2026-10-27", titulo:"Correção: acesso da Camilly e usuário sem espaço", itens:[
     {tipo:"correcao", area:"Tecnologia", txt:"Quem não está na lista de pessoas do sistema recebia acesso total por engano (aconteceu com a Camilly). Agora só vê o básico (Início, Rotina e Chat) até a Diretoria ligar a conta a uma pessoa da lista. Camilly e Leonardo entram na lista. A Camilly usa o grupo de acesso da Michele."},
     {tipo:"correcao", area:"Tecnologia", txt:"O usuário de entrada não tem espaço (ex.: michelebrito). Quem digitar com espaço também entra."},

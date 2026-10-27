@@ -60,7 +60,7 @@ function PilulaSituacao(){
 function ContaMenu(p){
   var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"];
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], arq = useRef(null);
-  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || srv.ehAdmin();
+  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || srv.pessoaDaConta()==="16";   // "atuar como" é só do Marcus; os demais usam somente a própria conta
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
   var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); };
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
