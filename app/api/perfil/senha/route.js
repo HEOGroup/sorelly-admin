@@ -13,6 +13,6 @@ export const PATCH = rota(async (req, { eu }) => {
   if (b.nova === b.atual) throw invalido("a senha nova precisa ser diferente da atual");
   const c = (await consulta("select senha_hash from sorelly.conta where id::text = $1", [String(eu.id)])).rows[0];
   if (!c || !(await conferirSenha(b.atual, c.senha_hash))) return erro("A senha atual está incorreta.", 400);
-  await consulta("update sorelly.conta set senha_hash = $2, atualizado_em = now() where id::text = $1", [String(eu.id), await criarHash(b.nova)]);
+  await consulta("update sorelly.conta set senha_hash = $2, senha_provisoria = null, atualizado_em = now() where id::text = $1", [String(eu.id), await criarHash(b.nova)]);
   return json({ ok: true });
 });
