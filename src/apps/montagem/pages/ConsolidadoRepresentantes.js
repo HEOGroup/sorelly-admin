@@ -305,7 +305,7 @@ function AbaConsolidadoRep(){
   var pessoasRecebem = BIPADORAS.concat([SUPERVISORA], AGENDAMENTO, FINANCEIRO);
   var usuarioNome = (pessoasRecebem.find(function(x){ return x.id===s.usuario; })||{}).nome || "";   // quem confere é quem está logada (cada uma tem seu login)
   var podeBip = podeBiparRetorno(s, s.usuario, BIPA_RETORNO_PADRAO(), papelDeCons(s.usuario)==="supervisao" || agenda);   // quem bipa (Configurador geral), o agendamento e a diretoria
-  var vc = ver || podeBip || agenda;   // valores da linha: quem bipa o retorno e o agendamento precisam deles para conferir o acerto
+  var vc = ver || podeBip || agenda;   // valores da linha: quem bipa o retorno e o agendamento precisam deles para conferir o acerto; totais e placar seguem só para quem tem "valores"
   var receber = function(id, patch){ if(!agenda) return d({type:"AVISO", txt:"Só o agendamento e a supervisão conferem os atendimentos"}); d({type:"CONSREP_RECEBER", id:id, patch:patch}); };
   var agora = function(){ return new Date().toISOString(); };
   // relógio: 1º clique começa a conferência, 2º clique termina (grava a data de recebimento); clicar no feito desfaz

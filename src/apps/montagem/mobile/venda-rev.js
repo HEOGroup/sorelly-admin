@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — mobile/venda-rev.js
-// Janela da VENDA no app da revendedora (sobe de baixo, 19/10/2026; fluxo desenhado com o Marcus): 1 Carrinho (cliente e peças) → 2 Desconto → 3 Como a cliente vai pagar → 4 Resumo para mostrar à cliente.
+// Janela da VENDA no app da revendedora (sobe de baixo, 19/10/2026; fluxo desenhado com o Marcus): 3 passos (28/10/2026): 1 Peças e cliente → 2 Valor e pagamento (desconto + forma de pagar na mesma tela) → 3 Confirmar venda.
 // Ordem das formas: À vista, Combinado (entrada hoje + o resto em datas), link Sorelly, Mercado Pago (por último). O desconto é livre (a revendedora escolhe) e SAI DA COMISSÃO DELA: o app mostra quanto ela ganha.
 // No fim: "Registrar venda" (grava em s.lp.vendasApp; no link Sorelly já pede o link ao setor) ou "Enviar proposta" (texto pronto para o WhatsApp). Pagamentos combinados em Pix ou dinheiro viram COBRANÇA: o app avisa no dia.
 import { createPortal } from "react-dom";
@@ -91,11 +91,13 @@ function JanelaVenda(p){
   };
 
   // ---------- peças da tela ----------
-  var voltar = {cliente:"carrinho", desconto:"carrinho", pagamento:"desconto", resumo:"pagamento"}[etapa];
-  var TITULO = {carrinho:"Carrinho", cliente:"Selecionar cliente", desconto:"Desconto", pagamento:"Pagamento", resumo:"Resumo da venda"};
+  var voltar = {cliente:"carrinho", pagamento:"carrinho", resumo:"pagamento"}[etapa];
+  var TITULO = {carrinho:"Peças e cliente", cliente:"Escolher cliente", pagamento:"Valor e pagamento", resumo:"Confirmar venda"};
+  var passo = {carrinho:1, cliente:1, pagamento:2, resumo:3}[etapa];
   var cab = e("div",{className:"flex items-center gap-3 border-b border-[#E5E7EB] px-4 py-3"},
     voltar && e("button",{onClick:function(){ setEtapa(voltar); setNovaCli(null); }, "aria-label":"Voltar", className:"grid size-9 place-items-center rounded-full bg-[#F3F4F6] text-[#111827]"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
-    e("b",{className:"text-[19px] text-[#111827]"}, TITULO[etapa]),
+    e("div",{className:"flex min-w-0 flex-col"}, e("b",{className:"text-[18px] leading-tight text-[#111827]"}, TITULO[etapa]),
+      e("div",{className:"mt-1 flex items-center gap-1", "aria-label":"Passo "+passo+" de 3"}, [1, 2, 3].map(function(n){ return e("span",{key:n, className:"h-1 w-6 rounded-full", style:{background:n<=passo ? "#C9A13B" : "#E5E7EB"}}); }), e("span",{className:"ml-1 text-[11px] font-semibold text-[#9CA3AF]"}, "Passo "+passo+" de 3"))),
     etapa==="carrinho" && e("span",{className:"rounded-full bg-[#F3F4F6] px-2.5 py-1 text-[12.5px] font-bold text-[#374151]"}, BKC(bruto)),
     e("button",{onClick:p.onFechar, "aria-label":"Fechar", className:"ml-auto grid size-9 place-items-center rounded-full bg-[#F3F4F6] text-[#374151]"}, e(Icon,{n:"x", s:15})));
   var rodape = function(texto, ok, acao, extra){
@@ -105,6 +107,24 @@ function JanelaVenda(p){
   };
   var linhaTotal = function(rot, val, forte, cor){ return e("div",{className:"flex items-baseline justify-between"}, e("span",{className:(forte ? "text-[14px] font-semibold " : "text-[13px] ")+"text-[#6B7280]"}, rot), e("b",{className:(forte ? "text-[22px] " : "text-[14px] ")+(cor || "text-[#111827]")}, val)); };
   var corpo;
+  // desconto e comissão ficam no começo da tela de pagamento (antes eram uma tela só para isso): chips, e UMA linha com o que a revendedora ganha
+  var escolher = function(pct){ setDesc({modo:"pct", pct:pct, outro:false, rs:0, outroPct:""}); };
+  var chipDesc = function(on, texto, acao, k){ return e("button",{key:k, onClick:acao, className:"h-9 rounded-xl text-[13px] font-bold ring-1 "+(on ? "bg-[#1A1A2E] ring-[#1A1A2E] "+BR : "bg-white text-[#374151] ring-[#E5E7EB]")}, texto); };
+  var blocoDesc = e("div",{key:"desc", className:"flex flex-col gap-2 rounded-2xl bg-[#F6F7F9] p-3"},
+    e("div",{className:"flex items-baseline justify-between"}, e("span",{className:ROT}, "Desconto"), e("span",{className:"text-[12px] text-[#6B7280]"}, "Peças "+BKC(bruto))),
+    e("div",{className:"grid grid-cols-5 gap-1.5"}, CHIPS.map(function(c){ return chipDesc(!desc.outro && desc.modo==="pct" && desc.pct===c, c===0 ? "Sem" : c+"%", function(){ escolher(c); }, c); })
+      .concat([chipDesc(desc.outro, "Outro", function(){ setDesc({modo:"pct", pct:0, outro:true, rs:0, outroPct:""}); }, "o")])),
+    desc.outro && e("div",{className:"flex gap-2"},
+      e("div",{className:"grid w-28 shrink-0 grid-cols-2 overflow-hidden rounded-xl ring-1 ring-[#E5E7EB]"}, [["pct", "%"], ["rs", "R$"]].map(function(m){ var on = desc.modo===m[0];
+        return e("button",{key:m[0], onClick:function(){ setDesc(Object.assign({}, desc, {modo:m[0]})); }, className:"h-11 text-[13px] font-semibold "+(on ? "bg-[#1A1A2E] "+BR : "bg-white text-[#374151]")}, m[1]); })),
+      desc.modo==="pct"
+        ? e("input",{value:desc.outroPct, inputMode:"decimal", placeholder:"Quanto de desconto", "aria-label":"Percentual de desconto", onChange:function(ev){ setDesc(Object.assign({}, desc, {outroPct:ev.target.value.replace(/[^0-9,\.]/g, "")})); }, className:CAMPO})
+        : e(CampoDinheiro,{value:desc.rs||null, label:"Desconto em reais", onChange:function(v){ setDesc(Object.assign({}, desc, {rs:v||0})); }, className:CAMPO+" text-left font-bold"})),
+    e("div",{className:"flex items-center justify-between rounded-xl bg-white px-3 py-2 ring-2 ring-[#C9A13B]"},
+      e("span",{className:"whitespace-nowrap text-[13px] font-semibold text-[#6B7280]"}, "Cliente paga"), e("b",{className:"whitespace-nowrap text-[20px] text-[#B8862B]"}, BKC(liquido))),
+    versao && e("div",{className:"flex flex-col gap-0.5"}, e("p",{className:"text-[12.5px] font-semibold "+(pctCom>0 ? "text-[#047857]" : "text-[#B45309]")},
+      pctCom>0 ? "Você ganha "+BKC(comCom)+" ("+pctCom+"%)" : "Ainda sem comissão: faltam "+BKC(Math.max(0, r2(metaMin-(base+liquido))))+" em vendas no mês"),
+      pctCom>0 && descRS>0 && comSem>comCom && e("p",{className:"text-[11.5px] text-[#6B7280]"}, "Desconto de "+BKC(descRS)+" sai da sua comissão (sem ele: "+BKC(comSem)+").")));
 
   if(etapa==="cliente"){
     var q = busca.trim().toLowerCase(), lista = p.clientes.filter(function(c){ return !q || c.nome.toLowerCase().indexOf(q)>=0 || (c.fone||"").indexOf(q)>=0; });
@@ -141,35 +161,12 @@ function JanelaVenda(p){
               e("img",{src:x.foto, alt:x.codigo, className:"size-16 shrink-0 rounded-lg object-cover"}),
               e("div",{className:"flex min-w-0 flex-1 flex-col gap-0.5"}, e("b",{className:"text-[15px] text-[#111827]"}, x.codigo), e("b",{className:"text-[15px] text-[#B8862B]"}, BKC(x.preco))),
               e("button",{onClick:function(){ p.onRemover(x); }, "aria-label":"Remover "+x.codigo, className:"grid size-8 place-items-center rounded-full bg-[#FEF2F2] text-[#B91C1C]"}, e(Icon,{n:"trash", s:14}))); }))),
-      e("div",{key:"f"}, rodape("Continuar", !!cliente && p.itens.length>0, function(){ setEtapa("desconto"); }, linhaTotal("Total", BKC(bruto), true, "text-[#B8862B]")))];
-  }
-  else if(etapa==="desconto"){
-    var escolher = function(pct){ setDesc({modo:"pct", pct:pct, outro:false, rs:0, outroPct:""}); };
-    corpo = [e("div",{key:"b", className:"flex flex-1 flex-col gap-3 overflow-y-auto p-4"},
-        e("div",{className:"flex flex-col items-center gap-0.5 rounded-2xl bg-[#F6F7F9] py-3"}, e("span",{className:ROT}, "Total das peças"), e("b",{className:"text-[28px] text-[#111827]"}, BKC(bruto)), cliente && e("span",{className:"text-[12px] text-[#6B7280]"}, "para "+cliente.nome)),
-        e("span",{className:ROT}, "Desconto para a cliente"),
-        e("div",{className:"grid grid-cols-5 gap-1.5"}, CHIPS.map(function(c){ var on = !desc.outro && desc.modo==="pct" && desc.pct===c;
-            return e("button",{key:c, onClick:function(){ escolher(c); }, className:"h-10 rounded-xl text-[13px] font-bold ring-1 "+(on ? "bg-[#1A1A2E] ring-[#1A1A2E] "+BR : "bg-white text-[#374151] ring-[#E5E7EB]")}, c===0 ? "Sem" : c+"%"); }).concat([
-          e("button",{key:"o", onClick:function(){ setDesc({modo:"pct", pct:0, outro:true, rs:0, outroPct:""}); }, className:"h-10 rounded-xl text-[13px] font-bold ring-1 "+(desc.outro ? "bg-[#1A1A2E] ring-[#1A1A2E] "+BR : "bg-white text-[#374151] ring-[#E5E7EB]")}, "Outro")])),
-        desc.outro && e("div",{className:"flex flex-col gap-2 rounded-xl bg-[#F6F7F9] p-2.5"},
-          e("div",{className:"grid grid-cols-2 overflow-hidden rounded-xl ring-1 ring-[#E5E7EB]"}, [["pct", "Em %"], ["rs", "Em R$"]].map(function(m){ var on = desc.modo===m[0];
-            return e("button",{key:m[0], onClick:function(){ setDesc(Object.assign({}, desc, {modo:m[0]})); }, className:"h-9 text-[13px] font-semibold "+(on ? "bg-[#1A1A2E] "+BR : "bg-white text-[#374151]")}, m[1]); })),
-          desc.modo==="pct"
-            ? e("input",{value:desc.outroPct, inputMode:"decimal", placeholder:"Percentual de desconto", "aria-label":"Percentual de desconto", onChange:function(ev){ setDesc(Object.assign({}, desc, {outroPct:ev.target.value.replace(/[^0-9,\.]/g, "")})); }, className:CAMPO})
-            : e(CampoDinheiro,{value:desc.rs||null, label:"Desconto em reais", onChange:function(v){ setDesc(Object.assign({}, desc, {rs:v||0})); }, className:CAMPO+" text-left font-bold"})),
-        e("div",{className:"flex flex-col gap-1.5 rounded-2xl p-3 ring-2 ring-[#C9A13B]", style:{background:"#FBF3DC"}},
-          linhaTotal("Desconto", descRS>0 ? "− "+BKC(descRS)+" ("+String(descPct).replace(".", ",")+"%)" : "Sem desconto", false, descRS>0 ? "text-[#B91C1C]" : "text-[#6B7280]"),
-          linhaTotal("Total para a cliente", BKC(liquido), true, "text-[#B8862B]")),
-        versao && e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#ECFDF5] p-3 ring-1 ring-[#A7F3D0]"},
-          e("span",{className:"text-[11px] font-bold uppercase tracking-wider text-[#047857]"}, "Quanto você ganha"),
-          pctCom>0 ? e("b",{className:"text-[18px] text-[#047857]"}, "Comissão de "+pctCom+"%: "+BKC(comCom)) : e("b",{className:"text-[15px] text-[#047857]"}, "Ainda sem comissão: faltam "+BKC(Math.max(0, r2(metaMin-(base+liquido))))+" em vendas no mês"),
-          pctCom>0 && descRS>0 && e("span",{className:"text-[12px] text-[#065F46]"}, "Sem desconto seria "+BKC(comSem)+". O desconto sai da sua comissão ("+BKC(r2(comSem-comCom))+").")
-        ))
-      , e("div",{key:"f"}, rodape("Continuar", liquido>0, function(){ setEtapa("pagamento"); }))];
+      e("div",{key:"f"}, rodape("Escolher pagamento", !!cliente && p.itens.length>0, function(){ setEtapa("pagamento"); }, e("div",{className:"flex flex-col gap-1"}, linhaTotal("Total", BKC(bruto), true, "text-[#B8862B]"), !cliente && e("p",{className:"text-center text-[12px] font-semibold text-[#B45309]"}, "Escolha a cliente para continuar."))))];
   }
   else if(etapa==="pagamento"){
     corpo = [e("div",{key:"b", className:"flex flex-1 flex-col gap-2 overflow-y-auto p-4"},
-        e("span",{className:ROT}, "Como a cliente vai pagar?"),
+        blocoDesc,
+        e("span",{className:ROT+" mt-1"}, "Como a cliente vai pagar?"),
         FORMAS.map(function(f){ var on = forma===f.k;
           return e("div",{key:f.k, className:"flex flex-col gap-2"},
             e("button",{onClick:function(){ setForma(f.k); }, className:"flex items-center gap-3 rounded-xl text-left ring-1 "+(f.pequeno ? "p-2 " : "p-2.5 ")+(on ? "bg-[#FBF3DC] ring-[#C9A13B]" : "bg-white ring-[#E5E7EB]")},
@@ -204,7 +201,7 @@ function JanelaVenda(p){
               erroLink ? e("p",{className:"text-[12px] font-semibold text-[#B91C1C]"}, erroLink)
                 : e("p",{className:"text-[11.5px] "+(depoisDoHorario ? "font-semibold text-[#B45309]" : "text-[#6B7280]")}, depoisDoHorario ? "Já passou das "+cfg.horaLimite+"h: o link só será gerado no próximo dia útil." : "Os links são gerados em horário comercial, até as "+cfg.horaLimite+"h.")),
             on && f.k==="mp" && e("p",{className:"rounded-xl bg-[#F6F7F9] p-2.5 text-[11.5px] text-[#6B7280]"}, "O link do Mercado Pago você gera na sua própria conta e envia à cliente.")); }))
-      , e("div",{key:"f"}, rodape("Continuar", formaOk, function(){ setEtapa("resumo"); }, linhaTotal("Total para a cliente", BKC(liquido), true, "text-[#B8862B]")))];
+      , e("div",{key:"f"}, rodape("Revisar venda", formaOk && liquido>0, function(){ setEtapa("resumo"); }, !forma && e("p",{className:"text-center text-[12px] text-[#6B7280]"}, "Escolha como a cliente vai pagar.")))];
   }
   else {   // resumo
     corpo = [e("div",{key:"b", className:"flex flex-1 flex-col gap-3 overflow-y-auto p-4"},
@@ -219,7 +216,7 @@ function JanelaVenda(p){
           e("span",{className:"text-[12.5px] font-semibold text-[#047857]"}, pctCom>0 ? "Sua comissão ("+pctCom+"%)" : "Sua comissão (abaixo da 1ª faixa)"), e("b",{className:"text-[17px] text-[#047857]"}, BKC(comCom))))
       , e("div",{key:"f", className:"flex flex-col gap-2 border-t border-[#E5E7EB] bg-white px-4 pb-6 pt-3"},
         e("button",{onClick:function(){ registrar("venda"); }, className:"flex h-12 w-full items-center justify-center gap-2 rounded-2xl text-[15px] font-bold text-[#1B1409] shadow-md", style:{background:DOURADO}}, e(Icon,{n:"check", s:17}), "Registrar venda"),
-        e("button",{onClick:function(){ registrar("proposta"); }, className:"flex h-11 w-full items-center justify-center gap-2 rounded-2xl text-[14px] font-bold text-[#B8862B] ring-2 ring-[#C9A13B]"}, e(Icon,{n:"send", s:15}), "Enviar proposta"))];
+        e("button",{onClick:function(){ registrar("proposta"); }, className:"flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-[13.5px] font-bold text-[#B8862B]"}, e(Icon,{n:"send", s:14}), "Ainda vai decidir? Enviar proposta"))];
   }
 
   var dialogo = resultado && e("div",{className:"absolute inset-0 z-50 grid place-items-center bg-black/35 px-5"},

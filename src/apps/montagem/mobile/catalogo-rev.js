@@ -100,7 +100,7 @@ function TelaCatalogoRev(p){
   var barra = itens.length>0 && e("div",{key:"b", className:"sticky z-10 mt-3", style:{bottom:"-1.9rem"}},
     e("button",{onClick:function(){ setAberto(true); }, className:"flex h-11 w-full items-center gap-3 rounded-xl px-4 text-left shadow-lg "+BR, style:{background:"#1A1A2E"}},
       e("span",{className:"relative grid size-7 shrink-0 place-items-center"}, e(Icon,{n:"revendedora", s:20}), e("span",{className:"absolute -right-2 -top-2 grid size-[18px] place-items-center rounded-full bg-[#C9A13B] text-[10px] font-black text-[#1B1409]"}, itens.length)),
-      e("b",{className:"flex-1 text-[14.5px]"}, "Ver carrinho"), e("b",{className:"text-[14.5px]"}, BKC(totalCarrinho))));
+      e("b",{className:"flex-1 text-[14.5px]"}, "Fechar venda"), e("b",{className:"text-[14.5px]"}, BKC(totalCarrinho))));
   var host = marca.current && marca.current.closest(".app-claro");
   var janela = aberto && e(JanelaVenda,{key:"j", host:host, k:p.k, itens:itens, total:totalCarrinho, clientes:clientes, clienteSel:clienteSel,
     onFechar:function(){ setAberto(false); }, onEscolher:setClienteSel, onNovaCliente:novaCliente, onRemover:alternar,

@@ -3,6 +3,72 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.0", data:"2026-10-28", titulo:"Acessos por grupo, contas das equipes e chat", itens:[
+    {tipo:"novo", area:"RH · Acessos", txt:"Grupos de acesso: Acesso total (Marcus e Leonardo) e Direção (sem Configuradores). Cada conta tem grupo, contato do chat e nome próprios."},
+    {tipo:"novo", area:"RH · Contas", txt:"23 contas de Bipagem, Montagem e Encomendas e a tela Senhas para enviar (copiar mensagem e nova senha)."},
+    {tipo:"melhoria", area:"Consolidado", txt:"Bipadora e Agendamento veem os valores da linha para conferir o acerto; a bipadora só vê a própria comissão no último dia do mês."},
+    {tipo:"melhoria", area:"Sistema", txt:"Montadora e bipadora abrem direto no SorellyChat; Admin antigo só para a Diretoria; abas abertas não passam de uma conta para outra."}
+  ]},
+  {v:"0.16.11", data:"2026-10-28", titulo:"App da revendedora: venda em 3 passos", itens:[
+    {tipo:"melhoria", area:"App da revendedora · Venda", txt:"A venda passou de 4 para 3 passos, com barra de progresso (Passo 1 de 3): 1 Peças e cliente, 2 Valor e pagamento (desconto e forma de pagar na mesma tela, com a comissão em uma linha só), 3 Confirmar venda. A tela de desconto separada saiu."},
+    {tipo:"melhoria", area:"App da revendedora · Venda", txt:"Botões com nome claro (Fechar venda, Escolher pagamento, Revisar venda, Registrar venda) e avisos do que falta quando o botão está cinza. \"Registrar venda\" é o botão principal; \"Ainda vai decidir? Enviar proposta\" virou link discreto."},
+  ]},
+  {v:"0.16.10", data:"2026-10-27", titulo:"Aviso discreto para mensagem comum", itens:[
+    {tipo:"melhoria", area:"Chat", txt:"Mensagem comum de outras pessoas não abre mais cartão na tela: toca um som Cristal baixinho, o botão S do topo pulsa uma vez e ganha o número vermelho de não lidas. Cartão grande só para o Marcus e para quem te marcar com @."},
+  ]},
+  {v:"0.16.9", data:"2026-10-27", titulo:"Conversa do Marcus no alto, aviso grande e situação só para a Diretoria", itens:[
+    {tipo:"novo", area:"Chat", txt:"A conversa com o Marcus fica sempre no alto da lista de todo mundo (não sai, nem arquivando) e é criada sozinha para cada pessoa. Toda mensagem do Marcus aparece como aviso grande, com a mensagem inteira e resposta rápida, marcando ou não. Quem te marcou com @ também."},
+    {tipo:"melhoria", area:"Chat", txt:"Situação (disponível, em reunião, ausente) só para Marcus, Nickolas e Lucas. Os demais ficam sempre disponíveis e sempre recebem os avisos. Em reunião ou ausente: silêncio total."},
+  ]},
+  {v:"0.16.8", data:"2026-10-27", titulo:"Sons de mensagem: Cristal", itens:[
+    {tipo:"melhoria", area:"Chat", txt:"Novos sons do chat no estilo \"Cristal\": chegou mensagem (dois brilhos), alguém marcou você com @ (três brilhos subindo) e mensagem enviada (brilho curto). Escolhido pelo Marcus entre 5 opções."},
+  ]},
+  {v:"0.16.7", data:"2026-10-27", titulo:"Som de digitar novo: tique de vidro", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"Novo som ao escrever, em todo campo do sistema (chat, formulários e senha): um tique fino de vidro, discreto. Espaço, apagar e Enter têm um tique próprio. Escolhido pelo Marcus entre 11 opções."},
+  ]},
+  {v:"0.16.6", data:"2026-10-27", titulo:"Horário dos colegas no alto da conversa do chat", itens:[
+    {tipo:"correcao", area:"Chat", txt:"A faixa com dias e horário de trabalho no alto da conversa não mostrava os horários reais no site, porque eles vêm do cadastro do RH, que fica só no computador da Diretoria. Agora a Diretoria envia sozinha ao servidor só o horário de cada pessoa (nome, entrada, saída e dias) e todos veem."},
+  ]},
+  {v:"0.16.5", data:"2026-10-27", titulo:"Apps e \"atuar como\" também para Nickolas e Lucas", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e a lista \"Atuar como outra pessoa\" valem para Marcus, Nickolas e Lucas. Os demais usam somente a própria conta."},
+  ]},
+  {v:"0.16.4", data:"2026-10-27", titulo:"\"Atuar como outra pessoa\" só para o Marcus", itens:[
+    {tipo:"correcao", area:"Tecnologia", txt:"A lista \"Atuar como outra pessoa\" do menu da conta aparecia para toda conta de Diretoria. Agora aparece só para o Marcus. Lucas, Leonardo e os demais usam somente a própria conta."},
+  ]},
+  {v:"0.16.3", data:"2026-10-27", titulo:"Correção: acesso da Camilly e usuário sem espaço", itens:[
+    {tipo:"correcao", area:"Tecnologia", txt:"Quem não está na lista de pessoas do sistema recebia acesso total por engano (aconteceu com a Camilly). Agora só vê o básico (Início, Rotina e Chat) até a Diretoria ligar a conta a uma pessoa da lista. Camilly e Leonardo entram na lista. A Camilly usa o grupo de acesso da Michele."},
+    {tipo:"correcao", area:"Tecnologia", txt:"O usuário de entrada não tem espaço (ex.: michelebrito). Quem digitar com espaço também entra."},
+  ]},
+  {v:"0.16.0", data:"2026-10-27", titulo:"SorellyChat de verdade e estrelas nas abas", itens:[
+    {tipo:"novo", area:"Chat", txt:"O SorellyChat passa a guardar conversas e mensagens no servidor: as pessoas conversam de verdade entre computadores (mensagem, reação, edição, grupo e conversa direta). Com o servidor ligado ele começa vazio, sem as conversas de demonstração. Atualiza a cada 4 segundos. Fotos e áudios ainda não. Exige rodar scripts/migrar-chat.mjs uma vez."},
+    {tipo:"novo", area:"Tecnologia", txt:"Estrelas nas abas do topo: a ☆ fixa a tela como favorita; as favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar e arrastar), e já aparecem quando o sistema abre. O Início fica sempre na frente e não fecha. A página Início mostra as favoritas."},
+  ]},
+  {v:"0.15.3", data:"2026-10-27", titulo:"Trocar a própria senha", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Menu da conta → Trocar minha senha (informa a atual e escolhe a nova, mínimo 8 letras). Cada pessoa troca a sua."},
+  ]},
+  {v:"0.15.2", data:"2026-10-27", titulo:"Entrar pelo nome e menu por pessoa", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"A tela de entrada aceita o usuário (nome, ex.: nickolas, michele brito) no lugar do e-mail. A Diretoria define o login de cada conta em RH → Acessos e autorizações → Contas. O e-mail continua valendo."},
+    {tipo:"novo", area:"Tecnologia", txt:"Menu por pessoa: cada conta pode ter só algumas telas liberadas (ou setores escondidos). Vale para o menu lateral e para os cartões do Início. Exige rodar scripts/migrar-perfil.mjs."},
+  ]},
+  {v:"0.15.1", data:"2026-10-27", titulo:"Apps só para o Marcus e barra de cima como a versão 3", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A página Apps e os apps de celular simulados (ícones do topo) aparecem só para o Marcus. Os demais, inclusive Lucas e Nickolas, não veem."},
+    {tipo:"melhoria", area:"Tecnologia", txt:"Barra de cima na ordem da versão 3: busca, situação, avisos, SorellyChat e conta. Zoom, claro e escuro e Sair foram para o menu da conta."},
+  ]},
+  {v:"0.15.0", data:"2026-10-27", titulo:"Página inicial de todos, com mensagem de fé, e barra de cima com foto e situação", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"Nova página Início (primeira tela de todo mundo, também da Diretoria): foto grande, \"Olá, nome. Seja bem-vindo!\", uma mensagem de fé que muda a cada 2 horas (50 versículos), os setores liberados, a rotina de hoje, comunicados da Diretoria, equipe agora e telas visitadas. A Diretoria vê também \"Para você decidir hoje\"."},
+    {tipo:"novo", area:"Tecnologia", txt:"Barra de cima: situação clicável (Disponível, Em reunião, Ausente) e foto da pessoa, guardadas no servidor para todos verem. Menu da conta com trocar e remover a foto. O nome de exibição não muda por aqui. Exige rodar scripts/migrar-perfil.mjs uma vez."},
+  ]},
+  {v:"0.14.9", data:"2026-10-27", titulo:"Entrada mais rápida e olho na senha", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de entrada já abre direto no bloco de login, sem a tela de clique e sem o mosaico (demorava e travava). As estrelas continuam fugindo do mouse, desenhadas de forma bem mais leve."},
+    {tipo:"novo", area:"Tecnologia", txt:"Campo de senha com o olho para ver e esconder o que foi digitado (no Criar conta, nos dois campos)."},
+  ]},
+  {v:"0.14.8", data:"2026-10-27", titulo:"Botão Sair no topo e troca de pessoa só para a Diretoria", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"Com o login ligado, o botão Sair fica sempre no topo e volta para a tela de entrada. Quem não é da Diretoria vê só o próprio nome, sem a lista para trocar de pessoa. A Diretoria continua podendo trocar para testar."},
+    {tipo:"correcao", area:"Tecnologia", txt:"O Sair do seletor de acesso não saía da conta do servidor. Agora sai de verdade."},
+  ]},
+  {v:"0.14.7", data:"2026-10-27", titulo:"Tela de entrada nova: mosaico, estrelas e bloco com gravura", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"A tela de e-mail e senha ganhou logo grande, linhas douradas e poeira de luz. O clique abre um mosaico de diamantes a partir do ponto clicado e mostra o bloco de login sobre estrelas cintilantes que fogem do mouse e deixam rastro. O bloco tem uma gravura fina nas bordas. Tudo desenhado por código, sem biblioteca. Respeita \"reduzir movimento\" do aparelho."},
+  ]},
   {v:"0.12.69", data:"2026-10-28", titulo:"Dashboard: bloco Acertos em duas colunas, sem 94/95/96", itens:[
     "Previsão (revendedoras no início do mês, previstos primeiros, novo previstos e % dos novos previstos) e Andamento (realizados, carregar, faltam total, % do mês). Barra dourada, mesmos números da caixa Faturamento.",
     "Meta padrão passa a 99% (os acertos estão sendo adiados, quase todos os que faltam vão acontecer); valor salvo migra para 99 uma vez. Caixa Faturamento sem as partes Ano e Novembro/Dezembro: viraram o botão Previsão do ano no alto do Dashboard.",

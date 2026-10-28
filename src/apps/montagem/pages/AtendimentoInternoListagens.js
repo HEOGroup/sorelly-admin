@@ -10,6 +10,8 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { mediaTres } from "@/apps/montagem/domain/revendedoras-internas";
+import { BotaoZap, foneBonito, sincronizarDm } from "@/apps/montagem/pages/RevendedorasInternas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -17,7 +19,8 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { TD, TH } from "@/apps/montagem/ui/table";
-import { e, useState } from "@/shared/react";
+import { apiAtiva } from "@/apps/montagem/lib/api";
+import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
 
 // o que a revendedora vem fazer (aparece logo depois do nome)
@@ -34,6 +37,8 @@ function Selo(p){ return e("span",{className:"rounded-full bg-slate-600 px-2 py-
 function AbaIntListagens(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var hoje = isoDia(new Date());
+  // as agendadas pela Tamara vêm da DevMaster: atualiza ao abrir e a cada 10 minutos (mesma busca da aba Revendedoras)
+  useEffect(function(){ var rodar = function(){ if(apiAtiva()) sincronizarDm(d, true).catch(function(){ /* sem servidor: segue com o que já está salvo */ }); }; rodar(); var t = setInterval(rodar, 600000); return function(){ clearInterval(t); }; }, []);
   var df = useState(hoje), dia = df[0], setDia = df[1];
   var fm = useState(VAZIO), form = fm[0], setForm = fm[1];
   var cn = useState([]), conds = cn[0], setConds = cn[1];
@@ -58,8 +63,17 @@ function AbaIntListagens(){
   var b = busca.trim().toLowerCase();
 
   // dias com atendimento (mais recente primeiro); o de hoje sempre aparece
-  var internos = (s.internos||[]).filter(function(x){ return !b || (x.nome||"").toLowerCase().indexOf(b)>=0; });
-  var dias = internos.map(function(x){ return x.data; }).concat(b ? [] : [hoje]).filter(function(x,i,a){ return x && a.indexOf(x)===i; }).sort().reverse();
+  // agendadas pela Tamara (lista de Revendedoras) que ainda não viraram atendimento: aparecem aqui como linhas virtuais; Atender cria o atendimento de verdade
+  var comInterno = {}; (s.internos||[]).forEach(function(x){ comInterno[x.id] = 1; });
+  var virtuais = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data && !comInterno[r.internoId]; }).map(function(r){ var cs = (r.conds||[]).filter(function(c){ return c.t!=="Expositor"; });
+    return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, fone:((r.contatos||[]).find(function(c){ return c.fone; })||{}).fone||"", data:r.agend.data, hora:r.agend.hora, status:"agendado", tipo:r.kitNovo ? "kit_novo" : "acerto", condicionais:cs.map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }), remarcacoesLista:[], obs:""}; });
+  var internos = (s.internos||[]).concat(virtuais).filter(function(x){ return !b || (x.nome||"").toLowerCase().indexOf(b)>=0; });
+  var dias = internos.map(function(x){ return x.data; }).concat(b ? [] : [hoje]).filter(function(x,i,a){ return x && a.indexOf(x)===i; }).sort(function(p,q){ var gp = p>=hoje, gq = q>=hoje; return gp!==gq ? (gp ? -1 : 1) : gp ? p.localeCompare(q) : q.localeCompare(p); });   // hoje e os próximos primeiro (em ordem), depois os dias passados (do mais recente)
+  // média de vendas: venda atual (que vem da DevMaster/app depois do atendimento) + as 2 últimas vendas da revendedora; sem a atual, as 3 últimas
+  var nomeChave = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+  var revDe = function(nome){ return (s.revInternas||[]).find(function(r){ return nomeChave(r.nome)===nomeChave(nome); }); };
+  var mediaDe = function(x, venda){ var rv = revDe(x.nome); if(!rv) return null; var ant = (rv.hist||[]).filter(function(h){ return h && h.venda>0 && h.data!==x.data; }).slice(0,2);
+    var base = venda>0 ? [{data:x.data, venda:venda, acerto:null}].concat(ant) : (rv.hist||[]); return mediaTres(base); };
   var vendaDe = function(x){ return x.status==="acertado" && x.acerto ? x.acerto.vendaLiquida : (x.vendaApp||0); };
   var aberto = function(dt){ return b ? true : abertos[dt]!==undefined ? abertos[dt] : dt===hoje; };
   var alt = function(dt){ var o = Object.assign({}, abertos); o[dt] = !aberto(dt); setAbertos(o); };
@@ -114,8 +128,8 @@ function AbaIntListagens(){
       var feitos = lista.filter(function(x){ return x.status==="acertado"; }).length, total = lista.reduce(function(t,x){ return t+vendaDe(x); }, 0), ac = aberto(dt);
       var C = "text-center!", vazio = e("span",{className:"text-muted-foreground"},"—"), TINTA = "text-[#1B1409]";
       var chip = function(txt, cls){ return e("span",{className:"inline-flex max-w-full items-center gap-1 truncate rounded-md px-2 py-0.5 text-[13px] font-semibold "+(cls||"bg-black/15 "+TINTA)}, txt); };
-      var LARG = [36,56,92,230,128,92,92,58,104,70,64,64,58,64,128,80,44];
-      var COLUNAS = ["Ord.","Hora","Atender","Nome","Tipo","Condicional","Venda","Chegou","Escolha do kit","Encom.","Bipou","Montou","Kit novo","Termo","Remarc. / multa","Situação",""];
+      var LARG = [44,56,92,230,150,128,92,104,92,58,104,70,64,64,58,64,128,80,44];
+      var COLUNAS = ["Qtd.","Hora","Atender","Nome","WhatsApp","Tipo","Condicional","Média de vendas","Venda","Chegou","Escolha do kit","Encom.","Bipou","Montou","Kit novo","Termo","Remarc. / multa","Situação",""];
       var BLOCO = "[&_tr.kit>*:first-child]:border-l-2! [&_tr.kit>*:last-child]:border-r-2! [&_tr.kit>*:first-child]:border-l-[#D9A63A]! [&_tr.kit>*:last-child]:border-r-[#D9A63A]! "+
         "[&_tr.fim>td]:border-b-2! [&_tr.fim>td]:border-b-[#D9A63A]! [&_tr.fim>td:first-child]:rounded-bl-xl [&_tr.fim>td:last-child]:rounded-br-xl";
       var linhas = [e("tr",{key:"f"},
@@ -126,22 +140,24 @@ function AbaIntListagens(){
             chip("Total vendido "+BK(total)))))];
       if(ac && lista.length===0) linhas.push(e("tr",{key:"v"}, e("td",{colSpan:LARG.length, className:"bg-card py-6 text-center text-[13px] text-muted-foreground"},"Ninguém na agenda desse dia. Use \"Montar listagem\".")));
       if(ac && lista.length>0){
-        linhas.push(e("tr",{key:"cab", className:"kit bg-sidebar"}, COLUNAS.map(function(c,i){ return e(TH,{key:i, className:C+" text-[12px]! tracking-normal! px-1! "+(i===4||i===5 ? "text-warning!" : "")}, c); })));
+        linhas.push(e("tr",{key:"cab", className:"kit bg-sidebar"}, COLUNAS.map(function(c,i){ return e(TH,{key:i, className:C+" border-r border-[rgba(0,0,0,.42)] bg-linear-to-r from-[#9A6F1E] via-[#E8B84B] to-[#F5E7BE] text-[11px]! font-extrabold tracking-normal! text-[#1a1306]! px-1! last:border-r-0"}, c); })));
         lista.forEach(function(x, j){
           var st = STATUS[x.status] || STATUS.agendado, venda = vendaDe(x), feito = x.status==="acertado", conds = (x.condicionais||[]).map(function(c){ return c.numero; }).join(", ");
           var rem = x.remarcacoesLista||[], multas = rem.filter(function(r){ return !r.isenta; }).length;
           linhas.push(e("tr",{key:x.id, className:"kit transition-colors "+(feito ? "bg-success/10 hover:bg-success/15" : "bg-card hover:bg-muted/40")+(j===lista.length-1 ? " fim" : "")},
-            e(TD,{className:C+" "+MONO+" text-muted-foreground"}, (j+1)+"º"),
+            e(TD,{className:C+" "+MONO+" text-muted-foreground"}, j+1),
             e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, x.hora || vazio),
             e(TD,{className:C},
-              e(Btn,{v:"primary", sm:true, ic:"calc", disabled:feito, onClick:function(){ d({type:"INT_ABRIR", id:x.id}); }}, feito ? "Feito" : "Atender")),
+              e(Btn,{v:"primary", sm:true, ic:"calc", disabled:feito, onClick:function(){ if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); }}, feito ? "Feito" : "Atender")),
             e(TD,{className:C+" whitespace-normal! break-words font-semibold leading-tight", title:x.nome}, x.nome, modalidadeDe(s, x.nome)==="prata" && e("span",{className:"ml-1.5"}, e(Selo))),
+            e(TD,{className:C+" text-[12px]!"}, (function(){ var rv = revDe(x.nome), pr = { nome:x.nome, contatos:[{fone:x.fone || ((rv && rv.contatos||[]).find(function(c){ return c.fone; }) || {}).fone}] }; return foneBonito(pr) ? e("span",{className:"inline-flex items-center justify-center gap-1"}, foneBonito(pr), BotaoZap(pr)) : vazio; })()),
             e(TD,{className:C},
               (function(){ var tp = TIPOS_ATEND.find(function(o){ return o[0]===(x.tipo||"acerto"); }) || TIPOS_ATEND[0];
-                return e("select",{value:tp[0], disabled:feito, "aria-label":"Tipo de atendimento de "+x.nome, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:x.id, patch:{tipo:ev.target.value}}); },
+                return e("select",{value:tp[0], disabled:feito || x.virtual, "aria-label":"Tipo de atendimento de "+x.nome, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:x.id, patch:{tipo:ev.target.value}}); },
                   className:"h-7 w-full cursor-pointer rounded-md border-0 px-1.5 text-[11.5px] font-bold outline-none", style:{background:tp[2]+"30", color:tp[2]}},
                   TIPOS_ATEND.map(function(o){ return e("option",{key:o[0], value:o[0], style:{color:"#111"}}, o[1]); })); })()),
             e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, conds || vazio),
+            e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, (function(){ var m = mediaDe(x, venda); return m ? e("span",{title:m.n+(m.n===1 ? " venda" : " vendas")+" na média"+(venda>0 ? " (a atual e as 2 últimas)" : " (as últimas)")}, BK(m.media), m.n<3 && e("span",{className:"ml-1 text-[11px] text-muted-foreground"},"("+m.n+")")) : vazio; })()),
             e(TD,{className:C+" "+MONO}, feito || venda>0 ? BK(venda) : e("span",{className:"whitespace-nowrap rounded-md bg-info/15 px-1.5 py-0.5 text-[11.5px] font-semibold text-info", title:"O valor vendido vem direto do app da revendedora"},"do app")),
             e(TD,{className:C+" "+MONO+" text-[12.5px]!"}, x.chegada || vazio),
             e(TD,{className:C+" "+MONO+" text-[12px]!"}, x.escolhaIni ? (function(){ var n = new Date(x.escolhaIni); return String(n.getHours()).padStart(2,"0")+":"+String(n.getMinutes()).padStart(2,"0"); })()+(x.escolhaFim ? " · "+Math.max(1, Math.round((x.escolhaFim-x.escolhaIni)/60000))+" min" : " · escolhendo") : vazio),
@@ -155,13 +171,13 @@ function AbaIntListagens(){
             e(TD,{className:C},
               e("span",{className:"inline-flex items-center gap-1"},
                 e("b",{className:MONO+(multas>0 ? " text-destructive" : "")}, rem.length+(multas>0 ? " · "+multas+"m" : "")),
-                !feito && e("button",{onClick:function(){ d({type:"INT_REMARCAR", id:x.id, isenta:false}); }, title:"Remarcação com multa", className:"rounded bg-destructive/20 px-1.5 text-[11.5px] font-bold text-destructive hover:bg-destructive/30"},"+multa"),
-                !feito && e("button",{onClick:function(){ var m = window.prompt("Remarcação isenta de multa: qual o motivo?"); if(m && m.trim()) d({type:"INT_REMARCAR", id:x.id, isenta:true, motivo:m.trim()}); }, title:"Remarcação isenta", className:"rounded bg-success/20 px-1.5 text-[11.5px] font-bold text-success hover:bg-success/30"},"+isenta"),
+                !feito && !x.virtual && e("button",{onClick:function(){ d({type:"INT_REMARCAR", id:x.id, isenta:false}); }, title:"Remarcação com multa", className:"rounded bg-destructive/20 px-1.5 text-[11.5px] font-bold text-destructive hover:bg-destructive/30"},"+multa"),
+                !feito && !x.virtual && e("button",{onClick:function(){ var m = window.prompt("Remarcação isenta de multa: qual o motivo?"); if(m && m.trim()) d({type:"INT_REMARCAR", id:x.id, isenta:true, motivo:m.trim()}); }, title:"Remarcação isenta", className:"rounded bg-success/20 px-1.5 text-[11.5px] font-bold text-success hover:bg-success/30"},"+isenta"),
                 !feito && rem.length>0 && e("button",{onClick:function(){ d({type:"INT_REMARCAR_REMOVER", id:x.id, indice:rem.length-1}); }, title:"Desfazer a última", "aria-label":"Desfazer a última remarcação", className:"rounded bg-muted px-1.5 text-[11.5px] font-bold hover:bg-muted/70"},"−"))),
             e(TD,{className:C}, e("span",{className:"rounded-md px-2 py-0.5 text-[11.5px] font-semibold "+st[1]}, st[0])),
             e(TD,{className:C},
               e("span",{className:"inline-flex items-center gap-1"},
-                e("button",{onClick:function(){ if(window.confirm("Remover "+x.nome+" da agenda?")) d({type:"INT_REMOVER", id:x.id}); }, "aria-label":"Remover "+x.nome,
+                !x.virtual && e("button",{onClick:function(){ if(window.confirm("Remover "+x.nome+" da agenda?")) d({type:"INT_REMOVER", id:x.id}); }, "aria-label":"Remover "+x.nome,
                   className:"grid size-7 place-items-center rounded-full bg-muted text-base font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"},"×")))));
           if(x.obs) linhas.push(e("tr",{key:x.id+"o", className:"kit "+(feito ? "bg-success/5" : "bg-card")+(j===lista.length-1 ? " fim" : "")}, e("td",{colSpan:LARG.length, className:"text-center text-[12px] text-muted-foreground"}, "Obs.: "+x.obs)));
         });

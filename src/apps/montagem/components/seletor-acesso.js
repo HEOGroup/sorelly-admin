@@ -42,7 +42,7 @@ var comLoginAgora = function(){ return srv.apiAtiva() && !!srv.token(); };
 // Situação: um clique abre as três opções. Só existe com o servidor ligado.
 function PilulaSituacao(){
   var sit = useState(false), aberta = sit[0], setAberta = sit[1], pf = usePerfil();
-  if(!comLoginAgora() || pf.meuId==null) return null;
+  if(!comLoginAgora() || pf.meuId==null || ["16","17","28"].indexOf(srv.pessoaDaConta())<0) return null;   // situação (reunião/ausente): só Marcus, Nickolas e Lucas
   var meu = pf.pessoas[pf.meuId] || {}, atual = SITUACOES[meu.situacao] || SITUACOES.disponivel;
   var mudar = function(k){ setAberta(false); salvarEu({situacao:k}).catch(function(x){ window.alert(x.message); }); };
   return e("div",{className:"relative"},
@@ -60,7 +60,7 @@ function PilulaSituacao(){
 function ContaMenu(p){
   var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"];
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], arq = useRef(null);
-  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || srv.ehAdmin();
+  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
   var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); };
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };

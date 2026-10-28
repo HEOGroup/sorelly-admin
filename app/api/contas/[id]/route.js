@@ -21,7 +21,9 @@ export const PATCH = rota(async (req, { eu, params }) => {
   if (a.login !== undefined) poe("login", a.login);
   if (a.abas !== undefined) poe("abas", a.abas);
   if (a.ocultar !== undefined) poe("ocultar", a.ocultar);
-  if (a.senha !== undefined) poe("senha_hash", await criarHash(a.senha));
+  if (a.grupo !== undefined) poe("grupo", a.grupo);
+  if (a.cid !== undefined) poe("cid", a.cid);
+  if (a.senha !== undefined) { poe("senha_hash", await criarHash(a.senha)); poe("senha_provisoria", a.senha); }   // a Diretoria que redefine pode reenviar a senha
   let r;
   try { r = await consulta(`update sorelly.conta set ${sets.join(", ")} where id::text = $1 returning *`, v); }
   catch (x) { if (x && x.code === "23505") return erro("Este login já está em uso por outra pessoa.", 409); throw x; }

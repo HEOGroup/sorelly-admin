@@ -18,7 +18,7 @@ Entrada = realizados × média por acerto × % pago na hora + inadimplência ant
 ```
 - Antes de outubro/2026 o previsto era quase igual à base e isso "sempre foi bem alinhado". Em outubro o Marcus passou muitas revendedoras para ciclo de 45 e 60 dias (a base cresceu muito), então o histórico perdeu valor: **usar a data de devolução prevista** (DevMaster) em vez de só uma razão histórica.
 - **Janeiro:** param de entrar revendedoras no dia 15 de dezembro; em janeiro há menos revendedoras que em dezembro (queda fixa de 100 no código, `QUEDA_JANEIRO`). Na média por acerto, janeiro do ano passado foi cerca de R$ 900, sem app; este ano deve ficar por aí.
-- **Alta da média por acerto:** novembro +5%, dezembro +10% sobre a média atual (pedido de 27/10/2026; o código antigo tinha 15% em dezembro).
+- **Alta da média por acerto (decidido em 28/10/2026):** novembro +5%, dezembro +12%, janeiro +17% sobre a média atual. Fevereiro e março usam a média de janeiro. Novembro e dezembro ficam em `ALTA_MEDIA` (`domain/financeiro.js`); janeiro vale só na tela Resultado do mês (campos editáveis).
 - **Funcionárias** continuam comprando na mesma medida (média dos meses fechados). **Inadimplência antiga recebida** também entra pela média.
 - **Média por acerto** = faturado só dos acertos das revendedoras (sem funcionárias) ÷ revendedoras que acertaram, no contas a receber. Nunca "o que entrou ÷ acertos".
 
@@ -29,7 +29,7 @@ Entrada = realizados × média por acerto × % pago na hora + inadimplência ant
 | Ciclo dos kits (30, 45 ou 60 dias) | `dmafi` kits entregues nos últimos 45 dias: `afi_prevdevol` − `afi_data` (até 35 dias = 30; até 50 = 45; até 70 = 60) | Em outubro/2026 cerca de 96% dos kits ficaram em 30 dias |
 | Revendedoras novas por mês | Crescimento diário real (Visão geral, janela de 30 dias) | `projetarVariosAnos` em `domain/financeiro.js` |
 | Média por acerto, % pago na hora, inadimplência antiga, funcionárias | Contas a receber (`src/server/contas-receber.js`) | Média dos últimos 3 meses fechados |
-| A pagar de cada mês | Admin antigo (`s.contasPagar`, `faturamento_contas_mes`) | Janeiro sem lançamento repete o mês anterior (marcado ≈) |
+| A pagar de cada mês | O MAIOR entre o admin antigo (`s.contasPagar`, `faturamento_contas_mes`) e as contas já lançadas (`domain/contas-empresa-meses.local.js`, via `filtrar`/`totais` de `domain/contas-empresa.js`) | Janeiro a março só têm o lançado: é piso, aparece com "≥" na tela (28/10/2026) |
 
 ## 3. Meses sem data prevista ainda
 Kits que ainda serão entregues não existem na DevMaster. A previsão usa o ciclo:
@@ -68,6 +68,28 @@ Acertos adiados até o momento      90           Do mês          83,9%      (e,
 - **97/98/99% são sobre o total do mês** (realizados + Carregar + o que falta = novo previstos): 98% de 1.886 = 1.848. "Falta para os 98%" = 1.848 − 1.583 − 0 = 265 (linha à parte). "Do mês" = (realizados + Carregar) ÷ novo previstos = 83,9%.
 - Onde está travado: `metaDoMes` (`domain/financeiro.js`) devolve `previstosInicio` (tabela de abertura `META_MENSAL_DEMO`, ou o campo `inicio` guardado em `metaMensal` quando um mês novo recebe previstos novos; `sincPrevistosAcertos` em `domain/agendamento.js` grava esse `inicio` na primeira vez).
 - A caixa **Faturamento** não repete mais "Como o mês começou × agora": esses números vivem só neste bloco.
+
+## 4c. Previsão de caixa de novembro a março (28/10/2026, tela Resultado do mês › Previsão)
+Código: `PrevisaoMeses` em `pages/ResultadoMes.js`. Tudo que o Marcus decidiu:
+```
+Revendedoras no dia 1 do mês        (projeção de crescimento; dezembro entra só até o dia 15)
+        │
+        ▼  × razão de acertos
+Acertos do mês  = round(revendedoras no dia 1 × razão)
+        │
+        ▼  × média por acerto (nov +5%, dez +12%, jan +17%) × % pago na hora
+Venda  + inadimplência antiga (média) + funcionárias (média)  = ENTRADA
+        │
+        ▼  − a pagar do mês
+Resultado do mês  →  Saldo acumulado (parte do saldo real de hoje)
+```
+- **Razão de acertos** = (previstos do mês atual × 98%) ÷ revendedoras no dia 1 do mês atual. Em outubro dá cerca de 91%. Marcus: "mantém a razão" de novembro em diante.
+- **Dezembro** cresce menos (entrada só até o dia 15): padrão 50% do crescimento normal, campo editável "Dezembro · crescimento %". **Janeiro** herda o efeito e ainda perde 100 (`QUEDA_JANEIRO`). Fevereiro e março seguem a mesma conta.
+- **Funcionárias e roubo de kit:** condicional fechada como "vendida" para uma funcionária é lançada no cadastro dela. Não há como separar do resto: fica DENTRO das compras de funcionárias (grupo 0002 da DevMaster). Nada a construir.
+- **A pagar de todos os meses:** as contas de todos os meses já estão no sistema. A previsão usa o maior valor entre o admin antigo e as contas lançadas. Janeiro a março só têm o lançado até 22/10; vão crescer, então o resultado desses meses é o MELHOR CASO e a tela marca com "≥".
+- **Cuidado:** o "Saldo" da tela parte do saldo real de hoje, que pode diferir de tabelas feitas na conversa com números aproximados.
+- **Pendente:** definir a tela "mais completa do financeiro que mostra o resultado" (Marcus ainda não disse qual); estimar as contas que faltam lançar em jan–mar; linha "Notas fiscais" automática.
+Valores em reais desta previsão: `RESULTADO-DO-MES.local.md` (fora do Git). Registro de versão: 0.14.36 em `domain/versoes.js`.
 
 ## 5. Onde fica cada tipo de informação (para o Marcus saber onde buscar)
 | Assunto | Arquivo |

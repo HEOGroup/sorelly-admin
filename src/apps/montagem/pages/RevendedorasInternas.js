@@ -115,6 +115,7 @@ function Historico(p){
 // Nome + bolinha + número · resumo à esquerda · REGISTROS no meio (lista em cima; embaixo UM bloco que vai trocando de opções, passo a passo, sem campo grande) · condicionais ativas embaixo.
 // Registro e multa: domain/revendedoras-internas.js (TIPOS_REG, escada 5/8/15). Regras novas: botão Enviar regras novas (PDF + carimbo da versão).
 var foneDe = function(r){ var c = (r.contatos||[]).find(function(x){ return x.fone; }); var n = c ? String(c.fone).replace(/D/g,"") : ""; return n ? (n.length<=11 ? "55"+n : n) : ""; };
+var foneBonito = function(r){ var n = foneDe(r).replace(/^55/,""); return n.length===11 ? "("+n.slice(0,2)+") "+n.slice(2,7)+"-"+n.slice(7) : n.length===10 ? "("+n.slice(0,2)+") "+n.slice(2,6)+"-"+n.slice(6) : n; };
 var linkZap = function(r, texto){ var n = foneDe(r); return n ? "https://wa.me/"+n+(texto ? "?text="+encodeURIComponent(texto) : "") : ""; };
 var BotaoZap = function(r, cls){ var l = linkZap(r); return l ? e("a",{href:l, target:"_blank", rel:"noreferrer", title:"Chamar no WhatsApp", "aria-label":"WhatsApp de "+r.nome, onClick:function(ev){ ev.stopPropagation(); }, className:"inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[11px] font-bold text-[#04210f] hover:brightness-110 "+(cls||"")}, "W") : null; };
 var CARD_ESTILO = {background:"radial-gradient(900px 260px at 0% -10%, rgba(241,213,138,.13), transparent 60%), radial-gradient(500px 300px at 100% 110%, rgba(241,213,138,.13), transparent 60%), linear-gradient(150deg,#33260f,#120d06)", border:"1px solid rgba(241,213,138,.30)", boxShadow:"0 20px 60px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.06)"};
@@ -382,7 +383,7 @@ var kitDe = function(r){ var c = (r.conds||[]).filter(function(x){ return x.t!==
 var qtdCond = function(r){ return (r.conds||[]).filter(function(x){ return x.t!=="Expositor"; }).length; };
 var ultimoDe = function(r){ var c = (r.registro||[])[0]; if(!c) return ""; var t = tipoReg(c.tipo||"outro").t.replace(" para acerto","").replace(" (sem data)","").replace(" (funcionária, Veneziana…)","").replace("Representante pediu o kit","Rep. pediu o kit"); return (c.data ? fmtDataBR(c.data).slice(0,5)+" · " : "")+(c.quem||c.autor||"—")+" · "+t; };
 var COLUNAS = [
-  {k:"qtd", t:"Qtd.", tipo:"seq", v:qtdCond}, {k:"nome", t:"Nome", tipo:"txt", v:function(r){ return r.nome; }}, {k:"cod", t:"Cód.", tipo:"txt", v:function(r){ var c = String(r.devmaster||"").replace(/\D/g,""); return c ? c.padStart(6,"0") : ""; }},
+  {k:"qtd", t:"Qtd.", tipo:"seq", v:qtdCond}, {k:"nome", t:"Nome", tipo:"txt", v:function(r){ return r.nome; }}, {k:"zap", t:"WhatsApp", tipo:"txt", v:function(r){ return foneBonito(r); }}, {k:"cod", t:"Cód.", tipo:"txt", v:function(r){ var c = String(r.devmaster||"").replace(/\D/g,""); return c ? c.padStart(6,"0") : ""; }},
   {k:"kit", t:"Data do kit", tipo:"data", v:kitDe}, {k:"prev", t:"Acerto previsto", tipo:"data", v:proximoAcerto}, {k:"falt", t:"Faltam", tipo:"falt", v:function(r, h){ return diasEntre(h, proximoAcerto(r)); }},
   {k:"ag", t:"Data agendada", tipo:"data", v:function(r){ return r.agend ? r.agend.data : ""; }}, {k:"hora", t:"Hora", tipo:"txt", v:function(r){ return r.agend ? r.agend.hora : ""; }},
   {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }}];
@@ -431,13 +432,23 @@ function TabelaAgenda(p){
           : linhas.map(function(r, i){
               var prox = proximoAcerto(r), dd = diasEntre(hoje, prox), sit = SITUACOES.find(function(x){ return x.k===r.situacao; }) || SITUACOES[0], at = dd<0 && !r.agend;
               return e("tr",{key:r.id, onClick:function(){ p.abrir(r.id); }, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(i%2 ? "bg-white/[.025]" : "")},
-                e("td",{className:cel, style:at ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" font-semibold"}, r.nome, BotaoZap(r, "ml-1.5 align-middle"), r.kitNovo && e("span",{className:"ml-2 rounded-full bg-[rgba(232,184,75,.2)] px-2 text-[10.5px] font-bold text-[#E8B84B] ring-1 ring-[rgba(232,184,75,.5)]", title:"Kit novo direcionado pela Michele em "+fmtDataBR(r.kitNovo.desde)+": entrar em contato e agendar"}, "Kit novo")), e("td",{className:cel}, COLUNAS[2].v(r)||"—"),
+                e("td",{className:cel, style:at ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" font-semibold"}, r.nome, r.kitNovo && e("span",{className:"ml-2 rounded-full bg-[rgba(232,184,75,.2)] px-2 text-[10.5px] font-bold text-[#E8B84B] ring-1 ring-[rgba(232,184,75,.5)]", title:"Kit novo direcionado pela Michele em "+fmtDataBR(r.kitNovo.desde)+": entrar em contato e agendar"}, "Kit novo")), e("td",{className:cel}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, foneBonito(r) || "—", BotaoZap(r))), e("td",{className:cel}, COLUNAS[3].v(r)||"—"),
                 e("td",{className:cel}, dBR(kitDe(r))), e("td",{className:cel}, dBR(prox)),
                 e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"),
                 e("td",{className:cel+" "+(r.agend ? "text-[#E8B84B]" : "text-[#fbbf24]")}, r.agend ? dBR(r.agend.data) : "Aguardando"), e("td",{className:cel}, r.agend ? r.agend.hora : "—"),
                 e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d")); })))),
     pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},
       popCorpo, e("button",{type:"button", onClick:function(){ var n = Object.assign({}, fil); delete n[cPop.k]; setFil(n); setPop(null); }, className:"self-start text-[12px] text-[#E8B84B]"}, "Limpar este filtro")));
+}
+
+// Busca na DevMaster (servidor) as revendedoras do vendedor Sorelly e entrega à lista (REVINT_ADD_LOTE). Usada por esta tela e pela aba Listagens.
+function sincronizarDm(dispatch, auto){
+  return chamar("GET", "/revendedoras?rep=02"+(auto ? "" : "&atualizar=1")).then(function(r){
+    var itens = (r.itens||[]).map(function(i){ var kp = (i.conds||[]).filter(function(c){ return (r.vendedores||["02"]).indexOf(c.vd)>=0 && c.d; }).sort(function(a,b){ return (a.e||"").localeCompare(b.e||""); })[0];   // o condicional aberto do vendedor 02 (o mais antigo) dá a previsão e o plano
+      return {cod:i.cod, nome:i.nome, celular:i.celular, cidade:i.cidade, vendas:i.vendas||[], prevDevol:kp && kp.d || "", emissao:kp && kp.e || "", obs:(i.conds||[]).map(function(c){ return c.ob; }).filter(Boolean),
+        conds:(i.conds||[]).map(function(c){ return {n:c.n, t:c.t, e:c.e, d:c.d, p:c.p, v:c.v, vd:c.vd}; })}; });
+    dispatch({type:"REVINT_ADD_LOTE", itens:itens}); return {itens:itens, brinde:r.brinde};
+  });
 }
 
 function AbaRevendedorasInternas(){
@@ -447,11 +458,7 @@ function AbaRevendedorasInternas(){
   var buscarDm = function(auto){
     if(!apiAtiva()){ if(auto!==true) setMsgDm("Precisa do servidor ligado (veja com o Leonardo)."); return; }
     setBuscandoDm(true); setMsgDm(auto===true ? "Atualizando da DevMaster…" : "Buscando na DevMaster…");
-    chamar("GET", "/revendedoras?rep=02"+(auto===true ? "" : "&atualizar=1")).then(function(r){
-      var itens = (r.itens||[]).map(function(i){ var kp = (i.conds||[]).filter(function(c){ return (r.vendedores||["02"]).indexOf(c.vd)>=0 && c.d; }).sort(function(a,b){ return (a.e||"").localeCompare(b.e||""); })[0];   // o condicional aberto do vendedor 02 (o mais antigo) dá a previsão e o plano
-        return {cod:i.cod, nome:i.nome, celular:i.celular, cidade:i.cidade, vendas:i.vendas||[], prevDevol:kp && kp.d || "", emissao:kp && kp.e || "", obs:(i.conds||[]).map(function(c){ return c.ob; }).filter(Boolean),
-          conds:(i.conds||[]).map(function(c){ return {n:c.n, t:c.t, e:c.e, d:c.d, p:c.p, v:c.v, vd:c.vd}; })}; });
-      cx.dispatch({type:"REVINT_ADD_LOTE", itens:itens}); setMsgDm(itens.length+" revendedoras do vendedor Sorelly (02)"+(r.brinde && r.brinde.pronto===false ? " · vendas ainda calculando, busque de novo em 1 minuto" : ""));
+    sincronizarDm(cx.dispatch, auto===true).then(function(r){ setMsgDm(r.itens.length+" revendedoras do vendedor Sorelly (02)"+(r.brinde && r.brinde.pronto===false ? " · vendas ainda calculando, busque de novo em 1 minuto" : ""));
     }).catch(function(x){ setMsgDm(x.message); }).finally(function(){ setBuscandoDm(false); });
   };
   var todas = s.revInternas || [];
@@ -486,4 +493,4 @@ function AbaRevendedorasInternas(){
         e(Detalhes,{key:rSel.id, r:rSel, cx:cx, hojeIso:hojeIso}))));
 }
 
-export { AbaRevendedorasInternas };
+export { AbaRevendedorasInternas, sincronizarDm, BotaoZap, foneBonito, foneDe };

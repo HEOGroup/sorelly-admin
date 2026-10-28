@@ -22,15 +22,34 @@ function nota(c, freq, ini, dur, tipo, g){
   a.gain.setValueAtTime(0.0001, t0); a.gain.exponentialRampToValueAtTime(pico, t0 + 0.012); a.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
   o.connect(a); a.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.03);
 }
+// tom com a altura mudando (f0 -> f1) e sopro filtrado: formam o "tique de vidro" de digitar (escolhido pelo Marcus em 27/10/2026)
+function tomR(c, tipo, f0, f1, dur, g){
+  var o = c.createOscillator(), a = c.createGain(), t0 = c.currentTime;
+  o.type = tipo; o.frequency.setValueAtTime(f0, t0); o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+  a.gain.setValueAtTime(0.0001, t0); a.gain.exponentialRampToValueAtTime(Math.max(0.0002, g*cfg.volume), t0 + 0.001); a.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+  o.connect(a); a.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+}
+function sopro(c, dur, freq, q, g){
+  var n = Math.floor(c.sampleRate*dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0), i;
+  for(i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 2.4);
+  var s = c.createBufferSource(), fl = c.createBiquadFilter(), a = c.createGain(), t0 = c.currentTime;
+  s.buffer = b; fl.type = "highpass"; fl.frequency.value = freq; fl.Q.value = q;
+  a.gain.setValueAtTime(Math.max(0.0002, g*cfg.volume), t0);
+  s.connect(fl); fl.connect(a); a.connect(c.destination); s.start(t0);
+}
 var SONS = {
   clique:   function(c){ nota(c, 1500, 0, 0.07, "triangle", 0.4); nota(c, 900, 0.015, 0.05, "sine", 0.25); },
-  enviar:   function(c){ nota(c, 520, 0, 0.09, "sine", 0.4); nota(c, 780, 0.07, 0.12, "sine", 0.4); },
-  receber:  function(c){ nota(c, 880, 0, 0.12, "sine", 0.45); nota(c, 660, 0.11, 0.18, "sine", 0.4); },
-  mencao:   function(c){ nota(c, 784, 0, 0.1, "triangle", 0.5); nota(c, 988, 0.1, 0.1, "triangle", 0.5); nota(c, 1319, 0.2, 0.24, "triangle", 0.5); },   // três notas subindo
+  enviar:   function(c){ tomR(c, "sine", 2093, 2637, 0.12, 0.28); },   // mensagem enviada: brilho curto que sobe (Cristal)
+  receber:  function(c){ nota(c, 1760, 0, 0.34, "sine", 0.4); nota(c, 2349, 0.08, 0.42, "sine", 0.38); nota(c, 3520, 0.08, 0.16, "sine", 0.08); },   // chegou mensagem (Cristal)
+  receberBaixo: function(c){ nota(c, 1760, 0, 0.3, "sine", 0.16); nota(c, 2349, 0.08, 0.36, "sine", 0.15); },   // mensagem comum: Cristal baixinho, sem aviso na tela
+  mencao:   function(c){ nota(c, 1760, 0, 0.22, "sine", 0.4); nota(c, 2349, 0.09, 0.22, "sine", 0.4); nota(c, 2960, 0.18, 0.5, "sine", 0.42); },   // alguém marcou você: três brilhos subindo (Cristal)
   atraso:   function(c){ for(var i=0;i<3;i++){ nota(c, 440, i*0.32, 0.16, "square", 0.22); nota(c, 330, i*0.32+0.16, 0.16, "square", 0.22); } },       // sirene grave repetida
   concluir: function(c){ nota(c, 523, 0, 0.1, "sine", 0.4); nota(c, 659, 0.09, 0.1, "sine", 0.4); nota(c, 784, 0.18, 0.2, "sine", 0.4); },
   contar:   function(c){ nota(c, 1250 + Math.random()*180, 0, 0.022, "sine", 0.07); },   // tique baixinho dos números que sobem (padrão do sistema inteiro)
-  tecla:    function(c){ nota(c, 520 + Math.random()*120, 0, 0.025, "sine", 0.03); },   // 28/10/2026: bem suave (antes onda quadrada, forte demais)
+  tecla:    function(c){ var k = 0.96 + Math.random()*0.08; tomR(c, "triangle", 2600*k, 2000*k, 0.01, 0.22); sopro(c, 0.006, 6500, 1.2, 0.1); },   // letra: tique de vidro
+  tecla2:   function(c){ tomR(c, "triangle", 2000, 1500, 0.016, 0.26); sopro(c, 0.009, 5500, 1.2, 0.1); },                                 // espaço
+  tecla3:   function(c){ tomR(c, "triangle", 1800, 1300, 0.014, 0.22); sopro(c, 0.007, 5000, 1.2, 0.08); },                               // apagar
+  tecla4:   function(c){ tomR(c, "triangle", 2300, 1700, 0.016, 0.26); setTimeout(function(){ tomR(c, "triangle", 3000, 2400, 0.02, 0.22); }, 45); },   // Enter
   erro:     function(c){ nota(c, 200, 0, 0.22, "sawtooth", 0.28); nota(c, 150, 0.14, 0.26, "sawtooth", 0.28); }
 };
 function tocar(nome){
@@ -53,9 +72,9 @@ function iniciar(){
   var ultTecla = 0;
   document.addEventListener("keydown", function(ev){
     var el = ev.target; if(!el || ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
-    var campo = el.tagName==="TEXTAREA" || el.isContentEditable || (el.tagName==="INPUT" && ["text","search","email","tel","url","number",""].indexOf((el.type||"").toLowerCase())>=0);
-    if(!campo || !(ev.key.length===1 || ev.key==="Backspace" || ev.key==="Delete")) return;
-    var t = Date.now(); if(t-ultTecla<35) return; ultTecla = t; tocar("tecla");
+    var campo = el.tagName==="TEXTAREA" || el.isContentEditable || (el.tagName==="INPUT" && ["text","search","email","tel","url","number","password",""].indexOf((el.type||"").toLowerCase())>=0);
+    if(!campo || !(ev.key.length===1 || ev.key==="Backspace" || ev.key==="Delete" || ev.key==="Enter")) return;
+    var t = Date.now(); if(t-ultTecla<30) return; ultTecla = t; tocar(ev.key===" " ? "tecla2" : (ev.key==="Backspace" || ev.key==="Delete") ? "tecla3" : ev.key==="Enter" ? "tecla4" : "tecla");
   }, true);
   document.addEventListener("click", function(ev){
     var el = ev.target, b = el && el.closest && el.closest("button, [role=button], [role=tab], a, summary, label, select");

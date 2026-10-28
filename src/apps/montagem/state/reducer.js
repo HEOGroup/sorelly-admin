@@ -856,6 +856,15 @@ function reducer(s, a){
       else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
+    // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
+    case "REVINT_ATENDER": {
+      var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
+      if((s.internos||[]).some(function(x){ return x.id===ra.internoId; })) return s;
+      var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
+        condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
+        vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.kitNovo ? "kit_novo" : "acerto"});
+      return com(s, {internos:[itA].concat(s.internos||[]), revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {internoId:itA.id}); })});
+    }
     case "REVINT_CANCELAR": {
       var rc = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rc) return s;
       return com(s, {internos:(s.internos||[]).filter(function(x){ return !(x.id===rc.internoId && x.status==="agendado"); }),

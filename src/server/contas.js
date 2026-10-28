@@ -6,8 +6,10 @@ import { invalido } from "./http.js";
 
 export const STATUS = ["aguardando", "ativo", "bloqueado"];
 export const PERFIS = ["ADMIN", "MEMBER"];
+// grupos de acesso do menu (os mesmos de navigation/perfis.js; "basico" = só Início, Rotina e Chat)
+export const GRUPOS_VALIDOS = ["supervisao", "familia", "supervisora", "agendamento", "financeiro", "inadimplencia", "bipadora", "montadora", "listagens", "kitnovo", "cadastropecas", "basico"];
 
-export const paraConta = (r) => ({ id: r.id, nome: r.nome, email: r.email, status: r.status, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, criadoEm: r.criado_em, aprovadoPor: r.aprovado_por || "", login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null });
+export const paraConta = (r) => ({ id: r.id, nome: r.nome, email: r.email, status: r.status, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, criadoEm: r.criado_em, aprovadoPor: r.aprovado_por || "", login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null, senhaProvisoria: r.senha_provisoria || "" });   // só a lista da Diretoria usa paraConta
 
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -37,6 +39,8 @@ export function validarAlteracao(b) {
     if (b.login === null || b.login === "") o.login = null;
     else { const l = normalizarLogin(b.login); if (l.length < 2 || l.length > 40) throw invalido("login (2 a 40 letras)"); o.login = l; }
   }
+  if (b.grupo !== undefined) { if (b.grupo === null || b.grupo === "") o.grupo = null; else if (!GRUPOS_VALIDOS.includes(b.grupo)) throw invalido("grupo"); else o.grupo = b.grupo; }
+  if (b.cid !== undefined) { if (b.cid === null || b.cid === "") o.cid = null; else if (typeof b.cid !== "string" || !/^[a-z0-9_]{2,80}$/.test(b.cid)) throw invalido("cid"); else o.cid = b.cid; }
   for (const k of ["abas", "ocultar"]) {
     if (b[k] === undefined) continue;
     if (b[k] === null) { o[k] = null; continue; }
@@ -46,8 +50,8 @@ export function validarAlteracao(b) {
   return o;
 }
 
-// Login pelo nome: minúsculas, sem acento e com espaços simples ("Michele  Brito" vira "michele brito").
-export const normalizarLogin = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9 ._-]/g, "").replace(/\s+/g, " ").trim();
+// Login pelo nome: minúsculas, sem acento e SEM espaço ("Michele Brito" vira "michelebrito"; quem digita com espaço também entra).
+export const normalizarLogin = (t) => String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9._-]/g, "");
 
 export const contaPorEmail = async (email) => (await consulta("select * from sorelly.conta where lower(email) = lower($1)", [email])).rows[0];
 // Quem entra pode digitar o e-mail ou o login (nome). Sem a coluna "login" no banco, só vale o e-mail.

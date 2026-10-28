@@ -16,7 +16,7 @@ export const POST = rota(async (req) => {
     if (!(await conferirSenha(b.senha, c.senha_hash))) return erro("Usuário ou senha incorretos.", 401);
     if (c.status === "aguardando") return erro("Sua conta aguarda a liberação da Diretoria. Assim que liberar, é só entrar.", 403);
     if (c.status === "bloqueado") return erro("Sua conta está bloqueada. Fale com a Diretoria.", 403);
-    const usuario = { id: c.id, nome: c.nome, email: c.email, perfil: c.perfil, setores: c.setores || [], pessoaId: c.pessoa_id, conta: true, login: c.login || "", abas: c.abas || null, ocultar: c.ocultar || null };
+    const usuario = { id: c.id, nome: c.nome, email: c.email, perfil: c.perfil, setores: c.setores || [], pessoaId: c.pessoa_id, conta: true, login: c.login || "", abas: c.abas || null, ocultar: c.ocultar || null, grupo: c.grupo || null, cid: c.cid || null };
     return json({ token: await assinar({ id: c.id, conta: true }), usuario });
   }
   // 2) acesso antigo (tabela "user" do banco)

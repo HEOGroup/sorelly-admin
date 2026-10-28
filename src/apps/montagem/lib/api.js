@@ -26,16 +26,19 @@ async function chamar(metodo, caminho, corpo){
 // Conta que entrou, guardada para a tela decidir o que mostrar (ADMIN = Diretoria; abas = telas liberadas; ocultar = setores escondidos). Quem manda de verdade é o servidor.
 var CHAVE_CONTA = "sorelly_conta";
 function lerConta(){ try { return JSON.parse(localStorage.getItem(CHAVE_CONTA) || "null") || {}; } catch(x){ return {}; } }
-function guardaPerfil(p, pessoaId, extra){ try { if(!p){ localStorage.removeItem(CHAVE_CONTA); return; } localStorage.setItem(CHAVE_CONTA, JSON.stringify({perfil:p, pessoa:pessoaId==null ? "" : String(pessoaId), abas:(extra && extra.abas) || null, ocultar:(extra && extra.ocultar) || null})); } catch(x){} }
+function guardaPerfil(p, pessoaId, extra){ try { if(!p){ localStorage.removeItem(CHAVE_CONTA); return; } localStorage.setItem(CHAVE_CONTA, JSON.stringify({perfil:p, pessoa:pessoaId==null ? "" : String(pessoaId), abas:(extra && extra.abas) || null, ocultar:(extra && extra.ocultar) || null, grupo:(extra && extra.grupo) || null, cid:(extra && extra.cid) || null, nome:(extra && extra.nome) || ""})); } catch(x){} }
 function contaTexto(){ try { return localStorage.getItem(CHAVE_CONTA) || ""; } catch(x){ return ""; } }
 // id da pessoa ligada à conta que entrou (não muda quando a Diretoria usa o sistema "como" outra pessoa)
 function pessoaDaConta(){ return lerConta().pessoa || ""; }
 function ehAdmin(){ return lerConta().perfil==="ADMIN"; }
+function grupoDaConta(){ return lerConta().grupo || ""; }
+function cidDaConta(){ return lerConta().cid || ""; }
+function nomeDaConta(){ return lerConta().nome || ""; }
 function abasDaConta(){ var l = lerConta().abas; return Array.isArray(l) ? l : null; }
 function ocultosDaConta(){ var l = lerConta().ocultar; return Array.isArray(l) ? l : null; }
 // as telas abertas ficam na aba do navegador: ao entrar ou sair, a próxima pessoa não herda as da anterior
 function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ if(k.indexOf("sorelly_abas_globais_")===0) sessionStorage.removeItem(k); }); } catch(x){} }
-async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar}); return j.usuario; }
+async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar, grupo:u.grupo, cid:u.cid, nome:u.nome}); return j.usuario; }
 function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta };
+export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, cidDaConta, nomeDaConta };

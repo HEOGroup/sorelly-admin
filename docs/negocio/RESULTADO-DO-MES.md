@@ -94,11 +94,11 @@ Ainda em aberto: separar inadimplência "não paga" × "fechada por remessa" (re
 
 ## 7. Atualização de 28/10/2026: de onde a tela tira o "falta pagar"
 - A tela Resultado do mês NÃO usa o faturamento lançado (acertos e recebido) nem o Carregar nem o "a realizar". Ela usa: Receber = DevMaster (cache de 30 minutos; botão ↻), Pagar = lista de títulos em aberto da DevMaster (`scripts/atualizar-contas-pagar.mjs`) e, se a lista estiver vazia no mês, o número do admin antigo (`s.contasPagar`), Entrou de verdade = variação do saldo + contas pagas.
-- Antes o "falta pagar" do mês corrente vinha só do admin antigo (R$ 175.516,21, parado desde 27/10 21:03). Agora vem da lista da DevMaster (R$ 160.253,95 em 28/10). O "pago" continua do admin antigo (R$ 1.330.288,27).
+- Antes o "falta pagar" do mês corrente vinha só do admin antigo (número parado desde 27/10 21:03, valor no arquivo local). Agora vem da lista da DevMaster. O "pago" continua do admin antigo. Valores: ver `RESULTADO-DO-MES.local.md`.
 
 ## 8. Resultado do mês, mudanças de 28/10/2026 (pedido do Marcus)
 - Novo quadro **Faturamento** na tela (primeiro quadro): acertos feitos, Carregar (fora dos acertos), a realizar, total de acertos, esperados a 98%, faturamento lançado, média, faturamento previsto e **resultado previsto do mês** (faturamento previsto menos já pago e falta pagar).
-- A linha solta "Saldo se pagar tudo o que falta no mês" saiu do quadro Entrou de verdade (parecia um número aleatório). A variação do saldo virou **"Resultado do mês até agora"**, com sinal e cor: vermelho se negativo. Em 27/10 o resultado real de outubro é negativo: variação do saldo das contas −R$ 72.754,18 (com dinheiro em caixa).
+- A linha solta "Saldo se pagar tudo o que falta no mês" saiu do quadro Entrou de verdade (parecia um número aleatório). A variação do saldo virou **"Resultado do mês até agora"**, com sinal e cor: vermelho se negativo. Em 27/10 o resultado real de outubro é negativo (valor no arquivo local).
 - A linha de diferença (entrou x esperado) ganhou nome que diz o lado: "a favor" (verde) ou "contra" (vermelho). Ela NÃO é o resultado do mês.
 
 ## 9. Resultado do mês fica visual (28/10/2026, pedido do Marcus: "está gigante, nem sei onde olhar")
@@ -116,4 +116,4 @@ Ainda em aberto: separar inadimplência "não paga" × "fechada por remessa" (re
 
 - (28/10/2026, mesmo dia) A Previsão do mês atual também mostra os ACERTOS: realizados, vendas no Carregar (fora dos acertos), a realizar, total, esperados a 98% e o faturamento lançado; o Fechamento do mês começa com a linha "Acertos do mês" (realizados + Carregar + a realizar).
 
-- (28/10/2026) **Média real recebida por acerto** = o que as revendedoras pagaram na hora (Pix, link, cartão, dinheiro; `d.K.n[mês].rec`) ÷ revendedoras que acertaram (`d.K.n[mês].n`), lido do contas a receber da DevMaster. Fica ao lado da "Média por acerto (notas fiscais)" (faturamento lançado ÷ acertos, ex.: R$ 791,37). Aparece no quadro Faturamento e na Previsão do mês. Pedido do Marcus: a média das notas fiscais não é o que entra de verdade.
+- (28/10/2026) **Média real recebida por acerto** = o que as revendedoras pagaram na hora (Pix, link, cartão, dinheiro; `d.K.n[mês].rec`) ÷ revendedoras que acertaram (`d.K.n[mês].n`), lido do contas a receber da DevMaster. Fica ao lado da "Média por acerto (notas fiscais)" (faturamento lançado ÷ acertos). Aparece no quadro Faturamento e na Previsão do mês. Pedido do Marcus: a média das notas fiscais não é o que entra de verdade.

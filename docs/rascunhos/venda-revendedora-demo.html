@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Venda no app da revendedora (demonstração)</title>
+<style>
+:root{--ouro:#C9A13B;--ouro2:#B8862B;--esc:#1A1A2E;--txt:#111827;--cin:#6B7280;--lin:#E5E7EB}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#0f0f12;color:#fff;font-family:Inter,system-ui,sans-serif;font-size:13px;min-height:100vh;display:flex;gap:40px;align-items:center;justify-content:center;padding:24px;flex-wrap:wrap}
+.lado{width:300px;display:flex;flex-direction:column;gap:14px}
+.lado h1{font-size:20px}
+.lado p{color:#d1d5db;line-height:1.5}
+.passos{display:flex;flex-direction:column;gap:6px}
+.passos div{padding:8px 10px;border-radius:8px;background:#1b1b21;color:#9ca3af;border:1px solid #2a2a31;transition:.3s}
+.passos div.on{background:#2a2310;color:#fff;border-color:var(--ouro)}
+#legenda{min-height:44px;color:#E8B84B;font-weight:600;line-height:1.4}
+.ctl{display:flex;gap:8px}
+.ctl button{height:32px;padding:0 14px;border-radius:8px;border:1px solid #3a3a42;background:#1b1b21;color:#fff;font:inherit;cursor:pointer}
+.ctl button:hover{border-color:var(--ouro)}
+.phone{width:375px;height:760px;border-radius:48px;background:#000;padding:10px;box-shadow:0 0 0 2px #333,0 30px 60px #000a;position:relative}
+.tela{width:100%;height:100%;border-radius:40px;background:#fff;overflow:hidden;position:relative;color:var(--txt)}
+.top{background:#111;color:#fff;padding:44px 14px 10px;display:flex;align-items:center;gap:8px}
+.top b{font-size:16px}
+.busca{margin:10px 12px;height:36px;border-radius:12px;border:1px solid var(--lin);display:flex;align-items:center;padding:0 10px;color:#9CA3AF}
+.abas{display:flex;border-bottom:1px solid var(--lin);margin:0 12px}
+.abas span{flex:1;text-align:center;padding:6px 0;font-weight:700;color:var(--cin);font-size:12.5px}
+.abas span.on{color:var(--ouro2);border-bottom:2px solid var(--ouro)}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px}
+.card{border-radius:12px;border:2px solid var(--ouro);overflow:hidden;background:#fff}
+.foto{aspect-ratio:1.25;display:grid;place-items:center;font-size:34px;background:linear-gradient(135deg,#F6EFD9,#EFE3BF)}
+.info{padding:8px;display:flex;flex-direction:column;gap:6px}
+.info .l1{display:flex;justify-content:space-between;align-items:center}
+.tag{background:#FBF3DC;color:#8A6A1F;border-radius:99px;padding:1px 7px;font-size:10px;font-weight:700}
+.preco{color:var(--ouro2);font-weight:800;font-size:17px}
+.add{height:34px;border-radius:10px;border:0;font:inherit;font-weight:700;font-size:11.5px;color:#1B1409;background:linear-gradient(135deg,#B8862B,#E8B84B 55%,#F1E4C6);transition:.25s}
+.add.in{background:#15803D;color:#fff}
+.barra{position:absolute;left:12px;right:12px;bottom:18px;height:44px;border-radius:12px;background:var(--esc);color:#fff;display:flex;align-items:center;gap:10px;padding:0 14px;font-weight:700;font-size:14.5px;transform:translateY(90px);transition:.4s}
+.barra.on{transform:none}
+.barra .n{background:var(--ouro);color:#1B1409;border-radius:99px;font-size:10px;font-weight:900;min-width:18px;height:18px;display:grid;place-items:center}
+.barra .v{margin-left:auto}
+.veu{position:absolute;inset:0;background:#0007;opacity:0;pointer-events:none;transition:.35s}
+.veu.on{opacity:1}
+.folha{position:absolute;left:0;right:0;bottom:0;height:86%;background:#fff;border-radius:28px 28px 0 0;transform:translateY(105%);transition:.5s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;box-shadow:0 -10px 40px #0005}
+.folha.on{transform:none}
+.cab{padding:14px 16px 10px;border-bottom:1px solid var(--lin)}
+.cab b{font-size:18px;display:block}
+.prog{display:flex;align-items:center;gap:4px;margin-top:6px}
+.prog i{width:24px;height:4px;border-radius:9px;background:var(--lin);transition:.3s}
+.prog i.on{background:var(--ouro)}
+.prog span{font-size:11px;color:#9CA3AF;font-weight:600;margin-left:4px}
+.corpo{flex:1;position:relative;overflow:hidden}
+.vista{position:absolute;inset:0;padding:12px 16px;display:flex;flex-direction:column;gap:10px;opacity:0;transform:translateX(30px);transition:.4s;pointer-events:none}
+.vista.on{opacity:1;transform:none}
+.rot{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#9CA3AF}
+.cli{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--lin)}
+.av{width:40px;height:40px;border-radius:50%;background:#F3F4F6;display:grid;place-items:center;color:#9CA3AF;font-weight:700}
+.av.f{background:var(--esc);color:#fff}
+.item{display:flex;align-items:center;gap:10px;padding:8px;border-radius:12px;border:1px solid var(--lin);animation:ent .4s}
+@keyframes ent{from{opacity:0;transform:translateY(10px)}}
+.item .f{width:52px;height:52px;border-radius:8px;background:linear-gradient(135deg,#F6EFD9,#EFE3BF);display:grid;place-items:center;font-size:22px}
+.item b{display:block;font-size:15px}.item .p{color:var(--ouro2)}
+.rod{padding:10px 16px 20px;border-top:1px solid var(--lin);display:flex;flex-direction:column;gap:6px}
+.tot{display:flex;justify-content:space-between;align-items:baseline}
+.tot b{font-size:22px;color:var(--ouro2)}
+.btn{height:46px;border-radius:16px;border:0;font:inherit;font-weight:800;font-size:15px;color:#1B1409;background:linear-gradient(135deg,#B8862B,#E8B84B 55%,#F1E4C6);transition:.3s}
+.btn.off{background:#D1D5DB;color:#fff}
+.dica{text-align:center;font-size:12px;font-weight:600;color:#B45309;min-height:16px}
+.chips{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.chip{height:36px;border-radius:12px;border:1px solid var(--lin);display:grid;place-items:center;font-weight:700;color:#374151;background:#fff;transition:.25s}
+.chip.on{background:var(--esc);color:#fff;border-color:var(--esc)}
+.box{background:#F6F7F9;border-radius:16px;padding:10px;display:flex;flex-direction:column;gap:8px}
+.paga{display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:12px;padding:8px 12px;border:2px solid var(--ouro)}
+.paga b{font-size:20px;color:var(--ouro2)}
+.ganha{font-weight:700;font-size:12.5px;color:#047857}
+.sub{font-size:11.5px;color:var(--cin)}
+.forma{display:flex;align-items:center;gap:10px;padding:9px;border-radius:12px;border:1px solid var(--lin);transition:.25s}
+.forma.on{background:#FBF3DC;border-color:var(--ouro)}
+.forma .ic{width:34px;height:34px;border-radius:8px;background:#F3F4F6;display:grid;place-items:center}
+.forma.on .ic{background:var(--esc)}
+.forma b{display:block;font-size:13.5px}.forma span{font-size:11.5px;color:var(--cin)}
+.forma .r{margin-left:auto;width:20px;height:20px;border-radius:50%;border:2px solid #D1D5DB;display:grid;place-items:center;font-size:11px;color:#fff}
+.forma.on .r{background:var(--ouro);border-color:var(--ouro)}
+.resumo{border:2px solid var(--ouro);border-radius:16px;padding:12px;display:flex;flex-direction:column;gap:8px}
+.linha{display:flex;justify-content:space-between}
+.linha.g b{font-size:22px;color:var(--ouro2)}
+.pag{background:#FBF3DC;border-radius:12px;padding:8px}
+.com{display:flex;justify-content:space-between;align-items:center;background:#ECFDF5;border:1px solid #A7F3D0;color:#047857;border-radius:12px;padding:10px;font-weight:600}
+.com b{font-size:17px}
+.link{text-align:center;color:var(--ouro2);font-weight:700;font-size:13.5px;padding:6px}
+.ok{position:absolute;inset:0;background:#0007;display:grid;place-items:center;padding:20px;opacity:0;pointer-events:none;transition:.3s;z-index:5}
+.ok.on{opacity:1}
+.ok div{background:#fff;border-radius:24px;padding:20px;width:100%;display:flex;flex-direction:column;gap:8px;transform:scale(.9);transition:.3s}
+.ok.on div{transform:none}
+.ok h3{font-size:18px}.ok p{color:#4B5563;line-height:1.4}
+.ok i{align-self:center;width:54px;height:54px;border-radius:50%;background:#DCFCE7;color:#15803D;display:grid;place-items:center;font-size:28px;font-style:normal}
+.toque{position:absolute;width:44px;height:44px;border-radius:50%;background:#C9A13B88;border:2px solid #C9A13B;pointer-events:none;transform:translate(-50%,-50%) scale(.3);opacity:0;z-index:9}
+.toque.go{animation:t .6s}
+@keyframes t{0%{opacity:1;transform:translate(-50%,-50%) scale(.3)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.3)}}
+</style>
+</head>
+<body>
+<div class="lado">
+  <h1>Venda no app da revendedora</h1>
+  <p>Demonstração automática do novo fluxo: a venda agora tem <b>3 passos</b>.</p>
+  <div class="passos" id="passos">
+    <div>1 · Peças e cliente</div>
+    <div>2 · Valor e pagamento</div>
+    <div>3 · Confirmar venda</div>
+  </div>
+  <div id="legenda">Toque em ▶ para começar.</div>
+  <div class="ctl"><button id="bPlay">⏸ Pausar</button><button id="bRe">↺ Repetir</button></div>
+</div>
+
+<div class="phone"><div class="tela" id="tela">
+  <div class="top"><b>‹ Catálogo</b></div>
+  <div class="busca">🔍 Buscar por código ou tipo (anel, brinco...)</div>
+  <div class="abas"><span class="on">Disponíveis</span><span>Em pedidos</span><span>Vendidos</span></div>
+  <div class="grade" id="grade"></div>
+  <div class="barra" id="barra"><span class="n" id="bn">0</span><span>Fechar venda</span><span class="v" id="bv">R$ 0,00</span></div>
+
+  <div class="veu" id="veu"></div>
+  <div class="folha" id="folha">
+    <div class="cab"><b id="tit">Peças e cliente</b><div class="prog"><i></i><i></i><i></i><span id="pn">Passo 1 de 3</span></div></div>
+    <div class="corpo">
+      <div class="vista on" id="v1">
+        <div class="cli" id="cli"><div class="av" id="av">👥</div><div><div class="rot" id="clirot" style="display:none">Cliente</div><b id="clinome" style="color:#9CA3AF;font-weight:500;font-size:16px">Selecionar cliente</b></div></div>
+        <span class="rot">Itens selecionados</span>
+        <div id="itens" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+      <div class="vista" id="v2">
+        <div class="box">
+          <div class="linha"><span class="rot">Desconto</span><span class="sub" id="pecas"></span></div>
+          <div class="chips" id="chips"><div class="chip on">Sem</div><div class="chip">3%</div><div class="chip">5%</div><div class="chip">10%</div><div class="chip">Outro</div></div>
+          <div class="paga"><span class="sub" style="font-weight:600">Cliente paga</span><b id="liq">R$ 0,00</b></div>
+          <div class="ganha" id="gan"></div>
+          <div class="sub" id="gan2"></div>
+        </div>
+        <span class="rot">Como a cliente vai pagar?</span>
+        <div class="forma" id="f1"><div class="ic">💳</div><div><b>À vista</b><span>Pix ou dinheiro</span></div><div class="r"></div></div>
+        <div class="forma"><div class="ic">📅</div><div><b>Combinado</b><span>Entrada hoje e o resto em outra data</span></div><div class="r"></div></div>
+        <div class="forma"><div class="ic">🏦</div><div><b>Link de pagamento Sorelly</b><span>Parcelamento e crédito Sorelly</span></div><div class="r"></div></div>
+      </div>
+      <div class="vista" id="v3">
+        <div class="resumo">
+          <div style="display:flex;gap:10px;align-items:center"><div class="av f">M</div><div><b>Maria Souza</b><div class="sub">3 peças</div></div></div>
+          <div class="linha"><span class="sub">Total das peças</span><b>R$ 280,00</b></div>
+          <div class="linha"><span class="sub" style="color:#B91C1C">Desconto (10%)</span><b style="color:#B91C1C">− R$ 28,00</b></div>
+          <div class="linha g"><span class="sub">Total</span><b>R$ 252,00</b></div>
+          <div class="pag"><span class="rot">Pagamento</span><div style="font-weight:600;font-size:13.5px">À vista, no Pix ou em dinheiro: R$ 252,00</div></div>
+        </div>
+        <div class="com"><span>Sua comissão (40%)</span><b>R$ 100,80</b></div>
+      </div>
+    </div>
+    <div class="rod" id="rod">
+      <div class="tot" id="rtot"><span class="sub" style="font-size:14px;font-weight:600">Total</span><b id="rt">R$ 0,00</b></div>
+      <div class="dica" id="dica"></div>
+      <button class="btn off" id="btn">Escolher pagamento</button>
+      <div class="link" id="lnk" style="display:none">➤ Ainda vai decidir? Enviar proposta</div>
+    </div>
+  </div>
+  <div class="ok" id="ok"><div><i>✓</i><h3>Venda registrada!</h3><p>Venda de R$ 252,00 para Maria Souza finalizada. Pagamento: à vista.</p></div></div>
+  <div class="toque" id="toque"></div>
+</div></div>
+
+<script>
+var PEC=[{c:"A2080",t:"Anel",p:96,e:"💍"},{c:"A2072",t:"Anel",p:96,e:"💍"},{c:"A2051",t:"Anel",p:88,e:"💍"},{c:"SP0589",t:"Brinco",p:188,e:"✨"}];
+var $=function(i){return document.getElementById(i)};
+var brl=function(n){return "R$ "+n.toFixed(2).replace(".",",").replace(/\B(?=(\d{3})+(?!\d))/g,".")};
+var rodando=false,pausado=false,rodada=0;
+function esp(ms){var id=rodada;return new Promise(function(r){var t=0;(function l(){if(id!==rodada)return;if(pausado){setTimeout(l,100);return}t+=100;if(t>=ms)r();else setTimeout(l,100)})()})}
+function toque(el){var tl=$("tela").getBoundingClientRect(),b=el.getBoundingClientRect(),t=$("toque");t.style.left=(b.left+b.width/2-tl.left)+"px";t.style.top=(b.top+b.height/2-tl.top)+"px";t.classList.remove("go");void t.offsetWidth;t.classList.add("go")}
+function leg(t,p){$("legenda").textContent=t;var d=$("passos").children;for(var i=0;i<3;i++)d[i].className=(p===i+1)?"on":""}
+function passo(n){["v1","v2","v3"].forEach(function(v,i){$(v).className="vista"+(i+1===n?" on":"")});var is=document.querySelectorAll(".prog i");is.forEach(function(x,i){x.className=i<n?"on":""});$("pn").textContent="Passo "+n+" de 3";$("tit").textContent=["Peças e cliente","Valor e pagamento","Confirmar venda"][n-1]}
+function btn(t,on){$("btn").textContent=t;$("btn").className="btn"+(on?"":" off")}
+function montar(){var g=$("grade");g.innerHTML="";PEC.forEach(function(x,i){g.insertAdjacentHTML("beforeend",'<div class="card"><div class="foto">'+x.e+'</div><div class="info"><div class="l1"><b>'+x.c+'</b><span class="tag">'+x.t+'</span></div><div class="preco">'+brl(x.p)+'</div><button class="add" id="a'+i+'">Adicionar no carrinho</button></div></div>')})}
+function zerar(){montar();$("barra").className="barra";$("bn").textContent=0;$("bv").textContent="R$ 0,00";$("veu").className="veu";$("folha").className="folha";$("ok").className="ok";passo(1);$("itens").innerHTML="";$("av").className="av";$("av").textContent="👥";$("clinome").textContent="Selecionar cliente";$("clinome").style.cssText="color:#9CA3AF;font-weight:500;font-size:16px";$("clirot").style.display="none";$("rt").textContent="R$ 0,00";$("dica").textContent="";btn("Escolher pagamento",false);$("lnk").style.display="none";$("rtot").style.display="flex";document.querySelectorAll(".chip").forEach(function(c,i){c.className="chip"+(i?"":" on")});$("f1").className="forma";$("liq").textContent="R$ 280,00";$("gan").textContent="Você ganha R$ 112,00 (40%)";$("gan2").textContent="";$("pecas").textContent="Peças R$ 280,00"}
+async function rodar(){
+  var id=++rodada;zerar();leg("A revendedora abre o catálogo e escolhe as peças.",0);await esp(1200);
+  var soma=0,n=0;
+  for(var i=0;i<3;i++){if(id!==rodada)return;var b=$("a"+i);toque(b);await esp(250);b.className="add in";b.textContent="✓ No carrinho";soma+=PEC[i].p;n++;$("bn").textContent=n;$("bv").textContent=brl(soma);$("barra").className="barra on";await esp(1100)}
+  leg("Com as peças no carrinho, ela toca em Fechar venda.",0);await esp(900);toque($("barra"));await esp(300);
+  $("veu").className="veu on";$("folha").className="folha on";PEC.slice(0,3).forEach(function(x){$("itens").insertAdjacentHTML("beforeend",'<div class="item"><div class="f">'+x.e+'</div><div><b>'+x.c+'</b><b class="p">'+brl(x.p)+'</b></div></div>')});$("rt").textContent=brl(soma);
+  leg("PASSO 1 — As peças já estão no carrinho. Falta só escolher a cliente.",1);$("dica").textContent="Escolha a cliente para continuar.";await esp(2000);
+  toque($("cli"));await esp(500);$("av").className="av f";$("av").textContent="M";$("clinome").textContent="Maria Souza";$("clinome").style.cssText="font-size:16px";$("clirot").style.display="block";$("dica").textContent="";btn("Escolher pagamento",true);
+  leg("PASSO 1 — Cliente escolhida. O botão fica dourado.",1);await esp(1500);
+  toque($("btn"));await esp(350);passo(2);btn("Revisar venda",false);$("rtot").style.display="none";$("dica").textContent="Escolha como a cliente vai pagar.";
+  leg("PASSO 2 — Desconto e forma de pagar na mesma tela.",2);await esp(2000);
+  var ch=document.querySelectorAll(".chip");toque(ch[3]);await esp(300);ch[0].className="chip";ch[3].className="chip on";$("liq").textContent="R$ 252,00";$("gan").textContent="Você ganha R$ 100,80 (40%)";$("gan2").textContent="Desconto de R$ 28,00 sai da sua comissão (sem ele: R$ 112,00).";
+  leg("PASSO 2 — Desconto de 10%: o app já mostra quanto ela ganha.",2);await esp(2600);
+  toque($("f1"));await esp(300);$("f1").className="forma on";$("f1").querySelector(".r").textContent="✓";$("dica").textContent="";btn("Revisar venda",true);
+  leg("PASSO 2 — Pagamento à vista escolhido.",2);await esp(1600);
+  toque($("btn"));await esp(350);passo(3);btn("✓ Registrar venda",true);$("lnk").style.display="block";
+  leg("PASSO 3 — Resumo para conferir. Um botão principal: Registrar venda.",3);await esp(3000);
+  toque($("btn"));await esp(350);$("ok").className="ok on";leg("Pronto! Venda registrada em 3 passos.",0);await esp(3500);
+  if(id===rodada){leg("Fim. Toque em ↺ Repetir para ver de novo.",0)}
+}
+$("bPlay").onclick=function(){pausado=!pausado;this.textContent=pausado?"▶ Continuar":"⏸ Pausar"};
+$("bRe").onclick=function(){pausado=false;$("bPlay").textContent="⏸ Pausar";rodar()};
+rodar();
+</script>
+</body>
+</html>

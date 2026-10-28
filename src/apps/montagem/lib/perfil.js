@@ -59,4 +59,6 @@ function usePerfil(){
   return {pessoas:memoria.pessoas, meuId:memoria.meuId};
 }
 
-export { SITUACOES, ORDEM_SIT, usePerfil, salvarEu, reduzirFoto, carregar };
+// situação de quem está logado (só Marcus, Nickolas e Lucas podem mudar; os demais ficam sempre disponíveis)
+function minhaSituacao(){ var p = memoria.meuId!=null ? memoria.pessoas[memoria.meuId] : null; return (p && p.situacao) || "disponivel"; }
+export { minhaSituacao, SITUACOES, ORDEM_SIT, usePerfil, salvarEu, reduzirFoto, carregar };

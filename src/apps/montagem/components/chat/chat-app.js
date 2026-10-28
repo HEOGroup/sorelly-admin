@@ -6,7 +6,7 @@ import { tocar } from "@/apps/montagem/lib/sons";
 import { useNotif } from "@/apps/montagem/lib/notificacoes";
 import { ListaConversas, OURO, OURO_TXT } from "@/apps/montagem/components/chat/chat-lista";
 import { Conversa } from "@/apps/montagem/components/chat/chat-conversa";
-import { LogoChat, Ph, TemaChatClaro, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
+import { Avatar, LogoChat, Ph, TemaChatClaro, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useState } from "@/shared/react";
 
 // quem sou eu no chat: o contato ligado a quem entrou no sistema
@@ -29,6 +29,22 @@ function ChatApp(p){
         e("span",{className:"grid size-28 place-items-center rounded-3xl", style:{background:"#24180a"}}, e(LogoChat,{s:76})),
         e("h2",{className:"text-[20px] font-light", style:{color:W.texto}}, "SorellyChat"),
         e("p",{className:"max-w-sm text-[13px]"}, "Converse com a equipe e com as representantes sem sair do sistema. Escolha uma conversa ao lado.")))));
+}
+
+// Aviso grande (opção 3 escolhida pelo Marcus): vem de quem te marcou com @ ou do Marcus. Mostra a mensagem inteira e deixa responder ali mesmo; fica até fechar.
+function CartaoAviso(p){
+  var t = p.t, sv = useState(""), txt = sv[0], setTxt = sv[1];
+  var fechar = function(){ efem({toasts:p.todos.filter(function(x){ return x.id!==t.id; })}); };
+  var enviar = function(ev){ ev.preventDefault(); var v = txt.trim(); if(!v) return; api.sendMessage({conv:t.conv, eu:p.eu, texto:v}); setTxt(""); fechar(); };
+  return e("div",{className:"rounded-2xl p-3.5 shadow-2xl", style:{background:W.cab, color:W.texto, border:"1px solid #E8B84B"}},
+    e("div",{className:"mb-2 flex items-center gap-2.5"}, e(Avatar,{id:t.de, s:38}),
+      e("div",{className:"min-w-0 flex-1"}, e("div",{className:"truncate text-[14px] font-semibold"}, t.nome, e("span",{className:"ml-2 rounded-full px-2 text-[11px] font-bold", style:{background:"#2a2108", border:"1px solid #E8B84B", color:"#E8B84B"}}, t.deMarcus ? "Marcus" : "te marcou")),
+        e("div",{className:"truncate text-[11.5px]", style:{color:W.sec}}, t.titulo)),
+      e("button",{onClick:fechar, "aria-label":"Fechar o aviso", className:"grid size-8 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"x", s:16}))),
+    e("button",{onClick:function(){ fechar(); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } }, className:"mb-2.5 block w-full rounded-xl px-3 py-2.5 text-left text-[13.5px] leading-snug", style:{background:"#0e0e11", color:"#f1ecde", whiteSpace:"pre-wrap"}}, t.texto),
+    e("form",{onSubmit:enviar, className:"flex gap-2"},
+      e("input",{value:txt, onChange:function(ev){ setTxt(ev.target.value); }, placeholder:"Responder…", className:"h-9 min-w-0 flex-1 rounded-lg border px-3 text-[13px] outline-none", style:{background:"#0e0e11", color:W.texto, borderColor:"#3a3a40"}}),
+      e("button",{type:"submit", className:"h-9 rounded-lg px-4 text-[13px] font-bold", style:{background:"#E8B84B", color:"#1a1405"}}, "Enviar")));
 }
 
 // avisos globais: atraso de resposta, mensagens novas (toasts) — fica montado o tempo todo
@@ -57,8 +73,9 @@ function ChatGlobal(p){
     checar(); alertar(); var t = setInterval(function(){ checar(); alertar(); }, 10000); return function(){ clearInterval(t); };
   }, [eu, st.mencoes, nt.chat]);
   if(!st.efem.toasts.length || !eu || !nt.chat) return null;
-  return e("div",{className:"fixed bottom-24 right-4 z-[70] flex w-[min(20rem,calc(100vw-2rem))] flex-col gap-2", "data-sem-clique":true},
+  return e("div",{className:"fixed bottom-24 right-4 z-[70] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2", "data-sem-clique":true},
     st.efem.toasts.map(function(t){
+      if(t.grande) return e(CartaoAviso,{key:t.id, t:t, todos:st.efem.toasts, eu:eu, abrir:p.abrir});
       return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
         className:"flex items-start gap-3 rounded-xl px-3.5 py-3 text-left shadow-2xl", style:{background:t.atraso ? "#4a1d24" : W.cab, color:W.texto, border:"1px solid "+(t.atraso ? W.vermelho : t.mencao ? W.verde : W.borda)}},
         e(Ph,{n:t.atraso ? "alarm" : t.mencao ? "at" : "chat-circle-text", s:22, fill:true, className:t.atraso ? "animate-pulse" : "", style:{color:t.atraso ? W.vermelho : W.verde}}),
@@ -80,4 +97,12 @@ function ChatMini(p){
         aberto ? e(Ph,{n:"x", s:26, fill:true}) : e(LogoChat,{s:36}),
         !aberto && nl>0 && e("span",{className:"absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full px-1.5 text-[10.5px] font-bold text-white", style:{background:"#ef4444", height:20}}, nl>99 ? "99+" : nl))));
 }
-export { ChatApp, ChatMini, ChatGlobal, useEu };
+// Contador de não lidas do botão S do topo: número vermelho e um pulso curto quando chega mensagem comum.
+function BadgeNaoLidas(p){
+  var st = useChat(), eu = p.eu, nl = eu ? totalNaoLidas(eu) : 0, pulso = st.efem.pulso || 0;
+  if(!eu) return null;
+  return e("span",{key:pulso, className:"pointer-events-none absolute inset-0 grid place-items-center rounded-lg", style:pulso && Date.now()-pulso<1500 ? {animation:"sorelly-pulso .9s ease-out 1"} : undefined},
+    e("style",null, "@keyframes sorelly-pulso{0%{box-shadow:0 0 0 0 rgba(232,184,75,.9)}100%{box-shadow:0 0 0 14px rgba(232,184,75,0)}}"),
+    nl>0 && e("span",{className:"absolute -right-1.5 -top-1.5 grid min-w-[18px] place-items-center rounded-full px-1 text-[11px] font-bold text-white", style:{background:"#ef4444", height:18}}, nl>99 ? "99+" : nl));
+}
+export { ChatApp, ChatMini, ChatGlobal, BadgeNaoLidas, useEu };
