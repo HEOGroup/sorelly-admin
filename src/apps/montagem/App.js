@@ -219,7 +219,7 @@ function App(){
     e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
   // App da bipagem no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
-  if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); recarregar(); }});
+  if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); var pp = papelDe(u.pessoaId); if(pp==="montadora" || pp==="bipadora") navigate(caminhoDaAba("whats"), {replace:true}); recarregar(); }});   // montadora e bipadora começam no chat
   if(s.logado && aba==="celbip") return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
@@ -240,7 +240,7 @@ function App(){
         setoresV.filter(function(st){ return !soBreve(st); }).concat(setoresV.filter(soBreve)).map(linhaSetor),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
-        urlAdminAntigo() && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
+        urlAdminAntigo() && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
     !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",

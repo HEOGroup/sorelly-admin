@@ -7,6 +7,11 @@
 // Para criar uma página nova, acrescente uma linha aqui. Nada mais.
 import { e } from "@/shared/react";
 import { Navigate, useLocation, useOutletContext } from "react-router-dom";
+import { papelDe } from "@/apps/montagem/domain/equipe";
+import { apiAtiva, pessoaDaConta } from "@/apps/montagem/lib/api";
+
+// Montadoras e bipadoras abrem direto no SorellyChat; os demais, na página inicial
+const Inicial = () => { const p = apiAtiva() && pessoaDaConta() ? papelDe(Number(pessoaDaConta())) : ""; return e(Navigate, { to: p === "montadora" || p === "bipadora" ? "whatssorelly" : "inicio", replace: true }); };
 
 /**
  * Rota com a página carregada sob demanda.
@@ -48,7 +53,7 @@ const montagem = {
   path: "montagem",
   lazy: async () => ({ Component: (await import("@/apps/montagem/App")).default }),
   children: [
-    { index: true, element: e(Navigate, { to: "inicio", replace: true }) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
+    { index: true, element: e(Inicial) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
     pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
     pagina("agendamento-remarcacoes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgRemarc"),
