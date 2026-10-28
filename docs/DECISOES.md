@@ -1229,3 +1229,6 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 ## 28/10/2026 · Nickolas com acesso total; Atendimento interno da Tamara
 - **Nickolas = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas e Leonardo.
 - **Tamara começa sozinha no Agendamento** com menu individual e o Atendimento interno. As revendedoras internas passam a ficar no servidor (módulo `ri`), e o Agendamento lê a lista da DevMaster (`?rep=02`). Detalhes em `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md`.
+
+## 28/10/2026 · Priscila (secretária do Marcus) com acesso total
+- **Priscila = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas, Priscila e Leonardo. Conta `priscila` (perfil ADMIN, `grupo = supervisao`) e as 7 autorizações de ação iguais às do Marcus. O Financeiro da família (`financeiro_familia`) fica de fora, como para o Nickolas.

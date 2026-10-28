@@ -81,8 +81,8 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // mas o acesso deles é editável. Sócios = fixo.
 function grupoDe(id){
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
-  if(id===16 || id===17 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas e Leonardo (Marcus, 28/10/2026)
-  if(id===28 || id===29 || id===30 || id===31 || id===37 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
+  if(id===16 || id===17 || id===37 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas, Priscila (secretária) e Leonardo (Marcus, 28/10/2026)
+  if(id===28 || id===29 || id===30 || id===31 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
   if(id===SUPERVISORA.id) return "supervisora";
   return papelDe(id);
 }
