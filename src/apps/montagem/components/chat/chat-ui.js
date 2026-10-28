@@ -29,9 +29,9 @@ function Avatar(p){
 }
 
 function Tique(p){
-  var lido = p.status==="lido";
+  // sem azul de "lido" (Marcus, 28/10/2026): só enviado (um tique) e entregue (dois, cinza)
   if(p.status==="enviado") return e(Ph,{n:"check", s:15, style:{color:W.sec}});
-  return e(Ph,{n:"checks", s:15, style:{color: lido ? W.azul : W.sec}});
+  return e(Ph,{n:"checks", s:15, style:{color:W.sec}});
 }
 
 // formatação

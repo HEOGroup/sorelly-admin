@@ -305,6 +305,7 @@ function AbaConsolidadoRep(){
   var pessoasRecebem = BIPADORAS.concat([SUPERVISORA], AGENDAMENTO, FINANCEIRO);
   var usuarioNome = (pessoasRecebem.find(function(x){ return x.id===s.usuario; })||{}).nome || "";   // quem confere é quem está logada (cada uma tem seu login)
   var podeBip = podeBiparRetorno(s, s.usuario, BIPA_RETORNO_PADRAO(), papelDeCons(s.usuario)==="supervisao" || agenda);   // quem bipa (Configurador geral), o agendamento e a diretoria
+  var vc = ver || podeBip || agenda;   // valores da linha: quem bipa o retorno e o agendamento precisam deles para conferir o acerto
   var receber = function(id, patch){ if(!agenda) return d({type:"AVISO", txt:"Só o agendamento e a supervisão conferem os atendimentos"}); d({type:"CONSREP_RECEBER", id:id, patch:patch}); };
   var agora = function(){ return new Date().toISOString(); };
   // relógio: 1º clique começa a conferência, 2º clique termina (grava a data de recebimento); clicar no feito desfaz
@@ -486,29 +487,29 @@ function AbaConsolidadoRep(){
                     : podeBip ? e("button",{onClick:function(){ d({type:"RETORNO_BIPAR", id:r.id, por:nomeDe(s.usuario), porId:s.usuario}); }, className:"rounded-md bg-success/20 px-2 py-1 text-[11.5px] font-bold text-success hover:bg-success/30"},"Bipei")
                     : e("span",{className:"text-[11px] font-semibold text-warning"},"falta bipar")),
                   // ── Vendas ──
-                  td(ac && r.garantia>0 ? BK(r.garantia) : dash,{r:true}),   // o desconto de crédito já diminui o valor da venda ao lado
-                  td(ac ? BK(r.vendaLiquida) : dash,{r:true, c:"font-semibold text-sky-300"}),
-                  td(ac ? r.comissaoPct+"%" : dash,{r:true, c:"font-semibold text-yellow-300"}),
-                  td(ac ? BK(r.valorAcerto||0) : dash,{r:true, c:"text-violet-300 font-semibold"}),
-                  td(x.taxa>0 ? e("span",{className:"flex flex-col leading-tight"}, e("span",{className:"font-semibold"}, BK(x.taxa)), e("span",{className:"text-[10.5px] font-semibold "+(x.paga ? "text-emerald-400" : "text-red-400")}, x.paga ? "paga ✓" : "não paga")) : dash,{r:true}),
-                  td(ac && r.excedenteBrinde>0 ? BK(r.excedenteBrinde) : dash,{r:true, c:"text-red-400 font-semibold"}),
-                  td(ac && r.tagsValor>0 ? BK(r.tagsValor) : dash,{r:true, c:"text-red-400 font-semibold"}),
-                  td(ac ? BK(l.devido) : dash,{r:true, c:"text-violet-300 font-bold", style:undefined}), td(ac ? BK(l.pago) : dash,{r:true, c:"text-emerald-400 font-bold"}),
-                  td(e(CelMulta,{r:r, pct:multaPct, falta:l.falta})),
+                  td(vc && ac && r.garantia>0 ? BK(r.garantia) : dash,{r:true}),   // o desconto de crédito já diminui o valor da venda ao lado
+                  td(vc && ac ? BK(r.vendaLiquida) : dash,{r:true, c:"font-semibold text-sky-300"}),
+                  td(vc && ac ? r.comissaoPct+"%" : dash,{r:true, c:"font-semibold text-yellow-300"}),
+                  td(vc && ac ? BK(r.valorAcerto||0) : dash,{r:true, c:"text-violet-300 font-semibold"}),
+                  td(vc && x.taxa>0 ? e("span",{className:"flex flex-col leading-tight"}, e("span",{className:"font-semibold"}, BK(x.taxa)), e("span",{className:"text-[10.5px] font-semibold "+(x.paga ? "text-emerald-400" : "text-red-400")}, x.paga ? "paga ✓" : "não paga")) : dash,{r:true}),
+                  td(vc && ac && r.excedenteBrinde>0 ? BK(r.excedenteBrinde) : dash,{r:true, c:"text-red-400 font-semibold"}),
+                  td(vc && ac && r.tagsValor>0 ? BK(r.tagsValor) : dash,{r:true, c:"text-red-400 font-semibold"}),
+                  td(vc && ac ? BK(l.devido) : dash,{r:true, c:"text-violet-300 font-bold", style:undefined}), td(vc && ac ? BK(l.pago) : dash,{r:true, c:"text-emerald-400 font-bold"}),
+                  td(vc ? e(CelMulta,{r:r, pct:multaPct, falta:l.falta}) : dash),
                   // ── Pagamentos: Inadimplente e Dinheiro (confirmar) sempre abertos no começo, depois as contas ──
-                  td(l.falta>0.009 ? BK(l.falta) : dash,{r:true, c:l.falta>0.009 ? "text-red-400 font-bold" : ""}),
+                  td(vc && l.falta>0.009 ? BK(l.falta) : dash,{r:true, c:l.falta>0.009 ? "text-red-400 font-bold" : ""}),
                   td(e(CelDinheiro,{l:l, agenda:agenda, onOk:function(contado){ receber(r.id, {din:{ok:true, contado:contado, ts:agora(), por:s.usuario}}); }, onDesfaz:function(){ receber(r.id, {din:{ok:false}}); }}),{r:true}),
                   pagAbertoX && [
-                    colsPag.map(function(c2){ var v = somaConta(r, c2.k, c2.conta); return e(React.Fragment,{key:c2.k+c2.conta}, cel(v>0 ? BK(v) : dash, {c:(v>0 ? "font-semibold " : "")+"px-1! text-[12px]!", style:lado(c2.cor, c2.ini, c2.fim)})); }),
-                    fimCols.map(function(c2){ var v = somaConta(r, c2.k, null); return e(React.Fragment,{key:c2.k}, cel(v>0 ? BK(v) : dash, {c:(v>0 ? "font-semibold " : "")+"px-1! text-[12px]!", style:lado(c2.cor, true, true)})); })
+                    colsPag.map(function(c2){ var v = somaConta(r, c2.k, c2.conta); return e(React.Fragment,{key:c2.k+c2.conta}, cel(vc && v>0 ? BK(v) : dash, {c:(v>0 ? "font-semibold " : "")+"px-1! text-[12px]!", style:lado(c2.cor, c2.ini, c2.fim)})); }),
+                    fimCols.map(function(c2){ var v = somaConta(r, c2.k, null); return e(React.Fragment,{key:c2.k}, cel(vc && v>0 ? BK(v) : dash, {c:(v>0 ? "font-semibold " : "")+"px-1! text-[12px]!", style:lado(c2.cor, true, true)})); })
                   ],
                   // ── Peças e brindes (setor de bipagem de retorno) ──
                   pecasAbertoX ? [
                     cel(r.pecasCond||dash), cel(r.pecasVendidas||dash), cel(r.pecasTrocas||dash), cel(contaCat(r,"normal")||dash), cel(contaCat(r,"bb")||dash),
                     cel(ac && r.pecasProxLiberadas>0 ? (r.pecasProxCodigos||[]).length+"/"+r.pecasProxLiberadas : dash), cel(r.pecasADevolver==null ? dash : r.pecasADevolver),
-                    cel(ac ? BK(r.brindeNormal||0) : dash), cel(ac ? BK(r.brindeSelect||0) : dash),
-                    cel(ac && l.brindes.lancadoNormal>0 ? BK(l.brindes.lancadoNormal) : dash), cel(ac && l.brindes.lancadoSelect>0 ? BK(l.brindes.lancadoSelect) : dash),
-                    cel(r.excedenteBrinde>0 ? BK(r.excedenteBrinde) : dash, {c:"text-warning px-1! text-[12px]!"})
+                    cel(vc && ac ? BK(r.brindeNormal||0) : dash), cel(vc && ac ? BK(r.brindeSelect||0) : dash),
+                    cel(vc && ac && l.brindes.lancadoNormal>0 ? BK(l.brindes.lancadoNormal) : dash), cel(vc && ac && l.brindes.lancadoSelect>0 ? BK(l.brindes.lancadoSelect) : dash),
+                    cel(vc && r.excedenteBrinde>0 ? BK(r.excedenteBrinde) : dash, {c:"text-warning px-1! text-[12px]!"})
                   ] : td(""),
                   // ── Brindes (no final): abre o pop-up com os brindes e as peças do próximo mês ──
                   (function(){ var lista = lancadosDe(r), okp = rec.pecasOk||{}, nTr = (r.trocas||[]).length || r.pecasTrocas || 0,

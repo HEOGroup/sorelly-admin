@@ -11,7 +11,7 @@ var MES3 = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","D
 function FluxoMensal(p){
   var s = p.s, ano = p.ano, anoStr = String(ano), hoje = new Date(), anoAtual = hoje.getFullYear(), mesAtual = hoje.getMonth();
   var fd = fatEfetivo(s);
-  var proj = ano===anoAtual ? projetarAno(Object.assign({}, s, {faturamentoDiario:fd}), anoStr, 2, Number(s.metaPct)>=97 && Number(s.metaPct)<=99 ? Number(s.metaPct) : 98) : null;
+  var proj = ano===anoAtual ? projetarAno(Object.assign({}, s, {faturamentoDiario:fd}), anoStr, 2, Number(s.metaPct)>=97 && Number(s.metaPct)<=99 ? Number(s.metaPct) : 99) : null;
   var acum = 0;
   var cols = [0,1,2,3,4,5,6,7,8,9,10,11].map(function(m){
     var pref = ano+"-"+String(m+1).padStart(2,"0"), ks = Object.keys(fd).filter(function(k){ return k.slice(0,7)===pref; }).sort(), reg = ks.length ? fd[ks[ks.length-1]] : null;

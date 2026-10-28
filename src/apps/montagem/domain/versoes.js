@@ -3,6 +3,159 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.12.69", data:"2026-10-28", titulo:"Dashboard: bloco Acertos em duas colunas, sem 94/95/96", itens:[
+    "Previsão (revendedoras no início do mês, previstos primeiros, novo previstos e % dos novos previstos) e Andamento (realizados, carregar, faltam total, % do mês). Barra dourada, mesmos números da caixa Faturamento.",
+    "Meta padrão passa a 99% (os acertos estão sendo adiados, quase todos os que faltam vão acontecer); valor salvo migra para 99 uma vez. Caixa Faturamento sem as partes Ano e Novembro/Dezembro: viraram o botão Previsão do ano no alto do Dashboard.",
+    "O bloco é do Agendamento: clicar nele abre o Painel do Agendamento. Faltam (total) = novo previstos − realizados − carregar (303); a meta de 97/98/99% fica em linha à parte (Falta para os 98%).",
+    "Previstos primeiros volta a 1.976 (o lançamento de 27/10 tinha sobrescrito para 1.886); novo item Acertos adiados até o momento (1.976 − 1.886 = 90). A parte Como o mês começou × agora saiu da caixa Faturamento, pois repetia estes números."]},
+  {v:"0.12.72", data:"2026-10-28", titulo:"Média real recebida por acerto", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"Nova linha Média real recebida por acerto (pago na hora ÷ revendedoras que acertaram), ao lado da média das notas fiscais, no quadro Faturamento e na Previsão. Também mostra o % pago na hora."}
+  ]},
+  {v:"0.12.71", data:"2026-10-28", titulo:"Previsão com acertos realizados, Carregar e a realizar", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"A Previsão do mês mostra acertos realizados, Carregar, a realizar, total e esperados, e o Fechamento do mês traz os acertos junto com entrou, falta e resultado."}
+  ]},
+  {v:"0.12.70", data:"2026-10-28", titulo:"Previsão: só o que falta no mês e o fechamento", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"A aba Previsão mostra o que falta entrar e pagar no mês atual e, no fim, entrou, falta, pago, a pagar e o resultado final. Próximos meses atrás de um botão."}
+  ]},
+  {v:"0.12.69", data:"2026-10-28", titulo:"Resultado do mês: Faturamento e receber juntos, sem a barra", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"Saiu a barra de 6 números. Faturamento e Receber ficam lado a lado na primeira aba."}
+  ]},
+  {v:"0.12.68", data:"2026-10-28", titulo:"Resultado do mês mais visual", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"Faixa de 6 indicadores no topo e abas (Faturamento, Receber, Pagar, Entrou nas contas, Previsão) com uma tabela por vez. Saiu a linha dos dias lançados."}
+  ]},
+  {v:"0.14.37", data:"2026-10-28", titulo:"Atendimento interno · Revendedoras com calendário e horários do dia", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"Tela abre em Lista: calendário do mês (segunda a domingo) e, ao lado, os horários do dia escolhido, com a mesma altura. Botão Calendário mostra o mês inteiro com a listagem dentro de cada dia e navega entre meses."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Regras da agenda: até 3 por horário, 15 por dia, horários de 1 hora das 08h às 18h; sábado só até 11h (máximo 9); domingo sem atendimento. Horário livre (+ livre) abre a escolha da revendedora sem data marcada."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"Tabela centralizada, barra de degradê dourado com linhas de corte, coluna Qtd. (condicionais ativas), Data do kit e Acerto previsto. Sem barra de filtros: clique no título da coluna para filtrar; a coluna filtrada fica sublinhada."}
+  ]},
+  {v:"0.14.36", data:"2026-10-28", titulo:"Atendimento interno · card da revendedora com registro por opções, multa 5/8/15 e regras novas", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"Card da revendedora (nome, bolinha e número · resumo · registros · condicionais ativas) abre por cima da lista, compacto, e fecha com Esc. O registro da Tamara é um bloco só que vai trocando de opções passo a passo (O que aconteceu › Por quê? › Novo dia e hora › Quem autorizou), sem campo grande; o texto é opcional, de uma linha, com corretor."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Registro estruturado: 1ª, 2ª e 3ª tentativa, acerto marcado, remarcado, não veio, desmarcado, quer vir, representante pediu o kit, mudou o ciclo, troca pendente, passou para outra pessoa. Motivo obrigatório em remarcado, não veio e desmarcado. Cada registro guarda quem falou com ela e quem registrou."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Multa pela regra do sistema: 1ª remarcação −5 pontos de comissão e −15% do brinde, 2ª −8 e −50%, 3ª ou mais −15 e −100%; isenta (autorizada por Marcus, Lucas, Nickolas ou Ana Maria) não conta. As remarcações vão para a listagem do dia e a calculadora do acerto já aplica. Botão copia o aviso de remarcação para a revendedora."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Enviar regras novas: copia a mensagem, abre o PDF GUIA-DA-REVENDEDORA, registra o envio e carimba a revendedora com a versão em vigor: o próximo acerto dela vale com as regras novas."},
+    {tipo:"novo", area:"Atendimento interno", txt:"O histórico de anotações da DevMaster (todas as condicionais, também as fechadas) entra já classificado nessas opções ao abrir o card; condicionais ativas e expositores vêm da DevMaster. Segunda condicional bipada depois do kit aparece como Kit extra."},
+    {tipo:"melhoria", area:"Sistema", txt:"O navegador guarda só a anotação mais nova da DevMaster de cada revendedora (o resto se busca de novo), para não estourar o espaço de 8 MB."},
+  ]},
+  {v:"0.12.68", data:"2026-10-28", titulo:"SorellyChat no visual do WhatsApp claro", itens:[
+    "Conversas com fundo bege, balão branco (recebida) e verde claro (enviada), igual ao WhatsApp. Vale na tela cheia e no balão do canto.",
+    "O fundo escuro antigo (Joias douradas) saiu; quem usava passa para o WhatsApp claro.",
+    "Faixa da lista em cinza, pílulas Tudo/Não lidas/Grupos, busca arredondada, caixa de digitar em pílula com + e botão preto, hora na linha do texto e fundo com desenhos suaves.",
+    "Tique azul de lido saiu (só um ou dois tiques cinza). Som da tecla bem mais suave."]},
+  {v:"0.12.67", data:"2026-10-28", titulo:"Resultado do mês com faturamento e Carregar", itens:[
+    {tipo:"melhoria", area:"Financeiro · Resultado do mês", txt:"Quadro Faturamento (acertos, Carregar, a realizar, previsão e resultado previsto). Saiu a linha solta de saldo; a variação do saldo agora é o Resultado do mês até agora, em vermelho quando negativo."}
+  ]},
+  {v:"0.12.66", data:"2026-10-28", titulo:"Resultado do mês: falta pagar vem da DevMaster", itens:[
+    {tipo:"correção", area:"Financeiro · Resultado do mês", txt:"O falta pagar do mês agora usa a lista de títulos em aberto lida da DevMaster (outubro R$ 160.253,95), e não o número parado do admin antigo (R$ 175.516,21)."}
+  ]},
+  {v:"0.12.65", data:"2026-10-28", titulo:"Contas a pagar lidas direto da DevMaster", itens:[
+    {tipo:"melhoria", area:"Financeiro · Contas a pagar", txt:"Script que atualiza todos os títulos em aberto (outubro a 2027) direto da DevMaster, sem planilha. 3.792 títulos; novembro R$ 1.471.268,66 e dezembro R$ 1.500.485,63."}
+  ]},
+  {v:"0.14.35", data:"2026-10-28", titulo:"Atendimento interno · Revendedoras: acerto previsto, data agendada e registro de contatos", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"A tabela passou a mostrar, logo depois do nome: Acerto previsto (previsão de devolução do kit principal na DevMaster), Faltam (dias), Data agendada (\"Aguardando\" até a Tamara marcar), Hora, Situação e Último contato."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Card Vendas de 2026 no cadastro da revendedora (abre no mesmo lugar, sem outra tela): todas as vendas fechadas do ano, com valor de venda e valor de acerto sem brinde, troca, indicação e premiação, e o total. Lê da DevMaster; só leitura. Dias só de troca ou brinde aparecem marcados \"sem venda\"."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Contatos e situação por revendedora (um registro só para todas as condicionais dela). O que a Tamara escreve em Obs. Gerais das condicionais na DevMaster entra como histórico; ela registra contatos novos aqui. A data escrita (AGENDADO PARA DIA 28/11 ÀS 08H) vira a Data agendada: 59 das 203 já vieram marcadas."},
+  ]},
+  {v:"0.14.36", data:"2026-10-28", titulo:"Previsão: razão de acertos do mês", itens:[
+    {area:"Financeiro › Resultado do mês", tipo:"melhoria", txt:"Acertos dos próximos meses = revendedoras no dia 1 × razão do mês atual (previstos × 98% ÷ revendedoras do dia 1). Média: novembro +5%, dezembro +12%, janeiro +17%. Dezembro cresce só 50% do normal (campo editável) e janeiro perde 100 revendedoras. Visão geral: dezembro +12%."},
+    {area:"Financeiro › Resultado do mês", tipo:"melhoria", txt:"Previsão agora vai até março (5 meses). Contas a pagar de cada mês = o maior entre o admin antigo e as contas já lançadas das planilhas do DevMaster (nov R$ 1,38 mi, dez R$ 1,43 mi, jan R$ 1,01 mi, fev R$ 0,90 mi, mar R$ 0,82 mi lançados em 22/10). Mês só com o lançado aparece com ≥: ainda entram contas novas."}]},
+  {v:"0.14.35", data:"2026-10-28", titulo:"Revendedoras: aba Condicional (papel assinado)", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Nova aba Condicional: o papel da condicional copiado do exemplo da DevMaster (cabeçalho, termo, folha de anotação do acerto) com o texto novo. Termo em 7 cláusulas (minuta de 26/10; peças para troca ficou de fora até a política de trocas) e nota promissória revisada pelo advogado (27/10). Editor à esquerda, papel à direita, botões Salvar, Desfazer, Texto original, Copiar e Imprimir, e histórico das versões salvas. Os textos ficam em domain/condicional-modelo.js e no estado condicionalModelo."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"O papel real continua impresso pela DevMaster: o texto daqui é o modelo para trocar lá. A nota final do Marcus ainda será enviada."},
+  ]},
+  {v:"0.14.34", data:"2026-10-28", titulo:"Endereços por setor e tela, sem o /montagem", itens:[
+    {tipo:"melhoria", area:"Endereços", txt:"Todas as telas passaram a ter o endereço /setor/tela (ex.: /atendimento-interno/revendedoras, /financeiro/controle-de-pagamentos). O endereço sai sozinho do menu (router/slugs.js, ENDERECO_DA_ABA). O prefixo /montagem era o nome do primeiro app e saiu."},
+    {tipo:"melhoria", area:"Endereços", txt:"Os endereços antigos (/montagem/nome-da-tela e o curto /nome-da-tela) continuam abrindo e levam ao endereço novo, com o # e a busca preservados. O app de Kits novos continua em /kits-novos."},
+    {tipo:"melhoria", area:"Navegador", txt:"O título da aba do navegador agora é Tela · Setor (ex.: Revendedoras · Atendimento interno)."},
+  ]},
+  {v:"0.14.27", data:"2026-10-28", titulo:"Menu lateral reorganizado em 3 grupos", itens:[
+    {tipo:"melhoria", area:"Menu", txt:"O menu lateral virou 3 grupos, cada um fecha e abre clicando no nome (lembra a escolha): GERAL (Início, SorellyChat, Dashboard), SETORES (o resto, com botão \"Abrir tudo\") e SISTEMA (Apps, Tecnologia). \"Rotina do dia\" saiu do menu (a DevMaster vai trazer tudo automático; quando sobrar algo manual, vira uma aba só). \"CNPJs\" saiu do topo e virou uma tela dentro de Financeiro → Fiscal."},
+  ]},
+  {v:"0.12.64", data:"2026-10-28", titulo:"Agendamento com as representantes reais e Dashboard sem passar para novembro", itens:[
+    {tipo:"melhoria", area:"Agendamento", txt:"28 representantes reais de outubro (cota e saldo dia a dia até 26/10) vindas do admin antigo, no lugar da demonstração."},
+    {tipo:"melhoria", area:"Dashboard", txt:"Saiu o campo Passadas para novembro do bloco Acertos de outubro. A remarcação é feita direto na DevMaster."}
+  ]},
+  {v:"0.14.33", data:"2026-10-28", titulo:"Atendimento interno · Revendedoras nasce vazio", itens:[
+    {tipo:"melhoria", area:"Atendimento interno", txt:"A lista de revendedoras internas foi limpa (as 32 da planilha antiga saíram). Agora só entram as revendedoras do vendedor Sorelly (02, FE e BY) pelo botão Buscar da DevMaster; a lista geral continua na aba Revendedoras."},
+  ]},
+  {v:"0.14.35", data:"2026-10-27", titulo:"Acertos que faltam: aba nova e Agendamento acompanhando", itens:[
+    {area:"Financeiro › Faturamento › Acertos", tipo:"novo", txt:"Aba nova com feitos, Carregar, a realizar, previstos, meta 98% e histórico por dia; confere os 303 acertos com a DevMaster (kits principais abertos com data até o fim do mês, incluindo atrasados)."},
+    {area:"Agendamento / Resultado do mês", tipo:"correção", txt:"Previstos de outubro 1.886 (antes 1.976) também no Agendamento e no Financeiro; salvar previstos no Faturamento agora muda a meta do Agendamento. Resultado do mês usa os 303 em vez de 162."}]},
+  {v:"0.12.63", data:"2026-10-27", titulo:"Carregar zerado e 303 a realizar em outubro", itens:[
+    {tipo:"correção", area:"Financeiro · Previsão", txt:"27/10: Carregar = 0 e a realizar = 303. Total do mês 1.886 acertos. Gravado no código e no FATURAMENTO-DIARIO.md."}
+  ]},
+  {v:"0.12.62", data:"2026-10-27", titulo:"Faturamento fixado até 27/10", itens:[
+    {tipo:"correção", area:"Financeiro · Faturamento", txt:"27/10 fixado: 1.583 acertos e R$ 1.252.742,52 acumulados. Dia 27 = 119 acertos e R$ 92.183,97. Carregar de 27/10 ainda não informado."}
+  ]},
+  {v:"0.14.34", data:"2026-10-27", titulo:"Resultado do mês: previsão dos próximos meses", itens:[
+    {area:"Financeiro › Resultado do mês", tipo:"novo", txt:"Bloco Previsão embaixo: o que ainda entra e sai no mês e em novembro, dezembro e janeiro. Média por acerto só das revendedoras (contas a receber, 3 meses fechados), % pago na hora, inadimplência antiga e funcionárias em média, a pagar do admin antigo e saldo das contas mês a mês. Alta de novembro (5%) e dezembro (10%) e média de janeiro (R$ 900) editáveis na tela. Os acertos vêm da data prevista de acerto na DevMaster (nova rota /api/acertos-previstos), meta 98%, ciclo dos kits 30/45/60 e queda de janeiro."}]},
+  {v:"0.14.33", data:"2026-10-27", titulo:"Resultado do mês (Financeiro): receber × pagar e o que entrou de verdade", itens:[
+    {tipo:"novo", area:"Financeiro", txt:"Nova tela Financeiro › Resultado do mês, com três quadros: Receber (DevMaster: recebido na venda e inadimplência antiga recebida, revendedoras e funcionárias separadas, mais o faturado e a inadimplência do mês), Pagar (admin antigo: já pago, falta pagar, total do mês) e Entrou de verdade nas contas (variação do saldo + contas pagas, comparada com o esperado pelo DevMaster; a diferença é dinheiro que entrou e ainda não foi baixado) e o saldo se pagar tudo o que falta no mês."},
+    {tipo:"correcao", area:"Financeiro", txt:"Os saldos do admin antigo de 27/10 agora entram no estado já salvo (versão dos saldos 13)."},
+  ]},
+  {v:"0.14.32", data:"2026-10-27", titulo:"Atendimento interno: revendedoras do vendedor Sorelly vêm da DevMaster, com média e valor do próximo kit", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"O botão Buscar da DevMaster (Revendedoras) traz todas as revendedoras cujo vendedor é a Sorelly (código 02), lidas da API 2: 196 hoje. Entram como A contatar, ciclo de 30 dias e próximo acerto = previsão de devolução do kit principal. Quem já estava na lista só recebe as vendas reais; data, hora e situação da agendadora não mudam."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Colunas novas Média 3 vendas e Próximo kit: média das 3 últimas vendas sem brinde e a faixa da tabela do Configurador. Média abaixo de R$ 700 mostra Não libera."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"O ciclo (30, 45 ou 60) sai do plano real de cada revendedora, e o próximo acerto é a previsão de devolução da DevMaster (já com fim de semana), não mais emissão + 30 dias exatos."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"A calculadora do Atendimento Sorelly passou a usar a média das 3 últimas vendas (a de agora + as 2 anteriores), mínimo R$ 700, no lugar da média de 5 meses."},
+    {tipo:"correcao", area:"Atendimento interno", txt:"A busca do vendedor Sorelly (02) passou a seguir a tela de retorno de condicionais da DevMaster: revendedora com condicional aberto do vendedor 02 e previsão até 31/12/2026, mesmo que a representante do kit principal seja outra. O vendedor Sorelly são três códigos: 02 SORELLY, FE SORELLY FUNCIONARIOS e BY SORELLY REPRESENTANTE. Hoje: 203 revendedoras, 232 condicionais, 23.401 peças e R$ 2.114.086,00, igual à tela da DevMaster."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"A rota /api/revendedoras aceita ?rep=02 e devolve só as revendedoras com condicional aberto daquele vendedor."},
+  ]},
+  {v:"0.14.31", data:"2026-10-27", titulo:"Contas a pagar: já pago e falta pagar no alto, tela mais enxuta", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"No alto de Contas a pagar ficaram três números grandes: Já pago, Falta pagar e Total do mês (com barra), lidos do admin antigo (faturamento_contas_mes, 27/10 21:03). Outubro: R$ 1.330.288,27 pagos e R$ 175.516,21 a pagar. Antes a tela somava só as contas do relatório de 22/10 (R$ 1.142.034,30 pagos)."},
+    {tipo:"melhoria", area:"Financeiro", txt:"O mês virou um seletor pequeno no cabeçalho; os filtros e os cartões por CNPJ só abrem pelos botões Filtros e Por CNPJ."},
+  ]},
+  {v:"0.14.31", data:"2026-10-27", titulo:"Contas a receber liberada para o Financeiro", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"A tela Contas a receber agora abre para o Financeiro e para a Diretoria (antes só a Diretoria). O acerto - loja de anos anteriores aparece como Dívida antiga, em linha separada."},
+  ]},
+  {v:"0.14.30", data:"2026-10-27", titulo:"Contas a receber: quanto efetivamente não recebemos do acerto - loja", itens:[
+    {tipo:"correcao", area:"Financeiro", txt:"O acerto - loja é pago aos poucos, todo mês. A tela agora separa o lançado em Recebido depois e Não recebido (o saldo que continua em aberto). O mapa do dinheiro tem uma faixa verde (recebido depois) e uma vermelha (não recebido)."},
+    {tipo:"novo", area:"Financeiro", txt:"Bloco Quanto efetivamente não recebemos: lançado em 2026, recebido depois, não recebido de 2026 e não recebido de anos anteriores (acerto - loja de 2022 a 2025 ainda em aberto), com o total e o que entrou de acertos antigos no período."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Mês a mês com Recebido na venda, Recebido depois, Não recebido, % não recebido e Entrou de acerto - loja no mês (baixas da DevMaster por data de pagamento). A lista Quem ainda não pagou e a lista de pagamentos (filtro Só acerto - loja) incluem os abertos de anos anteriores."},
+  ]},
+  {v:"0.14.29", data:"2026-10-27", titulo:"Contas a receber: blocos CNPJs e contas e Forma de pagamento, lado a lado", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"Dois blocos lado a lado, cada linha abre e fecha ao clicar (com Abrir todos e Fechar todos): CNPJs e contas (CNPJ → conta e forma) e Forma de pagamento (forma → conta e CNPJ). A conta é só o banco (Sicredi, Safra...); Pix, Link, Crédito e Débito ficam na coluna Forma; o CNPJ tem coluna própria. Saíram banco, agência e número da conta."},
+  ]},
+  {v:"0.14.28", data:"2026-10-27", titulo:"Contas a receber: filtro Só acerto - loja em todos os meses", itens:[
+    {tipo:"novo", area:"Financeiro", txt:"Novo filtro de situação na barra do alto: Só acerto - loja (não pagou), Só acerto - loja em aberto e Só recebido. Com o ano inteiro escolhido, a lista de pagamentos traz todos os meses de uma vez e dá para agrupar por revendedora."},
+  ]},
+  {v:"0.14.27", data:"2026-10-27", titulo:"Contas a receber: funcionárias pelo cadastro do cliente", itens:[
+    {tipo:"correcao", area:"Financeiro", txt:"O filtro Só não funcionárias agora usa o grupo FUNCIONÁRIOS do cadastro do cliente na DevMaster (208 clientes), e não mais a lista de CPFs do RH. Revendedora negativada ou que sumiu com o kit continua revendedora. Em outubro o acerto - loja sem funcionárias caiu de R$ 66.747 para R$ 31.920."},
+  ]},
+  {v:"0.14.26", data:"2026-10-27", titulo:"Apps reorganizados: Representante/Revendedora e Funcionárias", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"A tela Apps agora tem 2 abas: \"Representante & revendedora\" (como já era) e \"Funcionárias\". Saíram os 3 apps separados de montagem, bipagem e condicionais (apareciam soltos, cada um no meio das telas do setor); no lugar entrou UM App das funcionárias só (pages/CelularFuncionarios.js, rota /app-funcionarias): a entrada é igual para todo mundo e, depois de entrar, cada pessoa vê só as tarefas do seu acesso (montagem, bipagem, condicionais, listagens, dinheiro, chat). Quem já está logado no sistema cai direto no app dela, sem escolher nada."},
+  ]},
+  {v:"0.14.26", data:"2026-10-27", titulo:"Contas a receber: mapa de ponta a ponta e tabela de CNPJs e contas bancárias", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"Mapa do dinheiro volta a ocupar a tela de ponta a ponta, com barras mais largas e nomes que nunca ficam um em cima do outro. Os indicadores do topo saíram e a atualização da DevMaster ficou pequena, ao lado do mês."},
+    {tipo:"novo", area:"Financeiro", txt:"Tabela CNPJs e contas bancárias: cada CNPJ com todas as suas contas, o número do banco, agência e conta, a forma de pagamento, o valor recebido e a porcentagem."},
+  ]},
+  {v:"0.14.25", data:"2026-10-27", titulo:"SorellyChat no celular dos funcionários internos", itens:[
+    {tipo:"novo", area:"SorellyChat", txt:"Montadora, bipagem e condicionais ganharam o SorellyChat dentro do próprio celular simulado: um botão redondo dourado abre o chat (mesma tela, menor) sem sair do app; \"‹ Voltar\" retorna para onde estava. Pedido do Marcus: dá para cancelar linhas de WhatsApp/telefone usadas só pra contato interno."},
+  ]},
+  {v:"0.14.21", data:"2026-10-27", titulo:"SorellyChat: horário + presença de volta na conversa (V1-B)", itens:[
+    {tipo:"novo", area:"SorellyChat", txt:"Na conversa com um colaborador, duas linhas no topo: 1ª (todo mundo vê) — bolinha online/almoço/ausente, dias e horário de trabalho. 2ª (só Diretoria e RH) — bolinhas dos últimos 10 dias e o resumo do mês, já separando falta COM justificativa de falta SEM justificativa (além de atraso e atestado). Formato escolhido pelo Marcus entre 3 versões."},
+  ]},
+  {v:"0.14.25", data:"2026-10-27", titulo:"Contas a receber: mapa e recebido lado a lado, blocos completos e lista de pagamentos", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"Mapa do dinheiro na metade esquerda e o bloco Recebido nas contas (por CNPJ, por conta, por forma) na metade direita. Faixa com 8 indicadores, incluindo Em aberto no ano."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Blocos com mais colunas e sem nada abreviado: o texto quebra em duas linhas; nomes inteiros de representantes e contas."},
+    {tipo:"novo", area:"Financeiro", txt:"No fim da tela, lista de TODOS os pagamentos do mês, linha por linha (emissão, revendedora, representante, venda, forma, titular, valor, saldo, vencimento, situação), com botão Agrupar por revendedora e filtro em cada coluna."},
+  ]},
+  {v:"0.14.24", data:"2026-10-27", titulo:"Média de vendas: regra completa no sistema", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"A média das 3 últimas vendas agora segue a regra inteira do Marcus: Leilão fora, vendas do mesmo dia juntas, dia que fecha em R$ 0 não conta, só vendas de até 12 meses e quem tem menos de 3 usa as que tem. A diferença paga em bonificação conta como venda. Vale na lista de revendedoras e na ficha de cada uma. Só 2026 está carregado, como combinado."},
+  ]},
+  {v:"0.14.24", data:"2026-10-27", titulo:"Contas a receber no Financeiro, com mês valendo para tudo", itens:[
+    {tipo:"melhoria", area:"Financeiro", txt:"A tela Contas a receber saiu de Revendedoras e foi para Financeiro › Receber (endereço /contas-a-receber)."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Ao escolher um mês, todos os blocos de baixo mostram só aquele mês (o bloco Por mês mostra só a linha do mês)."},
+    {tipo:"novo", area:"Financeiro", txt:"Bloco único Recebido nas contas, com três visões: por CNPJ, por conta e por forma de pagamento."},
+  ]},
+  {v:"0.14.23", data:"2026-10-27", titulo:"Média de vendas: Leilão fora das contas", itens:[
+    {tipo:"melhoria", area:"Revendedoras", txt:"Venda do vendedor EK (Leilão) não é acerto e não entra mais nas 3 últimas vendas usadas na média. O sistema passou a guardar o vendedor de cada venda; na próxima carga das vendas de 2026 (automática) o Leilão sai de todas as médias. Regra escrita em docs/negocio/MEDIA-DE-VENDAS.md. Encomendas (91) e Expositor (04) seguem como estavam: falta o Marcus decidir."},
+  ]},
+  {v:"0.14.20", data:"2026-10-27", titulo:"SorellyChat: resolver pendência sem precisar escrever nota", itens:[
+    {tipo:"correcao", area:"SorellyChat", txt:"Marcar uma conversa como resolvida virou só um clique: tirei o \"Diga em poucas palavras como foi resolvido\" (campo obrigatório de 5 letras) de todo lugar — menu de contexto da lista, barra de status da representante e barra de situação da conversa. Agora é só Pendente ou Resolvida, sem escrever nada."},
+  ]},
+  {v:"0.14.19", data:"2026-10-27", titulo:"SorellyChat: corrigido o \"+\" (nova conversa) bugado", itens:[
+    {tipo:"correcao", area:"SorellyChat", txt:"O painel que abre ao clicar no \"+\" (escolher setor e pessoa pra começar uma conversa) estava renderizado longe do botão, solto no fim da lista — por isso aparecia torto/bugado. Agora ele abre colado no próprio botão, igual o \"⋯\". Testado até o fim: \"+\" → escolher setor → escolher pessoa → conversa abre certinho."},
+  ]},
   {v:"0.14.18", data:"2026-10-27", titulo:"SorellyChat: corrigido rolar a tela toda junto", itens:[
     {tipo:"correcao", area:"SorellyChat", txt:"Achei a causa: a altura da tela do SorellyChat era um número fixo que não contava a faixa de abas abertas/menu (quando aparece em cima). Faltando esse tanto, a PÁGINA toda ficava um pouco mais alta que a tela e rolava junto — por isso a barra de cima e o nome da pessoa na conversa pareciam subir. Agora a altura se ajusta sozinha ao que sobra da tela; só a lista de conversas (abaixo da busca) e as mensagens (abaixo do nome da pessoa) rolam — o resto fica parado."},
   ]},
@@ -26,6 +179,9 @@ var VERSOES = [
   ]},
   {v:"0.14.11", data:"2026-10-27", titulo:"Dashboard: faixa de cima com divisórias e ✎ no Faturamento (V1-C)", itens:[
     {tipo:"melhoria", area:"Dashboard", txt:"A faixa de cima (Revendedoras, Faturamento, Previsão) ganhou linhas finas separando os 3 números, numa peça só. O botão de atualizar o faturamento de hoje virou um ✎ discreto no canto do número \"Faturamento até o momento\" — clicar abre o painel (Recebido, Acertos, Carregar, Atualizar hoje, Fixar) embaixo da faixa; clicar de novo ou em \"Fechar\" fecha. Escolhido entre 4 versões apresentadas ao Marcus (V1-C)."},
+  ]},
+  {v:"0.14.23", data:"2026-10-27", titulo:"Revendedoras: tela Contas a receber", itens:[
+    {tipo:"novo", area:"Revendedoras", txt:"Contas a receber: faixa de indicadores, Mapa do dinheiro (do faturado até a conta) e blocos com listas por titular, forma de pagamento, conta, mês, quem não pagou (acerto - loja) e saldo por representante. Filtros de mês, quem (só não funcionárias ou todos) e titular. Lido da DevMaster (dmabg, dmacd, dmaao, dmaam), só leitura; a leitura roda em segundo plano e fica guardada no banco."},
   ]},
   {v:"0.14.22", data:"2026-10-27", titulo:"Revendedoras: Cadastro, Kits e vendas e Contas a receber no menu do setor", itens:[
     {tipo:"melhoria", area:"Revendedoras", txt:"As três abas saíram do alto da página e viraram palavras do menu do setor (Cadastro, Kits e vendas, Contas a receber), cada uma com o seu endereço. O título Revendedoras saiu da página e tudo subiu."},
@@ -296,6 +452,9 @@ var VERSOES = [
     {tipo:"novo", area:"RH · Acessos e autorizações", txt:"Nova aba Contas: a Diretoria vê quem criou conta, liga a conta a uma pessoa do sistema, escolhe os setores e libera, bloqueia ou reativa. Liberar, bloquear ou trocar setor vale na hora."},
     {tipo:"novo", area:"Servidor", txt:"Tabela sorelly.conta, rotas de cadastro e de contas, e scripts migrar-contas e criar-admin (primeira conta da Diretoria). A tabela user do admin antigo não é tocada."},
     {tipo:"correção", area:"RH · Acessos e autorizações", txt:"A aba Quem vê o quê abria com erro por falta do grupo Cadastro de peças na lista de quem é cada perfil."},
+  ]},
+  {v:"0.12.61", data:"2026-10-27", titulo:"Contas a pagar até 31/10 atualizadas", itens:[
+    {tipo:"melhoria", area:"Financeiro · Contas a pagar", txt:"Lista trocada pelo relatório por Natureza de 27/10: 98 títulos, R$ 157.922,46 em aberto, com o CNPJ de cada um."}
   ]},
   {v:"0.12.60", data:"2026-10-27", titulo:"Saldos das contas e revendedoras até 27/10", itens:[
     {tipo:"melhoria", area:"Financeiro · Saldos", txt:"Saldos das 29 contas de 26 e 27/10 lidos do admin antigo. Revendedoras de 27/10 = 2.106."}

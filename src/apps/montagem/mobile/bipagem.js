@@ -6,6 +6,8 @@ import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { Avatar } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
+import { useEu } from "@/apps/montagem/components/chat/chat-app";
+import { CelChat } from "@/apps/montagem/mobile/cel-chat";
 import { e, useState } from "@/shared/react";
 import React from "react";
 
@@ -15,15 +17,19 @@ function AppBipagemRetirada(p){
   var abertas = s.listagens.filter(function(l){return !l.fechada;});
   var sl = useState(null), lid = sl[0], setLid = sl[1];
   var sk = useState({}), sel = sk[0], setSel = sk[1];
+  var ch = useState(false), chat = ch[0], setChat = ch[1];   // SorellyChat (27/10/2026, pedido do Marcus)
+  var eu = useEu(chat ? bip.id : null);
   var l = lid && s.listagens.find(function(x){return x.id===lid;});
   var prontos = l ? s.kits.filter(function(k){return k.lid===l.id && k.status==="bipado";}) : [];
   var pend = l && (s.retPend||[]).find(function(r){return r.lid===l.id;});
   var ids = prontos.filter(function(k){return sel[k.id];}).map(function(k){return k.id;});
   var escolher = function(id){ var o = {}; s.kits.forEach(function(k){ if(k.lid===id && k.status==="bipado") o[k.id] = true; }); setSel(o); setLid(id); };
+  if(chat) return e(p.semMoldura ? React.Fragment : IPhone15,null, e(CelChat,{eu:eu, voltar:function(){ setChat(false); }}));
   return e(p.semMoldura ? React.Fragment : IPhone15,null,
     e("div",{className:"mb-3 flex items-center gap-3"},
       e(Avatar,{nome:bip.nome, i:0}),
-      e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Bipagem · retirada"), e("p",{className:"truncate text-xl font-bold"}, bip.nome))),
+      e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Bipagem · retirada"), e("p",{className:"truncate text-xl font-bold"}, bip.nome)),
+      e("button",{onClick:function(){ setChat(true); }, title:"SorellyChat", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"whats", s:18, className:"text-[#E8B84B]"}))),
     !l ? e("div",{className:"flex flex-col gap-2"},
         e("p",{className:"px-1 text-[13px] font-semibold"},"Qual representante está aqui?"),
         abertas.map(function(x){ var n = s.kits.filter(function(k){return k.lid===x.id && k.status==="bipado";}).length, pd = (s.retPend||[]).some(function(r){return r.lid===x.id;});

@@ -13,14 +13,14 @@ var ICONES = {
 var POS = [[6,8,-14],[36,4,10],[10,38,8],[40,36,-12],[24,22,0],[50,20,16]];
 // id, nome, cor de fundo, cor do desenho, desenhos, mensagem recebida, mensagem enviada, texto
 var TEMAS = [
-  {id:"joias-ouro", nome:"Joias douradas", fundo:"#0b141a", traco:"rgba(232,184,75,.30)", icones:["dia","ane","coa","bri"], entrada:"#202c33", saida:"#005c4b", texto:"#e9edef"},
+  {id:"whatsapp-claro", nome:"WhatsApp claro", fundo:"#EFEAE2", traco:"rgba(120,100,70,.13)", icones:["dia","ane","coa","bri","cor","est"], entrada:"#FFFFFF", saida:"#D9FDD3", texto:"#111B21"},
   {id:"joias-rosa", nome:"Joias rosa", fundo:"#1c0f14", traco:"rgba(255,150,180,.30)", icones:["dia","ane","coa","bri"], entrada:"#2f1a22", saida:"#7a2d4b", texto:"#f6e6ea"},
   {id:"coracoes-rosa", nome:"Corações rosa", fundo:"#1c0f14", traco:"rgba(255,150,180,.28)", icones:["cor","est","cor","bri"], entrada:"#2f1a22", saida:"#7a2d4b", texto:"#f6e6ea"},
   {id:"folhas-verde", nome:"Folhas verdes", fundo:"#0b1a14", traco:"rgba(120,220,170,.26)", icones:["fol","bri","fol","cor"], entrada:"#14291f", saida:"#1f6b4a", texto:"#e6f4ec"},
   {id:"liso-grafite", nome:"Liso grafite", fundo:"#15181b", traco:null, icones:[], entrada:"#23282d", saida:"#2f5d50", texto:"#e9edef"},
   {id:"pontinhos", nome:"Pontinhos clássico", fundo:"#0b141a", traco:null, pontos:true, icones:[], entrada:"#202c33", saida:"#005c4b", texto:"#e9edef"}
 ];
-var PADRAO = "joias-ouro";
+var PADRAO = "whatsapp-claro";
 function tema(id){ return TEMAS.find(function(t){ return t.id===id; }) || TEMAS[0]; }
 function svgFundo(t){
   var g = t.icones.map(function(n, k){ var p = POS[k]; return '<g transform="translate('+p[0]+' '+p[1]+') rotate('+p[2]+' 7.5 7.5) scale(.75)">'+ICONES[n]+'</g>'; }).join("");

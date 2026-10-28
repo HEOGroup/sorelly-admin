@@ -22,6 +22,8 @@ Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O có
 | `FLUXO-DE-PAGAMENTOS.md` | Para onde vai cada Pix; controle de pagamentos. |
 | `REGRAS-DE-PIX.md` | Regras das chaves Pix. |
 | `CAIXA-FINANCEIRO.md` | Saldos e caixa. |
+| `REVENDEDORAS-E-PREVISAO.md` | Lógica de quantas revendedoras fazem acerto em cada mês (data prevista na DevMaster, ciclo 30/45/60, meta 98%, janeiro), previsão de entrada e o bug dos previstos (27/10/2026). Onde achar cada assunto do dinheiro. |
+| `RESULTADO-DO-MES.md` | Contas a receber, resultado efetivo do mês, regras de acerto - loja e funcionárias, fontes do DevMaster e do admin antigo, função de cada aba do Financeiro (27/10/2026). Os números reais ficam em `RESULTADO-DO-MES.local.md` (fora do Git). |
 | `FATURAMENTO-DIARIO.md` | Registro diário do faturamento passado pelo Marcus. |
 | `RELATORIO-DE-CUSTOS.md` | Regras travadas da Análise de custos. |
 | `LINK-DE-PAGAMENTO.md` | Link de pagamento e maquininhas. |

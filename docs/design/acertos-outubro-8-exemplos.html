@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Acertos de outubro · 8 exemplos</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0e0e10; --card:#17171a; --txt:#fff; --mut:rgba(255,255,255,.64);
+    --verde:#4ADE80; --amar:#FBBF24; --ouro:#F3D98B; --roxo:#C084FC; --cinza:rgba(255,255,255,.16);
+  }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--txt);font:400 13px/1.35 Inter,system-ui,sans-serif;padding:20px;max-width:1040px;margin:0 auto}
+  h1{font-size:16px;font-weight:700;margin-bottom:4px}
+  .nota{color:var(--mut);margin-bottom:16px}
+  .grade{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .ex>h2{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ouro);margin-bottom:5px}
+  /* barra dourada: igual à dos outros blocos do sistema */
+  .bloco{background:var(--card);border-radius:12px;overflow:hidden;box-shadow:0 0 0 1px rgba(232,184,75,.35);height:calc(100% - 20px)}
+  .barra{background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);color:#1B1409;text-align:center;padding:6px 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+  .barra b{display:block;font-size:14px;font-weight:700;line-height:1.2}
+  .barra span{font-size:11.5px;font-weight:500;opacity:.85}
+  .corpo{padding:12px 14px}
+  .n{font-variant-numeric:tabular-nums;font-weight:700}
+  .verde{color:var(--verde)} .amar{color:var(--amar)} .ouro{color:var(--ouro)} .roxo{color:var(--roxo)}
+  .rot{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--mut)}
+  .trilho{height:10px;border-radius:99px;background:rgba(0,0,0,.5);overflow:hidden;display:flex}
+  .trilho>div{height:100%}
+
+  /* 1 · frase */
+  .frase{font-size:15px;line-height:1.6;text-align:center}
+  .frase .n{font-size:20px}
+  .frase .sub{display:block;margin-top:8px;color:var(--mut);font-size:12px}
+
+  /* 2 · termômetro com rótulos em cima */
+  .termo{position:relative;padding-top:34px}
+  .termo .marca{position:absolute;top:0;transform:translateX(-50%);text-align:center;line-height:1.15}
+  .termo .marca .n{font-size:16px;display:block}
+  .termo .marca::after{content:"";display:block;width:1px;height:8px;background:rgba(255,255,255,.5);margin:2px auto 0}
+  .termo .base{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--mut)}
+
+  /* 3 · meio-círculo */
+  .gauge{display:flex;flex-direction:column;align-items:center}
+  .gauge svg{width:230px;height:128px}
+  .gauge .centro{margin-top:-52px;text-align:center}
+  .gauge .centro .n{font-size:20px;display:block}
+  .gauge .pe{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--mut)}
+  .gauge .pe b{color:var(--txt)}
+
+  /* 4 · linhas com barra */
+  .lin{display:grid;grid-template-columns:86px 1fr 52px;gap:10px;align-items:center;padding:5px 0}
+  .lin+.lin{border-top:1px solid rgba(255,255,255,.07)}
+  .lin .n{text-align:right;font-size:15px}
+
+  /* 5 · degraus (cascata) */
+  .cas{position:relative;height:118px}
+  .cas .b{position:absolute;height:22px;border-radius:5px;display:flex;align-items:center;padding:0 8px;font-size:12px;color:#10100f;font-weight:700;white-space:nowrap}
+  .cas .r{position:absolute;font-size:11px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+
+  /* 6 · dias do mês */
+  .dias{display:grid;grid-template-columns:repeat(31,1fr);gap:3px;margin:6px 0 10px}
+  .dias i{height:16px;border-radius:3px;background:var(--cinza)}
+  .dias i.f{background:var(--verde)} .dias i.h{background:var(--ouro);box-shadow:0 0 0 1px #fff}
+  .duas{display:flex;justify-content:space-between;gap:8px;text-align:center}
+  .duas>div{flex:1}
+  .duas .n{font-size:20px;display:block;line-height:1.1}
+
+  /* 7 · faixa de números sem caixa */
+  .faixa{display:flex;align-items:center}
+  .faixa>div{flex:1;text-align:center;padding:2px 4px}
+  .faixa>div+div{border-left:1px solid rgba(232,184,75,.35)}
+  .faixa .n{font-size:20px;display:block;line-height:1.1;margin-bottom:3px}
+  .faixa+.trilho{margin-top:12px}
+  .leg{display:flex;justify-content:space-between;margin-top:5px;font-size:11px;color:var(--mut)}
+
+  /* 8 · colunas */
+  .col{display:flex;align-items:flex-end;justify-content:space-around;height:112px;padding-top:4px}
+  .col>div{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;height:100%;width:22%}
+  .col .tb{width:100%;border-radius:6px 6px 0 0}
+  .col .n{font-size:15px}
+  .cols{display:flex;justify-content:space-around;margin-top:5px}
+  .cols span{width:22%;text-align:center}
+  @media(max-width:760px){.grade{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Acertos de outubro · 8 exemplos</h1>
+<p class="nota">Barra dourada igual à dos outros blocos. Sem os quadradinhos e sem as metas de 94, 95 e 96%. Sempre os mesmos 4 números: <b>Realizados</b>, <b>Carregar</b>, <b>Faltam</b> e <b>Previstos</b> (exemplo: 1.480 · 130 · 440 · 2.050). Escolha uma letra.</p>
+
+<div class="grade">
+
+<!-- 1 -->
+<section class="ex"><h2>1 · Frase</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>realizados × o que falta</span></div>
+    <div class="corpo"><p class="frase"><span class="n verde">1.480</span> realizados + <span class="n amar">130</span> a carregar<br>
+      faltam <span class="n ouro">440</span> dos <span class="n roxo">2.050</span> previstos
+      <span class="sub">78,5% do mês</span></p></div></div></section>
+
+<!-- 2 -->
+<section class="ex"><h2>2 · Termômetro com marcas</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>78,5% do mês</span></div>
+    <div class="corpo"><div class="termo">
+      <div class="marca" style="left:36.1%"><span class="n verde">1.480</span><span class="rot">Realizados</span></div>
+      <div class="marca" style="left:75.3%"><span class="n amar">130</span><span class="rot">Carregar</span></div>
+      <div class="trilho" style="height:14px;margin-top:22px"><div style="width:72.2%;background:var(--verde)"></div><div style="width:6.3%;background:var(--amar)"></div></div>
+      <div class="base"><span>0</span><span>Faltam <b class="ouro">440</b></span><span>Previstos <b class="roxo">2.050</b></span></div>
+    </div></div></div></section>
+
+<!-- 3 -->
+<section class="ex"><h2>3 · Velocímetro (meio-círculo)</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>realizados × o que falta</span></div>
+    <div class="corpo"><div class="gauge">
+      <svg viewBox="0 0 230 128">
+        <path d="M15 115 A100 100 0 0 1 215 115" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="16" stroke-linecap="round"/>
+        <path d="M15 115 A100 100 0 0 1 215 115" fill="none" stroke="#4ADE80" stroke-width="16" stroke-linecap="round" pathLength="100" stroke-dasharray="72.2 100"/>
+        <path d="M15 115 A100 100 0 0 1 215 115" fill="none" stroke="#FBBF24" stroke-width="16" pathLength="100" stroke-dasharray="6.3 100" stroke-dashoffset="-72.2"/>
+      </svg>
+      <div class="centro"><span class="n">78,5%</span><span class="rot">do mês</span></div>
+      <div class="pe"><span><b class="verde">1.480</b> realizados</span><span><b class="amar">130</b> carregar</span><span><b class="ouro">440</b> faltam</span><span><b class="roxo">2.050</b> previstos</span></div>
+    </div></div></div></section>
+
+<!-- 4 -->
+<section class="ex"><h2>4 · Linhas com barra</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>cada linha pesa nos 2.050 previstos</span></div>
+    <div class="corpo">
+      <div class="lin"><span class="rot">Realizados</span><div class="trilho"><div style="width:72.2%;background:var(--verde)"></div></div><span class="n verde">1.480</span></div>
+      <div class="lin"><span class="rot">Carregar</span><div class="trilho"><div style="width:6.3%;background:var(--amar)"></div></div><span class="n amar">130</span></div>
+      <div class="lin"><span class="rot">Faltam</span><div class="trilho"><div style="width:21.5%;background:var(--ouro)"></div></div><span class="n ouro">440</span></div>
+      <div class="lin"><span class="rot">Previstos</span><div class="trilho"><div style="width:100%;background:var(--roxo)"></div></div><span class="n roxo">2.050</span></div>
+    </div></div></section>
+
+<!-- 5 -->
+<section class="ex"><h2>5 · Cascata (do previsto até o que falta)</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>do previsto, o que já foi e o que sobra</span></div>
+    <div class="corpo"><div class="cas">
+      <div class="b" style="top:0;left:0;width:100%;background:var(--roxo)">Previstos · 2.050</div>
+      <div class="b" style="top:32px;left:0;width:72.2%;background:var(--verde)">Realizados · 1.480</div>
+      <div class="b" style="top:60px;left:72.2%;width:6.3%;background:var(--amar)"></div><span class="r" style="top:64px;left:calc(72.2% - 112px)">Carregar · <b style="color:var(--amar)">130</b></span>
+      <div class="b" style="top:88px;left:78.5%;width:21.5%;background:var(--ouro)"></div><span class="r" style="top:92px;left:calc(78.5% - 92px)">Faltam · <b style="color:var(--ouro)">440</b></span>
+    </div></div></div></section>
+
+<!-- 6 -->
+<section class="ex"><h2>6 · Dias do mês</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>dia 28 de 31</span></div>
+    <div class="corpo">
+      <div class="dias"><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="f"></i><i class="h"></i><i></i><i></i><i></i></div>
+      <div class="duas">
+        <div><span class="n verde">1.480</span><span class="rot">Realizados</span></div>
+        <div><span class="n amar">130</span><span class="rot">Carregar</span></div>
+        <div><span class="n ouro">440</span><span class="rot">Faltam</span></div>
+        <div><span class="n roxo">2.050</span><span class="rot">Previstos</span></div>
+      </div>
+    </div></div></section>
+
+<!-- 7 -->
+<section class="ex"><h2>7 · Faixa de números com fio dourado</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>realizados × o que falta</span></div>
+    <div class="corpo">
+      <div class="faixa">
+        <div><span class="n verde">1.480</span><span class="rot">Realizados</span></div>
+        <div><span class="n amar">130</span><span class="rot">Carregar</span></div>
+        <div><span class="n ouro">440</span><span class="rot">Faltam</span></div>
+        <div><span class="n roxo">2.050</span><span class="rot">Previstos</span></div>
+      </div>
+      <div class="trilho"><div style="width:72.2%;background:var(--verde)"></div><div style="width:6.3%;background:var(--amar)"></div></div>
+      <div class="leg"><span>78,5% do mês</span><span>faltam 440</span></div>
+    </div></div></section>
+
+<!-- 8 -->
+<section class="ex"><h2>8 · Colunas</h2>
+  <div class="bloco"><div class="barra"><b>Acertos de outubro</b><span>78,5% do mês</span></div>
+    <div class="corpo">
+      <div class="col">
+        <div><span class="n verde">1.480</span><div class="tb" style="height:72%;background:var(--verde)"></div></div>
+        <div><span class="n amar">130</span><div class="tb" style="height:6.3%;min-height:6px;background:var(--amar)"></div></div>
+        <div><span class="n ouro">440</span><div class="tb" style="height:21.5%;background:var(--ouro)"></div></div>
+        <div><span class="n roxo">2.050</span><div class="tb" style="height:100%;background:var(--roxo)"></div></div>
+      </div>
+      <div class="cols rot"><span>Realizados</span><span>Carregar</span><span>Faltam</span><span>Previstos</span></div>
+    </div></div></section>
+
+</div>
+</body>
+</html>

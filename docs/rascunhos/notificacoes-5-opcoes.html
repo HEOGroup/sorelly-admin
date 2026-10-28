@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 5 formas de mostrar a notificação</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.32)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#050403;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:22px 16px 70px}
+  .pg{max-width:1100px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#bbb;margin:0 0 18px}
+  .opc{margin-bottom:26px}
+  .opc h2{font-size:15px;margin:0 0 2px;color:var(--ouro)}
+  .opc p{margin:0 0 8px;color:#bbb}
+  .tela{position:relative;height:300px;border:1px solid #2a2a2e;border-radius:14px;background:radial-gradient(ellipse at 30% 0%,#1a1409,#0a0806 60%);overflow:hidden}
+  .fake{position:absolute;left:18px;top:16px;right:18px;color:#5d5648;font-size:12px}
+  .fake i{display:block;height:8px;border-radius:4px;background:#17130b;margin:9px 0}
+  .tela button.mostra{position:absolute;left:18px;bottom:16px;height:36px;border-radius:9px;border:1px solid var(--ouro);background:#1b1710;color:var(--ouro);font:inherit;font-weight:700;padding:0 16px;cursor:pointer;z-index:5}
+  .av{display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;flex:none}
+  .nt{position:absolute;opacity:0;transform:translateY(14px);transition:opacity .28s,transform .28s;z-index:9}
+  .nt.on{opacity:1;transform:none}
+  .ouro{color:var(--ouro)}
+  .mut{color:#bdb39d}
+  .cl{display:-webkit-box;-webkit-box-orient:vertical;overflow:hidden}
+
+  /* 1 · compacta: 1 linha de prévia (como o chat é hoje) */
+  .n1{right:16px;bottom:16px;width:340px;background:#16161a;border:1px solid var(--borda);border-radius:12px;padding:10px 14px;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+  .n1 b{display:block}.n1 .tx{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#d8d2c2}
+  /* 2 · cartão com foto e 3 linhas */
+  .n2{right:16px;bottom:16px;width:380px;background:#16161a;border:1px solid var(--borda);border-left:4px solid var(--ouro);border-radius:12px;padding:12px 14px;box-shadow:0 14px 34px rgba(0,0,0,.6);display:flex;gap:12px}
+  .n2 .cl{-webkit-line-clamp:3;color:#e6e0d0}
+  .n2 .t{display:flex;justify-content:space-between;gap:8px}
+  /* 3 · cartão grande com a mensagem inteira e resposta rápida */
+  .n3{right:16px;bottom:16px;width:420px;background:#16161a;border:1px solid var(--borda);border-radius:14px;padding:14px 16px;box-shadow:0 14px 34px rgba(0,0,0,.6)}
+  .n3 .cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .n3 .msg{background:#0e0e11;border-radius:10px;padding:10px 12px;color:#f1ecde;margin-bottom:10px}
+  .n3 .resp{display:flex;gap:8px}.n3 input{flex:1;height:34px;border-radius:8px;border:1px solid #3a3a40;background:#0e0e11;color:#fff;padding:0 10px;font:inherit}
+  .n3 .resp button,.n2 .bt button{height:34px;border-radius:8px;border:0;background:var(--ouro);color:#1a1405;font:inherit;font-weight:700;padding:0 14px;cursor:pointer}
+  /* 4 · faixa no alto da tela, com barra de tempo */
+  .n4{left:50%;top:14px;width:560px;max-width:94%;transform:translate(-50%,-14px);background:#16161a;border:1px solid var(--ouro);border-radius:12px;padding:10px 14px;box-shadow:0 14px 34px rgba(0,0,0,.6);display:flex;gap:12px;overflow:hidden}
+  .n4.on{transform:translate(-50%,0)}
+  .n4 .cl{-webkit-line-clamp:2;color:#e6e0d0}
+  .n4 .barra{position:absolute;left:0;bottom:0;height:3px;background:var(--ouro);width:100%;transform-origin:left}
+  .n4.on .barra{animation:gasta 6s linear forwards}
+  @keyframes gasta{to{transform:scaleX(0)}}
+  /* 5 · pilha: várias conversas agrupadas */
+  .n5{right:16px;bottom:16px;width:380px;display:flex;flex-direction:column;gap:8px}
+  .n5 .it{background:#16161a;border:1px solid var(--borda);border-radius:12px;padding:10px 14px;box-shadow:0 10px 26px rgba(0,0,0,.55);display:flex;gap:10px}
+  .n5 .cl{-webkit-line-clamp:2;color:#e6e0d0}
+  .n5 .mais{align-self:flex-end;background:#1b1710;border:1px solid var(--borda);border-radius:999px;padding:2px 12px;color:var(--ouro);font-size:12px}
+  .badge{background:#e5484d;color:#fff;border-radius:999px;font-size:11px;font-weight:700;padding:0 7px;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>5 formas de mostrar a notificação</h1>
+  <p class="sub">Todas usam a sua frase de exemplo e tocam o som <b>Cristal</b>. Clique em <b>▶ Mostrar</b> em cada quadro para ver aparecer no canto, como no sistema.</p>
+  <div id="area"></div>
+</div>
+
+<script>
+(function(){
+  var TXT = "Marcus, bom dia, queria verificar a alteração contratual no CNPJ da Mayz o que vai ser feito ? Vamos fazer alguma alteração de endereço ?";
+  var ctx = null, vol = .6;
+  function ligar(){ if(!ctx){ var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  function nota(f, ini, dur, pico){ var c = ligar(), t0 = c.currentTime+ini, o = c.createOscillator(), g = c.createGain(); o.type = "sine"; o.frequency.setValueAtTime(f, t0); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(pico*vol, t0+.006); g.gain.exponentialRampToValueAtTime(.0001, t0+dur); o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+dur+.05); }
+  function som(){ nota(1760, 0, .34, .4); nota(2349, .08, .42, .38); nota(3520, .08, .16, .08); }
+
+  var OPCOES = [
+    {k:1, nome:"Compacta, uma linha", desc:"Nome e o começo da mensagem em uma linha só, cortada com \"…\". É o que o chat faz hoje. Discreta, mas você não entende o assunto.",
+      html:'<div class="nt n1"><b>Nickolas</b><div class="tx">'+TXT+'</div></div>'},
+    {k:2, nome:"Cartão com foto e 3 linhas", desc:"Foto, nome, setor e as 3 primeiras linhas da mensagem. Dá para entender o assunto sem abrir. Tem botão Abrir.",
+      html:'<div class="nt n2"><div class="av" style="width:42px;height:42px;font-size:17px">N</div><div style="flex:1;min-width:0"><div class="t"><b>Nickolas</b><span class="mut">agora</span></div><div class="mut" style="font-size:11.5px;margin-bottom:3px">Diretoria</div><div class="cl">'+TXT+'</div><div class="bt" style="margin-top:8px"><button type="button">Abrir conversa</button></div></div></div>'},
+    {k:3, nome:"Cartão grande com resposta rápida", desc:"A mensagem inteira num balão, e uma caixa para responder ali mesmo, sem abrir o chat.",
+      html:'<div class="nt n3"><div class="cab"><div class="av" style="width:38px;height:38px;font-size:15px">N</div><div style="flex:1"><b>Nickolas</b><div class="mut" style="font-size:11.5px">Diretoria · agora</div></div><span class="ouro">✕</span></div><div class="msg">'+TXT+'</div><div class="resp"><input placeholder="Responder…"><button type="button">Enviar</button></div></div>'},
+    {k:4, nome:"Faixa no alto, com barra de tempo", desc:"Aparece no meio, em cima, 2 linhas de prévia e uma barrinha dourada que acaba em 6 segundos. Chama bastante atenção.",
+      html:'<div class="nt n4"><div class="av" style="width:40px;height:40px;font-size:16px">N</div><div style="flex:1;min-width:0"><b>Nickolas</b> <span class="mut">· Diretoria</span><div class="cl">'+TXT+'</div></div><div class="barra"></div></div>'},
+    {k:5, nome:"Pilha, conversas agrupadas", desc:"Quando chegam várias mensagens, ficam empilhadas por pessoa com a última prévia. Evita encher a tela. Mostra \"+2 conversas\".",
+      html:'<div class="nt n5"><div class="it"><div class="av" style="width:36px;height:36px;font-size:14px">N</div><div style="flex:1;min-width:0"><b>Nickolas</b><span class="badge">2</span><div class="cl">'+TXT+'</div></div></div><div class="it"><div class="av" style="width:36px;height:36px;font-size:14px">L</div><div style="flex:1;min-width:0"><b>Lucas</b><div class="cl">Marcus, o pagamento da Mayz saiu hoje de manhã.</div></div></div><span class="mais">+2 conversas</span></div>'}
+  ];
+  var area = document.getElementById("area");
+  OPCOES.forEach(function(o){
+    var d = document.createElement("div"); d.className = "opc";
+    d.innerHTML = '<h2>'+o.k+' · '+o.nome+'</h2><p>'+o.desc+'</p><div class="tela"><div class="fake">Tela do sistema<i style="width:60%"></i><i style="width:80%"></i><i style="width:45%"></i><i style="width:70%"></i></div><button class="mostra" type="button">▶ Mostrar</button>'+o.html+'</div>';
+    area.appendChild(d);
+    var b = d.querySelector(".mostra"), nt = d.querySelector(".nt");
+    b.addEventListener("click", function(){
+      nt.classList.remove("on"); void nt.offsetWidth;
+      setTimeout(function(){ nt.classList.add("on"); som(); }, 60);
+      clearTimeout(nt._t); nt._t = setTimeout(function(){ nt.classList.remove("on"); }, 6200);
+    });
+  });
+})();
+</script>
+</body>
+</html>

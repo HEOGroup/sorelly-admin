@@ -6,7 +6,7 @@
 //  - Tipo da condicional: Expositor (vendedor 04 ou previsão no ano 3000), Encomenda (vendedor 91), Reposição (marca S), Kit principal (o mais antigo sem a marca),
 //    Kit novo (criado 20 dias ou mais depois do principal) e Reposição / peças do próximo mês (criado antes de 20 dias). A funcionária vai poder corrigir o tipo (etapa 3).
 import { consultarTabela, todasAsPaginas } from "./devmaster2.js";
-import { composicaoDoCliente, composicaoGeral, iniciarCargaBrindes, resumoVendas, situacaoBrindes } from "./vendas-brinde.js";
+import { composicaoDoCliente, composicaoGeral, iniciarCargaBrindes, resumoVendas, situacaoBrindes, ultimasVendasDaMedia } from "./vendas-brinde.js";
 
 const TTL = 10 * 60 * 1000;
 const DIAS_JANELA = 90;   // Marcus, 27/10/2026: condicional aberto nos últimos 90 dias, com devolução prevista para até 90 dias à frente
@@ -24,6 +24,9 @@ export async function contarRevendedorasHoje() {
 }
 const G = globalThis;
 const NAO_REP = new Set(["04", "91"]);
+// "Vendedor Sorelly" (atendimento interno) = os três vendedores da própria Sorelly: 02 SORELLY, FE SORELLY FUNCIONARIOS e BY SORELLY REPRESENTANTE.
+// Conferido com a tela de retorno de condicionais da DevMaster em 27/10/2026: 203 revendedoras, 232 condicionais, 23.401 peças e R$ 2.114.086,00 (bateu certinho).
+export const VENDEDORES_SORELLY = ["02", "FE", "BY"];
 const PARTICULAS = new Set(["da", "de", "do", "dos", "das", "e"]);
 
 // "NAYALE EMANUELE CALIXTO" vira "Nayale Emanuele Calixto"
@@ -113,8 +116,8 @@ async function vendasDe(clientes) {
 
 // A primeira leva: revendedoras com condicional aberto e previsão em 2026. Cache de 10 minutos.
 async function listaBase({ forcar = false } = {}) {
-  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 8 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
-  const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc"];
+  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 11 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
+  const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc", "afi_obs"];
   const [c26, cExp, vend] = await Promise.all([
     todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { between: ["2026-01-01T00:00:00", "2026-12-31T23:59:59"] } }, campos }),
     todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { gte: "2100-01-01T00:00:00" } }, campos }),
@@ -137,7 +140,7 @@ async function listaBase({ forcar = false } = {}) {
   const itens = codigos.map((cod) => {
     const lista = porCliente.get(cod), tipos = tiposPor.get(cod), rep = representanteDe(lista), p = pessoas.get(cod) || {}, m = mun.get(String(p.aam_municipio || "")) || {};
     // conds: cada condicional aberto, compacto (t = tipo, p = peças, v = valor, d = previsão de devolução (vazio = sem previsão ou expositor), e = emissão, it = modelos do expositor)
-    const conds = lista.map((x) => { const t = tipos.get(x.afi_codigo), o = { t, p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, d: ano(x) >= 2100 ? "" : String(x.afi_prevdevol || "").slice(0, 10), e: String(x.afi_data || "").slice(0, 10) }; if (t === "Expositor") o.it = itensExp.get(x.afi_codigo) || []; return o; });
+    const conds = lista.map((x) => { const t = tipos.get(x.afi_codigo), o = { t, n: String(x.afi_codigo || "").trim(), vd: String(x.afi_vendedor || "").trim(), ob: String(x.afi_obs || "").trim(), p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, d: ano(x) >= 2100 ? "" : String(x.afi_prevdevol || "").slice(0, 10), e: String(x.afi_data || "").slice(0, 10) }; if (t === "Expositor") o.it = itensExp.get(x.afi_codigo) || []; return o; });
     const item = { cod, repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante", nome: nomeNormal(p.aam_nome), cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
       celular: p.aam_celular || p.aam_whatsapp || "", situacao: p.aam_situacao === "A" ? "Ativa" : p.aam_situacao === "B" ? "Bloqueada" : "Inativa", conds,
       nasc: p.aam_pessoa === "J" ? "" : String(p.aam_nascimento || "").slice(0, 10), cadastro: String(p.aam_datacadastro || "").slice(0, 10), email: String(p.aam_email || "").toLowerCase(), instagram: p.aam_instagram || "", bairro: nomeNormal(p.aam_bairro), cep: p.aam_cep || "", app: p.aam_xenviaapp === "S" };
@@ -145,7 +148,7 @@ async function listaBase({ forcar = false } = {}) {
     return item;
   }).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const dados = { geradoEm: new Date().toISOString(), total: itens.length, itens };
-  G.__sorellyRevs = { dados, em: Date.now(), v: 8 };
+  G.__sorellyRevs = { dados, em: Date.now(), v: 11 };
   return dados;
 }
 
@@ -202,12 +205,12 @@ export async function fichaRevendedora(cod) {
     endereco: nomeNormal(endereco), bairro: nomeNormal(p.aam_bairro), cidade: mun.nome || "", uf: mun.uf || String(p.aam_estado || "").toUpperCase(), cep: p.aam_cep || "",
     celular: p.aam_celular || "", whatsapp: p.aam_whatsapp || "", telefone: p.aam_telefone1 || "", email: String(p.aam_email || "").toLowerCase(), instagram: p.aam_instagram || "",
     condicionais, ...(() => {
-      const vtE = vendasTodas.map((v) => { const c = comp.get(v.codigo); return { ...v, ...(c ? { brinde: c.brinde, troca: c.troca, indicacao: c.indicacao, premiacao: c.premiacao, outros: c.outros, liquida: c.liquida } : { brinde: null, troca: null, indicacao: null, premiacao: null, outros: null, liquida: null }) }; });
+      const vtE = vendasTodas.map((v) => { const c = comp.get(v.codigo); return { ...v, ...(c ? { dia: c.dia, vendedorCod: c.vendedor, brinde: c.brinde, troca: c.troca, indicacao: c.indicacao, premiacao: c.premiacao, outros: c.outros, liquida: c.liquida, acertoLiq: c.acertoLiq } : { brinde: null, troca: null, indicacao: null, premiacao: null, outros: null, liquida: null, acertoLiq: null }) }; });
       const f26 = vtE.filter((v) => v.situacao === "Fechada" && v.liquida !== null), vmL = {};
       f26.forEach((v) => { const m = v.emissao.slice(0, 7); vmL[m] = arred((vmL[m] || 0) + v.liquida); });
       const soma = (k) => arred(f26.reduce((a, v) => a + (v[k] || 0), 0)); // "bruto" = valor de venda da DevMaster (campo venda)
       return { historico, vendasTodas: vtE, brinde: st,
-        vendas: st.pronto ? f26.slice(0, 3).map((v) => ({ d: v.emissao, v: v.liquida, b: v.brinde })) : (vendasRev.get(cod) || { v: [] }).v,
+        vendas: st.pronto ? ultimasVendasDaMedia(f26.map((v) => ({ data: v.dia || v.emissao, valor: v.liquida, brinde: v.brinde, vendedor: v.vendedorCod }))) : (vendasRev.get(cod) || { v: [] }).v,
         vendasMes: st.pronto ? vmL : (vendasRev.get(cod) || { m: {} }).m,
         resumo2026: st.pronto ? { n: f26.length, bruto: soma("venda"), liquida: soma("liquida"), brinde: soma("brinde"), troca: soma("troca"), indicacao: soma("indicacao"), premiacao: soma("premiacao"), outros: soma("outros") } : null };
     })(),

@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card da revendedora · ouro com condicionais · 4 versões</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  body{ background:#0b0b0d; color:#f4f4f5; font:13px/1.45 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; }
+  h1{ font-size:18px; } h2{ font-size:14px; margin:18px 0 6px; color:#F1D58A; } .sub{ color:#a1a1aa; margin:2px 0 12px; max-width:940px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(640px,1fr)); gap:20px; align-items:start; }
+  .rot{ font-weight:700; margin-bottom:2px; } .dica{ color:#a1a1aa; font-size:12px; margin-bottom:6px; }
+  /* tema ouro champagne */
+  .card{ --f1:#33260f; --f2:#120d06; --brilho:rgba(241,213,138,.13); --borda:rgba(241,213,138,.30); --acc:#F1D58A; --acc2:#C9962F; --topo1:rgba(241,213,138,.32); --txt:#fbf4e4; --mut:#cdbf9f; --cx:rgba(241,213,138,.07); --linha:rgba(241,213,138,.16);
+    position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--borda); color:var(--txt);
+    background: radial-gradient(900px 260px at 0% -10%, var(--brilho), transparent 60%), radial-gradient(500px 300px at 100% 110%, var(--brilho), transparent 60%), linear-gradient(150deg,var(--f1),var(--f2));
+    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06); }
+  .card *{ font-size:13px; }
+  .topo{ display:flex; align-items:center; gap:10px; padding:12px 16px; background:linear-gradient(90deg,var(--topo1),rgba(241,213,138,0)); border-bottom:1px solid var(--linha); }
+  .nome{ font:600 19px/1.15 Georgia,"Playfair Display","Times New Roman",serif !important; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cod{ color:var(--mut); font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+  .duas{ display:grid; grid-template-columns:230px 1fr; } .esq{ padding:14px 14px 14px 16px; display:flex; flex-direction:column; gap:9px; border-right:1px solid var(--linha); background:linear-gradient(180deg,var(--cx),transparent); }
+  .dir{ padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kv{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; } .kv span{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; } .kv b{ font-variant-numeric:tabular-nums; font-size:14px; }
+  .grande{ color:var(--acc); font-size:17px !important; font-weight:700; } .atraso{ color:#fca5a5; }
+  hr{ border:0; border-top:1px solid var(--linha); }
+  select,input,button{ font:inherit; color:var(--txt); background:var(--cx); border:1px solid var(--linha); border-radius:9px; height:32px; padding:0 9px; outline:none; } select option{ color:#111; }
+  input::placeholder{ color:var(--mut); } input:focus,select:focus{ border-color:var(--acc); } button{ cursor:pointer; } button:hover{ border-color:var(--acc); }
+  button.pri{ background:linear-gradient(135deg,var(--acc),var(--acc2)); color:#17110a; border:0; font-weight:700; box-shadow:0 4px 14px rgba(201,150,47,.35); }
+  .linha{ display:flex; gap:7px; align-items:center; } .linha > *{ min-width:0; }
+  .rotulo{ font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; color:var(--mut); }
+  .chip{ display:inline-flex; align-items:center; height:21px; padding:0 9px; border-radius:999px; font-size:11px !important; font-weight:700; white-space:nowrap; border:1px solid; }
+  .k-sem{ background:rgba(239,68,68,.16); color:#fecaca; border-color:rgba(239,68,68,.5); } .k-msg{ background:rgba(56,189,248,.15); color:#bae6fd; border-color:rgba(56,189,248,.5); }
+  .k-con{ background:rgba(255,255,255,.08); color:var(--txt); border-color:var(--linha); } .k-ag{ background:rgba(34,197,94,.16); color:#bbf7d0; border-color:rgba(34,197,94,.5); }
+  .k-ouro{ background:rgba(241,213,138,.16); color:var(--acc); border-color:rgba(241,213,138,.45); } .k-rep{ background:rgba(56,189,248,.14); color:#bae6fd; border-color:rgba(56,189,248,.45); } .k-exp{ background:rgba(255,255,255,.07); color:var(--mut); border-color:var(--linha); }
+  .tl{ display:flex; flex-direction:column; max-height:200px; overflow:auto; padding-right:4px; }
+  .ev{ display:grid; grid-template-columns:48px 1fr; gap:10px; padding:8px 0; border-top:1px solid var(--linha); } .ev:first-child{ border-top:0; }
+  .dia{ color:var(--mut); font-variant-numeric:tabular-nums; font-size:12px !important; padding-top:2px; }
+  .quem{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:2px; } .quem b{ font-size:13.5px !important; } .quem small{ color:var(--mut); font-size:11.5px !important; } .eu{ color:var(--acc); }
+  table{ width:100%; border-collapse:collapse; } th{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.06em; font-weight:600; text-align:right; padding:5px 8px; white-space:nowrap; }
+  th:first-child,td:first-child{ text-align:left; } td{ text-align:right; padding:5px 8px; border-top:1px solid var(--linha); font-variant-numeric:tabular-nums; white-space:nowrap; } tfoot td{ font-weight:700; border-top:2px solid var(--linha); }
+  td.esqt,th.esqt{ text-align:left; }
+  .cond{ border:1px solid var(--linha); border-radius:12px; padding:9px 12px; background:var(--cx); display:flex; flex-direction:column; gap:3px; min-width:0; }
+  .cond .num{ font-size:16px !important; font-weight:700; letter-spacing:.02em; font-variant-numeric:tabular-nums; } .cond .val{ color:var(--acc); font-weight:700; font-variant-numeric:tabular-nums; }
+  .faixa{ display:grid; grid-template-columns:repeat(3,1fr) auto; gap:8px; padding:10px 16px; border-bottom:1px solid var(--linha); align-items:stretch; }
+  .tot{ display:flex; flex-direction:column; justify-content:center; padding:0 6px; text-align:right; } .tot b{ font-size:15px !important; color:var(--acc); }
+  .abas{ display:flex; gap:2px; border-bottom:1px solid var(--linha); } .abas button{ border:0; border-bottom:2px solid transparent; border-radius:0; background:none; height:34px; color:var(--mut); padding:0 12px; }
+  .abas button.on{ color:var(--acc); border-bottom-color:var(--acc); font-weight:700; } .painel{ display:none; } .painel.on{ display:block; }
+  .tres{ display:grid; grid-template-columns:1.25fr 1fr 210px; } .tres > div{ padding:14px 16px; display:flex; flex-direction:column; gap:9px; min-width:0; border-right:1px solid var(--linha); } .tres > div:last-child{ border-right:0; background:linear-gradient(180deg,var(--cx),transparent); }
+  .mais{ background:none; border:0; color:var(--acc); height:auto; padding:0; font-size:12px !important; }
+  .check{ display:flex; align-items:center; gap:7px; } input[type=checkbox]{ width:16px; height:16px; padding:0; accent-color:#C9962F; }
+  /* agenda da tela geral (fora do card) */
+  .agenda{ border:1px solid rgba(241,213,138,.3); border-radius:14px; padding:12px; background:linear-gradient(150deg,#2a200f,#120d06); margin-bottom:6px; }
+  .semana{ display:grid; grid-template-columns:54px repeat(5,1fr); gap:0; font-size:12px; } .semana > div{ border-top:1px solid rgba(241,213,138,.14); padding:4px 6px; min-height:34px; } .semana .h{ color:#cdbf9f; font-variant-numeric:tabular-nums; } .semana .cab{ border-top:0; font-weight:700; color:#F1D58A; text-align:center; }
+  .slot{ display:inline-block; padding:2px 7px; border-radius:7px; background:rgba(241,213,138,.18); border:1px solid rgba(241,213,138,.4); margin:1px 2px 1px 0; font-size:11.5px; }
+  .slot.livre{ background:none; border-style:dashed; color:#cdbf9f; }
+  .nota{ color:#a1a1aa; margin-top:18px; max-width:940px; }
+  @media (max-width:700px){ .grade{ grid-template-columns:1fr; } .duas,.tres{ grid-template-columns:1fr; } .esq{ border-right:0; border-bottom:1px solid var(--linha); } .tres > div{ border-right:0; border-bottom:1px solid var(--linha); } .faixa{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Card da revendedora · ouro, com as condicionais · 4 versões</h1>
+<p class="sub">Exemplo: <b>Karine Thauany Batista de Souza</b> (002130), com os dados reais da DevMaster: 3 condicionais ativas com previsão (kit, peças do próximo mês e reposição) e 6 expositores sem previsão. Contatos e valores de venda são só de exemplo. Cada versão traz as condicionais e um botão para <b>incluir na listagem</b> do dia.</p>
+
+<h2>Antes dos cards: como seria a visão geral da Tamara (fora do card)</h2>
+<div class="agenda">
+  <div class="semana">
+    <div class="cab"></div><div class="cab">Seg 30/11</div><div class="cab">Ter 01/12</div><div class="cab">Qua 02/12</div><div class="cab">Qui 03/12</div><div class="cab">Sex 04/12</div>
+    <div class="h">08:00</div><div><span class="slot">Karine T. · 3 cond.</span></div><div><span class="slot">Ingrid L.</span></div><div><span class="slot livre">livre</span></div><div><span class="slot">Camila A.</span><span class="slot">Priscila L.</span></div><div><span class="slot livre">livre</span></div>
+    <div class="h">10:00</div><div><span class="slot">Manoela M.</span></div><div><span class="slot">Natieli S.</span></div><div><span class="slot">Beatriz F.</span></div><div><span class="slot livre">livre</span></div><div><span class="slot">Fabiane S.</span></div>
+    <div class="h">14:00</div><div><span class="slot livre">livre</span></div><div><span class="slot">Rafaely B.</span></div><div><span class="slot">Geovanna B.</span><span class="slot">Mylena C.</span></div><div><span class="slot">Janine A.</span></div><div><span class="slot livre">livre</span></div>
+  </div>
+  <div class="rotulo" style="margin-top:8px;text-transform:none;letter-spacing:0;color:#cdbf9f">Calendário do mês e grade por horário no topo da tela. Clicar num horário livre abre a listagem daquele dia, onde a Tamara vai montando a lista (cada revendedora entra com todas as condicionais dela).</div>
+</div>
+
+<h2>Os 4 cards</h2>
+<div class="grade" id="grade"></div>
+<p class="nota">Em todos: "Incluir na listagem" leva a revendedora, com a data e a hora marcadas e todas as condicionais ativas, para a listagem do dia. O número das condicionais, as peças e o valor saem direto da DevMaster (condicional aberto, com previsão até 31/12/2026). Expositores aparecem à parte, sem previsão.</p>
+
+<script>
+  var CONDS = [['095151','Kit principal','23/10','23/11','177','R$ 20.134,00','k-ouro'],['095189','Peças do próximo mês','23/10','23/11','128','R$ 14.779,00','k-rep'],['095524','Reposição','27/10','23/11','73','R$ 6.969,00','k-rep']];
+  var EXPO = '6 expositores · sem previsão · R$ 1.930,00';
+  var GENTE = ['Eu','Tamara','Nickolas','Marcus','Ana Maria','Nayale','Rebeca','Outra pessoa'];
+  var EV = [['28/10','ag','Tamara','Tamara','Acerto ficou agendado para o dia 23/11 às 14h.'],['23/10','con','Tamara','Tamara','Kit novo entregue (177 peças) e peças do próximo mês. Combinou de voltar no dia 23/11.'],['01/10','msg','Ana Maria','Tamara','Mensagem de confirmação do acerto enviada.']];
+  var TIPOS = {ag:['Agendado','k-ag'],con:['Contato','k-con'],msg:['Mensagem','k-msg'],sem:['Sem retorno','k-sem']};
+  var VENDAS = [['23/10','R$ 10.337,40','R$ 5.391,40'],['22/09','R$ 18.921,20','R$ 9.557,20'],['21/08','R$ 14.346,60','R$ 7.275,60'],['23/07','R$ 14.580,00','R$ 8.416,00']];
+  var sel = function(opts, w){ return '<select style="'+(w?'width:'+w:'')+'">'+opts.map(function(o){ return '<option>'+o+'</option>'; }).join('')+'</select>'; };
+  var tipoChip = function(c){ return '<span class="chip '+c[6]+'">'+c[1]+'</span>'; };
+  var topo = function(){ return '<div class="topo"><b class="nome">Karine Thauany Batista de Souza</b><span class="cod">002130</span><span class="chip k-ag">Agendada 23/11 · 14h</span></div>'; };
+  var resumo = function(listagem){ return '<div class="esq"><div class="kv"><span>Acerto previsto</span><b>23/11/2026</b></div><div class="kv"><span>Faltam</span><b>26 d</b></div><div class="kv"><span>Média 3 vendas</span><b>R$ 14.435,00</b></div><div class="kv"><span>Próximo kit</span><b class="grande">R$ 20.000,00</b></div><hr>'
+    +'<div class="rotulo">Situação</div>'+sel(['Agendada','A contatar','Entrei em contato','Sem retorno'])+'<div class="rotulo">Data agendada</div><div class="linha"><input type="date" style="flex:1" value="2026-11-23"><input type="time" style="width:80px" value="14:00"></div>'
+    +'<button class="pri">'+(listagem?'Incluir na listagem':'Agendar acerto')+'</button><div class="linha">'+sel(['Ciclo 30 d','Ciclo 45 d','Ciclo 60 d'],'50%')+sel(['Normal','Prata'],'50%')+'</div>'+sel(['Copiar mensagem ▾','1º contato','Confirmação na véspera','Lembrete do dia'])+'</div>'; };
+  var registrar = function(){ return '<div class="rotulo">Registrar contato</div><div class="linha">'+sel(['Contato','Mensagem enviada','Agendado','Mais prazo','Sem retorno','Viajando'],'124px')+sel(GENTE,'112px')+'<input style="flex:1" placeholder="O que aconteceu?"><button class="pri">+</button></div>'; };
+  var linhas = function(){ return EV.map(function(x){ var t=TIPOS[x[1]], mesmo=x[2]===x[3]; return '<div class="ev"><div class="dia">'+x[0]+'</div><div><div class="quem"><b>'+x[2]+'</b><span class="chip '+t[1]+'">'+t[0]+'</span>'+(mesmo?'':'<small>registrado por '+x[3]+'</small>')+'</div><div>'+x[4]+'</div></div></div>'; }).join(''); };
+  var tabCond = function(){ return '<table><thead><tr><th class="esqt">Condicional</th><th class="esqt">Tipo</th><th>Emissão</th><th>Previsão</th><th>Peças</th><th>Valor</th></tr></thead><tbody>'+CONDS.map(function(c){ return '<tr><td class="esqt"><b>'+c[0]+'</b></td><td class="esqt">'+tipoChip(c)+'</td><td>'+c[2]+'</td><td>'+c[3]+'</td><td>'+c[4]+'</td><td>'+c[5]+'</td></tr>'; }).join('')+'</tbody><tfoot><tr><td class="esqt" colspan="4">3 condicionais ativas</td><td>378</td><td>R$ 41.882,00</td></tr></tfoot></table><div class="rotulo" style="margin-top:6px;text-transform:none;letter-spacing:0"><span class="chip k-exp">'+EXPO+'</span></div>'; };
+  var vendas = function(){ return '<table><thead><tr><th class="esqt">Data</th><th>Valor de venda</th><th>Valor de acerto</th></tr></thead><tbody>'+VENDAS.map(function(v){ return '<tr><td class="esqt">'+v[0]+'</td><td>'+v[1]+'</td><td>'+v[2]+'</td></tr>'; }).join('')+'</tbody></table>'; };
+
+  // V1: condicionais em tabela, embaixo
+  var v1 = '<div class="card">'+topo()+'<div class="duas">'+resumo(true)+'<div class="dir">'+registrar()+'<div class="tl">'+linhas()+'</div></div></div><div style="padding:10px 16px 14px;border-top:1px solid var(--linha)"><div class="rotulo" style="margin-bottom:4px">Condicionais ativas</div>'+tabCond()+'</div></div>';
+  // V2: cartões de condicional no alto
+  var v2 = '<div class="card">'+topo()+'<div class="faixa">'+CONDS.map(function(c){ return '<div class="cond"><div class="linha" style="justify-content:space-between"><span class="num">'+c[0]+'</span>'+tipoChip(c)+'</div><div class="cod">'+c[4]+' peças · previsão '+c[3]+'</div><div class="val">'+c[5]+'</div></div>'; }).join('')+'<div class="tot"><span class="rotulo">Total</span><b>R$ 41.882,00</b><span class="cod">378 peças</span></div></div><div class="duas">'+resumo(true)+'<div class="dir">'+registrar()+'<div class="tl">'+linhas()+'</div><span class="chip k-exp" style="align-self:flex-start">'+EXPO+'</span></div></div></div>';
+  // V3: abas à direita
+  var v3 = '<div class="card" data-abas>'+topo()+'<div class="duas">'+resumo(true)+'<div style="min-width:0"><div class="abas"><button class="on" data-a="0">Contatos (3)</button><button data-a="1">Condicionais (3)</button><button data-a="2">Vendas 2026 (23)</button></div>'
+    +'<div class="painel on dir" data-p="0">'+registrar()+'<div class="tl">'+linhas()+'</div></div><div class="painel dir" data-p="1">'+tabCond()+'</div><div class="painel dir" data-p="2">'+vendas()+'</div></div></div></div>';
+  // V4: três colunas pensando na listagem (condicionais | contatos | listagem)
+  var v4 = '<div class="card">'+topo()+'<div class="tres"><div><div class="rotulo">Condicionais ativas · marque as que entram na listagem</div>'+CONDS.map(function(c){ return '<label class="cond check" style="flex-direction:row;align-items:center"><input type="checkbox" checked><div style="flex:1;min-width:0"><div class="linha" style="justify-content:space-between"><span class="num">'+c[0]+'</span>'+tipoChip(c)+'</div><div class="cod">'+c[4]+' peças · previsão '+c[3]+'</div></div><span class="val">'+c[5]+'</span></label>'; }).join('')
+    +'<div class="linha" style="justify-content:space-between"><span class="chip k-exp">'+EXPO+'</span><b class="grande">R$ 41.882,00</b></div></div>'
+    +'<div>'+registrar()+'<div class="tl">'+linhas()+'</div></div>'
+    +'<div><div class="kv"><span>Acerto previsto</span><b>23/11</b></div><div class="kv"><span>Faltam</span><b>26 d</b></div><div class="kv"><span>Média 3 vendas</span><b>R$ 14.435,00</b></div><div class="kv"><span>Próximo kit</span><b class="grande">R$ 20.000,00</b></div><hr>'
+    +'<div class="rotulo">Listagem do dia</div><div class="linha"><input type="date" style="flex:1;min-width:0" value="2026-11-23"><input type="time" style="width:78px" value="14:00"></div><button class="pri">Incluir na listagem</button>'+sel(['Situação: Agendada','A contatar','Sem retorno'])+'<div class="linha">'+sel(['30 d','45 d','60 d'],'50%')+sel(['Normal','Prata'],'50%')+'</div>'+sel(['Mensagem ▾','1º contato','Véspera','Dia'])+'</div></div></div>';
+  var VERS = [['1 · Condicionais em tabela, embaixo','Resumo e contatos em cima, a tabela das condicionais ocupa a largura toda embaixo. Fácil de comparar número, peças e valor.',v1],
+              ['2 · Cartões das condicionais no alto','Cada condicional é um cartãozinho com número grande, logo abaixo do nome. Dá para ver quantas ela tem sem rolar.',v2],
+              ['3 · Abas à direita','Mais limpo: Contatos, Condicionais e Vendas 2026 ficam em abas, com o resumo e as ações sempre à esquerda.',v3],
+              ['4 · Três colunas para montar a listagem','Condicionais (com caixa para marcar), contatos e a listagem do dia. Pensado para a Tamara montar a lista rápido.',v4]];
+  document.getElementById('grade').innerHTML = VERS.map(function(v){ return '<div><div class="rot">'+v[0]+'</div><div class="dica">'+v[1]+'</div>'+v[2]+'</div>'; }).join('');
+  document.querySelectorAll('[data-abas]').forEach(function(c){ var bs=c.querySelectorAll('.abas button'), ps=c.querySelectorAll('.painel'); bs.forEach(function(b,i){ b.onclick=function(){ bs.forEach(function(x){x.classList.remove('on')}); ps.forEach(function(x){x.classList.remove('on')}); b.classList.add('on'); ps[i].classList.add('on'); }; }); });
+</script>
+</body>
+</html>

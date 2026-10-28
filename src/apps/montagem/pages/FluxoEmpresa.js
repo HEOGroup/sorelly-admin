@@ -67,7 +67,7 @@ var TELAS = {
   rh:[["Funcionários e representantes","pronto",100],["Acessos por setor","pronto",100],["Ponto e horas extras","breve",0]],
   comp:[["Compras Sorelly","breve",0],["Fornecedores","breve",0],["Compras de joias das representantes","pronto",100]],
   sac:[["Chamados","breve",0]], fac:[["Segurança","breve",0],["Limpeza e zeladoria","breve",0]],
-  tec:[["Configurador geral","pronto",100],["Avisos","pronto",100],["Projetos (dev)","breve",0]], dir:[["Fluxo da empresa","pronto",100],["Comissões e desempenho","breve",0]]};
+  tec:[["Configurador geral","pronto",100],["Avisos","pronto",100],["Projetos (dev)","breve",0]], dir:[["Fluxo da empresa","pronto",100],["Central de controle","pronto",100]]};
 var ST = {pronto:["#4ADE80","Pronto"], quase:["#FBBF24","Quase pronto"], trazer:["#FB923C","A trazer"], breve:["#94A3B8","Em breve"]};
 var pct = function(id){ var t = TELAS[id] || []; return t.length ? Math.round(t.reduce(function(s,x){ return s+x[2]; },0)/t.length) : 0; };
 

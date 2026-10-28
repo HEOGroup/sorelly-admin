@@ -10,7 +10,9 @@ import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
 import { formasPagamentoPadrao, normalizarVersao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
-import { agendDemo } from "@/apps/montagem/domain/agendamento";
+import { agendDemo, sincPrevistosAcertos } from "@/apps/montagem/domain/agendamento";
+import { globLocal } from "@/lib/glob-local";
+var AG_REAL = (function(){ var m = globLocal("apps/montagem/domain/agendamento-real.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; })();   // representantes, cotas e saldos reais do admin antigo (outubro/2026)
 import { RH_STAMP, rhAplicarAdmin, rhDemo } from "@/apps/montagem/domain/rh";
 import { metasPadrao } from "@/apps/montagem/domain/metas-setor";
 import { cpAjustar, cpDemo } from "@/apps/montagem/domain/controle-pagamentos";
@@ -50,7 +52,7 @@ import { media3 } from "@/apps/montagem/domain/vendas";
 import { hoje, hora, isoDia } from "@/apps/montagem/lib/format";
 
 // revendedoras internas de demonstração; quem é Kit 100% Prata já entra com a modalidade no cadastro (perfisRev)
-var VERSAO_REVINT = 5; // 3 = sem os 4 atendimentos de demonstração de hoje (a agenda agora vem da lista de 14, 15 e 16/10)
+var VERSAO_REVINT = 6; // 6 = lista vazia (28/10/2026): só entra o que vem da DevMaster; 5 = // 3 = sem os 4 atendimentos de demonstração de hoje (a agenda agora vem da lista de 14, 15 e 16/10)
 function semearRevInternas(st){
   st.revInternas = revInternasDemo(); st.perfisRev = Object.assign({}, st.perfisRev); st.revIntV = VERSAO_REVINT;
   var vig = versaoVigente(st), agora = Date.now();
@@ -125,7 +127,31 @@ function aplicaHoje26(s){
 function aplicaContas27(s){
   s.contasPagar = Object.assign({}, s.contasPagar); var a = Object.assign({}, s.contasPagar["2026"] || {});
   a[9] = {pago:1330288.27, apagar:175516.21, fixado:false}; a[10] = {pago:0, apagar:1466105.48, fixado:false}; a[11] = {pago:0, apagar:1500381.39, fixado:false};
-  s.contasPagar["2026"] = a; return s;
+  s.contasPagar["2026"] = a; s.contasPagarEm = "2026-10-27T21:03"; return s;
+}
+// 27/10/2026 (Marcus): 27/10 FIXADO = 1.583 acertos e R$ 1.252.742,52 acumulados no mês. Dia 27 = diferença para o último dia anterior lançado. O Carregar de 27/10 ainda NÃO foi informado (vale o de 26/10 = 34). Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFat27(s){
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, k = "2026-10-27";
+  var ant = Object.keys(s.faturamentoDiario||{}).filter(function(d){ return d<k && d.slice(0,7)==="2026-10"; }).sort().pop(), a0 = ant ? s.faturamentoDiario[ant] : {recebido:0, acertos:0};
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:1252742.52, acertos:1583, revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now(), parcial:false});
+  s.contasPagasDiario = Object.assign({}, s.contasPagasDiario); s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:Math.round((1252742.52-(a0.recebido||0))*100)/100, acertos:1583-(a0.acertos||0)});
+  if(s.fatHoje && s.fatHoje.data<=k) s.fatHoje = null;
+  // 27/10/2026 (Marcus): Carregar = 0 vendas e 303 revendedoras ainda para realizar acerto no mês (a realizar = 303). Total do mês = 1.583 + 0 + 303 = 1.886; a 97% = 1.829.
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:303, carregar:0}}); s.carregarDia = Object.assign({}, s.carregarDia, {"2026-10-27":0});
+  // histórico do que falta realizar (aba Acertos do Faturamento) e meta do Agendamento/Financeiro = 1.583 + 0 + 303 = 1.886 (antes 1.976)
+  s.restanteDia = Object.assign({}, s.restanteDia, {"2026-10-19":{feitos:997, carregar:16, aRealizar:908}, "2026-10-20":{feitos:1120, carregar:7, aRealizar:783}, "2026-10-26":{feitos:1347, carregar:34, aRealizar:513}, "2026-10-27":{feitos:1583, carregar:0, aRealizar:303}});
+  var pv27 = sincPrevistosAcertos(s, "2026-10", 1886); s.metaMensal = pv27.metaMensal; if(pv27.agend) s.agend = pv27.agend;
+  return s;
+}
+// 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
+function aplicaAgendReal(s){
+  if(!AG_REAL || !s.agend || !s.agend.config) return s;
+  var ag = JSON.parse(JSON.stringify(s.agend)), ym = AG_REAL.ym, norm = function(n){ return String(n||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }, ant = {};
+  (ag.config.representantes||[]).forEach(function(r){ ant[norm(r.nome)] = r; });
+  ag.config.representantes = AG_REAL.reps.map(function(r){ var a = ant[norm(r[1])]; return {id:"ar-"+r[0], codigo:r[0], nome:r[1], ativo:true, grupo:(a && a.grupo) || ""}; });
+  ag.cotas = ag.cotas || {}; ag.saldos = ag.saldos || {}; ag.cotas[ym] = {}; ag.saldos[ym] = {};
+  AG_REAL.reps.forEach(function(r){ var id = "ar-"+r[0]; ag.cotas[ym][id] = r[2]; var d = {}; r[3].forEach(function(v, i){ d[i+1] = v; }); ag.saldos[ym][id] = d; });
+  s.agend = ag; return s;
 }
 function aplicaHoje22(s){
   s.fatHoje = {data:"2026-10-22", recebido:982434.43, acertos:1241, em:Date.now()};
@@ -172,7 +198,7 @@ function novo(){
     faturamentoDiario:JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO)), metaMensal:JSON.parse(JSON.stringify(META_MENSAL_DEMO)),
     revendedorasDiario:JSON.parse(JSON.stringify(REVENDEDORAS_DIARIO_DEMO)), vendidoPonta:JSON.parse(JSON.stringify(VENDIDO_PONTA_DEMO)),
     contasPagasDiario:JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO)), inadFin:JSON.parse(JSON.stringify(INAD_FIN0)), comprasInt:JSON.parse(JSON.stringify(COMPRAS_INT0)), cpdV:VERSAO_CPD, negPix:{Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}}, fatHojeV:8, fatHoje:null, fat14FixV:2, rev14V:1, fatHoje14V:1, revAtualizadoEm:{"2026-10-14":1792022400000},
-    saldosContas:saldosContas0(), saldosV:12,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
+    saldosContas:saldosContas0(), saldosV:13,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
     avisosCfg:{media_alta:[11,16,17]}, alertas:[],
     mesFechado:null, visao:"supervisao", bipadora:9, usuario:16, logado:true, aba:"painel", celular:1, telaCel:"proximo",
     abertas:{L1:true, L2:true}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null, demoAcertos:VERSAO_DEMO, demoListagens:VERSAO_LISTAGENS, lysieDemoV:1, lysieNovasV:1, dayanneNormalV:1};
@@ -208,14 +234,14 @@ function novo(){
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
   st.metasSet = metasPadrao();   // metas mensais do Cadastro e da Inadimplência (Financeiro → Comissões)
-  st.agend = agendDemo(st);   // setor de Agendamento: meses fechados, mês aberto, cotas e saldos de demonstração
+  st.agend = agendDemo(st); if(AG_REAL){ aplicaAgendReal(st); st.agRealV = 1; }   // setor de Agendamento: meses fechados, mês aberto, cotas e saldos de demonstração
   var di = internosDemo(st); st.internos = di.internos; st.acertosConsignado = st.acertosConsignado.concat(di.acertos); st.lancFin = di.lancFin; st.intAbas = []; st.intSel = null; st.demoInternos = VERSAO_INTERNOS; var tdn = termosDemo(st); Object.keys(tdn).forEach(function(n){ st.perfisRev[n] = Object.assign({}, st.perfisRev[n], tdn[n]); });   // listagem do atendimento interno (02/10 feita, 05/10 agenda)
   semearRevInternas(st);   // depois dos internos de demonstração: coloca 4 atendimentos marcados para hoje
   st.pk = pkSemearDemo(st).pk;   // Preferências do kit: ~65% das revendedoras já preenchidas (demonstração)
   if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
   if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
   aplicaPagosAdmin(st); st.cpdAdminV = 5; st.cpdLocalV = 5;
-  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1;   // faturamento fixado até 19/10 (também no estado novo)
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1; aplicaFat27(st); st.fat27V = 3;   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -285,8 +311,11 @@ function inicial(){
     if(s.fat23V!==1){ s.fat23V = 1; aplicaFat23(s); }
     if(s.cp22V!==1){ s.cp22V = 1; aplicaContas22(s); }
     if(s.fat26V!==1){ s.fat26V = 1; aplicaFat26(s); }
-    if(s.cp27V!==1){ s.cp27V = 1; aplicaContas27(s); }
+    if(s.cp27V!==2){ s.cp27V = 2; aplicaContas27(s); }
     if(s.hoje26V!==6){ s.hoje26V = 6; aplicaHoje26(s); }
+    if(s.fat27V!==3){ s.fat27V = 3; aplicaFat27(s); }
+    if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
+    if(AG_REAL && s.agRealV!==1){ s.agRealV = 1; aplicaAgendReal(s); }
     if(s.cpdAdminV!==5){ s.cpdAdminV = 5; aplicaPagosAdmin(s); }   // v4: contas pagas de 01/09 a 26/10 lidas direto do admin antigo
     if(TEM_CHAVES_ADMIN && s.pixAdminV!==2 && s.px && s.saldosContas){ s.pixAdminV = 2; s.px = pxAplicarChavesAdmin(JSON.parse(JSON.stringify(s.px)), s.saldosContas.contas, "Marcus", Date.now()); }
     if(TEM_CHAVES_ADMIN && s.pixExtrasV!==2 && s.cp){ s.pixExtrasV = 2; s.cp = cpAplicarExtras(s.cp, "Marcus", Date.now()); }
@@ -385,7 +414,7 @@ function inicial(){
     if(s.perfisRev && s.perfisRev["Andrielle Taborda"] && !s.perfisRev["Andrielle Taborda"].expositores)
       s.perfisRev["Andrielle Taborda"].expositores = [{id:"exp-acrilico", nome:"Expositor acrílico grande", qtd:1},{id:"exp-pulseira", nome:"Expositor de pulseira", qtd:1}];
     if(!s.fiscal || !s.fiscal.hist) s.fiscal = JSON.parse(JSON.stringify(FISCAL0));
-    if(!s.saldosContas || s.saldosV!==12){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 12; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-23" && ATU_DIAS.indexOf(k)<0) scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v11: saldo do dia 23/10 lido do admin antigo
+    if(!s.saldosContas || s.saldosV!==13){ var scAntes = s.saldosContas, scNovo = saldosContas0(); s.saldosV = 13; if(scAntes){ Object.keys(scAntes.saldos||{}).forEach(function(k){ if(k>"2026-10-23" && ATU_DIAS.indexOf(k)<0) scNovo.saldos[k] = scAntes.saldos[k]; }); scNovo.fechamentos = scAntes.fechamentos || {}; if(scAntes.contas){ var cSeed = scNovo.contas; scNovo.contas = scAntes.contas.slice(); cSeed.forEach(function(c){ if(!scNovo.contas.some(function(x){ return x.id===c.id; })) scNovo.contas.push(c); }); } if(scAntes.blocos){ var bSeed = scNovo.blocos; scNovo.blocos = scAntes.blocos.slice(); bSeed.forEach(function(b){ if(!scNovo.blocos.some(function(x){ return x.id===b.id; })){ var ib = scNovo.blocos.findIndex(function(x){ return x.id==="BLOQ"; }); scNovo.blocos.splice(ib<0 ? scNovo.blocos.length : ib, 0, b); } }); } scNovo.aportes = scAntes.aportes || {}; } s.saldosContas = scNovo; }   // v11: saldo do dia 23/10 lido do admin antigo
     if(!s.contasCnpj) s.contasCnpj = JSON.parse(JSON.stringify(CONTAS_CNPJ0));
     if(!s.ccNovV){ s.ccNovV = 1;   // 26/10/2026: a pagar de novembro, lido do admin antigo (relFin004_Filial, vencimento em 11/2026), confirmado pelo Marcus
       s.contasCnpj = JSON.parse(JSON.stringify(s.contasCnpj));
@@ -438,4 +467,13 @@ function registroListagem(l, kits, agora){
       mont:nomeDe(k.montId), tempoM:k.tempoM, fimM:hora(k.fimM), bip:nomeDe(k.bipId), tempoB:k.fimB&&k.iniB?k.fimB-k.iniB:null, fimB:hora(k.fimB), ret:hora(k.retEm)}; })};
 }
 
-export { CHAVE, novo, inicial, mapKit, com, kitDe, ajustaDiv, registroListagem };
+// O navegador guarda pouco (cerca de 8 MB para tudo). As anotações que vêm da DevMaster (revendedoras internas) podem ser buscadas de novo a qualquer hora,
+// por isso o que vai para o disco leva só a mais nova de cada revendedora; os registros feitos aqui (origem sistema) vão inteiros. Abrir o card busca o histórico completo de novo.
+function paraSalvar(st){
+  if(!st || !st.revInternas) return st;
+  return Object.assign({}, st, {revInternas:st.revInternas.map(function(r){
+    if(!r.registro || !r.registro.length) return r;
+    var dm = r.registro.filter(function(c){ return c.origem==="devmaster"; }).slice(0,1), meus = r.registro.filter(function(c){ return c.origem!=="devmaster"; });
+    var o = Object.assign({}, r, {registro:meus.concat(dm).sort(function(a,b){ return (b.data||"").localeCompare(a.data||""); })}); delete o.histDmEm; return o; })});
+}
+export { paraSalvar, CHAVE, novo, inicial, mapKit, com, kitDe, ajustaDiv, registroListagem };

@@ -12,12 +12,12 @@ import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
-import { internoDeAgendada } from "@/apps/montagem/domain/revendedoras-internas";
+import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicaFila } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
-import { agendReduz } from "@/apps/montagem/domain/agendamento";
+import { agendReduz, sincPrevistosAcertos } from "@/apps/montagem/domain/agendamento";
 import { p45Reduz } from "@/apps/montagem/domain/plano45-60";
 import { rhReduz } from "@/apps/montagem/domain/rh";
 import { metasReduz } from "@/apps/montagem/domain/metas-setor";
@@ -48,6 +48,7 @@ import { prReduz } from "@/apps/montagem/domain/producao";
 import { cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
 import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
+import { MODELO_PADRAO } from "@/apps/montagem/domain/condicional-modelo";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
 
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
@@ -76,7 +77,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = "inicio";   // todo mundo começa na página inicial (27/10/2026)
+      var abaIni = (pp==="montadora" || pp==="bipadora") ? "whats" : "inicio";   // todo mundo começa na página inicial (27/10/2026); montadora e bipadora, no SorellyChat (28/10/2026)
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
@@ -123,9 +124,14 @@ function reducer(s, a){
       return com(s, {revendedorasDiario:rd, revAtualizadoEm:a.unico ? Object.assign({}, s.revAtualizadoEm||{}, {[a.data]:agora}) : s.revAtualizadoEm}, "Revendedoras de "+a.data.split("-").reverse().join("/")+" salvo");
     }
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
-    case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 98});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
+    case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 99});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
-    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; return com(s, {fechaMes:fmk, carregarDia:cdk}, "Acertos a realizar do mês salvos"); }
+    case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; var ymK = a.ym, fdK = s.faturamentoDiario||{}, ksK = Object.keys(fdK).filter(function(k){ return k.slice(0,7)===ymK; }).sort(), feitosK = ksK.length ? (fdK[ksK[ksK.length-1]].acertos||0) : 0;
+      if(s.fatHoje && String(s.fatHoje.data).slice(0,7)===ymK) feitosK = Math.max(feitosK, s.fatHoje.acertos||0);
+      var hojeIsoK = hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0"), rdk = Object.assign({}, s.restanteDia||{}); rdk[hojeIsoK] = {feitos:feitosK, carregar:Number(a.carregar)||0, aRealizar:Number(a.aRealizar)||0};
+      // 27/10/2026 (Marcus): feitos + Carregar + a realizar = acertos previstos do mês, também na meta do Agendamento e do Financeiro
+      var pvK = Number(a.aRealizar)>0 ? sincPrevistosAcertos(s, ymK, feitosK+(Number(a.carregar)||0)+(Number(a.aRealizar)||0)) : {};
+      return com(s, Object.assign({fechaMes:fmk, carregarDia:cdk, restanteDia:rdk}, pvK), "Acertos a realizar do mês salvos"); }
     case "CARREGAR_INICIO": { var cik = Object.assign({}, s.carregarInicio||{}); cik[a.ym] = Number(a.n)||0; return com(s, {carregarInicio:cik}, "Carregar do início do mês salvo"); }
     case "REV_REABRIR": { var raR = Object.assign({}, s.revAtualizadoEm||{}); delete raR[a.data]; return com(s, {revAtualizadoEm:raR}, "Revendedoras reabertas para atualizar"); }
     case "INT_CANCELAR": return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:a.cancelar ? "cancelado" : "agendado"}); })});
@@ -757,12 +763,81 @@ function reducer(s, a){
     // Revendedoras vindas da DevMaster (servidor → /devmaster/revendedoras): entram só as que ainda não existem (mesmo código da DevMaster ou mesmo nome), como "A contatar", ciclo de 30 dias
     case "REVINT_ADD_LOTE": {
       var nm = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };
-      var jaR = s.revInternas||[], chv = {}; jaR.forEach(function(r){ chv[nm(r.nome)] = 1; if(r.devmaster) chv["c"+r.devmaster] = 1; });
-      var novosR = (a.itens||[]).filter(function(i){ if(chv["c"+i.codigo] || chv[nm(i.nome)]) return false; chv["c"+i.codigo] = 1; chv[nm(i.nome)] = 1; return true; }).map(function(i){
-        return {id:"RD"+i.codigo, nome:i.nome, ciclo:30, proximoManual:null, situacao:"contatar", agend:null, internoId:null, hist:[{data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}],
-          contatos:i.celular ? [{nome:"WhatsApp da revendedora", fone:i.celular}] : [], prata:false, devmaster:i.codigo, obs:""}; });
-      return com(s, {revInternas:jaR.concat(novosR)}, novosR.length+(novosR.length===1 ? " revendedora nova" : " revendedoras novas")+" da DevMaster ("+(a.itens||[]).length+" encontradas)");
+      // Itens da API 2 (/api/revendedoras?rep=02): cod, nome, celular, cidade, vendas [{d, v}] (3 últimas, sem brinde, mais nova primeiro) e prevDevol (previsão do kit principal).
+      // Quem já existe só recebe as vendas reais (histórico); data, hora, situação e ciclo da agendadora nunca são mexidos.
+      var sz = function(c){ return String(c||"").replace(/^0+/, ""); };   // 004624 e 4624 são o mesmo código
+      var codI = function(i){ return sz(i.cod || i.codigo); };
+      var histDe = function(i){ var h = (i.vendas||[]).map(function(v){ return {data:v.d, venda:v.v, acerto:null}; }); while(h.length<3) h.push({data:null, venda:null, acerto:null}); return h; };
+      var temVendas = function(i){ return (i.vendas||[]).length>0; };
+      var jaR = s.revInternas||[], chv = {}; jaR.forEach(function(r){ chv[nm(r.nome)] = 1; if(r.devmaster) chv["c"+sz(r.devmaster)] = 1; });
+      var porItem = {}; (a.itens||[]).forEach(function(i){ porItem[codI(i)] = i; });
+      var atualizadas = 0;
+      // Registro de contatos da Tamara: as linhas de "Obs. Gerais" das condicionais (DevMaster) viram histórico (origem devmaster, refeito a cada busca); os contatos digitados aqui (origem sistema) ficam.
+      // A data marcada que está escrita ("AGENDADO PARA DIA 28/11 ÀS 08H") entra como Data agendada, só se a agendadora ainda não marcou outra; a situação só muda para quem ainda está em "A contatar" ou "Entrei em contato".
+      var hojeRI = isoDeRI(new Date());
+      var registroDe = function(r, i){
+        var dm = parseObs(i.obs||[], hojeRI), meus = ((r && r.registro)||[]).filter(function(c){ return c.origem==="sistema"; });
+        var reg = meus.concat(dm).sort(function(x,y){ return (y.data||"").localeCompare(x.data||""); }), ag = agendadoDe(reg), patch = {registro:reg};
+        if(ag && ag.data>=hojeRI && (!r || !r.agend || r.agend.fonte==="devmaster")) patch.agend = {data:ag.data, hora:ag.hora, fonte:"devmaster"};
+        if(!r || r.situacao==="contatar" || r.situacao==="contato") patch.situacao = situacaoDoRegistro(reg, hojeRI);
+        if(i.conds) patch.conds = i.conds;   // condicionais ativas (número, tipo, peças, valor, previsão) para o card
+        return patch;
+      };
+      var jaN = jaR.map(function(r){ var i = r.devmaster && porItem[sz(r.devmaster)]; if(!i) return r;
+        var patch = registroDe(r, i), tv = temVendas(i);
+        if(tv){ patch.hist = histDe(i).map(function(x){ var o = (r.hist||[]).find(function(y){ return y && y.data===x.data && y.acerto!=null; }); return o ? Object.assign({}, x, {acerto:o.acerto}) : x; }); patch.fonteVendas = "devmaster"; }
+        patch.proximoDm = i.prevDevol || r.proximoDm || null; atualizadas++;
+        return Object.assign({}, r, patch); });
+      var novosR = (a.itens||[]).filter(function(i){ var c = codI(i); if(chv["c"+c] || chv[nm(i.nome)]) return false; chv["c"+c] = 1; chv[nm(i.nome)] = 1; return true; }).map(function(i){
+        // ciclo = plano mais próximo (30, 45 ou 60) da distância entre a emissão do kit e a previsão de devolução; a data real é a da DevMaster (proximoDm), que já tem fim de semana
+        var dias = i.emissao && i.prevDevol ? Math.round((new Date(i.prevDevol+"T12:00:00") - new Date(i.emissao+"T12:00:00"))/86400000) : 0;
+        var ciclo = [30,45,60].reduce(function(m, c){ return !dias || Math.abs(c-dias)<Math.abs(m-dias) ? c : m; }, 30);
+        return Object.assign({id:"RD"+codI(i), nome:i.nome, ciclo:ciclo, proximoManual:null, proximoDm:i.prevDevol || null, situacao:"contatar", agend:null, internoId:null, hist:histDe(i), fonteVendas:"devmaster",
+          contatos:i.celular ? [{nome:"WhatsApp da revendedora", fone:i.celular}] : [], prata:false, devmaster:String(i.cod || i.codigo), cidade:i.cidade || "", obs:""}, registroDe(null, i)); });
+      return com(s, {revInternas:jaN.concat(novosR)}, novosR.length+(novosR.length===1 ? " revendedora nova" : " revendedoras novas")+(atualizadas ? " · "+atualizadas+" com vendas atualizadas" : "")+" da DevMaster ("+(a.itens||[]).length+" encontradas)");
     }
+    // Kit novo que a Michele direcionou para a Sorelly (atendimento interno): entra na lista da Tamara como A contatar, com a marca Kit novo; ela entra em contato e agenda.
+    case "REVINT_KIT_NOVO": {
+      var nmK = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+      var jaK = (s.revInternas||[]).find(function(r){ return nmK(r.nome)===nmK(a.nome); });
+      var marca = {id:a.kitId||"", valor:a.valor||0, desde:isoDeRI(new Date())};
+      if(jaK) return com(s, {revInternas:s.revInternas.map(function(r){ return r===jaK ? Object.assign({}, r, {kitNovo:marca}) : r; })}, a.nome+" marcada como kit novo na lista do atendimento interno");
+      var novaK = {id:"KN"+(a.kitId||Date.now()), nome:a.nome, ciclo:30, proximoManual:null, proximoDm:null, situacao:"contatar", agend:null, internoId:null, hist:[{data:null,venda:null,acerto:null},{data:null,venda:null,acerto:null},{data:null,venda:null,acerto:null}],
+        contatos:a.celular ? [{nome:"WhatsApp da revendedora", fone:a.celular}] : [], prata:false, devmaster:"", cidade:a.cidade||"", obs:"", registro:[], conds:[], kitNovo:marca};
+      return com(s, {revInternas:[novaK].concat(s.revInternas||[])}, a.nome+" (kit novo) entrou na lista do atendimento interno");
+    }
+    // contato registrado pela agendadora (cadastro da revendedora, vale para todas as condicionais dela); só os digitados aqui (origem sistema) podem ser apagados
+    // REGISTRO ESTRUTURADO da agendadora (tipo e motivo em caixas): a.tipo, a.motivo, a.quem (quem falou com ela), a.por (conta logada), a.autorizado, a.isenta, a.dia, a.hora, a.ciclo, a.texto.
+    // Efeitos: marcado/remarcado com dia e hora marcam a data (e mudam a agenda da Atendimento Sorelly se ela já está lá); não veio e desmarcado tiram a data e a agenda;
+    // remarcado/não veio/desmarcado entram na escada de multa 5/8/15 (isenta não conta); mudou o ciclo troca o ciclo.
+    case "REVINT_REG": {
+      var rg = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rg || !a.tipo) return s;
+      var hojeRg = isoDeRI(new Date()), agoraRg = Date.now(), tpMulta = a.tipo==="remarcado" || a.tipo==="nao_veio" || a.tipo==="desmarcado", comDia = (a.tipo==="marcado" || a.tipo==="remarcado") && a.dia;
+      var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && !!a.isenta, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
+      var patchRg = {registro:[ent].concat(rg.registro||[])}, intsRg = s.internos||[], exRg = intsRg.find(function(x){ return x.id===rg.internoId && x.status!=="acertado"; });
+      if(comDia){ patchRg.agend = {data:ent.dia, hora:ent.hora}; patchRg.situacao = "agendada"; if(exRg) intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {data:ent.dia, hora:ent.hora}); }); }
+      if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){ patchRg.agend = null; patchRg.situacao = "contato"; if(exRg && exRg.status==="agendado"){ intsRg = intsRg.filter(function(x){ return x.id!==exRg.id; }); patchRg.internoId = null; } }
+      if(tpMulta && exRg && exRg.status==="agendado" && a.tipo==="remarcado") intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).concat([{isenta:ent.isenta, motivo:ent.isenta ? (ent.motivo||ent.autorizado||"autorizada") : "", em:agoraRg}])}); });
+      if(a.tipo==="ciclo" && ent.ciclo){ patchRg.ciclo = ent.ciclo; patchRg.proximoManual = null; }
+      if(a.tipo==="contato" || a.tipo==="t1" || a.tipo==="t2" || a.tipo==="t3" || a.tipo==="quer_vir") if(rg.situacao==="contatar") patchRg.situacao = "contato";
+      return com(s, {internos:intsRg, revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, patchRg); })}, rg.nome.split(" ")[0]+": registro salvo");
+    }
+    // histórico completo da DevMaster (todas as condicionais da revendedora, também as já fechadas): refaz só as linhas de origem devmaster; os registros feitos aqui ficam
+    case "REVINT_HIST_DM": {
+      var rh = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rh) return s;
+      var dmH = parseObs(a.obs||[], isoDeRI(new Date())), meusH = (rh.registro||[]).filter(function(c){ return c.origem==="sistema"; });
+      var regH = meusH.concat(dmH).sort(function(x,y){ return (y.data||"").localeCompare(x.data||""); });
+      return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {registro:regH, histDmEm:Date.now()}); })});
+    }
+    // regras novas enviadas (PDF GUIA-DA-REVENDEDORA): registra o envio e carimba a revendedora com a versão em vigor; o PRÓXIMO acerto dela já usa as regras novas
+    case "REVINT_REGRAS_ENVIAR": {
+      var rn = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rn) return s;
+      var vigN = versaoDaEntrega(s); if(!vigN) return s;
+      var entN = {data:isoDeRI(new Date()), tipo:"regras", motivo:"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:"", isenta:false, dia:"", hora:"", ciclo:0, texto:"Regras e comissões novas enviadas (guia da revendedora)", origem:"sistema", ts:Date.now()};
+      var prN = Object.assign({}, s.perfisRev||{}); prN[rn.nome] = Object.assign({}, prN[rn.nome], {regrasEntregaId:vigN.id, regrasEntregaEm:isoDeRI(new Date())});
+      return com(s, {perfisRev:prN, revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {registro:[entN].concat(r.registro||[]), regrasEnviadas:{em:isoDeRI(new Date()), por:a.por||"", versaoId:vigN.id}}); })}, rn.nome.split(" ")[0]+": regras novas registradas");
+    }
+    case "REVINT_CONTATO_DEL": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {registro:(r.registro||[]).filter(function(c){ return !(c.origem==="sistema" && c.ts===a.ts); })}); })});
     case "REVINT_SET": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, a.patch); })});
     // ── Avisos: quem recebe cada alerta (Tecnologia → Avisos) e os alertas disparados (um por chave) ──
     case "AVISO_CFG": return com(s, {avisosCfg:Object.assign({}, s.avisosCfg||{}, {[a.tipo]:a.ids})});
@@ -774,10 +849,11 @@ function reducer(s, a){
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
     case "REVINT_AGENDAR": {
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
+      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
       var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada"});
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
       if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}); }); }
-      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
+      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
     case "REVINT_CANCELAR": {
@@ -984,6 +1060,13 @@ function reducer(s, a){
       if(novaV.novas && novaV.vigenciaDesde < "2026-10-27") novaV.vigenciaDesde = "2026-10-27";   // as regras novas só valem para kits entregues a partir dessa data
       return com(s, {regrasConsignado:{versoes:(s.regrasConsignado.versoes||[]).concat([novaV]), atualId:novaV.id}},
         "Regras do consignado atualizadas: vale a partir do próximo kit de cada revendedora");
+    }
+    // Modelo do papel da condicional (Revendedoras › Condicional): guarda o texto de cada peça (cab, termo, nota, acerto) e o histórico das versões anteriores.
+    case "CONDICIONAL_MODELO_SALVAR": {
+      var cmA = s.condicionalModelo || MODELO_PADRAO;
+      var cmH = (cmA.historico||[]).concat([{ts:Date.now(), por:a.por||"", campo:a.campo, texto:cmA[a.campo]}]).slice(-40);
+      var cmN = Object.assign({}, cmA, {historico:cmH}); cmN[a.campo] = a.texto;
+      return com(s, {condicionalModelo:cmN}, "Condicional: texto salvo");
     }
     case "PECAS": {
       var cp = JSON.parse(JSON.stringify(s.cfg)); if(a.max){ var lk = cp.pecasKit[a.i]; lk.qmax = lk.qmax || {}; lk.qmax[a.j] = a.valor; } else cp.pecasKit[a.i].q[a.j] = a.valor; return com(s, {cfg:cp});

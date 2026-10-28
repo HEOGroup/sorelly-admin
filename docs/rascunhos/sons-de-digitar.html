@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 5 sons de digitar</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.3)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0a0806;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:24px 16px 60px}
+  .pg{max-width:760px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#bbb;margin:0 0 18px}
+  textarea{width:100%;height:110px;border-radius:12px;border:1px solid var(--borda);background:#0e0e11;color:#fff;padding:12px;font:inherit;font-size:15px;resize:vertical}
+  textarea:focus{outline:2px solid var(--ouro);outline-offset:1px}
+  .vol{display:flex;align-items:center;gap:10px;margin:12px 0 18px;color:#ccc}
+  .vol input{flex:1;accent-color:var(--ouro)}
+  .opc{display:flex;align-items:center;gap:12px;border:1px solid var(--borda);border-radius:12px;background:#110e08;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+  .opc.on{border-color:var(--ouro);background:#1b1710;box-shadow:0 0 0 1px var(--ouro) inset}
+  .opc .n{width:30px;height:30px;border-radius:50%;background:var(--ouro);color:#1a1405;font-weight:800;display:grid;place-items:center;flex:none}
+  .opc b{display:block;font-size:14px}.opc small{color:#bdb39d}
+  .opc .t{flex:1}
+  .opc button{height:34px;border-radius:8px;border:1px solid var(--borda);background:#14110b;color:var(--ouro);font:inherit;font-weight:600;padding:0 14px;cursor:pointer}
+  .opc button:hover{background:#1d180e}
+  .dica{margin-top:16px;color:#9d9482}
+  .tag{display:inline-block;border:1px solid var(--borda);border-radius:999px;padding:0 8px;font-size:11px;color:#ddd;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>5 sons de digitar</h1>
+  <p class="sub">Escolha uma opção abaixo e <b>digite na caixa</b> para ouvir. Teste também a barra de espaço, o apagar e o Enter. Depois me diga o número que você gostou.</p>
+
+  <textarea id="cx" placeholder="Digite aqui para ouvir o som da opção escolhida…" autofocus></textarea>
+  <div class="vol"><span>Volume</span><input id="vol" type="range" min="0" max="100" value="60"><span id="volv">60%</span></div>
+
+  <div id="lista"></div>
+  <p class="dica">Dica: o som toca em cada letra. A barra de espaço, o apagar e o Enter têm um som diferente em cada opção.</p>
+</div>
+
+<script>
+(function(){
+  var ctx = null, vol = .6, escolha = 1;
+  function ligar(){ if(!ctx){ var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  var R = function(a, b){ return a + Math.random()*(b-a); };
+
+  // peças de som
+  function tom(tipo, f0, f1, dur, pico, atq){
+    var c = ligar(), t0 = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t0); if(f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, pico*vol), t0 + (atq||0.003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function ruido(dur, freq, q, pico, filtro){
+    var c = ligar(), t0 = c.currentTime, n = Math.floor(c.sampleRate*dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0), i;
+    for(i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 2.4);
+    var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = b; f.type = filtro || "bandpass"; f.frequency.value = freq; f.Q.value = q || 0.8;
+    g.gain.setValueAtTime(Math.max(0.0002, pico*vol), t0);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t0);
+  }
+  var PENTA = [523, 587, 659, 784, 880, 1047];
+
+  // as 5 opções: l = letra, e = espaço, a = apagar, n = enter
+  var SONS = {
+    1: {nome:"Teclado mecânico macio", desc:"Um \"toc\" grave e redondo, de teclado bom",
+      l:function(){ var k = R(.9,1.12); tom("sine", 175*k, 85*k, .075, .55); ruido(.03, 1900*k, .8, .32); ruido(.008, 4200, 1, .12, "highpass"); },
+      e:function(){ tom("sine", 120, 62, .11, .65); ruido(.05, 1100, .8, .35); },
+      a:function(){ tom("sine", 240, 120, .06, .45); ruido(.025, 2600, .8, .3); },
+      n:function(){ tom("sine", 100, 55, .16, .7); ruido(.07, 900, .8, .4); ruido(.012, 3500, 1, .18, "highpass"); }},
+    2: {nome:"Máquina de escrever", desc:"Um \"clac\" seco e metálico, e um sininho no Enter",
+      l:function(){ var k = R(.92,1.08); ruido(.032, 2800*k, .7, .75, "highpass"); tom("square", 1000*k, 700*k, .02, .1); tom("sine", 130, 70, .05, .35); },
+      e:function(){ ruido(.05, 2200, .7, .85, "highpass"); tom("sine", 105, 55, .09, .5); },
+      a:function(){ ruido(.03, 3400, .7, .6, "highpass"); tom("square", 1300, 900, .02, .08); },
+      n:function(){ ruido(.05, 2400, .7, .8, "highpass"); var c = ligar(); setTimeout(function(){ tom("sine", 2093, 2093, .9, .22, .002); tom("sine", 3136, 3136, .7, .1, .002); }, 40); }},
+    3: {nome:"Gota d'água", desc:"Um \"plop\" leve, como bolha. Mais divertido e suave",
+      l:function(){ var k = R(.85,1.2); tom("sine", 950*k, 320*k, .085, .5); },
+      e:function(){ tom("sine", 700, 180, .14, .6); },
+      a:function(){ tom("sine", 300, 900, .08, .45); },
+      n:function(){ tom("sine", 800, 200, .12, .6); setTimeout(function(){ tom("sine", 1100, 330, .1, .45); }, 70); }},
+    4: {nome:"Celular (tique leve)", desc:"Um tique curtinho e discreto, como o teclado do celular",
+      l:function(){ var k = R(.95,1.05); tom("sine", 1900*k, 1250*k, .014, .28, .001); ruido(.007, 5200, 1, .1); },
+      e:function(){ tom("sine", 1500, 1000, .02, .3, .001); ruido(.01, 4200, 1, .12); },
+      a:function(){ tom("sine", 1300, 800, .018, .26, .001); ruido(.008, 3600, 1, .1); },
+      n:function(){ tom("sine", 1700, 1100, .02, .3, .001); setTimeout(function(){ tom("sine", 2300, 1500, .02, .22, .001); }, 45); }},
+    5: {nome:"Madeira (marimba)", desc:"Uma notinha de madeira, que muda de tom a cada letra. Parece música",
+      l:function(){ var f = PENTA[Math.floor(Math.random()*PENTA.length)]; tom("triangle", f, f*.99, .16, .38, .002); tom("sine", f*4, f*4, .04, .1, .001); },
+      e:function(){ tom("triangle", 262, 258, .24, .5, .002); tom("sine", 1047, 1047, .05, .1, .001); },
+      a:function(){ tom("triangle", 440, 330, .1, .3, .002); },
+      n:function(){ tom("triangle", 523, 520, .2, .4, .002); setTimeout(function(){ tom("triangle", 784, 780, .26, .4, .002); }, 90); }}
+  };
+  var lista = document.getElementById("lista");
+  Object.keys(SONS).forEach(function(k){
+    var s = SONS[k], d = document.createElement("div");
+    d.className = "opc"; d.setAttribute("data-k", k);
+    d.innerHTML = '<span class="n">'+k+'</span><span class="t"><b>'+s.nome+'</b><small>'+s.desc+'</small></span><button type="button">▶ Ouvir</button>';
+    lista.appendChild(d);
+  });
+  function marca(){ [].forEach.call(lista.children, function(d){ d.classList.toggle("on", +d.getAttribute("data-k")===escolha); }); }
+  lista.addEventListener("click", function(ev){
+    var d = ev.target.closest(".opc"); if(!d) return;
+    escolha = +d.getAttribute("data-k"); marca();
+    if(ev.target.closest("button")){ var s = SONS[escolha]; s.l(); setTimeout(s.l, 140); setTimeout(s.l, 260); setTimeout(s.e, 420); setTimeout(s.a, 600); setTimeout(s.n, 760); }
+    document.getElementById("cx").focus();
+  });
+  var cx = document.getElementById("cx"), ult = 0;
+  cx.addEventListener("keydown", function(ev){
+    if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+    var t = Date.now(); if(t-ult < 30) return; ult = t;
+    var s = SONS[escolha];
+    if(ev.key===" ") s.e();
+    else if(ev.key==="Backspace" || ev.key==="Delete") s.a();
+    else if(ev.key==="Enter") s.n();
+    else if(ev.key.length===1) s.l();
+  });
+  var v = document.getElementById("vol"), vv = document.getElementById("volv");
+  v.addEventListener("input", function(){ vol = v.value/100; vv.textContent = v.value+"%"; });
+  marca();
+})();
+</script>
+</body>
+</html>

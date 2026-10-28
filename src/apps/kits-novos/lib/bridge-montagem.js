@@ -46,6 +46,31 @@ export function direcionarParaRepresentante(c, rep) {
   }
 }
 
+/** Nome da opção "Sorelly" na lista de representantes: o kit vai para a lista da Tamara (Atendimento interno › Revendedoras). */
+export const REP_SORELLY = "Sorelly (atendimento interno)";
+
+/** Kit novo direcionado para a Sorelly: entra na lista de Revendedoras internas como "A contatar", com a marca Kit novo. */
+export function direcionarParaSorelly(c) {
+  try {
+    var raw = localStorage.getItem(CHAVE_MONTAGEM);
+    if (!raw) return false;
+    var s = JSON.parse(raw);
+    if (!s || s.v !== 4) return false;
+    var chave = function (t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+    var marca = { id: "KN" + c.id, valor: c.val || 0, desde: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) };
+    var lista = s.revInternas || [], ja = lista.find(function (r) { return chave(r.nome) === chave(c.nome); });
+    if (ja) { ja.kitNovo = marca; }
+    else {
+      var h = { data: null, venda: null, acerto: null };
+      lista.unshift({ id: "KN" + c.id, nome: c.nome, ciclo: 30, proximoManual: null, proximoDm: null, situacao: "contatar", agend: null, internoId: null, hist: [h, h, h],
+        contatos: c.tel ? [{ nome: "WhatsApp da revendedora", fone: c.tel }] : [], prata: false, devmaster: "", cidade: c.cid || "", obs: "", registro: [], conds: [], kitNovo: marca });
+    }
+    s.revInternas = lista;
+    localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
+    return true;
+  } catch (x) { return false; }
+}
+
 /** true se o app de montagem já tem estado salvo neste navegador (pra avisar quando a ponte não vai funcionar). */
 export function montagemDisponivel() {
   try { return !!localStorage.getItem(CHAVE_MONTAGEM); } catch (x) { return false; }

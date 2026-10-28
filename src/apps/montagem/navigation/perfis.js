@@ -6,15 +6,16 @@ import { ABAS } from "@/apps/montagem/navigation/abas";
 var TODAS = ABAS.map(function(a){ return a[0]; });
 // Telas dos Configuradores: Direção e família abrem tudo menos estas
 var CONFIGURADORES = ["config","comconfig","knconfigurador","configrep","rhconfig"];
-var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","calc","condicionais","consolidado","intrevs","intlist","intcalc","intcons","consrep","controlekits","celbip"],   // listagens (representantes e internas), calculadora, condicionais, consolidados; Equipe e Registros só Deysiane e Diretoria montadora:["painel","celular"],
-  kitnovo:["kitnovo","knpendencias","knconsolidado","knregras","knconfigurador","aprovacaocad","desempenhocad","indicacoes","msgcad","repcad"], listagens:["painel","pedirpecas","kitnovo","condicionais","celcond"],
+var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","calc","condicionais","consolidado","intrevs","intlist","intcalc","intcons","consrep","controlekits","celfunc"],   // listagens (representantes e internas), calculadora, condicionais, consolidados; Equipe e Registros só Deysiane e Diretoria.
+  montadora:["painel","celfunc","producao","prefkit","pedirpecas"],   // Montagem de kits e Encomendas (27/10/2026): listagens sem valor, app, produção e preferências; sem dinheiro, Equipe e comissões
+  kitnovo:["kitnovo","knpendencias","knconsolidado","knregras","knconfigurador","aprovacaocad","desempenhocad","indicacoes","msgcad","repcad"], listagens:["painel","pedirpecas","kitnovo","condicionais","celfunc"],
   agendamento:["agpainel","p45ind","p45apr","p45acomp","p45alin","p45msg","p45pnl","agremarc","agreps","agabertura","agconfig","aganalises","aghistorico","consrep","controlekits","inadimp","dinheiro"], financeiro:["cpagamentos","direcionar","dircontas","dirregras","ctapagar","ctalista","chavespixbanco","emprestimos","chavespix","adquirentes","comlink","compras","cadpecas","estoquesorelly","linkrel","cfregras","pfresumo","pflanc","pfneg","pfmaq","pfforn","pfcadastro","pfprest","dinheiro","comisstodos","agbonus","agmetas","comdatas","comisbip","comismont","comisint","comcad","cominad","consrep","controlekits","placar","comissoes","pixdireto","inadimp","inadfin","caixa"],
   familia:TODAS.filter(function(k){ return CONFIGURADORES.indexOf(k)<0 && k.indexOf("marcus")!==0; }),
   supervisora:TODAS.filter(function(k){ return k!=="fluxo" && k.indexOf("marcus")!==0; }),                       // Deysiane: como era (tudo)
   cadastropecas:["cadpecas"],          // Rayssa e Graziella
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"]};
-var PAPEL_LB = {supervisao:"Sócios (acesso total)", familia:"Direção e família (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
+var PAPEL_LB = {supervisao:"Acesso total", familia:"Direção (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
   financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças",
   representante:"Representantes"};
 // cor e ícone de cada grupo (tela de Acessos e seletor do topo)

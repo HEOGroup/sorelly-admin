@@ -14,6 +14,8 @@ import { NovaConta } from "@/apps/montagem/pages/ContasPagarEmpresa";
 import { use } from "@/apps/montagem/state/context";
 import { e, useState } from "@/shared/react";
 
+// hora da última leitura de faturamento_contas_mes no admin antigo: trocar junto com aplicaContasNN em state/store.js (atualização diária)
+var ADMIN_EM = "27/10 21:03";
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 0)); };
 var ABAS = [["quando","Quando vence"],["apagar","A pagar"],["pago","Pagas"],["todas","Todas"]];
@@ -44,6 +46,7 @@ function AbaCtaLista(){
   var c = useState(""), per = c[0], setPer = c[1], f = useState(""), filial = f[0], setFilial = f[1], g = useState(""), nota = g[0], setNota = g[1], h = useState(""), busca = h[0], setBusca = h[1];
   var i2 = useState(""), nat = i2[0], setNat = i2[1], o = useState("venc"), ord = o[0], setOrd = o[1], l = useState(100), lim = l[0], setLim = l[1], n = useState(false), nova = n[0], setNova = n[1];
   var sa = useState(null), aberta = sa[0], setAberta = sa[1], sl = useState([]), sel = sl[0], setSel = sl[1], rg = useState(false), regPag = rg[0], setRegPag = rg[1], av = useState(""), aviso = av[0], setAviso = av[1];
+  var fa = useState(false), filtrosAb = fa[0], setFiltrosAb = fa[1], ca = useState(false), cnpjAb = ca[0], setCnpjAb = ca[1];
   var podePagar = temAutorizacao("pagamento_registra", s.usuario);
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
   var quem = "";   // tudo junto: empresa + pró-labore e retiradas
@@ -52,6 +55,10 @@ function AbaCtaLista(){
   // faixa de totais: o que está nos filtros de mês, CNPJ, nota e busca (ignora a aba e o período)
   var todos = filtrar(mes, filial, busca, "", quem, nota).filter(function(i){ return !nat || (i.nat+" · "+i.natNome)===nat; });
   var pagos = todos.filter(function(i){ return i.status==="pago"; }), abertos = todos.filter(function(i){ return i.status==="apagar"; }), atrasadas = abertos.filter(function(i){ return i.venc<hoje; });
+  // Alto da tela (Marcus, 27/10/2026): JÁ PAGO e FALTA PAGAR do mês, do admin antigo (s.contasPagar, atualizado em s.contasPagarEm); sem esse dado, soma as contas da lista
+  var cm = mes ? (((s.contasPagar || {})[mes.slice(0, 4)] || {})[Number(mes.slice(5, 7))-1] || null) : null, doAdmin = !!(cm && ((cm.pago || 0)>0 || (cm.apagar || 0)>0));
+  var hPago = doAdmin ? cm.pago || 0 : soma(pagos), hFalta = doAdmin ? cm.apagar || 0 : soma(abertos), hTot = r2(hPago+hFalta), hPct = hTot>0 ? Math.round(hPago/hTot*100) : 0;
+  var quandoAtu = s.contasPagarEm ? s.contasPagarEm.slice(8, 10)+"/"+s.contasPagarEm.slice(5, 7)+" "+s.contasPagarEm.slice(11, 16) : ADMIN_EM;
   // aba "Quando vence": o que está em aberto por dia, semana e CNPJ (clicar no valor filtra a lista)
   var emAberto = filtrar("", "", "", "apagar", quem, ""), ini7 = segunda(hoje);
   var QUANDO = [["atraso","Atrasadas", emAberto.filter(function(i){ return i.venc<hoje; })], ["hoje","Hoje", emAberto.filter(function(i){ return i.venc===hoje; })], ["amanha","Amanhã", emAberto.filter(function(i){ return i.venc===somaDias(hoje, 1); })],
@@ -102,18 +109,25 @@ function AbaCtaLista(){
     nova && e(NovaConta,{fechar:function(){ setNova(false); }}),
     aberta && e(PagamentoConta,{key:aberta.id, s:s, item:aberta, lista:ls, podePagar:podePagar, fechar:function(){ setAberta(null); }, ir:function(x){ if(x) setAberta(x); }, salvar:function(b){ cx.dispatch({type:"CPE_BAIXA", baixas:[b]}); setAberta(null); }, desfazer:function(id){ cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:id, por:s.usuario}); setAberta(null); }}),
     regPag && todasItens.length>0 && e(RegistrarPagamento,{s:s, itens:todasItens, fechar:function(){ setRegPag(false); }, salvar:function(baixas){ cx.dispatch({type:"CPE_BAIXA", baixas:baixas}); setRegPag(false); setSel([]); setAviso(""); }}),
-    e("div",{className:"flex h-10 items-center justify-between gap-2"}, e("h1",{className:"truncate text-[16px] font-semibold text-foreground"}, "Contas a pagar"), e(Botao,{principal:true, onClick:function(){ setNova(true); }}, "Lançar conta")),
-    e(BlocoFiltros,{onLimpar:filtrado ? limpar : null},
-      e(CampoSel,{t:"Mês", id:"cp-mes", value:mes, onChange:function(v){ setMes(v); setLim(100); setNat(""); }, opcoes:ms.map(function(m){ return [m, nomeMes(m)]; }).concat(ms.length>1 ? [["", "Todos os meses"]] : [])}),
+    e("div",{className:"flex flex-wrap items-center gap-2"},
+      e("h1",{className:"mr-auto truncate text-[16px] font-semibold text-foreground"}, "Contas a pagar"),
+      e("select",{"aria-label":"Mês", value:mes, onChange:function(ev){ setMes(ev.target.value); setLim(100); setNat(""); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}, ms.map(function(m){ return e("option",{key:m, value:m}, nomeMes(m)); }).concat(ms.length>1 ? [e("option",{key:"todos", value:""}, "Todos os meses")] : [])),
+      e(Botao,{onClick:function(){ setFiltrosAb(!filtrosAb); }}, filtrosAb ? "Esconder filtros" : (filtrado ? "Filtros ligados" : "Filtros")),
+      e(Botao,{onClick:function(){ setCnpjAb(!cnpjAb); }}, cnpjAb ? "Esconder CNPJs" : "Por CNPJ"),
+      e(Botao,{principal:true, onClick:function(){ setNova(true); }}, "Lançar conta")),
+    e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-3"},
+      e("div",{className:"rounded-lg border-2 border-success/60 bg-success/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Já pago"+(mes ? " em "+nomeMes(mes) : "")), e("div",{className:"text-[20px] font-semibold tabular-nums text-success"}, BKC(hPago)), e("div",{className:"text-[11px] text-foreground"}, hPct+"% do total")),
+      e("div",{className:"rounded-lg border-2 border-warning/60 bg-warning/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Falta pagar"), e("div",{className:"text-[20px] font-semibold tabular-nums text-warning"}, BKC(hFalta)), e("div",{className:"text-[11px] text-foreground"}, (100-hPct)+"% do total"+(atrasadas.length ? " · "+atrasadas.length+" atrasadas na lista" : ""))),
+      e("div",{className:"rounded-lg border border-border bg-card px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Total do mês"), e("div",{className:"text-[20px] font-semibold tabular-nums text-foreground"}, BKC(hTot)), e("div",{className:"mt-1 h-2 overflow-hidden rounded bg-white/10"}, e("div",{className:"h-full bg-success", style:{width:hPct+"%"}})))),
+    e("p",{className:"text-center text-[11px] text-foreground"}, doAdmin ? "Valores do admin antigo"+(quandoAtu ? " · atualizado "+quandoAtu : "")+". A lista embaixo vem do relatório do DevMaster e ainda não tem as baixas feitas depois." : "Soma das contas da lista."),
+    filtrosAb && e(BlocoFiltros,{onLimpar:filtrado ? limpar : null},
       e(CampoSel,{t:"Período", id:"cp-per", value:per, onChange:function(v){ setPer(v); setLim(100); }, opcoes:PERIODOS}),
       e(CampoSel,{t:"CNPJ", id:"cp-cnpj", value:filial, onChange:function(v){ setFilial(v); setLim(100); }, opcoes:[["", "Todos"]].concat(FILIAIS.map(function(x){ return [x[0], x[1]+(x[0]==="fora" ? "" : " · "+x[2])]; }))}),
       e(CampoSel,{t:"Nota", id:"cp-nota", value:nota, onChange:function(v){ setNota(v); setLim(100); }, opcoes:NOTAS}),
       e(CampoSel,{t:"Natureza", id:"cp-nat", value:nat, onChange:function(v){ setNat(v); setLim(100); }, opcoes:[["", "Todas"]].concat(nats.map(function(x){ return [x, x]; }))}),
       e(CampoSel,{t:"Ordenar por", id:"cp-ord", value:ord, onChange:setOrd, opcoes:ORDENS}),
       e(CampoBusca,{t:"Buscar", id:"cp-busca", value:busca, placeholder:"Fornecedor, natureza ou valor", onChange:function(v){ setBusca(v); setLim(100); }})),
-    e("p",{className:"text-[13px] font-semibold text-foreground"}, "Total do mês ", e("b",null, BKC(soma(todos))), " · "+todos.length+" títulos"),
-    blocoCnpj("Pago", pagos, "text-success", pagos.length+" pagamentos"),
-    blocoCnpj("A pagar", abertos, "text-warning", abertos.length+" contas", atrasadas),
+    cnpjAb && e("div",{className:"flex flex-col gap-2"}, blocoCnpj("Pago", pagos, "text-success", pagos.length+" pagamentos"), blocoCnpj("A pagar", abertos, "text-warning", abertos.length+" contas", atrasadas)),
     e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setLim(100); if(k==="quando"){ setPer(""); } }}),
     aba==="quando" ? e("div",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, "Em aberto por dia, semana e CNPJ · clique no valor para ver a lista"), quando) : lista);
 }

@@ -25,7 +25,7 @@ import React from "react";
 import "@phosphor-icons/web/duotone";
 import "@phosphor-icons/web/fill";
 import "@/apps/montagem/styles/montagem.css";
-import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
+import { abaDoCaminho, caminhoDaAba, setorDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
@@ -46,7 +46,7 @@ import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
 import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
-import { CHAVE, inicial } from "@/apps/montagem/state/store";
+import { CHAVE, inicial, paraSalvar } from "@/apps/montagem/state/store";
 import { Ctx } from "@/apps/montagem/state/context";
 import { reducer } from "@/apps/montagem/state/reducer";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -60,6 +60,8 @@ import * as sons from "@/apps/montagem/lib/sons";
 // cor de cada botão da barra de cima (mais cores em degradê para achar rápido); sem cor aqui, vale a cor do setor
 var ACESSO_COB = ACESSO_COBRANCA_BASE.concat([32]);   // sócios + Amanda de Miranda (id 32): quem opera a cobrança de funcionárias
 var COR_AREA = {};   // Financeiro usa uma cor só (a do setor); cores diferentes ficam só para estado (pago, atrasado...)
+// Grupos do menu lateral (28/10/2026, pedido do Marcus): Geral (Início/SorellyChat/Dashboard/Apps/Diretoria) → Setores (o resto). "setor" é o padrão de quem não tem grupo.
+var GRUPOS_SIDEBAR = [["geral","Geral"], ["setor","Setores"]];
 // agrupa os botões da barra do topo (áreas com "grupo"): o nome do grupo fica em cima dos botões; sem grupo, lista simples
 // menu em cascata montado das áreas do setor: área com uma tela só vira botão direto; área com grupos abre grupo → tela; as demais abrem a lista de telas
 function menuAuto(st){
@@ -123,7 +125,10 @@ function App(){
     window.addEventListener("mousemove", mover); window.addEventListener("mouseup", soltar);
   };
   var alternarMenu = function(v){ setRecolhido(v); if(v) setColArea(null); try{ localStorage.setItem("sorelly_menu_recolhido", v ? "1" : "0"); }catch(x){} };
-  var ga = useState({}), gruposAb = ga[0], setGruposAb = ga[1];
+  // grupos do menu lateral (Geral/Setores/Sistema, 28/10/2026): fecha/abre cada um, lembra a escolha; sem chave = aberto
+  var ga = useState(function(){ try{ return JSON.parse(localStorage.getItem("sorelly_grupos_menu")||"{}"); }catch(x){ return {}; } }), gruposAb = ga[0], setGruposAb = ga[1];
+  var alternarGrupoMenu = function(k){ var v = Object.assign({}, gruposAb); v[k] = gruposAb[k]===false; setGruposAb(v); try{ localStorage.setItem("sorelly_grupos_menu", JSON.stringify(v)); }catch(x){} };
+  var abrirTodosGrupos = function(){ setGruposAb({}); try{ localStorage.removeItem("sorelly_grupos_menu"); }catch(x){} };
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
   // barra do topo aberta 100% (todas as telas do setor à vista) ou recolhida (listas suspensas); lembra a escolha neste navegador
@@ -131,7 +136,7 @@ function App(){
   var alternarBarra = function(v){ setBarraAberta(v); setAreaTopo(null); try{ localStorage.setItem("sorelly_barra_aberta", v ? "1" : "0"); }catch(x){} };
   var at = useState(null), areaTopo = at[0], setAreaTopo = at[1];   // lista de telas aberta na barra do topo ({i, x, y})
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
-  useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(Object.assign({}, s, {aviso:null}))); }catch(x){} }, [s]);
+  useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); }catch(x){} }, [s]);
   useEffect(function(){ document.documentElement.classList.add("app-montagem");
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
   definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
@@ -142,23 +147,25 @@ function App(){
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
-  if(permitidas && permitidas.indexOf("rotina")<0) permitidas = permitidas.concat(["rotina"]);   // a Rotina do dia é de todo mundo (cada um vê a sua)   // o SorellyChat é de todo mundo
+  // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
-  if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celular","celbip","celrep","celrev","celcond"].indexOf(k)<0; });
+  if(!soMarcus) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
-  // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início, Rotina e Chat sempre ficam. Vale para o menu e os cartões do Início.
+  // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","rotina","whats"].indexOf(k)>=0; });
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats"].indexOf(k)>=0; });
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
   var titulo = aba==="breve" ? (breveURL||s.breveNome||"Em breve") : ABAS.find(function(a){return a[0]===aba;})[1];
   var onde = ondeEsta(aba);
+  var donoTitulo = aba==="breve" ? null : setorDaAba(aba), setorTitulo = donoTitulo ? donoTitulo.nome : "Sorelly Admin";
+  useEffect(function(){ document.title = titulo+" · "+setorTitulo; }, [titulo, setorTitulo]);   // título da aba do navegador: Tela · Setor (pedido do Marcus, 28/10/2026)
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
   var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // dois modos: Admin (a Sorelly) e Marcus (sistema particular, só ele)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
@@ -209,9 +216,9 @@ function App(){
     className:"flex h-9 w-full items-center gap-2.5 rounded-lg px-1.5 text-left text-sm "+(on?"bg-sidebar-accent font-medium text-sidebar-accent-foreground":"text-foreground/85 hover:bg-white/5 hover:text-foreground")},
     e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
-  // App da bipagem no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
-  if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); recarregar(); }});
-  if(s.logado && aba==="celbip") return e(Ctx.Provider,{value:{state:s, dispatch:d}},
+  // App das funcionárias no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
+  if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); var pp = papelDe(u.pessoaId); if(pp==="montadora" || pp==="bipadora") navigate(caminhoDaAba("whats"), {replace:true}); recarregar(); }});   // montadora e bipadora começam no chat
+  if(s.logado && aba==="celfunc") return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
@@ -228,10 +235,18 @@ function App(){
         [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"]].map(function(x){
           return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
-        setoresV.filter(function(st){ return !soBreve(st); }).concat(setoresV.filter(soBreve)).map(linhaSetor),
+        GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
+          lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
+          var fechado = gruposAb[g[0]]===false;
+          return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
+            e("div",{className:"mt-2.5 flex items-center justify-between px-1.5 pb-0.5 first:mt-0"},
+              e("button",{type:"button", onClick:function(){ alternarGrupoMenu(g[0]); }, className:"flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"},
+                e(Icon,{n:"chevrondown", s:10, className:"transition-transform "+(fechado ? "-rotate-90" : "")}), g[1]),
+              g[0]==="setor" && e("button",{type:"button", onClick:abrirTodosGrupos, className:"text-[10.5px] font-semibold text-muted-foreground hover:text-foreground"}, "Abrir tudo")),
+            !fechado && lst.map(linhaSetor)); }),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
-        urlAdminAntigo() && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
+        urlAdminAntigo() && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
     !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",

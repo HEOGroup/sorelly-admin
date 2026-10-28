@@ -33,7 +33,9 @@ function pessoaDaConta(){ return lerConta().pessoa || ""; }
 function ehAdmin(){ return lerConta().perfil==="ADMIN"; }
 function abasDaConta(){ var l = lerConta().abas; return Array.isArray(l) ? l : null; }
 function ocultosDaConta(){ var l = lerConta().ocultar; return Array.isArray(l) ? l : null; }
-async function entrar(email, senha){ var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar}); return j.usuario; }
-function sair(){ guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
+// as telas abertas ficam na aba do navegador: ao entrar ou sair, a próxima pessoa não herda as da anterior
+function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ if(k.indexOf("sorelly_abas_globais_")===0) sessionStorage.removeItem(k); }); } catch(x){} }
+async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar}); return j.usuario; }
+function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
 export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta };

@@ -3,7 +3,7 @@
 import { EntBadge, Etiquetas, StBadge } from "@/apps/kits-novos/components/badges";
 import { ETAPA, ETAPAS, aberto, diasNaEtapa, etapaDe } from "@/apps/kits-novos/domain/etapas";
 import { dataBR, hojeISO } from "@/apps/kits-novos/lib/datas";
-import { direcionarParaRepresentante, registrarRecusa } from "@/apps/kits-novos/lib/bridge-montagem";
+import { direcionarParaRepresentante, direcionarParaSorelly, REP_SORELLY, registrarRecusa } from "@/apps/kits-novos/lib/bridge-montagem";
 import { DlgPerfilRep } from "@/apps/kits-novos/components/rep-editar";
 import { GradeJanelas } from "@/apps/kits-novos/components/grade-janelas";
 import { Sugestoes } from "@/apps/kits-novos/components/rep-indicar";
@@ -131,7 +131,7 @@ function DlgDetalhe(p){
           e("ol",{className:"ml-1 flex flex-col gap-1 border-l-2 border-primary pl-3"}, c.hist.slice().reverse().map(function(h,i){ return e("li",{key:i, className:"text-[13px]"}, e("span",{className:MONO+" text-muted-foreground"}, new Date(h.em).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})), " ", e("b",null,h.quem), " ", h.txt); }))))));
 }
 // lista de representantes: as do quadro + todas do mapa (inclui a sugerida)
-function opcoesRep(base, s, atual){ var o = {}, r = []; (base||[]).concat(todasReps(s).map(function(x){ return x.nome; }), atual ? [atual] : []).forEach(function(n){ if(n && !o[n]){ o[n] = 1; r.push(n); } }); return r; }
+function opcoesRep(base, s, atual){ var o = {}, r = [REP_SORELLY]; o[REP_SORELLY] = 1; (base||[]).concat(todasReps(s).map(function(x){ return x.nome; }), atual ? [atual] : []).forEach(function(n){ if(n && !o[n]){ o[n] = 1; r.push(n); } }); return r; }
 function DlgAvancar(p){
   var cx2 = use(), d = cx2.dispatch, c = p.c, et = etapaDe(c), prox = ETAPAS[et.n];
   // Solicitar o kit: o sistema já sugere a representante e diz o porquê; a Michele só dá o OK (ou escolhe outra)
@@ -141,7 +141,7 @@ function DlgAvancar(p){
   return e(Modal,{open:true, titulo:"Avan\u00e7ar para "+prox.nome, sub:c.nome+", hoje em "+et.nome, confirmar:"Confirmar", icone:"arrowright", desabilitado:!f.data||precisaRep||precisaOk||(prox.k==="agendado" && !f.agDia),
       onClose:p.fechar, onConfirmar:function(){ var extra = {}; if(prox.k==="solicitado") extra.rep = f.rep; if(prox.k==="retirado") extra.retirada = f.retirada; if(prox.k==="agendado"){ extra.agDia = f.agDia; extra.agPer = f.agPer; }
         d({type:"AVANCAR", id:c.id, data:f.data, extra:extra});
-        if(prox.k==="solicitado" && f.rep) direcionarParaRepresentante(c, f.rep); }},
+        if(prox.k==="solicitado" && f.rep){ if(f.rep===REP_SORELLY) direcionarParaSorelly(c); else direcionarParaRepresentante(c, f.rep); } }},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       e(Campo,{l:"Data de "+prox.nome.toLowerCase()}, e("input",{type:"date", className:INPUT+" "+MONO, value:f.data, onChange:function(ev){up("data", ev.target.value);}})),
       prox.k==="solicitado" && e(Campo,{l:"Representante"}, e("select",{className:INPUT, value:f.rep, onChange:function(ev){up("rep", ev.target.value);}}, e("option",{value:""},"Escolha"), opcoesRep(p.listas.reps, cx2.state, f.rep).map(function(r){return e("option",{key:r, value:r}, r);}))),

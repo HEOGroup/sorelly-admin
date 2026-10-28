@@ -2,6 +2,32 @@
 
 Serve para a regra de venda mínima: média das 3 últimas vendas contra R$ 500 (acerto com representante) ou R$ 700 (atendimento Sorelly). Média abaixo = kit novo não liberado e cadastro bloqueado.
 
+## REGRA COMPLETA DA MÉDIA, EM ORDEM (resumo único, com os TES) — 27/10/2026
+| Passo | Regra | TES / código |
+|---|---|---|
+| 1 | Só vendas faturadas e não canceladas | `dmach.ach_situacao = F` e sem `ach_datacanc` |
+| 2 | **Vendedor Leilão fora** | `ach_vendedor = EK` |
+| 3 | Cada item da venda é classificado pelo TES (`dmaci.aci_tes`) | ver tabela abaixo |
+| 4 | Venda sem brinde = valor da DevMaster − brinde − troca − indicação − premiação − outros | `dmach.ach_valormerc` |
+| 5 | Vendas da mesma revendedora no mesmo dia se juntam em UM acerto | |
+| 6 | Dia que fecha em R$ 0 não é venda (fica só no registro) | |
+| 7 | Só vendas de até 12 meses | |
+| 8 | Média = as 3 últimas que sobram; com menos de 3, divide pelas que existem | |
+
+| Tipo do item | TES | Conta na média? |
+|---|---|---|
+| **Venda de mercadoria** | **S001, S002**; até 28/02/2026 também **S501, S502** | SIM |
+| Brinde | S009 (antigo S503) | Não |
+| Troca | S006 (antigo S504) | Não |
+| Indicação | S007 (antigo S505) | Não |
+| Premiação por meta | S011 | Não |
+| Outros | todo o resto (S004, S005, S010, S008...) | Não |
+
+**Diferença paga em bonificação CONTA como venda (Marcus, 27/10/2026).** Exemplo: prêmio de R$ 500, peças escolhidas R$ 560, a revendedora paga R$ 60. Os R$ 60 (item S001/S002) entram na venda e na média. Só os itens de bônus (S006, S007, S009, S011 e antigos) saem do valor. Não existe regra de "venda inteira fora da média". Isso substitui a proposta que estava sem OK mais abaixo.
+
+**Situação no código (27/10/2026): TODOS os 8 passos estão escritos.** A função `ultimasVendasDaMedia()` em `src/server/vendas-brinde.js` faz os passos 2 e 5 a 8. Ela alimenta a coluna "Média das 3 últimas vendas" da lista (`composicaoGeral()`) e a ficha da revendedora (`src/server/revendedoras.js`). Os passos 1, 3 e 4 vêm da carga das vendas (`sincronizarBrindes`). Testada com 11 casos (Leilão, mesmo dia, dia zerado, 12 meses, menos de 3 vendas, diferença paga). Falta ligar à calculadora do acerto (hoje a representante digita as 2 vendas anteriores).
+- Data que vale para juntar o dia: a de **faturamento** (`faturada`), que é a que o banco já usa. A Letícia usa a de emissão: a confirmar com o Marcus.
+
 ## Regra TRAVADA
 1. **Venda = só venda de mercadoria, sem brinde.** Da venda da DevMaster (`dmach.ach_valormerc`) sai tudo que não é venda: brinde, troca, indicação, premiação por meta e outros. Itens vêm do TES (S001, S501, S002, S008 = venda; S009/S503 = brinde; S006/S504 = troca; S007/S505 = indicação; S011 = premiação). Código: `src/server/vendas-brinde.js`, tabela `sorelly.venda_composicao`.
 2. **Vendas da mesma revendedora no mesmo dia se juntam** (a venda é aberta em duas às vezes). Conta como UM acerto, com a soma.
@@ -16,7 +42,7 @@ Serve para a regra de venda mínima: média das 3 últimas vendas contra R$ 500 
 - Exemplos: revendedora 003771 (31/07 teve R$ 4.184 só de troca): média cai de R$ 3.720,67 para R$ 2.048 se o zero contar. Mesmo dia: 006799 = R$ 498 + R$ 310 = R$ 808.
 
 ## Situação no código
-Regra ainda NÃO escrita no código (falta função de média por revendedora e ligar à calculadora do acerto, hoje a representante digita as 2 vendas anteriores).
+Regra escrita no código em 27/10/2026 (`ultimasVendasDaMedia`, ver "Regra completa" no topo). Falta só ligar à calculadora do acerto (hoje a representante digita as 2 vendas anteriores).
 
 ## Pagamentos da DevMaster (para a aba de pagamentos da revendedora)
 O token da API 2 libera as tabelas dmaaa a dmafq. Em `dmach` (vendas): `ach_xformaspagtxt` (ex.: "DINHEIRO: R$ 1.972,00"), `ach_tipopag` (ex.: DIN), `ach_condpag`.
@@ -89,3 +115,18 @@ Venda sem brinde = valor da DevMaster − brinde − troca − indicação − p
 - A média é só das ÚLTIMAS 3 vendas. Venda velha, como a de 2023 da Eva, NÃO entra. A Letícia errou ao usar a venda de 26/06/2023.
 - Eva (002089): sem a venda de 2023 ficam 2 vendas recentes (R$ 1.204 + R$ 1.235 sem brinde = média R$ 1.219,50). Quem tem menos de 3 vendas recentes: média das que existem.
 - A confirmar: até que idade uma venda ainda conta como "recente" (ex.: 12 meses)? Isso também define se vale puxar anos anteriores (decisão anterior: depois puxar outros anos) ou se só serve para histórico.
+
+## Decisão do Marcus (27/10/2026): janela e anos
+- Uma venda só entra na média se tiver **no máximo 12 meses**. A base carregada continua **só 2026** (não puxar 2023, 2024 nem 2025).
+- Efeito: vendas de out a dez/2025 ficam de fora enquanto não forem carregadas (a revendedora com venda só nesse período fica com menos vendas na média). Em 2027 a base precisa continuar carregando 2026 e 2027.
+- Regra final da média: vendas sem brinde → mesmo dia juntam → dia só de troca/brinde/indicação/premiação não conta (fica no registro, no TES dele) → até 12 meses → as 3 últimas que sobram → quem tem menos de 3 divide pelas que existem.
+- ~~Ainda sem OK: vendas de bonificação inteiras fora da média.~~ **Resolvido em 27/10/2026:** a diferença paga CONTA como venda (ver "Regra completa" no topo).
+
+## Regra TRAVADA (Marcus, 27/10/2026): vendedor LEILÃO fora da média
+- Venda do vendedor **EK (LEILÃO)** NÃO é acerto e **nunca entra em nenhuma conta de média** do sistema. Fica no histórico da revendedora, como as trocas e os brindes.
+- Motivo: a Cíntia das Graças (001655) tem 7 vendas pequenas de Leilão (R$ 248 a R$ 688) que entrariam entre as últimas vendas e derrubariam a média.
+- Posição na ordem da regra: é o **primeiro filtro** (antes de "sem brinde", "mesmo dia junta" e "12 meses").
+- Código: `src/server/vendas-brinde.js` guarda o vendedor de cada venda (`sorelly.venda_composicao.vendedor`, vindo de `dmach.ach_vendedor`) e a lista `VENDEDOR_FORA_DA_MEDIA = ["EK"]`. `composicaoGeral()` já tira o Leilão das 3 últimas vendas. Quem escrever a função de média por revendedora deve usar a mesma lista.
+- A coluna nasce sozinha. As linhas antigas ficam sem vendedor até a próxima carga de 2026, que o sistema refaz sozinho uma vez. Nesse intervalo o Leilão ainda conta.
+- Códigos de vendedor que NÃO são representante: 04 = EXPOSITOR, 91 = ENCOMENDAS, EK = LEILÃO. Só o EK está fora da média por decisão do Marcus. Encomendas (91) e Expositor (04) seguem como antes até ele decidir.
+- Os totais por mês (venda do mês, nº de acertos) continuam contando o Leilão. Falta o Marcus dizer se também devem tirar.

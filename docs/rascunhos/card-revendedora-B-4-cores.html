@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card da revendedora · layout B em 4 cores</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  body{ background:#0b0b0d; color:#f4f4f5; font:13px/1.45 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; }
+  h1{ font-size:18px; } .sub{ color:#a1a1aa; margin:2px 0 14px; max-width:900px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(600px,1fr)); gap:18px; align-items:start; }
+  .rot{ font-weight:700; margin-bottom:6px; } .dica{ color:#a1a1aa; font-size:12px; margin-bottom:6px; }
+  /* tema = variáveis */
+  .card{ --f1:#1a1a1d; --f2:#101012; --brilho:rgba(255,255,255,.06); --borda:rgba(255,255,255,.12); --acc:#E8B84B; --acc2:#B8862B; --topo1:rgba(232,184,75,.30); --topo2:rgba(232,184,75,0); --txt:#f6f1e7; --mut:#b4ab98; --cx:rgba(255,255,255,.06); --linha:rgba(255,255,255,.10);
+    position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--borda); color:var(--txt);
+    background: radial-gradient(900px 260px at 0% -10%, var(--brilho), transparent 60%), radial-gradient(500px 300px at 100% 110%, var(--brilho), transparent 60%), linear-gradient(150deg,var(--f1),var(--f2));
+    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06); }
+  .card *{ font-size:13px; }
+  .t1{ --f1:#33260f; --f2:#120d06; --brilho:rgba(241,213,138,.13); --borda:rgba(241,213,138,.30); --acc:#F1D58A; --acc2:#C9962F; --topo1:rgba(241,213,138,.32); --txt:#fbf4e4; --mut:#cdbf9f; --cx:rgba(241,213,138,.07); --linha:rgba(241,213,138,.16); }
+  .t2{ --f1:#0c3a40; --f2:#06161a; --brilho:rgba(45,212,191,.16); --borda:rgba(45,212,191,.32); --acc:#5EEAD4; --acc2:#14B8A6; --topo1:rgba(45,212,191,.30); --txt:#effcf9; --mut:#9bc9c3; --cx:rgba(45,212,191,.08); --linha:rgba(45,212,191,.18); }
+  .t3{ --f1:#4a1427; --f2:#16060d; --brilho:rgba(251,113,133,.16); --borda:rgba(251,113,133,.32); --acc:#FDA4AF; --acc2:#E11D48; --topo1:rgba(251,113,133,.30); --txt:#fff1f3; --mut:#d9aab3; --cx:rgba(251,113,133,.08); --linha:rgba(251,113,133,.18); }
+  .t4{ --f1:#2b1a5c; --f2:#0e0820; --brilho:rgba(167,139,250,.22); --borda:rgba(196,181,253,.34); --acc:#C4B5FD; --acc2:#8B5CF6; --topo1:rgba(167,139,250,.34); --txt:#f5f2ff; --mut:#b8aedd; --cx:rgba(196,181,253,.09); --linha:rgba(196,181,253,.18); }
+  .topo{ display:flex; align-items:center; gap:10px; padding:12px 16px; background:linear-gradient(90deg,var(--topo1),var(--topo2)); border-bottom:1px solid var(--linha); }
+  .nome{ font:600 19px/1.15 Georgia,"Playfair Display","Times New Roman",serif !important; letter-spacing:.2px; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cod{ color:var(--mut); font-variant-numeric:tabular-nums; letter-spacing:.04em; }
+  .duas{ display:grid; grid-template-columns:230px 1fr; }
+  .esq{ padding:14px 14px 14px 16px; display:flex; flex-direction:column; gap:9px; border-right:1px solid var(--linha); background:linear-gradient(180deg,var(--cx),transparent); }
+  .dir{ padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kv{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; }
+  .kv span{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; }
+  .kv b{ font-variant-numeric:tabular-nums; font-size:14px; }
+  .grande{ color:var(--acc); font-size:17px !important; font-weight:700; }
+  .atraso{ color:#fca5a5; }
+  hr{ border:0; border-top:1px solid var(--linha); }
+  select,input,button{ font:inherit; color:var(--txt); background:var(--cx); border:1px solid var(--linha); border-radius:9px; height:32px; padding:0 9px; outline:none; }
+  select{ cursor:pointer; background-image:none; } select option{ color:#111; }
+  input::placeholder{ color:var(--mut); } input:focus,select:focus{ border-color:var(--acc); box-shadow:0 0 0 2px color-mix(in srgb,var(--acc) 25%,transparent); }
+  button{ cursor:pointer; } button:hover{ border-color:var(--acc); }
+  button.pri{ background:linear-gradient(135deg,var(--acc),var(--acc2)); color:#17110a; border:0; font-weight:700; box-shadow:0 4px 14px color-mix(in srgb,var(--acc2) 40%,transparent); }
+  .linha{ display:flex; gap:7px; align-items:center; } .linha > *{ min-width:0; }
+  .rotulo{ font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; color:var(--mut); }
+  .chip{ display:inline-flex; align-items:center; height:21px; padding:0 9px; border-radius:999px; font-size:11px !important; font-weight:700; letter-spacing:.02em; white-space:nowrap; border:1px solid; }
+  .k-sem{ background:rgba(239,68,68,.16); color:#fecaca; border-color:rgba(239,68,68,.5); }
+  .k-msg{ background:rgba(56,189,248,.15); color:#bae6fd; border-color:rgba(56,189,248,.5); }
+  .k-con{ background:rgba(255,255,255,.08); color:var(--txt); border-color:var(--linha); }
+  .k-ag{ background:rgba(34,197,94,.16); color:#bbf7d0; border-color:rgba(34,197,94,.5); }
+  .k-bo{ background:rgba(245,158,11,.17); color:#fde68a; border-color:rgba(245,158,11,.5); }
+  .k-pro{ background:rgba(168,85,247,.18); color:#e9d5ff; border-color:rgba(168,85,247,.5); }
+  .tl{ display:flex; flex-direction:column; max-height:300px; overflow:auto; padding-right:4px; }
+  .ev{ display:grid; grid-template-columns:48px 1fr; gap:10px; padding:9px 0; border-top:1px solid var(--linha); } .ev:first-child{ border-top:0; }
+  .dia{ color:var(--mut); font-variant-numeric:tabular-nums; font-size:12px !important; padding-top:2px; }
+  .quem{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:2px; }
+  .quem b{ font-size:13.5px !important; } .quem small{ color:var(--mut); font-size:11.5px !important; }
+  .eu{ color:var(--acc); }
+  .txt{ color:var(--txt); opacity:.94; } .txt.corta{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mais{ background:none; border:0; color:var(--acc); height:auto; padding:0; font-size:12px !important; margin-top:2px; }
+  table{ width:100%; border-collapse:collapse; } th{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.06em; font-weight:600; text-align:right; padding:4px 6px; } th:first-child,td:first-child{ text-align:left; }
+  td{ text-align:right; padding:4px 6px; border-top:1px solid var(--linha); font-variant-numeric:tabular-nums; } tfoot td{ font-weight:700; border-top:2px solid var(--linha); }
+  .vend{ display:none; } .vend.on{ display:block; }
+  .nota{ color:#a1a1aa; margin-top:18px; max-width:900px; }
+  @media (max-width:700px){ .grade{ grid-template-columns:1fr; } .duas{ grid-template-columns:1fr; } .esq{ border-right:0; border-bottom:1px solid var(--linha); } }
+</style>
+</head>
+<body>
+<h1>Card da revendedora · layout B em 4 cores</h1>
+<p class="sub">O mesmo layout B, agora com fundo em degradê e letras mais elegantes. Novidade: cada contato mostra <b>quem entrou em contato</b> e <b>quem registrou</b>. A conta que está logada registra sozinha; a Tamara pode dizer que foi outra funcionária. Números e nomes de exemplo.</p>
+<div class="grade" id="grade"></div>
+<p class="nota">Como funciona o "quem": ao registrar, o campo <b>Quem falou com ela</b> já vem com "Eu" (a conta logada: Marcus, Nickolas, Tamara…). A Tamara troca para Rebeca, Ana Maria, Nayale… se foi outra pessoa. O registro guarda os dois nomes: aparece "Rebeca · registrado por Tamara". Se for a mesma pessoa, aparece só o nome.</p>
+<script>
+  var GENTE = ['Eu','Tamara','Nickolas','Marcus','Ana Maria','Nayale','Rebeca','Soliane','Outra pessoa'];
+  var TIPOS = {sem:['Sem retorno','k-sem'],msg:['Mensagem','k-msg'],con:['Contato','k-con'],ag:['Agendado','k-ag'],bo:['B.O.','k-bo'],pro:['Protesto','k-pro']};
+  var PESSOAS = {
+    alexia:{nome:'Alexia Luana dos Santos',cod:'026344',chip:['60 dias com o kit','k-bo'],prev:'05/11/2026',falta:'23 d atrasada',media:'R$ 1.204,00',kit:'R$ 10.000,00',sit:'Sem retorno',
+      ev:[['28/10','con','Nickolas','Nickolas','Liguei e ela atendeu: está viajando, volta dia 10/11. Pediu mais prazo.'],
+          ['01/10','sem','Nayale','Tamara','Passado para Tamega. Alega estar viajando a trabalho e vai morar fora do Brasil. 60 dias com o kit, sem retorno. Não responde mais.'],
+          ['17/09','msg','Ana Maria','Tamara','Enviou mensagem para cobrar a data do acerto.'],
+          ['02/09','con','Rebeca','Tamara','Entrou em contato: viajando, aguardando o retorno.']],
+      vendas:[['12/08','R$ 1.235,00','R$ 679,20'],['14/07','R$ 1.204,00','R$ 662,20']],tv:['R$ 2.439,00','R$ 1.341,40']},
+    gabrielly:{nome:'Gabrielly Karolyna da Silva dos Santos',cod:'021329',chip:['B.O. · Convertido Sorelly','k-bo'],prev:'12/11/2026',falta:'15 d atrasada',media:'R$ 1.671,00',kit:'R$ 12.000,00',sit:'B.O. · Convertido Sorelly',
+      ev:[['14/06','sem','Soliane','Tamara','ENTRADO EM CONTATO DESDE O DIA 23/05 PELO CELULAR PESSOAL DA SOLIANE QUE FEZ A ENTREGA DO KIT. PESSOAL DO CADASTRO TENTOU LIGAR PARA TODOS OS CONTATOS DE REFERÊNCIA E NINGUÉM ATENDEU. LIGOU PARA A MÃE: NÃO TINHA FILHOS E O NOME DELA ERA MARI. PAI: ERA SOGRO, FILHO E NORA SE MUDARAM. "AMOR": SEPARADOS, ELA FOI PARA O XAXIM. AVISADA DO PROTESTO DA NOTA, SEM RETORNO. TELEFONE NÃO EXISTE. FACEBOOK NÃO ENCONTRADO.'],
+          ['—','bo','Nickolas','Tamara','B.O.: Nickolas está tentando contato. Convertido Sorelly.'],
+          ['23/05','con','Soliane','Tamara','Primeira tentativa pelo telefone da Sorelly.']],
+      vendas:[['15/10','R$ 2.712,00','R$ 1.490,00'],['15/09','R$ 2.243,00','R$ 1.233,70'],['18/08','R$ 4.488,00','R$ 2.468,40']],tv:['R$ 9.443,00','R$ 5.192,10']}
+  };
+  var VARIA = [['t1','1 · Ouro champagne','Quente e elegante: marrom escuro com brilho dourado. Combina com a marca.','alexia'],
+               ['t2','2 · Azul petróleo','Mais calmo e limpo: verde-azulado escuro com acento turquesa.','gabrielly'],
+               ['t3','3 · Vinho e rosé','Mais ousado: bordô profundo com acento rosé.','alexia'],
+               ['t4','4 · Violeta noite','Moderno: violeta escuro com brilho lilás.','gabrielly']];
+  var sel = function(opts, w){ return '<select style="'+(w?'width:'+w:'')+'">'+opts.map(function(o){ return '<option>'+o+'</option>'; }).join('')+'</select>'; };
+  function card(tema, chave){
+    var p = PESSOAS[chave];
+    var evs = p.ev.map(function(x,i){ var t = TIPOS[x[1]], longo = x[4].length>150, mesmo = x[2]===x[3];
+      return '<div class="ev"><div class="dia">'+x[0]+'</div><div><div class="quem"><b'+(x[2]==='Nickolas'?' class="eu"':'')+'>'+x[2]+'</b><span class="chip '+t[1]+'">'+t[0]+'</span>'+(mesmo?'':'<small>registrado por '+x[3]+'</small>')+'</div>'
+        +'<div class="txt'+(longo?' corta':'')+'">'+x[4]+'</div>'+(longo?'<button class="mais">ver tudo</button>':'')+'</div></div>'; }).join('');
+    var linhasV = p.vendas.map(function(v){ return '<tr><td>'+v[0]+'</td><td>'+v[1]+'</td><td>'+v[2]+'</td></tr>'; }).join('');
+    return '<div class="card '+tema+'"><div class="topo"><b class="nome">'+p.nome+'</b><span class="cod">'+p.cod+'</span><span class="chip '+p.chip[1]+'">'+p.chip[0]+'</span></div>'
+      +'<div class="duas"><div class="esq">'
+      +'<div class="kv"><span>Acerto previsto</span><b>'+p.prev+'</b></div><div class="kv"><span>Faltam</span><b class="atraso">'+p.falta+'</b></div>'
+      +'<div class="kv"><span>Média 3 vendas</span><b>'+p.media+'</b></div><div class="kv"><span>Próximo kit</span><b class="grande">'+p.kit+'</b></div><hr>'
+      +'<div class="rotulo">Situação</div>'+sel([p.sit,'A contatar','Entrei em contato','Agendada','Sem retorno','Protesto'])
+      +'<div class="rotulo">Data agendada</div><div class="linha"><input type="date" style="flex:1"><input type="time" style="width:80px"></div><button class="pri">Agendar acerto</button>'
+      +'<div class="linha">'+sel(['Ciclo 30 d','Ciclo 45 d','Ciclo 60 d'],'50%')+sel(['Normal','Prata'],'50%')+'</div>'
+      +sel(['Copiar mensagem ▾','1º contato','Confirmação na véspera','Lembrete do dia'])
+      +'</div><div class="dir">'
+      +'<div class="rotulo">Registrar contato</div>'
+      +'<div class="linha">'+sel(['Contato','Mensagem enviada','Agendado','Mais prazo','Sem retorno','Viajando','B.O.','Protesto'],'128px')+sel(GENTE,'118px')+'<input style="flex:1" placeholder="O que aconteceu?"><button class="pri">+</button></div>'
+      +'<div class="rotulo" style="margin-top:-4px;text-transform:none;letter-spacing:0">Quem falou com ela: <b class="eu">Eu</b> (conta logada). Troque se foi outra pessoa.</div>'
+      +'<div class="tl">'+evs+'</div>'
+      +'<button class="mais" data-v>Vendas 2026 ('+p.vendas.length+') ▸</button><div class="vend"><table><thead><tr><th>Data</th><th>Venda</th><th>Acerto</th></tr></thead><tbody>'+linhasV+'</tbody><tfoot><tr><td>Total</td><td>'+p.tv[0]+'</td><td>'+p.tv[1]+'</td></tr></tfoot></table></div>'
+      +'</div></div></div>';
+  }
+  document.getElementById('grade').innerHTML = VARIA.map(function(v){ return '<div><div class="rot">'+v[1]+'</div><div class="dica">'+v[2]+'</div>'+card(v[0], v[3])+'</div>'; }).join('');
+  document.querySelectorAll('.mais').forEach(function(b){ b.onclick=function(){ if(b.hasAttribute('data-v')){ b.nextElementSibling.classList.toggle('on'); return; } var t=b.previousElementSibling; t.classList.toggle('corta'); b.textContent=t.classList.contains('corta')?'ver tudo':'ver menos'; }; });
+</script>
+</body>
+</html>

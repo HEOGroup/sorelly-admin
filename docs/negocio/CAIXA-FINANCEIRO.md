@@ -1,5 +1,7 @@
 # Caixa e Financeiro — o que foi alinhado com o Marcus (out/2026)
 
+> **27/10/2026:** a visão do resultado efetivo do mês (receber × pagar, entrou de verdade, previsão dos próximos meses) e a função de cada aba do Financeiro estão em `RESULTADO-DO-MES.md`. A prova real do caixa deve migrar para a tela Resultado do mês; esta tela fica só com os saldos do dia.
+
 Documento de memória da tela **Financeiro → Saldos Bancários → Caixa**. Leia antes de mexer nela. Atualize ao decidir algo novo.
 **Este arquivo vai para o GitHub (repositório público): não há valores da empresa aqui.** Os dados reais estão em `src/apps/montagem/domain/saldos-iniciais.local.js` (fora do Git, `.gitignore`) e os números e exemplos em `CAIXA-FINANCEIRO.local.md` (também fora do Git). Quem for trabalhar na tela precisa pedir esses dois arquivos ao Marcus.
 

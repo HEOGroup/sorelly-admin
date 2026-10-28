@@ -6,7 +6,7 @@
 // Cada nó: {nome, aba?, modo?, perm?, itens?}. Sem itens = abre a tela. Itens sem permissão somem (e a palavra some se ficar vazia).
 import { createPortal } from "react-dom";
 import { useLayoutEffect } from "react";
-import { gravarFavoritas, lerFavoritas } from "@/apps/montagem/lib/favoritas";
+import { chaveDeNo, gravarFavoritas, lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { e, Fragment, useEffect, useRef, useState } from "@/shared/react";
 
 var OURO = "#B8862B", LARG = 244, LIN = 30;
@@ -106,10 +106,10 @@ function BuscaMenu(p){
 
 // ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
 var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
-var chaveDeNo = function(n, setor){ return setor+"|"+(n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; };
 var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")) || "[]"); }catch(x){ return []; } };
-// Estrela (27/10/2026): clicar na ☆ fixa a aba como FAVORITA. Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
-// O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, clique na ★.
+// Favoritar (27/10/2026, botão mudou de lugar em 28/10/2026): fica na própria tela (ui/page.js, canto do PageHead), não mais aqui na faixa de abas.
+// Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
+// O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, usa o botão "Favoritar aba" na tela.
 var INICIO_ABA = {k:chaveDeNo({aba:"inicio", nome:"Início"}, "Início"), nome:"Início", aba:"inicio", setor:"Início", cor:"#E8B84B"};
 function AbasAbertas(p){
   var nos = filtrar(p.menu, p.pode), todas = folhas(nos, [], []).map(function(x){ return x.no; });
@@ -132,17 +132,12 @@ function AbasAbertas(p){
       try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(nova)); }catch(x){}
       return nova;
     });
-  }, [kAtual]);
+  }, [kAtual, favs]);   // "favs" também: ao desfavoritar a tela atual (botão "Favoritar aba" na tela), ela volta sozinha para a faixa de abas
   // ordem na faixa: Início, favoritas (na ordem escolhida), depois as abertas que não são favoritas
   var lista = [INICIO_ABA].concat(favs.filter(function(f){ return f.aba!=="inicio"; }), abas.filter(function(a){ return a.aba!=="inicio" && !eFav(a.k); }));
   var fecha = function(a, ev){ ev.stopPropagation(); var i = lista.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
     if(a.k!==kAtual) return;
     p.abrir(lista[Math.max(0, i-1)]);   // volta para a aba da esquerda (no pior caso, o Início)
-  };
-  var alternaFav = function(a, ev){
-    ev.stopPropagation();
-    if(eFav(a.k)){ var tira = favs.filter(function(f){ return f.k!==a.k; }); setFavs(tira); gravarFavoritas(visao, tira); grava(abas.concat([a])); }
-    else { var poe = favs.concat([{k:a.k, nome:a.nome, aba:a.aba, modo:a.modo, breve:a.breve, setor:a.setor, cor:a.cor}]); setFavs(poe); gravarFavoritas(visao, poe); grava(abas.filter(function(z){ return z.k!==a.k; })); }
   };
   // segurar a aba e arrastar para trocar de lugar (favoritas entre favoritas, abertas entre abertas)
   var soltar = function(alvo, ev){
@@ -160,8 +155,6 @@ function AbasAbertas(p){
           className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50")+(arrastando===a.k ? " opacity-40" : ""), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
         e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
           (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
-        !fixo && e("button",{type:"button", "aria-label":fav ? "Tirar "+a.nome+" dos favoritos" : "Fixar "+a.nome+" nos favoritos", title:fav ? "Tirar dos favoritos" : "Fixar nos favoritos", onClick:function(ev){ alternaFav(a, ev); },
-          className:"h-full px-1.5 text-[15px] leading-none "+(fav ? "text-[#F5D68A]" : "opacity-60 hover:opacity-100")}, fav ? "★" : "☆"),
         (!fixo && !fav) && e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕"),
         (fixo || fav) && e("span",{className:"pr-2"})); }));
 }

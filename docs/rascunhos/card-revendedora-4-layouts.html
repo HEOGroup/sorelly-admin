@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card da revendedora · 4 layouts</title>
+<style>
+  :root{ --bg:#0f0f10; --card:#18181a; --card2:#202023; --linha:#2c2c30; --txt:#f4f4f5; --mut:#a1a1aa; --ouro:#E8B84B; --ouro2:#B8862B; --ok:#22C55E; --ruim:#EF4444; --atencao:#F59E0B; --azul:#38BDF8; }
+  *{ box-sizing:border-box; margin:0; }
+  body{ background:var(--bg); color:var(--txt); font:13px/1.4 Inter,system-ui,Segoe UI,Arial,sans-serif; padding:16px; }
+  h1{ font-size:18px; margin-bottom:2px; } .sub{ color:var(--mut); margin-bottom:14px; }
+  .grade{ display:grid; grid-template-columns:repeat(auto-fit,minmax(560px,1fr)); gap:16px; align-items:start; }
+  .opc{ display:flex; flex-direction:column; gap:6px; }
+  .opc > .rot{ font-weight:700; color:var(--ouro); } .opc > .dica{ color:var(--mut); font-size:12px; }
+  .card{ background:var(--card); border:1px solid var(--linha); border-radius:12px; overflow:hidden; }
+  .card *{ font-size:13px; }
+  .topo{ display:flex; align-items:center; gap:10px; padding:8px 12px; border-bottom:1px solid var(--linha); background:linear-gradient(90deg,rgba(232,184,75,.14),transparent); }
+  .topo b.nome{ font-size:15px; flex:1; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .cod{ color:var(--mut); font-variant-numeric:tabular-nums; }
+  select,input,button{ font:inherit; color:var(--txt); background:var(--card2); border:1px solid var(--linha); border-radius:8px; height:32px; padding:0 8px; }
+  select{ cursor:pointer; } button{ cursor:pointer; } button:hover{ border-color:var(--ouro2); }
+  button.pri{ background:var(--ouro); color:#1b1409; border-color:var(--ouro); font-weight:700; }
+  input{ min-width:0; } input::placeholder{ color:var(--mut); }
+  .chip{ display:inline-flex; align-items:center; height:22px; padding:0 8px; border-radius:999px; font-size:11.5px; font-weight:700; border:1px solid transparent; white-space:nowrap; }
+  .c-ouro{ background:rgba(232,184,75,.16); color:var(--ouro); border-color:rgba(232,184,75,.4); }
+  .c-ok{ background:rgba(34,197,94,.15); color:var(--ok); border-color:rgba(34,197,94,.4); }
+  .c-ruim{ background:rgba(239,68,68,.15); color:#fca5a5; border-color:rgba(239,68,68,.45); }
+  .c-aten{ background:rgba(245,158,11,.15); color:#fbbf24; border-color:rgba(245,158,11,.4); }
+  .c-azul{ background:rgba(56,189,248,.14); color:var(--azul); border-color:rgba(56,189,248,.4); }
+  .c-cinza{ background:#2a2a2e; color:var(--mut); border-color:var(--linha); }
+  .nums{ display:grid; grid-template-columns:repeat(5,1fr); }
+  .nums > div{ padding:6px 10px; border-right:1px solid var(--linha); min-width:0; } .nums > div:last-child{ border-right:0; }
+  .nums small{ display:block; color:var(--mut); font-size:11px; text-transform:uppercase; letter-spacing:.03em; }
+  .nums b{ font-size:14px; font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .corpo{ padding:10px 12px; display:flex; flex-direction:column; gap:8px; }
+  .linhas{ display:flex; gap:8px; align-items:center; }
+  .abas{ display:flex; gap:2px; border-bottom:1px solid var(--linha); padding:0 8px; }
+  .abas button{ border:0; border-bottom:2px solid transparent; border-radius:0; background:none; height:34px; color:var(--mut); }
+  .abas button.on{ color:var(--ouro); border-bottom-color:var(--ouro); font-weight:700; }
+  .painel{ display:none; } .painel.on{ display:block; } .painel.on.corpo{ display:flex; }
+  .tl{ display:flex; flex-direction:column; }
+  .ev{ display:grid; grid-template-columns:58px 1fr; gap:8px; padding:7px 0; border-top:1px solid var(--linha); }
+  .ev:first-child{ border-top:0; }
+  .ev .d{ color:var(--mut); font-variant-numeric:tabular-nums; font-size:12px; }
+  .ev .q{ font-weight:700; margin-right:6px; } .ev .t{ color:#e4e4e7; }
+  .ev .t.corta{ display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+  .mais{ background:none; border:0; color:var(--ouro); height:auto; padding:0; font-size:12px; margin-top:2px; }
+  .scroll{ max-height:230px; overflow:auto; }
+  table{ width:100%; border-collapse:collapse; } th{ text-align:right; color:var(--mut); font-size:11px; text-transform:uppercase; font-weight:600; padding:5px 8px; } th:first-child,td:first-child{ text-align:left; }
+  td{ text-align:right; padding:4px 8px; border-top:1px solid var(--linha); font-variant-numeric:tabular-nums; } tfoot td{ font-weight:700; border-top:2px solid var(--linha); }
+  .zero td{ color:var(--mut); }
+  .acc > button.cab{ width:100%; display:flex; justify-content:space-between; align-items:center; border:0; border-top:1px solid var(--linha); border-radius:0; background:none; height:34px; padding:0 12px; font-weight:700; }
+  .acc > button.cab span{ color:var(--mut); font-weight:400; } .acc .cont{ display:none; padding:6px 12px 10px; } .acc.on .cont{ display:block; }
+  .duas{ display:grid; grid-template-columns:220px 1fr; } .duas > .esq{ border-right:1px solid var(--linha); padding:10px 12px; display:flex; flex-direction:column; gap:8px; } .duas > .dir{ padding:10px 12px; display:flex; flex-direction:column; gap:8px; min-width:0; }
+  .kv{ display:flex; justify-content:space-between; gap:8px; } .kv span{ color:var(--mut); } .kv b{ font-variant-numeric:tabular-nums; text-align:right; }
+  .rod{ display:flex; gap:8px; padding:8px 12px; border-top:1px solid var(--linha); align-items:center; }
+  .fila{ display:flex; flex-wrap:wrap; gap:6px; }
+  .nota{ color:var(--mut); font-size:12px; margin-top:16px; }
+  @media (max-width:640px){ .grade{ grid-template-columns:1fr; } .duas{ grid-template-columns:1fr; } .duas>.esq{ border-right:0; border-bottom:1px solid var(--linha);} .nums{ grid-template-columns:repeat(2,1fr);} }
+</style>
+</head>
+<body>
+<h1>Card da revendedora · 4 layouts</h1>
+<p class="sub">Tudo no mesmo lugar (abre embaixo da linha). Menos botões: situação e atalhos viram caixa suspensa, o ciclo vira um campo pequeno, e as mensagens prontas viram um menu. Números de exemplo.</p>
+
+<div class="grade">
+
+<!-- ============ A ============ -->
+<div class="opc">
+  <div class="rot">A · Números em cima, abas embaixo</div>
+  <div class="dica">O mais direto: uma faixa com os 5 números que importam e três abas (Contatos, Vendas, Cadastro). Quase nada aparece até você pedir.</div>
+  <div class="card" data-abas>
+    <div class="topo"><b class="nome">Gabrielly Karolyna da Silva dos Santos</b><span class="cod">021329</span>
+      <select aria-label="Situação"><option>Sem retorno</option><option>A contatar</option><option>Entrei em contato</option><option selected>B.O. · Convertido Sorelly</option><option>Agendada</option><option>Protesto</option></select></div>
+    <div class="nums">
+      <div><small>Acerto previsto</small><b>12/11/2026</b></div><div><small>Faltam</small><b style="color:var(--ruim)">15 d atrasada</b></div>
+      <div><small>Agendada</small><b style="color:var(--mut)">Aguardando</b></div><div><small>Média 3 vendas</small><b>R$ 1.671,00</b></div><div><small>Próximo kit</small><b style="color:var(--ouro)">R$ 12.000,00</b></div>
+    </div>
+    <div class="abas"><button class="on" data-a="0">Contatos (3)</button><button data-a="1">Vendas 2026 (4)</button><button data-a="2">Cadastro</button></div>
+    <div class="painel on corpo" data-p="0">
+      <div class="linhas"><select style="width:150px" aria-label="Tipo de contato"><option>Entrei em contato</option><option>Mensagem enviada</option><option>Agendado</option><option>Mais prazo</option><option>Sem retorno</option><option>Viajando</option><option>B.O.</option><option>Protesto</option></select>
+        <input style="flex:1" placeholder="O que aconteceu?"><button class="pri">Registrar</button></div>
+      <div class="tl scroll">
+        <div class="ev"><div class="d">14/06</div><div><span class="q">Soliane</span><span class="t corta">ENTRADO EM CONTATO DESDE O DIA 23/05 PELO CELULAR PESSOAL DA SOLIANE QUE FEZ A ENTREGA DO KIT. PESSOAL DO CADASTRO TENTOU LIGAR PARA TODOS OS CONTATOS DE REFERÊNCIA E NINGUÉM ATENDEU. LIGOU PARA A MÃE: NÃO TINHA FILHOS E O NOME DELA ERA MARI. PAI: ERA SOGRO, FILHO E NORA SE MUDARAM. "AMOR": SEPARADOS, ELA FOI PARA O XAXIM. AVISADO DO PROTESTO DA NOTA, SEM RETORNO. TELEFONE NÃO EXISTE. FACEBOOK NÃO ENCONTRADO.</span><button class="mais">ver tudo</button></div></div>
+        <div class="ev"><div class="d">—</div><div><span class="q">Obs. fixa</span><span class="t">B.O. · Nickolas está tentando contato · convertido Sorelly</span></div></div>
+      </div>
+    </div>
+    <div class="painel corpo" data-p="1">
+      <table><thead><tr><th>Data</th><th>Valor de venda</th><th>Valor de acerto</th></tr></thead><tbody>
+        <tr><td>15/10</td><td>R$ 2.712,00</td><td>R$ 1.490,00</td></tr><tr><td>15/09</td><td>R$ 2.243,00</td><td>R$ 1.233,70</td></tr><tr class="zero"><td>31/08 <span class="chip c-cinza">sem venda</span></td><td>R$ 0,00</td><td>R$ 0,00</td></tr><tr><td>18/08</td><td>R$ 4.488,00</td><td>R$ 2.468,40</td></tr></tbody>
+        <tfoot><tr><td>Total</td><td>R$ 9.443,00</td><td>R$ 5.192,10</td></tr></tfoot></table>
+    </div>
+    <div class="painel corpo" data-p="2">
+      <div class="linhas"><span class="cod">Ciclo</span><select style="width:80px"><option>30 d</option><option>45 d</option><option selected>60 d</option></select><span class="cod">Kit</span><select style="width:100px"><option>Normal</option><option>Prata</option></select><span class="cod">Fone</span><b>(41) 99999-0000</b></div>
+      <div class="linhas"><span class="cod">Cliente desde</span><b>10/05/2024</b><span class="cod">Cidade</span><b>Curitiba</b></div>
+    </div>
+    <div class="rod"><button class="pri">Agendar acerto</button><input type="date" style="width:140px"><input type="time" style="width:90px"><span style="flex:1"></span><select aria-label="Mensagens prontas"><option>Mensagem pronta ▾</option><option>1º contato</option><option>Confirmação na véspera</option><option>Lembrete do dia</option></select></div>
+  </div>
+</div>
+
+<!-- ============ B ============ -->
+<div class="opc">
+  <div class="rot">B · Resumo à esquerda, histórico à direita</div>
+  <div class="dica">Quem agenda olha o resumo e age ali mesmo. O histórico de contatos fica sempre à vista, do mais novo para o mais antigo.</div>
+  <div class="card">
+    <div class="topo"><b class="nome">Alexia Luana dos Santos</b><span class="cod">026344</span><span class="chip c-aten">60 dias com o kit</span></div>
+    <div class="duas">
+      <div class="esq">
+        <div class="kv"><span>Acerto previsto</span><b>05/11/2026</b></div>
+        <div class="kv"><span>Faltam</span><b style="color:var(--ruim)">23 d atrasada</b></div>
+        <div class="kv"><span>Média 3 vendas</span><b>R$ 1.204,00</b></div>
+        <div class="kv"><span>Próximo kit</span><b style="color:var(--ouro)">R$ 10.000,00</b></div>
+        <hr style="border:0;border-top:1px solid var(--linha)">
+        <select aria-label="Situação"><option>Sem retorno</option><option>A contatar</option><option>Entrei em contato</option><option>Agendada</option></select>
+        <div class="linhas"><input type="date" style="flex:1;min-width:0"><input type="time" style="width:78px"></div>
+        <button class="pri">Agendar acerto</button>
+        <div class="linhas"><select style="flex:1" aria-label="Ciclo"><option>Ciclo 30 d</option><option>Ciclo 45 d</option><option selected>Ciclo 60 d</option></select><select style="flex:1" aria-label="Kit"><option>Normal</option><option>Prata</option></select></div>
+        <select aria-label="Mensagens prontas"><option>Copiar mensagem ▾</option><option>1º contato</option><option>Confirmação na véspera</option><option>Lembrete do dia</option></select>
+      </div>
+      <div class="dir">
+        <div class="linhas"><select style="width:140px"><option>Entrei em contato</option><option>Mensagem enviada</option><option>Agendado</option><option>Mais prazo</option><option>Sem retorno</option><option>Viajando</option></select><input style="flex:1" placeholder="Registrar contato"><button class="pri">+</button></div>
+        <div class="tl">
+          <div class="ev"><div class="d">01/10</div><div><span class="q">Nayale</span><span class="chip c-ruim">Sem retorno</span><span class="t"> Passado para Tamega. Alega estar viajando a trabalho e vai morar fora do Brasil. 60 dias com o kit, sem retorno. Não responde mais.</span></div></div>
+          <div class="ev"><div class="d">17/09</div><div><span class="q">Ana Maria</span><span class="chip c-azul">Mensagem</span><span class="t"> Enviou mensagem para cobrar a data do acerto.</span></div></div>
+          <div class="ev"><div class="d">02/09</div><div><span class="q">Rebeca</span><span class="chip c-ouro">Contato</span><span class="t"> Entrou em contato: viajando, aguardando o retorno.</span></div></div>
+        </div>
+        <button class="mais" data-vendas>Vendas 2026 (3) ▸</button>
+        <div class="painel" id="vB"><table><thead><tr><th>Data</th><th>Venda</th><th>Acerto</th></tr></thead><tbody><tr><td>12/08</td><td>R$ 1.235,00</td><td>R$ 679,20</td></tr><tr><td>14/07</td><td>R$ 1.204,00</td><td>R$ 662,20</td></tr></tbody><tfoot><tr><td>Total</td><td>R$ 2.439,00</td><td>R$ 1.341,40</td></tr></tfoot></table></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ C ============ -->
+<div class="opc">
+  <div class="rot">C · Linha do tempo como centro</div>
+  <div class="dica">Foco no que acontece com a cliente: etiquetas por tipo (B.O., Protesto, Convertido Sorelly, Viajando…) para achar uma "cena" de longe. Números viram uma linha fina.</div>
+  <div class="card">
+    <div class="topo"><b class="nome">Gabrielly Karolyna da Silva dos Santos</b><span class="cod">021329</span>
+      <span class="chip c-ruim">B.O.</span><span class="chip c-ouro">Convertido Sorelly</span></div>
+    <div class="corpo" style="padding-bottom:4px">
+      <div class="linhas" style="flex-wrap:wrap;gap:12px;color:var(--mut)">
+        <span>Acerto previsto <b style="color:var(--txt)">12/11</b></span><span>Agendada <b style="color:var(--txt)">Aguardando</b></span><span>Média <b style="color:var(--txt)">R$ 1.671,00</b></span><span>Kit <b style="color:var(--ouro)">R$ 12.000,00</b></span>
+        <span style="flex:1"></span>
+        <select aria-label="Mais"><option>Mais ▾</option><option>Ciclo 30 d</option><option>Ciclo 45 d</option><option>Ciclo 60 d</option><option>Kit Prata</option><option>Mensagem pronta…</option></select>
+      </div>
+      <div class="linhas"><select style="width:150px"><option>Entrei em contato</option><option>Mensagem enviada</option><option>Agendado</option><option>Mais prazo</option><option>Sem retorno</option><option>Viajando</option><option>B.O.</option><option>Protesto</option></select><input style="flex:1" placeholder="Registrar o que aconteceu…"><button class="pri">Registrar</button></div>
+    </div>
+    <div class="corpo scroll" style="padding-top:0">
+      <div class="tl">
+        <div class="ev"><div class="d">14/06</div><div><span class="chip c-ruim">Sem contato</span> <span class="q">Soliane</span><span class="t corta">Entrado em contato desde 23/05 pelo celular pessoal da Soliane, que fez a entrega do kit; cadastro ligou para todas as referências e ninguém atendeu. Mãe: não tinha filhos. Pai: era sogro. "Amor": separados, ela foi para o Xaxim. Avisada do protesto da nota, sem retorno. Telefone não existe. Facebook não encontrado.</span><button class="mais">ver tudo</button></div></div>
+        <div class="ev"><div class="d">23/05</div><div><span class="chip c-ouro">Contato</span> <span class="q">Soliane</span><span class="t">Primeira tentativa pelo telefone da Sorelly.</span></div></div>
+      </div>
+    </div>
+    <div class="rod"><button class="pri">Agendar</button><span class="cod" style="flex:1">Sem data marcada</span><button>Vendas 2026 (4)</button></div>
+  </div>
+</div>
+
+<!-- ============ D ============ -->
+<div class="opc">
+  <div class="rot">D · Seções que abrem e fecham</div>
+  <div class="dica">Tudo fechado, só o necessário aberto. Cada seção mostra um resumo de uma linha mesmo fechada, então você nem precisa abrir para saber.</div>
+  <div class="card" data-acc>
+    <div class="topo"><b class="nome">Alexia Luana dos Santos</b><span class="cod">026344</span>
+      <select aria-label="Situação"><option selected>Sem retorno</option><option>A contatar</option><option>Entrei em contato</option><option>Agendada</option></select></div>
+    <div class="acc on"><button class="cab">Contatos <span>último: 01/10 · Nayale · sem retorno, viajando</span></button>
+      <div class="cont">
+        <div class="linhas" style="margin-bottom:6px"><select style="width:140px"><option>Entrei em contato</option><option>Mensagem enviada</option><option>Agendado</option><option>Mais prazo</option><option>Sem retorno</option><option>Viajando</option></select><input style="flex:1" placeholder="Registrar contato"><button class="pri">Registrar</button></div>
+        <div class="tl">
+          <div class="ev"><div class="d">01/10</div><div><span class="q">Nayale</span><span class="t">Passado para Tamega · sem retorno · alega estar viajando a trabalho e vai morar fora do Brasil · 60 dias com o kit.</span></div></div>
+          <div class="ev"><div class="d">17/09</div><div><span class="q">Ana Maria</span><span class="t">Mensagem para cobrar a data do acerto.</span></div></div>
+          <div class="ev"><div class="d">02/09</div><div><span class="q">Rebeca</span><span class="t">Entrou em contato: viajando, aguardando o retorno.</span></div></div>
+        </div>
+      </div></div>
+    <div class="acc"><button class="cab">Agendamento <span>acerto previsto 05/11 · Aguardando data</span></button>
+      <div class="cont"><div class="linhas"><input type="date" style="flex:1"><input type="time" style="width:90px"><button class="pri">Agendar</button><select aria-label="Mensagens prontas"><option>Mensagem ▾</option><option>1º contato</option><option>Véspera</option><option>Dia</option></select></div></div></div>
+    <div class="acc"><button class="cab">Vendas 2026 <span>3 vendas · R$ 3.643,00 de venda · R$ 2.003,60 de acerto</span></button>
+      <div class="cont"><table><thead><tr><th>Data</th><th>Venda</th><th>Acerto</th></tr></thead><tbody><tr><td>12/08</td><td>R$ 1.235,00</td><td>R$ 679,20</td></tr><tr><td>14/07</td><td>R$ 1.204,00</td><td>R$ 662,20</td></tr><tr><td>20/06</td><td>R$ 1.204,00</td><td>R$ 662,20</td></tr></tbody></table></div></div>
+    <div class="acc"><button class="cab">Cadastro <span>ciclo 60 d · kit Normal · (41) 99999-0000</span></button>
+      <div class="cont"><div class="linhas"><select style="width:100px"><option>30 d</option><option>45 d</option><option selected>60 d</option></select><select style="width:100px"><option>Normal</option><option>Prata</option></select><b>(41) 99999-0000</b></div></div></div>
+  </div>
+</div>
+
+</div>
+<p class="nota">Nos quatro: a lista de contatos corta o texto longo em duas linhas com "ver tudo", as ocorrências (B.O., Protesto, Convertido Sorelly, Sem retorno, Viajando…) viram etiqueta ou item da caixa de tipo, e o que veio da DevMaster continua aparecendo como histórico.</p>
+<script>
+  document.querySelectorAll('[data-abas]').forEach(function(c){ var bs=c.querySelectorAll('.abas button'), ps=c.querySelectorAll('.painel'); bs.forEach(function(b,i){ b.onclick=function(){ bs.forEach(function(x){x.classList.remove('on')}); ps.forEach(function(x){x.classList.remove('on')}); b.classList.add('on'); ps[i].classList.add('on'); }; }); });
+  document.querySelectorAll('.acc > .cab').forEach(function(b){ b.onclick=function(){ b.parentElement.classList.toggle('on'); }; });
+  document.querySelectorAll('.mais').forEach(function(b){ if(b.hasAttribute('data-vendas')){ b.onclick=function(){ document.getElementById('vB').classList.toggle('on'); }; return; } b.onclick=function(){ var t=b.previousElementSibling; t.classList.toggle('corta'); b.textContent=t.classList.contains('corta')?'ver tudo':'ver menos'; }; });
+</script>
+</body>
+</html>

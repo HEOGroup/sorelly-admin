@@ -18,19 +18,22 @@ const TES_VENDA = ["S001", "S002"];            // venda em qualquer época
 const TES_VENDA_ATE_FEV = ["S501", "S502"];      // venda só até FIM_TES_ANTIGO; depois disso vira "outros"
 const FIM_TES_ANTIGO = "2026-02-28";
 const CATEGORIA = { S009: "brinde", S503: "brinde", S006: "troca", S504: "troca", S007: "indicacao", S505: "indicacao", S011: "premiacao" };
+const VENDEDOR_FORA_DA_MEDIA = ["EK"];          // EK = LEILÃO: não é acerto, nunca entra na média de vendas (Marcus, 27/10/2026)
 const ACERTO_A_CADA = 20 * 60 * 1000;
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 
 const estado = () => (G.__sorellyBrinde = G.__sorellyBrinde || { rodando: false, etapa: "", pct: 0, erro: "", pronto: false, concluidaEm: 0, vendas: 0, verificouBanco: false });
 
 async function garantirTabelas() {
+  if (G.__sorellyBrindeTabelas) return;   // uma vez por execução do servidor
   await consulta(`create table if not exists sorelly.venda_composicao (
     venda text primary key, cliente text not null, emissao date not null, venda_dm numeric not null default 0,
     brinde numeric not null default 0, troca numeric not null default 0, indicacao numeric not null default 0, premiacao numeric not null default 0, outros numeric not null default 0,
     atualizada_em timestamptz not null default now())`);
-  await consulta("alter table sorelly.venda_composicao add column if not exists acerto_dm numeric, add column if not exists comissao numeric, add column if not exists faturada date");   // valor do acerto e comissão da DevMaster (27/10/2026)
+  await consulta("alter table sorelly.venda_composicao add column if not exists acerto_dm numeric, add column if not exists comissao numeric, add column if not exists faturada date, add column if not exists vendedor text");   // valor do acerto e comissão da DevMaster; vendedor = código na DevMaster (EK = Leilão) (27/10/2026)
   await consulta("create index if not exists venda_composicao_cliente on sorelly.venda_composicao (cliente)");
   await consulta("create table if not exists sorelly.venda_composicao_estado (id int primary key, concluida_em timestamptz, vendas int)");
+  G.__sorellyBrindeTabelas = true;
 }
 
 function isoDiaBR(deslocaDias = 0) {
@@ -49,9 +52,9 @@ export async function sincronizarBrindes({ completo = false } = {}) {   // compl
   try {
     await garantirTabelas();
     const tem = await consulta("select count(*)::int as n from sorelly.venda_composicao");
-    const semAcerto = await consulta("select count(*)::int as n from sorelly.venda_composicao where acerto_dm is null or faturada is null");   // linhas antigas, sem o valor do acerto: relê tudo uma vez
+    const semAcerto = await consulta("select count(*)::int as n from sorelly.venda_composicao where acerto_dm is null or faturada is null or vendedor is null");   // linhas antigas, sem o valor do acerto ou sem o vendedor: relê tudo uma vez
     const desde = !completo && tem.rows[0].n > 0 && semAcerto.rows[0].n === 0 ? (isoDiaBR(-60) < INICIO ? INICIO : isoDiaBR(-60)) : INICIO;
-    const vendas = (await todasAsPaginas("dmach", { filtro: { ach_situacao: "F", ach_datafat: { gte: desde + "T00:00:00" } }, campos: ["ach_codigo", "ach_cliente", "ach_emissao", "ach_datafat", "ach_valormerc", "ach_valortotal", "ach_valordesc", "ach_datacanc"] })).filter((x) => !x.ach_datacanc);
+    const vendas = (await todasAsPaginas("dmach", { filtro: { ach_situacao: "F", ach_datafat: { gte: desde + "T00:00:00" } }, campos: ["ach_codigo", "ach_cliente", "ach_emissao", "ach_datafat", "ach_valormerc", "ach_valortotal", "ach_valordesc", "ach_datacanc", "ach_vendedor"] })).filter((x) => !x.ach_datacanc);
     if (!vendas.length) { s.pronto = true; s.concluidaEm = Date.now(); return; }
     const codigos = vendas.map((x) => Number(x.ach_codigo)).filter(Number.isFinite), minC = Math.min(...codigos), maxC = Math.max(...codigos);
     // itens que NÃO são venda, em faixas de 1.000 códigos, 4 faixas por vez
@@ -69,12 +72,12 @@ export async function sincronizarBrindes({ completo = false } = {}) {   // compl
     s.etapa = "Guardando no banco";
     for (let k = 0; k < vendas.length; k += 500) {
       const lote = vendas.slice(k, k + 500), params = [], linhas = lote.map((x, i) => {
-        const o = soma.get(x.ach_codigo) || { brinde: 0, troca: 0, indicacao: 0, premiacao: 0, outros: 0 }, b = i * 12;
-        params.push(x.ach_codigo, x.ach_cliente, String(x.ach_emissao).slice(0, 10), r2(x.ach_valormerc), r2(o.brinde), r2(o.troca), r2(o.indicacao), r2(o.premiacao), r2(o.outros), r2(x.ach_valortotal), r2(x.ach_valordesc), String(x.ach_datafat || x.ach_emissao).slice(0, 10));
-        return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11},$${b + 12})`;
+        const o = soma.get(x.ach_codigo) || { brinde: 0, troca: 0, indicacao: 0, premiacao: 0, outros: 0 }, b = i * 13;
+        params.push(x.ach_codigo, x.ach_cliente, String(x.ach_emissao).slice(0, 10), r2(x.ach_valormerc), r2(o.brinde), r2(o.troca), r2(o.indicacao), r2(o.premiacao), r2(o.outros), r2(x.ach_valortotal), r2(x.ach_valordesc), String(x.ach_datafat || x.ach_emissao).slice(0, 10), String(x.ach_vendedor || ""));
+        return `($${b + 1},$${b + 2},$${b + 3},$${b + 4},$${b + 5},$${b + 6},$${b + 7},$${b + 8},$${b + 9},$${b + 10},$${b + 11},$${b + 12},$${b + 13})`;
       });
-      await consulta(`insert into sorelly.venda_composicao (venda, cliente, emissao, venda_dm, brinde, troca, indicacao, premiacao, outros, acerto_dm, comissao, faturada) values ${linhas.join(",")}
-        on conflict (venda) do update set cliente = excluded.cliente, emissao = excluded.emissao, venda_dm = excluded.venda_dm, brinde = excluded.brinde, troca = excluded.troca, indicacao = excluded.indicacao, premiacao = excluded.premiacao, outros = excluded.outros, acerto_dm = excluded.acerto_dm, comissao = excluded.comissao, faturada = excluded.faturada, atualizada_em = now()`, params);
+      await consulta(`insert into sorelly.venda_composicao (venda, cliente, emissao, venda_dm, brinde, troca, indicacao, premiacao, outros, acerto_dm, comissao, faturada, vendedor) values ${linhas.join(",")}
+        on conflict (venda) do update set cliente = excluded.cliente, emissao = excluded.emissao, venda_dm = excluded.venda_dm, brinde = excluded.brinde, troca = excluded.troca, indicacao = excluded.indicacao, premiacao = excluded.premiacao, outros = excluded.outros, acerto_dm = excluded.acerto_dm, comissao = excluded.comissao, faturada = excluded.faturada, vendedor = excluded.vendedor, atualizada_em = now()`, params);
     }
     // venda cancelada depois: sai do banco (só dentro do período relido)
     await consulta("delete from sorelly.venda_composicao where coalesce(faturada, emissao) >= $1 and venda <> all($2::text[])", [desde, vendas.map((x) => x.ach_codigo)]);
@@ -107,15 +110,35 @@ export function iniciarCargaBrindes({ forcar = false } = {}) {
 const NAO_VENDA = "(brinde + troca + indicacao + premiacao + outros)";
 const LIQ = "(venda_dm - " + NAO_VENDA + ")", ACE = "(coalesce(acerto_dm, 0) - " + NAO_VENDA + ")";
 
-// Totais por revendedora: venda sem brinde, brinde, nº de acertos e valor dos acertos por mês; e as 3 últimas vendas (sem brinde). Só 2026.
+// MÉDIA DE VENDAS (regra do Marcus, 27/10/2026; passo a passo e TES em docs/negocio/MEDIA-DE-VENDAS.md).
+// Recebe as vendas de UMA revendedora: [{ data: "AAAA-MM-DD", valor (já sem brinde, troca, indicação, premiação e outros), brinde, vendedor }] e devolve as até 3 vendas que entram na média, da mais nova para a mais antiga:
+//   1. Leilão (VENDEDOR_FORA_DA_MEDIA) não é acerto: sai.  2. Só vendas de até 12 meses.  3. Vendas do mesmo dia se juntam em UMA.
+//   4. Dia que fecha em R$ 0 (só troca, brinde, indicação ou premiação) não é venda: sai.  5. Ficam as 3 últimas; quem tem menos de 3 usa as que tem.
+// A diferença paga em indicação, premiação ou troca CONTA como venda (Marcus, 27/10/2026): só os itens de bônus saem do valor.
+export function ultimasVendasDaMedia(vendas) {
+  const hoje = isoDiaBR(0), corte = (Number(hoje.slice(0, 4)) - 1) + hoje.slice(4), porDia = new Map();
+  vendas.forEach((x) => {
+    if (VENDEDOR_FORA_DA_MEDIA.includes(String(x.vendedor || "")) || !x.data || x.data < corte) return;
+    const o = porDia.get(x.data) || { d: x.data, v: 0, b: 0 };
+    o.v += Number(x.valor) || 0; o.b += Number(x.brinde) || 0;
+    porDia.set(x.data, o);
+  });
+  return [...porDia.values()].filter((o) => o.v > 0.005).sort((a, b) => b.d.localeCompare(a.d)).slice(0, 3).map((o) => ({ d: o.d, v: r2(o.v), b: r2(o.b) }));
+}
+
+// Totais por revendedora: venda sem brinde, brinde, nº de acertos e valor dos acertos por mês; e as vendas da média (ultimasVendasDaMedia). Só 2026.
 export async function composicaoGeral() {
+  await garantirTabelas();   // a coluna vendedor precisa existir antes de filtrar o Leilão
   const mensal = await consulta(`select cliente, to_char(coalesce(faturada, emissao), 'YYYY-MM') as mes, count(*)::int as n, sum(${LIQ}) as liquida, sum(${ACE}) as acerto, sum(brinde) as brinde, sum(troca) as troca, sum(indicacao) as indicacao, sum(premiacao) as premiacao
     from sorelly.venda_composicao group by 1, 2`);
-  const ult = await consulta("select cliente, venda, coalesce(faturada, emissao) as emissao, venda_dm, brinde, troca, indicacao, premiacao, outros from sorelly.venda_composicao order by cliente, coalesce(faturada, emissao) desc, venda desc");
+  // Base da média: todas as vendas (o filtro do Leilão, dos 12 meses, do dia junto e do dia zerado está em ultimasVendasDaMedia). Venda ainda sem vendedor gravado conta até a próxima carga.
+  const ult = await consulta(`select cliente, to_char(coalesce(faturada, emissao), 'YYYY-MM-DD') as dia, vendedor, ${LIQ} as liquida, brinde from sorelly.venda_composicao`);
   const m = new Map();
   const de = (c) => m.get(c) || m.set(c, { vm: {}, bm: {}, tm: {}, nm: {}, am: {}, v: [] }).get(c);
   mensal.rows.forEach((x) => { const o = de(x.cliente); o.vm[x.mes] = r2(x.liquida); o.bm[x.mes] = r2(x.brinde); o.tm[x.mes] = r2(Number(x.troca) + Number(x.indicacao) + Number(x.premiacao)); o.nm[x.mes] = x.n; o.am[x.mes] = r2(x.acerto); });
-  ult.rows.forEach((x) => { const o = de(x.cliente); if (o.v.length < 3) o.v.push({ d: new Date(x.emissao).toISOString().slice(0, 10), v: r2(Number(x.venda_dm) - Number(x.brinde) - Number(x.troca) - Number(x.indicacao) - Number(x.premiacao) - Number(x.outros)), b: r2(x.brinde) }); });
+  const porCliente = new Map();
+  ult.rows.forEach((x) => { const l = porCliente.get(x.cliente) || porCliente.set(x.cliente, []).get(x.cliente); l.push({ data: x.dia, valor: Number(x.liquida), brinde: Number(x.brinde), vendedor: x.vendedor }); });
+  porCliente.forEach((vendas, cliente) => { de(cliente).v = ultimasVendasDaMedia(vendas); });
   return m;
 }
 
@@ -129,8 +152,8 @@ export async function resumoVendas(dia) {
 
 // Composição de cada venda de UMA revendedora (para a ficha). Chave: código da venda.
 export async function composicaoDoCliente(cliente) {
-  const r = await consulta("select venda, venda_dm, brinde, troca, indicacao, premiacao, outros, acerto_dm from sorelly.venda_composicao where cliente = $1", [cliente]);
+  const r = await consulta("select venda, venda_dm, brinde, troca, indicacao, premiacao, outros, acerto_dm, vendedor, to_char(coalesce(faturada, emissao), 'YYYY-MM-DD') as dia from sorelly.venda_composicao where cliente = $1", [cliente]);
   const m = new Map();
-  r.rows.forEach((x) => m.set(x.venda, { bruto: r2(x.venda_dm), brinde: r2(x.brinde), troca: r2(x.troca), indicacao: r2(x.indicacao), premiacao: r2(x.premiacao), outros: r2(x.outros), liquida: r2(Number(x.venda_dm) - Number(x.brinde) - Number(x.troca) - Number(x.indicacao) - Number(x.premiacao) - Number(x.outros)), acertoLiq: r2(Number(x.acerto_dm) - Number(x.brinde) - Number(x.troca) - Number(x.indicacao) - Number(x.premiacao) - Number(x.outros)) }));
+  r.rows.forEach((x) => m.set(x.venda, { dia: x.dia, vendedor: x.vendedor, bruto: r2(x.venda_dm), brinde: r2(x.brinde), troca: r2(x.troca), indicacao: r2(x.indicacao), premiacao: r2(x.premiacao), outros: r2(x.outros), liquida: r2(Number(x.venda_dm) - Number(x.brinde) - Number(x.troca) - Number(x.indicacao) - Number(x.premiacao) - Number(x.outros)), acertoLiq: r2(Number(x.acerto_dm) - Number(x.brinde) - Number(x.troca) - Number(x.indicacao) - Number(x.premiacao) - Number(x.outros)) }));
   return m;
 }

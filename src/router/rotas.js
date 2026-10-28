@@ -7,6 +7,12 @@
 // Para criar uma página nova, acrescente uma linha aqui. Nada mais.
 import { e } from "@/shared/react";
 import { Navigate, useLocation, useOutletContext } from "react-router-dom";
+import { papelDe } from "@/apps/montagem/domain/equipe";
+import { apiAtiva, pessoaDaConta } from "@/apps/montagem/lib/api";
+import { ABA_DO_SLUG, ENDERECO_DA_ABA, caminhoNovoDoAntigo } from "@/apps/montagem/router/slugs";
+
+// Montadoras e bipadoras abrem direto no SorellyChat; os demais, na página inicial
+const Inicial = () => { const p = apiAtiva() && pessoaDaConta() ? papelDe(Number(pessoaDaConta())) : ""; return e(Navigate, { to: p === "montadora" || p === "bipadora" ? "whatssorelly" : "inicio", replace: true }); };
 
 /**
  * Rota com a página carregada sob demanda.
@@ -48,7 +54,7 @@ const montagem = {
   path: "montagem",
   lazy: async () => ({ Component: (await import("@/apps/montagem/App")).default }),
   children: [
-    { index: true, element: e(Navigate, { to: "inicio", replace: true }) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
+    { index: true, element: e(Inicial) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
     pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
     pagina("agendamento-remarcacoes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgRemarc"),
@@ -126,7 +132,6 @@ const montagem = {
     pagina("atendimento-interno-calculadora", () => import("@/apps/montagem/pages/AtendimentoInternoCalculadora"), "AbaIntCalculadora"),
     pagina("configuracoes-representantes", () => import("@/apps/montagem/pages/ConfigRepresentantes"), "AbaConfigRepresentantes"),
     pagina("condicionais", () => import("@/apps/montagem/pages/Condicionais"), "AbaCondicionais"),
-    pagina("app-condicionais", () => import("@/apps/montagem/pages/CelularCondicionais"), "AbaCelularCond"),
     paginaKN("revendedoras-novas", "AbaKitsNovosEmbutido"),
     paginaKN("representantes-do-setor", "AbaRepCadastroEmbutido"),
     paginaKN("kits-novos-pendencias", "AbaPendenciasEmbutido"),
@@ -161,8 +166,7 @@ const montagem = {
     pagina("versoes", () => import("@/apps/montagem/pages/Versoes"), "AbaVersoes"),
     pagina("padrao-visual", () => import("@/apps/montagem/pages/PadraoVisual"), "AbaPadraoVisual"),
     pagina("avisos", () => import("@/apps/montagem/pages/ConfigAvisos"), "AbaConfigAvisos"),
-    pagina("app-montadora", () => import("@/apps/montagem/pages/CelularMontadora"), "AbaCelular"),
-    pagina("app-bipagem", () => import("@/apps/montagem/pages/CelularBipagem"), "AbaCelularBip"),
+    pagina("app-funcionarias", () => import("@/apps/montagem/pages/CelularFuncionarios"), "AbaCelularFunc"),
     pagina("app-representante", () => import("@/apps/montagem/pages/CelularRepresentante"), "AbaCelularRep"),
     pagina("app-revendedora", () => import("@/apps/montagem/pages/CelularRevendedora"), "AbaCelularRev"),
     pagina("vendas-vendas", () => import("@/apps/montagem/pages/Vendas"), "AbaVendasVendas"),
@@ -174,6 +178,7 @@ const montagem = {
     pagina("limite-de-faturamento", () => import("@/apps/montagem/pages/LimiteFaturamento"), "AbaLimiteFaturamento"),
     pagina("fiscal", () => import("@/apps/montagem/pages/Fiscal"), "AbaFiscal"),
     pagina("contas-a-pagar-mensal", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
+    pagina("resultado-do-mes", () => import("@/apps/montagem/pages/ResultadoMes"), "AbaResultadoMes"),
     pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),
@@ -184,7 +189,8 @@ const montagem = {
     pagina("revendedoras", () => import("@/apps/montagem/pages/BaseRevendedoras"), "AbaBaseRevendedoras"),
     pagina("revendedoras-ativas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasAtivas"),
     pagina("revendedoras-kits-e-vendas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasKits"),
-    pagina("revendedoras-contas-a-receber", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasReceber"),
+    pagina("revendedoras-condicional", () => import("@/apps/montagem/pages/CondicionalModelo"), "AbaCondicionalModelo"),
+    pagina("contas-a-receber", () => import("@/apps/montagem/pages/ContasReceber"), "AbaContasReceber"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),
     pagina("inicio", () => import("@/apps/montagem/pages/Inicio"), "AbaInicio"),   // página inicial de todos (27/10/2026)
@@ -249,17 +255,23 @@ const kitsNovos = {
   ],
 };
 
-// Endereço sem /montagem: o prefixo é só o nome interno do app principal (existe também /kits-novos). Quem digita /regras-acertos cai em /montagem/regras-acertos.
-function SemPrefixo() {
+// Endereço novo (28/10/2026, pedido do Marcus): /setor/tela (ex.: /atendimento-interno/revendedoras), sem o "montagem".
+// Cada rota de tela acima foi escrita com o nome ANTIGO; aqui o caminho vira o endereço novo (router/slugs.js). "em-breve" e os filhos sem nome de tela ficam como estão.
+// O app de Kits novos continua em /kits-novos.
+function Antigo() {   // link antigo (/montagem/nome-antigo ou só /nome-antigo): leva ao endereço novo; nome desconhecido vai ao início
   const l = useLocation();
-  return e(Navigate, { to: "/montagem" + (l.pathname === "/" ? "" : l.pathname) + l.search + l.hash, replace: true });
+  return e(Navigate, { to: (caminhoNovoDoAntigo(l.pathname) || "/inicio") + l.search + l.hash, replace: true });
 }
 
+const montagemNovo = {
+  lazy: montagem.lazy,   // sem path: a casca do app envolve as telas, que agora moram direto na raiz
+  children: montagem.children.filter((c) => c.path !== "*").map((c) => (c.path && ABA_DO_SLUG[c.path] ? { ...c, path: ENDERECO_DA_ABA[ABA_DO_SLUG[c.path]] } : c))
+    .concat({ path: "*", element: e(Antigo) }),
+};
+
 export const rotas = [
-  { path: "/", element: e(Navigate, { to: "/montagem", replace: true }) },
-  montagem,
   kitsNovos,
-  { path: "*", element: e(SemPrefixo) },   // endereço curto (ex.: /app-revendedora) vale como /montagem/app-revendedora
+  montagemNovo,
 ];
 
 export default rotas;

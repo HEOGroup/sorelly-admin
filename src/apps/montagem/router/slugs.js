@@ -7,7 +7,23 @@
 // Para criar uma página nova: acrescente a aba em navigation/abas.js, o slug
 // aqui e a rota em router/rotas.js. Nada mais precisa ser tocado.
 
-export const BASE = "/montagem";
+import { SETORES, ondeEsta } from "@/apps/montagem/navigation/setores";
+
+function noMenu(lista, aba) {
+  return (lista || []).some(function (n) { return n.aba === aba || noMenu(n.itens, aba); });
+}
+/** Setor dono da tela: o das áreas do setor; se a tela só aparece no menu em texto do setor (campo `menu`), esse. */
+export function setorDaAba(aba) {
+  var o = ondeEsta(aba);
+  if (o) return o.setor;
+  return SETORES.find(function (st) { return noMenu(st.menu, aba); }) || null;
+}
+
+// Endereço novo (28/10/2026, pedido do Marcus): /setor/tela (ex.: /atendimento-interno/revendedoras), sem o "montagem".
+// O prefixo "/montagem" era o nome do primeiro app do sistema; os endereços antigos (/montagem/atendimento-interno-revendedoras) continuam abrindo e levam ao novo.
+// SLUG_DA_ABA guarda o nome ANTIGO de cada tela (ele serve para reconhecer os links antigos e as rotas em router/rotas.js); o endereço novo sai do menu:
+// setor (nome do setor) + tela (o nome antigo sem o começo repetido do setor).
+export const BASE_ANTIGA = "/montagem";
 
 export const SLUG_DA_ABA = {
   painel: "listagens",
@@ -92,7 +108,6 @@ export const SLUG_DA_ABA = {
   intcalc: "atendimento-interno-calculadora",
   intcons: "atendimento-interno-consolidado",
   condicionais: "condicionais",
-  celcond: "app-condicionais",
   kitnovo: "revendedoras-novas",
   knpendencias: "kits-novos-pendencias",
   knconsolidado: "kits-novos-consolidado",
@@ -124,18 +139,19 @@ export const SLUG_DA_ABA = {
   prefkit: "preferencias-do-kit",
   pedirpecas: "pedir-pecas",
   desempenhocad: "desempenho-do-cadastro",
-  celular: "app-montadora",
-  celbip: "app-bipagem",
+  celfunc: "app-funcionarias",
   celrep: "app-representante",
   celrev: "app-revendedora",
   vendas: "vendas-vendas",
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
+  resultado: "resultado-do-mes",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
   revbase: "revendedoras-ativas",
   revkits: "revendedoras-kits-e-vendas",
-  revreceber: "revendedoras-contas-a-receber",
+  revcond: "revendedoras-condicional",
+  revreceber: "contas-a-receber",
   inicio: "inicio",
   apps: "apps",
   dinheiro: "dinheiro",
@@ -193,17 +209,59 @@ export const ABA_DO_SLUG = Object.keys(SLUG_DA_ABA).reduce(function (acc, aba) {
 
 export const ABA_INICIAL = "painel";
 
+function slugTexto(t) {
+  return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/&/g, " ").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+}
+// Pastas de public/ e prefixos fixos: nenhum setor pode ter o mesmo nome (o arquivo estático ganharia da tela).
+var RESERVADOS = { dados: 1, fotos: 1, regras: 1, api: 1, "kits-novos": 1, montagem: 1, "em-breve": 1 };
+
+/** Endereço novo de cada aba: "setor/tela". Aba que não está em nenhum setor (início, chat, mapa...) fica com o nome antigo, solto. */
+export const ENDERECO_DA_ABA = (function () {
+  var out = {}, usados = {};
+  Object.keys(SLUG_DA_ABA).forEach(function (aba) {
+    var antigo = SLUG_DA_ABA[aba], dono = aba === "breve" ? null : setorDaAba(aba), fim = antigo;
+    if (dono) {
+      var setor = slugTexto(dono.nome);
+      if (setor && !RESERVADOS[setor]) {
+        var resto = antigo === setor ? "painel" : antigo.indexOf(setor + "-") === 0 ? antigo.slice(setor.length + 1) : antigo;
+        var cand = setor + "/" + resto;
+        if (usados[cand]) cand = setor + "/" + antigo;   // dois nomes iguais no mesmo setor: usa o nome antigo inteiro
+        if (!usados[cand]) fim = cand;
+      }
+    }
+    usados[fim] = aba;
+    out[aba] = fim;
+  });
+  return out;
+})();
+
+export const ABA_DO_ENDERECO = Object.keys(ENDERECO_DA_ABA).reduce(function (acc, aba) {
+  acc[ENDERECO_DA_ABA[aba]] = aba;
+  return acc;
+}, {});
+
 /** Caminho completo de uma aba. `breve` é o nome da tela ainda não construída. */
 export function caminhoDaAba(aba, breve) {
-  var slug = SLUG_DA_ABA[aba] || SLUG_DA_ABA[ABA_INICIAL];
-  if (aba === "breve" && breve) return BASE + "/" + slug + "/" + encodeURIComponent(breve);
-  return BASE + "/" + slug;
+  var fim = ENDERECO_DA_ABA[aba] || ENDERECO_DA_ABA[ABA_INICIAL];
+  if (aba === "breve" && breve) return "/" + fim + "/" + encodeURIComponent(breve);
+  return "/" + fim;
 }
 
-/** Lê a aba (e o nome da tela "em breve") a partir do pathname. */
+/** Endereço novo de um link ANTIGO (/montagem/nome-antigo, ou só /nome-antigo). Devolve null se o nome não é de nenhuma tela. */
+export function caminhoNovoDoAntigo(pathname) {
+  var partes = String(pathname || "").replace(/^\/montagem(?=\/|$)/, "").split("/").filter(Boolean);
+  var aba = ABA_DO_SLUG[partes[0]];
+  if (!aba) return null;
+  return aba === "breve" && partes[1] ? "/" + ENDERECO_DA_ABA[aba] + "/" + partes[1] : "/" + ENDERECO_DA_ABA[aba];
+}
+
+/** Lê a aba (e o nome da tela "em breve") a partir do pathname (endereço novo; o antigo também é aceito). */
 export function abaDoCaminho(pathname) {
-  var partes = pathname.replace(BASE, "").split("/").filter(Boolean);
-  var aba = ABA_DO_SLUG[partes[0]] || ABA_INICIAL;
-  var breve = aba === "breve" && partes[1] ? decodeURIComponent(partes[1]) : null;
+  var partes = String(pathname || "").replace(/^\/montagem(?=\/|$)/, "").split("/").filter(Boolean);
+  var aba = ABA_DO_ENDERECO[partes[0] + "/" + partes[1]] || ABA_DO_ENDERECO[partes[0]];
+  var usouDois = !!ABA_DO_ENDERECO[partes[0] + "/" + partes[1]];
+  if (!aba) aba = ABA_DO_SLUG[partes[0]] || ABA_INICIAL;
+  var resto = partes.slice(usouDois ? 2 : 1);
+  var breve = aba === "breve" && resto[0] ? decodeURIComponent(resto[0]) : null;
   return { aba: aba, breve: breve };
 }

@@ -6,7 +6,7 @@ import { tocar } from "@/apps/montagem/lib/sons";
 import { useNotif } from "@/apps/montagem/lib/notificacoes";
 import { ListaConversas, OURO, OURO_TXT } from "@/apps/montagem/components/chat/chat-lista";
 import { Conversa } from "@/apps/montagem/components/chat/chat-conversa";
-import { LogoChat, Ph, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
+import { LogoChat, Ph, TemaChatClaro, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useState } from "@/shared/react";
 
 // quem sou eu no chat: o contato ligado a quem entrou no sistema
@@ -73,7 +73,7 @@ function ChatMini(p){
   if(!eu) return null;
   return e("div",{className:"fixed bottom-4 right-4 z-[65]", "data-sem-clique":true},
     aberto && e("div",{className:"mb-3 flex h-[min(34rem,calc(100vh-7rem))] w-[min(24rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl shadow-2xl", style:{border:"1px solid #d4a63a", background:W.painel}},
-      e("div",{className:"min-h-0 flex-1"}, e(ChatApp,{eu:eu, direcao:p.direcao, compacto:true, abrirCompleto:function(){ alternar(false); p.abrirCompleto(); }}))),
+      e("div",{className:"min-h-0 flex-1"}, e(TemaChatClaro,null, e(ChatApp,{eu:eu, direcao:p.direcao, compacto:true, abrirCompleto:function(){ alternar(false); p.abrirCompleto(); }})))),
     e("div",{className:"flex justify-end"},
       e("button",{onClick:function(){ alternar(!aberto); }, "aria-label":aberto ? "Minimizar o chat" : "Abrir o SorellyChat"+(nl ? " ("+nl+" não lidas)" : ""), title:"SorellyChat",
         className:"relative grid size-14 place-items-center rounded-full shadow-2xl transition-transform hover:scale-105", style:{background:"#24180a", color:"#f6dc8c", border:"2px solid #E8B84B"}},

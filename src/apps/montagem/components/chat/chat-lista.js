@@ -53,41 +53,29 @@ function BarraChat(p){
   var mostrarTodas = !!(p.direcao && !p.leitura && stB.efem.verTodas);
   var opcoes = pg ? pg.abas.filter(function(a){ return a[0]!=="conversas"; }) : [];
   var fechar = function(){ setAberto(null); };
-  var celula = function(id, ic, txt, on, onClick){ return e("button",{onClick:onClick, className:"flex h-10 flex-1 items-center justify-center gap-2 text-[12px] font-bold", style:{background:on ? "rgba(36,24,10,.92)" : "transparent", color:on ? "#f6dc8c" : OURO_TXT}}, e(Ph,{n:ic, s:20, fill:true}), txt, e(Ph,{n:"caret-down", s:12, fill:true})); };
+  var celula = function(id, ic, txt, on, onClick){ return e("button",{onClick:onClick, className:"flex h-10 flex-1 items-center justify-center gap-2 text-[12px] font-bold", style:{background:on ? W.sel : "transparent", color:W.texto}}, e(Ph,{n:ic, s:20, fill:true}), txt, e(Ph,{n:"caret-down", s:12, fill:true})); };
   var cels = [];
   if(p.direcao) cels.push(celula("ver", "eye", p.leitura ? "Vendo "+contato(eu).nome.split(" ")[0] : mostrarTodas ? "Vendo todas" : "Ver como", aberto==="ver" || p.leitura || mostrarTodas, function(){ setAberto(aberto==="ver" ? null : "ver"); }));
   if(opcoes.length>0) cels.push(celula("op", "gear-six", "Opções", aberto==="op" || opcoes.some(function(a){ return pg.aba===a[0]; }), function(){ setAberto(aberto==="op" ? null : "op"); }));
-  var comSep = []; cels.forEach(function(c, i){ if(i) comSep.push(e("span",{key:"s"+i, className:"my-2 w-px shrink-0", style:{background:"rgba(36,24,10,.35)"}})); comSep.push(e("div",{key:"c"+i, className:"flex flex-1"}, c)); });
+  var comSep = []; cels.forEach(function(c, i){ if(i) comSep.push(e("span",{key:"s"+i, className:"my-2 w-px shrink-0", style:{background:W.borda}})); comSep.push(e("div",{key:"c"+i, className:"flex flex-1"}, c)); });
   return e("div",{className:"relative shrink-0"},
-    e("div",{className:"flex items-center gap-2.5 px-3 py-2", style:{background:OURO, color:OURO_TXT}},
+    e("div",{className:"flex items-center gap-2.5 px-3 py-2", style:{background:W.cab, color:W.texto}},
       p.aoVoltarApp && e("button",{onClick:p.aoVoltarApp, "aria-label":"Voltar ao início do app", className:"grid size-7 shrink-0 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:"arrow-left", s:17})),
       e("span",{className:"grid size-7 shrink-0 place-items-center rounded-xl", style:{background:"rgba(36,24,10,.94)", boxShadow:"0 2px 8px rgba(0,0,0,.3)"}}, e(LogoChat,{s:20})),
       e("h2",{className:"min-w-0 flex-1 truncate font-extrabold tracking-tight text-[15px]"}, "SorellyChat"),
-      p.ajuda && e("div",{className:"relative"}, e("button",{onClick:function(){ setAberto(aberto==="ajuda" ? null : "ajuda"); }, "aria-label":"Ajuda: falar com a Sorelly", title:"Ajuda: falar com a Sorelly", className:"flex h-9 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold", style:{background:"rgba(36,24,10,.92)", color:"#f6dc8c"}}, e(Ph,{n:"lifebuoy", s:18, fill:true}), "Ajuda"),
+      p.ajuda && e("div",{className:"relative"}, e("button",{onClick:function(){ setAberto(aberto==="ajuda" ? null : "ajuda"); }, "aria-label":"Ajuda: falar com a Sorelly", title:"Ajuda: falar com a Sorelly", className:"flex h-9 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold", style:{background:W.campo, color:W.texto}}, e(Ph,{n:"lifebuoy", s:18, fill:true}), "Ajuda"),
         aberto==="ajuda" && e(Popover,{className:"right-0 top-11", fechar:fechar, largura:250}, p.ajuda.canais.map(function(c){ return e(ItemMenu,{key:c.id, n:c.ic, onClick:function(){ fechar(); p.ajuda.abrir(c.id); }}, c.nome); }))),
       !pg && e("button",{onClick:function(){ p.abrirCompleto && p.abrirCompleto(); }, "aria-label":"Abrir em tela cheia", title:"Tela cheia", className:"grid size-9 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:"arrows-out-simple", s:20, fill:true}))),
-    comSep.length>0 && e("div",{className:"flex", style:{background:OURO, color:OURO_TXT, borderTop:"1px solid rgba(36,24,10,.35)", boxShadow:"inset 0 -1px 0 rgba(0,0,0,.25)"}}, comSep),
+    comSep.length>0 && e("div",{className:"flex", style:{background:W.cab, color:W.texto, borderTop:"1px solid "+W.borda, borderBottom:"1px solid "+W.borda}}, comSep),
     aberto==="ver" && e(VerComo,{euReal:p.euReal, className:"left-2 top-[7.1rem]", largura:300, fechar:fechar}),
     aberto==="op" && e(Popover,{className:"right-2 top-[7.1rem]", fechar:fechar, largura:230},
       opcoes.map(function(a){ return e(ItemMenu,{key:a[0], n:a[2], onClick:function(){ fechar(); pg.mudar(a[0]); }}, CURTO[a[0]] || a[1], pg.aba===a[0] && e(Ph,{n:"check", s:15, className:"ml-auto", style:{color:W.verde}})); })));
 }
 
-// pede como foi resolvido e dá o OK na conversa (para depois poder arquivar)
-function ResolverConversa(p){
-  var nt = useState(""), nota = nt[0], setNota = nt[1], er = useState(false), erro = er[0], setErro = er[1];
-  var ok = function(){ if(nota.trim().length<5){ setErro(true); return; } api.resolveConv(p.id, p.eu, nota.trim()); p.fechar(); };
-  return e(Janela,{titulo:"Marcar como resolvida", fechar:p.fechar, largura:420},
-    e("div",{className:"flex flex-col gap-3 p-4"},
-      e("p",{className:"text-[12.5px]", style:{color:W.sec}}, "Diga em poucas palavras como foi resolvido. Fica registrado na conversa."),
-      e("input",{autoFocus:true, value:nota, onChange:function(ev){ setNota(ev.target.value); setErro(false); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Como foi resolvido?", "aria-label":"Como foi resolvido", className:"h-10 rounded-lg px-3 text-[13px] outline-none", style:{background:W.campo, color:W.texto, border:erro ? "1px solid "+W.vermelho : "1px solid transparent"}}),
-      erro && e("span",{className:"text-[11.5px]", style:{color:W.vermelho}}, "Escreva em poucas palavras como resolveu."),
-      e("button",{onClick:ok, className:"self-end rounded-full px-5 py-2 text-[13px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "Dar OK")));
-}
-
 function ListaConversas(p){
   var st = useChat(), eu = p.eu, bq = useState(""), busca = bq[0], setBusca = bq[1], ft = useState("todas"), filtro = ft[0], setFiltro = ft[1];
   var nv = useState(false), nova = nv[0], setNova = nv[1], pf = useState(false), perfil = pf[0], setPerfil = pf[1];
-  var vc = useState(false), escolhendo = vc[0], setEscolhendo = vc[1], cm = useState(null), ctx = cm[0], setCtx = cm[1], gn = useState(false), grupoNovo = gn[0], setGrupoNovo = gn[1], rs = useState(null), resolvendo = rs[0], setResolvendo = rs[1];   // false, "func" ou "rep"
+  var vc = useState(false), escolhendo = vc[0], setEscolhendo = vc[1], cm = useState(null), ctx = cm[0], setCtx = cm[1], gn = useState(false), grupoNovo = gn[0], setGrupoNovo = gn[1];   // false, "func" ou "rep"
   var mo = useState(false), mais = mo[0], setMais = mo[1];   // "⋯" com Decidir/Espera/Marcado/Arquivadas/Grupos (saíram da fileira de filtros, 27/10/2026)
   var lm = useState(40), limite = lm[0], setLimite = lm[1];
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
@@ -155,9 +143,12 @@ function ListaConversas(p){
     p.leitura && e("div",{className:"flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px]", style:{background:"#3a2f12", color:W.ouro}}, e(Ph,{n:"eye", s:15, fill:true}), "Você está vendo o SorellyChat de "+contato(eu).nome+" (leitura; nas conversas das representantes com as revendedoras você pode responder)"),
     mostrarTodas && e("div",{className:"flex shrink-0 items-center gap-2 px-3 py-1.5 text-[11px]", style:{background:"#3a2f12", color:W.ouro}}, e(Ph,{n:"eye", s:15, fill:true}), "Todas as conversas da empresa (somente leitura)"),
     e("div",{className:"shrink-0 px-3 pb-2 pt-1"},
-      e("div",{className:"flex h-8 items-center gap-2 rounded-lg px-3", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:15, style:{color:W.sec}}),
-        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Pesquisar", "aria-label":"Pesquisar", className:"min-w-0 flex-1 bg-transparent text-[12.5px] outline-none", style:{color:W.texto}}),
+      e("div",{className:"flex h-9 items-center gap-2.5 rounded-full px-3.5", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:16, style:{color:W.sec}}),
+        e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Pesquisar ou começar uma nova conversa", "aria-label":"Pesquisar", className:"min-w-0 flex-1 bg-transparent text-[13px] outline-none", style:{color:W.texto}}),
         busca && e("button",{onClick:function(){ setBusca(""); }, "aria-label":"Limpar busca"}, e(Ph,{n:"x", s:14, style:{color:W.sec}})))),
+    // filtros em pílulas, como no WhatsApp
+    e("div",{className:"flex shrink-0 items-center gap-1.5 px-3 pb-2"}, [["todas","Tudo",0],["naolidas","Não lidas",naoLidasTotal],["grupos","Grupos",0]].map(function(f){ var on = filtro===f[0];
+      return e("button",{key:f[0], onClick:function(){ setFiltro(f[0]); setLimite(40); }, className:"flex h-7 items-center gap-1 rounded-full px-3 text-[12.5px]", style:{background:on ? "#D9FDD3" : "transparent", color:on ? "#0A6B3E" : W.sec, border:"1px solid "+(on ? "#D9FDD3" : W.borda), fontWeight:on ? 600 : 400}}, f[1], f[2]>0 && e("span",{className:"text-[11px]"}, f[2])); })),
     filtro==="arq" && !q && e("p",{className:"shrink-0 px-4 pb-1 text-[11px] font-semibold", style:{color:W.ouro}}, "Conversas arquivadas. Abra uma e use \"Tirar das arquivadas\" nos dados dela."),
     e("div",{className:"min-h-0 flex-1 overflow-y-auto", onScroll:rolou},
       q ? e("div",null,
@@ -179,10 +170,9 @@ function ListaConversas(p){
           arq ? e(ItemMenu,{n:"archive-box", onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Tirar das arquivadas")
             : e(ItemMenu,{n:"archive-box", desligado:!!motivo, onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Arquivar conversa"),
           !arq && motivo && e("p",{className:"px-4 pb-1 text-[11px] leading-snug", style:{color:"#f59e0b"}}, "Não dá para arquivar: "+motivo+". Resolva primeiro."),
-          motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); setResolvendo(id); }}, "Marcar como resolvida"),
+          motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); api.resolveConv(id, eu, ""); }}, "Marcar como resolvida"),
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),
-    resolvendo && e(ResolverConversa,{id:resolvendo, eu:eu, fechar:function(){ setResolvendo(null); }}),
     grupoNovo && e(NovoGrupo,{eu:eu, fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
     escolhendo && e(VerComo,{euReal:euReal, modo:escolhendo, fechar:function(){ setEscolhendo(false); }}));
 }

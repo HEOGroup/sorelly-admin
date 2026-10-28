@@ -132,7 +132,7 @@ function Compositor(p){
   if(!conv.membros.includes(eu)) return null;
 
   var temTexto = texto.trim().length>0 || anexos.length>0;
-  return e("div",{className:"relative", style:{background:W.cab}},
+  return e("div",{className:"relative", style:{background:W.fundo}},
     // aviso de erro
     erro && e("div",{className:"flex items-center gap-2 px-4 py-2 text-[12px]", style:{background:"#3b1f24", color:"#ffb4bd"}}, e(Ph,{n:"warning", s:16}), e("span",{className:"flex-1"}, erro), e("button",{onClick:function(){ setErro(null); }, "aria-label":"Fechar aviso"}, e(Ph,{n:"x", s:14}))),
     // respondendo / editando
@@ -163,21 +163,21 @@ function Compositor(p){
         e("span",{className:"text-[14px] tabular-nums"}, duracao(grav.ms)), e("span",{className:"flex-1 text-[11.5px]", style:{color:W.sec}}, grav.pausado ? "Gravação pausada" : "Gravando…")),
       e("button",{onClick:pausarGravacao, "aria-label":grav.pausado ? "Continuar gravando" : "Pausar gravação", className:"grid size-10 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:grav.pausado ? "microphone" : "pause", s:22, fill:true, style:{color:W.vermelho}})),
       e("button",{onClick:enviarAudio, "aria-label":"Enviar áudio", className:"grid size-11 place-items-center rounded-full text-white", style:{background:W.verde}}, e(Ph,{n:"paper-plane-tilt", s:22, fill:true}))) :
-    e("div",{className:"flex items-end gap-1.5 px-2.5 py-2.5"},
-      e("button",{onClick:function(){ setEmoji(!emoji); setMenuAnexo(false); }, "aria-label":"Emojis", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"smiley", s:24, style:{color:W.sec}})),
+    e("div",{className:"flex items-end gap-0.5 rounded-[26px] py-1 pl-1.5 pr-1.5", style:{background:W.painel, margin:"8px 12px 10px", boxShadow:"0 1px 2px rgba(11,20,26,.13)"}},
       e("div",{className:"relative"},
-        e("button",{onClick:function(){ setMenuAnexo(!menuAnexo); setEmoji(false); }, "aria-label":"Anexar", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"paperclip", s:24, style:{color:W.sec}})),
+        e("button",{onClick:function(){ setMenuAnexo(!menuAnexo); setEmoji(false); }, "aria-label":"Anexar", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5"}, e(Ph,{n:"plus", s:24, style:{color:W.sec}})),
         menuAnexo && e(Popover,{className:"bottom-12 left-0", fechar:function(){ setMenuAnexo(false); }},
           e(ItemMenu,{n:"image", onClick:function(){ setMenuAnexo(false); fotoIn.current.click(); }}, "Foto"),
           e(ItemMenu,{n:"file-text", onClick:function(){ setMenuAnexo(false); docIn.current.click(); }}, "Documento, PDF ou planilha"),
           e(ItemMenu,{n:"camera", onClick:function(){ setMenuAnexo(false); setCamera(true); }}, "Câmera"))),
       e("input",{ref:fotoIn, type:"file", accept:"image/*", multiple:true, className:"hidden", onChange:function(ev){ addArquivos(ev.target.files); ev.target.value = ""; }}),
       e("input",{ref:docIn, type:"file", accept:".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.odt,.ods,.zip", multiple:true, className:"hidden", onChange:function(ev){ addArquivos(ev.target.files); ev.target.value = ""; }}),
+      e("button",{onClick:function(){ setEmoji(!emoji); setMenuAnexo(false); }, "aria-label":"Emojis", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5"}, e(Ph,{n:"smiley-sticker", s:24, style:{color:W.sec}})),
       e("textarea",{ref:ta, rows:1, spellCheck:true, lang:"pt-BR", value:texto, onChange:mudou, onKeyDown:teclas, placeholder:anexos.length ? "Adicione uma legenda…" : "Digite uma mensagem", "aria-label":"Mensagem",
-        className:"max-h-[140px] min-h-[42px] flex-1 resize-none rounded-lg px-3.5 py-2.5 text-[14px] leading-snug outline-none", style:{background:W.campo, color:W.texto}}),
+        className:"max-h-[140px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-snug outline-none", style:{color:W.texto}}),
       temTexto || p.editando ?
-        e("button",{onClick:enviar, "aria-label":"Enviar", className:"grid size-11 shrink-0 place-items-center rounded-full text-white", style:{background:W.verde}}, e(Ph,{n:p.editando ? "check" : "paper-plane-tilt", s:22, fill:true})) :
-        e("button",{onClick:gravar, "aria-label":"Gravar áudio", className:"grid size-11 shrink-0 place-items-center rounded-full text-white", style:{background:W.verde}}, e(Ph,{n:"microphone", s:22, fill:true}))),
+        e("button",{onClick:enviar, "aria-label":"Enviar", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:p.editando ? "check" : "paper-plane-right", s:20, fill:true})) :
+        e("button",{onClick:gravar, "aria-label":"Gravar áudio", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:"microphone", s:20, fill:true}))),
     camera && e(Camera,{fechar:function(){ setCamera(false); }, foto:addFotoCamera}));
 }
 export { Compositor };

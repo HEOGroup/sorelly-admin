@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 5 sons parecidos com o 4</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.3)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0a0806;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:24px 16px 60px}
+  .pg{max-width:760px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#bbb;margin:0 0 18px}
+  textarea{width:100%;height:110px;border-radius:12px;border:1px solid var(--borda);background:#0e0e11;color:#fff;padding:12px;font:inherit;font-size:15px;resize:vertical}
+  textarea:focus{outline:2px solid var(--ouro);outline-offset:1px}
+  .vol{display:flex;align-items:center;gap:10px;margin:12px 0 18px;color:#ccc}
+  .vol input{flex:1;accent-color:var(--ouro)}
+  .opc{display:flex;align-items:center;gap:12px;border:1px solid var(--borda);border-radius:12px;background:#110e08;padding:12px 14px;margin-bottom:10px;cursor:pointer}
+  .opc.on{border-color:var(--ouro);background:#1b1710;box-shadow:0 0 0 1px var(--ouro) inset}
+  .opc .n{width:30px;height:30px;border-radius:50%;background:var(--ouro);color:#1a1405;font-weight:800;display:grid;place-items:center;flex:none}
+  .opc b{display:block;font-size:14px}.opc small{color:#bdb39d}
+  .opc .t{flex:1}
+  .opc button{height:34px;border-radius:8px;border:1px solid var(--borda);background:#14110b;color:var(--ouro);font:inherit;font-weight:600;padding:0 14px;cursor:pointer}
+  .opc button:hover{background:#1d180e}
+  .dica{margin-top:16px;color:#9d9482}
+  .tag{display:inline-block;border:1px solid var(--borda);border-radius:999px;padding:0 8px;font-size:11px;color:#ddd;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>5 sons parecidos com o 4</h1>
+  <p class="sub">O primeiro é o <b>4</b>, que você escolheu, para comparar. Os outros 5 (A a E) são parecidos. Escolha e <b>digite na caixa</b>. Teste também espaço, apagar e Enter.</p>
+
+  <textarea id="cx" placeholder="Digite aqui para ouvir o som da opção escolhida…" autofocus></textarea>
+  <div class="vol"><span>Volume</span><input id="vol" type="range" min="0" max="100" value="60"><span id="volv">60%</span></div>
+
+  <div id="lista"></div>
+  <p class="dica">Dica: o som toca em cada letra. A barra de espaço, o apagar e o Enter têm um som diferente em cada opção.</p>
+</div>
+
+<script>
+(function(){
+  var ctx = null, vol = .6, escolha = 4;
+  function ligar(){ if(!ctx){ var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  var R = function(a, b){ return a + Math.random()*(b-a); };
+
+  // peças de som
+  function tom(tipo, f0, f1, dur, pico, atq){
+    var c = ligar(), t0 = c.currentTime, o = c.createOscillator(), g = c.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t0); if(f1) o.frequency.exponentialRampToValueAtTime(Math.max(20, f1), t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, pico*vol), t0 + (atq||0.003)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function ruido(dur, freq, q, pico, filtro){
+    var c = ligar(), t0 = c.currentTime, n = Math.floor(c.sampleRate*dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0), i;
+    for(i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 2.4);
+    var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = b; f.type = filtro || "bandpass"; f.frequency.value = freq; f.Q.value = q || 0.8;
+    g.gain.setValueAtTime(Math.max(0.0002, pico*vol), t0);
+    s.connect(f); f.connect(g); g.connect(c.destination); s.start(t0);
+  }
+  var PENTA = [523, 587, 659, 784, 880, 1047];
+
+  // as 5 opções: l = letra, e = espaço, a = apagar, n = enter
+  var SONS = {
+    4: {nome:"O que você escolheu (referência)", desc:"O tique curtinho de celular da rodada anterior",
+      l:function(){ var k = R(.95,1.05); tom("sine", 1900*k, 1250*k, .014, .28, .001); ruido(.007, 5200, 1, .1); },
+      e:function(){ tom("sine", 1500, 1000, .02, .3, .001); ruido(.01, 4200, 1, .12); },
+      a:function(){ tom("sine", 1300, 800, .018, .26, .001); ruido(.008, 3600, 1, .1); },
+      n:function(){ tom("sine", 1700, 1100, .02, .3, .001); setTimeout(function(){ tom("sine", 2300, 1500, .02, .22, .001); }, 45); }},
+    "A": {nome:"A · Tique mais redondo", desc:"Igual ao 4, só que um pouco mais grave e cheio",
+      l:function(){ var k = R(.94,1.06); tom("sine", 1350*k, 880*k, .02, .32, .001); ruido(.008, 3600, 1, .09); },
+      e:function(){ tom("sine", 1000, 640, .028, .34, .001); ruido(.012, 3000, 1, .1); },
+      a:function(){ tom("sine", 900, 560, .024, .3, .001); ruido(.01, 2800, 1, .09); },
+      n:function(){ tom("sine", 1100, 700, .03, .34, .001); setTimeout(function(){ tom("sine", 1600, 1050, .03, .26, .001); }, 50); }},
+    "B": {nome:"B · Tique com brilho", desc:"Igual ao 4, com um pontinho agudo brilhando no final",
+      l:function(){ var k = R(.95,1.05); tom("sine", 1900*k, 1250*k, .014, .26, .001); tom("sine", 3800*k, 3000*k, .012, .08, .001); ruido(.007, 5600, 1, .1); },
+      e:function(){ tom("sine", 1500, 1000, .02, .28, .001); tom("sine", 3000, 2400, .014, .08, .001); ruido(.01, 4400, 1, .11); },
+      a:function(){ tom("sine", 1300, 800, .018, .24, .001); tom("sine", 2600, 1800, .012, .06, .001); },
+      n:function(){ tom("sine", 1700, 1100, .02, .28, .001); setTimeout(function(){ tom("sine", 2400, 1600, .028, .24, .001); tom("sine", 4800, 3600, .02, .07, .001); }, 45); }},
+    "C": {nome:"C · Tique de vidro", desc:"Mais fino e cristalino, quase imperceptível",
+      l:function(){ var k = R(.96,1.04); tom("triangle", 2600*k, 2000*k, .01, .22, .001); ruido(.006, 6500, 1.2, .1, "highpass"); },
+      e:function(){ tom("triangle", 2000, 1500, .016, .26, .001); ruido(.009, 5500, 1.2, .1, "highpass"); },
+      a:function(){ tom("triangle", 1800, 1300, .014, .22, .001); ruido(.007, 5000, 1.2, .08, "highpass"); },
+      n:function(){ tom("triangle", 2300, 1700, .016, .26, .001); setTimeout(function(){ tom("triangle", 3000, 2400, .02, .22, .001); }, 45); }},
+    "D": {nome:"D · Teclado de notebook", desc:"Um clique seco e baixinho, de tecla rasa",
+      l:function(){ var k = R(.94,1.06); ruido(.012, 3200*k, 1.1, .22); tom("sine", 900*k, 650*k, .012, .16, .001); },
+      e:function(){ ruido(.02, 2400, 1, .26); tom("sine", 700, 480, .02, .2, .001); },
+      a:function(){ ruido(.014, 3800, 1.1, .2); tom("sine", 800, 560, .014, .14, .001); },
+      n:function(){ ruido(.022, 2600, 1, .28); tom("sine", 760, 500, .026, .22, .001); setTimeout(function(){ tom("sine", 1100, 800, .02, .16, .001); }, 50); }},
+    "E": {nome:"E · Tique suave com eco", desc:"Igual ao 4, com uma sombrinha que demora um pouquinho mais",
+      l:function(){ var k = R(.95,1.05); tom("sine", 1700*k, 1150*k, .03, .24, .001); ruido(.007, 4800, 1, .08); },
+      e:function(){ tom("sine", 1300, 900, .04, .26, .001); ruido(.01, 3800, 1, .09); },
+      a:function(){ tom("sine", 1150, 760, .034, .22, .001); ruido(.008, 3400, 1, .08); },
+      n:function(){ tom("sine", 1450, 980, .042, .26, .001); setTimeout(function(){ tom("sine", 2000, 1400, .05, .2, .001); }, 55); }}
+  };
+  var lista = document.getElementById("lista");
+  Object.keys(SONS).forEach(function(k){
+    var s = SONS[k], d = document.createElement("div");
+    d.className = "opc"; d.setAttribute("data-k", String(k));
+    d.innerHTML = '<span class="n">'+k+'</span><span class="t"><b>'+s.nome+'</b><small>'+s.desc+'</small></span><button type="button">▶ Ouvir</button>';
+    lista.appendChild(d);
+  });
+  function marca(){ [].forEach.call(lista.children, function(d){ d.classList.toggle("on", d.getAttribute("data-k")===String(escolha)); }); }
+  lista.addEventListener("click", function(ev){
+    var d = ev.target.closest(".opc"); if(!d) return;
+    escolha = d.getAttribute("data-k"); marca();
+    if(ev.target.closest("button")){ var s = SONS[escolha]; s.l(); setTimeout(s.l, 140); setTimeout(s.l, 260); setTimeout(s.e, 420); setTimeout(s.a, 600); setTimeout(s.n, 760); }
+    document.getElementById("cx").focus();
+  });
+  var cx = document.getElementById("cx"), ult = 0;
+  cx.addEventListener("keydown", function(ev){
+    if(ev.ctrlKey || ev.metaKey || ev.altKey || ev.repeat) return;
+    var t = Date.now(); if(t-ult < 30) return; ult = t;
+    var s = SONS[escolha];
+    if(ev.key===" ") s.e();
+    else if(ev.key==="Backspace" || ev.key==="Delete") s.a();
+    else if(ev.key==="Enter") s.n();
+    else if(ev.key.length===1) s.l();
+  });
+  var v = document.getElementById("vol"), vv = document.getElementById("volv");
+  v.addEventListener("input", function(){ vol = v.value/100; vv.textContent = v.value+"%"; });
+  marca();
+})();
+</script>
+</body>
+</html>

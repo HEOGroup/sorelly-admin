@@ -48,7 +48,7 @@ function AbaPrevisaoFaturamentoBase(){
   var fca = useState(fmSalvo.carregar||0), carregarForm = fca[0], setCarregarForm = fca[1];
   var salvarARealizar = function(){ d({type:"FECHA_MES_SET", ym:fmYm, aRealizar:aRealizarForm, carregar:carregarForm}); };
   var fixarDia = function(){ d({type:"FAT_FIXAR", data:isoHoje, recebido:recHoje, acertos:aceHoje}); };
-  var mp = useState(sReal.metaPct||98), metaPct = mp[0], setMetaPctLocal = mp[1], setMetaPct = function(v){ setMetaPctLocal(v); d({type:"META_PCT_SET", pct:v}); };   // meta usada na previsão: 97/98/99%, padrão 98 (27/10/2026, Marcus; antes era 96/97/98 padrão 97)
+  var mp = useState(sReal.metaPct||99), metaPct = mp[0], setMetaPctLocal = mp[1], setMetaPct = function(v){ setMetaPctLocal(v); d({type:"META_PCT_SET", pct:v}); };   // meta usada na previsão: 97/98/99%, padrão 98 (27/10/2026, Marcus; antes era 96/97/98 padrão 97)
   var jc = useState(2), janela = jc[0], setJanela = jc[1];   // janela de crescimento escolhida (índice em CRESCIMENTO_REVENDEDORAS; 2 = 30 dias)
   var ad = useState(false), abrirDetalhe = ad[0], setAbrirDetalhe = ad[1];
   var salvar = function(){ d({type:"FAT_LANCAR", data:dataForm, recebido:recForm, acertos:aceForm, revendedoras:revForm}); };

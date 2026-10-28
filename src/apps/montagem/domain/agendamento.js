@@ -60,6 +60,15 @@ function movimentos(ag, ym){
   return {saem:saem, entram:entram, nSaem:q(saem), nEntram:q(entram), porAutor:porAutor, propositais:cont(saem, true), outras:cont(saem, false), chegaram:q(entram)};
 }
 function previstosAjustados(ag, ym, base){ var mv = movimentos(ag, ym); return Math.max(0, base-mv.nSaem+mv.nEntram); }
+// Acertos previstos do mês = feitos + Carregar + a realizar (Marcus, 27/10/2026): o que ele lança em Faturamento muda também a meta do Agendamento e do Financeiro (metaMensal).
+// O valor do Agendamento é a base ANTES das passadas para outro mês, por isso soma de volta o que já saiu e tira o que entrou. Mês fechado não muda. Devolve o patch do estado.
+function sincPrevistosAcertos(s, ym, total){
+  var an = ym.slice(0,4), ix = Number(ym.slice(5,7))-1, mm = JSON.parse(JSON.stringify(s.metaMensal||{})), patch;
+  mm[an] = mm[an]||{}; mm[an][ix] = Object.assign({base:0, previstos:0}, mm[an][ix], {previstos:total}); if(!mm[an][ix].inicio) mm[an][ix].inicio = ((s.metaMensal||{})[an]||{})[ix] ? (s.metaMensal[an][ix].previstos||0) : 0; patch = {metaMensal:mm};
+  if(s.agend && s.agend.mes && s.agend.mes[ym] && !s.agend.mes[ym].fechadoEm){
+    var ag = JSON.parse(JSON.stringify(s.agend)), mv = movimentos(ag, ym); ag.mes[ym].previstos = Math.max(0, total+mv.nSaem-mv.nEntram); patch.agend = ag; }
+  return patch;
+}
 
 // ---------- faixas de meta e bônus ----------
 function avaliarFaixas(faixas, previstos, realizado){
@@ -307,5 +316,5 @@ function parecidas(ag){
   var grupos = {}; (ag.config.representantes||[]).forEach(function(r){ var k = String(r.nome).trim().split(/\s+/)[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); (grupos[k] = grupos[k]||[]).push(r); });
   return Object.keys(grupos).filter(function(k){ return grupos[k].length>1; }).map(function(k){ return grupos[k]; });
 }
-export { resumoComissaoAg, agrupar, AUTORIZADORES, DIA_SEM, recebidoDe, revFimDe, vencimentoBonus, bonusDoMes, precisaVirar, parecidas, NOMES_MES, MEDALHAS, TIPOS_REMARC, tipoDe, chaveMes, nomeMes, anoDe, diasNoMes, pct, mesAnterior, proximoMes, diarioDeFd, incrementos, realizadoDe, movimentos, previstosAjustados,
+export { sincPrevistosAcertos, resumoComissaoAg, agrupar, AUTORIZADORES, DIA_SEM, recebidoDe, revFimDe, vencimentoBonus, bonusDoMes, precisaVirar, parecidas, NOMES_MES, MEDALHAS, TIPOS_REMARC, tipoDe, chaveMes, nomeMes, anoDe, diasNoMes, pct, mesAnterior, proximoMes, diarioDeFd, incrementos, realizadoDe, movimentos, previstosAjustados,
   avaliarFaixas, maiorFaixa, saldoAtualDe, repPct, ordenarReps, mesAberto, representantesDoMes, pctPorCodigo, painelDe, snapshotDe, analisesDe, agendReduz, agendDemo };

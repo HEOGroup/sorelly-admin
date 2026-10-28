@@ -115,8 +115,8 @@ function Ficha(p){
 
 // bloco com borda dourada: título pequeno + total em cima, lista dentro (mesmo desenho do Direcionar pagamento)
 function Painel(p){
-  return e("section",{className:"flex h-full min-w-0 flex-col overflow-hidden rounded-lg border-2 border-[#d9a63a]/85 bg-card/60"},
-    e("div",{className:"border-b border-border bg-[#B8862B]/20 px-2 py-1 text-center"}, e("div",{className:"truncate text-[11px] font-medium uppercase tracking-[.05em]", style:{color:"#f5d68a"}}, p.t), e("div",{className:"truncate text-[18px] font-medium tabular-nums "+(p.cor||"")}, p.v)),
+  return e("section",{className:"flex h-full min-w-0 flex-col overflow-hidden rounded-lg border-2 bg-card/60 "+(p.vermelho ? "border-destructive/75" : "border-[#d9a63a]/85")},
+    e("div",{className:"border-b border-border px-2 py-1 text-center "+(p.vermelho ? "bg-destructive/15" : "bg-[#B8862B]/20")}, e("div",{className:"truncate text-[11px] font-medium uppercase tracking-[.05em]", style:{color:p.vermelho ? "#fca5a5" : "#f5d68a"}}, p.t), e("div",{className:"truncate text-[18px] font-medium tabular-nums "+(p.cor||"")}, p.v)),
     e("div",{className:"flex flex-1 flex-col"+(p.corpoMin ? " min-h-[192px]" : "")}, p.children));
 }
 var Ln = function(cols, vals, cab, k, onClick, extra){ return e("div",{key:k, onClick:onClick, className:"grid min-h-8 items-center border-b border-border text-center text-[13px] last:border-b-0 "+(cab ? "bg-white/5 text-[11px] font-medium uppercase tracking-[.02em] " : "")+(onClick ? "cursor-pointer hover:bg-white/10 " : "")+(extra || ""), style:{gridTemplateColumns:cols}},
@@ -254,8 +254,6 @@ function RevendedorasTela(props){
       (fc.q || fc.rep || fc.sit || fc.uf || fc.fx || fc.de || fc.ate) && e("button",{type:"button", onClick:function(){ setFc({q:"", rep:"", sit:"", uf:"", fx:"", de:"", ate:""}); }, className:H+" rounded-md border border-border px-3 text-[13px] hover:bg-white/10"}, "Limpar")),
     e(TabelaPlanilha,{key:"cad", cols:COLS_CAD, linhas:cadLinhas, chave:"id", aoClicar:abre, centro:true,
       totalLinha:function(ls){ var ids = ls.filter(function(x){ return x.idade!==""; }); return [{span:3, t:"TOTAL DO FILTRO · "+inteiro(ls.length)+(ls.length===1 ? " revendedora" : " revendedoras")}, ids.length ? "Média "+Math.round(soma(ids, "idade")/ids.length) : "", {span:8, t:""}, (function(){ var cs2 = ls.filter(function(x){ return x.casaDias!==""; }); return cs2.length ? "Média "+casaTxt(soma(cs2, "casaDias")/cs2.length) : ""; })(), ""]; }, vazio:"Nenhuma revendedora com esses filtros."}));
-  // Aba 3: ainda sem fonte dos pagamentos (regra do Marcus, 27/10/2026: venda com forma "Acerto com loja" = NÃO pagou)
-  var receberView = e("p",{className:"rounded-lg border border-border bg-card/60 px-3 py-6 text-center text-[13px]"}, "Contas a receber: aguardando a ligação com os pagamentos da DevMaster. Regra já definida: venda com a forma Acerto com loja = não pagou.");
 
   return e(Pagina,null,
         erro && e("p",{role:"alert", className:"rounded-lg bg-destructive/15 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, erro),
@@ -263,7 +261,7 @@ function RevendedorasTela(props){
     // a lista fica montada (escondida) enquanto a ficha está aberta: filtros e ordem não se perdem ao voltar
     e("div",{className:"flex flex-col gap-2.5 "+(ficha ? "hidden" : "")},
       !dados && !erro ? e("p",{className:"text-[13px]"}, "Carregando da DevMaster… (a primeira vez demora cerca de 30 segundos)")
-      : dados && aba==="cadastro" ? cadastroView : dados && aba==="receber" ? receberView
+      : dados && aba==="cadastro" ? cadastroView
       : dados ? e("div",{className:"flex flex-col gap-2.5"},
         e("div",{className:"grid gap-2.5 grid-cols-[repeat(auto-fit,minmax(21rem,1fr))]"},
           e(Painel,{t:"Revendedoras", v:inteiro(nRev), corpoMin:true},
@@ -326,5 +324,4 @@ function RevendedorasTela(props){
 }
 function AbaRevendedorasAtivas(){ return e(RevendedorasTela,{vista:"cadastro"}); }
 function AbaRevendedorasKits(){ return e(RevendedorasTela,{vista:"kits"}); }
-function AbaRevendedorasReceber(){ return e(RevendedorasTela,{vista:"receber"}); }
-export { AbaRevendedorasAtivas, AbaRevendedorasKits, AbaRevendedorasReceber };
+export { AbaRevendedorasAtivas, AbaRevendedorasKits, Painel, Ln, Sel };

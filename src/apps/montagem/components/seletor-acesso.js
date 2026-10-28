@@ -2,7 +2,7 @@
 // Barra de cima, versão 3 (aprovada pelo Marcus em 27/10/2026): busca, situação (Disponível, Em reunião, Ausente), avisos, SorellyChat e a conta (foto + nome).
 // O menu da conta tem: trocar ou remover a foto, aparência (claro/escuro), tamanho da tela e Sair. NÃO muda nome de exibição (só a Diretoria, na aba Contas).
 // Só a Diretoria vê a lista "Atuar como" para usar o sistema como outra pessoa. Sem servidor (modo antigo) a lista aparece para todos, como era a simulação do login.
-import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
+import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LEONARDO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import * as srv from "@/apps/montagem/lib/api";
 import { ORDEM_SIT, SITUACOES, reduzirFoto, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
 import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
@@ -32,8 +32,8 @@ function TrocarSenha(){
 
 // ordem da lista: sócios primeiro, depois cada setor
 var SETORES_LOGIN = function(){
-  var socios = [16,29,28,37,38,32].map(function(i){ return DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M]).find(function(x){ return x.id===i; }); });
-  return [["supervisao", socios], ["familia", DIRECAO_FAMILIA.concat(FAMILIA)], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
+  var todos = DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M], DIRECAO_FAMILIA, FAMILIA, [LEONARDO]), por = function(ids){ return ids.map(function(i){ return todos.find(function(x){ return x.id===i; }); }); };
+  return [["supervisao", por([16,44])], ["familia", por([29,28,37,38,32,17,31,30])], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
     ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]], ["cadastropecas", CADASTRO_PECAS]]; };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); };
 var BOTAO_MENU = "flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-semibold outline-none hover:bg-white/10";

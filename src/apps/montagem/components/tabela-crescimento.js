@@ -9,7 +9,7 @@ import { e } from "@/shared/react";
 function TabelaCrescimento(p){
   var s = p.s, ano = p.ano, anoStr = String(ano), mesAtual = new Date().getMonth(), janela = p.janela===undefined ? 2 : p.janela;
   var real = resumoMensalRevendedoras(s, ano);
-  var proj = projetarAno(Object.assign({}, s, {faturamentoDiario:fatEfetivo(s)}), anoStr, janela, (Number(s.metaPct)>=97 && Number(s.metaPct)<=99 ? Number(s.metaPct) : 98));
+  var proj = projetarAno(Object.assign({}, s, {faturamentoDiario:fatEfetivo(s)}), anoStr, janela, (Number(s.metaPct)>=97 && Number(s.metaPct)<=99 ? Number(s.metaPct) : 99));
   var fatDe = function(i){ var x = proj.porMes[i]; return x ? x.valor : 0; };
   // meses até o atual vêm do real; os que faltam até dezembro são PREVISÃO (revendedoras pela janela escolhida)
   var linhas = [], anterior = null;

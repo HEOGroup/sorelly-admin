@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit perfeito · 3 layouts do app da montadora</title>
+<style>
+:root{--bg:#0e0c09;--card:#1f1a12;--card2:#2a2318;--line:#3b3222;--ouro:#E8B84B;--prata:#CBD5E1;--txt:#ffffff;--ok:#4ADE80;--ruim:#F87171}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--txt);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.35}
+header.top{padding:14px 16px 4px;text-align:center}
+header.top h1{font-size:18px;font-weight:600;margin:0}
+header.top p{margin:4px 0 0}
+.palco{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;padding:14px 12px 28px}
+.col{width:392px;max-width:100%}
+.rotulo{text-align:center;margin-bottom:6px}
+.rotulo b{font-size:14px}
+.rotulo span{display:block;font-size:12px}
+.tel{background:#15120d;border:2px solid var(--line);border-radius:26px;overflow:hidden}
+.st{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:11px}
+.cab{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.cab .v{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.cab .t{flex:1;min-width:0}
+.cab .t b{display:block;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cab .t span{font-size:11px}
+.cap{padding:10px 12px}
+.faixa{display:grid;grid-template-columns:repeat(3,1fr);border:1px solid var(--line);border-radius:8px;margin-bottom:8px}
+.faixa div{text-align:center;padding:6px 2px;border-right:1px solid var(--line)}
+.faixa div:last-child{border:0}
+.faixa b{display:block;font-size:18px;font-weight:600;font-variant-numeric:tabular-nums}
+.faixa small{font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.bar{height:10px;border-radius:5px;background:var(--card2);display:flex;overflow:hidden}
+.bar i{display:block;height:100%}
+.o{background:var(--ouro)}.p{background:var(--prata)}
+.pill{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 8px;border-radius:12px;font-size:12px;border:1px solid var(--line);background:var(--card)}
+.pill.o2{border-color:var(--ouro);color:var(--ouro)}.pill.p2{border-color:var(--prata);color:var(--prata)}
+.cart{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.cart .lin{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:48px;cursor:pointer}
+.cart .nm{flex:1;min-width:0}
+.cart .nm b{display:block;font-size:14px}
+.cart .nm span{font-size:12px}
+.qtd{font-size:22px;font-weight:600;font-variant-numeric:tabular-nums;min-width:36px;text-align:right}
+.chk{width:26px;height:26px;border-radius:7px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.chk.on{background:var(--ok);border-color:var(--ok);color:#06210f}
+.det{display:none;border-top:1px solid var(--line);padding:8px 10px;background:#1a150e}
+.cart.abre .det{display:block}
+.row{display:grid;grid-template-columns:1fr 44px 44px;gap:6px;align-items:center;height:32px;border-bottom:1px solid #2a2418}
+.row:last-child{border:0}
+.row.h{height:26px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.row .n{text-align:right;font-variant-numeric:tabular-nums}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px}
+.aros{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.aro{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:5px 2px}
+.aro b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.aro small{font-size:11px}
+.aviso{border:1px solid var(--ruim);border-radius:8px;padding:6px 8px;font-size:12px;margin-top:6px}
+.dica{border:1px dashed var(--ouro);border-radius:8px;padding:6px 8px;font-size:12px;margin-top:6px}
+.prog{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:4px 0 8px}
+.prog i{display:block;height:100%;background:var(--ok);width:0}
+.btns{display:flex;gap:8px;padding:10px 12px;border-top:1px solid var(--line)}
+.btn{flex:1;height:36px;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--txt);font:inherit;font-weight:600;cursor:pointer}
+.btn.pri{background:var(--ouro);color:#2a1f05;border-color:var(--ouro)}
+.pontos{display:flex;gap:4px;justify-content:center;padding:4px 0 8px}
+.pontos i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.pontos i.on{background:var(--ouro)}
+.grande{font-size:44px;font-weight:700;text-align:center;line-height:1;font-variant-numeric:tabular-nums}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin-bottom:8px}
+.seg span{flex:1;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.seg .on{background:var(--ouro);color:#2a1f05;font-weight:600}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;border-bottom:1px solid var(--line);padding:0 4px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+td{height:32px;padding:0 4px;border-bottom:1px solid #2a2418;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+tr.cat td{background:var(--card2);font-weight:600}
+tr.tot td{font-weight:700;border-bottom:0;background:#2a2112}
+.nota{max-width:1240px;margin:0 auto;padding:0 16px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.nota div{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 12px}
+.nota b{display:block;margin-bottom:4px}
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>Kit perfeito · como a montadora vê no app</h1>
+  <p>3 desenhos com os números reais da Cíntia das Graças (5 últimas vendas, folga 3× como exemplo). Toque nos cartões para testar.</p>
+</header>
+
+<div class="palco">
+  <div class="col">
+    <div class="rotulo"><b>Layout A · Lista de conferência</b><span>Um cartão por tipo, a montadora marca o que já separou</span></div>
+    <div class="tel" id="A"></div>
+  </div>
+  <div class="col">
+    <div class="rotulo"><b>Layout B · Passo a passo</b><span>Uma tela por tipo, com tudo daquele tipo</span></div>
+    <div class="tel" id="B"></div>
+  </div>
+  <div class="col">
+    <div class="rotulo"><b>Layout C · Folha única</b><span>Tudo numa folha, como a lista de separação</span></div>
+    <div class="tel" id="C"></div>
+  </div>
+</div>
+
+<div class="nota">
+  <div><b>O que muda para a montadora</b>Hoje o app mostra a mesma tabela para todo kit do mesmo valor. Aqui cada revendedora tem a sua lista: quantidade por tipo, ouro e prata, aro do anel, conjuntos e pedras.</div>
+  <div><b>Dinheiro</b>A montadora nunca vê valor do kit. Nos desenhos aparece só o preço máximo de venda da peça ("até R$"). Falta o Marcus dizer se isso pode aparecer.</div>
+  <div><b>Cor da pedra</b>O cadastro da DevMaster não guarda a cor da pedra. Os desenhos usam só o que o nome da peça cita (cristal, rubi, rosa...). Em 102 peças com pedra o nome não diz a cor.</div>
+</div>
+
+<script>
+var D={
+ base:"Últimas 5 vendas · atualizado hoje 06:00",
+ cats:[
+  {id:"brincos",nome:"Brincos",ic:"👂",sub:"avulso, trio, argola, duo",
+   tipos:[["Brinco avulso",13,9],["Trio normal",8,7],["Argola avulsa",5,6],["Trio de argola",3,2],["Duo",1,3]],
+   teto:188,nota:"Metade das peças vendidas é BB (Select). Dos trios normais, 22 de 23 são BB.",pedras:"Cravejado e ponto de luz"},
+  {id:"aneis",nome:"Anéis",ic:"💍",sub:"por tamanho (aro)",o:13,p:12,
+   aros:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
+   evitar:"Aros 10, 12, 13, 15, 17 e 23: ela vendeu só 1 em 5 acertos.",teto:128,pedras:"Cravejado (27) e pedra zircônia (12)"},
+  {id:"colares",nome:"Colares",ic:"🔗",sub:"corrente e pingente",o:12,p:8,teto:168,pedras:"Cristal e coração"},
+  {id:"pulseiras",nome:"Pulseiras",ic:"⌚",sub:"elos e riviera",o:9,p:10,teto:138,pedras:"Cristal"},
+  {id:"chokers",nome:"Chokers",ic:"📿",sub:"",o:4,p:5,teto:144},
+  {id:"conjuntos",nome:"Conjuntos",ic:"💎",sub:"colar e brinco juntos",o:2,p:3,teto:168,
+   modelos:["Prata: ponto de luz pequeno (a mais vendida, 2 em 5)","Prata: flor ou oval cravejado","Ouro: coração liso ou gota"]},
+  {id:"masc",nome:"Masculino",ic:"👨",sub:"corrente, pulseira",o:2,p:6,teto:104},
+  {id:"inf",nome:"Infantil",ic:"👶",sub:"brinco, conjunto, colar",o:5,p:0,teto:128},
+  {id:"outros",nome:"Pingente, bracelete, tornozeleira",ic:"✨",sub:"2 de cada",o:0,p:6,teto:172}
+ ],
+ cores:[["Cristal",29],["Vermelho e rubi",13],["Rosa",5],["Verde",5],["Preto",5],["Azul",4],["Roxo",3]]
+};
+D.cats.forEach(function(c){
+  if(c.tipos){c.o=c.tipos.reduce(function(s,t){return s+t[1]},0);c.p=c.tipos.reduce(function(s,t){return s+t[2]},0)}
+  c.t=c.o+c.p;
+});
+var TOT=D.cats.reduce(function(s,c){return s+c.t},0);
+var TO=D.cats.reduce(function(s,c){return s+c.o},0);
+var TP=D.cats.reduce(function(s,c){return s+c.p},0);
+function pct(a,b){return Math.round(a/b*100)}
+function st(){return '<div class="st"><span>09:41</span><span>Montagem</span></div>'}
+function cab(){return '<div class="cab"><div class="v">‹</div><div class="t"><b>Kit da Cíntia das Graças</b><span>'+D.base+'</span></div></div>'}
+function faixa(){return '<div class="faixa"><div><b>'+TOT+'</b><small>Peças</small></div><div><b style="color:var(--ouro)">'+pct(TO,TOT)+'%</b><small>Ouro</small></div><div><b style="color:var(--prata)">'+pct(TP,TOT)+'%</b><small>Prata</small></div></div>'}
+function metal(c){return '<span class="pill o2">Ouro '+c.o+'</span> <span class="pill p2">Prata '+c.p+'</span>'}
+function barra(c){var t=c.o+c.p||1;return '<div class="bar"><i class="o" style="width:'+(c.o/t*100)+'%"></i><i class="p" style="width:'+(c.p/t*100)+'%"></i></div>'}
+function detalhe(c){
+  var h='';
+  if(c.tipos){h+='<div class="row h"><span>Tipo</span><span class="n" style="color:var(--ouro)">Ouro</span><span class="n" style="color:var(--prata)">Prata</span></div>'+c.tipos.map(function(t){return '<div class="row"><span>'+t[0]+'</span><span class="n">'+t[1]+'</span><span class="n">'+t[2]+'</span></div>'}).join('')}
+  if(c.aros){h+='<div class="sec">Quantos de cada aro</div><div class="aros">'+c.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'}
+  if(c.modelos){h+='<div class="sec">Modelos que ela vende</div>'+c.modelos.map(function(m){return '<div style="padding:3px 0">• '+m+'</div>'}).join('')}
+  if(c.evitar)h+='<div class="aviso">Não mandar: '+c.evitar+'</div>';
+  if(c.nota)h+='<div class="dica">'+c.nota+'</div>';
+  if(c.pedras)h+='<div class="sec">Pedras que mais saem</div><div>'+c.pedras+'</div>';
+  if(c.teto)h+='<div class="sec">Preço máximo de venda</div><div>Peça até <b>R$ '+c.teto+',00</b></div>';
+  return h;
+}
+
+/* A */
+(function(){
+  var feito={};
+  function pintaA(){
+    var sep=0;D.cats.forEach(function(c){if(feito[c.id])sep+=c.t});
+    var h=st()+cab()+'<div class="cap">'+faixa()+
+      '<div style="display:flex;justify-content:space-between"><span>Separadas</span><b>'+sep+' de '+TOT+'</b></div><div class="prog"><i style="width:'+(sep/TOT*100)+'%"></i></div>';
+    D.cats.forEach(function(c){
+      h+='<div class="cart" data-id="'+c.id+'"><div class="lin" data-abre="'+c.id+'"><div style="font-size:20px">'+c.ic+'</div><div class="nm"><b>'+c.nome+'</b><span>'+metal(c)+'</span></div><div class="qtd">'+c.t+'</div><div class="chk'+(feito[c.id]?' on':'')+'" data-marca="'+c.id+'">'+(feito[c.id]?'✓':'')+'</div></div><div class="det">'+barra(c)+detalhe(c)+'</div></div>';
+    });
+    h+='</div>';
+    var el=document.getElementById('A');var abertos=[].slice.call(el.querySelectorAll('.cart.abre')).map(function(x){return x.dataset.id});
+    el.innerHTML=h;
+    abertos.forEach(function(id){var x=el.querySelector('.cart[data-id="'+id+'"]');if(x)x.classList.add('abre')});
+  }
+  document.getElementById('A').addEventListener('click',function(e){
+    var m=e.target.closest('[data-marca]');
+    if(m){feito[m.dataset.marca]=!feito[m.dataset.marca];pintaA();e.stopPropagation();return}
+    var a=e.target.closest('[data-abre]');
+    if(a){a.parentNode.classList.toggle('abre')}
+  });
+  pintaA();
+})();
+
+/* B */
+(function(){
+  var i=0;
+  function pintaB(){
+    var c=D.cats[i];
+    var h=st()+cab()+'<div class="cap"><div class="pontos">'+D.cats.map(function(_,k){return '<i class="'+(k===i?'on':'')+'"></i>'}).join('')+'</div>'+
+      '<div style="text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:.06em">Passo '+(i+1)+' de '+D.cats.length+'</div>'+
+      '<div style="text-align:center;font-size:20px;font-weight:600;margin:2px 0 8px">'+c.ic+' '+c.nome+'</div>'+
+      '<div class="grande">'+c.t+'</div><div style="text-align:center;margin:2px 0 8px">peças neste tipo</div>'+
+      '<div style="display:flex;justify-content:center;gap:8px;margin-bottom:8px">'+metal(c)+'</div>'+barra(c)+detalhe(c)+'</div>'+
+      '<div class="btns"><button class="btn" data-d="-1">‹ Anterior</button><button class="btn pri" data-d="1">'+(i===D.cats.length-1?'Concluir kit':'Próximo ›')+'</button></div>';
+    document.getElementById('B').innerHTML=h;
+  }
+  document.getElementById('B').addEventListener('click',function(e){
+    var b=e.target.closest('[data-d]');if(!b)return;
+    i=Math.max(0,Math.min(D.cats.length-1,i+parseInt(b.dataset.d,10)));pintaB();
+  });
+  i=1;pintaB();
+})();
+
+/* C */
+(function(){
+  var modo='Tudo';
+  function cel(o,p){return modo==='Ouro'?o:modo==='Prata'?p:(o+p)}
+  function pintaC(){
+    var rows='',sum=0;
+    D.cats.forEach(function(c){
+      var t=cel(c.o,c.p);sum+=t;
+      rows+='<tr class="cat"><td>'+c.nome+'</td><td>'+(modo==='Prata'?'':c.o)+'</td><td>'+(modo==='Ouro'?'':c.p)+'</td><td>'+t+'</td></tr>';
+      if(c.tipos)c.tipos.forEach(function(t2){rows+='<tr><td style="padding-left:12px">'+t2[0]+'</td><td>'+(modo==='Prata'?'':t2[1])+'</td><td>'+(modo==='Ouro'?'':t2[2])+'</td><td>'+cel(t2[1],t2[2])+'</td></tr>'});
+    });
+    var aneis=D.cats[1];
+    var h=st()+cab()+'<div class="cap">'+faixa()+
+      '<div class="seg" id="segC">'+['Tudo','Ouro','Prata'].map(function(m){return '<span class="'+(m===modo?'on':'')+'" data-m="'+m+'">'+m+'</span>'}).join('')+'</div>'+
+      '<table><colgroup><col style="width:46%"><col style="width:16%"><col style="width:18%"><col style="width:20%"></colgroup><thead><tr><th>Tipo</th><th style="color:var(--ouro)">Ouro</th><th style="color:var(--prata)">Prata</th><th>Total</th></tr></thead><tbody>'+rows+
+      '<tr class="tot"><td>Total do kit</td><td>'+(modo==='Prata'?'':TO)+'</td><td>'+(modo==='Ouro'?'':TP)+'</td><td>'+sum+'</td></tr></tbody></table>'+
+      '<div class="sec">Anéis · quantos de cada aro</div><div class="aros">'+aneis.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'+
+      '<div class="aviso">Não mandar: '+aneis.evitar+'</div>'+
+      '<div class="sec">Conjuntos</div>'+D.cats[5].modelos.map(function(m){return '<div style="padding:2px 0">• '+m+'</div>'}).join('')+
+      '<div class="sec">Pedras (pelo nome da peça)</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+D.cores.map(function(c){return '<span class="pill">'+c[0]+' '+c[1]+'</span>'}).join('')+'</div>'+
+      '<div class="sec">Preço máximo de venda (peça até)</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+D.cats.slice(0,7).map(function(c){return '<span class="pill">'+c.nome+' R$ '+c.teto+'</span>'}).join('')+'</div>'+
+      '</div>';
+    document.getElementById('C').innerHTML=h;
+  }
+  document.getElementById('C').addEventListener('click',function(e){
+    var m=e.target.closest('[data-m]');if(!m)return;modo=m.dataset.m;pintaC();
+  });
+  pintaC();
+})();
+</script>
+</body>
+</html>

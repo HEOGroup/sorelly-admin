@@ -13,5 +13,7 @@ function gravarFavoritas(visao, lista){
   try { localStorage.setItem(chave(visao), JSON.stringify(lista)); } catch(x){}
   window.dispatchEvent(new Event("sorelly-favoritas"));   // barra de abas e página inicial se atualizam
 }
+// chave de uma tela (setor + aba + modo + nome): a mesma em toda parte que mexe com favoritas (components/barra-menu.js e ui/page.js)
+function chaveDeNo(n, setor){ return setor+"|"+(n.aba||"")+"|"+(n.modo||"")+"|"+n.nome; }
 
-export { lerFavoritas, gravarFavoritas };
+export { lerFavoritas, gravarFavoritas, chaveDeNo };

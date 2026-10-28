@@ -4,6 +4,7 @@
 // Abas: Dia a dia (faturamento × contas, só resultado) · Mês a mês (12 meses lado a lado + detalhe editável) · Previsão (tudo previsão, separada) · Lançar (formulário do dia).
 // Os números vêm das mesmas fontes de sempre (faturamentoDiario, contasPagasDiario, contasPagar, fechaMes), então batem com a Visão geral. Quem edita: autorização faturamento_edita.
 import { AbasTela, BlocoFiltros, Botao, COR, CampoSel, FaixaTotais, Rotulo, corSinal, brl } from "@/apps/montagem/components/padrao-fin";
+import { AcertosRestantes } from "@/apps/montagem/components/acertos-restantes";
 import { FluxoMensal } from "@/apps/montagem/components/fluxo-mensal";
 import { CarregarMes, PrevisaoMeses, ResumoMesAno } from "@/apps/montagem/components/previsao-meses";
 import { DiaADia } from "@/apps/montagem/components/tabela-faturamento-dia";
@@ -17,7 +18,7 @@ import { e, useState } from "@/shared/react";
 
 var iso = function(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 var n0 = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
-var ABAS = [["dia","Dia a dia"],["mes","Mês a mês"],["prev","Previsão"]];
+var ABAS = [["dia","Dia a dia"],["acertos","Acertos"],["mes","Mês a mês"],["prev","Previsão"]];
 
 // aba Lançar: o que o Marcus (ou quem tiver a autorização) lança no dia. Mesmas ações de sempre: FAT_HOJE (provisório), FAT_FIXAR (valor certo), FECHA_MES_SET (previstos), REV_LANCAR.
 function Lancar(p){
@@ -64,6 +65,7 @@ function AbaFaturamento(p){
     e(FaixaTotais,{itens:[{t:"Recebido", v:BKC(rec), cor:COR.entra},{t:"Pago", v:BKC(pago), cor:COR.sai},{t:"Resultado", v:brl(res), cor:corSinal(res)},{t:"Acertos", v:n0(ace)},{t:"Carregar", v:n0(((s.fechaMes||{})[pref]||{}).carregar||0), cor:"text-warning"},{t:"Média", v:ace>0 ? BKC(rec/ace) : "—"}]}),
     e(AbasTela,{abas:abas, atual:aba, onMudar:setAba}),
     aba==="dia" && e(DiaADia,{s:s, ano:ref.ano, mes:ref.mes}),
+    aba==="acertos" && e(AcertosRestantes,{s:s, ano:ref.ano, mes:ref.mes}),
     aba==="mes" && e("div",{className:"flex flex-col gap-3"}, e(FluxoMensal,{s:s, ano:ref.ano}), e(AbaConsolidadoFaturamento,{ano:ref.ano})),
     aba==="prev" && e("div",{className:"flex flex-col gap-3"}, e(ResumoMesAno,{s:s}), e(CarregarMes,{s:s, d:pode ? d : null}), e(PrevisaoMeses,{s:s}), p.extraPrevisao),
     aba==="lanc" && pode && e(Lancar,{s:s, d:d}));

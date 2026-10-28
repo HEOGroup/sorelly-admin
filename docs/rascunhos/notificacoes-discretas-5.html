@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 5 avisos discretos de mensagem</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.32)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#050403;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:22px 16px 70px}
+  .pg{max-width:1100px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#bbb;margin:0 0 14px}
+  .regras{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px;margin:0 0 22px}
+  .regras div{border:1px solid var(--borda);border-radius:10px;background:#110e08;padding:8px 12px;color:#d8d2c2}
+  .regras b{color:var(--ouro)}
+  .opc{margin-bottom:26px}
+  .opc h2{font-size:15px;margin:0 0 2px;color:var(--ouro)}
+  .opc>p{margin:0 0 8px;color:#bbb}
+  .tela{position:relative;height:330px;border:1px solid #2a2a2e;border-radius:14px;background:radial-gradient(ellipse at 30% 0%,#1a1409,#0a0806 60%);overflow:hidden}
+  .abatit{position:absolute;left:0;right:0;top:0;height:22px;background:#0d0b07;border-bottom:1px solid #1d1810;color:#8d8574;font-size:11px;padding:3px 12px;white-space:nowrap}
+  .barra{position:absolute;left:0;right:0;top:22px;height:46px;background:#0d0b07;border-bottom:1px solid var(--borda);display:flex;align-items:center;gap:8px;padding:0 12px}
+  .barra .gap{flex:1}.barra .tit{color:var(--ouro);font-weight:700}
+  .bt{height:32px;border-radius:9px;border:1px solid var(--borda);background:#14110b;color:#fff;display:inline-flex;align-items:center;gap:6px;padding:0 11px;font:inherit;font-weight:600;cursor:pointer;position:relative}
+  .pill{border-color:rgba(232,184,75,.45);background:rgba(232,184,75,.1)}
+  .pt{width:9px;height:9px;border-radius:50%;background:#3ecf8e}.pill.reuniao .pt{background:#f5a524}
+  .sbtn{width:34px;padding:0;justify-content:center;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;border-color:#f1cd75;font-weight:800}
+  .cont{position:absolute;top:-6px;right:-6px;min-width:18px;height:18px;border-radius:9px;background:#e5484d;color:#fff;font-size:11px;font-weight:700;display:none;place-items:center;padding:0 5px}
+  .cont.on{display:grid}
+  .sbtn.pulsa{animation:pulsa .9s ease-out 1}
+  @keyframes pulsa{0%{box-shadow:0 0 0 0 rgba(232,184,75,.9)}100%{box-shadow:0 0 0 16px rgba(232,184,75,0)}}
+  .fake{position:absolute;left:18px;top:86px;right:18px;color:#5d5648;font-size:12px}
+  .fake i{display:block;height:8px;border-radius:4px;background:#17130b;margin:9px 0}
+  .ctl{position:absolute;left:14px;bottom:12px;display:flex;flex-wrap:wrap;gap:8px;z-index:6}
+  .ctl button{height:32px;border-radius:8px;border:1px solid var(--borda);background:#1b1710;color:var(--ouro);font:inherit;font-weight:600;padding:0 12px;cursor:pointer}
+  .ctl button.dest{border-color:var(--ouro)}
+  .lista{position:absolute;right:62px;top:72px;width:330px;background:#16161a;border:1px solid var(--borda);border-radius:12px;padding:6px;box-shadow:0 14px 34px rgba(0,0,0,.6);display:none;z-index:8}
+  .lista.on{display:block}
+  .lista .it{padding:7px 10px;border-radius:8px}.lista .it:hover{background:rgba(232,184,75,.1)}
+  .lista b{display:block}.lista span{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#cfc8b6}
+  .lista .vz{padding:8px 10px;color:#9d9482}
+  .av{display:grid;place-items:center;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;flex:none}
+  .card{position:absolute;right:16px;bottom:16px;width:420px;max-width:94%;background:#16161a;border:1px solid var(--ouro);border-radius:14px;padding:14px 16px;box-shadow:0 14px 34px rgba(0,0,0,.6);opacity:0;transform:translateY(14px);transition:.28s;z-index:9;pointer-events:none}
+  .card.on{opacity:1;transform:none;pointer-events:auto}
+  .card .cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .card .tag{background:#2a2108;border:1px solid var(--ouro);color:var(--ouro);border-radius:999px;padding:0 9px;font-size:11px;font-weight:700}
+  .card .msg{background:#0e0e11;border-radius:10px;padding:10px 12px;color:#f1ecde;margin-bottom:10px}
+  .card .resp{display:flex;gap:8px}.card input{flex:1;height:34px;border-radius:8px;border:1px solid #3a3a40;background:#0e0e11;color:#fff;padding:0 10px;font:inherit}
+  .card .resp button{height:34px;border-radius:8px;border:0;background:var(--ouro);color:#1a1405;font:inherit;font-weight:700;padding:0 14px;cursor:pointer}
+  /* variações do aviso discreto */
+  .p2{position:absolute;left:50%;top:76px;transform:translate(-50%,-10px);background:#16161a;border:1px solid var(--borda);border-radius:999px;padding:5px 16px;opacity:0;transition:.25s;z-index:7;white-space:nowrap}
+  .p2.on{opacity:1;transform:translate(-50%,0)}
+  .f3{position:absolute;left:0;right:0;top:0;height:3px;background:linear-gradient(90deg,transparent,var(--ouro),transparent);transform:scaleX(0);z-index:10}
+  .f3.on{animation:varre 1.4s ease-out 1}
+  @keyframes varre{0%{transform:scaleX(0);opacity:1}60%{transform:scaleX(1);opacity:1}100%{transform:scaleX(1);opacity:0}}
+  .b4{position:absolute;right:56px;top:74px;background:#16161a;border:1px solid var(--borda);border-radius:10px;padding:6px 12px;opacity:0;transform:translateY(-6px);transition:.25s;z-index:7;white-space:nowrap}
+  .b4.on{opacity:1;transform:none}
+  .b4:after{content:"";position:absolute;right:20px;top:-6px;width:10px;height:10px;background:#16161a;border-left:1px solid var(--borda);border-top:1px solid var(--borda);transform:rotate(45deg)}
+  .mut{color:#bdb39d}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>5 avisos discretos de mensagem</h1>
+  <p class="sub">Mensagem comum não interrompe: só um sinal discreto. O cartão grande (opção 3 que você gostou) aparece <b>só quando você é marcado com @</b>. Em cada quadro teste os 4 botões.</p>
+  <div class="regras">
+    <div><b>Mensagem comum</b><br>Som baixinho + contador no botão S. Sem cartão</div>
+    <div><b>Marcado com @</b><br>Cartão grande com resposta rápida</div>
+    <div><b>Em reunião</b><br>Silêncio total: só o contador sobe</div>
+    <div><b>Chat aberto</b><br>Nada aparece. Você já está vendo</div>
+  </div>
+  <div id="area"></div>
+</div>
+
+<script>
+(function(){
+  var COM = "Marcus, bom dia, queria verificar a alteração contratual no CNPJ da Mayz o que vai ser feito ? Vamos fazer alguma alteração de endereço ?";
+  var MARC = "@Marcus preciso da sua decisão sobre o endereço da Mayz ainda hoje.";
+  var OUTRAS = [["Lucas","O pagamento da Mayz saiu hoje de manhã."],["Michele","Chegou um kit novo para você aprovar."],["Camilly","Cadastro da revendedora conferido."]];
+  var ctx = null, vol = .6;
+  function ligar(){ if(!ctx){ var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  function nota(f, ini, dur, pico){ var c = ligar(), t0 = c.currentTime+ini, o = c.createOscillator(), g = c.createGain(); o.type = "sine"; o.frequency.setValueAtTime(f, t0); g.gain.setValueAtTime(.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(.0002, pico*vol), t0+.006); g.gain.exponentialRampToValueAtTime(.0001, t0+dur); o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0+dur+.05); }
+  function somBaixo(){ nota(1760, 0, .3, .16); nota(2349, .08, .36, .15); }            // mensagem comum: baixinho
+  function somMarcado(){ nota(1760, 0, .22, .4); nota(2349, .09, .22, .4); nota(2960, .18, .5, .42); }
+
+  var OPCOES = [
+    {k:1, nome:"Contador e pulso no botão S", desc:"O botão S pulsa uma vez e ganha o número vermelho. Passar o mouse mostra quem escreveu, com 1 linha de prévia.", cue:"pulso"},
+    {k:2, nome:"Pílula \"Nova mensagem\" no alto", desc:"Uma pílula pequena aparece no meio, em cima, por 4 segundos, só com o nome. Sem prévia. O contador fica no S.", cue:"pilula"},
+    {k:3, nome:"Fio dourado no alto da tela", desc:"Um fio de luz dourado passa no topo da tela, bem sutil, e o contador sobe. Não cobre nada.", cue:"fio"},
+    {k:4, nome:"Balãozinho ao lado do S", desc:"Um balão pequeno sai do botão S com o nome e \"nova mensagem\" por 3 segundos. A prévia aparece ao passar o mouse.", cue:"balao"},
+    {k:5, nome:"Só contador, no botão e na aba", desc:"O mais discreto: o número no botão S e no título da aba do navegador, \"(3) Sorelly Admin\". Nenhum movimento na tela.", cue:"aba"}
+  ];
+  var area = document.getElementById("area");
+  OPCOES.forEach(function(o){
+    var d = document.createElement("div"); d.className = "opc";
+    d.innerHTML = '<h2>'+o.k+' · '+o.nome+'</h2><p>'+o.desc+'</p>'+
+      '<div class="tela">'+
+        '<div class="abatit"><span class="at">Sorelly Admin</span></div>'+
+        '<div class="barra"><span class="tit">Início</span><span class="gap"></span>'+
+          '<button class="bt pill" type="button"><span class="pt"></span><span class="st">Disponível</span> ▾</button>'+
+          '<button class="bt" type="button">🔔</button>'+
+          '<button class="bt sbtn" type="button">S<span class="cont"></span></button>'+
+          '<span class="av" style="width:30px;height:30px;font-size:13px">M</span></div>'+
+        '<div class="fake">Tela do sistema<i style="width:60%"></i><i style="width:80%"></i><i style="width:45%"></i><i style="width:70%"></i></div>'+
+        '<div class="f3"></div><div class="p2"></div><div class="b4"></div>'+
+        '<div class="lista"></div>'+
+        '<div class="card"><div class="cab"><div class="av" style="width:38px;height:38px;font-size:15px">N</div><div style="flex:1"><b>Nickolas</b> <span class="tag">te marcou</span><div class="mut" style="font-size:11.5px">Diretoria · agora</div></div><span style="color:var(--ouro);cursor:pointer" class="fc">✕</span></div><div class="msg"></div><div class="resp"><input placeholder="Responder…"><button type="button">Enviar</button></div></div>'+
+        '<div class="ctl"><button class="a" type="button">▶ Mensagem comum</button><button class="b dest" type="button">▶ Marcado com @</button><button class="c" type="button">Em reunião: não</button><button class="e" type="button">Abrir o chat</button></div>'+
+      '</div>';
+    area.appendChild(d);
+    var q = function(s){ return d.querySelector(s); };
+    var est = {n:0, reuniao:false, msgs:[], i:0};
+    var cont = q(".cont"), sbtn = q(".sbtn"), lista = q(".lista"), card = q(".card"), p2 = q(".p2"), b4 = q(".b4"), f3 = q(".f3"), at = q(".at");
+    function mostraCont(){ cont.textContent = est.n; cont.classList.toggle("on", est.n>0); if(o.cue==="aba") at.textContent = (est.n>0 ? "("+est.n+") " : "")+"Sorelly Admin"; }
+    function pinta(){ lista.innerHTML = est.msgs.length ? est.msgs.slice(-4).reverse().map(function(m){ return '<div class="it"><b>'+m[0]+'</b><span>'+m[1]+'</span></div>'; }).join("") : '<div class="vz">Nenhuma mensagem nova</div>'; }
+    function piscar(el, ms){ el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); clearTimeout(el._t); el._t = setTimeout(function(){ el.classList.remove("on"); }, ms); }
+    function chega(marcado){
+      var m = marcado ? ["Nickolas", MARC] : (est.i++ % 4===0 ? ["Nickolas", COM] : OUTRAS[(est.i) % OUTRAS.length]);
+      est.msgs.push(m); est.n++; mostraCont(); pinta();
+      if(est.reuniao) return;                       // em reunião: silêncio total
+      if(marcado){ somMarcado(); q(".card .msg").textContent = MARC; piscar(card, 7000); return; }
+      somBaixo();
+      if(o.cue==="pulso"){ sbtn.classList.remove("pulsa"); void sbtn.offsetWidth; sbtn.classList.add("pulsa"); }
+      if(o.cue==="pilula"){ p2.innerHTML = '<b>Nova mensagem</b> <span class="mut">de '+m[0]+'</span>'; piscar(p2, 4000); }
+      if(o.cue==="fio"){ piscar(f3, 1500); }
+      if(o.cue==="balao"){ b4.innerHTML = '<b>'+m[0]+'</b> <span class="mut">nova mensagem</span>'; piscar(b4, 3000); }
+    }
+    q(".a").addEventListener("click", function(){ chega(false); });
+    q(".b").addEventListener("click", function(){ chega(true); });
+    q(".c").addEventListener("click", function(ev){ est.reuniao = !est.reuniao; ev.target.textContent = "Em reunião: "+(est.reuniao ? "sim" : "não"); q(".pill").classList.toggle("reuniao", est.reuniao); q(".st").textContent = est.reuniao ? "Em reunião" : "Disponível"; });
+    q(".e").addEventListener("click", function(){ est.n = 0; est.msgs = []; mostraCont(); pinta(); card.classList.remove("on"); });
+    q(".fc").addEventListener("click", function(){ card.classList.remove("on"); });
+    sbtn.addEventListener("mouseenter", function(){ pinta(); lista.classList.add("on"); });
+    sbtn.addEventListener("mouseleave", function(){ setTimeout(function(){ if(!lista.matches(":hover")) lista.classList.remove("on"); }, 250); });
+    lista.addEventListener("mouseleave", function(){ lista.classList.remove("on"); });
+    pinta();
+  });
+})();
+</script>
+</body>
+</html>

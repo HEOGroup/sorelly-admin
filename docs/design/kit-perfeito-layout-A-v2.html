@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit perfeito · Layout A, versão 2</title>
+<style>
+:root{--bg:#0e0c09;--card:#1f1a12;--card2:#2a2318;--line:#3b3222;--ouro:#E8B84B;--prata:#CBD5E1;--ok:#4ADE80;--ruim:#F87171;--aviso:#FBBF24}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.35}
+h1{font-size:18px;font-weight:600;margin:0;text-align:center;padding:14px 16px 2px}
+.sub{text-align:center;margin:0 0 8px}
+.palco{display:flex;flex-wrap:wrap;gap:20px;justify-content:center;padding:6px 12px 20px}
+.col{width:392px;max-width:100%}
+.tel{background:#15120d;border:2px solid var(--line);border-radius:26px;overflow:hidden}
+.st{height:26px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;font-size:11px}
+.cab{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--line)}
+.cab .v{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);display:flex;align-items:center;justify-content:center}
+.cab b{display:block;font-size:14px}
+.cab span{font-size:11px}
+.cap{padding:10px 12px}
+.regras{border:1px solid var(--ouro);border-radius:10px;padding:8px 10px;margin-bottom:8px}
+.regras b{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;color:var(--ouro)}
+.regras div{padding:2px 0;font-size:13px}
+.prog{display:flex;justify-content:space-between;align-items:center}
+.trilho{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:4px 0 8px;display:flex}
+.trilho i{display:block;height:100%}
+.parte{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:10px 0 6px;display:flex;align-items:center;gap:6px}
+.parte:before,.parte:after{content:"";flex:1;height:1px;background:var(--line)}
+.cart{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;overflow:hidden}
+.cart.ok{border-color:var(--ok)}.cart.falta{border-color:var(--aviso)}
+.lin{display:flex;align-items:center;gap:10px;padding:8px 10px;min-height:52px;cursor:pointer}
+.num{width:30px;height:30px;border-radius:50%;background:var(--card2);border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-weight:700;flex:none}
+.ok .num{background:var(--ok);border-color:var(--ok);color:#06210f}
+.falta .num{background:var(--aviso);border-color:var(--aviso);color:#2a1d02}
+.nm{flex:1;min-width:0}
+.nm b{display:block;font-size:14px}
+.pill{display:inline-flex;align-items:center;height:22px;padding:0 7px;border-radius:11px;font-size:12px;border:1px solid var(--line);margin:2px 3px 0 0}
+.o2{border-color:var(--ouro);color:var(--ouro)}.p2{border-color:var(--prata);color:var(--prata)}
+.est-ok{border-color:var(--ok);color:var(--ok)}.est-baixo{border-color:var(--aviso);color:var(--aviso)}.est-sem{border-color:var(--ruim);color:var(--ruim)}
+.qtd{font-size:24px;font-weight:700;min-width:38px;text-align:right;font-variant-numeric:tabular-nums}
+.det{display:none;border-top:1px solid var(--line);padding:8px 10px;background:#1a150e}
+.cart.abre .det{display:block}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px;color:var(--ouro)}
+.sec:first-child{margin-top:0}
+.row{display:grid;grid-template-columns:1fr 44px 44px;gap:6px;align-items:center;height:30px;border-bottom:1px solid #2a2418}
+.row .n{text-align:right;font-variant-numeric:tabular-nums}
+.row.h{height:24px;font-size:11px;text-transform:uppercase}
+.aros{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.aro{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:4px 2px}
+.aro b{display:block;font-size:18px}.aro small{font-size:11px}
+.nao{border:1px solid var(--ruim);border-radius:8px;padding:6px 8px;margin-top:6px}
+.se{border:1px dashed var(--aviso);border-radius:8px;padding:6px 8px;margin-top:6px}
+.acoes{display:flex;gap:8px;margin-top:8px}
+.btn{flex:1;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+.btn.pri{background:var(--ok);border-color:var(--ok);color:#06210f}
+.btn.av{background:var(--aviso);border-color:var(--aviso);color:#2a1d02}
+.btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#2a1f05}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.cont{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
+.cont .c{display:flex;align-items:center;gap:10px}
+.cont .c button{width:38px;height:38px;border-radius:8px;border:1px solid var(--line);background:var(--card2);color:#fff;font-size:20px;cursor:pointer}
+.cont .c b{font-size:22px;min-width:28px;text-align:center}
+.rod{padding:10px 12px;border-top:1px solid var(--line)}
+.final h2{font-size:18px;margin:6px 0;text-align:center}
+.lf{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #2a2418}
+.alerta{border:1px solid var(--ruim);border-radius:8px;padding:6px 8px;margin-top:6px;color:#fff}
+.nota{max-width:1240px;margin:0 auto;padding:0 16px 24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+.nota div{border:1px solid var(--line);border-radius:10px;background:var(--card);padding:10px 12px}
+.nota b{display:block;margin-bottom:4px}
+</style>
+</head>
+<body>
+<h1>Kit perfeito · Layout A, versão 2</h1>
+<p class="sub">Lista na ordem certa, com instrução simples e o que fazer quando falta peça. Toque nos cartões e nos botões.</p>
+<div class="palco"><div class="col"><div class="tel" id="T"></div></div></div>
+<div class="nota">
+  <div><b>O que mudou do layout A</b>Agora tem uma ordem numerada (1 a 9), dividida em 3 idas ao estoque, uma regra de "antes de começar", o aviso de estoque em cada etapa, o botão "Faltou peça" com a instrução de troca e um fechamento que avisa a supervisão.</div>
+  <div><b>Regras de troca (propostas, a confirmar)</b>1º: mesmo tipo e mesmo metal, outro desenho. 2º: mesmo tipo, outro metal (no máximo 1 em cada 4). Anel: aro vizinho. Nunca trocar por outro tipo de peça. Faltou mais de 20% de um tipo: chamar a supervisão na hora.</div>
+  <div><b>Estoque nos desenhos</b>As etiquetas "estoque ok, baixo, sem" são exemplo. O sistema ainda não lê o estoque da DevMaster. Falta decidir de onde vem.</div>
+</div>
+<script>
+var D=[
+ {nome:"Brincos",o:30,p:27,est:"ok",
+  tipos:[["Brinco avulso",13,9],["Trio normal",8,7],["Argola avulsa",5,6],["Trio de argola",3,2],["Duo",1,3]],
+  prefira:"Desenho: coração, gota e trevo. Pedra: cristal; ela também compra vermelho e verde.",
+  nota:"Metade dos brincos dela é BB (Select).",
+  se:"Troque por outro desenho do mesmo tipo e do mesmo metal."},
+ {nome:"Anéis",o:13,p:12,est:"baixo",
+  aros:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
+  prefira:"Cravejado. Anel aparador (aliança) também sai.",
+  nao:"Não pegue os aros 10, 12, 13, 15, 17 e 23.",
+  se:"Falta o aro? Pegue o aro vizinho (um número acima ou abaixo) da lista. Nunca um aro fora da lista."},
+ {nome:"Colares",o:12,p:8,est:"ok",prefira:"Desenho: coração e Nossa Senhora. Pedra cristal.",se:"Troque por outro desenho do mesmo metal. Corrente não troca por pingente."},
+ {nome:"Pulseiras",o:9,p:10,est:"ok",prefira:"Elos e riviera com cristal.",se:"Troque por outro modelo do mesmo metal."},
+ {nome:"Chokers",o:4,p:5,est:"baixo",prefira:"Cristal.",se:"Troque por outro modelo do mesmo metal."},
+ {nome:"Conjuntos",o:2,p:3,est:"baixo",modelos:["Prata: ponto de luz pequeno (o mais vendido)","Prata: flor ou oval cravejado","Ouro: coração liso ou gota"],se:"Não troque por peças soltas. Se não tiver o conjunto, marque Faltou peça."},
+ {nome:"Masculino",o:2,p:6,est:"ok",prefira:"Corrente e pulseira, prata.",se:"Troque por outra peça masculina do mesmo metal."},
+ {nome:"Infantil",o:5,p:0,est:"ok",prefira:"Ouro.",se:"Troque por outra peça infantil de ouro."},
+ {nome:"Pingente, bracelete e tornozeleira",o:0,p:6,est:"ok",prefira:"2 de cada, prata.",se:"Troque por outra peça do mesmo tipo e metal."}
+];
+var PARTES=[[0,"Ida 1 ao estoque · maior volume",[0,1]],[1,"Ida 2 ao estoque · colares e pulseiras",[2,3,4]],[2,"Ida 3 ao estoque · poucas peças",[5,6,7,8]]];
+D.forEach(function(c){ if(c.tipos){c.o=c.tipos.reduce(function(s,t){return s+t[1]},0);c.p=c.tipos.reduce(function(s,t){return s+t[2]},0)} c.t=c.o+c.p; });
+var TOT=D.reduce(function(s,c){return s+c.t},0);
+var S=D.map(function(){return {s:"pend",miss:0,abre:false,falando:false,m:0}});
+S[1].abre=true;
+var final=false,avisou=false;
+var EST={ok:"Estoque ok",baixo:"Estoque baixo",sem:"Sem estoque"};
+function resolvidas(){return S.filter(function(x){return x.s!=="pend"}).length}
+function faltas(){return D.map(function(c,i){return {c:c,m:S[i].miss}}).filter(function(x){return x.m>0})}
+function detalhe(c,i){
+ var h="";
+ h+='<div class="sec">Pegue exatamente</div>';
+ if(c.tipos)h+='<div class="row h"><span>Tipo</span><span class="n" style="color:var(--ouro)">Ouro</span><span class="n" style="color:var(--prata)">Prata</span></div>'+c.tipos.map(function(t){return '<div class="row"><span>'+t[0]+'</span><span class="n">'+t[1]+'</span><span class="n">'+t[2]+'</span></div>'}).join('');
+ else h+='<div style="padding:2px 0"><span class="pill o2">Ouro '+c.o+'</span><span class="pill p2">Prata '+c.p+'</span></div>';
+ if(c.aros)h+='<div class="sec">Quantos de cada aro</div><div class="aros">'+c.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>';
+ if(c.modelos)h+='<div class="sec">Modelos</div>'+c.modelos.map(function(m){return '<div style="padding:2px 0">• '+m+'</div>'}).join('');
+ if(c.prefira)h+='<div class="sec">Prefira</div><div>'+c.prefira+'</div>';
+ if(c.nota)h+='<div style="margin-top:4px">'+c.nota+'</div>';
+ if(c.nao)h+='<div class="nao"><b>Não pegue:</b> '+c.nao.replace("Não pegue ","")+'</div>';
+ h+='<div class="se"><b>Se faltar:</b> '+c.se+'</div>';
+ var st=S[i];
+ if(st.falando){
+  var lim=Math.ceil(c.t*0.2);
+  h+='<div class="sec">Quantas peças faltaram?</div><div class="cont"><div class="c"><button data-i="'+i+'" data-a="menos">−</button><b>'+st.m+'</b><button data-i="'+i+'" data-a="mais">+</button></div><span>de '+c.t+' peças</span></div>';
+  if(st.m>lim)h+='<div class="alerta"><b>Faltou muito.</b> Chame a supervisão agora, antes de continuar.</div>';
+  h+='<div class="acoes"><button class="btn" data-i="'+i+'" data-a="cancela">Voltar</button><button class="btn av" data-i="'+i+'" data-a="salvaFalta"'+(st.m<1?' disabled':'')+'>Confirmar falta</button></div>';
+ } else if(st.s==="pend"){
+  h+='<div class="acoes"><button class="btn av" data-i="'+i+'" data-a="falta">Faltou peça</button><button class="btn pri" data-i="'+i+'" data-a="ok">Separei tudo</button></div>';
+ } else {
+  h+='<div class="acoes"><button class="btn" data-i="'+i+'" data-a="refaz">Refazer esta etapa</button></div>';
+ }
+ return h;
+}
+function pinta(){
+ var T=document.getElementById("T");
+ if(final){
+  var f=faltas(),nf=f.reduce(function(s,x){return s+x.m},0);
+  T.innerHTML='<div class="st"><span>09:41</span><span>Montagem</span></div><div class="cab"><div class="v" data-a="voltaLista">‹</div><div><b>Kit da Cíntia das Graças</b><span>Fechamento</span></div></div><div class="cap final"><h2>'+(nf?'Kit montado com falta':'Kit completo')+'</h2>'+
+   '<div class="lf"><span>Peças no kit</span><b>'+(TOT-nf)+' de '+TOT+'</b></div>'+
+   (nf?'<div class="sec">O que faltou</div>'+f.map(function(x){return '<div class="lf"><span>'+x.c.nome+'</span><b style="color:var(--aviso)">faltam '+x.m+'</b></div>'}).join(''):'<p>Todas as etapas foram separadas.</p>')+
+   (nf?'<div class="alerta" style="border-color:var(--aviso)">A supervisão precisa saber antes de lacrar o kit.</div>':'')+
+   '<div class="acoes">'+(nf?'<button class="btn ouro" data-a="avisa"'+(avisou?' disabled':'')+'>'+(avisou?'Supervisão avisada ✓':'Avisar supervisão')+'</button>':'')+'<button class="btn pri" data-a="lacra"'+(nf&&!avisou?' disabled':'')+'>Kit pronto</button></div></div>';
+  return;
+ }
+ var r=resolvidas(),h='<div class="st"><span>09:41</span><span>Montagem</span></div><div class="cab"><div class="v">‹</div><div><b>Kit da Cíntia das Graças</b><span>'+TOT+' peças · últimas 5 vendas dela</span></div></div><div class="cap">'+
+ '<div class="regras"><b>Antes de começar</b><div>1. Siga a ordem dos números.</div><div>2. Pegue só o que a lista mostra, nem uma peça a mais.</div><div>3. Faltou peça? Aperte "Faltou peça". Não invente troca.</div></div>'+
+ '<div class="prog"><span>Etapas prontas</span><b>'+r+' de '+D.length+'</b></div><div class="trilho"><i style="width:'+(r/D.length*100)+'%;background:var(--ok)"></i></div>';
+ var n=0;
+ PARTES.forEach(function(p){
+  h+='<div class="parte">'+p[1]+'</div>';
+  p[2].forEach(function(i){
+   n++;var c=D[i],st=S[i];
+   h+='<div class="cart '+(st.s==="ok"?'ok':st.s==="falta"?'falta':'')+(st.abre?' abre':'')+'"><div class="lin" data-t="'+i+'"><div class="num">'+(st.s==="ok"?'✓':st.s==="falta"?'!':n)+'</div><div class="nm"><b>'+c.nome+'</b><span class="pill o2">Ouro '+c.o+'</span><span class="pill p2">Prata '+c.p+'</span><span class="pill est-'+c.est+'">'+EST[c.est]+'</span>'+(st.s==="falta"?'<span class="pill est-baixo">Faltam '+st.miss+'</span>':'')+'</div><div class="qtd">'+c.t+'</div></div><div class="det">'+detalhe(c,i)+'</div></div>';
+  });
+ });
+ h+='</div><div class="rod"><button class="btn ouro" style="width:100%" data-a="fim"'+(r<D.length?' disabled':'')+'>'+(r<D.length?'Falta separar '+(D.length-r)+' etapa'+(D.length-r>1?'s':''):'Finalizar kit')+'</button></div>';
+ T.innerHTML=h;
+}
+document.getElementById("T").addEventListener("click",function(e){
+ var b=e.target.closest("[data-a]");
+ if(b){
+  var a=b.dataset.a,i=parseInt(b.dataset.i,10),s=S[i];
+  if(a==="ok"){s.s="ok";s.miss=0;s.abre=false}
+  else if(a==="falta"){s.falando=true;s.m=1}
+  else if(a==="mais"){s.m=Math.min(D[i].t,s.m+1)}
+  else if(a==="menos"){s.m=Math.max(0,s.m-1)}
+  else if(a==="cancela"){s.falando=false;s.m=0}
+  else if(a==="salvaFalta"){s.s="falta";s.miss=s.m;s.falando=false;s.abre=false}
+  else if(a==="refaz"){s.s="pend";s.miss=0;s.m=0}
+  else if(a==="fim"){final=true}
+  else if(a==="voltaLista"){final=false}
+  else if(a==="avisa"){avisou=true}
+  else if(a==="lacra"){final=false;S.forEach(function(x){x.s="pend";x.miss=0;x.abre=false});S[1].abre=true;avisou=false}
+  pinta();return;
+ }
+ var t=e.target.closest("[data-t]");
+ if(t){var k=parseInt(t.dataset.t,10);S[k].abre=!S[k].abre;pinta()}
+});
+pinta();
+</script>
+</body>
+</html>

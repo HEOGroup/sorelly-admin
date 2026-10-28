@@ -622,7 +622,7 @@ function getResponseStats(filtro){
 
 // ---------- perfil, presença, configurações ----------
 function setFundo(cid, id){ mudar(function(s){ var u = Object.assign({}, s.usuarios); u[cid] = Object.assign({}, u[cid], {fundo:id}); return Object.assign({}, s, {usuarios:u}); }); }
-function fundoDe(cid){ var u = estado.usuarios[cid]; return (u && u.fundo) || "joias-ouro"; }
+function fundoDe(cid){ var u = estado.usuarios[cid]; return (u && u.fundo && u.fundo!=="joias-ouro" && u.fundo) || "whatsapp-claro"; }   // "joias-ouro" era o padrão antigo (escuro): vira o WhatsApp claro
 function setFoto(cid, url){ mudar(function(s){ var u = Object.assign({}, s.usuarios); u[cid] = Object.assign({}, u[cid], {foto:url}); return Object.assign({}, s, {usuarios:u}); }); }
 // fotos oficiais já salvas no projeto (public/fotos); a troca feita na tela vale por cima delas
 var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg", f_anabeatrizhessdeoliveira:"fotos/ana-beatriz.jpg"};

@@ -13,6 +13,7 @@
 | **23/10/2026** | **1.330** | **R$ 1.049.731,83** | **R$ 789,27** | dia: 90 acertos, R$ 67.551,40 (fechado pelo Marcus em 24/10/2026; em 26/10 ele escreveu 1.130 acertos, mas o acumulado não cai: vale 1.330) |
 | 24/10/2026 (sáb) | 1.330 | R$ 1.049.731,83 | R$ 789,27 | sem faturamento e sem contas pagas (Marcus, 26/10/2026; a funcionária ainda vai atualizar) |
 | 25/10/2026 (dom) | 1.330 | R$ 1.049.731,83 | R$ 789,27 | sem faturamento e sem contas pagas |
+| **27/10/2026** | **1.583** | **R$ 1.252.742,52** | **R$ 791,37** | dia: 119 acertos, R$ 92.183,97 (fixado pelo Marcus em 27/10/2026). Carregar de 27/10 = 0 |
 
 **Previsão de outubro (Marcus, 20/10/2026):** 1.120 feitos + 7 vendas no Carregar sem valor (contam como feitas, fora da média) + 783 a realizar = **1.910 acertos no mês**; previsão a 97% = 1.853 acertos. Em 21/10 o dia 20 foi fixado em 1.124 acertos (o Carregar e o a realizar seguem os mesmos até o Marcus mandar outros). Em 19/10 eram 997 + 16 + 908 = 1.921 (a diferença é o que já foi feito e passado para frente).
 
@@ -139,3 +140,37 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 ## Saldos e revendedoras de 27/10/2026 (lidos do admin antigo)
 - Saldos das 29 contas gravados para 26/10 e 27/10 (`saldos-atualizacao.local.js`). Soma das contas bancárias (sem Retido e sem Dinheiro): 26/10 −R$ 237.662,00 · 27/10 −R$ 218.823,61. Sicredi Shopping 46 subiu de −R$ 10.102,98 (23/10) para +R$ 12.434,73 (27/10); Sicredi Serenity de −R$ 33.449,16 para −R$ 12.786,76; Itaú Black foi de −R$ 4.923,82 para −R$ 31.171,49.
 - Revendedoras: 27/10 = 2.106 (admin). Série 20 a 27/10: 2.058 · 2.081 · 2.087 · 2.106 · 2.113 · 2.113 · 2.105 (Marcus; o admin tinha 2.110) · 2.106.
+
+## Contas a pagar até 31/10 — planilha relFin004_Natureza de 27/10/2026
+- No relatório "por Natureza" TODOS os CNPJs vêm dentro da filial 34 (principal). Por isso o CNPJ de cada título é herdado da lista de 22/10 (chave: prefixo, número, parcela e fornecedor). 4 títulos novos (freelancer taxa, R$ 2.340,00) entram como "fora".
+- 98 títulos, saldo **R$ 157.922,46**: CNPJ 34 R$ 11.036,64 · 46 R$ 44.391,12 · 59 R$ 7.797,50 · 67 R$ 3.284,52 · por fora R$ 91.412,68. Vencidos R$ 14.238,64; 28/10 R$ 66.389,50; 29/10 R$ 15.060,54; 30/10 R$ 61.500,20.
+- Antes (22/10): 206 títulos, R$ 374.100,65. 110 títulos (R$ 184.432,93) sumiram: foram pagos de 22 a 27/10.
+- Arquivo `domain/contas-empresa.local.js` (backup da versão de 22/10 fora do projeto). Os 110 pagos NÃO foram para a lista de pagas por título; o pago do mês segue pelo diário.
+- Falta (admin antigo): créditos bancários (R$ 83.000,00 mar/26 e R$ 200.044,14 abr/26), saldo de fim de mês (dez/25 a jul/26), divergência de saldo e reabrir mês no Financeiro.
+
+## Faturamento fixado em 27/10/2026
+- Acumulado do mês em 27/10: **1.583 acertos e R$ 1.252.742,52** (média R$ 791,37). Dia 27: 119 acertos e R$ 92.183,97. Código: `aplicaFat27` em `state/store.js` (flag `fat27V`). Pago do mês no sistema R$ 1.261.865,29, resultado −R$ 9.122,77. Carregar de 27/10 pendente.
+
+## Previsão de outubro e Carregar — 27/10/2026 (TRAVADO)
+| Data | Acertos feitos | Recebido | Carregar | A realizar | Total do mês | A 97% | A 98% |
+|---|---|---|---|---|---|---|---|
+| 26/10/2026 | 1.347 | R$ 1.062.977,38 | 34 | 513 | 1.894 | 1.837 | 1.856 |
+| **27/10/2026** | **1.583** | **R$ 1.252.742,52** | **0** | **303** | **1.886** | **1.829** | **1.848** |
+
+- Carregar de 27/10 = **0** (Marcus). Os 34 de 26/10 já foram feitos. Carregar do início do mês: 12 (01/10).
+- "A realizar" = 303 revendedoras que ainda vão fazer o acerto dentro do mês (Marcus, 27/10).
+- Com os valores de 27/10 o sistema mostra: total do mês R$ 1.462.456,21 · contas do mês R$ 1.505.804,48 · resultado previsto −R$ 43.348,27 (a 98%).
+- Atenção: o sistema está com meta de **98%**; o Marcus tinha pedido calcular com 97%.
+
+## Agendamento de outubro/2026 lido do admin antigo (28/10/2026)
+- Admin antigo (acertos_month): revendedoras com kit 2.024 e acertos previstos 1.976, parados desde 09/10. Lançamentos diários só até 14/10 (acumulado 675). O realizado do nosso sistema vem do Faturamento (1.583 em 27/10), por isso não usa o lançamento diário antigo.
+- Gravadas as **28 representantes reais** com cota e saldo dia a dia de 01 a 26/10 (acertos_representante, _month e _daily_balance), no lugar da lista de demonstração. Arquivo local `domain/agendamento-real.local.js`; código `aplicaAgendReal` em `state/store.js` (flag `agRealV`). Meses fechados não mudam.
+- Observação: a Marciane (A4) tem cota 14 e saldo inicial 69 no admin antigo; importado como está.
+- Passar revendedoras para o mês seguinte NÃO se faz mais no Dashboard: o Marcus altera direto na DevMaster (data prevista). O bloco "Passadas para novembro" saiu do Dashboard (27/10/2026).
+- Meta do mês: o sistema calcula a 98% (Marcus, 27/10/2026).
+
+## Contas a pagar direto da DevMaster — 28/10/2026
+- Script `node scripts/atualizar-contas-pagar.mjs` lê a tabela dmabe (Contas a Pagar, situação A e P com saldo) da DevMaster API 2 (só leitura) e regrava as listas "a pagar" de `contas-empresa.local.js` (vence até 31/10) e `contas-empresa-meses.local.js` (de 01/11 em diante). Nome do fornecedor vem de dmaat e o da natureza de dmaan. Os títulos já conhecidos mantêm o CNPJ conferido; os novos (698) usam a filial da DevMaster: 01=34, 02=46, 03=59, 04=por fora, 05=67 (batia em cerca de 90% dos títulos conhecidos).
+- Resultado em 28/10: 3.792 títulos em aberto. Outubro R$ 160.253,95 (103) · novembro R$ 1.471.268,66 (785) · dezembro R$ 1.500.485,63 (695) · janeiro/27 R$ 1.112.044,14 (454) · fevereiro R$ 998.724,91 · março R$ 915.701,79. Antes (22/10): novembro R$ 1.382.862,74 e dezembro R$ 1.426.056,90.
+- Erros de cadastro vistos na DevMaster: título GRA 34 com vencimento no ano 0026 (R$ 1.500,00) e título PÇ 39 de 15/11/2025 (R$ 4.065,00) ainda em aberto.
+- 37 títulos que estavam na lista de 22/10 (R$ 732.943,70) não estão mais em aberto: foram pagos ou renegociados.

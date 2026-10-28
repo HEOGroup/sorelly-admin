@@ -30,7 +30,7 @@ var SONS = {
   atraso:   function(c){ for(var i=0;i<3;i++){ nota(c, 440, i*0.32, 0.16, "square", 0.22); nota(c, 330, i*0.32+0.16, 0.16, "square", 0.22); } },       // sirene grave repetida
   concluir: function(c){ nota(c, 523, 0, 0.1, "sine", 0.4); nota(c, 659, 0.09, 0.1, "sine", 0.4); nota(c, 784, 0.18, 0.2, "sine", 0.4); },
   contar:   function(c){ nota(c, 1250 + Math.random()*180, 0, 0.022, "sine", 0.07); },   // tique baixinho dos números que sobem (padrão do sistema inteiro)
-  tecla:    function(c){ nota(c, 1700 + Math.random()*500, 0, 0.03, "square", 0.1); nota(c, 650, 0.004, 0.03, "triangle", 0.14); },
+  tecla:    function(c){ nota(c, 520 + Math.random()*120, 0, 0.025, "sine", 0.03); },   // 28/10/2026: bem suave (antes onda quadrada, forte demais)
   erro:     function(c){ nota(c, 200, 0, 0.22, "sawtooth", 0.28); nota(c, 150, 0.14, 0.26, "sawtooth", 0.28); }
 };
 function tocar(nome){

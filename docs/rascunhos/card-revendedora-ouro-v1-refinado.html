@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Card da revendedora · versão 1 refinada</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  body{ background:#0b0b0d; color:#f4f4f5; font:13px/1.45 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; }
+  h1{ font-size:18px; } .sub{ color:#a1a1aa; margin:2px 0 14px; max-width:860px; }
+  .card{ --f1:#33260f; --f2:#120d06; --brilho:rgba(241,213,138,.13); --borda:rgba(241,213,138,.30); --acc:#F1D58A; --acc2:#C9962F; --txt:#fbf4e4; --mut:#cdbf9f; --cx:rgba(241,213,138,.07); --linha:rgba(241,213,138,.16);
+    max-width:900px; position:relative; overflow:hidden; border-radius:16px; border:1px solid var(--borda); color:var(--txt);
+    background: radial-gradient(900px 260px at 0% -10%, var(--brilho), transparent 60%), radial-gradient(500px 300px at 100% 110%, var(--brilho), transparent 60%), linear-gradient(150deg,var(--f1),var(--f2));
+    box-shadow:0 14px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06); }
+  .card *{ font-size:13px; }
+  .topo{ display:flex; align-items:center; gap:10px; padding:12px 18px; background:linear-gradient(90deg,rgba(241,213,138,.30),rgba(241,213,138,0)); border-bottom:1px solid var(--linha); }
+  .nome{ font:italic 700 25px/1 "Cormorant Garamond",Georgia,"Times New Roman",serif !important; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+  .bola{ width:7px; height:7px; border-radius:50%; background:var(--acc); box-shadow:0 0 8px var(--acc); flex:none; }
+  .num{ font-variant-numeric:tabular-nums; letter-spacing:.06em; color:var(--acc); font-weight:600; }
+  .espaco{ flex:1; }
+  select,input,button,textarea{ font:inherit; color:var(--txt); background:var(--cx); border:1px solid var(--linha); border-radius:9px; height:32px; padding:0 9px; outline:none; } select option{ color:#111; }
+  textarea{ height:auto; padding:8px 10px; resize:vertical; line-height:1.45; width:100%; }
+  input::placeholder,textarea::placeholder{ color:var(--mut); } input:focus,select:focus,textarea:focus{ border-color:var(--acc); box-shadow:0 0 0 2px rgba(241,213,138,.2); } button{ cursor:pointer; } button:hover{ border-color:var(--acc); }
+  button.pri{ background:linear-gradient(135deg,var(--acc),var(--acc2)); color:#17110a; border:0; font-weight:700; box-shadow:0 4px 14px rgba(201,150,47,.35); padding:0 16px; }
+  .rotulo{ font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; color:var(--mut); }
+  .chip{ display:inline-flex; align-items:center; height:21px; padding:0 9px; border-radius:999px; font-size:11px !important; font-weight:700; white-space:nowrap; border:1px solid; }
+  .k-ag{ background:rgba(34,197,94,.16); color:#bbf7d0; border-color:rgba(34,197,94,.5); } .k-t{ background:rgba(241,213,138,.14); color:var(--acc); border-color:rgba(241,213,138,.45); }
+  .k-des{ background:rgba(245,158,11,.17); color:#fde68a; border-color:rgba(245,158,11,.5); } .k-falt{ background:rgba(239,68,68,.16); color:#fecaca; border-color:rgba(239,68,68,.5); }
+  .k-msg{ background:rgba(56,189,248,.15); color:#bae6fd; border-color:rgba(56,189,248,.5); } .k-out{ background:rgba(255,255,255,.08); color:var(--txt); border-color:var(--linha); }
+  .k-kit{ background:rgba(241,213,138,.16); color:var(--acc); border-color:rgba(241,213,138,.45); } .k-extra{ background:rgba(168,85,247,.18); color:#e9d5ff; border-color:rgba(168,85,247,.5); } .k-rep{ background:rgba(56,189,248,.14); color:#bae6fd; border-color:rgba(56,189,248,.45); }
+  .k-exp{ background:rgba(255,255,255,.07); color:var(--mut); border-color:var(--linha); }
+  /* registros em cima */
+  .regs{ padding:10px 18px 4px; border-bottom:1px solid var(--linha); background:linear-gradient(180deg,rgba(241,213,138,.06),transparent); }
+  .regs .cab{ display:flex; justify-content:space-between; align-items:center; margin-bottom:2px; }
+  .ev{ display:grid; grid-template-columns:44px 1fr; gap:10px; padding:7px 0; border-top:1px solid var(--linha); } .ev:first-of-type{ border-top:0; }
+  .dia{ color:var(--mut); font-variant-numeric:tabular-nums; font-size:12px !important; padding-top:2px; }
+  .quem{ display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:1px; } .quem b{ font-size:13.5px !important; } .quem small{ color:var(--mut); font-size:11.5px !important; }
+  .quando{ font-weight:700; color:#bbf7d0; }
+  .mais{ background:none; border:0; color:var(--acc); height:auto; padding:0; font-size:12px !important; }
+  .ocultos{ display:none; } .regs.aberto .ocultos{ display:grid; }
+  /* meio */
+  .meio{ display:grid; grid-template-columns:230px 1fr; }
+  .esq{ padding:14px 14px 14px 18px; display:flex; flex-direction:column; gap:9px; border-right:1px solid var(--linha); background:linear-gradient(180deg,var(--cx),transparent); }
+  .dir{ padding:14px 18px; display:flex; flex-direction:column; gap:10px; min-width:0; }
+  .kv{ display:flex; justify-content:space-between; align-items:baseline; gap:8px; } .kv span{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.07em; } .kv b{ font-variant-numeric:tabular-nums; font-size:14px; }
+  .grande{ color:var(--acc); font-size:17px !important; font-weight:700; } hr{ border:0; border-top:1px solid var(--linha); }
+  .linha{ display:flex; gap:7px; align-items:center; } .linha > *{ min-width:0; }
+  table{ width:100%; border-collapse:collapse; } th{ color:var(--mut); font-size:11px !important; text-transform:uppercase; letter-spacing:.06em; font-weight:600; text-align:right; padding:5px 8px; white-space:nowrap; }
+  th.e,td.e{ text-align:left; } td{ text-align:right; padding:6px 8px; border-top:1px solid var(--linha); font-variant-numeric:tabular-nums; white-space:nowrap; } tfoot td{ font-weight:700; border-top:2px solid var(--linha); }
+  .vend{ display:none; } .vend.on{ display:block; }
+  /* registrar embaixo */
+  .novo{ padding:14px 18px 16px; border-top:1px solid var(--linha); background:linear-gradient(0deg,rgba(241,213,138,.09),transparent); display:flex; flex-direction:column; gap:9px; }
+  .campos{ display:grid; grid-template-columns:1.2fr 1fr auto; gap:8px; align-items:end; } .campo{ display:flex; flex-direction:column; gap:4px; min-width:0; } .campo select,.campo input{ width:100%; }
+  .quando-campos{ display:none; gap:8px; } .quando-campos.on{ display:flex; }
+  .nota{ color:#a1a1aa; margin-top:14px; max-width:860px; }
+  @media (max-width:720px){ .meio{ grid-template-columns:1fr; } .esq{ border-right:0; border-bottom:1px solid var(--linha); } .campos{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Card da revendedora · versão 1 refinada</h1>
+<p class="sub">Registros em cima (o mais novo aparece primeiro), condicionais no meio e o campo grande para registrar embaixo. No Atendimento interno <b>não existe "peças do próximo mês"</b>: a segunda condicional é um <b>kit extra autorizado</b>. Teste: escolha o tipo, escreva e clique em Registrar.</p>
+
+<div class="card" id="card">
+  <div class="topo"><b class="nome">Karine Thauany Batista de Souza</b><span class="bola"></span><span class="num">002130</span><span class="espaco"></span><span class="chip k-ag" id="chipTopo">Acerto marcado · 23/11 às 14h</span></div>
+
+  <div class="regs" id="regs">
+    <div class="cab"><span class="rotulo">Registros</span><button class="mais" id="verTodos">ver todos (5) ▾</button></div>
+    <div id="lista"></div>
+  </div>
+
+  <div class="meio">
+    <div class="esq">
+      <div class="kv"><span>Acerto previsto</span><b>23/11/2026</b></div>
+      <div class="kv"><span>Faltam</span><b>26 d</b></div>
+      <div class="kv"><span>Média 3 vendas</span><b>R$ 14.435,00</b></div>
+      <div class="kv"><span>Próximo kit</span><b class="grande">R$ 20.000,00</b></div>
+      <hr>
+      <div class="rotulo">Situação</div>
+      <select><option>Agendada</option><option>A contatar</option><option>Entrei em contato</option><option>Sem retorno</option><option>Faltou</option></select>
+      <div class="rotulo">Data agendada</div>
+      <div class="linha"><input type="date" value="2026-11-23" style="flex:1"><input type="time" value="14:00" style="width:80px"></div>
+      <button class="pri">Incluir na listagem</button>
+      <div class="linha"><select style="width:50%"><option>Ciclo 30 d</option><option>Ciclo 45 d</option><option>Ciclo 60 d</option></select><select style="width:50%"><option>Normal</option><option>Prata</option></select></div>
+    </div>
+    <div class="dir">
+      <div class="rotulo">Condicionais ativas</div>
+      <table><thead><tr><th class="e">Condicional</th><th class="e">Tipo</th><th>Emissão</th><th>Previsão</th><th>Peças</th><th>Valor</th></tr></thead><tbody>
+        <tr><td class="e"><b>095151</b></td><td class="e"><span class="chip k-kit">Kit principal</span></td><td>23/10</td><td>23/11</td><td>177</td><td>R$ 20.134,00</td></tr>
+        <tr><td class="e"><b>095189</b></td><td class="e"><span class="chip k-extra" title="Bipado depois, com autorização do Marcus">Kit extra · aut. Marcus</span></td><td>23/10</td><td>23/11</td><td>128</td><td>R$ 14.779,00</td></tr>
+        <tr><td class="e"><b>095524</b></td><td class="e"><span class="chip k-rep">Reposição</span></td><td>27/10</td><td>23/11</td><td>73</td><td>R$ 6.969,00</td></tr>
+      </tbody><tfoot><tr><td class="e" colspan="4">3 condicionais ativas</td><td>378</td><td>R$ 41.882,00</td></tr></tfoot></table>
+      <div class="linha" style="justify-content:space-between"><span class="chip k-exp">6 expositores · sem previsão · R$ 1.930,00</span><button class="mais" id="verVendas">Vendas 2026 (23) ▸</button></div>
+      <div class="vend" id="vend"><table><thead><tr><th class="e">Data</th><th>Valor de venda</th><th>Valor de acerto</th></tr></thead><tbody>
+        <tr><td class="e">23/10</td><td>R$ 10.337,40</td><td>R$ 5.391,40</td></tr><tr><td class="e">22/09</td><td>R$ 18.921,20</td><td>R$ 9.557,20</td></tr><tr><td class="e">21/08</td><td>R$ 14.346,60</td><td>R$ 7.275,60</td></tr></tbody></table></div>
+    </div>
+  </div>
+
+  <div class="novo">
+    <div class="campos">
+      <div class="campo"><span class="rotulo">O que aconteceu</span>
+        <select id="tipo"><option value="t1">1ª tentativa de contato para acerto</option><option value="t2">2ª tentativa de contato para acerto</option><option value="t3">3ª tentativa de contato para acerto</option><option value="ag">Acerto marcado</option><option value="des">Acerto desmarcado</option><option value="falt">Revendedora faltou</option><option value="msg">Mensagem enviada</option><option value="prazo">Pediu mais prazo</option><option value="out">Outro</option></select></div>
+      <div class="campo"><span class="rotulo">Quem falou com ela</span>
+        <select id="quem"><option>Eu (Tamara)</option><option>Nickolas</option><option>Marcus</option><option>Ana Maria</option><option>Nayale</option><option>Rebeca</option><option>Outra pessoa</option></select></div>
+      <button class="pri" id="reg" style="height:32px">Registrar</button>
+    </div>
+    <div class="quando-campos" id="quandoCampos"><div class="campo"><span class="rotulo">Dia do acerto</span><input type="date" id="qd" value="2026-11-23"></div><div class="campo"><span class="rotulo">Hora</span><input type="time" id="qh" value="14:00"></div></div>
+    <textarea id="texto" rows="4" placeholder="Escreva o que ela disse, o que foi combinado, quem atendeu… (campo grande: pode escrever à vontade)"></textarea>
+  </div>
+</div>
+<p class="nota">Quando o tipo é <b>Acerto marcado</b>, o dia e a hora aparecem no registro e na faixa do alto, e vão para a listagem do dia. <b>Acerto desmarcado</b> e <b>Revendedora faltou</b> limpam a data marcada e voltam a situação para "A contatar". O nome de quem registrou é sempre a conta logada; "Quem falou com ela" pode ser outra pessoa.</p>
+
+<script>
+  var T = {t1:['1ª tentativa','k-t'],t2:['2ª tentativa','k-t'],t3:['3ª tentativa','k-t'],ag:['Acerto marcado','k-ag'],des:['Acerto desmarcado','k-des'],falt:['Revendedora faltou','k-falt'],msg:['Mensagem','k-msg'],prazo:['Mais prazo','k-out'],out:['Outro','k-out']};
+  var EV = [
+    {d:'28/10',quem:'Tamara',reg:'Tamara',t:'ag',quando:'23/11 às 14h',txt:'Ela confirmou o dia e disse que vem pegar o kit novo.'},
+    {d:'23/10',quem:'Marcus',reg:'Tamara',t:'out',txt:'Autorizou mais um kit de R$ 14.779,00 (128 peças) além dos R$ 20.134,00 já bipados.'},
+    {d:'22/09',quem:'Rebeca',reg:'Tamara',t:'t2',txt:'Ligou, caiu na caixa postal. Deixou recado.'},
+    {d:'20/09',quem:'Tamara',reg:'Tamara',t:'t1',txt:'Mensagem no WhatsApp, sem resposta.'},
+    {d:'18/09',quem:'Nickolas',reg:'Nickolas',t:'des',txt:'Pediu para desmarcar: viajando. Remarcar depois do dia 20.'}];
+  var lista = document.getElementById('lista');
+  function linha(x, oculto){ var t=T[x.t], mesmo = x.quem===x.reg;
+    return '<div class="ev'+(oculto?' ocultos':'')+'"><div class="dia">'+x.d+'</div><div><div class="quem"><b>'+x.quem+'</b><span class="chip '+t[1]+'">'+t[0]+'</span>'+(x.quando?'<span class="quando">'+x.quando+'</span>':'')+(mesmo?'':'<small>registrado por '+x.reg+'</small>')+'</div><div>'+(x.txt||'')+'</div></div></div>'; }
+  function pinta(){ lista.innerHTML = EV.map(function(x,i){ return linha(x, i>=3); }).join(''); document.getElementById('verTodos').textContent = document.getElementById('regs').classList.contains('aberto') ? 'ver menos ▴' : 'ver todos ('+EV.length+') ▾'; }
+  pinta();
+  document.getElementById('verTodos').onclick=function(){ document.getElementById('regs').classList.toggle('aberto'); pinta(); };
+  document.getElementById('verVendas').onclick=function(){ document.getElementById('vend').classList.toggle('on'); };
+  var tipo=document.getElementById('tipo'), qc=document.getElementById('quandoCampos');
+  tipo.onchange=function(){ qc.classList.toggle('on', tipo.value==='ag'); };
+  document.getElementById('reg').onclick=function(){
+    var txt=document.getElementById('texto').value.trim(), t=tipo.value; if(!txt && t!=='ag') { document.getElementById('texto').focus(); return; }
+    var qv=document.getElementById('quem').value, quem=qv.indexOf('Eu')===0 ? 'Tamara' : qv, quando=null;
+    if(t==='ag'){ var d=document.getElementById('qd').value.split('-'), h=document.getElementById('qh').value; quando=d[2]+'/'+d[1]+' às '+h.replace(':00','h').replace(':','h'); var chip=document.getElementById('chipTopo'); chip.className='chip k-ag'; chip.textContent='Acerto marcado · '+quando; }
+    if(t==='des'||t==='falt'){ var c=document.getElementById('chipTopo'); c.className='chip '+(t==='falt'?'k-falt':'k-des'); c.textContent=t==='falt'?'Revendedora faltou':'Acerto desmarcado'; }
+    var hoje=new Date(); EV.unshift({d:('0'+hoje.getDate()).slice(-2)+'/'+('0'+(hoje.getMonth()+1)).slice(-2),quem:quem,reg:'Tamara',t:t,quando:quando,txt:txt});
+    document.getElementById('texto').value=''; pinta();
+  };
+</script>
+</body>
+</html>

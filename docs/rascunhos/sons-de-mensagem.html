@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sorelly · 5 sons de mensagem</title>
+<style>
+  :root{--ouro:#E8B84B;--borda:rgba(232,184,75,.3)}
+  *{box-sizing:border-box}
+  body{margin:0;background:#0a0806;color:#fff;font:13px/1.5 Inter,system-ui,sans-serif;padding:24px 16px 60px}
+  .pg{max-width:780px;margin:0 auto}
+  h1{font-size:20px;margin:0 0 4px}
+  .sub{color:#bbb;margin:0 0 18px}
+  .vol{display:flex;align-items:center;gap:10px;margin:0 0 18px;color:#ccc}
+  .vol input{flex:1;accent-color:var(--ouro)}
+  .card{border:1px solid var(--borda);border-radius:12px;background:#110e08;padding:14px 16px;margin-bottom:12px}
+  .card.on{border-color:var(--ouro);background:#1b1710;box-shadow:0 0 0 1px var(--ouro) inset}
+  .topo{display:flex;align-items:center;gap:12px;margin-bottom:10px;cursor:pointer}
+  .n{width:30px;height:30px;border-radius:50%;background:var(--ouro);color:#1a1405;font-weight:800;display:grid;place-items:center;flex:none}
+  .topo b{display:block;font-size:14px}.topo small{color:#bdb39d}
+  .bt{display:flex;flex-wrap:wrap;gap:8px}
+  .bt button{height:34px;border-radius:8px;border:1px solid var(--borda);background:#14110b;color:var(--ouro);font:inherit;font-weight:600;padding:0 14px;cursor:pointer}
+  .bt button:hover{background:#1d180e}
+  .sim{height:38px;border-radius:10px;border:1px solid var(--ouro);background:none;color:var(--ouro);font:inherit;font-weight:700;padding:0 16px;cursor:pointer;margin-bottom:18px}
+  .aviso{position:fixed;right:18px;bottom:18px;background:#16161a;border:1px solid var(--ouro);border-radius:12px;padding:10px 14px;box-shadow:0 12px 30px rgba(0,0,0,.6);opacity:0;transform:translateY(10px);transition:.25s;pointer-events:none}
+  .aviso.on{opacity:1;transform:none}
+</style>
+</head>
+<body>
+<div class="pg">
+  <h1>5 sons de mensagem</h1>
+  <p class="sub">Parecidos com o do WhatsApp. Cada opção tem 3 sons: <b>Receber</b> (chegou mensagem), <b>Marcado</b> (alguém te marcou com @) e <b>Enviar</b> (você mandou). Escolha uma e me diga o número.</p>
+  <div class="vol"><span>Volume</span><input id="vol" type="range" min="0" max="100" value="60"><span id="volv">60%</span></div>
+  <button class="sim" id="sim" type="button">▶ Simular uma mensagem chegando daqui a 3 segundos</button>
+  <div id="lista"></div>
+</div>
+<div class="aviso" id="av"><b>Nickolas</b><br>Oi, Marcus! Tudo certo por aí?</div>
+
+<script>
+(function(){
+  var ctx = null, vol = .6, escolha = 1;
+  function ligar(){ if(!ctx){ var AC = window.AudioContext || window.webkitAudioContext; ctx = new AC(); } if(ctx.state==="suspended") ctx.resume(); return ctx; }
+  function nota(tipo, f0, f1, ini, dur, pico, atq){
+    var c = ligar(), t0 = c.currentTime + ini, o = c.createOscillator(), g = c.createGain();
+    o.type = tipo; o.frequency.setValueAtTime(f0, t0); if(f1 && f1!==f0) o.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(Math.max(0.0002, pico*vol), t0 + (atq||0.006)); g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    o.connect(g); g.connect(c.destination); o.start(t0); o.stop(t0 + dur + 0.05);
+  }
+  function sopro(ini, dur, f0, f1, pico){
+    var c = ligar(), t0 = c.currentTime + ini, n = Math.floor(c.sampleRate*dur), b = c.createBuffer(1, n, c.sampleRate), d = b.getChannelData(0), i;
+    for(i=0;i<n;i++) d[i] = (Math.random()*2-1) * Math.pow(1-i/n, 1.6);
+    var s = c.createBufferSource(), f = c.createBiquadFilter(), g = c.createGain();
+    s.buffer = b; f.type = "bandpass"; f.Q.value = 1.4; f.frequency.setValueAtTime(f0, t0); f.frequency.exponentialRampToValueAtTime(f1, t0 + dur);
+    g.gain.setValueAtTime(Math.max(0.0002, pico*vol), t0); s.connect(f); f.connect(g); g.connect(c.destination); s.start(t0);
+  }
+  var SONS = {
+    1: {nome:"Pop duplo", desc:"Dois toques rápidos e redondos, o mais parecido com o WhatsApp",
+      receber:function(){ nota("sine", 880, 880, 0, .16, .5); nota("sine", 1175, 1175, .09, .22, .5); nota("sine", 1760, 1760, .09, .08, .12); },
+      marcado:function(){ nota("sine", 880, 880, 0, .14, .5); nota("sine", 1175, 1175, .09, .14, .5); nota("sine", 1568, 1568, .18, .26, .55); },
+      enviar:function(){ nota("sine", 700, 1100, 0, .09, .4); sopro(0, .09, 1500, 3500, .12); }},
+    2: {nome:"Gota que sobe", desc:"Um \"blup\" que sobe, leve e simpático",
+      receber:function(){ nota("sine", 620, 1250, 0, .13, .5); nota("sine", 1500, 1500, .11, .16, .3); },
+      marcado:function(){ nota("sine", 620, 1250, 0, .13, .5); nota("sine", 780, 1560, .14, .13, .5); nota("sine", 1100, 1900, .28, .2, .5); },
+      enviar:function(){ nota("sine", 500, 900, 0, .08, .4); }},
+    3: {nome:"Sininho curto", desc:"Um \"ding\" de sino pequeno, claro e rápido",
+      receber:function(){ nota("triangle", 1318, 1318, 0, .5, .45, .004); nota("sine", 3560, 3560, 0, .18, .12, .002); },
+      marcado:function(){ nota("triangle", 1318, 1318, 0, .35, .45, .004); nota("triangle", 1760, 1760, .14, .55, .45, .004); nota("sine", 4700, 4700, .14, .2, .1, .002); },
+      enviar:function(){ nota("triangle", 1046, 1046, 0, .16, .3, .004); }},
+    4: {nome:"Marimba suave", desc:"Duas notinhas de madeira, quentes e macias",
+      receber:function(){ nota("triangle", 784, 780, 0, .2, .5, .004); nota("sine", 3136, 3136, 0, .05, .1, .002); nota("triangle", 1047, 1040, .11, .28, .5, .004); nota("sine", 4188, 4188, .11, .05, .1, .002); },
+      marcado:function(){ nota("triangle", 784, 780, 0, .16, .5, .004); nota("triangle", 1047, 1040, .1, .16, .5, .004); nota("triangle", 1319, 1310, .2, .34, .55, .004); },
+      enviar:function(){ nota("triangle", 659, 650, 0, .14, .4, .004); }},
+    5: {nome:"Cristal", desc:"Um brilho de vidro que combina com o tique de digitar",
+      receber:function(){ nota("sine", 1760, 1760, 0, .34, .4, .004); nota("sine", 2349, 2349, .08, .42, .38, .004); nota("sine", 3520, 3520, .08, .16, .08, .002); },
+      marcado:function(){ nota("sine", 1760, 1760, 0, .22, .4, .004); nota("sine", 2349, 2349, .09, .22, .4, .004); nota("sine", 2960, 2960, .18, .5, .42, .004); },
+      enviar:function(){ nota("sine", 2093, 2637, 0, .12, .28, .003); }}
+  };
+  var lista = document.getElementById("lista");
+  Object.keys(SONS).forEach(function(k){
+    var s = SONS[k], d = document.createElement("div");
+    d.className = "card"; d.setAttribute("data-k", k);
+    d.innerHTML = '<div class="topo"><span class="n">'+k+'</span><span><b>'+s.nome+'</b><small>'+s.desc+'</small></span></div><div class="bt"><button data-s="receber" type="button">▶ Receber</button><button data-s="marcado" type="button">▶ Marcado (@)</button><button data-s="enviar" type="button">▶ Enviar</button></div>';
+    lista.appendChild(d);
+  });
+  function marca(){ [].forEach.call(lista.children, function(d){ d.classList.toggle("on", d.getAttribute("data-k")===String(escolha)); }); }
+  lista.addEventListener("click", function(ev){
+    var d = ev.target.closest(".card"); if(!d) return;
+    escolha = d.getAttribute("data-k"); marca();
+    var b = ev.target.closest("button"); if(b) SONS[escolha][b.getAttribute("data-s")]();
+  });
+  var av = document.getElementById("av");
+  document.getElementById("sim").addEventListener("click", function(){
+    ligar();
+    setTimeout(function(){ SONS[escolha].receber(); av.classList.add("on"); setTimeout(function(){ av.classList.remove("on"); }, 3200); }, 3000);
+  });
+  var v = document.getElementById("vol"), vv = document.getElementById("volv");
+  v.addEventListener("input", function(){ vol = v.value/100; vv.textContent = v.value+"%"; });
+  marca();
+})();
+</script>
+</body>
+</html>

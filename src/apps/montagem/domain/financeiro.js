@@ -130,8 +130,10 @@ function faturadoPorDia(s, ano, mes){
 function metaDoMes(s, anoStr, mes, feitos){
   var base = Object.assign({base:0, previstos:0}, ((s.metaMensal||{})[anoStr]||{})[mes]), fm = (s.fechaMes||{})[anoStr+"-"+String(mes+1).padStart(2,"0")] || {};
   var carregar = Number(fm.carregar)||0, aRealizar = Number(fm.aRealizar)||0;
-  if(!(aRealizar>0)) return {base:base.base, previstos:base.previstos, previstosAgend:base.previstos, carregar:carregar, aRealizar:0, manual:false};
-  return {base:base.base, previstos:(feitos||0)+carregar+aRealizar, previstosAgend:base.previstos, carregar:carregar, aRealizar:aRealizar, manual:true};
+  // "primeiros previstos" = o que o Agendamento previu na abertura do mês (guardado em inicio; meses antigos, na tabela de abertura). Não muda quando o Marcus lança os previstos novos.
+  var inicio = ((META_MENSAL_DEMO[anoStr]||{})[mes]||{}).previstos || base.inicio || base.previstos;
+  if(!(aRealizar>0)) return {base:base.base, previstos:base.previstos, previstosAgend:base.previstos, previstosInicio:inicio, carregar:carregar, aRealizar:0, manual:false};
+  return {base:base.base, previstos:(feitos||0)+carregar+aRealizar, previstosAgend:base.previstos, previstosInicio:inicio, carregar:carregar, aRealizar:aRealizar, manual:true};
 }
 function isoOntem(){ var d = new Date(); d.setDate(d.getDate()-1); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
 // Crescimento real de revendedoras, calculado a partir do CSV que o usuário mandou (revendedoras-diarias, até 27/09/2026 = 2007).
@@ -191,7 +193,7 @@ function projetarAno(s, anoStr, janelaIdx, metaPct){
   return {porMes:porMes, ratioPB:ratioPB, ratioRP:ratioRP, ratioRPUsado:ratioRPUsado, mediaAcertoHist:mediaAcertoHist, mediaAtualMes:mediaAtualMes, fechados:fechados, revHoje:revHoje, mesAtual:mesAtual};
 }
 // Novembro e dezembro do ano corrente: a média por acerto é a média ATUAL do mês + 5% e + 15% (pedido do Marcus, 09/10/2026).
-var ALTA_MEDIA = {10:0.05, 11:0.15};
+var ALTA_MEDIA = {10:0.05, 11:0.12};   // dezembro 12% e janeiro 17% (Marcus, 28/10/2026; janeiro só na tela Resultado do mês)
 // regra do mês i: o que o Marcus definiu no Configurador (s.altaMedia, null = sem regra) ou o padrão acima
 function altaDe(s, i){ var a = s.altaMedia; if(a && Object.prototype.hasOwnProperty.call(a, i)) return a[i]===null ? undefined : a[i]; return ALTA_MEDIA[i]; }
 function mediaMesAtual(s, anoStr, mes){

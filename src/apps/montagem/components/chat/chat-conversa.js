@@ -12,6 +12,7 @@ import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { Compositor } from "@/apps/montagem/components/chat/chat-compositor";
 import { InfoConversa } from "@/apps/montagem/components/chat/chat-info";
+import { CartaoHorario } from "@/apps/montagem/components/chat/chat-horario";
 import { Avatar, CORES_ESPERA, EtiquetaEspera, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, diaRotulo, duracao, hora, mesmoDia, tamanho, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
@@ -158,7 +159,7 @@ function ConteudoMsg(p){
   if(m.tipo==="decisao" && m.dec.tipo==="preco") return e(CartaoPreco,{m:m, eu:p.eu, convId:p.convId, abrir:p.abrir, somenteLeitura:p.somenteLeitura});
   if(m.tipo==="decisao") return e(CartaoDecisao,{m:m, eu:p.eu, convId:p.convId, abrir:p.abrir, somenteLeitura:p.somenteLeitura});
   if(m.tipo==="audio") return e(AudioMsg,{midia:md});
-  var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[13.5px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu)) : null;
+  var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[14px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu), p.espaco ? e("span",{className:"inline-block", style:{width:p.espaco, height:1}}) : null) : null;
   if(m.tipo==="imagem") return e("div",{className:"flex flex-col gap-1"},
     url ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url, alt:md.nome||"Foto", className:"max-h-72 w-full max-w-[280px] object-cover"})) :
       e("p",{className:"flex items-center gap-2 py-3 text-[12px]", style:{color:W.sec}}, e(Ph,{n:"image", s:22}), "Foto indisponível (não ficou salva neste navegador)."), corpo);
@@ -181,6 +182,7 @@ function Bolha(p){
   var cit = m.resp ? p.todas.find(function(x){ return x.id===m.resp; }) : null;
   var reacs = {}; Object.keys(m.reacoes||{}).forEach(function(k){ var em = m.reacoes[k]; reacs[em] = (reacs[em]||[]).concat([k]); });
   var temReacao = Object.keys(reacs).length>0;
+  var noTexto = m.tipo==="texto" && !!m.texto && !ap && !m.porDir;   // mensagem só de texto: a hora fica na linha do texto, como no WhatsApp
   return e("div",{"data-m":m.id, className:"group relative flex px-[6%] "+(minha ? "justify-end" : "justify-start")+(p.primeira ? " mt-2" : " mt-0.5")+(temReacao ? " mb-3" : "")},
     e("div",{className:"relative max-w-[min(85%,520px)] rounded-lg px-2.5 pb-1 pt-1.5 shadow-sm", style:{background:minha ? p.tema.saida : p.tema.entrada, color:p.tema.texto, borderTopLeftRadius:!minha && p.primeira ? 0 : undefined, borderTopRightRadius:minha && p.primeira ? 0 : undefined, outline:p.destaque ? "2px solid "+W.ouro : "none"}},
       !ap && !p.somenteLeitura && e("button",{onClick:function(){ setMenu(true); }, "aria-label":"Opções da mensagem", className:"absolute right-1 top-1 z-10 grid size-6 place-items-center rounded-full opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100", style:{background:minha ? p.tema.saida : p.tema.entrada}}, e(Ph,{n:"caret-down", s:15, style:{color:W.sec}})),
@@ -197,9 +199,9 @@ function Bolha(p){
         m.enc && e("p",{className:"mb-0.5 flex items-center gap-1 text-[11px] italic", style:{color:W.sec}}, e(Ph,{n:"share-fat", s:13}), "Encaminhada"),
         cit && e("button",{onClick:function(){ p.irPara(cit.id); }, className:"mb-1 block w-full rounded-md border-l-4 px-2 py-1 text-left text-[11.5px]", style:{background:"rgba(0,0,0,.22)", borderColor:contato(cit.de).cor}},
           e("span",{className:"block font-semibold", style:{color:contato(cit.de).cor}}, cit.de===p.eu ? "Você" : contato(cit.de).nome), e("span",{className:"line-clamp-2", style:{color:W.sec}}, textoPrevia(cit))),
-        e(ConteudoMsg,{m:m, eu:p.eu, abrir:p.abrir, convId:p.conv.id, somenteLeitura:p.somenteLeitura})),
+        e(ConteudoMsg,{m:m, eu:p.eu, abrir:p.abrir, convId:p.conv.id, somenteLeitura:p.somenteLeitura, espaco:noTexto ? 46+(minha ? 20 : 0)+(m.ed ? 44 : 0)+(m.fixa ? 14 : 0) : 0})),
       m.porDir && !ap && e("p",{className:"mt-0.5 flex items-center gap-1 text-[10.5px] font-bold", style:{color:W.ouro}}, e(Ph,{n:"crown-simple", s:13, fill:true}), "Respondido por "+contato(m.porDir).nome.split(" ")[0]+" (Direção)"),
-      e("div",{className:"flex items-center justify-end gap-1 pl-6 text-[10px] leading-none", style:{color:W.sec, marginTop:ap ? 0 : -2}},
+      e("div",{className:noTexto ? "absolute bottom-1 right-2 flex items-center justify-end gap-1 text-[11px] leading-none" : "flex items-center justify-end gap-1 pl-6 text-[11px] leading-none", style:{color:W.sec, marginTop:noTexto || ap ? 0 : -2}},
         m.fixa && !ap && e(Ph,{n:"push-pin", s:12, fill:true}), m.ed && !ap && e("span",null,"editada"), e("span",null, hora(m.t)), minha && !ap && e(Tique,{status:m.status})),
       temReacao && e("div",{className:"absolute -bottom-3.5 "+(minha ? "right-2" : "left-2")+" flex gap-1"}, Object.keys(reacs).map(function(em){
         return e("button",{key:em, onClick:function(){ api.react(p.conv.id, m.id, p.eu, em); }, title:reacs[em].map(function(i){ return contato(i).nome; }).join(", "), className:"flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[11px]", style:{background:W.cab, border:"1px solid "+W.borda}}, em, reacs[em].length>1 && e("span",{className:"text-[10px]"}, reacs[em].length)); }))));
@@ -219,44 +221,32 @@ function FaixaMencoes(p){
   }));
 }
 
-// Status da conversa com a representante: aberta (falta a equipe responder), aguardando a representante ou resolvida. Para resolver, quem atende diz como foi resolvido.
+// Status da conversa com a representante: aberta (falta a equipe responder), aguardando a representante ou resolvida. Só pendente/resolvido, sem nota (Marcus, 27/10/2026).
 function BarraStatus(p){
   useChat();
-  var th = api.statusConv(p.conv.id), ps = useState(false), pedindo = ps[0], setPedindo = ps[1], nt = useState(""), nota = nt[0], setNota = nt[1], er = useState(false), erro = er[0], setErro = er[1];
+  var th = api.statusConv(p.conv.id);
   if(!th) return null;
   var cor = th.estado==="aberta" ? CORES_ESPERA[Math.max(1, th.nivel)] : th.estado==="aguardando" ? "#53bdeb" : "#25d366";
   var rotulo = th.estado==="aberta" ? "Aberta · "+th.pend+(th.pend===1 ? " mensagem" : " mensagens")+" sem resposta há "+tempoCurtoStore(th.espera)
-    : th.estado==="aguardando" ? "Aguardando a representante" : "✓ Resolvida"+(p.conv.resolvidaPor ? " por "+contato(p.conv.resolvidaPor).nome.split(" ")[0] : "")+(p.conv.resolucao ? ": "+p.conv.resolucao : "");
-  var confirmar = function(){ if(nota.trim().length<5){ setErro(true); return; } api.resolveConv(p.conv.id, p.eu, nota.trim()); setPedindo(false); setNota(""); setErro(false); };
+    : th.estado==="aguardando" ? "Aguardando a representante" : "✓ Resolvida"+(p.conv.resolvidaPor ? " por "+contato(p.conv.resolvidaPor).nome.split(" ")[0] : "");
   return e("div",{className:"flex shrink-0 flex-wrap items-center gap-2 px-4 py-1.5 text-[11.5px]", style:{background:W.painel, borderBottom:"1px solid "+W.borda}},
     e("span",{className:"flex items-center gap-1.5 font-semibold", style:{color:cor}}, e(Ph,{n:th.estado==="resolvida" ? "check-circle" : "clock-countdown", s:15, fill:true}), rotulo),
-    th.estado!=="resolvida" && p.pode && !pedindo && e("button",{onClick:function(){ setPedindo(true); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Resolver"),
-    pedindo && e("div",{className:"flex w-full flex-wrap items-center gap-2"},
-      e("input",{autoFocus:true, value:nota, onChange:function(ev){ setNota(ev.target.value); setErro(false); }, onKeyDown:function(ev){ if(ev.key==="Enter") confirmar(); }, placeholder:"Como foi resolvido? (obrigatório)", "aria-label":"Como foi resolvido", className:"h-8 min-w-48 flex-1 rounded-lg px-3 text-[12px] outline-none", style:{background:W.campo, color:W.texto, border:erro ? "1px solid "+W.vermelho : "1px solid transparent"}}),
-      e("button",{onClick:confirmar, className:"rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "Dar OK"),
-      e("button",{onClick:function(){ setPedindo(false); setErro(false); }, className:"rounded-full px-3 py-1 text-[11px]", style:{background:W.campo, color:W.sec}}, "Cancelar"),
-      erro && e("span",{className:"text-[11px]", style:{color:W.vermelho}}, "Escreva em poucas palavras como resolveu.")));
+    th.estado!=="resolvida" && p.pode && e("button",{onClick:function(){ api.resolveConv(p.conv.id, p.eu, ""); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Resolver"));
 }
 
-// Situação da conversa (para todos os funcionários): Pendente ou Resolvida. Conversa com pendência não pode ser arquivada; para resolver, diz-se como foi.
+// Situação da conversa (para todos os funcionários): só Pendente ou Resolvida, sem pedir nota (Marcus, 27/10/2026).
 function BarraSituacao(p){
   useChat();
-  var c = p.conv, motivo = api.pendencia(p.eu, c.id), ps = useState(false), pedindo = ps[0], setPedindo = ps[1], nt = useState(""), nota = nt[0], setNota = nt[1], er = useState(false), erro = er[0], setErro = er[1];
+  var c = p.conv, motivo = api.pendencia(p.eu, c.id);
   var ms = api.getMessages(c.id, p.eu).filter(function(m){ return m.tipo!=="sistema" && m.apag!=="todos"; }), ult = ms[ms.length-1];
   var resolvida = !motivo && c.resolvidaEm && ult && c.resolvidaEm>=ult.t;
   var soDecisao = /decis/.test(motivo);
-  var confirmar = function(){ if(nota.trim().length<5){ setErro(true); return; } api.resolveConv(c.id, p.eu, nota.trim()); setPedindo(false); setNota(""); setErro(false); };
   var cor = motivo ? "#f59e0b" : resolvida ? "#25d366" : W.sec;
   return e("div",{className:"flex shrink-0 flex-wrap items-center gap-2 px-4 py-1.5 text-[11.5px]", style:{background:W.painel, borderBottom:"1px solid "+W.borda}},
     e("span",{className:"flex min-w-0 items-center gap-1.5 font-semibold", style:{color:cor}}, e(Ph,{n:motivo ? "hourglass" : resolvida ? "check-circle" : "circle-dashed", s:15, fill:true}),
-      motivo ? "Pendente: "+motivo : resolvida ? "✓ Resolvida"+(c.resolvidaPor ? " por "+contato(c.resolvidaPor).nome.split(" ")[0] : "")+(c.resolucao ? ": "+c.resolucao : "") : "Sem pendência"),
-    motivo && !soDecisao && !pedindo && e("button",{onClick:function(){ setPedindo(true); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Marcar resolvida"),
-    !motivo && !pedindo && e("button",{onClick:function(){ api.markPending(c.id, p.eu); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:"#f59e0b", color:"#24180a"}}, resolvida ? "Reabrir (pendente)" : "Marcar pendente"),
-    pedindo && e("div",{className:"flex w-full flex-wrap items-center gap-2"},
-      e("input",{autoFocus:true, value:nota, onChange:function(ev){ setNota(ev.target.value); setErro(false); }, onKeyDown:function(ev){ if(ev.key==="Enter") confirmar(); }, placeholder:"Como foi resolvido? (obrigatório)", "aria-label":"Como foi resolvido", className:"h-8 min-w-48 flex-1 rounded-lg px-3 text-[12px] outline-none", style:{background:W.campo, color:W.texto, border:erro ? "1px solid "+W.vermelho : "1px solid transparent"}}),
-      e("button",{onClick:confirmar, className:"rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "Dar OK"),
-      e("button",{onClick:function(){ setPedindo(false); setErro(false); }, className:"rounded-full px-3 py-1 text-[11px]", style:{background:W.campo, color:W.sec}}, "Cancelar"),
-      erro && e("span",{className:"text-[11px]", style:{color:W.vermelho}}, "Escreva em poucas palavras como resolveu.")));
+      motivo ? "Pendente: "+motivo : resolvida ? "✓ Resolvida"+(c.resolvidaPor ? " por "+contato(c.resolvidaPor).nome.split(" ")[0] : "") : "Sem pendência"),
+    motivo && !soDecisao && e("button",{onClick:function(){ api.resolveConv(c.id, p.eu, ""); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Marcar resolvida"),
+    !motivo && e("button",{onClick:function(){ api.markPending(c.id, p.eu); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:"#f59e0b", color:"#24180a"}}, resolvida ? "Reabrir (pendente)" : "Marcar pendente"));
 }
 
 // Grupo Agendamento: uma aba no topo para cada representante (a conversa de agendamento com ela abre aqui mesmo, sem poluir a barra lateral).
@@ -373,6 +363,7 @@ function ConversaBase(p){
         e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[14px] font-semibold"}, tituloDe(conv, eu)),
           e("span",{className:"block truncate text-[11.5px]", style:{color:subt.verde ? W.verde : W.sec}}, subt.t))),
       p.extra, e("button",{onClick:function(){ setInfo(true); }, "aria-label":"Dados da conversa", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"info", s:21, style:{color:W.sec}}))),
+    conv.tipo==="dm" && outro && outro!==eu && contato(outro).tipo==="func" && e(CartaoHorario,{cid:outro, pode:!!p.direcao && !somenteLeitura}),
     (conv.tipo==="dm" || conv.tipo==="grupo") && membro && !p.leitura && e(BarraSituacao,{conv:conv, eu:eu}),
     conv.tipo==="setor" && eu!==conv.repId && e(BarraStatus,{conv:conv, eu:eu, pode:!somenteLeitura && conv.membros.indexOf(eu)>=0}),
     abasV && abasV.length>1 && e(BarraAbas,{conv:conv, eu:eu, abas:abasV, aba:abaAtual, mudar:setAba}),

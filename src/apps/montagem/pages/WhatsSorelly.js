@@ -5,7 +5,7 @@ import { ChatApp, useEu } from "@/apps/montagem/components/chat/chat-app";
 import { ConfigChat } from "@/apps/montagem/components/chat/chat-config";
 import { OURO, OURO_TXT } from "@/apps/montagem/components/chat/chat-lista";
 import { PainelSetores, PainelTempo } from "@/apps/montagem/components/chat/chat-painel";
-import { LogoChat, Ph, W } from "@/apps/montagem/components/chat/chat-ui";
+import { LogoChat, Ph, TemaChatClaro, W } from "@/apps/montagem/components/chat/chat-ui";
 import { FotosEquipe } from "@/apps/montagem/components/chat/chat-fotos";
 import { ehDirecao, ehDono, podeEditarFotos } from "@/apps/montagem/domain/chat-contatos";
 import { use } from "@/apps/montagem/state/context";
@@ -24,7 +24,7 @@ function AbaWhats(){
   }, []);
   // ocupa o bloco inteiro (anula o respiro da página) até a borda de baixo
   return e("div",{ref:raiz, className:"-m-4 overflow-hidden md:-m-6", style:{background:W.fundo}},
-    aba==="conversas" ? e(ChatApp,{eu:eu, direcao:direcao, paginas:{abas:abas, aba:aba, mudar:setAba}}) :
+    aba==="conversas" ? e(TemaChatClaro,null, e(ChatApp,{eu:eu, direcao:direcao, paginas:{abas:abas, aba:aba, mudar:setAba}})) :
     e("div",{className:"flex h-full flex-col overflow-hidden"},
       e("div",{className:"flex shrink-0 items-center gap-3 px-4 py-2.5", style:{background:OURO, color:OURO_TXT}},
         e("button",{onClick:function(){ setAba("conversas"); }, "aria-label":"Voltar às conversas", className:"grid size-9 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:"arrow-left", s:21})),

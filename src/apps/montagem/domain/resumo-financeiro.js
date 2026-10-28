@@ -5,7 +5,7 @@ import { MESES_LONGO, contasDoMes, metaDoMes, fatEfetivo, projetarAno, projetarV
 
 var JANELA_PADRAO = 2;
 // % dos acertos previstos (Agendamento) que o sistema usa para prever o mês: 94, 95 ou 96 (escolhido na Visão geral / Previsão de faturamento; padrão 95)
-function metaPctDe(s){ var p = Number(s && s.metaPct); return p>=97 && p<=99 ? p : 98; }   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)   // janela = índice de CRESCIMENTO_REVENDEDORAS (2 = 30 dias)
+function metaPctDe(s){ var p = Number(s && s.metaPct); return p>=97 && p<=99 ? p : 99; }   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)   // janela = índice de CRESCIMENTO_REVENDEDORAS (2 = 30 dias)
 
 function resumoFinanceiro(s, janela){
   var JANELA = janela===undefined ? JANELA_PADRAO : janela;
@@ -25,7 +25,7 @@ function resumoFinanceiro(s, janela){
   // os três casos lado a lado: com 97, 98 ou 99% do total de acertos do mês, quantos acertos esperados, quantos faltam e o faturamento do mês
   var casos = [97,98,99].map(function(pc){ var al = Math.round(meta.previstos*pc/100); return {pct:pc, acertos:al, faltam:Math.max(0, al-acertosTot), fat:al*mediaAcerto}; });
   var c = cp(mes);
-  var mesRes = {nome:MESES_LONGO[mes], base:meta.base, previstos:meta.previstos, previstosInicio:meta.previstosAgend, carregarInicio:(s.carregarInicio||{})[anoStr+"-"+String(mes+1).padStart(2,"0")], metaPct:META_PCT, casos:casos, metaAlvo:metaAlvo, acertos:acertosTot, feitos:acertos, carregar:meta.carregar, aRealizar:meta.aRealizar, mediaAcerto:mediaAcerto, recebido:recebido, pago:c.pago, aReceber:aReceber, aPagar:c.apagar, previsto:fatPrevisto,
+  var mesRes = {nome:MESES_LONGO[mes], base:meta.base, previstos:meta.previstos, previstosInicio:meta.previstosInicio, carregarInicio:(s.carregarInicio||{})[anoStr+"-"+String(mes+1).padStart(2,"0")], metaPct:META_PCT, casos:casos, metaAlvo:metaAlvo, acertos:acertosTot, feitos:acertos, carregar:meta.carregar, aRealizar:meta.aRealizar, mediaAcerto:mediaAcerto, recebido:recebido, pago:c.pago, aReceber:aReceber, aPagar:c.apagar, previsto:fatPrevisto,
     contasTotal:c.pago+c.apagar, resultadoAgora:recebido-c.pago, resultadoEsperado:fatPrevisto-(c.pago+c.apagar)};
   // ano
   var meses = [], totContas = 0, totPago = 0;

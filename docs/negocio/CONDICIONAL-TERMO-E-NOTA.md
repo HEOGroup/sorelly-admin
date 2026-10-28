@@ -77,3 +77,8 @@ EMITENTE: assinatura · nome [NOME] · CPF · RG · estado civil · endereço ·
 AVALISTA: assinatura · nome · CPF · RG · estado civil · endereço
 
 Mudanças do advogado: saiu a frase do Art. 75 da Lei Uniforme de Genebra (não produz efeito; os requisitos já estão no texto); saiu a autorização de protesto (o protesto não depende de autorização e já consta na cláusula 5ª do termo); a cobrança é sobre o SALDO DEVEDOR, não sobre o valor da nota, porque pode haver devolução parcial; entrou correção pelo IPCA e entraram RG e estado civil do emitente e do avalista.
+
+## Versão em uso no sistema (28/10/2026)
+- Aba Revendedoras › Condicional (`domain/condicional-modelo.js`): termo com as 7 cláusulas da minuta 2 + nota promissória revisada pelo advogado. O papel (cabeçalho e folha do acerto) copia o exemplo da DevMaster.
+- Cláusula de peças para troca FICOU DE FORA (Marcus, 28/10/2026: a política de trocas será refeita depois). Texto antigo, para reaproveitar: "As representantes realizam a entrega e a eventual retirada enquanto a REVENDEDORA estiver ativa em suas atividades comerciais. Na hipótese de interrupção, suspensão ou encerramento das atividades de revenda, a responsabilidade pela devolução das peças passa a ser integral e exclusiva da REVENDEDORA, que deve providenciar a entrega no endereço indicado pela empresa dentro do prazo de conclusão da peça de até 90 dias."
+- Pendente: nota final do Marcus; troca do texto no modelo impresso da DevMaster.
