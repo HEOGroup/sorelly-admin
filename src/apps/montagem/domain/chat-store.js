@@ -4,7 +4,8 @@
 // Quando o servidor existir, só o corpo das funções de `api` troca (HTTP + WebSocket); as telas não mudam.
 // Tabelas previstas no banco: users, conversations, conversation_members, messages, attachments, reactions, pins, mentions, work_sessions.
 import { React } from "@/shared/react";
-import { CONTATOS, contato, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
+import { CONTATOS, contato, contatoDoLogin, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
+import { minhaSituacao } from "@/apps/montagem/lib/perfil";
 import { horariosParaChat } from "@/apps/montagem/domain/rh";
 import { tocar } from "@/apps/montagem/lib/sons";
 import { ler as notifLer } from "@/apps/montagem/lib/notificacoes";
@@ -15,6 +16,9 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 var CHAVE = "whatssorelly_v1", CHAVE_MIDIA = "whatssorelly_midia_v1";
 // Com o servidor ligado (27/10/2026) o chat é DE VERDADE: começa vazio (sem as conversas de demonstração), guarda em outra chave e troca mensagens pelo servidor.
 var SERVIDOR = apiAtiva(), CHAVE_SRV = "whatssorelly_srv_v1";
+// A conversa com o Marcus (pessoa 16) fica SEMPRE no alto da lista de todo mundo, não sai (nem arquivando) e toda mensagem dele vira o aviso grande (27/10/2026).
+var MARCUS_CID = contatoDoLogin(16);
+var ehConvMarcus = function(c, cid){ return !!MARCUS_CID && cid!==MARCUS_CID && c.tipo==="dm" && c.membros.indexOf(MARCUS_CID)>=0 && c.membros.indexOf(cid)>=0; };
 var seqServidor = 0, aplicando = false, fila = [], enviando = false, timerSync = null;
 var MIN = 60000, HORA = 3600000, DIA = 86400000;
 var uid = function(p){ return p + Date.now().toString(36) + Math.random().toString(36).slice(2,6); };
@@ -437,17 +441,17 @@ function listaConversas(cid, opc){
     if(!dir && c.tipo==="setor" && (c.canal==="agendamento" || c.canal==="cadastro") && cid!==c.repId) return false;
     if(!rep && temRep(c)) return false;
     if(c.tipo==="setor" && !(s.msgs[c.id]||[]).length) return false;
-    return (s.msgs[c.id]||[]).length>0 || c.criada>Date.now()-DIA;
+    return (s.msgs[c.id]||[]).length>0 || c.criada>Date.now()-DIA || ehConvMarcus(c, cid);
   }).map(function(c){
     var abasV = abasDe(c, cid), ld = lidoEm(cid, c);
     var ms = (s.msgs[c.id]||[]).filter(function(m){ return visivelPara(m, cid) && (!abasV || abasV.indexOf(abaDaMsg(m))>=0); }), ult = ms[ms.length-1];
     var nl = abasV ? ms.filter(function(m){ return m.t>lidoEm(cid, c, abaDaMsg(m)) && m.de!==cid && m.apag!=="todos"; }) : ms.filter(function(m){ return m.t>ld && m.de!==cid && m.apag!=="todos"; });
     var nlRep = c.reps ? s.convs.reduce(function(t, cc){ return t + (cc.tipo==="setor" && cc.canal===(c.repCanal||"agendamento") && cc.membros.indexOf(cid)>=0 ? (s.msgs[cc.id]||[]).filter(function(m){ return m.t>lidoEm(cid, cc) && m.de!==cid && m.apag!=="todos"; }).length : 0); }, 0) : 0;
     return {conv:c, titulo:tituloDe(c, cid), ultima:ult||null, naoLidas:nl.length+nlRep, marcado:nl.some(function(m){ return (m.mencoes||[]).indexOf(cid)>=0; }),
-      fixa:!!(c.fixaPor && c.fixaPor[cid]), arq:!!(c.arqPor && c.arqPor[cid]), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
+      marcus:ehConvMarcus(c, cid), fixa:ehConvMarcus(c, cid) || !!(c.fixaPor && c.fixaPor[cid]), arq:!ehConvMarcus(c, cid) && !!(c.arqPor && c.arqPor[cid]), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
       pendentes:ms.filter(function(m){ return m.tipo==="decisao" && m.dec && m.dec.estado==="pendente" && m.apag!=="todos" && m.dec.decisores.indexOf(cid)>=0; }).length};
   });
-  r.sort(function(a,b){ return (b.pendentes>0?1:0)-(a.pendentes>0?1:0) || (b.fixa?1:0)-(a.fixa?1:0) || ((b.ultima?b.ultima.t:b.conv.criada) - (a.ultima?a.ultima.t:a.conv.criada)); });
+  r.sort(function(a,b){ return (b.marcus?1:0)-(a.marcus?1:0) || (b.pendentes>0?1:0)-(a.pendentes>0?1:0) || (b.fixa?1:0)-(a.fixa?1:0) || ((b.ultima?b.ultima.t:b.conv.criada) - (a.ultima?a.ultima.t:a.conv.criada)); });
   return r;
 }
 function totalNaoLidas(cid){ return listaConversas(cid).reduce(function(t,x){ return t + x.naoLidas; }, 0); }
@@ -750,13 +754,14 @@ function esvaziar(){
 }
 function notificarRecebida(convId, msg){
   var conv = convPorId(convId); if(!conv) return;
-  var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, aberta = estado.efem.aberta===convId && !document.hidden;
-  if(notifLer().chat){ if(meMarcou) tocar("mencao"); else tocar("receber"); }
-  if(!aberta){
-    var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou};
-    efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
-    setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);
-  } else markRead(eu, convId, msg.aba);
+  if(minhaSituacao()!=="disponivel") return;   // em reunião ou ausente (só Marcus, Nickolas e Lucas): silêncio total
+  var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, deMarcus = !!MARCUS_CID && msg.de===MARCUS_CID && eu!==MARCUS_CID, grande = meMarcou || deMarcus;
+  var aberta = estado.efem.aberta===convId && !document.hidden;
+  if(aberta){ markRead(eu, convId, msg.aba); return; }
+  if(notifLer().chat){ if(grande) tocar("mencao"); else tocar("receber"); }
+  var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
+  efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
+  if(!grande) setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);   // o aviso grande fica até a pessoa fechar ou responder
 }
 function aplicarServidor(r, primeira){
   var novas = [];
@@ -794,6 +799,7 @@ function iniciarServidor(){
   }
   aplicando = true; try{ mudar(function(s){ return Object.assign({}, s, {contaChat:eu}); }); } finally { aplicando = false; }
   seqServidor = estado.seqSrv || 0;
+  if(MARCUS_CID && eu!==MARCUS_CID) abrirDm(eu, MARCUS_CID);   // todo mundo já tem a conversa com o Marcus
   if(timerSync) return function(){};
   timerSync = setInterval(sincronizar, 4000); sincronizar();
   return function(){ clearInterval(timerSync); timerSync = null; };

@@ -12,6 +12,7 @@ export const PATCH = rota(async (req, { eu }) => {
   const b = await corpo(req, 128 * 1024);
   const sets = [], vals = [eu.id];
   if (b.situacao !== undefined) {
+    if (![16, 17, 28].includes(eu.pessoaId)) return erro("Só Marcus, Nickolas e Lucas podem mudar a situação.", 400);   // os demais ficam sempre disponíveis e sempre recebem os avisos
     if (!SITUACOES.includes(b.situacao)) throw invalido("situacao");
     vals.push(b.situacao); sets.push("situacao = $" + vals.length);
   }

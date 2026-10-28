@@ -42,7 +42,7 @@ var comLoginAgora = function(){ return srv.apiAtiva() && !!srv.token(); };
 // Situação: um clique abre as três opções. Só existe com o servidor ligado.
 function PilulaSituacao(){
   var sit = useState(false), aberta = sit[0], setAberta = sit[1], pf = usePerfil();
-  if(!comLoginAgora() || pf.meuId==null) return null;
+  if(!comLoginAgora() || pf.meuId==null || ["16","17","28"].indexOf(srv.pessoaDaConta())<0) return null;   // situação (reunião/ausente): só Marcus, Nickolas e Lucas
   var meu = pf.pessoas[pf.meuId] || {}, atual = SITUACOES[meu.situacao] || SITUACOES.disponivel;
   var mudar = function(k){ setAberta(false); salvarEu({situacao:k}).catch(function(x){ window.alert(x.message); }); };
   return e("div",{className:"relative"},
