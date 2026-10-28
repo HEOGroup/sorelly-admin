@@ -1232,3 +1232,8 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 
 ## 28/10/2026 · Priscila (secretária do Marcus) com acesso total
 - **Priscila = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas, Priscila e Leonardo. Conta `priscila` (perfil ADMIN, `grupo = supervisao`) e as 7 autorizações de ação iguais às do Marcus. O Financeiro da família (`financeiro_familia`) fica de fora, como para o Nickolas.
+
+## 28/10/2026 · Contas a pagar e contas pagas automáticas; Priscila com tudo
+- **Contas a pagar e contas pagas vêm direto da DevMaster, sem script e sem planilha (Marcus, 28/10/2026).** Servidor: `src/server/contas-dm.js` (cache de 10 min) e rota `/api/contas-dm` (Financeiro e Diretoria). Tela: `lib/contas-dm.js` busca ao abrir e a cada 10 min; os dados valem no lugar dos arquivos locais. CNPJ dos títulos a pagar = o que o Marcus conferiu (módulo `cpfil` no banco) ou a filial da DevMaster.
+- **CNPJ das contas PAGAS = pela conta bancária usada** (aprovado pelo Marcus em 28/10/2026): nome da conta terminado em 34/46/59/67, ou Axis (67), Serenity (59), Comércio (46), Atacadista (34); Caixa e contas pessoais = "por fora". Em 1 a 27/10 (admin antigo × DevMaster): 57 de 100 células dia × CNPJ iguais; total 34 +R$ 4.154, 46 +R$ 8.755, 59 +R$ 2.546, 67 igual, "por fora" +R$ 73.690. De 28/10 em diante vale o servidor; antes disso o dia que já tem valor fica como está.
+- **Priscila = Financeiro da família liberado** (Marcus, 28/10/2026): `ACESSO_FF` e a autorização `financeiro_familia`. Priscila tem tudo igual ao Marcus.

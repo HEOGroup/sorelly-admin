@@ -11,7 +11,7 @@ var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/ff-dados.
 function ffLocal(){ if(!LOCAL) return null; var o = JSON.parse(JSON.stringify(LOCAL)), tira = o.removerDividas||[]; if(tira.length) o.dividas = o.dividas.filter(function(x){ return tira.indexOf(x.id)<0; }); return o; }
 var FORMAS_REPASSE = ["PIX","Dinheiro","Cartão de crédito"];
 var TIPOS_REGRA = [["CONTAS_MES_ACIMA","Contas do mês acima de (R$)"], ["ATRASADAS_ACIMA","Contas atrasadas acima de (R$)"], ["PIX_ABAIXO_META","PIX abaixo da meta (%)"], ["SALDO_PRESTADOR_ACIMA","Saldo de prestador acima de (R$)"]];
-var ACESSO_FF = [16, 28, 29];   // quem abre o Financeiro Familiar: Marcus, Lucas e Anamaria (sócios). Nem a família nem outras pessoas de acesso total.
+var ACESSO_FF = [16, 28, 29, 37];   // quem abre o Financeiro Familiar: Marcus, Lucas e Anamaria (sócios). Nem a família nem outras pessoas de acesso total.
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };

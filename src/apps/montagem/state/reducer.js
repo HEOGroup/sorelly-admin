@@ -207,6 +207,17 @@ function reducer(s, a){
     // Setor de Agendamento (acertos): todas as ações ficam em domain/agendamento.js
     // "revdia" (total de revendedoras automático, DevMaster, 27/10/2026) não guarda num módulo à parte: junta direto em revendedorasDiario/revAtualizadoEm (mesmos campos do lançamento manual antigo)
     // "fatdia" (faturamento do dia anterior automático, DevMaster, 27/10/2026): junta só o "recebido" de cada dia em faturamentoDiario; acertos/revendedoras daquele dia continuam como já estavam
+    // Contas pagas por dia vindas da DevMaster (lib/contas-dm.js, 28/10/2026): de 28/10 em diante o servidor vale; antes disso só preenche o dia que está vazio (o que o Marcus conferiu no admin antigo fica)
+    case "CONTAS_DM": {
+      var cdm = Object.assign({}, s.contasPagasDiario), mudouDm = false;
+      Object.keys(a.diario || {}).forEach(function(dt){
+        var at = cdm[dt], vazio = !at || (!Object.keys(at.cnpjs || {}).some(function(k){ return at.cnpjs[k]; }) && !at.contasPorFora);
+        if(dt < "2026-10-28" && !vazio) return;
+        var nv = Object.assign({cnpjs:{}, contasPorFora:0}, at, {cnpjs:Object.assign({}, a.diario[dt].cnpjs), contasPorFora:a.diario[dt].contasPorFora});
+        if(JSON.stringify(nv.cnpjs)!==JSON.stringify((at || {}).cnpjs) || nv.contasPorFora!==(at || {}).contasPorFora){ cdm[dt] = nv; mudouDm = true; }
+      });
+      return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
+    }
     case "SYNC_MODULO": {
       if(a.chave==="revdia"){
         var pRD = {};
