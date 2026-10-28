@@ -209,12 +209,14 @@ function reducer(s, a){
     // "fatdia" (faturamento do dia anterior automático, DevMaster, 27/10/2026): junta só o "recebido" de cada dia em faturamentoDiario; acertos/revendedoras daquele dia continuam como já estavam
     // Contas pagas por dia vindas da DevMaster (lib/contas-dm.js, 28/10/2026): de 28/10 em diante o servidor vale; antes disso só preenche o dia que está vazio (o que o Marcus conferiu no admin antigo fica)
     case "CONTAS_DM": {
+      // "Por fora" NÃO vem da DevMaster: é a planilha que o Nickolas lança no sistema (Marcus, 28/10/2026). Aqui entram só os CNPJs 34, 46, 59 e 67; de 28/10 em diante o servidor vale; antes disso só preenche o dia que está sem valor nos CNPJs.
       var cdm = Object.assign({}, s.contasPagasDiario), mudouDm = false;
       Object.keys(a.diario || {}).forEach(function(dt){
-        var at = cdm[dt], vazio = !at || (!Object.keys(at.cnpjs || {}).some(function(k){ return at.cnpjs[k]; }) && !at.contasPorFora);
+        var at = cdm[dt], vazio = !at || !Object.keys(at.cnpjs || {}).some(function(k){ return at.cnpjs[k]; });
         if(dt < "2026-10-28" && !vazio) return;
-        var nv = Object.assign({cnpjs:{}, contasPorFora:0}, at, {cnpjs:Object.assign({}, a.diario[dt].cnpjs), contasPorFora:a.diario[dt].contasPorFora});
-        if(JSON.stringify(nv.cnpjs)!==JSON.stringify((at || {}).cnpjs) || nv.contasPorFora!==(at || {}).contasPorFora){ cdm[dt] = nv; mudouDm = true; }
+        var cn = Object.assign({}, a.diario[dt].cnpjs);
+        if(JSON.stringify(cn)===JSON.stringify((at || {}).cnpjs)) return;
+        cdm[dt] = Object.assign({cnpjs:{}, contasPorFora:0}, at, {cnpjs:cn}); mudouDm = true;
       });
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
