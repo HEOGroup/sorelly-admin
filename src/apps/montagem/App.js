@@ -44,7 +44,8 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { BIPA_RETORNO_PADRAO, definirBlocos, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial } from "@/apps/montagem/state/store";
 import { Ctx } from "@/apps/montagem/state/context";
@@ -81,13 +82,15 @@ function botoesAgrupados(areas, fazer, cor){
     e("div",{className:"flex flex-wrap items-center gap-1"}, mapa[g])); });
 }
 function App(){
+  // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
+  if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
   var navigate = useNavigate();
   var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.
   var sn = useState(0), recarregar = function(){ sn[1](function(x){ return x+1; }); };
   useEffect(function(){ window.addEventListener("sorelly-saiu", recarregar); return function(){ window.removeEventListener("sorelly-saiu", recarregar); }; }, []);
-  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {abas:j.usuario.abas, ocultar:j.usuario.ocultar}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
+  useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; srv.chamar("GET", "/auth/eu").then(function(j){ if(j.usuario){ var antesC = srv.contaTexto(); srv.guardaPerfil(j.usuario.perfil, j.usuario.pessoaId, {abas:j.usuario.abas, ocultar:j.usuario.ocultar, grupo:j.usuario.grupo, cid:j.usuario.cid, nome:j.usuario.nome}); if(antesC!==srv.contaTexto()) recarregar(); } if(j.usuario && j.usuario.pessoaId!=null && j.usuario.pessoaId!==s.usuario) d({type:"LOGIN", id:j.usuario.pessoaId}); }).catch(function(){}); }, [sn[0]]);
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);

@@ -24,7 +24,7 @@ export async function usuarioDe(req) {
       // conta do sistema novo: vale o que está no banco agora (liberar, bloquear ou mudar setores tem efeito na hora)
       const r = (await consulta("select * from sorelly.conta where id::text = $1", [String(payload.id)])).rows[0];
       if (!r || r.status !== "ativo") return null;
-      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null };
+      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null };
     }
     return { id: payload.id, nome: payload.nome, email: payload.email, perfil: payload.perfil, setores: payload.setores || [], pessoaId: payload.pessoaId ?? null };
   } catch (e) {

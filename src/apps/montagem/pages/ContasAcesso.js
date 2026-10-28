@@ -13,6 +13,7 @@ var SETORES = [["rh","RH"], ["cobranca","Cobrança"], ["socios","Sócios"], ["fi
 var ROTULO_STATUS = {aguardando:"Aguardando", ativo:"Ativo", bloqueado:"Bloqueado"};
 var COR_STATUS = {aguardando:"text-warning", ativo:"text-success", bloqueado:"text-destructive"};
 
+var GRUPOS_ACESSO = ["supervisao","familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","basico"];
 function pessoasDoSistema(){ return EQUIPE.map(function(p){ return {id:p.id, nome:p.nome}; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }); }
 function dataCurta(t){ try { return new Date(t).toLocaleDateString("pt-BR"); } catch(x){ return ""; } }
 
@@ -28,10 +29,15 @@ function LinhaConta(p){
       e("span",{className:"text-[13px] font-semibold uppercase tracking-[.05em] "+COR_STATUS[c.status]}, ROTULO_STATUS[c.status]),
       c.status!=="ativo" && e(Botao,{principal:true, desabilitado:c.pessoaId==null, title:c.pessoaId==null ? "Escolha a pessoa do sistema antes de liberar" : "Liberar o acesso", onClick:function(){ muda({status:"ativo"}); }}, c.status==="bloqueado" ? "Reativar" : "Liberar"),
       c.status!=="bloqueado" && e(Botao,{onClick:function(){ muda({status:"bloqueado"}); }}, "Bloquear")),
-    e("div",{className:"grid grid-cols-1 gap-x-3 gap-y-2 md:grid-cols-4"},
+    e("div",{className:"grid grid-cols-1 gap-x-3 gap-y-2 md:grid-cols-3"},
       e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Pessoa do sistema",
         e("select",{className:CAMPO, value:c.pessoaId==null ? "" : String(c.pessoaId), onChange:function(ev){ muda({pessoaId:ev.target.value==="" ? null : parseInt(ev.target.value)}); }},
           e("option",{value:""}, "Escolher…"), pessoasDoSistema().map(function(x){ return e("option",{key:x.id, value:String(x.id)}, x.nome); }))),
+      e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Grupo de acesso",
+        e("select",{className:CAMPO, value:c.grupo||"", onChange:function(ev){ muda({grupo:ev.target.value || null}); }},
+          e("option",{value:""}, "Pela lista do sistema"), GRUPOS_ACESSO.map(function(g){ return e("option",{key:g, value:g}, PAPEL_LB[g] || g); }))),
+      e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Contato do chat",
+        e("input",{key:c.id+"-cid-"+(c.cid||""), className:CAMPO, defaultValue:c.cid||"", placeholder:"ex.: f_michelebrito", maxLength:80, onBlur:function(ev){ var v = ev.target.value.trim(); if(v!==(c.cid||"")) muda({cid:v}); }})),
       e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Login (usuário)",
         e("input",{key:c.id+"-"+(c.login||""), className:CAMPO, defaultValue:c.login||"", placeholder:"ex.: nickolas", maxLength:40, onBlur:function(ev){ var v = ev.target.value.trim(); if(v!==(c.login||"")) muda({login:v}); }})),
       e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold"}, "Perfil",

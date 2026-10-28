@@ -4,7 +4,8 @@
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
 import { erro, invalido } from "./http.js";
 
-export const contatoDaConta = (eu) => (eu && eu.pessoaId != null ? contatoDoLogin(eu.pessoaId) : null);
+// o contato do chat vem da própria conta (cid); sem ele, pela lista de pessoas do sistema
+export const contatoDaConta = (eu) => (eu && eu.cid) || (eu && eu.pessoaId != null ? contatoDoLogin(eu.pessoaId) : null);
 
 // devolve o contato (cid) de quem pediu, ou joga erro 403 se a conta não está ligada a um contato do chat
 export function exigirContato(eu) {

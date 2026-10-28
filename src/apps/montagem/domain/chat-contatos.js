@@ -41,7 +41,11 @@ var ALIAS_LOGIN = {Taynara:"Tainara", Sthefany:"Sthafany", Rakieli:"Rakiely"};
 function prefixo(a, b){ var n = 0; while(n<a.length && n<b.length && a[n]===b[n]) n++; return n; }
 // id do contato de quem está logado (EQUIPE usa nomes curtos: "Pamela", "Paula Melissa"…)
 var cacheLogin = {};
+// contato do chat definido na conta (funcionário fora da lista de 43 nomes): o App informa
+var CID_CONTA = {};
+function definirCidConta(id, cid){ if(id==null || isNaN(id)) return; if(cid) CID_CONTA[id] = cid; else delete CID_CONTA[id]; }
 function contatoDoLogin(idLogin){
+  if(CID_CONTA[idLogin]) return CID_CONTA[idLogin];
   if(cacheLogin[idLogin]!==undefined) return cacheLogin[idLogin];
   var p = EQUIPE.find(function(x){ return x.id===idLogin; }); var r = null;
   if(p){
@@ -68,4 +72,4 @@ function iniciais(nome){ var p = String(nome||"?").split(/\s+/).filter(Boolean);
 // presença de demonstração: estável por pessoa; em produção virá do servidor (WebSocket)
 function presenca(id){ var h = hash(id); return {online: h%100 < 58, visto: Date.now() - (h%420)*60000}; }
 var id = function(parte){ var c = CONTATOS.find(function(x){ return sem(x.completo).indexOf(sem(parte))===0; }); return c ? c.id : null; };
-export { registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };
+export { definirCidConta, registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };

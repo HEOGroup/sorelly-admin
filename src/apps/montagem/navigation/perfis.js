@@ -13,14 +13,15 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   supervisora:TODAS.filter(function(k){ return k!=="fluxo" && k.indexOf("marcus")!==0; }),                       // Deysiane: como era (tudo)
   cadastropecas:["cadpecas"],          // Rayssa e Graziella
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
-  representante:["celrep","painel","consrep","comissoes"]};
+  representante:["celrep","painel","consrep","comissoes"],
+  basico:[]};   // acesso básico: só Início, Rotina e Chat (o App acrescenta)
 var PAPEL_LB = {supervisao:"Sócios (acesso total)", familia:"Direção e família (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
   financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças",
-  representante:"Representantes"};
+  representante:"Representantes", basico:"Acesso básico"};
 // cor e ícone de cada grupo (tela de Acessos e seletor do topo)
 var VISUAL = {supervisao:["#D9A63A","coroa"], familia:["#A855F7","equipe"], supervisora:["#22C55E","caixa"], agendamento:["#3B82F6","calendario"],
   financeiro:["#14B8A6","banco"], inadimplencia:["#EF4444","alert"], bipadora:["#0EA5E9","bipagem"], montadora:["#F59E0B","montadora"],
-  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], representante:["#8B5CF6","representante"]};
+  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], representante:["#8B5CF6","representante"], basico:["#64748B","user"]};
 // grupos que o RH pode editar, na ordem da tela
 var GRUPOS_EDITAVEIS = ["familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","representante"];
 

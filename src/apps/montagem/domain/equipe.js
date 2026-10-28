@@ -53,8 +53,12 @@ function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORA
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
 var PODE_EXCECAO = [16, 11, 39];   // Marcus, Deysiane e a Elen (Encomendas): Marcus pediu em 19/10/2026 (ele às vezes manda ela fazer um kit específico)
 function podeLiberarExcecao(id){ return PODE_EXCECAO.indexOf(id)>=0; }
-function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : "\u2014"; }
+// Contas com grupo de acesso próprio (funcionário que não está na lista de 43 nomes): o App informa o grupo e o nome da conta que entrou.
+var GRUPO_CONTA = {}, NOME_CONTA = {};
+function definirContaEquipe(id, grupo, nome){ if(id==null || isNaN(id)) return; if(grupo) GRUPO_CONTA[id] = grupo; else delete GRUPO_CONTA[id]; if(nome) NOME_CONTA[id] = nome; else delete NOME_CONTA[id]; }
+function nomeDe(id){ var p = EQUIPE.find(function(x){return x.id===id;}); return p ? p.nome : (NOME_CONTA[id] || "\u2014"); }
 function papelDe(id){
+  if(GRUPO_CONTA[id]) return GRUPO_CONTA[id]==='supervisora' ? 'supervisao' : GRUPO_CONTA[id];   // grupo definido na conta vale sobre a lista
   if(id===SUPERVISORA.id || DIRETORIA.some(function(x){return x.id===id;})) return "supervisao";
   if(id===KITNOVO.id || CADASTRO_REV.some(function(x){return x.id===id;})) return "kitnovo";
   if(CADASTRO_PECAS.some(function(x){return x.id===id;})) return "cadastropecas";
@@ -75,6 +79,7 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // Grupo de ACESSO (menu e blocos de cada tela). Diferente do papel (função na montagem): Nickolas e Deysiane seguem como supervisão nas ações,
 // mas o acesso deles é editável. Sócios = fixo.
 function grupoDe(id){
+  if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
   if(id===16 || id===28 || id===29 || id===37 || id===38 || id===AMANDA_M.id) return "supervisao";   // Amanda de Miranda e Priscila: acesso total, como o Marcus
   if(id===17 || id===30 || id===31) return "familia";
   if(id===SUPERVISORA.id) return "supervisora";
@@ -105,5 +110,5 @@ function podeFinanceiro(id){ return veBloco(id,"conciliar"); }
 var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b.id; }).concat([ATENDENTE_PECAS.id, KITNOVO.id, SUPERVISORA.id]); };
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
 // quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
-var pessoaConhecida = function(id){ return EQUIPE.some(function(p){ return p.id===id; }); };
-export { pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };
+var pessoaConhecida = function(id){ return !!GRUPO_CONTA[id] || EQUIPE.some(function(p){ return p.id===id; }); };
+export { definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };

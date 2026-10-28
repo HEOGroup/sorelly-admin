@@ -21,6 +21,8 @@ export const PATCH = rota(async (req, { eu, params }) => {
   if (a.login !== undefined) poe("login", a.login);
   if (a.abas !== undefined) poe("abas", a.abas);
   if (a.ocultar !== undefined) poe("ocultar", a.ocultar);
+  if (a.grupo !== undefined) poe("grupo", a.grupo);
+  if (a.cid !== undefined) poe("cid", a.cid);
   if (a.senha !== undefined) poe("senha_hash", await criarHash(a.senha));
   let r;
   try { r = await consulta(`update sorelly.conta set ${sets.join(", ")} where id::text = $1 returning *`, v); }
