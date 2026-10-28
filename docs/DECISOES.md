@@ -996,3 +996,8 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 ## 26/10/2026 · Revendedoras: expositores
 - Marcus: puxar as condicionais abertas até o ano 3000 (expositor). "Todas" continua só kits (2.106 revendedoras, R$ 20.665.969); aba Expositor e aba "Só expositor · sem kit" (59 esquecidas). Modelos agrupados: todos os dois andares juntos; abrir o grupo mostra os modelos e quem está com cada um (filtro por grupo/modelo). Média das 3 últimas vendas = acertos fechados (dmach, ach_valormerc) dos últimos 20 meses; objetivo: cobrar valor mínimo de venda de quem está com expositor (a regra de cobrança ainda NÃO existe). Esquecida: mais de 6 meses amarelo, mais de 1 ano vermelho. Itens do expositor com código fora de MP/EX/MU/PJ são joias e ficam no grupo "Peças de joia".
+
+## 28/10/2026 · Grupos de acesso: "Acesso total" e "Direção"
+- **Acesso total** (antes "Sócios (acesso total)") = só Marcus e Leonardo (id 44).
+- **Direção** (antes "Direção e família"), sem Configuradores = Anamaria, Lucas, Priscila, Maria Claudia, Amanda de Miranda, Nickolas, Marco Antonio, Ana Beatriz. O Marcus ajusta o acesso de cada um em RH → Acessos.
+- Mudou só o grupo do MENU (`grupoDe`, `domain/equipe.js`); as ações (papel) seguem como antes.

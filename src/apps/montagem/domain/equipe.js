@@ -37,6 +37,7 @@ var FAMILIA = [{id:31, nome:"Marco Antonio"}, {id:30, nome:"Ana Beatriz"}];
 var LISTAGENS_RESP = {id:23, nome:"Majorry"};
 var SUPERVISORA = {id:11, nome:"Deysiane"};
 var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}, {id:28, nome:"Lucas"}];
+var LEONARDO = {id:44, nome:"Leonardo"};   // desenvolvedor: acesso total (conta com pessoa_id 44)
 var KITNOVO = {id:18, nome:"Michele"};
 var CADASTRO_REV = [{id:45, nome:"Camilly"}];   // Cadastro de revendedoras: mesmo grupo de acesso da Michele (Kits novos e Cadastro)
 // Cadastro de peças (23/10/2026): Rayssa (supervisora) e Graziella lançam as peças e respondem os pedidos da produção (Cadastro de peças → Solicitações)
@@ -47,7 +48,7 @@ var FINANCEIRO = [{id:27, nome:"Nayale"}, {id:36, nome:"Bruna"}];   // Bruna faz
 // Agendamento (acertos): todos do setor lançam; gerenciam (abrir/fechar o mês e configurar) a Diretoria e quem estiver marcado no Configurador (padrão: Ana Maria)
 function podeGerirAgend(id, ag){ return DIRETORIA.some(function(x){ return x.id===id; }) || (((ag && ag.config && ag.config.gerentes) || [24]).indexOf(id)>=0); }
 var ACAO_AGENDAMENTO = [24,25,26], ACAO_FINANCEIRO = [27,36];
-var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[KITNOVO],CADASTRO_REV,CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
+var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[LEONARDO],[KITNOVO],CADASTRO_REV,CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
 // Quem pode ser montador de um kit: pessoa que existe na equipe e é da montagem ou da supervisão/diretoria (bipadora, financeiro etc. não montam)
 function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORAS.some(function(m){ return m.id===id; }) || papelDe(id)==="supervisao"); }
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
@@ -80,8 +81,8 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // mas o acesso deles é editável. Sócios = fixo.
 function grupoDe(id){
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
-  if(id===16 || id===28 || id===29 || id===37 || id===38 || id===AMANDA_M.id) return "supervisao";   // Amanda de Miranda e Priscila: acesso total, como o Marcus
-  if(id===17 || id===30 || id===31) return "familia";
+  if(id===16 || id===LEONARDO.id) return "supervisao";   // Acesso total: só o Marcus e o Leonardo (Marcus, 28/10/2026)
+  if(id===17 || id===28 || id===29 || id===30 || id===31 || id===37 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
   if(id===SUPERVISORA.id) return "supervisora";
   return papelDe(id);
 }
@@ -111,4 +112,4 @@ var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
 // quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
 var pessoaConhecida = function(id){ return !!GRUPO_CONTA[id] || EQUIPE.some(function(p){ return p.id===id; }); };
-export { definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, KITNOVO, EQUIPE, nomeDe, papelDe };
+export { definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, LEONARDO, KITNOVO, EQUIPE, nomeDe, papelDe };

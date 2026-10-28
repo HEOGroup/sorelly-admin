@@ -24,7 +24,7 @@ var mesmo = function(a, b){ return String(a)===String(b); };
 var PAPEIS = ["SUPERVISOR", "FUNCIONARIO"];
 var ROTULO_PAPEL = {SUPERVISOR:"Supervisão", FUNCIONARIO:"Funcionário(a)"};
 // Grupos de acesso do sistema (espelha PAPEL_LB de navigation/perfis.js; manter igual). É o "setor" que o departamento pode apontar (vínculo só informativo).
-var SETORES_ACESSO = [["supervisao","Sócios (acesso total)"], ["familia","Direção e família (sem Configuradores)"], ["supervisora","Supervisão da montagem"], ["agendamento","Agendamento"],
+var SETORES_ACESSO = [["supervisao","Acesso total"], ["familia","Direção (sem Configuradores)"], ["supervisora","Supervisão da montagem"], ["agendamento","Agendamento"],
   ["financeiro","Financeiro"], ["inadimplencia","Inadimplência"], ["bipadora","Atendimento e bipagem"], ["montadora","Montagem de kits"], ["listagens","Listagens e condicionais"],
   ["kitnovo","Kit novo"], ["cadastropecas","Cadastro de peças"], ["representante","Representantes"]];
 // cor por posição do departamento de 1º nível (como no mapa mental do original)

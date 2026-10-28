@@ -16,7 +16,7 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"],
   basico:[]};   // acesso básico: só Início, Rotina e Chat (o App acrescenta)
-var PAPEL_LB = {supervisao:"Sócios (acesso total)", familia:"Direção e família (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
+var PAPEL_LB = {supervisao:"Acesso total", familia:"Direção (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
   financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças",
   representante:"Representantes", basico:"Acesso básico"};
 // cor e ícone de cada grupo (tela de Acessos e seletor do topo)
