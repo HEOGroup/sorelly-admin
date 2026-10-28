@@ -3,7 +3,7 @@
 // tabela (ciclo, vendas, próxima data, situação) e calendário em tela cheia com o que está agendado por dia.
 // A agendadora trabalha por aqui: contata, agenda, confirma na véspera e manda o lembrete (textos prontos).
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
-import { CICLOS, SITUACOES, avaliarKit, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
+import { CICLOS, SITUACOES, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -143,7 +143,7 @@ function Tabela(p){
   var tabela = e("div",{ref:scrollRef, onMouseDown:aoPressionar, onMouseMove:aoMover, onMouseUp:aoSoltar, onMouseLeave:aoSoltar, onClickCapture:aoClicar, title:"Clique no meio, segure e arraste para o lado", className:"cursor-grab overflow-x-auto rounded-xl border border-border bg-card active:cursor-grabbing"},
     e("table",{className:"w-full min-w-max border-collapse"},
       e("thead",{className:"sticky top-0 z-10"}, e("tr",{className:"bg-sidebar"},
-        ["Data do acerto","Hora","Nome","Cód. DevMaster","Telefone / WhatsApp","Kit","Ciclo","Data última venda","Última venda","Último acerto","Penúltima venda","Penúltimo acerto","Próximo acerto","Faltam","Situação"].map(th))),
+        ["Data do acerto","Hora","Nome","Cód. DevMaster","Telefone / WhatsApp","Kit","Ciclo","Data última venda","Última venda","Último acerto","Penúltima venda","Penúltimo acerto","Média 3 vendas","Próximo kit","Próximo acerto","Faltam","Situação"].map(th))),
       e("tbody",null, lista.map(function(r){
         var prox = proximoAcerto(r), dias = diasEntre(hojeIso, prox), alerta = emAlerta(r, hojeIso), sit = SITUACOES.find(function(x){ return x.k===r.situacao; });
         var h0 = r.hist[0] || {}, h1 = r.hist[1], h2 = r.hist[2], on = aberto===r.id;
@@ -156,6 +156,9 @@ function Tabela(p){
             td(e("span",{className:"rounded-full bg-primary/15 px-2.5 py-1 text-[12px] font-bold text-primary ring-1 ring-primary/40"}, r.tipo || "Acerto")), td(e(IconeCiclo,{n:r.ciclo, manual:!!r.proximoManual})),
             td(fmtDataBR(h0.data), MONO), td(e("span",{className:"flex items-center justify-center gap-2"}, e("span",{className:MONO+" font-semibold"}, dinheiro(h0.venda)), e(Variacao,{novo:h0.venda, ant:h1 && h1.venda}))), td(dinheiro(h0.acerto), MONO+" font-semibold text-primary"),
             td(dinheiro(h1 && h1.venda), MONO), td(dinheiro(h1 && h1.acerto), MONO+" text-primary"),
+            (function(){ var m = mediaTres(r.hist), kit = m ? kitDaMedia(m.media, s.cfg) : null;
+              return e(React.Fragment,null, td(m ? e("span",{title:m.n+(m.n===1 ? " venda" : " vendas")+" na média"}, dinheiro(m.media), m.n<3 && e("span",{className:"ml-1 text-[11px] text-muted-foreground"},"("+m.n+")")) : dash, MONO+" font-semibold"),
+                td(kit!=null ? dinheiro(kit) : m ? e("span",{title:"Média abaixo de "+BK(MEDIA_MINIMA_SORELLY)+": kit novo não liberado"},"Não libera") : dash, MONO+" font-semibold "+(kit!=null ? "text-primary" : "text-destructive"))); })(),
             td(e("b",{className:MONO}, fmtDataBR(prox))),
             td(e("span",{className:"inline-block rounded-md px-2 py-0.5 text-[12.5px] font-bold ring-1 "+corDias}, dias<0 ? Math.abs(dias)+" d atrasada" : dias===0 ? "hoje" : dias+" d")),
             td(e("span",{className:"inline-flex flex-col items-center gap-0.5"},
@@ -236,7 +239,10 @@ function AbaRevendedorasInternas(){
   var buscarDm = function(){
     if(!apiAtiva()){ setMsgDm("Precisa do servidor ligado (veja com o Leonardo)."); return; }
     setBuscandoDm(true); setMsgDm("Buscando na DevMaster…");
-    chamar("GET", "/devmaster/revendedoras?vendedor=02&atualizar=1").then(function(r){ cx.dispatch({type:"REVINT_ADD_LOTE", itens:r.itens}); setMsgDm(r.total+" na DevMaster (Sorelly 02)"); }).catch(function(x){ setMsgDm(x.message); }).finally(function(){ setBuscandoDm(false); });
+    chamar("GET", "/revendedoras?rep=02&atualizar=1").then(function(r){
+      var itens = (r.itens||[]).map(function(i){ var kp = (i.conds||[]).filter(function(c){ return (r.vendedores||["02"]).indexOf(c.vd)>=0 && c.d; }).sort(function(a,b){ return (a.e||"").localeCompare(b.e||""); })[0];   // o condicional aberto do vendedor 02 (o mais antigo) dá a previsão e o plano
+        return {cod:i.cod, nome:i.nome, celular:i.celular, cidade:i.cidade, vendas:i.vendas||[], prevDevol:kp && kp.d || "", emissao:kp && kp.e || ""}; });
+      cx.dispatch({type:"REVINT_ADD_LOTE", itens:itens}); setMsgDm(itens.length+" revendedoras do vendedor Sorelly (02)"+(r.brinde && r.brinde.pronto===false ? " · vendas ainda calculando, busque de novo em 1 minuto" : "")); }).catch(function(x){ setMsgDm(x.message); }).finally(function(){ setBuscandoDm(false); });
   };
   var vs = useState("tabela"), visao = vs[0], setVisao = vs[1];
   var bs = useState(""), busca = bs[0], setBusca = bs[1];

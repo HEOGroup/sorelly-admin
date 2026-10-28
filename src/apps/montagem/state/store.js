@@ -50,7 +50,7 @@ import { media3 } from "@/apps/montagem/domain/vendas";
 import { hoje, hora, isoDia } from "@/apps/montagem/lib/format";
 
 // revendedoras internas de demonstração; quem é Kit 100% Prata já entra com a modalidade no cadastro (perfisRev)
-var VERSAO_REVINT = 5; // 3 = sem os 4 atendimentos de demonstração de hoje (a agenda agora vem da lista de 14, 15 e 16/10)
+var VERSAO_REVINT = 6; // 6 = lista vazia (28/10/2026): só entra o que vem da DevMaster; 5 = // 3 = sem os 4 atendimentos de demonstração de hoje (a agenda agora vem da lista de 14, 15 e 16/10)
 function semearRevInternas(st){
   st.revInternas = revInternasDemo(); st.perfisRev = Object.assign({}, st.perfisRev); st.revIntV = VERSAO_REVINT;
   var vig = versaoVigente(st), agora = Date.now();

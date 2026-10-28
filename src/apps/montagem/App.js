@@ -25,7 +25,7 @@ import React from "react";
 import "@phosphor-icons/web/duotone";
 import "@phosphor-icons/web/fill";
 import "@/apps/montagem/styles/montagem.css";
-import { abaDoCaminho, caminhoDaAba } from "@/apps/montagem/router/slugs";
+import { abaDoCaminho, caminhoDaAba, setorDaAba } from "@/apps/montagem/router/slugs";
 import { useRotaAba } from "@/router/use-rota-aba";
 import { Aviso } from "@/apps/montagem/components/aviso";
 import { definirAutorizacoes, temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
@@ -164,6 +164,8 @@ function App(){
   var gerAg = podeGerirAgend(s.usuario, s.agend);
   var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
+  var donoTitulo = aba==="breve" ? null : setorDaAba(aba), setorTitulo = donoTitulo ? donoTitulo.nome : "Sorelly Admin";
+  useEffect(function(){ document.title = titulo+" · "+setorTitulo; }, [titulo, setorTitulo]);   // título da aba do navegador: Tela · Setor (pedido do Marcus, 28/10/2026)
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;

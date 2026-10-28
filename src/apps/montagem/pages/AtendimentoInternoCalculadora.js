@@ -314,7 +314,7 @@ function AtendimentoInterno(){
       : [linhaMedia("Venda anterior", e(CampoDinheiro,{key:"a0", value:vendasAnt[0], disabled:jaFeito, label:"Venda anterior", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(0, v); }})),
          linhaMedia("Venda mais antiga", e(CampoDinheiro,{key:"a1", value:vendasAnt[1], disabled:jaFeito, label:"Venda mais antiga", className:CP+" text-center! "+MONO+" text-white!", onChange:function(v){ setVendaAnt(1, v); }}))],
     e("div",{className:"flex flex-col items-center gap-0.5 border-t border-border/50 pt-2 text-center"},
-      e("span",{className:"text-[12px] font-bold uppercase tracking-wide"}, "Média ("+vendasMedia.length+(vendasMedia.length===1 ? " mês" : " meses")+" · até "+avKit.nMeses+")"), e("b",{className:MONO+" text-[20px] text-primary"}, mediaVendas!==null ? din(mediaVendas) : "—"),
+      e("span",{className:"text-[12px] font-bold uppercase tracking-wide"}, "Média ("+vendasMedia.length+(vendasMedia.length===1 ? " venda" : " vendas")+" · até "+avKit.nMeses+")"), e("b",{className:MONO+" text-[20px] text-primary"}, mediaVendas!==null ? din(mediaVendas) : "—"),
       !temHist && e("span",{className:"text-[11.5px] text-muted-foreground"},"Cadastre as vendas anteriores em Revendedoras para a média ficar automática")),
     e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg "+GRAD_BARRA+" px-3 py-2 text-center text-[#1B1409]"},
       e("span",{className:"text-[12px] font-extrabold uppercase tracking-wide"}, "Kit a liberar"), e("b",{className:MONO+" text-[22px]"}, kitLiberado ? din(kitLiberado) : avKit.motivo ? "Não libera" : "•••")),

@@ -77,7 +77,7 @@ Detalhes em [`docs/ARQUITETURA.md`](docs/ARQUITETURA.md).
    pagina("minha-tela", () => import("@/apps/montagem/pages/MinhaTela"), "AbaMinhaTela"),
    ```
 
-   Isso já deixa `/montagem/minha-tela` funcionando.
+   O endereço novo sai sozinho do menu: `/setor/tela` (ex.: `/atendimento-interno/revendedoras`). O endereço antigo `/montagem/minha-tela` continua abrindo e leva ao novo. Veja `router/slugs.js` (`ENDERECO_DA_ABA`).
 
 3. Para aparecer no menu: a aba em `navigation/abas.js`, o slug em `router/slugs.js` e a tela no setor certo em `navigation/setores.js`.
 

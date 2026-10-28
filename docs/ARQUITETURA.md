@@ -9,7 +9,7 @@ Navegador                                             Servidor (o mesmo Next.js)
 ┌────────────────────────────────────────────┐        ┌─────────────────────────────────────┐
 │ app/[[...slug]]  → casca (ssr: false)      │        │ app/api/*         rotas HTTP        │
 │   └─ src/cliente.js → React Router         │        │   └─ src/server/* login, permissão, │
-│        ├─ /montagem/*   (app principal)    │  JSON  │                   estado, rotina,   │
+│        ├─ /setor/tela    (app principal)   │  JSON  │                   estado, rotina,   │
 │        └─ /kits-novos/* (Kits novos)       │ ─────► │                   DevMaster         │
 │ Estado: reducer + localStorage             │        │ Postgres (schema "sorelly")         │
 │ Sincronização opcional (NEXT_PUBLIC_API_URL)│       │                                     │

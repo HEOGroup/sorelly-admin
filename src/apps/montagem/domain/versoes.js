@@ -3,6 +3,22 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.14.34", data:"2026-10-28", titulo:"Endereços por setor e tela, sem o /montagem", itens:[
+    {tipo:"melhoria", area:"Endereços", txt:"Todas as telas passaram a ter o endereço /setor/tela (ex.: /atendimento-interno/revendedoras, /financeiro/controle-de-pagamentos). O endereço sai sozinho do menu (router/slugs.js, ENDERECO_DA_ABA). O prefixo /montagem era o nome do primeiro app e saiu."},
+    {tipo:"melhoria", area:"Endereços", txt:"Os endereços antigos (/montagem/nome-da-tela e o curto /nome-da-tela) continuam abrindo e levam ao endereço novo, com o # e a busca preservados. O app de Kits novos continua em /kits-novos."},
+    {tipo:"melhoria", area:"Navegador", txt:"O título da aba do navegador agora é Tela · Setor (ex.: Revendedoras · Atendimento interno)."},
+  ]},
+  {v:"0.14.33", data:"2026-10-28", titulo:"Atendimento interno · Revendedoras nasce vazio", itens:[
+    {tipo:"melhoria", area:"Atendimento interno", txt:"A lista de revendedoras internas foi limpa (as 32 da planilha antiga saíram). Agora só entram as revendedoras do vendedor Sorelly (02, FE e BY) pelo botão Buscar da DevMaster; a lista geral continua na aba Revendedoras."},
+  ]},
+  {v:"0.14.32", data:"2026-10-27", titulo:"Atendimento interno: revendedoras do vendedor Sorelly vêm da DevMaster, com média e valor do próximo kit", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"O botão Buscar da DevMaster (Revendedoras) traz todas as revendedoras cujo vendedor é a Sorelly (código 02), lidas da API 2: 196 hoje. Entram como A contatar, ciclo de 30 dias e próximo acerto = previsão de devolução do kit principal. Quem já estava na lista só recebe as vendas reais; data, hora e situação da agendadora não mudam."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Colunas novas Média 3 vendas e Próximo kit: média das 3 últimas vendas sem brinde e a faixa da tabela do Configurador. Média abaixo de R$ 700 mostra Não libera."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"O ciclo (30, 45 ou 60) sai do plano real de cada revendedora, e o próximo acerto é a previsão de devolução da DevMaster (já com fim de semana), não mais emissão + 30 dias exatos."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"A calculadora do Atendimento Sorelly passou a usar a média das 3 últimas vendas (a de agora + as 2 anteriores), mínimo R$ 700, no lugar da média de 5 meses."},
+    {tipo:"correcao", area:"Atendimento interno", txt:"A busca do vendedor Sorelly (02) passou a seguir a tela de retorno de condicionais da DevMaster: revendedora com condicional aberto do vendedor 02 e previsão até 31/12/2026, mesmo que a representante do kit principal seja outra. O vendedor Sorelly são três códigos: 02 SORELLY, FE SORELLY FUNCIONARIOS e BY SORELLY REPRESENTANTE. Hoje: 203 revendedoras, 232 condicionais, 23.401 peças e R$ 2.114.086,00, igual à tela da DevMaster."},
+    {tipo:"melhoria", area:"Revendedoras", txt:"A rota /api/revendedoras aceita ?rep=02 e devolve só as revendedoras com condicional aberto daquele vendedor."},
+  ]},
   {v:"0.14.18", data:"2026-10-27", titulo:"SorellyChat: corrigido rolar a tela toda junto", itens:[
     {tipo:"correcao", area:"SorellyChat", txt:"Achei a causa: a altura da tela do SorellyChat era um número fixo que não contava a faixa de abas abertas/menu (quando aparece em cima). Faltando esse tanto, a PÁGINA toda ficava um pouco mais alta que a tela e rolava junto — por isso a barra de cima e o nome da pessoa na conversa pareciam subir. Agora a altura se ajusta sozinha ao que sobra da tela; só a lista de conversas (abaixo da busca) e as mensagens (abaixo do nome da pessoa) rolam — o resto fica parado."},
   ]},

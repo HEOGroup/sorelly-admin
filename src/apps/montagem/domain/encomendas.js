@@ -1,4 +1,5 @@
 import { globLocal } from "@/lib/glob-local";
+import { caminhoDaAba } from "@/apps/montagem/router/slugs";
 // Sorelly Admin · montagem — domain/encomendas.js
 // Encomendas e Reposições (ESBOÇO, 16/10/2026; contexto e regras em docs/negocio/ENCOMENDAS-REPOSICOES.md). Módulo novo: não existe no SorellyAdmin.
 // Controle INTERNO dos pedidos que hoje chegam bagunçados pelo WhatsApp: reposição, liberação de expositor e encomenda. (Decisão de 07/10/2026: reposição NÃO é oferecida às revendedoras por ora.)
@@ -618,7 +619,7 @@ function erReduz(s, a){
 }
 
 // link direto para a tela onde o Marcus autoriza (Top 50, bloco Pedidos ao Marcus)
-function linkPedidos(){ return (typeof window!=="undefined" ? window.location.origin : "")+"/montagem/top-50#pedidos"; }
+function linkPedidos(){ return (typeof window!=="undefined" ? window.location.origin : "")+caminhoDaAba("enctop50")+"#pedidos"; }
 export { linkPedidos, listagemDoDia, textoListagem, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
   formatarReais, formatarDia, formatarDataHora, somaMeses, faixaDaMedia, proximaFaixa, direitoReposicao, direitoExpositor, bloqueioReposicao, bloqueadaNaData, calcularDireito,
   revDe, revPorNome, reposicoesDoMes, proximosStatus, proximaEtapa, minutosNaEtapa, textoTempo, listaPedidos, indicadoresEr, representantesEr, validarPedido, taxaDoPedido,

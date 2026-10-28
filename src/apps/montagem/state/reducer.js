@@ -757,11 +757,23 @@ function reducer(s, a){
     // Revendedoras vindas da DevMaster (servidor → /devmaster/revendedoras): entram só as que ainda não existem (mesmo código da DevMaster ou mesmo nome), como "A contatar", ciclo de 30 dias
     case "REVINT_ADD_LOTE": {
       var nm = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };
-      var jaR = s.revInternas||[], chv = {}; jaR.forEach(function(r){ chv[nm(r.nome)] = 1; if(r.devmaster) chv["c"+r.devmaster] = 1; });
-      var novosR = (a.itens||[]).filter(function(i){ if(chv["c"+i.codigo] || chv[nm(i.nome)]) return false; chv["c"+i.codigo] = 1; chv[nm(i.nome)] = 1; return true; }).map(function(i){
-        return {id:"RD"+i.codigo, nome:i.nome, ciclo:30, proximoManual:null, situacao:"contatar", agend:null, internoId:null, hist:[{data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}, {data:null, venda:null, acerto:null}],
-          contatos:i.celular ? [{nome:"WhatsApp da revendedora", fone:i.celular}] : [], prata:false, devmaster:i.codigo, obs:""}; });
-      return com(s, {revInternas:jaR.concat(novosR)}, novosR.length+(novosR.length===1 ? " revendedora nova" : " revendedoras novas")+" da DevMaster ("+(a.itens||[]).length+" encontradas)");
+      // Itens da API 2 (/api/revendedoras?rep=02): cod, nome, celular, cidade, vendas [{d, v}] (3 últimas, sem brinde, mais nova primeiro) e prevDevol (previsão do kit principal).
+      // Quem já existe só recebe as vendas reais (histórico); data, hora, situação e ciclo da agendadora nunca são mexidos.
+      var sz = function(c){ return String(c||"").replace(/^0+/, ""); };   // 004624 e 4624 são o mesmo código
+      var codI = function(i){ return sz(i.cod || i.codigo); };
+      var histDe = function(i){ var h = (i.vendas||[]).map(function(v){ return {data:v.d, venda:v.v, acerto:null}; }); while(h.length<3) h.push({data:null, venda:null, acerto:null}); return h; };
+      var temVendas = function(i){ return (i.vendas||[]).length>0; };
+      var jaR = s.revInternas||[], chv = {}; jaR.forEach(function(r){ chv[nm(r.nome)] = 1; if(r.devmaster) chv["c"+sz(r.devmaster)] = 1; });
+      var porItem = {}; (a.itens||[]).forEach(function(i){ porItem[codI(i)] = i; });
+      var atualizadas = 0;
+      var jaN = jaR.map(function(r){ var i = r.devmaster && porItem[sz(r.devmaster)]; if(!i || !temVendas(i)) return r; atualizadas++; var h = histDe(i).map(function(x){ var o = (r.hist||[]).find(function(y){ return y && y.data===x.data && y.acerto!=null; }); return o ? Object.assign({}, x, {acerto:o.acerto}) : x; }); return Object.assign({}, r, {hist:h, fonteVendas:"devmaster", proximoDm:i.prevDevol || r.proximoDm || null}); });
+      var novosR = (a.itens||[]).filter(function(i){ var c = codI(i); if(chv["c"+c] || chv[nm(i.nome)]) return false; chv["c"+c] = 1; chv[nm(i.nome)] = 1; return true; }).map(function(i){
+        // ciclo = plano mais próximo (30, 45 ou 60) da distância entre a emissão do kit e a previsão de devolução; a data real é a da DevMaster (proximoDm), que já tem fim de semana
+        var dias = i.emissao && i.prevDevol ? Math.round((new Date(i.prevDevol+"T12:00:00") - new Date(i.emissao+"T12:00:00"))/86400000) : 0;
+        var ciclo = [30,45,60].reduce(function(m, c){ return !dias || Math.abs(c-dias)<Math.abs(m-dias) ? c : m; }, 30);
+        return {id:"RD"+codI(i), nome:i.nome, ciclo:ciclo, proximoManual:null, proximoDm:i.prevDevol || null, situacao:"contatar", agend:null, internoId:null, hist:histDe(i), fonteVendas:"devmaster",
+          contatos:i.celular ? [{nome:"WhatsApp da revendedora", fone:i.celular}] : [], prata:false, devmaster:String(i.cod || i.codigo), cidade:i.cidade || "", obs:""}; });
+      return com(s, {revInternas:jaN.concat(novosR)}, novosR.length+(novosR.length===1 ? " revendedora nova" : " revendedoras novas")+(atualizadas ? " · "+atualizadas+" com vendas atualizadas" : "")+" da DevMaster ("+(a.itens||[]).length+" encontradas)");
     }
     case "REVINT_SET": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, a.patch); })});
     // ── Avisos: quem recebe cada alerta (Tecnologia → Avisos) e os alertas disparados (um por chave) ──

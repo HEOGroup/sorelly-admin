@@ -24,6 +24,9 @@ export async function contarRevendedorasHoje() {
 }
 const G = globalThis;
 const NAO_REP = new Set(["04", "91"]);
+// "Vendedor Sorelly" (atendimento interno) = os três vendedores da própria Sorelly: 02 SORELLY, FE SORELLY FUNCIONARIOS e BY SORELLY REPRESENTANTE.
+// Conferido com a tela de retorno de condicionais da DevMaster em 27/10/2026: 203 revendedoras, 232 condicionais, 23.401 peças e R$ 2.114.086,00 (bateu certinho).
+export const VENDEDORES_SORELLY = ["02", "FE", "BY"];
 const PARTICULAS = new Set(["da", "de", "do", "dos", "das", "e"]);
 
 // "NAYALE EMANUELE CALIXTO" vira "Nayale Emanuele Calixto"
@@ -113,7 +116,7 @@ async function vendasDe(clientes) {
 
 // A primeira leva: revendedoras com condicional aberto e previsão em 2026. Cache de 10 minutos.
 async function listaBase({ forcar = false } = {}) {
-  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 8 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
+  if (!forcar && G.__sorellyRevs && G.__sorellyRevs.v === 9 && Date.now() - G.__sorellyRevs.em < TTL) return G.__sorellyRevs.dados;
   const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc"];
   const [c26, cExp, vend] = await Promise.all([
     todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { between: ["2026-01-01T00:00:00", "2026-12-31T23:59:59"] } }, campos }),
@@ -137,7 +140,7 @@ async function listaBase({ forcar = false } = {}) {
   const itens = codigos.map((cod) => {
     const lista = porCliente.get(cod), tipos = tiposPor.get(cod), rep = representanteDe(lista), p = pessoas.get(cod) || {}, m = mun.get(String(p.aam_municipio || "")) || {};
     // conds: cada condicional aberto, compacto (t = tipo, p = peças, v = valor, d = previsão de devolução (vazio = sem previsão ou expositor), e = emissão, it = modelos do expositor)
-    const conds = lista.map((x) => { const t = tipos.get(x.afi_codigo), o = { t, p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, d: ano(x) >= 2100 ? "" : String(x.afi_prevdevol || "").slice(0, 10), e: String(x.afi_data || "").slice(0, 10) }; if (t === "Expositor") o.it = itensExp.get(x.afi_codigo) || []; return o; });
+    const conds = lista.map((x) => { const t = tipos.get(x.afi_codigo), o = { t, vd: String(x.afi_vendedor || "").trim(), p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, d: ano(x) >= 2100 ? "" : String(x.afi_prevdevol || "").slice(0, 10), e: String(x.afi_data || "").slice(0, 10) }; if (t === "Expositor") o.it = itensExp.get(x.afi_codigo) || []; return o; });
     const item = { cod, repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante", nome: nomeNormal(p.aam_nome), cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
       celular: p.aam_celular || p.aam_whatsapp || "", situacao: p.aam_situacao === "A" ? "Ativa" : p.aam_situacao === "B" ? "Bloqueada" : "Inativa", conds,
       nasc: p.aam_pessoa === "J" ? "" : String(p.aam_nascimento || "").slice(0, 10), cadastro: String(p.aam_datacadastro || "").slice(0, 10), email: String(p.aam_email || "").toLowerCase(), instagram: p.aam_instagram || "", bairro: nomeNormal(p.aam_bairro), cep: p.aam_cep || "", app: p.aam_xenviaapp === "S" };
@@ -145,7 +148,7 @@ async function listaBase({ forcar = false } = {}) {
     return item;
   }).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR"));
   const dados = { geradoEm: new Date().toISOString(), total: itens.length, itens };
-  G.__sorellyRevs = { dados, em: Date.now(), v: 8 };
+  G.__sorellyRevs = { dados, em: Date.now(), v: 9 };
   return dados;
 }
 
