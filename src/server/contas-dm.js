@@ -4,7 +4,7 @@
 //   apagar: [filial, natureza, nomeNatureza, prefixo, número, parcela, fornecedorCod, título, emissão, vencimento, valor, saldo, diasAtraso]
 //   pagas:  [filial, natureza, nomeNatureza, prefixo, número, parcela, fornecedorCod, título, baixa, vencimento, valor]
 // CNPJ das contas PAGAS = pela CONTA BANCÁRIA usada (regra do Marcus, 28/10/2026): nome da conta termina em 34/46/59/67, ou traz Axis (67), Serenity (59), Comércio (46), Atacadista (34); Caixa e contas pessoais = "fora".
-// CNPJ das contas A PAGAR = o que o Marcus já conferiu (módulo cpfil no banco) e, para título novo, a filial da DevMaster (01=34, 02=46, 03=59, 04=fora, 05=67).
+// CNPJ das contas A PAGAR = filial da DevMaster (01=34, 02=46, 03=59, 04=fora, 05=67); só para vencimento até 31/12/2026 vale antes o CNPJ que o Marcus já conferiu (módulo cpfil no banco).
 import * as dm from "@/server/devmaster2";
 import { consulta } from "@/server/db";
 
@@ -52,7 +52,8 @@ async function montar() {
   const abertos = (await leAbertos).flat();
   const apagar = abertos.filter((x) => x.abe_saldo > 0.004).map((x) => {
     const k = [x.abe_prefixo, x.abe_numero, x.abe_parcela, x.abe_fornecedor].join("|"), venc = dia(x.abe_vencimento);
-    const fil = known.get(k) || FILIAL[x.abe_filialorigem] || "fora";
+    // Previsões de 2027 (salário, adiantamento, cartão...) são lançadas por filial DE PROPÓSITO (a Nayale confirmou em 28/10/2026): vale a filial da DevMaster. Antes de 2027 vale o CNPJ que o Marcus conferiu.
+    const fil = (venc >= "2027-01-01" ? null : known.get(k)) || FILIAL[x.abe_filialorigem] || "fora";
     return [fil, x.abe_natureza, nomeNat.get(x.abe_natureza) || "", x.abe_prefixo, x.abe_numero, x.abe_parcela, x.abe_fornecedor, nomeForn.get(x.abe_fornecedor) || "", dia(x.abe_emissao), venc, r2(x.abe_valor), r2(x.abe_saldo), diasAtraso(venc)];
   }).sort((a, b) => (a[9] < b[9] ? -1 : a[9] > b[9] ? 1 : 0));
 

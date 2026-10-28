@@ -1240,3 +1240,6 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 
 ## 28/10/2026 · "Por fora" é lançado pelo Nickolas, não vem da DevMaster
 - **"Contas por fora" = a planilha que o Nickolas passa a preencher direto no sistema (Marcus, 28/10/2026).** A leitura automática da DevMaster (`/api/contas-dm`) preenche só os CNPJs 34, 46, 59 e 67 do Contas pagas por dia; o "por fora" fica como está (`CONTAS_DM` em `state/reducer.js`). Os pagamentos de contas Caixa e pessoais continuam na lista de contas pagas, mas não entram no total diário.
+
+## 28/10/2026 · Previsões de 2027 ficam na filial da DevMaster
+- **As previsões de 2027 (salário, adiantamento, cartão, vale alimentação, INSS...) são lançadas por filial de propósito (Nayale, 28/10/2026)**: vale a filial da DevMaster. Em `src/server/contas-dm.js`, só para vencimento até 31/12/2026 o CNPJ já conferido pelo Marcus vale antes da filial. A lista de "filial errada" (234 títulos, 184 de 2027) estava errada nesses 184: não pedir correção à Nayale.
