@@ -65,3 +65,13 @@ Este documento junta tudo o que ficou decidido. Decisões curtas também estão 
 | Celular simulado: Gabrielly e Maria Eduarda (bipagem) sem acesso (`BIP7` em `mobile/app-funcionarias.js`) | Pendente |
 | Endereço `/whatssorelly`: Marcus disse que "não muda nada" | Sem diagnóstico; perguntar login e endereço |
 | Apps da representante e da revendedora | São esboço para o Leonardo copiar; não corrigir detalhes |
+
+## 8. Atualização de 28/10/2026 (tarde)
+
+- **Nickolas passou para Acesso total**, igual ao Marcus (conta com `grupo = supervisao`; `grupoDe(17)` em `domain/equipe.js`). Acesso total agora: Marcus, Nickolas e Leonardo.
+- **Agendamento: contas** Ana Maria, Mariana e Tamara (pessoas 24, 25 e 26). Marcus começou **só pela Tamara**. O menu dela é individual (coluna `abas` da conta): Atendimento interno (4 telas), Painel, Plano 45/60, Remarcações, Representantes (cotas), Análises, Histórico, Consolidado Representante, Controle de kits e Inadimplência. Sem Dinheiro, Abertura do mês nem Configurador.
+- **O menu da conta só restringe** o menu do grupo; não acrescenta telas. Por isso as 4 telas do Atendimento interno entraram na lista do grupo Agendamento (`ABAS_PERFIL.agendamento`).
+- **Atendimento interno · Revendedoras agora é compartilhado** (módulo `ri` = `s.revInternas`, sincronizado pelo servidor; permissão do setor Agendamento). Antes, ficava só no navegador de cada pessoa.
+- A leitura das revendedoras do vendedor Sorelly (`/api/revendedoras?rep=02`) está liberada ao Agendamento. A lista geral continua só da Diretoria.
+- Ao abrir a tela, o sistema busca sozinho na DevMaster: **203 revendedoras**, das quais **60 já vêm com agenda** preenchida pelas anotações escritas nas condicionais. As demais não têm data escrita nas anotações.
+- Limitação: o módulo grava a lista inteira. Duas pessoas editando ao mesmo tempo, a última gravação vale.

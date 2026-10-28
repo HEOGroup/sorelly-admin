@@ -6,7 +6,10 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "cpc", "mk", "gr", "revdia", "fatdia", "inicio", "chathor"];
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "cpc", "mk", "gr", "revdia", "fatdia", "inicio", "chathor", "ri"];
+// módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
+var ESPELHO = {ri:["revInternas"]};
+var fatia = function(s, c){ if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
@@ -34,7 +37,7 @@ function restaurarCopiaAntesServidor(){
 // "Este navegador manda": envia TODAS as chaves de cada módulo e substitui as do servidor (a cópia sorelly.estado_modulo_copia_20261026 guarda a versão anterior).
 async function enviarTudoDoNavegador(s){
   var feitos = 0, falhas = [];
-  for(var i=0;i<PADRAO.length;i++){ var c = PADRAO[i], v = s[c];
+  for(var i=0;i<PADRAO.length;i++){ var c = PADRAO[i], v = fatia(s, c);
     if(!v || typeof v!=="object" || !Object.keys(v).length) continue;
     try { await chamar("PUT", "/estado/"+c, {chaves:v}); feitos++; } catch(x){ falhas.push(c+": "+x.message); } }
   if(!falhas.length) guardaModo("servidor");
@@ -63,7 +66,7 @@ function useSyncModulos(s, d){
       if(r.igual) return undefined;   // nada novo no servidor
       var trouxe = false;
       if(r.versao>m.versao || !m.pronto){
-        var novas = {}, local = ref.current.s[chave] || {};
+        var novas = {}, local = fatia(ref.current.s, chave) || {};
         Object.keys(r.conteudo||{}).forEach(function(k){ var j = json(r.conteudo[k]); m.snaps[k] = j; if(json(local[k])!==j) novas[k] = r.conteudo[k]; });
         if(Object.keys(novas).length){ d({type:"SYNC_MODULO", chave:chave, conteudo:novas}); trouxe = true; }
         m.versao = r.versao; if(r.versao>0) m.bloqueado = false;
@@ -75,7 +78,7 @@ function useSyncModulos(s, d){
   };
   var empurrar = function(chave){
     var m = ref.current.mods[chave]; if(!m || !m.pronto || m.bloqueado || m.semAcesso) return Promise.resolve();
-    var atual = ref.current.s[chave] || {}, mudou = {}, n = 0;
+    var atual = fatia(ref.current.s, chave) || {}, mudou = {}, n = 0;
     Object.keys(atual).forEach(function(k){ var j = json(atual[k]); if(j!==m.snaps[k]){ mudou[k] = atual[k]; n++; } });
     if(!n) return Promise.resolve();
     return chamar("PUT", "/estado/"+chave, {chaves:mudou}).then(function(r){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); m.versao = r.versao; }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; });   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
@@ -87,7 +90,7 @@ function useSyncModulos(s, d){
     var iv = setInterval(tick, 20000); return function(){ vivo = false; clearInterval(iv); };
   }, [ativo, lista.join(",")]);
   // envia 1 s depois da última mudança
-  var assinatura = lista.map(function(c){ return json(s[c]); }).join("|");
+  var assinatura = lista.map(function(c){ return json(fatia(s, c)); }).join("|");
   useEffect(function(){
     if(!ativo) return;
     var t = setTimeout(function(){ lista.forEach(empurrar); }, 1000); return function(){ clearTimeout(t); };

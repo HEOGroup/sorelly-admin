@@ -33,7 +33,7 @@ function TrocarSenha(){
 // ordem da lista: sócios primeiro, depois cada setor
 var SETORES_LOGIN = function(){
   var todos = DIRETORIA.concat(ACESSO_TOTAL, [AMANDA_M], DIRECAO_FAMILIA, FAMILIA, [LEONARDO]), por = function(ids){ return ids.map(function(i){ return todos.find(function(x){ return x.id===i; }); }); };
-  return [["supervisao", por([16,44])], ["familia", por([29,28,37,38,32,17,31,30])], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
+  return [["supervisao", por([16,17,44])], ["familia", por([29,28,37,38,32,31,30])], ["supervisora", [SUPERVISORA]], ["agendamento", AGENDAMENTO], ["financeiro", FINANCEIRO],
     ["bipadora", BIPADORAS.concat([ATENDENTE_PECAS])], ["montadora", MONTADORAS], ["listagens", [LISTAGENS_RESP]], ["kitnovo", [KITNOVO]], ["cadastropecas", CADASTRO_PECAS]]; };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase(); };
 var BOTAO_MENU = "flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg px-2.5 text-left text-[13px] font-semibold outline-none hover:bg-white/10";

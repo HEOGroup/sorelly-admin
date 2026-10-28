@@ -1225,3 +1225,7 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 - **Acesso total** (antes "Sócios (acesso total)") = só Marcus e Leonardo (id 44).
 - **Direção** (antes "Direção e família"), sem Configuradores = Anamaria, Lucas, Priscila, Maria Claudia, Amanda de Miranda, Nickolas, Marco Antonio, Ana Beatriz. O Marcus ajusta o acesso de cada um em RH → Acessos.
 - Mudou só o grupo do MENU (`grupoDe`, `domain/equipe.js`); as ações (papel) seguem como antes.
+
+## 28/10/2026 · Nickolas com acesso total; Atendimento interno da Tamara
+- **Nickolas = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas e Leonardo.
+- **Tamara começa sozinha no Agendamento** com menu individual e o Atendimento interno. As revendedoras internas passam a ficar no servidor (módulo `ri`), e o Agendamento lê a lista da DevMaster (`?rep=02`). Detalhes em `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md`.
