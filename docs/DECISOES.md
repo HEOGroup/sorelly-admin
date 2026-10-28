@@ -1243,3 +1243,7 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 
 ## 28/10/2026 · Previsões de 2027 ficam na filial da DevMaster
 - **As previsões de 2027 (salário, adiantamento, cartão, vale alimentação, INSS...) são lançadas por filial de propósito (Nayale, 28/10/2026)**: vale a filial da DevMaster. Em `src/server/contas-dm.js`, só para vencimento até 31/12/2026 o CNPJ já conferido pelo Marcus vale antes da filial. A lista de "filial errada" (234 títulos, 184 de 2027) estava errada nesses 184: não pedir correção à Nayale.
+
+## 28/10/2026 · Planilha de pagamentos a fornecedores (resumo do mês)
+- O Marcus passou a planilha atualizada (`Pag Fornecedores`). O resumo do mês (A pagar, Pago, Saldo de cada fornecedor, prestador e sócio) é lido da aba RESUMO MÊS por `scripts/planilha-fornecedores.mjs` e agora também é gravado no banco (módulo `pfmes`), para o sistema na Vercel ler sem depender do computador do Marcus. Rodar: `node --env-file-if-exists=.env.local scripts/planilha-fornecedores.mjs "caminho.xlsx"`.
+- Hoje parte dos pagamentos é feita na planilha e depois atualizada na DevMaster. Falta importar, por fornecedor, os lançamentos (Pix de revendedora, boletos, passadas de cartão) das abas de negociação: Office Graf, Point, Ellos, Art Ello, Mega Sul e Pontual (a Pontual está só até 20/10). Ver `docs/negocio/FLUXO-DE-PAGAMENTOS.md`.

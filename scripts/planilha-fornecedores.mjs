@@ -69,4 +69,10 @@ const saida = { geradoEm: new Date().toISOString().slice(0, 10), mes, itens, car
 writeFileSync(new URL("../src/apps/montagem/domain/pf-mes.local.js", import.meta.url),
   "// DADOS REAIS (só neste computador, fora do GitHub): saldo de cada fornecedor no mês, lido da planilha Pag Fornecedores (RESUMO MÊS). Gerado por scripts/planilha-fornecedores.mjs\nexport default " + JSON.stringify(saida) + ";\n");
 rmSync(dir, { recursive: true, force: true });
+// Também grava no banco (módulo pfmes) para o sistema na Vercel ler (28/10/2026). Rode com: node --env-file-if-exists=.env.local scripts/planilha-fornecedores.mjs "caminho.xlsx"
+try {
+  const { consulta, pool } = await import("../src/server/db.js");
+  await consulta("insert into sorelly.estado_modulo (modulo, conteudo, versao) values ('pfmes', $1::jsonb, 1) on conflict (modulo) do update set conteudo = excluded.conteudo, versao = sorelly.estado_modulo.versao + 1, atualizado_em = now()", [JSON.stringify({ dados: saida })]);
+  await pool().end(); console.log("gravado no banco: módulo pfmes");
+} catch (x) { console.log("banco NÃO atualizado:", x.message); }
 console.log("mês", mes, "| linhas", itens.length, "| fornecedores com saldo", itens.filter((i) => i.tipo === "fornecedor" && i.saldo > 0.005).length, "| desconto cartão (média 3 últimos)", media + "%");

@@ -12,6 +12,7 @@ import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inici
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
+import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { ZoomTela } from "@/apps/montagem/components/zoom-tela";
@@ -97,6 +98,7 @@ function App(){
   // Rotina do dia vinda do servidor: combinados e checks de hoje, a cada minuto
   useEffect(function(){ if(!srv.apiAtiva() || !srv.token()) return; var t = function(){ var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); }, dia = n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate());
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
+  definirPfMes(s.pfmes && s.pfmes.dados);   // resumo do mês dos fornecedores vindo do servidor
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
   var modoSync = useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão); "pendente" = a Diretoria escolhe quem manda na primeira vez
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
