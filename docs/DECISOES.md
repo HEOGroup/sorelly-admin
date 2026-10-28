@@ -4,6 +4,7 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 ## 27/10/2026
+- **Sons de mensagem do chat (Marcus, 27/10/2026):** escolhido o estilo **Cristal** (opção 5 de `docs/rascunhos/sons-de-mensagem.html`): receber, marcado (@) e enviar. Os sons antigos foram recusados.
 - **Som de digitar (Marcus, 27/10/2026):** o som escolhido para toda escrita do sistema é o **tique de vidro** (opção C da página `docs/rascunhos/sons-de-digitar-2.html`): fino, curto e discreto; espaço, apagar e Enter têm tique próprio. Vale em todo campo de texto, inclusive senha. Os sons antigos (bipe agudo, "toc") foram recusados.
 - **Horário dos colegas no alto da conversa (Marcus, 27/10/2026):** a faixa do chat (dias e horário de trabalho) lê o cadastro do RH, que só existe no computador da Diretoria. Agora a conta de Diretoria que tem o RH aberto envia ao servidor, num módulo aberto a todos (`chathor`), só nome, entrada, saída e dias de cada colaborador (sem salário nem CPF). Quem não tem o RH usa essa cópia.
 - **Apps e "atuar como" (Marcus, 27/10/2026):** valem para Marcus, Nickolas e Lucas (pessoas 16, 17 e 28). Todos os demais usam somente a própria conta e não veem a página Apps. Substitui a regra anterior ("só o Marcus").

@@ -39,9 +39,9 @@ function sopro(c, dur, freq, q, g){
 }
 var SONS = {
   clique:   function(c){ nota(c, 1500, 0, 0.07, "triangle", 0.4); nota(c, 900, 0.015, 0.05, "sine", 0.25); },
-  enviar:   function(c){ nota(c, 520, 0, 0.09, "sine", 0.4); nota(c, 780, 0.07, 0.12, "sine", 0.4); },
-  receber:  function(c){ nota(c, 880, 0, 0.12, "sine", 0.45); nota(c, 660, 0.11, 0.18, "sine", 0.4); },
-  mencao:   function(c){ nota(c, 784, 0, 0.1, "triangle", 0.5); nota(c, 988, 0.1, 0.1, "triangle", 0.5); nota(c, 1319, 0.2, 0.24, "triangle", 0.5); },   // três notas subindo
+  enviar:   function(c){ tomR(c, "sine", 2093, 2637, 0.12, 0.28); },   // mensagem enviada: brilho curto que sobe (Cristal)
+  receber:  function(c){ nota(c, 1760, 0, 0.34, "sine", 0.4); nota(c, 2349, 0.08, 0.42, "sine", 0.38); nota(c, 3520, 0.08, 0.16, "sine", 0.08); },   // chegou mensagem (Cristal)
+  mencao:   function(c){ nota(c, 1760, 0, 0.22, "sine", 0.4); nota(c, 2349, 0.09, 0.22, "sine", 0.4); nota(c, 2960, 0.18, 0.5, "sine", 0.42); },   // alguém marcou você: três brilhos subindo (Cristal)
   atraso:   function(c){ for(var i=0;i<3;i++){ nota(c, 440, i*0.32, 0.16, "square", 0.22); nota(c, 330, i*0.32+0.16, 0.16, "square", 0.22); } },       // sirene grave repetida
   concluir: function(c){ nota(c, 523, 0, 0.1, "sine", 0.4); nota(c, 659, 0.09, 0.1, "sine", 0.4); nota(c, 784, 0.18, 0.2, "sine", 0.4); },
   contar:   function(c){ nota(c, 1250 + Math.random()*180, 0, 0.022, "sine", 0.07); },   // tique baixinho dos números que sobem (padrão do sistema inteiro)

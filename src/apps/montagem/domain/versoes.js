@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.16.8", data:"2026-10-27", titulo:"Sons de mensagem: Cristal", itens:[
+    {tipo:"melhoria", area:"Chat", txt:"Novos sons do chat no estilo \"Cristal\": chegou mensagem (dois brilhos), alguém marcou você com @ (três brilhos subindo) e mensagem enviada (brilho curto). Escolhido pelo Marcus entre 5 opções."},
+  ]},
   {v:"0.16.7", data:"2026-10-27", titulo:"Som de digitar novo: tique de vidro", itens:[
     {tipo:"melhoria", area:"Tecnologia", txt:"Novo som ao escrever, em todo campo do sistema (chat, formulários e senha): um tique fino de vidro, discreto. Espaço, apagar e Enter têm um tique próprio. Escolhido pelo Marcus entre 11 opções."},
   ]},
