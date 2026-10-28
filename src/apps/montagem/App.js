@@ -50,7 +50,7 @@ import { CHAVE, inicial } from "@/apps/montagem/state/store";
 import { Ctx } from "@/apps/montagem/state/context";
 import { reducer } from "@/apps/montagem/state/reducer";
 import { Icon } from "@/apps/montagem/ui/icon";
-import { ChatGlobal, ChatMini, useEu } from "@/apps/montagem/components/chat/chat-app";
+import { BadgeNaoLidas, ChatGlobal, ChatMini, useEu } from "@/apps/montagem/components/chat/chat-app";
 import { ehDirecao } from "@/apps/montagem/domain/chat-contatos";
 import { api, efem, definirHorariosRh } from "@/apps/montagem/domain/chat-store";
 import { horariosDoRh } from "@/apps/montagem/domain/rh";
@@ -259,7 +259,7 @@ function App(){
         e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:podeMenu}),
         e(PilulaSituacao),
         e(BotaoNotificacoes),
-        e("button",{className:"grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22})),
+        e("button",{className:"relative grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22}), e(BadgeNaoLidas,{eu:euChat})),
         e(ContaMenu,{zoom:e(ZoomTela), onTema:toggleTema})),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},

@@ -97,4 +97,12 @@ function ChatMini(p){
         aberto ? e(Ph,{n:"x", s:26, fill:true}) : e(LogoChat,{s:36}),
         !aberto && nl>0 && e("span",{className:"absolute -right-1 -top-1 grid min-w-5 place-items-center rounded-full px-1.5 text-[11.5px] font-bold text-white", style:{background:"#ef4444", height:20}}, nl>99 ? "99+" : nl))));
 }
-export { ChatApp, ChatMini, ChatGlobal, useEu };
+// Contador de não lidas do botão S do topo: número vermelho e um pulso curto quando chega mensagem comum.
+function BadgeNaoLidas(p){
+  var st = useChat(), eu = p.eu, nl = eu ? totalNaoLidas(eu) : 0, pulso = st.efem.pulso || 0;
+  if(!eu) return null;
+  return e("span",{key:pulso, className:"pointer-events-none absolute inset-0 grid place-items-center rounded-lg", style:pulso && Date.now()-pulso<1500 ? {animation:"sorelly-pulso .9s ease-out 1"} : undefined},
+    e("style",null, "@keyframes sorelly-pulso{0%{box-shadow:0 0 0 0 rgba(232,184,75,.9)}100%{box-shadow:0 0 0 14px rgba(232,184,75,0)}}"),
+    nl>0 && e("span",{className:"absolute -right-1.5 -top-1.5 grid min-w-[18px] place-items-center rounded-full px-1 text-[11px] font-bold text-white", style:{background:"#ef4444", height:18}}, nl>99 ? "99+" : nl));
+}
+export { ChatApp, ChatMini, ChatGlobal, BadgeNaoLidas, useEu };

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.16.10", data:"2026-10-27", titulo:"Aviso discreto para mensagem comum", itens:[
+    {tipo:"melhoria", area:"Chat", txt:"Mensagem comum de outras pessoas não abre mais cartão na tela: toca um som Cristal baixinho, o botão S do topo pulsa uma vez e ganha o número vermelho de não lidas. Cartão grande só para o Marcus e para quem te marcar com @."},
+  ]},
   {v:"0.16.9", data:"2026-10-27", titulo:"Conversa do Marcus no alto, aviso grande e situação só para a Diretoria", itens:[
     {tipo:"novo", area:"Chat", txt:"A conversa com o Marcus fica sempre no alto da lista de todo mundo (não sai, nem arquivando) e é criada sozinha para cada pessoa. Toda mensagem do Marcus aparece como aviso grande, com a mensagem inteira e resposta rápida, marcando ou não. Quem te marcou com @ também."},
     {tipo:"melhoria", area:"Chat", txt:"Situação (disponível, em reunião, ausente) só para Marcus, Nickolas e Lucas. Os demais ficam sempre disponíveis e sempre recebem os avisos. Em reunião ou ausente: silêncio total."},

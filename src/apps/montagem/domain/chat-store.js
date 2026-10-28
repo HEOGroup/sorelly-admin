@@ -758,7 +758,8 @@ function notificarRecebida(convId, msg){
   var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, deMarcus = !!MARCUS_CID && msg.de===MARCUS_CID && eu!==MARCUS_CID, grande = meMarcou || deMarcus;
   var aberta = estado.efem.aberta===convId && !document.hidden;
   if(aberta){ markRead(eu, convId, msg.aba); return; }
-  if(notifLer().chat){ if(grande) tocar("mencao"); else tocar("receber"); }
+  if(notifLer().chat){ if(grande) tocar("mencao"); else tocar("receberBaixo"); }
+  if(!grande){ efem({pulso:Date.now()}); return; }   // mensagem comum: só o som baixinho, o contador no botão S e um pulso. Sem cartão (decisão do Marcus, 27/10/2026)
   var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
   efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
   if(!grande) setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);   // o aviso grande fica até a pessoa fechar ou responder
