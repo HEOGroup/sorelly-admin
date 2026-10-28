@@ -3,6 +3,9 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
+## 28/10/2026 (Atendimento interno · Listagens)
+- **Listagens segue o formato da lista da Tamara** (degradê dourado com linhas de corte, tudo centralizado, Qtd. 1, 2, 3…, WhatsApp com botão) e continua por dia, em dropdown. **Média de vendas na Listagem** (para a bipagem escolher quem atende): venda atual (chega da DevMaster depois do atendimento) + as 2 últimas vendas da revendedora; sem a atual, as últimas 3. As agendadas da Tamara aparecem no dia como linhas virtuais; **Atender** cria o atendimento com as condicionais reais (`REVINT_ATENDER`). Pendente: confirmar o acesso da bipagem a esta tela (perfis).
+
 ## 28/10/2026 (App da revendedora · venda)
 - **Venda em 3 passos (Marcus pediu mais simples; Leonardo copia para o app real):** 1 Peças e cliente → 2 Valor e pagamento (desconto + forma de pagar na mesma tela; comissão em uma linha) → 3 Confirmar venda (Registrar venda; "Enviar proposta" é link secundário). Código: `mobile/venda-rev.js`, `mobile/catalogo-rev.js`. Regras de desconto, formas, comissão e link Sorelly não mudaram.
 

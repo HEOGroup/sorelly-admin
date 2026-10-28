@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.1", data:"2026-10-28", titulo:"Atendimento interno · Listagens com a agenda da Tamara, média de vendas e WhatsApp", itens:[
+    {tipo:"novo", area:"Atendimento interno", txt:"Listagens: cada dia mostra as revendedoras agendadas pela Tamara (lidas da DevMaster, atualizadas ao abrir e a cada 10 minutos). Atender cria o atendimento com as condicionais reais e abre a calculadora."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Coluna Média de vendas na Listagem: venda atual (quando chega da DevMaster) mais as 2 últimas vendas; sem a atual, as últimas. Coluna WhatsApp com o número e botão que abre a conversa."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"Revendedoras: a lista se atualiza sozinha (quem virar vendedor Sorelly 02 entra como A contatar), coluna WhatsApp, card maior, nome em fonte padrão, botão Enviar regras no WhatsApp, calendário e horários do dia (3 por horário, 15 por dia, sábado até 11h)."},
+    {tipo:"novo", area:"Kits novos", txt:"Ao solicitar o kit, a Michele pode escolher Sorelly (atendimento interno): a revendedora entra na lista da Tamara com a marca Kit novo."}
+  ]},
   {v:"0.17.0", data:"2026-10-28", titulo:"Acessos por grupo, contas das equipes e chat", itens:[
     {tipo:"novo", area:"RH · Acessos", txt:"Grupos de acesso: Acesso total (Marcus e Leonardo) e Direção (sem Configuradores). Cada conta tem grupo, contato do chat e nome próprios."},
     {tipo:"novo", area:"RH · Contas", txt:"23 contas de Bipagem, Montagem e Encomendas e a tela Senhas para enviar (copiar mensagem e nova senha)."},
