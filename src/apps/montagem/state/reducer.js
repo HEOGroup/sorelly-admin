@@ -227,6 +227,7 @@ function reducer(s, a){
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
+      if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
