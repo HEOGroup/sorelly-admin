@@ -61,6 +61,8 @@ function pessoaDoContato(cid){
   return PESSOA_DO_CID[cid];
 }
 // o Configurador do SorellyChat é só do dono (Marcus, login 16)
+// Criar grupo no SorellyChat: só o Marcus (Marcus, 29/10/2026: "só eu monto os grupos, por setor, e alguns ligam setores"). Funcionário não cria grupo.
+function podeCriarGrupo(cid){ return !!cid && cid===contatoDoLogin(16); }
 function ehDono(idLogin){ return idLogin===16 || idLogin===44; }   // Configurador do chat: Marcus e Leonardo (29/10/2026)
 // direção pelo contato (Marcus, Nickolas, Lucas, Anamaria e a família): vê todas as conversas paralelas dos grupos
 var DIRECAO_NOMES = ["Marcus","Nickolas","Lucas","Anamaria","Marco Antonio","Ana Beatriz"];
@@ -78,4 +80,4 @@ function iniciais(nome){ var p = String(nome||"?").split(/\s+/).filter(Boolean);
 // presença de demonstração: estável por pessoa; em produção virá do servidor (WebSocket)
 function presenca(id){ var h = hash(id); return {online: h%100 < 58, visto: Date.now() - (h%420)*60000}; }
 var id = function(parte){ var c = CONTATOS.find(function(x){ return sem(x.completo).indexOf(sem(parte))===0; }); return c ? c.id : null; };
-export { pessoaDoContato, definirCidConta, registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };
+export { podeCriarGrupo, pessoaDoContato, definirCidConta, registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };

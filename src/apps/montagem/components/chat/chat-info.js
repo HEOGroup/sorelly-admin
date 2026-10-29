@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — components/chat/chat-info.js
 // Dados da conversa (contato ou grupo: nome, foto, membros, administradores, sair) e janelas "Nova conversa" / "Novo grupo".
 import { api, fotoDe, guardarMidia, lerMidia, horarioDe, online, useChat } from "@/apps/montagem/domain/chat-store";
-import { CONTATOS, contato, sem } from "@/apps/montagem/domain/chat-contatos";
+import { CONTATOS, contato, podeCriarGrupo, sem } from "@/apps/montagem/domain/chat-contatos";
 import { Avatar, Ph, W, Janela, Vazio } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
@@ -68,9 +68,9 @@ function SeletorPessoas(p){
 
 function NovaConversa(p){
   var st = useChat(), md = useState("lista"), modo = md[0], setModo = md[1];
-  if(modo==="grupo") return e(NovoGrupo,{eu:p.eu, fechar:p.fechar, aoCriar:p.abrir});
+  if(modo==="grupo" && podeCriarGrupo(p.eu)) return e(NovoGrupo,{eu:p.eu, fechar:p.fechar, aoCriar:p.abrir});
   return e(Janela,{titulo:"Nova conversa", fechar:p.fechar, largura:420},
-    e("button",{onClick:function(){ setModo("grupo"); }, className:"flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/5"},
+    podeCriarGrupo(p.eu) && e("button",{onClick:function(){ setModo("grupo"); }, className:"flex w-full items-center gap-3 px-4 py-3 text-left hover:bg-white/5"},
       e("span",{className:"grid size-10 place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"users-three", s:22, fill:true, style:{color:"#fff"}})), e("span",{className:"text-[14px] font-medium"}, "Novo grupo")),
     e(SeletorPessoas,{lista:contatosVisiveis(st, p.eu), linha:function(c){
       return e("button",{key:c.id, onClick:function(){ p.abrir(api.openDm(p.eu, c.id)); }, className:"flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-white/5"},

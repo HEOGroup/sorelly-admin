@@ -55,7 +55,7 @@ function rhDemo(){
 // ---------- colaboradores ----------
 // Dados pessoais e de folha vêm da planilha FUNCIONARIOS - CONTROLE 2026, guardada num arquivo LOCAL (fora do GitHub). Sem o arquivo, o cadastro começa vazio e o RH preenche na tela.
 var LOCAIS = (function(){ var m = globLocal("apps/montagem/domain/rh-funcionarios.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : []; })();
-var ALIAS_PLANILHA = {"sthefany-marques-de-aquino-correa":"sthafany-marques-de-aquino-correa"};   // a planilha escreve Sthefany; a lista de Pessoas, Sthafany
+var ALIAS_PLANILHA = {"sthefany-marques-de-aquino-correa":"sthafany-marques-de-aquino-correa", "thaylianny-aparecida-jacob":"thalyanny-aparecida-jacob"};   // a planilha escreve Thaylianny; o certo é Thalyanny (29/10/2026)   // a planilha escreve Sthefany; a lista de Pessoas, Sthafany
 var LOCAL_POR_ID = {}; LOCAIS.forEach(function(x){ LOCAL_POR_ID[ALIAS_PLANILHA[x.id]||x.id] = x; });
 var titulo = function(t){ return String(t||"").toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/\s(Da|De|Do|Das|Dos|E)\s/g, function(m){ return m.toLowerCase(); }); };
 var dadosLocal = function(x){ return {funcao:x.funcao, folha:x.folha, termoPeca:!!x.termoPeca, cpf:x.cpf, vt:x.vt, nascimento:x.nascimento, telefone:x.telefone, cidade:x.cidade, admissao:x.admissao, salario:x.salario, entrada:x.entrada, saida:x.saida, escalaId:x.escala, aviso:!!x.aviso,

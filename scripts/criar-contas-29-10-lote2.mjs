@@ -1,11 +1,11 @@
-// Contas de Thaylianny, Ana Paula (RH), Geovana Santos e Majorry (pedido do Marcus, 29/10/2026): Acesso básico (Início, SorellyChat, Melhorias) até o Marcus alinhar o que liberar. Pode rodar de novo.
+// Contas de Thalyanny (antes escrita Thaylianny, corrigida em scripts/corrigir-thalyanny.mjs), Ana Paula (RH), Geovana Santos e Majorry (pedido do Marcus, 29/10/2026): Acesso básico (Início, SorellyChat, Melhorias) até o Marcus alinhar o que liberar. Pode rodar de novo.
 //   node --env-file-if-exists=.env.local scripts/criar-contas-29-10-lote2.mjs
 import { randomInt } from "node:crypto";
 import { consulta, pool } from "../src/server/db.js";
 import { criarHash } from "../src/server/senha.js";
 
 const PESSOAS = [
-  ["Thaylianny Aparecida Jacob", 48, "thaylianny", "f_thayliannyaparecidajacob"],
+  ["Thalyanny Aparecida Jacob", 48, "thalyanny", "f_thalyannyaparecidajacob"],
   ["Ana Paula de Almeida Fernandes", 49, "anapaula", "f_anapauladealmeidafernandes"],
   ["Geovana Santos Neves", 50, "geovana", "f_geovanasantosneves"],
   ["Majorry Prost Fermino dos Santos", 23, "majorry", "f_majorryprostferminodossantos"],

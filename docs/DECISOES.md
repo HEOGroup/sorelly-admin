@@ -14,6 +14,10 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Cópia de segurança antes do corte:** tabela `sorelly.estado_modulo_copia_20261029`.
 - **PENDENTE (não está pronto):** (1) contas pagas por dia e faturamento diário só existem no navegador/arquivo local, NÃO em módulo do servidor: a equipe não consegue compartilhar o lançamento diário; (2) Fiscal (notas de entrada e saída) e Contas por mês (`faturamento_contas_mes`) não foram puxados; (3) fechamento de mês (saldo de fim de mês, reabrir mês) não existe no novo; (4) login real, backup diário e registro de quem fez o quê (Leonardo).
 
+## 29/10/2026 (SorellyChat · só o Marcus cria grupos)
+- **Marcus (29/10/2026): funcionário não faz grupo.** Só o Marcus monta os grupos, por setor, e alguns grupos ligam setores. `podeCriarGrupo(cid)` em `domain/chat-contatos.js` (só o contato do login 16); o botão Novo grupo some nas janelas Nova conversa e na lista; `criarGrupo` do `chat-store.js` recusa; o servidor (`app/api/chat/conv/route.js`) recusa grupo NOVO com id `g_` de quem não é o Marcus (grupos do sistema, id `c_`, não mudam). Grupos que funcionários já tinham criado ficam como estão. Leonardo não cria (só o Marcus); dizer se quiser incluir.
+- **Conta da Thalyanny (29/10/2026):** o nome certo é Thalyanny (estava Thaylianny); login `thalyanny`, e-mail interno `thalyanny@interno.sorelly`, chat `f_thalyannyaparecidajacob`; senha provisória nova gerada por `scripts/corrigir-thalyanny.mjs`. Alias `thaylianny-aparecida-jacob` em `ALIAS_PLANILHA` (RH) liga a planilha ao nome certo.
+
 ## 29/10/2026 (RH · o sistema novo é a fonte dos horários)
 - **Marcus (29/10/2026): "precisamos começar a usar só o novo".** A cópia dos horários foi feita UMA vez, do admin ANTIGO (única fonte com a saída real), e acabou. Daqui em diante o horário vive no RH do sistema novo: RH › Colaboradores tem **Horário de entrada** e **Horário de saída** (`saida` no cadastro; o que o RH digitar vale por cima do arquivo local) e o SorellyChat lê dali. Não ler mais o admin antigo para isso.
 

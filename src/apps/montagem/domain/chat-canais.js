@@ -8,7 +8,7 @@ var CANAIS_REP = [
   {id:"diretoria", nome:"Diretoria", ic:"crown-simple", cor:"#B8862B", para:"Só urgências. Marcus responde 24 horas; Nickolas e Lucas, no horário de trabalho.", membros:["Marcus","Nickolas","Lucas"]},
   {id:"financeiro", nome:"Financeiro", ic:"bank", cor:"#3B82F6", para:"Comissões e pagamentos: primeiro com o Lucas.", membros:["Lucas","Nayale","Bruna"]},
   {id:"agendamento", nome:"Agendamento", ic:"calendar-dots", cor:"#A855F7", para:"Horários de acerto, atrasos e remarcações.", membros:["Ana Maria Divino","Mariana","Tamara"]},
-  {id:"cadastro", nome:"Cadastro de Revendedoras", ic:"identification-card", cor:"#F97316", para:"Atualizar o cadastro de uma revendedora (endereço, telefone, dados).", membros:["Camilly","Thaylianny"]},
+  {id:"cadastro", nome:"Cadastro de Revendedoras", ic:"identification-card", cor:"#F97316", para:"Atualizar o cadastro de uma revendedora (endereço, telefone, dados).", membros:["Camilly","Thalyanny"]},
   {id:"kits", nome:"Kits", ic:"gift", cor:"#22C55E", para:"Informar ou tirar dúvida sobre algum kit.", membros:["Deysiane","Leci","Edna"]},
   {id:"encomendas", nome:"Encomendas", ic:"package", cor:"#14B8A6", para:"Saber se as peças de uma cliente já foram separadas.", membros:["Agatha","Eduarda Gabriela","Elen"]},
   {id:"kitsnovos", nome:"Kits Novos", ic:"sparkle", cor:"#EC4899", para:"Revendedoras novas que foram direcionadas para você.", membros:["Michele"]}

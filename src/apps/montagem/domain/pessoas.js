@@ -9,7 +9,7 @@ var FUNCIONARIOS_POR_SETOR = [
     ["Natasha Ribeiro Lemes da Silva","","46"], ["Renata Dolato","","67"], ["Sthafany Marques de Aquino Correa","","67"]]],
   ["Bipagem", [["Gabrielly Morais Evangelista da Silva","","59"], ["Maria Eduarda de Assunção","","67"]]],
   ["Cadastro de peças", [["Graziella de Antoni dos Anjos","","67"], ["Rayssa Alessandra Ingatain","","46"]]],
-  ["Cadastro de revendedoras", [["Camilly de Sousa Maciel","","46"], ["Thaylianny Aparecida Jacob","","67"]]],
+  ["Cadastro de revendedoras", [["Camilly de Sousa Maciel","","46"], ["Thalyanny Aparecida Jacob","","67"]]],
   ["Compras", [["Helen Garmier da Silva","","59"]]],
   ["Condicionais", [["Majorry Prost Fermino dos Santos","","34"]]],
   ["Encomendas", [["Agatha Kristye Lencioni Mota","","46"], ["Eduarda Gabriela Henrique Lima","","46"], ["Elen Vitoria Lourenço de Bonfim","","34"], ["Joao Guilherme de Oliveira","","46"]]],

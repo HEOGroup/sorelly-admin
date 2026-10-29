@@ -4,7 +4,7 @@
 // Quando o servidor existir, só o corpo das funções de `api` troca (HTTP + WebSocket); as telas não mudam.
 // Tabelas previstas no banco: users, conversations, conversation_members, messages, attachments, reactions, pins, mentions, work_sessions.
 import { React } from "@/shared/react";
-import { CONTATOS, contato, contatoDoLogin, pessoaDoContato, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
+import { CONTATOS, contato, contatoDoLogin, podeCriarGrupo, pessoaDoContato, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
 import { enviarFotoPessoa, fotoDoServidor, minhaSituacao } from "@/apps/montagem/lib/perfil";
 import { horariosParaChat } from "@/apps/montagem/domain/rh";
 import { tocar } from "@/apps/montagem/lib/sons";
@@ -73,7 +73,7 @@ function semear(){
 
   C("c_cad","grupo","Cadastro de Revendedoras", porSetor("Cadastro de revendedoras").concat([I("Michele"), marcus, nick]), [I("Michele")], {descr:"Entrada de novas revendedoras, kits novos e distribuição."});
   M("c_cad", I("Camilly"), 200, "Entraram 14 cadastros novos hoje. 9 já foram aprovados.");
-  M("c_cad", I("Thaylianny"), 190, "Ficaram 2 pendentes: documento ilegível. Já pedi outro pelo WhatsApp da cliente.");
+  M("c_cad", I("Thalyanny"), 190, "Ficaram 2 pendentes: documento ilegível. Já pedi outro pelo WhatsApp da cliente.");
   M("c_cad", I("Michele"), 100, "Vou direcionar 6 para representantes e 3 vêm retirar aqui na Sorelly.");
   Mr("c_cad", I("Michele"), 12, "@Marcus Hess pode liberar o kit da Beatriz Nogueira? O pagamento já caiu.", [marcus]);
 
@@ -126,7 +126,7 @@ function semear(){
   D(dey, I("Edna"), [[dey, 150, "Edna, hoje você fica no treinamento das novas bipadoras, tudo bem?"], [I("Edna"), 140, "Tudo certo, Deysi! Já separei o material."]]);
   D(I("Ana Maria Divino"), nay, [[I("Ana Maria Divino"), 100, "Nay, o recebimento da Thalita já foi conferido. Pode dar o OK."], [nay, 95, "Dou agora."]]);
   D(I("Rayssa"), I("Graziella"), [[I("Graziella"), 210, "Rayssa, lancei os 14 modelos novos. Falta só o preço da diretoria."], [I("Rayssa"), 205, "Perfeito, o Marcus já está vendo."]]);
-  D(I("Camilly"), I("Thaylianny"), [[I("Camilly"), 260, "Thay, assume os cadastros da tarde? Preciso sair mais cedo."], [I("Thaylianny"), 255, "Assumo sim!"]]);
+  D(I("Camilly"), I("Thalyanny"), [[I("Camilly"), 260, "Thay, assume os cadastros da tarde? Preciso sair mais cedo."], [I("Thalyanny"), 255, "Assumo sim!"]]);
   var rep1 = I("Dayanne"), rep2 = I("Lysie"), cam = I("Camilly");
   var cId = "cn_cadastro_"+rep1; C(cId, "setor", "Cadastro de Revendedoras", [rep1].concat(membrosDoCanal("cadastro")), [], {canal:"cadastro", repId:rep1, atendente:cam});
   M(cId, rep1, 190, "Oi! A Beatriz Nogueira mudou de endereço. Posso mandar o novo por aqui?");
@@ -589,6 +589,7 @@ function abrirCanal(repCid, canalId, extra){
   return id;
 }
 function criarGrupo(p){
+  if(!podeCriarGrupo(p.eu)) return null;   // só o Marcus cria grupo
   var id = uid("g_");
   mudar(function(s){ var o = {}; o[id] = [];
     return Object.assign({}, s, {convs:s.convs.concat([{id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}]), msgs:Object.assign({}, s.msgs, o)}); });

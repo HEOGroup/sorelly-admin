@@ -2,7 +2,7 @@
 // Lista de conversas (estilo WhatsApp): faixa dourada "SorellyChat" com menu, perfil, busca global em conversas e mensagens, filtros, fixadas e não lidas.
 // A Direção ainda pode ver o WhatsApp de qualquer funcionário (só leitura) e todas as conversas da empresa.
 import { api, efem, estaOcupado, motivoOcupado, fotoDe, useChat, textoPrevia } from "@/apps/montagem/domain/chat-store";
-import { CONTATOS, contato, sem } from "@/apps/montagem/domain/chat-contatos";
+import { CONTATOS, contato, podeCriarGrupo, sem } from "@/apps/montagem/domain/chat-contatos";
 import { NovoGrupo, FotoEditavel } from "@/apps/montagem/components/chat/chat-info";
 import { SeletorFundo } from "@/apps/montagem/components/chat/chat-fundos";
 import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista } from "@/apps/montagem/components/chat/chat-ui";
@@ -41,7 +41,7 @@ function VerComo(p){
   return e(Popover,{className:p.className, fechar:p.fechar, largura:p.largura},
     e("div",{className:"max-h-[58vh] overflow-y-auto"},
       e("div",{className:"px-2 pb-1"}, e("input",{autoFocus:true, value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa ou setor", "aria-label":"Buscar", className:"h-8 w-full rounded-lg px-3 text-[12px] outline-none", style:{background:W.campo, color:W.texto}})),
-      !pessoas && p.nova && e("button",{onClick:p.aoGrupo, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:"#fff"}})), e("span",{className:"font-medium"}, "Novo grupo")),
+      !pessoas && p.nova && podeCriarGrupo(p.euReal) && e("button",{onClick:p.aoGrupo, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:"#fff"}})), e("span",{className:"font-medium"}, "Novo grupo")),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, false); }, className:linha}, e(Avatar,{id:p.euReal, s:26}), e("span",{className:"font-medium"}, "O meu SorellyChat")),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, true); }, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:OURO}}, e(Ph,{n:"eye", s:15, fill:true, style:{color:OURO_TXT}})), e("span",{className:"font-medium"}, "Todas as conversas")),
       !pessoas && e("p",{className:"px-3 pb-0.5 pt-1.5 text-[9.5px] font-extrabold uppercase tracking-wide", style:{color:W.ouro}}, "Setores"),
@@ -196,7 +196,7 @@ function ListaConversas(p){
           motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); api.resolveConv(id, eu, ""); }}, "Marcar como resolvida"),
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),
-    grupoNovo && e(NovoGrupo,{eu:eu, fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
+    grupoNovo && podeCriarGrupo(eu) && e(NovoGrupo,{eu:eu, fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
     escolhendo && e(VerComo,{euReal:euReal, modo:escolhendo, fechar:function(){ setEscolhendo(false); }}));
 }
 export { BarraChat, ListaConversas, OURO, OURO_TXT };
