@@ -175,6 +175,10 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Erros de cadastro vistos na DevMaster: título GRA 34 com vencimento no ano 0026 (R$ 1.500,00) e título PÇ 39 de 15/11/2025 (R$ 4.065,00) ainda em aberto.
 - 37 títulos que estavam na lista de 22/10 (R$ 732.943,70) não estão mais em aberto: foram pagos ou renegociados.
 
+## Faturamento fixado em 28/10/2026 (valores do Marcus, 29/10/2026)
+- Acumulado do mês em 28/10, DevMaster, sem funcionários: **1.652 acertos e R$ 1.296.201,60**. Dia 28 por diferença com 27/10: 69 acertos e R$ 43.459,08. Carregar = 0. Acertos que faltam no mês (previsão de devolução até 31/10): 234. Total do mês 1.652 + 0 + 234 = 1.886.
+- Código: `aplicaFat28` em `state/store.js` (flag `fat28V`).
+- Teste de 29/10: a leitura automática do faturamento (notas de saída `dmabl`) dava só R$ 262.449,25 até 27/10 e **não reproduz** o relatório de notas fiscais; o robô das 10h foi DESLIGADO (`instrumentation.js` e rota `/api/faturamento/dia`). A DevMaster dá 233 acertos que faltam no mês (o Marcus viu 234).
 ## Atualização automática de 29/10/2026 (3h, lido do admin antigo)
 - Saldos das 29 contas gravados também para 28/10 (`saldos-atualizacao.local.js`). Soma das contas bancárias (sem Retido e sem Dinheiro): 28/10 = −R$ 227.119,68 (27/10 era −R$ 218.823,61). Sicredi Shopping 46: −R$ 5.138,96. Sicredi Serenity: −R$ 6.127,90. Itaú Black: −R$ 26.379,17.
 - Contas pagas: o admin antigo ainda NÃO tem linha do dia 28/10. Última linha é 27/10 (R$ 11.508,02, igual ao já gravado). Dia 28/10 fica sem contas pagas até o admin lançar.

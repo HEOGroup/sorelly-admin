@@ -3,6 +3,23 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.6", data:"2026-10-29", titulo:"SorellyChat: sem selo de pendência na lista", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"A lista de conversas não mostra mais o selo amarelo de pendência nem o realce da linha. O horário de trabalho e de almoço aparece para quem vê a conversa com uma colaboradora, inclusive vendo como a Bruna."},
+  ]},
+  {v:"0.17.5", data:"2026-10-29", titulo:"SorellyChat: topo travado", itens:[
+    {tipo:"correção", area:"SorellyChat", txt:"A página inteira não rola mais junto com o chat. Só a lista de conversas e a conversa rolam; o topo fica parado. A altura do chat é refeita sempre que o topo da tela muda."},
+  ]},
+  {v:"0.17.4", data:"2026-10-29", titulo:"SorellyChat mais limpo e contagem de revendedoras", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"Na conversa com um colaborador, o topo mostra só o horário de trabalho. Saíram as bolinhas dos últimos 10 dias e o resumo do mês."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Saiu a barra \"Marcar pendente / Marcar resolvida\" de dentro da conversa."},
+    {tipo:"correção", area:"Servidor", txt:"O robô das revendedoras (18h) conta condicional aberto emitido nos últimos 180 dias, com devolução prevista até 90 dias à frente. Antes eram 90 dias de emissão e dava 5 a menos que a DevMaster."},
+  ]},
+  {v:"0.17.3", data:"2026-10-29", titulo:"Faturamento de 28/10 fixado e robô do faturamento desligado", itens:[
+    {tipo:"correção", area:"Financeiro · Faturamento", txt:"28/10 fixado: 1.652 acertos e R$ 1.296.201,60 acumulados; Carregar 0 e 234 acertos a realizar (total 1.886)."},
+    {tipo:"correção", area:"Servidor", txt:"O robô que lia o faturamento às 10h foi desligado: a regra dele dava só cerca de R$ 262 mil no mês e gravaria o valor errado."}
+  ]},
+  {v:"0.17.2", data:"2026-10-29", titulo:"Contas a pagar: já pago e falta pagar vêm direto da DevMaster", itens:[
+    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor, a cada 10 minutos."}
   {v:"0.17.16", data:"2026-10-29", titulo:"SorellyChat mais limpo", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"Na conversa com um colaborador, o topo mostra só o horário de trabalho. Saíram as bolinhas dos últimos 10 dias e o resumo do mês."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Saiu a barra \"Marcar pendente / Marcar resolvida\" de dentro da conversa."},

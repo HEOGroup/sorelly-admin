@@ -1,8 +1,7 @@
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
-// Força a atualização automática do faturamento do dia anterior (ver src/server/faturamento-dia.js) na hora, sem esperar as 10h.
-// Só a Diretoria: usar quando a DevMaster caiu na hora certa e precisa tentar de novo.
-import { json, rota } from "@/server/http";
-import { atualizarFaturamentoDoDia } from "@/server/faturamento-dia";
+// DESLIGADA em 29/10/2026: a atualização automática do faturamento (src/server/faturamento-dia.js) usa as notas de saída (dmabl), que dão cerca de
+// R$ 262 mil no mês contra R$ 1,29 mi do relatório de notas fiscais do Marcus, e gravaria o valor errado. Religar só depois de achar a regra do relatório.
+import { erro, rota } from "@/server/http";
 
-export const POST = rota(async () => json(await atualizarFaturamentoDoDia({ forcar: true })), { diretoria: true });
+export const POST = rota(async () => erro("A atualização automática do faturamento está desligada até a regra do relatório de notas fiscais ser conferida.", 503), { diretoria: true });

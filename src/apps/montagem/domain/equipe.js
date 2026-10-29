@@ -84,8 +84,8 @@ var SO_CHAT = [36];
 function grupoDe(id){
   if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
-  if(id===16 || id===17 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas e Leonardo (Marcus, 28/10/2026)
-  if(id===28 || id===29 || id===30 || id===31 || id===37 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
+  if(id===16 || id===17 || id===37 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas, Priscila (secretária) e Leonardo (Marcus, 28/10/2026)
+  if(id===28 || id===29 || id===30 || id===31 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
   if(id===SUPERVISORA.id) return "supervisora";
   return papelDe(id);
 }

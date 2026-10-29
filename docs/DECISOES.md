@@ -1295,6 +1295,33 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 - **Nickolas = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas e Leonardo.
 - **Tamara começa sozinha no Agendamento** com menu individual e o Atendimento interno. As revendedoras internas passam a ficar no servidor (módulo `ri`), e o Agendamento lê a lista da DevMaster (`?rep=02`). Detalhes em `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md`.
 
+## 28/10/2026 · Priscila (secretária do Marcus) com acesso total
+- **Priscila = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas, Priscila e Leonardo. Conta `priscila` (perfil ADMIN, `grupo = supervisao`) e as 7 autorizações de ação iguais às do Marcus. O Financeiro da família (`financeiro_familia`) fica de fora, como para o Nickolas.
+
+## 28/10/2026 · Contas a pagar e contas pagas automáticas; Priscila com tudo
+- **Contas a pagar e contas pagas vêm direto da DevMaster, sem script e sem planilha (Marcus, 28/10/2026).** Servidor: `src/server/contas-dm.js` (cache de 10 min) e rota `/api/contas-dm` (Financeiro e Diretoria). Tela: `lib/contas-dm.js` busca ao abrir e a cada 10 min; os dados valem no lugar dos arquivos locais. CNPJ dos títulos a pagar = o que o Marcus conferiu (módulo `cpfil` no banco) ou a filial da DevMaster.
+- **CNPJ das contas PAGAS = pela conta bancária usada** (aprovado pelo Marcus em 28/10/2026): nome da conta terminado em 34/46/59/67, ou Axis (67), Serenity (59), Comércio (46), Atacadista (34); Caixa e contas pessoais = "por fora". Em 1 a 27/10 (admin antigo × DevMaster): 57 de 100 células dia × CNPJ iguais; total 34 +R$ 4.154, 46 +R$ 8.755, 59 +R$ 2.546, 67 igual, "por fora" +R$ 73.690. De 28/10 em diante vale o servidor; antes disso o dia que já tem valor fica como está.
+- **Priscila = Financeiro da família liberado** (Marcus, 28/10/2026): `ACESSO_FF` e a autorização `financeiro_familia`. Priscila tem tudo igual ao Marcus.
+
+## 28/10/2026 · "Por fora" é lançado pelo Nickolas, não vem da DevMaster
+- **"Contas por fora" = a planilha que o Nickolas passa a preencher direto no sistema (Marcus, 28/10/2026).** A leitura automática da DevMaster (`/api/contas-dm`) preenche só os CNPJs 34, 46, 59 e 67 do Contas pagas por dia; o "por fora" fica como está (`CONTAS_DM` em `state/reducer.js`). Os pagamentos de contas Caixa e pessoais continuam na lista de contas pagas, mas não entram no total diário.
+
+## 28/10/2026 · Previsões de 2027 ficam na filial da DevMaster
+- **As previsões de 2027 (salário, adiantamento, cartão, vale alimentação, INSS...) são lançadas por filial de propósito (Nayale, 28/10/2026)**: vale a filial da DevMaster. Em `src/server/contas-dm.js`, só para vencimento até 31/12/2026 o CNPJ já conferido pelo Marcus vale antes da filial. A lista de "filial errada" (234 títulos, 184 de 2027) estava errada nesses 184: não pedir correção à Nayale.
+
+## 28/10/2026 · Planilha de pagamentos a fornecedores (resumo do mês)
+- O Marcus passou a planilha atualizada (`Pag Fornecedores`). O resumo do mês (A pagar, Pago, Saldo de cada fornecedor, prestador e sócio) é lido da aba RESUMO MÊS por `scripts/planilha-fornecedores.mjs` e agora também é gravado no banco (módulo `pfmes`), para o sistema na Vercel ler sem depender do computador do Marcus. Rodar: `node --env-file-if-exists=.env.local scripts/planilha-fornecedores.mjs "caminho.xlsx"`.
+- Hoje parte dos pagamentos é feita na planilha e depois atualizada na DevMaster. Falta importar, por fornecedor, os lançamentos (Pix de revendedora, boletos, passadas de cartão) das abas de negociação: Office Graf, Point, Ellos, Art Ello, Mega Sul e Pontual (a Pontual está só até 20/10). Ver `docs/negocio/FLUXO-DE-PAGAMENTOS.md`.
+
+## 28/10/2026 · Saldos das contas bancárias compartilhados (Nayale atualiza no admin novo)
+- A Nayale atualizava o saldo das contas no admin antigo (Contas bancárias › Lançamento diário). No novo, a tela é Financeiro › Saldos e análises › Saldo das contas › Contas bancárias (`pages/Caixa.js`, "Lançar saldos"). Os saldos ficavam só no navegador de cada pessoa. Agora `s.saldosContas` é sincronizado pelo servidor (módulo `sc`, setor Financeiro), com os 9 blocos, 30 contas e os saldos de 31/08 a 27/10/2026 já gravados.
+- Limitação: o módulo grava o conjunto inteiro; duas pessoas lançando ao mesmo tempo, vale a última gravação. Partes da Visão geral do Caixa (recebido, faturamento por dia) ainda dependem de arquivos locais do computador do Marcus.
+
+## 29/10/2026 · Contas a pagar direto da DevMaster (alto da tela)
+- Marcus (a mãe questionou o 175 mil e o pago): o sistema tem que chamar a DevMaster, não o admin antigo. Já pago e Falta pagar agora vêm da leitura do servidor. Pendente: R$ 150,00 do dia 01/10 contra a tela da DevMaster e a data do pagamento (pagamento ou débito).
+
+## 29/10/2026 · Faturamento de 28/10 e robô desligado
+- Marcus: gravar 28/10 (1.652 acertos, R$ 1.296.201,60, Carregar 0, 234 a realizar) e desligar o robô do faturamento, que gravaria o valor errado. Pendente: achar a regra do relatório de notas fiscais e definir qual contagem de revendedoras vale.
 
 ## 28/10/2026 · Solicitações de melhorias
 - O sistema foi liberado aos funcionários e chegam muitos pedidos de mudança. Nova tela **Melhorias › Solicitações de melhorias** (`/melhorias`, `pages/Melhorias.js`, `domain/melhorias.js`, estado `s.mel`, ação `MEL`).

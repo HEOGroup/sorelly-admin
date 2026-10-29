@@ -9,15 +9,16 @@ import { consultarTabela, todasAsPaginas } from "./devmaster2.js";
 import { composicaoDoCliente, composicaoGeral, iniciarCargaBrindes, resumoVendas, situacaoBrindes, ultimasVendasDaMedia } from "./vendas-brinde.js";
 
 const TTL = 10 * 60 * 1000;
-const DIAS_JANELA = 90;   // Marcus, 27/10/2026: condicional aberto nos últimos 90 dias, com devolução prevista para até 90 dias à frente
+const DIAS_JANELA = 90;   // devolução prevista para até 90 dias à frente
+const DIAS_EMISSAO = 180; // Marcus, 29/10/2026: condicional emitido nos últimos 180 dias (com 90 dava 2.069; a DevMaster do Marcus mostra 2.074)
 
-// Quantas revendedoras (clientes distintos) têm condicional ABERTO emitido nos últimos 90 dias, com devolução prevista
+// Quantas revendedoras (clientes distintos) têm condicional ABERTO emitido nos últimos 180 dias, com devolução prevista
 // para até 90 dias à frente. Usado pela atualização automática do total de revendedoras (server/revendedoras-dia.js).
 export async function contarRevendedorasHoje() {
   const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
   const iso = (d) => d.toISOString().slice(0, 19);
   const cond = await todasAsPaginas("dmafi", {
-    filtro: { afi_status: "A", afi_data: { gte: iso(new Date(hoje.getTime() - DIAS_JANELA * 86400000)) }, afi_prevdevol: { lte: iso(new Date(hoje.getTime() + DIAS_JANELA * 86400000)) } },
+    filtro: { afi_status: "A", afi_data: { gte: iso(new Date(hoje.getTime() - DIAS_EMISSAO * 86400000)) }, afi_prevdevol: { lte: iso(new Date(hoje.getTime() + DIAS_JANELA * 86400000)) } },
     campos: ["afi_cliente"],
   });
   return new Set(cond.map((x) => x.afi_cliente).filter(Boolean)).size;
