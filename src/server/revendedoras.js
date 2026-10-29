@@ -37,7 +37,7 @@ export function nomeNormal(t) {
 }
 const semCodigoNoFim = (t) => String(t || "").replace(/\s+\d{4,}\s*$/, "");   // alguns vendedores vêm como "NOME 002910"
 
-async function vendedores() {
+export async function vendedores() {
   if (G.__sorellyVend && Date.now() - G.__sorellyVend.em < TTL * 6) return G.__sorellyVend.mapa;
   const itens = await todasAsPaginas("dmaao", { campos: ["aao_codigo", "aao_nome"] });
   const mapa = new Map(itens.map((x) => [String(x.aao_codigo).trim(), nomeNormal(semCodigoNoFim(x.aao_nome))]));
@@ -46,7 +46,7 @@ async function vendedores() {
 }
 
 // A DevMaster guarda o município do cliente como CÓDIGO (ex.: 3782); o nome está na tabela dmaal (Municípios).
-async function municipios(codigos) {
+export async function municipios(codigos) {
   const c = (G.__sorellyMun = G.__sorellyMun || new Map()), faltam = [...new Set(codigos.filter(Boolean))].filter((k) => !c.has(k));
   for (let i = 0; i < faltam.length; i += 250) {
     const r = await consultarTabela("dmaal", { registros: 500, campos: ["aal_codigo", "aal_descricao", "aal_estado"], filtro: { aal_codigo: { in: faltam.slice(i, i + 250) } } });
@@ -77,7 +77,7 @@ export function tiposDasCondicionais(lista) {
 }
 
 // Representante da revendedora: vendedor do kit principal (ignora expositor e encomendas). Sem nenhum: vazio.
-function representanteDe(lista) {
+export function representanteDe(lista) {
   const reais = lista.filter((x) => !NAO_REP.has(x.afi_vendedor) && ano(x) < 2100);
   if (!reais.length) return "";
   const p = reais.filter((x) => x.afi_xreposicao !== "S").sort((a, b) => t(a.afi_data) - t(b.afi_data))[0] || reais.sort((a, b) => t(a.afi_data) - t(b.afi_data))[0];
@@ -216,4 +216,48 @@ export async function fichaRevendedora(cod) {
         resumo2026: st.pronto ? { n: f26.length, bruto: soma("venda"), liquida: soma("liquida"), brinde: soma("brinde"), troca: soma("troca"), indicacao: soma("indicacao"), premiacao: soma("premiacao"), outros: soma("outros") } : null };
     })(),
   };
+}
+
+// ── Agenda do Agendamento (Marcus, 29/10/2026): TODAS as revendedoras com kit ativo.
+// Regra: condicional ABERTO (dmafi, status "A") com devolução prevista até 120 dias à frente; a data de emissão NÃO limita (qualquer emissão, "desde 01/01/0100").
+// Sem limite para trás: quem já passou da data prevista e continua aberta entra como atrasada. Expositor (previsão no ano 3000) fica de fora pela própria data.
+// A data do acerto de cada revendedora = devolução prevista do kit principal (ou do kit novo); sem eles, a mais próxima das outras. Só leitura; cache de 10 min.
+const DIAS_AGENDA = 120;
+export async function listaAgenda({ forcar = false } = {}) {
+  const c = G.__sorellyAgenda;
+  if (!forcar && c && c.dados && Date.now() - c.em < TTL) return c.dados;
+  if (c && c.pend) return c.pend;
+  const pend = (async () => {
+    const hoje = new Date(); hoje.setHours(0, 0, 0, 0);
+    const iso = (d) => d.toISOString().slice(0, 19);
+    const dia = (x) => String(x || "").slice(0, 10);
+    const limite = iso(new Date(hoje.getTime() + DIAS_AGENDA * 86400000));
+    const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc"];
+    const [cond, vend] = await Promise.all([todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { lte: limite } }, campos }), vendedores()]);
+    const porCliente = new Map();
+    cond.forEach((x) => { if (x.afi_cliente) (porCliente.get(x.afi_cliente) || porCliente.set(x.afi_cliente, []).get(x.afi_cliente)).push(x); });
+    const codigos = [...porCliente.keys()], pessoas = new Map();
+    for (let i = 0; i < codigos.length; i += 250) {
+      const lote = await consultarTabela("dmaam", { registros: 500, campos: ["aam_codigo", "aam_nome", "aam_municipio", "aam_estado", "aam_celular", "aam_whatsapp", "aam_situacao"], filtro: { aam_codigo: { in: codigos.slice(i, i + 250) } } });
+      lote.itens.forEach((p) => pessoas.set(p.aam_codigo, p));
+    }
+    const mun = await municipios([...pessoas.values()].map((p) => String(p.aam_municipio || "")));
+    const itens = codigos.map((cod) => {
+      const lista = porCliente.get(cod), tipos = tiposDasCondicionais(lista), rep = representanteDe(lista), p = pessoas.get(cod) || {}, m = mun.get(String(p.aam_municipio || "")) || {};
+      const principais = lista.filter((x) => ["Kit principal", "Kit novo"].includes(tipos.get(x.afi_codigo)));
+      const base = (principais.length ? principais : lista).filter((x) => x.afi_prevdevol).sort((a, b) => String(a.afi_prevdevol).localeCompare(String(b.afi_prevdevol)));
+      const kp = lista.filter((x) => tipos.get(x.afi_codigo) === "Kit principal").sort((a, b) => t(a.afi_data) - t(b.afi_data))[0] || base[0] || lista[0];
+      return {
+        cod, nome: nomeNormal(p.aam_nome), celular: p.aam_celular || p.aam_whatsapp || "", cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
+        repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante",
+        prev: base[0] ? dia(base[0].afi_prevdevol) : "", emissao: kp ? dia(kp.afi_data) : "",
+        kits: lista.length, pecas: lista.reduce((s, x) => s + (Number(x.afi_qtditens) || 0), 0), valor: Math.round(lista.reduce((s, x) => s + (Number(x.afi_valormerc) || 0), 0) * 100) / 100,
+      };
+    }).filter((i) => i.prev).sort((a, b) => a.prev.localeCompare(b.prev) || a.nome.localeCompare(b.nome, "pt-BR"));
+    const dados = { geradoEm: new Date().toISOString(), hoje: dia(iso(hoje)), janelaDias: DIAS_AGENDA, total: itens.length, itens };
+    G.__sorellyAgenda = { dados, em: Date.now() };
+    return dados;
+  })().finally(() => { if (G.__sorellyAgenda) delete G.__sorellyAgenda.pend; });
+  G.__sorellyAgenda = Object.assign({}, c, { pend });
+  return pend;
 }

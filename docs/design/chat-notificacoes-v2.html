@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · aviso 1 com 2 linhas e sons mais fortes</title>
+<style>
+:root{--ouro:#E8B84B;--cx:#110e08;--tx:#fff;--mut:#bdb39d}
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:radial-gradient(ellipse at 50% 0%,#201808,#0a0806 55%,#050403);color:var(--tx);min-height:100vh;padding:24px}
+h1{font-size:18px;margin:0 0 4px;text-align:center}p.sub{margin:0 0 18px;text-align:center;color:var(--mut)}
+h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);margin:22px 0 10px;text-align:center}
+.grade{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:980px;margin:0 auto}
+.bt{height:32px;min-width:96px;padding:0 14px;border-radius:8px;border:1px solid rgba(232,184,75,.4);background:#1b1710;color:var(--ouro);font:inherit;font-weight:600;cursor:pointer}
+.bt:hover{border-color:var(--ouro)}
+.som{width:220px;border:1px solid rgba(232,184,75,.28);border-radius:12px;background:var(--cx);padding:12px;text-align:center}
+.som b{display:block;margin-bottom:2px}.som small{display:block;color:var(--mut);margin-bottom:10px}
+.som label{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:10px;color:var(--mut);cursor:pointer}
+#pilha{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;z-index:9;max-width:calc(100vw - 32px)}
+.av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#1a1405;flex:none;background:linear-gradient(145deg,#f1cd75,#b8892a)}
+/* aviso 1: cartão com foto, nome e prévia em 2 linhas */
+.n1{width:340px;display:flex;gap:10px;align-items:flex-start;padding:10px 12px;background:#111b21;border:1px solid rgba(232,184,75,.35);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:entra .25s;cursor:pointer}
+.n1 .t{min-width:0;flex:1}.n1 b{display:block;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.n1 span{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;color:#cfd8dc;margin-top:1px}
+.n1 time{font-size:11px;color:var(--mut);flex:none}
+@keyframes entra{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sai{to{transform:translateX(30px);opacity:0}}
+.nota{max-width:700px;margin:18px auto 0;text-align:center;color:var(--mut)}
+</style></head><body>
+<h1>SorellyChat · aviso 1 e sons mais fortes</h1>
+<p class="sub">A prévia da mensagem agora ocupa até 2 linhas. Escolha um som, marque "Tocar junto" e clique em "Mostrar aviso".</p>
+
+<h2>Aviso</h2>
+<div class="grade">
+  <button class="bt" id="mostra1" style="min-width:200px">Mostrar aviso (mensagem curta)</button>
+  <button class="bt" id="mostra2" style="min-width:200px">Mostrar aviso (mensagem longa)</button>
+</div>
+
+<h2>Sons (mais fortes, sem cansar)</h2>
+<div class="grade">
+  <div class="som"><b>A · Cristal forte</b><small>O som atual, com mais volume</small><button class="bt" data-s="a">Tocar</button><label><input type="radio" name="som" value="a" checked> Tocar junto com o aviso</label></div>
+  <div class="som"><b>B · Gota firme</b><small>Uma nota que cai, mais presente</small><button class="bt" data-s="b">Tocar</button><label><input type="radio" name="som" value="b"> Tocar junto com o aviso</label></div>
+  <div class="som"><b>C · Sino duplo</b><small>Dois toques claros</small><button class="bt" data-s="c">Tocar</button><label><input type="radio" name="som" value="c"> Tocar junto com o aviso</label></div>
+  <div class="som"><b>D · Bolha</b><small>Estalo curto, mais forte</small><button class="bt" data-s="d">Tocar</button><label><input type="radio" name="som" value="d"> Tocar junto com o aviso</label></div>
+</div>
+<p class="nota">Os sons duram menos de meio segundo e têm ataque suave, para não cansar quem recebe muitas mensagens. Me diga a letra que você escolher.</p>
+<div id="pilha"></div>
+<script>
+var ctx, mestre;
+function ac(){
+  if(!ctx){ ctx = new (window.AudioContext||window.webkitAudioContext)();
+    mestre = ctx.createDynamicsCompressor(); mestre.threshold.value = -14; mestre.ratio.value = 4; mestre.attack.value = 0.003; mestre.release.value = 0.2;   // segura os picos: forte, mas sem estourar
+    mestre.connect(ctx.destination); }
+  if(ctx.state==="suspended") ctx.resume(); return ctx; }
+function nota(f,ini,dur,tipo,vol,fim){ var c=ac(),o=c.createOscillator(),g=c.createGain(),t=c.currentTime+ini; o.type=tipo||"sine"; o.frequency.setValueAtTime(f,t); if(fim) o.frequency.exponentialRampToValueAtTime(fim,t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(mestre); o.start(t); o.stop(t+dur+0.05); }
+var SONS={
+  a:function(){ nota(1760,0,.34,"sine",.8); nota(2349,.09,.42,"sine",.75); nota(3520,.09,.18,"sine",.14); nota(880,0,.3,"triangle",.18); },
+  b:function(){ nota(880,0,.32,"sine",.9,520); nota(1320,0,.22,"sine",.22,780); nota(440,0,.3,"triangle",.22,260); },
+  c:function(){ [0,.2].forEach(function(t){ nota(1568,t,.5,"sine",.75); nota(3136,t,.35,"sine",.22); nota(2093,t,.45,"triangle",.2); }); },
+  d:function(){ nota(500,0,.1,"sine",.95,1100); nota(1500,.07,.08,"sine",.35); nota(250,0,.1,"triangle",.3,600); }
+};
+document.querySelectorAll("[data-s]").forEach(function(b){ b.onclick=function(){ SONS[b.dataset.s](); }; });
+var pilha=document.getElementById("pilha");
+function remove(el){ el.style.animation="sai .2s forwards"; setTimeout(function(){ el.remove(); },200); }
+function mostra(txt){
+  var hh=new Date().toTimeString().slice(0,5), el=document.createElement("div");
+  el.className="n1"; el.innerHTML='<div class="av">N</div><div class="t"><b>Natasha - Kits e Atendimento</b><span>'+txt+'</span></div><time>'+hh+'</time>';
+  pilha.appendChild(el); el.onclick=function(){ remove(el); }; setTimeout(function(){ if(el.parentNode) remove(el); }, 7000);
+  var r=document.querySelector("input[name=som]:checked"); if(r) SONS[r.value]();
+}
+document.getElementById("mostra1").onclick=function(){ mostra("Oi Marcus, o kit da Ketlyn já está pronto?"); };
+document.getElementById("mostra2").onclick=function(){ mostra("Oi Marcus, preciso confirmar o kit da Ketlyn e da Maria Luysa antes das 15h, porque as duas vêm buscar hoje. Pode me responder quando puder?"); };
+</script></body></html>

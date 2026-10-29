@@ -57,6 +57,7 @@ const montagem = {
     { index: true, element: e(Inicial) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
     pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
+    pagina("agendamento-revendedoras", () => import("@/apps/montagem/pages/AgendamentoRevendedoras"), "AbaAgRevendedoras"),
     pagina("agendamento-remarcacoes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgRemarc"),
     pagina("plano-45-60-indicacoes", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Ind"),
     pagina("plano-45-60-aprovacao", () => import("@/apps/montagem/pages/Plano4560"), "AbaP45Apr"),

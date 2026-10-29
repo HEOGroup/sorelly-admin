@@ -40,7 +40,7 @@ function sopro(c, dur, freq, q, g){
 var SONS = {
   clique:   function(c){ nota(c, 1500, 0, 0.07, "triangle", 0.4); nota(c, 900, 0.015, 0.05, "sine", 0.25); },
   enviar:   function(c){ tomR(c, "sine", 2093, 2637, 0.12, 0.28); },   // mensagem enviada: brilho curto que sobe (Cristal)
-  receber:  function(c){ nota(c, 1760, 0, 0.34, "sine", 0.4); nota(c, 2349, 0.08, 0.42, "sine", 0.38); nota(c, 3520, 0.08, 0.16, "sine", 0.08); },   // chegou mensagem (Cristal)
+  receber:  function(c){ nota(c, 1760, 0, 0.34, "sine", 0.66); nota(c, 2349, 0.09, 0.42, "sine", 0.6); nota(c, 3520, 0.09, 0.18, "sine", 0.11); nota(c, 880, 0, 0.3, "triangle", 0.14); },   // chegou mensagem (Cristal forte, escolhido pelo Marcus em 29/10/2026)
   receberBaixo: function(c){ nota(c, 1760, 0, 0.3, "sine", 0.16); nota(c, 2349, 0.08, 0.36, "sine", 0.15); },   // mensagem comum: Cristal baixinho, sem aviso na tela
   mencao:   function(c){ nota(c, 1760, 0, 0.22, "sine", 0.4); nota(c, 2349, 0.09, 0.22, "sine", 0.4); nota(c, 2960, 0.18, 0.5, "sine", 0.42); },   // alguém marcou você: três brilhos subindo (Cristal)
   atraso:   function(c){ for(var i=0;i<3;i++){ nota(c, 440, i*0.32, 0.16, "square", 0.22); nota(c, 330, i*0.32+0.16, 0.16, "square", 0.22); } },       // sirene grave repetida

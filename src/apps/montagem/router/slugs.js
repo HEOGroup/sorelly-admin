@@ -29,6 +29,7 @@ export const SLUG_DA_ABA = {
   painel: "listagens",
   visaobip: "visao-bipagem",
   agpainel: "agendamento",
+  agrevs: "agendamento-revendedoras",
   agremarc: "agendamento-remarcacoes",
   p45ind: "plano-45-60-indicacoes",
   p45apr: "plano-45-60-aprovacao",
