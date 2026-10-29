@@ -3,6 +3,16 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.18", data:"2026-10-29", titulo:"Agendamento › Revendedoras: todas com kit ativo e calendário de acertos", itens:[
+    {tipo:"novo", area:"Agendamento", txt:"Nova aba Revendedoras (/agendamento/revendedoras): as 2.074 revendedoras com kit ativo (condicional aberto na DevMaster com devolução prevista até 120 dias à frente; emissão sem limite). Desenho copiado da aba Revendedoras do Atendimento interno: calendário, painel do dia, tabela com filtro no título da coluna e visão Calendário grande."},
+    {tipo:"novo", area:"Agendamento", txt:"O calendário CONTA ACERTOS por dia, somando todas as representantes (cor mais forte = mais acertos). O painel do dia mostra o total e o número de acertos de cada representante; clicar numa representante filtra. Filtrou uma ou várias representantes, uma revendedora ou uma coluna? O calendário e o painel passam a mostrar só quem sobrou."},
+    {tipo:"novo", area:"Servidor", txt:"Rota /api/agenda-revendedoras (server/revendedoras.js › listaAgenda), só leitura, cache de 10 minutos; abre para Agendamento e Diretoria."},
+    {tipo:"correção", area:"Agendamento · Painel", txt:"Corrigido o aviso de chave repetida nos sinais − + = do bloco \"Como a meta se forma\" (o Painel segue igual)."},
+  ]},
+  {v:"0.17.17", data:"2026-10-29", titulo:"SorellyChat: fotos de todos para todos", itens:[
+    {tipo:"correção", area:"SorellyChat", txt:"As fotos do chat vêm do perfil guardado no servidor (a mesma da página Início). Antes ficavam só no navegador de quem colocou, por isso sumiam ao ver pela Nayale ou por outra pessoa."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Quando a Diretoria ou o Marketing coloca a foto de alguém no chat, ela também vai para o servidor e todos passam a ver. Funciona para quem já tem conta no sistema."},
+  ]},
   {v:"0.17.16", data:"2026-10-29", titulo:"SorellyChat: aviso com foto em 2 linhas, som Cristal forte, Ctrl+V e avisos ligados", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"Mensagem nova mostra o aviso modelo 1: foto, nome da conversa e a mensagem em até 2 linhas, com o som Cristal mais forte. As notificações do chat começam ligadas para todos e, com a aba escondida, o navegador também avisa (pede permissão uma vez)."},
     {tipo:"novo", area:"SorellyChat", txt:"Ctrl+V com imagem copiada (print ou foto) vira anexo com pré-visualização na barra de escrever. O áudio já existia."},
