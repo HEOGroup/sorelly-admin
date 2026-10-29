@@ -6,6 +6,7 @@
 //
 // Para criar uma página nova, acrescente uma linha aqui. Nada mais.
 import { e } from "@/shared/react";
+import { ErroRecarregar } from "./erro-recarregar";
 import { Navigate, useLocation, useOutletContext } from "react-router-dom";
 import { papelDe } from "@/apps/montagem/domain/equipe";
 import { apiAtiva, pessoaDaConta } from "@/apps/montagem/lib/api";
@@ -231,6 +232,7 @@ const montagem = {
 
 const kitsNovos = {
   path: "kits-novos",
+  errorElement: e(ErroRecarregar),
   // Os ~2.000 registros da planilha chegam antes da casca montar, num .json
   // servido à parte. Só quem abre este app paga esse download.
   loader: async () => {
@@ -259,6 +261,7 @@ function Antigo() {   // link antigo (/montagem/nome-antigo ou só /nome-antigo)
 }
 
 const montagemNovo = {
+  errorElement: e(ErroRecarregar),
   lazy: montagem.lazy,   // sem path: a casca do app envolve as telas, que agora moram direto na raiz
   children: montagem.children.filter((c) => c.path !== "*").map((c) => (c.path && ABA_DO_SLUG[c.path] ? { ...c, path: ENDERECO_DA_ABA[ABA_DO_SLUG[c.path]] } : c))
     .concat({ path: "*", element: e(Antigo) }),
