@@ -783,7 +783,7 @@ function notificarRecebida(convId, msg){
   avisoDoNavegador(tituloDe(conv, eu), (conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg));
   var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
   efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
-  if(!grande) setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);   // o aviso grande fica até a pessoa fechar ou responder
+  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, grande ? 9000 : 7000);   // todos os avisos são o modelo 1 (Marcus, 29/10/2026) e somem sozinhos
 }
 function aplicarServidor(r, primeira){
   var novas = [];

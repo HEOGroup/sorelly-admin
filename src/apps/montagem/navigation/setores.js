@@ -54,13 +54,10 @@ var MENU_ENCOMENDAS = [
 ];
 
 // Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
-var MENU_AGENDAMENTO = [
-  M("Painel","agpainel"),
+var MENU_AGENDAMENTO = [   // reorganizado em 29/10/2026 (Marcus): Revendedoras primeiro, Representantes depois, Painel dentro de Análises; Plano 45/60 e Remarcações saíram
   M("Revendedoras","agrevs"),
-  M("Plano 45/60","p45pnl",{tambem:["p45ind","p45apr","p45acomp","p45alin","p45msg"]}),   // uma palavra só; as cinco visões são abas dentro da tela
-  M("Remarcações","agremarc"),
   M("Representantes","agreps"),
-  {nome:"Análises", itens:[M("Análises","aganalises"), M("Histórico","aghistorico")]},
+  {nome:"Análises", itens:[M("Painel","agpainel"), M("Análises","aganalises"), M("Histórico","aghistorico")]},
   {nome:"Gestão do mês", itens:[M("Abertura do mês","agabertura"), M("Configurador","agconfig")]}
 ];
 
@@ -147,8 +144,8 @@ var SETORES = [
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
-    {nome:"Acertos", telas:[T("agpainel","Painel"), T("agrevs","Revendedoras")]}, {nome:"Plano 45/60", telas:[T("p45ind","Indicações do plano 45/60"), T("p45apr","Aprovação do plano 45/60"), T("p45acomp","Acompanhamento do plano 45/60"), T("p45alin","Alinhamento do plano 45/60"), T("p45msg","Mensagens do plano 45/60"), T("p45pnl","Painel do plano 45/60")]}, {nome:"Remarcações", telas:[T("agremarc","Remarcações")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
-    {nome:"Análises", telas:[T("aganalises","Análises")]}, {nome:"Histórico", telas:[T("aghistorico","Histórico")]}, {nome:"Gestão do mês", telas:[T("agabertura","Abertura do mês"), T("agconfig","Configurador")]}]},
+    {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
+    {nome:"Análises", telas:[T("agpainel","Painel"), T("aganalises","Análises"), T("aghistorico","Histórico")]}, {nome:"Gestão do mês", telas:[T("agabertura","Abertura do mês"), T("agconfig","Configurador")]}]},
   // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto
   {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", menu:MENU_CADASTRO, areas:[

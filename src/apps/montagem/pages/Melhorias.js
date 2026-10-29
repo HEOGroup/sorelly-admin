@@ -226,12 +226,11 @@ function Detalhe(p){
       gere ? e(MenuSituacao,{key:x.id+x.situacao, x:x, s:s, d:d, excluir:function(){ setConfirma(true); }}) : e("span",{className:"font-semibold"}, x.situacao),
       e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[15px] hover:bg-white/10"}, "✕")),
     x.porId===s.usuario && x.situacao==="Mudança feita, testar" && e(BarraTeste,{x:x, s:s, d:d}),
-    e("div",{className:"grid min-h-0 flex-1 md:grid-cols-[minmax(230px,28%)_minmax(0,1fr)]"},
-      e("div",{className:"flex min-h-0 flex-col gap-3 overflow-y-auto border-b border-border p-3 md:border-b-0 md:border-r"},
-        info("Pedido de", e("div",{className:"flex items-center gap-2 text-[13px]"}, e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:36}), e("div",{className:"min-w-0"}, e("b",null, x.por), " · "+x.setor, e("div",null, quando(x.em))))),
-        info("Tela", e("div",{className:"flex"}, e(AbrirTela,{url:x.url, antes:p.fechar}))),
-        gere && info("Conversa do Claude", e("div",{className:"flex"}, e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere})))),
-      e("div",{className:"flex min-h-0 min-w-0 flex-col", style:{background:W.fundo}},
+    // fixo no alto: só o link da tela e o lugar da conversa do Claude (só Marcus e Leonardo veem)
+    e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-border px-3 py-1.5 text-[13px]"},
+      e("span",{className:"flex items-center gap-2"}, "Tela", e(AbrirTela,{url:x.url, antes:p.fechar}), x.url && e("span",{className:"text-[12px] opacity-80"}, melCaminho(x.url))),
+      gere && e("span",{className:"flex min-w-0 items-center gap-2"}, "Conversa do Claude", e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}))),
+      e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
         e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
           e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:32}),
           e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, x.por), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, x.setor+" · pedido de melhoria"))),
@@ -249,7 +248,7 @@ function Detalhe(p){
             e("textarea",{value:txt, rows:1, maxLength:2000, onChange:function(ev){ setTxt(ev.target.value); }, onPaste:colar,
               onKeyDown:function(ev){ if(ev.key==="Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } },
               placeholder:"Digite uma mensagem", className:"max-h-24 min-h-9 min-w-0 flex-1 resize-none rounded-lg px-3 py-2 text-[13px] outline-none", style:{background:W.campo, color:W.texto}}),
-            e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤"))))),
+            e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤")))),
     confirma && e("div",{className:"absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4"},
       e("div",{className:"flex w-full max-w-sm flex-col gap-3 rounded-xl border border-border bg-card p-4 text-center"},
         e("b",{className:"text-[15px]"}, "Tem certeza que quer excluir?"),
@@ -316,7 +315,7 @@ function AbaMelhorias(){
   var agora = Date.now();
   var fila = gere && vis==="todas" ? base.map(function(x){ return {x:x, dias:melEspera(s, x, agora)}; }).filter(function(y){ return y.dias!==null; }).sort(function(a, b){ return b.dias-a.dias; }).slice(0, 3) : [];
   var janela = (novo || aberto) && e("div",{className:"fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget){ setNovo(false); setSel(null); } }},
-    e("div",{className:"my-auto w-full max-w-[1060px]"},
+    e("div",{className:"my-auto w-full "+(novo ? "max-w-[1060px]" : "max-w-[780px]")},
       novo ? e(NovaConversa,{s:s, d:d, fechar:function(){ setNovo(false); }, onEnviou:function(id){ setNovo(false); setSel(id); }}) : e(Detalhe,{x:aberto, s:s, d:d, zoom:function(src, nome){ setZoom({src:src, nome:nome}); }, fechar:function(){ setSel(null); }})));
   var cols = [{t:"Data", w:104, c:true}, {t:"Setor", w:150, c:true}, {t:"Funcionária", w:160, c:true}, {t:"Situação", w:190, c:true}, {t:"Tela", w:70, c:true}, {t:"Descrição", c:true}].concat(gere ? [{t:"Conversa do Claude", w:185, c:true}] : []);
   var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); } catch(x){ return iso; } };

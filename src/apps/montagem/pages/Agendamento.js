@@ -126,8 +126,7 @@ function AbaAgPainel(){
           e(Bloco,{t:"Ainda faltam", v:int(p.restante), cor:p.restante>0 ? "#FBBF24" : "#4ADE80", sub:"para fechar a previsão"}),
           e(Bloco,{t:"% da previsão", v:pc(p.previstos>0 ? p.realizado/p.previstos*100 : 0), cor:"#C084FC", sub:"realizados ÷ previstos"})),
         e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-xl bg-black/25 px-3 py-2 text-[13px]"},
-          e("span",null, e("b",null, nomeMes(prox.ym)+" (formando): "), prox.formados+(prox.formados===1 ? " revendedora já remarcada" : " revendedoras já remarcadas")+" para o próximo mês · já entram nos acertos previstos dele."),
-          e(Btn,{v:"secondary", sm:true, onClick:function(){ c.d({type:"ABA", aba:"agremarc"}); }}, "Anotar remarcações")))),
+          e("span",null, e("b",null, nomeMes(prox.ym)+" (formando): "), prox.formados+(prox.formados===1 ? " revendedora já remarcada" : " revendedoras já remarcadas")+" para o próximo mês · já entram nos acertos previstos dele.")))),
     e(MetasCards,{metas:p.metas}),
     e(BlocoBarra,{cor:"roxo", t:"Bônus do mês", sub:p.maior ? "faixa "+p.maior.pct+"% batida: o mesmo valor para cada funcionária" : "nenhuma faixa batida ainda"},
       e("div",{className:"flex flex-col divide-y divide-white/10 px-4 py-1"}, p.bonus.length===0 ? e("p",{className:"py-3 text-[13px] text-muted-foreground"}, "Nenhuma funcionária cadastrada no Configurador.") : p.bonus.map(function(b){
@@ -144,55 +143,6 @@ function AbaAgPainel(){
       e(BlocoBarra,{cor:"roxo", t:"Resumo pronto para WhatsApp"}, e("div",{className:"flex flex-col gap-3 p-4"}, e("textarea",{readOnly:true, value:p.texto, rows:4, className:INPUT+" h-auto! w-full p-3 text-[13.5px]"}), e(Btn,{v:"secondary", sm:true, ic:"copiar", onClick:copiar}, "Copiar texto")))));
 }
 
-// ───────────────── Remarcações: quem sai da meta do mês e para onde vai ─────────────────
-function AbaAgRemarc(){
-  var c = useAg(), ag = c.ag, ym = mesAberto(ag), nf = useState({nome:"", tipo:"p45", autorizadoPor:"", destino:"", obs:""}), form = nf[0], setForm = nf[1], nt = useState("anotar"), aba = nt[0], setAba = nt[1];
-  if(!ym) return e(Sem,{t:"Remarcações do Agendamento", sub:"Quem sai da meta do mês.", msg:"Nenhum mês aberto ainda. "+(c.gerente ? "Abra o mês em Abertura do mês." : "Peça a quem gerencia para abrir o mês.")});
-  var prox = proximoMes(ym), destinos = [prox, proximoMes(prox), proximoMes(proximoMes(prox))], destino = form.destino || prox, m = ag.mes[ym], mv = movimentos(ag, ym), mvProx = movimentos(ag, prox);
-  var lista = (ag.remarc||[]).slice().sort(function(a1,b1){ return b1.em.localeCompare(a1.em); }), tipo = tipoDe(form.tipo), pr = painelDe(ag, ym, undefined, fatEfetivo(c.s)), pode = form.nome.trim() && form.autorizadoPor;
-  var add = function(){ if(!pode) return; acao(c, "remarc_add", {nome:form.nome, tipo:form.tipo, autorizadoPor:form.autorizadoPor, destino:destino, obs:form.obs}); setForm(Object.assign({}, form, {nome:"", obs:""})); };
-  var tile = function(t, v, cor, sub){ return e("div",{key:t, className:CARD+" flex flex-col items-center text-center"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-[.12em] text-muted-foreground"}, t), e("b",{className:MONO+" text-[24px]", style:{color:cor}}, v), sub && e("span",{className:"text-[11.5px] text-muted-foreground"}, sub)); };
-  var abas = [["anotar","Anotar e lista", lista.length], ["metas","Metas e calculadora"], ["proximo","Mês seguinte", mvProx.chegaram]];
-  var campo = function(rot, el, cls){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(cls||"")}, rot, el); };
-  return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Remarcações do Agendamento", sub:"Revendedora que sai da meta de "+nomeMes(ym)+": ela deixa de contar nos acertos previstos deste mês e passa a contar nos do mês para onde foi. Sempre se anota quem autorizou."}),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-5"},
-      tile("Previstos da abertura", int(m.previstos), "#E8B84B"), tile("Autorizadas (45 / 60 dias)", "− "+int(mv.propositais), "#60A5FA", "adiadas de propósito"), tile("Remarcadas", "− "+int(mv.outras), "#F59E0B", "para o mês seguinte"),
-      tile("Vindas de outro mês", "+ "+int(mv.chegaram), "#22C55E"), tile("Previstos ajustados", int(Math.max(0, m.previstos-mv.nSaem+mv.nEntram)), "#F3D98B", "a meta vale este número")),
-    e("div",{className:"flex flex-wrap gap-2"}, abas.map(function(x){ var on = aba===x[0];
-      return e("button",{key:x[0], onClick:function(){ setAba(x[0]); }, className:"flex h-11 items-center gap-2 rounded-xl px-5 text-[14px] font-bold ring-1 "+(on ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-[#E8B84B]/30 hover:bg-muted/50")},
-        x[1], x[2]!==undefined && e("span",{className:"rounded-full bg-black/30 px-2 py-0.5 text-[11.5px] text-white"}, x[2])); })),
-    aba==="anotar" && e("div",{className:"flex flex-col gap-4"},
-      e(BlocoBarra,{cor:"roxo", t:"Anotar uma remarcação", sub:"vale na hora para as metas, os bônus e a previsão do Financeiro"},
-        e("div",{className:"flex flex-col gap-2 p-4"},
-          e("div",{className:"flex flex-wrap items-end gap-3"},
-            campo("Revendedora", e("input",{value:form.nome, placeholder:"Nome da revendedora", className:INPUT+" h-10!", onChange:function(ev){ setForm(Object.assign({}, form, {nome:ev.target.value})); }, onKeyDown:function(ev){ if(ev.key==="Enter") add(); }}), "min-w-[14rem] flex-1"),
-            campo("Motivo", e("select",{value:form.tipo, className:INPUT+" h-10! w-64 cursor-pointer", onChange:function(ev){ setForm(Object.assign({}, form, {tipo:ev.target.value})); }}, TIPOS_REMARC.map(function(t){ return e("option",{key:t.id, value:t.id}, t.lb); }))),
-            campo("Quem autorizou", e("select",{value:form.autorizadoPor, className:INPUT+" h-10! w-44 cursor-pointer", onChange:function(ev){ setForm(Object.assign({}, form, {autorizadoPor:ev.target.value})); }}, e("option",{value:""}, "Escolha…"), AUTORIZADORES.map(function(n){ return e("option",{key:n, value:n}, n); }))),
-            campo("Vai para o mês", e("select",{value:destino, className:INPUT+" h-10! w-44 cursor-pointer", onChange:function(ev){ setForm(Object.assign({}, form, {destino:ev.target.value})); }}, destinos.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)+"/"+anoDe(k)); }))),
-            campo("Observação (opcional)", e("input",{value:form.obs, className:INPUT+" h-10!", onChange:function(ev){ setForm(Object.assign({}, form, {obs:ev.target.value})); }}), "min-w-[12rem] flex-1"),
-            e(Btn,{v:"primary", disabled:!pode, onClick:add}, "Anotar")),
-          e("p",{className:"text-[12px] text-muted-foreground"}, tipo.proposito ? "Adiada de propósito: não conta na meta deste mês." : "Sai da meta deste mês e entra na do mês escolhido.", !form.autorizadoPor && " Escolha quem autorizou para poder anotar."))),
-      e(BlocoBarra,{cor:"roxo", t:"Remarcadas", sub:lista.length+(lista.length===1 ? " anotação" : " anotações")},
-        lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13px] text-muted-foreground"}, "Nenhuma remarcação anotada ainda. Quando uma revendedora for adiada ou passar para o mês seguinte, anote aqui com quem autorizou.") :
-        e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Revendedora"), th("Motivo"), th("Autorizado por"), th("Sai de"), th("Vai para"), th("Anotado por"), th("")])),
-          e("tbody",null, lista.map(function(x){ var t = tipoDe(x.tipo);
-            return e("tr",{key:x.id, className:"border-b border-border/60"},
-              e("td",{className:"px-3 py-2 text-[13.5px] font-semibold"}, x.nome, x.obs && e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, x.obs)),
-              e("td",{className:"px-3 py-2"}, e("span",{className:"whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", style:{background:t.cor+"26", color:t.cor}}, t.lb)),
-              e("td",{className:"px-3 py-2 text-[13.5px] font-semibold"}, x.autorizadoPor || "—"),
-              e("td",{className:"px-3 py-2 text-[13px]"}, nomeMes(x.origem)), e("td",{className:"px-3 py-2 text-[13px] font-semibold"}, nomeMes(x.destino)),
-              e("td",{className:"px-3 py-2 text-[12px] text-muted-foreground"}, x.por+" · "+new Date(x.em).toLocaleDateString("pt-BR")),
-              e("td",{className:"px-3 py-2"}, e("button",{onClick:function(){ if(window.confirm("Desfazer a remarcação de "+x.nome+"?")) acao(c, "remarc_del", {id:x.id}); }, "aria-label":"Desfazer", title:"Desfazer", className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground hover:bg-destructive/20 hover:text-destructive"}, e(Ph,{n:"trash", s:15})))); })))))),
-    aba==="metas" && e("div",{className:"flex flex-col gap-4"}, e(MetasCards,{metas:pr.metas}), e(CalculadoraMetas,{p:pr, agora:revAgora(c.s)})),
-    aba==="proximo" && e("div",{className:"flex flex-col gap-4"},
-      e(BlocoBarra,{cor:"roxo", t:nomeMes(prox)+" · formando", sub:"o que já chegou de "+nomeMes(ym)},
-        e("div",{className:"flex flex-col gap-2 p-4"}, e("b",{className:MONO+" text-[34px] text-[#4ADE80]"}, "+ "+int(mvProx.chegaram)), e("span",{className:"text-[12.5px] text-muted-foreground"}, "revendedoras já remarcadas para "+nomeMes(prox)+". Elas entram nos acertos previstos de lá quando o mês abrir, somadas ao número da abertura."),
-          mvProx.entram.map(function(x){ return e("span",{key:x.id, className:"text-[13px]"}, "• "+x.nome+" · autorizado por "+(x.autorizadoPor||"—")); }))),
-      c.gerente && e("p",{className:"rounded-xl bg-muted/30 px-3 py-2 text-[12px] text-muted-foreground"}, "Em Abertura do mês você informa o número que vem da DevMaster; as remarcações ajustam por cima, sem duplicar.")));
-}
-
-// ───────────────── Representantes ─────────────────
 function AbaAgReps(){
   var c = useAg(), ag = c.ag, ym = mesDe(ag, null), od = useState("pct"), ordem = od[0], setOrdem = od[1], bq = useState(""), busca = bq[0], setBusca = bq[1];
   if(!ym) return e(Sem,{t:"Controle por representante", sub:"Contagem regressiva a partir da cota do dia 1.", msg:"Nenhum mês aberto ainda."});
@@ -388,4 +338,4 @@ function AbaAgComissoes(){
     e("div",{className:"flex flex-wrap gap-2"}, [["bonus","Bônus a pagar"], ["metas","Metas e valores"]].map(function(x){ return e("button",{key:x[0], onClick:function(){ setAba(x[0]); }, className:"h-10 rounded-xl px-4 text-[13px] font-bold ring-1 "+(aba===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/50")}, x[1]); })),
     aba==="bonus" ? e(AbaAgBonus) : e(AbaAgMetas));
 }
-export { AbaAgComissoes, AbaAgMetas, AbaAgBonus, AbaAgRemarc, AbaAgPainel, AbaAgReps, AbaAgAbertura, AbaAgConfig, AbaAgAnalises, AbaAgHistorico };
+export { AbaAgComissoes, AbaAgMetas, AbaAgBonus, AbaAgPainel, AbaAgReps, AbaAgAbertura, AbaAgConfig, AbaAgAnalises, AbaAgHistorico };

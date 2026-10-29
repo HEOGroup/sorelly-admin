@@ -9,6 +9,8 @@ import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useRef, useState } from "@/shared/react";
+import { useNavigate } from "react-router-dom";
+import { caminhoDaAba } from "@/apps/montagem/router/slugs";
 
 // Troca da própria senha (precisa da atual). Aparece dentro do menu da conta.
 function TrocarSenha(){
@@ -58,11 +60,11 @@ function PilulaSituacao(){
 // Conta: foto e nome; o menu reúne foto, aparência, tamanho da tela, "atuar como" (Diretoria) e Sair.
 // p.zoom = o controle de tamanho; p.onTema = alterna claro/escuro. O zoom fica sempre montado (só escondido quando o menu está fechado) para valer desde a abertura do sistema.
 function ContaMenu(p){
-  var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"];
+  var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"], navigate = useNavigate();
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], arq = useRef(null);
   var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
-  var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); };
+  var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); navigate(caminhoDaAba("inicio")); };   // ao trocar de pessoa, vai para o Início dela (as abas do Marcus não vão junto; voltando para si, as dele voltam)
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
   var trocarFoto = function(ev){
     var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;

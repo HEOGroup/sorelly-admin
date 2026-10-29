@@ -89,6 +89,7 @@ function App(){
   // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
   if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
+  if(typeof window!=="undefined") window.__sorellyAtuando = String(s.usuario);   // abas abertas e favoritas são de quem está usando (ou de quem o Marcus está "atuando como")
   var navigate = useNavigate();
   var euChat = useEu(srv.apiAtiva() && srv.pessoaDaConta() ? Number(srv.pessoaDaConta()) : s.usuario);   // com servidor, o chat é sempre da conta que entrou
   // Servidor ligado (lib/api.js): sem login pede e-mail e senha; com login restaura quem é (pessoaId) e guarda no sistema. O token vencido ou a saída voltam para a entrada.

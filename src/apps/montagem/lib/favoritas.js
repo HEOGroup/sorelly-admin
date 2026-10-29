@@ -4,7 +4,7 @@
 // Cada favorita: {k, nome, aba, modo, breve, setor, cor} (o mesmo formato das abas abertas).
 import { pessoaDaConta } from "@/apps/montagem/lib/api";
 
-var chave = function(visao){ return "sorelly_favoritas_"+(pessoaDaConta() || "local")+"_"+(visao || "admin"); };
+var chave = function(visao){ return "sorelly_favoritas_"+((typeof window!=="undefined" && window.__sorellyAtuando) || pessoaDaConta() || "local")+"_"+(visao || "admin"); };
 
 function lerFavoritas(visao){
   try { var l = JSON.parse(localStorage.getItem(chave(visao)) || "[]"); return Array.isArray(l) ? l : []; } catch(x){ return []; }

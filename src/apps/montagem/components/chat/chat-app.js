@@ -77,11 +77,10 @@ function ChatGlobal(p){
   if(!st.efem.toasts.length || !eu || !nt.chat) return null;
   return e("div",{className:"fixed bottom-24 right-4 z-[70] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2", "data-sem-clique":true},
     st.efem.toasts.map(function(t){
-      if(t.grande) return e(CartaoAviso,{key:t.id, t:t, todos:st.efem.toasts, eu:eu, abrir:p.abrir});
-      if(!t.atraso && !t.mencao) return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
+      if(!t.atraso) return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
         className:"flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left shadow-2xl", style:{background:W.cab, color:W.texto, border:"1px solid rgba(232,184,75,.35)"}},   // aviso modelo 1 (Marcus, 29/10/2026): foto, nome da conversa e a mensagem em até 2 linhas
         e(Avatar,{id:t.de, s:42}),
-        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13px] font-semibold"}, t.titulo), e("span",{className:"line-clamp-2 text-[13px]", style:{color:"#cfd8dc"}}, t.sub)),
+        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13px] font-semibold"}, (t.mencao ? "Você foi marcado · " : "")+((convPorId(t.conv)||{}).tipo==="grupo" ? t.titulo : (t.nome || t.titulo))), e("span",{className:"line-clamp-2 text-[13px]", style:{color:"#cfd8dc"}}, t.texto || t.sub)),
         e("span",{className:"shrink-0 text-[11px]", style:{color:W.sec}}, new Date().toTimeString().slice(0, 5)));
       return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
         className:"flex items-start gap-3 rounded-xl px-3.5 py-3 text-left shadow-2xl", style:{background:t.atraso ? "#4a1d24" : W.cab, color:W.texto, border:"1px solid "+(t.atraso ? W.vermelho : t.mencao ? W.verde : W.borda)}},

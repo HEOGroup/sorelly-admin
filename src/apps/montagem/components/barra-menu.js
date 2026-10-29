@@ -106,7 +106,7 @@ function BuscaMenu(p){
 
 // ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
 var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
-var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")) || "[]"); }catch(x){ return []; } };
+var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")+"_"+(window.__sorellyAtuando||"")) || "[]"); }catch(x){ return []; } };
 // Favoritar (27/10/2026, botão mudou de lugar em 28/10/2026): fica na própria tela (ui/page.js, canto do PageHead), não mais aqui na faixa de abas.
 // Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
 // O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, usa o botão "Favoritar aba" na tela.
@@ -118,18 +118,18 @@ function AbasAbertas(p){
   var st = useState(function(){ return lerAbas(p.visao); }), abas = st[0], setAbas = st[1];
   var sf = useState(function(){ return lerFavoritas(visao); }), favs = sf[0], setFavs = sf[1], sd = useState(null), arrastando = sd[0], setArrastando = sd[1];
   // trocou de modo (Admin <-> Marcus): carrega a lista do outro modo
-  useEffect(function(){ setAbas(lerAbas(p.visao)); setFavs(lerFavoritas(visao)); }, [p.visao]);
+  useEffect(function(){ setAbas(lerAbas(p.visao)); setFavs(lerFavoritas(visao)); }, [p.visao, window.__sorellyAtuando]);   // trocou de modo ou de pessoa ("atuar como"): cada um tem as suas abas e favoritas
   useEffect(function(){ var f = function(){ setFavs(lerFavoritas(visao)); }; window.addEventListener("sorelly-favoritas", f); return function(){ window.removeEventListener("sorelly-favoritas", f); }; }, [visao]);
   var kAtual = atual ? chaveDeNo(atual, p.setor) : "";
   var eFav = function(k){ return favs.some(function(f){ return f.k===k; }); };
-  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(l)); }catch(x){} };
+  var grava = function(l){ setAbas(l); try{ sessionStorage.setItem(CHAVE+(p.visao||"admin")+"_"+(window.__sorellyAtuando||""), JSON.stringify(l)); }catch(x){} };
   useEffect(function(){
     if(!atual || atual.aba==="inicio" || eFav(kAtual)) return;
     setAbas(function(ant){
       if(ant.some(function(a){ return a.k===kAtual; })) return ant;
       var nova = ant.concat([{k:kAtual, nome:atual.nome, aba:atual.aba, modo:atual.modo, breve:atual.breve, setor:p.setor, cor:p.cor}]);
       while(nova.length>MAX){ var j = nova.findIndex(function(a){ return a.k!==kAtual; }); nova.splice(j, 1); }
-      try{ sessionStorage.setItem(CHAVE+(p.visao||"admin"), JSON.stringify(nova)); }catch(x){}
+      try{ sessionStorage.setItem(CHAVE+(p.visao||"admin")+"_"+(window.__sorellyAtuando||""), JSON.stringify(nova)); }catch(x){}
       return nova;
     });
   }, [kAtual, favs]);   // "favs" também: ao desfavoritar a tela atual (botão "Favoritar aba" na tela), ela volta sozinha para a faixa de abas
