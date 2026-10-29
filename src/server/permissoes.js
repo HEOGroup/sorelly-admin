@@ -34,3 +34,23 @@ export function podeModulo(usuario, modulo) {
 }
 
 export const SETORES_VALIDOS = ["rh", "cobranca", "socios", "financeiro", "linkpag", "agendamento", "cadastro", "kitsnovos", "montagem", "producao", "encomendas", "pecas", "marketing", "garantia"];
+
+// Contas SÓ PARA VISUALIZAR (Marcus, 29/10/2026): veem os módulos que o setor deixa, mas não gravam nada, exceto onde a lista diz.
+// chave = pessoaId; valor = setores em que a pessoa PODE alterar. Ana Beatriz (30): só Financeiro. Marco Antonio (31): em nenhum.
+// Chat, perfil (foto e senha) e pedidos de melhoria continuam livres para todos.
+const SOMENTE_LEITURA = { 30: ["financeiro"], 31: [] };
+export const ehSomenteLeitura = (usuario) => usuario?.perfil !== "ADMIN" && usuario?.pessoaId != null && Object.prototype.hasOwnProperty.call(SOMENTE_LEITURA, usuario.pessoaId);
+// true = a gravação deve ser recusada (caminho = pathname da rota; só chamar para métodos que alteram)
+export function bloqueiaEscrita(usuario, caminho) {
+  if (!ehSomenteLeitura(usuario)) return false;
+  if (/^\/api\/(chat|perfil|auth)\//.test(caminho)) return false;
+  const podem = SOMENTE_LEITURA[usuario.pessoaId];
+  const m = /^\/api\/estado\/([^/]+)/.exec(caminho);
+  if (m) {
+    if (m[1] === "mel") return false;
+    const lista = SETORES_DO_MODULO[m[1]] || [];
+    return !lista.some((s) => podem.includes(s));
+  }
+  if (/^\/api\/faturamento\//.test(caminho)) return !podem.includes("financeiro");
+  return true;
+}

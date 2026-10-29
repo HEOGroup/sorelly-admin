@@ -1,6 +1,7 @@
 // Peças comuns das rotas da API (substituem o Fastify do servidor antigo): resposta JSON, erro, login obrigatório e leitura do corpo.
 import { SignJWT, jwtVerify } from "jose";
 import { consulta } from "./db.js";
+import { bloqueiaEscrita } from "./permissoes.js";
 
 export const json = (corpo, status = 200) => Response.json(corpo, { status });
 export const erro = (msg, status) => json({ erro: msg }, status);
@@ -42,6 +43,7 @@ export function rota(fn, { diretoria = false, publica = false } = {}) {
         eu = await usuarioDe(req);
         if (!eu) return erro("Entre no sistema para continuar.", 401);
         if (diretoria && eu.perfil !== "ADMIN") return erro("Só a Diretoria pode fazer isso.", 403);
+        if (req.method !== "GET" && bloqueiaEscrita(eu, new URL(req.url).pathname)) return erro("Seu acesso é só para visualizar.", 403);
       }
       const params = ctx && ctx.params ? await ctx.params : {};
       return await fn(req, { eu, params, url: new URL(req.url) });
