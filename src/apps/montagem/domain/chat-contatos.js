@@ -54,6 +54,12 @@ function contatoDoLogin(idLogin){
   }
   cacheLogin[idLogin] = r; return r;
 }
+// inverso de contatoDoLogin: o id do login (pessoa) de um contato do chat, para achar a foto do perfil guardada no servidor
+var PESSOA_DO_CID = null;
+function pessoaDoContato(cid){
+  if(!PESSOA_DO_CID){ PESSOA_DO_CID = {}; EQUIPE.forEach(function(p){ var c = contatoDoLogin(p.id); if(c && PESSOA_DO_CID[c]==null) PESSOA_DO_CID[c] = p.id; }); }
+  return PESSOA_DO_CID[cid];
+}
 // o Configurador do SorellyChat é só do dono (Marcus, login 16)
 function ehDono(idLogin){ return idLogin===16; }
 // direção pelo contato (Marcus, Nickolas, Lucas, Anamaria e a família): vê todas as conversas paralelas dos grupos
@@ -72,4 +78,4 @@ function iniciais(nome){ var p = String(nome||"?").split(/\s+/).filter(Boolean);
 // presença de demonstração: estável por pessoa; em produção virá do servidor (WebSocket)
 function presenca(id){ var h = hash(id); return {online: h%100 < 58, visto: Date.now() - (h%420)*60000}; }
 var id = function(parte){ var c = CONTATOS.find(function(x){ return sem(x.completo).indexOf(sem(parte))===0; }); return c ? c.id : null; };
-export { definirCidConta, registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };
+export { pessoaDoContato, definirCidConta, registrarRevendedora, CONTATOS, rotuloCurto, contato, contatoDaRepresentante, contatoDoLogin, ehDirecao, ehDirecaoCid, ehDono, podeEditarFotos, iniciais, presenca, id as idPorNome, hash, sem };

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · 4 avisos e 4 sons</title>
+<style>
+:root{--ouro:#E8B84B;--bg:#0a0806;--cx:#110e08;--tx:#fff;--mut:#bdb39d}
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:radial-gradient(ellipse at 50% 0%,#201808,#0a0806 55%,#050403);color:var(--tx);min-height:100vh;padding:24px}
+h1{font-size:18px;margin:0 0 4px;text-align:center}p.sub{margin:0 0 18px;text-align:center;color:var(--mut)}
+h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);margin:22px 0 10px;text-align:center}
+.grade{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:980px;margin:0 auto}
+.bt{height:32px;min-width:96px;padding:0 14px;border-radius:8px;border:1px solid rgba(232,184,75,.4);background:#1b1710;color:var(--ouro);font:inherit;font-weight:600;cursor:pointer}
+.bt:hover{border-color:var(--ouro)}
+.som{width:220px;border:1px solid rgba(232,184,75,.28);border-radius:12px;background:var(--cx);padding:12px;text-align:center}
+.som b{display:block;margin-bottom:2px}.som small{display:block;color:var(--mut);margin-bottom:10px}
+.modelo{width:230px;border:1px solid rgba(232,184,75,.28);border-radius:12px;background:var(--cx);padding:12px;text-align:center}
+.modelo b{display:block;margin-bottom:2px}.modelo small{display:block;color:var(--mut);margin-bottom:10px}
+#pilha{position:fixed;right:16px;bottom:16px;display:flex;flex-direction:column;gap:8px;align-items:flex-end;z-index:9;max-width:calc(100vw - 32px)}
+.av{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#1a1405;flex:none;background:linear-gradient(145deg,#f1cd75,#b8892a)}
+.av.v{background:#7E57C2;color:#fff}
+/* 1 · cartão WhatsApp */
+.n1{width:320px;display:flex;gap:10px;align-items:center;padding:10px 12px;background:#111b21;border:1px solid rgba(232,184,75,.35);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:entra .25s}
+.n1 .t{min-width:0;flex:1}.n1 b{display:block;font-size:13px}.n1 span{display:block;color:#cfd8dc;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.n1 time{font-size:11px;color:var(--mut);align-self:flex-start}
+/* 2 · barra fina */
+.n2{display:flex;gap:8px;align-items:center;height:34px;padding:0 14px;background:#0e0e11;border:1px solid rgba(232,184,75,.4);border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.5);animation:entra .25s}
+.n2 i{width:8px;height:8px;border-radius:50%;background:#25d366;flex:none}.n2 b{color:var(--ouro)}.n2 span{max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 3 · cartão com botões */
+.n3{width:330px;padding:12px;background:var(--cx);border:1px solid rgba(232,184,75,.35);border-top:3px solid var(--ouro);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:entra .25s}
+.n3 .l{display:flex;gap:10px;align-items:center}.n3 b{display:block}.n3 span.p{display:block;color:#e6e6e6;margin:8px 0 10px}
+.n3 .bs{display:flex;gap:8px}.n3 .bt{height:30px;min-width:0;flex:1}
+/* 4 · contador */
+.n4{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;background:var(--ouro);color:#1a1405;border-radius:999px;box-shadow:0 8px 24px rgba(0,0,0,.5);animation:entra .25s;font-weight:700}
+.n4 .av{width:30px;height:30px;font-size:12px;background:#1a1405;color:var(--ouro)}.n4 .c{background:#1a1405;color:var(--ouro);border-radius:999px;min-width:22px;height:22px;display:grid;place-items:center;font-size:12px;padding:0 6px}
+@keyframes entra{from{transform:translateX(30px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sai{to{transform:translateX(30px);opacity:0}}
+.nota{max-width:700px;margin:18px auto 0;text-align:center;color:var(--mut)}
+</style></head><body>
+<h1>SorellyChat · avisos e sons</h1>
+<p class="sub">Toque nos botões para testar. Os avisos aparecem no canto de baixo à direita, como no sistema.</p>
+
+<h2>4 modelos de aviso</h2>
+<div class="grade">
+  <div class="modelo"><b>1 · Cartão com foto</b><small>Como o do WhatsApp: foto, nome, prévia e hora</small><button class="bt" data-n="1">Mostrar</button></div>
+  <div class="modelo"><b>2 · Barra fina</b><small>Uma linha só, discreta</small><button class="bt" data-n="2">Mostrar</button></div>
+  <div class="modelo"><b>3 · Com botões</b><small>Responder e Marcar como lida</small><button class="bt" data-n="3">Mostrar</button></div>
+  <div class="modelo"><b>4 · Contador dourado</b><small>Junta as mensagens: "3 novas"</small><button class="bt" data-n="4">Mostrar</button></div>
+</div>
+
+<h2>4 sons</h2>
+<div class="grade">
+  <div class="som"><b>A · Cristal</b><small>O som atual do sistema</small><button class="bt" data-s="a">Tocar</button></div>
+  <div class="som"><b>B · Gota</b><small>Uma nota curta e suave</small><button class="bt" data-s="b">Tocar</button></div>
+  <div class="som"><b>C · Sino duplo</b><small>Dois toques, bem claro</small><button class="bt" data-s="c">Tocar</button></div>
+  <div class="som"><b>D · Bolha</b><small>Estalo curto, tipo WhatsApp</small><button class="bt" data-s="d">Tocar</button></div>
+</div>
+<p class="nota">Dica: use "Mostrar" e "Tocar" juntos para ver como fica a combinação. Me diga o número e a letra que você escolher (ex.: 1 e C).</p>
+<div id="pilha"></div>
+<script>
+var ctx; function ac(){ if(!ctx) ctx = new (window.AudioContext||window.webkitAudioContext)(); if(ctx.state==="suspended") ctx.resume(); return ctx; }
+function nota(f,ini,dur,tipo,vol,fim){ var c=ac(),o=c.createOscillator(),g=c.createGain(),t=c.currentTime+ini; o.type=tipo||"sine"; o.frequency.setValueAtTime(f,t); if(fim) o.frequency.exponentialRampToValueAtTime(fim,t+dur);
+  g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(c.destination); o.start(t); o.stop(t+dur+0.05); }
+var SONS={
+  a:function(){ nota(1760,0,.34,"sine",.4); nota(2349,.08,.42,"sine",.38); nota(3520,.08,.16,"sine",.08); },
+  b:function(){ nota(880,0,.28,"sine",.5,520); nota(1320,0,.2,"sine",.12,780); },
+  c:function(){ [0,.22].forEach(function(t){ nota(1568,t,.5,"sine",.4); nota(3136,t,.35,"sine",.12); nota(2093,t,.45,"triangle",.1); }); },
+  d:function(){ nota(500,0,.09,"sine",.55,1100); nota(1500,.07,.07,"sine",.18); }
+};
+document.querySelectorAll("[data-s]").forEach(function(b){ b.onclick=function(){ SONS[b.dataset.s](); }; });
+var pilha=document.getElementById("pilha"), cont=0;
+function ini(n){ return n; }
+function remove(el){ el.style.animation="sai .2s forwards"; setTimeout(function(){ el.remove(); },200); }
+function mostra(k){
+  var el=document.createElement("div"), hh=new Date().toTimeString().slice(0,5);
+  if(k==="1") el.innerHTML='<div class="n1"><div class="av">N</div><div class="t"><b>Natasha - Kits e Atendimento</b><span>Oi Marcus, o kit da Ketlyn já está pronto?</span></div><time>'+hh+'</time></div>';
+  if(k==="2") el.innerHTML='<div class="n2"><i></i><b>Natasha</b><span>Oi Marcus, o kit da Ketlyn já está pronto?</span></div>';
+  if(k==="3") el.innerHTML='<div class="n3"><div class="l"><div class="av v">N</div><div><b>Natasha</b><small style="color:#bdb39d">Kits e Atendimento · '+hh+'</small></div></div><span class="p">Oi Marcus, o kit da Ketlyn já está pronto?</span><div class="bs"><button class="bt">Responder</button><button class="bt">Marcar como lida</button></div></div>';
+  if(k==="4"){ cont++; el.innerHTML='<div class="n4"><div class="av">N</div><span>Natasha e outros</span><span class="c">'+cont+' novas</span></div>'; var velho=pilha.querySelector(".n4"); if(velho) velho.remove(); }
+  var caixa=el.firstChild; pilha.appendChild(caixa); caixa.onclick=function(){ remove(caixa); };
+  setTimeout(function(){ if(caixa.parentNode) remove(caixa); }, 6000);
+}
+document.querySelectorAll("[data-n]").forEach(function(b){ b.onclick=function(){ mostra(b.dataset.n); }; });
+</script></body></html>

@@ -19,10 +19,7 @@ var VERSOES = [
     {tipo:"correção", area:"Servidor", txt:"O robô que lia o faturamento às 10h foi desligado: a regra dele dava só cerca de R$ 262 mil no mês e gravaria o valor errado."}
   ]},
   {v:"0.17.2", data:"2026-10-29", titulo:"Contas a pagar: já pago e falta pagar vêm direto da DevMaster", itens:[
-    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor, a cada 10 minutos."}
-  {v:"0.17.16", data:"2026-10-29", titulo:"SorellyChat mais limpo", itens:[
-    {tipo:"melhoria", area:"SorellyChat", txt:"Na conversa com um colaborador, o topo mostra só o horário de trabalho. Saíram as bolinhas dos últimos 10 dias e o resumo do mês."},
-    {tipo:"melhoria", area:"SorellyChat", txt:"Saiu a barra \"Marcar pendente / Marcar resolvida\" de dentro da conversa."},
+    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor, a cada 10 minutos."},
   ]},
   {v:"0.17.15", data:"2026-10-29", titulo:"Início: Setores e Acesso básico sem apps", itens:[
     {tipo:"melhoria", area:"Início", txt:"Na tela inicial, \"Seus setores\" virou \"Setores\" e saiu \"Para você decidir hoje\". \"Seu dia\", \"Visitados recentemente\" e as bolinhas da mensagem saíram para todos. Setores com letra maior, foto maior. No chat, horário e bolinha só para a Direção."},

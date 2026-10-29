@@ -7,12 +7,14 @@ import { useNotif } from "@/apps/montagem/lib/notificacoes";
 import { ListaConversas, OURO, OURO_TXT } from "@/apps/montagem/components/chat/chat-lista";
 import { Conversa } from "@/apps/montagem/components/chat/chat-conversa";
 import { Avatar, LogoChat, Ph, TemaChatClaro, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
+import { usePerfil } from "@/apps/montagem/lib/perfil";
 import { e, useEffect, useState } from "@/shared/react";
 
 // quem sou eu no chat: o contato ligado a quem entrou no sistema
 function useEu(idLogin){ var cid = contatoDoLogin(idLogin); useEffect(function(){ definirEu(cid); }, [cid]); definirEu(cid); useEffect(function(){ if(cid) return iniciarServidor(); return undefined; }, [cid]); return cid; }
 
 function ChatApp(p){
+  usePerfil();   // traz as fotos do perfil de todos e redesenha quando chegam
   var st = useChat(), euReal = p.eu, vc = st.efem.verComo, leitura = !!(p.direcao && vc), eu = leitura ? vc : euReal;
   var sel = st.efem.conversaSel, existe = sel && st.convs.some(function(c){ return c.id===sel; });
   var voltar = function(){ efem({conversaSel:null}); };

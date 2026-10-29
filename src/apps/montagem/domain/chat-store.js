@@ -4,8 +4,8 @@
 // Quando o servidor existir, só o corpo das funções de `api` troca (HTTP + WebSocket); as telas não mudam.
 // Tabelas previstas no banco: users, conversations, conversation_members, messages, attachments, reactions, pins, mentions, work_sessions.
 import { React } from "@/shared/react";
-import { CONTATOS, contato, contatoDoLogin, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
-import { minhaSituacao } from "@/apps/montagem/lib/perfil";
+import { CONTATOS, contato, contatoDoLogin, pessoaDoContato, ehDirecaoCid, idPorNome, hash, presenca, registrarRevendedora, sem } from "@/apps/montagem/domain/chat-contatos";
+import { fotoDoServidor, minhaSituacao } from "@/apps/montagem/lib/perfil";
 import { horariosParaChat } from "@/apps/montagem/domain/rh";
 import { tocar } from "@/apps/montagem/lib/sons";
 import { ler as notifLer } from "@/apps/montagem/lib/notificacoes";
@@ -634,7 +634,8 @@ function fundoDe(cid){ var u = estado.usuarios[cid]; return (u && u.fundo && u.f
 function setFoto(cid, url){ mudar(function(s){ var u = Object.assign({}, s.usuarios); u[cid] = Object.assign({}, u[cid], {foto:url}); return Object.assign({}, s, {usuarios:u}); }); }
 // fotos oficiais já salvas no projeto (public/fotos); a troca feita na tela vale por cima delas
 var FOTOS_PADRAO = {f_marianacardosodealmeida:"fotos/mariana-cardoso.jpg", f_tamaramarquesdegouveia:"fotos/tamara-gouveia.jpg", f_anamariadivinodasilva:"fotos/ana-maria-agendamento.jpg", f_rayssaalessandraingatain:"fotos/rayssa.jpg", f_camillydesousamaciel:"fotos/camilly.jpg", f_lucasoliveiradarocha:"fotos/lucas.jpg", f_nickolasgabriellealneves:"fotos/nickolas.jpg", f_michelebritolimacassemiro:"fotos/michele.jpg", f_leonardo:"fotos/leonardo.jpg", f_sthafanymarquesdeaquinocorrea:"fotos/sthefany.jpg", f_amandademirandagoncalves:"fotos/amanda-miranda.jpg", f_deysianeportuguesdasilva:"fotos/deysiane.jpg", f_anabeatrizhessdeoliveira:"fotos/ana-beatriz.jpg"};
-function fotoDe(cid){ var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? ("/"||"/")+FOTOS_PADRAO[cid] : null; }
+function fotoDe(cid){ var pid = pessoaDoContato(cid), srv = pid!=null ? fotoDoServidor(pid) : null; if(srv) return srv;   // foto do perfil (servidor): todos veem a de todos
+  var u = estado.usuarios[cid]; if(u && u.foto) return lerMidia(u.foto) || (u.foto.indexOf("data:")===0 ? u.foto : null); if(u && u.foto===null) return null; return FOTOS_PADRAO[cid] ? ("/"||"/")+FOTOS_PADRAO[cid] : null; }
 // motivo "almoco" expira sozinho 1h depois (Marcus, 27/10/2026): "Ficar ocupado" (sem motivo) fica até a pessoa voltar na mão
 function setOcupado(cid, ligado, motivo){
   mudar(function(s){ var o = Object.assign({}, s.ocupado), a = o[cid] || {desde:null, motivo:null, ate:null, periodos:[]}, agora = Date.now();
