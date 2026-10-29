@@ -144,12 +144,12 @@ function AbaAgPainel(){
 }
 
 function AbaAgReps(){
-  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), od = useState("pct"), ordem = od[0], setOrdem = od[1], bq = useState(""), busca = bq[0], setBusca = bq[1];
+  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), od = useState("pct"), ordem = od[0], setOrdem = od[1], bq = useState(""), busca = bq[0], setBusca = bq[1], jt = useState(false), junto = jt[0], setJunto = jt[1];
   if(!ym) return e(Sem,{t:"Controle por representante", sub:"Contagem regressiva a partir da cota do dia 1.", msg:"Nenhum mês aberto ainda."});
   var p = painelDe(ag, ym, undefined, fatEfetivo(c.s)), fechado = p.fechado, rk = p.ranking, ant = pctPorCodigo(ag, mesAnterior(ym)), total = diasNoMes(ym), dias = []; for(var i=1; i<=total; i++) dias.push(i);
   var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }, q = norm(busca);
   var feitoDe = function(l){ return Math.max(0, l.cota-l.saldoAtual); };
-  var ordenadas = p.linhas.slice().sort(function(a1, b1){
+  var ordenadas = (junto ? agrupar(p.linhas) : p.linhas).slice().sort(function(a1, b1){
     if(ordem==="afazer") return b1.saldoAtual-a1.saldoAtual; if(ordem==="menos") return a1.saldoAtual-b1.saldoAtual; if(ordem==="nome") return a1.nome.localeCompare(b1.nome); if(ordem==="cota") return b1.cota-a1.cota; return 0; });
   var linhas = ordenadas.filter(function(l){ return !q || norm(l.nome).indexOf(q)>=0 || norm(l.codigo).indexOf(q)>=0; });
   var totCota = p.linhas.reduce(function(t,l){ return t+l.cota; }, 0), totAfazer = p.linhas.reduce(function(t,l){ return t+l.saldoAtual; }, 0), totFeito = Math.max(0, totCota-totAfazer);
@@ -169,6 +169,7 @@ function AbaAgReps(){
     e(BlocoBarra,{cor:"roxo", t:"Todas as representantes", sub:linhas.length+" na lista · "+(fechado ? "mês fechado" : "mês ao vivo")},
       e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5"},
         e("input",{value:busca, placeholder:"Buscar por nome ou código", "aria-label":"Buscar representante", className:INPUT+" h-9! w-64", onChange:function(ev){ setBusca(ev.target.value); }}),
+        e("div",{className:"flex h-9 overflow-hidden rounded-lg border border-border", role:"group", "aria-label":"Ver cidades separadas ou juntas"}, [[false,"Separado"],[true,"Junto"]].map(function(o){ return e("button",{key:String(o[0]), onClick:function(){ setJunto(o[0]); }, "aria-pressed":junto===o[0], title:o[0] ? "Soma as cidades da mesma representante (ex.: Thalita e Thalita Litoral)" : "Cada cidade com o seu controle", className:"px-4 text-[13px] font-semibold "+(junto===o[0] ? "bg-[#E8B84B] text-black" : "bg-transparent")}, o[1]); })),
         e("select",{value:ordem, "aria-label":"Ordenar por", className:INPUT+" h-9! w-64 cursor-pointer", onChange:function(ev){ setOrdem(ev.target.value); }}, [["pct","Ordenar: % batido (maior primeiro)"],["afazer","Ordenar: mais acertos a fazer"],["menos","Ordenar: menos acertos a fazer"],["cota","Ordenar: maior cota"],["nome","Ordenar: nome A–Z"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
       e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse text-[14px]"},
         e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Cód.","sticky left-0 z-10 bg-sidebar"), th("Representante","sticky left-12 z-10 bg-sidebar"), th("Cota (dia 1)"), th("Feitos"), th("A fazer","border-r border-border")].concat(dias.map(function(d){ return th(String(d),"text-center px-1!"); }), [th("% mês"), th("Tendência")]))),

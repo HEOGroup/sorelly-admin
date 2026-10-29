@@ -3,6 +3,21 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.1", data:"2026-10-29", titulo:"Pagas por dia e excluir lançamento em Contas a pagar", itens:[
+    {tipo:"novo", area:"Financeiro", txt:"Tela Pagas por dia (Contas): escolhe o dia e vê o total pago, por CNPJ e conta por conta, com dia anterior, hoje e dia seguinte."},
+    {tipo:"novo", area:"Financeiro", txt:"Contas a pagar: conta lançada à mão ganha o botão Excluir lançamento (só quem pode registrar pagamento). Os pagamentos dela saem junto e fica no histórico."}]},
+  {v:"0.17.24", data:"2026-10-29", titulo:"Agendamento: cidades da mesma representante, separadas e juntas", itens:[
+    {tipo:"novo", area:"Agendamento", txt:"Controle por representante tem o botão Separado | Junto. Separado: cada cidade com a sua cota e o seu saldo. Junto: soma as cidades da mesma pessoa (cota, saldo e cada dia). Pódio, zona de atenção, análises e histórico já somavam."},
+    {tipo:"melhoria", area:"Agendamento", txt:"Grupos gravados: Thalita (Thalita Torazzi + Litoral PR) e Anne (Asley, PG e Joinville). Quem gerencia muda os grupos no Configurador do Agendamento."},
+  ]},
+  {v:"0.18.0", data:"2026-10-29", titulo:"Corte do Financeiro: última puxada do admin antigo", itens:[
+    {tipo:"melhoria", area:"Financeiro familiar", txt:"Dados do Financeiro familiar refeitos a partir do admin antigo e gravados no servidor (Pix, contas, pagamentos, repasses). Totais conferidos contra o antigo."},
+    {tipo:"melhoria", area:"Cobrança de funcionárias", txt:"Compras e pagamentos atualizados com o admin antigo (873 e 396), somas conferidas."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Saldos das contas e contas pagas por dia atualizados até 28/10."}]},
+  {v:"0.13.0", data:"2026-10-29", titulo:"Top 50 oficial: lista da planilha, importação e Encomendas no servidor", itens:[
+    {tipo:"novo", area:"Encomendas e reposições", txt:"Top 50 da planilha do Marcus carregado (50 revendedoras, com última venda, representante, data do acerto, situação e responsável pela montagem). A tela Top 50 diz que são as revendedoras com direito a reposições e encomendas diretamente pelo setor."},
+    {tipo:"novo", area:"Encomendas e reposições", txt:"Botão Importar lista (só diretoria): cola as linhas da planilha e o sistema cadastra, atualiza e, se marcado, tira quem ficou fora da lista. Serve para colocar o Top 50 no servidor sem passar os dados pelo GitHub."},
+    {tipo:"melhoria", area:"Servidor", txt:"O módulo de Encomendas e reposições entra na lista dos módulos guardados no servidor, liberado ao setor Encomendas (a Diretoria abre tudo)."}]},
   {v:"0.17.23", data:"2026-10-29", titulo:"SorellyChat: botão Setores e grupo da Montagem", itens:[
     {tipo:"novo", area:"SorellyChat", txt:"Botão \"Setores\" ao lado do Almoço, para todos: lista os grupos de setor de que a pessoa faz parte (a Direção vê todos) e um toque abre o grupo. Mostra as mensagens não lidas."},
     {tipo:"novo", area:"SorellyChat", txt:"Grupo \"Montagem de Kits\": Deysiane (supervisora) e as montadoras. No topo, um ícone por montadora abre a conversa particular dela (mesmo modelo do Atendimento Interno). Nasce sozinho para quem já tem o chat aberto."},
@@ -190,6 +205,8 @@ var VERSOES = [
     {tipo:"melhoria", area:"Melhorias", txt:"Janela do pedido (layout 1): menor, com quem pediu, a tela com link e o print grande à esquerda (amplia com um clique) e o chat à direita, que já começa com o que a pessoa escreveu no pedido."},
     {tipo:"correcao", area:"Financeiro · Negociações", txt:"Vencimento das parcelas mês a mês: agora cai no mesmo dia do mês seguinte ou, se o mês é mais curto, no último dia (31/12, 31/01, 28/02, 31/03, 30/04...). Antes 31/01 + 1 mês virava 03/03 e o Nickolas digitava à mão. Data que não existe (31/04) não salva mais."},
     {tipo:"melhoria", area:"Financeiro · Negociações", txt:"Parcelas do pedido: fonte um pouco menor e coluna do valor maior, para o valor aparecer inteiro (R$ 1.733,25)."},
+    {tipo:"novo", area:"RH", txt:"Colaboradores: campo Horário de saída ao lado da entrada (a lista mostra 08:00–18:00). O horário do SorellyChat vem daí: o RH do sistema novo passa a ser a fonte, sem olhar o admin antigo."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Horário das funcionárias copiado do admin de produção: entrada e saída reais de cada pessoa (por exemplo 08:00 às 17:00 para quem trabalha de segunda a sábado e 08:00 às 18:00 de segunda a sexta), em vez de calcular. 68 pessoas conferidas; quem não tem saída no admin segue a conta."},
     {tipo:"correcao", area:"SorellyChat", txt:"Horário das funcionárias: quem trabalha de segunda a sexta agora sai 10 horas depois da entrada (08:00 sai às 18:00, 07:30 às 17:30...). Antes dava 17:48, 17:18 e outras saídas quebradas. Quem trabalha de segunda a sábado continua com 8h20 depois da entrada."},
     {tipo:"melhoria", area:"Melhorias", txt:"Nova solicitação agora é o mesmo chat de quem responde: fixo no alto só o link da tela; o print colado com Ctrl+V já aparece na conversa como mensagem sua (até 4); escreve e envia, e o pedido nasce com esse chat. O Ctrl+V entrava duas vezes e foi corrigido."},
     {tipo:"melhoria", area:"Melhorias", txt:"Ao clicar no pedido abre só um chat: sem coluna do lado. Fixo no alto ficam o ícone que abre a tela e o lugar da conversa do Claude (só Marcus e Leonardo); embaixo, o chat começa com o que a pessoa escreveu e o print."},

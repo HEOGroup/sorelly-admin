@@ -89,8 +89,8 @@ function ordenarReps(linhas){
 function agrupar(linhas){
   var out = [], idx = {};
   linhas.forEach(function(l){ var g = String(l.grupo||"").trim(); if(!g){ out.push(l); return; } var k = g.toLowerCase();
-    if(idx[k]===undefined){ idx[k] = out.length; out.push({id:null, codigo:"G:"+k, nome:g, ativo:true, cota:l.cota, saldoAtual:l.saldoAtual, saldosPorDia:{}, grupo:g, membros:1}); }
-    else { var x = out[idx[k]]; x.cota += l.cota; x.saldoAtual += l.saldoAtual; x.membros++; } });
+    if(idx[k]===undefined){ idx[k] = out.length; out.push({id:null, codigo:"G:"+k, nome:g, ativo:true, cota:l.cota, saldoAtual:l.saldoAtual, saldosPorDia:Object.assign({}, l.saldosPorDia), grupo:g, membros:1}); }
+    else { var x = out[idx[k]]; x.cota += l.cota; x.saldoAtual += l.saldoAtual; x.membros++; Object.keys(l.saldosPorDia||{}).forEach(function(d){ x.saldosPorDia[d] = (x.saldosPorDia[d]||0) + l.saldosPorDia[d]; }); } });
   return out.map(function(l){ if(l.membros) l.pct = repPct(l.cota, l.saldoAtual); return l; });
 }
 
