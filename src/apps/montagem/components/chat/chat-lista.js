@@ -77,6 +77,7 @@ function ListaConversas(p){
   var nv = useState(false), nova = nv[0], setNova = nv[1], pf = useState(false), perfil = pf[0], setPerfil = pf[1];
   var vc = useState(false), escolhendo = vc[0], setEscolhendo = vc[1], cm = useState(null), ctx = cm[0], setCtx = cm[1], gn = useState(false), grupoNovo = gn[0], setGrupoNovo = gn[1];   // false, "func" ou "rep"
   var mo = useState(false), mais = mo[0], setMais = mo[1];   // "⋯" com Decidir/Espera/Marcado/Arquivadas/Grupos (saíram da fileira de filtros, 27/10/2026)
+  var so = useState(false), setoresAberto = so[0], setSetoresAberto = so[1];   // "Setores": os grupos de cada setor (Montagem, Atendimento, Agendamento…), um toque abre o grupo
   var lm = useState(40), limite = lm[0], setLimite = lm[1];
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
   var todasL = api.getConversations(eu, {todas:mostrarTodas});
@@ -88,6 +89,8 @@ function ListaConversas(p){
   var thDe = {}; lista.forEach(function(x){ thDe[x.conv.id] = api.statusConv(x.conv.id); });
   var devo = function(x){ var t = thDe[x.conv.id]; return !!t && t.estado==="aberta" && t.resp.indexOf(eu)>=0; };
   var aguardando = lista.filter(devo).length;
+  var gruposSetor = lista.filter(function(x){ return x.conv.tipo==="grupo" && x.conv.paralelas; }).sort(function(a, b){ return a.conv.nome.localeCompare(b.conv.nome); });
+  var setoresNaoLidas = gruposSetor.reduce(function(t, x){ return t + x.naoLidas; }, 0);
   var marcadoTotal = lista.filter(function(x){ return x.marcado; }).length;
   var filtrada = (filtro==="arq" ? arqs : lista).filter(function(x){ return filtro==="arq" ? true : filtro==="marcado" ? x.marcado : filtro==="espera" ? devo(x) : filtro==="naolidas" ? x.naoLidas>0 : filtro==="grupos" ? x.conv.tipo==="grupo" : filtro==="decidir" ? x.pendentes>0 : true; });
   if(ordem==="antigas") filtrada = filtrada.slice().sort(function(a, b){ var ma = devo(a), mb = devo(b); if(ma!==mb) return ma ? -1 : 1; var ta = ma ? thDe[a.conv.id].desde : (a.ultima ? a.ultima.t : 0), tb = mb ? thDe[b.conv.id].desde : (b.ultima ? b.ultima.t : 0); return ta-tb; });
@@ -129,11 +132,17 @@ function ListaConversas(p){
       e("div",{className:"ml-auto flex shrink-0 items-center gap-1.5"},
         p.leitura && e("button",{onClick:function(){ efem({verComo:null, conversaSel:null}); }, className:"rounded-full px-3 py-1 text-[11px] font-semibold", style:{background:OURO, color:OURO_TXT}}, "Voltar ao meu"),
         !p.leitura && e("button",{onClick:function(){ api.setBusy(eu, motivoOcupado(eu)!=="almoco", "almoco"); }, className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:motivoOcupado(eu)==="almoco" ? "rgba(245,197,66,.2)" : W.campo, color:motivoOcupado(eu)==="almoco" ? "#f5c542" : W.texto}}, e(Ph,{n:"fork-knife", s:13, fill:true}), motivoOcupado(eu)==="almoco" ? "Em almoço" : "Almoço"),
-        e("button",{onClick:function(){ setMais(!mais); }, "aria-label":"Mais opções", title:"Decidir, espera, marcadas, arquivadas e grupos", className:"grid size-7 place-items-center rounded-full", style:{background:W.campo}}, e(Ph,{n:"dots-three-vertical", s:15, fill:true, style:{color:W.texto}})),
+        gruposSetor.length>0 && e("button",{onClick:function(){ setSetoresAberto(!setoresAberto); setMais(false); }, "aria-label":"Grupos por setor", title:"Grupos por setor", className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:setoresAberto ? "rgba(232,184,75,.2)" : W.campo, color:setoresAberto ? W.ouro : W.texto}}, e(Ph,{n:"users-three", s:13, fill:true}), "Setores", setoresNaoLidas>0 && e("span",{className:"grid min-w-4 place-items-center rounded-full px-1 text-[9.5px] font-bold", style:{background:W.verde, color:"#0b141a", height:16}}, setoresNaoLidas)),
+        e("button",{onClick:function(){ setMais(!mais); setSetoresAberto(false); }, "aria-label":"Mais opções", title:"Decidir, espera, marcadas, arquivadas e grupos", className:"grid size-7 place-items-center rounded-full", style:{background:W.campo}}, e(Ph,{n:"dots-three-vertical", s:15, fill:true, style:{color:W.texto}})),
         e("button",{onClick:function(){ setNova(true); }, "aria-label":"Nova conversa", title:"Nova conversa", disabled:!!p.leitura, className:"grid size-7 place-items-center rounded-full disabled:opacity-30", style:{background:W.texto}}, e(Ph,{n:"plus", s:15, fill:true, style:{color:W.painel}}))),
       mais && e(Popover,{className:"right-2 top-10", fechar:function(){ setMais(false); }, largura:220},
         [["todas","Todas","stack",0],["decidir","Decidir","clock-countdown",urgentesTotal],["espera","Espera","hourglass-medium",aguardando],["marcado","Marcado","at",marcadoTotal],["arq","Arquivadas","archive-box",arqs.length],["grupos","Grupos","users-three",0]].map(function(f){
           return e(ItemMenu,{key:f[0], n:f[2], onClick:function(){ setFiltro(f[0]); setLimite(40); setMais(false); }}, f[1], f[3]>0 && e("span",{className:"ml-auto text-[11px]", style:{color:W.sec}}, f[3])); })),
+      setoresAberto && e(Popover,{className:"right-2 top-10", fechar:function(){ setSetoresAberto(false); }, largura:260},
+        e("p",{className:"px-4 pb-1 pt-0.5 text-[9.5px] font-extrabold uppercase tracking-wide", style:{color:W.ouro}}, "Grupos por setor"),
+        gruposSetor.map(function(x){ return e("button",{key:x.conv.id, onClick:function(){ setSetoresAberto(false); abrir(x.conv.id); }, className:"flex w-full items-center gap-2.5 px-3 py-1.5 text-left text-[12.5px] hover:bg-white/10"},
+          e(Avatar,{grupo:true, nome:x.conv.nome, foto:x.conv.foto, s:30}), e("span",{className:"min-w-0 flex-1 truncate font-medium"}, x.conv.nome),
+          x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas)); })),
       // "+" nova conversa: o painel abre colado no botão, dentro da MESMA faixa (antes abria solto lá embaixo da lista e bugava) — Marcus, 27/10/2026
       nova && e(VerComo,{nova:true, euReal:eu, className:"right-2 top-10", largura:280, fechar:function(){ setNova(false); }, aoPessoa:function(cid){ setNova(false); abrir(api.openDm(eu, cid)); }, aoGrupo:function(){ setNova(false); setGrupoNovo(true); }})),
     filtro!=="todas" && e("div",{className:"flex shrink-0 items-center justify-between gap-2 px-3 py-1 text-[11px]", style:{background:"#3a2f12", color:W.ouro}},

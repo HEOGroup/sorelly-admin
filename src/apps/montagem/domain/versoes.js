@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.23", data:"2026-10-29", titulo:"SorellyChat: botão Setores e grupo da Montagem", itens:[
+    {tipo:"novo", area:"SorellyChat", txt:"Botão \"Setores\" ao lado do Almoço, para todos: lista os grupos de setor de que a pessoa faz parte (a Direção vê todos) e um toque abre o grupo. Mostra as mensagens não lidas."},
+    {tipo:"novo", area:"SorellyChat", txt:"Grupo \"Montagem de Kits\": Deysiane (supervisora) e as montadoras. No topo, um ícone por montadora abre a conversa particular dela (mesmo modelo do Atendimento Interno). Nasce sozinho para quem já tem o chat aberto."},
+  ]},
   {v:"0.17.22", data:"2026-10-29", titulo:"SorellyChat: fotos, áudios e arquivos funcionam; Leonardo igual ao Marcus", itens:[
     {tipo:"correção", area:"SorellyChat", txt:"Fotos, áudios e arquivos agora funcionam no chat (antes aparecia \"Fotos e áudios ainda não funcionam no chat\"). A mídia sobe para o servidor (tabela sorelly.chat_midia, criada sozinha) antes da mensagem e quem recebe busca pela chave; só quem é membro da conversa abre. Limite de uns 2,5 MB por arquivo (a foto já é reduzida a 1280 px). Rotas: /api/chat/midia (enviar) e /api/chat/midia/[key] (buscar)."},
     {tipo:"melhoria", area:"Acessos", txt:"O Leonardo (pessoa 44) ficou 100% igual ao Marcus: aba Apps e apps de celular, \"Atuar como\", situação (reunião/ausente), edição dos Acessos e das Autorizações, TODAS as autorizações, Configurador do SorellyChat, Cobrança de funcionárias, Financeiro familiar e liberar exceção de kit."},
