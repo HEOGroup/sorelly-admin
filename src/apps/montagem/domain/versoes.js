@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.7", data:"2026-10-29", titulo:"SorellyChat: fotos de todos para todos", itens:[
+    {tipo:"correção", area:"SorellyChat", txt:"As fotos do chat vêm do perfil guardado no servidor (a mesma da página Início). Antes ficavam só no navegador de quem colocou, por isso sumiam ao ver pela Nayale ou por outra pessoa."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Quando a Diretoria ou o Marketing coloca a foto de alguém no chat, ela também vai para o servidor e todos passam a ver. Funciona para quem já tem conta no sistema."},
+  ]},
   {v:"0.17.6", data:"2026-10-29", titulo:"SorellyChat: sem selo de pendência na lista", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"A lista de conversas não mostra mais o selo amarelo de pendência nem o realce da linha. O horário de trabalho e de almoço aparece para quem vê a conversa com uma colaboradora, inclusive vendo como a Bruna."},
   ]},

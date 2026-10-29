@@ -61,6 +61,19 @@ function usePerfil(){
 
 // situação de quem está logado (só Marcus, Nickolas e Lucas podem mudar; os demais ficam sempre disponíveis)
 function minhaSituacao(){ var p = memoria.meuId!=null ? memoria.pessoas[memoria.meuId] : null; return (p && p.situacao) || "disponivel"; }
+// Foto de qualquer pessoa (data URL do chat, 320 px) vai para o servidor reduzida a 160 px; url vazia remove. eu = é a minha própria foto.
+function enviarFotoPessoa(pessoaId, url, eu){
+  var mandar = function(foto){ return chamar("PATCH", eu ? "/perfil/eu" : "/perfil/pessoa/"+pessoaId, {foto:foto}).then(function(r){ mesclar([r.pessoa]); avisar(); }); };
+  if(!url) return mandar("");
+  return new Promise(function(ok, falha){
+    var img = new Image(); img.onerror = function(){ falha(new Error("foto")); };
+    img.onload = function(){
+      var lado = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = 160; c.height = 160;
+      c.getContext("2d").drawImage(img, (img.width-lado)/2, (img.height-lado)/2, lado, lado, 0, 0, 160, 160); ok(c.toDataURL("image/jpeg", 0.78));
+    };
+    img.src = url;
+  }).then(mandar);
+}
 // foto do perfil guardada no servidor (a mesma que todos veem na página Início)
 function fotoDoServidor(pessoaId){ var p = memoria.pessoas[pessoaId]; return (p && p.foto) || null; }
-export { fotoDoServidor, minhaSituacao, SITUACOES, ORDEM_SIT, usePerfil, salvarEu, reduzirFoto, carregar };
+export { enviarFotoPessoa, fotoDoServidor, minhaSituacao, SITUACOES, ORDEM_SIT, usePerfil, salvarEu, reduzirFoto, carregar };
