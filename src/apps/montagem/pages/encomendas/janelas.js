@@ -2,7 +2,7 @@
 // Janelas do setor reunidas em um componente só (usado pelas telas Ida na empresa, Top 50 e Representantes). O Funil usa as mesmas janelas direto.
 //   <Janelas E={useEr()} modal={estado} ir={fn(m)}/>   tipos: novo, motivo, agendar, atender, detalhe, revs, bloquear
 import { Dinheiro, Janela } from "@/apps/montagem/components/padrao";
-import { linkPedidos, mensagemSolicitacao } from "@/apps/montagem/domain/encomendas";
+import { lerListaColada, linkPedidos, mensagemSolicitacao } from "@/apps/montagem/domain/encomendas";
 import { Agendar, Atender, Detalhe, Motivo, NovoPedido, Revendedoras } from "@/apps/montagem/pages/encomendas/Quadro";
 import { Bt, Escolha, Painel, copiar } from "@/apps/montagem/pages/encomendas/visual";
 import { Campo } from "@/apps/montagem/pages/compras/visualCompras";
@@ -65,6 +65,18 @@ function Solicitar(p){
         : e(Painel,{key:"b", t:"Ações", ic:"gear"}, e(Bt,{tipo:"forte", ic:"paper-plane-tilt", disabled:!v.nome.trim() || !v.representante.trim() || !v.motivo.trim(), onClick:ok}, "Registrar e gerar mensagem"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
 }
 
+// importar a lista do Top 50 colando as linhas da planilha (só diretoria)
+function Importar(p){
+  var st = useState({texto:"", substituir:true}), v = st[0], linhas = lerListaColada(v.texto);
+  var ok = function(){ if(p.E.exec("top50_importar", {linhas:linhas, substituir:v.substituir})) p.fechar(); };
+  return e(Janela,{t:"Importar lista do Top 50", sub:"Cole as linhas da planilha (revendedora, última venda, representante, data do acerto, situação, responsável, observações).", fechar:p.fechar,
+    colunas:[e(Painel,{key:"a", t:"Linhas coladas", ic:"clipboard-text", estado:"atual"},
+        e("textarea",{value:v.texto, rows:12, placeholder:"Cole aqui as linhas copiadas do Excel", onChange:function(ev){ st[1](Object.assign({}, v, {texto:ev.target.value})); }, className:INPUT+" h-auto! w-full resize-none py-2 text-left"}),
+        e("label",{className:"flex cursor-pointer items-center justify-center gap-2 text-[12.5px]"}, e("input",{type:"checkbox", checked:v.substituir, onChange:function(ev){ st[1](Object.assign({}, v, {substituir:ev.target.checked})); }}), "Tirar do Top 50 quem não está na lista")),
+      e(Painel,{key:"b", t:"Ações", ic:"gear"}, e("p",{className:"text-[13px]"}, linhas.length ? linhas.length+(linhas.length===1 ? " revendedora lida" : " revendedoras lidas")+": "+linhas.slice(0, 3).map(function(l){ return l.nome; }).join(", ")+(linhas.length>3 ? "…" : "") : "Nenhuma linha lida ainda."),
+        e(Bt,{tipo:"forte", ic:"upload-simple", disabled:!linhas.length, onClick:ok}, "Importar"), e(Bt,{ic:"x", onClick:p.fechar}, "Cancelar"))]});
+}
+
 // ver a mensagem de um pedido já registrado
 function MsgSol(p){
   var so = p.E.er.top50Sol.find(function(x){ return x.id===p.id; }); if(!so) return null;
@@ -83,6 +95,7 @@ function Janelas(p){
   if(m.tipo==="revs") return e(Revendedoras,{E:E, fechar:fechar});
   if(m.tipo==="bloquear") return e(Bloquear,{E:E, id:m.id, fechar:fechar});
   if(m.tipo==="retirar") return e(Retirar,{E:E, id:m.id, fechar:fechar});
+  if(m.tipo==="importar") return e(Importar,{E:E, fechar:fechar});
   if(m.tipo==="solicitar") return e(Solicitar,{E:E, id:m.id, fechar:fechar});
   if(m.tipo==="msgsol") return e(MsgSol,{E:E, id:m.id, fechar:fechar});
   return null;

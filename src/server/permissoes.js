@@ -9,6 +9,7 @@ export const SETORES_DO_MODULO = {
   pf: ["financeiro"], cp: ["financeiro"], px: ["financeiro"], lp: ["financeiro", "linkpag"], contasEmpresa: ["financeiro"],
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
+  er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem"], cpc: ["pecas"],
   mk: ["marketing"], gr: ["garantia"],
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
