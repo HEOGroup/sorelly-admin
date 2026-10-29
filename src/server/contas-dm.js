@@ -18,6 +18,8 @@ const tudo = (codigo, base) => dm.todasAsPaginas(codigo, base);
 export function cnpjDaConta(banco, nomeConta) {
   const n = String(nomeConta || "").toUpperCase();
   if (/^CX/.test(String(banco || ""))) return "fora";
+  if (/HESS E OLIVEIRA/.test(n)) return "fora";   // Hess & Oliveira = filial 04, por fora (tem "Atacadista" no nome, mas não é o CNPJ 34)
+  if (/LIMITE ROTATIVO/.test(n)) return "34";   // Sicredi Limite Rotativo = Sicredi Rotativo 34 do Contas bancárias
   const m = n.match(/(?:^|[\s-])(34|46|59|67)\s*$/);
   if (m) return m[1];
   if (/AXIS/.test(n)) return "67";
