@@ -236,6 +236,7 @@ function reducer(s, a){
         Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
         return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
       }
+      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return Object.assign({}, s, pFd); }   // faturamento e contas pagas por dia vindos do servidor
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){

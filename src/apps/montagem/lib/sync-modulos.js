@@ -6,9 +6,9 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "gr", "revdia", "fatdia", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn"];
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn"];
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
-var ESPELHO = {ri:["revInternas"], sc:["saldosContas"]};
+var ESPELHO = {ri:["revInternas"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 var fatia = function(s, c){ if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}

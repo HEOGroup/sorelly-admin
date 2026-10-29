@@ -22,6 +22,7 @@ export const SETORES_DO_MODULO = {
   inicio: ["*"],   // comunicados da página inicial (27/10/2026): todo mundo logado lê; quem publica é a Diretoria (regra da tela)
   revdia: ["*"],   // total de revendedoras do dia (automático, DevMaster): todo mundo logado pode ler
   contasreceber: ["financeiro"],   // tela Contas a receber (DevMaster, só leitura): Financeiro e Diretoria (27/10/2026)
+  fd: ["financeiro"],   // faturamento e contas pagas por dia lançados pela equipe (corte do admin antigo, 29/10/2026): Financeiro e Diretoria
   fatdia: ["financeiro"],   // faturamento do dia anterior (automático, DevMaster): só financeiro (e Diretoria, que já abre tudo)
 };
 
