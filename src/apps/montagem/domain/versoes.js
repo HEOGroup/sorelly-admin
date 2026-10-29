@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.6", data:"2026-10-29", titulo:"SorellyChat: sem selo de pendência na lista", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"A lista de conversas não mostra mais o selo amarelo de pendência nem o realce da linha. O horário de trabalho e de almoço aparece para quem vê a conversa com uma colaboradora, inclusive vendo como a Bruna."},
+  ]},
   {v:"0.17.5", data:"2026-10-29", titulo:"SorellyChat: topo travado", itens:[
     {tipo:"correção", area:"SorellyChat", txt:"A página inteira não rola mais junto com o chat. Só a lista de conversas e a conversa rolam; o topo fica parado. A altura do chat é refeita sempre que o topo da tela muda."},
   ]},
