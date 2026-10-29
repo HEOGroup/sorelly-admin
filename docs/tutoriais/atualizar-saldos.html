@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Como atualizar os saldos · Sorelly</title>
+<style>
+  :root{--bg:#0d0b07;--card:#17130b;--ouro:#E8B84B;--ouro2:#b8892a;--txt:#f5efe0;--mut:#a89f88;--ok:#4ade80;--neg:#f87171;--linha:#2c2415}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.45 system-ui,"Segoe UI",Roboto,sans-serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:16px}
+  h1{font-size:20px;margin:4px 0 2px;color:var(--ouro);text-align:center}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:12px;text-align:center}
+  .legenda{width:min(980px,100%);background:linear-gradient(135deg,#2a2111,#1a1409);border:1px solid var(--ouro2);border-radius:12px;padding:14px 18px;margin-bottom:12px;display:flex;gap:14px;align-items:center;min-height:84px}
+  .num{flex:none;width:42px;height:42px;border-radius:50%;background:var(--ouro);color:#1a1405;font-weight:800;font-size:20px;display:grid;place-items:center}
+  .txt{font-size:19px;font-weight:600}
+  .txt small{display:block;font-size:14px;font-weight:400;color:var(--mut);margin-top:2px}
+  .tela{width:min(980px,100%);height:460px;background:#000;border:1px solid var(--linha);border-radius:12px;display:flex;overflow:hidden;position:relative}
+  .lado{width:210px;flex:none;background:#0a0804;border-right:1px solid var(--linha);padding:12px 10px;font-size:13px}
+  .lado .logo{color:var(--ouro);letter-spacing:.3em;font-size:12px;text-align:center;margin-bottom:12px}
+  .it{padding:7px 9px;border-radius:7px;color:#d8d0bb;margin:2px 0;transition:all .3s}
+  .it.sub1{margin-left:12px;font-size:12.5px}.it.sub2{margin-left:24px;font-size:12.5px}
+  .it.fechado{display:none}
+  .main{flex:1;padding:12px 14px;overflow:hidden;position:relative}
+  .abas{display:flex;gap:6px;margin-bottom:8px}
+  .aba{padding:6px 12px;border-radius:8px;background:#1b160c;font-size:13px;transition:all .3s}
+  .aba.on{background:var(--ouro);color:#1a1405;font-weight:700}
+  .barra{display:flex;align-items:center;gap:8px;background:#15110a;border-radius:9px;padding:6px 10px;margin-bottom:8px;font-size:13px;flex-wrap:wrap}
+  .barra b{font-size:14px}
+  .btn{padding:4px 10px;border-radius:7px;background:#2a2314;font-size:12.5px;transition:all .3s;border:1px solid transparent}
+  .data{background:#1d170c;border:1px solid var(--linha);border-radius:7px;padding:4px 10px;font-size:13px}
+  .chip{margin-left:auto;padding:3px 10px;border-radius:99px;background:#241d10;font-weight:700;font-size:12.5px;transition:all .3s}
+  .chip.ok{background:rgba(34,197,94,.25);color:#bbf7d0}
+  .cards{display:flex;gap:8px;margin-bottom:8px}
+  .cartao{flex:1;border-radius:9px;padding:6px 10px;font-size:12px;color:#1a1405}
+  .cartao b{display:block;font-size:17px}
+  .c1{background:linear-gradient(135deg,#f1cd75,#b8892a)}.c2{background:linear-gradient(135deg,#6ee7a8,#2f9e6a)}
+  .bloco{background:var(--card);border:1px solid var(--linha);border-radius:9px;margin-bottom:6px;overflow:hidden;transition:all .3s}
+  .bloco.fechadoOk{border-color:rgba(34,197,94,.55)}
+  .cab{display:flex;align-items:center;gap:10px;padding:5px 10px;font-size:13px;font-weight:700;background:linear-gradient(90deg,#8a6a2a66,#8a6a2a1f)}
+  .cab .st{margin-left:auto;font-size:11.5px;padding:2px 9px;border-radius:99px;background:#00000050}
+  .cab .st.ok{background:rgba(34,197,94,.3);color:#d1fae5}
+  .fechar{padding:3px 10px;border-radius:7px;background:var(--ouro);color:#1a1405;font-size:12px;font-weight:700;transition:all .3s}
+  .conta{display:flex;align-items:center;justify-content:space-between;padding:4px 10px;border-top:1px solid #ffffff12;font-size:13px}
+  .campo{width:130px;height:28px;border-radius:6px;border:1px solid #3a2f18;background:#ffffff0d;text-align:center;font:600 14px ui-monospace,Consolas,monospace;display:grid;place-items:center;transition:all .3s}
+  .campo.neg{color:var(--neg)}
+  .hl{outline:3px solid var(--ouro);outline-offset:2px;box-shadow:0 0 22px #E8B84Baa;animation:pulso 1.2s ease-in-out infinite}
+  @keyframes pulso{50%{box-shadow:0 0 6px #E8B84B55}}
+  .cursor{position:absolute;width:22px;height:22px;pointer-events:none;transition:all .9s cubic-bezier(.4,0,.2,1);z-index:9;filter:drop-shadow(0 2px 3px #000)}
+  .cursor svg{width:22px;height:22px}
+  .ctrl{display:flex;gap:8px;align-items:center;margin-top:12px}
+  .ctrl button{background:#2a2314;color:var(--txt);border:1px solid var(--ouro2);border-radius:9px;padding:8px 16px;font-size:15px;cursor:pointer}
+  .ctrl button:hover{background:#3a2f18}
+  .pontos{display:flex;gap:5px;margin:0 8px}.pt{width:9px;height:9px;border-radius:50%;background:#3b3220;cursor:pointer}.pt.on{background:var(--ouro)}
+  .fim{position:absolute;inset:0;background:#000000d9;display:none;place-items:center;text-align:center;padding:30px;z-index:20}
+  .fim.on{display:grid}.fim div{max-width:600px}.fim h2{color:var(--ouro);margin:0 0 10px}.fim li{text-align:left;margin:6px 0}
+  .aviso{color:var(--mut);font-size:12px;margin-top:10px;text-align:center}
+</style>
+</head>
+<body>
+<h1>Como atualizar os saldos das contas</h1>
+<div class="sub">Sistema novo da Sorelly · Financeiro › Contas bancárias · valores de exemplo</div>
+
+<div class="legenda"><div class="num" id="n">1</div><div class="txt" id="t"></div></div>
+
+<div class="tela" id="tela">
+  <div class="lado">
+    <div class="logo">SORELLY</div>
+    <div class="it">Início</div><div class="it">SorellyChat</div>
+    <div class="it" id="mFin">▸ Financeiro</div>
+    <div class="it sub1 fechado" id="mSal">▸ Saldos e análises</div>
+    <div class="it sub2 fechado" id="mSdc">▸ Saldo das contas</div>
+    <div class="it sub2 fechado" id="mCb" style="margin-left:38px">Contas bancárias</div>
+    <div class="it">Agendamento</div><div class="it">Recursos Humanos</div>
+  </div>
+  <div class="main">
+    <div class="abas"><div class="aba on" id="aVis">📊 Visão geral</div><div class="aba" id="aLan">✏️ Lançar saldos</div></div>
+    <div id="vazio" style="color:var(--mut);padding:50px 10px;text-align:center">Escolha uma tela no menu da esquerda.</div>
+    <div id="conteudo" style="display:none">
+      <div class="barra"><b>Lançar saldos do dia</b><span class="btn">‹</span><span class="data" id="dt">28/10/2026</span><span class="btn">›</span><span id="dsem" style="font-weight:600">Quarta</span><span class="chip" id="chip">0 de 3 CNPJs fechados</span><span class="btn" id="bTodos">Fechar todos</span></div>
+      <div class="cards"><div class="cartao c1">Total do dia<b id="total">R$ 0,00</b></div><div class="cartao c2">Disponível<b id="disp">R$ 0,00</b></div></div>
+      <div class="bloco" id="b34"><div class="cab"><span>▲ Sorelly Atacadista · 34</span><span class="st" id="s34">Em aberto</span><span class="fechar" id="f34">Fechar CNPJ</span></div>
+        <div class="conta"><span>Sicredi Atacadista 34</span><span class="campo" id="v1">R$ 0,00</span></div>
+        <div class="conta"><span>Itaú Empresas Atacadista 34</span><span class="campo" id="v2">R$ 0,00</span></div></div>
+      <div class="bloco" id="b46"><div class="cab"><span>▲ Sorelly Comércio · 46</span><span class="st" id="s46">Em aberto</span><span class="fechar" id="f46">Fechar CNPJ</span></div>
+        <div class="conta"><span>Sicredi Comércio 46</span><span class="campo" id="v3">R$ 0,00</span></div>
+        <div class="conta"><span>Safra Comércio 46</span><span class="campo" id="v4">R$ 0,00</span></div></div>
+      <div class="bloco" id="b59"><div class="cab"><span>▲ Serenity · 59</span><span class="st" id="s59">Em aberto</span><span class="fechar" id="f59">Fechar CNPJ</span></div>
+        <div class="conta"><span>Sicredi Serenity 59</span><span class="campo" id="v5">R$ 0,00</span></div></div>
+    </div>
+    <div class="cursor" id="cur"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 2.5-8L21 10z" fill="#fff" stroke="#000" stroke-width="1.5"/></svg></div>
+  </div>
+  <div class="fim" id="fim"><div><h2>Pronto! ✅</h2><ul>
+    <li><b>Todo dia:</b> lance o saldo de cada conta e feche os CNPJs.</li>
+    <li><b>Não precisa mais lançar:</b> as contas a pagar e as contas pagas por CNPJ. Elas vêm sozinhas da DevMaster, a cada 10 minutos.</li>
+    <li><b>"Por fora":</b> quem lança é o Nickolas.</li>
+    <li>Todos veem o mesmo saldo. Se errar, é só clicar em <b>Editar</b> no CNPJ.</li></ul></div></div>
+</div>
+
+<div class="ctrl"><button id="ant">‹ Voltar</button><button id="pp">⏸ Pausar</button><button id="prox">Avançar ›</button><div class="pontos" id="pts"></div></div>
+<div class="aviso">Os números desta animação são de exemplo. Os do sistema são os reais.</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+var BRL = function(n){ var s = Math.abs(n).toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, "."); return (n < 0 ? "-" : "") + "R$ " + s; };
+var valores = {v1: 12450.30, v2: -3200.00, v3: 8120.55, v4: 560.00, v5: 21340.10};
+var contas = {b34: ["v1", "v2"], b46: ["v3", "v4"], b59: ["v5"]};
+var pass = 0, tmr = null, tocando = true, timers = [];
+
+function limpa(){ timers.forEach(clearTimeout); timers = []; document.querySelectorAll(".hl").forEach(function(x){ x.classList.remove("hl"); }); }
+function hl(id){ var el = $(id); if(el) el.classList.add("hl"); }
+function mover(id){ var el = $(id), tela = $("tela").getBoundingClientRect(), main = document.querySelector(".main").getBoundingClientRect(); if(!el) return; var r = el.getBoundingClientRect(); $("cur").style.left = (r.left - main.left + r.width / 2) + "px"; $("cur").style.top = (r.top - main.top + r.height / 2) + "px"; }
+function zera(){ Object.keys(valores).forEach(function(k){ $(k).textContent = "R$ 0,00"; $(k).classList.remove("neg"); }); ["34","46","59"].forEach(function(c){ $("s"+c).textContent = "Em aberto"; $("s"+c).classList.remove("ok"); $("b"+c).classList.remove("fechadoOk"); $("f"+c).textContent = "Fechar CNPJ"; }); $("chip").textContent = "0 de 3 CNPJs fechados"; $("chip").classList.remove("ok"); $("total").textContent = "R$ 0,00"; $("disp").textContent = "R$ 0,00"; }
+function digita(id, alvo, atraso){ var txt = String(Math.round(Math.abs(alvo) * 100)); var i = 0; function passo(){ i++; var v = Number(txt.slice(0, i)) / 100; $(id).textContent = BRL(alvo < 0 ? -v : v); $(id).classList.toggle("neg", alvo < 0); somar(); if(i < txt.length) timers.push(setTimeout(passo, 110)); } timers.push(setTimeout(passo, atraso)); }
+function lido(id){ var t = $(id).textContent.replace(/[^\d,-]/g, "").replace(",", "."); return Number(t) || 0; }
+function somar(){ var t = Object.keys(valores).reduce(function(s, k){ return s + lido(k); }, 0); $("total").textContent = BRL(t); $("disp").textContent = BRL(t + 150000); }
+function fecha(c){ $("s"+c).textContent = "✓ Fechado"; $("s"+c).classList.add("ok"); $("b"+c).classList.add("fechadoOk"); $("f"+c).textContent = "Editar"; var n = ["34","46","59"].filter(function(x){ return $("s"+x).classList.contains("ok"); }).length; $("chip").textContent = n + " de 3 CNPJs fechados"; if(n === 3) $("chip").classList.add("ok"); }
+
+var PASSOS = [
+  ["Entre no sistema", "Abra sorelly-admin.vercel.app e entre com o seu usuário e a sua senha.", function(){ $("fim").classList.remove("on"); $("vazio").style.display = ""; $("conteudo").style.display = "none"; ["mSal","mSdc","mCb"].forEach(function(i){ $(i).classList.add("fechado"); }); $("mFin").textContent = "▸ Financeiro"; $("aVis").classList.add("on"); $("aLan").classList.remove("on"); zera(); $("cur").style.left = "60%"; $("cur").style.top = "50%"; }],
+  ["Clique em Financeiro", "No menu da esquerda, clique em Financeiro.", function(){ mover("mFin"); hl("mFin"); timers.push(setTimeout(function(){ $("mFin").textContent = "▾ Financeiro"; $("mSal").classList.remove("fechado"); }, 900)); }],
+  ["Chegue em Contas bancárias", "Clique em Saldos e análises, depois Saldo das contas e Contas bancárias.", function(){ $("mFin").textContent = "▾ Financeiro"; $("mSal").classList.remove("fechado"); mover("mSal"); hl("mSal"); timers.push(setTimeout(function(){ $("mSdc").classList.remove("fechado"); mover("mSdc"); hl("mSdc"); }, 1100)); timers.push(setTimeout(function(){ $("mCb").classList.remove("fechado"); mover("mCb"); hl("mCb"); }, 2300)); timers.push(setTimeout(function(){ $("vazio").style.display = "none"; $("conteudo").style.display = ""; }, 3400)); }],
+  ["Abra a aba Lançar saldos", "Clique na aba ✏️ Lançar saldos, no alto da tela.", function(){ $("vazio").style.display = "none"; $("conteudo").style.display = ""; mover("aLan"); hl("aLan"); timers.push(setTimeout(function(){ $("aLan").classList.add("on"); $("aVis").classList.remove("on"); }, 1000)); }],
+  ["Confira a data", "A tela abre no dia de hoje. Para outro dia, use as setas ‹ e › ou escolha a data.", function(){ $("aLan").classList.add("on"); $("aVis").classList.remove("on"); mover("dt"); hl("dt"); }],
+  ["Digite o saldo de cada conta", "Digite só os números: os centavos entram sozinhos. Tecle Enter para ir para a próxima conta.", function(){ mover("v1"); hl("v1"); digita("v1", valores.v1, 600); timers.push(setTimeout(function(){ mover("v3"); hl("v3"); digita("v3", valores.v3, 0); }, 2600)); timers.push(setTimeout(function(){ mover("v4"); hl("v4"); digita("v4", valores.v4, 0); }, 4400)); }],
+  ["Saldo negativo?", "Digite o sinal de menos (-) antes do número. O valor fica vermelho.", function(){ $("v1").textContent = BRL(valores.v1); $("v3").textContent = BRL(valores.v3); $("v4").textContent = BRL(valores.v4); somar(); mover("v2"); hl("v2"); digita("v2", valores.v2, 700); timers.push(setTimeout(function(){ mover("v5"); hl("v5"); digita("v5", valores.v5, 0); }, 2600)); }],
+  ["Feche o CNPJ", "Terminou um CNPJ? Clique em Fechar CNPJ. Isso confirma o saldo dele.", function(){ Object.keys(valores).forEach(function(k){ $(k).textContent = BRL(valores[k]); $(k).classList.toggle("neg", valores[k] < 0); }); somar(); mover("f34"); hl("f34"); timers.push(setTimeout(function(){ fecha("34"); }, 1100)); }],
+  ["Feche os outros CNPJs", "Faça o mesmo nos outros. Ou clique em Fechar todos.", function(){ Object.keys(valores).forEach(function(k){ $(k).textContent = BRL(valores[k]); $(k).classList.toggle("neg", valores[k] < 0); }); somar(); fecha("34"); mover("f46"); hl("f46"); timers.push(setTimeout(function(){ fecha("46"); mover("f59"); hl("f59"); }, 1100)); timers.push(setTimeout(function(){ fecha("59"); }, 2300)); }],
+  ["Confira o topo", "Veja 3 de 3 CNPJs fechados, o Total do dia e o Disponível.", function(){ Object.keys(valores).forEach(function(k){ $(k).textContent = BRL(valores[k]); $(k).classList.toggle("neg", valores[k] < 0); }); somar(); ["34","46","59"].forEach(fecha); mover("chip"); hl("chip"); hl("total"); }],
+  ["Errou um valor?", "Clique em Editar no CNPJ, corrija a conta e feche de novo. Nada se perde.", function(){ Object.keys(valores).forEach(function(k){ $(k).textContent = BRL(valores[k]); $(k).classList.toggle("neg", valores[k] < 0); }); somar(); ["34","46","59"].forEach(fecha); mover("f34"); hl("f34"); }],
+  ["Pronto!", "O saldo fica salvo na hora, e todos veem o mesmo número.", function(){ Object.keys(valores).forEach(function(k){ $(k).textContent = BRL(valores[k]); $(k).classList.toggle("neg", valores[k] < 0); }); somar(); ["34","46","59"].forEach(fecha); timers.push(setTimeout(function(){ $("fim").classList.add("on"); }, 1200)); }]
+];
+
+// estado da tela antes de cada passo, para o passo funcionar também quando se pula direto para ele
+function base(p){ $("vazio").style.display = p >= 3 ? "none" : ""; $("conteudo").style.display = p >= 3 ? "" : "none"; $("mFin").textContent = p >= 1 ? "▾ Financeiro" : "▸ Financeiro"; $("mSal").classList.toggle("fechado", p < 1); $("mSdc").classList.toggle("fechado", p < 2); $("mCb").classList.toggle("fechado", p < 2); $("aLan").classList.toggle("on", p >= 4); $("aVis").classList.toggle("on", p < 4); }
+function ir(i){ limpa(); pass = (i + PASSOS.length) % PASSOS.length; var p = PASSOS[pass]; $("n").textContent = pass + 1; $("t").innerHTML = p[0] + "<small>" + p[1] + "</small>"; if(pass < PASSOS.length - 1) $("fim").classList.remove("on"); base(pass); if(pass <= 6) zera(); p[2](); document.querySelectorAll(".pt").forEach(function(x, k){ x.classList.toggle("on", k === pass); }); if(tocando){ clearTimeout(tmr); tmr = setTimeout(function(){ ir(pass + 1); }, pass === 5 || pass === 6 || pass === 8 ? 8200 : 5600); } }
+PASSOS.forEach(function(_, k){ var d = document.createElement("div"); d.className = "pt"; d.onclick = function(){ ir(k); }; $("pts").appendChild(d); });
+$("ant").onclick = function(){ ir(pass - 1); }; $("prox").onclick = function(){ ir(pass + 1); };
+$("pp").onclick = function(){ tocando = !tocando; $("pp").textContent = tocando ? "⏸ Pausar" : "▶ Continuar"; if(tocando) ir(pass); else clearTimeout(tmr); };
+ir(0);
+</script>
+</body>
+</html>

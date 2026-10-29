@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tela Apps · 3 layouts por fluxo</title>
+<style>
+:root{--bg:#0B0B0D;--card:#141417;--card2:#1B1B20;--linha:#2A2A31;--txt:#F5F1E6;--mut:#B9B3A3;--ouro:#E8B84B;--ouro2:#B8862B;--verde:#34C27A;--verm:#E5594F;
+ --rev:#EC4899;--rep:#8B5CF6;--fun:#F59E0B;--mot:#14B8A6;--cli:#3B82F6}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;color:var(--txt);font-family:Inter,system-ui,sans-serif;font-size:13px;padding:24px 16px 60px}
+h1{font-size:20px;text-align:center}
+.sub{text-align:center;color:var(--mut);margin:4px 0 22px}
+.opc{max-width:1280px;margin:0 auto 34px}
+.opc>h2{font-size:15px;color:var(--ouro);margin-bottom:2px}
+.opc>p{color:var(--mut);margin-bottom:8px}
+.tela{background:var(--bg);border:1px solid var(--linha);border-radius:10px;padding:12px}
+.cab{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.cab b{font-size:18px}
+.cab small{display:block;color:var(--mut);font-size:13px}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+button,.sel{height:32px;border-radius:7px;border:1px solid var(--linha);background:var(--card2);color:var(--txt);font:inherit;font-size:13px;padding:0 12px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--ouro2)}
+button.on{background:var(--ouro);color:#1B1409;border-color:var(--ouro);font-weight:600}
+button.ic{padding:0;width:32px}
+.sel{display:inline-flex;align-items:center;color:var(--mut);cursor:default}
+.sep{width:1px;height:20px;background:var(--linha);margin:0 4px}
+.faixa{border:1px solid var(--linha);border-radius:10px;background:var(--card);padding:10px;margin-bottom:10px}
+.fh{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.fh b{font-size:13px;letter-spacing:.04em;text-transform:uppercase;color:var(--ouro)}
+.fh span.n{color:var(--mut);font-size:12px;margin-left:8px;text-transform:none;letter-spacing:0}
+.fila{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;align-items:flex-start}
+.lig{align-self:center;color:var(--ouro);font-size:20px}
+.app{width:158px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.app.off{opacity:.35}
+.ph{width:150px;height:300px;border-radius:26px;border:3px solid #2B2B2F;background:#F2F3F5;position:relative;overflow:hidden;color:#111}
+.ph.and{border-radius:16px}
+.ph .top{height:40px;color:#fff;font-weight:700;font-size:12px;display:flex;align-items:flex-end;padding:0 10px 6px}
+.ph .ln{height:22px;margin:6px 8px;border-radius:7px;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.ph .nt{position:absolute;top:5px;left:50%;transform:translateX(-50%);width:44px;height:11px;border-radius:9px;background:#000}
+.ph.and .nt{width:9px;height:9px;border-radius:50%}
+.nome{font-weight:600;font-size:13px;text-align:center}
+.tb{display:flex;gap:4px;justify-content:center;flex-wrap:wrap}
+.tb button{height:26px;font-size:11px;padding:0 8px}
+.chips{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.chips button{height:26px;font-size:12px;padding:0 9px}
+.duas{display:grid;grid-template-columns:1.6fr 1fr;gap:10px}
+@media(max-width:900px){.duas{grid-template-columns:1fr}}
+.c3{display:grid;grid-template-columns:200px 1fr;gap:10px}
+@media(max-width:800px){.c3{grid-template-columns:1fr}}
+.trilho{display:flex;flex-direction:column;gap:6px}
+.trilho .it{display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--linha);border-radius:8px;padding:6px 8px}
+.trilho .it i{width:10px;height:10px;border-radius:50%}
+.trilho .it span{flex:1;font-weight:600}
+.trilho .it button{height:24px;padding:0 7px;font-size:11px}
+.trilho h4{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin:6px 0 0}
+.aviso{margin-top:8px;color:var(--mut);font-size:12px}
+</style>
+</head>
+<body>
+<h1>Tela Apps · 3 layouts por fluxo</h1>
+<p class="sub">Todos os botões funcionam: ligar app, trocar acesso, iOS ou Android, zoom e atalhos de fluxo.</p>
+
+<section class="opc" id="A"></section>
+<section class="opc" id="B"></section>
+<section class="opc" id="C"></section>
+
+<script>
+var APPS={
+ rev:{n:"Revendedora",c:"#EC4899",sub:"Beatriz Nogueira"},
+ rep:{n:"Representante",c:"#8B5CF6",sub:"Dayanne"},
+ fun:{n:"Funcionárias",c:"#F59E0B",sub:"Diretoria"},
+ mot:{n:"Motoboy",c:"#14B8A6",sub:"Rafael"},
+ cli:{n:"Cliente final",c:"#3B82F6",sub:"Juliana"}
+};
+var ACESSOS=["Diretoria","Supervisão","Montagem","Bipagem","Condicionais","Agendamento","Financeiro"];
+function S(){return {on:{rev:1,rep:1,fun:1,mot:1,cli:1},so:{rev:"ios",rep:"ios",fun:"ios",mot:"ios",cli:"ios"},acesso:"Diretoria",zoom:1,kit:"Beatriz Nogueira · Dayanne"}}
+var st={A:S(),B:S(),C:S()};
+function fone(id,k){
+  var s=st[id],a=APPS[k],z=s.zoom,sub=k==="fun"?s.acesso:a.sub;
+  var linhas="";for(var i=0;i<8;i++)linhas+='<div class="ln" style="width:'+(i%3==1?'70%':'auto')+'"></div>';
+  return '<div class="app'+(s.on[k]?'':' off')+'" style="width:'+(158*z)+'px">'+
+   '<div style="zoom:'+z+'"><div class="ph '+(s.so[k]==='and'?'and':'')+'"><span class="nt"></span><div class="top" style="background:'+a.c+'">'+a.n+'</div>'+linhas+'</div></div>'+
+   '<div class="nome" style="color:'+a.c+'">'+a.n+'</div><div style="color:var(--mut);font-size:12px">'+sub+'</div>'+
+   '<div class="tb">'+
+    '<button onclick="act(\''+id+'\',\'so\',\''+k+'\')">'+(s.so[k]==='ios'?'iOS':'Android')+'</button>'+
+    '<button onclick="act(\''+id+'\',\'rec\',\''+k+'\')">Recarregar</button>'+
+    '<button onclick="act(\''+id+'\',\'off\',\''+k+'\')">'+(s.on[k]?'Ocultar':'Mostrar')+'</button>'+
+   '</div></div>';
+}
+function acessos(id){
+  return '<div class="chips">'+ACESSOS.map(function(x){return '<button class="'+(st[id].acesso===x?'on':'')+'" onclick="act(\''+id+'\',\'acesso\',\''+x+'\')">'+x+'</button>'}).join('')+'</div>';
+}
+function zoomBtns(id){
+  return [['P',.8],['M',1],['G',1.2]].map(function(z){return '<button class="'+(st[id].zoom===z[1]?'on':'')+'" onclick="act(\''+id+'\',\'zoom\','+z[1]+')">'+z[0]+'</button>'}).join('');
+}
+function fila(id,ks,lig){
+  return '<div class="fila">'+ks.map(function(k,i){return (i&&lig?'<span class="lig">⇄</span>':'')+fone(id,k)}).join('')+'</div>';
+}
+function seletorKit(id){return '<span class="sel">Kit: '+st[id].kit+' ▾</span>'}
+function preset(id,nome){
+  return '<button onclick="act(\''+id+'\',\'preset\',\''+nome+'\')">'+nome+'</button>';
+}
+
+function A(){ // faixas por fluxo, botões em cada faixa
+  return '<h2>Layout A · Faixas por fluxo</h2><p>Duas faixas com nome. Cada faixa tem os seus botões. Os apps ligados ficam com seta entre eles.</p>'+
+  '<div class="tela"><div class="cab"><div><b>Apps</b><small>Visão de teste dos apps.</small></div><div class="bar">'+preset('A','Mostrar todos')+preset('A','Reiniciar tudo')+'<span class="sep"></span>'+zoomBtns('A')+'</div></div>'+
+  '<div class="faixa"><div class="fh"><div><b>Venda e acerto</b><span class="n">ligados entre si</span></div><div class="bar">'+seletorKit('A')+'<button onclick="act(\'A\',\'sync\')">Sincronizar com o kit</button><button onclick="act(\'A\',\'acerto\')">Abrir acerto pronto</button></div></div>'+
+   '<div style="margin-bottom:8px">'+acessos('A')+'</div>'+fila('A',['rev','rep','fun'],1)+'</div>'+
+  '<div class="faixa"><div class="fh"><div><b>Entrega e compra</b><span class="n">pedido da cliente até a porta</span></div><div class="bar"><span class="sel">Pedido: E-2041 ▾</span><button onclick="act(\'A\',\'oferta\')">Enviar oferta ao motoboy</button><button onclick="act(\'A\',\'pin\')">Mostrar PIN</button></div></div>'+fila('A',['cli','mot'],1)+'</div></div>';
+}
+function B(){ // dois blocos lado a lado + barra única no topo
+  var s=st.B;
+  return '<h2>Layout B · Dois blocos lado a lado</h2><p>Uma barra grande no topo com todos os atalhos. Venda e acerto à esquerda, entrega e compra à direita. Os apps ficam menores, mas todos aparecem sem rolar.</p>'+
+  '<div class="tela"><div class="cab"><div><b>Apps</b><small>Todos os apps na mesma tela.</small></div></div>'+
+  '<div class="faixa" style="margin-bottom:10px"><div class="bar" style="justify-content:space-between"><div class="bar">'+seletorKit('B')+'<button onclick="act(\'B\',\'sync\')">Sincronizar</button><button onclick="act(\'B\',\'acerto\')">Acerto pronto</button><button onclick="act(\'B\',\'oferta\')">Oferta ao motoboy</button><button onclick="act(\'B\',\'pin\')">PIN da entrega</button></div><div class="bar">'+preset('B','Acerto completo')+preset('B','Entrega')+preset('B','Mostrar todos')+'<span class="sep"></span>'+zoomBtns('B')+'<button onclick="act(\'B\',\'reset\')">Reiniciar</button></div></div></div>'+
+  '<div class="duas"><div class="faixa"><div class="fh"><b>Venda e acerto</b></div><div style="margin-bottom:8px">'+acessos('B')+'</div>'+fila('B',['rev','rep','fun'],1)+'</div>'+
+  '<div class="faixa"><div class="fh"><b>Entrega e compra</b></div><div style="height:30px"></div>'+fila('B',['cli','mot'],1)+'</div></div></div>';
+}
+function C(){ // trilho de botões à esquerda + palco por fluxo
+  var s=st.C,ks=Object.keys(APPS);
+  var t='<h2>Layout C · Trilho de botões e palco</h2><p>Os botões ficam numa coluna à esquerda, um bloco por app. O palco mostra os fluxos escolhidos nas abas do topo.</p>'+
+  '<div class="tela"><div class="cab"><div><b>Apps</b><small>Escolha o fluxo e ligue os apps.</small></div><div class="bar"><button class="'+(s.fluxo!=='ent'&&s.fluxo!=='todos'?'on':'')+'" onclick="act(\'C\',\'fluxo\',\'venda\')">Venda e acerto</button><button class="'+(s.fluxo==='ent'?'on':'')+'" onclick="act(\'C\',\'fluxo\',\'ent\')">Entrega e compra</button><button class="'+(s.fluxo==='todos'?'on':'')+'" onclick="act(\'C\',\'fluxo\',\'todos\')">Todos</button><span class="sep"></span>'+zoomBtns('C')+'</div></div>'+
+  '<div class="c3"><div class="trilho"><h4>Contexto</h4><span class="sel">Kit: '+s.kit.split(' · ')[0]+' ▾</span><button onclick="act(\'C\',\'sync\')">Sincronizar com o kit</button><button onclick="act(\'C\',\'acerto\')">Abrir acerto pronto</button><button onclick="act(\'C\',\'oferta\')">Oferta ao motoboy</button><h4>Apps</h4>'+
+   ks.map(function(k){return '<div class="it"><i style="background:'+APPS[k].c+'"></i><span>'+APPS[k].n+'</span><button onclick="act(\'C\',\'so\',\''+k+'\')">'+(s.so[k]==='ios'?'iOS':'And.')+'</button><button class="'+(s.on[k]?'on':'')+'" onclick="act(\'C\',\'off\',\''+k+'\')">'+(s.on[k]?'Ligado':'Desl.')+'</button></div>'}).join('')+
+   '<h4>Acesso das funcionárias</h4>'+acessos('C')+'<button onclick="act(\'C\',\'reset\')">Reiniciar tudo</button></div>'+
+  '<div>';
+  var f=s.fluxo||'venda';
+  if(f==='venda'||f==='todos') t+='<div class="faixa"><div class="fh"><b>Venda e acerto</b></div>'+fila('C',['rev','rep','fun'],1)+'</div>';
+  if(f==='ent'||f==='todos') t+='<div class="faixa"><div class="fh"><b>Entrega e compra</b></div>'+fila('C',['cli','mot'],1)+'</div>';
+  return t+'</div></div></div>';
+}
+var AVISO={sync:"Os três apps agora mostram o mesmo kit.",acerto:"Acerto já preenchido aberto na representante.",oferta:"Oferta E-2041 enviada ao motoboy.",pin:"PIN 4821 mostrado na cliente e pedido ao motoboy.",rec:"App recarregado.",reset:"Tudo reiniciado."};
+function act(id,t,v){
+  var s=st[id];
+  if(t==='so')s.so[v]=s.so[v]==='ios'?'and':'ios';
+  else if(t==='off')s.on[v]=s.on[v]?0:1;
+  else if(t==='acesso')s.acesso=v;
+  else if(t==='zoom')s.zoom=v;
+  else if(t==='fluxo')s.fluxo=v;
+  else if(t==='preset'){
+    var m={'Mostrar todos':['rev','rep','fun','mot','cli'],'Acerto completo':['rev','rep','fun'],'Entrega':['cli','rev','mot']};
+    if(v==='Reiniciar tudo'){st[id]=S();}
+    else{s.on={};(m[v]||[]).forEach(function(k){s.on[k]=1});}
+  }
+  else if(t==='reset'){st[id]=S();}
+  else { aviso(id,AVISO[t]); return; }
+  draw(id);
+  if(AVISO[t])aviso(id,AVISO[t]);
+}
+function aviso(id,txt){var el=document.querySelector('#'+id+' .aviso');if(!el){el=document.createElement('div');el.className='aviso';document.querySelector('#'+id).appendChild(el)}el.textContent=txt}
+function draw(id){document.getElementById(id).innerHTML={A:A,B:B,C:C}[id]()}
+draw('A');draw('B');draw('C');
+</script>
+</body>
+</html>

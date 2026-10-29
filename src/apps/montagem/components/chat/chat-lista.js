@@ -99,7 +99,7 @@ function ListaConversas(p){
   var linha = function(x){
     var u = x.ultima, ativa = st.efem.conversaSel===x.conv.id, minha = u && u.de===eu, outro = x.conv.tipo==="dm" ? (x.conv.membros.find(function(i){ return i!==eu; }) || x.conv.membros[0]) : x.conv.tipo==="setor" ? x.conv.repId : null;
     var dig = (st.efem.digitando[x.conv.id]||[]).filter(function(i){ return i!==eu; });
-    return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, onContextMenu:function(ev){ if(p.leitura) return; ev.preventDefault(); setCtx({px:ev.clientX, py:ev.clientY, it:x}); }, className:"flex w-full items-center gap-2.5 px-3 py-2 text-left", style:{background:x.pendentes ? (W.painel==="#FFFFFF" ? (ativa ? "#FFE9B8" : "#FFF4DC") : (ativa ? "#3d2d0f" : "#2a2010")) : ativa ? W.sel : "transparent", borderBottom:"1px solid "+W.borda, boxShadow:x.pendentes ? "inset 4px 0 0 #f59e0b" : "none"}},
+    return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, onContextMenu:function(ev){ if(p.leitura) return; ev.preventDefault(); setCtx({px:ev.clientX, py:ev.clientY, it:x}); }, className:"flex w-full items-center gap-2.5 px-3 py-2 text-left", style:{background:ativa ? W.sel : "transparent", borderBottom:"1px solid "+W.borda, boxShadow:"none"}},
       x.conv.tipo==="grupo" ? e(Avatar,{grupo:true, nome:x.conv.nome, foto:x.conv.foto, s:44}) : e(Avatar,{id:outro, s:44, presenca:true}),
       e("span",{className:"min-w-0 flex-1"},
         e("span",{className:"flex items-baseline gap-2"}, e("span",{className:"min-w-0 flex-1 truncate text-[13px] font-semibold"}, x.titulo, x.conv.tipo==="setor" && !x.conv.atendente && e("span",{className:"ml-1.5 rounded px-1 text-[9px] font-semibold", style:{background:"#4a3410", color:"#f5c542"}}, "na fila"), mostrarTodas && !x.membro && e("span",{className:"ml-1.5 rounded px-1 text-[9px] font-normal", style:{background:"#3a2f12", color:W.ouro}}, "só leitura")),
@@ -112,7 +112,6 @@ function ListaConversas(p){
           x.fixa && e(Ph,{n:"push-pin", s:15, fill:true, style:{color:W.sec}}),
           x.marcado && e("span",{className:"grid size-5 place-items-center rounded-full text-[10px] font-bold text-white", style:{background:W.verde}, title:"Marcou você"}, "@"),
           devo(x) && e(EtiquetaEspera,{t:thDe[x.conv.id]}),
-          x.pendentes>0 && e("span",{className:"flex items-center gap-1 rounded-full px-2 text-[10.5px] font-extrabold", style:{background:"#f59e0b", color:"#24180a", height:20}, title:"Aguardando a sua decisão"}, e(Ph,{n:"clock-countdown", s:12, fill:true}), x.pendentes),
           x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas))));
   };
   var rolou = function(ev){ var a = ev.target; if(a.scrollHeight-a.scrollTop-a.clientHeight<120 && limite<filtrada.length) setLimite(limite+40); };

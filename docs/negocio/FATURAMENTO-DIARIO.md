@@ -174,3 +174,8 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Resultado em 28/10: 3.792 títulos em aberto. Outubro R$ 160.253,95 (103) · novembro R$ 1.471.268,66 (785) · dezembro R$ 1.500.485,63 (695) · janeiro/27 R$ 1.112.044,14 (454) · fevereiro R$ 998.724,91 · março R$ 915.701,79. Antes (22/10): novembro R$ 1.382.862,74 e dezembro R$ 1.426.056,90.
 - Erros de cadastro vistos na DevMaster: título GRA 34 com vencimento no ano 0026 (R$ 1.500,00) e título PÇ 39 de 15/11/2025 (R$ 4.065,00) ainda em aberto.
 - 37 títulos que estavam na lista de 22/10 (R$ 732.943,70) não estão mais em aberto: foram pagos ou renegociados.
+
+## Atualização automática de 29/10/2026 (3h, lido do admin antigo)
+- Saldos das 29 contas gravados também para 28/10 (`saldos-atualizacao.local.js`). Soma das contas bancárias (sem Retido e sem Dinheiro): 28/10 = −R$ 227.119,68 (27/10 era −R$ 218.823,61). Sicredi Shopping 46: −R$ 5.138,96. Sicredi Serenity: −R$ 6.127,90. Itaú Black: −R$ 26.379,17.
+- Contas pagas: o admin antigo ainda NÃO tem linha do dia 28/10. Última linha é 27/10 (R$ 11.508,02, igual ao já gravado). Dia 28/10 fica sem contas pagas até o admin lançar.
+- Contas pagas de outubro gravadas (01 a 27/10): **R$ 1.261.865,29**. Total do mês no admin (`faturamento_contas_mes`, 27/10 21:03): pagas R$ 1.330.288,27. Diferença de R$ 68.422,98 entre a soma por dia e o total do mês (já vista antes; origem a investigar). Nenhum total de mês novo desde 27/10.

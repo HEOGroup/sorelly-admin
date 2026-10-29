@@ -108,6 +108,7 @@ var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {bre
 var SETORES = [
   // Grupo "Geral" (28/10/2026, reorganização do menu lateral): Início, SorellyChat e Dashboard juntos no topo.
   {id:"inicio", grupo:"geral", nome:"Início", ic:"coroa", cor:"#E8B84B", direto:T("inicio","Início")},   // página inicial de todos (27/10/2026): foto, mensagem de fé, setores e o dia da pessoa
+  {id:"melhorias", grupo:"geral", nome:"Melhorias", ic:"sino", cor:"#E8B84B", direto:T("melhorias","Solicitações de melhorias")},   // todo funcionário pede mudanças no sistema (28/10/2026)
   {id:"whats", grupo:"geral", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", grupo:"geral", nome:"Dashboard", ic:"dashboard", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   // Rotina do dia SAIU do menu (28/10/2026, pedido do Marcus): a DevMaster vai trazer tudo automático; o que precisar atualizar à mão vira UMA aba só, ainda a definir. Tela e código continuam no projeto, só não aparecem mais.
@@ -236,7 +237,7 @@ var SETORES = [
 var GRUPO_BARRA = {"financeiro":{"Controle de\npagamentos":"Pagamentos", "Contas a\npagar":"Pagamentos", "Pagamentos a\nfornecedores":"Pagamentos", "Faturamento &\ncontas a pagar":"Faturamento", 
   "Representantes":"Pessoas", "Comissões":"Pessoas", "Cobrança":"Pessoas", "Saldo das\ncontas":"Bancos", "Link de\npagamento":"Relatórios"}};
 SETORES.forEach(function(st){ var g = GRUPO_BARRA[st.id]; if(g) (st.areas||[]).forEach(function(ar){ if(g[ar.nome]) ar.grupo = g[ar.nome]; }); });
-var APPS_TOPO = [["celrep","App representante","representante","#8B5CF6"],["celrev","App revendedora","revendedora","#EC4899"],["celfunc","App das funcionárias","montadora","#F59E0B"]];
+var APPS_TOPO = [["celrep","App representante","representante","#8B5CF6"],["celfunc","App das funcionárias","montadora","#F59E0B"]];
 var SETORES_BAIXO = [];   // Equipes passou para o RH (16/10/2026)
 function ondeEsta(aba){ var r = null; SETORES.forEach(function(st){ (st.areas||[]).forEach(function(ar, i){ ar.telas.forEach(function(t){ if(!r && t.aba===aba) r = {setor:st, area:ar, i:i}; }); }); }); return r; }
 function telaPorNome(nome){ var r = null; SETORES.forEach(function(st){ (st.areas||[]).forEach(function(ar){ ar.telas.forEach(function(t){ if(!r && t.nome===nome) r = t; }); }); }); return r; }

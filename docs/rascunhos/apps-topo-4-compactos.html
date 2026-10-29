@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tela Apps · 4 topos compactos</title>
+<style>
+:root{--bg:#0B0B0D;--card:#141417;--card2:#1B1B20;--linha:#2A2A31;--txt:#F5F1E6;--mut:#B9B3A3;--ouro:#E8B84B;--ouro2:#B8862B}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;color:var(--txt);font-family:Inter,system-ui,sans-serif;font-size:13px;padding:20px 14px 60px}
+h1{font-size:18px;text-align:center}
+.sub{text-align:center;color:var(--mut);margin:4px 0 18px}
+.v{max-width:1360px;margin:0 auto 22px}
+.v>h2{font-size:14px;color:var(--ouro);margin-bottom:2px}
+.v>p{color:var(--mut);margin-bottom:6px}
+.tela{background:var(--bg);border:1px solid var(--linha);border-radius:10px;padding:10px}
+.ttl{font-size:18px;font-weight:700;margin-bottom:6px}
+.box{border:1px solid var(--linha);border-radius:10px;background:var(--card);padding:8px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.row+.row{margin-top:6px}
+button,input,select{font:inherit;font-size:13px;color:var(--txt)}
+button,select,input{height:32px;border-radius:7px;border:1px solid var(--linha);background:var(--card2);padding:0 12px}
+input{width:230px}
+button{cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--ouro2)}
+button.c{height:28px;padding:0 10px}
+button.on{background:var(--ouro);border-color:var(--ouro);color:#1B1409;font-weight:600}
+button.fx.on{background:rgba(232,184,75,.18);border-color:var(--ouro);color:var(--txt)}
+.lb{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);white-space:nowrap}
+.sep{width:1px;height:18px;background:var(--linha)}
+.ml{margin-left:auto}
+.nota{color:var(--mut);font-size:12px}
+.pn{border:1px solid var(--linha);border-radius:8px;background:var(--card2);padding:8px;margin-top:6px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:2px 10px}
+.ck{display:flex;gap:7px;align-items:center;height:28px;cursor:pointer;white-space:nowrap}
+.ck i{width:14px;height:14px;border:1px solid var(--mut);border-radius:3px;flex:none}
+.ck.on i{background:var(--ouro);border-color:var(--ouro)}
+.ck small{color:var(--mut);font-size:12px}
+.rail{display:grid;grid-template-columns:270px 1fr;gap:10px}
+@media(max-width:800px){.rail{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column}
+.lista .ck{height:26px}
+.pal{border:1px dashed var(--linha);border-radius:8px;min-height:140px;padding:10px;display:flex;gap:10px;flex-wrap:wrap;align-items:flex-start;justify-content:center;color:var(--mut)}
+.fk{width:92px;height:130px;border-radius:14px;border:2px solid #2B2B2F;background:#F2F3F5;color:#111;font-size:11px;font-weight:600;text-align:center;padding:30px 6px 0}
+.fk b{display:block;font-size:11px;line-height:1.2}
+.fk.a{background:#8B5CF6;color:#fff}.fk.b{background:#F59E0B;color:#1B1409}.fk.d{background:#14B8A6;color:#06201C}.fk.e{background:#EC4899;color:#fff}
+.chipx{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 6px 0 10px;border-radius:7px;background:rgba(232,184,75,.18);border:1px solid var(--ouro)}
+.chipx button{height:20px;width:20px;padding:0;border:0;background:transparent;color:var(--mut)}
+</style>
+</head>
+<body>
+<h1>Tela Apps · 4 topos compactos</h1>
+<p class="sub">Nenhum nome abreviado. Todos os botões funcionam.</p>
+<div class="v" id="v1"></div><div class="v" id="v2"></div><div class="v" id="v3"></div><div class="v" id="v4"></div>
+
+<script>
+var CEL=[["rev","Revendedora"],["rep","Representante"],["dir","Diretoria"],["dey","Supervisão da montagem"],["mon","Montagem de kits"],["bip","Bipagem"],["con","Condicionais"],["age","Agendamento"],["fin","Financeiro"],["mot","Motoboy"]];
+var N={};CEL.forEach(function(c){N[c[0]]=c[1]});
+var FX=[["Listagem de kits",["rep","con","mon","bip"]],["Acerto da representante",["rev","rep","age","fin"]],["Kit novo",["rep","rev","mon"]],["Entrega",["rev","mot"]],["Retirada de kits",["bip","rep"]],["Pagamento do acerto",["rep","age","fin"]],["Atendimento interno",["rev","bip","mon"]]];
+var ST={};
+["v1","v2","v3","v4"].forEach(function(i){ST[i]={sel:{rev:1,rep:1,dir:1,mot:1},z:1,q:"",ab:null,fx:[]}});
+var rota=function(ks){return ks.map(function(k){return N[k]}).join(" → ")};
+var on=function(i,ks){return ks.every(function(k){return ST[i].sel[k]})};
+var cnt=function(i){return Object.keys(ST[i].sel).length};
+function tFx(i,ks){var s=ST[i].sel,o=on(i,ks);ks.forEach(function(k){if(o)delete s[k];else s[k]=1});d(i)}
+function tCel(i,k){var s=ST[i].sel;if(s[k])delete s[k];else s[k]=1;d(i)}
+function lim(i){ST[i].sel={};d(i)}
+function zm(i,z){ST[i].z=z;d(i)}
+function bq(i,v){ST[i].q=v;d(i,true)}
+function novo(i){var n=prompt("Nome do novo fluxo (usa os celulares ligados agora):");if(!n)return;ST[i].fx.push([n,CEL.map(function(c){return c[0]}).filter(function(k){return ST[i].sel[k]})]);d(i)}
+function ab(i,m){ST[i].ab=ST[i].ab===m?null:m;d(i)}
+function allFx(i){return FX.concat(ST[i].fx)}
+function zbtn(i){return '<span class="ml row" style="margin-top:0"><span class="lb">Tamanho</span>'+[["P",.8],["M",1],["G",1.2]].map(function(z){return '<button class="c '+(ST[i].z===z[1]?'on':'')+'" onclick="zm(\''+i+'\','+z[1]+')">'+z[0]+'</button>'}).join('')+'</span>'}
+function busca(i){return '<input id="q'+i+'" placeholder="Buscar fluxo ou celular…" value="'+ST[i].q+'" oninput="bq(\''+i+'\',this.value)">'}
+function casa(i,nome,ks){var q=ST[i].q.trim().toLowerCase();return !q||nome.toLowerCase().indexOf(q)>=0||ks.some(function(k){return N[k].toLowerCase().indexOf(q)>=0})}
+function fxChips(i){return allFx(i).filter(function(f){return casa(i,f[0],f[1])}).map(function(f){return '<button class="c fx '+(on(i,f[1])?'on':'')+'" title="'+rota(f[1])+'" onclick="tFx(\''+i+'\',['+f[1].map(function(k){return "'"+k+"'"})+'])">'+f[0]+'</button>'}).join('')}
+function celChips(i){return CEL.filter(function(c){return casa(i,c[1],[c[0]])}).map(function(c){return '<button class="c '+(ST[i].sel[c[0]]?'on':'')+'" onclick="tCel(\''+i+'\',\''+c[0]+'\')">'+c[1]+'</button>'}).join('')}
+function ck(i,fn,ativo,nome,extra){return '<div class="ck '+(ativo?'on':'')+'" onclick="'+fn+'"><i></i><span>'+nome+'</span>'+(extra?'<small>'+extra+'</small>':'')+'</div>'}
+function fxChecks(i){return allFx(i).filter(function(f){return casa(i,f[0],f[1])}).map(function(f){return ck(i,"tFx('"+i+"',["+f[1].map(function(k){return "'"+k+"'"})+"])",on(i,f[1]),f[0],rota(f[1]))}).join('')}
+function celChecks(i){return CEL.filter(function(c){return casa(i,c[1],[c[0]])}).map(function(c){return ck(i,"tCel('"+i+"','"+c[0]+"')",ST[i].sel[c[0]],c[1])}).join('')}
+function ligados(i){var ks=CEL.filter(function(c){return ST[i].sel[c[0]]});return ks.length?ks.map(function(c){return '<span class="chipx">'+c[1]+'<button onclick="tCel(\''+i+'\',\''+c[0]+'\')" aria-label="Desligar '+c[1]+'">×</button></span>'}).join(''):'<span class="nota">Nenhum celular ligado.</span>'}
+var COR={rep:"a",rev:"e",mot:"d"};
+function phones(i){var ks=CEL.filter(function(c){return ST[i].sel[c[0]]});return ks.length?ks.map(function(c){return '<div class="fk '+(COR[c[0]]||'b')+'" style="zoom:'+ST[i].z+'"><b>'+c[1]+'</b></div>'}).join(''):'Nenhum celular ligado.'}
+
+function V1(i){return '<h2>Versão 1 · Três linhas de botões</h2><p>Os fluxos viraram botões pequenos, com o nome inteiro. Passe o mouse para ver o caminho completo.</p><div class="tela"><div class="ttl">Apps</div><div class="box">'+
+ '<div class="row">'+busca(i)+'<button onclick="novo(\''+i+'\')">+ Novo fluxo</button><button onclick="lim(\''+i+'\')">Limpar</button><span class="nota">'+cnt(i)+' celulares ligados</span>'+zbtn(i)+'</div>'+
+ '<div class="row"><span class="lb" style="width:90px">Fluxos</span>'+fxChips(i)+'</div>'+
+ '<div class="row"><span class="lb" style="width:90px">Celulares</span>'+celChips(i)+'</div></div></div>'}
+function V2(i){var s=ST[i];return '<h2>Versão 2 · Duas listas que abrem</h2><p>Uma linha só quando fechado. Embaixo ficam os celulares ligados, cada um com × para desligar.</p><div class="tela"><div class="ttl">Apps</div><div class="box">'+
+ '<div class="row"><button class="'+(s.ab==='fx'?'on':'')+'" onclick="ab(\''+i+'\',\'fx\')">Fluxos ('+allFx(i).length+') ▾</button><button class="'+(s.ab==='cel'?'on':'')+'" onclick="ab(\''+i+'\',\'cel\')">Celulares ('+cnt(i)+' ligados) ▾</button>'+busca(i)+'<button onclick="novo(\''+i+'\')">+ Novo fluxo</button><button onclick="lim(\''+i+'\')">Limpar</button>'+zbtn(i)+'</div>'+
+ (s.ab==='fx'?'<div class="pn"><div class="grid" style="grid-template-columns:repeat(auto-fill,minmax(420px,1fr))">'+fxChecks(i)+'</div></div>':'')+
+ (s.ab==='cel'?'<div class="pn"><div class="grid">'+celChecks(i)+'</div></div>':'')+
+ '<div class="row"><span class="lb">Ligados</span>'+ligados(i)+'</div></div></div>'}
+function V3(i){var s=ST[i];return '<h2>Versão 3 · Uma linha só</h2><p>Escolhe o fluxo numa lista e liga os celulares na mesma linha. Quebra para a linha de baixo só se faltar largura.</p><div class="tela"><div class="ttl">Apps</div><div class="box"><div class="row">'+
+ '<select onchange="var f=allFx(\''+i+'\')[this.value];if(f)tFx(\''+i+'\',f[1]);this.value=\'\'"><option value="">Escolher fluxo</option>'+allFx(i).map(function(f,k){return '<option value="'+k+'">'+(on(i,f[1])?'✓ ':'')+f[0]+'</option>'}).join('')+'</select>'+
+ '<span class="sep"></span>'+celChips(i)+'<span class="sep"></span><button onclick="novo(\''+i+'\')">+ Novo fluxo</button><button onclick="lim(\''+i+'\')">Limpar</button>'+zbtn(i)+'</div></div></div>'}
+function V4(i){return '<h2>Versão 4 · Coluna ao lado dos celulares</h2><p>O topo some. Tudo fica numa coluna à esquerda e os celulares ocupam o resto da tela.</p><div class="tela"><div class="ttl">Apps</div><div class="rail"><div class="box col lista">'+
+ busca(i)+'<div class="row" style="margin-top:6px"><button onclick="novo(\''+i+'\')">+ Novo fluxo</button><button onclick="lim(\''+i+'\')">Limpar</button></div>'+
+ '<div class="lb" style="margin:8px 0 2px">Fluxos</div>'+fxChecks(i)+'<div class="lb" style="margin:8px 0 2px">Celulares</div>'+celChecks(i)+
+ '<div class="row" style="margin-top:8px"><span class="lb">Tamanho</span>'+[["P",.8],["M",1],["G",1.2]].map(function(z){return '<button class="c '+(ST[i].z===z[1]?'on':'')+'" onclick="zm(\''+i+'\','+z[1]+')">'+z[0]+'</button>'}).join('')+'</div></div>'+
+ '<div class="pal">'+phones(i)+'</div></div></div>'}
+var F={v1:V1,v2:V2,v3:V3,v4:V4};
+function d(i,foco){var el=document.getElementById(i);var pos=foco?document.getElementById('q'+i).selectionStart:0;el.innerHTML=F[i](i);if(foco){var q=document.getElementById('q'+i);q.focus();q.setSelectionRange(pos,pos)}}
+["v1","v2","v3","v4"].forEach(function(i){d(i)});
+</script>
+</body>
+</html>

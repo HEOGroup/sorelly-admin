@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Preferências do kit · nova Análise (desenho)</title>
+<style>
+:root{--bg:#0f0d0a;--pan:#1a160f;--pan2:#241e13;--line:#3b3222;--ouro:#E8B84B;--prata:#CBD5E1;--ok:#4ADE80;--ruim:#F87171;--av:#FBBF24}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:#fff;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:13px;line-height:1.3}
+.pg{max-width:1120px;margin:0 auto;padding:14px 16px 24px}
+.cab{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px}
+h1{font-size:18px;font-weight:600;margin:0}
+.sub{margin:2px 0 0}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg span{height:32px;padding:0 14px;display:flex;align-items:center;cursor:pointer;white-space:nowrap}
+.seg .on{background:var(--ouro);color:#2a1f05;font-weight:600}
+.faixa{display:grid;grid-template-columns:repeat(6,1fr);border:1px solid var(--line);border-radius:8px;background:var(--pan);margin-bottom:8px}
+.faixa div{padding:6px 4px;text-align:center;border-right:1px solid var(--line);min-width:0}
+.faixa div:last-child{border:0}
+.faixa b{display:block;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.faixa small{font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.selo{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:11px;border:1px solid var(--av);color:var(--av);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.bloco{border:1px solid var(--line);border-radius:8px;background:var(--pan);margin-bottom:8px;overflow:hidden}
+.bar{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;background:var(--pan2);border-bottom:1px solid var(--line)}
+.corpo{padding:8px 10px}
+.fil{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fil label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em;margin-bottom:2px}
+.cp{height:32px;border:1px solid var(--line);border-radius:6px;background:#120f09;padding:0 8px;display:flex;align-items:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dois{grid-column:span 2}
+.btns{display:flex;gap:8px;justify-content:flex-end;align-items:flex-end}
+.btn{height:32px;min-width:96px;border-radius:6px;border:1px solid var(--line);background:var(--pan2);color:#fff;font:inherit;cursor:pointer}
+.btn.pri{background:var(--ouro);border-color:var(--ouro);color:#2a1f05;font-weight:600}
+table{width:100%;border-collapse:collapse;table-layout:fixed}
+th{height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;padding:0 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+td{height:32px;padding:0 8px;border-bottom:1px solid #2a2418;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.n{text-align:right}
+tr.cl{cursor:pointer}
+tr.cl:hover td{background:rgba(232,184,75,.08)}
+tr.sel td{background:rgba(232,184,75,.16)}
+.mb{display:flex;height:8px;border-radius:4px;overflow:hidden;background:var(--pan2);min-width:70px}
+.mb i{display:block;height:100%}
+.o{background:var(--ouro)}.p{background:var(--prata)}
+.grade{display:grid;grid-template-columns:1.05fr 1fr;gap:8px}
+.grade2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+@media(max-width:820px){.grade,.grade2{grid-template-columns:1fr}.fil{grid-template-columns:1fr 1fr}.faixa{grid-template-columns:repeat(3,1fr)}}
+.lin{display:grid;grid-template-columns:46px 1fr 44px 1fr 44px;gap:6px;align-items:center;height:24px}
+.tr{height:10px;background:var(--pan2);border-radius:3px;overflow:hidden}
+.tr i{display:block;height:100%}
+.pd{background:var(--ouro)}.vd{background:#7FB5FF}
+.leg{display:flex;gap:14px;font-size:11px;margin:4px 0}
+.leg i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.opc{display:grid;grid-template-columns:1fr 60px 52px;gap:6px;align-items:center;height:28px;border-bottom:1px solid #2a2418}
+.opc:last-child{border:0}
+.vazio{padding:18px 10px;text-align:center}
+.nota{margin-top:10px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:8px}
+.nota div{border:1px solid var(--line);border-radius:8px;background:var(--pan);padding:8px 10px}
+.nota b{display:block;margin-bottom:2px}
+</style>
+</head>
+<body>
+<div class="pg">
+  <div class="cab">
+    <div><h1>Preferências do kit</h1><p class="sub">Formulário do app, respostas das revendedoras e análise para a montagem.</p></div>
+    <div class="seg"><span>Revendedoras</span><span>Formulário do app</span><span class="on">Análise</span><span>Importar</span></div>
+  </div>
+
+  <div class="faixa">
+    <div><b>31</b><small>Revendedoras</small></div>
+    <div><b>31</b><small>Com preferências</small></div>
+    <div><b>100%</b><small>Preenchimento</small></div>
+    <div><b>12,5</b><small>Categorias por resposta</small></div>
+    <div><b style="color:var(--ouro)">48%</b><small>Ouro</small></div>
+    <div><b style="color:var(--prata)">52%</b><small>Prata</small></div>
+  </div>
+
+  <div class="bloco">
+    <div class="bar"><span>Filtros</span><span class="selo">Dados de demonstração</span></div>
+    <div class="corpo fil">
+      <div class="dois"><label>Busca</label><div class="cp">Nome, telefone ou cidade</div></div>
+      <div><label>Representante</label><div class="cp">Todas</div></div>
+      <div><label>Situação</label><div class="cp">Todas</div></div>
+      <div><label>Estado</label><div class="cp">Todos</div></div>
+      <div><label>Cidade</label><div class="cp">Todas</div></div>
+      <div><label>Fonte</label><div class="cp">Todas</div></div>
+      <div><label>Período</label><div class="cp">01/10/2026 a 28/10/2026</div></div>
+      <div class="btns" style="grid-column:span 4"><button class="btn">Limpar</button><button class="btn pri">Filtrar</button></div>
+    </div>
+  </div>
+
+  <div class="seg" id="abas" style="margin-bottom:8px"><span class="on" data-a="resumo">Resumo</span><span data-a="bloco">Por bloco</span><span data-a="rev">Por revendedora</span></div>
+
+  <div id="v-resumo">
+    <div class="grade">
+      <div class="bloco" style="margin:0">
+        <div class="bar"><span>Anéis · tamanho que pedem e tamanho que vendem</span></div>
+        <div class="corpo" id="tamanhos"></div>
+      </div>
+      <div class="bloco" style="margin:0">
+        <div class="bar"><span>Mais pedidos por bloco</span></div>
+        <table><thead><tr><th style="width:40%">Bloco</th><th>Mais pedido</th><th class="n" style="width:58px">%</th></tr></thead><tbody id="top"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <div id="v-bloco" style="display:none">
+    <div class="grade2" style="grid-template-columns:1.5fr 1fr">
+      <div class="bloco" style="margin:0">
+        <div class="bar"><span>Blocos do formulário</span><span>Toque na linha para ver o detalhe</span></div>
+        <table><thead><tr><th style="width:30%">Bloco</th><th class="n" style="width:15%">Responderam</th><th style="width:18%">Ouro / prata</th><th>Mais pedido</th><th class="n" style="width:52px">%</th></tr></thead><tbody id="blocos"></tbody></table>
+      </div>
+      <div class="bloco" style="margin:0">
+        <div class="bar"><span id="dt">Detalhe</span></div>
+        <div class="corpo" id="det"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="v-rev" style="display:none">
+    <div class="bloco" style="margin:0">
+      <div class="bar"><span>Revendedoras</span><span>228 revendedoras · mostrando 8</span></div>
+      <table><thead><tr><th style="width:15%">Representante</th><th>Revendedora</th><th style="width:14%">Situação</th><th style="width:18%">Ouro / prata</th><th class="n" style="width:90px">Atualizado</th></tr></thead><tbody id="revs"></tbody></table>
+    </div>
+  </div>
+
+  <div class="nota">
+    <div><b>Dados</b>Todos os números são de demonstração. Os tamanhos "pedem" de 18 a 25 são ilustrativos. A coluna "vendem" é real (4.260 anéis, set e out/2026).</div>
+    <div><b>Uma coisa por vez</b>A tela atual mostra 20 cartões de uma vez. Aqui há três abas e cada aba mostra uma visão.</div>
+    <div><b>Defeito na tela atual</b>A coluna "Categorias" da lista de revendedoras mostra 0 em todas as linhas. Fica fora deste desenho até conferir.</div>
+  </div>
+</div>
+<script>
+var AROS=[[10,13,3],[11,13,1],[12,20,6],[13,17,2],[14,20,7],[15,20,5],[16,20,12],[17,13,8],[18,10,18],[19,10,8],[20,7,9],[21,7,5],[22,3,7],[23,3,2],[24,3,3],[25,0,1]];
+var mp=20,mv=18;
+document.getElementById('tamanhos').innerHTML='<div class="leg"><span><i style="background:var(--ouro)"></i>Pedem (respostas)</span><span><i style="background:#7FB5FF"></i>Vendem (vendas reais)</span></div>'+
+ '<div class="lin" style="height:20px;font-size:11px;text-transform:uppercase"><span>Tamanho</span><span></span><span class="n" style="text-align:right">Pedem</span><span></span><span style="text-align:right">Vendem</span></div>'+
+ AROS.map(function(a){return '<div class="lin"><span>Nº '+a[0]+'</span><div class="tr"><i class="pd" style="width:'+(a[1]/mp*100)+'%"></i></div><span style="text-align:right">'+a[1]+'%</span><div class="tr"><i class="vd" style="width:'+(a[2]/mv*100)+'%"></i></div><span style="text-align:right">'+a[2]+'%</span></div>'}).join('')+
+ '<table style="margin-top:8px"><thead><tr><th>Faixa</th><th class="n">Pedem</th><th class="n">Vendem</th></tr></thead><tbody><tr><td>Até 15</td><td class="n">61%</td><td class="n">24%</td></tr><tr><td>16 a 19</td><td class="n">28%</td><td class="n">47%</td></tr><tr><td>20 ou mais</td><td class="n">11%</td><td class="n">29%</td></tr></tbody></table>';
+var B=[
+ ["Anéis","30 · 97%",42.7,57.3,"Tamanho 12",20.0,[["Tamanho 12",20],["Tamanho 14",20],["Tamanho 15",20],["Tamanho 16",20],["Tamanho 13",16.7],["Tamanho 10",13.3],["Tamanho 11",13.3],["Tamanho 17",13.3]]],
+ ["Tornozeleira","31 · 100%",40.9,59.1,"Vende",71.0,[["Vende",71.0],["Não vende",29.0],["Ouro + prata",32.3],["Prata",25.8],["Ouro",12.9]]],
+ ["Masculino","31 · 100%",44.2,55.8,"Brincos",61.3,[["Brincos",61.3],["Correntes",54.8],["Pulseiras",51.6],["Vende",83.9]]],
+ ["Conjunto","30 · 97%",54.0,46.0,"Vende",83.3,[["Vende",83.3],["Não vende",16.7],["Ouro",30.0],["Ouro + prata",30.0],["Prata",23.3]]],
+ ["Material de apoio","30 · 97%",null,null,"Vende",70.0,[["Vende",70.0],["Não vende",30.0]]],
+ ["Pingentes avulsos","30 · 97%",null,null,"Vende",73.3,[["Vende",73.3],["Não vende",26.7]]],
+ ["Colares","29 · 94%",51.7,48.3,"Só ouro e prata",null,[]],
+ ["Bracelete","29 · 94%",47.5,52.5,"Vende",69.0,[["Vende",69.0],["Não vende",31.0],["Prata",24.1],["Ouro + prata",24.1],["Ouro",20.7]]],
+ ["Colar filhos","27 · 87%",49.1,50.9,"3 meninas",40.7,[["3 meninas",40.7],["2 meninos",33.3],["3 meninos",33.3],["1 menino",22.2],["1 menino + 1 menina",22.2],["2 meninas",18.5],["1 menina",14.8],["2 meninos + 1 menina",7.4]]],
+ ["Pulseira","27 · 87%",50.0,50.0,"Só ouro e prata",null,[]]
+];
+function mb(o,p){return o==null?'<span>—</span>':'<div class="mb"><i class="o" style="width:'+o+'%"></i><i class="p" style="width:'+p+'%"></i></div>'}
+function f1(n){return n==null?'—':(Math.round(n*10)/10).toString().replace('.',',')+'%'}
+document.getElementById('top').innerHTML=B.filter(function(b){return b[5]!=null}).map(function(b){return '<tr><td>'+b[0]+'</td><td>'+b[4]+'</td><td class="n">'+f1(b[5])+'</td></tr>'}).join('');
+function pintaBlocos(sel){
+ document.getElementById('blocos').innerHTML=B.map(function(b,i){return '<tr class="cl'+(i===sel?' sel':'')+'" data-i="'+i+'"><td>'+b[0]+'</td><td class="n">'+b[1]+'</td><td>'+mb(b[2],b[3])+'</td><td>'+b[4]+'</td><td class="n">'+f1(b[5])+'</td></tr>'}).join('');
+ var b=B[sel];document.getElementById('dt').textContent=b[0];
+ var h='<div style="margin-bottom:8px">'+(b[2]==null?'Sem pergunta de metal':'Ouro '+f1(b[2])+' · Prata '+f1(b[3]))+'</div>';
+ h+=b[6].length?b[6].map(function(o){return '<div class="opc"><span>'+o[0]+'</span><div class="tr"><i class="pd" style="width:'+Math.min(100,o[1])+'%"></i></div><span style="text-align:right">'+f1(o[1])+'</span></div>'}).join(''):'<div class="vazio">Sem opções cadastradas neste bloco.</div>';
+ document.getElementById('det').innerHTML=h;
+}
+document.getElementById('blocos').addEventListener('click',function(e){var t=e.target.closest('tr[data-i]');if(t)pintaBlocos(+t.dataset.i)});
+pintaBlocos(0);
+var R=[["Dayanne","Andrielle Taborda","Preencheu",30,70,"04/10/2026"],["Dayanne","Beatriz Nogueira","Preencheu",35,65,"14/10/2026"],["Dayanne","Márcia Camargo","Preencheu",46,54,"10/10/2026"],["Dayanne","Maria Eduarda de Almeida","Preencheu",61,39,"13/10/2026"],["Jessica","Elisângela Faria","Não preencheu",null,null,"—"],["Jessica","Rosângela Pinto","Preencheu",46,54,"16/10/2026"],["Lysie","Cláudia Wosniak","Preencheu",36,64,"16/10/2026"],["Lysie","Sabrina Lopes","Não preencheu",null,null,"—"]];
+document.getElementById('revs').innerHTML=R.map(function(r){return '<tr class="cl"><td>'+r[0]+'</td><td>'+r[1]+'</td><td>'+r[2]+'</td><td>'+mb(r[3],r[4])+'</td><td class="n">'+r[5]+'</td></tr>'}).join('');
+document.getElementById('abas').addEventListener('click',function(e){
+ var s=e.target.closest('[data-a]');if(!s)return;
+ [].forEach.call(document.querySelectorAll('#abas span'),function(x){x.classList.toggle('on',x===s)});
+ ['resumo','bloco','rev'].forEach(function(k){document.getElementById('v-'+k).style.display=k===s.dataset.a?'block':'none'});
+});
+</script>
+</body>
+</html>

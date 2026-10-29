@@ -24,13 +24,12 @@ import { TelaAulasRev } from "@/apps/montagem/mobile/aulas-rev";
 import { TelaAjudaRev } from "@/apps/montagem/mobile/ajuda-rev";
 import { TelaVendasPedidos } from "@/apps/montagem/mobile/vendas-pedidos-rev";
 import { cobrancasDaRevendedora, hojeSP, vendidoNoApp } from "@/apps/montagem/domain/link-pagamento";
-import { infNaoLidos } from "@/apps/montagem/domain/informativos";
-import { FolderAoAbrir, TelaInformativos } from "@/apps/montagem/mobile/informativos-app";
 import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app";
 import { BlocoKN } from "@/apps/montagem/mobile/kn-bloco";
 import { PASSOS_KN, conteudoPasso, dataPrimeiroAcerto } from "@/apps/montagem/mobile/kn-conteudo";
 import { Avatar } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
+import { COR_FUNCAO, FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
@@ -55,12 +54,12 @@ var BRANCO = "txt-branco";
 function claro(hex, p){ var n = parseInt(hex.slice(1),16), r = (n>>16)&255, g = (n>>8)&255, b = n&255, m = function(c){ return Math.round(c+(255-c)*(1-p)); };
   return "#"+[m(r),m(g),m(b)].map(function(x){ return x.toString(16).padStart(2,"0"); }).join(""); }
 function Cartao(p){
-  return e("button",{onClick:p.onClick, style:{background:claro(p.cor, .2)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 text-left shadow-sm active:scale-[.99] "+(p.destaque ? "ring-2 ring-[#C9A13B]" : "")},
-    e("span",{className:"grid size-11 shrink-0 place-items-center rounded-2xl", style:{background:p.cor+"1F", color:p.cor}}, e(Icon,{n:p.ic, s:20, peso:"fill"})),
+  return e("button",{onClick:p.onClick, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left shadow-sm active:scale-[.99]"},
+    e("span",{className:"grid size-8 shrink-0 place-items-center rounded-lg", style:{background:p.cor+"1F", color:p.cor}}, e(Icon,{n:p.ic, s:16, peso:"fill"})),
     e("span",{className:"min-w-0 flex-1"},
-      e("b",{className:"flex items-center gap-2 text-[15px] leading-tight text-[#111827]"}, e("span",{className:"shrink-0 whitespace-nowrap"}, p.t), p.badge && e("span",{className:"ml-auto whitespace-nowrap rounded-full bg-[#DB2777] px-2 py-px text-[10px] font-black "+BRANCO}, p.badge), p.novo && !p.badge && e("span",{className:"rounded-full bg-[#C9A13B] px-1.5 py-px text-[9.5px] font-black uppercase "+BRANCO}, "novo")),
-      e("span",{className:"block truncate whitespace-nowrap text-[12.5px] leading-tight text-[#6B7280]"}, p.sub)),
-    e(Icon,{n:"chevron", s:16, className:"shrink-0 text-[#9CA3AF]"}));
+      e("b",{className:"flex items-center gap-2 text-[13px] leading-tight text-[#111827]"}, e("span",{className:"shrink-0 whitespace-nowrap"}, p.t), p.badge && e("span",{className:"ml-auto whitespace-nowrap rounded-full bg-[#DB2777] px-1.5 py-px text-[9.5px] font-black "+BRANCO}, p.badge), p.novo && !p.badge && e("span",{className:"rounded-full bg-[#C9A13B] px-1.5 py-px text-[9px] font-black uppercase "+BRANCO}, "novo")),
+      e("span",{className:"block truncate whitespace-nowrap text-[11px] leading-tight text-[#6B7280]"}, p.sub)),
+    e(Icon,{n:"chevron", s:13, className:"shrink-0 text-[#9CA3AF]"}));
 }
 function AppRevendedora(p){
   var cx = use(), s = cx.state, d = cx.dispatch, k = p.k;
@@ -107,18 +106,18 @@ function AppRevendedora(p){
       e("span",{className:"flex shrink-0 items-center gap-1.5"}, chama, e("b",{className:"text-[12px] font-black tracking-[.25em] text-amber-200"},"SORELLY")),
       e("span",{className:"relative grid size-8 shrink-0 place-items-center rounded-full bg-[#2A2A2E]"}, e(Icon,{n:"alert", s:14}),
         e("span",{className:"absolute -right-1 -top-1 grid min-w-[1.05rem] place-items-center rounded-full bg-rose-500 px-1 text-[10px] font-bold"}, "8"))),
-    e("div",{className:"relative mt-2 flex items-center justify-between"},
-      e("div",{className:"flex items-center gap-2"}, brasao(26),
-        e("div",null, e("p",{className:"text-[10px] font-black uppercase tracking-wider text-[#E8B84B]"},"Nível atual"), e("b",{className:"text-[19px] leading-none"},"Bronze"))),
-      e("div",{className:"flex items-center gap-2 text-right"},
-        e("div",null, e("p",{className:"text-[10.5px] opacity-60"},"Próximo nível"), e("b",{className:"text-[13px]"},"Bronze")), brasao(22))),
+    e("div",{className:"relative mt-1.5 flex items-center justify-between"},
+      e("div",{className:"flex items-center gap-1.5"}, brasao(20),
+        e("div",null, e("p",{className:"text-[9px] font-black uppercase tracking-wider text-[#E8B84B]"},"Nível atual"), e("b",{className:"text-[14px] leading-none"},"Bronze"))),
+      e("div",{className:"flex items-center gap-1.5 text-right"},
+        e("div",null, e("p",{className:"text-[9px] opacity-60"},"Próximo nível"), e("b",{className:"text-[12px] leading-none"},"Bronze")), brasao(17))),
     e("div",{className:"relative mt-1.5 h-1 rounded-full bg-[#3A3A3F]"}, e("span",{className:"block h-full rounded-full bg-[#E8B84B]", style:{width:Math.max(4, Math.min(100, pctBarra))+"%"}})),
     e("p",{className:"relative mt-1.5 rounded-lg bg-[#2A2A2E] px-2.5 py-1 text-[10px] leading-tight"}, textoMeta),
-    e("div",{className:"relative mb-1 mt-2 flex flex-col gap-1.5"},
-      [{lb:"Total vendido", v:BKC(total), ic:"grafico", cor:"#F3D8A0"}, {lb:"Acerto previsto · "+dataAcerto, v:BKC(res ? res.valorAcerto : 0), ic:"wallet", cor:"#C6DFF8"}, {lb:"Comissão · "+(res ? res.comissaoPct : 0)+"%", v:BKC(res ? res.comissao : 0), ic:"coins", cor:"#C1EDD1"}].map(function(m){
-        return e("div",{key:m.lb, className:"flex items-center justify-between gap-2 rounded-xl px-3 py-2", style:{background:"rgba(255,255,255,.08)"}},
-          e("span",{className:"flex min-w-0 items-center gap-2"}, e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full", style:{background:"rgba(255,255,255,.12)", color:m.cor}}, e(Icon,{n:m.ic, s:13, peso:"fill"})), e("b",{className:"truncate text-[12.5px] font-semibold "+BRANCO}, m.lb)),
-          e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13.5px] font-extrabold text-amber-200"}, m.v)); })));
+    e("div",{className:"relative mt-1.5 grid grid-cols-3 gap-1.5"},
+      [{lb:"Vendido", v:BKC(total), ic:"grafico", cor:"#F3D8A0"}, {lb:"Acerto", v:BKC(res ? res.valorAcerto : 0), ic:"wallet", cor:"#C6DFF8", dica:"Acerto previsto"+(dataAcerto==="—" ? "" : " para "+dataAcerto)}, {lb:"Comissão", v:BKC(res ? res.comissao : 0), ic:"coins", cor:"#C1EDD1"}].map(function(m){
+        return e("div",{key:m.lb, title:m.dica, className:"flex min-w-0 flex-col items-center gap-0.5 rounded-lg px-1 py-1.5", style:{background:"rgba(255,255,255,.08)"}},
+          e("span",{className:"flex max-w-full items-center gap-1", style:{color:m.cor}}, e(Icon,{n:m.ic, s:11, peso:"fill"}), e("b",{className:"truncate whitespace-nowrap text-[10px] font-semibold "+BRANCO}, m.lb)),
+          e("span",{className:MONO+" whitespace-nowrap text-[12.5px] font-extrabold text-amber-200"}, m.v)); })));
 
   var resumo = e("div",{className:"overflow-hidden rounded-2xl bg-white ring-1 ring-[#E5E7EB]"},
     e("div",{className:"grid grid-cols-2 divide-x divide-[#E5E7EB]"},
@@ -137,6 +136,9 @@ function AppRevendedora(p){
   // Entrega do kit novo feita JUNTO com a representante: a representante inicia no app dela; cada etapa só libera a próxima com o OK das duas
   var temKitNovo = (k.tipoKit||"").indexOf("kit_novo")===0 || !!k.demoKitNovo;   // só quem tem um kit novo para receber vê o aviso
   var ent = (s.entregasKN||{})[k.id], atual = passoAtual(ent), concluida = !!ent && ent.status==="concluida";
+  var kitNovoPendente = temKitNovo && !concluida;   // tem kit novo para receber e ainda não assinou: vendas bloqueadas
+  var av = useState(""), aviso = av[0], setAviso = av[1];
+  var avisa = function(){ setAviso("Receba o kit novo para liberar as vendas."); setTimeout(function(){ setAviso(""); }, 2500); };
   var abertoEf = aberto===null ? Math.min(atual, TOTAL_PASSOS) : aberto;
   var ctxKN = {v:versao, k:k, perfil:perfil, dataAcerto:dataPrimeiroAcerto()};
   var okRev = function(n){ d({type:"KN_ENT_CHECK", kitId:k.id, n:n, quem:"rev"}); setAberto(null); };
@@ -177,33 +179,34 @@ function AppRevendedora(p){
       e("span",{className:"flex items-center gap-2"}, e("button",{onClick:function(){ setErros(Math.max(0, erros-1)); }, className:"grid size-8 place-items-center rounded-full bg-[#F3F4F6] text-[18px] font-bold text-[#111827]"}, "−"), e("b",{className:"w-5 text-center text-[16px] text-[#111827]"}, erros), e("button",{onClick:function(){ setErros(erros+1); }, className:"grid size-8 place-items-center rounded-full bg-[#F3F4F6] text-[18px] font-bold text-[#111827]"}, "+"))),
     e("button",{disabled:!nota, onClick:function(){ d({type:"INT_AVALIAR", id:k.internoId, nota:nota, erros:erros}); }, className:"h-10 rounded-xl text-[13.5px] font-bold disabled:opacity-40 "+BRANCO, style:{background:"#C9A13B"}}, avI.nota ? "✓ Avaliação enviada. Toque para atualizar" : "Enviar avaliação"));
   var lkAbertos = ((s.lp && s.lp.solicitacoes) || []).filter(function(x){ return x.canal==="app" && x.revendedora===k.rev && (x.status==="solicitado" || x.status==="gerado"); }).length;
-  var infNovos = infNaoLidos(s, "revendedora", k.rev);   // informativos que ela ainda não abriu
   var inicio = [
     topo,
     e("div",{key:"f"}, folha([blocoAval,
-      e("button",{key:"zap", onClick:function(){ setTela("whats"); }, className:"flex w-full items-center gap-2.5 rounded-xl bg-[#F6EBCB] px-2.5 py-2 text-left shadow-sm ring-2 ring-[#C9A13B]"},
-        e("span",{className:"grid size-10 shrink-0 place-items-center rounded-lg bg-[#24180a]"}, e(LogoChat,{s:27})),
-        e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[14.5px] leading-tight text-[#5B4A1E]"}, "SorellyChat"), e("span",{className:"block truncate whitespace-nowrap text-[11.5px] leading-tight text-[#7A6730]"}, "Fale com a representante e com a Sorelly"))),
-      e("div",{key:"cat", className:"flex h-9 items-center justify-center gap-2 rounded-xl text-[14px] font-bold shadow "+BRANCO, style:{backgroundImage:"linear-gradient(90deg,#E8B84B,#C9921F)"}}, e(Icon,{n:"send", s:16}), "Compartilhar catálogo"),
-      cobrancas.length>0 && e(Cartao,{key:"cob", ic:"alert", cor:"#DC2626", t:"Cobranças", sub:cobrancas.length+(cobrancas.length===1 ? " pagamento para cobrar" : " pagamentos para cobrar"), destaque:true, badge:cobrancas.length+" hoje", onClick:function(){ setTela("vendas"); }}),
-      e(Cartao,{key:"k", ic:"box", cor:"#DB2777", t:"Kit novo", sub:temKitNovo ? "Receba seu kit com a representante" : "Nenhum kit novo para receber agora", novo:temKitNovo, destaque:temKitNovo, badge:!temKitNovo ? null : ((ent && ent.status==="concluida") ? "recebido" : (ent ? "em andamento" : "1 para receber")), onClick:function(){ setTela("kitnovo"); }}),
-      e(Cartao,{key:"rc", ic:"book", cor:"#B8862B", t:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", onClick:function(){ setTela("regrascom"); }}),
-      e(Cartao,{key:"inf", ic:"book", cor:"#9A7424", t:"Informativos", sub:"Regras, avisos e novidades", badge:infNovos>0 ? infNovos+(infNovos===1 ? " novo" : " novos") : null, onClick:function(){ setTela("informativos"); }}),
-      e(Cartao,{key:"c1", ic:"grid", cor:"#2563EB", t:"Catálogos", sub:"Veja e compartilhe as peças", onClick:function(){ setTela("catalogo"); }}),
-      e(Cartao,{key:"c2", ic:"list", cor:"#16A34A", t:"Vendas e Pedidos", sub:"Pedidos e pagamentos", onClick:function(){ setTela("vendas"); }}),
-      e(Cartao,{key:"lk", ic:"wallet", cor:"#0891B2", t:"Link de pagamento", sub:"Cobre a cliente no cartão", novo:true, badge:lkAbertos>0 ? lkAbertos+" em andamento" : null, onClick:function(){ setTela("links"); }}),
-      e(Cartao,{key:"c3", ic:"wallet", cor:"#9333EA", t:"Pagamentos", sub:"Gerencie seus pagamentos", onClick:function(){}}),
+      // Ordem (Marcus, 29/10/2026): Visualizar catálogo em cima de tudo, depois SorellyChat e, logo abaixo, Kit novo.
+      e("button",{key:"cat", onClick:function(){ setTela("catalogo"); }, className:"flex h-9 items-center justify-center gap-2 rounded-xl text-[13px] font-bold shadow active:scale-[.99] "+BRANCO, style:{backgroundImage:"linear-gradient(90deg,#E8B84B,#C9921F)"}}, e(Icon,{n:"grid", s:15}), "Visualizar catálogo"),
+      e("button",{key:"zap", onClick:function(){ setTela("whats"); }, className:"flex w-full items-center gap-2 rounded-xl bg-[#F6EBCB] px-2 py-1.5 text-left shadow-sm"},
+        e("span",{className:"grid size-8 shrink-0 place-items-center rounded-lg bg-[#24180a]"}, e(LogoChat,{s:22})),
+        e("span",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[13px] leading-tight text-[#5B4A1E]"}, "SorellyChat"), e("span",{className:"block truncate whitespace-nowrap text-[11px] leading-tight text-[#7A6730]"}, "Fale com a representante e com a Sorelly"))),
+      // Kit novo: só aparece até ser recebido (assinado); depois some e só volta quando ela ficar sem kit de novo. Enquanto não for recebido, as vendas ficam bloqueadas.
+      kitNovoPendente && e(Cartao,{key:"k", ic:"box", cor:"#DB2777", t:"Kit novo", sub:"Receba o kit para liberar as vendas", destaque:true, badge:ent ? "em andamento" : "1 para receber", onClick:function(){ setTela("kitnovo"); }}),
+      aviso && e("p",{key:"av", className:"rounded-lg bg-[#FEF3C7] px-2.5 py-1.5 text-center text-[12px] font-semibold text-[#92400E]"}, aviso),
+      // Ordem (Marcus, 29/10/2026): catálogo, Kit novo, SorellyChat, Vendas e Pedidos, depois o dia a dia (link, pagamentos, clientes, condicionais, garantias), divulgação e, no fim, regras e ajuda.
+      // O cartão "Cobranças" saiu: as cobranças ficam dentro de Pagamentos.
+      e(Cartao,{key:"c2", ic:"list", cor:"#16A34A", t:"Vendas e Pedidos", sub:"Pedidos e pagamentos", badge:kitNovoPendente ? "bloqueado" : null, onClick:function(){ if(kitNovoPendente) avisa(); else setTela("vendas"); }}),
+      e(Cartao,{key:"lk", ic:"wallet", cor:"#0891B2", t:"Link de pagamento", sub:"Cobre a cliente no cartão", novo:!kitNovoPendente, badge:kitNovoPendente ? "bloqueado" : (lkAbertos>0 ? lkAbertos+" em andamento" : null), onClick:function(){ if(kitNovoPendente) avisa(); else setTela("links"); }}),
+      e(Cartao,{key:"c3", ic:"wallet", cor:"#9333EA", t:"Pagamentos", sub:cobrancas.length>0 ? cobrancas.length+(cobrancas.length===1 ? " pagamento para cobrar" : " pagamentos para cobrar") : "Gerencie seus pagamentos", badge:cobrancas.length>0 ? cobrancas.length+" hoje" : null, onClick:function(){ if(kitNovoPendente) avisa(); else setTela("vendas"); }}),
       e(Cartao,{key:"c4", ic:"users", cor:"#4F46E5", t:"Clientes", sub:"Gerencie seus clientes", onClick:function(){ setTela("clientes"); }}),
+      e(Cartao,{key:"c6", ic:"maleta", cor:COR_FUNCAO.condicionais, t:"Condicionais", sub:"Gerencie seus kits", onClick:function(){ setTela("condicionais"); }}),
       e(Cartao,{key:"c5", ic:"escudo", cor:"#D97706", t:"Garantias", sub:"Gerencie suas garantias", onClick:function(){ setTela("garantias"); }}),
-      e(Cartao,{key:"c6", ic:"maleta", cor:"#CA8A04", t:"Condicionais", sub:"Gerencie seus kits", onClick:function(){ setTela("condicionais"); }}),
       e(Cartao,{key:"c7", ic:"whats", cor:"#2563EB", t:"Mensagens para vender", sub:"Modelos prontos para enviar", onClick:function(){ setTela("mensagens"); }}),
-      e(Cartao,{key:"c8", ic:"presente", cor:"#EAB308", t:"Indique & Ganhe", sub:"Ganhe prêmios indicando", onClick:function(){ setTela("indique"); }}),
-      e(Cartao,{key:"c9", ic:"grid", cor:"#7C3AED", t:"Artes & Criativos", sub:"Baixe artes para divulgar", onClick:function(){ setTela("artes"); }}),
+      e(Cartao,{key:"c9", ic:"grid", cor:"#A21CAF", t:"Artes & Criativos", sub:"Baixe artes para divulgar", onClick:function(){ setTela("artes"); }}),
       e(Cartao,{key:"c10", ic:"gem", cor:"#DB2777", t:"Preferências do kit", sub:"Consolidado do kit ideal", onClick:function(){ setTela("preferencias"); }}),
+      e(Cartao,{key:"c8", ic:"presente", cor:"#EAB308", t:"Indique & Ganhe", sub:"Ganhe prêmios indicando", onClick:function(){ setTela("indique"); }}),
+      e(Cartao,{key:"rc", ic:"book", cor:"#B8862B", t:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", onClick:function(){ setTela("regrascom"); }}),
       e(Cartao,{key:"c11", ic:"play", cor:"#DC2626", t:"Aulas sobre o aplicativo", sub:"Aprenda a usar o app", onClick:function(){ setTela("aulas"); }}),
       e(Cartao,{key:"c12", ic:"inbox", cor:"#6B7280", t:"Central de Ajuda", sub:"Suporte e tutoriais", onClick:function(){ setTela("ajuda"); }})]))];
 
-  return e(IPhone15,{semIndicador:tela==="catalogo"}, tela==="regrascom" ? e(TelaRegrasComissoes,{publico:"revendedora", onVoltar:function(){ setTela("inicio"); }}) : tela==="informativos" ? e(TelaInformativos,{publico:"revendedora", quem:k.rev, modalidade:mod, onVoltar:function(){ setTela("inicio"); }}) : tela==="kitnovo" ? telaKitNovo : tela==="catalogo" ? e(TelaCatalogoRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="vendas" ? e(TelaVendasPedidos,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="garantias" ? e(TelaGarantiasRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="condicionais" ? e(TelaCondicionaisRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="clientes" ? e(TelaClientesRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="mensagens" ? e(TelaMensagensVenderRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="indique" ? e(TelaIndiqueRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="artes" ? e(TelaArtesRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="preferencias" ? e(TelaPreferenciasVer,{k:k, onVoltar:function(){ setTela("inicio"); }, onEditar:function(){ setTela("prefs_editar"); }}) : tela==="prefs_editar" ? e(TelaPreferenciasRev,{k:k, onVoltar:function(){ setTela("preferencias"); }}) : tela==="aulas" ? e(TelaAulasRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="ajuda" ? e(TelaAjudaRev,{k:k, onVoltar:function(){ setTela("inicio"); }, onChat:function(){ setTela("whats"); }, onAulas:function(){ setTela("aulas"); }}) : tela==="links" ? e(TelaLinksRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="whats" ? e(MensagensRev,{nome:k.rev, rep:k.rep || listagemDe(s,k).rep, onInicio:function(){ setTela("inicio"); }}) : inicio, e(FolderAoAbrir,{key:"folder", publico:"revendedora", quem:k.rev, modalidade:mod}));
+  return e(IPhone15,{semIndicador:tela==="catalogo"}, tela==="regrascom" ? e(TelaRegrasComissoes,{publico:"revendedora", onVoltar:function(){ setTela("inicio"); }}) : tela==="kitnovo" ? telaKitNovo : tela==="catalogo" ? e(TelaCatalogoRev,{k:k, bloqueado:kitNovoPendente, onVoltar:function(){ setTela("inicio"); }}) : tela==="vendas" ? e(TelaVendasPedidos,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="garantias" ? e(TelaGarantiasRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="condicionais" ? e(TelaCondicionaisRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="clientes" ? e(TelaClientesRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="mensagens" ? e(TelaMensagensVenderRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="indique" ? e(TelaIndiqueRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="artes" ? e(TelaArtesRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="preferencias" ? e(TelaPreferenciasVer,{k:k, onVoltar:function(){ setTela("inicio"); }, onEditar:function(){ setTela("prefs_editar"); }}) : tela==="prefs_editar" ? e(TelaPreferenciasRev,{k:k, onVoltar:function(){ setTela("preferencias"); }}) : tela==="aulas" ? e(TelaAulasRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="ajuda" ? e(TelaAjudaRev,{k:k, onVoltar:function(){ setTela("inicio"); }, onChat:function(){ setTela("whats"); }, onAulas:function(){ setTela("aulas"); }}) : tela==="links" ? e(TelaLinksRev,{k:k, onVoltar:function(){ setTela("inicio"); }}) : tela==="whats" ? e(MensagensRev,{nome:k.rev, rep:k.rep || listagemDe(s,k).rep, onInicio:function(){ setTela("inicio"); }}) : inicio);
 }
 
 export { RecebimentoRep, AppRevendedora };

@@ -99,6 +99,8 @@ var REGRAS_GERAIS_OFICIAIS = {
 var NOVAS_PADRAO = {
   minimoRepresentante:500, minimoInterno:700,   // referência da MÉDIA das vendas (não é corte de comissão: a faixa de 15% continua)
   mediaVendas:3,                                // 2 vendas anteriores + a venda do dia do acerto
+  // venda do acerto abaixo de minimoRepresentante (R$ 500, Marcus 29/10/2026): a representante precisa registrar o MOTIVO antes de finalizar; "Outro" pede texto livre
+  motivosVendaBaixa:["Não tem muitos clientes", "Pouca habilidade com vendas", "Não teve tempo", "Problema de saúde ou pessoal", "Não gostou das peças", "Outro"],
   multaPendentePct:10,                          // multa sobre o VALOR PENDENTE do acerto, qualquer valor
   prazoQuitarDias:15,                           // prazo máximo para quitar o que faltou
   atrasoQuitacaoPctDia:1, atrasoQuitacaoTetoPct:10,   // depois do prazo: +1% do pendente por dia, teto 10%
@@ -390,7 +392,7 @@ function textoRegrasNovas(v, modalidade){
   var nova = [
     {t:"Comissão", x:"A comissão vai de "+minP+"% a "+maxP+"% conforme a venda líquida (a partir de "+reais(g.minRenovar)+"). Abaixo disso não tem comissão."},
     {t:"Taxa de deslocamento", x:"Venda abaixo de "+reais(g.taxaAbaixoDe)+" paga uma taxa fixa de "+reais(taxa)+", que soma no valor do acerto. Cancelar o kit com venda abaixo desse valor também paga a taxa."},
-    {t:"Venda mínima", x:"A média das suas últimas "+N.mediaVendas+" vendas precisa ser de pelo menos "+reais(N.minimoRepresentante)+" no acerto com a representante e "+reais(N.minimoInterno)+" no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado."},
+    {t:"Venda mínima", x:"A média das suas últimas "+N.mediaVendas+" vendas precisa ser de pelo menos "+reais(N.minimoRepresentante)+" no acerto com a representante e "+reais(N.minimoInterno)+" no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado. Venda do acerto abaixo de "+reais(N.minimoRepresentante)+" pede uma justificativa da representante."},
     {t:"Acerto na data", x:"O acerto e a devolução são na data marcada. Acerto fora da data perde parte da comissão e do brinde — "+escTxt+". Com "+N.juridicoDias+" dias de atraso perde toda a comissão e todo o brinde, e o valor integral do kit pode ser cobrado pela nota promissória."},
     {t:"Remarcação", x:"Remarcar o acerto tira comissão e brinde — "+rem+". Remarcação com emergência comprovada não conta."},
     {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente, e o prazo para quitar é de "+N.prazoQuitarDias+" dias. Depois do prazo soma "+N.atrasoQuitacaoPctDia+"% ao dia, até "+N.atrasoQuitacaoTetoPct+"%. Enquanto houver valor pendente, o próximo kit fica bloqueado."},

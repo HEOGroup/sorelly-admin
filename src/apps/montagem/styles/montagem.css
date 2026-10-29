@@ -58,3 +58,13 @@ html.dark.app-montagem { --muted-foreground: oklch(0.86 0 0); }
 
 /* App da representante, tela Comissões: textos brancos sobre cartões escuros/coloridos (o tema claro do app muda só a classe text-white) */
 .cr-b { color:#fff; } .cr-b90 { color:rgba(255,255,255,.9); } .cr-b80 { color:rgba(255,255,255,.8); } .cr-b70 { color:rgba(255,255,255,.7); } .cr-b60 { color:rgba(255,255,255,.6); }
+
+/* Escala de letra única dos apps de celular (Marcus, 29/10/2026): o app da revendedora é a referência (título 13 px, legenda 11 px, selo 10 px).
+   Tamanhos quebrados dos outros apps caem no degrau mais próximo; 15 px (nome do cabeçalho) e 20 px (números grandes) ficam como estão. */
+.app-claro .text-\[9\.5px\] { font-size:10px; }
+.app-claro .text-\[10\.5px\], .app-claro .text-\[11\.5px\], .app-claro .text-\[12px\] { font-size:11px; }
+.app-claro .text-\[12\.5px\], .app-claro .text-\[13\.5px\], .app-claro .text-\[14px\], .app-claro .text-\[14\.5px\] { font-size:13px; }
+.app-claro .text-\[16px\], .app-claro .text-\[17px\] { font-size:15px; }
+
+/* Parte principal (cabeçalho escuro) FIXA no topo de todos os apps de celular: só o resto da tela rola (Marcus, 29/10/2026). */
+.app-claro #app-screen > :first-child { position: sticky; top: -8px; z-index: 6; }   /* -8px cancela o padding de cima da rolagem: sem faixa clara em cima do cabeçalho */

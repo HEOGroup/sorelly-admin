@@ -5,7 +5,7 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { FILTRO_PADRAO, FORMAS, FORN_CATS, F_PER, F_SIT, F_TIPO, NF_LABEL, PT_FORN, acertoPreset, acertoPresetAtivo, acertoResumo, agregar, alertasDe, blocosDoMes, cicloLabel,
-  coletar, dividirNF, diaISO, ehPrestador, expandirParcelas, pendentesPrestadores, forn, formasDoPedido, gerarParcelas, hojeIso, mesLabel, painelTotais, parcelaSituacao, pedidoDetalhe, pedidosSemParcela, pfReduz,
+  coletar, dataValida, dividirNF, diaISO, ehPrestador, expandirParcelas, pendentesPrestadores, forn, formasDoPedido, gerarParcelas, hojeIso, mesLabel, painelTotais, parcelaSituacao, pedidoDetalhe, pedidosSemParcela, pfReduz,
   relacaoPorMes, resumoAlertas, resumoNegociacao, saldoParcela, tabelaJanelas, temOverride, ultDia, viewMatriz, viewTempo } from "@/apps/montagem/domain/pf";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -330,7 +330,7 @@ function JanelaPedido(p){
       if(alvo<=0){ aviso(c, "Informe primeiro o valor desta parte do pedido.", "alerta"); return; }
       var o = {}; o[key] = gerarParcelas(alvo, ped[qk], ped.data || "2026-09-15", pt==="com" ? "boleto" : undefined).map(function(g){ return {forma:g.forma, venc:g.venc, valor:g.valor.toFixed(2), qtd:"1", conta:"", status:"Pendente"}; }); upd(o);
     };
-    var grade = pt==="com" ? "grid-cols-[1.1fr_1.25fr_1fr_.55fr_1.4fr_1fr_2rem]" : "grid-cols-[1.1fr_1.25fr_1fr_1.4fr_1fr_2rem]";
+    var grade = pt==="com" ? "grid-cols-[1fr_1.2fr_1.35fr_.5fr_1.2fr_.95fr_2rem]" : "grid-cols-[1fr_1.2fr_1.35fr_1.2fr_.95fr_2rem]";
     var cab = pt==="com" ? ["Forma","Vencimento","Valor (R$)","Nº parc.","Conta / bandeira","Status",""] : ["Forma","Vencimento","Valor (R$)","Conta / origem","Status",""];
     return e("div",{className:"flex flex-col gap-2 rounded-xl bg-muted/25 p-3 ring-1 "+(pt==="com" ? "ring-[#3B82F6]/40" : "ring-[#3B82F6]/40")},
       e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
@@ -340,12 +340,12 @@ function JanelaPedido(p){
           e(Btn,{neutro:true, onClick:dividir}, "Dividir saldo em Nx"), e(Btn,{ic:"plus", onClick:function(){ add(linhaNova(pt, ped.data || "2026-09-15")); }}, "Parcela"))),
       e("div",{className:"hidden gap-2 px-1 text-[11px] font-bold uppercase tracking-wide text-white/80 sm:grid "+grade}, cab.map(function(t, i){ return e("span",{key:i}, t); })),
       lines.length ? lines.map(function(l, i){
-        return e("div",{key:i, className:"grid items-center gap-2 "+grade},
+        return e("div",{key:i, className:"grid items-center gap-1.5 [&_input]:text-[12px]! [&_select]:text-[12px]! "+grade},
           pt==="com"
             ? e(Sl,{value:l.forma, label:"Forma", onChange:function(v){ set(i, "forma", v); }}, e("option",{value:"boleto"}, "Boleto"), e("option",{value:"pix_empresa"}, "Pix empresa"), e("option",{value:"cartao"}, "Cartão"))
             : e("span",{className:"truncate rounded-lg bg-[#3B82F6]/15 px-2 py-2 text-[13px] font-semibold", style:tom("orange")}, "Pix revendedora"),
           e(In,{type:"date", value:l.venc, label:"Vencimento", onChange:function(v){ set(i, "venc", v); }}),
-          e(Dinheiro,{out:"ponto", value:l.valor, label:"Valor", onChange:function(v){ set(i, "valor", v); }}),
+          e(Dinheiro,{out:"ponto", value:l.valor, label:"Valor", className:"w-full min-w-0 px-1.5! text-[12px]!", onChange:function(v){ set(i, "valor", v); }}),
           pt==="com" && e(In,{type:"number", min:"1", num:true, value:l.qtd, disabled:l.forma!=="cartao", label:"Nº de parcelas", onChange:function(v){ set(i, "qtd", v); }}),
           e(In,{value:l.conta, ph:pt==="com" ? "Conta / bandeira" : "Conta / origem", label:"Conta", onChange:function(v){ set(i, "conta", v); }}),
           e(Sl,{value:l.status, label:"Status", onChange:function(v){ set(i, "status", v); }}, e("option",null, "Pendente"), e("option",null, "Pago")),
@@ -356,6 +356,8 @@ function JanelaPedido(p){
   };
   var salvar = function(){
     var linhas = (X.com>0.005 ? ped.lcom : []).concat(X.sem>0.005 ? ped.lsem : []);
+    var ruim = linhas.find(function(l){ return !dataValida(l.venc); });
+    if(ruim){ aviso(c, "Vencimento inválido ou vazio"+(ruim.venc ? ": "+ruim.venc : "")+". Confira as datas das parcelas (o mês pode não ter esse dia).", "alerta"); return; }
     var ok = grava(c, "pedido_add", {fornId:ped.fornId, numero:ped.numero, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
     if(ok) fechar();
   };

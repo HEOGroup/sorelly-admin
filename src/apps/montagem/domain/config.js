@@ -62,7 +62,7 @@ aplicaFaixas(CFG0);
 // texto de uma célula da tabela de peças: "10 a 12" quando tem faixa, senão o número
 function textoPeca(l, j){ var q = l.q[j], mx = l.qmax && l.qmax[j]; return q===null||q===undefined ? "—" : (mx!==undefined && mx!==null && mx>q ? q+" a "+mx : String(q)); }
 function tabelaAtual(c){ return c.tabelaAtiva==="baixo" && c.tabelaKitBaixo ? c.tabelaKitBaixo : c.tabelaKit; }
-var MOTIVOS = ["Aro fora do pedido","Metal fora da propor\u00e7\u00e3o pedida","Faltou encomenda",
+var MOTIVOS = ["Tamanho fora do pedido","Metal fora da propor\u00e7\u00e3o pedida","Faltou encomenda",
   "Pe\u00e7a que a revendedora n\u00e3o quer","Valor acima do kit","Valor abaixo do kit"];
 
 export { CFG0, tabelaAtual, MOTIVOS, FAIXA_CAT, aplicaFaixas, textoPeca };

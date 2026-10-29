@@ -7,6 +7,8 @@ import { relatorioTaxas, chaveFech, comisEfetiva, datasDoMes, dataHora, faltaDe,
 import { relatorioPix, textoNegociacao } from "@/apps/montagem/domain/pix-direto";
 import { podeConfigComissao, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { AbaConfigComissoes } from "@/apps/montagem/pages/ConfigComissoes";
+import { ComissoesKitNovo } from "@/apps/montagem/pages/ComissoesKitNovo";
+import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { AbaRegrasRepresentantes } from "@/apps/montagem/pages/RegrasRepresentantes";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -427,11 +429,16 @@ function PainelRegras(p){
 // A tela das Comissões dos representantes e, em outra tela, as regras (em cima) e as configurações (embaixo)
 function AbaComissoes(){
   var t = useState(false), conf = t[0], setConf = t[1], s = use().state;
+  var vs = useState("rep"), visao = vs[0], setVisao = vs[1];   // antes do return condicional (ordem dos hooks)
   if(conf && podeConfigComissao(s.usuario)) return e(React.Fragment,null,
     e("div",{className:"flex items-center gap-3"}, e(Btn,{v:"secondary", sm:true, onClick:function(){ setConf(false); }}, "← Voltar às comissões")),
     e(PageHead,{t:"Configurar comissões dos representantes", sub:"As regras ficam em cima e, embaixo, as configurações para mexer. Só o Marcus altera; o texto das regras muda sozinho."}),
     e(AbaRegrasRepresentantes),
     e("section",{className:"rounded-xl bg-card p-3 ring-2 ring-[#E8B84B]/40"}, e(AbaConfigComissoes,{embutido:true})));
-  return e(AbaComissoesBase,{aoConfig:function(){ setConf(true); }});
+  // Kit novo (teste do novo fluxo): aba ao lado das comissões, só aparece com o teste ligado ou revendedoras marcadas
+  var cN = comisEfetiva(s), temNf = !!(cN.nf && (cN.nf.ativo || (cN.nf.revs||[]).length));
+  return e(React.Fragment,null,
+    temNf && e("div",{className:"mb-3 flex"}, e(Segmentado,{opcoes:[["rep", "Representantes"], ["kitnovo", "Kit novo"]], atual:visao, onMudar:setVisao})),
+    temNf && visao==="kitnovo" ? e(ComissoesKitNovo) : e(AbaComissoesBase,{aoConfig:function(){ setConf(true); }}));
 }
 export { AbaComissoes };

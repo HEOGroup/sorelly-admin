@@ -27,7 +27,7 @@ function carregar(){
 function salvarEu(patch){
   return chamar("PATCH", "/perfil/eu", patch).then(function(r){ mesclar([r.pessoa]); avisar(); return r.pessoa; });
 }
-// Lê o arquivo e devolve uma foto quadrada de 160 px (JPEG), pequena o bastante para ir ao servidor.
+// Lê o arquivo e devolve uma foto quadrada de 160 px (JPEG; foto em pé corta a partir do topo, para não perder o rosto), pequena o bastante para ir ao servidor.
 function reduzirFoto(arquivo){
   return new Promise(function(ok, falha){
     var leitor = new FileReader();
@@ -37,7 +37,7 @@ function reduzirFoto(arquivo){
       img.onerror = function(){ falha(new Error("Este arquivo não é uma imagem.")); };
       img.onload = function(){
         var lado = Math.min(img.width, img.height), c = document.createElement("canvas"); c.width = 160; c.height = 160;
-        c.getContext("2d").drawImage(img, (img.width-lado)/2, (img.height-lado)/2, lado, lado, 0, 0, 160, 160);
+        c.getContext("2d").drawImage(img, (img.width-lado)/2, img.height>img.width ? 0 : (img.height-lado)/2, lado, lado, 0, 0, 160, 160);
         ok(c.toDataURL("image/jpeg", 0.78));
       };
       img.src = leitor.result;

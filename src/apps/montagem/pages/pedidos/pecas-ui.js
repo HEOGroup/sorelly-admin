@@ -24,7 +24,7 @@ function FormPedido(p){
     e(CampoSel,{t:"Urgência", id:"pp-urg", value:v.urg, onChange:function(x){ set("urg", x); }, opcoes:URGENCIAS}),
     e("div",{className:"col-span-2 min-w-0"},
       e(Rotulo,{t:"Detalhe", id:"pp-texto"}),
-      e("input",{id:"pp-texto", value:v.texto, onChange:function(ev){ set("texto", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") enviar(); }, placeholder:"Ex.: letras A, M · aro 16 · ponto de luz", className:CAMPO})),
+      e("input",{id:"pp-texto", value:v.texto, onChange:function(ev){ set("texto", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") enviar(); }, placeholder:"Ex.: letras A, M · tamanho 16 · ponto de luz", className:CAMPO})),
     e("div",{className:"flex items-end justify-end"}, e(Botao,{principal:true, onClick:enviar}, "Enviar pedido")));
 }
 

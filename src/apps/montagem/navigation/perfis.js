@@ -9,22 +9,23 @@ var CONFIGURADORES = ["config","comconfig","knconfigurador","configrep","rhconfi
 var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","calc","condicionais","consolidado","intrevs","intlist","intcalc","intcons","consrep","controlekits","celfunc"],   // listagens (representantes e internas), calculadora, condicionais, consolidados; Equipe e Registros só Deysiane e Diretoria.
   montadora:["painel","celfunc","producao","prefkit","pedirpecas"],   // Montagem de kits e Encomendas (27/10/2026): listagens sem valor, app, produção e preferências; sem dinheiro, Equipe e comissões
   kitnovo:["kitnovo","knpendencias","knconsolidado","knregras","knconfigurador","aprovacaocad","desempenhocad","indicacoes","msgcad","repcad"], listagens:["painel","pedirpecas","kitnovo","condicionais","celfunc"],
-  agendamento:["agpainel","p45ind","p45apr","p45acomp","p45alin","p45msg","p45pnl","agremarc","agreps","agabertura","agconfig","aganalises","aghistorico","consrep","controlekits","inadimp","dinheiro","intrevs","intlist","intcalc","intcons"], financeiro:["cpagamentos","direcionar","dircontas","dirregras","ctapagar","ctalista","chavespixbanco","emprestimos","chavespix","adquirentes","comlink","compras","cadpecas","estoquesorelly","linkrel","cfregras","pfresumo","pflanc","pfneg","pfmaq","pfforn","pfcadastro","pfprest","dinheiro","comisstodos","agbonus","agmetas","comdatas","comisbip","comismont","comisint","comcad","cominad","consrep","controlekits","placar","comissoes","pixdireto","inadimp","inadfin","caixa"],
+  agendamento:["agpainel","p45ind","p45apr","p45acomp","p45alin","p45msg","p45pnl","agremarc","agreps","agabertura","agconfig","aganalises","aghistorico","consrep","controlekits","inadimp","dinheiro","intrevs","intlist","intcalc","intcons"], financeiro:["resultado","previsaocaixa","revreceber","previsaofat","intcons","cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig","fiscal","limitefat","cnpjs","cpagamentos","direcionar","dircontas","dirregras","ctapagar","ctalista","chavespixbanco","emprestimos","chavespix","adquirentes","comlink","compras","cadpecas","estoquesorelly","linkrel","cfregras","pfresumo","pflanc","pfneg","pfmaq","pfforn","pfcadastro","pfprest","dinheiro","comisstodos","agbonus","agmetas","comdatas","comisbip","comismont","comisint","comcad","cominad","consrep","controlekits","placar","comissoes","pixdireto","inadimp","inadfin","caixa"],
   familia:TODAS.filter(function(k){ return CONFIGURADORES.indexOf(k)<0 && k.indexOf("marcus")!==0; }),
   supervisora:TODAS.filter(function(k){ return k!=="fluxo" && k.indexOf("marcus")!==0; }),                       // Deysiane: como era (tudo)
   cadastropecas:["cadpecas"],          // Rayssa e Graziella
+  linkcadastro:["linkpag","linkrel","comlink","compras","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Hellen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"],
   basico:[]};   // acesso básico: só Início, Rotina e Chat (o App acrescenta)
 var PAPEL_LB = {supervisao:"Acesso total", familia:"Direção (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
-  financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças",
+  financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças", linkcadastro:"Link, compras e cadastro",
   representante:"Representantes", basico:"Acesso básico"};
 // cor e ícone de cada grupo (tela de Acessos e seletor do topo)
 var VISUAL = {supervisao:["#D9A63A","coroa"], familia:["#A855F7","equipe"], supervisora:["#22C55E","caixa"], agendamento:["#3B82F6","calendario"],
   financeiro:["#14B8A6","banco"], inadimplencia:["#EF4444","alert"], bipadora:["#0EA5E9","bipagem"], montadora:["#F59E0B","montadora"],
-  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], representante:["#8B5CF6","representante"], basico:["#64748B","user"]};
+  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], linkcadastro:["#14B8A6","banco"], representante:["#8B5CF6","representante"], basico:["#64748B","user"]};
 // grupos que o RH pode editar, na ordem da tela
-var GRUPOS_EDITAVEIS = ["familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","representante"];
+var GRUPOS_EDITAVEIS = ["familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","linkcadastro","representante"];
 
 /** Telas liberadas para o grupo: o que o RH marcou, ou o padrão. null = tudo. */
 function abasDoPapel(papel, acessos){

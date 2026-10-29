@@ -46,9 +46,9 @@ h1{font-size:18px;font-weight:600;margin:0;text-align:center;padding:14px 16px 2
 .row{display:grid;grid-template-columns:1fr 44px 44px;gap:6px;align-items:center;height:30px;border-bottom:1px solid #2a2418}
 .row .n{text-align:right;font-variant-numeric:tabular-nums}
 .row.h{height:24px;font-size:11px;text-transform:uppercase}
-.aros{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.aro{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:4px 2px}
-.aro b{display:block;font-size:18px}.aro small{font-size:11px}
+.tamanhos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tamanho{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:4px 2px}
+.tamanho b{display:block;font-size:18px}.tamanho small{font-size:11px}
 .nao{border:1px solid var(--ruim);border-radius:8px;padding:6px 8px;margin-top:6px}
 .se{border:1px dashed var(--aviso);border-radius:8px;padding:6px 8px;margin-top:6px}
 .acoes{display:flex;gap:8px;margin-top:8px}
@@ -76,7 +76,7 @@ h1{font-size:18px;font-weight:600;margin:0;text-align:center;padding:14px 16px 2
 <div class="palco"><div class="col"><div class="tel" id="T"></div></div></div>
 <div class="nota">
   <div><b>O que mudou do layout A</b>Agora tem uma ordem numerada (1 a 9), dividida em 3 idas ao estoque, uma regra de "antes de começar", o aviso de estoque em cada etapa, o botão "Faltou peça" com a instrução de troca e um fechamento que avisa a supervisão.</div>
-  <div><b>Regras de troca (propostas, a confirmar)</b>1º: mesmo tipo e mesmo metal, outro desenho. 2º: mesmo tipo, outro metal (no máximo 1 em cada 4). Anel: aro vizinho. Nunca trocar por outro tipo de peça. Faltou mais de 20% de um tipo: chamar a supervisão na hora.</div>
+  <div><b>Regras de troca (propostas, a confirmar)</b>1º: mesmo tipo e mesmo metal, outro desenho. 2º: mesmo tipo, outro metal (no máximo 1 em cada 4). Anel: tamanho vizinho. Nunca trocar por outro tipo de peça. Faltou mais de 20% de um tipo: chamar a supervisão na hora.</div>
   <div><b>Estoque nos desenhos</b>As etiquetas "estoque ok, baixo, sem" são exemplo. O sistema ainda não lê o estoque da DevMaster. Falta decidir de onde vem.</div>
 </div>
 <script>
@@ -87,10 +87,10 @@ var D=[
   nota:"Metade dos brincos dela é BB (Select).",
   se:"Troque por outro desenho do mesmo tipo e do mesmo metal."},
  {nome:"Anéis",o:13,p:12,est:"baixo",
-  aros:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
+  tamanhos:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
   prefira:"Cravejado. Anel aparador (aliança) também sai.",
-  nao:"Não pegue os aros 10, 12, 13, 15, 17 e 23.",
-  se:"Falta o aro? Pegue o aro vizinho (um número acima ou abaixo) da lista. Nunca um aro fora da lista."},
+  nao:"Não pegue os tamanhos 10, 12, 13, 15, 17 e 23.",
+  se:"Falta o tamanho? Pegue o tamanho vizinho (um número acima ou abaixo) da lista. Nunca um tamanho fora da lista."},
  {nome:"Colares",o:12,p:8,est:"ok",prefira:"Desenho: coração e Nossa Senhora. Pedra cristal.",se:"Troque por outro desenho do mesmo metal. Corrente não troca por pingente."},
  {nome:"Pulseiras",o:9,p:10,est:"ok",prefira:"Elos e riviera com cristal.",se:"Troque por outro modelo do mesmo metal."},
  {nome:"Chokers",o:4,p:5,est:"baixo",prefira:"Cristal.",se:"Troque por outro modelo do mesmo metal."},
@@ -113,7 +113,7 @@ function detalhe(c,i){
  h+='<div class="sec">Pegue exatamente</div>';
  if(c.tipos)h+='<div class="row h"><span>Tipo</span><span class="n" style="color:var(--ouro)">Ouro</span><span class="n" style="color:var(--prata)">Prata</span></div>'+c.tipos.map(function(t){return '<div class="row"><span>'+t[0]+'</span><span class="n">'+t[1]+'</span><span class="n">'+t[2]+'</span></div>'}).join('');
  else h+='<div style="padding:2px 0"><span class="pill o2">Ouro '+c.o+'</span><span class="pill p2">Prata '+c.p+'</span></div>';
- if(c.aros)h+='<div class="sec">Quantos de cada aro</div><div class="aros">'+c.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>';
+ if(c.tamanhos)h+='<div class="sec">Quantos de cada tamanho</div><div class="tamanhos">'+c.tamanhos.map(function(a){return '<div class="tamanho"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>';
  if(c.modelos)h+='<div class="sec">Modelos</div>'+c.modelos.map(function(m){return '<div style="padding:2px 0">• '+m+'</div>'}).join('');
  if(c.prefira)h+='<div class="sec">Prefira</div><div>'+c.prefira+'</div>';
  if(c.nota)h+='<div style="margin-top:4px">'+c.nota+'</div>';

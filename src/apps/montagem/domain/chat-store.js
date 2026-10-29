@@ -317,7 +317,11 @@ function definirHorariosRh(lista){
   (lista||[]).forEach(function(x){ var cid = porNome[sem(x.nome)]; if(cid) m[cid] = {ini:x.ini, fim:x.fim, dias:x.dias}; });
   HOR_RH = m;
 }
+// quem trabalha 24 horas, todos os dias (sem almoço): o Marcus (pedido dele, 29/10/2026). Vale quando não há ajuste próprio.
+var TRABALHA_24H = ["Marcus Vinicius Hess de Oliveira"];
+var H24 = {ini:"00:00", fim:"23:59", sexIni:"00:00", sexFim:"23:59", almIni:"00:00", almFim:"00:00", dias:[0,1,2,3,4,5,6], proprio:false, temRh:false, h24:true};
 function horarioDe(cid){
+  if(!(estado.horarios||{})[cid] && TRABALHA_24H.some(function(n){ var c = CONTATOS.find(function(x){ return x.id===cid; }); return !!c && c.completo===n; })) return H24;
   var ex = estado.config.expediente, al = ex.almoco || ALMOCO_PADRAO, proprio = (estado.horarios||{})[cid], h = proprio || HOR_RH[cid] || {};
   return {ini:h.ini||ex.ini, fim:h.fim||ex.fim, sexIni:h.sexIni||h.ini||ex.ini, sexFim:h.sexFim||h.fim||ex.fim, almIni:h.almIni||al.ini, almFim:h.almFim||al.fim, dias:h.dias||ex.dias, proprio:!!proprio, temRh:!!HOR_RH[cid]};
 }
@@ -758,14 +762,21 @@ function esvaziar(){
   req.then(function(){ fila.shift(); enviando = false; esvaziar(); })
     .catch(function(x){ enviando = false; if(/Sem conexão|Algo deu errado/.test(x.message||"")) setTimeout(esvaziar, 4000); else { fila.shift(); esvaziar(); } });   // sem rede: tenta de novo; recusa do servidor: descarta
 }
+// aviso do próprio navegador/Windows quando a aba do sistema está escondida (precisa da permissão, pedida na primeira vez que a pessoa clica para escrever)
+function avisoDoNavegador(titulo, texto){
+  try { if(!document.hidden || !notifLer().chat || typeof Notification==="undefined" || Notification.permission!=="granted") return;
+    var n = new Notification(titulo, {body:texto, tag:"sorellychat"}); n.onclick = function(){ window.focus(); n.close(); }; } catch(x){}
+}
+function pedirPermissaoAviso(){ try { if(typeof Notification!=="undefined" && Notification.permission==="default") Notification.requestPermission(); } catch(x){} }
 function notificarRecebida(convId, msg){
   var conv = convPorId(convId); if(!conv) return;
   if(minhaSituacao()!=="disponivel") return;   // em reunião ou ausente (só Marcus, Nickolas e Lucas): silêncio total
   var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, deMarcus = !!MARCUS_CID && msg.de===MARCUS_CID && eu!==MARCUS_CID, grande = meMarcou || deMarcus;
   var aberta = estado.efem.aberta===convId && !document.hidden;
   if(aberta){ markRead(eu, convId, msg.aba); return; }
-  if(notifLer().chat){ if(grande) tocar("mencao"); else tocar("receberBaixo"); }
-  if(!grande){ efem({pulso:Date.now()}); return; }   // mensagem comum: só o som baixinho, o contador no botão S e um pulso. Sem cartão (decisão do Marcus, 27/10/2026)
+  if(notifLer().chat){ if(grande) tocar("mencao"); else tocar("receber"); }   // mensagem comum também toca o som normal e mostra o aviso (Marcus, 29/10/2026: funcionários precisam perceber a mensagem)
+  if(!grande) efem({pulso:Date.now()});
+  avisoDoNavegador(tituloDe(conv, eu), (conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg));
   var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
   efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
   if(!grande) setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);   // o aviso grande fica até a pessoa fechar ou responder
@@ -812,4 +823,4 @@ function iniciarServidor(){
   return function(){ clearInterval(timerSync); timerSync = null; };
 }
 
-export { iniciarServidor, FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, motivoOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };
+export { pedirPermissaoAviso, iniciarServidor, FAIXAS_H, faixaDe, acompanhar, abaDaMsg, abasDe, naoLidasAba, pendentesAba, api, fundoDe, horarioDe, definirHorariosRh, situacaoAgora, useChat, definirEu, euAgora, efem, convPorId, tituloDe, lidoEm, textoPrevia, tempoUtil, prazoDe, mencaoAtraso, marcarAlertada, guardarMidia, lerMidia, fotoDe, estaOcupado, motivoOcupado, online, totalNaoLidas, restaurarDemo, listaConversas, mensagens, temRep, MIN, HORA, DIA, uid };

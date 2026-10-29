@@ -64,7 +64,15 @@ function prazoTxt(d){   // HTML prazoTxt -> dados
 function ultDia(mes){ var a = mes.split("-").map(Number); return new Date(a[0],a[1],0).getDate(); }
 function diaISO(mes, dia){ return mes+"-"+p2(Math.min(dia,ultDia(mes))); }
 function addDias(iso, n){ var d = new Date(iso+"T00:00:00"); d.setDate(d.getDate()+n); return isoLocal(d); }
-function addMeses(iso, n){ var d = new Date(iso+"T00:00:00"); d.setMonth(d.getMonth()+n); return isoLocal(d); }   // mesma regra do HTML (setMonth)
+// Mesmo dia no mês seguinte; se o mês é mais curto, cai no ÚLTIMO dia dele (31/01 + 1 mês = 28/02; 31/03 + 1 mês = 30/04). Antes (regra do HTML, setMonth) 31/01 + 1 mês virava 03/03 e o Nickolas digitava à mão (Marcus, 29/10/2026).
+function addMeses(iso, n){
+  var p = String(iso).split("-"), dia = parseInt(p[2], 10), alvo = new Date(parseInt(p[0], 10), parseInt(p[1], 10)-1+n, 1);
+  var ultimo = new Date(alvo.getFullYear(), alvo.getMonth()+1, 0).getDate();
+  alvo.setDate(Math.min(dia, ultimo));
+  return isoLocal(alvo);
+}
+// data "AAAA-MM-DD" que existe de verdade (31/04 não existe)
+function dataValida(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||"")); if(!m) return false; var d = new Date(+m[1], +m[2]-1, +m[3]); return d.getFullYear()===+m[1] && d.getMonth()===+m[2]-1 && d.getDate()===+m[3]; }
 function mesLabel(iso){ var a = iso.split("-"); return MESES[parseInt(a[1],10)-1]+"/"+a[0]; }
 function mesCurto(m){ var a = m.split("-"); return MESES[parseInt(a[1],10)-1].slice(0,3)+"/"+a[0].slice(2); }
 function mesAtual(){ return hojeIso().slice(0,7); }
@@ -1167,7 +1175,7 @@ function pfReduz(s, a){
 export {
   TEM_ATU_PF,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
-  brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
+  brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,
   contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancExcedente, tokenAcerto,

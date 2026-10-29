@@ -4,15 +4,15 @@
 // entrar, cada pessoa vê só as tarefas do seu acesso (ACESSOS) — a montadora cai direto na tela de montagem, a bipadora na
 // retirada, etc. Extraído de pages/Apps.js para servir também a tela de verdade (pages/CelularFuncionarios.js).
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
-import { ChatApp } from "@/apps/montagem/components/chat/chat-app";
-import { contatoDoLogin, ehDirecao, idPorNome } from "@/apps/montagem/domain/chat-contatos";
-import { definirEu, efem } from "@/apps/montagem/domain/chat-store";
-import { TemaChatClaro } from "@/apps/montagem/components/chat/chat-ui";
+import { ChatWhats } from "@/apps/montagem/mobile/chat-whats";
+import { contatoDoLogin, idPorNome } from "@/apps/montagem/domain/chat-contatos";
+import { efem } from "@/apps/montagem/domain/chat-store";
 import { ACESSO_TOTAL, AGENDAMENTO, BIPADORAS, FINANCEIRO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
 import { PainelDinheiro } from "@/apps/montagem/pages/Dinheiro";
 import { AppBipagemRetirada } from "@/apps/montagem/mobile/bipagem";
 import { CelCondicionais } from "@/apps/montagem/mobile/condicionais";
 import { Celular, CelListagens } from "@/apps/montagem/mobile/montadora";
+import { COR_FUNCAO, FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Avatar } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -43,10 +43,11 @@ function Seletor(p){
   var ab = useState(false), aberto = ab[0], setAberto = ab[1];
   var escolher = function(g, it){ setAberto(false); p.onEscolher(g, it); };
   return e("div",{className:"relative w-full"},
-    e("button",{type:"button", onClick:function(){ setAberto(!aberto); }, "aria-expanded":aberto, className:"flex h-10 w-full items-center gap-2 rounded-xl border border-[#E8B84B]/50 bg-card px-3 text-left text-[13px] font-semibold"},
+    // gatilho (opcional): quem usa o Seletor desenha o botão que abre a lista (a tela Apps põe o cargo + a bolinha da pessoa no cabeçalho do cartão)
+    p.gatilho ? p.gatilho(aberto, function(){ setAberto(!aberto); }) : e("button",{type:"button", onClick:function(){ setAberto(!aberto); }, "aria-expanded":aberto, className:"flex h-10 w-full items-center gap-2 rounded-xl border border-[#E8B84B]/50 bg-card px-3 text-left text-[13px] font-semibold"},
       e("span",{className:"min-w-0 flex-1 truncate"}, p.atual || p.rotulo), e(Icon,{n:"chevrondown", s:13})),
     aberto && e("div",{className:"fixed inset-0 z-30", onClick:function(){ setAberto(false); }}),
-    aberto && e("div",{className:"absolute inset-x-0 top-11 z-40 max-h-[26rem] overflow-y-auto rounded-xl border border-[#E8B84B]/40 bg-card p-1.5 shadow-2xl"},
+    aberto && e("div",{className:"absolute z-40 max-h-[26rem] overflow-y-auto rounded-xl border border-[#E8B84B]/40 bg-card p-1.5 shadow-2xl "+(p.gatilho ? "left-0 top-full mt-1 w-[270px]" : "inset-x-0 top-11")},
       e("button",{type:"button", onClick:function(){ escolher(null, null); }, className:"flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] font-semibold text-muted-foreground hover:bg-white/5"}, "↩ Voltar à tela de entrada"),
       p.grupos.length===0 && e("p",{className:"px-2.5 py-2 text-[12.5px] text-muted-foreground"}, p.vazio || "Ninguém para escolher."),
       p.grupos.map(function(g, i){ return e("div",{key:i, className:"mt-1 flex flex-col"},
@@ -71,14 +72,13 @@ function Entrada(p){
 // mistura a cor com branco (fundo claro das linhas), igual ao app da representante
 function claro(hex, p){ var n = parseInt(hex.slice(1),16), r = (n>>16)&255, g = (n>>8)&255, b = n&255, m = function(c){ return Math.round(c+(255-c)*(1-p)); };
   return "#"+[m(r),m(g),m(b)].map(function(x){ return x.toString(16).padStart(2,"0"); }).join(""); }
-var COR_TAREFA = {din:"#0891B2", ret:"#EA580C", mon:"#7C3AED", cond:"#CA8A04", list:"#2563EB", whats:"#C9A13B"};
+var COR_TAREFA = {din:COR_FUNCAO.dinheiro, ret:COR_FUNCAO.retirada, mon:COR_FUNCAO.montagem, cond:COR_FUNCAO.condicionais, list:COR_FUNCAO.listagens, whats:COR_FUNCAO.chat};   // cores únicas por função (mobile/cores-app.js)
 
 // SorellyChat (chat interno) dentro do App das funcionárias: a pessoa conversa como ela mesma
 function WhatsInterno(p){   // ocupa a tela toda do celular, como o WhatsApp de verdade
   var pes = p.pessoa, cid = pes.id==="rh" ? idPorNome("Maria Claudia") : contatoDoLogin(pes.id);
   if(!cid) return e("p",{className:"rounded-2xl bg-white p-4 text-[13.5px] text-[#6B7280]"}, "Não encontrei o cadastro desta pessoa no chat.");
-  definirEu(cid);
-  return e("div",{className:"-mx-4 -mb-10 -mt-2 h-[679px] overflow-hidden"}, e(TemaChatClaro,null, e(ChatApp,{eu:cid, direcao:ehDirecao(pes.id), compacto:true, aoVoltarApp:p.aoVoltar})));
+  return e(ChatWhats,{eu:cid, canais:[], novaConversa:true, onInicio:p.aoVoltar, altura:679});   // mesmo formato WhatsApp dos outros apps; "+" começa conversa com qualquer pessoa
 }
 
 // App das funcionárias: tela inicial no mesmo estilo do app da representante (topo escuro, linhas coloridas); ao tocar, a tarefa
@@ -108,11 +108,12 @@ function AppInterno(p){
       e("span",{className:"flex shrink-0 items-center gap-1.5"}, flame, e("b",{className:"text-[12.5px] font-black tracking-[.25em] text-amber-200"}, "SORELLY")),
       e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-white/10"}, e(Icon,{n:"sino", s:15, className:"txt-branco"}))));
   // lista compacta, igual à lista de conversas do SorellyChat (linha contínua com fio embaixo, sem cartão nem espaço entre itens)
-  var lista = e("div",{className:"mt-3 flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm"}, ["whats"].concat(ac.tarefas).map(function(k, i, arr){ var t = TAREFAS[k], cor = COR_TAREFA[k], chat = k==="whats";
-    return e("button",{key:k, type:"button", onClick:function(){ abrir(k); }, className:"flex w-full items-center gap-3 px-3 py-2 text-left active:bg-black/5", style:{borderBottom: i<arr.length-1 ? "1px solid #EEF0F4" : "none"}},
-      e("span",{className:"grid size-10 shrink-0 place-items-center rounded-full", style:chat ? {background:"#24180a"} : {background:cor+"1F", color:cor}}, chat ? e(LogoChat,{s:24}) : e(Icon,{n:t.ic, s:18, peso:"fill"})),
-      e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block truncate text-[14px] text-[#111827]"}, t.t), e("span",{className:"block truncate text-[12px] text-[#6B7280]"}, SUB[k])),
-      e(Icon,{n:"chevron", s:14, className:"shrink-0 text-[#C7CAD1]"})); }));
+  // lista no MESMO desenho do app da revendedora: cartão pastel compacto, ícone 32 px, título 13 px, legenda 11 px (padronização de 29/10/2026)
+  var lista = e("div",{className:"mt-2.5 flex flex-col gap-2"}, ["whats"].concat(ac.tarefas).map(function(k){ var t = TAREFAS[k], cor = COR_TAREFA[k], chat = k==="whats";
+    return e("button",{key:k, type:"button", onClick:function(){ abrir(k); }, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left shadow-sm active:scale-[.99]", style:{background:FUNDO_BARRA}},
+      e("span",{className:"grid size-8 shrink-0 place-items-center rounded-lg", style:chat ? {background:"#24180a"} : {background:cor+"1F", color:cor}}, chat ? e(LogoChat,{s:22}) : e(Icon,{n:t.ic, s:16, peso:"fill"})),
+      e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block truncate text-[13px] leading-tight text-[#111827]"}, t.t), e("span",{className:"block truncate text-[11px] leading-tight text-[#6B7280]"}, SUB[k])),
+      e(Icon,{n:"chevron", s:13, className:"shrink-0 text-[#9CA3AF]"})); }));
   if(tela==="whats") return e(React.Fragment,null, e("span",{key:"h", className:"hidden"}), corpo);
   if(tela) return e(React.Fragment,null,
     e("div",{key:"b", className:"flex items-center gap-2"}, e("button",{type:"button", onClick:function(){ setTela(null); }, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[12px] font-semibold text-amber-200"}, "‹ Início"), e("b",{className:"text-[16px]"}, TAREFAS[tela].t)),

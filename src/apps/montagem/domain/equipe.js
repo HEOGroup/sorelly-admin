@@ -79,7 +79,10 @@ function papelDe(id){
 function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b){ return b.id===id; }); }
 // Grupo de ACESSO (menu e blocos de cada tela). Diferente do papel (função na montagem): Nickolas e Deysiane seguem como supervisão nas ações,
 // mas o acesso deles é editável. Sócios = fixo.
+// Só Início, SorellyChat e Melhorias por enquanto (Marcus, 29/10/2026): Bruna (36). Tirar o id daqui quando for liberar telas novas.
+var SO_CHAT = [36];
 function grupoDe(id){
+  if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
   if(id===16 || id===17 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas e Leonardo (Marcus, 28/10/2026)
   if(id===28 || id===29 || id===30 || id===31 || id===37 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos

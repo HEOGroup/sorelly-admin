@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tela Apps · Layout B · Fluxo da listagem</title>
+<style>
+:root{--bg:#0B0B0D;--card:#141417;--card2:#1B1B20;--linha:#2A2A31;--txt:#F5F1E6;--mut:#B9B3A3;--ouro:#E8B84B;--ouro2:#B8862B;--verde:#34C27A;--verm:#E5594F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;color:var(--txt);font-family:Inter,system-ui,sans-serif;font-size:13px;padding:20px 14px 60px}
+.tela{max-width:1340px;margin:0 auto;background:var(--bg);border:1px solid var(--linha);border-radius:10px;padding:12px}
+.cab{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.cab b{font-size:18px}.cab small{display:block;color:var(--mut)}
+.bar{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+button,.sel{height:32px;border-radius:7px;border:1px solid var(--linha);background:var(--card2);color:var(--txt);font:inherit;font-size:13px;padding:0 12px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--ouro2)}
+button.on{background:var(--ouro);color:#1B1409;border-color:var(--ouro);font-weight:600}
+button:disabled{opacity:.4;cursor:default}
+.sel{display:inline-flex;align-items:center;color:var(--mut);cursor:default}
+.sep{width:1px;height:20px;background:var(--linha);margin:0 4px}
+.bloco{border:1px solid var(--linha);border-radius:10px;background:var(--card);padding:10px;margin-bottom:10px}
+.bt{font-size:12px;letter-spacing:.05em;text-transform:uppercase;color:var(--ouro);font-weight:700;margin-bottom:6px}
+.passos{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.passo{height:32px;display:inline-flex;align-items:center;gap:6px;padding:0 10px;border-radius:7px;border:1px solid var(--linha);background:var(--card2);color:var(--mut);cursor:pointer}
+.passo i{font-style:normal;width:18px;height:18px;border-radius:50%;background:var(--linha);display:grid;place-items:center;font-size:11px;color:var(--txt)}
+.passo.feito{color:var(--txt)}.passo.feito i{background:var(--verde);color:#06210F}
+.passo.at{border-color:var(--ouro);color:var(--ouro);font-weight:600}.passo.at i{background:var(--ouro);color:#1B1409}
+.nota{margin-top:8px;color:var(--mut);line-height:1.5}
+.nota b{color:var(--txt);font-weight:600}
+.palco{display:flex;gap:6px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.col{width:210px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.seta{align-self:center;font-size:22px;color:var(--linha);padding-top:60px}
+.seta.hot{color:var(--ouro)}
+.fone{width:196px;height:410px;border-radius:28px;border:3px solid #2B2B2F;background:#F2F3F5;color:#111;overflow:hidden;position:relative;transition:box-shadow .2s,border-color .2s}
+.fone.age{border-color:var(--ouro);box-shadow:0 0 0 3px rgba(232,184,75,.35)}
+.fone.quieto{opacity:.55}
+.fone .nt{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:50px;height:12px;border-radius:9px;background:#000;z-index:3}
+.tp{padding:26px 10px 8px;color:#fff;font-weight:700;font-size:12px;line-height:1.2}
+.tp small{display:block;font-weight:500;font-size:10px;opacity:.9}
+.ct{padding:8px;display:flex;flex-direction:column;gap:6px;font-size:11px;line-height:1.3}
+.cd{background:#fff;border-radius:9px;padding:7px 8px;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.cd b{display:block;font-size:12px}
+.cd span{color:#555}
+.cd.verm{border-left:4px solid #E5594F}.cd.ouro{border-left:4px solid #E8B84B}.cd.verde{border-left:4px solid #34C27A}.cd.cinza{border-left:4px solid #bbb}
+.bt2{height:30px;border-radius:8px;border:0;background:#111;color:#fff;font-size:12px;font-weight:700;width:100%}
+.bt2.o{background:#E8B84B;color:#1B1409}
+.selo{display:inline-block;font-size:10px;font-weight:700;border-radius:99px;padding:1px 7px;background:#FEF3C7;color:#92400E;margin-top:3px}
+.selo.v{background:#FEE2E2;color:#991B1B}.selo.g{background:#DCFCE7;color:#166534}
+.badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:4;background:var(--ouro);color:#1B1409;font-size:10px;font-weight:700;border-radius:99px;padding:1px 8px}
+.nm{font-weight:600;text-align:center}
+.cap{font-size:12px;color:var(--mut);text-align:center;line-height:1.35;min-height:48px}
+.cap b{color:var(--txt);font-weight:600}
+table{width:100%;border-collapse:collapse}
+th{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);text-align:left;height:30px;border-bottom:1px solid var(--linha);padding:0 8px}
+td{height:32px;padding:0 8px;border-bottom:1px solid var(--linha);font-size:13px}
+tr.sel2 td{background:rgba(232,184,75,.12)}
+</style>
+</head>
+<body>
+<div class="tela">
+  <div class="cab"><div><b>Apps</b><small>Fluxo da listagem: o que cada pessoa vê, passo a passo.</small></div>
+    <div class="bar"><span class="sel">Revendedora: Beatriz Nogueira ▾</span><span class="sel">Representante: Dayanne ▾</span><button onclick="reiniciar()">Reiniciar</button><span class="sep"></span><button id="z1" onclick="zoom(.85)">P</button><button id="z2" class="on" onclick="zoom(1)">M</button><button id="z3" onclick="zoom(1.12)">G</button></div></div>
+
+  <div class="bloco">
+    <div class="bt">Tipo de kit (muda o caminho da montagem)</div>
+    <div class="bar" id="vars"></div>
+    <div class="nota" id="nvar"></div>
+  </div>
+
+  <div class="bloco">
+    <div class="bt">Passo a passo</div>
+    <div class="passos" id="passos"></div>
+    <div class="bar" style="margin-top:8px"><button onclick="ir(-1)">‹ Anterior</button><button class="on" onclick="ir(1)">Próximo ›</button><button id="play" onclick="tocar()">▶ Reproduzir</button></div>
+    <div class="nota" id="nstep"></div>
+  </div>
+
+  <div class="bloco">
+    <div class="bt">Venda e acerto · listagem de kits <span style="text-transform:none;letter-spacing:0;color:var(--mut);font-weight:400">· o contorno dourado mostra quem age agora</span></div>
+    <div class="palco" id="palco"></div>
+  </div>
+
+  <div class="bloco">
+    <div class="bt">Montagem · todos os caminhos possíveis</div>
+    <table id="tab"></table>
+    <div class="nota">Os valores de corte (R$ 4.000, R$ 12 mil, R$ 15 mil) ficam no Configurador. Quem monta é obrigatório: sem montador o kit não avança.</div>
+  </div>
+</div>
+
+<script>
+var PASSOS=["Pedido","Condicionais","Listagem","Montagem","Bipagem","Retirada"];
+var VARS={
+ normal:{n:"Kit normal",val:"R$ 7.000,00",nota:"<b>Caminho comum.</b> Qualquer montadora pega o kit na fila.",mont:"Montadora (qualquer)",selo:""},
+ semvalor:{n:"Sem valor",val:null,nota:"<b>Kit sem valor.</b> Fica vermelho na listagem. A supervisão calcula o valor (média de 3 meses) antes de alguém montar.",mont:"Montadora (qualquer)",selo:""},
+ limite:{n:"Acima do limite",val:"R$ 5.200,00",nota:"<b>Acima do limite de Encomendas.</b> Só Encomendas monta (Agatha, Elen, Eduarda). Marcus e Deysiane liberam exceção. Acima de R$ 4.000 também vale o selo Mesa maior.",mont:"Encomendas (Agatha)",selo:"Só Encomendas"},
+ grande:{n:"Kit grande",val:"R$ 13.400,00",nota:"<b>Acima de R$ 12 mil.</b> Só as 2 melhores montadoras montam. Acima de R$ 15 mil a Deysiane confere antes da bipagem.",mont:"2 melhores montadoras",selo:"Acima de R$ 12 mil"},
+ novo:{n:"Kit novo",val:"R$ 7.000,00",nota:"<b>Kit novo.</b> O valor vem do setor Kits novos. Na retirada, a representante entrega e confere as peças pelo app.",mont:"Montadora (qualquer)",selo:"Kit novo"}
+};
+var NS=[
+ "<b>1 · Pedido.</b> A representante preenche a nova listagem no app dela e envia o pedido do kit.",
+ "<b>2 · Condicionais.</b> A revendedora entra na vez da menina das condicionais. Ela confere números e peças e libera.",
+ "<b>3 · Listagem.</b> O kit entra na listagem do dia, na fila. A menina da listagem vê valor, horário e prioridade.",
+ "<b>4 · Montagem.</b> A montadora recebe o kit, inicia e conclui. Informa quem montou.",
+ "<b>5 · Bipagem.</b> A bipadora bipa o kit montado. Divergência acima de 20% é registrada.",
+ "<b>6 · Retirada.</b> A bipadora entrega, a representante retira. O kit vira Retirado."
+];
+var s=0,v='normal',z=1,tm=null;
+function V(){return VARS[v]}
+function tela(app,i){
+ var x=V(),val=x.val===null&&i<3?null:(x.val||"R$ 7.000,00");
+ if(app==='rep'){
+  var t=['Nova listagem','Pedido enviado','Pedido enviado','Pedido enviado','Pedido enviado','Pronto para retirar'][i];
+  var tp='<div class="tp" style="background:#8B5CF6">Representante<small>Dayanne</small></div>';
+  var ct;
+  if(i===0) ct='<div class="cd"><b>Beatriz Nogueira</b><span>Acerto + kit · retirada 14:00</span></div><div class="cd"><span>Valor do kit</span><b>'+(x.val||'A calcular')+'</b></div><button class="bt2 o">Enviar pedido</button>';
+  else if(i===5) ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Kit pronto e bipado</span></div>'+(v==='novo'?'<div class="cd"><b>Kit novo</b><span>Entregar e conferir as peças</span></div>':'')+'<button class="bt2 o">Retirei o kit</button>';
+  else { var st=['','Em conferência das condicionais','Na listagem · na fila','Em montagem','Aguardando bipagem'][i];
+   ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>'+st+'</span></div><div class="cd"><span>Retirada 14:00</span></div>'; }
+  return tp+'<div class="ct">'+ct+'</div>';
+ }
+ if(app==='cond'){
+  var tp='<div class="tp" style="background:#F59E0B">Funcionárias · Condicionais<small>Marjory</small></div>',ct;
+  if(i<1) ct='<div class="cd cinza"><b>Ninguém na vez</b><span>Fila vazia</span></div>';
+  else if(i===1) ct='<div class="cd verm"><b>Beatriz Nogueira</b><span>Condicional 00558 · 92 peças</span><br><span class="selo v">Pendente</span></div><button class="bt2 o">Conferir e liberar</button>';
+  else ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Condicional 00558 conferida</span><br><span class="selo g">Liberada</span></div><div class="cd cinza"><span>Próxima revendedora da vez</span></div>';
+  return tp+'<div class="ct">'+ct+'</div>';
+ }
+ if(app==='list'){
+  var tp='<div class="tp" style="background:#F59E0B">Funcionárias · Listagens<small>Listagem do dia</small></div>',ct;
+  if(i<1) ct='<div class="cd cinza"><b>Dayanne</b><span>Sem pedido novo</span></div>';
+  else if(i===1) ct='<div class="cd cinza"><b>Beatriz Nogueira</b><span>Aguardando condicionais</span></div>';
+  else {
+    var cor=val===null?'verm':'ouro',st=['','','Na fila','Montando','Aguardando bipagem','Bipado · pronto'][i];
+    ct='<div class="cd '+cor+'"><b>Beatriz Nogueira</b><span>Acerto + kit · 14:00</span><br><span>'+(val===null?'<span class="selo v">Sem valor</span>':val)+'</span> '+(x.selo?'<span class="selo">'+x.selo+'</span>':'')+'<br><span class="selo g" style="background:#E0E7FF;color:#3730A3">'+st+'</span></div>';
+    if(i===2) ct+= val===null?'<button class="bt2 o">Calcular valor</button>':'<button class="bt2">Prioridade ★</button>';
+    if(i===4&&v==='grande') ct+='<div class="cd"><span>Acima de R$ 15 mil: Deysiane confere</span></div>';
+  }
+  return tp+'<div class="ct">'+ct+'</div>';
+ }
+ if(app==='mont'){
+  var tp='<div class="tp" style="background:#F59E0B">Funcionárias · Montagem<small>'+x.mont+'</small></div>',ct;
+  if(i<2) ct='<div class="cd cinza"><b>Fila de montagem</b><span>Nenhum kit novo</span></div>';
+  else if(i===2) ct= val===null?'<div class="cd verm"><b>Beatriz Nogueira</b><span>Aguardando valor</span><br><span class="selo v">Bloqueado</span></div>':'<div class="cd ouro"><b>Beatriz Nogueira</b><span>Na fila · '+val+'</span><br>'+(x.selo?'<span class="selo">'+x.selo+'</span>':'')+'</div><div class="cd cinza"><span>'+(v==='limite'||v==='grande'?'Só visível para quem pode montar':'Entra na sua fila')+'</span></div>';
+  else if(i===3) ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Montando agora · '+val+'</span></div><div class="cd"><span>Quem montou</span><b>'+x.mont+'</b></div><button class="bt2 o">Concluir montagem</button>';
+  else ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Montagem concluída</span><br><span class="selo g">Enviado à bipagem</span></div>';
+  return tp+'<div class="ct">'+ct+'</div>';
+ }
+ if(app==='bip'){
+  var tp='<div class="tp" style="background:#F59E0B">Funcionárias · Bipagem<small>Natasha</small></div>',ct;
+  if(i<4) ct='<div class="cd cinza"><b>Nada para bipar</b><span>Aguardando montagem</span></div>';
+  else if(i===4) ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Montado · aguardando bipagem</span></div><button class="bt2 o">Bipar kit</button>';
+  else ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Bipado · 0 divergências</span></div><div class="cd"><b>Retirada de kits</b><span>Entregar para Dayanne</span></div><button class="bt2 o">Entregar</button>';
+  return tp+'<div class="ct">'+ct+'</div>';
+ }
+}
+var APPS=[['rep','Representante'],['cond','Condicionais'],['list','Listagem'],['mont','Montagem'],['bip','Bipagem e retirada']];
+var ATOR={0:['rep'],1:['cond'],2:['list'],3:['mont'],4:['bip'],5:['bip','rep']};
+var LEG={rep:["Preenche e envia o pedido","Só acompanha","Só acompanha","Só acompanha","Só acompanha","Retira o kit"],
+ cond:["—","Confere e libera","Vê conferida","","",""],
+ list:["—","Vê aguardando","Vê o kit na fila","Vê montando","Vê aguardando bipagem","Vê bipado"],
+ mont:["—","—","Vê na fila","Monta o kit","Concluído","Concluído"],
+ bip:["—","—","—","—","Bipa o kit","Entrega ao representante"]};
+function palco(){
+ var h='';
+ APPS.forEach(function(a,k){
+  var age=ATOR[s].indexOf(a[0])>=0;
+  if(k)h+='<span class="seta '+(ATOR[s].indexOf(a[0])>=0&&k>0&&s>0?'hot':'')+'">→</span>';
+  var leg=(LEG[a[0]][s]||'');
+  h+='<div class="col"><div style="zoom:'+z+'"><div class="fone '+(age?'age':'')+'"><span class="nt"></span>'+(age?'<span class="badge">Age agora</span>':'')+tela(a[0],s)+'</div></div><div class="nm">'+a[1]+'</div><div class="cap">'+leg+'</div></div>';
+ });
+ document.getElementById('palco').innerHTML=h;
+ var p='';PASSOS.forEach(function(n,i){p+='<span class="passo '+(i<s?'feito':'')+(i===s?' at':'')+'" onclick="s='+i+';draw()"><i>'+(i<s?'✓':i+1)+'</i>'+n+'</span>'});
+ document.getElementById('passos').innerHTML=p;
+ document.getElementById('nstep').innerHTML=NS[s];
+ var vb='';Object.keys(VARS).forEach(function(k){vb+='<button class="'+(k===v?'on':'')+'" onclick="v=\''+k+'\';draw()">'+VARS[k].n+'</button>'});
+ document.getElementById('vars').innerHTML=vb;
+ document.getElementById('nvar').innerHTML=V().nota;
+ var linhas=[["Kit normal","Qualquer montadora","Entra na fila e vai até Retirado."],["Sem valor","Ninguém, até calcular","Fica vermelho. A supervisão calcula na Calculadora de kits."],["Mesa maior (média acima de R$ 4.000)","Mesa da Agatha","Selo de aviso. Não trava."],["Acima do limite de Encomendas","Só Encomendas","Agatha, Elen e Eduarda. Marcus e Deysiane liberam exceção."],["Acima de R$ 12 mil","2 melhores montadoras","Após 100 kits no mês. Acima de R$ 15 mil a Deysiane confere."],["Kit novo","Montadora (qualquer)","Valor do setor Kits novos. Peças conferidas na entrega."]];
+ var sel={normal:0,semvalor:1,limite:3,grande:4,novo:5}[v];
+ var t='<tr><th>Situação</th><th>Quem monta</th><th>O que acontece</th></tr>';
+ linhas.forEach(function(l,i){t+='<tr class="'+(i===sel||(v==='limite'&&i===2)?'sel2':'')+'"><td>'+l[0]+'</td><td>'+l[1]+'</td><td>'+l[2]+'</td></tr>'});
+ document.getElementById('tab').innerHTML=t;
+}
+function draw(){palco()}
+function ir(d){s=Math.max(0,Math.min(5,s+d));draw()}
+function reiniciar(){s=0;v='normal';stop();draw()}
+function zoom(x){z=x;['z1','z2','z3'].forEach(function(id,i){document.getElementById(id).className=[.85,1,1.12][i]===x?'on':''});draw()}
+function stop(){if(tm){clearInterval(tm);tm=null;document.getElementById('play').textContent='▶ Reproduzir'}}
+function tocar(){if(tm){stop();return}document.getElementById('play').textContent='⏸ Parar';if(s>=5)s=0;draw();tm=setInterval(function(){if(s>=5){stop();return}s++;draw()},1800)}
+draw();
+</script>
+</body>
+</html>

@@ -80,7 +80,7 @@ function TabelaP(p){
   return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
     e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined}},
       e("colgroup",null, p.cols.map(function(c, i){ return e("col",{key:i, style:c.w ? {width:c.w} : undefined}); })),
-      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] truncate border-b border-border bg-white/5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(c.c ? "text-center" : c.n ? "text-right" : "text-left")}, c.t); }))),
+      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] truncate border-b border-border "+(p.cab || "bg-white/5")+" px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(c.c ? "text-center" : c.n ? "text-right" : "text-left")}, c.t); }))),
       e("tbody",null, p.children)));
 }
 // célula e linha da TabelaP. valor (n:true) à direita, fonte tabular; texto à esquerda com corte "…" e title

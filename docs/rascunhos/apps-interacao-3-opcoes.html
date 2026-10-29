@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tela Apps · 3 jeitos novos de os apps conversarem</title>
+<style>
+:root{--bg:#0B0B0D;--card:#141417;--card2:#1B1B20;--linha:#2A2A31;--txt:#F5F1E6;--mut:#B9B3A3;--ouro:#E8B84B;--ouro2:#B8862B;--verde:#34C27A;--verm:#E5594F}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:#050506;color:var(--txt);font-family:Inter,system-ui,sans-serif;font-size:13px;padding:20px 14px 60px}
+h1{font-size:18px;text-align:center}.sub{text-align:center;color:var(--mut);margin:4px 0 18px}
+.op{max-width:1360px;margin:0 auto 30px}
+.op>h2{font-size:15px;color:var(--ouro);margin-bottom:2px}.op>p{color:var(--mut);margin-bottom:6px;line-height:1.5}
+.tela{background:var(--bg);border:1px solid var(--linha);border-radius:10px;padding:10px}
+.ttl{font-size:18px;font-weight:700;margin-bottom:6px}
+.box{border:1px solid var(--linha);border-radius:10px;background:var(--card);padding:8px;margin-bottom:8px}
+.bt{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ouro);margin-bottom:6px}
+.row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+button{font:inherit;font-size:13px;color:var(--txt);height:32px;border-radius:7px;border:1px solid var(--linha);background:var(--card2);padding:0 12px;cursor:pointer;white-space:nowrap}
+button:hover{border-color:var(--ouro2)}button.on{background:var(--ouro);border-color:var(--ouro);color:#1B1409;font-weight:600}
+button.c{height:26px;font-size:12px;padding:0 9px}
+.mut{color:var(--mut)}
+.palco{display:flex;gap:8px;justify-content:center;align-items:flex-start;flex-wrap:wrap}
+.col{width:190px;display:flex;flex-direction:column;align-items:center;gap:5px}
+.fone{width:176px;height:370px;border-radius:26px;border:3px solid #2B2B2F;background:#F2F3F5;color:#111;overflow:hidden;position:relative;transition:box-shadow .2s,border-color .2s}
+.fone.age{border-color:var(--ouro);box-shadow:0 0 0 3px rgba(232,184,75,.35)}
+.fone.quieto{opacity:.5}
+.nt{position:absolute;top:6px;left:50%;transform:translateX(-50%);width:46px;height:11px;border-radius:9px;background:#000;z-index:3}
+.tp{padding:25px 10px 7px;color:#fff;font-weight:700;font-size:12px;line-height:1.2}.tp small{display:block;font-weight:500;font-size:10px;opacity:.9}
+.ct{padding:8px;display:flex;flex-direction:column;gap:6px;font-size:11px;line-height:1.3}
+.cd{background:#fff;border-radius:9px;padding:7px 8px;box-shadow:0 1px 2px rgba(0,0,0,.12)}.cd b{display:block;font-size:12px}.cd span{color:#555}
+.cd.verm{border-left:4px solid #E5594F}.cd.ouro{border-left:4px solid #E8B84B}.cd.verde{border-left:4px solid #34C27A}.cd.cinza{border-left:4px solid #bbb}
+.bt2{height:30px;border-radius:8px;border:0;background:#111;color:#fff;font-size:12px;font-weight:700;width:100%}.bt2.o{background:#E8B84B;color:#1B1409}
+.selo{display:inline-block;font-size:10px;font-weight:700;border-radius:99px;padding:1px 7px;background:#FEF3C7;color:#92400E;margin-top:3px}.selo.v{background:#FEE2E2;color:#991B1B}.selo.g{background:#DCFCE7;color:#166534}
+.badge{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);z-index:4;background:var(--ouro);color:#1B1409;font-size:10px;font-weight:700;border-radius:99px;padding:1px 8px;white-space:nowrap}
+.novo{position:absolute;top:28px;right:8px;z-index:4;background:#E5594F;color:#fff;font-size:10px;font-weight:700;border-radius:99px;padding:1px 8px;animation:pl 1.2s infinite}
+@keyframes pl{50%{opacity:.5}}
+.nm{font-weight:600;text-align:center}
+/* opção 1 */
+.tl{display:grid;grid-template-columns:170px repeat(6,minmax(110px,1fr));gap:3px;overflow-x:auto}
+.tl>div{min-height:40px;border-radius:6px;padding:5px 7px;font-size:12px;line-height:1.3;background:var(--card2);border:1px solid transparent}
+.tl .h{min-height:30px;font-weight:600;color:var(--mut);cursor:pointer;text-align:center}
+.tl .h.cur{color:var(--ouro);border-color:var(--ouro)}
+.tl .lane{display:flex;align-items:center;justify-content:space-between;gap:4px;font-weight:600}
+.tl .ac{background:rgba(232,184,75,.22);border-color:var(--ouro);cursor:pointer}
+.tl .ps{color:var(--mut);cursor:pointer}.tl .em{opacity:.35;cursor:pointer}
+.tl .cur2{box-shadow:inset 0 0 0 1px var(--ouro2)}
+/* opção 2 */
+.ev{display:flex;gap:8px;flex-wrap:wrap;align-items:stretch}
+.evb{border:1px solid var(--ouro);background:rgba(232,184,75,.14);border-radius:10px;padding:8px 12px;height:auto;text-align:left;min-width:260px;white-space:normal}
+.evb small{display:block;color:var(--mut);font-size:11px;margin-bottom:2px;text-transform:uppercase;letter-spacing:.05em}
+.evb b{font-size:14px}
+.evb.alt{border-color:var(--linha);background:var(--card2)}
+.log{max-height:150px;overflow:auto}
+.log div{padding:4px 0;border-bottom:1px solid var(--linha);font-size:12px}
+.log b{color:var(--ouro)}
+/* opção 3 */
+.kb{display:grid;grid-template-columns:repeat(6,minmax(130px,1fr));gap:6px;overflow-x:auto}
+.kc{border:1px solid var(--linha);background:var(--card2);border-radius:8px;padding:6px;min-height:92px}
+.kc.al{border-color:var(--ouro)}
+.kc h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--mut);margin-bottom:6px}
+.kit{background:var(--card);border:1px solid var(--linha);border-radius:7px;padding:6px 8px;margin-bottom:5px;cursor:grab}
+.kit.sel{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(232,184,75,.3)}
+.kit b{display:block;font-size:12px}
+</style>
+</head>
+<body>
+<h1>Tela Apps · 3 jeitos novos de os apps conversarem</h1>
+<p class="sub">Todos usam o mesmo exemplo: o fluxo da listagem de kits. Clique, arraste e veja os celulares reagirem.</p>
+<div class="op" id="o1"></div><div class="op" id="o2"></div><div class="op" id="o3"></div>
+
+<script>
+var N={rep:"Representante",cond:"Condicionais",list:"Listagem",mont:"Montagem",bip:"Bipagem e retirada"};
+var ORD=["rep","cond","list","mont","bip"];
+var PASSOS=["Pedido","Condicionais","Listagem","Montagem","Bipagem","Retirada"];
+var ATOR={0:["rep"],1:["cond"],2:["list"],3:["mont"],4:["bip"],5:["bip","rep"]};
+var LEG={rep:["Preenche e envia o pedido","Aguarda","Aguarda","Aguarda","Aguarda","Retira o kit"],
+ cond:["—","Confere e libera","Condicional liberada","—","—","—"],
+ list:["—","Vê aguardando condicionais","Vê o kit na fila","Vê montando","Vê aguardando bipagem","Vê bipado"],
+ mont:["—","—","Vê o kit na fila","Monta o kit","Montagem concluída","—"],
+ bip:["—","—","—","—","Bipa o kit","Entrega ao representante"]};
+function tela(app,i){
+ var val="R$ 7.000,00",tp,ct;
+ if(app==='rep'){tp='<div class="tp" style="background:#8B5CF6">Representante<small>Dayanne</small></div>';
+  if(i===0)ct='<div class="cd"><b>Beatriz Nogueira</b><span>Acerto + kit · retirada 14:00</span></div><div class="cd"><span>Valor do kit</span><b>'+val+'</b></div><button class="bt2 o" style="height:30px">Enviar pedido</button>';
+  else if(i===5)ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Kit pronto e bipado</span></div><button class="bt2 o" style="height:30px">Retirei o kit</button>';
+  else ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>'+['','Em conferência das condicionais','Na listagem · na fila','Em montagem','Aguardando bipagem'][i]+'</span></div><div class="cd"><span>Retirada 14:00</span></div>';}
+ if(app==='cond'){tp='<div class="tp" style="background:#F59E0B">Funcionárias · Condicionais<small>Marjory</small></div>';
+  if(i<1)ct='<div class="cd cinza"><b>Ninguém na vez</b><span>Fila vazia</span></div>';
+  else if(i===1)ct='<div class="cd verm"><b>Beatriz Nogueira</b><span>Condicional 00558 · 92 peças</span><br><span class="selo v">Pendente</span></div><button class="bt2 o" style="height:30px">Conferir e liberar</button>';
+  else ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Condicional 00558 conferida</span><br><span class="selo g">Liberada</span></div>';}
+ if(app==='list'){tp='<div class="tp" style="background:#F59E0B">Funcionárias · Listagens<small>Listagem do dia</small></div>';
+  if(i<1)ct='<div class="cd cinza"><b>Dayanne</b><span>Sem pedido novo</span></div>';
+  else if(i===1)ct='<div class="cd cinza"><b>Beatriz Nogueira</b><span>Aguardando condicionais</span></div>';
+  else{ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Acerto + kit · 14:00 · '+val+'</span><br><span class="selo g" style="background:#E0E7FF;color:#3730A3">'+['','','Na fila','Montando','Aguardando bipagem','Bipado · pronto'][i]+'</span></div>';if(i===2)ct+='<button class="bt2" style="height:30px">Prioridade ★</button>';}}
+ if(app==='mont'){tp='<div class="tp" style="background:#F59E0B">Funcionárias · Montagem<small>Montadora</small></div>';
+  if(i<2)ct='<div class="cd cinza"><b>Fila de montagem</b><span>Nenhum kit novo</span></div>';
+  else if(i===2)ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Na fila · '+val+'</span></div>';
+  else if(i===3)ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Montando agora</span></div><button class="bt2 o" style="height:30px">Concluir montagem</button>';
+  else ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Montagem concluída</span></div>';}
+ if(app==='bip'){tp='<div class="tp" style="background:#F59E0B">Funcionárias · Bipagem<small>Natasha</small></div>';
+  if(i<4)ct='<div class="cd cinza"><b>Nada para bipar</b><span>Aguardando montagem</span></div>';
+  else if(i===4)ct='<div class="cd ouro"><b>Beatriz Nogueira</b><span>Montado · aguardando bipagem</span></div><button class="bt2 o" style="height:30px">Bipar kit</button>';
+  else ct='<div class="cd verde"><b>Beatriz Nogueira</b><span>Bipado · 0 divergências</span></div><div class="cd"><b>Retirada de kits</b><span>Entregar para Dayanne</span></div>';}
+ return tp+'<div class="ct">'+ct+'</div>';
+}
+function fone(app,i,o){o=o||{};return '<div class="col"><div style="zoom:'+(o.z||.92)+'"><div class="fone '+(o.age?'age':'')+(o.dim?' quieto':'')+'"><span class="nt"></span>'+(o.age?'<span class="badge">'+(o.agetxt||'Age agora')+'</span>':'')+(o.novo?'<span class="novo">Novo</span>':'')+tela(app,i)+'</div></div><div class="nm">'+N[app]+'</div></div>'}
+
+/* ===== Opção 1: linha do tempo ===== */
+var S1={s:2,hide:{},tm:null};
+function o1(){var s=S1.s,h='<h2>Opção 1 · Linha do tempo (como um editor de vídeo)</h2><p>Cada celular tem uma pista. O cursor dourado anda pelos 6 passos e os celulares seguem o cursor. Clique em qualquer quadro para pular até ali. Clique no nome da pista para ocultar o celular.</p><div class="tela"><div class="ttl">Apps</div><div class="box"><div class="palco">';
+ ORD.forEach(function(a){if(!S1.hide[a])h+=fone(a,s,{age:ATOR[s].indexOf(a)>=0})});
+ h+='</div></div><div class="box"><div class="row" style="margin-bottom:8px"><button onclick="p1(-1)">‹ Anterior</button><button class="on" onclick="p1(1)">Próximo ›</button><button onclick="play1()">'+(S1.tm?'Parar':'Reproduzir')+'</button><button onclick="S1.s=0;S1.hide={};stop1();o1d()">Reiniciar</button><span class="mut">Passo '+(s+1)+' de 6 · '+PASSOS[s]+'</span></div><div class="tl"><div class="h" style="cursor:default"></div>';
+ PASSOS.forEach(function(n,k){h+='<div class="h '+(k===s?'cur':'')+'" onclick="S1.s='+k+';o1d()">'+(k+1)+' · '+n+'</div>'});
+ ORD.forEach(function(a){h+='<div class="lane"><span>'+N[a]+'</span><button class="c '+(S1.hide[a]?'':'on')+'" onclick="S1.hide[\''+a+'\']=!S1.hide[\''+a+'\'];o1d()">'+(S1.hide[a]?'Oculto':'Ligado')+'</button></div>';
+  for(var k=0;k<6;k++){var t=LEG[a][k],ac=ATOR[k].indexOf(a)>=0,c=ac?'ac':(t&&t!=='—'?'ps':'em');h+='<div class="'+c+' '+(k===s?'cur2':'')+'" onclick="S1.s='+k+';o1d()">'+t+'</div>'}});
+ document.getElementById('o1').innerHTML=h+'</div></div></div>'}
+function o1d(){o1()}
+function p1(d){S1.s=Math.max(0,Math.min(5,S1.s+d));o1()}
+function stop1(){if(S1.tm){clearInterval(S1.tm);S1.tm=null}}
+function play1(){if(S1.tm){stop1();o1();return}if(S1.s>=5)S1.s=0;S1.tm=setInterval(function(){if(S1.s>=5){stop1();o1();return}S1.s++;o1()},1700);o1()}
+
+/* ===== Opção 2: botões de evento ===== */
+var E=[
+ [{a:"rep",t:"Enviar o pedido da nova listagem",to:1,rec:["cond"]}],
+ [{a:"cond",t:"Conferir e liberar a condicional",to:2,rec:["list","rep"]},{a:"cond",t:"Peça faltando: devolver o pedido à representante",to:0,rec:["rep"],alt:1}],
+ [{a:"list",t:"Mandar o kit para a montagem",to:3,rec:["mont","rep"]}],
+ [{a:"mont",t:"Concluir a montagem",to:4,rec:["bip","list","rep"]}],
+ [{a:"bip",t:"Bipar o kit",to:5,rec:["list","rep"]},{a:"bip",t:"Divergência acima de 20%: devolver à montagem",to:3,rec:["mont","list"],alt:1}],
+ [{a:"rep",t:"Retirar o kit",to:6,rec:["bip","list"]}]
+];
+var S2={s:0,log:[],hist:[],novo:[]};
+function hr(n){var m=840+n*2;return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0')}
+function o2(){var s=S2.s,fim=s>5,i=Math.min(s,5),ev=fim?[]:E[s],prox=ev[0]&&ev[0].a;
+ var h='<h2>Opção 2 · Botões de evento (torre de controle)</h2><p>Você não escolhe celular. Você dispara o que acontece no mundo real e os celulares reagem. Quem recebe fica com a etiqueta "Novo". Há botões de problema que fazem o kit voltar. Dá para desfazer.</p><div class="tela"><div class="ttl">Apps</div><div class="box"><div class="bt">O que acontece agora</div><div class="ev">';
+ if(fim)h+='<span class="mut">Fluxo concluído. O kit foi retirado.</span>';
+ ev.forEach(function(x,k){h+='<button class="evb '+(x.alt?'alt':'')+'" onclick="ev2('+k+')"><small>'+N[x.a]+(x.alt?' · problema':'')+'</small><b>'+x.t+'</b></button>'});
+ h+='</div><div class="row" style="margin-top:8px"><button onclick="des2()" '+(S2.hist.length?'':'disabled style="opacity:.4"')+'>Desfazer</button><button onclick="S2={s:0,log:[],hist:[],novo:[]};o2()">Reiniciar</button></div></div><div class="box"><div class="palco">';
+ ORD.forEach(function(a){h+=fone(a,i,{age:prox===a,agetxt:'Sua vez',novo:S2.novo.indexOf(a)>=0})});
+ h+='</div></div><div class="box"><div class="bt">Registro</div><div class="log">'+(S2.log.length?S2.log.slice().reverse().map(function(l){return '<div><b>'+l.h+'</b> · '+l.t+' <span class="mut">→ '+l.r+'</span></div>'}).join(''):'<span class="mut">Nenhum evento ainda.</span>')+'</div></div></div>';
+ document.getElementById('o2').innerHTML=h}
+function ev2(k){var x=E[S2.s][k];S2.hist.push({s:S2.s,log:S2.log.slice(),novo:S2.novo.slice()});
+ S2.log.push({h:hr(S2.log.length),t:N[x.a]+': '+x.t,r:x.rec.map(function(a){return N[a]}).join(' e ')+' receberam'});S2.novo=x.rec;S2.s=x.to;o2()}
+function des2(){var h=S2.hist.pop();if(!h)return;S2.s=h.s;S2.log=h.log;S2.novo=h.novo;o2()}
+
+/* ===== Opção 3: quadro de etapas ===== */
+var S3={kits:[{n:"Beatriz Nogueira",s:2},{n:"Ketlyn",s:0},{n:"Bruna",s:4}],sel:0,todos:false,drag:null};
+function auto(s){var set={};[s-1,s,s+1].forEach(function(k){if(k>=0&&k<=5)(ATOR[k]||[]).forEach(function(a){set[a]=1})});return set}
+function o3(){var k=S3.kits[S3.sel],s=k.s,vis=S3.todos?null:auto(s);
+ var h='<h2>Opção 3 · Quadro de etapas (o quadro é o controle)</h2><p>Arraste o cartão do kit de uma coluna para outra, ou use "Avançar". Clique no cartão para seguir aquele kit. Os celulares que aparecem são sozinhos: quem age agora, quem passou e quem recebe depois.</p><div class="tela"><div class="ttl">Apps</div><div class="box"><div class="kb">';
+ PASSOS.forEach(function(n,c){h+='<div class="kc '+(c===s?'al':'')+'" ondragover="event.preventDefault()" ondrop="dr3('+c+')"><h4>'+(c+1)+' · '+n+'</h4>';
+  S3.kits.forEach(function(x,j){if(x.s===c)h+='<div class="kit '+(j===S3.sel?'sel':'')+'" draggable="true" ondragstart="S3.drag='+j+'" onclick="S3.sel='+j+';o3()"><b>'+x.n+'</b><div class="row" style="margin-top:4px"><button class="c" onclick="event.stopPropagation();av3('+j+')" '+(c>=5?'disabled style="opacity:.4"':'')+'>Avançar ›</button></div></div>'});
+  h+='</div>'});
+ h+='</div></div><div class="box"><div class="row" style="margin-bottom:8px"><span class="bt" style="margin:0">Seguindo</span><b>'+k.n+'</b><span class="mut">· etapa '+PASSOS[s]+' · age agora: '+ATOR[s].map(function(a){return N[a]}).join(' e ')+'</span><button class="c '+(S3.todos?'on':'')+'" onclick="S3.todos=!S3.todos;o3()" style="margin-left:auto">Mostrar todos os celulares</button></div><div class="palco">';
+ ORD.forEach(function(a){if(!vis||vis[a])h+=fone(a,s,{age:ATOR[s].indexOf(a)>=0})});
+ document.getElementById('o3').innerHTML=h+'</div></div></div>'}
+function av3(j){if(S3.kits[j].s<5){S3.kits[j].s++;S3.sel=j;o3()}}
+function dr3(c){if(S3.drag!=null){S3.kits[S3.drag].s=c;S3.sel=S3.drag;S3.drag=null;o3()}}
+o1();o2();o3();
+</script>
+</body>
+</html>

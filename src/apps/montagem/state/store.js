@@ -24,6 +24,7 @@ import { clDemo, clSemear } from "@/apps/montagem/domain/cadastro-leads";
 import { indDemo } from "@/apps/montagem/domain/indicacoes";
 import { ceDemo, ceMigrar } from "@/apps/montagem/domain/compras-estoque";
 import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
+import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
@@ -215,6 +216,7 @@ function novo(){
   st.lp = lpDemo();   // Link de pagamento e maquininhas (vazio; dados reais só no arquivo local)
   st.er = erDemo();   // Encomendas e reposições (vazio; dados reais só no arquivo local)
   st.p45 = p45Vazio();   // Agendamento → Plano 45/60 (vazio; dados reais só no arquivo local)
+  st.mel = {};   // Solicitações de melhorias (uma chave por pedido; vem do servidor)
   st.ga = gaDemo();   // Garantia (só o link do site externo)
   st.mk = mkDemo();   // Marketing (vazio; dados reais só no arquivo local)
   st.ce = ceDemo();   // Compras e Estoque interno de materiais (vazio; dados reais só no arquivo local)
@@ -375,6 +377,7 @@ function inicial(){
     if(s.lpMetaV!==1){ s.lpMetaV = 1; s.lp.config = Object.assign({}, s.lp.config, {bonus:{faixas:[{min:88000, valor:1000}, {min:82500, valor:800}, {min:78000, valor:600}, {min:75000, valor:450}, {min:70000, valor:300}], obs:"Meta de outubro/2026 (Bronze, Prata, Ouro, Platina e Diamante). A meta muda todo mês: ajuste aqui."}}); }   // Link de pagamento e maquininhas: cria vazio ou completa campos novos
     s.er = erMigrar(s.er);   // Encomendas e reposições: cria vazio ou completa campos novos
     s.p45 = p45Migrar(s.p45);   // Agendamento → Plano 45/60: cria vazio ou completa campos novos
+    s.mel = melMigrar(s.mel);   // Solicitações de melhorias
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
@@ -394,7 +397,7 @@ function inicial(){
     if(!s.agend) s.agend = agendDemo(s);
     if(s.agend && !s.agend.remarc){ s.agend.remarc = []; s.agend.diario = undefined; s.agend.v = 2; }   // v2: acertos realizados vêm do faturamento; remarcações entram   // Agendamento (acertos) chegou depois: monta com o que já existe
     if(s.agend && s.agend.config && !s.agend.sabrinaSaiu){ s.agend.sabrinaSaiu = true; (s.agend.config.representantes||[]).forEach(function(r){ if(/^Sabrina da Silva/.test(r.nome)) r.ativo = false; }); }   // Sabrina saiu da empresa (19/10/2026): fica no histórico, sem cota
-    if(s.reposV!==1){ s.reposV = 1; if(s.comis && s.comis.reposicao===15) s.comis.reposicao = 20; }   // reposição entregue passou de R$ 15 para R$ 20 (20/10/2026); quem já salvou outro valor não muda
+    if(s.reposV!==2){ s.reposV = 2; if(s.comis && s.comis.reposicao===20) s.comis.reposicao = 15; }   // reposição entregue = R$ 15 (decisão final do Marcus, 28/10/2026; o R$ 20 de 20/10 saiu); quem já salvou outro valor não muda
     if(s.dayanneNormalV!==1){ s.dayanneNormalV = 1; var lDay = (s.listagens||[]).find(function(x){ return x.rep==="Dayanne"; });
       if(lDay && !(s.kits||[]).some(function(k){ return k.rev==="Márcia Camargo"; })){ var lDay2 = Object.assign({}, lDay), kDay = kitNormalDayanne(lDay2); s.listagens = s.listagens.map(function(x){ return x.id===lDay.id ? lDay2 : x; }); s.kits = (s.kits||[]).concat([kDay]); }
       s.perfisRev = Object.assign({}, s.perfisRev, {"Márcia Camargo":Object.assign({}, PERFIL_MARCIA, (s.perfisRev||{})["Márcia Camargo"])}); }
@@ -450,7 +453,9 @@ function inicial(){
   return novo();
 }
 function mapKit(s, id, fn){ return s.kits.map(function(k){ return k.id===id ? Object.assign({},k,fn(k)) : k; }); }
-function com(s, patch, txt, tom){ var n = Object.assign({}, s, patch); if(txt) n.aviso = {txt:txt, tom:tom||"ok", t:Date.now()}; return n; }
+// kits novos direcionados (módulo kn do servidor): cada kit KN* de s.novas é espelhado em s.kn["k_"+id], uma chave por kit, para chegar ao app da representante em qualquer aparelho
+function espelharKn(n){ if(!n.novas) return n; var kn = null; n.novas.forEach(function(x){ if(!x || String(x.id).indexOf("KN")!==0) return; var k = "k_"+x.id; if(JSON.stringify((n.kn||{})[k])!==JSON.stringify(x)){ kn = kn || Object.assign({}, n.kn); kn[k] = x; } }); return kn ? Object.assign({}, n, {kn:kn}) : n; }
+function com(s, patch, txt, tom){ var n = Object.assign({}, s, patch); if(patch && patch.novas) n = espelharKn(n); if(txt) n.aviso = {txt:txt, tom:tom||"ok", t:Date.now()}; return n; }
 function kitDe(s,id){ return s.kits.find(function(k){return k.id===id;}); }
 function ajustaDiv(s, montId, delta){
   return s.montadoras.map(function(m){ return m.id!==montId ? m :

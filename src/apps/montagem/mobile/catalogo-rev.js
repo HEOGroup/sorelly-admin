@@ -73,7 +73,8 @@ function TelaCatalogoRev(p){
   var pecaDe = function(c){ return CATALOGO_REV.find(function(y){ return y.codigo===c; }); };
   var itens = carrinho.map(pecaDe).filter(Boolean);
   var totalCarrinho = itens.reduce(function(t, x){ return t+x.preco; }, 0);
-  var alternar = function(x){ var tem = carrinho.indexOf(x.codigo)>=0; setCarrinho(tem ? carrinho.filter(function(c){ return c!==x.codigo; }) : carrinho.concat([x.codigo])); };
+  var alternar = function(x){ if(p.bloqueado){ dica("Receba o kit novo para liberar as vendas."); return; }   // enquanto o kit novo não for recebido, não vende
+    var tem = carrinho.indexOf(x.codigo)>=0; setCarrinho(tem ? carrinho.filter(function(c){ return c!==x.codigo; }) : carrinho.concat([x.codigo])); };
   var novaCliente = function(d){ var c = {id:"c"+Date.now().toString(36), nome:d.nome, fone:d.fone}; var l = clientes.concat([c]); setClientes(l); gravarClientes(l); setClienteSel(c.id); };
   var q = busca.trim().toLowerCase();
   var lista = aba===0 ? CATALOGO_REV.filter(function(x){ return !q || x.codigo.toLowerCase().indexOf(q)>=0 || tipoDoCodigo(x.codigo).toLowerCase().indexOf(q)>=0; }) : [];

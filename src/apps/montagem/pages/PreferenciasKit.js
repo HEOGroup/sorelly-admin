@@ -16,7 +16,7 @@ var ABAS = [["rev","Revendedoras"], ["form","Formulário do app"], ["analise","A
 
 function AbaPreferenciasKit(){
   var st = useState("rev"), aba = st[0], d = use().dispatch;
-  var verNoApp = function(){ window.__revTelaIni = "preferencias"; d({type:"ABA", aba:"celrev"}); };   // abre o app da revendedora já na tela de preferências
+  var verNoApp = function(){ window.__revTelaIni = "preferencias"; d({type:"ABA", aba:"apps"}); };   // abre o app da revendedora (dentro da tela Apps) já na tela de preferências
   var corpo = aba==="rev" ? e(AbaPkRevendedoras,null) : aba==="form" ? e(AbaPkFormulario,null) : aba==="analise" ? e(AbaPkAnalise,null) : e(AbaPkImportar,null);
   return e("div",{className:"flex flex-col gap-2.5"},
     e(PageHead,{t:"Preferências do kit", sub:"Formulário do app, respostas das revendedoras e análise para a montagem."}, e(Bt,{tipo:"forte", ic:"device-mobile", onClick:verNoApp}, "Ver no app da revendedora")),

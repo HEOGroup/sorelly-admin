@@ -2,7 +2,8 @@
 // O celular do Admin (24/10/2026, pedido do Marcus): moldura de iPhone 13 (tela 390 x 844, entalhe no topo) com o sistema dentro,
 // com as mesmas cores do Admin. Fluxo real: Entrada → Início (ícones das telas do celular + dock) → tela escolhida, com o Chat à mão.
 // Cada tela de celular entra na lista TELAS (id, nome, ícone, componente). O botão "Ver no celular" de cada tela usa este celular.
-import { ChatApp, useEu } from "@/apps/montagem/components/chat/chat-app";
+import { useEu } from "@/apps/montagem/components/chat/chat-app";
+import { ChatWhats } from "@/apps/montagem/mobile/chat-whats";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { CelCondicionais } from "@/apps/montagem/mobile/condicionais";
@@ -67,7 +68,7 @@ function CelularAdmin(p){
   var nome = (pessoa && pessoa.nome) || "";
   var corpo;
   if(!entrou) corpo = e(Entrada,{aoEntrar:function(pes){ setPessoa(pes); setTela(p.abrir || "inicio"); }});
-  else if(tela==="chat") corpo = e("div",{className:"flex min-h-0 flex-1 flex-col"}, e(Barra,{titulo:"SorellyChat", voltar:inicio}), e("div",{className:"min-h-0 flex-1 overflow-hidden"}, e(ChatApp,{eu:eu, compacto:true})));
+  else if(tela==="chat") corpo = e("div",{className:"relative min-h-0 flex-1"}, e(ChatWhats,{eu:eu, canais:[], novaConversa:true, onInicio:inicio, cheio:true, semStatus:true}));   // mesmo formato WhatsApp dos outros apps
   else if(t) corpo = e("div",{className:"flex min-h-0 flex-1 flex-col"}, e(Barra,{titulo:t.nome, voltar:inicio}), e("div",{className:"min-h-0 flex-1 overflow-y-auto px-3 pb-8 pt-3 [scrollbar-width:none]"}, e(t.comp)));
   else corpo = e(Inicio,{nome:nome || "Marcus", abrir:setTela, sair:function(){ setPessoa(null); setTela("inicio"); }});
   return e(Moldura,{inicio:inicio}, corpo);

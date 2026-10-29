@@ -20,7 +20,11 @@ function AbaWhats(){
   var raiz = useRef(null);
   useEffect(function(){
     var ajusta = function(){ var el = raiz.current; if(!el) return; var topo = el.getBoundingClientRect().top; el.style.height = Math.max(480, window.innerHeight-Math.max(topo, 0))+"px"; };
-    ajusta(); window.addEventListener("resize", ajusta); return function(){ window.removeEventListener("resize", ajusta); };
+    // o topo da tela muda depois de montar (faixa de abas abertas, menu): confere de novo sempre que a página muda de tamanho
+    ajusta(); window.addEventListener("resize", ajusta);
+    var ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(ajusta) : null; if(ro) ro.observe(document.body);
+    var tm = setInterval(ajusta, 700);
+    return function(){ window.removeEventListener("resize", ajusta); if(ro) ro.disconnect(); clearInterval(tm); };
   }, []);
   // ocupa o bloco inteiro (anula o respiro da página) até a borda de baixo
   return e("div",{ref:raiz, className:"-m-4 overflow-hidden md:-m-6", style:{background:W.fundo}},

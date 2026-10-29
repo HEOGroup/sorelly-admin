@@ -11,7 +11,17 @@
 // Precisa bater com a chave e o formato de `novas` em
 // @/apps/montagem/state/store.js (CHAVE) e domain/representantes.js (NOVAS0).
 import { MESES } from "@/apps/kits-novos/lib/datas";
+import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 const CHAVE_MONTAGEM = "sorelly_montagem_v9";
+
+/** Com servidor ligado, o kit vai para o módulo "kn" (uma chave por kit): assim chega no app da representante em qualquer aparelho, não só neste navegador. */
+function enviarKitAoServidor(item) {
+  try {
+    if (!apiAtiva() || !token()) return;
+    var chaves = {}; chaves["k_" + item.id] = item;
+    chamar("PUT", "/estado/kn", { chaves: chaves }).catch(function () { /* sem rede: o kit continua salvo neste navegador */ });
+  } catch (x) { /* sem servidor */ }
+}
 
 function hojeCurto() {
   var d = new Date();
@@ -20,29 +30,22 @@ function hojeCurto() {
 
 /** Direciona um kit novo (já liberado) pra uma representante no app de montagem. */
 export function direcionarParaRepresentante(c, rep) {
+  var id = "KN" + c.id;
+  var item = { id: id, nome: c.nome, cidade: c.cid || "", bairro: c.bai || "", valor: c.val || 0, expositor: false, rep: rep, status: "direcionada", cadastro: hojeCurto() };
+  enviarKitAoServidor(item);
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM);
-    if (!raw) return false;
+    if (!raw) return apiAtiva();
     var s = JSON.parse(raw);
-    if (!s || s.v !== 4) return false;
-    var id = "KN" + c.id;
+    if (!s || s.v !== 4) return apiAtiva();
     var novas = (s.novas || []).filter(function (n) { return n.id !== id; });
-    novas.unshift({
-      id: id,
-      nome: c.nome,
-      cidade: c.cid || "",
-      bairro: c.bai || "",
-      valor: c.val || 0,
-      expositor: false,
-      rep: rep,
-      status: "direcionada",
-      cadastro: hojeCurto(),
-    });
+    novas.unshift(item);
     s.novas = novas;
+    var kn = Object.assign({}, s.kn); kn["k_" + id] = item; s.kn = kn;
     localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
     return true;
   } catch (x) {
-    return false;
+    return apiAtiva();
   }
 }
 
@@ -123,6 +126,7 @@ export function registrarRecusa(o) {
       if (!((id && n.id === id) || (!id && n.nome === o.rev))) return n;
       return Object.assign({}, n, { status: "aguardando", rep: null, recusadaPor: (n.recusadaPor || []).concat([o.rep]) });
     });
+    if (id) { var kr = s.novas.find(function (n) { return n.id === id; }); if (kr) { enviarKitAoServidor(kr); var kn2 = Object.assign({}, s.kn); kn2["k_" + id] = kr; s.kn = kn2; } }
     localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
     return { bloqueou: bloqueou, total: total, limite: limite };
   } catch (x) {

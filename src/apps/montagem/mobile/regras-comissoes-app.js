@@ -11,7 +11,7 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var BASE = "/regras/";
 var VERSOES = {
-  representante:{rotulo:"Representante", prefixo:"rep-", paginas:11, titulo:"Manual da representante"},
+  representante:{rotulo:"Representante", prefixo:"rep-", paginas:12, titulo:"Manual da representante"},
   revendedora:{rotulo:"Revendedora", prefixo:"rev-", paginas:8, titulo:"Regulamento da revendedora"}};
 var PDF_REVENDEDORA = BASE+"GUIA-DA-REVENDEDORA.pdf";
 var INK = "text-[#161616]", MUT = "text-[#6a6a6a]";

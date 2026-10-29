@@ -93,13 +93,17 @@ function decora(i){
 }
 
 var _cache = null;
+// Contas a pagar e pagas vindas do servidor (DevMaster, /api/contas-dm). Quando chegam, valem no lugar dos arquivos locais (que só existem no computador do Marcus).
+var SERV = null;
+function definirContasServidor(d){ SERV = d && d.apagar ? d : null; _cache = null; }
+function servidorEm(){ return SERV ? SERV.geradoEm || "ok" : null; }   // hora da última leitura da DevMaster; null = ainda usa os arquivos locais
 function baseItens(){
   if(_cache) return _cache;
-  var pagas = (((ANO && ANO.itens) || []).concat((LOCAL && LOCAL.itens) || [])).map(function(x, i){
+  var pagas = ((SERV && SERV.pagas) || ((ANO && ANO.itens) || []).concat((LOCAL && LOCAL.itens) || [])).map(function(x, i){
     return {id:"p"+i, status:"pago", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]), baixa:x[8], venc:x[9], valor:x[10], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ym(x[8]), outroMes:ym(x[9])!==ym(x[8])};
   });
   var mesRef = pagas.reduce(function(m, i){ return i.mes>m ? i.mes : m; }, "");
-  var apagar = (((LOCAL && LOCAL.apagar) || []).concat((FUTURAS && FUTURAS.apagar) || [])).map(function(x, i){
+  var apagar = ((SERV && SERV.apagar) || ((LOCAL && LOCAL.apagar) || []).concat((FUTURAS && FUTURAS.apagar) || [])).map(function(x, i){
     var vm = ym(x[9]), ant = !!mesRef && vm<mesRef;
     return {id:"a"+i, status:"apagar", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]), emissao:x[8], venc:x[9], valorTitulo:x[10], valor:x[11], atraso:x[12], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ant ? mesRef : vm, outroMes:ant};
   });
@@ -259,4 +263,4 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
-export { NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

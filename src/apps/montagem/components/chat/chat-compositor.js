@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — components/chat/chat-compositor.js
 // Barra de escrever do SorellyChat: texto (Enter envia, Shift+Enter quebra linha), emojis, @menção, anexos com pré-visualização, câmera e gravação de áudio.
 import { corrigirTexto, corrigirUltima } from "@/apps/montagem/lib/corretor";
-import { api, euAgora, guardarMidia } from "@/apps/montagem/domain/chat-store";
+import { api, euAgora, guardarMidia, pedirPermissaoAviso } from "@/apps/montagem/domain/chat-store";
 import { contato, sem } from "@/apps/montagem/domain/chat-contatos";
 import { tocar } from "@/apps/montagem/lib/sons";
 import { Avatar, Ph, W, Janela, Popover, ItemMenu, duracao, tamanho } from "@/apps/montagem/components/chat/chat-ui";
@@ -90,6 +90,12 @@ function Compositor(p){
     } else enviarMsg({conv:conv.id, eu:eu, aba:p.aba, texto:t, mencoes:ms, resp:p.resp ? p.resp.id : null});
     setTexto(""); setMencoes([]); setSug(null); setEmoji(false); if(p.resp) p.cancelarResp();
   };
+  // Ctrl+V com uma imagem (print ou foto copiada) vira anexo com pré-visualização; texto colado segue normal
+  var colar = function(ev){
+    var it = ev.clipboardData && ev.clipboardData.items, fs = [];
+    if(it) Array.prototype.forEach.call(it, function(x){ if(x.kind==="file" && x.type.indexOf("image/")===0){ var f = x.getAsFile(); if(f) fs.push(f.name && f.name!=="image.png" ? f : new File([f], "print-"+Date.now()+".png", {type:f.type})); } });
+    if(fs.length){ ev.preventDefault(); addArquivos(fs); }
+  };
   var addArquivos = function(lista){
     Array.prototype.slice.call(lista).forEach(function(f){
       if(f.size > 25*1048576){ tocar("erro"); setErro("\""+f.name+"\" é maior que 25 MB."); return; }
@@ -173,7 +179,7 @@ function Compositor(p){
       e("input",{ref:fotoIn, type:"file", accept:"image/*", multiple:true, className:"hidden", onChange:function(ev){ addArquivos(ev.target.files); ev.target.value = ""; }}),
       e("input",{ref:docIn, type:"file", accept:".pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.odt,.ods,.zip", multiple:true, className:"hidden", onChange:function(ev){ addArquivos(ev.target.files); ev.target.value = ""; }}),
       e("button",{onClick:function(){ setEmoji(!emoji); setMenuAnexo(false); }, "aria-label":"Emojis", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5"}, e(Ph,{n:"smiley-sticker", s:24, style:{color:W.sec}})),
-      e("textarea",{ref:ta, rows:1, spellCheck:true, lang:"pt-BR", value:texto, onChange:mudou, onKeyDown:teclas, placeholder:anexos.length ? "Adicione uma legenda…" : "Digite uma mensagem", "aria-label":"Mensagem",
+      e("textarea",{ref:ta, rows:1, spellCheck:true, lang:"pt-BR", value:texto, onChange:mudou, onKeyDown:teclas, onFocus:pedirPermissaoAviso, onPaste:colar, placeholder:anexos.length ? "Adicione uma legenda…" : "Digite uma mensagem", "aria-label":"Mensagem",
         className:"max-h-[140px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-snug outline-none", style:{color:W.texto}}),
       temTexto || p.editando ?
         e("button",{onClick:enviar, "aria-label":"Enviar", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:p.editando ? "check" : "paper-plane-right", s:20, fill:true})) :

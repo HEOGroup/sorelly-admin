@@ -43,3 +43,31 @@ Módulo novo, ainda sem detalhes: registro no INPI por marca/CNPJ, classe, núme
 Já existem registros, de várias marcas em vários CNPJs do grupo: **Sorelly** no CNPJ 34; **Serenity (portas-joias)** no 59; **Mayz (lingeries)** no 46; **Axis** no CNPJ do Lucas (pessoa física/sócio, não é CNPJ próprio da Axis). Falta levantar: números de processo no INPI, classes, situação e vencimentos. Ficha por marca com CNPJ titular.
 ### Salas comerciais
 Marcus vai levantar depois: contrato em PDF, CNPJ e valor do aluguel de cada sala.
+
+## Como o setor de cobrança trabalha hoje (resposta da Amanda de Miranda, passada pelo Marcus em 28/10/2026)
+**Quem:** Amanda de Miranda cuida do setor de cobrança há mais de um ano (entrou em setembro de 2025).
+
+**O que existe de registro**
+- Planilhas de **2024 e 2025** (a Amanda tem). Ao assumir, ela contatou todas as devedoras de 2024 e 2025 que conseguiu localizar e acompanhou cada caso.
+- Onde não houve pagamento e havia **nota promissória assinada**, ela negativou no **Serasa**.
+- **2022 e 2023: não existe registro organizado** de inadimplência nem de cobrança (naquele período não havia setor Jurídico estruturado). Dívida de antes de setembro/2025 não tem histórico detalhado.
+
+**Quando cobra e como (régua)**
+1. A dívida chega com a **condicional lançada** → o setor fala com a **representante** para saber se ela já negocia.
+2. Representante negociando: informa ao setor **datas, valores e prazos acordados**; o setor acompanha o cumprimento.
+3. Representante não quer ou não consegue cobrar: o **setor assume**. Primeiro contato com a devedora.
+4. Sem retorno em **2 a 3 dias**: nova tentativa/notificação.
+5. Sem retorno entre **5 e 7 dias**: notificação avisando do possível encaminhamento para **negativação no Serasa**.
+6. Depois continua o acompanhamento e toma as providências conforme o caso.
+
+**Quem aprova desconto ou acordo**
+- A Amanda analisa cada **acordo, parcelamento e desconto**, caso a caso (sem fórmula única).
+- **Desconto mais alto ou condição fora do padrão**: pede autorização ao **Nickolas ou ao Marcus** antes de fechar.
+
+**Quando a dívida é considerada perdida**
+- **Não há prazo fixo.** Primeiro todas as tentativas de contato e negociação amigável e a análise da documentação (principalmente **nota promissória assinada**).
+- Sem nota promissória, ainda pode negativar no Serasa, conforme a documentação do caso.
+- Acordo não cumprido por vários meses, com várias tentativas frustradas: para de prolongar a negociação amigável e avalia **Serasa e demais medidas**.
+
+### O que isso pede do sistema (ideia, a confirmar com o Marcus)
+Ficha por devedora com: situação (em contato, negociando via representante, acordo, acordo quebrado, negativada, quitada, perdoada), datas e valores combinados, parcelas, **tem nota promissória assinada** (sim/não), data da negativação no Serasa, quem autorizou desconto fora do padrão, histórico de contatos. Ligada ao bloco "Dívida antiga" da tela Contas a receber (Financeiro). A Amanda ainda vai mandar as planilhas de 2024 e 2025 (a combinar).

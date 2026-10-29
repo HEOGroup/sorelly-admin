@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Solicitações de melhorias · layout 1 com 4 topos</title>
+<style>
+:root{ --bg:#0e0e10; --card:#18181b; --card2:#1d1d21; --borda:#2c2c32; --ouro:#E8B84B; --ouro-b:rgba(232,184,75,.28); --txt:#fff; --verde:#4ade80; --amar:#fbbf24; --verm:#f87171; --azul:#60a5fa; --lar:#fb923c; }
+*{box-sizing:border-box} html,body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.35 Inter,system-ui,Arial,sans-serif}
+body{padding:16px;max-width:1320px;margin:0 auto}
+h1{font-size:18px;margin:0 0 4px}.sub{margin:0 0 10px}
+.barra{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 8px}
+.seg{display:inline-flex;border:1px solid var(--ouro-b);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--txt);border:0;font:inherit;font-weight:600;cursor:pointer}
+.seg button.on{background:var(--ouro);color:#1a1306}
+.rot{font-weight:700;margin:10px 0 2px;font-size:14px}.dica{margin:0 0 8px}
+.tela{border:1px solid var(--ouro-b);border-radius:12px;background:#111113;padding:12px}
+.topo{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:8px;margin-bottom:10px}
+.topo h2{margin:0;font-size:16px}.topo small{display:block}
+.btn{height:32px;padding:0 14px;border-radius:8px;border:1px solid var(--borda);background:var(--card2);color:var(--txt);font:inherit;font-weight:600;cursor:pointer}
+.btn.p{background:var(--ouro);color:#1a1306;border:0;font-weight:700}
+label{display:flex;flex-direction:column;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.campo{height:32px;border:1px solid var(--borda);background:var(--card2);color:var(--txt);border-radius:6px;padding:0 8px;font:inherit;width:100%}
+.filtros{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;gap:8px;background:var(--card);border:1px solid var(--borda);border-radius:8px;padding:8px;margin:10px 0 8px}
+table{width:100%;border-collapse:separate;border-spacing:0;border:1px solid var(--borda);border-radius:8px;overflow:hidden}
+th{height:30px;background:var(--card2);font-size:11px;text-transform:uppercase;letter-spacing:.06em;border-bottom:2px solid var(--ouro);border-right:1px solid var(--borda);text-align:center;cursor:pointer;white-space:nowrap}
+th:last-child{border-right:0}
+td{height:32px;text-align:center;padding:0 8px;border-bottom:1px solid var(--borda);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:240px}
+td.t{text-align:left;font-weight:700} tr:hover td{background:rgba(232,184,75,.07)}
+.Nova{color:var(--azul)}.Ana{color:var(--amar)}.Feita{color:var(--verde)}.Rec{color:var(--verm)}.Can{color:var(--lar)}
+.chip{display:inline-flex;align-items:center;height:20px;padding:0 8px;border-radius:999px;font-size:11px;font-weight:700;border:1px solid currentColor}
+.claude{display:flex;align-items:center;gap:6px;justify-content:center}
+.claude input{height:24px;width:170px;border:1px solid var(--borda);background:var(--card2);color:var(--txt);border-radius:5px;padding:0 6px;font:inherit}
+.claude a{color:var(--ouro);text-decoration:underline;cursor:pointer}
+.claude .vz{opacity:.8}
+.mini{height:24px;padding:0 8px;border-radius:5px;border:1px solid var(--ouro-b);background:transparent;color:var(--ouro);font:inherit;font-weight:700;cursor:pointer;font-size:11px}
+/* topos */
+.t1{display:flex;flex-wrap:wrap;gap:6px}
+.t1 button{height:30px;padding:0 12px;border-radius:999px;border:1px solid var(--borda);background:var(--card2);color:var(--txt);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.t1 button b{font-weight:800}.t1 button.on{border-color:var(--ouro);background:rgba(232,184,75,.16)}
+.t2 .bar{display:flex;height:10px;border-radius:999px;overflow:hidden;background:var(--card2);border:1px solid var(--borda)}
+.t2 .bar i{display:block;height:100%}
+.t2 .leg{display:flex;flex-wrap:wrap;gap:4px 16px;margin-top:6px}
+.t2 .leg span{display:inline-flex;gap:6px;align-items:center}.t2 .leg i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.t3{display:flex;gap:0;border-bottom:1px solid var(--borda)}
+.t3 button{height:34px;padding:0 16px;background:transparent;color:var(--txt);border:0;border-bottom:3px solid transparent;font:inherit;font-weight:600;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+.t3 button.on{border-bottom-color:var(--ouro);color:var(--ouro)}
+.t3 button small{background:var(--card2);border-radius:999px;padding:0 7px;font-weight:800;color:var(--txt)}
+.t4{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.t4 .g{background:var(--card);border:1px solid var(--borda);border-radius:10px;padding:8px 14px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.t4 .g b{font-size:20px}.t4 .g.d{border-color:var(--ouro);background:rgba(232,184,75,.10)}
+.nota{margin:10px 0 0;font-size:12px}
+</style></head><body>
+<h1>Solicitações de melhorias · layout 1 com a coluna da conversa do Claude</h1>
+<p class="sub">Tabela completa (layout 1) com a coluna nova <b>Conversa do Claude</b>: só você e o Leonardo preenchem (link ou nome da conversa). Abaixo, <b>4 opções de topo</b> no lugar do "Total 12, Nova 3…". Clique nos botões para trocar de topo. Nomes e pedidos são de exemplo.</p>
+<div class="barra"><div class="seg" id="segT"></div></div>
+<div class="rot" id="rot"></div><p class="dica" id="dica"></p>
+<div class="tela" id="tela"></div>
+<p class="nota">Conversa do Claude: vazio mostra "+ conversa"; preenchido com link vira link clicável; com nome mostra o nome. O lápis edita. Quem pediu e os outros funcionários não veem essa coluna (ou veem só leitura: me diga).</p>
+<script>
+var P=[
+ {t:"Kits novos: só 1 de 9 aparece para a Jessica Tobias",q:"Michele",s:"Kits novos",tela:"/projetos/kits-novos",sit:"Em análise",d:"28/10 18:00",r:2,c:"https://claude.ai/code/sessao-kits-novos"},
+ {t:"Filtro por mês no Resultado do mês",q:"Ana Maria",s:"Financeiro",tela:"/financeiro/resultado",sit:"Nova",d:"28/10 14:20",r:0,c:""},
+ {t:"Botão de WhatsApp na lista de revendedoras",q:"Tamara",s:"Atendimento interno",tela:"/atendimento-interno/revendedoras",sit:"Feita",d:"28/10 11:05",r:3,c:"Revendedoras internas 28/10"},
+ {t:"Imprimir a listagem do dia",q:"Deysiane",s:"Montagem",tela:"/kits/listagens",sit:"Feita",d:"27/10 16:40",r:1,c:"Listagens impressas"},
+ {t:"Cor mais forte nos atrasos",q:"Mariana",s:"Agendamento",tela:"/agendamento/painel",sit:"Recusada",d:"27/10 09:12",r:1,c:""},
+ {t:"Avisar quando kit novo chegar",q:"Michele",s:"Kits novos",tela:"/kits-novos/kits",sit:"Em análise",d:"26/10 17:30",r:1,c:""},
+ {t:"Exportar contas a pagar em planilha",q:"Nayale",s:"Financeiro",tela:"/financeiro/contas-a-pagar",sit:"Nova",d:"26/10 10:02",r:0,c:""},
+ {t:"Bipar retorno mais rápido",q:"Natasha",s:"Bipagem",tela:"/representantes/consolidado",sit:"Cancelada",d:"25/10 15:11",r:2,c:""},
+ {t:"Foto da peça na calculadora",q:"Rayssa",s:"Cadastro de peças",tela:"/cadastro-de-pecas/calculadora",sit:"Nova",d:"25/10 09:40",r:0,c:""},
+ {t:"Agenda de sábado só até 11h",q:"Tamara",s:"Atendimento interno",tela:"/atendimento-interno/revendedoras",sit:"Feita",d:"24/10 13:20",r:2,c:"https://claude.ai/code/agenda-sabado"},
+ {t:"Relatório de presença por setor",q:"Maria Claudia",s:"RH",tela:"/rh/presenca",sit:"Em análise",d:"24/10 08:50",r:1,c:""},
+ {t:"Mensagem pronta de véspera",q:"Ana Maria",s:"Financeiro",tela:"/financeiro/cobranca",sit:"Recusada",d:"23/10 17:05",r:1,c:""}];
+var K={"Nova":"Nova","Em análise":"Ana","Feita":"Feita","Recusada":"Rec","Cancelada":"Can"};
+var COR={"Nova":"#60a5fa","Em análise":"#fbbf24","Feita":"#4ade80","Recusada":"#f87171","Cancelada":"#fb923c"};
+var SIT=["Nova","Em análise","Feita","Recusada","Cancelada"];
+var T=[["1","Botões de situação"],["2","Barra única"],["3","Abas"],["4","Dois destaques"]];
+var DICA={"1":"Os números viram botões redondos que também filtram a tabela. Sem caixas de totais.","2":"Uma barra fina empilhada mostra a proporção de cada situação, com legenda em uma linha só.","3":"Abas de situação com um contador pequeno, em cima da tabela. Clicar numa aba filtra.","4":"Só dois números em destaque: o que espera resposta de vocês e o que já foi feito. O resto some."};
+var st={t:"1",f:""};
+function chip(s){return '<span class="chip '+K[s]+'">'+s+'</span>'}
+function cont(){var c={};P.forEach(function(p){c[p.sit]=(c[p.sit]||0)+1});return c}
+function topoEsc(){var c=cont(),n=P.length,aberto=(c["Nova"]||0)+(c["Em análise"]||0);
+ if(st.t==="1")return '<div class="t1"><button data-f="" class="'+(st.f===""?'on':'')+'">Todas <b>'+n+'</b></button>'+SIT.map(function(s){return '<button data-f="'+s+'" class="'+(st.f===s?'on':'')+'"><span class="'+K[s]+'">●</span>'+s+' <b>'+(c[s]||0)+'</b></button>'}).join("")+'</div>';
+ if(st.t==="2")return '<div class="t2"><div class="bar">'+SIT.map(function(s){return '<i style="width:'+((c[s]||0)/n*100)+'%;background:'+COR[s]+'"></i>'}).join("")+'</div><div class="leg"><span><b>'+n+' pedidos</b></span><span>'+aberto+' esperando resposta</span>'+SIT.filter(function(s){return c[s]}).map(function(s){return '<span><i style="background:'+COR[s]+'"></i>'+c[s]+' '+s.toLowerCase()+'</span>'}).join("")+'</div></div>';
+ if(st.t==="3")return '<div class="t3"><button data-f="" class="'+(st.f===""?'on':'')+'">Todas <small>'+n+'</small></button>'+SIT.map(function(s){return '<button data-f="'+s+'" class="'+(st.f===s?'on':'')+'">'+s+' <small>'+(c[s]||0)+'</small></button>'}).join("")+'</div>';
+ return '<div class="t4"><div class="g d"><span>Esperando resposta de vocês</span><b>'+aberto+'</b></div><div class="g"><span>Feitas</span><b class="Feita">'+(c["Feita"]||0)+'</b></div><div class="g"><span>Recusadas ou canceladas</span><b>'+((c["Recusada"]||0)+(c["Cancelada"]||0))+'</b></div></div>'}
+function celC(p){if(!p.c)return '<div class="claude"><button class="mini">+ conversa</button></div>';
+ var link=/^https?:/.test(p.c);return '<div class="claude">'+(link?'<a title="'+p.c+'">Abrir conversa ↗</a>':'<span>'+p.c+'</span>')+'<button class="mini">✎</button></div>'}
+function tela(){
+ var lista=P.filter(function(p){return !st.f||p.sit===st.f});
+ return '<div class="topo"><div><h2>Solicitações de melhorias</h2><small>Pedidos de mudança feitos pelos funcionários. Só você e o Leonardo respondem.</small></div><div style="display:flex;gap:8px;align-items:center"><div class="seg"><button class="on">Todas</button><button>Minhas</button></div><button class="btn p">Nova solicitação</button></div></div>'
+ +topoEsc()
+ +'<div class="filtros"><label>Busca<input class="campo" placeholder="Título, pessoa, setor ou tela"></label><label>Setor<select class="campo"><option>Todos</option></select></label><label>Funcionária<select class="campo"><option>Todas</option></select></label><label>Ordenar por<select class="campo"><option>Data</option><option>Funcionária</option><option>Setor</option><option>Situação</option></select></label><label>Agrupar por<select class="campo"><option>Nada</option><option>Setor</option><option>Funcionária</option></select></label></div>'
+ +'<table><thead><tr><th>Data</th><th>Setor</th><th>Funcionária</th><th>Título</th><th>Tela</th><th>Situação</th><th>Conversa do Claude</th><th>Resp.</th></tr></thead><tbody>'
+ +lista.map(function(p){return '<tr><td>'+p.d+'</td><td>'+p.s+'</td><td>'+p.q+'</td><td class="t">'+p.t+'</td><td>'+p.tela+'</td><td>'+chip(p.sit)+'</td><td>'+celC(p)+'</td><td>'+p.r+'</td></tr>'}).join("")+'</tbody></table>'}
+function draw(){
+ document.getElementById("segT").innerHTML=T.map(function(x){return '<button class="'+(x[0]===st.t?'on':'')+'" data-t="'+x[0]+'">Topo '+x[0]+'</button>'}).join("");
+ document.getElementById("rot").textContent="Topo "+st.t+" · "+T[+st.t-1][1];document.getElementById("dica").textContent=DICA[st.t];
+ document.getElementById("tela").innerHTML=tela();}
+document.addEventListener("click",function(ev){var a=ev.target.closest("[data-t]");if(a){st.t=a.dataset.t;st.f="";draw();return}var f=ev.target.closest("[data-f]");if(f){st.f=f.dataset.f;draw()}});
+draw();
+</script></body></html>

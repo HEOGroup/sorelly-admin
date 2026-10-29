@@ -38,7 +38,7 @@ function CelPedir(){
       e("div",null, e(Rot,{t:"Público"}), e(Chips,{opcoes:[["", "Qualquer"]].concat(PUBLICOS), v:v.publico, set:function(x){ set("publico", x); }})),
       e("div",null, e(Rot,{t:"Quantos modelos"}), e(Chips,{opcoes:MODELOS.map(function(n){ return [String(n), String(n)]; }), v:v.modelos, set:function(x){ set("modelos", x); }})),
       e("div",null, e(Rot,{t:"Urgência"}), e(Chips,{opcoes:URGENCIAS, v:v.urg, set:function(x){ set("urg", x); }})),
-      e("input",{value:v.texto, onChange:function(ev){ set("texto", ev.target.value); }, placeholder:"Detalhe: letras A, M · aro 16", "aria-label":"Detalhe", className:CAMPO}),
+      e("input",{value:v.texto, onChange:function(ev){ set("texto", ev.target.value); }, placeholder:"Detalhe: letras A, M · tamanho 16", "aria-label":"Detalhe", className:CAMPO}),
       e("button",{type:"button", onClick:enviar, className:"h-11 rounded-xl bg-[#B8862B] text-[15px] font-bold text-white"}, "Enviar pedido")),
     e("div",{className:"flex flex-col gap-1.5"},
       e("p",{className:"px-1 text-[13px] font-bold text-[#4B5563]"}, "Meus pedidos"),

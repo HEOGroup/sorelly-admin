@@ -3,6 +3,179 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.16", data:"2026-10-29", titulo:"SorellyChat mais limpo", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"Na conversa com um colaborador, o topo mostra só o horário de trabalho. Saíram as bolinhas dos últimos 10 dias e o resumo do mês."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Saiu a barra \"Marcar pendente / Marcar resolvida\" de dentro da conversa."},
+  ]},
+  {v:"0.17.15", data:"2026-10-29", titulo:"Início: Setores e Acesso básico sem apps", itens:[
+    {tipo:"melhoria", area:"Início", txt:"Na tela inicial, \"Seus setores\" virou \"Setores\" e saiu \"Para você decidir hoje\". \"Seu dia\", \"Visitados recentemente\" e as bolinhas da mensagem saíram para todos. Setores com letra maior, foto maior. No chat, horário e bolinha só para a Direção."},
+    {tipo:"correção", area:"Acessos", txt:"O grupo Acesso básico não abre mais nenhum app de celular. A Bruna (Financeiro) fica no Acesso básico em qualquer visão, inclusive em \"atuar como\": Início, SorellyChat e Melhorias."},
+  ]},
+  {v:"0.17.14", data:"2026-10-29", titulo:"Apps: barras na cor do SorellyChat, cabeçalho fixo e tamanho P ao abrir", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"Todas as barras (cartões) da tela inicial da revendedora, da representante e das funcionárias têm o fundo creme da barra do SorellyChat (FUNDO_BARRA em mobile/cores-app.js). Os ícones mantêm a cor de cada função."},
+    {tipo:"melhoria", area:"Apps", txt:"A parte principal (cabeçalho escuro) de cada app de celular fica FIXA no topo; só o resto da tela rola (regra em styles/montagem.css)."},
+    {tipo:"correção", area:"Apps", txt:"Sumiu a faixa clara que ficava em cima do cabeçalho dos apps (o topo fixo agora cola exatamente na barra de status). Na revendedora a ordem é Visualizar catálogo (em cima de tudo), SorellyChat e Kit novo logo abaixo; na representante SorellyChat é o primeiro e Kits Novos vem logo abaixo."},
+    {tipo:"melhoria", area:"Apps", txt:"Organização da tela: UM bloco em cima, com seta que abre e fecha (\"Apps e fluxos · fluxo · N apps\"); dentro ficam os fluxos e os 11 apps, para ligar e desligar um a um (botões Principais e Todos). Escolher um fluxo liga os apps dele. O tamanho e o play ficam sempre à vista; os celulares usam a largura toda embaixo. Abre fechado."},
+    {tipo:"melhoria", area:"Apps", txt:"Os botões P, M e G foram trocados por um controle de tamanho em porcentagem: botões − e + e uma barra, de 50% a 100%, de 5 em 5. A tela abre sempre em 100% (celular de ~363 px); o 50% é o menor tamanho (celular de ~212 px, o antigo 70%). Quando passa da largura da tela, a linha de celulares ganha rolagem lateral."},
+    {tipo:"melhoria", area:"Apps", txt:"(substituído pelo item acima) O tamanho P ficou menor: 78% do que cabe na largura (em 1800 px, celular de 127 px de largura). Nos cartões muito estreitos a barra mostra só a inicial da pessoa; o nome inteiro aparece ao passar o mouse e nos tamanhos M e G."},
+    {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre no tamanho P (cabem todos os celulares na largura). Os botões de tamanho agora são P, M e G."},
+  ]},
+  {v:"0.17.13", data:"2026-10-29", titulo:"Apps: selo do app em cima da barra e barra mais baixa e estreita", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"O selo \"App para iOS ou Android\" (\"App interno\" nos apps das funcionárias) passou para CIMA da barra do cargo, menor (18 px). A barra do cargo ficou pequena: 22 px de altura e só a largura do texto (cargo + nome), centralizada. Todos os cartões têm a mesma largura e os celulares seguem alinhados."},
+  ]},
+  {v:"0.17.12", data:"2026-10-29", titulo:"Apps: barra de uma linha, tipo do app em cima e app da revendedora reordenado", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"Barra de cima do celular com 34 px, numa linha só: cargo e, ao lado, o nome da pessoa. O selo \"App para iOS ou Android\" (\"App interno\" nos apps das funcionárias) fica logo embaixo da barra; nada fica embaixo do celular. Saiu o bloco \"O que este app gera no admin\" e o selo \"Age agora\" (a barra e o celular já acendem)."},
+    {tipo:"melhoria", area:"App da revendedora", txt:"Nova ordem da tela inicial: Visualizar catálogo, Kit novo, SorellyChat, Vendas e Pedidos, Link de pagamento, Pagamentos, Clientes, Condicionais, Garantias, Mensagens para vender, Artes, Preferências, Indique, Regras e comissões, Aulas e Ajuda. O cartão Cobranças saiu: as cobranças aparecem em Pagamentos (que passou a abrir a tela de vendas e pagamentos)."},
+  ]},
+  {v:"0.17.11", data:"2026-10-29", titulo:"Apps: padrão único de letra e de cor (referência: app da revendedora)", itens:[
+    {tipo:"novo", area:"Apps", txt:"Paleta única por função em mobile/cores-app.js: cada função tem UMA cor, igual em todos os apps (SorellyChat dourado, Kit novo rosa, Listagens roxo, Condicionais verde-água, Montagem azul, Retirada verde-limão, Dinheiro verde, Comissões âmbar...). Cor nova de função nova entra nesse arquivo."},
+    {tipo:"melhoria", area:"Apps", txt:"Escala de letra única (título 13 px, legenda 11 px, selo 10 px, nome do cabeçalho 15 px): regra em styles/montagem.css para todos os apps com moldura de celular; o app do motoboy foi trocado direto."},
+    {tipo:"melhoria", area:"Apps", txt:"Representante e Funcionárias passaram a usar na tela inicial os mesmos cartões compactos da revendedora (ícone 32 px, fundo pastel). O motoboy usa a paleta da revendedora (cabeçalho preto, ouro, verde e vermelho dela). Saiu o contorno de cada cartão na tela Apps: ficam só a barra de cima e o celular."},
+  ]},
+  {v:"0.17.10", data:"2026-10-29", titulo:"Apps: celulares alinhados, topo fino, sem a fila de celulares; revendedora sem bordas grossas", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"Os celulares ficam exatamente alinhados (mesmo topo e mesma base; o da representante foi ajustado para a mesma altura). Cabeçalho do cartão mais fino (cargo + bolinha da pessoa; em cartão estreito a bolinha vai embaixo). O bloco de cima ficou mais fino."},
+    {tipo:"melhoria", area:"Apps", txt:"Saiu o contorno grande em volta da fila de celulares. O cabeçalho de cada cartão é centralizado (cargo em letra maior e a bolinha com o nome embaixo), sem seta: clicar na barra já abre a lista."},
+    {tipo:"melhoria", area:"Apps", txt:"Saiu a fila de botões \"Celulares\" e o título \"Celulares em sequência\". Sem fluxo mostra os 8 principais (representante, revendedora, supervisão, condicionais, montagem, bipagem, motoboy, cliente); o botão Todos liga os 11; com fluxo, só os celulares dele."},
+    {tipo:"melhoria", area:"App da revendedora", txt:"Visualizar catálogo passou para o TOPO da lista. Kit novo, Cobranças e SorellyChat perderam a borda grossa dourada."},
+    {tipo:"melhoria", area:"Apps", txt:"O app da cliente final usa a paleta e os tamanhos de letra do app da revendedora (cabeçalho preto, ouro, 13 px e 11 px)."},
+  ]},
+  {v:"0.17.9", data:"2026-10-29", titulo:"Apps: cada celular num cartão, cargo em cima e escolha da pessoa no cabeçalho", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"Cada celular fica num cartão do mesmo tamanho, alinhado pelo topo e pela base, com a borda na cor do celular (acende quando ele age). Em cima: o cargo (Representante, Supervisão da montagem, Montagem de kits...) e, ao lado, a bolinha com o nome da pessoa. Clicar no cabeçalho abre a lista para escolher outra pessoa."},
+    {tipo:"melhoria", area:"Apps", txt:"A escolha da pessoa agora funciona também com os celulares pequenos (antes sumia no zoom automático). O Seletor do App das funcionárias aceita um botão próprio (gatilho)."},
+  ]},
+  {v:"0.17.8", data:"2026-10-29", titulo:"Apps: todos os celulares em uma linha, app da cliente final e fluxo Kit novo + venda + entrega", itens:[
+    {tipo:"novo", area:"Apps", txt:"App da cliente final (mobile/cliente.js): rastreio da entrega com etapas, código de entrega (o mesmo PIN do motoboy), itens e avaliação. Fica no fim da linha, depois do motoboy."},
+    {tipo:"novo", area:"Apps", txt:"Fluxo \"Kit novo + venda + entrega\" (13 passos): representante agenda → listagem → condicionais → montagem → bipagem → retirada → volta → entrega do kit → venda → motoboy → coleta → entrega → concluída. O fluxo \"Entrega\" ganhou a cliente final."},
+    {tipo:"melhoria", area:"Apps", txt:"Os dois blocos têm borda dourada, sobem e ocupam a largura toda. Os celulares ficam numa linha só, com zoom automático (botão Auto) para caber todos. O celular que age brilha na cor dele; quando dois agem juntos, os dois brilham. A linha do tempo passou para baixo dos celulares."},
+  ]},
+  {v:"0.17.21", data:"2026-10-29", titulo:"Tela Apps: linha do tempo dos fluxos", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"O topo da tela Apps agora é uma linha do tempo (escolha do Marcus). Escolhe-se um fluxo (Listagem de kits, Pagamento do acerto, Entrega, Retirada de kits, Kit novo, Atendimento interno): ele liga os celulares do fluxo e mostra uma grade com uma pista por celular e uma coluna por passo. Os botões Anterior, Próximo, Reproduzir e Reiniciar (ou um clique no quadro) andam pelos passos, e o celular de quem age fica com o contorno dourado e a etiqueta Age agora. Cada pista liga ou oculta o celular; os celulares avulsos e o tamanho P, M ou G continuam. Os fluxos são exemplos montados com as regras do sistema. Os apps ainda não trocam dados entre si: a linha do tempo mostra o caminho e quem age, sem mudar o conteúdo dos celulares."},
+    {tipo:"melhoria", area:"Apps", txt:"Topo mais compacto: saiu o título grande Apps (a palavra Apps ficou dentro do bloco, na primeira linha, e a frase de apoio saiu). Grade com linhas finas de 1 px, uma cor para cada celular (barra na lateral e fundo do quadro de quem age), passo atual em dourado e passos já feitos com ✓. Nomes das pistas por extenso, sem cortar."}
+  ]},
+  {v:"0.17.20", data:"2026-10-29", titulo:"SorellyChat no formato WhatsApp em todos os apps de celular", itens:[
+    {tipo:"melhoria", area:"Apps de celular", txt:"O SorellyChat da revendedora (lista Conversas, conversa com balões azuis e brancos, teclado do iPhone na tela, tela travada, barra só com Início e Conversas) agora é um componente único (mobile/chat-whats.js) usado também no app da representante, no app das funcionárias (Diretoria, supervisão, Montagem, Bipagem, Condicionais e demais setores), nos celulares simulados dos setores e no Ver no celular. Cada app só diz quem é e quais contatos fixos tem; mudar o jeito do chat passa a ser em um arquivo só."},
+    {tipo:"novo", area:"App das funcionárias", txt:"Botão + da lista abre Nova conversa: busca por pessoa ou setor com foto e começa a conversa direta. Na representante, os setores (Diretoria, Financeiro, Agendamento...) viram conversas da lista, e o botão Ajuda antigo saiu."},
+  ]},
+  {v:"0.17.7", data:"2026-10-29", titulo:"Conta do Castilho (Marketing) e chat da Hellen", itens:[
+    {tipo:"novo", area:"Acessos", txt:"Conta do Castilho (Marketing) com acesso básico: Início, Rotina, SorellyChat e Melhorias. Script: scripts/criar-conta-castilho.mjs."},
+    {tipo:"correção", area:"SorellyChat", txt:"A conta da Hellen não estava ligada ao contato dela no chat (a conversa não abria para ela). Ligada ao contato Helen Garmier da Silva."},
+  ]},
+  {v:"0.17.20", data:"2026-10-29", titulo:"Tela Apps: galeria de fluxos com busca", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"O topo da tela Apps agora é uma galeria de fluxos (escolha do Marcus). Cada cartão liga os celulares do fluxo (Listagem de kits, Acerto da representante, Kit novo, Entrega, Retirada de kits, Pagamento do acerto, Atendimento interno); dá para ligar vários cartões juntos. Há busca por fluxo ou celular, botão Novo fluxo (nome + celulares, salvo neste navegador, com × para apagar), Limpar, celulares avulsos (Revendedora, Representante, os 7 acessos das funcionárias e Motoboy) e tamanho P, M ou G. Os fluxos prontos são exemplos: o Marcus ajusta nomes e participantes."}
+  ]},
+  {v:"0.17.19", data:"2026-10-29", titulo:"Teclado do SorellyChat sem a barra cinza e com letras em negrito", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"Saiu a barra cinza de sugestões que aparecia em cima do teclado ao digitar, e a faixa bege atrás do campo de mensagem. O teclado ficou mais baixo. O texto que a revendedora digita no campo de mensagem passou para negrito (as teclas seguem normais)."},
+    {tipo:"correção", area:"App da revendedora", txt:"Saiu a barra cinza que aparecia DENTRO do campo de mensagem ao digitar: o estilo geral dos campos do app pintava o campo de cinza por cima do branco. Agora o campo é branco limpo, só com o cursor azul."},
+    {tipo:"correção", area:"App da revendedora", txt:"O tamanho e o peso das fontes dos botões do SorellyChat não valiam (a regra geral de botões passava por cima). Agora cada botão usa a própria fonte."},
+  ]},
+  {v:"0.17.17", data:"2026-10-29", titulo:"Tela Apps: escolher quais celulares aparecem", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"A tela Apps ganhou botões para ligar e desligar cada celular, em qualquer combinação: Revendedora, Representante, os 7 acessos das funcionárias (Diretoria, Supervisão, Montagem, Bipagem, Condicionais, Agendamento, Financeiro, cada um num celular com a sua pessoa) e Motoboy. Há atalhos de fluxo (Listagem de kits, Acerto, Entrega, Todos, Limpar) e tamanho P, M ou G. Os celulares ficam em dois blocos, Venda e acerto e Entrega. A escolha fica salva neste navegador."}
+  ]},
+  {v:"0.17.6", data:"2026-10-29", titulo:"Contas da Rayssa e da Graziella (Cadastro de peças)", itens:[
+    {tipo:"novo", area:"Acessos", txt:"Contas com login pelo nome e senha provisória. Abrem Cadastro de peças, Início, SorellyChat e Melhorias. Script: scripts/criar-contas-cadastro-pecas.mjs."},
+  ]},
+  {v:"0.17.5", data:"2026-10-29", titulo:"Família com acesso a todos os setores", itens:[
+    {tipo:"novo", area:"Acessos", txt:"Anamaria (mãe), Marco Antonio (pai) e Ana Beatriz (irmã): todos os 14 setores e todo o menu, menos os Configuradores. Contas de Marco Antonio e Ana Beatriz criadas com login pelo nome. Script: scripts/liberar-familia.mjs."},
+  ]},
+  {v:"0.17.18", data:"2026-10-29", titulo:"SorellyChat da revendedora: teclado do iPhone na tela", itens:[
+    {tipo:"novo", area:"App da revendedora", txt:"Ao tocar no campo de mensagem aparece o teclado do iPhone dentro do celular: barra de sugestões, letras com Shift (maiúscula no começo da frase), apagar, teclado de números (123 e ABC), espaço e retorno que envia. As mensagens sobem para ficar acima do teclado. Tocar nas mensagens ou apertar Esc fecha o teclado. Também dá para digitar no teclado do computador. Campo com cursor azul, como no WhatsApp."},
+  ]},
+  {v:"0.17.4", data:"2026-10-29", titulo:"Contas da Maria Claudia (RH) e da Deysiane", itens:[
+    {tipo:"novo", area:"Acessos", txt:"Contas com login pelo nome e senha provisória (tela Contas → Senhas para enviar). Maria Claudia: acesso igual ao da Priscila. Deysiane: supervisão da montagem (Montagem, Produção e Encomendas). Script: scripts/criar-contas-maria-deysiane.mjs."},
+  ]},
+  {v:"0.17.17", data:"2026-10-29", titulo:"SorellyChat da revendedora: fontes menores e topo da conversa refeito", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"Fontes do SorellyChat reduzidas para ficar mais real no celular: título Conversas 26, nome do contato 14,5, mensagem 14 (antes 34, 17 e 17), foto e linhas mais baixas, barra de baixo mais fina e campo de mensagem menor. Cabem mais conversas na tela."},
+    {tipo:"melhoria", area:"App da revendedora", txt:"Topo da conversa refeito: barra reta e fina com voltar, foto, nome inteiro e quem atende (antes o nome era cortado por causa das bolinhas de vídeo e telefone, que não faziam nada e saíram)."},
+  ]},
+  {v:"0.17.16", data:"2026-10-29", titulo:"SorellyChat do app da revendedora: cópia fiel do WhatsApp", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"SorellyChat refeito como cópia do WhatsApp do iPhone, aprovada pelo Marcus no HTML docs/design/sorellychat-whatsapp.html: título Conversas grande, uma linha por contato (representante, Indique uma revendedora, Link de pagamento, Garantias, Currículo, SAC) com foto redonda, hora e contador verde, barra flutuante só com Início e Conversas, e conversa com fundo bege, balões azuis (dela) e brancos, respostas com citação, tique duplo, campo de mensagem com câmera e microfone. A tela fica travada: só a lista e as mensagens rolam. Usa as conversas reais do chat do sistema (enviar, receber e marcar como lida)."},
+    {tipo:"melhoria", area:"Padrão visual", txt:"Exceção pedida pelo Marcus: o SorellyChat da revendedora usa as fontes e tamanhos do WhatsApp (17 px e título de 34 px) em CSS próprio, fora do limite de 20 px das telas do admin."},
+  ]},
+  {v:"0.17.16", data:"2026-10-29", titulo:"App do motoboy (H&O Delivery) na tela Apps", itens:[
+    {tipo:"novo", area:"Apps", txt:"Nova aba Motoboy na tela Apps, com o app da H&O Delivery funcionando no celular simulado (mobile/motoboy.js). Início com mapa total e botão grande Ficar online (layout E aprovado pelo Marcus), oferta com contagem de 18 s (aceitar, recusar ou expirar), corrida em 4 etapas (a caminho da coleta, coleta com foto, em transporte, entrega com PIN de 4 números), problemas (destinatário ausente, avaria, cancelar), Ganhos (dia, semana, mês e extrato), Histórico e Perfil com documentos. Sem documento aprovado o motoboy não fica online. Endereço completo só depois de aceitar."},
+    {tipo:"melhoria", area:"Apps", txt:"Tudo é de exemplo e fica só na memória do navegador: ainda não há servidor, despacho por proximidade, mapa/GPS reais, pagamento Pix, Admin Cloud nem integração com o app da revendedora. Esses itens são as próximas fases do projeto."}
+  ]},
+  {v:"0.17.15", data:"2026-10-29", titulo:"Venda abaixo de R$ 500 pede o motivo no acerto", itens:[
+    {tipo:"novo", area:"App da representante", txt:"Na calculadora de acertos, se a venda for menor que R$ 500 (mínimo geral, em Regras do consignado), aparece o pedido de motivo: não tem muitos clientes, pouca habilidade com vendas, não teve tempo, problema de saúde ou pessoal, não gostou das peças ou Outro (com campo para escrever). O botão Confirmar acerto fica travado até escolher. O motivo é gravado no acerto. A regra Venda mínima passou a citar a justificativa."},
+  ]},
+  {v:"0.17.14", data:"2026-10-29", titulo:"App da revendedora só existe dentro da tela Apps", itens:[
+    {tipo:"melhoria", area:"Apps", txt:"A tela e o botão separados App da revendedora saíram do menu e da barra do topo, e o endereço /app-revendedora deixou de existir. O app da revendedora fica só na tela Apps, ao lado do app da representante. O botão Ver no app das Preferências do kit agora abre a tela Apps já na tela de preferências."},
+  ]},
+  {v:"0.17.13", data:"2026-10-29", titulo:"App da revendedora: kit novo em primeiro lugar e vendas bloqueadas até receber", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"O cartão Kit novo agora fica em cima de Visualizar catálogo e só aparece enquanto ela tem um kit novo para receber. Depois de receber e assinar, ele some e só volta quando ela ficar sem kit de novo."},
+    {tipo:"novo", area:"App da revendedora", txt:"Enquanto o kit novo não for recebido, as vendas ficam bloqueadas: Vendas e Pedidos e Link de pagamento mostram a marca bloqueado e avisam para receber o kit novo, e no catálogo não dá para adicionar peça ao carrinho. Ver o catálogo continua liberado."},
+  ]},
+  {v:"0.17.12", data:"2026-10-29", titulo:"App da revendedora: SorellyChat refeito, tela cheia e só o nome no topo", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"SorellyChat refeito: o topo tem só o símbolo e o nome SorellyChat (sem botões do chat das funcionárias), depois a busca e a lista de conversas em fonte pequena, ocupando a tela toda do celular, sem faixas pretas. Cada contato é uma conversa. Embaixo ficam só Início e Conversas, apenas na lista; aberta a conversa, a barra some e o voltar leva à lista. Substitui a 0.17.11."},
+  ]},
+  {v:"0.17.11", data:"2026-10-29", titulo:"App da revendedora: SorellyChat com o chat real do sistema", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"SorellyChat agora abre o mesmo chat do app da representante e das funcionárias (fontes e espaços iguais, bem menor que a tela anterior). Cada contato (Minha representante, Indique uma revendedora, Link de pagamento, Garantias, Currículo e SAC) já aparece como uma conversa na lista, com um oi do próprio contato. O botão Ajuda do topo abre a lista de contatos. Substitui a tela Conversas da 0.17.10."},
+  ]},
+  {v:"0.17.10", data:"2026-10-29", titulo:"App da revendedora: Conversas no layout B (busca e 2 botões)", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"A tela Conversas do SorellyChat seguiu o layout B escolhido pelo Marcus: título, campo Buscar (filtra os contatos pelo nome) e a lista de conversas. Sem os filtros Todas, Não lidas e Setores. Embaixo, só 2 botões: Início e Conversas. A barra some ao abrir uma conversa, como no WhatsApp. Os botões redondos do topo (⋯ e +) não foram incluídos por não terem função."},
+  ]},
+  {v:"0.17.9", data:"2026-10-29", titulo:"App da revendedora: SorellyChat no estilo do WhatsApp", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"SorellyChat agora abre a tela Conversas no estilo do WhatsApp: título grande e uma linha por contato (foto redonda, nome, última mensagem, hora e contador verde), sem cartões. A conversa com a representante vem primeiro; quem tem mensagem recente sobe. Tocou na linha, abre a conversa; o voltar da conversa leva de volta à lista e o voltar da lista leva à página inicial. Substitui a abertura direta da 0.17.8."},
+  ]},
+  {v:"0.17.8", data:"2026-10-29", titulo:"App da revendedora: SorellyChat abre direto na conversa", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"Ao tocar em SorellyChat, o app abre direto a conversa com a representante dela (sem representante, abre o SAC). A lista de contatos que aparecia antes saiu. O botão voltar da conversa leva à página inicial."},
+  ]},
+  {v:"0.17.7", data:"2026-10-29", titulo:"App da revendedora: botão Visualizar catálogo em primeiro lugar", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"O botão Compartilhar catálogo saiu da página inicial e o cartão Catálogos também. No lugar ficou um só botão dourado, Visualizar catálogo, em primeiro lugar da lista, que abre o catálogo."},
+  ]},
+  {v:"0.17.6", data:"2026-10-29", titulo:"App da revendedora: página inicial mais compacta e sem informativos", itens:[
+    {tipo:"melhoria", area:"App da revendedora", txt:"Página inicial compacta: cartões (Cobranças, Kit novo, Catálogos e os outros), SorellyChat e Compartilhar catálogo com fonte e altura menores. O topo preto subiu: nível menor e Vendido, Acerto e Comissão lado a lado em uma linha só (antes eram três linhas, ocupando metade da tela). O rótulo do Acerto não mostra mais o traço quando falta a data."},
+    {tipo:"melhoria", area:"App da revendedora", txt:"Informativos saíram do app da revendedora: o cartão e o aviso que abria sozinho (Regras do acerto) foram retirados. As regras continuam no cartão Regras e comissões."},
+  ]},
+  {v:"0.17.5", data:"2026-10-29", titulo:"Solicitações de melhorias: lista com conversa ao lado e só Marcus e Leonardo respondem", itens:[
+    {tipo:"melhoria", area:"Melhorias", txt:"Tela refeita (layout 1): lista de pedidos à esquerda e, ao lado, a conversa ou a nova solicitação, sem barra dourada. Quem responde abre em Todas; a resposta aparece marcada."},
+    {tipo:"novo", area:"Melhorias", txt:"Primeiro pedido real: o da Michele (kits novos, só 1 de 9 aparecia). Ao abrir um pedido que tem foto, a foto abre grande na hora; clique ou Esc para fechar."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Tela em listagem completa: Data, Setor, Funcionária, Título, Tela, Situação, Conversa do Claude e Respostas. Ordenar por data, funcionária, setor ou situação e agrupar por setor ou funcionária. O pedido abre em janela."},
+    {tipo:"novo", area:"Melhorias", txt:"Topo com 4 blocos (só Marcus e Leonardo): setores, funcionárias e telas que mais pedem (clicar filtra) e a fila Esperando resposta, com os dias de espera."},
+    {tipo:"novo", area:"Melhorias", txt:"Coluna Conversa do Claude: o Marcus ou o Leonardo anexam o link ou o nome da conversa de cada pedido; os outros não veem a coluna."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Situações agora: Em análise, Mudança feita, testar e Recusada (pedido novo já nasce Em análise; o resto se conversa no chat). Saiu Nova e Cancelada; entrou o botão Excluir, com a pergunta Tem certeza que quer excluir?"},
+    {tipo:"melhoria", area:"Melhorias", txt:"Chat do pedido no estilo do WhatsApp (fundo escuro, balões com hora, foto da pessoa puxada do SorellyChat, campo redondo e botão verde) e janela com borda dourada. Pedido com mais de uma foto ganha os botões anterior e próxima foto; a nova solicitação aceita até 4 fotos."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Janela do pedido (layout 1): menor, com quem pediu, a tela com link e o print grande à esquerda (amplia com um clique) e o chat à direita, que já começa com o que a pessoa escreveu no pedido."},
+    {tipo:"correcao", area:"Financeiro · Negociações", txt:"Vencimento das parcelas mês a mês: agora cai no mesmo dia do mês seguinte ou, se o mês é mais curto, no último dia (31/12, 31/01, 28/02, 31/03, 30/04...). Antes 31/01 + 1 mês virava 03/03 e o Nickolas digitava à mão. Data que não existe (31/04) não salva mais."},
+    {tipo:"melhoria", area:"Financeiro · Negociações", txt:"Parcelas do pedido: fonte um pouco menor e coluna do valor maior, para o valor aparecer inteiro (R$ 1.733,25)."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Janela do pedido: a foto aparece só no chat, um pouco maior, com Ampliar, Copiar e Salvar embaixo dela. A coluna da esquerda ficou só com quem pediu, a tela e a conversa do Claude, e o chat ficou mais largo."},
+    {tipo:"correcao", area:"Melhorias", txt:"O print que a pessoa colou no pedido tinha sumido de dentro do chat; voltou na primeira mensagem (um ou mais prints). A foto da pessoa, a mesma do SorellyChat, aparece em toda mensagem (também nas minhas), na janela (Pedido de) e na coluna Funcionária da lista."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Tela do pedido virou um ícone que abre a tela direto (na lista e na janela). Segundo pedido real: o do Nickolas (vencimento das parcelas), com a resposta do Marcus."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Lista: cada linha numa linha só e a situação virou uma etiqueta com borda (Em análise, Mudança feita, testar...), sem quebrar em duas linhas."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Nova solicitação agora é um chat, igual à janela do pedido: sem campo de título, a pessoa escreve do jeito dela, cola prints (até 4) e envia. O título sai do começo da mensagem e o pedido abre em seguida com o chat. A coluna Descrição da lista mostra o começo do que a pessoa escreveu (até 74 letras e ... no final); o texto inteiro fica no chat do pedido."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Lista: coluna Título virou Descrição, tudo centralizado e sem texto cortado (quebra a linha), Situação e Tela mais para a frente (Data, Setor, Funcionária, Situação, Tela, Descrição, Conversa do Claude) e a coluna Resp. saiu."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Cores: a situação só tem cor na coluna Situação da lista; no menu, no topo da janela e na barra de teste fica tudo normal. A barra do cabeçalho da lista (Data, Setor, Funcionária...) ganhou cor azul."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Fluxo simples dos pedidos: Marcus e Leonardo marcam Em análise, Mudança feita, testar (já executei, pode testar) ou Recusada. Do lado de quem pediu aparece Testei e aprovei (Concluída) ou Testei, precisa melhorar (Precisa de melhoria, com o que falta no chat); aí Marcus e Leonardo continuam. Saíram as situações extras."},
+    {tipo:"melhoria", area:"Melhorias", txt:"(substituída pelo fluxo acima) Oito situações em dois grupos (Andamento: Em análise, Precisa de mais informação, Aprovada, Em andamento, Mudança feita, testar; Encerrado: Concluída, Para depois, Recusada), cada uma com uma dica curta no menu."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Tela mais compacta: topo com 4 cartões de 3 linhas e filtros numa linha só (busca, situação, setor, funcionária, ordenar, agrupar)."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Janela do pedido maior. No alto fica só a situação atual: clicar abre para baixo, escolhe a situação e escreve o que foi feito (vai para o chat); Excluir pedido fica dentro desse menu. Todas as fotos do pedido aparecem já, grandes, uma embaixo da outra."},
+    {tipo:"novo", area:"Melhorias", txt:"Foto do pedido com três botões: Ampliar, Copiar (para colar no Claude) e Salvar. Salvar abre a janela de salvar já com o nome da tela (melhoria-projetos-kits-novos-foto-1.jpg) e mostra Salvo. Situação e conversa do Claude mostram aviso de salvo."},
+    {tipo:"melhoria", area:"Melhorias", txt:"Só o Marcus e o Leonardo respondem e mudam a situação. Nickolas e Lucas passam a só pedir e acompanhar os próprios pedidos."}
+  ]},
+  {v:"0.17.4", data:"2026-10-29", titulo:"Kits novos: o kit direcionado chega no app da representante em qualquer aparelho", itens:[
+    {tipo:"correcao", area:"Kits novos", txt:"Pedido da Michele: ao solicitar 9 kits para a Jessica Tobias só 1 aparecia. O kit direcionado ficava só no navegador de quem pediu. Agora vai para o servidor (módulo kn, uma chave por kit) e chega no app da representante em qualquer aparelho."}
+  ]},
+  {v:"0.17.2", data:"2026-10-29", titulo:"Contas a pagar: já pago e falta pagar vêm direto da DevMaster", itens:[
+    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor. A data do pagamento é a data de débito."}
+  ]},
+  {v:"0.17.3", data:"2026-10-28", titulo:"Conta da Hellen (Link de pagamento, Compras e Cadastro)", itens:[
+    {tipo:"novo", area:"Acessos", txt:"Grupo \"Link, compras e cadastro\" (uma pessoa: Hellen). Abre Link de pagamento e maquininhas, Relatório de links, Comissão do Link, Compras e estoque, Base de revendedoras, Cadastro, Aprovação de cadastros, Desempenho do cadastro e Indicações. Não abre Kit novo."},
+    {tipo:"novo", area:"Acessos", txt:"Conta criada com login pelo nome (sem e-mail) e senha provisória, visível na tela Contas em \"Senhas para enviar\". Script: scripts/criar-conta-hellen.mjs."},
+  ]},
+  {v:"0.14.22", data:"2026-10-28", titulo:"Manual da representante: Seu pagamento e reposição R$ 15", itens:[
+    {tipo:"melhoria", area:"Representantes", txt:"A comissão por reposição entregue é R$ 15,00 (o R$ 20,00 de 20/10 saiu). Igual ao valor já usado em Encomendas e reposições."},
+    {tipo:"novo", area:"Manual da representante", txt:"Nova seção \"10. Seu pagamento\": comissão de 8%, quando libera, datas dos grupos A e B, corte às 13h, kit novo, reposição e combustível. O manual passou a ter 12 páginas, no PDF e nas imagens do botão \"Regras e comissões\" do app da representante."},
+    {tipo:"correção", area:"Manual da representante", txt:"Página 3 (última linha da taxa cortada pelo rodapé) e linha \"Venda mínima\" do resumo (passava da margem) corrigidas."},
+  ]},
+  {v:"0.14.21", data:"2026-10-28", titulo:"Comissões: aba Kit novo e desistência (teste do novo fluxo)", itens:[
+    {tipo:"novo", area:"Comissões", txt:"Aba \"Kit novo\" (ao lado de Representantes): uma linha por revendedora entregue, com entrega (R$ 25), 1º acerto, valor do acerto, 2% e total, mais a situação (esperando entrega, esperando o 1º acerto, falta confirmar, confirmado, desistência)."},
+    {tipo:"novo", area:"Comissões", txt:"Botão Desistência (financeiro): o R$ 25 zera e a Rep. Kit Novo recebe só a gasolina; dá para desfazer."},
+  ]},
+  {v:"0.17.2", data:"2026-10-28", titulo:"Solicitações de melhorias", itens:[
+    {tipo:"novo", area:"Melhorias", txt:"Nova tela para todo funcionário pedir uma mudança no sistema: título, o que mudar, a tela (já vem preenchida com a última tela aberta) e print opcional (vira JPEG pequeno). Quem pede, setor e data ficam salvos."},
+    {tipo:"novo", area:"Melhorias", txt:"Cada solicitação é uma conversa: quem pediu e a Diretoria trocam mensagens, com Ctrl+V para colar print da tela (ou botão Anexar), em balões."},
+    {tipo:"novo", area:"Melhorias", txt:"Marcus, Nickolas, Lucas e Leonardo veem todas as solicitações, filtram, mudam a situação (Nova, Em análise, Feita, Recusada) e respondem. Cada funcionário vê só as suas. Os pedidos ficam no servidor (módulo mel), um por registro."}
+  ]},
   {v:"0.17.1", data:"2026-10-28", titulo:"Atendimento interno · Listagens com a agenda da Tamara, média de vendas e WhatsApp", itens:[
     {tipo:"novo", area:"Atendimento interno", txt:"Listagens: cada dia mostra as revendedoras agendadas pela Tamara (lidas da DevMaster, atualizadas ao abrir e a cada 10 minutos). Atender cria o atendimento com as condicionais reais e abre a calculadora."},
     {tipo:"novo", area:"Atendimento interno", txt:"Coluna Média de vendas na Listagem: venda atual (quando chega da DevMaster) mais as 2 últimas vendas; sem a atual, as últimas. Coluna WhatsApp com o número e botão que abre a conversa."},

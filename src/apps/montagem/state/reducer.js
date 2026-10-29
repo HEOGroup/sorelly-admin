@@ -32,6 +32,7 @@ import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
 import { indReduz } from "@/apps/montagem/domain/indicacoes";
 import { ceReduz } from "@/apps/montagem/domain/compras-estoque";
 import { gaReduz } from "@/apps/montagem/domain/garantia";
+import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
@@ -207,6 +208,19 @@ function reducer(s, a){
     // Setor de Agendamento (acertos): todas as ações ficam em domain/agendamento.js
     // "revdia" (total de revendedoras automático, DevMaster, 27/10/2026) não guarda num módulo à parte: junta direto em revendedorasDiario/revAtualizadoEm (mesmos campos do lançamento manual antigo)
     // "fatdia" (faturamento do dia anterior automático, DevMaster, 27/10/2026): junta só o "recebido" de cada dia em faturamentoDiario; acertos/revendedoras daquele dia continuam como já estavam
+    // Contas pagas por dia vindas da DevMaster (lib/contas-dm.js, 28/10/2026): de 28/10 em diante o servidor vale; antes disso só preenche o dia que está vazio (o que o Marcus conferiu no admin antigo fica)
+    case "CONTAS_DM": {
+      // "Por fora" NÃO vem da DevMaster: é a planilha que o Nickolas lança no sistema (Marcus, 28/10/2026). Aqui entram só os CNPJs 34, 46, 59 e 67; de 28/10 em diante o servidor vale; antes disso só preenche o dia que está sem valor nos CNPJs.
+      var cdm = Object.assign({}, s.contasPagasDiario), mudouDm = false;
+      Object.keys(a.diario || {}).forEach(function(dt){
+        var at = cdm[dt], vazio = !at || !Object.keys(at.cnpjs || {}).some(function(k){ return at.cnpjs[k]; });
+        if(dt < "2026-10-28" && !vazio) return;
+        var cn = Object.assign({}, a.diario[dt].cnpjs);
+        if(JSON.stringify(cn)===JSON.stringify((at || {}).cnpjs)) return;
+        cdm[dt] = Object.assign({cnpjs:{}, contasPorFora:0}, at, {cnpjs:cn}); mudouDm = true;
+      });
+      return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
+    }
     case "SYNC_MODULO": {
       if(a.chave==="revdia"){
         var pRD = {};
@@ -214,6 +228,12 @@ function reducer(s, a){
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
+      if(a.chave==="kn"){   // kits novos vindos do servidor: entram (ou atualizam) na lista de novas da representante
+        var nvK = (s.novas||[]).slice();
+        Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
+        return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
+      }
+      if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
@@ -237,6 +257,7 @@ function reducer(s, a){
     case "AV": { var rAv = avReduz(s, a); return com(s, rAv.patch, rAv.msg); }   // Avaliações (revendedoras, sistema, montagem, funcionários)
     case "LP": { var rLp = lpReduz(s, a); return com(s, rLp.patch, rLp.msg); }   // Link de pagamento e maquininhas (Financeiro)
     case "ER": { var rEr = erReduz(s, a); return com(s, rEr.patch, rEr.msg); }   // Encomendas e reposições (pedidos, direito, bloqueio)
+    case "MEL": { var rMel = melReduz(s, a); return com(s, rMel.patch, rMel.msg); }   // Solicitações de melhorias (enviar, situação, resposta)
     case "GA": { var rGa = gaReduz(s, a); return com(s, rGa.patch, rGa.msg); }   // Garantia (só o atalho para o site externo)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
@@ -626,7 +647,7 @@ function reducer(s, a){
       if(a.recusouNegociar) res = Object.assign({}, res, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:versaoK.novas ? copiaNovas(versaoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
-        reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, recebimento:null,
+        reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, motivoVendaBaixa:a.motivoVendaBaixa||"", recebimento:null,
         vendaDigitada:a.vendaDigitada!=null ? a.vendaDigitada : a.vendaBruta, trocas:a.trocas||[], tagsDanificadas:a.tagsDanificadas||0, tagsValor:a.tagsValor||0,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
         pecasADevolver:a.pecasADevolver!=null?a.pecasADevolver:null, condicionaisSelecionadas:a.condicionaisSelecionadas||[],
@@ -732,6 +753,8 @@ function reducer(s, a){
     case "COMPRA_REP_ADD": return com(s, {comprasRep:[Object.assign({id:"CJ"+agora, pagamentos:[], por:a.por, criada:new Date(agora).toISOString()}, a.compra)].concat(s.comprasRep||[])}, "Compra registrada");
     case "COMPRA_REP_DEL": return com(s, {comprasRep:(s.comprasRep||[]).filter(function(x){ return x.id!==a.id; })});
     case "COMPRA_REP_PAG": return com(s, {comprasRep:(s.comprasRep||[]).map(function(x){ if(x.id!==a.id) return x; var l = (x.pagamentos||[]).slice(); if(a.del!=null) l.splice(a.del,1); else l.push(Object.assign({}, a.pag, {por:a.por, ts:new Date(agora).toISOString()})); return Object.assign({}, x, {pagamentos:l}); })}, a.del!=null ? null : "Pagamento da compra registrado");
+    // Desistência do kit novo (teste do novo fluxo): o kit volta e a Rep. Kit Novo recebe só a gasolina (o R$ 25 zera em itensComissao)
+    case "COMIS_DESIST": return com(s, {acertosConsignado:(s.acertosConsignado||[]).map(function(r){ return String(r.id)===String(a.id) ? Object.assign({}, r, {desistencia:!!a.valor}) : r; })}, a.valor ? "Desistência registrada: só a gasolina" : "Desistência desfeita");
     case "COMIS_CONFIG": return com(s, {comis:Object.assign({}, s.comis, a.patch)}, a.aviso || null);
     // Termo do kit novo conferido pelo agendamento (quando não veio assinado pelo app)
     case "COMIS_TERMO": {
@@ -971,7 +994,7 @@ function reducer(s, a){
     // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).
     case "REPOSICAO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
-      var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 20);   // R$ 20 por reposição entregue (Configurador de comissões)
+      var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
         hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null};

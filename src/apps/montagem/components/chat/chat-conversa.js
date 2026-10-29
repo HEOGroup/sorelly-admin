@@ -234,21 +234,6 @@ function BarraStatus(p){
     th.estado!=="resolvida" && p.pode && e("button",{onClick:function(){ api.resolveConv(p.conv.id, p.eu, ""); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Resolver"));
 }
 
-// Situação da conversa (para todos os funcionários): só Pendente ou Resolvida, sem pedir nota (Marcus, 27/10/2026).
-function BarraSituacao(p){
-  useChat();
-  var c = p.conv, motivo = api.pendencia(p.eu, c.id);
-  var ms = api.getMessages(c.id, p.eu).filter(function(m){ return m.tipo!=="sistema" && m.apag!=="todos"; }), ult = ms[ms.length-1];
-  var resolvida = !motivo && c.resolvidaEm && ult && c.resolvidaEm>=ult.t;
-  var soDecisao = /decis/.test(motivo);
-  var cor = motivo ? "#f59e0b" : resolvida ? "#25d366" : W.sec;
-  return e("div",{className:"flex shrink-0 flex-wrap items-center gap-2 px-4 py-1.5 text-[11.5px]", style:{background:W.painel, borderBottom:"1px solid "+W.borda}},
-    e("span",{className:"flex min-w-0 items-center gap-1.5 font-semibold", style:{color:cor}}, e(Ph,{n:motivo ? "hourglass" : resolvida ? "check-circle" : "circle-dashed", s:15, fill:true}),
-      motivo ? "Pendente: "+motivo : resolvida ? "✓ Resolvida"+(c.resolvidaPor ? " por "+contato(c.resolvidaPor).nome.split(" ")[0] : "") : "Sem pendência"),
-    motivo && !soDecisao && e("button",{onClick:function(){ api.resolveConv(c.id, p.eu, ""); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a"}}, "✓ Marcar resolvida"),
-    !motivo && e("button",{onClick:function(){ api.markPending(c.id, p.eu); }, className:"ml-auto rounded-full px-3 py-1 text-[11px] font-bold", style:{background:"#f59e0b", color:"#24180a"}}, resolvida ? "Reabrir (pendente)" : "Marcar pendente"));
-}
-
 // Grupo Agendamento: uma aba no topo para cada representante (a conversa de agendamento com ela abre aqui mesmo, sem poluir a barra lateral).
 // Quem não faz parte do agendamento (diretoria) só lê; quem faz, responde.
 function BarraRepresentantes(p){
@@ -364,7 +349,6 @@ function ConversaBase(p){
           e("span",{className:"block truncate text-[11.5px]", style:{color:subt.verde ? W.verde : W.sec}}, subt.t))),
       p.extra, e("button",{onClick:function(){ setInfo(true); }, "aria-label":"Dados da conversa", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"info", s:21, style:{color:W.sec}}))),
     conv.tipo==="dm" && outro && outro!==eu && contato(outro).tipo==="func" && e(CartaoHorario,{cid:outro, pode:!!p.direcao && !somenteLeitura}),
-    (conv.tipo==="dm" || conv.tipo==="grupo") && membro && !p.leitura && e(BarraSituacao,{conv:conv, eu:eu}),
     conv.tipo==="setor" && eu!==conv.repId && e(BarraStatus,{conv:conv, eu:eu, pode:!somenteLeitura && conv.membros.indexOf(eu)>=0}),
     abasV && abasV.length>1 && e(BarraAbas,{conv:conv, eu:eu, abas:abasV, aba:abaAtual, mudar:setAba}),
     fixa && e("button",{onClick:function(){ irPara(fixa.id); }, className:"flex shrink-0 items-center gap-2.5 px-4 py-1.5 text-left text-[12px]", style:{background:W.painel, borderBottom:"1px solid "+W.borda}},

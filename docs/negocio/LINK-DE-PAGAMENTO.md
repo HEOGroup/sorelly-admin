@@ -46,3 +46,16 @@ Dados reais de Janeiro a Outubro/2026 entram só por `domain/link-pagamento.loca
 
 ## Maquininhas por máquina (19/10/2026)
 Cada maquininha física é um meio (banco, CNPJ, aluguel/mês, representante). Sicredi 59: 4 × R$ 60; Sicredi 67 (Axis): 2 × R$ 129; Itaú: 3 × R$ 49 (isenção com R$ 50.000 somados no mês); Bradesco: R$ 150 + R$ 0; Safra: R$ 98,90. Getnet e Cielo são do Valdir (vão para Pagamentos a fornecedores). Serenity antiga segue para Sabrina e Julia G. até o Financeiro dizer a máquina. Taxas de Bradesco, Itaú e Safra: não informadas.
+
+## Pendências de maquininhas e links (registradas em 28/10/2026)
+- **Safra:** falta saber se tem taxa de Amex (hoje usa a taxa de Elo/demais).
+- **CCB Stone:** documentação diz que recebíveis do CNPJ 34 foram afetados por uma CCB Stone ligada ao CNPJ 46. Perguntar ao Lucas/Nickolas: existe empréstimo? valor e fim? está descontando das vendas da Sicredi? atrapalha o recebimento?
+- **Axis (Sicredi 67):** sem antecipação por ora; o Financeiro verifica em novembro/dezembro de 2026. Documento antigo diz faturamento mínimo de "R$ 30 milhões/mês": confirmar.
+- **Itaú:** vendas do mês (isenção de R$ 50.000) são digitadas à mão em Link de pagamento → Meios e acessos.
+- **Pontual (Getnet e Cielo do Valdir):** tratadas em outra conversa. Grafia Valdir/Vladir e CNPJ completo a confirmar. Falta ligar a passada ao lançamento em Pagamentos a fornecedores (Maquininha Banho).
+- **Nome do CNPJ 46 = Mayz:** corrigido nas taxas e nos saldos; falta a lista de CNPJs de Pagamentos a fornecedores → Negociações (ainda "Sorelly Comércio") e a documentação financeira do Lucas/Nickolas.
+- **Sabrina e Julia G. (saíram):** 32 revendedoras ficam "Sem representante" até o agendamento e o Leonardo passarem para a nova representante (lista em `revendedoras-sem-representante.local.csv`, só neste computador).
+- **Nomes a confirmar:** "Jessica" x "Jessica Castro" e "Leticia" x "Letícia Alves" (hoje separadas); Rayssa e Nayale são funcionárias e aparecem como representantes sem maquininha.
+- **Taxa do Link 59:** ainda usa a tabela antiga da Sicredi 59 (sem 4,05% das bandeiras que não são Visa/Master). Decidir se atualiza.
+- **Funcionalidades que faltam:** botão de link dentro da venda do app; crédito do excedente para o próximo acerto; ligar o link ao acerto da Atendimento Sorelly.
+- **Onde estão os dados:** taxas, aluguéis e representantes por máquina ficam SÓ em `src/apps/montagem/domain/maquininhas.local.js` (fora do Git, por conter nomes e valores por pessoa). Fazer cópia de segurança desse arquivo.

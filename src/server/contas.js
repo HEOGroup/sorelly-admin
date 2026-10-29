@@ -7,7 +7,7 @@ import { invalido } from "./http.js";
 export const STATUS = ["aguardando", "ativo", "bloqueado"];
 export const PERFIS = ["ADMIN", "MEMBER"];
 // grupos de acesso do menu (os mesmos de navigation/perfis.js; "basico" = só Início, Rotina e Chat)
-export const GRUPOS_VALIDOS = ["supervisao", "familia", "supervisora", "agendamento", "financeiro", "inadimplencia", "bipadora", "montadora", "listagens", "kitnovo", "cadastropecas", "basico"];
+export const GRUPOS_VALIDOS = ["supervisao", "familia", "supervisora", "agendamento", "financeiro", "inadimplencia", "bipadora", "montadora", "listagens", "kitnovo", "cadastropecas", "linkcadastro", "basico"];
 
 export const paraConta = (r) => ({ id: r.id, nome: r.nome, email: r.email, status: r.status, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, criadoEm: r.criado_em, aprovadoPor: r.aprovado_por || "", login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null, senhaProvisoria: r.senha_provisoria || "" });   // só a lista da Diretoria usa paraConta
 

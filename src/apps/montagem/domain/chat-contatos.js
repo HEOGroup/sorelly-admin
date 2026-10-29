@@ -8,7 +8,7 @@ var sem = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,
 var PARTICULAS = {de:1, da:1, do:1, dos:1, das:1, e:1};
 var CORES = ["#1FA855","#128C7E","#34B7F1","#7E57C2","#E91E63","#FF7043","#8D6E63","#00A884","#C2185B","#5C6BC0","#00897B","#F4511E","#6D4C41","#3949AB"];
 var APELIDOS = {"Marcus Vinicius Hess de Oliveira":"Marcus Hess", "Anamaria Hess de Oliveira":"Anamaria Hess", "Marco Antonio de Oliveira":"Marco Antonio", "Lucas Oliveira da Rocha":"Lucas Rocha",
-  "Ana Beatriz Hess de Oliveira":"Ana Beatriz", "Nickolas Gabriel Leal Neves":"Nickolas Neves"};
+  "Ana Beatriz Hess de Oliveira":"Ana Beatriz", "Nickolas Gabriel Leal Neves":"Nickolas Neves", "Castilho":"Lucas Castilho"};
 function hash(t){ var h = 7; for(var i=0;i<t.length;i++) h = (h*31 + t.charCodeAt(i)) % 1000003; return h; }
 function curto(completo, todos){
   if(APELIDOS[completo]) return APELIDOS[completo];
@@ -20,7 +20,7 @@ function curto(completo, todos){
 var tudo = [];
 FUNCIONARIOS_POR_SETOR.forEach(function(st){ st[1].forEach(function(f){ tudo.push({completo:f[0], setor:st[0], funcao:f[3]||"", tipo:"func"}); }); });
 REPRESENTANTES.filter(function(r){ return !r.tambemFunc; }).forEach(function(r){ tudo.push({completo:r.nome, setor:"Representantes", funcao:"Representante", tipo:"rep"}); });
-tudo.push({completo:"Castilho", setor:"Marketing", funcao:"Marketing (nome completo a confirmar)", tipo:"func"});   // novo no Marketing (15/10/2026); só contato do chat
+tudo.push({completo:"Castilho", setor:"Marketing", funcao:"Marketing (PJ)", tipo:"func"});   // Lucas Castilho, PJ do Marcus no Marketing (15/10/2026); o id do contato nasce de "Castilho", por isso o nome da lista não muda (só o apelido acima)
 var nomesTodos = tudo.map(function(x){ return x.completo; });
 var CONTATOS = tudo.map(function(x){
   var id = (x.tipo==="rep" ? "r_" : "f_") + sem(x.completo).replace(/ /g,"");

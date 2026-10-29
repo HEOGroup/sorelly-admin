@@ -12,7 +12,7 @@ import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { mensagemFechamento, mensagemEntrega, abrirPdfAcerto } from "@/apps/montagem/domain/mensagem-fechamento";
 import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
-  AVISO_BB, codigoBrindeValido, normalizarCodigo, limitarCodigo, codigoPecaValido, formasPagamentoPadrao, textoRegras, textoRegrasPrata, versaoEfetiva, modalidadeDe, MODALIDADE_LB } from "@/apps/montagem/domain/consignado";
+  AVISO_BB, NOVAS_PADRAO, codigoBrindeValido, normalizarCodigo, limitarCodigo, codigoPecaValido, formasPagamentoPadrao, textoRegras, textoRegrasPrata, versaoEfetiva, modalidadeDe, MODALIDADE_LB } from "@/apps/montagem/domain/consignado";
 import { ComissoesRep } from "@/apps/montagem/mobile/comissoes-rep";
 import { PedidoDataRep } from "@/apps/montagem/mobile/pedido-data-rep";
 import { TelaAssinatura } from "@/apps/montagem/mobile/assinatura";
@@ -35,6 +35,7 @@ import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/dom
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
+import { FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -176,14 +177,14 @@ function AppRepresentante(p){
   var nInfoNovos = infNaoLidos(s, "representante", l.rep);   // informativos que ela ainda não abriu
   var LISTA_INICIO = [
     {tela:"mensagens", titulo:"SorellyChat", sub: chatNaoLidas ? chatNaoLidas+(chatNaoLidas===1 ? " mensagem não lida" : " mensagens não lidas") : "Fale com os setores da Sorelly", icone:"whats", cor:"#C9A13B", logo:true, ativo:true},
-    {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
+    {tela:"revs", titulo:"Revendedoras", sub:"Veja e acompanhe sua rede", icone:"users", cor:"#EA580C", ativo:true},
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
     {tela:"comissoes", titulo:"Comissões", sub: nPagNI ? "⚠ "+nPagNI+(nPagNI===1 ? " pagamento não identificado" : " pagamentos não identificados") : "Minhas comissões e quilometragem", icone:"coins", cor:"#CA8A04", ativo:true},
     {tela:"regrascom", titulo:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", icone:"book", cor:"#B8862B", ativo:true},
     {tela:"informativos", titulo:"Informativos", sub: nInfoNovos ? nInfoNovos+(nInfoNovos===1 ? " novo" : " novos")+" para ler" : "Regras, avisos e novidades", icone:"book", cor:"#9A7424", ativo:true},
     {tela:"desempenho", titulo:"Desempenho", sub:"Em breve", icone:"trofeu", cor:"#16A34A", ativo:false},
-    {tela:"indique", titulo:"Indique & Ganhe", sub:"Em breve", icone:"presente", cor:"#CA8A04", ativo:false}];
+    {tela:"indique", titulo:"Indique & Ganhe", sub:"Em breve", icone:"presente", cor:"#EAB308", ativo:false}];
   var voltar = e("div",{className:"flex items-center gap-2"},
     e("button",{onClick:function(){setTela("inicio");}, className:"flex h-8 items-center gap-1 rounded-full bg-[#1C1C1E] px-3 text-[12px] font-semibold text-amber-200"}, "‹ Início"),
     e("b",{className:"text-[16px]"}, TITULO[tela]));
@@ -373,8 +374,14 @@ function AppRepresentante(p){
       linhaCons("r", e("span",null,"Valor restante:", restanteTotal<=0.009 && e("span",{className:"ml-1.5 text-[10.5px] font-semibold text-emerald-300"},"✓ acerto quitado")), restanteTotal>0.009 ? BK(restanteTotal) : "R$ 0,00", {topo:true, cor:restanteTotal>0.009 ? "text-amber-200" : "text-emerald-300", rotCor:"text-[#E5E5EA]"}))));
 
   // Payload único do acerto (usado na assinatura)
+  // venda abaixo do mínimo geral (R$ 500, domain/consignado.js): pede o motivo antes de confirmar o acerto
+  var vendaMotivo = dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta;
+  var minVendaGeral = (dv.novas && dv.novas.minimoRepresentante) || NOVAS_PADRAO.minimoRepresentante, motivosVB = (dv.novas && dv.novas.motivosVendaBaixa) || NOVAS_PADRAO.motivosVendaBaixa;
+  var vendaBaixa = vendaMotivo!=null && vendaMotivo < minVendaGeral;
+  var faltaMotivoVB = vendaBaixa && (!acertoForm.motivoVendaBaixa || (acertoForm.motivoVendaBaixa==="Outro" && !(acertoForm.motivoVendaBaixaTexto||"").trim()));
+  var motivoVB = !vendaBaixa ? "" : acertoForm.motivoVendaBaixa==="Outro" ? (acertoForm.motivoVendaBaixaTexto||"").trim() : (acertoForm.motivoVendaBaixa||"");
   var payloadAcerto = function(extra){
-    return Object.assign({type:"ACERTO_REGISTRAR", id:kitSel.id, vendaBruta:dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta, vendaDigitada:acertoForm.vendaBruta, trocas:acertoForm.trocas||[], tagsDanificadas:acertoForm.tagsDanificadas||0, tagsValor:dv.tagsValor, devolvida:0, garantia:acertoForm.garantia||0,
+    return Object.assign({type:"ACERTO_REGISTRAR", id:kitSel.id, motivoVendaBaixa:motivoVB, vendaBruta:dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta, vendaDigitada:acertoForm.vendaBruta, trocas:acertoForm.trocas||[], tagsDanificadas:acertoForm.tagsDanificadas||0, tagsValor:dv.tagsValor, devolvida:0, garantia:acertoForm.garantia||0,
       valorPago: acordoValido ? previaBase.valorDevido : totalPagoAtual, pagamentos:acertoForm.pagamentos, acordo: acordoExistente ? acertoForm.acordoParcelas : null,
       recusouNegociar:acertoForm.recusouNegociar, brindesLancados:acertoForm.brindes, excedenteBrinde:excedenteBrinde,
       pecasVendidas:acertoForm.pecasVendidas, pecasBrinde:acertoForm.brindes.length, pecasTrocas:(acertoForm.trocas||[]).length,
@@ -719,8 +726,18 @@ function AppRepresentante(p){
     jaAcertado
       ? e("div",{className:"flex flex-col gap-2"}, e("p",{className:"rounded-2xl bg-emerald-500/15 px-3 py-2 text-center text-[12.5px] font-bold text-emerald-300"},"Acerto já registrado e assinado — só consulta."),
           e("button",{onClick:function(){ setTela("fechamento"); }, className:"h-11 rounded-2xl text-[14px] font-bold "+ouro},"Ver mensagens de fechamento"))
-      : e("button",{disabled:acertoForm.vendaBruta==null, onClick:function(){ setTela("assinaracerto"); },
-      className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro},"Confirmar acerto"));
+      : [
+        // venda abaixo do mínimo (R$ 500): a representante justifica antes de confirmar (Marcus, 29/10/2026)
+        vendaBaixa && e("div",{key:"vb", className:"flex flex-col gap-2 rounded-xl border border-red-400/40 bg-red-500/10 p-2.5"},
+          e("p",{className:"text-[12.5px] font-semibold text-red-300"}, "Venda abaixo de "+BK(minVendaGeral)+": informe o motivo"),
+          e("div",{className:"flex flex-wrap gap-1.5"}, motivosVB.map(function(m){ var on = acertoForm.motivoVendaBaixa===m;
+            return e("button",{key:m, onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixa:on ? "" : m})); }, "aria-pressed":on,
+              className:"rounded-full px-3 py-1.5 text-[12.5px] font-semibold "+(on ? "text-[#1B1409]" : "bg-white/10 text-white"), style:on ? {background:"#E8B84B"} : null}, m); })),
+          acertoForm.motivoVendaBaixa==="Outro" && e("input",{value:acertoForm.motivoVendaBaixaTexto||"", placeholder:"Escreva o motivo", maxLength:140,
+            onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
+            className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
+        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB, onClick:function(){ setTela("assinaracerto"); },
+          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",
@@ -1074,15 +1091,16 @@ function AppRepresentante(p){
             e("b",{className:"truncate text-[12.5px] font-semibold "+BR}, m.lb)),
           e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13.5px] font-extrabold text-amber-200"}, m.v));
       })));
-  var listaInicio = e("div",{className:"mt-3.5 flex flex-col gap-2.5"}, LISTA_INICIO.map(function(m){
+  // lista da tela inicial no MESMO desenho do app da revendedora (cartão compacto, ícone 32 px, título 13 px e legenda 11 px) — padronização de 29/10/2026
+  var listaInicio = e("div",{className:"mt-2.5 flex flex-col gap-2"}, LISTA_INICIO.map(function(m){
     var conteudo = [
-      e("span",{key:"ic", className:"grid size-11 shrink-0 place-items-center rounded-2xl", style:m.logo ? {background:"#24180a"} : {background:m.cor+"1F", color:m.cor}}, m.logo ? e(LogoChat,{s:28}) : e(Icon,{n:m.icone, s:20, peso:"fill"})),
-      e("div",{key:"tx", className:"min-w-0 flex-1"}, e("b",{className:"block text-[15px] text-[#111827]"}, m.titulo), e("span",{className:"block truncate text-[12.5px] text-[#6B7280]"}, m.sub)),
-      m.ativo ? e(Icon,{key:"ch", n:"chevron", s:16, className:"shrink-0 text-[#9CA3AF]"})
-        : e("span",{key:"ch", className:"shrink-0 rounded-full bg-[#F3F4F6] px-2 py-0.5 text-[10.5px] font-semibold text-[#9CA3AF]"}, "Em breve")];
+      e("span",{key:"ic", className:"grid size-8 shrink-0 place-items-center rounded-lg", style:m.logo ? {background:"#24180a"} : {background:m.cor+"1F", color:m.cor}}, m.logo ? e(LogoChat,{s:22}) : e(Icon,{n:m.icone, s:16, peso:"fill"})),
+      e("div",{key:"tx", className:"min-w-0 flex-1"}, e("b",{className:"block text-[13px] leading-tight text-[#111827]"}, m.titulo), e("span",{className:"block truncate text-[11px] leading-tight text-[#6B7280]"}, m.sub)),
+      m.ativo ? e(Icon,{key:"ch", n:"chevron", s:13, className:"shrink-0 text-[#9CA3AF]"})
+        : e("span",{key:"ch", className:"shrink-0 rounded-full bg-[#F3F4F6] px-1.5 py-px text-[10px] font-semibold text-[#9CA3AF]"}, "Em breve")];
     return m.ativo
-      ? e("button",{key:m.tela, onClick:function(){ if(m.tela==="mensagens") efem({conversaSel:null}); setTela(m.tela); }, style:{background:claro(m.cor,.2)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 text-left shadow-sm active:scale-[.99]"}, conteudo)
-      : e("div",{key:m.tela, style:{background:claro(m.cor,.12)}, className:"flex w-full items-center gap-3 rounded-2xl p-3 opacity-70"}, conteudo); }));
+      ? e("button",{key:m.tela, onClick:function(){ if(m.tela==="mensagens") efem({conversaSel:null}); setTela(m.tela); }, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left shadow-sm active:scale-[.99]"}, conteudo)
+      : e("div",{key:m.tela, style:{background:FUNDO_BARRA}, className:"flex w-full items-center gap-2 rounded-xl px-2 py-1.5 opacity-70"}, conteudo); }));
   // ── Tela de regras: as mesmas regras da calculadora, lidas da versão do kit (ou da vigente). Quem edita é o admin (Regras do consignado). ──
   var vr = versaoVigente(s) || versaoSel;
   var kitComRegraAntiga = versaoSel && vr && versaoSel.id!==vr.id;
@@ -1165,7 +1183,7 @@ function AppRepresentante(p){
     tela==="entregakit" && kitSel && e(EntregaKNRep,{key:kitSel.id, s:s, d:d, k:kitSel, versao:versaoSel || versaoVigente(s),
       onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }}),
     tela==="reposicao" && kitSel && (function(){
-      var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 20;
+      var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15;
       return e("div",{key:"rep", className:"flex flex-col gap-3 pb-4"},
         e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"}, e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})), e("b",{className:douradoTitulo},"Entregar reposição")),
         e("p",{className:"truncate text-[17px] font-extrabold "+BR}, kitSel.rev),

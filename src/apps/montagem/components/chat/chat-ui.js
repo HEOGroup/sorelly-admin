@@ -29,9 +29,10 @@ function Avatar(p){
 }
 
 function Tique(p){
-  // sem azul de "lido" (Marcus, 28/10/2026): só enviado (um tique) e entregue (dois, cinza)
-  if(p.status==="enviado") return e(Ph,{n:"check", s:15, style:{color:W.sec}});
-  return e(Ph,{n:"checks", s:15, style:{color:W.sec}});
+  // tiques como os do WhatsApp (traço fino, sem caixa em volta); sem azul de "lido" (Marcus, 28/10/2026): enviado = um tique, entregue = dois, cinza
+  var dois = p.status!=="enviado";
+  return e("svg",{width:dois ? 17 : 12, height:11, viewBox:dois ? "0 0 17 11" : "0 0 12 11", fill:"none", stroke:W.sec, strokeWidth:1.5, strokeLinecap:"round", strokeLinejoin:"round", "aria-label":dois ? "Entregue" : "Enviado", style:{display:"block", flex:"none"}},
+    e("path",{d:"M1.2 6 L4.2 9 L10.2 1.6"}), dois && e("path",{d:"M6.2 6 L9.2 9 L15.2 1.6"}));
 }
 
 // formatação

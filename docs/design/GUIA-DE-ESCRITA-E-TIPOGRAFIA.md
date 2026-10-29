@@ -53,6 +53,9 @@ Lista completa na seção 19 do estudo; aqui o essencial, em duas colunas: usar 
 | Saldo das contas | Caixa, Posição bancária | Dinheiro nos bancos |
 | Disponível | Saldo com limite | Saldo das contas + cheque especial |
 | Cheque especial | Limite, Crédito | Limite liberado pelos bancos |
+| **Tamanho** (do anel) | **Aro**, numeração | REGRA FIXA do Marcus (28/10/2026): no sistema inteiro, em toda tela, mensagem, relatório e documento, o anel tem "tamanho" (ex.: tamanho 16), nunca "aro". Vale para texto novo e antigo |
+| Banhado | Folheado | Nome atual da peça (Marcus, 27/10/2026): folheado e banhado são a mesma coisa; escrever "banhado" |
+| Cravejado | Zircônia, micro zircônia (como categoria) | Cravejado é o termo geral; a pedra é a zircônia (Marcus, 27/10/2026) |
 | Acertos feitos / Previstos | Realizados, Fechados | "Realizados" só como "realizados esperados" na previsão |
 | Previsão | Projeção, Estimativa | Qualquer valor que ainda não aconteceu |
 | Fechado 🔒 | Travado, Consolidado | Mês que não edita |

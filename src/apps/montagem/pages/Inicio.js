@@ -19,7 +19,6 @@ import { useNavigate } from "react-router-dom";
 var pad = function(n){ return String(n).padStart(2, "0"); };
 var isoDia = function(d){ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
 var primeiroNome = function(n){ return String(n||"").trim().split(/\s+/)[0] || ""; };
-var saudacao = function(){ var h = new Date().getHours(); return h<12 ? "Bom dia" : h<18 ? "Boa tarde" : "Boa noite"; };
 var nomeAba = function(aba){ var a = ABAS.find(function(x){ return x[0]===aba; }); return a ? a[1] : aba; };
 var haQuanto = function(em){ var m = Math.round((Date.now()-em)/60000); if(m<1) return "agora"; if(m<60) return "há "+m+" min"; var h = Math.round(m/60); if(h<24) return "há "+h+" h"; var d = Math.round(h/24); return d===1 ? "ontem" : "há "+d+" dias"; };
 
@@ -32,8 +31,8 @@ function primeiraTela(st){
 var CSS = [
   ".ini{margin:-16px;color:#fff;background:radial-gradient(ellipse at 50% 0%,#201808 0%,#0a0806 55%,#050403 100%)}@media(min-width:768px){.ini{margin:-24px}}",
   ".ini-pg{display:flex;flex-direction:column;min-height:inherit;padding:40px 48px 56px}@media(max-width:700px){.ini-pg{padding:24px 16px 40px}}",
-  ".ini-hero{flex:1;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:26vh;padding:6px 0 4px}",
-  ".ini-foto{position:relative;display:grid;place-items:center;width:84px;height:84px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a) center/cover;color:#1a1405;font-weight:800;font-size:34px;border:2px solid #E8B84B;box-shadow:0 0 0 4px rgba(232,184,75,.12),0 0 22px rgba(232,184,75,.25)}",
+  ".ini-hero{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;min-height:26vh;padding:6px 0 4px}",
+  ".ini-foto{position:relative;display:grid;place-items:center;width:150px;height:150px;margin:0 auto 10px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a) center/cover;color:#1a1405;font-weight:800;font-size:60px;border:2px solid #E8B84B;box-shadow:0 0 0 4px rgba(232,184,75,.12),0 0 22px rgba(232,184,75,.25)}",
   ".ini-foto button{position:absolute;right:0;bottom:0;width:22px;height:22px;border-radius:50%;background:#14110b;border:1px solid rgba(232,184,75,.4);color:#E8B84B;cursor:pointer;display:grid;place-items:center}",
   ".ini-selo{display:inline-flex;border:1px solid rgba(232,184,75,.3);border-radius:999px;padding:3px 10px;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#E8B84B;background:#1b1710}",
   ".ini-nome{font-weight:700;letter-spacing:-.03em;line-height:1.08;margin:9px 0 0;font-size:30px}@media(max-width:700px){.ini-nome{font-size:19px}.ini-vtxt{font-size:13px}}",
@@ -44,7 +43,7 @@ var CSS = [
   ".ini-vtxt{font-family:Georgia,'Times New Roman',serif;font-style:italic;font-size:14px;line-height:1.5;max-width:900px;margin:0 auto}",
   ".ini-ref{margin-top:6px;color:#E8B84B;font-weight:700;font-size:13px}",
   ".ini-pontos{display:flex;justify-content:center;gap:5px;margin:8px 0 2px}.ini-pontos i{width:5px;height:5px;border-radius:50%;background:#3b3220}.ini-pontos i.on{background:#E8B84B}",
-  ".ini-rot{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#E8B84B;font-weight:700;margin:18px 0 8px;display:flex;align-items:center;gap:10px}",
+  ".ini-rot{font-size:16px;letter-spacing:.16em;text-transform:uppercase;color:#E8B84B;font-weight:700;margin:18px 0 8px;display:flex;align-items:center;gap:10px}",
   ".ini-rot:after{content:'';flex:1;height:1px;background:rgba(232,184,75,.28)}",
   ".ini-setores{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}",
   ".ini-setor{border:1px solid rgba(232,184,75,.28);border-radius:10px;background:#110e08;padding:9px 10px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;cursor:pointer;text-align:left;color:#fff}",
@@ -143,13 +142,12 @@ function AbaInicio(){
         e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
         erro && e("p",{role:"alert", style:{color:"#ff8a8a", fontWeight:600}}, erro),
         e("span",{className:"ini-selo"}, "Central Sorelly"),
-        e("h1",{className:"ini-nome"}, saudacao()+", "+nome+". ", e("span",{className:"ini-ouro"}, "Seja bem-vindo!")),
+        e("h1",{className:"ini-nome"}, "Olá, "+nome+". ", e("span",{className:"ini-ouro"}, "Seja bem-vindo!")),
         e(Cruz,{w:24, h:34}),
-        e("div",{className:"ini-vers"+(some ? " some" : "")}, e("div",{className:"ini-vtxt"}, msg.texto), e("div",{className:"ini-ref"}, msg.ref)),
-        e("div",{className:"ini-pontos", title:"Mensagens de hoje (uma a cada 2 horas)"}, Array.from({length:12}, function(_, k){ return e("i",{key:k, className:k===slot ? "on" : ""}); }))),
+        e("div",{className:"ini-vers"+(some ? " some" : "")}, e("div",{className:"ini-vtxt"}, msg.texto), e("div",{className:"ini-ref"}, msg.ref))),
 
       // setores
-      e("div",{className:"ini-rot"}, "Seus setores"),
+      e("div",{className:"ini-rot"}, "Setores"),
       e("div",{className:"ini-setores"}, setores.length===0 ? e("p",{className:"ini-vazio"}, "Nenhum setor liberado ainda. Peça à Diretoria.") : setores.map(function(st){
         var t = primeiraTela(st); if(!t) return null;
         return e("button",{key:st.id, type:"button", className:"ini-setor", onClick:function(){ if(t.breve) return; abrirAba(t.aba); }},
@@ -158,43 +156,6 @@ function AbaInicio(){
 
       // telas favoritas (estrela nas abas do topo), na ordem escolhida
       favoritas.length>0 && e("div",null, e("div",{className:"ini-rot"}, "Minhas favoritas"),
-        e("div",{className:"ini-chips"}, favoritas.map(function(f){ return e("button",{key:f.k, type:"button", className:"ini-chip", onClick:function(){ abrirAba(f.aba); }}, e("span",{style:{color:"#F5D68A"}}, "★"), f.nome, f.setor && f.setor!==f.nome ? e("small",null, f.setor) : null); }))),
-
-      // Diretoria: o que decidir hoje
-      diretor && e("div",null,
-        e("div",{className:"ini-rot"}, "Para você decidir hoje"),
-        e("div",{className:"ini-pend"},
-          apiAtiva() && e("button",{type:"button", className:"ini-p"+(contasAguardando>0 ? " v" : ""), onClick:function(){ abrirAba("acessos"); }}, e("b",null, String(contasAguardando)), "Contas aguardando liberação"),
-          e("button",{type:"button", className:"ini-p"+(resTodos.atrasados>0 ? " v" : ""), onClick:function(){ abrirAba("rotina"); }}, e("b",null, String(resTodos.atrasados)), "Combinados atrasados hoje"),
-          e("button",{type:"button", className:"ini-p", onClick:function(){ abrirAba("rotina"); }}, e("b",null, resTodos.feitos+" de "+resTodos.total), "Combinados feitos hoje"))),
-
-      // o dia da pessoa
-      e("div",{className:"ini-rot"}, "Seu dia"),
-      e("div",{className:"ini-cols"},
-        e("div",{className:"ini-bx"}, e("h4",null, "Minha rotina de hoje", e("small",null, resMinhas.total ? resMinhas.feitos+" de "+resMinhas.total : "")),
-          minhas.length===0 ? e("p",{className:"ini-vazio"}, "Nenhum combinado seu para hoje.") : minhas.map(function(i){
-            var atr = !i.feito && i.hora && i.hora<=hm;
-            return e("div",{key:i.id, className:"ini-ck"+(i.feito ? " ok" : atr ? " atr" : "")},
-              e("button",{type:"button", "aria-label":i.feito ? "Desmarcar" : "Marcar como feito", onClick:function(){ marcar(i, !i.feito); }}, i.feito ? e(Icon,{n:"check", s:12}) : null),
-              e("span",{style:{cursor:i.rota ? "pointer" : "default"}, onClick:function(){ if(i.rota) abrirAba(i.rota); }}, i.nome), e("em",null, i.hora||"")); })),
-        e("div",{className:"ini-bx"}, e("h4",null, "Comunicados", diretor ? e("button",{type:"button", className:"ini-btn", onClick:function(){ setNovoAberto(!novoAberto); }}, novoAberto ? "Cancelar" : "+ Novo aviso") : e("small",null, "da Diretoria")),
-          diretor && novoAberto && e("div",{className:"ini-novo"},
-            e("input",{value:novo.titulo, maxLength:80, placeholder:"Título do aviso", onChange:function(ev){ setNovo({titulo:ev.target.value, texto:novo.texto}); }}),
-            e("textarea",{value:novo.texto, rows:3, maxLength:600, placeholder:"Texto do aviso", onChange:function(ev){ setNovo({titulo:novo.titulo, texto:ev.target.value}); }}),
-            e("button",{type:"button", className:"ini-btn", onClick:publicar}, "Publicar")),
-          avisos.length===0 ? e("p",{className:"ini-vazio"}, "Nenhum comunicado no momento.") : avisos.map(function(a){
-            return e("div",{key:a.id, className:"ini-aviso"}, e("b",null, a.titulo), a.texto ? e("small",null, a.texto) : null,
-              diretor && e("button",{type:"button", "aria-label":"Apagar aviso", onClick:function(){ gravaAvisos(((s.inicio||{}).avisos||[]).filter(function(x){ return x.id!==a.id; })); }}, e(Icon,{n:"x", s:13}))); })),
-        e("div",{className:"ini-bx"}, e("h4",null, "Equipe agora", e("small",null, disponiveis+(disponiveis===1 ? " disponível" : " disponíveis"))),
-          equipe.length===0 ? e("p",{className:"ini-vazio"}, "Ninguém por aqui ainda.") : equipe.slice(0, 8).map(function(p){
-            var sit = SITUACOES[p.situacao] || SITUACOES.disponivel, curto = primeiroNome(nomeDe(p.pessoaId)) || primeiroNome(p.nome);
-            return e("div",{key:p.pessoaId, className:"ini-av"},
-              e("span",{className:"c", style:p.foto ? {backgroundImage:"url("+p.foto+")"} : undefined}, p.foto ? null : (curto||"?").charAt(0).toUpperCase(), e("u",{style:{background:sit[1]}})),
-              e("div",null, e("b",null, curto), e("small",null, sit[0]))); }))),
-
-      // telas visitadas
-      e("div",{className:"ini-rot"}, "Visitados recentemente"),
-      e("div",{className:"ini-chips"}, visitados(eu).length===0 ? e("p",{className:"ini-vazio"}, "As telas que você abrir aparecem aqui.") : visitados(eu).slice(0, 6).map(function(v){
-        return e("button",{key:v.aba, type:"button", className:"ini-chip", onClick:function(){ abrirAba(v.aba); }}, nomeAba(v.aba), e("small",null, haQuanto(v.em))); }))));
+        e("div",{className:"ini-chips"}, favoritas.map(function(f){ return e("button",{key:f.k, type:"button", className:"ini-chip", onClick:function(){ abrirAba(f.aba); }}, e("span",{style:{color:"#F5D68A"}}, "★"), f.nome, f.setor && f.setor!==f.nome ? e("small",null, f.setor) : null); })))));
 }
 export { AbaInicio };

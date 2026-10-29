@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>SorellyChat, cópia do WhatsApp</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;overflow:hidden;overscroll-behavior:none;background:#0d0d0f;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","SF Pro Display","Helvetica Neue","Inter","Segoe UI",Roboto,sans-serif;color:#000;-webkit-font-smoothing:antialiased}
+.stage{height:100%;display:flex;align-items:center;justify-content:center;gap:28px}
+.nota{color:#9a9aa0;font-size:13px;max-width:230px;line-height:1.5}
+.nota b{color:#E8B84B;display:block;margin-bottom:6px;font-size:14px}
+@media(max-width:760px){.nota{display:none}}
+.wrap{width:413px;height:872px;transform-origin:center center;flex-shrink:0}
+.phone{width:413px;height:872px;border-radius:60px;background:#000;padding:10px;box-shadow:0 0 0 2px #3a3a3e,0 20px 60px rgba(0,0,0,.6)}
+.screen{position:relative;width:393px;height:852px;border-radius:50px;overflow:hidden;background:#fff}
+/* barra de status e ilha */
+.status{position:absolute;top:0;left:0;right:0;height:54px;z-index:30;display:flex;justify-content:space-between;align-items:flex-start;padding:19px 34px 0 38px;font-size:16.5px;font-weight:600;pointer-events:none}
+.status .dir{display:flex;gap:6px;align-items:center}
+.ilha{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:122px;height:36px;border-radius:20px;background:#000;z-index:31}
+.home{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);width:138px;height:5px;border-radius:3px;background:#000;z-index:40}
+/* telas */
+.tela{position:absolute;inset:0;display:flex;flex-direction:column;background:#fff;transition:transform .28s cubic-bezier(.3,.8,.3,1)}
+#lista{z-index:1}
+#conversa{z-index:2;transform:translateX(100%);background:#EFEAE2}
+#conversa.on{transform:translateX(0)}
+#lista.atras{transform:translateX(-24%)}
+/* lista */
+.topo{padding:62px 16px 0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.vidro{width:44px;height:44px;border-radius:50%;background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.16);display:grid;place-items:center;border:0;cursor:pointer}
+.vidro.k{background:#111;color:#fff}
+.dir2{display:flex;gap:10px}
+h1{font-size:34px;font-weight:800;letter-spacing:-.6px;padding:10px 16px 6px;flex-shrink:0}
+.arq{display:flex;align-items:center;padding:6px 16px;height:46px;flex-shrink:0;color:#6b6b70;font-size:17px;font-weight:600}
+.arq .i{width:58px}
+.arq em{margin-left:auto;font-style:normal;font-size:15px;font-weight:500}
+.rolagem{flex:1;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;padding-bottom:104px}
+.rolagem::-webkit-scrollbar{display:none}
+.lin{display:flex;align-items:center;padding-left:14px;cursor:pointer;background:#fff}
+.lin:active{background:#ececee}
+.av{width:56px;height:56px;border-radius:50%;flex-shrink:0;display:grid;place-items:center;color:#fff;margin-right:13px}
+.cx{flex:1;min-width:0;border-bottom:.5px solid #d9d9dc;padding:11px 16px 11px 0;min-height:76px}
+.l1{display:flex;align-items:baseline;gap:8px}
+.nm{flex:1;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.2px}
+.hr{font-size:14px;color:#8a8a90;flex-shrink:0}
+.hr.v{color:#1fa855}
+.l2{display:flex;align-items:flex-start;gap:8px;margin-top:2px}
+.pv{flex:1;min-width:0;font-size:15.5px;line-height:1.28;color:#7b7b81;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pv svg{vertical-align:-2px;margin-right:4px}
+.pv b{color:#000;font-weight:600}
+.bd{min-width:22px;height:22px;border-radius:11px;background:#25D366;color:#fff;font-size:13px;font-weight:700;display:grid;place-items:center;padding:0 6px;flex-shrink:0;margin-top:2px}
+/* barra de baixo */
+.pilula{position:absolute;left:14px;right:14px;bottom:24px;height:66px;border-radius:34px;background:rgba(255,255,255,.94);backdrop-filter:blur(14px);box-shadow:0 2px 18px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:space-around;padding:0 10px;z-index:10}
+.aba{flex:1;height:52px;border-radius:26px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:11.5px;color:#3a3a3e;cursor:pointer;margin:0 3px}
+.aba.on{background:#ebebee;font-weight:700;color:#000}
+.aba .pt{position:relative}
+.aba .pt i{position:absolute;top:-4px;right:-9px;min-width:17px;height:17px;border-radius:9px;background:#25D366;color:#fff;font-size:11px;font-style:normal;font-weight:700;display:grid;place-items:center;padding:0 4px}
+/* conversa */
+.cab{position:absolute;top:0;left:0;right:0;z-index:20;padding:58px 12px 10px;display:flex;align-items:center;gap:8px;background:linear-gradient(#f6f6f6 70%,rgba(246,246,246,0))}
+.cap{height:48px;border-radius:24px;background:#fff;box-shadow:0 1px 8px rgba(0,0,0,.16);display:flex;align-items:center}
+.cap.c{flex:1;min-width:0;padding:0 14px 0 8px;gap:10px}
+.cap.d{padding:0 8px;gap:2px}
+.cap.d span{width:44px;height:44px;display:grid;place-items:center}
+.cab .av{width:36px;height:36px;margin:0}
+.tt{min-width:0}
+.tt b{display:block;font-size:17px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+.tt small{display:block;font-size:12.5px;color:#7b7b81;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.tt small.dg{color:#1fa855}
+.msgs{position:absolute;top:0;left:0;right:0;bottom:84px;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;overscroll-behavior:contain;padding:118px 10px 10px;display:flex;flex-direction:column;gap:3px;
+ background-color:#EFEAE2;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23cfc6b6' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round' opacity='.55'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Cpath d='M70 14l4 8 9 1-6 6 2 9-8-4-8 4 2-9-6-6 9-1z'/%3E%3Cpath d='M98 66c-6-8-14 2-6 9l6 6 6-6c8-7 0-17-6-9z'/%3E%3Crect x='14' y='62' width='16' height='12' rx='3'/%3E%3Cpath d='M18 62v-3a4 4 0 018 0v3'/%3E%3Cpath d='M58 82l22-8-8 22-4-9z'/%3E%3Cpath d='M40 104h12M46 98v12'/%3E%3C/g%3E%3C/svg%3E")}
+.msgs::-webkit-scrollbar{display:none}
+.dia{align-self:center;background:rgba(255,255,255,.85);color:#555;font-size:13px;font-weight:600;padding:5px 12px;border-radius:9px;margin:8px 0}
+.m{max-width:80%;padding:7px 11px 6px;border-radius:19px;font-size:17px;line-height:1.24;position:relative;word-wrap:break-word;overflow-wrap:anywhere;letter-spacing:-.15px}
+.m .mt{float:right;margin:7px -3px -2px 10px;font-size:12px;opacity:.75;display:inline-flex;gap:3px;align-items:center;line-height:1}
+.m.eu{align-self:flex-end;background:#1B87F5;color:#fff}
+.m.eu.fim{border-bottom-right-radius:5px}
+.m.el{align-self:flex-start;background:#fff;color:#000}
+.m.el.fim{border-bottom-left-radius:5px}
+.m.el .mt{color:#666;opacity:1}
+.m + .m{margin-top:0}
+.m.cola{margin-top:6px}
+.cit{background:rgba(0,0,0,.14);border-left:4px solid #1fa855;border-radius:10px;padding:6px 10px;margin:0 0 5px;font-size:15px;line-height:1.25}
+.m.el .cit{background:rgba(0,0,0,.07)}
+.cit b{display:block;color:#1c8f4d;font-size:14.5px}
+.m.eu .cit b{color:#bff0d2}
+.dig{align-self:flex-start;background:#fff;border-radius:19px;border-bottom-left-radius:5px;padding:12px 14px;display:flex;gap:4px}
+.dig i{width:7px;height:7px;border-radius:50%;background:#9a9aa0;animation:pul 1s infinite}
+.dig i:nth-child(2){animation-delay:.15s}.dig i:nth-child(3){animation-delay:.3s}
+@keyframes pul{0%,60%,100%{opacity:.3;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+.entrada{position:absolute;left:0;right:0;bottom:0;z-index:20;padding:8px 10px 30px;display:flex;align-items:center;gap:8px;background:linear-gradient(rgba(239,234,226,0),#EFEAE2 35%)}
+.entrada .plus{width:36px;height:40px;display:grid;place-items:center;flex-shrink:0}
+.caixa{flex:1;min-width:0;height:42px;border-radius:21px;background:#fff;border:1px solid #cfcfd3;display:flex;align-items:center;padding:0 10px 0 14px;gap:8px}
+.caixa input{flex:1;min-width:0;border:0;outline:0;background:transparent;font:inherit;font-size:17px;color:#000}
+.caixa input::placeholder{color:#a0a0a5}
+.cam,.mic,.env{flex-shrink:0;display:grid;place-items:center;border:0;cursor:pointer}
+.cam{width:38px;height:40px;background:transparent}
+.mic,.env{width:42px;height:42px;border-radius:50%;background:#1B87F5}
+.env{display:none}
+.entrada.digitando .cam,.entrada.digitando .mic{display:none}
+.entrada.digitando .env{display:grid}
+.toast{position:absolute;left:50%;bottom:110px;transform:translateX(-50%);background:rgba(30,30,32,.9);color:#fff;font-size:14px;padding:9px 14px;border-radius:14px;z-index:60;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<div class="stage">
+ <div class="nota"><b>SorellyChat, cópia do WhatsApp</b>Toque numa conversa, digite e envie. A tela fica travada como no WhatsApp: só a lista de conversas e as mensagens rolam. Embaixo ficam só Início e Conversas.</div>
+ <div class="wrap" id="wrap"><div class="phone"><div class="screen" id="tela">
+  <div class="status"><span id="hora">00:45</span><span class="dir">
+   <svg width="19" height="12" viewBox="0 0 19 12" fill="#000"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
+   <svg width="17" height="12" viewBox="0 0 17 12" fill="none" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M1.5 4.2a10 10 0 0114 0"/><path d="M4 7a6.5 6.5 0 019 0"/><circle cx="8.5" cy="10" r="1" fill="#000"/></svg>
+   <svg width="27" height="13" viewBox="0 0 27 13"><rect x=".5" y=".5" width="23" height="12" rx="3.6" fill="none" stroke="#000" opacity=".4"/><rect x="2" y="2" width="14" height="9" rx="2.2" fill="#000"/><rect x="25" y="4.2" width="1.8" height="4.6" rx=".9" fill="#000" opacity=".4"/></svg></span></div>
+  <div class="ilha"></div>
+  <div class="home"></div>
+
+  <section class="tela" id="lista">
+   <div class="topo"><button class="vidro" aria-label="Mais"><svg width="22" height="22" viewBox="0 0 24 24" fill="#111"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg></button>
+    <div class="dir2"><button class="vidro" aria-label="Câmera"><svg width="26" height="24" viewBox="0 0 26 24" fill="#111"><path d="M9 2.5h8l1.6 2.5H22a3 3 0 013 3v11a3 3 0 01-3 3H4a3 3 0 01-3-3V8a3 3 0 013-3h3.4z"/><circle cx="13" cy="13" r="4.6" fill="#fff"/></svg></button><button class="vidro k" aria-label="Nova conversa"><svg width="22" height="22" viewBox="0 0 24 24" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></button></div></div>
+   <h1>Conversas</h1>
+   <div class="arq"><span class="i"><svg width="28" height="26" viewBox="0 0 28 26" fill="none" stroke="#6b6b70" stroke-width="2" stroke-linejoin="round"><rect x="2" y="2" width="24" height="7" rx="2"/><path d="M4 9v11a3 3 0 003 3h14a3 3 0 003-3V9M11 14h6" stroke-linecap="round"/></svg></span>Arquivadas<em>2</em></div>
+   <div class="rolagem" id="itens"></div>
+   <nav class="pilula"><div class="aba" id="abaInicio"><span class="pt"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#3a3a3e" stroke-width="1.9" stroke-linejoin="round"><path d="M3 11l9-7.5 9 7.5v9a1 1 0 01-1 1h-5v-6H9v6H4a1 1 0 01-1-1z"/></svg></span>Início</div>
+    <div class="aba on"><span class="pt"><svg width="28" height="28" viewBox="0 0 28 28" fill="#000"><path d="M12 4C6.5 4 2.5 7.6 2.5 12.2c0 2.3 1 4.4 2.7 5.9L4.4 21.5l4-1.6c1.1.4 2.3.6 3.6.6 5.5 0 9.5-3.6 9.5-8.3S17.500 4 12 4z"/><path d="M24.500 11.500c1.700 1.300 2.700 3.200 2.700 5.300 0 1.900-.8 3.600-2.200 4.900l.6 3.100-3.500-1.500c-.9.300-1.900.4-2.900.4-2.600 0-4.900-1-6.400-2.600 5.600-.4 9.700-3.800 11.700-9.600z" opacity=".85"/></svg><i id="totalNL" style="display:none"></i></span>Conversas</div></nav>
+  </section>
+
+  <section class="tela" id="conversa">
+   <div class="msgs" id="msgs"></div>
+   <div class="cab">
+    <button class="vidro" id="volta" aria-label="Voltar"><svg width="14" height="22" viewBox="0 0 14 22" fill="none" stroke="#000" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 2L3 11l8 9"/></svg></button>
+    <div class="cap c"><div class="av" id="cAv"></div><div class="tt"><b id="cNome"></b><small id="cSub"></small></div></div>
+    <div class="cap d"><span><svg width="30" height="22" viewBox="0 0 30 22" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"><rect x="2" y="3" width="18" height="16" rx="4.5"/><path d="M20 9.500l7-4.200v11.400l-7-4.200z"/></svg></span><span><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="2.2" stroke-linejoin="round"><path d="M5 3h4l2 5-2.500 1.500a11 11 0 006 6L16 13l5 2v4a2 2 0 01-2 2C10.500 21 3 13.500 3 5a2 2 0 012-2z"/></svg></span></div>
+   </div>
+   <div class="entrada" id="entrada">
+    <span class="plus"><svg width="26" height="26" viewBox="0 0 24 24" stroke="#000" stroke-width="2" stroke-linecap="round"><path d="M12 3v18M3 12h18"/></svg></span>
+    <div class="caixa"><input id="txt" type="text" placeholder="" autocomplete="off" enterkeyhint="send"><svg width="26" height="26" viewBox="0 0 26 26" fill="none" stroke="#000" stroke-width="1.8" stroke-linejoin="round"><path d="M13 2.500H7a4.500 4.500 0 00-4.500 4.500v12A4.500 4.500 0 007 23.500h6.500c4.500 0 8-3.500 8-8V7A4.500 4.500 0 0017 2.500z"/><path d="M21.500 15.500h-4a4 4 0 00-4 4v4"/></svg></div>
+    <button class="cam" aria-label="Câmera"><svg width="30" height="26" viewBox="0 0 26 24" fill="none" stroke="#000" stroke-width="1.9" stroke-linejoin="round"><path d="M9 2.500h8l1.600 2.500H22a3 3 0 013 3v11a3 3 0 01-3 3H4a3 3 0 01-3-3V8a3 3 0 013-3h3.400z"/><circle cx="13" cy="13" r="4.600"/></svg></button>
+    <button class="mic" aria-label="Gravar"><svg width="18" height="24" viewBox="0 0 18 24" fill="#fff"><rect x="5" y="1" width="8" height="15" rx="4"/><path d="M1.500 11a7.500 7.500 0 0015 0M9 18.500V22" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg></button>
+    <button class="env" id="env" aria-label="Enviar"><svg width="22" height="22" viewBox="0 0 24 24" fill="#fff"><path d="M3 20.500V3.500L22 12z"/></svg></button>
+   </div>
+  </section>
+  <div class="toast" id="toast"></div>
+ </div></div></div>
+</div>
+<script>
+var CONT=[
+ {id:"rep",nome:"Minha representante",sub:"Vanessa · representante",cor:"#8B5CF6",ini:"V",
+  m:[["d","Hoje"],["e","Oi! Quando você vem fazer o acerto?","17:18"],["eu","Meu acerto é só mês que vem","21:44","Oi! Quando você vem fazer o acerto?"],["e","Perfeito. Posso te levar uma reposição antes?","21:45"],["eu","Pode ir sim, terça-feira de manhã.","00:22"],["e","Combinado! Só preciso agendar com as meninas do agendamento.","00:30"]],nl:2},
+ {id:"ind",nome:"Indique uma revendedora",sub:"Michele · Kit novo",cor:"#EC4899",ini:"♥",m:[["e","Oi! Quer indicar uma amiga para vender Sorelly? Me manda o nome e o telefone dela.","Ontem"]],nl:0},
+ {id:"lnk",nome:"Link de pagamento",sub:"Helen · Financeiro",cor:"#0EA5E9",ini:"$",m:[["eu","Preciso de um link de R$ 320,00 em 3x","Ontem"],["e","Link gerado: R$ 320,00 em 3x sem juros.","Ontem"]],nl:1},
+ {id:"gar",nome:"Garantias",sub:"Deysiane e Leci",cor:"#F59E0B",ini:"G",m:[["eu","Mandei a foto da peça com defeito.","Seg"]],nl:0},
+ {id:"cur",nome:"Envie seu currículo para trabalhar na Sorelly",sub:"Maria Claudia · RH",cor:"#14B8A6",ini:"T",m:[],nl:0},
+ {id:"sac",nome:"SAC",sub:"Atendimento Sorelly",cor:"#22C55E",ini:"S",m:[],nl:0}
+];
+var RESP=["Oi! Pode falar que eu te ajudo.","Entendi! Já vejo isso e te retorno.","Combinado, pode deixar comigo 😊","Perfeito! Qualquer coisa me chama por aqui."];
+var aberta=null,ri=0;
+var $=function(i){return document.getElementById(i)};
+var ticks2='<svg width="17" height="10" viewBox="0 0 17 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 5.500l3 3 6.500-7.500M6.500 7.500l1 1L14 1"/></svg>';
+var ticks1='<svg width="13" height="10" viewBox="0 0 13 10" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.500 5.500l3 3L11 1"/></svg>';
+function agora(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function ult(c){for(var i=c.m.length-1;i>=0;i--){if(c.m[i][0]!=="d")return c.m[i]}return null}
+function avat(c,t){return '<div class="av" style="background:'+c.cor+';font-size:'+(t?15:22)+'px;font-weight:700">'+c.ini+'</div>'}
+function lista(){
+  var ordem=CONT.slice().sort(function(a,b){var x=ult(a),y=ult(b);return (y?1:0)-(x?1:0)});
+  var h="",tot=0;
+  ordem.forEach(function(c){var u=ult(c);tot+=c.nl;
+    var pv=u?((u[0]==="eu"?ticks2.replace('currentColor','#8a8a90')+' ':'')+u[1]):"Toque para conversar";
+    h+='<div class="lin" data-id="'+c.id+'">'+avat(c)+'<div class="cx"><div class="l1"><span class="nm">'+c.nome+'</span><span class="hr'+(c.nl?' v':'')+'">'+(u?u[2]:"")+'</span></div><div class="l2"><span class="pv">'+pv+'</span>'+(c.nl?'<span class="bd">'+c.nl+'</span>':'')+'</div></div></div>';});
+  $("itens").innerHTML=h;var t=$("totalNL");t.style.display=tot?"grid":"none";t.textContent=tot;
+}
+function desenha(c){
+  var h="",ant=null;
+  c.m.forEach(function(m,i){
+    if(m[0]==="d"){h+='<div class="dia">'+m[1]+'</div>';ant=null;return}
+    var prox=c.m[i+1],fim=!prox||prox[0]!==m[0],cola=ant&&ant!==m[0];
+    var meta='<span class="mt">'+m[2]+(m[0]==="eu"?" "+(m[4]==="1"?ticks1:ticks2):"")+'</span>';
+    var cit=m[3]?'<div class="cit"><b>'+(m[0]==="eu"?"Vanessa":"Você")+'</b>'+m[3]+'</div>':"";
+    h+='<div class="m '+(m[0]==="eu"?"eu":"el")+(fim?" fim":"")+(cola?" cola":"")+'">'+cit+m[1]+meta+'</div>';ant=m[0];
+  });
+  $("msgs").innerHTML=h;var el=$("msgs");el.scrollTop=el.scrollHeight;
+}
+function abre(id){
+  aberta=CONT.filter(function(c){return c.id===id})[0];aberta.nl=0;
+  $("cAv").outerHTML='<div class="av" id="cAv" style="background:'+aberta.cor+';font-size:15px;font-weight:700">'+aberta.ini+'</div>';
+  $("cNome").textContent=aberta.nome;$("cSub").textContent=aberta.sub;$("cSub").className="";
+  desenha(aberta);$("conversa").classList.add("on");$("lista").classList.add("atras");lista();
+}
+function volta(){$("conversa").classList.remove("on");$("lista").classList.remove("atras");aberta=null;lista();$("txt").blur()}
+function envia(){
+  var t=$("txt");var v=t.value.trim();if(!v||!aberta)return;var c=aberta;
+  c.m.push(["eu",v.replace(/</g,"&lt;"),agora(),null,"1"]);t.value="";$("entrada").classList.remove("digitando");desenha(c);
+  setTimeout(function(){c.m[c.m.length-1][4]="2";if(aberta===c)desenha(c)},500);
+  setTimeout(function(){if(aberta!==c)return;$("cSub").textContent="digitando…";$("cSub").className="dg";
+    var d=document.createElement("div");d.className="dig";d.id="dig";d.innerHTML="<i></i><i></i><i></i>";$("msgs").appendChild(d);$("msgs").scrollTop=$("msgs").scrollHeight},900);
+  setTimeout(function(){c.m.push(["e",RESP[ri++%RESP.length],agora()]);if(aberta===c){$("cSub").textContent=c.sub;$("cSub").className="";desenha(c)}lista()},2400);
+  lista();
+}
+function toast(t){var x=$("toast");x.textContent=t;x.classList.add("on");setTimeout(function(){x.classList.remove("on")},1800)}
+$("itens").addEventListener("click",function(ev){var l=ev.target.closest(".lin");if(l)abre(l.getAttribute("data-id"))});
+$("volta").addEventListener("click",volta);
+$("env").addEventListener("click",envia);
+$("txt").addEventListener("keydown",function(ev){if(ev.key==="Enter"){ev.preventDefault();envia()}});
+$("txt").addEventListener("input",function(){$("entrada").classList.toggle("digitando",this.value.trim().length>0)});
+$("abaInicio").addEventListener("click",function(){toast("Volta para a página inicial do app")});
+function ajusta(){var w=$("wrap");var s=Math.min(1,(window.innerHeight-16)/872,(window.innerWidth-16)/413);w.style.transform="scale("+s+")";w.style.margin=((872*s-872)/2)+"px "+((413*s-413)/2)+"px"}
+window.addEventListener("resize",ajusta);ajusta();
+document.addEventListener("touchmove",function(e){if(!e.target.closest(".rolagem,.msgs"))e.preventDefault()},{passive:false});
+lista();
+</script>
+</body>
+</html>

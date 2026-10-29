@@ -49,10 +49,10 @@ header.top p{margin:4px 0 0}
 .row.h{height:26px;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
 .row .n{text-align:right;font-variant-numeric:tabular-nums}
 .sec{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin:8px 0 4px}
-.aros{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.aro{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:5px 2px}
-.aro b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
-.aro small{font-size:11px}
+.tamanhos{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.tamanho{border:1px solid var(--line);border-radius:8px;background:var(--card);text-align:center;padding:5px 2px}
+.tamanho b{display:block;font-size:18px;font-variant-numeric:tabular-nums}
+.tamanho small{font-size:11px}
 .aviso{border:1px solid var(--ruim);border-radius:8px;padding:6px 8px;font-size:12px;margin-top:6px}
 .dica{border:1px dashed var(--ouro);border-radius:8px;padding:6px 8px;font-size:12px;margin-top:6px}
 .prog{height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:4px 0 8px}
@@ -100,7 +100,7 @@ tr.tot td{font-weight:700;border-bottom:0;background:#2a2112}
 </div>
 
 <div class="nota">
-  <div><b>O que muda para a montadora</b>Hoje o app mostra a mesma tabela para todo kit do mesmo valor. Aqui cada revendedora tem a sua lista: quantidade por tipo, ouro e prata, aro do anel, conjuntos e pedras.</div>
+  <div><b>O que muda para a montadora</b>Hoje o app mostra a mesma tabela para todo kit do mesmo valor. Aqui cada revendedora tem a sua lista: quantidade por tipo, ouro e prata, tamanho do anel, conjuntos e pedras.</div>
   <div><b>Dinheiro</b>A montadora nunca vê valor do kit. Nos desenhos aparece só o preço máximo de venda da peça ("até R$"). Falta o Marcus dizer se isso pode aparecer.</div>
   <div><b>Cor da pedra</b>O cadastro da DevMaster não guarda a cor da pedra. Os desenhos usam só o que o nome da peça cita (cristal, rubi, rosa...). Em 102 peças com pedra o nome não diz a cor.</div>
 </div>
@@ -112,9 +112,9 @@ var D={
   {id:"brincos",nome:"Brincos",ic:"👂",sub:"avulso, trio, argola, duo",
    tipos:[["Brinco avulso",13,9],["Trio normal",8,7],["Argola avulsa",5,6],["Trio de argola",3,2],["Duo",1,3]],
    teto:188,nota:"Metade das peças vendidas é BB (Select). Dos trios normais, 22 de 23 são BB.",pedras:"Cravejado e ponto de luz"},
-  {id:"aneis",nome:"Anéis",ic:"💍",sub:"por tamanho (aro)",o:13,p:12,
-   aros:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
-   evitar:"Aros 10, 12, 13, 15, 17 e 23: ela vendeu só 1 em 5 acertos.",teto:128,pedras:"Cravejado (27) e pedra zircônia (12)"},
+  {id:"aneis",nome:"Anéis",ic:"💍",sub:"por tamanho (tamanho)",o:13,p:12,
+   tamanhos:[[21,4],[19,4],[18,3],[16,3],[20,3],[22,2],[14,2],[24,2]],
+   evitar:"Tamanhos 10, 12, 13, 15, 17 e 23: ela vendeu só 1 em 5 acertos.",teto:128,pedras:"Cravejado (27) e pedra zircônia (12)"},
   {id:"colares",nome:"Colares",ic:"🔗",sub:"corrente e pingente",o:12,p:8,teto:168,pedras:"Cristal e coração"},
   {id:"pulseiras",nome:"Pulseiras",ic:"⌚",sub:"elos e riviera",o:9,p:10,teto:138,pedras:"Cristal"},
   {id:"chokers",nome:"Chokers",ic:"📿",sub:"",o:4,p:5,teto:144},
@@ -142,7 +142,7 @@ function barra(c){var t=c.o+c.p||1;return '<div class="bar"><i class="o" style="
 function detalhe(c){
   var h='';
   if(c.tipos){h+='<div class="row h"><span>Tipo</span><span class="n" style="color:var(--ouro)">Ouro</span><span class="n" style="color:var(--prata)">Prata</span></div>'+c.tipos.map(function(t){return '<div class="row"><span>'+t[0]+'</span><span class="n">'+t[1]+'</span><span class="n">'+t[2]+'</span></div>'}).join('')}
-  if(c.aros){h+='<div class="sec">Quantos de cada aro</div><div class="aros">'+c.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'}
+  if(c.tamanhos){h+='<div class="sec">Quantos de cada tamanho</div><div class="tamanhos">'+c.tamanhos.map(function(a){return '<div class="tamanho"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'}
   if(c.modelos){h+='<div class="sec">Modelos que ela vende</div>'+c.modelos.map(function(m){return '<div style="padding:3px 0">• '+m+'</div>'}).join('')}
   if(c.evitar)h+='<div class="aviso">Não mandar: '+c.evitar+'</div>';
   if(c.nota)h+='<div class="dica">'+c.nota+'</div>';
@@ -211,7 +211,7 @@ function detalhe(c){
       '<div class="seg" id="segC">'+['Tudo','Ouro','Prata'].map(function(m){return '<span class="'+(m===modo?'on':'')+'" data-m="'+m+'">'+m+'</span>'}).join('')+'</div>'+
       '<table><colgroup><col style="width:46%"><col style="width:16%"><col style="width:18%"><col style="width:20%"></colgroup><thead><tr><th>Tipo</th><th style="color:var(--ouro)">Ouro</th><th style="color:var(--prata)">Prata</th><th>Total</th></tr></thead><tbody>'+rows+
       '<tr class="tot"><td>Total do kit</td><td>'+(modo==='Prata'?'':TO)+'</td><td>'+(modo==='Ouro'?'':TP)+'</td><td>'+sum+'</td></tr></tbody></table>'+
-      '<div class="sec">Anéis · quantos de cada aro</div><div class="aros">'+aneis.aros.map(function(a){return '<div class="aro"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'+
+      '<div class="sec">Anéis · quantos de cada tamanho</div><div class="tamanhos">'+aneis.tamanhos.map(function(a){return '<div class="tamanho"><small>Nº '+a[0]+'</small><b>'+a[1]+'</b></div>'}).join('')+'</div>'+
       '<div class="aviso">Não mandar: '+aneis.evitar+'</div>'+
       '<div class="sec">Conjuntos</div>'+D.cats[5].modelos.map(function(m){return '<div style="padding:2px 0">• '+m+'</div>'}).join('')+
       '<div class="sec">Pedras (pelo nome da peça)</div><div style="display:flex;flex-wrap:wrap;gap:6px">'+D.cores.map(function(c){return '<span class="pill">'+c[0]+' '+c[1]+'</span>'}).join('')+'</div>'+

@@ -1,0 +1,297 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>H&O Delivery · Motoboy · Mapa total + botão grande</title>
+<style>
+:root{
+  --navy:#0F1B33; --navy2:#1A2A4A; --ouro:#E0A526; --ouro-s:#FFF4D6;
+  --verde:#1FA971; --verm:#D64545; --bg:#F4F5F7; --card:#FFFFFF; --txt:#0F1B33; --mut:#5B6678; --linha:#E3E6EB;
+  --m-bg:#EAEDF1; --m-rua:#FFFFFF; --m-rua2:#D5DAE1; --m-par:#D6EBD8; --m-agua:#CFE3F4;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#1B2333;color:#fff;padding:28px 16px 48px}
+h1{font-size:20px;text-align:center;margin-bottom:4px}
+.sub{font-size:13px;text-align:center;color:#AEB8CA;margin-bottom:28px}
+.grade{display:flex;flex-wrap:wrap;gap:36px;justify-content:center}
+.col{width:340px}
+.rot{font-size:13px;margin-bottom:10px;line-height:1.4}
+.rot b{display:block;font-size:15px;color:var(--ouro)}
+.rot span{color:#AEB8CA}
+
+.fone{width:340px;height:700px;border-radius:42px;border:8px solid #05070C;background:var(--bg);color:var(--txt);position:relative;overflow:hidden;box-shadow:0 18px 40px rgba(0,0,0,.45)}
+.fone.dk{--bg:#0B1220;--card:#141E33;--txt:#F2F5FA;--mut:#98A5BD;--linha:#243150;
+  --m-bg:#16213A;--m-rua:#22304F;--m-rua2:#2C3C60;--m-par:#173028;--m-agua:#14304A}
+.sb{position:absolute;top:0;left:0;right:0;height:30px;display:flex;justify-content:space-between;align-items:center;padding:6px 22px 0;font-size:12px;font-weight:600;z-index:30;color:var(--txt)}
+.mapa{position:absolute;inset:0;width:100%;height:100%}
+.m-bg{fill:var(--m-bg)} .m-par{fill:var(--m-par)} .m-agua{fill:var(--m-agua)}
+.m-rua{stroke:var(--m-rua);fill:none;stroke-linecap:round}
+.m-rua2{stroke:var(--m-rua2);fill:none;stroke-linecap:round}
+.eu{fill:#2F7BFF;stroke:#fff;stroke-width:4}
+.eu-h{fill:#2F7BFF;opacity:.2}
+.pins{transition:opacity .25s}
+.fone.off .pins{opacity:.3}
+
+.pill{display:flex;align-items:center;gap:8px;background:var(--card);border-radius:999px;padding:7px 12px;box-shadow:0 2px 10px rgba(15,27,51,.18);font-size:13px;font-weight:700;white-space:nowrap}
+.pill svg{width:16px;height:16px;color:#2F7BFF;flex:none}
+.ic{width:40px;height:40px;border-radius:50%;background:var(--card);box-shadow:0 2px 10px rgba(15,27,51,.18);display:grid;place-items:center;position:relative;border:0;color:var(--txt);cursor:pointer;flex:none}
+.ic svg{width:20px;height:20px}
+.bdg{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;border-radius:9px;background:var(--verm);color:#fff;font-size:11px;font-weight:700;display:grid;place-items:center;padding:0 4px;border:2px solid var(--card)}
+.nav{position:absolute;left:0;right:0;bottom:0;height:64px;background:var(--card);border-top:1px solid var(--linha);display:flex;z-index:20}
+.nav a{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:11px;color:var(--mut);font-weight:600;text-decoration:none}
+.nav a svg{width:22px;height:22px}
+.nav a.on{color:var(--txt)} .nav a.on svg{color:var(--ouro)}
+.num{font-weight:800;letter-spacing:-.02em}
+.mut{color:var(--mut)} .verde{color:var(--verde)}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;font-size:12px;font-weight:700;padding:4px 10px;white-space:nowrap}
+.chip svg{width:14px;height:14px}
+.chip.o{background:var(--ouro);color:var(--navy)}
+.chip.c{background:var(--ouro-s);color:#7A5600}
+.fone.dk .chip.c{background:rgba(224,165,38,.18);color:var(--ouro)}
+.top{position:absolute;top:40px;left:14px;right:14px;display:flex;align-items:center;gap:8px;z-index:10}
+.lado{position:absolute;right:14px;display:flex;flex-direction:column;gap:10px;z-index:10}
+.barra{height:8px;border-radius:4px;background:var(--linha);overflow:hidden}
+.barra i{display:block;height:100%;background:var(--ouro);border-radius:4px}
+.aviso{display:flex;gap:10px;align-items:center;background:var(--ouro-s);color:#6B4A00;border-radius:14px;padding:9px 12px;font-size:12px;font-weight:600;line-height:1.35}
+.aviso svg{width:20px;height:20px;flex:none}
+.aviso b{display:block;font-size:13px}
+.fone.dk .aviso{background:rgba(224,165,38,.16);color:var(--ouro)}
+
+/* botão grande */
+.bg{border-radius:50%;border:0;cursor:pointer;font-weight:800;line-height:1.15;text-align:center;display:grid;place-items:center;flex:none;background:var(--ouro);color:var(--navy);position:relative}
+.fone:not(.off) .bg{background:var(--verde);color:#fff}
+.bg .t-off{display:none} .fone.off .bg .t-on{display:none} .fone.off .bg .t-off{display:inline}
+.bg small{display:block;font-size:11px;font-weight:600;opacity:.9}
+.bg.anel::before{content:"";position:absolute;inset:-9px;border-radius:50%;border:3px solid var(--ouro);opacity:.45}
+.fone:not(.off) .bg.anel::before{border-color:var(--verde)}
+.fone:not(.off) .bg.pulso::after{content:"";position:absolute;inset:-4px;border-radius:50%;border:3px solid var(--verde);animation:pl 1.8s infinite}
+@keyframes pl{0%{transform:scale(1);opacity:.7}100%{transform:scale(1.5);opacity:0}}
+.st-on,.st-off{display:none}
+.fone.off .st-off{display:inline} .fone:not(.off) .st-on{display:inline}
+
+/* E */
+.e-baixo{position:absolute;left:0;right:0;bottom:74px;z-index:15;display:flex;align-items:center;justify-content:center;gap:8px;padding:0 10px}
+.e-baixo .bg{width:104px;height:104px;font-size:13px;border:6px solid var(--card);box-shadow:0 6px 18px rgba(15,27,51,.3)}
+.e-lat{flex:1;min-width:0;background:var(--card);border-radius:16px;padding:9px 8px;box-shadow:0 2px 10px rgba(15,27,51,.18)}
+.e-lat small{display:block;font-size:11px;color:var(--mut);font-weight:600;white-space:nowrap}
+.e-lat .num{font-size:14px;white-space:nowrap}
+.e-lat .barra{margin-top:6px;height:6px}
+.e-faixa{position:absolute;left:14px;right:14px;bottom:200px;z-index:14;display:flex;justify-content:center}
+
+/* F */
+.f-gav{position:absolute;left:0;right:0;bottom:64px;background:var(--card);border-radius:24px 24px 0 0;padding:10px 16px 14px;z-index:15;box-shadow:0 -6px 24px rgba(15,27,51,.16)}
+.f-gav .al{width:40px;height:4px;border-radius:2px;background:var(--linha);margin:0 auto 12px}
+.f-lin{display:flex;gap:14px;align-items:center;margin-bottom:12px}
+.f-lin .bg{width:92px;height:92px;font-size:13px}
+.f-dir{flex:1;min-width:0}
+.f-dir small{font-size:11px;color:var(--mut);font-weight:600;display:block}
+.f-dir .num{font-size:20px;white-space:nowrap}
+.f-dir .barra{margin:8px 0 6px}
+.f-dir .mini{display:flex;justify-content:space-between;font-size:12px;font-weight:600;color:var(--mut)}
+.f-dir .mini b{color:var(--txt)}
+
+/* G */
+.g-zona{fill:var(--ouro)}
+.g-leg{position:absolute;left:14px;top:92px;z-index:10;display:flex;gap:6px}
+.g-bonus{position:absolute;left:14px;right:14px;bottom:196px;z-index:14;background:var(--card);border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 6px 20px rgba(0,0,0,.4);border:1px solid var(--linha)}
+.g-bonus .pin{width:34px;height:34px;border-radius:10px;background:rgba(224,165,38,.18);color:var(--ouro);display:grid;place-items:center;flex:none}
+.g-bonus .pin svg{width:18px;height:18px}
+.g-bonus div{flex:1;font-size:13px;line-height:1.3}
+.g-bonus b{display:block}
+.g-bonus span{font-size:12px;color:var(--mut)}
+.g-bonus .go{background:var(--ouro);color:var(--navy);border:0;border-radius:12px;height:32px;padding:0 12px;font-weight:800;font-size:13px;cursor:pointer}
+.g-baixo{position:absolute;left:14px;right:14px;bottom:76px;z-index:15;background:var(--card);border-radius:22px;padding:12px 14px;display:flex;align-items:center;gap:14px;box-shadow:0 6px 20px rgba(0,0,0,.4);border:1px solid var(--linha)}
+.g-baixo .bg{width:76px;height:76px;font-size:12px}
+.g-baixo .g3{flex:1;display:grid;grid-template-columns:1fr 1fr;gap:6px 10px}
+.g-baixo small{display:block;font-size:11px;color:var(--mut);font-weight:600}
+.g-baixo .num{font-size:16px;white-space:nowrap}
+
+/* H */
+.radar{transform-origin:center;transform-box:fill-box}
+.fone.off .radar{display:none}
+.r1,.r2,.r3{fill:none;stroke:#2F7BFF;stroke-width:2;animation:rd 3s infinite;transform-origin:150px 400px;opacity:0}
+.r2{animation-delay:1s} .r3{animation-delay:2s}
+@keyframes rd{0%{transform:scale(.2);opacity:.7}100%{transform:scale(1);opacity:0}}
+.h-aviso{position:absolute;left:14px;right:14px;top:92px;z-index:10;background:var(--navy);color:#fff;border-radius:16px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 14px rgba(15,27,51,.3);font-size:13px;line-height:1.3}
+.h-aviso b{display:block}
+.h-aviso span{font-size:12px;color:#AEB8CA}
+.h-aviso .n{background:var(--ouro);color:var(--navy);width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-weight:800;font-size:18px;flex:none}
+.h-raio{position:absolute;left:14px;top:170px;z-index:10;display:flex;flex-direction:column;gap:6px}
+.h-raio button{height:32px;padding:0 12px;border-radius:999px;border:0;background:var(--card);color:var(--txt);font-size:12px;font-weight:700;box-shadow:0 2px 10px rgba(15,27,51,.18);cursor:pointer}
+.h-raio button.on{background:var(--navy);color:#fff}
+.h-baixo{position:absolute;left:0;right:0;bottom:64px;z-index:15;background:var(--card);border-radius:24px 24px 0 0;padding:0 16px 12px;box-shadow:0 -6px 24px rgba(15,27,51,.16);height:118px}
+.h-baixo .bg{position:absolute;left:50%;top:-40px;transform:translateX(-50%);width:88px;height:88px;border:6px solid var(--card);font-size:12px}
+.h-cols{display:flex;justify-content:space-between;padding-top:14px}
+.h-cols>div{width:100px}
+.h-cols>div:last-child{text-align:right}
+.h-cols small{display:block;font-size:11px;color:var(--mut);font-weight:600}
+.h-cols .num{font-size:16px;white-space:nowrap}
+.h-cols+.aviso{margin-top:12px}
+.leg{max-width:760px;margin:36px auto 0;font-size:13px;color:#AEB8CA;line-height:1.6}
+.leg b{color:#fff}
+</style>
+</head>
+<body>
+
+<h1>H&O Delivery · Motoboy · Mapa total + botão grande</h1>
+<p class="sub">Mistura do layout A (mapa) com o D (botão redondo). Toque no botão grande para ver online e offline.</p>
+
+<svg width="0" height="0" style="position:absolute">
+  <defs>
+    <symbol id="mp" viewBox="0 0 340 700">
+      <rect class="m-bg" width="340" height="700"/>
+      <path class="m-par" d="M-10 90h120v110H-10z"/>
+      <path class="m-par" d="M230 430h120v100H230z"/>
+      <path class="m-agua" d="M-10 560c90-30 150 40 230 10s110-50 140-30v200H-10z"/>
+      <g class="m-rua2" stroke-width="16"><path d="M-10 210L350 260"/><path d="M120 -10L170 710"/><path d="M-10 420L350 380"/></g>
+      <g class="m-rua" stroke-width="14"><path d="M-10 210L350 260"/><path d="M120 -10L170 710"/><path d="M-10 420L350 380"/></g>
+      <g class="m-rua" stroke-width="8"><path d="M-10 120h360"/><path d="M-10 320h360"/><path d="M-10 500h360"/><path d="M60 -10v720"/><path d="M240 -10v720"/><path d="M300 -10v720"/><path d="M-10 60L350 20"/><path d="M200 330L350 560"/></g>
+      <g class="m-rua2" stroke-width="2"><path d="M-10 120h360"/><path d="M-10 320h360"/><path d="M60 -10v720"/><path d="M240 -10v720"/></g>
+    </symbol>
+    <symbol id="i-sino" viewBox="0 0 24 24"><path d="M12 3a6 6 0 0 0-6 6v3.6L4.5 16h15L18 12.6V9a6 6 0 0 0-6-6zm-2 15a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-ajuda" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-alvo" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 1v4M12 19v4M1 12h4M19 12h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-casa" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z" fill="currentColor"/></symbol>
+    <symbol id="i-grana" viewBox="0 0 24 24"><rect x="2.5" y="6" width="19" height="12" rx="2.5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="2.8" fill="currentColor"/></symbol>
+    <symbol id="i-hist" viewBox="0 0 24 24"><path d="M4 12a8 8 0 1 0 2.5-5.8M4 4v4h4M12 8v4l3 2" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-perfil" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 21c0-4 3.6-6 8-6s8 2 8 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></symbol>
+    <symbol id="i-caixa" viewBox="0 0 24 24"><path d="M3 7.5L12 3l9 4.5v9L12 21l-9-4.5zM3 7.5L12 12l9-4.5M12 12v9" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></symbol>
+    <symbol id="i-gps" viewBox="0 0 24 24"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="10" r="2.5" fill="currentColor"/></symbol>
+    <symbol id="i-alerta" viewBox="0 0 24 24"><path d="M12 3L2 20h20zM12 10v4M12 17h.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-fogo" viewBox="0 0 24 24"><path d="M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2 1-3 2-4 0 2 1 3 2 3 0-3-1-6 1-9z" fill="currentColor"/></symbol>
+  </defs>
+</svg>
+
+<div class="grade">
+
+<!-- ================= E ================= -->
+<div class="col">
+  <div class="rot"><b>E · Botão flutuante</b><span>Mapa limpo. O botão grande flutua embaixo, no centro, onde o polegar chega. Ganhos e meta ficam nos dois lados dele.</span></div>
+  <div class="fone" id="fE">
+    <div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>
+    <svg class="mapa"><use href="#mp"/>
+      <g transform="translate(150 360)"><circle class="eu-h" r="34"/><circle class="eu" r="11"/></g>
+      <g class="pins"><g fill="#E0A526" stroke="#0F1B33" stroke-width="2"><rect x="70" y="248" width="50" height="24" rx="12"/><rect x="225" y="198" width="50" height="24" rx="12"/><rect x="195" y="448" width="50" height="24" rx="12"/><rect x="40" y="418" width="50" height="24" rx="12"/><rect x="223" y="308" width="50" height="24" rx="12"/></g>
+      <g fill="#0F1B33" font-size="11" font-weight="800" text-anchor="middle"><text x="95" y="264">R$ 16</text><text x="250" y="214">R$ 22</text><text x="220" y="464">R$ 12</text><text x="65" y="434">R$ 18</text><text x="248" y="324">R$ 14</text></g></g>
+    </svg>
+    <div class="top">
+      <div class="pill" style="flex:1"><svg><use href="#i-gps"/></svg>Batel · Curitiba</div>
+      <button class="ic"><svg><use href="#i-sino"/></svg><span class="bdg">3</span></button>
+    </div>
+    <div class="lado" style="top:200px"><button class="ic"><svg><use href="#i-ajuda"/></svg></button><button class="ic"><svg><use href="#i-alvo"/></svg></button></div>
+    <div class="e-faixa"><span class="chip o"><svg><use href="#i-caixa"/></svg><span class="st-on">5 entregas perto de você</span><span class="st-off">Você está offline</span></span></div>
+    <div class="e-baixo">
+      <div class="e-lat"><small>Ganhos hoje</small><span class="num verde">R$ 142,00</span><div class="barra"><i style="width:71%"></i></div></div>
+      <button class="bg pulso" onclick="tg('fE')"><span class="t-off">FICAR<br>ONLINE</span><span class="t-on">ONLINE<small>toque p/ pausar</small></span></button>
+      <div class="e-lat"><small>Entregas</small><span class="num">9</span><small style="margin-top:2px">4h12 online</small></div>
+    </div>
+    <div class="nav"><a class="on" href="#"><svg><use href="#i-casa"/></svg>Início</a><a href="#"><svg><use href="#i-grana"/></svg>Ganhos</a><a href="#"><svg><use href="#i-hist"/></svg>Histórico</a><a href="#"><svg><use href="#i-perfil"/></svg>Perfil</a></div>
+  </div>
+</div>
+
+<!-- ================= F ================= -->
+<div class="col">
+  <div class="rot"><b>F · Gaveta com botão</b><span>Mapa total em cima. O botão grande mora dentro da gaveta, junto com ganhos, meta e aviso de documento. Mais informação, tudo à vista.</span></div>
+  <div class="fone off" id="fF">
+    <div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>
+    <svg class="mapa"><use href="#mp"/>
+      <g transform="translate(150 280)"><circle class="eu-h" r="34"/><circle class="eu" r="11"/></g>
+      <g class="pins"><g fill="#E0A526" stroke="#0F1B33" stroke-width="2"><rect x="70" y="170" width="50" height="24" rx="12"/><rect x="225" y="130" width="50" height="24" rx="12"/><rect x="215" y="300" width="50" height="24" rx="12"/><rect x="40" y="340" width="50" height="24" rx="12"/></g>
+      <g fill="#0F1B33" font-size="11" font-weight="800" text-anchor="middle"><text x="95" y="186">R$ 16</text><text x="250" y="146">R$ 22</text><text x="240" y="316">R$ 12</text><text x="65" y="356">R$ 18</text></g></g>
+    </svg>
+    <div class="top">
+      <div class="pill" style="flex:1"><svg><use href="#i-gps"/></svg>Batel · Curitiba</div>
+      <button class="ic"><svg><use href="#i-ajuda"/></svg></button>
+      <button class="ic"><svg><use href="#i-sino"/></svg><span class="bdg">3</span></button>
+    </div>
+    <div class="f-gav">
+      <div class="al"></div>
+      <div class="f-lin">
+        <button class="bg anel" onclick="tg('fF')"><span class="t-off">FICAR<br>ONLINE</span><span class="t-on">ONLINE<small>pausar</small></span></button>
+        <div class="f-dir">
+          <small>Ganhos de hoje · meta R$ 200,00</small>
+          <span class="num verde">R$ 142,00</span>
+          <div class="barra"><i style="width:71%"></i></div>
+          <div class="mini"><span><b>9</b> entregas</span><span><b>4h12</b> online</span><span><b>4,9</b> ★</span></div>
+        </div>
+      </div>
+      <div class="aviso"><svg><use href="#i-alerta"/></svg><div><b>CNH vence em 12 dias</b>Envie a nova para não perder corridas.</div></div>
+    </div>
+    <div class="nav"><a class="on" href="#"><svg><use href="#i-casa"/></svg>Início</a><a href="#"><svg><use href="#i-grana"/></svg>Ganhos</a><a href="#"><svg><use href="#i-hist"/></svg>Histórico</a><a href="#"><svg><use href="#i-perfil"/></svg>Perfil</a></div>
+  </div>
+</div>
+
+<!-- ================= G ================= -->
+<div class="col">
+  <div class="rot"><b>G · Mapa de demanda (escuro)</b><span>O mapa mostra onde há mais entregas. O app sugere ir para a zona forte e mostra o bônus. Bom para quem espera corrida parado.</span></div>
+  <div class="fone dk" id="fG">
+    <div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>
+    <svg class="mapa"><use href="#mp"/>
+      <g class="g-zona"><circle cx="90" cy="250" r="70" opacity=".30"/><circle cx="90" cy="250" r="42" opacity=".35"/><circle cx="250" cy="170" r="48" opacity=".20"/><circle cx="260" cy="440" r="40" opacity=".14"/></g>
+      <g fill="#fff" font-size="11" font-weight="800" text-anchor="middle"><text x="90" y="254">Batel</text><text x="250" y="174">Centro</text><text x="260" y="444">Portão</text></g>
+      <g transform="translate(170 400)"><circle class="eu-h" r="30"/><circle class="eu" r="10"/></g>
+    </svg>
+    <div class="top">
+      <div class="pill" style="flex:1"><svg><use href="#i-gps"/></svg>Água Verde · Curitiba</div>
+      <button class="ic"><svg><use href="#i-sino"/></svg><span class="bdg">3</span></button>
+    </div>
+    <div class="g-leg"><span class="chip o"><svg><use href="#i-fogo"/></svg>Alta demanda</span><span class="chip c">Média</span></div>
+    <div class="lado" style="top:300px"><button class="ic"><svg><use href="#i-ajuda"/></svg></button><button class="ic"><svg><use href="#i-alvo"/></svg></button></div>
+    <div class="g-bonus">
+      <div class="pin"><svg><use href="#i-fogo"/></svg></div>
+      <div><b>Vá para o Batel</b><span>12 entregas esperando · +R$ 4,00 por corrida</span></div>
+      <button class="go">Ir</button>
+    </div>
+    <div class="g-baixo">
+      <button class="bg pulso" onclick="tg('fG')"><span class="t-off">FICAR<br>ONLINE</span><span class="t-on">ONLINE<small>pausar</small></span></button>
+      <div class="g3">
+        <div><small>Ganhos hoje</small><span class="num verde">R$ 142,00</span></div>
+        <div><small>Meta</small><span class="num">71%</span></div>
+        <div><small>Entregas</small><span class="num">9</span></div>
+        <div><small>Online</small><span class="num">4h12</span></div>
+      </div>
+    </div>
+    <div class="nav"><a class="on" href="#"><svg><use href="#i-casa"/></svg>Início</a><a href="#"><svg><use href="#i-grana"/></svg>Ganhos</a><a href="#"><svg><use href="#i-hist"/></svg>Histórico</a><a href="#"><svg><use href="#i-perfil"/></svg>Perfil</a></div>
+  </div>
+</div>
+
+<!-- ================= H ================= -->
+<div class="col">
+  <div class="rot"><b>H · Radar de entregas</b><span>Ao ficar online, um radar abre ao redor do motoboy. Ele escolhe o raio (1, 3 ou 5 km). Faixa no topo diz quantas entregas há no raio.</span></div>
+  <div class="fone" id="fH">
+    <div class="sb"><span>9:41</span><span>5G ▮▮▮</span></div>
+    <svg class="mapa"><use href="#mp"/>
+      <g class="radar"><circle class="r1" cx="150" cy="400" r="150"/><circle class="r2" cx="150" cy="400" r="150"/><circle class="r3" cx="150" cy="400" r="150"/><circle cx="150" cy="400" r="150" fill="#2F7BFF" opacity=".07"/></g>
+      <g transform="translate(150 400)"><circle class="eu-h" r="30"/><circle class="eu" r="10"/></g>
+      <g class="pins"><g fill="#E0A526" stroke="#0F1B33" stroke-width="2"><rect x="70" y="330" width="50" height="24" rx="12"/><rect x="200" y="300" width="50" height="24" rx="12"/><rect x="190" y="480" width="50" height="24" rx="12"/><rect x="50" y="450" width="50" height="24" rx="12"/><rect x="225" y="400" width="50" height="24" rx="12"/></g>
+      <g fill="#0F1B33" font-size="11" font-weight="800" text-anchor="middle"><text x="95" y="346">R$ 16</text><text x="225" y="316">R$ 22</text><text x="215" y="496">R$ 12</text><text x="75" y="466">R$ 18</text><text x="250" y="416">R$ 14</text></g></g>
+    </svg>
+    <div class="top">
+      <div class="pill" style="flex:1"><svg><use href="#i-gps"/></svg>Batel · Curitiba</div>
+      <button class="ic"><svg><use href="#i-ajuda"/></svg></button>
+      <button class="ic"><svg><use href="#i-sino"/></svg><span class="bdg">3</span></button>
+    </div>
+    <div class="h-aviso">
+      <div class="n">5</div>
+      <div><b><span class="st-on">Procurando corridas…</span><span class="st-off">Você está offline</span></b><span><span class="st-on">5 entregas no raio de 3 km</span><span class="st-off">Fique online para ver corridas</span></span></div>
+    </div>
+    <div class="h-raio"><button>1 km</button><button class="on">3 km</button><button>5 km</button></div>
+    <div class="h-baixo">
+      <button class="bg pulso" onclick="tg('fH')"><span class="t-off">FICAR<br>ONLINE</span><span class="t-on">ONLINE<small>pausar</small></span></button>
+      <div class="h-cols">
+        <div><small>Ganhos hoje</small><span class="num verde">R$ 142,00</span></div>
+        <div><small>Entregas · Online</small><span class="num">9 · 4h12</span></div>
+      </div>
+    </div>
+    <div class="nav"><a class="on" href="#"><svg><use href="#i-casa"/></svg>Início</a><a href="#"><svg><use href="#i-grana"/></svg>Ganhos</a><a href="#"><svg><use href="#i-hist"/></svg>Histórico</a><a href="#"><svg><use href="#i-perfil"/></svg>Perfil</a></div>
+  </div>
+</div>
+
+</div>
+
+<p class="leg"><b>Em todos:</b> mapa total, botão grande liga/desliga, entregas perto, ganhos do dia, entregas feitas, tempo online, avisos e suporte. Endereço completo só depois do aceite. Valores são de exemplo. <b>Só F mostra o aviso da CNH</b>; nos outros ele pode ir para o sino.</p>
+
+<script>function tg(id){document.getElementById(id).classList.toggle('off')}</script>
+</body>
+</html>

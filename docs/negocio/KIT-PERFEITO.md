@@ -1,19 +1,19 @@
 # Kit perfeito (início em 27/10/2026)
 
 ## RESUMO DO QUE JÁ ESTÁ ALINHADO (leia primeiro; os detalhes e os números vêm nas seções abaixo, na ordem em que foram decididos)
-1. **Objetivo:** a montadora recebe, no app, a lista exata do que mandar para CADA revendedora (quantidade por tipo, ouro e prata, aro do anel, conjuntos, desenho e cor da pedra). Hoje a tabela "Peças por kit" (`pecasKit` em `domain/config.js`) é igual para todo kit do mesmo valor e só olha o valor do kit.
+1. **Objetivo:** a montadora recebe, no app, a lista exata do que mandar para CADA revendedora (quantidade por tipo, ouro e prata, tamanho do anel, conjuntos, desenho e cor da pedra). Hoje a tabela "Peças por kit" (`pecasKit` em `domain/config.js`) é igual para todo kit do mesmo valor e só olha o valor do kit.
 2. **Base:** as 5 últimas vendas de acerto da revendedora (menos de 5 = usa as que tem), atualizada 1 vez por dia. Leilão (vendedor EK), Encomendas (91) e Expositor (04) não são acerto. Teste com a Cíntia das Graças (DevMaster 001655).
 3. **Média de vendas** (regra completa e TES em `docs/negocio/MEDIA-DE-VENDAS.md`): Leilão fora, sem brinde, mesmo dia junta, dia de R$ 0 não conta, até 12 meses, 3 últimas. A diferença paga em bonificação conta como venda. Já está no código (`ultimasVendasDaMedia`, `src/server/vendas-brinde.js`).
-4. **Dados na DevMaster (só leitura):** `dmaci` = itens vendidos (aponta a condicional de origem); `dmafj` = peças ENVIADAS em cada condicional; `dmaaa` = produto (`aaa_classe`: 01 prata, 02 ouro; `aaa_grupo` = tipo); aro do anel = 3 últimos dígitos do código ou número no fim do nome. A DevMaster NÃO guarda a cor da pedra: só o nome da peça.
+4. **Dados na DevMaster (só leitura):** `dmaci` = itens vendidos (aponta a condicional de origem); `dmafj` = peças ENVIADAS em cada condicional; `dmaaa` = produto (`aaa_classe`: 01 prata, 02 ouro; `aaa_grupo` = tipo); tamanho do anel = 3 últimos dígitos do código ou número no fim do nome. A DevMaster NÃO guarda a cor da pedra: só o nome da peça.
 5. **Vocabulário (Marcus):** cravejado = zircônia = micro zircônia (tudo igual) · folheado = banhado · liso = sem pedra · vazado = buraco no meio · ABS = bola lisa · orgânico = ondulado (modelo bem vendido) · ponto de luz = uma pedra só (com ou sem cravejado em volta) · cristal = COR da pedra, transparente, a mais comum · aparador = aliança cravejada ou lisa (é anel) · diversos = código de peças aleatórias · piercing fake = tipo de brinco · detalhado = termo antigo.
-6. **O que importa na análise:** ouro x prata, quantidade por tipo, aros dos anéis, conjuntos, DESENHO da peça (coração, gota, trevo...), COR da pedra e preço de venda. Preço de etiqueta e faixas de preço saíram. A montadora nunca vê dinheiro: falta decidir se o "preço máximo da peça" pode aparecer.
+6. **O que importa na análise:** ouro x prata, quantidade por tipo, tamanhos dos anéis, conjuntos, DESENHO da peça (coração, gota, trevo...), COR da pedra e preço de venda. Preço de etiqueta e faixas de preço saíram. A montadora nunca vê dinheiro: falta decidir se o "preço máximo da peça" pode aparecer.
 7. **Quem usa é a montadora, no app** (não o Marcus). Layout escolhido: **A, lista de conferência**, versão 2 em `docs/design/kit-perfeito-layout-A-v2.html`: ordem numerada em 3 idas ao estoque, regras "antes de começar", aviso de estoque, "Separei tudo" ou "Faltou peça", alerta se faltar mais de 20% do tipo, fechamento que avisa a supervisão. Os 3 layouts antigos: `docs/design/kit-perfeito-layouts.html`.
-8. **Regra de quantidade PROPOSTA (sem OK):** quantidade do tipo = média vendida por kit × folga (exemplo 3×, arredondada para cima); a tabela mínimo e máximo de hoje vira só trava. Regras de troca propostas: mesmo tipo e metal, outro desenho; depois outro metal (no máximo 1 em 4); anel: aro vizinho; conjunto nunca vira peças soltas; nunca trocar de tipo.
+8. **Regra de quantidade PROPOSTA (sem OK):** quantidade do tipo = média vendida por kit × folga (exemplo 3×, arredondada para cima); a tabela mínimo e máximo de hoje vira só trava. Regras de troca propostas: mesmo tipo e metal, outro desenho; depois outro metal (no máximo 1 em 4); anel: tamanho vizinho; conjunto nunca vira peças soltas; nunca trocar de tipo.
 9. **Fica para 2027:** padrão de cadastro de peças (campos de cor da pedra, tipo, formato). Agora só se analisa o que já existe.
 10. **Perguntas abertas:** de onde vem o estoque; prioridade entre revendedoras quando falta peça; folga (2×, 3×...); Choker, bracelete e pingente em qual linha da tabela; o que são "Brincos grandes" e "Brincos (B)"; cores exatas (rubi = vermelho?); regras de troca; terminar os termos de corrente (elos, Cartier, baiano, riviera, malha), tamanho (mini, pequeno, fino, grande) e linhas (Luxo, Premium, VIP, Select).
 11. **Código:** nada de tela do Kit perfeito foi criado ainda. Só existem os desenhos em HTML.
 
-Objetivo do Marcus: quando a montadora monta o kit de uma revendedora, o kit leva exatamente o que ela vende. Peças mais vendidas, ouro ou prata conforme o gosto dela, só os aros de anel que ela vende e o preço máximo das peças que ela vende. Faltam as regras: elas saem depois dos números.
+Objetivo do Marcus: quando a montadora monta o kit de uma revendedora, o kit leva exatamente o que ela vende. Peças mais vendidas, ouro ou prata conforme o gosto dela, só os tamanhos de anel que ela vende e o preço máximo das peças que ela vende. Faltam as regras: elas saem depois dos números.
 
 ## Decisões do Marcus (27/10/2026)
 1. **Base = as 5 últimas vendas de acerto** da revendedora. Quem tem 1 ou 2 vendas usa as que tem. Quem tem 30 usa só as 5 últimas.
@@ -27,7 +27,7 @@ Objetivo do Marcus: quando a montadora monta o kit de uma revendedora, o kit lev
 | Itens da venda | `dmaci` por `aci_venda`; só TES S001/S002 | mesma regra de venda da média |
 | Ouro ou prata | `dmaaa.aaa_classe`: `02` = ouro, `01` = prata | outras classes (05, 06, 08) existem: peça sem material claro |
 | Categoria | `dmaaa.aaa_grupo`: 01 anel, 02 brinco, 03 conjunto, 04 colar, 05 infantil, 06 pulseira, 10 masculino, 19 brinco BB, 34 choker, 38 collection, 45 bracelete | grupos 13, 14, 16, 27, 30, 41, 42, 66 ainda sem nome |
-| Aro do anel | 3 últimos dígitos do código do produto (A2152014 = aro 14); também aparece no fim da descrição | só vale no grupo 01 |
+| Tamanho do anel | 3 últimos dígitos do código do produto (A2152014 = tamanho 14); também aparece no fim da descrição | só vale no grupo 01 |
 | Preço | `aci_valorbase` = preço de etiqueta (é o valor que conta como venda, igual ao `dmach.ach_valormerc`); `aci_valorun` = preço pago, cerca de 54% da etiqueta | usar etiqueta |
 
 ## Quem NÃO é acerto (tirar das 5 últimas)
@@ -38,7 +38,7 @@ Objetivo do Marcus: quando a montadora monta o kit de uma revendedora, o kit lev
 Vendas: 15/10 (2 vendas juntas), 16/09, 12/08, 14/07 (2 juntas), 17/06.
 - **Ouro 49% das peças (55% do valor) e prata 48% (44% do valor).** Quase meio a meio: não é cliente só de ouro nem só de prata.
 - **Categorias:** Brinco BB 18%, Anel 15%, Brinco 15%, Colar 12%, Pulseira 12%, Masculino 5%.
-- **Anéis (aro: peças):** 19:6, 21:6, 16:5, 18:5, 20:3, 22:3, 14:2, e 1 de cada nos aros 10, 12, 13, 15, 17, 23, 24. Concentra do 16 ao 22.
+- **Anéis (tamanho: peças):** 19:6, 21:6, 16:5, 18:5, 20:3, 22:3, 14:2, e 1 de cada nos tamanhos 10, 12, 13, 15, 17, 23, 24. Concentra do 16 ao 22.
 - **Preço de etiqueta:** máximo R$ 622 (1 colar), mas só 3 peças passam de R$ 256. Maior preço vendido 2 vezes ou mais: R$ 212. Percentil 90: R$ 144. Mediana: R$ 88.
 
 ## Pendências
@@ -50,7 +50,7 @@ Vendas: 15/10 (2 vendas juntas), 16/09, 12/08, 14/07 (2 juntas), 17/06.
 ## Teste 2 (27/10/2026): enviado x vendido, Cíntia das Graças
 Ideia do Marcus: a quantidade de CADA categoria no kit deve vir do que a revendedora vende nela, e não só do valor do kit. Duas revendedoras que vendem R$ 3 mil em 3 meses podem vender 10 anéis por mês ou 2: o kit não deve levar a mesma quantidade de anéis para as duas.
 
-**Dados novos na DevMaster:** `dmafj` = peças ENVIADAS em cada condicional (`afj_condicional`, `afj_produto`, `afj_quantidade`). Cada peça vendida (`dmaci`) aponta para o kit de onde saiu (`aci_condicional`, `aci_itemcond`). Assim se mede o GIRO = vendidas ÷ enviadas, por categoria, material, aro e preço.
+**Dados novos na DevMaster:** `dmafj` = peças ENVIADAS em cada condicional (`afj_condicional`, `afj_produto`, `afj_quantidade`). Cada peça vendida (`dmaci`) aponta para o kit de onde saiu (`aci_condicional`, `aci_itemcond`). Assim se mede o GIRO = vendidas ÷ enviadas, por categoria, material, tamanho e preço.
 
 **Base:** os 5 últimos kits grandes fechados da Cíntia (079751 de 12/05, 082360 de 11/06, 085109 de 11/07, 087870 de 11/08, 090669 de 11/09): 763 peças enviadas, 211 vendidas, giro 28% (R$ 70.676 enviados, R$ 17.903 vendidos, etiqueta).
 
@@ -68,7 +68,7 @@ Ideia do Marcus: a quantidade de CADA categoria no kit deve vir do que a revende
 | Bracelete | 0,4 | 0 a 1 | 1,2 | 33% |
 
 - **Ouro x prata:** enviado 57% ouro e 40% prata; vendido 48% ouro e 49% prata. Giro da prata 34%, do ouro 23%. Sobra ouro no kit.
-- **Anéis (aro: enviados -> vendidos):** 16: 13->5, 19: 7->5, 21: 14->5, 18: 9->2, 20: 4->2, 22: 12->2; aros 23, 24 e 25: 16 enviados, 2 vendidos; aro 15: 7->0; aros 11 e 13: 4->0.
+- **Anéis (tamanho: enviados -> vendidos):** 16: 13->5, 19: 7->5, 21: 14->5, 18: 9->2, 20: 4->2, 22: 12->2; tamanhos 23, 24 e 25: 16 enviados, 2 vendidos; tamanho 15: 7->0; tamanhos 11 e 13: 4->0.
 - **Preço de etiqueta (giro):** até R$ 50: 46% · R$ 50 a 80: 28% · R$ 80 a 100: 25% · R$ 100 a 150: **17%** · R$ 150 a 212: 25% · acima de R$ 212: 8 enviadas, 4 vendidas. O problema não é o teto: é o miolo de R$ 100 a 150.
 - **Brincos por tipo:** trio BB 42%, trio de argola 54%, argola BB 46%, brinco avulso 21%, argola avulsa 22%.
 - **Acabamento:** cravejado 31% de giro, liso 23%.
@@ -78,7 +78,7 @@ Ideia do Marcus: a quantidade de CADA categoria no kit deve vir do que a revende
 2. A tabela "Peças por kit" (mínimo e máximo) vira só LIMITE: nunca abaixo do mínimo, nunca acima do máximo.
 3. Folga (exemplo 3×; é o Marcus quem define, e pode ser por categoria) fica no Configurador.
 4. Com folga 3×, a Cíntia levaria: Brinco BB 25, Brinco 21, Anel 17, Pulseira 17, Colar 16, Choker 6, Infantil 5, Masculino 3, Conjunto 2, Bracelete 2 (114 peças; hoje ela recebe cerca de 133 nessas mesmas categorias, e cerca de 153 no kit inteiro).
-5. Dentro de cada categoria: aros só onde ela vende, prata e ouro na proporção do que ela VENDE, e menos peças de R$ 100 a 150.
+5. Dentro de cada categoria: tamanhos só onde ela vende, prata e ouro na proporção do que ela VENDE, e menos peças de R$ 100 a 150.
 - Anéis variam muito de um kit para outro (2 a 14): a média de 5 acertos suaviza, mas é a parte mais instável.
 - Grupos sem nome (07, 13, 14, 16, 27, 30, 41, 42, 66): somam cerca de 90 peças enviadas; o 14 é rifa/brinde. Falta nomear.
 
@@ -87,7 +87,7 @@ Base: 241 peças vendidas; 236 são joias (R$ 20.985 de etiqueta) e 5 não são 
 - Ouro 119 · Prata 115 (50% x 49%); no valor: ouro 56%, prata 44%.
 - Categorias: Brinco 87 (37%) · Anel 40 (17%) · Colar 32 (14%) · Pulseira 31 (13%) · Choker 14 (6%) · Masculino 13 (6%) · Infantil 7 · Conjunto 6 · Bracelete 2 · Pingente 2 · Tornozeleira 2.
 - Brincos: avulso 35 · trio normal 23 · argola avulsa 17 · trio de argola 7 · duo 5. Metade (43 de 87) tem código BB; dos trios normais, 22 de 23 são BB.
-- Anéis por aro: 21 e 19 = 6 cada · 18 e 16 = 5 · 20 = 4 · 14 e 22 = 3 · 24 = 2 · 1 cada nos aros 10, 12, 13, 15, 17, 23.
+- Anéis por tamanho: 21 e 19 = 6 cada · 18 e 16 = 5 · 20 = 4 · 14 e 22 = 3 · 24 = 2 · 1 cada nos tamanhos 10, 12, 13, 15, 17, 23.
 - Preço de etiqueta: até R$ 50 = 25% · 50 a 80 = 22% · 80 a 100 = 25% · 100 a 150 = 19% · 150 a 212 = 7% · acima de 212 = 2%.
 - Acabamento: cravejado 40%, ponto de luz 22%, cristal 16%, coração 15%, liso 10%, religioso 7%.
 
@@ -96,7 +96,7 @@ Grupo da peça (`dmaad`): 01 Anéis · 02 Brincos · 03 Conjuntos · 04 Colares 
 Material (`dmaai`, campo `aaa_classe`): 01 Prata 925 · 02 Ouro 18K · 03 Ródio · 04 Ródio negro · 05 Aço inox · 06 Produto de apoio · 08 Ouro rosé · 10 Collection · 11 Ouro 18K + Prata 925. O "?" das análises é produto de apoio (flanela, rifa, porta-joias).
 
 ## Tela de exemplo (27/10/2026, só desenho, nada no código)
-Tela "Kit perfeito" por revendedora: faixa de totais, bloco Filtros (revendedora, base, folga, kit de referência), "O que ela mais vende", "Anéis por aro", preço de etiqueta e a tabela "Quantidade por tipo" com Vende por acerto, Tabela hoje, Mín–Máx, Kit perfeito e Diferença. Com folga 3×: Cíntia 146 peças contra 181 da tabela do kit de R$ 16.000.
+Tela "Kit perfeito" por revendedora: faixa de totais, bloco Filtros (revendedora, base, folga, kit de referência), "O que ela mais vende", "Anéis por tamanho", preço de etiqueta e a tabela "Quantidade por tipo" com Vende por acerto, Tabela hoje, Mín–Máx, Kit perfeito e Diferença. Com folga 3×: Cíntia 146 peças contra 181 da tabela do kit de R$ 16.000.
 Achados: a tabela "Peças por kit" (`pecasKit` em `domain/config.js`) usa só o valor do kit. Pulseiras na linha de R$ 16.000 = 16 de cada metal, mas a faixa máxima das regras é 15. Choker, bracelete e pingente não têm linha na tabela. "Brincos grandes" não tem dado nas vendas.
 
 ## Rodada 3 (27/10/2026): a tela é da MONTADORA, não do Marcus
@@ -104,7 +104,7 @@ Achados: a tabela "Peças por kit" (`pecasKit` em `domain/config.js`) usa só o 
 - Desenhos: `docs/design/kit-perfeito-layouts.html` (3 layouts: A lista de conferência, B passo a passo, C folha única). Hoje a janela de montar (`components/janela-montar.js`, bloco "O que enviar") mostra só chips da tabela `pecasKit`, igual para todo kit do mesmo valor.
 - **Cor da pedra NÃO existe no cadastro da DevMaster** (`aaa_pedra` = N, `aaa_tipopedra` = Z, `aaa_estilos`, `aaa_corprincipal` = D em todos; campos de site e marketplace vazios). Só o nome da peça cita cor, e raramente: nas 236 joias da Cíntia, 102 têm pedra e não dizem a cor, 73 são lisas. Com cor no nome: cristal 29, vermelho/rubi/fúcsia 13, rosa 5, verde 5, preto 5, azul 4, roxo 3.
 - Conjuntos da Cíntia (5 vendas): 6 + 1 infantil. Prata: ponto de luz pequeno (2), flor cravejado, oval cravejado. Ouro: coração liso, gota orgânico, morango rubi (infantil). Preço de venda R$ 78 a R$ 168.
-- Anéis (aro: ouro/prata): 21: 4/2 · 19: 4/2 · 18: 1/4 · 16: 3/2 · 20: 2/2 · 22: 2/1 · 14: 1/2 · 24: 1/1; 1 só em 10, 12, 13, 15, 17, 23. Estilo: cravejado 27, pedra zircônia 12, ponto de luz 7, solitário 5, regulável 2, liso 1.
+- Anéis (tamanho: ouro/prata): 21: 4/2 · 19: 4/2 · 18: 1/4 · 16: 3/2 · 20: 2/2 · 22: 2/1 · 14: 1/2 · 24: 1/1; 1 só em 10, 12, 13, 15, 17, 23. Estilo: cravejado 27, pedra zircônia 12, ponto de luz 7, solitário 5, regulável 2, liso 1.
 - Maior preço de venda (e maior que repetiu 2 vezes): brinco R$ 212 (188) · anel R$ 188 (128) · colar R$ 622 (168) · pulseira R$ 362 (138) · choker R$ 232 (144) · conjunto R$ 168.
 - Regra de dinheiro: montadora e bipadora nunca veem valor. Pendente decidir se o "preço máximo da peça" pode aparecer para a montadora.
 
@@ -146,5 +146,50 @@ Desenho (% das peças): coração 14,4 · gota 8,1 · trevo 5,0 · círculo 4,8 
 ## Layout A, versão 2 (27/10/2026) — `docs/design/kit-perfeito-layout-A-v2.html`
 Marcus escolheu o layout A (lista de conferência). Pedido: criar uma SEQUÊNCIA, instruir bem as montadoras (linguagem simples, um passo por vez) e tratar o caso de faltar peça no estoque (as meninas pegam de uma vez, no estoque, as peças de maior quantidade, e às vezes não sobra para a revendedora).
 Desenho: regras "antes de começar", 9 etapas numeradas em 3 idas ao estoque (1: brincos e anéis · 2: colares, pulseiras e chokers · 3: conjuntos, masculino, infantil e outros), aviso de estoque por etapa, "Separei tudo" ou "Faltou peça" (conta quantas), alerta se faltar mais de 20% do tipo, e fechamento que lista o que faltou e avisa a supervisão antes de lacrar.
-Regras de troca PROPOSTAS (a confirmar): 1º mesmo tipo e metal, outro desenho; 2º mesmo tipo, outro metal (no máximo 1 em 4); anel: aro vizinho; conjunto nunca vira peças soltas; nunca trocar por outro tipo.
+Regras de troca PROPOSTAS (a confirmar): 1º mesmo tipo e metal, outro desenho; 2º mesmo tipo, outro metal (no máximo 1 em 4); anel: tamanho vizinho; conjunto nunca vira peças soltas; nunca trocar por outro tipo.
 Pendências: de onde vem o estoque (hoje o desenho usa "estoque ok, baixo, sem" de exemplo); quem decide quando o estoque não dá para todas as revendedoras (ordem de prioridade dos kits).
+
+## Avaliação de kits que as revendedoras elogiaram (começou em 28/10/2026)
+Método do Marcus: revendedoras que disseram "gostei do kit deste mês"; comparar o que venderam nas 3 últimas vendas com o kit novo, para descobrir o que o kit bom tem em comum. Script reutilizável: `avalia-kit.mjs` (na pasta temporária da conversa; recriar se precisar: lê dmach, dmaci, dmafi, dmafj e dmaaa da DevMaster).
+
+### 1. Franciane Poli de Oliveira Anastácio (DevMaster 008873) — "Eu amei o meu kit"
+- 3 últimas vendas: 24/09 R$ 300 · 13/08 R$ 1.226 · 14/07 R$ 656 (média R$ 727). Só 23 peças vendidas: amostra pequena.
+- Kit de agora: 091623 de 18/09, R$ 9.016, 105 peças (aberto, ainda sem acerto). Kit de antes: 087439 de 06/08, R$ 13.833, 151 peças. **O kit novo é 30% menor** e bate com a média dela pela tabela da Calculadora.
+- O que BATEU: tamanhos de anel (ela vendeu 21, 22 e 28; o kit tem 22 ×4, 24 ×3, 28 ×2, 21 ×1 e quase nada fora dessa faixa); cravejado (vendido 65%, kit 63%); preço máximo igual (R$ 188); categoria líder brinco (30% vendido, 36% no kit).
+- O que NÃO bateu: ouro e prata (ela vende 43% ouro e 57% prata; o kit tem 58% ouro e 41% prata); cor (ela vende cristal 22%, preto 13%, rosa 9%; o kit tem cristal 12%, verde 6%, rosa 4% e nenhuma peça preta); desenho (ela vende trevo 17% e coração 13%; o kit tem gota 12%, coração 11% e trevo só 3%); colar e choker (26% e 17% do que vende; 14% e 7% do kit).
+- Leitura provisória: ela gostou mesmo sem o kit seguir a cor, o desenho e o metal dela. O que mudou foi o TAMANHO (kit menor) e os tamanhos certos. Hipótese a testar nas próximas: o kit bom é o proporcional ao que a revendedora vende, e cor e desenho pesam menos do que se pensava.
+- Cuidado: o kit novo é de 18/09, antes da última venda dela (24/09); "gostar do kit" ainda não é resultado de venda.
+
+### 2. Savana Ferreira da Silva (DevMaster 010979) — "gostei, mas veio muito anel de numeração pequena"
+- Cadastrada em 05/10/2026, SEM nenhuma venda (kit novo). Kit 094270 de 15/10: R$ 7.009, 88 peças, 12 anéis.
+- Tamanhos do kit: 10, 11, 12, 14, 16, 17, 19, 20, 21, 22 (1 de cada) e 18 ×2. Até tamanho 15: 4 de 12 (33%); 16 a 19: 5; 20 ou mais: 3.
+- Curva de tamanhos de TODAS as revendedoras (4.260 anéis vendidos, set e out/2026): até 15 = 24% · 16 a 19 = 47% (o 18 sozinho vende 18%, o 16 vende 12%) · 20 a 22 = 22% · 23 ou mais = 7%. O kit da Savana tem mais anel pequeno que a média (33% contra 24%) e é "um de cada tamanho", sem peso nos tamanhos que mais saem.
+- Hoje NÃO existe como a revendedora pedir numeração: a Preferências do kit não tem pergunta de tamanho. Lacuna a resolver.
+- Regra proposta para kit novo (sem histórico): usar a curva geral de tamanhos, com mais peças no 16, 18, 19, 20 e 22 e quase nada abaixo do 12.
+
+### 3. Elisiane Aparecida de Lara Vaz Miranda (DevMaster 000696) — "gostei, vieram minhas encomendas e a maioria das preferências"
+- 3 últimas vendas: 09/10 R$ 1.499 · 11/09 R$ 2.072 · 10/08 R$ 1.406 (56 peças). Kit de agora: 093484 de 08/10, R$ 10.022, 133 peças, do mesmo tamanho dos anteriores (R$ 10.362 e R$ 10.045).
+- Kit NÃO acompanha o que ela vende: cravejado 51% no kit contra 70% vendido; cristal 6% contra 21%; vermelho 1% contra 7%; pulseira 16% no kit contra 7% vendido; ouro 51% no kit contra 38% vendido; tamanho 21 (vendeu 3) só 1 no kit.
+- O que bateu: tamanho do kit igual ao dos anteriores, brinco 36% (vendeu 32%), infantil 8% (vendeu 9%), desenho coração.
+- Leitura: ela gostou porque as ENCOMENDAS e as PREFERÊNCIAS dela foram atendidas, não porque o mix bateu com as vendas.
+
+### Padrão que aparece nos 3 casos (hipóteses, 28/10/2026)
+- Kit elogiado NÃO é o que reproduz o mix vendido (cor, metal, desenho falharam nos 3).
+- O que apareceu: (1) tamanho do kit proporcional ao que a revendedora vende (Franciane); (2) pedido atendido: encomenda e preferência (Elisiane); (3) tamanho: quando erra, a reclamação é de tamanho (Savana).
+- Falta ver kit que NÃO foi elogiado, para comparar. Pedir ao Marcus casos de reclamação.
+
+## Preferências do kit trazidas do admin antigo (28/10/2026)
+- Fonte: tabela `kit_block` do banco do admin antigo (consulta só leitura). 20 blocos: 19 + Observações; 14 ligados no app, 6 desligados (Identificação, Brincos, Conjuntos, Choker, Pulseiras, Braceletes). Salvo em `src/apps/montagem/domain/preferencias-kit.local.js` (gitignored, lido pela tela Preferências do kit na aba Formulário do app; conferido no navegador: "19 blocos no formulário · 14 ligados").
+- **O admin antigo TEM pergunta de tamanho** (atualizada em 30/09/2026): bloco Anéis, "Tamanhos que você mais vende (selecione 3 opções)", tamanhos 10 a 25. Corrige o que foi dito antes: a falta era só no sistema novo, que agora a tem.
+- Pergunta por bloco: Anéis (tamanhos), Colar Filhos (9 composições), Colar de Letras (até 5 letras), Infantil e Masculino (modelos), Conjunto, Bracelete, Tornozeleira (vende ou não, qual metal), Colares e Pulseira (barra ouro e prata), Flanela, Material de apoio e Pingentes avulsos. Desligados mas existentes: Brincos (15 estilos), Conjuntos (luxo, delicado, pontos de luz), Choker (10 modelos) e cores (11 cores, de cristal a lilás).
+- As RESPOSTAS das revendedoras não estão no banco do admin antigo (ficam no app da revendedora). As 31 respostas que aparecem na tela hoje são de demonstração.
+- Preferência só chega "a partir do 2º kit" (regra do app); kit novo, como o da Savana, não passou pela pergunta de tamanho.
+- Marcus pode ligar de novo Brincos, Conjuntos e Choker: são justamente os tipos que mais importam na análise (brinco é 37% das vendas).
+
+## Respostas das revendedoras às Preferências: onde estão (28/10/2026)
+- NÃO estão no banco do admin antigo. Vivem na **API mobile** do app da revendedora (doc do admin antigo: `docs/modulos/preferencias-kit.md`): o admin antigo lê `GET /revendedoras/kit-preferences` (lista, 100 por página), `/:id` (respostas e observações) e `/analytics`, com `MOBILE_API_URL` e `MOBILE_API_KEY` (Bearer).
+- Essas duas variáveis NÃO existem no `.env.local` do sistema novo nem num `.env` do projeto antigo no computador: só o `.env.example`. Sem elas não dá para ler os dados.
+- Caminhos para ter os dados de teste sem ligar o app: (1) Leonardo manda as duas variáveis (ou roda uma exportação única da lista) e eu leio uma vez, só leitura; (2) Leonardo exporta tudo em JSON ou tabela; a tela Preferências do kit tem a aba **Importar** (tabela ou JSON colado, colunas nome, telefone, cidade, estado, e-mail, id, atualizado em e uma por bloco). Os dados reais entram só no navegador e em `preferencias-kit.local.js`, nunca no Git.
+
+## Desenho da nova aba Análise (Preferências do kit), 28/10/2026 — `docs/design/preferencias-analise-desenho.html`
+Motivo: a aba atual é uma pilha de 20 cartões (2.500 px), filtro solto de 8 campos e frases longas, contra o padrão do sistema (planilha, faixa de totais, filtros no topo). Proposta: faixa de 6 totais; bloco Filtros em 4 colunas; selo "Dados de demonstração" no lugar do aviso amarelo; 3 abas visíveis (Resumo, Por bloco, Por revendedora); "Por bloco" vira UMA tabela com detalhe ao lado; Anéis com barras por tamanho em ordem e a coluna "Vendem" (curva real) ao lado de "Pedem". Aguarda OK do Marcus para aplicar no sistema. Defeito visto na tela atual: a coluna "Categorias" da lista de revendedoras mostra 0 em todas as linhas (conferir).
