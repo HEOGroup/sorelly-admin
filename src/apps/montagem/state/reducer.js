@@ -78,7 +78,7 @@ function reducer(s, a){
     // Entrar (a senha é ignorada no protótipo): cada pessoa cai direto na tela do seu setor — montadora e bipadora no próprio app, condicionais no app das condicionais.
     case "LOGIN": {
       var pp = papelDe(a.id);
-      var abaIni = (pp==="montadora" || pp==="bipadora") ? "whats" : "inicio";   // todo mundo começa na página inicial (27/10/2026); montadora e bipadora, no SorellyChat (28/10/2026)
+      var abaIni = !a.atuando && (pp==="montadora" || pp==="bipadora") ? "whats" : "inicio";   // "atuar como" (a.atuando) sempre começa no Início   // todo mundo começa na página inicial (27/10/2026); montadora e bipadora, no SorellyChat (28/10/2026)
       return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});

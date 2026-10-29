@@ -52,49 +52,53 @@ function imagemColada(ev){
   return null;
 }
 
-// nova solicitação = um chat (sem campo de título): a pessoa escreve do jeito dela, cola os prints e envia; o sistema cria o pedido com o que ela escreveu
+// nova solicitação = o mesmo chat de quem responde (Marcus, 29/10/2026): fixo no alto só o link da tela; o print colado (Ctrl+V) já aparece na conversa; escreve e envia, e o pedido nasce com esse chat
 function NovaConversa(p){
   var s = p.s, d = p.d, nome = nomeDe(s.usuario), setor = DIRETORIA.some(function(x){ return x.id===s.usuario; }) ? "Diretoria" : (PAPEL_LB[grupoDe(s.usuario)] || "");
   var t = useState(""), txt = t[0], setTxt = t[1], im = useState([]), imgs = im[0], setImgs = im[1], er = useState(""), erro = er[0], setErro = er[1], u = useState(window.__ultimaTela || ""), url = u[0], setUrl = u[1];
+  var fim = React.useRef(null);
+  useEffect(function(){ if(fim.current) fim.current.scrollIntoView({block:"end"}); }, [imgs.length]);
   var anexar = function(f){ if(!f) return; setErro(""); if(imgs.length>=4){ setErro("No máximo 4 prints."); return; } reduzirPrint(f).then(function(r){ setImgs(function(l){ return l.length<4 ? l.concat([r]) : l; }); }).catch(function(y){ setErro(y.message); }); };
   var colar = function(ev){ var f = imagemColada(ev); if(f){ ev.preventDefault(); anexar(f); } };
   var enviar = function(){
-    if(!txt.trim()){ setErro("Escreva o que você quer mudar."); return; }
+    if(!txt.trim()){ setErro(imgs.length ? "Escreva também o que você quer mudar." : "Escreva o que você quer mudar."); return; }
     var id = Date.now().toString(36)+Math.random().toString(36).slice(2, 5);
-    d({type:"MEL", op:"enviar", id:id, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nomeDe(s.usuario), setor:setor});
+    d({type:"MEL", op:"enviar", id:id, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nome, setor:setor});
     p.onEnviou(id);
   };
-  var info = function(rot, cont){ return e("div",{className:"min-w-0 shrink-0"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, rot), cont); };
-  return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
+  return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-2"},
       e("b",{className:"min-w-0 flex-1 text-[15px]"}, "Nova solicitação de melhoria"),
       e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[15px] hover:bg-white/10"}, "✕")),
-    e("div",{className:"grid min-h-0 flex-1 md:grid-cols-[1.3fr_1fr]"},
-      e("div",{className:"flex min-h-0 flex-col gap-3 overflow-y-auto border-b border-border p-3 md:border-b-0 md:border-r"},
-        info("Pedido de", e("div",{className:"text-[13px]"}, e("b",null, nome), setor ? " · "+setor : "")),
-        info("Tela (de onde vem o pedido)", e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO})),
-        info(imgs.length ? "Prints ("+imgs.length+")" : "Prints", imgs.length===0
-          ? e("p",{className:"text-[13px]"}, "Cole um print com Ctrl+V na mensagem, ou use o clipe 📎. Até 4 prints.")
-          : e("div",{className:"flex flex-col gap-2"}, imgs.map(function(im, i){ return e("div",{key:i, className:"relative"},
-              e("img",{src:im, alt:"Print "+(i+1), className:"h-auto max-h-[260px] w-full rounded border border-border object-contain"}),
-              e("button",{type:"button", "aria-label":"Remover print "+(i+1), onClick:function(){ setImgs(imgs.filter(function(y, j){ return j!==i; })); }, className:"absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-card text-[13px] ring-1 ring-border"}, "×")); })))),
-      e("div",{className:"flex min-h-0 min-w-0 flex-col", style:{background:W.fundo}},
-        e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
-          e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, "Marcus e Leonardo"), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, "respondem aqui, nesta conversa"))),
-        e("div",{className:"flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3", style:{backgroundImage:"radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px)", backgroundSize:"14px 14px"}},
-          e("div",{className:"max-w-[88%] rounded-xl rounded-bl-sm px-2.5 py-1.5 text-[13px] shadow-sm", style:{background:W.cab, color:W.texto}},
-            e("div",{className:"text-[12px] font-semibold", style:{color:W.ouro}}, "Sorelly"),
-            "Oi! Conte aqui o que você quer mudar no sistema, do seu jeito. Pode escrever e colar prints da tela (Ctrl+V). Não precisa de título."),
-          imgs.length>0 && e("div",{className:"self-end rounded-xl rounded-br-sm px-2.5 py-1.5 text-[12px]", style:{background:W.saida, color:W.texto}}, "📎 "+imgs.length+(imgs.length===1 ? " print anexado" : " prints anexados"))),
-        e("div",{className:"flex flex-col gap-1.5 px-2 py-2", style:{background:W.cab}},
-          erro && e("span",{className:"truncate text-[12px]", style:{color:W.vermelho}, title:erro}, erro),
-          e("div",{className:"flex items-end gap-2"},
-            e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[17px] hover:bg-white/10", title:"Anexar um print", style:{color:W.sec}}, "📎",
-              e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; anexar(f); }})),
-            e("textarea",{autoFocus:true, value:txt, rows:2, maxLength:3000, onChange:function(ev){ setTxt(ev.target.value); }, onPaste:colar,
-              onKeyDown:function(ev){ if(ev.key==="Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } },
-              placeholder:"Escreva o que você quer mudar", className:"max-h-32 min-h-12 min-w-0 flex-1 resize-none rounded-lg px-3 py-2 text-[13px] outline-none", style:{background:W.campo, color:W.texto}}),
-            e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤"))))));
+    // fixo no alto: só o link da tela
+    e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
+      e("span",null, "Tela"), e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar (link da tela do pedido)", "aria-label":"Link da tela", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO+" min-w-0 flex-1"})),
+    e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
+      e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
+        e(Avatar,{id:contatoDoLogin(s.usuario), nome:nome, s:32}),
+        e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, nome+(setor ? " · "+setor : "")), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, "Marcus e Leonardo respondem aqui"))),
+      e("div",{className:"flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3", style:{backgroundImage:"radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px)", backgroundSize:"14px 14px"}},
+        e("div",{className:"max-w-[88%] rounded-xl rounded-bl-sm px-2.5 py-1.5 text-[13px] shadow-sm", style:{background:W.cab, color:W.texto}},
+          e("div",{className:"text-[12px] font-semibold", style:{color:W.ouro}}, "Sorelly"),
+          "Conte aqui o que você quer mudar, do seu jeito. Cole o print da tela com Ctrl+V e ele já aparece na conversa. Só falta o link da tela, no alto."),
+        // o print colado já aparece aqui, como mensagem sua
+        imgs.length>0 && e("div",{className:"flex items-end gap-1.5 flex-row-reverse"},
+          e(Avatar,{id:contatoDoLogin(s.usuario), nome:nome, s:28}),
+          e("div",{className:"flex max-w-[80%] min-w-0 flex-col gap-1.5 rounded-xl rounded-br-sm px-2.5 py-1.5 text-[13px] shadow-sm", style:{background:W.saida, color:W.texto}},
+            imgs.map(function(im2, i){ return e("div",{key:i, className:"relative"},
+              e("img",{src:im2, alt:"Print "+(i+1), className:"max-h-64 w-full rounded-md object-contain", style:{background:"#000"}}),
+              e("button",{type:"button", "aria-label":"Remover print "+(i+1), title:"Remover este print", onClick:function(){ setImgs(imgs.filter(function(y, j){ return j!==i; })); }, className:"absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-card text-[13px] ring-1 ring-border"}, "×")); }),
+            e("div",{className:"text-right text-[10.5px]", style:{color:W.sec}}, imgs.length+(imgs.length===1 ? " print anexado" : " prints anexados")))),
+        e("div",{ref:fim})),
+      e("div",{className:"flex flex-col gap-1.5 px-2 py-2", style:{background:W.cab}},
+        erro && e("span",{className:"truncate text-[12px]", style:{color:W.vermelho}, title:erro}, erro),
+        e("div",{className:"flex items-end gap-2"},
+          e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[17px] hover:bg-white/10", title:"Anexar um print", style:{color:W.sec}}, "📎",
+            e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; anexar(f); }})),
+          e("textarea",{autoFocus:true, value:txt, rows:1, maxLength:3000, onChange:function(ev){ setTxt(ev.target.value); },
+            onKeyDown:function(ev){ if(ev.key==="Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } },
+            placeholder:"Escreva o que você quer mudar (Ctrl+V cola o print)", className:"max-h-28 min-h-9 min-w-0 flex-1 resize-none rounded-lg px-3 py-2 text-[13px] outline-none", style:{background:W.campo, color:W.texto}}),
+          e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤")))));
 }
 
 // ícone que abre direto a tela do pedido (no lugar do endereço escrito): um clique e já está lá
@@ -315,7 +319,7 @@ function AbaMelhorias(){
   var agora = Date.now();
   var fila = gere && vis==="todas" ? base.map(function(x){ return {x:x, dias:melEspera(s, x, agora)}; }).filter(function(y){ return y.dias!==null; }).sort(function(a, b){ return b.dias-a.dias; }).slice(0, 3) : [];
   var janela = (novo || aberto) && e("div",{className:"fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget){ setNovo(false); setSel(null); } }},
-    e("div",{className:"my-auto w-full "+(novo ? "max-w-[1060px]" : "max-w-[780px]")},
+    e("div",{className:"my-auto w-full max-w-[780px]"},
       novo ? e(NovaConversa,{s:s, d:d, fechar:function(){ setNovo(false); }, onEnviou:function(id){ setNovo(false); setSel(id); }}) : e(Detalhe,{x:aberto, s:s, d:d, zoom:function(src, nome){ setZoom({src:src, nome:nome}); }, fechar:function(){ setSel(null); }})));
   var cols = [{t:"Data", w:104, c:true}, {t:"Setor", w:150, c:true}, {t:"Funcionária", w:160, c:true}, {t:"Situação", w:190, c:true}, {t:"Tela", w:70, c:true}, {t:"Descrição", c:true}].concat(gere ? [{t:"Conversa do Claude", w:185, c:true}] : []);
   var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); } catch(x){ return iso; } };

@@ -64,7 +64,7 @@ function ContaMenu(p){
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], arq = useRef(null);
   var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
-  var escolher = function(id){ d({type:"LOGIN", id:id}); setAberto(false); setBusca(""); navigate(caminhoDaAba("inicio")); };   // ao trocar de pessoa, vai para o Início dela (as abas do Marcus não vão junto; voltando para si, as dele voltam)
+  var escolher = function(id){ d({type:"LOGIN", id:id, atuando:true}); setAberto(false); setBusca(""); navigate(caminhoDaAba("inicio")); };   // ao trocar de pessoa, vai para o Início dela (as abas do Marcus não vão junto; voltando para si, as dele voltam)
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
   var trocarFoto = function(ev){
     var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;

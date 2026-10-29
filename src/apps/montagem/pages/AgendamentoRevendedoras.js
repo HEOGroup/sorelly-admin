@@ -52,12 +52,34 @@ function contar(linhas){
 var calor = function(n, max){ return n<=0 ? null : "rgba(232,184,75,"+(0.10+0.42*(n/Math.max(1, max)))+")"; };
 var somaPeriodo = function(porDia, de, ate){ var t = 0; Object.keys(porDia).forEach(function(k){ if(k>=de && k<=ate) t += porDia[k].n; }); return t; };
 
-// o registro guardado no servidor muda a revendedora (representante e data do acerto); "dm" guarda o que a DevMaster mostra
+// Campos que a Ana Maria pode ajustar no card. A DevMaster manda: ela NUNCA sobrescreve o que foi alterado aqui; só é comparada com ele.
+// Cada campo alterado guarda: o nosso valor (campos), o valor que a DevMaster tinha na hora (dm) e o histórico. Três situações, comparando o nosso valor (L), o da DevMaster hoje (C) e o da hora da alteração (S):
+//   igual      → L = C: a DevMaster já está igual (nada a fazer)
+//   diferente  → C = S: só nós mudamos; fica marcado "≠ DevMaster" até alterar lá ou voltar para o da DevMaster
+//   dm_mudou   → C ≠ S e C ≠ L: a DevMaster mudou DEPOIS da nossa alteração; a Ana Maria escolhe: usar o da DevMaster ou manter o nosso
+var CAMPOS = [
+  {k:"nome", rot:"Nome", tipo:"txt"}, {k:"celular", rot:"WhatsApp", tipo:"txt"}, {k:"cidade", rot:"Cidade", tipo:"txt"}, {k:"uf", rot:"UF", tipo:"txt"},
+  {k:"representante", rot:"Representante", tipo:"sel"}, {k:"prev", rot:"Data do acerto", tipo:"date"}];
+var tem = function(o, k){ return !!o && Object.prototype.hasOwnProperty.call(o, k); };
 function aplicar(i, ov){
-  if(!ov) return Object.assign({}, i, {repDm:i.representante, prevDm:i.prev, difRep:false, difPrev:false, ov:null});
-  var rep = ov.representante || i.representante, prev = ov.prev || i.prev;
-  return Object.assign({}, i, {representante:rep, prev:prev, repDm:i.representante, prevDm:i.prev, difRep:rep!==i.representante, difPrev:prev!==i.prev, ov:ov});
+  var out = Object.assign({}, i, {dm:{}, dif:{}, ov:ov||null, temDif:false}), campos = (ov && ov.campos) || {}, snap = (ov && ov.dm) || {};
+  CAMPOS.forEach(function(c){
+    var dm = i[c.k] || ""; out.dm[c.k] = dm;
+    if(!tem(campos, c.k)) return;
+    var local = campos[c.k]; out[c.k] = local;
+    out.dif[c.k] = local===dm ? {estado:"igual", local:local, dm:dm} : dm!==snap[c.k] ? {estado:"dm_mudou", local:local, dm:dm, snap:snap[c.k]} : {estado:"diferente", local:local, dm:dm};
+  });
+  out.temDif = Object.keys(out.dif).some(function(k){ return out.dif[k].estado!=="igual"; });
+  return out;
 }
+var fmtCampo = function(k, v){ return k==="prev" && v ? fmtDataBR(v) : (v || "—"); };
+// selo pequeno ao lado do valor na tabela
+var seloDif = function(r, k){
+  var d = r.dif && r.dif[k]; if(!d || d.estado==="igual") return null;
+  return d.estado==="dm_mudou"
+    ? e("span",{className:"ml-1.5 rounded-full bg-destructive/20 px-1.5 text-[10.5px] font-bold text-[#f87171]", title:"A DevMaster mudou para: "+fmtCampo(k, d.dm)+" (o nosso: "+fmtCampo(k, d.local)+"). Abra o card para escolher."}, "DM mudou")
+    : e("span",{className:"ml-1.5 rounded-full bg-warning/20 px-1.5 text-[10.5px] font-bold text-warning", title:"Na DevMaster: "+fmtCampo(k, d.dm)+". Altere lá também ou volte para o da DevMaster."}, "≠ DevMaster");
+};
 
 // ── Calendário do topo: dia da semana, número e QUANTOS ACERTOS
 function CalendarioTopo(p){
@@ -182,10 +204,10 @@ function TabelaRevendedoras(p){
           : linhas.slice(0, p.limite).map(function(r, i){
               var dd = diasEntre(hoje, r.prev), sel = r.prev===p.dia && p.soDia;
               return e("tr",{key:r.cod, onClick:function(){ p.abrir(r.cod); }, title:"Clique para abrir o card de "+r.nome, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(sel ? "bg-[rgba(232,184,75,.10)] " : i%2 ? "bg-white/[.025] " : "")},
-                e("td",{className:cel, style:dd<0 ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" text-left font-semibold"}, r.nome), e("td",{className:cel}, foneBonito(r.celular) || "—"), e("td",{className:cel}, r.cod),
-                e("td",{className:cel+" text-left"}, r.representante, r.difRep && e("span",{className:"ml-2 rounded-full bg-warning/20 px-1.5 text-[10.5px] font-bold text-warning", title:"Na DevMaster: "+r.repDm+". Altere lá também."}, "≠ DevMaster")),
-                e("td",{className:cel+" text-left"}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—"), e("td",{className:cel}, r.kits),
-                e("td",{className:cel}, dBR(r.emissao)), e("td",{className:cel+" font-semibold"}, dBR(r.prev), r.difPrev && e("span",{className:"ml-1.5 rounded-full bg-warning/20 px-1.5 text-[10.5px] font-bold text-warning", title:"Na DevMaster: "+fmtDataBR(r.prevDm)+". Altere lá também."}, "≠")),
+                e("td",{className:cel, style:dd<0 ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" text-left font-semibold"}, r.nome, seloDif(r, "nome")), e("td",{className:cel}, foneBonito(r.celular) || "—", seloDif(r, "celular")), e("td",{className:cel}, r.cod),
+                e("td",{className:cel+" text-left"}, r.representante, seloDif(r, "representante")),
+                e("td",{className:cel+" text-left"}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—", seloDif(r, "cidade"), seloDif(r, "uf")), e("td",{className:cel}, r.kits),
+                e("td",{className:cel}, dBR(r.emissao)), e("td",{className:cel+" font-semibold"}, dBR(r.prev), seloDif(r, "prev")),
                 e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"), e("td",{className:cel+" text-right"}, BRL(r.valor))); })))),
     linhas.length>p.limite && e("div",{className:"flex items-center justify-center gap-3 py-2 text-[12.5px]"}, "Mostrando "+p.limite+" de "+linhas.length, e("button",{type:"button", onClick:p.maisLinhas, className:"h-7 rounded-md border border-border bg-[#1d1d21] px-3"}, "Ver mais 200")),
     pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},
@@ -207,61 +229,70 @@ function SeletorReps(p){
         return e("label",{key:r.nome, className:"flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-[13px] hover:bg-white/10"}, e("input",{type:"checkbox", checked:on, onChange:function(){ p.setSel(on ? p.sel.filter(function(x){ return x!==r.nome; }) : p.sel.concat([r.nome])); }}), e("span",{className:"min-w-0 flex-1 truncate"}, r.nome), e("b",{className:"tabular-nums text-muted-foreground"}, r.n)); }))));
 }
 
-// ── CARD da revendedora (modelo do card da Tamara): a Ana Maria troca a representante e a data do acerto, anota, e vê o histórico.
-// A DevMaster ainda manda: todo ajuste precisa ser feito ANTES lá. O botão Salvar só libera depois de marcar "já alterei na DevMaster".
+// ── CARD da revendedora (modelo do card da Tamara): a Ana Maria ajusta nome, WhatsApp, cidade, representante e data do acerto, anota e vê o histórico.
+// A DevMaster ainda manda: o ideal é alterar LÁ primeiro. Se alterar só aqui, o campo fica marcado "≠ DevMaster" até ela alterar lá (o selo some sozinho) ou voltar para o da DevMaster.
+// Ler a DevMaster NUNCA muda o que foi alterado aqui: se a DevMaster mudar depois, aparece "DM mudou" e ela escolhe entre usar o da DevMaster e manter o nosso.
 function CartaoRevendedora(p){
   var r = p.r, reps = p.todasReps, hojeIso = p.hojeIso, eu = p.eu;
-  var f1 = useState(r.representante), rep = f1[0], setRep = f1[1], f2 = useState(r.prev), prev = f2[0], setPrev = f2[1], f3 = useState(""), motivo = f3[0], setMotivo = f3[1];
-  var f4 = useState(false), jaDm = f4[0], setJaDm = f4[1], f5 = useState(""), obs = f5[0], setObs = f5[1], f6 = useState(false), todos = f6[0], setTodos = f6[1];
-  var mudou = rep!==r.representante || prev!==r.prev || obs.trim()!=="";
+  var iv = {}; CAMPOS.forEach(function(c){ iv[c.k] = r[c.k] || ""; });
+  var f1 = useState(iv), val = f1[0], setVal = f1[1], f2 = useState(""), motivo = f2[0], setMotivo = f2[1], f3 = useState(""), obs = f3[0], setObs = f3[1], f4 = useState(false), todos = f4[0], setTodos = f4[1];
+  var mudados = CAMPOS.filter(function(c){ return (val[c.k]||"")!==(r[c.k]||""); });
+  var mudou = mudados.length>0 || obs.trim()!=="";
   var historico = (r.ov && r.ov.historico) || [];
   var dias = diasEntre(hojeIso, r.prev);
+  var nDif = CAMPOS.filter(function(c){ return r.dif[c.k] && r.dif[c.k].estado!=="igual"; }).length;
   var conds = (r.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).sort(function(a, b){ return (a.e||"").localeCompare(b.e||""); });
   var tot = conds.reduce(function(a, c){ return {p:a.p+(c.p||0), v:a.v+(c.v||0)}; }, {p:0, v:0});
   var salvar = function(){
-    if(!mudou || !jaDm) return;
-    var novos = [], agora = new Date().toISOString();
-    if(rep!==r.representante) novos.push({em:agora, por:eu, campo:"Representante", de:r.representante, para:rep, motivo:motivo});
-    if(prev!==r.prev) novos.push({em:agora, por:eu, campo:"Acerto previsto", de:r.prev, para:prev, motivo:motivo});
-    if(obs.trim()) novos.push({em:agora, por:eu, campo:"Observação", de:"", para:obs.trim(), motivo:""});
-    p.salvar(r, {representante:rep, prev:prev, historico:novos.concat(historico).slice(0, 60)});
+    if(!mudou) return;
+    var agora = new Date().toISOString(), campos = Object.assign({}, (r.ov && r.ov.campos) || {}), dm = Object.assign({}, (r.ov && r.ov.dm) || {}), novos = [];
+    mudados.forEach(function(c){
+      novos.push({em:agora, por:eu, campo:c.rot, k:c.k, de:r[c.k]||"", para:val[c.k]||"", motivo:motivo});
+      if((val[c.k]||"")===(r.dm[c.k]||"")){ delete campos[c.k]; delete dm[c.k]; } else { campos[c.k] = val[c.k]||""; dm[c.k] = r.dm[c.k]||""; }   // voltou ao valor da DevMaster: não guarda nada
+    });
+    if(obs.trim()) novos.push({em:agora, por:eu, campo:"Observação", k:"obs", de:"", para:obs.trim(), motivo:""});
+    p.salvar(r, {campos:campos, dm:dm, historico:novos.concat(historico).slice(0, 80)});
   };
-  var kv = function(rot, val, cls){ return e("div",{className:"flex flex-wrap items-baseline justify-between gap-x-2"}, e("span",{className:ROTULO}, rot), e("b",{className:MONO+" text-[13.5px] "+(cls||"")}, val)); };
-  var zap = linkZap(r.celular);
+  var kv = function(rot, v, cls){ return e("div",{className:"flex flex-wrap items-baseline justify-between gap-x-2"}, e("span",{className:ROTULO}, rot), e("b",{className:MONO+" text-[13.5px] "+(cls||"")}, v)); };
+  var zap = linkZap(val.celular || r.celular);
+  // um campo editável + a situação dele em relação à DevMaster
+  var campo = function(c){
+    var d = r.dif[c.k], v = val[c.k]||"";
+    var entrada = c.tipo==="sel" ? e("select",{value:v, "aria-label":c.rot, className:CAMPO, onChange:function(ev){ var n = Object.assign({}, val); n[c.k] = ev.target.value; setVal(n); }}, (reps.indexOf(v)<0 && v ? [v] : []).concat(reps).map(function(n){ return e("option",{key:n, value:n}, n); }))
+      : e("input",{type:c.tipo==="date" ? "date" : "text", value:v, "aria-label":c.rot, className:CAMPO, onChange:function(ev){ var n = Object.assign({}, val); n[c.k] = ev.target.value; setVal(n); }});
+    var estado = !d || d.estado==="igual" ? e("span",{className:"text-[11.5px] "+(d ? "text-[#bbf7d0]" : "text-[#cdbf9f]")}, d ? "✓ A DevMaster já está igual" : "Igual à DevMaster")
+      : d.estado==="diferente" ? e("span",{className:"flex flex-wrap items-center gap-x-2 text-[11.5px] text-warning"}, "Na DevMaster: "+fmtCampo(c.k, d.dm)+" · altere lá também", e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"))
+      : e("span",{className:"flex flex-wrap items-center gap-x-2 text-[11.5px] text-[#fca5a5]"}, "A DevMaster mudou para "+fmtCampo(c.k, d.dm)+" (o nosso: "+fmtCampo(c.k, d.local)+")", e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"), e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "nosso"); }, className:"font-bold text-[#F1D58A] underline"}, "Manter o nosso"));
+    return e("div",{key:c.k, className:"flex flex-col gap-1"}, e("span",{className:ROTULO}, c.rot), entrada, estado);
+  };
   return e("div",{className:"overflow-hidden rounded-2xl text-[#fbf4e4]", style:CARD_ESTILO},
     e("div",{className:"flex items-center gap-2.5 border-b border-[rgba(241,213,138,.16)] py-2 pl-4 pr-24", style:TOPO_ESTILO},
       e("b",{className:"min-w-0 truncate text-[15px] text-white"}, r.nome),
       zap && e("a",{href:zap, target:"_blank", rel:"noreferrer", title:"Chamar no WhatsApp", "aria-label":"WhatsApp de "+r.nome, className:"inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[11px] font-bold text-[#04210f] hover:brightness-110"}, "W"),
       e("span",{className:"size-[6px] shrink-0 rounded-full bg-white"}), e("span",{className:MONO+" text-[13px] font-semibold text-white"}, r.cod),
-      e("span",{className:"flex-1"}), (r.difRep || r.difPrev) && chip("Diferente da DevMaster", CLASSE_ALERTA)),
+      e("span",{className:"flex-1"}), nDif>0 && chip(nDif+(nDif===1 ? " campo diferente" : " campos diferentes")+" da DevMaster", CLASSE_ALERTA)),
     // aviso fixo: a DevMaster ainda manda
     e("div",{className:"flex items-start gap-2 border-b border-[rgba(251,191,36,.35)] bg-[rgba(251,191,36,.12)] px-4 py-2 text-[12.5px] text-[#fde68a]"},
-      e("b",{className:"shrink-0"}, "Antes, altere na DevMaster."), e("span",null, "Qualquer mudança feita aqui (representante, data do acerto) precisa ser feita primeiro na DevMaster, até passarmos a usar só o sistema. Aqui fica o registro de quem mudou e quando.")),
-    e("div",{className:"grid md:grid-cols-[270px_minmax(0,1fr)]"},
-      e("div",{className:"flex flex-col gap-1.5 border-b border-[rgba(241,213,138,.16)] p-3 md:border-b-0 md:border-r", style:{background:"linear-gradient(180deg, rgba(241,213,138,.07), transparent)"}},
+      e("b",{className:"shrink-0"}, "Antes, altere na DevMaster."), e("span",null, "Se alterar só aqui, o campo fica marcado como diferente da DevMaster até você alterar lá. A leitura da DevMaster nunca muda o que foi alterado aqui: se ela mudar depois, aparece \"DM mudou\" e você escolhe qual vale.")),
+    e("div",{className:"grid md:grid-cols-[300px_minmax(0,1fr)]"},
+      e("div",{className:"flex flex-col gap-2 border-b border-[rgba(241,213,138,.16)] p-3 md:border-b-0 md:border-r", style:{background:"linear-gradient(180deg, rgba(241,213,138,.07), transparent)"}},
         kv("Acerto previsto", fmtDataBR(r.prev)), kv("Faltam", dias<0 ? Math.abs(dias)+" d atrasada" : dias===0 ? "hoje" : dias+" d", dias<0 ? "text-[#fca5a5]" : ""),
-        kv("Kits ativos", r.kits), kv("Peças", tot.p || r.pecas), kv("Valor", BRL(tot.v || r.valor), "text-[#F1D58A]"), kv("Cidade", r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—"), kv("WhatsApp", foneBonito(r.celular) || "—"),
-        e("div",{className:"mt-1 flex flex-col gap-1"}, e("span",{className:ROTULO}, "Representante"),
-          e("select",{value:rep, "aria-label":"Representante", className:CAMPO, onChange:function(ev){ setRep(ev.target.value); }}, (reps.indexOf(r.representante)<0 ? [r.representante] : []).concat(reps).map(function(n){ return e("option",{key:n, value:n}, n); })),
-          r.difRep ? e("span",{className:"text-[11.5px] text-warning"}, "Na DevMaster: "+r.repDm+" · altere lá também") : e("span",{className:"text-[11.5px] text-[#cdbf9f]"}, "Igual à DevMaster")),
-        e("div",{className:"flex flex-col gap-1"}, e("span",{className:ROTULO}, "Data do acerto"),
-          e("input",{type:"date", value:prev, "aria-label":"Data do acerto", className:CAMPO, onChange:function(ev){ setPrev(ev.target.value); }}),
-          r.difPrev ? e("span",{className:"text-[11.5px] text-warning"}, "Na DevMaster: "+fmtDataBR(r.prevDm)+" · altere lá também") : e("span",{className:"text-[11.5px] text-[#cdbf9f]"}, "Igual à DevMaster"))),
+        kv("Kits ativos", r.kits), kv("Peças", tot.p || r.pecas), kv("Valor", BRL(tot.v || r.valor), "text-[#F1D58A]"),
+        CAMPOS.map(campo)),
       e("div",{className:"flex min-w-0 flex-col gap-2 px-3.5 py-3"},
         e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Alterações feitas no sistema"), historico.length>3 && e("button",{type:"button", onClick:function(){ setTodos(!todos); }, className:"text-[12px] text-[#F1D58A]"}, todos ? "ver menos ▴" : "ver todas ("+historico.length+") ▾")),
         historico.length===0 ? e("p",{className:"text-[13px] text-[#cdbf9f]"}, "Nenhuma alteração ainda. Tudo vem da DevMaster.")
-        : e("div",{className:"flex max-h-44 flex-col overflow-y-auto pr-1"}, (todos ? historico : historico.slice(0, 3)).map(function(h, i){
-            var fmt = function(c, v){ return c==="Acerto previsto" && v ? fmtDataBR(v) : (v || "—"); };
+        : e("div",{className:"flex max-h-56 flex-col overflow-y-auto pr-1"}, (todos ? historico : historico.slice(0, 4)).map(function(h, i){
             return e("div",{key:i, className:"grid grid-cols-[48px_minmax(0,1fr)] gap-2 border-t border-[rgba(241,213,138,.16)] py-1.5 first:border-t-0"},
               e("div",{className:MONO+" pt-0.5 text-[12px] text-[#cdbf9f]"}, h.em.slice(8,10)+"/"+h.em.slice(5,7)),
-              e("div",{className:"min-w-0 text-[13px]"}, e("b",null, h.por), " · ", e("span",{className:"text-[#cdbf9f]"}, h.campo), h.campo==="Observação" ? e("div",null, h.para) : e("div",null, fmt(h.campo, h.de), " → ", e("b",{className:"text-[#bbf7d0]"}, fmt(h.campo, h.para))), h.motivo && e("div",{className:"text-[12px] text-[#cdbf9f]"}, "Motivo: "+h.motivo))); })),
+              e("div",{className:"min-w-0 text-[13px]"}, e("b",null, h.por), " · ", e("span",{className:"text-[#cdbf9f]"}, h.campo), h.campo==="Observação" || h.k==="resolvido" ? e("div",{className:h.k==="resolvido" ? "text-[#bbf7d0]" : ""}, h.para) : e("div",null, fmtCampo(h.k, h.de), " → ", e("b",{className:"text-[#bbf7d0]"}, fmtCampo(h.k, h.para))), h.motivo && e("div",{className:"text-[12px] text-[#cdbf9f]"}, "Motivo: "+h.motivo))); })),
         e("div",{className:"mt-1 flex flex-col gap-1.5 rounded-xl p-2 ring-1 ring-[rgba(241,213,138,.2)]", style:{background:"rgba(241,213,138,.06)"}},
-          e("input",{value:motivo, placeholder:"Motivo da troca (opcional)", className:CAMPO, onChange:function(ev){ setMotivo(ev.target.value); }}),
+          e("input",{value:motivo, placeholder:"Motivo da alteração (opcional)", className:CAMPO, onChange:function(ev){ setMotivo(ev.target.value); }}),
           e("input",{value:obs, placeholder:"Observação (opcional): fica no registro", className:CAMPO, onChange:function(ev){ setObs(ev.target.value); }}),
-          e("label",{className:"flex cursor-pointer items-center gap-2 text-[12.5px]"}, e("input",{type:"checkbox", checked:jaDm, onChange:function(ev){ setJaDm(ev.target.checked); }}), "Já fiz essa alteração na DevMaster"),
-          e("div",{className:"flex items-center gap-2"},
-            e("button",{type:"button", disabled:!mudou || !jaDm || p.salvando, onClick:salvar, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, p.salvando ? "Salvando…" : "Salvar alteração"),
-            !mudou && e("span",{className:"text-[12px] text-[#cdbf9f]"}, "Troque a representante ou a data para salvar."), mudou && !jaDm && e("span",{className:"text-[12px] text-warning"}, "Marque que já alterou na DevMaster."), p.erro && e("span",{className:"text-[12px] text-[#f87171]"}, p.erro))))),
+          e("div",{className:"flex flex-wrap items-center gap-2"},
+            e("button",{type:"button", disabled:!mudou || p.salvando, onClick:salvar, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, p.salvando ? "Salvando…" : "Salvar alteração"),
+            !mudou ? e("span",{className:"text-[12px] text-[#cdbf9f]"}, "Mude um campo ao lado ou escreva uma observação.") : e("span",{className:"text-[12px] text-warning"}, mudados.length ? mudados.map(function(c){ return c.rot; }).join(", ")+" ficará marcado como diferente da DevMaster até alterar lá." : "Só a observação será registrada."),
+            p.erro && e("span",{className:"text-[12px] text-[#f87171]"}, p.erro))))),
     e("div",{className:"border-t border-[rgba(241,213,138,.16)] px-4 pb-2.5 pt-2"},
       e("span",{className:ROTULO}, "Condicionais ativas"),
       conds.length===0 ? e("p",{className:"mt-1 text-[13px] text-[#cdbf9f]"}, "Sem condicionais para mostrar.")
@@ -290,7 +321,7 @@ function AbaAgRevendedoras(){
   useEffect(function(){ refCar.current(false); var t = setInterval(function(){ refCar.current(false); }, 600000); return function(){ clearInterval(t); }; }, []);
   var itens = dados ? dados.itens.map(function(i){ return aplicar(i, alt[i.cod]); }) : [];
   var fs = useState({}), fil = fs[0], setFil = fs[1], rs = useState([]), repsSel = rs[0], setRepsSel = rs[1], bs = useState(""), busca = bs[0], setBusca = bs[1];
-  var vs = useState("lista"), visao = vs[0], setVisao = vs[1], ls = useState(200), limite = ls[0], setLimite = ls[1], sd = useState(false), soDia = sd[0], setSoDia = sd[1];
+  var sf = useState(false), soDif = sf[0], setSoDif = sf[1], vs = useState("lista"), visao = vs[0], setVisao = vs[1], ls = useState(200), limite = ls[0], setLimite = ls[1], sd = useState(false), soDia = sd[0], setSoDia = sd[1];
   var h0 = parteData(hojeIso), m1 = useState([h0.getFullYear(), h0.getMonth()]), mes = m1[0], setMes = m1[1], m2 = useState([h0.getFullYear(), h0.getMonth()]), mesG = m2[0], setMesG = m2[1], d1 = useState(hojeIso), dia = d1[0], setDia = d1[1];
   var ab = useState(null), aberto = ab[0], setAberto = ab[1], sv = useState(false), salvando = sv[0], setSalvando = sv[1], er = useState(""), erro = er[0], setErro = er[1];
   useEffect(function(){ if(!aberto) return undefined; var f = function(ev){ if(ev.key==="Escape") setAberto(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [aberto]);
@@ -299,23 +330,31 @@ function AbaAgRevendedoras(){
   var reps = Object.keys(contaReps).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); }).map(function(n){ return {nome:n, n:contaReps[n]}; });
   var nomesReps = reps.map(function(r){ return r.nome; });
   var linhasSemDia = itens.filter(function(r){
+    if(soDif && !r.temDif) return false;
     if(repsSel.length && repsSel.indexOf(r.representante)<0) return false;
     if(busca && r.nome.toLowerCase().indexOf(busca.toLowerCase())<0 && String(r.cod).indexOf(busca)<0) return false;
     return passa(r, fil, hojeIso); });
   var porDia = contar(linhasSemDia), filtrando = linhasSemDia.length!==itens.length;
   var linhas = soDia ? linhasSemDia.filter(function(r){ return r.prev===dia; }) : linhasSemDia;
   var atrasadas = linhasSemDia.filter(function(r){ return r.prev<hojeIso; }).length;
-  var prox7 = linhasSemDia.filter(function(r){ return r.prev>=hojeIso && r.prev<=somaDia(hojeIso, 7); }).length, hojeN = (porDia[hojeIso] ? porDia[hojeIso].n : 0), alteradas = itens.filter(function(r){ return r.difRep || r.difPrev; }).length;
+  var prox7 = linhasSemDia.filter(function(r){ return r.prev>=hojeIso && r.prev<=somaDia(hojeIso, 7); }).length, hojeN = (porDia[hojeIso] ? porDia[hojeIso].n : 0), alteradas = itens.filter(function(r){ return r.temDif; }).length, nDmMudou = itens.filter(function(r){ return CAMPOS.some(function(c){ return r.dif[c.k] && r.dif[c.k].estado==="dm_mudou"; }); }).length;
   var escolherDia = function(iso){ if(soDia && iso===dia){ setSoDia(false); return; } setDia(iso); setSoDia(true); setLimite(200); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); };
   var irParaDia = function(iso){ setDia(iso); setSoDia(true); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); setVisao("lista"); };
   var alternaRep = function(k){ setRepsSel(repsSel.indexOf(k)>=0 ? repsSel.filter(function(x){ return x!==k; }) : repsSel.concat([k])); };
-  var limpaTudo = function(){ setFil({}); setRepsSel([]); setBusca(""); setSoDia(false); };
+  var limpaTudo = function(){ setFil({}); setRepsSel([]); setBusca(""); setSoDia(false); setSoDif(false); };
   var segBtn = function(k, t){ var on = visao===k; return e("button",{key:k, type:"button", onClick:function(){ setVisao(k); }, "aria-pressed":on, className:"h-8 px-3.5 text-[13px] font-semibold "+(on ? "" : "hover:bg-white/10"), style:on ? BARRA_OURO : null}, t); };
   var rSel = aberto ? itens.find(function(r){ return r.cod===aberto; }) : null;
-  var salvar = function(r, patch){
+  var gravar = function(r, patch){
     setSalvando(true); setErro("");
-    var reg = {cod:r.cod, representante:patch.representante, prev:patch.prev, historico:patch.historico, em:new Date().toISOString(), por:eu};
-    chamar("PUT", "/estado/agrev", {chaves:{["r_"+r.cod]:reg}}).then(function(){ var n = Object.assign({}, alt); n[r.cod] = reg; setAlt(n); }).catch(function(x){ setErro(x.message); }).finally(function(){ setSalvando(false); });
+    var reg = {cod:r.cod, campos:patch.campos, dm:patch.dm, historico:patch.historico, em:new Date().toISOString(), por:eu};
+    return chamar("PUT", "/estado/agrev", {chaves:{["r_"+r.cod]:reg}}).then(function(){ var n = Object.assign({}, alt); n[r.cod] = reg; setAlt(n); }).catch(function(x){ setErro(x.message); }).finally(function(){ setSalvando(false); });
+  };
+  // a Ana Maria resolve um campo diferente: usa o da DevMaster (o nosso sai) ou mantém o nosso (passa a valer contra a DevMaster de hoje)
+  var resolver = function(r, k, acao){
+    var campos = Object.assign({}, (r.ov && r.ov.campos) || {}), dm = Object.assign({}, (r.ov && r.ov.dm) || {}), d = r.dif[k], rot = CAMPOS.find(function(c){ return c.k===k; }).rot, texto;
+    if(acao==="dm"){ delete campos[k]; delete dm[k]; texto = "Voltou para o da DevMaster: "+fmtCampo(k, d.dm); }
+    else { dm[k] = d.dm; texto = "Mantido o nosso ("+fmtCampo(k, d.local)+") apesar de a DevMaster estar em "+fmtCampo(k, d.dm); }
+    gravar(r, {campos:campos, dm:dm, historico:[{em:new Date().toISOString(), por:eu, campo:rot, k:"resolvido", de:"", para:texto, motivo:""}].concat((r.ov && r.ov.historico) || []).slice(0, 80)});
   };
   var cel = function(rot, val, cor, dica){ return e("div",{title:dica||null, className:"flex min-w-[120px] flex-1 flex-col items-center justify-center border-r px-2 py-1 last:border-r-0 "+BORDA},
     e("span",{className:"text-[11px] font-semibold uppercase tracking-[.05em] text-muted-foreground"}, rot), e("b",{className:"text-[20px] leading-tight tabular-nums "+(cor||"")}, val)); };
@@ -330,11 +369,13 @@ function AbaAgRevendedoras(){
     e("div",{className:"flex flex-wrap rounded-xl border bg-[#131315] "+BORDA},
       cel("Revendedoras", linhasSemDia.length.toLocaleString("pt-BR"), "text-[#E8B84B]", filtrando ? "de "+itens.length.toLocaleString("pt-BR")+" no total" : "com kit ativo"),
       cel("Acertos hoje", hojeN), cel("Próximos 7 dias", prox7), cel("Atrasadas", atrasadas, atrasadas ? "text-[#f87171]" : "", "Passaram da data prevista e o kit continua aberto"),
-      cel("Representantes", reps.length), cel("Alteradas aqui", alteradas, alteradas ? "text-warning" : "", "Diferentes da DevMaster: altere lá também")),
+      cel("Representantes", reps.length), cel("Diferentes da DevMaster", alteradas, alteradas ? "text-warning" : "", "Alteradas aqui e ainda diferentes da DevMaster: altere lá também ou volte para o da DevMaster")),
     // filtros
     e("div",{className:"flex flex-wrap items-center gap-2"},
       e(SeletorReps,{reps:reps, sel:repsSel, setSel:setRepsSel}),
       e("input",{value:busca, placeholder:"Buscar revendedora (nome ou código)", className:INPUT+" h-8! w-[320px] text-[13px]!", onChange:function(ev){ setBusca(ev.target.value); }}),
+      e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border px-3 text-[13px] "+BORDA+(soDif ? " font-semibold" : ""), style:soDif ? BARRA_OURO : {background:"#1d1d21"}, title:"Mostra só as revendedoras com algum campo diferente da DevMaster"},
+        e("input",{type:"checkbox", checked:soDif, onChange:function(ev){ setSoDif(ev.target.checked); }}), "Só diferentes da DevMaster", nDmMudou>0 && e("b",{className:"rounded-full bg-destructive/25 px-1.5 text-[11px] text-[#f87171]", title:"A DevMaster mudou depois da nossa alteração"}, nDmMudou+" DM mudou")),
       soDia && e("button",{type:"button", onClick:function(){ setSoDia(false); }, className:"inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-bold", style:BARRA_OURO}, "Dia "+fmtDataBR(dia)+" ✕"),
       (filtrando || soDia) && e("button",{type:"button", onClick:limpaTudo, className:"text-[12.5px] text-[#E8B84B]"}, "Limpar todos os filtros"),
       e("span",{className:"ml-auto text-[12.5px] text-muted-foreground"}, "Clique numa revendedora para abrir o card")),
@@ -348,7 +389,7 @@ function AbaAgRevendedoras(){
     rSel && e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setAberto(null); }},
       e("div",{className:"relative my-auto w-full max-w-[900px]"},
         e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAberto(null); }, className:"absolute right-3 top-2.5 z-10 h-7 rounded-lg bg-black/40 px-2.5 text-[12.5px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.3)] hover:bg-black/60"}, "Fechar ✕"),
-        e(CartaoRevendedora,{key:rSel.cod+"|"+(rSel.ov ? rSel.ov.em : ""), r:rSel, todasReps:nomesReps, hojeIso:hojeIso, eu:eu, salvar:salvar, salvando:salvando, erro:erro}))));
+        e(CartaoRevendedora,{key:rSel.cod+"|"+(rSel.ov ? rSel.ov.em : ""), r:rSel, todasReps:nomesReps, hojeIso:hojeIso, eu:eu, salvar:gravar, resolver:resolver, salvando:salvando, erro:erro}))));
 }
 
 export { AbaAgRevendedoras };
