@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.4", data:"2026-10-29", titulo:"SorellyChat mais limpo e contagem de revendedoras", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"Na conversa com um colaborador, o topo mostra só o horário de trabalho. Saíram as bolinhas dos últimos 10 dias e o resumo do mês."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Saiu a barra \"Marcar pendente / Marcar resolvida\" de dentro da conversa."},
+    {tipo:"correção", area:"Servidor", txt:"O robô das revendedoras (18h) conta condicional aberto emitido nos últimos 180 dias, com devolução prevista até 90 dias à frente. Antes eram 90 dias de emissão e dava 5 a menos que a DevMaster."},
+  ]},
   {v:"0.17.3", data:"2026-10-29", titulo:"Faturamento de 28/10 fixado e robô do faturamento desligado", itens:[
     {tipo:"correção", area:"Financeiro · Faturamento", txt:"28/10 fixado: 1.652 acertos e R$ 1.296.201,60 acumulados; Carregar 0 e 234 acertos a realizar (total 1.886)."},
     {tipo:"correção", area:"Servidor", txt:"O robô que lia o faturamento às 10h foi desligado: a regra dele dava só cerca de R$ 262 mil no mês e gravaria o valor errado."}
