@@ -263,7 +263,7 @@ function App(){
             !fechado && lst.map(linhaSetor)); }),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
-        urlAdminAntigo() && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
+        urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
     !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",

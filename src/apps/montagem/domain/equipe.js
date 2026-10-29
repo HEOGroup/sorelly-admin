@@ -79,8 +79,8 @@ function papelDe(id){
 function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b){ return b.id===id; }); }
 // Grupo de ACESSO (menu e blocos de cada tela). Diferente do papel (função na montagem): Nickolas e Deysiane seguem como supervisão nas ações,
 // mas o acesso deles é editável. Sócios = fixo.
-// Só Início, SorellyChat e Melhorias por enquanto (Marcus, 29/10/2026): Bruna (36). Tirar o id daqui quando for liberar telas novas.
-var SO_CHAT = [36];
+// Só Início, SorellyChat e Melhorias por enquanto (Marcus, 29/10/2026): Bruna (36), as montadoras (1 a 7, 19 a 21) e Elen, Agatha e Eduarda (39 a 41, que ainda ganham o setor Encomendas pela conta). Vale também no "atuar como". Tirar o id daqui quando for liberar telas novas.
+var SO_CHAT = [36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
 function grupoDe(id){
   if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];

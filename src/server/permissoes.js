@@ -13,6 +13,7 @@ export const SETORES_DO_MODULO = {
   mk: ["marketing"], gr: ["garantia"],
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   pfmes: ["financeiro"],   // resumo do mês dos fornecedores (planilha Pag Fornecedores, RESUMO MÊS): gravado por scripts/planilha-fornecedores.mjs, lido pelo Direcionar Pix (28/10/2026)
+  agrev: ["agendamento"],   // alterações da Agenda de revendedoras (troca de representante, data do acerto, observação) feitas pela Ana Maria enquanto a DevMaster ainda manda (29/10/2026)
   ri: ["agendamento"],   // revendedoras do atendimento interno (lista, contatos e agenda da Tamara): Agendamento e Diretoria (28/10/2026)
   chathor: ["*"],   // horário de trabalho de cada colaborador para a faixa do alto da conversa do SorellyChat (só nome, entrada, saída e dias; sem salário nem CPF)
   kn: ["*"],   // kits novos direcionados pela Michele às representantes (29/10/2026): todo mundo logado lê, para o kit chegar no app da representante em qualquer aparelho

@@ -251,6 +251,7 @@ export async function listaAgenda({ forcar = false } = {}) {
         cod, nome: nomeNormal(p.aam_nome), celular: p.aam_celular || p.aam_whatsapp || "", cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
         repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante",
         prev: base[0] ? dia(base[0].afi_prevdevol) : "", emissao: kp ? dia(kp.afi_data) : "",
+        conds: lista.map((x) => ({ n: String(x.afi_codigo || "").trim(), t: tipos.get(x.afi_codigo), e: dia(x.afi_data), d: dia(x.afi_prevdevol), p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, vd: String(x.afi_vendedor || "").trim() })),
         kits: lista.length, pecas: lista.reduce((s, x) => s + (Number(x.afi_qtditens) || 0), 0), valor: Math.round(lista.reduce((s, x) => s + (Number(x.afi_valormerc) || 0), 0) * 100) / 100,
       };
     }).filter((i) => i.prev).sort((a, b) => a.prev.localeCompare(b.prev) || a.nome.localeCompare(b.nome, "pt-BR"));
