@@ -44,7 +44,7 @@ var comLoginAgora = function(){ return srv.apiAtiva() && !!srv.token(); };
 // Situação: um clique abre as três opções. Só existe com o servidor ligado.
 function PilulaSituacao(){
   var sit = useState(false), aberta = sit[0], setAberta = sit[1], pf = usePerfil();
-  if(!comLoginAgora() || pf.meuId==null || ["16","17","28"].indexOf(srv.pessoaDaConta())<0) return null;   // situação (reunião/ausente): só Marcus, Nickolas e Lucas
+  if(!comLoginAgora() || pf.meuId==null || ["16","17","28","44"].indexOf(srv.pessoaDaConta())<0) return null;   // situação (reunião/ausente): só Marcus, Nickolas, Lucas e Leonardo
   var meu = pf.pessoas[pf.meuId] || {}, atual = SITUACOES[meu.situacao] || SITUACOES.disponivel;
   var mudar = function(k){ setAberta(false); salvarEu({situacao:k}).catch(function(x){ window.alert(x.message); }); };
   return e("div",{className:"relative"},
@@ -62,7 +62,7 @@ function PilulaSituacao(){
 function ContaMenu(p){
   var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"], navigate = useNavigate();
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], arq = useRef(null);
-  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
+  var q = semAcento(busca), comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28","44"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
   var escolher = function(id){ d({type:"LOGIN", id:id, atuando:true}); setAberto(false); setBusca(""); navigate(caminhoDaAba("inicio")); };   // ao trocar de pessoa, vai para o Início dela (as abas do Marcus não vão junto; voltando para si, as dele voltam)
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
@@ -76,7 +76,7 @@ function ContaMenu(p){
     : e("span",{className:"grid shrink-0 place-items-center text-white", style:{width:tam, height:tam, background:v[0], borderRadius:rd}}, e(Icon,{n:v[1], s:Math.round(tam*0.5)})); };
   var titulo = function(t){ return e("div",{className:"px-1 pt-1 text-[11px] font-bold uppercase tracking-wide text-white/60"}, t); };
 
-  return e("div",{className:"relative"},
+  var conta = e("div",{className:"relative"},
     e("input",{ref:arq, type:"file", accept:"image/*", className:"hidden", onChange:trocarFoto}),
     e("button",{onClick:function(){ setAberto(!aberto); }, "aria-label":"Minha conta", "aria-expanded":aberto,
         className:"flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 pl-1.5 pr-2.5 text-sm font-semibold outline-none hover:bg-primary/15"},
@@ -85,6 +85,7 @@ function ContaMenu(p){
     aberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(false); }}),
     e("div",{className:(aberto ? "" : "hidden ")+"absolute right-0 top-11 z-50 flex max-h-[80vh] flex-col gap-2 overflow-y-auto rounded-xl bg-card p-3 shadow-2xl ring-1 ring-[#E8B84B]/40 "+(podeTrocar ? "w-[min(30rem,92vw)]" : "w-64")},
       e("div",{className:"flex items-center gap-3 border-b border-border pb-3"}, foto(52, 12), e("div",{className:"min-w-0"}, e("div",{className:"truncate text-[14px] font-bold"}, nomeDe(s.usuario)), e("div",{className:"text-[12px] text-white/70"}, PAPEL_LB[g]))),
+      e("button",{type:"button", onClick:sair, className:"flex h-9 items-center justify-center gap-2 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"}, e(Icon,{n:"logout", s:15}), comLogin ? "Sair e entrar com outra conta" : "Sair (voltar para a tela de entrada)"),
       comLogin && meu && e("div",null,
         e("button",{type:"button", onClick:function(){ arq.current.click(); }, className:BOTAO_MENU}, e(Icon,{n:"pencil", s:15}), "Trocar minha foto"),
         meu.foto && e("button",{type:"button", onClick:removerFoto, className:BOTAO_MENU}, e(Icon,{n:"trash", s:15}), "Remover minha foto")),
@@ -103,8 +104,10 @@ function ContaMenu(p){
               e("span",{className:"grid size-5 place-items-center rounded-md text-white", style:{background:vis[0]}}, e(Icon,{n:vis[1], s:11})), PAPEL_LB[gr[0]]),
             e("div",{className:"flex flex-wrap gap-1.5"}, gente.map(function(x){ var on = x.id===s.usuario;
               return e("button",{key:x.id, onClick:function(){ escolher(x.id); },
-                className:"rounded-lg px-2.5 py-1 text-[12.5px] font-semibold ring-1 "+(on ? "text-white ring-2" : "bg-black/20 ring-border hover:bg-white/10"), style:on ? {background:vis[0], borderColor:vis[0]} : undefined}, x.nome); }))); })),
-      e("button",{type:"button", onClick:sair, className:"mt-1 flex h-9 items-center justify-center gap-2 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"}, e(Icon,{n:"logout", s:15}), comLogin ? "Sair" : "Sair (voltar para a tela de entrada)")));
+                className:"rounded-lg px-2.5 py-1 text-[12.5px] font-semibold ring-1 "+(on ? "text-white ring-2" : "bg-black/20 ring-border hover:bg-white/10"), style:on ? {background:vis[0], borderColor:vis[0]} : undefined}, x.nome); }))); }))));
+  // botão Sair sempre à vista ao lado da conta (Marcus, 29/10/2026: não achava onde sair para entrar com a conta de outra pessoa)
+  var botaoSair = e("button",{type:"button", onClick:sair, title:comLogin ? "Sair e entrar com outra conta" : "Sair (voltar para a tela de entrada)", "aria-label":"Sair", className:"flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-border bg-white/5 px-2.5 text-[13px] font-semibold outline-none hover:bg-white/10"}, e(Icon,{n:"logout", s:15}), "Sair");
+  return e("div",{className:"flex items-center gap-1.5"}, conta, botaoSair);
 }
 
 export { PilulaSituacao, ContaMenu, SETORES_LOGIN };

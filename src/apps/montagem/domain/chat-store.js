@@ -31,7 +31,22 @@ function guardarMidia(url){
   try{ midiasSalvas[k] = url; localStorage.setItem(CHAVE_MIDIA, JSON.stringify(midiasSalvas)); }catch(x){ delete midiasSalvas[k]; }   // cheio: fica só até recarregar
   return k;
 }
-function lerMidia(k){ if(k && String(k).indexOf("fotos/")===0) return ("/"||"/")+k; return midiasMem[k] || midiasSalvas[k] || null; }
+// Mídia de OUTRA pessoa (ou de outro navegador): não está aqui; busca no servidor pela chave (md_...) e avisa a tela quando chegar. 404 = o envio ainda não terminou: tenta de novo (até 8 vezes).
+var buscandoMidia = {}, tentativasMidia = {};
+function buscarMidia(k){
+  if(buscandoMidia[k] || (tentativasMidia[k]||0)>=8) return;
+  buscandoMidia[k] = true; tentativasMidia[k] = (tentativasMidia[k]||0)+1;
+  chamar("GET", "/chat/midia/"+encodeURIComponent(k)).then(function(r){
+    buscandoMidia[k] = false;
+    if(r && r.url){ midiasMem[k] = r.url; ouvintes.slice().forEach(function(f){ f(); }); }
+  }).catch(function(){ setTimeout(function(){ buscandoMidia[k] = false; ouvintes.slice().forEach(function(f){ f(); }); }, 3000); });
+}
+function lerMidia(k){
+  if(k && String(k).indexOf("fotos/")===0) return ("/"||"/")+k;
+  var v = midiasMem[k] || midiasSalvas[k] || null;
+  if(!v && k && SERVIDOR && /^md_/.test(k) && token()) buscarMidia(k);
+  return v;
+}
 
 // ---------- dados de demonstração ----------
 function semear(){
@@ -463,7 +478,7 @@ function mensagens(convId, cid){ return (estado.msgs[convId]||[]).filter(functio
 
 function sendMessage(p){
   var conv = convPorId(p.conv); if(!conv) return null;
-  if(SERVIDOR && p.midia){ if(typeof window!=="undefined") window.alert("Fotos e áudios ainda não funcionam no chat. Por enquanto, só texto."); return null; }
+  if(SERVIDOR && p.midia){ var dm = lerMidia(p.midia.key); if(dm && dm.length>3600000){ if(typeof window!=="undefined") window.alert("Esse arquivo é grande demais para o chat (máximo uns 2,5 MB). Reduza e envie de novo."); return null; } }
   var msg = {id:uid("m"), de:p.eu, t:Date.now(), tipo:p.tipo||"texto", texto:p.texto||"", midia:p.midia||null, resp:p.resp||null, enc:!!p.enc, dec:p.dec||null, status:"enviado", reacoes:{}, mencoes:p.mencoes||[]};
   if(p.aba && p.aba!=="geral") msg.aba = p.aba;
   if(p.porDir) msg.porDir = p.porDir;   // a Direção respondeu no lugar da representante (marcado com quem respondeu)
@@ -747,6 +762,7 @@ if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) windo
 
 // ---------- SERVIDOR (27/10/2026): conversas e mensagens guardadas no banco, para as pessoas conversarem de verdade ----------
 // Cada mudança local (mensagem nova, reação, edição, conversa nova) vai para uma fila e é enviada ao servidor; a cada 4 segundos a tela pergunta o que veio de novo (seq = número de ordem).
+var midiasEnviadas = {};   // chaves de mídia que já subiram para o servidor nesta sessão
 function diferencas(antes, depois){
   if(antes===depois || !eu) return;
   var cvAntes = {}; antes.convs.forEach(function(c){ cvAntes[c.id] = c; });
@@ -754,7 +770,7 @@ function diferencas(antes, depois){
   Object.keys(depois.msgs).forEach(function(cid){
     var nova = depois.msgs[cid], velha = antes.msgs[cid]; if(nova===velha) return;
     var mapa = {}; (velha||[]).forEach(function(m){ mapa[m.id] = m; });
-    nova.forEach(function(m){ var o = mapa[m.id]; if(o===m) return; if(!o){ if(m.de===eu) fila.push({t:"msg", conv:cid, msg:m}); } else fila.push({t:"patch", conv:cid, msg:m}); });
+    nova.forEach(function(m){ var o = mapa[m.id]; if(o===m) return; if(!o){ if(m.de===eu){ if(m.midia && m.midia.key && /^md_/.test(m.midia.key) && !midiasEnviadas[m.midia.key]) fila.push({t:"midia", conv:cid, key:m.midia.key}); fila.push({t:"msg", conv:cid, msg:m}); } } else fila.push({t:"patch", conv:cid, msg:m}); });
   });
   if(fila.length) setTimeout(esvaziar, 60);
 }
@@ -762,7 +778,7 @@ function esvaziar(){
   if(enviando || !fila.length || !token()) return;
   enviando = true;
   var it = fila[0];
-  var req = it.t==="conv" ? chamar("POST", "/chat/conv", {conv:it.conv}) : it.t==="msg" ? chamar("POST", "/chat/msg", {conv:it.conv, msg:it.msg}) : chamar("PATCH", "/chat/msg/"+encodeURIComponent(it.msg.id), {dados:it.msg});
+  var req = it.t==="midia" ? (function(){ var u = lerMidia(it.key); return u ? chamar("POST", "/chat/midia", {key:it.key, url:u}).then(function(){ midiasEnviadas[it.key] = true; }) : Promise.resolve(); })() : it.t==="conv" ? chamar("POST", "/chat/conv", {conv:it.conv}) : it.t==="msg" ? chamar("POST", "/chat/msg", {conv:it.conv, msg:it.msg}) : chamar("PATCH", "/chat/msg/"+encodeURIComponent(it.msg.id), {dados:it.msg});
   req.then(function(){ fila.shift(); enviando = false; esvaziar(); })
     .catch(function(x){ enviando = false; if(/Sem conexão|Algo deu errado/.test(x.message||"")) setTimeout(esvaziar, 4000); else { fila.shift(); esvaziar(); } });   // sem rede: tenta de novo; recusa do servidor: descarta
 }

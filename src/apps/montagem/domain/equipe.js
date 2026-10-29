@@ -52,7 +52,7 @@ var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_
 // Quem pode ser montador de um kit: pessoa que existe na equipe e é da montagem ou da supervisão/diretoria (bipadora, financeiro etc. não montam)
 function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORAS.some(function(m){ return m.id===id; }) || papelDe(id)==="supervisao"); }
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
-var PODE_EXCECAO = [16, 11, 39];   // Marcus, Deysiane e a Elen (Encomendas): Marcus pediu em 19/10/2026 (ele às vezes manda ela fazer um kit específico)
+var PODE_EXCECAO = [16, 11, 39, 44];   // Marcus, Deysiane e a Elen (Encomendas): Marcus pediu em 19/10/2026 (ele às vezes manda ela fazer um kit específico)
 function podeLiberarExcecao(id){ return PODE_EXCECAO.indexOf(id)>=0; }
 // Contas com grupo de acesso próprio (funcionário que não está na lista de 43 nomes): o App informa o grupo e o nome da conta que entrou.
 var GRUPO_CONTA = {}, NOME_CONTA = {};

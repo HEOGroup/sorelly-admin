@@ -290,13 +290,13 @@ function rhReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-// horário de cada pessoa para o SorellyChat (19/10/2026): a entrada vem da planilha; a saída é a jornada CLT de 44h por semana + 1h de almoço (seg-sex 8h48, seg-sáb 7h20). O RH/Direção ajusta no chat se for diferente.
+// horário de cada pessoa para o SorellyChat (19/10/2026): a entrada vem da planilha; a saída: seg a sex = entrada + 10h (08:00 sai às 18:00, Marcus, 29/10/2026); seg a sáb = jornada CLT de 44h + 1h de almoço (8h20). O RH/Direção ajusta no chat se for diferente.
 var ALIAS_CHAT = {"sthefany marques de aquino correa":"Sthafany Marques de Aquino Correa"};
 function horariosParaChat(){
   var fmt = function(m){ return p2(Math.floor(m/60))+":"+p2(m%60); };
   return LOCAIS.filter(function(x){ return !x.deslig && x.status!=="DESLIGADO" && minutosDe(x.entrada)!==null; }).map(function(x){
     var ini = minutosDe(x.entrada), sab = x.escala==="e2", nome = titulo(x.nome);
-    return {nome:ALIAS_CHAT[nome.toLowerCase()]||nome, ini:x.entrada, fim:fmt(ini+(sab ? 8*60+20 : 9*60+48)), dias:sab ? [1,2,3,4,5,6] : [1,2,3,4,5]};
+    return {nome:ALIAS_CHAT[nome.toLowerCase()]||nome, ini:x.entrada, fim:fmt(ini+(sab ? 8*60+20 : 10*60)), dias:sab ? [1,2,3,4,5,6] : [1,2,3,4,5]};
   });
 }
 
@@ -304,12 +304,13 @@ function horariosParaChat(){
 // Horário e presença saem direto do cadastro do RH: mudou lá, muda no chat. O cálculo da lista fica guardado enquanto o RH não muda (s.rh é o mesmo objeto).
 var memoRh = {rh:null, colabs:null, hor:null};
 function colabsMemo(s){ if(memoRh.rh!==s.rh){ memoRh.rh = s.rh; memoRh.colabs = colaboradoresRh(s); memoRh.hor = null; } return memoRh.colabs; }
-// horário de cada colaborador ativo: entrada do cadastro; saída = jornada CLT de 44h por semana dividida nos dias da escala + 1h de almoço (5 dias = 9h48, 6 dias = 8h20)
+// horário de cada colaborador ativo: entrada do cadastro; seg a sex (5 dias) a saída é entrada + 10h (08:00 sai às 18:00; Marcus, 29/10/2026: antes dava 17:48, 17:18...);
+// nas outras escalas (6 dias etc.) segue a jornada CLT de 44h por semana dividida nos dias da escala + 1h de almoço (6 dias = 8h20)
 function horariosDoRh(s){
   if(!s.rh) return [];
   var cs = colabsMemo(s);
   if(!memoRh.hor) memoRh.hor = cs.filter(function(x){ return !x.deslig && x.status!=="DESLIGADO" && minutosDe(x.entrada)!==null && x.escalaDias.length; }).map(function(x){
-    var ini = minutosDe(x.entrada), fim = ini + Math.round(44*60/x.escalaDias.length) + 60, nome = titulo(x.nome);
+    var ini = minutosDe(x.entrada), fim = ini + (x.escalaDias.length===5 ? 10*60 : Math.round(44*60/x.escalaDias.length) + 60), nome = titulo(x.nome);
     return {nome:ALIAS_CHAT[nome.toLowerCase()]||x.nome, ini:x.entrada, fim:p2(Math.floor(fim/60))+":"+p2(fim%60), dias:x.escalaDias.slice()}; });
   return memoRh.hor;
 }

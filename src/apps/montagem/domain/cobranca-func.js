@@ -5,7 +5,7 @@ import { globLocal } from "@/lib/glob-local";
 // Estado s.cf (só neste navegador: dívida de funcionária é dado sensível). Regras de cálculo portadas de apps/backend/src/lib/credito-pecas/regras.ts.
 
 var LIMITE_SALDO = 500;
-var ACESSO_COBRANCA_BASE = [16, 28, 29];   // Marcus, Lucas e Anamaria (somados à Amanda de Miranda, que opera a cobrança, em pages/CobrancaFunc.js)
+var ACESSO_COBRANCA_BASE = [16, 28, 29, 44];   // Marcus, Lucas e Anamaria (somados à Amanda de Miranda, que opera a cobrança, em pages/CobrancaFunc.js)
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };
 var hojeIso = function(){ var d = new Date(); return d.getFullYear()+"-"+p2(d.getMonth()+1)+"-"+p2(d.getDate()); };

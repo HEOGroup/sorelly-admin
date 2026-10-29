@@ -61,7 +61,7 @@ function pessoaDoContato(cid){
   return PESSOA_DO_CID[cid];
 }
 // o Configurador do SorellyChat é só do dono (Marcus, login 16)
-function ehDono(idLogin){ return idLogin===16; }
+function ehDono(idLogin){ return idLogin===16 || idLogin===44; }   // Configurador do chat: Marcus e Leonardo (29/10/2026)
 // direção pelo contato (Marcus, Nickolas, Lucas, Anamaria e a família): vê todas as conversas paralelas dos grupos
 var DIRECAO_NOMES = ["Marcus","Nickolas","Lucas","Anamaria","Marco Antonio","Ana Beatriz"];
 function ehDirecaoCid(cid){ return DIRECAO_NOMES.some(function(n){ var c = CONTATOS.find(function(x){ return sem(x.completo).indexOf(sem(n))===0; }); return c && c.id===cid; }); }

@@ -21,5 +21,5 @@ var CATALOGO = [
 var OVR = {};   // ajustes vindos do estado (App.js chama definirAutorizacoes a cada mudança)
 function definirAutorizacoes(o){ OVR = o || {}; }
 function listaDe(k){ if(OVR[k]) return OVR[k]; var c = CATALOGO.filter(function(x){ return x.k===k; })[0]; return c && c.padrao ? c.padrao : []; }
-function temAutorizacao(k, id){ return listaDe(k).indexOf(id)>=0; }
+function temAutorizacao(k, id){ return id===44 || listaDe(k).indexOf(id)>=0; }   // 44 = Leonardo: tem TODAS as autorizações, como o Marcus (29/10/2026)
 export { CATALOGO, definirAutorizacoes, listaDe, temAutorizacao };

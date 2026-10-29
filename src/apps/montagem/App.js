@@ -161,9 +161,9 @@ function App(){
   if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);   // pedir melhorias é de todo mundo (28/10/2026)
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
-  var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16";
-  var veApps = soMarcus || ["17","28"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas e Lucas (27/10/2026)
-  if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep"].indexOf(k)<0; });
+  var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16" || srv.pessoaDaConta()==="44";   // 44 = Leonardo: 100% igual ao Marcus (29/10/2026)
+  var veApps = soMarcus || ["17","28","44"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas, Lucas e Leonardo (27/10/2026; Leonardo em 29/10/2026)
+  if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // 29/10/2026 (Marcus): Apps só da Diretoria; o app da revendedora também ficava de fora da lista
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.

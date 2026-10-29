@@ -13,7 +13,7 @@ import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var EDITORES = [16,17,28,29];   // quem altera: Marcus, Nickolas, Lucas e Anamaria (igual à matriz de acessos)
+var EDITORES = [16,17,28,29,44];   // quem altera: Marcus, Nickolas, Lucas e Anamaria (igual à matriz de acessos)
 var DIRETORIA_IDS = [16,17,28];
 var COR = "#3B82F6";
 
