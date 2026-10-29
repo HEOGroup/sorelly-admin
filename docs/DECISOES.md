@@ -1393,3 +1393,4 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 - Troca de pessoa ("atuar como", 29/10/2026, Marcus): ao escolher outra pessoa o sistema vai para o Início dela; abas abertas e favoritas são de cada pessoa (`window.__sorellyAtuando`), então as do Marcus não aparecem na tela da Elen e voltam quando ele volta para si.
 - Avisos do chat (29/10/2026): TODOS usam o modelo 1 (foto, nome e mensagem em 2 linhas), inclusive quando alguém te marca ou o Marcus escreve; o cartão grande com campo de resposta saiu. Os avisos somem sozinhos em 7 a 9 segundos.
 - "Atuar como" (29/10/2026): sempre começa no Início da pessoa, mesmo montadora e bipadora (que no login real continuam começando no SorellyChat).
+- Chat (29/10/2026, Marcus): o aviso "Sem resposta há Xh" saiu. Os avisos de mensagem nova vão para o canto de CIMA, à direita, com letra maior e botão X (modelo a escolher em `docs/design/chat-notificacoes-v3.html`).

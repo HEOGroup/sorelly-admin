@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · avisos no canto de cima</title>
+<style>
+:root{--ouro:#E8B84B;--cx:#110e08;--tx:#fff;--mut:#bdb39d}
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:radial-gradient(ellipse at 50% 0%,#201808,#0a0806 55%,#050403);color:var(--tx);min-height:100vh;padding:24px}
+h1{font-size:18px;margin:0 0 4px;text-align:center}p.sub{margin:0 0 18px;text-align:center;color:var(--mut)}
+h2{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ouro);margin:22px 0 10px;text-align:center}
+.grade{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;max-width:980px;margin:0 auto}
+.bt{height:32px;min-width:96px;padding:0 14px;border-radius:8px;border:1px solid rgba(232,184,75,.4);background:#1b1710;color:var(--ouro);font:inherit;font-weight:600;cursor:pointer}
+.bt:hover{border-color:var(--ouro)}
+.modelo{width:230px;border:1px solid rgba(232,184,75,.28);border-radius:12px;background:var(--cx);padding:12px;text-align:center}
+.modelo b{display:block;margin-bottom:2px}.modelo small{display:block;color:var(--mut);margin-bottom:10px}
+.nota{max-width:700px;margin:18px auto 0;text-align:center;color:var(--mut)}
+/* canto de CIMA, à direita */
+#pilha{position:fixed;right:16px;top:16px;display:flex;flex-direction:column;gap:10px;align-items:flex-end;z-index:9;max-width:calc(100vw - 32px)}
+.av{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:18px;color:#1a1405;flex:none;background:linear-gradient(145deg,#f1cd75,#b8892a)}
+.x{position:absolute;top:6px;right:6px;width:26px;height:26px;border-radius:50%;border:0;background:rgba(255,255,255,.12);color:inherit;font-size:16px;line-height:1;cursor:pointer;display:grid;place-items:center}
+.x:hover{background:rgba(255,255,255,.28)}
+.n{position:relative;animation:entra .25s;cursor:pointer}
+.n .t{min-width:0;flex:1;padding-right:22px}
+.n .msg{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+/* 1 · cartão com foto (escuro) */
+.m1{width:400px;display:flex;gap:12px;align-items:flex-start;padding:14px;background:#111b21;border:1px solid rgba(232,184,75,.4);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.55)}
+.m1 b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.m1 .msg{font-size:16px;color:#e3eaee;margin-top:2px}.m1 time{display:block;font-size:12px;color:var(--mut);margin-top:4px}
+/* 2 · cartão dourado com faixa lateral */
+.m2{width:420px;display:flex;gap:12px;align-items:flex-start;padding:14px 14px 14px 12px;background:#1a1407;border:1px solid rgba(232,184,75,.5);border-left:6px solid var(--ouro);border-radius:12px;box-shadow:0 10px 28px rgba(0,0,0,.55)}
+.m2 b{display:block;font-size:17px;color:var(--ouro);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.m2 .msg{font-size:17px;margin-top:2px}.m2 time{position:absolute;right:38px;top:11px;font-size:12px;color:var(--mut)}
+/* 3 · cartão com botão Abrir */
+.m3{width:420px;padding:14px;background:#0e0e11;border:1px solid rgba(232,184,75,.4);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.55)}
+.m3 .l{display:flex;gap:12px;align-items:center;padding-right:24px}.m3 b{display:block;font-size:16px}.m3 small{color:var(--mut);font-size:12px}
+.m3 .msg{font-size:17px;margin:10px 0 12px;color:#f1ecde}.m3 .bs{display:flex;gap:8px}.m3 .bt{height:34px;flex:1;font-size:14px}
+/* 4 · cartão claro, como o WhatsApp Web */
+.m4{width:400px;display:flex;gap:12px;align-items:flex-start;padding:14px;background:#fff;color:#111b21;border:1px solid #d1d7db;border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.4)}
+.m4 .x{background:#eef1f3;color:#54656f}.m4 .x:hover{background:#dfe5e8}
+.m4 b{display:block;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.m4 .msg{font-size:16px;color:#3b4a54;margin-top:2px}.m4 time{display:block;font-size:12px;color:#667781;margin-top:4px}
+@keyframes entra{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+@keyframes sai{to{transform:translateY(-20px);opacity:0}}
+</style></head><body>
+<h1>SorellyChat · aviso no canto de cima</h1>
+<p class="sub">Aparece no alto, à direita. Letra maior e um X para fechar. Clique no aviso para abrir a conversa.</p>
+
+<h2>4 modos</h2>
+<div class="grade">
+  <div class="modelo"><b>1 · Escuro com foto</b><small>Letra 16 px, foto grande</small><button class="bt" data-n="1">Mostrar</button></div>
+  <div class="modelo"><b>2 · Faixa dourada</b><small>Letra 17 px, nome em dourado</small><button class="bt" data-n="2">Mostrar</button></div>
+  <div class="modelo"><b>3 · Com botão Abrir</b><small>Mostra a mensagem e o botão</small><button class="bt" data-n="3">Mostrar</button></div>
+  <div class="modelo"><b>4 · Claro (WhatsApp Web)</b><small>Fundo branco, letra escura</small><button class="bt" data-n="4">Mostrar</button></div>
+</div>
+<div class="grade" style="margin-top:14px"><button class="bt" id="varios" style="min-width:260px">Mostrar 3 avisos seguidos (modo escolhido por último)</button></div>
+<p class="nota">O som é o A (Cristal forte). Os avisos somem sozinhos em 9 segundos, ou quando você clica no X. Me diga o número que você escolher.</p>
+<div id="pilha"></div>
+<script>
+var ctx, mestre;
+function ac(){ if(!ctx){ ctx=new (window.AudioContext||window.webkitAudioContext)(); mestre=ctx.createDynamicsCompressor(); mestre.threshold.value=-14; mestre.ratio.value=4; mestre.connect(ctx.destination);} if(ctx.state==="suspended") ctx.resume(); return ctx; }
+function nota(f,ini,dur,tipo,vol){ var c=ac(),o=c.createOscillator(),g=c.createGain(),t=c.currentTime+ini; o.type=tipo||"sine"; o.frequency.setValueAtTime(f,t); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(vol,t+0.012); g.gain.exponentialRampToValueAtTime(0.0001,t+dur); o.connect(g); g.connect(mestre); o.start(t); o.stop(t+dur+0.05); }
+function somA(){ nota(1760,0,.34,"sine",.8); nota(2349,.09,.42,"sine",.75); nota(3520,.09,.18,"sine",.14); nota(880,0,.3,"triangle",.18); }
+var pilha=document.getElementById("pilha"), ultimo="1";
+function fecha(el){ el.style.animation="sai .2s forwards"; setTimeout(function(){ el.remove(); },200); }
+var X='<button class="x" aria-label="Fechar o aviso" title="Fechar">×</button>';
+function mostra(k, nome, txt){
+  var hh=new Date().toTimeString().slice(0,5), el=document.createElement("div"), ini=nome.charAt(0);
+  if(k==="1") el.innerHTML='<div class="n m1"><div class="av">'+ini+'</div><div class="t"><b>'+nome+'</b><span class="msg">'+txt+'</span><time>'+hh+'</time></div>'+X+'</div>';
+  if(k==="2") el.innerHTML='<div class="n m2"><div class="av">'+ini+'</div><div class="t"><b>'+nome+'</b><span class="msg">'+txt+'</span></div><time>'+hh+'</time>'+X+'</div>';
+  if(k==="3") el.innerHTML='<div class="n m3"><div class="l"><div class="av">'+ini+'</div><div><b>'+nome+'</b><small>Kits e Atendimento · '+hh+'</small></div></div><div class="msg">'+txt+'</div><div class="bs"><button class="bt">Abrir conversa</button></div>'+X+'</div>';
+  if(k==="4") el.innerHTML='<div class="n m4"><div class="av">'+ini+'</div><div class="t"><b>'+nome+'</b><span class="msg">'+txt+'</span><time>'+hh+'</time></div>'+X+'</div>';
+  var c=el.firstChild; pilha.appendChild(c);
+  c.querySelector(".x").onclick=function(ev){ ev.stopPropagation(); fecha(c); }; c.onclick=function(){ fecha(c); };
+  setTimeout(function(){ if(c.parentNode) fecha(c); }, 9000);
+  somA(); ultimo=k;
+}
+var TXT="Oi Marcus, preciso confirmar o kit da Ketlyn e da Maria Luysa antes das 15h, porque as duas vêm buscar hoje. Pode me responder quando puder?";
+document.querySelectorAll("[data-n]").forEach(function(b){ b.onclick=function(){ mostra(b.dataset.n,"Natasha",TXT); }; });
+document.getElementById("varios").onclick=function(){ mostra(ultimo,"Natasha","Oi Marcus, o kit da Ketlyn já está pronto?"); setTimeout(function(){ mostra(ultimo,"Priscila","Bom dia! Você viu o pedido da Dayanne?"); },700); setTimeout(function(){ mostra(ultimo,"Leci","Marcus, ligaram da DevMaster."); },1400); };
+</script></body></html>

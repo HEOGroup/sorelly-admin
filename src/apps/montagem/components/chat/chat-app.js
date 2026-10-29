@@ -65,14 +65,8 @@ function ChatGlobal(p){
         }
       });
     };
-    var alertar = function(){
-      var novos = api.checkAlerts(eu); if(!novos.length) return;
-      tocar("atraso");
-      var ts = novos.map(function(t){ var rep = t.conv.tipo==="setor" ? t.conv.repId : t.conv.membros.find(function(x){ return x!==t.resp[0]; });
-        return {id:"al"+t.conv.id+t.nivel+Date.now(), conv:t.conv.id, titulo:"Sem resposta há "+FAIXAS_H[t.nivel-1]+"h", sub:contato(rep).nome.split(" ").slice(0,2).join(" ")+" · "+t.setor+" · "+t.pend+(t.pend===1 ? " mensagem" : " mensagens")+" esperando", atraso:true}; });
-      efem({toasts:st.efem.toasts.concat(ts).slice(-3)});
-    };
-    checar(); alertar(); var t = setInterval(function(){ checar(); alertar(); }, 10000); return function(){ clearInterval(t); };
+    // "Sem resposta há Xh" saiu (Marcus, 29/10/2026)
+    checar(); var t = setInterval(function(){ checar(); }, 10000); return function(){ clearInterval(t); };
   }, [eu, st.mencoes, nt.chat]);
   if(!st.efem.toasts.length || !eu || !nt.chat) return null;
   return e("div",{className:"fixed bottom-24 right-4 z-[70] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2", "data-sem-clique":true},
