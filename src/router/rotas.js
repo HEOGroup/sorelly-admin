@@ -184,6 +184,7 @@ const montagem = {
     pagina("revendedoras-ativas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasAtivas"),
     pagina("revendedoras-kits-e-vendas", () => import("@/apps/montagem/pages/RevendedorasAtivas"), "AbaRevendedorasKits"),
     pagina("revendedoras-condicional", () => import("@/apps/montagem/pages/CondicionalModelo"), "AbaCondicionalModelo"),
+    pagina("pagas-por-dia", () => import("@/apps/montagem/pages/PagasPorDia"), "AbaPagasPorDia"),
     pagina("contas-a-receber", () => import("@/apps/montagem/pages/ContasReceber"), "AbaContasReceber"),
     pagina("previsao-de-faturamento", () => import("@/apps/montagem/pages/PrevisaoFaturamento"), "AbaPrevisaoFaturamento"),
     pagina("painel-dos-acertos", () => import("@/apps/montagem/pages/PainelAcertos"), "AbaPainelAcertos"),

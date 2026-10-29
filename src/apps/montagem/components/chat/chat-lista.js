@@ -114,7 +114,7 @@ function ListaConversas(p){
             e("span",{className:"line-clamp-2 break-words"}, u ? ((x.conv.tipo!=="dm" && u.de!==eu && u.tipo!=="sistema" ? contato(u.de).nome.split(" ")[0]+": " : "")+textoPrevia(u)) : "Conversa nova")),
           x.fixa && e(Ph,{n:"push-pin", s:15, fill:true, style:{color:W.sec}}),
           x.marcado && e("span",{className:"grid size-5 place-items-center rounded-full text-[10px] font-bold text-white", style:{background:W.verde}, title:"Marcou você"}, "@"),
-          devo(x) && e(EtiquetaEspera,{t:thDe[x.conv.id]}),
+          // relógio de espera (ex.: "2 · 11 min") saiu da lista (Marcus, 29/10/2026)
           x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas))));
   };
   var rolou = function(ev){ var a = ev.target; if(a.scrollHeight-a.scrollTop-a.clientHeight<120 && limite<filtrada.length) setLimite(limite+40); };

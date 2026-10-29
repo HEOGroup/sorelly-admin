@@ -40,6 +40,7 @@ export const SLUG_DA_ABA = {
   cpagamentos: "controle-de-pagamentos",
   ctapagar: "contas-a-pagar-empresa-e-familia",
   ctalista: "contas-a-pagar",
+  pagaspordia: "pagas-por-dia",
   emprestimos: "emprestimos",
   chavespix: "chaves-pix-e-regras",
   chavespixbanco: "chaves-pix-dos-bancos",

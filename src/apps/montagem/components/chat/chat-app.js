@@ -9,6 +9,7 @@ import { Conversa } from "@/apps/montagem/components/chat/chat-conversa";
 import { Avatar, LogoChat, Ph, TemaChatClaro, W, tempoCurto } from "@/apps/montagem/components/chat/chat-ui";
 import { usePerfil } from "@/apps/montagem/lib/perfil";
 import { e, useEffect, useState } from "@/shared/react";
+import { createPortal } from "react-dom";
 
 // quem sou eu no chat: o contato ligado a quem entrou no sistema
 function useEu(idLogin){ var cid = contatoDoLogin(idLogin); useEffect(function(){ definirEu(cid); }, [cid]); definirEu(cid); useEffect(function(){ if(cid) return iniciarServidor(); return undefined; }, [cid]); return cid; }
@@ -69,21 +70,26 @@ function ChatGlobal(p){
     checar(); var t = setInterval(function(){ checar(); }, 10000); return function(){ clearInterval(t); };
   }, [eu, st.mencoes, nt.chat]);
   if(!st.efem.toasts.length || !eu || !nt.chat) return null;
-  // avisos no alto, à direita, por cima da barra do topo (cobrem o "Buscar tela"); modelo 4 escolhido pelo Marcus em 29/10/2026: cartão claro, letra maior, X para fechar
+  // Avisos de mensagem nova (Marcus, 29/10/2026): balão empilhado DENTRO da conversa, no alto à direita. Uma pilha por pessoa (máx. 2 pessoas, regra em chat-store.js); o X tira a mensagem de cima; "Fechar todas" limpa tudo; clicar abre a conversa.
   var tira = function(t){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); };
-  return e("div",{className:"fixed right-4 top-3 z-[90] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2.5", "data-sem-clique":true},
-    st.efem.toasts.map(function(t){
-      var abrirConv = function(){ tira(t); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } };
-      var fechar = e("button",{onClick:function(ev){ ev.stopPropagation(); tira(t); }, "aria-label":"Fechar o aviso", title:"Fechar", className:"absolute right-2 top-2 grid size-7 place-items-center rounded-full text-[18px] leading-none hover:bg-black/10", style:{background:"#eef1f3", color:"#54656f"}}, "×");
-      if(t.atraso) return e("div",{key:t.id, role:"button", tabIndex:0, onClick:abrirConv, className:"relative flex cursor-pointer items-start gap-3 rounded-xl px-3.5 py-3 pr-11 text-left shadow-2xl", style:{background:"#4a1d24", color:W.texto, border:"1px solid "+W.vermelho}},
-        e(Ph,{n:"alarm", s:24, fill:true, className:"animate-pulse", style:{color:W.vermelho}}),
-        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[15px] font-semibold"}, t.titulo), e("span",{className:"line-clamp-2 text-[14px]", style:{color:W.sec}}, t.sub)), fechar);
-      return e("div",{key:t.id, role:"button", tabIndex:0, onClick:abrirConv, className:"relative flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 pr-11 text-left shadow-2xl", style:{background:"#ffffff", color:"#111b21", border:"1px solid #d1d7db"}},
-        e(Avatar,{id:t.de, s:48}),
-        e("span",{className:"min-w-0 flex-1"},
-          e("span",{className:"block truncate text-[16px] font-semibold"}, (t.mencao ? "Você foi marcado · " : "")+((convPorId(t.conv)||{}).tipo==="grupo" ? t.titulo : (t.nome || t.titulo))),
-          e("span",{className:"line-clamp-2 text-[16px] leading-snug", style:{color:"#3b4a54"}}, t.texto || t.sub),
-          e("span",{className:"mt-1 block text-[12px]", style:{color:"#667781"}}, new Date().toTimeString().slice(0, 5))), fechar); }));
+  var grupos = [], porChave = {};
+  st.efem.toasts.forEach(function(t){ var k = t.de || t.id; if(!porChave[k]){ porChave[k] = {k:k, msgs:[]}; grupos.push(porChave[k]); } porChave[k].msgs.push(t); });
+  var caixa = e("div",{className:"flex w-[min(26rem,calc(100%-2rem))] flex-col gap-4", style:{position:"absolute", right:16, top:64, zIndex:60}, "data-sem-clique":true},
+    grupos.map(function(g){
+      var ult = g.msgs[g.msgs.length-1], n = g.msgs.length, ouvir = function(){ efem({toasts:st.efem.toasts.filter(function(x){ return (x.de || x.id)!==g.k; })}); if(ult.conv && convPorId(ult.conv)){ efem({conversaSel:ult.conv}); p.abrir(ult.conv); } };
+      var fundo = function(i){ return e("span",{key:"f"+i, className:"absolute inset-0 rounded-[14px_14px_4px_14px]", style:{background:"#fff", borderLeft:"5px solid #25d366", boxShadow:"0 2px 8px rgba(0,0,0,.2)", transform:"translate("+(i*7)+"px,"+(i*6)+"px)", opacity:i===1 ? .85 : .6}}); };
+      return e("div",{key:g.k, className:"relative pb-2"},
+        n>=3 && fundo(2), n>=2 && fundo(1),
+        e("div",{role:"button", tabIndex:0, onClick:ouvir, className:"relative flex cursor-pointer items-start gap-3 rounded-[14px_14px_4px_14px] p-3 text-left", style:{background:ult.atraso ? "#fde8ea" : "#ffffff", color:"#0b141a", borderLeft:"5px solid "+(ult.atraso ? W.vermelho : "#25d366"), boxShadow:"0 4px 16px rgba(0,0,0,.25)"}},
+          ult.atraso ? e(Ph,{n:"alarm", s:40, fill:true, style:{color:W.vermelho}}) : e(Avatar,{id:ult.de, s:48}),
+          e("span",{className:"min-w-0 flex-1 pr-6"},
+            e("span",{className:"block truncate text-[14px] font-bold", style:{color:"#075e54"}}, ult.atraso ? ult.titulo : (ult.mencao ? "Você foi marcado · " : "")+((convPorId(ult.conv)||{}).tipo==="grupo" ? ult.titulo : (ult.nome || ult.titulo))),
+            e("span",{className:"line-clamp-2 text-[16px] font-medium leading-snug", style:{color:"#0b141a"}}, ult.texto || ult.sub),
+            e("button",{onClick:function(ev){ ev.stopPropagation(); efem({toasts:[]}); }, className:"mt-1 ml-auto block text-[12px] font-semibold hover:underline", style:{color:"#667781"}}, "Fechar todas ×")),
+          e("button",{onClick:function(ev){ ev.stopPropagation(); tira(ult); }, "aria-label":"Fechar este aviso", title:"Fechar este aviso", className:"absolute right-2 top-2 grid size-7 place-items-center rounded-full text-[20px] leading-none hover:bg-black/10", style:{color:"#54656f"}}, "×")),
+        n>=2 && e("span",{className:"absolute grid place-items-center rounded-full text-[14px] font-extrabold", style:{right:-8, top:-10, minWidth:26, height:26, padding:"0 7px", background:"#25d366", color:"#06240f", boxShadow:"0 2px 6px rgba(0,0,0,.3)"}}, n)); }));
+  var painel = typeof document!=="undefined" ? document.getElementById("painel-conversa") : null;
+  return painel ? createPortal(caixa, painel) : e("div",{style:{position:"fixed", right:0, top:150, width:"min(28rem,100vw)", height:0, zIndex:90}}, caixa);
 }
 
 // chat flutuante no canto da tela (some na tela cheia do SorellyChat)

@@ -58,7 +58,7 @@ var LOCAIS = (function(){ var m = globLocal("apps/montagem/domain/rh-funcionario
 var ALIAS_PLANILHA = {"sthefany-marques-de-aquino-correa":"sthafany-marques-de-aquino-correa"};   // a planilha escreve Sthefany; a lista de Pessoas, Sthafany
 var LOCAL_POR_ID = {}; LOCAIS.forEach(function(x){ LOCAL_POR_ID[ALIAS_PLANILHA[x.id]||x.id] = x; });
 var titulo = function(t){ return String(t||"").toLowerCase().replace(/(^|\s)(\S)/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/\s(Da|De|Do|Das|Dos|E)\s/g, function(m){ return m.toLowerCase(); }); };
-var dadosLocal = function(x){ return {funcao:x.funcao, folha:x.folha, termoPeca:!!x.termoPeca, cpf:x.cpf, vt:x.vt, nascimento:x.nascimento, telefone:x.telefone, cidade:x.cidade, admissao:x.admissao, salario:x.salario, entrada:x.entrada, escalaId:x.escala, aviso:!!x.aviso,
+var dadosLocal = function(x){ return {funcao:x.funcao, folha:x.folha, termoPeca:!!x.termoPeca, cpf:x.cpf, vt:x.vt, nascimento:x.nascimento, telefone:x.telefone, cidade:x.cidade, admissao:x.admissao, salario:x.salario, entrada:x.entrada, saida:x.saida, escalaId:x.escala, aviso:!!x.aviso,
   status:x.deslig ? "DESLIGADO" : x.status, deslig:x.deslig||null, afastamento:x.afastamento || (x.status==="AFASTADO" ? "A confirmar (consta como afastada na planilha)" : "")}; };
 function colaboradoresRh(s){
   var rh = s.rh, cfg = rh.config;
@@ -295,8 +295,8 @@ var ALIAS_CHAT = {"sthefany marques de aquino correa":"Sthafany Marques de Aquin
 function horariosParaChat(){
   var fmt = function(m){ return p2(Math.floor(m/60))+":"+p2(m%60); };
   return LOCAIS.filter(function(x){ return !x.deslig && x.status!=="DESLIGADO" && minutosDe(x.entrada)!==null; }).map(function(x){
-    var ini = minutosDe(x.entrada), sab = x.escala==="e2", nome = titulo(x.nome);
-    return {nome:ALIAS_CHAT[nome.toLowerCase()]||nome, ini:x.entrada, fim:fmt(ini+(sab ? 8*60+20 : 10*60)), dias:sab ? [1,2,3,4,5,6] : [1,2,3,4,5]};
+    var ini = minutosDe(x.entrada), sab = x.escala==="e2", nome = titulo(x.nome), fimReal = minutosDe(x.saida);
+    return {nome:ALIAS_CHAT[nome.toLowerCase()]||nome, ini:x.entrada, fim:fimReal!==null ? fmt(fimReal) : fmt(ini+(sab ? 8*60+20 : 10*60)), dias:sab ? [1,2,3,4,5,6] : [1,2,3,4,5]};
   });
 }
 
@@ -304,13 +304,13 @@ function horariosParaChat(){
 // Horário e presença saem direto do cadastro do RH: mudou lá, muda no chat. O cálculo da lista fica guardado enquanto o RH não muda (s.rh é o mesmo objeto).
 var memoRh = {rh:null, colabs:null, hor:null};
 function colabsMemo(s){ if(memoRh.rh!==s.rh){ memoRh.rh = s.rh; memoRh.colabs = colaboradoresRh(s); memoRh.hor = null; } return memoRh.colabs; }
-// horário de cada colaborador ativo: entrada do cadastro; seg a sex (5 dias) a saída é entrada + 10h (08:00 sai às 18:00; Marcus, 29/10/2026: antes dava 17:48, 17:18...);
+// horário de cada colaborador ativo: entrada e SAÍDA do cadastro (copiadas do admin de produção em 29/10/2026, rh_colaborador.horarioEntrada; a saída só é calculada se faltar): seg a sex (5 dias) a saída é entrada + 10h (08:00 sai às 18:00; Marcus, 29/10/2026: antes dava 17:48, 17:18...);
 // nas outras escalas (6 dias etc.) segue a jornada CLT de 44h por semana dividida nos dias da escala + 1h de almoço (6 dias = 8h20)
 function horariosDoRh(s){
   if(!s.rh) return [];
   var cs = colabsMemo(s);
   if(!memoRh.hor) memoRh.hor = cs.filter(function(x){ return !x.deslig && x.status!=="DESLIGADO" && minutosDe(x.entrada)!==null && x.escalaDias.length; }).map(function(x){
-    var ini = minutosDe(x.entrada), fim = ini + (x.escalaDias.length===5 ? 10*60 : Math.round(44*60/x.escalaDias.length) + 60), nome = titulo(x.nome);
+    var ini = minutosDe(x.entrada), fimReal = minutosDe(x.saida), fim = fimReal!==null ? fimReal : ini + (x.escalaDias.length===5 ? 10*60 : Math.round(44*60/x.escalaDias.length) + 60), nome = titulo(x.nome);
     return {nome:ALIAS_CHAT[nome.toLowerCase()]||x.nome, ini:x.entrada, fim:p2(Math.floor(fim/60))+":"+p2(fim%60), dias:x.escalaDias.slice()}; });
   return memoRh.hor;
 }

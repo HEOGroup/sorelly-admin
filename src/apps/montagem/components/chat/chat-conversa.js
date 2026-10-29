@@ -339,7 +339,7 @@ function ConversaBase(p){
     anterior = m;
   });
 
-  return e("div",{className:"flex h-full min-h-0 flex-col", style:{background:W.fundo, color:W.texto}},
+  return e("div",{id:"painel-conversa", className:"relative flex h-full min-h-0 flex-col", style:{background:W.fundo, color:W.texto}},
     // cabeçalho
     e("div",{className:"flex shrink-0 items-center gap-2.5 px-3 py-2", style:{background:W.cab}},
       p.onVoltar && e("button",{onClick:p.onVoltar, "aria-label":"Voltar para as conversas", className:"grid size-9 place-items-center rounded-full hover:bg-white/10 "+(p.compacto ? "" : "md:hidden")}, e(Ph,{n:"arrow-left", s:20})),

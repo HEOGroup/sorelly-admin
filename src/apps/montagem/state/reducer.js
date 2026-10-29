@@ -162,6 +162,9 @@ function reducer(s, a){
     case "SALDO_AJUSTE": { var sc6 = JSON.parse(JSON.stringify(s.saldosContas)), l6 = sc6.ajustes[a.mes] || (sc6.ajustes[a.mes] = []);
       if(a.remover) sc6.ajustes[a.mes] = l6.filter(function(x){ return x.id!==a.remover; }); else l6.push(a.ajuste); return com(s, {saldosContas:sc6}); }
     case "CPE_LANC_ADD": return com(s, {cpe:Object.assign({}, s.cpe, {lanc:((s.cpe||{}).lanc||[]).concat(a.itens)})}, a.itens.length>1 ? a.itens.length+" parcelas lançadas" : "Conta lançada");
+    case "CPE_LANC_DEL": { var l0 = (((s.cpe||{}).lanc)||[]).filter(function(x){ return String(x.id)===String(a.id); })[0]; if(!l0) return s;   // excluir conta lançada à mão (Marcus, 29/10/2026): some da lista, leva junto os pagamentos dela e fica no histórico
+      var lx = (((s.cpe||{}).lanc)||[]).filter(function(x){ return String(x.id)!==String(a.id); }), bxl = (((s.cpe||{}).baixas)||[]).filter(function(x){ return x.chave!=="l|"+a.id; }), hxl = (((s.cpe||{}).hist)||[]).concat([{ts:Date.now(), por:a.por, acao:"Excluiu lançamento", chave:"l|"+a.id, desc:l0.nome||"", valor:l0.valor}]);
+      return com(s, {cpe:Object.assign({}, s.cpe, {lanc:lx, baixas:bxl, hist:hxl})}, "Lançamento excluído"); }
     case "CPE_BAIXA": { var bx = (((s.cpe||{}).baixas)||[]).concat(a.baixas), hx = (((s.cpe||{}).hist)||[]).concat(a.baixas.map(function(b){ return {ts:b.em, por:b.por, acao:"Deu baixa", chave:b.chave, desc:b.desc_txt||"", valor:b.principal}; }));
       return com(s, {cpe:Object.assign({}, s.cpe, {baixas:bx, hist:hx})}, a.baixas.length>1 ? a.baixas.length+" pagamentos registrados" : "Pagamento registrado"); }
     case "CPE_BAIXA_DESFAZ": { var b0 = (((s.cpe||{}).baixas)||[]).filter(function(x){ return x.id===a.id; })[0]; if(!b0) return s;

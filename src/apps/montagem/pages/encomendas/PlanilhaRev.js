@@ -3,7 +3,7 @@
 // A equipe lança a venda de cada mês; o sistema calcula a média dos últimos 3 meses COM venda lançada (pode ser 1 ou 2 meses só) e avisa quando passa a ficar abaixo de R$ 3.000.
 // "Selecionada pelo Marcus" não entra no alerta. Retirar pede o motivo; se a revendedora é do Marcus, vira pedido de autorização (mensagem pronta). Usada no Funil (aba Revendedoras) e na tela Top 50.
 import { BlocoFiltros, Botao, CampoBusca, CampoSel, FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
-import { abaixoDaMedia, formatarReais, hojeSP, mediaVendas, mesesColunas, rotuloMes } from "@/apps/montagem/domain/encomendas";
+import { abaixoDaMedia, formatarDia, formatarReais, hojeSP, mediaVendas, mesesColunas, rotuloMes } from "@/apps/montagem/domain/encomendas";
 import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { e, useState } from "@/shared/react";
 
@@ -29,6 +29,7 @@ function PlanilhaRev(p){
     if(f.grupo==="top50" && !r.top50) return false; if(f.grupo==="fora" && r.top50) return false; if(f.alerta && !r.alerta) return false;
     return !f.busca || (r.nome+" "+(r.representante || "")+" "+(r.telefone || "")).toLowerCase().indexOf(f.busca.toLowerCase())>=0;
   }).sort(function(a, b){ return (b.top50 ? 1 : 0)-(a.top50 ? 1 : 0) || a.nome.localeCompare(b.nome); });
+  var extra = p.grupo==="top50";
   var top = todas.filter(function(r){ return r.top50; }), faltam = top.filter(function(r){ return vazio(r.vendas && r.vendas[ult]); });
   function vazio(x){ return x===undefined || x===null || x===""; }
   var alertas = todas.filter(function(r){ return r.alerta; });
@@ -45,10 +46,12 @@ function PlanilhaRev(p){
       e(CampoSel,{id:"pl-grupo", t:"Grupo", value:f.grupo, onChange:function(v){ set("grupo", v); }, opcoes:[["", "Todas"], ["top50", "Top 50"], ["fora", "Fora do Top 50"]]}),
       e(CampoSel,{id:"pl-alerta", t:"Alerta", value:f.alerta, onChange:function(v){ set("alerta", v); }, opcoes:[["", "Todas"], ["sim", "Abaixo de "+formatarReais(min)]]}),
       e("div",{className:"flex items-end justify-end gap-2"}, e(Botao,{onClick:function(){ p.ir({tipo:"solicitar"}); }}, "Pedir entrada"), e(Botao,{principal:true, onClick:function(){ p.ir({tipo:"revs"}); }}, "Nova revendedora"))),
-    lista.length ? e(TabelaP,{minW:910+cols.length*96, cols:[{t:"Revendedora", w:210}, {t:"Telefone", w:118}, {t:"Representante", w:120}].concat(cols.map(function(m){ return {t:rotuloMes(m), w:96, n:true}; }), [{t:"Média", w:132, n:true}, {t:"Situação", w:150}, {t:"Marcus", w:64, c:true}, {t:"", w:84}])},
+    lista.length ? e(TabelaP,{minW:910+cols.length*96+(extra ? 480 : 0), cols:[{t:"Revendedora", w:210}, {t:"Telefone", w:118}, {t:"Representante", w:120}].concat(extra ? [{t:"Última venda", w:110, n:true}, {t:"Acerto", w:80}, {t:"Montagem", w:290}] : [], cols.map(function(m){ return {t:rotuloMes(m), w:96, n:true}; }), [{t:"Média", w:132, n:true}, {t:"Situação", w:150}, {t:"Marcus", w:64, c:true}, {t:"", w:84}])},
       lista.map(function(r){
         return e(Tr,{key:r.id, alerta:r.alerta},
           e(Td,{forte:true, title:r.nome}, r.nome), e(Td,null, r.telefone || "—"), e(Td,null, r.representante || "—"),
+          extra && e(Td,{n:true}, r.ultimaVenda>0 ? formatarReais(r.ultimaVenda) : "—"), extra && e(Td,null, r.dataAcerto ? formatarDia(r.dataAcerto).slice(0, 5) : "—"),
+          extra && e(Td,{title:[r.sitMont, r.respMont, r.obs].filter(Boolean).join(" · ")}, [r.sitMont, r.respMont ? "Resp.: "+r.respMont : "", r.obs].filter(Boolean).join(" · ") || "—"),
           cols.map(function(m){ return e("td",{key:m, className:"h-8 border-b border-border px-1.5"}, e(Cel,{v:r.vendas && r.vendas[m], rot:r.nome+" · "+rotuloMes(m), falta:r.top50 && m===ult && vazio(r.vendas && r.vendas[m]), on:function(v){ E.exec("rev_venda", {id:r.id, mes:m, valor:v}); }})); }),
           e(Td,{n:true, cor:r.alerta ? "text-destructive" : "", title:r.m.meses ? "Média de "+r.m.meses+(r.m.meses===1 ? " mês" : " meses")+": "+r.m.usados.map(rotuloMes).join(", ") : ""}, r.m.media!=null ? formatarReais(r.m.media)+(r.m.meses<3 ? " ("+r.m.meses+"m)" : "") : "—"),
           e(Td,{cor:r.alerta ? "text-destructive" : r.top50 ? "text-success" : "", title:r.bloqueadaAte ? "Bloqueada até "+r.bloqueadaAte : ""}, r.alerta ? "Média abaixo" : r.top50 ? (r.marcus ? "Top 50 · Marcus" : "Top 50") : "Fora do Top 50"),

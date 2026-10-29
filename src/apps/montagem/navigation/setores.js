@@ -22,6 +22,7 @@ var MENU_FINANCEIRO = [
     M("Estoque Sorelly","estoquesorelly")]},
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("Contas a pagar","ctalista"),
+    M("Pagas por dia","pagaspordia"),   // escolhe o dia e vê quanto foi pago, por CNPJ (Marcus, 29/10/2026: pedido do financeiro)
     {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
@@ -125,7 +126,7 @@ var SETORES = [
       ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"]), T("cnpjs","CNPJs")]]]),
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
-      ["Contas a pagar", [T("ctalista","Contas a pagar"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
+      ["Contas a pagar", [T("ctalista","Contas a pagar"), T("pagaspordia","Pagas por dia"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
       ["Financeiro familiar", [T("ffhome","Home da família"), T("ffalertas","Alertas da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras")]],
       ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [

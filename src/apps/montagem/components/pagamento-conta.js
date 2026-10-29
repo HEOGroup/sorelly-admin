@@ -73,7 +73,8 @@ function PagamentoConta(p){
             parcial && e("p",{className:"col-span-2 text-[13px] text-warning"}, "Pagamento parcial: o que falta ("+BKC(falta)+") continua a pagar."),
             erro && e("p",{className:"col-span-2 text-[13px] text-destructive"}, erro)))),
       e("div",{className:"flex flex-wrap items-center justify-between gap-2 border-t border-border px-4 py-2.5"},
-        e("div",{className:"flex gap-2"}, e(Botao,{desabilitado:!ant, onClick:function(){ p.ir(ant); }}, "‹ Conta anterior"), e(Botao,{desabilitado:!prox, onClick:function(){ p.ir(prox); }}, "Próxima conta ›")),
+        e("div",{className:"flex gap-2"}, e(Botao,{desabilitado:!ant, onClick:function(){ p.ir(ant); }}, "‹ Conta anterior"), e(Botao,{desabilitado:!prox, onClick:function(){ p.ir(prox); }}, "Próxima conta ›"),
+          i.manual && p.podePagar && p.excluir && e(Botao,{onClick:function(){ if(window.confirm("Excluir este lançamento? Ele sai da lista e os pagamentos dele também.")){ p.excluir(String(i.chave).slice(2)); } }}, "Excluir lançamento")),
         e("div",{className:"flex gap-2"}, e(Botao,{onClick:p.fechar}, pago || !p.podePagar ? "Fechar" : "Cancelar"), !pago && p.podePagar && e(Botao,{principal:true, onClick:salvar}, "Registrar pagamento")))));
 }
 

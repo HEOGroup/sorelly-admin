@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · balão empilhado</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:#0a0806;color:#fff}
+.barra{display:flex;gap:8px;justify-content:center;align-items:center;padding:10px;background:#110e08;border-bottom:1px solid rgba(232,184,75,.3);flex-wrap:wrap}
+.barra span{color:#bdb39d;margin-right:6px}
+.bt{height:32px;padding:0 14px;border-radius:8px;border:1px solid rgba(232,184,75,.4);background:#1b1710;color:#E8B84B;font:inherit;font-weight:600;cursor:pointer}.bt:hover{border-color:#E8B84B}
+.tela{display:flex;height:calc(100vh - 54px);min-height:520px;color:#111b21}
+.lista{width:300px;background:#fff;border-right:1px solid #e1e5e8;overflow:hidden;flex:none}
+.lista h3{margin:0;padding:12px 14px;font-size:15px}
+.li{display:flex;gap:10px;padding:10px 14px;border-top:1px solid #f0f2f3}.li .a{width:40px;height:40px;border-radius:50%;background:#d0d7dc;flex:none;display:grid;place-items:center;font-weight:700;color:#54656f}
+.li b{display:block;font-size:13px}.li small{color:#667781}
+.conv{position:relative;flex:1;display:flex;flex-direction:column;background:#efeae2;min-width:0;overflow:hidden}
+.cab{display:flex;gap:10px;align-items:center;padding:10px 14px;background:#f0f2f5;border-bottom:1px solid #e1e5e8}.cab .a{width:40px;height:40px;border-radius:50%;background:#c6cfd4}
+.msgs{flex:1;padding:16px 24px;display:flex;flex-direction:column;gap:6px;justify-content:flex-end}
+.m{max-width:420px;padding:6px 10px;border-radius:8px;background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.1)}.m.eu{align-self:flex-end;background:#d9fdd3}
+.ent{padding:10px 14px;background:#f0f2f5}.ent div{background:#fff;border-radius:22px;padding:10px 16px;color:#8696a0}
+/* coluna dos avisos: canto de cima à direita, DENTRO da conversa; cada pessoa é uma pilha, uma embaixo da outra */
+#col{position:absolute;right:20px;top:14px;width:420px;display:flex;flex-direction:column;gap:16px;z-index:5;align-items:stretch}
+.pilha{position:relative;padding-bottom:10px;cursor:pointer;animation:desce .25s}
+@keyframes desce{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.fundo{position:absolute;left:0;right:0;height:100%;background:#fff;border-radius:14px 14px 4px 14px;border-left:5px solid #25d366;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+.f1{top:6px;left:7px;right:-7px;opacity:.85}.f2{top:12px;left:14px;right:-14px;opacity:.6}
+.topo{position:relative;background:#fff;border-radius:14px 14px 4px 14px;border-left:5px solid #25d366;box-shadow:0 4px 16px rgba(0,0,0,.25);padding:10px 12px;font-size:16px;display:flex;gap:10px;align-items:flex-start}
+.topo .foto{width:48px;height:48px;font-size:20px;border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;display:grid;place-items:center;flex:none}
+.topo .t{flex:1;min-width:0}.topo b{display:block;color:#075e54;font-size:14px}.topo .msg{display:-webkit-box;-webkit-line-clamp:2;color:#0b141a;font-weight:500;-webkit-box-orient:vertical;overflow:hidden}
+.cont{position:absolute;right:-8px;top:-10px;min-width:26px;height:26px;border-radius:13px;padding:0 7px;background:#25d366;color:#06240f;font-weight:800;font-size:14px;display:grid;place-items:center;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.x{border:0;background:transparent;color:#54656f;font-size:20px;line-height:1;cursor:pointer;padding:0 4px}.x:hover{color:#111b21}
+.ft{display:block;margin:6px 0 0 auto;border:0;background:transparent;color:#667781;font:inherit;font-size:12px;font-weight:600;cursor:pointer;padding:2px 0}.ft:hover{color:#111b21;text-decoration:underline}
+.todas{display:none !important;align-self:flex-end;align-items:center;gap:6px;height:30px;padding:0 6px 0 12px;border-radius:15px;background:#111b21;color:#fff;font-size:13px;font-weight:600;border:0;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.3)}.todas b{font-size:20px;line-height:1;font-weight:400}.todas:hover{background:#000}
+.pilha.pula .topo{animation:pula .25s}@keyframes pula{50%{transform:translateY(-4px)}}
+</style></head><body>
+<div class="barra"><span>Teste:</span>
+ <button class="bt" data-p="Natasha Silva">Natasha manda mensagem</button><button class="bt" data-p="Priscila Pinheiro">Priscila manda mensagem</button><button class="bt" data-p="Leci Nunes">Leci manda mensagem</button>
+ <button class="bt" id="lim" style="color:#fff">Limpar</button><span style="margin-left:10px">Clique várias vezes na mesma pessoa para empilhar (2, 3, 4…). No máximo 2 pessoas: a terceira tira a primeira.</span></div>
+<div class="tela">
+ <div class="lista"><h3>SorellyChat</h3>
+  <div class="li"><div class="a">MK</div><div><b>Michele - Kits Novos</b><small>Oi</small></div></div>
+  <div class="li"><div class="a">AS</div><div><b>Ana Silva - Agendamento</b><small>Oi</small></div></div>
+  <div class="li"><div class="a">LC</div><div><b>Castilho - Marketing</b><small>Dae</small></div></div>
+  <div class="li"><div class="a">AH</div><div><b>Anamaria - Diretoria</b><small>Olá.</small></div></div></div>
+ <div class="conv" id="conv">
+  <div class="cab"><div class="a"></div><div><b>Ana Silva - Agendamento</b><br><small style="color:#25a35a">online</small></div></div>
+  <div class="msgs"><div class="m">Beleza.</div><div class="m eu">Me manda mensagem</div><div class="m eu">Oi oi</div><div class="m">Oiii</div></div>
+  <div class="ent"><div>Digite uma mensagem</div></div>
+  <div id="col"><button class="todas" id="todas" aria-label="Fechar todas as notificações">Fechar todas <b>×</b></button></div>
+ </div>
+</div>
+<script>
+var ctx,mestre;function ac(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();mestre=ctx.createDynamicsCompressor();mestre.connect(ctx.destination);}if(ctx.state==="suspended")ctx.resume();return ctx;}
+function nota(f,i,d,t,v){var c=ac(),o=c.createOscillator(),g=c.createGain(),s=c.currentTime+i;o.type=t||"sine";o.frequency.setValueAtTime(f,s);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(v,s+.012);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(mestre);o.start(s);o.stop(s+d+.05);}
+function som(){nota(1760,0,.34,"sine",.8);nota(2349,.09,.42,"sine",.75);nota(3520,.09,.18,"sine",.14);nota(880,0,.3,"triangle",.18);}
+var col=document.getElementById("col"), pilhas={}, textos=["Oi Marcus, tudo bem? Preciso confirmar o kit da Ketlyn e da Maria Luysa antes das 15h, porque as duas vêm buscar hoje e eu ainda não tenho o valor fechado.","Pode me responder quando puder? Fiquei na dúvida se o brinde entra no mesmo acerto ou se vai para o próximo mês, e a revendedora está esperando aqui na recepção.","Ok então, confirmo hoje ainda. Vou separar as peças da condicional e te mando uma foto do kit pronto assim que terminar de bipar tudo.","Já te mando o valor."], n=0;
+function envia(nome){
+  var p=pilhas[nome], txt=textos[n++%textos.length];
+  if(!p){
+    var ks=Object.keys(pilhas); while(ks.length>=2){ fecha(ks.shift()); }   // só 2 pessoas por vez: a terceira tira a mais antiga
+    var el=document.createElement("div"); el.className="pilha";
+    el.innerHTML='<div class="fundo f2" style="display:none"></div><div class="fundo f1" style="display:none"></div><div class="topo"><div class="foto"></div><div class="t"><b></b><span class="msg"></span><button class="ft">Fechar todas ×</button></div><button class="x" aria-label="Fechar o aviso">×</button></div><div class="cont" style="display:none"></div>';
+    el.querySelector(".foto").textContent=nome.charAt(0); el.querySelector("b").textContent=nome;
+    col.appendChild(el); col.appendChild(bTodas); p=pilhas[nome]={el:el,msgs:[],t:null};
+    el.querySelector(".x").onclick=function(ev){ev.stopPropagation();tiraUma(nome);}; el.querySelector(".ft").onclick=function(ev){ev.stopPropagation();Object.keys(pilhas).forEach(fecha);}; el.onclick=function(){tiraUma(nome);};
+  }
+  p.msgs.push(txt); var el=p.el; pinta(p);
+    el.classList.remove("pula"); void el.offsetWidth; el.classList.add("pula");
+  clearTimeout(p.t); p.t=setTimeout(function(){fecha(nome);},5000); som(); ajustaTodas();
+}
+function pinta(p){ var q=p.msgs.length, el=p.el; el.querySelector(".msg").textContent=p.msgs[q-1];
+  el.querySelector(".f1").style.display=q>=2?"block":"none"; el.querySelector(".f2").style.display=q>=3?"block":"none";
+  var c=el.querySelector(".cont"); c.style.display=q>=2?"grid":"none"; c.textContent=q; }
+function tiraUma(nome){ var p=pilhas[nome]; if(!p) return; p.msgs.pop(); if(!p.msgs.length) return fecha(nome); pinta(p); }   // o X tira só a mensagem de cima
+function fecha(nome){var p=pilhas[nome]; if(!p) return; clearTimeout(p.t); p.el.remove(); delete pilhas[nome]; ajustaTodas();}
+document.querySelectorAll("[data-p]").forEach(function(b){b.onclick=function(){envia(b.dataset.p);};});
+var bTodas=document.getElementById("todas"); bTodas.onclick=function(){Object.keys(pilhas).forEach(fecha);};
+function ajustaTodas(){ bTodas.style.display=Object.keys(pilhas).length ? "flex" : "none"; }
+document.getElementById("lim").onclick=function(){Object.keys(pilhas).forEach(fecha);};
+</script></body></html>

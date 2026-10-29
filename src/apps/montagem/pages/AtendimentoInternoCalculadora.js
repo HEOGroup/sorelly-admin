@@ -155,6 +155,12 @@ function AtendimentoInterno(){
   var ga = useState(true), agendaAberta = ga[0], setAgendaAberta = ga[1];
   var gk = useState(true), kitAberto = gk[0], setKitAberto = gk[1];
   useEffect(function(){ if(sel && sel.inicioTs){ setAgendaAberta(false); setKitAberto(false); } }, [sel ? sel.id : null, sel ? !!sel.inicioTs : false]);
+  // layout novo (29/10/2026): 4 modos de tela para o Marcus escolher; a escolha fica salva neste navegador
+  var ly = useState(function(){ try{ var v = Number(localStorage.getItem("sorelly_atend_layout")); return v>=1 && v<=4 ? v : 1; }catch(x){ return 1; } }), lay = ly[0], setLayRaw = ly[1];
+  var setLay = function(n){ setLayRaw(n); try{ localStorage.setItem("sorelly_atend_layout", String(n)); }catch(x){} };
+  var ps = useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
+  var ta = useState("comissao"), apoioAba = ta[0], setApoioAba = ta[1];           // aba do bloco de apoio: Comissões, Valor do kit ou Regras
+  useEffect(function(){ setPassoAt(0); }, [sel ? sel.id : null]);
 
   var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
@@ -250,13 +256,61 @@ function AtendimentoInterno(){
           className:"grid w-11 shrink-0 place-items-center text-[16px] font-bold text-[#1B1409] shadow-[inset_0_1px_0_rgba(255,255,255,.35)] "+GRAD_BARRA}, kitAberto ? "▾" : "▸")),
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
+  // ── Tela nova (29/10/2026): fila do dia à esquerda, comissões / valor do kit / regras embaixo dela, atendimento à direita ──
+  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId; }); })
+    .map(function(r){ return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, hora:r.agend.hora, status:"agendado"}; });
+  var listaDia = agenda.concat(virtuaisHoje).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
+  var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
+  var itemFila = function(x){
+    var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
+    var st = feito ? ["Feita","bg-success/20 text-success"] : on ? ["Atendendo","bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    return e("button",{key:x.id, type:"button", onClick:function(){ if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
+      className:"flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
+      e("b",{className:"w-11 shrink-0 text-primary "+MONO}, x.hora || "—"),
+      e("span",{className:"min-w-0 flex-1 truncate font-semibold", title:x.nome}, x.nome),
+      e("span",{className:"shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold "+st[1]}, st[0]));
+  };
+  var CABEC = "flex items-center justify-between gap-2 px-3 py-2 text-[#1B1409] shadow-[inset_0_1px_0_rgba(255,255,255,.35)] "+GRAD_BARRA;
+  var filaDia = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
+    e("div",{className:CABEC}, e("h2",{className:"font-heading text-[14px] font-bold"}, "Hoje · "+hoje.split("-").reverse().slice(0,2).join("/")), e("span",{className:"text-[12px] font-bold"}, feitosHoje+" de "+listaDia.length+" feitos")),
+    e("div",{className:"flex flex-col gap-1 p-2"},
+      listaDia.length ? listaDia.map(itemFila) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje."),
+      e("button",{type:"button", onClick:function(){ setMAberto(!mAberto); }, className:"mt-1 h-8 rounded-lg bg-black/20 text-[12.5px] font-bold text-muted-foreground hover:bg-muted/50"}, mAberto ? "Fechar" : "+ Incluir cliente à mão"),
+      mAberto && e("div",{className:"flex flex-col gap-1.5 rounded-lg bg-black/15 p-2"},
+        e("input",{value:mForm.nome, placeholder:"Nome da cliente", "aria-label":"Nome da cliente", className:CP+" h-8!", onChange:function(ev){ setMForm(Object.assign({}, mForm, {nome:ev.target.value})); }}),
+        e("div",{className:"grid grid-cols-2 gap-1.5"},
+          e("input",{type:"time", value:mForm.hora, "aria-label":"Horário", className:CP+" h-8!", onChange:function(ev){ setMForm(Object.assign({}, mForm, {hora:ev.target.value})); }}),
+          e("input",{value:mForm.cond, placeholder:"Nº condicional", "aria-label":"Números das condicionais", className:CP+" h-8! "+MONO, onChange:function(ev){ setMForm(Object.assign({}, mForm, {cond:ev.target.value})); }})),
+        e(Btn,{v:"primary", ic:"check", disabled:!manualOk, onClick:addManual}, "Adicionar à fila"))));
+  var vApoio = versaoBase || versaoVigente(s);
+  var regrasApoio = vApoio ? textoRegras(vApoio, modalidade).filter(function(r){ return !/deslocamento|pe[cç]as/i.test(r.t); }) : [];
+  var listaRegras = e("ul",{className:"flex flex-col gap-1.5 p-2.5 text-[12.5px] leading-snug"}, regrasApoio.map(function(r,i){ return e("li",{key:i, className:"flex gap-2"}, e("span",{className:"shrink-0 font-bold text-primary"}, (i+1)+"."), e("span",null, r.t)); }));
+  var apoioKit = e("section",{key:"k", className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, barraKits, e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit));
+  var apoioRegras = e("section",{key:"r", className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, e("div",{className:CABEC}, e("h2",{className:"font-heading text-[14px] font-bold"}, "Regras do consignado")), listaRegras);
+  var apoioTabs = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
+    e("div",{className:"grid grid-cols-3 gap-1 p-1 "+GRAD_BARRA, role:"tablist"}, [["comissao","Comissões"],["kit","Valor do kit"],["regras","Regras"]].map(function(o){ var on = apoioAba===o[0];
+      return e("button",{key:o[0], type:"button", role:"tab", "aria-selected":on, onClick:function(){ setApoioAba(o[0]); }, className:"h-8 rounded-lg text-[12.5px] font-extrabold "+(on ? "bg-[#1B1409] text-[#F1E4C6]" : "text-[#1B1409]/80 hover:text-[#1B1409]")}, o[1]); })),
+    apoioAba==="comissao" ? e("div",{className:"flex flex-col gap-2 p-2"}, barraKits, tabelaComissao(kitVisto)) : apoioAba==="kit" ? e("div",{className:"p-2"}, blocoValorKit) : listaRegras);
+  var seletorLayout = e("div",{className:"flex items-center gap-1.5 rounded-xl bg-card px-3 py-1.5 ring-1 ring-[#E8B84B]/30"},
+    e("span",{className:"text-[12px] font-bold uppercase tracking-wide text-muted-foreground"}, "Layout"),
+    [1,2,3,4].map(function(n){ var on = lay===n;
+      return e("button",{key:n, type:"button", "aria-pressed":on, onClick:function(){ setLay(n); }, title:["Um passo por vez, tabelas embaixo da fila","Um passo por vez, com resumo ao lado e abas","Ficha em seções, só a atual aberta","Três colunas: fila, passo e apoio"][n-1],
+        className:"grid size-8 place-items-center rounded-lg text-[13px] font-bold "+(on ? "bg-primary text-primary-foreground" : "bg-black/20 text-muted-foreground hover:bg-muted/60")}, n); }));
+  var cabecaPagina = function(sub){ return e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:sub}), e("div",{className:"flex flex-wrap items-center gap-2"}, seletorLayout, seletorKit)); };
+  var pagina = function(centro, midiaEsq, midiaDir){
+    if(lay===4) return e("div",{className:"grid grid-cols-1 items-start gap-4 xl:grid-cols-[17rem_minmax(0,1fr)] 2xl:grid-cols-[17rem_minmax(0,1fr)_22rem]"},
+      e("div",{className:"flex min-w-0 flex-col gap-3"}, filaDia), centro,
+      e("div",{className:"flex min-w-0 flex-col gap-3 xl:col-span-2 2xl:col-span-1"}, midiaDir, apoioTabs));
+    return e("div",{className:"grid grid-cols-1 items-start gap-4 xl:grid-cols-[19rem_minmax(0,1fr)]"},
+      e("div",{className:"flex min-w-0 flex-col gap-3"}, filaDia, midiaEsq, lay===2 ? apoioTabs : React.Children.toArray([apoioKit, apoioRegras])), centro);
+  };
+
   // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela (erro #300 do React) ao fechar a aba do atendimento.
   useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"Atendimento interno: abra um atendimento pela Listagens."}), seletorKit),
-    e("div",{className:"grid grid-cols-1 items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(36rem,42%)]"},
-      e("div",{className:"flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-16 text-center text-[14px] text-muted-foreground"},
-        "Para atender, escolha a revendedora na Listagens e toque em Atender.", e(Btn,{v:"primary", ic:"calc", onClick:function(){ d({type:"ABA", aba:"intlist"}); }}, "Ir para a Listagens")), colAgenda));
+    cabecaPagina("Toque na cliente que chegou, na fila do dia, para iniciar o atendimento."),
+    pagina(e("div",{className:"flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-16 text-center text-[14px] text-muted-foreground"},
+      "Nenhum atendimento aberto.", e("span",{className:"font-semibold text-foreground"}, "Escolha o nome da cliente na fila do dia.")), null, null));
 
   // ── 1 · Condicionais: SÓ número, valor e quantidade de peças, tudo digitado à mão pela funcionária ──
   var condsSel = formD.condicionaisSelecionadas;
@@ -370,9 +424,9 @@ function AtendimentoInterno(){
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
   // pagamento: só a FORMA e o VALOR exato (ex.: pix 7.000, ou dois pix); a conta o financeiro divide na Visão geral
   var cartaoPag = !dv.previaBase ? null : e("div",{className:"flex flex-col gap-2 rounded-xl p-2.5", style:{background:"#E8B84B12"}},
-    !jaFeito && e("div",{className:"grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_5rem] items-center gap-2"},
-      campoLado("Forma", e("select",{value:lancForm.forma, "aria-label":"Forma de pagamento", className:CG, onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {forma:ev.target.value})); }},
-        e("option",{value:""},"Escolha…"), formas.map(function(f){ return e("option",{key:f.k, value:f.k}, f.label); }))),
+    !jaFeito && e("div",{role:"group", "aria-label":"Forma de pagamento", className:"flex flex-wrap gap-1.5"}, formas.map(function(f){ var on = lancForm.forma===f.k;
+      return e("button",{key:f.k, type:"button", "aria-pressed":on, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k})); }, className:"h-9 rounded-lg px-3 text-[13px] font-bold ring-1 "+(on ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/30 text-foreground ring-border hover:bg-muted/50")}, f.label); })),
+    !jaFeito && e("div",{className:"grid grid-cols-[minmax(0,1fr)_5rem] items-center gap-2"},
       campoLado("Valor", e(CampoDinheiro,{value:lancForm.valor, label:"Valor do pagamento", className:CPD+" h-10! font-bold", placeholder:"R$ 0,00", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }})),
       e(Btn,{v:"primary", ic:"check", className:"h-10!", disabled:!lancOk, onClick:addPag}, "OK")),
     form.pagamentos.length>0 && e("div",{className:"flex flex-col gap-1"}, form.pagamentos.map(function(p,i){
@@ -636,10 +690,7 @@ function AtendimentoInterno(){
     prox.focus(); if(prox.tagName==="INPUT" && prox.select){ try{ prox.select(); }catch(x){} }
     if(prox.scrollIntoView) prox.scrollIntoView({block:"center", behavior:"smooth"});
   };
-  return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"}, e(PageHead,{t:"Atendimento Sorelly", sub:"A calculadora do acerto à esquerda, vá preenchendo de cima para baixo; a agenda de hoje fica à direita."}), seletorKit),
-    e("div",{className:"grid grid-cols-1 items-start gap-4 2xl:grid-cols-[minmax(0,1fr)_minmax(36rem,42%)]"},
-      e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
+  var topoCard = React.Children.toArray([
         // até 2 atendimentos abertos ao mesmo tempo (uma escolhe o kit enquanto a outra é atendida)
         e("div",{className:"flex items-center gap-1.5 border-b border-border bg-sidebar px-2 pt-2"},
           abasUI.map(function(x){ var on = x.id===sel.id;
@@ -669,14 +720,33 @@ function AtendimentoInterno(){
               : jaFeito && e("button",{onClick:function(){ d({type:"INT_FINALIZAR", id:sel.id}); }, className:"rounded-md bg-[#1B1409] px-3 py-1 text-[12.5px] font-bold text-white hover:opacity-90"},"■ Finalizar bipagem"))),
         estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13.5px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
         chegouMuitoAtrasada && e("p",{className:"border-b border-border bg-[#E8B84B]/10 px-4 py-1.5 text-center text-[12.5px] font-semibold text-primary"},"Chegou "+atrasoChegada+" min depois do horário (tolerância de "+TOLERANCIA_CHEGADA_MIN+" min): perde "+Math.round(DESCONTO_BRINDE_ATRASO*100)+"% do brinde."),
-        sel.obs && e("p",{className:"border-b border-border bg-muted/20 px-4 py-1.5 text-center text-[12.5px] text-muted-foreground"}, e("b",null,"Observação: "), sel.obs, sel.encomenda ? " · Encomenda "+sel.encomenda : ""),
-        e("div",{className:"flex flex-col gap-2 p-2.5"+(jaFeito ? " [&>section:not(:last-child)]:pointer-events-none" : ""), onKeyDown:enterProximo},
-          jaFeito && e("p",{className:"rounded-lg bg-success/10 px-3 py-1.5 text-center text-[12.5px] font-semibold text-success"},"Acerto já registrado — somente consulta."),
-          // 1 Condicionais com a Média ao lado (mesma altura); 2 Vendas com 3 Pagamentos ao lado; embaixo, o resto na ordem
-          e("div",{className:"grid grid-cols-1 items-stretch gap-2 @[44rem]:grid-cols-[minmax(0,1.4fr)_minmax(16rem,1fr)]"}, secao(0), blocoMedia),
-          e("div",{className:"grid grid-cols-1 items-start gap-2 @[44rem]:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]"}, secao(1), secao(2)),
-          [3,4,5].map(secao))),
-      colAgenda));
+        sel.obs && e("p",{className:"border-b border-border bg-muted/20 px-4 py-1.5 text-center text-[12.5px] text-muted-foreground"}, e("b",null,"Observação: "), sel.obs, sel.encomenda ? " · Encomenda "+sel.encomenda : "")
+  ]);
+  var cartao = function(corpo){ return e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, topoCard, corpo); };
+  // etapas: uma de cada vez, com botões (nada de lista suspensa)
+  var stepper = e("div",{className:"grid grid-cols-3 gap-1 @[44rem]:grid-cols-6", role:"tablist"}, PASSOS.map(function(p,i){ var on = i===passoAt, ok = feitoPasso[i];
+    return e("button",{key:p[0], type:"button", role:"tab", "aria-selected":on, onClick:function(){ setPassoAt(i); },
+      className:"flex h-8 min-w-0 items-center justify-center gap-1 rounded-lg px-1 text-[11px] font-bold uppercase ring-1 "+(on ? "bg-primary text-primary-foreground ring-primary" : ok ? "bg-success/15 text-success ring-success/40" : "bg-muted/30 text-muted-foreground ring-border hover:bg-muted/50")},
+      e("span",null, ok && !on ? "✓" : String(i+1)), e("span",{className:"truncate"}, p[1])); }));
+  var nav = e("div",{className:"flex items-center justify-between gap-2"},
+    e(Btn,{v:"secondary", disabled:passoAt===0, onClick:function(){ setPassoAt(passoAt-1); }}, "‹ Voltar"),
+    passoAt<PASSOS.length-1 ? e(Btn,{v:"primary", className:"h-10!", onClick:function(){ setPassoAt(passoAt+1); }}, "Confirmar e seguir ›") : e("span",null));
+  var avisoFeito = jaFeito && e("p",{className:"rounded-lg bg-success/10 px-3 py-1.5 text-center text-[12.5px] font-semibold text-success"},"Acerto já registrado — somente consulta.");
+  var bloqueio = jaFeito && passoAt<PASSOS.length-1 ? " [&>section]:pointer-events-none" : "";
+  var passoUnico = e("div",{className:"flex min-w-0 flex-col gap-3 p-3"+bloqueio, onKeyDown:enterProximo}, avisoFeito, stepper, secao(passoAt), nav);
+  var resumoLado = e("aside",{className:"flex min-w-0 flex-col gap-2"}, blocoMedia,
+    e("div",{className:"flex flex-col gap-1 rounded-xl bg-black/15 p-2.5"}, PASSOS.map(function(p,i){
+      return e("div",{key:p[0], className:"flex items-center gap-2 text-[12.5px] "+(feitoPasso[i] ? "text-success" : "text-muted-foreground")}, e("span",{className:"w-4 text-center font-bold"}, feitoPasso[i] ? "✓" : String(i+1)), p[1]); })));
+  var sequencia = e("div",{className:"flex min-w-0 flex-col gap-2 p-3", onKeyDown:enterProximo}, avisoFeito, blocoMedia, PASSOS.map(function(p,i){
+    if(i===passoAt) return e("div",{key:p[0], className:"flex flex-col gap-2"}, secao(i), nav);
+    var ok = feitoPasso[i];
+    return e("button",{key:p[0], type:"button", onClick:function(){ setPassoAt(i); }, className:"flex h-9 items-center gap-2 rounded-xl px-3 text-left text-[13px] ring-1 "+(ok ? "bg-success/10 ring-success/40" : "bg-muted/20 opacity-60 ring-border hover:opacity-100")},
+      e("span",{className:"grid size-6 place-items-center rounded-full text-[12px] font-bold "+(ok ? "bg-success/25 text-success" : "bg-primary/20 text-primary")}, ok ? "✓" : String(i+1)),
+      e("b",null, p[1]), ok && e("span",{className:"ml-auto text-[12px] text-success"}, "feito")); }));
+  var corpo = lay===3 ? sequencia : lay===2 ? e("div",{className:"grid grid-cols-1 items-start @[52rem]:grid-cols-[minmax(0,1fr)_17rem]"}, passoUnico, e("div",{className:"p-3 @[52rem]:pl-0"}, resumoLado)) : passoUnico;
+  return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
+    cabecaPagina("Fila do dia à esquerda e o atendimento à direita, um passo por vez."),
+    pagina(cartao(corpo), lay===1 ? blocoMedia : null, lay===4 ? blocoMedia : null));
 }
 
 export { AbaIntCalculadora };

@@ -449,9 +449,8 @@ function inserir(convId, msg){
     var meMarcou = (msg.mencoes||[]).indexOf(eu)>=0, aberta = estado.efem.aberta===convId && (!conv.paralelas || (estado.efem.abaAberta||"geral")===abaDaMsg(msg)) && !document.hidden;
     if(notifLer().chat){ if(meMarcou) tocar("mencao"); else tocar("receber"); }   // som só com as notificações do chat ligadas
     if(!aberta){
-      var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou};
-      efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
-      setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 6000);
+      var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg)};
+      empurrarAviso(toast);
     } else markRead(eu, convId, msg.aba);
   }
 }
@@ -792,6 +791,14 @@ function avisoDoNavegador(titulo, texto){
     var n = new Notification(titulo, {body:texto, tag:"sorellychat"}); n.onclick = function(){ window.focus(); n.close(); }; } catch(x){}
 }
 function pedirPermissaoAviso(){ try { if(typeof Notification!=="undefined" && Notification.permission==="default") Notification.requestPermission(); } catch(x){} }
+// Aviso de mensagem nova (Marcus, 29/10/2026): no máximo 2 pessoas por vez (a 3ª tira a mais antiga); várias mensagens da mesma pessoa empilham; cada mensagem some sozinha em 5 segundos, como o WhatsApp
+function empurrarAviso(toast){
+  var l = estado.efem.toasts.concat([toast]), ordem = [];
+  l.forEach(function(x){ var k = x.de || x.id; ordem = ordem.filter(function(o){ return o!==k; }); ordem.push(k); });
+  var manter = ordem.slice(-2);
+  efem({toasts:l.filter(function(x){ return manter.indexOf(x.de || x.id)>=0; })});
+  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 5000);
+}
 function notificarRecebida(convId, msg){
   var conv = convPorId(convId); if(!conv) return;
   if(minhaSituacao()!=="disponivel") return;   // em reunião ou ausente (só Marcus, Nickolas e Lucas): silêncio total
@@ -802,8 +809,7 @@ function notificarRecebida(convId, msg){
   if(!grande) efem({pulso:Date.now()});
   avisoDoNavegador(tituloDe(conv, eu), (conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg));
   var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
-  efem({toasts:estado.efem.toasts.concat([toast]).slice(-3)});
-  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, grande ? 9000 : 7000);   // todos os avisos são o modelo 1 (Marcus, 29/10/2026) e somem sozinhos
+  empurrarAviso(toast);
 }
 function aplicarServidor(r, primeira){
   var novas = [];

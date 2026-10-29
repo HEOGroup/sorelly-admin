@@ -67,7 +67,8 @@ function AbaEncTop50(){
   var snap = er.top50Snap[er.top50Snap.length-1];
   useEffect(function(){ if(window.location.hash==="#pedidos"){ var t = setTimeout(function(){ var el = document.getElementById("pedidos"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 400); return function(){ clearTimeout(t); }; } }, []);
   return e(Pagina,null,
-    e(PageHead,{t:"Top 50", sub:"Vendas por mês, média e alerta das revendedoras com reposição por entrega e encomenda."},
+    e(PageHead,{t:"Top 50", sub:"Revendedoras com direito a realizar reposições e encomendas diretamente pelo setor de encomendas."},
+      e(Botao,{desabilitado:!E.pode, title:E.pode ? "Cola a lista da planilha do Top 50" : "Só a diretoria importa a lista", onClick:function(){ ir({tipo:"importar"}); }}, "Importar lista"),
       e(Botao,{principal:true, desabilitado:!E.pode, title:E.pode ? "Registra a lista de hoje como aprovada" : "Só a diretoria aprova a lista", onClick:function(){ E.exec("top50_registrar", {}); }}, "Aprovar lista do mês")),
     e(PlanilhaRev,{E:E, grupo:"top50", ir:ir}),
     e("div",{id:"pedidos"}, e(Bloco,{t:"Pedidos ao Marcus", dir:e("span",{className:"text-[12px] text-foreground/80"}, "entrar ou sair do Top 50")},

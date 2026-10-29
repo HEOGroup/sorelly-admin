@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · avisos dentro do chat</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:#0a0806;color:#fff}
+.barra{display:flex;gap:8px;justify-content:center;align-items:center;padding:10px;background:#110e08;border-bottom:1px solid rgba(232,184,75,.3);flex-wrap:wrap}
+.barra span{color:#bdb39d;margin-right:6px}
+.bt{height:32px;padding:0 14px;border-radius:8px;border:1px solid rgba(232,184,75,.4);background:#1b1710;color:#E8B84B;font:inherit;font-weight:600;cursor:pointer}.bt:hover{border-color:#E8B84B}
+.tela{display:flex;height:calc(100vh - 54px);min-height:520px;color:#111b21}
+.lista{width:300px;background:#fff;border-right:1px solid #e1e5e8;overflow:hidden;flex:none}
+.lista h3{margin:0;padding:12px 14px;font-size:15px;background:#fff}
+.li{display:flex;gap:10px;padding:10px 14px;border-top:1px solid #f0f2f3}.li .a{width:40px;height:40px;border-radius:50%;background:#d0d7dc;flex:none;display:grid;place-items:center;font-weight:700;color:#54656f}
+.li b{display:block;font-size:13px}.li small{color:#667781}
+.conv{position:relative;flex:1;display:flex;flex-direction:column;background:#efeae2;min-width:0;overflow:hidden}
+.cab{display:flex;gap:10px;align-items:center;padding:10px 14px;background:#f0f2f5;border-bottom:1px solid #e1e5e8}.cab .a{width:40px;height:40px;border-radius:50%;background:#c6cfd4}
+.msgs{flex:1;padding:16px 24px;display:flex;flex-direction:column;gap:6px;justify-content:flex-end}
+.m{max-width:420px;padding:6px 10px;border-radius:8px;background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.1)}.m.eu{align-self:flex-end;background:#d9fdd3}
+.ent{padding:10px 14px;background:#f0f2f5}.ent div{background:#fff;border-radius:22px;padding:10px 16px;color:#8696a0}
+/* avisos: ficam DENTRO do painel da conversa, um pouco abaixo do cabeçalho */
+.av{position:absolute;z-index:5;animation:desce .25s}
+@keyframes desce{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+.x{border:0;background:transparent;color:inherit;font-size:20px;line-height:1;cursor:pointer;opacity:.7;padding:0 4px}.x:hover{opacity:1}
+.foto{border-radius:50%;background:linear-gradient(145deg,#f1cd75,#b8892a);color:#1a1405;font-weight:800;display:grid;place-items:center;flex:none}
+/* 1 · faixa fina por baixo do cabeçalho, largura toda */
+.o1{left:0;right:0;top:0;display:flex;align-items:center;gap:12px;padding:10px 18px;background:#25d366;color:#06240f;font-size:16px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.o1 .foto{width:34px;height:34px;font-size:14px}.o1 b{margin-right:6px}.o1 span.t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 2 · balão de conversa no canto de cima, à direita (parece uma mensagem) */
+.o2{right:20px;top:14px;max-width:360px;padding:10px 14px 10px 12px;background:#fff;border-radius:14px 14px 4px 14px;box-shadow:0 4px 16px rgba(0,0,0,.25);border-left:5px solid #25d366;font-size:16px}
+.o2 b{display:block;color:#128c7e;font-size:14px}.o2 .l{display:flex;gap:8px;align-items:flex-start}.o2 .t{flex:1}
+/* 3 · pílula pequena (foto + nome + texto numa linha) */
+.o3{right:20px;top:16px;display:flex;align-items:center;gap:10px;padding:6px 10px 6px 6px;background:#111b21;color:#fff;border-radius:999px;box-shadow:0 4px 16px rgba(0,0,0,.35);font-size:15px;max-width:420px}
+.o3 .foto{width:36px;height:36px;font-size:14px}.o3 b{color:#25d366;margin-right:4px}.o3 .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 4 · só texto com sombra, sem caixa: nome em destaque e mensagem grande, canto de cima à direita */
+.o4{right:24px;top:18px;max-width:360px;text-align:right;text-shadow:0 1px 3px rgba(255,255,255,.9)}
+.o4 b{display:block;font-size:18px;color:#075e54}.o4 .t{display:block;font-size:20px;font-weight:600;color:#111b21}.o4 small{color:#54656f;font-size:12px}
+.o4 .x{position:absolute;left:-26px;top:0;color:#111b21}
+</style></head><body>
+<div class="barra"><span>Escolha o aviso:</span>
+ <button class="bt" data-o="1">1 · Faixa verde</button><button class="bt" data-o="2">2 · Balão de conversa</button><button class="bt" data-o="3">3 · Pílula</button><button class="bt" data-o="4">4 · Só texto</button>
+ <button class="bt" id="lim" style="color:#fff">Limpar</button></div>
+<div class="tela">
+ <div class="lista"><h3>SorellyChat</h3>
+  <div class="li"><div class="a">MK</div><div><b>Michele - Kits Novos</b><small>Oi</small></div></div>
+  <div class="li"><div class="a">AS</div><div><b>Ana Silva - Agendamento</b><small>Oi</small></div></div>
+  <div class="li"><div class="a">LC</div><div><b>Castilho - Marketing</b><small>Dae</small></div></div>
+  <div class="li"><div class="a">MA</div><div><b>Maria Assunção - Bipagem</b><small>Conversa nova</small></div></div>
+  <div class="li"><div class="a">AH</div><div><b>Anamaria - Diretoria</b><small>Olá.</small></div></div></div>
+ <div class="conv" id="conv">
+  <div class="cab"><div class="a"></div><div><b>Ana Silva - Agendamento</b><br><small style="color:#25a35a">online</small></div></div>
+  <div class="msgs"><div class="m">Beleza.</div><div class="m eu">Me manda mensagem</div><div class="m eu">Oi oi</div><div class="m">Oiii</div></div>
+  <div class="ent"><div>Digite uma mensagem</div></div>
+ </div>
+</div>
+<script>
+var ctx,mestre;function ac(){if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();mestre=ctx.createDynamicsCompressor();mestre.connect(ctx.destination);}if(ctx.state==="suspended")ctx.resume();return ctx;}
+function nota(f,i,d,t,v){var c=ac(),o=c.createOscillator(),g=c.createGain(),s=c.currentTime+i;o.type=t||"sine";o.frequency.setValueAtTime(f,s);g.gain.setValueAtTime(.0001,s);g.gain.exponentialRampToValueAtTime(v,s+.012);g.gain.exponentialRampToValueAtTime(.0001,s+d);o.connect(g);g.connect(mestre);o.start(s);o.stop(s+d+.05);}
+function som(){nota(1760,0,.34,"sine",.8);nota(2349,.09,.42,"sine",.75);nota(3520,.09,.18,"sine",.14);nota(880,0,.3,"triangle",.18);}
+var conv=document.getElementById("conv");
+function limpa(){document.querySelectorAll(".av").forEach(function(e){e.remove();});}
+function mostra(k){limpa();var d=document.createElement("div"),X='<button class="x" aria-label="Fechar o aviso">×</button>',T="Ok então, pode deixar que eu confirmo o kit da Ketlyn ainda hoje.";
+ if(k==="1")d.innerHTML='<div class="av o1"><div class="foto">NS</div><span class="t"><b>Natasha Silva</b>'+T+'</span>'+X+'</div>';
+ if(k==="2")d.innerHTML='<div class="av o2"><div class="l"><div class="t"><b>Natasha Silva</b>'+T+'</div>'+X+'</div></div>';
+ if(k==="3")d.innerHTML='<div class="av o3"><div class="foto">NS</div><span class="t"><b>Natasha</b>'+T+'</span>'+X+'</div>';
+ if(k==="4")d.innerHTML='<div class="av o4"><b>Natasha Silva</b><span class="t">'+T+'</span><small>14:56</small>'+X+'</div>';
+ var el=d.firstChild;conv.appendChild(el);el.querySelector(".x").onclick=function(){el.remove();};som();setTimeout(function(){if(el.parentNode)el.remove();},9000);}
+document.querySelectorAll("[data-o]").forEach(function(b){b.onclick=function(){mostra(b.dataset.o);};});
+document.getElementById("lim").onclick=limpa;
+</script></body></html>
