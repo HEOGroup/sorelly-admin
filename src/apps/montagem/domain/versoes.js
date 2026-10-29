@@ -14,6 +14,8 @@ var VERSOES = [
     {tipo:"melhoria", area:"Financeiro familiar", txt:"Dados do Financeiro familiar refeitos a partir do admin antigo e gravados no servidor (Pix, contas, pagamentos, repasses). Totais conferidos contra o antigo."},
     {tipo:"melhoria", area:"Cobrança de funcionárias", txt:"Compras e pagamentos atualizados com o admin antigo (873 e 396), somas conferidas."},
     {tipo:"melhoria", area:"Financeiro", txt:"Saldos das contas e contas pagas por dia atualizados até 28/10."}]},
+  {v:"0.13.1", data:"2026-10-29", titulo:"Recarrega sozinho depois de uma atualização", itens:[
+    {tipo:"correcao", area:"Sistema", txt:"Aba aberta antes de uma publicação dava erro de carregamento (Loading chunk failed). Agora a tela recarrega sozinha uma vez; se o erro repetir, aparece um aviso com o botão Recarregar."}]},
   {v:"0.13.0", data:"2026-10-29", titulo:"Top 50 oficial: lista da planilha, importação e Encomendas no servidor", itens:[
     {tipo:"novo", area:"Encomendas e reposições", txt:"Top 50 da planilha do Marcus carregado (50 revendedoras, com última venda, representante, data do acerto, situação e responsável pela montagem). A tela Top 50 diz que são as revendedoras com direito a reposições e encomendas diretamente pelo setor."},
     {tipo:"novo", area:"Encomendas e reposições", txt:"Botão Importar lista (só diretoria): cola as linhas da planilha e o sistema cadastra, atualiza e, se marcado, tira quem ficou fora da lista. Serve para colocar o Top 50 no servidor sem passar os dados pelo GitHub."},

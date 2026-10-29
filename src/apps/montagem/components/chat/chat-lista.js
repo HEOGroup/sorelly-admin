@@ -6,7 +6,12 @@ import { CONTATOS, contato, sem } from "@/apps/montagem/domain/chat-contatos";
 import { NovoGrupo, FotoEditavel } from "@/apps/montagem/components/chat/chat-info";
 import { SeletorFundo } from "@/apps/montagem/components/chat/chat-fundos";
 import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista } from "@/apps/montagem/components/chat/chat-ui";
+import { SETORES } from "@/apps/montagem/navigation/setores";
+import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useState } from "@/shared/react";
+
+// grupo do chat -> setor da barra lateral do sistema (mesmo ícone e mesma cor); grupo sem setor parecido usa o ícone de equipe em dourado
+var setorDoGrupo = function(nome){ var n = sem(nome); return SETORES.find(function(x){ var sn = sem(String(x.nome).split(/\s+/).join(" ")); return sn===n || sn.indexOf(n)===0 || n.indexOf(sn)===0 || sn.split(" ")[0]===n.split(" ")[0]; }); };
 
 // dourado mais refinado, com degradê (marca "SorellyChat")
 var OURO = "linear-gradient(135deg, #6b4f12 0%, #b8892b 28%, #f6dc8c 52%, #d4a63a 74%, #8a6420 100%)";
@@ -77,6 +82,7 @@ function ListaConversas(p){
   var nv = useState(false), nova = nv[0], setNova = nv[1], pf = useState(false), perfil = pf[0], setPerfil = pf[1];
   var vc = useState(false), escolhendo = vc[0], setEscolhendo = vc[1], cm = useState(null), ctx = cm[0], setCtx = cm[1], gn = useState(false), grupoNovo = gn[0], setGrupoNovo = gn[1];   // false, "func" ou "rep"
   var mo = useState(false), mais = mo[0], setMais = mo[1];   // "⋯" com Decidir/Espera/Marcado/Arquivadas/Grupos (saíram da fileira de filtros, 27/10/2026)
+  var vs = useState("todos"), vista = vs[0], setVista = vs[1];   // metade direita da barra: Todos | Setores (Marcus, 29/10/2026)
   var so = useState(false), setoresAberto = so[0], setSetoresAberto = so[1];   // "Setores": os grupos de cada setor (Montagem, Atendimento, Agendamento…), um toque abre o grupo
   var lm = useState(40), limite = lm[0], setLimite = lm[1];
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
@@ -154,9 +160,13 @@ function ListaConversas(p){
       e("div",{className:"flex h-9 items-center gap-2.5 rounded-full px-3.5", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:16, style:{color:W.sec}}),
         e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Pesquisar ou começar uma nova conversa", "aria-label":"Pesquisar", className:"min-w-0 flex-1 bg-transparent text-[13px] outline-none", style:{color:W.texto}}),
         busca && e("button",{onClick:function(){ setBusca(""); }, "aria-label":"Limpar busca"}, e(Ph,{n:"x", s:14, style:{color:W.sec}})))),
-    // filtros em pílulas, como no WhatsApp
-    e("div",{className:"flex shrink-0 items-center gap-1.5 px-3 pb-2"}, [["todas","Tudo",0],["naolidas","Não lidas",naoLidasTotal],["grupos","Grupos",0]].map(function(f){ var on = filtro===f[0];
-      return e("button",{key:f[0], onClick:function(){ setFiltro(f[0]); setLimite(40); }, className:"flex h-7 items-center gap-1 rounded-full px-3 text-[12.5px]", style:{background:on ? "#D9FDD3" : "transparent", color:on ? "#0A6B3E" : W.sec, border:"1px solid "+(on ? "#D9FDD3" : W.borda), fontWeight:on ? 600 : 400}}, f[1], f[2]>0 && e("span",{className:"text-[11px]"}, f[2])); })),
+    // duas metades (Marcus, 29/10/2026): Arquivadas (vira Voltar quando aberta) | Todos / Setores
+    e("div",{className:"flex shrink-0 items-center gap-2 px-3 pb-2"},
+      e("button",{onClick:function(){ setFiltro(filtro==="arq" ? "todas" : "arq"); setLimite(40); }, className:"flex h-9 flex-1 items-center justify-center gap-1.5 rounded-xl text-[13px] font-semibold", style:{background:W.campo, color:W.texto, border:"1px solid "+W.borda}},
+        filtro==="arq" ? e(Ph,{n:"arrow-left", s:16}) : e(Ph,{n:"archive-box", s:16}), filtro==="arq" ? "Voltar" : "Arquivadas", filtro!=="arq" && arqs.length>0 && e("span",{className:"rounded-full px-1.5 text-[11px]", style:{background:W.borda}}, arqs.length)),
+      e("div",{className:"flex h-9 flex-1 gap-1 rounded-xl p-[3px]", style:{background:W.campo, border:"1px solid "+W.borda}},
+        [["todos","Todos"],["setores","Setores"]].map(function(v){ var on = vista===v[0] && filtro!=="arq";
+          return e("button",{key:v[0], onClick:function(){ setVista(v[0]); setFiltro("todas"); setLimite(40); }, className:"flex-1 rounded-lg text-[13px] font-semibold", style:{background:on ? "#25d366" : "transparent", color:on ? "#06240f" : W.sec}}, v[1]); }))),
     filtro==="arq" && !q && e("p",{className:"shrink-0 px-4 pb-1 text-[11px] font-semibold", style:{color:W.ouro}}, "Conversas arquivadas. Abra uma e use \"Tirar das arquivadas\" nos dados dela."),
     e("div",{className:"min-h-0 flex-1 overflow-y-auto", onScroll:rolou},
       q ? e("div",null,
@@ -166,6 +176,12 @@ function ListaConversas(p){
           e("span",{className:"flex items-baseline justify-between gap-2"}, e("span",{className:"truncate text-[13px]"}, r.x.titulo), e("span",{className:"shrink-0 text-[10.5px]", style:{color:W.sec}}, horaLista(r.m.t))),
           e("span",{className:"line-clamp-2 text-[12px]", style:{color:W.sec}}, (r.m.de===eu ? "Você: " : contato(r.m.de).nome.split(" ")[0]+": ")+r.m.texto)); }),
         !porNome.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
+      vista==="setores" && filtro!=="arq" ? e("div",null, lista.filter(function(x){ return x.conv.tipo==="grupo"; }).sort(function(x, y){ return x.conv.nome.localeCompare(y.conv.nome, "pt-BR"); }).map(function(x){
+        var sd = setorDoGrupo(x.conv.nome), cor = sd ? sd.cor : "#E8B84B";
+        return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, className:"flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5", style:{borderBottom:"1px solid "+W.borda}},
+          e("span",{className:"grid size-11 shrink-0 place-items-center rounded-xl", style:{background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"66"}}, e(Icon,{n:sd ? sd.ic : "equipe", s:22, peso:"duotone"})),
+          e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[14px] font-semibold"}, x.conv.nome), e("span",{className:"block truncate text-[12px]", style:{color:W.sec}}, (x.conv.funcionarias||[]).length>0 ? (x.conv.funcionarias||[]).slice(0,4).map(function(id){ return contato(id).nome.split(" ")[0]; }).join(", ") : x.conv.membros.length+" pessoas")),
+          x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas)); })) :
       !filtrada.length ? e(Vazio,{n:filtro==="naolidas" ? "checks" : "chat-circle-dots"}, filtro==="marcado" ? "Ninguém marcou você sem resposta." : filtro==="arq" ? "Nenhuma conversa arquivada." : filtro==="naolidas" ? "Nenhuma mensagem não lida." : "Nenhuma conversa ainda. Toque no ícone de mensagem para começar.") :
       e("div",null, filtro==="todas" && arqs.length>0 && e("button",{onClick:function(){ setFiltro("arq"); setLimite(40); }, className:"flex w-full items-center gap-3 px-3 py-2 text-left", style:{borderBottom:"1px solid "+W.borda}}, e("span",{className:"grid size-6 place-items-center"}, e(Ph,{n:"archive-box", s:18, style:{color:W.sec}})), e("span",{className:"flex-1 text-[12.5px] font-medium", style:{color:W.sec}}, "Arquivadas"), e("span",{className:"text-[11px]", style:{color:W.sec}}, arqs.length)), filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[11px]", style:{color:W.sec}}, "Role para ver mais…"))),
     ctx && (function(){

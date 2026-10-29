@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SorellyChat · Arquivadas e Setores</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:13px/1.4 Inter,system-ui,sans-serif;background:#0a0806;color:#111b21}
+.nota{padding:8px 12px;background:#110e08;color:#bdb39d;text-align:center;border-bottom:1px solid rgba(232,184,75,.3)}
+.tela{display:flex;height:calc(100vh - 35px);min-height:560px}
+.lista{width:340px;background:#fff;border-right:1px solid #e1e5e8;display:flex;flex-direction:column;flex:none}
+.top{display:flex;gap:8px;align-items:center;padding:12px 14px;font-size:16px;font-weight:700}
+/* as duas metades: Arquivadas | Todos-Setores */
+.metades{display:flex;gap:8px;padding:0 12px 10px}
+.metades>*{flex:1;height:36px;border-radius:10px;border:1px solid #d1d7db;background:#f0f2f5;color:#3b4a54;font:inherit;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.metades>*:hover{background:#e6eaed}
+.arq .n{background:#d1d7db;border-radius:10px;padding:0 7px;font-size:12px}
+.vt{display:flex;padding:3px;gap:3px;background:#f0f2f5;border:1px solid #d1d7db;border-radius:10px;height:36px}
+.vt button{flex:1;border:0;border-radius:8px;background:transparent;font:inherit;font-weight:600;color:#54656f;cursor:pointer}
+.vt button.on{background:#25d366;color:#06240f}
+.rol{flex:1;overflow:auto;border-top:1px solid #eef1f3}
+.li{display:flex;gap:10px;padding:10px 14px;border-bottom:1px solid #f4f6f7;cursor:pointer;align-items:center}.li:hover{background:#f5f6f6}.li.sel{background:#e9edef}
+.a{width:42px;height:42px;border-radius:50%;background:#d0d7dc;flex:none;display:grid;place-items:center;font-weight:700;color:#54656f}
+.a.s{background:#14b8a6;color:#fff;border-radius:12px}
+.li b{display:block;font-size:13px}.li small{color:#667781}.li .h{margin-left:auto;color:#667781;font-size:11px;align-self:flex-start}
+.conv{flex:1;display:flex;flex-direction:column;background:#efeae2;min-width:0}
+.cab{display:flex;gap:10px;align-items:center;padding:10px 14px;background:#f0f2f5;border-bottom:1px solid #e1e5e8}
+/* faixa de pessoas do setor, no alto do grupo */
+.pessoas{display:flex;gap:8px;align-items:center;padding:8px 14px;background:#fff;border-bottom:1px solid #e1e5e8;overflow:auto}
+.pessoas small{color:#667781;margin-right:2px;white-space:nowrap}
+.pp{display:flex;gap:6px;align-items:center;height:34px;padding:0 12px 0 4px;border-radius:17px;border:1px solid #d1d7db;background:#f7f8f8;cursor:pointer;white-space:nowrap;font:inherit;font-weight:600;color:#111b21}.pp:hover{background:#e9edef;border-color:#25d366}
+.pp .a{width:26px;height:26px;font-size:11px}
+.msgs{flex:1;padding:16px 24px;display:flex;flex-direction:column;gap:6px;justify-content:flex-end}
+.m{max-width:430px;padding:6px 10px;border-radius:8px;background:#fff;box-shadow:0 1px 1px rgba(0,0,0,.1)}.m b{display:block;font-size:12px;color:#128c7e}.m.eu{align-self:flex-end;background:#d9fdd3}
+.ent{padding:10px 14px;background:#f0f2f5}.ent div{background:#fff;border-radius:22px;padding:10px 16px;color:#8696a0}
+.vazio{margin:auto;color:#667781;text-align:center}
+</style></head><body>
+<div class="nota">Teste: clique em <b>Arquivadas</b>, em <b>Setores</b> e depois em <b>Encomendas</b>. No grupo, clique na Elen, Agatha ou Eduarda para abrir a conversa com ela.</div>
+<div class="tela">
+ <div class="lista">
+  <div class="top">SorellyChat</div>
+  <div class="metades" id="metades"></div>
+  <div class="rol" id="rol"></div>
+ </div>
+ <div class="conv" id="conv"></div>
+</div>
+<script>
+var CONVS=[["Michele - Kits Novos","Oi","14:55","MK"],["Ana Silva - Agendamento","Oi","14:55","AS"],["Castilho - Marketing","Dae","14:52","LC"],["Maria Assunção - Bipagem","Conversa nova","","MA"],["Anamaria - Diretoria","Olá.","14:23","AH"],["Tamara - Agendamento","Ok","14:14","TM"]];
+var ARQ=[["Kawany - Kits e Atendimento","Tudo certo!!","14:14","KS"],["Gabrielly - Bipagem","Oi, vamos conversar por aqui.","14:13","GS"],["Amanda Coelho - Inadimplência","Oi.","14:12","AC"]];
+var SETORES=[["Encomendas","3 pessoas · Elen, Agatha, Eduarda",["Elen","Agatha","Eduarda"]],["Kits e Atendimento","Natasha, Kawany, Natalia",["Natasha","Kawany","Natalia"]],["Cadastro de revendedoras","Camilly, Thaylianny",["Camilly","Thaylianny"]],["Financeiro","Nayale, Bruna",["Nayale","Bruna"]],["Agendamento","Ana Silva, Mariana, Tamara",["Ana Silva","Mariana","Tamara"]],["Bipagem","Geovana, Maria Eduarda, Gabrielly",["Geovana","Maria Eduarda","Gabrielly"]],["Marketing","Castilho, Beatriz",["Castilho","Beatriz"]],["RH","Maria Claudia, Ana Paula",["Maria Claudia","Ana Paula"]]];
+var est={modo:"todos",arq:false,sel:null};
+function li(c,i,tipo,sel){return '<div class="li'+(sel?' sel':'')+'" data-t="'+tipo+'" data-i="'+i+'"><div class="a'+(tipo==="s"?' s':'')+'">'+c[3]+'</div><div><b>'+c[0]+'</b><small>'+c[1]+'</small></div><span class="h">'+(c[2]||"")+'</span></div>';}
+function desenha(){
+  var m=document.getElementById("metades"), r=document.getElementById("rol");
+  // metade esquerda: Arquivadas (ou Voltar, quando está dentro); metade direita: Todos | Setores
+  m.innerHTML=(est.arq?'<button id="volta">← Voltar</button>':'<button class="arq" id="barq">Arquivadas <span class="n">'+ARQ.length+'</span></button>')
+   +'<div class="vt"><button data-v="todos" class="'+(est.modo==="todos"&&!est.arq?"on":"")+'">Todos</button><button data-v="setores" class="'+(est.modo==="setores"&&!est.arq?"on":"")+'">Setores</button></div>';
+  var h="";
+  if(est.arq) h=ARQ.map(function(c,i){return li(c,i,"a",false);}).join("");
+  else if(est.modo==="setores") h=SETORES.map(function(s,i){return li([s[0],s[1],"","#"],i,"s",est.sel===("s"+i));}).join("");
+  else h=CONVS.map(function(c,i){return li(c,i,"c",est.sel===("c"+i));}).join("");
+  r.innerHTML=h;
+  var b=document.getElementById("barq"); if(b) b.onclick=function(){est.arq=true;desenha();};
+  var v=document.getElementById("volta"); if(v) v.onclick=function(){est.arq=false;desenha();};
+  m.querySelectorAll("[data-v]").forEach(function(x){x.onclick=function(){est.arq=false;est.modo=x.dataset.v;desenha();};});
+  r.querySelectorAll(".li").forEach(function(x){x.onclick=function(){abre(x.dataset.t,+x.dataset.i);};});
+}
+function abre(t,i){
+  var c=document.getElementById("conv");
+  if(t==="s"){ est.sel="s"+i; var s=SETORES[i];
+    c.innerHTML='<div class="cab"><div class="a s">'+s[0].charAt(0)+'</div><div><b>Grupo '+s[0]+'</b><br><small style="color:#667781">'+s[2].length+' pessoas</small></div></div>'
+     +'<div class="pessoas"><small>Abrir conversa com:</small>'+s[2].map(function(n){return '<button class="pp" data-n="'+n+'"><span class="a">'+n.charAt(0)+'</span>'+n+'</button>';}).join("")+'</div>'
+     +'<div class="msgs"><div class="m"><b>'+s[2][0]+'</b>Bom dia, pessoal!</div><div class="m eu">Bom dia! Alguma encomenda para hoje?</div></div><div class="ent"><div>Digite uma mensagem para o grupo</div></div>';
+    c.querySelectorAll(".pp").forEach(function(x){x.onclick=function(){ c.innerHTML='<div class="cab"><div class="a">'+x.dataset.n.charAt(0)+'</div><div><b>'+x.dataset.n+' - '+s[0]+'</b><br><small style="color:#25a35a">online</small></div></div><div class="pessoas"><button class="pp" id="vg">← Voltar ao grupo '+s[0]+'</button></div><div class="msgs"><div class="m">Oi Marcus!</div></div><div class="ent"><div>Digite uma mensagem</div></div>'; document.getElementById("vg").onclick=function(){abre("s",i);}; };});
+  } else { est.sel=t+i; var d=(t==="a"?ARQ:CONVS)[i];
+    c.innerHTML='<div class="cab"><div class="a">'+d[3]+'</div><div><b>'+d[0]+'</b></div></div><div class="msgs"><div class="m">'+d[1]+'</div></div><div class="ent"><div>Digite uma mensagem</div></div>'; }
+  desenha();
+}
+document.getElementById("conv").innerHTML='<div class="vazio">Escolha uma conversa ao lado.</div>'; desenha();
+</script></body></html>
