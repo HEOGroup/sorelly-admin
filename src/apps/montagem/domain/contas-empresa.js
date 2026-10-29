@@ -96,6 +96,7 @@ var _cache = null;
 // Contas a pagar e pagas vindas do servidor (DevMaster, /api/contas-dm). Quando chegam, valem no lugar dos arquivos locais (que só existem no computador do Marcus).
 var SERV = null;
 function definirContasServidor(d){ SERV = d && d.apagar ? d : null; _cache = null; }
+function servidorEm(){ return SERV ? SERV.geradoEm || "ok" : null; }   // hora da última leitura da DevMaster; null = ainda usa os arquivos locais
 function baseItens(){
   if(_cache) return _cache;
   var pagas = ((SERV && SERV.pagas) || ((ANO && ANO.itens) || []).concat((LOCAL && LOCAL.itens) || [])).map(function(x, i){
@@ -262,4 +263,4 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
-export { definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

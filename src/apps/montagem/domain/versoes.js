@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.2", data:"2026-10-29", titulo:"Contas a pagar: já pago e falta pagar vêm direto da DevMaster", itens:[
+    {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor, a cada 10 minutos."}
+  ]},
   {v:"0.17.1", data:"2026-10-28", titulo:"Atendimento interno · Listagens com a agenda da Tamara, média de vendas e WhatsApp", itens:[
     {tipo:"novo", area:"Atendimento interno", txt:"Listagens: cada dia mostra as revendedoras agendadas pela Tamara (lidas da DevMaster, atualizadas ao abrir e a cada 10 minutos). Atender cria o atendimento com as condicionais reais e abre a calculadora."},
     {tipo:"novo", area:"Atendimento interno", txt:"Coluna Média de vendas na Listagem: venda atual (quando chega da DevMaster) mais as 2 últimas vendas; sem a atual, as últimas. Coluna WhatsApp com o número e botão que abre a conversa."},

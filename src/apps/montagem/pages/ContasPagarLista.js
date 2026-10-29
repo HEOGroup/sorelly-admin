@@ -4,7 +4,7 @@
 // Empresa + pró-labore e retiradas juntos (Total), como a tela Análise de custos (Marcus, 22/10/2026). Dados do DevMaster (domain/contas-empresa.js); aqui só a leitura em lista e os filtros.
 import { AbasTela, BlocoFiltros, Botao, COR, CampoBusca, CampoSel, FaixaTotais, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { FILIAIS, filtrar, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
+import { servidorEm, FILIAIS, filtrar, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
 import { RegistrarPagamento } from "@/apps/montagem/components/registrar-pagamento";
@@ -56,9 +56,9 @@ function AbaCtaLista(){
   var todos = filtrar(mes, filial, busca, "", quem, nota).filter(function(i){ return !nat || (i.nat+" · "+i.natNome)===nat; });
   var pagos = todos.filter(function(i){ return i.status==="pago"; }), abertos = todos.filter(function(i){ return i.status==="apagar"; }), atrasadas = abertos.filter(function(i){ return i.venc<hoje; });
   // Alto da tela (Marcus, 27/10/2026): JÁ PAGO e FALTA PAGAR do mês, do admin antigo (s.contasPagar, atualizado em s.contasPagarEm); sem esse dado, soma as contas da lista
-  var cm = mes ? (((s.contasPagar || {})[mes.slice(0, 4)] || {})[Number(mes.slice(5, 7))-1] || null) : null, doAdmin = !!(cm && ((cm.pago || 0)>0 || (cm.apagar || 0)>0));
+  var srvEm = servidorEm(), cm = mes ? (((s.contasPagar || {})[mes.slice(0, 4)] || {})[Number(mes.slice(5, 7))-1] || null) : null, doAdmin = !srvEm && !!(cm && ((cm.pago || 0)>0 || (cm.apagar || 0)>0));
   var hPago = doAdmin ? cm.pago || 0 : soma(pagos), hFalta = doAdmin ? cm.apagar || 0 : soma(abertos), hTot = r2(hPago+hFalta), hPct = hTot>0 ? Math.round(hPago/hTot*100) : 0;
-  var quandoAtu = s.contasPagarEm ? s.contasPagarEm.slice(8, 10)+"/"+s.contasPagarEm.slice(5, 7)+" "+s.contasPagarEm.slice(11, 16) : ADMIN_EM;
+  var quandoDm = srvEm && srvEm!=="ok" ? new Date(srvEm).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"})+" "+new Date(srvEm).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}) : "", quandoAtu = s.contasPagarEm ? s.contasPagarEm.slice(8, 10)+"/"+s.contasPagarEm.slice(5, 7)+" "+s.contasPagarEm.slice(11, 16) : ADMIN_EM;
   // aba "Quando vence": o que está em aberto por dia, semana e CNPJ (clicar no valor filtra a lista)
   var emAberto = filtrar("", "", "", "apagar", quem, ""), ini7 = segunda(hoje);
   var QUANDO = [["atraso","Atrasadas", emAberto.filter(function(i){ return i.venc<hoje; })], ["hoje","Hoje", emAberto.filter(function(i){ return i.venc===hoje; })], ["amanha","Amanhã", emAberto.filter(function(i){ return i.venc===somaDias(hoje, 1); })],
@@ -119,7 +119,7 @@ function AbaCtaLista(){
       e("div",{className:"rounded-lg border-2 border-success/60 bg-success/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Já pago"+(mes ? " em "+nomeMes(mes) : "")), e("div",{className:"text-[20px] font-semibold tabular-nums text-success"}, BKC(hPago)), e("div",{className:"text-[11px] text-foreground"}, hPct+"% do total")),
       e("div",{className:"rounded-lg border-2 border-warning/60 bg-warning/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Falta pagar"), e("div",{className:"text-[20px] font-semibold tabular-nums text-warning"}, BKC(hFalta)), e("div",{className:"text-[11px] text-foreground"}, (100-hPct)+"% do total"+(atrasadas.length ? " · "+atrasadas.length+" atrasadas na lista" : ""))),
       e("div",{className:"rounded-lg border border-border bg-card px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Total do mês"), e("div",{className:"text-[20px] font-semibold tabular-nums text-foreground"}, BKC(hTot)), e("div",{className:"mt-1 h-2 overflow-hidden rounded bg-white/10"}, e("div",{className:"h-full bg-success", style:{width:hPct+"%"}})))),
-    e("p",{className:"text-center text-[11px] text-foreground"}, doAdmin ? "Valores do admin antigo"+(quandoAtu ? " · atualizado "+quandoAtu : "")+". A lista embaixo vem do relatório do DevMaster e ainda não tem as baixas feitas depois." : "Soma das contas da lista."),
+    e("p",{className:"text-center text-[11px] text-foreground"}, srvEm ? "Lido direto da DevMaster"+(quandoDm ? " em "+quandoDm : "")+", atualiza a cada 10 minutos. Já pago = contas baixadas na DevMaster no mês. Falta pagar = títulos em aberto que vencem no mês." : doAdmin ? "Valores do admin antigo"+(quandoAtu ? " · atualizado "+quandoAtu : "")+". A lista embaixo vem do relatório do DevMaster e ainda não tem as baixas feitas depois." : "Soma das contas da lista."),
     filtrosAb && e(BlocoFiltros,{onLimpar:filtrado ? limpar : null},
       e(CampoSel,{t:"Período", id:"cp-per", value:per, onChange:function(v){ setPer(v); setLim(100); }, opcoes:PERIODOS}),
       e(CampoSel,{t:"CNPJ", id:"cp-cnpj", value:filial, onChange:function(v){ setFilial(v); setLim(100); }, opcoes:[["", "Todos"]].concat(FILIAIS.map(function(x){ return [x[0], x[1]+(x[0]==="fora" ? "" : " · "+x[2])]; }))}),

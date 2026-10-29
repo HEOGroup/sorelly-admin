@@ -55,3 +55,10 @@ Tirar o financeiro 100% da DevMaster e deixar só no Sorelly Admin, em poucos di
 - Repositório **público**: nunca subir `*.local.*`, chaves ou valores da empresa em arquivo versionado.
 - Antes de subir: `npm run conferir` (regra do Leonardo, 26/10/2026). O GitHub publica sozinho no servidor.
 - Uma conversa por assunto: duas conversas mexendo no mesmo arquivo se sobrescrevem.
+
+## 7. Contas a pagar lidas pelo servidor (29/10/2026)
+- O servidor lê a DevMaster (`src/server/contas-dm.js`, rota `/api/contas-dm`, só Financeiro e Diretoria, cache de 10 minutos) e o navegador recebe ao abrir e a cada 10 minutos (`lib/contas-dm.js`). Os arquivos `*.local.js` NÃO existem no servidor publicado: por isso o site publicado mostrava a lista quase vazia.
+- Tela Contas a pagar: o alto (Já pago e Falta pagar) agora vem da DevMaster quando o servidor responde; antes vinha do admin antigo (número parado de 27/10 21:03).
+- Falta pagar é um número vivo: muda conforme a equipe baixa títulos na DevMaster. O R$ 175 mil do admin antigo era um retrato parado.
+- Pendente: o dia 01/10 tem R$ 150,00 a mais que a tela da DevMaster do Marcus (4 baixas de R$ 150,00 nesse dia: FRE 62, ADM 1435, ADM 1434, VR 951) e a data do pagamento (hoje data de pagamento; a data de débito deu o mesmo valor do sistema em 01/10). O total do mês é igual nas duas datas.
+- Requisito de produção: `DEVMASTER_API_URL_V2` e `DEVMASTER_API_KEY_V2` configuradas no servidor publicado.

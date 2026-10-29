@@ -1251,3 +1251,6 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 ## 28/10/2026 · Saldos das contas bancárias compartilhados (Nayale atualiza no admin novo)
 - A Nayale atualizava o saldo das contas no admin antigo (Contas bancárias › Lançamento diário). No novo, a tela é Financeiro › Saldos e análises › Saldo das contas › Contas bancárias (`pages/Caixa.js`, "Lançar saldos"). Os saldos ficavam só no navegador de cada pessoa. Agora `s.saldosContas` é sincronizado pelo servidor (módulo `sc`, setor Financeiro), com os 9 blocos, 30 contas e os saldos de 31/08 a 27/10/2026 já gravados.
 - Limitação: o módulo grava o conjunto inteiro; duas pessoas lançando ao mesmo tempo, vale a última gravação. Partes da Visão geral do Caixa (recebido, faturamento por dia) ainda dependem de arquivos locais do computador do Marcus.
+
+## 29/10/2026 · Contas a pagar direto da DevMaster (alto da tela)
+- Marcus (a mãe questionou o 175 mil e o pago): o sistema tem que chamar a DevMaster, não o admin antigo. Já pago e Falta pagar agora vêm da leitura do servidor. Pendente: R$ 150,00 do dia 01/10 contra a tela da DevMaster e a data do pagamento (pagamento ou débito).
