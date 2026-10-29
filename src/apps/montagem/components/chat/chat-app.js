@@ -69,17 +69,21 @@ function ChatGlobal(p){
     checar(); var t = setInterval(function(){ checar(); }, 10000); return function(){ clearInterval(t); };
   }, [eu, st.mencoes, nt.chat]);
   if(!st.efem.toasts.length || !eu || !nt.chat) return null;
-  return e("div",{className:"fixed bottom-24 right-4 z-[70] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2", "data-sem-clique":true},
+  // avisos no alto, à direita, por cima da barra do topo (cobrem o "Buscar tela"); modelo 4 escolhido pelo Marcus em 29/10/2026: cartão claro, letra maior, X para fechar
+  var tira = function(t){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); };
+  return e("div",{className:"fixed right-4 top-3 z-[90] flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2.5", "data-sem-clique":true},
     st.efem.toasts.map(function(t){
-      if(!t.atraso) return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
-        className:"flex items-start gap-2.5 rounded-xl px-3 py-2.5 text-left shadow-2xl", style:{background:W.cab, color:W.texto, border:"1px solid rgba(232,184,75,.35)"}},   // aviso modelo 1 (Marcus, 29/10/2026): foto, nome da conversa e a mensagem em até 2 linhas
-        e(Avatar,{id:t.de, s:42}),
-        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13px] font-semibold"}, (t.mencao ? "Você foi marcado · " : "")+((convPorId(t.conv)||{}).tipo==="grupo" ? t.titulo : (t.nome || t.titulo))), e("span",{className:"line-clamp-2 text-[13px]", style:{color:"#cfd8dc"}}, t.texto || t.sub)),
-        e("span",{className:"shrink-0 text-[11px]", style:{color:W.sec}}, new Date().toTimeString().slice(0, 5)));
-      return e("button",{key:t.id, onClick:function(){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } },
-        className:"flex items-start gap-3 rounded-xl px-3.5 py-3 text-left shadow-2xl", style:{background:t.atraso ? "#4a1d24" : W.cab, color:W.texto, border:"1px solid "+(t.atraso ? W.vermelho : t.mencao ? W.verde : W.borda)}},
-        e(Ph,{n:t.atraso ? "alarm" : t.mencao ? "at" : "chat-circle-text", s:22, fill:true, className:t.atraso ? "animate-pulse" : "", style:{color:t.atraso ? W.vermelho : W.verde}}),
-        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13px] font-semibold"}, (t.mencao ? "Você foi marcado · " : "")+t.titulo), e("span",{className:"line-clamp-2 text-[11.5px]", style:{color:W.sec}}, t.sub))); }));
+      var abrirConv = function(){ tira(t); if(t.conv && convPorId(t.conv)){ efem({conversaSel:t.conv}); p.abrir(t.conv); } };
+      var fechar = e("button",{onClick:function(ev){ ev.stopPropagation(); tira(t); }, "aria-label":"Fechar o aviso", title:"Fechar", className:"absolute right-2 top-2 grid size-7 place-items-center rounded-full text-[18px] leading-none hover:bg-black/10", style:{background:"#eef1f3", color:"#54656f"}}, "×");
+      if(t.atraso) return e("div",{key:t.id, role:"button", tabIndex:0, onClick:abrirConv, className:"relative flex cursor-pointer items-start gap-3 rounded-xl px-3.5 py-3 pr-11 text-left shadow-2xl", style:{background:"#4a1d24", color:W.texto, border:"1px solid "+W.vermelho}},
+        e(Ph,{n:"alarm", s:24, fill:true, className:"animate-pulse", style:{color:W.vermelho}}),
+        e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[15px] font-semibold"}, t.titulo), e("span",{className:"line-clamp-2 text-[14px]", style:{color:W.sec}}, t.sub)), fechar);
+      return e("div",{key:t.id, role:"button", tabIndex:0, onClick:abrirConv, className:"relative flex cursor-pointer items-start gap-3 rounded-2xl p-3.5 pr-11 text-left shadow-2xl", style:{background:"#ffffff", color:"#111b21", border:"1px solid #d1d7db"}},
+        e(Avatar,{id:t.de, s:48}),
+        e("span",{className:"min-w-0 flex-1"},
+          e("span",{className:"block truncate text-[16px] font-semibold"}, (t.mencao ? "Você foi marcado · " : "")+((convPorId(t.conv)||{}).tipo==="grupo" ? t.titulo : (t.nome || t.titulo))),
+          e("span",{className:"line-clamp-2 text-[16px] leading-snug", style:{color:"#3b4a54"}}, t.texto || t.sub),
+          e("span",{className:"mt-1 block text-[12px]", style:{color:"#667781"}}, new Date().toTimeString().slice(0, 5))), fechar); }));
 }
 
 // chat flutuante no canto da tela (some na tela cheia do SorellyChat)

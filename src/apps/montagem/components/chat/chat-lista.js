@@ -167,8 +167,7 @@ function ListaConversas(p){
           e("p",{className:"truncate px-4 pb-1 pt-0.5 text-[11px] font-bold", style:{color:W.ouro}}, it.titulo),
           e(ItemMenu,{n:"push-pin", onClick:function(){ fecha(); api.pin.conversa(eu, id); }}, it.fixa ? "Desafixar" : "Fixar no topo"),
           arq ? e(ItemMenu,{n:"archive-box", onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Tirar das arquivadas")
-            : e(ItemMenu,{n:"archive-box", desligado:!!motivo, onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Arquivar conversa"),
-          !arq && motivo && e("p",{className:"px-4 pb-1 text-[11px] leading-snug", style:{color:"#f59e0b"}}, "Não dá para arquivar: "+motivo+". Resolva primeiro."),
+            : e(ItemMenu,{n:"archive-box", onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Arquivar conversa"),
           motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); api.resolveConv(id, eu, ""); }}, "Marcar como resolvida"),
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),

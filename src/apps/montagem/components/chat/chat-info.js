@@ -114,7 +114,7 @@ function InfoConversa(p){
   var admin = conv.tipo!=="setor" && (conv.admins.indexOf(eu)>=0 || !!p.direcao), membro = conv.membros.indexOf(eu)>=0;
   var fixa = !!(conv.fixaPor && conv.fixaPor[eu]), arquivada = !!(conv.arqPor && conv.arqPor[eu]), av = useState(""), avisoArq = av[0], setAvisoArq = av[1];
   var arqBloco = function(){ return e("div",null,
-    e("button",{onClick:function(){ if(!arquivada){ var mot = api.pendencia(eu, conv.id); if(mot){ setAvisoArq(mot); return; } } api.arquivar(eu, conv.id); p.fechar(); }, className:"flex w-full items-center gap-3 px-6 py-3 text-left hover:bg-white/5"}, e(Ph,{n:"archive-box", s:20}), arquivada ? "Tirar das arquivadas" : "Arquivar conversa"),
+    e("button",{onClick:function(){ api.arquivar(eu, conv.id); p.fechar(); }, className:"flex w-full items-center gap-3 px-6 py-3 text-left hover:bg-white/5"}, e(Ph,{n:"archive-box", s:20}), arquivada ? "Tirar das arquivadas" : "Arquivar conversa"),
     avisoArq && e("p",{className:"px-6 pb-2 text-[11.5px]", style:{color:"#f59e0b"}}, "Não dá para arquivar: "+avisoArq+". Marque como resolvida na barra da conversa primeiro.")); };
   if(conv.tipo==="dm"){
     var o = contato(conv.membros.find(function(x){ return x!==eu; }) || conv.membros[0]);

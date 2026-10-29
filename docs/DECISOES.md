@@ -1263,7 +1263,8 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 ## 28/10/2026 · Aba Condicional em Revendedoras
 - Marcus mandou o papel de exemplo da DevMaster (4 páginas: lista de peças, termo, folha de anotação do acerto) e pediu copiar 100% com o texto novo do termo e da nota promissória.
 - Criada a aba Revendedoras › Condicional (editável, com histórico). Termo = minuta 2 de 26/10, 7 cláusulas. A cláusula de peças para troca ficou de fora (a política de trocas será refeita depois; texto antigo guardado em CONDICIONAL-TERMO-E-NOTA.md). Nota = texto do advogado de 27/10. A data do acerto e da devolução é o vencimento da nota.
-- Pendente: o Marcus envia a nota final; depois alguém troca o texto no modelo da DevMaster.
+- Pendente: nota promissória final fica para outra hora (Marcus, 29/10/2026); quando vier, trocar `NOTA_PADRAO`; depois alguém troca o texto no modelo da DevMaster.
+- PDF de referência para a DevMaster: `docs/negocio/CONDICIONAL-NOVA-VERSAO-28-10-2026.pdf` (layout do relVen006_grupo, 3 páginas: termo, nota, folha do acerto; lista de peças só de exemplo). A folha do acerto ficou igual à antiga (sem campos de multa e dívida anterior, decisão do Marcus 28/10/2026). Política de trocas: a avaliar depois.
 
 ## 28/10/2026 · Previsão pela razão de acertos
 - Marcus: acertos futuros = revendedoras no dia 1 do mês × razão do mês atual (previstos × 98% ÷ revendedoras do dia 1; outubro ≈ 91,3%). Substitui a regra do ciclo 30/45/60 na tela Resultado do mês.
@@ -1394,3 +1395,4 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 - Avisos do chat (29/10/2026): TODOS usam o modelo 1 (foto, nome e mensagem em 2 linhas), inclusive quando alguém te marca ou o Marcus escreve; o cartão grande com campo de resposta saiu. Os avisos somem sozinhos em 7 a 9 segundos.
 - "Atuar como" (29/10/2026): sempre começa no Início da pessoa, mesmo montadora e bipadora (que no login real continuam começando no SorellyChat).
 - Chat (29/10/2026, Marcus): o aviso "Sem resposta há Xh" saiu. Os avisos de mensagem nova vão para o canto de CIMA, à direita, com letra maior e botão X (modelo a escolher em `docs/design/chat-notificacoes-v3.html`).
+- Chat (29/10/2026, Marcus): pode arquivar qualquer conversa, mesmo com mensagem sem resposta (a conversa pode ter sido encerrada). Aviso de mensagem nova = modelo 4 (cartão claro, letra 16 px, X), no alto à direita, por cima do "Buscar tela".

@@ -510,7 +510,7 @@ function pinConversation(cid, convId){
 }
 function arquivarConversa(cid, convId){
   var c0 = convPorId(convId); if(!c0) return false;
-  if(!(c0.arqPor && c0.arqPor[cid]) && pendenciaDe(cid, convId)) return false;   // com pendência não arquiva: resolva primeiro
+  // arquivar é livre, mesmo com mensagem sem resposta: a conversa pode ter sido encerrada (Marcus, 29/10/2026)
   mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.arqPor); if(f[cid]) delete f[cid]; else f[cid] = true; return Object.assign({}, c, {arqPor:f}); })}); });
   return true;
 }
