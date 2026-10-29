@@ -62,3 +62,7 @@ Tirar o financeiro 100% da DevMaster e deixar só no Sorelly Admin, em poucos di
 - Falta pagar é um número vivo: muda conforme a equipe baixa títulos na DevMaster. O R$ 175 mil do admin antigo era um retrato parado.
 - Pendente: o dia 01/10 tem R$ 150,00 a mais que a tela da DevMaster do Marcus (4 baixas de R$ 150,00 nesse dia: FRE 62, ADM 1435, ADM 1434, VR 951) e a data do pagamento (hoje data de pagamento; a data de débito deu o mesmo valor do sistema em 01/10). O total do mês é igual nas duas datas.
 - Requisito de produção: `DEVMASTER_API_URL_V2` e `DEVMASTER_API_KEY_V2` configuradas no servidor publicado.
+
+## 8. Robô do faturamento desligado (29/10/2026)
+- O robô que lê o faturamento do dia anterior às 10h (`src/server/faturamento-dia.js`) está desligado: a regra dele (notas de saída `dmabl`) não reproduz o relatório de notas fiscais do Marcus (valor muito menor). Pendente: achar o relatório e os filtros da DevMaster que dão o número do Marcus e só então religar.
+- O robô das revendedoras (18h) continua ligado; a contagem dele (condicional aberto em 90 dias) difere da série usada pelo Marcus. Pendente: definir qual contagem vale.

@@ -1254,3 +1254,6 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 
 ## 29/10/2026 · Contas a pagar direto da DevMaster (alto da tela)
 - Marcus (a mãe questionou o 175 mil e o pago): o sistema tem que chamar a DevMaster, não o admin antigo. Já pago e Falta pagar agora vêm da leitura do servidor. Pendente: R$ 150,00 do dia 01/10 contra a tela da DevMaster e a data do pagamento (pagamento ou débito).
+
+## 29/10/2026 · Faturamento de 28/10 e robô desligado
+- Marcus: gravar 28/10 (1.652 acertos, R$ 1.296.201,60, Carregar 0, 234 a realizar) e desligar o robô do faturamento, que gravaria o valor errado. Pendente: achar a regra do relatório de notas fiscais e definir qual contagem de revendedoras vale.

@@ -174,3 +174,8 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Resultado em 28/10: 3.792 títulos em aberto. Outubro R$ 160.253,95 (103) · novembro R$ 1.471.268,66 (785) · dezembro R$ 1.500.485,63 (695) · janeiro/27 R$ 1.112.044,14 (454) · fevereiro R$ 998.724,91 · março R$ 915.701,79. Antes (22/10): novembro R$ 1.382.862,74 e dezembro R$ 1.426.056,90.
 - Erros de cadastro vistos na DevMaster: título GRA 34 com vencimento no ano 0026 (R$ 1.500,00) e título PÇ 39 de 15/11/2025 (R$ 4.065,00) ainda em aberto.
 - 37 títulos que estavam na lista de 22/10 (R$ 732.943,70) não estão mais em aberto: foram pagos ou renegociados.
+
+## Faturamento fixado em 28/10/2026 (valores do Marcus, 29/10/2026)
+- Acumulado do mês em 28/10, DevMaster, sem funcionários: **1.652 acertos e R$ 1.296.201,60**. Dia 28 por diferença com 27/10: 69 acertos e R$ 43.459,08. Carregar = 0. Acertos que faltam no mês (previsão de devolução até 31/10): 234. Total do mês 1.652 + 0 + 234 = 1.886.
+- Código: `aplicaFat28` em `state/store.js` (flag `fat28V`).
+- Teste de 29/10: a leitura automática do faturamento (notas de saída `dmabl`) dava só R$ 262.449,25 até 27/10 e **não reproduz** o relatório de notas fiscais; o robô das 10h foi DESLIGADO (`instrumentation.js` e rota `/api/faturamento/dia`). A DevMaster dá 233 acertos que faltam no mês (o Marcus viu 234).

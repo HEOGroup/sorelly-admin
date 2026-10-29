@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.17.3", data:"2026-10-29", titulo:"Faturamento de 28/10 fixado e robô do faturamento desligado", itens:[
+    {tipo:"correção", area:"Financeiro · Faturamento", txt:"28/10 fixado: 1.652 acertos e R$ 1.296.201,60 acumulados; Carregar 0 e 234 acertos a realizar (total 1.886)."},
+    {tipo:"correção", area:"Servidor", txt:"O robô que lia o faturamento às 10h foi desligado: a regra dele dava só cerca de R$ 262 mil no mês e gravaria o valor errado."}
+  ]},
   {v:"0.17.2", data:"2026-10-29", titulo:"Contas a pagar: já pago e falta pagar vêm direto da DevMaster", itens:[
     {tipo:"correção", area:"Financeiro · Contas a pagar", txt:"O alto da tela (Já pago e Falta pagar) deixou de copiar o admin antigo e passou a ler a DevMaster pelo servidor, a cada 10 minutos."}
   ]},
