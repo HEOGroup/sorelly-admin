@@ -93,7 +93,7 @@ function CalculadoraMetas(p){
 function Bloco(p){ return e("div",{className:"flex min-w-0 flex-1 flex-col justify-between gap-1 rounded-2xl px-4 py-3 text-center", style:{background:"linear-gradient(145deg,"+p.cor+"3A,"+p.cor+"10 70%)", boxShadow:"inset 0 0 0 1.5px "+p.cor+"88, 0 4px 14px "+p.cor+"22"}},
   e("span",{className:"text-[10.5px] font-bold uppercase leading-tight tracking-[.12em] text-white/80"}, p.t),
   e("b",{className:MONO+" text-[30px] leading-none", style:{color:p.cor}}, p.v), p.sub && e("span",{className:"text-[11.5px] leading-tight text-white/65"}, p.sub)); }
-var Op = function(t){ return e("span",{key:"op"+t, className:"hidden shrink-0 self-center text-[26px] font-black text-[#E8B84B] xl:block"}, t); };
+var Op = function(t, n){ return e("span",{key:"op"+t+n, className:"hidden shrink-0 self-center text-[26px] font-black text-[#E8B84B] xl:block"}, t); };
 
 function AbaAgPainel(){
   var c = useAg(), ag = c.ag, es = useState(null), esc = es[0], setEsc = es[1], ym = mesDe(ag, esc), fd = fatEfetivo(c.s);
@@ -115,10 +115,10 @@ function AbaAgPainel(){
     e(BlocoBarra,{cor:"roxo", t:"Como a meta de "+nomeMes(ym)+" se forma", sub:"quem entra e quem sai da meta durante o mês · os acertos feitos vêm da Visão geral"},
       e("div",{className:"flex flex-col gap-3 p-4"},
         e("div",{className:"flex flex-col gap-2 xl:flex-row"},
-          e(Bloco,{t:"Revendedoras que começaram o mês", v:int(p.base), cor:"#E8B84B", sub:"com kit na abertura"}), Op("−"),
-          e(Bloco,{t:"Autorizadas (45 / 60 dias)", v:int(p.saidasPropositais), cor:"#60A5FA", sub:"adiadas com autorização · não contam na meta"}), Op("−"),
-          e(Bloco,{t:"Remarcadas para outro mês", v:int(p.saidasOutras), cor:"#F59E0B", sub:"Ana Maria e outros motivos"}), Op("+"),
-          e(Bloco,{t:"Vindas de outro mês", v:int(p.chegadas), cor:"#22C55E", sub:"remarcadas para este mês"}), Op("="),
+          e(Bloco,{t:"Revendedoras que começaram o mês", v:int(p.base), cor:"#E8B84B", sub:"com kit na abertura"}), Op("−", 1),
+          e(Bloco,{t:"Autorizadas (45 / 60 dias)", v:int(p.saidasPropositais), cor:"#60A5FA", sub:"adiadas com autorização · não contam na meta"}), Op("−", 2),
+          e(Bloco,{t:"Remarcadas para outro mês", v:int(p.saidasOutras), cor:"#F59E0B", sub:"Ana Maria e outros motivos"}), Op("+", 3),
+          e(Bloco,{t:"Vindas de outro mês", v:int(p.chegadas), cor:"#22C55E", sub:"remarcadas para este mês"}), Op("=", 4),
           e(Bloco,{t:"Acertos previstos (meta)", v:int(p.previstos), cor:"#F3D98B", sub:p.previstosBase!==p.previstos ? "abertura: "+int(p.previstosBase)+" · ajustado" : "sem ajustes"})),
         e("div",{className:"flex flex-col gap-2 md:flex-row"},
           e(Bloco,{t:"Revendedoras agora", v:int(revAgora(c.s)), cor:"#E8B84B", sub:(revAgora(c.s)-p.base>=0 ? "+" : "")+int(revAgora(c.s)-p.base)+" desde o início do mês"}),
