@@ -1,4 +1,5 @@
 import { globLocal } from "@/lib/glob-local";
+import { hojeSP } from "./cadastro-leads";
 // Sorelly Admin · montagem — domain/cadastro-pecas.js
 // Cadastro de peças (Rayssa): custo e preço sugerido de cada peça, por LOTE (= uma aba da planilha Bruto/Ouro 2026), comparação de fornecedores
 // e pedidos de alteração para a DevMaster. Estado s.cpc (só neste navegador). Nasce VAZIO (repositório é público); dados de teste, se existirem,
@@ -14,8 +15,13 @@ var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/cadastro-
 
 var GALVANICAS = {pontual:"Pontual", ellos:"Ellos"};
 // Status do pedido de bruto (Marcus, 21/10/2026). "Banhado" entra sozinho quando uma fatura de banho é lançada para o pedido.
-var STATUS_PED = ["Montando pedido", "Aguardando envio", "A caminho da Pontual", "A caminho da Ellos", "Aguardando banho", "Parcial", "Banhado", "Cadastrando", "Finalizado"];
-var ANTES_BANHO = ["Montando pedido", "Aguardando envio", "A caminho da Pontual", "A caminho da Ellos", "Aguardando banho", "Parcial"];
+var STATUS_PED = ["Montando pedido", "Separando", "Aguardando envio", "A caminho da Pontual", "A caminho da Ellos", "Aguardando banho", "Parcial", "Banhado", "Cadastrando", "Finalizado"];
+var ANTES_BANHO = ["Montando pedido", "Separando", "Aguardando envio", "A caminho da Pontual", "A caminho da Ellos", "Aguardando banho", "Parcial"];
+// Etapas do pedido de bruto (Marcus, 29/10/2026): Escolha, Separação, Fechado, Banho, Chegou. O pedido fecha no romaneio. Cada status detalhado cai numa etapa.
+var ETAPAS_PED = [["escolha", "Escolha"], ["separacao", "Separação"], ["fechado", "Fechado"], ["banho", "Banho"], ["chegou", "Chegou"]];
+var ETAPA_DO_STATUS = {"Montando pedido":"escolha", "Separando":"separacao", "Aguardando envio":"fechado", "A caminho da Pontual":"banho", "A caminho da Ellos":"banho", "Aguardando banho":"banho", "Parcial":"banho", "Banhado":"chegou", "Cadastrando":"chegou", "Finalizado":"chegou"};
+var PRAZO_ETAPA = {separacao:5, fechado:2, banho:10};   // dias; valores de partida, a confirmar com o Marcus (vão para a tela Config)
+var BANHO_FORN = {"point":"Pontual", "mega sul":"Pontual", "art ello":"Ellos", "xangai":"Ellos", "linda":"Ellos", "tucano":"Ellos", "charme":"Ellos"};   // para qual banho cada bruto vai (Marcus, 29/10/2026)
 var CATS = [["aneis","Anéis"], ["brincos","Brincos"], ["trios","Trios"], ["colares","Colares"], ["chokers","Chokers"], ["pulseiras","Pulseiras"], ["masculino","Masculino"], ["pingentes","Pingentes"], ["tornozeleiras","Tornozeleiras"], ["infantil","Infantil"], ["conjuntos","Conjuntos"], ["venezianas","Venezianas"], ["acessorios","Acessórios"], ["portaJoias","Porta joias"]];
 // serviços de cada fatura de banho (as galvânicas cobram coisas diferentes)
 var SERV = {pontual:[["rodio","Caneta ródio"], ["verniz","Verniz"], ["tarraxa","Tarraxa"], ["flash","Flash"], ["prata","Prata"], ["ouro1","Ouro 1"], ["ouro2","Ouro 2"], ["ouro3","Ouro 3"], ["ouro4","Ouro 4"], ["ouro5","Ouro 5"], ["ouroBranco","Ouro branco"]],
@@ -37,14 +43,21 @@ var numPonto = function(v){ var n = typeof v==="number" ? v : parseFloat(String(
 var r2 = function(n){ return Math.round(n*100)/100; };
 var trim = function(t){ return String(t==null ? "" : t).trim(); };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
-function hojeISO(){ return new Date().toISOString().slice(0, 10); }
+function hojeISO(){ return hojeSP(); }   // dia no fuso de São Paulo (nunca UTC)
+// ---------- etapas do pedido de bruto ----------
+function etapaPed(p){ return ETAPA_DO_STATUS[p.status] || "banho"; }
+function banhoPed(p){ var n = String(p.forn||"").toLowerCase(); return p.chegPontual ? "Pontual" : p.chegEllos ? "Ellos" : BANHO_FORN[n] || (/^linda/.test(n) ? "Ellos" : ""); }
+// status detalhado ao entrar numa etapa: no banho, "a caminho" da galvânica certa
+function statusDaEtapa(p, k){ var b = banhoPed(p); return k==="escolha" ? "Montando pedido" : k==="separacao" ? "Separando" : k==="fechado" ? "Aguardando envio" : k==="banho" ? (b==="Pontual" ? "A caminho da Pontual" : b==="Ellos" ? "A caminho da Ellos" : "Aguardando banho") : "Cadastrando"; }
+function diasNaEtapa(p, hoje){ var a = Date.parse((p.statusEm || p.data || "")+"T12:00:00"), b = Date.parse(String(hoje||hojeISO())+"T12:00:00"); return isNaN(a) || isNaN(b) ? 0 : Math.max(0, Math.round((b-a)/86400000)); }
+function atrasadoPed(p, hoje){ var z = PRAZO_ETAPA[etapaPed(p)]; return z!=null && diasNaEtapa(p, hoje)>z; }
 function novoId(c, p){ c.seq = (c.seq||0) + 1; return p + c.seq; }
 
 function novoCpc(){ return {seq:0, lotes:[], pedidos:[], fatP:[], fatE:[], envios:[], solic:[], config:clone(CONFIG_PADRAO), historico:[]}; }
 function pedidoNovo(c, x){
   var cats = {}; CATS.forEach(function(k){ var v = Math.round(num((x.cats||{})[k[0]])); if(v>0) cats[k[0]] = v; });
   var valor = numPonto(x.valor), desc = Math.min(1, Math.max(0, numPonto(x.desc)));
-  return {id:novoId(c, "o"), forn:normForn(x.forn), data:trim(x.data), nota:trim(x.nota), valor:valor, desc:desc, pagar:x.pagar!=null && x.pagar!=="" ? numPonto(x.pagar) : r2(valor*(1-desc)), chegPontual:trim(x.chegPontual), chegEllos:trim(x.chegEllos), chegSorelly:trim(x.chegSorelly), romaneio:trim(x.romaneio), status:normStatus(x.status || "Montando pedido"), cats:cats, obs:trim(x.obs)};
+  return {id:novoId(c, "o"), forn:normForn(x.forn), data:trim(x.data), nota:trim(x.nota), valor:valor, desc:desc, pagar:x.pagar!=null && x.pagar!=="" ? numPonto(x.pagar) : r2(valor*(1-desc)), chegPontual:trim(x.chegPontual), chegEllos:trim(x.chegEllos), chegSorelly:trim(x.chegSorelly), romaneio:trim(x.romaneio), status:normStatus(x.status || "Montando pedido"), statusEm:trim(x.statusEm) || trim(x.data), cats:cats, obs:trim(x.obs)};
 }
 function faturaNova(c, galv, x){
   var serv = {}; SERV[galv].forEach(function(k){ var v = numPonto((x.serv||{})[k[0]]); if(v) serv[k[0]] = v; });
@@ -194,7 +207,13 @@ function cpcReduz(s, a){
     case "ped_edit": {
       var pe = c.pedidos.find(function(x){ return x.id===a.id; }); if(!pe) return recusa("Pedido não encontrado.");
       ["forn", "data", "nota", "romaneio", "chegPontual", "chegEllos", "chegSorelly", "obs"].forEach(function(k){ if(a[k]!==undefined) pe[k] = k==="forn" ? normForn(a[k]) : trim(a[k]); });
-      if(a.status!==undefined){ if(STATUS_PED.indexOf(a.status)<0) return recusa("Status inválido."); pe.status = a.status; }
+      if(a.status!==undefined && a.status!==pe.status){
+        if(STATUS_PED.indexOf(a.status)<0) return recusa("Status inválido.");
+        var et0 = etapaPed(pe), et1 = ETAPA_DO_STATUS[a.status];   // o pedido só fecha com o romaneio
+        if((et0==="escolha" || et0==="separacao") && et1!=="escolha" && et1!=="separacao" && !trim(pe.romaneio)) return recusa("Informe o romaneio antes de fechar o pedido.");
+        pe.status = a.status; pe.statusEm = hojeISO();
+        if(et1==="chegou" && !pe.chegSorelly) pe.chegSorelly = hojeISO();
+      }
       if(a.valor!==undefined){ pe.valor = Math.max(0, numPonto(a.valor)); pe.pagar = r2(pe.valor*(1-pe.desc)); }
       if(a.desc!==undefined){ pe.desc = Math.min(1, Math.max(0, numPonto(a.desc)/100)); pe.pagar = r2(pe.valor*(1-pe.desc)); }
       if(a.pagar!==undefined){ pe.pagar = Math.max(0, numPonto(a.pagar)); pe.desc = pe.valor>0 ? Math.min(1, Math.max(0, 1-pe.pagar/pe.valor)) : 0; }
@@ -218,7 +237,7 @@ function cpcReduz(s, a){
     case "fat_pedidos": {   // liga a fatura aos pedidos de bruto; pedido que ainda não tinha sido banhado passa sozinho para "Banhado"
       var l3 = a.galv==="ellos" ? c.fatE : c.fatP, f3 = l3.find(function(x){ return x.id===a.id; }); if(!f3) return recusa("Fatura não encontrada.");
       f3.pedidos = (a.pedidos||[]).slice();
-      c.pedidos.forEach(function(p){ if(f3.pedidos.indexOf(p.id)>=0 && ANTES_BANHO.indexOf(p.status)>=0) p.status = "Banhado"; });
+      c.pedidos.forEach(function(p){ if(f3.pedidos.indexOf(p.id)>=0 && ANTES_BANHO.indexOf(p.status)>=0){ p.status = "Banhado"; p.statusEm = hojeISO(); } });
       log("fat_pedidos", f3.fatura+" · "+f3.pedidos.length+" pedido(s)"); return ok("Pedidos ligados à fatura; os que esperavam banho passaram para Banhado.");
     }
     case "env_add": { var ev = envioNovo(c, a); if(!(ev.kg>0)) return recusa("Informe o peso enviado (kg)."); c.envios.unshift(ev); log("env_add", ev.kg+" kg"); return ok("Envio de ouro registrado."); }
@@ -263,4 +282,4 @@ function podeFazer(c, atividade, nome, admin){
 }
 function brl(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function pct0(f){ return Math.round((f||0)*100)+"%"; }
-export { STATUS_PED, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };
+export { STATUS_PED, ETAPAS_PED, PRAZO_ETAPA, etapaPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };

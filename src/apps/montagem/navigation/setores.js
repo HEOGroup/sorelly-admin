@@ -44,6 +44,16 @@ var MENU_CADASTRO = [
   M("Mensagens prontas","msgcad")
 ];
 
+// Menu do Cadastro de peças (29/10/2026, pedido do Marcus: igual ao Financeiro, com as telas no menu do topo e não em abas dentro da tela). ORDEM DO FLUXO: pedidos de bruto (tela mãe) → controle do mês → banho → peças (cadastro e preço) → fornecedores → configurações. Plano das próximas telas em docs/negocio/FLUXO-DE-COMPRA-DE-BRUTO.md (seção 11).
+var MENU_CADPECAS = [
+  M("Pedidos de bruto","cadpecas"),
+  M("Controle do mês","cpctrl"),
+  {nome:"Banho", itens:[M("Tabela do banho","cpbanho"), M("Faturas Pontual","cpfp"), M("Faturas Ellos","cpfe"), M("Retirar ouro","cpouro")]},
+  {nome:"Peças", itens:[M("Solicitações","cpsol"), M("Planilhas de cadastro","cplotes"), M("Calculadora","cpcalc"), M("DevMaster","cpdev")]},
+  M("Fornecedores","cpforn"),
+  M("Configurações","cpcfg")
+];
+
 // Menu das Encomendas e reposições (23/10/2026): mesmo estilo do Financeiro e do Cadastro. Poucas telas = palavras diretas no topo (sem lista), na ORDEM DO FLUXO: pedido → ida na empresa → Top 50 → representantes → expositores → regras.
 var MENU_ENCOMENDAS = [
   M("Funil de pedidos","encomendas"),
@@ -188,7 +198,12 @@ var SETORES = [
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", menu:MENU_ESTOQUE, semAbas:true, areas:[
     {nome:"Compras e estoque de material", telas:[T("compras","Compras e estoque de material")]}]},
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
-  {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", direto:T("cadpecas","Cadastro de peças")},
+  {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", menu:MENU_CADPECAS, areas:[
+    {nome:"Pedidos", telas:[T("cadpecas","Pedidos de bruto"), T("cpctrl","Controle do mês")]},
+    {nome:"Banho", telas:[T("cpbanho","Tabela do banho"), T("cpfp","Faturas Pontual"), T("cpfe","Faturas Ellos"), T("cpouro","Retirar ouro")]},
+    {nome:"Peças", telas:[T("cpsol","Solicitações"), T("cplotes","Planilhas de cadastro"), T("cpcalc","Calculadora"), T("cpdev","DevMaster")]},
+    {nome:"Fornecedores", telas:[T("cpforn","Fornecedores")]},
+    {nome:"Configurações", telas:[T("cpcfg","Configurações")]}]},
   {id:"encomendas", nome:"Encomendas & Reposições", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
     {nome:"Ida na empresa", telas:[T("encida","Ida na empresa")]},

@@ -1,8 +1,7 @@
 // Sorelly Admin · montagem — pages/CadastroPecas.js
-// Setor próprio "Cadastro de peças" (responsável Rayssa; Financeiro e diretoria também acessam): uma tela só, com abas. Corpos em pages/cadpecas/.
-// Regras em domain/cadastro-pecas.js (estado s.cpc). Preços sugeridos seguem para aprovação no SorellyChat (grupo "Cadastro de Peças").
-// Estilo das telas de Pagamentos a fornecedores (azul, tabelas pequenas, sem blocos coloridos), pedido do Marcus em 20-21/10/2026.
-import { Abas } from "@/apps/montagem/components/padrao";
+// Setor "Cadastro de peças" (responsável Rayssa; Financeiro e diretoria também acessam). Desde 29/10/2026 cada tela é uma ABA DO MENU do topo (igual ao Financeiro: navigation/setores.js, MENU_CADPECAS),
+// e não mais abas dentro de uma tela só. Este arquivo só entrega cada tela com o seu título. Corpos em pages/cadpecas/. Regras em domain/cadastro-pecas.js (estado s.cpc).
+// Preços sugeridos seguem para aprovação no SorellyChat (grupo "Cadastro de Peças"). Estilo das telas de Pagamentos a fornecedores (azul, tabelas pequenas, sem blocos coloridos).
 import { AbaCalculadora } from "@/apps/montagem/pages/cadpecas/Calculadora";
 import { AbaBanho } from "@/apps/montagem/pages/cadpecas/Banho";
 import { AbaControle } from "@/apps/montagem/pages/cadpecas/Controle";
@@ -13,23 +12,26 @@ import { AbaPedidos } from "@/apps/montagem/pages/cadpecas/Pedidos";
 import { AbaSolicitacoes } from "@/apps/montagem/pages/cadpecas/Solicitacoes";
 import { contagem } from "@/apps/montagem/domain/pedidos-pecas";
 import { use } from "@/apps/montagem/state/context";
-import { COR } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS = [["sol","Solicitações"], ["ped","Pedidos de bruto"], ["ctrl","Controle do mês"], ["fp","Faturas Pontual"], ["fe","Faturas Ellos"], ["ouro","Retirar ouro"], ["banho","Tabela do banho"], ["lotes","Planilhas de cadastro"], ["calc","Calculadora"], ["forn","Fornecedores"], ["dev","DevMaster"], ["config","Configurações"]];
+// planilha aberta na Calculadora: a tela Planilhas de cadastro escolhe e abre a Calculadora, que está em outra tela do menu
+var LOTE = {id:""};
 
-function AbaCadastroPecas(){
-  var st = useState({aba:"sol", lote:""}), v = st[0], novos = contagem(use().state.pp).aberto;
-  var ir = function(aba, lote){ st[1]({aba:aba, lote:lote!==undefined ? lote : v.lote}); };
-  var corpo = v.aba==="sol" ? e(AbaSolicitacoes,null) : v.aba==="forn" ? e(AbaFornecedores,null) : v.aba==="dev" ? e(AbaDevMaster,null) : v.aba==="config" ? e(AbaConfigCad,null)
-    : v.aba==="ctrl" ? e(AbaControle,null) : v.aba==="fp" ? e(AbaFaturas,{galv:"pontual"}) : v.aba==="fe" ? e(AbaFaturas,{galv:"ellos"}) : v.aba==="ouro" ? e(AbaRetirarOuro,null) : v.aba==="banho" ? e(AbaBanho,null)
-    : v.aba==="calc" ? e(AbaCalculadora,{loteId:v.lote, onLote:function(id){ ir("calc", id); }})
-    : v.aba==="lotes" ? e(AbaLotes,{onAbrir:function(id){ ir("calc", id); }})
-    : e(AbaPedidos,null);
-  return e("div",{className:"flex flex-col gap-2.5"},
-    e(PageHead,{t:"Cadastro de peças", sub:"Solicitações da produção, pedidos de bruto, faturas de banho, controle do mês, custo e preço das peças e pedidos para a DevMaster."}),
-    e(Abas,{abas:ABAS.map(function(a){ return a[0]==="sol" && novos ? [a[0], a[1]+" ("+novos+")"] : a; }), atual:v.aba, onMudar:function(a){ ir(a); }, cor:COR}),
-    corpo);
-}
-export { AbaCadastroPecas };
+function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:t, sub:sub}), corpo); }
+
+// Pedidos de bruto = tela mãe do setor (tem o próprio título, quadro e planilha)
+function AbaCadastroPecas(){ return e(AbaPedidos,null); }
+function AbaPecasSolicitacoes(){ var n = contagem(use().state.pp).aberto; return Tela("Solicitações", n ? n+" pedido"+(n===1 ? "" : "s")+" de peças da produção em aberto." : "Pedidos de peças da produção para o cadastro.", e(AbaSolicitacoes,null)); }
+function AbaPecasControle(){ return Tela("Controle do mês", "Quanto foi comprado de bruto em cada mês e o banho faturado.", e(AbaControle,null)); }
+function AbaPecasFaturasPontual(){ return Tela("Faturas Pontual", "Faturas de banho da Pontual ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"pontual"})); }
+function AbaPecasFaturasEllos(){ return Tela("Faturas Ellos", "Faturas de banho da Ellos ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"ellos"})); }
+function AbaPecasOuro(){ return Tela("Retirar ouro", "Ouro e prata enviados ao banho e o que já foi descontado em fatura.", e(AbaRetirarOuro,null)); }
+function AbaPecasBanho(){ return Tela("Tabela do banho", "Preços do banho: Ellos e Pontual lado a lado.", e(AbaBanho,null)); }
+function AbaPecasLotes(){ var cx = use(); return Tela("Planilhas de cadastro", "Uma planilha por volta do banho: custo, preço e markup. Clique para abrir na Calculadora.", e(AbaLotes,{onAbrir:function(id){ LOTE.id = id; cx.dispatch({type:"ABA", aba:"cpcalc"}); }})); }
+function AbaPecasCalculadora(){ var st = useState(LOTE.id); return Tela("Calculadora", "Custo, preço sugerido e markup de cada peça da planilha.", e(AbaCalculadora,{loteId:st[0], onLote:function(id){ LOTE.id = id; st[1](id); }})); }
+function AbaPecasFornecedores(){ return Tela("Fornecedores", "Quanto cada fornecedor custa por peça, com o banho.", e(AbaFornecedores,null)); }
+function AbaPecasDevMaster(){ return Tela("DevMaster", "Pedidos de alteração para a DevMaster.", e(AbaDevMaster,null)); }
+function AbaPecasConfig(){ return Tela("Configurações", "Regras do cadastro de peças e quem lança cada atividade.", e(AbaConfigCad,null)); }
+
+export { AbaCadastroPecas, AbaPecasSolicitacoes, AbaPecasControle, AbaPecasFaturasPontual, AbaPecasFaturasEllos, AbaPecasOuro, AbaPecasBanho, AbaPecasLotes, AbaPecasCalculadora, AbaPecasFornecedores, AbaPecasDevMaster, AbaPecasConfig };
