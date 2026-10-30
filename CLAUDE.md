@@ -36,6 +36,12 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - Resumo da API 2: `GET /{codigo}` lê qualquer tabela (`dmaam` clientes, `dmaaa` produtos, `dmabh` pedidos de venda), com `filtro`, `campos`, `ordem` e paginação no corpo JSON do GET; `GET /{codigo}/fotos` traz fotos em base64; `GET /relatorios/{nome}` gera relatórios. Token JWT no cabeçalho `Token`, liberado por tabela (sem a tabela no token, `403`). Estrutura das tabelas: dicionário `dmzag`/`dmzae`.
 - Os POST da API 2 gravam no ERP de verdade: nunca chamar sem a diretoria aprovar. As chaves ficam só no `.env.local` do servidor, nunca no front nem no Git.
 
+## API do app Sorelly (backend do app mobile): só leitura
+- Guia completo em `docs/app-sorelly/API-LEITURA.md` (30/10/2026, ~4.300 linhas, 99 endpoints GET). Consulte antes de puxar qualquer dado do app da revendedora/representante (vendas, clientes, pedidos, garantias, indicações, metas, métricas admin). Cópia do original em `sorelly-app/apps/backend/docs/api/API-LEITURA.md`; se o backend mudar, o código de lá vence.
+- Não leia inteiro. Leia primeiro as seções 0 a 8 (linhas 1 a 500: base URL, login, headers, erros, variáveis de ambiente, avisos, índice). Depois Grep pela rota (ex.: `^### GET /api/sales`) e Read com `offset`/`limit`.
+- Neste projeto: `MOBILE_API_URL` (já termina em `/api`, então a rota `/api/admin/x` vira `${MOBILE_API_URL}/admin/x`) e `MOBILE_API_KEY` (= `ADMIN_SECRET` do backend, Bearer). Essa chave lê `/admin/*`, `/revendedoras/*` e `/representantes/*` (com `?representativeCod=`); as rotas da revendedora logada (`/sales`, `/clients`, `/auth/*`…) dão 401 com ela. Detalhes e exemplo de código na seção "Uso neste projeto" do guia. Mandar sempre `X-App-Version: 3.5.0`.
+- Segredos (`ADMIN_SECRET`, tokens) só no `.env.local` do servidor, nunca no front nem no Git. Só chamar GET; POST/PUT/PATCH/DELETE gravam no app de verdade.
+
 ## Regras detalhadas (carregadas só quando você trabalha na pasta)
 - `src/apps/montagem/domain/CLAUDE.md`: faturamento, acerto, brindes, taxas, Kit 100% Prata, peças do próximo mês.
 - `src/apps/montagem/pages/CLAUDE.md`: menu de Kits, listagens, calculadora, análise de vendas, condicionais, peças por kit.
