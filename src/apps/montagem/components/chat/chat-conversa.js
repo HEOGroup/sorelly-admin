@@ -102,11 +102,16 @@ function NovaSolicitacao(p){
       e("button",{onClick:enviar, disabled:!ok, className:"flex items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-bold text-white disabled:opacity-40", style:{background:W.verde}}, e(Ph,{n:"paper-plane-tilt", s:17, fill:true}), "Enviar solicitação")));
 }
 // abas do grupo: Geral e uma por funcionária; supervisora identificada; contador de não lidas e de pedidos para decidir em cada aba
+// nas abas do topo do grupo: só o primeiro nome (Marcus, 30/10/2026); só usa o nome do meio se duas pessoas do grupo tiverem o mesmo primeiro nome
+function primeiroNome(id, abas){
+  var pn = function(i){ return String(contato(i).completo||"").split(" ")[0]; }, n = pn(id);
+  return abas.filter(function(x){ return x!=="geral" && pn(x)===n; }).length>1 ? rotuloCurto(id) : n;
+}
 function BarraAbas(p){
   return e("div",{className:"flex shrink-0 items-center gap-1.5 overflow-x-auto px-3 py-1.5 [scrollbar-width:none]", style:{background:W.painel, borderBottom:"1px solid "+W.borda}},
     p.abas.map(function(a){ var on = a===p.aba, geral = a==="geral", c = geral ? null : contato(a), nl = on ? 0 : naoLidasAba(p.conv.id, p.eu, a), pd = pendentesAba(p.conv.id, p.eu, a), sup = !geral && (p.conv.supervisores||[]).indexOf(a)>=0;
       return e("button",{key:a, onClick:function(){ p.mudar(a); }, "aria-pressed":on, className:"flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full py-1 pl-1.5 pr-3 text-[12px] "+(geral ? "pl-3" : ""), style:{background:on ? "#103529" : W.campo, color:on ? "#25d366" : W.texto, boxShadow:on ? "inset 0 0 0 1px rgba(37,211,102,.5)" : "none"}},
-        !geral && e(Avatar,{id:a, s:22}), geral && e(Ph,{n:"users-three", s:15, fill:true}), geral ? "Geral" : rotuloCurto(a),
+        !geral && e(Avatar,{id:a, s:22}), geral && e(Ph,{n:"users-three", s:15, fill:true}), geral ? "Geral" : primeiroNome(a, p.abas),
         sup && e("span",{className:"rounded-full px-1.5 py-px text-[8px] font-extrabold uppercase tracking-wide", style:{background:"linear-gradient(135deg,#b8892b,#f6dc8c)", color:"#24180a"}, title:"Supervisora do setor"}, "Supervisora"),
         pd>0 && e("span",{className:"grid min-w-[18px] place-items-center rounded-full px-1 text-[9.5px] font-extrabold", style:{background:"#f59e0b", color:"#24180a", height:18}, title:"Aguardando a sua decisão"}, pd),
         nl>0 && e("span",{className:"grid min-w-[18px] place-items-center rounded-full px-1 text-[9.5px] font-bold", style:{background:W.verde, color:"#0b141a", height:18}}, nl)); }));
@@ -322,7 +327,7 @@ function ConversaBase(p){
     var dig = (st.efem.digitando[conv.id]||[]).filter(function(x){ return x!==eu; });
     if(dig.length) return {t:conv.tipo==="grupo" ? contato(dig[0]).nome+" está digitando…" : "digitando…", verde:true};
     if(conv.tipo==="setor"){ var at = conv.atendente; return eu===conv.repId ? {t:at ? "Atendente: "+contato(at).nome : "Aguardando um atendente do setor…", verde:!!at} : {t:at ? "Atendida por "+(at===eu ? "você" : contato(at).nome) : "Na fila do setor · quem responder primeiro pega"}; }
-    if(conv.tipo==="grupo") return {t:conv.membros.map(function(i){ return i===eu ? "Você" : contato(i).nome; }).join(", ")};
+    if(conv.tipo==="grupo") return {t:conv.membros.map(function(i){ return i===eu ? "Você" : String(contato(i).completo||contato(i).nome).split(" ")[0]; }).join(", ")};
     var o = conv.membros.find(function(x){ return x!==eu; }) || conv.membros[0];
     if(online(o)) return {t:"online", verde:true};
     var v = presenca(o).visto; return {t:"visto por último "+(mesmoDia(v, Date.now()) ? "hoje às " : "ontem às ")+hora(v)};

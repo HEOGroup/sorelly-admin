@@ -6,7 +6,9 @@ import { CONTATOS, contato, podeCriarGrupo, sem } from "@/apps/montagem/domain/c
 import { NovoGrupo, FotoEditavel } from "@/apps/montagem/components/chat/chat-info";
 import { Transmissao } from "@/apps/montagem/components/chat/chat-transmissao";
 import { SeletorFundo } from "@/apps/montagem/components/chat/chat-fundos";
-import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista } from "@/apps/montagem/components/chat/chat-ui";
+import { SETORES } from "@/apps/montagem/navigation/setores";
+import { Icon } from "@/apps/montagem/ui/icon";
+import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista, setorDoGrupo } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useState } from "@/shared/react";
 
 
@@ -76,6 +78,36 @@ function BarraChat(p){
       opcoes.map(function(a){ return e(ItemMenu,{key:a[0], n:a[2], onClick:function(){ fechar(); pg.mudar(a[0]); }}, CURTO[a[0]] || a[1], pg.aba===a[0] && e(Ph,{n:"check", s:15, className:"ml-auto", style:{color:W.verde}})); })));
 }
 
+// SETORES (Marcus, 30/10/2026): primeiro a lista dos setores, igual à barra lateral do sistema (ícone, cor e nome). Ao tocar num setor, abrem os grupos dele; o botão de voltar leva à lista.
+function VistaSetores(p){
+  var ab = useState(null), aberto = ab[0], setAberto = ab[1];
+  var setores = SETORES.filter(function(st){ return (st.grupo||"setor")==="setor"; });
+  var grupos = p.lista.filter(function(x){ return x.conv.tipo==="grupo"; });
+  var doSetor = function(st){ return grupos.filter(function(x){ return setorDoGrupo(x.conv.nome)===st; }); };
+  var soltos = grupos.filter(function(x){ return !setorDoGrupo(x.conv.nome); });
+  var nl = function(l){ return l.reduce(function(t, x){ return t + x.naoLidas; }, 0); };
+  var nomeDe = function(st){ return String(st.nome).replace(/\n/g, " "); };
+  var pode = podeCriarGrupo(p.euReal) && !p.leitura;
+  var linhaSetor = function(chave, ic, cor, nome, lista){ var n = nl(lista);
+    return e("button",{key:chave, onClick:function(){ setAberto(chave); }, className:"flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5", style:{borderBottom:"1px solid "+W.borda}},
+      e("span",{className:"grid size-11 shrink-0 place-items-center rounded-full", style:{background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"66"}}, e(Icon,{n:ic, s:22, peso:"duotone"})),
+      e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13px] font-semibold"}, nome), e("span",{className:"block truncate text-[11px]", style:{color:W.sec}}, lista.length ? lista.length+(lista.length===1 ? " grupo" : " grupos") : "Sem grupo ainda")),
+      n>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, n),
+      e(Ph,{n:"caret-right", s:14, style:{color:W.sec}})); };
+  if(aberto){
+    var st = setores.find(function(x){ return x.id===aberto; }), lista = aberto==="soltos" ? soltos : st ? doSetor(st) : [], nome = aberto==="soltos" ? "Outros grupos" : st ? nomeDe(st) : "";
+    return e("div",null,
+      e("button",{onClick:function(){ setAberto(null); }, className:"flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] font-semibold", style:{borderBottom:"1px solid "+W.borda, color:W.ouro}}, e(Ph,{n:"arrow-left", s:16}), "Setores", e("span",{style:{color:W.sec}}, "/"), e("span",{style:{color:W.texto}}, nome)),
+      lista.map(p.linha),
+      !lista.length && e("div",{className:"flex flex-col items-center gap-3 px-6 py-8 text-center"},
+        e("p",{className:"text-[13px]", style:{color:W.sec}}, "Nenhum grupo neste setor ainda."),
+        st && pode && e("button",{onClick:function(){ p.criar(nome); }, className:"flex h-8 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-bold", style:{background:OURO, color:OURO_TXT}}, e(Ph,{n:"plus", s:14, fill:true}), "Criar grupo "+nome)));
+  }
+  return e("div",null,
+    setores.map(function(st){ return linhaSetor(st.id, st.ic, st.cor, nomeDe(st), doSetor(st)); }),
+    soltos.length>0 && linhaSetor("soltos", "equipe", "#E8B84B", "Outros grupos", soltos));
+}
+
 function ListaConversas(p){
   var st = useChat(), eu = p.eu, bq = useState(""), busca = bq[0], setBusca = bq[1], ft = useState("todas"), filtro = ft[0], setFiltro = ft[1];
   var nv = useState(false), nova = nv[0], setNova = nv[1], pf = useState(false), perfil = pf[0], setPerfil = pf[1];
@@ -90,6 +122,7 @@ function ListaConversas(p){
   useEffect(function(){ if(!podeCriarGrupo(euReal) || p.leitura || !st.convs.length) return undefined; var t = setTimeout(function(){ api.ensureSectorGroups(euReal); }, vista==="setores" ? 300 : 2500); return function(){ clearTimeout(t); }; }, [euReal, st.convs.length, vista]);
   var todasL = api.getConversations(eu, {todas:mostrarTodas});
   var arqs = todasL.filter(function(x){ return x.arq && !x.pendentes; }), lista = todasL.filter(function(x){ return !(x.arq && !x.pendentes); });
+  var esperando = arqs.filter(function(x){ return !!x.ultima && x.ultima.de!==eu && x.ultima.tipo!=="sistema" && x.ultima.apag!=="todos"; }).length;   // arquivadas em que a última mensagem é de outra pessoa
   var naoLidasTotal = lista.reduce(function(t,x){ return t + x.naoLidas; }, 0);
   var urgentesTotal = lista.reduce(function(t,x){ return t + x.pendentes; }, 0);
   // acompanhamento: conversas em que eu sou quem deve responder, e há quanto tempo esperam
@@ -165,6 +198,8 @@ function ListaConversas(p){
       e("div",{className:"flex h-9 flex-1 gap-1 rounded-xl p-[3px]", style:{background:W.campo, border:"1px solid "+W.borda}},
         [["todos","Todos"],["setores","Setores"]].map(function(v){ var on = vista===v[0] && filtro!=="arq";
           return e("button",{key:v[0], onClick:function(){ setVista(v[0]); setFiltro("todas"); setLimite(40); }, className:"flex-1 rounded-lg text-[13px] font-semibold", style:{background:on ? "#25d366" : "transparent", color:on ? "#06240f" : W.sec}}, v[1]); }))),
+    filtro==="arq" && !selec && !p.leitura && esperando>0 && e("div",{className:"flex shrink-0 px-3 pb-2"},
+      e("button",{onClick:function(){ api.reabrirSemResposta(eu); setFiltro("todas"); }, className:"flex h-8 w-full items-center justify-center gap-2 rounded-full px-3 text-[13px] font-bold", style:{background:OURO, color:OURO_TXT}}, e(Ph,{n:"arrow-counter-clockwise", s:15, fill:true}), "Reabrir as que esperam minha resposta ("+esperando+")")),
     selec && e("div",{className:"flex shrink-0 items-center gap-2 px-3 pb-2"},
       e("span",{className:"flex-1 text-[13px] font-semibold", style:{color:W.texto}}, selec.length ? selec.length+(selec.length===1 ? " selecionada" : " selecionadas") : "Toque nas conversas"),
       e("button",{onClick:function(){ setSelec(filtrada.slice(0,limite).map(function(x){ return x.conv.id; })); }, className:"h-8 rounded-full px-3 text-[13px] font-semibold", style:{background:W.campo, color:W.texto}}, "Todas"),
@@ -177,15 +212,7 @@ function ListaConversas(p){
           e("span",{className:"flex items-baseline justify-between gap-2"}, e("span",{className:"truncate text-[13px]"}, r.x.titulo), e("span",{className:"shrink-0 text-[10.5px]", style:{color:W.sec}}, horaLista(r.m.t))),
           e("span",{className:"line-clamp-2 text-[12px]", style:{color:W.sec}}, (r.m.de===eu ? "Você: " : contato(r.m.de).nome.split(" ")[0]+": ")+r.m.texto)); }),
         !porNome.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
-      vista==="setores" && filtro!=="arq" && !lista.some(function(x){ return x.conv.tipo==="grupo"; }) ? e("div",{className:"flex flex-col items-center gap-3 px-6 py-8 text-center"},
-        e(Ph,{n:"users-three", s:40, style:{color:W.sec}}),
-        e("p",{className:"text-[13px]", style:{color:W.texto}}, "Nenhum grupo de setor ainda."),
-        podeCriarGrupo(euReal) && !p.leitura ? e("div",{className:"flex w-full flex-col gap-2"},
-          e("p",{className:"text-[13px]", style:{color:W.sec}}, "Toque para criar o grupo com as pessoas do setor. Cada funcionária ganha uma aba no topo."),
-          api.sectorGroupNames.map(function(n){ return e("button",{key:n, onClick:function(){ abrir(api.createSectorGroup(euReal, n)); }, className:"flex h-8 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-semibold", style:{background:W.campo, color:W.texto, border:"1px solid "+W.borda}}, e(Ph,{n:"plus", s:14, fill:true}), n); }),
-          e("button",{onClick:function(){ setGrupoNovo("setor"); }, className:"flex h-8 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-bold", style:{background:OURO, color:OURO_TXT}}, "Outro grupo de setor…"))
-        : e("p",{className:"text-[13px]", style:{color:W.sec}}, "Só o Marcus cria os grupos.")) :
-      vista==="setores" && filtro!=="arq" ? e("div",null, lista.filter(function(x){ return x.conv.tipo==="grupo"; }).sort(function(x, y){ return (y.ultima ? y.ultima.t : 0) - (x.ultima ? x.ultima.t : 0); }).map(linha)) :   // Setores = as mesmas linhas da lista normal (foto, última mensagem, hora, não lidas), só dos grupos; mais recente primeiro (Marcus, 30/10/2026)
+      vista==="setores" && filtro!=="arq" ? e(VistaSetores,{lista:lista, linha:linha, euReal:euReal, leitura:p.leitura, abrir:abrir, criar:function(n){ var id = api.createSectorGroup(euReal, n); if(id) abrir(id); }}) :   // Setores: lista de setores como na barra lateral; ao tocar, os grupos do setor (Marcus, 30/10/2026)
       !filtrada.length ? e(Vazio,{n:filtro==="naolidas" ? "checks" : "chat-circle-dots"}, filtro==="marcado" ? "Ninguém marcou você sem resposta." : filtro==="arq" ? "Nenhuma conversa arquivada." : filtro==="naolidas" ? "Nenhuma mensagem não lida." : "Nenhuma conversa ainda. Toque no ícone de mensagem para começar.") :
       e("div",null, filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[11px]", style:{color:W.sec}}, "Role para ver mais…"))),
     ctx && (function(){

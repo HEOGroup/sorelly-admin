@@ -19,7 +19,7 @@ function TemaChatClaro(p){
 function Ph(p){ return e("i",{className:(p.fill ? "ph-fill" : "ph-duotone")+" ph-"+p.n+" inline-block shrink-0 leading-none "+(p.className||""), style:Object.assign({fontSize:p.s||18}, p.style), "aria-hidden":true}); }
 
 // grupo do chat -> setor da barra lateral do sistema (mesmo ícone e mesma cor); sem setor parecido, fica o ícone de equipe
-var setorDoGrupo = function(nome){ var n = sem(nome); return SETORES.find(function(x){ var sn = sem(String(x.nome).split(/\s+/).join(" ")); return sn===n || sn.indexOf(n)===0 || n.indexOf(sn)===0 || sn.split(" ")[0]===n.split(" ")[0]; }); };
+export var setorDoGrupo = function(nome){ var n = sem(nome); return SETORES.find(function(x){ var sn = sem(String(x.nome).split(/\s+/).join(" ")); return sn===n || sn.indexOf(n)===0 || n.indexOf(sn)===0 || sn.split(" ")[0]===n.split(" ")[0]; }); };
 
 function Avatar(p){
   var c = p.grupo ? null : contato(p.id), s = p.s || 40;

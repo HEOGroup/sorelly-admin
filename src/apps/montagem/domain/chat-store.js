@@ -459,6 +459,7 @@ function inserir(convId, msg){
 function listaConversas(cid, opc){
   opc = opc || {}; var s = estado, dir = !!opc.todas, rep = s.config.representantes;
   var r = s.convs.filter(function(c){
+    if(c.excluido) return false;   // cópia escondida (grupo duplicado)
     if(!dir && c.membros.indexOf(cid)<0) return false;
     if(!dir && c.tipo==="setor" && (c.canal==="agendamento" || c.canal==="cadastro") && cid!==c.repId) return false;
     if(!rep && temRep(c)) return false;
@@ -519,6 +520,16 @@ function pinConversation(cid, convId){
 function arquivadaAgora(c, cid, ms){
   var v = c.arqPor && c.arqPor[cid]; if(!v) return false;
   return v===true ? true : !ms.some(function(m){ return m.t > v && m.de!==cid && m.tipo!=="sistema"; });   // só mensagem de OUTRA pessoa desarquiva; o que eu mesmo mando (inclusive Transmissão) não mexe
+}
+// Reabre as conversas arquivadas em que a ÚLTIMA mensagem é de outra pessoa (ou seja, eu não respondi). Devolve quantas voltaram (Marcus, 30/10/2026).
+function reabrirSemResposta(cid){
+  var ids = estado.convs.filter(function(c){
+    if(c.excluido || !c.arqPor || !c.arqPor[cid] || c.membros.indexOf(cid)<0) return false;
+    var ms = (estado.msgs[c.id]||[]).filter(function(m){ return visivelPara(m, cid) && m.tipo!=="sistema" && m.apag!=="todos"; }), u = ms[ms.length-1];
+    return !!u && u.de!==cid;
+  }).map(function(c){ return c.id; });
+  if(ids.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(ids.indexOf(c.id)<0) return c; var f = Object.assign({}, c.arqPor); delete f[cid]; return Object.assign({}, c, {arqPor:f}); })}); });
+  return ids.length;
 }
 function arquivarConversa(cid, convId){
   var c0 = convPorId(convId); if(!c0) return false;
@@ -615,9 +626,16 @@ function criarGrupoSetor(eu, nome){
     var exM = estado.convs.find(function(c){ return c.tipo==="grupo" && c.nome==="MLN"; }); if(exM) return exM.id;
     return criarGrupo({eu:eu, nome:"MLN", descr:"", membros:["Marcus","Nickolas","Lucas"].map(function(n){ return idPorNome(n); }).filter(Boolean)});
   }
-  var g = GRUPOS_SETOR.find(function(x){ return x[0]===nome; }); if(!g) return null;
+  var g = GRUPOS_SETOR.find(function(x){ return x[0]===nome; });
   var ex = estado.convs.find(function(c){ return c.tipo==="grupo" && c.nome===nome; }); if(ex) return ex.id;
-  var d = g[1](), id = uid("g_");
+  var d;
+  if(g) d = g[1]();
+  else {   // setor da barra lateral sem grupo pronto: junta as pessoas do setor (Marcus, 30/10/2026)
+    var sn = sem(nome), fs = CONTATOS.filter(function(c){ return c.tipo==="func" && !ehDirecaoCid(c.id) && (sem(c.setorCurto)===sn || sem(c.setor)===sn || sem(c.setor).indexOf(sn)===0 || sn.indexOf(sem(c.setorCurto))===0 && sem(c.setorCurto).length>3); }).map(function(c){ return c.id; });
+    if(!fs.length) return null;
+    d = {funcionarias:fs, membros:fs.concat(dir4()), supervisores:[], admins:[]};
+  }
+  var id = idAuto(nome);
   mudar(function(s){ var o = {}; o[id] = [];
     return Object.assign({}, s, {convs:s.convs.concat([{id:id, tipo:"grupo", nome:nome, descr:"", foto:null, membros:[eu].concat(d.membros.filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}]), msgs:Object.assign({}, s.msgs, o)}); });
   inserir(id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:contato(eu).nome+" criou o grupo \""+nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
@@ -625,14 +643,26 @@ function criarGrupoSetor(eu, nome){
 }
 // Um grupo para CADA setor, já criado (Marcus, 30/10/2026): primeiro os grupos prontos (Agendamento, Montagem…), depois um por setor com as pessoas do setor (2 ou mais).
 // Cada funcionária ganha a aba dela no topo. Só roda no Marcus e só cria o que ainda não existe (por nome), então pode rodar quantas vezes quiser.
+var garantiaFeita = false;   // roda UMA vez por abertura do sistema: criar de novo a cada sincronização gerava grupos repetidos (Marcus, 30/10/2026)
+var idAuto = function(nome){ return "g_auto_"+sem(nome).replace(/[^a-z0-9]/g, ""); };   // id fixo por nome: se rodar de novo, cai em cima do mesmo grupo e não cria outro
 function garantirGruposSetor(eu){
-  if(!podeCriarGrupo(eu) || !estado.convs.length) return 0;
-  var existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
-  var mk = function(nome, d){ novos.push({id:uid("g_"), tipo:"grupo", nome:nome, descr:"", foto:null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
+  if(garantiaFeita || !podeCriarGrupo(eu) || !estado.convs.length || (SERVIDOR && !seqServidor)) return 0;   // espera a primeira sincronização com o servidor
+  garantiaFeita = true;
+  // limpa cópias já criadas: grupos com o mesmo nome e quase vazios (só o aviso de criação) ficam escondidos; fica o que tem mais conversa
+  (function(){ var ordem = estado.convs.filter(function(c){ return c.tipo==="grupo" && !c.excluido && String(c.id).indexOf("g_")===0; }).sort(function(a, b){ return (estado.msgs[b.id]||[]).length-(estado.msgs[a.id]||[]).length || a.criada-b.criada; }), vistos = {}, dup = [];
+    ordem.forEach(function(c){ var k = sem(c.nome); if(!vistos[k]) vistos[k] = c.id; else if((estado.msgs[c.id]||[]).length<=1) dup.push(c.id); });
+    if(dup.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return dup.indexOf(c.id)>=0 ? Object.assign({}, c, {excluido:true}) : c; })}); }); })();
+  var existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
+  var mk = function(nome, d){ novos.push({id:idAuto(nome), tipo:"grupo", nome:nome, descr:"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
   GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
   var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
-  // Tecnologia (Marcus, 30/10/2026): só Marcus, Leonardo, Lucas, Nickolas e Priscila (sem a Anamaria); abas no topo: Leonardo e Priscila
-  if(!existe("Tecnologia")){ var leo = idPorNome("Leonardo"), pri = idPorNome("Priscila"), tec = [idPorNome("Marcus"), leo, idPorNome("Lucas"), idPorNome("Nickolas"), pri].filter(Boolean); if(leo) mk("Tecnologia", {funcionarias:[leo, pri].filter(Boolean), membros:tec}); }
+  // H&O Apps = grupo da Tecnologia (Marcus, 30/10/2026): Marcus, Leonardo, Lucas, Nickolas, Priscila e Maria (Claudia, do RH), sem a Anamaria. Abas no topo para abrir a conversa de cada um (menos o Marcus): Leonardo, Lucas, Nickolas, Priscila e Maria. Foto da H&O Apps e Sorelly.
+  var leo = idPorNome("Leonardo"), luc = idPorNome("Lucas"), nic = idPorNome("Nickolas"), pri = idPorNome("Priscila"), mar = idPorNome("Maria Claudia"), mcs = idPorNome("Marcus");
+  var tec = [mcs, leo, luc, nic, pri, mar].filter(Boolean), tecF = [leo, luc, nic, pri, mar].filter(Boolean);
+  var hoAnt = estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && (sem(c.nome)==="tecnologia" || sem(c.nome)==="h&o apps"); });
+  if(hoAnt){   // grupo já criado (nome antigo ou abas antigas): acerta nome, foto, pessoas e abas
+    if(hoAnt.nome!=="H&O Apps" || !hoAnt.foto || (hoAnt.funcionarias||[]).join()!==tecF.join()) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return c.id!==hoAnt.id ? c : Object.assign({}, c, {nome:"H&O Apps", foto:c.foto||"fotos/grupo-ho-apps.jpg", membros:tec, funcionarias:tecF, paralelas:true}); })}); });
+  } else if(leo) mk("H&O Apps", {funcionarias:tecF, membros:tec, foto:"fotos/grupo-ho-apps.jpg"});
   Object.keys(porSetor).sort().forEach(function(n){ var f = porSetor[n]; if(f.length<2 || existe(n)) return; var dr = dir4(); mk(n, {funcionarias:f, membros:f.concat(dr.filter(function(x){ return f.indexOf(x)<0; }))}); });
   if(!novos.length) return 0;
   mudar(function(s){ var o = {}; novos.forEach(function(g){ o[g.id] = []; }); return Object.assign({}, s, {convs:s.convs.concat(novos), msgs:Object.assign({}, s.msgs, o)}); });
@@ -802,7 +832,7 @@ function consolidadoSetores(filtro){
     .sort(function(a,b){ return b.abertas-a.abertas || (b.maisAntiga-a.maisAntiga); });
 }
 
-var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, arquivada:function(cid, convId){ var c = convPorId(convId), ms = estado.msgs[convId]||[]; return !!c && arquivadaAgora(c, cid, ms); }, pendencia:pendenciaDe, markPending:marcarPendente,
+var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, reabrirSemResposta:reabrirSemResposta, arquivada:function(cid, convId){ var c = convPorId(convId), ms = estado.msgs[convId]||[]; return !!c && arquivadaAgora(c, cid, ms); }, pendencia:pendenciaDe, markPending:marcarPendente,
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, ensureSectorGroups:garantirGruposSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
