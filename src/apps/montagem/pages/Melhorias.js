@@ -67,17 +67,18 @@ function NovaConversa(p){
     d({type:"MEL", op:"enviar", id:id, tipo:tipo, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nome, setor:setor});
     p.onEnviou(id);
   };
-  return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card text-foreground shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
-    e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-2"},
-      e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Novo chamado"),
-      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, e(Ph,{n:"x", s:16}))),
-    // fixo no alto: só o link da tela
-    e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
-      e("span",null, "Tela"), e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar (link da tela do pedido)", "aria-label":"Link da tela", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO+" min-w-0 flex-1"})),
-    // tipo obrigatório (Marcus, 30/10/2026): o que a pessoa está pedindo
-    e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
-      e("span",null, "O que é?"),
-      TIPOS.map(function(x){ var on = tipo===x[0]; return e("button",{key:x[0], type:"button", onClick:function(){ setTipo(x[0]); setErro(""); }, "aria-pressed":on, className:"h-8 rounded-full border px-3 text-[13px] font-semibold "+(on ? "border-primary bg-primary/20 text-primary" : "border-border bg-card hover:bg-white/10")}, x[1]); })),
+  return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl bg-card text-foreground", style:{border:"1px solid rgba(232,184,75,.75)", boxShadow:"0 0 0 4px rgba(232,184,75,.12), 0 24px 60px -12px rgba(0,0,0,.7)"}},
+    // cabeçalho: faixa dourada fina, ícone, título e subtítulo (Marcus, 30/10/2026: parte de cima mais bem acabada)
+    e("div",{className:"flex items-center gap-3 px-4 py-3", style:{background:"linear-gradient(135deg, rgba(232,184,75,.22), rgba(232,184,75,.04))", borderBottom:"1px solid rgba(232,184,75,.35)"}},
+      e("span",{className:"grid size-9 shrink-0 place-items-center rounded-xl", style:{background:"rgba(232,184,75,.2)", color:"#E8B84B", boxShadow:"inset 0 0 0 1px rgba(232,184,75,.5)"}}, e(Ph,{n:"lifebuoy", s:20, fill:true})),
+      e("div",{className:"min-w-0 flex-1 leading-tight"}, e("b",{className:"block text-[13px]"}, "Novo chamado"), e("span",{className:"block text-[11px] opacity-80"}, "Marcus e Leonardo respondem")),
+      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-lg border border-border bg-card hover:bg-white/10"}, e(Ph,{n:"x", s:16}))),
+    // dados do chamado: tela e tipo (obrigatório), com o nome de cada campo em cima
+    e("div",{className:"grid gap-3 border-b border-border px-4 py-3"},
+      e("label",{className:"grid gap-1"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, "Tela"),
+        e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar (link da tela do pedido)", "aria-label":"Link da tela", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO+" min-w-0"})),
+      e("div",{className:"grid gap-1"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, "O que é?"),
+        e("div",{className:"flex flex-wrap gap-2"}, TIPOS.map(function(x){ var on = tipo===x[0]; return e("button",{key:x[0], type:"button", onClick:function(){ setTipo(x[0]); setErro(""); }, "aria-pressed":on, className:"flex h-8 items-center gap-1.5 rounded-full border px-3 text-[13px] font-semibold "+(on ? "border-primary bg-primary/20 text-primary" : "border-border bg-card hover:bg-white/10")}, on && e(Ph,{n:"check", s:14}), x[1]); })))),
     e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
       e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
         e(Avatar,{id:contatoDoLogin(s.usuario), nome:nome, s:32}),
@@ -85,7 +86,7 @@ function NovaConversa(p){
       e("div",{className:"flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3", style:{backgroundImage:"radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px)", backgroundSize:"14px 14px"}},
         e("div",{className:"max-w-[88%] rounded-xl rounded-bl-sm px-2.5 py-1.5 text-[13px] shadow-sm", style:{background:W.cab, color:W.texto}},
           e("div",{className:"text-[12px] font-semibold", style:{color:W.ouro}}, "Sorelly"),
-          "Conte aqui o que você quer mudar, do seu jeito. Cole o print da tela com Ctrl+V e ele já aparece na conversa. Só falta o link da tela, no alto."),
+          "Conte aqui o que você quer mudar, do seu jeito. Cole o print da tela com Ctrl+V e ele já aparece na conversa. Escolha acima o que é e confira o link da tela."),
         // o print colado já aparece aqui, como mensagem sua
         imgs.length>0 && e("div",{className:"flex items-end gap-1.5 flex-row-reverse"},
           e(Avatar,{id:contatoDoLogin(s.usuario), nome:nome, s:28}),
@@ -229,7 +230,7 @@ function Detalhe(p){
   var iniciar = new Date(x.em).getTime();
   var zoomar = function(src){ var i = fotos.indexOf(src); p.zoom(src, nomeArq(x, i<0 ? 0 : i)); };
   var nomeFoto = function(src){ var i = fotos.indexOf(src); return nomeArq(x, i<0 ? 0 : i); };
-  return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card text-foreground shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
+  return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl bg-card text-foreground", style:{border:"1px solid rgba(232,184,75,.75)", boxShadow:"0 0 0 4px rgba(232,184,75,.12), 0 24px 60px -12px rgba(0,0,0,.7)"}},
     e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-3 py-2"},
       e("b",{className:"min-w-0 flex-1 break-words text-[13px] leading-tight"}, x.titulo),
       gere ? e(MenuSituacao,{key:x.id+x.situacao, x:x, s:s, d:d, excluir:function(){ setConfirma(true); }}) : e("span",{className:"font-semibold"}, x.situacao),

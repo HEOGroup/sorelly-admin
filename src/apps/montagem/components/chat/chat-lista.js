@@ -87,7 +87,7 @@ function ListaConversas(p){
   var sl = useState(null), selec = sl[0], setSelec = sl[1];   // modo "Selecionar": null = desligado, senão lista de ids marcadas (arquivar várias de uma vez, Marcus 30/10/2026)
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
   // Marcus: os grupos de todos os setores já ficam criados (espera as conversas chegarem do servidor antes, para não duplicar)
-  useEffect(function(){ if(!podeCriarGrupo(euReal) || p.leitura || !st.convs.length) return undefined; var t = setTimeout(function(){ api.ensureSectorGroups(euReal); }, 2500); return function(){ clearTimeout(t); }; }, [euReal, st.convs.length]);
+  useEffect(function(){ if(!podeCriarGrupo(euReal) || p.leitura || !st.convs.length) return undefined; var t = setTimeout(function(){ api.ensureSectorGroups(euReal); }, vista==="setores" ? 300 : 2500); return function(){ clearTimeout(t); }; }, [euReal, st.convs.length, vista]);
   var todasL = api.getConversations(eu, {todas:mostrarTodas});
   var arqs = todasL.filter(function(x){ return x.arq && !x.pendentes; }), lista = todasL.filter(function(x){ return !(x.arq && !x.pendentes); });
   var naoLidasTotal = lista.reduce(function(t,x){ return t + x.naoLidas; }, 0);
@@ -192,11 +192,11 @@ function ListaConversas(p){
       var it = ctx.it, arq = !!it.arq, motivo = it.pendencia, soDec = /decis/.test(motivo || ""), id = it.conv.id;
       var fecha = function(){ setCtx(null); };
       return e("div",{className:"fixed inset-0 z-[80]", onClick:fecha, onContextMenu:function(ev){ ev.preventDefault(); fecha(); }},
-        e("div",{className:"absolute w-64 overflow-hidden rounded-lg py-1.5 shadow-2xl", onClick:function(ev){ ev.stopPropagation(); }, style:{left:Math.max(8, Math.min(ctx.px, window.innerWidth-270)), top:Math.max(8, Math.min(ctx.py, window.innerHeight-260)), background:W.cab, border:"1px solid "+W.ouro, color:W.texto}},
-          e("p",{className:"truncate px-4 pb-1 pt-0.5 text-[11px] font-bold", style:{color:W.ouro}}, it.titulo),
-          e(ItemMenu,{n:"push-pin", onClick:function(){ fecha(); api.pin.conversa(eu, id); }}, it.fixa ? "Desafixar" : "Fixar no topo"),
+        e("div",{className:"absolute w-64 overflow-hidden rounded-lg py-1.5 shadow-2xl", onClick:function(ev){ ev.stopPropagation(); }, style:{left:Math.max(8, Math.min(ctx.px-40, window.innerWidth-270)), top:Math.max(8, Math.min(ctx.py-24, window.innerHeight-200)), background:W.cab, border:"1px solid "+W.ouro, color:W.texto}},
+          // Arquivar é o PRIMEIRO item e o menu abre com ele debaixo do cursor: botão direito + clique, sem mexer o mouse (Marcus, 30/10/2026)
           arq ? e(ItemMenu,{n:"archive-box", onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Tirar das arquivadas")
             : e(ItemMenu,{n:"archive-box", onClick:function(){ fecha(); api.arquivar(eu, id); }}, "Arquivar conversa"),
+          e(ItemMenu,{n:"push-pin", onClick:function(){ fecha(); api.pin.conversa(eu, id); }}, it.fixa ? "Desafixar" : "Fixar no topo"),
           motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); api.resolveConv(id, eu, ""); }}, "Marcar como resolvida"),
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),
