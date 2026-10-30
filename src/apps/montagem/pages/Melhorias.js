@@ -6,7 +6,7 @@ import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { TIPOS, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
 import { DIRETORIA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
-import { Avatar, W, hora } from "@/apps/montagem/components/chat/chat-ui";
+import { Avatar, Ph, W, hora } from "@/apps/montagem/components/chat/chat-ui";
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -67,10 +67,10 @@ function NovaConversa(p){
     d({type:"MEL", op:"enviar", id:id, tipo:tipo, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nome, setor:setor});
     p.onEnviou(id);
   };
-  return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
+  return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card text-foreground shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-2"},
       e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Novo chamado"),
-      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, "✕")),
+      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, e(Ph,{n:"x", s:16}))),
     // fixo no alto: só o link da tela
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
       e("span",null, "Tela"), e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar (link da tela do pedido)", "aria-label":"Link da tela", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO+" min-w-0 flex-1"})),
@@ -92,18 +92,18 @@ function NovaConversa(p){
           e("div",{className:"flex max-w-[80%] min-w-0 flex-col gap-1.5 rounded-xl rounded-br-sm px-2.5 py-1.5 text-[13px] shadow-sm", style:{background:W.saida, color:W.texto}},
             imgs.map(function(im2, i){ return e("div",{key:i, className:"relative"},
               e("img",{src:im2, alt:"Print "+(i+1), className:"max-h-64 w-full rounded-md object-contain", style:{background:"#000"}}),
-              e("button",{type:"button", "aria-label":"Remover print "+(i+1), title:"Remover este print", onClick:function(){ setImgs(imgs.filter(function(y, j){ return j!==i; })); }, className:"absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-card text-[13px] ring-1 ring-border"}, "×")); }),
+              e("button",{type:"button", "aria-label":"Remover print "+(i+1), title:"Remover este print", onClick:function(){ setImgs(imgs.filter(function(y, j){ return j!==i; })); }, className:"absolute right-1.5 top-1.5 grid size-6 place-items-center rounded-full bg-card text-[13px] ring-1 ring-border"}, e(Ph,{n:"x", s:13}))); }),
             e("div",{className:"text-right text-[10.5px]", style:{color:W.sec}}, imgs.length+(imgs.length===1 ? " print anexado" : " prints anexados")))),
         e("div",{ref:fim})),
       e("div",{className:"flex flex-col gap-1.5 px-2 py-2", style:{background:W.cab}},
         erro && e("span",{className:"truncate text-[12px]", style:{color:W.vermelho}, title:erro}, erro),
         e("div",{className:"flex items-end gap-2"},
-          e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[17px] hover:bg-white/10", title:"Anexar um print", style:{color:W.sec}}, "📎",
+          e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[13px] hover:bg-white/10", title:"Anexar um print", style:{color:W.sec}}, e(Ph,{n:"paperclip", s:20}),
             e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; anexar(f); }})),
           e("textarea",{autoFocus:true, value:txt, rows:1, maxLength:3000, onChange:function(ev){ setTxt(ev.target.value); },
             onKeyDown:function(ev){ if(ev.key==="Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } },
             placeholder:"Escreva o que você quer mudar (Ctrl+V cola o print)", className:"max-h-28 min-h-9 min-w-0 flex-1 resize-none rounded-lg px-3 py-2 text-[13px] outline-none", style:{background:W.campo, color:W.texto}}),
-          e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤")))));
+          e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, e(Ph,{n:"paper-plane-right", s:18, fill:true}))))));
 }
 
 // ícone que abre direto a tela do pedido (no lugar do endereço escrito): um clique e já está lá
@@ -111,7 +111,7 @@ function AbrirTela(p){
   var ir = useNavigate();
   if(!p.url) return e("span",null, "—");
   var caminho = melCaminho(p.url);
-  return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); if(p.antes) p.antes(); ir(caminho); }, title:"Abrir a tela "+caminho, "aria-label":"Abrir a tela "+caminho, className:"inline-grid size-7 place-items-center rounded-md border border-border bg-card text-[14px] hover:bg-white/10"}, "↗");
+  return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); if(p.antes) p.antes(); ir(caminho); }, title:"Abrir a tela "+caminho, "aria-label":"Abrir a tela "+caminho, className:"inline-grid size-7 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, e(Ph,{n:"arrow-square-out", s:15}));
 }
 
 // foto do pedido: ampliar, copiar (para colar no Claude) e salvar com o nome da tela no arquivo (Marcus, 29/10/2026)
@@ -186,7 +186,7 @@ function MenuSituacao(p){
   };
   return e("div",{className:"relative"},
     e("button",{type:"button", onClick:function(){ setSit(x.situacao); setAberto(!aberto); }, "aria-expanded":aberto, title:"Mudar a situação e contar o que foi feito", className:"flex h-8 items-center gap-2 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"},
-      e("span",{className:"font-semibold"}, x.situacao), e("span",null, aberto ? "▴" : "▾")),
+      e("span",{className:"font-semibold"}, x.situacao), e(Ph,{n:aberto ? "caret-up" : "caret-down", s:12})),
     aberto && e("div",{className:"absolute right-0 top-full z-20 mt-1 flex max-h-[75vh] w-[22rem] flex-col overflow-y-auto gap-2 rounded-xl border border-border bg-card p-3 shadow-2xl"},
       e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, "Situação"),
       OPCOES_RESP.map(function(o){ var n = o[0]; return e("label",{key:n, className:"flex min-h-9 cursor-pointer items-center gap-2 rounded-md px-2 py-0.5 text-[13px] hover:bg-white/10 "+(sit===n ? "bg-white/10" : "")},
@@ -229,11 +229,11 @@ function Detalhe(p){
   var iniciar = new Date(x.em).getTime();
   var zoomar = function(src){ var i = fotos.indexOf(src); p.zoom(src, nomeArq(x, i<0 ? 0 : i)); };
   var nomeFoto = function(src){ var i = fotos.indexOf(src); return nomeArq(x, i<0 ? 0 : i); };
-  return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
+  return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card text-foreground shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-3 py-2"},
       e("b",{className:"min-w-0 flex-1 break-words text-[13px] leading-tight"}, x.titulo),
       gere ? e(MenuSituacao,{key:x.id+x.situacao, x:x, s:s, d:d, excluir:function(){ setConfirma(true); }}) : e("span",{className:"font-semibold"}, x.situacao),
-      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, "✕")),
+      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, e(Ph,{n:"x", s:16}))),
     x.porId===s.usuario && x.situacao==="Mudança feita, testar" && e(BarraTeste,{x:x, s:s, d:d}),
     // fixo no alto: só o link da tela e o lugar da conversa do Claude (só Marcus e Leonardo veem)
     e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-border px-3 py-1.5 text-[13px]"},
@@ -252,12 +252,12 @@ function Detalhe(p){
           img && e("div",{className:"flex items-end gap-2"}, e("img",{src:img, alt:"Print a enviar", className:"h-14 rounded border border-border"}), e(Botao,{onClick:function(){ setImg(""); }}, "Remover")),
           erro && e("span",{className:"truncate text-[12px]", style:{color:W.vermelho}, title:erro}, erro),
           e("div",{className:"flex items-end gap-2"},
-            e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[17px] hover:bg-white/10", title:"Anexar uma imagem", style:{color:W.sec}}, "📎",
+            e("label",{className:"grid size-9 shrink-0 cursor-pointer place-items-center rounded-full text-[13px] hover:bg-white/10", title:"Anexar uma imagem", style:{color:W.sec}}, e(Ph,{n:"paperclip", s:20}),
               e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; anexar(f); }})),
             e("textarea",{value:txt, rows:1, maxLength:2000, onChange:function(ev){ setTxt(ev.target.value); }, onPaste:colar,
               onKeyDown:function(ev){ if(ev.key==="Enter" && !ev.shiftKey){ ev.preventDefault(); enviar(); } },
               placeholder:"Digite uma mensagem", className:"max-h-24 min-h-9 min-w-0 flex-1 resize-none rounded-lg px-3 py-2 text-[13px] outline-none", style:{background:W.campo, color:W.texto}}),
-            e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤")))),
+            e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, e(Ph,{n:"paper-plane-right", s:18, fill:true}))))),
     confirma && e("div",{className:"absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4"},
       e("div",{className:"flex w-full max-w-sm flex-col gap-3 rounded-xl border border-border bg-card p-4 text-center"},
         e("b",{className:"text-[13px]"}, "Tem certeza que quer excluir?"),

@@ -12,6 +12,7 @@ var VERSOES = [
     {tipo:"novo", area:"SorellyChat", txt:"Grupo Encomendas e Reposições (igual ao Agendamento: aba Geral e uma aba para Agatha, Elen e Eduarda). Todos os grupos prontos (inclusive MLN) agora aparecem no botão +, para quem ainda não foi criado."},
     {tipo:"novo", area:"SorellyChat", txt:"Um grupo para cada setor, já criado sozinho quando o Marcus abre o chat (só os que ainda não existem): os grupos prontos e um por setor com 2 ou mais pessoas. Cada funcionária ganha a aba dela no topo. Aparecem em Setores, como conversas normais."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Grupo sem foto mostra o ícone e a cor do setor, igual ao da barra lateral (Montagem, Financeiro, Agendamento…). Quando a foto for colocada, ela passa na frente."},
+    {tipo:"melhoria", area:"Chamados", txt:"Janela de novo chamado aberta de dentro do chat: o texto não some mais (cor correta). Clipe, seta de enviar, fechar e remover viraram ícones normais (antes eram emojis)."},
     {tipo:"melhoria", area:"Pessoas", txt:"Juan saiu da lista de pessoas (contatos do chat, fluxo da empresa e contagens): não trabalha mais para a Sorelly."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Grupo Tecnologia só com Marcus, Leonardo, Lucas, Nickolas e Priscila (sem a Anamaria); abas no topo com o primeiro nome."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Transmissão: botão Sem foto marca só quem ainda não colocou foto no perfil."}]},
