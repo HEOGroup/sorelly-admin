@@ -111,7 +111,7 @@ function veTotais(id){ return veBloco(id,"valores"); }
 function podeFinanceiro(id){ return veBloco(id,"conciliar"); }
 
 // quem bipa os retornos por padrão (editável em Configurador geral → Quem bipa): bipadoras, atendente de peças, Michele (kits novos) e Deysiane
-var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b.id; }).concat([ATENDENTE_PECAS.id, KITNOVO.id, SUPERVISORA.id]); };
+var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b.id; }).concat([ATENDENTE_PECAS.id, KITNOVO.id, SUPERVISORA.id, LISTAGENS_RESP.id]); };   // Majorry (23) também bipa retorno (Marcus, 30/10/2026)
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
 // quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
 var pessoaConhecida = function(id){ return !!GRUPO_CONTA[id] || EQUIPE.some(function(p){ return p.id===id; }); };
