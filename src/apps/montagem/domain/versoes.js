@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.7", data:"2026-10-30", titulo:"SorellyChat: lista de transmissão", itens:[
+    {tipo:"novo", area:"SorellyChat", txt:"Botão Transmissão na lista (só Direção): escolhe todos os funcionários ou só alguns (por setor ou por pessoa), escreve uma vez e cada um recebe na conversa direta, como no WhatsApp. Representantes entram só se marcar a opção."}]},
+  {v:"0.18.6", data:"2026-10-30", titulo:"SorellyChat: tela inteira, links e negrito", itens:[
+    {tipo:"novo", area:"SorellyChat", txt:"Botão Tela inteira na faixa do chat: cobre o menu e o topo do admin, para deixar o chat numa aba só dele. A escolha fica no endereço (?cheia=1)."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Links (http, https e www) abrem ao clicar, sem a pontuação do fim. Texto entre asteriscos (*assim*) fica em negrito, como no WhatsApp."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Faixas do topo da lista alinhadas na mesma altura e no mesmo tamanho de letra."}]},
   {v:"0.18.5", data:"2026-10-30", titulo:"SorellyChat: responder direto, arquivar em massa", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"Ao tocar em Responder, o cursor já vai para o campo de texto. A mensagem respondida aparece em tom claro dentro da caixa, como no WhatsApp."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Mensagem nova numa conversa arquivada tira a conversa das arquivadas de quem recebeu."},

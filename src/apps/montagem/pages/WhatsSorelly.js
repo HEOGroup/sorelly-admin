@@ -27,8 +27,11 @@ function AbaWhats(){
     return function(){ window.removeEventListener("resize", ajusta); if(ro) ro.disconnect(); clearInterval(tm); };
   }, []);
   // ocupa o bloco inteiro (anula o respiro da página) até a borda de baixo
-  return e("div",{ref:raiz, className:"-m-4 overflow-hidden md:-m-6", style:{background:W.fundo}},
-    aba==="conversas" ? e(TemaChatClaro,null, e(ChatApp,{eu:eu, direcao:direcao, paginas:{abas:abas, aba:aba, mudar:setAba}})) :
+  // Tela inteira (Marcus, 30/10/2026): cobre o menu e o topo do admin, para a funcionária deixar o chat numa aba só dela, igual ao WhatsApp. Lembra na barra do navegador (?cheia=1), então recarregar ou favoritar mantém.
+  var ch = useState(function(){ try{ return new URLSearchParams(window.location.search).get("cheia")==="1"; }catch(x){ return false; } }), cheia = ch[0], setCheia = ch[1];
+  var alternarCheia = function(){ var v = !cheia; setCheia(v); try{ var u = new URL(window.location.href); if(v) u.searchParams.set("cheia","1"); else u.searchParams.delete("cheia"); window.history.replaceState(window.history.state, "", u.pathname+u.search+u.hash); }catch(x){} };
+  return e("div",{ref:raiz, className:cheia ? "fixed inset-0 z-[55] overflow-hidden" : "-m-4 overflow-hidden md:-m-6", style:{background:W.fundo}},
+    aba==="conversas" ? e(TemaChatClaro,null, e(ChatApp,{eu:eu, direcao:direcao, paginas:{abas:abas, aba:aba, mudar:setAba, cheia:cheia, alternarCheia:alternarCheia}})) :
     e("div",{className:"flex h-full flex-col overflow-hidden"},
       e("div",{className:"flex shrink-0 items-center gap-3 px-4 py-2.5", style:{background:OURO, color:OURO_TXT}},
         e("button",{onClick:function(){ setAba("conversas"); }, "aria-label":"Voltar às conversas", className:"grid size-9 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:"arrow-left", s:21})),

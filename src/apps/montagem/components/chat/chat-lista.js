@@ -4,6 +4,7 @@
 import { api, efem, estaOcupado, motivoOcupado, fotoDe, useChat, textoPrevia } from "@/apps/montagem/domain/chat-store";
 import { CONTATOS, contato, podeCriarGrupo, sem } from "@/apps/montagem/domain/chat-contatos";
 import { NovoGrupo, FotoEditavel } from "@/apps/montagem/components/chat/chat-info";
+import { Transmissao } from "@/apps/montagem/components/chat/chat-transmissao";
 import { SeletorFundo } from "@/apps/montagem/components/chat/chat-fundos";
 import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista } from "@/apps/montagem/components/chat/chat-ui";
 import { SETORES } from "@/apps/montagem/navigation/setores";
@@ -58,7 +59,7 @@ function BarraChat(p){
   var mostrarTodas = !!(p.direcao && !p.leitura && stB.efem.verTodas);
   var opcoes = pg ? pg.abas.filter(function(a){ return a[0]!=="conversas"; }) : [];
   var fechar = function(){ setAberto(null); };
-  var celula = function(id, ic, txt, on, onClick){ return e("button",{onClick:onClick, className:"flex h-10 flex-1 items-center justify-center gap-2 text-[12px] font-bold", style:{background:on ? W.sel : "transparent", color:W.texto}}, e(Ph,{n:ic, s:20, fill:true}), txt, e(Ph,{n:"caret-down", s:12, fill:true})); };
+  var celula = function(id, ic, txt, on, onClick){ return e("button",{onClick:onClick, className:"flex h-8 flex-1 items-center justify-center gap-2 text-[13px] font-bold", style:{background:on ? W.sel : "transparent", color:W.texto}}, e(Ph,{n:ic, s:20, fill:true}), txt, e(Ph,{n:"caret-down", s:12, fill:true})); };
   var cels = [];
   if(p.direcao) cels.push(celula("ver", "eye", p.leitura ? "Vendo "+contato(eu).nome.split(" ")[0] : mostrarTodas ? "Vendo todas" : "Ver como", aberto==="ver" || p.leitura || mostrarTodas, function(){ setAberto(aberto==="ver" ? null : "ver"); }));
   if(opcoes.length>0) cels.push(celula("op", "gear-six", "Opções", aberto==="op" || opcoes.some(function(a){ return pg.aba===a[0]; }), function(){ setAberto(aberto==="op" ? null : "op"); }));
@@ -70,6 +71,7 @@ function BarraChat(p){
       e("h2",{className:"min-w-0 flex-1 truncate font-extrabold tracking-tight text-[15px]"}, "SorellyChat"),
       p.ajuda && e("div",{className:"relative"}, e("button",{onClick:function(){ setAberto(aberto==="ajuda" ? null : "ajuda"); }, "aria-label":"Ajuda: falar com a Sorelly", title:"Ajuda: falar com a Sorelly", className:"flex h-9 items-center gap-1.5 rounded-full px-3 text-[12px] font-bold", style:{background:W.campo, color:W.texto}}, e(Ph,{n:"lifebuoy", s:18, fill:true}), "Ajuda"),
         aberto==="ajuda" && e(Popover,{className:"right-0 top-11", fechar:fechar, largura:250}, p.ajuda.canais.map(function(c){ return e(ItemMenu,{key:c.id, n:c.ic, onClick:function(){ fechar(); p.ajuda.abrir(c.id); }}, c.nome); }))),
+      pg && pg.alternarCheia && e("button",{onClick:pg.alternarCheia, "aria-label":pg.cheia ? "Sair da tela inteira" : "Tela inteira", title:pg.cheia ? "Sair da tela inteira" : "Tela inteira (para deixar o chat numa aba só)", className:"grid size-9 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:pg.cheia ? "arrows-in-simple" : "arrows-out-simple", s:20, fill:true})),
       !pg && e("button",{onClick:function(){ p.abrirCompleto && p.abrirCompleto(); }, "aria-label":"Abrir em tela cheia", title:"Tela cheia", className:"grid size-9 place-items-center rounded-full hover:bg-black/10"}, e(Ph,{n:"arrows-out-simple", s:20, fill:true}))),
     comSep.length>0 && e("div",{className:"flex", style:{background:W.cab, color:W.texto, borderTop:"1px solid "+W.borda, borderBottom:"1px solid "+W.borda}}, comSep),
     aberto==="ver" && e(VerComo,{euReal:p.euReal, className:"left-2 top-[7.1rem]", largura:300, fechar:fechar}),
@@ -85,6 +87,7 @@ function ListaConversas(p){
   var vs = useState("todos"), vista = vs[0], setVista = vs[1];   // metade direita da barra: Todos | Setores (Marcus, 29/10/2026)
   var so = useState(false), setoresAberto = so[0], setSetoresAberto = so[1];   // "Setores": os grupos de cada setor (Montagem, Atendimento, Agendamento…), um toque abre o grupo
   var lm = useState(40), limite = lm[0], setLimite = lm[1];
+  var tr = useState(false), transmitindo = tr[0], setTransmitindo = tr[1];   // lista de transmissão: uma mensagem para vários funcionários (só Direção)
   var sl = useState(null), selec = sl[0], setSelec = sl[1];   // modo "Selecionar": null = desligado, senão lista de ids marcadas (arquivar várias de uma vez, Marcus 30/10/2026)
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
   var todasL = api.getConversations(eu, {todas:mostrarTodas});
@@ -140,6 +143,7 @@ function ListaConversas(p){
       perfil && e(Perfil,{eu:eu, fechar:function(){ setPerfil(false); }}),
       e("div",{className:"ml-auto flex shrink-0 items-center gap-1.5"},
         p.leitura && e("button",{onClick:function(){ efem({verComo:null, conversaSel:null}); }, className:"rounded-full px-3 py-1 text-[11px] font-semibold", style:{background:OURO, color:OURO_TXT}}, "Voltar ao meu"),
+        p.direcao && !p.leitura && e("button",{onClick:function(){ setTransmitindo(true); setMais(false); }, "aria-label":"Transmissão", title:"Transmissão: mandar uma mensagem para vários funcionários", className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:W.campo, color:W.texto}}, e(Ph,{n:"megaphone", s:13, fill:true}), "Transmissão"),
         !p.leitura && e("button",{onClick:function(){ setSelec(selec ? null : []); setMais(false); }, "aria-label":selec ? "Cancelar seleção" : "Selecionar conversas", title:selec ? "Cancelar seleção" : "Selecionar conversas", className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:selec ? OURO : W.campo, color:selec ? OURO_TXT : W.texto}}, e(Ph,{n:selec ? "x" : "check-circle", s:13, fill:true}), selec ? "Cancelar" : "Selecionar"),
         !p.leitura && e("button",{onClick:function(){ api.setBusy(eu, motivoOcupado(eu)!=="almoco", "almoco"); }, className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:motivoOcupado(eu)==="almoco" ? "rgba(245,197,66,.2)" : W.campo, color:motivoOcupado(eu)==="almoco" ? "#f5c542" : W.texto}}, e(Ph,{n:"fork-knife", s:13, fill:true}), motivoOcupado(eu)==="almoco" ? "Em almoço" : "Almoço"),
         gruposSetor.length>0 && e("button",{onClick:function(){ setSetoresAberto(!setoresAberto); setMais(false); }, "aria-label":"Grupos por setor", title:"Grupos por setor", className:"flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-bold", style:{background:setoresAberto ? "rgba(232,184,75,.2)" : W.campo, color:setoresAberto ? W.ouro : W.texto}}, e(Ph,{n:"users-three", s:13, fill:true}), "Setores", setoresNaoLidas>0 && e("span",{className:"grid min-w-4 place-items-center rounded-full px-1 text-[9.5px] font-bold", style:{background:W.verde, color:"#0b141a", height:16}}, setoresNaoLidas)),
@@ -204,6 +208,7 @@ function ListaConversas(p){
           motivo && !soDec && e(ItemMenu,{n:"check-circle", onClick:function(){ fecha(); api.resolveConv(id, eu, ""); }}, "Marcar como resolvida"),
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),
+    transmitindo && e(Transmissao,{eu:euReal, fechar:function(){ setTransmitindo(false); }}),
     grupoNovo && podeCriarGrupo(eu) && e(NovoGrupo,{eu:eu, fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
     escolhendo && e(VerComo,{euReal:euReal, modo:escolhendo, fechar:function(){ setEscolhendo(false); }}));
 }

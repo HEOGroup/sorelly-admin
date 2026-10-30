@@ -22,12 +22,17 @@ var escapar = function(t){ return t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); };
 // texto com @menções destacadas e links
 function renderTexto(texto, mencoes, eu){
   var nomes = (mencoes||[]).map(function(id){ return {id:id, n:"@"+contato(id).nome}; });
-  var pad = nomes.map(function(x){ return escapar(x.n); }).concat(["https?:\\/\\/[^\\s]+"]).join("|");
+  // links (http, https ou www.) e *negrito* como no WhatsApp (Marcus, 30/10/2026)
+  var pad = nomes.map(function(x){ return escapar(x.n); }).concat(["(?:https?:\\/\\/|www\\.)[^\\s]+", "\\*[^*\\n]+\\*"]).join("|");
   var partes = texto.split(new RegExp("("+pad+")", "g"));
   return partes.map(function(t, i){
     var m = nomes.find(function(x){ return x.n===t; });
     if(m) return e("span",{key:i, className:"rounded px-0.5 font-semibold", style:{color:W.azul, background:m.id===eu ? "rgba(83,189,235,.22)" : "transparent"}}, t);
-    if(/^https?:\/\//.test(t)) return e("a",{key:i, href:t, target:"_blank", rel:"noreferrer", style:{color:W.azul, textDecoration:"underline"}}, t);
+    if(/^(https?:\/\/|www\.)/.test(t)){
+      var fim = (/[.,;:!?)\]]+$/.exec(t) || [""])[0], url = fim ? t.slice(0, t.length-fim.length) : t;   // pontuação colada no fim não faz parte do link
+      return e("span",{key:i}, e("a",{href:/^www\./.test(url) ? "https://"+url : url, target:"_blank", rel:"noreferrer noopener", onClick:function(ev){ ev.stopPropagation(); }, style:{color:W.azul, textDecoration:"underline"}}, url), fim);
+    }
+    if(t.length>2 && /^\*[^*\n]+\*$/.test(t)) return e("strong",{key:i, className:"font-bold"}, t.slice(1, -1));
     return t;
   });
 }
