@@ -4,7 +4,7 @@
 import { Botao, CAMPO, Segmentado, TabelaP, Tr } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
+import { TIPOS, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
 import { DIRETORIA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { Avatar, W, hora } from "@/apps/montagem/components/chat/chat-ui";
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
@@ -55,24 +55,29 @@ function imagemColada(ev){
 // nova solicitação = o mesmo chat de quem responde (Marcus, 29/10/2026): fixo no alto só o link da tela; o print colado (Ctrl+V) já aparece na conversa; escreve e envia, e o pedido nasce com esse chat
 function NovaConversa(p){
   var s = p.s, d = p.d, nome = nomeDe(s.usuario), setor = DIRETORIA.some(function(x){ return x.id===s.usuario; }) ? "Diretoria" : (PAPEL_LB[grupoDe(s.usuario)] || "");
-  var t = useState(""), txt = t[0], setTxt = t[1], im = useState([]), imgs = im[0], setImgs = im[1], er = useState(""), erro = er[0], setErro = er[1], u = useState(window.__ultimaTela || ""), url = u[0], setUrl = u[1];
+  var t = useState(""), txt = t[0], setTxt = t[1], im = useState([]), imgs = im[0], setImgs = im[1], er = useState(""), erro = er[0], setErro = er[1], u = useState(window.__ultimaTela || ""), url = u[0], setUrl = u[1], tp = useState(""), tipo = tp[0], setTipo = tp[1];
   var fim = React.useRef(null);
   useEffect(function(){ if(fim.current) fim.current.scrollIntoView({block:"end"}); }, [imgs.length]);
   var anexar = function(f){ if(!f) return; setErro(""); if(imgs.length>=4){ setErro("No máximo 4 prints."); return; } reduzirPrint(f).then(function(r){ setImgs(function(l){ return l.length<4 ? l.concat([r]) : l; }); }).catch(function(y){ setErro(y.message); }); };
   var colar = function(ev){ var f = imagemColada(ev); if(f){ ev.preventDefault(); anexar(f); } };
   var enviar = function(){
+    if(!tipo){ setErro("Marque o que é: não sei como fazer, melhoria do layout ou algo que falta."); return; }
     if(!txt.trim()){ setErro(imgs.length ? "Escreva também o que você quer mudar." : "Escreva o que você quer mudar."); return; }
     var id = Date.now().toString(36)+Math.random().toString(36).slice(2, 5);
-    d({type:"MEL", op:"enviar", id:id, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nome, setor:setor});
+    d({type:"MEL", op:"enviar", id:id, tipo:tipo, titulo:"", desc:txt, url:url, imgs:imgs, porId:s.usuario, por:nome, setor:setor});
     p.onEnviou(id);
   };
   return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-2"},
-      e("b",{className:"min-w-0 flex-1 text-[15px]"}, "Nova solicitação de melhoria"),
-      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[15px] hover:bg-white/10"}, "✕")),
+      e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Nova customização"),
+      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, "✕")),
     // fixo no alto: só o link da tela
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
       e("span",null, "Tela"), e("input",{value:url, maxLength:300, placeholder:"/financeiro/contas-a-pagar (link da tela do pedido)", "aria-label":"Link da tela", onChange:function(ev){ setUrl(ev.target.value); }, className:CAMPO+" min-w-0 flex-1"})),
+    // tipo obrigatório (Marcus, 30/10/2026): o que a pessoa está pedindo
+    e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
+      e("span",null, "O que é?"),
+      TIPOS.map(function(x){ var on = tipo===x[0]; return e("button",{key:x[0], type:"button", onClick:function(){ setTipo(x[0]); setErro(""); }, "aria-pressed":on, className:"h-8 rounded-full border px-3 text-[13px] font-semibold "+(on ? "border-primary bg-primary/20 text-primary" : "border-border bg-card hover:bg-white/10")}, x[1]); })),
     e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
       e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
         e(Avatar,{id:contatoDoLogin(s.usuario), nome:nome, s:32}),
@@ -115,7 +120,7 @@ var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[\u0
 var nomeArq = function(x, i){
   var base = semAcento(melCaminho(x.url) || x.titulo).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "pedido";
   var ext = /^data:image\/png|\.png($|\?)/i.test(melFotos(x)[i] || "") ? "png" : "jpg";
-  return "melhoria-"+base+"-foto-"+(i+1)+"."+ext;
+  return "customizacao-"+base+"-foto-"+(i+1)+"."+ext;
 };
 function baixarFoto(b, nome){ var u = URL.createObjectURL(b), a = document.createElement("a"); a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 4000); return "Baixado ✓ (pasta Downloads)"; }
 // salva a foto: no Chrome abre a janela de salvar já com o nome da tela; sem isso, baixa direto
@@ -226,9 +231,9 @@ function Detalhe(p){
   var nomeFoto = function(src){ var i = fotos.indexOf(src); return nomeArq(x, i<0 ? 0 : i); };
   return e("div",{className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-3 py-2"},
-      e("b",{className:"min-w-0 flex-1 break-words text-[15px] leading-tight"}, x.titulo),
+      e("b",{className:"min-w-0 flex-1 break-words text-[13px] leading-tight"}, x.titulo),
       gere ? e(MenuSituacao,{key:x.id+x.situacao, x:x, s:s, d:d, excluir:function(){ setConfirma(true); }}) : e("span",{className:"font-semibold"}, x.situacao),
-      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[15px] hover:bg-white/10"}, "✕")),
+      e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, "✕")),
     x.porId===s.usuario && x.situacao==="Mudança feita, testar" && e(BarraTeste,{x:x, s:s, d:d}),
     // fixo no alto: só o link da tela e o lugar da conversa do Claude (só Marcus e Leonardo veem)
     e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 border-b border-border px-3 py-1.5 text-[13px]"},
@@ -237,7 +242,7 @@ function Detalhe(p){
       e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
         e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
           e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:32}),
-          e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, x.por), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, x.setor+" · pedido de melhoria"))),
+          e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, x.por), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, x.setor+" · customização"+(melTipoNome(x.tipo) ? " · "+melTipoNome(x.tipo) : "")))),
         e("div",{className:"flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3", style:{backgroundImage:"radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px)", backgroundSize:"14px 14px"}},
           e("div",{className:"mx-auto rounded-md px-2.5 py-0.5 text-[11.5px]", style:{background:W.cab, color:W.sec}}, isNaN(iniciar) ? "Pedido" : new Date(iniciar).toLocaleDateString("pt-BR")),
           e(Balao,{m:{porId:x.porId, por:x.por, em:x.em, txt:x.desc, imgs:melFotos(x)}, eu:s.usuario, dono:x.porId, zoom:zoomar, nomeFoto:nomeFoto}),   // o chat começa com o que a pessoa escreveu no pedido
@@ -255,7 +260,7 @@ function Detalhe(p){
             e("button",{type:"button", onClick:enviar, "aria-label":"Enviar", title:"Enviar (Enter)", className:"grid size-9 shrink-0 place-items-center rounded-full text-[16px] font-bold text-white hover:brightness-110", style:{background:W.verde}}, "➤")))),
     confirma && e("div",{className:"absolute inset-0 z-10 flex items-center justify-center bg-black/70 p-4"},
       e("div",{className:"flex w-full max-w-sm flex-col gap-3 rounded-xl border border-border bg-card p-4 text-center"},
-        e("b",{className:"text-[15px]"}, "Tem certeza que quer excluir?"),
+        e("b",{className:"text-[13px]"}, "Tem certeza que quer excluir?"),
         e("p",{className:"text-[13px]"}, "O pedido \""+x.titulo+"\" sai da lista de todo mundo."),
         e("div",{className:"flex justify-center gap-2"},
           e(Botao,{onClick:function(){ setConfirma(false); }}, "Não, voltar"),
@@ -321,22 +326,22 @@ function AbaMelhorias(){
   var janela = (novo || aberto) && e("div",{className:"fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget){ setNovo(false); setSel(null); } }},
     e("div",{className:"my-auto w-full max-w-[780px]"},
       novo ? e(NovaConversa,{s:s, d:d, fechar:function(){ setNovo(false); }, onEnviou:function(id){ setNovo(false); setSel(id); }}) : e(Detalhe,{x:aberto, s:s, d:d, zoom:function(src, nome){ setZoom({src:src, nome:nome}); }, fechar:function(){ setSel(null); }})));
-  var cols = [{t:"Data", w:104, c:true}, {t:"Setor", w:150, c:true}, {t:"Funcionária", w:160, c:true}, {t:"Situação", w:190, c:true}, {t:"Tela", w:70, c:true}, {t:"Descrição", c:true}].concat(gere ? [{t:"Conversa do Claude", w:185, c:true}] : []);
+  var cols = [{t:"Data", w:104, c:true}, {t:"Setor", w:150, c:true}, {t:"Funcionária", w:160, c:true}, {t:"Tipo", w:150, c:true}, {t:"Situação", w:190, c:true}, {t:"Tela", w:70, c:true}, {t:"Descrição", c:true}].concat(gere ? [{t:"Conversa do Claude", w:185, c:true}] : []);
   var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); } catch(x){ return iso; } };
   // célula centralizada que quebra a linha: o texto aparece inteiro, nada fica resumido com "…"
   var cel = function(cls, filho){ return e("td",{className:"h-9 whitespace-nowrap border-b border-border px-2.5 text-center align-middle "+(cls||"")}, filho); };
   var etiqueta = function(z){ return e("span",{className:"inline-flex h-6 items-center whitespace-nowrap rounded-full border px-2.5 text-[12px] font-semibold "+COR_SIT[z]}, z); };
   var tabela = function(itens, semCol){
     var uso = cols.filter(function(c){ return c.t!==semCol; });
-    return e(TabelaP,{minW:gere ? 1335 : 1150, cols:uso, cab:"bg-[#2b4a73]"},
+    return e(TabelaP,{minW:gere ? 1485 : 1300, cols:uso, cab:"bg-[#2b4a73]"},
       itens.map(function(x){
         return e(Tr,{key:x.id, onClick:function(){ abrir(x.id); }},
           cel("", quandoCurto2(x.em)), semCol!=="Setor" && cel("", x.setor), semCol!=="Funcionária" && cel("", e("span",{className:"inline-flex items-center gap-1.5"}, e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:24}), x.por)),
-          cel("", etiqueta(x.situacao)), cel("", e(AbrirTela,{url:x.url})), cel("", resumo(x.desc || x.titulo)),
+          cel("", melTipoNome(x.tipo) || "—"), cel("", etiqueta(x.situacao)), cel("", e(AbrirTela,{url:x.url})), cel("", resumo(x.desc || x.titulo)),
           gere && cel("", e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}))); }));
   };
   var corpo;
-  if(!lista.length) corpo = e("p",{className:"py-4 text-center text-[13px]"}, base.length ? "Nenhuma solicitação com este filtro." : "Nenhuma solicitação ainda.");
+  if(!lista.length) corpo = e("p",{className:"py-4 text-center text-[13px]"}, base.length ? "Nenhuma customização com este filtro." : "Nenhuma customização ainda.");
   else if(!grupo) corpo = tabela(lista, "");
   else {
     var campoG = grupo==="s" ? "setor" : "por", semC = grupo==="s" ? "Setor" : "Funcionária", gs = {};
@@ -352,9 +357,9 @@ function AbaMelhorias(){
       e("img",{src:zoom.src, alt:"Print ampliado", className:"max-h-full max-w-full rounded-lg border border-border object-contain"}),
       e("div",{className:"absolute right-4 top-4 flex items-center gap-1.5"}, e(BotoesFoto,{src:zoom.src, nome:zoom.nome||"foto.jpg"}), e("button",{type:"button", onClick:function(){ setZoom(null); }, className:"h-8 rounded-md bg-card px-3 text-[13px] font-semibold ring-1 ring-border"}, "Fechar ✕"))),
     janela,
-    e(PageHead,{t:"Solicitações de melhorias", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
+    e(PageHead,{t:"Customizações", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
       gere && e(Segmentado,{opcoes:[["todas","Todas"], ["minhas","Minhas"]], atual:vis, onMudar:setVis}),
-      e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Nova solicitação")),
+      e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Nova customização")),
     gere && vis==="todas" && e("div",{className:"grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-4"},
       e(Ranking,{t:"Setores que mais pedem", itens:ranking(base, "setor"), onEscolher:setFSet}),
       e(Ranking,{t:"Funcionárias que mais pedem", itens:ranking(base, "por"), onEscolher:setFQ}),
@@ -375,4 +380,4 @@ function AbaMelhorias(){
     corpo);
 }
 
-export { AbaMelhorias };
+export { AbaMelhorias, NovaConversa };

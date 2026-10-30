@@ -43,6 +43,7 @@ function VerComo(p){
     e("div",{className:"max-h-[58vh] overflow-y-auto"},
       e("div",{className:"px-2 pb-1"}, e("input",{autoFocus:true, value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa ou setor", "aria-label":"Buscar", className:"h-8 w-full rounded-lg px-3 text-[12px] outline-none", style:{background:W.campo, color:W.texto}})),
       !pessoas && p.nova && podeCriarGrupo(p.euReal) && e("button",{onClick:p.aoGrupo, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:"#fff"}})), e("span",{className:"font-medium"}, "Novo grupo")),
+      !pessoas && p.nova && p.aoMln && podeCriarGrupo(p.euReal) && e("button",{onClick:p.aoMln, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:OURO}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:OURO_TXT}})), e("span",{className:"font-medium"}, "Grupo MLN (Marcus, Nickolas e Lucas)")),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, false); }, className:linha}, e(Avatar,{id:p.euReal, s:26}), e("span",{className:"font-medium"}, "O meu SorellyChat")),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, true); }, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:OURO}}, e(Ph,{n:"eye", s:15, fill:true, style:{color:OURO_TXT}})), e("span",{className:"font-medium"}, "Todas as conversas")),
       !pessoas && e("p",{className:"px-3 pb-0.5 pt-1.5 text-[9.5px] font-extrabold uppercase tracking-wide", style:{color:W.ouro}}, "Setores"),
@@ -158,7 +159,7 @@ function ListaConversas(p){
           e(Avatar,{grupo:true, nome:x.conv.nome, foto:x.conv.foto, s:30}), e("span",{className:"min-w-0 flex-1 truncate font-medium"}, x.conv.nome),
           x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas)); })),
       // "+" nova conversa: o painel abre colado no botão, dentro da MESMA faixa (antes abria solto lá embaixo da lista e bugava) — Marcus, 27/10/2026
-      nova && e(VerComo,{nova:true, euReal:eu, className:"right-2 top-10", largura:280, fechar:function(){ setNova(false); }, aoPessoa:function(cid){ setNova(false); abrir(api.openDm(eu, cid)); }, aoGrupo:function(){ setNova(false); setGrupoNovo(true); }})),
+      nova && e(VerComo,{nova:true, euReal:eu, className:"right-2 top-10", largura:280, fechar:function(){ setNova(false); }, aoPessoa:function(cid){ setNova(false); abrir(api.openDm(eu, cid)); }, aoGrupo:function(){ setNova(false); setGrupoNovo(true); }, aoMln:function(){ setNova(false); abrir(api.createSectorGroup(euReal, "MLN")); }})),
     filtro!=="todas" && e("div",{className:"flex shrink-0 items-center justify-between gap-2 px-3 py-1 text-[11px]", style:{background:"#3a2f12", color:W.ouro}},
       "Filtro: "+({decidir:"Decidir", espera:"Espera", marcado:"Marcado", arq:"Arquivadas", grupos:"Grupos"}[filtro]||filtro),
       e("button",{onClick:function(){ setFiltro("todas"); }, "aria-label":"Tirar o filtro"}, e(Ph,{n:"x", s:14}))),
@@ -188,12 +189,15 @@ function ListaConversas(p){
           e("span",{className:"flex items-baseline justify-between gap-2"}, e("span",{className:"truncate text-[13px]"}, r.x.titulo), e("span",{className:"shrink-0 text-[10.5px]", style:{color:W.sec}}, horaLista(r.m.t))),
           e("span",{className:"line-clamp-2 text-[12px]", style:{color:W.sec}}, (r.m.de===eu ? "Você: " : contato(r.m.de).nome.split(" ")[0]+": ")+r.m.texto)); }),
         !porNome.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
-      vista==="setores" && filtro!=="arq" ? e("div",null, lista.filter(function(x){ return x.conv.tipo==="grupo"; }).sort(function(x, y){ return x.conv.nome.localeCompare(y.conv.nome, "pt-BR"); }).map(function(x){
-        var sd = setorDoGrupo(x.conv.nome), cor = sd ? sd.cor : "#E8B84B";
-        return e("button",{key:x.conv.id, onClick:function(){ abrir(x.conv.id); }, className:"flex w-full items-center gap-3 px-3 py-2.5 text-left hover:bg-white/5", style:{borderBottom:"1px solid "+W.borda}},
-          e("span",{className:"grid size-11 shrink-0 place-items-center rounded-xl", style:{background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"66"}}, e(Icon,{n:sd ? sd.ic : "equipe", s:22, peso:"duotone"})),
-          e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[14px] font-semibold"}, x.conv.nome), e("span",{className:"block truncate text-[12px]", style:{color:W.sec}}, (x.conv.funcionarias||[]).length>0 ? (x.conv.funcionarias||[]).slice(0,4).map(function(id){ return contato(id).nome.split(" ")[0]; }).join(", ") : x.conv.membros.length+" pessoas")),
-          x.naoLidas>0 && e("span",{className:"grid min-w-5 place-items-center rounded-full px-1.5 text-[10px] font-bold", style:{background:W.verde, color:"#0b141a", height:20}}, x.naoLidas)); })) :
+      vista==="setores" && filtro!=="arq" && !lista.some(function(x){ return x.conv.tipo==="grupo"; }) ? e("div",{className:"flex flex-col items-center gap-3 px-6 py-8 text-center"},
+        e(Ph,{n:"users-three", s:40, style:{color:W.sec}}),
+        e("p",{className:"text-[13px]", style:{color:W.texto}}, "Nenhum grupo de setor ainda."),
+        podeCriarGrupo(euReal) && !p.leitura ? e("div",{className:"flex w-full flex-col gap-2"},
+          e("p",{className:"text-[13px]", style:{color:W.sec}}, "Toque para criar o grupo com as pessoas do setor. Cada funcionária ganha uma aba no topo."),
+          api.sectorGroupNames.map(function(n){ return e("button",{key:n, onClick:function(){ abrir(api.createSectorGroup(euReal, n)); }, className:"flex h-8 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-semibold", style:{background:W.campo, color:W.texto, border:"1px solid "+W.borda}}, e(Ph,{n:"plus", s:14, fill:true}), n); }),
+          e("button",{onClick:function(){ setGrupoNovo("setor"); }, className:"flex h-8 items-center justify-center gap-2 rounded-full px-4 text-[13px] font-bold", style:{background:OURO, color:OURO_TXT}}, "Outro grupo de setor…"))
+        : e("p",{className:"text-[13px]", style:{color:W.sec}}, "Só o Marcus cria os grupos.")) :
+      vista==="setores" && filtro!=="arq" ? e("div",null, lista.filter(function(x){ return x.conv.tipo==="grupo"; }).sort(function(x, y){ return (y.ultima ? y.ultima.t : 0) - (x.ultima ? x.ultima.t : 0); }).map(linha)) :   // Setores = as mesmas linhas da lista normal (foto, última mensagem, hora, não lidas), só dos grupos; mais recente primeiro (Marcus, 30/10/2026)
       !filtrada.length ? e(Vazio,{n:filtro==="naolidas" ? "checks" : "chat-circle-dots"}, filtro==="marcado" ? "Ninguém marcou você sem resposta." : filtro==="arq" ? "Nenhuma conversa arquivada." : filtro==="naolidas" ? "Nenhuma mensagem não lida." : "Nenhuma conversa ainda. Toque no ícone de mensagem para começar.") :
       e("div",null, filtro==="todas" && arqs.length>0 && e("button",{onClick:function(){ setFiltro("arq"); setLimite(40); }, className:"flex w-full items-center gap-3 px-3 py-2 text-left", style:{borderBottom:"1px solid "+W.borda}}, e("span",{className:"grid size-6 place-items-center"}, e(Ph,{n:"archive-box", s:18, style:{color:W.sec}})), e("span",{className:"flex-1 text-[12.5px] font-medium", style:{color:W.sec}}, "Arquivadas"), e("span",{className:"text-[11px]", style:{color:W.sec}}, arqs.length)), filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[11px]", style:{color:W.sec}}, "Role para ver mais…"))),
     ctx && (function(){
@@ -209,7 +213,7 @@ function ListaConversas(p){
           !motivo && e(ItemMenu,{n:"hourglass", onClick:function(){ fecha(); api.markPending(id, eu); }}, "Marcar como pendente")));
     })(),
     transmitindo && e(Transmissao,{eu:euReal, fechar:function(){ setTransmitindo(false); }}),
-    grupoNovo && podeCriarGrupo(eu) && e(NovoGrupo,{eu:eu, fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
+    grupoNovo && podeCriarGrupo(eu) && e(NovoGrupo,{eu:eu, setor:grupoNovo==="setor", fechar:function(){ setGrupoNovo(false); }, aoCriar:function(id){ setGrupoNovo(false); abrir(id); }}),
     escolhendo && e(VerComo,{euReal:euReal, modo:escolhendo, fechar:function(){ setEscolhendo(false); }}));
 }
 export { BarraChat, ListaConversas, OURO, OURO_TXT };

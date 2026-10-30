@@ -117,7 +117,7 @@ var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {bre
 var SETORES = [
   // Grupo "Geral" (28/10/2026, reorganização do menu lateral): Início, SorellyChat e Dashboard juntos no topo.
   {id:"inicio", grupo:"geral", nome:"Início", ic:"coroa", cor:"#E8B84B", direto:T("inicio","Início")},   // página inicial de todos (27/10/2026): foto, mensagem de fé, setores e o dia da pessoa
-  {id:"melhorias", grupo:"geral", nome:"Melhorias", ic:"sino", cor:"#E8B84B", direto:T("melhorias","Solicitações de melhorias")},   // todo funcionário pede mudanças no sistema (28/10/2026)
+  {id:"melhorias", grupo:"geral", nome:"Customizações", ic:"sino", cor:"#E8B84B", direto:T("melhorias","Customizações")},   // todo funcionário pede mudanças no sistema (28/10/2026)
   {id:"whats", grupo:"geral", nome:"SorellyChat", ic:"whats", cor:"#E8B84B", direto:T("whats","SorellyChat")},
   {id:"visao", grupo:"geral", nome:"Dashboard", ic:"dashboard", cor:"#D9A63A", direto:T("visaogeral","Visão geral")},
   // Rotina do dia SAIU do menu (28/10/2026, pedido do Marcus): a DevMaster vai trazer tudo automático; o que precisar atualizar à mão vira UMA aba só, ainda a definir. Tela e código continuam no projeto, só não aparecem mais.

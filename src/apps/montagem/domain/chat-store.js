@@ -596,8 +596,26 @@ function criarGrupo(p){
   if(!podeCriarGrupo(p.eu)) return null;   // só o Marcus cria grupo
   var id = uid("g_");
   mudar(function(s){ var o = {}; o[id] = [];
-    return Object.assign({}, s, {convs:s.convs.concat([{id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}]), msgs:Object.assign({}, s.msgs, o)}); });
+    // grupo de setor (p.porFuncionaria): aba Geral + uma conversa com cada funcionária, no topo (mesmo desenho do Agendamento e da Montagem)
+    var extra = p.porFuncionaria ? {paralelas:true, funcionarias:p.membros.filter(function(x){ return x!==p.eu && !ehDirecaoCid(x); }), supervisores:[]} : {};
+    return Object.assign({}, s, {convs:s.convs.concat([Object.assign({id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}, extra)]), msgs:Object.assign({}, s.msgs, o)}); });
   inserir(id, {id:uid("m"), de:p.eu, t:Date.now(), tipo:"sistema", texto:contato(p.eu).nome+" criou o grupo \""+p.nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
+  return id;
+}
+// Grupos de setor prontos (Marcus, 30/10/2026): um toque cria o grupo com as pessoas certas e as abas das funcionárias. Só o Marcus cria; se o grupo já existe, só abre.
+var GRUPOS_SETOR = [["Agendamento", grupoAgendamento], ["Atendimento Interno", grupoAtendimento], ["Montagem", grupoMont], ["Marketing", grupoMkt], ["Encomendas e Reposição", grupoEnc], ["Financeiro Representantes", grupoFinRep]];
+function criarGrupoSetor(eu, nome){
+  if(!podeCriarGrupo(eu)) return null;
+  if(nome==="MLN"){   // grupo da Direção (Marcus, Nickolas e Lucas), conversa normal sem abas
+    var exM = estado.convs.find(function(c){ return c.tipo==="grupo" && c.nome==="MLN"; }); if(exM) return exM.id;
+    return criarGrupo({eu:eu, nome:"MLN", descr:"", membros:["Marcus","Nickolas","Lucas"].map(function(n){ return idPorNome(n); }).filter(Boolean)});
+  }
+  var g = GRUPOS_SETOR.find(function(x){ return x[0]===nome; }); if(!g) return null;
+  var ex = estado.convs.find(function(c){ return c.tipo==="grupo" && c.nome===nome; }); if(ex) return ex.id;
+  var d = g[1](), id = uid("g_");
+  mudar(function(s){ var o = {}; o[id] = [];
+    return Object.assign({}, s, {convs:s.convs.concat([{id:id, tipo:"grupo", nome:nome, descr:"", foto:null, membros:[eu].concat(d.membros.filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}]), msgs:Object.assign({}, s.msgs, o)}); });
+  inserir(id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:contato(eu).nome+" criou o grupo \""+nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
   return id;
 }
 function atualizarGrupo(convId, patch){ mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return c.id===convId ? Object.assign({}, c, patch) : c; })}); }); }
@@ -764,7 +782,7 @@ function consolidadoSetores(filtro){
 }
 
 var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, pendencia:pendenciaDe, markPending:marcarPendente,
-  startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, updateGroup:atualizarGrupo,
+  startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
 

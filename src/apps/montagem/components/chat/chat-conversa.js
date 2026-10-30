@@ -8,6 +8,7 @@ import { estiloFundo, tema } from "@/apps/montagem/components/chat/chat-fundos";
 import { PagamentosAConferir } from "@/apps/montagem/components/pagamentos-conferir";
 import { statusPedidoFin } from "@/apps/montagem/domain/atendimento-interno";
 import { use } from "@/apps/montagem/state/context";
+import { NovaConversa } from "@/apps/montagem/pages/Melhorias";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { Compositor } from "@/apps/montagem/components/chat/chat-compositor";
@@ -292,7 +293,7 @@ function ConversaBase(p){
   var ap = useState(null), apagando = ap[0], setApagando = ap[1], en = useState(null), encaminhando = en[0], setEncaminhando = en[1];
   var vi = useState(null), visor = vi[0], setVisor = vi[1], inf = useState(false), info = inf[0], setInfo = inf[1], dst = useState(null), destaque = dst[0], setDestaque = dst[1];
   var irParaRef = useRef(null), area = useRef(null), ultimo = useRef(0), altAntes = useRef(0);
-  var ab0 = useState("geral"), abaSel = ab0[0], setAba = ab0[1], sol = useState(false), solicitando = sol[0], setSolicitando = sol[1];
+  var ab0 = useState("geral"), abaSel = ab0[0], setAba = ab0[1], sol = useState(false), solicitando = sol[0], setSolicitando = sol[1], cu = useState(false), custom = cu[0], setCustom = cu[1], cxApp = use();   // custom: abre uma customização (pedido de mudança no sistema) sem sair da conversa (Marcus, 30/10/2026)
   var membro = !!conv && conv.membros.indexOf(eu)>=0;
   // a Direção, vendo o chat de uma representante, pode responder nas conversas dela com as revendedoras (a mensagem fica marcada com quem respondeu)
   var dirResp = !!conv && !!p.direcao && !!p.leitura && contato(eu).tipo==="rep" && conv.tipo==="dm" && conv.membros.some(function(i){ return contato(i).tipo==="rev"; });
@@ -352,7 +353,8 @@ function ConversaBase(p){
         conv.tipo==="grupo" || (conv.tipo==="setor" && eu===conv.repId) ? e(Avatar,{grupo:true, nome:conv.nome, foto:conv.foto, s:42}) : e(Avatar,{id:conv.tipo==="setor" ? conv.repId : outro, s:42, presenca:true}),
         e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[14px] font-semibold"}, tituloDe(conv, eu)),
           e("span",{className:"block truncate text-[11.5px]", style:{color:subt.verde ? W.verde : W.sec}}, subt.t))),
-      p.extra, e("button",{onClick:function(){ setInfo(true); }, "aria-label":"Dados da conversa", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"info", s:21, style:{color:W.sec}}))),
+      p.extra, cxApp && !somenteLeitura && e("button",{onClick:function(){ setCustom(true); }, "aria-label":"Abrir customização", title:"Abrir customização: pedir uma mudança no sistema", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"wrench", s:20, style:{color:W.sec}})),
+      e("button",{onClick:function(){ setInfo(true); }, "aria-label":"Dados da conversa", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"info", s:21, style:{color:W.sec}}))),
     conv.tipo==="dm" && outro && outro!==eu && contato(outro).tipo==="func" && e(CartaoHorario,{cid:outro, pode:!!p.direcao && !somenteLeitura}),
     conv.tipo==="setor" && eu!==conv.repId && e(BarraStatus,{conv:conv, eu:eu, pode:!somenteLeitura && conv.membros.indexOf(eu)>=0}),
     abasV && abasV.length>1 && e(BarraAbas,{conv:conv, eu:eu, abas:abasV, aba:abaAtual, mudar:setAba}),
@@ -368,6 +370,8 @@ function ConversaBase(p){
     conv.id==="c_atend" && abaAtual===eu && !somenteLeitura && e("div",{className:"flex shrink-0 justify-center px-3 py-1.5", style:{background:W.cab, borderTop:"1px solid "+W.borda}},
       e("button",{onClick:function(){ setSolicitando(true); }, className:"flex items-center gap-2 rounded-full px-4 py-1.5 text-[12px] font-bold", style:{background:"linear-gradient(135deg,#b8892b,#f6dc8c)", color:"#24180a"}}, e(Ph,{n:"coins", s:16, fill:true}), "Solicitar pagamento")),
     solicitando && e(NovaSolicitacao,{eu:eu, fechar:function(){ setSolicitando(false); }}),
+    custom && cxApp && e("div",{className:"fixed inset-0 z-[80] flex items-start justify-center overflow-y-auto bg-black/70 p-3", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setCustom(false); }},
+      e("div",{className:"my-auto w-full max-w-[780px]"}, e(NovaConversa,{s:cxApp.state, d:cxApp.dispatch, fechar:function(){ setCustom(false); }, onEnviou:function(){ setCustom(false); }}))),
     e(Compositor,{dirResp:dirResp, aba:abaAtual, conv:conv, eu:eu, resp:resp, editando:editando, somenteLeitura:somenteLeitura, cancelarResp:function(){ setResp(null); }, cancelarEdicao:function(){ setEditando(null); }}),
     // apagar
     apagando && e(Janela,{titulo:"Apagar mensagem?", fechar:function(){ setApagando(null); }, largura:360},

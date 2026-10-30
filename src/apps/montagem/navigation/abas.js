@@ -14,7 +14,7 @@ var ABAS = [["inicio","Início","coroa","sistema"],["rotina","Rotina do dia","ca
   ["cnpjs","CNPJs","banco","fin"],["caixa","Caixa","banco","fin"],["limitefat","Limite de faturamento","banco","fin"],["fiscal","Painel e notas","arquivo","fin"],["painelacertos","Painel dos acertos","agenda","fin"],["visaogeral","Dashboard","dashboard","visao"],
   ["pessoas","Funcionários e representantes","users","rh"],["acessos","Acessos e autorizações","escudo","rh"],["fluxo","Fluxo da empresa","grafico","dir"],["marcus","Resumo","grid4","dir"],["marcusfat","Faturamento","grafico","dir"],["marcuspat","Patrimônio e dívidas","banco","dir"],["marcuscontas","Contas do mês","calendario","dir"],["marcusextratos","Extratos","banco","dir"],["marcusativ","Atividades","caixa","dir"],["marcusacessos","Acessos e senhas","escudo","dir"],["marcusdados","Dados","users","dir"],
   ["whats","SorellyChat","whats","com"],
-  ["mapa","Mapa do sistema","grid4","tec"],["melhorias","Solicitações de melhorias","sino","sistema"]];
+  ["mapa","Mapa do sistema","grid4","tec"],["melhorias","Customizações","sino","sistema"]];
 var GRUPOS_MENU = {bip:["Bipagem de kits","caixa"], kitnovo:["Kit novo","kitnovo"], sistema:["Sistema","config"], aparte:["Sistemas à parte","celular"], espera:["Em espera","espera"]};
 var COR_ABA = {painel:"#D9A63A", consolidado:"#F97316", relatorios:"#3B82F6", equipe:"#22C55E", avalrep:"#EAB308", registros:"#EF4444", regras:"#8B5CF6",
   kitnovo:"#EC4899", condicionais:"#D97706", config:"#94A3B8", vendas:"#14B8A6", calc:"#F59E0B", celfunc:"#F59E0B", celrep:"#8B5CF6", whats:"#25D366"};

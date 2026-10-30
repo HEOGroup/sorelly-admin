@@ -14,6 +14,9 @@ var melAberta = function(z){ return SIT_ANDAMENTO.indexOf(z)>=0; };   // pedido 
 var SIT_ANTIGA = {"Nova":"Em análise", "Feita":"Mudança feita, testar", "Cancelada":"Recusada", "Precisa de mais informação":"Em análise", "Aprovada":"Em análise", "Em andamento":"Em análise", "Para depois":"Recusada"};   // nomes antigos já gravados
 var sitNova = function(z){ return SIT_ANTIGA[z] || z; };   // Recusada = não vai ser feita; Cancelada = o Marcus ou o Leonardo cancelou (29/10/2026)
 var GERENTES = [16, 44];
+// TIPO do chamado (Marcus, 30/10/2026): quem abre escolhe o que é, antes de enviar. Pedidos antigos não têm tipo.
+var TIPOS = [["duvida", "Não sei como fazer"], ["layout", "Melhoria do layout"], ["falta", "Algo que falta"]];
+var melTipoNome = function(t){ var x = TIPOS.find(function(i){ return i[0]===t; }); return x ? x[1] : ""; };
 var trim = function(v){ return String(v==null ? "" : v).trim(); };
 
 // PRIMEIRO PEDIDO REAL (Michele, 28/10/2026): entra sozinho na lista e só vira chave do módulo quando alguém responde ou muda a situação.
@@ -64,10 +67,11 @@ function melReduz(s, a){
   var m = Object.assign({}, s.mel);
   if(a.op==="enviar"){
     var desc = trim(a.desc), titulo = trim(a.titulo);
+    if(!melTipoNome(a.tipo)) return {patch:{}, msg:"Marque o tipo: não sei como fazer, melhoria do layout ou algo que falta."};
     if(!desc) return {patch:{}, msg:"Escreva o que precisa mudar."};
     if(!titulo){ titulo = desc.split(/\n|(?<=[.!?])\s/)[0].trim(); if(titulo.length>120) titulo = titulo.slice(0, 117).trim()+"..."; }   // sem campo de título: vem do começo da mensagem
     var id = a.id || Date.now().toString(36)+Math.random().toString(36).slice(2, 5), agora = new Date().toISOString();
-    m["s_"+id] = {id:id, titulo:titulo.slice(0, 120), desc:desc.slice(0, 3000), url:melCaminho(a.url).slice(0, 300), img:(a.imgs && a.imgs[0]) || a.img || "", imgs:(a.imgs||[]).slice(1, 4), porId:a.porId, por:a.por, setor:a.setor||"", em:agora, situacao:"Em análise", mudouEm:agora};
+    m["s_"+id] = {id:id, titulo:titulo.slice(0, 120), desc:desc.slice(0, 3000), tipo:a.tipo, url:melCaminho(a.url).slice(0, 300), img:(a.imgs && a.imgs[0]) || a.img || "", imgs:(a.imgs||[]).slice(1, 4), porId:a.porId, por:a.por, setor:a.setor||"", em:agora, situacao:"Em análise", mudouEm:agora};
     return {patch:{mel:m}, msg:"Solicitação enviada. Obrigado!"};
   }
   if(a.id && SEMENTE[a.id] && !m["s_"+a.id]) m["s_"+a.id] = SEMENTE[a.id];
@@ -96,4 +100,4 @@ function melReduz(s, a){
 
 function melMigrar(mel){ return mel && typeof mel==="object" ? mel : {}; }
 
-export { SITUACOES, SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };
+export { TIPOS, melTipoNome, SITUACOES,SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };

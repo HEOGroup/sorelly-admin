@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.8", data:"2026-10-30", titulo:"Customizações (antes Melhorias), grupos de setor e grupo MLN", itens:[
+    {tipo:"melhoria", area:"Customizações", txt:"O nome Melhorias virou Customizações (menu, tela e botões). Todo chamado novo pede o tipo antes de enviar: Não sei como fazer, Melhoria do layout ou Algo que falta. O tipo aparece na lista e na conversa do chamado."},
+    {tipo:"novo", area:"SorellyChat", txt:"Botão de chave inglesa no alto de qualquer conversa: abre uma customização sem sair do chat."},
+    {tipo:"novo", area:"SorellyChat", txt:"Setores vazio agora mostra botões para criar o grupo do Agendamento, Atendimento Interno, Montagem, Marketing, Encomendas e Financeiro Representantes (só o Marcus). Cada grupo ganha a aba Geral e uma aba para cada funcionária, no topo."},
+    {tipo:"novo", area:"SorellyChat", txt:"Novo grupo ganhou a opção Grupo de setor (abas por funcionária). No botão + há o atalho Grupo MLN (Marcus, Nickolas e Lucas)."}]},
   {v:"0.18.7", data:"2026-10-30", titulo:"SorellyChat: lista de transmissão", itens:[
     {tipo:"novo", area:"SorellyChat", txt:"Botão Transmissão na lista (só Direção): escolhe todos os funcionários ou só alguns (por setor ou por pessoa), escreve uma vez e cada um recebe na conversa direta, como no WhatsApp. Representantes entram só se marcar a opção."}]},
   {v:"0.18.6", data:"2026-10-30", titulo:"SorellyChat: tela inteira, links e negrito", itens:[
