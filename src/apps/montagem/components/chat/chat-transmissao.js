@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem — components/chat/chat-transmissao.js
 // Lista de transmissão (Marcus, 30/10/2026): uma mensagem para todos os funcionários ou só para os escolhidos. Cada pessoa recebe na conversa direta
 // com quem enviou, como no WhatsApp (não vira grupo e ninguém vê quem mais recebeu). Só a Direção usa.
-import { api } from "@/apps/montagem/domain/chat-store";
+import { api, fotoDe } from "@/apps/montagem/domain/chat-store";
 import { CONTATOS, sem } from "@/apps/montagem/domain/chat-contatos";
 import { Avatar, Janela, Ph, W } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useState } from "@/shared/react";
@@ -41,7 +41,8 @@ function Transmissao(p){
       e("div",{className:"flex shrink-0 items-center gap-2 px-3 pt-3"},
         e("div",{className:"flex h-8 min-w-0 flex-1 items-center gap-2 rounded-full px-3", style:{background:W.campo}}, e(Ph,{n:"magnifying-glass", s:15, style:{color:W.sec}}),
           e("input",{value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa ou setor", "aria-label":"Buscar", className:"min-w-0 flex-1 bg-transparent text-[13px] outline-none", style:{color:W.texto}})),
-        e("button",{onClick:function(){ alternarLista(pessoas); }, className:"h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold", style:{background:W.campo, color:W.texto}}, todosDe(pessoas) ? "Tirar todos" : "Todos")),
+        e("button",{onClick:function(){ alternarLista(pessoas); }, className:"h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold", style:{background:W.campo, color:W.texto}}, todosDe(pessoas) ? "Tirar todos" : "Todos"),
+        e("button",{onClick:function(){ setMarcados(pessoas.filter(function(c){ return !fotoDe(c.id); }).map(function(c){ return c.id; })); }, title:"Marca só quem ainda não colocou foto no perfil", className:"h-8 shrink-0 rounded-full px-3 text-[13px] font-semibold", style:{background:W.campo, color:W.texto}}, "Sem foto")),
       e("label",{className:"flex shrink-0 cursor-pointer items-center gap-2 px-4 pb-1 pt-2 text-[13px]", style:{color:W.texto}},
         e("input",{type:"checkbox", checked:comReps, onChange:function(ev){ setComReps(ev.target.checked); }}), "Incluir representantes"),
       e("div",{className:"min-h-0 flex-1 overflow-y-auto"},
