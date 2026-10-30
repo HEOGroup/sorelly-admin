@@ -486,6 +486,10 @@ function sendMessage(p){
   if(p.aba && p.aba!=="geral") msg.aba = p.aba;
   if(p.porDir) msg.porDir = p.porDir;   // a Direção respondeu no lugar da representante (marcado com quem respondeu)
   inserir(p.conv, msg); tocar("enviar");
+  // mensagem nova tira a conversa das arquivadas de quem recebeu (Marcus, 30/10/2026)
+  if(conv.arqPor && Object.keys(conv.arqPor).some(function(id){ return id!==p.eu; })){
+    mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==p.conv || !c.arqPor) return c; var f = Object.assign({}, c.arqPor); Object.keys(f).forEach(function(id){ if(id!==p.eu) delete f[id]; }); return Object.assign({}, c, {arqPor:f}); })}); });
+  }
   mudar(function(s){ return Object.assign({}, s, {lido:Object.assign({}, s.lido, (function(){ var o = {}; o[p.eu] = Object.assign({}, s.lido[p.eu], (function(){ var q = {}; q[chaveLido(convPorId(p.conv), p.aba)] = msg.t; return q; })()); return o; })())}); });
   (p.mencoes||[]).forEach(function(para){ if(para!==p.eu) startMention({conv:p.conv, msg:msg.id, de:p.eu, para:para, em:msg.t}); });
   setTimeout(function(){ alterarMsg(p.conv, msg.id, function(m){ return m.status==="enviado" ? Object.assign({}, m, {status:"entregue"}) : m; }); }, 800);

@@ -54,6 +54,8 @@ function Compositor(p){
   useEffect(function(){ return function(){ cancelarGravacao(); }; }, []);
   useEffect(function(){ var el = ta.current; if(el){ el.style.height = "auto"; el.style.height = Math.min(140, el.scrollHeight)+"px"; } }, [texto]);
 
+  // ao tocar em Responder, o cursor já fica no campo de texto
+  useEffect(function(){ if(p.resp && ta.current) ta.current.focus(); }, [p.resp && p.resp.id]);
   var membros = conv.membros.filter(function(id){ return id!==eu; }).map(contato);
   var mudou = function(ev){
     var v = ev.target.value, pos = ev.target.selectionStart;
@@ -142,11 +144,6 @@ function Compositor(p){
     // aviso de erro
     erro && e("div",{className:"flex items-center gap-2 px-4 py-2 text-[12px]", style:{background:"#3b1f24", color:"#ffb4bd"}}, e(Ph,{n:"warning", s:16}), e("span",{className:"flex-1"}, erro), e("button",{onClick:function(){ setErro(null); }, "aria-label":"Fechar aviso"}, e(Ph,{n:"x", s:14}))),
     // respondendo / editando
-    (p.resp || p.editando) && e("div",{className:"flex items-center gap-3 px-3 pt-2"},
-      e("div",{className:"min-w-0 flex-1 rounded-lg border-l-4 px-3 py-1.5 text-[12px]", style:{background:"#1a252c", borderColor:p.editando ? W.ouro : W.verde}},
-        e("p",{className:"font-semibold", style:{color:p.editando ? W.ouro : W.verde}}, p.editando ? "Editando mensagem" : contato(p.resp.de).nome),
-        e("p",{className:"truncate", style:{color:W.sec}}, p.editando ? p.editando.texto : p.resp.previa)),
-      e("button",{onClick:p.editando ? p.cancelarEdicao : p.cancelarResp, "aria-label":"Cancelar"}, e(Ph,{n:"x", s:18, style:{color:W.sec}}))),
     // anexos prontos para enviar
     anexos.length>0 && e("div",{className:"flex flex-wrap gap-2 px-3 pt-2"}, anexos.map(function(a, i){
       return e("div",{key:i, className:"relative overflow-hidden rounded-lg", style:{background:"#1a252c", border:"1px solid "+W.borda}},
@@ -169,7 +166,14 @@ function Compositor(p){
         e("span",{className:"text-[14px] tabular-nums"}, duracao(grav.ms)), e("span",{className:"flex-1 text-[11.5px]", style:{color:W.sec}}, grav.pausado ? "Gravação pausada" : "Gravando…")),
       e("button",{onClick:pausarGravacao, "aria-label":grav.pausado ? "Continuar gravando" : "Pausar gravação", className:"grid size-10 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:grav.pausado ? "microphone" : "pause", s:22, fill:true, style:{color:W.vermelho}})),
       e("button",{onClick:enviarAudio, "aria-label":"Enviar áudio", className:"grid size-11 place-items-center rounded-full text-white", style:{background:W.verde}}, e(Ph,{n:"paper-plane-tilt", s:22, fill:true}))) :
-    e("div",{className:"flex items-end gap-0.5 rounded-[26px] py-1 pl-1.5 pr-1.5", style:{background:W.painel, margin:"8px 12px 10px", boxShadow:"0 1px 2px rgba(11,20,26,.13)"}},
+    e("div",{className:"rounded-[26px] py-1 pl-1.5 pr-1.5", style:{background:W.painel, margin:"8px 12px 10px", boxShadow:"0 1px 2px rgba(11,20,26,.13)"}},
+    // respondendo / editando: cartão em tom claro dentro da caixa, como no WhatsApp
+    (p.resp || p.editando) && e("div",{className:"flex items-center gap-2 pb-1 pl-1 pr-1 pt-1"},
+      e("div",{className:"min-w-0 flex-1 rounded-xl border-l-4 px-3 py-2 text-[13px]", style:{background:W.campo, borderColor:p.editando ? W.ouro : W.azul}},
+        e("p",{className:"truncate font-semibold", style:{color:p.editando ? W.ouro : W.azul}}, p.editando ? "Editando mensagem" : contato(p.resp.de).nome),
+        e("p",{className:"truncate", style:{color:W.sec}}, p.editando ? p.editando.texto : p.resp.previa)),
+      e("button",{onClick:p.editando ? p.cancelarEdicao : p.cancelarResp, "aria-label":"Cancelar", className:"grid size-9 shrink-0 place-items-center rounded-full hover:bg-black/5"}, e(Ph,{n:"x", s:20, style:{color:W.texto}}))),
+    e("div",{className:"flex items-end gap-0.5"},
       e("div",{className:"relative"},
         e("button",{onClick:function(){ setMenuAnexo(!menuAnexo); setEmoji(false); }, "aria-label":"Anexar", className:"grid size-10 shrink-0 place-items-center rounded-full hover:bg-black/5"}, e(Ph,{n:"plus", s:24, style:{color:W.sec}})),
         menuAnexo && e(Popover,{className:"bottom-12 left-0", fechar:function(){ setMenuAnexo(false); }},
@@ -183,7 +187,7 @@ function Compositor(p){
         className:"max-h-[140px] min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2.5 text-[15px] leading-snug outline-none", style:{color:W.texto}}),
       temTexto || p.editando ?
         e("button",{onClick:enviar, "aria-label":"Enviar", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:p.editando ? "check" : "paper-plane-right", s:20, fill:true})) :
-        e("button",{onClick:gravar, "aria-label":"Gravar áudio", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:"microphone", s:20, fill:true}))),
+        e("button",{onClick:gravar, "aria-label":"Gravar áudio", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:"microphone", s:20, fill:true})))),
     camera && e(Camera,{fechar:function(){ setCamera(false); }, foto:addFotoCamera}));
 }
 export { Compositor };

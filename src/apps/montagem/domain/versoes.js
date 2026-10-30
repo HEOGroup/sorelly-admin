@@ -3,6 +3,14 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.5", data:"2026-10-30", titulo:"SorellyChat: responder direto, arquivar em massa", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"Ao tocar em Responder, o cursor já vai para o campo de texto. A mensagem respondida aparece em tom claro dentro da caixa, como no WhatsApp."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Mensagem nova numa conversa arquivada tira a conversa das arquivadas de quem recebeu."},
+    {tipo:"novo", area:"SorellyChat", txt:"Botão Selecionar na lista: marca várias conversas e arquiva (ou tira das arquivadas) de uma vez."}]},
+  {v:"0.18.3", data:"2026-10-30", titulo:"Atendimento Sorelly: desenho novo (lateral, tabelas e resumo em 4 blocos)", itens:[
+    {tipo:"melhoria", area:"Atendimento interno", txt:"Cabeçalho em faixa (revendedora, horário, situação com remarcação, chegada, montagem de kit, escolha do kit com relógio, iniciar). Cinco estações na lateral com a mesma altura: Condicionais e vendas, Pagamentos, Brindes, Condicional nova e Regras."},
+    {tipo:"melhoria", area:"Atendimento interno", txt:"Pagamentos: lista de formas, bandeira (cartões e link), parcelas e envio ao financeiro. Brindes normal e select com código e valor. Regras lidas uma a uma, com o texto e os números da regra em vigor."},
+    {tipo:"novo", area:"Atendimento interno", txt:"Resumo do acerto em 4 blocos (condicionais, brinde normal, brinde select e conta) com botão Gerar PDF."}]},
   {v:"0.18.4", data:"2026-10-29", titulo:"Trava dura do padrão visual: hook, conferidor e fotos de referência", itens:[
     {tipo:"novo", area:"Tecnologia", txt:"As regras do padrão visual viraram código (scripts/padrao-regras.mjs): tamanho do texto (13 e 11 px), número até 20 px, campo e botão de 32 px, letras brancas e peças do padrão. O Claude recebe o erro na hora em que edita uma tela e corrige antes de entregar."},
     {tipo:"novo", area:"Tecnologia", txt:"npm run padrao confere o que mudou antes de subir (dentro de npm run conferir e do CI do GitHub). npm run padrao:relatorio lista as telas antigas fora do padrão."},
