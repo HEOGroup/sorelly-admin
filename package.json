@@ -13,7 +13,12 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "verificar": "npm run lint && npm run build",
+    "verificar": "npm run lint && npm run padrao && npm run build",
+    "padrao": "node scripts/conferir-padrao.mjs",
+    "padrao:relatorio": "node scripts/conferir-padrao.mjs --relatorio",
+    "fotos": "playwright test",
+    "fotos:aprovar": "playwright test --update-snapshots",
+    "fotos:ver": "playwright show-report",
     "definir-senha": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/definir-senha.mjs",
     "semear-rotina": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/semear-rotina.mjs",
     "migrar-contas": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrar-contas.mjs",
@@ -33,6 +38,7 @@
     "react-router-dom": "^6.30.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.64.1",
     "@tailwindcss/postcss": "^4.1.13",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.35",

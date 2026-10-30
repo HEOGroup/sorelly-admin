@@ -1,0 +1,48 @@
+# Aprova as fotos de referência (tests/fotos/referencia/*-linux.png): tira as fotos de novo no GitHub e grava no branch escolhido.
+# Quando usar: o Marcus aprovou uma tela nova ou uma mudança de propósito numa tela protegida.
+# Como usar: GitHub → Actions → "Fotos de referência" → "Run workflow" → escolher o branch → Run. O commit "Fotos de referência aprovadas" aparece no branch.
+name: Fotos de referência
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  aprovar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+        env:
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Instalar o navegador das fotos
+        run: npx playwright install --with-deps chromium
+
+      - name: Tirar as fotos novas
+        run: npx playwright test --update-snapshots
+        env:
+          CI: "true"
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Gravar as fotos no branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/fotos/referencia
+          if git diff --cached --quiet; then echo "Nenhuma foto mudou."; exit 0; fi
+          git commit -m "Fotos de referência aprovadas ($(date -u +%d/%m/%Y))"
+          git push

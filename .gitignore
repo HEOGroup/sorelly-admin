@@ -20,3 +20,10 @@ next-env.d.ts
 *.tsbuildinfo
 src/generated/
 .next-conferencia
+
+# fotos de referência: só as fotos tiradas no GitHub (-linux, sem dados reais) vão para o Git.
+# As do PC (-win32) saem do build com os dados reais (*.local.js) e o repositório é público: NUNCA sobem.
+test-results/
+playwright-report/
+tests/fotos/referencia/*-win32.png
+tests/fotos/referencia/*-darwin.png

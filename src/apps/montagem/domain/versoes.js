@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.4", data:"2026-10-29", titulo:"Trava dura do padrão visual: hook, conferidor e fotos de referência", itens:[
+    {tipo:"novo", area:"Tecnologia", txt:"As regras do padrão visual viraram código (scripts/padrao-regras.mjs): tamanho do texto (13 e 11 px), número até 20 px, campo e botão de 32 px, letras brancas e peças do padrão. O Claude recebe o erro na hora em que edita uma tela e corrige antes de entregar."},
+    {tipo:"novo", area:"Tecnologia", txt:"npm run padrao confere o que mudou antes de subir (dentro de npm run conferir e do CI do GitHub). npm run padrao:relatorio lista as telas antigas fora do padrão."},
+    {tipo:"novo", area:"Tecnologia", txt:"Fotos de referência (Playwright): Visão geral, Faturamento, Contas a pagar e Padrão visual têm foto aprovada. O GitHub tira a foto de novo a cada mudança e reprova se a tela mudou sem aprovação. Aprovar foto nova: Actions → Fotos de referência."}]},
   {v:"0.18.1", data:"2026-10-29", titulo:"Pagas por dia e excluir lançamento em Contas a pagar", itens:[
     {tipo:"novo", area:"Financeiro", txt:"Tela Pagas por dia (Contas): escolhe o dia e vê o total pago, por CNPJ e conta por conta, com dia anterior, hoje e dia seguinte."},
     {tipo:"novo", area:"Financeiro", txt:"Contas a pagar: conta lançada à mão ganha o botão Excluir lançamento (só quem pode registrar pagamento). Os pagamentos dela saem junto e fica no histórico."}]},

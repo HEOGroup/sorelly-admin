@@ -5,6 +5,10 @@ import fs from "node:fs";
 
 const saida = ".next-conferencia";
 fs.rmSync(saida, { recursive: true, force: true });
+// 1) padrão visual no que mudou (scripts/conferir-padrao.mjs): fora do padrão, nem chega no build
+const p = spawnSync("node", ["scripts/conferir-padrao.mjs"], { stdio: "inherit" });
+if (p.status !== 0) { console.log("\nFORA DO PADRÃO: corrija antes de subir para o Git."); process.exit(p.status ?? 1); }
+// 2) build de produção numa pasta à parte
 spawnSync("node", ["scripts/gerar-locais.mjs"], { stdio: "inherit" });
 const r = spawnSync("npx", ["next", "build"], { stdio: "inherit", shell: true, env: { ...process.env, NEXT_DIST_DIR: saida } });
 fs.rmSync(saida, { recursive: true, force: true });

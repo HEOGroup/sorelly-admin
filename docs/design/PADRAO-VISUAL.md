@@ -30,6 +30,19 @@ Código das peças: `src/apps/montagem/components/padrao.js` (Pagina, Indicador,
 20. **Ícones no lugar de texto** quando o significado é claro; texto curto; um botão principal por tela; estados vazios formais e curtos.
 21. **Não acrescentar o que não foi pedido.** Ao terminar: mostrar funcionando no navegador, limpar o localStorage de teste e registrar em `DECISOES.md` e `domain/versoes.js`.
 
+## TRAVA DURA (29/10/2026): o padrão é conferido por código, não só por leitura
+O Marcus mediu: 135 telas com 10 tamanhos de fonte diferentes, mesmo com este documento. Por isso as regras que dá para conferir em texto viraram código em `scripts/padrao-regras.mjs` e rodam em três lugares:
+| Onde | Quando | O que acontece |
+|---|---|---|
+| Hook do Claude Code (`scripts/hook-padrao.mjs`) | A cada Edit/Write em tela | Devolve o erro na hora; o Claude corrige antes de seguir |
+| `npm run padrao` (dentro de `conferir`, `verificar` e do CI) | Antes de subir e em todo PR/push | Reprova o que mudou em relação à master |
+| Fotos de referência (`tests/fotos`, Playwright) | Em todo PR/push | Tira a foto das telas aprovadas e reprova se mudou |
+
+**O que o código reprova:** texto fora de 11 e 13 px (14 a 20 px só em número, na linha com `tabular-nums`, `brl(`, `din(` ou `MONO`); `clamp`/`vw`; acima de 20 px; campo/botão/linha com h-6, h-7, h-9, h-10, h-11, h-12 ou altura em px diferente de 30/32; texto cinza (`text-gray-*`, `text-white/40` ou menos); tela nova em `pages/` sem importar `padrao.js` ou `padrao-fin.js`.
+**O que fica por conta das fotos:** R$ em todo valor, centralizado, compacto, alinhado.
+**Exceção:** comentário `padrao-ok` na linha, só com o Marcus de acordo. **Telas antigas:** só o que for mexido precisa ficar no padrão; a lista completa sai de `npm run padrao:relatorio`.
+**Telas com foto:** Visão geral, Faturamento, Contas a pagar e Padrão visual (lista em `tests/fotos/telas.spec.mjs`). Aprovar uma foto nova: GitHub → Actions → "Fotos de referência" → Run workflow. No PC, `npm run fotos` precisa de `FOTOS_EMAIL`/`FOTOS_SENHA` no `.env.local`.
+
 ## Menu, barra do topo e cores (módulo novo)
 - Setor = item da barra lateral; área = botão da barra de cima; tela = item do menu da área. Tudo em `navigation/setores.js` (helpers T, G, Ti), nomes em `abas.js`, endereço em `router/slugs.js` e `src/router/rotas.js`, acesso por setor em `navigation/perfis.js`. Passo a passo no README.md.
 - **MENU DO SETOR, padrão de 22/10/2026 (opção 3, aprovada pelo Marcus; padronização de 26/10/2026: já vale em TODO setor com várias telas — Financeiro, Agendamento, Cadastro de revendedoras, Representantes & Kits, Encomendas e reposições, RH, Atendimento interno, Materiais & Estoque, Garantia & Pós-venda, Diretoria, Jurídico, Segurança e limpeza, Marketing e Tecnologia).** Cada setor tem o campo `menu` em `navigation/setores.js`: lista de nós `{nome, aba?, itens?, perm?}` (ajudante `M(nome, aba)`). A peça é `components/barra-menu.js`. De cima para baixo:

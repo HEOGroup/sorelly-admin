@@ -1,5 +1,5 @@
-# Confere cada mudança antes de ela chegar no master: o sistema precisa passar no lint e gerar o build.
-# Se falhar, o PR mostra um X vermelho e o erro aparece na aba "Actions" do GitHub.
+# Confere cada mudança antes de ela chegar no master: lint, padrão visual (scripts/conferir-padrao.mjs), build e as fotos de referência (tests/fotos).
+# Se falhar, o PR mostra um X vermelho e o erro aparece na aba "Actions" do GitHub. Fotos novas se aprovam pelo workflow "Fotos de referência".
 name: CI
 
 on:
@@ -17,6 +17,8 @@ jobs:
     timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # o conferidor do padrão compara com o commit base do PR (ou o anterior, no push)
 
       - uses: actions/setup-node@v4
         with:
@@ -29,7 +31,29 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Padrão visual (só o que mudou)
+        run: node scripts/conferir-padrao.mjs --base "${{ github.event.pull_request.base.sha || github.event.before }}"
+
       - name: Build
         run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Instalar o navegador das fotos
+        run: npx playwright install --with-deps chromium
+
+      - name: Fotos de referência
+        run: npx playwright test
+        env:
+          CI: "true"
+          NEXT_TELEMETRY_DISABLED: "1"
+
+      - name: Guardar o relatório das fotos (antes / depois / diferença)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: fotos-relatorio
+          path: |
+            playwright-report
+            test-results
+          retention-days: 14
