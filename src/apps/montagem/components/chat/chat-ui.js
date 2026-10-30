@@ -1,6 +1,8 @@
 // Sorelly Admin · montagem — components/chat/chat-ui.js
 // Peças pequenas do SorellyChat: cores do WhatsApp, avatar, ícones, ticks, janelas e formatação de hora.
-import { contato, iniciais } from "@/apps/montagem/domain/chat-contatos";
+import { contato, iniciais, sem } from "@/apps/montagem/domain/chat-contatos";
+import { SETORES } from "@/apps/montagem/navigation/setores";
+import { Icon } from "@/apps/montagem/ui/icon";
 import { fotoDe, lerMidia, online, textoPrevia } from "@/apps/montagem/domain/chat-store";
 import { e, useEffect } from "@/shared/react";
 
@@ -16,15 +18,20 @@ function TemaChatClaro(p){
 }
 function Ph(p){ return e("i",{className:(p.fill ? "ph-fill" : "ph-duotone")+" ph-"+p.n+" inline-block shrink-0 leading-none "+(p.className||""), style:Object.assign({fontSize:p.s||18}, p.style), "aria-hidden":true}); }
 
+// grupo do chat -> setor da barra lateral do sistema (mesmo ícone e mesma cor); sem setor parecido, fica o ícone de equipe
+var setorDoGrupo = function(nome){ var n = sem(nome); return SETORES.find(function(x){ var sn = sem(String(x.nome).split(/\s+/).join(" ")); return sn===n || sn.indexOf(n)===0 || n.indexOf(sn)===0 || sn.split(" ")[0]===n.split(" ")[0]; }); };
+
 function Avatar(p){
   var c = p.grupo ? null : contato(p.id), s = p.s || 40;
   var foto = p.foto ? (lerMidia(p.foto) || (String(p.foto).indexOf("data:")===0 ? p.foto : null)) : (!p.grupo && p.id ? fotoDe(p.id) : null);
   var nome = p.nome || (c && c.nome) || "?";
-  var cor = p.grupo ? "#6B7C85" : (c ? c.cor : "#6B7C85");
+  // grupo sem foto: ícone do setor, igual ao da barra lateral (Marcus, 30/10/2026; a foto entra depois e passa na frente)
+  var sd = p.grupo && !foto ? setorDoGrupo(nome) : null, corG = sd ? sd.cor : "#E8B84B";
+  var cor = p.grupo ? (sd || !foto ? corG+"33" : "#6B7C85") : (c ? c.cor : "#6B7C85");
   var ponto = Math.max(10, Math.round(s*0.3));
   return e("span",{className:"relative inline-block shrink-0", style:{width:s, height:s}, title:nome},
-    e("span",{className:"grid size-full place-items-center overflow-hidden rounded-full font-semibold text-white", style:{background:foto ? "#000" : cor, fontSize:s*0.38}},
-      foto ? e("img",{src:foto, alt:"", draggable:false, className:"size-full object-cover"}) : (p.grupo ? e(Ph,{n:"users-three", s:s*0.5, fill:true}) : iniciais(nome))),
+    e("span",{className:"grid size-full place-items-center overflow-hidden rounded-full font-semibold text-white", style:{background:foto ? "#000" : cor, fontSize:s*0.38, boxShadow:p.grupo && !foto ? "inset 0 0 0 1px "+corG+"66" : undefined, color:p.grupo && !foto ? corG : undefined}},
+      foto ? e("img",{src:foto, alt:"", draggable:false, className:"size-full object-cover"}) : (p.grupo ? e(Icon,{n:sd ? sd.ic : "equipe", s:Math.round(s*0.52), peso:"duotone"}) : iniciais(nome))),
     !p.grupo && p.id && p.presenca && online(p.id) && e("span",{className:"absolute rounded-full", style:{width:ponto, height:ponto, right:-1, bottom:-1, background:"#25d366", boxShadow:"0 0 0 2.5px "+W.painel}}));
 }
 

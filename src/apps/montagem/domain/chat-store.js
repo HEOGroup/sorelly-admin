@@ -470,7 +470,7 @@ function listaConversas(cid, opc){
     var nl = abasV ? ms.filter(function(m){ return m.t>lidoEm(cid, c, abaDaMsg(m)) && m.de!==cid && m.apag!=="todos"; }) : ms.filter(function(m){ return m.t>ld && m.de!==cid && m.apag!=="todos"; });
     var nlRep = c.reps ? s.convs.reduce(function(t, cc){ return t + (cc.tipo==="setor" && cc.canal===(c.repCanal||"agendamento") && cc.membros.indexOf(cid)>=0 ? (s.msgs[cc.id]||[]).filter(function(m){ return m.t>lidoEm(cid, cc) && m.de!==cid && m.apag!=="todos"; }).length : 0); }, 0) : 0;
     return {conv:c, titulo:tituloDe(c, cid), ultima:ult||null, naoLidas:nl.length+nlRep, marcado:nl.some(function(m){ return (m.mencoes||[]).indexOf(cid)>=0; }),
-      marcus:ehConvMarcus(c, cid), fixa:ehConvMarcus(c, cid) || !!(c.fixaPor && c.fixaPor[cid]), arq:!ehConvMarcus(c, cid) && arquivadaAgora(c, cid, ult), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
+      marcus:ehConvMarcus(c, cid), fixa:ehConvMarcus(c, cid) || !!(c.fixaPor && c.fixaPor[cid]), arq:!ehConvMarcus(c, cid) && arquivadaAgora(c, cid, ms), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
       pendentes:ms.filter(function(m){ return m.tipo==="decisao" && m.dec && m.dec.estado==="pendente" && m.apag!=="todos" && m.dec.decisores.indexOf(cid)>=0; }).length};
   });
   r.sort(function(a,b){ return (b.marcus?1:0)-(a.marcus?1:0) || (b.pendentes>0?1:0)-(a.pendentes>0?1:0) || (b.fixa?1:0)-(a.fixa?1:0) || ((b.ultima?b.ultima.t:b.conv.criada) - (a.ultima?a.ultima.t:a.conv.criada)); });
@@ -516,14 +516,14 @@ function pinConversation(cid, convId){
   mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.fixaPor); if(f[cid]) delete f[cid]; else f[cid] = true; return Object.assign({}, c, {fixaPor:f}); })}); });
 }
 // Arquivar guarda a hora. Mensagem mais nova que essa hora tira a conversa das arquivadas sozinha, não importa quem mandou nem por onde chegou (Marcus, 30/10/2026). Valor antigo "true" continua arquivado.
-function arquivadaAgora(c, cid, ultima){
+function arquivadaAgora(c, cid, ms){
   var v = c.arqPor && c.arqPor[cid]; if(!v) return false;
-  return v===true ? true : !(ultima && ultima.t > v);
+  return v===true ? true : !ms.some(function(m){ return m.t > v && m.de!==cid && m.tipo!=="sistema"; });   // só mensagem de OUTRA pessoa desarquiva; o que eu mesmo mando (inclusive Transmissão) não mexe
 }
 function arquivarConversa(cid, convId){
   var c0 = convPorId(convId); if(!c0) return false;
   // arquivar é livre, mesmo com mensagem sem resposta: a conversa pode ter sido encerrada (Marcus, 29/10/2026)
-  mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.arqPor), ms = s.msgs[c.id]||[]; if(arquivadaAgora(c, cid, ms[ms.length-1])) delete f[cid]; else f[cid] = Date.now(); return Object.assign({}, c, {arqPor:f}); })}); });
+  mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.arqPor), ms = s.msgs[c.id]||[]; if(arquivadaAgora(c, cid, ms)) delete f[cid]; else f[cid] = Date.now(); return Object.assign({}, c, {arqPor:f}); })}); });
   return true;
 }
 function editMessage(convId, msgId, texto){ alterarMsg(convId, msgId, function(m){ return Object.assign({}, m, {texto:texto, ed:true}); }); }
@@ -622,6 +622,22 @@ function criarGrupoSetor(eu, nome){
     return Object.assign({}, s, {convs:s.convs.concat([{id:id, tipo:"grupo", nome:nome, descr:"", foto:null, membros:[eu].concat(d.membros.filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}]), msgs:Object.assign({}, s.msgs, o)}); });
   inserir(id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:contato(eu).nome+" criou o grupo \""+nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
   return id;
+}
+// Um grupo para CADA setor, já criado (Marcus, 30/10/2026): primeiro os grupos prontos (Agendamento, Montagem…), depois um por setor com as pessoas do setor (2 ou mais).
+// Cada funcionária ganha a aba dela no topo. Só roda no Marcus e só cria o que ainda não existe (por nome), então pode rodar quantas vezes quiser.
+function garantirGruposSetor(eu){
+  if(!podeCriarGrupo(eu) || !estado.convs.length) return 0;
+  var existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
+  var mk = function(nome, d){ novos.push({id:uid("g_"), tipo:"grupo", nome:nome, descr:"", foto:null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
+  GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
+  var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
+  // Tecnologia (Marcus, 30/10/2026): só Marcus, Leonardo, Lucas, Nickolas e Priscila (sem a Anamaria); abas no topo: Leonardo e Priscila
+  if(!existe("Tecnologia")){ var leo = idPorNome("Leonardo"), pri = idPorNome("Priscila"), tec = [idPorNome("Marcus"), leo, idPorNome("Lucas"), idPorNome("Nickolas"), pri].filter(Boolean); if(leo) mk("Tecnologia", {funcionarias:[leo, pri].filter(Boolean), membros:tec}); }
+  Object.keys(porSetor).sort().forEach(function(n){ var f = porSetor[n]; if(f.length<2 || existe(n)) return; var dr = dir4(); mk(n, {funcionarias:f, membros:f.concat(dr.filter(function(x){ return f.indexOf(x)<0; }))}); });
+  if(!novos.length) return 0;
+  mudar(function(s){ var o = {}; novos.forEach(function(g){ o[g.id] = []; }); return Object.assign({}, s, {convs:s.convs.concat(novos), msgs:Object.assign({}, s.msgs, o)}); });
+  novos.forEach(function(g){ inserir(g.id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:"Grupo \""+g.nome+"\" criado", status:"lido", reacoes:{}, mencoes:[]}); });
+  return novos.length;
 }
 function atualizarGrupo(convId, patch){ mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return c.id===convId ? Object.assign({}, c, patch) : c; })}); }); }
 // Aviso automático no grupo Agendamento: uma vez por dia (quantos atendimentos há) e a cada cancelamento novo
@@ -786,8 +802,8 @@ function consolidadoSetores(filtro){
     .sort(function(a,b){ return b.abertas-a.abertas || (b.maisAntiga-a.maisAntiga); });
 }
 
-var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, arquivada:function(cid, convId){ var c = convPorId(convId), ms = estado.msgs[convId]||[]; return !!c && arquivadaAgora(c, cid, ms[ms.length-1]); }, pendencia:pendenciaDe, markPending:marcarPendente,
-  startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
+var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:verificarAlertas, sectorSummary:consolidadoSetores, getConversations:listaConversas, getMessages:mensagens, sendMessage:sendMessage, markRead:markRead, react:react, pin:{mensagem:pinMessage, conversa:pinConversation}, arquivar:arquivarConversa, arquivada:function(cid, convId){ var c = convPorId(convId), ms = estado.msgs[convId]||[]; return !!c && arquivadaAgora(c, cid, ms); }, pendencia:pendenciaDe, markPending:marcarPendente,
+  startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, ensureSectorGroups:garantirGruposSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
 

@@ -353,7 +353,7 @@ function ConversaBase(p){
         conv.tipo==="grupo" || (conv.tipo==="setor" && eu===conv.repId) ? e(Avatar,{grupo:true, nome:conv.nome, foto:conv.foto, s:42}) : e(Avatar,{id:conv.tipo==="setor" ? conv.repId : outro, s:42, presenca:true}),
         e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[14px] font-semibold"}, tituloDe(conv, eu)),
           e("span",{className:"block truncate text-[11.5px]", style:{color:subt.verde ? W.verde : W.sec}}, subt.t))),
-      p.extra, cxApp && !somenteLeitura && e("button",{onClick:function(){ setCustom(true); }, "aria-label":"Abrir customização", title:"Abrir customização: pedir uma mudança no sistema", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"wrench", s:20, style:{color:W.sec}})),
+      p.extra, cxApp && !somenteLeitura && e("button",{onClick:function(){ setCustom(true); }, "aria-label":"Abrir chamado", title:"Abrir chamado: dúvida, melhoria do layout ou algo que falta no sistema", className:"flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-3 text-[13px] font-semibold hover:brightness-110", style:{background:W.campo, color:W.texto}}, e(Ph,{n:"lifebuoy", s:16, fill:true}), "Abrir chamado"),
       e("button",{onClick:function(){ setInfo(true); }, "aria-label":"Dados da conversa", className:"grid size-9 place-items-center rounded-full hover:bg-white/10"}, e(Ph,{n:"info", s:21, style:{color:W.sec}}))),
     conv.tipo==="dm" && outro && outro!==eu && contato(outro).tipo==="func" && e(CartaoHorario,{cid:outro, pode:!!p.direcao && !somenteLeitura}),
     conv.tipo==="setor" && eu!==conv.repId && e(BarraStatus,{conv:conv, eu:eu, pode:!somenteLeitura && conv.membros.indexOf(eu)>=0}),

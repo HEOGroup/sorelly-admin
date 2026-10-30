@@ -12,7 +12,7 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
 var FONTE = "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif";
-var HOMENS = ["Higor","Joao","Nickolas","Marco","Lucas","Leonardo","Juan","Diego","Marcus"];
+var HOMENS = ["Higor","Joao","Nickolas","Marco","Lucas","Leonardo","Diego","Marcus"];
 var ehHomem = function(nome){ return HOMENS.indexOf(String(nome).split(" ")[0])>=0; };
 var DOS = function(){ var a = [].slice.call(arguments); return function(f){ return a.indexOf(f.setor)>=0; }; };
 var hex = function(h){ return [parseInt(h.slice(1,3),16), parseInt(h.slice(3,5),16), parseInt(h.slice(5,7),16)]; };

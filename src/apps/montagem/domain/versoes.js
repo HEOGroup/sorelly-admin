@@ -3,12 +3,19 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.10", data:"2026-10-30", titulo:"Faturamento fixado em 29/10 e 30/10", itens:[
+    {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"29/10 fixado: 1.731 acertos, R$ 1.363.799,00 e média R$ 787,87 (dia 29: 79 acertos, R$ 67.597,40). 30/10 fixado: 1.829 acertos, R$ 1.445.484,41 e média R$ 790,31 (dia 30: 98 acertos, R$ 81.685,41). Carregar e a realizar não foram informados: Carregar 0 e a realizar = 1.886 − feitos (57 em 30/10) até o Marcus mandar. Gravado no código (aplicaFat30), em FATURAMENTO-DIARIO.md e em DECISOES.md."},
+  ]},
   {v:"0.18.9", data:"2026-10-30", titulo:"SorellyChat: Setores só na barra Todos/Setores, Transmissão com filtro Sem foto", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"O botão Setores do alto da lista saiu: Setores fica só ao lado de Todos. Lá abre como a lista normal de conversas."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Conversa arquivada que recebe mensagem nova volta sozinha para a tela principal (vale para qualquer mensagem, de quem for). Saíram o texto amarelo e a faixa \"Filtro: Arquivadas\"."},
     {tipo:"novo", area:"SorellyChat", txt:"Grupo Encomendas e Reposições (igual ao Agendamento: aba Geral e uma aba para Agatha, Elen e Eduarda). Todos os grupos prontos (inclusive MLN) agora aparecem no botão +, para quem ainda não foi criado."},
+    {tipo:"novo", area:"SorellyChat", txt:"Um grupo para cada setor, já criado sozinho quando o Marcus abre o chat (só os que ainda não existem): os grupos prontos e um por setor com 2 ou mais pessoas. Cada funcionária ganha a aba dela no topo. Aparecem em Setores, como conversas normais."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Grupo sem foto mostra o ícone e a cor do setor, igual ao da barra lateral (Montagem, Financeiro, Agendamento…). Quando a foto for colocada, ela passa na frente."},
+    {tipo:"melhoria", area:"Pessoas", txt:"Juan saiu da lista de pessoas (contatos do chat, fluxo da empresa e contagens): não trabalha mais para a Sorelly."},
+    {tipo:"melhoria", area:"SorellyChat", txt:"Grupo Tecnologia só com Marcus, Leonardo, Lucas, Nickolas e Priscila (sem a Anamaria); abas no topo com o primeiro nome."},
     {tipo:"melhoria", area:"SorellyChat", txt:"Transmissão: botão Sem foto marca só quem ainda não colocou foto no perfil."}]},
-  {v:"0.18.8", data:"2026-10-30", titulo:"Customizações (antes Melhorias), grupos de setor e grupo MLN", itens:[
+  {v:"0.18.8", data:"2026-10-30", titulo:"Chamados (antes Melhorias), grupos de setor e grupo MLN", itens:[
     {tipo:"melhoria", area:"Customizações", txt:"O nome Melhorias virou Customizações (menu, tela e botões). Todo chamado novo pede o tipo antes de enviar: Não sei como fazer, Melhoria do layout ou Algo que falta. O tipo aparece na lista e na conversa do chamado."},
     {tipo:"novo", area:"SorellyChat", txt:"Botão de chave inglesa no alto de qualquer conversa: abre uma customização sem sair do chat."},
     {tipo:"novo", area:"SorellyChat", txt:"Setores vazio agora mostra botões para criar o grupo do Agendamento, Atendimento Interno, Montagem, Marketing, Encomendas e Financeiro Representantes (só o Marcus). Cada grupo ganha a aba Geral e uma aba para cada funcionária, no topo."},

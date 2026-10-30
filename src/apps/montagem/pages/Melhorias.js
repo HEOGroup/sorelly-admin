@@ -69,7 +69,7 @@ function NovaConversa(p){
   };
   return e("div",{onPaste:colar, className:"relative flex h-[min(88vh,680px)] min-w-0 flex-col overflow-hidden rounded-2xl border-2 bg-card shadow-2xl", style:{borderColor:"rgba(232,184,75,.55)"}},
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-2"},
-      e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Nova customização"),
+      e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Novo chamado"),
       e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", title:"Fechar", className:"grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] hover:bg-white/10"}, "✕")),
     // fixo no alto: só o link da tela
     e("div",{className:"flex items-center gap-2 border-b border-border px-3 py-1.5 text-[13px]"},
@@ -120,7 +120,7 @@ var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[\u0
 var nomeArq = function(x, i){
   var base = semAcento(melCaminho(x.url) || x.titulo).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60) || "pedido";
   var ext = /^data:image\/png|\.png($|\?)/i.test(melFotos(x)[i] || "") ? "png" : "jpg";
-  return "customizacao-"+base+"-foto-"+(i+1)+"."+ext;
+  return "chamado-"+base+"-foto-"+(i+1)+"."+ext;
 };
 function baixarFoto(b, nome){ var u = URL.createObjectURL(b), a = document.createElement("a"); a.href = u; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 4000); return "Baixado ✓ (pasta Downloads)"; }
 // salva a foto: no Chrome abre a janela de salvar já com o nome da tela; sem isso, baixa direto
@@ -242,7 +242,7 @@ function Detalhe(p){
       e("div",{className:"flex min-h-0 min-w-0 flex-1 flex-col", style:{background:W.fundo}},
         e("div",{className:"flex items-center gap-2 px-3 py-1.5", style:{background:W.cab, color:W.texto}},
           e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:32}),
-          e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, x.por), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, x.setor+" · customização"+(melTipoNome(x.tipo) ? " · "+melTipoNome(x.tipo) : "")))),
+          e("div",{className:"min-w-0 leading-tight"}, e("div",{className:"truncate text-[13px] font-semibold"}, x.por), e("div",{className:"truncate text-[11px]", style:{color:W.sec}}, x.setor+" · chamado"+(melTipoNome(x.tipo) ? " · "+melTipoNome(x.tipo) : "")))),
         e("div",{className:"flex min-h-0 flex-1 flex-col gap-1.5 overflow-y-auto p-3", style:{backgroundImage:"radial-gradient(rgba(255,255,255,.035) 1px, transparent 1px)", backgroundSize:"14px 14px"}},
           e("div",{className:"mx-auto rounded-md px-2.5 py-0.5 text-[11.5px]", style:{background:W.cab, color:W.sec}}, isNaN(iniciar) ? "Pedido" : new Date(iniciar).toLocaleDateString("pt-BR")),
           e(Balao,{m:{porId:x.porId, por:x.por, em:x.em, txt:x.desc, imgs:melFotos(x)}, eu:s.usuario, dono:x.porId, zoom:zoomar, nomeFoto:nomeFoto}),   // o chat começa com o que a pessoa escreveu no pedido
@@ -341,7 +341,7 @@ function AbaMelhorias(){
           gere && cel("", e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}))); }));
   };
   var corpo;
-  if(!lista.length) corpo = e("p",{className:"py-4 text-center text-[13px]"}, base.length ? "Nenhuma customização com este filtro." : "Nenhuma customização ainda.");
+  if(!lista.length) corpo = e("p",{className:"py-4 text-center text-[13px]"}, base.length ? "Nenhum chamado com este filtro." : "Nenhum chamado ainda.");
   else if(!grupo) corpo = tabela(lista, "");
   else {
     var campoG = grupo==="s" ? "setor" : "por", semC = grupo==="s" ? "Setor" : "Funcionária", gs = {};
@@ -357,9 +357,9 @@ function AbaMelhorias(){
       e("img",{src:zoom.src, alt:"Print ampliado", className:"max-h-full max-w-full rounded-lg border border-border object-contain"}),
       e("div",{className:"absolute right-4 top-4 flex items-center gap-1.5"}, e(BotoesFoto,{src:zoom.src, nome:zoom.nome||"foto.jpg"}), e("button",{type:"button", onClick:function(){ setZoom(null); }, className:"h-8 rounded-md bg-card px-3 text-[13px] font-semibold ring-1 ring-border"}, "Fechar ✕"))),
     janela,
-    e(PageHead,{t:"Customizações", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
+    e(PageHead,{t:"Chamados", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
       gere && e(Segmentado,{opcoes:[["todas","Todas"], ["minhas","Minhas"]], atual:vis, onMudar:setVis}),
-      e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Nova customização")),
+      e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Novo chamado")),
     gere && vis==="todas" && e("div",{className:"grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-4"},
       e(Ranking,{t:"Setores que mais pedem", itens:ranking(base, "setor"), onEscolher:setFSet}),
       e(Ranking,{t:"Funcionárias que mais pedem", itens:ranking(base, "por"), onEscolher:setFQ}),

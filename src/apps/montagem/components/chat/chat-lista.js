@@ -7,12 +7,8 @@ import { NovoGrupo, FotoEditavel } from "@/apps/montagem/components/chat/chat-in
 import { Transmissao } from "@/apps/montagem/components/chat/chat-transmissao";
 import { SeletorFundo } from "@/apps/montagem/components/chat/chat-fundos";
 import { Avatar, EtiquetaEspera, LogoChat, Ph, Tique, W, Janela, Popover, ItemMenu, Vazio, horaLista } from "@/apps/montagem/components/chat/chat-ui";
-import { SETORES } from "@/apps/montagem/navigation/setores";
-import { Icon } from "@/apps/montagem/ui/icon";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
-// grupo do chat -> setor da barra lateral do sistema (mesmo ícone e mesma cor); grupo sem setor parecido usa o ícone de equipe em dourado
-var setorDoGrupo = function(nome){ var n = sem(nome); return SETORES.find(function(x){ var sn = sem(String(x.nome).split(/\s+/).join(" ")); return sn===n || sn.indexOf(n)===0 || n.indexOf(sn)===0 || sn.split(" ")[0]===n.split(" ")[0]; }); };
 
 // dourado mais refinado, com degradê (marca "SorellyChat")
 var OURO = "linear-gradient(135deg, #6b4f12 0%, #b8892b 28%, #f6dc8c 52%, #d4a63a 74%, #8a6420 100%)";
@@ -90,6 +86,8 @@ function ListaConversas(p){
   var tr = useState(false), transmitindo = tr[0], setTransmitindo = tr[1];   // lista de transmissão: uma mensagem para vários funcionários (só Direção)
   var sl = useState(null), selec = sl[0], setSelec = sl[1];   // modo "Selecionar": null = desligado, senão lista de ids marcadas (arquivar várias de uma vez, Marcus 30/10/2026)
   var q = sem(busca), mostrarTodas = !!p.direcao && !p.leitura && !!st.efem.verTodas, euReal = p.euReal || eu;
+  // Marcus: os grupos de todos os setores já ficam criados (espera as conversas chegarem do servidor antes, para não duplicar)
+  useEffect(function(){ if(!podeCriarGrupo(euReal) || p.leitura || !st.convs.length) return undefined; var t = setTimeout(function(){ api.ensureSectorGroups(euReal); }, 2500); return function(){ clearTimeout(t); }; }, [euReal, st.convs.length]);
   var todasL = api.getConversations(eu, {todas:mostrarTodas});
   var arqs = todasL.filter(function(x){ return x.arq && !x.pendentes; }), lista = todasL.filter(function(x){ return !(x.arq && !x.pendentes); });
   var naoLidasTotal = lista.reduce(function(t,x){ return t + x.naoLidas; }, 0);

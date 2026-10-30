@@ -36,7 +36,7 @@ var FUNCIONARIOS_POR_SETOR = [
   // fora da lista de funcionários (CLT): sócios e família (CNPJ = empresa da qual é sócio) e PJs que trabalham para a Sorelly (H&O Apps = "ho")
   ["Sócios e família", [["Anamaria Hess de Oliveira","","34","Sócia"], ["Marcus Vinicius Hess de Oliveira","","46","Sócio (dono)"], ["Marco Antonio de Oliveira","","59","Sócio"],
     ["Lucas Oliveira da Rocha","","67","Sócio"], ["Ana Beatriz Hess de Oliveira","","","Sócia"]]],
-  ["PJ · prestadores", [["Leonardo","","ho","Desenvolvedor (H&O Apps)"], ["Juan","","ho","Desenvolvedor (H&O Apps)"], ["Diego Franco","","","Gestor de tráfego"]]]];
+  ["PJ · prestadores", [["Leonardo","","ho","Desenvolvedor (H&O Apps)"], ["Diego Franco","","","Gestor de tráfego"]]]];
 var VINCULO_DO_SETOR = {"Sócios e família":"socio", "PJ · prestadores":"pj"};
 
 // Representantes atualizadas por enquanto (CPF e CNPJ de cada uma o Marcus manda depois). Sabrina e Julia G. saíram da empresa (19/10/2026): fora da lista.
