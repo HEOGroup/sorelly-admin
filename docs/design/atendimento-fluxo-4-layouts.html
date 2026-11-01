@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento Sorelly · 4 fluxos</title>
+<style>
+:root{--bg:#0e0d0b;--card:#17150f;--card2:#1f1b12;--bd:#3a3220;--gold:#E8B84B;--gold2:#B8862B;--ink:#1B1409;--tx:#f4efe3;--mut:#b9ad8f;--ok:#4ade80;--bad:#f87171;--warn:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif;min-height:100vh}
+button{font:inherit;cursor:pointer;color:inherit;border:0;background:none}
+input{font:inherit;color:var(--tx);background:#0f0d08;border:1px solid var(--bd);border-radius:8px;height:32px;padding:0 10px;min-width:0;width:100%}
+input:focus{outline:2px solid var(--gold);border-color:var(--gold)}
+.top{display:flex;gap:8px;align-items:center;padding:8px 12px;background:#120f08;border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:5;flex-wrap:wrap}
+.top b{color:var(--gold);margin-right:6px}
+.lay{height:32px;padding:0 14px;border-radius:8px;background:#241f12;border:1px solid var(--bd);font-weight:700}
+.lay.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.mono{font-variant-numeric:tabular-nums}
+.btn{height:32px;padding:0 14px;border-radius:8px;font-weight:700;background:#2a2415;border:1px solid var(--bd)}
+.btn.p{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.btn.big{height:44px;padding:0 24px;font-size:15px;border-radius:12px}
+.btn:disabled{opacity:.4;cursor:default}
+.chip{height:32px;padding:0 12px;border-radius:999px;background:#241f12;border:1px solid var(--bd);font-weight:600;white-space:nowrap}
+.chip.on{background:var(--gold);color:var(--ink);border-color:var(--gold)}
+.pill{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700}
+.g{background:rgba(74,222,128,.18);color:var(--ok)}.y{background:rgba(251,191,36,.18);color:var(--warn)}.b{background:rgba(96,165,250,.18);color:#93c5fd}.o{background:rgba(232,184,75,.22);color:var(--gold)}
+.wrap{padding:12px;max-width:1500px;margin:0 auto}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:14px}
+.hd{background:linear-gradient(90deg,var(--gold2),var(--gold),#F1E4C6);color:var(--ink);font-weight:800;padding:8px 12px;border-radius:13px 13px 0 0;display:flex;justify-content:space-between;align-items:center}
+.lbl{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mut);font-weight:700;margin-bottom:4px}
+.row{display:grid;gap:8px}
+.fila-i{display:flex;align-items:center;gap:8px;height:42px;padding:0 10px;border-radius:10px;background:#1c1810;border:1px solid var(--bd);width:100%;text-align:left}
+.fila-i.on{background:rgba(232,184,75,.16);border-color:var(--gold)}
+.fila-i b{color:var(--gold);width:44px}
+.fila-i span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+table{width:100%;border-collapse:collapse}
+td,th{padding:5px 6px;text-align:left;border-bottom:1px solid #2b2517}
+th{font-size:11px;text-transform:uppercase;color:var(--mut)}
+.num{text-align:right}
+.tot{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #3a3220}
+.tot b{font-size:15px}
+.pos{color:var(--ok)}.neg{color:var(--bad)}
+.note{color:var(--mut);font-size:12px}
+.sec{padding:12px}
+h2{font-size:17px}
+@media(max-width:900px){.hide-s{display:none}}
+</style>
+</head>
+<body>
+<div class="top"><b>Atendimento Sorelly · 4 fluxos diferentes</b>
+  <span id="lays"></span>
+  <span style="margin-left:auto" class="note">Clique, preencha e avance: tudo funciona. Valores são de exemplo.</span>
+</div>
+<div class="wrap" id="app"></div>
+
+<script>
+var CLIS=[["08:00","Marlise Cristiane"],["09:00","Giovanna Gluck"],["09:00","Kauane Belizario"],["10:00","Kethilyn Parizzi"],["11:00","Isadora Julia"],["13:30","Ana Claudia"]];
+var PASSOS=["Condicionais","Vendas","Pagamentos","Brindes","Condicional nova","Regras"];
+var REGRAS=["Peça fora do kit com etiqueta é peça vendida.","Chegou mais de 30 min atrasada: perde 10% do brinde.","Acerto só vale com todos os pagamentos conferidos.","Condicional nova só com acerto fechado.","A revendedora lê e assina o termo do consignado."];
+var COM=0.30, BRP=0.10;
+var S;
+function novo(){return {lay:"A",cli:0,step:0,done:[0,0,0,0,0,0],
+  conds:[{n:"09635",v:19656.88,p:178,ok:0},{n:"09702",v:4210,p:36,ok:0}],cn:"",cv:"",cp:"",
+  vend:12000,pv:96,cred:0,pags:[],forma:"Pix",pval:"",bn:0,bb:0,nova:"",nn:"",regras:[0,0,0,0,0],ass:0};}
+S=novo();
+var $=function(id){return document.getElementById(id)};
+function fmt(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function num(x){x=String(x).replace(/\./g,"").replace(",",".");var v=parseFloat(x);return isNaN(v)?0:v}
+function nome2(n){return n.split(" ").slice(0,2).join(" ")}
+function calc(){var liq=S.vend-S.cred,com=liq*COM,ap=liq-com,pago=S.pags.reduce(function(a,p){return a+p.v},0);
+  var cv=S.conds.reduce(function(a,c){return a+c.v},0),cp=S.conds.reduce(function(a,c){return a+c.p},0);
+  return {liq:liq,com:com,ap:ap,pago:pago,pend:ap-pago,cv:cv,cp:cp,ret:cp-S.pv,brl:liq*BRP,brj:S.bn+S.bb};}
+function R(){render()}
+function go(i){S.step=i;R()}
+function next(){S.done[S.step]=1;if(S.step<5)S.step++;R()}
+function back(){if(S.step>0)S.step--;R()}
+function setf(k,v,isnum){S[k]=isnum?num(v):v;R()}
+function tgl(k,i){S[k][i]=S[k][i]?0:1;R()}
+function pick(i){S.cli=i;S.step=0;S.done=[0,0,0,0,0,0];R()}
+function addCond(){if(!S.cn)return;S.conds.push({n:S.cn,v:num(S.cv),p:num(S.cp),ok:1});S.cn=S.cv=S.cp="";R()}
+function delCond(i){S.conds.splice(i,1);R()}
+function addPag(){var v=num(S.pval);if(!v)return;S.pags.push({f:S.forma,v:v});S.pval="";R()}
+function delPag(i){S.pags.splice(i,1);R()}
+function setLay(l){S.lay=l;R()}
+function ok(i){return S.done[i]}
+
+/* ---------- peças de formulário (usadas pelos 4 fluxos) ---------- */
+function fila(compacto){return CLIS.map(function(c,i){var on=i===S.cli;return '<button class="fila-i'+(on?' on':'')+'" onclick="pick('+i+')"><b class="mono">'+c[0]+'</b><span>'+nome2(c[1])+'</span>'+(on?'<i class="pill o">Atendendo</i>':'<i class="pill b">Agendada</i>')+'</button>'}).join("")}
+function corpo(i,big){
+  var c=calc(),h="";
+  if(i===0){
+    h+='<table><tr><th>Nº</th><th class="num">Valor</th><th class="num">Peças</th><th>DevMaster</th><th></th></tr>';
+    S.conds.forEach(function(x,k){h+='<tr><td class="mono"><b>'+x.n+'</b></td><td class="num mono">'+fmt(x.v)+'</td><td class="num mono">'+x.p+'</td><td><button class="chip'+(x.ok?' on':'')+'" onclick="S.conds['+k+'].ok=S.conds['+k+'].ok?0:1;R()">'+(x.ok?'✓ Confere':'Conferir')+'</button></td><td><button class="btn" onclick="delCond('+k+')" title="Tirar">×</button></td></tr>'});
+    h+='</table><div class="row" style="grid-template-columns:1fr 1.3fr 1fr auto;margin-top:10px;align-items:end"><div><div class="lbl">Nº extra</div><input value="'+S.cn+'" onchange="S.cn=this.value;R()"></div><div><div class="lbl">Valor</div><input value="'+S.cv+'" onchange="S.cv=this.value;R()" placeholder="R$ 0,00"></div><div><div class="lbl">Peças</div><input value="'+S.cp+'" onchange="S.cp=this.value;R()"></div><button class="btn p" onclick="addCond()">Adicionar</button></div>';
+    h+='<div class="tot" style="margin-top:8px"><span>Total das condicionais</span><b class="mono">'+fmt(c.cv)+' · '+c.cp+' peças</b></div>';
+  }
+  if(i===1){
+    h+='<div class="row" style="grid-template-columns:repeat(3,1fr)"><div><div class="lbl">Quanto vendeu</div><input class="mono" value="'+S.vend.toLocaleString("pt-BR",{minimumFractionDigits:2})+'" onchange="setf(\'vend\',this.value,1)"></div><div><div class="lbl">Peças vendidas</div><input value="'+S.pv+'" onchange="setf(\'pv\',this.value,1)"></div><div><div class="lbl">Desconto de crédito</div><input value="'+S.cred.toLocaleString("pt-BR",{minimumFractionDigits:2})+'" onchange="setf(\'cred\',this.value,1)"></div></div>';
+    h+='<div style="margin-top:10px"><div class="tot"><span>Venda líquida</span><b class="mono">'+fmt(c.liq)+'</b></div><div class="tot"><span>Comissão ('+Math.round(COM*100)+'%, exemplo)</span><b class="mono pos">'+fmt(c.com)+'</b></div><div class="tot"><span>Valor a pagar</span><b class="mono">'+fmt(c.ap)+'</b></div><div class="tot"><span>Peças que devem retornar</span><b class="mono">'+c.ret+'</b></div></div>';
+  }
+  if(i===2){
+    h+='<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">'+["Pix","Dinheiro","Cartão","Acerto com loja"].map(function(f){return '<button class="chip'+(S.forma===f?' on':'')+'" onclick="setf(\'forma\',\''+f+'\')">'+f+'</button>'}).join("")+'</div>';
+    h+='<div class="row" style="grid-template-columns:1fr auto;align-items:end"><div><div class="lbl">Valor</div><input class="mono" value="'+S.pval+'" placeholder="'+(c.pend>0?c.pend.toLocaleString("pt-BR",{minimumFractionDigits:2}):"0,00")+'" onchange="S.pval=this.value;R()"></div><button class="btn p" onclick="if(!S.pval)S.pval=String(c.pend).replace(\'.\',\',\');addPag()">OK</button></div>';
+    S.pags.forEach(function(p,k){h+='<div class="tot"><span>'+p.f+'</span><span class="mono">'+fmt(p.v)+' <button class="btn" style="height:24px;padding:0 8px" onclick="delPag('+k+')">×</button></span></div>'});
+    h+='<div class="tot"><span>Falta pagar</span><b class="mono '+(c.pend>0.005?'neg':'pos')+'">'+fmt(c.pend)+'</b></div>';
+  }
+  if(i===3){
+    h+='<div class="note" style="margin-bottom:6px">Brinde que libera (exemplo '+Math.round(BRP*100)+'%): <b class="mono">'+fmt(c.brl)+'</b></div><div class="row" style="grid-template-columns:1fr 1fr"><div><div class="lbl">Brinde Normal</div><input class="mono" value="'+(S.bn||"")+'" placeholder="0,00" onchange="setf(\'bn\',this.value,1)"></div><div><div class="lbl">Brinde BB (Select)</div><input class="mono" value="'+(S.bb||"")+'" placeholder="0,00" onchange="setf(\'bb\',this.value,1)"></div></div><div class="tot" style="margin-top:8px"><span>Lançado</span><b class="mono '+(c.brj>c.brl?'neg':'')+'">'+fmt(c.brj)+'</b></div>';
+  }
+  if(i===4){
+    h+='<div style="display:flex;gap:8px;flex-wrap:wrap">'+[["cont","Continua"],["regra","Não pode (regras)"],["nao","Não quer"]].map(function(o){return '<button class="btn'+(big?' big':'')+(S.nova===o[0]?' p':'')+'" onclick="setf(\'nova\',\''+o[0]+'\')">'+o[1]+'</button>'}).join("")+'</div>';
+    if(S.nova==="cont")h+='<div style="margin-top:10px;max-width:260px"><div class="lbl">Nº da condicional nova</div><input value="'+S.nn+'" onchange="S.nn=this.value;R()"></div>';
+  }
+  if(i===5){
+    h+=REGRAS.map(function(r,k){return '<button class="fila-i'+(S.regras[k]?' on':'')+'" style="height:auto;min-height:38px;padding:6px 10px;margin-bottom:5px" onclick="tgl(\'regras\','+k+')"><b style="width:22px">'+(S.regras[k]?'✓':(k+1))+'</b><span style="white-space:normal">'+r+'</span></button>'}).join("");
+    h+='<button class="btn'+(S.ass?' p':'')+'" style="margin-top:6px" onclick="S.ass=S.ass?0:1;R()">'+(S.ass?'✓ Assinado pela revendedora':'✍ Revendedora assina')+'</button>';
+  }
+  return h;
+}
+function resumoPasso(i){var c=calc();
+  return [c.cp+" peças · "+fmt(c.cv), fmt(c.liq)+" líquida", S.pags.length?fmt(c.pago)+" pago":"sem pagamento", fmt(c.brj)+" lançado", S.nova==="cont"?"Continua "+S.nn:S.nova==="regra"?"Não pode":S.nova==="nao"?"Não quer":"—", S.regras.filter(Boolean).length+"/5 lidas"][i]}
+function faixaTopo(){var cl=CLIS[S.cli];return '<span style="font-size:17px;font-weight:800">'+nome2(cl[1])+'</span> <span class="note">horário '+cl[0]+'</span>'}
+
+/* ---------- FLUXO A · Esteira horizontal ---------- */
+function layA(){
+  var c=calc();
+  var h='<div class="card sec" style="margin-bottom:10px;display:flex;gap:8px;overflow:auto">'+CLIS.map(function(x,i){return '<button class="chip'+(i===S.cli?' on':'')+'" onclick="pick('+i+')"><span class="mono">'+x[0]+'</span> '+nome2(x[1])+'</button>'}).join("")+'</div>';
+  h+='<div class="card sec" style="margin-bottom:10px"><div style="display:flex;align-items:flex-start">';
+  PASSOS.forEach(function(p,i){var on=i===S.step,d=ok(i);
+    h+='<button onclick="go('+i+')" style="flex:1;text-align:center;position:relative;padding-top:2px"><div style="position:absolute;top:22px;left:-50%;width:100%;height:4px;background:'+(d||on?'var(--gold)':'#2b2517')+';z-index:0;'+(i===0?'display:none':'')+'"></div><div style="position:relative;z-index:1;margin:0 auto;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:16px;background:'+(d?'var(--ok)':on?'var(--gold)':'#241f12')+';color:'+(d||on?'var(--ink)':'var(--mut)')+';border:2px solid '+(on?'#fff':'var(--bd)')+'">'+(d?'✓':i+1)+'</div><div style="font-weight:700;margin-top:6px">'+p+'</div><div class="note mono" style="font-size:11.5px">'+(d?resumoPasso(i):'&nbsp;')+'</div></button>'});
+  h+='</div></div>';
+  h+='<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px;align-items:start"><div class="card"><div class="hd"><span>'+(S.step+1)+' · '+PASSOS[S.step]+' — '+faixaTopo().replace(/<[^>]+>/g,"")+'</span></div><div class="sec">'+corpo(S.step)+'<div style="display:flex;justify-content:space-between;margin-top:14px"><button class="btn" onclick="back()" '+(S.step===0?'disabled':'')+'>‹ Voltar</button><button class="btn p big" onclick="next()">'+(S.step===5?'Finalizar bipagem ■':'Confirmar e seguir ›')+'</button></div></div></div>';
+  h+='<div class="card sec"><div class="lbl">Acerto ao vivo</div><div class="tot"><span>Venda líquida</span><b class="mono">'+fmt(c.liq)+'</b></div><div class="tot"><span>Comissão</span><b class="mono pos">'+fmt(c.com)+'</b></div><div class="tot"><span>A pagar</span><b class="mono">'+fmt(c.ap)+'</b></div><div class="tot"><span>Falta</span><b class="mono '+(c.pend>0.005?'neg':'pos')+'">'+fmt(c.pend)+'</b></div></div></div>';
+  return h;
+}
+
+/* ---------- FLUXO B · Foco total (uma pergunta grande + nota ao vivo) ---------- */
+function layB(){
+  var c=calc();
+  var h='<div style="display:grid;grid-template-columns:76px minmax(0,1fr) 320px;gap:10px;align-items:stretch;min-height:76vh">';
+  h+='<div class="card" style="padding:8px;display:flex;flex-direction:column;gap:6px;align-items:center">'+CLIS.map(function(x,i){return '<button title="'+x[1]+'" onclick="pick('+i+')" style="width:54px;height:54px;border-radius:14px;display:grid;place-items:center;font-weight:800;font-size:15px;background:'+(i===S.cli?'var(--gold)':'#241f12')+';color:'+(i===S.cli?'var(--ink)':'var(--tx)')+';border:1px solid var(--bd)">'+x[1].split(" ").map(function(w){return w[0]}).slice(0,2).join("")+'</button>'}).join("")+'<div class="note" style="font-size:10px;text-align:center">Fila do dia</div></div>';
+  h+='<div class="card" style="display:flex;flex-direction:column;padding:22px 26px"><div class="note">'+faixaTopo().replace(/<[^>]+>/g,function(m){return m})+'</div><div style="height:6px;border-radius:6px;background:#2b2517;margin:12px 0 22px"><div style="height:6px;border-radius:6px;background:var(--gold);width:'+(S.step/6*100+100/12)+'%;transition:.3s"></div></div>';
+  var perg=["Estas condicionais conferem com a DevMaster?","Quanto a revendedora vendeu?","Como ela vai pagar?","Algum brinde para lançar?","Ela quer uma condicional nova?","Ela leu as regras e assinou?"];
+  h+='<div style="font-size:11px;text-transform:uppercase;color:var(--gold);font-weight:800">Etapa '+(S.step+1)+' de 6 · '+PASSOS[S.step]+'</div><div style="font-size:26px;font-weight:800;margin:6px 0 18px;line-height:1.2">'+perg[S.step]+'</div><div style="flex:1;max-width:640px">'+corpo(S.step,1)+'</div>';
+  h+='<div style="display:flex;justify-content:space-between;margin-top:18px"><button class="btn big" onclick="back()" '+(S.step===0?'disabled':'')+'>‹ Voltar</button><button class="btn p big" onclick="next()">'+(S.step===5?'Finalizar ■':'Próxima ›')+'</button></div></div>';
+  h+='<div class="card sec" style="background:#f6efdc;color:#1B1409;border-radius:6px"><div style="font-weight:800;text-align:center;letter-spacing:.1em">NOTA DO ACERTO</div><div style="text-align:center;font-size:12px;margin-bottom:8px">'+nome2(CLIS[S.cli][1])+'</div>';
+  [["Condicionais",c.cp+" peças",ok(0)],["Venda líquida",fmt(c.liq),ok(1)],["Comissão",fmt(c.com),ok(1)],["A pagar",fmt(c.ap),ok(1)],["Pago",fmt(c.pago),ok(2)],["Falta",fmt(c.pend),ok(2)],["Brindes",fmt(c.brj),ok(3)],["Nova",S.nova?{cont:"Continua",regra:"Não pode",nao:"Não quer"}[S.nova]:"—",ok(4)]].forEach(function(r){h+='<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px dashed #b9a97a;opacity:'+(r[2]?1:.45)+'"><span>'+r[0]+'</span><b class="mono">'+r[1]+'</b></div>'});
+  h+='</div></div>';
+  return h;
+}
+
+/* ---------- FLUXO C · Recibo vivo (o documento é a tela) ---------- */
+function layC(){
+  var c=calc();
+  var h='<div style="display:grid;grid-template-columns:250px minmax(0,1fr);gap:10px;align-items:start"><div class="card sec"><div class="lbl">Hoje · fila</div><div style="display:flex;flex-direction:column;gap:6px">'+fila()+'</div></div>';
+  h+='<div class="card" style="background:#f6efdc;color:#1B1409;border-radius:8px;padding:18px 22px;max-width:820px"><div style="display:flex;justify-content:space-between;border-bottom:2px solid #1B1409;padding-bottom:8px"><div><div style="font-size:11px;letter-spacing:.12em;font-weight:800">SORELLY JOIAS · ACERTO DE CONSIGNADO</div><div style="font-size:20px;font-weight:800">'+nome2(CLIS[S.cli][1])+'</div></div><div style="text-align:right"><div class="mono" style="font-size:20px;font-weight:800">'+fmt(c.ap)+'</div><div style="font-size:11px">valor a pagar</div></div></div>';
+  PASSOS.forEach(function(p,i){var on=i===S.step,d=ok(i);
+    h+='<div style="border-bottom:1px solid #cdbf93;padding:8px 0"><button onclick="go('+i+')" style="width:100%;display:flex;align-items:center;gap:10px;text-align:left"><span style="width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-weight:800;background:'+(d?'#16a34a':on?'#1B1409':'#d9cca3')+';color:'+(d||on?'#fff':'#6b5d35')+'">'+(d?'✓':i+1)+'</span><b style="font-size:14px;flex:1">'+p+'</b><span class="mono" style="font-weight:700;opacity:'+(d?1:.4)+'">'+(d?resumoPasso(i):'a preencher')+'</span><span>'+(on?'▾':'▸')+'</span></button>';
+    if(on)h+='<div class="rec" style="padding:10px 0 4px 36px">'+corpo(i)+'<div style="text-align:right;margin-top:10px"><button class="btn p" onclick="next()">'+(i===5?'Finalizar ■':'Confirmar ›')+'</button></div></div>';
+    h+='</div>'});
+  h+='</div></div><style>.rec .tot{border-color:#cdbf93}.rec input{background:#fffaf0;color:#1B1409;border-color:#b9a97a}.rec th{color:#6b5d35}.rec td,.rec th{border-color:#cdbf93}.rec .chip,.rec .btn{background:#e8dcb5;color:#1B1409;border-color:#b9a97a}.rec .chip.on,.rec .btn.p{background:#1B1409;color:#F1E4C6}.rec .note{color:#6b5d35}.rec .lbl{color:#6b5d35}.rec .fila-i{background:#fffaf0;border-color:#b9a97a;color:#1B1409}.rec .fila-i.on{background:#e8dcb5}.rec .pos{color:#15803d}.rec .neg{color:#b91c1c}</style>';
+  return h;
+}
+
+/* ---------- FLUXO D · Conversa guiada ---------- */
+function layD(){
+  var c=calc();
+  var perg=["Vamos começar. Confira as condicionais com a DevMaster.","Agora o valor da venda.","Como a revendedora vai pagar?","Tem brinde?","Ela quer condicional nova?","Última coisa: as regras e a assinatura."];
+  var h='<div style="display:grid;grid-template-columns:230px minmax(0,1fr) 270px;gap:10px;align-items:start"><div class="card sec"><div class="lbl">Fila</div><div style="display:flex;flex-direction:column;gap:6px">'+fila()+'</div></div>';
+  h+='<div class="card sec" style="display:flex;flex-direction:column;gap:12px;min-height:70vh"><div class="note" style="text-align:center">Atendimento de '+nome2(CLIS[S.cli][1])+'</div>';
+  for(var i=0;i<=S.step;i++){
+    h+='<div style="display:flex;gap:8px;align-items:flex-start"><div style="width:30px;height:30px;border-radius:50%;background:var(--gold);color:var(--ink);display:grid;place-items:center;font-weight:800">S</div><div style="background:#241f12;border-radius:4px 14px 14px 14px;padding:10px 14px;max-width:560px"><b>'+perg[i]+'</b></div></div>';
+    if(i<S.step||ok(i)&&i!==S.step)h+='<div style="align-self:flex-end;display:flex;gap:8px;align-items:center"><button class="note" onclick="go('+i+')" style="text-decoration:underline">editar</button><div style="background:var(--gold);color:var(--ink);border-radius:14px 4px 14px 14px;padding:8px 14px;font-weight:700" class="mono">'+resumoPasso(i)+'</div></div>';
+    else h+='<div style="margin-left:38px;max-width:620px;background:var(--card2);border:1px solid var(--gold);border-radius:14px;padding:12px">'+corpo(i)+'<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px"><button class="btn" onclick="back()" '+(i===0?'disabled':'')+'>‹</button><button class="btn p" onclick="next()">'+(i===5?'Finalizar ■':'Pronto ✓')+'</button></div></div>';
+  }
+  h+='</div><div class="card sec"><div class="lbl">Resumo</div><div style="width:120px;height:120px;border-radius:50%;margin:6px auto 12px;display:grid;place-items:center;background:conic-gradient(var(--gold) '+(S.done.filter(Boolean).length/6*360)+'deg,#2b2517 0);"><div style="width:92px;height:92px;border-radius:50%;background:var(--card);display:grid;place-items:center;font-size:22px;font-weight:800">'+S.done.filter(Boolean).length+'/6</div></div><div class="tot"><span>Líquida</span><b class="mono">'+fmt(c.liq)+'</b></div><div class="tot"><span>Comissão</span><b class="mono pos">'+fmt(c.com)+'</b></div><div class="tot"><span>A pagar</span><b class="mono">'+fmt(c.ap)+'</b></div><div class="tot"><span>Falta</span><b class="mono '+(c.pend>0.005?'neg':'pos')+'">'+fmt(c.pend)+'</b></div></div></div>';
+  return h;
+}
+
+function render(){
+  $("lays").innerHTML=[["A","A · Esteira"],["B","B · Foco total"],["C","C · Recibo vivo"],["D","D · Conversa"]].map(function(o){return '<button class="lay'+(S.lay===o[0]?' on':'')+'" onclick="setLay(\''+o[0]+'\')">'+o[1]+'</button>'}).join(" ");
+  $("app").innerHTML={A:layA,B:layB,C:layC,D:layD}[S.lay]();
+}
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento Sorelly · Lateral, 4 versões</title>
+<!--
+  Sorelly Admin · docs/design/atendimento-lateral-4-versoes.html (30/10/2026)
+  Formato escolhido (E2: estações na lateral), com os CAMPOS DE DENTRO refeitos: tudo em colunas alinhadas, sem espaço vazio,
+  e a primeira estação junta Condicionais + Vendas dividindo a tela ao meio. Abre com TUDO PREENCHIDO (botão "Limpar" no topo).
+  4 versões do miolo da primeira estação (V1 a V4); as outras estações usam o mesmo desenho dividido ao meio.
+  Casca igual ao admin. 13 px / 11 px, número até 20 px, campos de 32 px, nada quebra. Valores de demonstração (comissão 30% e brinde 10% são exemplos).
+-->
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#3A3F48;--fio2:#4A505B;--tx:#F2F0EA;--ouro:#D6B25C;--ouro-t:#1F1B12;--ok:#4CC38A;--ruim:#E5484D}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--fundo);color:var(--tx);font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif;font-feature-settings:"tnum" 1}
+button,input{font:inherit;color:inherit}button{cursor:pointer;background:none;border:0;white-space:nowrap}
+:focus-visible{outline:2px solid var(--ouro);outline-offset:1px}
+b,td,th,.n20,.n15,.pill,.chip,.btn,.cap{white-space:nowrap}
+.switch{display:flex;gap:6px;align-items:center;padding:8px 12px;background:#08090b;border-bottom:1px solid var(--fio);position:sticky;top:0;z-index:30;flex-wrap:wrap}
+.sw{height:32px;padding:0 12px;border:1px solid var(--fio);border-radius:6px;background:var(--painel);font-weight:500}
+.sw.on{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t);font-weight:600}
+.app{display:grid;grid-template-columns:172px 1fr;min-height:calc(100vh - 49px)}
+.lat{background:var(--painel);border-right:1px solid var(--fio);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.lat .logo{font-weight:700;letter-spacing:.14em;color:var(--ouro);padding:4px 8px 12px}
+.lat .it{height:30px;display:flex;align-items:center;padding:0 8px;border-radius:6px}
+.lat .it.on{background:var(--painel2);position:relative}.lat .it.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--ouro)}
+.lat .g{font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 8px 4px;font-weight:500}
+.main{min-width:0}
+.top{height:40px;border-bottom:1px solid var(--fio);display:flex;align-items:center;padding:0 16px;font-weight:600}
+.tabs{height:32px;border-bottom:1px solid var(--fio);display:flex;gap:16px;padding:0 16px}
+.tabs span{display:flex;align-items:center;border-bottom:2px solid transparent}.tabs .on{border-color:var(--ouro);font-weight:600}
+.page{display:grid;grid-template-columns:330px minmax(0,1fr);gap:10px;padding:10px 12px;align-items:start}
+.card{background:var(--painel);border:1px solid var(--fio);border-radius:8px;overflow:visible}
+.bar{height:32px;padding:0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--fio);font-weight:600}
+.cap{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;gap:8px;align-items:center}
+.fila-i{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border:1px solid var(--fio);border-radius:6px;width:100%;text-align:left}
+.fila-i.on{border-color:var(--ouro);background:var(--ouro-t)}
+.fila-i .h{width:38px;font-weight:600}.fila-i .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{height:20px;padding:0 8px;border-radius:10px;border:1px solid var(--fio2);font-size:11px;display:inline-flex;align-items:center}
+.pill.ok{border-color:var(--ok);color:var(--ok)}.pill.at{border-color:var(--ouro);color:var(--ouro)}
+.btn{height:32px;padding:0 12px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);font-weight:500}
+.btn:hover{background:#242830}.btn.p{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t);font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+.chip{height:32px;padding:0 12px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);font-weight:500}
+.chip.on{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t);font-weight:600}
+.in{height:32px;width:100%;min-width:0;padding:0 8px;border:1px solid var(--fio2);border-radius:6px;background:#0f1114;font-variant-numeric:tabular-nums}
+.in.r{text-align:right}
+.plus{height:32px;padding:0 12px;border:1px dashed var(--fio2);border-radius:6px;font-weight:500;width:100%}
+.plus:hover{border-color:var(--ouro);color:var(--ouro)}
+.x{width:32px;padding:0}
+.dot{width:20px;height:20px;border-radius:50%;border:1px solid var(--fio2);display:inline-grid;place-items:center;font-size:11px;flex:none;font-weight:600}
+[data-f].ok .dot{background:var(--ok);border-color:var(--ok);color:#06150e}
+.n20{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:24px}
+.n15{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.pos{color:var(--ok)}.neg{color:var(--ruim)}.gold{color:var(--ouro)}
+.pop{position:relative}
+.menu{position:absolute;top:36px;right:0;min-width:100%;background:var(--painel2);border:1px solid var(--fio2);border-radius:6px;z-index:25;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.menu button{display:block;width:100%;text-align:left;height:32px;padding:0 10px;border-radius:4px}.menu button:hover{background:#2a2f37}.menu .on{color:var(--ouro);font-weight:600}
+/* lateral */
+.shell{display:grid;grid-template-columns:200px minmax(0,1fr)}
+.vr{display:flex;flex-direction:column;border-right:1px solid var(--fio)}
+.vr button{display:flex;gap:10px;align-items:center;padding:10px 12px;text-align:left;border-bottom:1px solid var(--fio);width:100%;border-left:2px solid transparent;min-height:56px}
+.vr button:last-child{border-bottom:0}
+.vr button.on{border-left-color:var(--ouro);background:var(--painel2)}
+.vr .t{display:flex;flex-direction:column;min-width:0}.vr .t span{overflow:hidden;text-overflow:ellipsis;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+/* miolo dividido ao meio */
+.half{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.half>.h{padding:12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.half>.h+.h{border-left:1px solid var(--fio)}
+.ht{display:flex;align-items:center;justify-content:space-between;height:24px}
+/* grade de condicionais: ocupa toda a metade */
+.cg{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.3fr) minmax(0,.7fr) 32px;gap:6px 8px;align-items:center}
+.cg .r{text-align:right}
+.cg .tt{border-top:1px solid var(--fio);padding-top:8px;align-self:stretch;display:flex;align-items:center}
+.cg .tt.r{justify-content:flex-end}
+/* linhas rótulo + valor */
+.kv{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:8px;min-height:36px;border-bottom:1px solid var(--fio)}
+.kv:last-child{border-bottom:0}
+.kv .in{width:170px}
+/* faixa de indicadores com células iguais */
+.kp{display:grid;border:1px solid var(--fio);border-radius:6px}
+.kp>div{padding:6px 8px;border-left:1px solid var(--fio);display:flex;flex-direction:column;align-items:flex-end;min-width:0}
+.kp>div:first-child{border-left:0}
+.kp .in{height:28px;width:100%}
+/* faixa única (V2) */
+.ft{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 64px 32px 16px minmax(0,1.2fr) minmax(0,1fr) minmax(0,1.1fr) minmax(0,1.1fr);gap:6px 8px;align-items:center;padding:12px}
+.ft .r{text-align:right}.ft .sep{border-left:1px solid var(--fio);height:100%}
+.ft .tt{border-top:1px solid var(--fio);padding-top:8px;display:flex;align-items:center}.ft .tt.r{justify-content:flex-end}
+.rgl{display:flex;flex-direction:column;gap:6px}
+.rgl button{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border:1px solid var(--fio);border-radius:6px;text-align:left;overflow:hidden;width:100%}
+.rgl button span:last-child{overflow:hidden;text-overflow:ellipsis}.rgl .on{border-color:var(--ok)}
+table.cm{width:100%;border-collapse:collapse}
+table.cm td,table.cm th{padding:0 4px;height:30px;text-align:right;border-top:1px solid var(--fio)}
+table.cm th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500;border-top:0}
+table.cm td:first-child,table.cm th:first-child{text-align:left}
+.sum2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.sum2 .r{display:flex;align-items:center;gap:8px;min-height:32px;padding:0 12px;border-top:1px solid var(--fio)}
+.sum2 .r:nth-child(even){border-left:1px solid var(--fio)}
+.sum2 .r span:last-child{margin-left:auto;overflow:hidden;text-overflow:ellipsis}
+.tot{display:grid;grid-template-columns:repeat(5,1fr)}
+.tot div{padding:6px 8px;text-align:center;border-left:1px solid var(--fio)}.tot div:first-child{border-left:0}
+@media(max-width:1100px){.page{grid-template-columns:1fr}.app{grid-template-columns:1fr}.lat{display:none}}
+</style>
+</head>
+<body>
+<div class="switch"><b>Lateral · 4 versões</b><span id="sws" class="row"></span><button class="sw" onclick="cheio=!cheio;S=novo(S.cli);R()" id="btnCheio"></button><span style="margin-left:auto">Abre preenchido. Clique V1 a V4 e nas etapas.</span></div>
+<div class="app">
+  <aside class="lat"><div class="logo">SORELLY</div><div class="g">Geral</div><div class="it">Início</div><div class="it">SorellyChat</div><div class="g">Setores</div><div class="it">Financeiro</div><div class="it">Agendamento</div><div class="it">Revendedoras</div><div class="it on">Atendimento interno</div><div class="it">Materiais</div><div class="it">RH</div></aside>
+  <div class="main">
+    <div class="top">Atendimento interno</div>
+    <div class="tabs"><span>Revendedoras</span><span>Listagens</span><span class="on">Atendimento Sorelly</span><span>Consolidado Sorelly</span></div>
+    <div class="page"><div class="col" id="esq"></div><div class="col" id="centro"></div></div>
+  </div>
+</div>
+<script>
+var CLIS=[["08:00","Fabiane da Silva Eduardo","095701","9.307,00","107"],["09:00","Giovanna Gluck","095712","6.120,00","74"],["09:00","Kauane Belizario dos Santos","095730","11.480,00","131"],["10:00","Thalyta Beatriz Lima","095744","3.950,00","52"],["10:00","Ana Claudia Adriano","095751","7.730,00","88"],["11:00","Eduarda Cristine Ferreira Chechak","095760","5.210,00","63"]];
+var PASSOS=["Condicionais","Vendas","Pagamentos","Brindes","Condicional nova","Regras"];
+var ESTACOES=[["Condicionais e vendas",[0,1]],["Pagamentos",[2]],["Brindes",[3]],["Condicional nova",[4]],["Regras",[5]]];
+var FORMAS=["Pix","Dinheiro","Cartão","Acerto com loja"],MONT=["Leci","Eduarda","Agatha","Elen"];
+var REGRAS=["Peça fora do kit com etiqueta é peça vendida.","Chegou mais de 30 min atrasada: perde 10% do brinde.","Acerto só vale com todos os pagamentos conferidos.","Condicional nova só com acerto fechado.","A revendedora lê o termo do consignado."];
+var COM=0.30,BRP=0.10,S,FOCO=null,cheio=true;
+function novo(i){var c=CLIS[i],b={lay:(S&&S.lay)||"V1",cli:i,step:0,pop:null,conds:[{n:c[2],v:c[3],p:c[4]}],vendidas:"",vend:"",cred:"",showCred:false,pags:[],forma:"Pix",pval:"",semBr:false,showBr:false,brN:"",brS:"",nova:"",nn:"",regras:[0,0,0,0,0],ass:0,mont:"",chegou:false,iniciou:false,keep:false};
+  if(cheio){b.conds=[{n:c[2],v:c[3],p:c[4]},{n:"095999",v:"1.250,00",p:"14"}];b.vendidas="90";b.vend="9.000,00";b.cred="150,00";b.showCred=true;b.pags=[{f:"Pix",v:4000},{f:"Dinheiro",v:2195}];b.showBr=true;b.brN="300,00";b.brS="200,00";b.nova="cont";b.nn="095800";b.regras=[1,1,1,1,1];b.ass=1;b.mont="Leci";b.chegou=true;b.iniciou=true}return b}
+S=novo(0);
+function num(x){x=String(x||"").replace(/\./g,"").replace(",",".");var v=parseFloat(x);return isNaN(v)?0:v}
+function brl(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s==null?"":s).replace(/"/g,"&quot;")}
+function calc(){var cv=0,cp=0;S.conds.forEach(function(c){cv+=num(c.v);cp+=num(c.p)});var liq=num(S.vend)-num(S.cred),com=liq*COM,ap=liq-com,pago=S.pags.reduce(function(a,p){return a+p.v},0),br=num(S.brN)+num(S.brS);
+  return {cv:cv,cp:cp,ret:Math.max(0,cp-num(S.vendidas)),liq:liq,com:com,ap:ap,pago:pago,falta:ap-pago,brl:liq*BRP,br:br,brr:Math.max(0,liq*BRP-br)}}
+function feito(){var c=calc();return [S.conds.every(function(x){return x.n&&num(x.p)>0}),num(S.vend)>0,S.pags.length>0&&c.falta<=0.005&&c.ap>0,S.semBr||c.br>0,!!S.nova&&(S.nova!=="cont"||!!S.nn),S.regras.every(Boolean)&&!!S.ass]}
+function feitoE(){var f=feito();return [f[0]&&f[1],f[2],f[3],f[4],f[5]]}
+function vals(){var c=calc(),nr=S.regras.filter(Boolean).length;return [S.conds.length+(S.conds.length>1?" condicionais · ":" condicional · ")+c.cp+" peças · "+brl(c.cv),num(S.vend)>0?brl(c.liq)+" líquida · comissão "+Math.round(COM*100)+"%":"",S.pags.length?S.pags.map(function(p){return p.f+" "+brl(p.v)}).join(" + "):"",S.semBr?"Sem brinde":(c.br>0?"Lançado "+brl(c.br):""),S.nova==="cont"?"Continua"+(S.nn?" · nº "+S.nn:""):S.nova==="regra"?"Não pode (regras)":S.nova==="nao"?"Não quer":"",nr?nr+" de 5 regras"+(S.ass?" · assinado":""):""]}
+function curtosE(){var c=calc(),nr=S.regras.filter(Boolean).length;return [S.conds.length?c.cp+" peças · "+(num(S.vend)>0?brl(c.liq):"sem venda"):"",S.pags.length?brl(c.pago):"",S.semBr?"Sem brinde":(c.br>0?brl(c.br):""),S.nova==="cont"?"Continua":S.nova==="regra"?"Não pode":S.nova==="nao"?"Não quer":"",nr?nr+"/5"+(S.ass?" · assinado":""):""]}
+function B(){var c=calc(),f=feito(),fe=feitoE(),v=vals(),cu=curtosE();var m={liq:brl(c.liq),com:Math.round(COM*100)+"%",comV:brl(c.com),ap:brl(c.ap),pago:brl(c.pago),falta:brl(Math.max(0,c.falta)),cv:brl(c.cv),cp:c.cp,ret:c.ret,brl:brl(c.brl),br:brl(c.br),brr:brl(c.brr),nfeitos:f.filter(Boolean).length};
+  v.forEach(function(x,i){m["v"+i]=x||"a preencher"});cu.forEach(function(x,i){m["c"+i]=x||"a preencher"});
+  document.querySelectorAll("[data-b]").forEach(function(el){var k=el.getAttribute("data-b");if(m[k]!==undefined)el.textContent=m[k];if(k==="falta")el.className=el.className.replace(/ ?(pos|neg)/g,"")+(c.ap>0&&c.falta>0.005?" neg":" pos")});
+  document.querySelectorAll("[data-f]").forEach(function(el){var i=+el.getAttribute("data-f");el.classList.toggle("ok",!!f[i]);var d=el.querySelector(".dot");if(d)d.textContent=f[i]?"✓":(i+1)});
+  document.querySelectorAll("[data-e]").forEach(function(el){var i=+el.getAttribute("data-e");el.classList.toggle("ok",!!fe[i]);var d=el.querySelector(".dot");if(d)d.textContent=fe[i]?"✓":(i+1)});
+  var cp=document.getElementById("btnCopy");if(cp)cp.disabled=!(num(S.vend)>0)}
+function R(){var a=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute("data-id");if(a)FOCO=a;
+  document.getElementById("esq").innerHTML=esq();document.getElementById("centro").innerHTML=cabeca()+lateral()+resumo();
+  document.getElementById("sws").innerHTML=["V1","V2","V3","V4"].map(function(k,i){return '<button class="sw'+(S.lay===k?' on':'')+'" onclick="S.lay=\''+k+'\';S.step=0;R()">'+k+' · '+["Colunas alinhadas","Faixa única","Cartões com indicadores","Campo e resultado"][i]+'</button>'}).join("");
+  document.getElementById("btnCheio").textContent=cheio?"Limpar tudo":"Preencher tudo";
+  B();if(S.keep&&FOCO){var el=document.querySelector('[data-id="'+FOCO+'"]');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(x){}}}S.keep=false}
+document.addEventListener("focusin",function(e){var d=e.target.getAttribute&&e.target.getAttribute("data-id");if(d)FOCO=d});
+document.addEventListener("click",function(e){if(S.pop&&!e.target.closest(".pop")){S.pop=null;R()}});
+
+function esq(){return '<div class="card"><div class="bar"><span>Hoje · 30/10</span><span class="cap">0 de '+CLIS.length+' feitos</span></div><div class="col" style="padding:8px;gap:6px">'+CLIS.map(function(c,i){var on=i===S.cli;return '<button class="fila-i'+(on?' on':'')+'" onclick="S=novo('+i+');R()"><span class="h">'+c[0]+'</span><span class="nm" title="'+esc(c[1])+'">'+c[1]+'</span>'+(on?'<span class="pill at">Atendendo</span>':'')+'</button>'}).join("")+'<button class="plus">+ Incluir cliente à mão</button></div></div>'
+ +'<div class="card" style="padding:6px"><div class="row"><button class="chip on" style="flex:1">✓ Kit Normal</button><button class="chip" style="flex:1">Kit 100% Prata</button></div></div>'
+ +'<div class="card"><div class="bar"><span>Comissões</span><span class="cap">Kit · Regras</span></div><div style="padding:4px 8px 8px"><table class="cm"><tr><th>A partir de</th><th>Comis.</th><th>Normal</th><th>Select</th></tr>'+[["R$ 300,00","15%","—","—"],["R$ 500,00","25%","R$ 44,00","R$ 32,00"],["R$ 1.000,00","35%","R$ 118,00","R$ 122,00"],["R$ 2.500,00","40%","R$ 196,00","R$ 144,00"],["R$ 5.000,00","45%","R$ 312,00","R$ 232,00"]].map(function(r){return '<tr>'+r.map(function(x){return '<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</table></div></div>'}
+function popBtn(id,rot,opts,cur,fn){var open=S.pop===id;return '<div class="pop"><button class="btn" onclick="event.stopPropagation();S.pop='+(open?'null':"'"+id+"'")+';R()">'+rot+(cur?': <b>'+cur+'</b>':'')+' ▾</button>'+(open?'<div class="menu">'+opts.map(function(o){return '<button class="'+(cur===o?'on':'')+'" onclick="'+fn+'(\''+o+'\')">'+o+'</button>'}).join("")+'</div>':'')+'</div>'}
+function setMont(o){S.mont=o;S.pop=null;R()}
+function cabeca(){var c=CLIS[S.cli];return '<div class="card" style="padding:8px 12px"><div class="row" style="justify-content:space-between"><div class="row" style="min-width:0"><b>'+c[1]+'</b><span>'+c[0]+'</span><span class="pill'+(S.iniciou?' ok':'')+'">'+(S.iniciou?'Em atendimento':'Aguardando')+'</span></div><div class="row">'+popBtn("mont","Quem montou",MONT,S.mont,"setMont")+'<button class="btn" onclick="S.chegou=true;R()">'+(S.chegou?'✓ Chegou':'Chegou agora')+'</button><button class="btn">⏱ Escolha do kit</button><button class="btn p" onclick="S.iniciou=true;R()">▶ Iniciar</button></div></div></div>'}
+
+function mf(el){var v=num(el.value);if(el.value.trim()!=="")el.value=v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function ci(i,k,el){S.conds[i][k]=el.value;B()}
+function inp(k,el){S[k]=el.value;B()}
+function addCond(){S.conds.push({n:"",v:"",p:""});S.keep=true;FOCO="c"+(S.conds.length-1)+".n";R()}
+function delCond(i){S.conds.splice(i,1);R()}
+function addPag(){var v=num(S.pval)||Math.max(0,calc().falta);if(!v)return;S.pags.push({f:S.forma,v:v});S.pval="";R()}
+var I=function(id,val,k,extra){return '<input class="in r" data-id="'+id+'" value="'+esc(val)+'" '+(extra||"")+'>'};
+
+/* ===== peças reutilizadas ===== */
+function condRows(){return S.conds.map(function(c,k){return '<input class="in" data-id="c'+k+'.n" value="'+esc(c.n)+'" oninput="ci('+k+',\'n\',this)" placeholder="Nº"><input class="in r" data-id="c'+k+'.v" value="'+esc(c.v)+'" oninput="ci('+k+',\'v\',this)" onblur="mf(this)" placeholder="0,00"><input class="in r" data-id="c'+k+'.p" value="'+esc(c.p)+'" oninput="ci('+k+',\'p\',this)" placeholder="0">'+(S.conds.length>1?'<button class="btn x" onclick="delCond('+k+')" title="Tirar">×</button>':'<span></span>')}).join("")}
+function condGrid(){return '<div class="cg"><span class="cap">Nº</span><span class="cap r">Valor (R$)</span><span class="cap r">Peças</span><span></span>'+condRows()
+ +'<span style="grid-column:1/4"><button class="plus" onclick="addCond()">+ Outra condicional</button></span><span></span>'
+ +'<span class="tt cap">Total</span><span class="tt r n20 gold" data-b="cv"></span><span class="tt r n20" data-b="cp"></span><span class="tt"></span>'
+ +'<span class="cap" style="grid-column:1/3">Peças vendidas (total)</span>'+I("vendidas",S.vendidas,0,'oninput="inp(\'vendidas\',this)" placeholder="0"')+'<span></span>'
+ +'<span class="cap" style="grid-column:1/3">Devem voltar</span><span class="r n20 gold" data-b="ret" style="text-align:right"></span><span></span></div>'}
+function vendKV(){return '<div><div class="kv"><span>Quanto vendeu</span>'+I("vend",S.vend,0,'oninput="inp(\'vend\',this)" onblur="mf(this)" placeholder="R$ 0,00"')+'</div>'
+ +'<div class="kv"><span>Desconto de crédito</span>'+(S.showCred?I("cred",S.cred,0,'oninput="inp(\'cred\',this)" onblur="mf(this)" placeholder="R$ 0,00"'):'<button class="plus" style="width:170px" onclick="S.showCred=true;S.keep=true;FOCO=\'cred\';R()">+ Crédito</button>')+'</div>'
+ +'<div class="kv"><span>Venda líquida</span><b class="n20" data-b="liq"></b></div><div class="kv"><span>Comissão da revendedora</span><b class="n20" data-b="com"></b></div><div class="kv"><span>Valor a pagar</span><b class="n20 gold" data-b="ap"></b></div></div>'}
+function ht(t,extra){return '<div class="ht"><span class="cap">'+t+'</span>'+(extra||"")+'</div>'}
+
+/* ===== 1ª estação: 4 versões ===== */
+function est0(){
+ if(S.lay==="V1")return '<div class="half"><div class="h">'+ht("Condicionais")+condGrid()+'</div><div class="h">'+ht("Vendas")+vendKV()+'</div></div>';
+ if(S.lay==="V2"){var r=S.conds.map(function(c,k){return '<input class="in" data-id="c'+k+'.n" value="'+esc(c.n)+'" oninput="ci('+k+',\'n\',this)" placeholder="Nº"><input class="in r" data-id="c'+k+'.v" value="'+esc(c.v)+'" oninput="ci('+k+',\'v\',this)" onblur="mf(this)" placeholder="0,00"><input class="in r" data-id="c'+k+'.p" value="'+esc(c.p)+'" oninput="ci('+k+',\'p\',this)" placeholder="0">'+(S.conds.length>1?'<button class="btn x" onclick="delCond('+k+')">×</button>':'<span></span>')
+   +(k===0?'<span class="sep"></span>'+I("vend",S.vend,0,'oninput="inp(\'vend\',this)" onblur="mf(this)" placeholder="R$ 0,00"')+(S.showCred?I("cred",S.cred,0,'oninput="inp(\'cred\',this)" onblur="mf(this)" placeholder="R$ 0,00"'):'<button class="plus" onclick="S.showCred=true;S.keep=true;FOCO=\'cred\';R()">+ Crédito</button>')+'<b class="n15 r" style="text-align:right" data-b="liq"></b><b class="n15 gold r" style="text-align:right" data-b="ap"></b>':'<span></span><span></span><span></span><span></span><span></span>')}).join("");
+  return '<div class="ft"><span class="cap">Nº</span><span class="cap r">Valor (R$)</span><span class="cap r">Peças</span><span></span><span></span><span class="cap r">Vendeu (R$)</span><span class="cap r">Crédito (R$)</span><span class="cap r">Líquida</span><span class="cap r">A pagar</span>'+r
+   +'<span style="grid-column:1/4"><button class="plus" onclick="addCond()">+ Outra condicional</button></span><span></span><span></span><span class="r cap" style="grid-column:6/8;text-align:right">Comissão 30%</span><b class="n15 r" style="text-align:right" data-b="comV"></b><span></span>'
+   +'<span class="tt cap">Total</span><span class="tt r n15 gold" data-b="cv"></span><span class="tt r n15" data-b="cp"></span><span class="tt"></span><span></span><span class="cap" style="grid-column:6/8">Peças vendidas (total)</span>'+I("vendidas",S.vendidas,0,'oninput="inp(\'vendidas\',this)" placeholder="0"')+'<span></span>'
+   +'<span class="cap" style="grid-column:1/3">Devem voltar</span><b class="n15 gold r" style="text-align:right" data-b="ret"></b><span style="grid-column:4/10"></span></div>'}
+ if(S.lay==="V3"){var kp1='<div class="kp" style="grid-template-columns:1fr 1fr 1.2fr 1fr"><div><span class="cap">Total</span><b class="n15 gold" data-b="cv"></b></div><div><span class="cap">Peças</span><b class="n15" data-b="cp"></b></div><div><span class="cap">Vendidas</span>'+I("vendidas",S.vendidas,0,'oninput="inp(\'vendidas\',this)" placeholder="0"')+'</div><div><span class="cap">Voltam</span><b class="n15 gold" data-b="ret"></b></div></div>';
+  var kp2='<div class="kp" style="grid-template-columns:1fr 1fr 1fr"><div><span class="cap">Líquida</span><b class="n15" data-b="liq"></b></div><div><span class="cap">Comissão</span><b class="n15" data-b="com"></b></div><div><span class="cap">A pagar</span><b class="n15 gold" data-b="ap"></b></div></div>';
+  return '<div class="half"><div class="h">'+ht("Condicionais")+'<div class="cg"><span class="cap">Nº</span><span class="cap r">Valor (R$)</span><span class="cap r">Peças</span><span></span>'+condRows()+'<span style="grid-column:1/4"><button class="plus" onclick="addCond()">+ Outra condicional</button></span><span></span></div><div style="flex:1"></div>'+kp1+'</div>'
+   +'<div class="h">'+ht("Vendas")+'<div class="cg" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)"><span class="cap r">Quanto vendeu (R$)</span><span class="cap r">Desconto de crédito (R$)</span>'+I("vend",S.vend,0,'oninput="inp(\'vend\',this)" onblur="mf(this)" placeholder="R$ 0,00"')+(S.showCred?I("cred",S.cred,0,'oninput="inp(\'cred\',this)" onblur="mf(this)" placeholder="R$ 0,00"'):'<button class="plus" onclick="S.showCred=true;S.keep=true;FOCO=\'cred\';R()">+ Crédito</button>')+'</div><div style="flex:1"></div>'+kp2+'</div></div>'}
+ /* V4: cada campo com o seu resultado na mesma linha */
+ return '<div class="half"><div class="h">'+ht("Condicionais")+condGrid()+'</div><div class="h">'+ht("Vendas · campo → resultado")
+  +'<div class="kv" style="grid-template-columns:1fr 150px 130px"><span>Quanto vendeu</span>'+I("vend",S.vend,0,'oninput="inp(\'vend\',this)" onblur="mf(this)" placeholder="R$ 0,00"').replace('class="in r"','class="in r" style="width:100%"')+'<span class="n15" style="text-align:right" data-b="liq"></span></div>'
+  +'<div class="kv" style="grid-template-columns:1fr 150px 130px"><span>Crédito</span>'+(S.showCred?I("cred",S.cred,0,'oninput="inp(\'cred\',this)" onblur="mf(this)" placeholder="R$ 0,00"').replace('class="in r"','class="in r" style="width:100%"'):'<button class="plus" onclick="S.showCred=true;S.keep=true;FOCO=\'cred\';R()">+ Crédito</button>')+'<span class="cap" style="text-align:right">abate da venda</span></div>'
+  +'<div class="kv" style="grid-template-columns:1fr 150px 130px"><span>Comissão</span><span class="cap" style="text-align:right">30% da líquida</span><span class="n15" style="text-align:right" data-b="comV"></span></div>'
+  +'<div class="kv" style="grid-template-columns:1fr 150px 130px"><span>Valor a pagar</span><span></span><span class="n20 gold" style="text-align:right" data-b="ap"></span></div></div></div>'}
+
+/* ===== demais estações (iguais nas 4 versões, também divididas ao meio) ===== */
+function kvs(a){return '<div>'+a.map(function(x){return '<div class="kv"><span>'+x[0]+'</span><b class="n20 '+(x[2]||"")+'" data-b="'+x[1]+'"></b></div>'}).join("")+'</div>'}
+function est1(){return '<div class="half"><div class="h">'+ht("Lançar pagamento")+'<div class="row" style="flex-wrap:wrap">'+FORMAS.map(function(f){return '<button class="chip'+(S.forma===f?' on':'')+'" onclick="S.forma=\''+f+'\';R()">'+f+'</button>'}).join("")+'</div><div class="row"><input class="in r" data-id="pval" value="'+esc(S.pval)+'" oninput="inp(\'pval\',this)" onblur="mf(this)" placeholder="Valor (vazio = o que falta)"><button class="btn p" onclick="addPag()">OK</button></div>'
+  +'<div>'+(S.pags.length?S.pags.map(function(p,k){return '<div class="kv" style="grid-template-columns:1fr auto 32px"><span>'+p.f+'</span><b class="n15">'+brl(p.v)+'</b><button class="btn x" onclick="S.pags.splice('+k+',1);R()">×</button></div>'}).join(""):'<div class="kv"><span class="cap">Nenhum pagamento lançado</span></div>')+'</div></div><div class="h">'+ht("Conta")+kvs([["Valor a pagar","ap"],["Pago","pago","pos"],["Falta","falta"]])+'</div></div>'}
+function est2(){return '<div class="half"><div class="h">'+ht("Lançar brinde")+(S.showBr?'<div class="kv"><span>Brinde normal (R$)</span>'+I("brN",S.brN,0,'oninput="inp(\'brN\',this)" onblur="mf(this)" placeholder="R$ 0,00"')+'</div><div class="kv"><span>Brinde select (R$)</span>'+I("brS",S.brS,0,'oninput="inp(\'brS\',this)" onblur="mf(this)" placeholder="R$ 0,00"')+'</div>':'<div class="row"><button class="plus" onclick="S.showBr=true;S.semBr=false;S.keep=true;FOCO=\'brN\';R()">+ Lançar brinde</button><button class="chip'+(S.semBr?' on':'')+'" style="flex:none" onclick="S.semBr=!S.semBr;R()">Sem brinde</button></div>')+'</div><div class="h">'+ht("Brinde")+kvs([["Libera até (exemplo 10%)","brl"],["Lançado","br"],["Resta","brr","gold"]])+'</div></div>'}
+function est3(){return '<div class="h" style="padding:12px;display:flex;flex-direction:column;gap:8px">'+ht("Condicional nova")+'<div class="row" style="flex-wrap:wrap">'+[["cont","Continua"],["regra","Não pode (regras)"],["nao","Não quer"]].map(function(o){return '<button class="chip'+(S.nova===o[0]?' on':'')+'" onclick="S.nova=\''+o[0]+'\';R()">'+o[1]+'</button>'}).join("")+(S.nova==="cont"?'<input class="in" style="width:170px" data-id="nn" value="'+esc(S.nn)+'" oninput="inp(\'nn\',this)" placeholder="Nº da nova">':'')+'</div></div>'}
+function est4(){return '<div class="half"><div class="h">'+ht("Regras do consignado")+'<div class="rgl">'+REGRAS.map(function(r,k){return '<button class="'+(S.regras[k]?'on':'')+'" title="'+esc(r)+'" onclick="S.regras['+k+']=S.regras['+k+']?0:1;R()"><span class="dot'+(S.regras[k]?'" style="background:var(--ok);border-color:var(--ok);color:#06150e':'')+'">'+(S.regras[k]?'✓':k+1)+'</span><span>'+r+'</span></button>'}).join("")+'</div></div><div class="h">'+ht("Assinatura")+'<button class="btn'+(S.ass?' p':'')+'" onclick="S.ass=S.ass?0:1;R()">'+(S.ass?'✓ Revendedora assinou':'✍ Revendedora assina')+'</button></div></div>'}
+var ESTS=[est0,est1,est2,est3,est4];
+function nav(){return '<span class="row"><button class="btn" onclick="S.step=Math.max(0,S.step-1);R()" '+(S.step?'':'disabled')+'>‹ Voltar</button><button class="btn p" onclick="S.step=Math.min(4,S.step+1);R()">'+(S.step===4?'Finalizar':'Próxima ›')+'</button></span>'}
+function lateral(){var cu=curtosE(),fe=feitoE();return '<section class="card shell"><div class="vr">'+ESTACOES.map(function(e,i){return '<button data-e="'+i+'" class="'+(i===S.step?'on':'')+(fe[i]?' ok':'')+'" onclick="S.step='+i+';R()"><span class="dot">'+(fe[i]?'✓':i+1)+'</span><span class="t"><b>'+e[0]+'</b><span data-b="c'+i+'"></span></span></button>'}).join("")+'</div><div><div class="bar"><span>'+(S.step+1)+' · '+ESTACOES[S.step][0]+'</span>'+nav()+'</div>'+ESTS[S.step]()+'</div></section>'}
+
+function resumo(){var rows=PASSOS.map(function(p,i){return '<div class="r" data-f="'+i+'"><span class="dot">'+(i+1)+'</span><b>'+p+'</b><span data-b="v'+i+'"></span></div>'}).join("");
+ return '<section class="card"><div class="bar"><span>Resumo do acerto · '+CLIS[S.cli][1].split(" ").slice(0,2).join(" ")+'</span><span class="cap"><span data-b="nfeitos"></span> de 6 etapas</span></div><div class="tot">'+[["Líquida","liq",""],["Comissão","com",""],["A pagar","ap","gold"],["Pago","pago","pos"],["Falta","falta",""]].map(function(x){return '<div><div class="cap">'+x[0]+'</div><div class="n20 '+x[2]+'" data-b="'+x[1]+'"></div></div>'}).join("")+'</div><div class="sum2">'+rows+'</div><div class="row" style="justify-content:space-between;padding:6px 12px;border-top:1px solid var(--fio)"><span>Fica salvo sozinho neste atendimento.</span><span class="row"><button class="btn" id="btnCopy" onclick="copiar()">Copiar resumo</button><button class="btn p" onclick="copiar(true)">Enviar no WhatsApp</button></span></div></section>'}
+function texto(){var v=vals(),c=calc(),l=["*Resumo do acerto · Sorelly Joias*","Revendedora: "+CLIS[S.cli][1],"Data: 30/10/2026",""];PASSOS.forEach(function(p,i){if(v[i])l.push("• "+p+": "+v[i])});l.push("","*Valor a pagar: "+brl(c.ap)+"*");l.push(c.falta>0.005?"Falta pagar: "+brl(c.falta):"Pago: quitado ✓");return l.join("\n")}
+function copiar(w){var t=texto();try{navigator.clipboard.writeText(t)}catch(x){}if(w)window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank");var b=document.getElementById("btnCopy");b.textContent="✓ Copiado";setTimeout(function(){var q=document.getElementById("btnCopy");if(q)q.textContent="Copiar resumo"},1400)}
+R();
+</script>
+</body>
+</html>

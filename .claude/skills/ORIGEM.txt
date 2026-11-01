@@ -1,0 +1,2 @@
+frontend-design: anthropics/skills ca45fc4 (2026-10-28)
+impeccable: pbakaus/impeccable 02523ae (2026-10-30) v4.8.0, instalado por cópia da pasta .claude/skills (sem o motor binário e sem hooks)

@@ -183,3 +183,25 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Saldos das 29 contas gravados também para 28/10 (`saldos-atualizacao.local.js`). Soma das contas bancárias (sem Retido e sem Dinheiro): 28/10 = −R$ 227.119,68 (27/10 era −R$ 218.823,61). Sicredi Shopping 46: −R$ 5.138,96. Sicredi Serenity: −R$ 6.127,90. Itaú Black: −R$ 26.379,17.
 - Contas pagas: o admin antigo ainda NÃO tem linha do dia 28/10. Última linha é 27/10 (R$ 11.508,02, igual ao já gravado). Dia 28/10 fica sem contas pagas até o admin lançar.
 - Contas pagas de outubro gravadas (01 a 27/10): **R$ 1.261.865,29**. Total do mês no admin (`faturamento_contas_mes`, 27/10 21:03): pagas R$ 1.330.288,27. Diferença de R$ 68.422,98 entre a soma por dia e o total do mês (já vista antes; origem a investigar). Nenhum total de mês novo desde 27/10.
+
+## Faturamento fixado em 29/10/2026 (valor do Marcus, 30/10/2026)
+| Data | Acertos acum. | Faturamento acum. | Média | Dia |
+|---|---|---|---|---|
+| 28/10 | 1.652 | R$ 1.296.201,60 | R$ 784,63 | 69 acertos, R$ 43.459,08 |
+| **29/10** | **1.731** | **R$ 1.363.799,00** | **R$ 787,87** | 79 acertos, R$ 67.597,40 |
+- **30/10 FICA DE FORA:** o Marcus vai mandar o número certo. Os valores provisórios (1.829 acertos e R$ 1.445.484,41, média R$ 790,31) foram retirados do sistema.
+- Carregar e "a realizar" NÃO foram informados. Provisório: Carregar 0 e a realizar = 1.886 − 1.731 = 155. Pedir ao Marcus.
+- O admin antigo não tinha saldos nem contas pagas de 29 e 30/10 (último dia 28/10).
+- Código: `aplicaFat30` em `state/store.js` (flag `fat30V` = 2).
+
+## FECHAMENTO DE OUTUBRO/2026 — TRAVADO, SEM FUNCIONÁRIOS (Marcus, 01/11/2026)
+| Data | Acertos acum. | Faturamento acum. | Média | Dia |
+|---|---|---|---|---|
+| 29/10 | 1.731 | R$ 1.363.799,00 | R$ 787,87 | 79 acertos, R$ 67.597,40 |
+| **30/10** | **1.835** | **R$ 1.430.877,71** | **R$ 779,77** | 104 acertos, R$ 67.078,71 |
+| **31/10 (fecha o mês)** | **1.843** | **R$ 1.438.133,61** | **R$ 780,32** | 8 acertos, R$ 7.255,90 |
+- Carregar 0, a realizar 0 (mês encerrado), **2.047 revendedoras** no fim do mês. Previstos 1.886 → 97,7% realizado.
+- Relatório da DevMaster **sem funcionários**. As compras de funcionárias ainda vão entrar (hoje não estão no faturamento do sistema).
+- Número anterior do Marcus (1.839 acertos, R$ 1.458.447,71, média R$ 793,07): guardado em `fechaMes["2026-10"].comFunc`. Atenção: a diferença de faturamento (R$ 20.314,10) cabe nas compras de funcionárias, mas os acertos vão para baixo (1.839 contra 1.843): conferir a origem com o Marcus.
+- Contas pagas e saldos: o admin antigo só tem até 28/10 (lido em 01/11). Quinta e sexta (29 e 30/10) ainda não foram lançados lá.
+- Código: `aplicaFechaOut` em `state/store.js` (flag `fecha10V` = 2); `fechaMes["2026-10"].fechado = true`.

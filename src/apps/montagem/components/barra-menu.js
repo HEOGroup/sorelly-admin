@@ -83,27 +83,6 @@ function BarraMenu(p){
     aberto && aberto[0] && createPortal(e(Fragment,null, e("div",{className:"fixed inset-x-0 bottom-0 z-40", style:{top:aberto[0].r.b}, onClick:fechar}), listas), document.body));
 }
 
-// ── Busca de tela: escreve e acha qualquer tela do setor (Enter abre a primeira)
-function BuscaMenu(p){
-  var todas = folhas(filtrar(p.menu, p.pode), [], []);
-  var sq = useState(""), q = sq[0], setQ = sq[1], si = useState(0), idx = si[0], setIdx = si[1], sf = useState(false), foco = sf[0], setFoco = sf[1];
-  var ref = useRef(null);
-  var termos = norm(q).split(/\s+/).filter(Boolean);
-  var achadas = termos.length ? todas.filter(function(x){ var t = norm(x.trilha.join(" ")+" "+x.no.nome); return termos.every(function(w){ return t.indexOf(w)>=0; }); }).slice(0, 12) : [];
-  var abre = function(x){ setQ(""); setFoco(false); if(ref.current) ref.current.blur(); p.abrir(x.no); };
-  return e("div",{className:"relative flex shrink-0 items-center px-2"},
-    e("input",{ref:ref, type:"search", value:q, placeholder:"Buscar tela…", "aria-label":"Buscar tela do "+p.setor, onFocus:function(){ setFoco(true); }, onBlur:function(){ setTimeout(function(){ setFoco(false); }, 150); },
-      onChange:function(ev){ setQ(ev.target.value); setIdx(0); },
-      onKeyDown:function(ev){ if(ev.key==="ArrowDown"){ ev.preventDefault(); setIdx(Math.min(idx+1, achadas.length-1)); } else if(ev.key==="ArrowUp"){ ev.preventDefault(); setIdx(Math.max(idx-1, 0)); } else if(ev.key==="Enter" && achadas[idx]){ abre(achadas[idx]); } else if(ev.key==="Escape"){ setQ(""); ev.target.blur(); } },
-      className:"h-6 w-48 rounded-md border border-border bg-card px-2 text-[12.5px] text-white outline-none focus-visible:ring-2 focus-visible:ring-primary"}),
-    foco && termos.length>0 && e("div",{className:"absolute right-2 top-full z-50 mt-0.5 max-h-80 w-80 overflow-y-auto border border-border bg-card"},
-      achadas.length ? achadas.map(function(x, i){
-        return e("button",{key:i, type:"button", onMouseDown:function(ev){ ev.preventDefault(); abre(x); }, onMouseEnter:function(){ setIdx(i); },
-          className:"flex w-full flex-col justify-center border-b border-border px-3 text-left last:border-b-0 "+(i===idx ? "font-medium text-white" : "text-white"), style:Object.assign({minHeight:LIN}, i===idx ? {background:OURO} : {})},
-          e("span",{className:"truncate text-[12.5px]"}, x.no.nome), e("span",{className:"truncate text-[11px]"}, x.trilha.join(" › "))); })
-        : e("p",{className:"px-3 text-[12.5px] text-white", style:{height:LIN, lineHeight:LIN+"px"}}, "Nenhuma tela com esse nome")));
-}
-
 // ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
 var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
 var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")+"_"+(window.__sorellyAtuando||"")) || "[]"); }catch(x){ return []; } };
@@ -218,14 +197,12 @@ function MenuSetor(p){
       return;
     }
     var de = retangulo(ev && ev.currentTarget);
-    if(!de) de = retangulo(document.querySelector('input[type="search"][aria-label^="Buscar tela"]'));
     var r = p.abrir(n, ev); voar(n.nome, de); return r;
   };
   return e("div",{className:"sticky top-12 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:73}},
     !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor, cor:p.cor, visao:p.visao}),
     e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
-      e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo}),
-      e(BuscaMenu,{menu:p.menu, pode:p.pode, abrir:abrirComVoo, setor:p.setor})),
+      e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo})),
     aviso && createPortal(e("div",{role:"alert", className:"fixed left-1/2 top-24 z-[60] max-w-[90vw] -translate-x-1/2 rounded-md border border-destructive bg-card px-4 py-2 text-[13px] text-white shadow-lg"}, aviso), document.body));
 }
 

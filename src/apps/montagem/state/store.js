@@ -156,6 +156,37 @@ function aplicaFat28(s){
   var pv28 = sincPrevistosAcertos(s, "2026-10", 1886); s.metaMensal = pv28.metaMensal; if(pv28.agend) s.agend = pv28.agend;
   return s;
 }
+// 30/10/2026 (Marcus): 29/10 FIXADO = 1.731 acertos e R$ 1.363.799,00 acumulados (média R$ 787,87). Dia 29 = diferença para o dia anterior. O dia 30/10 NÃO entra: o Marcus vai mandar o número certo (os valores provisórios 1.829 e R$ 1.445.484,41 foram retirados). Carregar e "a realizar" não foram informados: Carregar segue 0 e a realizar = 1.886 - feitos (155) até o Marcus mandar. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFat30(s){
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 0, k = "2026-10-29";
+  var ant = Object.keys(s.faturamentoDiario||{}).filter(function(x){ return x<k && x.slice(0,7)==="2026-10"; }).sort().pop(), a0 = ant ? s.faturamentoDiario[ant] : {recebido:0, acertos:0};
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario);
+  s.carregarDia = Object.assign({}, s.carregarDia); s.restanteDia = Object.assign({}, s.restanteDia);
+  ["2026-10-30"].forEach(function(x){ delete s.faturamentoDiario[x]; delete s.carregarDia[x]; delete s.restanteDia[x]; if(s.contasPagasDiario[x]){ var c = Object.assign({}, s.contasPagasDiario[x]); delete c.faturado; delete c.acertos; s.contasPagasDiario[x] = c; } });
+  s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:1363799.00, acertos:1731, revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now(), parcial:false});
+  s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:Math.round((1363799.00-(a0.recebido||0))*100)/100, acertos:1731-(a0.acertos||0)});
+  s.carregarDia[k] = 0; s.restanteDia[k] = {feitos:1731, carregar:0, aRealizar:1886-1731};
+  if(s.fatHoje && s.fatHoje.data<=k) s.fatHoje = null;
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:1886-1731, carregar:0}});
+  var pv30 = sincPrevistosAcertos(s, "2026-10", 1886); s.metaMensal = pv30.metaMensal; if(pv30.agend) s.agend = pv30.agend;
+  return s;
+}
+// 01/11/2026 (Marcus): FECHAMENTO DE OUTUBRO/2026, relatório SEM FUNCIONÁRIOS (DevMaster): 30/10 = 1.835 acertos e R$ 1.430.877,71 (média R$ 779,77); 31/10 = 1.843 acertos e R$ 1.438.133,61 (média R$ 780,32). Carregar 0, nada a realizar, 2.047 revendedoras no fim do mês. O fechamento que o Marcus tinha antes (1.839 acertos, R$ 1.458.447,71, média R$ 793,07) fica guardado em fechaMes.comFunc como referência: as compras de funcionárias ainda vão entrar. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFechaOut(s){
+  var DIAS = [["2026-10-30", 1430877.71, 1835], ["2026-10-31", 1438133.61, 1843]];
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario);
+  s.carregarDia = Object.assign({}, s.carregarDia); s.restanteDia = Object.assign({}, s.restanteDia);
+  DIAS.forEach(function(d){
+    var k = d[0], ant = Object.keys(s.faturamentoDiario).filter(function(x){ return x<k && x.slice(0,7)==="2026-10"; }).sort().pop(), a0 = ant ? s.faturamentoDiario[ant] : {recebido:0, acertos:0};
+    s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:d[1], acertos:d[2], revendedoras:2047, fixadoEm:Date.now(), parcial:false});
+    s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:Math.round((d[1]-(a0.recebido||0))*100)/100, acertos:d[2]-(a0.acertos||0)});
+    s.carregarDia[k] = 0; s.restanteDia[k] = {feitos:d[2], carregar:0, aRealizar:0};
+  });
+  s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-31":2047});
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:0, carregar:0, fechado:true, comFunc:{acertos:1839, recebido:1458447.71}}});
+  if(s.fatHoje && s.fatHoje.data<="2026-11-01") s.fatHoje = null;
+  return s;
+}
 // 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
 function aplicaAgendReal(s){
   if(!AG_REAL || !s.agend || !s.agend.config) return s;
@@ -255,7 +286,7 @@ function novo(){
   if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
   if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
   aplicaPagosAdmin(st); st.cpdAdminV = 5; st.cpdLocalV = 5;
-  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1; aplicaFat27(st); st.fat27V = 3; aplicaFat28(st); st.fat28V = 1;   // faturamento fixado até 19/10 (também no estado novo)
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1; aplicaFat27(st); st.fat27V = 3; aplicaFat28(st); st.fat28V = 1; aplicaFat30(st); st.fat30V = 2; aplicaFechaOut(st); st.fecha10V = 2;   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -329,6 +360,8 @@ function inicial(){
     if(s.hoje26V!==6){ s.hoje26V = 6; aplicaHoje26(s); }
     if(s.fat27V!==3){ s.fat27V = 3; aplicaFat27(s); }
     if(s.fat28V!==1){ s.fat28V = 1; aplicaFat28(s); }
+    if(s.fat30V!==2){ s.fat30V = 2; aplicaFat30(s); }   // v2: só o dia 29 (o 30 sai até o Marcus mandar o certo)
+    if(s.fecha10V!==2){ s.fecha10V = 2; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
     if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
     if(AG_REAL && s.agRealV!==1){ s.agRealV = 1; aplicaAgendReal(s); }
     if(s.cpdAdminV!==5){ s.cpdAdminV = 5; aplicaPagosAdmin(s); }   // v4: contas pagas de 01/09 a 26/10 lidas direto do admin antigo

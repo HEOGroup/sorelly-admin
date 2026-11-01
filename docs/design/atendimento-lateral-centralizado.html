@@ -1,0 +1,379 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento Sorelly · Lateral centralizado</title>
+<!--
+  Sorelly Admin · docs/design/atendimento-lateral-centralizado.html (30/10/2026)
+  UMA versão, tudo CENTRALIZADO: cabeçalho de coluna, valor e rótulo sempre no centro da mesma coluna; ícones todos do mesmo tamanho (20 px);
+  estações na lateral; primeira estação junta Condicionais + Vendas dividindo a tela ao meio. Abre preenchido (botão "Limpar tudo").
+  Casca igual ao admin. 13 px / 11 px, número até 20 px, campos de 32 px, nada quebra. Valores de demonstração (comissão 30% e brinde 10% são exemplos).
+-->
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#3A3F48;--fio2:#4A505B;--tx:#F2F0EA;--ouro:#D6B25C;--ouro-t:#1F1B12;--ok:#4CC38A;--ruim:#E5484D}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--fundo);color:var(--tx);font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif;font-feature-settings:"tnum" 1}
+button,input{font:inherit;color:inherit;text-align:center}button{cursor:pointer;background:none;border:0;white-space:nowrap}
+:focus-visible{outline:2px solid var(--ouro);outline-offset:1px}
+b,td,th,.n20,.pill,.chip,.btn,.cap{white-space:nowrap}
+.switch{display:flex;gap:6px;align-items:center;justify-content:center;padding:8px 12px;background:#08090b;border-bottom:1px solid var(--fio);position:sticky;top:0;z-index:30}
+.sw{height:32px;padding:0 12px;border:1px solid var(--fio);border-radius:6px;background:var(--painel);font-weight:500}
+.app{display:grid;grid-template-columns:172px 1fr;min-height:calc(100vh - 49px)}
+.lat{background:var(--painel);border-right:1px solid var(--fio);padding:12px 8px;display:flex;flex-direction:column;gap:2px}
+.lat .logo{font-weight:700;letter-spacing:.14em;color:var(--ouro);padding:4px 8px 12px;text-align:center}
+.lat .it{height:30px;display:flex;align-items:center;justify-content:center;padding:0 8px;border-radius:6px}
+.lat .it.on{background:var(--painel2);position:relative}.lat .it.on::before{content:"";position:absolute;left:0;top:8px;bottom:8px;width:2px;background:var(--ouro)}
+.lat .g{font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:10px 8px 4px;font-weight:500;text-align:center}
+.main{min-width:0}
+.top{height:40px;border-bottom:1px solid var(--fio);display:flex;align-items:center;justify-content:center;font-weight:600}
+.tabs{height:32px;border-bottom:1px solid var(--fio);display:flex;gap:16px;padding:0 16px;justify-content:center}
+.tabs span{display:flex;align-items:center;border-bottom:2px solid transparent}.tabs .on{border-color:var(--ouro);font-weight:600}
+.page{display:grid;grid-template-columns:330px minmax(0,1fr);gap:10px;padding:10px 12px;align-items:start}
+.card{background:var(--painel);border:1px solid var(--fio);border-radius:8px}
+.bar{background:linear-gradient(90deg,rgba(214,178,92,.46),rgba(214,178,92,.14) 55%,rgba(214,178,92,.32));border-radius:7px 7px 0 0;height:32px;padding:0 12px;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;border-bottom:1px solid var(--fio);font-weight:600}
+.bar>:first-child{justify-self:start}.bar>:last-child{justify-self:end}.bar>.mid{justify-self:center}
+.cap{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500;text-align:center}
+.col{display:flex;flex-direction:column;gap:10px;min-width:0}
+.row{display:flex;gap:8px;align-items:center;justify-content:center}
+.fila-i{height:32px;display:grid;grid-template-columns:44px minmax(0,1fr) 74px;align-items:center;gap:6px;padding:0 8px;border:1px solid var(--fio);border-radius:6px;width:100%}
+.fila-i.on{border-color:var(--ouro);background:var(--ouro-t)}
+.fila-i .h{font-weight:600}.fila-i .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{height:20px;padding:0 8px;border-radius:10px;border:1px solid var(--fio2);font-size:11px;display:inline-flex;align-items:center;justify-content:center}
+.pill.ok{border-color:var(--ok);color:var(--ok)}.pill.at{border-color:var(--ouro);color:var(--ouro)}
+.btn{height:32px;padding:0 12px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);font-weight:500}
+.btn:hover{background:#242830}.btn.p{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t);font-weight:600}
+.btn:disabled{opacity:.45;cursor:default}
+.chip{height:32px;padding:0 12px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);font-weight:500}
+.chip.on{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t);font-weight:600}
+.in{height:32px;width:100%;min-width:0;padding:0 8px;border:1px solid var(--fio2);border-radius:6px;background:#0f1114;font-variant-numeric:tabular-nums;text-align:center}
+.plus{height:32px;padding:0 12px;border:1px dashed var(--fio2);border-radius:6px;font-weight:500;width:100%}
+.plus:hover{border-color:var(--ouro);color:var(--ouro)}
+.x{width:32px;padding:0}
+.dot{width:20px;height:20px;border-radius:50%;border:1px solid var(--fio2);display:inline-grid;place-items:center;font-size:11px;flex:none;font-weight:600;line-height:1}
+[data-f].ok .dot,[data-e].ok .dot{background:var(--ok);border-color:var(--ok);color:#06150e}
+.n20{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:24px;text-align:center}
+.n15{font-size:15px;font-weight:600;font-variant-numeric:tabular-nums;text-align:center}
+.pos{color:var(--ok)}.neg{color:var(--ruim)}.gold{color:var(--ouro)}
+.pop{position:relative}
+.menu{position:absolute;top:36px;right:0;min-width:100%;background:var(--painel2);border:1px solid var(--fio2);border-radius:6px;z-index:25;padding:4px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.menu button{display:block;width:100%;height:32px;padding:0 10px;border-radius:4px}.menu button:hover{background:#2a2f37}.menu .on{color:var(--ouro);font-weight:600}
+.shell{display:grid;grid-template-columns:200px minmax(0,1fr);min-height:402px}
+.vr{display:flex;flex-direction:column;border-right:1px solid var(--fio)}
+.vr button{flex:1;display:flex;flex-direction:column;gap:2px;align-items:flex-start;justify-content:center;padding:6px 12px;text-align:left;border-bottom:1px solid var(--fio);width:100%;border-left:2px solid transparent;min-height:46px}
+.nm1{display:flex;align-items:center;justify-content:flex-start;gap:8px}
+.vr button:last-child{border-bottom:0}
+.vr button.on{border-left-color:var(--ouro);background:var(--painel2)}
+.vr .t{display:flex;flex-direction:column;align-items:flex-start;min-width:0;max-width:100%}.vr .t>span[data-b]{padding-left:28px;overflow:hidden;text-overflow:ellipsis;max-width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.half{flex:1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.half>.h{padding:0 12px 12px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.half>.h+.h{border-left:1px solid var(--fio)}
+.ht{display:flex;align-items:center;justify-content:center;height:32px;margin:0 -12px;background:var(--painel2);border-bottom:1px solid var(--fio);border-radius:0}
+.half>.h:first-child .ht{border-top-left-radius:7px}.half>.h:last-child .ht{border-top-right-radius:7px}
+.navr{display:flex;justify-content:center;gap:8px;padding:8px;border-top:1px solid var(--fio)}
+.navr .btn{width:88px;padding:0 6px;min-height:32px;height:32px;flex-direction:row;border:1px solid var(--fio2)}.navr .btn.p{border-color:var(--ouro)}
+/* grade de condicionais: toda coluna é centralizada (cabeçalho, campo e total) */
+.cg{display:grid;grid-template-columns:84px 104px 56px 32px;gap:6px 8px;align-items:center;justify-items:stretch;justify-content:center}
+.cg .tt{border-top:1px solid var(--fio);padding-top:8px;display:flex;align-items:center;justify-content:center}
+.cg .lb{grid-column:1/3;display:flex;align-items:center;justify-content:center}
+/* linhas rótulo | valor: duas colunas iguais, os dois centralizados */
+.kv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:center;gap:8px;min-height:38px;border-bottom:1px solid var(--fio);text-align:center}
+.kv:last-child{border-bottom:0}
+.kv .in{width:104px;justify-self:center}
+.kv>*{justify-self:center}
+.kp{display:grid;border:1px solid var(--fio);border-radius:6px}
+.kp.k0{border:0;border-top:1px solid var(--fio);border-radius:0}
+.kp>div{padding:8px 6px;border-left:1px solid var(--fio);display:flex;flex-direction:column;align-items:center;gap:2px;min-width:0}
+.kp>div:first-child{border-left:0}
+.ctb{border:1px solid var(--fio);border-radius:6px;overflow:hidden;display:flex;flex-direction:column}
+.half>.h>.ctb{flex:1}
+.ct{padding-left:8px!important;padding-right:8px!important;display:grid;grid-template-columns:24px minmax(0,1fr) minmax(0,1.15fr) minmax(0,1.15fr) 40px minmax(0,1.3fr) 24px;gap:4px;align-items:center;min-height:32px;padding:0 4px;text-align:center;font-variant-numeric:tabular-nums;border-top:1px solid var(--fio)}
+.ct.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.ct.z{background:rgba(255,255,255,.03)}.ct.off{opacity:.45}
+.ct .in{height:26px;padding:0 4px}
+.ck{width:20px;height:20px;border:1px solid var(--fio2);border-radius:4px;display:grid;place-items:center;font-size:11px;margin:auto;font-weight:700}
+.ck.on{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-t)}
+.vd{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px;align-items:center;justify-items:center;text-align:center}
+.vd .in{width:104px}
+.vd .sp{border-top:1px solid var(--fio);padding-top:8px;width:100%;text-align:center;display:flex;justify-content:center;align-items:center;gap:6px}
+.vd .sp.v{justify-content:center}
+.vd .vt{background:var(--ouro-t);border:1px solid var(--ouro);border-radius:6px;width:100%;height:40px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600}
+.vr3 span{white-space:nowrap}
+.vr3{display:grid;grid-template-columns:minmax(0,1fr) 116px;gap:6px;align-items:center;min-height:34px;padding:0 10px;text-align:center;border-top:1px solid var(--fio);font-variant-numeric:tabular-nums}
+.vr3.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.vr3.ft{background:var(--painel2);min-height:32px;margin-top:auto}
+.vr3.z{background:rgba(255,255,255,.03)}
+.vr3.tt2{background:var(--ouro-t);border-top:1px solid var(--ouro);min-height:42px;font-weight:600}
+.vr3 .in{height:28px;width:104px;margin:0 auto;display:block}
+.vr3 .plus{height:28px}
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.6);display:grid;place-items:center;z-index:50}
+.mb{width:440px;background:var(--painel);border:1px solid var(--fio2);border-radius:8px}
+.mc{padding:12px;display:flex;flex-direction:column;gap:10px}
+.lr{min-height:34px;display:flex;align-items:center;justify-content:center;border-top:1px solid var(--fio);cursor:pointer;width:100%}
+.lr:first-child{border-top:0}.lr:hover{background:var(--painel2)}
+.lr.z{background:rgba(255,255,255,.03)}
+.lr.on{background:var(--ouro-t);box-shadow:inset 3px 0 0 var(--ouro);font-weight:600;color:var(--ouro)}
+.pr{display:grid;grid-template-columns:minmax(0,1.4fr) 56px 104px 28px;gap:6px;align-items:center;min-height:34px;padding:0 10px;text-align:center;border-top:1px solid var(--fio);font-variant-numeric:tabular-nums}
+.pr.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.pr.z{background:rgba(255,255,255,.03)}
+.bt{display:grid;grid-template-columns:minmax(0,1fr) 104px 24px;gap:6px;align-items:center;min-height:34px;padding:0 10px;text-align:center;border-top:1px solid var(--fio);font-variant-numeric:tabular-nums}
+.bt.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.bt.z{background:rgba(255,255,255,.03)}
+.bt.en{background:var(--ouro-t);border-top:1px solid var(--fio)}
+.bt .in{height:28px;padding:0 4px}
+.t3{display:grid;grid-template-columns:minmax(0,1fr) 64px 104px;gap:6px;align-items:center;min-height:34px;padding:0 10px;text-align:center;border-top:1px solid var(--fio);font-variant-numeric:tabular-nums}
+.t3.c,.t2.c{min-height:28px}
+.t2{display:grid;grid-template-columns:minmax(0,1fr) 96px;gap:6px;align-items:center;min-height:34px;padding:0 10px;text-align:center;border-top:1px solid var(--fio);font-variant-numeric:tabular-nums}
+.t2.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.t2.z{background:rgba(255,255,255,.03)}
+.t2.tt2{background:var(--ouro-t);border-top:1px solid var(--ouro);min-height:36px;font-weight:600}
+.t3.hd{background:var(--painel2);height:30px;border-top:0;border-bottom:1px solid var(--fio)}
+.t3.z{background:rgba(255,255,255,.03)}
+.t3.tt2{background:var(--ouro-t);border-top:1px solid var(--ouro);min-height:40px;font-weight:600}
+.hc{display:grid;grid-template-columns:minmax(0,1.45fr) .55fr 1.75fr .85fr .85fr 1fr 1.1fr;padding:0;overflow:visible}
+.hc>div{border-left:1px solid var(--fio);padding:5px 8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:0;min-height:50px}
+.hc .btn{height:28px;padding:0 10px}
+.hc>div:first-child{border-left:0}
+.hc .hn{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px}
+.hc .hi{background:var(--ouro-t);border-radius:0 7px 7px 0}
+.rgl{display:flex;flex-direction:column;gap:6px}
+.rgl button{height:32px;display:grid;grid-template-columns:20px minmax(0,1fr) 20px;align-items:center;gap:8px;padding:0 8px;border:1px solid var(--fio);border-radius:6px;overflow:hidden;width:100%}
+.rgl button span:nth-child(2){overflow:hidden;text-overflow:ellipsis}.rgl .on{border-color:var(--ok)}
+table.cm{width:100%;border-collapse:collapse}
+table.cm td,table.cm th{padding:0 4px;height:30px;text-align:center;border-top:1px solid var(--fio)}
+table.cm th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500;border-top:0}
+.sum2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+.sum2 .r{display:grid;grid-template-columns:20px minmax(0,1fr) minmax(0,1.6fr);align-items:center;gap:8px;min-height:34px;padding:0 12px;border-top:1px solid var(--fio);text-align:center}
+.sum2 .r:nth-child(even){border-left:1px solid var(--fio)}
+.sum2 .r span:last-child{overflow:hidden;text-overflow:ellipsis}
+.tot{display:grid;grid-template-columns:repeat(5,1fr)}
+.tot>div{padding:8px;text-align:center;border-left:1px solid var(--fio);display:flex;flex-direction:column;align-items:center;gap:2px}.tot>div:first-child{border-left:0}
+.sr{display:grid;grid-template-columns:190px minmax(0,1fr) 140px;align-items:center;gap:8px;min-height:36px;padding:0 14px;border-top:1px solid var(--fio);text-align:center;font-variant-numeric:tabular-nums}
+.sr.hd{background:var(--painel2);height:30px}
+.sr .nm{display:flex;align-items:center;justify-content:flex-start;gap:10px;font-weight:600}
+.sr:nth-child(even):not(.hd){background:rgba(255,255,255,.03)}
+@media(max-width:1100px){.page{grid-template-columns:1fr}.app{grid-template-columns:1fr}.lat{display:none}}
+</style>
+</head>
+<body>
+<div class="switch"><b>Lateral centralizado</b><button class="sw" id="btnCheio" onclick="cheio=!cheio;S=novo(S.cli);R()"></button><button class="sw" onclick="S.modal=true;R()">Simular: Agendamento lança remarcação</button><span>Abre preenchido (já com 1 remarcação com multa).</span></div>
+<div class="app">
+  <aside class="lat"><div class="logo">SORELLY</div><div class="g">Geral</div><div class="it">Início</div><div class="it">SorellyChat</div><div class="g">Setores</div><div class="it">Financeiro</div><div class="it">Agendamento</div><div class="it">Revendedoras</div><div class="it on">Atendimento interno</div><div class="it">Materiais</div><div class="it">RH</div></aside>
+  <div class="main">
+    <div class="top">Atendimento interno</div>
+    <div class="tabs"><span>Revendedoras</span><span>Listagens</span><span class="on">Atendimento Sorelly</span><span>Consolidado Sorelly</span></div>
+    <div class="page"><div class="col" id="esq"></div><div class="col" id="centro"></div></div>
+  </div>
+</div>
+<div id="modal"></div>
+<script>
+var CLIS=[["08:00","Fabiane da Silva Eduardo","095701","9.307,00","107"],["09:00","Giovanna Gluck","095712","6.120,00","74"],["09:00","Kauane Belizario dos Santos","095730","11.480,00","131"],["10:00","Thalyta Beatriz Lima","095744","3.950,00","52"],["10:00","Ana Claudia Adriano","095751","7.730,00","88"],["11:00","Eduarda Cristine Ferreira Chechak","095760","5.210,00","63"]];
+var PASSOS=["Condicionais","Vendas","Pagamentos","Brindes","Condicional nova","Regras"];
+var ESTACOES=["Condicionais e vendas","Pagamentos","Brindes","Condicional nova","Regras"];
+var FORMAS=["Pix","Dinheiro","Cartão","Acerto com loja"],MONT=["Leci","Eduarda","Agatha","Elen"];
+var REGRAS=["Peça fora do kit com etiqueta é peça vendida.","Chegou mais de 30 min atrasada: perde 10% do brinde.","Acerto só vale com todos os pagamentos conferidos.","Condicional nova só com acerto fechado.","A revendedora lê o termo do consignado."];
+var FAIXAS=[[5000,0.45],[2500,0.40],[1000,0.35],[500,0.25],[300,0.15]];function comPct(l){for(var i=0;i<FAIXAS.length;i++)if(l>=FAIXAS[i][0])return FAIXAS[i][1];return 0}
+function proxFaixa(l){var r=null;for(var i=FAIXAS.length-1;i>=0;i--)if(FAIXAS[i][0]>l)r=FAIXAS[i];return r}
+function vezCob(){return S.remarc.filter(function(x){return !x.isenta}).length}
+function descRem(){var v=vezCob(),T=[{c:5,b:15},{c:8,b:50},{c:15,b:100}];return v<1?{v:0,c:0,b:0}:Object.assign({v:v},T[Math.min(v,3)-1])}
+var BRP=0.10,S,FOCO=null,cheio=true;
+function novo(i){var c=CLIS[i],b={cli:i,step:0,pop:null,conds:[{n:c[2],em:"21/10/2026",pd:"20/11/2026",v:c[3],p:c[4],ok:true}],vendidas:"",vend:"",cred:"",showCred:false,pags:[],forma:"Pix",parc:1,band:"",enviado:"",pval:"",semBr:false,brindes:[],bnCod:"",bnVal:"",bbCod:"BB",bbVal:"",nova:"",nn:"",regras:[0,0,0,0,0,0,0,0,0],rsel:0,vant1:"8.200,00",vant2:"6.900,00",ass:0,mont:"",chegou:false,iniciou:false,chegouAt:"",iniAt:"",escIni:0,escFim:0,keep:false,remarc:[],modal:false,rmIsenta:false,rmMotivo:"",rmPor:"Ana Maria"};
+  if(cheio){b.conds=[{n:"094454",em:"16/10/2026",pd:"16/11/2026",v:"13.526,00",p:"118",ok:true},{n:"094844",em:"21/10/2026",pd:"16/11/2026",v:"534,00",p:"2",ok:true},{n:"094873",em:"21/10/2026",pd:"16/11/2026",v:"4.636,00",p:"58",ok:true},{n:"095205",em:"23/10/2026",pd:"23/11/2026",v:"522,00",p:"1",ok:true},{n:"095218",em:"23/10/2026",pd:"16/11/2026",v:"322,00",p:"1",ok:true}];b.vendidas="120";b.vend="9.000,00";b.cred="150,00";b.showCred=true;b.pags=[{f:"Pix",v:3000},{f:"Dinheiro",v:2310}];b.brindes=[{cat:"n",cod:"P0231",v:180},{cat:"n",cod:"P0388",v:120},{cat:"s",cod:"BB0001",v:150}];b.nova="cont";b.nn="095800";b.regras=[1,1,1,1,1,1,1,1,1];b.ass=1;b.mont="Leci";b.remarc=[{isenta:false,motivo:"",por:"Ana Maria",em:"22/10/2026"}];b.chegou=true;b.iniciou=true;b.chegouAt="08:03";b.iniAt="08:10"}return b}
+S=novo(0);
+function num(x){x=String(x||"").replace(/\./g,"").replace(",",".");var v=parseFloat(x);return isNaN(v)?0:v}
+function brl(n){return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function esc(s){return String(s==null?"":s).replace(/"/g,"&quot;")}
+function calc(){var cv=0,cp=0;S.conds.forEach(function(c){if(c.ok){cv+=num(c.v);cp+=num(c.p)}});var liq=num(S.vend)-num(S.cred),pf=comPct(liq),ds=descRem(),pct=Math.max(0,pf-ds.c/100),com=liq*pct,ap=liq-com,pago=S.pags.reduce(function(a,p){return a+p.v},0),fb=faixaBr(liq),ln=S.brindes.filter(function(b){return b.cat==="n"}).reduce(function(a,b){return a+b.v},0),ls=S.brindes.filter(function(b){return b.cat==="s"}).reduce(function(a,b){return a+b.v},0),br=ln+ls;
+  var pp=ap>0?Math.min(100,pago/ap*100):0,med=(liq+num(S.vant1)+num(S.vant2))/3;
+  return {pp:pp,med:med,kitOk:pp>=80&&med>=700,pct:pct,cv:cv,cp:cp,ret:Math.max(0,cp-num(S.vendidas)),liq:liq,com:com,ap:ap,pago:pago,falta:ap-pago,libN:Math.ceil(fb[0]*(1-ds.b/100)-1e-9),libS:Math.ceil(fb[1]*(1-ds.b/100)-1e-9),ds:ds,pf:pf,lN:ln,lS:ls,br:br}}
+function feito(){var c=calc();return [S.conds.some(function(x){return x.ok})&&S.conds.every(function(x){return !x.ok||(x.n&&num(x.p)>0)}),num(S.vend)>0,S.pags.length>0&&c.falta<=0.005&&c.ap>0,S.semBr||S.brindes.length>0,!!S.nova&&(S.nova!=="cont"||!!S.nn),S.regras.every(Boolean)&&!!S.ass]}
+function feitoE(){var f=feito();return [f[0]&&f[1],f[2],f[3],f[4],f[5]]}
+function vals(){var c=calc(),nr=S.regras.filter(Boolean).length;return [nOk()+(nOk()>1?" condicionais · ":" condicional · ")+c.cp+" peças · "+brl(c.cv),num(S.vend)>0?brl(c.liq)+" líquida · comissão "+Math.round(c.pct*100)+"%"+(c.ds.c?" (remarcação −"+c.ds.c+"%)":""):"",S.pags.length?S.pags.map(function(p){return p.f+" "+brl(p.v)}).join(" + ")+(S.enviado?" · enviado ao financeiro":""):"",S.semBr?"Sem brinde":(S.brindes.length?"Normal "+brl(c.lN)+" · Select "+brl(c.lS):""),S.nova==="cont"?"Continua"+(S.nn?" · nº "+S.nn:""):S.nova==="regra"?"Não pode (regras)":S.nova==="nao"?"Não quer":"",nr?nr+" de 9 regras"+(S.ass?" · assinado":""):""]}
+function curtosE(){var c=calc(),nr=S.regras.filter(Boolean).length;return [nOk()?c.cp+" peças · "+(num(S.vend)>0?brl(c.liq):"sem venda"):"",S.pags.length?brl(c.pago):"",S.semBr?"Sem brinde":(S.brindes.length?brl(c.br):""),S.nova==="cont"?"Continua":S.nova==="regra"?"Não pode":S.nova==="nao"?"Não quer":"",nr?nr+"/9"+(S.ass?" · assinado":""):""]}
+function B(){var c=calc(),f=feito(),fe=feitoE(),v=vals(),cu=curtosE();var m={liq:brl(c.liq),pctPago:Math.round(c.pp)+"%",med:brl(c.med),res:c.kitOk?"✓ Liberado":"✗ Não liberado",com:Math.round(c.pct*100)+"%",prox:(function(){var q=proxFaixa(c.liq);return num(S.vend)<=0?"Digite a venda":q?"Faltam "+brl(q[0]-c.liq)+" para "+Math.round(q[1]*100)+"%":"Faixa máxima de comissão"})(),comV:brl(c.com),ap:brl(c.ap),pago:brl(c.pago),falta:brl(Math.max(0,c.falta)),cv:brl(c.cv),cp:c.cp,ret:c.ret,libN:brl(c.libN),libS:brl(c.libS),lN:brl(c.lN),br:brl(c.br),lS:brl(c.lS),rN:brl(Math.max(0,c.libN-c.lN)),rS:brl(Math.max(0,c.libS-c.lS)),nfeitos:f.filter(Boolean).length};
+  v.forEach(function(x,i){m["v"+i]=x||"a preencher"});vals2().forEach(function(x,i){m["d"+i]=x[0]||"a preencher";m["m"+i]=x[1]||"—"});cu.forEach(function(x,i){m["c"+i]=i===3?"":(x||"a preencher")});
+  document.querySelectorAll("[data-b]").forEach(function(el){var k=el.getAttribute("data-b");if(m[k]!==undefined)el.textContent=m[k];if(k==="res")el.className=el.className.replace(/ ?(pos|neg)/g,"")+(c.kitOk?" pos":" neg");if(k==="falta")el.className=el.className.replace(/ ?(pos|neg)/g,"")+(c.ap>0&&c.falta>0.005?" neg":" pos")});
+  document.querySelectorAll("[data-f]").forEach(function(el){var i=+el.getAttribute("data-f");el.classList.toggle("ok",!!f[i]);var d=el.querySelector(".dot");if(d)d.textContent=f[i]?"✓":(i+1)});
+  document.querySelectorAll("[data-e]").forEach(function(el){var i=+el.getAttribute("data-e");el.classList.toggle("ok",!!fe[i]);var d=el.querySelector(".dot");if(d)d.textContent=fe[i]?"✓":(i+1)});
+  var bo=document.getElementById("bolha");if(bo)bo.innerHTML=bolha();tick();var cp=document.getElementById("btnCopy");if(cp)cp.disabled=!(num(S.vend)>0)}
+function R(){var a=document.activeElement&&document.activeElement.getAttribute&&document.activeElement.getAttribute("data-id");if(a)FOCO=a;
+  document.getElementById("esq").innerHTML=esq();document.getElementById("centro").innerHTML=cabeca()+lateral()+resumo();
+  document.getElementById("modal").innerHTML=modal();document.getElementById("btnCheio").textContent=cheio?"Limpar tudo":"Preencher tudo";
+  B();if(S.keep&&FOCO){var el=document.querySelector('[data-id="'+FOCO+'"]');if(el){el.focus();try{el.setSelectionRange(el.value.length,el.value.length)}catch(x){}}}S.keep=false}
+document.addEventListener("focusin",function(e){var d=e.target.getAttribute&&e.target.getAttribute("data-id");if(d)FOCO=d});
+document.addEventListener("click",function(e){if(S.pop&&!e.target.closest(".pop")){S.pop=null;R()}});
+
+function modal(){if(!S.modal)return "";var pre=descRem();
+ return '<div class="ov"><div class="mb"><div class="bar"><span></span><span class="mid">Agendamento · remarcar acerto de '+CLIS[S.cli][1].split(" ").slice(0,2).join(" ")+'</span><button class="btn x" onclick="S.modal=false;R()">×</button></div><div class="mc">'
+  +'<div class="row"><button class="chip'+(!S.rmIsenta?' on':'')+'" onclick="S.rmIsenta=false;R()">Com multa</button><button class="chip'+(S.rmIsenta?' on':'')+'" onclick="S.rmIsenta=true;R()">Isenta de multa</button></div>'
+  +(S.rmIsenta?'<input class="in" style="width:100%" data-id="rmMotivo" value="'+esc(S.rmMotivo)+'" oninput="S.rmMotivo=this.value" placeholder="Motivo da isenção (obrigatório)">':'')
+  +'<div class="cap">Autorizada por</div><div class="row" style="flex-wrap:wrap">'+["Marcus","Nickolas","Lucas","Ana Maria"].map(function(n){return '<button class="chip'+(S.rmPor===n?' on':'')+'" onclick="S.rmPor=\''+n+'\';R()">'+n+'</button>'}).join("")+'</div>'
+  +'<div class="cap">Já lançadas</div>'+(S.remarc.length?S.remarc.map(function(x,i){return '<div class="kv" style="grid-template-columns:1fr 1fr 32px;min-height:32px"><span>'+(x.isenta?'Isenta · '+esc(x.motivo):'Com multa')+'</span><span class="cap">'+x.por+' · '+x.em+'</span><button class="btn x" onclick="S.remarc.splice('+i+',1);R()">×</button></div>'}).join(""):'<div class="cap">Nenhuma remarcação</div>')
+  +'<div class="cap" style="text-align:center">1ª com multa: comissão −5% e brinde −15% · 2ª: −8% e −50% · 3ª ou mais: −15% e sem brinde</div>'
+  +'<div class="cap" style="text-align:center">Isenta não conta para o desconto</div>'
+  +'<div class="row" style="justify-content:flex-end"><button class="btn" onclick="S.modal=false;R()">Fechar</button><button class="btn p" onclick="addRemarc()">Lançar remarcação</button></div></div></div></div>'}
+function addRemarc(){if(S.rmIsenta&&!S.rmMotivo.trim())return;S.remarc.push({isenta:S.rmIsenta,motivo:S.rmMotivo.trim(),por:S.rmPor,em:"30/10/2026"});S.rmMotivo="";S.rmIsenta=false;R()}
+function esq(){return '<div class="card"><div class="bar"><span></span><span class="mid">Hoje · 30/10</span><span class="cap">0 de '+CLIS.length+' feitos</span></div><div class="col" style="padding:8px;gap:6px">'+CLIS.map(function(c,i){var on=i===S.cli;return '<button class="fila-i'+(on?' on':'')+'" onclick="S=novo('+i+');R()"><span class="h">'+c[0]+'</span><span class="nm" title="'+esc(c[1])+'">'+c[1]+'</span>'+(on?'<span class="pill at">Atendendo</span>':'<span></span>')+'</button>'}).join("")+'<button class="plus">+ Incluir cliente à mão</button></div></div>'
+ +'<div class="card" style="padding:6px"><div class="row"><button class="chip on" style="flex:1">✓ Kit Normal</button><button class="chip" style="flex:1">Kit 100% Prata</button></div></div>'
+ +'<div class="card"><div class="bar"><span></span><span class="mid">Comissões</span><span></span></div><div style="padding:4px 8px 8px"><table class="cm"><tr><th>A partir de</th><th>Comis.</th><th>Normal</th><th>Select</th></tr>'+[["R$ 300,00","15%","—","—"],["R$ 500,00","25%","R$ 44,00","R$ 32,00"],["R$ 1.000,00","35%","R$ 118,00","R$ 122,00"],["R$ 2.500,00","40%","R$ 196,00","R$ 144,00"],["R$ 5.000,00","45%","R$ 312,00","R$ 232,00"]].map(function(r){return '<tr>'+r.map(function(x){return '<td>'+x+'</td>'}).join("")+'</tr>'}).join("")+'</table></div></div>'}
+function popBtn(id,rot,opts,cur,fn){var open=S.pop===id;return '<div class="pop"><button class="btn" onclick="event.stopPropagation();S.pop='+(open?'null':"'"+id+"'")+';R()">'+rot+(cur?': <b>'+cur+'</b>':'')+' ▾</button>'+(open?'<div class="menu">'+opts.map(function(o){return '<button class="'+(cur===o?'on':'')+'" onclick="'+fn+'(\''+o+'\')">'+o+'</button>'}).join("")+'</div>':'')+'</div>'}
+function setMont(o){S.mont=o;S.pop=null;R()}
+function hhmm(){var d=new Date();return ("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)}
+function mmss(ms){var s=Math.max(0,Math.floor(ms/1000));return ("0"+Math.floor(s/60)).slice(-2)+":"+("0"+s%60).slice(-2)}
+function chegouF(){S.chegou=true;S.chegouAt=hhmm();R()}
+function iniciarF(){S.iniciou=true;S.iniAt=hhmm();R()}
+function escIniF(){S.escIni=Date.now();S.escFim=0;R()}
+function escFimF(){S.escFim=Date.now();R()}
+function tick(){var el=document.getElementById("rel");if(el&&S.escIni&&!S.escFim){el.textContent=mmss(Date.now()-S.escIni);el.className="n15 "+(Date.now()-S.escIni>45*60000?"neg":"")}}
+setInterval(tick,1000);
+function cabeca(){var c=CLIS[S.cli];
+ var cell=function(l,v){return '<div><span class="cap">'+l+'</span>'+v+'</div>'};
+ var sit='<span class="row" style="gap:6px;flex-wrap:nowrap">'+(S.iniciou?'<span class="pill ok">Em atendimento</span>':'<span class="pill">Aguardando</span>')+(S.remarc.length?'<span class="pill at" title="'+esc(S.remarc.map(function(x){return (x.isenta?'Isenta ('+x.motivo+')':'Com multa')+' · lançada por '+x.por+' (Agendamento) em '+x.em}).join(' | '))+'">↻ '+S.remarc.length+'× '+(vezCob()?'multa':'isenta')+'</span>':'')+'</span>';
+ var esc2=!S.escIni?'<button class="btn" onclick="escIniF()">⏱ Começou</button>':(!S.escFim?'<span class="row" style="gap:6px"><b id="rel" class="n15"></b><span class="cap">de 45 min</span><button class="btn x" style="width:28px;height:28px" onclick="escFimF()" title="Terminou">■</button></span>':'<b class="pos">✓ '+mmss(S.escFim-S.escIni)+'</b>');
+ return '<div class="card hc">'+cell("Revendedora",'<b class="hn" title="'+esc(c[1])+'">'+c[1]+'</b>')+cell("Horário",'<b class="n15">'+c[0]+'</b>')+cell("Situação",sit)
+  +cell("Chegada",S.chegouAt?'<b class="pos">✓ '+S.chegouAt+'</b>':'<button class="btn" onclick="chegouF()">Chegou agora</button>')
+  +cell("Quem atende",popBtn("mont","Escolher",MONT,S.mont,"setMont").replace(">Escolher: <b>",">").replace("</b> ▾"," ▾"))
+  +cell("Escolha do kit",esc2)
+  +'<div class="hi">'+(S.iniAt?'<b class="pos">✓ Iniciado '+S.iniAt+'</b>':'<button class="btn p" style="height:30px" onclick="iniciarF()">▶ Iniciar</button>')+'</div></div>'}
+function mf(el){var v=num(el.value);if(el.value.trim()!=="")el.value=v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function ci(i,k,el){S.conds[i][k]=el.value;B()}
+function inp(k,el){S[k]=el.value;B()}
+function nOk(){return S.conds.filter(function(c){return c.ok}).length}
+function addCond(){S.conds.push({n:"",em:"",pd:"",v:"",p:"",ok:true});S.keep=true;FOCO="c"+(S.conds.length-1)+".n";R()}
+function delCond(i){S.conds.splice(i,1);R()}
+function addPag(){var v=num(S.pval)||Math.max(0,calc().falta);if(!v)return;S.pags.push({f:S.forma,v:v});S.pval="";R()}
+function money(el,fn){var d=el.value.replace(/\D/g,"").replace(/^0+/,"").slice(0,7),v="";if(d!=="")v=(parseInt(d,10)/100).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2});el.value=v?"R$ "+v:"";fn(v)}
+function mv(v){return v?"R$ "+v:""}
+function IM(id,val,fn,extra){return '<input class="in" inputmode="numeric" data-id="'+id+'" value="'+esc(mv(val))+'" oninput="money(this,function(v){'+fn+'})" placeholder="R$ 0,00" '+(extra||"")+'>'}
+function I(id,val,extra){return '<input class="in" data-id="'+id+'" value="'+esc(val)+'" '+(extra||"")+'>'}
+function ht(t){return '<div class="ht"><span class="cap">'+t+'</span></div>'}
+
+/* ===== estações 1 a 3: campos pequenos no centro e uma faixa de resultados em cada metade ===== */
+function faixaBr(liq){var f=[0,0];[[500,44,32],[1000,118,122],[2500,196,144],[5000,312,232]].forEach(function(r){if(liq>=r[0])f=[r[1],r[2]]});return f}
+function addBr(cat){var cod=String(cat==="n"?S.bnCod:S.bbCod).trim().toUpperCase(),v=num(cat==="n"?S.bnVal:S.bbVal);if(!cod||v<=0)return;if(cat==="s"&&!/^BB\w{3,}/.test(cod))return;S.brindes.push({cat:cat,cod:cod,v:v});S.semBr=false;if(cat==="n"){S.bnCod="";S.bnVal=""}else{S.bbCod="BB";S.bbVal=""}S.keep=true;FOCO=cat==="n"?"bnCod":"bbCod";R()}
+function delBr(i){S.brindes.splice(i,1);R()}
+function strip(cells,cls){return '<div class="kp" style="grid-template-columns:repeat('+cells.length+',minmax(0,1fr))">'+cells.map(function(x){return '<div><span class="cap">'+x[0]+'</span>'+(x[3]||'<b class="'+(cls||"n15")+' '+(x[2]||"")+'" data-b="'+x[1]+'"></b>')+'</div>'}).join("")+'</div>'}
+function condRows(){return S.conds.map(function(c,k){return '<input class="in" data-id="c'+k+'.n" value="'+esc(c.n)+'" oninput="ci('+k+',\'n\',this)" placeholder="Nº"><input class="in" data-id="c'+k+'.v" value="'+esc(c.v)+'" oninput="ci('+k+',\'v\',this)" onblur="mf(this)" placeholder="0,00"><input class="in" data-id="c'+k+'.p" value="'+esc(c.p)+'" oninput="ci('+k+',\'p\',this)" placeholder="0">'+(S.conds.length>1?'<button class="btn x" onclick="delCond('+k+')" title="Tirar">×</button>':'<span></span>')}).join("")}
+function est0(){
+ var cg='<div class="ctb"><div class="ct hd"><span class="cap">M</span><span class="cap">Nº</span><span class="cap">Emissão</span><span class="cap">Prev. devol.</span><span class="cap">Peças</span><span class="cap">Valor</span><span></span></div>'+S.conds.map(function(c,k){var man=!c.em;
+   return '<div class="ct'+(k%2?' z':'')+(c.ok?'':' off')+'"><button class="ck'+(c.ok?' on':'')+'" onclick="S.conds['+k+'].ok=!S.conds['+k+'].ok;R()" aria-label="Conferida na DevMaster">'+(c.ok?'✓':'')+'</button>'
+    +(man?'<input class="in" data-id="c'+k+'.n" value="'+esc(c.n)+'" oninput="ci('+k+',\'n\',this)" placeholder="Nº">':'<span>'+c.n+'</span>')+'<span>'+(c.em||'à mão')+'</span><span>'+(c.pd||'—')+'</span>'
+    +(man?'<input class="in" data-id="c'+k+'.p" value="'+esc(c.p)+'" oninput="ci('+k+',\'p\',this)" placeholder="0">':'<span>'+c.p+'</span>')
+    +(man?IM("c"+k+".v",c.v,"S.conds["+k+"].v=v;B()"):'<span>R$ '+c.v+'</span>')
+    +(man?'<button class="btn x" style="width:24px;height:26px" onclick="delCond('+k+')">×</button>':'<span></span>')+'</div>'}).join("")+'<div style="flex:1"></div><div style="padding:6px;border-top:1px solid var(--fio)"><button class="plus" onclick="addCond()">+ Condicional a mais (à mão)</button></div></div>';
+ var left=cg.slice(0,-6)+strip([["Total","cv","gold"],["Peças","cp"],["Vendidas","",""," <input class=\"in\" style=\"height:24px;width:56px\" data-id=\"vendidas\" value=\""+esc(S.vendidas)+"\" oninput=\"inp('vendidas',this)\" placeholder=\"0\">"],["Voltam","ret","gold"]]).replace('class="kp"','class="kp k0"')+'</div>';
+ var rv=function(rot,val,z){return '<div class="vr3'+(z?' z':'')+'"><span>'+rot+'</span><span>'+val+'</span></div>'};
+ var vd='<div class="ctb"><div class="vr3 hd"><span class="cap">Item</span><span class="cap">Valor</span></div>'
+  +rv('Quanto vendeu',IM("vend",S.vend,"S.vend=v;B()"))
+  +rv('Desconto de crédito',S.showCred?IM("cred",S.cred,"S.cred=v;B()"):'<button class="plus" onclick="S.showCred=true;S.keep=true;FOCO=\'cred\';R()">+ Crédito</button>',true)
+  +rv('Venda líquida','<b class="n15" data-b="liq"></b>')
+  +rv('Comissão <b class="pill at" data-b="com"></b>','<b class="n15" data-b="comV"></b>',true)+(S.remarc.length?rv('Remarcação <span class="cap">(Agendamento)</span>',vezCob()?'<b class="pill at">−'+descRem().c+'% comissão</b>':'<b class="pill">Isenta</b>'):'')
+  +'<div class="vr3 tt2"><span>Valor a pagar</span><b class="n20 gold" data-b="ap"></b></div>'
+  +rv('Brinde normal libera','<b class="n15" data-b="libN"></b>')
+  +rv('Brinde select libera','<b class="n15" data-b="libS"></b>',true)+'<div class="vr3 ft"><span class="cap" data-b="prox" style="grid-column:1/3"></span></div></div>';
+ var right=vd;
+ return '<div class="half" style="grid-template-columns:minmax(0,1.17fr) minmax(0,.83fr)"><div class="h">'+ht("Condicionais · DevMaster")+left+'</div><div class="h">'+ht("Vendas")+right+'</div></div>'}
+var FORMAS2=["Pix","Dinheiro","Cartão de crédito","Cartão de débito","Link de pagamento","Acerto com loja"];
+var BANDEIRAS=["Visa","Mastercard","Elo","Amex","Hipercard"];
+function pedeBand(f){return f==="Cartão de crédito"||f==="Cartão de débito"||f==="Link de pagamento"}
+function pedeParc(f){return f==="Cartão de crédito"||f==="Link de pagamento"}
+function addPag2(){if(S.enviado)return;if(pedeBand(S.forma)&&!S.band)return;var v=num(S.pval)||Math.max(0,calc().falta);if(v<=0)return;S.pags.push({f:S.forma,v:v,p:pedeParc(S.forma)?S.parc:1,b:pedeBand(S.forma)?S.band:""});S.pval="";R()}
+function envia(){var d=new Date();S.enviado=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2);R()}
+function rv2(rot,val,cls){return '<div class="vr3'+(cls||'')+'"><span>'+rot+'</span><span>'+val+'</span></div>'}
+function est1(){
+ var lista=FORMAS2.map(function(f,i){return '<div class="lr'+(i%2?' z':'')+(S.forma===f?' on':'')+'" onclick="S.forma=\''+f+'\';R()">'+f+'</div>'}).join("");
+ var bandRow=pedeBand(S.forma)?'<div style="padding:8px 8px 0;display:flex;gap:6px;justify-content:center;align-items:center;flex-wrap:wrap;border-top:1px solid var(--fio)"><span class="cap">Bandeira</span>'+BANDEIRAS.map(function(b){return '<button class="chip'+(S.band===b?' on':'')+'" style="height:28px;padding:0 9px" onclick="S.band=\''+b+'\';R()">'+b+'</button>'}).join("")+'</div>':'';
+ var rodape=bandRow+'<div style="padding:8px;'+(bandRow?'':'border-top:1px solid var(--fio);')+'display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap"><span class="cap">'+S.forma+'</span>'+IM("pval",S.pval,"S.pval=v;B()","style=\"width:104px\"")
+  +(pedeParc(S.forma)?'<span class="row" style="gap:4px"><button class="btn x" onclick="S.parc=Math.max(1,S.parc-1);R()">−</button><b style="min-width:30px;text-align:center">'+S.parc+'x</b><button class="btn x" onclick="S.parc=Math.min(6,S.parc+1);R()">+</button></span>':'')
+  +'<button class="btn p" '+(S.enviado||(pedeBand(S.forma)&&!S.band)?'disabled':'')+' onclick="addPag2()">Adicionar</button></div>'+(pedeBand(S.forma)&&!S.band?'<div class="cap" style="text-align:center;padding-bottom:8px;color:var(--ruim)">Escolha a bandeira</div>':'');
+ var sel=S.pags.length?S.pags.map(function(p,k){return '<div class="pr'+(k%2?' z':'')+'" style="min-height:40px"><span style="display:flex;flex-direction:column;align-items:center">'+p.f+(p.b?'<span class="cap">'+p.b+'</span>':'')+'</span><span>'+(p.p>1?p.p+'x':'À vista')+'</span><b class="n15">'+brl(p.v)+'</b>'+(S.enviado?'<span></span>':'<button class="btn x" style="width:24px;height:26px" onclick="S.pags.splice('+k+',1);R()">×</button>')+'</div>'}).join(""):'<div class="pr"><span class="cap" style="grid-column:1/5">Nenhuma forma selecionada</span></div>';
+ var envBtn=S.enviado?'<div class="row"><span class="pill ok" style="height:32px;padding:0 12px;font-size:13px">✓ Enviado ao financeiro às '+S.enviado+'</span><span class="cap">Aguardando as contas</span></div>'
+   :'<button class="btn p" style="width:100%" onclick="envia()" '+(S.pags.length&&calc().falta<=0.005?'':'disabled')+'>Enviar ao financeiro</button><div class="cap" style="text-align:center">'+(S.pags.length&&calc().falta<=0.005?'O financeiro define as contas de cada forma':'Feche o saldo para enviar')+'</div>';
+ return '<div class="half"><div class="h">'+ht("Selecione a forma de pagamento")+'<div class="ctb"><div style="flex:1">'+lista+'</div>'+rodape+'</div></div>'
+  +'<div class="h">'+ht("Formas de pagamento selecionadas")
+  +'<div class="ctb" style="flex:none"><div class="pr hd"><span class="cap">Forma</span><span class="cap">Parc.</span><span class="cap">Valor</span><span></span></div>'+sel+'</div>'
+  +'<div class="ctb" style="flex:none"><div class="vr3 hd"><span class="cap">Totais</span><span></span></div>'+rv2("Valor total",'<b class="n15" data-b="ap"></b>')+rv2("Pagamentos",'<b class="n15 pos" data-b="pago"></b>',' z')+'<div class="vr3 tt2"><span>Saldo</span><b class="n20" data-b="falta"></b></div></div>'
+  +envBtn+'</div></div>'}
+function blocoBr(cat,tit,codId,valId,cod,val){var lista=S.brindes.map(function(b,i){return {b:b,i:i}}).filter(function(x){return x.b.cat===cat});
+  var rows=lista.length?lista.map(function(x,k){return '<div class="bt'+(k%2?' z':'')+'"><b>'+x.b.cod+'</b><b class="n15">'+brl(x.b.v)+'</b><button class="btn x" style="width:24px;height:26px" onclick="delBr('+x.i+')">×</button></div>'}).join(""):'<div class="bt"><span class="cap" style="grid-column:1/4">Nenhuma peça lançada</span></div>';
+  var entry='<div class="bt en"><input class="in" data-id="'+codId+'" value="'+esc(cod)+'" oninput="inp(\''+codId+'\',this)" placeholder="'+(cat==="s"?"BB0001":"Código")+'" autocapitalize="characters" onkeydown="if(event.key===\'Enter\')addBr(\''+cat+'\')">'+IM(valId,val,"S."+valId+"=v;B()","onkeydown=\"if(event.key===\\'Enter\\')addBr(\\'"+cat+"\\')\"")+'<button class="btn p x" style="width:24px;height:26px;padding:0" onclick="addBr(\''+cat+'\')" aria-label="Lançar peça">+</button></div>';
+  var notas=(descRem().b?'<div class="vr3 ft" style="margin-top:0"><span class="cap" style="grid-column:1/3">Remarcação: brinde −'+descRem().b+'%</span></div>':'');
+  return '<div class="h">'+ht(tit)+'<div class="ctb"><div class="bt hd"><span class="cap">Código</span><span class="cap">Valor</span><span></span></div>'+rows+entry+'<div style="flex:1"></div>'+strip([["Libera",cat==="n"?"libN":"libS"],["Lançado",cat==="n"?"lN":"lS"],["Resta",cat==="n"?"rN":"rS","gold"]]).replace('class="kp"','class="kp k0"')+notas+'</div></div>'}
+function est2(){return '<div class="half">'+blocoBr("n","Brinde normal","bnCod","bnVal",S.bnCod,S.bnVal)+blocoBr("s","Brinde select (BB)","bbCod","bbVal",S.bbCod,S.bbVal)+'</div>'}
+function est3(){var c=calc();if(!c.kitOk&&S.nova==="cont")S.nova="regra";
+ var iv=function(id,val,fn){return IM(id,val,fn)};
+ var ok=c.kitOk,motivo=c.pp<80?"Pagou só "+Math.round(c.pp)+"% do acerto (mínimo 80%)":c.med<700?"Média das vendas abaixo de R$ 700,00":"";
+ var esq='<div class="h">'+ht("Kit novo · liberação")+'<div class="ctb" style="flex:1"><div class="vr3 hd"><span class="cap">Item</span><span class="cap">Valor</span></div>'
+  +rv2("Pago do acerto (mínimo 80%)",'<b class="n15" data-b="pctPago"></b>')
+  +rv2("Venda atual",'<b class="n15" data-b="liq"></b>',' z')
+  +rv2("Venda anterior",IM("vant1",S.vant1,"S.vant1=v;B()"))
+  +rv2("Venda mais antiga",IM("vant2",S.vant2,"S.vant2=v;B()"),' z')
+  +rv2("Média das 3 vendas (mínimo R$ 700,00)",'<b class="n15" data-b="med"></b>')
+  +rv2("Dívida anterior",'<b class="n15">R$ 0,00</b>',' z')
+  +'<div class="vr3 tt2" style="margin-top:auto;'+(ok?'':'background:rgba(229,72,77,.12);border-top-color:var(--ruim)')+'"><span>Kit novo</span><b class="n15 '+(ok?'pos':'neg')+'" data-b="res"></b></div></div></div>';
+ var op=[["cont","Continua vendendo",!ok],["regra","Não pode (regras)",false],["nao","Não quer continuar",false]];
+ var lista=op.map(function(o,i){return '<div class="lr'+(i%2?' z':'')+(S.nova===o[0]?' on':'')+'" '+(o[2]?'style="opacity:.4;cursor:not-allowed"':'onclick="S.nova=\''+o[0]+'\';R()"')+'>'+o[1]+(o[2]?' <span class="cap" style="margin-left:8px">bloqueado</span>':'')+'</div>'}).join("");
+ var fica=S.conds.filter(function(x){return !x.ok}).map(function(x){return x.n}).join(", ")||"Nenhuma";
+ var dir='<div class="h">'+ht("Continua vendendo?")+'<div class="ctb" style="flex:1"><div style="flex:none">'+lista+'</div>'
+  +(S.nova==="cont"?'<div class="vr3 z" style="border-top:1px solid var(--fio)"><span>Nº da condicional nova</span><input class="in" data-id="nn" value="'+esc(S.nn)+'" oninput="inp(\'nn\',this)" placeholder="Nº"></div>':'')
+  +'<div class="vr3" style="border-top:1px solid var(--fio)"><span>Condicionais que continuam</span><span class="cap">'+esc(fica)+'</span></div>'
+  +'<div class="vr3 ft"><span class="cap" style="grid-column:1/3;text-align:center">'+(ok?"Kit novo liberado: pode continuar":"Kit novo não liberado: "+esc(motivo)+". Só com autorização do financeiro.")+'</span></div></div></div>';
+ return '<div class="half">'+esq+dir+'</div>'}
+var REGRAS9=[
+ {t:"Comissão",n:0,x:"A comissão vai de 15% a 45% conforme a venda líquida, a partir de R$ 300,00. Abaixo disso não tem comissão.",r:[["Venda a partir de R$ 300,00","15%"],["Venda a partir de R$ 1.000,00","35%"],["Venda a partir de R$ 2.500,00","40%"],["Venda a partir de R$ 5.000,00","45%"]]},
+ {t:"Taxa de deslocamento",n:0,x:"Venda abaixo de R$ 300,00 paga uma taxa fixa, que soma no valor do acerto. Cancelar o kit com venda abaixo desse valor também paga a taxa.",r:[["Venda abaixo de R$ 300,00","R$ 35,00"],["Atendimento na Sorelly","Sem taxa"]]},
+ {t:"Venda mínima",n:1,x:"A média das suas últimas 3 vendas precisa ser de pelo menos R$ 500,00 no acerto com a representante e R$ 700,00 no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado.",r:[["Média mínima (representante)","R$ 500,00"],["Média mínima (Sorelly)","R$ 700,00"],["Vendas na média","3"]]},
+ {t:"Acerto na data",n:1,x:"O acerto e a devolução são na data marcada. Acerto fora da data perde parte da comissão e do brinde. Com 60 dias de atraso perde toda a comissão e todo o brinde, e o valor do kit pode ser cobrado pela nota promissória.",r:[["1 a 7 dias","−5% comissão e brinde"],["8 a 15 dias","−10%"],["16 a 30 dias","−15%"],["31 a 45 dias","−20%"],["46 a 59 dias","−25%"],["60 dias","Perde tudo"]]},
+ {t:"Remarcação",n:0,x:"Remarcar o acerto tira comissão e brinde. Remarcação com emergência comprovada não conta.",r:[["1ª vez","Comissão −5% · brinde −15%"],["2ª vez","Comissão −8% · brinde −50%"],["3ª em diante","Comissão −15% · sem brinde"]]},
+ {t:"Pagamento",n:1,x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa sobre o valor pendente e prazo para quitar. Enquanto houver valor pendente, o próximo kit fica bloqueado.",r:[["Multa sobre o pendente","10%"],["Prazo para quitar","15 dias"],["Depois do prazo","+1% ao dia, até 10%"]]},
+ {t:"Brinde",n:1,x:"Existem o brinde Normal e o Select (BB). Toda peça cujo código começa com BB é Select. O brinde só é entregue depois do pagamento e precisa ser retirado na hora do acerto: peça que não estiver nesse momento é considerada vendida. O que passar do valor liberado soma no total a pagar.",r:[["Faltou até 5% do pagamento","80% do brinde"],["Faltou de 5% até 10%","50% do brinde"],["Faltou mais de 10%","Sem brinde"]]},
+ {t:"Kit novo",n:1,x:"Com 80% ou mais do acerto pago e média de vendas acima do mínimo, o kit novo é liberado. Abaixo disso precisa de autorização do financeiro.",r:[["Acerto pago","80% ou mais"],["Média de vendas","Acima do mínimo"]]},
+ {t:"Peças",n:0,x:"Peça sem etiqueta é considerada vendida. O que não foi vendido volta para a empresa.",r:[["Tag riscada ou extraviada","R$ 5,00 cada"],["Peça sem etiqueta","Conta como vendida"]]}];
+function marcaRegra(){S.regras[S.rsel]=S.regras[S.rsel]?0:1;if(S.regras[S.rsel]){var n=S.regras.indexOf(0);if(n>=0)S.rsel=n}R()}
+function est4(){var rg=REGRAS9[S.rsel],lidas=S.regras.filter(Boolean).length;
+ var lista=REGRAS9.map(function(g,i){var on=i===S.rsel;return '<div class="lr'+(i%2?' z':'')+(on?' on':'')+'" style="flex:1;justify-content:flex-start;gap:8px;padding:0 10px;min-height:30px" onclick="S.rsel='+i+';R()"><span class="dot'+(S.regras[i]?'" style="background:var(--ok);border-color:var(--ok);color:#06150e':'')+'">'+(S.regras[i]?'✓':i+1)+'</span><span style="flex:1;text-align:left">'+g.t+'</span>'+(g.n?'<span class="pill at">Nova</span>':'')+'</div>'}).join("");
+ var esq='<div class="h">'+ht("Regras do consignado · "+REGRAS9.length)+'<div class="ctb" style="flex:1"><div style="flex:1;display:flex;flex-direction:column">'+lista+'</div><div class="kp k0" style="grid-template-columns:1fr 1fr"><div><span class="cap">Lidas</span><b class="n15 '+(lidas===REGRAS9.length?'pos':'')+'">'+lidas+' de '+REGRAS9.length+'</b></div><div style="justify-content:center"><button class="btn'+(S.ass?' p':'')+'" style="height:28px" '+(lidas<REGRAS9.length?'disabled':'')+' onclick="S.ass=S.ass?0:1;R()">'+(S.ass?'✓ Assinou':'✍ Revendedora assina')+'</button></div></div></div></div>';
+ var dir='<div class="h">'+ht((S.rsel+1)+" · "+rg.t)+'<div class="ctb" style="flex:1"><div style="padding:12px;text-align:left;line-height:1.55">'+(rg.n?'<span class="pill at" style="margin-bottom:6px">Regra nova (27/10/2026)</span><br>':'')+rg.x+'</div>'
+  +'<div class="vr3 hd" style="margin-top:0;grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)"><span class="cap">Em números</span><span class="cap">Valor</span></div>'+rg.r.map(function(x,i){return '<div class="vr3'+(i%2?' z':'')+'" style="grid-template-columns:minmax(0,1fr) minmax(0,1.35fr)"><span>'+x[0]+'</span><b>'+x[1]+'</b></div>'}).join("")
+  +'<div style="flex:1"></div><div style="padding:8px;border-top:1px solid var(--fio);display:flex;justify-content:center"><button class="btn'+(S.regras[S.rsel]?'':' p')+'" onclick="marcaRegra()">'+(S.regras[S.rsel]?'✓ Regra lida · desfazer':'Li e expliquei esta regra')+'</button></div></div></div>';
+ return '<div class="half" style="grid-template-columns:minmax(0,.8fr) minmax(0,1.2fr)">'+esq+dir+'</div>'}
+var ESTS=[est0,est1,est2,est3,est4];
+function nav(){return '<div class="navr"><button class="btn" onclick="S.step=Math.max(0,S.step-1);R()" '+(S.step?'':'disabled')+'>‹ Voltar</button><button class="btn p" onclick="S.step=Math.min(4,S.step+1);R()">'+(S.step===4?'Finalizar':'Próxima ›')+'</button></div>'}
+function lateral(){var fe=feitoE();return '<section class="card shell"><div class="vr">'+ESTACOES.map(function(n,i){return '<button data-e="'+i+'" class="'+(i===S.step?'on':'')+(fe[i]?' ok':'')+'" onclick="S.step='+i+';R()"><span class="t"><span class="nm1"><span class="dot">'+(fe[i]?'✓':i+1)+'</span><b>'+n+'</b></span><span data-b="c'+i+'"></span></span></button>'}).join("")+nav()+'</div><div style="min-width:0;display:flex;flex-direction:column">'+ESTS[S.step]()+'</div></section>'}
+function vals2(){var c=calc(),nr=S.regras.filter(Boolean).length;
+ return [[nOk()+(nOk()>1?" condicionais · ":" condicional · ")+c.cp+" peças",brl(c.cv)],
+  [num(S.vend)>0?"Vendeu "+brl(num(S.vend))+(num(S.cred)>0?" · crédito −"+brl(num(S.cred)):"")+" · comissão "+Math.round(c.pct*100)+"%"+(c.ds.c?" (remarcação −"+c.ds.c+"%)":""):"",num(S.vend)>0?brl(c.liq):""],
+  [S.pags.map(function(p){return p.f+(p.b?" "+p.b:"")+(p.p>1?" "+p.p+"x":"")+" "+brl(p.v)}).join(" + ")+(S.enviado?" · enviado ao financeiro":""),S.pags.length?brl(c.pago):""],
+  [S.brindes.length?"Normal "+brl(c.lN)+" · Select "+brl(c.lS):"",S.brindes.length?brl(c.br):""],
+  [S.nova==="cont"?"Continua vendendo"+(S.nn?" · nº "+S.nn:""):S.nova==="regra"?"Não pode (regras)":S.nova==="nao"?"Não quer continuar":"",S.nova?"✓":""],
+  [nr?nr+" de "+REGRAS9.length+" regras lidas"+(S.ass?" · assinado":""):"",S.ass?"✓":""]]}
+function texto(){var d=vals2(),c=calc(),l=["*Resumo do acerto · Sorelly Joias*","Revendedora: "+CLIS[S.cli][1],"Data: 30/10/2026",""];PASSOS.forEach(function(p,i){if(d[i][0])l.push("• "+p+": "+d[i][0])});l.push("","*Valor a pagar: "+brl(c.ap)+"*");l.push(c.falta>0.005?"Falta pagar: "+brl(c.falta):"Pago: quitado ✓");return l.join("\n")}
+function pdf(){var c=calc(),d=vals2(),h='<html><head><meta charset="utf-8"><title>Resumo do acerto</title><style>body{font:13px Inter,Arial,sans-serif;margin:32px;color:#111}h1{font-size:18px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #bbb;padding:6px 8px;text-align:center}th{background:#eee;font-size:11px;text-transform:uppercase}.tot td{font-weight:700;font-size:15px}</style></head><body><h1>Resumo do acerto · Sorelly Joias</h1><div>Revendedora: <b>'+CLIS[S.cli][1]+'</b> · Data: 30/10/2026</div>'
+ +'<table><tr><th>Condicional</th><th>Peças</th><th>Valor</th></tr>'+S.conds.filter(function(x){return x.ok}).map(function(x){return '<tr><td>'+x.n+'</td><td>'+x.p+'</td><td>R$ '+x.v+'</td></tr>'}).join("")+'<tr class="tot"><td>Total</td><td>'+c.cp+'</td><td>'+brl(c.cv)+'</td></tr></table>'
+ +'<table><tr><th>Item</th><th>Valor</th></tr><tr><td>Venda líquida</td><td>'+brl(c.liq)+'</td></tr><tr><td>Comissão ('+Math.round(c.pct*100)+'%)</td><td>'+brl(c.com)+'</td></tr><tr class="tot"><td>Valor a pagar</td><td>'+brl(c.ap)+'</td></tr><tr><td>Pago</td><td>'+brl(c.pago)+'</td></tr><tr class="tot"><td>Saldo</td><td>'+brl(Math.max(0,c.falta))+'</td></tr></table>'
+ +(S.brindes.length?'<table><tr><th>Brinde</th><th>Tipo</th><th>Valor</th></tr>'+S.brindes.map(function(b){return '<tr><td>'+b.cod+'</td><td>'+(b.cat==="n"?"Normal":"Select")+'</td><td>'+brl(b.v)+'</td></tr>'}).join("")+'</table>':'')
+ +'<div>Pagamentos: '+(d[2][0]||"—")+'</div></body></html>';
+ var w=window.open("","_blank");if(w){w.document.write(h);w.document.close();setTimeout(function(){w.print()},300)}}
+function t3(a,b,c,cls){return '<div class="t3'+(cls||'')+'"><span>'+a+'</span><span>'+b+'</span><b>'+c+'</b></div>'}
+function t2(a,b,cls){return '<div class="t2'+(cls||'')+'"><span>'+a+'</span><b>'+b+'</b></div>'}
+function resumo(){var c=calc();
+ var cs=S.conds.filter(function(x){return x.ok});
+ var condT='<div class="ctb" style="flex:1"><div class="t3 hd"><span class="cap">Condicional</span><span class="cap">Peças</span><span class="cap">Valor</span></div>'+cs.map(function(x,i){return t3(x.n,x.p,"R$ "+x.v,(i%2?" z":"")+" c")}).join("")+'<div style="flex:1"></div>'
+  +'<div class="t3 c" style="border-top:1px solid var(--fio2)"><span class="cap">Total</span><b>'+c.cp+'</b><b class="gold" data-b="cv"></b></div>'
+  +'<div class="t3 c z"><span class="cap">Vendidas</span><b>'+num(S.vendidas)+'</b><span></span></div>'
+  +'<div class="t3 tt2"><span>Retornadas</span><b class="gold" data-b="ret"></b><span></span></div></div>';
+ var bloco=function(cat,tit,lib,lanc){var L=S.brindes.filter(function(b){return b.cat===cat});
+  return '<div class="h">'+ht(tit)+'<div class="ctb" style="flex:1"><div class="t2 hd"><span class="cap">Código</span><span class="cap">Valor</span></div>'+(L.length?L.map(function(b,i){return t2(b.cod,brl(b.v),i%2?" z":"")}).join(""):'<div class="t2"><span class="cap" style="grid-column:1/3">Nenhuma peça</span></div>')+'<div style="flex:1"></div>'
+  +'<div class="t2 c" style="border-top:1px solid var(--fio2)"><span class="cap">Libera</span><b data-b="'+lib+'"></b></div><div class="t2 tt2"><span>Lançado</span><b class="gold" data-b="'+lanc+'"></b></div></div></div>'};
+ var esq='<div class="h">'+ht("Condicionais")+condT+'</div>'+bloco("n","Brinde normal","libN","lN")+bloco("s","Brinde select","libS","lS");
+ var dir='<div class="h">'+ht("Conta do acerto")+'<div class="ctb" style="flex:1"><div class="vr3 hd"><span class="cap">Item</span><span class="cap">Valor</span></div>'
+  +rv2("Venda líquida",'<b class="n15" data-b="liq"></b>')+rv2("Comissão",'<b class="n15" data-b="comV"></b>',' z')
+  +'<div class="vr3 tt2" style="margin-top:0"><span>Valor a pagar</span><b class="n20 gold" data-b="ap"></b></div>'
+  +rv2("Pago",'<b class="n15 pos" data-b="pago"></b>')+'<div class="vr3 tt2" style="margin-top:0"><span>Saldo</span><b class="n20" data-b="falta"></b></div><div style="flex:1"></div>'
+  +'<div class="row" style="justify-content:center;padding:8px;border-top:1px solid var(--fio);flex-wrap:wrap"><button class="btn p" id="btnCopy" onclick="pdf()">Gerar PDF</button><button class="btn" onclick="copiar(true)">Enviar no WhatsApp</button></div></div></div>';
+ return '<section class="card"><div class="bar"><span class="cap"><span data-b="nfeitos"></span> de 6 etapas</span><span class="mid">Resumo do acerto · '+CLIS[S.cli][1]+'</span><span class="cap">30/10/2026</span></div><div class="half" style="flex:none;grid-template-columns:minmax(0,1.25fr) minmax(0,.8fr) minmax(0,.8fr) minmax(0,1.05fr)">'+esq+dir+'</div></section>'}
+function copiar(w){var t=texto();try{navigator.clipboard.writeText(t)}catch(x){}if(w)window.open("https://wa.me/?text="+encodeURIComponent(t),"_blank");var b=document.getElementById("btnCopy");b.textContent="✓ Copiado";setTimeout(function(){var q=document.getElementById("btnCopy");if(q)q.textContent="Copiar resumo"},1400)}
+R();
+</script>
+</body>
+</html>

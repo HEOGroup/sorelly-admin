@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.11", data:"2026-11-01", titulo:"Outubro/2026 fechado (sem funcionários)", itens:[
+    {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"Outubro travado pelo relatório SEM funcionários: 1.843 acertos, R$ 1.438.133,61, média R$ 780,32 (30/10: 1.835 e R$ 1.430.877,71; 31/10: 1.843 e R$ 1.438.133,61), Carregar 0, nada a realizar, 2.047 revendedoras. O número anterior (1.839, R$ 1.458.447,71) fica guardado como referência até entrarem as compras de funcionárias. Gravado no código (aplicaFechaOut), em FATURAMENTO-DIARIO.md e em DECISOES.md."},
+  ]},
   {v:"0.18.10", data:"2026-10-30", titulo:"Faturamento fixado em 29/10", itens:[
     {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"29/10 fixado: 1.731 acertos, R$ 1.363.799,00 e média R$ 787,87 (dia 29: 79 acertos, R$ 67.597,40). O dia 30/10 NÃO entrou: o Marcus manda o número certo depois (os provisórios foram retirados). Carregar 0 e a realizar = 1.886 − 1.731 = 155 até o Marcus mandar. Gravado no código (aplicaFat30), em FATURAMENTO-DIARIO.md e em DECISOES.md."},
   ]},

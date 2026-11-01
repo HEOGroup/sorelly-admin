@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Atendimento: 5 versões do topo</title>
+<style>
+:root{--bg:#0b0b0c;--card:#141415;--b:#3a3320;--g:#e8c04a;--g2:rgba(232,192,74,.4);--g3:rgba(232,192,74,.18);--t:#fff;--mut:#d9d9d9}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--t);font:13px/1.2 Inter,system-ui,sans-serif;padding:20px;max-width:1280px;margin:auto}
+h2{font-size:13px;margin:22px 0 6px;color:var(--g)}
+.lb{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.box{border:1px solid var(--g2);border-radius:8px;background:var(--card);overflow:hidden}
+.c{height:32px;display:flex;align-items:center;justify-content:center;border:1px solid var(--g2);border-radius:6px;background:var(--bg);padding:0 12px;font-weight:600;white-space:nowrap;color:var(--t);font-size:13px}
+.c.pri{border-color:var(--g);color:var(--g)}
+.kit{display:flex;height:32px;border:1px solid var(--g2);border-radius:6px;overflow:hidden}
+.kit span{padding:0 14px;display:flex;align-items:center;font-weight:600}
+.kit .on{background:var(--g);color:#1a1405}
+.num{font-variant-numeric:tabular-nums}
+.obs{border-top:1px solid var(--g3);text-align:center;padding:7px;font-size:13px}
+.obs b{font-weight:700}
+.row{display:flex;align-items:center}
+.cel{display:flex;flex-direction:column;gap:4px;padding:6px 10px;border-left:1px solid var(--g3)}
+.cel:first-child{border-left:0}
+.cel .lb{text-align:center}
+.nome{font-size:13px;font-weight:700}
+</style>
+</head>
+<body>
+<h1 style="font-size:13px">Atendimento Sorelly · 5 versões do topo (todas com Kit Ouro/Prata, sem botão de incluir cliente)</h1>
+
+<!-- V1 -->
+<h2>V1 · Duas linhas: quem é + o que fazer</h2>
+<div class="box">
+  <div class="row" style="padding:8px 12px;gap:12px;border-bottom:1px solid var(--g3)">
+    <span class="nome">Fabiane da Silva Eduardo</span>
+    <span class="num" style="color:var(--g)">08:00</span>
+    <span class="c" style="height:26px;font-weight:500">Aguardando</span>
+    <span style="margin-left:auto" class="row"><span class="lb" style="margin-right:8px">Kit</span>
+      <span class="kit"><span class="on">Ouro</span><span>Prata</span></span></span>
+  </div>
+  <div class="row" style="padding:8px 12px;gap:8px">
+    <span class="c">Chegou agora</span>
+    <span class="c">Escolher ▾</span>
+    <span class="c">⏱ Começou</span>
+    <span class="c pri" style="margin-left:auto;min-width:140px">▶ Iniciar</span>
+  </div>
+  <div class="obs"><b>Observação:</b> Agendada pela Tamara (DevMaster)</div>
+</div>
+
+<!-- V2 -->
+<h2>V2 · Uma linha só, rótulo ao lado do campo, sem cabeçalho dourado</h2>
+<div class="box">
+  <div class="row" style="padding:8px 12px;gap:14px;flex-wrap:wrap">
+    <span class="nome" style="min-width:190px">Fabiane da Silva Eduardo</span>
+    <span class="row" style="gap:6px"><span class="lb">Hora</span><span class="num" style="font-weight:700">08:00</span></span>
+    <span class="row" style="gap:6px"><span class="lb">Situação</span><span class="c" style="height:26px;font-weight:500">Aguardando</span></span>
+    <span class="row" style="gap:6px"><span class="lb">Kit</span><span class="kit"><span class="on">Ouro</span><span>Prata</span></span></span>
+    <span class="row" style="gap:6px"><span class="lb">Chegada</span><span class="c">Chegou agora</span></span>
+    <span class="row" style="gap:6px"><span class="lb">Montagem</span><span class="c">Escolher ▾</span></span>
+    <span class="row" style="gap:6px"><span class="lb">Escolha</span><span class="c">⏱ Começou</span></span>
+    <span class="c pri" style="margin-left:auto">▶ Iniciar</span>
+  </div>
+  <div class="obs">Agendada pela Tamara (DevMaster)</div>
+</div>
+
+<!-- V3 -->
+<h2>V3 · Cartão da revendedora à esquerda, grade de ações à direita</h2>
+<div class="box row" style="align-items:stretch">
+  <div style="padding:10px 14px;border-right:1px solid var(--g3);min-width:250px;display:flex;flex-direction:column;gap:8px;justify-content:center">
+    <div class="row" style="gap:10px"><span style="width:32px;height:32px;border-radius:50%;background:var(--g3);border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--g)">FS</span>
+      <span><div class="nome">Fabiane da Silva Eduardo</div><div class="num" style="margin-top:3px">08:00 · Aguardando</div></span></div>
+    <span class="kit" style="width:max-content"><span class="on">Ouro</span><span>Prata</span></span>
+  </div>
+  <div style="flex:1;padding:10px 12px;display:grid;grid-template-columns:repeat(3,1fr);gap:6px 10px;align-items:end">
+    <span><div class="lb" style="margin-bottom:3px">Chegada</div><div class="c">Chegou agora</div></span>
+    <span><div class="lb" style="margin-bottom:3px">Montagem de kit</div><div class="c">Escolher ▾</div></span>
+    <span><div class="lb" style="margin-bottom:3px">Escolha do kit</div><div class="c">⏱ Começou</div></span>
+    <span style="grid-column:1/3;text-align:center;padding-top:2px">Agendada pela Tamara (DevMaster)</span>
+    <span class="c pri">▶ Iniciar</span>
+  </div>
+</div>
+
+<!-- V4 -->
+<h2>V4 · Tabela fina: rótulos em cima, valores embaixo, bordas douradas (estilo Raycast)</h2>
+<div class="box">
+  <div style="display:grid;grid-template-columns:2.2fr .7fr 1fr 1fr 1fr 1fr 1fr 1fr">
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2)">Revendedora</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Horário</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Situação</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Kit</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Chegada</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Montagem</div>
+    <div class="lb" style="height:30px;display:flex;align-items:center;justify-content:center;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)">Escolha</div>
+    <div class="lb" style="height:30px;background:var(--g3);border-bottom:1px solid var(--g2);border-left:1px solid var(--g3)"></div>
+
+    <div style="padding:6px;display:flex;align-items:center;justify-content:center" class="nome">Fabiane da Silva Eduardo</div>
+    <div style="padding:6px;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--g3)" class="num"><b>08:00</b></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="c" style="font-weight:500">Aguardando</div></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="kit"><span class="on" style="flex:1;justify-content:center">Ouro</span><span style="flex:1;justify-content:center">Prata</span></div></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="c">Chegou agora</div></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="c">Escolher ▾</div></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="c">⏱ Começou</div></div>
+    <div style="padding:6px;border-left:1px solid var(--g3)"><div class="c pri">▶ Iniciar</div></div>
+  </div>
+  <div class="obs">Agendada pela Tamara (DevMaster)</div>
+</div>
+
+<!-- V5 -->
+<h2>V5 · Passos numerados: Chegada → Montagem → Escolha → Iniciar</h2>
+<div class="box">
+  <div class="row" style="padding:8px 12px;gap:12px;border-bottom:1px solid var(--g3)">
+    <span class="nome">Fabiane da Silva Eduardo</span>
+    <span class="num" style="color:var(--g)">08:00</span>
+    <span class="c" style="height:26px;font-weight:500">Aguardando</span>
+    <span class="kit" style="margin-left:auto"><span class="on">Ouro</span><span>Prata</span></span>
+  </div>
+  <div class="row" style="padding:8px 12px;gap:6px">
+    <span class="row" style="gap:8px;flex:1"><span style="width:20px;height:20px;border-radius:50%;background:var(--g);color:#1a1405;font-weight:700;display:flex;align-items:center;justify-content:center;font-size:11px">1</span><span class="c" style="flex:1">Chegou agora</span></span>
+    <span style="color:var(--g)">→</span>
+    <span class="row" style="gap:8px;flex:1"><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;font-size:11px">2</span><span class="c" style="flex:1">Montagem: Escolher ▾</span></span>
+    <span style="color:var(--g)">→</span>
+    <span class="row" style="gap:8px;flex:1"><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;font-size:11px">3</span><span class="c" style="flex:1">⏱ Começou</span></span>
+    <span style="color:var(--g)">→</span>
+    <span class="row" style="gap:8px;flex:1"><span style="width:20px;height:20px;border-radius:50%;border:1px solid var(--g2);display:flex;align-items:center;justify-content:center;font-size:11px">4</span><span class="c pri" style="flex:1">▶ Iniciar</span></span>
+  </div>
+  <div class="obs">Agendada pela Tamara (DevMaster)</div>
+</div>
+</body>
+</html>

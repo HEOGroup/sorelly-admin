@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Visão geral · direção Raycast</title>
+<!--
+  Sorelly Admin · docs/design/visao-geral-direcao-raycast.html (30/10/2026)
+  A tela Visão geral desenhada FORA do admin, na direção escolhida pelo Marcus: Raycast (escuro sóbrio, sem degradê nem brilho,
+  bordas finas, uma fonte) com o dourado da Sorelly só como destaque. Mesmos blocos e mesmas informações da tela de hoje.
+  Botão "Hoje" no alto: mostra a mesma estrutura com o visual atual (degradê, dourado em tudo, número colorido, fonte mono), para comparar.
+  Números de DEMONSTRAÇÃO (não são os reais). Fontes: as do próprio sistema (src/styles/fontes). Abrir direto no navegador.
+-->
+<style>
+  @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("../../src/styles/fontes/inter-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("../../src/styles/fontes/inter-latin-ext.woff2") format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+  @font-face{font-family:"JetBrains Mono";font-weight:100 800;src:url("../../src/styles/fontes/jetbrains-mono-latin.woff2") format("woff2")}
+
+  :root{
+    --fundo:#0E0F12; --painel:#15171B; --painel-2:#1B1E23; --fio:#262A31; --fio-forte:#343941;
+    --texto:#ECEAE4; --texto-2:#B9B6AE; --texto-3:#8E8B84;
+    --ouro:#D6B25C; --ouro-tinta:#1F1B12;
+    --ok:#4CC38A; --ruim:#E5484D; --atencao:#F2B544; --info:#6AA6F8;
+    --raio:6px; --raio-g:8px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 "Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{font-feature-settings:"tnum" 1,"cv11" 1}
+  ::selection{background:rgba(214,178,92,.28);color:#fff}
+  button,select,input{font:inherit;color:inherit}
+  a{color:inherit;text-decoration:none}
+  :focus-visible{outline:2px solid var(--ouro);outline-offset:2px}
+  svg{display:block}
+
+  /* ── casca ─────────────────────────────────────────── */
+  .app{display:grid;grid-template-columns:236px 1fr;min-height:100vh}
+  .lateral{background:var(--painel);border-right:1px solid var(--fio);padding:14px 10px;display:flex;flex-direction:column;gap:4px;position:sticky;top:0;height:100vh}
+  .marca{display:flex;align-items:center;gap:10px;padding:4px 8px 14px}
+  .marca .logo{width:28px;height:28px;border-radius:7px;background:var(--ouro);color:var(--ouro-tinta);display:grid;place-items:center;font-weight:700;letter-spacing:.02em}
+  .marca b{font-weight:600;letter-spacing:.12em;font-size:12px}
+  .pessoa{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid var(--fio);border-radius:var(--raio);margin:0 0 8px;background:var(--painel-2)}
+  .pessoa .av{width:22px;height:22px;border-radius:50%;background:var(--ouro);color:var(--ouro-tinta);display:grid;place-items:center;font-size:11px;font-weight:700}
+  .pessoa small{display:block;color:var(--texto-3);font-size:11px}
+  .grupo{font-size:11px;color:var(--texto-3);padding:10px 8px 4px;display:flex;justify-content:space-between}
+  .grupo a{color:var(--texto-3)}
+  .item{display:flex;align-items:center;gap:10px;height:30px;padding:0 8px;border-radius:var(--raio);color:var(--texto-2);position:relative}
+  .item svg{width:15px;height:15px;color:var(--texto-3)}
+  .item:hover{background:var(--painel-2);color:var(--texto)}
+  .item.ativo{background:var(--painel-2);color:var(--texto)}
+  .item.ativo::before{content:"";position:absolute;left:0;top:9px;bottom:9px;width:2px;background:var(--ouro);border-radius:2px}
+  .item.ativo svg{color:var(--ouro)}
+
+  .topo{height:48px;border-bottom:1px solid var(--fio);display:flex;align-items:center;gap:12px;padding:0 20px;background:var(--fundo);position:sticky;top:0;z-index:2}
+  .topo .setor{font-weight:600;display:flex;align-items:center;gap:8px}
+  .topo .setor svg{width:16px;height:16px;color:var(--ouro)}
+  .busca{margin-left:auto;width:300px;height:30px;border:1px solid var(--fio);border-radius:var(--raio);background:var(--painel);display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--texto-3)}
+  .busca kbd{margin-left:auto;font:11px "Inter";border:1px solid var(--fio-forte);border-radius:4px;padding:0 5px;color:var(--texto-3)}
+  .icone-btn{width:30px;height:30px;border:1px solid var(--fio);border-radius:var(--raio);background:var(--painel);display:grid;place-items:center;color:var(--texto-2);position:relative}
+  .icone-btn svg{width:15px;height:15px}
+  .icone-btn .n{position:absolute;top:-5px;right:-5px;min-width:16px;height:16px;border-radius:8px;background:var(--ouro);color:var(--ouro-tinta);font-size:10px;font-weight:700;display:grid;place-items:center;padding:0 4px}
+  .btn{height:30px;padding:0 12px;border:1px solid var(--fio);border-radius:var(--raio);background:var(--painel);color:var(--texto);display:inline-flex;align-items:center;gap:6px;cursor:pointer;white-space:nowrap}
+  .btn:hover{background:var(--painel-2);border-color:var(--fio-forte)}
+  .btn.principal{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-tinta);font-weight:600}
+  .btn.principal:hover{filter:brightness(1.06)}
+  .btn svg{width:14px;height:14px}
+
+  .abas{height:34px;border-bottom:1px solid var(--fio);display:flex;align-items:stretch;gap:2px;padding:0 20px;background:var(--fundo)}
+  .aba{display:flex;align-items:center;gap:8px;padding:0 10px;color:var(--texto-3);border-bottom:1px solid transparent;margin-bottom:-1px}
+  .aba.ativa{color:var(--texto);border-bottom-color:var(--ouro)}
+  .aba .x{color:var(--texto-3);font-size:12px}
+
+  .conteudo{padding:18px 20px 40px;max-width:1360px}
+  .cabeca{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+  .cabeca h1{font-size:18px;font-weight:600;margin:0;letter-spacing:-.01em}
+  .cabeca p{margin:2px 0 0;color:var(--texto-2)}
+  .cabeca .acoes{display:flex;gap:8px}
+
+  /* ── faixa do topo: o número que importa ───────────── */
+  .faixa{display:grid;grid-template-columns:1.1fr 1.6fr 1fr 1fr;border:1px solid var(--fio);border-radius:var(--raio-g);background:var(--painel);margin-bottom:12px}
+  .faixa > div{padding:12px 16px;border-right:1px solid var(--fio);min-width:0}
+  .faixa > div:last-child{border-right:0}
+  .rotulo{font-size:11px;color:var(--texto-3);margin:0 0 4px;display:block}
+  .valor{font-size:20px;font-weight:600;letter-spacing:-.01em;line-height:1.1;white-space:nowrap}
+  .valor.ouro{color:var(--ouro)}
+  .sub{display:flex;gap:14px;margin-top:6px;color:var(--texto-2);font-size:12px;white-space:nowrap}
+  .sub b{color:var(--texto);font-weight:600}
+  .fio-ouro{display:inline-block;border-bottom:1px solid var(--ouro);padding-bottom:3px}
+
+  /* ── blocos ────────────────────────────────────────── */
+  .grade{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;align-items:start}
+  .col{display:flex;flex-direction:column;gap:12px;min-width:0}
+  .bloco{border:1px solid var(--fio);border-radius:var(--raio-g);background:var(--painel);min-width:0}
+  .bloco > header{display:flex;align-items:center;justify-content:space-between;gap:8px;height:38px;padding:0 14px;border-bottom:1px solid var(--fio)}
+  .bloco > header h2{font-size:13px;font-weight:600;margin:0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .bloco > header a{white-space:nowrap;flex-shrink:0}
+  .bloco > header small{color:var(--texto-3);font-size:11px;margin-left:8px;font-weight:400}
+  .bloco > header a{font-size:12px;color:var(--texto-2)}
+  .bloco > header a:hover{color:var(--ouro)}
+  .bloco .corpo{padding:10px 14px 12px}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:0 18px}
+  .lista{display:grid;grid-template-columns:1fr auto;gap:4px 12px;align-items:baseline}
+  .lista span{color:var(--texto-2);min-width:0;line-height:1.3;padding:2px 0}
+  .lista b{font-weight:500;text-align:right;white-space:nowrap;align-self:start;padding:2px 0}
+  .lista b.ok{color:var(--ok)} .lista b.ruim{color:var(--ruim)} .lista b.atencao{color:var(--atencao)}
+  .lista .forte, .lista .forte + b{font-weight:600;color:var(--texto)}
+  .secao{font-size:11px;color:var(--texto-3);margin:0 0 6px}
+  .secao + .lista{margin-bottom:10px}
+  .barra{height:3px;background:var(--fio);border-radius:2px;overflow:hidden;margin-top:8px}
+  .barra i{display:block;height:100%;background:var(--ouro)}
+  .barra.ok i{background:var(--ok)}
+
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .par > div{border:1px solid var(--fio);border-radius:var(--raio);padding:8px 10px}
+  .par .valor{font-size:18px}
+
+  .opcao{display:flex;align-items:center;justify-content:space-between;gap:10px;height:34px;padding:0 10px;border:1px solid var(--fio);border-radius:var(--raio);margin-bottom:6px;color:var(--texto-2)}
+  .opcao b{font-weight:600;color:var(--texto);width:34px;flex-shrink:0}
+  .opcao > span:not(.v){min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .opcao .v{margin-left:auto;font-weight:500;color:var(--texto);white-space:nowrap;flex-shrink:0}
+  .opcao.sel{border-color:var(--ouro);color:var(--texto)}
+  .opcao.sel .v{color:var(--ouro)}
+
+  .linha{display:flex;align-items:center;gap:10px;height:36px;border-top:1px solid var(--fio)}
+  .linha:first-child{border-top:0}
+  .linha .h{color:var(--texto-3);width:40px}
+  .linha .nome{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .linha .nome small{display:block;font-size:11px;color:var(--texto-3)}
+  .linha .nome small.ruim{color:var(--ruim)}
+  .linha .v{font-weight:500;white-space:nowrap}
+  .linha .x{color:var(--texto-3);width:18px;text-align:center}
+  .linha.pedido{cursor:pointer}
+  .linha.pedido:hover .nome{color:var(--ouro)}
+
+  .tabela{width:100%;border-collapse:collapse}
+  .tabela th{font-size:11px;font-weight:500;color:var(--texto-3);text-align:left;height:28px;border-bottom:1px solid var(--fio);padding:0 8px}
+  .tabela td{height:30px;padding:0 8px;border-bottom:1px solid var(--fio);white-space:nowrap}
+  .tabela td:first-child,.tabela th:first-child{padding-left:0} .tabela td:last-child,.tabela th:last-child{padding-right:0}
+  .tabela tr:last-child td{border-bottom:0}
+  .tabela .num{text-align:right}
+  .tabela th.num{text-align:right}
+  .tabela .ok{color:var(--ok)} .tabela .ruim{color:var(--ruim)}
+  .tabela .marca-ao-vivo{font-size:11px;color:var(--ouro);margin-left:6px}
+  .tabela .muted{color:var(--texto-3)}
+  .cnpj{display:inline-flex;align-items:center;gap:7px}
+  .cnpj i{width:7px;height:7px;border-radius:2px;display:inline-block}
+
+  .tag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:4px;font-size:11px;border:1px solid var(--fio-forte);color:var(--texto-2)}
+  .tag.ok{border-color:rgba(76,195,138,.4);color:var(--ok)}
+  .tag.atencao{border-color:rgba(242,181,68,.45);color:var(--atencao)}
+
+  .chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+  .chip{height:26px;padding:0 10px;border:1px solid var(--fio);border-radius:var(--raio);background:transparent;color:var(--texto-2);cursor:pointer}
+  .chip.sel{border-color:var(--ouro);color:var(--texto)}
+
+  .grafico{display:flex;align-items:flex-end;gap:5px;height:150px;padding:0 0 0 0;border-bottom:1px solid var(--fio)}
+  .grafico i{flex:1;background:var(--fio-forte);border-radius:2px 2px 0 0;position:relative;min-width:0}
+  .grafico i.hoje{background:var(--ouro)}
+  .grafico i.prev{background:transparent;border:1px dashed var(--fio-forte);border-bottom:0}
+  .grafico i.hoje::after,.grafico i.prev::after{content:attr(data-v);position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--texto-2);white-space:nowrap}
+  .grafico i.hoje::after{color:var(--ouro)}
+  .eixo{display:flex;justify-content:space-between;font-size:11px;color:var(--texto-3);margin-top:6px}
+
+  .largo{grid-column:1 / -1}
+  footer.nota{color:var(--texto-3);font-size:11px;margin-top:14px}
+
+  /* ── seletor Hoje | Raycast (só nesta prévia) ─────── */
+  .comparar{position:fixed;right:16px;bottom:16px;z-index:10;display:flex;border:1px solid var(--fio-forte);border-radius:var(--raio);overflow:hidden;background:var(--painel);box-shadow:0 8px 24px rgba(0,0,0,.45)}
+  .comparar button{height:34px;padding:0 14px;border:0;background:transparent;color:var(--texto-2);cursor:pointer}
+  .comparar button.sel{background:var(--ouro);color:var(--ouro-tinta);font-weight:600}
+
+  /* ── "Hoje": o visual atual, aproximado, para comparar ── */
+  body.hoje{--fundo:#0a0a0a;--painel:#111;--painel-2:#171717;--fio:rgba(232,184,75,.35);--fio-forte:rgba(232,184,75,.6);--ouro:#E8B84B;--texto:#fff;--texto-2:rgba(255,255,255,.8);--texto-3:rgba(255,255,255,.6);--raio:10px;--raio-g:14px}
+  body.hoje .bloco > header,body.hoje .faixa{background:linear-gradient(135deg,rgba(232,184,75,.55),rgba(232,184,75,.1) 78%);box-shadow:inset 0 0 0 1px rgba(232,184,75,.45)}
+  body.hoje .bloco > header{border-bottom:0;height:52px;flex-direction:column;justify-content:center;gap:0}
+  body.hoje .bloco > header h2{font-size:15px;font-weight:800;color:#fff}
+  body.hoje .bloco > header small{display:block;margin:0;color:rgba(255,255,255,.75)}
+  body.hoje .bloco > header a{position:absolute;right:12px;background:#111;border-radius:999px;padding:3px 10px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.3)}
+  body.hoje .bloco > header{position:relative}
+  body.hoje .valor,body.hoje .lista b,body.hoje .tabela td.num,body.hoje .par .valor,body.hoje .linha .v,body.hoje .opcao .v{font-family:"JetBrains Mono",monospace;color:var(--ouro)}
+  body.hoje .valor{font-size:22px;font-weight:700}
+  body.hoje .lista b{color:#4ADE80} body.hoje .lista b.ruim{color:#EF4444} body.hoje .lista b.atencao{color:#FBBF24}
+  body.hoje .rotulo,body.hoje .secao,body.hoje .tabela th{text-transform:uppercase;letter-spacing:.08em;font-weight:700;color:rgba(255,255,255,.75)}
+  body.hoje .item.ativo{background:linear-gradient(135deg,rgba(232,184,75,.45),rgba(232,184,75,.1));box-shadow:inset 0 0 0 1px rgba(232,184,75,.5)}
+  body.hoje .item.ativo::before{display:none}
+  body.hoje .btn{background:linear-gradient(135deg,rgba(232,184,75,.5),rgba(232,184,75,.15));border-color:rgba(232,184,75,.6);font-weight:700;border-radius:999px}
+  body.hoje .btn.principal{background:linear-gradient(135deg,#E8B84B,#b8892a);color:#111}
+  body.hoje .fio-ouro{border-bottom:0}
+  body.hoje .par > div,body.hoje .opcao,body.hoje .pessoa,body.hoje .busca{background:linear-gradient(135deg,rgba(232,184,75,.22),rgba(232,184,75,.05) 78%)}
+  body.hoje .opcao.sel{box-shadow:0 0 0 1px #E8B84B,0 0 16px rgba(232,184,75,.35)}
+  body.hoje .grafico i{background:#4ADE80} body.hoje .grafico i.hoje{background:#22c55e;box-shadow:0 0 12px rgba(34,197,94,.6)}
+  body.hoje .cabeca h1{font-size:26px;font-weight:800}
+  body.hoje .barra i{background:#4ADE80;box-shadow:0 0 8px #4ADE80}
+  body.hoje .tabela td.ok,body.hoje .tabela td.ruim{font-family:"JetBrains Mono",monospace}
+  body.hoje .marca .logo{box-shadow:0 0 18px rgba(232,184,75,.6)}
+  body.hoje .lateral{background:linear-gradient(180deg,#141414,#0a0a0a)}
+
+  @media (max-width:1100px){.grade{grid-template-columns:1fr 1fr}.faixa{grid-template-columns:1fr 1fr}}
+  @media (max-width:820px){.app{grid-template-columns:1fr}.lateral{display:none}.grade{grid-template-columns:1fr}.busca{display:none}}
+  @media (prefers-reduced-motion:no-preference){.grafico i{transition:height .5s cubic-bezier(.2,.8,.2,1)}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="lateral">
+    <div class="marca"><div class="logo">S</div><b>SORELLY</b></div>
+    <div class="pessoa"><div class="av">M</div><div>Marcus<small>Acesso total</small></div></div>
+    <div class="grupo"><span>Geral</span></div>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 18h18M4 9l4 4 4-7 4 7 4-4-1 9H5z"/></svg>Início</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg>Melhorias</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H8l-4 4z"/></svg>SorellyChat</a>
+    <a class="item ativo" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Visão geral</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="7" y="2.5" width="10" height="19" rx="2"/><path d="M11 18h2"/></svg>Apps</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19h16M5 10l3-4 4 5 4-6 3 5v9H5z"/></svg>Diretoria</a>
+    <div class="grupo"><span>Setores</span><a href="#">Abrir tudo</a></div>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 10l9-6 9 6M5 10v9h14v-9M9 19v-5h6v5"/></svg>Financeiro</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Agendamento</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>Cadastro de revendedoras</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="8" cy="8" r="3"/><circle cx="16" cy="9" r="2.5"/><path d="M2.5 19a5.5 5.5 0 0 1 11 0M13 18a4.5 4.5 0 0 1 8.5 0"/></svg>Revendedoras</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 7h16v13H4zM9 7V4h6v3"/></svg>Representantes &amp; Kits</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10 14l4-4M8 16l-2 2a3 3 0 0 1-4-4l2-2M16 8l2-2a3 3 0 0 1 4 4l-2 2"/></svg>Link de pagamento</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 15h3"/></svg>Atendimento interno</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12L4 7.5"/></svg>Materiais &amp; Estoque</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 7h11v10H3zM14 10h4l3 3v4h-7z"/><circle cx="7" cy="18" r="1.5"/><circle cx="17" cy="18" r="1.5"/></svg>Encomendas &amp; Reposições</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6z"/></svg>Garantia &amp; Pós-venda</a>
+    <a class="item" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="7" width="18" height="13" rx="2"/><path d="M9 7V4h6v3M3 12h18"/></svg>Recursos Humanos</a>
+  </aside>
+
+  <main>
+    <div class="topo">
+      <div class="setor"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/><rect x="13" y="13" width="8" height="8" rx="1.5"/></svg>Visão geral</div>
+      <div class="busca"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>Buscar tela ou colar endereço<kbd>Ctrl K</kbd></div>
+      <div class="icone-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15zM10 20h4"/></svg></div>
+      <div class="icone-btn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 5h16v11H8l-4 4z"/></svg><span class="n">11</span></div>
+      <button class="btn">Sair</button>
+    </div>
+    <div class="abas">
+      <div class="aba">Início</div>
+      <div class="aba ativa">Visão geral <span class="x">×</span></div>
+    </div>
+
+    <div class="conteudo">
+      <div class="cabeca">
+        <div><h1>Visão geral</h1><p>Crescimento de revendedoras e resultado do ano, sempre atualizados.</p></div>
+        <div class="acoes"><button class="btn">Favoritar aba</button><button class="btn principal">Previsão do ano</button></div>
+      </div>
+
+      <section class="faixa" aria-label="Resumo de hoje">
+        <div><span class="rotulo">Revendedoras hoje</span><div class="valor">2.118</div><div class="sub"><span><b class="ok">+52</b> no mês</span><span>em 15/10</span></div></div>
+        <div><span class="rotulo">Faturamento até o momento</span><div class="valor ouro"><span class="fio-ouro">R$ 1.284.350,00</span></div><div class="sub"><span><b>1.640</b> acertos</span><span><b>0</b> no Carregar</span><span><b>R$ 783,14</b> de média</span></div></div>
+        <div><span class="rotulo">Contas pagas no mês</span><div class="valor">R$ 1.276.900,00</div><div class="sub"><span>87% do previsto</span></div></div>
+        <div><span class="rotulo">Resultado até hoje</span><div class="valor" style="color:var(--ok)">R$ 7.450,00</div><div class="sub"><span>previsto no mês <b style="color:var(--ruim)">−R$ 55.000,00</b></span></div></div>
+      </section>
+
+      <div class="grade">
+        <!-- coluna 1 -->
+        <div class="col">
+          <section class="bloco">
+            <header><h2>Acertos de outubro<small>previsão × o que já foi</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo duas">
+              <div>
+                <p class="secao">Previsão</p>
+                <div class="lista">
+                  <span>Revendedoras no início do mês</span><b>2.030</b>
+                  <span>Previstos primeiros</span><b>1.970</b>
+                  <span class="forte">Novo previstos</span><b>1.880</b>
+                  <span>Acertos adiados até o momento</span><b class="atencao">90</b>
+                  <span class="forte">98% dos novos previstos</span><b>1.842</b>
+                </div>
+              </div>
+              <div>
+                <p class="secao">Andamento</p>
+                <div class="lista">
+                  <span>Realizados</span><b class="ok">1.640</b>
+                  <span>Carregar</span><b>0</b>
+                  <span class="forte">Faltam</span><b>240</b>
+                  <span>Do mês</span><b>87,2%</b>
+                  <span>Falta para os 98%</span><b>202</b>
+                </div>
+                <div class="barra ok"><i style="width:87%"></i></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="bloco">
+            <header><h2>Bipagem de retorno<small>kits que voltaram das representantes</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo par">
+              <div><span class="rotulo">Bipados hoje</span><div class="valor">0</div></div>
+              <div><span class="rotulo">Aguardando bipagem</span><div class="valor">10</div></div>
+            </div>
+          </section>
+
+          <section class="bloco">
+            <header><h2>Solicitações para decidir<small>vendas acima de R$ 2.000,00</small></h2><a href="#">1 no SorellyChat</a></header>
+            <div class="corpo" style="padding-top:0;padding-bottom:0">
+              <div class="linha pedido"><div class="nome">Pagamento · Letícia Barros<small>Aguardando pagamento · Thalita · 09:06</small></div><span class="x">›</span></div>
+              <div class="linha pedido"><div class="nome">Pagamento · Rúbia Falcão<small>Aguardando pagamento · Thalita · 10:13</small></div><span class="x">›</span></div>
+              <div class="linha pedido"><div class="nome">Pagamento · Mariana Costa<small>Aguardando pagamento · Jessica · 14:17</small></div><span class="x">›</span></div>
+            </div>
+          </section>
+
+          <section class="bloco">
+            <header><h2>Atendimento interno<small>consolidado do mês e listagem de hoje</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo">
+              <div class="par" style="margin-bottom:10px">
+                <div><span class="rotulo">Faturamento do dia</span><div class="valor">R$ 0,00</div></div>
+                <div><span class="rotulo">Faturamento do mês</span><div class="valor">R$ 0,00</div></div>
+              </div>
+              <div class="lista" style="grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:8px;text-align:center">
+                <div><span class="rotulo">Atendimentos</span><b style="display:block;text-align:center">9</b></div>
+                <div><span class="rotulo">Atendidas</span><b style="display:block;text-align:center">0</b></div>
+                <div><span class="rotulo">Faltam</span><b style="display:block;text-align:center">9</b></div>
+                <div><span class="rotulo">Canceladas</span><b style="display:block;text-align:center">0</b></div>
+                <div><span class="rotulo">Atrasadas</span><b style="display:block;text-align:center;color:var(--ruim)">1</b></div>
+              </div>
+              <div class="linha"><span class="h">08:00</span><div class="nome">Karoline Parenti Silva<small class="ruim">atrasada</small></div><span class="v">R$ 3.324,40</span><span class="x">×</span></div>
+              <div class="linha"><span class="h">13:30</span><div class="nome">Mylena Cristine de Souza<small>média anterior</small></div><span class="v">R$ 2.919,60</span><span class="x">×</span></div>
+              <div class="linha"><span class="h">13:30</span><div class="nome">Adrielly Karine Lourenço da Silva<small>média anterior</small></div><span class="v">R$ 3.655,00</span><span class="x">×</span></div>
+            </div>
+          </section>
+        </div>
+
+        <!-- coluna 2 -->
+        <div class="col">
+          <section class="bloco">
+            <header><h2>Inadimplência interna<small>do dia 1 até hoje</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo duas">
+              <div>
+                <p class="secao">Inadimplência</p>
+                <div class="lista">
+                  <span>Valor da dívida</span><b class="ruim">R$ 7.218,55</b>
+                  <span>Já foi pago</span><b class="ok">R$ 6.354,21</b>
+                  <span class="forte">Falta receber</span><b>R$ 864,34</b>
+                </div>
+                <div class="barra ok"><i style="width:88%"></i></div>
+              </div>
+              <div>
+                <p class="secao">Compras de funcionários</p>
+                <div class="lista">
+                  <span>Valor vendido</span><b>R$ 4.713,70</b>
+                  <span>Já foi pago</span><b class="ok">R$ 4.482,30</b>
+                  <span class="forte">Falta pagar</span><b>R$ 231,40</b>
+                </div>
+                <div class="barra ok"><i style="width:95%"></i></div>
+              </div>
+            </div>
+          </section>
+
+          <section class="bloco">
+            <header><h2>Faturamento<small>outubro · previsão e resultado</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo">
+              <p class="secao">Previsão do mês · escolha quantos % dos acertos previstos</p>
+              <div class="opcao"><b>97%</b><span>1.823 acertos · faltam 183</span><span class="v">R$ 1.427.600,00</span></div>
+              <div class="opcao sel"><b>98%</b><span>1.842 acertos · faltam 202</span><span class="v">R$ 1.442.300,00</span></div>
+              <div class="opcao"><b>99%</b><span>1.861 acertos · faltam 221</span><span class="v">R$ 1.457.100,00</span></div>
+
+              <p class="secao" style="margin-top:12px">Até o momento</p>
+              <div class="lista">
+                <span class="forte">Faturamento atualizado</span><b>R$ 1.284.350,00</b>
+                <span>Acertos realizados</span><b>1.640</b>
+                <span>Carregar (vendas por fora)</span><b>0</b>
+                <span>Média por acerto</span><b>R$ 783,14</b>
+                <span>Contas pagas até o momento</span><b class="ruim">R$ 1.276.900,00</b>
+                <span class="forte">Resultado até o momento</span><b class="ok">R$ 7.450,00</b>
+              </div>
+              <p class="secao" style="margin-top:12px">Ainda falta em outubro (98%)</p>
+              <div class="lista">
+                <span>Acertos esperados</span><b>1.842</b>
+                <span>Acertos que faltam</span><b>202</b>
+                <span>Faturamento previsto</span><b class="ok">R$ 158.200,00</b>
+                <span>Contas a pagar previsto</span><b class="ruim">R$ 220.650,00</b>
+              </div>
+              <p class="secao" style="margin-top:12px">Total de outubro (previsto)</p>
+              <div class="lista">
+                <span>Faturamento total previsto</span><b class="ok">R$ 1.442.300,00</b>
+                <span>Contas a pagar total previsto</span><b class="ruim">R$ 1.497.300,00</b>
+                <span class="forte">Resultado do mês</span><b class="ruim" style="font-size:16px">−R$ 55.000,00</b>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- coluna 3 -->
+        <div class="col">
+          <section class="bloco">
+            <header><h2>Pessoas<small>na operação hoje</small></h2><a href="#">Ver a lista completa</a></header>
+            <div class="corpo">
+              <div class="lista">
+                <span>Funcionários</span><b>68</b>
+                <span>Sócios</span><b>5</b>
+                <span>PJ</span><b>3</b>
+                <span>Representantes</span><b>19</b>
+                <span class="forte">Total de pessoas</span><b>95</b>
+              </div>
+              <p class="secao" style="margin-top:12px">Pessoas por CNPJ</p>
+              <div class="lista">
+                <span><span class="cnpj"><i style="background:#D6B25C"></i>34 · Sorelly Atacadista</span></span><b>13</b>
+                <span><span class="cnpj"><i style="background:#E07A9A"></i>46 · Mayz Comércio de Moda</span></span><b>29</b>
+                <span><span class="cnpj"><i style="background:#5CC8C2"></i>59 · Serenity</span></span><b>17</b>
+                <span><span class="cnpj"><i style="background:#6AA6F8"></i>67 · Axis</span></span><b>13</b>
+                <span><span class="cnpj"><i style="background:#9B8CF2"></i>H&amp;O Apps</span></span><b>2</b>
+                <span class="muted">CNPJ a informar</span><b>2</b>
+              </div>
+              <div style="display:flex;gap:8px;margin-top:12px"><button class="btn">Copiar representantes</button><button class="btn">Copiar funcionários</button></div>
+            </div>
+          </section>
+
+          <section class="bloco">
+            <header><h2>ILF por CNPJ<small>quanto ainda pode faturar até o sublimite</small></h2><a href="#">Abrir</a></header>
+            <div class="corpo">
+              <table class="tabela">
+                <thead><tr><th>CNPJ</th><th class="num">ILF</th><th class="num">Pode faturar</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="cnpj"><i style="background:#5CC8C2"></i>59 Serenity <span class="tag ok">Dentro</span></span></td><td class="num">14,1%</td><td class="num">R$ 1.512.850,00</td></tr>
+                  <tr><td><span class="cnpj"><i style="background:#D6B25C"></i>34 Sorelly <span class="tag atencao">Perto</span></span></td><td class="num">14,3%</td><td class="num">R$ 994.560,00</td></tr>
+                  <tr><td><span class="cnpj"><i style="background:#E07A9A"></i>46 Mayz <span class="tag ok">Dentro</span></span></td><td class="num">16,4%</td><td class="num">R$ 1.689.080,00</td></tr>
+                  <tr><td><span class="cnpj"><i style="background:#6AA6F8"></i>67 Axis <span class="tag ok">Dentro</span></span></td><td class="num">90,2%</td><td class="num">R$ 3.538.140,00</td></tr>
+                </tbody>
+              </table>
+              <footer class="nota">Mais folga para nota: 67 Axis.</footer>
+            </div>
+          </section>
+        </div>
+
+        <!-- largo -->
+        <section class="bloco largo">
+          <header><h2>Crescimento de revendedoras<small>escolha quantos dias mostrar · a projeção até dezembro vai junto</small></h2><a href="#">Tela cheia</a></header>
+          <div class="corpo">
+            <div class="chips"><button class="chip">7 dias</button><button class="chip">15 dias</button><button class="chip sel">30 dias</button><button class="chip">60 dias</button><button class="chip">90 dias</button><button class="chip">Mês atual</button><button class="chip">História completa</button></div>
+            <div class="grafico" aria-label="Revendedoras por dia">
+              <i style="height:8%"></i><i style="height:9%"></i><i style="height:14%"></i><i style="height:15%"></i><i style="height:20%"></i><i style="height:21%"></i><i style="height:24%"></i><i style="height:26%"></i><i style="height:30%"></i><i style="height:38%"></i><i style="height:40%"></i><i style="height:44%"></i><i style="height:46%"></i><i style="height:47%"></i><i style="height:50%"></i><i style="height:52%"></i><i style="height:53%"></i><i style="height:55%"></i><i style="height:57%"></i><i style="height:58%"></i><i style="height:60%"></i><i style="height:62%"></i><i style="height:64%"></i><i style="height:68%"></i><i style="height:72%"></i><i style="height:74%"></i><i style="height:76%"></i><i style="height:78%"></i><i style="height:80%"></i><i class="hoje" data-v="2.118" style="height:82%"></i><i class="prev" data-v="2.230" style="height:96%"></i>
+            </div>
+            <div class="eixo"><span>16/09</span><span>24/09</span><span>02/10</span><span>10/10</span><span>hoje · 15/10</span><span>novembro</span></div>
+
+            <p class="secao" style="margin-top:16px">Mês a mês · os meses que faltam até dezembro são previsão</p>
+            <table class="tabela">
+              <thead><tr><th>Mês</th><th class="num">Revendedoras</th><th class="num">Aumento</th><th class="num">Faturamento</th></tr></thead>
+              <tbody>
+                <tr><td>Janeiro</td><td class="num">1.740</td><td class="num ruim">−87 (−4,8%)</td><td class="num">R$ 1.390.000,00</td></tr>
+                <tr><td>Fevereiro</td><td class="num">1.791</td><td class="num ok">+58 (+3,3%)</td><td class="num">R$ 1.010.000,00</td></tr>
+                <tr><td>Março</td><td class="num">1.806</td><td class="num ok">+15 (+0,8%)</td><td class="num">R$ 1.155.000,00</td></tr>
+                <tr><td>Abril</td><td class="num">1.878</td><td class="num ok">+90 (+5,0%)</td><td class="num">R$ 1.260.000,00</td></tr>
+                <tr><td>Maio</td><td class="num">1.911</td><td class="num ok">+33 (+1,8%)</td><td class="num">R$ 1.415.000,00</td></tr>
+                <tr><td>Junho</td><td class="num">1.839</td><td class="num ruim">−68 (−3,6%)</td><td class="num">R$ 1.320.000,00</td></tr>
+                <tr><td>Julho</td><td class="num">1.862</td><td class="num ok">+28 (+1,5%)</td><td class="num">R$ 1.215.000,00</td></tr>
+                <tr><td>Agosto</td><td class="num">1.951</td><td class="num ok">+136 (+7,5%)</td><td class="num">R$ 1.360.000,00</td></tr>
+                <tr><td>Setembro</td><td class="num">2.023</td><td class="num ok">+92 (+4,8%)</td><td class="num">R$ 1.425.000,00</td></tr>
+                <tr><td>Outubro <span class="marca-ao-vivo">ao vivo</span></td><td class="num">2.118</td><td class="num ok">+52 (+2,7%)</td><td class="num">R$ 1.284.350,00</td></tr>
+                <tr class="muted"><td class="muted">Novembro <span class="tag">previsto</span></td><td class="num muted">2.164</td><td class="num muted">+87 (+4,2%)</td><td class="num muted">R$ 1.690.000,00</td></tr>
+                <tr class="muted"><td class="muted">Dezembro <span class="tag">previsto</span></td><td class="num muted">2.266</td><td class="num muted">+102 (+4,7%)</td><td class="num muted">R$ 1.890.000,00</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="comparar" role="group" aria-label="Comparar visual">
+  <button type="button" id="b-hoje">Hoje</button>
+  <button type="button" id="b-raycast" class="sel">Direção Raycast</button>
+</div>
+<script>
+  var bH = document.getElementById("b-hoje"), bR = document.getElementById("b-raycast");
+  function modo(hoje){ document.body.classList.toggle("hoje", hoje); bH.classList.toggle("sel", hoje); bR.classList.toggle("sel", !hoje); }
+  bH.onclick = function(){ modo(true); }; bR.onclick = function(){ modo(false); };
+</script>
+</body>
+</html>
