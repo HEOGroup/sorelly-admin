@@ -152,9 +152,10 @@ function FormColab(p){
         e("div",{className:"flex gap-2"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", onClick:salvar}, "Salvar")))));
 }
 function AbaRhColab(){
-  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1];
+  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fl = useState({}), filtros = fl[0], setFiltros = fl[1];
   var todos = colaboradoresRh(c.s), norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }, q = norm(busca);
-  var lista = todos.filter(function(x){ return (aba==="todos" || (aba==="ativos" ? x.status!=="DESLIGADO" : x.status==="DESLIGADO")) && (!q || norm(x.nome).indexOf(q)>=0 || norm(x.setor).indexOf(q)>=0); }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
+  var vt = function(x){ return x.vt || "—"; }, passa = function(x){ return (!filtros.setor || x.setor===filtros.setor) && (!filtros.funcao || (x.funcao||"—")===filtros.funcao) && (!filtros.cnpj || (x.cnpj||"")===filtros.cnpj) && (!filtros.status || x.status===filtros.status) && (!filtros.escala || x.escalaId===filtros.escala) && (!filtros.entrada || x.entrada===filtros.entrada) && (!filtros.vt || vt(x)===filtros.vt); };
+  var lista = todos.filter(function(x){ return passa(x) && (aba==="todos" || (aba==="ativos" ? x.status!=="DESLIGADO" : x.status==="DESLIGADO")) && (!q || norm(x.nome).indexOf(q)>=0 || norm(x.setor).indexOf(q)>=0); }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
   var sem = todos.filter(function(x){ return x.status!=="DESLIGADO" && !x.admissao; }).length, esc = function(id){ var k = c.rh.config.escalas.find(function(y){ return y.id===id; }); return k ? k.nome : "—"; };
   var stLb = function(k){ return (STATUS.find(function(y){ return y[0]===k; })||[])[1]||k; };
   var editando = editId && todos.find(function(x){ return x.id===editId; });
@@ -165,6 +166,13 @@ function AbaRhColab(){
       ["ativos","inativos","todos"].map(function(k){ return e("button",{key:k, onClick:function(){ setAba(k); }, className:"h-10 rounded-xl px-4 text-[13px] font-bold capitalize ring-1 "+(aba===k ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/50")}, k); }),
       e("input",{value:busca, placeholder:"Buscar nome ou setor", "aria-label":"Buscar", className:INPUT+" h-10! w-64", onChange:function(ev){ setBusca(ev.target.value); }}), e("span",{className:"text-[12.5px] text-muted-foreground"}, lista.length+" na lista"),
       e("span",{className:"flex-1"}), e(Btn,{v:"secondary", onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "+ Nova colaboradora")),
+    e(BlocoBarra,{cor:"ouro", t:"Filtros", compacto:true}, e("div",{className:"grid grid-cols-2 gap-2 p-3 md:grid-cols-4"},
+      [["setor","Setor",function(x){ return x.setor; }],["funcao","Função",function(x){ return x.funcao||"—"; }],["cnpj","Empresa",function(x){ return x.cnpj||""; }],["entrada","Entrada",function(x){ return x.entrada; }],["vt","Vale-transporte",vt]].map(function(f){
+        var vals = []; todos.forEach(function(x){ var v = f[2](x); if(vals.indexOf(v)<0) vals.push(v); }); vals.sort();
+        return e(Sel,{key:f[0], value:filtros[f[0]]||"", label:f[1], className:"w-full", onChange:function(v){ var o = Object.assign({}, filtros); o[f[0]] = v; setFiltros(o); }}, e("option",{value:""}, f[1]+": todos"), vals.map(function(v){ return e("option",{key:v, value:v}, f[0]==="cnpj" ? rotuloCnpj(v) : v); })); }),
+      e(Sel,{value:filtros.status||"", label:"Situação", className:"w-full", onChange:function(v){ setFiltros(Object.assign({}, filtros, {status:v})); }}, e("option",{value:""}, "Situação: todas"), STATUS.map(function(y){ return e("option",{key:y[0], value:y[0]}, y[1]); })),
+      e(Sel,{value:filtros.escala||"", label:"Escala", className:"w-full", onChange:function(v){ setFiltros(Object.assign({}, filtros, {escala:v})); }}, e("option",{value:""}, "Escala: todas"), c.rh.config.escalas.map(function(y){ return e("option",{key:y.id, value:y.id}, y.nome); })),
+      e(Btn,{v:"ghost", onClick:function(){ setFiltros({}); }}, "Limpar filtros"))),
     novo && e(BlocoBarra,{cor:"ouro", t:"Nova colaboradora"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"},
       e(Campo,{rot:"Nome completo", className:"min-w-[16rem] flex-1"}, e("input",{value:novo.nome, className:INPUT+" h-10!", onChange:function(ev){ setNovo(Object.assign({}, novo, {nome:ev.target.value})); }})),
       e(Campo,{rot:"Setor"}, e(Sel,{value:novo.setor, label:"Setor", className:"w-56", onChange:function(v){ setNovo(Object.assign({}, novo, {setor:v})); }}, FUNCIONARIOS_POR_SETOR.filter(function(s2){ return s2[0]!=="Sócios e família" && s2[0].indexOf("PJ")!==0; }).map(function(s2){ return e("option",{key:s2[0], value:s2[0]}, s2[0]); }))),

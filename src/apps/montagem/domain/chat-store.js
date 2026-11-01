@@ -885,6 +885,11 @@ function notificarRecebida(convId, msg){
   var toast = {id:uid("t"), conv:convId, titulo:tituloDe(conv, eu), sub:(conv.tipo==="grupo" ? contato(msg.de).nome+": " : "")+textoPrevia(msg), mencao:meMarcou, grande:grande, de:msg.de, nome:contato(msg.de).nome, texto:msg.texto||textoPrevia(msg), deMarcus:deMarcus};
   empurrarAviso(toast);
 }
+// mensagem nova numa conversa que eu arquivei: ela volta para a lista (Marcus, 01/11/2026)
+function desarquivarSeChegou(convId){
+  var c0 = convPorId(convId); if(!c0 || !c0.arqPor || !c0.arqPor[eu]) return;
+  mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.arqPor); delete f[eu]; return Object.assign({}, c, {arqPor:f}); })}); });
+}
 function aplicarServidor(r, primeira){
   var novas = [];
   aplicando = true;
@@ -902,7 +907,7 @@ function aplicarServidor(r, primeira){
       return Object.assign({}, s, {convs:convs, msgs:msgs, lido:lido, seqSrv:r.seq});
     });
   } finally { aplicando = false; }
-  if(!primeira) novas.forEach(function(n){ notificarRecebida(n.conv, n.msg); });
+  if(!primeira) novas.forEach(function(n){ desarquivarSeChegou(n.conv); notificarRecebida(n.conv, n.msg); });
 }
 function sincronizar(){
   if(!SERVIDOR || !token() || !eu) return Promise.resolve();

@@ -80,6 +80,7 @@ var normNome = function(n){ return String(n||"").normalize("NFD").replace(/[̀-�
 var palavras = function(n){ return normNome(n).split(" ").filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
 var ALIAS_ADMIN = {"michelle brito lima":"michele-brito-lima-cassemiro", "thalita tozzi ardnt":"thalita-torazzi-arndt"};
 function rhAplicarAdmin(rh){
+  return rh;   // o admin antigo saiu de uso (Marcus, 01/11/2026): a presença vem só do que o RH lança aqui; a importação única foi feita por scripts/importar-rh-antigo.mjs
   if(!ATU_RH || !ATU_RH.presenca) return rh;
   var cand = funcionarios().filter(function(f){ return f.vinculo==="clt"; }).map(function(f){ return {id:slug(f.nome), nome:f.nome}; }).concat(LOCAIS.map(function(x){ return {id:ALIAS_PLANILHA[x.id]||x.id, nome:x.nome}; }));
   var cache = {}, achar = function(nome){
