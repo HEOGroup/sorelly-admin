@@ -10,6 +10,7 @@ import { rotAlertas } from "@/apps/montagem/domain/rotina";
 import * as srv from "@/apps/montagem/lib/api";
 import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
+import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
@@ -147,6 +148,7 @@ function App(){
   useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); }catch(x){} }, [s]);
   useEffect(function(){ document.documentElement.classList.add("app-montagem");
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
+  definirFeriadosAgenda(s.rh && s.rh.config && s.rh.config.feriados);   // feriados do RH fecham a agenda do atendimento interno (Deysiane, 01/11/2026)
   definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
   definirBlocos(s.acessosBlocos);   // partes de cada tela que o RH liberou por grupo
   // horário de trabalho do SorellyChat = entrada e escala do cadastro do RH. Quem não tem o RH (a maioria) usa a cópia guardada no servidor, que a Diretoria envia sozinha ao abrir o sistema.

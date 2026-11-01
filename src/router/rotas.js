@@ -221,6 +221,7 @@ const montagem = {
     pagina("rh-colaboradores", () => import("@/apps/montagem/pages/RH"), "AbaRhColab"),
     pagina("rh-advertencias", () => import("@/apps/montagem/pages/RH"), "AbaRhAdv"),
     pagina("rh-experiencia", () => import("@/apps/montagem/pages/RH"), "AbaRhExp"),
+    pagina("rh-solicitacoes", () => import("@/apps/montagem/pages/RHSolicitacoes"), "AbaRhSolic"),
     pagina("rh-horas-extras", () => import("@/apps/montagem/pages/RH"), "AbaRhHoras"),
     pagina("rh-negociacoes", () => import("@/apps/montagem/pages/RH"), "AbaRhNegoc"),
     pagina("comissoes-cadastro-revendedoras", () => import("@/apps/montagem/pages/MetasSetor"), "AbaComCadastro"),

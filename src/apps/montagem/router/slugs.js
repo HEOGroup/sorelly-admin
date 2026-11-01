@@ -179,6 +179,7 @@ export const SLUG_DA_ABA = {
   rhcolab: "rh-colaboradores",
   rhadv: "rh-advertencias",
   rhexp: "rh-experiencia",
+  rhsolic: "rh-solicitacoes",
   rhhoras: "rh-horas-extras",
   rhnegoc: "rh-negociacoes",
   comcad: "comissoes-cadastro-revendedoras",

@@ -68,7 +68,7 @@ function colaboradoresRh(s){
   var saiu = LOCAIS.filter(function(x){ return !ids[ALIAS_PLANILHA[x.id]||x.id]; }).map(function(x){ return {id:x.id, nome:titulo(x.nome), setor:x.setor, cnpj:x.cnpj}; });
   var novos = (rh.novos||[]).map(function(n){ return {id:n.id, nome:n.nome, setor:n.setor, cnpj:n.cnpj, novo:true}; });
   return base.concat(saiu, novos).map(function(b){ var o = rh.colab[b.id]||{}, l = LOCAL_POR_ID[b.id] ? dadosLocal(LOCAL_POR_ID[b.id]) : {}, esc = cfg.escalas.find(function(x){ return x.id===(o.escalaId||l.escalaId||cfg.escalaPadrao); }) || cfg.escalas[0];
-    return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {escalaId:esc.id, escalaDias:esc.dias}); });
+    return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {setor:o.setor||b.setor, escalaId:esc.id, escalaDias:esc.dias}); });
 }
 var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
 

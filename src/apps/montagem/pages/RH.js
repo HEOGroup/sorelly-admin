@@ -68,7 +68,7 @@ function AbaRhVisao(){
 var CICLO = ["P","F","AJ","AT","FE","FO","AF",""];
 var corDe = function(cod){ var x = CODIGOS.find(function(k){ return k[0]===cod; }); return x ? x[2] : "#64748B"; };
 function AbaRhPresenca(){
-  var c = useRh(), es = useEscopo(), esc = es[0], rh = c.rh, nf = useState({id:"", data:hojeIso(), hora:""}), form = nf[0], setForm = nf[1];
+  var c = useRh(), es = useEscopo(), esc = es[0], rh = c.rh, nf = useState({id:"", data:hojeIso(), hora:""}), form = nf[0], setForm = nf[1], vs = useState("dia"), vista = vs[0], setVista = vs[1], dd = useState(hojeIso()), diaSel = dd[0], setDiaSel = dd[1];
   var todos = colaboradoresRh(c.s).filter(function(x){ return x.status==="ATIVO" && (!esc.cnpj || x.cnpj===esc.cnpj); }).sort(function(a, b){ return (a.setor||"").localeCompare(b.setor||"") || a.nome.localeCompare(b.nome); });
   var tot = ultimoDia(esc.ano, esc.mes), dias = []; for(var i=1; i<=tot; i++) dias.push(i);
   var st = statsEscopo(c.s, Object.assign({}, esc, {anual:false}));
@@ -81,7 +81,17 @@ function AbaRhPresenca(){
     esc.anual ? e(BlocoBarra,{cor:"ouro", t:"ABS mês a mês · "+esc.ano}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Mês"), th("Dias escalados"), th("Ausências"), th("ABS")])),
       e("tbody",null, (statsEscopo(c.s, esc).porMes||[]).map(function(m){ return e("tr",{key:m.mes, className:"border-b border-border/60"}, e("td",{className:TD+" font-semibold"}, MESES[m.mes-1]), e("td",{className:TD}, int(m.escalados)), e("td",{className:TD}, int(m.ausentes)), e("td",{className:TD+" font-semibold "+MONO}, pc(m.abs))); })))) :
     e(React.Fragment,null,
-      e(BlocoBarra,{cor:"ouro", t:MESES[esc.mes-1]+" de "+esc.ano, sub:todos.length+" ativas · ABS do mês "+pc(st.abs)},
+      e("div",{className:"flex gap-2"}, [["dia","Visão do dia"],["mes","Grade do mês"]].map(function(v){ return e(Btn,{key:v[0], v:vista===v[0] ? "primary" : "ghost", onClick:function(){ setVista(v[0]); }}, v[1]); })),
+      vista==="dia" && (function(){
+        var doDia = todos.filter(function(x){ return diaEscalado(rh, x, diaSel); }), presentes = doDia.filter(function(x){ var q = presencaDe(rh, x.id, diaSel); return q && q.c==="P"; }).length, semLanc = doDia.filter(function(x){ var q = presencaDe(rh, x.id, diaSel); return !q || !q.c; }).length;
+        return e(BlocoBarra,{cor:"ouro", t:"Dia "+br(diaSel)+" · "+DIAS_SEMANA[diaSem(diaSel)], sub:doDia.length+" escaladas · "+presentes+" presentes · "+semLanc+" sem lançamento"},
+          e("div",{className:"flex flex-wrap items-center gap-2 p-3"}, e("input",{type:"date", value:diaSel, "aria-label":"Dia", className:INPUT+" h-8! w-40", onChange:function(ev){ if(ev.target.value) setDiaSel(ev.target.value); }}), e(Btn,{v:"ghost", onClick:function(){ setDiaSel(hojeIso()); }}, "Hoje"), e(Btn,{v:"primary", disabled:semLanc===0, onClick:function(){ acao(c, "pres_marcar_dia", {data:diaSel, cnpj:esc.cnpj}); }}, "Marcar todos como presentes"), e("span",{className:"text-[13px] text-muted-foreground"}, "Depois, marque só quem faltou.")),
+          e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Colaboradora"), th("Setor"), th("Situação"), th("Atraso")])),
+            e("tbody",null, doDia.length===0 ? e("tr",null, e("td",{colSpan:4, className:"px-3 py-6 text-center text-muted-foreground"}, "Ninguém escalada neste dia.")) : doDia.map(function(x){ var q = presencaDe(rh, x.id, diaSel), atual = q && q.c ? q.c : "";
+              return e("tr",{key:x.id, className:"border-b border-border/60"}, e("td",{className:TD+" font-semibold"}, x.nome), e("td",{className:TD}, x.setor),
+                e("td",{className:TD}, e("div",{className:"flex flex-wrap gap-1"}, ["P","F","AJ","AT","FE","FO","AF"].map(function(cod){ var on = atual===cod; return e("button",{key:cod, title:(CODIGOS.find(function(k){ return k[0]===cod; })||[])[1], onClick:function(){ acao(c, "pres_set", {id:x.id, data:diaSel, codigo:on ? "" : cod}); }, className:"h-8 w-10 rounded text-[13px] font-bold", style:{background:on ? corDe(cod) : corDe(cod)+"26", color:on ? "#0b0b0b" : corDe(cod)}}, cod); }))),
+                e("td",{className:TD+" "+MONO}, q && q.atraso ? q.atraso : "—")); }))))); })(),
+      vista==="mes" && e(BlocoBarra,{cor:"ouro", t:MESES[esc.mes-1]+" de "+esc.ano, sub:todos.length+" ativas · ABS do mês "+pc(st.abs)},
         e("div",{className:"overflow-x-auto"}, e("table",{className:"border-collapse text-[12px]"},
           e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Colaboradora","sticky left-0 z-10 bg-sidebar min-w-56")].concat(dias.map(function(d){ var iso = dataIso(esc.ano, esc.mes, d), dw = diaSem(iso);
             return e("th",{key:d, className:"border-b border-border px-0.5 py-1 text-center font-semibold "+(dw===0 || dw===6 ? "text-[#F3D98B]" : "")}, e("div",null, d), e("div",{className:"text-[9.5px] font-normal"}, DIAS_SEMANA[dw].slice(0,3)),

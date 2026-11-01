@@ -4,7 +4,7 @@
 // A agendadora trabalha por aqui: contata, agenda, confirma na véspera e manda o lembrete (textos prontos).
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, motivoNaoMarcar, parteData, CICLOS, SITUACOES, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, resumoMulta, multaDaVez, avisoRemarcacao, mensagemRegras, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
+import { feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, motivoNaoMarcar, parteData, CICLOS, SITUACOES, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, resumoMulta, multaDaVez, avisoRemarcacao, mensagemRegras, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -311,6 +311,7 @@ function CalendarioTopo(p){
       [].concat.apply([], sem).map(function(d, i){
         if(!d) return e("div",{key:i});
         var iso = isoDe(d), w = d.getDay(), cap = capacidadeDia(iso), n = marcadasDoDia(lista, iso).length, v = cap-n, sel = iso===p.dia, hj = iso===hoje;
+        if(w!==0 && feriadoDe(iso)) return e("div",{key:i, title:"Feriado: "+feriadoDe(iso)+" (sem atendimento)", className:"flex flex-col justify-center gap-px rounded-md border border-dashed border-border bg-card/40 px-1.5"}, e("span",{className:"text-[11px] font-bold text-foreground"}, "Feriado"), e("span",{className:"text-[13px] font-bold text-foreground"}, d.getDate()), e("span",{className:"text-[11px] text-foreground"}, "sem atend."));
         if(w===0) return e("div",{key:i, className:"flex flex-col justify-center gap-px rounded-[7px] border border-dashed border-[#2c2c32] bg-[#0f0f11] px-1.5", title:"Domingo: sem atendimento"},
           e("span",{className:"text-[10.5px] font-bold"},"Domingo"), e("span",{className:"text-[15px] font-extrabold leading-none"}, d.getDate()), e("span",{className:"text-[10px] font-semibold"},"sem atend."));
         return e("button",{key:i, type:"button", onClick:function(){ p.setDia(iso); }, title:NDIA[w]+" "+fmtDataBR(iso)+" · "+n+" de "+cap+" marcadas",
@@ -329,6 +330,7 @@ function HorariosDoDia(p){
     e("b",{className:"text-[13.5px]"}, fmtDataBR(iso)+" · "+NDIA[w].toLowerCase()),
     cap>0 && e("span",{className:"inline-flex items-center gap-1.5"}, e("span",null, marc.length+" de "+cap+" marcadas"), e("i",{className:"block h-2 w-[90px] overflow-hidden rounded bg-[#2a2a30]"}, e("u",{className:"block h-2", style:{width:Math.round(marc.length/cap*100)+"%", background:BARRA_OURO.background}}))),
     cap>0 && e("span",{className:corVagas(v, cap)}, v<=0 ? "Dia lotado" : v+" vagas no dia"));
+  if(w!==0 && feriadoDe(iso)) return e("div",null, cab, e("div",{className:"rounded-md border border-warning/40 bg-warning/10 px-2 py-1 text-[13px] text-foreground"}, "Feriado ("+feriadoDe(iso)+"): sem atendimento. Não é possível marcar."));
   if(w===0) return e("div",null, cab, e("div",{className:"rounded-md border border-[rgba(251,191,36,.45)] bg-[rgba(251,191,36,.12)] px-2 py-1 text-[12px]"},"Domingo: sem atendimento. Não é possível marcar."));
   var horas = horasDoDia(iso);
   var candidatas = escolhendo ? lista.filter(function(r){ return !r.agend && (!busca || r.nome.toLowerCase().indexOf(busca.toLowerCase())>=0); }).sort(function(a,b){ return proximoAcerto(a).localeCompare(proximoAcerto(b)); }).slice(0,7) : [];
@@ -366,6 +368,7 @@ function CalendarioGrande(p){
     e("div",{className:"grid grid-cols-7 gap-[5px] p-2.5"}, [].concat.apply([], sem).map(function(d, i){
       if(!d) return e("div",{key:i});
       var iso = isoDe(d), w = d.getDay();
+      if(w!==0 && feriadoDe(iso)) return e("div",{key:i, title:"Feriado: "+feriadoDe(iso), className:"flex min-h-[118px] flex-col rounded-lg border border-dashed border-border bg-card/40 p-1.5"}, e("div",{className:"flex items-baseline justify-between"}, e("b",{className:"text-[13px]"}, d.getDate()), e("span",{className:"text-[11px] font-bold text-foreground"}, "Feriado")), e("span",{className:"mt-auto text-center text-[11px] font-bold text-foreground"}, feriadoDe(iso)));
       if(w===0) return e("div",{key:i, className:"flex min-h-[118px] flex-col rounded-[10px] border border-dashed border-[#2c2c32] bg-[#0e0e10] p-1.5 opacity-80"},
         e("div",{className:"flex items-baseline justify-between"}, e("b",{className:"text-[15px]"}, d.getDate()), e("span",{className:"text-[10.5px] font-bold"},"Domingo")), e("span",{className:"mt-auto text-center text-[11.5px] font-bold"},"sem atendimento"));
       var marc = marcadasDoDia(lista, iso).sort(function(a,b){ return a.hora.localeCompare(b.hora); }), cap = capacidadeDia(iso), v = cap-marc.length;

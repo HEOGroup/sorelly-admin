@@ -16,7 +16,9 @@ var CATALOGO = [
   {k:"p45_aprova", setor:"Agendamento · Plano 45/60", t:"Aprovar, reprovar e importar o plano 45/60", desc:"Decide a fila de Aprovação (fixa o mínimo de vendas), desfaz decisões, importa a planilha e ajusta a meta do Agendamento. Aprovada e mudando de mês, a revendedora sai da meta de um mês e entra no outro.", padrao:[16,17,28]},
   {k:"p45_lanca", setor:"Agendamento · Plano 45/60", t:"Lançar e corrigir indicações do plano 45/60", desc:"Lança a indicação das representantes (nome completo, datas, média), corrige linhas e registra o contato. Quem aprova também lança. Acrescente aqui a pós-venda que coordena a lista.", padrao:[24,25,26]},
   {k:"agend_gerencia", setor:"Agendamento", t:"Gerenciar o mês, as cotas e o configurador", desc:"Abrir e fechar o mês, mudar cotas e configurar. A diretoria sempre pode.", especial:"agend"},
-  {k:"retorno_bipa", setor:"Representantes", t:"Bipar os retornos dos kits", desc:"Dar o OK de cada retorno bipado e abrir o Consolidado.", especial:"bipa"}
+  {k:"retorno_bipa", setor:"Representantes", t:"Bipar os retornos dos kits", desc:"Dar o OK de cada retorno bipado e abrir o Consolidado.", especial:"bipa"},
+  {k:"rh_solicita_mudanca", setor:"RH", t:"Pedir mudança de setor, função, escala ou horário de entrada", desc:"Abre a solicitação em RH → Solicitações. Quem pede é a supervisão do setor (hoje Deysiane); o RH confirma antes de valer.", padrao:[11,38,49,16,17,28,29]},
+  {k:"rh_confirma_mudanca", setor:"RH", t:"Confirmar ou recusar mudança pedida pelo setor", desc:"Aprova ou recusa em RH → Solicitações. Ao aprovar, o cadastro da colaboradora muda na hora.", padrao:[38,49,16,17,28,29]}
 ];
 var OVR = {};   // ajustes vindos do estado (App.js chama definirAutorizacoes a cada mudança)
 function definirAutorizacoes(o){ OVR = o || {}; }

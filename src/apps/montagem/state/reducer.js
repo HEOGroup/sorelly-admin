@@ -306,6 +306,7 @@ function reducer(s, a){
     }
     case "CEL": return com(s, {celular:a.id, telaCel:"proximo"});
     case "TELACEL": return com(s, {telaCel:a.t});
+    case "RHSOL": { var rs = Object.assign({}, s.rhsol); if(a.op==="add") rs[a.item.id] = a.item; else if(a.op==="set" && rs[a.id]) rs[a.id] = Object.assign({}, rs[a.id], a.patch); return com(s, {rhsol:rs}); }   // solicitações de mudança de cadastro (RH → Solicitações); módulo "rhsol" do servidor, uma chave por pedido
     case "TOGGLE": var o = Object.assign({}, s.abertas); o[a.id] = !o[a.id]; return com(s, {abertas:o});
     case "TODAS": var t = {}; s.listagens.forEach(function(l){ t[l.id] = a.v; }); return com(s, {abertas:t});
     case "KIT_ABERTO": return com(s, {kitAberto: s.kitAberto===a.id ? null : a.id});
