@@ -7,6 +7,7 @@
 // Cor só no valor: classes COR.entra (verde) e COR.sai (vermelho); saldo pela cor do sinal (corSinal). Todo valor em reais leva "R$" (use BKC / brl).
 import { BKC } from "@/apps/montagem/lib/format";
 import { e } from "@/shared/react";
+import React from "react";
 
 var COR = {entra:"text-success", sai:"text-destructive"};
 var corSinal = function(v){ return v<0 ? COR.sai : v>0 ? COR.entra : ""; };
@@ -91,4 +92,38 @@ function Td(p){
 }
 function Tr(p){ return e("tr",{onClick:p.onClick, title:p.title, className:(p.total ? "border-t-2 border-border bg-white/5 font-semibold" : (p.alerta ? "bg-destructive/10" : (p.apagado ? "opacity-60" : "")))+(p.onClick ? " cursor-pointer hover:bg-white/10" : "")}, p.children); }
 
-export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, Bloco, FaixaTotais, AbasTela, Segmentado, TabelaP, Td, Tr };
+// ── Peças vindas da calculadora do Atendimento interno (extraídas em 01/11/2026, visual IDÊNTICO ao que a calculadora já tinha) ──
+// Tile: caixa de uma linha, rótulo à esquerda e o conteúdo (valor, campo) à direita. Uso: e(Tile, {tit:"Valor a pagar"}, conteudo)
+function Tile(p){
+  return e("div",{className:"flex min-h-10 min-w-0 items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-1.5"},
+    e("span",{className:"shrink-0 text-[13px] font-semibold"}, p.tit),
+    e("span",{className:"flex min-w-0 flex-1 items-center justify-end gap-3 whitespace-nowrap text-right"}, p.children));
+}
+// Aviso: faixa de uma frase. tom: "vermelho" | "verde" | (sem tom = amarelo)
+function Aviso(p){
+  return e("p",{className:"rounded-lg px-3 py-2 text-[13px] font-semibold "+(p.tom==="vermelho" ? "bg-destructive/15 text-destructive" : p.tom==="verde" ? "bg-success/15 text-success" : "bg-warning/15 text-warning")}, p.children);
+}
+// LinhaCampo: rótulo de 9 rem + campo na mesma linha (formulários em grade alinhada). Uso: e(LinhaCampo, {nome:"Venda atual"}, campo)
+function LinhaCampo(p){
+  return e("div",{className:"grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-2"}, e("span",{className:"text-[13px] font-semibold text-foreground"}, p.nome), p.children);
+}
+// Secao: título pequeno em caixa alta e, embaixo, os filhos em coluna. Uso: e(Secao, {t:"Condicionais"}, filhos)
+function Secao(p){
+  return e("div",{className:"flex flex-col gap-2"}, p.t && e("h3",{className:"text-[13px] font-bold uppercase tracking-wide text-muted-foreground"}, p.t), React.Children.toArray(p.children));
+}
+// BotaoRemover: × redondo que apaga uma linha. Uso: e(BotaoRemover, {onClick:fn, label:"Remover condicional"})
+function BotaoRemover(p){
+  return e("button",{type:"button", onClick:p.onClick, "aria-label":p.label, className:"grid size-8 place-items-center rounded-full bg-muted text-base font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"},"×");
+}
+// TabelaSimples + CabSimples + TdSimples: a tabela da calculadora (cabeçalho em caixa alta, linhas soltas). Uso: e(TabelaSimples, {cols:[{t:"Nº", w:"20%"}, {t:"Valor", r:true}]}, linhas com TdSimples)
+// OBS.: ainda NÃO é a TabelaP (cabeçalho 30 px / linhas 32 px). Unir as duas muda o visual e fica para depois, com o Marcus.
+function CabSimples(p){ return e("th",{className:"px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground "+(p.r ? "text-right" : "text-left"), style:p.w ? {width:p.w} : undefined}, p.children); }
+function TdSimples(p){ return e("td",{className:"px-2 py-1.5 align-middle "+(p.r ? "text-right" : "text-left")+" "+(p.className||"")}, p.children); }
+function TabelaSimples(p){
+  return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
+    e("table",{className:"w-full table-fixed border-collapse text-sm"},
+      e("thead",null, e("tr",{className:"border-b border-border bg-muted/40"}, p.cols.map(function(c,i){ return e(CabSimples,{key:i, r:c.r, w:c.w}, c.t); }))),
+      e("tbody",null, p.children)));
+}
+
+export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, Bloco, FaixaTotais, AbasTela, Segmentado, TabelaP, Td, Tr, Tile, Aviso, LinhaCampo, Secao, BotaoRemover, TabelaSimples, CabSimples, TdSimples };

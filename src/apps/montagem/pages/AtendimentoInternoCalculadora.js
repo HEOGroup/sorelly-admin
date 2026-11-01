@@ -3,6 +3,7 @@
 // em tela COMPLETA para o balcão: agenda de hoje à esquerda e todas as etapas do acerto à direita, na ordem, para ir preenchendo (Enter adiciona a linha);
 // resumo fixo no topo. O valor vendido vem direto do app da revendedora (campo vendaApp do atendimento).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
+import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
@@ -50,17 +51,7 @@ var fmtData = function(iso){ return iso ? iso.split("-").reverse().join("/") : "
 var din = function(n){ return BK(n); };
 var PASSOS = [["cond","Condicionais"],["vendas","Vendas"],["pag","Pagamentos"],["brindes","Brindes"],["nova","Condicional nova"],["regras","Regras do consignado"]];
 
-function Th(p){ return e("th",{className:"px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground "+(p.r ? "text-right" : "text-left"), style:p.w ? {width:p.w} : undefined}, p.children); }
-function Td(p){ return e("td",{className:"px-2 py-1.5 align-middle "+(p.r ? "text-right" : "text-left")+" "+(p.className||"")}, p.children); }
-function Tab(p){
-  return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
-    e("table",{className:"w-full table-fixed border-collapse text-sm"},
-      e("thead",null, e("tr",{className:"border-b border-border bg-muted/40"}, p.cols.map(function(c,i){ return e(Th,{key:i, r:c.r, w:c.w}, c.t); }))),
-      e("tbody",null, p.children)));
-}
-function Remover(p){ return e("button",{type:"button", onClick:p.onClick, "aria-label":p.label, className:"grid size-8 place-items-center rounded-full bg-muted text-base font-bold text-muted-foreground hover:bg-destructive/20 hover:text-destructive"},"×"); }
-function Aviso(p){ return e("p",{className:"rounded-lg px-3 py-2 text-[13px] font-semibold "+(p.tom==="vermelho" ? "bg-destructive/15 text-destructive" : p.tom==="verde" ? "bg-success/15 text-success" : "bg-warning/15 text-warning")}, p.children); }
-function Secao(p){ return e("div",{className:"flex flex-col gap-2"}, p.t && e("h3",{className:"text-[13px] font-bold uppercase tracking-wide text-muted-foreground"}, p.t), React.Children.toArray(p.children)); }
+// Tile, Aviso, LinhaCampo, Secao, BotaoRemover (Remover) e TabelaSimples (Tab, Td) agora são peças de components/padrao-fin.js (01/11/2026, mesmo visual).
 function Linha(p){
   return e("div",{className:"flex items-baseline justify-between gap-3 "+(p.topo ? "border-t border-border pt-2" : "")},
     e("span",{className:"text-[13px] "+(p.rotCor || "text-muted-foreground")}, p.rot),
@@ -344,7 +335,7 @@ function AtendimentoInterno(){
 
   // ── Média das últimas vendas e valor do kit (mesma tabela da Calculadora de kits) ──
   var setVendaAnt = function(i, v){ if(jaFeito) return; var o = [vendasAnt[0]||null, vendasAnt[1]||null]; o[i] = v; d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendasAnt:o}}); };
-  var linhaMedia = function(nome, campo){ return e("div",{key:nome, className:"grid grid-cols-[9rem_minmax(0,1fr)] items-center gap-2"}, e("span",{className:"text-[13px] font-semibold text-foreground"}, nome), campo); };
+  var linhaMedia = function(nome, campo){ return e(LinhaCampo,{key:nome, nome:nome}, campo); };
   var avisoMedia = mediaVendas!==null && cfg.limiteAnaliseVendas && mediaVendas>cfg.limiteAnaliseVendas ? "Média acima de "+BK(cfg.limiteAnaliseVendas)+": obrigatório mandar a análise de vendas" : null;
   var blocoMedia = e("section",{className:"flex min-w-0 flex-col gap-2.5 rounded-lg border border-foreground/25 bg-card/60 p-4"},
     e("h2",{className:"text-[13px] font-semibold"}, "Média das vendas e valor do kit"),
@@ -376,9 +367,7 @@ function AtendimentoInterno(){
   // cartão da conta: rótulo pequeno em cima, valor grande embaixo (alguns são campos digitados, outros só mostram)
   // todos os cartões iguais (mesma cor, mesmo tamanho): nome à esquerda, informação à direita; só a cor da letra do valor muda
   var ICONE_TILE = {"Vendas":"🛍️","Líquida":"🧮","Comissão":"💰","Brinde que libera":"🎁","Diferença do brinde":"⚖️","Desconto crédito":"🏷️","Valor a pagar":"💵"};
-  var tile = function(tit, conteudo){ return e("div",{className:"flex min-h-10 min-w-0 items-center justify-between gap-3 rounded-lg bg-black/20 px-3 py-1.5"},
-    e("span",{className:"shrink-0 text-[13px] font-semibold"}, tit),
-    e("span",{className:"flex min-w-0 flex-1 items-center justify-end gap-3 whitespace-nowrap text-right"}, conteudo)); };
+  var tile = function(tit, conteudo){ return e(Tile,{tit:tit}, conteudo); };
   var numTile = function(v){ return e("b",{className:MONO+" text-[20px] font-medium leading-tight"}, v); };
   // brinde que ela poderá liberar (já aparece antes do pagamento): faixa da venda líquida, com os descontos de atraso e remarcação
   var faixaBr = pa ? (versao.faixas||[]).slice().sort(function(a,b){ return b.min-a.min; }).find(function(x){ return pa.vendaLiquida>=x.min; }) : null;

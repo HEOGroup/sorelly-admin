@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+  {v:"0.18.16", data:"2026-11-01", titulo:"Peças da calculadora viram peças do sistema", itens:[
+    {tipo:"melhoria", area:"Tecnologia", txt:"Tile, Aviso, LinhaCampo, Secao, BotaoRemover e TabelaSimples saíram da calculadora do Atendimento interno e foram para components/padrao-fin.js. A tela fica igual; as outras telas agora podem usar as mesmas peças em vez de copiar."}]},
   {v:"0.18.12", data:"2026-11-01", titulo:"Amanda de Miranda: acesso total e edição de acessos", itens:[
     {tipo:"melhoria", area:"RH · Acessos e autorizações", txt:"Amanda de Miranda passou ao grupo Acesso total e agora também altera a matriz Quem vê o quê e as autorizações (antes só visualizava)."}
   ]},
