@@ -13,7 +13,7 @@ import { ContasLogin } from "@/apps/montagem/components/contas-login";
 import { e } from "@/shared/react";
 import React from "react";
 
-var EDITORES = [16,17,28,29,44];   // Marcus, Nickolas, Lucas, Anamaria
+var EDITORES = [16,17,28,29,32,44];   // Marcus, Nickolas, Lucas, Anamaria, Amanda de Miranda (01/11/2026)
 var nomes = function(l){ return l.map(function(x){ return x.nome; }); };
 var QUEM = {
   supervisao: ["Marcus","Anamaria","Lucas"],

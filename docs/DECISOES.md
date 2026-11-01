@@ -1461,3 +1461,7 @@ Foco agora: novo fluxo do kit novo (Representante Kit Novo, proposta do Nickolas
 
 - **01/11/2026 (leitura diária do admin antigo, automática):** sem dado novo desde 28/10. Saldos: última data no admin = 28/10. Contas pagas por dia: última = 28/10. Soma dos dias de outubro = R$ 1.288.701,85; o total do mês no admin (faturamento_contas_mes) = R$ 1.377.632,43 (diferença R$ 88.930,58, a investigar). Arquivo local não foi alterado.
 - Fechamento de outubro/2026 travado, SEM FUNCIONÁRIOS (01/11/2026, Marcus): 30/10 = 1.835 acertos e R$ 1.430.877,71 (779,77); 31/10 = 1.843 acertos e R$ 1.438.133,61 (780,32). Carregar 0, 2.047 revendedoras. Compras de funcionárias ainda vão entrar. O número com funcionárias (1.839 / R$ 1.458.447,71 / 793,07) fica em `fechaMes.comFunc`. Código `aplicaFechaOut` (`fecha10V` 2).
+
+## 01/11/2026 · Amanda de Miranda: acesso total
+Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já estava assim (perfil ADMIN). No código, `grupoDe` (domain/equipe.js) passou a devolver "supervisao" para ela (antes "familia"), para o acesso não voltar atrás se a conta mudar. Ela segue sem poder editar a matriz de acessos (só Marcus, Nickolas, Lucas, Anamaria e Leonardo; `EDITORES`).
+- Amanda de Miranda (id 32) também ALTERA Acessos e Autorizações (01/11/2026, Marcus): entrou em `EDITORES` de `pages/Acessos.js` e `pages/AcessosAutorizacoes.js`.

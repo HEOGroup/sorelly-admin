@@ -84,8 +84,8 @@ var SO_CHAT = [36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
 function grupoDe(id){
   if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
-  if(id===16 || id===17 || id===37 || id===LEONARDO.id) return "supervisao";   // Acesso total: Marcus, Nickolas, Priscila (secretária) e Leonardo (Marcus, 28/10/2026)
-  if(id===28 || id===29 || id===30 || id===31 || id===38 || id===AMANDA_M.id) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
+  if(id===16 || id===17 || id===37 || id===LEONARDO.id || id===AMANDA_M.id) return "supervisao";   // Acesso total: Marcus, Nickolas, Priscila (secretária), Leonardo (Marcus, 28/10/2026) e Amanda de Miranda (Marcus, 01/11/2026)
+  if(id===28 || id===29 || id===30 || id===31 || id===38) return "familia";   // Direção: sem Configuradores; o Marcus ajusta o acesso de cada um em RH → Acessos
   if(id===SUPERVISORA.id) return "supervisora";
   return papelDe(id);
 }
