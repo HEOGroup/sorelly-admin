@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.20", data:"2026-11-02", titulo:"Resultado do mês: Contas a pagar nos dois quadros", itens:[
+    {tipo:"melhoria", area:"Resultado do mês", txt:"Os quadros Faturamento e Receber agora trazem as Contas a pagar escritas (já pago, falta pagar e Total de contas a pagar do mês) e o Resultado do mês: faturamento menos contas a pagar, e esperado entrar menos contas a pagar."},
+    {tipo:"correção", area:"Contas a pagar", txt:"Se a leitura da DevMaster falhar ao abrir o sistema, ele tenta de novo em 15 segundos (antes esperava 10 minutos e a tela ficava com números antigos). Quando a DevMaster ainda não carregou, a tela avisa que o valor é do admin antigo."}
+  ]},
  {v:"0.18.19", data:"2026-11-02", titulo:"Resultado do mês: mês fechado sem previsão", itens:[
     {tipo:"correção", area:"Resultado do mês", txt:"Em mês que já passou (ex.: outubro) o quadro Faturamento mostra só o que aconteceu: acertos feitos, faturamento lançado, médias e o Resultado do mês (faturamento menos pago e a pagar). Somem Vendas no Carregar, Acertos a realizar, Total de acertos, Acertos esperados e Faturamento previsto. No mês aberto continua a previsão."}
   ]},
