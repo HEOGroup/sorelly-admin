@@ -1493,3 +1493,8 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - **Negociações, vencimento das parcelas:** a regra já estava certa desde 29/10 (`addMeses` em `domain/pf.js`: mesmo dia, ou último dia do mês curto). Testado: 31/12 + 1 a 6 meses = 31/01, 28/02, 31/03, 30/04, 31/05, 30/06.
 - **Setor nas Melhorias vem da PESSOA** (`SETOR_DA_PESSOA` em `domain/melhorias.js`): Anamaria, Nayale e Amanda de Miranda = Financeiro; Hellen = Link / Cadastro / Compras; Deysiane = Produção / Kits; Rayssa = Cadastro de peças; Maria Claudia = Recursos Humanos; Marcus e Nickolas = Diretoria; Ana Maria e Tamara = Agendamento; Michele e Camilly = Kits novos. Vale para pedidos antigos e novos.
 - **ATENÇÃO (a decidir):** `s.cpe` (pagamentos dados, lançamentos feitos à mão, troca de CNPJ e classificação das contas) NÃO está na lista de módulos sincronizados com o servidor: fica só no navegador de cada pessoa. Um pagamento registrado pela Anamaria não aparece para a Nayale.
+
+## 02/11/2026 · Contas a pagar: representantes agrupados (pedido do Marcus)
+- A comissão do consignado e o combustível de cada representante (grupo "Representantes", naturezas 4.02, 4.03 e 4.20) entram numa linha só: representante, CNPJ, quantidade de títulos, total e situação. Clicar abre os títulos (com "↳"). Motivo: a comissão é paga no total, não título por título.
+- A caixa de marcar da linha marca todos os títulos de uma vez (mesma regra: só do mesmo CNPJ) e "Registrar pagamento" paga o total. A linha agrupa por representante + CNPJ + situação (pago ou a pagar); se uma representante tem títulos em dois CNPJs, aparece uma linha por CNPJ.
+- Código: `pages/ContasPagarLista.js` (`linhaGrupo`, `marcaGrupo`).

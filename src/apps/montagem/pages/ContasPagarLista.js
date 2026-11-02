@@ -46,7 +46,7 @@ function AbaCtaLista(){
   var c = useState(""), per = c[0], setPer = c[1], f = useState(""), filial = f[0], setFilial = f[1], g = useState(""), nota = g[0], setNota = g[1], h = useState(""), busca = h[0], setBusca = h[1];
   var i2 = useState(""), nat = i2[0], setNat = i2[1], o = useState("venc"), ord = o[0], setOrd = o[1], l = useState(100), lim = l[0], setLim = l[1], n = useState(false), nova = n[0], setNova = n[1];
   var sa = useState(null), aberta = sa[0], setAberta = sa[1], sl = useState([]), sel = sl[0], setSel = sl[1], rg = useState(false), regPag = rg[0], setRegPag = rg[1], av = useState(""), aviso = av[0], setAviso = av[1];
-  var fa = useState(false), filtrosAb = fa[0], setFiltrosAb = fa[1], ca = useState(false), cnpjAb = ca[0], setCnpjAb = ca[1];
+  var fa = useState(false), filtrosAb = fa[0], setFiltrosAb = fa[1], ca = useState(false), cnpjAb = ca[0], setCnpjAb = ca[1], gx = useState({}), grAb = gx[0], setGrAb = gx[1];
   var podePagar = temAutorizacao("pagamento_registra", s.usuario);
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
   var quem = "";   // tudo junto: empresa + pró-labore e retiradas
@@ -74,7 +74,12 @@ function AbaCtaLista(){
   var statusAba = aba==="apagar" ? "apagar" : aba==="pago" ? "pago" : "";
   var base = filtrar(mes, filial, busca, statusAba, quem, nota).filter(function(i){ return noPeriodo(i, per, hoje) && (!nat || (i.nat+" · "+i.natNome)===nat); });
   var nats = []; filtrar(mes, filial, busca, statusAba, quem, nota).forEach(function(i){ var k = i.nat+" · "+i.natNome; if(nats.indexOf(k)<0) nats.push(k); }); nats.sort();
-  var ls = base.slice().sort(CMP[ord]), vis = ls.slice(0, lim), totLista = soma(base);
+  var ls = base.slice().sort(CMP[ord]), totLista = soma(base);
+  // REPRESENTANTES (Marcus, 02/11/2026): comissão e combustível de cada representante entram numa linha só (representante + CNPJ + situação), que abre ao clicar; a comissão é paga no total
+  var unid = [], idxG = {};
+  ls.forEach(function(i){ if(i.grupo!=="Representantes"){ unid.push({item:i}); return; } var k = i.nome+"|"+i.filial+"|"+i.status; if(idxG[k]===undefined){ idxG[k] = unid.length; unid.push({grupo:k, itens:[]}); } unid[idxG[k]].itens.push(i); });
+  var vis = unid.slice(0, lim), vis2 = [];
+  vis.forEach(function(u){ if(u.item){ vis2.push({i:u.item}); return; } if(u.itens.length===1){ vis2.push({i:u.itens[0]}); return; } vis2.push({g:u}); if(grAb[u.grupo]) u.itens.forEach(function(x){ vis2.push({i:x, filho:true}); }); });
   var situacao = function(i){ return i.status==="pago" ? "Pago "+dm(i.baixa) : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
   var colCheck = podePagar && (aba==="apagar" || aba==="todas"), colAcao = podePagar && (aba==="pago" || aba==="todas");
   var nomeCnpj = function(f){ return f==="fora" ? "Por fora" : "CNPJ "+f; };
@@ -89,16 +94,32 @@ function AbaCtaLista(){
     todasItens.length>0 && e("span",null, todasItens.length+(todasItens.length>1 ? " contas marcadas" : " conta marcada")+" · "+nomeCnpj(todasItens[0].filial)+" · ", e("b",null, BKC(soma(todasItens)))),
     aviso && e("span",{className:"text-warning"}, aviso),
     todasItens.length>0 && e("span",{className:"ml-auto flex gap-2"}, e(Botao,{onClick:function(){ setSel([]); setAviso(""); }}, "Limpar"), e(Botao,{principal:true, onClick:function(){ setRegPag(true); }}, "Registrar pagamento"))) : null;
+  var marcaGrupo = function(its, desmarcar){
+    var ids = its.map(function(x){ return x.id; });
+    if(desmarcar){ setSel(sel.filter(function(x){ return ids.indexOf(x)<0; })); setAviso(""); return; }
+    var ref = ls.filter(function(x){ return sel.indexOf(x.id)>=0 && ids.indexOf(x.id)<0; })[0];
+    if(ref && ref.filial!==its[0].filial){ setAviso("Marque só contas do mesmo CNPJ. Já tem "+nomeCnpj(ref.filial)+" marcado: registre esse pagamento ou desmarque."); return; }
+    setAviso(""); setSel(sel.filter(function(x){ return ids.indexOf(x)<0; }).concat(ids));
+  };
+  var linhaGrupo = function(u){
+    var its = u.itens, k = u.grupo, op = !!grAb[k], ap = its[0].status==="apagar", marcados = its.filter(function(x){ return sel.indexOf(x.id)>=0; }).length;
+    var venc = its.map(function(x){ return dataDe(x); }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; })), ult = its.map(function(x){ return x.baixa || ""; }).sort().pop(), nats = [];
+    its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
+    return e(Tr,{key:"g|"+k, onClick:function(){ var o = Object.assign({}, grAb); o[k] = !op; setGrAb(o); }, title:op ? "Fechar os títulos" : "Abrir os títulos"},
+      colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2.5 text-center"}, ap ? e("input",{type:"checkbox", checked:marcados===its.length, onChange:function(){ marcaGrupo(its, marcados===its.length); }, "aria-label":"Marcar todas as contas de "+its[0].nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
+      e(Td,null, dm(venc)), e(Td,null, nomeFilial(its[0].filial)), e(Td,null, its.length+" títulos"), e(Td,null, "—"), e(Td,{forte:true}, (op ? "▾ " : "▸ ")+its[0].nome), e(Td,{title:nats.join(" · ")}, nats.join(" · ")),
+      e(Td,{n:true}, BKC(soma(its))), e(Td,{cor:ap && atr>0 ? "text-warning" : (ap ? "" : "text-success")}, ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago "+dm(ult)), colAcao && e("td",{className:"h-8 border-b border-border"}));
+  };
   var lista = e("div",{className:"flex flex-col gap-2"},
     e("p",{className:"text-[13px] text-foreground"}, base.length+" títulos · total ", e("b",null, BKC(totLista))),
     barraSel,
     e(TabelaP,{minW:960+(colCheck ? 40 : 0)+(colAcao ? 110 : 0), cols:(colCheck ? [{t:"", w:40}] : []).concat([{t:"Vence", w:90},{t:"CNPJ", w:80},{t:"Número", w:130},{t:"Parcela", w:80},{t:"Fornecedor"},{t:"Natureza", w:230},{t:"Valor", n:true, w:140},{t:"Situação", w:160}], colAcao ? [{t:"", w:110}] : [])},
-      vis.map(function(i){ var num = ((i.pref||"")+" "+(i.num||"")).trim() || "—";
-        return e(Tr,{key:i.id, onClick:function(){ setAberta(i); }, title:"Abrir a conta"}, colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2.5 text-center"}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null), e(Td,{title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e(Td,null, nomeFilial(i.filial)), e(Td,null, num), e(Td,null, i.parc||"—"), e(Td,{forte:true}, i.nome), e(Td,{title:i.nat+" "+i.natNome}, i.natNome),
+      vis2.map(function(z){ if(z.g) return linhaGrupo(z.g); var i = z.i, num = ((i.pref||"")+" "+(i.num||"")).trim() || "—";
+        return e(Tr,{key:i.id, onClick:function(){ setAberta(i); }, title:"Abrir a conta"}, colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2.5 text-center"}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null), e(Td,{title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e(Td,null, nomeFilial(i.filial)), e(Td,null, num), e(Td,null, i.parc||"—"), e(Td,{forte:!z.filho}, (z.filho ? "↳ " : "")+i.nome), e(Td,{title:i.nat+" "+i.natNome}, i.natNome),
           e(Td,{n:true}, BKC(i.valor)), e(Td,{cor:i.status==="apagar" && i.atraso>0 ? "text-warning" : (i.status==="pago" ? "text-success" : ""), title:i.bx ? ("Pago por "+nomeDe(i.bx.por)+" · "+i.bx.contaNome+(i.bx.obs ? " · "+i.bx.obs : "")) : (i.obs||undefined)}, situacao(i)), colAcao && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:"h-8 border-b border-border px-2 text-right"}, i.bx ? e("button",{type:"button", onClick:function(){ if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:i.bx.id, por:s.usuario}); }, className:"h-7 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Desfazer") : null)); }),
       vis.length ? e(Tr,{key:"t", total:true}, colCheck && e(Td,null, ""), e(Td,null, "Total"), e(Td,null, ""), e(Td,null, ""), e(Td,null, ""), e(Td,null, base.length+" títulos"), e(Td,null, ""), e(Td,{n:true}, BKC(totLista)), e(Td,null, ""), colAcao && e(Td,null, "")) : null),
     !vis.length && e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhuma conta neste filtro."),
-    ls.length>vis.length && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ setLim(lim+200); }}, "Mostrar mais ("+(ls.length-vis.length)+")")));
+    unid.length>vis.length && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ setLim(lim+200); }}, "Mostrar mais ("+(unid.length-vis.length)+")")));
   // bloco em cima o PAGO, embaixo o A PAGAR: total e cada CNPJ; clicar no CNPJ filtra
   var cartao = function(rot, v, cor, on, fn, sub){ return e("button",{key:rot, type:"button", onClick:fn, disabled:!fn, className:"flex min-w-0 flex-col items-center rounded-lg border px-2 py-1.5 text-center "+(on ? "border-primary bg-primary/15 " : "border-border bg-card ")+(fn ? "hover:bg-[#B8862B] " : "")}, e("span",{className:"text-[11px] font-bold uppercase text-foreground"}, rot), e("b",{className:"tabular-nums text-[14px] "+(cor||"text-foreground")}, BKC(v)), sub ? e("span",{className:"text-[11px] text-foreground"}, sub) : null); };
   var blocoCnpj = function(titulo, lista, cor, sub, atras){ return e("div",{key:titulo, className:"flex flex-col gap-1.5"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, titulo),

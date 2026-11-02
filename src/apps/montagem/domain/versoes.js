@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.15", data:"2026-11-02", titulo:"Contas a pagar: representantes agrupados", itens:[
+    {tipo:"melhoria", area:"Contas a pagar", txt:"A comissão e o combustível de cada representante entram numa linha só (representante, CNPJ, quantidade de títulos, total e situação). Clicar na linha abre os títulos. A caixa de marcar da linha marca todos de uma vez, para registrar o pagamento no total. Vale nas abas A pagar, Pagas e Todas."}
+  ]},
  {v:"0.18.14", data:"2026-11-02", titulo:"Financeiro: trocar o CNPJ da conta; Melhorias com setor organizado", itens:[
     {tipo:"novo", area:"Contas a pagar", txt:"Na janela da conta (também de conta já paga) há o campo CNPJ da conta com o botão Trocar CNPJ e Voltar ao original. Vale em todas as listas e fica no histórico. Pedido da Nayale."},
     {tipo:"correção", area:"Resultado do mês", txt:"O filtro de mês tinha uma opção Janeiro repetida no início da lista; saiu. Mostra de janeiro até o mês atual."},
