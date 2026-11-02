@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vídeo · Ver o que foi pago em cada dia</title>
+<style>
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba. Nomes e valores são de exemplo. */
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+.sis{position:relative;display:grid;grid-template-columns:220px 1fr;grid-template-rows:44px 1fr;height:100vh;width:100vw}
+.lado{grid-row:1/3;border-right:1px solid var(--fio);background:var(--painel);display:flex;flex-direction:column;padding:10px 8px;gap:2px;overflow:hidden}
+.logo{font-weight:700;color:var(--ouro);font-size:15px;padding:4px 8px 10px;letter-spacing:.04em}
+.it{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:#E6E3DB;border:1px solid transparent}
+.it i{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}
+.it.on{background:rgba(214,178,92,.16);border-color:rgba(214,178,92,.5);color:var(--ouro)}.it.on i{background:var(--ouro)}
+.hov{background:rgba(255,255,255,.1)}
+.topo{border-bottom:1px solid var(--fio);display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--painel)}
+.topo .grande{font-weight:600}.pessoa{margin-left:auto;border:1px solid var(--fio2);border-radius:10px;padding:0 10px;height:22px;line-height:20px;font-size:11px}
+.area{position:relative;overflow:hidden;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.tela{display:none;flex-direction:column;gap:12px}.tela.v{display:flex}
+.menu{display:flex;gap:18px;height:34px;align-items:center;border-bottom:1px solid var(--fio);position:relative}
+.menu span{color:#D8D5CD;padding:6px 6px;border-bottom:2px solid transparent;border-radius:4px}.menu .on{color:var(--ouro);border-bottom-color:var(--ouro)}
+.drop{display:none;position:absolute;left:560px;top:34px;z-index:4;width:230px;border:1px solid var(--fio2);border-radius:8px;background:var(--painel);padding:4px;box-shadow:0 8px 24px #000a}
+.drop.v{display:block}.drop div{height:30px;display:flex;align-items:center;padding:0 10px;border-radius:5px}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font-weight:600;display:inline-flex;align-items:center}
+.filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;padding:12px}
+.cp{display:flex;flex-direction:column;gap:4px}.cp small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;transition:border-color .3s,box-shadow .3s}
+.in.foco{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35)}
+.faixa{display:flex;gap:0;border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+.faixa div{flex:1;padding:6px 10px;text-align:center;border-left:1px solid var(--fio)}.faixa div:first-child{border-left:0}
+.faixa small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.faixa b{font-size:16px}
+table{width:100%;border-collapse:collapse}th{height:30px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.04);padding:0 12px}
+td{height:32px;padding:0 12px;border-top:1px solid var(--fio)}.n{text-align:right}th.n{text-align:right}.verde{color:var(--ok)}
+.legenda{position:absolute;left:0;right:0;bottom:0;z-index:5;min-height:62px;border-top:1px solid var(--ouro);background:rgba(15,16,19,.96);padding:10px 20px 10px 244px;display:flex;gap:12px;align-items:center;font-size:16px}
+.legenda .nn{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:6;background:var(--painel2)}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
+#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
+#mao svg{width:22px;height:22px}#mao.toque::after{content:"";position:absolute;left:-10px;top:-10px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ouro);animation:o .5s ease-out}
+@keyframes o{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
+#reco{position:absolute;right:12px;top:10px;z-index:7;height:24px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);font:11px Inter,system-ui,sans-serif;padding:0 10px;cursor:pointer}
+body.gravar #reco{display:none}
+</style></head><body>
+<div class="sis" id="sis">
+  <aside class="lado">
+    <div class="logo">SORELLY</div>
+    <div class="it on" id="mIni"><i></i>Início</div>
+    <div class="it"><i></i>SorellyChat</div>
+    <div class="it" id="mFin"><i></i>Financeiro</div>
+    <div class="it"><i></i>Agendamento</div>
+    <div class="it"><i></i>Cadastro de revendedoras</div>
+    <div class="it"><i></i>Kits</div>
+    <div class="it"><i></i>Materiais e estoque</div>
+    <div class="it"><i></i>Recursos Humanos</div>
+    <div class="it"><i></i>Melhorias</div>
+    <div class="it"><i></i>Aulas do setor</div>
+  </aside>
+  <header class="topo"><b class="grande" id="tit">Início</b><span id="sub"></span><span class="pessoa">Anamaria · Financeiro</span></header>
+  <main class="area">
+    <section class="tela v" id="tIni"><div class="bloco" style="padding:14px"><b style="font-size:20px">Olá, Anamaria</b></div></section>
+    <section class="tela" id="tFin">
+      <div class="menu"><span>Pagamentos ▾</span><span>Resultado do mês</span><span>Previsão de caixa</span><span>Saldos e análises ▾</span><span id="mContas">Contas ▾</span><span>Receber ▾</span><span>Fiscal ▾</span><span>Família ▾</span>
+        <div class="drop" id="drop"><div>Contas a pagar</div><div id="mPagas">Pagas por dia</div><div>Fornecedores ▸</div><div>Comissões ▸</div></div></div>
+      <div id="tPagas" style="display:none;flex-direction:column;gap:12px">
+        <div style="display:flex;gap:8px;align-items:center"><b style="font-size:16px;margin-right:auto">Pagas por dia</b><span class="btn" id="bAnt">‹ Dia anterior</span><span class="btn" id="bHoje">Hoje</span><span class="btn" id="bSeg">Dia seguinte ›</span></div>
+        <div class="bloco filtros"><div class="cp"><small>Dia</small><div class="in" id="fDia"></div></div><div class="cp"><small>CNPJ</small><div class="in" id="fCnpj">Todos</div></div><div class="cp"><small>Buscar</small><div class="in" id="fBusca"><span id="tBusca" style="color:#D8D5CD">Fornecedor, natureza ou valor</span></div></div></div>
+        <div class="faixa" id="faixa"></div>
+        <div id="info" style="text-align:center;font-size:11px"></div>
+        <div class="bloco"><table><thead><tr><th>CNPJ</th><th>Fornecedor</th><th>Natureza</th><th>Número</th><th class="n">Valor</th></tr></thead><tbody id="corpo"></tbody></table></div>
+      </div>
+    </section>
+  </main>
+  <div class="legenda"><span class="nn" id="n">1</span><span id="txt"></span></div>
+  <div class="prog"><i id="barra"></i></div>
+  <div id="mao"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <button id="reco">Recomeçar</button>
+</div>
+<script>
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 58000;
+if(/gravar=1/.test(location.search)) document.body.classList.add("gravar");
+var DADOS = [["34","Fornecedor Exemplo A","Matéria-prima","BOL 1021",4820.5],["46","Fornecedor Exemplo B","Banho","NF 884",3200],["34","Prestador Exemplo C","Serviços","PIX",1500],["59","Fornecedor Exemplo D","Embalagens","BOL 552",980.4],["Por fora","Fornecedor Exemplo E","Bônus","DIN",1000]];
+var CNPJS = ["34","46","59","67","Por fora"];
+var st = {vazio:false, cnpj:"", busca:""};
+var brl = function(v){ return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var nome = function(c){ return c==="Por fora" ? c : "CNPJ "+c; };
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var foco = function(id, on){ $(id).classList.toggle("foco", on); };
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var desenha = function(){
+  var base = st.vazio ? [] : DADOS, soma = function(l){ return l.reduce(function(t,x){ return t+x[4]; },0); };
+  var vis = base.filter(function(x){ return (!st.cnpj || x[0]===st.cnpj) && (!st.busca || (x[1]+" "+x[2]).toLowerCase().indexOf(st.busca.toLowerCase())>=0); });
+  $("fDia").textContent = st.vazio ? "01/11/2026" : "02/11/2026";
+  $("faixa").innerHTML = '<div><small>Total do dia</small><b class="verde">'+brl(soma(base))+'</b></div>'+CNPJS.map(function(c){ return '<div><small>'+nome(c)+'</small><b>'+brl(soma(base.filter(function(x){ return x[0]===c; })))+'</b></div>'; }).join("");
+  $("info").textContent = (st.vazio ? "01/11/2026 (domingo) · 0 pagamentos." : "02/11/2026 (segunda) · "+base.length+" pagamentos.");
+  $("corpo").innerHTML = vis.length ? vis.map(function(x){ return '<tr><td>'+nome(x[0])+'</td><td><b>'+x[1]+'</b></td><td>'+x[2]+'</td><td>'+x[3]+'</td><td class="n verde">'+brl(x[4])+'</td></tr>'; }).join("")+'<tr style="background:rgba(255,255,255,.04)"><td>Total</td><td>'+vis.length+' pagamento'+(vis.length>1?"s":"")+'</td><td></td><td></td><td class="n"><b>'+brl(soma(vis))+'</b></td></tr>' : '<tr><td colspan="5" style="text-align:center;height:48px">Nenhum pagamento neste dia.</td></tr>';
+};
+var vai = function(id, ini, fn){
+  em(ini, function(){ var r = $(id).getBoundingClientRect(), s = $("sis").getBoundingClientRect(); $("mao").style.left = (r.left - s.left + Math.min(40, r.width/2))+"px"; $("mao").style.top = (r.top - s.top + r.height/2)+"px"; $(id).classList.add("hov"); });
+  em(ini+1000, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); $(id).classList.remove("hov"); if(fn) fn(); });
+};
+var inicia = function(){
+  limpa(); t0 = Date.now(); st = {vazio:false, cnpj:"", busca:""};
+  $("mao").style.transition = "none"; $("mao").style.left = "640px"; $("mao").style.top = "300px"; void $("mao").offsetWidth; $("mao").style.transition = "";
+  $("tit").textContent = "Início"; $("sub").textContent = ""; $("tIni").className = "tela v"; $("tFin").className = "tela"; $("tPagas").style.display = "none"; $("drop").className = "drop";
+  $("mIni").className = "it on"; $("mFin").className = "it"; $("fCnpj").textContent = "Todos"; $("tBusca").textContent = "Fornecedor, natureza ou valor"; $("tBusca").style.color = "#D8D5CD";
+  desenha();
+  em(200, function(){ cena(1, 'Esta é a tela <b>Início</b>. Olhe o <b>menu do lado esquerdo</b>.'); });
+  em(3500, function(){ cena(2, 'No menu da esquerda, clique em <b>Financeiro</b>.'); });
+  vai("mFin", 4500, function(){ $("mIni").className = "it"; $("mFin").className = "it on"; $("tIni").className = "tela"; $("tFin").className = "tela v"; $("tit").textContent = "Financeiro"; $("sub").textContent = ""; });
+  em(7500, function(){ cena(3, 'Na barra de cima, clique em <b>Contas</b>.'); });
+  vai("mContas", 8500, function(){ $("drop").className = "drop v"; });
+  em(11500, function(){ cena(4, 'Na lista que abriu, clique em <b>Pagas por dia</b>.'); });
+  vai("mPagas", 12500, function(){ $("drop").className = "drop"; $("tPagas").style.display = "flex"; $("sub").textContent = "› Pagas por dia"; });
+  em(15500, function(){ cena(5, 'Esta tela mostra <b>quanto foi pago em cada dia</b>. O <b>Total do dia</b> e cada <b>CNPJ</b> ficam na faixa de cima.'); });
+  vai("faixa", 16500, null);
+  em(22000, function(){ cena(6, 'Para ver o dia anterior, clique em <b>‹ Dia anterior</b>.'); });
+  vai("bAnt", 22800, function(){ st.vazio = true; desenha(); });
+  em(27500, function(){ cena(7, 'Clique em <b>Hoje</b> para voltar ao dia de hoje.'); });
+  vai("bHoje", 28300, function(){ st.vazio = false; desenha(); });
+  em(33000, function(){ cena(8, 'Para ver só um CNPJ, clique em <b>CNPJ</b> e escolha. Aqui: <b>CNPJ 34</b>.'); });
+  vai("fCnpj", 33800, function(){ foco("fCnpj", true); $("fCnpj").textContent = "CNPJ 34"; st.cnpj = "34"; desenha(); });
+  em(39000, function(){ foco("fCnpj", false); cena(9, 'Para achar um pagamento, clique em <b>Buscar</b> e escreva o fornecedor, a natureza ou o valor.'); });
+  vai("fBusca", 39800, function(){ foco("fBusca", true); $("tBusca").style.color = "#F2F0EA"; var t = "Prestador"; for(var i=1;i<=t.length;i++){ (function(k){ em(k*90, function(){ $("tBusca").textContent = t.slice(0,k); st.busca = t.slice(0,k); desenha(); }); })(i); } });
+  em(47500, function(){ foco("fBusca", false); cena(10, 'Pronto: a lista mostra só o pagamento procurado e o <b>Total</b> da lista aparece embaixo.'); });
+};
+$("reco").onclick = inicia;
+setInterval(function(){ $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script></body></html>
