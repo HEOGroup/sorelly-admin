@@ -123,7 +123,6 @@ function AbaConfigComissoes(props){
                 e(Btn,{v:"ghost", sm:true, onClick:addNf}, "+ Marcar"))))),
         e(BlocoBarra,{t:"Combustível", sub:"Preencher no dia em que a comissão é paga"},
           e("div",{className:"flex flex-col gap-3 p-3"},
-            lb("Combustível sem km no prazo (valor fixo)", e(MoneyInput,{value:f.combSemEnvio, sm:true, label:"Combustível sem km no prazo", className:"w-36", onChange:function(v){ muda({combSemEnvio:v}); }})),
             lb("Consumo (km por litro)", e(NumInput,{value:f.kmPorLitro, step:"0.5", label:"Km por litro", className:"h-9! w-24 text-sm!", onChange:function(v){ muda({kmPorLitro:v}); }})),
             e("p",{className:"text-[12px] text-muted-foreground"},"O preço do litro (média da ANP no Paraná) é atualizado por quem paga, na tela Comissões. O combustível sai de km × preço ÷ km por litro."))),
         e(BlocoBarra,{t:"Próximas remessas"},

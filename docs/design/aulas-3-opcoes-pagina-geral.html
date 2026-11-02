@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aulas · 3 opções para a página geral</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--p2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--t2:#D8D5CD;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A}
+*{box-sizing:border-box}html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif}
+.topo{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--painel);border-bottom:1px solid var(--fio);position:sticky;top:0;z-index:5}
+.topo button,.topo select{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);padding:0 14px;font:inherit;cursor:pointer}
+.topo button.on{border-color:var(--ouro);background:rgba(214,178,92,.18);color:var(--ouro);font-weight:600}.topo small{color:var(--t2)}
+main{max-width:1040px;margin:0 auto;padding:16px;display:flex;flex-direction:column;gap:14px}
+h1{font-size:16px;margin:0}.sub{color:var(--t2);margin:2px 0 0}
+.mut{color:var(--t2);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.barra{height:6px;border-radius:3px;background:#0b0c0f;overflow:hidden}.barra i{display:block;height:100%;background:var(--ouro)}
+.ico{width:40px;height:40px;border-radius:10px;display:grid;place-items:center;font-weight:800;font-size:16px;color:#0b0b0b;flex:none}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center}.btn.g{border-color:var(--fio2);background:var(--painel);color:var(--texto);font-weight:500}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+/* A: cartões grandes */
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.gc{border:1px solid var(--fio);border-radius:10px;background:var(--painel);padding:16px;display:flex;flex-direction:column;gap:12px;cursor:pointer}.gc:hover{border-color:var(--ouro)}
+.gc b{font-size:15px}.gc .n{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+/* B: lista */
+.lin{display:grid;grid-template-columns:40px minmax(0,1fr) 120px 160px 90px;gap:12px;align-items:center;padding:10px 14px;border-top:1px solid var(--fio);cursor:pointer}.lin:first-child{border-top:0}.lin:hover{background:rgba(255,255,255,.05)}
+@media(max-width:760px){.lin{grid-template-columns:40px 1fr 90px}.lin .c3,.lin .c4{display:none}}
+/* C: abas de setor */
+.abas{display:flex;gap:2px;border-bottom:1px solid var(--fio);flex-wrap:wrap}.abas span{padding:9px 14px;cursor:pointer;color:var(--t2);border-bottom:2px solid transparent;margin-bottom:-1px}.abas span.on{color:var(--ouro);border-color:var(--ouro);font-weight:600}
+.cur{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:center;padding:12px 14px;border-top:1px solid var(--fio);cursor:pointer}.cur:first-child{border-top:0}.cur:hover{background:rgba(255,255,255,.05)}
+.cur b{font-size:14px;display:block}
+/* dentro do setor (tela 2) */
+.dois{display:grid;grid-template-columns:290px minmax(0,1fr);gap:12px;align-items:start}@media(max-width:820px){.dois{grid-template-columns:1fr}}
+.mod h3{margin:0;padding:8px 12px;font-size:13px;background:rgba(255,255,255,.04)}.mod{border-top:1px solid var(--fio)}.mod:first-child{border-top:0}
+.aula{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:7px 12px;cursor:pointer}.aula:hover{background:rgba(255,255,255,.05)}.aula.sel{background:rgba(214,178,92,.14)}
+.bola{width:18px;height:18px;border-radius:9px;border:2px solid var(--fio2);display:grid;place-items:center;font-size:11px}.bola.f{background:var(--ok);border-color:var(--ok);color:#0b0b0b}.bola.a{border-color:var(--ouro)}
+.player{aspect-ratio:16/9;border:1px solid var(--fio2);border-radius:8px;background:#0b0c0f;display:grid;place-items:center;position:relative;color:var(--t2)}
+.player .pl{width:56px;height:56px;border-radius:28px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-size:22px}
+.leg{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(0,0,0,.65);border-radius:6px;padding:6px 10px;color:var(--texto)}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style></head><body>
+<div class="topo"><button class="on" data-o="A">Opção A · Cartões</button><button data-o="B">Opção B · Lista</button><button data-o="C">Opção C · Abas</button><span style="flex:1"></span><small>Ver como:</small><select id="quem"><option>Deysiane (2 setores)</option><option>Maria Claudia (1 setor)</option><option>Marcus (todos)</option></select></div>
+<main id="main"></main>
+<script>
+var SET = {"Montagem de kits":{cor:"#F59E0B",l:"M",n:12,f:7,m:18},"Bipagem":{cor:"#0EA5E9",l:"B",n:8,f:2,m:11},"Recursos Humanos":{cor:"#8B5CF6",l:"R",n:6,f:5,m:9},"Financeiro":{cor:"#3B82F6",l:"F",n:13,f:3,m:21},"Para todos":{cor:"#14B8A6",l:"T",n:5,f:4,m:6}};
+var QUEM = {"Deysiane (2 setores)":["Montagem de kits","Bipagem"],"Maria Claudia (1 setor)":["Recursos Humanos"],"Marcus (todos)":["Montagem de kits","Bipagem","Recursos Humanos","Financeiro"]};
+var CURSOS = {"Montagem de kits":[["Montagem de kits: do básico à entrega",12,7,"Obrigatório"],["Kit 100% Prata",4,4,""]],"Bipagem":[["Bipagem de retorno e de envio",8,2,"Obrigatório"],["Divergência de bipagem",3,0,""]],"Recursos Humanos":[["Presença do dia e relatório",5,5,"Obrigatório"],["Pedir mudança de colaboradora",1,0,"Novo"]],"Financeiro":[["Contas pagas por dia",6,3,"Obrigatório"],["Pagamentos a fornecedores",7,0,""]]};
+var $ = function(id){ return document.getElementById(id); }, op = "A", dentro = null, abaC = null;
+document.querySelectorAll(".topo [data-o]").forEach(function(b){ b.onclick = function(){ document.querySelectorAll(".topo [data-o]").forEach(function(x){ x.classList.remove("on"); }); b.classList.add("on"); op = b.dataset.o; dentro = null; abaC = null; desenha(); }; });
+$("quem").onchange = function(){ dentro = null; abaC = null; desenha(); };
+var meus = function(){ return QUEM[$("quem").value]; }, pc = function(s){ return Math.round(SET[s].f/SET[s].n*100); };
+function ico(s, t){ return '<div class="ico" style="background:'+SET[s].cor+(t?';width:'+t+'px;height:'+t+'px':'')+'">'+SET[s].l+'</div>'; }
+function abre(s){ dentro = s; desenha(); }
+function geral(){
+  var m = meus(), h = '<div><h1>Aulas do setor</h1><p class="sub">'+(m.length>1?"Escolha o setor para ver as aulas.":"Aulas do seu setor.")+'</p></div>';
+  if(op==="A"){
+    h += '<div class="grade">'+m.concat(["Para todos"]).map(function(s){ return '<div class="gc" data-s="'+s+'"><div class="linha">'+ico(s)+'<div><b>'+s+'</b><div class="mut">'+SET[s].n+' aulas · '+SET[s].m+' min</div></div></div><div class="barra"><i style="width:'+pc(s)+'%"></i></div><div class="linha"><span class="n">'+pc(s)+'%</span><span class="mut">'+SET[s].f+' de '+SET[s].n+' assistidas</span><span style="flex:1"></span><span class="btn">Entrar</span></div></div>'; }).join("")+'</div>';
+  } else if(op==="B"){
+    h += '<div class="bloco">'+m.concat(["Para todos"]).map(function(s){ return '<div class="lin" data-s="'+s+'">'+ico(s)+'<div><b>'+s+'</b><div class="mut">'+SET[s].n+' aulas · '+SET[s].m+' min</div></div><span class="c3 mut">'+SET[s].f+' de '+SET[s].n+'</span><div class="c4 barra"><i style="width:'+pc(s)+'%"></i></div><span class="btn g">Abrir</span></div>'; }).join("")+'</div>';
+  } else {
+    var a = abaC && m.indexOf(abaC)>=0 ? abaC : m[0];
+    h += '<div class="abas">'+m.map(function(s){ return '<span class="'+(s===a?"on":"")+'" data-a="'+s+'">'+s+'</span>'; }).join("")+'<span data-a="Para todos" class="'+(a==="Para todos"?"on":"")+'">Para todos</span></div>';
+    var cs = a==="Para todos" ? [["SorellyChat: avisos, anexos e áudio",5,4,""]] : CURSOS[a];
+    h += '<div class="bloco">'+cs.map(function(c){ return '<div class="cur" data-s="'+a+'"><div><b>'+c[0]+'</b><div class="mut">'+c[1]+' aulas'+(c[3]?' · '+c[3]:'')+'</div><div class="barra" style="margin-top:6px;max-width:320px"><i style="width:'+Math.round(c[2]/c[1]*100)+'%"></i></div></div><span class="btn g">'+(c[2]?'Continuar':'Começar')+'</span></div>'; }).join("")+'</div>';
+  }
+  return h;
+}
+function interno(){
+  var s = dentro, cor = SET[s].cor;
+  return '<div class="linha"><button class="btn g" id="volta">← Voltar às aulas</button>'+ico(s,32)+'<div><h1>'+s+'</h1><div class="mut">'+SET[s].n+' aulas · '+SET[s].f+' assistidas</div></div></div>'
+   +'<div class="dois"><div class="bloco"><div class="mod"><h3>Módulo 1 · Primeiros passos</h3><div class="aula"><span class="bola f">✓</span><span>Como abrir a tela do dia</span><span class="mut">1:20</span></div><div class="aula"><span class="bola f">✓</span><span>Ver as informações da pessoa</span><span class="mut">1:05</span></div></div>'
+   +'<div class="mod"><h3>Módulo 2 · Rotina</h3><div class="aula sel"><span class="bola a">▶</span><span>Conferir e concluir</span><span class="mut">1:40</span></div><div class="aula"><span class="bola"></span><span>Quando pedir ajuda</span><span class="mut">0:50</span></div></div>'
+   +'<div class="mod"><h3>Módulo 3 · Fluxos</h3><div class="aula"><span class="bola"></span><span>Do pedido à entrega</span><span class="mut">2:00</span></div><div class="aula"><span class="bola"></span><span>Mudança de pessoa na equipe</span><span class="mut">0:46</span></div></div></div>'
+   +'<div style="display:flex;flex-direction:column;gap:10px"><div class="player"><div class="pl">▶</div><div class="leg"><b>Passo 2 de 5.</b> Toque na peça ou digite o código.</div></div><div class="linha"><button class="btn">Marcar como concluída</button><button class="btn g">Próxima aula →</button></div></div></div>';
+}
+function desenha(){
+  $("main").innerHTML = dentro ? interno() : geral();
+  if($("volta")) $("volta").onclick = function(){ dentro = null; desenha(); };
+  document.querySelectorAll("[data-s]").forEach(function(el){ el.onclick = function(){ abre(el.dataset.s); }; });
+  document.querySelectorAll("[data-a]").forEach(function(el){ el.onclick = function(){ abaC = el.dataset.a; desenha(); }; });
+}
+desenha();
+</script></body></html>

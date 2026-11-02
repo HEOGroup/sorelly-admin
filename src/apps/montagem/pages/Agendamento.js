@@ -3,8 +3,11 @@
 // As regras e as contas ficam em domain/agendamento.js; aqui só as telas. Membros do setor lançam; quem gerencia (Diretoria e Ana Maria) abre/fecha o mês e configura.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+import { Bloco as BlocoP, Botao, CAMPO, Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
+import { PESSOAS_SETOR, donoAutomatico, donoDe } from "@/apps/montagem/domain/atividades";
 import { AGENDAMENTO, nomeDe, podeConferirPag, podeFinanceiro, podeGerirAgend } from "@/apps/montagem/domain/equipe";
-import { agrupar, AUTORIZADORES, DIA_SEM, bonusDoMes, parecidas, MEDALHAS, TIPOS_REMARC, analisesDe, anoDe, chaveMes, diasNoMes, mesAberto, mesAnterior, movimentos, nomeMes, painelDe, pctPorCodigo, proximoMes, representantesDoMes, tipoDe } from "@/apps/montagem/domain/agendamento";
+import { nomeProprio, cotasDaDevMaster, agrupar, AUTORIZADORES, DIA_SEM, bonusDoMes, parecidas, MEDALHAS, TIPOS_REMARC, analisesDe, anoDe, chaveMes, diasNoMes, mesAberto, mesAnterior, movimentos, nomeMes, painelDe, pctPorCodigo, proximoMes, representantesDoMes, tipoDe } from "@/apps/montagem/domain/agendamento";
 import { fatEfetivo } from "@/apps/montagem/domain/financeiro";
 import { diasNoMes as diasMes } from "@/apps/montagem/domain/agendamento";
 import { BKC as BK } from "@/apps/montagem/lib/format";
@@ -13,7 +16,8 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { ListagemLeitura } from "@/apps/montagem/pages/encomendas/ListagemDia";
-import { e, useState } from "@/shared/react";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
 var int = function(v){ return Math.round(v||0).toLocaleString("pt-BR"); };
@@ -30,7 +34,7 @@ function acao(c, op, extra){ c.d(Object.assign({type:"AG", op:op, por:c.por}, ex
 // campo de número inteiro que grava ao sair do campo
 function Dig(p){
   return e("input",{key:p.value, inputMode:"numeric", defaultValue:p.value===null || p.value===undefined || p.value==="" ? "" : String(p.value), placeholder:p.placeholder||"", disabled:p.disabled, "aria-label":p.label,
-    className:INPUT+" h-9! text-center "+MONO+" "+(p.className||"w-24"),
+    className:INPUT+" h-8! text-center "+MONO+" "+(p.className||"w-24"),
     onBlur:function(ev){ var v = ev.target.value.replace(/\D/g,""); if(String(p.value===null || p.value===undefined ? "" : p.value)!==v) p.onSalvar(v==="" ? null : Number(v)); },
     onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }});
 }
@@ -143,47 +147,78 @@ function AbaAgPainel(){
       e(BlocoBarra,{cor:"roxo", t:"Resumo pronto para WhatsApp"}, e("div",{className:"flex flex-col gap-3 p-4"}, e("textarea",{readOnly:true, value:p.texto, rows:4, className:INPUT+" h-auto! w-full p-3 text-[13.5px]"}), e(Btn,{v:"secondary", sm:true, ic:"copiar", onClick:copiar}, "Copiar texto")))));
 }
 
+// Representantes (Marcus, 01/11/2026): no padrão das outras telas do Agendamento. Sem faixa de caixas, sem textos de explicação, sem lista suspensa de ordem; botões, blocos e tabelas de components/padrao-fin.js.
 function AbaAgReps(){
-  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), od = useState("pct"), ordem = od[0], setOrdem = od[1], bq = useState(""), busca = bq[0], setBusca = bq[1], jt = useState(false), junto = jt[0], setJunto = jt[1];
-  if(!ym) return e(Sem,{t:"Controle por representante", sub:"Contagem regressiva a partir da cota do dia 1.", msg:"Nenhum mês aberto ainda."});
+  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), jt = useState("sep"), junto = jt[0], setJunto = jt[1], au = useState({busy:false, msg:""}), auto = au[0], setAuto = au[1], dn = useState({auto:{}, dono:{}}), cuida = dn[0], setCuida = dn[1], refSinc = useRef(null);
+  // COTAS E SALDOS DA DEVMASTER (Marcus, 01/11/2026): a cota do dia 1 e o saldo de cada dia vêm das revendedoras com kit aberto (tela Revendedoras), sem digitar. Roda sozinho ao abrir e no botão.
+  var sincronizar = function(){
+    if(!ym || !apiAtiva() || !c.gerente || ag.mes[ym].fechadoEm) return;
+    var hoje = new Date(), dia = chaveMes(hoje)===ym ? hoje.getDate() : null; setAuto({busy:true, msg:"Buscando na DevMaster…"});
+    Promise.all([chamar("GET", "/agenda-revendedoras"), chamar("GET", "/estado/agrev").catch(function(){ return {conteudo:{}}; })]).then(function(v){
+      var cont = (v[1] && v[1].conteudo) || {}, mud = Object.keys(cont).filter(function(k){ return k.indexOf("d_")===0 && cont[k] && cont[k].id; }).map(function(k){ return cont[k]; }), kb = cont["cotabase_"+ym];
+      var r = cotasDaDevMaster(v[0].itens || [], ag, ym, mud, kb ? kb.porCod : null), mudou = 0;
+      Object.keys(r.porRep).forEach(function(cod){ var x = r.porRep[cod]; if(!x.id) return;
+        var cAtual = ((ag.cotas||{})[ym]||{})[x.id], sAtual = dia ? ((((ag.saldos||{})[ym]||{})[x.id])||{})[dia] : undefined;
+        if(cAtual!==x.cota){ acao(c, "cota", {repId:x.id, cota:x.cota}); mudou++; }
+        if(dia && sAtual!==x.saldo){ acao(c, "saldo", {repId:x.id, dia:dia, saldo:x.saldo}); mudou++; } });
+      var fim = function(){ var hh = new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}); setAuto({busy:false, msg:"DevMaster às "+hh+": "+(mudou ? mudou+" ajustes" : "tudo igual")+(r.novaBase ? " · cotas do dia 1 gravadas agora"+(dia && dia>3 ? " (dia "+dia+": confira, já passaram dias do mês)" : "") : "")+(r.funcionarias ? " · "+r.funcionarias+" de funcionárias fora" : "")+(r.semRep ? " · "+r.semRep+" kits de vendedor sem representante cadastrada" : "")}); };
+      if(r.novaBase) chamar("PUT", "/estado/agrev", {chaves:{["cotabase_"+ym]:{em:new Date().toISOString(), por:c.por, porCod:r.base}}}).then(fim).catch(fim); else fim();
+    }).catch(function(x){ setAuto({busy:false, msg:"Não deu para ler a DevMaster: "+x.message}); });
+  };
+  refSinc.current = sincronizar;
+  // QUEM CUIDA (Marcus, 02/11/2026): o nome escrito nos casos da DevMaster diz quem cuida de cada representante (automático); a escolha manual vale mais. Todo o setor enxerga.
+  useEffect(function(){
+    if(!apiAtiva()) return undefined; var vivo = true;
+    Promise.all([chamar("GET", "/agenda-revendedoras"), chamar("GET", "/estado/agrev").catch(function(){ return {conteudo:{}}; })]).then(function(v){ if(vivo) setCuida({auto:donoAutomatico(v[0].itens || []), dono:(v[1] && v[1].conteudo && v[1].conteudo.atdono) || {}}); }).catch(function(){});
+    return function(){ vivo = false; };
+  }, []);
+  var trocaCuida = function(cod, nome){ var n = Object.assign({}, cuida.dono); if(nome) n[cod] = nome; else delete n[cod]; chamar("PUT", "/estado/agrev", {chaves:{atdono:n}}).then(function(){ setCuida(function(x){ return Object.assign({}, x, {dono:n}); }); }).catch(function(){}); };
+  var ajustado = !!(ag.patches && ag.patches.nov===3);   // só puxa depois que o estado do servidor chegou e os ajustes fixos foram aplicados
+  useEffect(function(){ if(!ajustado) return undefined; refSinc.current(); var t1 = setTimeout(function(){ refSinc.current(); }, 25000), iv = setInterval(function(){ refSinc.current(); }, 600000); return function(){ clearTimeout(t1); clearInterval(iv); }; }, [ym, ajustado]);
+  if(!ym) return e("p",{className:"text-[13px] text-foreground"}, "Nenhum mês aberto.");
   var p = painelDe(ag, ym, undefined, fatEfetivo(c.s)), fechado = p.fechado, rk = p.ranking, ant = pctPorCodigo(ag, mesAnterior(ym)), total = diasNoMes(ym), dias = []; for(var i=1; i<=total; i++) dias.push(i);
-  var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); }, q = norm(busca);
   var feitoDe = function(l){ return Math.max(0, l.cota-l.saldoAtual); };
-  var ordenadas = (junto ? agrupar(p.linhas) : p.linhas).slice().sort(function(a1, b1){
-    if(ordem==="afazer") return b1.saldoAtual-a1.saldoAtual; if(ordem==="menos") return a1.saldoAtual-b1.saldoAtual; if(ordem==="nome") return a1.nome.localeCompare(b1.nome); if(ordem==="cota") return b1.cota-a1.cota; return 0; });
-  var linhas = ordenadas.filter(function(l){ return !q || norm(l.nome).indexOf(q)>=0 || norm(l.codigo).indexOf(q)>=0; });
-  var totCota = p.linhas.reduce(function(t,l){ return t+l.cota; }, 0), totAfazer = p.linhas.reduce(function(t,l){ return t+l.saldoAtual; }, 0), totFeito = Math.max(0, totCota-totAfazer);
-  var maisAfazer = p.linhas.filter(function(l){ return l.cota>0; }).slice().sort(function(a1, b1){ return b1.saldoAtual-a1.saldoAtual; }).slice(0, 10), maxAf = Math.max.apply(null, maisAfazer.map(function(l){ return l.saldoAtual; }).concat([1]));
+  var linhas = junto==="junto" ? agrupar(p.linhas) : p.linhas;
+  // Curitiba × viagens: cota, feitos e o que ficou sem fazer em cada destino (Ana Maria, 29/10/2026)
+  var porDestino = {}; p.linhas.forEach(function(l){ var k = l.viagem || "Curitiba", g = porDestino[k] || (porDestino[k] = {nome:k, n:0, cota:0, afazer:0}); g.n++; g.cota += l.cota; g.afazer += l.saldoAtual; });
+  var destinos = Object.keys(porDestino).sort(function(a1, b1){ return a1==="Curitiba" ? -1 : b1==="Curitiba" ? 1 : a1.localeCompare(b1); }).map(function(k){ return porDestino[k]; });
+  var totFeito = Math.max(0, p.somaCotas-p.linhas.reduce(function(t,l){ return t+l.saldoAtual; }, 0)), totAfazer = p.linhas.reduce(function(t,l){ return t+l.saldoAtual; }, 0);
+  var maisAfazer = p.linhas.filter(function(l){ return l.cota>0 && l.saldoAtual>0; }).slice().sort(function(a1, b1){ return b1.saldoAtual-a1.saldoAtual; }).slice(0, 10);
   var sub = function(d){ var v = p.linhas.map(function(l){ return l.saldosPorDia[d]; }).filter(function(x){ return x!==undefined; }); return v.length ? int(v.reduce(function(t,x){ return t+x; }, 0)) : "—"; };
-  var tile = function(t, v, cor, s2){ return e("div",{key:t, className:CARD+" flex flex-col items-center text-center"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-[.12em] text-muted-foreground"}, t), e("b",{className:MONO+" text-[24px]", style:{color:cor}}, v), s2 && e("span",{className:"text-[11.5px] text-muted-foreground"}, s2)); };
-  return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Controle por representante", sub:"Quem já fez, quem ainda tem acertos a fazer e como cada uma está na cota do mês. Cada dia, lance o saldo que falta para a representante bater a cota."}),
-    p.alertaConciliacao ? e(Aviso,null, "Soma das cotas ("+int(p.somaCotas)+") não bate com os acertos previstos do setor ("+int(p.previstos)+").") : e(Aviso,{tom:"ok"}, "Soma das cotas bate com os acertos previstos do setor."),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-5"}, tile("Cotas somadas", int(totCota), "#E8B84B", p.linhas.filter(function(l){ return l.cota>0; }).length+" representantes com cota"), tile("Já feitos", int(totFeito), "#4ADE80"), tile("Ainda a fazer", int(totAfazer), "#FBBF24", "soma dos saldos"),
-      tile("% das cotas", pc(pct100(totFeito, totCota)), "#C084FC"), tile("Previstos do mês", int(p.previstos), "#F3D98B", "com as remarcações")),
-    maisAfazer.length>0 && e(BlocoBarra,{cor:"roxo", t:"Quem mais tem acertos a fazer", sub:"as 10 com mais acertos faltando para a cota"}, e("div",{className:"flex flex-col gap-1.5 p-4"}, maisAfazer.map(function(l){
-      return e("div",{key:l.codigo, className:"grid grid-cols-[minmax(8rem,16rem)_minmax(0,1fr)_5rem] items-center gap-3"}, e("span",{className:"truncate text-[13px] font-semibold uppercase", title:l.nome}, l.nome),
-        e("div",{className:"h-3 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded bg-linear-to-r from-[#B8862B] to-[#FBBF24]", style:{width:Math.max(2, l.saldoAtual/maxAf*100)+"%"}})), e("b",{className:MONO+" text-right text-[13px]"}, int(l.saldoAtual)+" a fazer")); }))),
-    e("div",{className:"flex flex-wrap items-end justify-center gap-4"}, rk.podio.map(function(r, i){ return e(Pecas,{key:r.codigo, r:r, i:i}); })),
-    rk.zona.length>0 && e(BlocoBarra,{cor:"roxo", t:"🚨 Zona de atenção · "+rk.zona.length+" piores do mês"}, e("div",{className:"flex flex-col divide-y divide-white/10 px-4 py-1"}, rk.zona.map(function(z){ return e("div",{key:z.codigo, className:"flex items-center justify-between py-2 text-[14px]"}, e("span",{className:"font-medium uppercase"}, z.nome), e("b",{className:MONO+" text-destructive"}, pc(z.pct))); }))),
-    e(BlocoBarra,{cor:"roxo", t:"Todas as representantes", sub:linhas.length+" na lista · "+(fechado ? "mês fechado" : "mês ao vivo")},
-      e("div",{className:"flex flex-wrap items-center gap-2 border-b border-border px-4 py-2.5"},
-        e("input",{value:busca, placeholder:"Buscar por nome ou código", "aria-label":"Buscar representante", className:INPUT+" h-9! w-64", onChange:function(ev){ setBusca(ev.target.value); }}),
-        e("div",{className:"flex h-9 overflow-hidden rounded-lg border border-border", role:"group", "aria-label":"Ver cidades separadas ou juntas"}, [[false,"Separado"],[true,"Junto"]].map(function(o){ return e("button",{key:String(o[0]), onClick:function(){ setJunto(o[0]); }, "aria-pressed":junto===o[0], title:o[0] ? "Soma as cidades da mesma representante (ex.: Thalita e Thalita Litoral)" : "Cada cidade com o seu controle", className:"px-4 text-[13px] font-semibold "+(junto===o[0] ? "bg-[#E8B84B] text-black" : "bg-transparent")}, o[1]); })),
-        e("select",{value:ordem, "aria-label":"Ordenar por", className:INPUT+" h-9! w-64 cursor-pointer", onChange:function(ev){ setOrdem(ev.target.value); }}, [["pct","Ordenar: % batido (maior primeiro)"],["afazer","Ordenar: mais acertos a fazer"],["menos","Ordenar: menos acertos a fazer"],["cota","Ordenar: maior cota"],["nome","Ordenar: nome A–Z"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse text-[14px]"},
-        e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Cód.","sticky left-0 z-10 bg-sidebar"), th("Representante","sticky left-12 z-10 bg-sidebar"), th("Cota (dia 1)"), th("Feitos"), th("A fazer","border-r border-border")].concat(dias.map(function(d){ return th(String(d),"text-center px-1!"); }), [th("% mês"), th("Tendência")]))),
-        e("tbody",null, linhas.map(function(l){ var a = ant[l.codigo];
-          return e("tr",{key:l.codigo, className:"border-b border-border/60"},
-            e("td",{className:"sticky left-0 z-10 bg-card px-3 py-1.5 font-medium"}, l.codigo), e("td",{title:l.nome, className:"sticky left-12 z-10 min-w-48 bg-card px-3 py-1.5 font-medium uppercase"}, l.nome),
-            e("td",{className:"bg-card px-3 py-1.5 text-center"}, l.id && c.gerente && !fechado ? e(Dig,{value:l.cota, label:"Cota de "+l.nome, className:"w-20", onSalvar:function(v){ acao(c, "cota", {repId:l.id, cota:v||0}); }}) : e("b",{className:MONO}, int(l.cota))),
-            e("td",{className:"px-3 py-1.5 text-center "+MONO+" text-[#4ADE80]"}, int(feitoDe(l))), e("td",{className:"border-r border-border px-3 py-1.5 text-center font-bold "+MONO+(l.saldoAtual>0 ? " text-[#FBBF24]" : " text-success")}, int(l.saldoAtual)),
-            dias.map(function(d){ return e("td",{key:d, className:"px-1 py-1 text-center"}, l.id && !fechado ? e(Dig,{value:l.saldosPorDia[d], label:l.nome+" dia "+d, placeholder:"-", className:"w-14 px-1!", onSalvar:function(v){ acao(c, "saldo", {repId:l.id, dia:d, saldo:v}); }}) : e("span",{className:MONO+" text-[12px]"}, l.saldosPorDia[d]!==undefined ? l.saldosPorDia[d] : "—")); }),
-            e("td",{className:"whitespace-nowrap px-3 py-1.5 font-semibold "+MONO}, pc(l.pct)),
-            e("td",{className:"px-3 py-1.5 text-center"}, l.pct===null || a===undefined ? "—" : l.pct>a ? e("span",{className:"text-success"}, "▲") : l.pct<a ? e("span",{className:"text-destructive"}, "▼") : e("span",{className:"text-muted-foreground"}, "■"))); }),
-          e("tr",{className:"bg-sidebar font-bold"}, e("td",{colSpan:2, className:"sticky left-0 z-10 bg-sidebar px-3 py-2 uppercase"}, "Total geral"), e("td",{className:"px-3 py-2 text-center "+MONO}, int(p.somaCotas)), e("td",{className:"px-3 py-2 text-center "+MONO}, int(totFeito)), e("td",{className:"border-r border-border px-3 py-2 text-center "+MONO}, int(totAfazer)),
-            dias.map(function(d){ return e("td",{key:d, className:"px-2 py-2 text-center text-[12px] "+MONO}, sub(d)); }), e("td",{colSpan:2}))))),
-    e("p",{className:"text-center text-[12.5px] text-muted-foreground"}, "A cota do dia 1 é preenchida por quem gerencia o setor. Os dias seguintes recebem o saldo restante (contagem regressiva). Representante sem cota fica fora do ranking. Nomes duplicados se juntam no Configurador.")));
+  var edita = function(l){ return !!l.id && c.gerente && !fechado; };
+  var colDia = function(d){ return {k:"d"+d, t:String(d), tipo:"num", min:64, v:function(l){ return l.saldosPorDia[d]; }, exib:function(l){ return l.saldosPorDia[d]!==undefined ? String(l.saldosPorDia[d]) : "—"; },
+    cel:function(l){ return l.id && !fechado ? e(Dig,{value:l.saldosPorDia[d], label:l.nome+" dia "+d, placeholder:"-", className:"w-14 px-1!", onSalvar:function(v){ acao(c, "saldo", {repId:l.id, dia:d, saldo:v}); }}) : (l.saldosPorDia[d]!==undefined ? l.saldosPorDia[d] : "—"); }}; };
+  var VIAGENS = [["", "Curitiba"], ["Ponta Grossa", "Ponta Grossa"], ["Joinville", "Joinville"], ["Litoral PR", "Litoral PR"], ["Maringá", "Maringá"], ["Santa Catarina", "Santa Catarina"]];
+  var tend = function(l){ var a = ant[l.codigo]; return l.pct===null || l.pct===undefined || a===undefined ? 0 : l.pct>a ? 1 : l.pct<a ? -1 : 0; };
+  var colunas = [
+    {k:"cod", t:"Cód.", fixa:true, v:function(l){ return l.codigo; }},
+    {k:"nome", t:"Representante", fixa:true, forte:true, v:function(l){ return nomeProprio(l.nome); }},
+    {k:"viagem", t:"Viagem", min:160, v:function(l){ return l.viagem || "Curitiba"; }, cel:function(l){ return edita(l) ? e("select",{value:l.viagem||"", "aria-label":"Viagem de "+l.nome, className:CAMPO+" w-36! cursor-pointer", onChange:function(ev){ acao(c, "rep_viagem", {id:l.id, viagem:ev.target.value}); }}, VIAGENS.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })) : (l.viagem || "Curitiba"); }},
+    {k:"resp", t:"Responsável", min:210, v:function(l){ return donoDe(cuida.dono, l.codigo) || cuida.auto[l.codigo] || "Setor"; }, exib:function(l){ var m = donoDe(cuida.dono, l.codigo); return m || (cuida.auto[l.codigo] ? "Automático: "+cuida.auto[l.codigo] : "Setor"); },
+      cel:function(l){ var m = donoDe(cuida.dono, l.codigo), aut = cuida.auto[l.codigo] ? "Automático: "+cuida.auto[l.codigo] : "Setor"; return c.gerente && String(l.codigo).indexOf("G:")!==0 ? e("select",{value:m, "aria-label":"Responsável por "+l.nome, className:CAMPO+" w-48! cursor-pointer", onChange:function(ev){ trocaCuida(l.codigo, ev.target.value); }}, e("option",{value:""}, aut), PESSOAS_SETOR.map(function(n){ return e("option",{key:n, value:n}, n); })) : (m || aut); }},
+    {k:"cota", t:"Cota", tipo:"num", min:96, v:function(l){ return l.cota; }, exib:function(l){ return int(l.cota); }, cel:function(l){ return edita(l) ? e(Dig,{value:l.cota, label:"Cota de "+l.nome, className:"w-20", onSalvar:function(v){ acao(c, "cota", {repId:l.id, cota:v||0}); }}) : int(l.cota); }},
+    {k:"feitos", t:"Feitos", tipo:"num", v:function(l){ return feitoDe(l); }, exib:function(l){ return int(feitoDe(l)); }},
+    {k:"afazer", t:"A fazer", tipo:"num", forte:true, v:function(l){ return l.saldoAtual; }, exib:function(l){ return int(l.saldoAtual); }}
+  ].concat(dias.map(colDia), [
+    {k:"pct", t:"% mês", tipo:"num", forte:true, v:function(l){ return l.pct; }, exib:function(l){ return pc(l.pct); }},
+    {k:"tend", t:"Tend.", tipo:"num", v:tend, exib:function(l){ return l.pct===null || l.pct===undefined || ant[l.codigo]===undefined ? "—" : tend(l)>0 ? "▲" : tend(l)<0 ? "▼" : "■"; }, cor:function(l){ return tend(l)>0 ? "text-success" : tend(l)<0 ? "text-destructive" : ""; }}]);
+  var rodape = function(rows){ var o = {cod:"", nome:"Total geral", cota:int(rows.reduce(function(s, l){ return s+l.cota; }, 0)), feitos:int(rows.reduce(function(s, l){ return s+feitoDe(l); }, 0)), afazer:int(rows.reduce(function(s, l){ return s+l.saldoAtual; }, 0))};
+    dias.forEach(function(d){ var v = rows.map(function(l){ return l.saldosPorDia[d]; }).filter(function(x){ return x!==undefined; }); o["d"+d] = v.length ? int(v.reduce(function(s, x){ return s+x; }, 0)) : "—"; }); return o; };
+  return e("div",{className:"flex flex-col gap-3"},
+    e("div",{className:"flex flex-wrap items-center gap-1.5"},
+      e(Segmentado,{opcoes:[["sep","Separado"], ["junto","Junto"]], atual:junto, onMudar:setJunto}),
+      e("span",{className:"flex-1"}),
+      auto.msg && e("span",{className:"truncate text-[13px] text-foreground", title:auto.msg}, auto.msg),
+      c.gerente && !fechado && apiAtiva() && e(Botao,{desabilitado:auto.busy, onClick:function(){ refSinc.current(); }}, auto.busy ? "Buscando…" : "Atualizar da DevMaster")),
+    p.alertaConciliacao && e("p",{className:"text-[13px] text-warning"}, "Soma das cotas ("+int(p.somaCotas)+") diferente do previsto vigente ("+int(p.previstos)+"): "+int(Math.abs(p.somaCotas-p.previstos))+" de diferença."),
+    e("div",{className:"grid grid-cols-1 gap-3 lg:grid-cols-2"},
+      destinos.length>1 && e(BlocoP,{t:"Curitiba e viagens"}, e(GradeFiltro,{chave:"destinos", rows:destinos, cols:[{k:"nome", t:"Destino", forte:true, v:function(g){ return nomeProprio(g.nome); }}, {k:"n", t:"Repres.", tipo:"num", v:function(g){ return g.n; }}, {k:"cota", t:"Cota", tipo:"num", v:function(g){ return g.cota; }, exib:function(g){ return int(g.cota); }},
+        {k:"feitos", t:"Feitos", tipo:"num", v:function(g){ return Math.max(0, g.cota-g.afazer); }, exib:function(g){ return int(Math.max(0, g.cota-g.afazer)); }}, {k:"afazer", t:"A fazer", tipo:"num", v:function(g){ return g.afazer; }, exib:function(g){ return int(g.afazer); }}, {k:"pct", t:"%", tipo:"num", v:function(g){ return pct100(Math.max(0, g.cota-g.afazer), g.cota); }, exib:function(g){ return pc(pct100(Math.max(0, g.cota-g.afazer), g.cota)); }}]})),
+      maisAfazer.length>0 && e(BlocoP,{t:"Mais acertos a fazer"}, e(GradeFiltro,{chave:"mais", rows:maisAfazer, cols:[{k:"nome", t:"Representante", forte:true, v:function(l){ return nomeProprio(l.nome); }}, {k:"cota", t:"Cota", tipo:"num", v:function(l){ return l.cota; }, exib:function(l){ return int(l.cota); }}, {k:"feitos", t:"Feitos", tipo:"num", v:function(l){ return feitoDe(l); }, exib:function(l){ return int(feitoDe(l)); }}, {k:"afazer", t:"A fazer", tipo:"num", forte:true, v:function(l){ return l.saldoAtual; }, exib:function(l){ return int(l.saldoAtual); }}]})),
+      totFeito>0 && rk.podio.length>0 && e(BlocoP,{t:"Pódio do mês"}, e(GradeFiltro,{chave:"podio", rows:rk.podio.map(function(r, i){ return Object.assign({pos:i+1}, r); }), cols:[{k:"pos", t:"#", tipo:"num", v:function(r){ return r.pos; }}, {k:"nome", t:"Representante", forte:true, v:function(r){ return nomeProprio(r.nome); }}, {k:"pct", t:"% da cota", tipo:"num", v:function(r){ return r.pct; }, exib:function(r){ return pc(r.pct); }}]})),
+      totFeito>0 && rk.zona.length>0 && e(BlocoP,{t:"Zona de atenção"}, e(GradeFiltro,{chave:"zona", rows:rk.zona, cols:[{k:"nome", t:"Representante", forte:true, v:function(z){ return nomeProprio(z.nome); }}, {k:"pct", t:"% da cota", tipo:"num", v:function(z){ return z.pct; }, exib:function(z){ return pc(z.pct); }, cor:function(){ return "text-destructive"; }}]}))),
+    e(BlocoP,{t:"Todas as representantes", dir:e("span",{className:"text-[13px] tabular-nums text-foreground"}, linhas.length+(fechado ? " · mês fechado" : ""))},
+      e(GradeFiltro,{chave:"todas", rows:linhas, cols:colunas, rodape:rodape})));
 }
 var pct100 = function(a, b){ return b>0 ? a/b*100 : 0; };
 

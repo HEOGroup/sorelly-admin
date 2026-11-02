@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aulas do setor · proposta de tela</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A}
+*{box-sizing:border-box}html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif}
+.topo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--painel);border-bottom:1px solid var(--fio)}
+.topo select{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);color:var(--texto);padding:0 10px;font:inherit}
+.topo small{color:#D8D5CD}
+.app{display:flex;height:calc(100vh - 53px);min-height:560px}
+.lado{width:210px;flex:none;background:#0B0C0F;border-right:1px solid var(--fio);padding:10px 8px;display:flex;flex-direction:column;gap:2px;overflow:auto}
+.lado .it{height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:6px;color:#D8D5CD}
+.lado .it.on{background:rgba(214,178,92,.16);color:var(--ouro);font-weight:600}
+.lado .sep{height:1px;background:var(--fio);margin:8px 4px}
+.lado .grupo{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:#D8D5CD;padding:6px 10px 2px}
+.ic{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}
+.on .ic{background:var(--ouro)}
+main{flex:1;min-width:0;padding:14px;display:flex;flex-direction:column;gap:12px;overflow:auto}
+h1{font-size:16px;margin:0}.sub{color:#D8D5CD;margin:2px 0 0}
+.filtros{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.chip{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font:inherit;cursor:pointer}
+.chip.on{border-color:var(--ouro);background:rgba(214,178,92,.18);color:var(--ouro);font-weight:600}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:12px;align-items:start}
+@media(max-width:900px){.cols{grid-template-columns:1fr}}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+.bloco>.t{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.aula{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--fio);cursor:pointer}
+.aula:first-of-type{border-top:0}.aula:hover{background:rgba(255,255,255,.05)}.aula.sel{background:rgba(214,178,92,.12)}
+.play{width:34px;height:34px;border-radius:17px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.aula b{display:block}.aula span.s{color:#D8D5CD;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.dur{font-variant-numeric:tabular-nums;color:#D8D5CD}
+.tag{display:inline-flex;height:20px;align-items:center;padding:0 8px;border:1px solid var(--fio2);border-radius:10px;font-size:11px;margin-left:6px}
+.palco{padding:12px;display:flex;flex-direction:column;gap:10px}
+.tela{aspect-ratio:16/10;border:1px solid var(--fio2);border-radius:8px;background:#0b0c0f;display:grid;place-items:center;text-align:center;color:#D8D5CD;overflow:hidden}
+.tela iframe{width:100%;height:100%;border:0}
+.vazio{padding:18px 12px;color:#D8D5CD}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font:inherit;font-weight:600;cursor:pointer}
+.aviso{padding:8px 12px;border-radius:8px;background:rgba(242,181,68,.12);color:#F2B544;font-weight:600}
+</style></head><body>
+<div class="topo"><b>Proposta de tela</b><small>Teste como cada pessoa vê:</small>
+  <select id="quem"></select><small id="quemInfo"></small></div>
+<div class="app">
+  <nav class="lado">
+    <div class="grupo">Geral</div><div class="it"><span class="ic"></span>Início</div><div class="it"><span class="ic"></span>SorellyChat</div>
+    <div class="grupo">Setores</div><div class="it"><span class="ic"></span>Financeiro</div><div class="it"><span class="ic"></span>Agendamento</div><div class="it"><span class="ic"></span>Recursos Humanos</div><div class="it"><span class="ic"></span>Montagem de kits</div><div class="it"><span class="ic"></span>Encomendas</div>
+    <div class="sep"></div>
+    <div class="it on" title="Último item do menu"><span class="ic"></span>Aulas do setor</div>
+  </nav>
+  <main>
+    <div><h1>Aulas do setor</h1><p class="sub" id="sub"></p></div>
+    <div class="filtros" id="filtros"></div>
+    <div class="cols">
+      <div class="bloco"><div class="t"><span>Aulas</span><span id="cont"></span></div><div id="lista"></div></div>
+      <div class="bloco"><div class="t"><span id="tit">Escolha uma aula</span></div><div class="palco">
+        <div class="tela" id="tela">Clique em uma aula para assistir.</div>
+        <div id="info"></div></div></div>
+    </div>
+  </main>
+</div>
+<script>
+var SETORES = ["Recursos Humanos","Financeiro","Montagem de kits","Bipagem","Encomendas","Agendamento"];
+var AULAS = [
+  {id:1, setor:"Recursos Humanos", t:"Pedir ao RH a mudança de uma colaboradora", d:"0:46", tipo:"Vídeo com legendas", url:"https://sorelly-admin.vercel.app/tutoriais/pedir-mudanca-video.html"},
+  {id:2, setor:"Recursos Humanos", t:"Presença do dia: marcar todos e lançar só as faltas", d:"1:10", tipo:"Vídeo com legendas"},
+  {id:3, setor:"Financeiro", t:"Contas pagas por dia", d:"1:05", tipo:"Vídeo com legendas"},
+  {id:4, setor:"Financeiro", t:"Excluir um lançamento errado", d:"0:50", tipo:"Vídeo com legendas"},
+  {id:5, setor:"Montagem de kits", t:"Pedir mudança de pessoa na equipe", d:"0:46", tipo:"Vídeo com legendas"},
+  {id:6, setor:"Bipagem", t:"Bipar um retorno de kit", d:"1:20", tipo:"Vídeo com legendas"},
+  {id:7, setor:"Encomendas", t:"Funil de pedidos: do pedido à entrega", d:"1:30", tipo:"Vídeo com legendas"},
+  {id:8, setor:"Agendamento", t:"Confirmar quem mudou a data", d:"1:00", tipo:"Vídeo com legendas"}
+];
+// quem vê o quê: cada pessoa só vê as aulas dos setores em que é responsável (ou atua); a Diretoria vê todas
+var PESSOAS = {
+  "Maria Claudia (RH)":["Recursos Humanos"],
+  "Deysiane (Montagem e Bipagem)":["Montagem de kits","Bipagem"],
+  "Nayale (Financeiro)":["Financeiro"],
+  "Elen (Encomendas)":["Encomendas"],
+  "Ana Maria (Agendamento)":["Agendamento"],
+  "Marcus (Diretoria: todos)":SETORES
+};
+var $ = function(id){ return document.getElementById(id); }, filtro = "todos", sel = null, nome = "Deysiane (Montagem e Bipagem)";
+$("quem").innerHTML = Object.keys(PESSOAS).map(function(n){ return '<option'+(n===nome?' selected':'')+'>'+n+'</option>'; }).join("");
+$("quem").onchange = function(){ nome = this.value; filtro = "todos"; sel = null; desenha(); };
+function desenha(){
+  var meus = PESSOAS[nome], lista = AULAS.filter(function(a){ return meus.indexOf(a.setor)>=0 && (filtro==="todos" || a.setor===filtro); });
+  $("quemInfo").textContent = "Vê os setores: "+meus.join(", ");
+  $("sub").textContent = meus.length>1 ? "Você é responsável por mais de um setor: aparecem as aulas de todos eles." : "Aulas do setor "+meus[0]+".";
+  $("filtros").innerHTML = meus.length>1 ? ['todos'].concat(meus).map(function(s){ return '<button class="chip'+(filtro===s?' on':'')+'" data-s="'+s+'">'+(s==="todos"?"Todos os meus setores":s)+'</button>'; }).join("") : "";
+  document.querySelectorAll("[data-s]").forEach(function(b){ b.onclick = function(){ filtro = b.dataset.s; sel = null; desenha(); }; });
+  $("cont").textContent = lista.length+" aula"+(lista.length===1?"":"s");
+  $("lista").innerHTML = lista.length ? lista.map(function(a){ return '<div class="aula'+(sel===a.id?' sel':'')+'" data-id="'+a.id+'"><span class="play">▶</span><span><b>'+a.t+'</b><span class="s">'+a.setor+'</span><span class="tag">'+a.tipo+'</span></span><span class="dur">'+a.d+'</span></div>'; }).join("") : '<div class="vazio">Ainda não há aulas para o seu setor.</div>';
+  document.querySelectorAll("[data-id]").forEach(function(el){ el.onclick = function(){ sel = +el.dataset.id; desenha(); mostra(); }; });
+  if(sel==null){ $("tit").textContent = "Escolha uma aula"; $("tela").textContent = "Clique em uma aula para assistir."; $("info").innerHTML = ""; } else mostra();
+}
+function mostra(){
+  var a = AULAS.find(function(x){ return x.id===sel; }); if(!a) return;
+  $("tit").textContent = a.t;
+  $("tela").innerHTML = a.url ? '<iframe src="'+a.url+'" title="'+a.t+'"></iframe>' : 'Vídeo desta aula entra aqui<br>(modelo: '+a.tipo+', '+a.d+')';
+  $("info").innerHTML = '<span class="tag" style="margin:0">'+a.setor+'</span><span class="tag">'+a.d+'</span>'+(a.url ? ' <button class="btn" style="margin-left:8px" onclick="window.open(\''+a.url+'\',\'_blank\')">Abrir em tela cheia</button>' : '');
+}
+desenha();
+</script></body></html>

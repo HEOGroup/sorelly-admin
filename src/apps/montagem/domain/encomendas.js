@@ -381,15 +381,18 @@ function textoRegrasReposicao(config){
     "• Atendimento somente por mensagem escrita, sem áudio. Aguarde o retorno da equipe.", "",
     "Atenção: se as vendas forem inferiores a "+b.pctMinimo+"% do valor da reposição, a revendedora fica bloqueada por "+b.meses+" meses para novas solicitações."].join("\n");
 }
+// TIPOS da listagem de horários (pedido da Tamara, 29/10/2026; feito em 01/11/2026): além da ida da reposição, entram quem vem retirar kit novo e quem vem retirar brinde de indicação
+var TIPOS_IDA = [["ida", "Ida na empresa"], ["kit_novo", "Kit novo"], ["brinde", "Brinde de indicação"]];
+var rotuloIda = function(t){ var x = TIPOS_IDA.find(function(o){ return o[0]===t; }); return x ? x[1] : TIPOS_IDA[0][1]; };
 // listagem do dia (ida na empresa): pedidos agendados + horários lançados à mão
 function listagemDoDia(er, data){
   var deP = er.pedidos.filter(function(p){ return p.tipo==="reposicao" && p.canal==="empresa" && p.dataAgendada===data && p.status!=="recusado" && p.status!=="cancelado"; })
-    .map(function(p){ return {id:p.id, origem:"pedido", hora:p.hora || "", revendedora:p.revendedora, representante:p.representante || "", obs:p.atendente ? "Atende: "+p.atendente : ROTULO_STATUS[p.status]}; });
-  var deA = er.agenda.filter(function(x){ return x.data===data; }).map(function(x){ return {id:x.id, origem:"lista", hora:x.hora, revendedora:x.revendedora, representante:x.representante, obs:x.obs}; });
+    .map(function(p){ return {id:p.id, origem:"pedido", tipo:"ida", hora:p.hora || "", revendedora:p.revendedora, representante:p.representante || "", obs:p.atendente ? "Atende: "+p.atendente : ROTULO_STATUS[p.status]}; });
+  var deA = er.agenda.filter(function(x){ return x.data===data; }).map(function(x){ return {id:x.id, origem:"lista", tipo:x.tipo || "ida", hora:x.hora, revendedora:x.revendedora, representante:x.representante, obs:x.obs}; });
   return deP.concat(deA).sort(function(a, b){ return (a.hora || "99:99").localeCompare(b.hora || "99:99") || a.revendedora.localeCompare(b.revendedora); });
 }
 function textoListagem(data, itens){
-  var linhas = itens.length ? itens.map(function(x, i){ return (i+1)+". *"+(x.hora || "sem hora")+"* · "+x.revendedora+(x.representante ? " · Rep.: "+x.representante : "")+(x.obs ? " ("+x.obs+")" : ""); }) : ["Nenhuma ida na empresa marcada."];
+  var linhas = itens.length ? itens.map(function(x, i){ return (i+1)+". *"+(x.hora || "sem hora")+"* · "+x.revendedora+(x.tipo && x.tipo!=="ida" ? " · "+rotuloIda(x.tipo) : "")+(x.representante ? " · Rep.: "+x.representante : "")+(x.obs ? " ("+x.obs+")" : ""); }) : ["Nenhuma ida na empresa marcada."];
   return ["📅 *IDAS NA EMPRESA: "+formatarDia(data)+"*", "", linhas.join("\n"), "", "Setor de Encomendas e Reposições"].join("\n");
 }
 // pedido de autorização ao Marcus (entrada ou saída do Top 50), pronto para copiar
@@ -635,7 +638,7 @@ function erReduz(s, a){
     }
     case "agenda_add": {
       if(!diaValido(a.data)) return recusa("Informe a data."); if(!trim(a.revendedora)) return recusa("Informe a revendedora.");
-      er.agenda.push({id:"A"+(++er.seq), data:a.data, hora:trim(a.hora), revendedora:trim(a.revendedora), representante:trim(a.representante), obs:trim(a.obs), por:por}); return ok("Horário lançado");
+      er.agenda.push({id:"A"+(++er.seq), data:a.data, tipo:TIPOS_IDA.some(function(o){ return o[0]===a.tipo; }) ? a.tipo : "ida", hora:trim(a.hora), revendedora:trim(a.revendedora), representante:trim(a.representante), obs:trim(a.obs), por:por}); return ok("Horário lançado");
     }
     case "agenda_del": { var ag0 = er.agenda.length; er.agenda = er.agenda.filter(function(x){ return x.id!==a.id; }); return er.agenda.length<ag0 ? ok("Horário removido") : recusa("Horário não encontrado."); }
     case "agenda_enviar": {
@@ -668,7 +671,7 @@ function erReduz(s, a){
 
 // link direto para a tela onde o Marcus autoriza (Top 50, bloco Pedidos ao Marcus)
 function linkPedidos(){ return (typeof window!=="undefined" ? window.location.origin : "")+caminhoDaAba("enctop50")+"#pedidos"; }
-export { aplicarLista, lerListaColada, linkPedidos, listagemDoDia, textoListagem, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
+export { aplicarLista, lerListaColada, linkPedidos, listagemDoDia, textoListagem, TIPOS_IDA, rotuloIda, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
   formatarReais, formatarDia, formatarDataHora, somaMeses, faixaDaMedia, proximaFaixa, direitoReposicao, direitoExpositor, bloqueioReposicao, bloqueadaNaData, calcularDireito,
   revDe, revPorNome, reposicoesDoMes, proximosStatus, proximaEtapa, minutosNaEtapa, textoTempo, listaPedidos, indicadoresEr, representantesEr, validarPedido, taxaDoPedido,
   textoRegrasReposicao, textoRegrasExpositor, hojeSP, agoraSP, somaDias };

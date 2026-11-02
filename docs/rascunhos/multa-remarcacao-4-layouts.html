@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multa por remarcação · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --papel:#FBF6E9; --linha:#E7DCC0; --texto:#1F1A10; --ouro:#C9A13B; --ouro-escuro:#8A6A14; --ouro-claro:#FFF3CF;
+    --verde:#15803D; --verde-claro:#DCFCE7; --vermelho:#B91C1C; --vermelho-claro:#FEE2E2; --ambar:#92400E; --ambar-claro:#FEF3C7; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:700px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .cab .ic{width:36px;height:36px;border-radius:12px;background:rgba(202,138,4,.15);color:#CA8A04;display:grid;place-items:center;font-weight:800}
+  .cab b{font-size:13px;flex:1}
+  .rot{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--ouro-escuro)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,input,select{font:inherit;color:inherit}
+  .btn{height:32px;border:0;border-radius:10px;background:var(--ouro);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.vazio{background:transparent;border:1px dashed var(--ouro);color:var(--ouro-escuro)}
+  .btn.verm{background:var(--vermelho)} .btn.verd{background:var(--verde)}
+  .passo{width:32px;height:32px;border-radius:10px;background:var(--papel);border:1px solid var(--linha);font-weight:700;font-size:20px;line-height:1;cursor:pointer;flex:none}
+  .valor{min-width:34px;text-align:center;font-size:15px}
+  .linha{display:flex;align-items:center;gap:8px}
+  .folga{flex:1;min-width:0}
+  .oculto{display:none!important}
+  .sep{border-top:1px solid var(--linha)}
+  .efeito{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:2px solid var(--ouro);padding-top:8px;margin-top:8px}
+  .selo{border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+  .selo.v{background:var(--vermelho-claro);color:#7F1D1D} .selo.a{background:var(--ambar-claro);color:var(--ambar)} .selo.i{background:var(--verde-claro);color:#14532D} .selo.z{background:#EFE9D6;color:var(--ouro-escuro)}
+  .item{display:flex;align-items:center;gap:8px;min-height:32px;border-bottom:1px solid var(--linha)}
+  .item:last-child{border-bottom:0}
+  .esc{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+  .deg{border:1px solid var(--linha);border-radius:12px;background:var(--papel);padding:6px;text-align:center}
+  .deg.on{background:var(--vermelho-claro);border-color:var(--vermelho)}
+  .deg.pas{background:#EFE9D6}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{height:32px;border:1px solid var(--linha);border-radius:999px;background:var(--papel);padding:0 12px;cursor:pointer}
+  .chip.on{background:var(--ouro-claro);border-color:var(--ouro);font-weight:700}
+  .chip.mal.on{background:var(--vermelho-claro);border-color:var(--vermelho);color:#7F1D1D}
+  .quad{background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:8px;margin-top:8px}
+  table{width:100%;border-collapse:collapse}
+  th{height:30px;font-size:11px;letter-spacing:0;text-transform:uppercase;color:var(--ouro-escuro);text-align:left;border-bottom:2px solid var(--ouro);padding:0 3px}
+  td{padding:0 3px}
+  .tab4 td:first-child{width:82px}
+  td{height:36px;border-bottom:1px solid var(--linha)}
+  th.d,td.d{text-align:right}
+  tfoot td{font-weight:700;background:var(--papel);border-bottom:0}
+  .motivo{width:100%;height:32px;border:1px solid var(--linha);border-radius:10px;background:var(--papel);padding:0 8px}
+</style>
+</head>
+<body>
+<h1>Multa por remarcação · 4 layouts</h1>
+<p class="sub">Bloco da Calculadora de acertos, com as <b>regras reais</b>: remarcação com multa (1ª −5% comissão e −15% brinde · 2ª −8% e −50% · 3ª ou mais −15% e −100%; a isenta não pesa), atraso do acerto (até 7 dias −5% · 15 −10% · 30 −15% · 45 −20% · 59 −25% · 60 ou mais perde tudo) e multa sobre o valor pendente (10%, mais 1% ao dia depois de 15 dias, teto 10%). Tudo funciona. Dados de exemplo.</p>
+
+<div class="grade">
+
+  <section class="caixa" id="L1"><h2>1 · Três linhas de controle</h2>
+    <p class="nota">Remarcações, atraso e pendente em linhas iguais: nome, controle e o efeito ao lado. O resultado fecha embaixo.</p>
+    <div class="tel"><div class="cart"><div class="cab"><span class="ic">▦</span><b>Multa por remarcação</b></div>
+      <div data-lista></div>
+      <div class="linha oculto" data-escolha style="margin:6px 0"><button class="btn verm" data-nova="multa">Com multa</button><button class="btn verd" data-nova="isenta">Isenta</button></div>
+      <div class="linha sep" style="min-height:40px"><span class="folga"><b>Remarcações</b> <span data-c="qtdRem"></span></span><span class="selo" data-c="efRem"></span><button class="btn vazio" data-abre>+ Remarcação</button></div>
+      <div class="linha sep" style="min-height:40px"><span class="folga"><b>Atraso do acerto</b></span><button class="passo" data-m="atraso">−</button><span class="num valor" data-c="atraso"></span><button class="passo" data-p="atraso">+</button></div>
+      <div class="linha" style="justify-content:flex-end;min-height:28px"><span class="selo" data-c="efAtr"></span></div>
+      <div class="linha sep" style="min-height:40px"><span class="folga"><b>Dias com valor pendente</b></span><button class="passo" data-m="pend">−</button><span class="num valor" data-c="pend"></span><button class="passo" data-p="pend">+</button></div>
+      <div class="linha" style="justify-content:flex-end;min-height:28px"><span class="selo" data-c="efPen"></span></div>
+      <div class="efeito"><span><b>Efeito na comissão</b></span><span class="num" data-c="comissao"></span></div>
+      <div class="linha" style="justify-content:space-between;margin-top:4px"><span><b>Efeito no brinde</b></span><span class="num" data-c="brinde"></span></div>
+    </div></div></section>
+
+  <section class="caixa" id="L2"><h2>2 · Escadas</h2>
+    <p class="nota">Mostra a escada da remarcação (1ª, 2ª, 3ª) e a escada do atraso. A etapa em que ela está acende. Sem conta de cabeça.</p>
+    <div class="tel"><div class="cart"><div class="cab"><span class="ic">▦</span><b>Multa por remarcação</b></div>
+      <span class="rot">Remarcações com multa</span>
+      <div class="esc" style="margin-top:6px">
+        <div class="deg" data-deg="1"><span class="rot">1ª</span><br><span class="num">−5%</span><br><small>brinde −15%</small></div>
+        <div class="deg" data-deg="2"><span class="rot">2ª</span><br><span class="num">−8%</span><br><small>brinde −50%</small></div>
+        <div class="deg" data-deg="3"><span class="rot">3ª ou mais</span><br><span class="num">−15%</span><br><small>brinde −100%</small></div>
+      </div>
+      <div class="linha" style="margin-top:8px"><button class="btn verm folga" data-nova="multa">+ Com multa</button><button class="btn verd folga" data-nova="isenta">+ Isenta</button></div>
+      <p style="margin-top:4px" data-c="textoRem"></p>
+      <span class="rot" style="display:block;margin-top:12px">Atraso do acerto</span>
+      <div class="chips" style="margin-top:6px" data-faixas></div>
+      <span class="rot" style="display:block;margin-top:12px">Dias com valor pendente</span>
+      <div class="linha" style="margin-top:6px"><button class="passo" data-m="pend">−</button><span class="num valor" data-c="pend"></span><button class="passo" data-p="pend">+</button><span class="selo folga" style="text-align:center" data-c="efPen"></span></div>
+      <div class="efeito"><span><b>Comissão</b></span><span class="num" data-c="comissao"></span></div>
+      <div class="linha" style="justify-content:space-between;margin-top:4px"><span><b>Brinde</b></span><span class="num" data-c="brinde"></span></div>
+    </div></div></section>
+
+  <section class="caixa" id="L3"><h2>3 · Igual ao bloco Condicionais</h2>
+    <p class="nota">Lista das remarcações em linhas, o botão "+ Remarcação" à esquerda e o efeito à direita. Atraso e pendente ficam em linhas finais.</p>
+    <div class="tel"><div class="cart"><div class="cab"><span class="ic">▦</span><b>Multa por remarcação</b></div>
+      <div data-lista></div>
+      <div class="linha oculto" data-escolha style="margin:6px 0"><button class="btn verm folga" data-nova="multa">Com multa</button><button class="btn verd folga" data-nova="isenta">Isenta de multa</button></div>
+      <div class="linha" style="border-top:1px solid var(--linha);padding-top:8px"><button class="btn vazio" data-abre>+ Remarcação</button><span class="folga" style="text-align:center"><b>Efeito</b></span><span class="num" data-c="efRemCurto"></span></div>
+      <div class="linha" style="margin-top:8px"><span class="folga"><b>Dias de atraso do acerto</b></span><button class="passo" data-m="atraso">−</button><span class="num valor" data-c="atraso"></span><button class="passo" data-p="atraso">+</button></div>
+      <div class="linha" style="margin-top:8px"><span class="folga"><b>Dias com valor pendente</b></span><button class="passo" data-m="pend">−</button><span class="num valor" data-c="pend"></span><button class="passo" data-p="pend">+</button></div>
+      <div class="quad"><div class="linha" style="justify-content:space-between"><span>Comissão</span><span class="num" data-c="comissao"></span></div>
+        <div class="linha" style="justify-content:space-between"><span>Brinde</span><span class="num" data-c="brinde"></span></div>
+        <div class="linha" style="justify-content:space-between"><span>Multa do pendente</span><span class="num" data-c="multaPen"></span></div></div>
+    </div></div></section>
+
+  <section class="caixa" id="L4"><h2>4 · Tabela compacta</h2>
+    <p class="nota">Estilo planilha, como o Financeiro: uma linha por regra, com quantidade, perda na comissão e no brinde, e o total no rodapé.</p>
+    <div class="tel"><div class="cart"><div class="cab"><span class="ic">▦</span><b>Multa por remarcação</b></div>
+      <table class="tab4">
+        <thead><tr><th>Regra</th><th class="d">Qtde</th><th class="d">Com.</th><th class="d">Brinde</th></tr></thead>
+        <tbody>
+          <tr><td>Com multa</td><td class="d"><span class="num" data-c="nMulta"></span></td><td class="d num" data-c="tComRem"></td><td class="d num" data-c="tBriRem"></td></tr>
+          <tr><td>Isenta</td><td class="d"><span class="num" data-c="nIsenta"></span></td><td class="d num">0%</td><td class="d num">0%</td></tr>
+          <tr><td>Atraso (dias)</td><td class="d"><div class="linha" style="justify-content:flex-end;gap:4px"><button class="passo" data-m="atraso" style="width:28px;height:28px">−</button><span class="num" data-c="atraso"></span><button class="passo" data-p="atraso" style="width:28px;height:28px">+</button></div></td><td class="d num" data-c="tComAtr"></td><td class="d num" data-c="tBriAtr"></td></tr>
+          <tr><td>Pendente (dias)</td><td class="d"><div class="linha" style="justify-content:flex-end;gap:4px"><button class="passo" data-m="pend" style="width:28px;height:28px">−</button><span class="num" data-c="pend"></span><button class="passo" data-p="pend" style="width:28px;height:28px">+</button></div></td><td class="d num" colspan="2" data-c="multaPen"></td></tr>
+        </tbody>
+        <tfoot><tr><td colspan="2">Perda total</td><td class="d num" data-c="tCom"></td><td class="d num" data-c="tBri"></td></tr></tfoot>
+      </table>
+      <div class="linha" style="margin-top:8px"><button class="btn verm folga" data-nova="multa">+ Com multa</button><button class="btn verd folga" data-nova="isenta">+ Isenta</button></div>
+    </div></div></section>
+
+</div>
+
+<script>
+var BASE = 45;   // comissão da faixa de exemplo (%)
+var ESCADA = [[5,15],[8,50],[15,100]];
+var FAIXAS = [[0,0,0,"Em dia"],[7,5,5,"até 7 dias"],[15,10,10,"até 15 dias"],[30,15,15,"até 30 dias"],[45,20,20,"até 45 dias"],[59,25,25,"até 59 dias"],[60,100,100,"60 dias ou mais"]];
+var rem = [ {t:"isenta", m:"Falecimento na família"} ];   // exemplo
+var atraso = 3, pend = 18;
+var PEND = 226.90;
+var brl = function(x){ return "R$ "+x.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+function faixaAtraso(d){ if(d<=0) return {c:0,b:0,r:"Em dia"}; if(d>=60) return {c:100,b:100,r:"Perde tudo · jurídico",tudo:true}; for(var i=1;i<FAIXAS.length-1;i++){ if(d<=FAIXAS[i][0]) return {c:FAIXAS[i][1],b:FAIXAS[i][2],r:FAIXAS[i][3]}; } return {c:25,b:25,r:"até 59 dias"}; }
+function calc(){
+  var multas = rem.filter(function(x){ return x.t==="multa"; }).length, isentas = rem.length-multas;
+  var e = multas>0 ? ESCADA[Math.min(multas,3)-1] : [0,0], at = faixaAtraso(atraso);
+  var extra = Math.min(10, Math.max(0, pend-15)); var pctPen = 10+extra;
+  var com = at.tudo ? 100 : e[0]+at.c, bri = Math.min(100, e[1]+at.b);
+  return {multas:multas, isentas:isentas, e:e, at:at, pctPen:pctPen, multaPen:PEND*pctPen/100, com:com, bri:bri, comFinal: at.tudo ? 0 : Math.max(0, BASE-com)};
+}
+function selo(el, txt, cls){ el.textContent = txt; el.className = "selo "+cls; }
+function desenha(){
+  var c = calc();
+  document.querySelectorAll("[data-lista]").forEach(function(l){
+    l.innerHTML = "";
+    if(!rem.length){ var v = document.createElement("div"); v.className = "item"; v.textContent = "Nenhuma remarcação neste kit"; l.appendChild(v); }
+    var n = 0;
+    rem.forEach(function(x, i){ if(x.t==="multa") n++; var d = document.createElement("div"); d.className = "item";
+      d.innerHTML = "<b>"+(i+1)+"ª</b><span class='folga'>"+(x.t==="multa" ? "Com multa" : "Isenta · "+x.m)+"</span><span class='selo "+(x.t==="multa" ? "v" : "i")+"'>"+(x.t==="multa" ? "−"+ESCADA[Math.min(n,3)-1][0]+"% · brinde −"+ESCADA[Math.min(n,3)-1][1]+"%" : "não pesa")+"</span><button class='passo' style='width:28px;height:28px;font-size:16px'>×</button>";
+      d.querySelector("button").addEventListener("click", function(){ rem.splice(i,1); desenha(); }); l.appendChild(d); });
+  });
+  document.querySelectorAll(".caixa").forEach(function(s){
+    var set = function(k, v){ s.querySelectorAll("[data-c="+k+"]").forEach(function(n){ n.textContent = v; }); };
+    set("atraso", atraso); set("pend", pend); set("nMulta", c.multas); set("nIsenta", c.isentas);
+    set("qtdRem", "("+rem.length+")");
+    set("comissao", c.at.tudo ? "perde tudo" : BASE+"% → "+c.comFinal+"%  (−"+c.com+")");
+    set("brinde", "−"+c.bri+"%");
+    set("multaPen", brl(c.multaPen)+" ("+c.pctPen+"%)");
+    set("efRemCurto", c.multas ? "−"+c.e[0]+"% · −"+c.e[1]+"%" : "sem perda");
+    set("tComRem", c.multas ? "−"+c.e[0]+"%" : "0%"); set("tBriRem", c.multas ? "−"+c.e[1]+"%" : "0%");
+    set("tComAtr", c.at.tudo ? "100%" : "−"+c.at.c+"%"); set("tBriAtr", "−"+c.at.b+"%");
+    set("tCom", c.at.tudo ? "100%" : "−"+c.com+"%"); set("tBri", "−"+c.bri+"%");
+    set("textoRem", c.multas ? c.multas+"ª com multa: perde "+c.e[0]+"% da comissão e "+c.e[1]+"% do brinde." : "Sem remarcação com multa.");
+    var er = s.querySelector("[data-c=efRem]"); if(er) selo(er, c.multas ? "−"+c.e[0]+"% · −"+c.e[1]+"%" : "sem perda", c.multas ? "v" : "z");
+    var ea = s.querySelector("[data-c=efAtr]"); if(ea) selo(ea, c.at.tudo ? "perde tudo · jurídico" : atraso>0 ? c.at.r+": −"+c.at.c+"% · brinde −"+c.at.b+"%" : "em dia", atraso>0 ? "v" : "z");
+    s.querySelectorAll("[data-c=efPen]").forEach(function(ep){ selo(ep, pend>15 ? "multa 10% + "+(c.pctPen-10)+"% de atraso" : "multa 10%", pend>15 ? "a" : "z"); });
+    s.querySelectorAll("[data-deg]").forEach(function(g){ var k = +g.dataset.deg; g.className = "deg"+(c.multas && Math.min(c.multas,3)===k ? " on" : (c.multas && k<Math.min(c.multas,3) ? " pas" : "")); });
+    var fx = s.querySelector("[data-faixas]"); if(fx){ fx.innerHTML = ""; [[0,"Em dia"],[3,"Até 7"],[12,"Até 15"],[25,"Até 30"],[40,"Até 45"],[55,"Até 59"],[60,"60 ou mais"]].forEach(function(f){ var b = document.createElement("button"); var on = faixaAtraso(atraso).r===faixaAtraso(f[0]).r; b.className = "chip mal"+(on ? " on" : ""); b.textContent = f[1]; b.addEventListener("click", function(){ atraso = f[0]; desenha(); }); fx.appendChild(b); }); }
+  });
+}
+document.querySelectorAll(".caixa").forEach(function(s){
+  s.querySelectorAll("[data-m]").forEach(function(b){ b.addEventListener("click", function(){ if(b.dataset.m==="atraso") atraso = Math.max(0, atraso-1); else pend = Math.max(0, pend-1); desenha(); }); });
+  s.querySelectorAll("[data-p]").forEach(function(b){ b.addEventListener("click", function(){ if(b.dataset.p==="atraso") atraso++; else pend++; desenha(); }); });
+  var ab = s.querySelector("[data-abre]"), es = s.querySelector("[data-escolha]"); if(ab) ab.addEventListener("click", function(){ es.classList.toggle("oculto"); });
+  s.querySelectorAll("[data-nova]").forEach(function(b){ b.addEventListener("click", function(){ rem.push(b.dataset.nova==="multa" ? {t:"multa"} : {t:"isenta", m:"Motivo justificado"}); if(es) es.classList.add("oculto"); desenha(); }); });
+});
+desenha();
+</script>
+</body>
+</html>

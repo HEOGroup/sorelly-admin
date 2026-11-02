@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cursos do setor · esboço de 4 telas</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--p2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--t2:#D8D5CD;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544;--ruim:#E5484D}
+*{box-sizing:border-box}html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif}
+.abas{display:flex;gap:6px;flex-wrap:wrap;padding:10px 14px;background:var(--painel);border-bottom:1px solid var(--fio);position:sticky;top:0;z-index:5}
+.abas button{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font:inherit;cursor:pointer}
+.abas button.on{border-color:var(--ouro);background:rgba(214,178,92,.18);color:var(--ouro);font-weight:600}
+.abas small{margin-left:auto;color:var(--t2);align-self:center}
+.tela{display:none;padding:14px;max-width:1180px;margin:0 auto;flex-direction:column;gap:12px}.tela.on{display:flex}
+h1{font-size:16px;margin:0}.sub{color:var(--t2);margin:2px 0 0}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+.bloco>.t{height:30px;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.corpo{padding:12px}
+.in,.sel{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--p2);color:var(--texto);padding:0 10px;font:inherit}
+.chip{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font:inherit;cursor:pointer}.chip.on{border-color:var(--ouro);background:rgba(214,178,92,.18);color:var(--ouro);font-weight:600}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center}.btn.g{border-color:var(--fio2);background:var(--painel);color:var(--texto);font-weight:500}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:12px;display:flex;flex-direction:column;gap:8px}
+.card:hover{border-color:var(--ouro)}
+.ico{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-weight:800;color:#0b0b0b}
+.tag{display:inline-flex;height:20px;align-items:center;padding:0 8px;border:1px solid var(--fio2);border-radius:10px;font-size:11px}.tag.ob{border-color:rgba(242,181,68,.6);color:var(--at)}.tag.nv{border-color:rgba(76,195,138,.6);color:var(--ok)}
+.barra{height:6px;border-radius:3px;background:var(--p2);overflow:hidden}.barra i{display:block;height:100%;background:var(--ouro)}
+.mut{color:var(--t2);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.dois{display:grid;grid-template-columns:300px minmax(0,1fr);gap:12px;align-items:start}@media(max-width:860px){.dois{grid-template-columns:1fr}}
+.mod{border-top:1px solid var(--fio)}.mod:first-child{border-top:0}.mod h3{margin:0;padding:8px 12px;font-size:13px;background:rgba(255,255,255,.03)}
+.aula{display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center;padding:7px 12px;cursor:pointer}.aula:hover{background:rgba(255,255,255,.05)}.aula.sel{background:rgba(214,178,92,.14)}
+.bola{width:18px;height:18px;border-radius:9px;border:2px solid var(--fio2);display:grid;place-items:center;font-size:11px}.bola.f{background:var(--ok);border-color:var(--ok);color:#0b0b0b}.bola.a{border-color:var(--ouro)}
+.player{aspect-ratio:16/9;border:1px solid var(--fio2);border-radius:8px;background:#0b0c0f;display:grid;place-items:center;text-align:center;color:var(--t2);position:relative;overflow:hidden}
+.player .pl{width:56px;height:56px;border-radius:28px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-size:22px}
+.legenda{position:absolute;left:10px;right:10px;bottom:10px;background:rgba(0,0,0,.65);border-radius:6px;padding:6px 10px;text-align:left;color:var(--texto)}
+.guias{display:flex;gap:4px;border-bottom:1px solid var(--fio)}.guias span{padding:8px 12px;cursor:pointer;color:var(--t2)}.guias span.on{color:var(--ouro);border-bottom:2px solid var(--ouro);font-weight:600}
+.passos{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px}
+.fluxo{display:flex;gap:0;align-items:stretch;flex-wrap:wrap}
+.etapa{flex:1;min-width:150px;border:1px solid var(--fio2);border-radius:8px;background:var(--p2);padding:10px;cursor:pointer;display:flex;flex-direction:column;gap:6px}.etapa.on{border-color:var(--ouro);background:rgba(214,178,92,.12)}.etapa b{font-size:13px}
+.seta{align-self:center;padding:0 6px;color:var(--ouro);font-size:18px}
+table{width:100%;border-collapse:collapse}th{height:30px;text-align:left;padding:0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.04);border-bottom:1px solid var(--fio)}td{height:36px;padding:0 10px;border-bottom:1px solid var(--fio)}
+.ok{color:var(--ok);font-weight:600}.at{color:var(--at);font-weight:600}.ruim{color:var(--ruim);font-weight:600}
+.faixa{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--fio);border-radius:8px;background:var(--painel)}.faixa>div{padding:10px 12px;border-right:1px solid var(--fio);display:flex;flex-direction:column;gap:4px}.faixa>div:last-child{border:0}.faixa b{font-size:20px;font-variant-numeric:tabular-nums}
+</style></head><body>
+<div class="abas" id="abas">
+  <button class="on" data-t="t1">1 · Catálogo (meus cursos)</button><button data-t="t2">2 · Dentro do curso</button><button data-t="t3">3 · Fluxos do setor</button><button data-t="t4">4 · Acompanhamento (responsável)</button>
+  <small>Esboço com dados de exemplo · cada pessoa vê só o curso do próprio setor</small>
+</div>
+
+<!-- 1 CATÁLOGO -->
+<section class="tela on" id="t1">
+  <div><h1>Aulas do setor</h1><p class="sub">Você é responsável por <b>Montagem de kits</b> e <b>Bipagem</b>. Aparecem os cursos dos dois setores.</p></div>
+  <div class="linha"><input class="in" placeholder="Buscar aula ou curso" style="width:260px"><button class="chip on">Todos os meus setores</button><button class="chip">Montagem de kits</button><button class="chip">Bipagem</button><span style="flex:1"></span><button class="chip">Só os que faltam</button></div>
+  <div class="bloco"><div class="t"><span>Continue de onde parou</span></div><div class="corpo linha"><div class="ico" style="background:#F59E0B">M</div><div style="flex:1"><b>Montagem de kits · Módulo 2 · Conferir peças da condicional</b><div class="barra" style="margin-top:6px;max-width:420px"><i style="width:55%"></i></div></div><button class="btn">Continuar (0:32)</button></div></div>
+  <div class="grade">
+    <div class="card"><div class="linha"><div class="ico" style="background:#F59E0B">M</div><div><b>Montagem de kits: do básico à entrega</b><div class="mut">Montagem de kits · 12 aulas · 18 min</div></div></div><div class="barra"><i style="width:55%"></i></div><div class="linha"><span class="tag ob">Obrigatório</span><span style="flex:1"></span><span class="mut">7 de 12</span></div></div>
+    <div class="card"><div class="linha"><div class="ico" style="background:#0EA5E9">B</div><div><b>Bipagem de retorno e de envio</b><div class="mut">Bipagem · 8 aulas · 11 min</div></div></div><div class="barra"><i style="width:25%"></i></div><div class="linha"><span class="tag ob">Obrigatório</span><span style="flex:1"></span><span class="mut">2 de 8</span></div></div>
+    <div class="card"><div class="linha"><div class="ico" style="background:#8B5CF6">R</div><div><b>Pedir mudança de colaboradora ao RH</b><div class="mut">Recursos Humanos · 1 aula · 1 min</div></div></div><div class="barra"><i style="width:0%"></i></div><div class="linha"><span class="tag nv">Novo</span><span style="flex:1"></span><span class="mut">0 de 1</span></div></div>
+    <div class="card"><div class="linha"><div class="ico" style="background:#22C55E">K</div><div><b>Kit 100% Prata: regras e tabela</b><div class="mut">Montagem de kits · 4 aulas · 7 min</div></div></div><div class="barra"><i style="width:100%"></i></div><div class="linha"><span class="tag">Concluído</span><span style="flex:1"></span><span class="ok">✓ 4 de 4</span></div></div>
+    <div class="card"><div class="linha"><div class="ico" style="background:#14B8A6">C</div><div><b>SorellyChat: avisos, anexos e áudio</b><div class="mut">Para todos · 5 aulas · 6 min</div></div></div><div class="barra"><i style="width:80%"></i></div><div class="linha"><span class="tag">Geral</span><span style="flex:1"></span><span class="mut">4 de 5</span></div></div>
+    <div class="card"><div class="linha"><div class="ico" style="background:#EC4899">N</div><div><b>Trilha de boas-vindas: primeira semana</b><div class="mut">Para quem entrou agora · 6 aulas · 9 min</div></div></div><div class="barra"><i style="width:0%"></i></div><div class="linha"><span class="tag nv">Nova pessoa</span><span style="flex:1"></span><span class="mut">0 de 6</span></div></div>
+  </div>
+</section>
+
+<!-- 2 DENTRO DO CURSO -->
+<section class="tela" id="t2">
+  <div><h1>Montagem de kits: do básico à entrega</h1><p class="sub">Montagem de kits · 12 aulas · 18 min · <span class="tag ob">Obrigatório</span> · você concluiu 7 de 12</p></div>
+  <div class="dois">
+    <div class="bloco"><div class="t"><span>Conteúdo</span><span>58%</span></div>
+      <div class="mod"><h3>Módulo 1 · Primeiros passos</h3>
+        <div class="aula"><span class="bola f">✓</span><span>Como abrir a listagem do dia</span><span class="mut">1:20</span></div>
+        <div class="aula"><span class="bola f">✓</span><span>Ver as preferências da revendedora</span><span class="mut">1:05</span></div></div>
+      <div class="mod"><h3>Módulo 2 · Rotina</h3>
+        <div class="aula sel"><span class="bola a">▶</span><span>Conferir peças da condicional</span><span class="mut">1:40</span></div>
+        <div class="aula"><span class="bola"></span><span>Montar kit grande (acima de R$ 4.000)</span><span class="mut">2:10</span></div>
+        <div class="aula"><span class="bola"></span><span>Quando pedir ajuda da supervisão</span><span class="mut">0:50</span></div></div>
+      <div class="mod"><h3>Módulo 3 · Fluxos</h3>
+        <div class="aula"><span class="bola"></span><span>Do pedido à retirada</span><span class="mut">2:00</span></div>
+        <div class="aula"><span class="bola"></span><span>Mudança de pessoa na equipe</span><span class="mut">0:46</span></div></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="player"><div class="pl">▶</div><div class="legenda"><b>Passo 2 de 5.</b> Toque na peça ou digite o código. Peça que falta fica em vermelho.</div></div>
+      <div class="linha"><button class="btn">Marcar como concluída</button><button class="btn g">Próxima aula →</button><span style="flex:1"></span><button class="btn g">Velocidade 1x</button><button class="btn g">Tela cheia</button></div>
+      <div class="bloco"><div class="guias" id="guias"><span class="on">Passo a passo</span><span>Resumo</span><span>Anexos</span><span>Dúvidas</span></div>
+        <div class="corpo"><ol class="passos"><li>Abra a listagem do dia e escolha o kit.</li><li>Toque em <b>Montar</b> e confira as condicionais.</li><li>Marque cada peça. Código errado aparece em vermelho.</li><li>Peça que falta: avise a supervisão pelo chat.</li><li>Clique em <b>Concluir montagem</b>.</li></ol></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 FLUXOS -->
+<section class="tela" id="t3">
+  <div><h1>Fluxos do setor</h1><p class="sub">O curso segue o caminho do trabalho. Clique numa etapa para ver as aulas dela.</p></div>
+  <div class="linha"><button class="chip on">Montagem de kits</button><button class="chip">Bipagem</button><button class="chip">Cadastro de revendedoras → Kit novo</button><button class="chip">Atendimento interno</button><button class="chip">Financeiro: do Pix ao pagamento</button></div>
+  <div class="bloco"><div class="t"><span>Fluxo · Montagem de kits</span><span class="mut">5 etapas · 12 aulas</span></div><div class="corpo">
+    <div class="fluxo" id="fluxo">
+      <div class="etapa on" data-e="0"><span class="mut">1 · Pedido</span><b>Listagem do dia</b><span>2 aulas</span><div class="barra"><i style="width:100%"></i></div></div><span class="seta">→</span>
+      <div class="etapa" data-e="1"><span class="mut">2 · Média</span><b>Calcular o kit</b><span>3 aulas</span><div class="barra"><i style="width:60%"></i></div></div><span class="seta">→</span>
+      <div class="etapa" data-e="2"><span class="mut">3 · Montar</span><b>Conferir peças</b><span>3 aulas</span><div class="barra"><i style="width:33%"></i></div></div><span class="seta">→</span>
+      <div class="etapa" data-e="3"><span class="mut">4 · Bipar</span><b>Bipagem do envio</b><span>2 aulas</span><div class="barra"><i style="width:0%"></i></div></div><span class="seta">→</span>
+      <div class="etapa" data-e="4"><span class="mut">5 · Retirada</span><b>Entregar à representante</b><span>2 aulas</span><div class="barra"><i style="width:0%"></i></div></div>
+    </div></div></div>
+  <div class="dois" style="grid-template-columns:1fr 1fr">
+    <div class="bloco"><div class="t"><span id="et">Etapa 1 · Listagem do dia</span></div><div id="etLista"></div></div>
+    <div class="bloco"><div class="t"><span>Quem faz o quê nesta etapa</span></div><div class="corpo"><table><tr><th>Quem</th><th>Faz</th></tr><tr><td>Montadora</td><td>Abre a listagem e escolhe o kit</td></tr><tr><td>Supervisão</td><td>Define quem monta kit grande</td></tr><tr><td>Bipadora</td><td>Entra depois, na etapa 4</td></tr></table><p class="sub" style="margin-top:10px">Ligação com outros setores: <b>Cadastro de peças</b> libera as peças → <b>Produção</b> → Montagem → <b>Bipagem</b>.</p></div></div>
+  </div>
+</section>
+
+<!-- 4 ACOMPANHAMENTO -->
+<section class="tela" id="t4">
+  <div><h1>Acompanhamento da equipe</h1><p class="sub">Para quem é responsável pelo setor (ou RH e Diretoria). Mostra quem já viu os cursos obrigatórios.</p></div>
+  <div class="linha"><select class="sel"><option>Montagem de kits</option><option>Bipagem</option><option>Todos os meus setores</option></select><select class="sel"><option>Todos os cursos</option><option>Só obrigatórios</option></select><span style="flex:1"></span><button class="btn g">Copiar lista de quem falta</button><button class="btn">Avisar pelo chat</button></div>
+  <div class="faixa"><div><span class="mut">Pessoas no setor</span><b>12</b></div><div><span class="mut">Concluíram os obrigatórios</span><b class="ok">7</b></div><div><span class="mut">Em andamento</span><b class="at">3</b></div><div><span class="mut">Não começaram</span><b class="ruim">2</b></div></div>
+  <div class="bloco"><div class="t"><span>Equipe · Montagem de kits</span><span class="mut">nomes de exemplo</span></div>
+    <table><tr><th>Pessoa</th><th>Do básico à entrega</th><th>Kit 100% Prata</th><th>SorellyChat</th><th>Última aula</th><th>Situação</th></tr>
+      <tr><td>Ana (exemplo)</td><td>12 de 12</td><td>4 de 4</td><td>5 de 5</td><td>28/10</td><td class="ok">Em dia</td></tr>
+      <tr><td>Bia (exemplo)</td><td>7 de 12</td><td>4 de 4</td><td>4 de 5</td><td>01/11</td><td class="at">Em andamento</td></tr>
+      <tr><td>Carla (exemplo)</td><td>2 de 12</td><td>0 de 4</td><td>1 de 5</td><td>25/10</td><td class="at">Em andamento</td></tr>
+      <tr><td>Dani (exemplo, nova)</td><td>0 de 12</td><td>0 de 4</td><td>0 de 5</td><td>—</td><td class="ruim">Não começou</td></tr></table></div>
+  <div class="bloco"><div class="t"><span>Trilha de quem entrou agora</span></div><div class="corpo linha"><span class="tag nv">Boas-vindas · 6 aulas</span><span>1 · Entrar no sistema</span><span class="seta">→</span><span>2 · Foto e senha</span><span class="seta">→</span><span>3 · SorellyChat</span><span class="seta">→</span><span>4 · Pedir melhoria</span><span class="seta">→</span><span>5 · Aulas do seu setor</span><span class="seta">→</span><span>6 · Primeiro dia de trabalho</span></div></div>
+</section>
+
+<script>
+var $ = function(s){ return document.querySelector(s); };
+document.querySelectorAll("#abas button").forEach(function(b){ b.onclick = function(){ document.querySelectorAll("#abas button").forEach(function(x){ x.classList.remove("on"); }); b.classList.add("on"); document.querySelectorAll(".tela").forEach(function(t){ t.classList.remove("on"); }); $("#"+b.dataset.t).classList.add("on"); }; });
+document.querySelectorAll("#guias span").forEach(function(s){ s.onclick = function(){ document.querySelectorAll("#guias span").forEach(function(x){ x.classList.remove("on"); }); s.classList.add("on"); }; });
+var ETAPAS = [["Etapa 1 · Listagem do dia",["Como abrir a listagem do dia (1:20)","Ver as preferências da revendedora (1:05)"]],["Etapa 2 · Calcular o kit",["Média das vendas e valor do kit (1:30)","Análise de vendas obrigatória (1:10)","Kit sem valor definido (0:45)"]],["Etapa 3 · Conferir peças",["Conferir peças da condicional (1:40)","Montar kit grande (2:10)","Quando pedir ajuda da supervisão (0:50)"]],["Etapa 4 · Bipagem do envio",["Bipar o envio (1:20)","Divergência de bipagem (1:00)"]],["Etapa 5 · Retirada",["Retirada pela representante (1:10)","Retirada parcial de kits (0:50)"]]];
+function etapa(i){ document.querySelectorAll(".etapa").forEach(function(e,k){ e.classList.toggle("on", k===i); }); $("#et").textContent = ETAPAS[i][0]; $("#etLista").innerHTML = ETAPAS[i][1].map(function(a){ return '<div class="aula"><span class="bola a">▶</span><span>'+a+'</span><span class="mut">assistir</span></div>'; }).join(""); }
+document.querySelectorAll(".etapa").forEach(function(e){ e.onclick = function(){ etapa(+e.dataset.e); }; }); etapa(0);
+</script></body></html>

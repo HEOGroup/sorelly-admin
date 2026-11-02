@@ -182,14 +182,16 @@ function itensComissao(c, s, agora){
           fin:l.fin, conferido:conferido, promOk:a.promOk, motivo:!conferido ? "Aguardando o agendamento conferir" : !a.promOk ? "Promissória não assinada" : "",
           libera:l.libera, pixRep:pixRep, rep:pixRep ? (l.fin && l.fin.rep) || null : r.rep, repAcerto:r.rep, extra:l.extra}); });
     }
-    if(r.tipo==="kit_novo_entrega" || r.tipo==="acerto" && r.kitNovoOk || r.tipo==="reposicao" || r.tipo==="reposicao_especial"){
+    // Acerto + kit (renovação) paga SÓ a comissão do acerto (Marcus, 02/11/2026): o R$ 20 / R$ 35 é do kit NOVO (entrega). Exceção: revendedora do teste do novo fluxo (nf).
+    if(r.tipo==="kit_novo_entrega" || r.tipo==="acerto" && r.kitNovoOk && nfDe(c, r.rev) || r.tipo==="reposicao" || r.tipo==="reposicao_especial"){
       var fin = r.fin && r.fin.k ? r.fin.k : null, repos = r.tipo.indexOf("reposicao")===0, expo = r.tipoKit==="kit_novo_exp" || (r.expositoresMarcados||[]).length>0;
       var nfk = !repos ? nfDe(c, r.rev) : null;
       var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : nfk ? (r.desistencia ? 0 : c.nf.entrega) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 15 (Configurador), com a condicional assinada
       var man = c.termos[r.id], termo = repos ? true : !!(r.assinatura || man), condOk = !!(rec.prom && rec.prom.ok);   // kit novo só é pago com a condicional assinada
-      var libera = fin && conferido && termo && condOk ? Math.max(tsIso(fin.ts), tsIso(rec.em)) : null;
+      var semFotoExpo = r.tipo==="kit_novo_entrega" && r.tipoKit==="kit_novo_exp" && r.expositorFoto===false;   // kit novo + expositor sem a foto do expositor montado (registro antigo, sem o campo, não entra aqui)
+      var libera = fin && conferido && termo && condOk && !semFotoExpo ? Math.max(tsIso(fin.ts), tsIso(rec.em)) : null;
       if(valor>0) poe({id:r.id+"#k", chave:"k", tipo:repos ? "repos" : "kitnovo", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:r.tipo==="acerto" ? (expo ? "Kit novo + expositor" : "Kit novo") : st, forma:"", conta:fin ? fin.conta : "",
-        valorPago:0, comissao:r2(valor), fin:fin, conferido:conferido, motivo:!conferido ? "Aguardando o agendamento conferir" : !termo ? "Termo do kit novo não assinado" : !condOk ? "Condicional não assinada" : "", libera:libera, rep:nfk ? nfk.repKitNovo : r.rep, repAcerto:r.rep, nfKitNovo:!!nfk, extra:false, termoAuto:!!r.assinatura, termoManual:man || null, termoOk:termo});
+        valorPago:0, comissao:r2(valor), fin:fin, conferido:conferido, motivo:!conferido ? "Aguardando o agendamento conferir" : !termo ? "Termo do kit novo não assinado" : !condOk ? "Condicional não assinada" : semFotoExpo ? "Falta a foto do expositor montado" : "", libera:libera, rep:nfk ? nfk.repKitNovo : r.rep, repAcerto:r.rep, nfKitNovo:!!nfk, extra:false, termoAuto:!!r.assinatura, termoManual:man || null, termoOk:termo});
     }
   });
   return itens;
@@ -213,12 +215,18 @@ function resumoSituacao(c, itens, rep, data, agora){
   kmDias = r2(kmDias);
   var kmModo = "total";   // o km é só o TOTAL DO PERÍODO (decisão do Marcus); o dia a dia (c.kmDia) não é mais usado
   var kmUso = kmModo==="dias" ? kmDias : (fech.km||0);
-  var kmOk = kmUso>0 && (kmModo==="dias" ? ultTs<=corte : (fech.kmPor!=="rep" || tsIso(fech.kmTs)<=corte)), combFixo = meus.length>0 && aposCorte && !kmOk;
-  var comb = combFixo ? r2(c.combSemEnvio) : r2((kmOk ? kmUso : 0)*porKm);
+  var kmOk = kmUso>0 && (kmModo==="dias" ? ultTs<=corte : (fech.kmPor!=="rep" || tsIso(fech.kmTs)<=corte)), combFixo = false;   // o valor fixo de R$ 200 saiu (Marcus, 02/11/2026)
+  // Combustível só para quem teve acerto no período. Km enviado FORA do prazo de uma data é pago na data SEGUINTE (junto com o km dela).
+  var grp = grupoDaRep(c, rep), lista = datasDoGrupo(c, grp, new Date(data+"T12:00:00").getTime(), 1, 2), ix = lista.indexOf(data);
+  var antData = ix>0 ? lista[ix-1] : null, proxData = ix>=0 && ix<lista.length-1 ? lista[ix+1] : null, temAcerto = meus.length>0, kmAtras = 0;
+  var fAnt = antData ? (c.fech[chaveFech(antData, rep)] || {}) : {};
+  if(antData && fAnt.km>0 && fAnt.kmPor==="rep" && tsIso(fAnt.kmTs)>corteDe(c, antData) && tsIso(fAnt.kmTs)<=corte && itens.some(function(i){ return i.dest===rep && i.dataRem===antData; })) kmAtras = fAnt.km;
+  var kmTarde = kmUso>0 && !kmOk && temAcerto && kmModo!=="dias";
+  var comb = r2(((kmOk && temAcerto ? kmUso : 0) + kmAtras)*porKm);
   var aPagar = r2(confirmado + comb);
   var manuais = r2((fech.pagamentos||[]).reduce(function(t,p){ return t+(p.valor||0); }, 0)), pagos = r2(manuais + direto);   // Pix representante já conta como pago
   var falta = r2(aPagar - pagos);
-  return {itens:meus, comissaoTotal:r2(confirmado+pendente), litros:c.kmPorLitro>0 ? r2(kmUso/c.kmPorLitro) : 0, confirmado:confirmado, datasAt:meus.map(function(i){ return i.data; }).filter(function(x,k,a){ return x && a.indexOf(x)===k; }).sort(), pendente:pendente, direto:direto, comb:comb, ajuste:ajuste, aPagar:aPagar, pagos:pagos, falta:falta, km:kmUso, kmTotal:fech.km||0, kmDias:kmDias, kmModo:kmModo, diasKm:diasKm, kmTs:fech.kmTs||null, kmPor:fech.kmPor||null, kmOk:kmOk, combFixo:combFixo, preco:preco, porKm:porKm,
+  return {itens:meus, comissaoTotal:r2(confirmado+pendente), litros:c.kmPorLitro>0 ? r2(kmUso/c.kmPorLitro) : 0, confirmado:confirmado, datasAt:meus.map(function(i){ return i.data; }).filter(function(x,k,a){ return x && a.indexOf(x)===k; }).sort(), pendente:pendente, direto:direto, comb:comb, ajuste:ajuste, aPagar:aPagar, pagos:pagos, falta:falta, km:kmUso, kmTotal:fech.km||0, kmDias:kmDias, kmModo:kmModo, diasKm:diasKm, kmTs:fech.kmTs||null, kmPor:fech.kmPor||null, kmOk:kmOk, combFixo:combFixo, kmTarde:kmTarde, kmAtras:kmAtras, antData:antData, proxCorte:proxData ? corteDe(c, proxData) : null, preco:preco, porKm:porKm,
     corte:corte, aposCorte:agora>=corte, paga:(aPagar>0.009 || pagos>0.009) && falta<=0.009, lista:fech.pagamentos||[], diretos:meus.filter(function(i){ return i.pagoDireto; })};
 }
 

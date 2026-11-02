@@ -94,6 +94,25 @@ function agrupar(linhas){
   return out.map(function(l){ if(l.membros) l.pct = repPct(l.cota, l.saldoAtual); return l; });
 }
 
+// ---------- cotas e saldos automáticos, lidos da DevMaster (Marcus, 01/11/2026) ----------
+// itens = revendedoras com kit aberto lidas da DevMaster (/agenda-revendedoras: prev = data do acerto, repCod = vendedor). Cada representante do Agendamento tem o MESMO código do vendedor da DevMaster.
+// COTA (dia 1) = quantas têm data no mês quando a conta é feita pela primeira vez (guardada em "cotabase" no módulo agrev e nunca recalculada), menos as que o Marcus passou para fora do mês (45/60 dias).
+// SALDO (o que falta fazer) = quantas continuam abertas com data no mês + as que o setor (ou ninguém ainda confirmou) mudou para fora do mês, que continuam no previsto. Kit feito sai da DevMaster, então o saldo desce sozinho.
+// mud = datas mudadas (agrev, chaves "d_"): {rep, de, para, quem}. base = cotabase já guardada ({codigo: n}) ou null na primeira vez.
+function cotasDaDevMaster(itens, ag, ym, mud, base){
+  var norm = function(c){ return String(c||"").trim().replace(/^0+/, ""); }, nm = function(n){ return String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); };
+  var porCod = {}; (ag.config.representantes||[]).forEach(function(r){ porCod[norm(r.codigo)] = r; });
+  var nomeParaCod = {}; itens.forEach(function(i){ if(i.repCod) nomeParaCod[nm(i.representante)] = norm(i.repCod); });
+  var abertas = {}, semRep = 0, funcionarias = 0;
+  itens.forEach(function(i){ if(!i.prev || i.prev.slice(0, 7)!==ym) return; if(/funcion/i.test(i.representante||"")){ funcionarias++; return; } var c = norm(i.repCod); if(!porCod[c]){ semRep++; return; } abertas[c] = (abertas[c]||0)+1; });
+  var tiradas = {}, ficam = {};
+  (mud||[]).forEach(function(m){ if(!m.de || !m.para || m.de.slice(0, 7)!==ym || m.para.slice(0, 7)===ym) return; var c = nomeParaCod[nm(m.rep)]; if(!c || !porCod[c]) return; if(m.quem==="marcus") tiradas[c] = (tiradas[c]||0)+1; else ficam[c] = (ficam[c]||0)+1; });
+  var nova = Object.assign({}, base || {}), gravar = !base, out = {};
+  Object.keys(porCod).forEach(function(c){ var b; if(nova[c]!==undefined) b = nova[c]; else { b = abertas[c]||0; nova[c] = b; gravar = true; }
+    out[c] = {id:porCod[c].id, nome:porCod[c].nome, cota:Math.max(0, b-(tiradas[c]||0)), saldo:(abertas[c]||0)+(ficam[c]||0)}; });
+  return {porRep:out, base:nova, novaBase:gravar, semRep:semRep, funcionarias:funcionarias};
+}
+
 // ---------- estado e leitura ----------
 function mesAberto(ag){ var ks = Object.keys(ag.mes||{}).filter(function(k){ return !ag.mes[k].fechadoEm; }).sort(); return ks.length ? ks[ks.length-1] : null; }
 function representantesDoMes(ag, ym){
@@ -102,7 +121,7 @@ function representantesDoMes(ag, ym){
   var cotas = (ag.cotas||{})[ym]||{}, saldos = (ag.saldos||{})[ym]||{};
   return (ag.config.representantes||[]).filter(function(r){ return r.ativo || (cotas[r.id]>0); }).map(function(r){
     var cota = cotas[r.id]||0, sd = saldos[r.id]||{}, atual = saldoAtualDe(cota, sd);
-    return {id:r.id, codigo:r.codigo, nome:r.nome, ativo:r.ativo, cota:cota, saldoAtual:atual, pct:repPct(cota, atual), saldosPorDia:sd, grupo:r.grupo||""}; });
+    return {id:r.id, codigo:r.codigo, nome:r.nome, ativo:r.ativo, cota:cota, saldoAtual:atual, pct:repPct(cota, atual), saldosPorDia:sd, grupo:r.grupo||"", viagem:r.viagem||""}; });
 }
 function pctPorCodigo(ag, ym){ var o = {}; representantesDoMes(ag, ym).forEach(function(r){ if(r.pct!==null && r.pct!==undefined) o[r.codigo] = r.pct; }); return o; }
 
@@ -271,6 +290,8 @@ function agendReduz(s, a, agora){
       pri.apelidos = (pri.apelidos||[]).concat([dup.nome, dup.codigo]).concat(dup.apelidos||[]).filter(function(v, i, x){ return v && x.indexOf(v)===i && v!==pri.nome && v!==pri.codigo; });
       cfg.representantes = cfg.representantes.filter(function(r){ return r.id!==dup.id; }); return ok(dup.nome+" juntada com "+pri.nome); }
     case "rep_grupo": { var rg = cfg.representantes.find(function(r){ return r.id===a.id; }); if(!rg) return recusa("Representante não encontrada."); var gn = String(a.grupo||"").trim(); if(gn) rg.grupo = gn; else delete rg.grupo; return ok(gn ? rg.nome+" agrupada em "+gn+" nos relatórios" : rg.nome+" saiu do grupo"); }
+    // VIAGEM (pedido da Ana Maria, 29/10/2026; feito em 01/11/2026): a representante que atende uma viagem (Ponta Grossa, Joinville) fica separada das de Curitiba em Representantes, para ver quanto ficou sem fazer de cada viagem
+    case "rep_viagem": { var rv = cfg.representantes.find(function(r){ return r.id===a.id; }); if(!rv) return recusa("Representante não encontrada."); var vn = String(a.viagem||"").trim(); if(vn) rv.viagem = vn; else delete rv.viagem; return ok(vn ? rv.nome+" marcada como viagem para "+vn : rv.nome+" voltou para Curitiba"); }
     case "gerente": { var g = cfg.gerentes||[]; cfg.gerentes = a.on ? (g.indexOf(a.id)>=0 ? g : g.concat([a.id])) : g.filter(function(x){ return x!==a.id; }); return ok(); }
     case "pagto": { var er5 = exigeAberto(); if(er5) return er5; ag.mes[ym].pagamento = Object.assign({prevista:null, confirmada:null, por:null}, ag.mes[ym].pagamento, {prevista:a.prevista||null}); return ok("Data prevista salva"); }
     case "pagto_ok": { var er6 = exigeAberto(); if(er6) return er6; ag.mes[ym].pagamento = Object.assign({prevista:null, confirmada:null, por:null}, ag.mes[ym].pagamento, {confirmada:isoHoje(), por:por}); return ok("Pagamento do bônus confirmado"); }
@@ -316,5 +337,12 @@ function parecidas(ag){
   var grupos = {}; (ag.config.representantes||[]).forEach(function(r){ var k = String(r.nome).trim().split(/\s+/)[0].toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); (grupos[k] = grupos[k]||[]).push(r); });
   return Object.keys(grupos).filter(function(k){ return grupos[k].length>1; }).map(function(k){ return grupos[k]; });
 }
-export { sincPrevistosAcertos, resumoComissaoAg, agrupar, AUTORIZADORES, DIA_SEM, recebidoDe, revFimDe, vencimentoBonus, bonusDoMes, precisaVirar, parecidas, NOMES_MES, MEDALHAS, TIPOS_REMARC, tipoDe, chaveMes, nomeMes, anoDe, diasNoMes, pct, mesAnterior, proximoMes, diarioDeFd, incrementos, realizadoDe, movimentos, previstosAjustados,
+// Nome de pessoa como se escreve: "MARCUS HESS" e "marcus hess" viram "Marcus Hess"; "de/da/do/dos/das/e" ficam em minúscula; sigla de 2 letras ("SC", "PR") e nomes com "&" ficam como vieram (Marcus, 01/11/2026)
+var PARTICULAS = {de:1, da:1, do:1, das:1, dos:1, e:1};
+function nomeProprio(n){
+  return String(n||"").trim().replace(/\s+/g, " ").split(" ").map(function(w, i){
+    var b = w.toLowerCase(); if(i>0 && PARTICULAS[b]) return b; if(/^[A-Z]{2}$/.test(w) || w.indexOf("&")>=0) return w;
+    return b.replace(/(^|[-'’(])(\p{L})/gu, function(m, a, c){ return a+c.toUpperCase(); }); }).join(" ");
+}
+export { nomeProprio, cotasDaDevMaster, sincPrevistosAcertos, resumoComissaoAg, agrupar, AUTORIZADORES, DIA_SEM, recebidoDe, revFimDe, vencimentoBonus, bonusDoMes, precisaVirar, parecidas, NOMES_MES, MEDALHAS, TIPOS_REMARC, tipoDe, chaveMes, nomeMes, anoDe, diasNoMes, pct, mesAnterior, proximoMes, diarioDeFd, incrementos, realizadoDe, movimentos, previstosAjustados,
   avaliarFaixas, maiorFaixa, saldoAtualDe, repPct, ordenarReps, mesAberto, representantesDoMes, pctPorCodigo, painelDe, snapshotDe, analisesDe, agendReduz, agendDemo };

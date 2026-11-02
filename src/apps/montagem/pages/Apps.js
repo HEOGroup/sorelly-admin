@@ -73,18 +73,31 @@ function Coluna(p){
 }
 
 // Revendedora e representante dividem o mesmo contexto (os kits da revendedora vêm da representante escolhida); cada um só aparece se estiver ligado em "Celulares"
+var DEMO_REV = "Francelle Schmidt Alves Pinto dos Santos";
+var CENARIO_COMPLETO = {venda:8278, conds:[{n:"99011", p:60}, {n:"99012", p:55}, {n:"99013", p:45}, {n:"99014", p:40}], vendidas:68, pago:4326, brindes:[
+  {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
+  {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
 function ColsRepRev(p){
-  var s = use().state;
+  var cx0 = use(), s = cx0.state;
   var ksReais = s.kits.filter(function(k){ return k.status==="retirado" || k.status==="bipado"; });
   var ksSorelly = (s.internos||[]).map(function(it){ return {id:"INT-"+it.id, rev:titulo(it.nome), rep:"Sorelly", interno:true, internoId:it.id, vendas:[it.vendaApp||0], status:"retirado", tipoKit:"acerto_kit", lid:null}; });
   var rv = useState({logado:true, id:null}), rev = rv[0], setRev = rv[1];
-  var rp = useState({logado:true, id:null}), rep = rp[0], setRep = rp[1];
-  var lAtual = s.listagens.find(function(x){ return x.id===rep.id; }) || s.listagens[0];
+  var rp = useState(function(){ try{ if(/[?&]acerto=1/.test(window.location.search)) return {logado:true, id:"ACERTO_COMPLETO", nome:"Nagela", demo:true, n:Date.now()}; }catch(x){} return {logado:true, id:null}; }), rep = rp[0], setRep = rp[1];   // /apps?acerto=1 abre direto o exemplo Acerto completo (02/11/2026)
+  // representantes REAIS (lista do Agendamento): escolher uma abre o app dela com todas as revendedoras (01/11/2026, Marcus)
+  var repsReais = ((s.agend && s.agend.config && s.agend.config.representantes) || []).filter(function(r){ return r.ativo && r.codigo!=="02"; });
+  var listDe = function(nome){ return s.listagens.find(function(x){ return x.rep===nome && !x.fechada; }) || s.listagens.find(function(x){ return x.rep===nome; }); };
+  var lAtual = (rep.nome ? listDe(rep.nome) : s.listagens.find(function(x){ return x.id===rep.id; })) || s.listagens[0] || {id:null, rep:null, horario:""};   // sem listagem de teste (01/11/2026)
+  useEffect(function(){ if(rep.nome && !listDe(rep.nome)) cx0.dispatch({type:"CRIAR_LISTAGEM", rep:rep.nome, destino:"Curitiba", horario:"10:00"}); }, [rep.nome, s.listagens.length]);
+  // "Acerto completo" (02/11/2026, Marcus): exemplo SEMPRE pronto para ver, refeito toda vez que a opção é escolhida (nada depende de dado salvo antes).
+  // Francelle (revendedora real da Nagela), venda R$ 8.278,00, 95% pago, brindes lançados, tudo preenchido na Calculadora.
+  var demoKit = rep.demo ? s.kits.find(function(k){ var l0 = listDe("Nagela"); return k.rev===DEMO_REV && k.status!=="acertado" && l0 && k.lid===l0.id; }) : null;
+  useEffect(function(){ if(!rep.demo || demoKit) return; var l0 = listDe("Nagela"); if(!l0) return;
+    cx0.dispatch({type:"ADD_KIT", lid:l0.id, rev:DEMO_REV, bairro:"Curitiba", vendas:[], cod:"004439", fone:"41996029727", tipoKit:"acerto_kit", porApp:true, hora:null}); }, [rep.demo, rep.n, s.listagens.length, s.kits.length]);
   var sorelly = rep.logado && rep.id==="SORELLY";
   var ks = sorelly ? ksSorelly : rep.logado ? ksReais.filter(function(k){ return listagemDe(s,k).rep===lAtual.rep; }) : ksReais;
   var kAtual = ks.find(function(x){ return x.id===rev.id; }) || ks[0];
   var gruposRev = ks.length ? [{itens:ks.map(function(k){ return {id:k.id, nome:k.rev, sub:k.interno ? "Sorelly · atendimento interno" : listagemDe(s,k).rep+" · "+STATUS_LB[k.status]}; })}] : [];
-  var gruposRep = [{itens:[{id:"SORELLY", nome:"Sorelly", sub:"Atendimento interno (revendedoras que vêm à empresa)"}].concat(s.listagens.map(function(l){ return {id:l.id, nome:l.rep, sub:"Retirada "+l.horario+(l.fechada ? " · concluída" : "")}; }))}];
+  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
   var entradaRev = e(Entrada,{titulo:"App da revendedora", onEntrar:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }, onTeste:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }});
   var entradaRep = e(Entrada,{altura:722, titulo:"App da representante", onEntrar:function(){ setRep({logado:true, id:lAtual.id}); }, onTeste:function(){ setRep({logado:true, id:lAtual.id}); }});
   return e(React.Fragment,null,
@@ -94,10 +107,10 @@ function ColsRepRev(p){
         onEscolher:function(g, i){ setRev(i ? {logado:true, id:i.id} : {logado:false, id:null}); }},
       celular: rev.logado && kAtual ? e(AppRevendedora,{key:kAtual.id, k:kAtual}) : e(IPhone15,null, entradaRev)}),
     p.rep && e(Coluna,{key:"rep", f:p.f, ordem:0, cor:COR_CEL.rep, age:!!(p.age && p.age.rep), nome:"Representante", sub:"App para iOS ou Android", zoom:0.806,
-      pessoa:rep.logado ? (sorelly ? "Sorelly" : lAtual.rep) : null,
-      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : lAtual.rep) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : lAtual.id) : null, grupos:gruposRep,
-        onEscolher:function(g, i){ setRep(i ? {logado:true, id:i.id} : {logado:false, id:null}); }},
-      celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : e(AppRepresentante,{key:lAtual.id, l:lAtual})) : e(IPhone17ProMax,null, entradaRep)}));
+      pessoa:rep.logado ? (sorelly ? "Sorelly" : titulo(lAtual.rep)) : null,
+      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
+        onEscolher:function(g, i){ setRep(!i ? {logado:false, id:null} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? {logado:true, id:i.id, nome:i.rep} : {logado:true, id:i.id}); }},
+      celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : lAtual.id ? e(AppRepresentante,{key:lAtual.id, l:lAtual, abrir:rep.demo && demoKit ? {rev:DEMO_REV, n:rep.n, cenario:CENARIO_COMPLETO} : null}) : e(IPhone17ProMax,null, e("p",{className:"p-6 text-center text-[13px]"}, "Escolha uma representante no seletor acima do celular."))) : e(IPhone17ProMax,null, entradaRep)}));
 }
 
 // nome curto do cargo na barra de cima do cartão (o nome inteiro continua na linha do tempo e na dica)
@@ -118,7 +131,7 @@ function ColFunc(p){
 // Os apps ainda não trocam dados entre si: a linha do tempo mostra o caminho e quem age, não muda o conteúdo de cada celular.
 var CELULARES = [["rep","Representante"], ["rev","Revendedora"]].concat(ACESSOS.map(function(a){ return [a.k, a.titulo]; })).concat([["mot","Motoboy"], ["cli","Cliente final"]]);
 var NOME_CEL = {}, TODOS = {}, PRINCIPAIS = {}; CELULARES.forEach(function(c){ NOME_CEL[c[0]] = c[1]; TODOS[c[0]] = true; });
-["rep","rev","dey","con","mon","bip","mot","cli"].forEach(function(k){ PRINCIPAIS[k] = true; });   // sem fluxo escolhido = estes 8 (cabem na tela); com fluxo = só os dele; "Todos" liga os 11
+["rep","rev"].forEach(function(k){ PRINCIPAIS[k] = true; });   // 02/11/2026 (Marcus): a tela SEMPRE começa só com o app da representante e o da revendedora abertos; o resto fica fechado (liga em Apps e fluxos). Com fluxo = só os dele; "Todos" liga os 11
 // Fluxos de exemplo montados com as regras do sistema; o Marcus ajusta nomes, passos e participantes.
 var FLUXOS = [
   {nome:"Kit novo + venda + entrega", pistas:["rep","rev","dey","con","mon","bip","mot","cli"], passos:[

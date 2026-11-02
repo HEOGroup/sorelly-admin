@@ -1,25 +1,17 @@
-# sorellychat: pendências
+# SorellyChat: pendências
 
-O que o diário de decisões (`docs/DECISOES.md`) diz que **ainda falta ou está em aberto** neste setor. Levantado em 02/11/2026 por palavras como pendente, a confirmar, falta. É um ponto de partida: confira, risque o que já foi feito e acrescente o que faltar.
-Pendência nova entra aqui e no diário geral, no mesmo dia.
+Atualizado em 02/11/2026. Item resolvido sai daqui e vai para `decisoes.md`.
+Lista tirada do diário por palavras como "pendente" e "falta". **Ainda não revisada com o Marcus: parte pode já estar feita.** Texto completo: diário geral, na linha indicada. "Quem decide" é uma sugestão pelo assunto.
 
-- [ ] **Marcus (29/10/2026): o horário estava quebrado (17:48, 17:18...).** Quem trabalha de seg a sex sai **entrada + 10h** (08:00 → 18:00; 07:30 → 17:30; 07:00 → 17:00; 08:30 → 18:30). Seg a sáb segue 8h20 depois da entrada (08:00 → 16:20). Código: `horariosDoRh` e `horariosParaChat` em `domain/rh.js`. A lista do servidor (`chathor`…
-  - de: 29/10/2026 (SorellyChat · horário de saída das funcionárias)  (diário, linha 63)
-- [ ] **Marcus achou as 8 situações complexas e pediu o fluxo dos dois lados (29/10/2026).** Situações: Em análise, Mudança feita, testar, Precisa de melhoria, Concluída, Recusada. **Lado de quem responde (Marcus e Leonardo):** escolhe Em análise, "Mudança feita, testar" (já executei, ela pode testar) ou Recusada, e escreve o que fez …
-  - de: 29/10/2026 (Melhorias · fluxo simples de situação, dos dois lados)  (diário, linha 96)
-- [ ] **Primeiro pedido real do sistema de melhorias = o da Michele** (kits novos, só 1 de 9 revendedoras aparecia para a Jessica Tobias; foto em `public/melhorias/michele-kit-novo.jpg`, semente `SEMENTE.michele1` em `domain/melhorias.js`, situação Em análise). **Pedido com foto abre a foto grande na hora** (Marcus, 29/10/2026); cliqu…
-  - de: 29/10/2026 (Melhorias · primeiro pedido real e foto grande)  (diário, linha 114)
-- [ ] **SorellyChat de verdade (Marcus, 27/10/2026):** com o servidor ligado o chat guarda conversas e mensagens no banco (tabelas `sorelly.chat_conv` e `sorelly.chat_msg`, rotas `/api/chat/*`), sem as conversas e respostas de demonstração. Cada pessoa é o contato do chat ligado à sua conta; só membros leem e escrevem numa conversa. A…
-  - de: 27/10/2026 (trecho)  (diário, linha 195)
-- [ ] **Resumo fiscal (WhatsApp):** o Marcus manda um texto mensal "RESUMO FISCAL <ano> – GRUPO SORELLY" com, por CNPJ (Sorelly Atacadista, Serenity, Mayz, Axis Joias): vendas no ano, vendas no mês e quanto falta para o sublimite do Simples (R$ 3.600.000,00). O módulo Fiscal deve gerar esse texto sozinho.
-  - de: 16/10/2026 (trecho)  (diário, linha 310)
-- [ ] 29/10/2026 (Top 50 oficial): a planilha TOP 50 REVENDEDORAS.xlsx (aba Top 50 Setembro) é a lista das revendedoras com direito a realizar reposições e encomendas diretamente pelo setor de encomendas (50 nomes; colunas: revendedora, última venda, representante, data do acerto, situação, responsável pela montagem, observações). O s…
-  - de: 29/10/2026 · Início só com Setores; Acesso básico  (diário, linha 1447)
-- [ ] Tela Pedidos do Cadastro de peças (29/10/2026, Marcus): escolheu os layouts A + B juntos (Quadro e Planilha, com o seletor Quadro | Planilha, como nos Kits novos). Etapas do pedido: Escolha, Separação, Fechado, Banho, Chegou (a etapa "Romaneio" virou "Separação": o pedido fecha no romaneio). Prazos de partida (a confirmar): Sepa…
-  - de: 29/10/2026 · Início só com Setores; Acesso básico  (diário, linha 1447)
-- [ ] Pedidos de bruto no sistema (29/10/2026, Marcus): a tela Pedidos do Cadastro de peças foi trocada pelo Quadro + Planilha aprovado (`pages/cadpecas/Pedidos.js`; regras em `domain/cadastro-pecas.js`: ETAPAS_PED, etapaPed, statusDaEtapa, atrasadoPed). Novo status "Separando" (etapa Separação) e campo `statusEm` (data em que entrou …
-  - de: 29/10/2026 · Início só com Setores; Acesso básico  (diário, linha 1447)
-- [ ] ESTRUTURA DO SETOR, correção do Marcus (29/10/2026): o setor precisa de uma TELA MÃE que mostra o fluxo dos pedidos, uma tela para MONTAR o pedido (comprar), uma para ESCOLHER O BANHO e uma para DEFINIR as regras. Visão: sistema ponta a ponta com os fornecedores. O fornecedor sobe as fotos num lugar do sistema (em vez do WhatsAp…
-  - de: 29/10/2026 · Início só com Setores; Acesso básico  (diário, linha 1447)
-- [ ] Tela Montar pedido (29/10/2026): desenhada em 4 layouts (A catálogo em grade + carrinho; B lista com quantidade na linha; C passo a passo; D foto a foto), aguardando o Marcus escolher. Rascunho local (tem foto e preço reais, fora do Git): `docs/rascunhos/montagem/montar-pedido-4-layouts.local.html`. Regras usadas no desenho, a confirmar:…
-  - de: 29/10/2026 · Início só com Setores; Acesso básico  (diário, linha 1447)
+| # | Pendência | Quem decide | Observação |
+|---|---|---|---|
+| 1 | Marcus (29/10/2026): o horário estava quebrado (17:48, 17:18...). | Leonardo | De 29/10/2026, diário linha 63. A conferir. |
+| 2 | Marcus achou as 8 situações complexas e pediu o fluxo dos dois lados (29/10/2026). | Leonardo | De 29/10/2026, diário linha 96. A conferir. |
+| 3 | Primeiro pedido real do sistema de melhorias = o da Michele | Marcus | De 29/10/2026, diário linha 114. A conferir. |
+| 4 | SorellyChat de verdade (Marcus, 27/10/2026) | Leonardo | De 27/10/2026, diário linha 195. A conferir. |
+| 5 | Resumo fiscal (WhatsApp): o Marcus manda um texto mensal "RESUMO FISCAL <ano> – GRUPO SORELLY" com, por CNPJ (Sorelly Atacadista, Serenity, Mayz, Axis Joias): vendas no ano, vendas no mês e quanto… | Marcus | De 16/10/2026, diário linha 310. A conferir. |
+| 6 | 29/10/2026 (Top 50 oficial): a planilha TOP 50 REVENDEDORAS.xlsx (aba Top 50 Setembro) é a lista das revendedoras com direito a realizar reposições e encomendas diretamente pelo setor de encomendas… | Marcus | De 29/10/2026, diário linha 1447. A conferir. |
+| 7 | Tela Pedidos do Cadastro de peças (29/10/2026, Marcus): escolheu os layouts A + B juntos (Quadro e Planilha, com o seletor Quadro / Planilha, como nos Kits novos). Etapas do pedido: Escolha,… | Marcus | De 29/10/2026, diário linha 1447. A conferir. |
+| 8 | Pedidos de bruto no sistema (29/10/2026, Marcus): a tela Pedidos do Cadastro de peças foi trocada pelo Quadro + Planilha aprovado (pages/cadpecas/Pedidos.js; regras em domain/cadastro-pecas.js:… | Marcus | De 29/10/2026, diário linha 1447. A conferir. |
+| 9 | ESTRUTURA DO SETOR, correção do Marcus (29/10/2026): o setor precisa de uma TELA MÃE que mostra o fluxo dos pedidos, uma tela para MONTAR o pedido (comprar), uma para ESCOLHER O BANHO e uma para… | Marcus | De 29/10/2026, diário linha 1447. A conferir. |
+| 10 | Tela Montar pedido (29/10/2026): desenhada em 4 layouts (A catálogo em grade + carrinho; B lista com quantidade na linha; C passo a passo; D foto a foto), aguardando o Marcus escolher. Rascunho local… | Marcus | De 29/10/2026, diário linha 1447. A conferir. |

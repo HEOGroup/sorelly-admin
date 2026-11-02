@@ -3,6 +3,18 @@
 Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam de representantes, da mais nova para a mais antiga.
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 
+- **02/11/2026** (Marcus, diário geral, seção de 02/11): **Combustível só para quem teve acerto no período (Marcus, 02/11/2026).** A representante precisa enviar o km até a data agendada (o corte do pagamento). Representante que também é funcionária RECEBE combustível, como as outras.
+- **02/11/2026** (Marcus, diário geral, seção de 02/11): **Fim dos R$ 200,00 fixos (Marcus, 02/11/2026):** sem km no prazo, o combustível não é pago naquela data e passa para a outra data. Quem faz poucos atendimentos ainda sai no lucro. **AINDA NÃO ESTÁ NO CÓDIGO:** `comissoes.js` (`combSemEnvio`) continua pagando R$ 200,00; falta confirmar como o km enviado fora do prazo é pago na data seguinte.
+- **02/11/2026** (Marcus, diário geral, seção de 02/11): **Compras de joias das representantes podem ser descontadas da comissão (Marcus, 02/11/2026).** Falta definir como (qual data, parcelas, limite). Hoje a tela Compras de joias não desconta nada.
+- **02/11/2026** (Marcus, diário geral, seção de 02/11): **Valor em reais para quem tem 10% (Marcus, 02/11/2026):** aceito; a representante vê o valor da comissão dela em reais e não o percentual.
+- **02/11/2026** (Marcus, diário geral, seção de 02/11): **Sem a foto do expositor, a comissão inteira do kit novo + expositor fica pendente (Marcus, 02/11/2026).** Já é assim no código.
+- **02/11/2026** (Marcus): **Fim dos R$ 200,00 fixos do combustível. FEITO.** Sem km no prazo, não paga naquela data; o km enviado depois é pago na próxima data. Período sem acerto não ganha combustível. Detalhe no diário geral.
+- **02/11/2026** (Marcus): **Compras de joias descontam da comissão (só decisão, não está no código):** parcela mínima R$ 50,00; dívida em aberto máxima R$ 1.000,00 por representante; se parar de trabalhar, a última comissão desconta o que faltar; sem comissão para cobrir, alerta na hora e a parcela fica para a data seguinte; depende da negociação com o setor da Amanda. Detalhe no diário geral.
+- **02/11/2026** (Marcus): **A comissão é sempre sobre o acerto; o desconto sai depois. Nota promissória continua travando a comissão.**
+- **02/11/2026** (Marcus): **Representante que sai:** o RH marca a saída; a ordem com as revendedoras dela vai para a Ana Maria, que passa a outras representantes. Ainda não está no código. Detalhe no diário geral.
+- **02/11/2026** (Marcus): **A comissão RETIDA de quem sai não é paga** (a parte que a revendedora ainda não pagou). Ainda não está no código. Detalhe no diário geral.
+- **02/11/2026** (Marcus): **Acerto + kit (renovação) paga só a comissão do acerto.** O R$ 20,00 e o R$ 35,00 são só da entrega de kit novo.
+- **02/11/2026** (Marcus): **Kit novo = R$ 20,00; kit novo + expositor = R$ 35,00** (não são mais provisórios). A representante monta o expositor e envia a foto no app; sem a foto, a comissão do kit novo + expositor fica pendente. Detalhe no diário geral, seção de 02/11/2026.
 - **01/11/2026** (Marcus, hoje): **Pix direto é só uma forma de pagar a representante. Não muda a comissão.** Isso fecha o item "Pix direto" que aparece como "em aberto" na decisão de 28/10 abaixo.
 - **01/11/2026** (Marcus, hoje): o texto das Regras e do manual **continua em 8%** mesmo que a representante tenha outro percentual. As outras NÃO podem saber que algumas têm 10%. Mudar o percentual de uma representante em "Configurar comissões" não altera esse texto.
 

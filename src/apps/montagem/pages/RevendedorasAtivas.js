@@ -124,7 +124,7 @@ var Ln = function(cols, vals, cab, k, onClick, extra){ return e("div",{key:k, on
 
 var SEL = H+" rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";
 // seleção compacta sem rótulo em cima: a primeira opção é o próprio nome do filtro
-var Sel = function(nome, valor, opcoes, onChange, aria, ouro){ var ops = [["", nome]].concat(opcoes.filter(function(o){ return o[0]!==""; }));
+var Sel = function(nome, valor, opcoes, onChange, aria, ouro){ var ops = (nome===null ? [] : [["", nome]]).concat(opcoes.filter(function(o){ return o[0]!==""; }));   // nome null = sem a opção "Todos" (Resultado do mês: sempre um mês escolhido)
   return e("select",{key:nome, value:valor, "aria-label":aria, title:aria, onChange:function(ev){ onChange(ev.target.value); }, className:SEL+" max-w-[14rem] truncate "+(valor ? "border-primary text-primary " : "")+(ouro ? "border-[#B8862B]" : "")}, ops.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })); };
 var FIL0 = {q:"", rep:"", uf:"", sit:"", dev:"", nc:"", grupo:"", modelo:"", de:"", ate:""};
 function RevendedorasTela(props){

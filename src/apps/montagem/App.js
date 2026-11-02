@@ -10,6 +10,7 @@ import { rotAlertas } from "@/apps/montagem/domain/rotina";
 import * as srv from "@/apps/montagem/lib/api";
 import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
+import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
@@ -37,6 +38,7 @@ import { setPlano } from "@/apps/montagem/lib/estilo-plano";
 import { BuscaTela } from "@/apps/montagem/components/busca-tela";
 import { iniciarAtalhos } from "@/apps/montagem/lib/atalhos-tela";
 import { AvisoAlertas } from "@/apps/montagem/components/aviso-alertas";
+import { AvisoMelhorias } from "@/apps/montagem/components/aviso-melhorias";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
 import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
@@ -85,6 +87,21 @@ function botoesAgrupados(areas, fazer, cor){
     e("span",{className:"px-1 text-[10px] font-bold uppercase leading-none tracking-[.14em]", style:{color:cor+"cc"}}, g),
     e("div",{className:"flex flex-wrap items-center gap-1"}, mapa[g])); });
 }
+function AvisoOutraJanela(p){
+  if(!p.on) return null;
+  return e("div",{role:"alert", className:"fixed bottom-14 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-red-500/60 bg-black/90 px-3 py-2 text-[13px] text-white"},
+    e("span",null,"Outra janela do sistema está aberta neste navegador e grava por cima dos seus dados. Feche as outras janelas."),
+    e("button",{onClick:p.fechar, className:"h-8 shrink-0 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground hover:opacity-90"},"Entendi"));
+}
+
+function AvisoSemEspaco(p){
+  if(!p.on) return null;
+  var temCopia = false; try{ temCopia = !!localStorage.getItem("sorelly_copia_antes_servidor"); }catch(x){}
+  return e("div",{role:"alert", className:"fixed bottom-3 left-1/2 z-[60] flex -translate-x-1/2 items-center gap-3 rounded-lg border border-red-500/60 bg-black/90 px-3 py-2 text-[13px] text-white"},
+    e("span",null,"Sem espaço para salvar neste navegador. O que for feito agora pode se perder ao recarregar."),
+    temCopia && e("button",{onClick:p.liberar, className:"h-8 shrink-0 rounded-lg bg-primary px-3 text-[13px] font-semibold text-primary-foreground hover:opacity-90"},"Apagar cópia antiga"));
+}
+
 function App(){
   // a conta que entrou pode trazer o grupo de acesso, o nome e o contato do chat (funcionário fora da lista de 43 nomes)
   if(srv.apiAtiva() && srv.pessoaDaConta()){ definirContaEquipe(Number(srv.pessoaDaConta()), srv.grupoDaConta(), srv.nomeDaConta()); definirCidConta(Number(srv.pessoaDaConta()), srv.cidDaConta()); }
@@ -115,6 +132,8 @@ function App(){
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)
   var loc = useLocation();
+  // 02/11/2026 (Marcus): toda aba nova abre já no COMEÇO dela, logo abaixo da barra do topo (a barra é fixa), em vez de herdar a rolagem da aba anterior.
+  useEffect(function(){ try{ window.scrollTo(0, 0); }catch(x){} }, [loc.pathname]);
   var naURL = abaDoCaminho(loc.pathname), abaURL = naURL.aba, breveURL = naURL.breve;
   var mn = useState(false), menu = mn[0], setMenu = mn[1];
   // botão flutuante do SorellyChat: desligado por padrão; só aparece depois que o Marcus liga no botão do topo (lembra a escolha)
@@ -144,9 +163,20 @@ function App(){
   var alternarBarra = function(v){ setBarraAberta(v); setAreaTopo(null); try{ localStorage.setItem("sorelly_barra_aberta", v ? "1" : "0"); }catch(x){} };
   var at = useState(null), areaTopo = at[0], setAreaTopo = at[1];   // lista de telas aberta na barra do topo ({i, x, y})
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
-  useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); }catch(x){} }, [s]);
+  // Salvar no navegador. Se o espaço acabar (limite de ~10 MB), AVISA na tela em vez de falhar calado (01/11/2026: acerto sumia ao recarregar)
+  var sp = useState(false), semEspaco = sp[0], setSemEspaco = sp[1];
+  var salvar = function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
+  var liberarEspaco = function(){ try{ localStorage.removeItem("sorelly_copia_antes_servidor"); localStorage.removeItem("sorelly_copia_antes_servidor_em"); }catch(x){} salvar(); };
+  useEffect(function(){ salvar(); }, [s]);
+  // Duas janelas do sistema no mesmo navegador dividem o MESMO armazenamento e uma grava por cima da outra (acerto sumia). O evento "storage" só chega aqui quando OUTRA janela grava: avisa.
+  var ow = useState(false), outraJanela = ow[0], setOutraJanela = ow[1];
+  // Aparece no máximo uma vez a cada 10 minutos e some sozinho em 8 segundos (só para não incomodar).
+  useEffect(function(){ var ultimo = 0, tm = null;
+    var ouve = function(ev){ if(ev.key!==CHAVE || Date.now()-ultimo<600000) return; ultimo = Date.now(); setOutraJanela(true); clearTimeout(tm); tm = setTimeout(function(){ setOutraJanela(false); }, 8000); };
+    window.addEventListener("storage", ouve); return function(){ window.removeEventListener("storage", ouve); clearTimeout(tm); }; }, []);
   useEffect(function(){ document.documentElement.classList.add("app-montagem");
     return function(){ document.documentElement.classList.remove("app-montagem"); }; }, []);
+  definirFeriadosAgenda(s.rh && s.rh.config && s.rh.config.feriados);   // feriados do RH fecham a agenda do atendimento interno (Deysiane, 01/11/2026)
   definirAutorizacoes(s.autoriz);   // quem pode fazer cada ação (RH → Acessos e autorizações)
   definirBlocos(s.acessosBlocos);   // partes de cada tela que o RH liberou por grupo
   // horário de trabalho do SorellyChat = entrada e escala do cadastro do RH. Quem não tem o RH (a maioria) usa a cópia guardada no servidor, que a Diretoria envia sozinha ao abrir o sistema.
@@ -158,7 +188,8 @@ function App(){
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
-  if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);   // pedir melhorias é de todo mundo (28/10/2026)
+  if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);
+  if(permitidas && permitidas.indexOf("aulas")<0) permitidas = permitidas.concat(["aulas"]);   // as aulas do setor são de todo mundo (cada um vê só as do seu setor)   // pedir melhorias é de todo mundo (28/10/2026)
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16" || srv.pessoaDaConta()==="44";   // 44 = Leonardo: 100% igual ao Marcus (29/10/2026)
@@ -168,13 +199,13 @@ function App(){
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
-  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias"];
+  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas"];
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias"].indexOf(k)>=0; });
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas"].indexOf(k)>=0; });
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
@@ -240,7 +271,7 @@ function App(){
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
-    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}));
+    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
@@ -308,10 +339,11 @@ function App(){
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
-    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(BuscaTela),
+    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar
+    e(AvisoMelhorias,{abrirMelhorias:function(){ navigate(caminhoDaAba("melhorias")); setColArea(null); }}),   // resposta nova nas Melhorias (02/11/2026)
     e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }, abrirTela:function(aba){ navigate(caminhoDaAba(aba)); setColArea(null); }}));
 }
 

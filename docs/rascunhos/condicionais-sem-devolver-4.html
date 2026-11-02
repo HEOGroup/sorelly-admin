@@ -1,0 +1,225 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condicionais · 4 modelos sem devolver</title>
+<style>
+  :root{
+    --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --papel:#FBF6E9; --linha:#E7DCC0; --texto:#1F1A10; --ouro:#C9A13B; --ouro-escuro:#8A6A14;
+    --ouro-claro:#FFF3CF; --verde:#15803D; --vermelho:#B91C1C; --vermelho-claro:#FEE2E2; --branco:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:680px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:390px}
+
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .cab{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .cab .titulo{font-weight:700;font-size:13px}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-weight:700;padding:2px 10px;font-size:11px;margin-left:auto}
+  .rot{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ouro-escuro)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700}
+  .grande{font-size:20px}
+  button,input{font:inherit;color:inherit}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:10px;background:var(--papel);padding:0 10px;min-width:0;width:100%}
+  .campo:focus{outline:2px solid var(--ouro)}
+  .btn{height:32px;border:0;border-radius:10px;background:var(--ouro);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.vazio{background:transparent;border:1px dashed var(--ouro);color:var(--ouro-escuro)}
+  .passo{width:32px;height:32px;border-radius:10px;background:var(--papel);border:1px solid var(--linha);font-weight:700;font-size:20px;line-height:1;cursor:pointer;flex:none}
+  .passo.rapido{width:auto;padding:0 10px;font-size:13px}
+  .check{width:18px;height:18px;accent-color:var(--ouro)}
+  .linha{display:flex;align-items:center;gap:8px}
+  .folga{flex:1;min-width:0}
+  .oculto{display:none!important}
+  .item{display:flex;align-items:center;gap:10px;height:36px;border-bottom:1px solid var(--linha);cursor:pointer}
+  .item:last-child{border-bottom:0}
+  .interruptor{position:relative;width:38px;height:22px;border-radius:999px;background:#D9CFB3;flex:none;border:0}
+  .interruptor::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+  .interruptor.on{background:var(--ouro)}
+  .interruptor.on::after{left:19px}
+  .erro{margin-top:8px;border-radius:10px;padding:6px 10px;font-weight:700;background:var(--vermelho-claro);color:#7F1D1D}
+
+  /* 1 · lista + rodapé */
+  .rodape{margin-top:6px;border-top:2px solid var(--ouro);padding-top:8px;display:flex;flex-direction:column;gap:6px}
+  .rodape .l{display:flex;align-items:center;justify-content:space-between;min-height:32px}
+
+  /* 2 · dois cartões */
+  .dois{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+  .termo{background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:8px;text-align:center;display:flex;flex-direction:column;gap:2px}
+  .termo small{font-size:11px;color:var(--ouro-escuro)}
+
+  /* 3 · tabela */
+  table{width:100%;border-collapse:collapse}
+  th{height:30px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ouro-escuro);text-align:left;border-bottom:2px solid var(--ouro)}
+  td{height:32px;border-bottom:1px solid var(--linha)}
+  th.d,td.d{text-align:right}
+  tfoot td{font-weight:700;background:var(--papel);border-bottom:0}
+
+  /* 4 · chips + campo */
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{height:32px;display:flex;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:999px;background:var(--papel);padding:0 12px;cursor:pointer}
+  .chip.on{background:var(--ouro-claro);border-color:var(--ouro);font-weight:700}
+  .foco{margin-top:10px;background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:10px;text-align:center}
+</style>
+</head>
+<body>
+<h1>Condicionais · 4 modelos sem "devolver"</h1>
+<p class="sub">Este bloco mostra só: as condicionais, o <b>total conferido</b> e as <b>peças vendidas</b>. O "devolver" fica para o bloco final, depois dos brindes e das trocas. Tudo funciona: marque, digite e adicione. Dados inventados.</p>
+
+<div class="grade">
+
+  <!-- 1 -->
+  <section class="caixa" id="M1">
+    <h2>1 · Lista com rodapé de totais</h2>
+    <p class="nota">Interruptores nas condicionais. No rodapé, uma linha dourada fecha: total conferido e peças vendidas.</p>
+    <div class="tel"><div class="cart">
+      <div class="cab"><span class="titulo">Condicionais</span><span class="selo"><span data-c="conf">0</span> peças</span></div>
+      <div data-lista></div>
+      <div class="linha oculto" style="margin:8px 0" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>OK</button>
+      </div>
+      <button class="btn vazio" style="margin-top:6px" data-abre>+ Condicional</button>
+      <div class="rodape">
+        <div class="l"><span>Total conferido</span><span class="num grande" data-c="conf">0</span></div>
+        <div class="l"><span>Peças vendidas</span><div class="linha"><button class="passo" data-menos>−</button><input class="campo num" style="width:72px;text-align:center" inputmode="numeric" data-vend><button class="passo" data-mais>+</button></div></div>
+      </div>
+      <div class="erro oculto" data-erro></div>
+    </div></div>
+  </section>
+
+  <!-- 2 -->
+  <section class="caixa" id="M2">
+    <h2>2 · Dois cartões no topo</h2>
+    <p class="nota">Só dois números, lado a lado: o que conferiu (fixo) e o que vendeu (digita). Condicionais embaixo.</p>
+    <div class="tel"><div class="cart">
+      <div class="dois">
+        <div class="termo"><span class="rot">Conferido</span><span class="num grande" data-c="conf">0</span><small data-c="qtd"></small></div>
+        <div class="termo"><span class="rot">Vendidas</span><input class="campo num grande" style="height:36px;text-align:center;padding:0 2px;background:#fff" inputmode="numeric" data-vend><small>digite o total</small></div>
+      </div>
+      <div data-lista></div>
+      <div class="linha oculto" style="margin:8px 0" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>OK</button>
+      </div>
+      <button class="btn vazio" style="margin-top:6px" data-abre>+ Condicional</button>
+      <div class="erro oculto" data-erro></div>
+    </div></div>
+  </section>
+
+  <!-- 3 -->
+  <section class="caixa" id="M3">
+    <h2>3 · Tabela compacta</h2>
+    <p class="nota">Igual às telas do Financeiro: uma linha por condicional e dois totais no rodapé.</p>
+    <div class="tel"><div class="cart">
+      <table>
+        <thead><tr><th style="width:34px"></th><th>Condicional</th><th class="d">Peças</th></tr></thead>
+        <tbody data-lista></tbody>
+        <tbody>
+          <tr class="oculto" data-novo>
+            <td></td>
+            <td><input class="campo" placeholder="Nº" inputmode="numeric" data-n></td>
+            <td class="d"><div class="linha" style="justify-content:flex-end"><input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:70px"><button class="btn" data-ok>OK</button></div></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td></td><td>Total conferido</td><td class="d num" data-c="conf">0</td></tr>
+          <tr><td></td><td>Peças vendidas</td><td class="d"><input class="campo num" style="width:80px;text-align:right" inputmode="numeric" data-vend></td></tr>
+        </tfoot>
+      </table>
+      <button class="btn vazio" style="width:100%;margin-top:10px" data-abre>+ Adicionar condicional</button>
+      <div class="erro oculto" data-erro></div>
+    </div></div>
+  </section>
+
+  <!-- 4 -->
+  <section class="caixa" id="M4">
+    <h2>4 · Botões redondos e um campo</h2>
+    <p class="nota">Condicionais viram botões que se marcam com um toque. Embaixo, um único campo grande: peças vendidas.</p>
+    <div class="tel"><div class="cart">
+      <div class="cab"><span class="titulo">Condicionais conferidas</span><span class="selo"><span data-c="conf">0</span> peças</span></div>
+      <div class="chips" data-lista></div>
+      <div class="linha oculto" style="margin-top:8px" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>OK</button>
+      </div>
+      <button class="btn vazio" style="margin-top:8px" data-abre>+ Condicional</button>
+      <div class="foco">
+        <span class="rot">Total de peças vendidas</span>
+        <div class="linha" style="justify-content:center;margin-top:6px">
+          <button class="passo rapido" data-delta="-10">−10</button>
+          <button class="passo" data-menos>−</button>
+          <input class="campo num" style="width:96px;height:44px;text-align:center;font-size:20px;background:#fff" inputmode="numeric" data-vend>
+          <button class="passo" data-mais>+</button>
+          <button class="passo rapido" data-delta="10">+10</button>
+        </div>
+      </div>
+      <div class="erro oculto" data-erro></div>
+    </div></div>
+  </section>
+
+</div>
+
+<script>
+var dados = [ {n:"99001", p:120, on:true}, {n:"99002", p:60, on:false}, {n:"99003", p:45, on:false} ];
+var vendidas = 85;
+var soma = function(){ return dados.filter(function(x){ return x.on; }).reduce(function(t,x){ return t+x.p; }, 0); };
+var nOn = function(){ return dados.filter(function(x){ return x.on; }).length; };
+
+function lista(sec){
+  var id = sec.id, el = sec.querySelector("[data-lista]"); el.innerHTML = "";
+  dados.forEach(function(x, i){
+    var d;
+    if(id==="M1" || id==="M2"){
+      d = document.createElement("div"); d.className = "item";
+      d.innerHTML = "<button class='interruptor"+(x.on?" on":"")+"' aria-label='Marcar'></button><b class='folga'>Condicional "+x.n+"</b><span class='num'>"+x.p+" peças</span>";
+    } else if(id==="M3"){
+      d = document.createElement("tr");
+      d.innerHTML = "<td><input type='checkbox' class='check'"+(x.on?" checked":"")+"></td><td>"+x.n+"</td><td class='d num'>"+x.p+"</td>";
+    } else {
+      d = document.createElement("button"); d.className = "chip"+(x.on?" on":"");
+      d.innerHTML = (x.on?"✓ ":"")+x.n+" · <span class='num'>"+x.p+"</span>";
+    }
+    d.addEventListener("click", function(ev){ if(ev.target.tagName==="INPUT" && ev.target.type!=="checkbox") return; dados[i].on = !dados[i].on; atualiza(); });
+    el.appendChild(d);
+  });
+}
+
+function atualiza(){
+  var conf = soma();
+  document.querySelectorAll(".caixa").forEach(function(sec){
+    lista(sec);
+    sec.querySelectorAll("[data-c=conf]").forEach(function(n){ n.textContent = conf; });
+    sec.querySelectorAll("[data-c=qtd]").forEach(function(n){ n.textContent = nOn()===1 ? "de 1 condicional" : "de "+nOn()+" condicionais"; });
+    sec.querySelectorAll("[data-vend]").forEach(function(i){ if(document.activeElement!==i) i.value = vendidas; });
+    var er = sec.querySelector("[data-erro]");
+    if(vendidas>conf){ er.textContent = "Vendeu "+(vendidas-conf)+" peças a mais do que conferiu. Confira as condicionais."; er.classList.remove("oculto"); } else er.classList.add("oculto");
+  });
+}
+
+document.querySelectorAll(".caixa").forEach(function(sec){
+  sec.querySelectorAll("[data-vend]").forEach(function(i){ i.addEventListener("input", function(){ vendidas = parseInt(i.value.replace(/\D/g,""),10)||0; atualiza(); }); });
+  var m = sec.querySelector("[data-menos]"), p = sec.querySelector("[data-mais]");
+  if(m) m.addEventListener("click", function(){ vendidas = Math.max(0, vendidas-1); atualiza(); });
+  if(p) p.addEventListener("click", function(){ vendidas += 1; atualiza(); });
+  sec.querySelectorAll("[data-delta]").forEach(function(b){ b.addEventListener("click", function(){ vendidas = Math.max(0, vendidas + parseInt(b.dataset.delta,10)); atualiza(); }); });
+  var ab = sec.querySelector("[data-abre]"), nv = sec.querySelector("[data-novo]");
+  ab.addEventListener("click", function(){ nv.classList.toggle("oculto"); });
+  sec.querySelector("[data-ok]").addEventListener("click", function(){
+    var n = nv.querySelector("[data-n]").value.trim(), pc = parseInt(nv.querySelector("[data-p]").value,10)||0;
+    if(!n || pc<=0) return; dados.push({n:n, p:pc, on:true}); nv.querySelector("[data-n]").value = ""; nv.querySelector("[data-p]").value = ""; nv.classList.add("oculto"); atualiza();
+  });
+});
+atualiza();
+</script>
+</body>
+</html>

@@ -96,7 +96,9 @@ function Fechamento(p){
   var podeAdd = fin && rs.aposCorte && valor>0 && f.conta && rs.falta>0.009 && valor <= rs.falta+0.009;
   var campo = function(t2, filho){ return e("label",{className:"flex flex-col gap-1"}, e("span",{className:"text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"}, t2), filho); };
   var item = function(t2, v, cor, sub){ return e("div",{className:"flex flex-col"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground"}, t2), e("b",{className:MONO+" text-[15px] "+(cor||"")}, v), sub && e("span",{className:"text-[11.5px] text-muted-foreground"}, sub)); };
-  var kmTxt = rs.combFixo ? "sem km no prazo · valor fixo"
+  var kmTxt = rs.itens.length===0 ? "sem atendimentos no período"
+    : rs.kmTarde ? "km enviado fora do prazo · paga na próxima data"
+    : rs.kmAtras>0 && !(rs.km>0) ? "inclui o km do período anterior, enviado fora do prazo"
     : rs.km>0 ? arred(rs.km)+" km "+(rs.kmModo==="dias" ? "dia a dia" : "total")+" · "+(rs.preco>0 ? arred(rs.litros)+" L × "+BK(rs.preco) : "falta o preço da gasolina")
     : "a representante ainda não enviou o km";
   return e("div",{className:"flex flex-col gap-2.5 border-t-2 border-[#C9AA6A]/50 bg-linear-to-r from-[#2A2013] to-[#3A2D18] px-4 py-3"},

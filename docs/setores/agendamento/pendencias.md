@@ -1,13 +1,11 @@
-# agendamento: pendências
+# Agendamento: pendências
 
-O que o diário de decisões (`docs/DECISOES.md`) diz que **ainda falta ou está em aberto** neste setor. Levantado em 02/11/2026 por palavras como pendente, a confirmar, falta. É um ponto de partida: confira, risque o que já foi feito e acrescente o que faltar.
-Pendência nova entra aqui e no diário geral, no mesmo dia.
+Atualizado em 02/11/2026. Item resolvido sai daqui e vai para `decisoes.md`.
+Lista tirada do diário por palavras como "pendente" e "falta". **Ainda não revisada com o Marcus: parte pode já estar feita.** Texto completo: diário geral, na linha indicada. "Quem decide" é uma sugestão pelo assunto.
 
-- [ ] **Carregar de 27/10 = 0 e A realizar = 303 (Marcus), travados no código** (`aplicaFat27`, `fat27V` 3): previstos de outubro = 1.583 feitos + 0 + 303 = 1.886. Os 303 batem com a DevMaster: revendedoras com kit principal aberto e data prevista até 31/10, **incluindo as atrasadas** (contar só de hoje em diante dava 162, errado). **…
-  - de: 27/10/2026 (Acertos que faltam, Carregar e Agendamento)  (diário, linha 164)
-- [ ] **Alinhamento das saídas de outubro (Marcus, 24/10/2026):** o resumo da Letícia/Marcus de 24/10 é a referência das saídas: **92 confirmadas para novembro, 0 de outubro direto para dezembro** (os 19 de dezembro eram acertos de novembro); podem subir a 99 (em análise e saídas da empresa), 101 (listas novas de Moroz e Anne) e 102 (…
-  - de: 24/10/2026 (trecho)  (diário, linha 229)
-- [ ] **Pendente de decisão:** critério de manter o prazo (mínimo em reais, % de crescimento ou os dois; sugestão: mínimo em reais), janela da nova data (dias 1 a 10 ou 1 a 4), teto de revendedoras por representante (sugestão 160), comissão da representante sobre acerto adiado, o que a coluna "ANA DO RH CHAMOU?" controla, e se as 25 a…
-  - de: 23/10/2026 (trecho)  (diário, linha 237)
-- [ ] **Link de pagamento, regras por valor:** mínimo R$ 80,00 · até R$ 80,00 = 1x · R$ 80,01 a R$ 400,00 = até 4x · R$ 400,01 a R$ 1.500,00 = até 6x · acima de R$ 1.500,00 = até 10x, sempre sem juros e com parcela mínima de R$ 50,00. Substitui "mínimo R$ 100 e 6x". Pendente: taxas dos links Sicredi para 7x a 10x (e Link 34/59 de 2x a…
-  - de: 19/10/2026 (trecho)  (diário, linha 291)
+| # | Pendência | Quem decide | Observação |
+|---|---|---|---|
+| 1 | Carregar de 27/10 = 0 e A realizar = 303 (Marcus), travados no código | Marcus | De 27/10/2026, diário linha 164. A conferir. |
+| 2 | Alinhamento das saídas de outubro (Marcus, 24/10/2026) | Marcus | De 24/10/2026, diário linha 229. A conferir. |
+| 3 | Pendente de decisão: critério de manter o prazo (mínimo em reais, % de crescimento ou os dois; sugestão: mínimo em reais), janela da nova data (dias 1 a 10 ou 1 a 4), teto de revendedoras por… | Marcus | De 23/10/2026, diário linha 237. A conferir. |
+| 4 | Link de pagamento, regras por valor: mínimo R$ 80,00 · até R$ 80,00 = 1x · R$ 80,01 a R$ 400,00 = até 4x · R$ 400,01 a R$ 1.500,00 = até 6x · acima de R$ 1.500,00 = até 10x, sempre sem juros e com… | Marcus | De 19/10/2026, diário linha 291. A conferir. |

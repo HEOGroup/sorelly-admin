@@ -178,7 +178,12 @@ function comBaixas(l){
 function itensEmpresa(){
   var l = LANC_ITENS.length ? baseItens().concat(LANC_ITENS) : baseItens();
   l = PF_ITENS.length ? l.filter(function(i){ return !PF_OCULTOS[i.id]; }).concat(PF_ITENS) : l;
-  return comBaixas(l);
+  return comFilial(comBaixas(l));
+}
+// CNPJ trocado à mão (Nayale, 02/11/2026): guardado em CLASSE com a chave "fil|<conta>"; vale também para a conta já paga
+function comFilial(l){
+  var k = Object.keys(CLASSE).filter(function(x){ return x.indexOf("fil|")===0; }); if(!k.length) return l;
+  return l.map(function(i){ var f = CLASSE["fil|"+i.chave]; return f && f!==i.filial ? Object.assign({}, i, {filial:f, filialOrig:i.filial}) : i; });
 }
 // bônus mensal do Nickolas até dezembro/2026: R$ 1.000 até o dia 15 e R$ 1.000 até o dia 30, sem nota (Por fora)
 function bonusNickolas(){

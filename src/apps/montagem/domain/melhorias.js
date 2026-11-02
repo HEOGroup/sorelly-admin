@@ -30,12 +30,17 @@ SEMENTE.nickolas1 = {id:"nickolas1", titulo:"Negociações: vencimento das parce
 var SEMENTE_MSGS = {nickolas1:[{k:"resp1", m:{porId:16, por:"Marcus", em:"2026-10-29T15:00:00.000Z", img:"",
   txt:"Nickolas, resolvido! Melhoria: o vencimento das parcelas agora cai no mês seguinte, no mesmo dia, ou no último dia do mês quando ele é mais curto (31/12, 31/01, 28/02, 31/03, 30/04, 31/05). E o sistema não deixa mais salvar data que não existe, como 31/04. Nova melhoria: nas parcelas a fonte ficou um pouco menor e a coluna do valor maior, para o número aparecer inteiro. Teste e me diga se ficou bom."}}]};
 
+// SETOR de cada pedido (02/11/2026, Marcus): o setor mostrado vem da PESSOA, não do que ficou gravado no dia do pedido (lista organizada, igual para pedidos antigos e novos).
+var SETOR_DA_PESSOA = {29:"Financeiro", 27:"Financeiro", 32:"Financeiro", 46:"Link / Cadastro / Compras", 11:"Produção / Kits", 42:"Cadastro de peças", 38:"Recursos Humanos", 16:"Diretoria", 17:"Diretoria", 24:"Agendamento", 26:"Agendamento", 18:"Kits novos", 45:"Kits novos"};
+var SETOR_NOME = {"Acesso total":"Diretoria", "Direção (sem Configuradores)":"Diretoria", "Supervisão da montagem":"Produção / Kits", "Link, compras e cadastro":"Link / Cadastro / Compras", "Kit novo":"Kits novos"};
+var melSetor = function(x){ return SETOR_DA_PESSOA[x.porId] || SETOR_NOME[x.setor] || x.setor || ""; };
+var melSetorPessoa = function(id, gravado){ return SETOR_DA_PESSOA[id] || SETOR_NOME[gravado] || gravado || ""; };
 function melPodeGerir(id){ return GERENTES.indexOf(id)>=0; }
 function melLista(s){
   var m = (s && s.mel) || {};
   var reais = Object.keys(m).filter(function(k){ return k.indexOf("s_")===0 && m[k] && m[k].id; }).map(function(k){ return m[k]; });
   Object.keys(SEMENTE).forEach(function(id){ if(!m["s_"+id]) reais.push(SEMENTE[id]); });
-  return reais.filter(function(x){ return !x.excluido; }).map(function(x){ return SIT_ANTIGA[x.situacao] ? Object.assign({}, x, {situacao:sitNova(x.situacao)}) : x; })
+  return reais.filter(function(x){ return !x.excluido; }).map(function(x){ return Object.assign({}, x, {situacao:sitNova(x.situacao), setor:melSetor(x)}); })
     .sort(function(a, b){ return a.em < b.em ? 1 : -1; });
 }
 // caminho da tela (sem o endereço do site): "https://x.com/financeiro/resultado?a=1" vira "/financeiro/resultado"
@@ -100,4 +105,27 @@ function melReduz(s, a){
 
 function melMigrar(mel){ return mel && typeof mel==="object" ? mel : {}; }
 
-export { TIPOS, melTipoNome, SITUACOES,SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };
+// RESPOSTA NOVA (02/11/2026, pedido do Marcus): quem pediu a melhoria recebe um aviso ao abrir o admin quando alguém responde ou muda a situação do pedido dele.
+// "Visto" fica neste navegador (localStorage, por pessoa). Respostas anteriores a MEL_AVISO_DESDE não avisam (evita um aviso em massa no dia em que o aviso nasceu).
+var MEL_AVISO_DESDE = "2026-11-02T00:00:00.000Z";
+var chaveVisto = function(eu){ return "sorelly_mel_visto_" + eu; };
+function melLerVistos(eu){ try { var o = JSON.parse(localStorage.getItem(chaveVisto(eu)) || "{}"); return o && typeof o==="object" ? o : {}; } catch(x){ return {}; } }
+function melMarcarVisto(eu, id){
+  var o = melLerVistos(eu); o[id] = new Date().toISOString();
+  try { localStorage.setItem(chaveVisto(eu), JSON.stringify(o)); } catch(x){}
+  try { window.dispatchEvent(new Event("sorelly-mel-visto")); } catch(x){}
+}
+// pedidos DELA com resposta ou mudança de situação de outra pessoa, ainda não vistos: [{id, titulo, ts, video}]
+function melNovidades(s, eu){
+  var vistos = melLerVistos(eu), r = [];
+  melLista(s).filter(function(x){ return x.porId===eu; }).forEach(function(x){
+    var visto = vistos[x.id] || MEL_AVISO_DESDE, novas = melMsgs(s, x.id).filter(function(m){ return m.porId!==eu && m.em>visto; });
+    var mudou = x.mudouEm && x.mudouEm>visto && !novas.length;
+    if(!novas.length && !mudou) return;
+    var ult = novas.length ? novas[novas.length-1] : null;
+    r.push({id:x.id, titulo:String(x.titulo || x.desc || "Pedido").slice(0, 80), ts:ult ? ult.em : x.mudouEm, video:!!(ult && ult.video), sit:x.situacao});
+  });
+  return r.sort(function(a, b){ return a.ts<b.ts ? 1 : -1; });
+}
+
+export { melSetorPessoa, melSetor, melNovidades, melMarcarVisto, TIPOS, melTipoNome, SITUACOES,SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };

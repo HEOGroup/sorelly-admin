@@ -68,7 +68,7 @@ function colaboradoresRh(s){
   var saiu = LOCAIS.filter(function(x){ return !ids[ALIAS_PLANILHA[x.id]||x.id]; }).map(function(x){ return {id:x.id, nome:titulo(x.nome), setor:x.setor, cnpj:x.cnpj}; });
   var novos = (rh.novos||[]).map(function(n){ return {id:n.id, nome:n.nome, setor:n.setor, cnpj:n.cnpj, novo:true}; });
   return base.concat(saiu, novos).map(function(b){ var o = rh.colab[b.id]||{}, l = LOCAL_POR_ID[b.id] ? dadosLocal(LOCAL_POR_ID[b.id]) : {}, esc = cfg.escalas.find(function(x){ return x.id===(o.escalaId||l.escalaId||cfg.escalaPadrao); }) || cfg.escalas[0];
-    return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {escalaId:esc.id, escalaDias:esc.dias}); });
+    return Object.assign({status:"ATIVO", entrada:cfg.entradaPadrao, admissao:"", salario:0, planoId:"", efetivadoEm:"", efetivadoPor:"", ferias:null, afastamento:"", deslig:null, aviso:false}, l, o, b, {setor:o.setor||b.setor, escalaId:esc.id, escalaDias:esc.dias}); });
 }
 var rotuloCnpj = function(c){ return c ? "CNPJ "+c : "CNPJ a informar"; };
 
@@ -80,6 +80,7 @@ var normNome = function(n){ return String(n||"").normalize("NFD").replace(/[̀-�
 var palavras = function(n){ return normNome(n).split(" ").filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
 var ALIAS_ADMIN = {"michelle brito lima":"michele-brito-lima-cassemiro", "thalita tozzi ardnt":"thalita-torazzi-arndt"};
 function rhAplicarAdmin(rh){
+  return rh;   // o admin antigo saiu de uso (Marcus, 01/11/2026): a presença vem só do que o RH lança aqui; a importação única foi feita por scripts/importar-rh-antigo.mjs
   if(!ATU_RH || !ATU_RH.presenca) return rh;
   var cand = funcionarios().filter(function(f){ return f.vinculo==="clt"; }).map(function(f){ return {id:slug(f.nome), nome:f.nome}; }).concat(LOCAIS.map(function(x){ return {id:ALIAS_PLANILHA[x.id]||x.id, nome:x.nome}; }));
   var cache = {}, achar = function(nome){

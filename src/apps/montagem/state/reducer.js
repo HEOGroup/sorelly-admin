@@ -1,6 +1,8 @@
 // Sorelly Admin · montagem e bipagem — state/reducer.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
+import { aplicaFdFixos } from "@/apps/montagem/state/fd-patches";
+import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
@@ -67,7 +69,7 @@ function abaterDividas(s, rev, pagamentos, exceto){
 function aplicarAbatimento(lista, ab, pag0, novoId, agora){
   if(!ab.total) return lista;
   return lista.map(function(r){ var v = ab.abat[r.id]; if(!v) return r;
-    return Object.assign({}, r, {pagamentos:(r.pagamentos||[]).concat([{forma:(pag0||{}).forma||"pix", descricao:(pag0||{}).descricao||"", parcelas:1, data:new Date(agora).toISOString().slice(0,10), valor:v, anexo:null, extra:true, ts:agora, por:"Abatido no acerto seguinte", deAcerto:novoId}])}); });
+    return Object.assign({}, r, {pagamentos:(r.pagamentos||[]).concat([{forma:(pag0||{}).forma||"pix", descricao:(pag0||{}).descricao||"", parcelas:1, data:isoDia(new Date(agora)), valor:v, anexo:null, extra:true, ts:agora, por:"Abatido no acerto seguinte", deAcerto:novoId}])}); });
 }
 function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
@@ -175,6 +177,8 @@ function reducer(s, a){
     case "CHAVESPIX_LIMPA": return Object.assign({}, s, {cpxFoco:null});
     case "EMP_ABRIR": return com(s, {emp:Object.assign({}, s.emp, {aberto:a.chave}), aba:"emprestimos"});
     case "EMP_SET": { var ct = Object.assign({}, (s.emp||{}).contratos); ct[a.chave] = Object.assign({}, ct[a.chave], a.patch); return com(s, {emp:Object.assign({}, s.emp, {contratos:ct})}); }
+    case "CPE_FILIAL": { var cf = Object.assign({}, (s.cpe||{}).classe), kf = "fil|"+a.chave, hf = (((s.cpe||{}).hist)||[]).concat([{ts:Date.now(), por:a.por, acao:a.filial ? "Trocou o CNPJ para "+a.filial : "Voltou ao CNPJ original", chave:a.chave, desc:a.desc||"", valor:a.valor||0}]);   // trocar o CNPJ de uma conta, mesmo já paga (Nayale, 02/11/2026): vale em toda a lista; guarda em classe com a chave "fil|<conta>"
+      if(a.filial) cf[kf] = a.filial; else delete cf[kf]; return com(s, {cpe:Object.assign({}, s.cpe, {classe:cf, hist:hf})}, a.filial ? "CNPJ da conta trocado" : "Conta voltou ao CNPJ original"); }
     case "CPE_CLASSE": { var cl = Object.assign({}, (s.cpe||{}).classe); if(a.valor) cl[a.chave] = a.valor; else delete cl[a.chave]; return com(s, {cpe:Object.assign({}, s.cpe, {classe:cl})}, a.valor==="familia" ? "Conta marcada como Família" : a.valor==="sorelly" ? "Conta marcada como Sorelly" : "Marcação removida"); }
     case "CPD_SET": {
       var cpd = JSON.parse(JSON.stringify(s.contasPagasDiario||{}));
@@ -236,7 +240,7 @@ function reducer(s, a){
         Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
         return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
       }
-      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return Object.assign({}, s, pFd); }   // faturamento e contas pagas por dia vindos do servidor
+      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
@@ -244,6 +248,7 @@ function reducer(s, a){
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
         return Object.assign({}, s, {faturamentoDiario:fdm});
       }
+      if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
       return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
     }
     case "ROT": { var rRot = rotReduz(s, a); return com(s, rRot.patch, rRot.msg); }   // Rotina do dia
@@ -306,6 +311,7 @@ function reducer(s, a){
     }
     case "CEL": return com(s, {celular:a.id, telaCel:"proximo"});
     case "TELACEL": return com(s, {telaCel:a.t});
+    case "RHSOL": { var rs = Object.assign({}, s.rhsol); if(a.op==="add") rs[a.item.id] = a.item; else if(a.op==="set" && rs[a.id]) rs[a.id] = Object.assign({}, rs[a.id], a.patch); return com(s, {rhsol:rs}); }   // solicitações de mudança de cadastro (RH → Solicitações); módulo "rhsol" do servidor, uma chave por pedido
     case "TOGGLE": var o = Object.assign({}, s.abertas); o[a.id] = !o[a.id]; return com(s, {abertas:o});
     case "TODAS": var t = {}; s.listagens.forEach(function(l){ t[l.id] = a.v; }); return com(s, {abertas:t});
     case "KIT_ABERTO": return com(s, {kitAberto: s.kitAberto===a.id ? null : a.id});
@@ -474,6 +480,8 @@ function reducer(s, a){
       nk.id = "U"+agora; nk.vendas = a.vendas||[]; nk.ultimaHora = true; nk.atrasado = !!a.atrasado;
       nk.ordem = s.kits.filter(function(x){return x.lid===a.lid;}).length + 1;
       nk.tipoKit = a.tipoKit || "acerto_kit"; nk.fone = a.fone || ""; nk.porApp = !!a.porApp;
+      if(a.vendasAnt) nk.vendasAnt = a.vendasAnt;   // as 2 últimas vendas vindas da DevMaster, mais nova primeiro (kit novo: média no app da representante)
+      if(a.cod) nk.codRev = a.cod;
       nk.cond = {nums:a.conds||[], pegas:false, chkM:{}, chkB:{}, faltas:{}, impressas:{}, novas:[]};
       nk.horaAtend = a.hora || null;
       // Carimba a vers\u00e3o de regras de comiss\u00e3o/brinde vigente agora: o acerto deste kit sempre vai usar esta vers\u00e3o,
@@ -642,6 +650,7 @@ function reducer(s, a){
     // Fecha o acerto de um kit de revenda normal: calcula comissão/brinde pela regra carimbada no kit e grava no consolidado.
     case "ACERTO_REGISTRAR": {
       k = kitDe(s, a.id); if(!k) return s;
+      if(k.status==="acertado" && (s.acertosConsignado||[]).some(function(r0){ return r0.kitId===k.id && r0.tipo==="acerto"; })) return s;   // dois toques em "Finalizar acerto" não geram dois registros nem comissão em dobro
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
       var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK);
       var abK = abaterDividas(s, k.rev, a.pagamentos, null);
@@ -650,7 +659,7 @@ function reducer(s, a){
       // Revendedora recusou negociar o que faltava: sem brinde de jeito nenhum, vira nota promissória (executada em 48h úteis).
       if(a.recusouNegociar) res = Object.assign({}, res, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var registro = Object.assign({id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:versaoK.novas ? copiaNovas(versaoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        tipo:"acerto", tipoKit:k.tipoKit||"acerto_kit", data:isoDia(new Date(agora)), regrasVersaoId:versaoK.id, modalidade:modK, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abK.total, regrasNovas:versaoK.novas ? copiaNovas(versaoK.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(k.remarcacoesLista||[]).length, remarcacoes:(k.remarcacoesLista||[]).slice(), formSnapshot:a.formSnapshot||null, motivoVendaBaixa:a.motivoVendaBaixa||"", recebimento:null,
         vendaDigitada:a.vendaDigitada!=null ? a.vendaDigitada : a.vendaBruta, trocas:a.trocas||[], tagsDanificadas:a.tagsDanificadas||0, tagsValor:a.tagsValor||0,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null,
@@ -748,6 +757,7 @@ function reducer(s, a){
     // Negociação do Pix direto (só a diretoria edita, na tela Regras dos representantes): por representante, % ou valor, vigência e extra
     case "NEGPIX_SET": { var np = Object.assign({}, s.negPix||{}); np[a.rep] = Object.assign({modo:"pct", valor:0, vigencia:"mes", mes:isoDia(new Date(agora)).slice(0,7), extra:0, extraTxt:""}, np[a.rep]||{}, a.patch); return com(s, {negPix:np}); }
     case "NEGPIX_DEL": { var nd = Object.assign({}, s.negPix||{}); delete nd[a.rep]; return com(s, {negPix:nd}, "Negociação removida"); }
+    case "REV_COND_DEFINIR": { var prD = Object.assign({}, s.perfisRev||{}), perD = Object.assign({}, prD[a.rev]||{}); perD.condicionaisAbertas = (a.lista||[]).slice(); prD[a.rev] = perD; return Object.assign({}, s, {perfisRev:prD}); }   // 02/11/2026: troca a lista inteira (usado pelo exemplo Acerto completo)
     case "REV_COND_ADD": { var pr = Object.assign({}, s.perfisRev||{}), per = Object.assign({}, pr[a.rev]||{}), lista = (per.condicionaisAbertas||[]).slice();
       if(!a.numero || lista.some(function(x){ return x.numero===a.numero; })) return s;
       lista.push({numero:a.numero, pecas:a.pecas||0, manual:true}); per.condicionaisAbertas = lista; pr[a.rev] = per; return com(s, {perfisRev:pr}, "Condicional "+a.numero+" adicionada"); }
@@ -983,7 +993,7 @@ function reducer(s, a){
         valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
       if(a.recusouNegociar) resI = Object.assign({}, resI, {brindeNormal:0, brindeSelect:0, fatorPagamento:0});
       var regI = Object.assign({id:"AC"+agora, internoId:it.id, rev:it.nome, rep:"Atendimento interno", origem:"interno", tipo:"acerto",
-        data:new Date(agora).toISOString().slice(0,10), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
+        data:isoDia(new Date(agora)), regrasVersaoId:vBase.id, modalidade:modI, atrasoDias:a.atrasoDias||0, diasQuitacao:a.diasQuitacao||0, abatidoDivida:abI.total, regrasNovas:vEf.novas ? copiaNovas(vEf.novas) : null, hora:new Date(agora).toTimeString().slice(0,5), vendaBruta:a.vendaBruta, garantia:a.garantia||0, pecasCond:a.pecasCond||0,
         reagendamentos:(it.remarcacoesLista||[]).length, formSnapshot:a.formSnapshot||null, recebimento:null,
         pecasVendidas:a.pecasVendidas||null, pecasBrinde:a.pecasBrinde||null, pecasTrocas:a.pecasTrocas||null, pecasADevolver:a.pecasADevolver!=null ? a.pecasADevolver : null,
         condicionaisSelecionadas:a.condicionaisSelecionadas||[], pagamentos:a.pagamentos||[], acordo:a.acordo||null, recusouNegociar:!!a.recusouNegociar,
@@ -1000,7 +1010,7 @@ function reducer(s, a){
       k = kitDe(s, a.id); if(!k) return s;
       var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:new Date(agora).toISOString().slice(0,10), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
+        tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:isoDia(new Date(agora)), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
         hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null};
       // a condicional assinada entregue na reposição sobe nas condicionais em aberto da revendedora
       var prR = Object.assign({}, s.perfisRev||{}), perR = Object.assign({}, prR[k.rev]||{}), abR = (perR.condicionaisAbertas||[]).slice();
@@ -1014,8 +1024,9 @@ function reducer(s, a){
     case "KITNOVO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
       var regEntrega = {id:"KN"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
-        tipo:"kit_novo_entrega", tipoKit:k.tipoKit||"kit_novo", data:new Date(agora).toISOString().slice(0,10), condicionais:a.condicionais||[], pecasTotal:a.pecasTotal||0,
-        pecasFaltaram:a.pecasFaltaram||0, obsDivergencia:a.obsDivergencia||"", regrasLidas:a.regrasLidas||[], assinatura:a.assinatura||null};
+        tipo:"kit_novo_entrega", tipoKit:k.tipoKit||"kit_novo", data:isoDia(new Date(agora)), condicionais:a.condicionais||[], pecasTotal:a.pecasTotal||0,
+        pecasFaltaram:a.pecasFaltaram||0, obsDivergencia:a.obsDivergencia||"", regrasLidas:a.regrasLidas||[], assinatura:a.assinatura||null,
+        expositorFoto:!!((s.entregasKN||{})[k.id]||{}).fotoExpositor};   // foto do expositor montado: o R$ 35 de "kit novo + expositor" só libera com ela (28/10/2026)
       return com(s, {perfisRev:carimboEntrega(s, k.rev), kits: mapKit(s, a.id, function(){ return {kitNovoEntregue:regEntrega, status:"acertado"}; }),
         montadoras: (regEntrega.pecasFaltaram>0 && k.montId) ? ajustaDiv(s, k.montId, 1) : s.montadoras,
         acertosConsignado:[regEntrega].concat(s.acertosConsignado||[])},

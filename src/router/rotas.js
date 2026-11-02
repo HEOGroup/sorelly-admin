@@ -57,13 +57,14 @@ const montagem = {
   children: [
     { index: true, element: e(Inicial) },   // por pedido do Marcus (22/10/2026): ao abrir o sistema aparece sempre a Visão geral (antes era Regras de reposição, de 07/10/2026)
     pagina("listagens", () => import("@/apps/montagem/pages/Painel"), "AbaPainel"),
-    pagina("agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgPainel"),
+    pagina("agendamento", () => import("@/apps/montagem/pages/AgendamentoPainel"), "AbaAgPainel"),
     pagina("agendamento-revendedoras", () => import("@/apps/montagem/pages/AgendamentoRevendedoras"), "AbaAgRevendedoras"),
     pagina("agendamento-representantes", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgReps"),
-    pagina("agendamento-abertura", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgAbertura"),
-    pagina("agendamento-configurador", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgConfig"),
-    pagina("agendamento-analises", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgAnalises"),
-    pagina("agendamento-historico", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgHistorico"),
+    pagina("agendamento-abertura", () => import("@/apps/montagem/pages/AgendamentoPainel"), "AbaAgPainel"),   // 02/11/2026: a Abertura do mês deixou de existir; o endereço antigo abre o Painel
+    pagina("agendamento-configurador", () => import("@/apps/montagem/pages/AgendamentoPainel"), "AbaAgPainel"),   // 02/11/2026: o Configurador do Agendamento deixou de existir (tudo vem da DevMaster); o endereço antigo abre o Painel
+    pagina("agendamento-atividades", () => import("@/apps/montagem/pages/AgendamentoAtividades"), "AbaAgAtividades"),
+    pagina("agendamento-analises", () => import("@/apps/montagem/pages/AgendamentoAnalises"), "AbaAgAnalises"),
+    pagina("agendamento-historico", () => import("@/apps/montagem/pages/AgendamentoAnalises"), "AbaAgAnalises"),
     pagina("comissoes-bonus-agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgComissoes"),
     pagina("ff-home", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfHome"),
     pagina("ff-alertas", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfAlertas"),
@@ -174,7 +175,7 @@ const montagem = {
     pagina("padrao-visual", () => import("@/apps/montagem/pages/PadraoVisual"), "AbaPadraoVisual"),
     pagina("avisos", () => import("@/apps/montagem/pages/ConfigAvisos"), "AbaConfigAvisos"),
     pagina("app-funcionarias", () => import("@/apps/montagem/pages/CelularFuncionarios"), "AbaCelularFunc"),
-    pagina("app-representante", () => import("@/apps/montagem/pages/CelularRepresentante"), "AbaCelularRep"),
+    { path: "app-representante", element: e(Navigate, { to: "/apps", replace: true }) },   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps
     pagina("vendas-vendas", () => import("@/apps/montagem/pages/Vendas"), "AbaVendasVendas"),
     pagina("caixa", () => import("@/apps/montagem/pages/Caixa"), "AbaCaixa"),
     pagina("emprestimos", () => import("@/apps/montagem/pages/Emprestimos"), "AbaEmprestimos"),
@@ -221,6 +222,8 @@ const montagem = {
     pagina("rh-colaboradores", () => import("@/apps/montagem/pages/RH"), "AbaRhColab"),
     pagina("rh-advertencias", () => import("@/apps/montagem/pages/RH"), "AbaRhAdv"),
     pagina("rh-experiencia", () => import("@/apps/montagem/pages/RH"), "AbaRhExp"),
+    pagina("rh-solicitacoes", () => import("@/apps/montagem/pages/RHSolicitacoes"), "AbaRhSolic"),
+    pagina("aulas", () => import("@/apps/montagem/pages/Aulas"), "AbaAulas"),
     pagina("rh-horas-extras", () => import("@/apps/montagem/pages/RH"), "AbaRhHoras"),
     pagina("rh-negociacoes", () => import("@/apps/montagem/pages/RH"), "AbaRhNegoc"),
     pagina("comissoes-cadastro-revendedoras", () => import("@/apps/montagem/pages/MetasSetor"), "AbaComCadastro"),

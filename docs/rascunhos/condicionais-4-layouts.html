@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Condicionais · 4 layouts</title>
+<style>
+  :root{
+    --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --papel:#FBF6E9; --linha:#E7DCC0; --texto:#1F1A10; --ouro:#C9A13B; --ouro-escuro:#8A6A14;
+    --ouro-claro:#FFF3CF; --verde:#15803D; --verde-claro:#DCFCE7; --vermelho:#B91C1C; --branco:#FFFFFF;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:640px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1700px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{font-size:13px;align-self:flex-start}
+  .tel{width:100%;max-width:390px}
+
+  /* peças comuns */
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .rot{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ouro-escuro)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700}
+  .grande{font-size:20px}
+  button,input{font:inherit;color:inherit}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:10px;background:var(--papel);padding:0 10px;min-width:0;width:100%}
+  .campo:focus{outline:2px solid var(--ouro)}
+  .btn{height:32px;border:0;border-radius:10px;background:var(--ouro);color:#fff;font-weight:700;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.vazio{background:transparent;border:1px dashed var(--ouro);color:var(--ouro-escuro)}
+  .passo{width:32px;height:32px;border:0;border-radius:10px;background:var(--papel);border:1px solid var(--linha);font-weight:700;font-size:20px;line-height:1;cursor:pointer}
+  .check{width:18px;height:18px;accent-color:var(--ouro)}
+  .oculto{display:none!important}
+  .linha{display:flex;align-items:center;gap:8px}
+  .folga{flex:1;min-width:0}
+  .devolver-ok{color:var(--verde)}
+
+  /* A: números em cima */
+  .ladoalado{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tile{background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:8px;text-align:center}
+  .tile .num{display:block}
+  .chips{display:flex;flex-wrap:wrap;gap:6px}
+  .chip{height:32px;display:flex;align-items:center;gap:6px;border:1px solid var(--linha);border-radius:999px;background:var(--papel);padding:0 12px;cursor:pointer}
+  .chip.on{background:var(--ouro-claro);border-color:var(--ouro);font-weight:700}
+
+  /* B: conta */
+  .conta{display:flex;align-items:center;justify-content:space-between;background:var(--papel);border:1px solid var(--linha);border-radius:12px;padding:10px 12px;gap:6px}
+  .conta .bloco{text-align:center;flex:1}
+  .conta .sinal{font-size:20px;font-weight:700;color:var(--ouro-escuro)}
+  .item{display:flex;align-items:center;gap:10px;height:40px;border-bottom:1px solid var(--linha)}
+  .item:last-child{border-bottom:0}
+  .interruptor{position:relative;width:38px;height:22px;border-radius:999px;background:#D9CFB3;cursor:pointer;flex:none;border:0}
+  .interruptor::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:left .15s}
+  .interruptor.on{background:var(--ouro)}
+  .interruptor.on::after{left:19px}
+
+  /* C: passos */
+  .trilha{display:flex;gap:6px;margin-bottom:10px}
+  .trilha span{flex:1;height:6px;border-radius:999px;background:var(--linha)}
+  .trilha span.f{background:var(--ouro)}
+  .passo-t{display:flex;align-items:center;gap:8px;margin:10px 0 6px}
+  .bolinha{width:24px;height:24px;border-radius:50%;background:var(--ouro);color:#fff;display:grid;place-items:center;font-weight:700;flex:none}
+  .bolinha.ok{background:var(--verde)}
+  .resultado{margin-top:12px;border-radius:12px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;background:var(--verde-claro);color:#14532D}
+
+  /* D: tabela */
+  table{width:100%;border-collapse:collapse}
+  th{height:30px;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--ouro-escuro);text-align:left;border-bottom:2px solid var(--ouro)}
+  td{height:32px;border-bottom:1px solid var(--linha)}
+  th.d,td.d{text-align:right}
+  tfoot td{font-weight:700;background:var(--papel);border-bottom:0}
+  .nova td{background:var(--papel)}
+</style>
+</head>
+<body>
+<h1>Condicionais · 4 layouts</h1>
+<p class="sub">Bloco "Condicionais" da Calculadora de acertos no app da representante. Os 4 usam os mesmos dados de exemplo e funcionam: marque as condicionais, mude as vendidas e veja a conta. Dados inventados.</p>
+
+<div class="grade">
+
+  <!-- ============ A ============ -->
+  <section class="caixa" id="A">
+    <h2>A · Números em cima</h2>
+    <p class="nota">Primeiro o resultado (conferido, vendidas, a devolver). Embaixo, condicionais viram botões redondos.</p>
+    <div class="tel"><div class="cart">
+      <div class="ladoalado">
+        <div class="tile"><span class="rot">Conferido</span><span class="num grande" data-c="conf">0</span></div>
+        <div class="tile"><span class="rot">Vendidas</span><span class="num grande" data-c="vend">0</span></div>
+        <div class="tile"><span class="rot">Devolver</span><span class="num grande" data-c="dev">0</span></div>
+      </div>
+      <p class="rot" style="margin:12px 0 6px">Condicionais abertas</p>
+      <div class="chips" data-lista></div>
+      <div class="linha" style="margin-top:10px">
+        <span class="rot folga">Peças vendidas</span>
+        <button class="passo" data-menos>−</button>
+        <input class="campo num" style="width:72px;text-align:center" inputmode="numeric" data-vend>
+        <button class="passo" data-mais>+</button>
+      </div>
+      <button class="btn vazio" style="width:100%;margin-top:10px" data-abre>+ Adicionar condicional à mão</button>
+      <div class="linha oculto" style="margin-top:10px" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>Adicionar</button>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ B ============ -->
+  <section class="caixa" id="B">
+    <h2>B · A conta na tela</h2>
+    <p class="nota">Uma conta só, no topo: conferidas − vendidas = devolver. Condicionais em linhas com interruptor.</p>
+    <div class="tel"><div class="cart">
+      <div class="conta">
+        <div class="bloco"><span class="rot">Conferidas</span><br><span class="num grande" data-c="conf">0</span></div>
+        <span class="sinal">−</span>
+        <div class="bloco"><span class="rot">Vendidas</span><br><input class="campo num grande" style="height:36px;text-align:center;padding:0 4px" inputmode="numeric" data-vend></div>
+        <span class="sinal">=</span>
+        <div class="bloco"><span class="rot">Devolver</span><br><span class="num grande" data-c="dev">0</span></div>
+      </div>
+      <div style="margin-top:8px" data-lista></div>
+      <div class="linha oculto" style="margin-top:8px" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>OK</button>
+      </div>
+      <button class="btn vazio" style="margin-top:8px" data-abre>+ Condicional</button>
+    </div></div>
+  </section>
+
+  <!-- ============ C ============ -->
+  <section class="caixa" id="C">
+    <h2>C · Dois passos</h2>
+    <p class="nota">Guia a representante: 1) marcar as condicionais, 2) dizer quantas vendeu. O resultado aparece embaixo, verde quando fecha.</p>
+    <div class="tel"><div class="cart">
+      <div class="trilha"><span data-t="1"></span><span data-t="2"></span></div>
+      <div class="passo-t"><span class="bolinha" data-b="1">1</span><b>Marque as condicionais</b></div>
+      <div data-lista></div>
+      <div class="linha oculto" style="margin:6px 0" data-novo>
+        <input class="campo" placeholder="Nº" inputmode="numeric" data-n>
+        <input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:90px">
+        <button class="btn" data-ok>OK</button>
+      </div>
+      <button class="btn vazio" style="margin-top:6px" data-abre>+ Outra condicional</button>
+      <div class="passo-t"><span class="bolinha" data-b="2">2</span><b>Quantas peças vendeu?</b></div>
+      <div class="linha">
+        <button class="passo" data-menos>−</button>
+        <input class="campo num grande folga" style="height:40px;text-align:center" inputmode="numeric" data-vend>
+        <button class="passo" data-mais>+</button>
+      </div>
+      <div class="resultado">
+        <span><span class="rot" style="color:#14532D">Voltam para a empresa</span><br><span data-resumo></span></span>
+        <span class="num grande" data-c="dev">0</span>
+      </div>
+    </div></div>
+  </section>
+
+  <!-- ============ D ============ -->
+  <section class="caixa" id="D">
+    <h2>D · Tabela compacta</h2>
+    <p class="nota">Estilo planilha, igual às telas do Financeiro: uma linha por condicional, total no rodapé, vendidas na última linha.</p>
+    <div class="tel"><div class="cart">
+      <table>
+        <thead><tr><th style="width:34px"></th><th>Condicional</th><th class="d">Peças</th></tr></thead>
+        <tbody data-lista></tbody>
+        <tbody>
+          <tr class="nova oculto" data-novo>
+            <td></td>
+            <td><input class="campo" placeholder="Nº" inputmode="numeric" data-n></td>
+            <td class="d"><div class="linha" style="justify-content:flex-end"><input class="campo" placeholder="Peças" inputmode="numeric" data-p style="width:70px"><button class="btn" data-ok>OK</button></div></td>
+          </tr>
+        </tbody>
+        <tfoot>
+          <tr><td></td><td>Conferido</td><td class="d num" data-c="conf">0</td></tr>
+          <tr><td></td><td>Vendidas</td><td class="d"><input class="campo num" style="width:80px;text-align:right" inputmode="numeric" data-vend></td></tr>
+          <tr><td></td><td>A devolver</td><td class="d num grande" data-c="dev">0</td></tr>
+        </tfoot>
+      </table>
+      <button class="btn vazio" style="width:100%;margin-top:10px" data-abre>+ Adicionar condicional</button>
+    </div></div>
+  </section>
+
+</div>
+
+<script>
+// Dados de exemplo (inventados)
+var dados = [ {n:"99001", p:120, on:true}, {n:"99002", p:60, on:false}, {n:"99003", p:45, on:false} ];
+var vendidas = 85;
+
+function soma(){ return dados.filter(function(x){ return x.on; }).reduce(function(t,x){ return t+x.p; }, 0); }
+
+function desenha(sec){
+  var id = sec.id, lista = sec.querySelector("[data-lista]");
+  lista.innerHTML = "";
+  dados.forEach(function(x, i){
+    var el;
+    if(id==="A"){
+      el = document.createElement("button"); el.className = "chip"+(x.on?" on":"");
+      el.innerHTML = (x.on?"✓ ":"")+x.n+" · <span class='num'>"+x.p+"</span>";
+    } else if(id==="B"){
+      el = document.createElement("div"); el.className = "item";
+      el.innerHTML = "<button class='interruptor"+(x.on?" on":"")+"' aria-label='Marcar'></button><b class='folga'>Condicional "+x.n+"</b><span class='num'>"+x.p+" peças</span>";
+    } else if(id==="C"){
+      el = document.createElement("label"); el.className = "item";
+      el.innerHTML = "<input type='checkbox' class='check'"+(x.on?" checked":"")+"><b class='folga'>Condicional "+x.n+"</b><span class='num'>"+x.p+" peças</span>";
+    } else {
+      el = document.createElement("tr");
+      el.innerHTML = "<td><input type='checkbox' class='check'"+(x.on?" checked":"")+"></td><td>"+x.n+"</td><td class='d num'>"+x.p+"</td>";
+    }
+    el.addEventListener("click", function(ev){ if(ev.target.tagName==="INPUT" && ev.target.type!=="checkbox") return; if(el.tagName==="LABEL" && ev.target.tagName!=="INPUT") return; dados[i].on = !dados[i].on; atualiza(); });
+    lista.appendChild(el);
+  });
+}
+
+function atualiza(){
+  document.querySelectorAll(".caixa").forEach(function(sec){
+    desenha(sec);
+    var conf = soma(), dev = conf - vendidas;
+    sec.querySelectorAll("[data-c=conf]").forEach(function(n){ n.textContent = conf; });
+    sec.querySelectorAll("[data-c=vend]").forEach(function(n){ n.textContent = vendidas; });
+    sec.querySelectorAll("[data-c=dev]").forEach(function(n){ n.textContent = dev; n.classList.toggle("devolver-ok", dev>=0); n.style.color = dev<0 ? "var(--vermelho)" : ""; });
+    sec.querySelectorAll("[data-vend]").forEach(function(i){ if(document.activeElement!==i) i.value = vendidas; });
+    var r = sec.querySelector("[data-resumo]"); if(r) r.textContent = conf+" conferidas − "+vendidas+" vendidas";
+    var t1 = sec.querySelector("[data-t='1']"), t2 = sec.querySelector("[data-t='2']");
+    if(t1){ t1.classList.toggle("f", conf>0); t2.classList.toggle("f", vendidas>0); sec.querySelector("[data-b='1']").classList.toggle("ok", conf>0); sec.querySelector("[data-b='2']").classList.toggle("ok", vendidas>0); }
+  });
+}
+
+document.querySelectorAll(".caixa").forEach(function(sec){
+  sec.querySelectorAll("[data-vend]").forEach(function(i){ i.addEventListener("input", function(){ vendidas = parseInt(i.value.replace(/\D/g,""),10)||0; atualiza(); }); });
+  var m = sec.querySelector("[data-menos]"), p = sec.querySelector("[data-mais]");
+  if(m) m.addEventListener("click", function(){ vendidas = Math.max(0, vendidas-1); atualiza(); });
+  if(p) p.addEventListener("click", function(){ vendidas += 1; atualiza(); });
+  var ab = sec.querySelector("[data-abre]"), nv = sec.querySelector("[data-novo]");
+  ab.addEventListener("click", function(){ nv.classList.toggle("oculto"); });
+  sec.querySelector("[data-ok]").addEventListener("click", function(){
+    var n = nv.querySelector("[data-n]").value.trim(), pc = parseInt(nv.querySelector("[data-p]").value,10)||0;
+    if(!n || pc<=0) return; dados.push({n:n, p:pc, on:true}); nv.querySelector("[data-n]").value = ""; nv.querySelector("[data-p]").value = ""; nv.classList.add("oculto"); atualiza();
+  });
+});
+atualiza();
+</script>
+</body>
+</html>

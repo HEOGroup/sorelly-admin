@@ -54,7 +54,9 @@ function Seletor(p){
         g.titulo && e("p",{className:"px-2.5 pb-0.5 pt-1.5 text-[10.5px] font-extrabold uppercase tracking-wider text-primary"}, g.titulo, g.nota && e("span",{className:"ml-1.5 font-semibold normal-case tracking-normal text-muted-foreground"}, "· "+g.nota)),
         g.itens.map(function(it){ var on = p.atualId===it.id;
           return e("button",{key:it.id, type:"button", onClick:function(){ escolher(g, it); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
-            e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate"}, it.nome), it.sub && e("span",{className:"block truncate text-[11.5px] text-muted-foreground"}, it.sub))); })); })));
+            it.cod && e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full bg-primary/20 text-[11px] font-bold text-primary"}, String(it.nome).charAt(0)),
+            e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate"}, it.nome), it.sub && e("span",{className:"block truncate text-[11.5px] text-muted-foreground"}, it.sub)),
+            it.cod && e("span",{className:"shrink-0 rounded-md border border-primary/40 px-1.5 text-[11px] font-bold tabular-nums text-primary"}, it.cod)); })); })));
 }
 
 // entrada de cada app: só login (usuário, senha e o botão Entrar como TESTE) — A MESMA tela para montagem, bipagem e condicionais

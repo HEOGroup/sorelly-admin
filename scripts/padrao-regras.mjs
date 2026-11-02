@@ -7,7 +7,7 @@
 // Exceção aprovada pelo Marcus: a linha recebe o comentário `padrao-ok` e passa (ex.: `// padrao-ok: título da capa`).
 
 export var DOC = "docs/design/PADRAO-VISUAL.md";
-export var REGRAS = "Padrão visual (" + DOC + "): fonte Inter, texto de 13 px FIXO (nunca clamp/vw), rótulo e cabeçalho 11 px, número até 20 px, campo/botão/linha 32 px (h-8), cabeçalho de tabela 30 px, letras brancas (nunca cinza), todo valor em reais com R$, filtros no topo, abas visíveis, peças de components/padrao.js e padrao-fin.js, menu do setor no padrão `menu`.";
+export var REGRAS = "Padrão visual (" + DOC + "): fonte Inter, texto de 13 px FIXO (nunca clamp/vw), rótulo e cabeçalho 11 px, número até 20 px, campo/botão/linha 32 px (h-8), cabeçalho de tabela 30 px, letras brancas (nunca cinza), todo valor em reais com R$, filtros no topo, abas visíveis, SEM faixa de totais (blocos de números) no topo da tela, tabela com topo dourado em degradê, nada abreviado (sem reticências) e tudo centralizado, peças de components/padrao.js e padrao-fin.js, menu do setor no padrão `menu`.";
 
 var norm = function(f){ return String(f || "").replace(/\\/g, "/"); };
 
@@ -61,6 +61,22 @@ export function conferirLinhas(arquivo, linhas, op){
 
     if(!admin) return;
 
+    // 2b. SEM faixa de totais (blocos de números no topo da tela). Pedido do Marcus em 02/11/2026: nunca mais.
+    if(/(\be\(\s*|<)(FaixaTotais|Faixa)\b|\bimport\b[^;]*\b(FaixaTotais|Faixa)\b|^\s*(FaixaTotais|Faixa)\s*,?\s*$/.test(codigo))
+      add("faixa de totais no topo da tela (proibida em 02/11/2026: comece pelo título, filtros e tabela)", l);
+
+    // 2c. NADA ABREVIADO (Marcus, 02/11/2026): proibido cortar texto com "…" (truncate, ellipsis, line-clamp, slice + "…"). O texto aparece inteiro: a coluna cresce ou o texto quebra em 2 linhas.
+    if(/\b(truncate|text-ellipsis|line-clamp-\d+)\b|textOverflow\s*:|\.slice\([^)]*\)\s*\+\s*["'`](…|\.\.\.)["'`]|["'`](…|\.\.\.)["'`]\s*\+\s*\w/.test(codigo))
+      add("texto abreviado/cortado (proibido em 02/11/2026: a coluna cresce ou o texto quebra, nunca \"…\")", l);
+
+    // 2d. TUDO ALINHADO NO MEIO (Marcus, 02/11/2026): célula e cabeçalho de tabela sempre centralizados (nada à esquerda nem à direita).
+    if(/"(td|th)"|<t[dh]\b|\bTd\b|\bTh\b|TabelaP\b|TabelaPlanilha|CabSimples|TdSimples/.test(codigo) && (/\btext-(left|right)\b|textAlign\s*:\s*["'`](left|right)|\bjustify-(start|end)\b/.test(codigo) || (/\bTd\b/.test(codigo) && /\bn\s*:\s*(true|!0)\b/.test(codigo))))
+      add("célula de tabela fora do centro (proibido em 02/11/2026: tudo centralizado)", l);
+
+    // 2e. TOPO DOURADO (Marcus, 02/11/2026): toda tabela tem cabeçalho dourado em degradê. Tabela feita à mão em pages/ não tem: use TabelaP (padrao-fin.js) ou TabelaPlanilha (tabela-planilha.js), que já trazem o topo dourado.
+    if(ehPagina(arquivo) && /\be\(\s*["'](table|thead)["']|<(table|thead)\b/.test(codigo))
+      add("tabela feita à mão (use TabelaP ou TabelaPlanilha: o topo dourado em degradê vem da peça)", l);
+
     // 3. altura de campo, botão e linha: 32 px (h-8); cabeçalho de tabela 30 px
     if(PISTA_CAMPO.test(codigo)){
       var ma = /\bh-(6|7|9|10|11|12)\b/.exec(codigo);
@@ -78,7 +94,7 @@ export function conferirLinhas(arquivo, linhas, op){
 
   // 5. tela nova em pages/ sem as peças do padrão
   if(op.arquivoNovo && ehPagina(arquivo) && !PECAS.test(op.conteudo || linhas.join("\n")))
-    erros.unshift("tela nova sem as peças do padrão: importe de components/padrao.js (Pagina, Faixa, Indicador, Tab, Td) ou padrao-fin.js (Bloco, FaixaTotais, TabelaP, BlocoFiltros)");
+    erros.unshift("tela nova sem as peças do padrão: importe de components/padrao.js (Pagina, Indicador, Tab, Td) ou padrao-fin.js (Bloco, TabelaP, BlocoFiltros)");
 
   return erros;
 }

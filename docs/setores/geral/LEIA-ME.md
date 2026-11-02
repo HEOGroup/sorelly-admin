@@ -1,32 +1,45 @@
-# Geral (decisões sem setor claro)
+# Setor Geral (decisões sem setor claro)
 
-> Resumo do setor, atualizado em 02/11/2026. Fontes: `CLAUDE.md`, `docs/negocio/FLUXO-DA-EMPRESA.md` e `docs/negocio/INTEGRACAO-ENTRE-SETORES.md`. "(a confirmar)" = falta confirmar com o Marcus. Ao falar deste setor, o Claude lê este arquivo primeiro.
+Resumo para ler primeiro. Para o detalhe: `decisoes.md` (o que o Marcus decidiu, 4 itens), `pendencias.md` (o que está aberto, 0 itens). "(a confirmar)" = falta confirmar com o Marcus.
 
 ## 1. O que o setor faz
 Guarda as decisões que não se encaixaram em um setor só (preferências gerais do Marcus e do sistema).
 
+```
+—
+      │
+      ▼
+Geral
+      │
+      ▼
+—
+```
+
 ## 2. Quem
-- **Líder:** —
-- **Pessoas:** não é um setor da planilha do RH.
+| Quem | Papel |
+|---|---|
+| — | Líder do setor |
+| — | Não é um setor da planilha do RH |
 
-## 3. Telas no sistema
-- Nenhuma
+## 3. Regras que valem
+| # | Regra |
+|---|---|
+| 1 | Se uma decisão daqui tem setor, mova para a pasta dele. |
 
-## 4. Integração com outros setores
-- **Recebe de:** —
-- **Entrega para:** —
-- Mapa completo: `docs/negocio/INTEGRACAO-ENTRE-SETORES.md`
+## 4. Onde ficam as coisas
+| O quê | Onde |
+|---|---|
+| Início | `/inicio` |
+| Apps | `/apps` |
+| Aulas do setor | `/aulas` |
+| Plano de organização | `docs/PLANO-DE-ORGANIZACAO.md` |
+| Integração com os outros setores | `docs/negocio/INTEGRACAO-ENTRE-SETORES.md` |
 
-## 5. Regras que valem
-- Se uma decisão daqui tem setor, mova para a pasta dele.
+Código das telas: `pages/Inicio.js`, `pages/Apps.js`, `pages/Aulas.js`.
 
-## 6. Documentos do setor
-- `docs/PLANO-DE-ORGANIZACAO.md`
-
-## 7. Em aberto (principais)
+## 5. Em aberto (principais)
 - (nada registrado)
-- Lista completa tirada do diário: `pendencias.md` desta pasta (0 itens, a conferir).
+- Lista completa: `pendencias.md` desta pasta (0 itens, a revisar com o Marcus).
 
-## 8. Arquivos desta pasta
-- `decisoes.md`: 4 decisões copiadas do diário geral.
-- `pendencias.md`: o que o diário diz que falta.
+## 6. Regra de trabalho
+Mudou uma regra? Atualize (1) o sistema, (2) `decisoes.md` desta pasta e o diário geral, no mesmo dia, (3) o painel: `node scripts/gerar-painel-documentos.mjs`.

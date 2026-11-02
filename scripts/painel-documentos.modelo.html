@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Painel de documentos</title>
+<style>
+:root{--bg:#121212;--side:#161616;--card:#1c1c1c;--hover:#232323;--tx:#f2f2ee;--mut:#b9b9b2;--bd:#2e2e2b;--gold:#e8b84b;--goldbg:rgba(232,184,75,.12);--ok:#4ade80;--warn:#fbbf24;--code:#0e0e0e}
+@media (prefers-color-scheme:light){:root{--bg:#f6f6f3;--side:#efefea;--card:#fff;--hover:#f0efe9;--tx:#1d1d1b;--mut:#55554f;--bd:#dcdcd5;--gold:#9a7417;--goldbg:rgba(154,116,23,.12);--ok:#15803d;--warn:#a16207;--code:#f3f3ef}}
+*{box-sizing:border-box}html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px/1.55 Inter,"Segoe UI",system-ui,sans-serif;display:grid;grid-template-columns:240px 300px 1fr;height:100vh;overflow:hidden}
+aside{background:var(--side);border-right:1px solid var(--bd);display:flex;flex-direction:column;min-height:0}
+.marca{padding:16px 16px 10px;font-weight:600;font-size:14px;letter-spacing:.02em}.marca b{color:var(--gold);font-weight:600}
+.busca{margin:0 12px 10px;position:relative}.busca input{width:100%;height:34px;border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:8px;padding:0 10px 0 30px;font:inherit;outline:none}.busca input:focus{border-color:var(--gold)}
+.busca svg{position:absolute;left:9px;top:9px;width:16px;height:16px;stroke:var(--mut)}
+nav{overflow:auto;padding:4px 8px 16px;flex:1}
+nav button{display:flex;justify-content:space-between;align-items:center;width:100%;border:0;background:none;color:var(--tx);text-align:left;padding:7px 10px;border-radius:7px;font:inherit;cursor:pointer}
+nav button:hover{background:var(--hover)}nav button.on{background:var(--goldbg);color:var(--tx);font-weight:600}nav button.on span.n{color:var(--gold)}
+nav span.n{font-size:12px;color:var(--mut)}nav .grupo{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut);padding:12px 10px 4px}
+.lista{border-right:1px solid var(--bd);overflow:auto;min-height:0;padding:14px 12px}
+.lista h2{font-size:13px;text-transform:uppercase;letter-spacing:.05em;margin:2px 4px 10px;color:var(--mut);font-weight:600}
+.it{display:block;width:100%;text-align:left;border:1px solid transparent;background:none;color:var(--tx);border-radius:9px;padding:9px 10px;margin:0 0 4px;font:inherit;cursor:pointer}
+.it:hover{background:var(--hover)}.it.on{background:var(--card);border-color:var(--gold)}
+.it .t{display:block;font-weight:500}.it .k{display:inline-block;font-size:11px;color:var(--mut);margin-top:2px}.it .loc{color:var(--warn)}
+main{overflow:auto;min-height:0}
+.leitor{max-width:860px;margin:0 auto;padding:26px 34px 60px}
+.topo{display:flex;justify-content:space-between;gap:12px;align-items:center;font-size:12px;color:var(--mut);margin-bottom:14px}
+.topo a{color:var(--gold);text-decoration:none}.topo a:hover{text-decoration:underline}
+.md h1{font-size:22px;margin:0 0 14px;font-weight:600}.md h2{font-size:17px;margin:26px 0 10px;padding-top:12px;border-top:1px solid var(--bd);font-weight:600}.md h3{font-size:15px;margin:20px 0 8px;font-weight:600}.md h4{font-size:14px;margin:16px 0 6px}
+.md p{margin:8px 0}.md ul,.md ol{margin:6px 0 10px;padding-left:22px}.md li{margin:3px 0}.md li.chk{list-style:none;margin-left:-20px}.md li.chk input{margin-right:8px;accent-color:var(--gold)}
+.md code{background:var(--code);border:1px solid var(--bd);border-radius:5px;padding:1px 5px;font:12.5px/1.4 "JetBrains Mono",Consolas,monospace}
+.md pre{background:var(--code);border:1px solid var(--bd);border-radius:8px;padding:12px 14px;overflow:auto;font:12.5px/1.5 "JetBrains Mono",Consolas,monospace}.md pre code{border:0;padding:0;background:none}
+.md blockquote{margin:10px 0;padding:8px 14px;border-left:3px solid var(--gold);background:var(--goldbg);border-radius:0 8px 8px 0}
+.md table{border-collapse:collapse;width:100%;margin:10px 0;font-size:13px;display:block;overflow:auto}.md th,.md td{border:1px solid var(--bd);padding:6px 10px;text-align:left;vertical-align:top}.md th{background:var(--card);font-weight:600}
+.md a{color:var(--gold)}.md hr{border:0;border-top:1px solid var(--bd);margin:18px 0}.md mark{background:var(--gold);color:#111;border-radius:3px;padding:0 2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin:14px 0 22px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:12px 14px;cursor:pointer}.card:hover{border-color:var(--gold)}
+.card .nm{font-weight:600}.card .q{font-size:12px;color:var(--mut);margin-top:4px}.card .q b{color:var(--tx);font-weight:600}
+.res{border:1px solid var(--bd);background:var(--card);border-radius:9px;padding:10px 12px;margin:0 0 8px;cursor:pointer}.res:hover{border-color:var(--gold)}.res .t{font-weight:600}.res .s{font-size:12.5px;color:var(--mut);margin-top:3px}
+.aviso{border:1px solid var(--bd);border-radius:10px;padding:14px 16px;background:var(--card)}
+@media (max-width:900px){body{grid-template-columns:1fr;overflow:auto;height:auto}aside,.lista{border:0;border-bottom:1px solid var(--bd)}nav{max-height:220px}.leitor{padding:20px 16px}}
+</style>
+</head>
+<body>
+<aside>
+  <div class="marca"><b>Sorelly</b> · Documentos</div>
+  <div class="busca"><svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" placeholder="Buscar em todos os documentos" autocomplete="off"></div>
+  <nav id="nav"></nav>
+</aside>
+<section class="lista" id="lista"></section>
+<main><div class="leitor" id="leitor"></div></main>
+<script>
+var D=/*__DADOS__*/null;
+var $=function(id){return document.getElementById(id)};
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function inline(s,base){
+  s=esc(s);
+  s=s.replace(/`([^`]+)`/g,function(_,c){var alvo=/\.md$/.test(c)?(D.conteudo[c.replace(/^docs\//,'')]!=null?c.replace(/^docs\//,''):resolver(base,c)):null;return alvo&&D.conteudo[alvo]!=null?'<a href="#doc='+encodeURIComponent(alvo)+'"><code>'+c+'</code></a>':'<code>'+c+'</code>'});
+  s=s.replace(/\*\*([^*]+)\*\*/g,'<b>$1</b>').replace(/(^|[^*])\*([^*\s][^*]*)\*/g,'$1<i>$2</i>');
+  s=s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g,function(_,t,h){var alvo=resolver(base,h);return alvo&&D.conteudo[alvo]?'<a href="#doc='+encodeURIComponent(alvo)+'">'+t+'</a>':'<a href="'+h+'" target="_blank">'+t+'</a>'});
+  return s;
+}
+function resolver(base,h){ if(/^(https?:|#|mailto:)/.test(h))return null; h=decodeURIComponent(h.split('#')[0]); var partes=(base.split('/').slice(0,-1)).concat(h.split('/')),out=[]; partes.forEach(function(p){if(p==='..')out.pop();else if(p&&p!=='.')out.push(p)}); return out.join('/') }
+function md(txt,base){
+  var L=txt.replace(/\r/g,'').split('\n'),o=[],i=0,lista=null;
+  function fecha(){if(lista){o.push('</'+lista+'>');lista=null}}
+  while(i<L.length){var l=L[i];
+    if(/^```/.test(l)){fecha();var b=[];i++;while(i<L.length&&!/^```/.test(L[i])){b.push(esc(L[i]));i++}o.push('<pre><code>'+b.join('\n')+'</code></pre>');i++;continue}
+    var h=l.match(/^(#{1,4})\s+(.*)$/);if(h){fecha();var n=h[1].length;o.push('<h'+n+'>'+inline(h[2],base)+'</h'+n+'>');i++;continue}
+    if(/^\s*\|.*\|\s*$/.test(l)&&i+1<L.length&&/^\s*\|?\s*:?-{2,}/.test(L[i+1])){fecha();var cel=function(x){return x.trim().replace(/^\||\|$/g,'').split('|').map(function(c){return c.trim()})};var cab=cel(l),t='<table><thead><tr>'+cab.map(function(c){return '<th>'+inline(c,base)+'</th>'}).join('')+'</tr></thead><tbody>';i+=2;while(i<L.length&&/^\s*\|.*\|\s*$/.test(L[i])){t+='<tr>'+cel(L[i]).map(function(c){return '<td>'+inline(c,base)+'</td>'}).join('')+'</tr>';i++}o.push(t+'</tbody></table>');continue}
+    if(/^\s*>/.test(l)){fecha();var q=[];while(i<L.length&&/^\s*>/.test(L[i])){q.push(L[i].replace(/^\s*>\s?/,''));i++}o.push('<blockquote>'+inline(q.join(' '),base)+'</blockquote>');continue}
+    if(/^\s*(---|\*\*\*)\s*$/.test(l)){fecha();o.push('<hr>');i++;continue}
+    var li=l.match(/^(\s*)([-*]|\d+\.)\s+(.*)$/);if(li){var tipo=/\d/.test(li[2])?'ol':'ul';if(lista!==tipo){fecha();o.push('<'+tipo+'>');lista=tipo}var c=li[3],ck=c.match(/^\[( |x|X)\]\s+(.*)$/),pad=li[1].length?' style="margin-left:'+(li[1].length*8)+'px"':'';o.push(ck?'<li class="chk"'+pad+'><input type="checkbox" disabled'+(ck[1]!==' '?' checked':'')+'>'+inline(ck[2],base)+'</li>':'<li'+pad+'>'+inline(c,base)+'</li>');i++;continue}
+    if(!l.trim()){fecha();i++;continue}
+    fecha();var p=[l];i++;while(i<L.length&&L[i].trim()&&!/^(#{1,4}\s|```|\s*[-*]\s|\s*\d+\.\s|\s*>|\s*\|)/.test(L[i])){p.push(L[i]);i++}o.push('<p>'+inline(p.join(' '),base)+'</p>');
+  }
+  fecha();return o.join('\n');
+}
+var aba='inicio',doc=null,marca=null;
+function itens(a){return (D.abas.filter(function(x){return x.id===a})[0]||{itens:[]}).itens}
+function desenhaNav(){
+  var h='',grp={inicio:'',financeiro:'Setores',ideias:'Ideias'};
+  D.abas.forEach(function(a){ if(grp[a.id])h+='<div class="grupo">'+grp[a.id]+'</div>'; h+='<button data-a="'+a.id+'" class="'+(a.id===aba?'on':'')+'"><span>'+esc(a.nome)+'</span><span class="n">'+a.itens.length+'</span></button>'});
+  $('nav').innerHTML=h;[].forEach.call($('nav').querySelectorAll('button'),function(b){b.onclick=function(){$('q').value='';ir('#setor='+b.dataset.a)}});
+}
+function desenhaLista(){
+  var a=D.abas.filter(function(x){return x.id===aba})[0];var h='<h2>'+esc(a.nome)+'</h2>';
+  a.itens.forEach(function(it){h+='<button class="it'+(doc===it.p?' on':'')+'" data-p="'+encodeURIComponent(it.p)+'"><span class="t">'+esc(it.t)+'</span><span class="k">'+esc(it.k)+(it.l?' · <span class="loc">só neste PC</span>':'')+'</span></button>'});
+  $('lista').innerHTML=h;[].forEach.call($('lista').querySelectorAll('.it'),function(b){b.onclick=function(){ir('#setor='+aba+'&doc='+b.dataset.p)}});
+}
+function abreDoc(p,marcar){
+  var it=null;D.abas.forEach(function(a){a.itens.forEach(function(x){if(x.p===p&&!it)it=x})});
+  var txt=D.conteudo[p],titulo=it?it.t:p,h='<div class="topo"><span>docs/'+esc(p)+'</span><a href="'+encodeURI(p)+'" target="_blank">Abrir o arquivo</a></div>';
+  if(txt!=null){var corpo=md(txt,p);if(marcar){var re=new RegExp('('+marcar.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+')','gi');corpo=corpo.replace(/>([^<]+)</g,function(_,t){return '>'+t.replace(re,'<mark>$1</mark>')+'<'})}h+='<div class="md">'+corpo+'</div>'}
+  else h+='<div class="md"><h1>'+esc(titulo)+'</h1></div><div class="aviso">'+(it&&it.l?'Este arquivo tem <b>dados reais</b> e fica <b>só neste PC</b> (fora do Git). Por segurança ele não aparece dentro do painel. Use <b>Abrir o arquivo</b> acima.':'Este arquivo não é texto (PDF ou desenho). Use <b>Abrir o arquivo</b> acima.')+'</div>';
+  $('leitor').innerHTML=h;$('leitor').parentNode.scrollTop=0;
+  var m=$('leitor').querySelector('mark');if(m)m.scrollIntoView({block:'center'});
+}
+function inicioTela(){
+  var tD=0,tP=0;D.resumo.forEach(function(r){tD+=r.nd;tP+=r.np});
+  var h='<div class="md"><h1>Painel de documentos da Sorelly</h1><p>Escolha um setor à esquerda e clique num documento para ler aqui mesmo. A busca no alto procura em todos os documentos.</p></div>';
+  h+='<div class="cards"><div class="card" data-a="inicio"><div class="nm">Setores</div><div class="q"><b>'+D.resumo.length+'</b> pastas</div></div><div class="card"><div class="nm">Decisões copiadas</div><div class="q"><b>'+tD+'</b> nos setores</div></div><div class="card"><div class="nm">Pendências</div><div class="q"><b>'+tP+'</b> a conferir</div></div><div class="card" data-a="ideias"><div class="nm">Ideias</div><div class="q"><b>'+itens('ideias').length+'</b> documentos</div></div></div>';
+  h+='<div class="md"><h2>Setores</h2></div><div class="cards">';
+  D.resumo.forEach(function(r){h+='<div class="card" data-a="'+r.id+'"><div class="nm">'+esc(r.nome)+'</div><div class="q"><b>'+r.nd+'</b> decisões · <b>'+r.np+'</b> pendências</div></div>'});
+  h+='</div><div class="topo"><span>Gerado em '+esc(D.gerado)+'. Para atualizar: <code>node scripts/gerar-painel-documentos.mjs</code></span></div>';
+  $('leitor').innerHTML=h;[].forEach.call($('leitor').querySelectorAll('.card[data-a]'),function(c){c.onclick=function(){ir('#setor='+c.dataset.a)}});
+}
+function buscar(termo){
+  termo=termo.trim();if(termo.length<2){rota();return}
+  var t=termo.toLowerCase(),res=[];
+  Object.keys(D.conteudo).forEach(function(p){var x=D.conteudo[p],lx=x.toLowerCase(),k=lx.indexOf(t),n=0,j=k;while(j>=0&&n<50){n++;j=lx.indexOf(t,j+t.length)}if(k>=0){var ini=Math.max(0,k-70);res.push({p:p,n:n,s:(ini?'…':'')+x.slice(ini,k+t.length+90).replace(/\s+/g,' ')+'…'})}});
+  res.sort(function(a,b){return b.n-a.n});
+  var nomeDe=function(p){var r=p;D.abas.forEach(function(a){a.itens.forEach(function(i){if(i.p===p)r=i.t})});return r};
+  var h='<div class="md"><h1>Busca: '+esc(termo)+'</h1><p>'+res.length+' documento(s) encontrados.</p></div>';
+  res.slice(0,60).forEach(function(r){h+='<div class="res" data-p="'+encodeURIComponent(r.p)+'"><div class="t">'+esc(nomeDe(r.p))+' <span style="color:var(--mut);font-weight:400;font-size:12px">· '+r.n+(r.n>=50?'+':'')+' vez(es)</span></div><div class="s">'+esc(r.s)+'</div></div>'});
+  $('leitor').innerHTML=h;$('leitor').parentNode.scrollTop=0;
+  [].forEach.call($('leitor').querySelectorAll('.res'),function(e){e.onclick=function(){marca=termo;ir('#doc='+e.dataset.p)}});
+}
+function ir(h){if(location.hash===h)rota();else location.hash=h}
+function rota(){
+  var h=location.hash.slice(1),m={};h.split('&').forEach(function(x){var k=x.split('=');if(k[0])m[k[0]]=decodeURIComponent(k[1]||'')});
+  if(m.doc&&!m.setor&&!itens(aba).some(function(i){return i.p===m.doc})){D.abas.slice(1).concat(D.abas[0]).some(function(a){return a.itens.some(function(i){if(i.p===m.doc){aba=a.id;return true}})})}
+  aba=m.setor||aba||'inicio';if(!D.abas.some(function(a){return a.id===aba}))aba='inicio';doc=m.doc||null;
+  var mc=marca;marca=null;
+  desenhaNav();desenhaLista();if(doc)abreDoc(doc,mc);else if(aba==='inicio')inicioTela();else{var r=itens(aba)[0];if(r){doc=r.p;desenhaLista();abreDoc(r.p)}}
+}
+var tempo;$('q').oninput=function(){clearTimeout(tempo);var v=this.value;tempo=setTimeout(function(){buscar(v)},180)};
+window.onhashchange=rota;rota();
+</script>
+</body>
+</html>

@@ -59,7 +59,7 @@ Ordem das etapas: Condicionais → Remarcação → Crédito de garantia → Ven
 - Pix representante (forma nova no app): o financeiro escolhe a representante e dá OK em Comissões (filtro só Todos/Pendentes); o valor entra como PAGO na comissão pendente dela (lista de pagamentos da data). Falta cobrir = confirmado + combustível + ajuste − pago.
 - Datas: grupo A paga 1/11/21, grupo B 6/16/26. Corte = 12h do dia anterior (hora e dias configuráveis): o que for confirmado até o corte entra naquela data; depois, na seguinte. Pagamento só depois do corte.
 - Pagamento feito depois (Inadimplência → Registrar pagamento) vira linha extra do acerto; o financeiro confirma a conta e a comissão retida entra na remessa seguinte.
-- Kit novo: R$ 20 (R$ 35 com expositor), valores PROVISÓRIOS, só com termo assinado (assinatura do app, ou check manual do agendamento no Consolidado).
+- Kit novo: R$ 20 (R$ 35 com expositor; valores finais desde 02/11/2026; com expositor a representante monta e envia a foto no app, sem a foto fica pendente; ACERTO + KIT paga só a comissão do acerto, sem esse valor), só com termo assinado (assinatura do app, ou check manual do agendamento no Consolidado).
 - A confirmar com o Marcus: comissão retida só sobre o valor em aberto (hoje) ou do acerto inteiro; promissória bloqueia a comissão (hoje sim, dá para desligar); lista com os ~25 representantes e grupos; manual do folder digital (aba "Kit novo" no app da representante: ainda não feito).
 
 ## Peças liberadas para o próximo mês
@@ -116,3 +116,5 @@ Nome da revendedora fixo ao rolar. Consolidado travado no topo: Vendas / Comiss�
 ## Decisão de 19/10/2026 (Marcus)
 - **Representante NÃO tem bonificação** (nem bônus por nota de R$ 200, nem R$ 80 por R$ 1.000 de Pix direto). Nota e pontos da Avaliação ficam só como acompanhamento e bloqueio de kit novo. O placar das representantes, se vier, também não paga nada. Só a comissão (8%, kit novo, reposição, combustível) paga representante.
 - Lista de representantes de `pessoas.js` confirmada (23, sem Sabrina e Julia G.). Listagens continuam simuladas.
+- **Combustível (02/11/2026, vale no lugar do R$ 200,00 fixo das notas de 06/10):** só quem teve acerto no período; sem km no prazo não paga naquela data; km enviado depois do corte (até o corte da data seguinte) é pago na PRÓXIMA data, junto com o km dela. Código: `resumoSituacao` em `domain/comissoes.js` (`kmAtras`, `kmTarde`, `combFixo` sempre falso). O campo `combSemEnvio` ficou sem uso.
+- **Compras de joias (02/11/2026, só decisão):** desconta da comissão em parcelas (mínimo R$ 50,00); dívida em aberto máxima R$ 1.000,00 por representante; sem comissão para cobrir, alerta e a parcela passa para a data seguinte; se parar de trabalhar, a última comissão desconta o que faltar. Ver `docs/DECISOES.md` de 02/11/2026.

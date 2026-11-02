@@ -6,14 +6,18 @@
 // CARD da revendedora (clicar na linha): a Ana Maria pode trocar a representante, a data do acerto e anotar. ENQUANTO A DEVMASTER AINDA MANDA, toda alteração
 // precisa ser feita ANTES na DevMaster; o card avisa e pede a confirmação. As alterações ficam no módulo "agrev" (um registro por revendedora) e ganham o selo
 // "diferente da DevMaster" até a DevMaster ficar igual.
+import { CalendarioAcertos } from "@/apps/montagem/components/calendario-acertos";
+import { diaEfetivo, redistribuirContagem } from "@/apps/montagem/domain/feriados";
+import { MenuFiltro, ordenar, passaFiltro } from "@/apps/montagem/components/filtro-planilha";
+import { Botao } from "@/apps/montagem/components/padrao-fin";
+import { nomeProprio } from "@/apps/montagem/domain/agendamento";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { diasEntre, fmtDataBR, isoDe, parteData } from "@/apps/montagem/domain/revendedoras-internas";
 import { isoDia } from "@/apps/montagem/lib/format";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { PageHead } from "@/apps/montagem/ui/page";
-import { e, useEffect, useRef, useState } from "@/shared/react";
+import { e, useEffect, useMemo, useRef, useState } from "@/shared/react";
 import React from "react";
 
 var MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
@@ -25,10 +29,13 @@ var CARD_ESTILO = {background:"radial-gradient(900px 260px at 0% -10%, rgba(241,
 var TOPO_ESTILO = {background:"linear-gradient(90deg, rgba(241,213,138,.30), rgba(241,213,138,0))"};
 var ROTULO = "text-[11px] font-semibold uppercase tracking-[.07em] text-[#cdbf9f]";
 var CAMPO = INPUT+" h-8! w-full text-[13px]! ";
-var ALTURA = 340;
+var ALTURA = 372;
 var BRL = function(v){ return "R$ "+Number(v||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); };
 var curto = function(nome){ var p = String(nome||"").split(/\s+/).filter(function(w){ return ["da","de","do","dos","das","e"].indexOf(w.toLowerCase())<0; }); return p.slice(0,2).join(" "); };
 var dBR = function(iso){ return iso ? fmtDataBR(iso).slice(0,5) : "—"; };
+// último caso da revendedora (campo Obs. gerais da condicional na DevMaster): "26/10 Tamara: kit sem mexer…"; na tabela vai cortado, o texto inteiro fica no card e no title
+var casoTexto = function(r){ return r.caso ? dBR(r.caso.iso)+" "+(r.caso.quem ? r.caso.quem+": " : "")+r.caso.txt : ""; };
+var casoCurto = function(r){ var x = casoTexto(r); return !x ? "—" : x.length>70 ? x.slice(0, 69)+"…" : x; };
 var foneBonito = function(cel){ var n = String(cel||"").replace(/\D/g,"").replace(/^55/,""); return n.length===11 ? "("+n.slice(0,2)+") "+n.slice(2,7)+"-"+n.slice(7) : n.length===10 ? "("+n.slice(0,2)+") "+n.slice(2,6)+"-"+n.slice(6) : n; };
 var linkZap = function(cel){ var n = String(cel||"").replace(/\D/g,""); return n ? "https://wa.me/"+(n.length<=11 ? "55"+n : n) : ""; };
 var segundaDe = function(dt){ var x = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
@@ -46,7 +53,7 @@ function semanasDoMes(ano, mes){
 // quantos acertos por dia (e por representante), só da lista já filtrada
 function contar(linhas){
   var porDia = {};
-  linhas.forEach(function(r){ var d = porDia[r.prev] || (porDia[r.prev] = {n:0, reps:{}}); d.n++; d.reps[r.representante] = (d.reps[r.representante]||0)+1; });
+  linhas.forEach(function(r){ var k = diaEfetivo(r.prev), d = porDia[k] || (porDia[k] = {n:0, reps:{}}); d.n++; d.reps[r.representante] = (d.reps[r.representante]||0)+1; });
   return porDia;
 }
 var calor = function(n, max){ return n<=0 ? null : "rgba(232,184,75,"+(0.10+0.42*(n/Math.max(1, max)))+")"; };
@@ -77,30 +84,9 @@ var fmtCampo = function(k, v){ return k==="prev" && v ? fmtDataBR(v) : (v || "�
 var seloDif = function(r, k){
   var d = r.dif && r.dif[k]; if(!d || d.estado==="igual") return null;
   return d.estado==="dm_mudou"
-    ? e("span",{className:"ml-1.5 rounded-full bg-destructive/20 px-1.5 text-[10.5px] font-bold text-[#f87171]", title:"A DevMaster mudou para: "+fmtCampo(k, d.dm)+" (o nosso: "+fmtCampo(k, d.local)+"). Abra o card para escolher."}, "DM mudou")
-    : e("span",{className:"ml-1.5 rounded-full bg-warning/20 px-1.5 text-[10.5px] font-bold text-warning", title:"Na DevMaster: "+fmtCampo(k, d.dm)+". Altere lá também ou volte para o da DevMaster."}, "≠ DevMaster");
+    ? e("span",{className:"ml-1.5 rounded-full bg-destructive/20 px-1.5 text-[11px] font-bold text-[#f87171]", title:"A DevMaster mudou para: "+fmtCampo(k, d.dm)+" (o nosso: "+fmtCampo(k, d.local)+"). Abra o card para escolher."}, "DM mudou")
+    : e("span",{className:"ml-1.5 rounded-full bg-warning/20 px-1.5 text-[11px] font-bold text-warning", title:"Na DevMaster: "+fmtCampo(k, d.dm)+". Altere lá também ou volte para o da DevMaster."}, "≠ DevMaster");
 };
-
-// ── Calendário do topo: dia da semana, número e QUANTOS ACERTOS
-function CalendarioTopo(p){
-  var ano = p.mes[0], mes = p.mes[1], sem = semanasDoMes(ano, mes), porDia = p.porDia, hoje = p.hojeIso;
-  var max = 0; Object.keys(porDia).forEach(function(k){ if(k.slice(0,7)===ano+"-"+String(mes+1).padStart(2,"0")) max = Math.max(max, porDia[k].n); });
-  var doMes = somaPeriodo(porDia, ano+"-"+String(mes+1).padStart(2,"0")+"-01", ano+"-"+String(mes+1).padStart(2,"0")+"-31");
-  return e("div",{className:"flex h-full flex-col rounded-xl border bg-[#131315] px-2 pb-2 pt-1.5 "+BORDA},
-    e("div",{className:"mb-1 flex items-center justify-between gap-2"},
-      e("button",{type:"button", "aria-label":"Mês anterior", onClick:function(){ var t = new Date(ano, mes-1, 1); p.setMes([t.getFullYear(), t.getMonth()]); }, className:"h-[26px] rounded-md border border-border bg-[#1d1d21] px-2.5 text-[13px]"}, "◀"),
-      e("span",{className:"flex items-baseline gap-2"}, e("b",{className:"text-[13px]"}, MESES[mes]+" de "+ano), e("span",{className:"text-[12px] font-semibold text-[#E8B84B]"}, doMes+" acertos")),
-      e("button",{type:"button", "aria-label":"Próximo mês", onClick:function(){ var t = new Date(ano, mes+1, 1); p.setMes([t.getFullYear(), t.getMonth()]); }, className:"h-[26px] rounded-md border border-border bg-[#1d1d21] px-2.5 text-[13px]"}, "▶")),
-    e("div",{className:"grid min-h-0 flex-1 grid-cols-7 gap-[3px]", style:{gridAutoRows:"minmax(0,1fr)"}},
-      [].concat.apply([], sem).map(function(d, i){
-        if(!d) return e("div",{key:i});
-        var iso = isoDe(d), w = d.getDay(), n = porDia[iso] ? porDia[iso].n : 0, sel = iso===p.dia, hj = iso===hoje;
-        return e("button",{key:i, type:"button", onClick:function(){ p.setDia(iso); }, title:NDIA[w]+" "+fmtDataBR(iso)+" · "+n+(n===1 ? " acerto" : " acertos")+" · clique para ver só este dia na tabela",
-          className:"flex flex-col justify-center rounded-[7px] border px-1.5 text-left hover:border-[rgba(232,184,75,.55)] "+(sel ? "border-transparent ring-2 ring-[#E8B84B]" : "border-[#2c2c32]"), style:{background:calor(n, max) || (w===0 ? "#0f0f11" : "#18181b")}},
-          e("span",{className:"flex w-full items-baseline justify-between"}, e("span",{className:"text-[10.5px] font-bold"}, NDIA3[w]), e("span",{className:"text-[13px] font-extrabold leading-none "+(hj ? "text-[#E8B84B]" : "")}, d.getDate())),
-          e("span",{className:"mt-0.5 text-[15px] font-extrabold leading-none tabular-nums "+(n ? "" : "opacity-30")}, n || "—"));
-      })));
-}
 
 // ── Resumo ao lado do calendário (no lugar da lista do dia): números do dia, da semana e do mês e as representantes do dia
 function Resumo(p){
@@ -112,38 +98,15 @@ function Resumo(p){
     e("span",{className:"text-[11px] font-semibold uppercase tracking-[.05em] text-muted-foreground"}, rot), e("b",{className:"text-[20px] leading-tight tabular-nums "+(cor||"")}, val), sub && e("span",{className:"text-[11px] text-muted-foreground"}, sub)); };
   return e("div",{className:"flex h-full flex-col gap-2 rounded-xl border bg-[#131315] p-2 "+BORDA},
     e("div",{className:"flex flex-wrap items-baseline justify-between gap-2"},
-      e("b",{className:"text-[13px]"}, fmtDataBR(iso)+" · "+NDIA[w].toLowerCase()), e("span",{className:"text-[12px] "+(dd<0 ? "text-[#f87171]" : "text-muted-foreground")}, dd<0 ? Math.abs(dd)+" d atrás" : dd===0 ? "hoje" : "daqui a "+dd+" d"),
-      p.soDia ? e("button",{type:"button", onClick:p.limpaDia, className:"h-6 rounded-full px-2.5 text-[11.5px] font-bold", style:BARRA_OURO}, "Tabela só deste dia ✕") : e("span",{className:"text-[11.5px] text-muted-foreground"}, "Clique num dia para filtrar a tabela")),
+      e("b",{className:"text-[13px]"}, fmtDataBR(iso)+" · "+NDIA[w].toLowerCase()), e("span",{className:"text-[13px] "+(dd<0 ? "text-[#f87171]" : "text-muted-foreground")}, dd<0 ? Math.abs(dd)+" d atrás" : dd===0 ? "hoje" : "daqui a "+dd+" d"),
+      p.soDia ? e("button",{type:"button", onClick:p.limpaDia, className:"h-8 rounded-full px-3 text-[13px] font-bold", style:BARRA_OURO}, "Tabela só deste dia ✕") : e("span",{className:"text-[11px] text-muted-foreground"}, "Clique num dia para filtrar a tabela")),
     e("div",{className:"grid grid-cols-4 gap-1.5"}, cel("No dia", d.n, "text-[#E8B84B]"), cel("Na semana", somaPeriodo(p.porDia, seg, dom)), cel("No mês", somaPeriodo(p.porDia, mesIni, mesFim)), cel("Atrasadas", p.atrasadas, p.atrasadas ? "text-[#f87171]" : "", "hoje: "+p.hojeN)),
-    e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Acertos do dia por representante"), p.repsSel.length>0 && e("button",{type:"button", onClick:p.limpaReps, className:"text-[11.5px] text-[#E8B84B]"}, "ver todas")),
+    e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Acertos do dia por representante"), p.repsSel.length>0 && e("button",{type:"button", onClick:p.limpaReps, className:"text-[11px] text-[#E8B84B]"}, "ver todas")),
     e("div",{className:"min-h-0 flex-1 overflow-y-auto pr-1"},
       reps.length===0 ? e("p",{className:"py-4 text-center text-[13px] text-muted-foreground"}, "Nenhum acerto previsto neste dia"+(p.filtrando ? " com esses filtros." : "."))
       : reps.map(function(k){ var on = p.repsSel.indexOf(k)>=0;
-          return e("button",{key:k, type:"button", onClick:function(){ p.alternaRep(k); }, title:"Clique para filtrar só "+k, className:"mb-1 grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_28px] items-center gap-2 rounded-md px-2 py-1 text-left text-[12.5px] hover:bg-white/10 "+(on ? "ring-1 ring-[#E8B84B]" : "")},
+          return e("button",{key:k, type:"button", onClick:function(){ p.alternaRep(k); }, title:"Clique para filtrar só "+k, className:"mb-1 grid w-full grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_28px] items-center gap-2 rounded-md px-2 py-1 text-left text-[13px] hover:bg-white/10 "+(on ? "ring-1 ring-[#E8B84B]" : "")},
             e("span",{className:"truncate "+(on ? "font-bold" : "")}, k), e("i",{className:"block h-2 overflow-hidden rounded bg-[#2a2a30]"}, e("u",{className:"block h-2", style:{width:Math.round(d.reps[k]/max*100)+"%", background:BARRA_OURO.background}})), e("b",{className:"text-right tabular-nums"}, d.reps[k])); })));
-}
-
-// ── Calendário inteiro: mês grande, cada dia com o total e as representantes
-function CalendarioGrande(p){
-  var ano = p.mes[0], mes = p.mes[1], sem = semanasDoMes(ano, mes), porDia = p.porDia, hoje = p.hojeIso;
-  var ym = ano+"-"+String(mes+1).padStart(2,"0"), max = 0; Object.keys(porDia).forEach(function(k){ if(k.slice(0,7)===ym) max = Math.max(max, porDia[k].n); });
-  var btn = "h-8 rounded-lg border border-border bg-[#1d1d21] px-3 text-[13px]";
-  return e("div",{className:"overflow-hidden rounded-xl border bg-[#111113] "+BORDA},
-    e("div",{className:"flex flex-wrap items-center gap-2 border-b px-3 py-2 "+BORDA},
-      e("button",{type:"button", onClick:function(){ var t = new Date(ano, mes-1, 1); p.setMes([t.getFullYear(), t.getMonth()]); }, className:btn}, "◀ Mês anterior"),
-      e("h3",{className:"min-w-[170px] text-center text-[15px] font-bold"}, MESES[mes]+" de "+ano),
-      e("button",{type:"button", onClick:function(){ var t = new Date(ano, mes+1, 1); p.setMes([t.getFullYear(), t.getMonth()]); }, className:btn}, "Próximo mês ▶"),
-      e("button",{type:"button", onClick:function(){ var t = parteData(hoje); p.setMes([t.getFullYear(), t.getMonth()]); }, className:btn}, "Hoje"),
-      e("span",{className:"text-[13px] font-semibold text-[#E8B84B]"}, somaPeriodo(porDia, ym+"-01", ym+"-31")+" acertos no mês"),
-      e("span",{className:"flex-1"}), e("span",{className:"text-[12.5px]"}, "Clique no dia para ver a lista.")),
-    e("div",{className:"grid grid-cols-7 gap-[5px] p-2.5"}, [].concat.apply([], sem).map(function(d, i){
-      if(!d) return e("div",{key:i});
-      var iso = isoDe(d), w = d.getDay(), x = porDia[iso] || {n:0, reps:{}}, reps = Object.keys(x.reps).sort(function(a, b){ return x.reps[b]-x.reps[a]; });
-      return e("div",{key:i, onClick:function(){ p.irParaDia(iso); }, className:"flex min-h-[118px] min-w-0 cursor-pointer flex-col gap-[3px] rounded-[10px] border p-1.5 hover:brightness-125 "+(iso===hoje ? "border-[#E8B84B]" : "border-[rgba(232,184,75,.2)]"), style:{background:calor(x.n, max) || "#141416"}},
-        e("div",{className:"flex items-baseline justify-between"}, e("span",null, e("b",{className:"text-[15px] "+(iso===hoje ? "text-[#E8B84B]" : "")}, d.getDate()), " ", e("span",{className:"text-[10.5px] font-bold"}, NDIA3[w])), e("b",{className:"text-[15px] tabular-nums "+(x.n ? "" : "opacity-30")}, x.n || "—")),
-        reps.slice(0,4).map(function(k){ return e("div",{key:k, title:k, className:"grid h-[19px] grid-cols-[1fr_auto] items-center gap-1 rounded-[5px] border bg-[#25252b]/80 px-1.5 text-[11px] "+BORDA}, e("span",{className:"truncate"}, curto(k)), e("b",{className:"tabular-nums text-[#E8B84B]"}, x.reps[k])); }),
-        reps.length>4 && e("div",{className:"text-center text-[11px] font-bold"}, "+"+(reps.length-4)+" representantes"));
-    })));
 }
 
 // ── Colunas da tabela (iguais às da aba do Atendimento interno: filtro ao clicar no título)
@@ -158,142 +121,133 @@ var COLUNAS = [
   {k:"emissao", t:"Data do kit", tipo:"data", v:function(r){ return r.emissao; }},
   {k:"prev", t:"Acerto previsto", tipo:"data", v:function(r){ return r.prev; }},
   {k:"falt", t:"Faltam", tipo:"falt", v:function(r, h){ return diasEntre(h, r.prev); }},
+  {k:"caso", t:"Último caso", tipo:"txt", v:function(r){ return casoTexto(r); }},
   {k:"valor", t:"Valor do kit", tipo:"din", v:function(r){ return r.valor; }}];
 
+// texto que aparece na tabela (é ele que entra na lista de valores do filtro)
+var exibDe = function(c, r, hoje){ var x = c.v(r, hoje);
+  if(c.k==="emissao" || c.k==="prev") return x ? dBR(x) : "—";
+  if(c.k==="falt") return x<0 ? "Atrasada "+Math.abs(x)+" d" : x===0 ? "Hoje" : x+" d";
+  if(c.k==="valor") return BRL(x);
+  if(c.k==="caso") return casoCurto(r);
+  return x===undefined || x===null || x==="" ? "—" : String(x); };
 function passa(r, fil, hoje){
-  var ok = true;
-  COLUNAS.forEach(function(c){ var f = fil[c.k]; if(!f || !ok || !c.v) return; var x = c.v(r, hoje);
-    if(c.tipo==="txt"){ if(f.q && String(x).toLowerCase().indexOf(f.q.toLowerCase())<0) ok = false; }
-    else if(c.tipo==="num"){ if(f.q!=="" && f.q!=null && !(Number(x)>=Number(f.q))) ok = false; }
-    else if(c.tipo==="data"){ if(f.a && !f.b && x!==f.a) ok = false; else if(f.a && f.b && !(x>=f.a && x<=f.b)) ok = false; else if(!f.a && f.b && !(x && x<=f.b)) ok = false; }
-    else if(c.tipo==="falt"){ if(f.q==="atr" && !(x<0)) ok = false; if(f.q==="7" && !(x>=0 && x<=7)) ok = false; if(f.q==="30" && !(x>=0 && x<=30)) ok = false; if(f.q==="fut" && !(x>30)) ok = false; }
-    else if(c.tipo==="sel"){ if(f.q && String(x)!==String(f.q)) ok = false; } });
-  return ok;
+  return COLUNAS.every(function(c){ var f = fil[c.k]; if(!f || !c.v) return true; return passaFiltro(f, c.tipo, c.v(r, hoje), exibDe(c, r, hoje)); });
+}
+// valores únicos de uma coluna, na ordem certa, com a quantidade de linhas de cada um
+function valoresDaColuna(lista, c, hoje){
+  var mapa = {}; lista.forEach(function(r){ var x = c.v(r, hoje), k = exibDe(c, r, hoje), g = mapa[k] || (mapa[k] = {v:k, n:0, b:x}); g.n++; });
+  return Object.keys(mapa).map(function(k){ return mapa[k]; }).sort(function(a, b){ var va = a.b===undefined || a.b===null || a.b==="", vb = b.b===undefined || b.b===null || b.b==="";
+    if(va || vb) return va && vb ? 0 : va ? 1 : -1; if(typeof a.b==="number" && typeof b.b==="number") return a.b-b.b; return String(a.b).localeCompare(String(b.b), "pt-BR", {numeric:true}); });
 }
 
+// texto de cada célula (usado para medir a largura da coluna)
+var celTxt = function(c, r, hoje){
+  if(c.k==="nome") return r.nome; if(c.k==="zap") return foneBonito(r.celular) || "—"; if(c.k==="cod") return String(r.cod); if(c.k==="rep") return r.representante;
+  if(c.k==="cidade") return r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—"; if(c.k==="kits") return String(r.kits);
+  if(c.k==="emissao" || c.k==="prev") return dBR(c.k==="prev" ? r.prev : r.emissao);
+  if(c.k==="falt"){ var dd = diasEntre(hoje, r.prev); return dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"; }
+  if(c.k==="valor") return BRL(r.valor);
+  if(c.k==="caso") return casoCurto(r); return ""; };
+function largurasDe(lista, hoje){
+  var out = {}, cv = typeof document!=="undefined" ? document.createElement("canvas").getContext("2d") : null;
+  var mede = function(txt, peso){ if(!cv) return String(txt).length*8; cv.font = peso+" 13px Inter, system-ui, sans-serif"; return cv.measureText(String(txt)).width; };
+  COLUNAS.forEach(function(c){
+    var tem = c.tipo!=="seq" && c.tipo!=="din", w = mede(c.t, 600)+(tem ? 62 : 20);   // título + seta de ordem + ícone do filtro
+    if(c.tipo==="seq") w = Math.max(w, mede(String(lista.length), 400));
+    else lista.forEach(function(r){ var x = mede(celTxt(c, r, hoje), c.k==="nome" || c.k==="prev" ? 600 : 400); if(x>w-22) w = x+22; });
+    if(lista.some(function(r){ return r.dif && r.dif[c.k] && r.dif[c.k].estado!=="igual"; })) w += 90;   // selo "≠ DevMaster"
+    out[c.k] = Math.ceil(w+22); });
+  return out;
+}
 function TabelaRevendedoras(p){
-  var linhas = p.linhas, fil = p.fil, setFil = p.setFil, hoje = p.hojeIso, reps = p.todasReps;
-  var ref = useRef(null), pr = useRef(null), pp = useState(null), pop = pp[0], setPop = pp[1];
-  var ativo = function(c){ var f = fil[c.k]; return !!f && !!(f.q || f.a || f.b); };
+  var linhas = p.linhas, fil = p.fil, setFil = p.setFil, hoje = p.hojeIso, ord = p.ord, setOrd = p.setOrd;
+  var pp = useState(null), pop = pp[0], setPop = pp[1];
+  var ativo = function(c){ return !!fil[c.k] || (!!ord && ord.k===c.k); };
   var algum = COLUNAS.some(ativo);
-  var troca = function(col, parte, valor){ var n = Object.assign({}, fil), f = Object.assign({}, n[col]); f[parte] = valor; n[col] = f; setFil(n); };
-  useEffect(function(){
-    if(!pop) return undefined;
-    var fora = function(ev){ if(pr.current && pr.current.contains(ev.target)) return; if(ev.target.closest && ev.target.closest("th[data-col]")) return; setPop(null); };
-    var esc = function(ev){ if(ev.key==="Escape") setPop(null); };
-    document.addEventListener("mousedown", fora); document.addEventListener("keydown", esc);
-    return function(){ document.removeEventListener("mousedown", fora); document.removeEventListener("keydown", esc); };
-  }, [pop]);
-  var abrirPop = function(c, ev){ if(pop && pop.col===c.k){ setPop(null); return; } var t = ev.currentTarget.getBoundingClientRect(), w = ref.current.getBoundingClientRect(); setPop({col:c.k, top:t.bottom-w.top+4, left:Math.max(0, Math.min(t.left-w.left, w.width-250))}); };
-  var cPop = pop ? COLUNAS.find(function(c){ return c.k===pop.col; }) : null, fPop = cPop ? (fil[cPop.k]||{}) : {};
-  var rot = "flex flex-col gap-1 text-[11px] font-bold uppercase tracking-[.05em]", campo = INPUT+" h-8! w-full text-[13px]!";
-  var popCorpo = !cPop ? null : cPop.tipo==="txt" ? e("label",{className:rot}, cPop.t+" contém", e("input",{autoFocus:true, value:fPop.q||"", placeholder:"Digite para filtrar", className:campo, onChange:function(ev){ troca(cPop.k, "q", ev.target.value); }}))
-    : cPop.tipo==="num" ? e("label",{className:rot}, cPop.t+" a partir de", e("input",{autoFocus:true, type:"number", min:0, value:fPop.q||"", className:campo, onChange:function(ev){ troca(cPop.k, "q", ev.target.value); }}))
-    : cPop.tipo==="data" ? e(React.Fragment,null, e("label",{className:rot},"Data (ou de)", e("input",{autoFocus:true, type:"date", value:fPop.a||"", className:campo, onChange:function(ev){ troca(cPop.k, "a", ev.target.value); }})),
-        e("label",{className:rot},"até", e("input",{type:"date", value:fPop.b||"", className:campo, onChange:function(ev){ troca(cPop.k, "b", ev.target.value); }})),
-        e("span",{className:"text-[11.5px]"},"Só a primeira: aquele dia. As duas: de … até …. Só a segunda: até aquele dia."))
-    : cPop.tipo==="falt" ? e("label",{className:rot},"Faltam", e("select",{value:fPop.q||"", className:campo, onChange:function(ev){ troca(cPop.k, "q", ev.target.value); }}, e("option",{value:""},"Todas"), e("option",{value:"atr"},"Atrasadas"), e("option",{value:"7"},"Próximos 7 dias"), e("option",{value:"30"},"Próximos 30 dias"), e("option",{value:"fut"},"Depois de 30 dias")))
-    : e("label",{className:rot}, cPop.t, e("select",{value:fPop.q||"", className:campo, onChange:function(ev){ troca(cPop.k, "q", ev.target.value); }}, e("option",{value:""},"Todas"), reps.map(function(n){ return e("option",{key:n, value:n}, n); })));
-  var cel = "whitespace-nowrap border-b border-r px-2 text-center tabular-nums "+BORDA+" last:border-r-0";
-  return e("div",{ref:ref, className:"relative"},
-    algum && e("button",{type:"button", onClick:function(){ setFil({}); setPop(null); }, className:"absolute right-2 top-[-24px] text-[12px] text-[#E8B84B]"}, "Limpar filtros das colunas"),
-    e("div",{className:"overflow-x-auto"},
-      e("table",{className:"w-full min-w-max border-separate border-spacing-0 border text-[12px] "+BORDA},
-        e("thead",null, e("tr",{style:BARRA_OURO}, COLUNAS.map(function(c){ return e("th",{key:c.k, "data-col":c.k, title:c.tipo==="seq" ? "Número da linha" : "Clique para filtrar", onClick:c.tipo==="seq" || c.tipo==="din" ? null : function(ev){ abrirPop(c, ev); }, className:(c.tipo==="seq" || c.tipo==="din" ? "" : "cursor-pointer ")+"h-8 select-none whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2 text-center text-[11px] font-extrabold uppercase tracking-[.06em] last:border-r-0 hover:bg-white/15 "+(ativo(c) ? "underline decoration-2 underline-offset-4" : "")}, c.t); }))),
-        e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"p-4 text-center"}, p.total===0 ? (p.carregando ? "Carregando da DevMaster…" : "Nenhuma revendedora ainda. Clique em Atualizar da DevMaster.") : "Nenhuma revendedora com esses filtros."))
+  var abrirPop = function(c, ev){ if(pop && pop.col===c.k){ setPop(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setPop({col:c.k, top:Math.max(8, Math.min(r.bottom+4, window.innerHeight-460)), left:Math.max(8, Math.min(r.left-120, window.innerWidth-320))}); };
+  var cPop = pop ? COLUNAS.find(function(c){ return c.k===pop.col; }) : null;
+  var larg = useMemo(function(){ return largurasDe(p.todasLinhas, hoje); }, [p.todasLinhas, hoje]), soma = COLUNAS.reduce(function(s, c){ return s+larg[c.k]; }, 0);
+  var TC = "h-8 whitespace-nowrap border-b border-border px-2.5 text-center text-[13px] ";
+  return e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"overflow-x-auto rounded-lg border border-border"},
+      e("table",{className:"border-collapse text-[13px]", style:{tableLayout:"fixed", width:soma, minWidth:"100%"}},
+        e("colgroup",null, COLUNAS.map(function(c){ return e("col",{key:c.k, style:{width:larg[c.k]}}); })),
+        e("thead",null, e("tr",{style:BARRA_OURO}, COLUNAS.map(function(c){ var tem = c.tipo!=="seq" && c.tipo!=="din", on = ativo(c);
+          return e("th",{key:c.k, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0"},
+            e("span",{className:"inline-flex items-center justify-center gap-1.5"}, c.t, ord && ord.k===c.k && e("span",{"aria-hidden":true}, ord.dir==="asc" ? "↑" : "↓"),
+              tem && e("button",{type:"button", "aria-label":"Filtro de "+c.t, title:"Classificar e filtrar "+c.t, onClick:function(ev){ abrirPop(c, ev); }, className:"inline-grid size-6 place-items-center rounded hover:bg-black/15 "+(on ? "bg-black/20" : "")},
+                e("svg",{width:14, height:14, viewBox:"0 0 24 24", fill:on ? "currentColor" : "none", stroke:"currentColor", strokeWidth:2.4, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M3 4h18l-7 8.5V20l-4-2v-5.5L3 4z"})))),
+              c.tipo==="seq" && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar")); }))),
+        e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"h-8 px-2.5 text-center text-[13px]"}, p.total===0 ? (p.carregando ? "Carregando da DevMaster…" : "Nenhuma revendedora ainda. Clique em Atualizar da DevMaster.") : "Nenhuma revendedora com esses filtros."))
           : linhas.slice(0, p.limite).map(function(r, i){
               var dd = diasEntre(hoje, r.prev), sel = r.prev===p.dia && p.soDia;
-              return e("tr",{key:r.cod, onClick:function(){ p.abrir(r.cod); }, title:"Clique para abrir o card de "+r.nome, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(sel ? "bg-[rgba(232,184,75,.10)] " : i%2 ? "bg-white/[.025] " : "")},
-                e("td",{className:cel, style:dd<0 ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" text-left font-semibold"}, r.nome, seloDif(r, "nome")), e("td",{className:cel}, foneBonito(r.celular) || "—", seloDif(r, "celular")), e("td",{className:cel}, r.cod),
-                e("td",{className:cel+" text-left"}, r.representante, seloDif(r, "representante")),
-                e("td",{className:cel+" text-left"}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—", seloDif(r, "cidade"), seloDif(r, "uf")), e("td",{className:cel}, r.kits),
-                e("td",{className:cel}, dBR(r.emissao)), e("td",{className:cel+" font-semibold"}, dBR(r.prev), seloDif(r, "prev")),
-                e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"), e("td",{className:cel+" text-right"}, BRL(r.valor))); })))),
-    linhas.length>p.limite && e("div",{className:"flex items-center justify-center gap-3 py-2 text-[12.5px]"}, "Mostrando "+p.limite+" de "+linhas.length, e("button",{type:"button", onClick:p.maisLinhas, className:"h-7 rounded-md border border-border bg-[#1d1d21] px-3"}, "Ver mais 200")),
-    pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},
-      popCorpo, e("button",{type:"button", onClick:function(){ var n = Object.assign({}, fil); delete n[cPop.k]; setFil(n); setPop(null); }, className:"self-start text-[12px] text-[#E8B84B]"}, "Limpar este filtro")));
+              return e("tr",{key:r.cod, onClick:function(){ p.abrir(r.cod); }, title:"Clique para abrir o card de "+r.nome, className:"cursor-pointer hover:bg-white/10 "+(sel ? "bg-primary/10" : "")},
+                e("td",{className:TC+"tabular-nums", style:dd<0 ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:TC+"font-semibold", title:r.nome}, r.nome, seloDif(r, "nome")), e("td",{className:TC+"tabular-nums"}, foneBonito(r.celular) || "—", seloDif(r, "celular")), e("td",{className:TC+"tabular-nums"}, r.cod),
+                e("td",{className:TC+"text-left", title:r.representante}, r.representante, seloDif(r, "representante")),
+                e("td",{className:TC+"text-left"}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—", seloDif(r, "cidade"), seloDif(r, "uf")), e("td",{className:TC+"tabular-nums"}, r.kits),
+                e("td",{className:TC+"tabular-nums"}, dBR(r.emissao)), e("td",{className:TC+"font-semibold tabular-nums"}, dBR(r.prev), seloDif(r, "prev")),
+                e("td",{className:TC+"tabular-nums "+(dd<0 ? "text-destructive" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"), e("td",{className:TC, title:casoTexto(r) || undefined}, casoCurto(r)), e("td",{className:TC+"tabular-nums"}, BRL(r.valor))); })))),
+    pop && cPop && e(MenuFiltro,{key:cPop.k, col:cPop, f:fil[cPop.k] || null, top:pop.top, left:pop.left, valores:valoresDaColuna(p.todasLinhas, cPop, hoje), sort:ord && ord.k===cPop.k ? ord.dir : null, onClose:function(){ setPop(null); },
+      setF:function(n){ var m = Object.assign({}, fil); if(n) m[cPop.k] = n; else delete m[cPop.k]; setFil(m); },
+      setSort:function(dir){ setOrd(dir ? {k:cPop.k, dir:dir} : null); }}),
+    linhas.length>p.limite && e("div",{className:"flex items-center justify-center gap-3 text-[13px]"}, "Mostrando "+p.limite+" de "+linhas.length, e(Botao,{onClick:p.maisLinhas}, "Ver mais 200")));
 }
 
-// ── Escolha de representantes (várias de uma vez) em lista que abre e fecha
-function SeletorReps(p){
-  var as = useState(false), aberto = as[0], setAberto = as[1], bs = useState(""), busca = bs[0], setBusca = bs[1];
-  var lista = p.reps.filter(function(r){ return !busca || r.nome.toLowerCase().indexOf(busca.toLowerCase())>=0; });
-  return e("div",{className:"relative"},
-    e("button",{type:"button", onClick:function(){ setAberto(!aberto); }, "aria-expanded":aberto, className:"flex h-8 items-center gap-2 rounded-lg border px-3 text-[13px] "+BORDA+(p.sel.length ? " font-semibold" : ""), style:p.sel.length ? BARRA_OURO : {background:"#1d1d21"}},
-      p.sel.length===0 ? "Todas as representantes" : p.sel.length===1 ? curto(p.sel[0]) : p.sel.length+" representantes", e("span",{className:"text-[10px]"}, aberto ? "▲" : "▼")),
-    aberto && e("div",{className:"fixed inset-0 z-30", onClick:function(){ setAberto(false); }}),
-    aberto && e("div",{className:"absolute left-0 top-9 z-40 flex w-[320px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2 shadow-2xl "+BORDA},
-      e("input",{autoFocus:true, value:busca, placeholder:"Buscar representante", className:INPUT+" h-8! w-full text-[13px]!", onChange:function(ev){ setBusca(ev.target.value); }}),
-      e("div",{className:"flex gap-3 text-[12px] text-[#E8B84B]"}, e("button",{type:"button", onClick:function(){ p.setSel(p.reps.map(function(r){ return r.nome; })); }}, "Marcar todas"), e("button",{type:"button", onClick:function(){ p.setSel([]); }}, "Limpar")),
-      e("div",{className:"max-h-[300px] overflow-y-auto"}, lista.map(function(r){ var on = p.sel.indexOf(r.nome)>=0;
-        return e("label",{key:r.nome, className:"flex cursor-pointer items-center gap-2 rounded-md px-1.5 py-1 text-[13px] hover:bg-white/10"}, e("input",{type:"checkbox", checked:on, onChange:function(){ p.setSel(on ? p.sel.filter(function(x){ return x!==r.nome; }) : p.sel.concat([r.nome])); }}), e("span",{className:"min-w-0 flex-1 truncate"}, r.nome), e("b",{className:"tabular-nums text-muted-foreground"}, r.n)); }))));
+// ── Terceiro bloco ao lado do calendário: números da lista (já com os filtros das colunas) e o botão de atualizar
+function BlocoNumeros(p){
+  var linha = function(rot, v, cor, dica){ return e("div",{key:rot, title:dica||null, className:"flex h-8 items-center justify-between gap-2 border-b border-border px-1 text-[13px] last:border-b-0"}, e("span",{className:"truncate"}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
+  return e("div",{className:"flex h-full flex-col gap-2 rounded-xl border bg-[#131315] p-2 "+BORDA},
+    e("div",{className:"flex min-h-0 flex-1 flex-col overflow-y-auto"},
+      linha("Revendedoras", p.total.toLocaleString("pt-BR")+(p.filtrando ? " de "+p.todas.toLocaleString("pt-BR") : ""), "text-primary", "Com kit ativo"),
+      linha("Acertos hoje", p.hojeN), linha("Próximos 7 dias", p.prox7), linha("Representantes", p.reps),
+      linha("Datas a confirmar", p.aConfirmar, p.aConfirmar ? "text-warning" : "", "Datas que mudaram na DevMaster desde a foto e esperam o Marcus dizer quem mudou"),
+      linha("Diferentes da DevMaster", p.alteradas, p.alteradas ? "text-warning" : "", "Alteradas aqui e ainda diferentes da DevMaster: altere lá também ou volte para o da DevMaster")),
+    e(Botao,{desabilitado:p.carregando, onClick:p.atualizar, title:"Busca de novo na DevMaster (a tela se atualiza sozinha a cada 10 minutos)"}, "Atualizar da DevMaster"),
+    (p.msg || p.carregando) && e("span",{className:"truncate text-[13px]", title:p.msg}, p.carregando && !p.msg ? "Carregando da DevMaster…" : p.msg));
 }
 
-// ── CARD da revendedora (modelo do card da Tamara): a Ana Maria ajusta nome, WhatsApp, cidade, representante e data do acerto, anota e vê o histórico.
-// A DevMaster ainda manda: o ideal é alterar LÁ primeiro. Se alterar só aqui, o campo fica marcado "≠ DevMaster" até ela alterar lá (o selo some sozinho) ou voltar para o da DevMaster.
-// Ler a DevMaster NUNCA muda o que foi alterado aqui: se a DevMaster mudar depois, aparece "DM mudou" e ela escolhe entre usar o da DevMaster e manter o nosso.
+// ── CARD da revendedora (Marcus, 01/11/2026): compacto e para LER de uma vez. Tudo vem da DevMaster e é só leitura (nome, WhatsApp, representante, cidade);
+// a única coisa que se altera aqui é a DATA DO ACERTO. Ordem: quem é → último caso → dados → data do acerto → condicionais → alterações feitas.
+// A DevMaster ainda manda: se a data mudar só aqui, fica "≠ DevMaster" até alterar lá; se a DevMaster mudar depois, aparece "DM mudou" e a escolha é da Ana Maria.
 function CartaoRevendedora(p){
-  var r = p.r, reps = p.todasReps, hojeIso = p.hojeIso, eu = p.eu;
-  var iv = {}; CAMPOS.forEach(function(c){ iv[c.k] = r[c.k] || ""; });
-  var f1 = useState(iv), val = f1[0], setVal = f1[1], f2 = useState(""), motivo = f2[0], setMotivo = f2[1], f3 = useState(""), obs = f3[0], setObs = f3[1], f4 = useState(false), todos = f4[0], setTodos = f4[1];
-  var mudados = CAMPOS.filter(function(c){ return (val[c.k]||"")!==(r[c.k]||""); });
-  var mudou = mudados.length>0 || obs.trim()!=="";
-  var historico = (r.ov && r.ov.historico) || [];
-  var dias = diasEntre(hojeIso, r.prev);
-  var nDif = CAMPOS.filter(function(c){ return r.dif[c.k] && r.dif[c.k].estado!=="igual"; }).length;
+  var r = p.r, hojeIso = p.hojeIso, eu = p.eu, cPrev = CAMPOS.find(function(c){ return c.k==="prev"; });
+  var f1 = useState(r.prev || ""), data = f1[0], setData = f1[1], f2 = useState(""), motivo = f2[0], setMotivo = f2[1];
+  var mudou = (data||"")!==(r.prev||""), historico = (r.ov && r.ov.historico) || [], dias = diasEntre(hojeIso, r.prev), d = r.dif.prev, zap = linkZap(r.celular);
   var conds = (r.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).sort(function(a, b){ return (a.e||"").localeCompare(b.e||""); });
   var tot = conds.reduce(function(a, c){ return {p:a.p+(c.p||0), v:a.v+(c.v||0)}; }, {p:0, v:0});
   var salvar = function(){
     if(!mudou) return;
-    var agora = new Date().toISOString(), campos = Object.assign({}, (r.ov && r.ov.campos) || {}), dm = Object.assign({}, (r.ov && r.ov.dm) || {}), novos = [];
-    mudados.forEach(function(c){
-      novos.push({em:agora, por:eu, campo:c.rot, k:c.k, de:r[c.k]||"", para:val[c.k]||"", motivo:motivo});
-      if((val[c.k]||"")===(r.dm[c.k]||"")){ delete campos[c.k]; delete dm[c.k]; } else { campos[c.k] = val[c.k]||""; dm[c.k] = r.dm[c.k]||""; }   // voltou ao valor da DevMaster: não guarda nada
-    });
-    if(obs.trim()) novos.push({em:agora, por:eu, campo:"Observação", k:"obs", de:"", para:obs.trim(), motivo:""});
-    p.salvar(r, {campos:campos, dm:dm, historico:novos.concat(historico).slice(0, 80)});
+    var agora = new Date().toISOString(), campos = Object.assign({}, (r.ov && r.ov.campos) || {}), dm = Object.assign({}, (r.ov && r.ov.dm) || {});
+    if((data||"")===(r.dm.prev||"")){ delete campos.prev; delete dm.prev; } else { campos.prev = data||""; dm.prev = r.dm.prev||""; }   // voltou ao valor da DevMaster: não guarda nada
+    p.salvar(r, {campos:campos, dm:dm, historico:[{em:agora, por:eu, campo:cPrev.rot, k:"prev", de:r.prev||"", para:data||"", motivo:motivo}].concat(historico).slice(0, 80)});
   };
-  var kv = function(rot, v, cls){ return e("div",{className:"flex flex-wrap items-baseline justify-between gap-x-2"}, e("span",{className:ROTULO}, rot), e("b",{className:MONO+" text-[13.5px] "+(cls||"")}, v)); };
-  var zap = linkZap(val.celular || r.celular);
-  // um campo editável + a situação dele em relação à DevMaster
-  var campo = function(c){
-    var d = r.dif[c.k], v = val[c.k]||"";
-    var entrada = c.tipo==="sel" ? e("select",{value:v, "aria-label":c.rot, className:CAMPO, onChange:function(ev){ var n = Object.assign({}, val); n[c.k] = ev.target.value; setVal(n); }}, (reps.indexOf(v)<0 && v ? [v] : []).concat(reps).map(function(n){ return e("option",{key:n, value:n}, n); }))
-      : e("input",{type:c.tipo==="date" ? "date" : "text", value:v, "aria-label":c.rot, className:CAMPO, onChange:function(ev){ var n = Object.assign({}, val); n[c.k] = ev.target.value; setVal(n); }});
-    var estado = !d || d.estado==="igual" ? e("span",{className:"text-[11.5px] "+(d ? "text-[#bbf7d0]" : "text-[#cdbf9f]")}, d ? "✓ A DevMaster já está igual" : "Igual à DevMaster")
-      : d.estado==="diferente" ? e("span",{className:"flex flex-wrap items-center gap-x-2 text-[11.5px] text-warning"}, "Na DevMaster: "+fmtCampo(c.k, d.dm)+" · altere lá também", e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"))
-      : e("span",{className:"flex flex-wrap items-center gap-x-2 text-[11.5px] text-[#fca5a5]"}, "A DevMaster mudou para "+fmtCampo(c.k, d.dm)+" (o nosso: "+fmtCampo(c.k, d.local)+")", e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"), e("button",{type:"button", onClick:function(){ p.resolver(r, c.k, "nosso"); }, className:"font-bold text-[#F1D58A] underline"}, "Manter o nosso"));
-    return e("div",{key:c.k, className:"flex flex-col gap-1"}, e("span",{className:ROTULO}, c.rot), entrada, estado);
-  };
+  var info = function(rot, v){ return e("div",{className:"min-w-0"}, e("div",{className:ROTULO}, rot), e("div",{className:"truncate text-[13px] text-white", title:String(v)}, v)); };
+  var estado = !d || d.estado==="igual" ? e("span",{className:"text-[13px] "+(d ? "text-[#bbf7d0]" : "text-[#cdbf9f]")}, d ? "A DevMaster já está igual." : "Igual à DevMaster. Se mudar aqui, mude lá também.")
+    : d.estado==="diferente" ? e("span",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-warning"}, "Na DevMaster: "+fmtCampo("prev", d.dm)+". Mude lá também.", e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"))
+    : e("span",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-[#fca5a5]"}, "A DevMaster mudou para "+fmtCampo("prev", d.dm)+" (o nosso: "+fmtCampo("prev", d.local)+").", e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"), e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "nosso"); }, className:"font-bold text-[#F1D58A] underline"}, "Manter o nosso"));
+  var LINHA = "border-b border-[rgba(241,213,138,.16)] ";
   return e("div",{className:"overflow-hidden rounded-2xl text-[#fbf4e4]", style:CARD_ESTILO},
-    e("div",{className:"flex items-center gap-2.5 border-b border-[rgba(241,213,138,.16)] py-2 pl-4 pr-24", style:TOPO_ESTILO},
+    e("div",{className:"flex items-center gap-2.5 py-2 pl-4 pr-3 "+LINHA, style:TOPO_ESTILO},
       e("b",{className:"min-w-0 truncate text-[15px] text-white"}, r.nome),
       zap && e("a",{href:zap, target:"_blank", rel:"noreferrer", title:"Chamar no WhatsApp", "aria-label":"WhatsApp de "+r.nome, className:"inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-[11px] font-bold text-[#04210f] hover:brightness-110"}, "W"),
       e("span",{className:"size-[6px] shrink-0 rounded-full bg-white"}), e("span",{className:MONO+" text-[13px] font-semibold text-white"}, r.cod),
-      e("span",{className:"flex-1"}), nDif>0 && chip(nDif+(nDif===1 ? " campo diferente" : " campos diferentes")+" da DevMaster", CLASSE_ALERTA)),
-    // aviso fixo: a DevMaster ainda manda
-    e("div",{className:"flex items-start gap-2 border-b border-[rgba(251,191,36,.35)] bg-[rgba(251,191,36,.12)] px-4 py-2 text-[12.5px] text-[#fde68a]"},
-      e("b",{className:"shrink-0"}, "Antes, altere na DevMaster."), e("span",null, "Se alterar só aqui, o campo fica marcado como diferente da DevMaster até você alterar lá. A leitura da DevMaster nunca muda o que foi alterado aqui: se ela mudar depois, aparece \"DM mudou\" e você escolhe qual vale.")),
-    e("div",{className:"grid md:grid-cols-[300px_minmax(0,1fr)]"},
-      e("div",{className:"flex flex-col gap-2 border-b border-[rgba(241,213,138,.16)] p-3 md:border-b-0 md:border-r", style:{background:"linear-gradient(180deg, rgba(241,213,138,.07), transparent)"}},
-        kv("Acerto previsto", fmtDataBR(r.prev)), kv("Faltam", dias<0 ? Math.abs(dias)+" d atrasada" : dias===0 ? "hoje" : dias+" d", dias<0 ? "text-[#fca5a5]" : ""),
-        kv("Kits ativos", r.kits), kv("Peças", tot.p || r.pecas), kv("Valor", BRL(tot.v || r.valor), "text-[#F1D58A]"),
-        CAMPOS.map(campo)),
-      e("div",{className:"flex min-w-0 flex-col gap-2 px-3.5 py-3"},
-        e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Alterações feitas no sistema"), historico.length>3 && e("button",{type:"button", onClick:function(){ setTodos(!todos); }, className:"text-[12px] text-[#F1D58A]"}, todos ? "ver menos ▴" : "ver todas ("+historico.length+") ▾")),
-        historico.length===0 ? e("p",{className:"text-[13px] text-[#cdbf9f]"}, "Nenhuma alteração ainda. Tudo vem da DevMaster.")
-        : e("div",{className:"flex max-h-56 flex-col overflow-y-auto pr-1"}, (todos ? historico : historico.slice(0, 4)).map(function(h, i){
-            return e("div",{key:i, className:"grid grid-cols-[48px_minmax(0,1fr)] gap-2 border-t border-[rgba(241,213,138,.16)] py-1.5 first:border-t-0"},
-              e("div",{className:MONO+" pt-0.5 text-[12px] text-[#cdbf9f]"}, h.em.slice(8,10)+"/"+h.em.slice(5,7)),
-              e("div",{className:"min-w-0 text-[13px]"}, e("b",null, h.por), " · ", e("span",{className:"text-[#cdbf9f]"}, h.campo), h.campo==="Observação" || h.k==="resolvido" ? e("div",{className:h.k==="resolvido" ? "text-[#bbf7d0]" : ""}, h.para) : e("div",null, fmtCampo(h.k, h.de), " → ", e("b",{className:"text-[#bbf7d0]"}, fmtCampo(h.k, h.para))), h.motivo && e("div",{className:"text-[12px] text-[#cdbf9f]"}, "Motivo: "+h.motivo))); })),
-        e("div",{className:"mt-1 flex flex-col gap-1.5 rounded-xl p-2 ring-1 ring-[rgba(241,213,138,.2)]", style:{background:"rgba(241,213,138,.06)"}},
-          e("input",{value:motivo, placeholder:"Motivo da alteração (opcional)", className:CAMPO, onChange:function(ev){ setMotivo(ev.target.value); }}),
-          e("input",{value:obs, placeholder:"Observação (opcional): fica no registro", className:CAMPO, onChange:function(ev){ setObs(ev.target.value); }}),
-          e("div",{className:"flex flex-wrap items-center gap-2"},
-            e("button",{type:"button", disabled:!mudou || p.salvando, onClick:salvar, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, p.salvando ? "Salvando…" : "Salvar alteração"),
-            !mudou ? e("span",{className:"text-[12px] text-[#cdbf9f]"}, "Mude um campo ao lado ou escreva uma observação.") : e("span",{className:"text-[12px] text-warning"}, mudados.length ? mudados.map(function(c){ return c.rot; }).join(", ")+" ficará marcado como diferente da DevMaster até alterar lá." : "Só a observação será registrada."),
-            p.erro && e("span",{className:"text-[12px] text-[#f87171]"}, p.erro))))),
-    e("div",{className:"border-t border-[rgba(241,213,138,.16)] px-4 pb-2.5 pt-2"},
+      e("span",{className:"flex-1"}), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.35)] hover:bg-black/30"}, "Fechar ✕")),
+    r.caso && e("div",{className:"flex flex-col gap-1.5 border-b border-[rgba(251,191,36,.35)] bg-[rgba(251,191,36,.12)] px-4 py-2.5"},
+      e("div",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-[#fde68a]"}, e("b",null, "Último caso"), e("span",null, "· "+fmtDataBR(r.caso.iso)+(r.caso.quem ? " · "+r.caso.quem : "")+(r.caso.cond ? " · condicional "+r.caso.cond : ""))),
+      e("p",{className:"text-[13px] leading-snug text-white"}, r.caso.txt),
+      (r.casos||[]).length>0 && e("span",{className:"text-[13px] text-[#F1D58A]"}, "Casos anteriores ("+r.casos.length+")"),
+      (r.casos||[]).length>0 && e("div",{className:"flex flex-col pr-1 "+(r.casos.length>8 ? "max-h-72 overflow-y-auto" : "")}, r.casos.map(function(c, i){ return e("div",{key:i, className:"grid grid-cols-[48px_96px_minmax(0,1fr)] gap-2 border-t border-[rgba(251,191,36,.25)] py-1.5 text-[13px]"}, e("span",{className:MONO+" text-[#fde68a]"}, dBR(c.iso)), e("span",{className:"truncate text-[#fde68a]"}, c.quem || "—"), e("span",{className:"text-white"}, c.txt)); }))),
+    e("div",{className:"grid grid-cols-2 gap-x-4 gap-y-2 px-4 py-2.5 md:grid-cols-4 "+LINHA},
+      info("Representante", r.representante), info("Cidade", r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—"), info("WhatsApp", foneBonito(r.celular) || "—"), info("Kits · peças · valor", r.kits+" · "+(tot.p || r.pecas)+" · "+BRL(tot.v || r.valor))),
+    e("div",{className:"flex flex-col gap-2 px-4 py-3 "+LINHA},
+      e("div",{className:"flex flex-wrap items-end gap-3"},
+        e("label",{className:"flex flex-col gap-1"}, e("span",{className:ROTULO}, "Data do acerto"), e("input",{type:"date", value:data, "aria-label":"Data do acerto", className:CAMPO+" w-44!", onChange:function(ev){ setData(ev.target.value); }})),
+        e("div",{className:"flex flex-col gap-1"}, e("span",{className:ROTULO}, "Faltam"), e("b",{className:"h-8 text-[13px] leading-8 "+(dias<0 ? "text-[#fca5a5]" : "")}, dias<0 ? Math.abs(dias)+" d atrasada" : dias===0 ? "hoje" : dias+" d")),
+        e("label",{className:"flex min-w-[200px] flex-1 flex-col gap-1"}, e("span",{className:ROTULO}, "Motivo"), e("input",{value:motivo, placeholder:"Motivo da mudança (opcional)", "aria-label":"Motivo", className:CAMPO, onChange:function(ev){ setMotivo(ev.target.value); }})),
+        e("button",{type:"button", disabled:!mudou || p.salvando, onClick:salvar, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, p.salvando ? "Salvando…" : "Salvar data")),
+      estado, p.erro && e("span",{className:"text-[13px] text-[#f87171]"}, p.erro)),
+    e("div",{className:"px-4 pb-2.5 pt-2 "+LINHA},
       e("span",{className:ROTULO}, "Condicionais ativas"),
       conds.length===0 ? e("p",{className:"mt-1 text-[13px] text-[#cdbf9f]"}, "Sem condicionais para mostrar.")
       : e("table",{className:"mt-0.5 w-full border-collapse text-[13px]"},
@@ -302,47 +256,96 @@ function CartaoRevendedora(p){
             e("td",{className:"px-2 py-1 font-bold "+MONO}, c.n||"—"), e("td",{className:"px-2 py-1"}, chip(c.t==="Reposição / peças do próximo mês" ? "Kit extra" : c.t, CLASSE_TIPO[c.t] || "bg-info/15 text-info ring-info/40")),
             e("td",{className:"px-2 py-1 text-right "+MONO}, c.e ? c.e.slice(8)+"/"+c.e.slice(5,7) : "—"), e("td",{className:"px-2 py-1 text-right "+MONO}, c.d ? c.d.slice(8)+"/"+c.d.slice(5,7) : "—"),
             e("td",{className:"px-2 py-1 text-right "+MONO}, c.p), e("td",{className:"px-2 py-1 text-right "+MONO}, BRL(c.v))); })),
-          e("tfoot",null, e("tr",{className:"border-t-2 border-[rgba(241,213,138,.3)] font-bold"}, e("td",{className:"px-2 py-1", colSpan:4}, conds.length+(conds.length===1 ? " condicional ativa" : " condicionais ativas")), e("td",{className:"px-2 py-1 text-right "+MONO}, tot.p), e("td",{className:"px-2 py-1 text-right "+MONO}, BRL(tot.v)))))));
+          e("tfoot",null, e("tr",{className:"border-t-2 border-[rgba(241,213,138,.3)] font-bold"}, e("td",{className:"px-2 py-1", colSpan:4}, conds.length+(conds.length===1 ? " condicional ativa" : " condicionais ativas")), e("td",{className:"px-2 py-1 text-right "+MONO}, tot.p), e("td",{className:"px-2 py-1 text-right "+MONO}, BRL(tot.v)))))),
+    historico.length>0 && e("div",{className:"flex flex-col gap-1 px-4 pb-3 pt-2"},
+      e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Alterações feitas no sistema ("+historico.length+")")),
+      e("div",{className:"flex flex-col pr-1 "+(historico.length>8 ? "max-h-72 overflow-y-auto" : "")}, historico.map(function(h, i){
+        return e("div",{key:i, className:"grid grid-cols-[48px_minmax(0,1fr)] gap-2 border-t border-[rgba(241,213,138,.16)] py-1.5 first:border-t-0"},
+          e("div",{className:MONO+" text-[13px] text-[#cdbf9f]"}, h.em.slice(8,10)+"/"+h.em.slice(5,7)),
+          e("div",{className:"min-w-0 text-[13px]"}, e("b",null, h.por), " · ", e("span",{className:"text-[#cdbf9f]"}, h.campo), h.campo==="Observação" || h.k==="resolvido" ? e("span",{className:h.k==="resolvido" ? "text-[#bbf7d0]" : ""}, " "+h.para) : e("span",null, " "+fmtCampo(h.k, h.de)+" → ", e("b",{className:"text-[#bbf7d0]"}, fmtCampo(h.k, h.para))), h.motivo && e("span",{className:"text-[#cdbf9f]"}, " · Motivo: "+h.motivo))); }))));
+}
+
+// ── Datas mudadas (Marcus, 01/11/2026): a DevMaster só guarda a data de hoje, então o sistema guarda uma FOTO das datas (módulo agrev, chave "foto") e compara a cada leitura.
+// Data diferente da foto = linha em "Datas mudadas", pendente até o Marcus confirmar QUEM mudou: ele (sai do previsto do mês de origem) ou o setor (Letícia de Sá ou Ana Maria: fica no previsto).
+// Marcou "Marcus" com mês de origem diferente do destino: grava a remarcação no Agendamento (remarc_plano, planoId = id da mudança), então o previsto vigente recalcula na hora. Desfazer remove a remarcação.
+var SETOR_QUEM = ["Letícia de Sá", "Ana Maria"];
+var mesDe = function(iso){ return String(iso||"").slice(0, 7); };
+var tipoPorDias = function(dias){ return dias>=50 ? "p60" : dias>=30 ? "p45" : "outro"; };
+function DatasMudadas(p){
+  var lista = p.lista, sou = p.souMarcus, ver = useState(false), todas = ver[0], setTodas = ver[1];
+  var pend = lista.filter(function(m){ return !m.quem; }), feitas = lista.filter(function(m){ return !!m.quem; });
+  var linhas = (pend.concat(feitas)).slice(0, todas ? 400 : 8);
+  var BTN = "h-8 rounded-lg px-3 text-[13px] font-bold ring-1 ring-[rgba(241,213,138,.35)] hover:bg-white/10";
+  var linha = function(m){
+    var dias = diasEntre(m.de, m.para), sai = mesDe(m.de)!==mesDe(m.para), cor = dias<0 ? "text-[#fbf4e4]" : "text-[#F1D58A]";
+    var estado = !m.quem ? chip("A confirmar", CLASSE_ALERTA)
+      : m.quem==="marcus" ? chip(sai ? "Marcus · sai do previsto" : "Marcus · mesmo mês", "bg-primary/15 text-primary ring-primary/40")
+      : chip(m.setor+" · fica no previsto", "bg-success/15 text-success ring-success/40");
+    return e("div",{key:m.id, className:"grid items-center gap-2 border-t px-3 py-1.5 first:border-t-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_150px_minmax(0,1.3fr)] "+BORDA},
+      e("div",{className:"min-w-0"}, e("b",{className:"block truncate text-[13px] text-white", title:nomeProprio(m.nome)}, nomeProprio(m.nome)), e("span",{className:ROTULO+" block truncate", title:nomeProprio(m.rep)}, m.cod+" · "+curto(nomeProprio(m.rep)))),
+      e("div",{className:"flex flex-wrap items-center gap-2 text-[13px]"}, estado),
+      e("div",{className:MONO+" text-[13px] "+cor}, dBR(m.de)+" → "+dBR(m.para)+" · "+(dias>0 ? "+" : "")+dias+" d"+(sai ? " · "+MESES[Number(mesDe(m.de).slice(5))-1].slice(0,3)+" → "+MESES[Number(mesDe(m.para).slice(5))-1].slice(0,3) : "")),
+      e("div",{className:"flex flex-wrap items-center justify-end gap-1.5"},
+        !m.quem
+          ? (sou ? [e("button",{key:"m", type:"button", onClick:function(){ p.marcar(m, "marcus", ""); }, className:BTN+" text-[#F1D58A]"}, "Foi eu"), SETOR_QUEM.map(function(n){ return e("button",{key:n, type:"button", onClick:function(){ p.marcar(m, "setor", n); }, className:BTN+" text-[#fbf4e4]"}, n); })]
+                  : e("span",{className:"text-[13px] text-[#fbf4e4]"}, "Só o Marcus confirma"))
+          : (sou && e("button",{type:"button", onClick:function(){ p.desfazer(m); }, className:BTN+" text-[#fbf4e4]"}, "Desfazer"))));
+  };
+  return e("div",{className:"overflow-hidden rounded-xl border bg-[#131315] "+BORDA},
+    e("div",{className:"flex flex-wrap items-center gap-3 px-3 py-2", style:BARRA_OURO},
+      e("b",{className:"text-[13px]"}, "Datas mudadas"), e("span",{className:"text-[13px]"}, pend.length ? pend.length+" a confirmar" : "Nada a confirmar"),
+      e("span",{className:"flex-1"}), e("span",{className:"text-[11px] font-semibold uppercase tracking-[.07em]"}, "Foto de "+(p.fotoEm ? fmtDataBR(p.fotoEm.slice(0, 10)) : "hoje"))),
+    lista.length===0 ? e("p",{className:"px-3 py-3 text-[13px] text-[#fbf4e4]"}, p.temFoto ? "Nenhuma data mudou desde a foto." : "A primeira foto das datas será tirada na próxima leitura da DevMaster.")
+    : e("div",null, linhas.map(linha), lista.length>8 && e("button",{type:"button", onClick:function(){ setTodas(!todas); }, className:"h-8 w-full border-t text-[13px] font-semibold text-[#F1D58A] "+BORDA}, todas ? "Ver menos" : "Ver todas ("+lista.length+")")));
 }
 
 function AbaAgRevendedoras(){
   var cx = use(), hojeIso = isoDia(new Date()), eu = nomeDe(cx.state.usuario);
   var ds = useState(null), dados = ds[0], setDados = ds[1], cs = useState(false), carregando = cs[0], setCarregando = cs[1], ms = useState(""), msg = ms[0], setMsg = ms[1];
   var as = useState({}), alt = as[0], setAlt = as[1];   // alterações da Ana Maria (módulo agrev): cod → registro
+  var fotoS = useState(null), foto = fotoS[0], setFoto = fotoS[1], mudS = useState({}), mudMap = mudS[0], setMudMap = mudS[1];   // foto das datas e datas mudadas (módulo agrev: chaves "foto" e "d_...")
+  // compara as datas da DevMaster com a foto: data diferente vira "data mudada" pendente; sem foto, tira a primeira (base do mês). Leitura parcial (menos de 80% da foto) não mexe em nada.
+  var detectar = function(d, c){
+    var itensD = d.itens || [], base = c.foto && c.foto.datas ? c.foto.datas : null; if(itensD.length<500) return;
+    var agora = new Date().toISOString(), novos = {}, datas = Object.assign({}, base || {}), mudouFoto = !base;
+    if(base && itensD.length<Object.keys(base).length*0.8) return;
+    itensD.forEach(function(i){
+      var cod = String(i.cod), antes = base ? base[cod] : undefined;
+      if(antes===undefined){ if(datas[cod]!==i.prev){ datas[cod] = i.prev; mudouFoto = true; } return; }
+      if(antes!==i.prev){ var id = "d_"+cod+"_"+antes+"_"+i.prev; if(!c[id]) novos[id] = {id:id, cod:i.cod, nome:i.nome, rep:i.representante, de:antes, para:i.prev, detectadoEm:agora, quem:null}; datas[cod] = i.prev; mudouFoto = true; } });
+    if(!mudouFoto && !Object.keys(novos).length) return;
+    var fotoNova = {em:(c.foto && c.foto.em) || agora, atualizadoEm:agora, datas:datas}, chaves = Object.assign({}, novos, {foto:fotoNova});
+    chamar("PUT", "/estado/agrev", {chaves:chaves}).then(function(){ setFoto(fotoNova); setMudMap(function(m){ return Object.assign({}, m, novos); }); }).catch(function(x){ setMsg(x.message); });
+  };
   var carregar = function(forcar){
     if(!apiAtiva()){ setMsg("Precisa do servidor ligado (veja com o Leonardo)."); return; }
     setCarregando(true); setMsg(forcar ? "Buscando na DevMaster…" : "");
     Promise.all([chamar("GET", "/agenda-revendedoras"+(forcar ? "?atualizar=1" : "")), chamar("GET", "/estado/agrev").catch(function(){ return {conteudo:{}}; })]).then(function(v){
-      setDados(v[0]); var o = {}, c = (v[1] && v[1].conteudo) || {}; Object.keys(c).forEach(function(k){ if(k.indexOf("r_")===0 && c[k] && c[k].cod) o[c[k].cod] = c[k]; }); setAlt(o);
+      setDados(v[0]); var o = {}, md = {}, c = (v[1] && v[1].conteudo) || {}; Object.keys(c).forEach(function(k){ if(k.indexOf("r_")===0 && c[k] && c[k].cod) o[c[k].cod] = c[k]; else if(k.indexOf("d_")===0 && c[k] && c[k].id) md[k] = c[k]; }); setAlt(o); setFoto(c.foto || null); setMudMap(md); detectar(v[0], c);
       setMsg(forcar ? "Atualizado: "+v[0].total+" revendedoras" : "");
     }).catch(function(x){ setMsg(x.message); }).finally(function(){ setCarregando(false); });
   };
   var refCar = useRef(null); refCar.current = carregar;
   useEffect(function(){ refCar.current(false); var t = setInterval(function(){ refCar.current(false); }, 600000); return function(){ clearInterval(t); }; }, []);
-  var itens = dados ? dados.itens.map(function(i){ return aplicar(i, alt[i.cod]); }) : [];
-  var fs = useState({}), fil = fs[0], setFil = fs[1], rs = useState([]), repsSel = rs[0], setRepsSel = rs[1], bs = useState(""), busca = bs[0], setBusca = bs[1];
-  var sf = useState(false), soDif = sf[0], setSoDif = sf[1], vs = useState("lista"), visao = vs[0], setVisao = vs[1], ls = useState(200), limite = ls[0], setLimite = ls[1], sd = useState(false), soDia = sd[0], setSoDia = sd[1];
-  var h0 = parteData(hojeIso), m1 = useState([h0.getFullYear(), h0.getMonth()]), mes = m1[0], setMes = m1[1], m2 = useState([h0.getFullYear(), h0.getMonth()]), mesG = m2[0], setMesG = m2[1], d1 = useState(hojeIso), dia = d1[0], setDia = d1[1];
+  var itens = dados ? dados.itens.map(function(i){ return aplicar(Object.assign({}, i, {nome:nomeProprio(i.nome), representante:nomeProprio(i.representante)}), alt[i.cod]); }) : [];
+  var fs = useState({}), fil = fs[0], setFil = fs[1], od = useState(null), ord = od[0], setOrd = od[1], ls = useState(200), limite = ls[0], setLimite = ls[1], sd = useState(false), soDia = sd[0], setSoDia = sd[1];
+  var md = useState("sistema"), modo = md[0], setModo = md[1], h0 = parteData(hojeIso), m1 = useState([h0.getFullYear(), h0.getMonth()]), mes = m1[0], setMes = m1[1], d1 = useState(hojeIso), dia = d1[0], setDia = d1[1];
   var ab = useState(null), aberto = ab[0], setAberto = ab[1], sv = useState(false), salvando = sv[0], setSalvando = sv[1], er = useState(""), erro = er[0], setErro = er[1];
   useEffect(function(){ if(!aberto) return undefined; var f = function(ev){ if(ev.key==="Escape") setAberto(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [aberto]);
   // representantes (com a quantidade de revendedoras de cada uma), já com as trocas feitas aqui
   var contaReps = {}; itens.forEach(function(r){ contaReps[r.representante] = (contaReps[r.representante]||0)+1; });
   var reps = Object.keys(contaReps).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); }).map(function(n){ return {nome:n, n:contaReps[n]}; });
   var nomesReps = reps.map(function(r){ return r.nome; });
-  var linhasSemDia = itens.filter(function(r){
-    if(soDif && !r.temDif) return false;
-    if(repsSel.length && repsSel.indexOf(r.representante)<0) return false;
-    if(busca && r.nome.toLowerCase().indexOf(busca.toLowerCase())<0 && String(r.cod).indexOf(busca)<0) return false;
-    return passa(r, fil, hojeIso); });
-  var porDia = contar(linhasSemDia), filtrando = linhasSemDia.length!==itens.length;
-  var linhas = soDia ? linhasSemDia.filter(function(r){ return r.prev===dia; }) : linhasSemDia;
-  var atrasadas = linhasSemDia.filter(function(r){ return r.prev<hojeIso; }).length;
-  var prox7 = linhasSemDia.filter(function(r){ return r.prev>=hojeIso && r.prev<=somaDia(hojeIso, 7); }).length, hojeN = (porDia[hojeIso] ? porDia[hojeIso].n : 0), alteradas = itens.filter(function(r){ return r.temDif; }).length, nDmMudou = itens.filter(function(r){ return CAMPOS.some(function(c){ return r.dif[c.k] && r.dif[c.k].estado==="dm_mudou"; }); }).length;
+  var repsSel = fil.rep && fil.rep.vals ? fil.rep.vals : [];
+  var linhasSemDia = itens.filter(function(r){ return passa(r, fil, hojeIso); });
+  var linhasCal = modo==="agendado" ? linhasSemDia.filter(function(r){ return !!r.agenda; }) : linhasSemDia;   // Sistema = todos pela data da DevMaster; Agendado = só quem já tem agendamento na DevMaster
+  var orig = {}; linhasCal.forEach(function(r){ if(r.prev) orig[r.prev] = (orig[r.prev] || 0)+1; }); var red = redistribuirContagem(orig);   // acerto de domingo ou feriado passa para o próximo dia útil
+  var porDia = contar(linhasCal), filtrando = linhasSemDia.length!==itens.length;
+  var linhas0 = soDia ? linhasCal.filter(function(r){ return diaEfetivo(r.prev)===dia; }) : linhasSemDia, colOrd = ord ? COLUNAS.find(function(c){ return c.k===ord.k; }) : null, linhas = colOrd ? ordenar(linhas0, colOrd, ord.dir, hojeIso) : linhas0;
+  var atrasadas = linhasCal.filter(function(r){ return r.prev<hojeIso; }).length;
+  var prox7 = linhasCal.filter(function(r){ return r.prev>=hojeIso && r.prev<=somaDia(hojeIso, 7); }).length, hojeN = (porDia[hojeIso] ? porDia[hojeIso].n : 0), alteradas = itens.filter(function(r){ return r.temDif; }).length;
   var escolherDia = function(iso){ if(soDia && iso===dia){ setSoDia(false); return; } setDia(iso); setSoDia(true); setLimite(200); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); };
-  var irParaDia = function(iso){ setDia(iso); setSoDia(true); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); setVisao("lista"); };
-  var alternaRep = function(k){ setRepsSel(repsSel.indexOf(k)>=0 ? repsSel.filter(function(x){ return x!==k; }) : repsSel.concat([k])); };
-  var limpaTudo = function(){ setFil({}); setRepsSel([]); setBusca(""); setSoDia(false); setSoDif(false); };
-  var segBtn = function(k, t){ var on = visao===k; return e("button",{key:k, type:"button", onClick:function(){ setVisao(k); }, "aria-pressed":on, className:"h-8 px-3.5 text-[13px] font-semibold "+(on ? "" : "hover:bg-white/10"), style:on ? BARRA_OURO : null}, t); };
+  var alternaRep = function(k){ var n = Object.assign({}, fil); if(repsSel.indexOf(k)>=0) delete n.rep; else n.rep = {op:"", v:"", vals:[k]}; setFil(n); };
   var rSel = aberto ? itens.find(function(r){ return r.cod===aberto; }) : null;
   var gravar = function(r, patch){
     setSalvando(true); setErro("");
@@ -356,40 +359,24 @@ function AbaAgRevendedoras(){
     else { dm[k] = d.dm; texto = "Mantido o nosso ("+fmtCampo(k, d.local)+") apesar de a DevMaster estar em "+fmtCampo(k, d.dm); }
     gravar(r, {campos:campos, dm:dm, historico:[{em:new Date().toISOString(), por:eu, campo:rot, k:"resolvido", de:"", para:texto, motivo:""}].concat((r.ov && r.ov.historico) || []).slice(0, 80)});
   };
-  var cel = function(rot, val, cor, dica){ return e("div",{title:dica||null, className:"flex min-w-[120px] flex-1 flex-col items-center justify-center border-r px-2 py-1 last:border-r-0 "+BORDA},
-    e("span",{className:"text-[11px] font-semibold uppercase tracking-[.05em] text-muted-foreground"}, rot), e("b",{className:"text-[20px] leading-tight tabular-nums "+(cor||"")}, val)); };
+  var souMarcus = String(eu||"").indexOf("Marcus")===0, listaMud = Object.keys(mudMap).map(function(k){ return mudMap[k]; }).sort(function(a, b){ return (b.detectadoEm||"").localeCompare(a.detectadoEm||""); }), nAConf = listaMud.filter(function(m){ return !m.quem; }).length;
+  var gravarMud = function(m, patch){ var nova = Object.assign({}, m, patch); return chamar("PUT", "/estado/agrev", {chaves:{[m.id]:nova}}).then(function(){ setMudMap(function(x){ var n = Object.assign({}, x); n[m.id] = nova; return n; }); }).catch(function(x){ setMsg(x.message); }); };
+  var marcarMud = function(m, quem, setor){
+    gravarMud(m, {quem:quem, setor:setor || "", confirmadoEm:new Date().toISOString(), confirmadoPor:eu}).then(function(){
+      if(quem==="marcus" && mesDe(m.de)!==mesDe(m.para)) cx.dispatch({type:"AG", op:"remarc_plano", por:eu, itens:[{planoId:m.id, nome:m.nome, tipo:tipoPorDias(diasEntre(m.de, m.para)), autorizadoPor:"Marcus", origem:mesDe(m.de), destino:mesDe(m.para)}]});
+      else if(quem==="setor") cx.dispatch({type:"AG", op:"remarc_plano_del", por:eu, ids:[m.id]}); });
+  };
+  var desfazerMud = function(m){ gravarMud(m, {quem:null, setor:"", confirmadoEm:null, confirmadoPor:null}).then(function(){ cx.dispatch({type:"AG", op:"remarc_plano_del", por:eu, ids:[m.id]}); }); };
   return e(React.Fragment,null,
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"},
-      e(PageHead,{t:"Revendedoras com kit ativo", sub:"Kits abertos na DevMaster com acerto previsto até "+(dados ? dados.janelaDias : 120)+" dias à frente · a DevMaster ainda manda: altere lá primeiro"}),
-      e("div",{className:"flex flex-wrap items-center gap-2"},
-        e("div",{className:"inline-flex overflow-hidden rounded-lg border "+BORDA}, segBtn("lista","Lista"), segBtn("calendario","Calendário")),
-        e("button",{type:"button", disabled:carregando, onClick:function(){ carregar(true); }, title:"Busca de novo na DevMaster (a tela se atualiza sozinha a cada 10 minutos)", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold disabled:opacity-50", style:BARRA_OURO}, "↻ Atualizar da DevMaster"),
-        (msg || carregando) && e("span",{className:"text-[12.5px]"}, carregando && !msg ? "Carregando da DevMaster…" : msg))),
-    // faixa de totais (já com os filtros)
-    e("div",{className:"flex flex-wrap rounded-xl border bg-[#131315] "+BORDA},
-      cel("Revendedoras", linhasSemDia.length.toLocaleString("pt-BR"), "text-[#E8B84B]", filtrando ? "de "+itens.length.toLocaleString("pt-BR")+" no total" : "com kit ativo"),
-      cel("Acertos hoje", hojeN), cel("Próximos 7 dias", prox7), cel("Atrasadas", atrasadas, atrasadas ? "text-[#f87171]" : "", "Passaram da data prevista e o kit continua aberto"),
-      cel("Representantes", reps.length), cel("Diferentes da DevMaster", alteradas, alteradas ? "text-warning" : "", "Alteradas aqui e ainda diferentes da DevMaster: altere lá também ou volte para o da DevMaster")),
-    // filtros
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-      e(SeletorReps,{reps:reps, sel:repsSel, setSel:setRepsSel}),
-      e("input",{value:busca, placeholder:"Buscar revendedora (nome ou código)", className:INPUT+" h-8! w-[320px] text-[13px]!", onChange:function(ev){ setBusca(ev.target.value); }}),
-      e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-2 rounded-lg border px-3 text-[13px] "+BORDA+(soDif ? " font-semibold" : ""), style:soDif ? BARRA_OURO : {background:"#1d1d21"}, title:"Mostra só as revendedoras com algum campo diferente da DevMaster"},
-        e("input",{type:"checkbox", checked:soDif, onChange:function(ev){ setSoDif(ev.target.checked); }}), "Só diferentes da DevMaster", nDmMudou>0 && e("b",{className:"rounded-full bg-destructive/25 px-1.5 text-[11px] text-[#f87171]", title:"A DevMaster mudou depois da nossa alteração"}, nDmMudou+" DM mudou")),
-      soDia && e("button",{type:"button", onClick:function(){ setSoDia(false); }, className:"inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[12.5px] font-bold", style:BARRA_OURO}, "Dia "+fmtDataBR(dia)+" ✕"),
-      (filtrando || soDia) && e("button",{type:"button", onClick:limpaTudo, className:"text-[12.5px] text-[#E8B84B]"}, "Limpar todos os filtros"),
-      e("span",{className:"ml-auto text-[12.5px] text-muted-foreground"}, "Clique numa revendedora para abrir o card")),
-    visao==="lista"
-      ? e("div",{className:"flex flex-col gap-3"},
-          e("div",{className:"grid gap-3 lg:grid-cols-[560px_minmax(0,1fr)]", style:{minHeight:ALTURA}},
-            e("div",{style:{height:ALTURA}}, e(CalendarioTopo,{porDia:porDia, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso})),
-            e("div",{className:"overflow-hidden", style:{height:ALTURA}}, e(Resumo,{porDia:porDia, dia:dia, hojeIso:hojeIso, repsSel:repsSel, alternaRep:alternaRep, limpaReps:function(){ setRepsSel([]); }, filtrando:filtrando, soDia:soDia, limpaDia:function(){ setSoDia(false); }, atrasadas:atrasadas, hojeN:hojeN}))),
-          e(TabelaRevendedoras,{linhas:linhas, total:itens.length, carregando:carregando, fil:fil, setFil:setFil, hojeIso:hojeIso, todasReps:nomesReps, dia:dia, soDia:soDia, abrir:setAberto, limite:limite, maisLinhas:function(){ setLimite(limite+200); }}))
-      : e(CalendarioGrande,{porDia:porDia, mes:mesG, setMes:setMesG, hojeIso:hojeIso, irParaDia:irParaDia}),
+    e("div",{className:"grid gap-3 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)_minmax(0,.8fr)]", style:{minHeight:ALTURA}},
+      e("div",{style:{height:ALTURA}}, e(CalendarioAcertos,{ano:mes[0], mes:mes[1], valor:function(i){ return {n:porDia[i] ? porDia[i].n : 0, sai:red.saiu[i], entra:red.entra[i]}; }, dia:dia, onDia:escolherDia, hojeIso:hojeIso, modo:modo, setModo:setModo, onMes:function(a, m){ setMes([a, m]); }})),
+      e("div",{className:"overflow-hidden", style:{height:ALTURA}}, e(Resumo,{porDia:porDia, dia:dia, hojeIso:hojeIso, repsSel:repsSel, alternaRep:alternaRep, limpaReps:function(){ var n = Object.assign({}, fil); delete n.rep; setFil(n); }, filtrando:filtrando, soDia:soDia, limpaDia:function(){ setSoDia(false); }, atrasadas:atrasadas, hojeN:hojeN})),
+      e("div",{style:{height:ALTURA}}, e(BlocoNumeros,{total:linhasSemDia.length, todas:itens.length, filtrando:filtrando, hojeN:hojeN, prox7:prox7, reps:reps.length, aConfirmar:nAConf, alteradas:alteradas, carregando:carregando, msg:msg, atualizar:function(){ carregar(true); }}))),
+    listaMud.length>0 && e(DatasMudadas,{lista:listaMud, souMarcus:souMarcus, marcar:marcarMud, desfazer:desfazerMud, fotoEm:foto && foto.em, temFoto:!!foto}),
+    e(TabelaRevendedoras,{linhas:linhas, total:itens.length, carregando:carregando, fil:fil, setFil:setFil, ord:ord, setOrd:setOrd, todasLinhas:itens, hojeIso:hojeIso, todasReps:nomesReps, dia:dia, soDia:soDia, abrir:setAberto, limite:limite, maisLinhas:function(){ setLimite(limite+200); }}),
     rSel && e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setAberto(null); }},
       e("div",{className:"relative my-auto w-full max-w-[900px]"},
-        e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAberto(null); }, className:"absolute right-3 top-2.5 z-10 h-7 rounded-lg bg-black/40 px-2.5 text-[12.5px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.3)] hover:bg-black/60"}, "Fechar ✕"),
-        e(CartaoRevendedora,{key:rSel.cod+"|"+(rSel.ov ? rSel.ov.em : ""), r:rSel, todasReps:nomesReps, hojeIso:hojeIso, eu:eu, salvar:gravar, resolver:resolver, salvando:salvando, erro:erro}))));
+        e(CartaoRevendedora,{fechar:function(){ setAberto(null); }, key:rSel.cod+"|"+(rSel.ov ? rSel.ov.em : ""), r:rSel, todasReps:nomesReps, hojeIso:hojeIso, eu:eu, salvar:gravar, resolver:resolver, salvando:salvando, erro:erro}))));
 }
 
-export { AbaAgRevendedoras };
+export { AbaAgRevendedoras, CARD_ESTILO, TOPO_ESTILO, BTN_OURO, ROTULO };

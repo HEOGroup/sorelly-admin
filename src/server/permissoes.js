@@ -3,6 +3,7 @@
 // ATENÇÃO: neste atalho a permissão é por MÓDULO inteiro. "Ver só os próprios pedidos" dentro de um módulo continua sendo regra da tela, não do servidor; por isso dados sensíveis ficam em módulos de setor restrito.
 // Chaves = nomes do estado do sistema (s.rh, s.cf, s.ce ...).
 export const SETORES_DO_MODULO = {
+  rhsol: ["*"],   // solicitações de mudança de cadastro: quem pede (supervisão do setor) e quem confirma (RH) precisam ler e gravar
   rh: ["rh"], eq: ["rh"],
   cf: ["cobranca"], ff: ["socios"],
   ce: ["*"],

@@ -8,7 +8,7 @@ import { codigoRetirada } from "@/apps/montagem/components/dialogos";
 import { ETAPA } from "@/apps/montagem/components/fila";
 import { KitsNovosRep, foraDoPrazo } from "@/apps/montagem/components/kits-novos-rep";
 import { derivarAcerto, FORM_ACERTO_VAZIO } from "@/apps/montagem/domain/acerto-derivado";
-import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
+import { comisEfetiva, itensComissao, totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { mensagemFechamento, mensagemEntrega, abrirPdfAcerto } from "@/apps/montagem/domain/mensagem-fechamento";
 import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
@@ -26,8 +26,6 @@ import { SEM_KIT, STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/
 import { badge } from "@/apps/montagem/ui/badge";
 import { comissaoRev, sugerido } from "@/apps/montagem/domain/vendas";
 import { N1, hoje, hora, isoDia } from "@/apps/montagem/lib/format";
-import { infNaoLidos } from "@/apps/montagem/domain/informativos";
-import { FolderAoAbrir, TelaInformativos } from "@/apps/montagem/mobile/informativos-app";
 import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app";
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
@@ -37,6 +35,7 @@ import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { FUNDO_BARRA } from "@/apps/montagem/mobile/cores-app";
 import { Icon } from "@/apps/montagem/ui/icon";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
@@ -55,42 +54,29 @@ function claro(hex, p){ var n = parseInt(hex.slice(1),16), r = (n>>16)&255, g = 
 function revDemo(rev, fone, endereco, cidade, total, dias, hora){
   return {rev:rev, fone:fone, bairro:endereco, cidade:cidade, vendas:[total, Math.round(total*0.92/10)*10, Math.round(total*0.85/10)*10], cond:Math.round(total*3/500)*500, dias:dias, hora:hora};
 }
-var CARTEIRA_DEMO = {
-  Dayanne:[
-    revDemo("Amanda Ribeiro","(41) 00000-0001","Avenida Nossa Senhora da Luz, 725 - Jardim Social, Curitiba - PR","Curitiba/PR",2500,1,"09:00"),
-    revDemo("Daniela Moreira","(41) 00000-0004","Avenida Brasil, 1480 - Eucaliptos, Fazenda Rio Grande - PR","Curitiba/PR",1900,4,null),
-    revDemo("Patrícia Nunes","(41) 00000-0021","Rua Fictícia L, 121","Curitiba/PR",3000,3,"11:00"),
-    revDemo("Luciana Prado","(41) 00000-0022","Rua Fictícia L, 222","Curitiba/PR",1300,5,"14:30"),
-    revDemo("Aline Souza","(41) 00000-0025","Rua Fictícia O, 125","Curitiba/PR",1700,6,"09:30")],
-  Lysie:[
-    revDemo("Fernanda Azevedo","(41) 00000-0006","Rua Fictícia C, 206","Curitiba/PR",1700,1,"09:30"),
-    revDemo("Gabriela Mendes","(41) 00000-0007","Rua Fictícia D, 107","Curitiba/PR",1600,2,"10:30"),
-    revDemo("Helena Barros","(41) 00000-0023","Rua Fictícia M, 123","Curitiba/PR",900,3,"15:00"),
-    revDemo("Bruna Teixeira","(41) 00000-0026","Rua Fictícia P, 126","Curitiba/PR",1400,4,"10:00"),
-    revDemo("Mirela Santos","(41) 00000-0028","Rua Fictícia R, 128","Curitiba/PR",800,5,"11:30"),
-    // 1 agendada (data e hora no cadastro dela, ver store.js) e 2 a agendar (sem data ainda)
-    revDemo("Simone Prestes","(41) 00000-0041","Rua Fictícia AA, 141 - Portão, Curitiba - PR","Curitiba/PR",1800,2,"10:00"),
-    revDemo("Taís Fontoura","(41) 00000-0042","Rua Fictícia AB, 242 - Cabral, Curitiba - PR","Curitiba/PR",1500,3,null),
-    revDemo("Rosana Linhares","(41) 00000-0043","Rua Fictícia AC, 343 - Boa Vista, Curitiba - PR","Curitiba/PR",2100,5,null)],
-  Jessica:[
-    revDemo("Larissa Almeida","(41) 00000-0011","Rua Fictícia F, 111","São José dos Pinhais/PR",2200,1,"09:00"),
-    revDemo("Mariana Costa","(41) 00000-0012","Rua Fictícia F, 212","São José dos Pinhais/PR",1900,2,"10:15"),
-    revDemo("Natália Freitas","(41) 00000-0024","Rua Fictícia N, 124","São José dos Pinhais/PR",2000,4,"13:00"),
-    revDemo("Carla Vidal","(41) 00000-0027","Rua Fictícia Q, 127","São José dos Pinhais/PR",2100,5,"11:00"),
-    revDemo("Nádia Pires","(41) 00000-0029","Rua Fictícia S, 129","São José dos Pinhais/PR",600,6,"14:00")],
-  Thalita:[
-    revDemo("Fabiana Moura","(41) 00000-0030","Rua Fictícia T, 130","Curitiba/PR",3000,1,"09:30"),
-    revDemo("Jaqueline Neves","(41) 00000-0031","Rua Fictícia T, 231","Curitiba/PR",2400,2,"10:30"),
-    revDemo("Karina Lopes","(41) 00000-0032","Rua Fictícia U, 132","Curitiba/PR",1200,3,"13:30"),
-    revDemo("Letícia Barros","(41) 00000-0033","Rua Fictícia U, 233","Curitiba/PR",3800,4,"15:00"),
-    revDemo("Rúbia Falcão","(41) 00000-0034","Rua Fictícia V, 134","Curitiba/PR",9000,5,"16:00")]
-};
+var CARTEIRA_DEMO = {};   // 01/11/2026 (Marcus): carteira fictícia saiu; a carteira vem do uso real
 var REF_NOMES = ["Maria Aparecida","João Carlos","Rosângela Silva","Marcos Paulo","Cleusa Pereira","Adriana Santos","Sueli Ramos","Edson Luiz"];
 var REF_REL = ["Mãe","Irmã","Vizinha","Esposo","Amiga","Prima","Tia","Cunhado"];
 function refsDe(nome){ var h = 0; for(var i=0;i<nome.length;i++) h = (h*31 + nome.charCodeAt(i)) % 9973;
   return [0,1,2].slice(0, 2 + h%2).map(function(j){ var x = (h + j*7) % REF_NOMES.length;
     return {nome:REF_NOMES[x], rel:REF_REL[(h + j*3) % REF_REL.length], fone:"(41) 9"+String(8100 + (h*(j+3))%1800)+"-"+String(1000 + (h*(j+5))%9000).slice(-4)}; }); }
-function carteiraRep(s, rep){
+// Vendas anteriores vindas do SISTEMA (DevMaster, rota /api/revendedoras: 3 últimas vendas sem brinde, mais nova primeiro). Lista lida uma vez e guardada; a revendedora é achada pelo nome.
+// nome da representante para MOSTRAR (a lista do DevMaster vem em caixa alta: MARCIANE vira Marciane)
+var nomeBonito = function(x){ return String(x||"").toLowerCase().replace(/(^|s|-)([a-zà-ú])/g, function(m, p, b){ return p+b.toUpperCase(); }); };
+var LISTA_REVS = {};   // uma lista por representante
+var semAcento = function(x){ return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/s+/g, " ").trim(); };
+// código do vendedor na DevMaster (lista do Agendamento): resolve nomes repetidos como Jessica e Thalita
+function codigoRep(s, rep){ var r = ((s.agend && s.agend.config && s.agend.config.representantes) || []).find(function(x){ return x.ativo && x.nome===rep; }); return r ? r.codigo : ""; }
+function listaReal(rep, cod){
+  var k = rep+"|"+(cod||"");
+  if(!LISTA_REVS[k]) LISTA_REVS[k] = chamar("GET", "/representante/revendedoras?rep="+encodeURIComponent(rep)+(cod ? "&vendedor="+encodeURIComponent(cod) : "")).catch(function(){ LISTA_REVS[k] = null; return null; });
+  return LISTA_REVS[k];
+}
+function vendasDoSistema(rep, nome, cod){
+  if(!apiAtiva()) return Promise.resolve(null);
+  return listaReal(rep, cod).then(function(d){ var n = semAcento(nome), it = d && (d.itens||[]).find(function(i){ return semAcento(i.nome)===n; }); return it ? (it.vendas||[]).map(function(v){ return v.v; }) : null; });
+}
+function carteiraRep(s, rep, reais){
   var dm = function(dt){ return dt.toLocaleDateString("pt-BR",{day:"2-digit", month:"2-digit"}); };
   var dmISO = function(iso){ var p = (iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1] : ""; };
   var perfis = s.perfisRev||{};
@@ -103,7 +89,12 @@ function carteiraRep(s, rep){
   var comFeito = function(c){ var a = feito(c.rev); return a ? Object.assign({}, c, {vendas:[a.vendaBruta].concat((c.vendas||[]).slice(1)), realizado:{data:dmISO(a.data), mes:MESES_CHEIOS[+a.data.slice(5,7)-1]}}) : c; };
   var peds = (s.p45 && s.p45.pedidos) || [];
   var comPedido = function(c){ if(c.hoje) return c; var pd = peds.filter(function(x){ return (x.status==="registrada" || x.status==="aprovada") && x.nome.toLowerCase()===c.rev.toLowerCase(); }).slice(-1)[0]; return pd ? Object.assign({}, c, {data:dmISO(pd.novaData)}) : c; };
-  return hojeK.map(comFeito).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
+  // carteira REAL: todas as revendedoras da representante (DevMaster), menos as que já estão na listagem de hoje
+  var jaHoje = {}; hojeK.forEach(function(k){ jaHoje[semAcento(k.rev)] = 1; });
+  var reaisC = (reais||[]).filter(function(it){ return !jaHoje[semAcento(it.nome)]; }).map(function(it){
+    var vs = (it.vendas||[]).map(function(v){ return v.v; }), md = vs.length ? vs.reduce(function(t,x){ return t+x; }, 0)/vs.length : 0;
+    return comPedido(comFeito({id:"R"+it.cod, rev:it.nome, fone:it.celular||"", bairro:it.cidade||"", vendas:vs, cond:Math.round(md/500)*500, hora:null, hoje:false, data:dmISO(String(it.prevDevol||"").slice(0,10)), cod:it.cod})); });
+  return hojeK.map(comFeito).concat(reaisC).concat((CARTEIRA_DEMO[rep]||[]).map(function(c,i){ var dt = new Date(); dt.setDate(dt.getDate()+c.dias);
     var ag = (perfis[c.rev]||{}).agendado;
     return comPedido(comFeito(Object.assign({id:"C"+i, hoje:false, data: ag && ag.data ? dmISO(ag.data) : dm(dt), hora: ag ? (ag.hora||null) : c.hora}, c))); }));
 }
@@ -130,6 +121,9 @@ function AppRepresentante(p){
   var ab = useState(1), blocoAberto = ab[0], setBlocoAberto = ab[1];
   var TROCA_VAZIA = {tipo:null, antigaCod:"", antigaValor:null, novaCod:"", novaValor:null};
   var tr0 = useState(TROCA_VAZIA), trocaIn = tr0[0], setTrocaIn = tr0[1];
+  var bcS = useState("normal"), brindeCat = bcS[0], setBrindeCat = bcS[1];   // brinde que está sendo lançado: normal ou bb (02/11/2026)
+  var bfS = useState(false), brindeFormAberto = bfS[0], setBrindeFormAberto = bfS[1];
+  var tfS = useState(false), trocaFormAberto = tfS[0], setTrocaFormAberto = tfS[1];
   var lsel = useState(l.id), lidPed = lsel[0], setLidPed = lsel[1];
   var so = useState("data"), sortBy = so[0], setSortBy = so[1];
   var fa = useState(false), filtrosAbertos = fa[0], setFiltrosAbertos = fa[1];
@@ -142,7 +136,9 @@ function AppRepresentante(p){
   var lvB = useState(""), buscaListagem = lvB[0], setBuscaListagem = lvB[1];
   var ep = useState(false), editandoPerfil = ep[0], setEditandoPerfil = ep[1];
   var re = useState(null), regEscolha = re[0], setRegEscolha = re[1]; // null = fechado, "multa"/"isenta" = caixinha aberta nessa escolha
-  var meses = mesesApp(), cart = carteiraRep(s, l.rep);
+  var rsT = useState(null), reais = rsT[0], setReais = rsT[1];   // carteira real da representante (DevMaster); null = carregando
+  useEffect(function(){ if(!apiAtiva()){ setReais([]); return; } var vivo = true; setReais(null); listaReal(l.rep, codigoRep(s, l.rep)).then(function(x){ if(vivo) setReais((x && x.itens) || []); }); return function(){ vivo = false; }; }, [l.rep]);
+  var meses = mesesApp(), cart = carteiraRep(s, l.rep, reais);
   var vendMes = function(r, i){ return r.vendas[i===undefined?mes:i] || 0; };
   var totMes = function(i){ return cart.reduce(function(t,r){return t+vendMes(r,i);},0); };
   var tot = totMes(mes);
@@ -164,17 +160,18 @@ function AppRepresentante(p){
     ["desempenho","Desempenho","trofeu","#16A34A", "Em breve"],
     ["indique","Indique & Ganhe","presente","#CA8A04", "Em breve"]];
   var TITULO = {rev:"Revendedora", comissoes:"Comissões"}; MENU.forEach(function(m){ TITULO[m[0]] = m[1]; });
-  // Tela inicial (dashboard): totais somados da carteira, no mesmo critério dos cards de revendedora (vendido/acerto/comissão 8%).
-  var vendidoTotal = tot, acertoTotal = cart.reduce(function(t,r){ var vd = vendMes(r); return t + Math.round(vd*(1-((comissaoRev(vd, s.cfg)||{pct:0}).pct/100))); }, 0),
-    comissaoRepTotal = Math.round(acertoTotal*0.08);
-  if(l.rep==="Dayanne"){ vendidoTotal = 125215; acertoTotal = 70120.40; comissaoRepTotal = 5609.63; } // valores fictícios de demonstração pedidos pro perfil da Dayanne
+  // Tela inicial (dashboard): só o que foi REGISTRADO no sistema pelos acertos feitos no app, no mês escolhido. Sem acerto registrado, tudo zero (01/11/2026, Marcus: as representantes ainda não usam o sistema).
+  // Comissão = a do motor de comissões (domain/comissoes.js), a mesma da tela Comissões; o Pix direto não conta como comissão.
+  var mesCard = (function(){ var h0 = new Date(), d0 = new Date(h0.getFullYear(), h0.getMonth()-mes, 1); return d0.getFullYear()+"-"+String(d0.getMonth()+1).padStart(2,"0"); })();
+  var acertosCard = (s.acertosConsignado||[]).filter(function(a){ return a.origem!=="interno" && a.tipo==="acerto" && a.rep===l.rep && (a.data||"").slice(0,7)===mesCard; });
+  var vendidoTotal = acertosCard.reduce(function(t0,a){ return t0+(a.vendaBruta||0); }, 0), acertoTotal = acertosCard.reduce(function(t0,a){ return t0+(a.valorAcerto||0); }, 0),
+    comissaoRepTotal = itensComissao(comisEfetiva(s), s, Date.now()).filter(function(i){ return i.dest===l.rep && !i.pixRep && (i.data||"").slice(0,7)===mesCard; }).reduce(function(t0,i){ return t0+i.comissao; }, 0);
   var nPagNI = (s.acertosConsignado||[]).reduce(function(t,r){ return r.origem==='interno' || r.rep!==l.rep ? t : t+Object.keys(r.divs||{}).filter(function(i){ return r.divs[i].tipo==='nao_ident' && !(r.fin && r.fin[i]); }).length; }, 0);
   var minhasL = s.listagens.filter(function(x){return x.rep===l.rep && !x.fechada;});
   // conversa com a revendedora no próprio chat do app (em vez de abrir o WhatsApp)
   var abrirChat = function(nome){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(nome); if(!cr) return; efem({conversaSel:api.openChannel(rv, "r_rep", [cr])}); setTela("mensagens"); };
   // aceitou o kit novo: abre a conversa com a revendedora no SorellyChat já com a mensagem de apresentação enviada
   var aceitouKitNovo = function(n, texto){ var cr = contatoDaRepresentante(l.rep), rv = registrarRevendedora(n.nome); if(!cr) return; var conv = api.openChannel(rv, "r_rep", [cr]); api.sendMessage({conv:conv, eu:cr, texto:texto}); efem({conversaSel:conv}); setTela("mensagens"); };
-  var nInfoNovos = infNaoLidos(s, "representante", l.rep);   // informativos que ela ainda não abriu
   var LISTA_INICIO = [
     {tela:"mensagens", titulo:"SorellyChat", sub: chatNaoLidas ? chatNaoLidas+(chatNaoLidas===1 ? " mensagem não lida" : " mensagens não lidas") : "Fale com os setores da Sorelly", icone:"whats", cor:"#C9A13B", logo:true, ativo:true},
     {tela:"novos", titulo:"Kits Novos", sub: nNovos ? nNovos+" aguardando" : "Revendedoras novas direcionadas", icone:"novas", cor:"#DB2777", ativo:true},
@@ -182,7 +179,6 @@ function AppRepresentante(p){
     {tela:"listagens", titulo:"Listagens", sub: minhasL.length+(minhasL.length===1?" listagem aberta":" listagens abertas"), icone:"lista", cor:"#7C3AED", ativo:true},
     {tela:"comissoes", titulo:"Comissões", sub: nPagNI ? "⚠ "+nPagNI+(nPagNI===1 ? " pagamento não identificado" : " pagamentos não identificados") : "Minhas comissões e quilometragem", icone:"coins", cor:"#CA8A04", ativo:true},
     {tela:"regrascom", titulo:"Regras e comissões", sub:"Tabela, brindes, taxas e multas", icone:"book", cor:"#B8862B", ativo:true},
-    {tela:"informativos", titulo:"Informativos", sub: nInfoNovos ? nInfoNovos+(nInfoNovos===1 ? " novo" : " novos")+" para ler" : "Regras, avisos e novidades", icone:"book", cor:"#9A7424", ativo:true},
     {tela:"desempenho", titulo:"Desempenho", sub:"Em breve", icone:"trofeu", cor:"#16A34A", ativo:false},
     {tela:"indique", titulo:"Indique & Ganhe", sub:"Em breve", icone:"presente", cor:"#EAB308", ativo:false}];
   var voltar = e("div",{className:"flex items-center gap-2"},
@@ -230,12 +226,19 @@ function AppRepresentante(p){
     d({type:"ADD_KIT", lid:lUse.id, rev:sel.rev, bairro:sel.bairro||"", vendas: tipo==="reposicao" ? [] : sel.vendas, prio:false, atrasado:foraDoPrazo(lUse, s), tipoKit:tipo, conds:conds, fone:sel.fone, hora:(opts.hora!==undefined?opts.hora:sel.hora)||null, porApp:true});
     if(!opts.ficarNaTela) setTela("revs"); };
   var kitSel = sel && sel.hoje ? s.kits.find(function(k){return k.id===sel.id;}) : null;
+  // As 2 vendas anteriores da revendedora vêm do SISTEMA (a representante não digita nem consegue puxar na hora). Quando a listagem vier da DevMaster, o kit traz `vendasAnt` = [mais nova, mais antiga]; na demonstração usa os meses anteriores da carteira.
+  // Devolve [de 2 acertos atrás, do último acerto], a ordem que a regra da média espera.
+  var vsS = useState({}), vendasSis = vsS[0], setVendasSis = vsS[1];   // nome da revendedora -> [mais nova, mais antiga, ...] vindo do sistema
+  useEffect(function(){ if(!sel || !sel.hoje || vendasSis[sel.rev]!==undefined) return; var nome = sel.rev; vendasDoSistema(l.rep, nome, codigoRep(s, l.rep)).then(function(v){ setVendasSis(function(o){ var n = Object.assign({}, o); n[nome] = v || null; return n; }); }); }, [sel && sel.rev]);
+  var vendasAntSistema = function(){ var kk = kitSel || {}, v = kk.vendasAnt || (sel && vendasSis[sel.rev]) || (sel && sel.vendas && sel.vendas.length>=3 ? [sel.vendas[1], sel.vendas[2]] : null); return v ? [v[1] || null, v[0] || null] : []; };
+  useEffect(function(){ if(!sel) return; var v = vendasAntSistema(), at = acertoForm.vendasAnteriores||[]; if((v[0]>0 || v[1]>0) && at[0]!==v[0] && at[1]!==v[1]) setAcertoForm(function(f0){ return Object.assign({}, f0, {vendasAnteriores:v}); }); }, [vendasSis, selId]);   // o histórico chegou depois de abrir o acerto: entra no formulário
   // resumo do kit entregue e conferido (condicionais, peças, valor, faltas e peças de outro kit): entra no PDF do acerto + kit novo e no resumo do kit novo
   var kitConfDe = function(kid){ var cf = (s.confBip||{})[kid], kk = s.kits.find(function(x){ return x.id===kid; }); if(!cf || !cf.fim || !kk) return null;
     var cs = condicionaisDoKit(kk), tk = totaisKit(cs), r = cf.resultado || {};
     return {conds:cs.map(function(c){ var x = totaisDe(c); return {numero:c.numero, modelos:x.modelos, pecas:x.pecas, valor:x.valor}; }), pecas:tk.pecas, valor:tk.valor, lidas:r.lidas||0, esperadas:r.esperadas||0, faltas:r.faltas||[], sobras:r.sobras||[]}; };
   var raS = useState(false), reposAss = raS[0], setReposAss = raS[1];   // reposição: a revendedora assinou a condicional?
-  var cmS = useState({numero:"", pecas:""}), condManual = cmS[0], setCondManual = cmS[1];   // condicional adicionada à mão (quando não está cadastrada)
+  var cmS = useState({numero:"", pecas:""}), condManual = cmS[0], setCondManual = cmS[1];
+  var cfS = useState(false), condFormAberto = cfS[0], setCondFormAberto = cfS[1];   // formulário "+ Condicional" (02/11/2026: fica fechado até tocar)   // condicional adicionada à mão (quando não está cadastrada)
   var paS = useState(null), pendAbrir = paS[0], setPendAbrir = paS[1];                      // pedido para abrir direto um acerto já preenchido (botão do admin ou ?acerto=1)
   var jaAcertado = kitSel && (kitSel.status==="acertado" || kitSel.acerto || kitSel.reposicaoEntregue);
   var ehKitNovoHoje = !!kitSel && (kitSel.tipoKit||"").indexOf("kit_novo")===0;
@@ -249,7 +252,9 @@ function AppRepresentante(p){
   // Toda a conta do acerto vem de domain/acerto-derivado.js (a mesma da Calculadora de acertos do atendimento interno).
   var vezAtual = kitSel ? vezCobravel(kitSel.remarcacoesLista) : 0;
   var condicionaisRev = sel ? ((s.perfisRev[sel.rev]||{}).condicionaisAbertas || []) : [];
-  var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev) : 0});
+  // Depois de registrado, o acerto deste kit NÃO conta como dívida anterior (senão o pendente é contado duas vezes e a mensagem de fechamento sai errada)
+  var regDoKit = kitSel ? (s.acertosConsignado||[]).find(function(r0){ return r0.kitId===kitSel.id && r0.tipo==="acerto"; }) : null;
+  var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
   // Pagamento: a representante só informa FORMA + VALOR e o pedido de conta segue em segundo plano (Controle de pagamentos); o app nunca espera.
@@ -267,18 +272,24 @@ function AppRepresentante(p){
   useEffect(function(){ if(!p.abrir) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(alvo){ setSel(alvo.id); setPendAbrir(p.abrir.n); } }, [p.abrir && p.abrir.n]);
   useEffect(function(){
     if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
-    var conds = condicionaisRev.slice(0,2).map(function(c){ return c.numero; }), hoje = isoDia(new Date());
+    var cz = p.abrir.cenario;   // 02/11/2026 (Marcus): opção "Acerto completo" da aba Apps: um acerto 100% preenchido para visualizar
+    var iguais = !cz || (condicionaisRev.length===cz.conds.length && cz.conds.every(function(c){ return condicionaisRev.some(function(x){ return x.numero===c.n && x.pecas===c.p; }); }));
+    if(!iguais){ d({type:"REV_COND_DEFINIR", rev:sel.rev, lista:cz.conds.map(function(c){ return {numero:c.n, pecas:c.p, manual:true}; })}); return; }   // exemplo: a revendedora fica com exatamente estas condicionais; roda de novo quando entrarem
+    var conds = cz ? cz.conds.map(function(c){ return c.n; }) : condicionaisRev.slice(0,2).map(function(c){ return c.numero; }), hoje = isoDia(new Date());
     var conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };
-    var base = Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:3000, condicionaisSelecionadas:conds});
+    var base = Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:cz ? cz.venda : 3000, condicionaisSelecionadas:conds});
     var valor = conta(base).previaBase ? conta(base).previaBase.valorDevido : 0;
-    var comPag = Object.assign({}, base, {pagamentos:[{forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:valor, anexo:null}]});
+    var comPag = Object.assign({}, base, {pagamentos:[{forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:cz ? cz.pago : valor, anexo:null}]});
     var d1 = conta(comPag), brindes = [];
-    if(d1.libN>0) brindes.push({cat:"normal", codigo:"N1287", valor:d1.libN, origem:"nova"});
-    if(d1.libS>0) brindes.push({cat:"bb", codigo:"BB0001", valor:d1.libS, origem:"nova"});
+    if(cz && cz.brindes) brindes = cz.brindes.map(function(b){ return {cat:b.cat, codigo:b.codigo, valor:b.valor, origem:"antiga"}; });   // exemplo: brindes lançados do jeito que o Marcus passou
+    else {
+      if(d1.libN>0) brindes.push({cat:"normal", codigo:"N1287", valor:d1.libN, origem:"nova"});
+      if(d1.libS>0) brindes.push({cat:"bb", codigo:"BB0001", valor:d1.libS, origem:"nova"});
+    }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
-    setAcertoForm(Object.assign({}, comPag, {pecasVendidas:40, brindes:brindes, pecasProxCodigos:prox}));
+    setAcertoForm(Object.assign({}, comPag, {pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
-  }, [pendAbrir, selId]);
+  }, [pendAbrir, selId, condicionaisRev.length]);
   var toggleCondicional = function(numero){ var o = acertoForm.condicionaisSelecionadas.slice(), i = o.indexOf(numero);
     if(i>=0) o.splice(i,1); else o.push(numero); setAcertoForm(Object.assign({}, acertoForm, {condicionaisSelecionadas:o})); };
   var expositoresRev = sel ? ((s.perfisRev[sel.rev]||{}).expositores || []) : [];
@@ -289,12 +300,19 @@ function AppRepresentante(p){
   var BR2 = BR;
   var checkOk = e("span",{className:"grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500/20 text-emerald-400"}, e(Icon,{n:"check", s:13}));
   var badgeTxt = function(txt, cor){ return e("span",{className:"shrink-0 rounded-full px-2 py-0.5 text-[10.5px] font-bold "+BR2, style:{background:cor}}, txt); };
+  // Ao abrir um bloco, ele SOBE até o topo, logo abaixo do cabeçalho fixo (02/11/2026, Marcus): os blocos de cima saem de vista e a tela vai subindo sozinha.
+  var subirBloco = function(el){ try{
+    var c = el.parentElement; while(c && !/(auto|scroll)/.test(getComputedStyle(c).overflowY)) c = c.parentElement;
+    if(!c) return;
+    var h = document.getElementById("hdr-calc"), alturaCab = h ? h.getBoundingClientRect().height : 0, cr = c.getBoundingClientRect(), er = el.getBoundingClientRect();
+    c.scrollTo({top:c.scrollTop + (er.top - cr.top) - alturaCab + 4, behavior:"smooth"});
+  }catch(x){} };
   var blocoAcordeao = function(idx, icone, cor, titulo, subtitulo, status, conteudo){
     var aberto = blocoAberto===idx;
-    return e("div",{key:idx, className:"overflow-hidden rounded-2xl bg-[#1C1C1E]"},
-      e("button",{onClick:function(){ setBlocoAberto(aberto?null:idx); }, className:"flex w-full items-center gap-3 p-3 text-left"},
-        e("span",{className:"grid size-9 shrink-0 place-items-center rounded-xl", style:{background:cor+"26", color:cor}}, e(Icon,{n:icone, s:18})),
-        e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[14px]"}, titulo), e("span",{className:"block truncate text-[11.5px] text-[#8E8E93]"}, subtitulo)),
+    return e("div",{key:idx, "data-bloco":idx, className:"overflow-hidden rounded-2xl bg-[#1C1C1E]"},
+      e("button",{onClick:function(ev){ var alvo = ev.currentTarget.parentElement; setBlocoAberto(aberto?null:idx); if(!aberto) setTimeout(function(){ subirBloco(alvo); }, 90); }, className:"flex w-full items-center gap-3 p-3 text-left"},
+        e("span",{className:"grid size-9 shrink-0 place-items-center rounded-xl", style:{background:"#CA8A0426", color:"#CA8A04"}}, e(Icon,{n:icone, s:18})),   // 02/11/2026 (Marcus): todos os blocos na mesma cor neutra do Condicionais
+        e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[14px]"}, titulo)),   // sem minitexto embaixo do título (02/11/2026, Marcus)
         status,
         e(Icon,{n: aberto?"chevrondown":"chevron", s:15, className:"text-[#8E8E93]"})),
       aberto && e("div",{className:"flex flex-col gap-2.5 border-t border-white/5 p-3"+(jaAcertado ? " pointer-events-none select-text" : "")}, conteudo));
@@ -312,43 +330,53 @@ function AppRepresentante(p){
     setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.concat([{cat:cat, codigo:normalizarCodigo(f.codigo), valor:f.valor, origem:f.origem}])}));
     setBrindeIn(Object.assign({}, brindeIn, o));
   };
-  var cartaoBrinde = function(cat, titulo, rotulo, liberado, resumo, cor, ph){
-    var f = brindeIn[cat], itens = acertoForm.brindes.map(function(b,i){ return {b:b, i:i}; }).filter(function(x){return x.b.cat===cat;});
-    var codOk = codigoBrindeValido(cat, f.codigo), pronto = codOk && f.valor>0 && !!f.origem, origem = f.origem || null;
+  // Brindes no mesmo desenho do bloco Condicionais (02/11/2026, Marcus): linhas, total logo abaixo, "Falta lançar" na última linha; formulário atrás de "+ Brinde".
+  var blocoBrindesNovo = function(){
+    var itens = acertoForm.brindes.map(function(b,i){ return {b:b, i:i}; });
+    var totalLanc = confBrinde.lancadoNormal + confBrinde.lancadoSelect;
+    var cat = brindeCat, f = brindeIn[cat], codOk = codigoBrindeValido(cat, f.codigo), pronto = codOk && f.valor>0 && !!f.origem, origem = f.origem || null;
     var setF = function(patch){ var o = {}; o[cat] = Object.assign({}, f, patch); setBrindeIn(Object.assign({}, brindeIn, o)); };
-    return e("div",{key:cat, className:"flex flex-col gap-2 rounded-xl p-2.5 ring-1", style:{background:cor+"14", "--tw-ring-color":cor+"55"}},
-      e("div",{className:"flex items-start justify-between gap-2"},
-        e("div",{className:"min-w-0"}, e("b",{className:"block text-[13.5px]"}, titulo), e("p",{className:"text-[11px] leading-snug text-[#8E8E93]"}, rotulo)),
-        e("span",{className:MONO+" shrink-0 text-[14px] font-extrabold", style:{color:cor}}, BK(liberado))),
-      itens.map(function(x){ return e("div",{key:x.i, className:"flex items-center justify-between gap-2 rounded-lg bg-black/30 px-2.5 py-1.5"},
-        e("span",{className:"flex min-w-0 items-center gap-1.5"}, e("span",{className:MONO+" text-[12.5px] font-semibold"}, x.b.codigo),
-          e("span",{className:"rounded-full px-1.5 py-px text-[9.5px] font-bold "+(x.b.origem==="antiga" ? "bg-amber-400/25 text-amber-200" : "bg-emerald-400/25 text-emerald-200")}, x.b.origem==="antiga" ? "KIT ANTIGO" : "KIT NOVO")),
-        e("span",{className:"flex items-center gap-2"},
-          e("span",{className:MONO+" text-[12.5px]"}, BK(x.b.valor)),
-          e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); },
-            "aria-label":"Remover peça "+x.b.codigo, className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×"))); }),
-      e("div",{className:"grid grid-cols-2 gap-1.5"}, [["antiga","Kit antigo","devolvendo","bg-[#F59E0B] txt-branco ring-transparent"],["nova","Kit novo","recebendo","bg-[#16A34A] txt-branco ring-transparent"]].map(function(o){ var on = origem===o[0];
-        return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on,
-          className:"flex h-10 flex-col items-center justify-center rounded-lg text-[12px] font-bold leading-tight ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")},
-          e("span",null,(on?"✓ ":"")+o[1]), e("span",{className:"text-[9.5px] font-medium opacity-80"}, o[2])); })),
-      e("div",{className:"flex gap-1.5"},
-        e("input",{value:f.codigo, placeholder:ph, autoCapitalize:"characters", "aria-label":"Código da peça",
-          onChange:function(ev){ setF({codigo:limitarCodigo(ev.target.value)}); },
-          className:"h-10 w-[6.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-[14px] font-semibold tracking-wide text-white outline-none ring-1 ring-white/10 "+MONO+" uppercase"}),
-        e(CampoReais,{value:f.valor, label:"Valor da peça", onChange:function(v){ setF({valor:v}); }, className:"h-10 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-right text-[14px] text-white outline-none ring-1 ring-white/10 "+MONO}),
-        e("button",{disabled:!pronto, onClick:function(){ lancarBrinde(cat); }, className:"h-10 shrink-0 rounded-lg px-2.5 text-[12px] font-bold disabled:opacity-40 "+BR2, style:{background:cor}}, "Lançar")),
-      f.codigo && !codOk && e("p",{className:"text-[11.5px] font-semibold text-red-400"},
-        cat==="bb" ? "Código BB: começa com BB (ou BB + 1 ou 2 letras) e termina com até 7 números. Ex.: BB0001, BBA0001 (anel). BB não é só brinco." : "Código: até 4 letras e até 7 números. Ex.: N1287."),
-      e("p",{className:"text-[13px] font-bold text-white"}, resumo));
+    var aberto = brindeFormAberto || itens.length===0;
+    return e("div",{key:"bnovo", className:"flex flex-col gap-2"},
+      e("div",{className:"flex items-center justify-between gap-2 text-[13px]"},
+        e("span",null,"Liberado: Normal "+BK(libN)+" · Select "+BK(libS)),
+        itens.length>0 && e("button",{onClick:function(){ setBrindeFormAberto(!brindeFormAberto); }, className:"h-8 shrink-0 rounded-lg border border-dashed border-amber-200/60 px-3 text-[13px] font-semibold text-amber-200"}, brindeFormAberto ? "Fechar" : "+ Brinde")),
+      aberto && e("div",{className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
+        e("div",{className:"grid grid-cols-2 gap-1.5"}, [["normal","Normal"],["bb","Select (BB)"]].map(function(o){ var on = cat===o[0];
+          return e("button",{key:o[0], onClick:function(){ setBrindeCat(o[0]); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? "bg-[#C9A13B] txt-branco ring-transparent" : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
+        e("div",{className:"grid grid-cols-2 gap-1.5"}, [["antiga","Kit antigo","devolvendo","bg-[#F59E0B] txt-branco ring-transparent"],["nova","Kit novo","recebendo","bg-[#16A34A] txt-branco ring-transparent"]].map(function(o){ var on = origem===o[0];
+          return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]+" · "+o[2]); })),
+        e("div",{className:"flex gap-1.5"},
+          e("input",{value:f.codigo, placeholder:cat==="bb" ? "BB0001" : "AB123", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ setF({codigo:limitarCodigo(ev.target.value)}); },
+            className:"h-8 w-[6.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-[13px] font-semibold tracking-wide text-white outline-none ring-1 ring-white/10 "+MONO+" uppercase"}),
+          e(CampoReais,{value:f.valor, label:"Valor da peça", onChange:function(v){ setF({valor:v}); }, className:"h-8 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-right text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
+          e("button",{disabled:!pronto, onClick:function(){ lancarBrinde(cat); }, className:"h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar")),
+        f.codigo && !codOk && e("p",{className:"text-[11px] font-semibold text-red-400"},
+          cat==="bb" ? "Código BB: começa com BB (ou BB + 1 ou 2 letras) e termina com até 7 números. Ex.: BB0001, BBA0001 (anel). BB não é só brinco." : "Código: até 4 letras e até 7 números. Ex.: N1287.")),
+      itens.map(function(x){ return e("div",{key:"br"+x.i, className:"flex h-8 items-center gap-2 px-2.5 text-[13px]"},
+        e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.cat==="bb" ? "bg-[#F3E8FF] text-[#6B21A8]" : "bg-[#FCE7F3] text-[#9D174D]")}, x.b.cat==="bb" ? "SELECT" : "NORMAL"),
+        e("span",{className:MONO+" shrink-0 font-semibold"}, x.b.codigo),
+        e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO"),
+        e("span",{className:"min-w-0 flex-1"}),
+        e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13px]"}, BK(x.b.valor)),
+        e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); },
+          "aria-label":"Remover peça "+x.b.codigo, className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")); }),
+      itens.length>0 && e("div",{className:"flex items-center justify-between gap-2 border-t border-amber-200/40 px-2.5 pt-2 text-[13px]"},
+        e("span",{className:"font-semibold"},"Total lançado"),
+        e("span",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[15px] text-amber-200"}, BK(totalLanc)), e("span",{className:"w-6"}))),
+      e("div",{className:"flex items-center justify-between gap-2 px-2.5 text-[13px]"},
+        e("span",{className:"shrink-0 whitespace-nowrap font-semibold"},"Falta lançar"),
+        (confBrinde.restanteNormal+confBrinde.restanteSelect)<=0.009
+          ? e("b",{className:"text-emerald-300"}, "Tudo lançado ✓")
+          : e("b",{className:MONO+" text-right text-[12.5px]"}, "Normal "+BK(confBrinde.restanteNormal)+" · Select "+BK(confBrinde.restanteSelect))));
   };
 
   // ── Cabeçalho fixo: título, ícone das regras, nome da revendedora e o consolidado padronizado (aparece quando preenche a venda) ──
-  var linhaCons = function(k, rot, val, o){ o = o || {};
-    return e("div",{key:k, className:"flex items-baseline justify-between gap-3"+(o.topo ? " border-t border-white/10 pt-1.5" : "")},
-      e("span",{className:(o.peq ? "text-[10.5px] " : "text-[12px] ")+(o.rotCor || "text-[#B5B5BA]")}, rot),
-      e("span",{className:MONO+" whitespace-nowrap font-bold "+(o.grande ? "text-[23px] font-black leading-none" : o.peq ? "text-[11px]" : "text-[13px]")+" "+(o.cor || BR)}, val)); };
-  var pagsTopo = acertoForm.pagamentos.map(function(p,i){ return {p:p, n:i+1}; }).slice(-3);
-  var headerCalc = kitSel && e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-1.5 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
+  // Cabeçalho da calculadora (02/11/2026, Marcus escolheu o layout 2): SÓ Vendas, Comissão e Valor do acerto, em três linhas. Multa, pagamentos e restante ficam no bloco Vendas e pagamentos.
+  var linhaCons = function(k, rot, val, fim){ return e("div",{key:k, className:"flex min-h-8 items-center justify-between gap-3 py-1 "+(fim ? "mt-0.5 border-t-2 border-[#C9A13B]" : k==="v" ? "" : "border-t border-white/10")},
+    e("span",{className:"text-[13px] "+(fim ? "font-bold text-amber-200" : BR)}, rot),
+    e("b",{className:MONO+" whitespace-nowrap "+(fim ? "text-[20px] text-amber-200" : "text-[15px] "+BR)}, val)); };
+  var headerCalc = kitSel && e("div",{id:"hdr-calc", className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-1.5 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
     e("div",{className:"flex items-center gap-2"},
       e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
       e("b",{className:douradoTitulo+" min-w-0 flex-1 truncate"}, "Calculadora de Acertos"),
@@ -359,19 +387,10 @@ function AppRepresentante(p){
         e("p",{className:"min-w-0 flex-1 truncate text-[13.5px] font-extrabold "+BR}, sel.rev),
         ehPrata && e("span",{className:"shrink-0 rounded-full bg-slate-300 px-2 py-0.5 text-[10.5px] font-black tracking-wider text-slate-900"}, "100% PRATA")),
       !previaAcerto && e("p",{className:"text-[11px] text-[#8E8E93]"},"Preencha as vendas para ver a conta do acerto."),
-      previaAcerto && e(React.Fragment,null,
-      linhaCons("v", dv.trocasAjuste!==0 ? "Vendas (com trocas):" : "Vendas:", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta)),
-      linhaCons("c", "Comissão:", e("span",null, e("span",{className:"mr-1.5 text-[10px] font-normal text-[#8E8E93]"}, previaAcerto.semFaixa ? "sem faixa — comissão zero"
-          : (previaAcerto.descontoRemarcacao.comissaoPct>0 || previaAcerto.atrasoPct>0) ? previaAcerto.faixa.pct+"% da faixa"+(previaAcerto.descontoRemarcacao.comissaoPct>0 ? " − "+previaAcerto.descontoRemarcacao.comissaoPct+"% de remarcação" : "")+(previaAcerto.atrasoPct>0 ? " − "+previaAcerto.atrasoPct+"% de atraso" : "") : previaAcerto.faixa.pct+"% da faixa, sem desconto"), previaAcerto.comissaoPct+"%")),
-      previaAcerto.taxaDeslocamento>0 && linhaCons("t", "Taxa de deslocamento:", BK(previaAcerto.taxaDeslocamento), {cor:"text-amber-300"}),
-      linhaCons("a", "Valor de Acerto:", BK(previaAcerto.valorAcerto), {cor:"text-amber-200", rotCor:"text-amber-200/80"}),
-      excedenteBrinde>0 && linhaCons("x", "Excedente de brinde:", BK(excedenteBrinde), {cor:"text-red-400"}),
-      dv.dividaAnterior>0 && linhaCons("dv", "Dívida anterior:", BK(dv.dividaAnterior), {cor:"text-red-400"}),
-      dv.novas && previaAcerto.multas>0 && linhaCons("mu", "Multa do valor pendente:", BK(previaAcerto.multas), {cor:"text-red-400"}),
-      dv.tagsValor>0 && linhaCons("tg", "Tags danificadas:", BK(dv.tagsValor), {cor:"text-red-400"}),
-      acertoForm.pagamentos.length>pagsTopo.length && e("p",{key:"mais", className:"text-[10.5px] text-[#8E8E93]"}, "+ "+(acertoForm.pagamentos.length-pagsTopo.length)+" pagamento(s) anterior(es)"),
-      pagsTopo.map(function(x){ return linhaCons("p"+x.n, "Pag. "+x.n+":", BK(x.p.valor)+" "+rotPag(x.p), {cor:"text-red-400", rotCor:"text-red-400/80", peq:true}); }),
-      linhaCons("r", e("span",null,"Valor restante:", restanteTotal<=0.009 && e("span",{className:"ml-1.5 text-[10.5px] font-semibold text-emerald-300"},"✓ acerto quitado")), restanteTotal>0.009 ? BK(restanteTotal) : "R$ 0,00", {topo:true, cor:restanteTotal>0.009 ? "text-amber-200" : "text-emerald-300", rotCor:"text-[#E5E5EA]"}))));
+      previaAcerto && e("div",{key:"tres", className:"mt-1 flex flex-col"},
+        linhaCons("v", "Vendas", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta)),
+        linhaCons("c", "Comissão", previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"),
+        linhaCons("a", "Valor do acerto", BK(previaAcerto.valorAcerto), true))));
 
   // Payload único do acerto (usado na assinatura)
   // venda abaixo do mínimo geral (R$ 500, domain/consignado.js): pede o motivo antes de confirmar o acerto
@@ -391,28 +410,18 @@ function AppRepresentante(p){
       pecasCond:pecasCondSelecionadas, formSnapshot:acertoForm}, extra||{});
   };
 
-  var calcAcertoScreen = kitSel && e("div",{className:"flex flex-col gap-2.5"},
+  var calcAcertoScreen = kitSel && e("div",{className:"flex flex-col gap-2.5 pb-72"},
     blocoAcordeao(0, "lista", "#CA8A04", "Condicionais",
       acertoForm.condicionaisSelecionadas.length ? acertoForm.condicionaisSelecionadas.length+" marcada(s) · "+pecasCondSelecionadas+" peças" : "Marque as condicionais em aberto conferidas",
       acertoForm.condicionaisSelecionadas.length ? badgeTxt(pecasCondSelecionadas+" peças","#CA8A04") : badgeTxt("Pendente","#64748B"),
       [condicionaisRev.length===0
         ? e("p",{key:"c0", className:"text-[13px] text-[#8E8E93]"},"Nenhuma condicional em aberto cadastrada para essa revendedora.")
         : e("div",{key:"c1", className:"flex flex-col gap-1.5"}, condicionaisRev.map(function(c){ var on = acertoForm.condicionaisSelecionadas.indexOf(c.numero)>=0;
-            return e("label",{key:c.numero, className:"flex items-center justify-between gap-2 rounded-xl px-2.5 py-2 "+(on?"bg-amber-200/15":"bg-white/5")},
-              e("span",{className:"flex items-center gap-2 text-[13px]"},
-                e("input",{type:"checkbox", checked:on, onChange:function(){ toggleCondicional(c.numero); }}),
-                "Condicional "+c.numero),
-              e("span",{className:MONO+" text-[12.5px] text-[#8E8E93]"}, c.pecas+" peças")); })),
-        e("div",{key:"cm", className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5"},
-          e("p",{className:"text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]"}, condicionaisRev.length===0 ? "Não tem condicional cadastrada? Adicione à mão" : "Adicionar outra condicional à mão"),
-          e("div",{className:"flex items-center gap-1.5"},
-            e("input",{value:condManual.numero, inputMode:"numeric", placeholder:"Nº da condicional", "aria-label":"Número da condicional", onChange:function(ev){ setCondManual(Object.assign({}, condManual, {numero:ev.target.value.replace(/[^0-9]/g,"").slice(0,8)})); },
-              className:"h-10 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-[14px] text-white outline-none ring-1 ring-white/10 "+MONO}),
-            e("input",{value:condManual.pecas, inputMode:"numeric", placeholder:"Peças", "aria-label":"Quantidade de peças", onChange:function(ev){ setCondManual(Object.assign({}, condManual, {pecas:ev.target.value.replace(/[^0-9]/g,"").slice(0,4)})); },
-              className:"h-10 w-[4.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-center text-[14px] text-white outline-none ring-1 ring-white/10 "+MONO}),
-            e("button",{disabled:!condManual.numero || !(+condManual.pecas>0), onClick:function(){ d({type:"REV_COND_ADD", rev:sel.rev, numero:condManual.numero, pecas:+condManual.pecas});
-              setAcertoForm(Object.assign({}, acertoForm, {condicionaisSelecionadas:acertoForm.condicionaisSelecionadas.concat([condManual.numero])})); setCondManual({numero:"", pecas:""}); },
-              className:"h-10 shrink-0 rounded-lg px-3 text-[12px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Adicionar"))),
+            return e("label",{key:c.numero, className:"flex h-8 cursor-pointer items-center gap-2.5 border-b border-white/10 px-2.5 text-[13px]"},
+              e("input",{type:"checkbox", className:"sr-only", checked:on, onChange:function(){ toggleCondicional(c.numero); }}),
+              e("span",{className:"relative h-[22px] w-[38px] shrink-0 rounded-full transition-colors "+(on ? "bg-[#C9A13B]" : "bg-[#D9CFB3]")}, e("span",{className:"absolute top-[3px] size-4 rounded-full bg-white transition-all "+(on ? "left-[19px]" : "left-[3px]")})),
+              e("b",{className:"min-w-0 flex-1"}, "Condicional "+c.numero),
+              e("span",{className:MONO+" text-[13px] font-bold"}, c.pecas+" peças")); })),
         expositoresRev.length>0 && e("div",{key:"cx", className:"flex flex-col gap-1.5 border-t border-white/10 pt-2"},
           e("p",{className:"text-[11px] font-bold uppercase tracking-wide text-[#8E8E93]"},"Expositores com a revendedora"),
           expositoresRev.map(function(x){ var on = (acertoForm.expositoresMarcados||[]).indexOf(x.id)>=0;
@@ -420,43 +429,58 @@ function AppRepresentante(p){
               e("span",{className:"flex items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:on, onChange:function(){
                 var m = acertoForm.expositoresMarcados||[]; setAcertoForm(Object.assign({}, acertoForm, {expositoresMarcados: on ? m.filter(function(i){return i!==x.id;}) : m.concat([x.id])})); }}), x.qtd+" "+x.nome.toLowerCase()),
               e("span",{className:"text-[11px] text-[#8E8E93]"}, on ? "conferido" : "com ela")); })),
-        e("p",{key:"c2", className:"border-t border-white/10 pt-2 text-[13px] font-semibold text-amber-200"},"Total conferido: "+pecasCondSelecionadas+" peças"),
-        e("div",{key:"c3", className:"flex items-center justify-between gap-2 text-[13px]"},
-          e("span",{className:"font-semibold"},"Total de peças vendidas"),
-          e("input",{inputMode:"numeric", value:acertoForm.pecasVendidas==null ? "" : acertoForm.pecasVendidas, placeholder:"0", "aria-label":"Total de peças vendidas",
-            onChange:function(ev){ var n = ev.target.value.replace(/D/g,""); setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:n ? Number(n) : null})); },
-            className:"h-9 w-24 rounded-lg bg-black/50 px-2 text-right text-[14px] font-bold text-white outline-none ring-1 ring-white/10"}))]),
+        e("div",{key:"ct", className:"flex items-center justify-between gap-2 border-t border-amber-200/40 px-2.5 pt-2 text-[13px]"},
+          e("button",{onClick:function(){ setCondFormAberto(!condFormAberto); }, className:"h-8 shrink-0 rounded-lg border border-dashed border-amber-200/60 px-3 text-[13px] font-semibold text-amber-200"}, "+ Condicional"),
+          e("span",{className:"min-w-0 flex-1 text-center font-semibold"},"Total conferido"),   // rótulo no meio, número na ponta (02/11/2026, Marcus)
+          e("b",{className:MONO+" shrink-0 pr-1 text-right text-[15px] text-amber-200"}, String(pecasCondSelecionadas))),
+        condFormAberto && e("div",{key:"cm", className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5"},   // só abre ao tocar em + Condicional (02/11/2026, Marcus): Código, Peças e Adicionar
+          e("div",{className:"flex items-center gap-1.5"},
+            e("input",{value:condManual.numero, inputMode:"numeric", placeholder:"Código", "aria-label":"Código da condicional", onChange:function(ev){ setCondManual(Object.assign({}, condManual, {numero:ev.target.value.replace(/[^0-9]/g,"").slice(0,8)})); },
+              className:"h-8 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
+            e("input",{value:condManual.pecas, inputMode:"numeric", placeholder:"Peças", "aria-label":"Quantidade de peças", onChange:function(ev){ setCondManual(Object.assign({}, condManual, {pecas:ev.target.value.replace(/[^0-9]/g,"").slice(0,4)})); },
+              className:"h-8 w-[4.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-center text-[13px] text-white outline-none ring-1 ring-white/10 "+MONO}),
+            e("button",{disabled:!condManual.numero || !(+condManual.pecas>0), onClick:function(){ d({type:"REV_COND_ADD", rev:sel.rev, numero:condManual.numero, pecas:+condManual.pecas});
+              setAcertoForm(Object.assign({}, acertoForm, {condicionaisSelecionadas:acertoForm.condicionaisSelecionadas.concat([condManual.numero])})); setCondManual({numero:"", pecas:""}); setCondFormAberto(false); },
+              className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Adicionar"))),
+        e("div",{key:"cv", className:"flex items-center justify-between gap-2 text-[13px]"},
+          e("span",{className:"font-semibold"},"Peças vendidas"),
+          e("div",{className:"flex items-center gap-1.5"},
+            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:Math.max(0,(acertoForm.pecasVendidas||0)-1)})); }, "aria-label":"Menos uma peça", className:"size-8 rounded-lg bg-white/10 font-bold"},"−"),
+            e("input",{inputMode:"numeric", value:acertoForm.pecasVendidas==null ? "" : acertoForm.pecasVendidas, placeholder:"0", "aria-label":"Total de peças vendidas",
+              onChange:function(ev){ var n = ev.target.value.replace(/\D/g,""); setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:n ? Number(n) : null})); },
+              className:"h-8 w-16 rounded-lg bg-black/50 px-2 text-center text-[13px] font-bold text-white outline-none ring-1 ring-white/10 "+MONO}),
+            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pecasVendidas:(acertoForm.pecasVendidas||0)+1})); }, "aria-label":"Mais uma peça", className:"size-8 rounded-lg bg-white/10 font-bold"},"+")))]),
     blocoAcordeao(1, "calendario", "#7C3AED", "Multa por remarcação",
       (kitSel.remarcacoesLista||[]).length ? (kitSel.remarcacoesLista.length)+" remarcação(ões) · "+vezCobravel(kitSel.remarcacoesLista)+" com multa" : "Nenhuma remarcação neste kit",
       badgeTxt((kitSel.remarcacoesLista||[]).length ? String(kitSel.remarcacoesLista.length) : "—", (kitSel.remarcacoesLista||[]).length ? "#7C3AED" : "#374151"),
       [(ehPrata || dv.novas) && e("div",{key:"atraso", className:"flex items-center justify-between gap-2 rounded-xl bg-red-500/10 px-2.5 py-2 ring-1 ring-red-500/20"},
-        e("span",{className:"text-[12.5px] font-semibold text-red-300"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (−"+(versaoSel.gerais.atrasoPctDia||1)+"% de comissão por dia)"),
+        e("span",{className:"text-[13px] font-semibold text-[#B91C1C]"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (−"+(versaoSel.gerais.atrasoPctDia||1)+"% de comissão por dia)"),
         e("div",{className:"flex items-center gap-2"},
           e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {atrasoDias:Math.max(0,(acertoForm.atrasoDias||0)-1)})); }, "aria-label":"Menos um dia", className:"size-8 rounded-lg bg-white/10 font-bold"},"−"),
           e("b",{className:MONO+" w-6 text-center text-[15px]"}, acertoForm.atrasoDias||0),
           e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {atrasoDias:(acertoForm.atrasoDias||0)+1})); }, "aria-label":"Mais um dia", className:"size-8 rounded-lg bg-white/10 font-bold"},"+"))),
-      dv.novas && previaAcerto && (acertoForm.atrasoDias||0)>0 && e("p",{key:"atraso2", className:"text-[12px] "+(previaAcerto.juridico ? "font-bold text-red-400" : "text-[#C4B5FD]")},
+      dv.novas && previaAcerto && (acertoForm.atrasoDias||0)>0 && e("p",{key:"atraso2", className:"text-[12px] "+(previaAcerto.juridico ? "font-bold text-red-400" : "text-white")},
         previaAcerto.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico (nota promissória)."
           : "Atraso de "+acertoForm.atrasoDias+" dia(s): perde "+previaAcerto.atrasoPct+"% da comissão e "+(previaAcerto.atrasoBrindePct||0)+"% do brinde."),
       dv.novas && previaAcerto && dv.faltaAtual>0.009 && e("div",{key:"quit", className:"flex flex-col gap-1.5 rounded-xl bg-amber-400/10 px-2.5 py-2 ring-1 ring-amber-400/20"},
         e("div",{className:"flex items-center justify-between gap-2"},
-          e("span",{className:"text-[12.5px] font-semibold text-amber-200"},"Dias com valor pendente (prazo "+((dv.versao.novas||{}).prazoQuitarDias||15)+")"),
+          e("span",{className:"text-[13px] font-semibold text-[#92400E]"},"Dias com valor pendente (prazo "+((dv.versao.novas||{}).prazoQuitarDias||15)+")"),
           e("div",{className:"flex items-center gap-2"},
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {diasQuitacao:Math.max(0,(acertoForm.diasQuitacao||0)-1)})); }, "aria-label":"Menos um dia", className:"size-8 rounded-lg bg-white/10 font-bold"},"−"),
             e("b",{className:MONO+" w-6 text-center text-[15px]"}, acertoForm.diasQuitacao||0),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {diasQuitacao:(acertoForm.diasQuitacao||0)+1})); }, "aria-label":"Mais um dia", className:"size-8 rounded-lg bg-white/10 font-bold"},"+"))),
-        e("p",{className:"text-[11.5px] leading-snug text-[#B5B5BA]"}, "Pendente de "+BK(previaAcerto.pendente)+": multa de "+BK(previaAcerto.multaPendente)+(previaAcerto.multaAtrasoQuitacao>0 ? " + "+BK(previaAcerto.multaAtrasoQuitacao)+" de atraso" : "")+". Próximo kit só depois de quitar.")),
-      regEscolha===null && e("button",{key:"r1", onClick:function(){ setRegEscolha("escolher"); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#7C3AED"}},
+        e("p",{className:"text-[13px] leading-snug text-[#1F1A10]"}, "Pendente de "+BK(previaAcerto.pendente)+": multa de "+BK(previaAcerto.multaPendente)+(previaAcerto.multaAtrasoQuitacao>0 ? " + "+BK(previaAcerto.multaAtrasoQuitacao)+" de atraso" : "")+". Próximo kit só depois de quitar.")),
+      regEscolha===null && e("button",{key:"r1", onClick:function(){ setRegEscolha("escolher"); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}},
         "+ Registrar remarcação"),
       regEscolha==="escolher" && e("div",{key:"r1a", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
-        e("p",{className:"text-center text-[12px] font-semibold text-[#C4B5FD]"},"Essa remarcação é isenta de multa?"),
+        e("p",{className:"text-center text-[12px] font-semibold text-white"},"Essa remarcação é isenta de multa?"),
         e("div",{className:"flex gap-2"},
           e("button",{onClick:function(){ d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false}); setRegEscolha(null); },
             className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#DC2626"}}, "Com multa"),
           e("button",{onClick:function(){ setRegEscolha("isenta"); }, className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#16A34A"}}, "Isenta de multa")),
         e("button",{onClick:function(){ setRegEscolha(null); }, className:"h-7 w-full rounded-lg text-[11.5px] font-semibold text-[#8E8E93]"}, "‹ Cancelar")),
       regEscolha==="isenta" && e("div",{key:"r1b", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
-          e("p",{className:"text-[12px] font-semibold text-[#C4B5FD]"},"Motivo da isenção"),
+          e("p",{className:"text-[12px] font-semibold text-white"},"Motivo da isenção"),
           e("input",{autoFocus:true, value:acertoForm.motivoProxRemarcacao, placeholder:"Ex.: falecimento na família",
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoProxRemarcacao:ev.target.value})); },
             className:campo+" w-full"}),
@@ -466,7 +490,7 @@ function AppRepresentante(p){
             e("button",{disabled:!acertoForm.motivoProxRemarcacao.trim(), onClick:function(){
                 d({type:"KIT_REMARCAR", id:kitSel.id, isenta:true, motivo:acertoForm.motivoProxRemarcacao.trim()});
                 setAcertoForm(Object.assign({}, acertoForm, {motivoProxRemarcacao:""})); setRegEscolha(null); },
-              className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#7C3AED"}}, "Confirmar isenção"))),
+              className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#3F3F46"}}, "Confirmar isenção"))),
       (kitSel.remarcacoesLista||[]).length>0 && e("div",{key:"rlist", className:"flex flex-col gap-1.5 border-t border-white/10 pt-2"},
         kitSel.remarcacoesLista.map(function(r,i){ return e("div",{key:i,
             className:"flex items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 "+(r.isenta?"bg-emerald-500/10":"bg-red-500/10")},
@@ -485,14 +509,8 @@ function AppRepresentante(p){
     blocoAcordeao(8, "undo", "#EA580C", "Trocas",
       (acertoForm.trocas||[]).length ? acertoForm.trocas.length+" troca(s) · "+(dv.trocasAjuste>=0 ? "soma " : "desconta ")+BK(Math.abs(dv.trocasAjuste))+" na venda" : "Peça quebrada trocada por outra",
       (acertoForm.trocas||[]).length ? badgeTxt(String(acertoForm.trocas.length),"#EA580C") : badgeTxt("—","#374151"),
-      [(acertoForm.trocas||[]).map(function(t,i){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);
-        return e("div",{key:"t"+i, className:"flex flex-col gap-1 rounded-xl bg-white/5 px-2.5 py-2"},
-          e("div",{className:"flex items-center justify-between gap-2"},
-            e("span",{className:"rounded-full px-2 py-px text-[10px] font-bold uppercase "+(t.tipo==="anterior" ? "bg-[#DBEAFE] text-[#1D4ED8]" : "bg-[#FFEDD5] text-[#C2410C]")}, t.tipo==="anterior" ? "Outro mês · já paga" : "Deste kit"),
-            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {trocas:acertoForm.trocas.filter(function(y,j){return j!==i;})})); }, "aria-label":"Remover troca", className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")),
-          e("p",{className:"text-[12.5px]"}, "Volta quebrada ", e("b",{className:MONO}, t.antigaCod), " "+BK(t.antigaValor)+" → ficou ", e("b",{className:MONO}, t.novaCod), " "+BK(t.novaValor)),
-          e("p",{className:"text-[12px] font-bold "+(aj>=0 ? "text-amber-200" : "text-emerald-300")}, (aj>=0 ? "Soma " : "Desconta ")+BK(Math.abs(aj))+" na venda")); }),
-      e("div",{key:"tf", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
+      [(acertoForm.trocas||[]).length>0 && e("div",{key:"th", className:"flex justify-end"}, e("button",{onClick:function(){ setTrocaFormAberto(!trocaFormAberto); }, className:"h-8 rounded-lg border border-dashed border-amber-200/60 px-3 text-[13px] font-semibold text-amber-200"}, trocaFormAberto ? "Fechar" : "+ Troca")),
+        ((acertoForm.trocas||[]).length===0 || trocaFormAberto) && e("div",{key:"tf", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["mes","Peça deste kit","quebrou neste mês","bg-[#EA580C] txt-branco ring-transparent"],["anterior","Peça de outro mês","já foi paga","bg-[#2563EB] txt-branco ring-transparent"]].map(function(o){ var on = trocaIn.tipo===o[0];
           return e("button",{key:o[0], onClick:function(){ setTrocaIn(Object.assign({}, trocaIn, {tipo:o[0]})); }, "aria-pressed":on,
             className:"flex h-10 flex-col items-center justify-center rounded-lg text-[12px] font-bold leading-tight ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")},
@@ -509,8 +527,17 @@ function AppRepresentante(p){
           e(CampoReais,{value:trocaIn.novaValor, label:"Valor da peça nova", onChange:function(v){ setTrocaIn(Object.assign({}, trocaIn, {novaValor:v})); }, className:"h-10 min-w-0 flex-1 rounded-lg bg-black/50 px-2 text-right text-[14px] text-white outline-none ring-1 ring-white/10 "+MONO}),
           e("button",{disabled:!(trocaIn.tipo && codigoPecaValido(trocaIn.antigaCod) && codigoPecaValido(trocaIn.novaCod) && trocaIn.antigaValor>0 && trocaIn.novaValor>0),
             onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {trocas:(acertoForm.trocas||[]).concat([trocaIn])})); setTrocaIn(TROCA_VAZIA); },
-            className:"h-10 shrink-0 rounded-lg px-2.5 text-[12px] font-bold disabled:opacity-40 "+BR2, style:{background:"#EA580C"}}, "Lançar")),
-        e("p",{className:"text-[11.5px] text-[#8E8E93]"}, trocaIn.tipo==="anterior" ? "Peça de outro mês já foi paga: entra na venda só a diferença (nova − quebrada). Se a nova for mais barata, desconta." : "Peça deste kit: a peça nova entra na venda pelo valor cheio e a quebrada volta para a empresa."))]),
+            className:"h-10 shrink-0 rounded-lg px-2.5 text-[12px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar")),
+        e("p",{className:"text-[11.5px] text-[#8E8E93]"}, trocaIn.tipo==="anterior" ? "Peça de outro mês já foi paga: entra na venda só a diferença (nova − quebrada). Se a nova for mais barata, desconta." : "Peça deste kit: a peça nova entra na venda pelo valor cheio e a quebrada volta para a empresa.")),
+        (acertoForm.trocas||[]).map(function(t,i){ var aj = t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0);
+          return e("div",{key:"t"+i, className:"flex h-8 items-center gap-2 px-2.5 text-[13px]"},
+            e("span",{className:"rounded-full px-2 py-px text-[10px] font-bold uppercase "+(t.tipo==="anterior" ? "bg-[#DBEAFE] text-[#1D4ED8]" : "bg-[#FFEDD5] text-[#C2410C]")}, t.tipo==="anterior" ? "Outro mês" : "Deste kit"),
+            e("span",{className:MONO+" min-w-0 flex-1 truncate text-[12.5px]", title:"Voltou quebrada "+t.antigaCod+" e ficou "+t.novaCod}, t.antigaCod+" → "+t.novaCod),
+            e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13px] font-bold "+(aj>=0 ? "text-amber-200" : "text-emerald-300")}, (aj>=0 ? "+ " : "− ")+BK(Math.abs(aj))),
+            e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {trocas:acertoForm.trocas.filter(function(y,j){return j!==i;})})); }, "aria-label":"Remover troca", className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")); }),
+        (acertoForm.trocas||[]).length>0 && e("div",{key:"ttot", className:"flex items-center justify-between gap-2 border-t border-amber-200/40 px-2.5 pt-2 text-[13px]"},
+          e("span",{className:"font-semibold"},"Ajuste na venda"),
+          e("span",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[15px] text-amber-200"}, (dv.trocasAjuste>=0 ? "+ " : "− ")+BK(Math.abs(dv.trocasAjuste))), e("span",{className:"w-6"})))]),
     blocoAcordeao(3, "grafico", "#2563EB", "Vendas e pagamentos",
       !previaBase ? "Preencha o valor vendido" : quitado ? BK(acertoForm.vendaBruta)+" · quitado" : BK(acertoForm.vendaBruta)+" · restante "+BK(restanteTotal),
       !previaBase ? badgeTxt("Pendente","#64748B") : quitado ? checkOk : acertoForm.recusouNegociar ? badgeTxt("Sem acordo","#DC2626") : acordoValido ? badgeTxt("Acordo","#7C3AED") : badgeTxt(BK(restanteTotal),"#D97706"),
@@ -531,7 +558,7 @@ function AppRepresentante(p){
       !previaBase ? null : e(React.Fragment,{key:"pg"},
           // 3 colunas que somam no total: valor do acerto + taxa de deslocamento + excedente de brinde ("—" quando não tem)
           e("div",{key:"dev3", className:"grid grid-cols-4 gap-1 border-t border-white/10 pt-2"},
-            [["Acerto", previaAcerto.valorAcerto, "text-amber-200"], ["Taxa", previaAcerto.taxaDeslocamento, "text-amber-300"], ["Brinde a mais", excedenteBrinde, "text-red-400"], ["Tags", dv.tagsValor, "text-red-400"]].map(function(c){
+            [["Acerto", previaAcerto.valorAcerto, "text-white"], ["Taxa", previaAcerto.taxaDeslocamento, "text-white"], ["Brinde a mais", excedenteBrinde, "text-white"], ["Tags", dv.tagsValor, "text-white"]].map(function(c){
               return e("div",{key:c[0], className:"flex flex-col items-center gap-0.5 rounded-xl bg-white/5 px-1 py-1.5"},
                 e("span",{className:"text-[9.5px] font-semibold uppercase tracking-wide text-[#8E8E93]"}, c[0]),
                 e("b",{className:MONO+" text-[11.5px] "+(c[1]>0 ? c[2] : "text-[#8E8E93]")}, c[1]>0 ? BK(c[1]) : "—")); })),
@@ -551,7 +578,7 @@ function AppRepresentante(p){
               e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
                   setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                 "aria-label":"Remover lançamento", className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70 hover:bg-white/20"}, "×")); })),
-          !lancAberto ? e("button",{key:"lanc1", onClick:function(){ setLancAberto(true); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#DB2777"}}, "+ Lançar pagamento")
+          !lancAberto ? e("button",{key:"lanc1", onClick:function(){ setLancAberto(true); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "+ Lançar pagamento")
             : e("div",{key:"lanc2", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
                 e("select",{value:lancForm.forma, onChange:function(ev){ setLancForm(Object.assign({}, LANC_VAZIO, {forma:ev.target.value, valor:lancForm.valor})); },
                     className:campo+" w-full"},
@@ -589,15 +616,15 @@ function AppRepresentante(p){
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([novoPag])}));
                       if(totalPagoAtual+lancForm.valor >= previaBase.valorDevido-0.009) setBlocoAberto(4);   // acerto quitado: abre os brindes
                       setLancAberto(false); setLancForm(LANC_VAZIO); },
-                    className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#DB2777"}}, "Lançar pagamento"))),
+                    className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar pagamento"))),
           e("div",{key:"tot", className:"flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[13px] font-bold"},
             e("span",null,"Total pago"), e("span",{className:MONO}, BK(totalPagoAtual))),
           !quitado && e("div",{key:"falta", className:"flex items-center justify-between gap-2 text-[13px] font-bold"},
-            e("span",{className:"text-amber-200"},"Falta do acerto · em aberto "+N1(previaBase.pctFaltante)+"%"), e("span",{className:MONO+" text-amber-200"}, BK(faltaAtual))),
+            e("span",null,"Falta do acerto · em aberto "+N1(previaBase.pctFaltante)+"%"), e("span",{className:MONO+" text-amber-200"}, BK(faltaAtual))),
           !quitado && !acordoExistente && !negociarAberto && !acertoForm.recusouNegociar && e("div",{key:"neg0", className:"flex gap-2"},
             e("button",{onClick:function(){ setNegociarAberto(true);
                 if(!acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); },
-                className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#7C3AED"}}, "Negociar o que falta"),
+                className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Negociar o que falta"),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true})); setBlocoAberto(4); },
                 className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#DC2626"}}, "Não quis negociar")),
           acertoForm.recusouNegociar && e("div",{key:"recusou", className:"flex flex-col gap-1.5 rounded-xl bg-red-500/10 p-2.5 ring-1 ring-red-500/30"},
@@ -607,7 +634,7 @@ function AppRepresentante(p){
               className:"h-7 w-full rounded-lg text-[11.5px] font-semibold text-[#8E8E93]"}, "Desfazer")),
           (negociarAberto || acordoExistente) && e("div",{key:"neg1", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
             e("div",{className:"flex items-center justify-between gap-2"},
-              e("p",{className:"text-[12px] font-semibold text-[#C4B5FD]"},"Parcelas negociadas"),
+              e("p",{className:"text-[12px] font-semibold text-white"},"Parcelas negociadas"),
               e("button",{onClick:function(){ setNegociarAberto(false); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[], acordoSalvo:false})); },
                 "aria-label":"Fechar negociação", className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")),
             acertoForm.acordoParcelas.map(function(p,i){ return e("div",{key:i, className:"flex items-center gap-2"},
@@ -617,7 +644,7 @@ function AppRepresentante(p){
               e(CampoDinheiro,{value:p.valor, label:"Valor da parcela", onChange:function(v){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {valor:v}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); },
                 className:"h-8 w-28 rounded-lg bg-black/50 px-2 text-right text-[12.5px] text-white outline-none ring-1 ring-white/10"})); }),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:acertoForm.acordoParcelas.concat([{data:isoDia(new Date()), valor:null}])})); },
-              className:"h-8 w-full rounded-lg text-[12px] font-semibold text-[#C4B5FD]"}, "+ Adicionar parcela"),
+              className:"h-8 w-full rounded-lg text-[12px] font-semibold text-white"}, "+ Adicionar parcela"),
             e("div",{className:"flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[12.5px]"},
               e("span",null,"Soma das parcelas / Falta cobrir"),
               e("span",{className:MONO+" font-bold "+(Math.abs(acordoSoma-faltaAtual)<=0.01?"text-emerald-300":"text-rose-300")}, BK(acordoSoma)+" / "+BK(faltaAtual))),
@@ -626,8 +653,8 @@ function AppRepresentante(p){
                 var soma = validas.reduce(function(t,p){return t+p.valor;},0);
                 setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:validas, acordoSalvo:validas.length>0}));
                 if(validas.length && Math.abs(soma-faltaAtual)<=0.01) setBlocoAberto(4);   // negociação fechou o valor: abre os brindes
-              }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#7C3AED"}}, "Salvar acordo"),
-            acertoForm.acordoSalvo && e("p",{className:"text-[11.5px] text-[#C4B5FD]"}, "Acordo salvo com "+acertoForm.acordoParcelas.length+" parcela(s). As parcelas precisam fechar exatamente o valor que falta para liberar brinde."),
+              }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Salvar acordo"),
+            acertoForm.acordoSalvo && e("p",{className:"text-[11.5px] text-white"}, "Acordo salvo com "+acertoForm.acordoParcelas.length+" parcela(s). As parcelas precisam fechar exatamente o valor que falta para liberar brinde."),
             acertoForm.acordoSalvo && e("p",{className:"text-[11px] text-[#8E8E93]"}, "Sem conta a receber."),
             e("button",{onClick:function(){ setNegociarAberto(false); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[], acordoSalvo:false})); },
               className:"h-8 w-full rounded-lg text-[11.5px] font-semibold text-rose-300"}, "Remover acordo")),
@@ -650,12 +677,9 @@ function AppRepresentante(p){
             (previaAcerto.descontoRemarcacao.brindePct>0 || previaAcerto.fatorPagamento<1) && e("p",{key:"bdesc", className:"text-[11.5px] text-amber-200"},
               "Valores já com desconto, proporcional em Normal e Select"+(previaAcerto.descontoRemarcacao.brindePct>0 ? " · remarcação −"+previaAcerto.descontoRemarcacao.brindePct+"%" : "")
               +(previaAcerto.fatorPagamento<1 ? " · faltou "+N1(previaAcerto.pctFaltante)+"% do pagamento ("+N1(previaAcerto.fatorPagamento*100)+"% do brinde)" : "")+"."),
-            cartaoBrinde("normal", "Brinde Normal", "Peças comuns do kit", libN,
-              "Lançado "+BK(confBrinde.lancadoNormal)+" · Restante "+BK(confBrinde.restanteNormal), "#DB2777", "AB123"),
-            cartaoBrinde("bb", "Brinde Select (BB)", "Select da faixa "+BK(libS)+" + saldo do Normal "+BK(confBrinde.saldoNormal), libS,
-              "Lançado "+BK(confBrinde.lancadoSelect)+" · Restante "+BK(confBrinde.restanteSelect)+" (o que passar do Select usa o saldo do Normal)", "#A855F7", "BB0001"),
+            blocoBrindesNovo(),
             excedenteBrinde>0 && e("p",{key:"bexc", className:"text-[12.5px] font-bold text-red-400"}, "Excedente de brinde de "+BK(excedenteBrinde)+" entrou no total a pagar."),
-            excedenteBrinde>0 && restanteTotal>0.009 && e("button",{key:"bpag", onClick:function(){ setLancAberto(true); setBlocoAberto(3); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#DB2777"}}, "+ Lançar pagamento"),
+            excedenteBrinde>0 && restanteTotal>0.009 && e("button",{key:"bpag", onClick:function(){ setLancAberto(true); setBlocoAberto(3); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "+ Lançar pagamento"),
             e("div",{key:"bnota", className:"flex flex-col gap-1 rounded-xl bg-amber-400/15 p-2.5 text-[12px] leading-snug"},
               e("b",null,"Atenção ao brinde"),
               e("p",null,"• Existem dois brindes: o Normal e o Select (BB)."),
@@ -675,18 +699,20 @@ function AppRepresentante(p){
               : previaBase && !previaBase.podeRenovar ? "Kit novo NÃO fornecido — vendas abaixo de "+BK(versaoSel.gerais.minRenovar)+" (mínimo para renovar o Kit 100% Prata). Cobra só as peças vendidas."
               : "Kit novo não liberado — "+N1(pctPagoAcerto)+"% pago. Precisa de autorização do financeiro (mínimo "+kitNovoMin+"%)."),
       dv.novas && previaBase && dv.minimo.regra && e("div",{key:"kmed", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
-        e("p",{className:"text-[12px] font-semibold text-[#C4B5FD]"},"Média das últimas 3 vendas (2 anteriores + a de hoje)"),
-        e("div",{className:"grid grid-cols-2 gap-1.5"}, [0,1].map(function(i){ var ant = acertoForm.vendasAnteriores||[];
-          return e(CampoDinheiro,{key:i, value:ant[i]==null ? null : ant[i], mostraZero:true, label:(i===0 ? "Venda de 2 acertos atrás" : "Venda do último acerto"),
-            onChange:function(v){ var n = [ant[0], ant[1]]; n[i] = v; setAcertoForm(Object.assign({}, acertoForm, {vendasAnteriores:n})); }, className:campo+" text-right"}); })),
+        e("p",{className:"text-[12px] font-semibold text-white"},"Média das últimas 3 vendas (2 anteriores + a de hoje)"),
+        e("div",{key:"kant", className:"grid grid-cols-2 gap-1.5"}, [0,1].map(function(i){ var ant = acertoForm.vendasAnteriores||[];
+          return e("div",{key:i, className:"flex flex-col gap-0.5 rounded-lg bg-black/30 px-2.5 py-1.5"},
+            e("span",{className:"text-[11px] font-semibold uppercase tracking-wide"}, i===0 ? "2 acertos atrás" : "Último acerto"),
+            e("b",{className:MONO+" text-[13px]"}, ant[i]>0 ? BK(ant[i]) : "—")); })),
+        e("p",{key:"knota", className:"text-[11px] leading-snug"}, (acertoForm.vendasAnteriores||[]).some(function(v){ return v>0; }) ? "Vendas anteriores vindas do sistema. A representante não digita." : "Sem vendas anteriores no sistema para esta revendedora: a média usa só a venda de hoje."),
         e("div",{className:"flex items-baseline justify-between gap-2 text-[12.5px]"},
           e("span",{className:"text-[#B5B5BA]"},"Média · mínimo "+BK(dv.minimo.ref)),
           e("b",{className:MONO+" "+(dv.minimo.abaixo ? "text-red-400" : "text-emerald-300")}, BK(dv.minimo.media))),
         dv.minimo.abaixo && e("p",{className:"text-[11.5px] leading-snug text-[#B5B5BA]"}, "Média abaixo do mínimo: o kit novo não é liberado e o cadastro fica bloqueado. A representante pode dar uma nova chance."),
         dv.minimo.abaixo && e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {novaChance:!acertoForm.novaChance})); }, "aria-pressed":!!acertoForm.novaChance,
-          className:"h-9 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:acertoForm.novaChance ? "#16A34A" : "#7C3AED"}}, acertoForm.novaChance ? "✓ Nova chance dada (toque para desfazer)" : "Dar nova chance")),
+          className:"h-9 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:acertoForm.novaChance ? "#16A34A" : "#3F3F46"}}, acertoForm.novaChance ? "✓ Nova chance dada (toque para desfazer)" : "Dar nova chance")),
       kitNovoLiberado && previaBase && acertoForm.pagamentos.length>0 && e("div",{key:"kc", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
-        e("p",{className:"text-[12px] font-semibold text-[#C4B5FD]"},"Condicionais e expositores em aberto — ela continua com:"),
+        e("p",{className:"text-[12px] font-semibold text-white"},"Condicionais e expositores em aberto — ela continua com:"),
         condAbertasFicam.length+expFicam.length===0 ? e("p",{className:"text-[12.5px] text-[#8E8E93]"},"Nada em aberto: tudo foi conferido neste acerto.")
           : e("div",{className:"flex flex-col gap-1"}, condAbertasFicam.map(function(c){ return e("div",{key:c.numero, className:"flex justify-between rounded-lg bg-black/30 px-2.5 py-1.5 text-[12.5px]"}, e("span",null,"Condicional "+c.numero), e("span",{className:MONO+" text-[#8E8E93]"}, c.pecas+" peças")); }),
               expFicam.map(function(x){ return e("div",{key:x.id, className:"rounded-lg bg-black/30 px-2.5 py-1.5 text-[12.5px]"}, x.qtd+" "+x.nome.toLowerCase()); })),
@@ -711,7 +737,7 @@ function AppRepresentante(p){
             e("input",{value:codProx, placeholder:"Código da peça", autoCapitalize:"characters", onChange:function(ev){ setCodProx(limitarCodigo(ev.target.value)); },
               className:"h-10 min-w-0 flex-1 rounded-lg bg-black/50 px-3 text-[15px] uppercase text-white outline-none ring-1 ring-white/10 "+MONO}),
             e("button",{disabled:!codigoPecaValido(codProx), onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {pecasProxCodigos:acertoForm.pecasProxCodigos.concat([codProx])})); setCodProx(""); },
-              className:"h-10 shrink-0 rounded-lg px-3 text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#0891B2"}}, "Adicionar")),
+              className:"h-10 shrink-0 rounded-lg px-3 text-[12.5px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Adicionar")),
           e("p",{className:"text-[11.5px] text-[#8E8E93]"}, acertoForm.pecasProxCodigos.length+" de "+dv.pecasProx.liberadas+" escolhidas")),
         dv.pecasProx.liberadas===0 && e("p",{key:"p4", className:"text-[12.5px] font-semibold text-amber-200"},"Nenhuma peça liberada"+(dv.pecasProx.base===0 ? " (venda abaixo da primeira faixa)." : " — acerto com mais de 10% em aberto."))]),
     blocoAcordeao(7, "caixa", "#CA8A04", "Devolução de peças",
@@ -970,7 +996,7 @@ function AppRepresentante(p){
           // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
           var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
           var pgsPedidos = pagamentosDoPedido(s.lancFin, kitSel.id);   // pagamentos que ela já lançou e pediu conta antes de sair da tela
-          setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : demoMarcia ? {vendaBruta:12268, condicionaisSelecionadas:["093801","093802"]} : {}, pgsPedidos.length ? {pagamentos:pgsPedidos} : {}));
+          setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : demoMarcia ? {vendaBruta:12268, condicionaisSelecionadas:["093801","093802"]} : {}, {vendasAnteriores:vendasAntSistema()}, pgsPedidos.length ? {pagamentos:pgsPedidos} : {}));
           if(demoAndrielle && !(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""});
           setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(0); setTela("calcacerto"); } }
       else { setMostrarSolicitar(true); } }},
@@ -1071,7 +1097,7 @@ function AppRepresentante(p){
       e("div",{className:"flex min-w-0 items-center gap-2"},
         e(Avatar,{nome:l.rep, i:0, className:"size-10 shrink-0 text-base"}),
         e("span",{className:"flex min-w-0 items-center gap-1"},
-          e("b",{className:"max-w-[6.5rem] truncate text-[15px] font-bold "+BR}, l.rep),
+          e("b",{className:"max-w-[6.5rem] truncate text-[15px] font-bold "+BR}, nomeBonito(l.rep)),
           e(Icon,{n:"chevrondown", s:12, className:"shrink-0 text-white/50"}))),
       e("span",{className:"flex shrink-0 items-center gap-1.5"}, flameLogo, e("b",{className:"text-[12.5px] font-black tracking-[.25em] text-amber-200"},"SORELLY")),
       e("button",{className:"relative grid size-9 shrink-0 place-items-center rounded-full bg-white/10"},
@@ -1171,7 +1197,7 @@ function AppRepresentante(p){
           return linha("pf"+i, prox ? BK0(f.min).replace(",00","")+" a "+BK0(prox.min-0.01) : BK0(f.min).replace(",00","")+" ou mais", f.pct+"%", "R$ "+f.bn, "R$ "+f.bb); }))
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
-  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens","informativos","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
+  var telaPropria = ["calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
   return e(IPhone17ProMax,null,
     tela==="calcacerto" && headerCalc,
     tela==="calcacerto" && avisoConta && e("button",{key:"avisoConta", type:"button", role:"alert", onClick:function(){ setAvisoConta(null); },
@@ -1213,14 +1239,13 @@ function AppRepresentante(p){
     tela==="pedidodata" && sel && e("div",{className:"mt-3 flex flex-col gap-2"}, e("button",{onClick:function(){ setTela("rev"); }, className:"self-start rounded-full bg-amber-200/10 px-3 py-1.5 text-[12px] font-bold text-[#E8B84B]"}, "‹ Voltar"), e(PedidoDataRep,{s:s, d:d, l:l, rev:sel})),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
     tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", onVoltar:function(){ setTela("inicio"); }}),
-    tela==="informativos" && e(TelaInformativos,{key:"inf", publico:"representante", quem:l.rep, onVoltar:function(){ setTela("inicio"); }}),
     tela==="regras" && headerRegras,
     tela==="regras" && telaRegras,
     tela==="inicio" && headerInicio,
     !telaPropria && tela!=="inicio" && tela!=="revs" && tela!=="rev" && tela!=="novos" && tela!=="listagens" && tela!=="comissoes" && e("div",null,
       e("div",{className:"flex items-center gap-3"},
         e(Avatar,{nome:l.rep, i:0}),
-        e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Olá, representante"), e("p",{className:"truncate text-xl font-bold"}, l.rep)),
+        e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#8E8E93]"},"Olá, representante"), e("p",{className:"truncate text-xl font-bold"}, nomeBonito(l.rep))),
         e("span",{className:"rounded-full bg-[#1C1C1E] px-2.5 py-1 text-[11px] font-semibold text-amber-200"}, "Retirada "+l.horario)),
       e("div",{className:"mt-3 flex gap-1.5"}, meses.map(function(m,i){ return e("button",{key:m, onClick:function(){setMes(i);},
         className:"flex-1 rounded-full py-1.5 text-[12px] font-bold "+(mes===i ? ouro : "bg-[#1C1C1E] text-[#8E8E93]")}, m+(i===0?" (atual)":"")); })),
@@ -1296,8 +1321,7 @@ function AppRepresentante(p){
                 e("button",{onClick:function(){mudaFalta(k,1);}, className:"size-7 rounded-lg bg-white/10 font-bold"},"+"))),
             e("button",{disabled:!nt, onClick:function(){ d({type:"AVALIAR", id:k.id, nota:nt, faltas:faltasDe(k)}); },
               className:"h-9 rounded-xl text-[13px] font-semibold disabled:opacity-40 "+ouro},"Enviar avaliação"));
-        })),
-    e(FolderAoAbrir,{key:"folder", publico:"representante", quem:l.rep}));
+        })));
 }
 
 export { MESES_ABR, mesesApp, PCT_REVENDEDORA, CARTEIRA_DEMO, REF_NOMES, REF_REL, refsDe, carteiraRep, AppRepresentante };

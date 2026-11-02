@@ -65,11 +65,12 @@ var MENU_ENCOMENDAS = [
 ];
 
 // Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
-var MENU_AGENDAMENTO = [   // reorganizado em 29/10/2026 (Marcus): Revendedoras primeiro, Representantes depois, Painel dentro de Análises; Plano 45/60 e Remarcações saíram
+var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendário no centro) volta a ser a PRIMEIRA aba do setor; Plano 45/60 e Remarcações saíram
+  M("Painel","agpainel"),
   M("Revendedoras","agrevs"),
   M("Representantes","agreps"),
-  {nome:"Análises", itens:[M("Painel","agpainel"), M("Análises","aganalises"), M("Histórico","aghistorico")]},
-  {nome:"Gestão do mês", itens:[M("Abertura do mês","agabertura"), M("Configurador","agconfig")]}
+  M("Atividades","agatividades"),
+  M("Análises","aganalises")
 ];
 
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
@@ -87,7 +88,7 @@ var MENU_REPRESENTANTES = [
 var MENU_RH = [
   M("Visão geral","rhvisao"),
   {nome:"Presença", itens:[M("Presença diária","rhpresenca"), M("Relatório diário","rhrelatorio")]},
-  {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab"), M("Controle de experiência","rhexp"), M("Advertências","rhadv"), M("Horas extras","rhhoras"), M("Negociações","rhnegoc"), M("Escala 42h","rhescala42")]},
+  {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab"), M("Controle de experiência","rhexp"), M("Advertências","rhadv"), M("Horas extras","rhhoras"), M("Solicitações","rhsolic"), M("Negociações","rhnegoc"), M("Escala 42h","rhescala42")]},
   {nome:"Contratos", itens:[
     {nome:"Pessoas", itens:[M("Representantes","rhcrep"), M("Funcionários (CLT)","rhcfunc"), M("Terceiros","rhcterc")]},
     {nome:"Empresa", itens:[M("Crédito bancário","rhccred"), M("Aluguéis","rhcalug"), M("Consórcios","rhcconsor")]},
@@ -155,8 +156,8 @@ var SETORES = [
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
-    {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
-    {nome:"Análises", telas:[T("agpainel","Painel"), T("aganalises","Análises"), T("aghistorico","Histórico")]}, {nome:"Gestão do mês", telas:[T("agabertura","Abertura do mês"), T("agconfig","Configurador")]}]},
+    {nome:"Painel", telas:[T("agpainel","Painel")]}, {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
+    {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
   // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto
   {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", menu:MENU_CADASTRO, areas:[
@@ -217,7 +218,7 @@ var SETORES = [
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
-    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhexp","Controle de experiência"), T("rhadv","Advertências"), T("rhhoras","Horas extras"), T("rhnegoc","Negociações"), T("rhescala42","Escala 42h")]},
+    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhexp","Controle de experiência"), T("rhadv","Advertências"), T("rhhoras","Horas extras"), T("rhsolic","Solicitações"), T("rhnegoc","Negociações"), T("rhescala42","Escala 42h")]},
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
@@ -245,7 +246,9 @@ var SETORES = [
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
-    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]}
+    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]},
+  // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)
+  {id:"aulas", nome:"Aulas do setor", ic:"book", cor:"#14B8A6", direto:T("aulas","Aulas do setor")}
 ];
 // Barra do topo em grupos (padrão visual, opção D): o nome do grupo aparece em cima dos botões. Setor sem "grupo" nas áreas segue com a barra simples.
 var GRUPO_BARRA = {"financeiro":{"Controle de\npagamentos":"Pagamentos", "Contas a\npagar":"Pagamentos", "Pagamentos a\nfornecedores":"Pagamentos", "Faturamento &\ncontas a pagar":"Faturamento", 

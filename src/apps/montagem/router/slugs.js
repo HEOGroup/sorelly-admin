@@ -33,6 +33,7 @@ export const SLUG_DA_ABA = {
   agreps: "agendamento-representantes",
   agabertura: "agendamento-abertura",
   agconfig: "agendamento-configurador",
+  agatividades: "agendamento-atividades",
   aganalises: "agendamento-analises",
   aghistorico: "agendamento-historico",
   agbonus: "comissoes-bonus-agendamento",
@@ -179,6 +180,8 @@ export const SLUG_DA_ABA = {
   rhcolab: "rh-colaboradores",
   rhadv: "rh-advertencias",
   rhexp: "rh-experiencia",
+  rhsolic: "rh-solicitacoes",
+  aulas: "aulas",
   rhhoras: "rh-horas-extras",
   rhnegoc: "rh-negociacoes",
   comcad: "comissoes-cadastro-revendedoras",
@@ -248,6 +251,7 @@ export const ABA_DO_ENDERECO = Object.keys(ENDERECO_DA_ABA).reduce(function (acc
 
 /** Caminho completo de uma aba. `breve` é o nome da tela ainda não construída. */
 export function caminhoDaAba(aba, breve) {
+  if (aba === "celrep") aba = "apps";   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps; o chip antigo "App da representante" leva para lá
   var fim = ENDERECO_DA_ABA[aba] || ENDERECO_DA_ABA[ABA_INICIAL];
   if (aba === "breve" && breve) return "/" + fim + "/" + encodeURIComponent(breve);
   return "/" + fim;

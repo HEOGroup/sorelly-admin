@@ -223,6 +223,34 @@ export async function fichaRevendedora(cod) {
 // Sem limite para trás: quem já passou da data prevista e continua aberta entra como atrasada. Expositor (previsão no ano 3000) fica de fora pela própria data.
 // A data do acerto de cada revendedora = devolução prevista do kit principal (ou do kit novo); sem eles, a mais próxima das outras. Só leitura; cache de 10 min.
 const DIAS_AGENDA = 120;
+// CASOS DA REVENDEDORA (Marcus, 01/11/2026): o campo "Obs. gerais" da condicional (afi_obs) guarda anotações do tipo "26/10 TAMARA - KIT SEM MEXER: ...".
+// Cada condicional pode ter várias linhas e a mesma anotação se repete em condicionais diferentes. Aqui cada anotação vira {iso, quem, txt, cond}, sem repetidas, da mais nova para a mais velha (pela data ESCRITA no texto).
+const PARTE_OBS = /(?:^|\s)(?=\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\s+\S)/;
+const ENTRADA_OBS = /^(\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\s+([^\-–:]{1,40}?)\s*[-–:]\s*([\s\S]+)$/;
+const comoNome = (s) => s.toLowerCase().replace(/(^|[\s'’-])(\p{L})/gu, (m, a, b) => a + b.toUpperCase()).replace(/\s(De|Da|Do|Das|Dos|E)(?=\s)/g, (m) => m.toLowerCase());
+const comoTexto = (s) => { const x = s.trim().replace(/\s+/g, " "); const m = x.toLowerCase(); return m.charAt(0).toUpperCase() + m.slice(1); };
+export function casosDaObs(conds, hojeIso) {
+  const vistos = new Set(), out = [], hoje = new Date(`${hojeIso}T00:00:00`);
+  conds.forEach((c) => {
+    const bruto = String(c.obs || "").trim(); if (!bruto) return;
+    bruto.split(/\r?\n/).flatMap((l) => l.split(PARTE_OBS)).map((l) => l.trim()).filter(Boolean).forEach((linha) => {
+      const m = linha.match(ENTRADA_OBS); let iso = String(c.emissao || ""), quem = "", txt = linha;
+      if (m) {
+        const dd = Number(m[1]), mm = Number(m[2]); let aa = m[3] ? Number(m[3]) : hoje.getFullYear(); if (aa < 100) aa += 2000;
+        if (!m[3] && new Date(aa, mm - 1, dd) > new Date(hoje.getTime() + 30 * 86400000)) aa -= 1;   // "26/10" escrito em novembro é deste ano; escrito em janeiro, do ano passado
+        iso = `${aa}-${String(mm).padStart(2, "0")}-${String(dd).padStart(2, "0")}`; quem = comoNome(m[4].trim()); txt = m[5];
+      }
+      const t = comoTexto(txt), chave = `${iso}|${quem.toLowerCase()}|${t.toLowerCase()}`; if (vistos.has(chave)) return; vistos.add(chave);
+      out.push({ iso, quem, txt: t, cond: c.n });
+    });
+  });
+  return out.sort((a, b) => b.iso.localeCompare(a.iso));
+}
+// o caso mais novo e até 30 anteriores (só o que existe; sem anotação, nada é enviado)
+function casosDe(lista, dia, hojeIso) {
+  const todos = casosDaObs(lista.map((x) => ({ obs: x.afi_obs, emissao: dia(x.afi_data), n: String(x.afi_codigo || "").trim() })), hojeIso);
+  return todos.length ? { caso: todos[0], casos: todos.slice(1, 31), nCasos: todos.length } : {};
+}
 export async function listaAgenda({ forcar = false } = {}) {
   const c = G.__sorellyAgenda;
   if (!forcar && c && c.dados && Date.now() - c.em < TTL) return c.dados;
@@ -232,7 +260,7 @@ export async function listaAgenda({ forcar = false } = {}) {
     const iso = (d) => d.toISOString().slice(0, 19);
     const dia = (x) => String(x || "").slice(0, 10);
     const limite = iso(new Date(hoje.getTime() + DIAS_AGENDA * 86400000));
-    const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc"];
+    const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc", "afi_obs", "afi_codagendamento"];
     const [cond, vend] = await Promise.all([todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { lte: limite } }, campos }), vendedores()]);
     const porCliente = new Map();
     cond.forEach((x) => { if (x.afi_cliente) (porCliente.get(x.afi_cliente) || porCliente.set(x.afi_cliente, []).get(x.afi_cliente)).push(x); });
@@ -251,8 +279,10 @@ export async function listaAgenda({ forcar = false } = {}) {
         cod, nome: nomeNormal(p.aam_nome), celular: p.aam_celular || p.aam_whatsapp || "", cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
         repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante",
         prev: base[0] ? dia(base[0].afi_prevdevol) : "", emissao: kp ? dia(kp.afi_data) : "",
+        agenda: base[0] ? String(base[0].afi_codagendamento || "").trim() : "",
         conds: lista.map((x) => ({ n: String(x.afi_codigo || "").trim(), t: tipos.get(x.afi_codigo), e: dia(x.afi_data), d: dia(x.afi_prevdevol), p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, vd: String(x.afi_vendedor || "").trim() })),
         kits: lista.length, pecas: lista.reduce((s, x) => s + (Number(x.afi_qtditens) || 0), 0), valor: Math.round(lista.reduce((s, x) => s + (Number(x.afi_valormerc) || 0), 0) * 100) / 100,
+        ...casosDe(lista, dia, iso(hoje).slice(0, 10)),
       };
     }).filter((i) => i.prev).sort((a, b) => a.prev.localeCompare(b.prev) || a.nome.localeCompare(b.nome, "pt-BR"));
     const dados = { geradoEm: new Date().toISOString(), hoje: dia(iso(hoje)), janelaDias: DIAS_AGENDA, total: itens.length, itens };

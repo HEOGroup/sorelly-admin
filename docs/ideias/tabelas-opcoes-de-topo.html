@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tabelas: 4 opções com topo dourado</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--no:#f87171;--ok:#4ade80;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1280px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+.sub{margin:2px 0 12px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.barra{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+select{height:32px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin-bottom:12px}
+#moldura{margin:0 auto;transition:max-width .2s}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+table{width:100%;border-collapse:collapse}
+thead th{background:var(--topo);color:#1a1306;height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;position:relative}
+thead th button{all:unset;cursor:pointer;margin-left:6px;font-size:11px}
+td{padding:6px 10px;min-height:32px;text-align:center;border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.atr{color:var(--no)}
+.quebra td,.quebra th{white-space:normal;overflow-wrap:anywhere}
+.nowrap td,.nowrap th{white-space:nowrap}
+.grade td,.grade th{border-left:1px solid var(--bd)}
+.grade td:first-child,.grade th:first-child{border-left:0}
+.limpa tbody tr:hover td{background:rgba(232,184,75,.10)}
+.pop{position:absolute;top:30px;left:50%;transform:translateX(-50%);z-index:5;width:260px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px;text-align:left;color:var(--tx);text-transform:none;letter-spacing:0;font-weight:400;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.5)}
+.pop div{height:32px;display:flex;align-items:center;padding:0 8px;border-radius:6px;cursor:pointer}
+.pop div:hover{background:rgba(232,184,75,.12)}
+.pop input{height:32px;width:100%;background:var(--bg);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px;margin:4px 0}
+.pop .b{display:flex;gap:6px;justify-content:space-between;padding:4px 0 0;height:auto}
+.pop .b button{height:32px;flex:1;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.pop .b button.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+tr.gp td{background:rgba(232,184,75,.16);font-weight:600;cursor:pointer;border-bottom:1px solid rgba(232,184,75,.3)}
+tr.tot td{background:var(--topo);color:#1a1306;font-weight:600;border-bottom:0}
+tr.det td{background:#0f0f11;padding:10px 14px}
+.dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;text-align:center}
+.dg small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ouro)}
+tr.lin{cursor:pointer}
+tr.lin:hover td{background:rgba(232,184,75,.10)}
+</style>
+</head>
+<body>
+<h1>Tabelas: 4 opções com topo dourado</h1>
+<p class="sub">Protótipo com dados inventados. Regras do Marcus de 02/11/2026: topo dourado em degradê, nada abreviado, tudo no meio. Use "Largura" para ver que nada corta.</p>
+<div class="barra">
+  <div class="seg" id="ops"><button data-o="1" class="on">1 · Planilha</button><button data-o="2">2 · Linhas limpas</button><button data-o="3">3 · Agrupada</button><button data-o="4">4 · Linha que abre</button></div>
+  <label>Largura <select id="larg"><option value="100%">Ampla</option><option value="980px">Comum (980 px)</option><option value="700px">Estreita (700 px)</option></select></label>
+</div>
+<div class="nota" id="leg"></div>
+<div id="moldura"></div>
+
+<script>
+const D = [
+  [1, "Maria Aparecida dos Santos Ferreira", "(41) 99000-0001", "010001", "Carla - Litoral", "Paranaguá / PR", 1, "08/07", "08/08", "86 d atrasada", "24/09 Carla: revendedora informou que não conseguiu vender o kit por motivo de viagem e pediu nova data"],
+  [2, "Suelen Geffer", "(47) 99000-0002", "010002", "Joice", "Itaperuçu / PR", 1, "25/07", "25/08", "69 d atrasada", "28/10 Joice: representante vai ligar na segunda"],
+  [3, "Kiara de Tunes Monteiro", "(48) 99000-0003", "010003", "Carla - SC", "Itapema / SC", 1, "17/08", "17/09", "46 d atrasada", "15/10 Mariana: vai marcar o acerto por mensagem"],
+  [4, "Karine Cristina do Rosario Alves", "(41) 99000-0004", "010004", "Carla - Litoral", "Paranaguá / PR", 1, "22/08", "22/09", "41 d atrasada", "30/10 Carla: revendedora estava no hospital"],
+  [5, "Katia Fernanda da Cruz Bonruque de Lima", "(48) 99000-0005", "010005", "Priscila", "São José dos Pinhais / PR", 2, "26/08", "26/09", "37 d atrasada", "30/10 Priscila: representante irá hoje"],
+  [6, "Janaina Rainha Falqueto", "(47) 99000-0006", "010006", "Carla - SC", "Balneário Camboriú / SC", 1, "10/09", "11/10", "22 d atrasada", "26/10 Carla: revendedora não estava na região"],
+  [7, "Jenifer Daiane da Costa Moreira dos Santos", "(47) 99000-0007", "010007", "Carla - SC", "Itapema / SC", 1, "10/09", "11/10", "22 d atrasada", "26/10 Carla: vai fazer somente a reposição"],
+  [8, "Ritielli da Silveira Collares", "(41) 99000-0008", "010008", "Joice", "Campo Largo / PR", 1, "11/09", "12/10", "21 d atrasada", "30/10 Joice: revendedora não vendeu nada"],
+  [9, "Paola Janaina Oliveira", "(41) 99000-0009", "010009", "Priscila", "Curitiba / PR", 2, "16/09", "17/10", "16 d atrasada", "30/10 Priscila: acerto marcado para sexta"],
+  [10, "Viviane Alves Pereira", "(41) 99000-0010", "010010", "Joice", "Colombo / PR", 1, "16/09", "17/10", "16 d atrasada", "28/10 Joice: a revendedora está com o filho doente"]
+];
+const COL = ["Qtd.", "Nome", "WhatsApp", "Cód.", "Representante", "Cidade", "Kits", "Data do kit", "Acerto previsto", "Faltam", "Último contato"];
+const $ = (s, r = document) => r.querySelector(s);
+const cel = (v, j) => `<td class="${j === 9 ? "atr" : ""}"${[0, 2, 3, 6, 7, 8, 9].includes(j) ? ' style="white-space:nowrap"' : ""}>${v}</td>`;
+const cab = (comFiltro) => `<thead><tr>${COL.map((c, j) => `<th>${c}${comFiltro ? ` <button data-f="${j}" title="Filtrar e ordenar">▽</button>` : ""}</th>`).join("")}</tr></thead>`;
+const corpo = () => D.map(r => `<tr>${r.map(cel).join("")}</tr>`).join("");
+
+const LEG = {
+  1: "<b>Opção 1 · Planilha.</b> A mais parecida com a de Revendedoras de hoje: grade com linhas finas, funil em cada coluna, e o texto longo quebra em duas ou três linhas. Nada corta. Clique no ▽ para ver o filtro.",
+  2: "<b>Opção 2 · Linhas limpas.</b> Sem linhas verticais, só o fio entre as linhas e destaque dourado ao passar o mouse. Cada coluna ocupa a largura do seu texto e, se faltar espaço, a tabela rola para o lado em vez de cortar.",
+  3: "<b>Opção 3 · Agrupada.</b> Linha de grupo dourada por representante (clique para abrir e fechar) e o total na última linha, também dourado. O total fica embaixo, não em cartões no topo.",
+  4: "<b>Opção 4 · Linha que abre.</b> A tabela mostra só as colunas principais. Clicar na linha abre os outros campos por baixo, inteiros e centralizados. Boa para telas com muitas colunas."
+};
+
+function tab1() {
+  const t = `<div class="rolar" style="position:relative"><table class="quebra grade">${cab(true)}<tbody>${corpo()}</tbody></table></div>`;
+  $("#moldura").innerHTML = t;
+  $("#moldura").querySelectorAll("th button").forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    document.querySelectorAll(".pop").forEach(p => p.remove());
+    const th = b.closest("th");
+    th.insertAdjacentHTML("beforeend", `<div class="pop"><div>Classificar A → Z</div><div>Classificar Z → A</div><input placeholder="Pesquisar"><div class="b"><button>Limpar coluna</button><button class="p">Fechar</button></div></div>`);
+    th.querySelector(".pop").onclick = ev => ev.stopPropagation();
+    th.querySelector(".p").onclick = () => th.querySelector(".pop").remove();
+  });
+}
+function tab2() {
+  $("#moldura").innerHTML = `<div class="rolar"><table class="nowrap limpa">${cab(false)}<tbody>${corpo()}</tbody></table></div>`;
+}
+function tab3() {
+  const reps = [...new Set(D.map(r => r[4]))];
+  const abertos = {};
+  const pinta = () => {
+    let h = "";
+    reps.forEach(rep => {
+      const l = D.filter(r => r[4] === rep), ab = abertos[rep] !== false;
+      h += `<tr class="gp" data-r="${rep}"><td colspan="11">${ab ? "▾" : "▸"} ${rep} · ${l.length} revendedoras · ${l.reduce((s, r) => s + r[6], 0)} kits</td></tr>`;
+      if (ab) h += l.map(r => `<tr>${r.map(cel).join("")}</tr>`).join("");
+    });
+    h += `<tr class="tot"><td colspan="6">Total</td><td>${D.reduce((s, r) => s + r[6], 0)}</td><td colspan="4">${D.length} revendedoras</td></tr>`;
+    $("#moldura").innerHTML = `<div class="rolar"><table class="quebra">${cab(false)}<tbody>${h}</tbody></table></div>`;
+    $("#moldura").querySelectorAll("tr.gp").forEach(t => t.onclick = () => { abertos[t.dataset.r] = abertos[t.dataset.r] === false; pinta(); });
+  };
+  pinta();
+}
+function tab4() {
+  const prin = [1, 4, 5, 8, 9]; const aberta = {};
+  const pinta = () => {
+    let h = "";
+    D.forEach((r, i) => {
+      h += `<tr class="lin" data-i="${i}">${prin.map(j => cel(r[j], j)).join("")}<td>${aberta[i] ? "▾" : "▸"}</td></tr>`;
+      if (aberta[i]) h += `<tr class="det"><td colspan="${prin.length + 1}"><div class="dg">${[2, 3, 6, 7, 10].map(j => `<div><small>${COL[j]}</small>${r[j]}</div>`).join("")}</div></td></tr>`;
+    });
+    $("#moldura").innerHTML = `<div class="rolar"><table class="quebra"><thead><tr>${prin.map(j => `<th>${COL[j]}</th>`).join("")}<th></th></tr></thead><tbody>${h}</tbody></table></div>`;
+    $("#moldura").querySelectorAll("tr.lin").forEach(t => t.onclick = () => { aberta[t.dataset.i] = !aberta[t.dataset.i]; pinta(); });
+  };
+  pinta();
+}
+const F = {1: tab1, 2: tab2, 3: tab3, 4: tab4};
+function abrir(o) {
+  document.querySelectorAll("#ops button").forEach(b => b.classList.toggle("on", b.dataset.o === String(o)));
+  $("#leg").innerHTML = LEG[o]; F[o]();
+}
+document.querySelectorAll("#ops button").forEach(b => b.onclick = () => abrir(+b.dataset.o));
+$("#larg").onchange = e => { $("#moldura").style.maxWidth = e.target.value; };
+document.addEventListener("click", () => document.querySelectorAll(".pop").forEach(p => p.remove()));
+abrir(1);
+</script>
+</body>
+</html>

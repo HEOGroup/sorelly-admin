@@ -5,6 +5,7 @@
 // Pagou menos que o devido = parcial (o que falta continua a pagar). A baixa vai para s.cpe.baixas (CPE_BAIXA / CPE_BAIXA_DESFAZ), como em registrar-pagamento.js.
 import { Botao, CAMPO, FaixaTotais, Rotulo } from "@/apps/montagem/components/padrao-fin";
 import { contasDe, nomeFilial } from "@/apps/montagem/components/registrar-pagamento";
+import { FILIAIS } from "@/apps/montagem/domain/contas-empresa";
 import { hojeIso } from "@/apps/montagem/domain/financeiro-familiar";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { BKC } from "@/apps/montagem/lib/format";
@@ -27,7 +28,7 @@ function PagamentoConta(p){
   var s = p.s, i = p.item, pago = i.status==="pago", baixas = ((s.cpe||{}).baixas || []).filter(function(b){ return b.chave===i.chave; });
   var ra = useState(hojeIso()), data = ra[0], setData = ra[1], rb = useState("PIX"), forma = rb[0], setForma = rb[1], rc = useState(""), conta = rc[0], setConta = rc[1];
   var rd = useState(0), acr = rd[0], setAcr = rd[1], re = useState(0), desc = re[0], setDesc = re[1], rf = useState(null), pagoEd = rf[0], setPagoEd = rf[1];
-  var rg = useState(""), obs = rg[0], setObs = rg[1], rh = useState(null), comp = rh[0], setComp = rh[1], ri = useState(""), erro = ri[0], setErro = ri[1];
+  var cn = useState(""), cnpjNovo = cn[0], setCnpjNovo = cn[1], rg = useState(""), obs = rg[0], setObs = rg[1], rh = useState(null), comp = rh[0], setComp = rh[1], ri = useState(""), erro = ri[0], setErro = ri[1];
   var contas = contasDe(s, i.filial), valor = i.valor;
   var devido = r2(valor+acr-desc), pagoV = pagoEd===null ? devido : pagoEd, principal = r2(Math.min(valor, Math.max(0, pagoV-acr+desc))), falta = r2(valor-principal), parcial = !pago && principal>0 && falta>0.004;
   var num = ((i.pref||"")+" "+(i.num||"")).trim();
@@ -50,6 +51,8 @@ function PagamentoConta(p){
         e("div",{className:"border-b border-border px-4 py-3 md:border-b-0 md:border-r"},
           Titulo("Dados da conta"),
           e(KV,{k:"Fornecedor", v:i.nome}), e(KV,{k:"Natureza", v:(i.nat ? i.nat+" · " : "")+i.natNome}), e(KV,{k:"Emissão", v:dmy(i.emissao)}), e(KV,{k:"Nota", v:i.nota==="sem" ? "Sem nota" : "Com nota"}), e(KV,{k:"Já pago", v:BKC(i.parcialPago || 0)}),
+          p.podePagar && p.trocarFilial && e("div",{className:"mt-2 flex flex-wrap items-end gap-2"}, e("div",{className:"min-w-0 flex-1"}, e(Rotulo,{t:"CNPJ da conta", id:"pc-cnpj"}), e("select",{id:"pc-cnpj", value:cnpjNovo || i.filial, onChange:function(ev){ setCnpjNovo(ev.target.value); }, className:CAMPO+" truncate"}, FILIAIS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]+(x[0]==="fora" ? "" : " · "+x[2])); }))),
+            e(Botao,{desabilitado:!cnpjNovo || cnpjNovo===i.filial, onClick:function(){ if(window.confirm("Trocar o CNPJ desta conta para "+nomeFilial(cnpjNovo)+"?")){ p.trocarFilial(i, cnpjNovo); } }}, "Trocar CNPJ"), i.filialOrig && e(Botao,{onClick:function(){ p.trocarFilial(i, ""); }}, "Voltar ao original")),
           e("div",{className:"mt-3"}, Titulo("Pagamentos desta conta"),
             baixas.length ? baixas.map(function(b){ return e("div",{key:b.id, className:"flex items-center justify-between gap-2 border-b border-border py-1 text-[12.5px]"},
               e("span",{className:"min-w-0 truncate", title:b.contaNome+" · "+nomeDe(b.por)}, dmy(b.data)+" · "+formaNome(b.forma)+" · "+b.contaNome), e("span",{className:"flex shrink-0 items-center gap-2"}, e("b",{className:"font-medium tabular-nums"}, BKC(b.principal+(b.juros||0)+(b.multa||0)-(b.desc||0))),

@@ -1,5 +1,7 @@
 // Sorelly Admin · montagem e bipagem — state/store.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+import { aplicaFdFixos } from "@/apps/montagem/state/fd-patches";
+import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { aplicaFila, filaRetornos } from "@/apps/montagem/domain/retornos";
 import { VERSAO_DEMO, acertosDemo } from "@/apps/montagem/domain/acertos-demo";
 import { rotDemo, rotMigrar } from "@/apps/montagem/domain/rotina";
@@ -171,7 +173,7 @@ function aplicaFat30(s){
   var pv30 = sincPrevistosAcertos(s, "2026-10", 1886); s.metaMensal = pv30.metaMensal; if(pv30.agend) s.agend = pv30.agend;
   return s;
 }
-// 01/11/2026 (Marcus): FECHAMENTO DE OUTUBRO/2026, relatório SEM FUNCIONÁRIOS (DevMaster): 30/10 = 1.835 acertos e R$ 1.430.877,71 (média R$ 779,77); 31/10 = 1.843 acertos e R$ 1.438.133,61 (média R$ 780,32). Carregar 0, nada a realizar, 2.047 revendedoras no fim do mês. O fechamento que o Marcus tinha antes (1.839 acertos, R$ 1.458.447,71, média R$ 793,07) fica guardado em fechaMes.comFunc como referência: as compras de funcionárias ainda vão entrar. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+// 01/11/2026 (Marcus): FECHAMENTO DE OUTUBRO/2026, relatório SEM FUNCIONÁRIOS (DevMaster): 30/10 = 1.835 acertos e R$ 1.430.877,71 (média R$ 779,77); 31/10 = 1.843 acertos e R$ 1.438.133,61 (média R$ 780,32). Carregar 0, nada a realizar, 2.047 revendedoras no fim do mês. O número antigo (1.839 / R$ 1.458.447,71) era de filtro errado e foi apagado em 01/11/2026. Registro em docs/negocio/FATURAMENTO-DIARIO.md
 function aplicaFechaOut(s){
   var DIAS = [["2026-10-30", 1430877.71, 1835], ["2026-10-31", 1438133.61, 1843]];
   s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario);
@@ -183,8 +185,16 @@ function aplicaFechaOut(s){
     s.carregarDia[k] = 0; s.restanteDia[k] = {feitos:d[2], carregar:0, aRealizar:0};
   });
   s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-10-31":2047});
-  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:0, carregar:0, fechado:true, comFunc:{acertos:1839, recebido:1458447.71}}});
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-10":{aRealizar:0, carregar:0, fechado:true}});
   if(s.fatHoje && s.fatHoje.data<="2026-11-01") s.fatHoje = null;
+  return s;
+}
+// 01/11/2026 (Marcus): ABERTURA DE NOVEMBRO/2026 = 2.047 revendedoras no início, 1.975 com acerto previsto, Carregar 0 (outubro fechou com 0 no Carregar, novembro começa com 0). Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaAbreNov(s){
+  var mm = JSON.parse(JSON.stringify(s.metaMensal||{})); mm["2026"] = mm["2026"]||{};
+  mm["2026"][10] = Object.assign({}, mm["2026"][10], {base:2047, previstos:1975, inicio:1975}); s.metaMensal = mm;
+  s.carregarInicio = Object.assign({}, s.carregarInicio, {"2026-11":0}); s.carregarDia = Object.assign({}, s.carregarDia, {"2026-11-01":0});
+  s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-11-01":2047});
   return s;
 }
 // 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
@@ -286,7 +296,7 @@ function novo(){
   if(TEM_CHAVES_ADMIN){ st.px = pxAplicarChavesAdmin(st.px, st.saldosContas.contas, "Marcus", Date.now()); st.pixAdminV = 2; st.cp = cpAplicarExtras(st.cp, "Marcus", Date.now()); st.pixExtrasV = 2; }   // chaves Pix lidas do admin antigo (bancos, pessoal, prestador e fornecedores)
   if(RH_STAMP){ st.rh = rhAplicarAdmin(st.rh); st.rhAdminStamp = RH_STAMP; }   // presença do RH lida do admin antigo
   aplicaPagosAdmin(st); st.cpdAdminV = 5; st.cpdLocalV = 5;
-  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1; aplicaFat27(st); st.fat27V = 3; aplicaFat28(st); st.fat28V = 1; aplicaFat30(st); st.fat30V = 2; aplicaFechaOut(st); st.fecha10V = 2;   // faturamento fixado até 19/10 (também no estado novo)
+  aplicaFat20(st); st.fat20FixV = 1; aplicaHoje20(st); st.hoje20V = 1; aplicaFat20b(st); st.fat20bV = 1; aplicaFat21(st); st.fat21V = 1; aplicaHoje22(st); st.hoje22V = 1; aplicaFat22(st); st.fat22V = 1; aplicaFat23(st); st.fat23V = 1; aplicaContas22(st); st.cp22V = 1; aplicaFat26(st); st.fat26V = 1; aplicaHoje26(st); st.hoje26V = 6; aplicaContas27(st); st.cp27V = 1; aplicaFat27(st); st.fat27V = 3; aplicaFat28(st); st.fat28V = 1; aplicaFat30(st); st.fat30V = 2; aplicaFechaOut(st); st.fecha10V = 3; aplicaAbreNov(st); st.nov26V = 2; aplicaAgendPatches(st); aplicaFdFixos(st);   // faturamento fixado até 19/10 (também no estado novo)
   st.filaSimV = 3; st.filaSimulada = Math.max(0, 10 - filaRetornos(st).length); st.filaNivel = -1; st.alertas = (st.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); st = aplicaFila(st);   // 14/10/2026: só 10 kits aguardando bipagem (sem alerta)
   return st;
 }
@@ -313,6 +323,15 @@ function inicial(){
     if(s.cfg.prazoPedidoHoras===undefined) s.cfg.prazoPedidoHoras = 48;
     ["perdaRecusa","recusasBloqueio","perdaDiaParado","diasParadosTolerancia"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = CFG0[f]; });
     if(s.repsV!==VERSAO_REPS){ s.repsV = VERSAO_REPS; s.avalRep = avalRepDemo(); s.recusas = RECUSAS0.slice(); s.virada = JSON.parse(JSON.stringify(VIRADA0)); s.bloqueioNovas = {Jessica:true}; }
+    // 01/11/2026 (Marcus): tira SÓ os dados de teste de cada navegador (listagens L1 a L4 e os kits delas, kits novos N1 a N4, histórico H*, avaliações, fila simulada). O que as funcionárias criaram fica.
+    if(s.zeraTesteV!==1){ s.zeraTesteV = 1; var TESTE_L = {L1:1, L2:1, L3:1, L4:1}, kitsFora = {};
+      s.kits = (s.kits||[]).filter(function(k){ if(TESTE_L[k.lid]){ kitsFora[k.id] = 1; return false; } return true; });
+      s.listagens = (s.listagens||[]).filter(function(l){ return !TESTE_L[l.id]; });
+      s.novas = (s.novas||[]).filter(function(n){ return !/^N[1-4]$/.test(n.id); });
+      s.histListagens = (s.histListagens||[]).filter(function(h){ return !(/^Hd+-/.test(h.id||"") && !h.lid); });
+      s.retPend = (s.retPend||[]).filter(function(r){ return !TESTE_L[r.lid]; });
+      s.entregasKN = Object.keys(s.entregasKN||{}).reduce(function(o, id){ if(!kitsFora[id]) o[id] = s.entregasKN[id]; return o; }, {});
+      s.avalRep = []; s.recusas = []; s.virada = {}; s.bloqueioNovas = {}; s.filaSimulada = 0; s.abertas = {}; s.kitAberto = null; }
     if(!s.avalRep){ s.avalRep = avalRepDemo(); s.recusas = RECUSAS0.slice(); s.virada = JSON.parse(JSON.stringify(VIRADA0)); s.bloqueioNovas = {Jessica:true}; }
     if(!s.contasPagar){ s.contasPagar = JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO)); s.verFinanceiro = "total"; }
     if(!s.faturamentoDiario) s.faturamentoDiario = JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO));
@@ -361,7 +380,10 @@ function inicial(){
     if(s.fat27V!==3){ s.fat27V = 3; aplicaFat27(s); }
     if(s.fat28V!==1){ s.fat28V = 1; aplicaFat28(s); }
     if(s.fat30V!==2){ s.fat30V = 2; aplicaFat30(s); }   // v2: só o dia 29 (o 30 sai até o Marcus mandar o certo)
-    if(s.fecha10V!==2){ s.fecha10V = 2; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
+    if(s.fecha10V!==3){ s.fecha10V = 3; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
+    if(s.nov26V!==2){ s.nov26V = 2; aplicaAbreNov(s); }   // 01/11/2026: novembro abre com 2.047 revendedoras, 1.975 previstos e Carregar 0
+    aplicaAgendPatches(s);   // 01/11/2026: abertura de novembro, metas 96/97/98% e viagens do Agendamento (ajustes guardados dentro do próprio agend: state/agend-patches.js)
+    aplicaFdFixos(s);   // 01/11/2026: setembro e outubro fechados e abertura de novembro, por valor (state/fd-patches.js)
     if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
     if(AG_REAL && s.agRealV!==1){ s.agRealV = 1; aplicaAgendReal(s); }
     if(s.cpdAdminV!==5){ s.cpdAdminV = 5; aplicaPagosAdmin(s); }   // v4: contas pagas de 01/09 a 26/10 lidas direto do admin antigo

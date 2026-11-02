@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aulas do setor · página geral (esboço)</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--p2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--t2:#D8D5CD;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544;--ruim:#E5484D}
+*{box-sizing:border-box}html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif}
+.topo{display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--painel);border-bottom:1px solid var(--fio)}
+.topo select{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--p2);color:var(--texto);padding:0 10px;font:inherit}.topo small{color:var(--t2)}
+.app{display:flex;min-height:calc(100vh - 53px)}
+.lado{width:210px;flex:none;background:#0B0C0F;border-right:1px solid var(--fio);padding:10px 8px;display:flex;flex-direction:column;gap:2px}
+.lado .it{height:32px;display:flex;align-items:center;gap:8px;padding:0 10px;border-radius:6px;color:var(--t2)}.lado .it.on{background:rgba(214,178,92,.16);color:var(--ouro);font-weight:600}
+.lado .sep{height:1px;background:var(--fio);margin:8px 4px}.lado .grupo{font-size:11px;text-transform:uppercase;letter-spacing:.07em;color:var(--t2);padding:6px 10px 2px}
+.ic{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}.on .ic{background:var(--ouro)}
+main{flex:1;min-width:0;padding:14px;display:flex;flex-direction:column;gap:14px;max-width:1100px}
+.cab{display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap}.cab h1{font-size:16px;margin:0}.sub{color:var(--t2);margin:2px 0 0}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--p2);color:var(--texto);padding:0 10px;font:inherit;width:260px}
+.chip{height:32px;padding:0 12px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font:inherit;cursor:pointer}.chip.on{border-color:var(--ouro);background:rgba(214,178,92,.18);color:var(--ouro);font-weight:600}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font:inherit;font-weight:600;cursor:pointer;display:inline-flex;align-items:center}.btn.g{border-color:var(--fio2);background:var(--painel);color:var(--texto);font-weight:500}
+.faixa{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--fio);border-radius:8px;background:var(--painel)}.faixa>div{padding:10px 12px;border-right:1px solid var(--fio);display:flex;flex-direction:column;gap:4px;text-align:center}.faixa>div:last-child{border:0}.faixa b{font-size:20px;font-variant-numeric:tabular-nums}
+.mut{color:var(--t2);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}.bloco>.t{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.pend{display:grid;grid-template-columns:34px minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:8px 12px;border-top:1px solid var(--fio)}.pend:first-of-type{border-top:0}
+.ico{width:34px;height:34px;border-radius:8px;display:grid;place-items:center;font-weight:800;color:#0b0b0b;flex:none}
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:10px;padding:12px}
+.card{border:1px solid var(--fio);border-radius:8px;background:var(--p2);padding:10px;display:flex;flex-direction:column;gap:6px;cursor:pointer}.card:hover{border-color:var(--ouro)}
+.barra{height:6px;border-radius:3px;background:#0b0c0f;overflow:hidden}.barra i{display:block;height:100%;background:var(--ouro)}
+.tag{display:inline-flex;height:20px;align-items:center;padding:0 8px;border:1px solid var(--fio2);border-radius:10px;font-size:11px}.tag.ob{border-color:rgba(242,181,68,.6);color:var(--at)}.tag.nv{border-color:rgba(76,195,138,.6);color:var(--ok)}
+.setor{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--fio)}.setor b{font-size:13px}
+.novo{display:grid;grid-template-columns:60px minmax(0,1fr) auto;gap:10px;padding:7px 12px;border-top:1px solid var(--fio);align-items:center}.novo:first-of-type{border-top:0}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.duas{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:14px}@media(max-width:900px){.duas{grid-template-columns:1fr}.faixa{grid-template-columns:repeat(2,1fr)}}
+</style></head><body>
+<div class="topo"><b>Esboço da página geral</b><small>Veja como cada pessoa enxerga:</small><select id="quem"></select><small id="info"></small></div>
+<div class="app">
+  <nav class="lado"><div class="grupo">Geral</div><div class="it"><span class="ic"></span>Início</div><div class="it"><span class="ic"></span>SorellyChat</div>
+    <div class="grupo">Setores</div><div class="it"><span class="ic"></span>Financeiro</div><div class="it"><span class="ic"></span>Recursos Humanos</div><div class="it"><span class="ic"></span>Montagem de kits</div><div class="it"><span class="ic"></span>Bipagem</div>
+    <div class="sep"></div><div class="it on"><span class="ic"></span>Aulas do setor</div></nav>
+  <main id="main"></main>
+</div>
+<script>
+var COR = {"Montagem de kits":"#F59E0B","Bipagem":"#0EA5E9","Recursos Humanos":"#8B5CF6","Financeiro":"#3B82F6","Para todos":"#14B8A6","Boas-vindas":"#EC4899","Encomendas":"#14B8A6"};
+var CURSOS = [
+ {s:"Montagem de kits",t:"Montagem de kits: do básico à entrega",n:12,m:18,f:7,ob:1},{s:"Montagem de kits",t:"Kit 100% Prata: regras e tabela",n:4,m:7,f:4,ob:0},
+ {s:"Bipagem",t:"Bipagem de retorno e de envio",n:8,m:11,f:2,ob:1},{s:"Bipagem",t:"Divergência de bipagem",n:3,m:5,f:0,ob:0},
+ {s:"Recursos Humanos",t:"Pedir mudança de colaboradora ao RH",n:1,m:1,f:0,ob:0,novo:1},{s:"Recursos Humanos",t:"Presença do dia e relatório diário",n:5,m:8,f:5,ob:1},
+ {s:"Financeiro",t:"Contas pagas por dia e lançamentos",n:6,m:9,f:3,ob:1},{s:"Financeiro",t:"Pagamentos a fornecedores",n:7,m:12,f:0,ob:0},
+ {s:"Para todos",t:"SorellyChat: avisos, anexos e áudio",n:5,m:6,f:4,ob:1},{s:"Boas-vindas",t:"Trilha da primeira semana",n:6,m:9,f:0,ob:0}
+];
+var PESSOAS = {"Deysiane (Montagem e Bipagem)":["Montagem de kits","Bipagem"],"Maria Claudia (RH)":["Recursos Humanos"],"Nayale (Financeiro)":["Financeiro"],"Dani (nova, Montagem)":["Montagem de kits"],"Marcus (Diretoria: todos)":["Montagem de kits","Bipagem","Recursos Humanos","Financeiro"]};
+var NOVIDADES = [["02/11","Pedir mudança de colaboradora ao RH","Recursos Humanos"],["30/10","Presença do dia: marcar todos e lançar faltas","Recursos Humanos"],["29/10","Contas pagas por dia","Financeiro"],["28/10","SorellyChat: aviso e som novos","Para todos"]];
+var $ = function(id){ return document.getElementById(id); }, nome = "Deysiane (Montagem e Bipagem)", filtro = "todos";
+$("quem").innerHTML = Object.keys(PESSOAS).map(function(n){ return '<option'+(n===nome?' selected':'')+'>'+n+'</option>'; }).join("");
+$("quem").onchange = function(){ nome = this.value; filtro = "todos"; desenha(); };
+function card(c){ var p = Math.round(c.f/c.n*100); return '<div class="card"><div class="linha"><div class="ico" style="background:'+COR[c.s]+'">'+c.s.charAt(0)+'</div><div><b>'+c.t+'</b><div class="mut">'+c.n+' aula'+(c.n>1?'s':'')+' · '+c.m+' min</div></div></div><div class="barra"><i style="width:'+p+'%"></i></div><div class="linha">'+(c.ob?'<span class="tag ob">Obrigatório</span>':'')+(c.novo?'<span class="tag nv">Novo</span>':'')+(p===100?'<span class="tag">Concluído</span>':'')+'<span style="flex:1"></span><span class="mut">'+c.f+' de '+c.n+'</span></div></div>'; }
+function desenha(){
+  var meus = PESSOAS[nome], nova = nome.indexOf("nova")>=0;
+  var lista = CURSOS.filter(function(c){ return (meus.indexOf(c.s)>=0 || c.s==="Para todos" || (nova && c.s==="Boas-vindas")) && (filtro==="todos" || c.s===filtro || c.s==="Para todos"); });
+  if(nova) lista = lista.map(function(c){ return Object.assign({}, c, {f:0}); });
+  var pend = lista.filter(function(c){ return c.ob && c.f<c.n; }), andando = lista.filter(function(c){ return c.f>0 && c.f<c.n; }), feitos = lista.filter(function(c){ return c.f===c.n; });
+  var setores = []; lista.forEach(function(c){ if(setores.indexOf(c.s)<0) setores.push(c.s); });
+  $("info").textContent = "Setores: "+meus.join(", ");
+  var h = '<div class="cab"><div style="flex:1"><h1>Aulas do setor</h1><p class="sub">'+(meus.length>1?"Você é responsável por mais de um setor: aparecem os cursos de todos.":"Cursos do setor "+meus[0]+" e os cursos para todos.")+'</p></div><input class="in" placeholder="Buscar aula ou curso"><button class="btn g">Pedir uma aula nova</button></div>';
+  if(meus.length>1) h += '<div class="linha"><button class="chip'+(filtro==="todos"?" on":"")+'" data-f="todos">Todos os meus setores</button>'+meus.map(function(s){ return '<button class="chip'+(filtro===s?" on":"")+'" data-f="'+s+'">'+s+'</button>'; }).join("")+'</div>';
+  h += '<div class="faixa"><div><span class="mut">Cursos para você</span><b>'+lista.length+'</b></div><div><span class="mut">Concluídos</span><b class="ok" style="color:var(--ok)">'+feitos.length+'</b></div><div><span class="mut">Em andamento</span><b style="color:var(--at)">'+andando.length+'</b></div><div><span class="mut">Obrigatórios que faltam</span><b style="color:'+(pend.length?'var(--ruim)':'var(--ok)')+'">'+pend.length+'</b></div></div>';
+  h += '<div class="duas"><div style="display:flex;flex-direction:column;gap:14px">';
+  h += '<div class="bloco"><div class="t"><span>Para você fazer agora</span><span class="mut">obrigatórios</span></div>'+(pend.length? pend.map(function(c){ return '<div class="pend"><div class="ico" style="background:'+COR[c.s]+'">'+c.s.charAt(0)+'</div><div><b>'+c.t+'</b><div class="mut">'+c.s+' · faltam '+(c.n-c.f)+' de '+c.n+' aulas</div></div><span class="tag ob">Obrigatório</span><button class="btn">'+(c.f?'Continuar':'Começar')+'</button></div>'; }).join("") : '<div class="pend"><span></span><span>Tudo em dia. Nenhum curso obrigatório pendente.</span></div>')+'</div>';
+  setores.forEach(function(s){ var cs = lista.filter(function(c){ return c.s===s; }); h += '<div class="bloco"><div class="setor"><div class="ico" style="background:'+COR[s]+';width:26px;height:26px">'+s.charAt(0)+'</div><b>'+s+'</b><span class="mut">'+cs.length+' curso'+(cs.length>1?'s':'')+'</span><span style="flex:1"></span><span class="mut">ver todos →</span></div><div class="grade">'+cs.map(card).join("")+'</div></div>'; });
+  h += '</div><div style="display:flex;flex-direction:column;gap:14px">';
+  var cont = andando[0]; h += '<div class="bloco"><div class="t"><span>Continue de onde parou</span></div><div class="pend" style="grid-template-columns:34px 1fr">'+(cont?'<div class="ico" style="background:'+COR[cont.s]+'">'+cont.s.charAt(0)+'</div><div><b>'+cont.t+'</b><div class="barra" style="margin:6px 0"><i style="width:'+Math.round(cont.f/cont.n*100)+'%"></i></div><button class="btn">Continuar</button></div>':'<span></span><span>Você ainda não começou nenhuma aula.</span>')+'</div></div>';
+  h += '<div class="bloco"><div class="t"><span>Novidades</span></div>'+NOVIDADES.filter(function(n){ return meus.indexOf(n[2])>=0 || n[2]==="Para todos"; }).map(function(n){ return '<div class="novo"><span class="mut">'+n[0]+'</span><span><b>'+n[1]+'</b><div class="mut">'+n[2]+'</div></span><span class="tag nv">Novo</span></div>'; }).join("")+'</div>';
+  h += '<div class="bloco"><div class="t"><span>Precisa de ajuda?</span></div><div class="pend" style="grid-template-columns:1fr"><span>Não achou a aula que precisa? Peça pelo botão <b>Pedir uma aula nova</b>. O pedido vai para Melhorias.</span></div></div>';
+  h += '</div></div>';
+  $("main").innerHTML = h;
+  document.querySelectorAll("[data-f]").forEach(function(b){ b.onclick = function(){ filtro = b.dataset.f; desenha(); }; });
+}
+desenha();
+</script></body></html>

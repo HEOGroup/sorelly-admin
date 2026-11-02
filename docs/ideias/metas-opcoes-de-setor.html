@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metas: 4 opções de setor</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--ok:#4ade80;--no:#f87171;--am:#facc15}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1180px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+.sub{font-size:13px;margin:2px 0 12px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button,.btn{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.btn{border:1px solid var(--bd);border-radius:8px}
+.btn.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin:12px 0}
+.menu{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin:14px 0 12px;flex-wrap:wrap}
+.menu button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;border-bottom:2px solid transparent;font:inherit;cursor:pointer}
+.menu button.on{border-bottom-color:var(--ouro);color:var(--ouro);font-weight:600}
+.faixa{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));border:1px solid var(--bd);border-radius:8px;background:var(--s1);margin-bottom:12px}
+.faixa div{padding:8px 10px;text-align:center;border-left:1px solid var(--bd)}
+.faixa div:first-child{border-left:0}
+.faixa small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+.faixa b{font-size:20px;font-weight:600}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1);margin-bottom:12px}
+.bloco>h3{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:600;padding:8px 12px;border-bottom:1px solid var(--bd)}
+.bloco .in{padding:10px 12px}
+.fil{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end}
+.fil label{display:block;font-size:11px;margin-bottom:3px}
+input,select{height:32px;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;text-align:center;padding:0 10px;background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE);color:#1a1306;white-space:nowrap}
+td{height:32px;padding:0 10px;border-bottom:1px solid var(--bd);white-space:nowrap;text-align:center}
+th.r,td.r{text-align:center}
+tr.cl{cursor:pointer}
+tr.cl:hover td,tr.sel td{background:var(--s2)}
+.ok{color:var(--ok)}.no{color:var(--no)}.am{color:var(--am)}.ou{color:var(--ouro)}
+.tag{display:inline-block;height:20px;line-height:18px;padding:0 8px;border:1px solid var(--bd);border-radius:6px;font-size:11px}
+.tag.ok{border-color:var(--ok)}.tag.no{border-color:var(--no)}.tag.am{border-color:var(--am)}.tag.ou{border-color:var(--ouro)}
+.dois{display:grid;grid-template-columns:300px minmax(0,1fr);gap:12px}
+.dois .bloco{margin-bottom:0}
+.kan{display:grid;grid-template-columns:repeat(5,minmax(190px,1fr));gap:10px;overflow-x:auto}
+.col{border:1px solid var(--bd);border-radius:8px;background:var(--s1);min-height:200px}
+.col>h4{font-size:12px;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--bd);display:flex;justify-content:space-between}
+.col .cards{padding:8px;display:grid;gap:8px}
+.card{border:1px solid var(--bd);border-radius:8px;background:var(--s2);padding:8px 10px}
+.card .t{font-weight:600;text-align:center}
+.card .l{display:flex;justify-content:space-between;gap:8px;margin-top:3px}
+.sim{display:grid;grid-template-columns:320px minmax(0,1fr);gap:12px}
+.sim .campo{margin-bottom:8px}
+.sim label{display:block;font-size:11px;margin-bottom:3px}
+.par{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.leg{font-size:12px}
+.passos{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.passos span{border:1px solid var(--bd);border-radius:8px;padding:6px 12px;background:var(--s1)}
+.passos span.on{border-color:var(--ouro);color:var(--ouro)}
+@media(max-width:820px){.dois,.sim{grid-template-columns:1fr}.fil{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<h1>Metas: 4 opções de setor</h1>
+<p class="sub">Protótipo com dados de exemplo. Nada aqui grava no sistema. As contagens por classe são reais de 02/11/2026; os nomes e as vendas são inventados.</p>
+<div class="seg" id="opcoes">
+  <button data-o="1" class="on">1 · Abas</button>
+  <button data-o="2">2 · Painel único</button>
+  <button data-o="3">3 · Funil</button>
+  <button data-o="4">4 · Campanha e simulador</button>
+</div>
+<div class="nota" id="legenda"></div>
+<div id="app"></div>
+
+<script>
+const R = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const N = v => Number(v).toLocaleString("pt-BR");
+const teto = (x, p) => Math.ceil(x * p / 10000) * 100;
+
+const CL = [
+  {id: "ini", nome: "Inicial", desc: "Kit novo e média abaixo de R$ 1.000", de: 0, ate: 999.99, n: 1132, m1: 1500, m2: 2000, fechada: true},
+  {id: "a", nome: "R$ 1.000 a 1.499", de: 1000, ate: 1499.99, n: 460, m1: 1700, m2: 2100, fechada: true},
+  {id: "b", nome: "R$ 1.500 a 1.999", de: 1500, ate: 1999.99, n: 270, m1: 2300, m2: 2700, fechada: true},
+  {id: "c", nome: "R$ 2.000 a 2.499", de: 2000, ate: 2499.99, n: 110},
+  {id: "d", nome: "R$ 2.500 a 2.999", de: 2500, ate: 2999.99, n: 71},
+  {id: "e", nome: "R$ 3.000 a 3.999", de: 3000, ate: 3999.99, n: 32},
+  {id: "f", nome: "R$ 4.000 a 4.999", de: 4000, ate: 4999.99, n: 21},
+  {id: "g", nome: "R$ 5.000 a 6.999", de: 5000, ate: 6999.99, n: 14},
+  {id: "h", nome: "R$ 7.000 ou mais", de: 7000, ate: 1e9, n: 4, individual: true}
+];
+CL.forEach(c => { if (!c.fechada && !c.individual) { c.m1 = teto(c.ate, 115); c.m2 = teto(c.ate, 135); } });
+
+const EX = {b1: 128, b2: 168, n1: 96, n2: 122};
+const extra = m => {
+  const k = (m - 1500) / 500;
+  return {n: Math.round(EX.n1 + (EX.n2 - EX.n1) * k), b: Math.round(EX.b1 + (EX.b2 - EX.b1) * k)};
+};
+const classeDe = media => CL.find(c => media >= c.de && media <= c.ate) || CL[0];
+const metasDe = media => {
+  const c = classeDe(media);
+  if (c.individual) return {c, m1: teto(media, 115), m2: teto(media, 135)};
+  return {c, m1: c.m1, m2: c.m2};
+};
+
+const REV = [
+  ["003120", "Ana P.", "Carla", 420, null, "08/11"],
+  ["005512", "Beatriz M.", "Carla", 0, 1620, ""],
+  ["004098", "Camila R.", "Joice", 1250, 1810, ""],
+  ["002877", "Daniela S.", "Joice", 1720, 2740, ""],
+  ["006301", "Eliane T.", "Priscila", 2150, null, "12/11"],
+  ["001954", "Fernanda L.", "Priscila", 2640, 2900, ""],
+  ["003777", "Gabriela N.", "Carla", 3400, null, "15/11"],
+  ["002215", "Helena V.", "Joice", 4320, 5950, ""],
+  ["004660", "Isabel C.", "Priscila", 5800, null, "18/11"],
+  ["000912", "Joana F.", "Carla", 7900, null, "20/11"],
+  ["005009", "Karina B.", "Joice", 980, 1380, ""],
+  ["003388", "Larissa D.", "Priscila", 1480, 2150, ""],
+  ["006770", "Marina G.", "Carla", 0, 2050, ""],
+  ["001420", "Natália O.", "Joice", 1900, null, "22/11"]
+].map((x, i) => {
+  const mt = metasDe(x[3]);
+  let st = "Aguardando acerto";
+  if (x[4] != null) st = x[4] >= mt.m2 ? "Meta 2" : x[4] >= mt.m1 ? "Meta 1" : "Não bateu";
+  const nivel = st === "Meta 2" ? mt.m2 : st === "Meta 1" ? mt.m1 : 0;
+  const ex = nivel ? extra(nivel) : null;
+  return {cod: x[0], nome: x[1], rep: x[2], media: x[3], vendido: x[4], prev: x[5], st, c: mt.c, m1: mt.m1, m2: mt.m2, ex, aplicado: i % 3 === 0 && !!nivel};
+});
+const corSt = s => s === "Meta 2" ? "ok" : s === "Meta 1" ? "ok" : s === "Não bateu" ? "no" : "am";
+
+const $ = (s, r = document) => r.querySelector(s);
+const faixa = () => "";
+const filtros = () => `<div class="bloco"><h3>Filtros</h3><div class="in"><div class="fil">
+  <div style="grid-column:span 2"><label>Busca</label><input placeholder="Nome ou código"></div>
+  <div><label>Classe</label><select><option>Todas</option>${CL.map(c => `<option>${c.nome}</option>`).join("")}</select></div>
+  <div><label>Representante</label><select><option>Todas</option><option>Carla</option><option>Joice</option><option>Priscila</option></select></div>
+  <div><label>Situação</label><select><option>Todas</option><option>Aguardando acerto</option><option>Meta 1</option><option>Meta 2</option><option>Não bateu</option></select></div>
+  <div></div><div style="text-align:right;grid-column:span 2"><button class="btn">Limpar</button> <button class="btn p">Filtrar</button></div>
+</div></div></div>`;
+
+const tabRev = (lista) => `<div class="bloco"><div class="tw"><table><thead><tr>
+  <th>Código</th><th>Nome</th><th>Representante</th><th>Classe</th><th class="r">Média</th><th class="r">Meta 1</th><th class="r">Meta 2</th><th class="r">Vendeu</th><th>Situação</th><th class="r">Extra BB</th><th class="r">Extra Normal</th></tr></thead><tbody>
+  ${lista.map(r => `<tr><td>${r.cod}</td><td>${r.nome}</td><td>${r.rep}</td><td>${r.c.nome}</td><td class="r">${r.media ? R(r.media) : "Sem venda"}</td><td class="r">${R(r.m1)}</td><td class="r">${R(r.m2)}</td><td class="r">${r.vendido == null ? "Acerto em " + r.prev : R(r.vendido)}</td><td><span class="tag ${corSt(r.st)}">${r.st}</span></td><td class="r ou">${r.ex ? R(r.ex.b) : "-"}</td><td class="r ou">${r.ex ? R(r.ex.n) : "-"}</td></tr>`).join("")}
+  </tbody></table></div></div>`;
+
+const tabClasses = (sel) => `<div class="bloco"><div class="tw"><table><thead><tr>
+  <th>Classe</th><th class="r">Revendedoras</th><th class="r">Meta 1</th><th class="r">Extra BB</th><th class="r">Extra Normal</th><th class="r">Meta 2</th><th class="r">Extra BB</th><th class="r">Extra Normal</th><th>Estado</th></tr></thead><tbody>
+  ${CL.map(c => { const a = c.individual ? null : extra(c.m1), b = c.individual ? null : extra(c.m2); return `<tr class="cl ${sel === c.id ? "sel" : ""}" data-c="${c.id}"><td>${c.nome}</td><td class="r">${N(c.n)}</td><td class="r">${c.individual ? "Média +15%" : R(c.m1)}</td><td class="r ou">${a ? R(a.b) : "-"}</td><td class="r ou">${a ? R(a.n) : "-"}</td><td class="r">${c.individual ? "Média +35%" : R(c.m2)}</td><td class="r ou">${b ? R(b.b) : "-"}</td><td class="r ou">${b ? R(b.n) : "-"}</td><td><span class="tag ${c.fechada ? "ok" : "am"}">${c.fechada ? "Aprovada" : "Provisória"}</span></td></tr>`; }).join("")}
+  </tbody></table></div></div>`;
+
+const totais = () => {
+  const bateu = REV.filter(r => r.st.startsWith("Meta")).length, acertou = REV.filter(r => r.vendido != null).length;
+  const liberar = REV.filter(r => r.ex && !r.aplicado).reduce((s, r) => s + r.ex.b + r.ex.n, 0);
+  return faixa([["Participantes", N(2114)], ["Aguardando acerto", N(REV.filter(r => r.vendido == null).length), "am"], ["Acertaram", N(acertou)], ["Bateram a meta", N(bateu), "ok"], ["Não bateram", N(REV.filter(r => r.st === "Não bateu").length), "no"], ["Extra a liberar", R(liberar), "ou"]]);
+};
+
+function abasGeneric(box, abas) {
+  box.innerHTML = `<div class="menu">${abas.map((a, i) => `<button data-i="${i}" class="${i === 0 ? "on" : ""}">${a[0]}</button>`).join("")}</div><div id="corpo"></div>`;
+  const ir = i => { box.querySelectorAll(".menu button").forEach((b, k) => b.classList.toggle("on", k === i)); $("#corpo", box).innerHTML = abas[i][1](); };
+  box.querySelectorAll(".menu button").forEach(b => b.onclick = () => ir(+b.dataset.i));
+  ir(0);
+}
+
+const campanhaResumo = () => `<div class="bloco"><h3>Campanha de novembro</h3><div class="in">
+  <div class="par" style="grid-template-columns:repeat(4,minmax(0,1fr))">
+    <div><label class="leg">Mês</label><select><option>Novembro de 2026</option><option>Dezembro de 2026</option></select></div>
+    <div><label class="leg">Meta 1 sobre o topo da faixa</label><input value="15%"></div>
+    <div><label class="leg">Meta 2 sobre o topo da faixa</label><input value="35%"></div>
+    <div><label class="leg">Situação</label><select><option>Rascunho</option><option>Publicada</option></select></div>
+  </div>
+  <div style="margin-top:10px;display:flex;gap:8px"><button class="btn">Copiar mês anterior</button><button class="btn p">Publicar campanha</button></div>
+</div></div>`;
+
+const brindes = () => `<div class="bloco"><div class="tw"><table><thead><tr><th>Código</th><th>Nome</th><th>Meta batida</th><th class="r">Extra BB</th><th class="r">Extra Normal</th><th>Pagamento</th><th>Situação</th></tr></thead><tbody>
+  ${REV.filter(r => r.ex).map(r => `<tr><td>${r.cod}</td><td>${r.nome}</td><td>${r.st}</td><td class="r ou">${R(r.ex.b)}</td><td class="r ou">${R(r.ex.n)}</td><td>${r.aplicado ? "Confirmado" : "Aguardando"}</td><td><span class="tag ${r.aplicado ? "ok" : "am"}">${r.aplicado ? "Aplicado no acerto" : "A liberar"}</span></td></tr>`).join("")}
+  </tbody></table></div></div>`;
+
+const historico = () => `<div class="bloco"><div class="tw"><table><thead><tr><th>Mês</th><th class="r">Participantes</th><th class="r">Bateram Meta 1</th><th class="r">Bateram Meta 2</th><th class="r">Taxa</th><th class="r">Extra pago</th><th class="r">Venda acima da média</th></tr></thead><tbody>
+  <tr><td>Novembro de 2026</td><td class="r">2.114</td><td class="r" colspan="5">Em andamento</td></tr>
+  <tr><td>Dezembro de 2026</td><td class="r">-</td><td class="r" colspan="5">Rascunho</td></tr>
+  <tr><td>Setembro de 2026 (admin antigo)</td><td class="r">3.588</td><td class="r">545</td><td class="r">-</td><td class="r">15,2%</td><td class="r">-</td><td class="r">-</td></tr>
+  </tbody></table></div></div>`;
+
+const O = {};
+O[1] = box => {
+  abasGeneric(box, [
+    ["Revendedoras", () => totais() + filtros() + tabRev(REV)],
+    ["Classes", () => faixa([["Classes", CL.length], ["Aprovadas", CL.filter(c => c.fechada).length, "ok"], ["Provisórias", CL.filter(c => !c.fechada).length, "am"], ["Revendedoras", N(CL.reduce((s, c) => s + c.n, 0))]]) + tabClasses()],
+    ["Campanha", () => campanhaResumo() + tabClasses()],
+    ["Brindes liberados", () => totais() + brindes()],
+    ["Histórico", historico]
+  ]);
+};
+
+O[2] = box => {
+  let sel = null;
+  const pinta = () => {
+    const lista = sel ? REV.filter(r => r.c.id === sel) : REV;
+    box.innerHTML = totais() + `<div class="dois"><div class="bloco"><h3>Classes</h3><div class="tw"><table><tbody>
+      <tr class="cl ${sel ? "" : "sel"}" data-c=""><td>Todas</td><td class="r">${N(2114)}</td></tr>
+      ${CL.map(c => `<tr class="cl ${sel === c.id ? "sel" : ""}" data-c="${c.id}"><td>${c.nome}</td><td class="r">${N(c.n)}</td></tr>`).join("")}
+      </tbody></table></div></div>
+      <div><div class="bloco"><h3>${sel ? "Classe " + CL.find(c => c.id === sel).nome : "Todas as classes"}</h3><div class="in" style="display:flex;gap:24px;flex-wrap:wrap">
+        ${sel ? (() => { const c = CL.find(x => x.id === sel), a = c.individual ? null : extra(c.m1), b = c.individual ? null : extra(c.m2); return `<div>Meta 1: <b>${c.individual ? "Média +15%" : R(c.m1)}</b>${a ? ` · extra BB <b class="ou">${R(a.b)}</b> e Normal <b class="ou">${R(a.n)}</b>` : ""}</div><div>Meta 2: <b>${c.individual ? "Média +35%" : R(c.m2)}</b>${b ? ` · extra BB <b class="ou">${R(b.b)}</b> e Normal <b class="ou">${R(b.n)}</b>` : ""}</div>`; })() : `<div>Escolha uma classe à esquerda para ver as metas e os brindes extras.</div>`}
+      </div></div>${tabRev(lista)}</div></div>`;
+    box.querySelectorAll("tr.cl").forEach(t => t.onclick = () => { sel = t.dataset.c || null; pinta(); });
+  };
+  pinta();
+};
+
+O[3] = box => {
+  const cols = [["Aguardando acerto", r => r.st === "Aguardando acerto"], ["Não bateu", r => r.st === "Não bateu"], ["Bateu Meta 1", r => r.st === "Meta 1" && !r.aplicado], ["Bateu Meta 2", r => r.st === "Meta 2" && !r.aplicado], ["Brinde aplicado", r => r.aplicado]];
+  box.innerHTML = totais() + filtros() + `<div class="kan">${cols.map(c => { const l = REV.filter(c[1]); return `<div class="col"><h4><span>${c[0]}</span><span>${l.length}</span></h4><div class="cards">${l.map(r => `<div class="card"><div class="t">${r.nome}</div><div class="l"><span>${r.c.nome}</span><span>${r.rep}</span></div><div class="l"><span>Meta 1 ${R(r.m1)}</span></div><div class="l"><span>${r.vendido == null ? "Acerto em " + r.prev : "Vendeu " + R(r.vendido)}</span></div>${r.ex ? `<div class="l ou"><span>BB ${R(r.ex.b)}</span><span>Normal ${R(r.ex.n)}</span></div>` : ""}${r.st === "Meta 1" || r.st === "Meta 2" ? (r.aplicado ? "" : `<button class="btn p" style="width:100%;margin-top:6px">Aplicar brinde ›</button>`) : ""}</div>`).join("")}</div></div>`; }).join("")}</div>`;
+};
+
+O[4] = box => {
+  const est = {taxa: 15, m2: 30};
+  const desenha = () => {
+    const linhas = CL.filter(c => !c.individual).map(c => {
+      const a = extra(c.m1), b = extra(c.m2);
+      const e1 = a.n + a.b, e2 = b.n + b.b;
+      const custo = c.n * (est.taxa / 100) * ((1 - est.m2 / 100) * e1 + (est.m2 / 100) * e2);
+      return {c, a, b, custo};
+    });
+    const total = linhas.reduce((s, l) => s + l.custo, 0);
+    $("#sim-dir", box).innerHTML = faixa([["Revendedoras", N(2114)], ["Batem a meta", N(Math.round(2114 * est.taxa / 100))], ["Custo do extra (sem a classe de 7.000)", R(total), "ou"], ["Custo por revendedora", R(total / 2110)]]) +
+      `<div class="bloco"><div class="tw"><table><thead><tr><th>Classe</th><th class="r">Revendedoras</th><th class="r">Meta 1</th><th class="r">Extra</th><th class="r">Meta 2</th><th class="r">Extra</th><th class="r">Custo estimado</th></tr></thead><tbody>
+      ${linhas.map(l => `<tr><td>${l.c.nome}</td><td class="r">${N(l.c.n)}</td><td class="r">${R(l.c.m1)}</td><td class="r ou">${R(l.a.n + l.a.b)}</td><td class="r">${R(l.c.m2)}</td><td class="r ou">${R(l.b.n + l.b.b)}</td><td class="r">${R(l.custo)}</td></tr>`).join("")}<tr><td><b>Total (sem a classe de R$ 7.000)</b></td><td class="r"><b>${N(linhas.reduce((s, l) => s + l.c.n, 0))}</b></td><td></td><td></td><td></td><td></td><td class="r ou"><b>${R(total)}</b></td></tr>
+      </tbody></table></div></div>`;
+  };
+  box.innerHTML = `<div class="passos"><span class="on">1 · Campanha</span><span>2 · Simulador</span><span>3 · Revisar</span><span>4 · Publicar</span></div>
+  <div class="sim"><div>
+    <div class="bloco"><h3>Campanha</h3><div class="in">
+      <div class="campo"><label>Mês</label><select><option>Novembro de 2026</option><option>Dezembro de 2026</option></select></div>
+      <div class="par"><div class="campo"><label>Meta 1 sobre o topo</label><input value="15%"></div><div class="campo"><label>Meta 2 sobre o topo</label><input value="35%"></div></div>
+      <div class="par"><div class="campo"><label>Piso Meta 1</label><input value="R$ 1.500,00"></div><div class="campo"><label>Piso Meta 2</label><input value="R$ 2.000,00"></div></div>
+      <div class="par"><div class="campo"><label>Extra BB na Meta 1</label><input value="R$ 128,00"></div><div class="campo"><label>Extra BB na Meta 2</label><input value="R$ 168,00"></div></div>
+      <div class="par"><div class="campo"><label>Extra Normal na Meta 1</label><input value="R$ 96,00"></div><div class="campo"><label>Extra Normal na Meta 2</label><input value="R$ 122,00"></div></div>
+      <button class="btn" style="width:100%">Copiar mês anterior</button>
+    </div></div>
+    <div class="bloco"><h3>Cenário</h3><div class="in">
+      <div class="campo"><label>Batem a meta: <b id="v1">${est.taxa}%</b></label><input type="range" id="r1" min="5" max="100" value="${est.taxa}" style="padding:0"></div>
+      <div class="campo"><label>Das que batem, chegam à Meta 2: <b id="v2">${est.m2}%</b></label><input type="range" id="r2" min="0" max="100" value="${est.m2}" style="padding:0"></div>
+      <button class="btn p" style="width:100%">Publicar campanha</button>
+    </div></div>
+  </div><div id="sim-dir"></div></div>`;
+  $("#r1", box).oninput = e => { est.taxa = +e.target.value; $("#v1", box).textContent = est.taxa + "%"; desenha(); };
+  $("#r2", box).oninput = e => { est.m2 = +e.target.value; $("#v2", box).textContent = est.m2 + "%"; desenha(); };
+  desenha();
+};
+
+const LEG = {
+  1: "<b>Opção 1 · Abas.</b> Segue o padrão do sistema: um menu do setor com Revendedoras, Classes, Campanha, Brindes liberados e Histórico. É a mais parecida com o Financeiro e a mais fácil de construir por etapas.",
+  2: "<b>Opção 2 · Painel único.</b> As classes ficam à esquerda e a tabela à direita. Você clica numa classe e vê as metas, os extras e só as revendedoras dela. Boa para analisar, ruim para operar o dia a dia.",
+  3: "<b>Opção 3 · Funil.</b> Colunas por situação: Aguardando acerto, Não bateu, Bateu Meta 1, Bateu Meta 2 e Brinde aplicado. O botão Aplicar brinde fecha o ciclo. Boa para quem libera os brindes todo dia.",
+  4: "<b>Opção 4 · Campanha e simulador.</b> A primeira tela é a campanha do mês, com o custo na hora ao lado. Você mexe nos valores e vê quanto custa antes de publicar. Dezembro nasce copiando Novembro."
+};
+function abrir(o) {
+  document.querySelectorAll("#opcoes button").forEach(b => b.classList.toggle("on", b.dataset.o === String(o)));
+  $("#legenda").innerHTML = LEG[o];
+  const app = $("#app"); app.innerHTML = ""; O[o](app);
+}
+document.querySelectorAll("#opcoes button").forEach(b => b.onclick = () => abrir(+b.dataset.o));
+abrir(1);
+</script>
+</body>
+</html>

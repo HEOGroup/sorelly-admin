@@ -39,7 +39,8 @@ function novoDia(){
   // Base de demonstração (08/10/2026, pedido do Marcus): 4 representantes reais (Dayanne, Lysie, Jessica e Thalita), 1 listagem de hoje cada,
   // com 3 acertos A REALIZAR por representante (12 no total). Nada montado nem bipado, pra testar o fluxo do zero.
   // Cada representante fecha 10 revendedoras de demonstração: 5 acertos feitos + 3 a realizar + 2 kits novos (acertos-demo.js).
-  var REPS = [["Dayanne","10:00"],["Lysie","10:00"],["Jessica","15:00"],["Thalita","11:00"]];
+  var REPS = [];   // 01/11/2026 (Marcus): sem listagens de teste; as listagens vêm do uso real
+  var REPS_ANTIGAS = [["Dayanne","10:00"],["Lysie","10:00"],["Jessica","15:00"],["Thalita","11:00"]];
   var BAIRROS = ["Tatuquara","Cabral","Cristo Rei","Uberaba","Boa Vista","Portão","Água Verde","Xaxim","Boqueirão","Batel","Santa Felicidade","Bacacheri"];
   // as revendedoras a realizar de cada representante (nome, bairro, valor do kit, prioridade, endereço) — as da Dayanne têm perfil/endereço nos apps de demonstração
   var FIXOS = {
@@ -158,7 +159,8 @@ var HISTORICO0 = [
   {mes:"Agosto de 2026", total:2984.40, pagoEm:"15/09/2026", situacao:"Pago"},
   {mes:"Julho de 2026", total:2810.20, pagoEm:"15/08/2026", situacao:"Pago"}
 ];
-function histDemo(){
+function histDemo(){ return []; }   // 01/11/2026 (Marcus): histórico de teste saiu
+function histDemoAntigo(){
   var reps = [["Dayanne","Curitiba",false,"10:00",5],["Lysie","Curitiba",false,"10:00",4],
               ["Jessica","Curitiba",false,"15:00",5],["Thalita","Curitiba",false,"11:00",4]];
   var nomes = ["Ana Paula Ribeiro","Bianca Moraes","Cristiane Lopes","Daiane Freitas","Edna Carvalho","Fabiana Rocha","Gislaine Prado","Helena Duarte",

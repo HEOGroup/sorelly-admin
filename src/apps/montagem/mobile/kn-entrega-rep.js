@@ -58,15 +58,16 @@ function EntregaKNRep(p){
   // foto do expositor (a representante arruma o expositor e anexa a foto; ela fica na aba Expositores)
   var fotoSel = function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
     var rd = new FileReader(); rd.onload = function(){ d({type:"KN_ENT_FOTO", kitId:k.id, foto:rd.result, nome:fl.name}); }; rd.readAsDataURL(fl); };
+  var exigeExpo = k.tipoKit==="kit_novo_exp", temExp = exigeExpo || !!(entrada && entrada.temExpositor);   // kit novo + expositor: a foto do expositor montado é obrigatória (28/10/2026)
   var expositorUI = entrada && e("div",{key:"exp", className:"flex flex-col gap-2 rounded-xl bg-[#F9FAFB] p-2.5 ring-1 ring-[#E5E7EB]"},
     e("label",{className:"flex items-center gap-2.5 text-[12.5px] font-semibold text-[#111827]"},
-      e("input",{type:"checkbox", checked:!!entrada.temExpositor, onChange:function(ev){ d({type:"KN_ENT_EXPOSITOR", kitId:k.id, v:ev.target.checked}); }, className:"size-5 shrink-0"}), "Esta entrega tem expositor"),
-    entrada.temExpositor && e("label",{className:"flex cursor-pointer items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2 text-[12px] text-[#6B7280] ring-1 ring-[#E5E7EB]"},
-      e("span",{className:"min-w-0 truncate"}, entrada.fotoExpositor ? "Foto anexada" : "Anexar a foto do expositor arrumado"),
+      e("input",{type:"checkbox", checked:temExp, disabled:exigeExpo, onChange:function(ev){ d({type:"KN_ENT_EXPOSITOR", kitId:k.id, v:ev.target.checked}); }, className:"size-5 shrink-0"}), "Esta entrega tem expositor"),
+    temExp && e("label",{className:"flex cursor-pointer items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-2 text-[12px] text-[#6B7280] ring-1 ring-[#E5E7EB]"},
+      e("span",{className:"min-w-0 truncate"}, entrada.fotoExpositor ? "Foto anexada" : "Monte o expositor e anexe a foto"),
       e("span",{className:"shrink-0 rounded-md bg-[#F3F4F6] px-2 py-1 font-bold text-[#111827]"}, entrada.fotoExpositor ? "Trocar" : "Tirar foto"),
       e("input",{type:"file", accept:"image/*", capture:"environment", className:"hidden", onChange:fotoSel})),
-    entrada.temExpositor && entrada.fotoExpositor && e("img",{src:entrada.fotoExpositor, alt:"Foto do expositor", className:"max-h-40 w-full rounded-lg object-cover"}));
-  var expositorOk = !entrada || !entrada.temExpositor || !!entrada.fotoExpositor;
+    temExp && entrada.fotoExpositor && e("img",{src:entrada.fotoExpositor, alt:"Foto do expositor", className:"max-h-40 w-full rounded-lg object-cover"}));
+  var expositorOk = !entrada || !temExp || !!entrada.fotoExpositor;
 
   var iniciar = function(){ d({type:"KN_ENT_INICIAR", kitId:k.id}); };
   var check = function(n){ d({type:"KN_ENT_CHECK", kitId:k.id, n:n, quem:"rep"}); setAberto(null); };

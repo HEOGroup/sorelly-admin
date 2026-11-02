@@ -202,6 +202,35 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 | **31/10 (fecha o mês)** | **1.843** | **R$ 1.438.133,61** | **R$ 780,32** | 8 acertos, R$ 7.255,90 |
 - Carregar 0, a realizar 0 (mês encerrado), **2.047 revendedoras** no fim do mês. Previstos 1.886 → 97,7% realizado.
 - Relatório da DevMaster **sem funcionários**. As compras de funcionárias ainda vão entrar (hoje não estão no faturamento do sistema).
-- Número anterior do Marcus (1.839 acertos, R$ 1.458.447,71, média R$ 793,07): guardado em `fechaMes["2026-10"].comFunc`. Atenção: a diferença de faturamento (R$ 20.314,10) cabe nas compras de funcionárias, mas os acertos vão para baixo (1.839 contra 1.843): conferir a origem com o Marcus.
+- O número anterior (1.839 acertos, R$ 1.458.447,71, média R$ 793,07) era de FILTRO ERRADO (Marcus, 01/11/2026) e foi apagado. Vale só o relatório sem funcionários.
 - Contas pagas e saldos: o admin antigo só tem até 28/10 (lido em 01/11). Quinta e sexta (29 e 30/10) ainda não foram lançados lá.
-- Código: `aplicaFechaOut` em `state/store.js` (flag `fecha10V` = 2); `fechaMes["2026-10"].fechado = true`.
+- Código: `aplicaFechaOut` em `state/store.js` (flag `fecha10V` = 3); `fechaMes["2026-10"].fechado = true`.
+
+## Abertura de novembro/2026 (Marcus, 01/11/2026)
+- 2.047 revendedoras no início, **1.975 com acerto previsto**, Carregar **0** (outubro fechou com 0).
+- Código: `aplicaAbreNov` em `state/store.js` (flag `nov26V`): grava `metaMensal["2026"][10]`, `carregarInicio["2026-11"]` e `revendedorasDiario["2026-11-01"]`.
+
+### Outubro: previsto × feito (referência para novembro)
+| Item | Valor |
+|---|---|
+| Revendedoras no início | 2.023 |
+| Previstos no início | 1.976 |
+| Previstos em 26/10 (previsão nova) | 1.886 |
+| Carregar no início / no fim | 12 / 0 |
+| Acertos feitos | 1.843 (93,3% do previsto inicial) |
+| Faturado (sem funcionários) | R$ 1.438.133,61 · média R$ 780,32 |
+| Passou para novembro | 0 acertos no Carregar |
+[SUPERADO pela regra abaixo: realização vale sobre o PREVISTO VIGENTE, não sobre o do início] Realização histórica sobre o previsto do início: jan 94,3% · fev 89,6% · mar 93,1% · abr 99,2% · mai 99,2% · jun 96,6% · jul 93,1% · ago 95,9% · set 95,8% · out 93,3% · média 95,0%.
+
+### Previsão de novembro para ficar positivo (conta feita em 01/11/2026)
+- Entra no caixa ≈ faturado × 97,1% (recebido na venda de outubro) + ≈ R$ 18.000 de acerto - loja antigo pago no mês.
+- Contas de novembro no admin: R$ 1.475.599,66 em 29/10 (cresce até o fim do mês; outubro fechou em torno de R$ 1.508.000 de contas).
+- Para empatar com contas de R$ 1,51 milhão: faturado ≈ R$ 1.537.000. Com 95% de realização (1.876 acertos), precisa de média ≈ R$ 819 (+5% sobre outubro). Cada acerto que passa para dezembro custa ≈ R$ 795 de caixa.
+
+### REGRA DO PREVISTO VIGENTE (Marcus, 01/11/2026) — vale no lugar da conta de realização sobre o previsto do início
+- O Marcus passa revendedoras para ciclo de 45 ou 60 dias durante o mês. Quem sai do mês **sai do previsto**, senão a meta do Agendamento fica injusta.
+- **Previsto vigente** = previsto do início − remarcadas para fora (45/60 dias) + entradas. A meta do setor e o % realizado contam **sobre o vigente**.
+- Outubro: início 1.976 → vigente 1.886 (90 saíram) → feitos 1.843 = **97,7% do vigente** (93,3% do início, que não mede o setor).
+- Novembro: 1.975 já é o previsto de hoje. Acertos = (1.975 − novas saídas) × ~97,7%; média +5% (R$ 819,33); entra no caixa ≈ faturado × 97,1% + R$ 18.000.
+- Com contas de R$ 1,51 milhão, o máximo que ainda pode sair de novembro sem ficar negativo: média +3% → ~18 acertos · +5% → ~55 · +7% → ~91. Cada acerto que sai custa ≈ R$ 795 de caixa no mês.
+- Pendente: caixa no mês que recebe os que saíram (dezembro, janeiro); fonte das saídas (remarcação do Agendamento ou data prevista da DevMaster).

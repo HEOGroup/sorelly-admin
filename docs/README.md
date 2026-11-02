@@ -2,7 +2,7 @@
 
 Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O código explica o *como*; aqui fica o *porquê*.
 
-**Para olhar tudo de uma vez:** abra [`Painel de documentos.html`](Painel%20de%20documentos.html) (abas por setor, nomes em português). O que falta organizar e em que ordem: [`PLANO-DE-ORGANIZACAO.md`](PLANO-DE-ORGANIZACAO.md). Como ler os nomes dos arquivos: [`COMO-LER-OS-NOMES.md`](COMO-LER-OS-NOMES.md).
+**Para olhar tudo de uma vez:** abra [`Painel de documentos.html`](Painel%20de%20documentos.html) (setores na lateral, leitura do documento já formatado e busca em todos os documentos). Mudou algum documento? Rode `node scripts/gerar-painel-documentos.mjs` para atualizar o painel. O que falta organizar e em que ordem: [`PLANO-DE-ORGANIZACAO.md`](PLANO-DE-ORGANIZACAO.md). Como ler os nomes dos arquivos: [`COMO-LER-OS-NOMES.md`](COMO-LER-OS-NOMES.md).
 
 | Pasta / arquivo | O que tem |
 |---|---|

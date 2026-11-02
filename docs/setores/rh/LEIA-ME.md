@@ -1,44 +1,73 @@
-# RH (Recursos Humanos)
+# Setor RH (Recursos Humanos)
 
-> Resumo do setor, atualizado em 02/11/2026. Fontes: `CLAUDE.md`, `docs/negocio/FLUXO-DA-EMPRESA.md` e `docs/negocio/INTEGRACAO-ENTRE-SETORES.md`. "(a confirmar)" = falta confirmar com o Marcus. Ao falar deste setor, o Claude lê este arquivo primeiro.
+Resumo para ler primeiro. Para o detalhe: `decisoes.md` (o que o Marcus decidiu, 33 itens), `pendencias.md` (o que está aberto, 2 itens) e `pessoas.local.md` (ficha de cada pessoa, fora do Git). "(a confirmar)" = falta confirmar com o Marcus.
 
 ## 1. O que o setor faz
 Cuida do quadro de pessoas, presença diária, horas extras, advertências, experiência, contratos e dos acessos e autorizações de cada setor.
 
+```
+Todos os setores (pessoas, presença)
+      │
+      ▼
+RH
+      │
+      ▼
+Todos (acessos por setor); Financeiro (comissões e folha)
+```
+
 ## 2. Quem
-- **Líder:** Maria Claudia
-- **Pessoas:** 2 na planilha do RH (RH). Nomes e dados de cada uma: `docs/setores/rh/pessoas.local.md` (só neste PC).
+| Quem | Papel |
+|---|---|
+| Maria Claudia | Líder do setor |
+| Maria F. | Supervisora de rh (1) |
+| Ana F. | Assistente administrativo (1) |
 
-## 3. Telas no sistema
-- Funcionários e representantes (só leitura)
-- Controle de RH: visão geral, presença diária, relatório para o WhatsApp, colaboradores, advertências, experiência, horas extras, configurador (`pages/RH.js`)
-- Contratos (representantes, CLT, terceiros, particulares do Marcus, modelos)
-- Acessos e autorizações (quem vê o quê, quem pode fazer o quê)
-- Equipes
+## 3. Regras que valem
+| # | Regra |
+|---|---|
+| 1 | Acesso é por setor, nunca por pessoa. |
+| 2 | CPF e salário: só a diretoria (e quem tem acesso total). |
+| 3 | Dados reais só em arquivos .local (repositório público). |
+| 4 | O sistema novo é a fonte dos horários (29/10/2026). |
 
-## 4. Integração com outros setores
-- **Recebe de:** Todos os setores (pessoas, presença)
-- **Entrega para:** Todos (acessos por setor); Financeiro (comissões e folha)
-- Mapa completo: `docs/negocio/INTEGRACAO-ENTRE-SETORES.md`
+## 4. Onde ficam as coisas
+| O quê | Onde |
+|---|---|
+| Visão geral | `/recursos-humanos/rh` |
+| Presença diária | `/recursos-humanos/rh-presenca` |
+| Relatório diário | `/recursos-humanos/rh-relatorio` |
+| Colaboradores | `/recursos-humanos/rh-colaboradores` |
+| Controle de experiência | `/recursos-humanos/rh-experiencia` |
+| Advertências | `/recursos-humanos/rh-advertencias` |
+| Horas extras | `/recursos-humanos/rh-horas-extras` |
+| Solicitações | `/recursos-humanos/rh-solicitacoes` |
+| Negociações | `/recursos-humanos/rh-negociacoes` |
+| Escala 42h | `/recursos-humanos/rh-escala-42h` |
+| Representantes | `/recursos-humanos/rh-contratos-representantes` |
+| Funcionários (CLT) | `/recursos-humanos/rh-contratos-funcionarios` |
+| Terceiros | `/recursos-humanos/rh-contratos-terceiros` |
+| Crédito bancário | `/recursos-humanos/rh-contratos-credito` |
+| Aluguéis | `/recursos-humanos/rh-contratos-alugueis` |
+| Consórcios | `/recursos-humanos/rh-contratos-consorcios` |
+| Particulares do Marcus | `/recursos-humanos/rh-contratos-marcus` |
+| Modelos de contrato | `/recursos-humanos/rh-contratos-modelos` |
+| Funcionários e representantes | `/recursos-humanos/funcionarios-e-representantes` |
+| Equipes | `/recursos-humanos/equipes` |
+| Acessos e autorizações | `/recursos-humanos/acessos-por-setor` |
+| Configurador | `/recursos-humanos/rh-configurador` |
+| pessoas | `docs/setores/rh/pessoas.local.md` |
+| Acessos e contas (28/10) | `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md` |
+| Fluxo da empresa | `docs/negocio/FLUXO-DA-EMPRESA.md` |
+| Pessoas (dados reais) | `docs/setores/rh/pessoas.local.md` (só neste PC) |
+| Integração com os outros setores | `docs/negocio/INTEGRACAO-ENTRE-SETORES.md` |
 
-## 5. Regras que valem
-- Acesso é por setor, nunca por pessoa.
-- CPF e salário: só a diretoria (e quem tem acesso total).
-- Dados reais só em arquivos .local (repositório público).
-- O sistema novo é a fonte dos horários (29/10/2026).
+Código das telas: `pages/RH.js`, `pages/RHSolicitacoes.js`, `pages/RHEscala42.js`, `pages/RHContratos.js`, `pages/Pessoas.js`, `pages/Equipes.js`, `pages/AcessosAutorizacoes.js`.
 
-## 6. Documentos do setor
-- `docs/setores/rh/pessoas.local.md`  (uma linha por funcionário, só neste PC)
-- `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md`
-- `docs/negocio/FLUXO-DA-EMPRESA.md`
-
-## 7. Em aberto (principais)
+## 5. Em aberto (principais)
 - Faltam 23 logins (Produção 16 + 7).
 - Trazer os dados reais do admin antigo (presença, advertências, contratos).
 - Banco de cada funcionário não existe nos dados.
-- Lista completa tirada do diário: `pendencias.md` desta pasta (2 itens, a conferir).
+- Lista completa: `pendencias.md` desta pasta (2 itens, a revisar com o Marcus).
 
-## 8. Arquivos desta pasta
-- `decisoes.md`: 11 decisões copiadas do diário geral.
-- `pendencias.md`: o que o diário diz que falta.
-- `pessoas.local.md`: uma linha por funcionário (só neste PC).
+## 6. Regra de trabalho
+Mudou uma regra? Atualize (1) o sistema, (2) `decisoes.md` desta pasta e o diário geral, no mesmo dia, (3) o painel: `node scripts/gerar-painel-documentos.mjs`.

@@ -76,7 +76,7 @@ function AbaRegrasRepresentantes(){
       bloco("Combustível e quilometragem","caminhao","A representante informa o km total do período no app e a Sorelly paga o combustível pelo preço médio da gasolina.",[
         e("div",{key:"l"}, passos([
           e(React.Fragment,null,"Quem informa o combustível é a representante, no app, em cada pagamento, ",v("até as "+hora+" do último dia de acertos"),"."),
-          e(React.Fragment,null,"Sem o km no prazo, o combustível pago é só o valor fixo de ",v(reais(c.combSemEnvio)),"."),
+          "Só tem combustível quem teve acerto no período. Sem o km no prazo, o combustível daquele período é pago só na próxima data.",
           e(React.Fragment,null,"A Sorelly paga ",v(c.kmPorLitro+" km por litro"),". Cálculo: km rodados ÷ "+c.kmPorLitro+" × preço do litro. Ex.: 110 km = 10 litros × R$ 6,78 = R$ 67,80."),
           "O preço do litro é a média de revenda da gasolina comum no Paraná, do levantamento semanal da ANP. Quem paga a comissão atualiza o valor sempre que for pagar.",
           "Em Comissões, cada representante tem a média de km por atendimento, comparada com a média de todas."]))]),
@@ -88,6 +88,8 @@ function AbaRegrasRepresentantes(){
         e("div",{key:"l"}, passos([
           e(React.Fragment,null,"Kit novo: ",v(reais(c.kitNovo)),", ou ",v(reais(c.kitNovoExpo))," com expositor ",e("span",{className:"text-warning"},"(valores provisórios)"),"."),
           "Só libera com o termo assinado da revendedora (assinatura no app ou check manual do agendamento).",
+          "Com expositor, a representante monta o expositor e envia a foto no app. Sem a foto, a comissão fica pendente.",
+          "Acerto + kit (renovação) paga só a comissão do acerto. O valor do kit novo é só da entrega de kit novo.",
           e(React.Fragment,null,"Reposição entregue: ",v(reais(c.reposicao||0))," por entrega, descrita como comissão. A representante entrega a ",v("condicional assinada")," (como no kit novo) e ela já sobe nas condicionais da revendedora.")]))]),
       (DIRETORIA.some(function(x){ return x.id===s.usuario; }) ? e(NegociacaoPix,{key:"neg", s:s, d:d}) : null),
       bloco("Compras de joias","gem","A representante também pode comprar joias da Sorelly.",[

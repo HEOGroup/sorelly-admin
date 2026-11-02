@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
 import { consulta, pool } from "../src/server/db.js";
-import { NOMES, COLAB, PRES_INI, PRES, ATRASOS, ADV, HE, TIPOS_HE, PCT_HE, MOTIVOS, PLANOS, FERIADOS } from "./rh-antigo.local.mjs";
+import { NOMES, COLAB, PRES_INI, PRES, ATRASOS, ADV, HE, TIPOS_HE, PCT_HE, MOTIVOS, PLANOS, FERIADOS, CARGOS, CARGA, AFAST } from "./rh-antigo.local.mjs";
 
 const aplicar = process.argv.includes("--aplicar");
 const norm = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -60,6 +60,9 @@ let nFer = 0; for (const [data, nome, cnpj] of FERIADOS) if (!cfg.feriados.some(
 
 // ---------- colaboradores: só preenche o que está vazio ----------
 const TIPO_DESLIG = { "Pedido do colaborador": "Pedido de demissão", "Fim de contrato de experiência": "Término de contrato" };
+const cargos = {}; CARGOS.split("|").forEach((x) => { const i = x.indexOf("="); cargos[+x.slice(0, i)] = x.slice(i + 1); });
+const carga = {}; CARGA.split("|").forEach((x) => { const [k, v] = x.split("="); carga[+k] = Number(v); });
+const somaHora = (hhmm, h) => { const [a, b] = hhmm.split(":").map(Number); const t = a * 60 + b + Math.round((h + 1) * 60); return String(Math.floor(t / 60) % 24).padStart(2, "0") + ":" + String(t % 60).padStart(2, "0"); };   // saída = entrada + carga + 1 h de almoço
 let nColab = 0;
 for (const n of Object.keys(dados)) {
   const d = dados[n], id = idDe[n], o = rh.colab[id] = rh.colab[id] || {}, antes = JSON.stringify(o);
@@ -70,9 +73,12 @@ for (const n of Object.keys(dados)) {
   if (vazio(o.escalaId)) o.escalaId = escalaId(d.esc);
   if (vazio(o.planoId) && d.plano) o.planoId = planoId(d.plano);
   if (vazio(o.efetivadoEm) && d.efet) o.efetivadoEm = d.efet;
+  if (vazio(o.funcao) && cargos[n]) o.funcao = cargos[n];
+  if (vazio(o.saida) && carga[n] && d.ent) o.saida = somaHora(d.ent, carga[n]);
   const semStatus = vazio(o.status) || (o.status === "ATIVO" && !o.deslig && !o.ferias && !o.afastamento);
   if (semStatus && d.st === "DESLIGADO") { o.status = "DESLIGADO"; o.deslig = { data: d.dd, tipo: TIPO_DESLIG[d.dt] || d.dt || "Outro", motivo: d.dm || "—", obs: "" }; o.desligPor = o.desligPor || "Importado do admin antigo"; o.ferias = null; o.afastamento = ""; }
-  else if (semStatus && d.st === "AFASTADO") { o.status = "AFASTADO"; o.afastamento = "Afastado (informado no admin antigo; o RH confirma o motivo)"; o.deslig = null; o.ferias = null; }
+  else if (semStatus && d.st === "AFASTADO") { o.status = "AFASTADO"; o.afastamento = AFAST[n] || "Afastada (informado no admin antigo)"; o.deslig = null; o.ferias = null; }
+  if (o.status === "AFASTADO" && AFAST[n] && /^Afastad[oa] \(informad/.test(o.afastamento || "")) o.afastamento = AFAST[n];   // troca o texto provisório pelo motivo do antigo
   if (JSON.stringify(o) !== antes) nColab++;
 }
 

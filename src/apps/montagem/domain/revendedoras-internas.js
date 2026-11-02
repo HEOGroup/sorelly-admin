@@ -210,14 +210,18 @@ function mensagemRegras(r, origem){
 var CAP_HORA = 3;
 var HORAS_AGENDA = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
 function diaDaSemana(iso){ return parteData(iso).getDay(); }
-function horasDoDia(iso){ var w = diaDaSemana(iso); return w===0 ? [] : w===6 ? HORAS_AGENDA.slice(0,3) : HORAS_AGENDA; }
-function capacidadeDia(iso){ var w = diaDaSemana(iso); return w===0 ? 0 : w===6 ? 9 : 15; }
+// Feriados (Deysiane, 01/11/2026): vêm do RH (config.feriados) e fecham a agenda como o domingo. App.js chama definirFeriadosAgenda a cada mudança do RH.
+var FERIADOS_AG = {};
+function definirFeriadosAgenda(lista){ var m = {}; (lista||[]).forEach(function(f){ if(f && f.data) m[f.data] = f.nome || "Feriado"; }); FERIADOS_AG = m; }
+function feriadoDe(iso){ return FERIADOS_AG[iso] || ""; }
+function horasDoDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe(iso) ? [] : w===6 ? HORAS_AGENDA.slice(0,3) : HORAS_AGENDA; }
+function capacidadeDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe(iso) ? 0 : w===6 ? 9 : 15; }
 // marcadas num dia: [{r, hora}] vindas de r.agend (dia e hora marcados na revendedora)
 function marcadasDoDia(lista, iso){ return (lista||[]).filter(function(r){ return r.agend && r.agend.data===iso; }).map(function(r){ return {r:r, hora:r.agend.hora}; }); }
 function vagasDoDia(lista, iso){ return capacidadeDia(iso) - marcadasDoDia(lista, iso).length; }
 // pode marcar naquele dia e horário? Devolve "" se pode, ou o motivo de não poder. "ignorarId" = a própria revendedora (remarcar o mesmo horário não conta duas vezes)
 function motivoNaoMarcar(lista, iso, hora, ignorarId){
-  var w = diaDaSemana(iso); if(w===0) return "Domingo: sem atendimento.";
+  var w = diaDaSemana(iso); if(feriadoDe(iso)) return "Feriado ("+feriadoDe(iso)+"): sem atendimento."; if(w===0) return "Domingo: sem atendimento.";
   if(horasDoDia(iso).indexOf(hora)<0) return w===6 ? "Sábado só marca até as 11h." : "Horário fora do atendimento.";
   var outros = marcadasDoDia((lista||[]).filter(function(r){ return r.id!==ignorarId; }), iso);
   if(outros.length>=capacidadeDia(iso)) return "Dia lotado ("+capacidadeDia(iso)+" marcadas).";
@@ -246,4 +250,4 @@ function agendaHojeDemo(lista, hojeIso, versaoId, agora){
   return itens;
 }
 
-export { CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo };
+export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo };

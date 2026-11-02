@@ -16,7 +16,7 @@ function useContasDm(logado, dispatch){
         definirContasServidor(r);
         dispatch({type:"CONTAS_DM", diario:r.diario || {}});
         setTick(function(n){ return n+1; });   // refaz a tela com a lista nova
-      }).catch(function(x){ if(/Só o Financeiro/.test(x.message||"")) parado = true; });
+      }).catch(function(x){ if(/Só o Financeiro/.test(x.message||"")) parado = true; else if(vivo) setTimeout(buscar, 15000); });   // falhou (rede, servidor ocupado): tenta de novo em 15 s, sem esperar os 10 min (02/11/2026: senão a tela ficava com números antigos)
     };
     buscar(); var iv = setInterval(buscar, 600000);
     return function(){ vivo = false; clearInterval(iv); };

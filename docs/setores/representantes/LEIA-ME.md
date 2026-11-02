@@ -29,12 +29,14 @@ Agendamento confere dinheiro e condicional ─► Financeiro confirma ─► Com
 | Percentual de cada uma | Existe um padrão (8%) e um percentual por representante, em "Configurar comissões". Algumas recebem 10%. **As representantes veem sempre 8%** (manual, Regras, telas). |
 | Liberação | Agendamento confere, nota promissória assinada, financeiro confirma. |
 | Datas | Grupo A: dias 1, 11 e 21. Grupo B: dias 6, 16 e 26. Corte às 13h do dia anterior. |
-| Kit novo | R$ 20,00 (R$ 35,00 com expositor). Provisório. Só com termo e condicional assinados. |
+| Kit novo | R$ 20,00. Com expositor, R$ 35,00: a representante monta o expositor e envia a foto no app (sem foto, fica pendente). Só com termo e condicional assinados. Acerto + kit paga só a comissão do acerto. |
 | Reposição | R$ 15,00 por entrega, com condicional assinada. |
-| Combustível | km total ÷ 11 × preço do litro (gasolina comum, Paraná). Sem km no prazo: R$ 200,00. |
+| Compras de joias | Descontam da comissão (decidido em 02/11, ainda não está no sistema): parcela mínima R$ 50,00, dívida em aberto máxima R$ 1.000,00, última comissão desconta o que faltar. Detalhe no diário. |
+| Combustível | km total ÷ 11 × preço do litro (gasolina comum, Paraná). Só para quem teve acerto no período, inclusive representante que também é funcionária. A representante envia o km até o corte (13h do dia anterior). Sem km no prazo, não paga naquela data; se enviar depois, é pago na próxima data. Não existe mais o valor fixo de R$ 200,00. |
 | Pix direto | É só uma forma de pagar a representante. Não muda a comissão. |
 | Bônus | Representante não tem bônus. |
 | Acerto com loja | Não é pagamento. Sem comissão, fica em aberto. |
+| Representante que sai | A comissão retida (parte que a revendedora não pagou) não é paga. Decidido em 02/11; ainda não está no sistema. |
 
 ## 4. Onde ficam as coisas
 | O quê | Onde |
@@ -42,7 +44,7 @@ Agendamento confere dinheiro e condicional ─► Financeiro confirma ─► Com
 | Regras (leitura) | `/representantes-kits/regras-representantes` |
 | Mudar percentual, datas, reposição, kit novo | Comissões → botão "Configurar comissões" |
 | App da representante | `/app-representante` (cartão "Regras e comissões" = manual) |
-| Manual da representante | `materiais-do-app/folder-representantes.html` (origem), `materiais-do-app/Regras & Comissões Representante 28-10.pdf`, `public/regras/rep-1..12.png` |
+| Manual da representante | `materiais-do-app/folder-representantes.html` (origem), `materiais-do-app/Regras & Comissões Representante 02-11.pdf`, `public/regras/rep-1..12.png` |
 | Regiões, horários e viagens | `docs/setores/representantes/Mapa das representantes.md` |
 | Contexto antigo (comissão, Consolidado, placar) | `docs/negocio/CONTEXTO-REPRESENTANTES.md` |
 | Regras de Pix | `docs/negocio/REGRAS-DE-PIX.md` |
