@@ -1,5 +1,6 @@
 // Sorelly Admin · montagem — domain/aulas.js
 // "Aulas do setor" (02/11/2026, pedido do Marcus): curso de cada setor, no fim do menu. Cada pessoa vê só as aulas do próprio setor; quem é responsável por mais de um setor vê os dois.
+// REGRA DO VÍDEO (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral + barra de cima + conteúdo), começa no Início e o cursor clica em cada passo até chegar ao local. Nunca só a aba.
 // Lista de setores e aulas ficam AQUI (catálogo). Aula nova = uma linha em AULAS (vídeo ou demonstração animada em public/tutoriais). O que a pessoa já assistiu fica neste navegador (localStorage).
 // Quem vê o quê: Direção (grupo supervisão ou família) vê tudo; os demais veem o setor do RH em que estão + os setores extras de EXTRA_POR_PESSOA + as aulas "Para todos".
 import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
@@ -32,7 +33,7 @@ var EXTRA_POR_PESSOA = {11: ["montagem", "bipagem", "condicionais", "producao"]}
 
 // Aulas. setores = em quais cursos aparece. modulo = grupo dentro do curso. video = arquivo de vídeo (opcional); url = demonstração animada (opcional).
 var AULAS = [
-  {id:"rh-pedir-mudanca", setores:["rh", "montagem", "bipagem", "producao", "condicionais", "atendimento", "encomendas", "agendamento"], modulo:"Fluxos", titulo:"Pedir ao RH a mudança de uma colaboradora", dur:"0:46",
+  {id:"rh-pedir-mudanca", setores:["rh", "montagem", "bipagem", "producao", "condicionais", "atendimento", "encomendas", "agendamento"], modulo:"Fluxos", titulo:"Pedir ao RH a mudança de uma colaboradora", dur:"0:58",
    url:"/tutoriais/pedir-mudanca-video.html", video:"/tutoriais/videos/pedir-mudanca.webm",
    passos:["Abra Recursos Humanos → Solicitações.", "Escolha a colaboradora.", "Escolha o que muda (setor, função, escala ou horário) e o novo valor.", "Escreva o motivo.", "Clique em Enviar ao RH.", "Espere a resposta do RH: Aprovada ou Recusada."]}
 ];
