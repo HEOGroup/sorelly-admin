@@ -35,7 +35,10 @@ var EXTRA_POR_PESSOA = {11: ["montagem", "bipagem", "condicionais", "producao"]}
 var AULAS = [
   {id:"rh-pedir-mudanca", setores:["rh", "montagem", "bipagem", "producao", "condicionais", "atendimento", "encomendas", "agendamento"], modulo:"Fluxos", titulo:"Pedir ao RH a mudança de uma colaboradora", dur:"0:58",
    url:"/tutoriais/pedir-mudanca-video.html", video:"/tutoriais/videos/pedir-mudanca.webm",
-   passos:["Abra Recursos Humanos → Solicitações.", "Escolha a colaboradora.", "Escolha o que muda (setor, função, escala ou horário) e o novo valor.", "Escreva o motivo.", "Clique em Enviar ao RH.", "Espere a resposta do RH: Aprovada ou Recusada."]}
+   passos:["Abra Recursos Humanos → Solicitações.", "Escolha a colaboradora.", "Escolha o que muda (setor, função, escala ou horário) e o novo valor.", "Escreva o motivo.", "Clique em Enviar ao RH.", "Espere a resposta do RH: Aprovada ou Recusada."]},
+  {id:"rh-presenca-dia", setores:["rh"], modulo:"Presença", titulo:"Lançar a presença do dia", dur:"1:02",
+   url:"/tutoriais/presenca-diaria-video.html", video:"/tutoriais/videos/presenca-diaria.webm",
+   passos:["Abra Recursos Humanos → Presença.", "Fique em Visão do dia.", "Clique em Marcar todos como presentes.", "Marque só quem faltou: F (falta sem justificativa), AJ (falta com aviso), AT (atestado).", "Clique de novo no mesmo código para tirar a marca.", "Use o filtro Todas as ocorrências para ver só quem faltou."]}
 ];
 
 var norm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };

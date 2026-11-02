@@ -1472,3 +1472,5 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - Todo vídeo-aula mostra a TELA INTEIRA do sistema (menu lateral, barra de cima e conteúdo), nunca só a aba.
 - O vídeo começa no Início (tela neutra) e o cursor clica em cada passo até chegar ao local, e só então executa. Assim a pessoa se localiza.
 - Vídeo "Pedir ao RH a mudança de uma colaboradora" refeito assim (58 s, 1280x720). Fonte: `public/tutoriais/pedir-mudanca-video.html` (`?gravar=1` esconde o botão); gravado com Playwright.
+
+- Aula 2 (02/11/2026): "Lançar a presença do dia" (RH › Presença), gravada com a tela inteira do sistema, começando no Início. Dados do vídeo são de exemplo. Fonte: `public/tutoriais/presenca-diaria-video.html`.
