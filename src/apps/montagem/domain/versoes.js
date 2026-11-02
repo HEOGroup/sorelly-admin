@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.21", data:"2026-11-02", titulo:"Resultado do mês: novembro com a previsão nos dois quadros", itens:[
+    {tipo:"correção", area:"Resultado do mês", txt:"No mês em andamento, o Total de contas a pagar passou a ser o MAIOR entre a DevMaster e o admin antigo (as contas do mês ainda estão sendo lançadas), como já era nos meses seguintes. Novembro mostrava só R$ 2.000,00 a pagar; agora R$ 1.470.572,51."},
+    {tipo:"melhoria", area:"Resultado do mês", txt:"Os quadros Faturamento e Receber do mês em andamento trazem Mais: falta entrar até o fim do mês (previsão), Entrada total prevista, Total de contas a pagar e o Resultado previsto do mês, iguais à aba Previsão."}
+  ]},
  {v:"0.18.20", data:"2026-11-02", titulo:"Resultado do mês: Contas a pagar nos dois quadros", itens:[
     {tipo:"melhoria", area:"Resultado do mês", txt:"Os quadros Faturamento e Receber agora trazem as Contas a pagar escritas (já pago, falta pagar e Total de contas a pagar do mês) e o Resultado do mês: faturamento menos contas a pagar, e esperado entrar menos contas a pagar."},
     {tipo:"correção", area:"Contas a pagar", txt:"Se a leitura da DevMaster falhar ao abrir o sistema, ele tenta de novo em 15 segundos (antes esperava 10 minutos e a tela ficava com números antigos). Quando a DevMaster ainda não carregou, a tela avisa que o valor é do admin antigo."}
