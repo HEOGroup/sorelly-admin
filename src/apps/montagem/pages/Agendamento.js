@@ -208,7 +208,7 @@ function AbaAgReps(){
     e("div",{className:"flex flex-wrap items-center gap-1.5"},
       e(Segmentado,{opcoes:[["sep","Separado"], ["junto","Junto"]], atual:junto, onMudar:setJunto}),
       e("span",{className:"flex-1"}),
-      auto.msg && e("span",{className:"truncate text-[13px] text-foreground", title:auto.msg}, auto.msg),
+      auto.msg && e("span",{className:"text-[13px] text-foreground", title:auto.msg}, auto.msg),
       c.gerente && !fechado && apiAtiva() && e(Botao,{desabilitado:auto.busy, onClick:function(){ refSinc.current(); }}, auto.busy ? "Buscando…" : "Atualizar da DevMaster")),
     p.alertaConciliacao && e("p",{className:"text-[13px] text-warning"}, "Soma das cotas ("+int(p.somaCotas)+") diferente do previsto vigente ("+int(p.previstos)+"): "+int(Math.abs(p.somaCotas-p.previstos))+" de diferença."),
     e("div",{className:"grid grid-cols-1 gap-3 lg:grid-cols-2"},

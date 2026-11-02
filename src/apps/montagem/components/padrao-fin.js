@@ -117,8 +117,8 @@ function BotaoRemover(p){
 }
 // TabelaSimples + CabSimples + TdSimples: a tabela da calculadora (cabeçalho em caixa alta, linhas soltas). Uso: e(TabelaSimples, {cols:[{t:"Nº", w:"20%"}, {t:"Valor", r:true}]}, linhas com TdSimples)
 // OBS.: ainda NÃO é a TabelaP (cabeçalho 30 px / linhas 32 px). Unir as duas muda o visual e fica para depois, com o Marcus.
-function CabSimples(p){ return e("th",{className:"px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground "+(p.r ? "text-right" : "text-left"), style:p.w ? {width:p.w} : undefined}, p.children); }
-function TdSimples(p){ return e("td",{className:"px-2 py-1.5 align-middle "+(p.r ? "text-right" : "text-left")+" "+(p.className||"")}, p.children); }
+function CabSimples(p){ return e("th",{className:"px-2 py-2 text-[13px] font-semibold uppercase tracking-wide text-muted-foreground "+"text-center", style:p.w ? {width:p.w} : undefined}, p.children); }
+function TdSimples(p){ return e("td",{className:"px-2 py-1.5 align-middle text-center "+(p.className||"")}, p.children); }
 function TabelaSimples(p){
   return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
     e("table",{className:"w-full table-fixed border-collapse text-sm"},

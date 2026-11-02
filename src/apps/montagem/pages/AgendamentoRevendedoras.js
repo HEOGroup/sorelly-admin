@@ -9,6 +9,7 @@
 import { CalendarioAcertos } from "@/apps/montagem/components/calendario-acertos";
 import { diaEfetivo, redistribuirContagem } from "@/apps/montagem/domain/feriados";
 import { MenuFiltro, ordenar, passaFiltro } from "@/apps/montagem/components/filtro-planilha";
+import { TabelaOuro } from "@/apps/montagem/components/tabela-ouro";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { nomeProprio } from "@/apps/montagem/domain/agendamento";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
@@ -35,7 +36,7 @@ var curto = function(nome){ var p = String(nome||"").split(/\s+/).filter(functio
 var dBR = function(iso){ return iso ? fmtDataBR(iso).slice(0,5) : "—"; };
 // último caso da revendedora (campo Obs. gerais da condicional na DevMaster): "26/10 Tamara: kit sem mexer…"; na tabela vai cortado, o texto inteiro fica no card e no title
 var casoTexto = function(r){ return r.caso ? dBR(r.caso.iso)+" "+(r.caso.quem ? r.caso.quem+": " : "")+r.caso.txt : ""; };
-var casoCurto = function(r){ var x = casoTexto(r); return !x ? "—" : x.length>70 ? x.slice(0, 69)+"…" : x; };
+var casoCurto = function(r){ var x = casoTexto(r); return !x ? "—" : x; };
 var foneBonito = function(cel){ var n = String(cel||"").replace(/\D/g,"").replace(/^55/,""); return n.length===11 ? "("+n.slice(0,2)+") "+n.slice(2,7)+"-"+n.slice(7) : n.length===10 ? "("+n.slice(0,2)+") "+n.slice(2,6)+"-"+n.slice(6) : n; };
 var linkZap = function(cel){ var n = String(cel||"").replace(/\D/g,""); return n ? "https://wa.me/"+(n.length<=11 ? "55"+n : n) : ""; };
 var segundaDe = function(dt){ var x = new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()); x.setDate(x.getDate()-((x.getDay()+6)%7)); return x; };
@@ -171,21 +172,19 @@ function TabelaRevendedoras(p){
   var TC = "h-8 whitespace-nowrap border-b border-border px-2.5 text-center text-[13px] ";
   return e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"overflow-x-auto rounded-lg border border-border"},
-      e("table",{className:"border-collapse text-[13px]", style:{tableLayout:"fixed", width:soma, minWidth:"100%"}},
-        e("colgroup",null, COLUNAS.map(function(c){ return e("col",{key:c.k, style:{width:larg[c.k]}}); })),
-        e("thead",null, e("tr",{style:BARRA_OURO}, COLUNAS.map(function(c){ var tem = c.tipo!=="seq" && c.tipo!=="din", on = ativo(c);
+      e(TabelaOuro,{largura:soma, colunas:COLUNAS.map(function(c){ return larg[c.k]; }), topo:COLUNAS.map(function(c){ var tem = c.tipo!=="seq" && c.tipo!=="din", on = ativo(c);
           return e("th",{key:c.k, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0"},
             e("span",{className:"inline-flex items-center justify-center gap-1.5"}, c.t, ord && ord.k===c.k && e("span",{"aria-hidden":true}, ord.dir==="asc" ? "↑" : "↓"),
               tem && e("button",{type:"button", "aria-label":"Filtro de "+c.t, title:"Classificar e filtrar "+c.t, onClick:function(ev){ abrirPop(c, ev); }, className:"inline-grid size-6 place-items-center rounded hover:bg-black/15 "+(on ? "bg-black/20" : "")},
                 e("svg",{width:14, height:14, viewBox:"0 0 24 24", fill:on ? "currentColor" : "none", stroke:"currentColor", strokeWidth:2.4, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M3 4h18l-7 8.5V20l-4-2v-5.5L3 4z"})))),
-              c.tipo==="seq" && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar")); }))),
+              c.tipo==="seq" && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar")); })},
         e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"h-8 px-2.5 text-center text-[13px]"}, p.total===0 ? (p.carregando ? "Carregando da DevMaster…" : "Nenhuma revendedora ainda. Clique em Atualizar da DevMaster.") : "Nenhuma revendedora com esses filtros."))
           : linhas.slice(0, p.limite).map(function(r, i){
               var dd = diasEntre(hoje, r.prev), sel = r.prev===p.dia && p.soDia;
               return e("tr",{key:r.cod, onClick:function(){ p.abrir(r.cod); }, title:"Clique para abrir o card de "+r.nome, className:"cursor-pointer hover:bg-white/10 "+(sel ? "bg-primary/10" : "")},
                 e("td",{className:TC+"tabular-nums", style:dd<0 ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:TC+"font-semibold", title:r.nome}, r.nome, seloDif(r, "nome")), e("td",{className:TC+"tabular-nums"}, foneBonito(r.celular) || "—", seloDif(r, "celular")), e("td",{className:TC+"tabular-nums"}, r.cod),
-                e("td",{className:TC+"text-left", title:r.representante}, r.representante, seloDif(r, "representante")),
-                e("td",{className:TC+"text-left"}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—", seloDif(r, "cidade"), seloDif(r, "uf")), e("td",{className:TC+"tabular-nums"}, r.kits),
+                e("td",{className:TC, title:r.representante}, r.representante, seloDif(r, "representante")),
+                e("td",{className:TC}, r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—", seloDif(r, "cidade"), seloDif(r, "uf")), e("td",{className:TC+"tabular-nums"}, r.kits),
                 e("td",{className:TC+"tabular-nums"}, dBR(r.emissao)), e("td",{className:TC+"font-semibold tabular-nums"}, dBR(r.prev), seloDif(r, "prev")),
                 e("td",{className:TC+"tabular-nums "+(dd<0 ? "text-destructive" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"), e("td",{className:TC, title:casoTexto(r) || undefined}, casoCurto(r)), e("td",{className:TC+"tabular-nums"}, BRL(r.valor))); })))),
     pop && cPop && e(MenuFiltro,{key:cPop.k, col:cPop, f:fil[cPop.k] || null, top:pop.top, left:pop.left, valores:valoresDaColuna(p.todasLinhas, cPop, hoje), sort:ord && ord.k===cPop.k ? ord.dir : null, onClose:function(){ setPop(null); },
@@ -196,7 +195,7 @@ function TabelaRevendedoras(p){
 
 // ── Terceiro bloco ao lado do calendário: números da lista (já com os filtros das colunas) e o botão de atualizar
 function BlocoNumeros(p){
-  var linha = function(rot, v, cor, dica){ return e("div",{key:rot, title:dica||null, className:"flex h-8 items-center justify-between gap-2 border-b border-border px-1 text-[13px] last:border-b-0"}, e("span",{className:"truncate"}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
+  var linha = function(rot, v, cor, dica){ return e("div",{key:rot, title:dica||null, className:"flex h-8 items-center justify-between gap-2 border-b border-border px-1 text-[13px] last:border-b-0"}, e("span",{className:""}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
   return e("div",{className:"flex h-full flex-col gap-2 rounded-xl border bg-[#131315] p-2 "+BORDA},
     e("div",{className:"flex min-h-0 flex-1 flex-col overflow-y-auto"},
       linha("Revendedoras", p.total.toLocaleString("pt-BR")+(p.filtrando ? " de "+p.todas.toLocaleString("pt-BR") : ""), "text-primary", "Com kit ativo"),
@@ -204,7 +203,7 @@ function BlocoNumeros(p){
       linha("Datas a confirmar", p.aConfirmar, p.aConfirmar ? "text-warning" : "", "Datas que mudaram na DevMaster desde a foto e esperam o Marcus dizer quem mudou"),
       linha("Diferentes da DevMaster", p.alteradas, p.alteradas ? "text-warning" : "", "Alteradas aqui e ainda diferentes da DevMaster: altere lá também ou volte para o da DevMaster")),
     e(Botao,{desabilitado:p.carregando, onClick:p.atualizar, title:"Busca de novo na DevMaster (a tela se atualiza sozinha a cada 10 minutos)"}, "Atualizar da DevMaster"),
-    (p.msg || p.carregando) && e("span",{className:"truncate text-[13px]", title:p.msg}, p.carregando && !p.msg ? "Carregando da DevMaster…" : p.msg));
+    (p.msg || p.carregando) && e("span",{className:"text-[13px]", title:p.msg}, p.carregando && !p.msg ? "Carregando da DevMaster…" : p.msg));
 }
 
 // ── CARD da revendedora (Marcus, 01/11/2026): compacto e para LER de uma vez. Tudo vem da DevMaster e é só leitura (nome, WhatsApp, representante, cidade);
@@ -222,7 +221,7 @@ function CartaoRevendedora(p){
     if((data||"")===(r.dm.prev||"")){ delete campos.prev; delete dm.prev; } else { campos.prev = data||""; dm.prev = r.dm.prev||""; }   // voltou ao valor da DevMaster: não guarda nada
     p.salvar(r, {campos:campos, dm:dm, historico:[{em:agora, por:eu, campo:cPrev.rot, k:"prev", de:r.prev||"", para:data||"", motivo:motivo}].concat(historico).slice(0, 80)});
   };
-  var info = function(rot, v){ return e("div",{className:"min-w-0"}, e("div",{className:ROTULO}, rot), e("div",{className:"truncate text-[13px] text-white", title:String(v)}, v)); };
+  var info = function(rot, v){ return e("div",{className:"min-w-0"}, e("div",{className:ROTULO}, rot), e("div",{className:"text-[13px] text-white", title:String(v)}, v)); };
   var estado = !d || d.estado==="igual" ? e("span",{className:"text-[13px] "+(d ? "text-[#bbf7d0]" : "text-[#cdbf9f]")}, d ? "A DevMaster já está igual." : "Igual à DevMaster. Se mudar aqui, mude lá também.")
     : d.estado==="diferente" ? e("span",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-warning"}, "Na DevMaster: "+fmtCampo("prev", d.dm)+". Mude lá também.", e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"))
     : e("span",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-[#fca5a5]"}, "A DevMaster mudou para "+fmtCampo("prev", d.dm)+" (o nosso: "+fmtCampo("prev", d.local)+").", e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "dm"); }, className:"font-bold text-[#F1D58A] underline"}, "Usar o da DevMaster"), e("button",{type:"button", onClick:function(){ p.resolver(r, "prev", "nosso"); }, className:"font-bold text-[#F1D58A] underline"}, "Manter o nosso"));
@@ -237,7 +236,7 @@ function CartaoRevendedora(p){
       e("div",{className:"flex flex-wrap items-center gap-x-2 text-[13px] text-[#fde68a]"}, e("b",null, "Último caso"), e("span",null, "· "+fmtDataBR(r.caso.iso)+(r.caso.quem ? " · "+r.caso.quem : "")+(r.caso.cond ? " · condicional "+r.caso.cond : ""))),
       e("p",{className:"text-[13px] leading-snug text-white"}, r.caso.txt),
       (r.casos||[]).length>0 && e("span",{className:"text-[13px] text-[#F1D58A]"}, "Casos anteriores ("+r.casos.length+")"),
-      (r.casos||[]).length>0 && e("div",{className:"flex flex-col pr-1 "+(r.casos.length>8 ? "max-h-72 overflow-y-auto" : "")}, r.casos.map(function(c, i){ return e("div",{key:i, className:"grid grid-cols-[48px_96px_minmax(0,1fr)] gap-2 border-t border-[rgba(251,191,36,.25)] py-1.5 text-[13px]"}, e("span",{className:MONO+" text-[#fde68a]"}, dBR(c.iso)), e("span",{className:"truncate text-[#fde68a]"}, c.quem || "—"), e("span",{className:"text-white"}, c.txt)); }))),
+      (r.casos||[]).length>0 && e("div",{className:"flex flex-col pr-1 "+(r.casos.length>8 ? "max-h-72 overflow-y-auto" : "")}, r.casos.map(function(c, i){ return e("div",{key:i, className:"grid grid-cols-[48px_96px_minmax(0,1fr)] gap-2 border-t border-[rgba(251,191,36,.25)] py-1.5 text-[13px]"}, e("span",{className:MONO+" text-[#fde68a]"}, dBR(c.iso)), e("span",{className:"text-[#fde68a]"}, c.quem || "—"), e("span",{className:"text-white"}, c.txt)); }))),
     e("div",{className:"grid grid-cols-2 gap-x-4 gap-y-2 px-4 py-2.5 md:grid-cols-4 "+LINHA},
       info("Representante", r.representante), info("Cidade", r.cidade ? r.cidade+(r.uf ? " / "+r.uf : "") : "—"), info("WhatsApp", foneBonito(r.celular) || "—"), info("Kits · peças · valor", r.kits+" · "+(tot.p || r.pecas)+" · "+BRL(tot.v || r.valor))),
     e("div",{className:"flex flex-col gap-2 px-4 py-3 "+LINHA},
@@ -256,7 +255,7 @@ function CartaoRevendedora(p){
             e("td",{className:"px-2 py-1 font-bold "+MONO}, c.n||"—"), e("td",{className:"px-2 py-1"}, chip(c.t==="Reposição / peças do próximo mês" ? "Kit extra" : c.t, CLASSE_TIPO[c.t] || "bg-info/15 text-info ring-info/40")),
             e("td",{className:"px-2 py-1 text-right "+MONO}, c.e ? c.e.slice(8)+"/"+c.e.slice(5,7) : "—"), e("td",{className:"px-2 py-1 text-right "+MONO}, c.d ? c.d.slice(8)+"/"+c.d.slice(5,7) : "—"),
             e("td",{className:"px-2 py-1 text-right "+MONO}, c.p), e("td",{className:"px-2 py-1 text-right "+MONO}, BRL(c.v))); })),
-          e("tfoot",null, e("tr",{className:"border-t-2 border-[rgba(241,213,138,.3)] font-bold"}, e("td",{className:"px-2 py-1", colSpan:4}, conds.length+(conds.length===1 ? " condicional ativa" : " condicionais ativas")), e("td",{className:"px-2 py-1 text-right "+MONO}, tot.p), e("td",{className:"px-2 py-1 text-right "+MONO}, BRL(tot.v)))))),
+          e("tfoot",null, e("tr",{className:"border-t-2 border-[rgba(241,213,138,.3)] font-bold"}, e("td",{className:"px-2 py-1 text-center", colSpan:4}, conds.length+(conds.length===1 ? " condicional ativa" : " condicionais ativas")), e("td",{className:"px-2 py-1 text-center "+MONO}, tot.p), e("td",{className:"px-2 py-1 text-center "+MONO}, BRL(tot.v)))))),
     historico.length>0 && e("div",{className:"flex flex-col gap-1 px-4 pb-3 pt-2"},
       e("div",{className:"flex items-center justify-between"}, e("span",{className:ROTULO}, "Alterações feitas no sistema ("+historico.length+")")),
       e("div",{className:"flex flex-col pr-1 "+(historico.length>8 ? "max-h-72 overflow-y-auto" : "")}, historico.map(function(h, i){
@@ -282,7 +281,7 @@ function DatasMudadas(p){
       : m.quem==="marcus" ? chip(sai ? "Marcus · sai do previsto" : "Marcus · mesmo mês", "bg-primary/15 text-primary ring-primary/40")
       : chip(m.setor+" · fica no previsto", "bg-success/15 text-success ring-success/40");
     return e("div",{key:m.id, className:"grid items-center gap-2 border-t px-3 py-1.5 first:border-t-0 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_150px_minmax(0,1.3fr)] "+BORDA},
-      e("div",{className:"min-w-0"}, e("b",{className:"block truncate text-[13px] text-white", title:nomeProprio(m.nome)}, nomeProprio(m.nome)), e("span",{className:ROTULO+" block truncate", title:nomeProprio(m.rep)}, m.cod+" · "+curto(nomeProprio(m.rep)))),
+      e("div",{className:"min-w-0"}, e("b",{className:"block text-[13px] text-white", title:nomeProprio(m.nome)}, nomeProprio(m.nome)), e("span",{className:ROTULO+" block ", title:nomeProprio(m.rep)}, m.cod+" · "+curto(nomeProprio(m.rep)))),
       e("div",{className:"flex flex-wrap items-center gap-2 text-[13px]"}, estado),
       e("div",{className:MONO+" text-[13px] "+cor}, dBR(m.de)+" → "+dBR(m.para)+" · "+(dias>0 ? "+" : "")+dias+" d"+(sai ? " · "+MESES[Number(mesDe(m.de).slice(5))-1].slice(0,3)+" → "+MESES[Number(mesDe(m.para).slice(5))-1].slice(0,3) : "")),
       e("div",{className:"flex flex-wrap items-center justify-end gap-1.5"},

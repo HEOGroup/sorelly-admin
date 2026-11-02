@@ -21,7 +21,7 @@ var dBR = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "�
 var LINHA = "flex h-8 items-center justify-between gap-2 border-b border-border px-1 text-[13px] last:border-b-0 ";
 
 // caixa no mesmo tom escuro com borda dourada da tela Revendedoras
-function Caixa(p){ return e("section",{className:"rounded-xl border border-[rgba(232,184,75,.22)] bg-[#131315] "+(p.cls||"")}, e("div",{className:"flex h-8 items-center justify-between gap-2 px-3 text-[13px] font-semibold text-foreground"}, e("span",{className:"truncate", title:p.t}, p.t), p.dir), e("div",{className:"px-3 pb-3"}, p.children)); }
+function Caixa(p){ return e("section",{className:"rounded-xl border border-[rgba(232,184,75,.22)] bg-[#131315] "+(p.cls||"")}, e("div",{className:"flex h-8 items-center justify-between gap-2 px-3 text-[13px] font-semibold text-foreground"}, e("span",{className:"", title:p.t}, p.t), p.dir), e("div",{className:"px-3 pb-3"}, p.children)); }
 
 function AbaAgPainel(){
   var cx = use(), s = cx.state, d = cx.dispatch, ag = s.agend, gerente = podeGerirAgend(s.usuario, ag), por = nomeDe(s.usuario);
@@ -49,7 +49,7 @@ function AbaAgPainel(){
   var ir = function(aba){ d({type:"ABA", aba:aba}); };
   var fechar = function(){ if(window.confirm("Isso vai FECHAR "+nomeMes(ym)+" definitivamente (vira histórico travado). Confirma?")) d({type:"AG", op:"fechar", ym:ym, por:por}); };
   var reabrir = function(){ if(window.confirm("Reabrir "+nomeMes(ym)+"? Ele volta a ficar editável.")) d({type:"AG", op:"reabrir", ym:ym, por:por}); };
-  var linha = function(rot, v, forte, cor){ return e("div",{key:rot, className:LINHA+(forte ? "font-semibold" : "")}, e("span",{className:"truncate", title:rot}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
+  var linha = function(rot, v, forte, cor){ return e("div",{key:rot, className:LINHA+(forte ? "font-semibold" : "")}, e("span",{className:"", title:rot}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
   var reps = p.linhas.filter(function(l){ return l.cota>0; }).slice().sort(function(a, b){ return b.saldoAtual-a.saldoAtual; }).slice(0, 8);
   var comData = prevDia ? Object.keys(prevDia.dias).filter(function(k){ return k.slice(0, 7)===ym; }).reduce(function(tt, k){ return tt+prevDia.dias[k]; }, 0) : null;
   return e("div",{className:"flex flex-col gap-3"},

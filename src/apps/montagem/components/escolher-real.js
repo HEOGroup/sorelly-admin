@@ -20,6 +20,6 @@ function EscolherReal(p){
 
   return e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-2 rounded-lg border border-border bg-card/60 p-3 md:grid-cols-4"},
     e(CampoSel,{id:"er-rep", t:"Representante", value:rep, onChange:setRep, opcoes:[["", "Escolha"]].concat(reps.map(function(x){ return [x.id, x.nome+" · "+x.codigo]; }))}),
-    e("p",{className:"col-span-2 self-end truncate text-[13px] md:col-span-3"}, "O app abre com todas as revendedoras dela (dados reais da DevMaster)."));
+    e("p",{className:"col-span-2 self-end text-[13px] md:col-span-3"}, "O app abre com todas as revendedoras dela (dados reais da DevMaster)."));
 }
 export { EscolherReal };

@@ -15,7 +15,7 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var dBR = function(i){ return i ? String(i).slice(8, 10)+"/"+String(i).slice(5, 7) : "—"; };
 var dBRA = function(i){ return i ? String(i).slice(8, 10)+"/"+String(i).slice(5, 7)+"/"+String(i).slice(0, 4) : "—"; };
-var curto = function(t, n){ t = String(t||""); return t.length>n ? t.slice(0, n-1)+"…" : t; };
+var curto = function(t){ return String(t||""); };   // nada abreviado (regra de 02/11/2026): o texto aparece inteiro
 var ROT = ROTULO;
 
 function AbaAgAtividades(){
@@ -77,11 +77,11 @@ function AbaAgAtividades(){
   return e("div",{className:"flex flex-col gap-3"},
     e("div",{className:"flex flex-wrap items-center gap-2"},
       e(Segmentado,{opcoes:[["abertas", "Abertas ("+abertas.length+")"], ["concluidas", "Concluídas ("+conclu.length+")"]], atual:vis, onMudar:setVis}),
-      e("span",{className:"flex-1"}), d.msg && e("span",{className:"truncate text-[13px] text-foreground", title:d.msg}, d.msg), e(Botao,{onClick:carregar}, "Atualizar")),
+      e("span",{className:"flex-1"}), d.msg && e("span",{className:"text-[13px] text-foreground", title:d.msg}, d.msg), e(Botao,{onClick:carregar}, "Atualizar")),
     e(GradeFiltro,{key:vis, chave:"ativ"+vis, rows:lista, cols:vis==="abertas" ? colAbertas : colConc, onRow:abrir, vazio:d.pronto ? (vis==="abertas" ? "Nenhuma atividade aberta." : "Nenhuma atividade concluída ainda.") : "Carregando da DevMaster…"}),
     sel && e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setAberto(null); }},
       e("div",{className:"my-auto w-full max-w-[640px] overflow-hidden rounded-2xl text-[13px] text-[#fbf4e4]", style:CARD_ESTILO},
-        e("div",{className:"flex items-center gap-2.5 border-b border-[rgba(241,213,138,.16)] py-2 pl-4 pr-3", style:TOPO_ESTILO}, e("b",{className:"min-w-0 flex-1 truncate text-[13px] font-bold text-white"}, sel.nomeP+" · "+sel.cod), e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAberto(null); }, className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.35)] hover:bg-black/30"}, "Fechar ✕")),
+        e("div",{className:"flex items-center gap-2.5 border-b border-[rgba(241,213,138,.16)] py-2 pl-4 pr-3", style:TOPO_ESTILO}, e("b",{className:"min-w-0 flex-1 text-[13px] font-bold text-white"}, sel.nomeP+" · "+sel.cod), e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAberto(null); }, className:"h-8 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.35)] hover:bg-black/30"}, "Fechar ✕")),
         e("div",{className:"flex flex-col p-4"},
         e("div",{className:"grid grid-cols-2 gap-x-4 gap-y-2 md:grid-cols-4"},
           [["Atividade", sel.tituloVivo], ["Prazo", dBRA(sel.prazo)], ["Responsável", sel.dono], ["Representante", sel.repP]].map(function(x){ return e("div",{key:x[0], className:"min-w-0"}, e("div",{className:ROT}, x[0]), e("div",{className:"text-[13px] text-white", title:x[1]}, x[1])); })),
