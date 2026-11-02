@@ -4,7 +4,7 @@
 import { Botao, CAMPO, Segmentado, TabelaP, Tr } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { TIPOS, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
+import { TIPOS, melMarcarVisto, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
 import { DIRETORIA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { Avatar, Ph, W, hora } from "@/apps/montagem/components/chat/chat-ui";
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
@@ -170,6 +170,7 @@ function Balao(p){
     e("div",{className:"max-w-[80%] min-w-0 px-2.5 py-1.5 text-[13px] shadow-sm "+(meu ? "rounded-xl rounded-br-sm" : "rounded-xl rounded-bl-sm"), style:{background:meu ? W.saida : W.cab, color:W.texto}},
       !meu && e("div",{className:"text-[12px] font-semibold", style:{color:resposta ? W.ouro : W.verde}}, m.por+(resposta ? " · Resposta" : "")),
       m.txt && e("div",{className:"whitespace-pre-wrap break-words"}, m.txt),
+      m.video && e("video",{controls:true, preload:"metadata", src:m.video, className:"mt-1 block w-full rounded-md border border-border bg-black"}),   // resposta com vídeo-aula (02/11/2026)
       (m.imgs || (m.img ? [m.img] : [])).map(function(src, k){ return e(React.Fragment,{key:k},
         e("button",{type:"button", onClick:function(){ p.zoom(src); }, title:"Clique para ampliar", className:"mt-1 block w-full cursor-zoom-in"}, e("img",{src:src, alt:"Print da tela", className:"max-h-64 w-full rounded-md object-contain", style:{background:"#000"}})),
         p.nomeFoto && e("div",{className:"mt-1"}, e(BotoesFoto,{src:src, nome:p.nomeFoto(src), ampliar:function(){ p.zoom(src); }}))); }),
@@ -305,7 +306,7 @@ var ranking = function(lista, campo){
 function AbaMelhorias(){
   var cx = use(), s = cx.state, d = cx.dispatch, gere = melPodeGerir(s.usuario);
   // quem responde (Marcus e Leonardo) abre em Todas; os demais só veem os próprios pedidos
-  var v = useState(gere ? "todas" : "minhas"), vis = v[0], setVis = v[1], nv = useState(false), novo = nv[0], setNovo = nv[1], sl = useState(null), sel = sl[0], setSel = sl[1];
+  var v = useState(gere ? "todas" : "minhas"), vis = v[0], setVis = v[1], nv = useState(false), novo = nv[0], setNovo = nv[1], sl = useState(function(){ var a = window.__melAbrir || null; window.__melAbrir = null; return a; }), sel = sl[0], setSel = sl[1];
   var fb = useState(""), busca = fb[0], setBusca = fb[1], fs = useState(""), fSit = fs[0], setFSit = fs[1], ft = useState(""), fSet = ft[0], setFSet = ft[1], fq = useState(""), fQ = fq[0], setFQ = fq[1];
   var od = useState("d-"), ord = od[0], setOrd = od[1], gr = useState(""), grupo = gr[0], setGrupo = gr[1], fc = useState({}), fechados = fc[0], setFechados = fc[1];
   var todas = melLista(s), minhas = todas.filter(function(x){ return x.porId===s.usuario; });
@@ -317,6 +318,7 @@ function AbaMelhorias(){
   var setores = Array.from(new Set(base.map(function(x){ return x.setor; }).filter(Boolean))).sort(), pessoas = Array.from(new Set(base.map(function(x){ return x.por; }).filter(Boolean))).sort();
   var aberto = sel && todas.find(function(x){ return x.id===sel && (gere || x.porId===s.usuario); });
   var limpa = busca || fSit || fSet || fQ;
+  useEffect(function(){ if(aberto && aberto.porId===s.usuario) melMarcarVisto(s.usuario, aberto.id); }, [aberto && aberto.id, melMsgs(s, aberto ? aberto.id : "").length]);   // abriu o pedido dela: a resposta conta como vista
   var zm = useState(null), zoom = zm[0], setZoom = zm[1];
   useEffect(function(){ if(!zoom) return undefined; var f = function(ev){ if(ev.key==="Escape") setZoom(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [zoom]);
   useEffect(function(){ if(!novo && !aberto) return undefined; var f = function(ev){ if(ev.key==="Escape" && !zoom){ setNovo(false); setSel(null); } }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [novo, aberto, zoom]);

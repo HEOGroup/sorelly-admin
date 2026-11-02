@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.13", data:"2026-11-02", titulo:"Aviso de resposta nas Melhorias e vídeo na resposta", itens:[
+    {tipo:"novo", area:"Melhorias", txt:"Quem pediu uma melhoria recebe um aviso no alto da tela, com som, ao abrir o admin quando alguém responde ou muda a situação do pedido. O botão Ver resposta abre o pedido. Abrir o pedido marca como visto. Respostas anteriores a 02/11/2026 não avisam."},
+    {tipo:"novo", area:"Melhorias", txt:"A resposta de um pedido pode trazer um vídeo-aula (campo video do comentário), que toca dentro do balão."},
+    {tipo:"novo", area:"Aulas do setor", txt:"Duas aulas do Financeiro: Ver o que foi pago em cada dia e Excluir um lançamento feito à mão."}
+  ]},
   {v:"0.18.12", data:"2026-11-01", titulo:"Amanda de Miranda: acesso total e edição de acessos", itens:[
     {tipo:"melhoria", area:"RH · Acessos e autorizações", txt:"Amanda de Miranda passou ao grupo Acesso total e agora também altera a matriz Quem vê o quê e as autorizações (antes só visualizava)."}
   ]},

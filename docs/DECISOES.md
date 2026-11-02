@@ -1481,3 +1481,8 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - Cuidado: toda tela NOVA do menu precisa entrar também na lista `abas` das contas que têm lista fixa.
 - Pedido "apagar o lançamento de R$ 1.000,00" (bônus do Nickolas, dia 23/10): esse valor NÃO é lançamento manual. Vem do combinado do Marcus de 20/10 (R$ 2.000 por mês, out a dez, `bonusNickolas()` em `domain/contas-empresa.js`), por isso não tem "Excluir lançamento". Se foi pago, usar Registrar pagamento. Apagar depende do Marcus.
 - Aulas 3 e 4 (02/11/2026, Financeiro › Contas): "Ver o que foi pago em cada dia" e "Excluir um lançamento feito à mão", ambas com a tela inteira, começando no Início. Dados do vídeo são de exemplo. O pedido da Anamaria era saber COMO excluir; a aula mostra o caminho (Contas a pagar › A pagar › linha › Excluir lançamento). Conta de DevMaster ou de combinado (ex.: bônus do Nickolas) não tem Excluir.
+
+## 02/11/2026 · Melhorias: aviso de resposta e vídeo na resposta (pedido do Marcus)
+- Quem pediu a melhoria recebe um cartão no alto da tela, com som, ao abrir o admin quando alguém responde ou muda a situação do pedido dele. "Ver resposta" abre a tela Melhorias já com o pedido aberto. "Depois" esconde; abrir o pedido marca como visto (fica no navegador, por pessoa). Código: `components/aviso-melhorias.js`, `melNovidades` em `domain/melhorias.js`.
+- Respostas anteriores a 02/11/2026 não avisam (evita aviso em massa). Quem gerencia (Marcus, Leonardo) não recebe aviso das próprias respostas.
+- O comentário aceita o campo `video` (caminho do arquivo): o vídeo toca dentro do balão. As respostas à Anamaria (Pagas por dia e Excluir lançamento) já levam o vídeo.

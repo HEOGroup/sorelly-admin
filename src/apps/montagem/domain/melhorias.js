@@ -100,4 +100,27 @@ function melReduz(s, a){
 
 function melMigrar(mel){ return mel && typeof mel==="object" ? mel : {}; }
 
-export { TIPOS, melTipoNome, SITUACOES,SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };
+// RESPOSTA NOVA (02/11/2026, pedido do Marcus): quem pediu a melhoria recebe um aviso ao abrir o admin quando alguém responde ou muda a situação do pedido dele.
+// "Visto" fica neste navegador (localStorage, por pessoa). Respostas anteriores a MEL_AVISO_DESDE não avisam (evita um aviso em massa no dia em que o aviso nasceu).
+var MEL_AVISO_DESDE = "2026-11-02T00:00:00.000Z";
+var chaveVisto = function(eu){ return "sorelly_mel_visto_" + eu; };
+function melLerVistos(eu){ try { var o = JSON.parse(localStorage.getItem(chaveVisto(eu)) || "{}"); return o && typeof o==="object" ? o : {}; } catch(x){ return {}; } }
+function melMarcarVisto(eu, id){
+  var o = melLerVistos(eu); o[id] = new Date().toISOString();
+  try { localStorage.setItem(chaveVisto(eu), JSON.stringify(o)); } catch(x){}
+  try { window.dispatchEvent(new Event("sorelly-mel-visto")); } catch(x){}
+}
+// pedidos DELA com resposta ou mudança de situação de outra pessoa, ainda não vistos: [{id, titulo, ts, video}]
+function melNovidades(s, eu){
+  var vistos = melLerVistos(eu), r = [];
+  melLista(s).filter(function(x){ return x.porId===eu; }).forEach(function(x){
+    var visto = vistos[x.id] || MEL_AVISO_DESDE, novas = melMsgs(s, x.id).filter(function(m){ return m.porId!==eu && m.em>visto; });
+    var mudou = x.mudouEm && x.mudouEm>visto && !novas.length;
+    if(!novas.length && !mudou) return;
+    var ult = novas.length ? novas[novas.length-1] : null;
+    r.push({id:x.id, titulo:String(x.titulo || x.desc || "Pedido").slice(0, 80), ts:ult ? ult.em : x.mudouEm, video:!!(ult && ult.video), sit:x.situacao});
+  });
+  return r.sort(function(a, b){ return a.ts<b.ts ? 1 : -1; });
+}
+
+export { melNovidades, melMarcarVisto, TIPOS, melTipoNome, SITUACOES,SIT_ANDAMENTO, SIT_FIM, melAberta, GERENTES, melPodeGerir, melLista, melMsgs, melResumo, melEspera, melFotos, melCaminho, melReduz, melMigrar };
