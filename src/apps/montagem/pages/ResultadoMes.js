@@ -145,6 +145,7 @@ function AbaResultadoMes(){
   var ymSel = ano+"-"+String(mi).padStart(2, "0"), fdS = fatEfetivo(s), ksF = Object.keys(fdS).filter(function(x){ return x.slice(0, 7)===ymSel; }).sort(), ultF = ksF.length ? fdS[ksF[ksF.length-1]] : {};
   var fmF = (s.fechaMes || {})[ymSel] || {}, nF = function(v){ return Math.round(v || 0).toLocaleString("pt-BR"); }, acF = ultF.acertos || 0, recF = ultF.recebido || 0, carF = Number(fmF.carregar) || 0, arF = Number(fmF.aRealizar) || 0;
   var mpF = Number(s.metaPct), pctF = (mpF>=97 && mpF<=99 ? mpF : 98), totF = acF+carF+arF, alvoF = Math.round(totF*pctF/100), medF = acF>0 ? recF/acF : 0, prevF = alvoF*medF, resF = prevF-(pago+falta);
+  var fechado = m0 < hojeD.getMonth(), resReal = recF-(pago+falta), resMostra = fechado ? resReal : resF;   // mês que já passou: sem a parte de previsão (a realizar, Carregar, esperados)
   var C3 = "2.4fr 1.2fr 2.6fr";
 
   return e(Pagina,null,
@@ -157,16 +158,16 @@ function AbaResultadoMes(){
       aba==="rec" && e(Painel,{t:"Faturamento · "+MES_LONGO[m0], v:ksF.length ? nF(acF)+" acertos feitos · "+brl(recF) : "Sem faturamento lançado"},
         Lw(C3, ["Linha", "Valor", "De onde vem"], true, "h"),
         Lw(C3, ["Acertos feitos no mês", nF(acF), ksF.length ? "Faturamento lançado até "+dm(ksF[ksF.length-1]) : "Nada lançado neste mês"], false, "f1"),
-        Lw(C3, ["Vendas no Carregar", ambar(nF(carF)), "Vendas ainda sem valor lançado; não estão dentro dos acertos feitos"], false, "f2"),
-        Lw(C3, ["Acertos ainda a realizar", nF(arF), "Revendedoras que ainda vão acertar até o fim do mês"], false, "f3"),
-        Lw(C3, ["Total de acertos do mês", nF(totF), "Feitos mais Carregar mais a realizar"], false, "f4", null, forte),
-        Lw(C3, ["Acertos esperados a "+pctF+"%", nF(alvoF), "Total do mês vezes a meta"], false, "f5"),
+        !fechado && Lw(C3, ["Vendas no Carregar", ambar(nF(carF)), "Vendas ainda sem valor lançado; não estão dentro dos acertos feitos"], false, "f2"),
+        !fechado && Lw(C3, ["Acertos ainda a realizar", nF(arF), "Revendedoras que ainda vão acertar até o fim do mês"], false, "f3"),
+        !fechado && Lw(C3, ["Total de acertos do mês", nF(totF), "Feitos mais Carregar mais a realizar"], false, "f4", null, forte),
+        !fechado && Lw(C3, ["Acertos esperados a "+pctF+"%", nF(alvoF), "Total do mês vezes a meta"], false, "f5"),
         Lw(C3, ["Faturamento lançado no mês", verde(brl(recF)), "Acumulado lançado em Faturamento"], false, "f6"),
         Lw(C3, ["Média por acerto (notas fiscais)", brl(medF), "Faturamento lançado dividido pelos acertos feitos, como no relatório de notas fiscais"], false, "f7"),
         Lw(C3, ["Média real recebida por acerto", Kn.n ? verde(brl(Kn.rec/Kn.n)) : "—", "O que as revendedoras pagaram na hora (Pix, link, cartão e dinheiro) dividido pelas revendedoras que acertaram, na DevMaster"], false, "f7b", null, forte),
         Lw(C3, ["Pago na hora", Kn.fat>0 ? Math.round(Kn.rec/Kn.fat*100)+"%" : "—", "Parte do faturado que entrou na hora; o resto vira acerto - loja"], false, "f7c"),
-        Lw(C3, ["Faturamento previsto do mês", verde(brl(prevF)), "Acertos esperados vezes a média"], false, "f8"),
-        Lw(C3, ["Resultado previsto do mês", resF<0 ? verm(brl(resF)) : verde(brl(resF)), "Faturamento previsto menos o total a pagar do mês (já pago mais o que falta)"], false, "f9", null, forte)),
+        !fechado && Lw(C3, ["Faturamento previsto do mês", verde(brl(prevF)), "Acertos esperados vezes a média"], false, "f8"),
+        Lw(C3, [fechado ? "Resultado do mês" : "Resultado previsto do mês", resMostra<0 ? verm(brl(resMostra)) : verde(brl(resMostra)), fechado ? "Faturamento lançado menos o total pago e a pagar do mês" : "Faturamento previsto menos o total a pagar do mês (já pago mais o que falta)"], false, "f9", null, forte)),
       aba==="rec" && e(Painel,{t:"Receber · DevMaster · "+MES_LONGO[m0], v:brl(esperado)+" esperado"},
         Lw(C3, ["Linha", "Valor", "De onde vem"], true, "h"),
         Lw(C3, ["Recebido na venda · revendedoras", brl(recRev), "Pix, link, cartão e dinheiro pagos na hora, sem as funcionárias do cadastro"], false, "r1"),

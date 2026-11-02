@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.19", data:"2026-11-02", titulo:"Resultado do mês: mês fechado sem previsão", itens:[
+    {tipo:"correção", area:"Resultado do mês", txt:"Em mês que já passou (ex.: outubro) o quadro Faturamento mostra só o que aconteceu: acertos feitos, faturamento lançado, médias e o Resultado do mês (faturamento menos pago e a pagar). Somem Vendas no Carregar, Acertos a realizar, Total de acertos, Acertos esperados e Faturamento previsto. No mês aberto continua a previsão."}
+  ]},
  {v:"0.18.18", data:"2026-11-02", titulo:"Resultado do mês: Pagar com a mesma fonte do Contas a pagar", itens:[
     {tipo:"correção", area:"Resultado do mês", txt:"O quadro Pagar usava o total parado do admin antigo (27/10) enquanto o Contas a pagar lê a DevMaster ao vivo, e não aplicava as baixas dadas no sistema. Agora os dois usam a mesma regra e o mesmo número. Com isso o quadro Entrou nas contas deixou de comparar saldo de 30/10 com pagamentos de 27/10."}
   ]},
