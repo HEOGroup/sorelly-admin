@@ -180,6 +180,7 @@ export const SLUG_DA_ABA = {
   rhadv: "rh-advertencias",
   rhexp: "rh-experiencia",
   rhsolic: "rh-solicitacoes",
+  aulas: "aulas",
   rhhoras: "rh-horas-extras",
   rhnegoc: "rh-negociacoes",
   comcad: "comissoes-cadastro-revendedoras",

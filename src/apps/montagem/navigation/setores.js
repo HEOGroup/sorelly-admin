@@ -245,7 +245,9 @@ var SETORES = [
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
-    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]}
+    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]},
+  // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)
+  {id:"aulas", nome:"Aulas do setor", ic:"book", cor:"#14B8A6", direto:T("aulas","Aulas do setor")}
 ];
 // Barra do topo em grupos (padrão visual, opção D): o nome do grupo aparece em cima dos botões. Setor sem "grupo" nas áreas segue com a barra simples.
 var GRUPO_BARRA = {"financeiro":{"Controle de\npagamentos":"Pagamentos", "Contas a\npagar":"Pagamentos", "Pagamentos a\nfornecedores":"Pagamentos", "Faturamento &\ncontas a pagar":"Faturamento", 
