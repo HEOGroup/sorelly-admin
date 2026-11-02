@@ -175,6 +175,8 @@ function reducer(s, a){
     case "CHAVESPIX_LIMPA": return Object.assign({}, s, {cpxFoco:null});
     case "EMP_ABRIR": return com(s, {emp:Object.assign({}, s.emp, {aberto:a.chave}), aba:"emprestimos"});
     case "EMP_SET": { var ct = Object.assign({}, (s.emp||{}).contratos); ct[a.chave] = Object.assign({}, ct[a.chave], a.patch); return com(s, {emp:Object.assign({}, s.emp, {contratos:ct})}); }
+    case "CPE_FILIAL": { var cf = Object.assign({}, (s.cpe||{}).classe), kf = "fil|"+a.chave, hf = (((s.cpe||{}).hist)||[]).concat([{ts:Date.now(), por:a.por, acao:a.filial ? "Trocou o CNPJ para "+a.filial : "Voltou ao CNPJ original", chave:a.chave, desc:a.desc||"", valor:a.valor||0}]);   // trocar o CNPJ de uma conta, mesmo já paga (Nayale, 02/11/2026): vale em toda a lista; guarda em classe com a chave "fil|<conta>"
+      if(a.filial) cf[kf] = a.filial; else delete cf[kf]; return com(s, {cpe:Object.assign({}, s.cpe, {classe:cf, hist:hf})}, a.filial ? "CNPJ da conta trocado" : "Conta voltou ao CNPJ original"); }
     case "CPE_CLASSE": { var cl = Object.assign({}, (s.cpe||{}).classe); if(a.valor) cl[a.chave] = a.valor; else delete cl[a.chave]; return com(s, {cpe:Object.assign({}, s.cpe, {classe:cl})}, a.valor==="familia" ? "Conta marcada como Família" : a.valor==="sorelly" ? "Conta marcada como Sorelly" : "Marcação removida"); }
     case "CPD_SET": {
       var cpd = JSON.parse(JSON.stringify(s.contasPagasDiario||{}));

@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.14", data:"2026-11-02", titulo:"Financeiro: trocar o CNPJ da conta; Melhorias com setor organizado", itens:[
+    {tipo:"novo", area:"Contas a pagar", txt:"Na janela da conta (também de conta já paga) há o campo CNPJ da conta com o botão Trocar CNPJ e Voltar ao original. Vale em todas as listas e fica no histórico. Pedido da Nayale."},
+    {tipo:"correção", area:"Resultado do mês", txt:"O filtro de mês tinha uma opção Janeiro repetida no início da lista; saiu. Mostra de janeiro até o mês atual."},
+    {tipo:"melhoria", area:"Melhorias", txt:"O setor de cada pedido vem da pessoa: Anamaria em Financeiro, Hellen em Link / Cadastro / Compras, Deysiane em Produção / Kits, Rayssa em Cadastro de peças. Pedidos antigos e novos seguem a mesma lista."}
+  ]},
  {v:"0.18.13", data:"2026-11-02", titulo:"Aviso de resposta nas Melhorias e vídeo na resposta", itens:[
     {tipo:"novo", area:"Melhorias", txt:"Quem pediu uma melhoria recebe um aviso no alto da tela, com som, ao abrir o admin quando alguém responde ou muda a situação do pedido. O botão Ver resposta abre o pedido. Abrir o pedido marca como visto. Respostas anteriores a 02/11/2026 não avisam."},
     {tipo:"novo", area:"Melhorias", txt:"A resposta de um pedido pode trazer um vídeo-aula (campo video do comentário), que toca dentro do balão."},

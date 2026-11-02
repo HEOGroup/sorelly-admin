@@ -146,7 +146,7 @@ function AbaResultadoMes(){
 
   return e(Pagina,null,
     e("div",{className:"flex flex-wrap items-center gap-2 rounded-lg border border-border bg-card/60 p-2"},
-      Sel("Janeiro", mes, MES_LONGO.slice(0, hojeD.getMonth()+1).map(function(n, i){ return [String(i+1), n+"/"+ano]; }), setMes, "Mês"),
+      Sel(null, mes, MES_LONGO.slice(0, hojeD.getMonth()+1).map(function(n, i){ return [String(i+1), n+"/"+ano]; }), setMes, "Mês"),
       e("button",{type:"button", title:"Atualizar da DevMaster", "aria-label":"Atualizar da DevMaster", onClick:function(){ carrega(true); }, className:H+" w-8 rounded-md border border-border text-[15px] hover:bg-white/10"}, "↻"),
       e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em] "+(d.atualizando ? "text-warning" : "text-muted-foreground"), role:"status"}, d.atualizando ? "Atualizando da DevMaster… "+(d.pct || 0)+"%" : "DevMaster · "+new Date(d.geradoEm).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})+(pr.fim ? " · saldo das contas até "+dm(pr.fim.data) : ""))),
     e(AbasTela,{abas:[["rec", "Faturamento e receber"], ["pag", "Pagar"], ["ent", "Entrou nas contas"], ["prev", "Previsão"]], atual:aba, onMudar:setAba}),

@@ -4,7 +4,7 @@
 import { Botao, CAMPO, Segmentado, TabelaP, Tr } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { TIPOS, melMarcarVisto, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
+import { TIPOS, melMarcarVisto, melSetorPessoa, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
 import { DIRETORIA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { Avatar, Ph, W, hora } from "@/apps/montagem/components/chat/chat-ui";
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
@@ -54,7 +54,7 @@ function imagemColada(ev){
 
 // nova solicitação = o mesmo chat de quem responde (Marcus, 29/10/2026): fixo no alto só o link da tela; o print colado (Ctrl+V) já aparece na conversa; escreve e envia, e o pedido nasce com esse chat
 function NovaConversa(p){
-  var s = p.s, d = p.d, nome = nomeDe(s.usuario), setor = DIRETORIA.some(function(x){ return x.id===s.usuario; }) ? "Diretoria" : (PAPEL_LB[grupoDe(s.usuario)] || "");
+  var s = p.s, d = p.d, nome = nomeDe(s.usuario), setor = melSetorPessoa(s.usuario, DIRETORIA.some(function(x){ return x.id===s.usuario; }) ? "Diretoria" : (PAPEL_LB[grupoDe(s.usuario)] || ""));
   var t = useState(""), txt = t[0], setTxt = t[1], im = useState([]), imgs = im[0], setImgs = im[1], er = useState(""), erro = er[0], setErro = er[1], u = useState(window.__ultimaTela || ""), url = u[0], setUrl = u[1], tp = useState(""), tipo = tp[0], setTipo = tp[1];
   var fim = React.useRef(null);
   useEffect(function(){ if(fim.current) fim.current.scrollIntoView({block:"end"}); }, [imgs.length]);
