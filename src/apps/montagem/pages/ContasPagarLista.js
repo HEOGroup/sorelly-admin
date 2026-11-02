@@ -134,12 +134,12 @@ function AbaCtaLista(){
   };
   var TC = "h-8 whitespace-nowrap border-b border-r border-border px-2.5 text-center text-[13px] last:border-r-0 ";
   var linhaGrupo = function(u){
-    var its = u.itens, k = u.grupo, op = !!grAb[k], ap = its[0].status==="apagar", marcados = its.filter(function(x){ return sel.indexOf(x.id)>=0; }).length, GT = TC+"bg-[#B8862B]/25 font-semibold ";
+    var its = u.itens, k = u.grupo, op = !!grAb[k], ap = its[0].status==="apagar", marcados = its.filter(function(x){ return sel.indexOf(x.id)>=0; }).length, GT = TC;
     var venc = its.map(function(x){ return dataDe(x); }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; })), ult = its.map(function(x){ return x.baixa || ""; }).sort().pop(), nats = [];
     its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
     return e("tr",{key:"g|"+k, onClick:function(){ var o = Object.assign({}, grAb); o[k] = !op; setGrAb(o); }, title:op ? "Fechar os títulos" : "Abrir os títulos", className:"cursor-pointer hover:bg-white/10"},
       colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:GT}, ap ? e("input",{type:"checkbox", checked:marcados===its.length, onChange:function(){ marcaGrupo(its, marcados===its.length); }, "aria-label":"Marcar todas as contas de "+its[0].nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
-      e("td",{className:GT+"text-left"}, (op ? "▾ " : "▸ ")+its[0].nome), e("td",{className:GT+"tabular-nums"}, dm(venc)), e("td",{className:GT}, pilulaCnpj(its[0].filial)), e("td",{className:GT}, its.length+" títulos"), e("td",{className:GT}, "—"), e("td",{className:GT}, nats.join(" · ")),
+      e("td",{className:GT+"text-left font-semibold", style:{color:"#FDBA74"}}, (op ? "▾ " : "▸ ")+its[0].nome), e("td",{className:GT+"tabular-nums"}, dm(venc)), e("td",{className:GT}, pilulaCnpj(its[0].filial)), e("td",{className:GT}, its.length+" títulos"), e("td",{className:GT}, "—"), e("td",{className:GT}, nats.join(" · ")),
       e("td",{className:GT+"tabular-nums"}, BKC(soma(its))), e("td",{className:GT+(ap && atr>0 ? "text-warning" : (ap ? "" : "text-success"))}, ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago "+dm(ult)), colAcao && e("td",{className:GT}));
   };
   var tabelaContas = function(){
