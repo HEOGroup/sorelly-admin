@@ -47,8 +47,9 @@ var numDe = function(i){ return ((i.pref||"")+" "+(i.num||"")).trim() || "—"; 
 // CNPJ completo com cor própria (cadastro em domain/cnpjs.js); H&O sem número cadastrado mostra o nome; Por fora em cinza
 var cnpjDe = function(id){ return CNPJS0.filter(function(c){ return c.id===id; })[0] || null; };
 var cnpjTxt = function(id){ var c = cnpjDe(id); return c && c.cnpj ? c.cnpj : (id==="fora" ? "Por fora" : c ? c.nome : id); };
-var cnpjCor = function(id){ var c = cnpjDe(id); return id==="fora" ? "#64748B" : c && c.cor ? c.cor : "#64748B"; };
-var pilulaCnpj = function(id){ return e("span",{className:"inline-flex items-center rounded-full px-2.5 py-0.5 text-[13px] font-semibold text-white", style:{background:cnpjCor(id)}}, cnpjTxt(id)); };
+// só a LETRA muda de cor (Marcus, 02/11/2026): tons claros que leem bem no fundo escuro
+var CNPJ_LETRA = {"34":"#F0C25A", "46":"#F472B6", "59":"#2DD4BF", "67":"#60A5FA", "ho":"#A78BFA", "fora":"#E2E8F0"};
+var pilulaCnpj = function(id){ return e("span",{className:"font-semibold", style:{color:CNPJ_LETRA[id] || "#E2E8F0"}}, cnpjTxt(id)); };
 // ordem das colunas (Marcus, 02/11/2026): Fornecedor primeiro, na esquerda; o resto centralizado
 var COLS = [
   {k:"nome", t:"Fornecedor", tipo:"sel", v:function(i){ return i.nome; }, x:function(i){ return i.nome; }},
