@@ -10,6 +10,7 @@ import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
 import { RegistrarPagamento } from "@/apps/montagem/components/registrar-pagamento";
 import { hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { BKC } from "@/apps/montagem/lib/format";
+import { CNPJS0 } from "@/apps/montagem/domain/cnpjs";
 import { MenuFiltro, ordenar, passaFiltro } from "@/apps/montagem/components/filtro-planilha";
 import { NovaConta } from "@/apps/montagem/pages/ContasPagarEmpresa";
 import { use } from "@/apps/montagem/state/context";
@@ -43,12 +44,18 @@ var nomeFilial = function(id){ return id==="fora" ? "Por fora" : id; };
 var BARRA_OURO = {background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)", color:"#1a1306"};
 var sitDe = function(i){ return i.status==="pago" ? "Pago "+dm(i.baixa) : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
 var numDe = function(i){ return ((i.pref||"")+" "+(i.num||"")).trim() || "—"; };
+// CNPJ completo com cor própria (cadastro em domain/cnpjs.js); H&O sem número cadastrado mostra o nome; Por fora em cinza
+var cnpjDe = function(id){ return CNPJS0.filter(function(c){ return c.id===id; })[0] || null; };
+var cnpjTxt = function(id){ var c = cnpjDe(id); return c && c.cnpj ? c.cnpj : (id==="fora" ? "Por fora" : c ? c.nome : id); };
+var cnpjCor = function(id){ var c = cnpjDe(id); return id==="fora" ? "#64748B" : c && c.cor ? c.cor : "#64748B"; };
+var pilulaCnpj = function(id){ return e("span",{className:"inline-flex items-center rounded-full px-2.5 py-0.5 text-[13px] font-semibold text-white", style:{background:cnpjCor(id)}}, cnpjTxt(id)); };
+// ordem das colunas (Marcus, 02/11/2026): Fornecedor primeiro, na esquerda; o resto centralizado
 var COLS = [
+  {k:"nome", t:"Fornecedor", tipo:"sel", v:function(i){ return i.nome; }, x:function(i){ return i.nome; }},
   {k:"venc", t:"Vence", tipo:"data", v:function(i){ return i.venc; }, x:function(i){ return dm(i.venc); }},
-  {k:"filial", t:"CNPJ", tipo:"sel", v:function(i){ return nomeFilial(i.filial); }, x:function(i){ return nomeFilial(i.filial); }},
+  {k:"filial", t:"CNPJ", tipo:"sel", v:function(i){ return cnpjTxt(i.filial); }, x:function(i){ return cnpjTxt(i.filial); }},
   {k:"num", t:"Número", tipo:"txt", v:numDe, x:numDe},
   {k:"parc", t:"Parcela", tipo:"txt", v:function(i){ return i.parc || "—"; }, x:function(i){ return i.parc || "—"; }},
-  {k:"nome", t:"Fornecedor", tipo:"sel", v:function(i){ return i.nome; }, x:function(i){ return i.nome; }},
   {k:"nat", t:"Natureza", tipo:"sel", v:function(i){ return i.natNome; }, x:function(i){ return i.natNome; }},
   {k:"valor", t:"Valor", tipo:"din", v:function(i){ return i.valor; }, x:function(i){ return BKC(i.valor); }},
   {k:"sit", t:"Situação", tipo:"sel", v:sitDe, x:sitDe}];
@@ -124,14 +131,14 @@ function AbaCtaLista(){
     if(ref && ref.filial!==its[0].filial){ setAviso("Marque só contas do mesmo CNPJ. Já tem "+nomeCnpj(ref.filial)+" marcado: registre esse pagamento ou desmarque."); return; }
     setAviso(""); setSel(sel.filter(function(x){ return ids.indexOf(x)<0; }).concat(ids));
   };
-  var TC = "h-8 whitespace-nowrap border-b border-border px-2.5 text-center text-[13px] ";
+  var TC = "h-8 whitespace-nowrap border-b border-r border-border px-2.5 text-center text-[13px] last:border-r-0 ";
   var linhaGrupo = function(u){
     var its = u.itens, k = u.grupo, op = !!grAb[k], ap = its[0].status==="apagar", marcados = its.filter(function(x){ return sel.indexOf(x.id)>=0; }).length, GT = TC+"bg-[#B8862B]/25 font-semibold ";
     var venc = its.map(function(x){ return dataDe(x); }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; })), ult = its.map(function(x){ return x.baixa || ""; }).sort().pop(), nats = [];
     its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
     return e("tr",{key:"g|"+k, onClick:function(){ var o = Object.assign({}, grAb); o[k] = !op; setGrAb(o); }, title:op ? "Fechar os títulos" : "Abrir os títulos", className:"cursor-pointer hover:bg-white/10"},
       colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:GT}, ap ? e("input",{type:"checkbox", checked:marcados===its.length, onChange:function(){ marcaGrupo(its, marcados===its.length); }, "aria-label":"Marcar todas as contas de "+its[0].nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
-      e("td",{className:GT+"tabular-nums"}, dm(venc)), e("td",{className:GT}, nomeFilial(its[0].filial)), e("td",{className:GT}, its.length+" títulos"), e("td",{className:GT}, "—"), e("td",{className:GT+"text-left"}, (op ? "▾ " : "▸ ")+its[0].nome), e("td",{className:GT+"text-left"}, nats.join(" · ")),
+      e("td",{className:GT+"text-left"}, (op ? "▾ " : "▸ ")+its[0].nome), e("td",{className:GT+"tabular-nums"}, dm(venc)), e("td",{className:GT}, pilulaCnpj(its[0].filial)), e("td",{className:GT}, its.length+" títulos"), e("td",{className:GT}, "—"), e("td",{className:GT}, nats.join(" · ")),
       e("td",{className:GT+"tabular-nums"}, BKC(soma(its))), e("td",{className:GT+(ap && atr>0 ? "text-warning" : (ap ? "" : "text-success"))}, ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago "+dm(ult)), colAcao && e("td",{className:GT}));
   };
   var tabelaContas = function(){
@@ -146,11 +153,11 @@ function AbaCtaLista(){
     var corpo = vis2.map(function(z){ if(z.g) return linhaGrupo(z.g); var i = z.i;
       return e("tr",{key:i.id, onClick:function(){ setAberta(i); }, title:"Abrir a conta", className:"cursor-pointer hover:bg-white/10"},
         colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:TC}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
-        e("td",{className:TC+"tabular-nums", title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e("td",{className:TC}, nomeFilial(i.filial)), e("td",{className:TC}, numDe(i)), e("td",{className:TC}, i.parc || "—"),
-        e("td",{className:TC+"text-left"+(z.filho ? "" : " font-semibold")}, (z.filho ? "↳ " : "")+i.nome), e("td",{className:TC+"text-left", title:i.nat+" "+i.natNome}, i.natNome), e("td",{className:TC+"tabular-nums"}, BKC(i.valor)),
+        e("td",{className:TC+"text-left"+(z.filho ? "" : " font-semibold")}, (z.filho ? "↳ " : "")+i.nome), e("td",{className:TC+"tabular-nums", title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e("td",{className:TC}, pilulaCnpj(i.filial)), e("td",{className:TC}, numDe(i)), e("td",{className:TC}, i.parc || "—"),
+        e("td",{className:TC, title:i.nat+" "+i.natNome}, i.natNome), e("td",{className:TC+"tabular-nums"}, BKC(i.valor)),
         e("td",{className:TC+(i.status==="apagar" && i.atraso>0 ? "text-warning" : (i.status==="pago" ? "text-success" : "")), title:i.bx ? ("Pago por "+nomeDe(i.bx.por)+" · "+i.bx.contaNome+(i.bx.obs ? " · "+i.bx.obs : "")) : (i.obs || undefined)}, sitDe(i)),
         colAcao && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:TC}, i.bx ? e("button",{type:"button", onClick:function(){ if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:i.bx.id, por:s.usuario}); }, className:"h-8 rounded-md border border-border px-2 text-[13px] text-foreground hover:bg-white/10"}, "Desfazer") : null)); });
-    var total = vis.length ? e("tr",{key:"t", className:"bg-white/10 font-semibold"}, colCheck && e("td",{className:TC}), e("td",{className:TC}, "Total"), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC+"text-left"}, lsc.length+" títulos"), e("td",{className:TC}), e("td",{className:TC+"tabular-nums"}, BKC(totLista)), e("td",{className:TC}), colAcao && e("td",{className:TC})) : null;
+    var total = vis.length ? e("tr",{key:"t", className:"bg-white/10 font-semibold"}, colCheck && e("td",{className:TC}), e("td",{className:TC+"text-left"}, "Total · "+lsc.length+" títulos"), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC+"tabular-nums"}, BKC(totLista)), e("td",{className:TC}), colAcao && e("td",{className:TC})) : null;
     return e("div",{className:"flex flex-col gap-2"},
       algum && e("div",{className:"flex items-center gap-3 text-[13px]"}, e(Botao,{onClick:function(){ setFil({}); setOrdC(null); setPop(null); }}, "Limpar filtros das colunas")),
       e("div",{className:"overflow-x-auto rounded-lg border border-border"}, e("table",{className:"w-full border-collapse text-[13px]"}, e("thead",null, cab), e("tbody",null, corpo, total))),
