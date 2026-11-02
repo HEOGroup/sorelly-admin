@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vídeo · Pedir ao RH a mudança de uma colaboradora</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--ruim:#E5484D;--at:#F2B544}
+*{box-sizing:border-box}html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif}
+body{min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px}
+.palco{width:100%;max-width:960px;display:flex;flex-direction:column;gap:12px}
+.legenda{min-height:58px;border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:10px 14px;display:flex;gap:12px;align-items:center;font-size:15px}
+.legenda .n{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.quadro{border:1px solid var(--fio);border-radius:8px;overflow:hidden;background:var(--painel)}
+.cab{display:flex;gap:10px;align-items:center;height:36px;padding:0 14px;border-bottom:1px solid var(--fio)}
+.menu{display:flex;gap:16px;padding:0 14px;height:34px;align-items:center;border-bottom:1px solid var(--fio)}
+.menu span{color:#D8D5CD;padding:6px 0}.menu .on{color:var(--ouro);border-bottom:2px solid var(--ouro)}
+.corpo{padding:14px;display:flex;flex-direction:column;gap:12px;min-height:340px}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+.bloco>.t{height:30px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.form{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px;padding:12px}
+.cp{display:flex;flex-direction:column;gap:4px}.cp small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;transition:border-color .3s,box-shadow .3s}
+.in.foco{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600;display:inline-flex;align-items:center}
+.btn.g{background:var(--painel);border-color:var(--fio2);color:var(--texto)}
+.btn.clic{outline:2px solid var(--ouro);outline-offset:2px;transform:scale(.97)}
+.span2{grid-column:span 2}
+.linha{display:grid;grid-template-columns:70px 170px 1fr 100px 130px;gap:8px;align-items:center;padding:0 12px;min-height:38px;border-top:1px solid var(--fio)}
+.cabt{display:grid;grid-template-columns:70px 170px 1fr 100px 130px;gap:8px;padding:0 12px;height:30px;align-items:center;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.04)}
+.pend{color:var(--at);font-weight:600}.ok{color:var(--ok);font-weight:600}
+.oculto{display:none}
+.pessoa{display:inline-block;margin-left:auto;border:1px solid var(--fio2);border-radius:10px;padding:0 8px;height:20px;font-size:11px;line-height:18px}
+.rodape{display:flex;gap:8px;align-items:center}.prog{flex:1;height:6px;border-radius:3px;background:var(--painel2);overflow:hidden}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
+</style></head><body>
+<div class="palco">
+  <div class="legenda"><span class="n" id="n">1</span><span id="txt"></span></div>
+  <div class="quadro">
+    <div class="cab"><b>Recursos Humanos</b><span>›</span><span id="tela">Visão geral</span><span class="pessoa" id="quem">Deysiane · supervisão</span></div>
+    <div class="menu"><span>Visão geral</span><span>Presença</span><span>Colaboradores</span><span id="mSol">Solicitações</span><span>Contratos</span></div>
+    <div class="corpo" id="corpo">
+      <div class="bloco oculto" id="blForm"><div class="t">Nova solicitação</div>
+        <div class="form">
+          <div class="cp span2"><small>Colaboradora</small><div class="in" id="fCol">Escolha…</div></div>
+          <div class="cp"><small>O que muda</small><div class="in" id="fCampo">Setor</div></div>
+          <div class="cp"><small>Hoje</small><div class="in" id="fHoje">—</div></div>
+          <div class="cp"><small>Novo setor</small><div class="in" id="fPara">Escolha…</div></div>
+          <div class="cp span2"><small>Motivo</small><div class="in" id="fMot"></div></div>
+          <div class="cp" style="justify-content:flex-end;align-items:flex-end"><span class="btn" id="bEnv">Enviar ao RH</span></div>
+        </div></div>
+      <div class="bloco oculto" id="blLista"><div class="t">Solicitações</div>
+        <div class="cabt"><span>Data</span><span>Colaboradora</span><span>Mudança</span><span>Pedido por</span><span>Situação</span></div>
+        <div id="lista"></div></div>
+    </div>
+  </div>
+  <div class="rodape"><button class="btn g" id="pausa">Parar</button><button class="btn g" id="reco">Recomeçar</button><div class="prog"><i id="barra"></i></div></div>
+</div>
+<script>
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 44000, pausado = false;
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var foco = function(id, on){ $(id).classList.toggle("foco", on); };
+var digita = function(id, texto, ini, passo){ for(var i=1;i<=texto.length;i++){ (function(k){ em(ini+k*passo, function(){ $(id).textContent = texto.slice(0,k); }); })(i); } };
+var clica = function(id, fn){ $(id).classList.add("clic"); em(600, function(){ $(id).classList.remove("clic"); fn(); }); };
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var inicia = function(){
+  limpa(); pausado = false; t0 = Date.now(); $("pausa").textContent = "Parar";
+  $("tela").textContent = "Visão geral"; $("quem").textContent = "Deysiane · supervisão"; $("mSol").className = "";
+  $("blForm").className = "bloco oculto"; $("blLista").className = "bloco oculto"; $("lista").innerHTML = "";
+  $("fCol").textContent = "Escolha…"; $("fHoje").textContent = "—"; $("fPara").textContent = "Escolha…"; $("fMot").textContent = ""; ["fCol","fCampo","fPara","fMot"].forEach(function(i){ foco(i,false); });
+  em(300,  function(){ cena(1, 'Abra <b>Recursos Humanos</b> e clique em <b>Solicitações</b>.'); });
+  em(3500, function(){ $("mSol").className = "on"; $("tela").textContent = "Solicitações"; $("blForm").className = "bloco"; $("blLista").className = "bloco"; });
+  em(6500, function(){ cena(2, 'No bloco <b>Nova solicitação</b>, escolha a <b>colaboradora</b>.'); foco("fCol", true); digita("fCol", "Colaboradora Exemplo · Produção", 0, 55); });
+  em(10500,function(){ foco("fCol", false); cena(3, 'Em <b>O que muda</b>, escolha <b>Setor</b>. O campo <b>Hoje</b> mostra o setor atual.'); foco("fCampo", true); $("fHoje").textContent = "Produção"; });
+  em(15000,function(){ foco("fCampo", false); cena(4, 'Escolha o <b>novo setor</b> e escreva o <b>motivo</b>.'); foco("fPara", true); digita("fPara", "Montagem de kits", 0, 60); });
+  em(18500,function(){ foco("fPara", false); foco("fMot", true); digita("fMot", "Vai ajudar na montagem esta semana", 0, 45); });
+  em(23000,function(){ foco("fMot", false); cena(5, 'Clique em <b>Enviar ao RH</b>. O pedido fica <b>Pendente</b>.'); clica("bEnv", function(){
+      $("lista").innerHTML = '<div class="linha" id="l1"><span>01/11</span><b>Colaboradora Exemplo</b><span>Setor: Produção → Montagem de kits</span><span>Deysiane</span><span class="pend" id="st">Pendente</span></div>'; $("fCol").textContent = "Escolha…"; $("fHoje").textContent = "—"; $("fPara").textContent = "Escolha…"; $("fMot").textContent = ""; }); });
+  em(29500,function(){ cena(6, 'O RH (Maria Claudia ou Ana Paula) abre a mesma tela e vê o pedido para <b>Aprovar</b> ou <b>Recusar</b>.'); $("quem").textContent = "Maria Claudia · RH"; $("st").outerHTML = '<span id="st"><span class="btn" id="bAp" style="height:26px;padding:0 10px">Aprovar</span></span>'; });
+  em(35000,function(){ clica("bAp", function(){ $("st").outerHTML = '<span class="ok" id="st">Aprovada · Maria</span>'; }); });
+  em(39000,function(){ cena(7, 'Pronto: a situação mostra <b>Aprovada</b> e o cadastro da colaboradora <b>já mudou</b>. Se for <b>Recusada</b>, aparece o motivo.'); $("quem").textContent = "Deysiane · supervisão"; });
+};
+$("reco").onclick = inicia;
+$("pausa").onclick = function(){ if(!pausado){ pausado = true; limpa(); $("pausa").textContent = "Tocar de novo"; } else inicia(); };
+setInterval(function(){ if(!pausado) $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script></body></html>
