@@ -1508,3 +1508,8 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - CNPJ na lista (Marcus, 02/11/2026): só a LETRA muda de cor, sem fundo nem pílula: 34 dourado, 46 rosa, 59 verde-água, 67 azul, H&O roxo, Por fora claro. Substitui a pílula colorida do mesmo dia.
 - Linha da representante no Contas a pagar (Marcus, 02/11/2026): sem barra colorida; o fundo é igual ao das outras linhas e só o NOME muda de cor (laranja claro, com ▸/▾). Substitui o fundo dourado do mesmo dia.
 - Cores dos CNPJs mais suaves (Marcus, 02/11/2026: "mais fraco"): tons pastel e letra sem negrito (34 dourado claro, 46 rosa claro, 59 verde-água claro, 67 azul claro, H&O lilás, Por fora branco claro).
+
+## 02/11/2026 · Resultado do mês: Pagar com a mesma fonte do Contas a pagar (Marcus: "tudo errado")
+- Problema: o quadro Pagar do Resultado do mês pegava o total do admin antigo (`s.contasPagar`, parado em 27/10 21:03), enquanto o alto do Contas a pagar lê a DevMaster ao vivo. Em outubro: Resultado mostrava já pago R$ 1.330.288,27 e falta R$ 175.516,21; Contas a pagar mostrava R$ 1.561.221,03 e R$ 1.000,00. O quadro "Entrou de verdade" misturava o saldo de 30/10 com pagamentos de 27/10 (diferença −R$ 201 mil, sem sentido).
+- Regra agora (igual nas duas telas): com a DevMaster lida pelo servidor valem as baixas e os títulos dela, mais os pagamentos dados no sistema (`totais(filtrar(mês))`); sem ela, o admin antigo; sem os dois, a soma dos dias. A tela também passou a aplicar as baixas e lançamentos do sistema (`setBaixas`, `setLancamentos`).
+- Outubro depois da correção: já pago R$ 1.561.221,03; falta R$ 1.000,00; entrou de verdade R$ 1.458.822,75 contra R$ 1.429.094,00 esperados (diferença a favor R$ 29.728,75, parecida com a de 27/10).

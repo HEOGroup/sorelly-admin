@@ -7,7 +7,7 @@
 // Próxima etapa: previsão de acertos dos próximos meses × contas a pagar de cada mês (saldo previsto mês a mês).
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { AbasTela, H, brl } from "@/apps/montagem/components/padrao-fin";
-import { filtrar, totais } from "@/apps/montagem/domain/contas-empresa";
+import { filtrar, servidorEm, setBaixas, setClasse, setLancamentos, setPf, totais } from "@/apps/montagem/domain/contas-empresa";
 import { contasDoMes, fatEfetivo, projetarVariosAnos, QUEDA_JANEIRO, resumoMensalRevendedoras } from "@/apps/montagem/domain/financeiro";
 import { isoDia, provaDoMes } from "@/apps/montagem/domain/saldos-contas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
@@ -121,6 +121,7 @@ function PrevisaoMeses(p){
 
 function AbaResultadoMes(){
   var cx = use(), s = cx.state, sc = s.saldosContas, hojeD = new Date(), hoje = isoDia(hojeD), ano = hojeD.getFullYear();
+  setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);   // as mesmas contas e baixas da tela Contas a pagar (antes esta tela não aplicava as baixas dadas no sistema)
   var sm = useState(String(hojeD.getMonth()+1)), mes = sm[0], setMes = sm[1], sd = useState(null), d = sd[0], setD = sd[1], se = useState(""), erro = se[0], setErro = se[1], sab = useState("rec"), aba = sab[0], setAba = sab[1];
   var carrega = function(forcar){ chamar("GET", "/contas-receber"+(forcar ? "?atualizar=1" : "")).then(function(x){ setD(x); setErro(x.erro && !x.pronto ? x.erro : ""); }).catch(function(x){ setErro(x.message); }); };
   useEffect(function(){ if(apiAtiva()) carrega(false); }, []);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -134,8 +135,10 @@ function AbaResultadoMes(){
   var recRev = Kn.rec || 0, recFun = (Kt.rec || 0)-(Kn.rec || 0), antRev = cxN, antFun = cxT-cxN, recVenda = Kt.rec || 0, esperado = recVenda+cxT;
   var inadMes = Kt.ace || 0, inadAberto = Kt.s || 0, faturado = Kt.fat || 0;
   // PAGAR (admin antigo)
-  var pm = ((s.contasPagar || {})[String(ano)] || {})[m0] || {}, somaDias = contasDoMes(s, String(ano), m0).pago || 0, doAdmin = (pm.pago || 0)>0, pago = doAdmin ? pm.pago : somaDias, listaAp = totais(filtrar(ano+"-"+String(mi).padStart(2, "0"), "", "", "", "", "")).apagar || 0;   // lista de títulos em aberto lida da DevMaster (28/10/2026): é mais nova que o número parado do admin antigo
-  var falta = listaAp>0 ? listaAp : doAdmin ? (pm.apagar || 0) : (contasDoMes(s, String(ano), m0).apagar || 0);
+  // PAGAR: MESMA regra do alto da tela Contas a pagar (02/11/2026): com a DevMaster lida pelo servidor, valem as baixas e os títulos dela (mais os pagamentos dados no sistema); sem ela, o admin antigo; sem os dois, a soma dos dias.
+  var ymP = ano+"-"+String(mi).padStart(2, "0"), tP = totais(filtrar(ymP, "", "", "", "", "")), srvP = !!servidorEm() && tP.n>0;
+  var pm = ((s.contasPagar || {})[String(ano)] || {})[m0] || {}, somaDias = contasDoMes(s, String(ano), m0).pago || 0, doAdmin = !srvP && (pm.pago || 0)>0, pago = srvP ? tP.pago : doAdmin ? pm.pago : somaDias, listaAp = tP.apagar || 0;
+  var falta = srvP ? tP.apagar : listaAp>0 ? listaAp : doAdmin ? (pm.apagar || 0) : (contasDoMes(s, String(ano), m0).apagar || 0);
   // ENTROU DE VERDADE
   var pr = provaDoMes(sc, ano, m0, 0, 0, hoje), temSaldo = pr.variacao!==null && pr.variacao!==undefined, entrou = temSaldo ? pr.variacao+pago : null, dif = entrou===null ? null : entrou-esperado;
   // FATURAMENTO (o que o Marcus lança em Faturamento): acertos feitos, Carregar, a realizar e a previsão do mês
@@ -174,10 +177,10 @@ function AbaResultadoMes(){
         Lw(C3, ["Faturado no mês (todas as vendas)", brl(faturado), "Recebido na venda mais o acerto - loja lançado no mês"], false, "r6"),
         Lw(C3, ["Inadimplência do mês (acerto - loja lançado)", verm(brl(inadMes)), "Vendido no mês e não pago na hora, com as funcionárias"], false, "r7"),
         Lw(C3, ["Da inadimplência do mês, ainda em aberto", verm(brl(inadAberto)), "O que continua sem baixa agora"], false, "r8")),
-      aba==="pag" && e(Painel,{t:"Pagar · "+(listaAp>0 ? "DevMaster" : "admin antigo")+" · "+MES_LONGO[m0], v:brl(pago+falta)+" no mês"},
+      aba==="pag" && e(Painel,{t:"Pagar · "+(srvP || listaAp>0 ? "DevMaster" : "admin antigo")+" · "+MES_LONGO[m0], v:brl(pago+falta)+" no mês"},
         Lw(C3, ["Linha", "Valor", "De onde vem"], true, "h"),
-        Lw(C3, ["Já pago no mês", verde(brl(pago)), doAdmin ? "Total do mês do admin antigo (faturamento_contas_mes)" : "Soma dos dias lançados em contas pagas"], false, "p1"),
-        Lw(C3, ["Falta pagar no mês", ambar(brl(falta)), doAdmin ? "A pagar do mês no admin antigo" : "A pagar das contas da lista"], false, "p2"),
+        Lw(C3, ["Já pago no mês", verde(brl(pago)), srvP ? "Baixas do mês pela data de débito na DevMaster, mais os pagamentos dados no sistema" : doAdmin ? "Total do mês do admin antigo (faturamento_contas_mes)" : "Soma dos dias lançados em contas pagas"], false, "p1"),
+        Lw(C3, ["Falta pagar no mês", ambar(brl(falta)), srvP ? "Títulos em aberto que vencem no mês, na DevMaster" : doAdmin ? "A pagar do mês no admin antigo" : "A pagar das contas da lista"], false, "p2"),
         Lw(C3, ["Total do mês a pagar", brl(pago+falta), "Já pago mais o que falta"], false, "p3", null, forte))),
     aba==="ent" && e(Painel,{t:"Entrou de verdade nas contas · "+MES_LONGO[m0], v:entrou===null ? "Sem saldo lançado" : brl(entrou)},
       Lw(C3, ["Linha", "Valor", "De onde vem"], true, "h"),
