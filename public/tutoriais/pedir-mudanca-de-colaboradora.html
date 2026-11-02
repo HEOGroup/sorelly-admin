@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Aula · Pedir mudança de colaboradora ao RH</title>
+<style>
+*{box-sizing:border-box}body{margin:0;font:13px/1.5 Inter,system-ui,sans-serif;background:#0a0806;color:#fff;padding:24px}
+main{max-width:900px;margin:0 auto}h1{font-size:20px;margin:0 0 4px}p.sub{margin:0 0 18px;color:#e6dcc3}
+.passo{display:grid;grid-template-columns:44px 1fr;gap:12px;margin:0 0 14px;padding:14px;border:1px solid rgba(232,184,75,.3);border-radius:12px;background:#110e08}
+.n{width:44px;height:44px;border-radius:50%;background:#E8B84B;color:#1a1405;font-weight:800;font-size:20px;display:grid;place-items:center}
+.passo h2{margin:0 0 4px;font-size:15px}.passo p{margin:0 0 8px}
+.tela{border:1px solid #2c2c32;border-radius:8px;background:#131315;padding:10px;font-size:13px}
+.linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.campo{height:32px;min-width:150px;border:1px solid #3a3a42;border-radius:6px;padding:0 10px;display:flex;align-items:center;background:#1b1b1f}
+.campo.on{border-color:#E8B84B;box-shadow:0 0 0 2px rgba(232,184,75,.35)}
+.bt{height:32px;border-radius:6px;border:1px solid #E8B84B;background:rgba(232,184,75,.2);color:#E8B84B;font-weight:600;padding:0 14px;display:flex;align-items:center}
+.bt.on{box-shadow:0 0 0 2px rgba(232,184,75,.5)}
+.menu{display:flex;gap:10px;color:#e6dcc3}.menu b{color:#E8B84B;border-bottom:2px solid #E8B84B;padding-bottom:2px}
+.ok{color:#4ade80;font-weight:700}.pend{color:#fbbf24;font-weight:700}.no{color:#f87171;font-weight:700}
+.video{margin:0 0 18px;display:none}.video video{width:100%;border-radius:12px;border:1px solid rgba(232,184,75,.3)}
+.dica{margin-top:16px;padding:12px;border-radius:10px;background:rgba(232,184,75,.12);border:1px solid rgba(232,184,75,.4)}
+a{color:#E8B84B}
+</style></head><body><main>
+<h1>Como pedir ao RH a mudança de uma colaboradora</h1>
+<p class="sub">Para a supervisão do setor. Serve para mudar <b>setor</b>, <b>função</b>, <b>escala</b> ou <b>horário de entrada</b>. A mudança só vale depois que o RH confirmar.</p>
+<div class="video" id="video"><video controls preload="metadata" src="videos/pedir-mudanca.mp4"></video></div>
+
+<section class="passo"><div class="n">1</div><div><h2>Abra Recursos Humanos → Solicitações</h2><p>No menu lateral, clique em <b>Recursos Humanos</b>. Depois clique em <b>Solicitações</b>.</p>
+<div class="tela"><div class="menu"><span>Visão geral</span><span>Presença</span><span>Colaboradores</span><b>Solicitações</b><span>Contratos</span></div></div></div></section>
+
+<section class="passo"><div class="n">2</div><div><h2>Escolha a colaboradora</h2><p>No bloco <b>Nova solicitação</b>, abra o campo <b>Colaboradora</b> e escolha o nome.</p>
+<div class="tela"><div class="linha"><div class="campo on" style="min-width:320px">Jordana dos Santos Amorim · Produção</div></div></div></div></section>
+
+<section class="passo"><div class="n">3</div><div><h2>Diga o que muda</h2><p>No campo <b>O que muda</b>, escolha Setor, Função, Escala ou Horário de entrada. O campo <b>Hoje</b> mostra o valor atual.</p>
+<div class="tela"><div class="linha"><div class="campo on">Setor</div><div class="campo">Hoje: Produção</div></div></div></div></section>
+
+<section class="passo"><div class="n">4</div><div><h2>Escreva o novo valor e o motivo</h2><p>Escolha o <b>Novo setor</b> (ou escreva a nova função) e explique o motivo em poucas palavras.</p>
+<div class="tela"><div class="linha"><div class="campo on">Montagem de kits</div><div class="campo on" style="min-width:300px">Vai ajudar na montagem esta semana</div></div></div></div></section>
+
+<section class="passo"><div class="n">5</div><div><h2>Clique em Enviar ao RH</h2><p>O pedido aparece na lista como <span class="pend">Pendente</span>. A Maria Claudia e a Ana Paula recebem o pedido na tela delas.</p>
+<div class="tela"><div class="linha"><div class="bt on">Enviar ao RH</div><span class="pend">Pendente</span></div></div></div></section>
+
+<section class="passo"><div class="n">6</div><div><h2>Espere a resposta do RH</h2><p>Volte a esta tela. Quando o RH decidir, a situação muda para <span class="ok">Aprovada</span> (o cadastro já mudou) ou <span class="no">Recusada</span> (com o motivo).</p>
+<div class="tela"><div class="linha"><span>Jordana · Setor: Produção → Montagem de kits</span><span class="ok">Aprovada · Maria</span></div></div></div></section>
+
+<div class="dica"><b>Importante:</b> peça sempre por aqui, nunca só por mensagem. Assim o RH tem o registro e o cadastro fica certo. Dúvida? Escreva no <a href="/melhorias">SorellyChat</a> para a Maria Claudia.</div>
+</main>
+<script>fetch("videos/pedir-mudanca.mp4",{method:"HEAD"}).then(function(r){ if(r.ok) document.getElementById("video").style.display="block"; }).catch(function(){});</script>
+</body></html>
