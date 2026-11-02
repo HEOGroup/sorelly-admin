@@ -15,7 +15,7 @@ Este documento junta tudo o que ficou decidido. Decisões curtas também estão 
 - Só o **grupo do menu** mudou. As ações de cada pessoa (papel em `papelDe`) seguem como antes.
 - O Marcus ajusta o acesso de cada pessoa da Direção em RH → Acessos.
 - Código: `grupoDe` em `domain/equipe.js`; rótulos em `navigation/perfis.js` e `domain/equipes.js`; lista "Atuar como outra pessoa" em `components/seletor-acesso.js`.
-- Cada conta pode ter **grupo de acesso**, **contato do chat** e **nome** próprios (funcionário fora da lista de 43 nomes). Colunas `grupo` e `cid` em `sorelly.conta` (`scripts/migrar-grupo.mjs`).
+- Cada conta pode ter **grupo de acesso**, **contato do chat** e **nome** próprios (funcionário fora da lista de 43 nomes). Colunas `grupo` e `cid` em `sorelly.conta` (`scripts/usados-uma-vez/migrar-grupo.mjs`).
 - Conta ligada a pessoa que não está em `EQUIPE` recebe só o básico (Início e Chat).
 
 ## 2. Quem vê dinheiro
@@ -29,7 +29,7 @@ Este documento junta tudo o que ficou decidido. Decisões curtas também estão 
 
 ## 3. Contas e senhas das equipes
 
-- 23 contas criadas: Bipagem (10), Montagem (10) e Encomendas (3). Login simples e senha provisória (`scripts/criar-contas-setor.mjs`).
+- 23 contas criadas: Bipagem (10), Montagem (10) e Encomendas (3). Login simples e senha provisória (`scripts/usados-uma-vez/criar-contas-setor.mjs`).
 - Tela **Senhas para enviar** em RH → Acessos e autorizações → Contas (só Diretoria): usuário, senha, botão "Copiar mensagem" e "Nova senha". A senha provisória some quando a pessoa troca a própria senha.
 - A lista de senhas NÃO fica no Git.
 

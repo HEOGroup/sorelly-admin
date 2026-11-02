@@ -2,10 +2,17 @@
 
 Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O código explica o *como*; aqui fica o *porquê*.
 
+**Para olhar tudo de uma vez:** abra [`Painel de documentos.html`](Painel%20de%20documentos.html) (abas por setor, nomes em português). O que falta organizar e em que ordem: [`PLANO-DE-ORGANIZACAO.md`](PLANO-DE-ORGANIZACAO.md). Como ler os nomes dos arquivos: [`COMO-LER-OS-NOMES.md`](COMO-LER-OS-NOMES.md).
+
 | Pasta / arquivo | O que tem |
 |---|---|
-| [`DECISOES.md`](DECISOES.md) | Diário de decisões (mais recente no topo). Toda decisão nova entra aqui no mesmo dia. |
-| [`negocio/`](negocio/) | Regras e fluxos da empresa, um arquivo por assunto. |
+| [`DECISOES.md`](DECISOES.md) | Diário de decisões (mais recente no topo). Toda decisão nova entra aqui E na pasta do setor, no mesmo dia. |
+| [`setores/`](setores/) | **Uma pasta por setor (17 + Geral)**: `LEIA-ME.md` (o que é, quem, telas, recebe de, entrega para, regras), `decisoes.md`, `pendencias.md` e, no RH e em Representantes, `pessoas.local.md` (fora do Git). Leia o `LEIA-ME.md` do setor primeiro. |
+| [`ideias/`](ideias/) | Uma ideia por arquivo, com a situação (só ideia, planejado, em andamento, pausado). |
+| [`negocio/`](negocio/) | Regras e fluxos da empresa, um arquivo por assunto. Comece por `INTEGRACAO-ENTRE-SETORES.md` (quem recebe o quê de quem). |
+| [`historico/`](historico/) | "Fotos de um dia": contextos e investigações que já não valem como regra atual. |
+| [`dados-locais/`](dados-locais/) | Dados reais só deste PC (financeiro, revendedoras, acessos, pessoal). Fora do Git. |
+| [`rascunhos/`](rascunhos/) | Desenhos feitos nas conversas, separados por assunto. Não são telas do sistema. |
 | [`negocio/arquivos/`](negocio/arquivos/) | PDFs de referência (apresentação da empresa, guia do app da representante, comissões e brindes). |
 | [`design/`](design/) | Padrão visual obrigatório, estudo de design system, guia de escrita e diagramas. |
 | [`prompts/`](prompts/) | Prompts usados para gerar sistemas e módulos (o `PROMPT-MESTRE.md` aparece na tela Tecnologia → Padrão visual). |
@@ -38,4 +45,5 @@ Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O có
 | `PADRAO-VISUAL.md` | **Obrigatório** antes de criar ou mexer em tela. |
 | `GUIA-DE-ESCRITA-E-TIPOGRAFIA.md` | Como escrever títulos, botões e avisos; fontes. |
 | `DESIGN-SYSTEM-ESTUDO.md` / `DESIGN-SYSTEM-ESTUDO-COMPLETO.md` | Estudo de design system (regras propostas). |
+| `testes-de-layout/` | Desenhos HTML para escolher layout (versões A, B, C...). |
 | `diagramas-guia/` | Diagramas SVG usados no guia do app da representante. |

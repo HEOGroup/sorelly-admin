@@ -1,0 +1,201 @@
+# financeiro: pendências
+
+O que o diário de decisões (`docs/DECISOES.md`) diz que **ainda falta ou está em aberto** neste setor. Levantado em 02/11/2026 por palavras como pendente, a confirmar, falta. É um ponto de partida: confira, risque o que já foi feito e acrescente o que faltar.
+Pendência nova entra aqui e no diário geral, no mesmo dia.
+
+- [ ] **PENDENTE (não está pronto):** (1) contas pagas por dia e faturamento diário só existem no navegador/arquivo local, NÃO em módulo do servidor: a equipe não consegue compartilhar o lançamento diário; (2) Fiscal (notas de entrada e saída) e Contas por mês (`faturamento_contas_mes`) não foram puxados; (3) fechamento de mês (saldo …
+  - de: 29/10/2026 (CORTE do Financeiro: a equipe para de usar o admin antigo)  (diário, linha 41)
+- [ ] **Previsão de novembro, dezembro e janeiro (Marcus, 27/10/2026), em Resultado do mês, embaixo:** a média por acerto vem do CONTAS A RECEBER só dos acertos das revendedoras (faturado ÷ revendedoras que acertaram, 3 meses fechados), nunca "o que entrou ÷ acertos". Entrada = acertos previstos da Visão geral × média × % pago na hora…
+  - de: 27/10/2026 (Resultado do mês · previsão)  (diário, linha 170)
+- [ ] **Tela nova: Previsão de caixa (pedido do Marcus, ajustada 3x no mesmo dia).** Financeiro → **Previsão de caixa** (palavra direta no topo do menu, não escondida — o Marcus reclamou que estava difícil de achar dentro de Saldos e análises → Saldo das contas, então subiu pro primeiro nível, ao lado de Pagamentos). Código: `pages/Pr…
+  - de: 26/10/2026 (trecho)  (diário, linha 210)
+- [ ] **ACHADO, investigado em 26/10 — divergência de R$ 79 mil nas contas pagas de 01 a 13/10, causa encontrada:** o relatório que o Marcus conferiu em 13/10 somava **R$ 530.060,74** pago nesse período; a leitura direta do banco do admin antigo para os MESMOS dias dá **R$ 609.091,94** (diferença de **R$ 79.031,20**). Cada um dos 10 d…
+  - de: 26/10/2026 (trecho)  (diário, linha 210)
+- [ ] **Financeiro familiar: os 36 pagamentos aplicados, autorizado pelo Marcus ("tá tudo certo, aplica aí"), 26/10/2026.** Montei a ligação admin↔sistema comparando pessoa + descrição + dia de vencimento + conta bancária das 167 contas do admin antigo com as 157 daqui (`sync3` em `ff-dados.local.js`, flag `ffImp8`). Resultado: **3 pa…
+  - de: 26/10/2026 (trecho)  (diário, linha 210)
+- [ ] **Primeira visão de fluxo de caixa, pedida pelo Marcus em 26/10/2026 (ver resposta completa no chat; registrar aqui só o método e o achado):** saldo real (23/10, admin antigo) + a receber do resto do mês (projeção de faturamento a 97%, R$ 386.680,71) − a pagar até 31/10 (planilha do Marcus, R$ 265.002,73) = saldo projetado ~−R$ …
+  - de: 26/10/2026 (trecho)  (diário, linha 210)
+- [ ] **Fiscal, painel novo (Marcus, baseado no HTML do primo):** tela `Fiscal → Painel e notas` (`pages/fiscal/Painel.js`). Barra de totais no topo com botão **Ano | Mês** que muda tudo. Um bloco por CNPJ, 2 em 2, sempre na ordem de quem mais precisa de nota de entrada (maior falta de lastro). Bloco enxuto, bate o olho: CNPJ inteiro,…
+  - de: 23/10/2026 (trecho)  (diário, linha 237)
+- [ ] **Fonte do sistema: Inter, corpo de 13 px no Financeiro (Marcus escolheu).** `theme.css` (`--font-sans` e `--font-heading` = Inter; mono só para código), `index.html` carrega a Inter; números do padrão do Financeiro na mesma fonte (Inter com algarismos tabulares). **Contas a pagar refeita no padrão** (`pages/ContasPagarLista.js`…
+  - de: 22/10/2026 (trecho)  (diário, linha 258)
+- [ ] **Faturamento construído no padrão (referência):** `pages/Faturamento.js` com as peças de `components/padrao-fin.js`. Pendente nesta tela: o "Detalhe por mês" editável (tabela antiga em `pages/ConsolidadoFaturamento.js`) e o bloco "Previsão de faturamento" (Configurador, só Marcus) ainda estão no visual antigo e entram na próxim…
+  - de: 22/10/2026 (trecho)  (diário, linha 258)
+- [ ] **Faturamento fixado até 20/10 (Marcus):** 1.124 acertos, R$ 888.787,53, média R$ 790,74 (`aplicaFat20b` em `state/store.js` + `FATURAMENTO-DIARIO.md`). Pendente de resposta dele: 08/10 e 13/10 no sistema (admin antigo) diferem dos números que ele passou (291/R$ 207.855,36 e 526/R$ 426.110,24).
+  - de: 21/10/2026 (trecho)  (diário, linha 276)
+- [ ] **Novo layout de navegação (Marcus, modelo DevMaster):** menu lateral de setores continua; em cima, barra do setor numa linha com listas em cascata; depois abas das telas abertas (máx. 5, com X, clique normal troca a aba atual e Ctrl+clique/botão direito abre nova); embaixo, linha de status (usuário, setor, data e hora, versão).…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar, a regra confirmada (Marcus, 19/10/2026, à noite):** o total do DevMaster (R$ 1.515.154,53 em out) é Sorelly + família juntas; Sorelly = total menos a família (R$ 1.307.365,14), Família dentro do DevMaster = R$ 207.789,39. Cada conta existe UMA vez no nosso sistema e leva a marcação Sorelly ou Família (`s.cpe.cl…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar, como o total funciona (Marcus, 19/10/2026, a regra certa):** o DevMaster JÁ TRAZ as contas da família que sempre foram pagas junto pela empresa; o Financeiro familiar nasceu separado e agora o objetivo é tirar tudo do DevMaster. Por isso o total do mês é o do DevMaster (out/2026 informado por ele: pagas R$ 824.…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar, layout e regra (Marcus, 19/10/2026, mais tarde):** a regra de tirar o pessoal do DevMaster da soma estava ERRADA. Valem: o salário dos sócios conta nos DOIS (Empresa e Família); Empresa = igual ao DevMaster; Família = Financeiro familiar; nada é cortado. Layout: bloco Principal em cima (Empresa | Família | Empr…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar, família e conciliação (Marcus, 19/10/2026):** Todas soma a família, com o botão "Somar família" (sim/não). O pessoal que existe no DevMaster e no Financeiro familiar vale UMA vez: com a família somada, vale o familiar e o pessoal do DevMaster (pró-labore, casas 3.13, viagem 3.16.08, Pix revendedoras) sai da som…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar, atualização do mesmo dia:** o Marcus achou "bagunça" ter contas por CNPJ, por fora, família e o familiar ao lado. A tela nova junta tudo numa linha só (Todas · CNPJ 34 · 46 · 59 · Axis · Por fora · Família); Família abre as telas completas do Financeiro familiar dentro dela. Total do mês = pago + falta pagar (o…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Contas a pagar = uma tela só (pedido do Marcus):** separa FAMÍLIA e EMPRESA, e a empresa por CNPJ (34, 46, 59, Axis 67 e "Por fora"). Tela nova em Financeiro → Contas a pagar (`pages/ContasPagarEmpresa.js`, `domain/contas-empresa.js`, dados reais só em `contas-empresa.local.js`). A tela antiga "Contas a pagar" (Faturamento & c…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Financeiro familiar, "Para quem entra" (decisão do Marcus):** tudo que é da casa (luz, viagem, hotel etc.) é lançado como **Família**, que divide em partes iguais (25%) entre Marcus, Anamaria, Marco Antonio e Ana Beatriz; o que for só de um (ex.: Ferrari) é lançado no nome da pessoa. A forma de pagamento e a conta pagadora são…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Acesso de leitura ao banco do admin antigo liberado pelo Leonardo** (financeiro familiar, faturamento, RH, crédito de peças; só as tabelas de login ficam bloqueadas, de propósito). Dados reais entram SEMPRE em arquivo `*.local.js` (repositório é público). Metas das revendedoras: NÃO trazer (descartado). **Financeiro familiar i…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Prestador de serviço (Pagamentos a fornecedores):** toda negociação de prestador tem SEMPRE data limite e valor mínimo de pix, mais um resumo do que está sendo pago (`descricao`, `limite`, `pixMin` no pedido). Em Negociações há o bloco "Prestadores de serviço — pendente" com botão "Ver negociação" que abre o combinado. Helcio:…
+  - de: 19/10/2026 (trecho)  (diário, linha 291)
+- [ ] **Novo módulo para depois: Créditos bancários** (Financeiro): os vários créditos/empréstimos da empresa com contratos, valores, parcelas, vencimentos e saldo devedor, para visualizar tudo num lugar. Ainda não existe no SorellyAdmin; desenhar com o Marcus (perguntas: quais tipos de crédito, por CNPJ, o que ele quer ver primeiro).
+  - de: 16/10/2026 (trecho)  (diário, linha 310)
+- [ ] Fiscal: dados reais importados em `domain/fiscal.local.js` (gitignored), batem com o resumo do Marcus até o centavo. Pontos a confirmar: "Filial Hess & Oliveira" (R$ 3,7 mi em vendas, sem notas, parece duplicada) e contas de nov/dez que repetem outubro.
+  - de: 16/10/2026 — Inadimplência e Jurídico  (diário, linha 369)
+- [ ] Lidas as tabelas `compras_*` do banco antigo (liberadas pelo Leonardo; também `rh_*`, `faturamento_*`, `finance_familiar_*` e `credito_peca_*` respondem): 137 pedidos, 15 setores, 15 categorias, 14 contas, 11 motivos. Gravados em `domain/compras-estoque.local.js` (gitignored). `ceMigrar` junta tudo uma vez (`ce.importV`) sem apa…
+  - de: 21/10/2026 — Compras trazidas do admin antigo  (diário, linha 532)
+- [ ] Criado `REGRAS-DE-PIX.md` com as regras ditas pelo Marcus (link = mesmo CNPJ; Pix > R$ 3.000 para Pontual e Point; Getnet + Pix > R$ 750 para Pontual; Pix < R$ 750 para prestadores menores, preferindo os da Sorelly; vale a maquininha da representante, não o CNPJ dela). Botão "Regras do Pix" no Controle de pagamentos leva ao edit…
+  - de: 20/10/2026 — Regras do Pix  (diário, linha 551)
+- [ ] 20/10/2026: Geral dos fornecedores com formatos Blocos/Planilha, sempre 3 dezenas do mês + 3 do mês seguinte; cartão da Pontual desconta da 1ª dezena do mês seguinte (estimativa passou -5%, 3 parcelas, a confirmar; constantes EST_DESC e EST_PARC em pages/pf/Resumo.js).
+  - de: 20/10/2026 — Relatório de custos agrupado por fornecedor (só organização, nada mudado no sistema)  (diário, linha 578)
+- [ ] Planilha "Pontual - Negociacoes PAG. 1.0" lida: ate out/2026 o sistema ja bate (Pix e boleto, mes a mes). Nov/2026 a abr/2027 foram trocados pelas parcelas da planilha (todas pendentes; as ja pagas ficam). Junho: 1 Pix de R$ 1.734,24 com data invalida 31/06 na planilha, NAO lancado (duvida).
+  - de: 20/10/2026 · Pontual, negociacao  (diário, linha 597)
+- [ ] Gravadas em FLUXO-DE-PAGAMENTOS.md (CNPJs da Pontual e pagadores, boleto 6x 30/60/90.., Pix por faixa de 10 dias ou parcelado junto, acordo set/2026, passo a passo e teto mensal). Proximo passo: tela de pedido novo da Pontual seguindo esse fluxo (aguardando respostas).
+  - de: 20/10/2026 · Regras da Pontual (texto do Marcus)  (diário, linha 600)
+- [ ] 20/10/2026 (relatório de custos, 5): João Guilherme (tio do Marcus) é do setor Encomendas, com o combustível dele (falta saber onde o combustível dele é lançado). Marketing e tráfego pago virou grupo (3.23.*: Facebook por Diego Franco); Google lançado hoje é só Workspace, sem Google Ads. Encargos da folha continuam a pagar.
+  - de: 20/10/2026 · Regras da Pontual (texto do Marcus)  (diário, linha 600)
+- [ ] 20/10/2026 (relatório de custos, 7): aluguéis = uma linha por CNPJ (34, 46, 59, 67), somando, e abrindo mostra as contas com as salas. Patriarca 46 = sala 703. Faltam as salas da Serenity (59) e da Axis (67).
+  - de: 20/10/2026 · Prestadores de outubro  (diário, linha 604)
+- [ ] 20/10/2026 (relatório de custos, 10): endereços da AXIS (CNPJ 67) passados pelo Marcus: Rua Vinte e Quatro de Maio, 412, sala 503, 5º andar; Rua Marechal Deodoro, 857, sala 1401. Entram na coluna Sala do aluguel da Axis (a confirmar se as duas salas são da Axis e qual é a da Serenity).
+  - de: 20/10/2026 · Prestadores de outubro  (diário, linha 604)
+- [ ] Tela "Por funcionario" (metas, bonus de horas extras) fica em Financeiro > Comissoes (decisao do Marcus). Falta alinhar: quais setores tem meta, o que e "bonus horas extra" e o que mostrar no detalhe.
+  - de: 20/10/2026 · Cores dos fornecedores, datas da planilha e metas  (diário, linha 612)
+- [ ] 20/10/2026 (relatório de custos, 14): Comissão atacado vai para o grupo Comissões de funcionários (R$ 400 em Outubro). Impostos: hoje só DAS (R$ 85.050 a pagar, 5 CNPJs), ICMS e Taxas; o Marcus diz que falta imposto (perguntas feitas; INSS e FGTS estão em Encargos da folha).
+  - de: 20/10/2026 · Cores dos fornecedores, datas da planilha e metas  (diário, linha 612)
+- [ ] 20/10/2026 (relatório de custos, 16): coluna Sala SAIU; a sala fica só na primeira linha da descrição da conta. Colunas: Total, Pago, Falta pagar. Cores: Falta pagar VERMELHO (tabela, cartões e indicador do topo); Atrasado LARANJA (#F97316).
+  - de: 20/10/2026 · Cores dos fornecedores, datas da planilha e metas  (diário, linha 612)
+- [ ] 20/10/2026 (relatório de custos, 20): a visão "Folha por funcionária" SAIU da Análise de custos (o Marcus não quis); a barra Mês/Situação/Nota/Buscar e os botões foram alinhados em duas fileiras. O Marcus quer uma ABA NOVA em Contas a pagar só de funcionários e representantes; está confuso para ele salário base × salário + adian…
+  - de: 20/10/2026 · Cores dos fornecedores, datas da planilha e metas  (diário, linha 612)
+- [ ] 20/10/2026 (relatório de custos, 24): tabela de Funcionários redesenhada pelo pedido do Marcus (Salário base do contrato, Total recebido, Adiantamento 40% e Salário juntos sob o grupo SALÁRIO, VR, VT, horas extras, bônus, 13º, outros, pago e falta pagar). Adiantamento = 40% do salário base. Relatórios de remuneração entram um a …
+  - de: 20/10/2026 · Cores dos fornecedores, datas da planilha e metas  (diário, linha 612)
+- [ ] 20/10/2026 (relatório de custos, 27): relatórios da Nayale (R$ 17.898,76) e da Camilly (R$ 14.933,40) de julho a setembro colocados na aba Funcionários. Na Nayale o total de agosto e setembro não soma com as linhas (falta a diferença salarial): conferir com o RH. O relatório basta para custo e hora extra; holerite só para INSS, …
+  - de: 20/10/2026 · Controle de pagamentos reorganizado  (diário, linha 649)
+- [ ] Pendente: aba Conferencia ERP (relFin009_Natureza.xlsx: CNPJ 34 e filial principal que registra tudo), boletos sem baixa/valor diferente enviados as meninas.
+  - de: 20/10/2026 · Pontual em abas (Opcao 3)  (diário, linha 656)
+- [ ] Pedido Pontual NF 11689 / fatura 13456-13455 lancado (Serenity CNPJ 59, R$ 14.343,00; 45% boleto 6x R$ 1.075,73 + 55% Pix 6x R$ 1.314,77; 15/11/2026 a 15/04/2027; data do pedido 19/10). Ainda nao estava na planilha.
+  - de: 20/10/2026 · Tela principal da Pontual unica + NF 11689  (diário, linha 668)
+- [ ] **Meta mensal do Cadastro de revendedoras, OUTUBRO/2026 (20/10/2026; PROPOSTA enviada pelo setor, aguardando aprovação do Marcus; ainda NÃO está no sistema):** o setor faz uma meta nova todo mês. Equipe: Camilly, Thali e Michelle (linha de frente) e **Helen** (apoio ao cadastro e planilhas, e também Link de Pagamento; é a mesma …
+  - de: 20/10/2026 · Botoes na Geral  (diário, linha 681)
+- [ ] **Meta mensal do Link de pagamento, OUTUBRO/2026 (20/10/2026; da Helen; proposta do setor, NÃO está no sistema; SUBSTITUI as faixas de 65/70/75/80 mil da planilha antiga, que dizia que mudariam em outubro):** meta pelo valor PAGO total em links no mês. Bronze R$ 70.000 = R$ 300 (~R$ 1.750/dia) · Prata R$ 75.000 = R$ 450 · Ouro R…
+  - de: 20/10/2026 · Botoes na Geral  (diário, linha 681)
+- [ ] **Mapa de metas e bônus por setor, a alinhar (20/10/2026):** têm meta mensal confirmada: Agendamento (94/95/96% = R$ 200/300/600), Cadastro, Inadimplência, Link de pagamento. Faltam confirmar valores de outubro: Montagem (banco antigo: 8 kits normais base R$ 15 + R$ 2 por kit extra; 6 kits especiais base R$ 15 + R$ 3), Bipagem (…
+  - de: 20/10/2026 · Botoes na Geral  (diário, linha 681)
+- [ ] **Comissão do atendimento interno, quem acompanha a revendedora (20/10/2026, Marcus):** R$ 5,00 FIXO por atendimento; venda acima de R$ 4.000,00 paga R$ 10,00. Qualquer funcionária que atender recebe; por enquanto quem atende são só **Maria Aparecida e Leci**. Cerca de 400 atendimentos por mês (~125 por funcionária, ~R$ 625 cada…
+  - de: 20/10/2026 · Botoes na Geral  (diário, linha 681)
+- [ ] Pix para o Marcus/familia (ex.: Pix Marcus - Higor, - Greyce, - 68 Gang; a mae tambem): entra como RETIRADA dos socios e o controle fica no Financeiro familiar (falta definir onde lancar).
+  - de: 21/10/2026 · Contas a pagar: nova ordem e alinhamento com o DevMaster  (diário, linha 706)
+- [ ] "Prestadores" virou "Sócios" (ff-socios): uma tela por sócio com Pix recebido, salario recebido, PARA ONDE FOI o Pix (contas do proprio socio x terceiros) e tabela de prestadores com combinado, enviado, progresso, falta pagar, data limite (campo prazo do prestador, editavel) e situacao. Opcao 1 + barra de progresso da Opcao C, e…
+  - de: 21/10/2026 · Financeiro familiar: tela Sócios  (diário, linha 718)
+- [ ] 21/10/2026 (reposição, regras novas): Top 50 recebe reposição por ENTREGA (pelo tio João, João Guilherme), pode sair durante o mês, taxa de R$ 15,00 paga ANTES por Pix com comprovante anexado, sem exceção. Média de R$ 2.000 ou mais (a equipe tira a média pelo WhatsApp por enquanto) pode agendar ida na empresa (até 1 hora para es…
+  - de: 21/10/2026 · Financeiro familiar: tela Sócios  (diário, linha 718)
+- [ ] Cada divida mostra Valor, Pago, Falta e "Fechou em": os envios (Pix) e os descontos baixam as dividas da mais antiga para a mais nova. Descricao obrigatoria de ler: orcamento/servico.
+  - de: 21/10/2026 · Socios: fechar divida e datas de quitacao  (diário, linha 731)
+- [ ] Amanda: R$ 350,00 devido, R$ 170,00 enviado, falta R$ 180,00 (setembro R$ 299 ja quitado).
+  - de: 21/10/2026 · Socios: fechar divida e datas de quitacao  (diário, linha 731)
+- [ ] 68 Gang: 320i R$ 13.055,30 (saldo informado R$ 8.059,30), DRL R$ 1.350 (quitada), OS R$ 25.474,56 (quitada, desconto de R$ 3.210 na batida). Sistema mostra falta R$ 8.213,16: diferenca de R$ 153,86 em Pix que nao consegui identificar.
+  - de: 21/10/2026 · Socios: fechar divida e datas de quitacao  (diário, linha 731)
+- [ ] Lancar divida: anexar PDF do orcamento (guardado no navegador) ou colar a mensagem do prestador; o sistema le codigo, total e pagamentos. Leitura de PDF e melhor esforco: falta um PDF de exemplo da 68 Gang para ajustar.
+  - de: 21/10/2026 · Prestador: Divida por codigo do orcamento (Marcus)  (diário, linha 738)
+- [ ] 68 Gang: 320i D#280826140921 R$ 13.055,30, pago R$ 4.996,00, falta R$ 8.059,30 (inclui Marcus Hess R$ 500 de 13/10); DRL D#081026153030 R$ 1.350 quitada em 19/10 (inclui Ana Beatriz R$ 29,80); OS D#270726133559 quitada. Pagamentos antes de 24/09 somam R$ 375,94 a mais que a OS pede: conferir.
+  - de: 21/10/2026 · Prestador: Divida por codigo do orcamento (Marcus)  (diário, linha 738)
+- [ ] 21/10/2026 (reposição pela representante): a representante pode levar reposição para QUALQUER revendedora (sem exigir Top 50 nem média), separa as peças ela mesma na empresa, até 10 por semana; os R$ 15 são dela. Falta definir o limite de valor por reposição.
+  - de: 21/10/2026 · Prestador: Divida por codigo do orcamento (Marcus)  (diário, linha 738)
+- [ ] Pedido que estoura o teto do mes ou da categoria fica PENDENTE (nao gera conta a pagar nem entra no lancado) ate aprovar. Autorizacao nova pf_limite_aprova (padrao Marcus, id 16), ajustavel em RH > Acessos e autorizacoes.
+  - de: 21/10/2026 · Limite mensal de fornecedores: implementado (Marcus aprovou o desenho)  (diário, linha 753)
+- [ ] Limite de fornecedores, layout C (tabela) escolhido pelo Marcus em 21/10/2026: tabela por tipo com limite, lancado, pendente, folga, % e quem pesa; regras escritas ao lado; proximos 4 meses com folga (para jogar Pix/parcelas); calendario de vencimentos com dias de conta fixa marcados.
+  - de: 21/10/2026 · Limite mensal de fornecedores: implementado (Marcus aprovou o desenho)  (diário, linha 753)
+- [ ] Calendario de vencimentos (21/10/2026, pedido do Marcus "melhore o calendario"): bloco proprio e largo abaixo do Limite. Cada dia mostra o total e o valor por tipo (cores Banho/Bruto/Serviços), total da semana, dia de conta fixa em vermelho ("evitar!" quando ja ha boleto/cheque), pendente de aprovação e "pago". Clicar no dia abr…
+  - de: 21/10/2026 · Limite mensal de fornecedores: implementado (Marcus aprovou o desenho)  (diário, linha 753)
+- [ ] Escala 42h, fim da 6x1 (21/10/2026): a partir de 16/12/2026 cada pessoa trabalha 42h e tem 2 folgas. Equipe A seg a sex (seg a qui 8h as 17h30, sex 8h as 17h); Equipe B ter a sab (ter a sex 8h as 17h30, sab 8h as 17h); Padrao = igual a A. Atendimento de kits, Bipagem e Agendamento se dividem entre A e B; Financeiro e demais seto…
+  - de: 21/10/2026 · Limite mensal de fornecedores: implementado (Marcus aprovou o desenho)  (diário, linha 753)
+- [ ] **Metas mensais implementadas (20/10/2026, Marcus mandou "vai mete marcha"):** Financeiro → Comissões → **Cadastro de revendedoras** (`pages/MetasSetor.js` AbaComCadastro) e **Inadimplência** (AbaComInad), regras em `domain/metas-setor.js` (`s.metasSet`, ação `METAS`). Meta POR MÊS (`meses["AAAA-MM"]`), com seletor de mês, "Cria…
+  - de: 21/10/2026 · Limite mensal de fornecedores: implementado (Marcus aprovou o desenho)  (diário, linha 753)
+- [ ] No admin antigo o lancamento de R$ 7.800 (28/08) esta PENDENTE na categoria Pix Itaú Black (Marcus apagou o pagamento em 22/10 00:05); aqui continua pago. Aguardando ele terminar para espelhar.
+  - de: 21/10/2026 · Financeiro familiar bate com o admin antigo (Marcus: "tem que bater")  (diário, linha 766)
+- [ ] Resumo do socio (22/10/2026, 5a versao): sem barras e sem "Meta do mes"; Por categoria em UMA coluna e com menos categorias (Compra parcelada, Financiamento/parcelas de carro e o que for menor que 2% somam em Outros; Consorcio fica); rotulos diretos (Total pago, Contas, Pro-labore, Pix recebido, Na minha conta, Repassado a prest…
+  - de: 21/10/2026 · Financeiro familiar bate com o admin antigo (Marcus: "tem que bater")  (diário, linha 766)
+- [ ] Resumo do socio (22/10/2026): bloco final "Grafico" com pizza das mesmas categorias do Por categoria. Conferencia do Pix revendedora: os numeros do Marcus (54.238,87 / Nubank 29.179,97 / Repasse 10.324,80 / Saldo 14.734,10) NAO saem do banco do admin antigo: la agosto tem 100 Pix = 49.828,29 (Nubank 30.310,05; Caixa 8.210,34; se…
+  - de: 21/10/2026 · Financeiro familiar bate com o admin antigo (Marcus: "tem que bater")  (diário, linha 766)
+- [ ] Lista de compras pendentes puxada do banco do admin antigo (143 pedidos; 17 novos ou com etapa nova). Arquivo local `domain/compras-estoque-sync.local.js` (gitignored); só atualiza pedido cujo histórico inteiro veio do admin antigo.
+  - de: 22/10/2026 · Compras atualizadas do admin antigo e olhar de cortes  (diário, linha 795)
+- [ ] Pendente: confirmar com o Marcus se valor pago diferente do valor (só juros/desconto) fica quitado (hoje: quita quando juros/desconto explicam a diferença; senão parcial); conferir baixas x "Contas pagas por dia".
+  - de: 22/10/2026 · Contas a pagar: Registrar pagamento (baixa)  (diário, linha 799)
+- [ ] Pendente de confirmação do Marcus: Cobrança de funcionários em Receber; Estoque Sorelly em Saldos e análises.
+  - de: 22/10/2026 · Estrutura do menu do Financeiro (aplicada para o Marcus verificar)  (diário, linha 835)
+- [ ] Contas a pagar, tela (22/10/2026): Marcus pediu (1) abrir com tudo junto, (2) Por vencimento seguir o mes escolhido com botao abrir/fechar todos os dias, (3) alinhar com a mae: pro-labore e retirada de lucros de Anamaria, Marcus e Marco Antonio sao custo da empresa, nao "familia". Feito: abas Empresa / Pro-labore e retiradas / T…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] **Kits novos: bairro, cidade e profissão na tela inicial + layout novo (Marcus, 23/10/2026):** pedido da Michele no teste com o Leonardo. Bairro, cidade e profissão ficam visíveis na Planilha (colunas depois do Nome) e no Quadro, para localizar a região e ver quem é a revendedora na hora de liberar, sem abrir o cadastro. Campo n…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] **Kits novos: etapas da representante, mapa de regiões e entrada automática (Marcus, 23/10/2026):** (1) O funil ganhou Aceito, Em contato, Agendado (dia e período marcados) e Retirado entre Solicitado e Entregue, para medir onde a representante demora; prazos novos no Configurador (provisórios: aceitar 1 dia, contatar 1, agendar…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] **Fluxo de Kits novos segundo o Nickolas e Mensagens prontas (Marcus, 23/10/2026):** (1) A ficha de entrega (dias e períodos livres, local, horário de trabalho, telefone) é colhida pela MICHELE, com mensagem pronta, ANTES de mandar o contato da revendedora à representante. (2) Rota por km existe no dia a dia, mas NÃO entra no si…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] 22/10/2026 (setor Encomendas e reposições criado no admin, opção E): 6 telas em UMA linha no topo, sem dropdown: Funil de pedidos, Ida na empresa, Top 50, Representantes, Expositores, Regras e mensagens. Funil = Kanban igual aos Kits novos (faixa de totais, bloco Filtros, colunas), cartão "faixa do canal" com nome e sobrenome, t…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] **Pedido de dias e horários às representantes (Marcus, 23/10/2026):** elas já passaram os bairros; falta só dia e horário, e observação, em mensagem curta (modelo: Nome, Segunda a Domingo, Obs.). O sistema guarda o horário exato por dia e deriva manhã/tarde/noite para a indicação (apps/kits-novos/domain/regioes-rep.js, periodosD…
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] Folder de regras, mínimo de venda (23/10/2026): Marcus decidiu mínimo de R$ 500,00 por acerto com a representante e R$ 700,00 por acerto na Sorelly. A faixa de 15% (R$ 300 a 499,99) continua na tabela de comissão. Entrou só no folder (materiais-do-app/folder-regras.html e FOLDER-REGRAS-SORELLY.pdf); o Configurador (minRenovar = …
+  - de: 22/10/2026 · Atualização da noite  (diário, linha 849)
+- [ ] Folders e informativos (23/10/2026): o folder deixou de ser PDF/imagem e virou conteúdo EDITÁVEL dentro do app da revendedora e do app da representante. Admin: Representantes & Kits → Regras → Folders e informativos (pages/Informativos.js, domain/informativos.js, estado s.inf). Cada informativo tem abas e blocos (tabela de comis…
+  - de: 23/10/2026 · Direcionar Pix (tela do Lucas)  (diário, linha 906)
+- [ ] Plano 45/60, planilha (23/10/2026, 04:04): GERAL DE VENDAS (1).xlsx relida; domain/plano45-60.local.js refeito (195 linhas, 186 nomes únicos: 9 nomes aparecem 2 vezes na planilha e o sistema guarda só a primeira). Importar planilha agora atualiza média, mínimo e Ana do RH das linhas que já vieram de planilha. As outras 3 abas da…
+  - de: 23/10/2026 · Direcionar Pix (tela do Lucas)  (diário, linha 906)
+- [ ] A confirmar: se o sistema inteiro deve abrir nela para o Lucas e a Nayale (hoje só abre ao entrar no Financeiro).
+  - de: 23/10/2026 · Direcionar Pix é a primeira tela do Financeiro  (diário, linha 919)
+- [ ] Terceiros (23/10/2026): botão "Trazer Leonardo, Castilho e Igor" em RH → Contratos → Terceiros (Leonardo = H&O Apps; Lucas Castilho = prestador dentro da empresa; Igor = função a confirmar). Só os nomes entram; o contrato assinado é anexado depois.
+  - de: 23/10/2026 · Direcionar Pix é a primeira tela do Financeiro  (diário, linha 919)
+- [ ] Pendente: aplicar o mesmo em Pix representantes, Comissões e Controle de pagamentos; registrar em Tecnologia → Versões.
+  - de: 24/10/2026 · Cores e leitura rápida no Financeiro (Direcionar Pix e Caixa)  (diário, linha 933)
+- [ ] Marcus: "a outra estrutura anterior estava melhor, piorou, pode retornar". Desfeita a opção A (blocos empilhados em tabelas). Valem: fila à esquerda, pedido à direita, fornecedores em cartões (o que falta para fechar o mês + data limite) no topo do pedido, Destinos que ainda faltam e Por CNPJ embaixo. O layout empilhado ficou só…
+  - de: 24/10/2026 · Direcionar Pix: volta ao layout anterior  (diário, linha 954)
+- [ ] Marcus: tirar o bloco de dentro do pedido, subir para o topo, em LISTA, e fazer embaixo dele um bloco de Devedores em lista. Entendido: Devedores = prestadores e sócios com saldo no mês (mesma planilha, RESUMO MÊS); fornecedores de peça ficam no bloco de cima. A confirmar com o Marcus quem são os Devedores.
+  - de: 24/10/2026 · Direcionar Pix: Falta para fechar o mês no topo + Devedores  (diário, linha 957)
+- [ ] Marcus: igual antes, uma FILA dos pagamentos, outro para DIRECIONAR e outro mostrando o valor que FALTA DOS FORNECEDORES; linhas bem alinhadas. Feito: fila (esquerda, rolagem) e direcionar (direita) com a mesma altura; fornecedores em tabela embaixo. Devedores e Destinos que ainda faltam saíram.
+  - de: 24/10/2026 · Direcionar Pix = 3 blocos alinhados  (diário, linha 965)
+- [ ] Marcus: os 34 do Carregar NÃO estão dentro dos 1.347 acertos. Precisa de coluna Carregar no sistema e comparativo com o início do mês (quantas já passaram para o mês seguinte). Feito: coluna no Dia a dia, bloco na Previsão e campo para o Carregar do início do mês. Falta o número do início de outubro.
+  - de: 26/10/2026 · Carregar em coluna própria  (diário, linha 995)
+- [ ] Marcus: 2.105 revendedoras em 26/10. Carregar aparece na faixa de totais do Faturamento e na Visão geral. Revendedoras por dia (20 a 25/10) pendente de puxar do admin antigo: conector fora do ar nesta sessão.
+  - de: 26/10/2026 · Revendedoras e Carregar  (diário, linha 1003)
+- [ ] Dívida com prazo do Financeiro familiar aparece em Contas a pagar → Família (só ACESSO_FF). Pendência: prestador da família sem destino em Controle de pagamentos não pode ser clicado (aparece só para leitura).
+  - de: 26/10/2026 · Direcionar: pedido no modelo 3B e dívidas da família  (diário, linha 1047)
+- [ ] Marcus: o pedido precisa mostrar Já pago (com a forma embaixo), o que falta pagar e como a revendedora quer pagar (Pix, cartão ou link). Ficam na coluna Valores. A barra Enviar por segue o padrão: uma barra, três botões iguais. Confirmar mostra Falta enviar.
+  - de: 26/10/2026 · Direcionar: Já pago, Falta pagar e Quer pagar por  (diário, linha 1069)
+- [ ] PENDENTE: de onde vêm as partes de verdade (a atendente lança forma e valor no atendimento interno; falta ligar). Teste visual desta versão ficou pendente porque o sistema pediu login.
+  - de: 26/10/2026 · Direcionar: o pedido vem em partes por forma  (diário, linha 1072)
+- [ ] Marcus: blocos de baixo com a mesma altura, sem barra de rolagem por dentro e título centralizado. COR POR BLOCO: testada (azul, vermelho, verde, ouro) e DESCARTADA pelo Marcus no mesmo dia; vale a versão sem cores (borda dourada, cor só no valor). O Falta direcionar sai do cabeçalho do pedido (fica em Confirmar). O exemplo de 1…
+  - de: 26/10/2026 · Direcionar: cor por bloco e cartões por forma  (diário, linha 1081)
+- [ ] Marcus: Conta, Valor e Motivo alinhados e centralizados; valor em peça (como a etiqueta Sugestão), mais perto da conta; botão Usar vira ✓; Usar todas as sugestões fica embaixo de Falta enviar; topo: "chegou às 14h08 · pagamento aguardando há 59 min".
+  - de: 26/10/2026 · Direcionar pagamento: acabamento da tabela  (diário, linha 1103)
+- [ ] Marcus: Falta enviar, Usar todas as sugestões e OK · enviar numa barra só, para ocupar menos espaço.
+  - de: 26/10/2026 · Direcionar pagamento: barra única embaixo  (diário, linha 1112)
+- [ ] Marcus: ao dividir, a segunda linha já nasce com valor editável (sem esperar a conta); o + fica só na última linha. Lista de contas: Fornecedor/Representante/Prestador só com valor pendente (devido + prazo); sócio abre divisores Contas e Prestadores de serviço (do Financeiro familiar); contas de prestador não entram em Contas do…
+  - de: 26/10/2026 · Direcionar: dividir já abre a linha nova; lista só com valor pendente  (diário, linha 1146)
+- [ ] **Em aberto:** só o VALOR do faturamento ficou automático. "Acertos" (quantidade de atendimentos do dia, que a Amanda também lançava) ainda não tem fonte automática definida — a confirmar com o Marcus se puxa de algum lugar ou continua manual.
+  - de: 27/10/2026 (4) · Faturamento do dia anterior: atualização automática pela DevMaster  (diário, linha 1205)
+- [ ] **Pendente: precisa reiniciar o servidor uma vez** para os dois relógios (revendedoras e faturamento) começarem a valer.
+  - de: 27/10/2026 (4) · Faturamento do dia anterior: atualização automática pela DevMaster  (diário, linha 1205)
+- [ ] 27/10/2026, RESULTADO EFETIVO DO MÊS e controle total (pedido do Marcus: "cansei de operar no negativo, quero ter controle total"): a medida do mês deixa de ser só o relatório de notas fiscais (ele não mostra o recebido real por revendedora, não traz a inadimplência e não inclui compras de funcionárias). Passa a valer: recebido …
+  - de: 27/10/2026 · Contas a pagar até 31/10  (diário, linha 1307)
+- [ ] 27/10/2026, tela RESULTADO DO MÊS criada (Financeiro, palavra direta no menu, `/resultado-do-mes`, `pages/ResultadoMes.js`): Receber (DevMaster) × Pagar (admin antigo) × Entrou de verdade. Outubro 1 a 27/10 deu entrou de verdade R$ 1.257.534,09 (variação do saldo R$ -72.754,18 + pago R$ 1.330.288,27) contra esperado R$ 1.223.185…
+  - de: 27/10/2026 · Contas a pagar até 31/10  (diário, linha 1307)
+- [ ] Marcus: 27/10 = R$ 1.252.742,52 recebido e 1.583 acertos. Gravado no código (aplicaFat27) e em docs/negocio/FATURAMENTO-DIARIO.md. Carregar de 27/10 pendente.
+  - de: 27/10/2026 · Faturamento fixado  (diário, linha 1316)
+- [ ] Inadimplência × roubo (kit fechado pelo valor total, com código do funcionário): regra entendida, ainda sem tela; falta saber onde aparece o código.
+  - de: 28/10/2026 · Previsão pela razão de acertos  (diário, linha 1331)
+- [ ] Marcus reclamou que o Resultado do mês não refletia o que passou. Diagnóstico: a tela lia o falta pagar do admin antigo (parado desde 27/10). Passou a ler a lista da DevMaster.
+  - de: 28/10/2026 · Resultado do mês, falta pagar  (diário, linha 1341)
+- [ ] Marcus: a Previsão deve mostrar só o que falta no mês e, no fim, entrou, falta e o resultado de pago e a pagar. Feito; próximos meses ficam atrás de botão.
+  - de: 28/10/2026 · Previsão só do mês atual  (diário, linha 1353)
+- [ ] **Meta padrão = 99%** (97/98/99 continuam à escolha): os acertos estão sendo adiados, então quase tudo que falta (303) vai acontecer. O valor salvo migra para 99 uma vez (`metaPct99V`).
+  - de: 28/10/2026 · Meta de 99% e Faturamento mais curto  (diário, linha 1374)
+- [ ] Hoje parte dos pagamentos é feita na planilha e depois atualizada na DevMaster. Falta importar, por fornecedor, os lançamentos (Pix de revendedora, boletos, passadas de cartão) das abas de negociação: Office Graf, Point, Ellos, Art Ello, Mega Sul e Pontual (a Pontual está só até 20/10). Ver `docs/negocio/FLUXO-DE-PAGAMENTOS.md`.
+  - de: 28/10/2026 · Planilha de pagamentos a fornecedores (resumo do mês)  (diário, linha 1400)
+- [ ] Marcus (a mãe questionou o 175 mil e o pago): o sistema tem que chamar a DevMaster, não o admin antigo. Já pago e Falta pagar agora vêm da leitura do servidor. Pendente: R$ 150,00 do dia 01/10 contra a tela da DevMaster e a data do pagamento (pagamento ou débito).
+  - de: 29/10/2026 · Contas a pagar direto da DevMaster (alto da tela)  (diário, linha 1408)
+- [ ] Marcus: gravar 28/10 (1.652 acertos, R$ 1.296.201,60, Carregar 0, 234 a realizar) e desligar o robô do faturamento, que gravaria o valor errado. Pendente: achar a regra do relatório de notas fiscais e definir qual contagem de revendedoras vale.
+  - de: 29/10/2026 · Faturamento de 28/10 e robô desligado  (diário, linha 1411)

@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendamento · Datas mudadas · demonstração</title>
+<!--
+  Sorelly Admin · docs/design/agendamento-datas-mudadas-video.html (01/11/2026)
+  Demonstração animada (toca sozinha, como um vídeo) do bloco "Datas mudadas" da tela Agendamento › Revendedoras:
+  a DevMaster muda a data → o sistema vê a diferença na foto → o Marcus confirma quem mudou → o previsto vigente recalcula.
+  Nomes e números de ILUSTRAÇÃO. Abrir direto no navegador; botão Recomeçar e Parar no rodapé.
+-->
+<style>
+  @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("../../src/styles/fontes/inter-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  :root{--fundo:#0E0F12;--painel:#15171B;--painel-2:#1B1E23;--fio:#262A31;--fio-forte:#343941;--texto:#F2F0EA;--texto-2:#D8D5CD;--ouro:#D6B25C;--ouro-tinta:#1F1B12;--ok:#4CC38A;--ruim:#E5484D;--atencao:#F2B544}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 "Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{font-feature-settings:"tnum" 1;min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:20px 16px 40px}
+  .palco{width:100%;max-width:980px;display:flex;flex-direction:column;gap:12px}
+  .legenda{min-height:54px;border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:10px 14px;display:flex;gap:12px;align-items:center}
+  .legenda .n{flex:none;width:24px;height:24px;border-radius:12px;background:var(--ouro);color:var(--ouro-tinta);display:grid;place-items:center;font-weight:700;font-size:11px}
+  .legenda b{font-weight:600}
+  .quadro{border:1px solid var(--fio);border-radius:8px;overflow:hidden}
+  .cab{display:flex;gap:10px;align-items:center;height:36px;padding:0 14px;border-bottom:1px solid var(--fio);background:var(--painel)}
+  .cab .tag{margin-left:auto}
+  .corpo{padding:14px;display:flex;flex-direction:column;gap:12px;min-height:330px}
+  .tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border:1px solid var(--fio-forte);border-radius:10px;font-size:11px}
+  .tag.ok{border-color:rgba(76,195,138,.5);color:var(--ok)} .tag.at{border-color:rgba(242,181,68,.5);color:var(--atencao)}
+  .rot{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+  .num{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+  .faixa{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+  .faixa>div{padding:10px 12px;border-right:1px solid var(--fio);display:flex;flex-direction:column;gap:4px}
+  .faixa>div:last-child{border-right:0}
+  .ouro{color:var(--ouro)}
+  .bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+  .bloco>.t{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--fio)}
+  .linha{display:grid;grid-template-columns:minmax(0,1.3fr) 150px 170px minmax(0,1.5fr);gap:8px;align-items:center;padding:0 12px;min-height:44px;border-top:1px solid var(--fio);transition:background .4s,opacity .4s}
+  .linha:first-of-type{border-top:0}
+  .linha.nova{background:rgba(242,181,68,.10)}
+  .vazio{padding:14px 12px}
+  .btn{height:28px;padding:0 10px;border-radius:6px;border:1px solid var(--fio-forte);background:var(--painel);font:inherit;color:inherit;font-weight:500}
+  .btn.p{background:var(--ouro);border-color:var(--ouro);color:var(--ouro-tinta);font-weight:600}
+  .btn.clic{outline:2px solid var(--ouro);outline-offset:2px;transform:scale(.97)}
+  .acoes{display:flex;gap:6px;justify-content:flex-end}
+  .escondido{opacity:0;height:0;min-height:0;overflow:hidden;padding:0;border:0}
+  .mao{position:absolute;pointer-events:none;width:14px;height:14px;border-radius:7px;background:var(--ouro);opacity:0;transition:all .6s ease}
+  .rodape{display:flex;gap:8px;align-items:center}
+  .prog{flex:1;height:6px;border-radius:3px;background:var(--painel-2);overflow:hidden}
+  .prog i{display:block;height:100%;width:0;background:var(--ouro)}
+  .btn.g{height:32px;padding:0 14px}
+  .subiu{animation:pulso .8s ease}
+  @keyframes pulso{0%{color:var(--ouro)}100%{color:inherit}}
+</style>
+</head>
+<body>
+<div class="palco">
+  <div class="legenda"><span class="n" id="n">1</span><span id="txt"></span></div>
+
+  <div class="quadro">
+    <div class="cab"><b>Agendamento</b><span>›</span><span>Revendedoras</span><span class="tag">Marcus</span></div>
+    <div class="corpo">
+      <div class="faixa">
+        <div><span class="rot">Previsto vigente</span><span class="num ouro" id="vig">1.975</span></div>
+        <div><span class="rot">Marcus passou</span><span class="num" id="mar">0</span></div>
+        <div><span class="rot">Setor mudou (ficam)</span><span class="num" id="set">0</span></div>
+        <div><span class="rot">Datas a confirmar</span><span class="num" id="conf">0</span></div>
+      </div>
+      <div class="bloco">
+        <div class="t"><b class="rot">Datas mudadas</b><span class="tag" id="status">Nada a confirmar</span></div>
+        <div id="lista"><div class="vazio" id="vazio">Nenhuma data mudou desde a foto de 01/11/2026.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="rodape">
+    <button class="btn g" id="pausa">Parar</button>
+    <button class="btn g" id="reco">Recomeçar</button>
+    <div class="prog"><i id="barra"></i></div>
+  </div>
+</div>
+
+<script>
+var $ = function(id){ return document.getElementById(id); };
+var vig = 1975, mar = 0, setor = 0, conf = 0, pausado = false, timers = [], t0 = 0, TOTAL = 40000;
+var f0 = function(n){ return Number(n).toLocaleString("pt-BR"); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var pinta = function(){ $("vig").textContent = f0(vig); $("mar").textContent = mar; $("set").textContent = setor; $("conf").textContent = conf; $("status").textContent = conf ? conf+" a confirmar" : "Nada a confirmar"; $("status").className = "tag"+(conf ? " at" : ""); $("vazio").style.display = $("lista").querySelector(".linha") ? "none" : "block"; };
+var sobe = function(id){ var el = $(id); el.classList.remove("subiu"); void el.offsetWidth; el.classList.add("subiu"); };
+var criaLinha = function(id, nome, cod, rep, de, para, dias, sai){
+  var d = document.createElement("div"); d.className = "linha nova"; d.id = id;
+  d.innerHTML = '<div><b>'+nome+'</b><br><span>'+cod+' · '+rep+'</span></div><div><span class="tag at" data-e>A confirmar</span></div><div>'+de+' → '+para+' · +'+dias+' d'+(sai ? ' · nov → dez' : ' · mesmo mês')+'</div><div class="acoes" data-a><button class="btn p" data-eu>Foi eu</button><button class="btn" data-let>Letícia de Sá</button><button class="btn" data-ana>Ana Maria</button></div>';
+  $("lista").appendChild(d); conf++; pinta(); sobe("conf"); return d;
+};
+var clica = function(el, fn){ el.classList.add("clic"); timers.push(setTimeout(function(){ el.classList.remove("clic"); fn(); }, 700)); };
+var marca = function(id, quem, sai){
+  var l = $(id); l.classList.remove("nova"); conf--;
+  l.querySelector("[data-e]").className = "tag ok"; l.querySelector("[data-e]").textContent = quem==="Marcus" ? (sai ? "Marcus · sai do previsto" : "Marcus · mesmo mês") : quem+" · fica no previsto";
+  l.querySelector("[data-a]").innerHTML = '<button class="btn">Desfazer</button>';
+  if(quem==="Marcus" && sai){ vig--; mar++; sobe("vig"); sobe("mar"); } else if(quem!=="Marcus"){ setor++; sobe("set"); }
+  pinta();
+};
+var desfaz = function(id, quem, sai){
+  var l = $(id); conf++; l.classList.add("nova");
+  l.querySelector("[data-e]").className = "tag at"; l.querySelector("[data-e]").textContent = "A confirmar";
+  l.querySelector("[data-a]").innerHTML = '<button class="btn p">Foi eu</button><button class="btn">Letícia de Sá</button><button class="btn">Ana Maria</button>';
+  if(quem==="Marcus" && sai){ vig++; mar--; sobe("vig"); sobe("mar"); } else if(quem!=="Marcus"){ setor--; sobe("set"); }
+  pinta();
+};
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var roteiro = function(){
+  em(300,  function(){ cena(1, '<b>Antes:</b> o sistema guardou uma <b>foto</b> das datas da DevMaster em 01/11. Nenhuma data mudou desde então.'); });
+  em(4500, function(){ cena(2, '<b>Na DevMaster</b> você muda a data de <b>Ana Paula Ribeiro</b> de 14/11 para 28/12. Lá não dá para marcar quem mudou.'); });
+  em(8500, function(){ cena(3, 'O sistema compara a DevMaster com a foto e <b>acha a diferença sozinho</b>. A linha aparece como <b>A confirmar</b>.'); criaLinha("l1","Ana Paula Ribeiro","41230","Thalita","14/11","28/12",44,true); });
+  em(13500,function(){ cena(4, 'Foi você. Clique em <b>Foi eu</b>: ela sai de novembro e o <b>previsto vigente cai de 1.975 para 1.974</b>.'); var b = $("l1").querySelector("[data-eu]"); clica(b, function(){ marca("l1","Marcus",true); }); });
+  em(19000,function(){ cena(5, '<b>Outro caso:</b> a Letícia de Sá muda <b>Camila Souza</b> de 09/11 para 22/11. Mesmo mês, e foi o setor.'); criaLinha("l2","Camila Souza","40877","Anne","09/11","22/11",13,false); });
+  em(24000,function(){ cena(6, 'Clique em <b>Letícia de Sá</b>: ela <b>continua no previsto</b>. O vigente não muda, e conta para a meta do setor.'); var b = $("l2").querySelector("[data-let]"); clica(b, function(){ marca("l2","Letícia de Sá",false); }); });
+  em(30000,function(){ cena(7, '<b>Errou o clique?</b> Use <b>Desfazer</b> na linha da Ana Paula: ela volta para A confirmar e o vigente volta para 1.975.'); var b = $("l1").querySelector(".btn"); clica(b, function(){ desfaz("l1","Marcus",true); }); });
+  em(36000,function(){ cena(8, '<b>Resumo:</b> toda mudança espera você. Só <b>Foi eu</b> tira do previsto; o setor fica. O vigente recalcula na hora.'); });
+};
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var inicia = function(){ limpa(); vig = 1975; mar = 0; setor = 0; conf = 0; $("lista").innerHTML = '<div class="vazio" id="vazio">Nenhuma data mudou desde a foto de 01/11/2026.</div>'; pinta(); t0 = Date.now(); pausado = false; $("pausa").textContent = "Parar"; roteiro(); };
+$("reco").onclick = inicia;
+$("pausa").onclick = function(){ if(!pausado){ pausado = true; limpa(); $("pausa").textContent = "Tocar de novo"; } else { inicia(); } };
+setInterval(function(){ if(!pausado) $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script>
+</body>
+</html>

@@ -43,6 +43,9 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - Neste projeto: `MOBILE_API_URL` (já termina em `/api`, então a rota `/api/admin/x` vira `${MOBILE_API_URL}/admin/x`) e `MOBILE_API_KEY` (= `ADMIN_SECRET` do backend, Bearer). Essa chave lê `/admin/*`, `/revendedoras/*` e `/representantes/*` (com `?representativeCod=`); as rotas da revendedora logada (`/sales`, `/clients`, `/auth/*`…) dão 401 com ela. Detalhes e exemplo de código na seção "Uso neste projeto" do guia. Mandar sempre `X-App-Version: 3.5.0`.
 - Segredos (`ADMIN_SECRET`, tokens) só no `.env.local` do servidor, nunca no front nem no Git. Só chamar GET; POST/PUT/PATCH/DELETE gravam no app de verdade.
 
+## Pastas por setor (01/11/2026, teste com Representantes)
+`docs/setores/<setor>/` = `LEIA-ME.md` (resumo), `decisoes.md` (cópia das decisões do setor, o diário geral `docs/DECISOES.md` continua), `pendencias.md` e `pessoas.local.md` (ficha de cada pessoa, DADOS REAIS, fora do Git). Ao falar de um setor, leia primeiro o `LEIA-ME.md` dele. Decisão nova entra no diário geral E no `decisoes.md` do setor, no mesmo dia. Pronto: `docs/setores/representantes/`. Não existe pasta por funcionário.
+
 ## Regras detalhadas (carregadas só quando você trabalha na pasta)
 - `src/apps/montagem/domain/CLAUDE.md`: faturamento, acerto, brindes, taxas, Kit 100% Prata, peças do próximo mês.
 - `src/apps/montagem/pages/CLAUDE.md`: menu de Kits, listagens, calculadora, análise de vendas, condicionais, peças por kit.
@@ -53,7 +56,7 @@ Usuário: Marcus (dono, não programador): explique em linguagem simples e sem j
 - NUNCA abra `public/dados/*.json`, `src/styles/fontes/`, `.next/` nem `node_modules/`.
 - Prefira Edit em trechos pequenos. Não reescreva arquivos.
 
-- **Mapa das representantes (26/10/2026):** regiões, horários, viagens e o que falta de cada uma estão em `MAPA-DAS-REPRESENTANTES.md` (raiz). Ler antes de mexer em Kits novos › Representantes; atualizar ao receber dados novos. Código: `src/apps/kits-novos/domain/regioes-rep.js` e `viagens-rep.js`.
+- **Mapa das representantes (26/10/2026):** regiões, horários, viagens e o que falta de cada uma estão em `docs/setores/representantes/Mapa das representantes.md`. Ler antes de mexer em Kits novos › Representantes; atualizar ao receber dados novos. Código: `src/apps/kits-novos/domain/regioes-rep.js` e `viagens-rep.js`.
 
 ## Pessoas e setores
 **Acesso é por setor/perfil, não por pessoa.** Cada setor enxerga só o que é dele. No código use perfil/setor; o nome é só quem ocupa o cargo hoje e pode mudar (ex.: condicionais era Gabi, agora Marjory).

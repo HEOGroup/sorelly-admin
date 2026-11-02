@@ -51,6 +51,6 @@ Perguntas em aberto do Marcus: o que a Produção (16) vê (sugestão: só o Sor
 ## 5. Próximos passos sugeridos
 
 1. Resposta da Ana Maria sobre o dia 28 e ajuste do número.
-2. Criar os 7 logins pequenos e a mensagem de boas-vindas de cada um (script no modelo de `scripts/criar-contas-29-10-lote2.mjs`).
+2. Criar os 7 logins pequenos e a mensagem de boas-vindas de cada um (script no modelo de `scripts/usados-uma-vez/criar-contas-29-10-lote2.mjs`).
 3. Grupos de setor no chat para os outros setores (Produção, Trocas, Facilities, Cadastro...), no mesmo modelo do `c_mont`.
 4. Opcional: apagar a lógica do Plano 45/60 (exige refazer o pedido de data do app da representante); Ana Maria marcar dia e hora na aba nova de Revendedoras; planilha de links da Hellen.

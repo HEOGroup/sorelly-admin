@@ -126,7 +126,7 @@ Nada disto foi construído. O sistema de hoje continua como está.
 
 ## 10. Tela Pedidos: layout escolhido (29/10/2026)
 
-Quadro e Planilha juntos, com o seletor Quadro | Planilha (igual aos Kits novos). Rascunho: `docs/rascunhos/pedidos-bruto-quadro-planilha.html`.
+Quadro e Planilha juntos, com o seletor Quadro | Planilha (igual aos Kits novos). Rascunho: `docs/rascunhos/pedidos-e-encomendas/pedidos-bruto-quadro-planilha.html`.
 Etapas do pedido: **Escolha, Separação, Fechado, Banho, Chegou** (a etapa "Romaneio" da seção 9 virou Separação, porque o pedido fecha no romaneio). Prazos de partida, a confirmar: Separação 5 dias, Fechado 2 dias, Banho 10 dias.
 Faixa de totais: Abertos, Comprado, Folga do teto, No banho, Atrasados, Peças. Filtros: busca, fornecedor, banho, CNPJ pagador, situação, mês.
 Próximas telas, uma por vez: Compras (escolha da peça com preço), Banho, Lotes, Fornecedores, Pagamento, Ouro, Config.
@@ -164,7 +164,7 @@ Dúvidas abertas: o preço, o peso e o código vêm digitados por quem sobe a fo
 
 ## 12. Tela Montar pedido: regras do desenho (29/10/2026, a confirmar)
 
-Quatro layouts desenhados em `docs/rascunhos/montar-pedido-4-layouts.local.html` (arquivo local: tem foto e preço reais). Cada foto do fornecedor já traz código, preço (ex.: 7/90) e peso, e o sistema usa isso para calcular antes de comprar:
+Quatro layouts desenhados em `docs/rascunhos/montagem/montar-pedido-4-layouts.local.html` (arquivo local: tem foto e preço reais). Cada foto do fornecedor já traz código, preço (ex.: 7/90) e peso, e o sistema usa isso para calcular antes de comprar:
 
 ```
 bruto com desconto da peça  +  peso × R$/g do banho escolhido  =  custo previsto por peça

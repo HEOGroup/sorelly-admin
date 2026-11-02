@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agendamento · Análises · 4 versões</title>
+<!--
+  Sorelly Admin · docs/design/agendamento-analises-4-versoes.html (01/11/2026)
+  ANÁLISES do Agendamento refeitas em UMA tela só (junta as antigas Análises e Histórico), para o Marcus escolher.
+  Mesma direção do novo Painel: Raycast (escuro sóbrio, sem degradê, bordas finas, uma fonte, ouro só no que importa; verde/amarelo/vermelho só para estado).
+  % realizado sobre o previsto VIGENTE (outubro: 1.886 vigente, 1.843 feitos = 97,7%). Meses de janeiro a setembro mostram o previsto do INÍCIO (o vigente só existe a partir de outubro).
+  Números de janeiro a outubro são os reais lançados; as representantes e os percentuais por representante são de ILUSTRAÇÃO. Abrir direto no navegador.
+-->
+<style>
+  @font-face{font-family:"Inter";font-style:normal;font-weight:100 900;font-display:swap;src:url("../../src/styles/fontes/inter-latin.woff2") format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
+  :root{--fundo:#0E0F12;--painel:#15171B;--painel-2:#1B1E23;--fio:#262A31;--fio-forte:#343941;--texto:#F2F0EA;--texto-2:#D8D5CD;--ouro:#D6B25C;--ouro-tinta:#1F1B12;--ok:#4CC38A;--ruim:#E5484D;--atencao:#F2B544}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.45 "Inter",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{font-feature-settings:"tnum" 1,"cv11" 1;padding:0 0 80px}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .topo{position:sticky;top:0;z-index:5;background:var(--fundo);border-bottom:1px solid var(--fio);padding:10px 24px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .topo b{margin-right:8px}
+  .topo a{height:32px;display:inline-flex;align-items:center;padding:0 12px;border:1px solid var(--fio-forte);border-radius:6px;color:var(--texto);text-decoration:none}
+  .topo a:hover{background:var(--painel-2)}
+  .nota{max-width:1180px;margin:18px auto 0;padding:0 24px}
+  .versao{max-width:1180px;margin:22px auto 0;padding:0 24px}
+  .rotulo{display:flex;align-items:baseline;gap:10px;margin:0 0 8px;flex-wrap:wrap}
+  .rotulo h2{margin:0;font-size:13px;font-weight:600}
+  .quadro{border:1px solid var(--fio);border-radius:8px;overflow:hidden}
+  .sis{display:flex;align-items:center;gap:10px;padding:0 14px;height:40px;border-bottom:1px solid var(--fio);background:var(--painel)}
+  .sis .logo{width:20px;height:20px;border-radius:5px;background:var(--ouro);color:var(--ouro-tinta);display:grid;place-items:center;font-weight:700;font-size:11px}
+  .menu{display:flex;gap:2px;padding:0 10px;height:36px;border-bottom:1px solid var(--fio)}
+  .menu span{display:flex;align-items:center;padding:0 12px;border-bottom:2px solid transparent}
+  .menu span.on{border-bottom-color:var(--ouro);font-weight:600}
+  .corpo{padding:16px;display:flex;flex-direction:column;gap:12px}
+  .titulo{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .titulo h3{margin:0;font-size:13px;font-weight:600}
+  .titulo .fim{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .tag{display:inline-flex;align-items:center;height:20px;padding:0 8px;border:1px solid var(--fio-forte);border-radius:10px;font-size:11px}
+  .tag.ok{border-color:rgba(76,195,138,.5);color:var(--ok)} .tag.at{border-color:rgba(242,181,68,.5);color:var(--atencao)} .tag.rm{border-color:rgba(229,72,77,.5);color:var(--ruim)}
+  .btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio-forte);background:var(--painel);font-weight:600}
+  .btn:hover{background:var(--painel-2)}
+  select.btn{font-weight:400;padding:0 10px}
+  .bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+  .bloco>.cab{height:30px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+  .bloco>.cab .fim{margin-left:auto;text-transform:none;letter-spacing:0;font-weight:400}
+  .rot{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+  .num{font-size:20px;font-weight:600;line-height:1.1;font-variant-numeric:tabular-nums}
+  .ouro,.pos,.neg,.at{color:inherit}
+  .cab .fim,.titulo .sub{display:none}
+  .tag,.tag.ok,.tag.at,.tag.rm{border-color:var(--fio-forte);color:var(--texto)}
+  .faixa{display:grid;border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+  .faixa>div{padding:10px 12px;border-right:1px solid var(--fio);display:flex;flex-direction:column;gap:4px}
+  .faixa>div:last-child{border-right:0}
+  table{width:100%;border-collapse:collapse}
+  th{height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600;text-align:left;padding:0 12px;border-bottom:1px solid var(--fio);white-space:nowrap}
+  td{height:32px;padding:0 12px;border-top:1px solid var(--fio);white-space:nowrap}
+  th.d,td.d{text-align:right;font-variant-numeric:tabular-nums}
+  tbody tr:first-child td{border-top:0}
+  tr.sel td{background:var(--painel-2)}
+  tr.clic{cursor:pointer} tr.clic:hover td{background:var(--painel-2)}
+  .seg{display:inline-flex;border:1px solid var(--fio-forte);border-radius:6px;overflow:hidden}
+  .seg button{height:30px;padding:0 14px;border:0;background:transparent;border-right:1px solid var(--fio-forte)}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--painel-2);font-weight:600;box-shadow:inset 0 -2px 0 var(--ouro)}
+  .abas{display:flex;gap:2px;border-bottom:1px solid var(--fio)}
+  .abas span{height:34px;display:flex;align-items:center;padding:0 14px;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .abas span.on{border-bottom-color:var(--ouro);font-weight:600}
+  .g2{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:12px}
+  .g3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+  .lista{display:flex;flex-direction:column}
+  .item{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:0 12px;height:32px;border-top:1px solid var(--fio)}
+  .item:first-child{border-top:0}
+  .mes{display:flex;flex-direction:column;gap:2px;padding:8px 12px;border-top:1px solid var(--fio);cursor:pointer}
+  .mes:first-child{border-top:0} .mes.on{background:var(--painel-2);box-shadow:inset 2px 0 0 var(--ouro)}
+  .barra{height:6px;border-radius:3px;background:var(--painel-2);overflow:hidden}
+  .barra i{display:block;height:100%;background:var(--ouro)}
+  svg{display:block;width:100%}
+  @media (max-width:900px){.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="topo"><b>Análises do Agendamento · 4 versões</b>
+  <a href="#A">A · Abas</a><a href="#B">B · Mês a mês</a><a href="#C">C · Planilha mestra</a><a href="#D">D · Comparação</a>
+</div>
+<p class="nota">Uma tela só, no lugar de <b>Análises</b> e <b>Histórico</b>. Quatro jeitos de organizar o mesmo conteúdo: % da meta por mês, comparativo entre meses e anos, representantes e registro de fechamentos. Jan a out são os números reais lançados; as representantes são de ilustração.</p>
+<div id="raiz"></div>
+
+<script>
+var M = [ // mês, revendedoras, previsto do início, vigente (só out), feitos, faturamento, média
+ ["Janeiro",1827,1754,null,1654,1392910.06],["Fevereiro",1750,1707,null,1530,1012357.60],["Março",1791,1757,null,1635,1157120.52],["Abril",1780,1667,null,1653,1263754.42],
+ ["Maio",1836,1763,null,1749,1416595.39],["Junho",1902,1826,null,1764,1318670.29],["Julho",1834,1793,null,1669,1214587.01],["Agosto",1834,1815,null,1741,1361845.04],
+ ["Setembro",1932,1889,null,1809,1446262.20],["Outubro",2023,1976,1886,1843,1438133.61]];
+var R = M.map(function(m){ var base = m[3] || m[2]; return {mes:m[0], rev:m[1], ini:m[2], vig:m[3], feitos:m[4], fat:m[5], base:base, pct:m[4]/base*100, med:m[5]/m[4], saidas:m[3] ? m[2]-m[3] : null}; });
+var REPS = [["Thalita (todas)",96.8,"10"],["Anne (todas)",96.1,"10"],["Dayanne",95.2,"10"],["Lysie Karine",94.7,"9"],["Viviane",93.9,"10"],["Veridiana",93.1,"8"],["Mayara Heloise",92.4,"7"],["Jessica Castro",91.0,"9"]];
+var LOG = [["Fechado","Setembro/2026","Automático (virada do mês)","30/09"],["Reaberto","Agosto/2026","Ana Maria","03/09"],["Fechado","Agosto/2026","Ana Maria","31/08"],["Fechado","Julho/2026","Automático (virada do mês)","31/07"]];
+var f0 = function(n){ return Number(n).toLocaleString("pt-BR"); };
+var pc = function(v){ return v.toFixed(1).replace(".",",")+"%"; };
+var rs = function(v){ return "R$ "+Number(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var faixa = function(p){ return p>=98?"98%":p>=97?"97%":p>=96?"96%":"—"; };
+var corPct = function(){ return ""; };
+var tit = function(a,b){ return '<div class="titulo"><h3>Análises</h3><span class="sub">'+a+'</span><span class="fim">'+(b||'')+'</span></div>'; };
+var SIS = '<div class="sis"><span class="logo">S</span><b>Agendamento</b><span style="flex:1"></span><span class="tag">Marcus</span></div>';
+var MENU = '<div class="menu"><span>Painel</span><span>Revendedoras</span><span>Representantes</span><span class="on">Análises</span><span>Gestão do mês</span></div>';
+var quadro = function(c){ return '<div class="quadro">'+SIS+MENU+'<div class="corpo">'+c+'</div></div>'; };
+var btnCsv = '<button class="btn">Exportar CSV</button>';
+
+// gráfico de linha da % realizada, com as três metas novas como linhas de referência
+var grafico = function(h){ var W=900,H=h||190,pd=34,lo=88,hi=100, xs=function(i){return pd+i*(W-2*pd)/(R.length-1);}, ys=function(v){return H-pd-((Math.max(lo,Math.min(hi,v))-lo)/(hi-lo))*(H-2*pd);};
+  var ref=[96,97,98].map(function(g){return '<line x1="'+pd+'" x2="'+(W-pd)+'" y1="'+ys(g)+'" y2="'+ys(g)+'" stroke="#343941" stroke-dasharray="3 3"/><text x="4" y="'+(ys(g)+4)+'" font-size="11" fill="#D8D5CD">'+g+'%</text>';}).join("");
+  var pts=R.map(function(r,i){return xs(i)+","+ys(r.pct);}).join(" ");
+  var dots=R.map(function(r,i){return '<circle cx="'+xs(i)+'" cy="'+ys(r.pct)+'" r="4" fill="'+(i===R.length-1?'#D6B25C':'#F2F0EA')+'"><title>'+r.mes+': '+pc(r.pct)+'</title></circle><text x="'+xs(i)+'" y="'+(H-10)+'" text-anchor="middle" font-size="11" fill="#D8D5CD">'+r.mes.slice(0,3)+'</text><text x="'+xs(i)+'" y="'+(ys(r.pct)-9)+'" text-anchor="middle" font-size="11" fill="#F2F0EA">'+Math.round(r.pct)+'</text>';}).join("");
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="% realizada por mês"><g>'+ref+'</g><polyline fill="none" stroke="#D6B25C" stroke-width="2" points="'+pts+'"/>'+dots+'</svg>'; };
+
+var tabMeses = function(){ return '<div class="bloco"><div class="cab">Meses fechados e o aberto<span class="fim">% sobre o previsto vigente (jan a set: previsto do início)</span></div><table><thead><tr><th>Mês</th><th class="d">Revendedoras</th><th class="d">Previsto início</th><th class="d">Vigente</th><th class="d">Feitos</th><th class="d">% da meta</th><th class="d">Faixa</th><th class="d">Faturado</th><th class="d">Média</th></tr></thead><tbody>'+
+  R.map(function(r){ return '<tr><td><b>'+r.mes+'</b></td><td class="d">'+f0(r.rev)+'</td><td class="d">'+f0(r.ini)+'</td><td class="d">'+(r.vig?f0(r.vig):'—')+'</td><td class="d">'+f0(r.feitos)+'</td><td class="d '+corPct(r.pct)+'"><b>'+pc(r.pct)+'</b></td><td class="d">'+faixa(r.pct)+'</td><td class="d">'+rs(r.fat)+'</td><td class="d">'+rs(r.med)+'</td></tr>'; }).join("")+'</tbody></table></div>'; };
+var tabReps = function(){ return '<div class="bloco"><div class="cab">Representantes mais consistentes<span class="fim">média do % final nos meses fechados · ilustração</span></div><table><thead><tr><th>Representante</th><th class="d">Meses</th><th class="d">Média de %</th><th style="width:30%"></th></tr></thead><tbody>'+REPS.map(function(r){ return '<tr><td><b>'+r[0]+'</b></td><td class="d">'+r[2]+'</td><td class="d">'+pc(r[1])+'</td><td><div class="barra"><i style="width:'+((r[1]-85)/15*100)+'%"></i></div></td></tr>'; }).join("")+'</tbody></table></div>'; };
+var tabLog = function(){ return '<div class="bloco"><div class="cab">Registro de fechamentos</div><div class="lista">'+LOG.map(function(l){ return '<div class="item"><span><b>'+l[0]+'</b> · '+l[1]+'</span><span>'+l[2]+' · '+l[3]+'</span></div>'; }).join("")+'</div></div>'; };
+var tabComp = function(){ var anos = R.map(function(r){ return '<tr><td><b>'+r.mes+'</b></td><td class="d">'+pc(r.pct)+'</td><td class="d">—</td><td class="d">—</td></tr>'; }).join(""); return '<div class="bloco"><div class="cab">Mesmo mês entre anos<span class="fim">2025 e 2024 entram quando o histórico chegar</span></div><table><thead><tr><th>Mês</th><th class="d">2026</th><th class="d">2025</th><th class="d">2024</th></tr></thead><tbody>'+anos+'</tbody></table></div>'; };
+
+var kpiAno = function(){ var t = R.reduce(function(a,r){ return {f:a.f+r.feitos, b:a.b+r.base, fat:a.fat+r.fat}; }, {f:0,b:0,fat:0}); var melhor = R.slice().sort(function(a,b){return b.pct-a.pct;})[0];
+  return '<div class="faixa" style="grid-template-columns:repeat(5,1fr)"><div><span class="rot">Acertos no ano</span><span class="num">'+f0(t.f)+'</span></div><div><span class="rot">% médio da meta</span><span class="num ouro">'+pc(t.f/t.b*100)+'</span></div><div><span class="rot">Melhor mês</span><span class="num">'+melhor.mes+'</span></div><div><span class="rot">Meses na faixa 96%+</span><span class="num">'+R.filter(function(r){return r.pct>=96;}).length+' de '+R.length+'</span></div><div><span class="rot">Faturado no ano</span><span class="num">'+rs(t.fat)+'</span></div></div>'; };
+
+var VERSOES = [
+ ['A','Abas no alto','Quatro abas visíveis (Meses, Comparativo, Representantes, Fechamentos). Cada uma mostra um assunto só. É o jeito mais parecido com o Financeiro.',
+   quadro(tit('',btnCsv)+'<div class="seg" style="align-self:flex-start"><button class="on">Meses</button><button>Comparativo</button><button>Representantes</button><button>Fechamentos</button></div><div class="bloco"><div class="cab">% da meta por mês<span class="fim">linhas pontilhadas = metas novas 96, 97 e 98%</span></div><div style="padding:6px 12px">'+grafico()+'</div></div>'+tabMeses())],
+ ['B','Mês a mês','Lista de meses à esquerda; ao clicar, o detalhe do mês aparece à direita (como a meta se formou, faixa batida, representantes). O gráfico fica no topo.',
+   quadro(tit('',btnCsv)+'<div class="bloco"><div class="cab">% da meta por mês</div><div style="padding:6px 12px">'+grafico(150)+'</div></div><div class="g2" style="grid-template-columns:minmax(0,1fr) minmax(0,1.6fr)"><div class="bloco"><div class="cab">Meses</div>'+R.slice().reverse().map(function(r,i){ return '<div class="mes'+(i===0?' on':'')+'"><div style="display:flex;justify-content:space-between"><b>'+r.mes+'</b><b class="'+corPct(r.pct)+'">'+pc(r.pct)+'</b></div><div class="barra"><i style="width:'+Math.min(100,r.pct)+'%"></i></div></div>'; }).join("")+'</div><div style="display:flex;flex-direction:column;gap:12px"><div class="bloco"><div class="cab">Outubro · como a meta se formou</div><div class="lista"><div class="item"><span>Revendedoras no início</span><b>2.023</b></div><div class="item"><span>Previsto do início</span><b>1.976</b></div><div class="item"><span>Passadas pelo Marcus (45 / 60 dias)</span><b>−90</b></div><div class="item"><span>Previsto vigente</span><b class="ouro">1.886</b></div><div class="item"><span>Feitos</span><b>1.843</b></div><div class="item"><span>% sobre o vigente</span><b class="pos">97,7%</b></div></div></div>'+'<div class="bloco"><div class="cab">Faixas de outubro<span class="fim">metas de outubro eram 94, 95 e 96%</span></div><div class="lista"><div class="item"><span>Meta 96%</span><b class="pos">✓ batida</b></div><div class="item"><span>Meta 97% (nova)</span><b class="pos">✓ batida</b></div><div class="item"><span>Meta 98% (nova)</span><b class="at">faltaram 6</b></div></div></div></div></div>')],
+ ['C','Planilha mestra','Uma tabela só com todas as colunas, filtros no topo e um mini gráfico por linha. Para quem prefere comparar números.',
+   quadro(tit('',btnCsv)+'<div style="display:flex;gap:8px;flex-wrap:wrap"><div class="seg"><button class="on">2026</button><button>2025</button></div><div class="seg"><button class="on">Meses</button><button>Representantes</button><button>Fechamentos</button></div></div>'+
+   '<div class="bloco"><table><thead><tr><th>Mês</th><th class="d">Revend.</th><th class="d">Início</th><th class="d">Saíram</th><th class="d">Vigente</th><th class="d">Feitos</th><th class="d">%</th><th class="d">Faixa</th><th class="d">Faturado</th><th class="d">Média</th><th style="width:140px">Tendência</th></tr></thead><tbody>'+R.map(function(r,i){ return '<tr class="clic'+(i===R.length-1?' sel':'')+'"><td><b>'+r.mes+'</b></td><td class="d">'+f0(r.rev)+'</td><td class="d">'+f0(r.ini)+'</td><td class="d">'+(r.saidas!==null?'−'+r.saidas:'—')+'</td><td class="d">'+(r.vig?f0(r.vig):'—')+'</td><td class="d">'+f0(r.feitos)+'</td><td class="d '+corPct(r.pct)+'"><b>'+pc(r.pct)+'</b></td><td class="d">'+faixa(r.pct)+'</td><td class="d">'+rs(r.fat)+'</td><td class="d">'+rs(r.med)+'</td><td><div class="barra"><i style="width:'+Math.max(5,(r.pct-85)/15*100)+'%"></i></div></td></tr>'; }).join("")+'<tr><td><b>Ano</b></td><td class="d"></td><td class="d">'+f0(R.reduce(function(t,r){return t+r.ini;},0))+'</td><td class="d"></td><td class="d"></td><td class="d"><b>'+f0(R.reduce(function(t,r){return t+r.feitos;},0))+'</b></td><td class="d"><b>'+pc(R.reduce(function(t,r){return t+r.feitos;},0)/R.reduce(function(t,r){return t+r.base;},0)*100)+'</b></td><td class="d"></td><td class="d"><b>'+rs(R.reduce(function(t,r){return t+r.fat;},0))+'</b></td><td class="d"></td><td></td></tr></tbody></table></div>')],
+ ['D','Comparação lado a lado','Três blocos pequenos comparam os meses em acertos, % da meta e média por acerto. Embaixo, representantes e fechamentos.',
+   quadro(tit('',btnCsv)+'<div class="g3">'+
+   [['Acertos feitos','feitos',function(r){return f0(r.feitos);},function(r){return r.feitos/1900*100;}],['% da meta','pct',function(r){return pc(r.pct);},function(r){return (r.pct-85)/15*100;}],['Média por acerto','med',function(r){return rs(r.med);},function(r){return (r.med-600)/300*100;}]].map(function(b){
+     var maior = R.slice().sort(function(x,y){return y[b[1]]-x[b[1]];})[0].mes; return '<div class="bloco"><div class="cab">'+b[0]+'<span class="fim">líder: <b class="ouro">'+maior+'</b></span></div><div class="lista">'+R.map(function(r){ return '<div class="item" style="display:grid;grid-template-columns:64px 1fr 92px;gap:10px"><span>'+r.mes.slice(0,3)+'</span><div class="barra"><i style="width:'+Math.max(4,Math.min(100,b[3](r)))+'%;'+(r.mes===maior?'':'background:var(--fio-forte)')+'"></i></div><b class="d" style="text-align:right">'+b[2](r)+'</b></div>'; }).join("")+'</div></div>'; }).join("")+'</div><div class="g2" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1fr)">'+tabReps()+tabLog()+'</div>')]
+];
+document.getElementById("raiz").innerHTML = VERSOES.map(function(v){ return '<section class="versao" id="'+v[0]+'"><div class="rotulo"><h2>Versão '+v[0]+' · '+v[1]+'</h2><span>'+v[2]+'</span></div>'+v[3]+'</section>'; }).join("");
+</script>
+</body>
+</html>
