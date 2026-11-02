@@ -22,17 +22,17 @@ function Curso(p){
     e("div",{className:"flex flex-wrap items-center gap-3"}, e(Botao,{onClick:p.voltar}, "← Voltar às aulas"), e(Selo,{cor:st.cor, nome:st.nome, g:true}),
       e("div",{className:"min-w-0"}, e("h2",{className:"truncate text-[13px] font-semibold text-foreground"}, st.nome), e("p",{className:"text-[11px] uppercase tracking-wide text-foreground"}, lista.length+" aula"+(lista.length===1 ? "" : "s")+" · "+minutos(lista)+" min · "+lista.filter(function(a){ return vistas.indexOf(a.id)>=0; }).length+" assistida"+(lista.length===1 ? "" : "s")))),
     !lista.length ? e(Aviso,null, "Ainda não há aulas neste setor. Peça uma aula nova em Melhorias.") :
-    e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-[18rem_minmax(0,1fr)]"},
+    e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-[26rem_minmax(0,1fr)]"},
       e("div",{className:"overflow-hidden rounded-lg border border-border bg-card/60"}, modulos.map(function(m){ return e("div",{key:m, className:"border-t border-border first:border-t-0"},
         e("p",{className:"bg-white/5 px-3 py-2 text-[13px] font-semibold text-foreground"}, m),
         lista.filter(function(a){ return a.modulo===m; }).map(function(a){ var ok = vistas.indexOf(a.id)>=0, on = atual && atual.id===a.id;
           return e("button",{key:a.id, type:"button", onClick:function(){ setAulaId(a.id); }, className:"flex w-full items-center gap-2 px-3 py-2 text-left text-[13px] text-foreground hover:bg-white/10 "+(on ? "bg-primary/15" : "")},
             e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full border text-[11px] "+(ok ? "border-success bg-success text-black" : on ? "border-primary text-primary" : "border-border")}, ok ? "✓" : on ? "▶" : ""),
-            e("span",{className:"min-w-0 flex-1 truncate", title:a.titulo}, a.titulo), e("span",{className:"shrink-0 text-[11px] tabular-nums"}, a.dur)); })); })),
+            e("span",{className:"min-w-0 flex-1 leading-snug", title:a.titulo}, a.titulo), e("span",{className:"shrink-0 text-[11px] tabular-nums"}, a.dur)); })); })),
       atual && e("div",{className:"flex min-w-0 flex-col gap-3"},
         e("h3",{className:"text-[13px] font-semibold text-foreground"}, atual.titulo),
-        atual.video ? e("video",{key:atual.id, controls:true, preload:"metadata", src:atual.video, className:"w-full max-w-[520px] rounded-lg border border-border bg-black"})
-          : atual.url ? e("iframe",{key:atual.id, src:atual.url, title:atual.titulo, className:"h-[300px] w-full max-w-[520px] rounded-lg border border-border bg-black"})
+        atual.video ? e("video",{key:atual.id, controls:true, preload:"metadata", src:atual.video, className:"w-full max-w-[680px] rounded-lg border border-border bg-black"})
+          : atual.url ? e("iframe",{key:atual.id, src:atual.url, title:atual.titulo, className:"h-[390px] w-full max-w-[680px] rounded-lg border border-border bg-black"})
           : e(Aviso,null, "O vídeo desta aula ainda não foi gravado."),
         e("div",{className:"flex flex-wrap items-center gap-2"},
           e(Botao,{principal:!feita, onClick:function(){ marcarVista(eu, atual.id, !feita); }}, feita ? "Desmarcar como assistida" : "Marcar como assistida"),
