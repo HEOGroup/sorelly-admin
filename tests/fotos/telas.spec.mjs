@@ -8,7 +8,9 @@ var TELAS = [
   ["visao-geral", "Visão geral (modelo do padrão)"],
   ["previsao-de-faturamento", "Faturamento (referência do Financeiro)"],
   ["contas-a-pagar", "Contas a pagar (segunda referência do Financeiro)"],
-  ["padrao-visual", "Padrão visual (peças ao vivo)"],
+  // Só a aba "Padrão visual" (as peças ao vivo). A outra aba mostra o texto inteiro dos documentos (PADRAO-VISUAL.md e PROMPT-MESTRE.md):
+  // a foto mudaria a cada frase editada e o CI ficaria vermelho sem tela errada. O terceiro item é o botão a clicar antes da foto.
+  ["padrao-visual", "Padrão visual (peças ao vivo)", /^Padrão visual$/],
 ];
 var DATA_FIXA = new Date("2026-10-15T10:00:00-03:00");
 
@@ -35,6 +37,7 @@ test.describe("Fotos de referência do padrão visual", function(){
       await page.goto("/" + t[0], { waitUntil: "networkidle" });
       // servidor com login e sem conta das fotos: não tira foto da tela de entrada (seria uma referência errada)
       if(await page.getByText("Entre com o seu usuário").count()) test.skip(true, "Servidor com login: informe FOTOS_EMAIL e FOTOS_SENHA no .env.local para tirar as fotos no PC.");
+      if(t[2]) await page.locator("main button", { hasText: t[2] }).click();   // abre a aba certa da tela
       await page.waitForTimeout(3000);   // os números correm de zero até o valor (lib/contagem-tela.js); espera terminar
       // avisos do SorellyChat (cartões no canto) cobrem a tela: fecha todos antes da foto
       for(var i = 0; i < 5 && await page.getByText("Fechar todas").count(); i++){ await page.getByText("Fechar todas").first().click(); await page.waitForTimeout(300); }
