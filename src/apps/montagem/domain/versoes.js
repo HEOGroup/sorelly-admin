@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.16", data:"2026-11-02", titulo:"Contas a pagar: tabela no modelo do Agendamento", itens:[
+    {tipo:"melhoria", area:"Contas a pagar", txt:"A lista (abas A pagar, Pagas e Todas) agora tem o cabeçalho dourado e um funil de filtro em todas as colunas, como em Agendamento › Revendedoras: classificar de A a Z, filtrar por condição e por valores. A Natureza aparece inteira, sem abreviar."}
+  ]},
  {v:"0.18.15", data:"2026-11-02", titulo:"Contas a pagar: representantes agrupados", itens:[
     {tipo:"melhoria", area:"Contas a pagar", txt:"A comissão e o combustível de cada representante entram numa linha só (representante, CNPJ, quantidade de títulos, total e situação). Clicar na linha abre os títulos. A caixa de marcar da linha marca todos de uma vez, para registrar o pagamento no total. Vale nas abas A pagar, Pagas e Todas."}
   ]},

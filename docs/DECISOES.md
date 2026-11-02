@@ -1498,3 +1498,9 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - A comissão do consignado e o combustível de cada representante (grupo "Representantes", naturezas 4.02, 4.03 e 4.20) entram numa linha só: representante, CNPJ, quantidade de títulos, total e situação. Clicar abre os títulos (com "↳"). Motivo: a comissão é paga no total, não título por título.
 - A caixa de marcar da linha marca todos os títulos de uma vez (mesma regra: só do mesmo CNPJ) e "Registrar pagamento" paga o total. A linha agrupa por representante + CNPJ + situação (pago ou a pagar); se uma representante tem títulos em dois CNPJs, aparece uma linha por CNPJ.
 - Código: `pages/ContasPagarLista.js` (`linhaGrupo`, `marcaGrupo`).
+
+## 02/11/2026 · Contas a pagar: tabela no modelo do Agendamento (pedido do Marcus)
+- A lista (A pagar, Pagas, Todas) usa o mesmo desenho da tela Agendamento › Revendedoras: cabeçalho dourado e funil de filtro em TODAS as colunas (Vence, CNPJ, Número, Parcela, Fornecedor, Natureza, Valor, Situação), com `MenuFiltro` (A→Z, condição e valores). "Limpar filtros das colunas" aparece quando há filtro.
+- REGRA: a Natureza nunca fica abreviada (sem "…"); a coluna cresce até o maior texto e a tabela rola para o lado.
+- Os filtros do alto (Período, CNPJ, Nota, Natureza, Ordenar, Buscar) continuam; o filtro da coluna age sobre o resultado deles. O total e a contagem seguem o que está filtrado. Linha agrupada do representante em tom dourado.
+- O componente `components/filtro-planilha.js` (menu de filtro estilo Google Planilhas, criado na tela Agendamento › Revendedoras em 01/11/2026) entrou no Git junto com esta mudança, porque o Contas a pagar também usa. Quem editar a tela do Agendamento deve manter esse arquivo igual.
