@@ -48,8 +48,8 @@ var numDe = function(i){ return ((i.pref||"")+" "+(i.num||"")).trim() || "—"; 
 var cnpjDe = function(id){ return CNPJS0.filter(function(c){ return c.id===id; })[0] || null; };
 var cnpjTxt = function(id){ var c = cnpjDe(id); return c && c.cnpj ? c.cnpj : (id==="fora" ? "Por fora" : c ? c.nome : id); };
 // só a LETRA muda de cor (Marcus, 02/11/2026): tons claros que leem bem no fundo escuro
-var CNPJ_LETRA = {"34":"#F0C25A", "46":"#F472B6", "59":"#2DD4BF", "67":"#60A5FA", "ho":"#A78BFA", "fora":"#E2E8F0"};
-var pilulaCnpj = function(id){ return e("span",{className:"font-semibold", style:{color:CNPJ_LETRA[id] || "#E2E8F0"}}, cnpjTxt(id)); };
+var CNPJ_LETRA = {"34":"#D8C48F", "46":"#DBAAC3", "59":"#92CBC2", "67":"#9FBBE3", "ho":"#BCB1E3", "fora":"#E2E8F0"};   // tons suaves (Marcus: "mais fraco")
+var pilulaCnpj = function(id){ return e("span",{style:{color:CNPJ_LETRA[id] || "#E2E8F0"}}, cnpjTxt(id)); };
 // ordem das colunas (Marcus, 02/11/2026): Fornecedor primeiro, na esquerda; o resto centralizado
 var COLS = [
   {k:"nome", t:"Fornecedor", tipo:"sel", v:function(i){ return i.nome; }, x:function(i){ return i.nome; }},
