@@ -39,10 +39,10 @@ var AULAS = [
   {id:"rh-presenca-dia", setores:["rh"], modulo:"Presença", titulo:"Lançar a presença do dia", dur:"1:02",
    url:"/tutoriais/presenca-diaria-video.html", video:"/tutoriais/videos/presenca-diaria.webm",
    passos:["Abra Recursos Humanos → Presença.", "Fique em Visão do dia.", "Clique em Marcar todos como presentes.", "Marque só quem faltou: F (falta sem justificativa), AJ (falta com aviso), AT (atestado).", "Clique de novo no mesmo código para tirar a marca.", "Use o filtro Todas as ocorrências para ver só quem faltou."]},
-  {id:"fin-pagas-por-dia", setores:["financeiro"], modulo:"Contas", titulo:"Ver o que foi pago em cada dia", dur:"0:50",
+  {id:"fin-pagas-por-dia", setores:["financeiro"], modulo:"Contas", titulo:"Ver o que foi pago em cada dia", dur:"1:02",
    url:"/tutoriais/pagas-por-dia-video.html", video:"/tutoriais/videos/pagas-por-dia.webm",
    passos:["Abra Financeiro → Contas → Pagas por dia.", "Veja o Total do dia e o valor de cada CNPJ na faixa de cima.", "Use Dia anterior, Hoje e Dia seguinte para trocar o dia.", "Em CNPJ, escolha um CNPJ para ver só ele.", "Em Buscar, escreva o fornecedor, a natureza ou o valor."]},
-  {id:"fin-excluir-lancamento", setores:["financeiro"], modulo:"Contas", titulo:"Excluir um lançamento feito à mão", dur:"0:58",
+  {id:"fin-excluir-lancamento", setores:["financeiro"], modulo:"Contas", titulo:"Excluir um lançamento feito à mão", dur:"1:02",
    url:"/tutoriais/excluir-lancamento-video.html", video:"/tutoriais/videos/excluir-lancamento.webm",
    passos:["Abra Financeiro → Contas → Contas a pagar.", "Clique na aba A pagar e ache o lançamento.", "Clique na linha. A janela da conta abre.", "Embaixo, à esquerda, clique em Excluir lançamento.", "Confirme em OK.", "Só lançamento feito à mão (botão Lançar conta) pode ser excluído. Para pagar, use Registrar pagamento."]}
 ];

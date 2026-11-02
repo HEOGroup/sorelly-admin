@@ -102,6 +102,39 @@ var VERSOES = [
   {v:"0.18.12", data:"2026-11-01", titulo:"Novembro/2026 aberto", itens:[
     {tipo:"melhoria", area:"Financeiro · Faturamento", txt:"Novembro abre com 2.047 revendedoras, 1.975 com acerto previsto e Carregar 0 (outubro fechou com 0). Gravado no código (aplicaAbreNov), em FATURAMENTO-DIARIO.md e em DECISOES.md. A conta para novembro ficar positivo está no FATURAMENTO-DIARIO.md."},
   ]},
+ {v:"0.18.21", data:"2026-11-02", titulo:"Resultado do mês: novembro com a previsão nos dois quadros", itens:[
+    {tipo:"correção", area:"Resultado do mês", txt:"No mês em andamento, o Total de contas a pagar passou a ser o MAIOR entre a DevMaster e o admin antigo (as contas do mês ainda estão sendo lançadas), como já era nos meses seguintes. Novembro mostrava só R$ 2.000,00 a pagar; agora R$ 1.470.572,51."},
+    {tipo:"melhoria", area:"Resultado do mês", txt:"Os quadros Faturamento e Receber do mês em andamento trazem Mais: falta entrar até o fim do mês (previsão), Entrada total prevista, Total de contas a pagar e o Resultado previsto do mês, iguais à aba Previsão."}
+  ]},
+ {v:"0.18.20", data:"2026-11-02", titulo:"Resultado do mês: Contas a pagar nos dois quadros", itens:[
+    {tipo:"melhoria", area:"Resultado do mês", txt:"Os quadros Faturamento e Receber agora trazem as Contas a pagar escritas (já pago, falta pagar e Total de contas a pagar do mês) e o Resultado do mês: faturamento menos contas a pagar, e esperado entrar menos contas a pagar."},
+    {tipo:"correção", area:"Contas a pagar", txt:"Se a leitura da DevMaster falhar ao abrir o sistema, ele tenta de novo em 15 segundos (antes esperava 10 minutos e a tela ficava com números antigos). Quando a DevMaster ainda não carregou, a tela avisa que o valor é do admin antigo."}
+  ]},
+ {v:"0.18.19", data:"2026-11-02", titulo:"Resultado do mês: mês fechado sem previsão", itens:[
+    {tipo:"correção", area:"Resultado do mês", txt:"Em mês que já passou (ex.: outubro) o quadro Faturamento mostra só o que aconteceu: acertos feitos, faturamento lançado, médias e o Resultado do mês (faturamento menos pago e a pagar). Somem Vendas no Carregar, Acertos a realizar, Total de acertos, Acertos esperados e Faturamento previsto. No mês aberto continua a previsão."}
+  ]},
+ {v:"0.18.18", data:"2026-11-02", titulo:"Resultado do mês: Pagar com a mesma fonte do Contas a pagar", itens:[
+    {tipo:"correção", area:"Resultado do mês", txt:"O quadro Pagar usava o total parado do admin antigo (27/10) enquanto o Contas a pagar lê a DevMaster ao vivo, e não aplicava as baixas dadas no sistema. Agora os dois usam a mesma regra e o mesmo número. Com isso o quadro Entrou nas contas deixou de comparar saldo de 30/10 com pagamentos de 27/10."}
+  ]},
+ {v:"0.18.17", data:"2026-11-02", titulo:"Contas a pagar: colunas em ordem, CNPJ completo com cor", itens:[
+    {tipo:"melhoria", area:"Contas a pagar", txt:"Fornecedor passou para a primeira coluna (à esquerda); as outras ficam centralizadas, com linhas finas entre as colunas. O CNPJ aparece completo, com a cor de cada empresa (34 dourado, 46 rosa, 59 verde-água, 67 azul, Por fora cinza)."}
+  ]},
+ {v:"0.18.16", data:"2026-11-02", titulo:"Contas a pagar: tabela no modelo do Agendamento", itens:[
+    {tipo:"melhoria", area:"Contas a pagar", txt:"A lista (abas A pagar, Pagas e Todas) agora tem o cabeçalho dourado e um funil de filtro em todas as colunas, como em Agendamento › Revendedoras: classificar de A a Z, filtrar por condição e por valores. A Natureza aparece inteira, sem abreviar."}
+  ]},
+ {v:"0.18.15", data:"2026-11-02", titulo:"Contas a pagar: representantes agrupados", itens:[
+    {tipo:"melhoria", area:"Contas a pagar", txt:"A comissão e o combustível de cada representante entram numa linha só (representante, CNPJ, quantidade de títulos, total e situação). Clicar na linha abre os títulos. A caixa de marcar da linha marca todos de uma vez, para registrar o pagamento no total. Vale nas abas A pagar, Pagas e Todas."}
+  ]},
+ {v:"0.18.14", data:"2026-11-02", titulo:"Financeiro: trocar o CNPJ da conta; Melhorias com setor organizado", itens:[
+    {tipo:"novo", area:"Contas a pagar", txt:"Na janela da conta (também de conta já paga) há o campo CNPJ da conta com o botão Trocar CNPJ e Voltar ao original. Vale em todas as listas e fica no histórico. Pedido da Nayale."},
+    {tipo:"correção", area:"Resultado do mês", txt:"O filtro de mês tinha uma opção Janeiro repetida no início da lista; saiu. Mostra de janeiro até o mês atual."},
+    {tipo:"melhoria", area:"Melhorias", txt:"O setor de cada pedido vem da pessoa: Anamaria em Financeiro, Hellen em Link / Cadastro / Compras, Deysiane em Produção / Kits, Rayssa em Cadastro de peças. Pedidos antigos e novos seguem a mesma lista."}
+  ]},
+ {v:"0.18.13", data:"2026-11-02", titulo:"Aviso de resposta nas Melhorias e vídeo na resposta", itens:[
+    {tipo:"novo", area:"Melhorias", txt:"Quem pediu uma melhoria recebe um aviso no alto da tela, com som, ao abrir o admin quando alguém responde ou muda a situação do pedido. O botão Ver resposta abre o pedido. Abrir o pedido marca como visto. Respostas anteriores a 02/11/2026 não avisam."},
+    {tipo:"novo", area:"Melhorias", txt:"A resposta de um pedido pode trazer um vídeo-aula (campo video do comentário), que toca dentro do balão."},
+    {tipo:"novo", area:"Aulas do setor", txt:"Duas aulas do Financeiro: Ver o que foi pago em cada dia e Excluir um lançamento feito à mão."}
+  ]},
   {v:"0.18.12", data:"2026-11-01", titulo:"Amanda de Miranda: acesso total e edição de acessos", itens:[
     {tipo:"melhoria", area:"RH · Acessos e autorizações", txt:"Amanda de Miranda passou ao grupo Acesso total e agora também altera a matriz Quem vê o quê e as autorizações (antes só visualizava)."}
   ]},
