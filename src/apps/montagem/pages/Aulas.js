@@ -31,8 +31,8 @@ function Curso(p){
             e("span",{className:"min-w-0 flex-1 truncate", title:a.titulo}, a.titulo), e("span",{className:"shrink-0 text-[11px] tabular-nums"}, a.dur)); })); })),
       atual && e("div",{className:"flex min-w-0 flex-col gap-3"},
         e("h3",{className:"text-[13px] font-semibold text-foreground"}, atual.titulo),
-        atual.video ? e("video",{key:atual.id, controls:true, preload:"metadata", src:atual.video, className:"w-full rounded-lg border border-border bg-black"})
-          : atual.url ? e("iframe",{key:atual.id, src:atual.url, title:atual.titulo, className:"h-[440px] w-full rounded-lg border border-border bg-black"})
+        atual.video ? e("video",{key:atual.id, controls:true, preload:"metadata", src:atual.video, className:"w-full max-w-[520px] rounded-lg border border-border bg-black"})
+          : atual.url ? e("iframe",{key:atual.id, src:atual.url, title:atual.titulo, className:"h-[300px] w-full max-w-[520px] rounded-lg border border-border bg-black"})
           : e(Aviso,null, "O vídeo desta aula ainda não foi gravado."),
         e("div",{className:"flex flex-wrap items-center gap-2"},
           e(Botao,{principal:!feita, onClick:function(){ marcarVista(eu, atual.id, !feita); }}, feita ? "Desmarcar como assistida" : "Marcar como assistida"),
