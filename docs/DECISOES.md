@@ -1474,3 +1474,9 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - Vídeo "Pedir ao RH a mudança de uma colaboradora" refeito assim (58 s, 1280x720). Fonte: `public/tutoriais/pedir-mudanca-video.html` (`?gravar=1` esconde o botão); gravado com Playwright.
 
 - Aula 2 (02/11/2026): "Lançar a presença do dia" (RH › Presença), gravada com a tela inteira do sistema, começando no Início. Dados do vídeo são de exemplo. Fonte: `public/tutoriais/presenca-diaria-video.html`.
+
+## 02/11/2026 · Financeiro: "Pagas por dia" para a Anamaria (pedido dela em Melhorias)
+- Causa: a conta `anamariahess` guarda uma lista fixa de telas (campo `abas`), feita antes de "Pagas por dia" existir (29/10). A tela estava no menu, mas fora da lista dela. Só a conta dela estava assim (conferido: nenhuma outra conta com Contas a pagar e sem Pagas por dia).
+- Correção: a tela foi acrescentada na lista dela no banco (`scripts/usados-uma-vez/liberar-pagas-por-dia-anamaria.mjs`). Ela precisa atualizar a página (Ctrl+F5).
+- Cuidado: toda tela NOVA do menu precisa entrar também na lista `abas` das contas que têm lista fixa.
+- Pedido "apagar o lançamento de R$ 1.000,00" (bônus do Nickolas, dia 23/10): esse valor NÃO é lançamento manual. Vem do combinado do Marcus de 20/10 (R$ 2.000 por mês, out a dez, `bonusNickolas()` em `domain/contas-empresa.js`), por isso não tem "Excluir lançamento". Se foi pago, usar Registrar pagamento. Apagar depende do Marcus.
