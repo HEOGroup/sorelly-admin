@@ -3,6 +3,15 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.34", data:"2026-11-03", titulo:"Aula Lançar uma fatura de banho", itens:[
+  {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Cadastro de peças: Lançar uma fatura de banho (1:17, tela inteira). Mostra Faturas Pontual, a criação da fatura, os valores dos serviços e a ligação aos pedidos de bruto."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude passa a mostrar o nome da conversa e a data (ex.: CHAMADOS 1 (03/11/2026))."},
+ ]},
+ {v:"0.18.33", data:"2026-11-03", titulo:"Chamados: filtro na coluna, como no Agendamento", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A barra de filtros do alto saiu. Agora se clica no título da coluna (Data, Setor, Funcionária, Tipo, Situação, Tela, Descrição) para classificar, filtrar por condição ou marcar valores, igual ao Agendamento. Cada coluna tem a largura do maior texto, então Setor e Funcionária não passam mais um por cima do outro. Os cartões do alto continuam filtrando."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude guarda a data da resposta e, se houver, o link da conversa (claude://…). Com link, aparece o botão Abrir conversa, que abre a conversa direto no app do Claude, mesmo arquivada."},
+  {tipo:"melhoria", area:"Cadastro de peças", txt:"Rayssa e Graziella também lançam faturas de banho (Faturas Pontual, Faturas Ellos e Retirar ouro), junto com o Nickolas. Pedido da Rayssa nos Chamados."},
+ ]},
  {v:"0.18.34", data:"2026-11-03", titulo:"Agendamento: atividades, cota e Painel", itens:[
   {tipo:"novo", area:"Agendamento", txt:"Atividades: acerto atrasado há 31 dias ou mais, atrasado há 60 dias ou mais (Inadimplência/Jurídico) e ciclo de kit acima de 90 dias viram atividade. Atrasada só conta depois do dia útil efetivo (domingo e feriado passam para o próximo dia). Concluída só vale se uma pessoa respondeu."},
   {tipo:"novo", area:"Agendamento", txt:"Atividade: botão Entrei em contato e aguardo (representante ou revendedora), aba Aguardando retorno, histórico de contatos e todas as anotações da DevMaster na janela, que ficou larga."},
