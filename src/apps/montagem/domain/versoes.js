@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.41", data:"2026-11-03", titulo:"Atendimento interno: lista Kits novos para agendar", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Em Revendedoras, logo abaixo do calendário e acima da tabela, nova lista Kits novos (mesmo padrão da tabela de revendedoras; a tabela de baixo ganhou o título Revendedoras internas com o total) para agendar: os kits que o setor Kits novos manda para a Sorelly e ainda não têm dia marcado (revendedora, cidade, kit Normal ou Prata com o valor, há quantos dias chegou). Agendar (botão pequeno) abre a ficha da revendedora, onde se escolhe data e hora; ela entra na listagem do dia como Kit novo. Cada tabela tem uma etiqueta no canto (Kits novos · N para agendar; Revendedoras internas · N total). Com ?exemplo=kits na tela aparecem 3 linhas de exemplo, sem gravar."},
+ ]},
  {v:"0.18.40", data:"2026-11-04", titulo:"SorellyChat: busca acha pessoas", itens:[
   {tipo:"correção", area:"SorellyChat", txt:"A busca do chat só olhava conversas que já existiam e o texto das mensagens, então um funcionário sem conversa não aparecia. Agora aparece a seção Pessoas, com nome, setor e função; tocar abre a conversa nova."},
  ]},

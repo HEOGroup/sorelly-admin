@@ -9,6 +9,7 @@ import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
@@ -456,6 +457,37 @@ function sincronizarDm(dispatch, auto){
   });
 }
 
+// KITS NOVOS PARA AGENDAR (Marcus aprovou o desenho em 03/11/2026): lista no alto da tela com os kits que o setor Kits novos (Michele) mandou para a Sorelly e ainda não têm dia marcado.
+// Cada kit entra sozinho (bridge-montagem.js › direcionarParaSorelly marca kitNovo na revendedora); a Tamara escolhe dia e hora e a revendedora entra na listagem do dia como Kit novo.
+// Para ver o desenho sem kit real: abrir a tela com ?exemplo=kits (3 linhas de exemplo, sem gravar nada).
+// etiqueta no canto de cima de cada tabela (Marcus, 03/11/2026): "Kits novos · 3 para agendar" e "Revendedoras internas · 210 total"
+function Etiqueta(p){ return e("div",{className:"flex flex-wrap items-end gap-2"}, e("span",{className:"inline-flex h-8 items-center gap-2 rounded-t-lg px-3 text-[13px] font-semibold", style:BARRA_OURO}, e("b",null, p.nome), e("span",null, "· "+p.info)), p.extra && e("span",{className:"pb-1 text-[13px]"}, p.extra)); }
+var exemploKitsAtivo = function(){ return typeof window!=="undefined" && /[?&]exemplo=kits/.test(window.location.search); };
+function kitsExemplo(){
+  var h = {data:null, venda:null, acerto:null};
+  return [["EX1", "Camili Exemplo da Silva", "Curitiba", false, 7000, 1], ["EX2", "Gabriela Exemplo Alves", "São José dos Pinhais", false, 5000, 2], ["EX3", "Ingrid Exemplo Moura", "Curitiba", true, 7000, 0]].map(function(x){
+    return {id:x[0], nome:x[1], cidade:x[2], prata:x[3], exemplo:true, ciclo:30, proximoManual:null, proximoDm:null, situacao:"contatar", agend:null, internoId:null, hist:[h, h, h], contatos:[{nome:"WhatsApp da revendedora", fone:"(41) 90000-0000"}], devmaster:"", obs:"", registro:[], conds:[], kitNovo:{id:x[0], valor:x[4], desde:isoDia(new Date(Date.now()-x[5]*86400000))}};
+  });
+}
+function KitsNovosParaAgendar(p){
+  var ex = exemploKitsAtivo();
+  var reais = p.lista.filter(function(r){ return r.kitNovo && !r.agend; }).sort(function(a, b){ return String(a.kitNovo.desde || "").localeCompare(String(b.kitNovo.desde || "")); });
+  var lista = reais.length ? reais : ex ? kitsExemplo() : [];
+  var quando = function(r){ var n = Math.max(0, diasEntre(r.kitNovo.desde || p.hojeIso, p.hojeIso)); return n===0 ? "hoje" : "há "+n+(n===1 ? " dia" : " dias"); };
+  var linhas = lista.map(function(r, k){ return Object.assign({}, r, {n:k+1}); });
+  var colunas = [
+    {k:"n", t:"Nº", tipo:"num", semFiltro:true, v:function(r){ return r.n; }},
+    {k:"nome", t:"Revendedora", forte:true, v:function(r){ return r.nome; }},
+    {k:"cid", t:"Cidade", v:function(r){ return r.cidade || "—"; }},
+    {k:"kit", t:"Kit", v:function(r){ return (r.prata ? "Prata " : "Normal ")+BK(r.kitNovo.valor); }},
+    {k:"cheg", t:"Chegou", v:function(r){ return quando(r); }},
+    {k:"ag", t:"", semFiltro:true, v:function(){ return ""; }, exib:function(){ return "Agendar"; }, cel:function(r){ return e("button",{type:"button", title:"Abrir a ficha da revendedora para agendar", onClick:function(){ p.abrir(r.id); }, className:"h-6 rounded-md px-2 text-[13px] font-bold", style:BTN_OURO2}, "Agendar"); }}   // padrao-ok: botão menor, pedido do Marcus (03/11/2026)
+  ];
+  return e("div",{className:"flex flex-col"},
+    e(Etiqueta,{nome:"Kits novos", info:lista.length+" para agendar", extra:"Vêm direto do setor Kits novos"+(ex && !reais.length ? " · EXEMPLO, nada é gravado" : "")}),
+    e(GradeFiltro,{chave:"kitsnovos", rows:linhas, cols:colunas, vazio:"Nenhum kit novo para agendar. Quando a Michele mandar um kit para a Sorelly, ele aparece aqui."}));
+}
+
 function AbaRevendedorasInternas(){
   var cx = use(), s = cx.state, hojeIso = isoDia(new Date());
   // DevMaster: busca no servidor as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra aqui as que ainda não existem
@@ -474,7 +506,7 @@ function AbaRevendedorasInternas(){
   var h0 = parteData(hojeIso), ms = useState([h0.getFullYear(), h0.getMonth()]), mes = ms[0], setMes = ms[1], mg = useState([h0.getFullYear(), h0.getMonth()]), mesG = mg[0], setMesG = mg[1];
   var ds = useState(hojeIso), dia = ds[0], setDia = ds[1], ab = useState(null), aberto = ab[0], setAberto = ab[1];
   useEffect(function(){ if(!aberto) return undefined; var f = function(ev){ if(ev.key==="Escape") setAberto(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [aberto]);
-  var rSel = todas.find(function(r){ return r.id===aberto; });
+  var rSel = todas.find(function(r){ return r.id===aberto; }) || (exemploKitsAtivo() ? kitsExemplo().find(function(r){ return r.id===aberto; }) : null);   // o exemplo abre a ficha só para ver; nada é gravado
   var escolherDia = function(iso){ setDia(iso); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); };
   var irParaDia = function(iso){ escolherDia(iso); setVisao("lista"); };
   var segBtn = function(k, t){ var on = visao===k; return e("button",{key:k, type:"button", onClick:function(){ setVisao(k); }, "aria-pressed":on, className:"h-8 px-3.5 text-[13px] font-semibold "+(on ? "" : "hover:bg-white/10"), style:on ? BTN_OURO2 : null}, t); };
@@ -490,7 +522,8 @@ function AbaRevendedorasInternas(){
           e("div",{className:"grid gap-3 lg:grid-cols-[660px_minmax(0,1fr)]", style:{minHeight:ALTURA_AGENDA}},
             e("div",{style:{height:ALTURA_AGENDA}}, e(CalendarioTopo,{lista:todas, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso})),
             e("div",{className:"overflow-hidden", style:{height:ALTURA_AGENDA}}, e(HorariosDoDia,{lista:todas, dia:dia, hojeIso:hojeIso, abrir:setAberto, dispatch:cx.dispatch}))),
-          e(TabelaAgenda,{lista:todas, hojeIso:hojeIso, s:s, abrir:setAberto}))
+          e(KitsNovosParaAgendar,{lista:todas, hojeIso:hojeIso, abrir:setAberto}),
+          e("div",{className:"flex flex-col"}, e(Etiqueta,{nome:"Revendedoras internas", info:todas.length+" total"}), e(TabelaAgenda,{lista:todas, hojeIso:hojeIso, s:s, abrir:setAberto})))
       : e(CalendarioGrande,{lista:todas, mes:mesG, setMes:setMesG, hojeIso:hojeIso, abrir:setAberto, irParaDia:irParaDia}),
     rSel && e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setAberto(null); }},
       e("div",{className:"relative my-auto w-full max-w-[880px]"},
