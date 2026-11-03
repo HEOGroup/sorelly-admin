@@ -17,6 +17,13 @@ function reduzirImagem(url){
     c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", 0.82)); };
     im.onerror = function(){ ok(url); }; im.src = url; });
 }
+// miniatura (320 px, uns 10 a 20 KB) que viaja junto com a mensagem: a foto aparece na hora no outro lado, enquanto a grande chega
+function criarMini(url){
+  return new Promise(function(ok){ var im = new Image(); im.onload = function(){
+    var k = Math.min(1, 320/Math.max(im.width, im.height)), c = document.createElement("canvas"); c.width = Math.round(im.width*k); c.height = Math.round(im.height*k);
+    c.getContext("2d").drawImage(im, 0, 0, c.width, c.height); ok(c.toDataURL("image/jpeg", 0.6)); };
+    im.onerror = function(){ ok(null); }; im.src = url; });
+}
 function tipoDe(f){ return /^image\//.test(f.type) ? "imagem" : "arquivo"; }
 
 function Camera(p){
@@ -87,7 +94,7 @@ function Compositor(p){
     if(!t && !anexos.length) return;
     var ms = mencoes.filter(function(id){ return t.indexOf("@"+contato(id).nome)>=0; });
     if(anexos.length){
-      anexos.forEach(function(a, i){ enviarMsg({conv:conv.id, eu:eu, aba:p.aba, tipo:a.tipo, texto:i===0 ? t : "", mencoes:i===0 ? ms : [], resp:i===0 && p.resp ? p.resp.id : null, midia:{key:guardarMidia(a.url), nome:a.nome, tam:a.tam, mime:a.mime}}); });
+      anexos.forEach(function(a, i){ enviarMsg({conv:conv.id, eu:eu, aba:p.aba, tipo:a.tipo, texto:i===0 ? t : "", mencoes:i===0 ? ms : [], resp:i===0 && p.resp ? p.resp.id : null, midia:{key:guardarMidia(a.url), mini:a.mini||undefined, nome:a.nome, tam:a.tam, mime:a.mime}}); });
       setAnexos([]);
     } else enviarMsg({conv:conv.id, eu:eu, aba:p.aba, texto:t, mencoes:ms, resp:p.resp ? p.resp.id : null});
     setTexto(""); setMencoes([]); setSug(null); setEmoji(false); if(p.resp) p.cancelarResp();
@@ -102,11 +109,12 @@ function Compositor(p){
     Array.prototype.slice.call(lista).forEach(function(f){
       if(f.size > 25*1048576){ tocar("erro"); setErro("\""+f.name+"\" é maior que 25 MB."); return; }
       lerArquivo(f).then(function(url){ return tipoDe(f)==="imagem" ? reduzirImagem(url) : url; }).then(function(url){
-        setAnexos(function(a){ return a.concat([{url:url, tipo:tipoDe(f), nome:f.name, tam:f.size, mime:f.type||"application/octet-stream"}]); }); setErro(null);
+        return (tipoDe(f)==="imagem" ? criarMini(url) : Promise.resolve(null)).then(function(mini){
+          setAnexos(function(a){ return a.concat([{url:url, mini:mini, tipo:tipoDe(f), nome:f.name, tam:f.size, mime:f.type||"application/octet-stream"}]); }); setErro(null); });
       }).catch(function(){ tocar("erro"); setErro("Não consegui ler \""+f.name+"\"."); });
     });
   };
-  var addFotoCamera = function(url){ setAnexos(function(a){ return a.concat([{url:url, tipo:"imagem", nome:"foto-"+Date.now()+".jpg", tam:Math.round(url.length*0.75), mime:"image/jpeg"}]); }); };
+  var addFotoCamera = function(url){ criarMini(url).then(function(mini){ setAnexos(function(a){ return a.concat([{url:url, mini:mini, tipo:"imagem", nome:"foto-"+Date.now()+".jpg", tam:Math.round(url.length*0.75), mime:"image/jpeg"}]); }); }); };
 
   // ---- gravação de áudio ----
   function cancelarGravacao(){

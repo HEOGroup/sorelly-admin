@@ -172,7 +172,7 @@ function ConteudoMsg(p){
   if(m.tipo==="audio") return e(AudioMsg,{midia:md});
   var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[14px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu), p.espaco ? e("span",{className:"inline-block", style:{width:p.espaco, height:1}}) : null) : null;
   if(m.tipo==="imagem") return e("div",{className:"flex flex-col gap-1"},
-    url ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url, alt:md.nome||"Foto", className:"max-h-72 w-full max-w-[280px] object-cover"})) :
+    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", className:"max-h-72 w-full max-w-[280px] object-cover"})) :
       e("p",{className:"flex items-center gap-2 py-3 text-[12px]", style:{color:W.sec}}, e(Ph,{n:"image", s:22}), "Foto indisponível (não ficou salva neste navegador)."), corpo);
   if(m.tipo==="arquivo"){
     var ic = /pdf/.test(md.mime||"") ? "file-pdf" : /sheet|excel|csv/.test((md.mime||"")+(md.nome||"")) ? "file-xls" : /word|doc/.test((md.mime||"")+(md.nome||"")) ? "file-doc" : "file-text";
@@ -189,13 +189,22 @@ function ConteudoMsg(p){
 
 function Bolha(p){
   var m = p.m, minha = m.de===p.eu, c = contato(m.de), ap = m.apag==="todos";
-  var mn = useState(false), menu = mn[0], setMenu = mn[1];
+  var mn = useState(false), menu = mn[0], setMenu = mn[1], bolhaRef = useRef(null);
+  // menu aberto: a conversa sobe sozinha até o menu aparecer inteiro acima do campo de escrever (como no WhatsApp)
+  useEffect(function(){
+    if(!menu || !bolhaRef.current) return;
+    var caixa = bolhaRef.current.querySelector("[data-menu-msg]"), rolagem = bolhaRef.current.parentElement;
+    while(rolagem && !/(auto|scroll)/.test(getComputedStyle(rolagem).overflowY)) rolagem = rolagem.parentElement;
+    if(!caixa || !rolagem) return;
+    var falta = caixa.getBoundingClientRect().bottom - rolagem.getBoundingClientRect().bottom + 12;
+    if(falta>0) rolagem.scrollBy({top:falta, behavior:"smooth"});
+  }, [menu]);
   var cit = m.resp ? p.todas.find(function(x){ return x.id===m.resp; }) : null;
   var reacs = {}; Object.keys(m.reacoes||{}).forEach(function(k){ var em = m.reacoes[k]; reacs[em] = (reacs[em]||[]).concat([k]); });
   var temReacao = Object.keys(reacs).length>0;
   var noTexto = m.tipo==="texto" && !!m.texto && !ap && !m.porDir;   // mensagem só de texto: a hora fica na linha do texto, como no WhatsApp
   return e("div",{"data-m":m.id, className:"group relative flex px-[6%] "+(minha ? "justify-end" : "justify-start")+(p.primeira ? " mt-2" : " mt-0.5")+(temReacao ? " mb-3" : "")},
-    e("div",{className:"relative max-w-[min(85%,520px)] rounded-lg px-2.5 pb-1 pt-1.5 shadow-sm", style:{background:minha ? p.tema.saida : p.tema.entrada, color:p.tema.texto, borderTopLeftRadius:!minha && p.primeira ? 0 : undefined, borderTopRightRadius:minha && p.primeira ? 0 : undefined, outline:p.destaque ? "2px solid "+W.ouro : "none"}},
+    e("div",{ref:bolhaRef, className:"relative max-w-[min(85%,520px)] rounded-lg px-2.5 pb-1 pt-1.5 shadow-sm", style:{background:minha ? p.tema.saida : p.tema.entrada, color:p.tema.texto, borderTopLeftRadius:!minha && p.primeira ? 0 : undefined, borderTopRightRadius:minha && p.primeira ? 0 : undefined, outline:p.destaque ? "2px solid "+W.ouro : "none"}},
       !ap && !p.somenteLeitura && e("button",{onClick:function(){ setMenu(true); }, "aria-label":"Opções da mensagem", className:"absolute right-1 top-1 z-10 grid size-6 place-items-center rounded-full opacity-0 transition-opacity focus:opacity-100 group-hover:opacity-100", style:{background:minha ? p.tema.saida : p.tema.entrada}}, e(Ph,{n:"caret-down", s:15, style:{color:W.sec}})),
       menu && e(Popover,{className:(minha ? "right-0" : "left-0")+" top-7", fechar:function(){ setMenu(false); }, largura:200},
         e("div",{className:"flex items-center justify-around px-2 pb-1.5 pt-0.5"}, REACOES.map(function(r){ return e("button",{key:r, onClick:function(){ api.react(p.conv.id, m.id, p.eu, r); setMenu(false); }, className:"grid size-8 place-items-center rounded-full text-[19px] hover:bg-white/10"}, r); })),

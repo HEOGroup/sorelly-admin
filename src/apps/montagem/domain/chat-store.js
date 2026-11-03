@@ -28,18 +28,19 @@ var midiasMem = {};
 var midiasSalvas = (function(){ try{ return JSON.parse(localStorage.getItem(CHAVE_MIDIA)||"{}"); }catch(x){ return {}; } })();
 function guardarMidia(url){
   var k = uid("md_"); midiasMem[k] = url;
+  if(SERVIDOR) return k;   // com servidor a mídia fica lá; gravar tudo no navegador a cada envio travava a tela (JSON de todas as fotos de uma vez)
   try{ midiasSalvas[k] = url; localStorage.setItem(CHAVE_MIDIA, JSON.stringify(midiasSalvas)); }catch(x){ delete midiasSalvas[k]; }   // cheio: fica só até recarregar
   return k;
 }
 // Mídia de OUTRA pessoa (ou de outro navegador): não está aqui; busca no servidor pela chave (md_...) e avisa a tela quando chegar. 404 = o envio ainda não terminou: tenta de novo (até 8 vezes).
 var buscandoMidia = {}, tentativasMidia = {};
 function buscarMidia(k){
-  if(buscandoMidia[k] || (tentativasMidia[k]||0)>=8) return;
+  if(buscandoMidia[k] || (tentativasMidia[k]||0)>=20) return;
   buscandoMidia[k] = true; tentativasMidia[k] = (tentativasMidia[k]||0)+1;
   chamar("GET", "/chat/midia/"+encodeURIComponent(k)).then(function(r){
     buscandoMidia[k] = false;
     if(r && r.url){ midiasMem[k] = r.url; ouvintes.slice().forEach(function(f){ f(); }); }
-  }).catch(function(){ setTimeout(function(){ buscandoMidia[k] = false; ouvintes.slice().forEach(function(f){ f(); }); }, 3000); });
+  }).catch(function(){ setTimeout(function(){ buscandoMidia[k] = false; ouvintes.slice().forEach(function(f){ f(); }); }, 1200); });
 }
 function lerMidia(k){
   if(k && String(k).indexOf("fotos/")===0) return ("/"||"/")+k;
@@ -836,6 +837,13 @@ var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:veri
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, ensureSectorGroups:garantirGruposSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
+// Só no desenvolvimento: simula mensagens RECEBIDAS de alguém, só neste navegador (nada vai ao servidor nem a outra pessoa). Uso no console: __chatTeste("Leonardo", "Oi teste", 5, 10)
+if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatTeste = function(nome, texto, vezes, segundos){
+  var de = idPorNome(nome); if(!de || !eu) return "Pessoa não encontrada ou ninguém logado no chat.";
+  var id = abrirDm(eu, de), n = 0;
+  var uma = function(){ var msg = {id:uid("m"), de:de, t:Date.now(), tipo:"texto", texto:texto, midia:null, resp:null, enc:false, dec:null, status:"enviado", reacoes:{}, mencoes:[]}; inserir(id, msg); if(++n<vezes) setTimeout(uma, segundos*1000); };
+  uma(); return "Enviando "+vezes+" mensagens de "+nome+", uma a cada "+segundos+" s.";
+};
 
 // ---------- SERVIDOR (27/10/2026): conversas e mensagens guardadas no banco, para as pessoas conversarem de verdade ----------
 // Cada mudança local (mensagem nova, reação, edição, conversa nova) vai para uma fila e é enviada ao servidor; a cada 4 segundos a tela pergunta o que veio de novo (seq = número de ordem).
@@ -865,13 +873,13 @@ function avisoDoNavegador(titulo, texto){
     var n = new Notification(titulo, {body:texto, tag:"sorellychat"}); n.onclick = function(){ window.focus(); n.close(); }; } catch(x){}
 }
 function pedirPermissaoAviso(){ try { if(typeof Notification!=="undefined" && Notification.permission==="default") Notification.requestPermission(); } catch(x){} }
-// Aviso de mensagem nova (Marcus, 29/10/2026): no máximo 2 pessoas por vez (a 3ª tira a mais antiga); várias mensagens da mesma pessoa empilham; cada mensagem some sozinha em 5 segundos, como o WhatsApp
+// Aviso de mensagem nova (Marcus, 29/10/2026): no máximo 2 pessoas por vez (a 3ª tira a mais antiga); várias mensagens da mesma pessoa empilham; cada mensagem some sozinha em 9 segundos (eram 5; Marcus pediu mais tempo em 02/11/2026)
 function empurrarAviso(toast){
   var l = estado.efem.toasts.concat([toast]), ordem = [];
   l.forEach(function(x){ var k = x.de || x.id; ordem = ordem.filter(function(o){ return o!==k; }); ordem.push(k); });
   var manter = ordem.slice(-2);
   efem({toasts:l.filter(function(x){ return manter.indexOf(x.de || x.id)>=0; })});
-  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 5000);
+  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 9000);
 }
 function notificarRecebida(convId, msg){
   var conv = convPorId(convId); if(!conv) return;

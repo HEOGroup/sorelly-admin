@@ -75,8 +75,9 @@ function ChatGlobal(p){
   var grupos = [], porChave = {};
   st.efem.toasts.forEach(function(t){ var k = t.de || t.id; if(!porChave[k]){ porChave[k] = {k:k, msgs:[]}; grupos.push(porChave[k]); } porChave[k].msgs.push(t); });
   var painel = typeof document!=="undefined" ? document.getElementById("painel-conversa") : null;
+  var comBolinha = false; try{ comBolinha = localStorage.getItem("sorelly_chat_botao")==="1"; }catch(x){}   // bolinha do chat ligada: o aviso fica ao lado dela; sem a bolinha, vai até o canto
   // Marcus, 02/11/2026: o aviso fica EMBAIXO. Dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre a conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat.
-  var caixa = e("div",{className:"flex w-[min(26rem,calc(100%-2rem))] flex-col gap-3", style:painel ? {position:"absolute", right:16, bottom:84, zIndex:60} : {position:"fixed", right:16, bottom:92, zIndex:90}, "data-sem-clique":true},
+  var caixa = e("div",{className:"flex w-[min(26rem,calc(100%-2rem))] flex-col gap-3", style:painel ? {position:"absolute", right:16, bottom:84, zIndex:60} : {position:"fixed", right:comBolinha ? 88 : 16, bottom:16, zIndex:90}, "data-sem-clique":true},
     grupos.map(function(g){
       var ult = g.msgs[g.msgs.length-1], n = g.msgs.length, ouvir = function(){ efem({toasts:st.efem.toasts.filter(function(x){ return (x.de || x.id)!==g.k; })}); if(ult.conv && convPorId(ult.conv)){ efem({conversaSel:ult.conv}); p.abrir(ult.conv); } };
       return e("div",{key:g.k, className:"relative"},

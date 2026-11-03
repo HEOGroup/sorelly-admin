@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.28", data:"2026-11-02", titulo:"SorellyChat: foto abre mais rápido e aviso no canto", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"A foto viaja com uma miniatura dentro da mensagem e aparece na hora no outro lado, enquanto a foto grande chega. O envio não grava mais todas as fotos no navegador. A busca da foto grande repete a cada 1,2 segundo."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"Menu da mensagem: a conversa sobe sozinha até o menu aparecer inteiro acima do campo de escrever."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"Aviso de mensagem nova: fica no canto de baixo, à direita (ao lado da bolinha, se ela estiver ligada) e dura 9 segundos."},
+ ]},
  {v:"0.18.27", data:"2026-11-02", titulo:"Agendamento: abertura do mês pela DevMaster", itens:[
     {tipo:"novo", area:"Agendamento · abertura do mês", txt:"O mês abre sozinho com os números da DevMaster, sem digitar: revendedoras no início = todas as com kit ativo; acertos previstos = as com data de acerto até o último dia do mês, atrasadas incluídas (regra do Marcus: 2.047 e 1.975 em novembro). Vale uma vez por mês, quando o Painel lê a DevMaster (op abertura_dm). Novembro já tem os números do Marcus e não muda."}
   ]},
