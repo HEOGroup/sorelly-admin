@@ -841,16 +841,16 @@ function AppRepresentante(p){
     e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"},
       e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
       e("b",{className:douradoTitulo}, "Fechar atendimento")),
-    e("p",{className:"rounded-2xl bg-emerald-500/15 px-3 py-2 text-[13px] font-bold text-emerald-300"},"✓ Acerto de "+sel.rev+" registrado e assinado. Envie as mensagens abaixo."),
-    [["cliente","Mensagem para a revendedora", msgs.cliente, "#16A34A"],["grupo","Mensagem para o grupo da empresa", msgs.grupo, "#2563EB"]].map(function(m){
+    e("p",{className:"rounded-2xl bg-[#1C1C1E] px-3 py-2.5 text-center text-[13px] font-semibold"}, e("span",{className:"text-[#C9A13B]"}, "✓ "), "Acerto de "+sel.rev+" registrado e assinado. Envie as mensagens abaixo."),
+    [["cliente","Mensagem para a revendedora", msgs.cliente],["grupo","Mensagem para o grupo da empresa", msgs.grupo]].map(function(m){
+      var BTN2 = "grid h-10 flex-1 place-items-center rounded-xl text-[13px] font-semibold "+BR2, ST2 = {background:"#3F3F46"};
       return e("div",{key:m[0], className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
-        e("b",{className:"text-[13.5px]"}, m[1]),
-        e("textarea",{readOnly:true, value:m[2], rows:Math.min(16, m[2].split("\n").length+1), className:"w-full resize-none rounded-xl bg-black/50 p-2.5 text-[12px] leading-snug text-white outline-none ring-1 ring-white/10"}),
-        e("div",{className:"flex gap-2"},
-          e("button",{onClick:function(){ copiarMsg(m[0], m[2]); }, className:"h-10 flex-1 rounded-xl text-[13px] font-bold "+BR2, style:{background:m[3]}}, msgCopiada===m[0] ? "✓ Copiado" : "Copiar mensagem"),
-          m[0]==="cliente" && e("button",{onClick:function(){ abrirPdfAcerto("Acerto de "+sel.rev, m[2]); }, className:"h-10 flex-1 rounded-xl bg-[#C9A13B] text-[13px] font-bold "+BR2}, "Baixar PDF"),
-          m[0]==="cliente" && sel.fone && e("a",{href:"https://wa.me/55"+sel.fone.replace(/\D/g,"")+"?text="+encodeURIComponent(m[2]), target:"_blank", rel:"noreferrer",
-            className:"grid h-10 flex-1 place-items-center rounded-xl bg-emerald-500 text-[13px] font-bold "+BR2}, "Abrir no WhatsApp"))); }),
+        e("b",{className:"text-center text-[13.5px]"}, m[1]),
+        e("textarea",{readOnly:true, value:m[2], rows:Math.min(16, m[2].split("\n").length+1), className:"w-full resize-none rounded-xl bg-black/40 p-2.5 text-[12px] leading-snug text-white outline-none ring-1 ring-white/10"}),
+        e("button",{onClick:function(){ copiarMsg(m[0], m[2]); }, className:"h-10 w-full rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, msgCopiada===m[0] ? "✓ Copiado" : "Copiar mensagem"),
+        m[0]==="cliente" && e("div",{className:"flex gap-2"},
+          e("button",{onClick:function(){ abrirPdfAcerto("Acerto de "+sel.rev, m[2]); }, className:BTN2, style:ST2}, "Baixar PDF"),
+          sel.fone && e("a",{href:"https://wa.me/55"+sel.fone.replace(/\D/g,"")+"?text="+encodeURIComponent(m[2]), target:"_blank", rel:"noreferrer", className:BTN2, style:ST2}, "Abrir no WhatsApp"))); }),
     e("button",{onClick:function(){ setTela("rev"); }, className:"h-11 rounded-2xl text-[14px] font-bold "+ouro}, "Concluir"));
   var blocoClaro = "rounded-2xl border "+LINHA_CARD+" bg-white p-3 text-[13px] text-[#111827]";
   var perfilAtual = sel ? (s.perfisRev[sel.rev] || {}) : {};
