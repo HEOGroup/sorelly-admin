@@ -3,33 +3,14 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.18.38", data:"2026-11-03", titulo:"Compras: etapas Em transporte, Chegou na empresa e Entregue no quadro", itens:[
-  {tipo:"melhoria", area:"Compras e estoque", txt:"O quadro de Compras passa a ter as colunas Solicitada, Aprovada, Liberada para compra, Efetuada, Em transporte, Chegou na empresa e Entregue (pedido do Nickolas). Arrastar o cartão registra a etapa. As situações do domínio não mudaram: só o nome e a coluna."},
- ]},
- {v:"0.18.37", data:"2026-11-03", titulo:"Chamados sem foto na lista e Compras sem etiqueta de logística", itens:[
-  {tipo:"melhoria", area:"Chamados", txt:"A coluna Funcionária da lista mostra só o nome, sem a foto ou ícone."},
-  {tipo:"melhoria", area:"Compras e estoque", txt:"O campo Etiqueta de logística saiu da janela da compra (pedido da Hellen). Os dados antigos continuam guardados."},
- ]},
- {v:"0.18.36", data:"2026-11-03", titulo:"Link de pagamento: ajustes pedidos pela Hellen", itens:[
-  {tipo:"novo", area:"Link de pagamento", txt:"Solicitações: coluna nova Recusado ou negado. Cancelar ou recusar usa os motivos da planilha (Expirada, Bloqueada, Cancelada, Antifraude, Abandonada, Negada; Recusado só em Solicitado). O link vai para qualquer etapa (arrastar o cartão ou Mover para outra etapa)."},
-  {tipo:"novo", area:"Link de pagamento", txt:"Comprovantes ganhou Data inicial e Data final. Nova aba Descontados no acerto, com os links já usados em acertos. Taxas e recebimentos só aparece para a Diretoria."},
-  {tipo:"melhoria", area:"Link de pagamento", txt:"Histórico: o filtro de situação mostra só Pago, Comprovante enviado, Expirado, Bloqueada, Cancelado, Antifraude, Abandonada e Negada. A 2ª tentativa conta só quando a revendedora repete o mesmo valor no dia."},
- ]},
  {v:"0.18.37", data:"2026-11-03", titulo:"Apps: abre sempre na simulação", itens:[
   {tipo:"correção", area:"App da representante", txt:"Na lista de Revendedoras, kit novo, reposição e saída ganham identificador próprio (KIT NOVO, REPOSIÇÃO, SAÍDA) e não mostram mais Acerto hoje nem vendido, acerto e comissão zerados. Só o acerto mostra esses números."},
   {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre com os dois celulares prontos. O da representante entra como Anamaria, com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída). O da revendedora abre na tela inicial da Juliana, com R$ 1.500,00 em vendas já lançadas."},
- ]},
- {v:"0.18.35", data:"2026-11-03", titulo:"Chamados: data só com o dia e coluna Respondido em", itens:[
-  {tipo:"melhoria", area:"Chamados", txt:"A data do chamado mostra só o dia (30/10). A coluna Tipo saiu da lista. Nova coluna Respondido em, que mostra sozinha o dia da última resposta do Marcus ou do Leonardo. A coluna Conversa do Claude guarda só o nome da conversa (ex.: CHAMADOS 1) e não tem mais o botão de editar: ela só mostra o nome."},
  ]},
  {v:"0.18.35", data:"2026-11-04", titulo:"Listagens: por representante ou tabela, data colorida e iniciar montagem no celular", itens:[
   {tipo:"melhoria", area:"Listagens", txt:"Cada listagem mostra a data com cor (hoje verde, amanhã azul, mais adiante roxo, dia que passou vermelho). A barra da representante ficou limpa, sem contadores de sem valor, atrasado e retirados. Aparecem as listagens de hoje em diante."},
   {tipo:"novo", area:"Listagens", txt:"Botão Por representante | Tabela: a visão em tabela junta todas as listagens numa tabela só, com Data e Representante em colunas."},
   {tipo:"novo", area:"App da montadora", txt:"Na aba Listagens do celular, cada kit que ainda não foi pego tem o botão Iniciar montagem (um kit por vez). A listagem mostra a data."}
- ]},
- {v:"0.18.36", data:"2026-11-03", titulo:"Chat do celular das funcionárias: responder, reagir e aviso", itens:[
-  {tipo:"novo", area:"App das funcionárias", txt:"No chat do celular, tocar numa mensagem abre o menu: reagir com 👍 ❤️ 😂 😮 😢 🙏, responder e copiar. A reação aparece embaixo da mensagem e a resposta mostra a mensagem citada."},
-  {tipo:"novo", area:"App das funcionárias", txt:"Aviso de mensagem nova no alto do celular, como a notificação do iPhone: uma pilha por pessoa, no máximo 2, com o número de mensagens. Dura 9 segundos e, ao tocar, abre a conversa. Não aparece para a conversa que já está aberta."},
  ]},
  {v:"0.18.36", data:"2026-11-03", titulo:"Atendimento Sorelly em etapas travadas, com brilho no próximo passo", itens:[
   {tipo:"novo", area:"Atendimento interno", txt:"Atendimento Sorelly: Chegou agora, Iniciar atendimento, Confirmar condicionais e Quanto vendeu, uma etapa de cada vez. O botão do próximo passo brilha. Etapa que ainda não chegou fica apagada e Bloqueada."},
@@ -45,24 +26,8 @@ var VERSOES = [
   {tipo:"melhoria", area:"Atendimento interno", txt:"Listagens usa fonte de 13 px em todas as colunas, colunas mais largas (Tipo mostra o nome inteiro) e nada abreviado."},
   {tipo:"novo", area:"Atendimento interno", txt:"Em cada atendimento, o próximo passo brilha: Atender, depois Escolha do kit, Bipou e Montou. A célula mostra Próximo."},
  ]},
- {v:"0.18.34", data:"2026-11-03", titulo:"Chat do celular das funcionárias: Sorelly Interno e fotos", itens:[
-  {tipo:"novo", area:"App das funcionárias", txt:"O chat do celular mostra o Sorelly Interno fixo no topo, com o alfinete, e sem campo de escrever para quem não é o Marcus. O texto entre asteriscos aparece em negrito."},
-  {tipo:"novo", area:"App das funcionárias", txt:"Foto no chat do celular: a funcionária recebe a foto na conversa, toca para ampliar e envia foto pelo botão + ou pela câmera. A foto sai reduzida e com miniatura, igual ao chat do computador."},
- ]},
- {v:"0.18.34", data:"2026-11-03", titulo:"Aula Lançar uma fatura de banho", itens:[
-  {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Cadastro de peças: Lançar uma fatura de banho (1:17, tela inteira). Mostra Faturas Pontual, a criação da fatura, os valores dos serviços e a ligação aos pedidos de bruto."},
-  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude passa a mostrar o nome da conversa e a data (ex.: CHAMADOS 1 (03/11/2026))."},
- ]},
  {v:"0.18.35", data:"2026-11-03", titulo:"Metas: tela Notificações", itens:[
   {tipo:"novo", area:"Metas", txt:"Tela Notificações em Metas: escolhe a revendedora real, mostra o desempenho dela, o celular (iPhone 15) com as telas Notificação e Minha Meta, o medidor de letras (título 30, texto 90), os 3 horários por dia e a tabela com 18 textos que mudam com os dados dela. Só leitura. O envio do push e o tempo real do app dependem do backend do app (Leonardo)."},
- ]},
- {v:"0.18.33", data:"2026-11-03", titulo:"Chamados: filtro na coluna, como no Agendamento", itens:[
-  {tipo:"melhoria", area:"Chamados", txt:"A barra de filtros do alto saiu. Agora se clica no título da coluna (Data, Setor, Funcionária, Tipo, Situação, Tela, Descrição) para classificar, filtrar por condição ou marcar valores, igual ao Agendamento. Cada coluna tem a largura do maior texto, então Setor e Funcionária não passam mais um por cima do outro. Os cartões do alto continuam filtrando."},
-  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude guarda a data da resposta e, se houver, o link da conversa (claude://…). Com link, aparece o botão Abrir conversa, que abre a conversa direto no app do Claude, mesmo arquivada."},
-  {tipo:"melhoria", area:"Cadastro de peças", txt:"Rayssa e Graziella também lançam faturas de banho (Faturas Pontual, Faturas Ellos e Retirar ouro), junto com o Nickolas. Pedido da Rayssa nos Chamados."},
- ]},
- {v:"0.18.32", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
-  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
  ]},
  {v:"0.18.34", data:"2026-11-03", titulo:"Contas das representantes: fixa ou pergunta à empresa", itens:[
     {tipo:"melhoria", area:"App da representante", txt:"Lançar pagamento: a representante não escolhe mais a conta. O menu de contas saiu. A conta é a fixa dela ou a empresa define em seguida (os brindes já liberam). A linha do pagamento mostra aguardando a empresa quando ainda não tem conta."},
@@ -71,9 +36,6 @@ var VERSOES = [
  {v:"0.18.33", data:"2026-11-03", titulo:"Pós-vendas › Contatos: blocos de desempenho do app e data do último pedido", itens:[
   {tipo:"novo", area:"Pós-vendas", txt:"Três blocos no alto de Contatos: Uso do app, Último pedido lançado (hoje ou ontem, 2 a 5, 6 a 10, 11 a 30 e mais de 30 dias) e Pedidos lançados no app. A tabela ganhou as colunas Último pedido no app, Dias sem lançar e Pedidos no app."},
   {tipo:"correção", area:"Pós-vendas", txt:"A leitura do uso do app não gravava nada e a data do último pedido não era lida (o app manda texto). Corrigido; leitura vazia não conta mais como concluída. A aba Uso do app (em breve) saiu das abas guardadas."},
- ]},
- {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
-  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
  ]},
  {v:"0.18.32", data:"2026-11-02", titulo:"Pós-vendas: setor próprio com a tela de contatos da Letícia", itens:[
   {tipo:"novo", area:"Pós-vendas", txt:"Setor novo Pós-vendas, separado de Garantia, e o menu lateral agora abre sempre inteiro (saiu o botão Abrir tudo). Encomendas & Reposições passou a se chamar Encomendas."},
@@ -86,9 +48,6 @@ var VERSOES = [
  {v:"0.18.31", data:"2026-11-02", titulo:"Kits novos: sem revendedoras de demonstração e sem a coluna Contatos", itens:[
   {tipo:"correção", area:"Kits novos", txt:"As candidatas inventadas do Cadastro (telefone (41) 98888-…) e as 3 revendedoras de exemplo (Marina, Bruna e Talita) não entram mais nos Kits novos, e as que já estavam salvas no navegador saem sozinhas. Era o que a Michele e a Camilly viam como nomes que não existem."},
   {tipo:"melhoria", area:"Kits novos", txt:"A coluna Contatos (1, 2, 3) saiu da tabela e do cartão do quadro, a pedido da Michele. Os contatos de referência continuam no detalhe da revendedora."},
- ]},
- {v:"0.18.30", data:"2026-11-02", titulo:"Chamados: endereço e avisos sem o nome Melhorias", itens:[
-  {tipo:"melhoria", area:"Chamados", txt:"A tela agora abre em /chamados (o link antigo /melhorias continua abrindo e leva para lá). O aviso de resposta diz \"Você tem uma resposta nos seus Chamados\" e a tela Aulas manda pedir aula nova em Chamados."},
  ]},
  {v:"0.18.29", data:"2026-11-02", titulo:"SorellyChat: grupos de gestão", itens:[
   {tipo:"novo", area:"SorellyChat", txt:"Dois grupos novos: Financeiro (gestão), com Marcus, Nickolas, Lucas, Nayale, Anamaria, Ana Beatriz e Marco Antonio; e Agendamento (gestão), com Marcus, Lucas, Nickolas, Priscila, Maria Claudia, Mariana, Ana Maria e Tamara. Conversa normal, sem abas por funcionária."},
@@ -148,6 +107,83 @@ var VERSOES = [
     {tipo:"melhoria", area:"App da representante", txt:"Pré-acerto com fundo branco, cobrindo a tela do começo ao fim, com as mesmas fontes (11 e 13 px) e linhas finas. Cada remarcação mostra o efeito em Comissão e Brinde embaixo do nome."},
     {tipo:"melhoria", area:"Apps", txt:"O exemplo Acerto completo (/apps?acerto=1) já abre com o Pré-acerto preenchido: 1 remarcação com multa e 9 dias de atraso. A calculadora do acerto recebe esses dados travados."},
     {tipo:"melhoria", area:"App da representante", txt:"No acerto, o bloco Multa por remarcação ficou SÓ DE LEITURA (Definido no pré-acerto): remarcações e dias de atraso chegam travados. Saiu o campo Dias com valor pendente e a multa do pendente (é da Inadimplência)."}]},
+  {v:"0.18.24", data:"2026-11-02", titulo:"SorellyChat: foto abre mais rápido", itens:[
+    {tipo:"melhoria", area:"SorellyChat", txt:"A foto viaja com uma miniatura dentro da mensagem e aparece na hora no outro lado, enquanto a foto grande chega. O envio não grava mais todas as fotos no navegador, o que travava a tela. A busca da foto grande repete a cada 1 segundo e meio."},
+  ]},
+ {v:"0.18.38", data:"2026-11-03", titulo:"Compras: etapas Em transporte, Chegou na empresa e Entregue no quadro", itens:[
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O quadro de Compras passa a ter as colunas Solicitada, Aprovada, Liberada para compra, Efetuada, Em transporte, Chegou na empresa e Entregue (pedido do Nickolas). Arrastar o cartão registra a etapa. As situações do domínio não mudaram: só o nome e a coluna."},
+ ]},
+ {v:"0.18.37", data:"2026-11-03", titulo:"Chamados sem foto na lista e Compras sem etiqueta de logística", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Funcionária da lista mostra só o nome, sem a foto ou ícone."},
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O campo Etiqueta de logística saiu da janela da compra (pedido da Hellen). Os dados antigos continuam guardados."},
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Link de pagamento: ajustes pedidos pela Hellen", itens:[
+  {tipo:"novo", area:"Link de pagamento", txt:"Solicitações: coluna nova Recusado ou negado. Cancelar ou recusar usa os motivos da planilha (Expirada, Bloqueada, Cancelada, Antifraude, Abandonada, Negada; Recusado só em Solicitado). O link vai para qualquer etapa (arrastar o cartão ou Mover para outra etapa)."},
+  {tipo:"novo", area:"Link de pagamento", txt:"Comprovantes ganhou Data inicial e Data final. Nova aba Descontados no acerto, com os links já usados em acertos. Taxas e recebimentos só aparece para a Diretoria."},
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Histórico: o filtro de situação mostra só Pago, Comprovante enviado, Expirado, Bloqueada, Cancelado, Antifraude, Abandonada e Negada. A 2ª tentativa conta só quando a revendedora repete o mesmo valor no dia."},
+ ]},
+ {v:"0.18.35", data:"2026-11-03", titulo:"Chamados: data só com o dia e coluna Respondido em", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A data do chamado mostra só o dia (30/10). A coluna Tipo saiu da lista. Nova coluna Respondido em, que mostra sozinha o dia da última resposta do Marcus ou do Leonardo. A coluna Conversa do Claude guarda só o nome da conversa (ex.: CHAMADOS 1) e não tem mais o botão de editar: ela só mostra o nome."},
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Chat do celular das funcionárias: responder, reagir e aviso", itens:[
+  {tipo:"novo", area:"App das funcionárias", txt:"No chat do celular, tocar numa mensagem abre o menu: reagir com 👍 ❤️ 😂 😮 😢 🙏, responder e copiar. A reação aparece embaixo da mensagem e a resposta mostra a mensagem citada."},
+  {tipo:"novo", area:"App das funcionárias", txt:"Aviso de mensagem nova no alto do celular, como a notificação do iPhone: uma pilha por pessoa, no máximo 2, com o número de mensagens. Dura 9 segundos e, ao tocar, abre a conversa. Não aparece para a conversa que já está aberta."},
+ ]},
+ {v:"0.18.35", data:"2026-11-03", titulo:"Chat do celular das funcionárias: Sorelly Interno e fotos", itens:[
+  {tipo:"novo", area:"App das funcionárias", txt:"O chat do celular mostra o Sorelly Interno fixo no topo, com o alfinete, e sem campo de escrever para quem não é o Marcus. O texto entre asteriscos aparece em negrito."},
+  {tipo:"novo", area:"App das funcionárias", txt:"Foto no chat do celular: a funcionária recebe a foto na conversa, toca para ampliar e envia foto pelo botão + ou pela câmera. A foto sai reduzida e com miniatura, igual ao chat do computador."},
+ ]},
+ {v:"0.18.34", data:"2026-11-03", titulo:"Aula Lançar uma fatura de banho", itens:[
+  {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Cadastro de peças: Lançar uma fatura de banho (1:17, tela inteira). Mostra Faturas Pontual, a criação da fatura, os valores dos serviços e a ligação aos pedidos de bruto."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude passa a mostrar o nome da conversa e a data (ex.: CHAMADOS 1 (03/11/2026))."},
+ ]},
+ {v:"0.18.33", data:"2026-11-03", titulo:"Chamados: filtro na coluna, como no Agendamento", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A barra de filtros do alto saiu. Agora se clica no título da coluna (Data, Setor, Funcionária, Tipo, Situação, Tela, Descrição) para classificar, filtrar por condição ou marcar valores, igual ao Agendamento. Cada coluna tem a largura do maior texto, então Setor e Funcionária não passam mais um por cima do outro. Os cartões do alto continuam filtrando."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude guarda a data da resposta e, se houver, o link da conversa (claude://…). Com link, aparece o botão Abrir conversa, que abre a conversa direto no app do Claude, mesmo arquivada."},
+  {tipo:"melhoria", area:"Cadastro de peças", txt:"Rayssa e Graziella também lançam faturas de banho (Faturas Pontual, Faturas Ellos e Retirar ouro), junto com o Nickolas. Pedido da Rayssa nos Chamados."},
+ ]},
+ {v:"0.18.34", data:"2026-11-03", titulo:"Agendamento: atividades, cota e Painel", itens:[
+  {tipo:"novo", area:"Agendamento", txt:"Atividades: acerto atrasado há 31 dias ou mais, atrasado há 60 dias ou mais (Inadimplência/Jurídico) e ciclo de kit acima de 90 dias viram atividade. Atrasada só conta depois do dia útil efetivo (domingo e feriado passam para o próximo dia). Concluída só vale se uma pessoa respondeu."},
+  {tipo:"novo", area:"Agendamento", txt:"Atividade: botão Entrei em contato e aguardo (representante ou revendedora), aba Aguardando retorno, histórico de contatos e todas as anotações da DevMaster na janela, que ficou larga."},
+  {tipo:"melhoria", area:"Agendamento", txt:"Painel: cota até o fim do mês lida da DevMaster, tabela de Representantes com atrasados, agendados e % feito, atualização automática; Agendado vem da agenda da DevMaster; filtro das tabelas abre clicando no título."}
+ ]},
+ {v:"0.18.33", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+ ]},
+ {v:"0.18.32", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+ ]},
+ {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
+ ]},
+ {v:"0.18.30", data:"2026-11-02", titulo:"Chamados: endereço e avisos sem o nome Melhorias", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A tela agora abre em /chamados (o link antigo /melhorias continua abrindo e leva para lá). O aviso de resposta diz \"Você tem uma resposta nos seus Chamados\" e a tela Aulas manda pedir aula nova em Chamados."},
+ ]},
+ {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
+ ]},
+ {v:"0.18.30", data:"2026-11-02", titulo:"SorellyChat: foto inteira no fim da conversa", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"Foto nova no fim da conversa ficava cortada atrás do campo de escrever. Agora a conversa desce de novo quando a foto termina de carregar."},
+ ]},
+ {v:"0.18.29", data:"2026-11-02", titulo:"SorellyChat: grupos de gestão e Novo grupo dentro do setor", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Dois grupos novos: Financeiro (gestão), com Marcus, Nickolas, Lucas, Nayale, Anamaria, Ana Beatriz e Marco Antonio; e Agendamento (gestão), com Marcus, Lucas, Nickolas, Priscila, Maria Claudia, Mariana, Ana Maria e Tamara. Conversa normal, sem abas por funcionária."},
+  {tipo:"novo", area:"SorellyChat", txt:"Aba Setores do chat: dentro de cada setor há o botão Novo grupo. Ele abre com as pessoas do grupo do setor marcadas (dá para tirar gente ou juntar outras) e o grupo novo fica dentro do setor."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"O botão + não mostra mais os atalhos prontos de grupo (MLN, Agendamento etc.). Cada setor já é um grupo; outros grupos se criam em Novo grupo."},
+ ]},
+ {v:"0.18.28", data:"2026-11-02", titulo:"SorellyChat: foto abre mais rápido e aviso no canto", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"A foto viaja com uma miniatura dentro da mensagem e aparece na hora no outro lado, enquanto a foto grande chega. O envio não grava mais todas as fotos no navegador. A busca da foto grande repete a cada 1,2 segundo."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"Menu da mensagem: a conversa sobe sozinha até o menu aparecer inteiro acima do campo de escrever."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"Aviso de mensagem nova: fica no canto de baixo, à direita (ao lado da bolinha, se ela estiver ligada) e dura 9 segundos."},
+ ]},
+ {v:"0.18.27", data:"2026-11-02", titulo:"Agendamento: abertura do mês pela DevMaster", itens:[
+    {tipo:"novo", area:"Agendamento · abertura do mês", txt:"O mês abre sozinho com os números da DevMaster, sem digitar: revendedoras no início = todas as com kit ativo; acertos previstos = as com data de acerto até o último dia do mês, atrasadas incluídas (regra do Marcus: 2.047 e 1.975 em novembro). Vale uma vez por mês, quando o Painel lê a DevMaster (op abertura_dm). Novembro já tem os números do Marcus e não muda."}
+  ]},
+ {v:"0.18.26", data:"2026-11-02", titulo:"SorellyChat: aviso de mensagem embaixo", itens:[
+    {tipo:"melhoria", area:"SorellyChat · avisos de mensagem", txt:"O aviso de mensagem nova agora fica embaixo: dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre mais o alto da conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat. Várias mensagens da mesma pessoa aparecem uma em cima da outra: só a última aparece inteira e o número (2, 3, 4, 5…) mostra quantas são."}
+  ]},
+ {v:"0.18.25", data:"2026-11-02", titulo:"Navegador cheio: estado guardado comprimido", itens:[
+    {tipo:"correção", area:"Sistema · navegador cheio", txt:"O aviso Sem espaço para salvar neste navegador acontecia porque o Admin guardava 4 MB de dados reais no navegador. Agora o estado é gravado comprimido (de 3,9 MB para cerca de 0,5 MB, lib/estado-comprimido.js) e a gravação espera 0,4 s depois da última mudança e acontece também ao esconder ou fechar a aba. Com o servidor ligado, módulo que o servidor já confirmou não é mais guardado no navegador (exceto kn, agend, cl e ri, que o app de Kits novos lê de lá). Os arquivos de Kits novos que leem esse dado aceitam os dois formatos."}
+  ]},
  {v:"0.18.24", data:"2026-11-02", titulo:"App da representante: bloco Condicionais refeito", itens:[
     {tipo:"melhoria", area:"App da representante", txt:"Bloco Condicionais da Calculadora de acertos refeito (modelo 1 escolhido pelo Marcus): lista das condicionais, o Total conferido logo abaixo da última (alinhado com as peças) e, embaixo, uma linha só de Peças vendidas com botões − e +. O formulário à mão ficou atrás do botão + Condicional. O devolver fica só no bloco final, depois de brindes e trocas."},
     {tipo:"melhoria", area:"App da representante", txt:"Calculadora de acertos: o botão do bloco Condicionais é sempre + Condicional (sem Fechar) e o formulário só abre ao tocar nele, só com Nº, Peças e Adicionar; fecha sozinho depois de adicionar. Todos os blocos na mesma cor do Condicionais. Textos do bloco Multa por remarcação mais escuros."},
@@ -158,9 +194,6 @@ var VERSOES = [
     {tipo:"melhoria", area:"App da representante", txt:"Cabeçalho fixo da Calculadora de acertos com só três linhas (layout 2 escolhido pelo Marcus): Vendas, Comissão e Valor do acerto (fio dourado e número maior). Multa, pagamentos e restante saíram do cabeçalho e ficam no bloco Vendas e pagamentos."},
     {tipo:"melhoria", area:"App da representante", txt:"Condicionais com interruptores (como no modelo escolhido) e o exemplo Acerto completo agora tem 4 condicionais (60 + 55 + 45 + 40 = 200 peças) e 68 peças vendidas, como o acerto real da Francelle."},
     {tipo:"melhoria", area:"App da representante", txt:"Brindes e Trocas no mesmo desenho do bloco Condicionais: linhas curtas (categoria, código, kit antigo/novo, valor), Total lançado ou Ajuste na venda logo abaixo, Falta lançar (ou Tudo lançado) na última linha, e o formulário atrás dos botões + Brinde e + Troca. Brinde Normal e Select agora numa lista só."},
-  ]},
-  {v:"0.18.24", data:"2026-11-02", titulo:"SorellyChat: foto abre mais rápido", itens:[
-    {tipo:"melhoria", area:"SorellyChat", txt:"A foto viaja com uma miniatura dentro da mensagem e aparece na hora no outro lado, enquanto a foto grande chega. O envio não grava mais todas as fotos no navegador, o que travava a tela. A busca da foto grande repete a cada 1 segundo e meio."},
   ]},
   {v:"0.18.23", data:"2026-11-02", titulo:"Combustível: sem valor fixo, km atrasado paga na data seguinte", itens:[
     {tipo:"melhoria", area:"Comissões", txt:"Saiu o combustível fixo de R$ 200,00. Sem km no prazo, não paga naquela data. O km enviado depois do prazo é pago na próxima data, somado ao km dela. Só tem combustível quem teve acerto no período."},
@@ -183,13 +216,6 @@ var VERSOES = [
  {v:"0.18.20", data:"2026-11-01", titulo:"Agendamento: Revendedoras só com calendário e filtro por coluna; Análises mais completas; nomes como Marcus Hess", itens:[
     {tipo:"melhoria", area:"Agendamento · Revendedoras", txt:"Saíram o título, os botões, a faixa de totais e os filtros do alto. A tela abre com 3 blocos lado a lado: calendário, o dia escolhido (No dia, Na semana, No mês, Atrasadas e representantes do dia) e os números da lista com o botão Atualizar da DevMaster. Cada coluna da tabela tem o próprio filtro logo abaixo do título (texto, data, seleção). O bloco Datas mudadas só aparece quando há data para confirmar."},
     {tipo:"melhoria", area:"Agendamento · Análises", txt:"Bloco no topo explica que as regras mudaram a partir de novembro de 2026 e por quê: metas de 96, 97 e 98% sobre o previsto vigente (antes 94, 95 e 96% sobre o previsto do início), bônus R$ 200, R$ 300 e R$ 600, e o motivo (os acertos que o Marcus adia para 45/60 dias saem da conta). Traz a fórmula do previsto vigente, o exemplo de outubro e a regra de domingo e feriado."},
-    {tipo:"correção", area:"Agendamento · Agendado", txt:"O botão Agendado do calendário contava o código de agendamento da condicional, que fica gravado para sempre mesmo depois que a data muda (apareciam agendados em 30/11 com atividades de agosto). Agora Agendado = atividade de acerto PENDENTE na agenda da DevMaster (dmaik), no dia marcado nela. Em 02/11: 225 revendedoras, de 03/11 a 06/11. A coluna Acertos agendados do Painel segue a mesma regra."},
-    {tipo:"melhoria", area:"Agendamento · tabelas e Representantes", txt:"O ícone de funil saiu dos títulos de todas as tabelas do Agendamento: clicar no título da coluna já abre o menu de classificar e filtrar (título sublinhado quando a coluna está filtrada). Em Representantes saiu a coluna Viagem, o Responsável mostra só o nome (sem a palavra Automático) e os campos de cota e dias usam a mesma letra da tela."},
-    {tipo:"melhoria", area:"Agendamento · Painel · Representantes", txt:"Bloco refeito com palavras simples: Representante, Revendedoras, Acertos feitos, Acertos a realizar, Acertos atrasados, Acertos agendados e % feito, numa tabela só com todas as representantes. Um texto explica que a atualização é automática: o Admin lê a DevMaster quando alguém da gerência abre o Painel e a cada 10 minutos com a tela aberta, e mostra a hora da última leitura. A cota e o que falta contam os acertos até o fim do mês, atrasados incluídos."},
-    {tipo:"novo", area:"Agendamento · abertura do mês", txt:"O mês abre sozinho com os números da DevMaster, sem digitar: revendedoras no início = todas as com kit ativo; acertos previstos = as com data de acerto até o último dia do mês, atrasadas incluídas (regra do Marcus: 2.047 e 1.975 em novembro). Vale uma vez por mês, quando o Painel lê a DevMaster (op abertura_dm). Novembro já tem os números do Marcus e não muda."},
-    {tipo:"melhoria", area:"SorellyChat · avisos de mensagem", txt:"O aviso de mensagem nova agora fica embaixo: dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre mais o alto da conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat. Várias mensagens da mesma pessoa aparecem uma em cima da outra: só a última aparece inteira e o número (2, 3, 4, 5…) mostra quantas são. Saíram os cartões de trás que apareciam espiando."},
-    {tipo:"correção", area:"Sistema · navegador cheio (compressão)", txt:"Sem login no servidor, o Admin guardava 4 MB de dados reais no navegador e enchia o espaço. Agora o estado é gravado comprimido (de 3,9 MB para cerca de 0,5 MB). A gravação espera 0,4 s depois da última mudança e acontece também ao esconder ou fechar a aba. Os arquivos de Kits novos que leem esse dado foram ajustados para os dois formatos."},
-    {tipo:"correção", area:"Sistema · navegador cheio", txt:"O aviso Sem espaço para salvar neste navegador acontecia porque o Admin guardava o estado inteiro (3,9 MB) no navegador mesmo com o servidor ligado. Agora, módulo que o servidor já confirmou (Link de pagamento, Pagamentos a fornecedores, Compras, Cobrança, Financeiro familiar e os outros) não é mais guardado no navegador: fica só no servidor, para todo mundo. O que faltar ao abrir entra com o padrão e o servidor troca logo depois. Módulo sem acesso, vazio ou sem carga inicial continua guardado no navegador."},
     {tipo:"correção", area:"Agendamento · Análises", txt:"A coluna Saíram passou a se chamar Adiaram 45/60 dias (também no CSV)."},
     {tipo:"melhoria", area:"Agendamento · menu", txt:"O Configurador do Agendamento saiu do menu (tudo vem da DevMaster). O menu do setor ficou: Painel, Revendedoras, Representantes, Atividades e Análises. O endereço antigo do Configurador abre o Painel."},
     {tipo:"melhoria", area:"Agendamento · Dia útil e menu", txt:"Acerto marcado para domingo ou feriado passa para o próximo dia útil na contagem do calendário (Painel e Revendedoras; o sábado tem expediente e não passa); o dia sem expediente fica vazio (violeta) e o dia útil mostra o total já somado; o detalhe do que passou aparece só ao passar o mouse. A página Abertura do mês saiu do menu; o item Gestão do mês virou só Configurador. O endereço antigo da Abertura abre o Painel."},
