@@ -117,4 +117,33 @@ function ConfPecas(p){
           e("button",{onClick:function(){ setConfirmar(false); d({type:"CONF_FINALIZAR", kitId:k.id}); }, className:"h-10 flex-1 rounded-xl bg-[#C9A13B] text-[12.5px] font-bold txt-branco"},"Sim, finalizar"))));
 }
 
-export { ConfPecas };
+// Contagem do TOTAL de peças, dentro da própria tela (Marcus, 03/11/2026): a representante conta tudo junto, sem sair da tela da entrega. Sem bipagem por enquanto (BIPAR_ATIVO).
+function ContagemTotal(p){
+  var s = p.s, d = p.d, k = p.k, conf = (s.confBip||{})[k.id] || {}, tot = totaisKit(condicionaisDoKit(k)), r = conf.fim ? conf.resultado : null;
+  var vt = useState(""), valor = vt[0], setValor = vt[1], nt = useState(""), notaTxt = nt[0], setNotaTxt = nt[1];
+  var tem = valor!=="" && valor!==undefined, muda = function(v){ setValor(v==="" ? "" : Math.max(0, parseInt(v, 10)||0)); };
+  if(r) return e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"flex flex-col gap-1 rounded-xl px-3 py-2.5 "+(r.erros ? "bg-[#FEE2E2]" : "bg-[#F6EFDF]")},
+      e("b",{className:"text-[13px] "+(r.erros ? "text-[#991B1B]" : "text-[#161616]")}, "Quantidade conferida: "+r.lidas+" de "+r.esperadas+" peças"),
+      r.nFaltas>0 && e("span",{className:"text-[12.5px] text-[#991B1B]"},"Faltaram "+r.nFaltas+" peça(s) no total."),
+      r.nSobras>0 && e("span",{className:"text-[12.5px] text-[#92400E]"},"Sobraram "+r.nSobras+" peça(s) no total."),
+      r.erros>0 && e("span",{className:"text-[12px] text-[#991B1B]"},"Diferença registrada para o setor conferir.")),
+    r.porQuantidade && r.erros>0 && (conf.nota
+      ? e("p",{className:"text-[13px]"},"Peças que faltaram, anotadas: "+conf.nota)
+      : e("div",{className:"flex flex-col gap-1.5"},
+          e("p",{className:"text-[12.5px]"},"Sabe quais peças faltaram? Anote (opcional)."),
+          e("input",{value:notaTxt, maxLength:200, placeholder:"Ex.: AB123, CD456", "aria-label":"Peças que faltaram", onChange:function(ev){ setNotaTxt(ev.target.value); }, className:"h-10 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-[#E5E7EB]"}),
+          e("button",{disabled:!notaTxt.trim(), onClick:function(){ d({type:"CONF_NOTA", kitId:k.id, nota:notaTxt.trim()}); setNotaTxt(""); }, className:"h-10 rounded-xl bg-[#3F3F46] text-[13px] font-bold txt-branco disabled:opacity-40"},"Salvar anotação"))),
+    e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); setValor(""); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12.5px] font-semibold text-[#6B7280]"},"Contar de novo"));
+  return e("div",{className:"flex flex-col gap-2"},
+    e("p",{className:"text-[13px]"},"Conte todas as peças do kit juntas, misturadas, e digite o total."),
+    e("div",{className:"flex items-center justify-between gap-2"},
+      e("span",{className:"flex min-w-0 flex-col"}, e("b",{className:"text-[13px]"},"Total de peças"), e("span",{className:MONO+" text-[12px]"},"esperadas "+tot.pecas)),
+      e("span",{className:"flex shrink-0 items-center gap-1.5"},
+        e("button",{type:"button", "aria-label":"Menos uma peça", onClick:function(){ muda((valor||0)-1); }, className:"grid size-9 place-items-center rounded-lg bg-[#F3F4F6] text-[16px] font-bold text-[#111827]"},"−"),
+        e("input",{value:tem ? valor : "", inputMode:"numeric", placeholder:"0", "aria-label":"Total de peças contadas", onChange:function(ev){ muda(ev.target.value.replace(/\D/g,"")); }, className:"h-10 w-20 rounded-lg bg-white px-2 text-center text-[14px] font-bold text-[#111827] outline-none ring-1 ring-[#E5E7EB] "+MONO}),
+        e("button",{type:"button", "aria-label":"Mais uma peça", onClick:function(){ muda((valor||0)+1); }, className:"grid size-9 place-items-center rounded-lg bg-[#F3F4F6] text-[16px] font-bold text-[#111827]"},"+"))),
+    e("button",{disabled:!tem, onClick:function(){ d({type:"CONF_QTD", kitId:k.id, total:valor}); }, className:"h-10 rounded-xl bg-[#C9A13B] text-[13px] font-bold txt-branco disabled:opacity-40"},"Confirmar a quantidade"));
+}
+
+export { ConfPecas, ContagemTotal };

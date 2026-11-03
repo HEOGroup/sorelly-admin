@@ -7,7 +7,7 @@ import { passoAtual, TOTAL_PASSOS, PASSO_CONF } from "@/apps/montagem/domain/kit
 import { BlocoKN } from "@/apps/montagem/mobile/kn-bloco";
 import { PASSOS_KN, conteudoPasso, dataPrimeiroAcerto } from "@/apps/montagem/mobile/kn-conteudo";
 import { AssinaturaDigital } from "@/apps/montagem/mobile/campos";
-import { ConfPecas } from "@/apps/montagem/mobile/conf-pecas";
+import { ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
 import { MONO } from "@/apps/montagem/ui/input";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -26,7 +26,6 @@ function EntregaKNRep(p){
   var conf = (s.confBip||{})[k.id] || {}, res = conf.fim ? conf.resultado : null;
   var autoAbriu = useRef(false);
   // confirmadas as etapas anteriores, o app já leva para a tela da conferência das peças (uma vez)
-  useEffect(function(){ if(atual===PASSO_CONF && !conf.lib && !autoAbriu.current && p.onConferir){ autoAbriu.current = true; p.onConferir(); } }, [atual]);
   var cx = useState(false), caixinhas = cx[0], setCaixinhas = cx[1];
   var esperado = res ? res.esperadas : 0, faltaram = res ? res.nFaltas : 0, selecionadas = res ? res.conds : [];
   var obs = res && res.erros ? "Faltaram: "+res.faltas.map(function(f){ return f.codigo+(f.qtd>1 ? " ×"+f.qtd : ""); }).join(", ")+(res.nSobras ? " · peça a mais: "+res.sobras.map(function(x){ return x.codigo; }).join(", ") : "") : "";
@@ -37,11 +36,7 @@ function EntregaKNRep(p){
   var conferenciaUI = e("div",{className:"flex flex-col gap-2.5"},
     (montou || bipou) && e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#F6EFDF] px-3 py-2 text-[12px] text-[#161616]"},
       e("b",null,"Registro do kit"), e("span",null,"Montado por "+(montou||"—")+" · Bipado por "+(bipou||"—"))),
-    // a conferência das peças abre numa TELA SEPARADA (câmera); aqui fica só o resumo e o botão
-    res ? e("div",{className:"flex flex-col gap-1 rounded-xl px-3 py-2 "+(res.erros ? "bg-[#FEE2E2]" : "bg-[#DCFCE7]")},
-        e("b",{className:"text-[13px] "+(res.erros ? "text-[#991B1B]" : "text-[#15803D]")}, res.erros ? "Conferência feita com "+res.erros+" erro(s)" : "Conferência feita: "+res.lidas+" de "+res.esperadas+" peças, sem erros"),
-        e("button",{onClick:function(){ p.onConferir && p.onConferir(); }, className:"text-left text-[11.5px] font-semibold text-[#6B7280] underline"},"Ver a conferência"))
-      : e("button",{onClick:function(){ p.onConferir && p.onConferir(); }, className:"h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco"}, conf.lib ? "Continuar a conferência das peças" : "Conferir as peças do kit"),
+    e(ContagemTotal,{s:s, d:d, k:k}),   // contagem do total de peças na própria etapa (03/11/2026, Marcus); a bipagem volta quando existir
     e("label",{className:"flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-[13px] font-semibold text-[#111827] ring-1 ring-[#E5E7EB]"},
       e("input",{type:"checkbox", checked:caixinhas, onChange:function(ev){ setCaixinhas(ev.target.checked); }, className:"size-5 shrink-0"}), "Entreguei as caixinhas de presente"));
 

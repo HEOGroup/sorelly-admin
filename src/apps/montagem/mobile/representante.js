@@ -20,7 +20,7 @@ import { TelaAssinatura } from "@/apps/montagem/mobile/assinatura";
 import { CampoReaisAuto, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
 import { LinksDoAcerto } from "@/apps/montagem/mobile/links-pagamento-app";
 import { EntregaKNRep } from "@/apps/montagem/mobile/kn-entrega-rep";
-import { ConfPecas } from "@/apps/montagem/mobile/conf-pecas";
+import { ConfPecas, ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
 import { SEM_KIT, STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
@@ -282,7 +282,7 @@ function AppRepresentante(p){
   useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
   var abriuRef = useRef(null);
   useEffect(function(){ if(!p.abrir || abriuRef.current===p.abrir.n) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(!alvo) return; abriuRef.current = p.abrir.n; setSel(alvo.id);
-    if(p.abrir.destino==="kitnovo") setTela("entregakit"); else if(p.abrir.destino==="reposicao"){ setConfVolta("reposicao"); setTela("confkit"); } else setPendAbrir(p.abrir.n); }, [p.abrir && p.abrir.n, cart.length]);   // atalhos da aba Apps: Acerto completo, Kit novo e Reposição
+    if(p.abrir.destino==="kitnovo") setTela("entregakit"); else if(p.abrir.destino==="reposicao"){ setTela("reposicao"); } else setPendAbrir(p.abrir.n); }, [p.abrir && p.abrir.n, cart.length]);   // atalhos da aba Apps: Acerto completo, Kit novo e Reposição
   useEffect(function(){
     if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
     var cz = p.abrir.cenario;   // 02/11/2026 (Marcus): opção "Acerto completo" da aba Apps: um acerto 100% preenchido para visualizar
@@ -1073,10 +1073,10 @@ function AppRepresentante(p){
     {lb: kitSel && kitSel.kitNovoEntregue ? "Kit novo (já entregue)" : "Entregar Kit Novo", icone:"novas", cor:"#DB2777", ativo:(ehKitNovoHoje || !!(kitSel && kitSel.demoKitNovo)) && !(kitSel && kitSel.kitNovoEntregue),
       onClick:function(){ setMenuAberto(false); setTela("entregakit"); }},
     {lb: kitSel && kitSel.reposicaoEntregue ? "Reposição (já entregue)" : "Entregar Reposição", icone:"caixa", cor:"#0891B2", ativo:!!kitSel && kitSel.tipoKit==="reposicao" && !kitSel.reposicaoEntregue,
-      onClick:function(){ setMenuAberto(false); setConfVolta("reposicao"); setTela("confkit"); }}];
+      onClick:function(){ setMenuAberto(false); setTela("reposicao"); }}];
   var soRepos = !!kitSel && kitSel.tipoKit==="reposicao" && !kitSel.reposicaoEntregue;   // reposição: o atendimento é só a entrega (contar as peças + condicional assinada)
   var soKitNovo = !!kitSel && (ehKitNovoHoje || !!kitSel.demoKitNovo) && !kitSel.kitNovoEntregue;   // revendedora de kit novo: o atendimento é só a entrega do kit novo
-  var botaoRealizar = sel && e("button",{onClick:function(){ if(soRepos){ setMenuAberto(false); setConfVolta("reposicao"); setTela("confkit"); return; } if(soKitNovo){ setMenuAberto(false); setTela("entregakit"); return; } setMenuAberto(!menuAberto); setAgendarAberto(false); }, className:"relative flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-[12px] font-extrabold leading-none "+ouro},
+  var botaoRealizar = sel && e("button",{onClick:function(){ if(soRepos){ setMenuAberto(false); setTela("reposicao"); return; } if(soKitNovo){ setMenuAberto(false); setTela("entregakit"); return; } setMenuAberto(!menuAberto); setAgendarAberto(false); }, className:"relative flex h-12 w-full flex-col items-center justify-center gap-0.5 rounded-2xl px-2 text-[12px] font-extrabold leading-none "+ouro},
     e(Icon,{n: menuAberto?"chevrondown":"chevron", s:12, className:"absolute right-2 top-1/2 -translate-y-1/2 opacity-80"}),
     soRepos ? [e("span",{key:"a"},"Entregar"), e("span",{key:"b"},"reposição")] : soKitNovo ? [e("span",{key:"a"},"Entregar"), e("span",{key:"b"},"kit novo")] : [e("span",{key:"a"},"Realizar"), e("span",{key:"b"},"atendimento")]);
   var painelRealizar = sel && menuAberto && e("div",{className:"overflow-hidden rounded-2xl border "+LINHA_CARD+" bg-white shadow-sm"},
@@ -1309,10 +1309,7 @@ function AppRepresentante(p){
               [["Condicionais", String(tkR.condicionais)], ["Peças", String(tkR.pecas)], ["Comissão da entrega", BK(valorRep)]].map(function(l, n){
                 return e("div",{key:l[0], className:"flex min-h-8 items-center justify-between gap-3 "+(n ? "border-t border-white/10" : "")}, e("span",{className:"text-[13px] "+BR}, l[0]), e("b",{className:MONO+" text-[13px] "+BR}, l[1])); })))),
         e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-10"},
-          cartao("c1", "caixa", "Contar as peças", !!kc, [
-            kc ? e("p",{key:"t", className:"text-[13px]"},"Peças conferidas: "+kc.lidas+" de "+kc.esperadas+(kc.faltas.length ? " · faltaram "+kc.faltas.length : ""))
-               : e("p",{key:"t", className:"text-[13px]"},"Conte as peças com a revendedora e confirme a quantidade de cada condicional."),
-            !kc && e("button",{key:"b", onClick:function(){ setConfVolta("reposicao"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Contar as peças")]),
+          cartao("c1", "caixa", "Contar as peças", !!kc, [e(ContagemTotal,{key:"ct", s:s, d:d, k:kitSel})]),
           cartao("c2", "cadastro", "Condicional assinada", !!reposAss, [
             e("p",{key:"t", className:"text-[13px]"},"A revendedora assina a condicional. Ela sobe nas condicionais em aberto dela."),
             e("button",{key:"b", disabled:!kc, onClick:function(){ setTela("assinarrepos"); }, className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, kc ? "Assinar e concluir a reposição" : "Primeiro conte as peças")]),

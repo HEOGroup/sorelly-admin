@@ -13,7 +13,7 @@ import { e, useState } from "@/shared/react";
 
 // foto da colaboradora (a mesma do perfil no SorellyChat) ao lado do nome; sem foto, as iniciais
 function Pessoa(p){
-  return e("span",{className:"inline-flex items-center justify-center gap-2"}, e(Avatar,{id:idPorNome(p.nome), nome:p.nome, s:p.s || 28}), e("span",{className:"text-[13px] "+(p.forte ? "font-semibold" : "")}, p.nome));
+  return e("span",{className:"flex items-center justify-start gap-3"}, e(Avatar,{id:idPorNome(p.nome), nome:p.nome, s:p.s || 28}), e("span",{className:"text-[13px] "+(p.forte ? "font-semibold" : "")}, p.nome));
 }
 var num = function(n){ return n===null || n===undefined ? "—" : String(n).replace(".", ","); };
 var COR_REC = {pendente:"text-foreground", aprovar:"text-success", acompanhar:"text-warning", nao:"text-destructive"};

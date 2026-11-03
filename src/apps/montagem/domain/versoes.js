@@ -3,13 +3,20 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.42", data:"2026-11-03", titulo:"Chamados: data de acerto no Link de pagamento, kit novo R$ 7.000, Pix por dia, valor liberado", itens:[
+  {tipo:"correção", area:"Link de pagamento", txt:"Não dava para salvar a data do acerto em link já solicitado ou pago: a conferência da data estava errada e recusava qualquer data. Corrigido (Hellen). O mesmo erro no mês inicial do Top 50 das Encomendas também foi corrigido."},
+  {tipo:"melhoria", area:"Kits novos", txt:"Todo kit novo que chega do Cadastro entra com o valor padrão de R$ 7.000,00. A Michele edita à mão quando a Direção aprova outro valor."},
+  {tipo:"novo", area:"Financeiro familiar", txt:"PIX das revendedoras: faixa Total por dia, com a soma dos PIX de cada dia (Anamaria)."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Na ficha da revendedora, campo Valor liberado (reposição ou kit novo). O valor vai para a Observação da listagem do dia (Tamara)."},
+  {tipo:"melhoria", area:"RH", txt:"A lista Colaboradora no lançamento de atraso e falta fica em ordem alfabética (Ana Paula)."},
+ ]},
  {v:"0.18.47", data:"2026-11-03", titulo:"RH: Ficha de experiência com 100 pontos", itens:[
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada colaboradora em experiência tem uma ficha de 100 pontos. Ela perde pontos a cada ocorrência (falta, atraso, comportamento, erro). O gestor dá nota de 0 a 10 em produtividade e adaptação. O sistema mostra a recomendação: efetivar (85 a 100), acompanhar (70 a 84) ou não efetivar. A colaboradora nunca vê a ficha. Botão Imprimir ficha."},
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Faltas, atestados e atrasos da Presença diária aparecem na ficha como sugestão. O RH confirma ou descarta antes de tirar os pontos."},
   {tipo:"novo", area:"RH → Configurador", txt:"Aba Ficha de experiência: descontos de cada ocorrência (atestado = 1 ponto), pontos de cada categoria e faixas da recomendação."},
   {tipo:"novo", area:"RH → Acessos e autorizações", txt:"Duas autorizações novas: lançar ocorrências na ficha e dar as notas do gestor."},
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada setor tem um gestor que dá a nota do gestor e vê só as fichas do próprio setor. A lista de gestores fica em Configurador do RH → Ficha de experiência → Gestores por setor."},
-  {tipo:"novo", area:"RH → Controle de experiência", txt:"A foto da colaboradora (a mesma do perfil do SorellyChat) aparece ao lado do nome na lista e no topo da ficha. Sem foto, aparecem as iniciais."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"A foto da colaboradora (a mesma do perfil do SorellyChat) aparece ao lado do nome na lista e no topo da ficha. Sem foto, aparecem as iniciais. Na lista, a coluna Colaboradora fica à esquerda, com foto de 48 px dentro de uma linha mais alta (pedido do Marcus; exceção `padrao-ok` à regra de centralizar)."},
   {tipo:"novo", area:"Avisos → Avaliação de experiência", txt:"No dia da 1ª e da 2ª avaliação (e até 3 dias depois) sai um alerta para a Maria, Marcus, Nickolas e Lucas. Um clique em Abrir tela leva direto à ficha da colaboradora, com a pontuação e as notas, para decidir se efetiva. Quem recebe muda em Tecnologia → Avisos."},
   {tipo:"melhoria", area:"RH → Controle de experiência", txt:"A lista passou para o padrão visual (topo dourado, nada abreviado) e ganhou a coluna Pontos."}
  ]},
