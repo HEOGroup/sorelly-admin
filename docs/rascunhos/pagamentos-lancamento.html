@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendas e pagamentos · lançar pagamento</title>
+<style>
+  :root{ --fundo:#0B0B0C; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4DCC6; --ouro:#C9A13B; --campo:#CFC7B2; --b1:#FBF8EF; --b2:#F4EEDB; --b3:#EADFC2; --borda:#D9CDA8; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:700px}
+  .tel{width:100%;max-width:330px;margin:0 auto}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button,select,input{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .cab{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--linha);margin-bottom:8px}
+  .ico{width:32px;height:32px;border-radius:8px;background:#F4EFE0;color:#8A6A12;display:grid;place-items:center;font-weight:600;flex:none}
+  .cab b{flex:1;font-size:13px;font-weight:600}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-size:11px;font-weight:600;padding:1px 8px}
+  .selo.c{background:#64748B}
+  .fechado{border:1px solid var(--borda);border-radius:12px;overflow:hidden}
+  .fechado .r{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 12px;white-space:nowrap}
+  .fechado .r+.r{border-top:1px solid var(--linha)}
+  .t1{background:var(--b1)} .t2{background:var(--b2)} .t3{background:var(--b3);font-weight:600;min-height:38px!important}
+  .v{display:inline-flex;align-items:center;gap:6px;justify-content:flex-end}
+  .sg{font-style:normal;font-weight:600;width:12px;text-align:center}
+  .mais{border:0;background:none;font-size:11px;text-decoration:underline;cursor:pointer;height:28px;padding:0}
+  .sec{font-size:11px;font-weight:600;min-height:30px;display:flex;align-items:center;justify-content:space-between;margin-top:6px}
+  /* pagamentos: sem o sinal de menos; link confirmado não tem ×  */
+  .p{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;border-bottom:1px solid var(--linha);white-space:nowrap}
+  .p small{font-size:11px;margin-left:6px}
+  .p .fim{width:24px;flex:none}
+  .total{display:flex;justify-content:space-between;align-items:center;min-height:32px}
+  .falta{display:flex;align-items:center;justify-content:space-between;min-height:38px;padding:0 12px;margin-top:6px;border:1px solid var(--borda);border-radius:12px;background:var(--b3);font-weight:600}
+  .btn{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.esc{background:var(--texto);color:#fff;border-color:var(--texto);font-weight:600}
+  .btn.cheio{width:100%}
+  .btn:disabled{opacity:.4;cursor:default}
+  .x{width:24px;height:32px;border:0;background:transparent;font-size:13px;cursor:pointer}
+  .campo{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:100%;font-size:13px}
+  .din{display:inline-flex;align-items:center;height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:100%;gap:2px}
+  .din input{border:0;outline:0;width:100%;min-width:0;text-align:right;font-weight:600;background:none;padding:0;height:30px}
+  .din.peq{width:108px;height:30px}
+  .din .rs,.din .ct{font-weight:600}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .aviso{padding:8px 0;line-height:1.4;font-weight:600}
+  /* acordeão: igual aos blocos do app (ícone, título, seta); abre para baixo */
+  .acd{margin-top:8px;border:1px solid var(--borda);border-radius:12px;overflow:hidden;background:var(--b1)}
+  .acd-cab{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 10px;border:0;background:var(--b2);cursor:pointer;text-align:left}
+  .acd-cab b{flex:1;font-size:13px;font-weight:600}
+  .acd.on .acd-cab{border-bottom:1px solid var(--borda)}
+  .acd-corpo{display:flex;flex-direction:column;gap:6px;padding:8px 10px 10px}
+  /* lançar pagamento (versão antiga em painel) */
+  .abre{width:100%;display:flex;align-items:center;justify-content:space-between;height:36px;border-radius:10px;border:1px solid var(--texto);background:var(--texto);color:#fff;padding:0 12px;font-weight:600;cursor:pointer;margin-top:8px}
+  .abre.on{border-radius:10px 10px 0 0}
+  .painel{border:1px solid var(--borda);border-top:0;border-radius:0 0 10px 10px;background:var(--b1);padding:4px 10px 10px}
+  .nota{font-size:11px;line-height:1.4;padding:6px 0}
+  .op{display:flex;align-items:center;gap:8px;min-height:34px;border-bottom:1px solid var(--linha);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+  .op .bol{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--texto);flex:none}
+  .op.on .bol{background:var(--texto);box-shadow:inset 0 0 0 3px #fff}
+  .op span.nm{flex:1}
+  .op.on span.nm{font-weight:600}
+  .sub2{margin:0 0 0 12px;border-left:2px solid var(--ouro);padding-left:8px;background:var(--b2);border-radius:0 8px 8px 0}
+  .sub2 .op{min-height:32px;font-size:13px}
+  .campos{display:flex;flex-direction:column;gap:6px;padding-top:8px}
+  .anexo{display:flex;align-items:center;justify-content:space-between;gap:6px;height:32px;border:1px solid var(--campo);border-radius:8px;padding:0 8px;cursor:pointer;font-size:11px;background:#fff}
+  .anexo input{display:none}
+</style>
+</head>
+<body>
+<h1>Vendas e pagamentos · lançar pagamento</h1>
+<p class="sub">O <b>+ Lançar pagamento</b> agora é um <b>acordeão</b> (clica e abre para baixo, como os outros blocos). Dentro dele, a <b>forma</b> e a <b>conta</b> são <b>menus suspensos</b>. Quando a forma é <b>Pix</b>, o menu de contas mostra só <b>Point, Sicredi Serenity 59...</b>, sem repetir "Pix". As contas vêm da lista do <b>Financeiro</b> e, por enquanto, <b>a revendedora define</b> em qual pagou. Faltam R$ 200,00 para você lançar. Digite 888 e vira R$ 888,00.</p>
+<div class="tel"><div class="cart" id="U"></div></div>
+<script>
+var R = function(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+// lista que o Financeiro define (Configurações): cada forma com as suas contas
+var FORMAS = [["pix","Pix"],["link","Link de pagamento"],["credito","Cartão de crédito"],["debito","Cartão de débito"],["dinheiro","Dinheiro"],["inad","Inadimplência"]];
+var CONTAS = {pix:["PIX - POINT","PIX - SICREDI - SERENITY - 59","PIX - ITAÚ - 59","PIX H&O"], link:["LINK - SICREDI - SERENITY - 59","LINK - SICREDI - SORELLY - 46"], credito:["CRÉDITO - SICREDI - SERENITY - 59","CRÉDITO - CIELO - P"], debito:["DÉBITO - CIELO - P","DÉBITO - SICREDI - SERENITY - 59"]};
+var bonita = function(c){ return c.toLowerCase().replace(/\s*-\s*/g," ").replace(/(^|\s)([a-zà-ú0-9])/g, function(m,a,b){ return a+b.toUpperCase(); }).replace(/&o/g,"&O"); };
+var limpa = function(v){ var s = String(v).replace(/[^0-9,]/g,""), i = s.indexOf(","); if(i>=0) s = s.slice(0,i+1)+s.slice(i+1).replace(/,/g,"").slice(0,2); return s.replace(/^0+(?=\d)/,""); };
+var paraNum = function(raw){ var p = String(raw||"").split(","); return parseFloat((p[0]||"0")+"."+(p[1]||"0")) || 0; };
+var milhar = function(raw){ var p = String(raw||"").split(","); var i = (p[0]||"").replace(/\B(?=(\d{3})+(?!\d))/g,"."); return p.length>1 ? i+","+p[1] : i; };
+var sufixo = function(raw){ var r = String(raw||""); if(r==="") return ",00"; var p = r.split(","); if(p.length===1) return ",00"; return p[1].length===0 ? "00" : p[1].length===1 ? "0" : ""; };
+var deNum = function(n){ return n.toFixed(2).replace(".",",").replace(/,00$/,"").replace(/(,\d)0$/,"$1"); };
+var hoje = "02/11";
+var s = {venda:8278, txt:{venda:"8278"}, tags:0, aberto:false, forma:"", conta:"", parc:1, anexo:"", acordo:null, acordoTxt:"",
+  pags:[ {f:"Link",c:"Sicredi Serenity 59",d:hoje,v:693.07,pago:true}, {f:"Link",c:"Sicredi Serenity 59",d:hoje,v:577.56,pago:true}, {f:"Link",c:"Sicredi Serenity 59",d:hoje,v:519.80,pago:true}, {f:"Link",c:"Sicredi Serenity 59",d:hoje,v:404.29,pago:true},
+    {f:"Dinheiro",c:"",d:hoje,v:693.07}, {f:"Pix",c:"Point",d:hoje,v:1732.68}, {f:"Pix",c:"Sicredi Serenity 59",d:hoje,v:1155.13} ]};
+var GARANTIA = 100, PCT = 30, BRINDE_MAIS = 251;
+function calc(){ var liq = Math.max(0, s.venda-GARANTIA), com = liq*PCT/100, total = liq-com+BRINDE_MAIS+s.tags*5, pago = s.pags.reduce(function(t,p){ return t+(p.inad ? 0 : p.v); },0);
+  return {liq:liq, com:com, total:total, pago:pago, falta:Math.max(0,total-pago)}; }
+function din(k){ var raw = s.txt[k]||""; return '<span class="din"><span class="rs">R$</span><input data-din="'+k+'" inputmode="numeric" autocomplete="off" aria-label="Valor em reais" value="'+milhar(raw)+'"><span class="ct">'+sufixo(raw)+'</span></span>'; }
+function L(cls,sig,rot,val){ return '<div class="r '+cls+'"><span>'+rot+'</span><span class="v"><i class="sg">'+sig+'</i><span class="num">'+val+'</span></span></div>'; }
+var pedeConta = function(f){ return !!CONTAS[f]; };
+function semPrefixo(ct){ return bonita(ct).replace(/^(Pix|Link|Crédito|Débito)\s+/,""); }   // a forma já está escrita em cima: embaixo só o nome da conta
+function painel(c){
+  var opF = '<option value="">Escolha a forma</option>'+FORMAS.map(function(f){ return '<option value="'+f[0]+'"'+(s.forma===f[0]?' selected':'')+'>'+f[1]+'</option>'; }).join('');
+  var campoConta = pedeConta(s.forma) ? '<select class="campo" data-contasel aria-label="Conta"><option value="">Escolha a conta</option>'+CONTAS[s.forma].map(function(ct){ return '<option value="'+ct+'"'+(s.conta===ct?' selected':'')+'>'+semPrefixo(ct)+'</option>'; }).join('')+'</select>' : '';
+  var pronto = s.forma && (!pedeConta(s.forma) || s.conta);
+  var nota = s.forma==="inad" ? 'Inadimplência: o valor fica em aberto e não conta como pagamento.' : s.forma==="dinheiro" ? 'Dinheiro não pede conta. O agendamento confere o valor.' : pedeConta(s.forma) ? 'Escolha a conta em que a revendedora pagou.' : 'As contas vêm da lista do Financeiro.';
+  var parc = s.forma==="credito" && s.conta ? '<div class="par"><span style="align-self:center">Parcelas</span><select class="campo" data-parc aria-label="Parcelas">'+[1,2,3,4,5,6].map(function(n){ return '<option'+(n===s.parc?' selected':'')+'>'+n+'x</option>'; }).join('')+'</select></div>' : '';
+  var campos = pronto ? parc+'<div class="par"><input class="campo" data-data value="'+hoje+'" aria-label="Data do pagamento">'+din("pv")+'</div>'
+    +'<label class="anexo"><span>'+(s.anexo?('Comprovante: '+s.anexo):'Comprovante (opcional)')+'</span><b>'+(s.anexo?'Trocar':'Anexar')+'</b><input type="file" data-anexo accept="application/pdf,image/*"></label>'
+    +'<button class="btn esc cheio" data-lancar>Lançar pagamento</button>' : '';
+  return '<div class="acd-corpo"><select class="campo" data-formasel aria-label="Forma de pagamento">'+opF+'</select>'+campoConta+'<p class="nota">'+nota+'</p>'+campos+'</div>'; }
+function negociar(c){ if(c.falta<0.01) return '<p class="aviso">Acerto quitado. Brinde liberado.</p>';
+  if(s.acordo==="neg") return '<p class="aviso">'+s.acordoTxt+'</p><button class="btn cheio" data-acordo="nenhum">Remover acordo</button>';
+  if(s.acordo==="rec") return '<p class="aviso">Sem brinde. Nota promissória em 48 h úteis.</p><button class="btn cheio" data-acordo="nenhum">Desfazer</button>';
+  if(s.acordo==="form") return '<div class="campos"><div class="par"><input class="campo" data-adata value="'+hoje+'" aria-label="Data da parcela">'+din("av")+'</div><div class="par"><button class="btn" data-acordo="nenhum">Cancelar</button><button class="btn esc" data-acordo="salvar">Salvar acordo</button></div></div>';
+  return '<div class="par" style="margin-top:8px"><button class="btn" data-acordo="form">Negociar o que falta</button><button class="btn" data-acordo="rec">Não quis negociar</button></div>'; }
+function desenha(){ var c = calc();
+  document.getElementById("U").innerHTML =
+   '<div class="cab"><span class="ico">▤</span><b>Vendas e pagamentos</b>'+(c.falta<0.01?'<span class="selo">Quitado</span>':'<span class="selo c">'+R(c.falta)+'</span>')+'</div>'
+   +'<div class="fechado">'
+     +'<div class="r t1"><span>Valor vendido</span><span class="v"><i class="sg"></i><span class="din peq"><span class="rs">R$</span><input data-din="venda" inputmode="numeric" autocomplete="off" aria-label="Valor vendido" value="'+milhar(s.txt.venda)+'"><span class="ct">'+sufixo(s.txt.venda)+'</span></span></span></div>'
+     +L("t1","−","Crédito de garantia",R(GARANTIA))+L("t2","","Venda líquida",R(c.liq))
+     +'<div class="r t2"><span>Comissão</span><span class="v"><i class="sg"></i><span class="num" style="min-width:44px;text-align:right">'+PCT+'%</span><span class="num">− '+R(c.com)+'</span></span></div>'
+     +L("t2","+","Brinde a mais",R(BRINDE_MAIS))+(s.tags?L("t2","+","Tags riscadas ("+s.tags+")",R(s.tags*5)):'')
+     +L("t3","","Valor a pagar",R(c.total))
+     +'<div class="r t1" style="justify-content:flex-end;min-height:30px"><button class="mais" data-tag="1">+ Tag riscada</button></div>'
+   +'</div>'
+   +'<div class="sec"><span>Pagamentos ('+s.pags.length+') · ✓ já pago por link</span></div>'
+   +s.pags.map(function(p,i){ var podeTirar = !p.pago;
+     return '<div class="p"><span>'+(p.pago?'✓ ':'')+'<b style="font-weight:600">'+p.f+'</b>'+(p.c?' '+p.c:'')+(p.d!==hoje?'<small>'+p.d+'</small>':'')+(p.inad?'<small>em aberto</small>':'')+'</span><span class="v"><span class="num">'+R(p.v)+'</span>'+(podeTirar?'<button class="x" data-del="'+i+'" aria-label="Tirar pagamento">×</button>':'<span class="fim"></span>')+'</span></div>'; }).join('')
+   +'<div class="total"><span>Total pago</span><span class="num">'+R(c.pago)+'</span></div>'
+   +'<div class="falta"><span>Falta</span><span class="num">'+R(c.falta)+'</span></div>'
+   +'<div class="acd'+(s.aberto?' on':'')+'"><button class="acd-cab" data-abre aria-expanded="'+s.aberto+'"><span class="ico">＋</span><b>Lançar pagamento</b><span>'+(s.aberto?'▴':'▾')+'</span></button>'+(s.aberto ? painel(c) : '')+'</div>'
+   +negociar(c); }
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.dataset.din) return; var k = t.dataset.din, raw = limpa(t.value); s.txt[k] = raw; if(k==="venda") s.venda = paraNum(raw);
+  desenha(); var n = document.querySelector('[data-din="'+k+'"]'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } });
+document.addEventListener("change", function(ev){ var t = ev.target;
+  if(t.hasAttribute("data-formasel")){ s.forma = t.value; s.conta = ""; s.parc = 1; desenha(); } else if(t.hasAttribute("data-contasel")){ s.conta = t.value; desenha(); } else if(t.hasAttribute("data-parc")) s.parc = parseInt(t.value,10); else if(t.hasAttribute("data-anexo")){ s.anexo = t.files && t.files[0] ? t.files[0].name : ""; desenha(); } });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.tag!==undefined) s.tags++;
+  else if(d.abre!==undefined){ s.aberto = !s.aberto; if(s.aberto){ s.forma = ""; s.conta = ""; s.anexo = ""; s.parc = 1; s.txt.pv = deNum(calc().falta); } }
+  else if(d.lancar!==undefined){ var v = paraNum(s.txt.pv), dt = document.querySelector('[data-data]').value; if(v<=0) return; var f = FORMAS.filter(function(x){ return x[0]===s.forma; })[0];
+    var nome = s.forma==="credito" ? "Crédito" : s.forma==="debito" ? "Débito" : s.forma==="link" ? "Link" : f[1];
+    var conta = s.conta ? bonita(s.conta).replace(/^(Pix|Link|Crédito|Débito)\s+/,"")+(s.forma==="credito"&&s.parc>1?" "+s.parc+"x":"") : "";
+    s.pags.push({f:nome, c:conta, d:dt, v:v, inad:s.forma==="inad"}); s.aberto = false; }
+  else if(d.del!==undefined) s.pags.splice(+d.del,1);
+  else if(d.acordo!==undefined){ var z = d.acordo;
+    if(z==="form"){ s.acordo = "form"; s.txt.av = deNum(calc().falta); }
+    else if(z==="salvar"){ var v2 = paraNum(s.txt.av), dt2 = document.querySelector('[data-adata]').value; s.acordo = "neg"; s.acordoTxt = "Acordo salvo: "+R(v2)+" em "+dt2+(Math.abs(v2-calc().falta)<0.01 ? ". Cobre o que falta: brinde liberado." : ". Precisa cobrir exatamente o que falta para liberar o brinde."); }
+    else s.acordo = z==="nenhum" ? null : z; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>
