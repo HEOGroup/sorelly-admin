@@ -32,7 +32,7 @@ Todos os setores
 | O quê | Onde |
 |---|---|
 | SorellyChat | `/whatssorelly` |
-| Chamados | `/melhorias` |
+| Chamados | `/chamados` (o antigo `/melhorias` ainda abre) |
 | Integração com os outros setores | `docs/negocio/INTEGRACAO-ENTRE-SETORES.md` |
 
 Código das telas: `pages/WhatsSorelly.js`, `pages/Melhorias.js`.

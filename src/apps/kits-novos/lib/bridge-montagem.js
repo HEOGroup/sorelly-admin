@@ -12,6 +12,7 @@
 // @/apps/montagem/state/store.js (CHAVE) e domain/representantes.js (NOVAS0).
 import { MESES } from "@/apps/kits-novos/lib/datas";
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { lerEstado, textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 const CHAVE_MONTAGEM = "sorelly_montagem_v9";
 
 /** Com servidor ligado, o kit vai para o módulo "kn" (uma chave por kit): assim chega no app da representante em qualquer aparelho, não só neste navegador. */
@@ -36,13 +37,13 @@ export function direcionarParaRepresentante(c, rep) {
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM);
     if (!raw) return apiAtiva();
-    var s = JSON.parse(raw);
+    var s = lerEstado(raw);
     if (!s || s.v !== 4) return apiAtiva();
     var novas = (s.novas || []).filter(function (n) { return n.id !== id; });
     novas.unshift(item);
     s.novas = novas;
     var kn = Object.assign({}, s.kn); kn["k_" + id] = item; s.kn = kn;
-    localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
+    localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return true;
   } catch (x) {
     return apiAtiva();
@@ -57,7 +58,7 @@ export function direcionarParaSorelly(c) {
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM);
     if (!raw) return false;
-    var s = JSON.parse(raw);
+    var s = lerEstado(raw);
     if (!s || s.v !== 4) return false;
     var chave = function (t) { return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
     var marca = { id: "KN" + c.id, valor: c.val || 0, desde: new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" }) };
@@ -69,7 +70,7 @@ export function direcionarParaSorelly(c) {
         contatos: c.tel ? [{ nome: "WhatsApp da revendedora", fone: c.tel }] : [], prata: false, devmaster: "", cidade: c.cid || "", obs: "", registro: [], conds: [], kitNovo: marca });
     }
     s.revInternas = lista;
-    localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
+    localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return true;
   } catch (x) { return false; }
 }
@@ -85,7 +86,7 @@ export { CHAVE_MONTAGEM };
 export function revendedorasPorRep() {
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM); if (!raw) return {};
-    var s = JSON.parse(raw), ag = s && s.agend; if (!ag || !ag.config) return {};
+    var s = lerEstado(raw), ag = s && s.agend; if (!ag || !ag.config) return {};
     var h = new Date(), ym = h.getFullYear() + "-" + String(h.getMonth() + 1).padStart(2, "0"), meses = Object.keys(ag.cotas || {}).sort();
     var cotas = (ag.cotas || {})[ym] || (ag.cotas || {})[meses[meses.length - 1]] || {}, out = {};
     (ag.config.representantes || []).forEach(function (r) { if (cotas[r.id] > 0) out[r.nome] = cotas[r.id]; });
@@ -100,7 +101,7 @@ function hojeIsoSP() { return new Date().toLocaleDateString("sv-SE", { timeZone:
 export function listaRecusas() {
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM); if (!raw) return [];
-    var s = JSON.parse(raw);
+    var s = lerEstado(raw);
     return ((s && s.recusas) || []).filter(function (r) { return r && r.rep; });
   } catch (x) { return []; }
 }
@@ -110,7 +111,7 @@ export function registrarRecusa(o) {
   try {
     var raw = localStorage.getItem(CHAVE_MONTAGEM);
     if (!raw) return null;
-    var s = JSON.parse(raw);
+    var s = lerEstado(raw);
     if (!s || s.v !== 4) return null;
     var id = o.id ? "KN" + o.id : null;
     var d = new Date();
@@ -127,7 +128,7 @@ export function registrarRecusa(o) {
       return Object.assign({}, n, { status: "aguardando", rep: null, recusadaPor: (n.recusadaPor || []).concat([o.rep]) });
     });
     if (id) { var kr = s.novas.find(function (n) { return n.id === id; }); if (kr) { enviarKitAoServidor(kr); var kn2 = Object.assign({}, s.kn); kn2["k_" + id] = kr; s.kn = kn2; } }
-    localStorage.setItem(CHAVE_MONTAGEM, JSON.stringify(s));
+    localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
     return { bloqueou: bloqueou, total: total, limite: limite };
   } catch (x) {
     return null;

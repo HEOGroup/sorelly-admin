@@ -81,6 +81,10 @@ export function conferirLinhas(arquivo, linhas, op){
     if(ehPagina(arquivo) && /\be\(\s*Tab\s*,|\bimport\b[^;]*\bTab\b[^;]*components\/padrao["']/.test(codigo))
       add("tabela com a peça antiga Tab (cabeçalho cinza): use GradeFiltro, TabelaP ou TabelaPlanilha, que trazem a barra dourada inteira", l);
 
+    // 2f. UM DEGRADÊ SÓ (Marcus, 02/11/2026): o topo dourado é um degradê esticado na barra inteira; nunca um degradê por célula.
+    if(/"(td|th)"|<t[dh]\b|\bTh\b|\bTd\b/.test(codigo) && /gradient|degrade\(/.test(codigo))
+      add("degradê dentro da célula (o topo dourado é UM degradê na barra inteira, não um por célula)", l);
+
     // 3. altura de campo, botão e linha: 32 px (h-8); cabeçalho de tabela 30 px
     if(PISTA_CAMPO.test(codigo)){
       var ma = /\bh-(6|7|9|10|11|12)\b/.exec(codigo);

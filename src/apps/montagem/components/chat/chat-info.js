@@ -79,9 +79,9 @@ function NovaConversa(p){
 
 function NovoGrupo(p){
   var st = useChat(), nm = useState(""), nome = nm[0], setNome = nm[1], ds = useState(""), descr = ds[0], setDescr = ds[1];
-  var sl = useState([]), sel = sl[0], setSel = sl[1], ft = useState(null), foto = ft[0], setFoto = ft[1];
+  var sl = useState(p.padrao || []), sel = sl[0], setSel = sl[1], ft = useState(null), foto = ft[0], setFoto = ft[1];
   var pf = useState(!!p.setor), porFunc = pf[0], setPorFunc = pf[1];   // grupo de setor: uma aba de conversa com cada funcionária
-  var criar = function(){ if(!nome.trim() || !sel.length) return; var id = api.createGroup({eu:p.eu, nome:nome.trim(), descr:descr.trim(), foto:foto, membros:sel, porFuncionaria:porFunc}); p.aoCriar(id); };
+  var criar = function(){ if(!nome.trim() || !sel.length) return; var id = api.createGroup({eu:p.eu, nome:nome.trim(), descr:descr.trim(), foto:foto, membros:sel, porFuncionaria:porFunc, setorId:p.setorId}); p.aoCriar(id); };
   return e(Janela,{titulo:"Novo grupo", fechar:p.fechar, largura:440},
     e("div",{className:"flex items-center gap-3 p-4"},
       e(FotoEditavel,{pode:true, fotoAtual:foto ? lerMidia(foto) : null, titulo:"Foto do grupo", aoSalvar:function(u){ setFoto(guardarMidia(u)); }, aoRemover:function(){ setFoto(null); }, trigger:function(abrir){ return e("button",{onClick:abrir, "aria-label":"Escolher foto do grupo", className:"relative"}, e(Avatar,{grupo:true, nome:nome||"Grupo", foto:foto, s:64}), e("span",{className:"absolute -bottom-1 -right-1 grid size-6 place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"camera", s:13, fill:true, style:{color:"#fff"}}))); }}),
@@ -90,7 +90,7 @@ function NovoGrupo(p){
         e("input",{value:descr, onChange:function(ev){ setDescr(ev.target.value); }, maxLength:120, placeholder:"Descrição (opcional)", "aria-label":"Descrição do grupo", className:"h-9 rounded-lg px-3 text-[12px] outline-none", style:campo}))),
     e("label",{className:"flex cursor-pointer items-center gap-2 px-4 pb-2 text-[13px]"}, e("input",{type:"checkbox", checked:porFunc, onChange:function(ev){ setPorFunc(ev.target.checked); }}), "Grupo de setor: aba Geral e uma conversa com cada funcionária"),
     e("p",{className:"px-4 pb-1 text-[11.5px] font-semibold uppercase tracking-wide", style:{color:W.verde}}, "Participantes ("+sel.length+")"),
-    e(SeletorPessoas,{lista:contatosVisiveis(st, p.eu), linha:function(c){ var on = sel.indexOf(c.id)>=0;
+    e(SeletorPessoas,{lista:contatosVisiveis(st, p.eu).slice().sort(function(a, b){ var ia = (p.padrao||[]).indexOf(a.id)>=0, ib = (p.padrao||[]).indexOf(b.id)>=0; return ia===ib ? 0 : ia ? -1 : 1; }), linha:function(c){ var on = sel.indexOf(c.id)>=0;
       return e("button",{key:c.id, onClick:function(){ setSel(on ? sel.filter(function(i){ return i!==c.id; }) : sel.concat([c.id])); }, className:"flex w-full items-center gap-3 px-4 py-2 text-left hover:bg-white/5"},
         e("span",{className:"grid size-5 place-items-center rounded border", style:{borderColor:on ? W.verde : W.sec, background:on ? W.verde : "transparent"}}, on && e(Ph,{n:"check", s:13, style:{color:"#fff"}})),
         e(Avatar,{id:c.id, s:36}), e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate text-[13.5px]"}, c.nome), e("span",{className:"block truncate text-[11px]", style:{color:W.sec}}, c.setor))); }}),

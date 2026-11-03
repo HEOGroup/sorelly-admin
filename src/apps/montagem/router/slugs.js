@@ -120,8 +120,9 @@ export const SLUG_DA_ABA = {
   compras: "compras-e-estoque",
   linkpag: "link-de-pagamento",
   linkrel: "relatorio-de-links",
-  melhorias: "melhorias",
+  melhorias: "chamados",   // a tela virou Chamados (Marcus, 02/11/2026); o link antigo /melhorias continua abrindo (ABA_DO_SLUG abaixo)
   garantia: "garantia",
+  posvendas: "pos-vendas",
   marketing: "marketing",
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",
@@ -158,6 +159,11 @@ export const SLUG_DA_ABA = {
   revbase: "revendedoras-ativas",
   revkits: "revendedoras-kits-e-vendas",
   revcond: "revendedoras-condicional",
+  metrev: "metas-revendedoras",
+  metacomp: "metas-acompanhamento",
+  methist: "metas-historico",
+  metnotif: "metas-notificacoes",
+  metregras: "metas-regras",
   revreceber: "contas-a-receber",
   inicio: "inicio",
   apps: "apps",
@@ -214,7 +220,7 @@ export const SLUG_DA_ABA = {
 export const ABA_DO_SLUG = Object.keys(SLUG_DA_ABA).reduce(function (acc, aba) {
   acc[SLUG_DA_ABA[aba]] = aba;
   return acc;
-}, {});
+}, { melhorias: "melhorias" });   // endereço antigo dos Chamados (até 02/11/2026)
 
 export const ABA_INICIAL = "painel";
 

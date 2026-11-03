@@ -11,7 +11,8 @@ import * as srv from "@/apps/montagem/lib/api";
 import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
-import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
@@ -153,9 +154,7 @@ function App(){
   };
   var alternarMenu = function(v){ setRecolhido(v); if(v) setColArea(null); try{ localStorage.setItem("sorelly_menu_recolhido", v ? "1" : "0"); }catch(x){} };
   // grupos do menu lateral (Geral/Setores/Sistema, 28/10/2026): fecha/abre cada um, lembra a escolha; sem chave = aberto
-  var ga = useState(function(){ try{ return JSON.parse(localStorage.getItem("sorelly_grupos_menu")||"{}"); }catch(x){ return {}; } }), gruposAb = ga[0], setGruposAb = ga[1];
-  var alternarGrupoMenu = function(k){ var v = Object.assign({}, gruposAb); v[k] = gruposAb[k]===false; setGruposAb(v); try{ localStorage.setItem("sorelly_grupos_menu", JSON.stringify(v)); }catch(x){} };
-  var abrirTodosGrupos = function(){ setGruposAb({}); try{ localStorage.removeItem("sorelly_grupos_menu"); }catch(x){} };
+  try{ localStorage.removeItem("sorelly_grupos_menu"); }catch(x){}   // o menu abre sempre inteiro: apaga a escolha antiga de grupos fechados
   var so = useState(function(){ var o = ondeEsta(abaURL); return o ? o.setor.id : "kits"; }), setorAb = so[0], setSetorAb = so[1];
   var ca = useState(null), colArea = ca[0], setColArea = ca[1];
   // barra do topo aberta 100% (todas as telas do setor à vista) ou recolhida (listas suspensas); lembra a escolha neste navegador
@@ -165,9 +164,13 @@ function App(){
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
   // Salvar no navegador. Se o espaço acabar (limite de ~10 MB), AVISA na tela em vez de falhar calado (01/11/2026: acerto sumia ao recarregar)
   var sp = useState(false), semEspaco = sp[0], setSemEspaco = sp[1];
-  var salvar = function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
+  var salvar = function(){ try{ localStorage.setItem(CHAVE, textoDoEstado(semDoServidor(paraSalvar(Object.assign({}, s, {aviso:null}))))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
   var liberarEspaco = function(){ try{ localStorage.removeItem("sorelly_copia_antes_servidor"); localStorage.removeItem("sorelly_copia_antes_servidor_em"); }catch(x){} salvar(); };
-  useEffect(function(){ salvar(); }, [s]);
+  // grava 0,4 s depois da última mudança (comprimir um estado grande leva uns décimos de segundo) e na hora em que a aba é escondida ou fechada
+  var salvarRef = React.useRef(null); salvarRef.current = salvar;
+  useEffect(function(){ var t = setTimeout(function(){ salvarRef.current(); }, 400); return function(){ clearTimeout(t); }; }, [s]);
+  useEffect(function(){ var f = function(){ salvarRef.current(); }, g = function(){ if(document.hidden) f(); };
+    window.addEventListener("pagehide", f); document.addEventListener("visibilitychange", g); return function(){ window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", g); }; }, []);
   // Duas janelas do sistema no mesmo navegador dividem o MESMO armazenamento e uma grava por cima da outra (acerto sumia). O evento "storage" só chega aqui quando OUTRA janela grava: avisa.
   var ow = useState(false), outraJanela = ow[0], setOutraJanela = ow[1];
   // Aparece no máximo uma vez a cada 10 minutos e some sozinho em 8 segundos (só para não incomodar).
@@ -286,13 +289,11 @@ function App(){
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
-          var fechado = gruposAb[g[0]]===false;
+          // menu sempre aberto, sem botão de abrir/fechar (Marcus, 02/11/2026): o título do grupo é só um rótulo
           return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
-            e("div",{className:"mt-2.5 flex items-center justify-between px-1.5 pb-0.5 first:mt-0"},
-              e("button",{type:"button", onClick:function(){ alternarGrupoMenu(g[0]); }, className:"flex items-center gap-1 text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground hover:text-foreground"},
-                e(Icon,{n:"chevrondown", s:10, className:"transition-transform "+(fechado ? "-rotate-90" : "")}), g[1]),
-              g[0]==="setor" && e("button",{type:"button", onClick:abrirTodosGrupos, className:"text-[10.5px] font-semibold text-muted-foreground hover:text-foreground"}, "Abrir tudo")),
-            !fechado && lst.map(linhaSetor)); }),
+            e("div",{className:"mt-2.5 px-1.5 pb-0.5 first:mt-0"},
+              e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
+            lst.map(linhaSetor)); }),
         !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
         !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
         urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),

@@ -1,6 +1,7 @@
 // Sorelly Admin · montagem — pages/preferencias-kit/Analise.js
 // Aba "Análise": soma das respostas por categoria (mosaico), resumo ouro/prata, ranking das opções mais pedidas, fontes e sincronia da configuração.
-import { BarraFiltros, Faixa, Indicador, Mosaico, Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { BarraFiltros, Mosaico, Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { AVISO_CONFIANCA, FONTES, ROTULO_FONTE, ROTULO_SITUACAO, formatarDataHora, pkAnalise, pkRegioes } from "@/apps/montagem/domain/preferencias-kit";
 import { Aviso, BarraMetal, BarraPct, Data, MCOR, OURO, Busca, Selo, Sel, Vazio, pct1, usePk } from "@/apps/montagem/pages/preferencias-kit/visual";
@@ -46,7 +47,7 @@ function AbaPkAnalise(){
   var ativo = !!(f.busca || f.estado || f.cidade || f.situacao || f.fonte || f.desde || f.ate);
   var vazio = an.totalRevendedoras===0 && !ativo;
   return e(Pagina,null,
-    e(Aviso,null, AVISO_CONFIANCA),
+    !(s.pk && s.pk.deApp) && e(Aviso,null, AVISO_CONFIANCA),
     e(BarraFiltros,{ativo:ativo, onLimpar:function(){ sf[1](F0); }},
       e(Busca,{v:f.busca, set:set("busca"), ph:"Buscar por nome, telefone ou cidade"}),
       e(Sel,{v:f.estado, set:set("estado"), rot:"Estado", opcoes:reg.estados.map(function(x){ return [x, x]; })}),
@@ -54,11 +55,11 @@ function AbaPkAnalise(){
       e(Sel,{v:f.situacao, set:set("situacao"), rot:"Situação", opcoes:[["sem", ROTULO_SITUACAO.sem], ["pendente", ROTULO_SITUACAO.pendente], ["montado", ROTULO_SITUACAO.montado]]}),
       e(Sel,{v:f.fonte, set:set("fonte"), rot:"Fonte", opcoes:FONTES.map(function(x){ return [x, ROTULO_FONTE[x]]; })}),
       e(Data,{rot:"De", v:f.desde, set:set("desde")}), e(Data,{rot:"Até", v:f.ate, set:set("ate")})),
-    e(Faixa,{n:4},
-      e(Indicador,{t:"Revendedoras", v:an.totalRevendedoras, cor:"total"}),
-      e(Indicador,{t:"Com preferências", v:an.totalComPreferencias, cor:"ok", sub:"Taxa de preenchimento "+pct1(an.taxaPreenchimento)}),
-      e(Indicador,{t:"Sem preferências", v:an.totalSemPreferencias, cor:"neutro"}),
-      e(Indicador,{t:"Média de categorias", v:num1(an.mediaCategoriasPorRevendedora), cor:"info", sub:"Por revendedora"})),
+    e(BlocoResumo,{t:"Resumo das respostas", cab:["Situação", "Revendedoras", "Do total"], linhas:[
+      {r:"Revendedoras com kit ativo", v:an.totalRevendedoras.toLocaleString("pt-BR"), p:"", total:true},
+      {r:"Com preferências", v:an.totalComPreferencias.toLocaleString("pt-BR"), p:pct1(an.taxaPreenchimento), cor:"ok"},
+      {r:"Sem preferências", v:an.totalSemPreferencias.toLocaleString("pt-BR"), p:an.totalRevendedoras ? pct1(100-an.taxaPreenchimento) : ""},
+      {r:"Categorias respondidas por revendedora (média)", v:num1(an.mediaCategoriasPorRevendedora), p:""}]}),
     vazio
       ? e(Vazio,{ic:"chart-bar"}, "Sem dados para analisar. Cadastre revendedoras ou importe uma tabela.")
       : e(Mosaico,{min:"21rem"}, [

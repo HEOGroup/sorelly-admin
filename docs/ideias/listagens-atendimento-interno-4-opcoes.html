@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Atendimento interno · Listagens: 4 opções</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--leve:rgba(184,134,43,.22);--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1280px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+h2{font-size:13px;font-weight:600;margin-bottom:8px}
+.sub{margin:2px 0 14px}
+.bloco{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:12px;margin-bottom:12px}
+.duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media(max-width:820px){.duas{grid-template-columns:1fr}}
+table{width:100%;border-collapse:collapse}
+th,td{height:32px;padding:0 10px;text-align:center;border-bottom:1px solid var(--bd);white-space:nowrap}
+.cmp thead th{background:var(--topo);color:#1a1306;height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.cmp td:first-child{text-align:left;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.campos{display:flex;gap:16px;flex-wrap:wrap;align-items:center}
+.campos label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
+.campos input{accent-color:#E8B84B}
+.fixo{opacity:.7}
+.tela{border:1px dashed var(--bd);border-radius:8px;padding:12px;background:var(--bg)}
+.tit{font-size:18px;font-weight:600}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+.rolar table{background:var(--topo) top left/100% 30px no-repeat}
+.rolar thead th{background:transparent;color:#1a1306;height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.dia td{background:var(--leve);text-align:left;font-weight:600;cursor:pointer}
+.dia:hover td{filter:brightness(1.25)}
+/* A: semana em colunas */
+.semana{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+@media(max-width:900px){.semana{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.col{border:1px solid var(--bd);border-radius:8px;background:var(--s1);overflow:hidden}
+.col h3{background:var(--leve);padding:6px 10px;font-size:13px;font-weight:600;display:flex;justify-content:space-between}
+.card{padding:6px 10px;border-top:1px solid var(--bd)}
+.card b{font-weight:600}
+.card .h{display:inline-block;min-width:44px}
+.card small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-top:2px}
+/* C: abas */
+.abas{display:flex;gap:4px;border-bottom:1px solid var(--bd);margin-bottom:10px;flex-wrap:wrap}
+.abas button{height:36px;padding:0 14px;background:transparent;color:var(--tx);border:0;border-bottom:2px solid transparent;font:inherit;cursor:pointer;margin-bottom:-1px}
+.abas button.on{border-bottom-color:var(--ouro);font-weight:600}
+/* D: grade de horários */
+.grade th:first-child,.grade td:first-child{width:64px}
+.grade td{vertical-align:top;height:auto;padding:6px 8px;white-space:normal}
+.grade td div{padding:2px 0}
+.grade td.vazio{opacity:.35}
+.pergunta li{margin:4px 0 4px 18px}
+</style>
+</head>
+<body>
+<h1>Atendimento interno · Listagens: 4 opções</h1>
+<p class="sub">Nomes e dados são inventados, só para mostrar o layout. Primeiro decida o que a tela precisa ter. Depois escolha uma das 4 formas.</p>
+
+<div class="bloco">
+  <h2>1. Para que serve esta tela?</h2>
+  <div style="margin-bottom:10px;overflow-x:auto;border:1px solid var(--bd);border-radius:8px"><table class="cmp">
+    <thead><tr><th>Tela</th><th>Para quê</th><th>Mostra</th></tr></thead>
+    <tbody>
+      <tr><td>Atendimento Sorelly</td><td>Atender a revendedora agora</td><td>Só a fila de hoje</td></tr>
+      <tr><td>Consolidado Sorelly</td><td>Histórico do que já foi atendido</td><td>Data, hora, revendedora, venda, valor do acerto, valor pago, formas de pagamento, comprovantes, quem bipou, quem atendeu, kit novo, início, duração</td></tr>
+      <tr><td>Listagens (esta)</td><td>Ver a agenda que a Tamara montou</td><td>Dias que vêm pela frente e o que já passou</td></tr>
+    </tbody></table></div>
+  <p><b>Conclusão:</b> o valor, o pagamento e o tempo já estão no Consolidado Sorelly. A Listagens só precisa mostrar a agenda de forma fácil: quem vem, a que horas e para quê. Se nem isso for útil, a tela pode sair do menu.</p>
+</div>
+
+<div class="bloco">
+  <h2>2. O que vai ter em cada linha?</h2>
+  <div class="campos">
+    <span class="fixo"><label><input type="checkbox" checked disabled> Horário</label></span>
+    <span class="fixo"><label><input type="checkbox" checked disabled> Nome</label></span>
+    <span class="fixo"><label><input type="checkbox" checked disabled> Tipo</label></span>
+    <span class="fixo"><label><input type="checkbox" checked disabled> Quem bipou</label></span>
+    <span class="fixo"><label><input type="checkbox" checked disabled> Quem atende na montagem</label></span>
+    <span>|</span>
+    <label><input type="checkbox" id="c-sit"> Situação (Agendado ou Feito)</label>
+    <label><input type="checkbox" id="c-cond"> Número da condicional</label>
+    <label><input type="checkbox" id="c-cheg"> Hora que chegou</label>
+  </div>
+  <p style="margin-top:8px">Os cinco primeiros são os que você pediu. Marque os outros para ver como ficam nas opções B e C (as opções A e D mostram só os cinco).</p>
+</div>
+
+<div class="bloco">
+  <h2>3. Layout</h2>
+  <div class="seg" id="seg"></div>
+  <div class="tela" id="tela" style="margin-top:12px"></div>
+</div>
+
+<div class="bloco pergunta">
+  <h2>4. Para decidir</h2>
+  <ol>
+    <li>"Quem escolheu o kit" é a pessoa que atende na montagem do kit, escolhida depois do acerto? Se for outra coisa, diga.</li>
+    <li>A tela precisa existir, ou o Consolidado Sorelly e a fila do Atendimento Sorelly já bastam?</li>
+    <li>Qual das 4 formas é mais fácil de ler?</li>
+  </ol>
+</div>
+
+<script>
+var DIAS = [
+  {id:"0", rot:"Hoje · 03/11 · terça", curto:"Hoje", linhas:[
+    {h:"08:30", n:"Marlene Cardoso Reis", t:"Acerto", b:"Natasha", a:"Leci", s:"Feito", c:"093011", ch:"08:25"},
+    {h:"10:00", n:"Patrícia Alves Moura", t:"Kit novo", b:"Edna", a:"", s:"Agendado", c:"093102", ch:""},
+    {h:"10:30", n:"Josiane Tavares Lima", t:"Acerto", b:"", a:"", s:"Agendado", c:"093177", ch:""},
+    {h:"13:30", n:"Elaine Souza Prado", t:"Reposição", b:"", a:"", s:"Agendado", c:"093240", ch:""},
+    {h:"15:00", n:"Cíntia Barros Neves", t:"Acerto", b:"", a:"", s:"Agendado", c:"093251", ch:""},
+    {h:"16:30", n:"Débora Fontes Vaz", t:"Retirada de prêmio", b:"", a:"", s:"Agendado", c:"093260", ch:""}]},
+  {id:"1", rot:"04/11 · quarta", curto:"Qua 04/11", linhas:[
+    {h:"10:30", n:"Luciana Meireles Cruz", t:"Acerto", b:"", a:"", s:"Agendado", c:"093301", ch:""},
+    {h:"10:30", n:"Sandra Pires Duarte", t:"Kit novo", b:"", a:"", s:"Agendado", c:"093318", ch:""},
+    {h:"12:00", n:"Camila Rocha Torres", t:"Acerto", b:"", a:"", s:"Agendado", c:"093330", ch:""}]},
+  {id:"2", rot:"05/11 · quinta", curto:"Qui 05/11", linhas:[
+    {h:"11:00", n:"Rosana Lopes Gentil", t:"Indicação", b:"", a:"", s:"Agendado", c:"093402", ch:""},
+    {h:"14:30", n:"Vera Lúcia Matos", t:"Acerto", b:"", a:"", s:"Agendado", c:"093415", ch:""}]},
+  {id:"3", rot:"06/11 · sexta", curto:"Sex 06/11", linhas:[
+    {h:"08:00", n:"Tânia Mara Duarte", t:"Acerto", b:"", a:"", s:"Agendado", c:"093501", ch:""},
+    {h:"09:00", n:"Beatriz Nunes Salles", t:"Kit novo", b:"", a:"", s:"Agendado", c:"093512", ch:""},
+    {h:"10:00", n:"Fabiana Lemos Rangel", t:"Reposição", b:"", a:"", s:"Agendado", c:"093520", ch:""},
+    {h:"10:00", n:"Alessandra Viana Paz", t:"Acerto", b:"", a:"", s:"Agendado", c:"093533", ch:""}]}
+];
+var OPC = [["A","A · Semana em colunas"],["B","B · Planilha por dia"],["C","C · Um dia por aba"],["D","D · Grade de horários"]];
+var atual = "A", aberto = {"0":true}, diaAba = "0";
+var ver = function(id){ return document.getElementById(id).checked; };
+var vazio = "—";
+function colunas(){ var c = [["Horário","h"],["Nome","n"],["Tipo","t"],["Quem bipou","b"],["Quem atende na montagem","a"]]; if(ver("c-cond")) c.push(["Condicional","c"]); if(ver("c-cheg")) c.push(["Chegou","ch"]); if(ver("c-sit")) c.push(["Situação","s"]); return c; }
+function linhaHtml(l, cols){ return "<tr>"+cols.map(function(c){ return "<td>"+(l[c[1]]||vazio)+"</td>"; }).join("")+"</tr>"; }
+function cab(cols){ return "<thead><tr>"+cols.map(function(c){ return "<th>"+c[0]+"</th>"; }).join("")+"</tr></thead>"; }
+function topo(){ return '<div class="tit">Atendimento interno · Listagens</div><p class="sub">Só reflete as listagens que a Tamara monta no setor Revendedoras.</p>'; }
+
+function renderA(){ return topo()+'<div class="semana">'+DIAS.map(function(d){ return '<div class="col"><h3><span>'+d.rot+'</span><span>'+d.linhas.length+'</span></h3>'+d.linhas.map(function(l){ return '<div class="card"><span class="h"><b>'+l.h+'</b></span> '+l.n+'<small>'+l.t+' · bipou: '+(l.b||vazio)+' · atende: '+(l.a||vazio)+'</small></div>'; }).join("")+'</div>'; }).join("")+'</div>'; }
+
+function renderB(){ var cols = colunas(), n = cols.length;
+  var corpo = DIAS.map(function(d){ var ab = !!aberto[d.id]; var feitos = d.linhas.filter(function(l){ return l.s==="Feito"; }).length;
+    return '<tr class="dia" data-d="'+d.id+'"><td colspan="'+n+'">'+(ab ? "▾ " : "▸ ")+d.rot+' · '+d.linhas.length+' atendimentos · '+feitos+' feitos</td></tr>'+(ab ? d.linhas.map(function(l){ return linhaHtml(l, cols); }).join("") : ""); }).join("");
+  return topo()+'<div class="rolar"><table>'+cab(cols)+'<tbody>'+corpo+'</tbody></table></div>'; }
+
+function renderC(){ var cols = colunas(), d = DIAS.filter(function(x){ return x.id===diaAba; })[0];
+  return topo()+'<div class="abas">'+DIAS.map(function(x){ return '<button data-a="'+x.id+'" class="'+(x.id===diaAba ? "on" : "")+'">'+x.curto+' ('+x.linhas.length+')</button>'; }).join("")+'</div>'+
+    '<div class="rolar"><table>'+cab(cols)+'<tbody>'+d.linhas.map(function(l){ return linhaHtml(l, cols); }).join("")+'</tbody></table></div>'; }
+
+function renderD(){ var horas = ["08:00","08:30","09:00","10:00","10:30","11:00","12:00","13:30","14:30","15:00","16:30"];
+  var cab2 = '<thead><tr><th>Horário</th>'+DIAS.map(function(d){ return '<th>'+d.curto+'</th>'; }).join("")+'</tr></thead>';
+  var corpo = horas.map(function(h){ return '<tr><td><b>'+h+'</b></td>'+DIAS.map(function(d){ var ls = d.linhas.filter(function(l){ return l.h===h; });
+    return ls.length ? '<td>'+ls.map(function(l){ return '<div>'+l.n+'<br><small>'+l.t+' · bipou: '+(l.b||vazio)+' · atende: '+(l.a||vazio)+'</small></div>'; }).join("")+'</td>' : '<td class="vazio">'+vazio+'</td>'; }).join("")+'</tr>'; }).join("");
+  return topo()+'<div class="rolar"><table class="grade">'+cab2+'<tbody>'+corpo+'</tbody></table></div><p style="margin-top:8px">A regra da agenda é até 3 por horário e até 15 por dia: a grade mostra isso de uma vez.</p>'; }
+
+function desenhar(){
+  document.getElementById("seg").innerHTML = OPC.map(function(o){ return '<button data-o="'+o[0]+'" class="'+(o[0]===atual ? "on" : "")+'">'+o[1]+'</button>'; }).join("");
+  document.getElementById("tela").innerHTML = ({A:renderA,B:renderB,C:renderC,D:renderD})[atual]();
+}
+document.addEventListener("click", function(ev){ var t = ev.target;
+  var o = t.closest("[data-o]"); if(o){ atual = o.getAttribute("data-o"); desenhar(); return; }
+  var d = t.closest("[data-d]"); if(d){ var id = d.getAttribute("data-d"); aberto[id] = !aberto[id]; desenhar(); return; }
+  var a = t.closest("[data-a]"); if(a){ diaAba = a.getAttribute("data-a"); desenhar(); } });
+["c-sit","c-cond","c-cheg"].forEach(function(id){ document.getElementById(id).addEventListener("change", desenhar); });
+desenhar();
+</script>
+</body>
+</html>

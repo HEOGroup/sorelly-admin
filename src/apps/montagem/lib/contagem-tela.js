@@ -40,7 +40,10 @@ function loop(agora){
 function correr(el, info, de, para, final, dur){
   var cn = el._cn; ativas.forEach(function(a){ if(a.el===el) ativas.delete(a); });
   var texto = fmt(info.tipo, info.sinal, de); el.textContent = texto; cn.txt = texto; cn.mostrado = de;   // volta ao valor antigo antes de aparecer o novo
-  ativas.add({el:el, info:info, de:de, para:para, final:final, ini:performance.now(), dur:dur});
+  var a = {el:el, info:info, de:de, para:para, final:final, ini:performance.now(), dur:dur};
+  ativas.add(a);
+  // Relógio de segurança (02/11/2026): se o navegador não desenhar quadros (aba escondida, painel de teste), a animação nunca termina e o número ficaria preso no valor antigo.
+  setTimeout(function(){ if(ativas.has(a) && el._cn && el.textContent===el._cn.txt){ el.textContent = final; el._cn.txt = final; el._cn.mostrado = para; ativas.delete(a); } }, dur+400);
   if(!raf) raf = requestAnimationFrame(loop);
 }
 // primeira passada (ao abrir a tela): registra cada número e o faz correr desde zero

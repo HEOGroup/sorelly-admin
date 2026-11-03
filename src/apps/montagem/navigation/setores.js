@@ -100,9 +100,11 @@ var MENU_RH = [
 // Menus dos setores pequenos (26/10/2026, padronização do topo): mesma peça `menu` de Financeiro/RH/Encomendas, só que com `semAbas:true`
 // (poucas telas, viram palavra direta, sem faixa de abas abertas — regra de PADRAO-VISUAL.md "MENU DO SETOR"). Nenhuma tela mudou de lugar: só ganhou a faixa padronizada.
 var MENU_REVENDEDORAS = [M("Cadastro","revbase"), M("Kits e vendas","revkits"), M("Condicional","revcond")];
+var MENU_METAS = [M("Revendedoras","metrev"), M("Acompanhamento","metacomp"), M("Histórico","methist"), M("Notificações","metnotif"), M("Regras","metregras")];   // Metas das revendedoras (retomadas em 02/11/2026); as outras telas (Campanha, Simulador, Acompanhamento, Brindes, Histórico, Regras) vêm depois
 var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
 var MENU_ESTOQUE = [M("Compras e estoque de material","compras")];
-var MENU_GARANTIA = [M("Garantia","garantia"), M("Pós-vendas", undefined, {breve:true})];
+var MENU_GARANTIA = [M("Garantia","garantia")];
+var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
   {nome:"Central de controle", itens:[M("App Sorelly", undefined, {breve:true}), M("Avisos","avisos"), M("Padrão visual","padrao"), M("Versões","versoes"), M("Mapa do sistema","mapa"), M("Projetos (dev)", undefined, {breve:true})]},
@@ -182,6 +184,8 @@ var SETORES = [
   // Representantes & Kits num setor só (decisão de 15/10/2026): as áreas de Representantes (campo) e de Kits (interno) ficam separadas lá dentro; o financeiro vai chegar às comissões por aqui e pela aba Financeiro
   {id:"revbase", nome:"Revendedoras", ic:"users", cor:"#F59E0B", menu:MENU_REVENDEDORAS, semAbas:true, areas:[
     {nome:"Revendedoras", telas:[T("revbase","Cadastro"), T("revkits","Kits e vendas"), T("revcond","Condicional")]}]},   // base de todos os setores, lida da DevMaster (26/10/2026); por ora só Diretoria
+  {id:"metas", nome:"Metas", ic:"grafico", cor:"#D4A84B", menu:MENU_METAS, semAbas:true, areas:[
+    {nome:"Metas", telas:[T("metrev","Revendedoras"), T("metacomp","Acompanhamento"), T("methist","Histórico"), T("metnotif","Notificações"), T("metregras","Regras")]}]},   // metas por revendedora, mês a mês (02/11/2026); por ora só Diretoria
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
@@ -205,16 +209,17 @@ var SETORES = [
     {nome:"Peças", telas:[T("cpsol","Solicitações"), T("cplotes","Planilhas de cadastro"), T("cpcalc","Calculadora"), T("cpdev","DevMaster")]},
     {nome:"Fornecedores", telas:[T("cpforn","Fornecedores")]},
     {nome:"Configurações", telas:[T("cpcfg","Configurações")]}]},
-  {id:"encomendas", nome:"Encomendas & Reposições", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
+  {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
     {nome:"Ida na empresa", telas:[T("encida","Ida na empresa")]},
     {nome:"Top 50", telas:[T("enctop50","Top 50")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
     {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
-  {id:"garantia", nome:"Garantia & Pós-venda", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
-    {nome:"Garantias", telas:[T("garantia","Garantia")]},
-    {nome:"Pós-vendas", telas:[B("Pós-vendas")]}]},
+  {id:"garantia", nome:"Garantia", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
+    {nome:"Garantias", telas:[T("garantia","Garantia")]}]},
+  {id:"posvendas", nome:"Pós-vendas", ic:"phone", cor:"#EC4899", menu:MENU_POSVENDAS, semAbas:true, areas:[
+    {nome:"Contatos", telas:[T("posvendas","Pós-vendas")]}]},
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},

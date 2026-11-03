@@ -77,12 +77,20 @@ var DEMO_REV = "Francelle Schmidt Alves Pinto dos Santos";
 var CENARIO_COMPLETO = {garantia:100, venda:8278, conds:[{n:"99011", p:60}, {n:"99012", p:55}, {n:"99013", p:45}, {n:"99014", p:40}], vendidas:68, pago:4326, brindes:[
   {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
   {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
+// SIMULAÇÃO que a tela Apps abre sempre (Marcus, 03/11/2026): representante Anamaria com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída) e a revendedora Juliana, do app da revendedora, já com R$ 1.500,00 em vendas lançadas.
+var SIM_REP = "Anamaria", SIM_REV_APP = "Juliana Martins Souza";
+var SIM_REVS = [
+  {rev:"Camila Ferreira Lopes", tipoKit:"kit_novo", vendas:[], cod:"900101", fone:"41999900101"},
+  {rev:SIM_REV_APP, tipoKit:"acerto_kit", vendas:[1500], cod:"900102", fone:"41999900102"},
+  {rev:"Patricia Gomes Ribeiro", tipoKit:"acerto_kit", vendas:[2300], cod:"900103", fone:"41999900103"},
+  {rev:"Renata Alves Costa", tipoKit:"reposicao", vendas:[1800], cod:"900104", fone:"41999900104"},
+  {rev:"Beatriz Nogueira Dias", tipoKit:"saiu", vendas:[1100], cod:"900105", fone:"41999900105"}];
 function ColsRepRev(p){
   var cx0 = use(), s = cx0.state;
   var ksReais = s.kits.filter(function(k){ return k.status==="retirado" || k.status==="bipado"; });
   var ksSorelly = (s.internos||[]).map(function(it){ return {id:"INT-"+it.id, rev:titulo(it.nome), rep:"Sorelly", interno:true, internoId:it.id, vendas:[it.vendaApp||0], status:"retirado", tipoKit:"acerto_kit", lid:null}; });
-  var rv = useState({logado:true, id:null}), rev = rv[0], setRev = rv[1];
-  var rp = useState(function(){ try{ if(/[?&]acerto=1/.test(window.location.search)) return {logado:true, id:"ACERTO_COMPLETO", nome:"Nagela", demo:true, n:Date.now()}; }catch(x){} return {logado:true, id:null}; }), rep = rp[0], setRep = rp[1];   // /apps?acerto=1 abre direto o exemplo Acerto completo (02/11/2026)
+  var rv = useState({logado:true, id:null}), rev = rv[0], setRev = rv[1];   // abre no app da Juliana (R$ 1.500,00 em vendas) quando a representante é a Anamaria
+  var rp = useState(function(){ try{ if(/[?&]acerto=1/.test(window.location.search)) return {logado:true, id:"ACERTO_COMPLETO", nome:"Nagela", demo:true, n:Date.now()}; }catch(x){} return {logado:true, id:"R:"+SIM_REP, nome:SIM_REP, sim:true}; }), rep = rp[0], setRep = rp[1];   // a tela abre sempre na simulação da Anamaria   // /apps?acerto=1 abre direto o exemplo Acerto completo (02/11/2026)
   // representantes REAIS (lista do Agendamento): escolher uma abre o app dela com todas as revendedoras (01/11/2026, Marcus)
   var repsReais = ((s.agend && s.agend.config && s.agend.config.representantes) || []).filter(function(r){ return r.ativo && r.codigo!=="02"; });
   var listDe = function(nome){ return s.listagens.find(function(x){ return x.rep===nome && !x.fechada; }) || s.listagens.find(function(x){ return x.rep===nome; }); };
@@ -93,9 +101,15 @@ function ColsRepRev(p){
   var demoKit = rep.demo ? s.kits.find(function(k){ var l0 = listDe("Nagela"); return k.rev===DEMO_REV && k.status!=="acertado" && l0 && k.lid===l0.id; }) : null;
   useEffect(function(){ if(!rep.demo || demoKit) return; var l0 = listDe("Nagela"); if(!l0) return;
     cx0.dispatch({type:"ADD_KIT", lid:l0.id, rev:DEMO_REV, bairro:"Curitiba", vendas:[], cod:"004439", fone:"41996029727", tipoKit:"acerto_kit", porApp:true, hora:null}); }, [rep.demo, rep.n, s.listagens.length, s.kits.length]);
+  var lSim = rep.sim ? listDe(SIM_REP) : null, kitsSim = lSim ? s.kits.filter(function(k){ return k.lid===lSim.id; }) : [];
+  var faltaSim = lSim ? SIM_REVS.find(function(x){ return !kitsSim.some(function(k){ return k.rev===x.rev; }); }) : null;
+  var difSim = lSim ? kitsSim.find(function(k){ var x = SIM_REVS.find(function(y){ return y.rev===k.rev; }); return x && ((k.vendas||[])[0]||0)!==(x.vendas[0]||0); }) : null;   // o vendido da simulação volta ao combinado
+  useEffect(function(){ if(difSim) cx0.dispatch({type:"KIT_VENDAS", id:difSim.id, vendas:SIM_REVS.find(function(y){ return y.rev===difSim.rev; }).vendas}); }, [difSim && difSim.id, difSim && (difSim.vendas||[])[0]]);
+  useEffect(function(){ if(!lSim || !faltaSim) return; cx0.dispatch({type:"ADD_KIT", lid:lSim.id, rev:faltaSim.rev, bairro:"Curitiba", vendas:faltaSim.vendas, cod:faltaSim.cod, fone:faltaSim.fone, tipoKit:faltaSim.tipoKit, porApp:true, hora:null}); }, [lSim && lSim.id, faltaSim && faltaSim.rev, s.kits.length]);
   var sorelly = rep.logado && rep.id==="SORELLY";
   var ks = sorelly ? ksSorelly : rep.logado ? ksReais.filter(function(k){ return listagemDe(s,k).rep===lAtual.rep; }) : ksReais;
-  var kAtual = ks.find(function(x){ return x.id===rev.id; }) || ks[0];
+  if(rep.sim && lSim) ks = ks.concat(kitsSim.filter(function(k){ return !ks.some(function(x){ return x.id===k.id; }); }));   // simulação: todos os kits da Anamaria aparecem para escolher a revendedora
+  var kAtual = ks.find(function(x){ return x.id===rev.id; }) || (rep.sim && ks.find(function(x){ return x.rev===SIM_REV_APP; })) || ks[0];
   var gruposRev = ks.length ? [{itens:ks.map(function(k){ return {id:k.id, nome:k.rev, sub:k.interno ? "Sorelly · atendimento interno" : listagemDe(s,k).rep+" · "+STATUS_LB[k.status]}; })}] : [];
   var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
   var entradaRev = e(Entrada,{titulo:"App da revendedora", onEntrar:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }, onTeste:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }});

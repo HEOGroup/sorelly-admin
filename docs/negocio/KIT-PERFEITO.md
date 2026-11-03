@@ -193,3 +193,109 @@ Método do Marcus: revendedoras que disseram "gostei do kit deste mês"; compara
 
 ## Desenho da nova aba Análise (Preferências do kit), 28/10/2026 — `docs/design/testes-de-layout/preferencias-analise-desenho.html`
 Motivo: a aba atual é uma pilha de 20 cartões (2.500 px), filtro solto de 8 campos e frases longas, contra o padrão do sistema (planilha, faixa de totais, filtros no topo). Proposta: faixa de 6 totais; bloco Filtros em 4 colunas; selo "Dados de demonstração" no lugar do aviso amarelo; 3 abas visíveis (Resumo, Por bloco, Por revendedora); "Por bloco" vira UMA tabela com detalhe ao lado; Anéis com barras por tamanho em ordem e a coluna "Vendem" (curva real) ao lado de "Pedem". Aguarda OK do Marcus para aplicar no sistema. Defeito visto na tela atual: a coluna "Categorias" da lista de revendedoras mostra 0 em todas as linhas (conferir).
+
+## API do app: teste de leitura das Preferências do kit (02/11/2026)
+- Marcus trocou o `.env.local` por um arquivo com `MOBILE_API_URL` e `MOBILE_API_KEY` (cópia do anterior guardada fora do projeto). Teste só com GET em `/revendedoras/kit-preferences/analytics`, `/revendedoras/kit-preferences` (lista) e `/revendedoras/kit-preferences/:id`: os três responderam 200. Guia: `docs/app-sorelly/API-LEITURA.md`.
+- **Números reais (02/11/2026):** 3.025 revendedoras; 2.044 com preferências (67,6%); 981 sem; média de 13,5 categorias respondidas; ouro e prata 50% e 50%; última atualização 02/11/2026 22:12. Todos os blocos do formulário aparecem com resposta.
+- **Tamanho de anel que as revendedoras PEDEM (cada uma marca até 3, mas o app aceita mais; votos por tamanho):** 18 = 58,6% · 16 = 53,0% · 17 = 50,8% · 20 = 46,4% · 19 = 45,8% · 15 = 34,6% · 21 = 32,9% · 14 = 30,7% · 22 = 26,4% · 23 = 16,5% · 13 = 14,2% · 12 = 13,8% · 24 = 11,9% · 25 = 8,8% · 10 = 5,7% · 11 = 4,7%. Em faixas: até 15 = 23% · 16 a 19 = 46% · 20 a 22 = 23% · 23 ou mais = 8%.
+- **Compara com o que VENDEM** (4.260 anéis, set e out/2026: 24% · 47% · 22% · 7%): com dados reais, **o que pedem bate com o que vendem**. O tamanho 18 lidera nos dois. A demonstração antiga mostrava o contrário e estava errada.
+- **Savana (id 10979):** respondeu em 28/10/2026, DEPOIS do kit de 15/10; marcou tamanhos 14 a 21 (8 tamanhos). O kit dela tinha os tamanhos 10, 11 e 12 (3 anéis) fora dessa lista. Na hora de montar, ela ainda não tinha respondido.
+- Rotas que NÃO funcionam com a chave admin: as da revendedora logada (precisam do token dela) e `/representantes/movimentos` e `/listagens`.
+
+## Preferências do kit direto do app, todas as revendedoras (02/11/2026)
+- Marcus pediu "de todas, não amostra": a tela Preferências do kit (abas Revendedoras e Análise) lê as 3.025 revendedoras do app (2.045 com respostas), só leitura. Código: `src/server/preferencias-app.js` (leitura do app em segundo plano, tabela `sorelly.preferencia_app`, relê só quem mudou, no máximo 1 vez por dia; primeira carga completa levou 17 s, a segunda 3 s), rota `app/api/preferencias-app/route.js` (só Diretoria), tela `pages/PreferenciasKit.js` (dados só em memória; botão "Atualizar do app").
+- Por que não gravar no estado da tela: o navegador já guarda cerca de 3,9 MB do sistema e o módulo `pk` também vai ao servidor; 3.025 revendedoras (cerca de 2,4 MB) estourariam o limite. Sem telefone e sem e-mail no banco.
+- Conferido: a Análise mostra 3.025 revendedoras, 2.045 com preferências (67,6%), 980 sem, ouro 50,5% e prata 49,5%; tamanho de anel mais pedido = 18 (58,7%), igual ao painel do próprio app.
+- Limites desta versão: somente leitura (editar resposta na tela não grava no app); revendedora do app aparece como "Sem representante" (o app não manda a representante nesta rota; dá para cruzar depois com a DevMaster); quem pode abrir é só a Diretoria.
+- Defeito dos contadores do topo (Não preencheram 0, Blocos ativos 0) CORRIGIDO em 02/11/2026: não era a conta, era a animação dos números parada quando o navegador não desenha quadros; a contagem (`lib/contagem-tela.js`) ganhou um relógio de segurança. Conferido: 3.015 revendedoras, 2.042 preencheram, 973 não preencheram, 13 blocos ativos. O total é 3.015 e não 3.025 porque a aba junta nomes repetidos.
+
+## Só quem tem kit ativo + resultado para compras (02/11/2026)
+- Marcus: revendedora do app sem kit ativo NÃO aparece e NÃO conta (fica guardada). Regra (corrigida): tem condicional aberto na DevMaster que NÃO seja só expositor ou encomenda (kit principal, kit novo ou reposição) = 2.047 códigos, igual à conta do Marcus. Cruzamento por NOME (o app não manda o código): das 2.042 com kit ativo na DevMaster, 2.003 têm par no app (1.623 com respostas, 81%); 39 não casaram; 1.022 do app sem kit ativo ficaram de fora (422 com respostas). A coluna Representante passou a vir da DevMaster; a tela não mostra mais as listagens de demonstração.
+- Resultado para a análise de compras: `docs/negocio/PREFERENCIAS-ANALISE-COMPRAS.md` (quem vende cada tipo, metal, tamanhos de anel, modelos infantil e masculino, composições do colar filhos, letras do colar de letras, palavras das observações).
+- Cuidado: nas barras de ouro e prata, 73% a 79% das revendedoras deixaram exatamente 50%. Só cerca de um quarto expressou preferência, e entre essas ficou 53% mais ouro e 47% mais prata. A média 50% e 50% não é confiável.
+
+## Teste com 3 revendedoras: preferências x vendas dos últimos 3 meses (03/11/2026)
+Revendedoras: Elisiane (cód. 000696), Franciane Poli (008873) e Cíntia das Graças (001655). Vendas de acerto dos últimos ~3 meses (Leilão, Encomendas e Expositor fora), peças ENVIADAS nos kits de onde elas saíram e o kit de agora (DevMaster, só leitura). Valores a preço de etiqueta.
+
+**Achado 1: as preferências não dizem QUANTO.** Nas 4 que olhamos (as 3 + Savana), quase tudo veio "Ouro + Prata", barra 50/50 (valor padrão) e "vendo: sim". Preferência serve para filtrar (não vende X, só prata, tamanhos, letras), nunca para contar peças. A quantidade vem das vendas.
+
+**Achado 2: o código da revendedora na DevMaster é o id dela no app** (696 = 000696, 1655 = 001655, 8873 = 008873, 10979 = 010979). Os 4 bateram. Se confirmar com mais casos, o cruzamento deixa de ser por nome e as 39 sem par se resolvem. A confirmar.
+
+**Achado 3: o exemplo do Marcus aparece nos números.** Kit parecido em valor, mistura diferente: Elisiane e Franciane receberam kit de R$ 10 mil e R$ 9 mil; a Cíntia, R$ 17,6 mil. Pulseiras no kit de agora: Elisiane 21 (vende 1,3 por venda, giro 7%), Franciane 8 (vende 1, giro 4%), Cíntia 22 (vende 5,7, giro 26%). Giro geral dos kits anteriores: Franciane 6%, Elisiane 14%, Cíntia 33%.
+
+| Revendedora | Vendas nos 3 meses | Vendido (etiqueta) | Kit de agora |
+|---|---|---|---|
+| Elisiane | R$ 1.499 · R$ 2.072 · R$ 1.406 | R$ 4.744 (56 peças) | R$ 10.010 (132 peças) |
+| Franciane | R$ 300 · R$ 1.226 (só 2 vendas) | R$ 1.450 | R$ 8.991 (104 peças) |
+| Cíntia | R$ 5.687 · R$ 7.275 · R$ 4.070 | R$ 15.217 | R$ 17.576 (167 peças) |
+
+### Regra PROPOSTA "partes do valor" (sem OK do Marcus)
+1. O valor do kit continua pela regra de hoje (média das vendas). Esta regra só decide a MISTURA.
+2. Parte do tipo = valor vendido do tipo ÷ valor vendido total, nos últimos 3 meses.
+3. Peças do tipo = valor do kit × parte ÷ preço médio da peça do tipo (preço médio enviado nos kits anteriores).
+4. Amostra: tipo que ela diz vender e não vendeu nos 3 meses leva 2 peças (parâmetro).
+5. Preferências só filtram: "não vendo" = 0 peça; metal só quando ela escolheu um só; anéis só nos tamanhos que vendeu + os que marcou; letras do colar.
+6. Trava: mínimo e máximo da tabela "Peças por kit" de hoje.
+7. Base fraca (menos de 3 vendas ou venda abaixo de 10% do kit): mistura = metade a dela, metade a tabela padrão.
+
+Resultado (peças por tipo: kit de agora -> proposta):
+| Tipo | Elisiane | Franciane | Cíntia |
+|---|---|---|---|
+| Brinco | 47 -> 39 | 37 -> 23 | 39 -> 60 |
+| Colar | 15 -> 22 | 15 -> 21 | 28 -> 31 |
+| Anel | 18 -> 13 | 12 -> 8 | 33 -> 31 |
+| Choker | 7 -> 11 | 7 -> 14 | 10 -> 13 |
+| Pulseira | 21 -> 7 | 8 -> 10 | 22 -> 22 |
+| Masculino | 5 -> 6 | 8 -> 3 | 10 -> 9 |
+| Infantil | 11 -> 8 | 3 -> 2 | 6 -> 6 |
+| Conjunto | 3 -> 3 | 4 -> 2 | 6 -> 3 |
+| Total | 130 -> 113 | 99 -> 87 | 161 -> 181 |
+O valor em R$ do kit fica igual (diferença de menos de R$ 150).
+
+Anéis (tamanho): Elisiane vendeu 18, 21 e 23 e marcou 18 a 25; o kit de agora levou 14 e 16 (3 peças que ela não vende). Cíntia vendeu do 16 ao 21; o kit de agora levou 8 do tamanho 22 e 6 do 25 (vendeu 2 e 0). Franciane vendeu 21 e 22 e marcou 12, 13 e 22; o kit de agora levou 28 (2 peças).
+
+Pendências: Franciane tem base fraca (2 vendas); Savana é nova e ainda não vendeu, então vai de tabela padrão.
+
+### CORREÇÃO (03/11/2026): o valor do kit vem das TABELAS que já existem (a regra "partes do valor" acima fica substituída)
+O Marcus lembrou: valor do kit e peças por kit já têm tabela em `domain/config.js`. A regra nova SÓ remaneja as peças da tabela conforme o que a revendedora vende; o total e o valor ficam os da tabela.
+1. **Média** das 3 últimas vendas (regra de `MEDIA-DE-VENDAS.md`). Média oficial dos 3 testes (sem brinde): Elisiane R$ 1.581 · Franciane R$ 668 · Cíntia R$ 5.096.
+2. **Valor do kit** = `tabelaKit` pela média (tabela "alto"; a "baixo" é a outra): a partir de R$ 5.000 → R$ 20.000 · 4.000 → 17.000 · 2.500 → 15.000 · 1.600 → 12.000 · 1.000 → 10.000 · 700 → 8.000 · 400 → 6.000 · abaixo → 5.000. Resultado: Elisiane R$ 10.000 · Franciane R$ 6.000 · Cíntia R$ 20.000.
+3. **Peças por tipo** = linha do valor em `pecasKit` (a tabela "Peças por kit"). Ela é igual para todas do mesmo valor: esse é o problema.
+4. **Regra proposta:** fator do tipo = (parte dela nas vendas) ÷ (parte do tipo na tabela), com limite de 0,4 a 2,5; peças = tabela × fator, ajustado para manter o total de peças da tabela; mínimo de 2 peças por tipo que ela vende.
+5. A trava de mínimo e máximo da tabela e os filtros das preferências continuam como estavam.
+
+Resultado em peças (tabela -> proposta). Tipos agrupados: Colar = colares ouro e prata + choker; Pulseira = pulseiras + bracelete; Brinco = grandes, B, Select (BB) e trios.
+| Tipo | Elisiane (kit R$ 10 mil) | Franciane (R$ 6 mil) | Cíntia (R$ 20 mil) |
+|---|---|---|---|
+| Colar | 20 -> 36 | 12 -> 29 | 40 -> 50 |
+| Pulseira | 20 -> 11 | 12 -> 9 | 40 -> 27 |
+| Brinco | 51 -> 40 | 35 -> 26 | 85 -> 81 |
+| Anel | 17 -> 13 | 11 -> 9 | 33 -> 41 |
+| Conjunto | 4 -> 5 | 2 -> 2 | 8 -> 4 |
+| Infantil | 4 -> 10 | 3 -> 2 | 8 -> 10 |
+| Masculino | 4 -> 7 | 3 -> 4 | 8 -> 13 |
+| Tornozeleira | 3 -> 2 | 2 -> 2 | 6 -> 2 |
+| Total | 123 -> 124 | 80 -> 83 | 228 -> 228 |
+Cuidados: o choker precisa de linha própria na tabela (hoje não existe: por isso o Colar da Franciane sobe tanto); Franciane tem base fraca (2 vendas na janela).
+**Achado:** o kit de agora da Franciane na DevMaster é R$ 9.016, mas a tabela dá R$ 6.000 pela média dela (R$ 668). Cíntia: kit R$ 17.600, tabela R$ 20.000. Elisiane: R$ 10.022, tabela R$ 10.000. Conferir por que o kit da Franciane saiu maior que a tabela.
+
+## Caso Elisiane (cód. 000696): próximo kit se ela vender R$ 2.400 (03/11/2026)
+**Hoje:** vendas (sem brinde) 09/10 R$ 1.428 · 11/09 R$ 1.972 · 10/08 R$ 1.344 = média R$ 1.581 -> `tabelaKit` dá kit de **R$ 10.000** (alto).
+**Se vender R$ 2.400 no próximo acerto:** entram 2.400, 1.428 e 1.972 (sai 1.344) = média R$ 1.933 -> faixa de R$ 1.600 -> kit de **R$ 12.000** (alto; na tabela baixo seria R$ 10.000). Linha de R$ 12.000 em `pecasKit`: 139 peças (colares 12+12, pulseiras 12+12, conjuntos 2+2, trios 2+2, brincos grandes 6, B 24, BB 20, anéis 20, infantil 4, masculino 5, tornozeleiras 2+1, flanela 1).
+**Vendido nas 3 últimas vendas (56 peças):** colar+choker 16 (6 ouro/10 prata) · BB 10 · pulseira+bracelete 5 (todas prata) · brinco comum 5 · anel 6 (tamanhos 21:3, 23:2, 18:1) · infantil 6 · trio de argolas 3 · masculino 3 · conjunto 1 · tornozeleira 0 · pingente 1 · flanela 0.
+**Pediu no app (06/10):** anéis 18 a 25 (e na observação "23/25/25"); duo de argolas e argolas bem pequenas; letras F (prata), J, L, M (prata), S (ouro); infantil: brincos e conjuntos; masculino: pulseiras e correntes; vende flanela, material de apoio, tornozeleira, bracelete, pingente avulso; colar filhos todos; metal: "Ouro + Prata" em tudo e barra 50/50 (padrão).
+**Proposta (12k, regra do fator com limite 0,5 a 1,5, total fechado em 138 peças + 1 flanela):**
+| Tipo | Tabela | Proposta |
+|---|---|---|
+| Colar (com choker) | 24 | 39 |
+| Pulseira (com bracelete) | 24 | 14 |
+| Conjunto | 4 | 3 |
+| Trio de argolas | 4 | 7 |
+| Brinco (grandes + B) | 30 | 16 |
+| Brinco Select (BB) | 20 | 27 |
+| Anel | 20 | 16 |
+| Infantil | 4 | 6 |
+| Masculino | 5 | 8 |
+| Tornozeleira | 3 | 2 |
+Metal: pulseira quase toda prata (4 ouro e 10 prata); colar 17 ouro e 22 prata; anel 7 ouro e 9 prata; os outros tipos 50/50. Anéis (16 peças da proposta, sobre 20 da tabela se a regra do anel da tabela valer): tamanhos 18:2 19:1 20:1 21:6 22:1 23:6 24:1 25:2 (vendeu 18, 21 e 23; marcou 18 a 25; observação pede 23 e 25). Letras do colar: F, J, L, M, S. Duo de argolas pequenas, infantil em brincos e conjuntos, masculino em pulseira e corrente.
+**Cuidados:** (a) as linhas "Brincos grandes" e "Brincos (B)" da tabela não têm definição: juntei as duas e comparei com os brincos comuns (grupo 02); (b) choker entra com colar até o Marcus decidir; (c) a venda de R$ 2.400 foi suposta com a mesma mistura das 3 anteriores; (d) sem limite (0,4 a 2,5) o colar iria a 41 e o brinco a 13: o limite 0,5 a 1,5 é mais seguro para começar.

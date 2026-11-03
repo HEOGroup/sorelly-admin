@@ -33,6 +33,12 @@ var EXTRA_POR_PESSOA = {11: ["montagem", "bipagem", "condicionais", "producao"]}
 
 // Aulas. setores = em quais cursos aparece. modulo = grupo dentro do curso. video = arquivo de vídeo (opcional); url = demonstração animada (opcional).
 var AULAS = [
+  {id:"pecas-lancar-fatura-banho", setores:["pecas"], modulo:"Banho", titulo:"Lançar uma fatura de banho", dur:"1:17",
+   url:"/tutoriais/lancar-fatura-banho-video.html", video:"/tutoriais/videos/lancar-fatura-banho.webm",
+   passos:["Abra Cadastro de peças → Banho → Faturas Pontual (ou Faturas Ellos).", "No bloco Nova fatura, preencha Data, Nº da fatura e Fornecedor do bruto.", "Clique em Criar fatura. A linha nova aparece no alto da tabela.", "Na linha nova, digite o valor de cada serviço. O Total soma sozinho.", "Desconto de peça: valor negativo na coluna Desc.", "Clique em ligar, marque os pedidos de bruto e clique em Salvar ligação. Os pedidos viram Banhado.", "Para enviar ouro, use Banho → Retirar ouro → Registrar envio."]},
+  {id:"geral-abrir-chamado", setores:["geral"], modulo:"Primeiros passos", titulo:"Abrir um chamado", dur:"1:08",
+   url:"/tutoriais/abrir-chamado-video.html", video:"/tutoriais/videos/abrir-chamado.webm",
+   passos:["Abra Chamados, no menu da esquerda.", "Clique em Novo chamado.", "Confira o link da tela.", "Marque o que é: Não sei como fazer, Melhoria do layout ou Algo que falta.", "Escreva o que você quer, do seu jeito. Cole o print com Ctrl+V (até 4).", "Clique no botão verde ou aperte Enter.", "Quando aparecer o aviso de resposta, clique em Ver resposta e teste se a situação for Mudança feita, testar."]},
   {id:"rh-pedir-mudanca", setores:["rh", "montagem", "bipagem", "producao", "condicionais", "atendimento", "encomendas", "agendamento"], modulo:"Fluxos", titulo:"Pedir ao RH a mudança de uma colaboradora", dur:"0:58",
    url:"/tutoriais/pedir-mudanca-video.html", video:"/tutoriais/videos/pedir-mudanca.webm",
    passos:["Abra Recursos Humanos → Solicitações.", "Escolha a colaboradora.", "Escolha o que muda (setor, função, escala ou horário) e o novo valor.", "Escreva o motivo.", "Clique em Enviar ao RH.", "Espere a resposta do RH: Aprovada ou Recusada."]},

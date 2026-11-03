@@ -3,16 +3,111 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
- {v:"0.18.33", data:"2026-11-03", titulo:"Pagamentos: Regras e contas, e regras do Pix", itens:[
+ {v:"0.18.38", data:"2026-11-03", titulo:"Compras: etapas Em transporte, Chegou na empresa e Entregue no quadro", itens:[
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O quadro de Compras passa a ter as colunas Solicitada, Aprovada, Liberada para compra, Efetuada, Em transporte, Chegou na empresa e Entregue (pedido do Nickolas). Arrastar o cartão registra a etapa. As situações do domínio não mudaram: só o nome e a coluna."},
+ ]},
+ {v:"0.18.37", data:"2026-11-03", titulo:"Chamados sem foto na lista e Compras sem etiqueta de logística", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Funcionária da lista mostra só o nome, sem a foto ou ícone."},
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O campo Etiqueta de logística saiu da janela da compra (pedido da Hellen). Os dados antigos continuam guardados."},
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Link de pagamento: ajustes pedidos pela Hellen", itens:[
+  {tipo:"novo", area:"Link de pagamento", txt:"Solicitações: coluna nova Recusado ou negado. Cancelar ou recusar usa os motivos da planilha (Expirada, Bloqueada, Cancelada, Antifraude, Abandonada, Negada; Recusado só em Solicitado). O link vai para qualquer etapa (arrastar o cartão ou Mover para outra etapa)."},
+  {tipo:"novo", area:"Link de pagamento", txt:"Comprovantes ganhou Data inicial e Data final. Nova aba Descontados no acerto, com os links já usados em acertos. Taxas e recebimentos só aparece para a Diretoria."},
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Histórico: o filtro de situação mostra só Pago, Comprovante enviado, Expirado, Bloqueada, Cancelado, Antifraude, Abandonada e Negada. A 2ª tentativa conta só quando a revendedora repete o mesmo valor no dia."},
+ ]},
+ {v:"0.18.37", data:"2026-11-03", titulo:"Apps: abre sempre na simulação", itens:[
+  {tipo:"correção", area:"App da representante", txt:"Na lista de Revendedoras, kit novo, reposição e saída ganham identificador próprio (KIT NOVO, REPOSIÇÃO, SAÍDA) e não mostram mais Acerto hoje nem vendido, acerto e comissão zerados. Só o acerto mostra esses números."},
+  {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre com os dois celulares prontos. O da representante entra como Anamaria, com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída). O da revendedora abre na tela inicial da Juliana, com R$ 1.500,00 em vendas já lançadas."},
+ ]},
+ {v:"0.18.35", data:"2026-11-03", titulo:"Chamados: data só com o dia e coluna Respondido em", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A data do chamado mostra só o dia (30/10). A coluna Tipo saiu da lista. Nova coluna Respondido em, que mostra sozinha o dia da última resposta do Marcus ou do Leonardo. A coluna Conversa do Claude guarda só o nome da conversa (ex.: CHAMADOS 1) e não tem mais o botão de editar: ela só mostra o nome."},
+ ]},
+ {v:"0.18.35", data:"2026-11-04", titulo:"Listagens: por representante ou tabela, data colorida e iniciar montagem no celular", itens:[
+  {tipo:"melhoria", area:"Listagens", txt:"Cada listagem mostra a data com cor (hoje verde, amanhã azul, mais adiante roxo, dia que passou vermelho). A barra da representante ficou limpa, sem contadores de sem valor, atrasado e retirados. Aparecem as listagens de hoje em diante."},
+  {tipo:"novo", area:"Listagens", txt:"Botão Por representante | Tabela: a visão em tabela junta todas as listagens numa tabela só, com Data e Representante em colunas."},
+  {tipo:"novo", area:"App da montadora", txt:"Na aba Listagens do celular, cada kit que ainda não foi pego tem o botão Iniciar montagem (um kit por vez). A listagem mostra a data."}
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Chat do celular das funcionárias: responder, reagir e aviso", itens:[
+  {tipo:"novo", area:"App das funcionárias", txt:"No chat do celular, tocar numa mensagem abre o menu: reagir com 👍 ❤️ 😂 😮 😢 🙏, responder e copiar. A reação aparece embaixo da mensagem e a resposta mostra a mensagem citada."},
+  {tipo:"novo", area:"App das funcionárias", txt:"Aviso de mensagem nova no alto do celular, como a notificação do iPhone: uma pilha por pessoa, no máximo 2, com o número de mensagens. Dura 9 segundos e, ao tocar, abre a conversa. Não aparece para a conversa que já está aberta."},
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Atendimento Sorelly em etapas travadas, com brilho no próximo passo", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Atendimento Sorelly: Chegou agora, Iniciar atendimento, Confirmar condicionais e Quanto vendeu, uma etapa de cada vez. O botão do próximo passo brilha. Etapa que ainda não chegou fica apagada e Bloqueada."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Listagens refeita como tela só de registro, no padrão novo de tabelas: título, bloco Filtros (busca, período e tipo) e uma tabela simples, sem botão Atender, sem brilho e sem cor, agrupada por dia."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Listagens em planilha por dia (opção B): barra do dia dourada leve com o texto no começo, que abre e fecha, e o cabeçalho das colunas logo acima da primeira linha de cada dia aberto. Colunas: Horário, Nome, Tipo, Quem bipou, Quem atende na montagem."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Atendimento Sorelly: não existe mais Chegou agora. O botão Iniciar atendimento fica no topo e leva direto às Condicionais. A Escolha do kit brilha quando os pagamentos fecham, mas pode ser iniciada antes."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Atendimento Sorelly: Escolha do kit voltou para o cabeçalho; a etapa Vendas ficou em dois blocos lado a lado (Vendas e Acerto), com a Comissão embaixo, junto do Valor do acerto."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Atendimento Sorelly: a funcionária preenche as Peças vendidas em Vendas. Valor a pagar e Saldo passaram a Valor do acerto e Falta pagar. Negociar o que falta aparece pequeno, só quando falta algum valor."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Bloco Atendimento tem a escolha do kit e o botão Iniciar atendimento embaixo. Quem atende na montagem do kit só é escolhido depois de finalizar o acerto. Ao fechar a aba do atendimento, a tela volta para as Listagens."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Desconto de crédito só aparece depois de Quanto vendeu, com um aviso: o crédito vem do setor de Trocas. Dias de atraso do acerto ficam travados (a Tamara preenche)."},
+ ]},
+ {v:"0.18.35", data:"2026-11-03", titulo:"Atendimento interno · Listagens: fonte padrão e brilho no próximo passo", itens:[
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Listagens usa fonte de 13 px em todas as colunas, colunas mais largas (Tipo mostra o nome inteiro) e nada abreviado."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Em cada atendimento, o próximo passo brilha: Atender, depois Escolha do kit, Bipou e Montou. A célula mostra Próximo."},
+ ]},
+ {v:"0.18.34", data:"2026-11-03", titulo:"Chat do celular das funcionárias: Sorelly Interno e fotos", itens:[
+  {tipo:"novo", area:"App das funcionárias", txt:"O chat do celular mostra o Sorelly Interno fixo no topo, com o alfinete, e sem campo de escrever para quem não é o Marcus. O texto entre asteriscos aparece em negrito."},
+  {tipo:"novo", area:"App das funcionárias", txt:"Foto no chat do celular: a funcionária recebe a foto na conversa, toca para ampliar e envia foto pelo botão + ou pela câmera. A foto sai reduzida e com miniatura, igual ao chat do computador."},
+ ]},
+ {v:"0.18.34", data:"2026-11-03", titulo:"Aula Lançar uma fatura de banho", itens:[
+  {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Cadastro de peças: Lançar uma fatura de banho (1:17, tela inteira). Mostra Faturas Pontual, a criação da fatura, os valores dos serviços e a ligação aos pedidos de bruto."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude passa a mostrar o nome da conversa e a data (ex.: CHAMADOS 1 (03/11/2026))."},
+ ]},
+ {v:"0.18.35", data:"2026-11-03", titulo:"Metas: tela Notificações", itens:[
+  {tipo:"novo", area:"Metas", txt:"Tela Notificações em Metas: escolhe a revendedora real, mostra o desempenho dela, o celular (iPhone 15) com as telas Notificação e Minha Meta, o medidor de letras (título 30, texto 90), os 3 horários por dia e a tabela com 18 textos que mudam com os dados dela. Só leitura. O envio do push e o tempo real do app dependem do backend do app (Leonardo)."},
+ ]},
+ {v:"0.18.33", data:"2026-11-03", titulo:"Chamados: filtro na coluna, como no Agendamento", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A barra de filtros do alto saiu. Agora se clica no título da coluna (Data, Setor, Funcionária, Tipo, Situação, Tela, Descrição) para classificar, filtrar por condição ou marcar valores, igual ao Agendamento. Cada coluna tem a largura do maior texto, então Setor e Funcionária não passam mais um por cima do outro. Os cartões do alto continuam filtrando."},
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude guarda a data da resposta e, se houver, o link da conversa (claude://…). Com link, aparece o botão Abrir conversa, que abre a conversa direto no app do Claude, mesmo arquivada."},
+  {tipo:"melhoria", area:"Cadastro de peças", txt:"Rayssa e Graziella também lançam faturas de banho (Faturas Pontual, Faturas Ellos e Retirar ouro), junto com o Nickolas. Pedido da Rayssa nos Chamados."},
+ ]},
+ {v:"0.18.32", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+ ]},
+ {v:"0.18.34", data:"2026-11-03", titulo:"Contas das representantes: fixa ou pergunta à empresa", itens:[
+    {tipo:"melhoria", area:"App da representante", txt:"Lançar pagamento: a representante não escolhe mais a conta. O menu de contas saiu. A conta é a fixa dela ou a empresa define em seguida (os brindes já liberam). A linha do pagamento mostra aguardando a empresa quando ainda não tem conta."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Regras e contas: aplicada a regra das maquininhas e links (quem já usa maquininha ou link fica com a conta fixa do CNPJ dela; quem não usa pergunta à empresa), com Situação Fixa · falta conferir e botão Conferir para o Lucas. Botão Aplicar as maquininhas e links."},
+    {tipo:"melhoria", area:"Financeiro", txt:"Saiu o Testar uma situação da tela Regras e contas."}]},
+ {v:"0.18.33", data:"2026-11-03", titulo:"Pós-vendas › Contatos: blocos de desempenho do app e data do último pedido", itens:[
+  {tipo:"novo", area:"Pós-vendas", txt:"Três blocos no alto de Contatos: Uso do app, Último pedido lançado (hoje ou ontem, 2 a 5, 6 a 10, 11 a 30 e mais de 30 dias) e Pedidos lançados no app. A tabela ganhou as colunas Último pedido no app, Dias sem lançar e Pedidos no app."},
+  {tipo:"correção", area:"Pós-vendas", txt:"A leitura do uso do app não gravava nada e a data do último pedido não era lida (o app manda texto). Corrigido; leitura vazia não conta mais como concluída. A aba Uso do app (em breve) saiu das abas guardadas."},
+ ]},
+ {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
+ ]},
+ {v:"0.18.32", data:"2026-11-02", titulo:"Pós-vendas: setor próprio com a tela de contatos da Letícia", itens:[
+  {tipo:"novo", area:"Pós-vendas", txt:"Setor novo Pós-vendas, separado de Garantia, e o menu lateral agora abre sempre inteiro (saiu o botão Abrir tudo). Encomendas & Reposições passou a se chamar Encomendas."},
+  {tipo:"novo", area:"Pós-vendas", txt:"Tela Contatos: tabela das revendedoras com kit ativo (média, próximo acerto, uso do app, preferências), filtro por regras (campo, condição e valor), atalhos prontos, mensagem com {primeiro_nome}, link do WhatsApp já com a mensagem e botão Criar tarefa para a Letícia. Aba Tarefas: a Letícia chama e marca quem já foi chamada. Uso do app lido direto do app (só leitura). Só a Diretoria abre por enquanto."},
+  {tipo:"correção", area:"Preferências do kit", txt:"A aba Importar passou a usar a tabela do padrão (topo dourado, nada abreviado)."},
+ ]},
+ {v:"0.18.32", data:"2026-11-03", titulo:"Aula Abrir um chamado", itens:[
+  {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Para todos: Abrir um chamado (1:08, tela inteira, começa no Início). Serve para funcionário novo. O vídeo de Kits novos (o que mudou) é temporário, só para a Michele e a Camilly verem, e não entra nas Aulas."},
+ ]},
+ {v:"0.18.31", data:"2026-11-02", titulo:"Kits novos: sem revendedoras de demonstração e sem a coluna Contatos", itens:[
+  {tipo:"correção", area:"Kits novos", txt:"As candidatas inventadas do Cadastro (telefone (41) 98888-…) e as 3 revendedoras de exemplo (Marina, Bruna e Talita) não entram mais nos Kits novos, e as que já estavam salvas no navegador saem sozinhas. Era o que a Michele e a Camilly viam como nomes que não existem."},
+  {tipo:"melhoria", area:"Kits novos", txt:"A coluna Contatos (1, 2, 3) saiu da tabela e do cartão do quadro, a pedido da Michele. Os contatos de referência continuam no detalhe da revendedora."},
+ ]},
+ {v:"0.18.30", data:"2026-11-02", titulo:"Chamados: endereço e avisos sem o nome Melhorias", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A tela agora abre em /chamados (o link antigo /melhorias continua abrindo e leva para lá). O aviso de resposta diz \"Você tem uma resposta nos seus Chamados\" e a tela Aulas manda pedir aula nova em Chamados."},
+ ]},
+ {v:"0.18.29", data:"2026-11-02", titulo:"SorellyChat: grupos de gestão", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Dois grupos novos: Financeiro (gestão), com Marcus, Nickolas, Lucas, Nayale, Anamaria, Ana Beatriz e Marco Antonio; e Agendamento (gestão), com Marcus, Lucas, Nickolas, Priscila, Maria Claudia, Mariana, Ana Maria e Tamara. Conversa normal, sem abas por funcionária."},
+  {tipo:"novo", area:"SorellyChat", txt:"Aba Setores do chat: dentro de cada setor há o botão Novo grupo. Ele abre com as pessoas do grupo do setor marcadas (dá para tirar gente ou juntar outras) e o grupo novo fica dentro do setor."},
+  {tipo:"melhoria", area:"SorellyChat", txt:"O botão + não mostra mais os atalhos prontos de grupo (MLN, Agendamento etc.). Cada setor já é um grupo; outros grupos se criam em Novo grupo."},
+ ]},
+ {v:"0.18.27", data:"2026-11-03", titulo:"Pagamentos: Regras e contas", itens:[
     {tipo:"novo", area:"Financeiro", txt:"Financeiro → Pagamentos → Regras e contas: tela com 2 abas para o Lucas deixar tudo definido antes. Aba Regras (editar as regras do Pix, perguntar à empresa ou mandar para uma conta, e testar uma situação) e aba Contas das representantes (conta fixa, vale até, limite de valor, sugerir pelo caixa e o caixa de hoje). Tabelas com a barra dourada inteira. Substitui as telas Contas das representantes e Regras do Pix; as regras saíram de Saldo das contas."},
+    {tipo:"melhoria", area:"Financeiro", txt:"A fila do Direcionar passa a usar as regras do Pix: regra que manda perguntar mostra o motivo e não sugere conta; regra com conta vira a primeira opção. A conta fixa da representante respeita a validade e o limite de valor."}]},
+ {v:"0.18.26", data:"2026-11-02", titulo:"Chaves Pix e regras: regras de exemplo, simulador e orientação do caixa", itens:[
     {tipo:"novo", area:"Financeiro", txt:"Regra que PERGUNTA à empresa (vale antes do link e da conta fixa) e condição nova \"a venda teve link ou cartão\". Regras de exemplo: link + Pix acima de R$ 1.500 pergunta; Pix acima de R$ 3.000 pergunta; muito dinheiro com valor alto pergunta; muito dinheiro com pouco Pix vai para o Itaú PJ. Botão Trazer as regras de exemplo."},
-    {tipo:"novo", area:"Financeiro", txt:"Testar uma situação (casos prontos ou valores à mão; mostra a conta, o motivo e as regras olhadas na ordem) e Orientação do caixa (saldo, limite, folga, contas negativas e folha dos próximos 10 dias; diz quem precisa de Pix primeiro)."},
-    {tipo:"melhoria", area:"Financeiro", txt:"A fila do Direcionar passa a usar as regras do Pix: regra que manda perguntar mostra o motivo e não sugere conta; regra com conta vira a primeira opção. A conta fixa da representante respeita a validade e o limite de valor."},
-    {tipo:"melhoria", area:"App da representante", txt:"Vendas e pagamentos: bordas douradas na conta e nos pagamentos e fonte maior nos valores de pagamento."}]},
+    {tipo:"novo", area:"Financeiro", txt:"Chaves Pix e regras: bloco Testar uma situação (casos prontos ou valores à mão; mostra a conta, o motivo e as regras olhadas na ordem) e bloco Orientação do caixa (saldo, limite, folga, contas negativas e folha dos próximos 10 dias; diz quem precisa de Pix primeiro)."}]},
  {v:"0.18.27", data:"2026-11-02", titulo:"Metas das revendedoras: tela Revendedoras", itens:[
     {tipo:"novo", area:"Metas", txt:"Setor novo Metas (menu Metas › Revendedoras, endereço /metas/revendedoras). Lê a média das 3 últimas vendas ANTES do mês, a classe, a Meta 1, a Meta 2, o acerto previsto, quanto vendeu no mês e a situação (Aguardando acerto, Bateu Meta 1, Bateu Meta 2, Não bateu) de cada uma das 2.114 revendedoras, direto da DevMaster e do banco, só leitura. Seletor de mês (novembro e dezembro) e botão Exportar (CSV do que está filtrado)."},
     {tipo:"novo", area:"Metas", txt:"Três blocos de resumo em cima, escritos em linhas: revendedoras por categoria, acertos do mês e meta do mês (bateram, não bateram, extra de brinde a liberar). Filtro e ordem em cada coluna da tabela. Regras e contas em domain/metas.js (classes de R$ 500, Meta 1 = 15% e Meta 2 = 35% sobre o topo da faixa, Inicial = R$ 1.500 e R$ 2.000, brinde extra BB e Normal em linha reta entre os dois pontos do Marcus)."},
     {tipo:"melhoria", area:"Abas", txt:"Favoritar agora é com 3 CLIQUES na própria aba do topo (fixa e trava, sem ✕); 3 cliques de novo soltam. O botão Favoritar aba saiu de todas as telas."},
+    {tipo:"melhoria", area:"Metas", txt:"Bloco Comissões e brindes da tela Regras mais compacto: só DUAS barras. A de cima tem Comissões e brindes (em cima de Venda líquida), Padrão e Prata; a de baixo tem Venda líquida, Comissão, Normal e BB (duas vezes). Saiu a linha abaixo de R$ 300,00. Os dois blocos de cima têm 349 px e a tabela cabe sem rolar. TabelaPlanilha ganhou cabAcima (barras de grupo)."},
+    {tipo:"melhoria", area:"Metas", txt:"Metas subidas (Marcus): R$ 1.000,00 até R$ 1.499,99 = 1.900 e 2.400; R$ 1.500,00 até R$ 1.999,99 = 2.500 e 3.000; R$ 2.000,00 até R$ 2.499,99 = 3.000 e 3.700; R$ 2.500,00 até R$ 2.999,99 = 3.800 e 4.500; R$ 3.000,00 até R$ 3.999,99 = 4.800 e 5.800; R$ 4.000,00 até R$ 4.999,99 = 6.000 e 7.200; R$ 5.000,00 até R$ 6.999,99 = 8.500 e 10.000; R$ 7.000,00 ou mais = média +20% e +40%. Kit novo e médias até R$ 999,99 continuam 1.500 e 2.000. Os brindes extras acompanham (valores permitidos)."},
+    {tipo:"melhoria", area:"Metas", txt:"Tela Regras: os blocos Como funciona e Comissões e brindes do acerto agora começam na mesma linha (barra de 30 px) e terminam na mesma altura (TabelaPlanilha ganhou cheia)."},
     {tipo:"novo", area:"Metas", txt:"Brindes extras só nos valores que a Sorelly trabalha, sempre R$ 4,00 a menos (a revendedora paga a diferença): 64, 84, 92, 108, 118, 124, 128, 140, 164, 184, 208, 228, 238, 258, 278, 308, 318, 364 e 418. No Editar da tela Regras o extra é uma caixa de escolha com esses valores. Padrões: Kit novo e médias até R$ 999,99 = Meta 1 BB 124 e Normal 92, Meta 2 BB 164 e Normal 118; as outras categorias acompanham a reta e ficam no valor permitido mais perto (de R$ 5.000 para cima o teto é R$ 418)."},
     {tipo:"novo", area:"Metas", txt:"Categoria nova: a faixa de R$ 0,00 até R$ 999,99 virou duas, R$ 0,00 até R$ 599,99 (324 revendedoras) e R$ 600,00 até R$ 999,99 (514), com as mesmas metas por enquanto. Na tela Regras, ao lado do Como funciona, bloco novo Comissões e brindes do acerto (Kit padrão e Kit 100% Prata, lido de domain/consignado.js)."},
     {tipo:"melhoria", area:"Metas", txt:"Categorias com os valores certinhos em todas as telas do setor: Kit novo (nunca vendeu), R$ 0,00 até R$ 999,99 (no lugar de Inicial), R$ 1.000,00 até R$ 1.499,99, R$ 1.500,00 até R$ 1.999,99 e assim por diante, até R$ 7.000,00 ou mais. Na tela Regras saiu a mensagem para o WhatsApp e o funil de filtro das colunas (TabelaPlanilha ganhou semFiltro)."},

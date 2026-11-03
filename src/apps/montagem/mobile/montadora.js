@@ -6,7 +6,7 @@ import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { proximoPara, resumoMontadora } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
-import { BK, N1 } from "@/apps/montagem/lib/format";
+import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { avisosDe } from "@/apps/montagem/domain/pedidos-pecas";
 import { CelPedir } from "@/apps/montagem/mobile/montadora-pedido";
@@ -87,15 +87,18 @@ function CelResultados(){
 }
 var COR_SIT = {semvalor:"#B45309", pendente:"#4B5563", montando:"#6D28D9", supervisao:"#B45309", ajuste:"#B91C1C", montado:"#1D4ED8", bipando:"#1D4ED8", bipado:"#15803D", retirado:"#15803D", condicional:"#B45309", precond:"#B45309"};
 function CelListagens(){
-  var s = use().state;
-  return e("div",{className:"flex flex-col gap-2.5"}, s.listagens.map(function(l, i){
+  var cx = use(), s = cx.state, d = cx.dispatch, eu = s.celular;
+  // a montadora começa a montagem direto na listagem (Marcus, 04/11/2026): botão em cada kit que ainda não foi pego; um kit por vez
+  var montando = s.kits.some(function(k){ return k.montId===eu && k.status==="montando"; });
+  var hojeISO = isoDia(new Date());
+  return e("div",{className:"flex flex-col gap-2.5"}, s.listagens.filter(function(l){ return !l.fechada && (!l.data || l.data>=hojeISO); }).sort(function(a, b){ return String(a.data || "").localeCompare(String(b.data || "")) || String(a.horario).localeCompare(String(b.horario)); }).map(function(l, i){
     var ks = s.kits.filter(function(k){return k.lid===l.id;}).sort(function(a,b){return a.ordem-b.ordem;});
     var prontos = ks.filter(function(k){return ["montado","bipando","bipado","retirado"].indexOf(k.status)>=0;}).length;
     return e("details",{key:l.id, open:i===0 || undefined, className:"group overflow-hidden rounded-2xl border border-[#E9DDBB] bg-white shadow-sm"},
       e("summary",{className:"flex cursor-pointer list-none items-center gap-2.5 bg-[#F6EBCB] px-3 py-2.5 [&::-webkit-details-marker]:hidden"},
         e(Avatar,{nome:l.rep, i:i, className:"size-9 shrink-0 text-[13px]"}),
         e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[16px] leading-tight text-[#111827]"}, "Representante "+l.rep),
-          e("span",{className:"block text-[13px] leading-tight text-[#6B5B2A]"}, "Retirada às "+l.horario+(l.viagem ? ", viagem para "+l.destino : ""))),
+          e("span",{className:"block text-[13px] leading-tight text-[#6B5B2A]"}, (l.data ? (l.data===hojeISO ? "Hoje " : "")+l.data.slice(8, 10)+"/"+l.data.slice(5, 7)+" · " : "")+"Retirada às "+l.horario+(l.viagem ? ", viagem para "+l.destino : ""))),
         e("div",{className:"flex shrink-0 flex-col items-end"}, e("b",{className:"text-[15px] text-[#15803D]"}, prontos+" de "+ks.length), e("span",{className:"text-[11.5px] leading-tight text-[#6B5B2A]"}, ks.length===1 ? "kit pronto" : "kits prontos")),
         e(Icon,{n:"chevrondown", s:15, className:"shrink-0 text-[#6B5B2A] transition-transform group-open:rotate-180"})),
       e("div",{className:"h-1.5 bg-[#EEF0F4]"}, e("i",{className:"block h-full bg-[#15803D]", style:{width:(ks.length ? prontos/ks.length*100 : 0)+"%"}})),
@@ -107,7 +110,11 @@ function CelListagens(){
             e("span",{className:"shrink-0 rounded-full px-2.5 py-0.5 text-[12px] font-bold", style:{background:COR_SIT[k.status]+"1F", color:COR_SIT[k.status]}}, STATUS_LB[k.status])),
           e("div",{className:"flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[13px] text-[#4B5563]"},
             e("span",null, tipo), k.prio && e("b",{className:"text-[#B45309]"}, "Prioridade"),
-            modalidadeDe(s, k.rev)==="prata" && e("b",{className:"text-[#475569]"}, "Kit 100% Prata")));
+            modalidadeDe(s, k.rev)==="prata" && e("b",{className:"text-[#475569]"}, "Kit 100% Prata")),
+          (k.status==="pendente" || k.status==="ajuste") && e("button",{disabled:montando, onClick:function(){ d({type:"INICIAR_M", id:k.id, montId:eu}); },
+            className:"mt-1 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] text-[14.5px] font-bold text-[#1B1409] active:translate-y-px disabled:opacity-40"},
+            e(Icon,{n:"play", s:15}), montando ? "Conclua o kit atual primeiro" : k.status==="ajuste" ? "Iniciar ajuste" : "Iniciar montagem"),
+          k.status==="montando" && k.montId===eu && e("button",{onClick:function(){ d({type:"TELACEL", t:"proximo"}); }, className:"mt-1 flex h-11 w-full items-center justify-center rounded-xl bg-[#F1EAFE] text-[14.5px] font-bold text-[#5B21B6]"}, "Montando agora: abrir"));
       })));
   }));
 }

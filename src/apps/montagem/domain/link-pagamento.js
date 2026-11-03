@@ -235,7 +235,8 @@ function resolverMeio(s, revendedora, meioId, representante){
 var meioSugerido = function(s, revendedora, representante){ var r = resolverMeio(s, revendedora, "", representante); return r.meio || null; };
 
 // ---------- solicitações: regras ----------
-var nTentativasDia = function(lp, revendedora, dia){ var n = norm(revendedora); return lp.solicitacoes.filter(function(x){ return norm(x.revendedora)===n && diaDe(x.criadoEm)===dia && x.status!=="recusado" && x.status!=="cancelado"; }).length; };
+// Tentativa = mesma revendedora, mesmo dia e MESMO VALOR (pedido da Hellen, 03/11/2026): ela pode pedir vários links no dia com valores diferentes; só repetir o mesmo valor conta como outra tentativa.
+var nTentativasDia = function(lp, revendedora, dia, valor){ var n = norm(revendedora), v = valor===undefined ? null : r2(num(valor)); return lp.solicitacoes.filter(function(x){ return norm(x.revendedora)===n && diaDe(x.criadoEm)===dia && (v===null || r2(num(x.valor))===v) && x.status!=="recusado" && x.status!=="cancelado"; }).length; };
 // Máximo de parcelas sem juros para um valor (regra por faixa, 19/10/2026): até {ate} reais cabem {max}x; acima da última faixa vale maxParcelasSemJuros (10x)
 function parcelasMaximas(cfg, valor){
   var v = r2(num(valor)), fx = (cfg && cfg.faixas) || [], teto = Math.round(num(cfg && cfg.maxParcelasSemJuros)) || 1;
@@ -267,7 +268,7 @@ function validarSolicitacao(s, d, agora){
   if(d.semMeio && d.canal==="app" && BANDEIRAS.indexOf(d.bandeira)<0) return "Escolha a bandeira do cartão.";   // pedido feito no app: valor, parcelas e bandeira são o mínimo para gerar o link
   if(d.dataAcerto && !/^\d{4}-\d{2}-\d{2}$/.test(d.dataAcerto)) return "Data do acerto inválida.";
   if(d.dataAcerto===hoje && (d.emissor||"atendimento")!=="representante") return "No dia do acerto somente a representante pode emitir o link.";
-  if(nTentativasDia(lp, d.revendedora, hoje)>=c.tentativasDia) return "Limite de "+c.tentativasDia+" tentativas de link por dia atingido para esta revendedora.";
+  if(nTentativasDia(lp, d.revendedora, hoje, valor)>=c.tentativasDia) return "Limite de "+c.tentativasDia+" tentativas de link por dia atingido para esta revendedora com este valor.";
   var r = resolverMeio(s, d.revendedora, d.meioId, trim(d.representante)); if(r.erro && !d.semMeio) return r.erro;   // semMeio: pedido vindo do app da revendedora; a equipe escolhe o link ao gerar
   return null;
 }
@@ -316,7 +317,8 @@ function vendidoNoApp(lp, rev, mes){ var t = 0; ((lp && lp.vendasApp) || []).for
 function minutosRestantes(sol, agora){ if(!sol || sol.status!=="gerado" || !sol.expiraEm) return null; var a = minutosDe(agora || agoraSP()), b = minutosDe(sol.expiraEm); return a==null || b==null ? null : Math.floor(b-a); }
 var textoRestante = function(min){ if(min==null) return ""; if(min<=0) return "Expirado"; var h = Math.floor(min/60), m = min%60; return h>0 ? h+"h "+p2(m)+"min" : m+"min"; };
 var expirados = function(lp, agora){ var a = minutosDe(agora || agoraSP()); return lp.solicitacoes.filter(function(x){ var e = minutosDe(x.expiraEm); return x.status==="gerado" && e!=null && e<=a; }).map(function(x){ return x.id; }); };
-var proximosStatus = function(sol){ return TRANSICOES[sol.status] || []; };
+// qualquer etapa (Hellen, 03/11/2026): o link pode ir para qualquer outra situação, para corrigir um movimento errado
+var proximosStatus = function(sol){ return STATUS.filter(function(k){ return k!==sol.status; }); };
 var proximaEtapa = function(sol){ var i = FLUXO.indexOf(sol.status); return i>=0 && i<FLUXO.length-1 ? FLUXO[i+1] : null; };
 
 // ---------- crédito do acerto ----------
@@ -570,7 +572,7 @@ function lpReduz(s, a){
       var rm = resolverMeio(sx, a.revendedora, a.meioId, trim(a.representante)), repn = trim(a.representante) || repDaRevendedora(lp, a.revendedora);
       if(trim(a.representante) && !repDaRevendedora(lp, a.revendedora)) lp.revendedoras.push({id:"R"+(++lp.seq), nome:trim(a.revendedora), representante:trim(a.representante)});
       var sol = {id:"S"+(++lp.seq), canal:a.canal, revendedora:trim(a.revendedora), representante:repn, valor:r2(num(a.valor)), parcelas:Math.round(num(a.parcelas)), meioId:rm.meio ? rm.meio.id : "", bandeira:a.bandeira||"", status:"solicitado", emissor:a.emissor==="representante" ? "representante" : "atendimento",
-        geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto||"", tentativa:nTentativasDia(lp, a.revendedora, hoje)+1, observacao:trim(a.observacao), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0, criadoEm:agora, criadoPor:por, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:""}]};
+        geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto||"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1, observacao:trim(a.observacao), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0, criadoEm:agora, criadoPor:por, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:""}]};
       sol.cliente = trim(a.cliente);   // nome simplificado da cliente, só para controle da revendedora (opcional)
       lp.solicitacoes.push(sol); return ok("Solicitação registrada");
     }
@@ -590,7 +592,10 @@ function lpReduz(s, a){
         x.pagoEm = pg;
       }
       if(para==="comprovante"){ x.comprovanteEm = agora; x.comprovantePor = por; }
-      if(EXIGE_MOTIVO[para]) x.motivo = trim(a.nota);
+      if(trim(a.nota)) x.motivo = trim(a.nota);
+      if(para==="solicitado"){ x.geradoEm = ""; x.geradoPor = ""; x.expiraEm = ""; x.pagoEm = ""; x.comprovanteEm = ""; x.comprovantePor = ""; }   // voltou ao começo: limpa as datas das etapas seguintes
+      if(para==="gerado"){ x.pagoEm = ""; x.comprovanteEm = ""; x.comprovantePor = ""; }
+      if(para==="pago"){ x.comprovanteEm = ""; x.comprovantePor = ""; }
       x.status = para; (x.historico = x.historico || []).push({em:agora, por:por, de:de, para:para, nota:trim(a.nota)});
       return ok(para==="gerado" ? "Link gerado" : para==="pago" ? "Pagamento registrado" : para==="comprovante" ? "Comprovante registrado como enviado" : ROTULO_STATUS[para]);
     }

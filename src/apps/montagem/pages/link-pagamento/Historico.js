@@ -3,7 +3,7 @@
 // O quadro de Solicitações mostra só o que está em andamento; os milhares de registros antigos (inclusive os da planilha de 2026) ficam aqui.
 import { BarraFiltros, Faixa, LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CANAIS, COR_STATUS, EM_ANDAMENTO, ROTULO_STATUS, STATUS, formatarDia, formatarReais, listaSolicitacoes, meioDe, mesDe, nomeMeio } from "@/apps/montagem/domain/link-pagamento";
+import { CANAIS, COR_STATUS, EM_ANDAMENTO, ROTULO_STATUS, formatarDia, formatarReais, listaSolicitacoes, meioDe, mesDe, nomeMeio } from "@/apps/montagem/domain/link-pagamento";
 import { Busca, Ind, Sel, Selo, Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
 import { e, useMemo, useState } from "@/shared/react";
@@ -40,7 +40,7 @@ function AbaLpHistorico(){
     e(BarraFiltros,{ativo:ativo, onLimpar:function(){ st[1](VAZIO); pg[1](0); }},
       e(Busca,{v:f.busca, set:function(v){ set("busca", v); }, ph:"Buscar revendedora, representante ou autorização"}),
       e(Sel,{v:f.mes, set:function(v){ set("mes", v); }, rot:"Mês", todos:"Todos os meses", opcoes:base.meses.map(function(m){ return [m, rotuloMes(m)]; })}),
-      e(Sel,{v:f.status, set:function(v){ set("status", v); }, rot:"Situação", todos:"Todas as finalizadas", opcoes:STATUS.map(function(k){ return [k, ROTULO_STATUS[k]]; })}),
+      e(Sel,{v:f.status, set:function(v){ set("status", v); }, rot:"Situação", todos:"Todas as finalizadas", opcoes:["pago", "comprovante", "expirado", "bloqueada", "cancelado", "antifraude", "abandonada", "negada"].map(function(k){ return [k, ROTULO_STATUS[k]]; })}),
       e(Sel,{v:f.representante, set:function(v){ set("representante", v); }, rot:"Representante", todos:"Todas as representantes", opcoes:base.reps.map(function(r){ return [r, r]; })}),
       e(Sel,{v:f.meioId, set:function(v){ set("meioId", v); }, rot:"Link", todos:"Todos os links", opcoes:meiosLink}),
       e(Sel,{v:f.canal, set:function(v){ set("canal", v); }, rot:"Canal", todos:"Todos os canais", opcoes:CANAIS})),

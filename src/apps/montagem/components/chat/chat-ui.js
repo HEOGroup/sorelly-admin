@@ -70,7 +70,7 @@ function Janela(p){
 function Popover(p){
   return e("div",{className:"absolute z-[60] "+(p.className||"")},
     e("div",{className:"fixed inset-0 z-[59]", onClick:p.fechar, onContextMenu:function(ev){ ev.preventDefault(); p.fechar(); }}),
-    e("div",{className:"relative z-[61] overflow-hidden rounded-lg py-1.5 shadow-2xl", style:{background:W.cab, border:"1px solid "+W.borda, minWidth:p.largura||180}}, p.children));
+    e("div",{"data-menu-msg":true, className:"relative z-[61] overflow-hidden rounded-lg py-1.5 shadow-2xl", style:{background:W.cab, border:"1px solid "+W.borda, minWidth:p.largura||180}}, p.children));
 }
 function ItemMenu(p){
   return e("button",{onClick:p.onClick, disabled:p.desligado, className:"flex w-full items-center gap-3 whitespace-nowrap px-4 py-2 text-left text-[13.5px] hover:bg-white/10 disabled:opacity-40", style:{color:p.perigo ? W.vermelho : W.texto}},

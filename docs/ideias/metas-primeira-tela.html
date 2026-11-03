@@ -1,0 +1,206 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metas: primeira tela, 4 opções</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--ok:#4ade80;--no:#f87171;--am:#facc15;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1320px;margin:0 auto}
+h1{font-size:18px;font-weight:600}
+.sub{margin:2px 0 12px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin:12px 0}
+.tela{border:1px solid var(--bd);border-radius:12px;padding:14px;background:var(--bg)}
+.menu{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:12px;flex-wrap:wrap}
+.menu span{height:32px;line-height:32px;padding:0 14px;border-bottom:2px solid transparent}
+.menu span.on{border-bottom-color:var(--ouro);color:var(--ouro);font-weight:600}
+.cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.cab h2{font-size:18px;font-weight:600}
+.cab .d{display:flex;gap:8px;align-items:center}
+select,input{height:32px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px;width:100%}
+.cab select{width:auto}
+.btn{height:32px;min-width:96px;padding:0 14px;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.btn.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+.blocos{display:grid;gap:12px;margin-bottom:12px;align-items:stretch}
+.b3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.bc{grid-template-columns:2fr 1fr 1fr}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1);display:flex;flex-direction:column}
+.bloco>h3{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:8px 12px;border-bottom:1px solid var(--bd);text-align:center}
+.bloco .in{padding:6px 12px;flex:1;display:flex;flex-direction:column;justify-content:space-between}
+.lh{display:grid;grid-template-columns:minmax(120px,1.1fr) 1.2fr 56px;gap:10px;align-items:center;height:30px;padding:0 4px;border-radius:6px}
+.lh span:first-child{text-align:center}
+.lh b{text-align:center;font-weight:600}
+.lh.cl{cursor:pointer}
+.lh.cl:hover,.lh.on{background:rgba(232,184,75,.12)}
+.bar{height:8px;background:var(--s2);border-radius:4px;overflow:hidden;display:block}
+.bar i{display:block;height:100%;background:var(--ouro)}
+.bar i.ok{background:var(--ok)}.bar i.no{background:var(--no)}.bar i.am{background:var(--am)}
+.emp{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:6px 0}
+.emp i{display:block;height:100%}
+.rod{text-align:center;padding:6px 0 2px;font-size:12px}
+.don{display:flex;gap:14px;align-items:center;justify-content:center;padding:8px 0;flex-wrap:wrap}
+.anel{width:110px;height:110px;border-radius:50%;position:relative;flex:none}
+.anel::after{content:attr(data-c);position:absolute;inset:18px;border-radius:50%;background:var(--s1);display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:600}
+.leg{display:grid;gap:2px}
+.leg div{display:flex;gap:8px;align-items:center;height:24px}
+.leg i{width:10px;height:10px;border-radius:3px;display:inline-block}
+.leg b{margin-left:auto;font-weight:600;padding-left:12px}
+.fil{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;align-items:end}
+.fil label{display:block;font-size:11px;margin-bottom:3px}
+.chip{display:inline-flex;gap:8px;align-items:center;height:24px;padding:0 10px;border:1px solid var(--ouro);border-radius:6px;color:var(--ouro);cursor:pointer;margin:0 0 8px}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+table{width:100%;border-collapse:collapse;white-space:nowrap;background:var(--topo) top left/100% 30px no-repeat}
+thead th{height:30px;padding:0 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#1a1306;background:transparent}
+td{height:32px;padding:0 12px;text-align:center;border-bottom:1px solid var(--bd)}
+tbody tr:hover td{background:rgba(232,184,75,.10)}
+tfoot td{font-weight:600;background:var(--s2);border-bottom:0}
+.tag{display:inline-block;height:20px;line-height:18px;padding:0 8px;border:1px solid var(--bd);border-radius:6px;font-size:11px}
+.tag.ok{border-color:var(--ok)}.tag.no{border-color:var(--no)}.tag.am{border-color:var(--am)}
+.ou{color:var(--ouro)}
+@media(max-width:900px){.b3,.bc{grid-template-columns:1fr}.fil{grid-template-columns:repeat(2,minmax(0,1fr))}}
+</style>
+</head>
+<body>
+<h1>Metas: primeira tela, 4 opções</h1>
+<p class="sub">Tela Revendedoras, com 3 blocos em cima da lista. Todos os números dos blocos são de exemplo (as quantidades por classe são reais de 02/11/2026). Nada grava no sistema.</p>
+<div class="seg" id="ops"><button data-o="1" class="on">1 · Barras</button><button data-o="2">2 · Blocos que filtram</button><button data-o="3">3 · Classe e resultado</button><button data-o="4">4 · Anéis</button></div>
+<div class="nota" id="leg"></div>
+<div id="app"></div>
+
+<script>
+const R = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const N = v => Number(v).toLocaleString("pt-BR");
+const $ = (s, r = document) => r.querySelector(s);
+const teto = (x, p) => Math.ceil(x * p / 10000) * 100;
+
+const CL = [
+  {id: "ini", nome: "Inicial", de: 0, ate: 999.99, n: 1132, m1: 1500, m2: 2000, ac: .40, p1: .12, p2: .06},
+  {id: "a", nome: "R$ 1.000 a 1.499", de: 1000, ate: 1499.99, n: 460, m1: 1700, m2: 2100, ac: .44, p1: .10, p2: .04},
+  {id: "b", nome: "R$ 1.500 a 1.999", de: 1500, ate: 1999.99, n: 270, m1: 2300, m2: 2700, ac: .46, p1: .09, p2: .04},
+  {id: "c", nome: "R$ 2.000 a 2.499", de: 2000, ate: 2499.99, n: 110, ac: .45, p1: .08, p2: .03},
+  {id: "d", nome: "R$ 2.500 a 2.999", de: 2500, ate: 2999.99, n: 71, ac: .45, p1: .08, p2: .03},
+  {id: "e", nome: "R$ 3.000 a 3.999", de: 3000, ate: 3999.99, n: 32, ac: .44, p1: .07, p2: .03},
+  {id: "f", nome: "R$ 4.000 a 4.999", de: 4000, ate: 4999.99, n: 21, ac: .43, p1: .07, p2: .02},
+  {id: "g", nome: "R$ 5.000 a 6.999", de: 5000, ate: 6999.99, n: 14, ac: .43, p1: .07, p2: .02},
+  {id: "h", nome: "R$ 7.000 ou mais", de: 7000, ate: 1e9, n: 4, ac: .50, p1: .05, p2: .02, individual: true}
+];
+CL.forEach(c => {
+  if (!c.m1 && !c.individual) { c.m1 = teto(c.ate, 115); c.m2 = teto(c.ate, 135); }
+  c.acertaram = Math.round(c.n * c.ac);
+  c.b2 = Math.round(c.acertaram * c.p2);
+  c.b1 = Math.round(c.acertaram * c.p1);
+  c.nao = c.acertaram - c.b1 - c.b2;
+  c.agu = c.n - c.acertaram;
+});
+const T = CL.reduce((s, c) => { ["n", "acertaram", "b1", "b2", "nao", "agu"].forEach(k => s[k] = (s[k] || 0) + c[k]); return s; }, {});
+const pct = (a, b) => b ? Math.round(a / b * 1000) / 10 + "%" : "0%";
+const extra = m => { const k = (m - 1500) / 500; return {n: Math.round(96 + 26 * k), b: Math.round(128 + 40 * k)}; };
+const metasDe = media => { const c = CL.find(x => media >= x.de && media <= x.ate) || CL[0]; return c.individual ? {c, m1: teto(media, 115), m2: teto(media, 135)} : {c, m1: c.m1, m2: c.m2}; };
+
+const REV = [
+  ["003120", "Ana Paula Souza", "Carla", 420, null, "08/11", "C-04810"], ["005512", "Beatriz Menezes", "Carla", 0, 1620, "", "C-04811"],
+  ["004098", "Camila Rocha", "Joice", 1250, 1810, "", "C-04812"], ["002877", "Daniela Silva", "Joice", 1720, 2740, "", "C-04813"],
+  ["006301", "Eliane Tavares", "Priscila", 2150, null, "12/11", "C-04814"], ["001954", "Fernanda Lima", "Priscila", 2640, 2900, "", "C-04815"],
+  ["003777", "Gabriela Nunes", "Carla", 3400, null, "15/11", "C-04816"], ["002215", "Helena Vieira", "Joice", 4320, 5950, "", "C-04817"],
+  ["004660", "Isabel Campos", "Priscila", 5800, null, "18/11", "C-04818"], ["000912", "Joana Ferraz", "Carla", 7900, null, "20/11", "C-04819"],
+  ["005009", "Karina Borges", "Joice", 980, 1380, "", "C-04820"], ["003388", "Larissa Duarte", "Priscila", 1480, 2150, "", "C-04821"],
+  ["006770", "Marina Gomes", "Carla", 0, 2050, "", "C-04822"], ["001420", "Natália Oliveira", "Joice", 1900, null, "22/11", "C-04823"]
+].map(x => {
+  const mt = metasDe(x[3]);
+  let st = "Aguardando acerto";
+  if (x[4] != null) st = x[4] >= mt.m2 ? "Bateu Meta 2" : x[4] >= mt.m1 ? "Bateu Meta 1" : "Não bateu";
+  const nivel = st === "Bateu Meta 2" ? mt.m2 : st === "Bateu Meta 1" ? mt.m1 : 0;
+  return {cod: x[0], nome: x[1], rep: x[2], media: x[3], vendeu: x[4], prev: x[5], cond: x[6], c: mt.c, m1: mt.m1, m2: mt.m2, st, ex: nivel ? extra(nivel) : null};
+});
+const cor = s => s.startsWith("Bateu") ? "ok" : s === "Não bateu" ? "no" : "am";
+
+let filtro = {cl: null, st: null};
+
+const filtros = () => `<div class="bloco" style="margin-bottom:12px"><h3>Filtros</h3><div class="in" style="display:block;padding:10px 12px"><div class="fil">
+  <div style="grid-column:span 2"><label>Busca</label><input placeholder="Nome ou código"></div>
+  <div><label>Classe</label><select><option>Todas</option>${CL.map(c => `<option>${c.nome}</option>`).join("")}</select></div>
+  <div><label>Representante</label><select><option>Todas</option><option>Carla</option><option>Joice</option><option>Priscila</option></select></div>
+  <div><label>Situação</label><select><option>Todas</option><option>Aguardando acerto</option><option>Bateu Meta 1</option><option>Bateu Meta 2</option><option>Não bateu</option></select></div>
+  <div></div><div style="grid-column:span 2;text-align:right"><button class="btn">Limpar</button> <button class="btn p">Filtrar</button></div>
+</div></div></div>`;
+
+const tabela = () => {
+  const l = REV.filter(r => (!filtro.cl || r.c.id === filtro.cl) && (!filtro.st || r.st === filtro.st || (filtro.st === "Bateu" && r.st.startsWith("Bateu"))));
+  const chips = (filtro.cl ? `<span class="chip" data-x="cl">Classe: ${CL.find(c => c.id === filtro.cl).nome} ✕</span> ` : "") + (filtro.st ? `<span class="chip" data-x="st">Situação: ${filtro.st} ✕</span>` : "");
+  return `${chips ? `<div>${chips}</div>` : ""}<div class="rolar"><table><thead><tr><th>Código</th><th>Nome</th><th>Representante</th><th>Classe</th><th>Média</th><th>Condicional</th><th>Meta 1</th><th>Meta 2</th><th>Acerto previsto</th><th>Vendeu</th><th>Situação</th><th>Extra BB</th><th>Extra Normal</th></tr></thead><tbody>
+  ${l.map(r => `<tr><td>${r.cod}</td><td>${r.nome}</td><td>${r.rep}</td><td>${r.c.nome}</td><td>${r.media ? R(r.media) : "Sem venda"}</td><td>${r.cond}</td><td>${R(r.m1)}</td><td>${R(r.m2)}</td><td>${r.prev || "Acertou"}</td><td>${r.vendeu == null ? "Aguardando" : R(r.vendeu)}</td><td><span class="tag ${cor(r.st)}">${r.st}</span></td><td class="ou">${r.ex ? R(r.ex.b) : "-"}</td><td class="ou">${r.ex ? R(r.ex.n) : "-"}</td></tr>`).join("")}
+  </tbody><tfoot><tr><td colspan="13">Mostrando ${l.length} de ${N(T.n)} revendedoras (amostra do protótipo)</td></tr></tfoot></table></div>`;
+};
+
+const linha = (rot, n, max, tipo, attrs = "") => `<div class="lh ${attrs ? "cl" : ""}" ${attrs}><span>${rot}</span><span class="bar"><i class="${tipo || ""}" style="width:${Math.max(2, n / max * 100)}%"></i></span><b>${N(n)}</b></div>`;
+const empilhada = (partes) => `<div class="emp">${partes.map(p => `<i style="width:${p[0]}%;background:${p[1]}" title="${p[2]}"></i>`).join("")}</div>`;
+const anel = (partes, centro) => {
+  let ac = 0; const tot = partes.reduce((s, p) => s + p[1], 0);
+  const seg = partes.map(p => { const a = ac / tot * 360; ac += p[1]; return `${p[2]} ${a}deg ${ac / tot * 360}deg`; }).join(",");
+  return `<div class="anel" data-c="${centro}" style="background:conic-gradient(${seg})"></div>`;
+};
+const leg = (partes) => `<div class="leg">${partes.map(p => `<div><i style="background:${p[2]}"></i><span>${p[0]}</span><b>${N(p[1])}</b></div>`).join("")}</div>`;
+
+const B_CAT = (cl) => `<div class="bloco"><h3>Revendedoras por categoria</h3><div class="in">${CL.map(c => linha(c.nome, c.n, CL[0].n, "", cl ? `data-cl="${c.id}"` : "")).join("")}</div></div>`;
+const B_ACE = (st) => `<div class="bloco"><h3>Acertos de novembro</h3><div class="in">
+  ${linha("Participantes", T.n, T.n, "")}${linha("Acertaram", T.acertaram, T.n, "ok", st ? `data-st="Acertou"` : "")}${linha("Aguardando acerto", T.agu, T.n, "am", st ? `data-st="Aguardando acerto"` : "")}
+  ${empilhada([[T.acertaram / T.n * 100, "var(--ok)", "Acertaram"], [T.agu / T.n * 100, "var(--am)", "Aguardando"]])}
+  <div class="rod">${pct(T.acertaram, T.n)} já acertaram</div></div></div>`;
+const B_MET = (st) => `<div class="bloco"><h3>Meta de novembro</h3><div class="in">
+  ${linha("Bateram Meta 2", T.b2, T.acertaram, "ok", st ? `data-st="Bateu Meta 2"` : "")}${linha("Bateram Meta 1", T.b1, T.acertaram, "ok", st ? `data-st="Bateu Meta 1"` : "")}${linha("Não bateram", T.nao, T.acertaram, "no", st ? `data-st="Não bateu"` : "")}
+  ${empilhada([[T.b2 / T.acertaram * 100, "var(--ok)", "Meta 2"], [T.b1 / T.acertaram * 100, "#2f9e5b", "Meta 1"], [T.nao / T.acertaram * 100, "var(--no)", "Não bateram"]])}
+  <div class="rod">${pct(T.b1 + T.b2, T.acertaram)} dos que acertaram bateram a meta</div></div></div>`;
+
+const TOPO = () => `<div class="menu"><span>Campanha</span><span>Simulador</span><span class="on">Revendedoras</span><span>Acompanhamento</span><span>Brindes</span><span>Histórico</span><span>Regras</span></div>
+<div class="cab"><h2>Revendedoras</h2><div class="d"><select><option>Novembro de 2026</option><option>Dezembro de 2026</option></select><button class="btn">Exportar</button></div></div>`;
+
+function pinta(o) {
+  let blocos = "";
+  if (o === 1) blocos = `<div class="blocos b3">${B_CAT(false)}${B_ACE(false)}${B_MET(false)}</div>`;
+  if (o === 2) blocos = `<div class="blocos b3">${B_CAT(true)}${B_ACE(true)}${B_MET(true)}</div>`;
+  if (o === 3) {
+    const mat = `<div class="bloco"><h3>Categoria e resultado</h3><div class="in" style="padding:0"><table><thead><tr><th>Categoria</th><th>Revendedoras</th><th>Acertaram</th><th>Bateram</th><th>Não bateram</th><th>Aguardando</th></tr></thead><tbody>
+      ${CL.map(c => `<tr><td>${c.nome}</td><td>${N(c.n)}</td><td>${N(c.acertaram)}</td><td class="ok" style="color:var(--ok)">${N(c.b1 + c.b2)}</td><td style="color:var(--no)">${N(c.nao)}</td><td style="color:var(--am)">${N(c.agu)}</td></tr>`).join("")}
+      </tbody><tfoot><tr><td>Total</td><td>${N(T.n)}</td><td>${N(T.acertaram)}</td><td>${N(T.b1 + T.b2)}</td><td>${N(T.nao)}</td><td>${N(T.agu)}</td></tr></tfoot></table></div></div>`;
+    const a1 = [["Acertaram", T.acertaram, "#4ade80"], ["Aguardando", T.agu, "#facc15"]], a2 = [["Meta 2", T.b2, "#4ade80"], ["Meta 1", T.b1, "#2f9e5b"], ["Não bateram", T.nao, "#f87171"]];
+    blocos = `<div class="blocos bc">${mat}<div class="bloco"><h3>Acertos de novembro</h3><div class="in"><div class="don" style="flex-direction:column">${anel(a1, N(T.acertaram))}${leg(a1)}</div></div></div><div class="bloco"><h3>Meta de novembro</h3><div class="in"><div class="don" style="flex-direction:column">${anel(a2, pct(T.b1 + T.b2, T.acertaram))}${leg(a2)}</div></div></div></div>`;
+  }
+  if (o === 4) {
+    const tons = ["#F5E7BE", "#EFD58E", "#E8B84B", "#D4A84B", "#B8862B", "#9A6F1E", "#7C5818", "#5E4312", "#40300D"];
+    const c1 = CL.map((c, i) => [c.nome, c.n, tons[i]]);
+    const a1 = [["Acertaram", T.acertaram, "#4ade80"], ["Aguardando", T.agu, "#facc15"]], a2 = [["Meta 2", T.b2, "#4ade80"], ["Meta 1", T.b1, "#2f9e5b"], ["Não bateram", T.nao, "#f87171"]];
+    const blk = (t, partes, centro) => `<div class="bloco"><h3>${t}</h3><div class="in"><div class="don">${anel(partes, centro)}${leg(partes)}</div></div></div>`;
+    blocos = `<div class="blocos b3">${blk("Revendedoras por categoria", c1, N(T.n))}${blk("Acertos de novembro", a1, pct(T.acertaram, T.n))}${blk("Meta de novembro", a2, pct(T.b1 + T.b2, T.acertaram))}</div>`;
+  }
+  $("#app").innerHTML = `<div class="tela">${TOPO()}${blocos}${filtros()}<div id="tab">${tabela()}</div></div>`;
+  const reTab = () => { $("#tab").innerHTML = tabela(); $("#tab").querySelectorAll(".chip").forEach(c => c.onclick = () => { filtro[c.dataset.x] = null; reTab(); marca(); }); };
+  const marca = () => document.querySelectorAll("#app .lh.cl").forEach(x => x.classList.toggle("on", (x.dataset.cl && x.dataset.cl === filtro.cl) || (x.dataset.st && x.dataset.st === filtro.st)));
+  if (o === 2) document.querySelectorAll("#app .lh.cl").forEach(x => x.onclick = () => {
+    if (x.dataset.cl) filtro.cl = filtro.cl === x.dataset.cl ? null : x.dataset.cl;
+    if (x.dataset.st) filtro.st = filtro.st === x.dataset.st ? null : (x.dataset.st === "Acertou" ? null : x.dataset.st);
+    reTab(); marca();
+  });
+}
+
+const LEG = {
+  1: "<b>Opção 1 · Barras.</b> Três blocos lado a lado: categorias, acertos de novembro e meta. Cada linha tem a quantidade e uma barra. A faixa embaixo mostra a proporção. É a leitura mais simples.",
+  2: "<b>Opção 2 · Blocos que filtram.</b> Igual à opção 1, mas cada linha dos blocos é clicável. Clique em \"Bateram Meta 1\" ou numa categoria e a lista abaixo filtra na hora. Um botão no topo da lista tira o filtro.",
+  3: "<b>Opção 3 · Classe e resultado.</b> O bloco da esquerda cruza categoria com resultado: quantas acertaram, bateram, não bateram e aguardam em cada classe, com o total no pé. Os dois anéis mostram acertos e meta.",
+  4: "<b>Opção 4 · Anéis.</b> Três blocos iguais, cada um com um anel e a legenda com as quantidades. A categoria usa tons de dourado. Acertos e meta usam verde, amarelo e vermelho só para estado."
+};
+function abrir(o) {
+  filtro = {cl: null, st: null};
+  document.querySelectorAll("#ops button").forEach(b => b.classList.toggle("on", b.dataset.o === String(o)));
+  $("#leg").innerHTML = LEG[o]; pinta(o);
+}
+document.querySelectorAll("#ops button").forEach(b => b.onclick = () => abrir(+b.dataset.o));
+abrir(1);
+</script>
+</body>
+</html>

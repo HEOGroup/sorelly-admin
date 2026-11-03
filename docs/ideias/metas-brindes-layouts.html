@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metas: Brindes, 4 layouts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--ok:#4ade80;--no:#f87171;--am:#facc15;--inf:#60a5fa;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1380px;margin:0 auto}
+h1.pg{font-size:18px;font-weight:600}
+.sub{margin:2px 0 10px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin:10px 0}
+.tela{border:1px solid var(--bd);border-radius:12px;padding:12px;background:var(--bg)}
+.menu{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:10px;flex-wrap:wrap}
+.menu span{height:32px;line-height:32px;padding:0 14px;border-bottom:2px solid transparent}
+.menu span.on{border-bottom-color:var(--ouro);color:var(--ouro);font-weight:600}
+.tit{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.tit h2{font-size:20px;font-weight:600;line-height:1}
+.btn{height:32px;min-width:96px;padding:0 14px;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.btn.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+.btn.s{height:26px;min-width:0;padding:0 10px;font-size:12px}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+table{width:100%;border-collapse:collapse;white-space:nowrap;background:var(--topo) top left/100% 30px no-repeat}
+thead th{height:30px;padding:0 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#1a1306;background:transparent}
+thead th button{all:unset;cursor:pointer;margin-left:6px;font-size:11px;padding:2px 4px;border-radius:4px}
+thead th button.f{background:#1a1306;color:#F5E7BE}
+td{height:32px;padding:0 12px;text-align:center;border-bottom:1px solid var(--bd)}
+tbody tr:hover td{background:rgba(232,184,75,.08)}
+tfoot td{font-weight:600;background:var(--s2);border-bottom:0}
+tr.gp td{background:rgba(232,184,75,.16);font-weight:600;cursor:pointer}
+.tag{display:inline-block;height:20px;line-height:18px;padding:0 8px;border:1px solid var(--bd);border-radius:6px;font-size:11px}
+.tag.am{border-color:var(--am);color:var(--am)}.tag.inf{border-color:var(--inf);color:var(--inf)}.tag.ok{border-color:var(--ok);color:var(--ok)}
+.ou{color:var(--ouro)}
+.barra{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;border:1px solid var(--ouro);border-radius:8px;padding:8px 12px;margin-bottom:10px;background:rgba(232,184,75,.08)}
+.pop{position:fixed;z-index:20;width:270px;background:var(--s2);border:1px solid var(--bd);border-radius:8px;padding:8px;box-shadow:0 12px 32px rgba(0,0,0,.6)}
+.pop .it{height:32px;display:flex;align-items:center;padding:0 8px;border-radius:6px;cursor:pointer}
+.pop .it:hover{background:rgba(232,184,75,.12)}
+.pop h4{font-size:11px;text-transform:uppercase;letter-spacing:.05em;padding:6px 8px 2px}
+.pop .vals{max-height:180px;overflow:auto;border:1px solid var(--bd);border-radius:8px;margin:4px 0}
+.pop .vals label{display:flex;gap:8px;align-items:center;height:32px;padding:0 8px;cursor:pointer}
+.pop .vals span:last-child{margin-left:auto}
+.pop .bt{display:flex;gap:8px;margin-top:6px}.pop .bt button{flex:1}
+input[type=checkbox]{width:15px;height:15px;accent-color:#d4a84b}
+</style>
+</head>
+<body>
+<h1 class="pg">Metas: Brindes, 4 layouts</h1>
+<p class="sub">A tela vira uma tabela das revendedoras que bateram a meta. Dados de exemplo. Nada grava no sistema.</p>
+<div class="seg" id="ops"><button data-o="1" class="on">1 · Tabela única</button><button data-o="2">2 · Abas por etapa</button><button data-o="3">3 · Por representante</button><button data-o="4">4 · Seleção em lote</button></div>
+<div class="nota" id="leg"></div>
+<div id="app"></div>
+
+<script>
+const R = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const N = v => Number(v).toLocaleString("pt-BR");
+const $ = (s, r = document) => r.querySelector(s);
+const NOMES = ["Ana Paula Souza", "Beatriz Menezes Rocha", "Camila Rocha", "Daniela Silva Tavares", "Eliane Tavares", "Fernanda Lima", "Gabriela Nunes", "Helena Vieira", "Isabel Campos", "Joana Ferraz", "Karina Borges", "Larissa Duarte", "Marina Gomes", "Natália Oliveira", "Olívia Almeida", "Patrícia Costa Moreira dos Santos", "Raquel Pereira", "Sabrina Andrade"];
+const REPS = ["Carla - Litoral", "Carla - SC", "Joice", "Priscila"];
+const CLS = [["Kit novo", 1500, 2000], ["Inicial", 1500, 2000], ["R$ 1.000 a 1.499", 1700, 2100], ["R$ 1.500 a 1.999", 2300, 2700], ["R$ 2.000 a 2.499", 2900, 3400]];
+const extra = m => { const k = (m - 1500) / 500; return {bb: Math.round(128 + 40 * k), no: Math.round(96 + 26 * k)}; };
+let seed = 11; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+const DADOS = NOMES.map((nome, i) => {
+  const c = CLS[Math.floor(rnd() * CLS.length)], n2 = rnd() < .4, meta = n2 ? c[2] : c[1], ex = extra(meta);
+  const etapa = i % 5 === 0 ? 2 : i % 3 === 0 ? 1 : 0;
+  return {id: i, cod: String(3000 + i * 41), nome, rep: REPS[Math.floor(rnd() * REPS.length)], classe: c[0], bateu: n2 ? "Meta 2" : "Meta 1", meta, vendeu: Math.round(meta * (1.02 + rnd() * .25) / 10) * 10, bb: ex.bb, no: ex.no, etapa, em: etapa ? "0" + (2 + (i % 3)) + "/11/2026" : ""};
+});
+const ET = ["A liberar", "Pagamento confirmado", "Aplicado no acerto"], COR = ["am", "inf", "ok"];
+const tag = e => `<span class="tag ${COR[e]}">${ET[e]}</span>`;
+const proxBtn = r => r.etapa === 0 ? `<button class="btn s p" data-id="${r.id}" data-a="1">Confirmar pagamento</button>` : r.etapa === 1 ? `<button class="btn s p" data-id="${r.id}" data-a="2">Aplicar no acerto</button>` : `<span>Aplicado em ${r.em}</span>`;
+
+const COLS = {
+  cod: ["Código", r => r.cod], nome: ["Nome", r => r.nome], rep: ["Representante", r => r.rep], classe: ["Classe", r => r.classe], bateu: ["Bateu", r => r.bateu], meta: ["Meta", r => R(r.meta)],
+  vendeu: ["Vendeu", r => R(r.vendeu)], bb: ["Extra BB", r => R(r.bb), "ou"], no: ["Extra Normal", r => R(r.no), "ou"], etapa: ["Etapa", r => ET[r.etapa], null, r => tag(r.etapa)], acao: ["Ação", null, null, proxBtn]
+};
+let fil = {}, ord = null, aba = "todas", fechados = {}, sel = new Set();
+
+function visiveis(cols, base) {
+  let l = (base || DADOS).filter(r => cols.every(k => !fil[k] || fil[k].has(COLS[k][1] ? COLS[k][1](r) : "")));
+  if (ord && COLS[ord.k][1]) l = l.slice().sort((a, b) => COLS[ord.k][1](a).localeCompare(COLS[ord.k][1](b), "pt-BR", {numeric: true}) * ord.d);
+  return l;
+}
+function cabeca(cols, extra) {
+  return `<thead><tr>${extra || ""}${cols.map(k => `<th>${COLS[k][0]}${COLS[k][1] ? `<button data-f="${k}" class="${fil[k] || (ord && ord.k === k) ? "f" : ""}" title="Filtrar e ordenar">▽</button>` : ""}</th>`).join("")}</tr></thead>`;
+}
+function linha(r, cols, pre) {
+  return `<tr>${pre || ""}${cols.map(k => { const c = COLS[k]; const v = c[3] ? c[3](r) : c[1](r); return `<td${c[2] ? ` class="${c[2]}"` : ""}>${v}</td>`; }).join("")}</tr>`;
+}
+function fecha() { document.querySelectorAll(".pop").forEach(p => p.remove()); }
+function menuColuna(k, btn, redesenha) {
+  fecha();
+  const f = COLS[k][1], cont = new Map(); DADOS.forEach(r => { const t = f(r); cont.set(t, (cont.get(t) || 0) + 1); });
+  const vals = [...cont.keys()].sort((a, b) => a.localeCompare(b, "pt-BR", {numeric: true}));
+  let marc = new Set(fil[k] || vals);
+  const p = document.createElement("div"); p.className = "pop"; p.onclick = e => e.stopPropagation();
+  const rb = btn.getBoundingClientRect(); p.style.top = Math.min(rb.bottom + 4, innerHeight - 380) + "px"; p.style.left = Math.max(8, Math.min(rb.left - 120, innerWidth - 290)) + "px";
+  const pinta = () => {
+    p.innerHTML = `<div class="it" data-o="1">Classificar A → Z</div><div class="it" data-o="-1">Classificar Z → A</div><h4>Filtrar por valores</h4><div class="vals">${vals.map(v => `<label><input type="checkbox" ${marc.has(v) ? "checked" : ""} data-v="${v.replace(/"/g, "&quot;")}"><span>${v}</span><span>${cont.get(v)}</span></label>`).join("")}</div><div class="bt"><button class="btn" data-a="lc">Limpar coluna</button><button class="btn p" data-a="ok">Fechar</button></div>`;
+    p.querySelectorAll(".it").forEach(i => i.onclick = () => { ord = {k, d: +i.dataset.o}; fecha(); redesenha(); });
+    p.querySelectorAll("input").forEach(c => c.onchange = () => { c.checked ? marc.add(c.dataset.v) : marc.delete(c.dataset.v); if (marc.size === vals.length) delete fil[k]; else fil[k] = new Set(marc); redesenha(); });
+    p.querySelector('[data-a="lc"]').onclick = () => { delete fil[k]; if (ord && ord.k === k) ord = null; fecha(); redesenha(); };
+    p.querySelector('[data-a="ok"]').onclick = fecha;
+  };
+  document.body.appendChild(p); pinta();
+}
+function liga(box, redesenha) {
+  box.querySelectorAll("thead th button[data-f]").forEach(b => b.onclick = e => { e.stopPropagation(); menuColuna(b.dataset.f, b, redesenha); });
+  box.querySelectorAll("button[data-a][data-id]").forEach(b => b.onclick = () => { const r = DADOS[+b.dataset.id]; r.etapa = +b.dataset.a; r.em = "03/11/2026"; redesenha(); });
+}
+document.addEventListener("click", fecha);
+const titulo = (extra) => `<div class="tit"><h2>Brindes - Metas de Novembro 2026</h2>${extra || ""}</div>`;
+const MENU = `<div class="menu"><span>Revendedoras</span><span>Acompanhamento</span><span class="on">Brindes</span><span>Histórico</span><span>Regras</span></div>`;
+const somaExtra = l => ({bb: l.reduce((s, r) => s + r.bb, 0), no: l.reduce((s, r) => s + r.no, 0)});
+const pe = (l, cols) => { const s = somaExtra(l); return `<tfoot><tr>${cols.map((k, i) => `<td>${i === 0 ? "Total" : k === "nome" ? N(l.length) + " revendedoras" : k === "bb" ? R(s.bb) : k === "no" ? R(s.no) : ""}</td>`).join("")}</tr></tfoot>`; };
+
+const O = {};
+O[1] = box => {
+  const cols = ["cod", "nome", "rep", "classe", "bateu", "meta", "vendeu", "bb", "no", "etapa", "acao"];
+  const pinta = () => { const l = visiveis(cols); box.innerHTML = `<div class="tela">${MENU}${titulo(fil && Object.keys(fil).length ? `<button class="btn" id="lc">Limpar filtros</button>` : "")}<div class="rolar"><table>${cabeca(cols)}<tbody>${l.map(r => linha(r, cols)).join("")}</tbody>${pe(l, cols)}</table></div></div>`; liga(box, pinta); const lc = $("#lc"); if (lc) lc.onclick = () => { fil = {}; ord = null; pinta(); }; };
+  pinta();
+};
+O[2] = box => {
+  const cols = ["cod", "nome", "rep", "classe", "bateu", "meta", "vendeu", "bb", "no", "acao"];
+  const pinta = () => {
+    const base = aba === "todas" ? DADOS : DADOS.filter(r => r.etapa === +aba), l = visiveis(cols, base);
+    const n = i => DADOS.filter(r => r.etapa === i).length;
+    box.innerHTML = `<div class="tela">${MENU}${titulo(`<div class="seg" id="abas"><button data-t="0" class="${aba === "0" ? "on" : ""}">A liberar (${n(0)})</button><button data-t="1" class="${aba === "1" ? "on" : ""}">Pagamento confirmado (${n(1)})</button><button data-t="2" class="${aba === "2" ? "on" : ""}">Aplicado no acerto (${n(2)})</button><button data-t="todas" class="${aba === "todas" ? "on" : ""}">Todas (${DADOS.length})</button></div>`)}<div class="rolar"><table>${cabeca(cols)}<tbody>${l.map(r => linha(r, cols)).join("")}</tbody>${pe(l, cols)}</table></div></div>`;
+    box.querySelectorAll("#abas button").forEach(b => b.onclick = () => { aba = b.dataset.t; pinta(); }); liga(box, pinta);
+  };
+  pinta();
+};
+O[3] = box => {
+  const cols = ["cod", "nome", "classe", "bateu", "meta", "vendeu", "bb", "no", "etapa", "acao"];
+  const pinta = () => {
+    const l = visiveis(cols), reps = [...new Set(l.map(r => r.rep))].sort(); let h = "";
+    reps.forEach(rep => {
+      const g = l.filter(r => r.rep === rep), s = somaExtra(g), ab = fechados[rep] !== true;
+      h += `<tr class="gp" data-r="${rep}"><td colspan="${cols.length}">${ab ? "▾" : "▸"} ${rep} · ${g.length} revendedoras · a liberar ${g.filter(r => r.etapa === 0).length} · Extra BB ${R(s.bb)} · Extra Normal ${R(s.no)}</td></tr>`;
+      if (ab) h += g.map(r => linha(r, cols)).join("");
+    });
+    const s = somaExtra(l);
+    box.innerHTML = `<div class="tela">${MENU}${titulo()}<div class="rolar"><table>${cabeca(cols)}<tbody>${h}</tbody><tfoot><tr><td colspan="${cols.length}">Total: ${l.length} revendedoras · Extra BB ${R(s.bb)} · Extra Normal ${R(s.no)}</td></tr></tfoot></table></div></div>`;
+    box.querySelectorAll("tr.gp").forEach(t => t.onclick = () => { fechados[t.dataset.r] = fechados[t.dataset.r] !== true; pinta(); }); liga(box, pinta);
+  };
+  pinta();
+};
+O[4] = box => {
+  const cols = ["cod", "nome", "rep", "classe", "bateu", "meta", "vendeu", "bb", "no", "etapa"];
+  const pinta = () => {
+    const l = visiveis(cols), ids = l.map(r => r.id), marcadas = DADOS.filter(r => sel.has(r.id)), s = somaExtra(marcadas);
+    const barra = `<div class="barra"><b>${marcadas.length} selecionadas</b><span>Peças a separar: Extra BB ${R(s.bb)} · Extra Normal ${R(s.no)}</span><button class="btn p" id="b1">Confirmar pagamento</button><button class="btn p" id="b2">Aplicar no acerto</button><button class="btn" id="b0">Limpar seleção</button></div>`;
+    const pre = `<th><input type="checkbox" id="todos" ${ids.length && ids.every(i => sel.has(i)) ? "checked" : ""}></th>`;
+    box.innerHTML = `<div class="tela">${MENU}${titulo()}${marcadas.length ? barra : ""}<div class="rolar"><table>${cabeca(cols, pre)}<tbody>${l.map(r => linha(r, cols, `<td><input type="checkbox" data-s="${r.id}" ${sel.has(r.id) ? "checked" : ""}></td>`)).join("")}</tbody><tfoot><tr><td></td>${cols.map((k, i) => `<td>${i === 0 ? "Total" : k === "nome" ? N(l.length) + " revendedoras" : k === "bb" ? R(somaExtra(l).bb) : k === "no" ? R(somaExtra(l).no) : ""}</td>`).join("")}</tr></tfoot></table></div></div>`;
+    liga(box, pinta);
+    box.querySelectorAll("input[data-s]").forEach(c => c.onchange = () => { c.checked ? sel.add(+c.dataset.s) : sel.delete(+c.dataset.s); pinta(); });
+    $("#todos").onchange = e => { ids.forEach(i => e.target.checked ? sel.add(i) : sel.delete(i)); pinta(); };
+    const em = (e, de) => { marcadas.forEach(r => { if (r.etapa === de) { r.etapa = e; r.em = "03/11/2026"; } }); pinta(); };
+    if (marcadas.length) { $("#b1").onclick = () => em(1, 0); $("#b2").onclick = () => em(2, 1); $("#b0").onclick = () => { sel.clear(); pinta(); }; }
+  };
+  pinta();
+};
+const LEG = {
+  1: "<b>Layout 1 · Tabela única.</b> Uma tabela só com todas as colunas, a etapa de cada uma e o botão da próxima ação na própria linha. Filtro e ordem em cada coluna (▽). O total fica no pé da tabela.",
+  2: "<b>Layout 2 · Abas por etapa.</b> Quatro abas visíveis em cima (A liberar, Pagamento confirmado, Aplicado no acerto e Todas), cada uma com a sua tabela. Quem libera trabalha na aba A liberar e a lista diminui a cada clique.",
+  3: "<b>Layout 3 · Por representante.</b> A tabela é agrupada por representante, com uma linha dourada que mostra quantas estão a liberar e o total de extra BB e Normal. Clique na linha para abrir ou fechar o grupo. Serve para separar as peças por representante.",
+  4: "<b>Layout 4 · Seleção em lote.</b> Caixa de marcar em cada linha. Ao marcar, aparece uma barra com o total de peças a separar (BB e Normal) e os botões Confirmar pagamento e Aplicar no acerto para todas as marcadas de uma vez."
+};
+function abrir(o) {
+  fil = {}; ord = null; aba = "todas"; sel = new Set(); fecha();
+  document.querySelectorAll("#ops button").forEach(b => b.classList.toggle("on", b.dataset.o === String(o)));
+  $("#leg").innerHTML = LEG[o]; O[o]($("#app"));
+}
+document.querySelectorAll("#ops button").forEach(b => b.onclick = () => abrir(+b.dataset.o));
+abrir(1);
+</script>
+</body>
+</html>

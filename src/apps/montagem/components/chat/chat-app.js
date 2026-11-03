@@ -74,12 +74,13 @@ function ChatGlobal(p){
   var tira = function(t){ efem({toasts:st.efem.toasts.filter(function(x){ return x.id!==t.id; })}); };
   var grupos = [], porChave = {};
   st.efem.toasts.forEach(function(t){ var k = t.de || t.id; if(!porChave[k]){ porChave[k] = {k:k, msgs:[]}; grupos.push(porChave[k]); } porChave[k].msgs.push(t); });
-  var caixa = e("div",{className:"flex w-[min(26rem,calc(100%-2rem))] flex-col gap-4", style:{position:"absolute", right:16, top:64, zIndex:60}, "data-sem-clique":true},
+  var painel = typeof document!=="undefined" ? document.getElementById("painel-conversa") : null;
+  var comBolinha = false; try{ comBolinha = localStorage.getItem("sorelly_chat_botao")==="1"; }catch(x){}   // bolinha do chat ligada: o aviso fica ao lado dela; sem a bolinha, vai até o canto
+  // Marcus, 02/11/2026: o aviso fica EMBAIXO. Dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre a conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat.
+  var caixa = e("div",{className:"flex w-[min(26rem,calc(100%-2rem))] flex-col gap-3", style:painel ? {position:"absolute", right:16, bottom:84, zIndex:60} : {position:"fixed", right:comBolinha ? 88 : 16, bottom:16, zIndex:90}, "data-sem-clique":true},
     grupos.map(function(g){
       var ult = g.msgs[g.msgs.length-1], n = g.msgs.length, ouvir = function(){ efem({toasts:st.efem.toasts.filter(function(x){ return (x.de || x.id)!==g.k; })}); if(ult.conv && convPorId(ult.conv)){ efem({conversaSel:ult.conv}); p.abrir(ult.conv); } };
-      var fundo = function(i){ return e("span",{key:"f"+i, className:"absolute inset-0 rounded-[14px_14px_4px_14px]", style:{background:"#fff", borderLeft:"5px solid #25d366", boxShadow:"0 2px 8px rgba(0,0,0,.2)", transform:"translate("+(i*7)+"px,"+(i*6)+"px)", opacity:i===1 ? .85 : .6}}); };
-      return e("div",{key:g.k, className:"relative pb-2"},
-        n>=3 && fundo(2), n>=2 && fundo(1),
+      return e("div",{key:g.k, className:"relative"},
         e("div",{role:"button", tabIndex:0, onClick:ouvir, className:"relative flex cursor-pointer items-start gap-3 rounded-[14px_14px_4px_14px] p-3 text-left", style:{background:ult.atraso ? "#fde8ea" : "#ffffff", color:"#0b141a", borderLeft:"5px solid "+(ult.atraso ? W.vermelho : "#25d366"), boxShadow:"0 4px 16px rgba(0,0,0,.25)"}},
           ult.atraso ? e(Ph,{n:"alarm", s:40, fill:true, style:{color:W.vermelho}}) : e(Avatar,{id:ult.de, s:48}),
           e("span",{className:"min-w-0 flex-1 pr-6"},
@@ -88,8 +89,7 @@ function ChatGlobal(p){
             e("button",{onClick:function(ev){ ev.stopPropagation(); efem({toasts:[]}); }, className:"mt-1 ml-auto block text-[12px] font-semibold hover:underline", style:{color:"#667781"}}, "Fechar todas ×")),
           e("button",{onClick:function(ev){ ev.stopPropagation(); tira(ult); }, "aria-label":"Fechar este aviso", title:"Fechar este aviso", className:"absolute right-2 top-2 grid size-7 place-items-center rounded-full text-[20px] leading-none hover:bg-black/10", style:{color:"#54656f"}}, "×")),
         n>=2 && e("span",{className:"absolute grid place-items-center rounded-full text-[14px] font-extrabold", style:{right:-8, top:-10, minWidth:26, height:26, padding:"0 7px", background:"#25d366", color:"#06240f", boxShadow:"0 2px 6px rgba(0,0,0,.3)"}}, n)); }));
-  var painel = typeof document!=="undefined" ? document.getElementById("painel-conversa") : null;
-  return painel ? createPortal(caixa, painel) : e("div",{style:{position:"fixed", right:0, top:150, width:"min(28rem,100vw)", height:0, zIndex:90}}, caixa);
+  return painel ? createPortal(caixa, painel) : caixa;
 }
 
 // chat flutuante no canto da tela (some na tela cheia do SorellyChat)

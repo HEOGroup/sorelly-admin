@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metas: notificações e Minha Meta no app</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--ok:#4ade80;--no:#f87171;--am:#facc15;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.45 Inter,system-ui,sans-serif;padding:16px;max-width:1380px;margin:0 auto}
+h1{font-size:20px;font-weight:600;line-height:1}
+.cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 16px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:120px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.btn{height:32px;padding:0 12px;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.btn.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+.topo{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:14px;align-items:start}
+.esq{display:flex;flex-direction:column;gap:10px}
+.dir{display:flex;flex-direction:column;align-items:center;gap:8px}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1);width:100%}
+.bloco>h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;height:30px;display:flex;align-items:center;justify-content:center;color:#1a1306;background:var(--topo);border-radius:8px 8px 0 0}
+.in{padding:10px 12px}
+.dois{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+select{height:32px;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px;text-align:center}
+.cont{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cont div{border:1px solid var(--bd);border-radius:8px;padding:6px;text-align:center}
+.cont b{font-size:16px;font-weight:600}
+.ok{color:var(--ok)}.am{color:var(--am)}.no{color:var(--no)}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+table{width:100%;border-collapse:collapse;background:var(--topo) top left/100% 30px no-repeat}
+thead th{height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#1a1306;white-space:nowrap}
+td{padding:7px 10px;text-align:center;border-bottom:1px solid var(--bd);vertical-align:middle}
+tbody tr{cursor:pointer}
+tbody tr:hover td,tbody tr.on td{background:rgba(232,184,75,.14)}
+tbody tr.sug td:first-child{box-shadow:inset 3px 0 0 var(--ok)}
+.tag{display:inline-block;height:20px;line-height:18px;padding:0 8px;border:1px solid var(--ouro);border-radius:6px;font-size:11px;white-space:nowrap;color:var(--ouro)}
+.tag.s{border-color:var(--ok);color:var(--ok);margin-left:4px}
+.lin{display:grid;grid-template-columns:1.2fr 1fr;align-items:center;min-height:28px;padding:0 12px;border-bottom:1px solid var(--bd);text-align:center;font-size:12.5px}
+.lin:last-child{border-bottom:0}
+.lin b{font-weight:600}
+.barra{height:8px;background:var(--s2);border-radius:4px;overflow:hidden;margin:6px 12px 2px}
+.barra i{display:block;height:100%;background:var(--ouro);transition:width .4s}
+.acoes{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;padding:8px 10px;border-top:1px solid var(--bd)}
+.acoes label{display:flex;gap:6px;align-items:center;font-size:12px}
+.pulso{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--ok);margin-right:6px;animation:pisca 1.2s infinite}
+@keyframes pisca{50%{opacity:.25}}
+/* iPhone 15 (393 x 852 pt) em escala 0,74 */
+.iph{width:291px;height:630px;border-radius:44px;background:#000;border:7px solid #2b2b2e;box-shadow:0 0 0 2px #444 inset;position:relative;overflow:hidden;flex:none}
+.ilha{position:absolute;top:10px;left:50%;transform:translateX(-50%);width:84px;height:24px;background:#000;border-radius:14px;z-index:5}
+.tela{position:absolute;inset:0;background:linear-gradient(160deg,#3b3f55,#1b1d2b 55%,#4a3b2a);padding-top:52px;color:#fff;text-align:center}
+.hora{font-size:64px;font-weight:600;letter-spacing:-2px;line-height:1;opacity:.85;margin-top:8px}
+.data{font-size:15px;opacity:.9;margin-top:34px}
+.notif{margin:22px 10px 0;background:rgba(60,60,67,.62);backdrop-filter:blur(14px);border-radius:20px;padding:11px 12px;display:flex;gap:10px;text-align:left}
+.nic{width:28px;height:28px;border-radius:8px;background:#1a1306;border:1px solid #D4A84B;flex:none;display:flex;align-items:center;justify-content:center;color:#E8B84B;font-weight:700;font-size:14px}
+.nt{font-size:10.6px;font-weight:600;line-height:1.25;display:-webkit-box;-webkit-line-clamp:1;-webkit-box-orient:vertical;overflow:hidden}
+.nb{font-size:10.6px;line-height:1.25;opacity:.92;margin-top:1px;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.nbn{font-size:9px;opacity:.6;margin-left:auto;flex:none}
+.rodape{position:absolute;bottom:22px;left:0;right:0;display:flex;justify-content:space-between;padding:0 34px}
+.rodape i{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18)}
+.barra-home{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:110px;height:4px;border-radius:2px;background:#fff;opacity:.8}
+.app{position:absolute;inset:0;background:#0f0f11;padding-top:46px;display:flex;flex-direction:column;color:#fff}
+.apptop{padding:6px 14px;font-weight:600;font-size:15px;display:flex;justify-content:space-between;align-items:center}
+.appc{flex:1;overflow:hidden;padding:6px 12px}
+.card{background:#1a1a1d;border:1px solid #2a2a2e;border-radius:14px;padding:10px;margin-bottom:8px;text-align:center;font-size:12px}
+.card small{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#E8B84B;margin-bottom:3px;font-weight:600}
+.tabs{display:flex;justify-content:space-around;align-items:flex-end;padding:8px 4px 20px;background:#141416;border-top:1px solid #2a2a2e}
+.tabs div{font-size:10px;text-align:center;opacity:.7;width:56px}
+.tabs div i{display:block;width:22px;height:22px;border-radius:7px;background:#2a2a2e;margin:0 auto 3px}
+.tabs .meta{opacity:1;font-weight:700}
+.tabs .meta i{background:linear-gradient(135deg,#F5E7BE,#E8B84B);width:30px;height:30px;border-radius:10px;animation:brilho 1.6s ease-in-out infinite}
+.tabs .meta span{color:#E8B84B}
+@keyframes brilho{0%,100%{box-shadow:0 0 0 0 rgba(232,184,75,.65),0 0 8px 2px rgba(232,184,75,.5)}50%{box-shadow:0 0 0 7px rgba(232,184,75,0),0 0 18px 6px rgba(245,231,190,.8)}}
+.anel{width:104px;height:104px;border-radius:50%;margin:6px auto;display:flex;align-items:center;justify-content:center;position:relative}
+.anel::after{content:attr(data-p);position:absolute;inset:9px;background:#1a1a1d;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600}
+.btnapp{display:block;width:100%;height:36px;border-radius:10px;border:0;background:linear-gradient(135deg,#F5E7BE,#E8B84B);color:#1a1306;font-weight:700;font-size:13px;margin-top:6px}
+.nota{font-size:12px;text-align:center;padding:6px 0 2px}
+.lista{font-size:12.5px}
+.lista li{margin:4px 0 4px 16px}
+@media(max-width:1000px){.topo{grid-template-columns:1fr}.dois{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="cab"><h1>Notificações e Minha Meta no app da revendedora</h1><span>Protótipo com revendedoras inventadas. Nada é enviado.</span></div>
+<div class="topo">
+  <div class="esq">
+    <select id="rev" aria-label="Revendedora"></select>
+    <div class="bloco"><h2>Desempenho em tempo real</h2>
+      <div id="desemp"></div>
+      <div class="acoes"><button class="btn" id="atu">Atualizar</button><button class="btn" id="sim">Simular venda</button><label><input type="checkbox" id="auto"> Atualizar sozinho (60 s)</label></div>
+    </div>
+    <div class="dois">
+      <div class="bloco"><h2>Medidor de letras</h2><div class="in">
+        <div class="cont"><div>Título<br><b id="ct">0</b> / 30</div><div>Texto<br><b id="cb">0</b> / 90</div></div>
+        <p class="nota" id="av"></p>
+        <ul class="lista">
+          <li>Tela bloqueada: título em 1 linha (o horário fica ao lado) e texto até 4 linhas, cerca de 38 letras por linha.</li>
+          <li>Banner com o app aberto: só 2 linhas de texto.</li>
+          <li>Regra segura: título até 30 e texto até 90, com o principal nos primeiros 45.</li>
+        </ul>
+      </div></div>
+      <div class="bloco"><h2>3 por dia (sugestão)</h2><div class="in"><ul class="lista">
+        <li><b>09:30</b> sobre a meta (personalizada)</li>
+        <li><b>14:00</b> dica de venda (catálogo, link de pagamento, garantia)</li>
+        <li><b>18:30</b> sobre a meta (quem está perto) ou novidade</li>
+        <li>Silêncio das 21:00 às 08:00. Nunca 2 sobre a meta seguidas.</li>
+      </ul></div></div>
+    </div>
+  </div>
+  <div class="dir">
+    <div class="seg" id="vis"><button data-v="n" class="on">Notificação</button><button data-v="m">Minha Meta</button></div>
+    <div id="fones"></div>
+  </div>
+</div>
+<div class="bloco" style="margin-top:14px"><h2>Notificações (textos)</h2></div>
+<div class="rolar" style="border-top-left-radius:0;border-top-right-radius:0;border-top:0"><table><thead><tr><th>Quando</th><th>Técnica de copy</th><th>Título</th><th>Texto</th><th>Letras</th></tr></thead><tbody id="tx"></tbody></table></div>
+<p class="nota">A barra verde marca o texto sugerido para a situação da revendedora escolhida. Clique numa linha para ver no celular, lá em cima, com os dados dela.</p>
+<script>
+const $ = s => document.querySelector(s);
+const R = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+// Revendedoras INVENTADAS (nada de dado real): classe, metas e brinde extra de cada meta, vendido no app, dias até o acerto
+const REVS = [
+  {nome: "Ana Paula", classe: "Kit novo", m1: 1500, m2: 2000, e1: [124, 92], e2: [164, 118], vend: 0, dias: 16, acesso: "nunca abriu Minha Meta", env: 0},
+  {nome: "Beatriz", classe: "R$ 600,00 até R$ 999,99", m1: 1500, m2: 2000, e1: [124, 92], e2: [164, 118], vend: 380, dias: 12, acesso: "ontem, 20:14", env: 1},
+  {nome: "Camila", classe: "R$ 1.000,00 até R$ 1.499,99", m1: 1900, m2: 2400, e1: [164, 108], e2: [184, 140], vend: 1010, dias: 9, acesso: "hoje, 08:51", env: 2},
+  {nome: "Daniela", classe: "R$ 1.500,00 até R$ 1.999,99", m1: 2500, m2: 3000, e1: [208, 140], e2: [238, 164], vend: 2280, dias: 2, acesso: "hoje, 11:03", env: 2},
+  {nome: "Eliane", classe: "R$ 2.000,00 até R$ 2.499,99", m1: 3000, m2: 3700, e1: [238, 164], e2: [308, 208], vend: 3150, dias: 5, acesso: "hoje, 09:40", env: 3},
+  {nome: "Fernanda", classe: "R$ 2.500,00 até R$ 2.999,99", m1: 3800, m2: 4500, e1: [308, 208], e2: [364, 238], vend: 4620, dias: 4, acesso: "hoje, 10:22", env: 3},
+  {nome: "Gabriela", classe: "R$ 3.000,00 até R$ 3.999,99", m1: 4800, m2: 5800, e1: [364, 258], e2: [418, 318], vend: 2600, dias: 11, acesso: "há 3 dias", env: 3},
+  {nome: "Helena", classe: "R$ 4.000,00 até R$ 4.999,99", m1: 6000, m2: 7200, e1: [418, 318], e2: [418, 364], vend: 5100, dias: 3, acesso: "hoje, 07:58", env: 1},
+  {nome: "Joana", classe: "R$ 0,00 até R$ 599,99", m1: 1500, m2: 2000, e1: [124, 92], e2: [164, 118], vend: 1420, dias: 1, acesso: "hoje, 12:30", env: 2}
+];
+const TEXTOS = [
+  ["Apresentar a meta", "Ganho concreto + convite", "Sua Minha Meta chegou 🎯", "{nome}, venda {alvo} neste acerto e ganhe brinde extra. Toque e veja."],
+  ["Apresentar a meta", "Pergunta de sim", "{nome}, quer um brinde extra?", "Venda {alvo} até o acerto e ele é seu. Veja quanto falta."],
+  ["Apresentar a meta", "Pressuposição positiva", "Seu brinde extra te espera", "Quando você chegar em {alvo}, BB e Normal extras são seus. Veja o caminho."],
+  ["Explicar a meta", "Passo único e curto", "Entenda sua meta rapidinho", "Toque em Minha Meta: veja quanto falta e o brinde que você ganha."],
+  ["Primeiro impulso", "Reforço do que já fez", "Bom começo, {nome}! 💛", "Você já vendeu {vend}. Faltam {falta} para o brinde extra."],
+  ["Metade do caminho", "Prova de progresso", "Metade do caminho! 🚀", "{pct}% da meta feita. Faltam {falta} para o brinde extra."],
+  ["Falta pouco", "Número específico", "Falta pouco, {nome}! 🔥", "Só {falta} para o brinde extra. Uma boa venda e você chega lá."],
+  ["Falta pouco", "Imagem mental", "Seu brinde está a uma venda", "Faltam {falta}. Mostre o catálogo hoje e feche!"],
+  ["Falta pouco", "Ganho detalhado", "{nome}, quase lá!", "Faltam {falta} para liberar BB {bb} + Normal {no} de brinde extra."],
+  ["Falta pouco", "Escolha entre duas", "Hoje é um bom dia para fechar", "{nome}, faltam {falta}. Link de pagamento ou catálogo? Você escolhe."],
+  ["Reta final", "Prazo real", "Seu acerto é em {dias} dias ⏳", "Faltam {falta} para o brinde extra. Ainda dá tempo, {nome}!"],
+  ["Reta final", "Urgência honesta", "Último dia para vender hoje", "{nome}, faltam {falta}. Feche hoje e leve o brinde extra."],
+  ["Bateu a Meta 1", "Celebração + próximo degrau", "Meta 1 batida! 🎉", "Brinde extra garantido, {nome}! A Meta 2 está a só {falta2}."],
+  ["Bateu a Meta 1", "Reconhecimento", "Parabéns, {nome}! 💎", "Você garantiu o brinde extra. Quer mais? Veja a Meta 2 no app."],
+  ["Bateu a Meta 2", "Celebração máxima", "Meta 2 conquistada! 🏆", "Você ganhou o maior brinde extra. Parabéns, {nome}!"],
+  ["Depois do acerto", "Recomeço sem culpa", "Na próxima você chega lá 💛", "Você vendeu {vend}. Sua nova meta já está em Minha Meta."],
+  ["Dica de venda", "Ação única", "Seu catálogo é sua vitrine ✨", "Compartilhe o link hoje e mostre suas peças favoritas."],
+  ["Dica de venda", "Facilidade", "Fechar venda ficou fácil 💳", "Envie o link de pagamento pelo app e receba na hora."]
+];
+let sel = -1, vis = "n", ir = 0, atualizadoEm = new Date(), timer = null;
+const rv = () => REVS[ir];
+function estado(r) {
+  const bateu2 = r.vend >= r.m2, bateu1 = r.vend >= r.m1, alvo = bateu1 ? r.m2 : r.m1, ex = bateu1 ? r.e2 : r.e1;
+  const pct = Math.min(100, Math.round(r.vend / alvo * 100)), falta = Math.max(0, alvo - r.vend);
+  let sit = "Apresentar a meta", sug = 0;
+  if (bateu2) { sit = "Bateu Meta 2"; sug = 14; }
+  else if (bateu1) { sit = "Bateu Meta 1"; sug = 12; }
+  else if (r.dias <= 3 && r.vend > 0) { sit = "Reta final"; sug = r.dias <= 1 ? 11 : 10; }
+  else if (pct >= 80) { sit = "Falta pouco"; sug = 6; }
+  else if (pct >= 50) { sit = "Metade do caminho"; sug = 5; }
+  else if (r.vend > 0) { sit = "Primeiro impulso"; sug = 4; }
+  return {alvo, ex, pct, falta, sit, sug, bateu1, bateu2};
+}
+function sub(t) {
+  const r = rv(), s = estado(r);
+  return t.replace(/\{nome\}/g, r.nome).replace(/\{alvo\}/g, R(s.alvo)).replace(/\{falta2\}/g, R(Math.max(0, r.m2 - r.vend))).replace(/\{falta\}/g, R(s.falta)).replace(/\{vend\}/g, R(r.vend))
+    .replace(/\{pct\}/g, s.pct).replace(/\{bb\}/g, R(s.ex[0])).replace(/\{no\}/g, R(s.ex[1])).replace(/\{dias\}/g, r.dias);
+}
+const notif = (t, b) => `<div class="notif"><div class="nic">S</div><div style="min-width:0;flex:1"><div style="display:flex;gap:6px"><div class="nt">${t}</div><div class="nbn">agora</div></div><div class="nb">${b}</div></div></div>`;
+function pinta() {
+  const r = rv(), s = estado(r), idx = sel < 0 ? s.sug : sel, [q, tec, t0, b0] = TEXTOS[idx], t = sub(t0), b = sub(b0);
+  $("#ct").textContent = t.length; $("#cb").textContent = b.length;
+  $("#ct").className = t.length > 30 ? "no" : "ok"; $("#cb").className = b.length > 90 ? (b.length > 140 ? "no" : "am") : "ok";
+  $("#av").textContent = b.length > 140 ? "Passa de 4 linhas: corta na tela bloqueada." : b.length > 90 ? "Cabe na tela bloqueada, mas o banner corta o final." : t.length > 30 ? "Título longo: pode ser cortado." : "Cabe inteiro na tela bloqueada e no banner.";
+  $("#av").className = "nota " + (b.length > 140 || t.length > 30 ? "no" : b.length > 90 ? "am" : "ok");
+  if (vis === "n") {
+    $("#fones").innerHTML = `<div class="iph"><div class="ilha"></div><div class="tela"><div class="data">Seg. 2 de nov.</div><div class="hora">23:38</div>${notif(t, b)}<div class="rodape"><i></i><i></i></div><div class="barra-home"></div></div></div>`;
+  } else {
+    $("#fones").innerHTML = `<div class="iph"><div class="ilha"></div><div class="app"><div class="apptop"><span>Minha Meta</span><span>🎯</span></div><div class="appc">
+      <div class="card"><small>Seu progresso</small><div class="anel" data-p="${s.pct}%" style="background:conic-gradient(#E8B84B ${s.pct * 3.6}deg,#2a2a2e 0)"></div>${s.bateu2 ? "Meta 2 conquistada!" : "Faltam <b>" + R(s.falta) + "</b> para o brinde extra"}<br><span style="font-size:11px;opacity:.7">Acerto em ${r.dias} dia${r.dias === 1 ? "" : "s"}</span></div>
+      <div class="card"><small>Meta 1: ${R(r.m1)} ${r.vend >= r.m1 ? "✓" : ""}</small>Brinde extra: BB ${R(r.e1[0])} + Normal ${R(r.e1[1])}</div>
+      <div class="card"><small>Meta 2: ${R(r.m2)} ${r.vend >= r.m2 ? "✓" : ""}</small>Brinde extra maior: BB ${R(r.e2[0])} + Normal ${R(r.e2[1])}</div>
+      <button class="btnapp">Como bater minha meta</button></div><div class="tabs"><div><i></i>Início</div><div><i></i>Pedidos</div><div class="meta"><i></i><span>Minha Meta</span></div><div><i></i>Perfil</div></div></div></div>`;
+  }
+  const corSit = s.bateu1 ? "ok" : s.pct >= 80 ? "am" : "";
+  $("#desemp").innerHTML = `<div class="barra"><i style="width:${s.pct}%"></i></div>` +
+    [["Categoria", r.classe], ["Meta 1 / Meta 2", R(r.m1) + " / " + R(r.m2)], ["Vendido no app", `<b>${R(r.vend)}</b>`], ["Falta para " + (s.bateu1 ? "a Meta 2" : "a Meta 1"), R(s.falta)], ["Progresso", s.pct + "%"],
+     ["Situação", `<b class="${corSit}">${s.sit}</b>`], ["Acerto previsto", "em " + r.dias + " dia" + (r.dias === 1 ? "" : "s")], ["Último acesso ao app", r.acesso], ["Notificações hoje", r.env + " de 3"], ["Texto sugerido", `<b>${TEXTOS[s.sug][2].replace("{nome}", r.nome).replace("{dias}", r.dias)}</b>`],
+     ["Atualizado às", `<span class="pulso"></span>${atualizadoEm.toLocaleTimeString("pt-BR")}`]].map(x => `<div class="lin"><span>${x[0]}</span><span>${x[1]}</span></div>`).join("");
+  $("#tx").innerHTML = TEXTOS.map((x, i) => { const tt = sub(x[2]), bb = sub(x[3]); return `<tr data-i="${i}" class="${i === idx ? "on" : ""} ${i === s.sug ? "sug" : ""}"><td><span class="tag">${x[0]}</span>${i === s.sug ? '<span class="tag s">sugerido</span>' : ""}</td><td>${x[1]}</td><td>${tt}</td><td style="min-width:240px">${bb}</td><td><span class="${tt.length > 30 ? "no" : "ok"}">${tt.length}</span> / <span class="${bb.length > 140 ? "no" : bb.length > 90 ? "am" : "ok"}">${bb.length}</span></td></tr>`; }).join("");
+  document.querySelectorAll("#tx tr").forEach(tr => tr.onclick = () => { sel = +tr.dataset.i; vis = "n"; window.scrollTo({top: 0, behavior: "smooth"}); document.querySelectorAll("#vis button").forEach(x => x.classList.toggle("on", x.dataset.v === "n")); pinta(); });
+}
+$("#rev").innerHTML = REVS.map((r, i) => `<option value="${i}">${r.nome} · ${r.classe}</option>`).join("");
+$("#rev").onchange = e => { ir = +e.target.value; sel = -1; atualizadoEm = new Date(); pinta(); };
+document.querySelectorAll("#vis button").forEach(b => b.onclick = () => { vis = b.dataset.v; document.querySelectorAll("#vis button").forEach(x => x.classList.toggle("on", x === b)); pinta(); });
+$("#atu").onclick = () => { atualizadoEm = new Date(); pinta(); };
+$("#sim").onclick = () => { rv().vend += 120 + Math.round(Math.random() * 260); atualizadoEm = new Date(); sel = -1; pinta(); };
+$("#auto").onchange = e => { clearInterval(timer); if (e.target.checked) timer = setInterval(() => { atualizadoEm = new Date(); pinta(); }, 60000); };
+pinta();
+</script>
+</body>
+</html>

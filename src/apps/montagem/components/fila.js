@@ -23,7 +23,17 @@ var ETAPA = {bipado:0, bipando:1, montado:2, supervisao:3, montando:4, ajuste:5,
 var TOM_LINHA = {bipado:"bg-success/10 hover:bg-success/15", montado:"bg-info/10 hover:bg-info/15", supervisao:"bg-warning/12 hover:bg-warning/18",
   retirado:"bg-muted/50 text-muted-foreground hover:bg-muted/70"};
 function tempoFim(ms, ts){ if(!ts) return null; var m = Math.round((ms||0)/60000); return (m<1?"<1":m)+"m · "+hora(ts); }
-var FAIXA_GRADE = "grid items-center gap-2.5 grid-cols-[9rem_11rem_7.5rem_8rem_4.5rem_minmax(0,1fr)_26rem]";
+var FAIXA_GRADE = "grid items-center gap-2.5 grid-cols-[minmax(10rem,1fr)_9rem_11rem_29rem]";
+// DATA DA LISTAGEM COM COR (Marcus, 04/11/2026): hoje verde, dia seguinte azul, mais adiante roxo, dia que já passou vermelho
+var DIAS_SEMANA = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
+function dataListagem(iso, hojeISO){
+  if(!iso) return {txt:"Sem data", cls:"bg-[#374151] text-white"};
+  var dd = iso.slice(8, 10)+"/"+iso.slice(5, 7), dif = Math.round((new Date(iso+"T12:00:00") - new Date(hojeISO+"T12:00:00"))/86400000), sem = DIAS_SEMANA[new Date(iso+"T12:00:00").getDay()];
+  if(dif<0) return {txt:sem+" "+dd+" · passou", cls:"bg-[#7A1F1F] text-white"};
+  if(dif===0) return {txt:"Hoje · "+dd, cls:"bg-[#14532D] text-white"};
+  if(dif===1) return {txt:"Amanhã · "+dd, cls:"bg-[#1E3A8A] text-white"};
+  return {txt:sem+" "+dd, cls:"bg-[#581C87] text-white"};
+}
 function Fila(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var la = useState(null), linhaAb = la[0], setLinhaAb = la[1];   // kit que a Deysiane está finalizando na linha
@@ -31,8 +41,8 @@ function Fila(p){
   var fila = filaMontagem(s);
   // Listagens concluídas saem do Painel (ficam no Consolidado)
   var hojeISO = isoDia(new Date());
-  var lists = s.listagens.slice().sort(function(a,b){return minutos(a.horario)-minutos(b.horario);})
-    .filter(function(l){return !l.fechada && (!l.data || l.data===hojeISO) && (p.filtroRep==="todas" || l.id===p.filtroRep);});
+  var lists = s.listagens.slice().filter(function(l){return !l.fechada && (!l.data || l.data>=hojeISO) && (p.filtroRep==="todas" || l.id===p.filtroRep);})
+    .sort(function(a,b){ return String(a.data||"").localeCompare(String(b.data||"")) || minutos(a.horario)-minutos(b.horario); });
   var busca = (p.busca||"").toLowerCase();
   var sit = SITUACOES.find(function(x){return x.id===p.sit;});
   var mostrados = 0;
@@ -58,7 +68,8 @@ function Fila(p){
   // Colunas na ordem do fluxo: kit → montagem → condicionais pegas → bipagem → nova condicional
   // Dinheiro (média de venda e valor do kit) só aparece para a supervisão; montadora e bipadora não veem valores
   // todas as colunas com largura: a tabela distribui o espaço proporcionalmente (o nome não fica gigante)
-  var LARG = [36,52,140,120].concat(sup ? [70,86] : []).concat([112,124,76,76,76,76,70,34]);
+  var plano = !!p.plano, cabFeito = false;
+  var LARG = (plano ? [122,130] : []).concat([36,52,140,120]).concat(sup ? [70,86] : []).concat([112,124,76,76,76,76,70,34]);
   COLS = LARG.length;
   var TINTA = "text-[#1B1409]";
   var chip = function(txt, ic, cls, titulo){ return e("span",{title:titulo, className:"inline-flex max-w-full items-center gap-1 truncate rounded-md px-2 py-0.5 text-[13px] font-semibold "+(cls||"bg-black/15 "+TINTA)}, ic && e(Icon,{n:ic, s:13}), txt); };
@@ -67,9 +78,9 @@ function Fila(p){
       (prim ? "bg-[#1B1409] text-[#F1E4C6] hover:bg-[#1B1409]/85" : "bg-black/10 "+TINTA+" hover:bg-black/20")}, e(Icon,{n:ic, s:14}), txt); };
   var BLOCO = "[&_tr.kit>*:first-child]:border-l-2! [&_tr.kit>*:last-child]:border-r-2! [&_tr.kit>*:first-child]:border-l-[#D9A63A]! [&_tr.kit>*:last-child]:border-r-[#D9A63A]! "+
     "[&_tr.fim>td]:border-b-2! [&_tr.fim>td]:border-b-[#D9A63A]! [&_tr.fim>td:first-child]:rounded-bl-xl [&_tr.fim>td:last-child]:rounded-br-xl";
-  var COLUNAS = [["Ordem"],["Horário"],["Nome"],["Tipo"],["Média"],["Valor kit"],["Situação"],
+  var COLUNAS = (plano ? [["Data"],["Representante"]] : []).concat([["Ordem"],["Horário"],["Nome"],["Tipo"],["Média"],["Valor kit"],["Situação"],
     ["Montadora","text-purple!"],["Tempo · fim","text-purple!"],["Cond.","text-warning!"],
-    ["Bipadora","text-info!"],["Tempo · fim","text-info!"],["Nova cond.","text-warning!"],[""]]
+    ["Bipadora","text-info!"],["Tempo · fim","text-info!"],["Nova cond.","text-warning!"],[""]])
     .filter(function(c){ return sup || (c[0]!=="Média" && c[0]!=="Valor kit"); });
   var cabecalho = function(key){ return e("tr",{key:key, className:"kit bg-sidebar"},
     COLUNAS.map(function(c,i){ return e(TH,{key:i, className:C+" text-[12px]! tracking-normal! px-1! "+(c[1]||"")}, c[0]); })); };
@@ -107,37 +118,33 @@ function Fila(p){
           var todos = s.kits.filter(function(k){return k.lid===l.id && k.status!=="precond";});
           var prontos = todos.filter(function(k){return k.status==="bipado";}).length;
           var semValor = todos.filter(function(k){return k.status==="semvalor";}).length;
-          var atras = todos.filter(function(k){return k.atrasado;}).length;
-          var aberta = !!s.abertas[l.id], comLinhas = aberta && ks.length>0, ultimo = ks[ks.length-1];
+          var aberta = plano || !!s.abertas[l.id], comLinhas = aberta && ks.length>0, ultimo = ks[ks.length-1];
           var linhas = [];
           if(sit && !ks.length) return linhas;
-          var retirados = todos.filter(function(k){return k.status==="retirado";}).length;
-          if(mostrados++>0) linhas.push(e("tr",{key:l.id+"esp", "aria-hidden":true}, e("td",{colSpan:COLS, className:"h-3 p-0!"})));
-          linhas.push(e("tr",{key:l.id},
-            e("td",{colSpan:COLS, className:"px-3! py-2! shadow-[inset_0_1px_0_rgba(255,255,255,.35)] bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] "+TINTA+" "+(comLinhas?"rounded-t-xl":"rounded-xl")},
-              e("div",{className:FAIXA_GRADE},
-                e("button",{onClick:function(){d({type:"TOGGLE", id:l.id});}, "aria-expanded":aberta, className:"inline-flex min-w-0 items-center gap-2 font-heading text-[15px] font-bold"},
-                  e(Icon,{n: aberta?"chevrondown":"chevron", s:16}), e("span",{className:"truncate"}, l.rep)),
-                chip(l.horario+(l.viagem ? " · "+l.destino : ""), l.viagem?"send":"clock", null, (l.viagem?"Viagem para "+l.destino+", ":"")+"retirada às "+l.horario),
-                e("div",{className:"flex min-w-0 gap-1"},
-                  semValor>0 && chip(semValor+" sem valor",null,"bg-[#7A1F1F] text-white"),
-                  !semValor && atras>0 && chip(atras+(atras>1?" atrasados":" atrasado"),"clock","bg-[#9A4A00] text-white", "Pedidos fora do prazo")),
-                e("span",{className:"text-[13px] font-medium opacity-85", title:prontos+" bipados esperando retirada, "+retirados+" retirados de "+todos.length},
-                  prontos+" bip. · "+retirados+"/"+todos.length+" ret."),
-                e("span",{className:"flex h-1.5 overflow-hidden rounded-full bg-black/15", title:"escuro = retirados, médio = bipados"},
-                  e("i",{className:"block h-full bg-[#1B1409]", style:{width:(retirados/todos.length*100)+"%"}}),
-                  e("i",{className:"block h-full bg-[#1B1409]/45", style:{width:(prontos/todos.length*100)+"%"}})),
-                e("span",null),
-                // botões em posições fixas (o espaço fica reservado mesmo quando um botão não aparece)
-                e("div",{className:"flex justify-end gap-1.5"},
-                  sup && (semValor>0 ? gbtn("Confirmar "+semValor,"check",function(){d({type:"CONFIRMAR_SUGERIDOS", lid:l.id});},false,false,"w-[8.5rem]","Confirmar "+semValor+" valores sugeridos")
-                    : e("span",{className:"w-[8.5rem]"})),
-                  sup && gbtn("Última hora","plus",function(){p.abrir("kit", l.id);},false,false,"w-[8rem]","Incluir kit de última hora"),
-                  sup && gbtn(prontos ? "Retirada ("+prontos+")" : "Nada pronto","send",function(){p.abrir("ret", l.id);}, true, !prontos,"w-[8.5rem]","Fazer retirada dos kits bipados"))))));
-          if(comLinhas) linhas.push(cabecalho(l.id+"cab"));
+          var dl = dataListagem(l.data, hojeISO);
+          // visão em tabela: sem barra por representante; Data e Representante viram colunas
+          if(!plano){
+            if(mostrados++>0) linhas.push(e("tr",{key:l.id+"esp", "aria-hidden":true}, e("td",{colSpan:COLS, className:"h-3 p-0!"})));
+            linhas.push(e("tr",{key:l.id},
+              e("td",{colSpan:COLS, className:"px-3! py-2! shadow-[inset_0_1px_0_rgba(255,255,255,.35)] bg-linear-to-r from-[#B8862B] via-[#E8B84B] to-[#F1E4C6] "+TINTA+" "+(comLinhas?"rounded-t-xl":"rounded-xl")},
+                e("div",{className:FAIXA_GRADE},
+                  e("button",{onClick:function(){d({type:"TOGGLE", id:l.id});}, "aria-expanded":aberta, className:"inline-flex min-w-0 items-center gap-2 font-heading text-[13px] font-bold"},
+                    e(Icon,{n: aberta?"chevrondown":"chevron", s:16}), e("span",null, l.rep)),
+                  chip(dl.txt, "calendario", dl.cls, "Dia da retirada"),
+                  chip(l.horario+(l.viagem ? " · "+l.destino : ""), l.viagem?"send":"clock", null, (l.viagem?"Viagem para "+l.destino+", ":"")+"retirada às "+l.horario),
+                  // botões em posições fixas (o espaço fica reservado mesmo quando um botão não aparece)
+                  e("div",{className:"flex justify-end gap-1.5"},
+                    sup && (semValor>0 ? gbtn("Confirmar valores","check",function(){d({type:"CONFIRMAR_SUGERIDOS", lid:l.id});},false,false,"w-[10.5rem]","Confirmar os valores sugeridos")
+                      : e("span",{className:"w-[10.5rem]"})),
+                    sup && gbtn("Última hora","plus",function(){p.abrir("kit", l.id);},false,false,"w-[8rem]","Incluir kit de última hora"),
+                    sup && gbtn(prontos ? "Retirada ("+prontos+")" : "Nada pronto","send",function(){p.abrir("ret", l.id);}, true, !prontos,"w-[8.5rem]","Fazer retirada dos kits bipados"))))));
+          }
+          if(comLinhas && (!plano || !cabFeito)){ linhas.push(cabecalho(l.id+"cab")); cabFeito = true; }
           if(aberta) ks.forEach(function(k){
             var pos = fila.indexOf(k), ab = s.kitAberto===k.id, fim = k===ultimo, tipo = TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit, semKit = !!SEM_KIT[k.tipoKit];
             linhas.push(e("tr",{key:k.id, className:"kit transition-colors "+(ab ? "bg-primary/10" : (TOM_LINHA[k.status] || "bg-card hover:bg-muted/40"))+(fim && !ab?" fim":"")},
+              plano && e(TD,{className:C}, chip(dl.txt, null, dl.cls, "Dia da retirada")),
+              plano && e(TD,{className:C+" font-medium"}, l.rep),
               e(TD,{className:C+" "+MONO+" text-muted-foreground"}, k.designada ? e("span",{className:"text-primary", title:"Pedido para "+nomeDe(k.designada)},"Ped.") : pos>=0 ? (pos+1)+"º" : "—"),
               e(TD,{className:C+" "+MONO+" text-[12.5px]!", title:"Horário de atendimento (a representante organiza pelo app)"}, k.horaAtend || vazio),
               e(TD,{className:C+" truncate font-medium"}, e("span",{title:k.rev+(k.atrasado?" · pedido fora do prazo":"")+(k.autorizadoPor?" · autorizado por "+nomeDe(k.autorizadoPor):"")},

@@ -3,6 +3,14 @@
 // cada coluna tem a largura do maior conteúdo e nada é abreviado. Opção de agrupar as linhas por uma coluna.
 // detalhe(linha) = o que abre logo embaixo da linha ao clicar (e fecha ao clicar de novo); começa tudo fechado.
 // Opções novas (26/10/2026, tela Revendedoras): centro (células centralizadas, linhas finas), totalLinha(linhas) = células da linha de TOTAL acima do cabeçalho, linhaGrupo(valor, linhas) = {span, rotulo, resto[]}, onFiltradas(linhas) avisa quem está em volta, cols[].fmt(v, linha), cols[].cor(linha) e cols[].max (largura máxima em px; o que passar corta com … e aparece inteiro ao passar o mouse).
+// cabAcima: [[{t, span, sep}, ...], ...] = barras de grupo em cima do cabeçalho das colunas, uma linha por barra (ex.: título e Padrão | Prata; Metas › Regras). O degradê dourado cobre todas.
+// cheia: true faz a tabela ocupar a altura toda do lugar onde está (as linhas se esticam por igual); serve para alinhar com o bloco ao lado (Metas › Regras).
+// semFiltro: true tira o funil (filtro e ordem) do título das colunas (Metas › Regras, 02/11/2026).
+// cols[].sep = true: linha de divisão grossa à esquerda da coluna (separa grupos de colunas; Metas › Regras).
+// cols[].render(valor, linha) = elemento no lugar do texto da célula (ex.: campo para digitar; Metas › Campanha).
+// semContagem: true tira o "N de N" de cima da tabela (Metas, 02/11/2026).
+// cols[].acao = {rotulo, titulo, onClick}: botãozinho no canto do título da coluna (ex.: "+" para abrir mais colunas; Metas › Revendedoras, 02/11/2026).
+// Grupos que abrem e fecham (03/11/2026, Atendimento interno › Listagens): grupoAberto(valor) = true/false, aoGrupo(valor) = clicou na linha do grupo, grupoEsquerda: true = texto da linha do grupo no começo (não centralizado).
 // cols: [{k, t}] (k = chave do valor na linha, t = título). linhas: objetos. aoClicar(linha). agrupar: chave da coluna ou "". rotuloGrupo(valor, qtd): texto da linha de grupo.
 import { e, useEffect, useMemo, useRef, useState } from "@/shared/react";
 
@@ -55,35 +63,37 @@ function TabelaPlanilha(p){
     return l;
   }, [p.linhas, p.cols, filtros, ordem, p.agrupar]);
   useEffect(function(){ if(p.onFiltradas) p.onFiltradas(linhas); }, [linhas]);   // eslint-disable-line react-hooks/exhaustive-deps
-  var centro = !!p.centro, cel = centro ? " text-center border-x border-border" : "";
+  var centro = true, cel = " text-center";   // 02/11/2026 (Marcus): toda tabela centralizada, sem linhas verticais
   var nFiltros = Object.keys(filtros).filter(function(k){ return filtros[k]; }).length;
   var ncols = p.cols.length, corpo = [], ultimo;
   linhas.forEach(function(l, i){
     if(p.agrupar && l[p.agrupar]!==ultimo){ ultimo = l[p.agrupar]; var q = 0; for(var j=i;j<linhas.length && linhas[j][p.agrupar]===ultimo;j++) q++;
-      var gl = p.linhaGrupo ? p.linhaGrupo(ultimo, linhas.slice(i, i+q)) : null;
-      corpo.push(gl ? e("tr",{key:"g"+i}, e("td",{colSpan:gl.span, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold"+cel}, gl.rotulo), (gl.resto||[]).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); }))
+      var gl = p.linhaGrupo ? p.linhaGrupo(ultimo, linhas.slice(i, i+q)) : null, gv = ultimo;
+      corpo.push(gl ? e("tr",{key:"g"+i, onClick:p.aoGrupo ? function(){ p.aoGrupo(gv); } : undefined, className:p.aoGrupo ? "cursor-pointer hover:brightness-125" : undefined}, e("td",{colSpan:gl.span, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold"+(p.grupoEsquerda ? " text-left" : cel)}, gl.rotulo), (gl.resto||[]).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); })) // padrao-ok: linha do grupo com o texto no começo (pedido do Marcus, 03/11/2026, Atendimento interno › Listagens)
         : e("tr",{key:"g"+i}, e("td",{colSpan:ncols, className:"h-8 whitespace-nowrap border-b border-border bg-white/10 px-2.5 text-[13px] font-semibold"+cel}, p.rotuloGrupo ? p.rotuloGrupo(ultimo, q) : texto(ultimo)+" · "+q))); }
+    if(p.agrupar && p.grupoAberto && !p.grupoAberto(l[p.agrupar])) return;   // grupo fechado: só a linha do grupo aparece
     var chv = p.chave ? l[p.chave] : i, aberta = !!(p.detalhe && detAbertos[chv]);
     var alterna = function(){ var n = Object.assign({}, detAbertos); if(n[chv]) delete n[chv]; else n[chv] = true; setDetAbertos(n); };
     corpo.push(e("tr",{key:chv, onClick:p.detalhe ? alterna : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, "aria-expanded":p.detalhe ? aberta : undefined, className:(p.detalhe || p.aoClicar) ? (centro ? "cursor-grab" : "cursor-pointer")+" hover:bg-white/10"+(aberta ? " bg-[#B8862B]/20" : "") : ""},
-      p.cols.map(function(c, ci){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); if(p.detalhe && ci===0) tx = (aberta ? "▾ " : "▸ ")+tx; return e("td",{key:c.k, title:c.max ? tx : undefined, style:c.max ? {maxWidth:c.max} : undefined, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px]"+cel+(c.max ? " overflow-hidden text-ellipsis" : "")+(c.cor ? " "+c.cor(l) : "")}, tx); })));
+      p.cols.map(function(c, ci){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); if(p.detalhe && ci===0) tx = (aberta ? "▾ " : "▸ ")+tx; return e("td",{key:c.k, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px]"+cel+(c.sep ? " border-l-2 border-l-[#E8B84B]" : "")+(c.cor ? " "+c.cor(l) : "")}, c.render ? c.render(l[c.k], l) : tx); })));
     if(aberta) corpo.push(e("tr",{key:"d"+chv}, e("td",{colSpan:ncols, className:"border-b border-border bg-black/25 p-2"}, p.detalhe(l))));
   });
-  return e("div",{ref:raiz, className:"flex flex-col gap-2"},
-    e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
-      e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
+  return e("div",{ref:raiz, className:"flex flex-col gap-2"+(p.cheia ? " h-full" : "")},
+    (!p.semContagem || nFiltros>0 || ordem) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
+      !p.semContagem && e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
       (nFiltros>0 || ordem) && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
-    e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", className:"overflow-x-auto rounded-lg border border-border"+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
-      e("table",{className:"border-collapse text-[13px]"+(centro ? " w-full" : "")},
-        e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), e("tr",null, p.cols.map(function(c){
+    e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : undefined, className:"overflow-x-auto rounded-lg border border-border"+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
+      e("table",{className:"w-full border-collapse text-[13px]", style:{height:p.cheia ? "100%" : undefined, background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left "+(p.totalLinha ? 33 : 0)+"px/100% "+(30*(1+(p.cabAcima ? p.cabAcima.length : 0)))+"px no-repeat"}},   // topo dourado: UM degradê do começo ao fim da tabela (02/11/2026)
+        e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b border-[#1a1306]/25 px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"+(g.sep ? " border-l-2 border-l-[#1a1306]" : "")}, g.t); })); }), e("tr",null, p.cols.map(function(c){
           var f = !!filtros[c.k], o = ordem && ordem.k===c.k ? ordem.dir : 0;
-          return e("th",{key:c.k, className:"relative h-[30px] cursor-grab border-b border-border bg-white/5 p-0 "+(centro ? "text-center border-x border-border" : "text-left")},
-            e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:(centro ? "min-h-[30px] justify-center whitespace-normal py-1 leading-tight " : "h-[30px] whitespace-nowrap ")+"flex w-full items-center gap-1.5 px-2.5 text-[11px] font-medium uppercase tracking-[.05em] cursor-grab hover:bg-white/10 "+(f ? "text-primary" : "text-foreground")},
+          return e("th",{key:c.k, className:"relative h-[30px] cursor-grab border-b border-border bg-transparent p-0 text-center"+(c.sep ? " border-l-2 border-l-[#1a1306]" : "")},
+            p.semFiltro ? e("div",{className:"flex h-[30px] w-full items-center justify-center whitespace-nowrap px-2.5 text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c.t) : e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:"flex h-[30px] w-full items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-[11px] font-semibold uppercase tracking-[.05em] cursor-grab hover:bg-black/10 "+(f ? "bg-[#1a1306] text-[#F5E7BE]" : "text-[#1a1306]")},
               c.t, o!==0 && e("span",{"aria-hidden":true}, o===1 ? "▲" : "▼"), e("span",{"aria-hidden":true, className:f ? "" : "opacity-60"}, f ? "◆" : "▾")),
+            c.acao && e("button",{type:"button", title:c.acao.titulo, "aria-label":c.acao.titulo, onClick:function(ev){ ev.stopPropagation(); c.acao.onClick(); }, className:"absolute right-1 top-1 grid size-6 place-items-center rounded text-[13px] font-bold text-[#1a1306] hover:bg-black/15"}, c.acao.rotulo),
             aberto===c.k && e(MenuColuna,{col:c, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
               aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },
               aoOrdenar:function(d){ setOrdem(d ? {k:c.k, dir:d} : null); setAberto(null); }}));
         }))),
-        e("tbody",null, corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))))));
+        e("tbody",null, corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-center text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))))));
 }
 export { TabelaPlanilha };

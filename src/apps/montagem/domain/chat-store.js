@@ -28,18 +28,19 @@ var midiasMem = {};
 var midiasSalvas = (function(){ try{ return JSON.parse(localStorage.getItem(CHAVE_MIDIA)||"{}"); }catch(x){ return {}; } })();
 function guardarMidia(url){
   var k = uid("md_"); midiasMem[k] = url;
+  if(SERVIDOR) return k;   // com servidor a mídia fica lá; gravar tudo no navegador a cada envio travava a tela (JSON de todas as fotos de uma vez)
   try{ midiasSalvas[k] = url; localStorage.setItem(CHAVE_MIDIA, JSON.stringify(midiasSalvas)); }catch(x){ delete midiasSalvas[k]; }   // cheio: fica só até recarregar
   return k;
 }
 // Mídia de OUTRA pessoa (ou de outro navegador): não está aqui; busca no servidor pela chave (md_...) e avisa a tela quando chegar. 404 = o envio ainda não terminou: tenta de novo (até 8 vezes).
 var buscandoMidia = {}, tentativasMidia = {};
 function buscarMidia(k){
-  if(buscandoMidia[k] || (tentativasMidia[k]||0)>=8) return;
+  if(buscandoMidia[k] || (tentativasMidia[k]||0)>=20) return;
   buscandoMidia[k] = true; tentativasMidia[k] = (tentativasMidia[k]||0)+1;
   chamar("GET", "/chat/midia/"+encodeURIComponent(k)).then(function(r){
     buscandoMidia[k] = false;
     if(r && r.url){ midiasMem[k] = r.url; ouvintes.slice().forEach(function(f){ f(); }); }
-  }).catch(function(){ setTimeout(function(){ buscandoMidia[k] = false; ouvintes.slice().forEach(function(f){ f(); }); }, 3000); });
+  }).catch(function(){ setTimeout(function(){ buscandoMidia[k] = false; ouvintes.slice().forEach(function(f){ f(); }); }, 1200); });
 }
 function lerMidia(k){
   if(k && String(k).indexOf("fotos/")===0) return ("/"||"/")+k;
@@ -200,7 +201,7 @@ function semearGrupoExtra(id){
   if(id==="c_enc"){ var g = grupoEnc(); return {conv:Object.assign({id:"c_enc", nome:"Encomendas & Reposição", descr:"Separação das encomendas, reposições e rotas de entrega. A Agatha é a supervisora; cada pessoa tem a sua conversa."}, base, g), msgs:[msg(I("Agatha"), 120, "Bom dia, meninas! Hoje temos reposições para separar e a rota de entrega sai às 14h.")]}; }
   if(id==="c_mont"){ var gm = grupoMont(); return {conv:Object.assign({id:"c_mont", nome:"Montagem de Kits", descr:"Setor de montagem: a Deysiane é a supervisora e cada montadora tem a sua conversa particular."}, base, gm), msgs:[msg(I("Deysiane"), 60, "Bom dia, meninas! Este é o grupo da Montagem. Para falar comigo em particular, toque no seu nome aqui em cima.")]}; }
   if(id==="c_interno"){ var todos = CONTATOS.filter(function(c){ return c.tipo==="func"; }).map(function(c){ return c.id; });
-    return {conv:Object.assign({id:"c_interno", nome:"Interno", descr:"Avisos e solicitações em geral para todos os funcionários internos da empresa."}, base, {membros:todos, admins:[marcus, I("Anamaria")].filter(Boolean)}), msgs:[msg(marcus, 180, "Este é o grupo Interno: avisos e solicitações que valem para todo mundo da empresa.")]}; }
+    return {conv:Object.assign({id:"c_interno", nome:"Sorelly Interno", descr:"Avisos oficiais da Sorelly para todos os funcionários."}, base, {membros:todos, admins:[marcus, I("Anamaria")].filter(Boolean)}), msgs:[msg(marcus, 180, "Este é o grupo Interno: avisos e solicitações que valem para todo mundo da empresa.")]}; }
   if(id==="c_finrep"){ var gf = grupoFinRep(); return {conv:Object.assign({id:"c_finrep", nome:"Financeiro Representantes", descr:"Os pagamentos dos acertos das representantes vêm da calculadora de acertos para cá. Cada representante tem a sua conversa; o financeiro direciona as contas e confere."}, base, gf), msgs:[msg(I("Lucas"), 90, "Pessoal, os pagamentos dos acertos aparecem aqui sozinhos. Cada representante vê só a conversa dela.")]}; }
   return null;
 }
@@ -256,7 +257,7 @@ function inicial(){
   return st;
 }
 var base = (function(){ try{ var o = JSON.parse(localStorage.getItem(CHAVE)||"null"); if(o && o.v===1) return o; }catch(x){} return inicial(); })();
-var GRUPO_PADRAO = {c_agend_at:{foto:"fotos/grupo-agendamento.jpg"}, c_cad:{foto:"fotos/grupo-cadastro.jpg", nome:"Cadastro de Revendedoras"}, c_mkt:{foto:"fotos/grupo-marketing.jpg"}, c_preco:{foto:"fotos/grupo-cadastro-pecas.jpg", nome:"Cadastro de Peças", antigo:"Preço das Peças"}};
+var GRUPO_PADRAO = {c_agend_at:{foto:"fotos/grupo-agendamento.jpg"}, c_cad:{foto:"fotos/grupo-cadastro.jpg", nome:"Cadastro de Revendedoras"}, c_mkt:{foto:"fotos/grupo-marketing.jpg"}, c_preco:{foto:"fotos/grupo-cadastro-pecas.jpg", nome:"Cadastro de Peças", antigo:"Preço das Peças"}, c_interno:{nome:"Sorelly Interno", antigo:"Interno"}};
 base.convs = base.convs.map(function(c){ var g = GRUPO_PADRAO[c.id]; if(!g) return c; var o = Object.assign({}, c); if(o.foto===undefined) o.foto = g.foto; if(g.nome && (o.nome==="Cadastro de revendedoras" || o.nome===g.antigo)) o.nome = g.nome; return o; });
 // o grupo Cadastro de Revendedoras também tem o seletor de representante no topo (qualquer pessoa do setor fala com a representante)
 base.convs = base.convs.map(function(c){ return c.id==="c_cad" && c.reps===undefined ? Object.assign({}, c, {reps:true, repCanal:"cadastro"}) : c; });
@@ -464,14 +465,14 @@ function listaConversas(cid, opc){
     if(!dir && c.tipo==="setor" && (c.canal==="agendamento" || c.canal==="cadastro") && cid!==c.repId) return false;
     if(!rep && temRep(c)) return false;
     if(c.tipo==="setor" && !(s.msgs[c.id]||[]).length) return false;
-    return (s.msgs[c.id]||[]).length>0 || c.criada>Date.now()-DIA || ehConvMarcus(c, cid);
+    return (s.msgs[c.id]||[]).length>0 || c.criada>Date.now()-DIA || ehConvMarcus(c, cid) || !!c.fixaTodos;
   }).map(function(c){
     var abasV = abasDe(c, cid), ld = lidoEm(cid, c);
     var ms = (s.msgs[c.id]||[]).filter(function(m){ return visivelPara(m, cid) && (!abasV || abasV.indexOf(abaDaMsg(m))>=0); }), ult = ms[ms.length-1];
     var nl = abasV ? ms.filter(function(m){ return m.t>lidoEm(cid, c, abaDaMsg(m)) && m.de!==cid && m.apag!=="todos"; }) : ms.filter(function(m){ return m.t>ld && m.de!==cid && m.apag!=="todos"; });
     var nlRep = c.reps ? s.convs.reduce(function(t, cc){ return t + (cc.tipo==="setor" && cc.canal===(c.repCanal||"agendamento") && cc.membros.indexOf(cid)>=0 ? (s.msgs[cc.id]||[]).filter(function(m){ return m.t>lidoEm(cid, cc) && m.de!==cid && m.apag!=="todos"; }).length : 0); }, 0) : 0;
     return {conv:c, titulo:tituloDe(c, cid), ultima:ult||null, naoLidas:nl.length+nlRep, marcado:nl.some(function(m){ return (m.mencoes||[]).indexOf(cid)>=0; }),
-      marcus:ehConvMarcus(c, cid), fixa:ehConvMarcus(c, cid) || !!(c.fixaPor && c.fixaPor[cid]), arq:!ehConvMarcus(c, cid) && arquivadaAgora(c, cid, ms), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
+      marcus:ehConvMarcus(c, cid) || !!c.fixaTodos, fixa:ehConvMarcus(c, cid) || !!c.fixaTodos || !!(c.fixaPor && c.fixaPor[cid]), arq:!ehConvMarcus(c, cid) && !c.fixaTodos && arquivadaAgora(c, cid, ms), pendencia:pendenciaDe(cid, c.id), membro:c.membros.indexOf(cid)>=0,
       pendentes:ms.filter(function(m){ return m.tipo==="decisao" && m.dec && m.dec.estado==="pendente" && m.apag!=="todos" && m.dec.decisores.indexOf(cid)>=0; }).length};
   });
   r.sort(function(a,b){ return (b.marcus?1:0)-(a.marcus?1:0) || (b.pendentes>0?1:0)-(a.pendentes>0?1:0) || (b.fixa?1:0)-(a.fixa?1:0) || ((b.ultima?b.ultima.t:b.conv.criada) - (a.ultima?a.ultima.t:a.conv.criada)); });
@@ -532,7 +533,7 @@ function reabrirSemResposta(cid){
   return ids.length;
 }
 function arquivarConversa(cid, convId){
-  var c0 = convPorId(convId); if(!c0) return false;
+  var c0 = convPorId(convId); if(!c0 || c0.fixaTodos) return false;   // grupo fixo de todos (Sorelly Interno) não se arquiva
   // arquivar é livre, mesmo com mensagem sem resposta: a conversa pode ter sido encerrada (Marcus, 29/10/2026)
   mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ if(c.id!==convId) return c; var f = Object.assign({}, c.arqPor), ms = s.msgs[c.id]||[]; if(arquivadaAgora(c, cid, ms)) delete f[cid]; else f[cid] = Date.now(); return Object.assign({}, c, {arqPor:f}); })}); });
   return true;
@@ -614,7 +615,7 @@ function criarGrupo(p){
   mudar(function(s){ var o = {}; o[id] = [];
     // grupo de setor (p.porFuncionaria): aba Geral + uma conversa com cada funcionária, no topo (mesmo desenho do Agendamento e da Montagem)
     var extra = p.porFuncionaria ? {paralelas:true, funcionarias:p.membros.filter(function(x){ return x!==p.eu && !ehDirecaoCid(x); }), supervisores:[]} : {};
-    return Object.assign({}, s, {convs:s.convs.concat([Object.assign({id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}, extra)]), msgs:Object.assign({}, s.msgs, o)}); });
+    return Object.assign({}, s, {convs:s.convs.concat([Object.assign({id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, setorId:p.setorId||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}, extra)]), msgs:Object.assign({}, s.msgs, o)}); });
   inserir(id, {id:uid("m"), de:p.eu, t:Date.now(), tipo:"sistema", texto:contato(p.eu).nome+" criou o grupo \""+p.nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
   return id;
 }
@@ -652,8 +653,27 @@ function garantirGruposSetor(eu){
   (function(){ var ordem = estado.convs.filter(function(c){ return c.tipo==="grupo" && !c.excluido && String(c.id).indexOf("g_")===0; }).sort(function(a, b){ return (estado.msgs[b.id]||[]).length-(estado.msgs[a.id]||[]).length || a.criada-b.criada; }), vistos = {}, dup = [];
     ordem.forEach(function(c){ var k = sem(c.nome); if(!vistos[k]) vistos[k] = c.id; else if((estado.msgs[c.id]||[]).length<=1) dup.push(c.id); });
     if(dup.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return dup.indexOf(c.id)>=0 ? Object.assign({}, c, {excluido:true}) : c; })}); }); })();
-  var existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
-  var mk = function(nome, d){ novos.push({id:idAuto(nome), tipo:"grupo", nome:nome, descr:"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
+  var avisoInterno = null, existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
+  var mk = function(nome, d){ novos.push(Object.assign({id:idAuto(nome), tipo:"grupo", nome:nome, descr:d.descr||"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:!d.simples, setorId:d.setorId||null, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}, d.extra||{})); };
+  // Grupos de gestão (Marcus, 02/11/2026): conversa normal só entre as pessoas listadas, sem abas por funcionária. O setor continua sendo um grupo à parte.
+  var gestao = function(nome, setorId, nomes){ var ids = nomes.map(function(n){ return idPorNome(n); }).filter(Boolean), ja = estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(nome); });
+    if(ja){ if(!ja.setorId) atualizarGrupo(ja.id, {setorId:setorId}); return; }   // grupo criado antes de existir a tela Grupos do setor: só ganha a marca do setor
+    if(ids.length>1) mk(nome, {simples:true, setorId:setorId, membros:ids}); };
+  gestao("Financeiro (gestão)", "financeiro", ["Marcus","Nickolas","Lucas","Nayale","Anamaria","Ana Beatriz","Marco Antonio"]);
+  gestao("Agendamento (gestão)", "agendamento", ["Marcus","Lucas","Nickolas","Priscila","Maria Claudia","Mariana","Ana Maria Divino","Tamara"]);
+  // Grupos antigos que pertencem a um setor (Marcus, 03/11/2026): ganham a marca do setor e passam a aparecer dentro dele na aba Setores
+  var marcar = function(acha, setorId){ estado.convs.filter(function(x){ return x.tipo==="grupo" && !x.excluido && !x.setorId && acha(x); }).forEach(function(c){ atualizarGrupo(c.id, {setorId:setorId}); }); };
+  marcar(function(c){ return c.id==="c_preco" || ["preco das pecas", "cadastro de pecas"].indexOf(sem(c.nome))>=0; }, "cadpecas");
+  // Sorelly Interno (Marcus, 03/11/2026): o grupo de todos os funcionários fica fixo no topo do chat de cada um, só a direção escreve, e já nasce com um aviso
+  (function(){ var DESCR = "Avisos oficiais da Sorelly para todos os funcionários.", AVISO = "Bem-vindos ao *Sorelly Interno* 💛 Este é o grupo oficial da Sorelly: os avisos importantes da empresa ficam aqui. Abra e leia cada aviso.";
+    var func = CONTATOS.filter(function(c){ return c.tipo==="func"; }).map(function(c){ return c.id; }), dr = [MARCUS_CID].filter(Boolean);   // só o Marcus escreve (Marcus, 03/11/2026)
+    var g = estado.convs.find(function(x){ return x.tipo==="grupo" && !x.excluido && (x.id==="c_interno" || ["sorelly interno", "interno"].indexOf(sem(x.nome))>=0); });
+    if(!g){ mk("Sorelly Interno", {simples:true, descr:DESCR, membros:func, admins:dr, extra:{fixaTodos:true, soAdmins:true, boasVindas:true}}); avisoInterno = AVISO; return; }   // não existe no servidor: nasce já fixo, só a direção escreve
+    var membros = g.membros.concat(func.filter(function(i){ return g.membros.indexOf(i)<0; }));
+    if(g.nome!=="Sorelly Interno" || !g.fixaTodos || !g.soAdmins || membros.length!==g.membros.length || (g.admins||[]).join()!==dr.join()) atualizarGrupo(g.id, {nome:"Sorelly Interno", descr:DESCR, fixaTodos:true, soAdmins:true, admins:dr, membros:membros});
+    if(!g.boasVindas){ atualizarGrupo(g.id, {boasVindas:true}); sendMessage({conv:g.id, eu:eu, texto:AVISO}); } })();
+  marcar(function(c){ return sem(c.nome)==="rh"; }, "rh");   // grupo RH: setor Recursos Humanos
+  marcar(function(c){ return sem(c.nome)==="trocas"; }, "garantia");   // Trocas é do setor de Garantia (CLAUDE.md)
   GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
   var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
   // H&O Apps = grupo da Tecnologia (Marcus, 30/10/2026): Marcus, Leonardo, Lucas, Nickolas, Priscila e Maria (Claudia, do RH), sem a Anamaria. Abas no topo para abrir a conversa de cada um (menos o Marcus): Leonardo, Lucas, Nickolas, Priscila e Maria. Foto da H&O Apps e Sorelly.
@@ -666,7 +686,7 @@ function garantirGruposSetor(eu){
   Object.keys(porSetor).sort().forEach(function(n){ var f = porSetor[n]; if(f.length<2 || existe(n)) return; var dr = dir4(); mk(n, {funcionarias:f, membros:f.concat(dr.filter(function(x){ return f.indexOf(x)<0; }))}); });
   if(!novos.length) return 0;
   mudar(function(s){ var o = {}; novos.forEach(function(g){ o[g.id] = []; }); return Object.assign({}, s, {convs:s.convs.concat(novos), msgs:Object.assign({}, s.msgs, o)}); });
-  novos.forEach(function(g){ inserir(g.id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:"Grupo \""+g.nome+"\" criado", status:"lido", reacoes:{}, mencoes:[]}); });
+  novos.forEach(function(g){ inserir(g.id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:"Grupo \""+g.nome+"\" criado", status:"lido", reacoes:{}, mencoes:[]}); if(avisoInterno && g.fixaTodos) sendMessage({conv:g.id, eu:eu, texto:avisoInterno}); });
   return novos.length;
 }
 function atualizarGrupo(convId, patch){ mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return c.id===convId ? Object.assign({}, c, patch) : c; })}); }); }
@@ -836,6 +856,17 @@ var api = {statusConv:statusConv, resolveConv:resolverConversa, checkAlerts:veri
   startMention:startMention, answerMention:answerMention, getResponseStats:getResponseStats, openDm:abrirDm, decide:decidir, syncPayment:sincronizarPagamento, avisoAgenda:avisoAgenda, pendencias:pendencias, openChannel:abrirCanal, createGroup:criarGrupo, createSectorGroup:criarGrupoSetor, ensureSectorGroups:garantirGruposSetor, sectorGroupNames:GRUPOS_SETOR.map(function(x){ return x[0]; }), updateGroup:atualizarGrupo,
   addMember:membroAdd, removeMember:membroRemover, toggleAdmin:adminAlternar, editMessage:editMessage, deleteMessage:deleteMessage, setConfig:setConfig, setFoto:setFoto, setFundo:setFundo, setSchedule:setHorario, clearSchedule:limparHorario, setBusy:setOcupado};
 if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatApi = api;   // só no desenvolvimento: ajuda a testar pelo console
+// Só no desenvolvimento: simula mensagens RECEBIDAS de alguém, só neste navegador (nada vai ao servidor nem a outra pessoa). Uso no console: __chatTeste("Leonardo", "Oi teste", 5, 10)
+if(typeof window!=="undefined" && (process.env.NODE_ENV !== "production")) window.__chatTeste = function(nome, texto, vezes, segundos, comFoto){
+  var de = idPorNome(nome); if(!de || !eu) return "Pessoa não encontrada ou ninguém logado no chat.";
+  var id = abrirDm(eu, de), n = 0;
+  var foto = function(){   // foto de teste (1280 px, como a que o chat envia) + miniatura de 320 px
+    var desenha = function(w, h){ var c = document.createElement("canvas"); c.width = w; c.height = h; var g = c.getContext("2d"), gr = g.createLinearGradient(0, 0, w, h); gr.addColorStop(0, "#b8892b"); gr.addColorStop(1, "#24180a"); g.fillStyle = gr; g.fillRect(0, 0, w, h); g.fillStyle = "#fff"; g.font = "bold "+Math.round(h/8)+"px sans-serif"; g.fillText("Foto de teste", w/12, h/2); return c; };
+    return {key:guardarMidia(desenha(1280, 960).toDataURL("image/jpeg", 0.82)), mini:desenha(320, 240).toDataURL("image/jpeg", 0.6), nome:"foto-teste.jpg", mime:"image/jpeg"};
+  };
+  var uma = function(){ var msg = {id:uid("m"), de:de, t:Date.now(), tipo:comFoto ? "imagem" : "texto", texto:texto, midia:comFoto ? foto() : null, resp:null, enc:false, dec:null, status:"enviado", reacoes:{}, mencoes:[]}; inserir(id, msg); if(++n<vezes) setTimeout(uma, segundos*1000); };
+  uma(); return "Enviando "+vezes+" mensagens de "+nome+", uma a cada "+segundos+" s.";
+};
 
 // ---------- SERVIDOR (27/10/2026): conversas e mensagens guardadas no banco, para as pessoas conversarem de verdade ----------
 // Cada mudança local (mensagem nova, reação, edição, conversa nova) vai para uma fila e é enviada ao servidor; a cada 4 segundos a tela pergunta o que veio de novo (seq = número de ordem).
@@ -865,13 +896,13 @@ function avisoDoNavegador(titulo, texto){
     var n = new Notification(titulo, {body:texto, tag:"sorellychat"}); n.onclick = function(){ window.focus(); n.close(); }; } catch(x){}
 }
 function pedirPermissaoAviso(){ try { if(typeof Notification!=="undefined" && Notification.permission==="default") Notification.requestPermission(); } catch(x){} }
-// Aviso de mensagem nova (Marcus, 29/10/2026): no máximo 2 pessoas por vez (a 3ª tira a mais antiga); várias mensagens da mesma pessoa empilham; cada mensagem some sozinha em 5 segundos, como o WhatsApp
+// Aviso de mensagem nova (Marcus, 29/10/2026): no máximo 2 pessoas por vez (a 3ª tira a mais antiga); várias mensagens da mesma pessoa empilham; cada mensagem some sozinha em 9 segundos (eram 5; Marcus pediu mais tempo em 02/11/2026)
 function empurrarAviso(toast){
   var l = estado.efem.toasts.concat([toast]), ordem = [];
   l.forEach(function(x){ var k = x.de || x.id; ordem = ordem.filter(function(o){ return o!==k; }); ordem.push(k); });
   var manter = ordem.slice(-2);
   efem({toasts:l.filter(function(x){ return manter.indexOf(x.de || x.id)>=0; })});
-  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 5000);
+  setTimeout(function(){ efem({toasts:estado.efem.toasts.filter(function(x){ return x.id!==toast.id; })}); }, 9000);
 }
 function notificarRecebida(convId, msg){
   var conv = convPorId(convId); if(!conv) return;

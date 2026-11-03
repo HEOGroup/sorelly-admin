@@ -34,7 +34,7 @@ function acao(c, op, extra){ c.d(Object.assign({type:"AG", op:op, por:c.por}, ex
 // campo de número inteiro que grava ao sair do campo
 function Dig(p){
   return e("input",{key:p.value, inputMode:"numeric", defaultValue:p.value===null || p.value===undefined || p.value==="" ? "" : String(p.value), placeholder:p.placeholder||"", disabled:p.disabled, "aria-label":p.label,
-    className:INPUT+" h-8! text-center "+MONO+" "+(p.className||"w-24"),
+    className:INPUT+" h-8! text-center text-[13px]! tabular-nums "+(p.className||"w-24"),
     onBlur:function(ev){ var v = ev.target.value.replace(/\D/g,""); if(String(p.value===null || p.value===undefined ? "" : p.value)!==v) p.onSalvar(v==="" ? null : Number(v)); },
     onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }});
 }
@@ -148,23 +148,28 @@ function AbaAgPainel(){
 }
 
 // Representantes (Marcus, 01/11/2026): no padrão das outras telas do Agendamento. Sem faixa de caixas, sem textos de explicação, sem lista suspensa de ordem; botões, blocos e tabelas de components/padrao-fin.js.
-function AbaAgReps(){
-  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), jt = useState("sep"), junto = jt[0], setJunto = jt[1], au = useState({busy:false, msg:""}), auto = au[0], setAuto = au[1], dn = useState({auto:{}, dono:{}}), cuida = dn[0], setCuida = dn[1], refSinc = useRef(null);
-  // COTAS E SALDOS DA DEVMASTER (Marcus, 01/11/2026): a cota do dia 1 e o saldo de cada dia vêm das revendedoras com kit aberto (tela Revendedoras), sem digitar. Roda sozinho ao abrir e no botão.
-  var sincronizar = function(){
+// COTAS E SALDOS DA DEVMASTER (Marcus, 01/11/2026): a cota do dia 1 e o saldo de cada dia vêm das revendedoras com kit aberto, sem digitar. Conta o que tem data de acerto até o último dia do mês, atrasados incluídos (02/11/2026).
+// Só quem gerencia o setor grava; roda no Painel e em Representantes ao abrir, 25 s depois e a cada 10 minutos.
+function sincronizarCotas(c, ym, setAuto){
+  var ag = c.ag;
     if(!ym || !apiAtiva() || !c.gerente || ag.mes[ym].fechadoEm) return;
     var hoje = new Date(), dia = chaveMes(hoje)===ym ? hoje.getDate() : null; setAuto({busy:true, msg:"Buscando na DevMaster…"});
     Promise.all([chamar("GET", "/agenda-revendedoras"), chamar("GET", "/estado/agrev").catch(function(){ return {conteudo:{}}; })]).then(function(v){
       var cont = (v[1] && v[1].conteudo) || {}, mud = Object.keys(cont).filter(function(k){ return k.indexOf("d_")===0 && cont[k] && cont[k].id; }).map(function(k){ return cont[k]; }), kb = cont["cotabase_"+ym];
-      var r = cotasDaDevMaster(v[0].itens || [], ag, ym, mud, kb ? kb.porCod : null), mudou = 0;
+      var r = cotasDaDevMaster(v[0].itens || [], ag, ym, mud, kb ? kb.porCod : null, kb ? kb.regra : 0), mudou = 0;
       Object.keys(r.porRep).forEach(function(cod){ var x = r.porRep[cod]; if(!x.id) return;
         var cAtual = ((ag.cotas||{})[ym]||{})[x.id], sAtual = dia ? ((((ag.saldos||{})[ym]||{})[x.id])||{})[dia] : undefined;
         if(cAtual!==x.cota){ acao(c, "cota", {repId:x.id, cota:x.cota}); mudou++; }
         if(dia && sAtual!==x.saldo){ acao(c, "saldo", {repId:x.id, dia:dia, saldo:x.saldo}); mudou++; } });
       var fim = function(){ var hh = new Date().toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}); setAuto({busy:false, msg:"DevMaster às "+hh+": "+(mudou ? mudou+" ajustes" : "tudo igual")+(r.novaBase ? " · cotas do dia 1 gravadas agora"+(dia && dia>3 ? " (dia "+dia+": confira, já passaram dias do mês)" : "") : "")+(r.funcionarias ? " · "+r.funcionarias+" de funcionárias fora" : "")+(r.semRep ? " · "+r.semRep+" kits de vendedor sem representante cadastrada" : "")}); };
-      if(r.novaBase) chamar("PUT", "/estado/agrev", {chaves:{["cotabase_"+ym]:{em:new Date().toISOString(), por:c.por, porCod:r.base}}}).then(fim).catch(fim); else fim();
+      if(r.novaBase) chamar("PUT", "/estado/agrev", {chaves:{["cotabase_"+ym]:{em:new Date().toISOString(), por:c.por, porCod:r.base, regra:2}}}).then(fim).catch(fim); else fim();
     }).catch(function(x){ setAuto({busy:false, msg:"Não deu para ler a DevMaster: "+x.message}); });
-  };
+}
+
+function AbaAgReps(){
+  var c = useAg(), ag = c.ag, ym = mesDe(ag, null), jt = useState("sep"), junto = jt[0], setJunto = jt[1], au = useState({busy:false, msg:""}), auto = au[0], setAuto = au[1], dn = useState({auto:{}, dono:{}}), cuida = dn[0], setCuida = dn[1], refSinc = useRef(null);
+  // COTAS E SALDOS DA DEVMASTER (Marcus, 01/11/2026): a cota do dia 1 e o saldo de cada dia vêm das revendedoras com kit aberto (tela Revendedoras), sem digitar. Roda sozinho ao abrir e no botão.
+  var sincronizar = function(){ sincronizarCotas(c, ym, setAuto); };
   refSinc.current = sincronizar;
   // QUEM CUIDA (Marcus, 02/11/2026): o nome escrito nos casos da DevMaster diz quem cuida de cada representante (automático); a escolha manual vale mais. Todo o setor enxerga.
   useEffect(function(){
@@ -193,9 +198,8 @@ function AbaAgReps(){
   var colunas = [
     {k:"cod", t:"Cód.", fixa:true, v:function(l){ return l.codigo; }},
     {k:"nome", t:"Representante", fixa:true, forte:true, v:function(l){ return nomeProprio(l.nome); }},
-    {k:"viagem", t:"Viagem", min:160, v:function(l){ return l.viagem || "Curitiba"; }, cel:function(l){ return edita(l) ? e("select",{value:l.viagem||"", "aria-label":"Viagem de "+l.nome, className:CAMPO+" w-36! cursor-pointer", onChange:function(ev){ acao(c, "rep_viagem", {id:l.id, viagem:ev.target.value}); }}, VIAGENS.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })) : (l.viagem || "Curitiba"); }},
-    {k:"resp", t:"Responsável", min:210, v:function(l){ return donoDe(cuida.dono, l.codigo) || cuida.auto[l.codigo] || "Setor"; }, exib:function(l){ var m = donoDe(cuida.dono, l.codigo); return m || (cuida.auto[l.codigo] ? "Automático: "+cuida.auto[l.codigo] : "Setor"); },
-      cel:function(l){ var m = donoDe(cuida.dono, l.codigo), aut = cuida.auto[l.codigo] ? "Automático: "+cuida.auto[l.codigo] : "Setor"; return c.gerente && String(l.codigo).indexOf("G:")!==0 ? e("select",{value:m, "aria-label":"Responsável por "+l.nome, className:CAMPO+" w-48! cursor-pointer", onChange:function(ev){ trocaCuida(l.codigo, ev.target.value); }}, e("option",{value:""}, aut), PESSOAS_SETOR.map(function(n){ return e("option",{key:n, value:n}, n); })) : (m || aut); }},
+    {k:"resp", t:"Responsável", min:210, v:function(l){ return donoDe(cuida.dono, l.codigo) || cuida.auto[l.codigo] || "Setor"; }, exib:function(l){ return donoDe(cuida.dono, l.codigo) || cuida.auto[l.codigo] || "Setor"; },
+      cel:function(l){ var m = donoDe(cuida.dono, l.codigo), aut = cuida.auto[l.codigo] || "Setor"; return c.gerente && String(l.codigo).indexOf("G:")!==0 ? e("select",{value:m, "aria-label":"Responsável por "+l.nome, className:CAMPO+" w-48! cursor-pointer", onChange:function(ev){ trocaCuida(l.codigo, ev.target.value); }}, e("option",{value:""}, aut), PESSOAS_SETOR.map(function(n){ return e("option",{key:n, value:n}, n); })) : (m || aut); }},
     {k:"cota", t:"Cota", tipo:"num", min:96, v:function(l){ return l.cota; }, exib:function(l){ return int(l.cota); }, cel:function(l){ return edita(l) ? e(Dig,{value:l.cota, label:"Cota de "+l.nome, className:"w-20", onSalvar:function(v){ acao(c, "cota", {repId:l.id, cota:v||0}); }}) : int(l.cota); }},
     {k:"feitos", t:"Feitos", tipo:"num", v:function(l){ return feitoDe(l); }, exib:function(l){ return int(feitoDe(l)); }},
     {k:"afazer", t:"A fazer", tipo:"num", forte:true, v:function(l){ return l.saldoAtual; }, exib:function(l){ return int(l.saldoAtual); }}
@@ -374,4 +378,4 @@ function AbaAgComissoes(){
     e("div",{className:"flex flex-wrap gap-2"}, [["bonus","Bônus a pagar"], ["metas","Metas e valores"]].map(function(x){ return e("button",{key:x[0], onClick:function(){ setAba(x[0]); }, className:"h-10 rounded-xl px-4 text-[13px] font-bold ring-1 "+(aba===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/50")}, x[1]); })),
     aba==="bonus" ? e(AbaAgBonus) : e(AbaAgMetas));
 }
-export { AbaAgComissoes, AbaAgMetas, AbaAgBonus, AbaAgPainel, AbaAgReps, AbaAgAbertura, AbaAgConfig, AbaAgAnalises, AbaAgHistorico };
+export { sincronizarCotas, AbaAgComissoes, AbaAgMetas, AbaAgBonus, AbaAgPainel, AbaAgReps, AbaAgAbertura, AbaAgConfig, AbaAgAnalises, AbaAgHistorico };

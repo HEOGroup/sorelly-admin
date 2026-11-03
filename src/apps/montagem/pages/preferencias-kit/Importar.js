@@ -1,6 +1,8 @@
 // Sorelly Admin · montagem — pages/preferencias-kit/Importar.js
 // Aba "Importar": cola tabela ou JSON, mostra a prévia do plano (criar, atualizar, erro por linha) e só então grava.
-import { Faixa, Indicador, Pagina, Tab, Td, LINHA } from "@/apps/montagem/components/padrao";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { Pagina } from "@/apps/montagem/components/padrao";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { formatarDataHora, pkModeloTabela, pkPlanejarImportacao } from "@/apps/montagem/domain/preferencias-kit";
 import { Area, Bt, Chip, Selo, Vazio, usePk } from "@/apps/montagem/pages/preferencias-kit/visual";
@@ -25,7 +27,10 @@ function AbaPkImportar(){
   var imps = (s.pk.importacoes||[]).slice().reverse();
   var linhas = v.tudo ? plano.linhas : plano.linhas.slice(0, MAX_LINHAS);
   return e(Pagina,null,
-    e(Faixa,{n:3}, e(Indicador,{t:"A criar", v:plano.resumo.criar, cor:"ok"}), e(Indicador,{t:"A atualizar", v:plano.resumo.atualizar, cor:"info"}), e(Indicador,{t:"Com erro", v:plano.resumo.erros, cor:plano.resumo.erros ? "ruim" : "neutro"})),
+    e(BlocoResumo,{t:"Resumo da importação", cab:["Situação", "Revendedoras", ""], linhas:[
+      {r:"A criar", v:String(plano.resumo.criar), p:"", cor:"ok"},
+      {r:"A atualizar", v:String(plano.resumo.atualizar), p:""},
+      {r:"Com erro", v:String(plano.resumo.erros), p:"", cor:plano.resumo.erros ? "ruim" : undefined}]}),
     e("div",{className:"grid items-start gap-2.5", style:{gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 22rem), 1fr))"}},
       e(BlocoBarra,{cor:"ouro", t:"Dados para importar", compacto:true}, e("div",{className:"flex flex-col gap-2 p-2.5"},
         e(Area,{v:v.texto, rot:"Tabela ou JSON", ph:"Cole aqui a tabela (com cabeçalho na primeira linha) ou o JSON.", rows:9, className:"font-mono text-[12px]!", set:function(x){ set("texto", x); }}),
@@ -39,13 +44,13 @@ function AbaPkImportar(){
       e(BlocoBarra,{cor:"ouro", t:"Prévia da importação", compacto:true}, e("div",{className:"flex flex-col gap-2 p-2.5"},
         !temTexto && e(Vazio,{ic:"file-arrow-up"}, "Cole os dados para ver a prévia."),
         plano.avisosGlobais.map(function(a, i){ return e("p",{key:i, className:"rounded-lg bg-[#FBBF24]/10 px-2 py-1 text-center text-[12px] text-[#FDE68A] ring-1 ring-[#FBBF24]/30"}, a); }),
-        plano.linhas.length>0 && e(Tab,{cols:["Linha", "Nome", "Ação", "Observações"]}, linhas.map(function(l){ var a = ACAO[l.acao], notas = l.erros.concat(l.avisos);
-          return e("tr",{key:l.indice, className:LINHA}, e(Td,{dinheiro:true}, l.indice), e(Td,{forte:true, className:"max-w-40 truncate!"}, l.nome || "—"), e(Td,null, e(Selo,{cor:a[1], ic:a[2]}, a[0])),
-            e(Td,{className:"min-w-48 max-w-72 whitespace-normal! text-[12px]!", cor:l.erros.length ? "ruim" : undefined}, notas.length ? notas.join(" ") : "—")); })),
+        plano.linhas.length>0 && e(TabelaPlanilha,{key:"previa", centro:true, semContagem:true, chave:"indice", cols:[{k:"indice", t:"Linha"}, {k:"nome", t:"Nome"}, {k:"acaoTxt", t:"Ação", render:function(_, l){ var a = ACAO[l.acao]; return e(Selo,{cor:a[1], ic:a[2]}, a[0]); }}, {k:"notasTxt", t:"Observações"}],
+          linhas:linhas.map(function(l){ var notas = l.erros.concat(l.avisos); return Object.assign({}, l, {nome:l.nome || "—", acaoTxt:ACAO[l.acao][0], notasTxt:notas.length ? notas.join(" ") : "—"}); })}),
         plano.linhas.length>MAX_LINHAS && e("button",{type:"button", onClick:function(){ set("tudo", !v.tudo); }, className:"mx-auto rounded-lg bg-white/10 px-3 py-1 text-[11.5px] font-bold hover:bg-white/20"}, v.tudo ? "Ver menos" : "Ver todas ("+plano.linhas.length+")"))),
       e(BlocoBarra,{cor:"ouro", t:"Histórico das importações", compacto:true}, e("div",{className:"flex flex-col gap-2 p-2.5"},
         imps.length===0 ? e(Vazio,{ic:"clock-counter-clockwise"}, "Nenhuma importação realizada.")
-          : e(Tab,{cols:["Data", "Por", "Linhas", "Novas", "Atualizadas", "Erros"]}, imps.map(function(i){ return e("tr",{key:i.id, className:LINHA}, e(Td,null, formatarDataHora(i.em)), e(Td,null, i.por), e(Td,{dinheiro:true}, i.linhas), e(Td,{dinheiro:true, cor:"ok"}, i.criadas), e(Td,{dinheiro:true, cor:"info"}, i.atualizadas), e(Td,{dinheiro:true, cor:i.erros ? "ruim" : undefined}, i.erros)); }))))));
+          : e(TabelaPlanilha,{key:"hist", centro:true, semContagem:true, chave:"id", cols:[{k:"quando", t:"Data"}, {k:"por", t:"Por"}, {k:"linhas", t:"Linhas"}, {k:"criadas", t:"Novas"}, {k:"atualizadas", t:"Atualizadas"}, {k:"erros", t:"Erros"}],
+            linhas:imps.map(function(i){ return Object.assign({}, i, {quando:formatarDataHora(i.em)}); })})))));
 }
 
 export { AbaPkImportar };

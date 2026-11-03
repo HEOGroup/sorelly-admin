@@ -1,7 +1,8 @@
 // Sorelly Admin · montagem — pages/Melhorias.js
 // Solicitações de melhorias (28/10/2026): todo funcionário pede uma mudança (título, o que mudar, tela, print opcional); Diretoria e Desenvolvimento respondem.
 // Lógica em domain/melhorias.js (estado s.mel, ação MEL; o servidor guarda no módulo "mel", um pedido por chave). Peças do padrão do Financeiro (components/padrao-fin.js).
-import { Botao, CAMPO, Segmentado, TabelaP, Tr } from "@/apps/montagem/components/padrao-fin";
+import { Botao, CAMPO, Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { TIPOS, melMarcarVisto, melSetorPessoa, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
@@ -270,20 +271,14 @@ function Detalhe(p){
 }
 
 // conversa do Claude (link ou nome) de cada pedido: só o Marcus e o Leonardo preenchem; os outros não veem a coluna
+// só mostra o nome da conversa (e o link, se houver); NÃO se edita pela tela: quem preenche sou eu ao responder (Marcus, 03/11/2026)
 function CelClaude(p){
-  var ed = useState(false), editando = ed[0], setEd = ed[1], vt = useState(p.x.claude || ""), v = vt[0], setV = vt[1];
-  var parar = function(ev){ ev.stopPropagation(); };
-  var salvar = function(){ p.d({type:"MEL", op:"claude", id:p.x.id, claude:v, porId:p.s.usuario}); setEd(false); };
-  var atual = p.x.claude || "", link = /^https?:\/\//.test(atual);
-  if(editando) return e("span",{className:"flex items-center gap-1", onClick:parar},
-    e("input",{autoFocus:true, value:v, placeholder:"Link ou nome da conversa", maxLength:300, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvar(); if(ev.key==="Escape"){ setV(atual); setEd(false); } }, className:CAMPO+" h-7 min-w-0"}),
-    e("button",{type:"button", onClick:salvar, className:"h-7 rounded-md border border-primary px-2 text-[12px] font-semibold text-primary"}, "OK"));
-  return e("span",{className:"flex items-center justify-center gap-1.5", onClick:parar},
-    atual ? (link ? e("a",{href:atual, target:"_blank", rel:"noreferrer", title:atual, className:"text-primary underline"}, "Abrir conversa ↗") : e("span",{className:"truncate", title:atual}, atual)) : null,
-    e("button",{type:"button", onClick:function(){ setV(atual); setEd(true); }, title:atual ? "Trocar a conversa do Claude" : "Anexar a conversa do Claude", className:"h-6 shrink-0 rounded border border-border px-1.5 text-[12px] hover:bg-white/10"}, atual ? "✎" : "+ conversa"));
+  var atual = p.x.claude || "", achou = atual.match(/(https?|claude):\/\/\S+/), link = achou ? achou[0] : "", texto = atual.replace(link, "").trim();
+  return e("span",{className:"flex items-center justify-center gap-1.5", onClick:function(ev){ ev.stopPropagation(); }},
+    texto ? e("span",{className:"whitespace-nowrap", title:texto}, texto) : e("span",null, "—"),
+    link ? e("a",{href:link, target:"_blank", rel:"noreferrer", title:"Abrir a conversa no Claude", className:"inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded border border-primary px-2 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "Abrir conversa ↗") : null);
 }
 
-var ORDENS = [["d-", "Data · mais novo primeiro"], ["d+", "Data · mais antigo primeiro"], ["q+", "Funcionária · A a Z"], ["q-", "Funcionária · Z a A"], ["s+", "Setor · A a Z"], ["sit+", "Situação"]];
 
 // cartão compacto do topo
 function Cartao(p){ return e("section",{className:"min-w-0 rounded-lg border border-border bg-card/60 px-2.5 py-1"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }
@@ -307,17 +302,13 @@ function AbaMelhorias(){
   var cx = use(), s = cx.state, d = cx.dispatch, gere = melPodeGerir(s.usuario);
   // quem responde (Marcus e Leonardo) abre em Todas; os demais só veem os próprios pedidos
   var v = useState(gere ? "todas" : "minhas"), vis = v[0], setVis = v[1], nv = useState(false), novo = nv[0], setNovo = nv[1], sl = useState(function(){ var a = window.__melAbrir || null; window.__melAbrir = null; return a; }), sel = sl[0], setSel = sl[1];
-  var fb = useState(""), busca = fb[0], setBusca = fb[1], fs = useState(""), fSit = fs[0], setFSit = fs[1], ft = useState(""), fSet = ft[0], setFSet = ft[1], fq = useState(""), fQ = fq[0], setFQ = fq[1];
-  var od = useState("d-"), ord = od[0], setOrd = od[1], gr = useState(""), grupo = gr[0], setGrupo = gr[1], fc = useState({}), fechados = fc[0], setFechados = fc[1];
+  var fb = useState(""), busca = fb[0], setBusca = fb[1], ft = useState(""), fSet = ft[0], setFSet = ft[1], fq = useState(""), fQ = fq[0], setFQ = fq[1];   // filtros dos cartões de cima; o resto é filtro na coluna (GradeFiltro, como no Agendamento)
   var todas = melLista(s), minhas = todas.filter(function(x){ return x.porId===s.usuario; });
   var base = gere && vis==="todas" ? todas : minhas, q = busca.trim().toLowerCase();
-  var lista = base.filter(function(x){ return (!fSit || x.situacao===fSit) && (!fSet || x.setor===fSet) && (!fQ || x.por===fQ) && (!q || (x.titulo+" "+x.desc+" "+x.por+" "+x.url+" "+x.setor).toLowerCase().indexOf(q)>=0); });
-  var campoOrd = ord.slice(0, -1), sentido = ord.slice(-1)==="-" ? -1 : 1;
-  var valor = function(x){ return campoOrd==="d" ? x.em : campoOrd==="q" ? (x.por||"").toLowerCase() : campoOrd==="s" ? (x.setor||"").toLowerCase() : SITUACOES.indexOf(x.situacao); };
-  lista = lista.slice().sort(function(a, b){ var va = valor(a), vb = valor(b); return (va<vb ? -1 : va>vb ? 1 : 0)*sentido || (a.em<b.em ? 1 : -1); });
-  var setores = Array.from(new Set(base.map(function(x){ return x.setor; }).filter(Boolean))).sort(), pessoas = Array.from(new Set(base.map(function(x){ return x.por; }).filter(Boolean))).sort();
+  var lista = base.filter(function(x){ return (!fSet || x.setor===fSet) && (!fQ || x.por===fQ) && (!q || (x.titulo+" "+x.desc+" "+x.por+" "+x.url+" "+x.setor).toLowerCase().indexOf(q)>=0); });
+  lista = lista.slice().sort(function(a, b){ return a.em<b.em ? 1 : a.em>b.em ? -1 : 0; });   // mais novo primeiro; a coluna classifica a partir daí
   var aberto = sel && todas.find(function(x){ return x.id===sel && (gere || x.porId===s.usuario); });
-  var limpa = busca || fSit || fSet || fQ;
+  var limpa = busca || fSet || fQ;
   useEffect(function(){ if(aberto && aberto.porId===s.usuario) melMarcarVisto(s.usuario, aberto.id); }, [aberto && aberto.id, melMsgs(s, aberto ? aberto.id : "").length]);   // abriu o pedido dela: a resposta conta como vista
   var zm = useState(null), zoom = zm[0], setZoom = zm[1];
   useEffect(function(){ if(!zoom) return undefined; var f = function(ev){ if(ev.key==="Escape") setZoom(null); }; window.addEventListener("keydown", f); return function(){ window.removeEventListener("keydown", f); }; }, [zoom]);
@@ -329,32 +320,21 @@ function AbaMelhorias(){
   var janela = (novo || aberto) && e("div",{className:"fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget){ setNovo(false); setSel(null); } }},
     e("div",{className:"my-auto w-full max-w-[780px]"},
       novo ? e(NovaConversa,{s:s, d:d, fechar:function(){ setNovo(false); }, onEnviou:function(id){ setNovo(false); setSel(id); }}) : e(Detalhe,{x:aberto, s:s, d:d, zoom:function(src, nome){ setZoom({src:src, nome:nome}); }, fechar:function(){ setSel(null); }})));
-  var cols = [{t:"Data", w:104, c:true}, {t:"Setor", w:150, c:true}, {t:"Funcionária", w:160, c:true}, {t:"Tipo", w:150, c:true}, {t:"Situação", w:190, c:true}, {t:"Tela", w:70, c:true}, {t:"Descrição", c:true}].concat(gere ? [{t:"Conversa do Claude", w:185, c:true}] : []);
-  var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); } catch(x){ return iso; } };
-  // célula centralizada que quebra a linha: o texto aparece inteiro, nada fica resumido com "…"
-  var cel = function(cls, filho){ return e("td",{className:"h-9 whitespace-nowrap border-b border-border px-2.5 text-center align-middle "+(cls||"")}, filho); };
+  var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit", timeZone:"America/Sao_Paulo"}); } catch(x){ return iso; } };   // só o dia (Marcus, 03/11/2026)
+  // data da resposta: a última mensagem de quem responde (Marcus ou Leonardo); sem mensagem, o dia em que mudou a situação
+  var respondeuEm = function(x){ var ms = melMsgs(s, x.id).filter(function(m){ return melPodeGerir(m.porId); }); var iso = ms.length ? ms[ms.length-1].em : (x.situacao!=="Em análise" ? x.mudouEm : ""); return iso || ""; };
+  var diaSP = function(iso){ try { return new Date(iso).toLocaleDateString("sv-SE", {timeZone:"America/Sao_Paulo"}); } catch(x){ return ""; } };
   var etiqueta = function(z){ return e("span",{className:"inline-flex h-6 items-center whitespace-nowrap rounded-full border px-2.5 text-[12px] font-semibold "+COR_SIT[z]}, z); };
-  var tabela = function(itens, semCol){
-    var uso = cols.filter(function(c){ return c.t!==semCol; });
-    return e(TabelaP,{minW:gere ? 1485 : 1300, cols:uso, cab:"bg-[#2b4a73]"},
-      itens.map(function(x){
-        return e(Tr,{key:x.id, onClick:function(){ abrir(x.id); }},
-          cel("", quandoCurto2(x.em)), semCol!=="Setor" && cel("", x.setor), semCol!=="Funcionária" && cel("", e("span",{className:"inline-flex items-center gap-1.5"}, e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:24}), x.por)),
-          cel("", melTipoNome(x.tipo) || "—"), cel("", etiqueta(x.situacao)), cel("", e(AbrirTela,{url:x.url})), cel("", resumo(x.desc || x.titulo)),
-          gere && cel("", e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}))); }));
-  };
-  var corpo;
-  if(!lista.length) corpo = e("p",{className:"py-4 text-center text-[13px]"}, base.length ? "Nenhum chamado com este filtro." : "Nenhum chamado ainda.");
-  else if(!grupo) corpo = tabela(lista, "");
-  else {
-    var campoG = grupo==="s" ? "setor" : "por", semC = grupo==="s" ? "Setor" : "Funcionária", gs = {};
-    lista.forEach(function(x){ var k = x[campoG] || "Sem "+(grupo==="s" ? "setor" : "nome"); (gs[k] = gs[k] || []).push(x); });
-    corpo = e("div",{className:"flex flex-col gap-2"}, Object.keys(gs).sort().map(function(k){ var it = gs[k], fechado = !!fechados[k], abertos = it.filter(function(x){ return melAberta(x.situacao); }).length;
-      return e("section",{key:k, className:"flex flex-col gap-1"},
-        e("button",{type:"button", onClick:function(){ var o = Object.assign({}, fechados); o[k] = !fechado; setFechados(o); }, "aria-expanded":!fechado, className:"flex h-9 items-center gap-3 rounded-md border border-border bg-card px-3 text-left text-[13px] hover:bg-white/10"},
-          e("b",null, (fechado ? "▸ " : "▾ ")+k), grupo==="q" && e("span",null, it[0].setor), e("span",{className:"ml-auto"}, it.length+(it.length===1 ? " pedido" : " pedidos")+" · "+abertos+" em aberto")),
-        !fechado && tabela(it, semC)); }));
-  }
+  // filtro na coluna, igual ao Agendamento: clicar no título abre classificar, condição e lista de valores; cada coluna tem a largura do maior texto (Setor e Funcionária não passam mais um por cima do outro)
+  var colunas = [
+    {k:"data", t:"Data", tipo:"data", v:function(x){ return diaSP(x.em); }, exib:function(x){ return quandoCurto2(x.em); }},
+    {k:"setor", t:"Setor", v:function(x){ return x.setor; }},
+    {k:"por", t:"Funcionária", v:function(x){ return x.por; }},   // sem foto nem ícone na lista (Marcus, 03/11/2026)
+    {k:"sit", t:"Situação", min:200, v:function(x){ return x.situacao; }, exib:function(x){ return x.situacao; }, cel:function(x){ return etiqueta(x.situacao); }},
+    {k:"tela", t:"Tela", min:80, v:function(x){ return melCaminho(x.url); }, cel:function(x){ return e(AbrirTela,{url:x.url}); }},
+    {k:"desc", t:"Descrição", v:function(x){ return resumo(x.desc || x.titulo); }}
+  ].concat([{k:"resp", t:"Respondido em", tipo:"data", min:130, v:function(x){ var r = respondeuEm(x); return r ? diaSP(r) : ""; }, exib:function(x){ var r = respondeuEm(x); return r ? quandoCurto2(r) : "—"; }}]).concat(gere ? [{k:"claude", t:"Conversa do Claude", min:185, v:function(x){ return x.claude || ""; }, cel:function(x){ return e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}); }}] : []);
+  var corpo = e(GradeFiltro,{chave:"chamados", rows:lista, cols:colunas, onRow:function(x){ abrir(x.id); }, vazio:"Nenhum chamado ainda."});
   return e(Pagina,null,
     zoom && e("div",{className:"fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-black/85 p-4", role:"dialog", "aria-modal":"true", onClick:function(){ setZoom(null); }},
       e("img",{src:zoom.src, alt:"Print ampliado", className:"max-h-full max-w-full rounded-lg border border-border object-contain"}),
@@ -372,14 +352,7 @@ function AbaMelhorias(){
         : e("div",{className:"flex flex-col"}, fila.map(function(y){
             return e("button",{key:y.x.id, type:"button", onClick:function(){ abrir(y.x.id); }, title:y.x.titulo, className:"grid min-h-6 w-full grid-cols-[4.25rem_minmax(0,1fr)] items-center gap-2 rounded py-0.5 text-left text-[13px] leading-tight hover:bg-white/10"},
               e("b",{className:y.dias>=3 ? "text-destructive" : "text-yellow-400"}, y.dias ? "há "+y.dias+(y.dias===1 ? " dia" : " dias") : "hoje"), e("span",{className:"break-words"}, y.x.titulo)); })))),
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-      e("input",{type:"search", "aria-label":"Buscar", value:busca, placeholder:"Buscar descrição, pessoa, setor ou tela", onChange:function(ev){ setBusca(ev.target.value); }, className:CAMPO+" min-w-72 flex-1"}),
-      e("select",{"aria-label":"Situação", title:"Situação", value:fSit, onChange:function(ev){ setFSit(ev.target.value); }, className:CAMPO+" w-auto! min-w-32"}, [["", "Todas as situações"]].concat(SITUACOES.map(function(z){ return [z, z]; })).map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      e("select",{"aria-label":"Setor", title:"Setor", value:fSet, onChange:function(ev){ setFSet(ev.target.value); }, className:CAMPO+" w-auto! min-w-32"}, [["", "Todos os setores"]].concat(setores.map(function(z){ return [z, z]; })).map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      e("select",{"aria-label":"Funcionária", title:"Funcionária", value:fQ, onChange:function(ev){ setFQ(ev.target.value); }, className:CAMPO+" w-auto! min-w-32"}, [["", "Todas as funcionárias"]].concat(pessoas.map(function(z){ return [z, z]; })).map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      e("select",{"aria-label":"Ordenar por", title:"Ordenar por", value:ord, onChange:function(ev){ setOrd(ev.target.value); }, className:CAMPO+" w-auto! min-w-32"}, ORDENS.map(function(o){ return [o[0], "Ordenar: "+o[1]]; }).map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      e("select",{"aria-label":"Agrupar por", title:"Agrupar por", value:grupo, onChange:function(ev){ setGrupo(ev.target.value); }, className:CAMPO+" w-auto! min-w-32"}, [["", "Sem agrupar"], ["s", "Agrupar por setor"], ["q", "Agrupar por funcionária"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      limpa && e(Botao,{onClick:function(){ setBusca(""); setFSit(""); setFSet(""); setFQ(""); }}, "Limpar")),
+    limpa && e("div",{className:"flex items-center justify-center gap-2 text-[13px]"}, "Filtro dos cartões: "+[fSet, fQ, busca].filter(Boolean).join(" · "), e(Botao,{onClick:function(){ setBusca(""); setFSet(""); setFQ(""); }}, "Limpar")),
     corpo);
 }
 

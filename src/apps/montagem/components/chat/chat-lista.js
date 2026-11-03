@@ -41,7 +41,6 @@ function VerComo(p){
     e("div",{className:"max-h-[58vh] overflow-y-auto"},
       e("div",{className:"px-2 pb-1"}, e("input",{autoFocus:true, value:busca, onChange:function(ev){ setBusca(ev.target.value); }, placeholder:"Buscar pessoa ou setor", "aria-label":"Buscar", className:"h-8 w-full rounded-lg px-3 text-[12px] outline-none", style:{background:W.campo, color:W.texto}})),
       !pessoas && p.nova && podeCriarGrupo(p.euReal) && e("button",{onClick:p.aoGrupo, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:W.verde}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:"#fff"}})), e("span",{className:"font-medium"}, "Novo grupo")),
-      !pessoas && p.nova && p.aoPreset && podeCriarGrupo(p.euReal) && ["MLN"].concat(api.sectorGroupNames).filter(function(n){ return !stC.convs.some(function(c){ return c.tipo==="grupo" && c.nome===n; }); }).map(function(n){ return e("button",{key:"pre"+n, onClick:function(){ p.aoPreset(n); }, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:OURO}}, e(Ph,{n:"users-three", s:15, fill:true, style:{color:OURO_TXT}})), e("span",{className:"font-medium"}, n==="MLN" ? "Grupo MLN (Marcus, Nickolas e Lucas)" : "Grupo "+n)); }),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, false); }, className:linha}, e(Avatar,{id:p.euReal, s:26}), e("span",{className:"font-medium"}, "O meu SorellyChat")),
       !pessoas && !p.nova && e("button",{onClick:function(){ ir(null, true); }, className:linha}, e("span",{className:"grid size-[26px] place-items-center rounded-full", style:{background:OURO}}, e(Ph,{n:"eye", s:15, fill:true, style:{color:OURO_TXT}})), e("span",{className:"font-medium"}, "Todas as conversas")),
       !pessoas && e("p",{className:"px-3 pb-0.5 pt-1.5 text-[9.5px] font-extrabold uppercase tracking-wide", style:{color:W.ouro}}, "Setores"),
@@ -80,11 +79,12 @@ function BarraChat(p){
 
 // SETORES (Marcus, 30/10/2026): primeiro a lista dos setores, igual à barra lateral do sistema (ícone, cor e nome). Ao tocar num setor, abrem os grupos dele; o botão de voltar leva à lista.
 function VistaSetores(p){
-  var ab = useState(null), aberto = ab[0], setAberto = ab[1];
+  var ab = useState(null), aberto = ab[0], setAberto = ab[1], nv = useState(false), novo = nv[0], setNovo = nv[1];
   var setores = SETORES.filter(function(st){ return (st.grupo||"setor")==="setor"; });
   var grupos = p.lista.filter(function(x){ return x.conv.tipo==="grupo"; });
-  var doSetor = function(st){ return grupos.filter(function(x){ return setorDoGrupo(x.conv.nome)===st; }); };
-  var soltos = grupos.filter(function(x){ return !setorDoGrupo(x.conv.nome); });
+  // grupo criado dentro do setor (setorId) fica no setor; os antigos seguem pelo nome (Marcus, 02/11/2026)
+  var doSetor = function(st){ return grupos.filter(function(x){ return x.conv.setorId ? x.conv.setorId===st.id : setorDoGrupo(x.conv.nome)===st; }); };
+  var soltos = grupos.filter(function(x){ return x.conv.setorId ? !setores.some(function(s){ return s.id===x.conv.setorId; }) : !setorDoGrupo(x.conv.nome); });
   var nl = function(l){ return l.reduce(function(t, x){ return t + x.naoLidas; }, 0); };
   var nomeDe = function(st){ return String(st.nome).replace(/\n/g, " "); };
   var pode = podeCriarGrupo(p.euReal) && !p.leitura;
@@ -96,8 +96,13 @@ function VistaSetores(p){
       e(Ph,{n:"caret-right", s:14, style:{color:W.sec}})); };
   if(aberto){
     var st = setores.find(function(x){ return x.id===aberto; }), lista = aberto==="soltos" ? soltos : st ? doSetor(st) : [], nome = aberto==="soltos" ? "Outros grupos" : st ? nomeDe(st) : "";
+    // Novo grupo dentro do setor: abre já com as pessoas do grupo mais antigo do setor marcadas; dá para tirar gente ou juntar outras (Marcus, 02/11/2026)
+    var padrao = st && lista.length ? lista.slice().sort(function(a, b){ return a.conv.criada-b.conv.criada; })[0].conv.membros : [];
     return e("div",null,
-      e("button",{onClick:function(){ setAberto(null); }, className:"flex h-8 w-full items-center gap-2 px-3 text-left text-[13px] font-semibold", style:{borderBottom:"1px solid "+W.borda, color:W.ouro}}, e(Ph,{n:"arrow-left", s:16}), "Setores", e("span",{style:{color:W.sec}}, "/"), e("span",{style:{color:W.texto}}, nome)),
+      e("div",{className:"flex items-center", style:{borderBottom:"1px solid "+W.borda}},
+        e("button",{onClick:function(){ setAberto(null); }, className:"flex h-8 min-w-0 flex-1 items-center gap-2 px-3 text-left text-[13px] font-semibold", style:{color:W.ouro}}, e(Ph,{n:"arrow-left", s:16}), "Setores", e("span",{style:{color:W.sec}}, "/"), e("span",{style:{color:W.texto}}, nome)),
+        st && pode && e("button",{onClick:function(){ setNovo(true); }, className:"mr-2 flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-bold", style:{background:OURO, color:OURO_TXT}}, e(Ph,{n:"plus", s:14, fill:true}), "Novo grupo")),
+      novo && st && e(NovoGrupo,{eu:p.euReal, setorId:st.id, padrao:padrao, fechar:function(){ setNovo(false); }, aoCriar:function(id){ setNovo(false); p.abrir(id); }}),
       lista.map(p.linha),
       !lista.length && e("div",{className:"flex flex-col items-center gap-3 px-6 py-8 text-center"},
         e("p",{className:"text-[13px]", style:{color:W.sec}}, "Nenhum grupo neste setor ainda."),

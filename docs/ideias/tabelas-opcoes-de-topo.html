@@ -21,7 +21,8 @@ select{height:32px;background:var(--s2);border:1px solid var(--bd);border-radius
 #moldura{margin:0 auto;transition:max-width .2s}
 .rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
 table{width:100%;border-collapse:collapse}
-thead th{background:var(--topo);color:#1a1306;height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;position:relative}
+table{background:var(--topo) top left/100% 30px no-repeat}
+thead th{background:transparent;color:#1a1306;height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;position:relative}
 thead th button{all:unset;cursor:pointer;margin-left:6px;font-size:11px}
 td{padding:6px 10px;min-height:32px;text-align:center;border-bottom:1px solid var(--bd);vertical-align:middle}
 tr:last-child td{border-bottom:0}
@@ -39,7 +40,7 @@ tr:last-child td{border-bottom:0}
 .pop .b button{height:32px;flex:1;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
 .pop .b button.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
 tr.gp td{background:rgba(232,184,75,.16);font-weight:600;cursor:pointer;border-bottom:1px solid rgba(232,184,75,.3)}
-tr.tot td{background:var(--topo);color:#1a1306;font-weight:600;border-bottom:0}
+tr.tot td{background:var(--s2);font-weight:600;border-bottom:0}
 tr.det td{background:#0f0f11;padding:10px 14px}
 .dg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px 16px;text-align:center}
 .dg small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--ouro)}

@@ -30,15 +30,17 @@ var COLUNAS = [
   {k:"aprovada", titulo:"Aprovada", cor:AZUL},
   {k:"liberada", titulo:"Liberada para compra", cor:"#93C5FD"},
   {k:"efetuada", titulo:"Efetuada", cor:ESTADO.info},
-  {k:"recebida", titulo:"Recebida / Entregue", cor:ESTADO.ok},
+  {k:"transito", titulo:"Em transporte", cor:"#38BDF8"},
+  {k:"recebida", titulo:"Chegou na empresa", cor:"#34D399"},
+  {k:"entregue", titulo:"Entregue", cor:ESTADO.ok},
   {k:"reprovada", titulo:"Reprovada", cor:ESTADO.ruim},
   {k:"cancelada", titulo:"Cancelada", cor:ESTADO.neutro}];
-var NOME_COL = {solicitada:"Solicitada", aprovada:"Aprovada", liberada:"Liberada para compra", efetuada:"Efetuada", recebida:"Recebida", reprovada:"Reprovada", cancelada:"Cancelada"};
+var NOME_COL = {solicitada:"Solicitada", aprovada:"Aprovada", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
 var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"solicitada", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
-  COMPRADA:"efetuada", EM_TRANSITO:"efetuada", RECEBIDA_PARCIAL:"efetuada", RECEBIDA:"recebida", ENTREGUE:"recebida", NEGADA:"reprovada", CANCELADA:"cancelada"};
-var ORDEM = {solicitada:0, aprovada:1, liberada:2, efetuada:3, recebida:4};
+  COMPRADA:"efetuada", EM_TRANSITO:"transito", RECEBIDA_PARCIAL:"transito", RECEBIDA:"recebida", ENTREGUE:"entregue", NEGADA:"reprovada", CANCELADA:"cancelada"};
+var ORDEM = {solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
 var FINAIS = ["ENTREGUE", "NEGADA", "CANCELADA"];
-var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], AGUARDANDO_CNPJ:["Falta CNPJ", "info"], AGUARDANDO_FORMA_PAGAMENTO:["Falta conta", "info"], EM_TRANSITO:["Em trânsito", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
+var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], AGUARDANDO_CNPJ:["Falta CNPJ", "info"], AGUARDANDO_FORMA_PAGAMENTO:["Falta conta", "info"], EM_TRANSITO:["Em transporte", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
 // próxima operação natural de cada situação (botão "Concluir etapa ›")
 var PROXIMO = {NAO_VERIFICADA:"aprovar", AGUARDANDO:"aprovar", AGUARDANDO_ORCAMENTO:"aprovar", AGUARDANDO_AUTORIZACAO:"autorizar", AGUARDANDO_CNPJ:"cnpj", AGUARDANDO_FORMA_PAGAMENTO:"pagamento", APROVADA:"liberar", LIBERADA:"comprar", COMPRADA:"receber", EM_TRANSITO:"receber", RECEBIDA_PARCIAL:"receber", RECEBIDA:"entregar"};
 var ultimoEm = function(p){ return p.eventos && p.eventos.length ? p.eventos[p.eventos.length-1].em : p.solicitadoEm; };
@@ -67,7 +69,9 @@ function mover(c, ac, pd, de, para){
     if(st==="APROVADA") return aviso("O financeiro precisa liberar a compra antes de efetuar.");
     return ac.iniciar(pd, "comprar");
   }
+  if(para==="transito"){ if(o0<3) return aviso("Efetue a compra antes de colocar em transporte."); if(st!=="COMPRADA") return aviso("Esta compra já saiu de Efetuada."); return ac.iniciar(pd, "transito"); }
   if(para==="recebida"){ if(o0<3) return aviso("Efetue a compra antes de registrar o recebimento."); return ac.iniciar(pd, "receber"); }
+  if(para==="entregue"){ if(o0<5) return aviso("Registre a chegada da compra na empresa antes de entregar."); return ac.iniciar(pd, "entregar"); }
 }
 
 // lista com as regras do domínio; quem não vê o funil completo só enxerga as próprias solicitações
@@ -131,7 +135,7 @@ function AbaCompraQuadro(props){
   var clica = function(k){ return function(){ set("ind", f.ind===k ? "" : k); }; };
   var cols = COLUNAS.map(function(col){
     var itens = lista.filter(function(p){ return COL_DE[p.status]===col.k; }).map(function(p){ return Object.assign({}, p, {arrastavel:FINAIS.indexOf(p.status)<0}); });
-    if(col.k==="solicitada" || col.k==="aprovada" || col.k==="liberada" || col.k==="efetuada") itens.sort(function(a, b){ return String(ultimoEm(a)).localeCompare(String(ultimoEm(b))); });
+    if(col.k==="solicitada" || col.k==="aprovada" || col.k==="liberada" || col.k==="efetuada" || col.k==="transito") itens.sort(function(a, b){ return String(ultimoEm(a)).localeCompare(String(ultimoEm(b))); });
     else itens.sort(function(a, b){ return (a.status==="ENTREGUE" ? 1 : 0)-(b.status==="ENTREGUE" ? 1 : 0) || String(ultimoEm(b)).localeCompare(String(ultimoEm(a))); });
     return Object.assign({}, col, {itens:itens, aceita:true});
   });

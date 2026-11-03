@@ -473,6 +473,7 @@ function reducer(s, a){
         listagens: s.listagens.map(function(l){ return l.id===a.lid ? Object.assign({}, l, {fechada:false, concluidaEm:null}) : l; }),
         histListagens: (s.histListagens||[]).filter(function(h){ return !(h.lid===a.lid && h.hoje); })},
       "Listagem reaberta e de volta ao Painel");
+    case "KIT_VENDAS": return com(s, {kits: s.kits.map(function(k){ return k.id===a.id ? Object.assign({}, k, {vendas:a.vendas||[]}) : k; })});   // simulação da tela Apps: acerta o vendido do mês de um kit
     case "ADD_KIT": {
       var l = s.listagens.find(function(x){return x.id===a.lid;}); if(!l || l.fechada) return s;
       if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+l.horario+" j\u00e1 est\u00e1 com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(l)+" revendedoras: escolha outra listagem", "alerta");

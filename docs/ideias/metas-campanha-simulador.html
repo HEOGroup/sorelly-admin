@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Metas: Campanha e simulador</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--ok:#4ade80;--no:#f87171;--am:#facc15;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1320px;margin:0 auto}
+.menu{display:flex;gap:2px;border-bottom:1px solid var(--bd);margin-bottom:10px;flex-wrap:wrap}
+.menu span{height:32px;line-height:32px;padding:0 14px;border-bottom:2px solid transparent}
+.menu span.on{border-bottom-color:var(--ouro);color:var(--ouro);font-weight:600}
+.cab{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap}
+.cab h1{font-size:20px;font-weight:600;line-height:1}
+.cab .d{display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 14px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.btn{height:32px;min-width:96px;padding:0 14px;background:transparent;color:var(--tx);border:1px solid var(--bd);border-radius:8px;font:inherit;cursor:pointer}
+.btn.p{background:var(--ouro);color:#111;border-color:var(--ouro);font-weight:600}
+.tag{display:inline-block;height:22px;line-height:20px;padding:0 10px;border:1px solid var(--bd);border-radius:6px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+.tag.am{border-color:var(--am);color:var(--am)}.tag.ok{border-color:var(--ok);color:var(--ok)}
+.grade{display:grid;grid-template-columns:330px minmax(0,1fr);gap:10px;align-items:start}
+.col{display:grid;gap:10px}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+.bloco>h2{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;padding:8px 12px;text-align:center;color:#1a1306;background:var(--topo);border-radius:8px 8px 0 0}
+.in{padding:10px 12px}
+.par{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.par:last-child{margin-bottom:0}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;margin-bottom:3px;text-align:center}
+input[type=text]{height:32px;width:100%;background:var(--s2);border:1px solid var(--bd);border-radius:8px;color:var(--tx);font:inherit;padding:0 10px;text-align:center}
+input[type=text]:focus{outline:2px solid var(--ouro);outline-offset:-1px}
+input[type=range]{width:100%;accent-color:#d4a84b}
+.sep{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;color:var(--ouro);text-align:center;margin:10px 0 6px;padding-top:8px;border-top:1px solid var(--bd)}
+.lin{display:grid;grid-template-columns:1.6fr 1fr 1fr;align-items:center;min-height:32px;padding:0 12px;border-bottom:1px solid var(--bd);text-align:center}
+.lin:last-child{border-bottom:0}
+.lin.t{background:var(--s2);font-weight:600}
+.lin b{font-weight:600}
+.ok{color:var(--ok)}.no{color:var(--no)}.am{color:var(--am)}.ou{color:var(--ouro)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0 0;justify-content:center}
+.chip{height:28px;padding:0 10px;border:1px solid var(--bd);border-radius:6px;background:transparent;color:var(--tx);font:inherit;font-size:12px;cursor:pointer}
+.chip.on{border-color:var(--ouro);color:var(--ouro)}
+.rolar{overflow-x:auto;border:1px solid var(--bd);border-radius:8px;background:var(--s1)}
+table{width:100%;border-collapse:collapse;white-space:nowrap;background:var(--topo) top left/100% 30px no-repeat}
+thead th{height:30px;padding:0 12px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;color:#1a1306;background:transparent}
+td{height:32px;padding:0 12px;text-align:center;border-bottom:1px solid var(--bd)}
+tbody tr:hover td{background:rgba(232,184,75,.10)}
+tfoot td{font-weight:600;background:var(--s2);border-bottom:0}
+td input{height:26px;width:96px;font-size:13px}
+.nota{font-size:12px;text-align:center;padding:6px 0 0}
+@media(max-width:1000px){.grade{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="menu"><span class="on">Campanha</span><span>Revendedoras</span><span>Acompanhamento</span><span>Brindes</span><span>Histórico</span><span>Regras</span></div>
+<div class="cab">
+  <h1 id="tit"></h1>
+  <div class="d"><span class="tag am" id="st">Rascunho</span><div class="seg" id="camp"><button data-c="nov" class="on">Novembro 2026</button><button data-c="dez">Dezembro 2026</button></div><button class="btn" id="copia">Copiar campanha anterior</button><button class="btn p" id="pub">Publicar</button></div>
+</div>
+<div class="grade">
+  <div class="col">
+    <div class="bloco"><h2>Regra da meta</h2><div class="in">
+      <div class="par"><div><label>Meta 1 sobre o topo</label><input type="text" id="pct1" value="15%"></div><div><label>Meta 2 sobre o topo</label><input type="text" id="pct2" value="35%"></div></div>
+      <div class="par"><div><label>Piso Meta 1</label><input type="text" id="piso1" value="R$ 1.500,00"></div><div><label>Piso Meta 2</label><input type="text" id="piso2" value="R$ 2.000,00"></div></div>
+      <div class="sep">Brinde extra na meta de</div>
+      <div class="par"><div><label>Ponto 1 (meta)</label><input type="text" id="pm1" value="R$ 1.500,00"></div><div><label>Ponto 2 (meta)</label><input type="text" id="pm2" value="R$ 2.000,00"></div></div>
+      <div class="par"><div><label>Extra BB</label><input type="text" id="bb1" value="R$ 128,00"></div><div><label>Extra BB</label><input type="text" id="bb2" value="R$ 168,00"></div></div>
+      <div class="par"><div><label>Extra Normal</label><input type="text" id="no1" value="R$ 96,00"></div><div><label>Extra Normal</label><input type="text" id="no2" value="R$ 122,00"></div></div>
+      <p class="nota">Entre os dois pontos o extra cresce em linha reta.</p>
+    </div></div>
+    <div class="bloco"><h2>Cenário do simulador</h2><div class="in">
+      <label>Participantes que batem a meta: <span id="v1"></span></label><input type="range" id="r1" min="1" max="100" value="11">
+      <label style="margin-top:10px">Das que batem, chegam à Meta 2: <span id="v2"></span></label><input type="range" id="r2" min="0" max="100" value="37">
+      <div class="chips" id="pre"><button class="chip" data-a="11" data-b="37">Como outubro</button><button class="chip" data-a="20" data-b="37">20%</button><button class="chip" data-a="30" data-b="37">30%</button><button class="chip" data-a="100" data-b="37">Todas</button></div>
+      <p class="nota">Como outubro: 11% das participantes bateriam (225 de 2.114), 37% delas na Meta 2.</p>
+    </div></div>
+    <div class="bloco"><h2>Custo do extra</h2>
+      <div class="lin" style="min-height:30px;background:var(--s2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span>Item</span><span>Revendedoras</span><span>Valor</span></div>
+      <div id="custo"></div>
+    </div>
+  </div>
+  <div>
+    <div class="rolar"><table>
+      <thead><tr><th>Classe</th><th>Revendedoras</th><th>Meta 1</th><th>Extra BB</th><th>Extra Normal</th><th>Meta 2</th><th>Extra BB</th><th>Extra Normal</th><th>Estado</th><th>Custo estimado</th></tr></thead>
+      <tbody id="corpo"></tbody><tfoot id="pe"></tfoot>
+    </table></div>
+    <p class="nota">Classes aprovadas têm meta fixa. As provisórias seguem a regra e você pode digitar a meta que quiser. A classe de R$ 7.000 ou mais é individual (média +15% e +35%); o custo usa média de R$ 7.500.</p>
+  </div>
+</div>
+
+<script>
+const R = v => "R$ " + Number(v).toLocaleString("pt-BR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const N = v => Number(v).toLocaleString("pt-BR");
+const $ = s => document.querySelector(s);
+const num = s => { const t = String(s).replace(/[^\d,]/g, "").replace(",", "."); return parseFloat(t) || 0; };
+const teto = (x, p) => Math.ceil(x * p / 10000) * 100;
+const CL = [
+  {id:"novo", nome:"Kit novo", n:266, m1:1500, m2:2000, fixa:true},
+  {id:"ini", nome:"Inicial", ate:999.99, n:866, m1:1500, m2:2000, fixa:true},
+  {id:"a", nome:"R$ 1.000 a 1.499", ate:1499.99, n:460, m1:1700, m2:2100, fixa:true},
+  {id:"b", nome:"R$ 1.500 a 1.999", ate:1999.99, n:270, m1:2300, m2:2700, fixa:true},
+  {id:"c", nome:"R$ 2.000 a 2.499", ate:2499.99, n:110}, {id:"d", nome:"R$ 2.500 a 2.999", ate:2999.99, n:71},
+  {id:"e", nome:"R$ 3.000 a 3.999", ate:3999.99, n:32}, {id:"f", nome:"R$ 4.000 a 4.999", ate:4999.99, n:21},
+  {id:"g", nome:"R$ 5.000 a 6.999", ate:6999.99, n:14}, {id:"h", nome:"R$ 7.000 ou mais", n:4, indiv:true}
+];
+const sobre = {};   // metas digitadas à mão nas classes provisórias
+function P() { return {p1:num($("#pct1").value), p2:num($("#pct2").value), piso1:num($("#piso1").value), piso2:num($("#piso2").value), a:{m:num($("#pm1").value), bb:num($("#bb1").value), no:num($("#no1").value)}, b:{m:num($("#pm2").value), bb:num($("#bb2").value), no:num($("#no2").value)}}; }
+const extra = (p, m) => { const k = p.b.m === p.a.m ? 0 : (m - p.a.m) / (p.b.m - p.a.m); return {bb: Math.round(p.a.bb + (p.b.bb - p.a.bb) * k), no: Math.round(p.a.no + (p.b.no - p.a.no) * k)}; };
+function metas(c, p) {
+  if (c.indiv) return {m1: teto(7500, 100 + p.p1), m2: teto(7500, 100 + p.p2)};
+  if (c.fixa) return {m1: c.m1, m2: c.m2};
+  const s = sobre[c.id] || {};
+  return {m1: s.m1 || Math.max(p.piso1, teto(c.ate, 100 + p.p1)), m2: s.m2 || Math.max(p.piso2, teto(c.ate, 100 + p.p2))};
+}
+let camp = "nov";
+function desenha() {
+  const p = P(), taxa = +$("#r1").value / 100, s2 = +$("#r2").value / 100;
+  $("#v1").textContent = $("#r1").value + "%"; $("#v2").textContent = $("#r2").value + "%";
+  $("#tit").textContent = "Campanha - " + (camp === "nov" ? "Novembro 2026" : "Dezembro 2026");
+  let totC = 0, totN = 0, venda = 0, nM1 = 0, nM2 = 0, tot = 0;
+  $("#corpo").innerHTML = CL.map(c => {
+    const m = metas(c, p), a = extra(p, m.m1), b = extra(p, m.m2), e1 = a.bb + a.no, e2 = b.bb + b.no;
+    const bat = c.n * taxa, n2 = bat * s2, n1 = bat - n2, custo = n1 * e1 + n2 * e2;
+    totC += custo; totN += bat; nM1 += n1; nM2 += n2; tot += c.n; venda += n1 * m.m1 + n2 * m.m2;
+    const cel = (k, v) => c.fixa || c.indiv ? (c.indiv && k ? (k === "m1" ? "Média +" + p.p1 + "%" : "Média +" + p.p2 + "%") : R(v)) : `<input type="text" data-c="${c.id}" data-k="${k}" value="${R(v)}">`;
+    return `<tr><td>${c.nome}</td><td>${N(c.n)}</td><td>${c.indiv ? "Média +" + p.p1 + "%" : cel("m1", m.m1)}</td><td class="ou">${R(a.bb)}</td><td class="ou">${R(a.no)}</td><td>${c.indiv ? "Média +" + p.p2 + "%" : cel("m2", m.m2)}</td><td class="ou">${R(b.bb)}</td><td class="ou">${R(b.no)}</td><td><span class="tag ${c.fixa ? "ok" : "am"}">${c.fixa ? "Aprovada" : "Provisória"}</span></td><td>${R(custo)}</td></tr>`;
+  }).join("");
+  $("#pe").innerHTML = `<tr><td>Total</td><td>${N(tot)}</td><td colspan="7"></td><td class="ou">${R(totC)}</td></tr>`;
+  $("#custo").innerHTML =
+    `<div class="lin"><span>Batem a meta</span><b>${N(Math.round(totN))}</b><span>${(taxa * 100).toLocaleString("pt-BR")}% do total</span></div>` +
+    `<div class="lin"><span>Na Meta 1</span><b>${N(Math.round(nM1))}</b><span></span></div>` +
+    `<div class="lin"><span>Na Meta 2</span><b>${N(Math.round(nM2))}</b><span></span></div>` +
+    `<div class="lin"><span>Venda dessas na meta</span><b></b><span>${R(venda)}</span></div>` +
+    `<div class="lin"><span>Custo por revendedora que bate</span><b></b><span>${R(totN ? totC / totN : 0)}</span></div>` +
+    `<div class="lin"><span>Extra sobre a venda</span><b></b><span>${venda ? (totC / venda * 100).toLocaleString("pt-BR", {maximumFractionDigits: 1}) + "%" : "0%"}</span></div>` +
+    `<div class="lin t"><span>Custo do extra</span><b></b><span class="ou">${R(totC)}</span></div>`;
+  document.querySelectorAll("#pre .chip").forEach(c => c.classList.toggle("on", +c.dataset.a === +$("#r1").value && +c.dataset.b === +$("#r2").value));
+  document.querySelectorAll("td input").forEach(i => i.onchange = () => { sobre[i.dataset.c] = Object.assign(sobre[i.dataset.c] || {}, {[i.dataset.k]: num(i.value)}); desenha(); });
+}
+document.querySelectorAll(".par input, #r1, #r2").forEach(i => i.oninput = desenha);
+document.querySelectorAll(".par input").forEach(i => i.onchange = desenha);
+document.querySelectorAll("#pre .chip").forEach(c => c.onclick = () => { $("#r1").value = c.dataset.a; $("#r2").value = c.dataset.b; desenha(); });
+document.querySelectorAll("#camp button").forEach(b => b.onclick = () => { camp = b.dataset.c; document.querySelectorAll("#camp button").forEach(x => x.classList.toggle("on", x === b)); $("#st").textContent = camp === "nov" ? "Rascunho" : "Rascunho"; desenha(); });
+$("#copia").onclick = () => { $("#st").textContent = "Copiada de novembro"; setTimeout(() => $("#st").textContent = "Rascunho", 1800); };
+$("#pub").onclick = () => { const s = $("#st"); s.textContent = "Publicada"; s.className = "tag ok"; };
+desenha();
+</script>
+</body>
+</html>

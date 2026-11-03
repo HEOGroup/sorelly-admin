@@ -374,7 +374,7 @@ function textoRegras(v, modalidade){
     {t:"Taxa de deslocamento", x:"Venda abaixo de "+reais(g.taxaAbaixoDe)+" paga uma taxa fixa, que soma no valor do acerto — "+taxaTxt+"."},
     {t:"Remarcação", x:"Remarcar o acerto tira comissão e brinde — "+rem+". Remarcação com motivo justificado não conta."},
     {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Se faltar, o brinde diminui — "+(pag||"sem desconto")+" · faltou mais de "+teto+"%: sem brinde."},
-    {t:"Negociação", x:"Faltando valor, dá para negociar parcelas que fechem o valor exato. Se não quiser negociar: sem brinde e a nota promissória é executada em 48h úteis."},
+    {t:"Negociação", x:"Faltando valor, dá para negociar parcelas que fechem o valor exato. Se não quiser negociar: sem brinde; o jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente."},
     {t:"Brinde", x:"Existem o brinde Normal e o Select (BB). BB não é só brinco: toda peça cujo código começa com BB (brinco, anel, colar, pulseira…) é Select. O brinde só é entregue depois do pagamento e precisa ser retirado com a representante NA HORA DO ACERTO: peça que não estiver nesse momento é considerada vendida. O que passar do valor liberado soma no total a pagar."},
     {t:"Kit novo", x:"Com "+g.kitNovoMinPct+"% ou mais do acerto pago, o kit novo é liberado. Abaixo disso precisa de autorização do financeiro."},
     {t:"Peças", x:(g.pecaSemEtiquetaVendida ? "Peça sem etiqueta é considerada vendida. " : "")+"Cada tag riscada ou extraviada custa "+reais(g.taxaTagExtraviada)+". O que não foi vendido volta para a empresa."}
@@ -436,6 +436,6 @@ function diffVersoes(atual, anterior){
   return {faixas:faixas, gerais:gerais};
 }
 
-export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
+export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, PRATA_FAIXAS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
   faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
   formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };

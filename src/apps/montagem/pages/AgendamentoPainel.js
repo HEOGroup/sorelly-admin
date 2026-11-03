@@ -9,13 +9,15 @@ import { redistribuirContagem } from "@/apps/montagem/domain/feriados";
 import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { anoDe, chaveMes, nomeProprio, mesAberto, nomeMes, painelDe } from "@/apps/montagem/domain/agendamento";
 import { nomeDe, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { sincronizarCotas } from "@/apps/montagem/pages/Agendamento";
 import { fatEfetivo } from "@/apps/montagem/domain/financeiro";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { BKC, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { ListagemLeitura } from "@/apps/montagem/pages/encomendas/ListagemDia";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
+var ultimoDia = function(ym){ var u = new Date(Number(ym.slice(0, 4)), Number(ym.slice(5, 7)), 0); return String(u.getDate()).padStart(2, "0")+"/"+ym.slice(5, 7); };
 var pc = function(v){ return v===null || v===undefined ? "—" : v.toLocaleString("pt-BR", {minimumFractionDigits:1, maximumFractionDigits:1})+"%"; };
 var dBR = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "—"; };
 var LINHA = "flex h-8 items-center justify-between gap-2 border-b border-border px-1 text-[13px] last:border-b-0 ";
@@ -25,7 +27,7 @@ function Caixa(p){ return e("section",{className:"rounded-xl border border-[rgba
 
 function AbaAgPainel(){
   var cx = use(), s = cx.state, d = cx.dispatch, ag = s.agend, gerente = podeGerirAgend(s.usuario, ag), por = nomeDe(s.usuario);
-  var es = useState(null), esc = es[0], setEsc = es[1], mu = useState([]), datas = mu[0], setDatas = mu[1], pd = useState(null), prevDia = pd[0], setPrevDia = pd[1], md = useState("sistema"), modo = md[0], setModo = md[1];
+  var es = useState(null), esc = es[0], setEsc = es[1], mu = useState([]), datas = mu[0], setDatas = mu[1], pd = useState(null), prevDia = pd[0], setPrevDia = pd[1], md = useState("sistema"), modo = md[0], setModo = md[1], sc = useState({busy:false, msg:""}), sinc = sc[0], setSinc = sc[1], sRef = useRef(null);
   var ks = Object.keys(ag.mes).sort(), ym = esc && ag.mes[esc] ? esc : (mesAberto(ag) || ks[ks.length-1] || null);
   // datas mudadas na DevMaster que esperam o Marcus (módulo agrev, chaves "d_..."); sem servidor, fica vazio
   useEffect(function(){
@@ -34,9 +36,17 @@ function AbaAgPainel(){
     return function(){ vivo = false; };
   }, [setDatas]);
   // previsto de cada dia = kits abertos na DevMaster com data de acerto naquele dia (mesma leitura da tela Revendedoras, leva uns 20 s); dia que já passou só mostra o feito
+  // atualização automática (Marcus, 02/11/2026): quem gerencia o setor, ao abrir o Painel, faz o Admin ler a DevMaster e gravar a cota e o que falta de cada representante; repete em 25 s e a cada 10 minutos
+  var mAberto = mesAberto(ag), ajustado = !!(ag.patches && ag.patches.nov===3);
+  sRef.current = function(){ if(mAberto && gerente) sincronizarCotas({s:s, d:d, ag:ag, gerente:gerente, por:por}, mAberto, setSinc); };
+  useEffect(function(){ if(!ajustado || !gerente || !apiAtiva()) return undefined; sRef.current(); var t1 = setTimeout(function(){ sRef.current(); }, 25000), iv = setInterval(function(){ sRef.current(); }, 600000); return function(){ clearTimeout(t1); clearInterval(iv); }; }, [ajustado, gerente, mAberto]);
+  var agRef = useRef(ag); agRef.current = ag;   // sempre o Agendamento mais novo (a leitura da DevMaster demora uns 20 s)
   useEffect(function(){
     if(!apiAtiva()) return undefined; var vivo = true, hj = isoDia(new Date());
-    chamar("GET", "/agenda-revendedoras").then(function(r){ if(!vivo) return; var m = {}, ma = {}, atras = 0; (r.itens || []).forEach(function(i){ if(!i.prev) return; if(i.prev<hj) atras++; else { m[i.prev] = (m[i.prev] || 0)+1; if(i.agenda) ma[i.prev] = (ma[i.prev] || 0)+1; } }); setPrevDia({dias:m, ag:ma, atrasadas:atras}); }).catch(function(){});
+    chamar("GET", "/agenda-revendedoras").then(function(r){ if(!vivo) return; var m = {}, ma = {}, atras = 0, porRep = {}, nz = function(x){ return String(x||"").trim().replace(/^0+/, ""); }; (r.itens || []).forEach(function(i){ if(!i.prev) return; var g = porRep[nz(i.repCod)] || (porRep[nz(i.repCod)] = {atras:0, agend:0}); if(i.prev<hj) g.atras++; if(i.agendaEm){ if(i.agendaEm.slice(0, 7)===hj.slice(0, 7)) g.agend++; ma[i.agendaEm] = (ma[i.agendaEm] || 0)+1; } if(i.prev<hj) atras++; else { m[i.prev] = (m[i.prev] || 0)+1;  } }); setPrevDia({dias:m, ag:ma, atrasadas:atras, porRep:porRep});
+      // mês aberto sozinho na virada: os números de abertura vêm da DevMaster, uma vez só (revendedoras com kit ativo e as com acerto até o fim do mês)
+      var its = r.itens || [], mAb = mesAberto(agRef.current), mm = mAb ? agRef.current.mes[mAb] : null;
+      if(its.length>=500 && mm && mm.aberturaAuto && !mm.aberturaDM && mAb===chaveMes(new Date())){ var fim = mAb+"-31"; d({type:"AG", op:"abertura_dm", ym:mAb, base:its.length, previstos:its.filter(function(i){ return i.prev && i.prev<=fim; }).length, dia:new Date().getDate(), por:"Sistema"}); } }).catch(function(){});
     return function(){ vivo = false; };
   }, [setPrevDia]);
   if(!ym) return e("div",{className:"flex flex-col gap-3"}, e("p",{className:"text-[13px] text-foreground"}, "Nenhum mês aberto. O mês abre sozinho na virada; aguarde a leitura da DevMaster."));
@@ -49,8 +59,14 @@ function AbaAgPainel(){
   var ir = function(aba){ d({type:"ABA", aba:aba}); };
   var fechar = function(){ if(window.confirm("Isso vai FECHAR "+nomeMes(ym)+" definitivamente (vira histórico travado). Confirma?")) d({type:"AG", op:"fechar", ym:ym, por:por}); };
   var reabrir = function(){ if(window.confirm("Reabrir "+nomeMes(ym)+"? Ele volta a ficar editável.")) d({type:"AG", op:"reabrir", ym:ym, por:por}); };
+  var pr = (prevDia && prevDia.porRep) || {}, nzc = function(x){ return String(x||"").trim().replace(/^0+/, ""); };   // atrasados e agendados de cada representante (leitura da DevMaster)
+  var colsReps = [{k:"nome", t:"Representante", forte:true, v:function(l){ return nomeProprio(l.nome); }}, {k:"rev", t:"Revendedoras", tipo:"num", v:function(l){ return l.cota; }, exib:function(l){ return inteiro(l.cota); }},
+    {k:"feitos", t:"Acertos feitos", tipo:"num", v:function(l){ return Math.max(0, l.cota-l.saldoAtual); }, exib:function(l){ return inteiro(Math.max(0, l.cota-l.saldoAtual)); }}, {k:"afazer", t:"Acertos a realizar", tipo:"num", v:function(l){ return l.saldoAtual; }, exib:function(l){ return inteiro(l.saldoAtual); }},
+    {k:"atras", t:"Acertos atrasados", tipo:"num", v:function(l){ return (pr[nzc(l.codigo)] || {}).atras || 0; }, exib:function(l){ return prevDia ? inteiro((pr[nzc(l.codigo)] || {}).atras || 0) : "—"; }, cor:function(l){ return ((pr[nzc(l.codigo)] || {}).atras || 0) ? "text-destructive" : ""; }},
+    {k:"agend", t:"Acertos agendados", tipo:"num", v:function(l){ return (pr[nzc(l.codigo)] || {}).agend || 0; }, exib:function(l){ return prevDia ? inteiro((pr[nzc(l.codigo)] || {}).agend || 0) : "—"; }},
+    {k:"pct", t:"% feito", tipo:"num", v:function(l){ return l.pct; }, exib:function(l){ return pc(l.pct); }}];
   var linha = function(rot, v, forte, cor){ return e("div",{key:rot, className:LINHA+(forte ? "font-semibold" : "")}, e("span",{className:"", title:rot}, rot), e("b",{className:"whitespace-nowrap tabular-nums "+(cor||"")}, v)); };
-  var reps = p.linhas.filter(function(l){ return l.cota>0; }).slice().sort(function(a, b){ return b.saldoAtual-a.saldoAtual; }).slice(0, 8);
+  var reps = p.linhas.slice().sort(function(a, b){ return b.saldoAtual-a.saldoAtual || a.nome.localeCompare(b.nome, "pt-BR"); });   // TODAS as representantes (Marcus, 02/11/2026), as com mais acertos a fazer primeiro
   var comData = prevDia ? Object.keys(prevDia.dias).filter(function(k){ return k.slice(0, 7)===ym; }).reduce(function(tt, k){ return tt+prevDia.dias[k]; }, 0) : null;
   return e("div",{className:"flex flex-col gap-3"},
     e("div",{className:"flex flex-wrap items-center gap-1.5"},
@@ -81,9 +97,9 @@ function AbaAgPainel(){
     datas.length>0 && e(Caixa,{t:"Datas a confirmar ("+datas.length+")", dir:e(Botao,{onClick:function(){ ir("agrevs"); }}, "Abrir Revendedoras")},
       e(GradeFiltro,{chave:"datas", vazio:"Nada a confirmar.", rows:datas.slice(0, 8), cols:[{k:"nome", t:"Revendedora", forte:true, v:function(m){ return nomeProprio(m.nome); }}, {k:"rep", t:"Representante", v:function(m){ return nomeProprio(m.rep); }},
         {k:"mud", t:"Mudança", v:function(m){ return m.de+m.para; }, exib:function(m){ return dBR(m.de)+" → "+dBR(m.para); }}, {k:"mes", t:"Mês", v:function(m){ return m.de.slice(0, 7)!==m.para.slice(0, 7) ? "Troca de mês" : "Mesmo mês"; }}]})),
-    reps.length>0 && e(Caixa,{t:"Representantes", dir:e(Botao,{onClick:function(){ ir("agreps"); }}, "Abrir Representantes")},
-      e(GradeFiltro,{chave:"reps", rows:reps, cols:[{k:"nome", t:"Representante", forte:true, v:function(l){ return nomeProprio(l.nome); }}, {k:"cota", t:"Cota", tipo:"num", v:function(l){ return l.cota; }, exib:function(l){ return inteiro(l.cota); }},
-        {k:"feitos", t:"Feitos", tipo:"num", v:function(l){ return Math.max(0, l.cota-l.saldoAtual); }, exib:function(l){ return inteiro(Math.max(0, l.cota-l.saldoAtual)); }}, {k:"afazer", t:"A fazer", tipo:"num", v:function(l){ return l.saldoAtual; }, exib:function(l){ return inteiro(l.saldoAtual); }}, {k:"pct", t:"%", tipo:"num", v:function(l){ return l.pct; }, exib:function(l){ return pc(l.pct); }}]})),
+    reps.length>0 && e(Caixa,{t:"Representantes · acertos até "+ultimoDia(ym), dir:e(Botao,{onClick:function(){ ir("agreps"); }}, "Abrir Representantes")},
+      e("p",{className:"pb-2 text-[13px] leading-snug"}, "Atualiza sozinho: o Admin lê a DevMaster quando alguém da gerência abre o Painel e a cada 10 minutos com a tela aberta. Conta os acertos com data até o fim do mês, atrasados incluídos."+(sinc.msg ? " Última leitura: "+sinc.msg.replace(/^DevMaster /, "")+"." : "")),
+      e(GradeFiltro,{chave:"reps", rows:reps, cols:colsReps})),
     e(ListagemLeitura,{er:s.er}));
 }
 

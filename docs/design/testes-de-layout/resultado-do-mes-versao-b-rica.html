@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resultado do mês · versão B rica</title>
+<style>
+:root{--bg:#0f0f0f;--card:#171717;--bd:#2e2a1d;--tx:#f5f5f0;--ouro:#E8B84B;--pos:#4ade80;--neg:#ff6b6b;--amb:#fbbf24;--faixa:#1d1a10}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.4 Inter,"Segoe UI",system-ui,sans-serif;padding:14px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:8px;margin:0 0 10px}
+.ctl label{font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.btn,select{height:32px;font:inherit;color:var(--tx);background:var(--card);border:1px solid var(--bd);border-radius:8px;padding:0 14px;min-width:96px;cursor:pointer}
+.estado{font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.aviso{border:1px solid var(--amb);border-radius:8px;padding:6px 10px;margin:0 0 10px;text-align:center;color:var(--amb);font-weight:600}
+.bloco{border:1px solid var(--bd);border-radius:10px;background:var(--card);overflow:hidden;margin:0 0 10px;break-inside:avoid}
+.bar{display:flex;align-items:center;justify-content:center;gap:8px;height:32px;padding:0 10px;background:linear-gradient(90deg,rgba(154,111,30,.45),rgba(232,184,75,.12));border-bottom:1px solid var(--bd);cursor:pointer;font-weight:600;position:relative}
+.bar small{position:absolute;right:10px;font-size:11px;font-weight:400}
+.bar i{font-style:normal;color:var(--ouro)}
+.cols{columns:2 30rem;column-gap:10px}
+.bloco.fechado table{display:none}
+table.t{border-collapse:collapse;width:100%;background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) 0 0/100% 30px no-repeat #141414}
+table.t th{height:30px;padding:0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#1a1306;font-weight:700;text-align:center;background:transparent}
+table.t td{height:32px;padding:0 10px;text-align:center;border-top:1px solid #2a2619;font-variant-numeric:tabular-nums;background:transparent}
+table.t td.n{white-space:nowrap}
+tr.forte td{background:rgba(184,134,43,.2);font-weight:600}
+tr.sel td{background:rgba(232,184,75,.18)}
+tr.lin{cursor:pointer}tr.lin:hover td{background:#201c10}
+.pos{color:var(--pos);font-weight:600}.neg{color:var(--neg);font-weight:600}.amb{color:var(--amb);font-weight:600}
+.tag{display:inline-block;border:1px solid var(--ouro);color:var(--ouro);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:600}
+.tag.p{border-style:dashed}.tag.ok{border-color:var(--pos);color:var(--pos)}.tag.at{border-color:var(--amb);color:var(--amb)}.tag.ru{border-color:var(--neg);color:var(--neg)}
+.fonte{font-size:11px;border:1px solid var(--bd);border-radius:6px;padding:1px 6px}
+.rod{text-align:center;margin:12px 0 0;font-size:11px}
+</style>
+</head>
+<body>
+<div class="ctl"><label>Mês</label><button class="btn" id="ant" aria-label="Mês anterior">‹</button><select id="sel"></select><button class="btn" id="prox" aria-label="Próximo mês">›</button><span class="estado">DevMaster · 02/11, 20:10</span></div>
+<div id="aviso"></div>
+<div id="topo"></div>
+<div class="cols" id="cols"></div>
+<p class="rod">Janeiro a outubro: números lidos da tela Resultado do mês em 02/11/2026. Nota fiscal = "Faturamento lançado" da tela Faturamento. Dinheiro = o que a DevMaster mostra recebido nas contas. Novembro: previsão da tela, sem nota lançada. Dezembro a abril: entrada de EXEMPLO; a saída é o que já está lançado. Clique na barra de um bloco para fechar ou abrir.</p>
+
+<script>
+var NOMES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro","Janeiro","Fevereiro","Março","Abril"];
+var ANOS=[26,26,26,26,26,26,26,26,26,26,26,26,27,27,27,27];
+var R=[
+[1654,1392910.06,1406046,842.15,805.30,96,1333571,10011,15098,463,62464,33370,1309101.61,0],
+[1530,1012357.60,1019144,661.67,637.58,96,974222,3878,24443,0,41044,21144,1032476.90,0],
+[1635,1157120.52,1161009,707.72,688.97,97,1127843,2028,20897,0,31138,21606,1166989.72,0],
+[1653,1263754.42,1266320,764.52,747.45,98,1237031,1045,14462,0,28244,15836,1251473.18,0],
+[1749,1416595.39,1415562,809.95,758.11,94,1326697,4430,14212,0,84436,73648,1379001.75,0],
+[1764,1318670.29,1327890,747.55,724.40,97,1279284,7424,15550,0,41181,21897,1439476.59,0],
+[1669,1214587.01,1383657,727.73,710.14,97,1226419,4980,19597,440,152258,138853,1378687.06,0],
+[1741,1361845.04,1399695,782.22,762.23,97,1323994,5775,17971,150,69926,55061,1545793.49,0],
+[1809,1446262.20,1433132,799.48,776.06,97,1379058,7488,18740,34,46586,30894,1440350.21,0],
+[1843,1438133.61,1493129,780.32,757.54,97,1396904,8061,19866,4263,88165,77244,1472339.32,1000]];
+var PREV=[[1380000,3021727.90],[1150000,1159476.36],[1100000,1031736.62],[1250000,952213.51],[1300000,801111.44]];
+var M=[];
+R.forEach(function(r,i){M.push({n:NOMES[i]+"/"+ANOS[i],tipo:"real",ac:r[0],nf:r[1],fat:r[2],mNF:r[3],mRe:r[4],ph:r[5],rrev:r[6],rfun:r[7],arev:r[8],afun:r[9],inad:r[10],ab:r[11],pago:r[12]-r[13],fal:r[13]})});
+M.push({n:"Novembro/26",tipo:"andamento",nf:null,fat:null,rrev:1494440.85,rfun:0,arev:25619.38,afun:0,inad:null,ab:null,pago:0,fal:1470572.51});
+PREV.forEach(function(p,i){M.push({n:NOMES[11+i]+"/"+ANOS[11+i],tipo:"previsto",parcial:true,nf:null,fat:null,rrev:p[0]-27449.33,rfun:0,arev:27449.33,afun:0,inad:null,ab:null,pago:0,fal:p[1]})});
+M.forEach(function(m){m.rv=m.rrev+m.rfun;m.ant=m.arev+m.afun;m.ent=m.rv+m.ant;m.tot=m.pago+m.fal;m.res=m.ent-m.tot;m.resNF=m.nf===null?null:m.nf-m.tot;m.dif=m.nf===null?null:m.res-m.resNF});
+
+function brl(v){return (v<0?"−":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function sn(v){if(v===null||v===undefined)return "—";if(Math.abs(v)<0.005)return brl(0);return '<span class="'+(v<0?"neg":"pos")+'">'+brl(v)+'</span>'}
+function pc(a,b){return b?(a/b*100).toFixed(1).replace(".",",")+"%":"—"}
+function c(v,k){if(v===null||v===undefined)return "—";if(typeof v==="string")return v;return k==="n"?Math.round(v).toLocaleString("pt-BR"):k==="p"?Math.round(v)+"%":brl(v)}
+function d(a,b,k){if(typeof a!=="number"||typeof b!=="number")return "—";var x=b-a;if(k==="n")return x===0?"0":(x>0?"+":"−")+Math.abs(Math.round(x)).toLocaleString("pt-BR");return sn(x)}
+function tg(m){return m.tipo==="real"?'<span class="tag">Fechado</span>':m.tipo==="andamento"?'<span class="tag">Em andamento</span>':'<span class="tag p">Previsto</span>'}
+function F(t){return '<span class="fonte">'+t+'</span>'}
+function tabela(cab,linhas){return '<table class="t"><thead><tr>'+cab.map(function(x){return '<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+linhas.join('')+'</tbody></table>'}
+function tr(cels,cls){return '<tr'+(cls?' class="'+cls+'"':'')+'>'+cels.map(function(x,i){return '<td'+(i?' class="n"':'')+'>'+x+'</td>'}).join('')+'</tr>'}
+var fechados={};
+function bloco(id,titulo,nota,corpo){return '<div class="bloco'+(fechados[id]?' fechado':'')+'" data-id="'+id+'"><div class="bar"><i>'+(fechados[id]?'▸':'▾')+'</i>'+titulo+(nota?'<small>'+nota+'</small>':'')+'</div>'+corpo+'</div>'}
+
+var sel=document.getElementById("sel");
+M.forEach(function(m,i){sel.innerHTML+='<option value="'+i+'">'+m.n+(m.tipo==="real"?"":m.tipo==="andamento"?" · em andamento":" · previsto")+'</option>'});sel.value="9";
+function ix(){return Number(sel.value)}
+function acum(i){var a={nf:0,ac:0,rv:0,ant:0,ent:0,tot:0,n:0};for(var j=0;j<=i;j++){var m=M[j];if(m.tipo!=="real")return null;a.nf+=m.nf;a.ac+=m.ac;a.rv+=m.rv;a.ant+=m.ant;a.ent+=m.ent;a.tot+=m.tot;a.n++}a.res=a.ent-a.tot;a.resNF=a.nf-a.tot;a.dif=a.res-a.resNF;return a}
+
+function tela(){
+  var i=ix(),m=M[i],r=m.tipo==="real",pv=!r,A=acum(i),p=i>0?M[i-1]:null;
+  document.getElementById("aviso").innerHTML=m.parcial?'<p class="aviso">As contas deste mês ainda estão sendo lançadas. A saída é só o que já está lançado, e o resultado é parcial.</p>':m.nf===null?'<p class="aviso">Este mês ainda não tem nota fiscal lançada. Só existe a previsão do dinheiro.</p>':'';
+
+  /* resultado (largura total) */
+  document.getElementById("topo").innerHTML=bloco("res","Resultado · "+m.n,"",
+    tabela(["Base","Entra","Sai","Resultado"+(m.parcial?" parcial":""),"Mês anterior"],[
+      tr(["Pela nota fiscal",c(m.nf),c(r?m.tot:null),sn(m.resNF),p&&p.resNF!==null?sn(p.resNF):"—"]),
+      tr(["Pelo dinheiro que entrou (DevMaster)",c(m.ent),c(m.tot),sn(m.res),p?sn(p.res):"—"],"forte"),
+      tr(["Diferença (dinheiro menos nota)",d(m.nf,m.ent),brl(0),sn(m.dif),p&&p.dif!==null?sn(p.dif):"—"])]));
+
+  var cols=[];
+  /* vendas */
+  cols.push(bloco("ven","1 · Vendas","Nota x DevMaster",tabela(["Linha","Pela nota","DevMaster","Diferença","Fonte"],[
+    tr(["Acertos feitos",c(m.ac,"n"),c(m.ac,"n"),d(m.ac,m.ac,"n"),F("Faturamento")]),
+    tr(["Faturado (todas as vendas)",c(m.nf),c(m.fat),d(m.nf,m.fat),F("Faturamento · DevMaster")]),
+    tr(["Média por acerto",c(m.mNF),c(m.mRe),d(m.mNF,m.mRe),F("Nota x recebido na hora")]),
+    tr(["Pago na hora","—",c(m.ph,"p"),"—",F("DevMaster")])])));
+  /* recebimento */
+  cols.push(bloco("rec","2 · Recebimento","Quanto entrou",tabela(["Linha","Valor","% do que entra","Fonte"],[
+    tr([pv?"Acertos que faltam · revendedoras":"Recebido na venda · revendedoras",c(m.rrev),pc(m.rrev,m.ent),F("DevMaster")]),
+    tr(["Recebido na venda · funcionárias",pv?"—":c(m.rfun),pv?"—":pc(m.rfun,m.ent),F("DevMaster")]),
+    tr(["Inadimplência antiga recebida · revendedoras",c(m.arev),pc(m.arev,m.ent),F("DevMaster")]),
+    tr(["Inadimplência antiga recebida · funcionárias",pv?"—":c(m.afun),pv?"—":pc(m.afun,m.ent),F("DevMaster")]),
+    tr(["Entra nas contas",c(m.ent),"100,0%",F("Soma")],"forte")])));
+  /* inadimplência */
+  cols.push(bloco("ina","3 · Inadimplência (acerto - loja)","O que não foi pago na hora",tabela(["Linha","Valor","% do faturado","Fonte"],[
+    tr(["Inadimplência do mês",c(m.inad),m.inad===null?"—":pc(m.inad,m.fat),F("DevMaster")]),
+    tr(["Já recebida depois",m.inad===null?"—":c(m.inad-m.ab),m.inad===null?"—":pc(m.inad-m.ab,m.fat),F("Conta")]),
+    tr(["Ainda em aberto",c(m.ab),m.ab===null?"—":pc(m.ab,m.fat),F("DevMaster")],"forte"),
+    tr(["Inadimplência antiga recebida no mês",c(m.ant),m.fat?pc(m.ant,m.fat):"—",F("DevMaster")])])));
+  /* pagamento */
+  cols.push(bloco("pag","4 · Pagamento","Quanto saiu",tabela(["Linha","Valor","% do total","Fonte"],[
+    tr(["Contas já pagas",c(m.pago),pc(m.pago,m.tot),F("DevMaster · sistema")]),
+    tr(["Contas que faltam pagar"+(m.parcial?" (só o lançado)":""),c(m.fal),pc(m.fal,m.tot),F("DevMaster")]),
+    tr(["Sai no mês",c(m.tot),"100,0%",F("Soma")],"forte")])));
+  /* ponte */
+  var run=0,pt=[];
+  function pass(l,v,sub){if(!sub)run+=v;pt.push(tr([(sub?"= ":v<0?"− ":"+ ")+l,sub?"":sn(v),c(sub?v:run)],sub?"forte":""))}
+  if(r){pass("Notas fiscais",m.nf);pass("Nota que não virou dinheiro na hora",m.rv-m.nf);pass("Recebido na venda",run,1);pass("Inadimplência antiga recebida",m.ant);pass("Entra nas contas",run,1);pass("Contas já pagas",-m.pago);pass("Contas que faltam pagar",-m.fal);pt.push(tr(["= Resultado do mês","",sn(run)],"forte"))}
+  else{pass("Acertos previstos",m.rv);pass("Inadimplência antiga e funcionárias",m.ant);pass("Entra nas contas",run,1);pass("Contas a pagar"+(m.parcial?" (só o lançado)":""),-m.tot);pt.push(tr([m.parcial?"= Resultado parcial":"= Resultado do mês","",sn(run)],"forte"))}
+  cols.push(bloco("pon","5 · Da nota ao dinheiro","Passo a passo",tabela(["Passo","Valor","Saldo corrido"],pt)));
+  /* últimos meses */
+  var li=[];for(var j=Math.max(0,i-5);j<=i;j++){var q=M[j];li.push('<tr class="lin'+(j===i?' sel':'')+'" data-i="'+j+'"><td>'+q.n+'</td><td class="n">'+c(q.nf)+'</td><td class="n">'+c(q.ent)+'</td><td class="n">'+d(q.nf,q.ent)+'</td><td class="n">'+c(q.tot)+'</td><td class="n">'+sn(q.res)+'</td></tr>')}
+  cols.push(bloco("ult","6 · Últimos meses","Clique para abrir",tabela(["Mês","Nota","Dinheiro","Diferença","Sai","Resultado"],li)));
+  /* ano até aqui */
+  cols.push(bloco("ano","7 · Ano até aqui","Janeiro até "+m.n.split("/")[0],A?tabela(["Linha","Acumulado","Média por mês"],[
+    tr(["Notas fiscais",c(A.nf),c(A.nf/A.n)]),tr(["Dinheiro que entrou",c(A.ent),c(A.ent/A.n)]),tr(["Diferença (dinheiro menos nota)",sn(A.ent-A.nf),sn((A.ent-A.nf)/A.n)]),
+    tr(["Contas pagas e a pagar",c(A.tot),c(A.tot/A.n)]),tr(["Resultado pela nota",sn(A.resNF),sn(A.resNF/A.n)]),tr(["Resultado pelo dinheiro",sn(A.res),sn(A.res/A.n)],"forte")]):tabela(["Linha","Acumulado"],[tr(["Só existe para meses fechados","—"])])));
+  /* meses que vêm */
+  var vi=[];for(var k=10;k<M.length;k++){var v=M[k];vi.push('<tr class="lin'+(k===i?' sel':'')+'" data-i="'+k+'"><td>'+v.n+'</td><td class="n">'+tg(v)+'</td><td class="n">'+c(v.ent)+'</td><td class="n">'+c(v.tot)+(v.parcial?' <span class="tag p">Incompleto</span>':'')+'</td><td class="n">'+sn(v.res)+(v.parcial?' <span class="tag p">Parcial</span>':'')+'</td></tr>')}
+  cols.push(bloco("vem","8 · Meses que vêm","Previsão",tabela(["Mês","Situação","Entra","Sai","Resultado"],vi)));
+  /* pontos para conferir */
+  var P=[];
+  function pt2(nome,ok,det){P.push(tr([nome,ok===null?'<span class="tag p">Sem dado</span>':ok?'<span class="tag ok">Certo</span>':'<span class="tag at">Conferir</span>',det]))}
+  pt2("Nota fiscal perto do dinheiro",m.nf===null?null:Math.abs(m.dif)<=20000,m.nf===null?"Sem nota lançada":"Diferença de "+brl(Math.abs(m.dif)));
+  pt2("Inadimplência do mês abaixo de 5% do faturado",m.inad===null?null:m.inad/m.fat<0.05,m.inad===null?"Sem dado":pc(m.inad,m.fat)+" do faturado");
+  pt2("Contas do mês completas",!m.parcial,m.parcial?"Ainda sendo lançadas":"Todas lançadas");
+  pt2("Resultado do mês positivo",m.res>=0,brl(m.res));
+  cols.push(bloco("con","9 · Pontos para conferir","Regras de alerta",tabela(["Ponto","Situação","Detalhe"],P)));
+  document.getElementById("cols").innerHTML=cols.join("");
+  [].forEach.call(document.querySelectorAll(".bar"),function(b){b.onclick=function(){var id=b.parentNode.dataset.id;fechados[id]=!fechados[id];tela()}});
+  [].forEach.call(document.querySelectorAll("tr.lin"),function(t){t.onclick=function(){sel.value=t.dataset.i;tela()}});
+}
+sel.onchange=tela;
+document.getElementById("ant").onclick=function(){sel.value=Math.max(0,ix()-1);tela()};
+document.getElementById("prox").onclick=function(){sel.value=Math.min(M.length-1,ix()+1);tela()};
+tela();
+</script>
+</body>
+</html>

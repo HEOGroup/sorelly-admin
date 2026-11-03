@@ -1,6 +1,8 @@
 // Sorelly Admin · montagem — pages/preferencias-kit/Revendedoras.js
 // Aba "Revendedoras": indicadores, filtros, lista paginada (pendentes primeiro) e a janela de detalhe em colunas (dados | respostas | ações).
-import { BarraFiltros, Dinheiro, Faixa, Indicador, Janela, LINHA, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
+import { BarraFiltros, Dinheiro, Janela, LINHA, Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { AVISO_CONFIANCA, ROTULO_FONTE, ROTULO_SITUACAO, FONTES, agoraSP, formatarDataHora, hojeSP, pkDetalhe, pkTotais } from "@/apps/montagem/domain/preferencias-kit";
 import { EditorResposta, RespostaView } from "@/apps/montagem/pages/preferencias-kit/resposta";
 import { Area, Aviso, Avatar, BarraMetal, Bolinha, Bt, Busca, Campo, Data, Ic, Painel, Paginar, Sel, SITCOR, Selo, Txt, grad, pct1, usePk } from "@/apps/montagem/pages/preferencias-kit/visual";
@@ -114,15 +116,17 @@ function AbaPkRevendedoras(){
   var set = function(k){ return function(v){ var c = Object.assign({}, f); c[k] = v; sf[1](c); }; };
   var ativo = !!(f.busca || f.rep || f.situacao);
   var n = function(fn){ return todas.filter(fn).length; };
+  var pc = function(x, t){ return t ? (Math.round(x*1000/t)/10).toString().replace(".", ",")+"%" : ""; }, nf = function(x){ return x.toLocaleString("pt-BR"); };
+  var nPre = n(function(l){ return l.preenchido; }), nNao = todas.length-nPre, nPen = n(function(l){ return l.situacao==="pendente"; });
   var relatorio = function(){ baixar("preferencias-do-kit-"+hojeSP()+".csv", pkRelatorioCSV(s, lista)); };
   return e(Pagina,null,
-    e(Aviso,null, AVISO_CONFIANCA),
-    e(Faixa,{n:5},
-      e(Indicador,{t:"Revendedoras", v:todas.length, cor:"total"}),
-      e(Indicador,{t:"Preencheram", v:n(function(l){ return l.preenchido; }), cor:"ok"}),
-      e(Indicador,{t:"Não preencheram", v:n(function(l){ return !l.preenchido; }), cor:"neutro"}),
-      e(Indicador,{t:"Pendentes de montagem", v:n(function(l){ return l.situacao==="pendente"; }), cor:"alerta"}),
-      e(Indicador,{t:"Blocos ativos", v:tot.blocosAtivos, cor:"info"})),
+    !(s.pk && s.pk.deApp) && e(Aviso,null, AVISO_CONFIANCA),
+    e(BlocoResumo,{t:"Resumo das preferências", cab:["Situação", "Revendedoras", "Do total"], linhas:[
+      {r:"Revendedoras com kit ativo", v:nf(todas.length), p:"", total:true},
+      {r:"Preencheram", v:nf(nPre), p:pc(nPre, todas.length), cor:"ok"},
+      {r:"Não preencheram", v:nf(nNao), p:pc(nNao, todas.length)},
+      {r:"Pendentes de montagem", v:nf(nPen), p:pc(nPen, todas.length), cor:"alerta"},
+      {r:"Blocos ativos no formulário", v:String(tot.blocosAtivos), p:""}]}),
     e(BarraFiltros,{ativo:ativo, onLimpar:function(){ sf[1](F0); }},
       e(Busca,{v:f.busca, set:set("busca"), ph:"Buscar revendedora"}),
       e(Sel,{v:f.rep, set:set("rep"), rot:"Representante", opcoes:reps}),
@@ -130,17 +134,14 @@ function AbaPkRevendedoras(){
       e("span",{className:"text-[12px] font-bold text-white/70"}, lista.length+(lista.length===1 ? " revendedora" : " revendedoras")),
       e(Bt,{tipo:"forte", ic:"download-simple", className:"h-9 py-0!", onClick:relatorio}, "Baixar relatório")),
     lista.length===0 ? e("div",{className:"rounded-xl bg-black/20 px-4 py-6 text-center text-[13px] text-white/70 ring-1 ring-white/10"}, "Nenhuma revendedora encontrada.")
-      : e(Tab,{cols:["Representante", "Revendedora", "Venda do mês", "Preferências", "Categorias", "Ouro / Prata", "Atualizado"]},
-          lista.slice().sort(function(a1, b1){ return pesoRep(a1.rep)-pesoRep(b1.rep) || a1.rep.localeCompare(b1.rep, "pt-BR") || a1.nome.localeCompare(b1.nome, "pt-BR"); }).map(function(l){
-            var abre = l.rev && l.preenchido ? function(){ sj[1](l.rev.id); } : undefined;
-            return e("tr",{key:l.nome, className:LINHA+(abre ? " cursor-pointer hover:bg-white/5" : ""), onClick:abre},
-              e(Td,{className:"max-w-[8rem] truncate text-left! text-white/80"}, l.rep),
-              e(Td,{forte:true, className:"max-w-[11.5rem] truncate text-left!"}, l.nome),
-              e(Td,{dinheiro:true}, l.venda ? BK(l.venda) : "—"),
-              e(Td,null, l.preenchido ? e(Selo,{cor:"#22C55E", ic:"check-circle"}, l.situacao==="montado" ? "Montado" : "Preencheu") : e(Selo,{cor:"#EF4444", ic:"circle-dashed"}, "Não preencheu")),
-              e(Td,null, l.preenchido ? l.categorias : "—"),
-              e(Td,null, l.ouro!=null ? Math.round(l.ouro)+"% / "+Math.round(l.prata)+"%" : "—"),
-              e(Td,null, l.atualizadoEm ? formatarDataHora(l.atualizadoEm).slice(0, 10) : "—")); })),
+      : e(TabelaPlanilha,{semContagem:true, chave:"nome", vazio:"Nenhuma revendedora encontrada.",
+          cols:[{k:"rep", t:"Representante"}, {k:"nome", t:"Revendedora"}, {k:"vendaTxt", t:"Venda do mês"},
+            {k:"sit", t:"Preferências", cor:function(l){ return l.preenchido ? "text-[#4ADE80]" : "text-[#F87171]"; }},
+            {k:"cat", t:"Categorias"}, {k:"metal", t:"Ouro / prata"}, {k:"quando", t:"Atualizado"}],
+          aoClicar:function(l){ if(l.rev && l.preenchido) sj[1](l.rev.id); },
+          linhas:lista.slice().sort(function(a1, b1){ return pesoRep(a1.rep)-pesoRep(b1.rep) || a1.rep.localeCompare(b1.rep, "pt-BR") || a1.nome.localeCompare(b1.nome, "pt-BR"); }).map(function(l){
+            return {rep:l.rep, nome:l.nome, vendaTxt:l.venda ? BK(l.venda) : "—", sit:l.preenchido ? (l.situacao==="montado" ? "Montado" : "Preencheu") : "Não preencheu", preenchido:l.preenchido, rev:l.rev,
+              cat:l.preenchido ? String(l.categorias) : "—", metal:l.ouro!=null ? Math.round(l.ouro)+"% / "+Math.round(l.prata)+"%" : "—", quando:l.atualizadoEm ? formatarDataHora(l.atualizadoEm).slice(0, 10) : "—"}; })}),
     jan && e(JanelaDetalhe,{key:jan, id:jan, fechar:function(){ sj[1](null); }}));
 }
 

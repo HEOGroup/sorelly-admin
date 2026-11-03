@@ -85,10 +85,10 @@ function BarraMenu(p){
 
 // ── Abas das telas abertas (máx. 8): UMA lista só para todos os setores (Marcus, 26/10/2026). Cada aba mostra em cima o SETOR e embaixo a TELA; clicar abre (e o ícone grande do topo e o menu passam para o setor da aba), ✕ fecha. Guardadas na sessão do navegador.
 var CHAVE = "sorelly_abas_globais_", MAX = 8, LINA = 40;   // uma lista por modo (Admin ou Marcus): o sistema particular não aparece no Admin
-var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")+"_"+(window.__sorellyAtuando||"")) || "[]"); }catch(x){ return []; } };
-// Favoritar (27/10/2026, botão mudou de lugar em 28/10/2026): fica na própria tela (ui/page.js, canto do PageHead), não mais aqui na faixa de abas.
+var lerAbas = function(visao){ try{ return JSON.parse(sessionStorage.getItem(CHAVE+(visao||"admin")+"_"+(window.__sorellyAtuando||"")) || "[]").filter(function(a){ return !(a.breve && a.nome==="Uso do app"); }); }catch(x){ return []; } };   // "Uso do app" (em breve) saiu do menu em 02/11/2026: some também das abas que ficaram guardadas
+// Favoritar (27/10/2026; desde 02/11/2026 é com 3 CLIQUES na própria aba, pedido do Marcus): 3 cliques fixam a aba (trava, sem ✕) e 3 cliques de novo soltam. Não existe mais botão na tela.
 // Favoritas ficam logo depois do Início, na ordem que a pessoa escolher (segurar a aba e arrastar), e já aparecem quando o sistema abre.
-// O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, usa o botão "Favoritar aba" na tela.
+// O Início fica sempre na frente e não fecha. Favorita não tem ✕: para soltar, clique 3 vezes na aba de novo.
 var INICIO_ABA = {k:chaveDeNo({aba:"inicio", nome:"Início"}, "Início"), nome:"Início", aba:"inicio", setor:"Início", cor:"#E8B84B"};
 function AbasAbertas(p){
   var nos = filtrar(p.menu, p.pode), todas = folhas(nos, [], []).map(function(x){ return x.no; });
@@ -112,6 +112,11 @@ function AbasAbertas(p){
       return nova;
     });
   }, [kAtual, favs]);   // "favs" também: ao desfavoritar a tela atual (botão "Favoritar aba" na tela), ela volta sozinha para a faixa de abas
+  // 3 cliques na aba: fixa nos favoritos; 3 cliques de novo solta (a aba solta volta para as abertas)
+  var alternaFav = function(a){
+    if(eFav(a.k)){ gravarFavoritas(visao, favs.filter(function(f){ return f.k!==a.k; })); if(!abas.some(function(z){ return z.k===a.k; })) grava(abas.concat([a])); }
+    else gravarFavoritas(visao, favs.concat([{k:a.k, nome:a.nome, aba:a.aba, modo:a.modo, breve:a.breve, setor:a.setor, cor:a.cor}]));
+  };
   // ordem na faixa: Início, favoritas (na ordem escolhida), depois as abertas que não são favoritas
   var lista = [INICIO_ABA].concat(favs.filter(function(f){ return f.aba!=="inicio"; }), abas.filter(function(a){ return a.aba!=="inicio" && !eFav(a.k); }));
   var fecha = function(a, ev){ ev.stopPropagation(); var i = lista.indexOf(a), resto = abas.filter(function(z){ return z!==a; }); grava(resto);
@@ -128,11 +133,11 @@ function AbasAbertas(p){
   };
   return e("div",{role:"tablist", "aria-label":"Telas abertas", className:"flex items-stretch overflow-x-auto border-y border-l border-border"},
     lista.map(function(a){ var on = a.k===kAtual, fixo = a.aba==="inicio", fav = eFav(a.k);
-      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, draggable:!fixo, title:fixo ? undefined : "Segure e arraste para mudar de lugar",
+      return e("div",{key:a.k, role:"tab", "data-aba":a.nome, "aria-selected":on, draggable:!fixo, title:fixo ? undefined : "Segure e arraste para mudar de lugar. Clique 3 vezes para "+(fav ? "soltar dos favoritos" : "fixar nos favoritos"),
           onDragStart:function(ev){ setArrastando(a.k); try{ ev.dataTransfer.setData("text/plain", a.k); ev.dataTransfer.effectAllowed = "move"; }catch(x){} },
           onDragOver:function(ev){ if(arrastando) ev.preventDefault(); }, onDrop:function(ev){ soltar(a, ev); }, onDragEnd:function(){ setArrastando(null); },
           className:"flex shrink-0 items-center border-r border-border text-white "+(on ? "bg-[#B8862B]" : "hover:bg-[#B8862B]/50")+(arrastando===a.k ? " opacity-40" : ""), style:{height:LINA, borderLeft:"3px solid "+(a.cor || OURO), boxShadow:on ? "inset 0 -3px 0 #F5D68A" : undefined}},
-        e("button",{type:"button", onClick:function(ev){ p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
+        e("button",{type:"button", onClick:function(ev){ if(ev.detail===3 && !fixo){ alternaFav(a); return; } p.abrir(a, ev); }, className:"flex h-full flex-col items-start justify-center whitespace-nowrap pl-2.5 pr-2 text-left leading-tight"},
           (a.setor && a.setor!==a.nome) ? e("span",{className:"text-[11px] "+(on ? "font-semibold" : "opacity-80")}, a.setor) : null, e("span",{className:"text-[12.5px] "+(on ? "font-bold" : "")}, a.nome)),
         (!fixo && !fav) && e("button",{type:"button", "aria-label":"Fechar "+a.nome, title:"Fechar", onClick:function(ev){ fecha(a, ev); }, className:"h-full pr-3 text-[12px] hover:text-destructive"}, "✕"),
         (fixo || fav) && e("span",{className:"pr-2"})); }));

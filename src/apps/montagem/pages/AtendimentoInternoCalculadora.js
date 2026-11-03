@@ -152,7 +152,8 @@ function AtendimentoInterno(){
   var sa = useState(false), assAberta = sa[0], setAssAberta = sa[1];                // janela de assinatura e registro do acerto                     // lista de quem atende na montagem do kit
   var ps =useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
   var ta = useState("comissao"), apoioAba = ta[0], setApoioAba = ta[1];           // aba do bloco de apoio: Comissões, Valor do kit ou Regras
-  useEffect(function(){ setPassoAt(0); }, [sel ? sel.id : null]);
+  useEffect(function(){ setPassoAt(sel && sel.inicioTs && sel.condOk ? 1 : 0); }, [sel ? sel.id : null]);   // abre na etapa em que parou
+  useEffect(function(){ if(sel && sel.atrasoDias!=null) up({atrasoDias:Number(sel.atrasoDias)||0}); }, [sel ? sel.id : null, sel ? sel.atrasoDias : null]);   // dias de atraso: quem preenche é a Tamara (agendamento)
 
   var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
@@ -366,7 +367,7 @@ function AtendimentoInterno(){
   var CG = INPUT+" h-10! w-full text-[14px]!";                // campos do pagamento (uma linha só)
   // cartão da conta: rótulo pequeno em cima, valor grande embaixo (alguns são campos digitados, outros só mostram)
   // todos os cartões iguais (mesma cor, mesmo tamanho): nome à esquerda, informação à direita; só a cor da letra do valor muda
-  var ICONE_TILE = {"Vendas":"🛍️","Líquida":"🧮","Comissão":"💰","Brinde que libera":"🎁","Diferença do brinde":"⚖️","Desconto crédito":"🏷️","Valor a pagar":"💵"};
+  var ICONE_TILE = {"Vendas":"🛍️","Líquida":"🧮","Comissão":"💰","Brinde que libera":"🎁","Diferença do brinde":"⚖️","Desconto crédito":"🏷️","Valor do acerto":"💵"};
   var tile = function(tit, conteudo){ return e(Tile,{tit:tit}, conteudo); };
   var numTile = function(v){ return e("b",{className:MONO+" text-[20px] font-medium leading-tight"}, v); };
   // brinde que ela poderá liberar (já aparece antes do pagamento): faixa da venda líquida, com os descontos de atraso e remarcação
@@ -380,10 +381,10 @@ function AtendimentoInterno(){
       tile("Líquida", numTile(pa ? din(pa.vendaLiquida) : "—"), "#E8B84B"),
       tile("Comissão", numTile(pa ? pa.comissaoPct+"%" : "—"), "#E8B84B"),
       tile("Brinde que libera", pa ? e("span",{className:"flex items-center gap-3 text-[14px] font-bold"}, "Normal "+din(faixaBr ? Math.round(faixaBr.bn*fatorBr) : 0), e("span",{className:"text-muted-foreground"},"·"), "Select "+din(faixaBr ? Math.round(faixaBr.bb*fatorBr) : 0)) : numTile("—"), "#E8B84B"),
-      tile("Valor a pagar", pa ? e("span",{className:"flex flex-wrap items-center gap-x-4 gap-y-0.5"}, e("b",{className:MONO+" text-[20px] font-medium leading-tight"}, din(dv.totalAPagar)),
+      tile("Valor do acerto", pa ? e("span",{className:"flex flex-wrap items-center gap-x-4 gap-y-0.5"}, e("b",{className:MONO+" text-[20px] font-medium leading-tight"}, din(dv.totalAPagar)),
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-medium text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
     (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
-      e("input",{type:"number", min:0, value:form.atrasoDias||0, "aria-label":"Dias de atraso", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({atrasoDias:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
+      e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPD+" h-8! w-16! cursor-not-allowed px-1! text-center! opacity-60"})),
     dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
       "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
@@ -462,9 +463,11 @@ function AtendimentoInterno(){
     : e(React.Fragment,null,
         cartaoPag,
         caixaFinanceiro,
-        !dv.quitado && !dv.acordoExistente && !negociarAberto && !form.recusouNegociar && e("div",{className:"flex gap-2"},
-          e(Btn,{v:"secondary", className:"flex-1", onClick:function(){ setNegociarAberto(true); if(!form.acordoParcelas.length) up({acordoParcelas:[{data:isoDia(new Date()), valor:null}]}); }}, "Negociar o que falta"),
-          e(Btn,{v:"destructive", className:"flex-1", onClick:function(){ up({recusouNegociar:true}); }}, "Não quis negociar")),
+        // negociar é um caso ou outro: só aparece (pequeno) se faltar algum valor depois de lançar pagamento
+        form.pagamentos.length>0 && dv.faltaAtual>0.009 && !dv.acordoExistente && !negociarAberto && !form.recusouNegociar && e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
+          e("span",{className:"text-[13px] font-semibold"}, "Falta "+din(dv.faltaAtual)+":"),
+          e(Btn,{v:"secondary", sm:true, onClick:function(){ setNegociarAberto(true); if(!form.acordoParcelas.length) up({acordoParcelas:[{data:isoDia(new Date()), valor:null}]}); }}, "Negociar"),
+          e(Btn,{v:"destructive", sm:true, onClick:function(){ up({recusouNegociar:true}); }}, "Não quis negociar")),
         form.recusouNegociar && e(Aviso,{tom:"vermelho"},"Não quis negociar: sem brinde; o jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente. ",
           e("button",{className:"underline", onClick:function(){ up({recusouNegociar:false}); }},"Desfazer")),
         (negociarAberto || dv.acordoExistente) && e(Secao,{t:"Parcelas negociadas · falta "+din(dv.faltaAtual)},
@@ -629,7 +632,7 @@ function AtendimentoInterno(){
   var feitoPasso = [condicionais.length>0 && condicionais.every(function(c){ return c.pecas>0; }), form.vendaBruta>0, !!dv.previaBase && (dv.quitado || dv.acordoValido || form.recusouNegociar), !!pa && (!!dv.brindeBloqueio || form.brindes.length>0), !!continuaEf && (continuaEf!=="sim" || !!form.novaCond), jaFeito];
   var nFeitos = feitoPasso.filter(Boolean).length;
   var temPa = !!pa && form.vendaBruta>0;
-  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime()}}); };
+  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime(), chegada:sel.chegada||horaAgora()}}); };
   // relógio da escolha do kit: a funcionária dá OK quando a revendedora começa a escolher; o tempo máximo depende do valor do kit
   var maxEscolhaMin = tempoMaxEscolhaMin(kitLiberado);
   var escolhendo = !!sel.escolhaIni && !sel.escolhaFim, decorridoSeg = sel.escolhaIni ? Math.max(0, Math.floor(((sel.escolhaFim || Date.now())-sel.escolhaIni)/1000)) : 0;
@@ -673,32 +676,31 @@ function AtendimentoInterno(){
   // cabeçalho: toda célula tem rótulo de 11 px em cima e uma caixa de 32 px embaixo (mesmo tamanho, mesma borda)
   var CX = "flex h-8 w-full min-w-0 items-center justify-center gap-1.5 rounded-md border px-2 text-[13px] font-medium whitespace-nowrap ";
   var CXN = CX+"border-primary/40 bg-card hover:bg-white/10 ";
+  var BRILHO = "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)] ";   // brilho no próximo passo: a funcionária só segue o que brilha
   var celula = function(rot, conteudo, grow){ return e("div",{className:"flex min-w-0 flex-col items-center justify-center gap-0.5 border-l border-primary/30 px-2 py-1 first:border-l-0 "+(grow||"flex-1")}, e("span",{className:CAP+" whitespace-nowrap"}, rot || "\u00a0"), conteudo); };
   var tipoSit = jaFeito ? "Acerto registrado" : sel.inicioTs ? "Em atendimento" : "Aguardando";
   var nMulta = vezCobravel(remarcs);
   var cSit = e("span",{className:CX+(sel.inicioTs || jaFeito ? "border-success text-success" : "border-foreground/25")}, tipoSit);
   var cRem = remarcs.length>0 && e("span",{title:remarcs.map(function(r){ return (r.isenta ? "Isenta ("+(r.motivo||"")+")" : "Com multa")+(r.autorizadoPor ? " · autorizada por "+r.autorizadoPor : ""); }).join(" | "), className:CX+"border-primary text-primary"}, "↻ "+remarcs.length+"× "+(nMulta ? "multa" : "isenta"));
-  var cChega = sel.chegada ? e("span",{className:CX+"border-success text-success"}, "✓ "+sel.chegada)
-    : jaFeito ? e("span",{className:CX+"border-primary/40"},"—") : e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{chegada:horaAgora()}}); }, className:CXN}, "Chegou agora");
   var cAtende = e("div",{className:"relative w-full"},
-    e("button",{type:"button", disabled:jaFeito, onClick:function(){ setPopAt(!popAt); }, "aria-label":"Quem atende na montagem do kit", className:CXN+"disabled:opacity-50"}, (sel.atendeu||"Escolher")+" ▾"),
+    e("button",{type:"button", onClick:function(){ setPopAt(!popAt); }, "aria-label":"Quem atende na montagem do kit", className:CXN+(jaFeito && !sel.atendeu ? BRILHO : "")}, (sel.atendeu||"Escolher")+" ▾"),
     popAt && e("button",{type:"button", "aria-label":"Fechar a lista", className:"fixed inset-0 z-20 cursor-default", onClick:function(){ setPopAt(false); }}),
     popAt && e("div",{className:"absolute left-0 top-9 z-30 flex w-full flex-col rounded-md border border-foreground/25 bg-card p-1 shadow-lg"}, QUEM_MONTA.map(function(b){
       return e("button",{key:b.id, type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{atendeu:b.nome}}); setPopAt(false); }, className:"h-8 rounded px-3 text-left text-[13px] hover:bg-white/10 "+(sel.atendeu===b.nome ? "font-semibold text-primary" : "")}, b.nome); })));
-  var cEscolha = !sel.escolhaIni ? (jaFeito ? e("span",{className:CX+"border-primary/40"},"—") : e("button",{type:"button", onClick:iniciarEscolha, title:"A revendedora começou a escolher o kit", className:CXN}, "⏱ Começou"))
+  var cEscolha = !sel.escolhaIni ? (jaFeito ? e("span",{className:CX+"border-primary/40"},"—") : e("button",{type:"button", onClick:iniciarEscolha, title:"A revendedora começou a escolher o kit", className:CXN+(fechouPagamentos ? BRILHO : "")}, "⏱ Começou"))
     : e("span",{className:CX+(estourou ? "border-destructive text-destructive" : "border-foreground/25")}, e("b",{className:"font-semibold tabular-nums"}, relogio(decorridoSeg)), maxEscolhaMin>0 && e("span",{className:"text-[11px] uppercase"}, "/ "+maxEscolhaMin+" min"),
         escolhendo && e("button",{type:"button", onClick:terminarEscolha, title:"Terminou de escolher", className:"grid h-8 w-8 place-items-center rounded-md border border-foreground/25 text-[13px] hover:bg-white/10"}, "■"));
   var cInicio = jaFeito ? (durMin ? e("span",{className:CX+"border-primary/40"}, "Bipagem · "+durMin+" min") : sel.fimTs ? e("span",{className:CX+"border-primary/40"}, "Finalizada às "+sel.fim)
         : e("button",{type:"button", onClick:function(){ d({type:"INT_FINALIZAR", id:sel.id}); }, className:CXN}, "■ Finalizar bipagem"))
     : sel.inicioTs ? e("span",{className:CX+"border-success text-success"}, "✓ Iniciado "+hhmmDeTs(sel.inicioTs))
-    : e("button",{type:"button", onClick:iniciar, className:CX+"border-primary bg-background font-semibold text-primary hover:bg-card"}, "▶ Iniciar");
+    : e("button",{type:"button", onClick:function(){ iniciar(); setPassoAt(0); }, className:CX+BRILHO+"border-primary bg-background font-semibold text-primary hover:bg-card"}, "▶ Iniciar atendimento");
   var topoCard = React.Children.toArray([
         // até 2 atendimentos abertos ao mesmo tempo (uma escolhe o kit enquanto a outra é atendida)
         e("div",{className:"flex items-center gap-1.5 border-b-2 border-primary/50 bg-sidebar px-2 pt-2"},
           abasUI.map(function(x){ var on = x.id===sel.id;
             return e("div",{key:x.id, className:"flex items-center gap-1 rounded-t-lg px-3 py-1.5 text-[13px] font-bold "+(on ? "bg-[#E8B84B] text-[#1B1409]" : "bg-white/5 text-foreground hover:bg-white/10")},
               e("button",{type:"button", onClick:function(){ d({type:"INT_SEL", id:x.id}); }}, primeiro(x.nome)+(x.escolhaIni && !x.escolhaFim ? " ⏱" : "")),
-              e("button",{type:"button", "aria-label":"Fechar a aba de "+x.nome, title:"Fechar a aba (o que foi preenchido fica guardado)", onClick:function(){ d({type:"INT_FECHAR_ABA", id:x.id}); }, className:"grid size-5 place-items-center rounded-full text-[13px] leading-none hover:bg-black/20"}, "×")); }),
+              e("button",{type:"button", "aria-label":"Fechar a aba de "+x.nome, title:"Fechar a aba (o que foi preenchido fica guardado)", onClick:function(){ d({type:"INT_FECHAR_ABA", id:x.id}); if(abasUI.length<2) d({type:"ABA", aba:"intlist"}); }, className:"grid size-5 place-items-center rounded-full text-[13px] leading-none hover:bg-black/20"}, "×")); }),
           e("span",{className:"ml-auto pb-1.5 text-[13px] text-muted-foreground"}, abasUI.length<2 ? "Dá para abrir mais 1 atendimento ao mesmo tempo" : "2 abertos · para trocar, clique na outra aba")),
         (function(){
           // topo em tabela fina (versão 4): rótulos em cima, valores embaixo
@@ -719,10 +721,12 @@ function AtendimentoInterno(){
             ["Situação", cSit, "auto"],
             ["Kit", kitSel, "auto"]
           ];
-          cols.push(["Chegada", cChega, "auto"], ["Montagem", cAtende, "auto"], ["Escolha", cEscolha, "auto"], ["\u00a0", cInicio, "auto"]);
+          cols.push(["Atendimento", cInicio, "auto"]);
+          if(sel.inicioTs || jaFeito) cols.push(["Escolha do kit", cEscolha, "auto"]);
+          if(jaFeito) cols.push(["Quem atende na montagem", cAtende, "auto"]);   // só depois de finalizar o acerto
           return e("div",{className:"grid border-b-2 border-primary/50", style:{gridTemplateColumns:cols.map(function(c){ return c[2]; }).join(" ")}},
             cols.map(function(c,i){ return e("div",{key:"h"+i, className:"flex h-[30px] items-center justify-center overflow-hidden whitespace-nowrap border-b border-primary/40 bg-primary/15 px-1 "+(i ? "border-l border-l-primary/30 " : "")+CAP}, c[0]); }),
-            cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30" : "")}, c[1]); }));
+            cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30 " : "")+(i<3 ? "bg-primary/15" : "")}, c[1]); }));   // nome, horário e situação: só leitura, com fundo colorido
         })(),
         estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando.")
   ]);
@@ -745,27 +749,32 @@ function AtendimentoInterno(){
       e("button",{type:"button", disabled:!condOk, onClick:function(){ addCond(); setCondNovaAberta(false); }, "aria-label":"Adicionar condicional", className:"grid h-8 w-8 place-items-center rounded-md bg-primary text-[13px] font-bold text-primary-foreground disabled:opacity-40"},"+")),
     !jaFeito && !condNovaAberta && e("button",{type:"button", onClick:function(){ setCondNovaAberta(true); }, className:"h-8 w-full border-t border-primary/20 text-[13px] font-medium hover:bg-white/5 hover:text-primary"}, "+ Condicional a mais (à mão)"),
     faixaSolta([{t:"Total", v:din(totalCondValor), cor:"text-primary"}, {t:"Peças", v:String(totalCondPecas)},
-      {t:"Vendidas", el:e("input",{value:totalVendidas>0 ? totalVendidas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Total de peças vendidas das condicionais", className:CPT+" w-14!", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendidasTotal:Number(soDigitos(ev.target.value,4))||0}}); }})},
+      {t:"Vendidas", v:totalVendidas>0 ? String(totalVendidas) : "—"},   // a funcionária preenche em Vendas › Peças vendidas
       {t:"Voltam", v:totalCondPecas>0 ? String(pecasRetornar) : "—", cor:"text-primary"}]));
   var pctDesc = pa ? pa.descontoRemarcacao.comissaoPct+pa.atrasoPct : 0;
   var tabVendas = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Quanto vendeu", e(CampoDinheiro,{value:form.vendaBruta, label:"Valor total vendido", className:CPT, onChange:function(v){ up({vendaBruta:v}); }})),
-    linhaKV("Desconto de crédito", e(CampoDinheiro,{value:form.garantia, label:"Desconto de crédito (garantia)", className:CPT, onChange:function(v){ up({garantia:v||0}); }}), {z:true}),
-    (ehPrata || dv.novas) && linhaKV(dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Prata)", e("input",{type:"number", min:0, value:form.atrasoDias||0, "aria-label":"Dias de atraso", className:CPT, onChange:function(ev){ up({atrasoDias:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
+    linhaKV("Peças vendidas", e("input",{value:totalVendidas>0 ? totalVendidas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Quantidade de peças vendidas", className:CPT, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendidasTotal:Number(soDigitos(ev.target.value,4))||0}}); }}), {z:true}),
+    form.vendaBruta>0 && !sel.creditoVisto && !jaFeito && e("div",{key:"cc", className:"m-2 flex flex-col items-center gap-1.5 rounded-md border-2 border-primary bg-primary/15 p-2 text-center text-[13px] "+BRILHO},
+      e("b",null,"Desconto de crédito"), e("span",null,"Esse crédito vem do setor de Trocas. Preencha só se o setor informar."),
+      e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{creditoVisto:true}}); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground"}, "Entendi")),
+    form.vendaBruta>0 && linhaKV("Desconto de crédito", e(CampoDinheiro,{value:form.garantia, label:"Desconto de crédito (garantia)", className:CPT, onChange:function(v){ up({garantia:v||0}); }}), {z:true, pill:"Trocas"}),
+    (ehPrata || dv.novas) && linhaKV(dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Prata)", e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPT+" cursor-not-allowed opacity-60"}), {pill:"Tamara"}));
+  var tabAcerto = e("div",{className:CTP},
+    e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—"), {z:true}),
-    linhaKV("Comissão", n15(pa ? din(pa.comissao) : "—"), {pill:pa ? pa.comissaoPct+"%" : ""}),
     pctDesc>0 && linhaKV("Remarcação / atraso", pilula("−"+pctDesc+"% comissão"+(pa.descontoRemarcacao.brindePct>0 ? " · brinde −"+pa.descontoRemarcacao.brindePct+"%" : ""), "border-primary text-primary"), {z:true}),
-    e("div",{className:"flex-1"}),
-    e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor a pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
-    dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))),
     linhaKV("Brinde normal libera", n15(pa ? din(faixaBr ? Math.round(faixaBr.bn*fatorBr) : 0) : "—")),
-    linhaKV("Brinde select libera", n15(pa ? din(faixaBr ? Math.round(faixaBr.bb*fatorBr) : 0) : "—"), {z:true}));
+    linhaKV("Brinde select libera", n15(pa ? din(faixaBr ? Math.round(faixaBr.bb*fatorBr) : 0) : "—"), {z:true}),
+    e("div",{className:"flex-1"}),
+    linhaKV("Comissão", n15(pa ? din(pa.comissao) : "—"), {pill:pa ? pa.comissaoPct+"%" : ""}),
+    e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
+    dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))));
   var notasVendas = e("div",{className:"flex flex-col gap-1"},
     dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
-  var est0 = metades("@[52rem]:grid-cols-[minmax(0,1.05fr)_minmax(0,.95fr)] grid-cols-1", lado("Condicionais", tabCond, "", "p-0"), lado("Vendas", [tabVendas, notasVendas], "", "gap-0! p-0"));
 
   // ── estação 2: pagamentos (forma e valor; o financeiro define as contas) ──
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
@@ -787,8 +796,8 @@ function AtendimentoInterno(){
       jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
-    linhaKV("Valor total", n15(pa ? din(dv.totalAPagar) : "—")), linhaKV("Pagamentos", n15(din(dv.totalPagoAtual), "text-success"), {z:true}),
-    e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Saldo"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))));
+    linhaKV("Valor do acerto", n15(pa ? din(dv.totalAPagar) : "—")), linhaKV("Pagamentos", n15(din(dv.totalPagoAtual), "text-success"), {z:true}),
+    e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))));
   var est1 = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Selecione a forma de pagamento", e("div",{className:CTB}, e("div",{className:"flex-1"}, listaFormas), linhaBand, linhaEntrada)), lado("Formas de pagamento selecionadas", [tabPag, tabTotPag, pPag]));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
@@ -897,19 +906,28 @@ function AtendimentoInterno(){
         : e(React.Fragment,null, metades("@[52rem]:grid-cols-[minmax(0,.8fr)_minmax(0,1.2fr)] grid-cols-1", lado("Regras do consignado · "+regras.length, e("div",{className:CTB}, listaRegras2)), lado((rSel+1)+" · "+regA.t, tabRegra))));
 
   // ── lateral de estações + navegação ──
-  var ESTS = [["Condicionais e vendas",[0,1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
-  var feitoE = ESTS.map(function(x){ return x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(i){ return feitoPasso[i]; }); });
-  var valE = ["", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
+  // etapas travadas em ordem: Atendimento → Condicionais → Vendas → o resto. Travada = apagada, com "Bloqueada"; a etapa de agora tem fundo dourado.
+  var condPronta = condicionais.length>0 && condicionais.every(function(c){ return c.pecas>0; });
+  var confCond = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{condOk:true}}); setPassoAt(1); };
+  var estCond = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Condicionais", tabCond, "flex-1", "p-0"),
+    e("div",{className:"flex justify-center gap-2 border-t-2 border-primary/50 p-2"},
+      sel.condOk || jaFeito ? e("span",{className:CX+"w-auto! border-success text-success"}, "✓ Condicionais confirmadas") : e("button",{type:"button", disabled:!condPronta, onClick:confCond, title:condPronta ? "" : "Falta o número, o valor e as peças de cada condicional.", className:"h-8 min-w-48 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(condPronta ? BRILHO : "")}, "Confirmar condicionais"),
+      sel.condOk && !jaFeito && e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{condOk:false}}); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Corrigir")));
+  var estVendas = e("div",{className:"flex min-w-0 flex-1 flex-col"}, metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Vendas", [tabVendas, notasVendas], "", "gap-0! p-0"), lado("Acerto", tabAcerto, "", "gap-0! p-0")));
+  var ESTS = [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
+  var feitoE = ESTS.map(function(x){ return x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
+  var libE = ESTS.map(function(x,i){ return jaFeito || (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : form.vendaBruta>0); });
+  var valE = ["", form.vendaBruta>0 ? din(form.vendaBruta) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
   var estAt = Math.min(passoAt, ESTS.length-1);
   var lateral = e("div",{className:"flex flex-col border-2 border-primary/50"},
-    ESTS.map(function(x,i){ var on = i===estAt, ok = feitoE[i];
-      return e("button",{key:x[0], type:"button", onClick:function(){ setPassoAt(i); }, className:"flex min-h-14 flex-1 flex-col justify-center gap-0.5 border-b border-l-2 border-b-primary/20 px-3 py-1.5 text-left "+(on ? "border-l-primary bg-primary/15" : "border-l-transparent hover:bg-white/5")},
-        e("span",{className:"flex items-center gap-2 text-[13px] font-semibold"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold "+(ok ? "border-success bg-success text-white" : "border-foreground/25")}, ok ? "✓" : i+1), x[0]),
-        valE[i] && e("span",{className:"pl-7 text-[11px] font-medium uppercase tracking-[.05em] tabular-nums"}, valE[i])); }),
+    ESTS.map(function(x,i){ var on = i===estAt, liv = libE[i], ok = feitoE[i] && liv && (i<4 || feitoE[2]);
+      return e("button",{key:x[0], type:"button", disabled:!liv, onClick:function(){ setPassoAt(i); }, className:"flex min-h-14 flex-1 flex-col justify-center gap-0.5 border-b border-l-4 border-b-primary/20 px-3 py-1.5 text-left "+(!liv ? "cursor-not-allowed border-l-transparent bg-black/40 opacity-50" : on ? "border-l-primary bg-primary/30" : ok ? "border-l-success bg-success/10 hover:bg-success/15" : "border-l-transparent hover:bg-white/5")},
+        e("span",{className:"flex items-center gap-2 text-[13px] font-semibold"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold "+(ok ? "border-success bg-success text-white" : on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25")}, ok ? "✓" : i+1), x[0]),
+        !liv ? e("span",{className:"pl-7 text-[11px] font-medium uppercase tracking-[.05em]"}, "Bloqueada") : valE[i] && e("span",{className:"pl-7 text-[11px] font-medium uppercase tracking-[.05em] tabular-nums"}, valE[i])); }),
     e("div",{className:"flex justify-center gap-2 border-t-2 border-primary/50 p-2"},
       e("button",{type:"button", disabled:estAt===0, onClick:function(){ setPassoAt(estAt-1); }, className:"h-8 w-[5.5rem] rounded-md border-2 border-primary/50 bg-card text-[13px] font-medium hover:bg-white/10 disabled:opacity-40"}, "‹ Voltar"),
-      e("button",{type:"button", disabled:estAt===ESTS.length-1, onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Próxima ›")));
-  var estFn = [est0, est1, estKit, est2, est3, est4][estAt];
+      e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 ? BRILHO : "")}, "Próxima ›")));
+  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : [estCond, estVendas, est1, estKit, est2, est3, est4][estAt];
   var SHELL = "grid min-h-[402px] grid-cols-[14rem_minmax(0,1fr)]";
   var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"flex min-w-0 flex-col"}, estFn));
 
@@ -933,7 +951,7 @@ function AtendimentoInterno(){
     var tb = function(cab, linhas){ return "<table><tr>"+cab.map(function(c){ return "<th>"+c+"</th>"; }).join("")+"</tr>"+linhas.map(function(l){ return "<tr>"+l.map(function(c){ return "<td>"+c+"</td>"; }).join("")+"</tr>"; }).join("")+"</table>"; };
     w.document.write("<html><head><meta charset='utf-8'><title>Resumo do acerto</title><style>body{font:13px Inter,Arial,sans-serif;margin:32px;color:#111}h1{font-size:18px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin:12px 0}td,th{border:1px solid #bbb;padding:6px 8px;text-align:center}th{background:#eee;font-size:11px;text-transform:uppercase}</style></head><body><h1>Resumo do acerto · Sorelly Joias</h1><div>Revendedora: <b>"+sel.nome+"</b> · Data: "+new Date().toLocaleDateString("pt-BR")+"</div>"
       + tb(["Condicional","Peças","Valor"], condicionais.map(function(c){ return [c.numero, c.pecas, din(c.valor||0)]; }).concat([["Total", totalCondPecas, din(totalCondValor)], ["Vendidas", totalVendidas, ""], ["Retornadas", pecasRetornar, ""]]))
-      + (pa ? tb(["Item","Valor"], [["Venda líquida", din(pa.vendaLiquida)], ["Comissão ("+pa.comissaoPct+"%)", din(pa.comissao)], ["Valor a pagar", din(dv.totalAPagar)], ["Pago", din(dv.totalPagoAtual)], ["Saldo", din(dv.restanteTotal)]]) : "")
+      + (pa ? tb(["Item","Valor"], [["Venda líquida", din(pa.vendaLiquida)], ["Comissão ("+pa.comissaoPct+"%)", din(pa.comissao)], ["Valor do acerto", din(dv.totalAPagar)], ["Pago", din(dv.totalPagoAtual)], ["Falta pagar", din(dv.restanteTotal)]]) : "")
       + (form.brindes.length ? tb(["Brinde","Tipo","Valor"], form.brindes.map(function(b){ return [b.codigo, b.cat==="bb" ? "Select" : "Normal", din(b.valor)]; })) : "")
       + (form.pagamentos.length ? "<div>Pagamentos: "+form.pagamentos.map(function(q){ return formaDe(q.forma).label+(q.bandeira ? " "+q.bandeira : "")+(q.parcelas>1 ? " "+q.parcelas+"x" : "")+" "+din(q.valor); }).join(" + ")+"</div>" : "")
       + "</body></html>");
@@ -941,9 +959,9 @@ function AtendimentoInterno(){
   };
   var resConta = blocoRes("Conta do acerto", [e("div",{key:"h", className:CABT+G2}, e("span",null,"Item"), e("span",null,"Valor")),
     rodaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—")), rodaKV("Comissão", n15(pa ? din(pa.comissao) : "—"), "bg-white/[0.03]"),
-    e("div",{key:"ap", className:LIN+G2+" min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor a pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
+    e("div",{key:"ap", className:LIN+G2+" min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     rodaKV("Pago", n15(din(dv.totalPagoAtual), "text-success")),
-    e("div",{key:"sd", className:LIN+G2+" min-h-9 border-t border-foreground/40 font-semibold"}, e("span",null,"Saldo"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))),
+    e("div",{key:"sd", className:LIN+G2+" min-h-9 border-t border-foreground/40 font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))),
     e("div",{key:"sp", className:"flex-1"}),
     e("div",{key:"bt", className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"},
       e("button",{type:"button", disabled:!temPa, onClick:pdfResumo, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Gerar PDF"),

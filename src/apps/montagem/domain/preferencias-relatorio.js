@@ -22,7 +22,7 @@ function pkLinhasSistema(s){
   };
   (s.kits||[]).forEach(function(k){ var l = null; try { l = listagemDe(s, k); } catch(x){} poe(k.rev, l && l.rep ? l.rep : GRUPO_OUTRAS, ((k.vendas||[])[0]||0) + (s.lp ? vendidoNoApp(s.lp, k.rev, hojeSP().slice(0, 7)) : 0)); });
   (s.revInternas||[]).forEach(function(r){ var h = (r.hist||[]).find(function(x){ return x && x.venda>0; }); poe(r.nome, GRUPO_INTERNO, h ? h.venda : 0); });
-  (pk.revendedoras||[]).forEach(function(r){ poe(r.nome, GRUPO_OUTRAS, 0); });
+  (pk.revendedoras||[]).forEach(function(r){ poe(r.nome, r.representante || GRUPO_OUTRAS, 0); });
   return out;
 }
 // agrupa por representante (ordem alfabética; "Atendimento Sorelly" e "Sem representante" por último) com os totais de cada grupo

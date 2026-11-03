@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vídeo · Abrir um chamado</title>
+<style>
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba. Nomes e valores são de exemplo. */
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba. Nomes e valores são de exemplo. */
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+.sis{position:relative;display:grid;grid-template-columns:220px 1fr;grid-template-rows:44px 1fr;height:100vh;width:100vw}
+.lado{grid-row:1/3;border-right:1px solid var(--fio);background:var(--painel);display:flex;flex-direction:column;padding:10px 8px;gap:2px;overflow:hidden}
+.logo{font-weight:700;color:var(--ouro);font-size:15px;padding:4px 8px 10px;letter-spacing:.04em}
+.it{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:#E6E3DB;border:1px solid transparent}
+.it i{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}
+.it.on{background:rgba(214,178,92,.16);border-color:rgba(214,178,92,.5);color:var(--ouro)}.it.on i{background:var(--ouro)}
+.hov{background:rgba(255,255,255,.1)}
+.topo{border-bottom:1px solid var(--fio);display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--painel)}
+.topo .grande{font-weight:600}.pessoa{margin-left:auto;border:1px solid var(--fio2);border-radius:10px;padding:0 10px;height:22px;line-height:20px;font-size:11px}
+.area{position:relative;overflow:hidden;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.tela{display:none;flex-direction:column;gap:12px}.tela.v{display:flex}
+.menu{display:flex;gap:18px;height:34px;align-items:center;border-bottom:1px solid var(--fio);position:relative}
+.menu span{color:#D8D5CD;padding:6px 6px;border-bottom:2px solid transparent;border-radius:4px}.menu .on{color:var(--ouro);border-bottom-color:var(--ouro)}
+.drop{display:none;position:absolute;left:560px;top:34px;z-index:4;width:230px;border:1px solid var(--fio2);border-radius:8px;background:var(--painel);padding:4px;box-shadow:0 8px 24px #000a}
+.drop.v{display:block}.drop div{height:30px;display:flex;align-items:center;padding:0 10px;border-radius:5px}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font-weight:600;display:inline-flex;align-items:center}
+.filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;padding:12px}
+.cp{display:flex;flex-direction:column;gap:4px}.cp small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;transition:border-color .3s,box-shadow .3s}
+.in.foco{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35)}
+.faixa{display:flex;gap:0;border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+.faixa div{flex:1;padding:6px 10px;text-align:center;border-left:1px solid var(--fio)}.faixa div:first-child{border-left:0}
+.faixa small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.faixa b{font-size:16px}
+table{width:100%;border-collapse:collapse}th{height:30px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.04);padding:0 12px}
+td{height:32px;padding:0 12px;border-top:1px solid var(--fio)}.n{text-align:right}th.n{text-align:right}.verde{color:var(--ok)}
+.legenda{position:absolute;left:0;right:0;bottom:0;z-index:5;min-height:62px;border-top:1px solid var(--ouro);background:rgba(15,16,19,.96);padding:10px 20px 10px 244px;display:flex;gap:12px;align-items:center;font-size:16px}
+.legenda .nn{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:6;background:var(--painel2)}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
+#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
+#mao svg{width:22px;height:22px}#mao.toque::after{content:"";position:absolute;left:-10px;top:-10px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ouro);animation:o .5s ease-out}
+@keyframes o{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
+#reco{position:absolute;right:12px;top:10px;z-index:7;height:24px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);font:11px Inter,system-ui,sans-serif;padding:0 10px;cursor:pointer}
+body.gravar #reco{display:none}
+.tabs{display:flex;gap:8px}.tabs span{height:32px;padding:0 14px;border:1px solid var(--fio2);border-radius:6px;display:inline-flex;align-items:center;font-weight:600}.tabs .on{border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.16)}
+.jan{display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;padding:30px 20px}.jan.v{display:flex}
+.card{width:100%;max-width:820px;border:1px solid var(--fio2);border-radius:14px;background:#14171c;overflow:hidden}
+.card .c1{padding:12px 16px;border-bottom:1px solid var(--fio);display:flex;justify-content:space-between}.card .c2{padding:12px 16px;display:grid;grid-template-columns:1fr 1.4fr;gap:16px;min-height:190px}
+.card .c3{padding:10px 16px;border-top:1px solid var(--fio);display:flex;justify-content:space-between}
+.conf{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.45);align-items:center;justify-content:center}.conf.v{display:flex}
+.conf div.b{width:420px;border:1px solid var(--fio2);border-radius:10px;background:#2b2d33;padding:18px}.conf p{margin:0 0 16px;font-size:14px}.conf .l{display:flex;gap:8px;justify-content:flex-end}
+tr.alvo.hov td{background:rgba(255,255,255,.08)}
+
+.jan .card{max-width:760px}.tp{display:flex;gap:8px;flex-wrap:wrap}.tp span{height:32px;padding:0 14px;border:1px solid var(--fio2);border-radius:16px;display:inline-flex;align-items:center;font-weight:600;transition:all .3s}.tp .on{border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.2)}
+.chat{background:#0b141a;border-radius:8px;padding:10px;min-height:150px;display:flex;flex-direction:column;gap:8px}.bal{max-width:80%;border-radius:10px;padding:6px 10px;background:#202c33}.bal.eu{align-self:flex-end;background:#005c4b}.bal b{color:var(--ouro);font-size:12px;display:block}
+.print{width:220px;height:90px;border-radius:6px;background:linear-gradient(135deg,#2a2d33,#1c1f24);border:1px dashed var(--fio2);display:grid;place-items:center;color:#D8D5CD;font-size:11px;margin-bottom:4px}
+.comp{display:flex;gap:8px;align-items:flex-end;margin-top:8px}.comp .ta{flex:1;min-height:36px;border-radius:8px;background:#2a3942;padding:8px 12px;transition:box-shadow .3s}.comp .ta.foco{box-shadow:0 0 0 2px rgba(214,178,92,.5)}
+.env{width:36px;height:36px;border-radius:18px;background:#25a05a;display:grid;place-items:center;font-weight:700;color:#fff}.clip{width:36px;height:36px;border-radius:18px;display:grid;place-items:center;color:#D8D5CD}
+.tecla{display:none;position:absolute;right:30px;bottom:100px;z-index:21;border:1px solid var(--ouro);border-radius:8px;background:var(--painel);padding:6px 12px;font-weight:700;color:var(--ouro)}.tecla.v{display:block}
+.aviso{display:none;position:absolute;right:20px;top:54px;z-index:25;width:380px;border:1px solid rgba(214,178,92,.7);border-radius:12px;background:#1d1a12;padding:12px;box-shadow:0 12px 30px #000a;flex-direction:column;gap:8px}.aviso.v{display:flex}
+.et{white-space:nowrap;display:inline-flex;height:22px;align-items:center;padding:0 10px;border:1px solid var(--ouro);border-radius:11px;color:var(--ouro);font-size:12px;font-weight:600}.et.ok{border-color:var(--ok);color:var(--ok)}
+.nova td{background:rgba(214,178,92,.12)}.cq{display:flex;gap:10px;margin-top:6px}.cq .col{flex:1;border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:8px;min-height:120px}.cq .col small{display:block;text-align:center;font-weight:700;text-transform:uppercase;font-size:11px;margin-bottom:6px}.cart{border:1px solid var(--fio2);border-radius:8px;background:var(--painel2);padding:6px 8px;text-align:center;margin-bottom:6px}
+.risca .cart{text-decoration:line-through;opacity:.5}.sumiu{border:2px dashed var(--at);border-radius:8px;padding:4px}
+</style></head><body>
+<div class="sis" id="sis">
+  <aside class="lado"><div class="logo">SORELLY</div><div class="it on" id="mIni"><i></i>Início</div><div class="it" id="mCham"><i></i>Chamados</div><div class="it"><i></i>SorellyChat</div><div class="it"><i></i>Financeiro</div><div class="it"><i></i>Agendamento</div><div class="it" id="mCad"><i></i>Cadastro de revendedoras</div><div class="it"><i></i>Kits</div><div class="it"><i></i>Materiais e estoque</div><div class="it"><i></i>Recursos Humanos</div><div class="it"><i></i>Aulas do setor</div></aside>
+  <header class="topo"><b class="grande" id="tit">Início</b><span id="sub"></span><span class="pessoa" id="pes">Funcionária · seu setor</span></header>
+  <main class="area">
+    <section class="tela v" id="tIni"><div class="bloco" style="padding:14px"><b style="font-size:20px">Olá! Seja bem-vinda.</b></div></section>
+    <section class="tela" id="tCh">
+      <div style="display:flex;gap:8px;align-items:center"><b style="font-size:20px;margin-right:auto">Chamados</b><span class="btn">Todas</span><span class="btn">Minhas</span><span class="btn" id="bNovo" style="border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.2)">Novo chamado</span></div>
+      <div class="bloco"><table><thead><tr><th>Data</th><th>Setor</th><th>Funcionária</th><th>Situação</th><th>Tela</th><th>Descrição</th></tr></thead><tbody id="corpo"></tbody></table></div>
+    </section>
+    <div class="jan" id="jan"><div class="card">
+      <div class="c1"><div><b style="font-size:16px">Novo chamado</b><div>Marcus e Leonardo respondem</div></div><span class="btn">✕</span></div>
+      <div style="padding:10px 16px;display:grid;gap:10px;border-bottom:1px solid var(--fio)">
+        <div class="cp"><small>Tela</small><div class="in" id="fTela">/financeiro/contas-a-pagar</div></div>
+        <div class="cp"><small>O que é?</small><div class="tp"><span id="t1">Não sei como fazer</span><span id="t2">Melhoria do layout</span><span id="t3">Algo que falta</span></div></div>
+      </div>
+      <div style="padding:10px 16px"><div class="chat" id="chat"><div class="bal"><b>Sorelly</b>Conte aqui o que você quer mudar, do seu jeito. Cole o print da tela com Ctrl+V e ele já aparece na conversa.</div><div class="bal eu" id="balPrint" style="display:none"><div class="print">print da tela</div><small>1 print anexado</small></div></div>
+        <div class="comp"><span class="clip">📎</span><div class="ta" id="fTxt"><span id="tx" style="color:#D8D5CD">Escreva o que você quer mudar (Ctrl+V cola o print)</span></div><span class="env" id="bEnv">➤</span></div></div>
+    </div></div>
+    <div class="tecla" id="tecla">Ctrl + V</div>
+    <div class="aviso" id="aviso"><b>Você tem uma resposta nos seus Chamados</b><span>Falta um botão para imprimir a lista</span><span style="display:flex;gap:8px"><span class="btn" id="bVer" style="border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.2)">Ver resposta</span><span class="btn">Depois</span></span></div>
+  </main>
+  <div class="legenda"><span class="nn" id="n">1</span><span id="txt"></span></div>
+  <div class="prog"><i id="barra"></i></div>
+  <div id="mao"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <button id="reco">Recomeçar</button>
+</div>
+<script>
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 68000;
+if(/gravar=1/.test(location.search)) document.body.classList.add("gravar");
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var vai = function(id, ini, fn){
+  em(ini, function(){ var r = $(id).getBoundingClientRect(), s = $("sis").getBoundingClientRect(); $("mao").style.left = (r.left - s.left + Math.min(40, r.width/2))+"px"; $("mao").style.top = (r.top - s.top + r.height/2)+"px"; $(id).classList.add("hov"); });
+  em(ini+1000, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); var el = $(id); if(el) el.classList.remove("hov"); if(fn) fn(); });
+};
+var digita = function(id, texto, ini, dur){ var n = texto.length; for(var i=1;i<=n;i++){ (function(k){ em(ini + dur*k/n, function(){ $(id).textContent = texto.slice(0,k); }); })(i); } };
+var zeraMao = function(){ $("mao").style.transition = "none"; $("mao").style.left = "640px"; $("mao").style.top = "300px"; void $("mao").offsetWidth; $("mao").style.transition = ""; };
+var TXT = "Falta um botão para imprimir a lista de contas a pagar.";
+var base = [["28/10","Financeiro","Ana","Mudança feita, testar","/financeiro/pagas","Filtro por CNPJ"],["29/10","Agendamento","Tamara","Em análise","/agendamento/painel","Incluir clientes na listagem"]];
+var desenha = function(nova){ $("corpo").innerHTML = (nova ? '<tr class="nova" id="linhaNova"><td>hoje</td><td>Financeiro</td><td>Você</td><td><span class="et">Em análise</span></td><td>/financeiro/contas-a-pagar</td><td>'+TXT+'</td></tr>' : "") + base.map(function(x){ return "<tr>"+x.map(function(c,j){ return "<td>"+(j===3 ? '<span class="et'+(c.indexOf("feita")>0?" ok":"")+'">'+c+"</span>" : c)+"</td>"; }).join("")+"</tr>"; }).join(""); };
+var inicia = function(){
+  limpa(); t0 = Date.now(); zeraMao(); desenha(false);
+  $("tit").textContent = "Início"; $("sub").textContent = ""; $("tIni").className = "tela v"; $("tCh").className = "tela"; $("jan").className = "jan"; $("tecla").className = "tecla"; $("aviso").className = "aviso";
+  ["t1","t2","t3"].forEach(function(i){ $(i).className = ""; }); $("fTela").className = "in"; $("fTxt").className = "ta"; $("tx").textContent = "Escreva o que você quer mudar (Ctrl+V cola o print)"; $("tx").style.color = "#D8D5CD"; $("balPrint").style.display = "none";
+  $("mIni").className = "it on"; $("mCham").className = "it";
+  em(200, function(){ cena(1, "Esta é a tela <b>Início</b>. Todo funcionário pode abrir um chamado: uma dúvida, um ajuste ou algo que falta."); });
+  em(5000, function(){ cena(2, "No menu da esquerda, clique em <b>Chamados</b>."); });
+  vai("mCham", 6000, function(){ $("mIni").className = "it"; $("mCham").className = "it on"; $("tIni").className = "tela"; $("tCh").className = "tela v"; $("tit").textContent = "Chamados"; });
+  em(9500, function(){ cena(3, "Aqui ficam todos os chamados. Clique em <b>Novo chamado</b>."); });
+  vai("bNovo", 10500, function(){ $("jan").className = "jan v"; });
+  em(14500, function(){ cena(4, "Em <b>Tela</b>, confira o link. Ele já vem com a última tela que você abriu. Troque se o pedido for de outra."); });
+  vai("fTela", 15500, function(){ $("fTela").className = "in foco"; });
+  em(20500, function(){ cena(5, "Em <b>O que é?</b>, marque uma opção. É obrigatório."); });
+  vai("t2", 21500, function(){ $("t2").className = "on"; $("fTela").className = "in"; });
+  em(26000, function(){ cena(6, "Clique no campo de baixo e escreva o que você quer, do seu jeito."); });
+  vai("fTxt", 27000, function(){ $("fTxt").className = "ta foco"; $("tx").style.color = "#F2F0EA"; $("tx").textContent = ""; digita("tx", TXT, 200, 3500); });
+  em(34500, function(){ cena(7, "Se tiver um print, aperte <b>Ctrl+V</b>. O print aparece na conversa. Pode colar até 4."); $("tecla").className = "tecla v"; });
+  em(37500, function(){ $("balPrint").style.display = "block"; });
+  em(40500, function(){ $("tecla").className = "tecla"; cena(8, "Clique no <b>botão verde</b> para enviar. O Enter também envia."); });
+  vai("bEnv", 41500, function(){ $("jan").className = "jan"; desenha(true); });
+  em(46500, function(){ cena(9, "Pronto. O chamado entra na lista como <b>Em análise</b>. O Marcus e o Leonardo respondem."); });
+  em(53000, function(){ cena(10, "Quando alguém responder, aparece este aviso no alto da tela, com som. Clique em <b>Ver resposta</b>."); $("aviso").className = "aviso v"; });
+  vai("bVer", 54500, function(){ $("aviso").className = "aviso"; });
+  em(59000, function(){ cena(11, "Se a situação for <b>Mudança feita, testar</b>, teste na tela e responda no chat: aprovou ou precisa melhorar. Pode escrever de novo no mesmo chamado."); });
+};
+$("reco").onclick = inicia;
+setInterval(function(){ $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script></body></html>

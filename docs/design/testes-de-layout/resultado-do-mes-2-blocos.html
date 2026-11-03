@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Resultado do mês · 2 blocos</title>
+<style>
+:root{--bg:#0f0f0f;--card:#171717;--bd:#2e2a1d;--tx:#f5f5f0;--ouro:#E8B84B;--pos:#4ade80;--neg:#ff6b6b;--amb:#fbbf24}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.4 Inter,"Segoe UI",system-ui,sans-serif;padding:14px}
+.topo{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:0 0 10px}
+.seg{display:flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden;flex-wrap:wrap}
+.seg button,.btn,select{height:32px;font:inherit;color:var(--tx);background:var(--card);border:0;padding:0 14px;cursor:pointer}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#1a1306;font-weight:600}
+select,.btn{border:1px solid var(--bd);border-radius:8px;min-width:96px}
+.ctl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;border:1px solid var(--bd);background:var(--card);border-radius:10px;padding:8px;margin:0 0 10px}
+.ctl label{font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.leg{text-align:center;margin:0 0 10px}.leg b{color:var(--ouro)}
+.aviso{border:1px solid var(--amb);border-radius:8px;padding:6px 10px;margin:0 0 10px;text-align:center;color:var(--amb);font-weight:600}
+.dois{display:grid;grid-template-columns:repeat(auto-fit,minmax(30rem,1fr));gap:10px;align-items:start}
+.bloco{border:1px solid var(--bd);border-radius:10px;background:var(--card);overflow:hidden}
+.bar{display:flex;align-items:center;justify-content:center;height:32px;padding:0 10px;background:linear-gradient(90deg,rgba(154,111,30,.45),rgba(232,184,75,.12));border-bottom:1px solid var(--bd);font-weight:600}
+table.t{border-collapse:collapse;width:100%;background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) 0 0/100% 30px no-repeat #141414}
+table.t th{height:30px;padding:0 10px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#1a1306;font-weight:700;text-align:center;background:transparent}
+table.t td{height:32px;padding:0 10px;text-align:center;border-top:1px solid #2a2619;font-variant-numeric:tabular-nums;background:transparent}
+table.t td.n{white-space:nowrap}
+tr.forte td{background:rgba(184,134,43,.2);font-weight:600}
+tr.lin{cursor:pointer}tr.lin:hover td{background:#201c10}tr.sel td{background:rgba(232,184,75,.18)}
+.pos{color:var(--pos);font-weight:600}.neg{color:var(--neg);font-weight:600}
+.tag{display:inline-block;border:1px solid var(--ouro);color:var(--ouro);border-radius:6px;padding:1px 7px;font-size:11px;font-weight:600}.tag.p{border-style:dashed}
+.sec{display:none}.sec.on{display:block}
+.rod{text-align:center;margin:12px 0 0;font-size:11px}
+</style>
+</head>
+<body>
+<div class="topo"><div class="seg" id="seg">
+  <button data-l="1" class="on">1 · Entra | Sai</button>
+  <button data-l="2">2 · Nota | Dinheiro</button>
+  <button data-l="3">3 · Mês | Meses que vêm</button>
+  <button data-l="4">4 · Resumo | Passo a passo</button>
+</div></div>
+<div class="ctl"><label>Mês</label><button class="btn" id="ant" aria-label="Mês anterior">‹</button><select id="sel"></select><button class="btn" id="prox" aria-label="Próximo mês">›</button></div>
+<div id="aviso"></div>
+<section class="sec on" id="l1"><p class="leg"><b>1.</b> À esquerda tudo o que entra. À direita tudo o que sai, e o resultado no fim.</p><div class="dois" id="d1"></div></section>
+<section class="sec" id="l2"><p class="leg"><b>2.</b> Dois jeitos de contar o mesmo mês: pela nota fiscal e pelo dinheiro. A diferença fica no pé do bloco do dinheiro.</p><div class="dois" id="d2"></div></section>
+<section class="sec" id="l3"><p class="leg"><b>3.</b> À esquerda o mês escolhido. À direita os meses ao redor: os últimos fechados e os que vêm. Clique em um mês para abrir.</p><div class="dois" id="d3"></div></section>
+<section class="sec" id="l4"><p class="leg"><b>4.</b> À esquerda o resumo curto. À direita a conta passo a passo, da nota fiscal até o resultado.</p><div class="dois" id="d4"></div></section>
+<p class="rod">Janeiro a outubro: números lidos da tela Resultado do mês em 02/11/2026. Nota fiscal = "Faturamento lançado". Dinheiro = recebido nas contas (DevMaster). Novembro: previsão, sem nota lançada. Dezembro a abril: entrada de EXEMPLO; a saída é o que já está lançado.</p>
+
+<script>
+var NOMES=["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro","Janeiro","Fevereiro","Março","Abril"];
+var ANOS=[26,26,26,26,26,26,26,26,26,26,26,26,27,27,27,27];
+var R=[[1392910.06,1333571,10011,15098,463,1309101.61,0],[1012357.60,974222,3878,24443,0,1032476.90,0],[1157120.52,1127843,2028,20897,0,1166989.72,0],[1263754.42,1237031,1045,14462,0,1251473.18,0],[1416595.39,1326697,4430,14212,0,1379001.75,0],[1318670.29,1279284,7424,15550,0,1439476.59,0],[1214587.01,1226419,4980,19597,440,1378687.06,0],[1361845.04,1323994,5775,17971,150,1545793.49,0],[1446262.20,1379058,7488,18740,34,1440350.21,0],[1438133.61,1396904,8061,19866,4263,1472339.32,1000]];
+var PREV=[[1380000,3021727.90],[1150000,1159476.36],[1100000,1031736.62],[1250000,952213.51],[1300000,801111.44]];
+var M=[];
+R.forEach(function(r,i){M.push({n:NOMES[i]+"/"+ANOS[i],tipo:"real",nf:r[0],rv:r[1]+r[2],ant:r[3]+r[4],pago:r[5]-r[6],fal:r[6]})});
+M.push({n:"Novembro/26",tipo:"andamento",nf:null,rv:1494440.85,ant:25619.38,pago:0,fal:1470572.51});
+PREV.forEach(function(p,i){M.push({n:NOMES[11+i]+"/"+ANOS[11+i],tipo:"previsto",parcial:true,nf:null,rv:p[0]-27449.33,ant:27449.33,pago:0,fal:p[1]})});
+M.forEach(function(m){m.ent=m.rv+m.ant;m.tot=m.pago+m.fal;m.res=m.ent-m.tot;m.resNF=m.nf===null?null:m.nf-m.tot;m.dif=m.nf===null?null:m.res-m.resNF});
+function brl(v){return (v<0?"−":"")+"R$ "+Math.abs(v).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function sn(v){if(v===null||v===undefined)return "—";if(Math.abs(v)<0.005)return brl(0);return '<span class="'+(v<0?"neg":"pos")+'">'+brl(v)+'</span>'}
+function c(v){return v===null||v===undefined?"—":brl(v)}
+function d(a,b){return typeof a==="number"&&typeof b==="number"?sn(b-a):"—"}
+function tg(m){return m.tipo==="real"?'<span class="tag">Fechado</span>':m.tipo==="andamento"?'<span class="tag">Em andamento</span>':'<span class="tag p">Previsto</span>'}
+function tb(cab,L){return '<table class="t"><thead><tr>'+cab.map(function(x){return '<th>'+x+'</th>'}).join('')+'</tr></thead><tbody>'+L.join('')+'</tbody></table>'}
+function tr(cels,cls,attr){return '<tr'+(cls?' class="'+cls+'"':'')+(attr||'')+'>'+cels.map(function(x,i){return '<td'+(i?' class="n"':'')+'>'+x+'</td>'}).join('')+'</tr>'}
+function bl(t,corpo){return '<div class="bloco"><div class="bar">'+t+'</div>'+corpo+'</div>'}
+var sel=document.getElementById("sel");
+M.forEach(function(m,i){sel.innerHTML+='<option value="'+i+'">'+m.n+(m.tipo==="real"?"":m.tipo==="andamento"?" · em andamento":" · previsto")+'</option>'});sel.value="9";
+function ix(){return Number(sel.value)}
+
+function V1(m){
+  var r=m.tipo==="real",pv=!r;
+  var e=bl("Entra",tb(["Linha","Pela nota","Dinheiro","Diferença"],[
+    tr([pv?"Acertos que faltam":"Recebido na venda",r?c(m.nf):"—",c(m.rv),r?d(m.nf,m.rv):"—"]),
+    tr(["Inadimplência antiga recebida","—",c(m.ant),"—"]),
+    tr(["Entra nas contas",r?c(m.nf):"—",c(m.ent),r?d(m.nf,m.ent):"—"],"forte")]));
+  var s=bl("Sai e resultado",tb(["Linha","Valor"],[
+    tr(["Contas já pagas",c(m.pago)]),
+    tr(["Contas que faltam pagar"+(m.parcial?" (só o lançado)":""),c(m.fal)]),
+    tr(["Sai no mês",c(m.tot)],"forte"),
+    tr(["Resultado pela nota fiscal",sn(m.resNF)]),
+    tr([m.parcial?"Resultado parcial pelo dinheiro":"Resultado pelo dinheiro",sn(m.res)],"forte")]));
+  return e+s;
+}
+function V2(m){
+  var r=m.tipo==="real";
+  var a=bl("Pela nota fiscal",tb(["Linha","Valor"],[
+    tr(["Notas fiscais (faturamento lançado)",c(m.nf)]),
+    tr(["Contas a pagar do mês",r?c(m.tot):"—"]),
+    tr(["Resultado",sn(m.resNF)],"forte")]));
+  var b=bl("Pelo dinheiro que entrou",tb(["Linha","Valor"],[
+    tr([r?"Recebido na venda":"Acertos que faltam",c(m.rv)]),
+    tr(["Inadimplência antiga recebida",c(m.ant)]),
+    tr(["Entra nas contas",c(m.ent)],"forte"),
+    tr(["Contas a pagar do mês"+(m.parcial?" (só o lançado)":""),c(m.tot)]),
+    tr([m.parcial?"Resultado parcial":"Resultado",sn(m.res)],"forte"),
+    tr(["Diferença para a nota fiscal",r?sn(m.dif):"—"])]));
+  return a+b;
+}
+function V3(m){
+  var i=ix(),r=m.tipo==="real";
+  var a=bl(m.n,tb(["Linha","Pela nota","Dinheiro","Diferença"],[
+    tr(["Entra",r?c(m.nf):"—",c(m.ent),r?d(m.nf,m.ent):"—"]),
+    tr(["Sai",r?c(m.tot):"—",c(m.tot),r?sn(0):"—"]),
+    tr([m.parcial?"Resultado parcial":"Resultado",sn(m.resNF),sn(m.res),r?sn(m.dif):"—"],"forte")]));
+  var L=[];for(var j=Math.max(0,Math.min(i-2,M.length-8));j<Math.min(M.length,Math.max(0,Math.min(i-2,M.length-8))+8);j++){var q=M[j];L.push('<tr class="lin'+(j===i?' sel':'')+'" data-i="'+j+'"><td>'+q.n+'</td><td class="n">'+tg(q)+'</td><td class="n">'+c(q.ent)+'</td><td class="n">'+c(q.tot)+(q.parcial?' <span class="tag p">Incompleto</span>':'')+'</td><td class="n">'+sn(q.res)+'</td></tr>')}
+  return a+bl("Meses ao redor",tb(["Mês","Situação","Entra","Sai","Resultado"],L));
+}
+function V4(m){
+  var r=m.tipo==="real";
+  var a=bl("Resumo",tb(["Linha","Pela nota","Dinheiro","Diferença"],[
+    tr(["Entra",r?c(m.nf):"—",c(m.ent),r?d(m.nf,m.ent):"—"]),
+    tr(["Sai",r?c(m.tot):"—",c(m.tot),r?sn(0):"—"]),
+    tr([m.parcial?"Resultado parcial":"Resultado",sn(m.resNF),sn(m.res),r?sn(m.dif):"—"],"forte")]));
+  var run=0,L=[];
+  function p(l,v,sub){if(!sub)run+=v;L.push(tr([(sub?"= ":v<0?"− ":"+ ")+l,sub?"":sn(v),c(sub?v:run)],sub?"forte":""))}
+  if(r){p("Notas fiscais",m.nf);p("Nota que não virou dinheiro na hora",m.rv-m.nf);p("Inadimplência antiga recebida",m.ant);p("Entra nas contas",run,1);p("Contas já pagas",-m.pago);p("Contas que faltam pagar",-m.fal);L.push(tr(["= Resultado do mês","",sn(run)],"forte"))}
+  else{p("Acertos previstos",m.rv);p("Inadimplência antiga e funcionárias",m.ant);p("Entra nas contas",run,1);p("Contas a pagar"+(m.parcial?" (só o lançado)":""),-m.tot);L.push(tr([m.parcial?"= Resultado parcial":"= Resultado do mês","",sn(run)],"forte"))}
+  return a+bl("Da nota ao dinheiro",tb(["Passo","Valor","Saldo corrido"],L));
+}
+function tela(){
+  var m=M[ix()];
+  document.getElementById("aviso").innerHTML=m.parcial?'<p class="aviso">As contas deste mês ainda estão sendo lançadas. A saída é só o que já está lançado, e o resultado é parcial.</p>':m.nf===null?'<p class="aviso">Este mês ainda não tem nota fiscal lançada. Só existe a previsão do dinheiro.</p>':'';
+  document.getElementById("d1").innerHTML=V1(m);document.getElementById("d2").innerHTML=V2(m);document.getElementById("d3").innerHTML=V3(m);document.getElementById("d4").innerHTML=V4(m);
+  [].forEach.call(document.querySelectorAll("tr.lin"),function(t){t.onclick=function(){sel.value=t.dataset.i;tela()}});
+}
+sel.onchange=tela;
+document.getElementById("ant").onclick=function(){sel.value=Math.max(0,ix()-1);tela()};
+document.getElementById("prox").onclick=function(){sel.value=Math.min(M.length-1,ix()+1);tela()};
+[].forEach.call(document.querySelectorAll("#seg button"),function(b){b.onclick=function(){
+  [].forEach.call(document.querySelectorAll("#seg button"),function(x){x.classList.toggle("on",x===b)});
+  [].forEach.call(document.querySelectorAll(".sec"),function(s){s.classList.toggle("on",s.id==="l"+b.dataset.l)});
+}});
+tela();
+</script>
+</body>
+</html>

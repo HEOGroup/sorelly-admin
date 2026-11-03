@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Listagens: 4 layouts</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--no:#f87171;--ok:#4ade80;--am:#fbbf24;--az:#60a5fa;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1360px;margin:0 auto;text-align:center}
+h1{font-size:18px;font-weight:600}
+.sub{margin:2px 0 12px}
+.seg{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden;margin-bottom:10px}
+.seg button{height:32px;padding:0 16px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:96px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin:0 auto 12px;max-width:1100px}
+.nota b{color:var(--ouro)}
+.filtros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px;margin-bottom:10px;text-align:left}
+.filtros label{display:flex;flex-direction:column;gap:2px;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.filtros span.c{height:32px;display:flex;align-items:center;justify-content:center;background:var(--s2);border:1px solid var(--bd);border-radius:8px;font-size:13px;text-transform:none;letter-spacing:0}
+.tela{display:none}.tela.on{display:block}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1);margin-bottom:10px;overflow:hidden}
+.bloco>.t{height:32px;display:flex;align-items:center;justify-content:center;gap:12px;background:var(--s2);border-bottom:1px solid var(--bd);font-weight:600;padding:0 10px}
+.rolar{overflow-x:auto}
+table{width:100%;border-collapse:collapse;background:var(--topo) top left/100% 30px no-repeat}
+thead th{background:transparent;color:#1a1306;height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;white-space:nowrap}
+td{padding:6px 10px;height:32px;text-align:center;border-bottom:1px solid var(--bd);vertical-align:middle;white-space:nowrap}
+tr:last-child td{border-bottom:0}
+tbody tr:hover td{background:rgba(232,184,75,.10)}
+.no{color:var(--no)}.ok{color:var(--ok)}.am{color:var(--am)}.az{color:var(--az)}
+.tag{display:inline-block;border:1px solid var(--bd);border-radius:6px;padding:1px 8px;font-size:11px;font-weight:600;margin:0 2px}
+.tag.v{border-color:var(--no);color:var(--no)}.tag.a{border-color:var(--am);color:var(--am)}.tag.o{border-color:var(--ouro);color:var(--ouro)}.tag.g{border-color:var(--ok);color:var(--ok)}
+.sit{font-weight:600}
+.btn{height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--ouro);color:#111;font:inherit;font-weight:700;cursor:pointer;min-width:96px}
+.btn.l{background:transparent;color:var(--tx);border:1px solid var(--bd);font-weight:500}
+/* C: funil */
+.kan{display:grid;grid-template-columns:repeat(5,minmax(200px,1fr));gap:8px;text-align:left}
+.col{border:1px solid var(--bd);border-radius:8px;background:var(--s1);min-height:200px}
+.col>.h{padding:6px 10px;border-bottom:1px solid var(--bd);text-align:center}
+.col>.h b{display:block}.col>.h small{font-size:11px}
+.card{margin:8px;border:1px solid var(--bd);border-radius:8px;background:var(--s2);overflow:hidden;text-align:center}
+.card .f{display:flex;justify-content:space-between;padding:3px 8px;background:var(--topo);color:#1a1306;font-size:11px;font-weight:600}
+.card .b{padding:6px 8px;display:flex;flex-direction:column;gap:3px}
+/* D: horários */
+.cap{height:8px;border-radius:4px;background:var(--bd);margin:4px auto;width:160px;overflow:hidden}
+.cap i{display:block;height:100%;background:var(--ouro)}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:900px){.kan{grid-template-columns:1fr}.grid2{grid-template-columns:1fr}.filtros{grid-template-columns:repeat(2,1fr)}}
+</style>
+</head>
+<body>
+<h1>Listagens de montagem: 4 layouts</h1>
+<p class="sub">Nomes e valores inventados. Mesmas 8 linhas nos 4 layouts, para você comparar. Escolha um e eu aplico na tela real.</p>
+<div class="seg" id="seg"><button class="on" data-t="A">A · Planilha do dia</button><button data-t="B">B · Por representante</button><button data-t="C">C · Funil</button><button data-t="D">D · Por horário</button></div>
+
+<div class="nota"><b>Regras que aparecem em todos:</b> Sem valor = vermelho · Só Encomendas (acima de R$ 3.000,00) · Mesa maior (acima de R$ 4.000,00) · Conferência (acima de R$ 15.000,00) · Atrasado (passou do prazo de 48 h) · Capacidade da listagem (15 kits; viagem sem limite) · Montadora e bipadora não veem valor.</div>
+
+<div class="filtros"><label>Buscar<span class="c">Revendedora ou representante</span></label><label>Representante<span class="c">Todas</span></label><label>Situação<span class="c">Todas</span></label><label>Tipo<span class="c">Todos</span></label></div>
+
+<!-- A -->
+<div class="tela on" id="A">
+<div class="bloco"><div class="t">Terça-feira, 04/11/2026 · Todas as retiradas</div>
+<div class="rolar"><table><thead><tr><th>Ordem</th><th>Horário</th><th>Representante</th><th>Revendedora</th><th>Tipo</th><th>Valor do kit</th><th>Regra</th><th>Situação</th><th>Montadora</th><th>Tempo</th><th>Bipadora</th><th>Ação</th></tr></thead><tbody>
+<tr><td>1</td><td>10:00</td><td>Dayanne Ribeiro</td><td>Beatriz Nogueira Prado</td><td>Acerto + kit</td><td>R$ 2.400,00</td><td>—</td><td class="sit ok">Bipado</td><td>Agatha</td><td>38 min</td><td>Natasha</td><td><button class="btn l">Retirar</button></td></tr>
+<tr><td>2</td><td>10:00</td><td>Dayanne Ribeiro</td><td>Camila Duarte Lopes</td><td>Acerto + kit</td><td>R$ 3.600,00</td><td><span class="tag o">Só Encomendas</span></td><td class="sit az">Montando</td><td>Elen</td><td>12 min</td><td>—</td><td><button class="btn l">Abrir</button></td></tr>
+<tr><td>3</td><td>10:00</td><td>Dayanne Ribeiro</td><td>Fernanda Aires Teixeira</td><td>Reposição</td><td class="no">Sem valor</td><td><span class="tag v">Sem valor</span></td><td class="sit no">Na fila</td><td>—</td><td>—</td><td>—</td><td><button class="btn">Definir valor</button></td></tr>
+<tr><td>4</td><td>10:00</td><td>Lysie Andrade</td><td>Juliana Mota Ferraz</td><td>Acerto + kit</td><td>R$ 4.800,00</td><td><span class="tag o">Mesa maior</span></td><td class="sit am">Aguardando bipagem</td><td>Agatha</td><td>51 min</td><td>—</td><td><button class="btn l">Bipar</button></td></tr>
+<tr><td>5</td><td>10:00</td><td>Lysie Andrade</td><td>Larissa Prado Sanches</td><td>Condicional</td><td>R$ 16.200,00</td><td><span class="tag a">Conferência</span></td><td class="sit am">Em conferência</td><td>Deysiane</td><td>1 h 05 min</td><td>—</td><td><button class="btn">Conferir</button></td></tr>
+<tr><td>6</td><td>17:00</td><td>Jessica Moraes</td><td>Marina Quintela Rocha</td><td>Acerto + kit</td><td>R$ 1.900,00</td><td>—</td><td class="sit">Na fila</td><td>—</td><td>—</td><td>—</td><td><button class="btn l">Montar</button></td></tr>
+<tr><td>7</td><td>17:00</td><td>Jessica Moraes</td><td>Patrícia Lemos Vidal</td><td>Acerto + kit</td><td>R$ 2.050,00</td><td><span class="tag v">Atrasado</span></td><td class="sit">Na fila</td><td>—</td><td>—</td><td>—</td><td><button class="btn l">Montar</button></td></tr>
+<tr><td>8</td><td>17:00</td><td>Thalita Souza</td><td>Renata Bastos Pinto</td><td>Reposição</td><td>R$ 1.100,00</td><td>—</td><td class="sit" style="color:#a1a1aa">Retirado</td><td>Elen</td><td>29 min</td><td>Natasha</td><td>—</td></tr>
+</tbody></table></div></div>
+<p>Uma tabela só, ordenada por horário. Filtro abre clicando no título da coluna. Boa para a Deysiane ver tudo de uma vez.</p>
+</div>
+
+<!-- B -->
+<div class="tela" id="B">
+<div class="bloco"><div class="t">Dayanne Ribeiro · Retirada 10:00 Curitiba · <span class="tag g">3 de 15 kits</span> <span class="tag v">1 sem valor</span></div>
+<div class="rolar"><table><thead><tr><th>Revendedora</th><th>Tipo</th><th>Valor do kit</th><th>Regra</th><th>Situação</th><th>Montadora</th><th>Bipadora</th><th>Ação</th></tr></thead><tbody>
+<tr><td>Beatriz Nogueira Prado</td><td>Acerto + kit</td><td>R$ 2.400,00</td><td>—</td><td class="sit ok">Bipado</td><td>Agatha</td><td>Natasha</td><td><button class="btn l">Retirar</button></td></tr>
+<tr><td>Camila Duarte Lopes</td><td>Acerto + kit</td><td>R$ 3.600,00</td><td><span class="tag o">Só Encomendas</span></td><td class="sit az">Montando</td><td>Elen</td><td>—</td><td><button class="btn l">Abrir</button></td></tr>
+<tr><td>Fernanda Aires Teixeira</td><td>Reposição</td><td class="no">Sem valor</td><td><span class="tag v">Sem valor</span></td><td class="sit no">Na fila</td><td>—</td><td>—</td><td><button class="btn">Definir valor</button></td></tr>
+</tbody></table></div></div>
+<div class="bloco"><div class="t">Lysie Andrade · Retirada 10:00 Curitiba · <span class="tag g">2 de 15 kits</span> <span class="tag a">1 em conferência</span></div>
+<div class="rolar"><table><thead><tr><th>Revendedora</th><th>Tipo</th><th>Valor do kit</th><th>Regra</th><th>Situação</th><th>Montadora</th><th>Bipadora</th><th>Ação</th></tr></thead><tbody>
+<tr><td>Juliana Mota Ferraz</td><td>Acerto + kit</td><td>R$ 4.800,00</td><td><span class="tag o">Mesa maior</span></td><td class="sit am">Aguardando bipagem</td><td>Agatha</td><td>—</td><td><button class="btn l">Bipar</button></td></tr>
+<tr><td>Larissa Prado Sanches</td><td>Condicional</td><td>R$ 16.200,00</td><td><span class="tag a">Conferência</span></td><td class="sit am">Em conferência</td><td>Deysiane</td><td>—</td><td><button class="btn">Conferir</button></td></tr>
+</tbody></table></div></div>
+<div class="bloco"><div class="t">Jessica Moraes · Retirada 17:00 Curitiba · <span class="tag g">2 de 15 kits</span> <span class="tag v">1 atrasado</span></div>
+<div class="rolar"><table><thead><tr><th>Revendedora</th><th>Tipo</th><th>Valor do kit</th><th>Regra</th><th>Situação</th><th>Montadora</th><th>Bipadora</th><th>Ação</th></tr></thead><tbody>
+<tr><td>Marina Quintela Rocha</td><td>Acerto + kit</td><td>R$ 1.900,00</td><td>—</td><td class="sit">Na fila</td><td>—</td><td>—</td><td><button class="btn l">Montar</button></td></tr>
+<tr><td>Patrícia Lemos Vidal</td><td>Acerto + kit</td><td>R$ 2.050,00</td><td><span class="tag v">Atrasado</span></td><td class="sit">Na fila</td><td>—</td><td>—</td><td><button class="btn l">Montar</button></td></tr>
+</tbody></table></div></div>
+<p>Igual ao desenho de hoje, mas com o resumo escrito na barra de cada representante (sem faixa de números no topo). Boa para quem pensa por representante.</p>
+</div>
+
+<!-- C -->
+<div class="tela" id="C">
+<div class="kan">
+<div class="col"><div class="h"><b>Na fila</b><small>3 kits · prazo 48 h · 1 atrasado</small></div>
+<div class="card"><div class="f"><span>Retirada 10:00</span><span class="no">Sem valor</span></div><div class="b"><b>Fernanda Aires Teixeira</b><span>Reposição · Dayanne Ribeiro</span><button class="btn">Definir valor</button></div></div>
+<div class="card"><div class="f"><span>Retirada 17:00</span><span>Atrasado</span></div><div class="b"><b>Patrícia Lemos Vidal</b><span>Acerto + kit · Jessica Moraes</span><span>R$ 2.050,00</span><button class="btn l">Montar</button></div></div>
+<div class="card"><div class="f"><span>Retirada 17:00</span><span>—</span></div><div class="b"><b>Marina Quintela Rocha</b><span>Acerto + kit · Jessica Moraes</span><span>R$ 1.900,00</span><button class="btn l">Montar</button></div></div></div>
+<div class="col"><div class="h"><b>Montando</b><small>1 kit</small></div>
+<div class="card"><div class="f"><span>Retirada 10:00</span><span>Só Encomendas</span></div><div class="b"><b>Camila Duarte Lopes</b><span>Acerto + kit · Dayanne Ribeiro</span><span>R$ 3.600,00 · Elen · 12 min</span><button class="btn l">Abrir</button></div></div></div>
+<div class="col"><div class="h"><b>Aguardando bipagem</b><small>2 kits · 1 em conferência</small></div>
+<div class="card"><div class="f"><span>Retirada 10:00</span><span>Mesa maior</span></div><div class="b"><b>Juliana Mota Ferraz</b><span>Acerto + kit · Lysie Andrade</span><span>R$ 4.800,00 · Agatha</span><button class="btn l">Bipar</button></div></div>
+<div class="card"><div class="f"><span>Retirada 10:00</span><span>Conferência</span></div><div class="b"><b>Larissa Prado Sanches</b><span>Condicional · Lysie Andrade</span><span>R$ 16.200,00 · Deysiane</span><button class="btn">Conferir</button></div></div></div>
+<div class="col"><div class="h"><b>Bipado</b><small>1 kit</small></div>
+<div class="card"><div class="f"><span>Retirada 10:00</span><span>—</span></div><div class="b"><b>Beatriz Nogueira Prado</b><span>Acerto + kit · Dayanne Ribeiro</span><span>R$ 2.400,00 · Natasha</span><button class="btn l">Retirar</button></div></div></div>
+<div class="col"><div class="h"><b>Retirado</b><small>1 kit</small></div>
+<div class="card"><div class="f"><span>Retirada 17:00</span><span>—</span></div><div class="b"><b>Renata Bastos Pinto</b><span>Reposição · Thalita Souza</span><span>R$ 1.100,00 · Elen</span></div></div></div>
+</div>
+<p>Padrão de funil igual ao de Kits novos: o kit anda da esquerda para a direita. Boa para ver gargalo (onde os kits param).</p>
+</div>
+
+<!-- D -->
+<div class="tela" id="D">
+<div class="grid2">
+<div class="bloco"><div class="t">Retirada 10:00 · Curitiba <span class="tag g">5 de 15 kits</span></div>
+<div class="cap"><i style="width:33%"></i></div>
+<div class="rolar"><table><thead><tr><th>Representante</th><th>Revendedora</th><th>Valor do kit</th><th>Situação</th></tr></thead><tbody>
+<tr><td>Dayanne Ribeiro</td><td>Beatriz Nogueira Prado</td><td>R$ 2.400,00</td><td class="sit ok">Bipado</td></tr>
+<tr><td>Dayanne Ribeiro</td><td>Camila Duarte Lopes</td><td>R$ 3.600,00</td><td class="sit az">Montando</td></tr>
+<tr><td>Dayanne Ribeiro</td><td>Fernanda Aires Teixeira</td><td class="no">Sem valor</td><td class="sit no">Na fila</td></tr>
+<tr><td>Lysie Andrade</td><td>Juliana Mota Ferraz</td><td>R$ 4.800,00</td><td class="sit am">Aguardando bipagem</td></tr>
+<tr><td>Lysie Andrade</td><td>Larissa Prado Sanches</td><td>R$ 16.200,00</td><td class="sit am">Em conferência</td></tr>
+</tbody></table></div></div>
+<div class="bloco"><div class="t">Retirada 17:00 · Curitiba <span class="tag g">3 de 15 kits</span></div>
+<div class="cap"><i style="width:20%"></i></div>
+<div class="rolar"><table><thead><tr><th>Representante</th><th>Revendedora</th><th>Valor do kit</th><th>Situação</th></tr></thead><tbody>
+<tr><td>Jessica Moraes</td><td>Marina Quintela Rocha</td><td>R$ 1.900,00</td><td class="sit">Na fila</td></tr>
+<tr><td>Jessica Moraes</td><td>Patrícia Lemos Vidal</td><td>R$ 2.050,00</td><td class="sit no">Na fila · atrasado</td></tr>
+<tr><td>Thalita Souza</td><td>Renata Bastos Pinto</td><td>R$ 1.100,00</td><td class="sit" style="color:#a1a1aa">Retirado</td></tr>
+</tbody></table></div></div>
+</div>
+<p>Um bloco por horário de retirada, com a barra de capacidade (15 kits). Boa para a montagem planejar a hora de fechar cada saída.</p>
+</div>
+
+<script>
+document.querySelectorAll('#seg button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#seg button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.tela').forEach(t=>t.classList.toggle('on',t.id===b.dataset.t));});
+</script>
+</body>
+</html>
