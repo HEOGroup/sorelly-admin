@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Peças próximo mês · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 12px;max-width:760px}
+  .chave{display:flex;justify-content:center;max-width:640px;margin:0 auto 20px;border:1px solid #2A2A2E;border-radius:8px;overflow:hidden}
+  .chave button{flex:1;height:32px;border:0;border-right:1px solid #2A2A2E;background:#151517;color:#fff;cursor:pointer;font:inherit}
+  .chave button:last-child{border-right:0}
+  .chave button.on{background:var(--ouro);font-weight:700}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,input{font:inherit;color:inherit}
+  .titulo{display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 4px;font-weight:700}
+  .tag{height:24px;border-radius:99px;padding:0 10px;display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:var(--texto);color:#fff}
+  .tag.no{background:#6B7280}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;min-width:0;width:100%;text-transform:uppercase}
+  .add{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px 4px}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 4px;border-top:1px solid var(--linha)}
+  .l.fim{background:#F7EFD8;border-radius:8px;border-top:0;margin-top:4px;font-weight:700}
+  .l.fim .num{font-size:15px}
+  .x{width:24px;height:24px;border-radius:50%;border:0;background:#EEE;font-weight:700;cursor:pointer;flex:none}
+  .bloco{display:flex;align-items:center;gap:8px;min-height:36px;border:1px solid var(--linha);border-radius:12px;padding:0 10px;margin-top:6px}
+  .bloco .num{flex:1}
+  .vazio{border-style:dashed;color:#8A8470}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:4px 0}
+  .c{border:1px solid var(--linha);border-radius:12px;padding:6px 4px;text-align:center}
+  .c small{display:block;font-size:11px;font-weight:700;text-transform:uppercase}
+  .c .num{font-size:20px}
+  .barra{height:8px;border-radius:99px;background:#EDE8DA;overflow:hidden;margin:6px 4px}
+  .barra i{display:block;height:100%;background:var(--ouro)}
+  .chips{display:flex;flex-wrap:wrap;gap:6px;padding:6px 4px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ouro);border-radius:8px;padding:2px 4px 2px 8px;font-weight:700}
+  table{width:100%;border-collapse:collapse;text-align:center}
+  th{height:28px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);padding:0 4px}
+  td{height:30px;border-bottom:1px solid var(--linha);padding:0 4px}
+  .passo{display:flex;align-items:center;gap:8px;min-height:34px;border-top:1px solid var(--linha);padding:0 4px}
+  .ck{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--ouro);color:#fff;font-weight:700;font-size:12px;flex:none}
+  .passo .t{flex:1}
+  .aviso{padding:8px 4px;font-weight:600;text-align:center}
+</style>
+</head>
+<body>
+<h1>Peças próximo mês · 4 layouts</h1>
+<p class="sub">Só a QUANTIDADE é controlada: o valor da peça não conta. A venda de exemplo é de R$ 8.278,00 (base de 35 peças). A representante escreve só o código. Troque a situação do pagamento na chave abaixo. Números inventados.</p>
+<div class="chave" id="chave"></div>
+<div class="grade" id="grade"></div>
+<script>
+var VENDA = 8278, BASE = 35, TOTAL = 8278;
+var CASOS = [
+  {nome:'Quitado', aberto:0, fator:1},
+  {nome:'Até 5% em aberto', aberto:300, fator:.75},
+  {nome:'De 5% a 10% em aberto', aberto:650, fator:.5},
+  {nome:'Mais de 10% em aberto', aberto:1200, fator:0}
+];
+var caso = 0, codigos = ['P2001','P2002','P2003'];
+function R(n){ return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function lib(){ return Math.floor(BASE * CASOS[caso].fator); }
+function pct(){ return (CASOS[caso].aberto / TOTAL * 100); }
+function P(n){ return n.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1}) + '%'; }
+function escolher(i){ caso = i; codigos = codigos.slice(0, lib()); desenha(); }
+function add(id){ var el = document.getElementById(id); var v = (el.value||'').trim().toUpperCase(); if(!v || codigos.length >= lib() || codigos.indexOf(v) >= 0) return; codigos.push(v); desenha(); }
+function del(i){ codigos.splice(i,1); desenha(); }
+function campo(id){ var cheio = codigos.length >= lib();
+  return '<div class="add"><input class="campo" id="'+id+'" placeholder="Código da peça" '+(cheio?'disabled':'')+' onkeydown="if(event.key===\'Enter\')add(\''+id+'\')"><button class="btn ouro" '+(cheio?'disabled':'')+' onclick="add(\''+id+'\')">Adicionar</button></div>'; }
+function semPeca(){ return '<div class="aviso">Nenhuma peça liberada</div>'; }
+function desenha(){
+  var n = lib(), pc = pct(), f = Math.round(CASOS[caso].fator*100), q = codigos.length;
+  var tag = '<span class="tag' + (n>0 ? '' : ' no') + '">' + (n>0 ? n + ' peças' : 'Nenhuma') + '</span>';
+  var A = '<div class="titulo"><span>Peças próximo mês</span>' + tag + '</div>'
+    + '<div class="l"><span>Valor da venda</span><b class="num">' + R(VENDA) + '</b></div>'
+    + '<div class="l"><span>Quantidade base</span><b class="num">' + BASE + ' peças</b></div>'
+    + '<div class="l"><span>Valor em aberto</span><b class="num">' + R(CASOS[caso].aberto) + '</b></div>'
+    + '<div class="l"><span>% em aberto</span><b class="num">' + P(pc) + '</b></div>'
+    + '<div class="l"><span>% de liberação</span><b class="num">' + f + '%</b></div>'
+    + '<div class="l fim"><span>Liberadas</span><b class="num">' + n + ' peças</b></div>'
+    + (n>0 ? campo('a') + codigos.map(function(c,i){ return '<div class="bloco"><b class="num">'+c+'</b><button class="x" onclick="del('+i+')">×</button></div>'; }).join('') + '<div class="l"><span>Escolhidas</span><b class="num">' + q + ' de ' + n + '</b></div>' : semPeca());
+  var B = '<div class="titulo"><span>Peças próximo mês</span>' + tag + '</div>'
+    + '<div class="duas"><div class="c"><small>Liberadas</small><b class="num">' + n + '</b></div><div class="c"><small>Escolhidas</small><b class="num">' + q + '</b></div></div>'
+    + '<div class="barra"><i style="width:' + (n ? Math.round(q/n*100) : 0) + '%"></i></div>'
+    + '<div class="l"><span>Base ' + BASE + ' × ' + f + '%</span><b class="num">' + P(pc) + ' em aberto</b></div>'
+    + (n>0 ? campo('b') + '<div class="chips">' + codigos.map(function(c,i){ return '<span class="chip">'+c+'<button class="x" onclick="del('+i+')">×</button></span>'; }).join('') + '</div>' : semPeca());
+  var C = '<div class="titulo"><span>Peças próximo mês</span>' + tag + '</div>'
+    + '<table><tr><th>Venda</th><th>Base</th><th>Em aberto</th><th>Final</th></tr><tr><td class="num">' + R(VENDA) + '</td><td class="num">' + BASE + '</td><td class="num">' + P(pc) + '</td><td class="num">' + n + '</td></tr></table>'
+    + (n>0 ? campo('c') + '<table><tr><th>Nº</th><th>Código</th><th></th></tr>' + codigos.map(function(c,i){ return '<tr><td>'+(i+1)+'</td><td class="num">'+c+'</td><td><button class="x" onclick="del('+i+')">×</button></td></tr>'; }).join('') + (q===0 ? '<tr><td colspan="3">Nenhuma peça escolhida</td></tr>' : '') + '</table>' : semPeca());
+  var vagas = ''; for(var i=0;i<Math.min(n,8);i++){ vagas += i<q ? '<div class="bloco"><span class="ck">✓</span><b class="num">'+codigos[i]+'</b><button class="x" onclick="del('+i+')">×</button></div>' : '<div class="bloco vazio"><span class="ck" style="background:#D9D4C2">'+(i+1)+'</span><span class="num">Vaga livre</span></div>'; }
+  var D = '<div class="titulo"><span>Peças próximo mês</span>' + tag + '</div>'
+    + '<div class="passo"><span class="ck">1</span><span class="t">Base pela venda</span><b class="num">' + BASE + ' peças</b></div>'
+    + '<div class="passo"><span class="ck">2</span><span class="t">Em aberto ' + P(pc) + '</span><b class="num">' + f + '%</b></div>'
+    + '<div class="passo"><span class="ck">3</span><span class="t"><b>Ela pode pegar</b></span><b class="num">' + n + ' peças</b></div>'
+    + (n>0 ? campo('d') + vagas + (n>8 ? '<div class="aviso">+ ' + (n-8) + ' vagas</div>' : '') : semPeca());
+  var tel = function(t, h){ return '<section class="caixa"><h2>' + t + '</h2><div class="tel"><div class="cart">' + h + '</div></div></section>'; };
+  document.getElementById('grade').innerHTML = tel('A · Conta e blocos', A) + tel('B · Cartões e barra', B) + tel('C · Tabelas', C) + tel('D · Passos e vagas', D);
+  document.getElementById('chave').innerHTML = CASOS.map(function(c,i){ return '<button class="'+(i===caso?'on':'')+'" onclick="escolher('+i+')">'+c.nome+'</button>'; }).join('');
+}
+desenha();
+</script>
+</body>
+</html>
