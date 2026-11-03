@@ -370,7 +370,7 @@ function AppRepresentante(p){
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["normal","Normal"],["bb","Select (BB)"]].map(function(o){ var on = cat===o[0];
           return e("button",{key:o[0], onClick:function(){ setBrindeCat(o[0]); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? "bg-[#C9A13B] txt-branco ring-transparent" : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["antiga","Kit antigo","devolvendo","bg-[#F59E0B] txt-branco ring-transparent"],["nova","Kit novo","recebendo","bg-[#16A34A] txt-branco ring-transparent"]].map(function(o){ var on = origem===o[0];
-          return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]+" · "+o[2]); })),
+          return e("button",{key:o[0], onClick:function(){ setF({origem:o[0]}); }, "aria-pressed":on, className:"h-8 whitespace-nowrap rounded-lg text-[13px] font-bold ring-1 "+(on ? o[3] : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
         e("div",{className:"flex gap-1.5"},
           e("input",{value:f.codigo, placeholder:cat==="bb" ? "BB0001" : "AB123", autoCapitalize:"characters", "aria-label":"Código da peça", onChange:function(ev){ setF({codigo:limitarCodigo(ev.target.value)}); },
             className:"h-8 w-[6.2rem] shrink-0 rounded-lg bg-black/50 px-2 text-[13px] font-semibold tracking-wide text-white outline-none ring-1 ring-white/10 "+MONO+" uppercase"}),
