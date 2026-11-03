@@ -41,7 +41,8 @@ var MENU_CADASTRO = [
   {nome:"Kits novos", itens:[M("Kits novos","kitnovo"), M("Pendências","knpendencias"), M("Consolidado","knconsolidado"), M("Regras","knregras")]},
   {nome:"Desempenho", itens:[M("Desempenho do cadastro","desempenhocad"), M("Indicações","indicacoes"), M("Avaliações","avaliacoes")]},
   M("Representantes","repcad"),
-  M("Mensagens prontas","msgcad")
+  M("Mensagens prontas","msgcad"),
+  M("Folders","folderscad")
 ];
 
 // Menu do Cadastro de peças (29/10/2026, pedido do Marcus: igual ao Financeiro, com as telas no menu do topo e não em abas dentro da tela). ORDEM DO FLUXO: pedidos de bruto (tela mãe) → controle do mês → banho → peças (cadastro e preço) → fornecedores → configurações. Plano das próximas telas em docs/negocio/FLUXO-DE-COMPRA-DE-BRUTO.md (seção 11).
@@ -175,6 +176,8 @@ var SETORES = [
       T("repcad","Representantes")]},
     {nome:"Mensagens prontas", telas:[
       T("msgcad","Mensagens prontas")]},
+    {nome:"Folders", telas:[
+      T("folderscad","Folders")]},
     {nome:"Avaliações", telas:[
       T("avaliacoes","Avaliações")]},
     {nome:"Kits novos", telas:[

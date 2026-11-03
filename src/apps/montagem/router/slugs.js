@@ -116,6 +116,7 @@ export const SLUG_DA_ABA = {
   aprovacaocad: "aprovacao-de-cadastros",
   indicacoes: "indicacoes",
   msgcad: "mensagens-prontas",
+  folderscad: "folders",
   repcad: "representantes-do-setor",
   compras: "compras-e-estoque",
   linkpag: "link-de-pagamento",

@@ -170,6 +170,7 @@ const montagem = {
     pagina("compras-e-estoque", () => import("@/apps/montagem/pages/ComprasEstoque"), "AbaComprasEstoque"),
     pagina("indicacoes", () => import("@/apps/montagem/pages/Indicacoes"), "AbaIndicacoes"),
     pagina("mensagens-prontas", () => import("@/apps/montagem/pages/MensagensProntas"), "AbaMensagensProntas"),
+    pagina("folders", () => import("@/apps/montagem/pages/FoldersCadastro"), "AbaFoldersCadastro"),
     pagina("aprovacao-de-cadastros", () => import("@/apps/montagem/pages/AprovacaoCadastros"), "AbaAprovacaoCadastros"),
     pagina("desempenho-do-cadastro", () => import("@/apps/montagem/pages/DesempenhoCadastro"), "AbaDesempenhoCadastro"),
     pagina("versoes", () => import("@/apps/montagem/pages/Versoes"), "AbaVersoes"),
