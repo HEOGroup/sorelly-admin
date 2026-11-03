@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kit novo · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 12px;max-width:720px}
+  .chave{display:flex;justify-content:center;gap:0;max-width:420px;margin:0 auto 20px;border:1px solid #2A2A2E;border-radius:8px;overflow:hidden}
+  .chave button{flex:1;height:32px;border:0;background:#151517;color:#fff;cursor:pointer;font:inherit}
+  .chave button.on{background:var(--ouro);font-weight:700}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button{font:inherit;color:inherit}
+  .titulo{display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 4px;font-weight:700}
+  .tag{height:24px;border-radius:99px;padding:0 10px;display:inline-flex;align-items:center;font-size:11px;font-weight:700;background:var(--texto);color:#fff}
+  .tag.no{background:#6B7280}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .btn.cheio{width:100%;margin-top:8px}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 4px;border-top:1px solid var(--linha)}
+  .l.fim{background:#F7EFD8;border-radius:8px;border-top:0;margin-top:4px;font-weight:700}
+  .l.fim .num{font-size:15px}
+  .tres{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin:4px 0}
+  .c{border:1px solid var(--linha);border-radius:12px;padding:6px 4px;text-align:center}
+  .c small{display:block;font-size:11px;font-weight:700;text-transform:uppercase}
+  .c .num{font-size:13px}
+  .c.hoje{border-color:var(--ouro)}
+  table{width:100%;border-collapse:collapse;text-align:center}
+  th{height:28px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);padding:0 4px}
+  td{height:30px;border-bottom:1px solid var(--linha);padding:0 4px}
+  .passo{display:flex;align-items:center;gap:8px;min-height:36px;border-top:1px solid var(--linha);padding:0 4px}
+  .ck{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--ouro);color:#fff;font-weight:700;font-size:12px;flex:none}
+  .ck.no{background:#9CA3AF}
+  .passo span.t{flex:1}
+</style>
+</head>
+<body>
+<h1>Kit novo · 4 layouts</h1>
+<p class="sub">As duas vendas anteriores já vêm do sistema, a representante não digita. A média usa as 3 últimas vendas (2 anteriores + a de hoje). Números de exemplo, inventados.</p>
+<div class="chave"><button id="bOk" class="on" onclick="caso(1)">Média acima do mínimo</button><button id="bNo" onclick="caso(0)">Média abaixo do mínimo</button></div>
+<div class="grade" id="grade"></div>
+<script>
+var MIN = 500;
+var casos = { 1:{a:7350, u:8278, h:8278}, 0:{a:120, u:260, h:310} };
+var atual = 1;
+function R(n){ return 'R$ ' + n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function caso(c){ atual = c; document.getElementById('bOk').classList.toggle('on', c===1); document.getElementById('bNo').classList.toggle('on', c===0); desenha(); }
+function desenha(){
+  var d = casos[atual], media = (d.a + d.u + d.h) / 3, ok = media >= MIN;
+  var status = ok ? '<span class="tag">Liberado</span>' : '<span class="tag no">Não liberado</span>';
+  var nova = ok ? '' : '<button class="btn cheio" onclick="this.classList.toggle(\'ouro\');this.textContent=this.classList.contains(\'ouro\')?\'✓ Nova chance dada\':\'Dar nova chance\'">Dar nova chance</button>';
+  var conf = '<button class="btn ouro cheio"' + (ok ? '' : ' disabled') + '>Confirmar kit novo</button>';
+  var A = '<div class="titulo"><span>Kit novo</span>' + status + '</div>'
+    + '<div class="l"><span>2 acertos atrás</span><b class="num">' + R(d.a) + '</b></div>'
+    + '<div class="l"><span>Último acerto</span><b class="num">' + R(d.u) + '</b></div>'
+    + '<div class="l"><span>Acerto de hoje</span><b class="num">' + R(d.h) + '</b></div>'
+    + '<div class="l fim"><span>Média · mínimo ' + R(MIN) + '</span><b class="num">' + R(media) + '</b></div>'
+    + nova + conf;
+  var B = '<div class="titulo"><span>Kit novo</span>' + status + '</div>'
+    + '<div class="tres"><div class="c"><small>2 atrás</small><b class="num">' + R(d.a) + '</b></div><div class="c"><small>Último</small><b class="num">' + R(d.u) + '</b></div><div class="c hoje"><small>Hoje</small><b class="num">' + R(d.h) + '</b></div></div>'
+    + '<div class="l fim"><span>Média · mínimo ' + R(MIN) + '</span><b class="num">' + R(media) + '</b></div>'
+    + nova + conf;
+  var C = '<div class="titulo"><span>Kit novo</span>' + status + '</div>'
+    + '<table><tr><th>Venda</th><th>Valor</th><th>Entra</th></tr>'
+    + '<tr><td>2 acertos atrás</td><td class="num">' + R(d.a) + '</td><td>✓</td></tr>'
+    + '<tr><td>Último acerto</td><td class="num">' + R(d.u) + '</td><td>✓</td></tr>'
+    + '<tr><td>Hoje</td><td class="num">' + R(d.h) + '</td><td>✓</td></tr>'
+    + '<tr><td><b>Média</b></td><td class="num">' + R(media) + '</td><td>' + (ok ? '✓' : '✕') + '</td></tr></table>'
+    + nova + conf;
+  var D = '<div class="titulo"><span>Kit novo</span>' + status + '</div>'
+    + '<div class="passo"><span class="ck">✓</span><span class="t">Acerto pago</span><b class="num">100%</b></div>'
+    + '<div class="passo"><span class="ck' + (ok ? '' : ' no') + '">' + (ok ? '✓' : '✕') + '</span><span class="t">Média das 3 vendas</span><b class="num">' + R(media) + '</b></div>'
+    + '<div class="passo" style="min-height:28px;border-top:0"><span style="width:30px"></span><span class="t" style="font-size:11px">' + R(d.a) + ' · ' + R(d.u) + ' · ' + R(d.h) + '</span></div>'
+    + '<div class="passo"><span class="ck">✓</span><span class="t">Condicionais conferidas</span><b class="num">Nada em aberto</b></div>'
+    + nova + conf;
+  var tel = function(t, h){ return '<section class="caixa"><h2>' + t + '</h2><div class="tel"><div class="cart">' + h + '</div></div></section>'; };
+  document.getElementById('grade').innerHTML = tel('A · Conta em linhas', A) + tel('B · Três cartões', B) + tel('C · Tabela', C) + tel('D · Passos com check', D);
+}
+desenha();
+</script>
+</body>
+</html>
