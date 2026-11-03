@@ -4,7 +4,8 @@
 // (só a lista e as mensagens rolam), barra de baixo só com Início e Conversas. Cada app só diz quem é (eu), quais contatos fixos existem (canais) e para onde volta (onInicio).
 // EXCEÇÃO CONSCIENTE ao padrão de 13 px: o Marcus pediu a fonte e os tamanhos do WhatsApp (nome 14,5, texto 14, título 26), por isso o CSS é próprio (classes wz-).
 // Dados reais do chat do sistema (domain/chat-store.js). Para trocar o jeito de TODOS os apps, mexa só neste arquivo.
-import { api, definirEu, efem, useChat } from "@/apps/montagem/domain/chat-store";
+import { api, definirEu, efem, guardarMidia, lerMidia, useChat } from "@/apps/montagem/domain/chat-store";
+import { criarMini, lerArquivo, reduzirImagem } from "@/apps/montagem/components/chat/chat-compositor";
 import { CONTATOS, contato, sem } from "@/apps/montagem/domain/chat-contatos";
 import { Avatar as AvatarChat, TemaChatClaro, diaRotulo, hora, horaLista, mesmoDia, textoPreviaMsg } from "@/apps/montagem/components/chat/chat-ui";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -41,6 +42,8 @@ var CSS = ""
 + "background-color:#EFEAE2;background-image:url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cg fill='none' stroke='%23cfc6b6' stroke-width='1.3' stroke-linecap='round' stroke-linejoin='round' opacity='.55'%3E%3Ccircle cx='20' cy='20' r='7'/%3E%3Cpath d='M70 14l4 8 9 1-6 6 2 9-8-4-8 4 2-9-6-6 9-1z'/%3E%3Cpath d='M98 66c-6-8-14 2-6 9l6 6 6-6c8-7 0-17-6-9z'/%3E%3Crect x='14' y='62' width='16' height='12' rx='3'/%3E%3Cpath d='M18 62v-3a4 4 0 018 0v3'/%3E%3Cpath d='M58 82l22-8-8 22-4-9z'/%3E%3Cpath d='M40 104h12M46 98v12'/%3E%3C/g%3E%3C/svg%3E\")}"
 + ".wz-msgs::-webkit-scrollbar{display:none}"
 + ".wz-dia{align-self:center;background:rgba(255,255,255,.85);color:#555;font-size:11px;font-weight:600;padding:3px 10px;border-radius:8px;margin:6px 0}"
++ ".wz-img{display:block;max-width:100%;max-height:260px;border-radius:10px;margin:1px 0 3px;object-fit:cover}.wz-visor{position:absolute;inset:0;z-index:60;background:rgba(0,0,0,.93);display:flex;align-items:center;justify-content:center}.wz-visor img{max-width:100%;max-height:100%}"
++ ".wz-so{justify-content:center;font-size:13px;font-weight:600;color:#555;padding-bottom:30px}.wz-pin{margin-left:4px;font-size:11px}"
 + ".wz-sis{align-self:center;background:rgba(255,255,255,.7);color:#666;font-size:11px;padding:3px 9px;border-radius:8px;margin:3px 0;text-align:center}"
 + ".wz-m{max-width:80%;padding:5px 9px 4px;border-radius:15px;font-size:14px;line-height:1.28;position:relative;overflow-wrap:anywhere;white-space:pre-wrap}"
 + ".wz-m .mt{float:right;margin:5px -2px -1px 8px;font-size:10px;opacity:.75;display:inline-flex;gap:2px;align-items:center;line-height:1;white-space:nowrap}"
@@ -76,10 +79,12 @@ var Tq2 = function(cor){ return e("svg",{width:14, height:8, viewBox:"0 0 17 10"
 var Camera = function(t){ return e("svg",{width:t||22, height:Math.round((t||22)*.92), viewBox:"0 0 26 24", fill:"none", stroke:"#000", strokeWidth:1.9, strokeLinejoin:"round"}, e("path",{d:"M9 2.5h8l1.6 2.5H22a3 3 0 013 3v11a3 3 0 01-3 3H4a3 3 0 01-3-3V8a3 3 0 013-3h3.4z"}), e("circle",{cx:13, cy:13, r:4.6})); };
 
 // p: {eu (contato do chat), canais [{id, nome, cor, ...}] contatos fixos que viram conversa, abrirCanal(c) → id da conversa, subCanal(c), ini(c), onInicio, altura, novaConversa (bool)}
+// *texto* vira negrito, como no chat do computador (o aviso do Sorelly Interno usa)
+function negrito(tx){ if(typeof tx!=="string" || tx.indexOf("*")<0) return tx; return tx.split(/(\*[^*\n]+\*)/g).map(function(parte, i){ return /^\*[^*\n]+\*$/.test(parte) ? e("b",{key:i}, parte.slice(1, -1)) : parte; }); }
 function ChatWhats(p){
   var st = useChat(), cid = p.eu, canais = p.canais || [];
   var ab = useState(null), aberto = ab[0], setAberto = ab[1], tx = useState(""), texto = tx[0], setTexto = tx[1];
-  var fim = useRef(null);
+  var fim = useRef(null), arq = useRef(null), vz = useState(null), visor = vz[0], setVisor = vz[1];
   var tcS = useState(false), tc = tcS[0], setTc = tcS[1], shS = useState(false), sh = shS[0], setSh = shS[1], nuS = useState(false), nu = nuS[0], setNu = nuS[1];   // teclado na tela, shift e teclado de números
   var npS = useState(false), nova = npS[0], setNova = npS[1], bqS = useState(""), buscaNova = bqS[0], setBuscaNova = bqS[1];   // "+" nova conversa (só no app das funcionárias)
   var atual = aberto && aberto.it;
@@ -96,12 +101,12 @@ function ChatWhats(p){
   var itemReal = function(x, ordem){
     var c = x.conv, outro = c.tipo==="dm" ? (c.membros.find(function(i){ return i!==cid; }) || c.membros[0]) : c.tipo==="setor" && c.repId!==cid ? c.repId : null;
     var ct = outro ? contato(outro) : null;
-    return {key:c.id, titulo:x.titulo, sub:c.tipo==="grupo" ? c.membros.length+" participantes" : ct ? (ct.funcao || ct.setorCurto || "") : "Sorelly", pessoa:outro, grupo:c.tipo==="grupo", foto:c.foto, cor:"#6B7C85", ini:String(x.titulo||"?").charAt(0).toUpperCase(), x:x, u:ultValida(x), ordem:ordem}; };
+    return {key:c.id, titulo:x.titulo, sub:c.tipo==="grupo" ? c.membros.length+" participantes" : ct ? (ct.funcao || ct.setorCurto || "") : "Sorelly", pessoa:outro, grupo:c.tipo==="grupo", foto:c.foto, cor:"#6B7C85", ini:String(x.titulo||"?").charAt(0).toUpperCase(), x:x, u:ultValida(x), ordem:ordem, fixa:!!c.fixaTodos}; };
   canais.forEach(function(c, i){
     var id = "cn_"+c.id+"_"+cid; usados[id] = 1; var x = porId[id];
     itens.push({key:id, titulo:c.nome, sub:p.subCanal ? p.subCanal(c) : "Sorelly", cor:c.cor, ini:p.ini ? p.ini(c) : c.nome.charAt(0), canal:c, x:x, u:ultValida(x), ordem:i}); });
   convs.forEach(function(x, i){ if(!usados[x.conv.id]) itens.push(itemReal(x, 100+i)); });
-  itens.sort(function(a, b){ return (b.u ? b.u.t : 0)-(a.u ? a.u.t : 0) || a.ordem-b.ordem; });   // quem tem mensagem recente sobe
+  itens.sort(function(a, b){ return (b.fixa?1:0)-(a.fixa?1:0) || (b.u ? b.u.t : 0)-(a.u ? a.u.t : 0) || a.ordem-b.ordem; });   // grupo fixo (Sorelly Interno) no topo; depois quem tem mensagem recente sobe
   var totalNL = itens.reduce(function(t, it){ return t+(it.x ? it.x.naoLidas||0 : 0); }, 0);
 
   var abre = function(it){ var conv = it.canal ? p.abrirCanal(it.canal) : it.x.conv.id; setAberto({conv:conv, it:it}); setTexto(""); setTc(false); setNu(false); setSh(false); };
@@ -115,6 +120,8 @@ function ChatWhats(p){
     else if(conv){ var ct = conv.tipo==="setor" && conv.repId!==cid ? contato(conv.repId) : null; setAberto({conv:sel, it:{key:sel, titulo:ct ? ct.nome : conv.nome, sub:ct ? ct.funcao : "Sorelly", pessoa:ct ? conv.repId : null, cor:"#6B7C85", ini:String((ct ? ct.nome : conv.nome)||"?").charAt(0)}}); }
     efem({conversaSel:null});
   }, [sel]);
+  var enviaFotos = function(lista){ if(!aberto) return; var conv = aberto.conv; Array.prototype.slice.call(lista).filter(function(f){ return f.type.indexOf("image/")===0; }).forEach(function(f){
+    lerArquivo(f).then(reduzirImagem).then(function(url){ return criarMini(url).then(function(mini){ api.sendMessage({conv:conv, eu:cid, tipo:"imagem", texto:"", midia:{key:guardarMidia(url), mini:mini||undefined, nome:f.name, tam:f.size, mime:"image/jpeg"}}); }); }); }); };
   var envia = function(){ var v = texto.trim(); if(!v || !aberto) return; api.sendMessage({conv:aberto.conv, eu:cid, texto:v}); setTexto(""); };
   var avatar = function(it, cls){
     if(it.pessoa || it.grupo) return e("span",{className:"wz-avw"+(cls ? " "+cls : "")}, e(AvatarChat,{id:it.pessoa, grupo:it.grupo, nome:it.titulo, foto:it.foto, s:cls ? 32 : 44}));
@@ -161,7 +168,7 @@ function ChatWhats(p){
       var x = it.x, u = it.u, nl = x ? x.naoLidas||0 : 0;
       return e("button",{key:it.key, className:"wz-lin", onClick:function(){ abre(it); }}, avatar(it),
         e("div",{className:"wz-cx"},
-          e("div",{className:"wz-l1"}, e("span",{className:"wz-nm"}, it.titulo), u && e("span",{className:"wz-hr"+(nl ? " v" : "")}, horaLista(u.t))),
+          e("div",{className:"wz-l1"}, e("span",{className:"wz-nm"}, it.titulo, it.fixa && e("span",{className:"wz-pin", "aria-label":"Fixo no topo"}, "📌")), u && e("span",{className:"wz-hr"+(nl ? " v" : "")}, horaLista(u.t))),
           e("div",{className:"wz-l2"}, e("span",{className:"wz-pv"}, u && u.de===cid && Tq2("#8a8a90"), u ? textoPreviaMsg(u) : "Toque para conversar"), nl>0 && e("span",{className:"wz-bd"}, nl))));
     })),
     e("nav",{className:"wz-pil"},
@@ -179,23 +186,26 @@ function ChatWhats(p){
     corpo.push(e("div",{key:m.id, className:"wz-m "+(eu ? "eu" : "el")+(ultimaDoGrupo ? " fim" : "")+(troca ? " cola" : "")},
       !eu && grupoOuSetor && (!ant || troca || msgs[i-1].de!==m.de) && e("b",{className:"wz-quem"}, contato(m.de).nome),
       cit && e("div",{className:"wz-cit"}, e("b",null, cit.de===cid ? "Você" : contato(cit.de).nome.split(" ")[0]), textoPreviaMsg(cit)),
-      m.apag==="todos" ? e("i",null, "Mensagem apagada") : textoPreviaMsg(m), e("span",{className:"mt"}, hora(m.t), eu && Tq2())));
+      m.apag==="todos" ? e("i",null, "Mensagem apagada") : m.tipo==="imagem" && m.midia && (lerMidia(m.midia.key) || m.midia.mini) ? [e("img",{key:"i", className:"wz-img", alt:m.midia.nome||"Foto", src:lerMidia(m.midia.key) || m.midia.mini, onClick:function(){ setVisor(lerMidia(m.midia.key) || m.midia.mini); }, onLoad:function(){ if(i===msgs.length-1 && fim.current) fim.current.scrollTop = fim.current.scrollHeight; }}), m.texto || null] : negrito(textoPreviaMsg(m)), e("span",{className:"mt"}, hora(m.t), eu && Tq2())));
     ant = eu;
   });
 
+  var convAberta = aberto && st.convs.find(function(c){ return c.id===aberto.conv; }), soLer = !!(convAberta && convAberta.soAdmins && convAberta.admins.indexOf(cid)<0);   // Sorelly Interno: só o Marcus escreve
   var conversa = e("div",{key:"c", className:"wz-tela conv"+(aberto ? " on" : "")+(tc ? " kb" : "")}, atual && [
     e("div",{key:"m", className:"wz-msgs", ref:fim, onClick:function(){ if(tc){ setTc(false); if(document.activeElement && document.activeElement.blur) document.activeElement.blur(); } }}, corpo),
     e("div",{key:"h", className:"wz-cab"},
       e("button",{className:"wz-volta", "aria-label":"Voltar", onClick:function(){ setAberto(null); }}, e("svg",{width:11, height:19, viewBox:"0 0 14 22", fill:"none", stroke:"#1B87F5", strokeWidth:3, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M11 2L3 11l8 9"}))),
       avatar(atual, "pq"), e("div",{className:"wz-tt"}, e("b",null, atual.titulo), e("small",null, atual.sub))),
-    teclado,
-    e("div",{key:"e", className:"wz-ent"},
-      e("span",{className:"wz-plus"}, e("svg",{width:22, height:22, viewBox:"0 0 24 24", stroke:"#000", strokeWidth:2, strokeLinecap:"round"}, e("path",{d:"M12 3v18M3 12h18"}))),
+    !soLer && teclado,
+    soLer ? e("div",{key:"e", className:"wz-ent wz-so"}, "Só o Marcus escreve neste grupo.") : e("div",{key:"e", className:"wz-ent"},
+      e("input",{key:"f", ref:arq, type:"file", accept:"image/*", style:{display:"none"}, onChange:function(ev){ enviaFotos(ev.target.files); ev.target.value = ""; }}),
+      e("button",{className:"wz-plus", "aria-label":"Enviar foto", onClick:function(){ if(arq.current) arq.current.click(); }}, e("svg",{width:22, height:22, viewBox:"0 0 24 24", stroke:"#000", strokeWidth:2, strokeLinecap:"round"}, e("path",{d:"M12 3v18M3 12h18"}))),
       e("div",{className:"wz-cx2"}, e("input",{value:texto, onChange:function(ev){ setTexto(ev.target.value); }, onFocus:function(){ setTc(true); }, onClick:function(){ setTc(true); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); envia(); } else if(ev.key==="Escape"){ setTc(false); ev.target.blur(); } }, inputMode:"none", enterKeyHint:"send", autoComplete:"off", "aria-label":"Mensagem"}),
         e("svg",{width:21, height:21, viewBox:"0 0 26 26", fill:"none", stroke:"#000", strokeWidth:1.8, strokeLinejoin:"round"}, e("path",{d:"M13 2.5H7A4.5 4.5 0 002.5 7v12A4.5 4.5 0 007 23.5h6.5c4.5 0 8-3.5 8-8V7A4.5 4.5 0 0017 2.5z"}), e("path",{d:"M21.5 15.5h-4a4 4 0 00-4 4v4"}))),
       texto.trim()
         ? e("button",{className:"wz-env", "aria-label":"Enviar", onClick:envia}, e("svg",{width:18, height:18, viewBox:"0 0 24 24", fill:"#fff"}, e("path",{d:"M3 20.5V3.5L22 12z"})))
-        : [e("button",{key:"cam", className:"wz-cam", "aria-label":"Câmera"}, Camera(24)), e("button",{key:"mic", className:"wz-mic", "aria-label":"Gravar"}, e("svg",{width:14, height:19, viewBox:"0 0 18 24", fill:"#fff"}, e("rect",{x:5, y:1, width:8, height:15, rx:4}), e("path",{d:"M1.5 11a7.5 7.5 0 0015 0M9 18.5V22", stroke:"#fff", strokeWidth:2, fill:"none", strokeLinecap:"round"})))])]);
+        : [e("button",{key:"cam", className:"wz-cam", "aria-label":"Câmera", onClick:function(){ if(arq.current) arq.current.click(); }}, Camera(24)), e("button",{key:"mic", className:"wz-mic", "aria-label":"Gravar"}, e("svg",{width:14, height:19, viewBox:"0 0 18 24", fill:"#fff"}, e("rect",{x:5, y:1, width:8, height:15, rx:4}), e("path",{d:"M1.5 11a7.5 7.5 0 0015 0M9 18.5V22", stroke:"#fff", strokeWidth:2, fill:"none", strokeLinecap:"round"})))]),
+    visor && e("div",{key:"vz", className:"wz-visor", onClick:function(){ setVisor(null); }}, e("img",{src:visor, alt:"Foto"}))]);
 
   return e("div",{className:p.cheio ? "absolute inset-0 overflow-hidden" : "-mx-4 -mb-10 -mt-2 overflow-hidden", style:p.cheio ? null : {height:p.altura || 718}}, e(TemaChatClaro,null,
     e("div",{className:"wz"+(p.semStatus ? " sem-st" : "")}, e("style",null, CSS), lista, telaNova, conversa, p.semStatus ? null : Estado())));

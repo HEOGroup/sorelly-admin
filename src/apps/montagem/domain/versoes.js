@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.35", data:"2026-11-03", titulo:"Chat do celular das funcionárias: Sorelly Interno e fotos", itens:[
+  {tipo:"novo", area:"App das funcionárias", txt:"O chat do celular mostra o Sorelly Interno fixo no topo, com o alfinete, e sem campo de escrever para quem não é o Marcus. O texto entre asteriscos aparece em negrito."},
+  {tipo:"novo", area:"App das funcionárias", txt:"Foto no chat do celular: a funcionária recebe a foto na conversa, toca para ampliar e envia foto pelo botão + ou pela câmera. A foto sai reduzida e com miniatura, igual ao chat do computador."},
+ ]},
  {v:"0.18.34", data:"2026-11-03", titulo:"Aula Lançar uma fatura de banho", itens:[
   {tipo:"novo", area:"Aulas", txt:"Aula nova em Aulas do setor → Cadastro de peças: Lançar uma fatura de banho (1:17, tela inteira). Mostra Faturas Pontual, a criação da fatura, os valores dos serviços e a ligação aos pedidos de bruto."},
   {tipo:"melhoria", area:"Chamados", txt:"A coluna Conversa do Claude passa a mostrar o nome da conversa e a data (ex.: CHAMADOS 1 (03/11/2026))."},

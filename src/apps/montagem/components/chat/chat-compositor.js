@@ -198,4 +198,4 @@ function Compositor(p){
         e("button",{onClick:gravar, "aria-label":"Gravar áudio", className:"grid size-10 shrink-0 place-items-center rounded-full", style:{background:W.texto, color:W.painel}}, e(Ph,{n:"microphone", s:20, fill:true})))),
     camera && e(Camera,{fechar:function(){ setCamera(false); }, foto:addFotoCamera}));
 }
-export { Compositor };
+export { Compositor, lerArquivo, reduzirImagem, criarMini };   // o chat do celular das funcionárias usa os mesmos ajudantes de foto
