@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.39", data:"2026-11-03", titulo:"Tabelas com filtro: aviso de filtro ativo", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"Quando há filtro ou classificação ativa numa tabela com filtro na coluna (Chamados, Agendamento e outras), aparece um aviso no alto: Filtro ativo em quais colunas, mostrando X de Y, e o botão Limpar filtros."},
+ ]},
  {v:"0.18.37", data:"2026-11-03", titulo:"Apps: abre sempre na simulação", itens:[
   {tipo:"correção", area:"App da representante", txt:"Na lista de Revendedoras, kit novo, reposição e saída ganham identificador próprio (KIT NOVO, REPOSIÇÃO, SAÍDA) e não mostram mais Acerto hoje nem vendido, acerto e comissão zerados. Só o acerto mostra esses números."},
   {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre com os dois celulares prontos. O da representante entra como Anamaria, com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída). O da revendedora abre na tela inicial da Juliana, com R$ 1.500,00 em vendas já lançadas."},
