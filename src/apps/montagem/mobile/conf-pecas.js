@@ -12,12 +12,15 @@ import React from "react";
 
 var BR = function(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); };
 var BTN = "h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40";
+// 03/11/2026 (Marcus): ainda não dá para bipar. Por enquanto a representante só CONFIRMA A QUANTIDADE de peças de cada condicional. Quando a bipagem estiver pronta, trocar para true (o código de bipar continua abaixo).
+var BIPAR_ATIVO = false;
 var CARD = "rounded-2xl bg-white p-3 ring-1 ring-[#E5E7EB]";
 
 function ConfPecas(p){
   var s = p.s, d = p.d, k = p.k, conf = (s.confBip||{})[k.id] || {};
   var conds = condicionaisDoKit(k), tot = totaisKit(conds);
   var cd = useState(""), codigo = cd[0], setCodigo = cd[1];
+  var qt = useState({}), contadas = qt[0], setContadas = qt[1];   // quantidade contada de cada condicional (sem bipagem)
   var ab = useState(null), aberta = ab[0], setAberta = ab[1], cf = useState(false), confirmar = cf[0], setConfirmar = cf[1];
   var bipadora = k.bipId ? nomeDe(k.bipId) : "—", montadora = k.montId ? nomeDe(k.montId) : "—";
   var lido = function(c, i){ return Math.min(i.qtd, (conf.lidos||{})[c.numero+"|"+i.codigo]||0); };
@@ -38,6 +41,23 @@ function ConfPecas(p){
   if(!conf.lib) return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"text-[12.5px] text-[#374151]"},"Depois de explicar as regras para a revendedora, libere o kit para entregar e conferir as peças."), resumo,
     e("button",{onClick:function(){ d({type:"CONF_LIBERAR", kitId:k.id}); }, className:BTN},"Liberar kit"));
+  // 2) sem bipagem: a representante digita quantas peças contou em cada condicional
+  if(!conf.ini && !BIPAR_ATIVO){
+    var todas = conds.length>0 && conds.every(function(c){ return contadas[c.numero]!==undefined && contadas[c.numero]!==""; });
+    var muda = function(num, v){ var o = Object.assign({}, contadas); o[num] = v===""  ? "" : Math.max(0, parseInt(v, 10)||0); setContadas(o); };
+    return e("div",{className:"flex flex-col gap-2.5"},
+      e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-2 text-center text-[13px] font-bold text-[#161616]"},"✓ Kit liberado"),
+      e("p",{className:"text-[13px] text-[#374151]"},"Conte as peças de cada condicional com a revendedora e digite a quantidade."),
+      conds.map(function(c){ var esp = totaisDe(c).pecas, v = contadas[c.numero];
+        return e("div",{key:c.numero, className:CARD+" flex items-center justify-between gap-2"},
+          e("span",{className:"flex min-w-0 flex-col"}, e("b",{className:"text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[12px] text-[#6B7280]"},"esperadas "+esp+" peças")),
+          e("span",{className:"flex shrink-0 items-center gap-1.5"},
+            e("button",{type:"button", "aria-label":"Menos uma peça", onClick:function(){ muda(c.numero, (v||0)-1); }, className:"grid size-9 place-items-center rounded-lg bg-[#F3F4F6] text-[16px] font-bold text-[#111827]"},"−"),
+            e("input",{value:v===undefined ? "" : v, inputMode:"numeric", placeholder:"0", "aria-label":"Peças contadas da condicional "+c.numero, onChange:function(ev){ muda(c.numero, ev.target.value.replace(/\D/g,"")); }, className:"h-10 w-16 rounded-lg bg-white px-2 text-center text-[14px] font-bold text-[#111827] outline-none ring-1 ring-[#E5E7EB] "+MONO}),
+            e("button",{type:"button", "aria-label":"Mais uma peça", onClick:function(){ muda(c.numero, (v||0)+1); }, className:"grid size-9 place-items-center rounded-lg bg-[#F3F4F6] text-[16px] font-bold text-[#111827]"},"+"))); }),
+      e("button",{disabled:!todas, onClick:function(){ d({type:"CONF_QTD", kitId:k.id, contagem:contadas}); }, className:BTN},"Confirmar a quantidade"),
+      !todas && e("p",{className:"text-center text-[12px] text-[#6B7280]"},"Digite a quantidade de todas as condicionais."));
+  }
   // 2) começar a bipar
   if(!conf.ini) return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-2 text-center text-[13px] font-bold text-[#161616]"},"✓ Kit liberado"), resumo,
@@ -46,10 +66,10 @@ function ConfPecas(p){
   if(conf.fim){ var r = conf.resultado; return e("div",{className:"flex flex-col gap-2.5"},
     r.erros===0 ? e("div",{className:"flex flex-col gap-1 rounded-xl bg-[#DCFCE7] px-3 py-2.5"}, e("b",{className:"text-[13px] text-[#15803D]"},"Conferência concluída: "+r.lidas+" de "+r.esperadas+" peças, sem faltas."), r.nSobras>0 && e("span",{className:"text-[12px] text-[#92400E]"},"Peça(s) de outro kit (ficaram com a revendedora, só registrado): "+r.sobras.map(function(x){ return x.codigo; }).join(", ")))
     : e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-[#FEE2E2] px-3 py-2.5"},
-        e("b",{className:"text-[13px] text-[#991B1B]"},"Conferência concluída com "+r.erros+(r.erros===1 ? " erro" : " erros")),
+        e("b",{className:"text-[13px] text-[#991B1B]"}, r.porQuantidade ? "Quantidade conferida: "+r.lidas+" de "+r.esperadas+" peças" : "Conferência concluída com "+r.erros+(r.erros===1 ? " erro" : " erros")),
         r.nFaltas>0 && e("span",{className:"text-[12px] text-[#991B1B]"},"Faltaram "+r.nFaltas+" peça(s): "+r.faltas.map(function(f){ return f.codigo+(f.qtd>1 ? " (×"+f.qtd+")" : ""); }).join(", ")),
         r.nSobras>0 && e("span",{className:"text-[12px] text-[#92400E]"},"Peça(s) de outro kit (ficaram com a revendedora, só registrado): "+r.sobras.map(function(x){ return x.codigo; }).join(", ")),
-        e("span",{className:"text-[11.5px] text-[#991B1B]"},"Registrado como erro de "+bipadora+" (quem bipou o kit) no Consolidado e na Listagem.")),
+        e("span",{className:"text-[11.5px] text-[#991B1B]"}, r.porQuantidade ? "Diferença de quantidade registrada para o setor conferir." : "Registrado como erro de "+bipadora+" (quem bipou o kit) no Consolidado e na Listagem.")),
     p.onContinuar && e("button",{onClick:p.onContinuar, className:BTN},"Continuar"),
     e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12px] font-semibold text-[#6B7280]"},"Refazer a conferência (teste)")); }
   // 3) bipando

@@ -1082,6 +1082,16 @@ function reducer(s, a){
       else delete cb0[a.kitId];
       return com(s, {confBip:cb0}, a.type==="CONF_LIBERAR" ? "Kit liberado: pode começar a bipar" : null);
     }
+    case "CONF_QTD": {   // 03/11/2026: conferência só por QUANTIDADE (ainda sem bipagem): contagem = {numeroDaCondicional: quantidade}
+      var kQ = kitDe(s, a.kitId); if(!kQ) return s;
+      var condsQ = condicionaisDoKit(kQ), esperQ = 0, lidasQ = 0, faltasQ = [], sobrasQ = [];
+      condsQ.forEach(function(c){ var esp = totaisDe(c).pecas, ct = Math.max(0, parseInt((a.contagem||{})[c.numero], 10)||0); esperQ += esp; lidasQ += Math.min(esp, ct);
+        if(ct<esp) faltasQ.push({cond:c.numero, codigo:"Condicional "+c.numero, desc:"", qtd:esp-ct}); else if(ct>esp) sobrasQ.push({codigo:"Condicional "+c.numero, qtd:ct-esp}); });
+      var nFQ = faltasQ.reduce(function(t,f){ return t+f.qtd; },0), nSQ = sobrasQ.reduce(function(t,x){ return t+x.qtd; },0);
+      var resQ = {esperadas:esperQ, lidas:lidasQ, faltas:faltasQ, nFaltas:nFQ, sobras:sobrasQ, nSobras:nSQ, erros:nFQ, conds:condsQ.map(function(c){ return c.numero; }), porQuantidade:true};
+      var cbQ = Object.assign({}, s.confBip||{}); cbQ[a.kitId] = Object.assign({}, cbQ[a.kitId]||{}, {lib:(cbQ[a.kitId]||{}).lib||agora, ini:agora, fim:agora, contagem:a.contagem||{}, resultado:resQ, erros:[]});
+      return com(s, {confBip:cbQ}, nFQ>0 ? "Quantidade conferida: faltaram "+nFQ+" peça(s)" : "Quantidade conferida: "+lidasQ+" de "+esperQ+" peças");
+    }
     case "CONF_BIPAR": {
       var kB = kitDe(s, a.kitId), cfB = (s.confBip||{})[a.kitId]; if(!kB || !cfB || !cfB.ini || cfB.fim) return s;
       var cbB = Object.assign({}, s.confBip); cbB[a.kitId] = biparConf(condicionaisDoKit(kB), cfB, a.codigo);

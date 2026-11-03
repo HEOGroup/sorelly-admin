@@ -41,7 +41,7 @@ function EntregaKNRep(p){
     res ? e("div",{className:"flex flex-col gap-1 rounded-xl px-3 py-2 "+(res.erros ? "bg-[#FEE2E2]" : "bg-[#DCFCE7]")},
         e("b",{className:"text-[13px] "+(res.erros ? "text-[#991B1B]" : "text-[#15803D]")}, res.erros ? "Conferência feita com "+res.erros+" erro(s)" : "Conferência feita: "+res.lidas+" de "+res.esperadas+" peças, sem erros"),
         e("button",{onClick:function(){ p.onConferir && p.onConferir(); }, className:"text-left text-[11.5px] font-semibold text-[#6B7280] underline"},"Ver a conferência"))
-      : e("button",{onClick:function(){ p.onConferir && p.onConferir(); }, className:"h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco"}, conf.lib ? "Continuar a conferência das peças" : "Conferir as peças do kit (câmera)"),
+      : e("button",{onClick:function(){ p.onConferir && p.onConferir(); }, className:"h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco"}, conf.lib ? "Continuar a conferência das peças" : "Conferir as peças do kit"),
     e("label",{className:"flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-[13px] font-semibold text-[#111827] ring-1 ring-[#E5E7EB]"},
       e("input",{type:"checkbox", checked:caixinhas, onChange:function(ev){ setCaixinhas(ev.target.checked); }, className:"size-5 shrink-0"}), "Entreguei as caixinhas de presente"));
 
