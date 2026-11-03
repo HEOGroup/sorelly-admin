@@ -1291,21 +1291,32 @@ function AppRepresentante(p){
     tela==="entregakit" && kitSel && e(EntregaKNRep,{key:kitSel.id, s:s, d:d, k:kitSel, versao:versaoSel || versaoVigente(s),
       onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }, onAbrirRegras:function(){ setRegrasDaAssinatura("entregakit"); setTela("regrascom"); }}),
     tela==="reposicao" && kitSel && (function(){
-      var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15;
-      return e("div",{key:"rep", className:"flex flex-col gap-3 pb-4"},
-        e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"}, e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})), e("b",{className:douradoTitulo},"Entregar reposição")),
-        e("p",{className:"text-[17px] font-extrabold "+BR}, kitSel.rev),
-        e("div",{className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
-          e("b",{className:"text-[13.5px]"}, (kc ? "✓ " : "")+"1 · Contar as peças"),
-          kc ? e("p",{className:"text-[13px]"},"Peças conferidas: "+kc.lidas+" de "+kc.esperadas+(kc.faltas.length ? " · faltaram "+kc.faltas.length : ""))
-             : e("p",{className:"text-[13px]"},"Conte as peças com a revendedora e confira uma a uma."),
-          !kc && e("button",{onClick:function(){ setConfVolta("reposicao"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Contar e conferir as peças")),
-        e("div",{className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
-          e("b",{className:"text-[13.5px]"}, (reposAss ? "✓ " : "")+"2 · Condicional assinada"),
-          e("p",{className:"text-[13px]"},"A revendedora assina a condicional. Ela sobe nas condicionais em aberto dela."),
-          e("button",{disabled:!kc, onClick:function(){ setTela("assinarrepos"); }, className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, kc ? "Assinar e concluir a reposição" : "Primeiro conte as peças")),
-        e("p",{className:"rounded-2xl bg-[#1C1C1E] px-3 py-2.5 text-center text-[13px]"}, "Comissão da entrega: ", e("b",{className:MONO}, BK(valorRep)), ". Aparece no Consolidado e em Comissões.")); })(),
-
+      // 03/11/2026 (Marcus): igual à calculadora de acertos: cabeçalho escuro em cima e cartões claros embaixo (cabeçalho e corpo são blocos separados)
+      var kc = kitConfDe(kitSel.id), valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15, tkR = totaisKit(condicionaisDoKit(kitSel));
+      var cartao = function(chave, icone, titulo, ok, filhos){ return e("div",{key:chave, className:"overflow-hidden rounded-2xl bg-[#1C1C1E]"},
+        e("div",{className:"flex w-full items-center gap-3 p-3"},
+          e("span",{className:"grid size-9 shrink-0 place-items-center rounded-xl", style:{background:"#CA8A0426", color:"#CA8A04"}}, e(Icon,{n:icone, s:18})),
+          e("b",{className:"block min-w-0 flex-1 text-[14px]"}, titulo), ok ? checkOk : badgeTxt("—","#374151")),
+        e("div",{className:"flex flex-col gap-2.5 border-t border-white/5 p-3"}, filhos)); };
+      return e(React.Fragment,{key:"rep"},
+        e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-3 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
+          e("div",{className:"flex items-center gap-2"},
+            e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
+            e("b",{className:douradoTitulo+" min-w-0 flex-1"}, "Entregar reposição")),
+          e("div",{className:"flex flex-col gap-0.5 rounded-2xl bg-[#1C1C1E] px-3 py-2 ring-1 ring-amber-200/25"},
+            e("p",{className:"text-[13.5px] font-extrabold "+BR}, kitSel.rev),
+            e("div",{className:"mt-1 flex flex-col"},
+              [["Condicionais", String(tkR.condicionais)], ["Peças", String(tkR.pecas)], ["Comissão da entrega", BK(valorRep)]].map(function(l, n){
+                return e("div",{key:l[0], className:"flex min-h-8 items-center justify-between gap-3 "+(n ? "border-t border-white/10" : "")}, e("span",{className:"text-[13px] "+BR}, l[0]), e("b",{className:MONO+" text-[13px] "+BR}, l[1])); })))),
+        e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-10"},
+          cartao("c1", "caixa", "Contar as peças", !!kc, [
+            kc ? e("p",{key:"t", className:"text-[13px]"},"Peças conferidas: "+kc.lidas+" de "+kc.esperadas+(kc.faltas.length ? " · faltaram "+kc.faltas.length : ""))
+               : e("p",{key:"t", className:"text-[13px]"},"Conte as peças com a revendedora e confirme a quantidade de cada condicional."),
+            !kc && e("button",{key:"b", onClick:function(){ setConfVolta("reposicao"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Contar as peças")]),
+          cartao("c2", "cadastro", "Condicional assinada", !!reposAss, [
+            e("p",{key:"t", className:"text-[13px]"},"A revendedora assina a condicional. Ela sobe nas condicionais em aberto dela."),
+            e("button",{key:"b", disabled:!kc, onClick:function(){ setTela("assinarrepos"); }, className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, kc ? "Assinar e concluir a reposição" : "Primeiro conte as peças")]),
+          e("p",{className:"px-3 text-center text-[13px]"}, "A comissão aparece no Consolidado e em Comissões."))); })(),
     tela==="resumokn" && kitSel && (function(){
       var txt = mensagemEntrega({tipo:(kitSel.tipoKit||"").indexOf("repos")===0 ? "reposicao" : "kit_novo", nome:sel.rev, rep:l.rep, data:isoDia(new Date()), kitConf:kitConfDe(kitSel.id), condicionaisAssinadas:kitSel.tipoKit==="reposicao" ? !!kitSel.reposicaoEntregue : !!(s.entregasKN||{})[kitSel.id], comissao:kitSel.tipoKit==="reposicao" ? (kitSel.comissaoFixa||0) : 0});
       return e("div",{key:"rkn", className:"flex flex-col gap-3 pb-4"},
