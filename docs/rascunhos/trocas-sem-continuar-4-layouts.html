@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trocas · 4 layouts sem Continuar</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:760px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,input{font:inherit;color:inherit}
+  .titulo{display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 4px;font-weight:700}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .btn.cheio{width:100%;margin-top:6px}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;min-width:0;width:100%;text-transform:uppercase}
+  .campo.v{text-transform:none;text-align:right}
+  .lin{display:grid;grid-template-columns:6.2rem 1fr;gap:6px}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer;padding:0 4px}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .rot{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:8px 4px 4px}
+  .res{display:flex;align-items:center;justify-content:space-between;min-height:34px;padding:0 10px;margin-top:8px;background:#F7EFD8;border-radius:8px;font-weight:700}
+  .res .num{font-size:15px}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 4px;border-top:1px solid var(--linha)}
+  .x{width:24px;height:24px;border-radius:50%;border:0;background:#EEE;font-weight:700;cursor:pointer;flex:none}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .col{border:1px solid var(--linha);border-radius:12px;padding:6px}
+  .col h3{font-size:11px;text-transform:uppercase;text-align:center;font-weight:700;margin-bottom:4px}
+  .col .campo{margin-bottom:4px}
+  .seta{text-align:center;font-weight:700;margin:4px 0}
+  .bloco{border:1px solid var(--linha);border-radius:12px;padding:6px;margin-top:6px}
+  .bloco .top{display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:4px}
+  .chk{display:flex;align-items:center;gap:8px;min-height:32px;padding:0 4px;cursor:pointer}
+  .chk input{width:18px;height:18px}
+  .oculto{display:none!important}
+  .dica{font-size:11px;padding:0 4px}
+</style>
+</head>
+<body>
+<h1>Trocas · 4 layouts sem o "Continuar"</h1>
+<p class="sub">Tudo na mesma tela, sem passos. A conta aparece ao vivo. Regra usada (a mesma do sistema): <b>peça deste kit</b> = a nova entra na venda pelo valor cheio; <b>peça de outro mês (já paga)</b> = entra só a diferença, nova menos quebrada. Código: até 4 letras e até 7 números (ex.: AB123). Números de exemplo.</p>
+<div class="grade" id="grade"></div>
+<script>
+var LANC = [{tipo:'mes', ac:'AB123', av:80, nc:'CD456', nv:96}, {tipo:'anterior', ac:'B3519', av:78, nc:'A2112', nv:88}];
+var S = {A:{tipo:'', ac:'', av:'', nc:'', nv:''}, B:{outro:false, ac:'', av:'', nc:'', nv:''}, C:{blocos:[{tipo:'mes', ac:'AB123', av:'80', nc:'CD456', nv:'96'}]}, D:{tipo:'', ac:'', av:'', nc:'', nv:''}};
+var lanc = {A:LANC.slice(), B:LANC.slice(), D:LANC.slice()};
+function R(n){ return (n<0?'− ':'+ ') + 'R$ ' + Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function num(v){ var n = parseFloat(String(v).replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; }
+function cod(v){ return /^[A-Z]{1,4}\d{1,7}$/.test(String(v).toUpperCase()); }
+function aj(tipo, av, nv){ return tipo==='anterior' ? nv - av : nv; }
+function ok(o){ return !!o.tipo && cod(o.ac) && num(o.av)>0 && cod(o.nc) && num(o.nv)>0; }
+function lista(l){ return '<div class="rot">Lançadas</div>' + lanc[l].map(function(t,i){ return '<div class="l"><span>'+t.ac+' → '+t.nc+'<br><small>'+(t.tipo==='anterior'?'Outro mês':'Deste kit')+'</small></span><b class="num">'+R(aj(t.tipo,t.av,t.nv))+'</b><button class="x" onclick="del(\''+l+'\','+i+')">×</button></div>'; }).join(''); }
+function del(l,i){ lanc[l].splice(i,1); desenha(); }
+function set(l,k,v){ S[l][k]=v; desenha(true); }
+function inp(l,k,ph,v){ return '<input class="campo'+(v?' v':'')+'" placeholder="'+ph+'" value="'+(S[l][k]||'')+'" oninput="S.'+l+'.'+k+'=this.value;vivo(\''+l+'\')" onchange="desenha()">'; }
+function lancar(l){ var o=S[l], t={tipo:l==='B'?(o.outro?'anterior':'mes'):o.tipo, ac:o.ac.toUpperCase(), av:num(o.av), nc:o.nc.toUpperCase(), nv:num(o.nv)}; lanc[l].push(t); S[l]= l==='B' ? {outro:false,ac:'',av:'',nc:'',nv:''} : {tipo:'',ac:'',av:'',nc:'',nv:''}; desenha(); }
+function vivo(l){ var o=S[l], tipo=l==='B'?(o.outro?'anterior':'mes'):o.tipo, p=document.getElementById('res'+l), b=document.getElementById('bt'+l); if(p) p.querySelector('.num').textContent = R(aj(tipo,num(o.av),num(o.nv))); if(b) b.disabled = !ok({tipo:tipo||'x',ac:o.ac,av:o.av,nc:o.nc,nv:o.nv}) || (l!=='B' && !o.tipo); if(l==='D'){ var pn=document.getElementById('dn'), pr=document.getElementById('dr'); if(pn) pn.classList.toggle('oculto', !cod(o.ac)||!(num(o.av)>0)); if(pr) pr.classList.toggle('oculto', !ok(o)); } }
+function tela(t, h){ return '<section class="caixa"><h2>'+t+'</h2><div class="tel"><div class="cart"><div class="titulo"><span>Trocas</span><span class="num">'+lanc.A.length+' lançadas</span></div>'+h+'</div></div></section>'; }
+
+function desenha(){
+  var a=S.A, tipoA = '<div class="seg"><button class="'+(a.tipo==='mes'?'on':'')+'" onclick="set(\'A\',\'tipo\',\'mes\')">Deste kit</button><button class="'+(a.tipo==='anterior'?'on':'')+'" onclick="set(\'A\',\'tipo\',\'anterior\')">Outro mês (já paga)</button></div>';
+  var A = lista('A') + '<div class="rot">Nova troca</div>' + tipoA + '<div class="rot">Peça que voltou quebrada</div><div class="lin">'+inp('A','ac','AB123')+inp('A','av','R$ 0,00',1)+'</div><div class="rot">Peça nova que ela ficou</div><div class="lin">'+inp('A','nc','CD456')+inp('A','nv','R$ 0,00',1)+'</div><div class="res" id="resA"><span>Entra na venda</span><b class="num">'+R(aj(a.tipo,num(a.av),num(a.nv)))+'</b></div><button class="btn ouro cheio" id="btA" '+(ok(a)?'':'disabled')+' onclick="lancar(\'A\')">Lançar troca</button>';
+
+  var b=S.B;
+  var B = lista('B') + '<label class="chk"><input type="checkbox" '+(b.outro?'checked':'')+' onchange="set(\'B\',\'outro\',this.checked)">Peça de outro mês (já foi paga)</label><div class="duas"><div class="col"><h3>Quebrada</h3>'+inp('B','ac','AB123')+inp('B','av','R$ 0,00',1)+'</div><div class="col"><h3>Nova</h3>'+inp('B','nc','CD456')+inp('B','nv','R$ 0,00',1)+'</div></div><div class="res" id="resB"><span>Entra na venda</span><b class="num">'+R(aj(b.outro?'anterior':'mes',num(b.av),num(b.nv)))+'</b></div><button class="btn ouro cheio" id="btB" '+(ok({tipo:'x',ac:b.ac,av:b.av,nc:b.nc,nv:b.nv})?'':'disabled')+' onclick="lancar(\'B\')">Lançar troca</button>';
+
+  var C = '<button class="btn ouro cheio" style="margin:6px 0" onclick="S.C.blocos.push({tipo:\'mes\',ac:\'\',av:\'\',nc:\'\',nv:\'\'});desenha()">Nova troca</button>' + S.C.blocos.map(function(x,i){ var tot=aj(x.tipo,num(x.av),num(x.nv)), pronto=ok(x);
+    return '<div class="bloco"><div class="top"><div class="seg" style="flex:1"><button class="'+(x.tipo==='mes'?'on':'')+'" onclick="S.C.blocos['+i+'].tipo=\'mes\';desenha()">Deste kit</button><button class="'+(x.tipo==='anterior'?'on':'')+'" onclick="S.C.blocos['+i+'].tipo=\'anterior\';desenha()">Outro mês</button></div><button class="x" onclick="S.C.blocos.splice('+i+',1);desenha()">×</button></div><div class="lin"><input class="campo" placeholder="Quebrada AB123" value="'+x.ac+'" oninput="S.C.blocos['+i+'].ac=this.value" onchange="desenha()"><input class="campo v" placeholder="R$ 0,00" value="'+x.av+'" oninput="S.C.blocos['+i+'].av=this.value" onchange="desenha()"></div><div class="lin" style="margin-top:4px"><input class="campo" placeholder="Nova CD456" value="'+x.nc+'" oninput="S.C.blocos['+i+'].nc=this.value" onchange="desenha()"><input class="campo v" placeholder="R$ 0,00" value="'+x.nv+'" oninput="S.C.blocos['+i+'].nv=this.value" onchange="desenha()"></div><div class="res"><span>'+(pronto?'✓ Entra na venda':'Preencha as peças')+'</span><b class="num">'+R(pronto?tot:0)+'</b></div></div>'; }).join('') + '<p class="dica" style="margin-top:6px">Cada troca é um bloco. Quando está completa, já conta na venda. Não precisa lançar.</p>';
+
+  var d=S.D;
+  var D = lista('D') + '<div class="rot">Essa peça é...</div><div class="seg"><button class="'+(d.tipo==='mes'?'on':'')+'" onclick="set(\'D\',\'tipo\',\'mes\')">Deste kit</button><button class="'+(d.tipo==='anterior'?'on':'')+'" onclick="set(\'D\',\'tipo\',\'anterior\')">Outro mês (já paga)</button></div>'
+    + '<div class="'+(d.tipo?'':'oculto')+'"><div class="rot">Peça que voltou quebrada</div><div class="lin">'+inp('D','ac','AB123')+inp('D','av','R$ 0,00',1)+'</div></div>'
+    + '<div id="dn" class="'+(d.tipo && cod(d.ac) && num(d.av)>0?'':'oculto')+'"><div class="rot">Peça nova que ela ficou</div><div class="lin">'+inp('D','nc','CD456')+inp('D','nv','R$ 0,00',1)+'</div></div>'
+    + '<div id="dr" class="'+(ok(d)?'':'oculto')+'"><div class="res" id="resD"><span>Entra na venda</span><b class="num">'+R(aj(d.tipo,num(d.av),num(d.nv)))+'</b></div><button class="btn ouro cheio" id="btD" onclick="lancar(\'D\')">Lançar troca</button></div><p class="dica" style="margin-top:6px">Os campos aparecem sozinhos, na ordem. Sem botão Continuar.</p>';
+
+  var ativo = document.activeElement && document.activeElement.tagName==='INPUT' ? {p:document.activeElement.getAttribute('placeholder'), v:document.activeElement.value} : null;
+  document.getElementById('grade').innerHTML = tela('A · Tudo numa tela', A) + tela('B · Quebrada | Nova lado a lado', B) + tela('C · Um bloco por troca (soma sozinho)', C) + tela('D · Campos que aparecem sozinhos', D);
+}
+desenha();
+</script>
+</body>
+</html>
