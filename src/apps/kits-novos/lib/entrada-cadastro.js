@@ -8,8 +8,12 @@ import { MESES, diasDesde, hojeISO } from "@/apps/kits-novos/lib/datas";
 
 import { lerEstado, textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 var CHAVE_MONTAGEM = "sorelly_montagem_v9";
+// SEM DEMONSTRAÇÃO (chamados da Michele e da Camilly, 29/10/2026): as candidatas inventadas do Cadastro (cadastro-leads-demo.js: telefone "(41) 98888-…") e as 3 revendedoras de exemplo (D1 a D3) não entram nem ficam nos Kits novos.
+var TEL_DEMO = /^\(41\) 98888-/, IDS_DEMO = {D1:1, D2:1, D3:1};
+function ehDemo(l){ return l.observacoes==="Cadastro de demonstração" || TEL_DEMO.test(l.telefone||""); }
+function cartaoDemo(c){ return IDS_DEMO[c.id] || (/^L\d+$/.test(c.id) && TEL_DEMO.test(c.tel||"")); }
 function leadsCadastradas(){
-  try { var s = lerEstado(localStorage.getItem(CHAVE_MONTAGEM)); return ((s && s.cl && s.cl.leads) || []).filter(function(l){ return l.reviewStatus==="APPROVED" && l.desempenho==="cadastradas"; }); }
+  try { var s = lerEstado(localStorage.getItem(CHAVE_MONTAGEM)); return ((s && s.cl && s.cl.leads) || []).filter(function(l){ return l.reviewStatus==="APPROVED" && l.desempenho==="cadastradas" && !ehDemo(l); }); }
   catch(x){ return []; }
 }
 
@@ -30,7 +34,7 @@ function absorver(s){
   var tem = {}; s.dados.forEach(function(c){ tem[c.id] = 1; });
   var novos = leads.filter(function(l){ return !tem["L"+l.id]; }).map(function(l){ return registroDe(l, s.cfg); });
   // o Cadastro desfez e a Michele ainda não mexeu (continua em Cadastrada, sem histórico dela): sai daqui
-  var dados = s.dados.filter(function(c){ return !(/^L\d+$/.test(c.id) && c.st==="cadastrada" && !noCadastro[c.id] && (c.hist||[]).length<=1); });
+  var dados = s.dados.filter(function(c){ return !cartaoDemo(c) && !(/^L\d+$/.test(c.id) && c.st==="cadastrada" && !noCadastro[c.id] && (c.hist||[]).length<=1); });
   if(!novos.length && dados.length===s.dados.length) return s;
   return Object.assign({}, s, {dados:novos.concat(dados)});
 }

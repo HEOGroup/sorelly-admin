@@ -25,7 +25,7 @@ function Curso(p){
     e("div",{className:"flex flex-wrap items-center gap-3"}, e(Botao,{onClick:p.voltar}, "← Voltar"), e(Selo,{cor:st.cor, nome:st.nome, g:true}),
       e("h2",{className:"min-w-0 flex-1 truncate text-[13px] font-semibold text-foreground"}, st.nome),
       e("span",{className:TAG}, lista.length+" aula"+(lista.length===1 ? "" : "s")+" · "+minutos(lista)+" min"), e("span",{className:TAG}, assistidas+" de "+lista.length+" assistidas")),
-    !lista.length ? e(Aviso,null, "Ainda não há aulas neste setor. Peça uma aula nova em Melhorias.") :
+    !lista.length ? e(Aviso,null, "Ainda não há aulas neste setor. Peça uma aula nova em Chamados.") :
     e("div",{className:"grid grid-cols-1 items-start gap-2 md:grid-cols-[22rem_minmax(0,1fr)]"},
       e("div",{className:"overflow-hidden rounded-lg border border-border bg-card/60"}, modulos.map(function(m){ return e("div",{key:m, className:"border-t border-border first:border-t-0"},
         e("p",{className:"bg-white/5 px-3 py-2 text-[13px] font-semibold text-foreground"}, m),

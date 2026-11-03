@@ -1,6 +1,5 @@
 // Sorelly Admin · kits novos Curitiba — components/quadro.js
 // Quadro kanban das etapas (usa a peça padrão shared/kanban.js). Mover = abre os mesmos diálogos de hoje (avançar, voltar, cancelar) ou reativa.
-import { Contatos } from "@/apps/kits-novos/components/badges";
 import { ETAPAS, aberto, atrasado, dataEtapa, dataFim, diasNaEtapa, etapaDe } from "@/apps/kits-novos/domain/etapas";
 import { diasDesde, tsDe } from "@/apps/kits-novos/lib/datas";
 import { use } from "@/apps/kits-novos/state/context";
@@ -18,7 +17,6 @@ function CartaoKit(p){
     c.prof && e("span",{className:"text-[11.5px] leading-tight text-white/60", title:"Profissão"}, c.prof),
     e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
       aberto(c) && e("span",{className:"font-mono text-[11.5px] font-semibold "+(atr?"text-destructive":"text-white/80")}, diasNaEtapa(c)+(diasNaEtapa(c)===1?" dia":" dias")+(atr?" (atrasada)":"")),
-      e(Contatos,{c:c}),
       expo && e("span",{className:"rounded-md bg-warning/20 px-1.5 text-[11px] font-semibold text-warning"}, "Expositor")));
 }
 

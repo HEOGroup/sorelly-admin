@@ -19,7 +19,7 @@ function Linha(p){
   var sit = c.st==="cancelado" ? "Cancelado" : et.nome, sitCor = (c.st==="entregue" || c.st==="devolvido") ? "text-success" : (c.st==="cancelado" || atr) ? "text-destructive" : "";
   var al = []; if((c.desm||0)>0) al.push(c.desm+(c.desm>1 ? " desmarcações" : " desmarcação")); if(c.tipo==="Retornando") al.push("Retornando"); if(c.rep==="Sorelly") al.push("Vem na empresa");
   if(c.obs && /EXPOSITOR/i.test(c.obs)) al.push("Expositor"); if(c.obs && /FALTA LIGAR/i.test(c.obs) && aberto(c)) al.push("Falta ligar");
-  var feitos = (c.c1?1:0)+(c.c2?1:0)+(c.c3?1:0);
+  // a coluna Contatos (1, 2, 3) saiu da tabela (pedido da Michele, 29/10/2026): os contatos de referência ficam só no detalhe da revendedora, para o Cadastro
   // passar o mouse numa etapa mostra o tempo dela: quanto levou desde a etapa anterior (e o prazo), ou há quantos dias está parada nela
   var tempo = function(x){
     var i = ETAPAS.indexOf(x), v = c[x.campo], prev = null; for(var j = i-1; j>=0; j--){ if(c[ETAPAS[j].campo]){ prev = ETAPAS[j]; break; } }
@@ -48,14 +48,13 @@ function Linha(p){
     e(Td,{c:true, title:c.agDia ? "Marcada com a revendedora: "+dataBR(c.agDia)+(c.agPer ? ", "+c.agPer.toLowerCase() : "") : ""}, c.agDia ? dataBR(c.agDia).slice(0,5)+(c.agPer ? " "+c.agPer.charAt(0) : "") : "—"),
     dt(E("montando")), dt(E("bipado")), dt(E("retirado")), dt(E("entregue")), dt(E("devolvido")),
     e(Td,{c:true}, c.retirada || "—"),
-    e(Td,{c:true, cor:feitos===3 ? "text-success" : "", title:"Contatos de referência confirmados"}, feitos+"/3"),   // só o cadastro usa, até liberar (fica no fim da tabela)
     e(Td,{c:true}, e("span",{className:"flex justify-center gap-1"},
       prox && e("button",{type:"button", title:"Avançar para "+prox.nome.toLowerCase(), onClick:function(ev){ ev.stopPropagation(); d({type:"DIALOGO", d:{tipo:"avancar", id:c.id}}); },
         className:PEQ+"bg-primary text-primary-foreground hover:bg-primary/80"}, e(Icon,{n:"arrowright", s:13}), prox.nome),
       e("button",{type:"button", "aria-label":"Mais ações", onClick:function(ev){ ev.stopPropagation(); abrir(); }, className:"grid size-6 place-items-center rounded-md hover:bg-white/10"}, e(Icon,{n:"dots", s:15})))));
 }
 var COLS = [{t:"Dias", w:52, c:1}, {t:"Cadastro", w:84, c:1}, {t:"Nome", w:220, c:1}, {t:"Bairro", w:140, c:1}, {t:"Cidade", w:160, c:1}, {t:"Profissão", w:170, c:1}, {t:"Entrada", w:104, c:1}, {t:"Representante", w:150, c:1},
-  {t:"Kit", w:140, c:1}, {t:"Situação", w:210, c:1}, {t:"Alertas", w:200, c:1}, {t:"Liberado", w:80, c:1}, {t:"Solicitado", w:100, c:1}, {t:"Aceito", w:68, c:1}, {t:"Contato", w:74, c:1}, {t:"Agendado", w:88, c:1}, {t:"Marcada", w:84, c:1}, {t:"Montando", w:84, c:1}, {t:"Bipado", w:70, c:1}, {t:"Retirado", w:80, c:1}, {t:"Entrega", w:76, c:1}, {t:"Devolvido", w:86, c:1}, {t:"Retirada", w:140, c:1}, {t:"Contatos", w:80, c:1}, {t:"", w:130, c:1}];
+  {t:"Kit", w:140, c:1}, {t:"Situação", w:210, c:1}, {t:"Alertas", w:200, c:1}, {t:"Liberado", w:80, c:1}, {t:"Solicitado", w:100, c:1}, {t:"Aceito", w:68, c:1}, {t:"Contato", w:74, c:1}, {t:"Agendado", w:88, c:1}, {t:"Marcada", w:84, c:1}, {t:"Montando", w:84, c:1}, {t:"Bipado", w:70, c:1}, {t:"Retirado", w:80, c:1}, {t:"Entrega", w:76, c:1}, {t:"Devolvido", w:86, c:1}, {t:"Retirada", w:140, c:1}, {t:"", w:130, c:1}];
 var LARGURA = COLS.reduce(function(t, c){ return t + c.w; }, 0);
 
 export { Linha, COLS, LARGURA };

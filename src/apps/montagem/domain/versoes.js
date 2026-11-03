@@ -3,6 +3,15 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.32", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só a direção (Marcus, Nickolas, Lucas e Anamaria) escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+ ]},
+ {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
+ ]},
+ {v:"0.18.30", data:"2026-11-02", titulo:"Chamados: endereço e avisos sem o nome Melhorias", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A tela agora abre em /chamados (o link antigo /melhorias continua abrindo e leva para lá). O aviso de resposta diz \"Você tem uma resposta nos seus Chamados\" e a tela Aulas manda pedir aula nova em Chamados."},
+ ]},
  {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
   {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
  ]},
