@@ -420,7 +420,6 @@ function AppRepresentante(p){
       e("div",{className:"flex items-center gap-2"},
         e("p",{className:"min-w-0 flex-1 truncate text-[13.5px] font-extrabold "+BR}, sel.rev),
         ehPrata && e("span",{className:"shrink-0 rounded-full bg-slate-300 px-2 py-0.5 text-[10.5px] font-black tracking-wider text-slate-900"}, "100% PRATA")),
-      !previaAcerto && e("p",{className:"text-[11px] text-[#8E8E93]"},"Preencha as vendas para ver a conta do acerto."),
       previaAcerto && e("div",{key:"tres", className:"mt-1 flex flex-col"},
         linhaCons("v", "Vendas", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta)),
         linhaCons("c", "Comissão", previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"),
@@ -444,7 +443,18 @@ function AppRepresentante(p){
       pecasCond:pecasCondSelecionadas, formSnapshot:acertoForm}, extra||{});
   };
 
+  // Modalidade do kit (Ouro ou 100% Prata): só na calculadora de acertos, no começo (Marcus, 03/11/2026); cada troca vai pro histórico.
+  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
+  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
+  // compacto: uma linha só, rótulo pequeno e dois botões baixos (a regra de cada kit fica em Regras)
+  var blocoModalidade = sel && e("div",{className:"flex items-center gap-2 rounded-xl border "+LINHA_CARD+" bg-white px-2.5 py-1.5"},
+    e("p",{className:"shrink-0 text-[10.5px] font-bold uppercase tracking-wide text-[#A67C12]"},"Kit"),
+    e("div",{className:"grid flex-1 grid-cols-2 gap-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
+      return e("button",{key:o[0], onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
+        className:"h-7 rounded-lg text-[11.5px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-slate-700 ring-slate-700 " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#6B7280] ring-black/10")}, (ativo ? "✓ " : "")+o[1]); })),
+    histModalidade.length>0 && e("span",{className:"shrink-0 text-[9.5px] text-[#9A8B63]", title:"Última troca"}, histModalidade[0].em.slice(0,10).split("-").reverse().slice(0,2).join("/")));
   var calcAcertoScreen = kitSel && e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-72"},
+    blocoModalidade,
     blocoAcordeao(0, "lista", "#CA8A04", "Condicionais",
       acertoForm.condicionaisSelecionadas.length ? acertoForm.condicionaisSelecionadas.length+" marcada(s) · "+pecasCondSelecionadas+" peças" : "Marque as condicionais em aberto conferidas",
       acertoForm.condicionaisSelecionadas.length ? badgeTxt(pecasCondSelecionadas+" peças","#CA8A04") : badgeTxt("Pendente","#64748B"),
@@ -658,14 +668,11 @@ function AppRepresentante(p){
                         if(validas.length && Math.abs(soma-restanteTotal)<=0.01){ setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); } }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Salvar acordo"),
                     e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true, acordoParcelas:[], acordoSalvo:false})); setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Não quis negociar")),
                   acertoForm.acordoSalvo && e("p",{className:"text-[13px] font-semibold"}, Math.abs(acordoSoma-restanteTotal)<=0.01 ? "Acordo fecha o valor: brinde liberado." : "As parcelas ainda não fecham o valor em aberto.")),
-                fm && fm!=="acerto_loja" && formaDe(fm).parcelas && e("div",{className:"flex items-center justify-between gap-2 text-[13px]"},
-                  e("span",null,"Parcelas"),
-                  e("select",{value:lancForm.parcelas, "aria-label":"Parcelas", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); }, className:campoSel+" w-24"},
-                    PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
-                      .map(function(n){ return e("option",{key:n, value:n}, n+"x"); }))),
                 fm && fm!=="acerto_loja" ? e("div",{className:"flex items-center gap-2"},
-                  e("input",{type:"date", value:lancForm.data, "aria-label":"Data do pagamento", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {data:ev.target.value})); }, className:campoSel+" min-w-0 flex-1 [color-scheme:dark]"}),
-                  e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" min-w-0 flex-1"})) : null,
+                  formaDe(fm).parcelas && e("select",{value:lancForm.parcelas, "aria-label":"Parcelas", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); }, className:campoSel+" w-[5.2rem]! shrink-0"},
+                    PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
+                      .map(function(n){ return e("option",{key:n, value:n}, n+"x"); })),
+                  e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" w-auto! min-w-0 flex-1"})) : null,
                 pedeComp && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-black/40 px-2.5 text-[13px] ring-1 "+(lancForm.anexo ? "ring-[#CA8A04]" : "ring-white/10")},
                   e("span",{className:"min-w-0"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante *"),
                   e("span",{className:"shrink-0 font-bold"}, lancForm.anexo ? "Trocar" : "Anexar"),
@@ -687,9 +694,9 @@ function AppRepresentante(p){
           !quitado && !acordoExistente && !negociarAberto && !acertoForm.recusouNegociar && !(lancAberto && lancForm.forma==="acerto_loja") && e("div",{key:"neg0", className:"flex gap-2"},
             e("button",{onClick:function(){ setNegociarAberto(true);
                 if(!acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); },
-                className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Negociar o que falta"),
+                className:"h-8 flex-1 rounded-lg text-[12px] font-semibold ring-1 ring-[#C9A13B]/60", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Negociar o que falta"),
             e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true})); setBlocoAberto(4); },
-                className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Não quis negociar")),
+                className:"h-8 flex-1 rounded-lg text-[12px] font-semibold ring-1 ring-[#C9A13B]/60", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Não quis negociar")),
           acertoForm.recusouNegociar && e("div",{key:"recusou", className:"flex flex-col gap-1.5 rounded-xl bg-white/5 p-2.5 ring-1 ring-white/10"},
             e("p",{className:"text-[13px] font-bold text-amber-200"},"Brinde bloqueado. Revendedora não quis negociar o valor em aberto."),
             e("p",{className:"text-[12px] text-amber-200"},"Sem brinde. O jurídico entra em contato; sem negociação em 24 h, a nota promissória vai para execução no valor pendente."),
@@ -1044,16 +1051,6 @@ function AppRepresentante(p){
           listagemCheia(s, lPed.id) && e("p",{className:"text-[12px] font-semibold text-rose-600"},"Essa listagem já está cheia. Escolha outra."),
           e("button",{disabled:listagemCheia(s, lPed.id), onClick:function(){pedir("acerto_kit"); setMostrarSolicitar(false);},
             className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+ouro},"Confirmar: acerto + kit")));
-  // Modalidade do kit: fica no cadastro da revendedora (não é escolhida a cada acerto); cada troca vai pro histórico.
-  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
-  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
-  // compacto: uma linha só, rótulo pequeno e dois botões baixos (a regra de cada kit fica em Regras)
-  var blocoModalidade = sel && e("div",{className:"flex items-center gap-2 rounded-xl border "+LINHA_CARD+" bg-white px-2.5 py-1.5"},
-    e("p",{className:"shrink-0 text-[10.5px] font-bold uppercase tracking-wide text-[#A67C12]"},"Kit"),
-    e("div",{className:"grid flex-1 grid-cols-2 gap-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
-      return e("button",{key:o[0], onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
-        className:"h-7 rounded-lg text-[11.5px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-slate-700 ring-slate-700 " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#6B7280] ring-black/10")}, (ativo ? "✓ " : "")+o[1]); })),
-    histModalidade.length>0 && e("span",{className:"shrink-0 text-[9.5px] text-[#9A8B63]", title:"Última troca"}, histModalidade[0].em.slice(0,10).split("-").reverse().slice(0,2).join("/")));
   var abrirAcertoNovo = function(){
     // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
     var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
@@ -1100,7 +1097,7 @@ function AppRepresentante(p){
       e("button",{onClick:function(){ setPerguntaPre(false); setTela("preacerto"); }, className:"h-8 rounded-xl text-[13px] font-bold "+ouro}, "Sim, atualizar"),
       e("button",{onClick:function(){ setPerguntaPre(false); abrirAcertoNovo(); }, className:"h-8 rounded-xl bg-white/10 text-[13px] font-semibold text-white"}, "Não, seguir para o acerto")));
   var telaRev = sel && e("div",{className:"mt-3 flex flex-col gap-2"},
-    janelaPergunta, blocoNome, blocoStatusHoje, blocoModalidade, linhaAtendimento, botaoPreAcerto, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
+    janelaPergunta, blocoNome, blocoStatusHoje, linhaAtendimento, botaoPreAcerto, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
   var ponto = function(k){ return e("span",{className:"size-2 shrink-0 rounded-full "+PONTO_CEL[STATUS_TP[k.status]]}); };
   var fmtDataISO = function(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]; };
   var hojeISOStr = isoDia(new Date());
