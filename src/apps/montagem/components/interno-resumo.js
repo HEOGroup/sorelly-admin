@@ -7,7 +7,7 @@ import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e } from "@/shared/react";
 
-var TIPOS = {acerto:["Acerto","#E8B84B"], kit_novo:["Kit novo","#22C55E"], reposicao:["Reposição","#38BDF8"], premio:["Prêmio","#EC4899"], indicacao:["Indicação","#A78BFA"]};
+var TIPOS = {acerto:["Acerto","#E8B84B"], kit_novo:["Kit novo","#22C55E"], reposicao:["Reposição","#38BDF8"], premio:["Prêmio","#EC4899"], indicacao:["Indicação","#A78BFA"], retornando:["Kit retornando","#F59E0B"]};
 var SIT = {acertado:["✓ feito","text-success"], atendendo:["atendendo","text-primary"], agendado:["agendado","text-white/70"]};
 
 function resumoInterno(s){

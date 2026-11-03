@@ -33,7 +33,7 @@ Produção (peças liberadas); Financeiro (dados para pagar)
 | O quê | Onde |
 |---|---|
 | Compras e estoque de material | `/materiais-estoque/compras-e-estoque` |
-| Pedidos de bruto | `/cadastro-de-pecas/pedidos` |
+| Pedidos | `/cadastro-de-pecas/pedidos` |
 | Controle do mês | `/cadastro-de-pecas/controle-do-mes` |
 | Tabela do banho | `/cadastro-de-pecas/tabela-do-banho` |
 | Faturas Pontual | `/cadastro-de-pecas/faturas-pontual` |

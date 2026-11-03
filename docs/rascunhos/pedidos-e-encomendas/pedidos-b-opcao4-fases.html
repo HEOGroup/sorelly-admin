@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · opção 4 com fases</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  :root{ --bg:#0F0F0F; --cx:#16161A; --fio:rgba(255,255,255,.12); --ouro:#E8B84B; --ruim:#F87171;
+         --c1:#5B8DEF; --c2:#A78BFA; --c3:#2DD4BF; }
+  body{ background:#000; color:#fff; font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; font-variant-numeric:tabular-nums; }
+  h1{ font-size:18px; } .sub{ margin:2px 0 14px; max-width:980px; }
+  .tela{ background:var(--bg); border:1px solid var(--fio); border-radius:12px; overflow:hidden; }
+  .faixa{ display:flex; align-items:center; gap:10px; height:36px; padding:0 14px; border-bottom:1px solid var(--fio); background:#111114; } .ic{ width:20px; height:20px; border-radius:6px; border:1px solid var(--ouro); display:inline-block; }
+  .menu{ display:flex; gap:2px; height:34px; padding:0 10px; border-bottom:1px solid var(--fio); overflow:hidden; }
+  .menu span{ padding:0 12px; height:30px; display:flex; align-items:center; white-space:nowrap; } .menu span.on{ font-weight:700; color:var(--ouro); box-shadow:inset 0 -2px 0 var(--ouro); }
+  .corpo{ padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .head .tt{ flex:1; min-width:160px; } .head h2{ font-size:18px; line-height:1.2; }
+  .seg{ display:inline-flex; border:1px solid var(--fio); border-radius:8px; overflow:hidden; } .seg span{ height:32px; display:flex; align-items:center; padding:0 14px; } .seg span.on{ background:rgba(232,184,75,.16); color:var(--ouro); font-weight:700; }
+  button,select,input{ font:inherit; color:#fff; background:var(--cx); border:1px solid var(--fio); border-radius:8px; height:32px; padding:0 10px; outline:none; min-width:0; text-align:center; } select option{ color:#111; }
+  button{ cursor:pointer; min-width:96px; white-space:nowrap; } button:hover{ border-color:var(--ouro); } button.pri{ background:rgba(232,184,75,.16); border-color:var(--ouro); color:var(--ouro); font-weight:700; }
+  .filtro{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; } .filtro input{ width:260px; } .filtro select{ width:200px; }
+  .zoom{ display:inline-flex; align-items:center; border:1px solid var(--fio); border-radius:8px; overflow:hidden; background:var(--cx); }
+  .zoom button{ border:0; border-radius:0; min-width:32px; width:32px; padding:0; font-size:16px; font-weight:700; background:transparent; } .zoom button:hover{ background:rgba(255,255,255,.08); }
+  .zoom .pc{ min-width:62px; width:62px; font-size:13px; font-weight:400; border-left:1px solid var(--fio); border-right:1px solid var(--fio); } .zoom .pc.dif{ color:var(--ouro); }
+  /* quadro: linha 1 = barra das fases, linha 2 = as 12 colunas */
+  .kan{ display:grid; grid-template-columns:repeat(12,215px); grid-template-rows:auto 1fr; gap:6px 8px; align-items:start; overflow-x:auto; padding-bottom:8px; }
+  .fase{ grid-row:1; border-radius:8px; height:34px; position:relative; border:1px solid; overflow:hidden; }
+  .fase > span{ position:sticky; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px; height:100%; font-weight:700; white-space:nowrap; }
+  .fase small{ font-weight:400; font-size:12px; }
+  .f1{ background:rgba(91,141,239,.18); border-color:var(--c1); } .f2{ background:rgba(167,139,250,.18); border-color:var(--c2); } .f3{ background:rgba(45,212,191,.16); border-color:var(--c3); }
+  .col{ grid-row:2; border:1px solid var(--fio); border-top:3px solid var(--cor); border-radius:10px; background:var(--cx); padding:6px; display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .ch{ text-align:center; padding:2px 0 6px; border-bottom:1px solid var(--fio); margin-bottom:2px; } .ch b{ display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; line-height:1.25; } .ch small{ display:block; font-size:11px; }
+  .num{ flex:none; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; border:1px solid var(--cor); color:var(--cor); }
+  .vz{ text-align:center; padding:8px 0; font-size:12px; }
+  .card{ border:1px solid var(--fio); border-radius:8px; background:#1c1c21; cursor:pointer; text-align:center; box-shadow:inset 3px 0 0 var(--cor); } .card:hover{ border-color:var(--ouro); } .card.at{ border-color:var(--ruim); }
+  .l1{ display:flex; align-items:center; justify-content:center; gap:8px; min-height:30px; padding:0 8px 0 11px; flex-wrap:wrap; } .l1 b{ white-space:nowrap; }
+  .at-t{ color:var(--ruim); font-weight:700; }
+  .acao{ display:flex; padding:5px 8px 5px 11px; border-top:1px solid var(--fio); } .acao button{ flex:1; }
+  .det{ border-top:1px solid var(--fio); padding:6px 8px 6px 11px; display:grid; grid-template-columns:1fr auto; gap:2px 10px; text-align:left; } .det span:nth-child(even){ text-align:right; font-weight:700; } .det span:nth-child(odd){ font-size:11px; text-transform:uppercase; letter-spacing:.04em; align-self:center; }
+</style>
+</head>
+<body>
+<h1>Pedidos · opção 4 com fases em cor</h1>
+<p class="sub">Mesmo cartão que abre da opção 4. Novidades: uma <b>barra no alto</b> com as 3 fases (<b>Compra</b>, <b>Banho</b> e <b>Empresa</b>), cada uma com a sua cor, que acompanha as colunas quando a tela rola para o lado. A mesma cor aparece no topo de cada coluna, no número da etapa e na borda do cartão. Dá para saber a fase de relance. Vermelho continua só para atrasado e dourado só para botão e aba. O zoom no topo vale para a tela inteira. Dados de exemplo, inventados.</p>
+<div class="tela" id="T"></div>
+
+<script>
+var FASES = [ {n:"Compra", cor:"var(--c1)", cls:"f1", de:0, ate:2}, {n:"Banho", cor:"var(--c2)", cls:"f2", de:3, ate:7}, {n:"Empresa", cor:"var(--c3)", cls:"f3", de:8, ate:11} ];
+var ETAPAS = [
+ {n:"Escolha das peças",pz:null}, {n:"Em separação",pz:5}, {n:"Fechado, aguardando envio para banho",pz:2},
+ {n:"Enviado",pz:null}, {n:"Chegou no banho",pz:null}, {n:"Enviaram fotos",pz:null}, {n:"Marcus confirmou preços",pz:null}, {n:"Banho",pz:10},
+ {n:"Enviado para Sorelly",pz:null}, {n:"Chegou na empresa",pz:null}, {n:"Cadastrando",pz:null}, {n:"Finalizado",pz:null} ];
+function faseDe(i){ return FASES.find(function(f){ return i>=f.de && i<=f.ate; }); }
+var P = [
+ {id:1, f:"Point",    rom:"",       et:0,  v:18420.00, d:20, pc:640, banho:"Pontual", dias:1,  tot:1,  data:"03/11", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:2, f:"Mega Sul", rom:"",       et:0,  v:6240.00,  d:18, pc:250, banho:"Pontual", dias:2,  tot:2,  data:"02/11", nota:70, cnpj:"59", nos:"",      eles:""},
+ {id:3, f:"Xangai",   rom:"",       et:1,  v:9870.50,  d:15, pc:310, banho:"Ellos",   dias:6,  tot:6,  data:"28/10", nota:50, cnpj:"46", nos:"",      eles:""},
+ {id:4, f:"Art Ello", rom:"144459", et:2,  v:12300.00, d:15, pc:420, banho:"Ellos",   dias:1,  tot:8,  data:"26/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:5, f:"Point",    rom:"031892", et:2,  v:21760.00, d:25, pc:800, banho:"Pontual", dias:1,  tot:9,  data:"25/10", nota:50, cnpj:"67", nos:"",      eles:""},
+ {id:6, f:"Point",    rom:"035120", et:3,  v:594.00,   d:20, pc:20,  banho:"Pontual", dias:2,  tot:15, data:"19/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:7, f:"Point",    rom:"035067", et:3,  v:19046.72, d:20, pc:610, banho:"Pontual", dias:4,  tot:19, data:"15/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:8, f:"Linda",    rom:"144502", et:4,  v:7480.00,  d:10, pc:190, banho:"Ellos",   dias:1,  tot:15, data:"19/10", nota:60, cnpj:"46", nos:"Ellos 21/10", eles:""},
+ {id:9, f:"Point",    rom:"034992", et:5,  v:6611.30,  d:20, pc:230, banho:"Pontual", dias:3,  tot:26, data:"08/10", nota:60, cnpj:"34", nos:"Pontual 15/10", eles:"22/10"},
+ {id:10,f:"Point",    rom:"034993", et:5,  v:11000.22, d:20, pc:370, banho:"Pontual", dias:3,  tot:26, data:"08/10", nota:60, cnpj:"34", nos:"Pontual 15/10", eles:"22/10"},
+ {id:11,f:"Mega Sul", rom:"031655", et:6,  v:11200.00, d:18, pc:360, banho:"Pontual", dias:1,  tot:18, data:"16/10", nota:70, cnpj:"59", nos:"Pontual 24/10", eles:"30/10"},
+ {id:12,f:"Point",    rom:"031640", et:7,  v:15390.00, d:20, pc:520, banho:"Pontual", dias:11, tot:22, data:"12/10", nota:60, cnpj:"34", nos:"Pontual 20/10", eles:"23/10"},
+ {id:13,f:"Tucano",   rom:"002017", et:7,  v:3060.00,  d:12, pc:90,  banho:"Ellos",   dias:4,  tot:12, data:"22/10", nota:70, cnpj:"46", nos:"Ellos 29/10", eles:""},
+ {id:14,f:"Point",    rom:"031601", et:8,  v:9300.00,  d:20, pc:300, banho:"Pontual", dias:2,  tot:25, data:"09/10", nota:60, cnpj:"34", nos:"Pontual 17/10", eles:"20/10"},
+ {id:15,f:"Xangai",   rom:"008821", et:9,  v:8115.00,  d:15, pc:280, banho:"Ellos",   dias:1,  tot:30, data:"04/10", nota:50, cnpj:"59", nos:"Sorelly 01/11", eles:""},
+ {id:16,f:"Art Ello", rom:"144301", et:10, v:5200.00,  d:15, pc:170, banho:"Ellos",   dias:3,  tot:33, data:"01/10", nota:60, cnpj:"46", nos:"Sorelly 30/10", eles:""},
+ {id:17,f:"Mega Sul", rom:"031511", et:11, v:7400.00,  d:18, pc:240, banho:"Pontual", dias:0,  tot:40, data:"24/09", nota:70, cnpj:"59", nos:"Sorelly 28/10", eles:"07/10"}
+];
+var F = {q:"", forn:"", sit:""}, Z = 100, ABERTO = {10:true};
+var NIVEIS = [70,80,90,100,115,130,150];
+function brl(n){ return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pagar(p){ return p.v*(1-p.d/100); }
+function atras(p){ var z=ETAPAS[p.et].pz; return z!=null && p.dias>z; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function dias(p){ return p.et===11 ? '<span>Concluído</span>' : '<span class="'+(atras(p)?'at-t':'')+'"><b>'+p.dias+(p.dias===1?' dia':' dias')+'</b></span>'; }
+function vis(){ return P.filter(function(p){
+  if(F.q && (p.f+" "+p.rom).toLowerCase().indexOf(F.q.toLowerCase())<0) return false;
+  if(F.forn && p.f!==F.forn) return false;
+  if(F.sit==="atr" && !atras(p)) return false; if(F.sit==="aber" && p.et===11) return false; return true; }); }
+function zoomUi(){ return '<div class="zoom" aria-label="Zoom da tela"><button onclick="mudaZ(-1)" title="Diminuir" aria-label="Diminuir">−</button><button class="pc'+(Z!==100?' dif':'')+'" onclick="Z=100;desenha()" title="Voltar para 100%">'+Z+'%</button><button onclick="mudaZ(1)" title="Aumentar" aria-label="Aumentar">+</button></div>'; }
+function mudaZ(d){ var i = NIVEIS.indexOf(Z)+d; if(i>=0 && i<NIVEIS.length){ Z = NIVEIS[i]; desenha(); } }
+function btn(p){ return p.et<11 ? '<div class="acao"><button'+(atras(p)?' class="pri"':'')+'>'+(p.et<=1&&!p.rom?'Romaneio ›':'Concluir ›')+'</button></div>' : ''; }
+function card(p){ var ab = ABERTO[p.id], f = faseDe(p.et);
+  return '<div class="card'+(atras(p)?' at':'')+'" style="--cor:'+f.cor+'" onclick="ABERTO['+p.id+']=!ABERTO['+p.id+']; desenha()"><div class="l1"><b>'+esc(p.f)+'</b><span>'+brl(pagar(p))+'</span>'+dias(p)+'</div>'
+  +(ab ? '<div class="det"><span>Romaneio</span><span>'+(p.rom||'—')+'</span><span>Comprado em</span><span>'+p.data+'</span><span>Dias desde a compra</span><span>'+p.tot+'</span><span>Nota</span><span>'+p.nota+'%</span><span>CNPJ</span><span>final '+p.cnpj+'</span><span>Valor da lista</span><span>'+brl(p.v)+'</span><span>Desconto</span><span>'+p.d+'%</span><span>Peças</span><span>'+p.pc+'</span><span>Banho</span><span>'+p.banho+'</span><span>Chegada (nós)</span><span>'+(p.nos||'—')+'</span><span>Data que a Pontual conta</span><span>'+(p.eles||'—')+'</span></div>'+btn(p) : '')+'</div>'; }
+function quadro(){
+  var L = vis();
+  var bandas = FASES.map(function(f){ var it = L.filter(function(p){ return p.et>=f.de && p.et<=f.ate; }), tot = it.reduce(function(t,p){ return t+pagar(p); },0), at = it.filter(atras).length;
+    return '<div class="fase '+f.cls+'" style="grid-column:'+(f.de+1)+' / '+(f.ate+2)+'"><span>'+f.n+'<small>'+it.length+(it.length===1?' pedido':' pedidos')+' · '+brl(tot)+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small></span></div>'; }).join("");
+  var cols = ETAPAS.map(function(e,i){ var f = faseDe(i), it = L.filter(function(p){ return p.et===i; }), at = it.filter(atras).length, tot = it.reduce(function(t,p){ return t+pagar(p); },0);
+    return '<div class="col" style="--cor:'+f.cor+';grid-column:'+(i+1)+'"><div class="ch"><b><span class="num">'+(i+1)+'</span>'+e.n+'</b><small>'+it.length+(it.length===1?' pedido':' pedidos')+(e.pz?' · prazo '+e.pz+' dias':'')+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small><small>'+brl(tot)+'</small></div>'
+      +(it.length ? it.map(card).join("") : '<p class="vz">Nenhum pedido nesta etapa.</p>')+'</div>'; }).join("");
+  return '<div class="kan" id="K" style="zoom:'+(Z/100)+'">'+bandas+cols+'</div>';
+}
+function filtro(){
+  var fs = P.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  document.getElementById("F").innerHTML = '<input id="q" placeholder="Buscar fornecedor ou romaneio" value="'+esc(F.q)+'">'
+   +'<select id="fo"><option value="">Todos os fornecedores</option>'+fs.map(function(f){ return '<option'+(F.forn===f?' selected':'')+'>'+f+'</option>'; }).join("")+'</select>'
+   +'<select id="si"><option value="">Todas as situações</option><option value="aber"'+(F.sit==="aber"?' selected':'')+'>Em aberto</option><option value="atr"'+(F.sit==="atr"?' selected':'')+'>Atrasados</option></select>'
+   +((F.q||F.forn||F.sit) ? '<button id="lm">Limpar</button>' : '');
+  document.getElementById("q").oninput = function(){ F.q=this.value; var p=this.selectionStart; desenha(); var i=document.getElementById("q"); i.focus(); i.setSelectionRange(p,p); };
+  document.getElementById("fo").onchange = function(){ F.forn=this.value; filtro(); desenha(); };
+  document.getElementById("si").onchange = function(){ F.sit=this.value; filtro(); desenha(); };
+  var l=document.getElementById("lm"); if(l) l.onclick=function(){ F={q:"",forn:"",sit:""}; filtro(); desenha(); };
+}
+function desenha(){
+  var k = document.getElementById("K"), x = k ? k.scrollLeft : 0;
+  document.getElementById("H").innerHTML = '<div class="head"><div class="tt"><h2>Pedidos</h2></div>'+zoomUi()+'<div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><button class="pri">Novo pedido</button></div>';
+  document.getElementById("Qd").innerHTML = quadro();
+  var n = document.getElementById("K"); if(n) n.scrollLeft = x;
+}
+document.getElementById("T").innerHTML = '<div class="faixa"><span class="ic"></span><b>Cadastro de peças</b></div><div class="menu"><span class="on">Pedidos</span><span>Controle do mês</span><span>Banho</span><span>Peças</span><span>Fornecedores</span><span>Configurações</span></div>'
+ +'<div class="corpo"><div id="H"></div><div class="filtro" id="F"></div><div id="Qd"></div></div>';
+filtro(); desenha();
+</script>
+</body>
+</html>

@@ -134,7 +134,7 @@ var PASSO_ROTULO = {motivo:"Por quê?", quando:"Novo dia e hora", autorizado:"Qu
 
 function Detalhes(p){
   var r = p.r, cx = p.cx, s = cx.state, d = cx.dispatch, hojeIso = p.hojeIso, eu = nomeDe(s.usuario);
-  var ag = useState({data:(r.agend && r.agend.data) || proximoAcerto(r), hora:(r.agend && r.agend.hora) || "10:00"}), form = ag[0], setForm = ag[1];
+  var ag = useState({data:(r.agend && r.agend.data) || proximoAcerto(r), hora:(r.agend && r.agend.hora) || "10:00", tipo:r.tipoAtend || (r.kitNovo ? "kit_novo" : "acerto"), quer:r.quer || ""}), form = ag[0], setForm = ag[1];
   var NOVO0 = {tipo:"", motivo:"", quando:null, autorizado:"", ciclo:"", quem:"eu", texto:"", dia:(r.agend && r.agend.data) || proximoAcerto(r), hora:(r.agend && r.agend.hora) || "10:00"};
   var nf = useState(NOVO0), novo = nf[0], setNovo = nf[1];
   var tg = useState(false), todos = tg[0], setTodos = tg[1], ve = useState(false), verExpo = ve[0], setVerExpo = ve[1], vd = useState(false), verVendas = vd[0], setVerVendas = vd[1];
@@ -213,7 +213,9 @@ function Detalhes(p){
         e("div",{className:"flex gap-1.5"},
           e("input",{type:"date", value:form.data, "aria-label":"Data agendada", className:CAMPO+"min-w-[8.5rem] flex-1", onChange:function(ev){ setForm(Object.assign({}, form, {data:ev.target.value})); }}),
           e("input",{type:"time", value:form.hora, "aria-label":"Hora", className:CAMPO+"w-[92px]! shrink-0", onChange:function(ev){ setForm(Object.assign({}, form, {hora:ev.target.value})); }})),
-        e("button",{type:"button", disabled:!form.data||!form.hora, onClick:function(){ d({type:"REVINT_AGENDAR", id:r.id, data:form.data, hora:form.hora}); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, r.agend && r.internoId ? "Atualizar na listagem" : "Incluir na listagem"),
+        e("select",{value:form.tipo, "aria-label":"Tipo de atendimento", className:CAMPO+"mt-1", onChange:function(ev){ setForm(Object.assign({}, form, {tipo:ev.target.value})); }}, [["acerto", "Acerto"], ["kit_novo", "Kit novo"], ["reposicao", "Reposição"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
+        e("input",{value:form.quer, maxLength:200, placeholder:"O que a cliente quer", "aria-label":"O que a cliente quer", className:CAMPO, onChange:function(ev){ setForm(Object.assign({}, form, {quer:ev.target.value})); }}),
+        e("button",{type:"button", disabled:!form.data||!form.hora, onClick:function(){ d({type:"REVINT_AGENDAR", id:r.id, data:form.data, hora:form.hora, tipo:form.tipo, quer:form.quer}); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, r.agend && r.internoId ? "Atualizar na listagem" : "Incluir na listagem"),
         r.agend && r.internoId && e("span",{className:"text-[11.5px] text-[#bbf7d0]"},"✓ Na listagem do dia "+fmtDataBR(r.agend.data)),
         e("div",{className:"flex gap-1.5"},
           e("select",{value:r.ciclo, "aria-label":"Ciclo", className:CAMPO+"min-w-[5.5rem]", onChange:function(ev){ set({ciclo:Number(ev.target.value), proximoManual:null}); }}, CICLOS.map(function(n){ return e("option",{key:n, value:n}, n+" d"); })),

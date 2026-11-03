@@ -139,6 +139,9 @@ function ListaConversas(p){
   var filtrada = (filtro==="arq" ? arqs : lista).filter(function(x){ return filtro==="arq" ? true : filtro==="marcado" ? x.marcado : filtro==="espera" ? devo(x) : filtro==="naolidas" ? x.naoLidas>0 : filtro==="grupos" ? x.conv.tipo==="grupo" : filtro==="decidir" ? x.pendentes>0 : true; });
   if(ordem==="antigas") filtrada = filtrada.slice().sort(function(a, b){ var ma = devo(a), mb = devo(b); if(ma!==mb) return ma ? -1 : 1; var ta = ma ? thDe[a.conv.id].desde : (a.ultima ? a.ultima.t : 0), tb = mb ? thDe[b.conv.id].desde : (b.ultima ? b.ultima.t : 0); return ta-tb; });
   var porNome = q ? lista.filter(function(x){ return sem(x.titulo).indexOf(q)>=0; }) : [];
+  // Pessoas (Marcus, 03/11/2026): a busca também acha quem ainda NÃO tem conversa com você; tocar abre a conversa nova. Quem já tem conversa aparece em "Conversas".
+  var comConversa = {}; porNome.forEach(function(x){ if(x.conv.tipo==="dm") x.conv.membros.forEach(function(i){ comConversa[i] = true; }); });
+  var porPessoa = q.length>=2 && !p.leitura ? CONTATOS.filter(function(c){ return c.id!==euReal && !comConversa[c.id] && (st.config.representantes || c.tipo!=="rep") && (sem(c.completo).indexOf(q)>=0 || sem(c.nome||"").indexOf(q)>=0 || sem(c.setorCurto||"").indexOf(q)>=0 || sem(c.funcao||"").indexOf(q)>=0); }).slice(0, 25) : [];
   var porTexto = [];
   if(q.length>=2){ lista.forEach(function(x){ api.getMessages(x.conv.id, eu).forEach(function(m){ if(m.apag!=="todos" && m.texto && sem(m.texto).indexOf(q)>=0) porTexto.push({x:x, m:m}); }); });
     porTexto.sort(function(a,b){ return b.m.t-a.m.t; }); porTexto = porTexto.slice(0,40); }
@@ -212,11 +215,14 @@ function ListaConversas(p){
     e("div",{className:"min-h-0 flex-1 overflow-y-auto", onScroll:rolou},
       q ? e("div",null,
         porNome.length>0 && e("p",{className:"px-4 pb-1 pt-3 text-[11.5px] font-semibold", style:{color:W.ouro}}, "Conversas"), porNome.map(linha),
+        porPessoa.length>0 && e("p",{className:"px-4 pb-1 pt-3 text-[11px] font-semibold", style:{color:W.ouro}}, "Pessoas"),
+        porPessoa.map(function(c){ return e("button",{key:"pe"+c.id, onClick:function(){ abrir(api.openDm(euReal, c.id)); }, className:"flex w-full items-center gap-2.5 px-3 py-2 text-left hover:bg-white/5", style:{borderBottom:"1px solid "+W.borda}},
+          e(Avatar,{id:c.id, s:44, presenca:true}), e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block text-[13px] font-semibold"}, c.completo), e("span",{className:"block text-[11px]", style:{color:W.sec}}, c.setorCurto+(c.funcao ? " · "+c.funcao : "")))); }),
         porTexto.length>0 && e("p",{className:"px-4 pb-1 pt-3 text-[11.5px] font-semibold", style:{color:W.ouro}}, "Mensagens"),
         porTexto.map(function(r){ return e("button",{key:r.m.id, onClick:function(){ abrir(r.x.conv.id, r.m.id); }, className:"flex w-full flex-col px-4 py-2 text-left hover:bg-white/5", style:{borderBottom:"1px solid "+W.borda}},
           e("span",{className:"flex items-baseline justify-between gap-2"}, e("span",{className:"truncate text-[13px]"}, r.x.titulo), e("span",{className:"shrink-0 text-[10.5px]", style:{color:W.sec}}, horaLista(r.m.t))),
           e("span",{className:"line-clamp-2 text-[12px]", style:{color:W.sec}}, (r.m.de===eu ? "Você: " : contato(r.m.de).nome.split(" ")[0]+": ")+r.m.texto)); }),
-        !porNome.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
+        !porNome.length && !porPessoa.length && !porTexto.length && e(Vazio,{n:"magnifying-glass"}, q.length<2 ? "Digite pelo menos 2 letras." : "Nada encontrado para \""+busca+"\".")) :
       vista==="setores" && filtro!=="arq" ? e(VistaSetores,{lista:lista, linha:linha, euReal:euReal, leitura:p.leitura, abrir:abrir, criar:function(n){ var id = api.createSectorGroup(euReal, n); if(id) abrir(id); }}) :   // Setores: lista de setores como na barra lateral; ao tocar, os grupos do setor (Marcus, 30/10/2026)
       !filtrada.length ? e(Vazio,{n:filtro==="naolidas" ? "checks" : "chat-circle-dots"}, filtro==="marcado" ? "Ninguém marcou você sem resposta." : filtro==="arq" ? "Nenhuma conversa arquivada." : filtro==="naolidas" ? "Nenhuma mensagem não lida." : "Nenhuma conversa ainda. Toque no ícone de mensagem para começar.") :
       e("div",null, filtrada.slice(0,limite).map(linha), limite<filtrada.length && e("p",{className:"py-3 text-center text-[11px]", style:{color:W.sec}}, "Role para ver mais…"))),

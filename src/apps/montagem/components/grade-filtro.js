@@ -39,7 +39,12 @@ function GradeFiltro(p){
       if(va || vb) return va && vb ? 0 : va ? 1 : -1; if(typeof a.b==="number" && typeof b.b==="number") return a.b-b.b; return String(a.b).localeCompare(String(b.b), "pt-BR", {numeric:true}); }); };
   var tot = p.rodape ? p.rodape(linhas) : null;
   var TC = "h-8 whitespace-nowrap border-b border-border px-2.5 text-center text-[13px] tabular-nums ";
+  // aviso visível quando há filtro ou classificação ativa (Marcus, 03/11/2026): quais colunas, quantas linhas aparecem e um botão para limpar tudo
+  var ativas = cols.filter(ativo).map(function(c){ return c.t; });
   return e("div",{className:"flex flex-col gap-2"},
+    algum && e("div",{role:"status", className:"flex flex-wrap items-center justify-center gap-2 rounded-lg border border-primary/60 bg-primary/10 px-3 py-1.5 text-[13px]"},
+      e("b",null, "Filtro ativo"), e("span",null, "em "+ativas.join(", ")+" · mostrando "+linhas.length+" de "+rows.length),
+      e("button",{type:"button", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"h-8 rounded-md border border-primary px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "Limpar filtros")),
     e("div",{className:"overflow-x-auto rounded-lg border border-border"},
       e("table",{className:"border-collapse text-[13px]", style:{tableLayout:"fixed", width:soma, minWidth:"100%"}},
         e("colgroup",null, cols.map(function(c){ return e("col",{key:c.k, style:{width:larg[c.k]}}); })),

@@ -3,6 +3,37 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.40", data:"2026-11-03", titulo:"Atendimento interno: tipo de atendimento e o que a cliente quer", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Em Revendedoras, a ficha de cada revendedora ganhou o Tipo de atendimento (Acerto, Kit novo, Reposição, Brinde de indicação, Kit retornando) e o campo O que a cliente quer, antes de Incluir na listagem. O tipo e o texto vão para a listagem do dia (colunas Tipo e Observação). Pedido da Tamara nos Chamados."},
+ ]},
+ {v:"0.18.41", data:"2026-11-04", titulo:"SorellyChat: grupo Cadastro repetido", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"Os grupos Cadastro e Cadastro de revendedoras eram o mesmo grupo repetido. As mensagens do Cadastro passaram para o Cadastro de revendedoras e a cópia ficou escondida. O sistema não cria mais um grupo de setor quando já existe um com nome parecido."},
+ ]},
+ {v:"0.18.38", data:"2026-11-03", titulo:"SorellyChat: busca acha pessoas", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"A busca do chat só olhava conversas que já existiam e o texto das mensagens, então um funcionário sem conversa não aparecia. Agora aparece a seção Pessoas, com nome, setor e função; tocar abre a conversa nova."},
+ ]},
+ {v:"0.18.41", data:"2026-11-03", titulo:"Pedidos: filtros novos, período e cartão limpo", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Os filtros agora são: Buscar, Fornecedores bruto, Fornecedores banho (Pontual ou Ellos), Situação e Período. O Período abre ao clicar e deixa escolher Todo o período, Por mês ou Por data (de uma data até outra)."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O cartão do quadro ficou em duas linhas limpas, sem quebrar: o fornecedor do banho (Pontual ou Ellos) vem escrito antes do fornecedor do bruto, e embaixo ficam o valor e os dias com a fonte menor."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"As colunas do quadro ficaram mais largas (280 px) e o pedido cabe numa linha só. O nome do banho aparece em dois tons: Pontual em dourado e Ellos em azul."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Saíram os blocos que ficavam embaixo do quadro: Etapas e prazos, Pontual e Ellos. O quadro e os filtros ficaram sozinhos na tela. Os prazos continuam guardados no sistema para quando os blocos voltarem."}
+ ]},
+ {v:"0.18.39", data:"2026-11-03", titulo:"Tabelas com filtro: aviso de filtro ativo", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"Quando há filtro ou classificação ativa numa tabela com filtro na coluna (Chamados, Agendamento e outras), aparece um aviso no alto: Filtro ativo em quais colunas, mostrando X de Y, e o botão Limpar filtros."},
+ ]},
+ {v:"0.18.40", data:"2026-11-03", titulo:"Pedidos: filtros à esquerda e blocos de etapas, Pontual e Ellos", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O título da tela agora é Pedidos de bruto e banho e os filtros ficam no lado esquerdo, numa linha só."},
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Três blocos novos embaixo do quadro. Etapas e prazos: explica o que acontece em cada uma das 12 etapas, quantos pedidos estão nela e guarda o prazo em dias (dá para editar). Pontual e Ellos: um bloco para cada galvânica com o prazo do banho dela, os pedidos que estão lá, quantos dias estão lá, a data que a galvânica conta, a saída prevista e se está atrasado."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O atraso dos pedidos agora usa esses prazos. No Banho vale o prazo da Pontual ou da Ellos, conforme o pedido. Etapa sem prazo não marca atraso."}
+ ]},
+ {v:"0.18.39", data:"2026-11-03", titulo:"Pedidos com 12 etapas, fases em cor e zoom", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"O quadro agora tem as 12 etapas do caminho completo: Escolha das peças, Em separação, Fechado aguardando envio para banho, Enviado, Chegou no banho, Enviaram fotos, Marcus confirmou preços, Banho, Enviado para Sorelly, Chegou na empresa, Cadastrando e Finalizado. Uma barra no alto separa as 3 fases (Compra, Banho e Empresa), cada uma com a sua cor, que aparece também no topo de cada coluna e na borda do cartão. As colunas são finas e a tela rola para o lado."},
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Controle de zoom no topo (menos, porcentagem e mais, de 70% a 150%; clicar na porcentagem volta para 100%). O cartão do pedido é uma linha (fornecedor, valor e dias) e abre ao clicar com os detalhes, o botão Concluir e o botão Abrir ficha. Campo novo no pedido: Data que o banho conta (a data em que a Pontual ou a Ellos começa a contar o prazo)."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Os pedidos que já existiam foram passados para as etapas novas sozinhos (Montando pedido vira Escolha das peças, A caminho vira Enviado, Aguardando banho vira Chegou no banho, e assim por diante). Ao mover um pedido para Chegou no banho, o dia da chegada na Pontual ou na Ellos é gravado. Ligar uma fatura aos pedidos agora os leva para Enviado para Sorelly. Os dias na etapa dos pedidos que estão no banho contam desde a chegada lá. Correção: os campos do filtro estavam ocupando uma linha cada; agora ficam lado a lado, numa linha só."}
+ ]},
+ {v:"0.18.38", data:"2026-11-03", titulo:"Cadastro de peças: tela Pedidos mais limpa", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A tela Pedidos de bruto passa a se chamar Pedidos. Saiu a faixa de números do topo. O bloco grande de filtros virou uma linha só: busca, fornecedor, situação e mês. Os cartões do quadro ficaram menores, com 3 linhas: fornecedor e dias, romaneio, peças e banho, e o valor a pagar com o botão Concluir."}
+ ]},
  {v:"0.18.37", data:"2026-11-03", titulo:"Apps: abre sempre na simulação", itens:[
   {tipo:"correção", area:"App da representante", txt:"Na lista de Revendedoras, kit novo, reposição e saída ganham identificador próprio (KIT NOVO, REPOSIÇÃO, SAÍDA) e não mostram mais Acerto hoje nem vendido, acerto e comissão zerados. Só o acerto mostra esses números."},
   {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre com os dois celulares prontos. O da representante entra como Anamaria, com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída). O da revendedora abre na tela inicial da Juliana, com R$ 1.500,00 em vendas já lançadas."},

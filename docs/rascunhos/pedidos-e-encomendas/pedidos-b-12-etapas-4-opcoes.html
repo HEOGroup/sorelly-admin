@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · 12 etapas, 4 opções</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  :root{ --bg:#0F0F0F; --cx:#16161A; --fio:rgba(255,255,255,.12); --ouro:#E8B84B; --ruim:#F87171; }
+  body{ background:#000; color:#fff; font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; font-variant-numeric:tabular-nums; }
+  h1{ font-size:18px; } .sub{ margin:2px 0 14px; max-width:980px; }
+  .opcao{ margin-bottom:34px; } .opcao > .rot{ font-weight:700; font-size:15px; } .opcao > .dica{ margin:2px 0 8px; max-width:980px; }
+  .tela{ background:var(--bg); border:1px solid var(--fio); border-radius:12px; overflow:hidden; }
+  .faixa{ display:flex; align-items:center; gap:10px; height:36px; padding:0 14px; border-bottom:1px solid var(--fio); background:#111114; } .ic{ width:20px; height:20px; border-radius:6px; border:1px solid var(--ouro); display:inline-block; }
+  .menu{ display:flex; gap:2px; height:34px; padding:0 10px; border-bottom:1px solid var(--fio); overflow:hidden; }
+  .menu span{ padding:0 12px; height:30px; display:flex; align-items:center; white-space:nowrap; } .menu span.on{ font-weight:700; color:var(--ouro); box-shadow:inset 0 -2px 0 var(--ouro); }
+  .corpo{ padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .head .tt{ flex:1; min-width:160px; } .head h2{ font-size:18px; line-height:1.2; }
+  .seg{ display:inline-flex; border:1px solid var(--fio); border-radius:8px; overflow:hidden; } .seg span,.seg button{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 14px; } .seg span.on{ background:rgba(232,184,75,.16); color:var(--ouro); font-weight:700; }
+  button,select,input{ font:inherit; color:#fff; background:var(--cx); border:1px solid var(--fio); border-radius:8px; height:32px; padding:0 10px; outline:none; min-width:0; text-align:center; } select option{ color:#111; }
+  button{ cursor:pointer; min-width:96px; white-space:nowrap; } button:hover{ border-color:var(--ouro); } button.pri{ background:rgba(232,184,75,.16); border-color:var(--ouro); color:var(--ouro); font-weight:700; }
+  .filtro{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; } .filtro input{ width:260px; } .filtro select{ width:200px; }
+  /* controle de zoom, igual ao dos apps: menos, porcentagem, mais */
+  .zoom{ display:inline-flex; align-items:center; border:1px solid var(--fio); border-radius:8px; overflow:hidden; background:var(--cx); }
+  .zoom button{ border:0; border-radius:0; min-width:32px; width:32px; padding:0; font-size:16px; font-weight:700; background:transparent; } .zoom button:hover{ background:rgba(255,255,255,.08); }
+  .zoom .pc{ min-width:62px; width:62px; font-size:13px; border-left:1px solid var(--fio); border-right:1px solid var(--fio); } .zoom .pc.dif{ color:var(--ouro); }
+  /* quadro: colunas maiores, rola para o lado */
+  .kan{ display:grid; grid-auto-flow:column; grid-auto-columns:215px; gap:8px; align-items:start; overflow-x:auto; padding-bottom:8px; }
+  .col{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); padding:6px; display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .ch{ text-align:center; padding:2px 0 6px; border-bottom:1px solid var(--fio); margin-bottom:2px; } .ch em{ display:block; font-style:normal; font-size:11px; text-transform:uppercase; letter-spacing:.07em; } .ch b{ display:flex; align-items:center; justify-content:center; min-height:36px; line-height:1.25; } .ch small{ display:block; font-size:11px; }
+  .vz{ text-align:center; padding:8px 0; font-size:12px; }
+  .card{ border:1px solid var(--fio); border-radius:8px; background:#1c1c21; cursor:pointer; text-align:center; } .card:hover{ border-color:var(--ouro); } .card.at{ border-color:var(--ruim); }
+  .l1{ display:flex; align-items:center; justify-content:center; gap:8px; min-height:30px; padding:0 8px; flex-wrap:wrap; } .l1 b{ white-space:nowrap; }
+  .l2{ padding:0 8px 5px; font-size:12px; }
+  .at-t{ color:var(--ruim); font-weight:700; }
+  .grade{ display:grid; border-top:1px solid var(--fio); } .grade > div{ padding:3px 4px; border-right:1px solid var(--fio); min-width:0; } .grade > div:last-child{ border-right:0; }
+  .g2{ grid-template-columns:repeat(2,1fr); } .g3{ grid-template-columns:repeat(3,1fr); } .g2 > div:nth-child(2n){ border-right:0; }
+  .grade small{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.04em; } .grade b{ white-space:nowrap; }
+  .passos{ display:flex; gap:2px; padding:4px 8px 0; } .passos i{ flex:1; height:4px; border-radius:2px; background:rgba(255,255,255,.16); } .passos i.f{ background:rgba(255,255,255,.7); } .passos i.a{ background:var(--ouro); }
+  .fio{ height:3px; background:rgba(255,255,255,.1); } .fio div{ height:100%; background:rgba(255,255,255,.55); } .fio.at div{ background:var(--ruim); }
+  .acao{ display:flex; padding:5px 8px; border-top:1px solid var(--fio); } .acao button{ flex:1; }
+  .det{ border-top:1px solid var(--fio); padding:6px 8px; display:grid; grid-template-columns:1fr auto; gap:2px 10px; text-align:left; } .det span:nth-child(even){ text-align:right; font-weight:700; } .det span:nth-child(odd){ font-size:11px; text-transform:uppercase; letter-spacing:.04em; align-self:center; }
+</style>
+</head>
+<body>
+<h1>Pedidos · 12 etapas, 4 opções</h1>
+<p class="sub">Colunas maiores (215 px), rolando para o lado. No topo de cada tela tem o controle de zoom, igual ao dos apps: <b>−</b> diminui, <b>+</b> aumenta e a porcentagem volta para 100% ao clicar. O zoom vale para as 4 telas. Cada coluna mostra de qual fase ela é (Compra, Banho ou Empresa). Visual sóbrio: letra branca, linha fina, dourado só no botão principal e na aba, vermelho só no atrasado. Dados de exemplo, inventados.</p>
+<div class="tela" style="margin-bottom:14px"><div class="corpo"><div class="filtro" id="F"></div></div></div>
+
+<div class="opcao"><div class="rot">1 · Cartão com rótulos</div><div class="dica">Fornecedor e dias em cima. Embaixo uma grade 2 por 2 com nome pequeno em cada número: Romaneio, Peças, Banho e A pagar.</div><div class="tela" id="O1"></div></div>
+<div class="opcao"><div class="rot">2 · Cartão com trilho das 12 etapas</div><div class="dica">Uma régua fina de 12 tracinhos no cartão mostra onde o pedido está no caminho todo: brancos já passaram, o dourado é a etapa de agora. Dá para ver o andamento sem olhar a coluna.</div><div class="tela" id="O2"></div></div>
+<div class="opcao"><div class="rot">3 · Cartão com datas, prazo e botão</div><div class="dica">Mostra a data da compra, os dias desde a compra e os dias na etapa. Barra fina de prazo (vermelha se passou) e o botão Concluir › já no cartão.</div><div class="tela" id="O3"></div></div>
+<div class="opcao"><div class="rot">4 · Cartão que abre</div><div class="dica">Fechado: fornecedor, valor e dias. Clicando abre ali mesmo com nota, CNPJ, valor da lista, desconto, datas na Pontual (a que nós temos e a que a Pontual conta) e o botão Concluir ›.</div><div class="tela" id="O4"></div></div>
+
+<script>
+var ETAPAS = [
+ {n:"Escolha das peças",fase:"Compra",pz:null}, {n:"Em separação",fase:"Compra",pz:5}, {n:"Fechado, aguardando envio para banho",fase:"Compra",pz:2},
+ {n:"Enviado",fase:"Banho",pz:null}, {n:"Chegou no banho",fase:"Banho",pz:null}, {n:"Enviaram fotos",fase:"Banho",pz:null}, {n:"Marcus confirmou preços",fase:"Banho",pz:null}, {n:"Banho",fase:"Banho",pz:10},
+ {n:"Enviado para Sorelly",fase:"Empresa",pz:null}, {n:"Chegou na empresa",fase:"Empresa",pz:null}, {n:"Cadastrando",fase:"Empresa",pz:null}, {n:"Finalizado",fase:"Empresa",pz:null} ];
+var P = [
+ {id:1, f:"Point",    rom:"",       et:0,  v:18420.00, d:20, pc:640, banho:"Pontual", dias:1,  tot:1,  data:"03/11", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:2, f:"Mega Sul", rom:"",       et:0,  v:6240.00,  d:18, pc:250, banho:"Pontual", dias:2,  tot:2,  data:"02/11", nota:70, cnpj:"59", nos:"",      eles:""},
+ {id:3, f:"Xangai",   rom:"",       et:1,  v:9870.50,  d:15, pc:310, banho:"Ellos",   dias:6,  tot:6,  data:"28/10", nota:50, cnpj:"46", nos:"",      eles:""},
+ {id:4, f:"Art Ello", rom:"144459", et:2,  v:12300.00, d:15, pc:420, banho:"Ellos",   dias:1,  tot:8,  data:"26/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:5, f:"Point",    rom:"031892", et:2,  v:21760.00, d:25, pc:800, banho:"Pontual", dias:1,  tot:9,  data:"25/10", nota:50, cnpj:"67", nos:"",      eles:""},
+ {id:6, f:"Point",    rom:"035120", et:3,  v:594.00,   d:20, pc:20,  banho:"Pontual", dias:2,  tot:15, data:"19/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:7, f:"Point",    rom:"035067", et:3,  v:19046.72, d:20, pc:610, banho:"Pontual", dias:4,  tot:19, data:"15/10", nota:60, cnpj:"34", nos:"",      eles:""},
+ {id:8, f:"Linda",    rom:"144502", et:4,  v:7480.00,  d:10, pc:190, banho:"Ellos",   dias:1,  tot:15, data:"19/10", nota:60, cnpj:"46", nos:"Ellos 21/10", eles:""},
+ {id:9, f:"Point",    rom:"034992", et:5,  v:6611.30,  d:20, pc:230, banho:"Pontual", dias:3,  tot:26, data:"08/10", nota:60, cnpj:"34", nos:"Pontual 15/10", eles:"22/10"},
+ {id:10,f:"Point",    rom:"034993", et:5,  v:11000.22, d:20, pc:370, banho:"Pontual", dias:3,  tot:26, data:"08/10", nota:60, cnpj:"34", nos:"Pontual 15/10", eles:"22/10"},
+ {id:11,f:"Mega Sul", rom:"031655", et:6,  v:11200.00, d:18, pc:360, banho:"Pontual", dias:1,  tot:18, data:"16/10", nota:70, cnpj:"59", nos:"Pontual 24/10", eles:"30/10"},
+ {id:12,f:"Point",    rom:"031640", et:7,  v:15390.00, d:20, pc:520, banho:"Pontual", dias:11, tot:22, data:"12/10", nota:60, cnpj:"34", nos:"Pontual 20/10", eles:"23/10"},
+ {id:13,f:"Tucano",   rom:"002017", et:7,  v:3060.00,  d:12, pc:90,  banho:"Ellos",   dias:4,  tot:12, data:"22/10", nota:70, cnpj:"46", nos:"Ellos 29/10", eles:""},
+ {id:14,f:"Point",    rom:"031601", et:8,  v:9300.00,  d:20, pc:300, banho:"Pontual", dias:2,  tot:25, data:"09/10", nota:60, cnpj:"34", nos:"Pontual 17/10", eles:"20/10"},
+ {id:15,f:"Xangai",   rom:"008821", et:9,  v:8115.00,  d:15, pc:280, banho:"Ellos",   dias:1,  tot:30, data:"04/10", nota:50, cnpj:"59", nos:"Sorelly 01/11", eles:""},
+ {id:16,f:"Art Ello", rom:"144301", et:10, v:5200.00,  d:15, pc:170, banho:"Ellos",   dias:3,  tot:33, data:"01/10", nota:60, cnpj:"46", nos:"Sorelly 30/10", eles:""},
+ {id:17,f:"Mega Sul", rom:"031511", et:11, v:7400.00,  d:18, pc:240, banho:"Pontual", dias:0,  tot:40, data:"24/09", nota:70, cnpj:"59", nos:"Sorelly 28/10", eles:"07/10"}
+];
+var F = {q:"", forn:"", sit:""}, Z = 100, ABERTO = {10:true};
+var NIVEIS = [70,80,90,100,115,130,150];
+function brl(n){ return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pagar(p){ return p.v*(1-p.d/100); }
+function atras(p){ var z=ETAPAS[p.et].pz; return z!=null && p.dias>z; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function dias(p){ return p.et===11 ? '<span>Concluído</span>' : '<span class="'+(atras(p)?'at-t':'')+'"><b>'+p.dias+(p.dias===1?' dia':' dias')+'</b></span>'; }
+function rom(p){ return p.rom ? p.rom : 'sem romaneio'; }
+function vis(){ return P.filter(function(p){
+  if(F.q && (p.f+" "+p.rom).toLowerCase().indexOf(F.q.toLowerCase())<0) return false;
+  if(F.forn && p.f!==F.forn) return false;
+  if(F.sit==="atr" && !atras(p)) return false; if(F.sit==="aber" && p.et===11) return false; return true; }); }
+function zoomUi(){ return '<div class="zoom" aria-label="Zoom da tela"><button onclick="mudaZ(-1)" title="Diminuir" aria-label="Diminuir">−</button><button class="pc'+(Z!==100?' dif':'')+'" onclick="Z=100;tudo()" title="Voltar para 100%">'+Z+'%</button><button onclick="mudaZ(1)" title="Aumentar" aria-label="Aumentar">+</button></div>'; }
+function mudaZ(d){ var i = NIVEIS.indexOf(Z)+d; if(i>=0 && i<NIVEIS.length){ Z = NIVEIS[i]; tudo(); } }
+function topo(){ return '<div class="faixa"><span class="ic"></span><b>Cadastro de peças</b></div><div class="menu"><span class="on">Pedidos</span><span>Controle do mês</span><span>Banho</span><span>Peças</span><span>Fornecedores</span><span>Configurações</span></div>'
+  +'<div class="corpo"><div class="head"><div class="tt"><h2>Pedidos</h2></div>'+zoomUi()+'<div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><button class="pri">Novo pedido</button></div>'; }
+function quadro(card){
+  var L = vis();
+  return '<div class="kan" style="zoom:'+(Z/100)+'">'+ETAPAS.map(function(e,i){ var it = L.filter(function(p){ return p.et===i; }), at = it.filter(atras).length, tot = it.reduce(function(t,p){ return t+pagar(p); },0);
+    return '<div class="col"><div class="ch"><em>'+e.fase+'</em><b>'+e.n+'</b><small>'+it.length+(it.length===1?' pedido':' pedidos')+(e.pz?' · prazo '+e.pz+' dias':'')+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small><small>'+brl(tot)+'</small></div>'
+      +(it.length ? it.map(card).join("") : '<p class="vz">Nenhum pedido nesta etapa.</p>')+'</div>'; }).join("")+'</div>';
+}
+function btn(p){ return p.et<11 ? '<div class="acao"><button'+(atras(p)?' class="pri"':'')+'>'+(p.et<=1&&!p.rom?'Romaneio ›':'Concluir ›')+'</button></div>' : ''; }
+function c1(p){ return '<div class="card'+(atras(p)?' at':'')+'"><div class="l1"><b>'+esc(p.f)+'</b>'+dias(p)+'</div>'
+  +'<div class="grade g2"><div><small>Romaneio</small><b>'+rom(p)+'</b></div><div><small>Peças</small><b>'+p.pc+'</b></div><div><small>Banho</small><b>'+p.banho+'</b></div><div><small>A pagar</small><b>'+brl(pagar(p))+'</b></div></div></div>'; }
+function c2(p){ var tr = ETAPAS.map(function(e,i){ return '<i class="'+(i<p.et?'f':i===p.et?'a':'')+'" title="'+esc(e.n)+'"></i>'; }).join("");
+  return '<div class="card'+(atras(p)?' at':'')+'"><div class="l1"><b>'+esc(p.f)+'</b>'+dias(p)+'</div><div class="passos">'+tr+'</div>'
+  +'<div class="l2" style="padding-top:4px">'+(p.rom?'Romaneio '+p.rom:'Sem romaneio')+' · '+p.pc+' peças · banho '+p.banho+'</div><div class="l2"><b>'+brl(pagar(p))+'</b></div></div>'; }
+function c3(p){ var z=ETAPAS[p.et].pz, pc = z ? Math.min(100,Math.round(p.dias/z*100)) : 0;
+  return '<div class="card'+(atras(p)?' at':'')+'"><div class="l1"><b>'+esc(p.f)+'</b><span>'+(p.rom?'Romaneio '+p.rom:'Sem romaneio')+'</span></div>'
+  +'<div class="grade g3"><div><small>Compra</small><b>'+p.data+'</b></div><div><small>Desde a compra</small><b>'+p.tot+' d</b></div><div><small>Na etapa</small>'+dias(p)+'</div></div>'
+  +'<div class="grade g2"><div><small>Peças</small><b>'+p.pc+'</b></div><div><small>A pagar</small><b>'+brl(pagar(p))+'</b></div></div>'
+  +(z ? '<div class="fio'+(atras(p)?' at':'')+'" title="Prazo da etapa"><div style="width:'+pc+'%"></div></div>' : '')+btn(p)+'</div>'; }
+function c4(p){ var ab = ABERTO[p.id];
+  return '<div class="card'+(atras(p)?' at':'')+'" onclick="ABERTO['+p.id+']=!ABERTO['+p.id+']; tudo()"><div class="l1"><b>'+esc(p.f)+'</b><span>'+brl(pagar(p))+'</span>'+dias(p)+'</div>'
+  +(ab ? '<div class="det"><span>Romaneio</span><span>'+(p.rom||'—')+'</span><span>Comprado em</span><span>'+p.data+'</span><span>Dias desde a compra</span><span>'+p.tot+'</span><span>Nota</span><span>'+p.nota+'%</span><span>CNPJ</span><span>final '+p.cnpj+'</span><span>Valor da lista</span><span>'+brl(p.v)+'</span><span>Desconto</span><span>'+p.d+'%</span><span>Peças</span><span>'+p.pc+'</span><span>Banho</span><span>'+p.banho+'</span><span>Chegada (nós)</span><span>'+(p.nos||'—')+'</span><span>Data que a Pontual conta</span><span>'+(p.eles||'—')+'</span></div>'+btn(p) : '')+'</div>'; }
+function filtro(){
+  var fs = P.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  document.getElementById("F").innerHTML = '<input id="q" placeholder="Buscar fornecedor ou romaneio" value="'+esc(F.q)+'">'
+   +'<select id="fo"><option value="">Todos os fornecedores</option>'+fs.map(function(f){ return '<option'+(F.forn===f?' selected':'')+'>'+f+'</option>'; }).join("")+'</select>'
+   +'<select id="si"><option value="">Todas as situações</option><option value="aber"'+(F.sit==="aber"?' selected':'')+'>Em aberto</option><option value="atr"'+(F.sit==="atr"?' selected':'')+'>Atrasados</option></select>'
+   +((F.q||F.forn||F.sit) ? '<button id="lm">Limpar</button>' : '');
+  document.getElementById("q").oninput = function(){ F.q=this.value; var p=this.selectionStart; desenha(); var i=document.getElementById("q"); i.focus(); i.setSelectionRange(p,p); };
+  document.getElementById("fo").onchange = function(){ F.forn=this.value; tudo(); };
+  document.getElementById("si").onchange = function(){ F.sit=this.value; tudo(); };
+  var l=document.getElementById("lm"); if(l) l.onclick=function(){ F={q:"",forn:"",sit:""}; tudo(); };
+}
+function desenha(){
+  [["O1",c1],["O2",c2],["O3",c3],["O4",c4]].forEach(function(o){
+    var el = document.getElementById(o[0]), rolagem = el.querySelector(".kan"), x = rolagem ? rolagem.scrollLeft : 0;
+    el.innerHTML = topo()+quadro(o[1])+'</div>'; var n = el.querySelector(".kan"); if(n) n.scrollLeft = x; });
+}
+function tudo(){ filtro(); desenha(); }
+tudo();
+</script>
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos de banho · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#1C1C1F; --linha:#2E2E33; --ouro:#C9A13B; --branco:#FFFFFF; --ok:#4ADE80; --ruim:#F87171; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:820px}
+  .lista{display:flex;flex-direction:column;gap:20px;max-width:1250px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:14px}
+  .caixa > h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .topo{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:10px}
+  .bl{background:var(--cartao);border:1px solid var(--linha);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px}
+  .bl .tit{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;text-align:center;color:var(--ouro)}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:28px}
+  .l + .l{border-top:1px solid var(--linha)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .grande{font-size:20px}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)}
+  .selo{font-size:11px;font-weight:700;border-radius:99px;padding:1px 8px;border:1px solid var(--linha)}
+  .barra{height:8px;border-radius:99px;background:#2A2A2E;overflow:hidden;position:relative}
+  .barra i{display:block;height:100%;background:var(--ouro)}
+  .barra i.mais{background:var(--ruim)}
+  .marca{position:absolute;top:-2px;bottom:-2px;width:2px;background:#fff}
+  table{width:100%;border-collapse:collapse;text-align:center}
+  th{height:26px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6)}
+  td{height:28px;border-bottom:1px solid var(--linha);padding:0 4px}
+  .tres{display:grid;grid-template-columns:3fr 4fr 3fr;gap:6px}
+  .fase{border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .fase h4{font-size:11px;text-transform:uppercase;text-align:center;padding:5px;color:#fff}
+  .fase.c h4{background:#5B8DEF55}.fase.b h4{background:#A78BFA55}.fase.e h4{background:#2DD4BF55}
+  .cols{display:flex;gap:4px;padding:6px;overflow:hidden}
+  .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .col small{font-size:10px;text-align:center;font-weight:700;min-height:26px;display:flex;align-items:center;justify-content:center}
+  .card{background:#232327;border:1px solid var(--linha);border-radius:6px;padding:4px;text-align:center;font-size:11px}
+  .aviso{text-align:center;margin:6px 0 0;font-size:11px}
+</style>
+</head>
+<body>
+<h1>Pedidos de banho · 4 layouts</h1>
+<p class="sub">O quadro com as 12 etapas em 3 fases continua igual. O que muda é o alto da tela: <b>3 blocos pequenos só com prazo e tempo médio</b>. Entendi os 3 blocos assim: <b>Compra (fornecedores de bruto)</b>, <b>Banho Pontual</b> e <b>Banho Ellos</b>. Números inventados.</p>
+<div class="lista" id="lista"></div>
+<script>
+var D = {
+  compra:{nome:'Compra · bruto', prazo:5, medio:4.2, forns:[['Point',3.5,5],['Mega Sul',4.0,5],['Art Ello',5.5,5],['Xangai',6.1,5],['Linda',4.4,5]]},
+  pontual:{nome:'Banho Pontual', prazo:10, medio:8.6, forns:[['Ouro 3',8.0,10],['Ouro 4',9.5,10],['Prata',7.8,10]]},
+  ellos:{nome:'Banho Ellos', prazo:10, medio:11.3, forns:[['Ouro 1',12.0,10],['Prata',10.5,10]]}
+};
+var CH = ['compra','pontual','ellos'];
+function dd(n){ return String(n).replace('.',',') + ' d'; }
+function dentro(x){ return x.medio <= x.prazo; }
+function selo(x){ return dentro(x) ? '<span class="selo ok">Dentro do prazo</span>' : '<span class="selo ruim">Acima do prazo</span>'; }
+
+function A(){ return '<div class="topo">'+CH.map(function(k){ var x=D[k]; return '<div class="bl"><div class="tit">'+x.nome+'</div><div class="l"><span>Prazo</span><b class="num grande">'+dd(x.prazo)+'</b></div><div class="l"><span>Tempo médio</span><b class="num grande '+(dentro(x)?'ok':'ruim')+'">'+dd(x.medio)+'</b></div><div class="l"><span></span>'+selo(x)+'</div></div>'; }).join('')+'</div>'; }
+
+function B(){ return '<div class="topo">'+CH.map(function(k){ var x=D[k], pct=Math.min(100, x.medio/ (x.prazo*1.5) *100), marca=100/1.5; return '<div class="bl"><div class="tit">'+x.nome+'</div><div class="l"><span>Médio '+dd(x.medio)+'</span><span>Prazo '+dd(x.prazo)+'</span></div><div class="barra"><i class="'+(dentro(x)?'':'mais')+'" style="width:'+pct+'%"></i><span class="marca" style="left:'+marca+'%"></span></div><div class="l" style="justify-content:center">'+selo(x)+'</div></div>'; }).join('')+'</div>'; }
+
+function C(){ return '<div class="topo">'+CH.map(function(k){ var x=D[k]; return '<div class="bl"><div class="tit">'+x.nome+' · prazo '+dd(x.prazo)+'</div><table><tr><th>'+(k==='compra'?'Fornecedor':'Banho')+'</th><th>Médio</th></tr>'+x.forns.map(function(f){ return '<tr><td>'+f[0]+'</td><td class="num '+(f[1]<=f[2]?'ok':'ruim')+'">'+dd(f[1])+'</td></tr>'; }).join('')+'</table></div>'; }).join('')+'</div>'; }
+
+function Dd(){ return '<div class="topo">'+CH.map(function(k){ var x=D[k]; return '<div class="bl"><div class="tit">'+x.nome+'</div><div style="display:flex;align-items:baseline;justify-content:center;gap:8px"><b class="num grande">'+dd(x.prazo)+'</b><span>prazo</span><span>→</span><b class="num grande '+(dentro(x)?'ok':'ruim')+'">'+dd(x.medio)+'</b><span>médio</span></div><div class="l" style="justify-content:center"><span>'+(dentro(x) ? (x.prazo-x.medio).toFixed(1).replace('.',',')+' d de folga' : (x.medio-x.prazo).toFixed(1).replace('.',',')+' d de atraso')+'</span></div></div>'; }).join('')+'</div>'; }
+
+function quadro(){
+  var f = [['c','Compra',[['Escolha das peças',2],['Em separação',1],['Fechado, aguardando envio',0]]],['b','Banho',[['Enviado',1],['Chegou no banho',2],['Enviaram fotos',0],['Marcus confirmou preços',1],['Banho',3]]],['e','Empresa',[['Enviado para Sorelly',1],['Chegou na empresa',0],['Cadastrando',2],['Finalizado',4]]]];
+  return '<div class="tres">'+f.map(function(x){ return '<div class="fase '+x[0]+'"><h4>'+x[1]+'</h4><div class="cols">'+x[2].map(function(c){ var cards=''; for(var i=0;i<c[1];i++) cards+='<div class="card">Pedido</div>'; return '<div class="col"><small>'+c[0]+'</small>'+cards+'</div>'; }).join('')+'</div></div>'; }).join('')+'</div><p class="aviso">Quadro de etapas (igual ao de hoje)</p>';
+}
+var Q = quadro();
+document.getElementById('lista').innerHTML = [['A · Prazo e tempo médio em números grandes',A()],['B · Barra: tempo médio contra o prazo',B()],['C · Lista por fornecedor dentro de cada bloco',C()],['D · Prazo → médio em uma linha',Dd()]].map(function(x){ return '<section class="caixa"><h2>'+x[0]+'</h2>'+x[1]+Q+'</section>'; }).join('');
+</script>
+</body>
+</html>
