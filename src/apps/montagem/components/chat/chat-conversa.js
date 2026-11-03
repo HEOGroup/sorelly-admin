@@ -164,6 +164,14 @@ function CartaoDecisao(p){
       e("button",{onClick:function(){ api.decide(p.convId, p.m.id, p.eu, "info"); }, disabled:d.infoPedida, className:"flex flex-1 items-center justify-center gap-1.5 rounded-lg px-2 py-2.5 text-[12px] font-bold disabled:opacity-50", style:{background:W.campo, color:W.texto}}, e(Ph,{n:"question", s:17, fill:true}), d.infoPedida ? "Pedido enviado" : "Mais informações")) :
     e("p",{className:"px-3 pb-3 text-[11px]", style:{color:W.sec}}, "Aguardando a decisão de "+quem+"."));
 }
+// Foto nova no fim da conversa: a rolagem acontece antes da foto ganhar altura e ela ficava escondida atrás do campo de escrever. Quando a foto carrega e é a última mensagem, desce de novo.
+function seguirNoFim(ev){
+  var bolha = ev.target.closest("[data-m]"), area = bolha && bolha.parentElement;
+  while(area && !/(auto|scroll)/.test(getComputedStyle(area).overflowY)) area = area.parentElement;
+  if(!bolha || !area) return;
+  var todas = area.querySelectorAll("[data-m]");
+  if(todas[todas.length-1]===bolha) area.scrollTop = area.scrollHeight;
+}
 function ConteudoMsg(p){
   var m = p.m, md = m.midia, url = md && md.key ? lerMidia(md.key) : null;
   if(m.tipo==="decisao" && m.dec.tipo==="pagamento") return e(CartaoPagamento,{m:m, eu:p.eu, convId:p.convId, somenteLeitura:p.somenteLeitura});
@@ -172,7 +180,7 @@ function ConteudoMsg(p){
   if(m.tipo==="audio") return e(AudioMsg,{midia:md});
   var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[14px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu), p.espaco ? e("span",{className:"inline-block", style:{width:p.espaco, height:1}}) : null) : null;
   if(m.tipo==="imagem") return e("div",{className:"flex flex-col gap-1"},
-    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", className:"max-h-72 w-full max-w-[280px] object-cover"})) :
+    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", onLoad:seguirNoFim, className:"max-h-72 w-full max-w-[280px] object-cover"})) :
       e("p",{className:"flex items-center gap-2 py-3 text-[12px]", style:{color:W.sec}}, e(Ph,{n:"image", s:22}), "Foto indisponível (não ficou salva neste navegador)."), corpo);
   if(m.tipo==="arquivo"){
     var ic = /pdf/.test(md.mime||"") ? "file-pdf" : /sheet|excel|csv/.test((md.mime||"")+(md.nome||"")) ? "file-xls" : /word|doc/.test((md.mime||"")+(md.nome||"")) ? "file-doc" : "file-text";

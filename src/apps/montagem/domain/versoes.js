@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.30", data:"2026-11-02", titulo:"SorellyChat: foto inteira no fim da conversa", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"Foto nova no fim da conversa ficava cortada atrás do campo de escrever. Agora a conversa desce de novo quando a foto termina de carregar."},
+ ]},
  {v:"0.18.29", data:"2026-11-02", titulo:"SorellyChat: grupos de gestão e Novo grupo dentro do setor", itens:[
   {tipo:"novo", area:"SorellyChat", txt:"Dois grupos novos: Financeiro (gestão), com Marcus, Nickolas, Lucas, Nayale, Anamaria, Ana Beatriz e Marco Antonio; e Agendamento (gestão), com Marcus, Lucas, Nickolas, Priscila, Maria Claudia, Mariana, Ana Maria e Tamara. Conversa normal, sem abas por funcionária."},
   {tipo:"novo", area:"SorellyChat", txt:"Aba Setores do chat: dentro de cada setor há o botão Novo grupo. Ele abre com as pessoas do grupo do setor marcadas (dá para tirar gente ou juntar outras) e o grupo novo fica dentro do setor."},
