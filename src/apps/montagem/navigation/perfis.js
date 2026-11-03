@@ -16,16 +16,17 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   linkcadastro:["linkpag","linkrel","comlink","compras","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Hellen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
   inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"],
+  garantia:["garantia","garantiacred"],   // Garantia (03/11/2026): as meninas do setor lançam os créditos de garantia que sobem para o acerto no app da representante
   basico:[]};   // acesso básico: só Início, Rotina e Chat (o App acrescenta)
 var PAPEL_LB = {supervisao:"Acesso total", familia:"Direção (sem Configuradores)", supervisora:"Supervisão da montagem", agendamento:"Agendamento",
   financeiro:"Financeiro", inadimplencia:"Inadimplência", bipadora:"Atendimento e bipagem", montadora:"Montagem de kits", listagens:"Listagens e condicionais", kitnovo:"Kit novo", cadastropecas:"Cadastro de peças", linkcadastro:"Link, compras e cadastro",
-  representante:"Representantes", basico:"Acesso básico"};
+  representante:"Representantes", garantia:"Garantia", basico:"Acesso básico"};
 // cor e ícone de cada grupo (tela de Acessos e seletor do topo)
 var VISUAL = {supervisao:["#D9A63A","coroa"], familia:["#A855F7","equipe"], supervisora:["#22C55E","caixa"], agendamento:["#3B82F6","calendario"],
   financeiro:["#14B8A6","banco"], inadimplencia:["#EF4444","alert"], bipadora:["#0EA5E9","bipagem"], montadora:["#F59E0B","montadora"],
-  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], linkcadastro:["#14B8A6","banco"], representante:["#8B5CF6","representante"], basico:["#64748B","user"]};
+  listagens:["#D97706","lista"], kitnovo:["#EC4899","kitnovo"], cadastropecas:["#3B82F6","cubos"], linkcadastro:["#14B8A6","banco"], representante:["#8B5CF6","representante"], garantia:["#A855F7","escudo"], basico:["#64748B","user"]};
 // grupos que o RH pode editar, na ordem da tela
-var GRUPOS_EDITAVEIS = ["familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","linkcadastro","representante"];
+var GRUPOS_EDITAVEIS = ["familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","linkcadastro","representante","garantia"];
 
 /** Telas liberadas para o grupo: o que o RH marcou, ou o padrão. null = tudo. */
 function abasDoPapel(papel, acessos){
