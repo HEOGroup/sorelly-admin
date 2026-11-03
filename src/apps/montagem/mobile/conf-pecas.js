@@ -20,6 +20,7 @@ function ConfPecas(p){
   var s = p.s, d = p.d, k = p.k, conf = (s.confBip||{})[k.id] || {};
   var conds = condicionaisDoKit(k), tot = totaisKit(conds);
   var cd = useState(""), codigo = cd[0], setCodigo = cd[1];
+  var nt = useState(""), notaTxt = nt[0], setNotaTxt = nt[1];   // peças que faltaram, anotadas pela representante (opcional)
   var qt = useState({}), contadas = qt[0], setContadas = qt[1];   // quantidade contada de cada condicional (sem bipagem)
   var ab = useState(null), aberta = ab[0], setAberta = ab[1], cf = useState(false), confirmar = cf[0], setConfirmar = cf[1];
   var bipadora = k.bipId ? nomeDe(k.bipId) : "—", montadora = k.montId ? nomeDe(k.montId) : "—";
@@ -70,6 +71,13 @@ function ConfPecas(p){
         r.nFaltas>0 && e("span",{className:"text-[12px] text-[#991B1B]"},"Faltaram "+r.nFaltas+" peça(s): "+r.faltas.map(function(f){ return f.codigo+(f.qtd>1 ? " (×"+f.qtd+")" : ""); }).join(", ")),
         r.nSobras>0 && e("span",{className:"text-[12px] text-[#92400E]"},"Peça(s) de outro kit (ficaram com a revendedora, só registrado): "+r.sobras.map(function(x){ return x.codigo; }).join(", ")),
         e("span",{className:"text-[11.5px] text-[#991B1B]"}, r.porQuantidade ? "Diferença de quantidade registrada para o setor conferir." : "Registrado como erro de "+bipadora+" (quem bipou o kit) no Consolidado e na Listagem.")),
+    r.porQuantidade && r.erros>0 && e("div",{className:CARD+" flex flex-col gap-2"},
+      e("b",{className:"text-[13px] text-[#111827]"},"Sabe quais peças faltaram?"),
+      conf.nota ? e("p",{className:"text-[13px] text-[#374151]"},"Anotado: "+conf.nota)
+        : e(React.Fragment,null,
+            e("p",{className:"text-[12.5px] text-[#6B7280]"},"Se souber, anote os códigos ou os nomes. É opcional."),
+            e("input",{value:notaTxt, maxLength:200, placeholder:"Ex.: AB123, CD456", "aria-label":"Peças que faltaram", onChange:function(ev){ setNotaTxt(ev.target.value); }, className:"h-10 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-[#E5E7EB]"}),
+            e("button",{disabled:!notaTxt.trim(), onClick:function(){ d({type:"CONF_NOTA", kitId:k.id, nota:notaTxt.trim()}); setNotaTxt(""); }, className:"h-10 rounded-xl bg-[#3F3F46] text-[13px] font-bold txt-branco disabled:opacity-40"},"Salvar anotação"))),
     p.onContinuar && e("button",{onClick:p.onContinuar, className:BTN},"Continuar"),
     e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12px] font-semibold text-[#6B7280]"},"Refazer a conferência (teste)")); }
   // 3) bipando

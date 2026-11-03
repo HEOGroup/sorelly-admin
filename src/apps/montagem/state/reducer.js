@@ -1092,6 +1092,11 @@ function reducer(s, a){
       var cbQ = Object.assign({}, s.confBip||{}); cbQ[a.kitId] = Object.assign({}, cbQ[a.kitId]||{}, {lib:(cbQ[a.kitId]||{}).lib||agora, ini:agora, fim:agora, contagem:a.contagem||{}, resultado:resQ, erros:[]});
       return com(s, {confBip:cbQ}, nFQ>0 ? "Quantidade conferida: faltaram "+nFQ+" peça(s)" : "Quantidade conferida: "+lidasQ+" de "+esperQ+" peças");
     }
+    case "CONF_NOTA": {   // a representante anota as peças que faltaram (conferência por quantidade); fica no registro da conferência
+      var cbN = Object.assign({}, s.confBip||{}), anN = cbN[a.kitId]; if(!anN || !anN.fim) return s;
+      cbN[a.kitId] = Object.assign({}, anN, {nota:String(a.nota||"").slice(0, 200), notaEm:agora});
+      return com(s, {confBip:cbN}, "Peças que faltaram anotadas");
+    }
     case "CONF_BIPAR": {
       var kB = kitDe(s, a.kitId), cfB = (s.confBip||{})[a.kitId]; if(!kB || !cfB || !cfB.ini || cfB.fim) return s;
       var cbB = Object.assign({}, s.confBip); cbB[a.kitId] = biparConf(condicionaisDoKit(kB), cfB, a.codigo);
