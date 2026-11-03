@@ -661,6 +661,11 @@ function garantirGruposSetor(eu){
     if(ids.length>1) mk(nome, {simples:true, setorId:setorId, membros:ids}); };
   gestao("Financeiro (gestão)", "financeiro", ["Marcus","Nickolas","Lucas","Nayale","Anamaria","Ana Beatriz","Marco Antonio"]);
   gestao("Agendamento (gestão)", "agendamento", ["Marcus","Lucas","Nickolas","Priscila","Maria Claudia","Mariana","Ana Maria Divino","Tamara"]);
+  // Grupos antigos que pertencem a um setor (Marcus, 03/11/2026): ganham a marca do setor e passam a aparecer dentro dele na aba Setores
+  var marcar = function(acha, setorId){ estado.convs.filter(function(x){ return x.tipo==="grupo" && !x.excluido && !x.setorId && acha(x); }).forEach(function(c){ atualizarGrupo(c.id, {setorId:setorId}); }); };
+  marcar(function(c){ return c.id==="c_preco" || ["preco das pecas", "cadastro de pecas"].indexOf(sem(c.nome))>=0; }, "cadpecas");
+  marcar(function(c){ return sem(c.nome)==="rh"; }, "rh");   // grupo RH: setor Recursos Humanos
+  marcar(function(c){ return sem(c.nome)==="trocas"; }, "garantia");   // Trocas é do setor de Garantia (CLAUDE.md)
   GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
   var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
   // H&O Apps = grupo da Tecnologia (Marcus, 30/10/2026): Marcus, Leonardo, Lucas, Nickolas, Priscila e Maria (Claudia, do RH), sem a Anamaria. Abas no topo para abrir a conversa de cada um (menos o Marcus): Leonardo, Lucas, Nickolas, Priscila e Maria. Foto da H&O Apps e Sorelly.

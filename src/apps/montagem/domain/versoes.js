@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
+ ]},
  {v:"0.18.30", data:"2026-11-02", titulo:"SorellyChat: foto inteira no fim da conversa", itens:[
   {tipo:"correção", area:"SorellyChat", txt:"Foto nova no fim da conversa ficava cortada atrás do campo de escrever. Agora a conversa desce de novo quando a foto termina de carregar."},
  ]},
