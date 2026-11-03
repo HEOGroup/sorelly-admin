@@ -482,7 +482,7 @@ function erReduz(s, a){
       }
       if(c.reposicao){ var rr0 = c.reposicao, rp = {taxa:r2(num(rr0.taxa)), taxaRepresentante:r2(num(rr0.taxaRepresentante)), mediaMinima:r2(num(rr0.mediaMinima)), repPorSemana:Math.round(num(rr0.repPorSemana)), minutosEscolha:Math.round(num(rr0.minutosEscolha))};
         if(rp.taxa<0 || rp.taxaRepresentante<0 || rp.mediaMinima<=0 || rp.repPorSemana<1 || rp.minutosEscolha<1) return recusa("Confira os valores da reposição."); novo.reposicao = rp; }
-      if(c.top50){ var t5 = {mediaMinima:r2(num(c.top50.mediaMinima)), mesInicial:/^d{4}-d{2}$/.test(String(c.top50.mesInicial)) ? c.top50.mesInicial : cfg.top50.mesInicial}; if(t5.mediaMinima<=0) return recusa("Confira a média mínima do Top 50."); novo.top50 = t5; }
+      if(c.top50){ var t5 = {mediaMinima:r2(num(c.top50.mediaMinima)), mesInicial:/^\d{4}-\d{2}$/.test(String(c.top50.mesInicial)) ? c.top50.mesInicial : cfg.top50.mesInicial}; if(t5.mediaMinima<=0) return recusa("Confira a média mínima do Top 50."); novo.top50 = t5; }
       if(c.valores){ var vs = c.valores.map(function(x){ return {de:r2(num(x.de)), max:r2(num(x.max))}; }).sort(function(m, n){ return m.de-n.de; });
         if(!vs.length || vs.some(function(x){ return x.de<=0 || x.max<=0; })) return recusa("Confira a tabela de valores."); novo.valores = vs; }
       if(c.qtd){ var qq = {limiteMedia:r2(num(c.qtd.limiteMedia)), abaixo:Math.round(num(c.qtd.abaixo)), acima:Math.round(num(c.qtd.acima)), top50:Math.round(num(c.qtd.top50))};

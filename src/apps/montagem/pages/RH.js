@@ -8,6 +8,10 @@ import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
 import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
   parseHoras, porEmpresaStats, presencaDe, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
+import { Bloco as BlocoPadrao, Botao, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { FichaExperiencia, ConfigFicha, Pessoa } from "@/apps/montagem/pages/rh/FichaExperiencia";
+import { ehGestorDe, fichaCfg, fichaDe, resultadoFicha } from "@/apps/montagem/domain/rh-ficha";
+import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
@@ -109,7 +113,7 @@ function AbaRhPresenca(){
       e(BlocoBarra,{cor:"ouro", t:"Atrasos", sub:"o horário de chegada vai no relatório diário (minutos de atraso = chegada − horário de entrada do cadastro)"},
         e("div",{className:"flex flex-col gap-3 p-4"},
           e("div",{className:"flex flex-wrap items-end gap-3"},
-            e(Campo,{rot:"Colaboradora"}, e(Sel,{value:form.id, label:"Colaboradora", className:"w-72", onChange:function(v){ setForm(Object.assign({}, form, {id:v})); }}, e("option",{value:""}, "Escolha…"), todos.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
+            e(Campo,{rot:"Colaboradora"}, e(Sel,{value:form.id, label:"Colaboradora", className:"w-72", onChange:function(v){ setForm(Object.assign({}, form, {id:v})); }}, e("option",{value:""}, "Escolha…"), todos.slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), "pt-BR"); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
             e(Campo,{rot:"Dia"}, e("input",{type:"date", value:form.data, className:INPUT+" h-10! w-44", onChange:function(ev){ setForm(Object.assign({}, form, {data:ev.target.value})); }})),
             e(Campo,{rot:"Chegou às"}, e("input",{type:"time", value:form.hora, className:INPUT+" h-10! w-32", onChange:function(ev){ setForm(Object.assign({}, form, {hora:ev.target.value})); }})),
             e(Btn,{v:"primary", disabled:!form.id || !form.data || !form.hora, onClick:function(){ acao(c, "pres_atraso", {id:form.id, data:form.data, atraso:form.hora}); setForm(Object.assign({}, form, {hora:""})); }}, "Lançar atraso")),
@@ -212,7 +216,7 @@ function AbaRhAdv(){
     e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-4"}, e(Tile,{t:"No ano", v:int(lista.filter(function(x){ return x.data.slice(0,4)===String(ano); }).length), cor:"#E8B84B"}), e(Tile,{t:"Pessoas advertidas", v:int(porPessoa.length), cor:"#60A5FA"}),
       e(Tile,{t:"Em observação", v:int(porPessoa.filter(function(x){ return x.flag==="Em observação"; }).length), cor:"#F59E0B"}), e(Tile,{t:"Reincidentes", v:int(porPessoa.filter(function(x){ return x.flag==="Reincidente"; }).length), cor:"#EF4444"})),
     e(BlocoBarra,{cor:"ouro", t:"Nova advertência"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"},
-      e(Campo,{rot:"Colaboradora"}, e(Sel,{value:f.colabId, label:"Colaboradora", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {colabId:v})); }}, e("option",{value:""}, "Escolha…"), colabs.filter(function(x){ return x.status!=="DESLIGADO"; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
+      e(Campo,{rot:"Colaboradora"}, e(Sel,{value:f.colabId, label:"Colaboradora", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {colabId:v})); }}, e("option",{value:""}, "Escolha…"), colabs.slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), "pt-BR"); }).filter(function(x){ return x.status!=="DESLIGADO"; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
       e(Campo,{rot:"Data"}, e("input",{type:"date", value:f.data, className:INPUT+" h-10! w-44", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e(Campo,{rot:"Tipo"}, e(Sel,{value:f.tipoId, label:"Tipo", className:"w-44", onChange:function(v){ setF(Object.assign({}, f, {tipoId:v})); }}, e("option",{value:""}, "Escolha…"), cfg.tiposAdv.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
       e(Campo,{rot:"Motivo"}, e(Sel,{value:f.motivoId, label:"Motivo", className:"w-56", onChange:function(v){ setF(Object.assign({}, f, {motivoId:v})); }}, e("option",{value:""}, "Escolha…"), cfg.motivosAdv.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
@@ -229,16 +233,23 @@ function AbaRhAdv(){
 }
 
 // ───────────────── Controle de experiência ─────────────────
+function pontosFicha(c, id){ var r = resultadoFicha(fichaCfg(c.rh), fichaDe(c.rh, id)); return r.total===null ? "Sem nota" : String(r.total).replace(".", ",")+" / 100"; }
 function AbaRhExp(){
-  var c = useRh(), lista = experienciaLista(c.s), semPlano = colaboradoresRh(c.s).filter(function(x){ return x.status!=="DESLIGADO" && !x.efetivadoEm && (!x.planoId || !x.admissao); }).length;
+  var c = useRh(), fx = useState(function(){ var id = typeof window!=="undefined" ? window.__fichaAbrir : ""; if(typeof window!=="undefined") window.__fichaAbrir = null; return id || ""; }), fichaId = fx[0], setFichaId = fx[1], lista = experienciaLista(c.s), semPlano = colaboradoresRh(c.s).filter(function(x){ return x.status!=="DESLIGADO" && !x.efetivadoEm && (!x.planoId || !x.admissao); }).length;
+  // gestor de setor vê só as fichas do próprio setor; RH e Direção (autorizações da ficha) veem todas
+  var veTodas = temAutorizacao("rh_ficha_lanca", c.s.usuario) || temAutorizacao("rh_ficha_nota", c.s.usuario) || grupoDe(c.s.usuario)==="supervisao";
+  if(!veTodas) lista = lista.filter(function(x){ return ehGestorDe(fichaCfg(c.rh), nomeDe(c.s.usuario), x.c.setor); });
+  var colabFicha = fichaId ? colaboradoresRh(c.s).find(function(x){ return x.id===fichaId; }) : null;
+  if(colabFicha) return e("div",{className:"flex flex-col gap-4"}, e(PageHead,{t:"Ficha de experiência", sub:"100 pontos: a pessoa perde pontos a cada ocorrência no período de experiência."}),
+    e(FichaExperiencia,{c:c, colab:colabFicha, voltar:function(){ setFichaId(""); }, agir:function(op, extra){ acao(c, op, extra); }}));
   return e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:"Controle de experiência", sub:"1ª avaliação = admissão + 1º marco; 2ª = admissão + 1º + 2º marco; efetivação = dia seguinte à 2ª. Quem não foi efetivada aparece até 45 dias depois da 2ª avaliação."}),
     semPlano>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, semPlano+" colaboradoras ainda sem plano de experiência ou sem data de admissão no Cadastro; elas não aparecem aqui.")),
-    e(BlocoBarra,{cor:"ouro", t:"Em experiência", sub:lista.length+" na lista"}, lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13px] text-muted-foreground"}, "Ninguém em período de experiência no momento.") :
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Colaboradora"), th("Admissão"), th("1ª avaliação"), th("2ª avaliação"), th("Efetivação"), th("Prazo"), th("")])),
-        e("tbody",null, lista.map(function(x){ var ch = x.chip, cor = ch.vencido ? "#EF4444" : ch.aviso ? "#F59E0B" : "#22C55E";
-          return e("tr",{key:x.c.id, className:"border-b border-border/60"}, e("td",{className:TD+" font-semibold"}, x.c.nome, e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, x.c.setor)), e("td",{className:TD}, br(x.c.admissao)), e("td",{className:TD}, br(x.a1)), e("td",{className:TD}, br(x.a2)), e("td",{className:TD}, br(x.ef)),
-            e("td",{className:TD}, e("span",{className:"whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", style:{background:cor+"26", color:cor}}, ch.t)), e("td",{className:TD}, e(Btn,{v:"secondary", sm:true, onClick:function(){ if(window.confirm("Efetivar "+x.c.nome+" hoje?")) acao(c, "efetivar", {id:x.c.id}); }}, "Efetivar"))); }))))));
+    e(BlocoPadrao,{t:"Em experiência", dir:e("span",{className:"text-[13px]"}, lista.length+" na lista")}, lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Ninguém em período de experiência no momento.") :
+      e(TabelaP,{cols:[{t:"Colaboradora", c:true}, {t:"Admissão", w:100, c:true}, {t:"1ª avaliação", w:110, c:true}, {t:"2ª avaliação", w:110, c:true}, {t:"Efetivação", w:100, c:true}, {t:"Prazo", w:200, c:true}, {t:"Pontos", w:110, c:true}, {t:"Ações", w:190, c:true}]},
+        lista.map(function(x){ var ch = x.chip, cor = ch.vencido ? "text-destructive" : ch.aviso ? "text-warning" : "text-success";
+          return e(Tr,{key:x.c.id}, e(Td,{c:true, title:x.c.setor}, e(Pessoa,{nome:x.c.nome, forte:true})), e(Td,{c:true}, br(x.c.admissao)), e(Td,{c:true}, br(x.a1)), e(Td,{c:true}, br(x.a2)), e(Td,{c:true}, br(x.ef)), e(Td,{c:true, cor:cor, forte:true}, ch.t), e(Td,{c:true, forte:true}, pontosFicha(c, x.c.id)),
+            e("td",{className:"h-8 border-b border-border px-2.5 text-center"}, e("span",{className:"inline-flex gap-2"}, e(Botao,{onClick:function(){ setFichaId(x.c.id); }}, "Ficha"), e(Botao,{onClick:function(){ if(window.confirm("Efetivar "+x.c.nome+" hoje?")) acao(c, "efetivar", {id:x.c.id}); }}, "Efetivar")))); }))));
 }
 
 // ───────────────── Horas extras ─────────────────
@@ -259,7 +270,7 @@ function AbaRhHoras(){
     e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-4"}, e(Tile,{t:"Lançamentos", v:int(lista.length), cor:"#E8B84B"}), e(Tile,{t:"Horas pagas", v:formatHoras(soma(pagas)), cor:"#60A5FA"}), e(Tile,{t:"Banco de horas", v:formatHoras(soma(banco)), cor:"#A78BFA"}),
       c.veSalario ? e(Tile,{t:"Custo", v:BK(custoTotal), cor:"#F59E0B"}) : e(Tile,{t:"Pessoas", v:int(resumo.length), cor:"#F59E0B"})),
     e(BlocoBarra,{cor:"ouro", t:"Lançar hora extra"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"},
-      e(Campo,{rot:"Colaboradora"}, e(Sel,{value:f.colabId, label:"Colaboradora", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {colabId:v})); }}, e("option",{value:""}, "Escolha…"), colabs.filter(function(x){ return x.status==="ATIVO"; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
+      e(Campo,{rot:"Colaboradora"}, e(Sel,{value:f.colabId, label:"Colaboradora", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {colabId:v})); }}, e("option",{value:""}, "Escolha…"), colabs.slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), "pt-BR"); }).filter(function(x){ return x.status==="ATIVO"; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
       e(Campo,{rot:"Data"}, e("input",{type:"date", value:f.data, className:INPUT+" h-10! w-44", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e(Campo,{rot:"Horas (HH:MM)"}, e("input",{value:f.horas, placeholder:"02:30", className:INPUT+" h-10! w-28 text-center "+MONO, onChange:function(ev){ setF(Object.assign({}, f, {horas:ev.target.value.replace(/[^\d:]/g,"")})); }})),
       e(Campo,{rot:"Tipo"}, e(Sel,{value:f.tipoId, label:"Tipo", className:"w-52", onChange:function(v){ setF(Object.assign({}, f, {tipoId:v})); }}, e("option",{value:""}, "Escolha…"), cfg.tiposHE.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
@@ -334,13 +345,14 @@ function ListaCfg(p){
 }
 function AbaRhConfig(){
   var c = useRh(), cfg = c.rh.config, tb = useState("escalas"), aba = tb[0], setAba = tb[1];
-  var abas = [["escalas","Escalas"], ["planos","Planos de experiência"], ["adv","Advertências"], ["he","Horas extras"], ["feriados","Feriados"], ["geral","Relatório diário"]];
+  var abas = [["escalas","Escalas"], ["planos","Planos de experiência"], ["ficha","Ficha de experiência"], ["adv","Advertências"], ["he","Horas extras"], ["feriados","Feriados"], ["geral","Relatório diário"]];
   var check = function(it, dia){ var tem = it.dias.indexOf(dia)>=0; return e("label",{key:dia, className:"flex cursor-pointer items-center gap-1 text-[12px]"}, e("input",{type:"checkbox", checked:tem, className:"size-4", onChange:function(){ acao(c, "cfg_set", {lista:"escalas", id:it.id, patch:{dias:(tem ? it.dias.filter(function(x){ return x!==dia; }) : it.dias.concat([dia])).sort()}}); }}), DIAS_SEMANA[dia].slice(0,3)); };
   return e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:"Configurador do RH", sub:"Escalas, planos de experiência, tipos e motivos de advertência, adicionais de hora extra, feriados e o número de sócios do relatório. Setores e empresas vêm de Pessoas e CNPJs."}),
     e("div",{className:"flex flex-wrap gap-2"}, abas.map(function(x){ return e("button",{key:x[0], onClick:function(){ setAba(x[0]); }, className:"h-10 rounded-xl px-4 text-[13px] font-bold ring-1 "+(aba===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/50")}, x[1]); })),
     aba==="escalas" && e(ListaCfg,{c:c, lista:"escalas", t:"Escalas de trabalho", sub:"domingo nunca conta como dia escalado", vazio:{nome:"", dias:[1,2,3,4,5]}, campos:[["nome","w-56","text","Nome da escala"]], extra:function(it){ return e("div",{className:"flex flex-wrap gap-2"}, [1,2,3,4,5,6].map(function(d){ return check(it, d); })); }}),
     aba==="planos" && e(ListaCfg,{c:c, lista:"planos", t:"Planos de experiência", sub:"1º marco e 2º marco, em dias", vazio:{nome:"", marco1:45, marco2:45}, campos:[["nome","w-56","text","Nome"], ["marco1","w-24","number","1º marco"], ["marco2","w-24","number","2º marco"]]}),
+    aba==="ficha" && e(ConfigFicha,{c:c, agir:function(op, extra){ acao(c, op, extra); }}),
     aba==="adv" && e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-2"},
       e(ListaCfg,{c:c, lista:"tiposAdv", t:"Tipos de advertência", sub:"tipo com suspensão exige os dias", vazio:{nome:"", suspensao:false}, campos:[["nome","w-44","text","Nome"]], extra:function(it){ return e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[12.5px]"}, e("input",{type:"checkbox", checked:!!it.suspensao, className:"size-4", onChange:function(ev){ acao(c, "cfg_set", {lista:"tiposAdv", id:it.id, patch:{suspensao:ev.target.checked}}); }}), "gera suspensão"); }}),
       e(ListaCfg,{c:c, lista:"motivosAdv", t:"Motivos de advertência", vazio:{nome:""}, campos:[["nome","w-64","text","Motivo"]]})),

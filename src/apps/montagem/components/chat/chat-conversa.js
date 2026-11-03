@@ -180,7 +180,7 @@ function ConteudoMsg(p){
   if(m.tipo==="audio") return e(AudioMsg,{midia:md});
   var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[14px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu), p.espaco ? e("span",{className:"inline-block", style:{width:p.espaco, height:1}}) : null) : null;
   if(m.tipo==="imagem") return e("div",{className:"flex flex-col gap-1"},
-    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", onLoad:seguirNoFim, className:"max-h-72 w-full max-w-[280px] object-cover"})) :
+    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, chave:md.key, nome:md.nome}); }, className:"block max-w-[440px] overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", onLoad:seguirNoFim, className:"block h-auto max-h-[480px] w-auto max-w-full"})) :   // foto grande, inteira e sem corte: dá para ver sem abrir (Marcus, 04/11/2026)
       e("p",{className:"flex items-center gap-2 py-3 text-[12px]", style:{color:W.sec}}, e(Ph,{n:"image", s:22}), "Foto indisponível (não ficou salva neste navegador)."), corpo);
   if(m.tipo==="arquivo"){
     var ic = /pdf/.test(md.mime||"") ? "file-pdf" : /sheet|excel|csv/.test((md.mime||"")+(md.nome||"")) ? "file-xls" : /word|doc/.test((md.mime||"")+(md.nome||"")) ? "file-doc" : "file-text";
@@ -308,6 +308,21 @@ function Conversa(p){
     e("div",{className:"min-h-0 flex-1"}, e(ConversaBase, Object.assign({}, p, {key:idRep||p.convId, convId:idRep||p.convId, onVoltar:rep ? function(){ setRep(null); } : p.onVoltar}))));
 }
 
+// PDF no chat (Marcus, 04/11/2026): o navegador não abre PDF guardado como endereço "data:" dentro da janela, a tela ficava em branco. Aqui o PDF vira um arquivo em memória (blob) e abre no leitor do navegador.
+function pdfParaBlob(dataUrl, mime){
+  var m = /^data:([^;,]*)(;base64)?,(.*)$/.exec(dataUrl || ""); if(!m) return null;
+  try{ var bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]), b = new Uint8Array(bin.length); for(var i=0; i<bin.length; i++) b[i] = bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([b], {type:mime || m[1] || "application/pdf"})); }catch(x){ return null; }
+}
+function VisorPdf(p){
+  var us = useState(null), url = us[0], setUrl = us[1];
+  useEffect(function(){ var u = pdfParaBlob(p.url, "application/pdf"); setUrl(u); return function(){ if(u) URL.revokeObjectURL(u); }; }, [p.url]);
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:"flex flex-wrap items-center justify-center gap-2 px-3 py-2"},
+      e("a",{href:url||undefined, target:"_blank", rel:"noreferrer", className:"flex h-8 items-center rounded-md border px-3 text-[13px] font-semibold", style:{borderColor:W.borda, color:W.texto, opacity:url ? 1 : .5}}, "Abrir em outra aba"),
+      e("a",{href:url||undefined, download:p.nome||"arquivo.pdf", className:"flex h-8 items-center rounded-md border px-3 text-[13px] font-semibold", style:{borderColor:W.borda, color:W.texto, opacity:url ? 1 : .5}}, "Baixar")),
+    url ? e("iframe",{src:url, title:p.nome, className:"h-[78vh] w-full bg-white"}) : e("p",{className:"px-4 py-8 text-center text-[13px]"}, "Não consegui abrir este PDF. Use Baixar."));
+}
 function ConversaBase(p){
   var st = useChat(), eu = p.eu, conv = st.convs.find(function(c){ return c.id===p.convId; });
   var lm = useState(60), limite = lm[0], setLimite = lm[1];
@@ -403,7 +418,8 @@ function ConversaBase(p){
         e("button",{onClick:function(){ api.deleteMessage(conv.id, apagando.id, eu, false); setApagando(null); }, className:"rounded-lg px-4 py-2.5 text-left text-[13.5px] hover:bg-white/10", style:{color:W.vermelho}}, "Apagar para mim"),
         e("button",{onClick:function(){ setApagando(null); }, className:"rounded-lg px-4 py-2.5 text-left text-[13.5px] hover:bg-white/10"}, "Cancelar"))),
     encaminhando && e(Encaminhar,{msg:encaminhando, eu:eu, fechar:function(){ setEncaminhando(null); }}),
-    visor && e(Janela,{titulo:visor.nome||"Arquivo", fechar:function(){ setVisor(null); }, largura:900}, visor.tipo==="imagem" ? e("img",{src:visor.url, alt:"", className:"mx-auto max-h-[80vh] w-auto"}) : e("iframe",{src:visor.url, title:visor.nome, className:"h-[78vh] w-full bg-white"})),
+    visor && e(Janela,{titulo:visor.nome||"Arquivo", fechar:function(){ setVisor(null); }, largura:visor.tipo==="imagem" ? 1600 : 900}, visor.tipo==="imagem" ? e("img",{src:(visor.chave && lerMidia(visor.chave)) || visor.url, alt:"", className:"block h-[84vh] w-full object-contain"})   // foto em tela quase cheia e sempre a versão grande: a miniatura só vale enquanto a grande não chega (Marcus, 04/11/2026)
+      : visor.tipo==="pdf" ? e(VisorPdf,{url:visor.url, nome:visor.nome}) : e("iframe",{src:visor.url, title:visor.nome, className:"h-[78vh] w-full bg-white"})),
     info && e(InfoConversa,{conv:conv, eu:eu, direcao:p.direcao, fechar:function(){ setInfo(false); }, leitura:p.leitura, aoSair:function(){ setInfo(false); if(p.onVoltar) p.onVoltar(); }}));
 }
 

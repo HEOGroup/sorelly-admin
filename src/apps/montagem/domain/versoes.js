@@ -3,6 +3,59 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.47", data:"2026-11-03", titulo:"RH: Ficha de experiência com 100 pontos", itens:[
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada colaboradora em experiência tem uma ficha de 100 pontos. Ela perde pontos a cada ocorrência (falta, atraso, comportamento, erro). O gestor dá nota de 0 a 10 em produtividade e adaptação. O sistema mostra a recomendação: efetivar (85 a 100), acompanhar (70 a 84) ou não efetivar. A colaboradora nunca vê a ficha. Botão Imprimir ficha."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"Faltas, atestados e atrasos da Presença diária aparecem na ficha como sugestão. O RH confirma ou descarta antes de tirar os pontos."},
+  {tipo:"novo", area:"RH → Configurador", txt:"Aba Ficha de experiência: descontos de cada ocorrência (atestado = 1 ponto), pontos de cada categoria e faixas da recomendação."},
+  {tipo:"novo", area:"RH → Acessos e autorizações", txt:"Duas autorizações novas: lançar ocorrências na ficha e dar as notas do gestor."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada setor tem um gestor que dá a nota do gestor e vê só as fichas do próprio setor. A lista de gestores fica em Configurador do RH → Ficha de experiência → Gestores por setor."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"A foto da colaboradora (a mesma do perfil do SorellyChat) aparece ao lado do nome na lista e no topo da ficha. Sem foto, aparecem as iniciais."},
+  {tipo:"novo", area:"Avisos → Avaliação de experiência", txt:"No dia da 1ª e da 2ª avaliação (e até 3 dias depois) sai um alerta para a Maria, Marcus, Nickolas e Lucas. Um clique em Abrir tela leva direto à ficha da colaboradora, com a pontuação e as notas, para decidir se efetiva. Quem recebe muda em Tecnologia → Avisos."},
+  {tipo:"melhoria", area:"RH → Controle de experiência", txt:"A lista passou para o padrão visual (topo dourado, nada abreviado) e ganhou a coluna Pontos."}
+ ]},
+ {v:"0.18.45", data:"2026-11-03", titulo:"Pedidos: campo Fotos enviadas e os 3 pedidos da Point corrigidos", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Campo novo Fotos enviadas no pedido (na ficha e no cartão aberto). Quando o pedido muda para a etapa Enviaram fotos, o sistema grava o dia sozinho."},
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Os 4 pedidos da Ellos foram atualizados pelo resumo de 03/11: Joias & Cia (romaneio 5806) e Linda (159232/1) chegaram em 21/10 e tiveram as fotos em 23/10; Xangai 5457 chegou em 26/10 (estava 27/10) e teve as fotos em 27/10; Xangai 5499 segue a caminho."},
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Os pedidos da Point 035067, 035090 e 035120 estavam com chegada na Pontual em 22/10, que é o dia das fotos. Corrigido: chegaram em 19/10 e as fotos foram enviadas em 22/10. Agora têm 15 dias na Pontual (prazo 12) e aparecem como atrasados. Os valores bateram com o relatório: bruto R$ 45.048,04 e líquido R$ 35.809,50."}
+ ]},
+ {v:"0.18.46", data:"2026-11-04", titulo:"SorellyChat: fim dos grupos repetidos", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"O sistema criava sozinho um grupo de cada setor e, quando a lista de conversas ainda não tinha chegado completa, criava cópias (RH, Encomendas, Cadastro, Financeiro e outros). Agora ele não cria mais os grupos de setor sozinho, só age quando a lista do servidor chegou completa, e esconde as cópias que já nasceram, ficando o grupo com a conversa."},
+ ]},
+ {v:"0.18.44", data:"2026-11-03", titulo:"Pedidos: prazo da Pontual de 12 dias desde a chegada e verniz novo", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"A Pontual confirmou: o pedido leva 10 a 12 dias contados de quando chega lá, e mais 2 dias se tiver verniz novo. O prazo da Pontual passou para 12 dias. Na galvânica (etapas 5 a 8) o prazo é um só, contado da chegada lá, e o atraso e os dias do cartão contam desde a chegada. A Ellos continua com 10 dias de partida até ela responder."},
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Campo novo Verniz novo (Sim ou Não) na ficha do pedido. Com Sim, o prazo da Pontual sobe para 14 dias. O cartão aberto mostra Dias na galvânica, com o prazo (por exemplo, 12 de 12)."}
+ ]},
+ {v:"0.18.46", data:"2026-11-04", titulo:"Financeiro: tela Atividades e Resultado do mês com aba Resumo", itens:[
+  {tipo:"novo", area:"Financeiro", txt:"Financeiro › Atividades: lista do que fica para fazer depois (\"quando tiver um pouco mais de tempo\"). Cada atividade tem título, detalhes, quando (quando tiver tempo, esta semana, este mês ou em uma data), responsável, e conclui com uma resposta opcional. Abertas e Concluídas em abas; atividade com data vencida fica em vermelho. Guarda no módulo finativ, só do Financeiro e da Diretoria."},
+  {tipo:"novo", area:"Resultado do mês", txt:"Nova aba Resumo (abre primeiro): à esquerda o mês escolhido com nota fiscal, dinheiro e diferença; à direita os meses ao redor (fechados, em andamento e os que vêm). Mês que vem sem faturamento lançado mostra um traço no lugar da entrada, em vez do resultado exagerado de antes."}]},
+ {v:"0.18.45", data:"2026-11-04", titulo:"SorellyChat: PDF abre e grupo MLN", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"PDF enviado no chat não abria: o navegador não mostra PDF guardado como endereço data dentro da janela. Agora o PDF vira um arquivo em memória e abre no leitor do navegador, com os botões Abrir em outra aba e Baixar."},
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo MLN criado, só com Marcus, Nickolas e Lucas."},
+ ]},
+ {v:"0.18.44", data:"2026-11-04", titulo:"Contas de acesso em tabela", itens:[
+  {tipo:"melhoria", area:"Acessos e autorizações", txt:"A aba Contas virou uma tabela só, no padrão das outras telas: topo dourado, tudo centralizado, nada abreviado e sem faixa de totais. Cada linha tem usuário, situação, pessoa do sistema, grupo de acesso, perfil, contato do chat, senha e as ações Liberar, Bloquear, Copiar mensagem e Nova senha. Clicar na linha abre os setores. A lista de Senhas para enviar saiu: a senha está na própria tabela."},
+ ]},
+ {v:"0.18.43", data:"2026-11-04", titulo:"Acessos e autorizações voltou a abrir", itens:[
+  {tipo:"correção", area:"Acessos e autorizações", txt:"A tela quebrava com \"Algo deu errado\" porque a lista de quem está em cada grupo não tinha Link e cadastro, Garantia e Acesso básico. A lista foi completada e a tela abre de novo, inclusive a aba Contas."},
+ ]},
+ {v:"0.18.42", data:"2026-11-04", titulo:"SorellyChat: foto grande na conversa e em tela quase cheia", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"A foto na conversa fica maior (até 440 por 480 px), inteira e sem corte. Ao tocar, abre em tela quase cheia e sempre na versão grande; a miniatura só aparece enquanto a grande não chega. No celular da funcionária a foto ocupa a largura do balão."},
+ ]},
+ {v:"0.18.43", data:"2026-11-03", titulo:"Pedidos: coluna vazia limpa e Enviado na fase Compra", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"As colunas ficaram mais largas (340 px) e os dias na etapa voltaram para o cartão, ao lado do valor. No Banho, os dias contam desde a chegada do pedido na galvânica."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O período agora só esconde pedido finalizado. Pedido em aberto aparece sempre, mesmo de 45 dias atrás (antes, os que já estavam na Sorelly, como Chegou na empresa e Cadastrando, sumiam ao filtrar por mês). O filtro Situação virou Tipo do pedido: Todos os pedidos, Em aberto (tudo, sem período), Atrasados e Finalizados. Com Em aberto ou Atrasados o botão do período fica apagado, porque ele não vale."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Botão no alto para ocultar ou mostrar as colunas que não têm pedido (mostra quantas são). Ocultas, as outras colunas e a barra das fases se juntam. O sistema lembra a escolha neste navegador."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A tela inteira (título, botões, filtros e quadro) ficou dentro de um bloco só com borda. As colunas não ganharam borda nova."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Coluna sem pedido não mostra mais a frase Nenhum pedido nesta etapa. O cabeçalho continua igual, com a contagem e o valor (0 pedidos e R$ 0,00)."},
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"A etapa Enviado passou para a fase Compra (azul), porque o bruto ainda está do lado do fornecedor. A fase Compra agora vai da etapa 1 à 4, o Banho da 5 à 8 e a Empresa da 9 à 12."}
+ ]},
+ {v:"0.18.41", data:"2026-11-03", titulo:"Atendimento interno: lista Kits novos para agendar", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Em Revendedoras, logo abaixo do calendário e acima da tabela, nova lista Kits novos (mesmo padrão da tabela de revendedoras; a tabela de baixo ganhou o título Revendedoras internas com o total) para agendar: os kits que o setor Kits novos manda para a Sorelly e ainda não têm dia marcado (revendedora, cidade, kit Normal ou Prata com o valor, há quantos dias chegou). Agendar (botão pequeno) abre a ficha da revendedora, onde se escolhe data e hora; ela entra na listagem do dia como Kit novo. Cada tabela tem uma etiqueta no canto (Kits novos · N para agendar; Revendedoras internas · N total). Com ?exemplo=kits na tela aparecem 3 linhas de exemplo, sem gravar."},
+ ]},
+ {v:"0.18.42", data:"2026-11-03", titulo:"Pedidos: etapa Banho corrigida e cartão alinhado à esquerda", itens:[
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Os pedidos que estavam em Chegou no banho já estão em produção na Pontual e na Ellos. Eles passaram para a etapa 8, Banho, uma vez só. A data da etapa ficou no dia da chegada na galvânica, então os dias continuam certos. Pedido que entrar em Chegou no banho depois disso não é mexido. Correção do mesmo dia: o servidor guardava as etapas antigas e devolvia por cima a cada 20 segundos. Agora a correção também roda quando os pedidos chegam do servidor, e o resultado volta para o servidor."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O cartão do quadro ficou alinhado à esquerda, começando do início: banho, fornecedor e número do pedido (romaneio) juntos, e o valor. Os dias saíram da frente do cartão e ficam no cartão aberto, na linha Na etapa."}
+ ]},
  {v:"0.18.40", data:"2026-11-04", titulo:"SorellyChat: busca acha pessoas", itens:[
   {tipo:"correção", area:"SorellyChat", txt:"A busca do chat só olhava conversas que já existiam e o texto das mensagens, então um funcionário sem conversa não aparecia. Agora aparece a seção Pessoas, com nome, setor e função; tocar abre a conversa nova."},
  ]},

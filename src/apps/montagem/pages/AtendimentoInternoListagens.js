@@ -28,35 +28,50 @@ function AbaIntListagens(){
   var hoje = isoDia(new Date());
   // as agendadas pela Tamara vêm da DevMaster: atualiza ao abrir e a cada 10 minutos (mesma busca da aba Revendedoras)
   useEffect(function(){ var rodar = function(){ if(apiAtiva()) sincronizarDm(d, true).catch(function(){ /* sem servidor: segue com o que já está salvo */ }); }; rodar(); var t = setInterval(rodar, 600000); return function(){ clearInterval(t); }; }, []);
-  var ab = useState({}), abertos = ab[0], setAbertos = ab[1];   // dias abertos (hoje abre sozinho)
+  var ab = useState({}), abertos = ab[0], setAbertos = ab[1];   // meses e dias abertos (tudo começa fechado)
 
   // agendadas pela Tamara (lista de Revendedoras) que ainda não viraram atendimento: aparecem aqui como linhas virtuais
   var comInterno = {}; (s.internos||[]).forEach(function(x){ comInterno[x.id] = 1; });
   var virtuais = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data && !comInterno[r.internoId]; }).map(function(r){
     return {id:"IRV"+r.id, nome:r.nome, data:r.agend.data, hora:r.agend.hora, status:"agendado", tipo:r.kitNovo ? "kit_novo" : "acerto"}; });
-  var todos = (s.internos||[]).concat(virtuais);
-  var datas = todos.map(function(x){ return x.data; }).filter(function(x, i, a){ return x && a.indexOf(x)===i; })
-    .sort(function(p, q){ var gp = p>=hoje, gq = q>=hoje; return gp!==gq ? (gp ? -1 : 1) : gp ? p.localeCompare(q) : q.localeCompare(p); });   // hoje e os próximos primeiro; depois os dias passados, do mais recente
-  var aberto = function(dt){ return abertos[dt]!==undefined ? abertos[dt] : dt===hoje; };
-  var alterna = function(dt){ var o = Object.assign({}, abertos); o[dt] = !aberto(dt); setAbertos(o); };
+  // começa do zero em novembro/2026 (Marcus, 04/11/2026): nada antes de 01/11/2026, e só aparecem os meses até o mês de hoje
+  var INICIO = "2026-11-01";
+  var todos = (s.internos||[]).concat(virtuais).filter(function(x){ return x.data && x.data>=INICIO && x.data.slice(0,7)<=hoje.slice(0,7); });
+  var MESES = ["Janeiro","Fevereiro","Março","Abril","Maio","Junho","Julho","Agosto","Setembro","Outubro","Novembro","Dezembro"];
+  var mesDe = function(dt){ return dt.slice(0,7); };   // AAAA-MM
+  var nomeMes = function(m){ return MESES[+m.slice(5,7)-1]+" "+m.slice(0,4); };
+  var unico = function(x, i, arr){ return x && arr.indexOf(x)===i; };
+  var ordem = function(ref){ return function(p, q){ var gp = p>=ref, gq = q>=ref; return gp!==gq ? (gp ? -1 : 1) : gp ? p.localeCompare(q) : q.localeCompare(p); }; };   // agora e o futuro primeiro (em ordem); depois o passado, do mais recente
+  var datas = todos.map(function(x){ return x.data; }).filter(unico).sort(ordem(hoje));
+  var meses = datas.map(mesDe).filter(unico).sort(ordem(mesDe(hoje)));
+  // tudo começa fechado: abre o mês e, dentro dele, o dia (abre para baixo)
+  var aberto = function(chave){ return !!abertos[chave]; };
+  var alterna = function(chave){ var o = Object.assign({}, abertos); o[chave] = !aberto(chave); setAbertos(o); };
 
   var corpo = [];
-  datas.forEach(function(dt){
-    var ls = todos.filter(function(x){ return x.data===dt; }).sort(function(p, q){ return (p.hora||"99").localeCompare(q.hora||"99"); });
-    var feitos = ls.filter(function(x){ return x.status==="acertado"; }).length, ab2 = aberto(dt);
-    corpo.push(e("tr",{key:"d"+dt, onClick:function(){ alterna(dt); }, className:"cursor-pointer hover:brightness-125"},
-      e("td",{colSpan:COLUNAS.length, "aria-expanded":ab2, className:"h-8 border-b border-border bg-[#B8862B]/25 px-2.5 text-left text-[13px] font-semibold"}, // padrao-ok: linha do dia com o texto no começo, pedido do Marcus em 03/11/2026
-        (ab2 ? "▾ " : "▸ ")+(dt===hoje ? "Hoje · " : "")+fmtData(dt)+" · "+diaSemana(dt)+" · "+ls.length+(ls.length===1 ? " atendimento" : " atendimentos")+" · "+feitos+" de "+ls.length+" feitos")));
-    if(!ab2) return;
-    // cabeçalho das colunas logo acima da primeira linha do dia aberto
-    corpo.push(e("tr",{key:"c"+dt, style:{background:TOPO}}, COLUNAS.map(function(c){ return e("th",{key:c[0], className:"h-[30px] px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c[0]); })));
-    ls.forEach(function(x){
-      corpo.push(e("tr",{key:x.id},
-        e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, x.hora || "—"),
-        e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px] font-semibold"}, x.nome),
-        e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, TIPOS[x.tipo||"acerto"] || "Acerto"),
-        e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, primeiro(x.bipou)),
-        e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, primeiro(x.atendeu))));
+  meses.forEach(function(m){
+    var abM = aberto("m"+m);
+    corpo.push(e("tr",{key:"m"+m, onClick:function(){ alterna("m"+m); }, className:"cursor-pointer hover:brightness-125"},
+      e("td",{colSpan:COLUNAS.length, "aria-expanded":abM, className:"h-8 border-b border-border bg-[#B8862B]/45 px-2.5 text-left text-[13px] font-semibold"}, // padrao-ok: linha do mês com o texto no começo, pedido do Marcus em 04/11/2026
+        (abM ? "▾ " : "▸ ")+nomeMes(m))));
+    if(!abM) return;
+    datas.filter(function(dt){ return mesDe(dt)===m; }).forEach(function(dt){
+      var ls = todos.filter(function(x){ return x.data===dt; }).sort(function(p, q){ return (p.hora||"99").localeCompare(q.hora||"99"); });
+      var ab2 = aberto(dt);
+      corpo.push(e("tr",{key:"d"+dt, onClick:function(){ alterna(dt); }, className:"cursor-pointer hover:brightness-125"},
+        e("td",{colSpan:COLUNAS.length, "aria-expanded":ab2, className:"h-8 border-b border-border bg-[#B8862B]/20 pl-8 pr-2.5 text-left text-[13px] font-semibold"}, // padrao-ok: linha do dia com o texto no começo, pedido do Marcus em 04/11/2026
+          (ab2 ? "▾ " : "▸ ")+fmtData(dt)+" · "+diaSemana(dt))));
+      if(!ab2) return;
+      // cabeçalho das colunas logo acima da primeira linha do dia aberto
+      corpo.push(e("tr",{key:"c"+dt, style:{background:TOPO}}, COLUNAS.map(function(c){ return e("th",{key:c[0], className:"h-[30px] px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c[0]); })));
+      ls.forEach(function(x){
+        corpo.push(e("tr",{key:x.id},
+          e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, x.hora || "—"),
+          e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px] font-semibold"}, x.nome),
+          e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, TIPOS[x.tipo||"acerto"] || "Acerto"),
+          e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, primeiro(x.bipou)),
+          e("td",{className:"h-8 border-b border-border px-2.5 text-center text-[13px]"}, primeiro(x.atendeu))));
+      });
     });
   });
 

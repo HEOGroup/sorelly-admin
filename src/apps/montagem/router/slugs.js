@@ -156,6 +156,7 @@ export const SLUG_DA_ABA = {
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
   resultado: "resultado-do-mes",
+  finativ: "financeiro-atividades",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
   revbase: "revendedoras-ativas",

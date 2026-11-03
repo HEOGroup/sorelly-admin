@@ -22,7 +22,7 @@ function registroDe(l, cfg){
   var dia = String(l.etapaCriadaEm || "").slice(0, 10), cad = dia && diasDesde(dia)<=3 ? dia : hojeISO();   // cadastro antigo "entra" hoje no fluxo da Michele
   var empresa = kitNaEmpresa(l.kitOpcao), exp = /expositor$/.test(l.kitOpcao||"");
   return {id:"L"+l.id, mes:MESES[+cad.split("-")[1]-1], cad:cad, lib:null, sol:null, bip:null, ret:null, st:"cadastrada",
-    nome:l.nome, cid:l.cidade||"", bai:bairroDe(l.endereco), prof:l.profissao||"", rep:empresa ? "Sorelly" : "", mod:"Misto", val:valorDoKit(l.kitOpcao, l.kitValorCasa, l.kitValorEmpresa) || cfg.valorPadrao, retirada:"",
+    nome:l.nome, cid:l.cidade||"", bai:bairroDe(l.endereco), prof:l.profissao||"", rep:empresa ? "Sorelly" : "", mod:"Misto", val:cfg.valorPadrao,   /* todo kit novo nasce com o valor padrão (R$ 7.000,00); a Michele edita à mão quando a Direção aprova outro (chamado dela, 03/11/2026) */ retirada:"",
     trab:l.empresa||"", trabEnd:"", disp:"", obs:exp ? "EXPOSITOR" : "", c1:false, c2:false, c3:false, c1n:"", c1t:"", c1r:"", c2n:"", c2t:"", c2r:"", c3n:"", c3t:"", c3r:"",
     tel:l.telefone||"", tipo:"Vendedora", op:l.reviewedBy||"Cadastro", ent:"Kommo", entId:"", obs2:"", desm:0,
     hist:[{em:Date.now(), quem:l.reviewedBy||"Cadastro", txt:"Chegou em Cadastradas no quadro do Cadastro (lead "+l.id+")"}]};

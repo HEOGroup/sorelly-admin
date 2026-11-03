@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vídeo · Proposta: Kits novos para a Tamara agendar</title>
+<style>
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba. Nomes e valores são de exemplo. */
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba. Nomes e valores são de exemplo. */
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+.sis{position:relative;display:grid;grid-template-columns:220px 1fr;grid-template-rows:44px 1fr;height:100vh;width:100vw}
+.lado{grid-row:1/3;border-right:1px solid var(--fio);background:var(--painel);display:flex;flex-direction:column;padding:10px 8px;gap:2px;overflow:hidden}
+.logo{font-weight:700;color:var(--ouro);font-size:15px;padding:4px 8px 10px;letter-spacing:.04em}
+.it{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:#E6E3DB;border:1px solid transparent}
+.it i{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}
+.it.on{background:rgba(214,178,92,.16);border-color:rgba(214,178,92,.5);color:var(--ouro)}.it.on i{background:var(--ouro)}
+.hov{background:rgba(255,255,255,.1)}
+.topo{border-bottom:1px solid var(--fio);display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--painel)}
+.topo .grande{font-weight:600}.pessoa{margin-left:auto;border:1px solid var(--fio2);border-radius:10px;padding:0 10px;height:22px;line-height:20px;font-size:11px}
+.area{position:relative;overflow:hidden;padding:14px 18px;display:flex;flex-direction:column;gap:12px}
+.tela{display:none;flex-direction:column;gap:12px}.tela.v{display:flex}
+.menu{display:flex;gap:18px;height:34px;align-items:center;border-bottom:1px solid var(--fio);position:relative}
+.menu span{color:#D8D5CD;padding:6px 6px;border-bottom:2px solid transparent;border-radius:4px}.menu .on{color:var(--ouro);border-bottom-color:var(--ouro)}
+.drop{display:none;position:absolute;left:560px;top:34px;z-index:4;width:230px;border:1px solid var(--fio2);border-radius:8px;background:var(--painel);padding:4px;box-shadow:0 8px 24px #000a}
+.drop.v{display:block}.drop div{height:30px;display:flex;align-items:center;padding:0 10px;border-radius:5px}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);color:var(--texto);font-weight:600;display:inline-flex;align-items:center}
+.filtros{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 12px;padding:12px}
+.cp{display:flex;flex-direction:column;gap:4px}.cp small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;transition:border-color .3s,box-shadow .3s}
+.in.foco{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35)}
+.faixa{display:flex;gap:0;border:1px solid var(--fio);border-radius:8px;background:var(--painel);overflow:hidden}
+.faixa div{flex:1;padding:6px 10px;text-align:center;border-left:1px solid var(--fio)}.faixa div:first-child{border-left:0}
+.faixa small{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em}.faixa b{font-size:16px}
+table{width:100%;border-collapse:collapse}th{height:30px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:rgba(255,255,255,.04);padding:0 12px}
+td{height:32px;padding:0 12px;border-top:1px solid var(--fio)}.n{text-align:right}th.n{text-align:right}.verde{color:var(--ok)}
+.legenda{position:absolute;left:0;right:0;bottom:0;z-index:5;min-height:62px;border-top:1px solid var(--ouro);background:rgba(15,16,19,.96);padding:10px 20px 10px 244px;display:flex;gap:12px;align-items:center;font-size:16px}
+.legenda .nn{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:6;background:var(--painel2)}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
+#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
+#mao svg{width:22px;height:22px}#mao.toque::after{content:"";position:absolute;left:-10px;top:-10px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ouro);animation:o .5s ease-out}
+@keyframes o{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
+#reco{position:absolute;right:12px;top:10px;z-index:7;height:24px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);font:11px Inter,system-ui,sans-serif;padding:0 10px;cursor:pointer}
+body.gravar #reco{display:none}
+.tabs{display:flex;gap:8px}.tabs span{height:32px;padding:0 14px;border:1px solid var(--fio2);border-radius:6px;display:inline-flex;align-items:center;font-weight:600}.tabs .on{border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.16)}
+.jan{display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.7);align-items:flex-start;justify-content:center;padding:30px 20px}.jan.v{display:flex}
+.card{width:100%;max-width:820px;border:1px solid var(--fio2);border-radius:14px;background:#14171c;overflow:hidden}
+.card .c1{padding:12px 16px;border-bottom:1px solid var(--fio);display:flex;justify-content:space-between}.card .c2{padding:12px 16px;display:grid;grid-template-columns:1fr 1.4fr;gap:16px;min-height:190px}
+.card .c3{padding:10px 16px;border-top:1px solid var(--fio);display:flex;justify-content:space-between}
+.conf{display:none;position:absolute;inset:0;z-index:30;background:rgba(0,0,0,.45);align-items:center;justify-content:center}.conf.v{display:flex}
+.conf div.b{width:420px;border:1px solid var(--fio2);border-radius:10px;background:#2b2d33;padding:18px}.conf p{margin:0 0 16px;font-size:14px}.conf .l{display:flex;gap:8px;justify-content:flex-end}
+tr.alvo.hov td{background:rgba(255,255,255,.08)}
+
+.jan .card{max-width:760px}.tp{display:flex;gap:8px;flex-wrap:wrap}.tp span{height:32px;padding:0 14px;border:1px solid var(--fio2);border-radius:16px;display:inline-flex;align-items:center;font-weight:600;transition:all .3s}.tp .on{border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.2)}
+.chat{background:#0b141a;border-radius:8px;padding:10px;min-height:150px;display:flex;flex-direction:column;gap:8px}.bal{max-width:80%;border-radius:10px;padding:6px 10px;background:#202c33}.bal.eu{align-self:flex-end;background:#005c4b}.bal b{color:var(--ouro);font-size:12px;display:block}
+.print{width:220px;height:90px;border-radius:6px;background:linear-gradient(135deg,#2a2d33,#1c1f24);border:1px dashed var(--fio2);display:grid;place-items:center;color:#D8D5CD;font-size:11px;margin-bottom:4px}
+.comp{display:flex;gap:8px;align-items:flex-end;margin-top:8px}.comp .ta{flex:1;min-height:36px;border-radius:8px;background:#2a3942;padding:8px 12px;transition:box-shadow .3s}.comp .ta.foco{box-shadow:0 0 0 2px rgba(214,178,92,.5)}
+.env{width:36px;height:36px;border-radius:18px;background:#25a05a;display:grid;place-items:center;font-weight:700;color:#fff}.clip{width:36px;height:36px;border-radius:18px;display:grid;place-items:center;color:#D8D5CD}
+.tecla{display:none;position:absolute;right:30px;bottom:100px;z-index:21;border:1px solid var(--ouro);border-radius:8px;background:var(--painel);padding:6px 12px;font-weight:700;color:var(--ouro)}.tecla.v{display:block}
+.aviso{display:none;position:absolute;right:20px;top:54px;z-index:25;width:380px;border:1px solid rgba(214,178,92,.7);border-radius:12px;background:#1d1a12;padding:12px;box-shadow:0 12px 30px #000a;flex-direction:column;gap:8px}.aviso.v{display:flex}
+.et{white-space:nowrap;display:inline-flex;height:22px;align-items:center;padding:0 10px;border:1px solid var(--ouro);border-radius:11px;color:var(--ouro);font-size:12px;font-weight:600}.et.ok{border-color:var(--ok);color:var(--ok)}
+.nova td{background:rgba(214,178,92,.12)}.cq{display:flex;gap:10px;margin-top:6px}.cq .col{flex:1;border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:8px;min-height:120px}.cq .col small{display:block;text-align:center;font-weight:700;text-transform:uppercase;font-size:11px;margin-bottom:6px}.cart{border:1px solid var(--fio2);border-radius:8px;background:var(--painel2);padding:6px 8px;text-align:center;margin-bottom:6px}
+.risca .cart{text-decoration:line-through;opacity:.5}.sumiu{border:2px dashed var(--at);border-radius:8px;padding:4px}
+
+.kn{border:1px solid rgba(214,178,92,.6);border-radius:10px;background:linear-gradient(180deg,rgba(214,178,92,.10),transparent)}.kn .tt{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--fio);font-weight:700}
+.kn .tt i{font-style:normal;background:var(--ouro);color:var(--tinta);border-radius:10px;padding:0 8px;font-size:12px}
+.kr{display:grid;grid-template-columns:1.6fr 1fr 1.1fr 1fr 150px;gap:8px;align-items:center;padding:6px 12px;border-top:1px solid var(--fio)}.kr.h{border-top:0;font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.kr .btn{height:28px;justify-content:center}.ok{color:var(--ok);font-weight:600}
+.agf{display:none;grid-template-columns:1fr 1fr auto;gap:8px;padding:8px 12px;background:rgba(0,0,0,.25);border-top:1px solid var(--fio)}.agf.v{display:grid}
+.toast{display:none;position:absolute;right:20px;top:54px;z-index:25;border:1px solid var(--ok);border-radius:10px;background:#12231a;padding:10px 14px;color:#bbf7d0}.toast.v{display:block}
+.tabrev td,.tabrev th{padding:0 10px}
+</style></head><body>
+<div class="sis" id="sis">
+  <aside class="lado"><div class="logo">SORELLY</div><div class="it on" id="mIni"><i></i>Início</div><div class="it" id="mCham"><i></i>Chamados</div><div class="it"><i></i>SorellyChat</div><div class="it"><i></i>Financeiro</div><div class="it"><i></i>Agendamento</div><div class="it" id="mCad"><i></i>Cadastro de revendedoras</div><div class="it" id="mAt"><i></i>Atendimento interno</div><div class="it"><i></i>Kits</div><div class="it"><i></i>Materiais e estoque</div><div class="it"><i></i>Recursos Humanos</div><div class="it"><i></i>Aulas do setor</div></aside>
+  <header class="topo"><b class="grande" id="tit">Início</b><span id="sub"></span><span class="pessoa" id="pes">Funcionária · seu setor</span></header>
+  <main class="area">
+    <section class="tela v" id="tIni"><div class="bloco" style="padding:14px"><b style="font-size:20px">Olá! Seja bem-vinda.</b></div></section>
+    <section class="tela" id="tAt">
+      <div class="menu"><span>Listagens</span><span id="mRev">Revendedoras</span><span>Atendimento Sorelly</span><span>Consolidado Sorelly</span></div>
+      <div id="tRev" style="display:none;flex-direction:column;gap:10px">
+        <div class="kn" id="kn">
+          <div class="tt">Kits novos para agendar <i id="cnt">3</i><span style="margin-left:auto;font-weight:400;font-size:12px">Vêm direto do setor Kits novos</span></div>
+          <div class="kr h"><span>Revendedora</span><span>Cidade</span><span>Kit</span><span>Chegou</span><span></span></div>
+          <div id="kl"></div>
+          <div class="agf" id="agf"><div class="cp"><small>Data</small><div class="in" id="aData">dd/mm/aaaa</div></div><div class="cp"><small>Hora</small><div class="in" id="aHora">hh:mm</div></div><span class="btn" id="bConf" style="align-self:end;border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.2)">Confirmar</span></div>
+        </div>
+        <b style="font-size:16px">Revendedoras internas <span style="font-weight:400;font-size:12px">· as que vão fazer acerto</span></b>
+        <div class="bloco"><table class="tabrev"><thead><tr><th>Revendedora</th><th>Próximo acerto</th><th>Faltam</th><th>Situação</th></tr></thead><tbody><tr><td>Revendedora Exemplo A</td><td>08/11</td><td>5 d</td><td>A contatar</td></tr><tr><td>Revendedora Exemplo B</td><td>10/11</td><td>7 d</td><td>Agendada</td></tr><tr><td>Revendedora Exemplo C</td><td>12/11</td><td>9 d</td><td>A contatar</td></tr></tbody></table></div>
+      </div>
+    </section>
+    <div class="toast" id="toast">✓ Kit novo marcado: entrou na listagem de 05/11 às 10:00</div>
+  </main>
+  <div class="legenda"><span class="nn" id="n">1</span><span id="txt"></span></div>
+  <div class="prog"><i id="barra"></i></div>
+  <div id="mao"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <button id="reco">Recomeçar</button>
+</div>
+<script>
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 62000;
+if(/gravar=1/.test(location.search)) document.body.classList.add("gravar");
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var vai = function(id, ini, fn){
+  em(ini, function(){ var r = $(id).getBoundingClientRect(), s = $("sis").getBoundingClientRect(); $("mao").style.left = (r.left - s.left + Math.min(40, r.width/2))+"px"; $("mao").style.top = (r.top - s.top + r.height/2)+"px"; $(id).classList.add("hov"); });
+  em(ini+1000, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); var el = $(id); if(el) el.classList.remove("hov"); if(fn) fn(); });
+};
+var digita = function(id, texto, ini, dur){ var n = texto.length; for(var i=1;i<=n;i++){ (function(k){ em(ini + dur*k/n, function(){ $(id).textContent = texto.slice(0,k); }); })(i); } };
+var zeraMao = function(){ $("mao").style.transition = "none"; $("mao").style.left = "640px"; $("mao").style.top = "300px"; void $("mao").offsetWidth; $("mao").style.transition = ""; };
+var KITS = [["Camili Exemplo da Silva","Curitiba","Normal R$ 7.000,00","há 1 dia"],["Gabriela Exemplo Alves","São José dos Pinhais","Normal R$ 5.000,00","há 2 dias"],["Ingrid Exemplo Moura","Curitiba","Prata R$ 7.000,00","hoje"]];
+var feito = false;
+var linhas = function(){ var l = feito ? KITS.slice(1) : KITS; $("cnt").textContent = l.length; $("kl").innerHTML = (feito ? '<div class="kr"><span class="ok">✓ '+KITS[0][0]+'</span><span>Curitiba</span><span>Normal R$ 7.000,00</span><span class="ok">Marcado 05/11 · 10:00</span><span></span></div>' : "") + l.map(function(k, i){ return '<div class="kr"><span><b>'+k[0]+'</b></span><span>'+k[1]+'</span><span>'+k[2]+'</span><span>'+k[3]+'</span><span><span class="btn" '+(i===0 && !feito ? 'id="bAg"' : "")+'>Agendar</span></span></div>'; }).join(""); };
+var inicia = function(){
+  limpa(); t0 = Date.now(); zeraMao(); feito = false; linhas();
+  $("tit").textContent = "Início"; $("sub").textContent = ""; $("tIni").className = "tela v"; $("tAt").className = "tela"; $("tRev").style.display = "none"; $("agf").className = "agf"; $("toast").className = "toast";
+  $("aData").textContent = "dd/mm/aaaa"; $("aHora").textContent = "hh:mm"; ["aData","aHora"].forEach(function(i){ $(i).className = "in"; }); $("kn").style.boxShadow = "";
+  $("pes").textContent = "Tamara · Agendamento";
+  $("mIni").className = "it on"; $("mAt").className = "it";
+  em(200, function(){ cena(1, "<b>PROPOSTA</b> (os nomes são de exemplo). Veja como a Tamara recebe os kits novos."); });
+  em(4500, function(){ cena(2, "No menu da esquerda, clique em <b>Atendimento interno</b>."); });
+  vai("mAt", 5500, function(){ $("mIni").className = "it"; $("mAt").className = "it on"; $("tIni").className = "tela"; $("tAt").className = "tela v"; $("tit").textContent = "Atendimento interno"; });
+  em(9000, function(){ cena(3, "Na barra de cima, clique em <b>Revendedoras</b>."); });
+  vai("mRev", 10000, function(){ $("tRev").style.display = "flex"; $("sub").textContent = "› Revendedoras"; });
+  em(13500, function(){ cena(4, "<b>No alto da tela</b> aparece a lista <b>Kits novos para agendar</b>. Todo kit que a Michele manda para a Sorelly cai aqui sozinho e fica pendente."); $("kn").style.boxShadow = "0 0 0 2px rgba(214,178,92,.7)"; });
+  em(21000, function(){ cena(5, "Cada linha mostra a revendedora, a cidade, o kit e há quanto tempo chegou. O número no título mostra quantos faltam agendar."); });
+  em(28000, function(){ cena(6, "Para agendar, clique em <b>Agendar</b> na linha da revendedora."); });
+  vai("bAg", 29000, function(){ $("agf").className = "agf v"; });
+  em(33500, function(){ cena(7, "Escolha a <b>data</b> e a <b>hora</b>. O sistema respeita as regras da agenda (3 por horário, 15 por dia)."); });
+  vai("aData", 34500, function(){ $("aData").className = "in foco"; $("aData").textContent = "05/11/2026"; });
+  vai("aHora", 37500, function(){ $("aData").className = "in"; $("aHora").className = "in foco"; $("aHora").textContent = "10:00"; });
+  em(41500, function(){ cena(8, "Clique em <b>Confirmar</b>."); });
+  vai("bConf", 42500, function(){ $("agf").className = "agf"; $("aHora").className = "in"; feito = true; linhas(); $("toast").className = "toast v"; });
+  em(47500, function(){ cena(9, "Pronto. O kit sai da fila de pendentes, o número diminui e a revendedora entra na <b>listagem do dia 05/11</b>, já como Kit novo."); });
+  em(55000, function(){ cena(10, "Quando a lista de cima fica vazia, a Tamara sabe que não há kit novo para agendar. <b>Reposição</b> pode seguir o mesmo desenho, com o pedido vindo de Encomendas e reposições."); $("toast").className = "toast"; });
+};
+$("reco").onclick = inicia;
+setInterval(function(){ $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script></body></html>

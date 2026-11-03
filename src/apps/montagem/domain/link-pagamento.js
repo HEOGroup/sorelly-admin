@@ -602,7 +602,7 @@ function lpReduz(s, a){
     case "sol_editar": {
       var ed = sol1(); if(!ed) return recusa("Solicitação não encontrada.");
       if(a.meioId && (!meioDe(sx, a.meioId) || meioDe(sx, a.meioId).tipo!=="LINK")) return recusa("Escolha um link de pagamento válido.");
-      if(a.dataAcerto && !/^d{4}-d{2}-d{2}$/.test(a.dataAcerto)) return recusa("Data do acerto inválida.");
+      if(a.dataAcerto && !/^\d{4}-\d{2}-\d{2}$/.test(a.dataAcerto)) return recusa("Data do acerto inválida.");
       var rp2 = trim(a.representante); ed.representante = rp2; if(a.meioId) ed.meioId = a.meioId; ed.dataAcerto = a.dataAcerto || ""; ed.bandeira = trim(a.bandeira); ed.observacao = trim(a.observacao); if(a.linkUrl!==undefined) ed.linkUrl = trim(a.linkUrl);
       if(rp2 && !repDaRevendedora(lp, ed.revendedora)) lp.revendedoras.push({id:"R"+(++lp.seq), nome:ed.revendedora, representante:rp2});
       ed.historico.push({em:agora, por:por, de:ed.status, para:ed.status, nota:"Dados editados"});

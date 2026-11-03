@@ -189,6 +189,7 @@ const montagem = {
     pagina("fiscal", () => import("@/apps/montagem/pages/Fiscal"), "AbaFiscal"),
     pagina("contas-a-pagar-mensal", () => import("@/apps/montagem/pages/ContasPagar"), "AbaContasPagar"),
     pagina("resultado-do-mes", () => import("@/apps/montagem/pages/ResultadoMes"), "AbaResultadoMes"),
+    pagina("financeiro-atividades", () => import("@/apps/montagem/pages/FinanceiroAtividades"), "AbaFinAtividades"),
     pagina("previsao-de-caixa", () => import("@/apps/montagem/pages/PrevisaoCaixa"), "AbaPrevisaoCaixa"),
     pagina("comissoes-de-todos", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComissoesTodos"),
     pagina("comissoes-bipagem", () => import("@/apps/montagem/pages/ComissoesTodos"), "AbaComisBipagem"),

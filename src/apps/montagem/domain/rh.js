@@ -4,6 +4,7 @@ import { globLocal } from "@/lib/glob-local";
 // advertências, controle de experiência e horas extras. As regras ficam aqui; as telas em pages/RH.js. Estado: s.rh (só neste navegador por enquanto).
 // A lista de colaboradores é a lista de funcionários CLT de domain/pessoas.js (sócios e PJ não entram no controle de presença); o RH completa o cadastro (admissão, escala, salário...).
 import { funcionarios, REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
+import { fichaCfg, fichaDe } from "@/apps/montagem/domain/rh-ficha";
 
 var CODIGOS = [["P","Presença","#22C55E"], ["F","Falta sem justificativa","#EF4444"], ["AJ","Falta com aviso","#F59E0B"], ["AT","Atestado","#A855F7"], ["FE","Férias","#3B82F6"], ["FO","Folga","#94A3B8"], ["AF","Afastamento","#EC4899"]];
 var AUSENTES = ["F","AJ","AT","AF"];
@@ -191,6 +192,33 @@ function experienciaLista(s, hoje){
     return {c:c, plano:pl, a1:a1, a2:a2, ef:ef, chip:chip, visivel:diasEntre(a2, h)<=45}; }).filter(function(x){ return x && x.visivel; }).sort(function(a, b){ return a.ef.localeCompare(b.ef); });
 }
 
+// ---------- ficha de experiência (03/11/2026): ocorrências que a Presença diária já registrou e o RH ainda não confirmou ----------
+// Cada falta, atestado e atraso do período de experiência vira uma sugestão "a confirmar"; só vira desconto quando o RH confirma. Chave = presenca|data|código (não repete).
+function ocorrenciasDaPresenca(s, c){
+  var rh = s.rh, cfg = fichaCfg(rh), f = fichaDe(rh, c.id), fim = c.efetivadoEm || hojeIso(), usadas = {};
+  (f.ocorrencias||[]).forEach(function(o){ if(o.chave) usadas[o.chave] = 1; }); (f.ignoradas||[]).forEach(function(k){ usadas[k] = 1; });
+  if(!c.admissao) return [];
+  var out = [];
+  Object.keys(rh.presenca||{}).sort().forEach(function(iso){
+    if(iso<c.admissao || iso>fim) return;
+    var p = rh.presenca[iso][c.id]; if(!p) return;
+    var cods = {F:"falta", AJ:"falta_aviso", AT:"atestado"};
+    if(cods[p.c] && !usadas["presenca|"+iso+"|"+p.c]) out.push({chave:"presenca|"+iso+"|"+p.c, data:iso, tipoId:cods[p.c], quando:p.c});
+    if(p.atraso && !usadas["presenca|"+iso+"|atraso"]){ var a = minutosDe(p.atraso), e0 = minutosDe(c.entrada), m = (a!==null && e0!==null && a>e0) ? a-e0 : null;
+      out.push({chave:"presenca|"+iso+"|atraso", data:iso, tipoId:(m!==null && m>cfg.atrasoLimite) ? "atraso_longo" : "atraso_curto", quando:"atraso", minutos:m}); }
+  });
+  return out;
+}
+
+// alerta no dia da 1ª e da 2ª avaliação (e até 3 dias depois): um clique em "Abrir tela" leva à ficha da pessoa (dados.ficha). App.js confere a cada 10 minutos; a chave não repete.
+function experienciaAlertas(s, hoje){
+  var h = hoje||hojeIso(), out = [];
+  experienciaLista(s, h).forEach(function(x){
+    [["1ª", x.a1], ["2ª", x.a2]].forEach(function(m){ var dias = diasEntre(m[1], h);
+      if(dias>=0 && dias<=3) out.push({tipo:"exp_avaliacao", chave:"exp_av:"+x.c.id+":"+m[0], titulo:"Chegou a "+m[0]+" avaliação: "+x.c.nome, texto:"Abra a ficha, veja a pontuação e as notas e decida se efetiva. Setor: "+x.c.setor+".", aba:"rhexp", dados:{ficha:x.c.id}}); }); });
+  return out;
+}
+
 // ---------- negociações paralelas (hora extra "por fora", 19/10/2026) ----------
 // Valores fechados em reais, combinados entre supervisor e funcionária; NÃO substituem a hora extra oficial da folha. Cada pessoa herda o padrão do grupo e só preenche o que for diferente.
 // Valores iniciais = planilha CONTROLE HORAS EXTRAS (setembro/outubro 2026); o Marcus está revendo para baixo. h3 vazio = "valor a combinar" (3ª hora só com aprovação prévia).
@@ -244,6 +272,22 @@ function rhReduz(s, a){
       rh.adv.push({id:novoId("ad-"), colabId:a.colabId, data:a.data, tipoId:a.tipoId, motivoId:a.motivoId, dias:dias, obs:String(a.obs||"").trim(), por:por, em:Date.now()}); return ok("Advertência registrada"); }
     case "efetivar": { var ce = colaboradoresRh(s).find(function(x){ return x.id===a.id; }); if(!ce) return recusa("Colaborador não encontrado."); if(ce.status==="DESLIGADO") return recusa("Colaboradora desligada."); if(ce.efetivadoEm) return recusa("Já efetivada.");
       rh.colab[a.id] = Object.assign({}, rh.colab[a.id], {efetivadoEm:hojeIso(), efetivadoPor:por}); return ok(ce.nome+" efetivada"); }
+    // ---- ficha de experiência (100 pontos): ocorrências, notas do gestor, parecer
+    case "ficha_oc_add": { var fc = colaboradoresRh(s).find(function(x){ return x.id===a.colabId; }); if(!fc) return recusa("Colaborador não encontrado.");
+      if(!fichaCfg(rh).tipos.some(function(x){ return x.id===a.tipoId; })) return recusa("Escolha o tipo de ocorrência."); if(!a.data) return recusa("Informe a data.");
+      rh.fichas = rh.fichas||{}; var f1 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId)); f1.ocorrencias = f1.ocorrencias.concat([{id:novoId("oc-"), tipoId:a.tipoId, data:a.data, obs:String(a.obs||"").trim(), origem:"manual", por:por, em:Date.now()}]); return ok("Ocorrência lançada"); }
+    case "ficha_oc_del": { rh.fichas = rh.fichas||{}; var f2 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId)); f2.ocorrencias = f2.ocorrencias.filter(function(x){ return x.id!==a.id; });
+      var gone = fichaDe(s.rh, a.colabId).ocorrencias.find(function(x){ return x.id===a.id; }); if(gone && gone.chave) f2.ignoradas = (f2.ignoradas||[]).concat([gone.chave]); return ok("Ocorrência removida"); }
+    case "ficha_auto_ok": { var fc3 = colaboradoresRh(s).find(function(x){ return x.id===a.colabId; }); if(!fc3) return recusa("Colaborador não encontrado.");
+      var pend = ocorrenciasDaPresenca(s, fc3).filter(function(x){ return !a.chaves || a.chaves.indexOf(x.chave)>=0; }); if(!pend.length) return recusa("Nada a confirmar.");
+      rh.fichas = rh.fichas||{}; var f3 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId));
+      f3.ocorrencias = f3.ocorrencias.concat(pend.map(function(x){ return {id:novoId("oc-"), tipoId:x.tipoId, data:x.data, obs:x.minutos ? "Chegou "+x.minutos+" min depois da entrada" : "", origem:"presenca", chave:x.chave, por:por, em:Date.now()}; })); return ok(pend.length+" ocorrência(s) confirmada(s)"); }
+    case "ficha_auto_ignorar": { rh.fichas = rh.fichas||{}; var f4 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId)); f4.ignoradas = (f4.ignoradas||[]).concat(a.chaves||[]); return ok("Sugestão descartada"); }
+    case "ficha_nota": { var cat = fichaCfg(rh).categorias.find(function(x){ return x.id===a.cat && x.nota; }); if(!cat) return recusa("Categoria sem nota.");
+      var nv = a.nota===null || a.nota==="" ? null : Number(a.nota); if(nv!==null && !(nv>=0 && nv<=10)) return recusa("A nota vai de 0 a 10.");
+      rh.fichas = rh.fichas||{}; var f5 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId)); f5.notas = Object.assign({}, f5.notas); f5.notas[a.cat] = nv; f5.notasPor = por; return ok(); }
+    case "ficha_set": { rh.fichas = rh.fichas||{}; var f6 = rh.fichas[a.colabId] = Object.assign({}, fichaDe(rh, a.colabId)); ["decisao","parecer","dataAvaliacao"].forEach(function(k){ if(a.patch[k]!==undefined) f6[k] = a.patch[k]; }); return ok(); }
+    case "ficha_cfg": { cfg.ficha = a.ficha; return ok("Ficha de experiência salva"); }
     case "he_add": { var horas = parseHoras(a.horas); if(!a.colabId || !a.data || !a.tipoId) return recusa("Escolha colaborador, data e tipo."); if(horas===null || horas<=0) return recusa("Informe as horas em HH:MM (ex.: 02:30).");
       rh.horas.push({id:novoId("he-"), colabId:a.colabId, data:a.data, tipoId:a.tipoId, horas:horas, obs:String(a.obs||"").trim(), por:por, em:Date.now()}); return ok("Hora extra lançada"); }
     case "he_del": { rh.horas = rh.horas.filter(function(x){ return x.id!==a.id; }); return ok("Hora extra excluída"); }
@@ -343,4 +387,4 @@ function presencaChat(s, nome, hoje){
 
 export { bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
-  advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, rhReduz };
+  advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, experienciaAlertas, ocorrenciasDaPresenca, rhReduz };

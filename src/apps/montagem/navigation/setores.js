@@ -15,6 +15,7 @@ var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, e
 var MENU_FINANCEIRO = [
   {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Regras e contas","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
   M("Resultado do mês","resultado"),   // visão-mãe (Marcus, 27/10/2026): receber × pagar, entrou de verdade; ver docs/negocio/RESULTADO-DO-MES.md
+  M("Atividades","finativ"),   // lista do que fica para fazer depois (Marcus, 03/11/2026): palavra direta logo no começo, para não ficar escondida no fim do menu
   M("Previsão de caixa","previsaocaixa"),   // palavra direta no topo (Marcus, 26/10/2026: estava escondida demais dentro de Saldos e análises › Saldo das contas)
   {nome:"Saldos e análises", itens:[
     {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
@@ -130,6 +131,7 @@ var SETORES = [
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
     {nome:"Resultado", telas:[T("resultado","Resultado do mês")]},
+    {nome:"Atividades", telas:[T("finativ","Atividades")]},
     {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Regras e contas"), T("cpagamentos","Controle de pagamentos")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],

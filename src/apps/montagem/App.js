@@ -59,7 +59,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { BadgeNaoLidas, ChatGlobal, ChatMini, useEu } from "@/apps/montagem/components/chat/chat-app";
 import { ehDirecao } from "@/apps/montagem/domain/chat-contatos";
 import { api, efem, definirHorariosRh } from "@/apps/montagem/domain/chat-store";
-import { horariosDoRh } from "@/apps/montagem/domain/rh";
+import { experienciaAlertas, horariosDoRh } from "@/apps/montagem/domain/rh";
 import { contato } from "@/apps/montagem/domain/chat-contatos";
 import * as sons from "@/apps/montagem/lib/sons";
 
@@ -129,6 +129,8 @@ function App(){
       rotAlertas(s.rot, s.usuario, n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate()), p(n.getHours())+":"+p(n.getMinutes())).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [s.rot, s.usuario, s.logado]);
   useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
   // Plano 45/60: aprovada sem contato em 24 h e nova data sem venda lançada (um alerta por tipo por dia)
+  // avaliação de experiência (03/11/2026): no dia da 1ª e da 2ª avaliação sai um alerta para quem o Tecnologia → Avisos marcar (padrão Maria, Marcus, Nickolas, Lucas); a chave não repete
+  useEffect(function(){ var t = function(){ if(!s.logado || !s.rh) return; experienciaAlertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.rh, s.logado]);
   useEffect(function(){ var t = function(){ if(!s.logado || !s.p45) return; p45Alertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.p45, s.logado]);
   useEffect(function(){ d({type:"FIN_REP_SYNC"}); }, [s.acertosConsignado]);   // pagamentos dos acertos das representantes → grupo Financeiro Representantes
   useEffect(function(){ api.avisoAgenda(isoDia(new Date()), s.internos||[]); }, [s.internos]);   // aviso diário do grupo Agendamento (atendimentos do dia e cancelamentos)

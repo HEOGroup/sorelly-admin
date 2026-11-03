@@ -172,3 +172,33 @@ bruto com desconto da peça  +  peso × R$/g do banho escolhido  =  custo previs
 
 Regras: desconto próprio por peça (25% ou 15%); quantidade de 20 a 200 por modelo (aviso acima de 200: só peça campeã); banho sugerido pela categoria (brinco: Ouro 1 com verniz; colar, pulseira e anel: Ouro 3), com ajuste por peça (a de prata troca para Prata); uma compra com vários fornecedores gera um pedido por fornecedor, cada um indo para a galvânica do fornecedor; a folga do teto de bruto aparece o tempo todo, e passar do teto deixa o pedido pendente de aprovação. Peça sem foto aparece como "Sem foto".
 Próxima tela: **Catálogo** (o fornecedor sobe as fotos; a equipe confere código, preço e peso).
+
+## 13. Como o banho funciona nas galvânicas (03/11/2026)
+
+**Ellos (Franciel, mensagem de 03/11/2026, sem números de prazo):**
+1. Recebe a mercadoria e **tira as fotos das peças**, que vêm para a Sorelly. As fotos vêm **no começo**, antes da produção.
+2. A Sorelly **escolhe o tipo de banho**. Só **depois dessa escolha** a Ellos começa a produzir.
+3. Produção da Ellos: separação → limpeza → polimento → vibração → engate → banho → finalização e preparo para o envio.
+4. Atraso recente: 9 dias sem um funcionário da limpeza; remanejaram gente (um do banho para o polimento e duas da equipe). Pediram desculpas e disseram que há bastante mercadoria ficando pronta, com **vários envios previstos ainda na semana de 03/11**.
+
+**O que isso muda na leitura dos dias:**
+- O relógio da galvânica **começa na escolha do banho** (etapa 7, "Marcus confirmou preços"), e não na chegada do pedido. A Pontual faz igual: conta da data em que separa.
+- O tempo entre "Enviaram fotos" e "Marcus confirmou preços" é **da Sorelly**, não da galvânica. Hoje os dias do Banho contam desde a chegada e misturam os dois tempos.
+- Etapas internas da Ellos (limpeza, polimento, vibração, engate) **não** têm etapa própria no sistema: ficam dentro de "Banho".
+
+**Ainda sem resposta (perguntar UMA por vez, na ordem):**
+1. Lista dos nossos pedidos que estão lá, com a data de chegada e a previsão de saída de cada um (a Pontual já manda assim).
+2. Avisar no dia em que cada pedido chega.
+3. Quantos dias da chegada até mandar as fotos.
+4. Quantos dias depois da escolha do banho até enviar para a Sorelly.
+
+**Pontual (resposta de 03/11/2026, "em média; depende do tamanho do pedido"):**
+- Quando o pedido chega: **+2 dias para fotografar** (etapa 5, Chegou no banho → 6, Enviaram fotos).
+- Depois que o Marcus seleciona os banhos: **+2 dias para separar** (etapa 7, Marcus confirmou preços).
+- **6 dias na produção** (etapa 8, Banho).
+- Para finalizar o pedido 100%: **10 a 12 dias** (2 + 2 + 6, mais o tempo que a Sorelly leva para escolher o banho).
+- **Confirmado pela Letícia (03/11/2026, 17:00): os 10 a 12 dias contam da chegada na Pontual. Com verniz novo, +2 dias. "Pode contar 12 dias de quando chega."** No sistema: Pontual 12 dias (14 com verniz novo).
+- Não respondeu se avisa no dia em que o pedido chega.
+- Como a Ellos, a Pontual só começa a separar depois da escolha do banho. A data que ela conta no relatório é a da separação.
+
+**Objetivo do Marcus (03/11/2026):** alinhar as duas galvânicas num jeito só de informar (data de chegada, data de início da produção e previsão de saída por pedido), para o sistema calcular o prazo igual para as duas.

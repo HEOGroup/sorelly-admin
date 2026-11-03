@@ -7,7 +7,7 @@
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { Botao, Segmentado, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
-import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, chegouPed, diasNaEtapa, etapaPed, fasePed, mesesCpc, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
+import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, prazoPed, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
 import { Cel, Sl, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -21,6 +21,7 @@ var COR_FASE = {compra:"#5B8DEF", banho:"#A78BFA", empresa:"#2DD4BF"};
 var COR_BANHO = {Pontual:"#E8B84B", Ellos:"#60A5FA"};   // o nome da galvânica em dois tons: Pontual dourado e Ellos azul (Marcus, 03/11/2026)
 var NIVEIS_ZOOM = [70, 80, 90, 100, 115, 130, 150];
 var CHAVE_ZOOM = "sorelly_pedidos_zoom";
+var CHAVE_VAZIAS = "sorelly_pedidos_vazias";   // "0" = colunas sem pedido escondidas; o sistema lembra a escolha neste navegador
 function rotuloMes(m){ var p = String(m).split("-"); return p.length===2 ? MESES[+p[1]-1]+" de "+p[0] : "Todos os meses"; }
 function cap(t){ return t ? t.charAt(0).toUpperCase()+t.slice(1) : t; }
 function dmy(iso){ var p = String(iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : ""; }
@@ -33,6 +34,8 @@ function nomeEtapa(k){ return (ETAPAS_PED.find(function(x){ return x[0]===k; })|
 function diasDesde(iso, hoje){ var a = Date.parse(String(iso||"")+"T12:00:00"), b = Date.parse(String(hoje)+"T12:00:00"); return isNaN(a) || isNaN(b) ? 0 : Math.max(0, Math.round((b-a)/86400000)); }
 function txtDias(n){ return n+(n===1 ? " dia" : " dias"); }
 function lerZoom(){ try { var z = parseInt(window.localStorage.getItem(CHAVE_ZOOM), 10); return NIVEIS_ZOOM.indexOf(z)>=0 ? z : 100; } catch(x){ return 100; } }
+function lerVazias(){ try { return window.localStorage.getItem(CHAVE_VAZIAS)!=="0"; } catch(x){ return true; } }
+function gravaVazias(v){ try { window.localStorage.setItem(CHAVE_VAZIAS, v ? "1" : "0"); } catch(x){} }
 function gravaZoom(z){ try { window.localStorage.setItem(CHAVE_ZOOM, String(z)); } catch(x){} }
 function plural(n, um, varios){ return n+" "+(n===1 ? um : varios); }
 function semRomaneio(p){ var et = etapaPed(p); return (et==="escolha" || et==="separacao") && !p.romaneio; }
@@ -59,7 +62,7 @@ function Periodo(p){
   var rot = per.tipo==="todos" ? "Todo o período" : per.tipo==="mes" ? cap(rotuloMes(per.mes)) : per.de && per.ate ? dmy(per.de)+" a "+dmy(per.ate) : per.de ? "A partir de "+dmy(per.de) : per.ate ? "Até "+dmy(per.ate) : "Por data";
   var ro = "text-[11px] font-medium uppercase tracking-[.05em]";
   return e("div",{ref:ref, className:"relative"},
-    e("button",{type:"button", "aria-haspopup":"dialog", "aria-expanded":aberto, title:"Período da compra", onClick:function(){ op[1](!aberto); }, className:CAMPO+" w-52 hover:bg-white/10"}, rot+" ▾"),
+    e("button",{type:"button", "aria-haspopup":"dialog", "aria-expanded":aberto, title:p.inativo ? "Em aberto e Atrasados o período não vale: aparece tudo" : "Período da compra", onClick:function(){ op[1](!aberto); }, className:CAMPO+" w-52 hover:bg-white/10"+(p.inativo ? " opacity-50" : "")}, rot+" ▾"),
     aberto && e("div",{role:"dialog", "aria-label":"Período da compra", className:"absolute left-0 top-full z-30 mt-1 flex w-72 flex-col gap-2 rounded-lg border border-border bg-popover p-2 text-center shadow-xl"},
       e("button",{type:"button", onClick:function(){ p.set({tipo:"todos", mes:per.mes, de:"", ate:""}); op[1](false); }, className:"h-8 rounded-md border text-[13px] hover:bg-white/10 "+(per.tipo==="todos" ? "border-primary bg-primary/20 font-semibold text-primary" : "border-border")}, "Todo o período"),
       e("div",{className:"flex flex-col gap-1"}, e("span",{className:ro}, "Por mês"),
@@ -69,23 +72,25 @@ function Periodo(p){
         e("div",{className:"grid grid-cols-2 gap-2"},
           e("label",{className:"flex flex-col gap-0.5 text-[11px]"}, "De", e("input",{type:"date", "aria-label":"Data inicial", value:per.de, onChange:function(ev){ p.set({tipo:"datas", mes:per.mes, de:ev.target.value, ate:per.ate}); }, className:CAMPO+" w-full"})),
           e("label",{className:"flex flex-col gap-0.5 text-[11px]"}, "Até", e("input",{type:"date", "aria-label":"Data final", value:per.ate, onChange:function(ev){ p.set({tipo:"datas", mes:per.mes, de:per.de, ate:ev.target.value}); }, className:CAMPO+" w-full"})))),
-      e("p",{className:"text-[11px]"}, "Os pedidos que ainda estão andando aparecem sempre. O período vale para os que já chegaram na Sorelly.")));
+      e("p",{className:"text-[11px]"}, "O período vale só para os pedidos finalizados. Pedido em aberto aparece sempre, de qualquer data.")));
 }
 
 function AbaPedidos(){
   var x = useCpc(), c = x.c, cfg = c.config, meses = mesesCpc(c), pode = podeFazer(c, "pedidos_bruto", x.por, x.admin), hoje = hojeISO();
   var md = useState("quadro"), modo = md[0], fl = useState(Object.assign({per:{tipo:meses[0] ? "mes" : "todos", mes:meses[0] || "", de:"", ate:""}}, VAZIO_F)), f = fl[0], mo = useState(null), modal = mo[0];
-  var zs = useState(lerZoom), zoom = zs[0], ab = useState({}), aberto = ab[0];
+  var zs = useState(lerZoom), zoom = zs[0], ab = useState({}), aberto = ab[0], vzs = useState(lerVazias), mostraVazias = vzs[0];
   var set = function(k, v){ var n = Object.assign({}, f); n[k] = v; fl[1](n); };
   var setZoom = function(z){ zs[1](z); gravaZoom(z); };
+  var alternaVazias = function(){ var v = !mostraVazias; vzs[1](v); gravaVazias(v); };
   var alterna = function(id){ var n = Object.assign({}, aberto); n[id] = !n[id]; ab[1](n); };
   var forns = c.pedidos.map(function(p){ return p.forn; }).filter(function(v, i, a){ return a.indexOf(v)===i; }).sort();
   var q = f.q.trim().toLowerCase();
-  // os que já chegaram na Sorelly aparecem só do período escolhido (todo o período, um mês ou entre duas datas da compra); o que ainda está andando aparece sempre (nenhum pedido some do quadro por causa do período)
+  // o período (todo o período, um mês ou entre duas datas da compra) só vale para os pedidos FINALIZADOS; o que está em aberto aparece sempre, mesmo de 45 dias atrás (Marcus, 03/11/2026)
   var vis = c.pedidos.filter(function(p){
-    var chegou = chegouPed(p);
-    return (!chegou || noPeriodo(p, f.per)) && (!f.forn || p.forn===f.forn) && (!f.banho || banhoPed(p)===f.banho)
-      && (!q || (p.forn+" "+p.romaneio+" "+p.nota).toLowerCase().indexOf(q)>=0) && (!f.sit || (f.sit==="atr" ? atrasadoPed(p, hoje, cfg) : etapaPed(p)!=="finalizado"));
+    var fin = etapaPed(p)==="finalizado";
+    var tipoOk = f.sit==="aberto" ? !fin : f.sit==="atr" ? atrasadoPed(p, hoje, cfg) : f.sit==="final" ? fin && noPeriodo(p, f.per) : (!fin || noPeriodo(p, f.per));   // aberto e atrasado: sem período; finalizado: só dentro do período
+    return tipoOk && (!f.forn || p.forn===f.forn) && (!f.banho || banhoPed(p)===f.banho)
+      && (!q || (p.forn+" "+p.romaneio+" "+p.nota).toLowerCase().indexOf(q)>=0);
   }).sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : 0; });
   var ativo = !!(f.q || f.forn || f.banho || f.sit);
   var ir = function(m){ mo[1](m); };
@@ -102,28 +107,34 @@ function AbaPedidos(){
     e("input",{id:"ped-busca", type:"search", "aria-label":"Buscar", value:f.q, placeholder:"Buscar fornecedor, romaneio ou nota", onChange:function(ev){ set("q", ev.target.value); }, className:CAMPO+" w-80"}),
     sel("ped-forn", "Fornecedor do bruto", "forn", [["", "Fornecedores bruto"]].concat(forns.map(function(n){ return [n, n]; }))),
     sel("ped-banho", "Fornecedor do banho", "banho", [["", "Fornecedores banho"], ["Pontual", "Pontual"], ["Ellos", "Ellos"]]),
-    sel("ped-sit", "Situação", "sit", [["", "Todas as situações"], ["aberto", "Em aberto"], ["atr", "Atrasados"]]),
-    e(Periodo,{per:f.per, meses:meses, set:function(v){ set("per", v); }}),
+    sel("ped-sit", "Tipo do pedido", "sit", [["", "Todos os pedidos"], ["aberto", "Em aberto (sem período)"], ["atr", "Atrasados"], ["final", "Finalizados"]], "Em aberto e Atrasados mostram tudo, de qualquer data. O período vale só para os finalizados."),
+    e(Periodo,{per:f.per, meses:meses, inativo:f.sit==="aberto" || f.sit==="atr", set:function(v){ set("per", v); }}),
     ativo && e(Botao,{onClick:function(){ fl[1](Object.assign({per:f.per}, VAZIO_F)); }}, "Limpar"));
 
   // ---- quadro: linha 1 = barra das fases, linha 2 = as 12 colunas ----
+  // colunas sem pedido: o botão do alto abre e fecha (fechadas, as outras colunas e a barra das fases se juntam)
+  var cont = ETAPAS_PED.map(function(k){ return vis.filter(function(p){ return etapaPed(p)===k[0]; }).length; });
+  var mostra = ETAPAS_PED.map(function(k, i){ return mostraVazias || cont[i]>0; });
+  var pos = [], nVis = 0; mostra.forEach(function(m, i){ if(m) nVis++; pos[i] = nVis; });
+  var nVazias = cont.filter(function(n){ return n===0; }).length;
   var bandas = FASES_PED.map(function(fa){
-    var idx = ETAPAS_PED.map(function(k, i){ return k[2]===fa[0] ? i : -1; }).filter(function(i){ return i>=0; });
+    var idx = ETAPAS_PED.map(function(k, i){ return k[2]===fa[0] && mostra[i] ? i : -1; }).filter(function(i){ return i>=0; });
+    if(!idx.length) return null;
     var it = vis.filter(function(p){ return fasePed(etapaPed(p))===fa[0]; }), tot = it.reduce(function(t, p){ return t+p.pagar; }, 0), at = it.filter(function(p){ return atrasadoPed(p, hoje, cfg); }).length, cor = COR_FASE[fa[0]];
-    return e("div",{key:"f-"+fa[0], className:"relative h-9 overflow-hidden rounded-lg border", style:{gridRow:1, gridColumn:(idx[0]+1)+" / "+(idx[idx.length-1]+2), borderColor:cor, background:cor+"2E"}},
+    return e("div",{key:"f-"+fa[0], className:"relative h-9 overflow-hidden rounded-lg border", style:{gridRow:1, gridColumn:pos[idx[0]]+" / "+(pos[idx[idx.length-1]]+1), borderColor:cor, background:cor+"2E"}},
       e("span",{className:"sticky left-0 right-0 flex h-full items-center justify-center gap-2 whitespace-nowrap text-[13px]"}, e("b",null, fa[1]), e("span",{className:"tabular-nums"}, plural(it.length, "pedido", "pedidos")+" · "+brl(tot)+(at ? " · "+plural(at, "atrasado", "atrasados") : ""))));
   });
   var colunas = ETAPAS_PED.map(function(k, i){
+    if(!mostra[i]) return null;
     var cor = COR_FASE[k[2]], it = vis.filter(function(p){ return etapaPed(p)===k[0]; }), at = it.filter(function(p){ return atrasadoPed(p, hoje, cfg); }).length, tot = it.reduce(function(t, p){ return t+p.pagar; }, 0), z = prazoTxt(cfg, k[0]);
-    return e("section",{key:k[0], className:"flex min-w-0 flex-col gap-1.5 rounded-xl bg-black/20 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:i+1, borderTop:"3px solid "+cor}},
+    return e("section",{key:k[0], className:"flex min-w-0 flex-col gap-1.5 rounded-xl bg-black/20 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:pos[i], borderTop:"3px solid "+cor}},
       e("div",{className:"flex flex-col items-center gap-0.5 border-b border-white/10 pb-1.5 text-center"},
         e("b",{className:"flex min-h-9 items-center justify-center gap-1.5 text-[13px] leading-tight"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px]", style:{border:"1px solid "+cor, color:cor}}, i+1), k[1]),
         e("span",{className:"text-[11px]"}, plural(it.length, "pedido", "pedidos")+(z ? " · prazo "+z : "")+(at ? " · "+plural(at, "atrasado", "atrasados") : "")),
         e("span",{className:"text-[11px] tabular-nums"}, brl(tot))),
-      it.length ? it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, pode:pode, aberto:!!aberto[p.id], alterna:alterna, avancar:avancar, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); })
-        : e("p",{className:"py-2 text-center text-[13px]"}, "Nenhum pedido nesta etapa."));
+      it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, pode:pode, aberto:!!aberto[p.id], alterna:alterna, avancar:avancar, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); }));
   });
-  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+ETAPAS_PED.length+", 280px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
+  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 340px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
 
   var tot = vis.reduce(function(t, p){ t.valor += p.valor; t.pagar += p.pagar; t.pecas += pecasPedido(p); return t; }, {valor:0, pagar:0, pecas:0});
   var planilha = vis.length ? e(TabelaP,{minW:1280, cols:[{t:"Compra", w:76}, {t:"Fornecedor", w:130}, {t:"Romaneio", w:92}, {t:"Etapa", w:250}, {t:"Dias", w:56}, {t:"Peças", w:70}, {t:"Valor", w:116}, {t:"Desc.", w:66}, {t:"A pagar", w:116}, {t:"Banho", w:84}, {t:"", w:104}]},
@@ -137,13 +148,15 @@ function AbaPedidos(){
       e(Td,{forte:true}, tot.valor>0 ? Math.round((1-tot.pagar/tot.valor)*1000)/10+"%" : "—"), e(Td,{forte:true}, brl(tot.pagar)), e(Td,null), e(Td,null))])) : e(Vazio,{ic:"package"}, "Nenhum pedido neste filtro.");
 
   return e(Pagina,null,
-    e(PageHead,{t:"Pedidos de bruto e banho", sub:"Da escolha das peças até o cadastro na Sorelly."},
-      modo==="quadro" && e(Zoom,{z:zoom, set:setZoom}),
-      e(Segmentado,{opcoes:[["quadro", "Quadro"], ["planilha", "Planilha"]], atual:modo, onMudar:md[1]}),
-      pode && e(Botao,{principal:true, onClick:function(){ ir({tipo:"novo"}); }}, "Novo pedido")),
-    filtros,
-    !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
-    modo==="planilha" ? planilha : quadro,
+    e("section",{className:"flex flex-col gap-3 rounded-lg border-2 border-white/30 bg-card/60 p-3"},   // tudo da tela (título, filtros e quadro) num bloco só com borda (Marcus, 03/11/2026)
+      e(PageHead,{t:"Pedidos de bruto e banho", sub:"Da escolha das peças até o cadastro na Sorelly."},
+        modo==="quadro" && nVazias>0 && e("button",{type:"button", "aria-pressed":!mostraVazias, title:mostraVazias ? "Esconder as colunas que não têm pedido" : "Mostrar de novo as colunas que não têm pedido", onClick:alternaVazias, className:"h-8 whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, (mostraVazias ? "Ocultar colunas vazias" : "Mostrar colunas vazias")+" ("+nVazias+")"),
+        modo==="quadro" && e(Zoom,{z:zoom, set:setZoom}),
+        e(Segmentado,{opcoes:[["quadro", "Quadro"], ["planilha", "Planilha"]], atual:modo, onMudar:md[1]}),
+        pode && e(Botao,{principal:true, onClick:function(){ ir({tipo:"novo"}); }}, "Novo pedido")),
+      filtros,
+      !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
+      modo==="planilha" ? planilha : quadro),
     modal && modal.tipo==="novo" && e(NovoPedido,{x:x, forns:forns, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="romaneio" && e(Romaneio,{x:x, id:modal.id, para:modal.para, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="ficha" && e(Ficha,{x:x, id:modal.id, pode:pode, hoje:hoje, cfg:cfg, avancar:avancar, fechar:function(){ ir(null); }}));
@@ -151,7 +164,7 @@ function AbaPedidos(){
 
 // texto do prazo de uma etapa: "5 dias"; no Banho, o de cada galvânica
 function prazoTxt(cfg, k){
-  if(k==="banho"){ var a = prazoEtapa(cfg, k, {chegPontual:"x"}), b = prazoEtapa(cfg, k, {chegEllos:"x"}); if(!a && !b) return ""; return a===b ? a+" dias" : "Pontual "+(a || "—")+" · Ellos "+(b || "—")+" dias"; }
+  if(["nobanho", "fotos", "precos", "banho"].indexOf(k)>=0){ var a = prazoEtapa(cfg, "banho", {chegPontual:"x"}), b = prazoEtapa(cfg, "banho", {chegEllos:"x"}); if(!a && !b) return ""; return a===b ? a+" dias" : "Pontual "+(a || "—")+" · Ellos "+(b || "—")+" dias"; }
   var z = prazoEtapa(cfg, k); return z ? z+" dias" : "";
 }
 function Par(p){ return [e("span",{key:"r", className:"text-[11px] font-medium uppercase tracking-[.04em]"}, p.t), e("span",{key:"v", className:"text-right text-[13px] font-bold"}, p.v)]; }
@@ -159,17 +172,18 @@ function Par(p){ return [e("span",{key:"r", className:"text-[11px] font-medium u
 // cartão do quadro: fechado = fornecedor, valor e dias; clicando abre os detalhes e o botão de avançar
 function Cartao(p){
   var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje, p.cfg), prox = proxima(pd), b = banhoPed(pd), cor = COR_FASE[fasePed(et)];
+  var dGal = naGalvanica(pd) ? diasNaGalvanica(pd, p.hoje) : null, diasCartao = dGal!=null ? dGal : diasNaEtapa(pd, p.hoje), pz = prazoPed(p.cfg, pd);
   var chegBanho = pd.chegPontual ? "Pontual "+dia(pd.chegPontual) : pd.chegEllos ? "Ellos "+dia(pd.chegEllos) : "—";
-  return e("div",{"data-sem-arrastar":true, className:"rounded-lg bg-card text-center ring-1 "+(atr ? "ring-destructive" : "ring-white/10 hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+cor}},
-    e("button",{type:"button", "aria-expanded":p.aberto, onClick:function(){ p.alterna(pd.id); }, className:"flex min-h-8 w-full flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-2 py-1 pl-3 text-[13px]"},
-      e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn)),
+  return e("div",{"data-sem-arrastar":true, className:"rounded-lg bg-card text-left ring-1 "+(atr ? "ring-destructive" : "ring-white/10 hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+cor}},
+    e("button",{type:"button", "aria-expanded":p.aberto, onClick:function(){ p.alterna(pd.id); }, className:"flex min-h-8 w-full flex-wrap items-center justify-start gap-x-2 gap-y-0.5 px-2 py-1 pl-3 text-left text-[13px]"},
+      e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio ? " · "+pd.romaneio : ""),
       e("span",{className:"whitespace-nowrap text-[11px] tabular-nums"}, brl(pd.pagar)),
-      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasNaEtapa(pd, p.hoje)))),
+      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
     p.aberto && e("div",{className:"flex flex-col gap-1.5 border-t border-white/10 py-1.5 pl-3 pr-2"},
       e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-0.5 text-left"},
-        e(Par,{t:"Romaneio", v:pd.romaneio || "—"}), e(Par,{t:"Comprado em", v:dia(pd.data)}), e(Par,{t:"Dias desde a compra", v:diasDesde(pd.data, p.hoje)}),
+        e(Par,{t:"Romaneio", v:pd.romaneio || "—"}), e(Par,{t:dGal!=null ? "Dias na galvânica" : "Na etapa", v:e("span",{className:atr ? "text-destructive" : ""}, et==="finalizado" ? "Concluído" : txtDias(diasCartao)+(pz ? " de "+pz : "")+(atr ? " · atrasado" : ""))}), e(Par,{t:"Comprado em", v:dia(pd.data)}), e(Par,{t:"Dias desde a compra", v:diasDesde(pd.data, p.hoje)}),
         e(Par,{t:"Nota", v:pd.nota || "—"}), e(Par,{t:"Valor da lista", v:brl(pd.valor)}), e(Par,{t:"Desconto", v:Math.round(pd.desc*10000)/100+"%"}),
-        e(Par,{t:"Peças", v:pecasPedido(pd) || "—"}), e(Par,{t:"Banho", v:e("span",{style:b ? {color:COR_BANHO[b]} : undefined}, b || "a definir")}), e(Par,{t:"Chegada no banho", v:chegBanho}),
+        e(Par,{t:"Peças", v:pecasPedido(pd) || "—"}), e(Par,{t:"Banho", v:e("span",{style:b ? {color:COR_BANHO[b]} : undefined}, b || "a definir")}), e(Par,{t:"Chegada no banho", v:chegBanho}), e(Par,{t:"Fotos enviadas", v:pd.fotosEm ? dia(pd.fotosEm) : "—"}),
         e(Par,{t:"Data que o banho conta", v:pd.contaBanho ? dia(pd.contaBanho) : "—"}), e(Par,{t:"Chegada na Sorelly", v:pd.chegSorelly ? dia(pd.chegSorelly) : "—"})),
       e("div",{className:"flex flex-col gap-1.5"},
         p.pode && prox && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.avancar(pd); }, className:"h-8 w-full rounded-md border border-primary bg-primary/20 text-[13px] font-semibold text-primary hover:bg-primary/30"}, semRomaneio(pd) && prox!=="separacao" ? "Romaneio ›" : "Concluir ›"),
@@ -195,13 +209,15 @@ function Ficha(p){
     e(Linha,{t:"A pagar"}, e("b",{className:"tabular-nums"}, brl(pd.pagar))),
     e(Linha,{t:"Chegou na Pontual"}, e(Cel,{v:pd.chegPontual, data:true, off:!pode, rot:"Chegada na Pontual", w:"w-32", onSet:set("chegPontual")})),
     e(Linha,{t:"Chegou na Ellos"}, e(Cel,{v:pd.chegEllos, data:true, off:!pode, rot:"Chegada na Ellos", w:"w-32", onSet:set("chegEllos")})),
+    e(Linha,{t:"Fotos enviadas"}, e(Cel,{v:pd.fotosEm, data:true, off:!pode, rot:"Fotos enviadas em", w:"w-32", onSet:set("fotosEm")})),
+    e(Linha,{t:"Verniz novo"}, e(Sl,{v:pd.vernizNovo ? "sim" : "nao", set:set("vernizNovo"), off:!pode, rot:"Tem verniz novo (+2 dias na Pontual)", opcoes:[["nao", "Não"], ["sim", "Sim (+2 dias)"]], className:"w-44 h-8!"})),
     e(Linha,{t:"Data que "+(gal ? "a "+gal : "o banho")+" conta"}, e(Cel,{v:pd.contaBanho, data:true, off:!pode, rot:"Data que o banho conta", w:"w-32", onSet:set("contaBanho")})),
     e(Linha,{t:"Chegou na Sorelly"}, e(Cel,{v:pd.chegSorelly, data:true, off:!pode, rot:"Chegada na Sorelly", w:"w-32", onSet:set("chegSorelly")})));
   var linha = e(Coluna,{key:"e", t:"Etapas"}, ETAPAS_PED.map(function(k, i){ var feito = i<i0, atual = i===i0, atr = atual && atrasadoPed(pd, p.hoje, p.cfg), cor = COR_FASE[k[2]];
     return e("div",{key:k[0], className:"flex items-start gap-2.5 py-0.5"},
       e("span",{className:"mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border-2", style:feito ? {borderColor:"#4ADE80", background:"#4ADE80"} : atual ? {borderColor:cor, background:cor} : {borderColor:cor, borderStyle:"dashed"}}),
       e("div",{className:"min-w-0"}, e("b",{className:"block text-[13px]"}, k[1]),
-        e("span",{className:"block text-[13px] "+(atr ? "font-semibold text-destructive" : "")}, feito ? "Concluída" : atual ? (et==="finalizado" ? "Pedido finalizado" : txtDias(diasNaEtapa(pd, p.hoje))+" nesta etapa"+(atr ? " · atrasado" : "")) : prazoTxt(p.cfg, k[0]) ? "Prazo de "+prazoTxt(p.cfg, k[0]) : ""))); }));
+        e("span",{className:"block text-[13px] "+(atr ? "font-semibold text-destructive" : "")}, feito ? "Concluída" : atual ? (et==="finalizado" ? "Pedido finalizado" : (naGalvanica(pd) && diasNaGalvanica(pd, p.hoje)!=null ? txtDias(diasNaGalvanica(pd, p.hoje))+" na galvânica (desde a chegada)" : txtDias(diasNaEtapa(pd, p.hoje))+" nesta etapa")+(atr ? " · atrasado" : "")) : prazoTxt(p.cfg, k[0]) ? "Prazo de "+prazoTxt(p.cfg, k[0]) : ""))); }));
   var acoes = e(Coluna,{key:"a", t:"Ações"},
     pode && prox && e(Botao,{principal:true, onClick:function(){ p.avancar(pd); }}, "Concluir ›"),
     e(Linha,{t:"Status"}, e(Sl,{v:pd.status, set:set("status"), off:!pode, rot:"Status do pedido", opcoes:STATUS_PED.map(function(t){ return [t, t]; }), className:"w-56 h-8!"})),

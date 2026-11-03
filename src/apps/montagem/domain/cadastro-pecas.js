@@ -17,7 +17,7 @@ var GALVANICAS = {pontual:"Pontual", ellos:"Ellos"};
 // Etapas do pedido de bruto (Marcus, 03/11/2026): 12 etapas em 3 fases (Compra, Banho, Empresa). O status do pedido é o nome da etapa. O pedido fecha no romaneio.
 // Terceiro item = fase. "Enviado para Sorelly" entra sozinho quando uma fatura de banho é ligada ao pedido.
 var ETAPAS_PED = [["escolha", "Escolha das peças", "compra"], ["separacao", "Em separação", "compra"], ["fechado", "Fechado, aguardando envio para banho", "compra"],
-  ["enviado", "Enviado", "banho"], ["nobanho", "Chegou no banho", "banho"], ["fotos", "Enviaram fotos", "banho"], ["precos", "Marcus confirmou preços", "banho"], ["banho", "Banho", "banho"],
+  ["enviado", "Enviado", "compra"], ["nobanho", "Chegou no banho", "banho"], ["fotos", "Enviaram fotos", "banho"], ["precos", "Marcus confirmou preços", "banho"], ["banho", "Banho", "banho"],
   ["paraSorelly", "Enviado para Sorelly", "empresa"], ["chegou", "Chegou na empresa", "empresa"], ["cadastrando", "Cadastrando", "empresa"], ["finalizado", "Finalizado", "empresa"]];
 var FASES_PED = [["compra", "Compra"], ["banho", "Banho"], ["empresa", "Empresa"]];
 var STATUS_PED = ETAPAS_PED.map(function(k){ return k[1]; });
@@ -43,7 +43,7 @@ function statusMigra(p){ var k = trim(p.status).toLowerCase(); return k==="banha
 var ESTADOS_SOL = [["pedido","Pedido"], ["enviado","Enviado à DevMaster"], ["feito","Feito"]];
 var PENDENCIAS_BANHO = ["Pontual manda um preço só para a prata e um só para o verniz, sem dizer o nível da prata (30M ou 50M) nem o tipo do verniz: confirmar com eles para fechar o comparativo."];
 var CONFIG_PADRAO = {quem:QUEM_PADRAO, banhoComp:{cotacaoEllos:0, atualizado:"", ellos:{}, pontual:{}, pendencias:PENDENCIAS_BANHO}, recebido:0.5486, markupAlvo:2.75, arred8:true, vernizPontual:0.37,
-  prazoEtapa:{separacao:5, fechado:2}, prazoBanho:{pontual:10, ellos:10},   // dias; etapa sem número = sem prazo (não marca atraso)
+  prazoEtapa:{separacao:5, fechado:2}, prazoBanho:{pontual:12, ellos:10},   // dias; etapa sem número = sem prazo (não marca atraso)
   banhoPadrao:[["Anéis","Ouro 4"], ["Colares","Ouro 3"], ["Braceletes e pulseiras","Ouro 3"], ["Correntes","Ouro 3"], ["Peças de prata","Prata"]]};
 
 var num = function(v){ var n = typeof v==="number" ? v : parseFloat(String(v==null ? "" : v).replace(/\./g,"").replace(",",".")); return isFinite(n) ? n : 0; };
@@ -70,14 +70,23 @@ function prazoEtapa(cfg, k, p){
   else v = (c.prazoEtapa || {})[k];
   v = numPonto(v); return v>0 ? v : null;
 }
-function atrasadoPed(p, hoje, cfg){ var z = prazoEtapa(cfg, etapaPed(p), p); return z!=null && diasNaEtapa(p, hoje)>z; }
+// Na galvânica (etapas 5 a 8) o prazo é UM só, contado da chegada lá: Pontual 12 dias, +2 se tiver verniz novo (Letícia, 03/11/2026). Ellos ainda sem resposta (10 dias de partida).
+var ETAPAS_GALV = ["nobanho", "fotos", "precos", "banho"];
+function naGalvanica(p){ return ETAPAS_GALV.indexOf(etapaPed(p))>=0; }
+function chegadaGalv(p){ var g = banhoPed(p); return (g==="Ellos" ? p.chegEllos : p.chegPontual) || p.chegPontual || p.chegEllos || ""; }
+function diasNaGalvanica(p, hoje){ var c = chegadaGalv(p); if(!c) return null; var a = Date.parse(c+"T12:00:00"), b = Date.parse(String(hoje||hojeISO())+"T12:00:00"); return isNaN(a) || isNaN(b) ? null : Math.max(0, Math.round((b-a)/86400000)); }
+function prazoPed(cfg, p){   // prazo em dias do pedido na etapa em que está (null = sem prazo)
+  if(naGalvanica(p)){ var g = banhoPed(p), c = cfg || CONFIG_PADRAO, v = numPonto((c.prazoBanho || CONFIG_PADRAO.prazoBanho)[g==="Ellos" ? "ellos" : "pontual"]); return v>0 ? v+(p.vernizNovo && g!=="Ellos" ? 2 : 0) : null; }
+  return prazoEtapa(cfg, etapaPed(p), p);
+}
+function atrasadoPed(p, hoje, cfg){ var z = prazoPed(cfg, p); if(z==null) return false; var d = naGalvanica(p) ? diasNaGalvanica(p, hoje) : null; if(d==null) d = diasNaEtapa(p, hoje); return d>z; }
 function novoId(c, p){ c.seq = (c.seq||0) + 1; return p + c.seq; }
 
-function novoCpc(){ return {seq:0, lotes:[], pedidos:[], fatP:[], fatE:[], envios:[], solic:[], config:clone(CONFIG_PADRAO), historico:[]}; }
+function novoCpc(){ return {seq:0, lotes:[], pedidos:[], fatP:[], fatE:[], envios:[], solic:[], config:clone(CONFIG_PADRAO), historico:[], fix:{}}; }
 function pedidoNovo(c, x){
   var cats = {}; CATS.forEach(function(k){ var v = Math.round(num((x.cats||{})[k[0]])); if(v>0) cats[k[0]] = v; });
   var valor = numPonto(x.valor), desc = Math.min(1, Math.max(0, numPonto(x.desc)));
-  return {id:novoId(c, "o"), forn:normForn(x.forn), data:trim(x.data), nota:trim(x.nota), valor:valor, desc:desc, pagar:x.pagar!=null && x.pagar!=="" ? numPonto(x.pagar) : r2(valor*(1-desc)), chegPontual:trim(x.chegPontual), chegEllos:trim(x.chegEllos), chegSorelly:trim(x.chegSorelly), contaBanho:trim(x.contaBanho), romaneio:trim(x.romaneio), status:statusMigra({status:x.status || "Escolha das peças", chegSorelly:x.chegSorelly}), statusEm:trim(x.statusEm) || trim(x.data), cats:cats, obs:trim(x.obs)};
+  return {id:novoId(c, "o"), forn:normForn(x.forn), data:trim(x.data), nota:trim(x.nota), valor:valor, desc:desc, pagar:x.pagar!=null && x.pagar!=="" ? numPonto(x.pagar) : r2(valor*(1-desc)), chegPontual:trim(x.chegPontual), chegEllos:trim(x.chegEllos), chegSorelly:trim(x.chegSorelly), contaBanho:trim(x.contaBanho), fotosEm:trim(x.fotosEm), vernizNovo:!!x.vernizNovo, romaneio:trim(x.romaneio), status:statusMigra({status:x.status || "Escolha das peças", chegSorelly:x.chegSorelly}), statusEm:trim(x.statusEm) || trim(x.data), cats:cats, obs:trim(x.obs)};
 }
 function faturaNova(c, galv, x){
   var serv = {}; SERV[galv].forEach(function(k){ var v = numPonto((x.serv||{})[k[0]]); if(v) serv[k[0]] = v; });
@@ -105,13 +114,31 @@ function cpcDemo(){
   ].forEach(function(p){ c.solic.push({id:novoId(c, "s"), titulo:p[0], texto:p[1], estado:"pedido", por:"Sistema", em:hojeISO()}); });
   return c;
 }
+// Cadastro de peças que chega do servidor (lib/sync-modulos.js → ação SYNC_MODULO): junta com o que está na tela e refaz a migração. Se os pedidos que chegaram ainda não trazem a marca da correção de 03/11/2026 (fix.banho1103), a correção roda de novo, porque o servidor guarda a versão antiga e estava devolvendo as etapas velhas por cima.
+function cpcDoServidor(atual, conteudo){
+  var n = clone(Object.assign({}, atual, conteudo));
+  if(conteudo){
+    var fx = conteudo.fix || {}; n.fix = Object.assign({}, n.fix);
+    if(conteudo.pedidos && !fx.banho1103) n.fix.banho1103 = 0;
+    if((conteudo.pedidos || conteudo.config) && !fx.pontual12) n.fix.pontual12 = 0;
+  }
+  return cpcMigrar(n);
+}
 function cpcMigrar(c){
   if(!c || typeof c!=="object") return cpcDemo();
   var b = novoCpc(); Object.keys(b).forEach(function(k){ if(c[k]===undefined) c[k] = b[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(c.config[k]===undefined) c.config[k] = clone(CONFIG_PADRAO[k]); });
   var bc = c.config.banhoComp;   // tabela de preços do banho (Ellos x Pontual): os valores reais vêm só do arquivo local
   if(LOCAL && LOCAL.comparativo && !Object.keys(bc.ellos).length && !Object.keys(bc.pontual).length){ var lc = LOCAL.comparativo; bc.cotacaoEllos = numPonto(lc.cotacaoEllos); bc.atualizado = trim(lc.atualizado); bc.ellos = clone(lc.ellos||{}); bc.pontual = clone(lc.pontual||{}); }
-  c.pedidos.forEach(function(p){ if(STATUS_PED.indexOf(p.status)<0) p.status = statusMigra(p); if(p.contaBanho===undefined) p.contaBanho = ""; });   // 03/11/2026: status antigos viram as 12 etapas
+  // correção única (Marcus, 03/11/2026): os pedidos que estavam em "Chegou no banho" já estão em produção, na etapa Banho (8). A marca fix.banho1103 impede de repetir; a data da etapa fica na chegada na galvânica para os dias continuarem certos.
+  if(!c.fix) c.fix = {};
+  if(!c.fix.banho1103){
+    c.pedidos.forEach(function(p){ if(p.status==="Chegou no banho"){ p.status = "Banho"; p.statusEm = p.chegPontual || p.chegEllos || p.statusEm || hojeISO(); } });
+    c.fix.banho1103 = 1;
+  }
+  // a Pontual confirmou em 03/11/2026: 12 dias contados da chegada (+2 com verniz novo). Marca fix.pontual12 impede de repetir.
+  if(!c.fix.pontual12){ c.config.prazoBanho = Object.assign({}, c.config.prazoBanho, {pontual:12}); c.fix.pontual12 = 1; }
+  c.pedidos.forEach(function(p){ if(STATUS_PED.indexOf(p.status)<0) p.status = statusMigra(p); if(p.contaBanho===undefined) p.contaBanho = ""; if(p.vernizNovo===undefined) p.vernizNovo = false; if(p.fotosEm===undefined) p.fotosEm = ""; });   // 03/11/2026: status antigos viram as 12 etapas
   c.lotes.forEach(function(l){ l.tabela.forEach(function(t){ t.tipo = normBanho(t.tipo); }); l.linhas.forEach(function(x){ x.banho = normBanho(x.banho); x.fornecedor = normForn(x.fornecedor); }); });   // nomes do banho e dos fornecedores padronizados
   return c;
 }
@@ -233,13 +260,15 @@ function cpcReduz(s, a){
     case "ped_add": { var po = pedidoNovo(c, a); if(!po.forn) return recusa("Informe o fornecedor."); if(!(po.valor>0)) return recusa("Informe o valor do pedido."); c.pedidos.unshift(po); log("ped_add", po.forn+" · "+brlC(po.valor)); return ok("Pedido lançado."); }
     case "ped_edit": {
       var pe = c.pedidos.find(function(x){ return x.id===a.id; }); if(!pe) return recusa("Pedido não encontrado.");
-      ["forn", "data", "nota", "romaneio", "chegPontual", "chegEllos", "chegSorelly", "contaBanho", "obs"].forEach(function(k){ if(a[k]!==undefined) pe[k] = k==="forn" ? normForn(a[k]) : trim(a[k]); });
+      ["forn", "data", "nota", "romaneio", "chegPontual", "chegEllos", "chegSorelly", "contaBanho", "fotosEm", "obs"].forEach(function(k){ if(a[k]!==undefined) pe[k] = k==="forn" ? normForn(a[k]) : trim(a[k]); });
+      if(a.vernizNovo!==undefined) pe.vernizNovo = a.vernizNovo===true || a.vernizNovo==="sim";
       if(a.status!==undefined && a.status!==pe.status){
         if(STATUS_PED.indexOf(a.status)<0) return recusa("Status inválido.");
         var et0 = etapaPed(pe), et1 = ETAPA_DO_STATUS[a.status];   // o pedido só fecha com o romaneio
         if((et0==="escolha" || et0==="separacao") && et1!=="escolha" && et1!=="separacao" && !trim(pe.romaneio)) return recusa("Informe o romaneio antes de fechar o pedido.");
         pe.status = a.status; pe.statusEm = hojeISO();
         if(et1==="nobanho"){ var gb = banhoPed(pe); if(gb==="Pontual" && !pe.chegPontual) pe.chegPontual = hojeISO(); else if(gb==="Ellos" && !pe.chegEllos) pe.chegEllos = hojeISO(); }   // chegou no banho: grava o dia na galvânica
+        if(et1==="fotos" && !pe.fotosEm) pe.fotosEm = hojeISO();   // a galvânica mandou as fotos: grava o dia
         if(idxEtapa(et1)>=idxEtapa("chegou") && !pe.chegSorelly) pe.chegSorelly = hojeISO();
       }
       if(a.valor!==undefined){ pe.valor = Math.max(0, numPonto(a.valor)); pe.pagar = r2(pe.valor*(1-pe.desc)); }
@@ -310,4 +339,4 @@ function podeFazer(c, atividade, nome, admin){
 }
 function brl(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function pct0(f){ return Math.round((f||0)*100)+"%"; }
-export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };
+export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, prazoPed, naGalvanica, diasNaGalvanica, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcDoServidor, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };

@@ -19,7 +19,7 @@ var QUEM = {
   supervisao: ["Marcus","Anamaria","Lucas"],
   familia: nomes(DIRECAO_FAMILIA).concat(nomes(FAMILIA)), supervisora: [SUPERVISORA.nome], agendamento: nomes(AGENDAMENTO), financeiro: nomes(FINANCEIRO),
   inadimplencia: [AMANDA_M.nome], bipadora: nomes(BIPADORAS).concat([ATENDENTE_PECAS.nome]), montadora: nomes(MONTADORAS), listagens: [LISTAGENS_RESP.nome], kitnovo: [KITNOVO.nome], cadastropecas: nomes(CADASTRO_PECAS),
-  representante: ["24 representantes (ainda sem login)"]};
+  representante: ["24 representantes (ainda sem login)"], linkcadastro: ["Hellen"], garantia: ["Setor Garantia"], basico: ["Demais funcionários"]};   // faltavam: a tela quebrava ao abrir (04/11/2026)
 
 function AbaAcessos(){
   var cx = use(), s = cx.state, d = cx.dispatch, edita = EDITORES.indexOf(s.usuario)>=0;
@@ -52,7 +52,7 @@ function AbaAcessos(){
       e("div",{className:"flex flex-col items-center gap-1 rounded-xl p-2 text-white", style:{background:v[0]}},
         e("span",{className:"grid size-8 place-items-center rounded-lg bg-black/25"}, e(Icon,{n:v[1], s:17})),
         e("span",{className:"text-[12.5px] font-bold leading-tight"}, PAPEL_LB[g]),
-        e("span",{className:"text-[10.5px] font-medium leading-tight opacity-90"}, QUEM[g].join(", ")),
+        e("span",{className:"text-[11px] font-medium leading-tight opacity-90"}, (QUEM[g] || []).join(", ")),
         mudou && edita && e("button",{onClick:function(){ restaurar(g); }, className:"mt-0.5 rounded bg-black/30 px-1.5 py-0.5 text-[10.5px] font-semibold hover:bg-black/45"},"Voltar ao padrão"))); };
   return e(React.Fragment,null,
     e(PageHead,{t:"Acessos por setor", sub:"Marque as telas que cada setor abre e, dentro da tela, o que cada um enxerga. Vale na hora."}),

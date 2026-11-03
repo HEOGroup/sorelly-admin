@@ -48,7 +48,7 @@ import { grReduz } from "@/apps/montagem/domain/garantias-rev";
 import { esReduz } from "@/apps/montagem/domain/estoque-sorelly";
 import { avReduz } from "@/apps/montagem/domain/avaliacoes";
 import { prReduz } from "@/apps/montagem/domain/producao";
-import { cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
+import { cpcDoServidor, cpcReduz } from "@/apps/montagem/domain/cadastro-pecas";
 import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { MODELO_PADRAO } from "@/apps/montagem/domain/condicional-modelo";
@@ -248,6 +248,7 @@ function reducer(s, a){
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
         return Object.assign({}, s, {faturamentoDiario:fdm});
       }
+      if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
       return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
     }
@@ -888,17 +889,18 @@ function reducer(s, a){
     case "AVISO_CFG": return com(s, {avisosCfg:Object.assign({}, s.avisosCfg||{}, {[a.tipo]:a.ids})});
     case "ALERTA_ADD": {
       if((s.alertas||[]).some(function(x){ return x.chave===a.chave; })) return s;
-      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, cor:a.cor||null, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
+      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, dados:a.dados||null, cor:a.cor||null, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
     }
     case "ALERTA_LIDO": return com(s, {alertas:(s.alertas||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {lidoPor:(x.lidoPor||[]).concat([a.usuario])}); })});
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
     case "REVINT_AGENDAR": {
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
       if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
-      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || "")});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
+      var vLib = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";   // valor liberado da reposição ou do kit novo (Tamara, 03/11/2026)
+      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
-      if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, a.quer ? {obs:"Quer: "+a.quer} : {}); }); }
-      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas", remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
+      if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, (a.quer || vLib) ? {obs:(a.quer ? "Quer: "+a.quer : "Atendimento")+vLib} : {}); }); }
+      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
@@ -1084,12 +1086,13 @@ function reducer(s, a){
     }
     case "CONF_QTD": {   // 03/11/2026: conferência só por QUANTIDADE (ainda sem bipagem): contagem = {numeroDaCondicional: quantidade}
       var kQ = kitDe(s, a.kitId); if(!kQ) return s;
-      var condsQ = condicionaisDoKit(kQ), esperQ = 0, lidasQ = 0, faltasQ = [], sobrasQ = [];
-      condsQ.forEach(function(c){ var esp = totaisDe(c).pecas, ct = Math.max(0, parseInt((a.contagem||{})[c.numero], 10)||0); esperQ += esp; lidasQ += Math.min(esp, ct);
-        if(ct<esp) faltasQ.push({cond:c.numero, codigo:"Condicional "+c.numero, desc:"", qtd:esp-ct}); else if(ct>esp) sobrasQ.push({codigo:"Condicional "+c.numero, qtd:ct-esp}); });
+      var condsQ = condicionaisDoKit(kQ), esperQ = 0, lidasQ = 0, faltasQ = [], sobrasQ = [];   // a representante conta tudo junto (as peças das condicionais vêm misturadas): compara só o TOTAL
+      condsQ.forEach(function(c){ esperQ += totaisDe(c).pecas; });
+      var ctQ = Math.max(0, parseInt(a.total, 10)||0); lidasQ = Math.min(esperQ, ctQ);
+      if(ctQ<esperQ) faltasQ.push({cond:"", codigo:"Total do kit", desc:"", qtd:esperQ-ctQ}); else if(ctQ>esperQ) sobrasQ.push({codigo:"Total do kit", qtd:ctQ-esperQ});
       var nFQ = faltasQ.reduce(function(t,f){ return t+f.qtd; },0), nSQ = sobrasQ.reduce(function(t,x){ return t+x.qtd; },0);
       var resQ = {esperadas:esperQ, lidas:lidasQ, faltas:faltasQ, nFaltas:nFQ, sobras:sobrasQ, nSobras:nSQ, erros:nFQ, conds:condsQ.map(function(c){ return c.numero; }), porQuantidade:true};
-      var cbQ = Object.assign({}, s.confBip||{}); cbQ[a.kitId] = Object.assign({}, cbQ[a.kitId]||{}, {lib:(cbQ[a.kitId]||{}).lib||agora, ini:agora, fim:agora, contagem:a.contagem||{}, resultado:resQ, erros:[]});
+      var cbQ = Object.assign({}, s.confBip||{}); cbQ[a.kitId] = Object.assign({}, cbQ[a.kitId]||{}, {lib:(cbQ[a.kitId]||{}).lib||agora, ini:agora, fim:agora, total:ctQ, resultado:resQ, erros:[]});
       return com(s, {confBip:cbQ}, nFQ>0 ? "Quantidade conferida: faltaram "+nFQ+" peça(s)" : "Quantidade conferida: "+lidasQ+" de "+esperQ+" peças");
     }
     case "CONF_NOTA": {   // a representante anota as peças que faltaram (conferência por quantidade); fica no registro da conferência

@@ -648,25 +648,26 @@ var garantiaFeita = false;   // roda UMA vez por abertura do sistema: criar de n
 var idAuto = function(nome){ return "g_auto_"+sem(nome).replace(/[^a-z0-9]/g, ""); };   // id fixo por nome: se rodar de novo, cai em cima do mesmo grupo e não cria outro
 function garantirGruposSetor(eu){
   if(garantiaFeita || !podeCriarGrupo(eu) || !estado.convs.length || (SERVIDOR && !seqServidor)) return 0;   // espera a primeira sincronização com o servidor
+  if(SERVIDOR && estado.convs.length<60) return 0;   // estado incompleto (só as conversas de demonstração): sem a lista de verdade o sistema acharia que os grupos não existem e criaria cópias (Marcus, 04/11/2026)
   garantiaFeita = true;
-  // junta as cópias que já nasceram: as mensagens vão para o grupo original e a cópia some (só o Marcus, uma vez)
-  // (grupo "Cadastro", de 30/10, e "Cadastro de revendedoras", criado em 03/11 com as mesmas pessoas: fica o segundo, com o nome certo)
-  [["Cadastro", "Cadastro de revendedoras"]].forEach(function(par){ var acha = function(n){ return estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(n) && String(c.id).indexOf("g_")===0; }); }, copia = acha(par[0]), orig = acha(par[1]);
-    if(!copia || !orig || copia.id===orig.id || !SERVIDOR) return;
-    chamar("POST", "/chat/mesclar", {de:copia.id, para:orig.id}).then(function(){ atualizarGrupo(copia.id, {excluido:true}); }).catch(function(){}); });
-  // limpa cópias já criadas: grupos com o mesmo nome e quase vazios (só o aviso de criação) ficam escondidos; fica o que tem mais conversa
-  (function(){ var ordem = estado.convs.filter(function(c){ return c.tipo==="grupo" && !c.excluido && String(c.id).indexOf("g_")===0; }).sort(function(a, b){ return (estado.msgs[b.id]||[]).length-(estado.msgs[a.id]||[]).length || a.criada-b.criada; }), vistos = {}, dup = [];
-    ordem.forEach(function(c){ var k = sem(c.nome); if(!vistos[k]) vistos[k] = c.id; else if((estado.msgs[c.id]||[]).length<=1) dup.push(c.id); });
-    if(dup.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return dup.indexOf(c.id)>=0 ? Object.assign({}, c, {excluido:true}) : c; })}); }); })();
+  // Nomes que valem como o MESMO grupo (Marcus, 04/11/2026: grupos repetidos: "Cadastro", "Encomendas" e "RH" nasceram duas vezes)
+  var MESMO_GRUPO = {"cadastro":["cadastro de revendedoras"], "cadastro de revendedoras":["cadastro"], "encomendas":["encomendas e reposicoes"], "encomendas e reposicoes":["encomendas"]};
+  var mesmoNome = function(x, y){ var sx = sem(x), sy = sem(y); return sx===sy || (MESMO_GRUPO[sx] || []).indexOf(sy)>=0; };
+  // esconde a cópia: grupo criado pelo sistema (id g_auto_...) com no máximo 1 mensagem (só o aviso de criação) que repete o nome de outro grupo; fica o que tem mais conversa. Roda antes de qualquer criação.
+  (function(){ var vis = estado.convs.filter(function(c){ return c.tipo==="grupo" && !c.excluido; }), n = function(c){ return (estado.msgs[c.id]||[]).length; }, esconder = [];
+    vis.forEach(function(x){ if(String(x.id).indexOf("g_auto_")!==0 || n(x)>1) return;
+      var outro = vis.find(function(y){ return y.id!==x.id && esconder.indexOf(y.id)<0 && mesmoNome(x.nome, y.nome) && (String(y.id).indexOf("g_auto_")!==0 || n(y)>n(x) || (n(y)===n(x) && (String(y.nome).length>String(x.nome).length || (String(y.nome).length===String(x.nome).length && y.id<x.id)))); });
+      if(outro) esconder.push(x.id); });
+    if(esconder.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return esconder.indexOf(c.id)>=0 ? Object.assign({}, c, {excluido:true}) : c; })}); }); })();
   // O grupo do setor pode já existir com outro nome (Marcus, 04/11/2026: "Cadastro" nasceu repetido ao lado do "Cadastro de revendedoras"): estes nomes contam como o mesmo grupo
-  var MESMO_GRUPO = {"cadastro":["cadastro de revendedoras"], "cadastro de revendedoras":["cadastro"]};
-  var avisoInterno = null, existe = function(n){ var sn = sem(n), outros = MESMO_GRUPO[sn] || []; return estado.convs.some(function(c){ var sc = sem(c.nome); return c.tipo==="grupo" && !c.excluido && (sc===sn || outros.indexOf(sc)>=0); }) || novos.some(function(g){ return sem(g.nome)===sn; }); }, novos = [];
+  var avisoInterno = null, existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && !c.excluido && mesmoNome(c.nome, n); }) || novos.some(function(g){ return mesmoNome(g.nome, n); }); }, novos = [];
   var mk = function(nome, d){ novos.push(Object.assign({id:idAuto(nome), tipo:"grupo", nome:nome, descr:d.descr||"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:!d.simples, setorId:d.setorId||null, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}, d.extra||{})); };
   // Grupos de gestão (Marcus, 02/11/2026): conversa normal só entre as pessoas listadas, sem abas por funcionária. O setor continua sendo um grupo à parte.
   var gestao = function(nome, setorId, nomes){ var ids = nomes.map(function(n){ return idPorNome(n); }).filter(Boolean), ja = estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(nome); });
     if(ja){ if(!ja.setorId) atualizarGrupo(ja.id, {setorId:setorId}); return; }   // grupo criado antes de existir a tela Grupos do setor: só ganha a marca do setor
     if(ids.length>1) mk(nome, {simples:true, setorId:setorId, membros:ids}); };
   gestao("Financeiro (gestão)", "financeiro", ["Marcus","Nickolas","Lucas","Nayale","Anamaria","Ana Beatriz","Marco Antonio"]);
+  gestao("MLN", null, ["Marcus","Nickolas","Lucas"]);   // grupo da Direção (Marcus, Nickolas e Lucas), só os três (Marcus, 04/11/2026)
   gestao("Agendamento (gestão)", "agendamento", ["Marcus","Lucas","Nickolas","Priscila","Maria Claudia","Mariana","Ana Maria Divino","Tamara"]);
   // Grupos antigos que pertencem a um setor (Marcus, 03/11/2026): ganham a marca do setor e passam a aparecer dentro dele na aba Setores
   var marcar = function(acha, setorId){ estado.convs.filter(function(x){ return x.tipo==="grupo" && !x.excluido && !x.setorId && acha(x); }).forEach(function(c){ atualizarGrupo(c.id, {setorId:setorId}); }); };
@@ -681,7 +682,6 @@ function garantirGruposSetor(eu){
     if(!g.boasVindas){ atualizarGrupo(g.id, {boasVindas:true}); sendMessage({conv:g.id, eu:eu, texto:AVISO}); } })();
   marcar(function(c){ return sem(c.nome)==="rh"; }, "rh");   // grupo RH: setor Recursos Humanos
   marcar(function(c){ return sem(c.nome)==="trocas"; }, "garantia");   // Trocas é do setor de Garantia (CLAUDE.md)
-  GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
   var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
   // H&O Apps = grupo da Tecnologia (Marcus, 30/10/2026): Marcus, Leonardo, Lucas, Nickolas, Priscila e Maria (Claudia, do RH), sem a Anamaria. Abas no topo para abrir a conversa de cada um (menos o Marcus): Leonardo, Lucas, Nickolas, Priscila e Maria. Foto da H&O Apps e Sorelly.
   var leo = idPorNome("Leonardo"), luc = idPorNome("Lucas"), nic = idPorNome("Nickolas"), pri = idPorNome("Priscila"), mar = idPorNome("Maria Claudia"), mcs = idPorNome("Marcus");
@@ -689,8 +689,8 @@ function garantirGruposSetor(eu){
   var hoAnt = estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && (sem(c.nome)==="tecnologia" || sem(c.nome)==="h&o apps"); });
   if(hoAnt){   // grupo já criado (nome antigo ou abas antigas): acerta nome, foto, pessoas e abas
     if(hoAnt.nome!=="H&O Apps" || !hoAnt.foto || (hoAnt.funcionarias||[]).join()!==tecF.join()) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return c.id!==hoAnt.id ? c : Object.assign({}, c, {nome:"H&O Apps", foto:c.foto||"fotos/grupo-ho-apps.jpg", membros:tec, funcionarias:tecF, paralelas:true}); })}); });
-  } else if(leo) mk("H&O Apps", {funcionarias:tecF, membros:tec, foto:"fotos/grupo-ho-apps.jpg"});
-  Object.keys(porSetor).sort().forEach(function(n){ var f = porSetor[n]; if(f.length<2 || existe(n)) return; var dr = dir4(); mk(n, {funcionarias:f, membros:f.concat(dr.filter(function(x){ return f.indexOf(x)<0; }))}); });
+  }
+  // (o sistema não cria mais os grupos de cada setor sozinho: eles já existem e criar de novo gerava grupos repetidos; grupo novo se cria em Setores › Novo grupo)
   if(!novos.length) return 0;
   mudar(function(s){ var o = {}; novos.forEach(function(g){ o[g.id] = []; }); return Object.assign({}, s, {convs:s.convs.concat(novos), msgs:Object.assign({}, s.msgs, o)}); });
   novos.forEach(function(g){ inserir(g.id, {id:uid("m"), de:eu, t:Date.now(), tipo:"sistema", texto:"Grupo \""+g.nome+"\" criado", status:"lido", reacoes:{}, mencoes:[]}); if(avisoInterno && g.fixaTodos) sendMessage({conv:g.id, eu:eu, texto:avisoInterno}); });
