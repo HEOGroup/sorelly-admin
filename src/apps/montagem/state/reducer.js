@@ -1097,6 +1097,13 @@ function reducer(s, a){
       cbN[a.kitId] = Object.assign({}, anN, {nota:String(a.nota||"").slice(0, 200), notaEm:agora});
       return com(s, {confBip:cbN}, "Peças que faltaram anotadas");
     }
+    case "SIM_REINICIAR_KIT": {   // atalhos Kit novo e Reposição da aba Apps: o kit de exemplo é refeito do zero toda vez (nada depende de teste guardado antes)
+      var idsRK = s.kits.filter(function(x){ return x.rev===a.rev; }).map(function(x){ return x.id; });
+      if(!idsRK.length) return s;
+      var cbRK = Object.assign({}, s.confBip||{}), enRK = Object.assign({}, s.entregasKN||{}); idsRK.forEach(function(id){ delete cbRK[id]; delete enRK[id]; });
+      var prRK = Object.assign({}, s.perfisRev||{}); if(prRK[a.rev]){ var ppRK = Object.assign({}, prRK[a.rev]); delete ppRK.condicionaisAbertas; delete ppRK.termoConsignado; prRK[a.rev] = ppRK; }
+      return com(s, {kits:s.kits.filter(function(k){ return idsRK.indexOf(k.id)<0; }), confBip:cbRK, entregasKN:enRK, perfisRev:prRK, acertosConsignado:(s.acertosConsignado||[]).filter(function(r){ return idsRK.indexOf(r.kitId)<0; })}, null);
+    }
     case "CONF_BIPAR": {
       var kB = kitDe(s, a.kitId), cfB = (s.confBip||{})[a.kitId]; if(!kB || !cfB || !cfB.ini || cfB.fim) return s;
       var cbB = Object.assign({}, s.confBip); cbB[a.kitId] = biparConf(condicionaisDoKit(kB), cfB, a.codigo);
