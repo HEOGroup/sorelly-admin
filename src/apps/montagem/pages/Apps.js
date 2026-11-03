@@ -145,7 +145,7 @@ function ColFunc(p){
 // Os apps ainda não trocam dados entre si: a linha do tempo mostra o caminho e quem age, não muda o conteúdo de cada celular.
 var CELULARES = [["rep","Representante"], ["rev","Revendedora"]].concat(ACESSOS.map(function(a){ return [a.k, a.titulo]; })).concat([["mot","Motoboy"], ["cli","Cliente final"]]);
 var NOME_CEL = {}, TODOS = {}, PRINCIPAIS = {}; CELULARES.forEach(function(c){ NOME_CEL[c[0]] = c[1]; TODOS[c[0]] = true; });
-["rep","rev"].forEach(function(k){ PRINCIPAIS[k] = true; });   // 02/11/2026 (Marcus): a tela SEMPRE começa só com o app da representante e o da revendedora abertos; o resto fica fechado (liga em Apps e fluxos). Com fluxo = só os dele; "Todos" liga os 11
+["rep"].forEach(function(k){ PRINCIPAIS[k] = true; });   // 03/11/2026 (Marcus): a tela SEMPRE começa só com o app da representante aberto (antes, 02/11, era representante e revendedora); o resto fica fechado (liga em Apps e fluxos). Com fluxo = só os dele; "Todos" liga os 11
 // Fluxos de exemplo montados com as regras do sistema; o Marcus ajusta nomes, passos e participantes.
 var FLUXOS = [
   {nome:"Kit novo + venda + entrega", pistas:["rep","rev","dey","con","mon","bip","mot","cli"], passos:[

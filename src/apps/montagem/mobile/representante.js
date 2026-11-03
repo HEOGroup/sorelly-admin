@@ -522,16 +522,18 @@ function AppRepresentante(p){
         var lista = acertoForm.trocas||[], formAberto = lista.length===0 || trocaFormAberto, tipoT = trocaIn.tipo;
         var ajDe = function(t){ return t.tipo==="anterior" ? (t.novaValor||0)-(t.antigaValor||0) : (t.novaValor||0); };
         var sinalT = function(v){ return (v>=0 ? "+ " : "− ")+BK(Math.abs(v)); };
-        var regraTxt = tipoT==="anterior" ? "Peça de outro mês (já foi paga): entra na venda só a diferença, nova menos quebrada. Se a nova for mais barata, desconta." : "Peça deste kit: a peça nova entra na venda pelo valor cheio e a quebrada volta para a empresa.";
+        var regraTxt = tipoT==="anterior" ? "Entra na venda só a diferença: nova menos quebrada. Se a nova for mais barata, desconta." : "A peça nova entra na venda pelo valor cheio e a quebrada volta para a empresa.";
         var okA = codigoPecaValido(trocaIn.antigaCod) && trocaIn.antigaValor>0, okN = codigoPecaValido(trocaIn.novaCod) && trocaIn.novaValor>0;
         var ajuste = ajDe({tipo:tipoT, antigaValor:trocaIn.antigaValor, novaValor:trocaIn.novaValor});
         var btnT = "h-8 flex-1 rounded-lg text-[11px] font-bold disabled:opacity-40 ";
         var fechaForm = function(){ setTrocaIn(TROCA_VAZIA); setPassoTroca(1); setTrocaFormAberto(false); };
-        var passos = e("div",{key:"tp", className:"flex gap-3"}, ["Tipo","Quebrada","Nova"].map(function(nome, i){ var on = passoTroca===i+1;
-          return e("span",{key:nome, className:"flex items-center gap-1.5 text-[11px] font-bold uppercase "+(on ? "" : "opacity-50")},
+        var liberado = function(n){ return n===1 || (n===2 && !!tipoT) || (n===3 && !!tipoT && okA); };
+        var passos = e("div",{key:"tp", className:"flex items-center justify-center gap-4"}, ["Tipo","Quebrada","Nova"].map(function(nome, i){ var on = passoTroca===i+1, lib = liberado(i+1);
+          return e("button",{key:nome, type:"button", disabled:!lib, onClick:function(){ setPassoTroca(i+1); }, className:"flex h-8 items-center justify-center gap-1.5 text-[11px] font-bold uppercase "+(on ? "" : "opacity-50")},
             e("i",{className:"grid size-5 place-items-center rounded-full bg-[#C9A13B] text-[11px] not-italic txt-branco"}, i+1), nome); }));
         var corpo = passoTroca===1 ? [
-            e("div",{key:"p1", className:"grid grid-cols-2 gap-1.5"}, [["mes","Peça deste kit","quebrou neste mês"],["anterior","Peça de outro mês","já foi paga"]].map(function(o){ var on = tipoT===o[0];
+            e("p",{key:"p1q", className:"text-center text-[11px] font-bold uppercase"}, "A peça que voltou quebrada é…"),
+            e("div",{key:"p1", className:"grid grid-cols-2 gap-1.5"}, [["mes","Deste kit","comprada neste mês"],["anterior","De outro mês","já foi paga"]].map(function(o){ var on = tipoT===o[0];
               return e("button",{key:o[0], onClick:function(){ setTrocaIn(Object.assign({}, trocaIn, {tipo:o[0]})); }, "aria-pressed":on,
                 className:"flex h-10 flex-col items-center justify-center rounded-lg text-[11px] font-bold leading-tight "+(on ? "bg-[#C9A13B] txt-branco" : "bg-white/10")}, e("span",null,o[1]), e("span",{className:"font-medium"}, o[2])); })),
             tipoT && e("p",{key:"p1r", className:"text-[11px]"}, regraTxt),
@@ -562,13 +564,13 @@ function AppRepresentante(p){
         return [
           e("div",{key:"th", className:"flex min-h-8 items-center justify-between"},
             e("p",{className:"text-[11px] font-bold uppercase tracking-wide"}, "Lançadas"),
-            e("button",{onClick:function(){ if(trocaFormAberto){ fechaForm(); } else { setTrocaIn(TROCA_VAZIA); setPassoTroca(1); setTrocaFormAberto(true); } }, className:"h-8 rounded-lg border border-dashed border-amber-200/60 px-3 text-[11px] font-semibold text-amber-200"}, trocaFormAberto ? "Cancelar" : "+ Troca")),
+            e("button",{onClick:function(){ if(trocaFormAberto){ fechaForm(); } else { setTrocaIn(TROCA_VAZIA); setPassoTroca(1); setTrocaFormAberto(true); } }, className:"h-8 rounded-lg border border-dashed border-amber-200/60 px-3 text-[11px] font-semibold text-amber-200"}, trocaFormAberto ? "Cancelar" : "+ Trocar peça")),
           lista.length===0 && !formAberto && e("p",{key:"t0", className:"text-[11px]"}, "Nenhuma troca lançada."),
           lista.map(function(t,i){ var aj = ajDe(t);
             return e("div",{key:"t"+i, className:"flex min-h-9 items-center justify-between gap-2 border-b border-white/10"},
               e("div",{className:"min-w-0"},
                 e("p",{className:MONO+" text-[13px] font-semibold"}, t.antigaCod+" → "+t.novaCod),
-                e("p",{className:"text-[11px]"}, t.tipo==="anterior" ? "Outro mês · já foi paga" : "Deste kit · quebrou neste mês")),
+                e("p",{className:"text-[11px]"}, t.tipo==="anterior" ? "De outro mês · já foi paga" : "Deste kit · comprada neste mês")),
               e("span",{className:"flex shrink-0 items-center gap-1"},
                 e("b",{className:MONO+" text-[13px] "+(aj>=0 ? "text-amber-200" : "text-amber-200")}, sinalT(aj)),
                 e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {trocas:lista.filter(function(y,j){return j!==i;})})); }, "aria-label":"Remover troca", className:"grid size-8 place-items-center text-[13px]"}, "×"))); }),
