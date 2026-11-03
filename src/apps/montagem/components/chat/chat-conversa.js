@@ -319,7 +319,8 @@ function ConversaBase(p){
   var membro = !!conv && conv.membros.indexOf(eu)>=0;
   // a Direção, vendo o chat de uma representante, pode responder nas conversas dela com as revendedoras (a mensagem fica marcada com quem respondeu)
   var dirResp = !!conv && !!p.direcao && !!p.leitura && contato(eu).tipo==="rep" && conv.tipo==="dm" && conv.membros.some(function(i){ return contato(i).tipo==="rev"; });
-  var somenteLeitura = !!conv && (!membro || !!p.leitura) && !dirResp;
+  var soDirecao = !!conv && !!conv.soAdmins && conv.admins.indexOf(eu)<0;   // Sorelly Interno: só quem é administrador escreve (hoje só o Marcus)
+  var somenteLeitura = !!conv && (!membro || !!p.leitura || soDirecao) && !dirResp;
   var todas = conv ? api.getMessages(conv.id, eu) : [];
   var abasV = conv ? abasDe(conv, eu) : null, abaAtual = abasV && abasV.indexOf(abaSel)>=0 ? abaSel : "geral";
   var todasAba = abasV ? todas.filter(function(m){ return abaDaMsg(m)===abaAtual; }) : todas;   // cada aba tem o seu histórico

@@ -3,8 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.33", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+ ]},
  {v:"0.18.32", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
-  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só a direção (Marcus, Nickolas, Lucas e Anamaria) escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
+  {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
  ]},
  {v:"0.18.31", data:"2026-11-03", titulo:"SorellyChat: grupos antigos dentro do setor", itens:[
   {tipo:"melhoria", area:"SorellyChat", txt:"Na aba Setores, o grupo Preço das Peças fica dentro de Cadastro de peças, o grupo RH dentro de Recursos Humanos e o grupo Trocas dentro de Garantia. Só o H&O Apps continua em Outros grupos."},
