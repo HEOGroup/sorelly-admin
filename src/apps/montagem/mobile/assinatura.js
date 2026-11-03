@@ -48,6 +48,8 @@ function TelaAssinatura(p){
       p.passosAntes,
       e(CartaoPasso,{n:nAntes+1, titulo: lista ? "Regras — leia e marque uma por uma" : "Regras passadas para a revendedora", cor:"#7C3AED", ok:regrasOk, travado:!antesOk,
           direita: lista ? marcadas+"/"+regras.length : null},
+        p.onAbrirRegras && e("button",{type:"button", onClick:p.onAbrirRegras, className:"flex h-10 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-[13.5px] font-bold txt-branco"}, e(Icon,{n:"book", s:16}), "Abrir as regras para a revendedora ler"),
+        p.onAbrirRegras && e("p",{className:"rounded-xl bg-[#f6efdf] px-3 py-2 text-center text-[12.5px] font-semibold text-[#161616]"}, "Avise a revendedora: as regras também ficam no app dela, em Regras e comissões. Ela pode ler de novo quando quiser."),
         lista
           ? regras.map(function(r,i){ return e("label",{key:i, className:"flex items-start gap-2.5 rounded-xl px-2.5 py-2 "+(checks[i] ? "bg-emerald-50" : "bg-[#F4F5F7]")},
               e("input",{type:"checkbox", checked:!!checks[i], onChange:function(){ alterna(i); }, className:"mt-0.5 size-4 shrink-0"}),
@@ -58,7 +60,8 @@ function TelaAssinatura(p){
                 e("input",{type:"checkbox", checked:ciente, onChange:function(ev){ setCiente(ev.target.checked); }, className:"size-5 shrink-0"}),
                 "A revendedora leu e entendeu as regras passadas"))),
       e(CartaoPasso,{n:nAntes+2, titulo:"Assinatura da revendedora", cor:"#0891B2", ok:!!assinatura, travado:!(antesOk && regrasOk)},
-        e(AssinaturaDigital,{onChange:setAssinatura, legenda:p.nome ? "Assinatura de "+p.nome : ""})),
+        e(AssinaturaDigital,{onChange:setAssinatura, legenda:p.nome ? "Assinatura de "+p.nome : ""}),
+        e("p",{className:"text-center text-[12px] text-[#6B7280]"}, "A assinatura fica gravada neste acerto, com a data e a versão das regras que ela leu.")),
       e("button",{disabled:!pronto, onClick:function(){ p.onConcluir({assinatura:assinatura, regrasLidas:regras.map(function(r){return r.t;})}); },
         className:"h-12 rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco disabled:opacity-40"}, p.rotuloBotao || "Concluir"),
       !pronto && e("p",{className:"text-center text-[11.5px] text-[#9CA3AF]"},

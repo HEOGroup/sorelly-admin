@@ -112,6 +112,7 @@ function AppRepresentante(p){
   var BRINDE_IN_VAZIO = {normal:{codigo:"", valor:null}, bb:{codigo:"", valor:null}};
   var bi = useState(BRINDE_IN_VAZIO), brindeIn = bi[0], setBrindeIn = bi[1];
   var ta = useState("inicio"), telaAntes = ta[0], setTelaAntes = ta[1];
+  var rdS = useState(false), regrasDaAssinatura = rdS[0], setRegrasDaAssinatura = rdS[1];   // as regras da revendedora foram abertas a partir da assinatura do acerto: o voltar retorna para ela
   var LANC_VAZIO = {forma:"", descricao:"", parcelas:1, data:isoDia(new Date()), valor:null, anexo:null};
   var mc = useState(null), msgCopiada = mc[0], setMsgCopiada = mc[1];
   var cpx = useState(""), codProx = cpx[0], setCodProx = cpx[1];
@@ -830,6 +831,7 @@ function AppRepresentante(p){
       ["Brindes", brindeBloqueio ? "Sem brinde" : acertoForm.brindes.length+" peça(s) lançada(s)"],
       ["Kit novo", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
+    onAbrirRegras:function(){ setRegrasDaAssinatura(true); setTela("regrascom"); },
     onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:true})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
   // Fechar atendimento: mensagem pronta para a revendedora e para o grupo da empresa
   var msgs = kitSel && previaAcerto ? mensagemFechamento({nome:sel.rev, rep:l.rep, data:isoDia(new Date()), dv:dv, form:acertoForm, condFicam:condAbertasFicam, expFicam:expFicam, kitConf:kitConfDe(kitSel.id),
@@ -1308,7 +1310,7 @@ function AppRepresentante(p){
       e("div",{className:"mt-3 pb-4"}, e(ConfPecas,{s:s, d:d, k:kitSel, onContinuar:function(){ setTela(confVolta); }}))),
     tela==="pedidodata" && sel && e("div",{className:"mt-3 flex flex-col gap-2"}, e("button",{onClick:function(){ setTela("rev"); }, className:"self-start rounded-full bg-amber-200/10 px-3 py-1.5 text-[12px] font-bold text-[#E8B84B]"}, "‹ Voltar"), e(PedidoDataRep,{s:s, d:d, l:l, rev:sel})),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
-    tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", onVoltar:function(){ setTela("inicio"); }}),
+    tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(false); setTela(volta ? "assinaracerto" : "inicio"); }}),
     tela==="regras" && headerRegras,
     tela==="regras" && telaRegras,
     tela==="inicio" && headerInicio,

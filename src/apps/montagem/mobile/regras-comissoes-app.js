@@ -29,7 +29,7 @@ function Paginas(p){
 
 function TelaRegrasComissoes(p){
   var ehRep = p.publico==="representante";
-  var st = useState(ehRep ? "representante" : "revendedora"), versao = st[0], v = VERSOES[versao];
+  var st = useState(p.inicio || (ehRep ? "representante" : "revendedora")), versao = st[0], v = VERSOES[versao];
   var marca = useRef(null);
   useEffect(function(){ var c = marca.current && marca.current.closest("#app-screen"); if(c) c.scrollTop = 0; }, []);   // abre sempre no topo (a lista anterior deixa a rolagem no meio)
   return [e("span",{key:"m", ref:marca, className:"hidden"}), e(CabecaTela,{key:"h", t:"Regras e comissões", sub:v.titulo, onVoltar:p.onVoltar}),
