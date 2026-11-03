@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.43", data:"2026-11-03", titulo:"Atendimento interno: horários organizados", itens:[
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Em Revendedoras, os botões Lista, Calendário e Buscar da DevMaster ficam no lado esquerdo, em cima do calendário. A coluna dos horários sobe até o alto da tela e mostra os 20 horários de meia em meia hora sem rolar. Pedido da Tamara e do Marcus."},
+ ]},
  {v:"0.18.42", data:"2026-11-03", titulo:"Chamados: data de acerto no Link de pagamento, kit novo R$ 7.000, Pix por dia, valor liberado", itens:[
   {tipo:"correção", area:"Link de pagamento", txt:"Não dava para salvar a data do acerto em link já solicitado ou pago: a conferência da data estava errada e recusava qualquer data. Corrigido (Hellen). O mesmo erro no mês inicial do Top 50 das Encomendas também foi corrigido."},
   {tipo:"melhoria", area:"Kits novos", txt:"Todo kit novo que chega do Cadastro entra com o valor padrão de R$ 7.000,00. A Michele edita à mão quando a Direção aprova outro valor."},

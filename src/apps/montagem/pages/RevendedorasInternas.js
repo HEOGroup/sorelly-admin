@@ -511,21 +511,22 @@ function AbaRevendedorasInternas(){
   var escolherDia = function(iso){ setDia(iso); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); };
   var irParaDia = function(iso){ escolherDia(iso); setVisao("lista"); };
   var segBtn = function(k, t){ var on = visao===k; return e("button",{key:k, type:"button", onClick:function(){ setVisao(k); }, "aria-pressed":on, className:"h-8 px-3.5 text-[13px] font-semibold "+(on ? "" : "hover:bg-white/10"), style:on ? BTN_OURO2 : null}, t); };
-  return e(React.Fragment,null,
-    e("div",{className:"flex flex-wrap items-end justify-between gap-3"},
-      e(PageHead,{t:"Revendedoras internas", sub:"203 revendedoras do vendedor Sorelly · agenda, registro de contatos e multa de remarcação"}),
-      e("div",{className:"flex flex-wrap items-center gap-2"},
+  // Lista/Calendário e Buscar da DevMaster ficam no lado esquerdo, em cima do calendário; a coluna dos horários sobe até o alto da tela (Marcus, 03/11/2026)
+  var cabecalho = e("div",{className:"flex flex-col gap-2"},
+    e(PageHead,{t:"Revendedoras internas", sub:"203 revendedoras do vendedor Sorelly · agenda, registro de contatos e multa de remarcação"}),
+    e("div",{className:"flex flex-wrap items-center gap-2"},
         e("div",{className:"inline-flex overflow-hidden rounded-lg border "+BORDA}, segBtn("lista","Lista"), segBtn("calendario","Calendário")),
         e("button",{type:"button", disabled:buscandoDm, onClick:function(){ buscarDm(); }, title:"Busca na DevMaster as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra as que faltam", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold disabled:opacity-50", style:BTN_OURO2}, "↻ Buscar da DevMaster"),
-        msgDm && e("span",{className:"text-[12.5px]"}, msgDm))),
+        msgDm && e("span",{className:"text-[13px]"}, msgDm)));
+  return e(React.Fragment,null,
     visao==="lista"
       ? e("div",{className:"flex flex-col gap-3"},
-          e("div",{className:"grid gap-3 lg:grid-cols-[660px_minmax(0,1fr)]", style:{minHeight:ALTURA_AGENDA}},
-            e("div",{style:{height:ALTURA_AGENDA}}, e(CalendarioTopo,{lista:todas, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso})),
-            e("div",{className:"overflow-hidden", style:{height:ALTURA_AGENDA}}, e(HorariosDoDia,{lista:todas, dia:dia, hojeIso:hojeIso, abrir:setAberto, dispatch:cx.dispatch}))),
+          e("div",{className:"grid gap-3 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]"},
+            e("div",{className:"flex flex-col gap-2"}, cabecalho, e("div",{className:"flex-1", style:{minHeight:ALTURA_AGENDA}}, e(CalendarioTopo,{lista:todas, dia:dia, setDia:escolherDia, mes:mes, setMes:setMes, hojeIso:hojeIso}))),
+            e("div",{className:"min-h-[560px] overflow-hidden"}, e(HorariosDoDia,{lista:todas, dia:dia, hojeIso:hojeIso, abrir:setAberto, dispatch:cx.dispatch}))),
           e(KitsNovosParaAgendar,{lista:todas, hojeIso:hojeIso, abrir:setAberto}),
           e("div",{className:"flex flex-col"}, e(Etiqueta,{nome:"Revendedoras internas", info:todas.length+" total"}), e(TabelaAgenda,{lista:todas, hojeIso:hojeIso, s:s, abrir:setAberto})))
-      : e(CalendarioGrande,{lista:todas, mes:mesG, setMes:setMesG, hojeIso:hojeIso, abrir:setAberto, irParaDia:irParaDia}),
+      : e(React.Fragment,null, cabecalho, e(CalendarioGrande,{lista:todas, mes:mesG, setMes:setMesG, hojeIso:hojeIso, abrir:setAberto, irParaDia:irParaDia})),
     rSel && e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) setAberto(null); }},
       e("div",{className:"relative my-auto w-full max-w-[880px]"},
         e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAberto(null); }, className:"absolute right-3 top-2.5 z-10 h-7 rounded-lg bg-black/40 px-2.5 text-[12.5px] font-semibold text-[#fbf4e4] ring-1 ring-[rgba(241,213,138,.3)] hover:bg-black/60"}, "Fechar ✕"),
