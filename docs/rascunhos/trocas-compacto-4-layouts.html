@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trocas · 4 layouts compactos</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:780px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:8px 10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,input{font:inherit;color:inherit}
+  .top{display:flex;align-items:center;justify-content:space-between;min-height:32px;font-weight:700}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 10px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .btn.tracej{border-style:dashed}
+  .btn[disabled]{opacity:.4;cursor:default}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;min-width:0;width:100%;text-transform:uppercase}
+  .campo.v{text-transform:none;text-align:right}
+  .lin{display:grid;grid-template-columns:5.6rem 1fr auto;gap:6px;align-items:center}
+  .lin2{display:grid;grid-template-columns:5.6rem 1fr;gap:6px}
+  .op{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .op button{min-height:38px;border:1px solid var(--linha);border-radius:8px;background:#fff;cursor:pointer;line-height:1.15;padding:2px 4px}
+  .op button b{display:block;font-weight:700}
+  .op button small{font-size:11px}
+  .op button.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .exp{font-size:11px;padding:4px 2px 0}
+  .p{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin:6px 0 3px}
+  .res{display:flex;align-items:center;justify-content:space-between;min-height:30px;border-top:2px solid var(--ouro);margin-top:6px;font-weight:700}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:34px;border-top:1px solid var(--linha)}
+  .l small{display:block;font-size:11px;font-weight:400}
+  .x{width:26px;height:26px;border-radius:50%;border:0;background:#EEE;font-weight:700;cursor:pointer;flex:none}
+  .pas{display:flex;gap:10px;margin:4px 0}
+  .pas button{border:0;background:none;display:flex;align-items:center;gap:5px;font-size:11px;font-weight:700;text-transform:uppercase;cursor:pointer;opacity:.5}
+  .pas button.on{opacity:1}
+  .pas i{width:20px;height:20px;border-radius:50%;background:var(--ouro);color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px}
+  .acc{border:1px solid var(--linha);border-radius:10px;margin-top:5px;overflow:hidden}
+  .acc .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 8px;cursor:pointer;font-weight:600}
+  .acc .cab .r{font-weight:400;font-size:12px}
+  .acc.on{border-color:var(--ouro)}
+  .acc .corpo{padding:0 8px 8px}
+  .oculto{display:none!important}
+  .mini{display:flex;gap:6px;margin-top:6px}
+  .mini .btn{flex:1}
+</style>
+</head>
+<body>
+<h1>Trocas · 4 layouts compactos</h1>
+<p class="sub">Mantive o jeito de antes (passo a passo), mais compacto e com o texto explicado. Agora o botão diz <b>"Trocar peça"</b> e a pergunta é <b>"A peça que voltou quebrada é…"</b>: <b>Deste kit</b> (comprada neste mês) ou <b>De outro mês</b> (já foi paga em outro acerto). Números de exemplo.</p>
+<div class="grade" id="grade"></div>
+<script>
+var REG = {mes:'A peça nova entra na venda pelo valor cheio e a quebrada volta para a empresa.', anterior:'Entra na venda só a diferença: nova menos quebrada. Se a nova for mais barata, desconta.'};
+var NOME = {mes:'Deste kit', anterior:'De outro mês'};
+var SUB = {mes:'comprada neste mês', anterior:'já foi paga'};
+var lanc = [{t:'mes', ac:'AB123', av:80, nc:'CD456', nv:96}, {t:'anterior', ac:'B3519', av:78, nc:'A2112', nv:88}];
+var S = {};
+function novo(){ return {passo:1, t:'', ac:'', av:'', nc:'', nv:'', aberto:false}; }
+['A','B','C','D'].forEach(function(k){ S[k] = novo(); });
+function R(n){ return (n<0?'− ':'+ ') + 'R$ ' + Math.abs(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function num(v){ var n = parseFloat(String(v).replace(/\./g,'').replace(',','.')); return isNaN(n)?0:n; }
+function cod(v){ return /^[A-Z]{1,4}\d{1,7}$/.test(String(v).toUpperCase()); }
+function aj(t, av, nv){ return t==='anterior' ? nv - av : nv; }
+function okA(o){ return cod(o.ac) && num(o.av)>0; }
+function okN(o){ return cod(o.nc) && num(o.nv)>0; }
+function dtotal(){ return lanc.reduce(function(s,x){ return s + aj(x.t,x.av,x.nv); }, 0); }
+function lista(){ return lanc.map(function(x,i){ return '<div class="l"><span><b class="num">'+x.ac+' → '+x.nc+'</b><small>'+NOME[x.t]+' · '+SUB[x.t]+'</small></span><span style="display:flex;align-items:center;gap:4px"><b class="num">'+R(aj(x.t,x.av,x.nv))+'</b><button class="x" onclick="lanc.splice('+i+',1);desenha()">×</button></span></div>'; }).join('') + (lanc.length ? '<div class="res"><span>Ajuste na venda</span><b class="num">'+R(dtotal())+'</b></div>' : '<p class="exp">Nenhuma troca lançada.</p>'); }
+function topo(k){ var o=S[k]; return '<div class="top"><span>Trocas</span><button class="btn tracej" onclick="S.'+k+'=novo();S.'+k+'.aberto='+(!o.aberto)+';desenha()">'+(o.aberto?'Fechar':'+ Trocar peça')+'</button></div>'; }
+function tipoBtns(k, auto){ var o=S[k]; return '<div class="p">A peça que voltou quebrada é…</div><div class="op">'+['mes','anterior'].map(function(t){ return '<button class="'+(o.t===t?'on':'')+'" onclick="S.'+k+'.t=\''+t+'\';'+(auto?'S.'+k+'.passo=2;':'')+'desenha()"><b>'+NOME[t]+'</b><small>'+SUB[t]+'</small></button>'; }).join('')+'</div>'+(o.t?'<p class="exp">'+REG[o.t]+'</p>':''); }
+function campos(k, qual){ var c = qual==='q' ? ['ac','av','AB123'] : ['nc','nv','CD456']; var o=S[k]; var h=function(id,ph,cls){ return '<input class="campo'+cls+'" data-id="'+k+id+'" placeholder="'+ph+'" value="'+o[id]+'" oninput="ed(\''+k+'\',\''+id+'\',this)">'; }; return '<div class="lin2">'+h(c[0],c[2],'')+h(c[1],'R$ 0,00',' v')+'</div>'; }
+function ed(k,f,el){ S[k][f]=el.value; var id=el.getAttribute('data-id'); desenha(); var n=document.querySelector('[data-id="'+id+'"]'); if(n){ n.focus(); try{ n.setSelectionRange(n.value.length,n.value.length); }catch(x){} } }
+function lancar(k){ var o=S[k]; lanc.push({t:o.t, ac:o.ac.toUpperCase(), av:num(o.av), nc:o.nc.toUpperCase(), nv:num(o.nv)}); S[k]=novo(); desenha(); }
+function resumoLancar(k){ var o=S[k]; return '<div class="res"><span>Entra na venda</span><b class="num">'+R(aj(o.t,num(o.av),num(o.nv)))+'</b></div><div class="mini"><button class="btn" onclick="S.'+k+'.passo='+(k==='D'?1:2)+';desenha()">Voltar</button><button class="btn ouro" '+(okA(o)&&okN(o)&&o.t?'':'disabled')+' onclick="lancar(\''+k+'\')">Lançar troca</button></div>'; }
+function tela(t, h){ return '<section class="caixa"><h2>'+t+'</h2><div class="tel"><div class="cart">'+h+'</div></div></section>'; }
+
+function A(){ var o=S.A, h=topo('A')+lista(); if(!o.aberto) return h;
+  var pas='<div class="pas">'+['Tipo','Quebrada','Nova'].map(function(n,i){ return '<button class="'+(o.passo===i+1?'on':'')+'" onclick="S.A.passo='+(i+1)+';desenha()"><i>'+(i+1)+'</i>'+n+'</button>'; }).join('')+'</div>';
+  var c = o.passo===1 ? tipoBtns('A',false)+'<div class="mini"><button class="btn ouro" '+(o.t?'':'disabled')+' onclick="S.A.passo=2;desenha()">Continuar</button></div>'
+    : o.passo===2 ? '<div class="p">Peça que voltou quebrada</div>'+campos('A','q')+'<div class="mini"><button class="btn" onclick="S.A.passo=1;desenha()">Voltar</button><button class="btn ouro" '+(okA(o)?'':'disabled')+' onclick="S.A.passo=3;desenha()">Continuar</button></div>'
+    : '<div class="p">Peça nova que ela ficou</div>'+campos('A','n')+resumoLancar('A');
+  return h+'<div style="border-top:1px solid var(--linha);margin-top:6px;padding-top:2px">'+pas+c+'</div>'; }
+
+function B(){ var o=S.B, h=topo('B')+lista(); if(!o.aberto) return h;
+  var c = o.passo===1 ? tipoBtns('B',true)
+    : o.passo===2 ? '<div class="p">1/2 · Peça quebrada ('+NOME[o.t].toLowerCase()+')</div>'+campos('B','q')+'<div class="mini"><button class="btn" onclick="S.B.passo=1;desenha()">‹ Tipo</button><button class="btn ouro" '+(okA(o)?'':'disabled')+' onclick="S.B.passo=3;desenha()">›</button></div>'
+    : '<div class="p">2/2 · Peça nova</div>'+campos('B','n')+resumoLancar('B');
+  return h+'<div style="border-top:1px solid var(--linha);margin-top:6px;padding-top:2px">'+c+'</div>'; }
+
+function C(){ var o=S.C, h=topo('C')+lista(); if(!o.aberto) return h;
+  var row=function(n,titulo,res,corpo){ var on=o.passo===n; return '<div class="acc '+(on?'on':'')+'"><div class="cab" onclick="S.C.passo='+n+';desenha()"><span>'+n+' · '+titulo+'</span><span class="r">'+res+'</span></div><div class="corpo '+(on?'':'oculto')+'">'+corpo+'</div></div>'; };
+  return h+row(1,'Tipo da peça quebrada', o.t?'✓ '+NOME[o.t]:'', tipoBtns('C',true))
+    +row(2,'Peça quebrada', okA(o)?'✓ '+o.ac.toUpperCase()+' · R$ '+num(o.av).toFixed(2).replace('.',','):'', campos('C','q')+'<div class="mini"><button class="btn ouro" '+(okA(o)?'':'disabled')+' onclick="S.C.passo=3;desenha()">Continuar</button></div>')
+    +row(3,'Peça nova', okN(o)?'✓ '+o.nc.toUpperCase():'', campos('C','n')+resumoLancar('C').replace(/<div class="mini">.*<\/div>$/, '<div class="mini"><button class="btn ouro" '+(okA(o)&&okN(o)&&o.t?'':'disabled')+' onclick="lancar(\'C\')">Lançar troca</button></div>')); }
+
+function D(){ var o=S.D, h=topo('D')+lista(); if(!o.aberto) return h;
+  var c = o.passo===1 ? tipoBtns('D',true)
+    : '<div class="p">'+NOME[o.t]+' · '+SUB[o.t]+'</div><div class="p" style="margin-top:2px">Voltou quebrada</div>'+campos('D','q')+'<div class="p">Ela ficou com</div>'+campos('D','n')+'<p class="exp">'+REG[o.t]+'</p>'+resumoLancar('D');
+  return h+'<div style="border-top:1px solid var(--linha);margin-top:6px;padding-top:2px">'+c+'</div>'; }
+
+function desenha(){
+  var f = document.activeElement; var guarda = f && f.tagName==='INPUT' ? f.placeholder : null;
+  document.getElementById('grade').innerHTML = tela('A · Passos numerados na mesma linha', A()) + tela('B · Passa sozinho ao escolher o tipo', B()) + tela('C · Três linhas que abrem uma por vez', C()) + tela('D · Só 2 passos: tipo, depois as duas peças', D());
+}
+desenha();
+</script>
+</body>
+</html>
