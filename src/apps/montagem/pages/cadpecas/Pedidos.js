@@ -1,12 +1,12 @@
 // Sorelly Admin · montagem — pages/cadpecas/Pedidos.js
-// Cadastro de peças → "Pedidos de bruto" (layout A+B escolhido pelo Marcus em 29/10/2026): Quadro por etapa e Planilha na mesma tela, faixa de totais e filtros no topo (mesmo desenho dos Kits novos).
+// Cadastro de peças → "Pedidos" (layout A+B escolhido pelo Marcus em 29/10/2026): Quadro por etapa e Planilha na mesma tela.
+// 03/11/2026 (Marcus): nome "Pedidos", filtro numa linha só (sem bloco), sem faixa de totais e cartão compacto de 3 linhas.
 // Etapas: Escolha, Separação, Fechado, Banho, Chegou (o pedido fecha no romaneio). Cada etapa agrupa os status detalhados (regras em domain/cadastro-pecas.js: ETAPAS_PED, etapaPed, statusDaEtapa).
 // Quem lança: Rayssa e Graziella (config.quem.pedidos_bruto); a diretoria sempre pode. O status "Banhado" entra sozinho quando uma fatura de banho é ligada ao pedido.
 // Editar chegadas, valores e peças por categoria: abrir a ficha do pedido (clique no cartão ou na linha).
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { BlocoFiltros, Botao, CampoBusca, CampoSel, FaixaTotais, Segmentado, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
+import { Botao, Segmentado, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
-import { limiteDe, usoMes } from "@/apps/montagem/domain/pf-limite";
 import { CATS, ETAPAS_PED, PRAZO_ETAPA, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, etapaPed, mesesCpc, pecasPedido, podeFazer, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
 import { Cel, Sl, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { Etiqueta } from "@/apps/montagem/pages/pf/ui";
@@ -17,7 +17,7 @@ import { e, useState } from "@/shared/react";
 
 var INP = "h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-primary";
 var MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
-var VAZIO_F = {q:"", forn:"", banho:"", sit:""};
+var VAZIO_F = {q:"", forn:"", sit:""};
 function rotuloMes(m){ var p = String(m).split("-"); return p.length===2 ? MESES[+p[1]-1]+" de "+p[0] : "Todos os meses"; }
 function dia(iso){ var p = String(iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1] : "—"; }
 function hojeISO(){ return hojeSP(); }
@@ -27,7 +27,7 @@ function nomeEtapa(k){ return (ETAPAS_PED.find(function(x){ return x[0]===k; })|
 function dicaPrazo(k, itens, hoje){ var z = PRAZO_ETAPA[k], at = itens.filter(function(it){ return atrasadoPed(it.p, hoje); }).length; return (z ? "prazo "+z+" dias" : "")+(at ? (z ? " · " : "")+at+(at>1 ? " atrasados" : " atrasado") : ""); }
 
 function AbaPedidos(){
-  var x = useCpc(), c = x.c, s = x.s, meses = mesesCpc(c), pode = podeFazer(c, "pedidos_bruto", x.por, x.admin), hoje = hojeISO();
+  var x = useCpc(), c = x.c, meses = mesesCpc(c), pode = podeFazer(c, "pedidos_bruto", x.por, x.admin), hoje = hojeISO();
   var md = useState("quadro"), modo = md[0], fl = useState(Object.assign({mes:meses[0] || ""}, VAZIO_F)), f = fl[0], mo = useState(null), modal = mo[0];
   var set = function(k, v){ var n = Object.assign({}, f); n[k] = v; fl[1](n); };
   var forns = c.pedidos.map(function(p){ return p.forn; }).filter(function(v, i, a){ return a.indexOf(v)===i; }).sort();
@@ -35,14 +35,10 @@ function AbaPedidos(){
   // os que já chegaram aparecem só do mês escolhido; o que ainda está andando aparece sempre (nenhum pedido some do quadro por causa do mês)
   var vis = c.pedidos.filter(function(p){
     var chegou = etapaPed(p)==="chegou";
-    return (!f.mes || !chegou || p.data.slice(0, 7)===f.mes) && (!f.forn || p.forn===f.forn) && (!f.banho || banhoPed(p)===f.banho)
+    return (!f.mes || !chegou || p.data.slice(0, 7)===f.mes) && (!f.forn || p.forn===f.forn)
       && (!q || (p.forn+" "+p.romaneio+" "+p.nota).toLowerCase().indexOf(q)>=0) && (!f.sit || (f.sit==="atr" ? atrasadoPed(p, hoje) : !chegou));
   }).sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : 0; });
-  var doMes = c.pedidos.filter(function(p){ return !f.mes || p.data.slice(0, 7)===f.mes; });
-  var comprado = doMes.reduce(function(t, p){ return t+p.pagar; }, 0);
-  var folga = null; if(s.pf && f.mes){ var L = limiteDe(s.pf), U = usoMes(s.pf, f.mes); folga = L.cat.bruto-U.cat.bruto; }
-  var atrasados = vis.filter(function(p){ return atrasadoPed(p, hoje); }).length;
-  var ativo = !!(f.q || f.forn || f.banho || f.sit);
+  var ativo = !!(f.q || f.forn || f.sit);
   var ir = function(m){ mo[1](m); };
 
   var avancar = function(p){
@@ -74,23 +70,19 @@ function AbaPedidos(){
     }).concat([e(Tr,{key:"total", total:true}, e(Td,{forte:true}, "Total"), e(Td,null, vis.length+" pedido"+(vis.length===1 ? "" : "s")), e(Td,null), e(Td,null), e(Td,null), e(Td,{n:true, forte:true}, tot.pecas), e(Td,{n:true, forte:true}, brl(tot.valor)),
       e(Td,{n:true, forte:true}, tot.valor>0 ? Math.round((1-tot.pagar/tot.valor)*1000)/10+"%" : "—"), e(Td,{n:true, forte:true}, brl(tot.pagar)), e(Td,null), e(Td,null))])) : e(Vazio,{ic:"package"}, "Nenhum pedido neste filtro.");
 
+  // filtro numa linha só, sem bloco e sem faixa de números (Marcus, 03/11/2026)
+  var sel = function(id, rot, k, opcoes, title){ return e("select",{id:id, "aria-label":rot, title:title, value:f[k], onChange:function(ev){ set(k, ev.target.value); }, className:INP+" w-44 text-center"},
+    opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })); };
   return e(Pagina,null,
-    e(PageHead,{t:"Pedidos de bruto", sub:"Da escolha das peças até a chegada na Sorelly."},
+    e(PageHead,{t:"Pedidos", sub:"Da escolha das peças até a chegada na Sorelly."},
       e(Segmentado,{opcoes:[["quadro", "Quadro"], ["planilha", "Planilha"]], atual:modo, onMudar:md[1]}),
       pode && e(Botao,{principal:true, onClick:function(){ ir({tipo:"novo"}); }}, "Novo pedido")),
-    e("div",{className:"mx-auto w-full max-w-6xl"}, e(FaixaTotais,{itens:[
-      {t:"Abertos", v:String(vis.filter(function(p){ return etapaPed(p)!=="chegou"; }).length)},
-      {t:"Comprado", v:brl(comprado)},
-      {t:"Folga do teto", v:folga==null ? "—" : brl(folga), cor:folga==null ? "" : folga<0 ? "text-destructive" : "text-success"},
-      {t:"No banho", v:String(vis.filter(function(p){ return etapaPed(p)==="banho"; }).length)},
-      {t:"Atrasados", v:String(atrasados), cor:atrasados>0 ? "text-destructive" : ""},
-      {t:"Peças", v:tot.pecas.toLocaleString("pt-BR")}]})),
-    e(BlocoFiltros,{onLimpar:ativo ? function(){ fl[1](Object.assign({mes:f.mes}, VAZIO_F)); } : undefined},
-      e(CampoBusca,{id:"ped-busca", t:"Buscar", value:f.q, placeholder:"Fornecedor, romaneio ou nota", onChange:function(v){ set("q", v); }}),
-      e(CampoSel,{id:"ped-forn", t:"Fornecedor", value:f.forn, onChange:function(v){ set("forn", v); }, opcoes:[["", "Todos"]].concat(forns.map(function(n){ return [n, n]; }))}),
-      e(CampoSel,{id:"ped-banho", t:"Banho", value:f.banho, onChange:function(v){ set("banho", v); }, opcoes:[["", "Todos"], ["Pontual", "Pontual"], ["Ellos", "Ellos"]]}),
-      e(CampoSel,{id:"ped-sit", t:"Situação", value:f.sit, onChange:function(v){ set("sit", v); }, opcoes:[["", "Todos"], ["aberto", "Em aberto"], ["atr", "Atrasados"]]}),
-      e(CampoSel,{id:"ped-mes", t:"Mês da compra", value:f.mes, onChange:function(v){ set("mes", v); }, opcoes:[["", "Todos os meses"]].concat(meses.map(function(m){ return [m, rotuloMes(m)]; })), title:"Os pedidos que ainda estão andando aparecem sempre; o mês vale para os que já chegaram"})),
+    e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
+      e("input",{id:"ped-busca", type:"search", "aria-label":"Buscar", value:f.q, placeholder:"Buscar fornecedor, romaneio ou nota", onChange:function(ev){ set("q", ev.target.value); }, className:INP+" w-72 text-center"}),
+      sel("ped-forn", "Fornecedor", "forn", [["", "Todos os fornecedores"]].concat(forns.map(function(n){ return [n, n]; }))),
+      sel("ped-sit", "Situação", "sit", [["", "Todas as situações"], ["aberto", "Em aberto"], ["atr", "Atrasados"]]),
+      sel("ped-mes", "Mês da compra", "mes", [["", "Todos os meses"]].concat(meses.map(function(m){ return [m, rotuloMes(m)]; })), "Os pedidos que ainda estão andando aparecem sempre; o mês vale para os que já chegaram"),
+      ativo && e(Botao,{onClick:function(){ fl[1](Object.assign({mes:f.mes}, VAZIO_F)); }}, "Limpar")),
     !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
     modo==="planilha" ? planilha : quadro,
     modal && modal.tipo==="novo" && e(NovoPedido,{x:x, forns:forns, fechar:function(){ ir(null); }}),
@@ -101,14 +93,14 @@ function AbaPedidos(){
 // cartão do quadro: fornecedor e dias na etapa, romaneio, valor a pagar, banho e o botão de avançar
 function Cartao(p){
   var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje), prox = proxima(pd), b = banhoPed(pd), semRom = (et==="escolha" || et==="separacao") && !pd.romaneio;
-  return e("div",{className:"flex flex-col gap-1.5"},
-    e("div",{className:"flex items-center justify-between gap-2"},
-      e("b",{className:"truncate text-[13px]", title:pd.forn}, pd.forn),
-      e("span",{className:"shrink-0 rounded px-1.5 text-[13px] font-bold "+(atr ? "bg-destructive text-white" : "bg-white/10"), title:atr ? "Atrasado" : "Dias nesta etapa"}, et==="chegou" ? dia(pd.chegSorelly) : diasNaEtapa(pd, p.hoje)+" d")),
-    e("div",{className:"flex items-center justify-between gap-2 text-[13px]"}, e("span",{className:"truncate"}, pd.romaneio ? "Romaneio "+pd.romaneio : "Sem romaneio"), e("span",{className:"shrink-0"}, (pecasPedido(pd) || "—")+" peças")),
-    e("div",{className:"flex items-baseline justify-between gap-2"}, e("b",{className:"text-[15px] tabular-nums"}, brl(pd.pagar)), e("span",{className:"text-[13px]"}, "Desc. "+Math.round(pd.desc*10000)/100+"%")),
-    e("div",{className:"flex items-center justify-between gap-2 text-[13px]"}, e("span",{className:"truncate"}, b ? "Banho "+b : "Banho a definir"), e("span",{className:"shrink-0 truncate", title:pd.status}, pd.status)),
-    p.pode && prox && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.avancar(pd); }, className:"h-8 w-full rounded-md border border-primary bg-primary/20 text-[13px] font-semibold text-primary hover:bg-primary/30"}, semRom && prox!=="separacao" ? "Romaneio ›" : "Concluir ›"));
+  // cartão compacto (Marcus, 03/11/2026): 3 linhas; desconto e status ficam na ficha e na planilha
+  return e("div",{className:"flex flex-col gap-1"},
+    e("div",{className:"flex items-center justify-center gap-2"},
+      e("b",{className:"text-[13px]"}, pd.forn),
+      e("span",{className:"rounded px-1.5 text-[13px] font-bold "+(atr ? "bg-destructive text-white" : "bg-white/10"), title:atr ? "Atrasado" : "Dias nesta etapa"}, et==="chegou" ? dia(pd.chegSorelly) : diasNaEtapa(pd, p.hoje)+" d")),
+    e("p",{className:"text-[13px]"}, (pd.romaneio ? "Romaneio "+pd.romaneio : "Sem romaneio")+" · "+(pecasPedido(pd) || "0")+" peças · "+(b ? b : "banho a definir")),
+    e("div",{className:"flex items-center justify-center gap-2"}, e("b",{className:"text-[13px] tabular-nums"}, brl(pd.pagar)),
+      p.pode && prox && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.avancar(pd); }, className:"h-8 rounded-md border border-primary bg-primary/20 px-2.5 text-[13px] font-semibold text-primary hover:bg-primary/30"}, semRom && prox!=="separacao" ? "Romaneio ›" : "Concluir ›")));
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }

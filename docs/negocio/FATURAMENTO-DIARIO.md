@@ -234,3 +234,11 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Novembro: 1.975 já é o previsto de hoje. Acertos = (1.975 − novas saídas) × ~97,7%; média +5% (R$ 819,33); entra no caixa ≈ faturado × 97,1% + R$ 18.000.
 - Com contas de R$ 1,51 milhão, o máximo que ainda pode sair de novembro sem ficar negativo: média +3% → ~18 acertos · +5% → ~55 · +7% → ~91. Cada acerto que sai custa ≈ R$ 795 de caixa no mês.
 - Pendente: caixa no mês que recebe os que saíram (dezembro, janeiro); fonte das saídas (remarcação do Agendamento ou data prevista da DevMaster).
+
+## Atualização automática de 03/11/2026 (3h, lido do admin antigo)
+- O admin antigo **não tem nada novo depois de 28/10**: saldos até 28/10 (29 contas, gravados às 20:27 de 28/10) e contas pagas até 28/10 (última gravação 29/10 10:41). O arquivo `saldos-atualizacao.local.js` já estava igual: nada regravado.
+- Contas pagas de outubro no arquivo (21 dias, 01 a 28/10): **R$ 1.288.701,85**. Dia 28/10: R$ 26.836,56 (34: 142,80 · 46: 23.389,58 · 59: 1.101,75 · 67: 800,52 · por fora: 1.401,91).
+- Faltam no admin: contas pagas e saldos de 29, 30 e 31/10 e de 01 a 03/11. Novembro ainda sem nenhum dia pago.
+- Totais do mês no admin (`faturamento_contas_mes`, 29/10 10:37): outubro pagas R$ 1.377.632,43 e a pagar R$ 130.791,07; novembro a pagar R$ 1.475.599,66; dezembro a pagar R$ 1.512.989,37. Diferença entre o pago do mês e a soma dos dias: R$ 88.930,58 (origem ainda a conferir).
+- Posição das contas (28/10, último dia no admin): soma das contas bancárias (sem Retido e sem Dinheiro) −R$ 227.119,68; Dinheiro R$ 52.904,38; Retidos R$ 7.771,57.
+- `aplicaPagosAdmin` (`state/store.js`) copia todos os dias do arquivo local, sem filtro de mês: já cobre novembro. Nada mudado no código.

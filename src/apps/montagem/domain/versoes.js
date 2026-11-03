@@ -3,7 +3,6 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
-<<<<<<< HEAD
  {v:"0.18.37", data:"2026-11-03", titulo:"Apps: abre sempre na simulação", itens:[
   {tipo:"correção", area:"App da representante", txt:"Na lista de Revendedoras, kit novo, reposição e saída ganham identificador próprio (KIT NOVO, REPOSIÇÃO, SAÍDA) e não mostram mais Acerto hoje nem vendido, acerto e comissão zerados. Só o acerto mostra esses números."},
   {tipo:"melhoria", area:"Apps", txt:"A tela Apps abre sempre com os dois celulares prontos. O da representante entra como Anamaria, com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída). O da revendedora abre na tela inicial da Juliana, com R$ 1.500,00 em vendas já lançadas."},
@@ -111,8 +110,6 @@ var VERSOES = [
   {v:"0.18.24", data:"2026-11-02", titulo:"SorellyChat: foto abre mais rápido", itens:[
     {tipo:"melhoria", area:"SorellyChat", txt:"A foto viaja com uma miniatura dentro da mensagem e aparece na hora no outro lado, enquanto a foto grande chega. O envio não grava mais todas as fotos no navegador, o que travava a tela. A busca da foto grande repete a cada 1 segundo e meio."},
   ]},
-=======
->>>>>>> origin/master
  {v:"0.18.38", data:"2026-11-03", titulo:"Compras: etapas Em transporte, Chegou na empresa e Entregue no quadro", itens:[
   {tipo:"melhoria", area:"Compras e estoque", txt:"O quadro de Compras passa a ter as colunas Solicitada, Aprovada, Liberada para compra, Efetuada, Em transporte, Chegou na empresa e Entregue (pedido do Nickolas). Arrastar o cartão registra a etapa. As situações do domínio não mudaram: só o nome e a coluna."},
  ]},
