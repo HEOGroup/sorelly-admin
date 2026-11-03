@@ -45,12 +45,31 @@ async function enviarTudoDoNavegador(s){
 }
 var json = function(v){ try { return JSON.stringify(v===undefined ? null : v); } catch(x){ return ""; } };
 
+// O QUE JÁ ESTÁ NO SERVIDOR NÃO É GUARDADO NO NAVEGADOR (Marcus, 02/11/2026): o sistema salva para todo mundo no servidor. O navegador guardava o estado inteiro (4 MB) e acabava o espaço ("Sem espaço para salvar neste navegador").
+// Um módulo só sai do navegador depois que o servidor confirmou que tem uma versão dele (versao>0); módulo sem acesso, vazio ou ainda sem carga inicial continua guardado aqui. A lista dura enquanto a mesma pessoa está logada.
+// o app de Kits novos (kits-novos/lib/bridge-montagem.js e entrada-cadastro.js) lê estes módulos direto do estado no navegador: continuam guardados aqui (kn, agend, cl e ri)
+var FICAM_NO_NAVEGADOR = ["kn", "agend", "cl", "ri"];
+var CHAVE_NO_SERVIDOR = "sorelly_modulos_no_servidor", noServidor = {};
+var chaveSessao = function(){ return String(token() || "").slice(-16); };
+function lembraModulo(c){ if(noServidor[c]) return; noServidor[c] = 1; try { localStorage.setItem(CHAVE_NO_SERVIDOR, chaveSessao()+"|"+Object.keys(noServidor).join(",")); } catch(x){} }
+function esqueceModulos(){ noServidor = {}; try { localStorage.removeItem(CHAVE_NO_SERVIDOR); } catch(x){} }
+// chaves do estado que o servidor já guarda (módulos confirmados, com o espelho de ri, sc e fd)
+function chavesNoServidor(){
+  if(!apiAtiva() || !token() || modoGuardado()!=="servidor") return [];
+  var lista = Object.assign({}, noServidor);
+  try { var p = (localStorage.getItem(CHAVE_NO_SERVIDOR) || "").split("|"); if(p[0]===chaveSessao() && p[1]) p[1].split(",").forEach(function(k){ lista[k] = 1; }); } catch(x){}
+  var out = []; Object.keys(lista).forEach(function(c){ if(FICAM_NO_NAVEGADOR.indexOf(c)>=0) return; (ESPELHO[c] || [c]).forEach(function(k){ out.push(k); }); }); return out;
+}
+function semDoServidor(st){ var ks = chavesNoServidor(); if(!ks.length || !st) return st; var o = Object.assign({}, st); ks.forEach(function(k){ delete o[k]; }); return o; }
+// todas as chaves que podem faltar no estado salvo (a tela completa com o padrão ao abrir)
+var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ (ESPELHO[c] || [c]).forEach(function(k){ o.push(k); }); }); return o; })();
+
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
 function useSyncModulos(s, d){
   var sm = useState(null), modo = sm[0], setModo = sm[1];   // null = descobrindo, "servidor" = sincroniza, "pendente" = Diretoria ainda vai escolher
   var tk = token();   // muda no login e na saída: refaz a descoberta
   useEffect(function(){
-    if(!apiAtiva() || !tk) { setModo(null); return undefined; }
+    if(!apiAtiva() || !tk) { setModo(null); esqueceModulos(); return undefined; }
     var ler = function(){ if(modoGuardado()){ setModo("servidor"); return; }
       chamar("GET", "/auth/eu").then(function(j){ setModo(j.usuario && j.usuario.perfil==="ADMIN" ? "pendente" : "servidor"); }).catch(function(){ setModo("pendente"); }); };
     ler(); window.addEventListener("sorelly-sync-modo", ler); return function(){ window.removeEventListener("sorelly-sync-modo", ler); };
@@ -71,7 +90,7 @@ function useSyncModulos(s, d){
         if(Object.keys(novas).length){ d({type:"SYNC_MODULO", chave:chave, conteudo:novas}); trouxe = true; }
         m.versao = r.versao; if(r.versao>0) m.bloqueado = false;
       }
-      m.pronto = true;
+      m.pronto = true; if(m.versao>0 && !m.semAcesso) lembraModulo(chave);
       // se trouxe dados novos, o envio fica para depois que a tela atualizar (senão o valor antigo do navegador voltaria por cima); servidor vazio: sobe o que está aqui
       return trouxe ? undefined : empurrar(chave);
     }).catch(function(x){ if(/não tem acesso/.test(x.message||"")) m.semAcesso = true; });
@@ -97,4 +116,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { useSyncModulos, modulosLigados, enviarTudoDoNavegador, guardaModo, usarServidor, reabrirEscolha, temCopiaAntesServidor, restaurarCopiaAntesServidor };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, enviarTudoDoNavegador, guardaModo, usarServidor, reabrirEscolha, temCopiaAntesServidor, restaurarCopiaAntesServidor };

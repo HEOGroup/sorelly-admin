@@ -1,5 +1,7 @@
 // Sorelly Admin · montagem e bipagem — state/store.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+import { CHAVES_SINCRONIZADAS } from "@/apps/montagem/lib/sync-modulos";
+import { lerEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { aplicaFdFixos } from "@/apps/montagem/state/fd-patches";
 import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { aplicaFila, filaRetornos } from "@/apps/montagem/domain/retornos";
@@ -301,7 +303,8 @@ function novo(){
   return st;
 }
 function inicial(){
-  try { var j = localStorage.getItem(CHAVE); if(j){ var s = JSON.parse(j); if(s && s.v===4){ s.aviso=null;
+  try { var j = localStorage.getItem(CHAVE); if(j){ var s = lerEstado(j); if(s && s.v===4){ s.aviso=null;
+    var base0 = novo(); CHAVES_SINCRONIZADAS.forEach(function(k){ if(s[k]===undefined && base0[k]!==undefined) s[k] = base0[k]; });   // módulos que já estão no servidor não vão para o navegador: entram com o padrão e o servidor troca logo depois (02/11/2026)
     // listagens de demonstração antigas são trocadas pelas novas (dias 6, 7 e 8, nada bipado)
     if(s.demoListagens!==VERSAO_LISTAGENS){ var dn = novoDia(); s.listagens = dn.listagens; s.kits = dn.kits; s.retPend = []; s.entregasKN = {}; s.abertas = {L1:true, L2:true}; s.kitAberto = null; s.demoListagens = VERSAO_LISTAGENS; s.perfisRev = Object.assign({}, s.perfisRev, {"Beatriz Nogueira":{profissao:"Nail Designer", enderecoCasa:"Rua Fictícia S, 210 - Centro, Curitiba - PR", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR", fone1:"(41) 00000-0088", fone2:"(41) 99900-0088", refs:[{nome:"Maria Aparecida", rel:"Mãe", fone:"(41) 99812-3344"}, {nome:"João Carlos", rel:"Esposo", fone:"(41) 98745-6120"}, {nome:"Rosângela Silva", rel:"Irmã", fone:"(41) 99133-8870"}]}}); }
     // campos novos da configuração entram com o padrão em dados já salvos

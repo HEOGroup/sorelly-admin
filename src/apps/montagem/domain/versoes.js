@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.25", data:"2026-11-02", titulo:"Navegador cheio: estado guardado comprimido", itens:[
+    {tipo:"correção", area:"Sistema · navegador cheio", txt:"O aviso Sem espaço para salvar neste navegador acontecia porque o Admin guardava 4 MB de dados reais no navegador. Agora o estado é gravado comprimido (de 3,9 MB para cerca de 0,5 MB, lib/estado-comprimido.js) e a gravação espera 0,4 s depois da última mudança e acontece também ao esconder ou fechar a aba. Com o servidor ligado, módulo que o servidor já confirmou não é mais guardado no navegador (exceto kn, agend, cl e ri, que o app de Kits novos lê de lá). Os arquivos de Kits novos que leem esse dado aceitam os dois formatos."}
+  ]},
  {v:"0.18.24", data:"2026-11-02", titulo:"App da representante: bloco Condicionais refeito", itens:[
     {tipo:"melhoria", area:"App da representante", txt:"Bloco Condicionais da Calculadora de acertos refeito (modelo 1 escolhido pelo Marcus): lista das condicionais, o Total conferido logo abaixo da última (alinhado com as peças) e, embaixo, uma linha só de Peças vendidas com botões − e +. O formulário à mão ficou atrás do botão + Condicional. O devolver fica só no bloco final, depois de brindes e trocas."},
     {tipo:"melhoria", area:"App da representante", txt:"Calculadora de acertos: o botão do bloco Condicionais é sempre + Condicional (sem Fechar) e o formulário só abre ao tocar nele, só com Nº, Peças e Adicionar; fecha sozinho depois de adicionar. Todos os blocos na mesma cor do Condicionais. Textos do bloco Multa por remarcação mais escuros."},

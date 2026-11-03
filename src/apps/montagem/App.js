@@ -11,7 +11,8 @@ import * as srv from "@/apps/montagem/lib/api";
 import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inicio-setores";
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
-import { useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
 import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
@@ -165,9 +166,13 @@ function App(){
   var gg = useState(0), grupoAb = gg[0], setGrupoAb = gg[1];   // grupo aberto dentro da coluna (um de cada vez)   // {setor, i}: área com a coluna lateral aberta
   // Salvar no navegador. Se o espaço acabar (limite de ~10 MB), AVISA na tela em vez de falhar calado (01/11/2026: acerto sumia ao recarregar)
   var sp = useState(false), semEspaco = sp[0], setSemEspaco = sp[1];
-  var salvar = function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(paraSalvar(Object.assign({}, s, {aviso:null})))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
+  var salvar = function(){ try{ localStorage.setItem(CHAVE, textoDoEstado(semDoServidor(paraSalvar(Object.assign({}, s, {aviso:null}))))); setSemEspaco(false); }catch(x){ setSemEspaco(true); } };
   var liberarEspaco = function(){ try{ localStorage.removeItem("sorelly_copia_antes_servidor"); localStorage.removeItem("sorelly_copia_antes_servidor_em"); }catch(x){} salvar(); };
-  useEffect(function(){ salvar(); }, [s]);
+  // grava 0,4 s depois da última mudança (comprimir um estado grande leva uns décimos de segundo) e na hora em que a aba é escondida ou fechada
+  var salvarRef = React.useRef(null); salvarRef.current = salvar;
+  useEffect(function(){ var t = setTimeout(function(){ salvarRef.current(); }, 400); return function(){ clearTimeout(t); }; }, [s]);
+  useEffect(function(){ var f = function(){ salvarRef.current(); }, g = function(){ if(document.hidden) f(); };
+    window.addEventListener("pagehide", f); document.addEventListener("visibilitychange", g); return function(){ window.removeEventListener("pagehide", f); document.removeEventListener("visibilitychange", g); }; }, []);
   // Duas janelas do sistema no mesmo navegador dividem o MESMO armazenamento e uma grava por cima da outra (acerto sumia). O evento "storage" só chega aqui quando OUTRA janela grava: avisa.
   var ow = useState(false), outraJanela = ow[0], setOutraJanela = ow[1];
   // Aparece no máximo uma vez a cada 10 minutos e some sozinho em 8 segundos (só para não incomodar).

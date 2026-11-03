@@ -6,9 +6,10 @@ import { bairroDe } from "@/apps/montagem/domain/entrada-kits-novos";
 import { kitNaEmpresa, valorDoKit } from "@/apps/montagem/domain/cadastro-leads";
 import { MESES, diasDesde, hojeISO } from "@/apps/kits-novos/lib/datas";
 
+import { lerEstado, textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 var CHAVE_MONTAGEM = "sorelly_montagem_v9";
 function leadsCadastradas(){
-  try { var s = JSON.parse(localStorage.getItem(CHAVE_MONTAGEM)||"null"); return ((s && s.cl && s.cl.leads) || []).filter(function(l){ return l.reviewStatus==="APPROVED" && l.desempenho==="cadastradas"; }); }
+  try { var s = lerEstado(localStorage.getItem(CHAVE_MONTAGEM)); return ((s && s.cl && s.cl.leads) || []).filter(function(l){ return l.reviewStatus==="APPROVED" && l.desempenho==="cadastradas"; }); }
   catch(x){ return []; }
 }
 
