@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.38", data:"2026-11-03", titulo:"Compras: etapas Em transporte, Chegou na empresa e Entregue no quadro", itens:[
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O quadro de Compras passa a ter as colunas Solicitada, Aprovada, Liberada para compra, Efetuada, Em transporte, Chegou na empresa e Entregue (pedido do Nickolas). Arrastar o cartão registra a etapa. As situações do domínio não mudaram: só o nome e a coluna."},
+ ]},
  {v:"0.18.37", data:"2026-11-03", titulo:"Chamados sem foto na lista e Compras sem etiqueta de logística", itens:[
   {tipo:"melhoria", area:"Chamados", txt:"A coluna Funcionária da lista mostra só o nome, sem a foto ou ícone."},
   {tipo:"melhoria", area:"Compras e estoque", txt:"O campo Etiqueta de logística saiu da janela da compra (pedido da Hellen). Os dados antigos continuam guardados."},
