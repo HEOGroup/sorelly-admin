@@ -1018,7 +1018,7 @@ function reducer(s, a){
       var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:isoDia(new Date(agora)), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
-        hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null};
+        hora:new Date(agora).toTimeString().slice(0,5), pagamentos:[], condicionaisSelecionadas:condicionaisDoKit(k).map(function(c){ return c.numero; }), recebimento:null, assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas};
       // a condicional assinada entregue na reposição sobe nas condicionais em aberto da revendedora
       var prR = Object.assign({}, s.perfisRev||{}), perR = Object.assign({}, prR[k.rev]||{}), abR = (perR.condicionaisAbertas||[]).slice();
       condicionaisDoKit(k).forEach(function(c){ if(!abR.some(function(x){ return x.numero===c.numero; })) abR.push({numero:c.numero, pecas:totaisDe(c).pecas}); });

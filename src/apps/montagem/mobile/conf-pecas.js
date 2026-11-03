@@ -26,10 +26,10 @@ function ConfPecas(p){
   var proxima = function(){ var r = null; conds.some(function(c){ return itensDe(c).some(function(i){ if(lido(c,i)<i.qtd){ r = i; return true; } return false; }); }); return r; };
 
   var resumo = e("div",{className:"flex flex-col gap-2"},
-    e("div",{className:"grid grid-cols-3 gap-2"},
-      [["Condicionais", tot.condicionais],["Peças", tot.pecas],["Valor total", BR(tot.valor)]].map(function(x){
-        return e("div",{key:x[0], className:"flex flex-col items-center rounded-xl bg-[#FEF3C7] px-1 py-2 text-center"},
-          e("span",{className:"text-[10.5px] font-semibold uppercase text-[#92400E]"}, x[0]), e("b",{className:MONO+" text-[14px] text-[#92400E]"}, x[1])); })),
+    e("div",{className:"flex flex-col rounded-xl bg-[#F9FAFB] ring-1 ring-[#E5E7EB]"},
+      [["Condicionais", tot.condicionais],["Peças", tot.pecas],["Valor total", BR(tot.valor)]].map(function(x, i){
+        return e("div",{key:x[0], className:"flex min-h-8 items-center justify-between px-3 text-[13px] text-[#111827] "+(i ? "border-t border-[#E5E7EB]" : "")},
+          e("span",null, x[0]), e("b",{className:MONO}, x[1])); })),
     conds.map(function(c){ var t = totaisDe(c); return e("div",{key:c.numero, className:"flex items-center justify-between rounded-xl bg-[#F9FAFB] px-3 py-2 ring-1 ring-[#E5E7EB]"},
       e("b",{className:"text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[12px] text-[#6B7280]"}, t.modelos+" modelos · "+t.pecas+" peças · "+BR(t.valor))); }),
     e("p",{className:"text-[11.5px] text-[#6B7280]"},"Bipado na empresa por "+bipadora+" · montado por "+montadora));
@@ -40,7 +40,7 @@ function ConfPecas(p){
     e("button",{onClick:function(){ d({type:"CONF_LIBERAR", kitId:k.id}); }, className:BTN},"Liberar kit"));
   // 2) começar a bipar
   if(!conf.ini) return e("div",{className:"flex flex-col gap-2.5"},
-    e("p",{className:"rounded-xl bg-[#DCFCE7] px-3 py-2 text-[12.5px] font-bold text-[#15803D]"},"Kit liberado"), resumo,
+    e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-2 text-center text-[13px] font-bold text-[#161616]"},"✓ Kit liberado"), resumo,
     e("button",{onClick:function(){ d({type:"CONF_INICIAR", kitId:k.id}); }, className:BTN},"Começar a bipar"));
   // 4) resultado
   if(conf.fim){ var r = conf.resultado; return e("div",{className:"flex flex-col gap-2.5"},

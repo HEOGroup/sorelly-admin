@@ -112,7 +112,7 @@ function AppRepresentante(p){
   var BRINDE_IN_VAZIO = {normal:{codigo:"", valor:null}, bb:{codigo:"", valor:null}};
   var bi = useState(BRINDE_IN_VAZIO), brindeIn = bi[0], setBrindeIn = bi[1];
   var ta = useState("inicio"), telaAntes = ta[0], setTelaAntes = ta[1];
-  var rdS = useState(false), regrasDaAssinatura = rdS[0], setRegrasDaAssinatura = rdS[1];   // as regras da revendedora foram abertas a partir da assinatura do acerto: o voltar retorna para ela
+  var rdS = useState(""), regrasDaAssinatura = rdS[0], setRegrasDaAssinatura = rdS[1];   // as regras da revendedora foram abertas a partir da assinatura do acerto: o voltar retorna para ela
   var LANC_VAZIO = {forma:"", descricao:"", parcelas:1, data:isoDia(new Date()), valor:null, anexo:null};
   var mc = useState(null), msgCopiada = mc[0], setMsgCopiada = mc[1];
   var cpx = useState(""), codProx = cpx[0], setCodProx = cpx[1];
@@ -831,8 +831,15 @@ function AppRepresentante(p){
       ["Brindes", brindeBloqueio ? "Sem brinde" : acertoForm.brindes.length+" peça(s) lançada(s)"],
       ["Kit novo", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
-    onAbrirRegras:function(){ setRegrasDaAssinatura(true); setTela("regrascom"); },
+    onAbrirRegras:function(){ setRegrasDaAssinatura("assinaracerto"); setTela("regrascom"); },
     onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:true})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
+  // Assinatura da reposição (03/11/2026): mesmo desenho do acerto: botão das regras, check de leitura e assinatura da revendedora
+  var telaAssinarRepos = kitSel && kitSel.tipoKit==="reposicao" && (function(){ var tk = totaisKit(condicionaisDoKit(kitSel)), kcR = kitConfDe(kitSel.id);
+    return e(TelaAssinatura,{titulo:"Assinatura da reposição", nome:sel.rev, modo:"unico", regras:[], rotuloBotao:"Concluir reposição",
+      resumo:[["Condicionais", String(tk.condicionais)], ["Peças", String(tk.pecas)], ["Valor total", BK(tk.valor)], ["Peças conferidas", kcR ? kcR.lidas+" de "+kcR.esperadas : "—"]],
+      onVoltar:function(){ setTela("reposicao"); },
+      onAbrirRegras:function(){ setRegrasDaAssinatura("assinarrepos"); setTela("regrascom"); },
+      onConcluir:function(r){ d({type:"REPOSICAO_ENTREGAR", id:kitSel.id, assinatura:r.assinatura, regrasLidas:true}); setReposAss(true); setTela("resumokn"); }}); })();
   // Fechar atendimento: mensagem pronta para a revendedora e para o grupo da empresa
   var msgs = kitSel && previaAcerto ? mensagemFechamento({nome:sel.rev, rep:l.rep, data:isoDia(new Date()), dv:dv, form:acertoForm, condFicam:condAbertasFicam, expFicam:expFicam, kitConf:kitConfDe(kitSel.id),
     remarcacoes:(kitSel.remarcacoesLista||[]).length ? kitSel.remarcacoesLista.length+" ("+vezCobravel(kitSel.remarcacoesLista)+" com multa)" : ""}) : null;
@@ -1267,7 +1274,7 @@ function AppRepresentante(p){
           return linha("pf"+i, prox ? BK0(f.min).replace(",00","")+" a "+BK0(prox.min-0.01) : BK0(f.min).replace(",00","")+" ou mais", f.pct+"%", "R$ "+f.bn, "R$ "+f.bb); }))
         .concat(textoRegrasPrata(vr).map(function(r,i){ return e("p",{key:"pr"+i}, e("b",null,r.t+": "), r.x); }));
     })()));
-  var telaPropria = ["preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
+  var telaPropria = ["preacerto","calcacerto","regras","assinaracerto","entregakit","confkit","assinarrepos","fechamento","resumokn","reposicao","mensagens","regrascom"].indexOf(tela)>=0;   // telas com cabeçalho e conteúdo próprios
   return e(IPhone17ProMax,null,
     tela==="preacerto" && kitSel && e(PreAcertoRep,{key:"pre"+kitSel.id, kit:kitSel, versao:versaoSel || versaoVigente(s), rev:sel.rev, prevista:previstaTxt, d:d,
       onVoltar:function(){ setTela("rev"); }, onSalvar:function(){ abrirAcertoNovo(); }, textoSalvar:"Salvar e ir para o acerto"}),
@@ -1277,6 +1284,7 @@ function AppRepresentante(p){
       e("span",{className:"text-[18px]"}, "💳"), e("span",{className:"min-w-0 flex-1 text-[12px] leading-tight"}, e("b",{className:"block"}, "Conta recebida: "+BK(avisoConta.valor)), e("span",{className:"block truncate"}, avisoConta.conta))),
     tela==="calcacerto" && calcAcertoScreen,
     tela==="assinaracerto" && telaAssinarAcerto,
+    tela==="assinarrepos" && telaAssinarRepos,
     tela==="fechamento" && telaFechamento,
     tela==="entregakit" && kitSel && e(EntregaKNRep,{key:kitSel.id, s:s, d:d, k:kitSel, versao:versaoSel || versaoVigente(s),
       onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }}),
@@ -1284,33 +1292,36 @@ function AppRepresentante(p){
       var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15;
       return e("div",{key:"rep", className:"flex flex-col gap-3 pb-4"},
         e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"}, e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})), e("b",{className:douradoTitulo},"Entregar reposição")),
-        e("p",{className:"truncate text-[17px] font-extrabold "+BR}, kitSel.rev),
-        e("div",{className:"flex flex-col gap-1.5 rounded-2xl bg-[#1C1C1E] p-3"},
-          e("b",{className:"text-[13px]"},"1 · Contar as peças"),
-          kc ? e("p",{className:"text-[12.5px] text-emerald-300"},"✓ Peças conferidas: "+kc.lidas+" de "+kc.esperadas+(kc.faltas.length ? " · faltaram "+kc.faltas.length : ""))
-             : e("button",{onClick:function(){ setConfVolta("reposicao"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Contar e conferir as peças")),
-        e("label",{className:"flex items-center gap-2 rounded-2xl bg-[#1C1C1E] p-3 text-[13px]"}, e("input",{type:"checkbox", checked:reposAss, onChange:function(){ setReposAss(!reposAss); }}),
-          e("span",null,e("b",null,"2 · Condicional assinada pela revendedora"), e("span",{className:"block text-[11.5px] text-[#8E8E93]"},"Ela sobe nas condicionais em aberto da revendedora."))),
-        e("p",{className:"rounded-2xl bg-amber-200/10 px-3 py-2 text-[12px] text-amber-200"},"Comissão da entrega: "+BK(valorRep)+" (aparece no Consolidado e em Comissões, descrita como comissão de reposição)."),
-        e("button",{disabled:!pronto, onClick:function(){ d({type:"REPOSICAO_ENTREGAR", id:kitSel.id}); setReposAss(false); setTela("resumokn"); }, className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, "Concluir reposição")); })(),
+        e("p",{className:"text-[17px] font-extrabold "+BR}, kitSel.rev),
+        e("div",{className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
+          e("b",{className:"text-[13.5px]"}, (kc ? "✓ " : "")+"1 · Contar as peças"),
+          kc ? e("p",{className:"text-[13px]"},"Peças conferidas: "+kc.lidas+" de "+kc.esperadas+(kc.faltas.length ? " · faltaram "+kc.faltas.length : ""))
+             : e("p",{className:"text-[13px]"},"Conte as peças com a revendedora e confira uma a uma."),
+          !kc && e("button",{onClick:function(){ setConfVolta("reposicao"); setTela("confkit"); }, className:"h-10 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Contar e conferir as peças")),
+        e("div",{className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
+          e("b",{className:"text-[13.5px]"}, (reposAss ? "✓ " : "")+"2 · Condicional assinada"),
+          e("p",{className:"text-[13px]"},"A revendedora assina a condicional. Ela sobe nas condicionais em aberto dela."),
+          e("button",{disabled:!kc, onClick:function(){ setTela("assinarrepos"); }, className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, kc ? "Assinar e concluir a reposição" : "Primeiro conte as peças")),
+        e("p",{className:"rounded-2xl bg-[#1C1C1E] px-3 py-2.5 text-center text-[13px]"}, "Comissão da entrega: ", e("b",{className:MONO}, BK(valorRep)), ". Aparece no Consolidado e em Comissões.")); })(),
+
     tela==="resumokn" && kitSel && (function(){
       var txt = mensagemEntrega({tipo:(kitSel.tipoKit||"").indexOf("repos")===0 ? "reposicao" : "kit_novo", nome:sel.rev, rep:l.rep, data:isoDia(new Date()), kitConf:kitConfDe(kitSel.id), condicionaisAssinadas:kitSel.tipoKit==="reposicao" ? !!kitSel.reposicaoEntregue : !!(s.entregasKN||{})[kitSel.id], comissao:kitSel.tipoKit==="reposicao" ? (kitSel.comissaoFixa||0) : 0});
       return e("div",{key:"rkn", className:"flex flex-col gap-3 pb-4"},
         e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex items-center gap-2 bg-[#0B0B0D] px-4 pb-3 pt-4"}, e("button",{onClick:function(){ setTela("rev"); }, "aria-label":"Voltar", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})), e("b",{className:douradoTitulo},"Resumo da entrega")),
         e("div",{className:"flex flex-col gap-2 rounded-2xl bg-[#1C1C1E] p-3"},
           e("textarea",{readOnly:true, value:txt, rows:Math.min(18, txt.split("\n").length+1), className:"w-full resize-none rounded-xl bg-black/50 p-2.5 text-[12px] leading-snug text-white outline-none ring-1 ring-white/10"}),
-          e("div",{className:"flex gap-2"}, e("button",{onClick:function(){ copiarMsg("kn", txt); }, className:"h-10 flex-1 rounded-xl text-[13px] font-bold "+BR2, style:{background:"#16A34A"}}, msgCopiada==="kn" ? "✓ Copiado" : "Copiar"),
-            e("button",{onClick:function(){ abrirPdfAcerto("Kit novo de "+sel.rev, txt); }, className:"h-10 flex-1 rounded-xl bg-[#C9A13B] text-[13px] font-bold "+BR2}, "Baixar PDF"))),
+          e("button",{onClick:function(){ copiarMsg("kn", txt); }, className:"h-10 w-full rounded-xl text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, msgCopiada==="kn" ? "✓ Copiado" : "Copiar mensagem"),
+          e("button",{onClick:function(){ abrirPdfAcerto((kitSel.tipoKit==="reposicao" ? "Reposição de " : "Kit novo de ")+sel.rev, txt); }, className:"grid h-10 w-full place-items-center rounded-xl text-[13px] font-semibold "+BR2, style:{background:"#3F3F46"}}, "Baixar PDF")),
         e("button",{onClick:function(){ setTela("rev"); }, className:"h-11 rounded-2xl text-[14px] font-bold "+ouro}, "Concluir")); })(),
-    tela==="confkit" && kitSel && e("div",{key:"ck"},
+    tela==="confkit" && kitSel && e(React.Fragment,{key:"ck"},
       e("div",{className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1 bg-[#0B0B0D] px-4 pb-3 pt-4"},
         e("div",{className:"flex items-center gap-2"}, e("button",{onClick:function(){ setTela(confVolta); }, "aria-label":"Voltar", className:"grid size-8 shrink-0 place-items-center rounded-full bg-amber-200/10 text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
-          e("b",{className:"min-w-0 flex-1 truncate text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Entregar o kit e conferir as peças")),
-        e("p",{className:"truncate text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
+          e("b",{className:"min-w-0 flex-1 text-[13px] font-black uppercase tracking-[.18em] text-amber-200"},"Conferir as peças")),
+        e("p",{className:"text-[17px] font-extrabold txt-branco"}, kitSel.rev)),
       e("div",{className:"mt-3 pb-4"}, e(ConfPecas,{s:s, d:d, k:kitSel, onContinuar:function(){ setTela(confVolta); }}))),
     tela==="pedidodata" && sel && e("div",{className:"mt-3 flex flex-col gap-2"}, e("button",{onClick:function(){ setTela("rev"); }, className:"self-start rounded-full bg-amber-200/10 px-3 py-1.5 text-[12px] font-bold text-[#E8B84B]"}, "‹ Voltar"), e(PedidoDataRep,{s:s, d:d, l:l, rev:sel})),
     tela==="mensagens" && e(MensagensRep,{rep:l.rep, revendedoras:cart.map(function(r){ return r.rev; }), onInicio:function(){ setTela("inicio"); }}),
-    tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(false); setTela(volta ? "assinaracerto" : "inicio"); }}),
+    tela==="regrascom" && e(TelaRegrasComissoes,{key:"rc", publico:"representante", inicio:regrasDaAssinatura ? "revendedora" : undefined, onVoltar:function(){ var volta = regrasDaAssinatura; setRegrasDaAssinatura(""); setTela(volta || "inicio"); }}),
     tela==="regras" && headerRegras,
     tela==="regras" && telaRegras,
     tela==="inicio" && headerInicio,
