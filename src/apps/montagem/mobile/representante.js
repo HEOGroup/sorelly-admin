@@ -606,6 +606,10 @@ function AppRepresentante(p){
                   p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                     "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
+          acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p);
+            return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
+              e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
+              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta)); }),
           (function(){
             var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
             var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja";   // dinheiro e inadimplência não têm comprovante
