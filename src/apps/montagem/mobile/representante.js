@@ -359,9 +359,13 @@ function AppRepresentante(p){
     var setF = function(patch){ var o = {}; o[cat] = Object.assign({}, f, patch); setBrindeIn(Object.assign({}, brindeIn, o)); };
     var aberto = brindeFormAberto || itens.length===0;
     return e("div",{key:"bnovo", className:"flex flex-col gap-2"},
-      e("div",{className:"flex items-center justify-between gap-2 text-[13px]"},
-        e("span",null,"Liberado: Normal "+BK(libN)+" · Select "+BK(libS)),
-        itens.length>0 && e("button",{onClick:function(){ setBrindeFormAberto(!brindeFormAberto); }, className:"h-8 shrink-0 rounded-lg border border-dashed border-amber-200/60 px-3 text-[13px] font-semibold text-amber-200"}, brindeFormAberto ? "Fechar" : "+ Brinde")),
+      e("button",{onClick:function(){ setBrindeFormAberto(!aberto); }, "aria-expanded":aberto, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, aberto ? "Fechar" : "Novo brinde"),
+      e("div",{className:"grid grid-cols-2 gap-1.5"}, [["Normal", libN, confBrinde.lancadoNormal, confBrinde.restanteNormal],["Select", libS, confBrinde.lancadoSelect, confBrinde.restanteSelect]].map(function(c){
+        return e("div",{key:c[0], className:"flex flex-col gap-0.5 rounded-xl border border-white/15 p-1.5"},
+          e("p",{className:"text-center text-[11px] font-bold uppercase"}, c[0]),
+          e("div",{className:"flex items-center justify-between gap-1 text-[13px]"}, e("span",null,"Liberado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(c[1]))),
+          e("div",{className:"flex items-center justify-between gap-1 text-[13px]"}, e("span",null,"Solicitado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(c[2]))),
+          e("div",{className:"mt-0.5 flex items-center justify-between gap-1 rounded-lg bg-[#C9A13B]/20 px-1.5 py-1 text-[13px] font-bold"}, e("span",null,c[3]<-0.009 ? "Excedente" : "Diferença"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(c[3]))))); })),
       aberto && e("div",{className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["normal","Normal"],["bb","Select (BB)"]].map(function(o){ var on = cat===o[0];
           return e("button",{key:o[0], onClick:function(){ setBrindeCat(o[0]); }, "aria-pressed":on, className:"h-8 rounded-lg text-[13px] font-bold ring-1 "+(on ? "bg-[#C9A13B] txt-branco ring-transparent" : "bg-[#F1F2F4] ring-[#E5E7EB] text-[#6B7280]")}, (on?"✓ ":"")+o[1]); })),
@@ -374,22 +378,14 @@ function AppRepresentante(p){
           e("button",{disabled:!pronto, onClick:function(){ lancarBrinde(cat); }, className:"h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar")),
         f.codigo && !codOk && e("p",{className:"text-[11px] font-semibold text-red-400"},
           cat==="bb" ? "Código BB: começa com BB (ou BB + 1 ou 2 letras) e termina com até 7 números. Ex.: BB0001, BBA0001 (anel). BB não é só brinco." : "Código: até 4 letras e até 7 números. Ex.: N1287.")),
-      itens.map(function(x){ return e("div",{key:"br"+x.i, className:"flex h-8 items-center gap-2 px-2.5 text-[13px]"},
+      itens.map(function(x){ return e("div",{key:"br"+x.i, className:"flex min-h-9 items-center gap-2 rounded-xl border border-white/15 bg-white/[.07] px-2.5 text-[13px]"},
         e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.cat==="bb" ? "bg-[#F3E8FF] text-[#6B21A8]" : "bg-[#FCE7F3] text-[#9D174D]")}, x.b.cat==="bb" ? "SELECT" : "NORMAL"),
         e("span",{className:MONO+" shrink-0 font-semibold"}, x.b.codigo),
         e("span",{className:"shrink-0 rounded-full px-1.5 py-px text-[10px] font-bold "+(x.b.origem==="antiga" ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#DCFCE7] text-[#166534]")}, x.b.origem==="antiga" ? "ANTIGO" : "NOVO"),
         e("span",{className:"min-w-0 flex-1"}),
         e("span",{className:MONO+" shrink-0 whitespace-nowrap text-[13px]"}, BK(x.b.valor)),
         e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {brindes:acertoForm.brindes.filter(function(y,j){return j!==x.i;})})); },
-          "aria-label":"Remover peça "+x.b.codigo, className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")); }),
-      itens.length>0 && e("div",{className:"flex items-center justify-between gap-2 border-t border-amber-200/40 px-2.5 pt-2 text-[13px]"},
-        e("span",{className:"font-semibold"},"Total lançado"),
-        e("span",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[15px] text-amber-200"}, BK(totalLanc)), e("span",{className:"w-6"}))),
-      e("div",{className:"flex items-center justify-between gap-2 px-2.5 text-[13px]"},
-        e("span",{className:"shrink-0 whitespace-nowrap font-semibold"},"Falta lançar"),
-        (confBrinde.restanteNormal+confBrinde.restanteSelect)<=0.009
-          ? e("b",{className:"text-emerald-300"}, "Tudo lançado ✓")
-          : e("b",{className:MONO+" text-right text-[12.5px]"}, "Normal "+BK(confBrinde.restanteNormal)+" · Select "+BK(confBrinde.restanteSelect))));
+          "aria-label":"Remover peça "+x.b.codigo, className:"grid size-6 place-items-center rounded-full bg-white/10 text-[13px] font-bold text-white/70"}, "×")); }));
   };
 
   // ── Cabeçalho fixo: título, ícone das regras, nome da revendedora e o consolidado padronizado (aparece quando preenche a venda) ──
