@@ -14,7 +14,7 @@ import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { BKC, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { ListagemLeitura } from "@/apps/montagem/pages/encomendas/ListagemDia";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var pc = function(v){ return v===null || v===undefined ? "—" : v.toLocaleString("pt-BR", {minimumFractionDigits:1, maximumFractionDigits:1})+"%"; };
 var dBR = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : "—"; };
@@ -34,9 +34,13 @@ function AbaAgPainel(){
     return function(){ vivo = false; };
   }, [setDatas]);
   // previsto de cada dia = kits abertos na DevMaster com data de acerto naquele dia (mesma leitura da tela Revendedoras, leva uns 20 s); dia que já passou só mostra o feito
+  var agRef = useRef(ag); agRef.current = ag;   // sempre o Agendamento mais novo (a leitura da DevMaster demora uns 20 s)
   useEffect(function(){
     if(!apiAtiva()) return undefined; var vivo = true, hj = isoDia(new Date());
-    chamar("GET", "/agenda-revendedoras").then(function(r){ if(!vivo) return; var m = {}, ma = {}, atras = 0; (r.itens || []).forEach(function(i){ if(!i.prev) return; if(i.prev<hj) atras++; else { m[i.prev] = (m[i.prev] || 0)+1; if(i.agenda) ma[i.prev] = (ma[i.prev] || 0)+1; } }); setPrevDia({dias:m, ag:ma, atrasadas:atras}); }).catch(function(){});
+    chamar("GET", "/agenda-revendedoras").then(function(r){ if(!vivo) return; var m = {}, ma = {}, atras = 0; (r.itens || []).forEach(function(i){ if(!i.prev) return; if(i.prev<hj) atras++; else { m[i.prev] = (m[i.prev] || 0)+1; if(i.agenda) ma[i.prev] = (ma[i.prev] || 0)+1; } }); setPrevDia({dias:m, ag:ma, atrasadas:atras});
+      // mês aberto sozinho na virada: os números de abertura vêm da DevMaster, uma vez só (revendedoras com kit ativo e as com acerto até o fim do mês)
+      var its = r.itens || [], mAb = mesAberto(agRef.current), mm = mAb ? agRef.current.mes[mAb] : null;
+      if(its.length>=500 && mm && mm.aberturaAuto && !mm.aberturaDM && mAb===chaveMes(new Date())){ var fim = mAb+"-31"; d({type:"AG", op:"abertura_dm", ym:mAb, base:its.length, previstos:its.filter(function(i){ return i.prev && i.prev<=fim; }).length, dia:new Date().getDate(), por:"Sistema"}); } }).catch(function(){});
     return function(){ vivo = false; };
   }, [setPrevDia]);
   if(!ym) return e("div",{className:"flex flex-col gap-3"}, e("p",{className:"text-[13px] text-foreground"}, "Nenhum mês aberto. O mês abre sozinho na virada; aguarde a leitura da DevMaster."));

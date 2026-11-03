@@ -1617,3 +1617,7 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 ## 02/11/2026 · Navegador cheio: estado comprimido
 - Aviso "Sem espaço para salvar neste navegador": o Admin guardava 4 MB de dados reais no navegador (limite de uns 5,2 MB). Agora grava comprimido (`lib/estado-comprimido.js`): 3,9 MB viram cerca de 0,5 MB. Quem lê a chave `sorelly_montagem_v9` usa `lerEstado`; quem grava usa `textoDoEstado`.
 - Pedido do Marcus ao Leonardo: o destino certo é o servidor (nada de negócio no navegador). O remendo sai quando o banco assumir.
+
+
+## 02/11/2026 · Abertura do mês pela DevMaster
+- Revendedoras no início = todas com kit ativo na DevMaster (2.047 em novembro); acertos previstos = as com data de acerto até o último dia do mês, atrasadas incluídas (1.975 em novembro, regra do Marcus). O mês aberto sozinho na virada recebe os números quando o Painel lê a DevMaster, uma vez só (op `abertura_dm`, marca `aberturaDM`). Novembro não muda. A conta só é exata no dia 1.

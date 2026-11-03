@@ -209,6 +209,10 @@ function agendReduz(s, a, agora){
       ag.mes[alvo] = Object.assign({pagamento:{prevista:null, confirmada:null, por:null}}, ja, {base:a.base||0, previstos:a.previstos||0, abertoEm:(ja||{}).abertoEm || em, fechadoEm:null, estimado:false});
       return {patch:{agend:ag, metaMensal:sincMeta([alvo])}, msg:"Abertura de "+nomeMes(alvo)+" salva (vale também para o Financeiro)"};
     }
+    // ABERTURA PELA DEVMASTER (Marcus, 02/11/2026): mês aberto sozinho na virada recebe os números da DevMaster: base = todas as revendedoras com kit ativo; previstos = as que têm data de acerto até o último dia do mês (atrasadas incluídas). Vale uma vez só por mês (aberturaDM).
+    case "abertura_dm": { var mA = ag.mes[a.ym]; if(!mA || mA.fechadoEm || mA.aberturaDM || !(a.base>0) || !(a.previstos>0)) return {patch:{}, msg:null};
+      ag.mes[a.ym] = Object.assign({}, mA, {base:Math.round(a.base), previstos:Math.round(a.previstos), estimado:false, aberturaDM:{em:em, dia:a.dia||1}});
+      return {patch:{agend:ag, metaMensal:sincMeta([a.ym])}, msg:"Abertura de "+nomeMes(a.ym)+" pela DevMaster: "+Math.round(a.base).toLocaleString("pt-BR")+" revendedoras e "+Math.round(a.previstos).toLocaleString("pt-BR")+" acertos previstos"}; }
     case "remarc_add": { var er0 = exigeAberto(); if(er0) return er0; if(AUTORIZADORES.indexOf(a.autorizadoPor)<0) return recusa("Informe quem autorizou (Marcus, Nickolas, Lucas ou Ana Maria).");
       var nm = String(a.nome||"").trim(); if(!nm) return recusa("Escreva o nome da revendedora."); if(!a.destino || a.destino===ym) return recusa("Escolha o mês para onde ela vai (diferente do mês atual).");
       if((ag.remarc||[]).some(function(x){ return x.origem===ym && x.nome.toLowerCase()===nm.toLowerCase(); })) return recusa(nm+" já está nas remarcações de "+nomeMes(ym)+".");

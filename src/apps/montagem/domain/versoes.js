@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.27", data:"2026-11-02", titulo:"Agendamento: abertura do mês pela DevMaster", itens:[
+    {tipo:"novo", area:"Agendamento · abertura do mês", txt:"O mês abre sozinho com os números da DevMaster, sem digitar: revendedoras no início = todas as com kit ativo; acertos previstos = as com data de acerto até o último dia do mês, atrasadas incluídas (regra do Marcus: 2.047 e 1.975 em novembro). Vale uma vez por mês, quando o Painel lê a DevMaster (op abertura_dm). Novembro já tem os números do Marcus e não muda."}
+  ]},
  {v:"0.18.26", data:"2026-11-02", titulo:"SorellyChat: aviso de mensagem embaixo", itens:[
     {tipo:"melhoria", area:"SorellyChat · avisos de mensagem", txt:"O aviso de mensagem nova agora fica embaixo: dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre mais o alto da conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat. Várias mensagens da mesma pessoa aparecem uma em cima da outra: só a última aparece inteira e o número (2, 3, 4, 5…) mostra quantas são."}
   ]},
