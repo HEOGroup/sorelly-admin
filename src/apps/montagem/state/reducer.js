@@ -280,7 +280,15 @@ function reducer(s, a){
     case "PF": { var rPf = pfReduz(s, a); return com(s, rPf.patch, rPf.msg); }
     case "PX": { var rPx = pxReduz(s, a); return com(s, rPx.patch, rPx.msg); }
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
-    case "DP": { var rDp = dpReduz(s, a); return com(s, rDp.patch, rDp.msg); }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
+    case "DP": { var rDp = dpReduz(s, a), sDp = com(s, rDp.patch, rDp.msg);
+      // Pix pedido pelo app da representante: ao direcionar aqui, o nome da conta vai para o pagamento do acerto (e o app avisa "Conta recebida")
+      if(a.op==="confirma" && rDp.patch.dp){ var pDp = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pDp && pDp.pid && pDp.kitId && pDp.status==="direcionado"){ var nomeD = function(id){ var d = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===id; }); return d ? d.nome : ""; };
+          var descD = (pDp.divisoes||[]).map(function(d){ return nomeD(d.destinoId)+(d.conta ? " · "+d.conta : ""); }).join(" + ") || "Conta definida";
+          var lfD = (sDp.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(pDp.kitId)) return x;
+            return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==pDp.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {enviada:true, partes:[{descricao:descD, valor:l.valor, comprovante:q0.comprovante||null, ok:false}]}); })}); });
+          sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); } }
+      return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
       if(a.setor){ if(a.dia) dp.setores[a.setor] = a.dia; else delete dp.setores[a.setor]; } else if(a.dia) dp.geral = a.dia; return com(s, {datasPag:dp}, "Data de pagamento salva"); }
@@ -983,8 +991,10 @@ function reducer(s, a){
     // Representante pede a conta de um pagamento do acerto (só forma + valor): sobe na hora no Controle de pagamentos, o app dela não espera
     case "REP_PAG": {
       if(a.op==="pedir"){ if(!a.kitId || !a.pid || !(a.valor>0)) return s;
-        return sincContasRep(com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)}, "Conta solicitada ao financeiro: "+BK(a.valor))); }
-      if(a.op==="remover") return com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)});
+        var sPed = com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)}, "Conta solicitada ao financeiro: "+BK(a.valor));
+        var fmL = {pix:"Pix", link:"Link de pagamento", credito:"Cartão de crédito", debito:"Cartão de débito"}[a.forma] || a.forma;
+        return sincContasRep(Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch)); }
+      if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); return Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); }
       return s;
     }
     case "INT_REMOVER":
