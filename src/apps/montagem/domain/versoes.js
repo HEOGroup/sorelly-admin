@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.40", data:"2026-11-04", titulo:"SorellyChat: busca acha pessoas", itens:[
+  {tipo:"correção", area:"SorellyChat", txt:"A busca do chat só olhava conversas que já existiam e o texto das mensagens, então um funcionário sem conversa não aparecia. Agora aparece a seção Pessoas, com nome, setor e função; tocar abre a conversa nova."},
+ ]},
  {v:"0.18.39", data:"2026-11-03", titulo:"Tabelas com filtro: aviso de filtro ativo", itens:[
   {tipo:"melhoria", area:"Chamados", txt:"Quando há filtro ou classificação ativa numa tabela com filtro na coluna (Chamados, Agendamento e outras), aparece um aviso no alto: Filtro ativo em quais colunas, mostrando X de Y, e o botão Limpar filtros."},
  ]},
