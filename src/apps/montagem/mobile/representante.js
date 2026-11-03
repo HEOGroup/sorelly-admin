@@ -444,7 +444,18 @@ function AppRepresentante(p){
       pecasCond:pecasCondSelecionadas, formSnapshot:acertoForm}, extra||{});
   };
 
+  // Modalidade do kit (Ouro ou 100% Prata): só na calculadora de acertos, no começo (Marcus, 03/11/2026); cada troca vai pro histórico.
+  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
+  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
+  // compacto: uma linha só, rótulo pequeno e dois botões baixos (a regra de cada kit fica em Regras)
+  var blocoModalidade = sel && e("div",{className:"flex items-center gap-2 rounded-xl border "+LINHA_CARD+" bg-white px-2.5 py-1.5"},
+    e("p",{className:"shrink-0 text-[10.5px] font-bold uppercase tracking-wide text-[#A67C12]"},"Kit"),
+    e("div",{className:"grid flex-1 grid-cols-2 gap-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
+      return e("button",{key:o[0], onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
+        className:"h-7 rounded-lg text-[11.5px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-slate-700 ring-slate-700 " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#6B7280] ring-black/10")}, (ativo ? "✓ " : "")+o[1]); })),
+    histModalidade.length>0 && e("span",{className:"shrink-0 text-[9.5px] text-[#9A8B63]", title:"Última troca"}, histModalidade[0].em.slice(0,10).split("-").reverse().slice(0,2).join("/")));
   var calcAcertoScreen = kitSel && e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-72"},
+    blocoModalidade,
     blocoAcordeao(0, "lista", "#CA8A04", "Condicionais",
       acertoForm.condicionaisSelecionadas.length ? acertoForm.condicionaisSelecionadas.length+" marcada(s) · "+pecasCondSelecionadas+" peças" : "Marque as condicionais em aberto conferidas",
       acertoForm.condicionaisSelecionadas.length ? badgeTxt(pecasCondSelecionadas+" peças","#CA8A04") : badgeTxt("Pendente","#64748B"),
@@ -1044,16 +1055,6 @@ function AppRepresentante(p){
           listagemCheia(s, lPed.id) && e("p",{className:"text-[12px] font-semibold text-rose-600"},"Essa listagem já está cheia. Escolha outra."),
           e("button",{disabled:listagemCheia(s, lPed.id), onClick:function(){pedir("acerto_kit"); setMostrarSolicitar(false);},
             className:"h-10 rounded-xl text-[13px] font-bold disabled:opacity-40 "+ouro},"Confirmar: acerto + kit")));
-  // Modalidade do kit: fica no cadastro da revendedora (não é escolhida a cada acerto); cada troca vai pro histórico.
-  var modalidadeSel = sel ? modalidadeDe(s, sel.rev) : "padrao", histModalidade = sel ? ((s.perfisRev[sel.rev]||{}).modalidadeHist || []) : [];
-  var trocarModalidade = function(m){ if(sel && m!==modalidadeSel) d({type:"SET_MODALIDADE", chave:sel.rev, modalidade:m, por:l.rep, origem:"representante"}); };
-  // compacto: uma linha só, rótulo pequeno e dois botões baixos (a regra de cada kit fica em Regras)
-  var blocoModalidade = sel && e("div",{className:"flex items-center gap-2 rounded-xl border "+LINHA_CARD+" bg-white px-2.5 py-1.5"},
-    e("p",{className:"shrink-0 text-[10.5px] font-bold uppercase tracking-wide text-[#A67C12]"},"Kit"),
-    e("div",{className:"grid flex-1 grid-cols-2 gap-1.5"}, [["padrao","Ouro"],["prata","100% Prata"]].map(function(o){ var ativo = modalidadeSel===o[0];
-      return e("button",{key:o[0], onClick:function(){ trocarModalidade(o[0]); }, "aria-pressed":ativo, title:"Troca de modalidade: avisar com no mínimo 10 dias",
-        className:"h-7 rounded-lg text-[11.5px] font-bold ring-1 "+(ativo ? (o[0]==="prata" ? "bg-slate-700 ring-slate-700 " : "bg-[#C9A13B] ring-[#C9A13B] ")+BR : "bg-white text-[#6B7280] ring-black/10")}, (ativo ? "✓ " : "")+o[1]); })),
-    histModalidade.length>0 && e("span",{className:"shrink-0 text-[9.5px] text-[#9A8B63]", title:"Última troca"}, histModalidade[0].em.slice(0,10).split("-").reverse().slice(0,2).join("/")));
   var abrirAcertoNovo = function(){
     // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
     var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
@@ -1100,7 +1101,7 @@ function AppRepresentante(p){
       e("button",{onClick:function(){ setPerguntaPre(false); setTela("preacerto"); }, className:"h-8 rounded-xl text-[13px] font-bold "+ouro}, "Sim, atualizar"),
       e("button",{onClick:function(){ setPerguntaPre(false); abrirAcertoNovo(); }, className:"h-8 rounded-xl bg-white/10 text-[13px] font-semibold text-white"}, "Não, seguir para o acerto")));
   var telaRev = sel && e("div",{className:"mt-3 flex flex-col gap-2"},
-    janelaPergunta, blocoNome, blocoStatusHoje, blocoModalidade, linhaAtendimento, botaoPreAcerto, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
+    janelaPergunta, blocoNome, blocoStatusHoje, linhaAtendimento, botaoPreAcerto, botaoPedidoData, blocoEnderecos, blocoRefs, botaoCondicionais, blocoSolicitar);
   var ponto = function(k){ return e("span",{className:"size-2 shrink-0 rounded-full "+PONTO_CEL[STATUS_TP[k.status]]}); };
   var fmtDataISO = function(iso){ if(!iso) return ""; var p = iso.split("-"); return p[2]+"/"+p[1]; };
   var hojeISOStr = isoDia(new Date());
