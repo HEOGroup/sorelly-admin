@@ -4,7 +4,7 @@
 // Regras (mínimo, parcela mínima, 6x, 12 h, 3 tentativas, dia do acerto) ficam em domain/link-pagamento.js (validarSolicitacao); aqui só desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BarraFiltros, Faixa, LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
-import { CANAIS, COR_STATUS, EMISSORES, ROTULO_STATUS, agoraSP, calcularTaxa, expirados, formatarDia, formatarDataHora, BANDEIRAS, formatarReais, hojeSP, indicadoresLp, listaSolicitacoes, somaDias, meioDe, meioSugerido, minutosRestantes, nomeMeio,
+import { CANAIS, COR_STATUS, EMISSORES, FLUXO, ROTULO_STATUS, agoraSP, calcularTaxa, expirados, formatarDia, formatarDataHora, BANDEIRAS, formatarReais, hojeSP, indicadoresLp, listaSolicitacoes, somaDias, meioDe, meioSugerido, minutosRestantes, nomeMeio,
   proximaEtapa, proximosStatus, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { Bt, BtMini, Busca, Editor, Ind, Sel, Selo } from "@/apps/montagem/pages/compras/visualCompras";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
@@ -12,7 +12,11 @@ import { MONO } from "@/apps/montagem/ui/input";
 import { Kanban } from "@/shared/kanban";
 import { e, useEffect, useMemo, useState } from "@/shared/react";
 
-var FINAIS = {comprovante:1, expirado:1, cancelado:1, recusado:1};
+var FINAIS = {comprovante:1, expirado:1, cancelado:1, recusado:1, negada:1, bloqueada:1, antifraude:1, abandonada:1};
+var SEM_ACEITE = {recusado:1, negada:1, bloqueada:1, antifraude:1, abandonada:1};   // coluna "Recusado ou negado" (como no Kommo)
+// motivos de cancelamento iguais aos da planilha (Hellen, 03/11/2026)
+var MOTIVOS = [["expirado", "Expirada"], ["bloqueada", "Bloqueada"], ["cancelado", "Cancelada"], ["antifraude", "Antifraude"], ["abandonada", "Abandonada"], ["negada", "Negada"]];
+var PEDE_MOTIVO = {cancelado:1, recusado:1, expirado:1, bloqueada:1, antifraude:1, abandonada:1, negada:1};
 var DIAS_NO_QUADRO = 3;   // finais recentes ainda aparecem no quadro por alguns dias
 var ANDAMENTO = {solicitado:1, gerado:1, pago:1};
 var noQuadro = function(x, desde){ return ANDAMENTO[x.status] || (FINAIS[x.status] && String(x.comprovanteEm || x.pagoEm || x.geradoEm || x.criadoEm || "").slice(0,10)>=desde); };
@@ -56,7 +60,8 @@ function Detalhe(p){
     {k:"observacao", rot:"Observação", tipo:"area"}];
   var extras = [
     prox && e(Bt,{key:"prox", tipo:"forte", ic:"arrow-right", onClick:function(){ p.onMover(x, x.status, prox); p.fechar(); }}, "Passar para "+ROTULO_STATUS[prox]),
-    !final && e(Bt,{key:"canc", tipo:"perigo", ic:"prohibit", onClick:function(){ p.fechar(); p.onCancelar(x); }}, "Cancelar ou recusar")];
+    e(Sel,{key:"mv", v:"", set:function(v){ if(v){ p.onMover(x, x.status, v); p.fechar(); } }, rot:"Mover para", todos:"Mover para outra etapa", opcoes:FLUXO.filter(function(k){ return k!==x.status; }).map(function(k){ return [k, ROTULO_STATUS[k]]; })}),
+    e(Bt,{key:"canc", tipo:"perigo", ic:"prohibit", onClick:function(){ p.fechar(); p.onCancelar(x); }}, "Cancelar ou recusar")];
   return e(Editor,{t:x.revendedora, sub:"Solicitação de link · "+ROTULO_STATUS[x.status], dados:dados, tDados:"Andamento", campos:campos, nc:1, titulos:["Editar"], icSalvar:"floppy-disk", salvarRot:"Salvar alterações", fechar:p.fechar, extras:extras,
     ini:{representante:x.representante||"", meioId:x.meioId||"", dataAcerto:x.dataAcerto||"", linkUrl:x.linkUrl||"", bandeira:x.bandeira||"", observacao:x.observacao||""},
     onSalvar:function(v){ return L.exec("sol_editar", Object.assign({id:x.id}, v)); }});
@@ -70,13 +75,13 @@ function AbaLpSolicitacoes(p){
   var agora = agoraSP(), ind = indicadoresLp(s), desde = somaDias(hojeSP(), -DIAS_NO_QUADRO);
   var lista = useMemo(function(){ return listaSolicitacoes({lp:{solicitacoes:lp.solicitacoes.filter(function(x){ return noQuadro(x, desde); })}}, f); }, [lp.solicitacoes, f, desde]);
   var mover = function(x, de, para){
-    if(para==="cancelado"){ md[1]({tipo:"motivo", id:x.id}); return; }
+    if(PEDE_MOTIVO[para]){ md[1]({tipo:"motivo", id:x.id, para:(para==="recusado" && x.status!=="solicitado") ? "negada" : para}); return; }
     L.exec("sol_mover", {id:x.id, para:para});
   };
-  var itens = function(k){ return lista.filter(function(x){ return k==="cancelado" ? (x.status==="cancelado" || x.status==="recusado") : x.status===k; }).map(function(x){ return Object.assign({}, x, {arrastavel:!FINAIS[x.status]}); }); };
-  var colunas = ["solicitado", "gerado", "pago", "comprovante", "expirado", "cancelado"].filter(function(k){ return ANDAMENTO[k] || lista.some(function(x){ return k==="cancelado" ? (x.status==="cancelado" || x.status==="recusado") : x.status===k; }) || k==="comprovante"; }).map(function(k){
-    return {k:k, titulo:k==="cancelado" ? "Cancelado ou recusado" : ROTULO_STATUS[k], cor:COR_STATUS[k], itens:itens(k),
-      aceita:function(it){ var t = proximosStatus(it); return k==="cancelado" ? t.indexOf("cancelado")>=0 : t.indexOf(k)>=0; }}; });
+  var itens = function(k){ return lista.filter(function(x){ return k==="recusado" ? SEM_ACEITE[x.status] : x.status===k; }).map(function(x){ return Object.assign({}, x, {arrastavel:true}); }); };
+  var colunas = ["solicitado", "gerado", "pago", "comprovante", "recusado", "expirado", "cancelado"].filter(function(k){ return ANDAMENTO[k] || k==="comprovante" || k==="recusado" || lista.some(function(x){ return x.status===k; }); }).map(function(k){
+    return {k:k, titulo:k==="recusado" ? "Recusado ou negado" : ROTULO_STATUS[k], cor:COR_STATUS[k], itens:itens(k),
+      aceita:function(it){ return k==="recusado" ? !SEM_ACEITE[it.status] : it.status!==k; }}; });
   var meiosLink = lp.meios.filter(function(m){ return m.tipo==="LINK"; });
   var ativo = !!(f.busca || f.canal || f.meioId);
   return e("div",{className:"flex flex-col gap-2.5"},
@@ -99,7 +104,7 @@ function AbaLpSolicitacoes(p){
     modo==="planilha" ? e(Planilha,{lista:lista, s:s, onMover:mover, onAbrir:function(x){ md[1]({tipo:"detalhe", id:x.id}); }}) : e(Kanban,{colunas:colunas, semMover:true, onAbrir:function(x){ md[1]({tipo:"detalhe", id:x.id}); }, unidade:["solicitação", "solicitações"], vazio:"Nenhuma solicitação nesta etapa.", onMover:mover, card:function(x){ return e(Cartao,{x:x, s:s, agora:agora, onMover:mover}); }}),
     modal && modal.tipo==="nova" && e(NovaSolicitacao,{L:L, fechar:function(){ md[1](null); }}),
     modal && modal.tipo==="detalhe" && e(Detalhe,{L:L, id:modal.id, onMover:mover, onCancelar:function(x){ md[1]({tipo:"motivo", id:x.id}); }, fechar:function(){ md[1](null); }}),
-    modal && modal.tipo==="motivo" && e(Motivo,{L:L, id:modal.id, fechar:function(){ md[1](null); }}));
+    modal && modal.tipo==="motivo" && e(Motivo,{L:L, id:modal.id, para:modal.para, fechar:function(){ md[1](null); }}));
 }
 
 // Modo planilha: as mesmas solicitações do quadro, em linhas compactas, com a ação de concluir a etapa
@@ -155,9 +160,9 @@ function NovaSolicitacao(p){
 // Motivo de cancelamento ou recusa (a recusa só vale para o que ainda está em "Solicitado")
 function Motivo(p){
   var x = p.L.lp.solicitacoes.find(function(y){ return y.id===p.id; }); if(!x) return null;
-  var ops = [["cancelado", "Cancelar"]].concat(x.status==="solicitado" ? [["recusado", "Recusar"]] : []);
+  var ops = MOTIVOS.concat(x.status==="solicitado" ? [["recusado", "Recusado"]] : []);
   return e(Editor,{t:"Cancelar ou recusar solicitação", sub:x.revendedora+" · "+formatarReais(x.valor), nc:1, icSalvar:"check", salvarRot:"Confirmar", fechar:p.fechar,
-    campos:[{k:"para", rot:"Ação", tipo:"botoes", ops:ops}, {k:"nota", rot:"Motivo", tipo:"area", obrig:true, ph:"Informe o motivo"}], ini:{para:"cancelado", nota:""},
+    campos:[{k:"para", rot:"Ação", tipo:"botoes", ops:ops}, {k:"nota", rot:"Motivo", tipo:"area", ph:"Informe o motivo (obrigatório para Cancelada e Recusado)"}], ini:{para:p.para || "cancelado", nota:""},
     onSalvar:function(v){ return p.L.exec("sol_mover", {id:p.id, para:v.para, nota:v.nota}); }});
 }
 export { AbaLpSolicitacoes, NovaSolicitacao, Motivo };

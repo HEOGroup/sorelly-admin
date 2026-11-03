@@ -3,6 +3,15 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.37", data:"2026-11-03", titulo:"Chamados sem foto na lista e Compras sem etiqueta de logística", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A coluna Funcionária da lista mostra só o nome, sem a foto ou ícone."},
+  {tipo:"melhoria", area:"Compras e estoque", txt:"O campo Etiqueta de logística saiu da janela da compra (pedido da Hellen). Os dados antigos continuam guardados."},
+ ]},
+ {v:"0.18.36", data:"2026-11-03", titulo:"Link de pagamento: ajustes pedidos pela Hellen", itens:[
+  {tipo:"novo", area:"Link de pagamento", txt:"Solicitações: coluna nova Recusado ou negado. Cancelar ou recusar usa os motivos da planilha (Expirada, Bloqueada, Cancelada, Antifraude, Abandonada, Negada; Recusado só em Solicitado). O link vai para qualquer etapa (arrastar o cartão ou Mover para outra etapa)."},
+  {tipo:"novo", area:"Link de pagamento", txt:"Comprovantes ganhou Data inicial e Data final. Nova aba Descontados no acerto, com os links já usados em acertos. Taxas e recebimentos só aparece para a Diretoria."},
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Histórico: o filtro de situação mostra só Pago, Comprovante enviado, Expirado, Bloqueada, Cancelado, Antifraude, Abandonada e Negada. A 2ª tentativa conta só quando a revendedora repete o mesmo valor no dia."},
+ ]},
  {v:"0.18.35", data:"2026-11-03", titulo:"Chamados: data só com o dia e coluna Respondido em", itens:[
   {tipo:"melhoria", area:"Chamados", txt:"A data do chamado mostra só o dia (30/10). A coluna Tipo saiu da lista. Nova coluna Respondido em, que mostra sozinha o dia da última resposta do Marcus ou do Leonardo. A coluna Conversa do Claude guarda só o nome da conversa (ex.: CHAMADOS 1) e não tem mais o botão de editar: ela só mostra o nome."},
  ]},

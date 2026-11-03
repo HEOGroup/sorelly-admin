@@ -329,7 +329,7 @@ function AbaMelhorias(){
   var colunas = [
     {k:"data", t:"Data", tipo:"data", v:function(x){ return diaSP(x.em); }, exib:function(x){ return quandoCurto2(x.em); }},
     {k:"setor", t:"Setor", v:function(x){ return x.setor; }},
-    {k:"por", t:"Funcionária", min:170, v:function(x){ return x.por; }, exib:function(x){ return x.por; }, cel:function(x){ return e("span",{className:"inline-flex items-center gap-1.5"}, e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:24}), x.por); }},
+    {k:"por", t:"Funcionária", v:function(x){ return x.por; }},   // sem foto nem ícone na lista (Marcus, 03/11/2026)
     {k:"sit", t:"Situação", min:200, v:function(x){ return x.situacao; }, exib:function(x){ return x.situacao; }, cel:function(x){ return etiqueta(x.situacao); }},
     {k:"tela", t:"Tela", min:80, v:function(x){ return melCaminho(x.url); }, cel:function(x){ return e(AbrirTela,{url:x.url}); }},
     {k:"desc", t:"Descrição", v:function(x){ return resumo(x.desc || x.titulo); }}

@@ -389,7 +389,8 @@ function Detalhe(p){
       ped.entregueEm && e("div",{className:"grid grid-cols-2 gap-1.5"}, e(Dado,{t:"Entregue em", v:formatarDia(ped.entregueEm)}), e(Dado,{t:"Recebido por", v:ped.entregueParaNome}), e(Dado,{t:"Assinatura", v:ped.assinaturaConfirmada ? "Confirmada" : "Não confirmada"})),
       !final && ped.status!=="NAO_VERIFICADA" && e(NotaFiscal,{key:ped.id+"-"+ped.notaFiscal, c:c, ped:ped}),
       final && ped.notaFiscal && e(Dado,{t:"Nota fiscal", v:ped.notaFiscal}),
-      ETIQUETA_ELEGIVEL.indexOf(ped.status)>=0 && e(Campo,{rot:"Etiqueta de logística"}, e("select",{value:ped.etiqueta || "", onChange:function(ev){ c.exec({op:"pedido_etiqueta", id:ped.id, etiqueta:ev.target.value}); }, className:CAMPO}, e("option",{value:""}, "Sem etiqueta"), ETIQUETAS.map(function(x){ return opt(x, ROTULO_ETIQUETA[x]); })))),
+      // campo Etiqueta de logística tirado a pedido da Hellen (Chamados, 03/11/2026); os dados antigos ficam guardados
+      null),
     e(Painel,{t:"Pagamentos", ic:"currency-circle-dollar"},
       !pagavel ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Disponível depois da compra efetuada.") : ped.enviada
         ? e("div",{className:"flex flex-col items-center gap-1.5"}, e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada em "+formatarDataHora(ped.enviadaPagamentos.em)), e("span",{className:"text-[12px] text-white/70"}, "Por "+ped.enviadaPagamentos.por), e(Bt,{ic:"receipt", onClick:function(){ ac.enviar(ped.id); }}, "Ver o que foi enviado"))
