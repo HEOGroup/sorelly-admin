@@ -63,7 +63,7 @@ function AbaRegrasAcertos(){
             .concat([{c:["Mais de "+teto+"%","Sem brinde"], cor:"text-destructive"}])),
         e("div",{key:"l", className:"mt-3"}, passos([
           "Faltando valor, dá para negociar parcelas. Se as parcelas fecharem o valor exato, o brinde é liberado.",
-          "Se a revendedora não quiser negociar: sem brinde e a nota promissória é executada em 48h úteis.",
+          "Se a revendedora não quiser negociar: sem brinde; o jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente.",
           "O brinde só é entregue depois do pagamento."]))]),
       bloco("Como lançar os brindes","presente","Depois de pagar, a representante lança peça por peça (código e valor).",[
         passos([

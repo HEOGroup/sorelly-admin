@@ -62,7 +62,7 @@ function derivarAcerto(p){
   var faixaMinBrinde = versao ? Math.min.apply(null, versao.faixas.filter(function(f){return f.bn+f.bb>0;}).map(function(f){return f.min;}).concat([Infinity])) : 500;
   var brindeBloqueio = !previaAcerto ? null
     : previaAcerto.vendaLiquida < faixaMinBrinde ? {curto:"Venda abaixo de "+BK(faixaMinBrinde), frase:"Venda líquida abaixo de "+BK(faixaMinBrinde)+" não tem brinde."}
-    : form.recusouNegociar ? {curto:"Bloqueado — sem negociação", frase:"Revendedora não quis negociar o valor em aberto. Sem brinde. Nota promissória será executada em 48h úteis."}
+    : form.recusouNegociar ? {curto:"Bloqueado — sem negociação", frase:"Revendedora não quis negociar o valor em aberto. Sem brinde. O jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente."}
     : !form.pagamentos.length && !acordoValido ? {curto:"Aguardando pagamento", frase:"O brinde só é liberado depois do pagamento do acerto. Lance os pagamentos ou feche a negociação."}
     : previaAcerto.fatorPagamento===0 ? {curto: ehPrata ? "Bloqueado — só com pagamento integral" : "Bloqueado — falta mais de "+tetoFalta+"%", frase: ehPrata
         ? "No Kit 100% Prata o brinde só sai depois do pagamento integral. Falta pagar para liberar."

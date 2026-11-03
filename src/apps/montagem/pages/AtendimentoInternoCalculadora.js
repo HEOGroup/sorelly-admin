@@ -465,7 +465,7 @@ function AtendimentoInterno(){
         !dv.quitado && !dv.acordoExistente && !negociarAberto && !form.recusouNegociar && e("div",{className:"flex gap-2"},
           e(Btn,{v:"secondary", className:"flex-1", onClick:function(){ setNegociarAberto(true); if(!form.acordoParcelas.length) up({acordoParcelas:[{data:isoDia(new Date()), valor:null}]}); }}, "Negociar o que falta"),
           e(Btn,{v:"destructive", className:"flex-1", onClick:function(){ up({recusouNegociar:true}); }}, "Não quis negociar")),
-        form.recusouNegociar && e(Aviso,{tom:"vermelho"},"Não quis negociar: sem brinde e nota promissória em 48h úteis. ",
+        form.recusouNegociar && e(Aviso,{tom:"vermelho"},"Não quis negociar: sem brinde; o jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente. ",
           e("button",{className:"underline", onClick:function(){ up({recusouNegociar:false}); }},"Desfazer")),
         (negociarAberto || dv.acordoExistente) && e(Secao,{t:"Parcelas negociadas · falta "+din(dv.faltaAtual)},
           e(Tab,{cols:[{t:"Parcela", w:"6rem"},{t:"Data"},{t:"Valor", r:true, w:"10rem"},{t:"", w:"3rem"}]},
