@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Brindes · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:720px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:10px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,input{font:inherit;color:inherit}
+  .titulo{display:flex;align-items:center;justify-content:space-between;min-height:32px;padding:0 4px;font-weight:700}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .btn.cheio{width:100%}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;min-width:0;width:100%}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;padding:0 4px;border-top:1px solid var(--linha)}
+  .l.dif{background:#F7EFD8;border-radius:8px;border-top:0;margin-top:4px;font-weight:700}
+  .oculto{display:none!important}
+  .form{display:flex;flex-direction:column;gap:6px;padding:6px 4px;border-top:1px solid var(--linha)}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .lin{display:grid;grid-template-columns:6.2rem 1fr;gap:6px}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .col{border:1px solid var(--linha);border-radius:12px;padding:6px}
+  .col h3{font-size:11px;text-transform:uppercase;text-align:center;font-weight:700;min-height:24px;display:flex;align-items:center;justify-content:center}
+  .barra{height:8px;border-radius:99px;background:#EDE8DA;overflow:hidden;margin:2px 0 4px}
+  .barra i{display:block;height:100%;background:var(--ouro)}
+  .blk{padding:4px}
+  .blk .l{border:0;padding:0}
+  table{width:100%;border-collapse:collapse;text-align:center}
+  th{height:28px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);padding:0 4px}
+  td{height:30px;border-bottom:1px solid var(--linha);padding:0 4px}
+</style>
+</head>
+<body>
+<h1>Brindes · 4 layouts</h1>
+<p class="sub">Todos mostram: o valor liberado, como solicitar a peça, as peças já solicitadas e a diferença. Números de exemplo, inventados. Clique em "Solicitar" para abrir o formulário.</p>
+<div class="grade">
+
+<section class="caixa"><h2>A · Duas colunas</h2><div class="tel"><div class="cart">
+  <div class="titulo"><span>Brindes</span><button class="btn ouro" onclick="alt('fa')">Solicitar</button></div>
+  <div class="duas">
+    <div class="col"><h3>Normal</h3>
+      <div class="l"><span>Liberado</span><b class="num">R$ 600,00</b></div>
+      <div class="l"><span>Solicitado</span><b class="num">R$ 550,00</b></div>
+      <div class="l dif"><span>Diferença</span><b class="num">R$ 50,00</b></div></div>
+    <div class="col"><h3>Select</h3>
+      <div class="l"><span>Liberado</span><b class="num">R$ 300,00</b></div>
+      <div class="l"><span>Solicitado</span><b class="num">R$ 100,00</b></div>
+      <div class="l dif"><span>Diferença</span><b class="num">R$ 200,00</b></div></div>
+  </div>
+  <div class="l"><span>N1287 · Antigo</span><b class="num">R$ 350,00</b></div>
+  <div class="l"><span>N1301 · Novo</span><b class="num">R$ 200,00</b></div>
+  <div class="l"><span>BB0001 · Novo</span><b class="num">R$ 100,00</b></div>
+  <div class="form oculto" id="fa">
+    <div class="seg"><button class="on">Normal</button><button>Select</button></div>
+    <div class="seg"><button class="on">Kit antigo</button><button>Kit novo</button></div>
+    <div class="lin"><input class="campo" placeholder="N1287"><input class="campo" placeholder="R$ 0,00"></div>
+    <button class="btn ouro cheio">Solicitar peça</button></div>
+</div></div></section>
+
+<section class="caixa"><h2>B · Barra de uso</h2><div class="tel"><div class="cart">
+  <div class="titulo"><span>Brindes</span><button class="btn ouro" onclick="alt('fb')">Solicitar</button></div>
+  <div class="blk"><div class="l"><b>Normal</b><span class="num">R$ 550,00 de R$ 600,00</span></div>
+    <div class="barra"><i style="width:92%"></i></div>
+    <div class="l"><span>Diferença</span><b class="num">R$ 50,00</b></div></div>
+  <div class="blk"><div class="l"><b>Select</b><span class="num">R$ 100,00 de R$ 300,00</span></div>
+    <div class="barra"><i style="width:33%"></i></div>
+    <div class="l"><span>Diferença</span><b class="num">R$ 200,00</b></div></div>
+  <div class="form oculto" id="fb">
+    <div class="seg"><button class="on">Normal</button><button>Select</button></div>
+    <div class="lin"><input class="campo" placeholder="N1287"><input class="campo" placeholder="R$ 0,00"></div>
+    <div class="seg"><button class="on">Kit antigo</button><button>Kit novo</button></div>
+    <button class="btn ouro cheio">Solicitar peça</button></div>
+  <div class="l"><span>Solicitadas</span><b class="num">3 peças</b></div>
+  <div class="l"><span>N1287 · Normal · Antigo</span><b class="num">R$ 350,00</b></div>
+  <div class="l"><span>N1301 · Normal · Novo</span><b class="num">R$ 200,00</b></div>
+  <div class="l"><span>BB0001 · Select · Novo</span><b class="num">R$ 100,00</b></div>
+</div></div></section>
+
+<section class="caixa"><h2>C · Tabela única</h2><div class="tel"><div class="cart">
+  <div class="titulo"><span>Brindes</span><button class="btn ouro" onclick="alt('fc')">Solicitar</button></div>
+  <table>
+    <tr><th>Brinde</th><th>Liberado</th><th>Solicitado</th><th>Diferença</th></tr>
+    <tr><td>Normal</td><td class="num">R$ 600,00</td><td class="num">R$ 550,00</td><td class="num">R$ 50,00</td></tr>
+    <tr><td>Select</td><td class="num">R$ 300,00</td><td class="num">R$ 100,00</td><td class="num">R$ 200,00</td></tr>
+  </table>
+  <div class="form oculto" id="fc">
+    <div class="duas"><div class="seg"><button class="on">Normal</button><button>Select</button></div><div class="seg"><button class="on">Antigo</button><button>Novo</button></div></div>
+    <div class="lin"><input class="campo" placeholder="N1287"><input class="campo" placeholder="R$ 0,00"></div>
+    <button class="btn ouro cheio">Solicitar peça</button></div>
+  <table style="margin-top:8px">
+    <tr><th>Código</th><th>Tipo</th><th>Kit</th><th>Valor</th></tr>
+    <tr><td class="num">N1287</td><td>Normal</td><td>Antigo</td><td class="num">R$ 350,00</td></tr>
+    <tr><td class="num">N1301</td><td>Normal</td><td>Novo</td><td class="num">R$ 200,00</td></tr>
+    <tr><td class="num">BB0001</td><td>Select</td><td>Novo</td><td class="num">R$ 100,00</td></tr>
+  </table>
+</div></div></section>
+
+<section class="caixa"><h2>D · Conta em linha</h2><div class="tel"><div class="cart">
+  <div class="titulo"><span>Brindes</span></div>
+  <div class="seg" style="margin:4px"><button class="on">Normal</button><button>Select</button></div>
+  <div class="l"><span>Liberado</span><b class="num">R$ 600,00</b></div>
+  <div class="l"><span>− N1287 · Antigo</span><b class="num">R$ 350,00</b></div>
+  <div class="l"><span>− N1301 · Novo</span><b class="num">R$ 200,00</b></div>
+  <div class="l dif"><span>Diferença</span><b class="num">R$ 50,00</b></div>
+  <div class="form">
+    <div class="lin"><input class="campo" placeholder="Código"><input class="campo" placeholder="R$ 0,00"></div>
+    <div class="seg"><button class="on">Kit antigo</button><button>Kit novo</button></div>
+    <button class="btn ouro cheio">Solicitar peça</button></div>
+  <div class="l"><span>Select: liberado R$ 300,00 · solicitado R$ 100,00 · diferença R$ 200,00</span></div>
+</div></div></section>
+
+</div>
+<script>
+function alt(id){document.getElementById(id).classList.toggle('oculto')}
+document.querySelectorAll('.seg button').forEach(function(b){b.addEventListener('click',function(){Array.prototype.forEach.call(b.parentNode.children,function(x){x.classList.remove('on')});b.classList.add('on')})});
+</script>
+</body>
+</html>

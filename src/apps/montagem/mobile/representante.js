@@ -299,13 +299,14 @@ function AppRepresentante(p){
       var listaPag = function(pg){ var lk = arred(pg*.30), px = arred(pg*.30), cr = arred(pg*.25), dn = arred(pg-lk-px-cr);
         var descLink = (formaDe("link").descricoes||[])[0] || "LINK - SICREDI - SERENITY - 59";
         return [{forma:"link", descricao:descLink, parcelas:1, data:hoje, valor:lk, anexo:null, jaPagoLink:true},
-          {forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:px, anexo:{nome:"comprovante-pix.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
+          {forma:"pix", descricao:"", pid:"pexemplo"+kitSel.id, parcelas:1, data:hoje, valor:px, anexo:{nome:"comprovante-pix.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
           {forma:"credito", descricao:"CRÉDITO - CIELO - P", parcelas:3, data:hoje, valor:cr, anexo:{nome:"comprovante-cartao.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
           {forma:"dinheiro", descricao:(formaDe("dinheiro").descricoes||[])[0] || "Dinheiro", parcelas:1, data:hoje, valor:dn, anexo:null}]; };
       var fimF = Object.assign({}, base, {garantia:cz.garantia||0, atrasoDias:9, brindes:brindes, pecasVendidas:cz.vendidas}), pagoF = valor;
       for(var it=0; it<4; it++){ pagoF = Math.max(0, arred(conta(Object.assign({}, fimF, {pagamentos:listaPag(pagoF)})).totalAPagar-200)); }
       comPag = Object.assign({}, fimF, {pagamentos:listaPag(pagoF)}); d1 = conta(comPag); }
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
+    if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
     setAcertoForm(Object.assign({}, comPag, {garantia:cz ? (cz.garantia||0) : 0, pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
