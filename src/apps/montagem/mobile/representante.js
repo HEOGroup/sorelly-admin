@@ -1287,7 +1287,7 @@ function AppRepresentante(p){
     tela==="assinarrepos" && telaAssinarRepos,
     tela==="fechamento" && telaFechamento,
     tela==="entregakit" && kitSel && e(EntregaKNRep,{key:kitSel.id, s:s, d:d, k:kitSel, versao:versaoSel || versaoVigente(s),
-      onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }}),
+      onVoltar:function(){ setTela("rev"); }, onConcluido:function(){ setTela("resumokn"); }, onConferir:function(){ setConfVolta("entregakit"); setTela("confkit"); }, onAbrirRegras:function(){ setRegrasDaAssinatura("entregakit"); setTela("regrascom"); }}),
     tela==="reposicao" && kitSel && (function(){
       var kc = kitConfDe(kitSel.id), pronto = !!kc && reposAss, valorRep = (s.comis||{}).reposicao!=null ? s.comis.reposicao : 15;
       return e("div",{key:"rep", className:"flex flex-col gap-3 pb-4"},

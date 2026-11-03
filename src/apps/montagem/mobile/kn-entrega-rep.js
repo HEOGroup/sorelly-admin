@@ -35,7 +35,7 @@ function EntregaKNRep(p){
   var montou = entrada && entrada.montou, bipou = entrada && entrada.bipou;
 
   var conferenciaUI = e("div",{className:"flex flex-col gap-2.5"},
-    (montou || bipou) && e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#F0FDFA] px-3 py-2 text-[12px] text-[#0F766E] ring-1 ring-[#99F6E4]"},
+    (montou || bipou) && e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#F6EFDF] px-3 py-2 text-[12px] text-[#161616]"},
       e("b",null,"Registro do kit"), e("span",null,"Montado por "+(montou||"—")+" · Bipado por "+(bipou||"—"))),
     // a conferência das peças abre numa TELA SEPARADA (câmera); aqui fica só o resumo e o botão
     res ? e("div",{className:"flex flex-col gap-1 rounded-xl px-3 py-2 "+(res.erros ? "bg-[#FEE2E2]" : "bg-[#DCFCE7]")},
@@ -46,8 +46,11 @@ function EntregaKNRep(p){
       e("input",{type:"checkbox", checked:caixinhas, onChange:function(ev){ setCaixinhas(ev.target.checked); }, className:"size-5 shrink-0"}), "Entreguei as caixinhas de presente"));
 
   var assinaturaUI = e("div",{className:"flex flex-col gap-2.5"},
+    p.onAbrirRegras && e("button",{type:"button", onClick:p.onAbrirRegras, className:"flex h-10 items-center justify-center gap-2 rounded-xl bg-[#7C3AED] text-[13.5px] font-bold txt-branco"}, e(Icon,{n:"book", s:16}), "Abrir as regras para a revendedora ler"),
+    e("p",{className:"rounded-xl bg-[#f6efdf] px-3 py-2 text-center text-[12.5px] font-semibold text-[#161616]"}, "Avise a revendedora: as regras também ficam no app dela, em Regras e comissões. Ela pode ler de novo quando quiser."),
     e("p",{className:"text-[12.5px] text-[#374151]"},"A revendedora confirma o recebimento do kit e das orientações assinando aqui."),
     e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+k.rev}),
+    e("p",{className:"text-center text-[12px] text-[#6B7280]"}, "A assinatura fica gravada nesta entrega, com a data e as regras que ela leu."),
     e("button",{disabled:!assinatura || !confOk, onClick:function(){
         d({type:"KITNOVO_ENTREGAR", id:k.id, condicionais:selecionadas, pecasTotal:esperado, pecasFaltaram:faltaram, obsDivergencia:faltaram ? obs : "",
           regrasLidas:PASSOS_KN.slice(1, PASSO_CONF-1).map(function(x){ return x.t; }), assinatura:assinatura});
@@ -87,9 +90,9 @@ function EntregaKNRep(p){
         e("span",{className:"text-[11px] font-bold text-amber-200"}, entrada.status==="concluida" ? "concluída" : "etapa "+Math.min(atual,TOTAL_PASSOS)+" de "+TOTAL_PASSOS))),
     !entrada
       ? e("div",{className:"mt-3 flex flex-col items-center gap-3 rounded-2xl bg-white p-5 text-center ring-1 ring-[#E5E7EB]"},
-          e("span",{className:"grid size-14 place-items-center rounded-full bg-[#FCE7F3] text-[#DB2777]"}, e(Icon,{n:"caixa", s:28})),
+          e("span",{className:"grid size-14 place-items-center rounded-full bg-[#F6EFDF] text-[#9A7424]"}, e(Icon,{n:"caixa", s:28})),
           e("b",{className:"text-[16px] text-[#111827]"},"Pronta para entregar o kit novo?"),
-          (montouKit || bipouKit) && e("p",{className:"rounded-xl bg-[#F0FDFA] px-3 py-1.5 text-[12px] text-[#0F766E]"},"Kit montado por "+(montouKit||"—")+" · bipado por "+(bipouKit||"—")),
+          (montouKit || bipouKit) && e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-1.5 text-[12px] text-[#161616]"},"Kit montado por "+(montouKit||"—")+" · bipado por "+(bipouKit||"—")),
           e("p",{className:"text-[13px] text-[#6B7280]"},"Você e a revendedora vão ler juntas, etapa por etapa. Cada etapa só libera a próxima quando as duas derem o check."),
           e("button",{onClick:iniciar, className:"h-12 w-full rounded-2xl bg-[#C9A13B] text-[14px] font-bold txt-branco"}, "Iniciar entrega"))
       : e("div",{className:"mt-3 flex flex-col gap-2.5 pb-4"},
@@ -101,7 +104,7 @@ function EntregaKNRep(p){
             var conteudo = conteudoPasso(n, Object.assign({}, ctx, {conferencia:conferenciaUI, assinatura:assinaturaUI, expositorUI:expositorUI}));
             var bloqueado = n>atual || (n===PASSO_CONF && !confOk) || (n===PASSO_EXPOSITOR && !expositorOk);
             var botao = n<TOTAL_PASSOS && e("button",{key:"ck", disabled:bloqueado && !c.rep, onClick:function(){ check(n); },
-              className:"h-11 rounded-xl text-[13.5px] font-bold txt-branco disabled:opacity-40 "+(c.rep ? "bg-[#16A34A]" : "bg-[#C9A13B]")}, c.rep ? "✓ Check dado. Toque para desfazer" : "Dar o check");
+              className:"h-11 rounded-xl text-[13.5px] font-bold txt-branco disabled:opacity-40 "+(c.rep ? "bg-[#3F3F46]" : "bg-[#C9A13B]")}, c.rep ? "✓ Check dado. Toque para desfazer" : "Dar o check");
             var aviso = (n===PASSO_CONF && !confOk && !c.rep) ? "Feche a conferência (e as caixinhas) para dar o check." : (n===PASSO_EXPOSITOR && !expositorOk && !c.rep) ? "Anexe a foto do expositor para dar o check." : null;
             return e(BlocoKN,{key:n, meta:meta, repOk:!!c.rep, revOk:!!c.rev, semCelular:!!entrada.semCelular, atual:atual,
               aberto:abertoEf===n, onToggle:function(){ setAberto(abertoEf===n ? 0 : n); },
