@@ -98,7 +98,7 @@ var REGRAS_GERAIS_OFICIAIS = {
 // Valem igual para acerto com representante e atendimento interno, Kit Normal e Kit Prata.
 var NOVAS_PADRAO = {
   minimoRepresentante:500, minimoInterno:700,   // referência da MÉDIA das vendas (não é corte de comissão: a faixa de 15% continua)
-  mediaVendas:3,                                // 2 vendas anteriores + a venda do dia do acerto
+  mediaVendas:4,                                // 3 vendas anteriores + a venda de hoje (Marcus, 03/11/2026: média das últimas 4 vendas)
   // venda do acerto abaixo de minimoRepresentante (R$ 500, Marcus 29/10/2026): a representante precisa registrar o MOTIVO antes de finalizar; "Outro" pede texto livre
   motivosVendaBaixa:["Não tem muitos clientes", "Pouca habilidade com vendas", "Não teve tempo", "Problema de saúde ou pessoal", "Não gostou das peças", "Outro"],
   multaPendentePct:10,                          // multa sobre o VALOR PENDENTE do acerto, qualquer valor
@@ -121,21 +121,22 @@ function atrasoAcerto(dias, N){
   return {comissaoPct:x.comissaoPct, brindePct:x.brindePct, tudo:false};
 }
 // média das últimas vendas = (n-1) vendas anteriores (a lista vem da mais antiga para a mais nova) + a venda do dia do acerto
+var MEDIA_N = 4;   // média das últimas 4 vendas (3 anteriores + a de hoje); vale mesmo para regras salvas com 3
 function mediaVendas(anteriores, vendaDoDia, n){
-  n = n || 3; var ant = (anteriores||[]).filter(function(v){ return v!=null && !isNaN(v); }).slice(-(n-1));
+  n = n || MEDIA_N; var ant = (anteriores||[]).filter(function(v){ return v!=null && !isNaN(v); }).slice(-(n-1));
   var lista = vendaDoDia!=null && !isNaN(vendaDoDia) ? ant.concat([vendaDoDia]) : ant;
   return {qtd:lista.length, media:lista.length ? r2n(lista.reduce(function(t,v){ return t+v; }, 0)/lista.length) : 0};
 }
 // compara a média com a referência (R$ 500 representante, R$ 700 interno). Versão antiga: nunca bloqueia.
 function avaliarMinimo(anteriores, vendaDoDia, versao, interno){
   var N = versao && versao.novas; if(!N) return {media:0, qtd:0, ref:0, abaixo:false, regra:false};
-  var m = mediaVendas(anteriores, vendaDoDia, N.mediaVendas), ref = interno ? N.minimoInterno : N.minimoRepresentante;
+  var m = mediaVendas(anteriores, vendaDoDia, MEDIA_N), ref = interno ? N.minimoInterno : N.minimoRepresentante;
   return {media:m.media, qtd:m.qtd, ref:ref, abaixo:m.qtd>0 && m.media<ref, regra:true};
 }
 // kit novo: precisa de 80% do acerto pago (senão só com o financeiro) e média acima da referência (senão bloqueado; a representante pode dar nova chance)
 function kitNovoLiberado(res, minimo, versao, novaChance){
   var pagoPct = 100-(res.pctFaltante||0), min = (versao && versao.gerais && versao.gerais.kitNovoMinPct!=null) ? versao.gerais.kitNovoMinPct : 80;
-  if(minimo && minimo.abaixo && !novaChance) return {liberado:false, motivo:"media", texto:"Média das vendas abaixo de R$ "+minimo.ref+": kit novo bloqueado"};
+  if(minimo && minimo.abaixo) return {liberado:false, motivo:"media", texto:"Média das vendas abaixo de R$ "+minimo.ref+": kit novo bloqueado"};
   if(pagoPct+1e-9<min) return {liberado:false, motivo:"pagamento", texto:"Pagou menos de "+min+"% do acerto: só com autorização do financeiro"};
   return {liberado:true, motivo:"", texto:""};
 }
@@ -394,7 +395,7 @@ function textoRegrasNovas(v, modalidade){
   var nova = [
     {t:"Comissão", x:"A comissão vai de "+minP+"% a "+maxP+"% conforme a venda líquida (a partir de "+reais(g.minRenovar)+"). Abaixo disso não tem comissão."},
     {t:"Taxa de deslocamento", x:"Venda abaixo de "+reais(g.taxaAbaixoDe)+" paga uma taxa fixa de "+reais(taxa)+", que soma no valor do acerto. Cancelar o kit com venda abaixo desse valor também paga a taxa."},
-    {t:"Venda mínima", x:"A média das suas últimas "+N.mediaVendas+" vendas precisa ser de pelo menos "+reais(N.minimoRepresentante)+" no acerto com a representante e "+reais(N.minimoInterno)+" no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado. Venda do acerto abaixo de "+reais(N.minimoRepresentante)+" pede uma justificativa da representante."},
+    {t:"Venda mínima", x:"A média das suas últimas "+MEDIA_N+" vendas precisa ser de pelo menos "+reais(N.minimoRepresentante)+" no acerto com a representante e "+reais(N.minimoInterno)+" no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado. Venda do acerto abaixo de "+reais(N.minimoRepresentante)+" pede uma justificativa da representante."},
     {t:"Acerto na data", x:"O acerto e a devolução são na data marcada. Acerto fora da data perde parte da comissão e do brinde — "+escTxt+". Com "+N.juridicoDias+" dias de atraso perde toda a comissão e todo o brinde, e o valor integral do kit pode ser cobrado pela nota promissória."},
     {t:"Remarcação", x:"Remarcar o acerto tira comissão e brinde — "+rem+". Remarcação com emergência comprovada não conta."},
     {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente, e o prazo para quitar é de "+N.prazoQuitarDias+" dias. Depois do prazo soma "+N.atrasoQuitacaoPctDia+"% ao dia, até "+N.atrasoQuitacaoTetoPct+"%. Enquanto houver valor pendente, o próximo kit fica bloqueado."},
@@ -435,6 +436,6 @@ function diffVersoes(atual, anterior){
   return {faixas:faixas, gerais:gerais};
 }
 
-export { MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
+export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
   faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
   formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };
