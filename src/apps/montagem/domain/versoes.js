@@ -9,6 +9,7 @@ var VERSOES = [
   {tipo:"novo", area:"Financeiro familiar", txt:"PIX das revendedoras: faixa Total por dia, com a soma dos PIX de cada dia (Anamaria)."},
   {tipo:"novo", area:"Atendimento interno", txt:"Na ficha da revendedora, campo Valor liberado (reposição ou kit novo). O valor vai para a Observação da listagem do dia (Tamara)."},
   {tipo:"melhoria", area:"RH", txt:"A lista Colaboradora no lançamento de atraso e falta fica em ordem alfabética (Ana Paula)."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"A agenda da Tamara passa a ter horários de meia em meia hora (08:00, 08:30, 09:00... até 17:30). Os limites de 3 por horário e 15 por dia continuam e serão revistos com ela. Sábado marca das 08:00 às 10:30."},
  ]},
  {v:"0.18.47", data:"2026-11-03", titulo:"RH: Ficha de experiência com 100 pontos", itens:[
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada colaboradora em experiência tem uma ficha de 100 pontos. Ela perde pontos a cada ocorrência (falta, atraso, comportamento, erro). O gestor dá nota de 0 a 10 em produtividade e adaptação. O sistema mostra a recomendação: efetivar (85 a 100), acompanhar (70 a 84) ou não efetivar. A colaboradora nunca vê a ficha. Botão Imprimir ficha."},

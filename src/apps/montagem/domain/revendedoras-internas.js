@@ -208,13 +208,14 @@ function mensagemRegras(r, origem){
 // Até 3 revendedoras no MESMO horário e até 15 por dia, horários de 1 hora das 08h às 18h (inclui 11h–12h e 12h–13h).
 // Sábado: só marca até as 11h (08h, 09h e 10h), no máximo 9 no dia. Domingo: sem atendimento, não marca nada.
 var CAP_HORA = 3;
-var HORAS_AGENDA = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00","17:00"];
+// horários de meia em meia hora (Tamara, 03/11/2026: 08:00, 08:30, 09:00...). Os limites (3 por horário, 15 por dia) ficam como estavam e serão revistos com ela.
+var HORAS_AGENDA = ["08:00","08:30","09:00","09:30","10:00","10:30","11:00","11:30","12:00","12:30","13:00","13:30","14:00","14:30","15:00","15:30","16:00","16:30","17:00","17:30"];
 function diaDaSemana(iso){ return parteData(iso).getDay(); }
 // Feriados (Deysiane, 01/11/2026): vêm do RH (config.feriados) e fecham a agenda como o domingo. App.js chama definirFeriadosAgenda a cada mudança do RH.
 var FERIADOS_AG = {};
 function definirFeriadosAgenda(lista){ var m = {}; (lista||[]).forEach(function(f){ if(f && f.data) m[f.data] = f.nome || "Feriado"; }); FERIADOS_AG = m; }
 function feriadoDe(iso){ return FERIADOS_AG[iso] || ""; }
-function horasDoDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe(iso) ? [] : w===6 ? HORAS_AGENDA.slice(0,3) : HORAS_AGENDA; }
+function horasDoDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe(iso) ? [] : w===6 ? HORAS_AGENDA.filter(function(h){ return h<"11:00"; }) : HORAS_AGENDA; }
 function capacidadeDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe(iso) ? 0 : w===6 ? 9 : 15; }
 // marcadas num dia: [{r, hora}] vindas de r.agend (dia e hora marcados na revendedora)
 function marcadasDoDia(lista, iso){ return (lista||[]).filter(function(r){ return r.agend && r.agend.data===iso; }).map(function(r){ return {r:r, hora:r.agend.hora}; }); }

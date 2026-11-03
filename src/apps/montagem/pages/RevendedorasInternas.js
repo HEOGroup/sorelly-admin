@@ -339,12 +339,12 @@ function HorariosDoDia(p){
   var horas = horasDoDia(iso);
   var candidatas = escolhendo ? lista.filter(function(r){ return !r.agend && (!busca || r.nome.toLowerCase().indexOf(busca.toLowerCase())>=0); }).sort(function(a,b){ return proximoAcerto(a).localeCompare(proximoAcerto(b)); }).slice(0,7) : [];
   return e("div",{className:"flex h-full flex-col"}, cab,
-    w===6 && e("div",{className:"mb-1 rounded-md border border-[rgba(251,191,36,.45)] bg-[rgba(251,191,36,.12)] px-2 py-0.5 text-[12px]"},"Sábado: só marca até as 11h (08h, 09h e 10h)."),
+    w===6 && e("div",{className:"mb-1 rounded-md border border-[rgba(251,191,36,.45)] bg-[rgba(251,191,36,.12)] px-2 py-0.5 text-[13px]"},"Sábado: só marca até as 11h (das 08:00 às 10:30)."),
     e("div",{className:"min-h-0 flex-1 overflow-y-auto"}, horas.map(function(h, i){
       var no = marc.filter(function(x){ return x.hora===h; }), fim = HORAS_AGENDA[HORAS_AGENDA.indexOf(h)+1] || "18:00", cheio = no.length>=CAP_HORA, motivo = motivoNaoMarcar(lista, iso, h, null);
       return e(React.Fragment,{key:h},
-        e("div",{className:"grid grid-cols-[78px_repeat(3,minmax(0,1fr))] items-center gap-1 border-t "+BORDA+" py-px", style:{minHeight:24}},
-          e("b",{className:"whitespace-nowrap text-[12px]"}, h.slice(0,2)+"–"+fim.slice(0,2)+"h ", e("small",{className:"text-[11px] "+(cheio ? "text-[#f87171]" : no.length ? "text-[#fbbf24]" : "text-[#4ade80]")}, no.length+"/"+CAP_HORA)),
+        e("div",{className:"grid grid-cols-[150px_repeat(3,minmax(0,1fr))] items-center gap-1 border-t "+BORDA+" py-px", style:{minHeight:24}},
+          e("b",{className:"whitespace-nowrap text-[13px]"}, h+"–"+fim+" ", e("small",{className:"text-[11px] "+(cheio ? "text-[#f87171]" : no.length ? "text-[#fbbf24]" : "text-[#4ade80]")}, no.length+"/"+CAP_HORA)),
           [0,1,2].map(function(j){ var x = no[j];
             if(x) return e("button",{key:j, type:"button", onClick:function(){ p.abrir(x.r.id); }, title:x.r.nome, className:"flex h-[21px] items-center justify-center truncate rounded-[5px] px-1.5 text-[11.5px] font-semibold", style:BARRA_OURO}, curto(x.r.nome));
             if(motivo) return e("div",{key:j, title:motivo, className:"flex h-[21px] items-center justify-center rounded-[5px] border border-dashed border-[#3b3b42] bg-[#1b1b1f] text-[11.5px] opacity-50"}, v<=0 ? "dia lotado" : "—");
