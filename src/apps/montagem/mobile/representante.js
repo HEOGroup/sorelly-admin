@@ -336,7 +336,7 @@ function AppRepresentante(p){
   var blocoAcordeao = function(idx, icone, cor, titulo, subtitulo, status, conteudo){
     var aberto = blocoAberto===idx;
     return e("div",{key:idx, "data-bloco":idx, className:"overflow-hidden rounded-2xl bg-[#1C1C1E]"},
-      e("button",{onClick:function(ev){ var alvo = ev.currentTarget.parentElement; setBlocoAberto(aberto?null:idx); if(!aberto) setTimeout(function(){ subirBloco(alvo); }, 90); }, className:"flex w-full items-center gap-3 p-3 text-left"},
+      e("button",{onClick:function(ev){ if(travaExcedente && (idx===5 || idx===6 || idx===7)){ irPagar(); return; } var alvo = ev.currentTarget.parentElement; setBlocoAberto(aberto?null:idx); if(!aberto) setTimeout(function(){ subirBloco(alvo); }, 90); }, className:"flex w-full items-center gap-3 p-3 text-left"},
         e("span",{className:"grid size-9 shrink-0 place-items-center rounded-xl", style:{background:"#CA8A0426", color:"#CA8A04"}}, e(Icon,{n:icone, s:18})),   // 02/11/2026 (Marcus): todos os blocos na mesma cor neutra do Condicionais
         e("div",{className:"min-w-0 flex-1"}, e("b",{className:"block text-[14px]"}, titulo)),   // sem minitexto embaixo do título (02/11/2026, Marcus)
         status,
@@ -349,6 +349,8 @@ function AppRepresentante(p){
   var kitNovoMin = dv.kitNovoMin, pctPagoAcerto = dv.pctPagoAcerto, kitNovoLiberado = dv.kitNovoLiberado, pagamentoParcial = dv.pagamentoParcial;
   var tetoFalta = dv.tetoFalta, faixaMinBrinde = dv.faixaMinBrinde, brindeBloqueio = dv.brindeBloqueio, brindeLiberado = dv.brindeLiberado,
     libN = dv.libN, libS = dv.libS, confBrinde = dv.confBrinde, excedenteBrinde = dv.excedenteBrinde, totalAPagar = dv.totalAPagar, restanteTotal = dv.restanteTotal;
+  var irPagar = function(){ setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); setBlocoAberto(3); };   // volta aos pagamentos com o valor da diferença já preenchido
+  var travaExcedente = excedenteBrinde>0.009 && restanteTotal>0.009;   // brinde acima do liberado: a diferença precisa ser paga antes de seguir (Marcus, 03/11/2026)
   var lancarBrinde = function(cat){
     var f = brindeIn[cat];
     if(!(codigoBrindeValido(cat, f.codigo) && f.valor>0 && f.origem)) return;
@@ -737,7 +739,9 @@ function AppRepresentante(p){
               +(previaAcerto.fatorPagamento<1 ? " · faltou "+N1(previaAcerto.pctFaltante)+"% do pagamento ("+N1(previaAcerto.fatorPagamento*100)+"% do brinde)" : "")+"."),
             blocoBrindesNovo(),
             excedenteBrinde>0 && e("p",{key:"bexc", className:"text-[12.5px] font-bold text-amber-200"}, "Excedente de brinde de "+BK(excedenteBrinde)+" entrou no total a pagar."),
-            excedenteBrinde>0 && restanteTotal>0.009 && e("button",{key:"bpag", onClick:function(){ setLancAberto(true); setBlocoAberto(3); }, className:"h-9 w-full rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#C9A13B"}}, "+ Lançar pagamento"),
+            travaExcedente && e("p",{key:"btrava", className:"text-[13px] font-bold text-amber-200"}, "Pague a diferença do brinde para continuar."),
+            e("button",{key:"bok", onClick:function(){ if(travaExcedente){ irPagar(); return; } setAcertoForm(Object.assign({}, acertoForm, {brindesOk:true})); setBlocoAberto(5); },
+              className:"h-9 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, travaExcedente ? "OK, pagar a diferença" : acertoForm.brindesOk ? "✓ Brindes confirmados" : "OK, escolhi os brindes"),
             e("div",{key:"bnota", className:"flex flex-col gap-1 rounded-xl bg-amber-400/15 p-2.5 text-[12px] leading-snug"},
               e("b",null,"Atenção ao brinde"),
               e("p",null,"• Existem dois brindes: o Normal e o Select (BB)."),
@@ -795,7 +799,8 @@ function AppRepresentante(p){
     blocoAcordeao(7, "caixa", "#CA8A04", "Devolução de peças",
       pecasADevolver===null ? "Informe o total de vendidas nas condicionais" : pecasADevolver+" peças pra devolver",
       pecasADevolver===null ? badgeTxt("Pendente","#64748B") : badgeTxt(pecasADevolver+" peças","#CA8A04"),
-      [[["Peças das condicionais", pecasCondSelecionadas],["Total de vendidas", acertoForm.pecasVendidas||0],["Total de brindes", acertoForm.brindes.length],["Trocas deste kit (ficaram com ela)", dv.nTrocasMes]].map(function(c){
+      [e("div",{key:"dalerta", role:"alert", className:"flex flex-col gap-0.5 rounded-xl bg-amber-400/15 p-2.5 text-[13px] leading-snug"}, e("b",null,"⚠ Atenção: conte as peças"), e("span",null,"Conte quantas peças estão voltando para a empresa. Confira o número abaixo com a revendedora antes de levar.")),
+       [["Peças das condicionais", pecasCondSelecionadas],["Total de vendidas", acertoForm.pecasVendidas||0],["Total de brindes", acertoForm.brindes.length],["Trocas deste kit (ficaram com ela)", dv.nTrocasMes]].map(function(c){
         return e("div",{key:c[0], className:"flex items-center justify-between gap-2 text-[12.5px] text-[#8E8E93]"}, e("span",null,c[0]), e("b",{className:MONO+" text-white"}, c[1])); }),
       (dv.nTrocasMes+dv.nTrocasAnt)>0 && e("p",{key:"dq", className:"text-[11.5px] text-[#8E8E93]"}, (dv.nTrocasMes+dv.nTrocasAnt)+" peça(s) quebrada(s) voltam junto para a empresa."),
       e("div",{key:"dtot", className:"flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[13px] font-bold"},
@@ -814,8 +819,8 @@ function AppRepresentante(p){
           acertoForm.motivoVendaBaixa==="Outro" && e("input",{value:acertoForm.motivoVendaBaixaTexto||"", placeholder:"Escreva o motivo", maxLength:140,
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
             className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
-        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB, onClick:function(){ setTela("assinaracerto"); },
-          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : "Confirmar acerto")]);
+        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente, onClick:function(){ setTela("assinaracerto"); },
+          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",
