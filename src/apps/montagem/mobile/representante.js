@@ -420,7 +420,6 @@ function AppRepresentante(p){
       e("div",{className:"flex items-center gap-2"},
         e("p",{className:"min-w-0 flex-1 truncate text-[13.5px] font-extrabold "+BR}, sel.rev),
         ehPrata && e("span",{className:"shrink-0 rounded-full bg-slate-300 px-2 py-0.5 text-[10.5px] font-black tracking-wider text-slate-900"}, "100% PRATA")),
-      !previaAcerto && e("p",{className:"text-[11px] text-[#8E8E93]"},"Preencha as vendas para ver a conta do acerto."),
       previaAcerto && e("div",{key:"tres", className:"mt-1 flex flex-col"},
         linhaCons("v", "Vendas", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta)),
         linhaCons("c", "Comissão", previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"),
@@ -675,8 +674,7 @@ function AppRepresentante(p){
                     PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
                       .map(function(n){ return e("option",{key:n, value:n}, n+"x"); }))),
                 fm && fm!=="acerto_loja" ? e("div",{className:"flex items-center gap-2"},
-                  e("input",{type:"date", value:lancForm.data, "aria-label":"Data do pagamento", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {data:ev.target.value})); }, className:campoSel+" min-w-0 flex-1 [color-scheme:dark]"}),
-                  e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" min-w-0 flex-1"})) : null,
+                  e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" min-w-0 w-full"})) : null,
                 pedeComp && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-black/40 px-2.5 text-[13px] ring-1 "+(lancForm.anexo ? "ring-[#CA8A04]" : "ring-white/10")},
                   e("span",{className:"min-w-0"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante *"),
                   e("span",{className:"shrink-0 font-bold"}, lancForm.anexo ? "Trocar" : "Anexar"),
