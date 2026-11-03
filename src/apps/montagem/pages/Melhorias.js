@@ -271,19 +271,12 @@ function Detalhe(p){
 }
 
 // conversa do Claude (link ou nome) de cada pedido: só o Marcus e o Leonardo preenchem; os outros não veem a coluna
+// só mostra o nome da conversa (e o link, se houver); NÃO se edita pela tela: quem preenche sou eu ao responder (Marcus, 03/11/2026)
 function CelClaude(p){
-  var ed = useState(false), editando = ed[0], setEd = ed[1], vt = useState(p.x.claude || ""), v = vt[0], setV = vt[1];
-  var parar = function(ev){ ev.stopPropagation(); };
-  var salvar = function(){ p.d({type:"MEL", op:"claude", id:p.x.id, claude:v, porId:p.s.usuario}); setEd(false); };
-  // o campo guarda a data da resposta e, se houver, o link da conversa: "03/11/2026 claude://claude.ai/epitaxy/local_…" (o botão abre a conversa direto no app do Claude, mesmo arquivada; Marcus, 03/11/2026)
   var atual = p.x.claude || "", achou = atual.match(/(https?|claude):\/\/\S+/), link = achou ? achou[0] : "", texto = atual.replace(link, "").trim();
-  if(editando) return e("span",{className:"flex items-center gap-1", onClick:parar},
-    e("input",{autoFocus:true, value:v, placeholder:"Link ou nome da conversa", maxLength:300, onChange:function(ev){ setV(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvar(); if(ev.key==="Escape"){ setV(atual); setEd(false); } }, className:CAMPO+" h-7 min-w-0"}),
-    e("button",{type:"button", onClick:salvar, className:"h-7 rounded-md border border-primary px-2 text-[12px] font-semibold text-primary"}, "OK"));
-  return e("span",{className:"flex items-center justify-center gap-1.5", onClick:parar},
-    texto ? e("span",{className:"whitespace-nowrap", title:texto}, texto) : null,
-    link ? e("a",{href:link, target:"_blank", rel:"noreferrer", title:"Abrir a conversa no Claude", className:"inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded border border-primary px-2 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "Abrir conversa ↗") : null,
-    e("button",{type:"button", onClick:function(){ setV(atual); setEd(true); }, title:atual ? "Trocar a conversa do Claude" : "Anexar a conversa do Claude", className:"h-6 shrink-0 rounded border border-border px-1.5 text-[12px] hover:bg-white/10"}, atual ? "✎" : "+ conversa"));
+  return e("span",{className:"flex items-center justify-center gap-1.5", onClick:function(ev){ ev.stopPropagation(); }},
+    texto ? e("span",{className:"whitespace-nowrap", title:texto}, texto) : e("span",null, "—"),
+    link ? e("a",{href:link, target:"_blank", rel:"noreferrer", title:"Abrir a conversa no Claude", className:"inline-flex h-6 shrink-0 items-center whitespace-nowrap rounded border border-primary px-2 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "Abrir conversa ↗") : null);
 }
 
 
@@ -327,7 +320,9 @@ function AbaMelhorias(){
   var janela = (novo || aberto) && e("div",{className:"fixed inset-0 z-40 flex items-start justify-center overflow-y-auto bg-black/60 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget){ setNovo(false); setSel(null); } }},
     e("div",{className:"my-auto w-full max-w-[780px]"},
       novo ? e(NovaConversa,{s:s, d:d, fechar:function(){ setNovo(false); }, onEnviou:function(id){ setNovo(false); setSel(id); }}) : e(Detalhe,{x:aberto, s:s, d:d, zoom:function(src, nome){ setZoom({src:src, nome:nome}); }, fechar:function(){ setSel(null); }})));
-  var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleString("pt-BR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}); } catch(x){ return iso; } };
+  var quandoCurto2 = function(iso){ try { return new Date(iso).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit", timeZone:"America/Sao_Paulo"}); } catch(x){ return iso; } };   // só o dia (Marcus, 03/11/2026)
+  // data da resposta: a última mensagem de quem responde (Marcus ou Leonardo); sem mensagem, o dia em que mudou a situação
+  var respondeuEm = function(x){ var ms = melMsgs(s, x.id).filter(function(m){ return melPodeGerir(m.porId); }); var iso = ms.length ? ms[ms.length-1].em : (x.situacao!=="Em análise" ? x.mudouEm : ""); return iso || ""; };
   var diaSP = function(iso){ try { return new Date(iso).toLocaleDateString("sv-SE", {timeZone:"America/Sao_Paulo"}); } catch(x){ return ""; } };
   var etiqueta = function(z){ return e("span",{className:"inline-flex h-6 items-center whitespace-nowrap rounded-full border px-2.5 text-[12px] font-semibold "+COR_SIT[z]}, z); };
   // filtro na coluna, igual ao Agendamento: clicar no título abre classificar, condição e lista de valores; cada coluna tem a largura do maior texto (Setor e Funcionária não passam mais um por cima do outro)
@@ -335,11 +330,10 @@ function AbaMelhorias(){
     {k:"data", t:"Data", tipo:"data", v:function(x){ return diaSP(x.em); }, exib:function(x){ return quandoCurto2(x.em); }},
     {k:"setor", t:"Setor", v:function(x){ return x.setor; }},
     {k:"por", t:"Funcionária", min:170, v:function(x){ return x.por; }, exib:function(x){ return x.por; }, cel:function(x){ return e("span",{className:"inline-flex items-center gap-1.5"}, e(Avatar,{id:contatoDoLogin(x.porId), nome:x.por, s:24}), x.por); }},
-    {k:"tipo", t:"Tipo", v:function(x){ return melTipoNome(x.tipo); }},
     {k:"sit", t:"Situação", min:200, v:function(x){ return x.situacao; }, exib:function(x){ return x.situacao; }, cel:function(x){ return etiqueta(x.situacao); }},
     {k:"tela", t:"Tela", min:80, v:function(x){ return melCaminho(x.url); }, cel:function(x){ return e(AbrirTela,{url:x.url}); }},
     {k:"desc", t:"Descrição", v:function(x){ return resumo(x.desc || x.titulo); }}
-  ].concat(gere ? [{k:"claude", t:"Conversa do Claude", min:185, v:function(x){ return x.claude || ""; }, cel:function(x){ return e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}); }}] : []);
+  ].concat([{k:"resp", t:"Respondido em", tipo:"data", min:130, v:function(x){ var r = respondeuEm(x); return r ? diaSP(r) : ""; }, exib:function(x){ var r = respondeuEm(x); return r ? quandoCurto2(r) : "—"; }}]).concat(gere ? [{k:"claude", t:"Conversa do Claude", min:185, v:function(x){ return x.claude || ""; }, cel:function(x){ return e(CelClaude,{key:x.id+(x.claude||""), x:x, s:s, d:d, gere:gere}); }}] : []);
   var corpo = e(GradeFiltro,{chave:"chamados", rows:lista, cols:colunas, onRow:function(x){ abrir(x.id); }, vazio:"Nenhum chamado ainda."});
   return e(Pagina,null,
     zoom && e("div",{className:"fixed inset-0 z-50 flex cursor-zoom-out items-center justify-center bg-black/85 p-4", role:"dialog", "aria-modal":"true", onClick:function(){ setZoom(null); }},

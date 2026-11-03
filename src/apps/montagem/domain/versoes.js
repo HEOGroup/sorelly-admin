@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.35", data:"2026-11-03", titulo:"Chamados: data só com o dia e coluna Respondido em", itens:[
+  {tipo:"melhoria", area:"Chamados", txt:"A data do chamado mostra só o dia (30/10). A coluna Tipo saiu da lista. Nova coluna Respondido em, que mostra sozinha o dia da última resposta do Marcus ou do Leonardo. A coluna Conversa do Claude guarda só o nome da conversa (ex.: CHAMADOS 1) e não tem mais o botão de editar: ela só mostra o nome."},
+ ]},
  {v:"0.18.36", data:"2026-11-03", titulo:"Chat do celular das funcionárias: responder, reagir e aviso", itens:[
   {tipo:"novo", area:"App das funcionárias", txt:"No chat do celular, tocar numa mensagem abre o menu: reagir com 👍 ❤️ 😂 😮 😢 🙏, responder e copiar. A reação aparece embaixo da mensagem e a resposta mostra a mensagem citada."},
   {tipo:"novo", area:"App das funcionárias", txt:"Aviso de mensagem nova no alto do celular, como a notificação do iPhone: uma pilha por pessoa, no máximo 2, com o número de mensagens. Dura 9 segundos e, ao tocar, abre a conversa. Não aparece para a conversa que já está aberta."},
