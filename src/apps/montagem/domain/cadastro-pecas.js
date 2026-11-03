@@ -62,6 +62,7 @@ function statusDaEtapa(p, k){ return (ETAPAS_PED.find(function(x){ return x[0]==
 function diasNaEtapa(p, hoje){
   var ini = p.statusEm || p.data || "";
   if(etapaPed(p)==="nobanho" && (p.chegPontual || p.chegEllos) && (!p.statusEm || p.statusEm===p.data)) ini = p.chegPontual || p.chegEllos;   // pedido antigo sem data da etapa: conta desde a chegada no banho
+  if(etapaPed(p)==="banho"){ var cg = p.contaBanho || p.chegPontual || p.chegEllos; if(cg) ini = cg; }   // a contagem do Banho começa na chegada na galvânica, não no dia em que o status foi atualizado (Rayssa, 03/11/2026)
   var a = Date.parse(ini+"T12:00:00"), b = Date.parse(String(hoje||hojeISO())+"T12:00:00"); return isNaN(a) || isNaN(b) ? 0 : Math.max(0, Math.round((b-a)/86400000)); }
 // prazo (dias) da etapa do pedido, ou null se não tem. No Banho vale o prazo da galvânica do pedido (Pontual ou Ellos).
 function prazoEtapa(cfg, k, p){
@@ -261,6 +262,8 @@ function cpcReduz(s, a){
     case "ped_edit": {
       var pe = c.pedidos.find(function(x){ return x.id===a.id; }); if(!pe) return recusa("Pedido não encontrado.");
       ["forn", "data", "nota", "romaneio", "chegPontual", "chegEllos", "chegSorelly", "contaBanho", "fotosEm", "obs"].forEach(function(k){ if(a[k]!==undefined) pe[k] = k==="forn" ? normForn(a[k]) : trim(a[k]); });
+      // preencher "Chegou na Pontual" ou "Chegou na Ellos" já passa o pedido para Chegou no banho (Aguardando banho), com a data da chegada (Rayssa, 03/11/2026)
+      if((a.chegPontual!==undefined || a.chegEllos!==undefined) && (pe.chegPontual || pe.chegEllos) && idxEtapa(etapaPed(pe))<idxEtapa("nobanho")){ pe.status = "Chegou no banho"; pe.statusEm = pe.chegPontual || pe.chegEllos; }
       if(a.vernizNovo!==undefined) pe.vernizNovo = a.vernizNovo===true || a.vernizNovo==="sim";
       if(a.status!==undefined && a.status!==pe.status){
         if(STATUS_PED.indexOf(a.status)<0) return recusa("Status inválido.");
