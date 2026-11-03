@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Folders · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#1C1C1F; --linha:#2E2E33; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:760px}
+  .lista{display:flex;flex-direction:column;gap:20px;max-width:1100px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:14px}
+  .caixa > h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+  .tela h3{font-size:16px;text-align:center;margin-bottom:2px}
+  .tela .s{text-align:center;margin-bottom:10px}
+  .blocos{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;margin-bottom:10px}
+  .bl{background:var(--cartao);border:1px solid var(--linha);border-radius:10px;padding:8px 10px;display:flex;align-items:center;gap:10px;min-width:260px;cursor:pointer;text-align:left;color:inherit;font:inherit}
+  .bl.on{border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro) inset}
+  .capa{width:34px;height:48px;border-radius:4px;background:#fff;border-top:3px solid var(--ouro);display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 4px;flex:none}
+  .capa i{display:block;height:3px;background:#C9C3B0;border-radius:2px}
+  .capa i:first-child{background:#1F1A10;width:70%}
+  .bl .t{display:flex;flex-direction:column;gap:1px;min-width:0}
+  .bl b{font-weight:700}
+  .bl small{font-size:11px;opacity:.85}
+  .bt{height:32px;border:1px solid var(--linha);border-radius:8px;background:#232327;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap;color:inherit;font:inherit;font-weight:600}
+  .bt.ouro{background:var(--ouro);border-color:var(--ouro);color:#fff;font-weight:700}
+  .acoes{display:flex;flex-wrap:wrap;justify-content:center;gap:6px}
+  .detalhe{border:1px solid var(--linha);border-radius:10px;padding:10px;display:flex;flex-direction:column;gap:8px}
+  .msg{background:#0F0F11;border:1px solid var(--linha);border-radius:8px;padding:8px 10px;white-space:pre-wrap}
+  .rot{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  table{width:100%;border-collapse:collapse;text-align:center}
+  th{height:30px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6)}
+  td{height:32px;border-bottom:1px solid var(--linha);padding:0 6px}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pgs{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+  .pg{width:54px;height:76px;border-radius:4px;background:#fff;color:#1F1A10;display:grid;place-items:center;font-weight:700;border-top:3px solid var(--ouro)}
+  .mini{display:flex;flex-direction:column;gap:6px;background:var(--cartao);border:1px solid var(--linha);border-radius:10px;padding:8px 10px;min-width:230px;flex:1;max-width:340px}
+  .mini .l1{display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .mini .bts{display:flex;gap:6px}
+  .mini .bts .bt{flex:1;padding:0 6px}
+</style>
+</head>
+<body>
+<h1>Folders · 4 layouts</h1>
+<p class="sub">Blocos pequenos no topo da tela, sem tabela e sem lista suspensa. Clique no bloco para escolher o folder. Os botões copiam o link e a mensagem de verdade. Textos de exemplo.</p>
+<div class="lista" id="lista"></div>
+<script>
+var F = [
+  {id:'resumo', nome:'Folder resumido', quem:'Candidatas a revendedora', pg:2, quando:'Enviar para quem quer se cadastrar', msg:'Olá! Aqui está o resumo de como funciona ser revendedora Sorelly: como ganhar, as comissões e o que combinamos. É rapidinho de ler.', link:'https://sistema.sorelly.com.br/regras/FOLDER-RESUMO-REVENDEDORA.pdf'},
+  {id:'completo', nome:'Regulamento completo', quem:'Revendedoras cadastradas', pg:8, quando:'Enviar depois do cadastro aprovado', msg:'Olá! Aqui está o regulamento completo da revendedora Sorelly, com as regras e comissões atualizadas.', link:'https://sistema.sorelly.com.br/regras/GUIA-DA-REVENDEDORA.pdf'}
+];
+var sel = {A:0,B:0,C:0,D:0}, copiado = '';
+function capa(){ return '<span class="capa"><i></i><i></i><i></i></span>'; }
+function bt(chave, rot, acao, ouro){ return '<button class="bt'+(ouro?' ouro':'')+'" onclick="'+acao+'">'+(copiado===chave?'Copiado ✓':rot)+'</button>'; }
+function cp(chave, txt){ try{ navigator.clipboard.writeText(txt); }catch(x){} copiado = chave; desenha(); setTimeout(function(){ if(copiado===chave){ copiado=''; desenha(); } }, 2000); }
+function escolher(l, i){ sel[l] = i; desenha(); }
+function acoes(l, f){ return '<div class="acoes"><button class="bt ouro" onclick="window.open(\'#\')">Abrir PDF</button>'+bt(l+'l'+f.id,'Copiar link','cp(\''+l+'l'+f.id+'\',\''+f.link+'\')')+bt(l+'m'+f.id,'Copiar mensagem','cp(\''+l+'m'+f.id+'\',\''+f.msg.replace(/'/g,"\\'")+'\\n'+f.link+'\')')+'</div>'; }
+function tela(t, corpo){ return '<section class="caixa"><h2>'+t+'</h2><div class="tela"><h3>Folders</h3><p class="s">Os folders para enviar às revendedoras e às candidatas.</p>'+corpo+'</div></section>'; }
+function desenha(){
+  var A = '<div class="blocos">'+F.map(function(f,i){ return '<button class="bl'+(sel.A===i?' on':'')+'" onclick="escolher(\'A\','+i+')">'+capa()+'<span class="t"><b>'+f.nome+'</b><small>'+f.quem+' · '+f.pg+' páginas</small></span></button>'; }).join('')+'</div>'
+    + (function(){ var f=F[sel.A]; return '<div class="detalhe"><div class="rot" style="text-align:center">'+f.quando+'</div>'+acoes('A',f)+'<div class="rot">Mensagem pronta</div><div class="msg">'+f.msg+'\n'+f.link+'</div></div>'; })();
+
+  var B = '<div class="blocos">'+F.map(function(f,i){ return '<div class="mini"><div class="l1"><b>'+f.nome+'</b><small>'+f.pg+' páginas</small></div><small>'+f.quem+'</small><div class="bts"><button class="bt ouro" onclick="window.open(\'#\')">Abrir</button>'+bt('Bl'+f.id,'Link','cp(\'Bl'+f.id+'\',\''+f.link+'\')')+bt('Bm'+f.id,'Mensagem','cp(\'Bm'+f.id+'\',\''+f.msg.replace(/'/g,"\\'")+'\\n'+f.link+'\')')+'</div></div>'; }).join('')+'</div>'
+    + '<table><tr><th>Folder</th><th>Para quem</th><th>Quando enviar</th><th>Páginas</th></tr>'+F.map(function(f){ return '<tr><td><b>'+f.nome+'</b></td><td>'+f.quem+'</td><td>'+f.quando+'</td><td>'+f.pg+'</td></tr>'; }).join('')+'</table>';
+
+  var C = '<div class="blocos">'+F.map(function(f,i){ return '<button class="bl'+(sel.C===i?' on':'')+'" onclick="escolher(\'C\','+i+')">'+capa()+'<span class="t"><b>'+f.nome+'</b><small>'+f.pg+' páginas</small></span></button>'; }).join('')+'</div>'
+    + (function(){ var f=F[sel.C], pgs=''; for(var p=1;p<=f.pg;p++) pgs+='<span class="pg">'+p+'</span>'; return '<div class="detalhe"><div class="rot" style="text-align:center">Páginas</div><div class="pgs">'+pgs+'</div>'+acoes('C',f)+'</div>'; })();
+
+  var D = '<div class="blocos">'+F.map(function(f,i){ return '<button class="bl'+(sel.D===i?' on':'')+'" style="min-width:200px" onclick="escolher(\'D\','+i+')"><span class="t"><b>'+f.nome+'</b><small>'+f.pg+' páginas</small></span></button>'; }).join('')+'</div>'
+    + (function(){ var f=F[sel.D]; return '<div class="duas"><div class="detalhe"><div class="rot">Para quem</div><div>'+f.quem+'</div><div class="rot">Quando enviar</div><div>'+f.quando+'</div>'+acoes('D',f)+'</div><div class="detalhe"><div class="rot">Mensagem pronta</div><div class="msg">'+f.msg+'\n'+f.link+'</div></div></div>'; })();
+
+  document.getElementById('lista').innerHTML = tela('A · Blocos com capa e detalhe embaixo', A) + tela('B · Blocos com os botões dentro e tabela embaixo', B) + tela('C · Blocos com capa e páginas embaixo', C) + tela('D · Blocos de texto e dois quadros embaixo', D);
+}
+desenha();
+</script>
+</body>
+</html>
