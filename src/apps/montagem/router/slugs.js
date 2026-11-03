@@ -123,6 +123,7 @@ export const SLUG_DA_ABA = {
   linkrel: "relatorio-de-links",
   melhorias: "chamados",   // a tela virou Chamados (Marcus, 02/11/2026); o link antigo /melhorias continua abrindo (ABA_DO_SLUG abaixo)
   garantia: "garantia",
+  garantiacred: "creditos",
   posvendas: "pos-vendas",
   marketing: "marketing",
   encomendas: "encomendas-e-reposicoes",

@@ -160,6 +160,7 @@ const montagem = {
     pagina("marketing", () => import("@/apps/montagem/pages/Marketing"), "AbaMarketing"),
     pagina("chamados", () => import("@/apps/montagem/pages/Melhorias"), "AbaMelhorias"),
     pagina("garantia", () => import("@/apps/montagem/pages/Garantia"), "AbaGarantia"),
+    pagina("creditos", () => import("@/apps/montagem/pages/GarantiaCreditos"), "AbaGarantiaCreditos"),
     pagina("pos-vendas", () => import("@/apps/montagem/pages/PosVendas"), "AbaPosVendas"),
     pagina("adquirentes-e-taxas", () => import("@/apps/montagem/pages/Adquirentes"), "AbaAdquirentes"),
     pagina("comissoes-link-de-pagamento", () => import("@/apps/montagem/pages/ComissaoLink"), "AbaComissaoLink"),

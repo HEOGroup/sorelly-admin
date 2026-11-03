@@ -13,8 +13,8 @@ var ROTULO_STATUS_RECLAMACAO = {aberta:"Aberta", resolvida:"Resolvida"};
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
 
 // ---------- estado ----------
-function grDemo(){ return {v:1, seq:0, reclamacoes:[], cond:{}, log:[]}; }
-function grMigrar(g){ var s = g && typeof g==="object" ? g : grDemo(); if(!Array.isArray(s.reclamacoes)) s.reclamacoes = []; if(!s.cond || typeof s.cond!=="object") s.cond = {}; if(!Array.isArray(s.log)) s.log = []; s.seq = s.seq||0; s.v = 1; return s; }
+function grDemo(){ return {v:1, seq:0, reclamacoes:[], cond:{}, creditos:[], log:[]}; }
+function grMigrar(g){ var s = g && typeof g==="object" ? g : grDemo(); if(!Array.isArray(s.reclamacoes)) s.reclamacoes = []; if(!s.cond || typeof s.cond!=="object") s.cond = {}; if(!Array.isArray(s.creditos)) s.creditos = []; if(!Array.isArray(s.log)) s.log = []; s.seq = s.seq||0; s.v = 1; return s; }
 
 // ---------- garantias ----------
 var ALFA = "ABCDEFGHJKLMNPQRSTUVWXYZ0123456789";
@@ -85,9 +85,30 @@ function grReduz(s, a){
       if(!a.revendedora || !a.numero) return recusa("Condicional não encontrada.");
       g.cond[a.revendedora+"|"+a.numero] = !!a.ativa; return ok("Condicional "+a.numero+(a.ativa ? " ativada" : " desativada"));
     }
+    // Crédito de garantia liberado pelo setor Garantia (03/11/2026, Marcus): a funcionária lança o valor da revendedora e ele sobe para o acerto no app da representante (ela não digita).
+    case "credito_add": {
+      var v = Math.round(Number(a.valor)*100)/100;
+      if(!a.revendedora) return recusa("Escolha a revendedora.");
+      if(!(v>0)) return recusa("Informe o valor do crédito.");
+      g.creditos.push({id:"CG"+(++g.seq), em:agora, revendedora:a.revendedora, cod:a.cod||"", valor:v, obs:String(a.obs||"").slice(0, 300), por:por, usado:null});
+      return ok("Crédito de "+a.revendedora+" lançado");
+    }
+    case "credito_del": {
+      var i = g.creditos.findIndex(function(c){ return c.id===a.id; });
+      if(i<0) return recusa("Crédito não encontrado.");
+      if(g.creditos[i].usado) return recusa("Este crédito já foi usado num acerto.");
+      g.creditos.splice(i, 1); return ok("Crédito excluído");
+    }
+    case "credito_usar": {   // o acerto da revendedora foi registrado: os créditos disponíveis dela ficam usados
+      var n = 0; g.creditos.forEach(function(c){ if(c.revendedora===a.revendedora && !c.usado){ c.usado = {em:agora, kitId:a.kitId||""}; n++; } });
+      return n ? ok(n+" crédito(s) de garantia usado(s) no acerto") : {patch:{}, msg:""};
+    }
     default: return recusa("Operação desconhecida.");
   }
 }
+// créditos de garantia da revendedora (mais novos primeiro) e o total ainda disponível para descontar no acerto
+function creditosDaRevendedora(s, rev){ return ((s.gr && s.gr.creditos) || []).filter(function(c){ return c.revendedora===rev; }).slice().reverse(); }
+function creditoDisponivel(s, rev){ return Math.round(creditosDaRevendedora(s, rev).filter(function(c){ return !c.usado; }).reduce(function(t, c){ return t+c.valor; }, 0)*100)/100; }
 
-export { grDemo, grMigrar, grReduz, codigoCertificado, garantiasDaRevendedora, reclamacoesDaRevendedora, reclamacoesDeGarantia, condicionaisDaRevendedora, condicionaisDemo, mesesDeGarantia,
+export { creditosDaRevendedora, creditoDisponivel, grDemo, grMigrar, grReduz, codigoCertificado, garantiasDaRevendedora, reclamacoesDaRevendedora, reclamacoesDeGarantia, condicionaisDaRevendedora, condicionaisDemo, mesesDeGarantia,
   MOTIVOS_RECLAMACAO, ROTULO_STATUS_RECLAMACAO, VALIDADE_MESES_PADRAO };
