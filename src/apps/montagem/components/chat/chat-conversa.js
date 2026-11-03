@@ -180,7 +180,7 @@ function ConteudoMsg(p){
   if(m.tipo==="audio") return e(AudioMsg,{midia:md});
   var corpo = m.texto ? e("p",{className:"whitespace-pre-wrap break-words text-[14px] leading-snug"}, renderTexto(m.texto, m.mencoes, p.eu), p.espaco ? e("span",{className:"inline-block", style:{width:p.espaco, height:1}}) : null) : null;
   if(m.tipo==="imagem") return e("div",{className:"flex flex-col gap-1"},
-    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, nome:md.nome}); }, className:"overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", onLoad:seguirNoFim, className:"max-h-72 w-full max-w-[280px] object-cover"})) :
+    (url || md.mini) ? e("button",{onClick:function(){ p.abrir({tipo:"imagem", url:url || md.mini, chave:md.key, nome:md.nome}); }, className:"block max-w-[440px] overflow-hidden rounded-lg", "aria-label":"Ampliar foto"}, e("img",{src:url || md.mini, alt:md.nome||"Foto", onLoad:seguirNoFim, className:"block h-auto max-h-[480px] w-auto max-w-full"})) :   // foto grande, inteira e sem corte: dá para ver sem abrir (Marcus, 04/11/2026)
       e("p",{className:"flex items-center gap-2 py-3 text-[12px]", style:{color:W.sec}}, e(Ph,{n:"image", s:22}), "Foto indisponível (não ficou salva neste navegador)."), corpo);
   if(m.tipo==="arquivo"){
     var ic = /pdf/.test(md.mime||"") ? "file-pdf" : /sheet|excel|csv/.test((md.mime||"")+(md.nome||"")) ? "file-xls" : /word|doc/.test((md.mime||"")+(md.nome||"")) ? "file-doc" : "file-text";
@@ -403,7 +403,9 @@ function ConversaBase(p){
         e("button",{onClick:function(){ api.deleteMessage(conv.id, apagando.id, eu, false); setApagando(null); }, className:"rounded-lg px-4 py-2.5 text-left text-[13.5px] hover:bg-white/10", style:{color:W.vermelho}}, "Apagar para mim"),
         e("button",{onClick:function(){ setApagando(null); }, className:"rounded-lg px-4 py-2.5 text-left text-[13.5px] hover:bg-white/10"}, "Cancelar"))),
     encaminhando && e(Encaminhar,{msg:encaminhando, eu:eu, fechar:function(){ setEncaminhando(null); }}),
-    visor && e(Janela,{titulo:visor.nome||"Arquivo", fechar:function(){ setVisor(null); }, largura:900}, visor.tipo==="imagem" ? e("img",{src:visor.url, alt:"", className:"mx-auto max-h-[80vh] w-auto"}) : e("iframe",{src:visor.url, title:visor.nome, className:"h-[78vh] w-full bg-white"})),
+    // foto em tela quase cheia e sempre a versão grande: a miniatura só vale enquanto a grande não chega (Marcus, 04/11/2026)
+    visor && e(Janela,{titulo:visor.nome||"Arquivo", fechar:function(){ setVisor(null); }, largura:visor.tipo==="imagem" ? 1600 : 900}, visor.tipo==="imagem" ? e("img",{src:(visor.chave && lerMidia(visor.chave)) || visor.url, alt:"", className:"block h-[84vh] w-full object-contain"}) :
+      e("iframe",{src:visor.url, title:visor.nome, className:"h-[78vh] w-full bg-white"})),
     info && e(InfoConversa,{conv:conv, eu:eu, direcao:p.direcao, fechar:function(){ setInfo(false); }, leitura:p.leitura, aoSair:function(){ setInfo(false); if(p.onVoltar) p.onVoltar(); }}));
 }
 
