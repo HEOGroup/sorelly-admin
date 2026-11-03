@@ -437,7 +437,7 @@ function AppRepresentante(p){
       pecasCond:pecasCondSelecionadas, formSnapshot:acertoForm}, extra||{});
   };
 
-  var calcAcertoScreen = kitSel && e("div",{className:"flex flex-col gap-2.5 pb-72"},
+  var calcAcertoScreen = kitSel && e("div",{className:"-mx-3 flex flex-col gap-2.5 pb-72"},
     blocoAcordeao(0, "lista", "#CA8A04", "Condicionais",
       acertoForm.condicionaisSelecionadas.length ? acertoForm.condicionaisSelecionadas.length+" marcada(s) · "+pecasCondSelecionadas+" peças" : "Marque as condicionais em aberto conferidas",
       acertoForm.condicionaisSelecionadas.length ? badgeTxt(pecasCondSelecionadas+" peças","#CA8A04") : badgeTxt("Pendente","#64748B"),
@@ -627,9 +627,10 @@ function AppRepresentante(p){
                     e("button",{onClick:function(){ setRegrasInadAberto(!regrasInadAberto); }, "aria-label":"Regras da inadimplência", "aria-expanded":regrasInadAberto, className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold"}, "i")),
                   regrasInadAberto && e("div",{className:"flex flex-col gap-1 rounded-lg bg-black/40 p-2 text-[12px]"},
                     e("p",{className:"font-bold"},"Regras da inadimplência"),
-                    e("p",null,"1. As parcelas precisam fechar exatamente o valor em aberto. Só assim o brinde é liberado."),
-                    e("p",null,"2. Se a revendedora não quiser negociar: sem brinde e a nota promissória é executada em 48 h úteis."),
-                    e("p",null,"3. Multa pendente de 10%. Prazo para quitar: 15 dias. Depois do prazo, 1% ao dia, até o teto de 10%.")),
+                    e("p",null,"1. O valor que faltar tem juros. Sem negociar, os brindes não são liberados."),
+                    e("p",null,"2. As parcelas precisam fechar exatamente o valor em aberto. Só assim o brinde é liberado."),
+                    e("p",null,"3. Se a revendedora não quiser negociar: sem brinde e a nota promissória é executada em 48 h úteis."),
+                    e("p",null,"4. Multa pendente de 10%. Prazo para quitar: 15 dias. Depois do prazo, 1% ao dia, até o teto de 10%.")),
                   acertoForm.acordoParcelas.map(function(p,i){ return e("div",{key:i, className:"grid grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)] items-center gap-x-2 gap-y-1"},
                     e("span",{className:"col-span-2 text-[11px] font-semibold"}, "Parcela "+(i+1)),
                     e("input",{type:"date", value:p.data, "aria-label":"Data da parcela", onChange:function(ev){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {data:ev.target.value}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoSel+" w-full min-w-0 [color-scheme:dark]"}),
