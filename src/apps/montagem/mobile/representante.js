@@ -364,7 +364,7 @@ function AppRepresentante(p){
         return e("div",{key:c[0], className:"flex flex-col gap-0.5 rounded-xl border border-white/15 p-1.5"},
           e("p",{className:"text-center text-[11px] font-bold uppercase"}, c[0]),
           e("div",{className:"flex items-center justify-between gap-1 text-[13px]"}, e("span",null,"Liberado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(c[1]))),
-          e("div",{className:"flex items-center justify-between gap-1 text-[13px]"}, e("span",null,"Solicitado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(c[2]))),
+          e("div",{className:"flex items-center justify-between gap-1 text-[13px]"}, e("span",null,"Lançado"), e("b",{className:MONO+" whitespace-nowrap"}, BK(c[2]))),
           e("div",{className:"mt-0.5 flex items-center justify-between gap-1 rounded-lg bg-[#C9A13B]/20 px-1.5 py-1 text-[13px] font-bold"}, e("span",null,c[3]<-0.009 ? "Excedente" : "Diferença"), e("b",{className:MONO+" whitespace-nowrap"}, BK(Math.abs(c[3]))))); })),
       aberto && e("div",{className:"flex flex-col gap-2 rounded-xl bg-white/5 p-1.5"},
         e("div",{className:"grid grid-cols-2 gap-1.5"}, [["normal","Normal"],["bb","Select (BB)"]].map(function(o){ var on = cat===o[0];
