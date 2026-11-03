@@ -40,6 +40,22 @@ function dpDemo(){
 }
 
 // ── contexto por CNPJ (contas a pagar de hoje/amanhã/atrasadas + disponível) montado pela tela
+// Conta fixa a partir da maquininha ou do link (Marcus, 03/11/2026: "você já tem as maquininhas, aplique alguma regra; amanhã o Lucas verifica"). Quem já tem conta marcada não muda.
+// Marca extra.auto (veio do sistema) até o Lucas conferir. Quem não tem maquininha nem link fica sem conta fixa: o pedido pergunta à empresa.
+function dpAplicarMaquininhas(s){
+  var dp = JSON.parse(JSON.stringify(s.dp || dpDemo())), cp = s.cp, lp = s.lp, n = 0;
+  dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {};
+  if(!cp || !lp) return {dp:dp, n:0};
+  var nn = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }, mesma = function(a, b){ a = nn(a); b = nn(b); return a===b || a.indexOf(b+" ")===0 || b.indexOf(a+" ")===0; };
+  (lp.vinculos||[]).forEach(function(v){
+    var rep = String(v.representante||"").replace(/^Representante\s+/i, "").trim(); if(!rep) return;
+    if(Object.keys(dp.contasRep).some(function(k){ return mesma(k, rep); })) return;
+    var m = (lp.meios||[]).find(function(x){ return x.id===v.maquininhaId || x.id===v.linkId; }), q = m ? String(m.cnpjId||"").match(/(34|46|59|67)/) : null; if(!q) return;
+    var d = cp.destinos.find(function(x){ return x.ativo && x.nome.indexOf("CNPJ "+q[1])===0; }); if(!d) return;
+    dp.contasRep[rep] = d.id; dp.contasRepExtra[rep] = {auto:true, de:(m.nome||"Maquininha")+" · CNPJ "+q[1]}; n++; });
+  dp.maqV = 1;
+  return {dp:dp, n:n};
+}
 // ── sugestão: devolve {opcoes:[{destinoId, nome, motivo, valor}], regras:[{n, texto, estado:"usada"|"nao_se_aplica"|"info"}], semContaFixa}
 // Regras editáveis do Pix (s.px.regras, tela Pagamentos → Regras e contas): casam pelo que a venda já pagou (dinheiro, link, cartão) e pelo valor do Pix. Marcus, 02/11/2026.
 function cenarioPix(pix){
@@ -130,10 +146,11 @@ function dpReduz(s, a){
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
     case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
     case "fixa": { dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {}; if(a.destinoId) dp.contasRep[a.rep] = a.destinoId; else { delete dp.contasRep[a.rep]; delete dp.contasRepExtra[a.rep]; } return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
-    case "fixa_extra": { dp.contasRepExtra = dp.contasRepExtra || {}; var xe = dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep], a.patch||{}); if(!xe.ate && !(xe.limite>0)) delete dp.contasRepExtra[a.rep]; return ok(); }
+    case "aplicar_maq": { var rm = dpAplicarMaquininhas(s); dp.contasRep = rm.dp.contasRep; dp.contasRepExtra = rm.dp.contasRepExtra; dp.maqV = 1; return ok(rm.n ? rm.n+" representante(s) com a conta fixa da maquininha ou do link" : "Nenhuma representante nova para aplicar"); }
+    case "fixa_extra": { dp.contasRepExtra = dp.contasRepExtra || {}; var xe = dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep], a.patch||{}); if(!xe.ate && !(xe.limite>0) && !xe.auto && !xe.conferida) delete dp.contasRepExtra[a.rep]; return ok(); }
     case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || 7000; return ok("Valor fora do normal salvo"); }
     case "demo": { dp.pix = dpDemo().pix; return ok("Pedidos de teste recarregados"); }
   }
   return recusa("Ação desconhecida.");
 }
-export { REGRAS0, dpDemo, dpReduz, sugerir };
+export { REGRAS0, dpDemo, dpReduz, sugerir, dpAplicarMaquininhas };

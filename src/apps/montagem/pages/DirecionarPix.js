@@ -403,14 +403,17 @@ function AbaContasRep(){
   var chaveDe = function(r){ return fixas[chave(r)] ? chave(r) : fixas[r.nome] ? r.nome : chave(r); };
   var nFix = reps.filter(function(r){ return fixaDe(r); }).length;
   var meiosDe = function(nome){ var lp = s.lp; if(!lp) return "—"; var v = vinculoDeRep(lp, nome); if(!v) return "—"; var l = []; (lp.meios||[]).forEach(function(m){ if(m.id===v.maquininhaId || m.id===v.linkId) l.push(m.nome); }); return l.length ? l.join(" · ") : "—"; };
-  var autoDe = function(r){ var cn = cnpjDaRep(s, chave(r)); return cn ? "Conta do CNPJ "+cn : o && o.cnpjs.length ? "Pelo caixa: CNPJ "+o.cnpjs[0].id : "Fila do Direcionar"; };
+  var autoDe = function(r){ var cn = cnpjDaRep(s, chave(r)); return cn ? "Conta do CNPJ "+cn : "Perguntar à empresa"; };
+  var extraDe = function(r){ return extra[chaveDe(r)] || {}; };
+  var sitDe = function(r){ var x = extraDe(r); return !fixaDe(r) ? "Perguntar à empresa" : x.auto && !x.conferida ? "Fixa · falta conferir" : "Fixa"; };
   var sugerirCaixa = function(r){ var alvo = cnpjDaRep(s, chave(r)) || (o && o.cnpjs.length ? o.cnpjs[0].id : ""), d = alvo ? cp.destinos.find(function(x){ return x.ativo && x.nome.indexOf("CNPJ "+alvo)===0; }) : null; if(d) c.d({type:"DP", op:"fixa", rep:chave(r), destinoId:d.id}); };
   var BT = "h-7 rounded-md border border-border px-2 text-[13px] hover:bg-white/10 disabled:opacity-40";
   return e("div",{className:"flex flex-col gap-3"},
-    o && e("div",{className:"flex flex-wrap items-center justify-center gap-3 rounded-lg border border-border px-3 py-2 text-center text-[13px]"},
-      e("span",null, e("b",null, "Caixa de hoje: "), "mande o Pix primeiro para o CNPJ "+o.cnpjs.map(function(x){ return x.id; }).join(", depois ")+"."),
+    e("div",{className:"flex flex-wrap items-center justify-center gap-3 rounded-lg border border-border px-3 py-2 text-center text-[13px]"},
+      o ? e("span",null, e("b",null, "Caixa de hoje: "), "mande o Pix primeiro para o CNPJ "+o.cnpjs.map(function(x){ return x.id; }).join(", depois ")+". A conta da representante é sempre a fixa dela ou a empresa define.") : e("span",null, "A conta da representante é sempre a fixa dela ou a empresa define."),
+      c.edita && e("button",{type:"button", onClick:function(){ c.d({type:"DP", op:"aplicar_maq"}); }, className:BT}, "Aplicar as maquininhas e links"),
       e("button",{type:"button", onClick:function(){ setMostraCaixa(!mostraCaixa); }, className:BT}, mostraCaixa ? "Esconder o caixa" : "Ver o caixa")),
-    mostraCaixa && e(Orientacao,{o:o}),
+    mostraCaixa && o && e(Orientacao,{o:o}),
     e(GradeFiltro,{chave:"contasrep", rows:reps, cols:[
       {k:"rep", t:"Representante", forte:true, v:function(r){ return chave(r); }},
       {k:"meio", t:"Maquininha ou link", v:function(r){ return meiosDe(chave(r)); }},
@@ -422,9 +425,11 @@ function AbaContasRep(){
         return e("input",{type:"date", value:(extra[k]||{}).ate||"", disabled:!c.edita || !fx, "aria-label":"Conta fixa vale até, "+chave(r), onChange:function(ev){ c.d({type:"DP", op:"fixa_extra", rep:k, patch:{ate:ev.target.value}}); }, className:CAMPO+" w-full text-center"}); }},
       {k:"lim", t:"Limite de valor", min:150, semFiltro:true, v:function(r){ return (extra[chaveDe(r)]||{}).limite || 0; }, cel:function(r){ var fx = fixaDe(r), k = chaveDe(r);
         return e(CampoDinheiro,{value:(extra[k]||{}).limite||null, label:"Limite de valor, "+chave(r), disabled:!c.edita || !fx, placeholder:"Sem limite", className:CAMPO+" w-full text-center tabular-nums", onChange:function(v){ c.d({type:"DP", op:"fixa_extra", rep:k, patch:{limite:v||0}}); }}); }},
-      {k:"sit", t:"Situação", forte:true, v:function(r){ return fixaDe(r) ? "Fixa" : "Automática"; }, cor:function(r){ return fixaDe(r) ? "text-green-400" : ""; }},
-      {k:"aj", t:"Ajuda", min:290, semFiltro:true, v:function(){ return ""; }, cel:function(r){ var fx = fixaDe(r);
+      {k:"sit", t:"Situação", forte:true, v:function(r){ return sitDe(r); }, cor:function(r){ var sd = sitDe(r); return sd==="Fixa" ? "text-green-400" : "text-yellow-400"; }},
+      {k:"aj", t:"Ajuda", min:400, semFiltro:true, v:function(){ return ""; }, cel:function(r){ var fx = fixaDe(r);
+        var x0 = extraDe(r);
         return e("span",{className:"flex items-center justify-center gap-1.5"},
+          e("button",{type:"button", disabled:!c.edita || !(x0.auto && !x0.conferida), title:x0.de ? "Veio de: "+x0.de : undefined, onClick:function(){ c.d({type:"DP", op:"fixa_extra", rep:chaveDe(r), patch:{conferida:true}}); }, className:BT}, "Conferir"),
           e("button",{type:"button", disabled:!c.edita, onClick:function(){ sugerirCaixa(r); }, className:BT}, "Sugerir pelo caixa"),
           e("button",{type:"button", disabled:!c.edita || !fx, onClick:function(){ c.d({type:"DP", op:"fixa", rep:chave(r), destinoId:""}); }, className:BT}, "Limpar")); }}]}),
     Secao("Valor fora do normal", "sobe para a fila do Direcionar e passa na frente", e("div",{className:"flex flex-wrap items-end justify-center gap-3 px-3 py-3"},

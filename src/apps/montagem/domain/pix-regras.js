@@ -132,24 +132,6 @@ function pxMigrar(px, s){
   if(s && s.formasPagamento) s.formasPagamento = s.formasPagamento.map(function(f){ if(f.k!=="pix") return f; var falta = px.contas.map(function(c){ return c.label; }).filter(function(l){ return f.descricoes.indexOf(l)<0; }); return falta.length ? Object.assign({}, f, {descricoes:f.descricoes.concat(falta)}) : f; });
   return px;
 }
-// Simulador (02/11/2026): c = {rep, linkCnpj ("" = sem link), link (valor), dinheiro, pix}. Devolve {tipo:"conta"|"perguntar"|"fila"|"erro", conta, cnpj, motivo, passos:[texto]}.
-function pxSimular(px, c){
-  var pix = Number(c.pix)||0, din = Number(c.dinheiro)||0, lk = Number(c.link)||0, linhas = [], passos = [];
-  if(!(pix>0)) return {tipo:"erro", motivo:"Informe o valor do Pix.", passos:[]};
-  if(c.linkCnpj){
-    var lb = ((CONTAS_PAGAMENTO.link||[]).map(function(x){ return x.label; })).find(function(x){ return cnpjDoTexto(x)===c.linkCnpj; });
-    if(!lb) return {tipo:"erro", motivo:"Não há conta de link cadastrada no CNPJ "+c.linkCnpj+".", passos:[]};
-    linhas.push({tipo:"pagamento", forma:"link", valor:lk>0 ? lk : 1, partes:[{descricao:lb, valor:lk>0 ? lk : 1, ok:true}], enviada:true});
-  }
-  if(din>0) linhas.push({tipo:"pagamento", forma:"dinheiro", valor:din, partes:[{descricao:"DINHEIRO", valor:din, ok:true}], enviada:true});
-  var linha = {tipo:"pagamento", forma:"pix", valor:pix, partes:[]}; linhas.push(linha);
-  var lf = {origem:c.rep ? "rep" : "interno", por:c.rep||"", linhas:linhas};
-  (px.regras||[]).forEach(function(r){ if(r.ativa===false) return; passos.push((regraCasa(r, lf, linha) ? "COMBINA · " : "não combina · ")+r.nome+(r.acao==="perguntar" ? " → perguntar" : r.destino ? " → "+r.destino : "")); });
-  var s = sugerirPix(px, lf, linha, []);
-  if(!s) return {tipo:"fila", motivo:"Nenhuma regra resolveu. O Pix fica na fila para o Lucas ou a diretoria definirem.", passos:passos};
-  if(s.perguntar) return {tipo:"perguntar", motivo:s.motivo, passos:passos};
-  return {tipo:"conta", conta:s.conta, cnpj:cnpjDaConta(px, s.conta), motivo:s.motivo, passos:passos};
-}
 // regras de exemplo (02/11/2026, Marcus: "cria algumas regras para testarmos"): entram uma vez, na frente; o Financeiro edita, liga e desliga na tela Chaves Pix e regras
 function pxRegrasExemplo(px, forcar){
   if(px.regrasExV===1 && !forcar) return px;
@@ -215,4 +197,4 @@ function cpAplicarExtras(cp, por, agora){
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
 function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, pxSimular, cnpjDoTexto };
+export {cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };

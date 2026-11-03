@@ -30,7 +30,7 @@ import { N1, hoje, hora, isoDia } from "@/apps/montagem/lib/format";
 import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app";
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
-import { estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
+import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -117,6 +117,7 @@ function AppRepresentante(p){
   var lf = useState(false), lancAberto = lf[0], setLancAberto = lf[1];
   var lv = useState(LANC_VAZIO), lancForm = lv[0], setLancForm = lv[1];
   var ngA = useState(false), negociarAberto = ngA[0], setNegociarAberto = ngA[1];
+  var riA = useState(false), regrasInadAberto = riA[0], setRegrasInadAberto = riA[1];
   var rf = useState({comExpositor:false, especial:false, valorEspecial:0}), reposForm = rf[0], setReposForm = rf[1];
   var mc = useState("acerto"), modoCalc = mc[0], setModoCalc = mc[1];
   var ab = useState(1), blocoAberto = ab[0], setBlocoAberto = ab[1];
@@ -293,14 +294,14 @@ function AppRepresentante(p){
       if(d1.libN>0) brindes.push({cat:"normal", codigo:"N1287", valor:d1.libN, origem:"nova"});
       if(d1.libS>0) brindes.push({cat:"bb", codigo:"BB0001", valor:d1.libS, origem:"nova"});
     }
-    if(cz){   // exemplo Acerto completo (02/11/2026, Marcus): 4 links já pagos + dinheiro + Pix Point + Pix Serenity Sicredi 59, faltando R$ 200,00 para lançar um pagamento
+    if(cz){   // exemplo Acerto completo (03/11/2026, Marcus): 4 formas de pagamento (link já pago, Pix, crédito em 3x e dinheiro), faltando R$ 200,00 para lançar um pagamento
       var arred = function(x){ return Math.round(x*100)/100; };
-      var listaPag = function(pg){ var links = [.12,.10,.09,.07].map(function(x){ return arred(pg*x); }), din = arred(pg*.12), pt = arred(pg*.30), sr = arred(pg-links.reduce(function(t,x){ return t+x; }, 0)-din-pt);
+      var listaPag = function(pg){ var lk = arred(pg*.30), px = arred(pg*.30), cr = arred(pg*.25), dn = arred(pg-lk-px-cr);
         var descLink = (formaDe("link").descricoes||[])[0] || "LINK - SICREDI - SERENITY - 59";
-        return links.map(function(v){ return {forma:"link", descricao:descLink, parcelas:1, data:hoje, valor:v, anexo:null, jaPagoLink:true}; }).concat([
-          {forma:"dinheiro", descricao:(formaDe("dinheiro").descricoes||[])[0] || "Dinheiro", parcelas:1, data:hoje, valor:din, anexo:null},
-          {forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:pt, anexo:null},
-          {forma:"pix", descricao:"PIX - SICREDI - SERENITY - 59", parcelas:1, data:hoje, valor:sr, anexo:null}]); };
+        return [{forma:"link", descricao:descLink, parcelas:1, data:hoje, valor:lk, anexo:null, jaPagoLink:true},
+          {forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:px, anexo:{nome:"comprovante-pix.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
+          {forma:"credito", descricao:"CRÉDITO - CIELO - P", parcelas:3, data:hoje, valor:cr, anexo:{nome:"comprovante-cartao.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
+          {forma:"dinheiro", descricao:(formaDe("dinheiro").descricoes||[])[0] || "Dinheiro", parcelas:1, data:hoje, valor:dn, anexo:null}]; };
       var fimF = Object.assign({}, base, {garantia:cz.garantia||0, atrasoDias:9, brindes:brindes, pecasVendidas:cz.vendidas}), pagoF = valor;
       for(var it=0; it<4; it++){ pagoF = Math.max(0, arred(conta(Object.assign({}, fimF, {pagamentos:listaPag(pagoF)})).totalAPagar-200)); }
       comPag = Object.assign({}, fimF, {pagamentos:listaPag(pagoF)}); d1 = conta(comPag); }
@@ -599,17 +600,16 @@ function AppRepresentante(p){
             acertoForm.pagamentos.map(function(p,i){ var rot = rotPag(p), sp = rot.indexOf(" "), hojeP = isoDia(new Date());
               return e("div",{key:i, className:"flex min-h-9 items-center justify-between gap-2 border-b border-white/10"},
                 e("span",{className:"min-w-0 whitespace-nowrap text-[13px]"}, p.jaPagoLink ? "✓ " : "", e("b",{className:"font-semibold"}, sp<0 ? rot : rot.slice(0, sp)), sp<0 ? "" : rot.slice(sp),
-                  p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null),
+                  p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null, estPag(p) && estPag(p).aguardando ? e("small",{className:"ml-1.5 text-[11px]"}, "aguardando a empresa") : null),
                 e("span",{className:"flex shrink-0 items-center gap-0.5"},
                   e("b",{className:MONO+" text-[14px]"}, BK(p.valor)),
                   p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                     "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
           (function(){
-            var fm = lancForm.forma, pedeCta = ["pix","link","credito","debito"].indexOf(fm)>=0, ctas = fm ? (formaDe(fm).descricoes||[]) : [];
-            var contaCurta = function(c){ return rotuloPagamento({descricao:c}).replace(/^(Pix|Link|Crédito|Débito)\s+/, ""); };   // a forma já está escrita em cima: embaixo só o nome da conta
-            var pronto = !!(fm && (!pedeCta || lancForm.descricao) && lancForm.data && lancForm.valor>0);
-            var nota = fm==="acerto_loja" ? "Inadimplência: o valor fica em aberto e não conta como pagamento." : fm==="dinheiro" ? "Dinheiro não pede conta. O agendamento confere o valor." : pedeCta ? "Escolha a conta em que a revendedora pagou." : "";
+            var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
+            var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja";   // dinheiro e inadimplência não têm comprovante
+            var pronto = !!(fm && lancForm.data && lancForm.valor>0 && (!pedeComp || lancForm.anexo));
             var abre = function(){ if(lancAberto){ setLancAberto(false); setLancForm(LANC_VAZIO); } else { setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); } };
             return e("div",{key:"lanc1", className:"mt-1 overflow-hidden rounded-xl border border-white/15"},
               e("button",{onClick:abre, "aria-expanded":lancAberto, className:"flex min-h-10 w-full items-center gap-2.5 bg-white/[.07] px-3 text-left"},
@@ -617,31 +617,49 @@ function AppRepresentante(p){
                 e("b",{className:"min-w-0 flex-1 text-[13px]"}, "Lançar pagamento"),
                 e(Icon,{n: lancAberto ? "chevrondown" : "chevron", s:15, className:"text-[#8E8E93]"})),
               lancAberto && e("div",{className:"flex flex-col gap-2 border-t border-white/10 p-2.5"},
-                e("select",{value:fm, "aria-label":"Forma de pagamento", onChange:function(ev){ setLancForm(Object.assign({}, LANC_VAZIO, {forma:ev.target.value, valor:lancForm.valor})); }, className:campoSel},
+                e("select",{value:fm, "aria-label":"Forma de pagamento", onChange:function(ev){ setLancForm(Object.assign({}, LANC_VAZIO, {forma:ev.target.value, valor:lancForm.valor}));
+                    if(ev.target.value==="acerto_loja" && !acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); }, className:campoSel},
                   e("option",{value:""},"Escolha a forma"),
                   formas.map(function(x){ return e("option",{key:x.k, value:x.k}, formaDe(x.k).label); })),
-                pedeCta && e("select",{value:lancForm.descricao, "aria-label":"Conta", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {descricao:ev.target.value})); }, className:campoSel},
-                  e("option",{value:""},"Escolha a conta"),
-                  ctas.map(function(c){ return e("option",{key:c, value:c}, contaCurta(c)); })),
-                nota && e("p",{className:"text-[11px]"}, nota),
-                fm && formaDe(fm).parcelas && lancForm.descricao && e("div",{className:"flex items-center justify-between gap-2 text-[13px]"},
+                fm==="acerto_loja" && e("div",{key:"inad", className:"flex flex-col gap-2 rounded-xl bg-white/5 p-2.5"},
+                  e("div",{className:"flex items-center justify-between gap-2"},
+                    e("p",{className:"text-[13px] font-bold"},"Negociar o valor em aberto"),
+                    e("button",{onClick:function(){ setRegrasInadAberto(!regrasInadAberto); }, "aria-label":"Regras da inadimplência", "aria-expanded":regrasInadAberto, className:"grid size-6 shrink-0 place-items-center rounded-full bg-white/10 text-[13px] font-bold"}, "i")),
+                  regrasInadAberto && e("div",{className:"flex flex-col gap-1 rounded-lg bg-black/40 p-2 text-[12px]"},
+                    e("p",{className:"font-bold"},"Regras da inadimplência"),
+                    e("p",null,"1. As parcelas precisam fechar exatamente o valor em aberto. Só assim o brinde é liberado."),
+                    e("p",null,"2. Se a revendedora não quiser negociar: sem brinde e a nota promissória é executada em 48 h úteis."),
+                    e("p",null,"3. Multa pendente de 10%. Prazo para quitar: 15 dias. Depois do prazo, 1% ao dia, até o teto de 10%.")),
+                  acertoForm.acordoParcelas.map(function(p,i){ return e("div",{key:i, className:"grid grid-cols-[4.5rem_minmax(0,1fr)_minmax(0,1fr)] items-center gap-2"},
+                    e("span",{className:"whitespace-nowrap text-[13px]"}, "Parcela "+(i+1)),
+                    e("input",{type:"date", value:p.data, "aria-label":"Data da parcela", onChange:function(ev){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {data:ev.target.value}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoSel+" w-full min-w-0 [color-scheme:dark]"}),
+                    e(CampoReaisAuto,{value:p.valor, label:"Valor da parcela", onChange:function(v){ var o = acertoForm.acordoParcelas.slice(); o[i] = Object.assign({}, o[i], {valor:v}); setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:o, acordoSalvo:false})); }, className:campoValor+" w-full min-w-0"})); }),
+                  e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:acertoForm.acordoParcelas.concat([{data:isoDia(new Date()), valor:null}])})); }, className:"h-8 w-full rounded-lg text-[13px] font-semibold"}, "+ Adicionar parcela"),
+                  e("div",{className:"grid grid-cols-[auto_1fr] gap-x-2 gap-y-1 border-t border-white/10 pt-2 text-[13px]"}, e("span",{className:"whitespace-nowrap"},"Soma das parcelas"), e("b",{className:MONO+" whitespace-nowrap text-right"}, BK(acordoSoma)), e("span",null,"Falta"), e("b",{className:MONO+" text-right"}, BK(restanteTotal))),
+                  e("div",{className:"grid grid-cols-1 gap-2"},
+                    e("button",{onClick:function(){ var validas = acertoForm.acordoParcelas.filter(function(p){return p.data && p.valor>0;}); var soma = validas.reduce(function(a,p){return a+p.valor;},0);
+                        setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:validas, acordoSalvo:validas.length>0, recusouNegociar:false}));
+                        if(validas.length && Math.abs(soma-restanteTotal)<=0.01){ setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); } }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#C9A13B"}}, "Salvar acordo"),
+                    e("button",{onClick:function(){ setAcertoForm(Object.assign({}, acertoForm, {recusouNegociar:true, acordoParcelas:[], acordoSalvo:false})); setBlocoAberto(4); setLancAberto(false); setLancForm(LANC_VAZIO); }, className:"h-8 w-full rounded-lg text-[13px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Não quis negociar")),
+                  acertoForm.acordoSalvo && e("p",{className:"text-[13px] font-semibold"}, Math.abs(acordoSoma-restanteTotal)<=0.01 ? "Acordo fecha o valor: brinde liberado." : "As parcelas ainda não fecham o valor em aberto.")),
+                fm && fm!=="acerto_loja" && formaDe(fm).parcelas && e("div",{className:"flex items-center justify-between gap-2 text-[13px]"},
                   e("span",null,"Parcelas"),
                   e("select",{value:lancForm.parcelas, "aria-label":"Parcelas", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {parcelas:Number(ev.target.value)})); }, className:campoSel+" w-24"},
                     PARCELAS_CARTAO.filter(function(n){ var pm = versaoSel && versaoSel.gerais.parcelaMinimaCredito; return !pm || n===1 || !(lancForm.valor>0) || lancForm.valor/n>=pm-0.001; })
                       .map(function(n){ return e("option",{key:n, value:n}, n+"x"); }))),
-                fm && formaDe(fm).parcelas && lancForm.descricao && versaoSel && versaoSel.gerais.parcelaMinimaCredito>0 && e("p",{className:"text-[11px]"},
-                  "Kit 100% Prata: crédito em até 6x sem juros, parcela mínima de "+BK(versaoSel.gerais.parcelaMinimaCredito)+"."),
-                pronto || fm ? e("div",{className:"flex items-center gap-2"},
+                fm && fm!=="acerto_loja" ? e("div",{className:"flex items-center gap-2"},
                   e("input",{type:"date", value:lancForm.data, "aria-label":"Data do pagamento", onChange:function(ev){ setLancForm(Object.assign({}, lancForm, {data:ev.target.value})); }, className:campoSel+" min-w-0 flex-1 [color-scheme:dark]"}),
                   e(CampoReaisAuto,{value:lancForm.valor, label:"Valor do pagamento", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }, className:campoValor+" min-w-0 flex-1"})) : null,
-                fm && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-black/40 px-2.5 text-[11px] ring-1 ring-white/10"},
-                  e("span",{className:"min-w-0 truncate"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante (opcional)"),
+                pedeComp && e("label",{className:"flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg bg-black/40 px-2.5 text-[13px] ring-1 "+(lancForm.anexo ? "ring-[#CA8A04]" : "ring-white/10")},
+                  e("span",{className:"min-w-0"}, lancForm.anexo ? "📎 "+lancForm.anexo.nome : "Comprovante *"),
                   e("span",{className:"shrink-0 font-bold"}, lancForm.anexo ? "Trocar" : "Anexar"),
-                  e("input",{type:"file", accept:"application/pdf,image/*", className:"hidden", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
+                  e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante (foto ou documento)", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
                     if(fl.size>400000){ setLancForm(Object.assign({}, lancForm, {anexo:{nome:fl.name, tipo:fl.type, dados:null, tamanho:fl.size}})); return; }
                     var rd = new FileReader(); rd.onload = function(){ setLancForm(function(f0){ return Object.assign({}, f0, {anexo:{nome:fl.name, tipo:fl.type, dados:rd.result, tamanho:fl.size}}); }); }; rd.readAsDataURL(fl); }})),
-                e("button",{disabled:!pronto, onClick:function(){
-                    var novoPag = Object.assign({}, lancForm, {descricao: pedeCta ? lancForm.descricao : ((formaDe(fm).descricoes||[])[0] || formaDe(fm).label)});   // a conta vem do que a revendedora informou; dinheiro e inadimplência não pedem conta
+                fm!=="acerto_loja" && e("button",{disabled:!pronto, onClick:function(){
+                    var pid = pedeCta ? "p"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36) : null;
+                    var novoPag = Object.assign({}, lancForm, pedeCta ? {descricao:"", pid:pid} : {descricao:(formaDe(fm).descricoes||[])[0] || formaDe(fm).label});   // Pix, link e cartão: o sistema usa a conta fixa dela ou pergunta à empresa; dinheiro e inadimplência não pedem conta
+                    if(pedeCta && kitSel) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pid, forma:lancForm.forma, valor:lancForm.valor, parcelas:lancForm.parcelas||1, data:lancForm.data, anexo:lancForm.anexo});
                     setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([novoPag])}));
                     if(totalPagoAtual+lancForm.valor >= previaBase.valorDevido-0.009) setBlocoAberto(4);   // acerto quitado: abre os brindes
                     setLancAberto(false); setLancForm(LANC_VAZIO); },
@@ -650,7 +668,7 @@ function AppRepresentante(p){
           e("div",{key:"tot", className:"flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[13px] font-bold"},
             e("span",null,"Total pago"), e("span",{className:MONO+" text-[15px]"}, BK(totalPagoAtual))),
           restanteTotal>0.009 && e("div",{key:"falta", className:"flex min-h-9 items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#C9A13B]/20 px-3 text-[13px] font-semibold"}, e("span",null,"Falta"), e("b",{className:MONO+" text-[15px]"}, BK(restanteTotal)))),
-          !quitado && !acordoExistente && !negociarAberto && !acertoForm.recusouNegociar && e("div",{key:"neg0", className:"flex gap-2"},
+          !quitado && !acordoExistente && !negociarAberto && !acertoForm.recusouNegociar && !(lancAberto && lancForm.forma==="acerto_loja") && e("div",{key:"neg0", className:"flex gap-2"},
             e("button",{onClick:function(){ setNegociarAberto(true);
                 if(!acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); },
                 className:"h-9 flex-1 rounded-lg text-[12.5px] font-bold "+BR2, style:{background:"#3F3F46"}}, "Negociar o que falta"),

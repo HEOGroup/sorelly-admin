@@ -57,3 +57,8 @@ Para cada CNPJ: contas a pagar de **hoje**, **amanhã** e **até o fim do mês**
 23. **Aba Contas das representantes:** planilha com a conta fixa de cada representante, **vale até** e **limite de valor** (`s.dp.contasRepExtra`), "Sugerir pelo caixa", "Limpar" e o valor fora do normal. Em cima, o caixa de hoje (quem precisa de Pix primeiro). Conta fixa vencida ou acima do limite deixa de valer e a sugestão cai no automático.
 24. **As regras do Pix agora valem na fila do Direcionar** (`sugerir`, `ctx.regrasPx`): regra "perguntar" para a sugestão e mostra o motivo; regra com conta vira a 1ª opção quando existe destino com o mesmo nome.
 - **Ainda não feito:** aviso "Aguardando o setor / brindes liberados" no app da representante (muda a regra 16); escolher a conta mais negativa dentro do fluxo real.
+
+## 03/11/2026 (Marcus) · A conta da representante é fixa ou pergunta à empresa
+25. **A representante NÃO escolhe entre várias contas.** A conta do Pix dela é sempre a **fixa** (aba Contas das representantes) ou a **empresa define** (pergunta). No app ela só informa a forma e o valor; o pedido de conta segue em segundo plano e os brindes já liberam. (Isto desfaz o menu de contas que entrou no app em 02/11/2026.)
+26. **Regra aplicada com as maquininhas e links que já existem** (`dpAplicarMaquininhas`, botão "Aplicar as maquininhas e links" e aplicação automática uma vez): quem já tem maquininha ou link vira conta fixa do CNPJ dela; quem não tem fica "Perguntar à empresa". Marca "Fixa · falta conferir" até o Lucas conferir (botão Conferir). Em 03/11/2026: 22 de 25 representantes com conta fixa, 3 sem maquininha.
+27. O "Testar uma situação" saiu da tela Regras e contas (pedido do Marcus).

@@ -9,7 +9,6 @@ import { hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { orientacaoCaixa } from "@/apps/montagem/domain/orientacao-pix";
 import { AbaContasRep } from "@/apps/montagem/pages/DirecionarPix";
-import { Testar } from "@/apps/montagem/pages/SimuladorPix";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT } from "@/apps/montagem/ui/input";
@@ -31,7 +30,7 @@ function Regras(p){
     X.go("regra_add", {nome:f.nome, quando:q, destino:f.acao==="perguntar" ? "" : f.destino, acao:f.acao==="perguntar" ? "perguntar" : ""}); st[1](VAZIO); };
   var n = px.regras.length;
   return e("div",{className:"flex flex-col gap-3"},
-    e("p",{className:"text-center text-[13px]"}, "O sistema olha as regras de cima para baixo. A primeira que serve decide. O que mandar \"perguntar à empresa\" cai na fila do Direcionar. O Lucas confirma sempre."),
+    e("p",{className:"text-center text-[13px]"}, "A conta da representante é sempre a FIXA dela (aba Contas das representantes) ou a empresa define. O sistema olha estas regras de cima para baixo, antes da conta fixa: a primeira que serve decide. O que mandar \"perguntar à empresa\" cai na fila do Direcionar. O Lucas confirma sempre."),
     e(GradeFiltro,{chave:"regraspix", vazio:"Nenhuma regra ainda. Crie abaixo ou traga as regras de exemplo.", rows:px.regras, cols:[
       {k:"ordem", t:"Ordem", forte:true, tipo:"num", v:function(r){ return px.regras.indexOf(r)+1; }, exib:function(r){ return (px.regras.indexOf(r)+1)+"º"; }},
       {k:"nome", t:"Regra", v:function(r){ return r.nome; }},
@@ -53,11 +52,12 @@ function Regras(p){
       e(Campo,{rot:"O que fazer"}, e("select",{value:f.acao, "aria-label":"O que fazer", className:IN+" w-full cursor-pointer", onChange:function(ev){ set({acao:ev.target.value}); }}, e("option",{value:"perguntar"}, "Perguntar à empresa"), e("option",{value:"conta"}, "Mandar para uma conta"))),
       f.acao==="conta" && e(Campo,{rot:"Conta"}, e("select",{value:f.destino, "aria-label":"Conta", className:IN+" w-full cursor-pointer", onChange:function(ev){ set({destino:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), ativas.map(function(c){ return e("option",{key:c.id, value:c.id}, c.label); }))),
       e("div",{className:"flex items-end justify-center"}, e(Btn,{v:"primary", ic:"plus", disabled:!pode, onClick:salvar}, "Criar regra"))),
-    e(Testar,{px:px, sc:X.s.saldosContas, o:p.o}));
+    null);
 }
 
 function AbaRegrasContas(){
-  var X = useX(), at = useState("regras"), aba = at[0], setAba = at[1];
+  var X = useX(), cx = use(), at = useState("regras"), aba = at[0], setAba = at[1];
+  useEffect(function(){ if(X.edita && cx.state.dp && cx.state.dp.maqV!==1) cx.dispatch({type:"DP", op:"aplicar_maq", por:nomeDe(cx.state.usuario)}); }, [cx.state.dp && cx.state.dp.maqV, X.edita]);   // aplica uma vez a conta fixa das maquininhas e links (o Lucas confere) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ if(X.px.regrasExV!==1 && X.edita) X.go("regras_exemplo"); }, [X.px.regrasExV, X.edita]);   // eslint-disable-line react-hooks/exhaustive-deps
   return e(Pagina,null,
     e(PageHead,{t:"Regras e contas", sub:"Deixe tudo definido antes: as regras do Pix e a conta de cada representante. Os pedidos chegam na fila do Direcionar."}),
