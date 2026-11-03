@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem — components/grade-filtro.js
 // TABELA NO JEITO DE PLANILHA (Marcus, 01/11/2026), a mesma em todas as tabelas do Agendamento:
-//   · barra dourada no cabeçalho, com o ícone de funil em cada coluna (menu de components/filtro-planilha.js: classificar, condição e valores);
+//   · barra dourada no cabeçalho; clicar no título da coluna abre o menu de components/filtro-planilha.js (classificar, condição e valores), sem ícone (Marcus, 02/11/2026: quem clica já sabe que abre o filtro);
 //   · tudo centralizado;
 //   · cada coluna tem a largura do MAIOR texto dela (título, linhas e total), medida na lista inteira: filtrar não encolhe a coluna e nada é cortado;
 //   · coluna "fixa" fica parada à esquerda quando a tabela rola para o lado.
@@ -44,11 +44,9 @@ function GradeFiltro(p){
       e("table",{className:"border-collapse text-[13px]", style:{tableLayout:"fixed", width:soma, minWidth:"100%"}},
         e("colgroup",null, cols.map(function(c){ return e("col",{key:c.k, style:{width:larg[c.k]}}); })),
         e("thead",null, e("tr",{style:OURO}, cols.map(function(c, i){
-          return e("th",{key:c.k, style:c.fixa ? Object.assign({position:"sticky", left:esq[c.k], zIndex:20}, OURO_FIXO) : null, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0"},
+          return e("th",{key:c.k, onClick:c.semFiltro ? undefined : function(ev){ abrir(c, ev); }, title:c.semFiltro ? undefined : "Clique para classificar e filtrar", style:c.fixa ? Object.assign({position:"sticky", left:esq[c.k], zIndex:20}, OURO_FIXO) : null, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0 "+(c.semFiltro ? "" : "cursor-pointer select-none hover:bg-black/10 ")+(ativo(c) ? "underline decoration-2 underline-offset-4" : "")},
             e("span",{className:"inline-flex items-center justify-center gap-1.5"}, c.t, ord && ord.k===c.k && e("span",{"aria-hidden":true}, ord.dir==="asc" ? "↑" : "↓"),
-              !c.semFiltro && e("button",{type:"button", "aria-label":"Filtro de "+c.t, title:"Classificar e filtrar "+c.t, onClick:function(ev){ abrir(c, ev); }, className:"inline-grid size-6 place-items-center rounded hover:bg-black/15 "+(ativo(c) ? "bg-black/20" : "")},
-                e("svg",{width:14, height:14, viewBox:"0 0 24 24", fill:ativo(c) ? "currentColor" : "none", stroke:"currentColor", strokeWidth:2.4, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M3 4h18l-7 8.5V20l-4-2v-5.5L3 4z"}))),
-              i===0 && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar"))); }))),
+              i===0 && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(ev){ ev.stopPropagation(); setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar"))); }))),
         e("tbody",null,
           linhas.length===0 ? e("tr",null, e("td",{colSpan:cols.length, className:"h-8 px-2.5 text-center text-[13px]"}, rows.length===0 ? (p.vazio || "Nada para mostrar.") : "Nada com esses filtros."))
           : linhas.map(function(r, i){

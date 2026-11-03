@@ -4,8 +4,9 @@
 // Regras que geram atividade (só leitura da DevMaster, tela Revendedoras):
 //  · "atrasada": a data do acerto já passou e o kit continua aberto. Chave = revendedora + data do acerto.
 //  · "nota": a anotação do campo Obs. gerais cita uma data que já passou (ex.: "Rep solicitou o kit para 27/10"), mas o acerto na DevMaster está a menos de 25 dias dessa data. Chave = revendedora + data citada.
-// Fecha sozinha ("Resolvido na DevMaster") quando a situação some da DevMaster. Atrasada concluída que continua atrasada (mesma data) reabre depois de 1 dia.
+// Quando a situação some da DevMaster, a atividade aberta sai da lista (não vira "concluída": concluída é só o que uma pessoa respondeu). Atrasada concluída que continua atrasada (mesma data) reabre depois de 1 dia.
 // Guarda em módulo "agrev" (chaves "at_..." uma por atividade e "atdono" = quem cuida de cada representante): mesma permissão do Agendamento, sem módulo novo.
+import { diaEfetivo } from "@/apps/montagem/domain/feriados";
 var dia = function(iso){ return new Date(String(iso).slice(0, 10)+"T00:00:00"); };
 var iso = function(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); };
 function diasEntre(a, b){ return Math.round((dia(b)-dia(a))/86400000); }
@@ -27,7 +28,10 @@ function pedidosDe(itens, hoje){
   var out = {};
   itens.forEach(function(i){
     var base = {cod:i.cod, nome:i.nome, rep:i.representante, repCod:i.repCod || "", detalhe:textoCaso(i.caso), prev:i.prev};
-    if(i.prev && i.prev<hoje){ out["at_atr_"+i.cod+"_"+i.prev] = Object.assign({id:"at_atr_"+i.cod+"_"+i.prev, tipo:"atrasada", titulo:"Acerto atrasado"}, base); return; }
+    // atrasada só depois do DIA EFETIVO: acerto de domingo ou feriado vale no próximo dia útil (ex.: 01/11 domingo e 02/11 Finados valem 03/11)
+    if(i.prev && diaEfetivo(i.prev)<hoje){ out["at_atr_"+i.cod+"_"+i.prev] = Object.assign({id:"at_atr_"+i.cod+"_"+i.prev, tipo:"atrasada", titulo:"Acerto atrasado"}, base); return; }
+    // ciclo longo (03/11/2026): data do acerto a mais de 90 dias da emissão do kit; alguém precisa explicar quem mudou a data e por quê
+    if(i.emissao && i.prev && diasEntre(i.emissao, i.prev)>90) out["at_ciclo_"+i.cod+"_"+i.prev] = Object.assign({id:"at_ciclo_"+i.cod+"_"+i.prev, tipo:"ciclo", titulo:"Explicar a data do acerto (ciclo de "+diasEntre(i.emissao, i.prev)+" dias)"}, base);
     var cita = citaData(i.caso);
     if(cita && diasEntre(cita, hoje)>=2 && i.prev && diasEntre(cita, i.prev)<25){ out["at_nota_"+i.cod+"_"+cita] = Object.assign({id:"at_nota_"+i.cod+"_"+cita, tipo:"nota", titulo:"Nota diz que o kit já saiu (data citada: "+cita.slice(8, 10)+"/"+cita.slice(5, 7)+")", cita:cita}, base); }
   });
@@ -39,14 +43,16 @@ function atualizar(itens, atuais, hoje){
   var pedidos = pedidosDe(itens, hoje), mudou = {};
   Object.keys(pedidos).forEach(function(id){
     var a = atuais[id], p = pedidos[id];
+    if(a && a.status==="concluida" && a.por==="Sistema") a = null;   // o setor nunca mexeu nela: volta a ser nova
     if(!a){ mudou[id] = Object.assign({}, p, {criadaEm:hoje, prazo:diaUtilSeguinte(hoje), status:"aberta", reaberturas:0}); return; }
     if(a.status==="concluida" && a.tipo==="atrasada" && a.concluidaEm && diasEntre(a.concluidaEm.slice(0, 10), hoje)>=1 && a.por!=="Sistema"){
       mudou[id] = Object.assign({}, a, {status:"aberta", prazo:diaUtilSeguinte(hoje), reaberturas:(a.reaberturas||0)+1, reabertaEm:hoje, detalhe:p.detalhe}); return; }
     if(a.status==="aberta" && a.detalhe!==p.detalhe) mudou[id] = Object.assign({}, a, {detalhe:p.detalhe});   // o caso escrito mudou: atualiza o texto
   });
   Object.keys(atuais).forEach(function(id){
-    var a = atuais[id]; if(a.status!=="aberta" || pedidos[id]) return;
-    mudou[id] = Object.assign({}, a, {status:"concluida", resultado:"resolvido", resposta:"Resolvido na DevMaster: a situação não aparece mais.", por:"Sistema", concluidaEm:new Date().toISOString()});
+    var a = atuais[id]; if(!a || pedidos[id]) return;
+    // Concluída só vale se uma PESSOA concluiu (Marcus, 03/11/2026). Situação que some da DevMaster (e as antigas fechadas pelo sistema) saem da lista: valor null apaga.
+    if(a.status==="aberta" || (a.status==="concluida" && a.por==="Sistema")) mudou[id] = null;
   });
   return mudou;
 }

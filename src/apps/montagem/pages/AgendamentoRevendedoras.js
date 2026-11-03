@@ -52,9 +52,9 @@ function semanasDoMes(ano, mes){
   return out;
 }
 // quantos acertos por dia (e por representante), só da lista já filtrada
-function contar(linhas){
+function contar(linhas, modo){
   var porDia = {};
-  linhas.forEach(function(r){ var k = diaEfetivo(r.prev), d = porDia[k] || (porDia[k] = {n:0, reps:{}}); d.n++; d.reps[r.representante] = (d.reps[r.representante]||0)+1; });
+  linhas.forEach(function(r){ var k = diaEfetivo(modo==="agendado" ? r.agendaEm : r.prev), d = porDia[k] || (porDia[k] = {n:0, reps:{}}); d.n++; d.reps[r.representante] = (d.reps[r.representante]||0)+1; });
   return porDia;
 }
 var calor = function(n, max){ return n<=0 ? null : "rgba(232,184,75,"+(0.10+0.42*(n/Math.max(1, max)))+")"; };
@@ -173,11 +173,9 @@ function TabelaRevendedoras(p){
   return e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"overflow-x-auto rounded-lg border border-border"},
       e(TabelaOuro,{largura:soma, colunas:COLUNAS.map(function(c){ return larg[c.k]; }), topo:COLUNAS.map(function(c){ var tem = c.tipo!=="seq" && c.tipo!=="din", on = ativo(c);
-          return e("th",{key:c.k, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0"},
+          return e("th",{key:c.k, onClick:tem ? function(ev){ abrirPop(c, ev); } : undefined, title:tem ? "Clique para classificar e filtrar" : undefined, className:"h-8 whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2.5 text-center text-[13px] font-semibold last:border-r-0 "+(tem ? "cursor-pointer select-none hover:bg-black/10 " : "")+(on ? "underline decoration-2 underline-offset-4" : "")},
             e("span",{className:"inline-flex items-center justify-center gap-1.5"}, c.t, ord && ord.k===c.k && e("span",{"aria-hidden":true}, ord.dir==="asc" ? "↑" : "↓"),
-              tem && e("button",{type:"button", "aria-label":"Filtro de "+c.t, title:"Classificar e filtrar "+c.t, onClick:function(ev){ abrirPop(c, ev); }, className:"inline-grid size-6 place-items-center rounded hover:bg-black/15 "+(on ? "bg-black/20" : "")},
-                e("svg",{width:14, height:14, viewBox:"0 0 24 24", fill:on ? "currentColor" : "none", stroke:"currentColor", strokeWidth:2.4, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M3 4h18l-7 8.5V20l-4-2v-5.5L3 4z"})))),
-              c.tipo==="seq" && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(){ setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar")); })},
+              c.tipo==="seq" && algum && e("button",{type:"button", title:"Limpar todos os filtros e a classificação", onClick:function(ev){ ev.stopPropagation(); setFil({}); setOrd(null); setPop(null); }, className:"ml-1 text-[11px] font-normal underline"}, "limpar"))); })},
         e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"h-8 px-2.5 text-center text-[13px]"}, p.total===0 ? (p.carregando ? "Carregando da DevMaster…" : "Nenhuma revendedora ainda. Clique em Atualizar da DevMaster.") : "Nenhuma revendedora com esses filtros."))
           : linhas.slice(0, p.limite).map(function(r, i){
               var dd = diasEntre(hoje, r.prev), sel = r.prev===p.dia && p.soDia;
@@ -337,10 +335,10 @@ function AbaAgRevendedoras(){
   var nomesReps = reps.map(function(r){ return r.nome; });
   var repsSel = fil.rep && fil.rep.vals ? fil.rep.vals : [];
   var linhasSemDia = itens.filter(function(r){ return passa(r, fil, hojeIso); });
-  var linhasCal = modo==="agendado" ? linhasSemDia.filter(function(r){ return !!r.agenda; }) : linhasSemDia;   // Sistema = todos pela data da DevMaster; Agendado = só quem já tem agendamento na DevMaster
-  var orig = {}; linhasCal.forEach(function(r){ if(r.prev) orig[r.prev] = (orig[r.prev] || 0)+1; }); var red = redistribuirContagem(orig);   // acerto de domingo ou feriado passa para o próximo dia útil
-  var porDia = contar(linhasCal), filtrando = linhasSemDia.length!==itens.length;
-  var linhas0 = soDia ? linhasCal.filter(function(r){ return diaEfetivo(r.prev)===dia; }) : linhasSemDia, colOrd = ord ? COLUNAS.find(function(c){ return c.k===ord.k; }) : null, linhas = colOrd ? ordenar(linhas0, colOrd, ord.dir, hojeIso) : linhas0;
+  var linhasCal = modo==="agendado" ? linhasSemDia.filter(function(r){ return !!r.agendaEm; }) : linhasSemDia;   // Sistema = todos pela data de acerto da DevMaster; Agendado = só quem tem atividade de acerto marcada na agenda da DevMaster, no dia marcado
+  var orig = {}; linhasCal.forEach(function(r){ var dt = modo==="agendado" ? r.agendaEm : r.prev; if(dt) orig[dt] = (orig[dt] || 0)+1; }); var red = redistribuirContagem(orig);   // acerto de domingo ou feriado passa para o próximo dia útil
+  var porDia = contar(linhasCal, modo), filtrando = linhasSemDia.length!==itens.length;
+  var linhas0 = soDia ? linhasCal.filter(function(r){ return diaEfetivo(modo==="agendado" ? r.agendaEm : r.prev)===dia; }) : linhasSemDia, colOrd = ord ? COLUNAS.find(function(c){ return c.k===ord.k; }) : null, linhas = colOrd ? ordenar(linhas0, colOrd, ord.dir, hojeIso) : linhas0;
   var atrasadas = linhasCal.filter(function(r){ return r.prev<hojeIso; }).length;
   var prox7 = linhasCal.filter(function(r){ return r.prev>=hojeIso && r.prev<=somaDia(hojeIso, 7); }).length, hojeN = (porDia[hojeIso] ? porDia[hojeIso].n : 0), alteradas = itens.filter(function(r){ return r.temDif; }).length;
   var escolherDia = function(iso){ if(soDia && iso===dia){ setSoDia(false); return; } setDia(iso); setSoDia(true); setLimite(200); var t = parteData(iso); setMes([t.getFullYear(), t.getMonth()]); };

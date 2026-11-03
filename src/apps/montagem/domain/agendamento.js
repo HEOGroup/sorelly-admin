@@ -99,15 +99,18 @@ function agrupar(linhas){
 // COTA (dia 1) = quantas têm data no mês quando a conta é feita pela primeira vez (guardada em "cotabase" no módulo agrev e nunca recalculada), menos as que o Marcus passou para fora do mês (45/60 dias).
 // SALDO (o que falta fazer) = quantas continuam abertas com data no mês + as que o setor (ou ninguém ainda confirmou) mudou para fora do mês, que continuam no previsto. Kit feito sai da DevMaster, então o saldo desce sozinho.
 // mud = datas mudadas (agrev, chaves "d_"): {rep, de, para, quem}. base = cotabase já guardada ({codigo: n}) ou null na primeira vez.
-function cotasDaDevMaster(itens, ag, ym, mud, base){
+// REGRA 2 (Marcus, 02/11/2026): o previsto do mês é o que tem data de acerto ATÉ O ÚLTIMO DIA do mês, atrasadas incluídas (antes só contava a data dentro do mês, e a soma das cotas ficava 36 abaixo do previsto).
+function cotasDaDevMaster(itens, ag, ym, mud, base, regra){
   var norm = function(c){ return String(c||"").trim().replace(/^0+/, ""); }, nm = function(n){ return String(n||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); };
   var porCod = {}; (ag.config.representantes||[]).forEach(function(r){ porCod[norm(r.codigo)] = r; });
   var nomeParaCod = {}; itens.forEach(function(i){ if(i.repCod) nomeParaCod[nm(i.representante)] = norm(i.repCod); });
   var abertas = {}, semRep = 0, funcionarias = 0;
-  itens.forEach(function(i){ if(!i.prev || i.prev.slice(0, 7)!==ym) return; if(/funcion/i.test(i.representante||"")){ funcionarias++; return; } var c = norm(i.repCod); if(!porCod[c]){ semRep++; return; } abertas[c] = (abertas[c]||0)+1; });
+  var fim = ym+"-31", ini = ym+"-01", atrasadas = {};
+  itens.forEach(function(i){ if(!i.prev || i.prev>fim) return; if(/funcion/i.test(i.representante||"")){ if(i.prev.slice(0, 7)===ym) funcionarias++; return; } var c = norm(i.repCod); if(!porCod[c]){ semRep++; return; } abertas[c] = (abertas[c]||0)+1; if(i.prev<ini) atrasadas[c] = (atrasadas[c]||0)+1; });
   var tiradas = {}, ficam = {};
   (mud||[]).forEach(function(m){ if(!m.de || !m.para || m.de.slice(0, 7)!==ym || m.para.slice(0, 7)===ym) return; var c = nomeParaCod[nm(m.rep)]; if(!c || !porCod[c]) return; if(m.quem==="marcus") tiradas[c] = (tiradas[c]||0)+1; else ficam[c] = (ficam[c]||0)+1; });
   var nova = Object.assign({}, base || {}), gravar = !base, out = {};
+  if(base && regra!==2){ Object.keys(porCod).forEach(function(c){ nova[c] = (nova[c]||0)+(atrasadas[c]||0); }); gravar = true; }   // cota do dia 1 gravada pela regra antiga: soma as atrasadas de antes do mês (continuam abertas)
   Object.keys(porCod).forEach(function(c){ var b; if(nova[c]!==undefined) b = nova[c]; else { b = abertas[c]||0; nova[c] = b; gravar = true; }
     out[c] = {id:porCod[c].id, nome:porCod[c].nome, cota:Math.max(0, b-(tiradas[c]||0)), saldo:(abertas[c]||0)+(ficam[c]||0)}; });
   return {porRep:out, base:nova, novaBase:gravar, semRep:semRep, funcionarias:funcionarias};

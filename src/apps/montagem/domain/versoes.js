@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.34", data:"2026-11-03", titulo:"Agendamento: atividades, cota e Painel", itens:[
+  {tipo:"novo", area:"Agendamento", txt:"Atividades: acerto atrasado há 31 dias ou mais, atrasado há 60 dias ou mais (Inadimplência/Jurídico) e ciclo de kit acima de 90 dias viram atividade. Atrasada só conta depois do dia útil efetivo (domingo e feriado passam para o próximo dia). Concluída só vale se uma pessoa respondeu."},
+  {tipo:"novo", area:"Agendamento", txt:"Atividade: botão Entrei em contato e aguardo (representante ou revendedora), aba Aguardando retorno, histórico de contatos e todas as anotações da DevMaster na janela, que ficou larga."},
+  {tipo:"melhoria", area:"Agendamento", txt:"Painel: cota até o fim do mês lida da DevMaster, tabela de Representantes com atrasados, agendados e % feito, atualização automática; Agendado vem da agenda da DevMaster; filtro das tabelas abre clicando no título."}
+ ]},
  {v:"0.18.33", data:"2026-11-03", titulo:"SorellyChat: grupo Sorelly Interno", itens:[
   {tipo:"novo", area:"SorellyChat", txt:"Grupo Sorelly Interno com todos os funcionários: fica fixo no topo do chat de cada um, não se arquiva e só o Marcus escreve. Nasce com um aviso de boas-vindas. Vídeo que só fecha no fim e lista de quem leu ainda não estão prontos."},
  ]},
