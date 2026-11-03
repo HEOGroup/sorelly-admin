@@ -21,8 +21,8 @@ function registroDe(l, cfg){
   // O prazo da Michele conta do dia em que o cadastro CHEGOU em Cadastradas (etapaCriadaEm), nunca da aprovação nem da criação do lead: lead em conferência de documentos ainda não é cadastrada (relato da Michele, 26/10/2026). Sem essa data, vale hoje.
   var dia = String(l.etapaCriadaEm || "").slice(0, 10), cad = dia && diasDesde(dia)<=3 ? dia : hojeISO();   // cadastro antigo "entra" hoje no fluxo da Michele
   var empresa = kitNaEmpresa(l.kitOpcao), exp = /expositor$/.test(l.kitOpcao||"");
-  return {id:"L"+l.id, mes:MESES[+cad.split("-")[1]-1], cad:cad, lib:null, sol:null, bip:null, ret:null, st:"cadastrada",
-    nome:l.nome, cid:l.cidade||"", bai:bairroDe(l.endereco), prof:l.profissao||"", rep:empresa ? "Sorelly" : "", mod:"Misto", val:cfg.valorPadrao,   /* todo kit novo nasce com o valor padrão (R$ 7.000,00); a Michele edita à mão quando a Direção aprova outro (chamado dela, 03/11/2026) */ retirada:"",
+  return {id:"L"+l.id, mes:MESES[+cad.split("-")[1]-1], cad:cad, lib:cad, sol:null, bip:null, ret:null, st:"liberado",
+    nome:l.nome, cid:l.cidade||"", bai:bairroDe(l.endereco), prof:l.profissao||"", rep:empresa ? "Sorelly" : "", mod:"Normal", val:cfg.valorPadrao,   /* todo kit novo nasce com o valor padrão (R$ 7.000,00); a Michele edita à mão quando a Direção aprova outro (chamado dela, 03/11/2026) */ retirada:"",
     trab:l.empresa||"", trabEnd:"", disp:"", obs:exp ? "EXPOSITOR" : "", c1:false, c2:false, c3:false, c1n:"", c1t:"", c1r:"", c2n:"", c2t:"", c2r:"", c3n:"", c3t:"", c3r:"",
     tel:l.telefone||"", tipo:"Vendedora", op:l.reviewedBy||"Cadastro", ent:"Kommo", entId:"", obs2:"", desm:0,
     hist:[{em:Date.now(), quem:l.reviewedBy||"Cadastro", txt:"Chegou em Cadastradas no quadro do Cadastro (lead "+l.id+")"}]};
@@ -34,7 +34,7 @@ function absorver(s){
   var tem = {}; s.dados.forEach(function(c){ tem[c.id] = 1; });
   var novos = leads.filter(function(l){ return !tem["L"+l.id]; }).map(function(l){ return registroDe(l, s.cfg); });
   // o Cadastro desfez e a Michele ainda não mexeu (continua em Cadastrada, sem histórico dela): sai daqui
-  var dados = s.dados.filter(function(c){ return !cartaoDemo(c) && !(/^L\d+$/.test(c.id) && c.st==="cadastrada" && !noCadastro[c.id] && (c.hist||[]).length<=1); });
+  var dados = s.dados.filter(function(c){ return !cartaoDemo(c) && !(/^L\d+$/.test(c.id) && c.st==="liberado" && !noCadastro[c.id] && (c.hist||[]).length<=1); });
   if(!novos.length && dados.length===s.dados.length) return s;
   return Object.assign({}, s, {dados:novos.concat(dados)});
 }

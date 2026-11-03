@@ -40,7 +40,7 @@ function reducer(s, a){
     }
     case "REATIVAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c || c.st!=="cancelado") return s;
-      return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({st:x.stAnterior||"cadastrada", ret:null}, reg(x, s, "Reativada")); }), dialogo:null}, c.nome+" reativada");
+      return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({st:x.stAnterior||"liberado", ret:null}, reg(x, s, "Reativada")); }), dialogo:null}, c.nome+" reativada");
     }
     case "SALVAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c) return s;
@@ -49,8 +49,8 @@ function reducer(s, a){
       return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({}, a.campos, reg(x, s, "Editou: "+mud.join(", "))); }), dialogo:null}, "Altera\u00e7\u00f5es salvas");
     }
     case "NOVA": {
-      var d = a.dados, n = {id:"N"+Date.now(), mes:MESES[new Date().getMonth()], cad:hojeISO(), lib:null, sol:null, bip:null, ret:null, st:"cadastrada",
-        nome:d.nome.trim(), cid:d.cid||"", bai:d.bai||"", prof:d.prof||"", rep:d.rep||"", mod:d.mod||"Misto", val:d.val||s.cfg.valorPadrao, retirada:"", trab:d.trab||"", trabEnd:d.trabEnd||"",
+      var d = a.dados, n = {id:"N"+Date.now(), mes:MESES[new Date().getMonth()], cad:hojeISO(), lib:hojeISO(), sol:null, bip:null, ret:null, st:"liberado",
+        nome:d.nome.trim(), cid:d.cid||"", bai:d.bai||"", prof:d.prof||"", rep:d.rep||"", mod:d.mod||"Normal", val:d.val||s.cfg.valorPadrao, retirada:"", trab:d.trab||"", trabEnd:d.trabEnd||"",
         disp:d.disp||"", obs:d.obs||"", c1:false, c2:false, c3:false, c1n:d.c1n||"", c1t:d.c1t||"", c1r:d.c1r||"", c2n:"", c2t:"", c2r:"", c3n:"", c3t:"", c3r:"",
         tipo:d.tipo||"Vendedora", op:quem(s), ent:d.ent||"", entId:"", obs2:d.obs2||"", desm:0,
         hist:[{em:Date.now(), quem:quem(s), txt:"Cadastrada no sistema"}]};

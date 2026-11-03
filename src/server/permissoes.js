@@ -18,6 +18,7 @@ export const SETORES_DO_MODULO = {
   agrev: ["agendamento"],   // alterações da Agenda de revendedoras (troca de representante, data do acerto, observação) feitas pela Ana Maria enquanto a DevMaster ainda manda (29/10/2026)
   ri: ["agendamento"],   // revendedoras do atendimento interno (lista, contatos e agenda da Tamara): Agendamento e Diretoria (28/10/2026)
   chathor: ["*"],   // horário de trabalho de cada colaborador para a faixa do alto da conversa do SorellyChat (só nome, entrada, saída e dias; sem salário nem CPF)
+  kndados: ["kitsnovos", "cadastro"],   // planilha de kits novos da Michele (03/11/2026): dados reais só no servidor, nunca no Git
   kn: ["*"],   // kits novos direcionados pela Michele às representantes (29/10/2026): todo mundo logado lê, para o kit chegar no app da representante em qualquer aparelho
   mel: ["*"],   // solicitações de melhorias (28/10/2026): todo funcionário lê e envia; quem responde (Diretoria e Desenvolvimento) é regra da tela
   inicio: ["*"],   // comunicados da página inicial (27/10/2026): todo mundo logado lê; quem publica é a Diretoria (regra da tela)

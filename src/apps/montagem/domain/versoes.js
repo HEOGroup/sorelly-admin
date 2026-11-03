@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.44", data:"2026-11-03", titulo:"Kits novos: planilha da Michele no sistema e só 4 etapas", itens:[
+  {tipo:"novo", area:"Kits novos", txt:"A planilha de kits novos da Michele (2.415 registros) foi para o servidor e é a base do app: a lista de exemplo saiu. Fica só no servidor, fora do Git. Os cadastros criados no app continuam."},
+  {tipo:"melhoria", area:"Kits novos", txt:"O painel tem só as etapas Liberado, Solicitado, Bipado e Entregue (mais Devolvido e Cancelado). Cadastrada, Aceito, Em contato, Agendado, Montando e Retirado saíram. Quem chega do Cadastro entra direto em Liberado. O modelo Misto virou Normal."},
+ ]},
  {v:"0.18.43", data:"2026-11-03", titulo:"Atendimento interno: horários organizados", itens:[
   {tipo:"melhoria", area:"Atendimento interno", txt:"Em Revendedoras, os botões Lista, Calendário e Buscar da DevMaster ficam no lado esquerdo, em cima do calendário. A coluna dos horários sobe até o alto da tela e mostra os 20 horários de meia em meia hora sem rolar. Pedido da Tamara e do Marcus."},
  ]},

@@ -5,18 +5,15 @@ import { MESES, diasDesde } from "@/apps/kits-novos/lib/datas";
 // Funil do kit novo (23/10/2026): do cadastro até a revendedora receber o kit. As etapas Aceito, Em contato, Agendado e Retirado são o caminho da REPRESENTANTE
 // (quando passa para ela, é onde o kit mais demora). Bipado = kit pronto na empresa; Retirado = a representante pegou o kit.
 var ETAPAS = [
-  {k:"cadastrada", n:1,  nome:"Cadastrada", campo:"cad", ic:"user"},
-  {k:"liberado",   n:2,  nome:"Liberado",   campo:"lib", ic:"check"},
-  {k:"solicitado", n:3,  nome:"Solicitado", campo:"sol", ic:"box"},
-  {k:"aceito",     n:4,  nome:"Aceito",     campo:"ace", ic:"inbox"},
-  {k:"contato",    n:5,  nome:"Em contato", campo:"con", ic:"phone"},
-  {k:"agendado",   n:6,  nome:"Agendado",   campo:"age", ic:"calendar"},
-  {k:"montando",   n:7,  nome:"Montando",   campo:"mon", ic:"gem"},
-  {k:"bipado",     n:8,  nome:"Bipado",     campo:"bip", ic:"scan"},
-  {k:"retirado",   n:9,  nome:"Retirado",   campo:"rtd", ic:"send"},
-  {k:"entregue",   n:10, nome:"Entregue",   campo:"ret", ic:"gem"},
-  {k:"devolvido",  n:11, nome:"Devolvido",  campo:"dev", ic:"undo"}
+  {k:"liberado",   n:1,  nome:"Liberado",   campo:"lib", ic:"check"},
+  {k:"solicitado", n:2,  nome:"Solicitado", campo:"sol", ic:"box"},
+  {k:"bipado",     n:3,  nome:"Bipado",     campo:"bip", ic:"scan"},
+  {k:"entregue",   n:4,  nome:"Entregue",   campo:"ret", ic:"gem"},
+  {k:"devolvido",  n:5,  nome:"Devolvido",  campo:"dev", ic:"undo"}
 ];
+// As etapas antigas (Cadastrada, Aceito, Em contato, Agendado, Montando, Retirado) saíram: a Michele não as usa. Registro antigo passa para a etapa mais próxima.
+var LEGADO = {cadastrada:"liberado", aceito:"solicitado", contato:"solicitado", agendado:"solicitado", montando:"solicitado", retirado:"bipado"};
+function estadoAtual(st){ return LEGADO[st] || st; }
 var ETAPA = {}; ETAPAS.forEach(function(x){ ETAPA[x.k]=x; });
 function etapaDe(c){ return ETAPA[c.st]; }
 function dataEtapa(c){ var et = etapaDe(c); return et ? c[et.campo] || c.cad : c.cad; }
@@ -34,4 +31,4 @@ function atrasado(c, cfg){ return aberto(c) && diasNaEtapa(c) > prazoDe(c, cfg);
 function mesDe(c){ return c.cad ? MESES[+c.cad.split("-")[1]-1] : c.mes; }
 function contatosFeitos(c){ return (c.c1?1:0)+(c.c2?1:0)+(c.c3?1:0); }
 
-export { ETAPAS, ETAPA, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, atrasado, mesDe, contatosFeitos };
+export { ETAPAS, ETAPA, LEGADO, estadoAtual, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, atrasado, mesDe, contatosFeitos };
