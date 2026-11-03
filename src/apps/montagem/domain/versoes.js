@@ -56,6 +56,10 @@ var VERSOES = [
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Coluna sem pedido não mostra mais a frase Nenhum pedido nesta etapa. O cabeçalho continua igual, com a contagem e o valor (0 pedidos e R$ 0,00)."},
   {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"A etapa Enviado passou para a fase Compra (azul), porque o bruto ainda está do lado do fornecedor. A fase Compra agora vai da etapa 1 à 4, o Banho da 5 à 8 e a Empresa da 9 à 12."}
  ]},
+ {v:"0.18.42", data:"2026-11-04", titulo:"Foto grande no chat e Acessos e autorizações voltou a abrir", itens:[
+  {tipo:"melhoria", area:"SorellyChat", txt:"A foto na conversa fica maior (até 440 por 480 px), inteira e sem corte. Ao tocar, abre em tela quase cheia e sempre na versão grande; a miniatura só aparece enquanto a grande não chega. No celular da funcionária a foto ocupa a largura do balão."},
+  {tipo:"correção", area:"Acessos e autorizações", txt:"A tela quebrava com Algo deu errado porque a lista de quem está em cada grupo não tinha Link e cadastro, Garantia e Acesso básico. A lista foi completada e a tela abre de novo, inclusive a aba Contas."},
+ ]},
  {v:"0.18.41", data:"2026-11-03", titulo:"Atendimento interno: lista Kits novos para agendar", itens:[
   {tipo:"novo", area:"Atendimento interno", txt:"Em Revendedoras, logo abaixo do calendário e acima da tabela, nova lista Kits novos (mesmo padrão da tabela de revendedoras; a tabela de baixo ganhou o título Revendedoras internas com o total) para agendar: os kits que o setor Kits novos manda para a Sorelly e ainda não têm dia marcado (revendedora, cidade, kit Normal ou Prata com o valor, há quantos dias chegou). Agendar (botão pequeno) abre a ficha da revendedora, onde se escolhe data e hora; ela entra na listagem do dia como Kit novo. Cada tabela tem uma etiqueta no canto (Kits novos · N para agendar; Revendedoras internas · N total). Com ?exemplo=kits na tela aparecem 3 linhas de exemplo, sem gravar."},
  ]},
