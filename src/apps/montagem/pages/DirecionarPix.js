@@ -189,15 +189,14 @@ function AbaDirecionar(){
     return rows; };
   var porTipo = {interno:0, rep:0}; todosFila.forEach(function(x){ porTipo[x.origem] += x.valor; });
   var maisAntigo = todosFila.length ? Math.min.apply(null, todosFila.map(function(x){ return x.recebidoEm; })) : null;
-  // ── LAYOUT D1 (Marcus, 26/10/2026): pedido aberto em cima (3 colunas) e, embaixo, Contas a pagar | Contas negativas | Vendas. Cada bloco só ocupa a altura do que tem; sem pedido, os 3 blocos sobem.
+  // ── LAYOUT D1 (Marcus, 26/10/2026): pedido aberto em cima (3 colunas) e, embaixo, Vendas | Contas negativas | Contas a pagar. Cada bloco só ocupa a altura do que tem; sem pedido, os 3 blocos sobem. (03/11/2026: Vendas à esquerda, onde entram todos os recebimentos; Contas a pagar à direita; coluna Forma tirada.)
   var ROT = "mb-1 text-[11px] font-medium uppercase tracking-[.05em]", OURO = {color:"#f5c14b"};
   var estado = !div.length ? "" : restante>0.009 ? "falta "+BKC(restante) : restante<-0.009 ? "passou "+BKC(-restante) : "fechado";
   // Vendas: linhas aparecem conforme os pedidos chegam
-  var blocoVendas = Painel("Vendas", "Na fila", fila.length ? fila.length+" · "+BKC(soma(fila.map(function(x){ return {valor:x.valor}; }))) : "0", "#4ade80", fila.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:440, cols:[{t:"Revendedora"},{t:"Origem", w:92},{t:"Forma", w:100},{t:"Direcionar", n:true, w:100},{t:"Espera", w:68}]}, fila.map(function(x){ var on = sel && sel.id===x.id, esp = COR_ESPERA[nivelEspera(x.recebidoEm)];
+  var blocoVendas = Painel("Vendas", "Na fila", fila.length ? fila.length+" · "+BKC(soma(fila.map(function(x){ return {valor:x.valor}; }))) : "0", "#4ade80", fila.length ? e("div",{className:"min-w-0"}, e(TabelaP,{minW:340, cols:[{t:"Revendedora"},{t:"Origem", w:92},{t:"Direcionar", n:true, w:100},{t:"Espera", w:68}]}, fila.map(function(x){ var on = sel && sel.id===x.id, esp = COR_ESPERA[nivelEspera(x.recebidoEm)];
     return e("tr",{key:x.id, onClick:function(){ setSelId(x.id); setErro(""); }, className:"cursor-pointer "+(on ? "bg-[#1f3a6e]" : "hover:bg-white/10"), style:{boxShadow:"inset 4px 0 0 "+esp}, title:"Chegou às "+hm(x.recebidoEm)+" · "+(x.origem==="interno" ? "Interno Sorelly · atendida por "+x.atendente : "Representante"+(x.maq ? " · "+x.maq : ""))+(x.vendas>0 ? " · vendas "+BKC(x.vendas) : "")+(x.valor>=limAlto ? " · valor alto" : "")},
       e("td",{className:"h-8 whitespace-normal break-words border-b border-border px-2.5 py-1 text-left font-semibold leading-snug"}, (x.origem==="rep" ? (x.revendedora ? doisNomes(x.revendedora) : "—") : doisNomes(x.quem))+(x.valor>=limAlto ? " ↑" : "")),
       e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-left font-semibold", title:x.origem==="rep" ? "Representante "+(x.repOrigem||"") : "Interno Sorelly"}, x.origem==="rep" ? doisNomes(x.repOrigem || String(x.quem).replace(/^Representante\s+/, "")) : "Interno"),
-      e("td",{className:"h-8 whitespace-normal border-b border-border px-2.5 py-1 text-left leading-snug "+(partesDe(x).some(function(q){ return q.forma!=="pix"; }) ? "font-semibold text-warning" : "")}, partesDe(x).map(function(q){ return formaPalavra(q.forma); }).join(" + ")),
       e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-right font-bold tabular-nums", style:{color:"#f5c14b"}}, BKC(x.valor)),
       e("td",{className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-left font-semibold tabular-nums", style:{color:esp}}, curto(x.recebidoEm))); })))
     : e("p",{className:"px-3 py-4 text-center text-[13px] text-foreground"}, "Nenhuma venda na fila."));
@@ -368,7 +367,7 @@ function AbaDirecionar(){
   return e("div",{className:"-mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
-    e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoContas, blocoNegativas, blocoVendas),
+    e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
     // ── feitos
     feitos.length>0 && Painel("Direcionados", "Pedidos", String(feitos.length), "#4ade80", e(TabelaP,{minW:720, cols:[{t:"Hora", w:70},{t:"De"},{t:"Valor", n:true, w:130},{t:"Destinos"},{t:"Quem confirmou", w:140},{t:"", w:90}]}, feitos.map(function(x){
       return e(Tr,{key:x.id}, e(Td,null, x.confirmadoEm ? hm(x.confirmadoEm) : "—"), e(Td,{forte:true}, x.quem), e(Td,{n:true}, BKC(x.valor)), e(Td,{title:x.divisoes.map(function(d){ return destinoDe(d.destinoId).nome+" "+BKC(d.valor); }).join(" · ")}, x.divisoes.map(function(d){ return destinoDe(d.destinoId).nome+" "+BKC(d.valor); }).join(" · ")), e(Td,null, x.confirmadoPor || "—"),
