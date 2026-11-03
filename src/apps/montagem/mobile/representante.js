@@ -280,7 +280,9 @@ function AppRepresentante(p){
   var atrasoPre = kitSel && kitSel.preAcerto ? (kitSel.preAcerto.atrasoDias||0) : 0;
   useEffect(function(){ if(tela!=="calcacerto" || !kitSel || jaAcertado) return; if((acertoForm.atrasoDias||0)!==atrasoPre) setAcertoForm(function(f0){ return Object.assign({}, f0, {atrasoDias:atrasoPre}); }); }, [tela, atrasoPre, acertoForm.atrasoDias, selId]);
   useEffect(function(){ if(!avisoConta) return; var tm = setTimeout(function(){ setAvisoConta(null); }, 12000); return function(){ clearTimeout(tm); }; }, [avisoConta]);
-  useEffect(function(){ if(!p.abrir) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(alvo){ setSel(alvo.id); setPendAbrir(p.abrir.n); } }, [p.abrir && p.abrir.n]);
+  var abriuRef = useRef(null);
+  useEffect(function(){ if(!p.abrir || abriuRef.current===p.abrir.n) return; var alvo = cart.find(function(r){ return r.rev===p.abrir.rev && r.hoje; }); if(!alvo) return; abriuRef.current = p.abrir.n; setSel(alvo.id);
+    if(p.abrir.destino==="kitnovo") setTela("entregakit"); else if(p.abrir.destino==="reposicao"){ setConfVolta("reposicao"); setTela("confkit"); } else setPendAbrir(p.abrir.n); }, [p.abrir && p.abrir.n, cart.length]);   // atalhos da aba Apps: Acerto completo, Kit novo e Reposição
   useEffect(function(){
     if(!pendAbrir || !p.abrir || !kitSel || !sel || sel.rev!==p.abrir.rev || !versaoBaseSel) return;
     var cz = p.abrir.cenario;   // 02/11/2026 (Marcus): opção "Acerto completo" da aba Apps: um acerto 100% preenchido para visualizar

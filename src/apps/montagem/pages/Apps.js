@@ -111,7 +111,7 @@ function ColsRepRev(p){
   if(rep.sim && lSim) ks = ks.concat(kitsSim.filter(function(k){ return !ks.some(function(x){ return x.id===k.id; }); }));   // simulação: todos os kits da Anamaria aparecem para escolher a revendedora
   var kAtual = ks.find(function(x){ return x.id===rev.id; }) || (rep.sim && ks.find(function(x){ return x.rev===SIM_REV_APP; })) || ks[0];
   var gruposRev = ks.length ? [{itens:ks.map(function(k){ return {id:k.id, nome:k.rev, sub:k.interno ? "Sorelly · atendimento interno" : listagemDe(s,k).rep+" · "+STATUS_LB[k.status]}; })}] : [];
-  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
+  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"KIT_NOVO_DEMO", nome:"Kit novo", cod:"exemplo"}, {id:"REPOSICAO_DEMO", nome:"Reposição", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
   var entradaRev = e(Entrada,{titulo:"App da revendedora", onEntrar:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }, onTeste:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }});
   var entradaRep = e(Entrada,{altura:722, titulo:"App da representante", onEntrar:function(){ setRep({logado:true, id:lAtual.id}); }, onTeste:function(){ setRep({logado:true, id:lAtual.id}); }});
   return e(React.Fragment,null,
@@ -122,9 +122,9 @@ function ColsRepRev(p){
       celular: rev.logado && kAtual ? e(AppRevendedora,{key:kAtual.id, k:kAtual}) : e(IPhone15,null, entradaRev)}),
     p.rep && e(Coluna,{key:"rep", f:p.f, ordem:0, cor:COR_CEL.rep, age:!!(p.age && p.age.rep), nome:"Representante", sub:"App para iOS ou Android", zoom:0.806,
       pessoa:rep.logado ? (sorelly ? "Sorelly" : titulo(lAtual.rep)) : null,
-      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
-        onEscolher:function(g, i){ setRep(!i ? {logado:false, id:null} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? {logado:true, id:i.id, nome:i.rep} : {logado:true, id:i.id}); }},
-      celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : lAtual.id ? e(AppRepresentante,{key:lAtual.id, l:lAtual, abrir:rep.demo && demoKit ? {rev:DEMO_REV, n:rep.n, cenario:CENARIO_COMPLETO} : null}) : e(IPhone17ProMax,null, e("p",{className:"p-6 text-center text-[13px]"}, "Escolha uma representante no seletor acima do celular."))) : e(IPhone17ProMax,null, entradaRep)}));
+      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.atalho ? rep.id : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
+        onEscolher:function(g, i){ setRep(!i ? {logado:false, id:null} : (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO") ? {logado:true, id:i.id, nome:SIM_REP, sim:true, atalho:i.id==="KIT_NOVO_DEMO" ? "kitnovo" : "reposicao", n:Date.now()} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? {logado:true, id:i.id, nome:i.rep} : {logado:true, id:i.id}); }},
+      celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : lAtual.id ? e(AppRepresentante,{key:lAtual.id, l:lAtual, abrir:rep.demo && demoKit ? {rev:DEMO_REV, n:rep.n, cenario:CENARIO_COMPLETO} : rep.atalho ? {rev:rep.atalho==="kitnovo" ? "Camila Ferreira Lopes" : "Renata Alves Costa", n:rep.n, destino:rep.atalho} : null}) : e(IPhone17ProMax,null, e("p",{className:"p-6 text-center text-[13px]"}, "Escolha uma representante no seletor acima do celular."))) : e(IPhone17ProMax,null, entradaRep)}));
 }
 
 // nome curto do cargo na barra de cima do cartão (o nome inteiro continua na linha do tempo e na dica)
