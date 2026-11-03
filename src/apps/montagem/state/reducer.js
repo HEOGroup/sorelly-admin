@@ -895,10 +895,10 @@ function reducer(s, a){
     case "REVINT_AGENDAR": {
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
       if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
-      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada"});
+      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || "")});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
-      if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}); }); }
-      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
+      if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, a.quer ? {obs:"Quer: "+a.quer} : {}); }); }
+      else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas", remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas

@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · blocos Pontual e Ellos no topo</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  :root{ --bg:#0F0F0F; --cx:#16161A; --fio:rgba(255,255,255,.12); --ouro:#E8B84B; --ruim:#F87171; --deg:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE);
+         --c1:#5B8DEF; --c2:#A78BFA; --c3:#2DD4BF; }
+  body{ background:#000; color:#fff; font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; font-variant-numeric:tabular-nums; }
+  h1{ font-size:18px; } .sub{ margin:2px 0 14px; max-width:980px; }
+  .opcao{ margin-bottom:34px; } .opcao > .rot{ font-weight:700; font-size:15px; } .opcao > .dica{ margin:2px 0 8px; max-width:980px; }
+  .tela{ background:var(--bg); border:1px solid var(--fio); border-radius:12px; overflow:hidden; }
+  .faixa{ display:flex; align-items:center; gap:10px; height:36px; padding:0 14px; border-bottom:1px solid var(--fio); background:#111114; } .ic{ width:20px; height:20px; border-radius:6px; border:1px solid var(--ouro); display:inline-block; }
+  .menu{ display:flex; gap:2px; height:34px; padding:0 10px; border-bottom:1px solid var(--fio); overflow:hidden; }
+  .menu span{ padding:0 12px; height:30px; display:flex; align-items:center; white-space:nowrap; } .menu span.on{ font-weight:700; color:var(--ouro); box-shadow:inset 0 -2px 0 var(--ouro); }
+  .corpo{ padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .head .tt{ flex:1; min-width:200px; } .head h2{ font-size:18px; line-height:1.2; } .head p{ font-size:13px; }
+  .seg{ display:inline-flex; border:1px solid var(--fio); border-radius:8px; overflow:hidden; } .seg span{ height:32px; display:flex; align-items:center; padding:0 14px; } .seg span.on{ background:rgba(232,184,75,.16); color:var(--ouro); font-weight:700; }
+  button,select,input{ font:inherit; color:#fff; background:var(--cx); border:1px solid var(--fio); border-radius:8px; height:32px; padding:0 10px; outline:none; min-width:0; text-align:center; } select option{ color:#111; }
+  button{ cursor:pointer; min-width:96px; white-space:nowrap; } button:hover{ border-color:var(--ouro); } button.pri{ background:rgba(232,184,75,.16); border-color:var(--ouro); color:var(--ouro); font-weight:700; }
+  .filtro{ display:flex; flex-wrap:wrap; justify-content:flex-start; gap:8px; } .filtro input{ width:320px; } .filtro select{ width:208px; }
+  .zoom{ display:inline-flex; align-items:center; border:1px solid var(--fio); border-radius:8px; overflow:hidden; background:var(--cx); }
+  .zoom button{ border:0; border-radius:0; min-width:32px; width:32px; padding:0; font-size:16px; font-weight:700; background:transparent; } .zoom button:hover{ background:rgba(255,255,255,.08); }
+  .zoom .pc{ min-width:62px; width:62px; font-size:13px; font-weight:400; border-left:1px solid var(--fio); border-right:1px solid var(--fio); } .zoom .pc.dif{ color:var(--ouro); }
+  /* os dois blocos do topo: Pontual e Ellos */
+  .topo2{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; align-items:start; }
+  .gal{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); overflow:hidden; }
+  .gal > .tt{ display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:8px 14px; padding:7px 10px; border-bottom:1px solid var(--fio); text-align:center; } .gal > .tt b{ font-size:15px; }
+  .gal .prazo{ display:inline-flex; align-items:center; gap:6px; } .gal .prazo input{ width:64px; height:28px; }
+  .gal .res{ padding:5px 10px; border-bottom:1px solid var(--fio); text-align:center; }
+  .rolar{ overflow-x:auto; }
+  table{ width:100%; border-collapse:collapse; text-align:center; background:var(--deg) no-repeat; background-size:100% 30px; }
+  th{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:0 10px; color:#1a1306; white-space:nowrap; background:transparent; }
+  td{ height:32px; padding:0 10px; border-top:1px solid var(--fio); background:var(--cx); white-space:nowrap; } tr.at td{ background:#241416; }
+  .at-t{ color:var(--ruim); font-weight:700; }
+  .vz{ text-align:center; padding:10px 0; }
+  .barra{ position:relative; height:18px; width:100%; min-width:130px; border-radius:9px; background:rgba(255,255,255,.1); overflow:hidden; } .barra div{ height:100%; background:rgba(255,255,255,.4); } .barra.at div{ background:rgba(239,68,68,.6); } .barra span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  /* quadro */
+  .kan{ display:grid; grid-template-columns:repeat(12,215px); grid-template-rows:auto 1fr; gap:6px 8px; align-items:start; overflow-x:auto; padding-bottom:8px; }
+  .fase{ grid-row:1; border-radius:8px; height:34px; position:relative; border:1px solid; overflow:hidden; }
+  .fase > span{ position:sticky; left:0; right:0; display:flex; align-items:center; justify-content:center; gap:8px; height:100%; font-weight:700; white-space:nowrap; } .fase small{ font-weight:400; font-size:12px; }
+  .f1{ background:rgba(91,141,239,.18); border-color:var(--c1); } .f2{ background:rgba(167,139,250,.18); border-color:var(--c2); } .f3{ background:rgba(45,212,191,.16); border-color:var(--c3); }
+  .col{ grid-row:2; border:1px solid var(--fio); border-top:3px solid var(--cor); border-radius:10px; background:var(--cx); padding:6px; display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .ch{ text-align:center; padding:2px 0 6px; border-bottom:1px solid var(--fio); margin-bottom:2px; } .ch b{ display:flex; align-items:center; justify-content:center; gap:6px; min-height:36px; line-height:1.25; } .ch small{ display:block; font-size:11px; }
+  .num{ flex:none; width:20px; height:20px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-size:11px; border:1px solid var(--cor); color:var(--cor); }
+  .card{ border:1px solid var(--fio); border-radius:8px; background:#1c1c21; cursor:pointer; text-align:center; box-shadow:inset 3px 0 0 var(--cor); } .card:hover{ border-color:var(--ouro); } .card.at{ border-color:var(--ruim); }
+  .l1{ display:flex; align-items:center; justify-content:center; gap:8px; min-height:30px; padding:0 8px 0 11px; flex-wrap:wrap; } .l1 b{ white-space:nowrap; }
+  @media(max-width:1000px){ .topo2{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<h1>Pedidos · blocos da Pontual e da Ellos no topo</h1>
+<p class="sub">Saiu o bloco das etapas lá de baixo. No topo da tela ficam só <b>2 blocos: um da Pontual e um da Ellos</b>, com os prazos. Abaixo, o quadro das 12 etapas como já estava. Os filtros ficam à esquerda e funcionam. O <b>dourado fica no topo de cada tabela</b>. Os 3 exemplos mudam só o que tem dentro dos blocos. O prazo (campo "dias") dá para mudar: digite outro número e os 3 exemplos recalculam. Dados de exemplo, inventados. Hoje, no exemplo, é 03/11/2026.</p>
+
+<div class="opcao"><div class="rot">Exemplo 1 · Tabela completa</div><div class="dica">Cada bloco tem o prazo em cima e uma tabela com tudo: onde o pedido está, quando chegou, quantos dias está lá, a data que a galvânica conta, a saída prevista e se está atrasado.</div><div class="tela" id="E1"></div></div>
+<div class="opcao"><div class="rot">Exemplo 2 · Barra de prazo</div><div class="dica">Tabela mais enxuta. No meio, uma barra mostra quanto do prazo cada pedido já gastou (vermelha se passou). Dá para bater o olho e ver quem está estourando.</div><div class="tela" id="E2"></div></div>
+<div class="opcao"><div class="rot">Exemplo 3 · Nossa data contra a data deles</div><div class="dica">Mostra a diferença entre o dia em que o pedido chegou lá (o que nós registramos) e o dia que a galvânica conta. É o que não batia no relatório da Pontual. Uma linha de resumo diz a diferença média.</div><div class="tela" id="E3"></div></div>
+
+<script>
+var HOJE = "2026-11-03";
+var FASES = [ {n:"Compra", cor:"var(--c1)", cls:"f1", de:0, ate:2}, {n:"Banho", cor:"var(--c2)", cls:"f2", de:3, ate:7}, {n:"Empresa", cor:"var(--c3)", cls:"f3", de:8, ate:11} ];
+var ETAPAS = [
+ {n:"Escolha das peças",pz:null}, {n:"Em separação",pz:5}, {n:"Fechado, aguardando envio para banho",pz:2},
+ {n:"Enviado",pz:null}, {n:"Chegou no banho",pz:null}, {n:"Enviaram fotos",pz:null}, {n:"Marcus confirmou preços",pz:null}, {n:"Banho",pz:"banho"},
+ {n:"Enviado para Sorelly",pz:null}, {n:"Chegou na empresa",pz:null}, {n:"Cadastrando",pz:null}, {n:"Finalizado",pz:null} ];
+function faseDe(i){ return FASES.find(function(f){ return i>=f.de && i<=f.ate; }); }
+var PRAZO = {pontual:10, ellos:10};
+/* g = galvânica; cheg = dia em que chegou lá (nosso registro); conta = dia que a galvânica conta */
+var P = [
+ {id:1, f:"Point",    rom:"",       et:0,  v:18420.00, d:20, g:"pontual", cheg:"",           conta:"",           dias:1},
+ {id:2, f:"Mega Sul", rom:"",       et:0,  v:6240.00,  d:18, g:"pontual", cheg:"",           conta:"",           dias:2},
+ {id:3, f:"Xangai",   rom:"",       et:1,  v:9870.50,  d:15, g:"ellos",   cheg:"",           conta:"",           dias:6},
+ {id:4, f:"Art Ello", rom:"144459", et:2,  v:12300.00, d:15, g:"ellos",   cheg:"",           conta:"",           dias:1},
+ {id:5, f:"Point",    rom:"031892", et:2,  v:21760.00, d:25, g:"pontual", cheg:"",           conta:"",           dias:1},
+ {id:6, f:"Point",    rom:"035120", et:3,  v:594.00,   d:20, g:"pontual", cheg:"",           conta:"",           dias:2},
+ {id:7, f:"Point",    rom:"035067", et:3,  v:19046.72, d:20, g:"pontual", cheg:"",           conta:"",           dias:4},
+ {id:8, f:"Art Ello", rom:"144470", et:3,  v:5300.00,  d:15, g:"ellos",   cheg:"",           conta:"",           dias:2},
+ {id:9, f:"Point",    rom:"034992", et:4,  v:6611.30,  d:20, g:"pontual", cheg:"2026-10-15", conta:"2026-10-22", dias:19},
+ {id:10,f:"Linda",    rom:"144502", et:4,  v:7480.00,  d:10, g:"ellos",   cheg:"2026-10-21", conta:"",           dias:13},
+ {id:11,f:"Point",    rom:"034993", et:5,  v:11000.22, d:20, g:"pontual", cheg:"2026-10-15", conta:"2026-10-22", dias:19},
+ {id:12,f:"Xangai",   rom:"009112", et:5,  v:7900.00,  d:15, g:"ellos",   cheg:"2026-10-27", conta:"2026-10-28", dias:7},
+ {id:13,f:"Mega Sul", rom:"031655", et:6,  v:11200.00, d:18, g:"pontual", cheg:"2026-10-24", conta:"2026-10-30", dias:10},
+ {id:14,f:"Point",    rom:"031640", et:7,  v:15390.00, d:20, g:"pontual", cheg:"2026-10-20", conta:"2026-10-23", dias:11},
+ {id:15,f:"Point",    rom:"031601", et:7,  v:9300.00,  d:20, g:"pontual", cheg:"2026-10-17", conta:"2026-10-20", dias:14},
+ {id:16,f:"Tucano",   rom:"002017", et:7,  v:3060.00,  d:12, g:"ellos",   cheg:"2026-10-29", conta:"2026-10-30", dias:4},
+ {id:17,f:"Point",    rom:"031511", et:8,  v:9100.00,  d:20, g:"pontual", cheg:"2026-10-09", conta:"2026-10-12", dias:2},
+ {id:18,f:"Xangai",   rom:"008821", et:9,  v:8115.00,  d:15, g:"ellos",   cheg:"2026-10-04", conta:"2026-10-05", dias:1},
+ {id:19,f:"Art Ello", rom:"144301", et:10, v:5200.00,  d:15, g:"ellos",   cheg:"2026-10-01", conta:"2026-10-02", dias:3},
+ {id:20,f:"Mega Sul", rom:"031200", et:11, v:7400.00,  d:18, g:"pontual", cheg:"2026-09-24", conta:"2026-09-26", dias:0}
+];
+var F = {q:"", forn:"", sit:""}, Z = 100, ABERTO = {};
+var NIVEIS = [70,80,90,100,115,130,150];
+function brl(n){ return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pagar(p){ return p.v*(1-p.d/100); }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function ms(iso){ return Date.parse(iso+"T12:00:00"); }
+function diasEntre(a, b){ return Math.round((ms(b)-ms(a))/86400000); }
+function addDias(iso, n){ var d = new Date(ms(iso)); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function dm(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7) : "—"; }
+function nd(n){ return n+(Math.abs(n)===1?" dia":" dias"); }
+function prazoDe(p){ var z = ETAPAS[p.et].pz; return z==="banho" ? PRAZO[p.g] : z; }
+function atras(p){ var z = prazoDe(p); return z!=null && p.dias>z; }
+function vis(){ return P.filter(function(p){
+  if(F.q && (p.f+" "+p.rom).toLowerCase().indexOf(F.q.toLowerCase())<0) return false;
+  if(F.forn && p.f!==F.forn) return false;
+  if(F.sit==="atr" && !atras(p)) return false; if(F.sit==="aber" && p.et===11) return false; return true; }); }
+function nomeG(g){ return g==="pontual" ? "Pontual" : "Ellos"; }
+
+/* ---------- os blocos do topo ---------- */
+function noBanho(g){ return P.filter(function(p){ return p.g===g && p.et>=3 && p.et<=7; }).filter(function(p){ return vis().indexOf(p)>=0; }); }
+function calc(p){   /* tudo que os 3 exemplos usam */
+  var pz = PRAZO[p.g], ini = p.conta || p.cheg, saida = ini && pz ? addDias(ini, pz) : "", venceu = !!saida && saida<HOJE;
+  return {pz:pz, ini:ini, saida:saida, venceu:venceu, usados:ini ? diasEntre(ini, HOJE) : 0, lad:p.cheg ? diasEntre(p.cheg, HOJE) : null,
+    sit: !saida ? "—" : venceu ? "Atrasado "+nd(diasEntre(saida, HOJE)) : saida===HOJE ? "Sai hoje" : "Faltam "+nd(diasEntre(HOJE, saida)),
+    dif: p.cheg && p.conta ? diasEntre(p.cheg, p.conta) : null};
+}
+function cab(g, extra){
+  var n = nomeG(g);
+  return '<div class="tt"><b>'+n+'</b><span class="prazo">Prazo do banho <input type="number" min="0" value="'+PRAZO[g]+'" onchange="PRAZO.'+g+'=Math.max(0,parseInt(this.value,10)||0); tudo()" aria-label="Prazo do banho na '+n+' em dias"> dias</span><span>'+noBanho(g).length+(noBanho(g).length===1?' pedido':' pedidos')+'</span></div>'+(extra||'');
+}
+function ordenar(L){ return L.sort(function(a,b){ var A=calc(a), B=calc(b); return (B.saida?-ms(B.saida):0)-(A.saida?-ms(A.saida):0) || 0; }).sort(function(a,b){ return (a.cheg?ms(a.cheg):Infinity)-(b.cheg?ms(b.cheg):Infinity); }); }
+function tabela(cols, linhas){ return '<div class="rolar"><table><tr>'+cols.map(function(c){ return '<th>'+c+'</th>'; }).join("")+'</tr>'+linhas+'</table></div>'; }
+function vazio(g){ return '<p class="vz">Nenhum pedido na '+nomeG(g)+' agora.</p>'; }
+
+function b1(g){   /* tabela completa */
+  var L = ordenar(noBanho(g)); if(!L.length) return '<div class="gal">'+cab(g)+vazio(g)+'</div>';
+  return '<div class="gal">'+cab(g)+tabela(["Fornecedor","Romaneio","Etapa","Chegou lá","Dias lá","Data que a "+nomeG(g)+" conta","Saída prevista","Prazo"], L.map(function(p){ var c = calc(p);
+    return '<tr class="'+(c.venceu?'at':'')+'"><td><b>'+esc(p.f)+'</b></td><td>'+(p.rom||'—')+'</td><td>'+ETAPAS[p.et].n+'</td><td>'+(p.cheg?dm(p.cheg):'a caminho')+'</td><td>'+(c.lad==null?'—':nd(c.lad))+'</td><td>'+dm(p.conta)+'</td><td>'+dm(c.saida)+'</td><td class="'+(c.venceu?'at-t':'')+'">'+c.sit+'</td></tr>'; }).join(""))+'</div>';
+}
+function b2(g){   /* barra de prazo */
+  var L = ordenar(noBanho(g)); if(!L.length) return '<div class="gal">'+cab(g)+vazio(g)+'</div>';
+  return '<div class="gal">'+cab(g)+tabela(["Fornecedor","Romaneio","Etapa","Prazo gasto","Saída prevista"], L.map(function(p){ var c = calc(p), pc = c.pz && c.ini ? Math.min(100, Math.round(c.usados/c.pz*100)) : 0;
+    return '<tr class="'+(c.venceu?'at':'')+'"><td><b>'+esc(p.f)+'</b></td><td>'+(p.rom||'—')+'</td><td>'+ETAPAS[p.et].n+'</td><td>'+(c.ini ? '<div class="barra'+(c.venceu?' at':'')+'"><div style="width:'+pc+'%"></div><span>'+c.usados+' de '+c.pz+' dias</span></div>' : 'a caminho')+'</td><td class="'+(c.venceu?'at-t':'')+'">'+(c.saida ? dm(c.saida) : '—')+'</td></tr>'; }).join(""))+'</div>';
+}
+function b3(g){   /* nossa data x data deles */
+  var L = ordenar(noBanho(g)), dif = L.map(function(p){ return calc(p).dif; }).filter(function(x){ return x!=null; });
+  var media = dif.length ? Math.round(dif.reduce(function(t,x){ return t+x; },0)/dif.length) : null;
+  var res = '<div class="res">'+(media==null ? 'Sem datas da '+nomeG(g)+' para comparar ainda.' : 'A '+nomeG(g)+' começa a contar em média <b>'+nd(media)+'</b> depois do dia em que o pedido chega lá ('+dif.length+(dif.length===1?' pedido comparado':' pedidos comparados')+').')+'</div>';
+  if(!L.length) return '<div class="gal">'+cab(g)+vazio(g)+'</div>';
+  return '<div class="gal">'+cab(g, res)+tabela(["Fornecedor","Romaneio","Chegou lá (nós)","Data que a "+nomeG(g)+" conta","Diferença","Saída prevista","Prazo"], L.map(function(p){ var c = calc(p);
+    return '<tr class="'+(c.venceu?'at':'')+'"><td><b>'+esc(p.f)+'</b></td><td>'+(p.rom||'—')+'</td><td>'+(p.cheg?dm(p.cheg):'a caminho')+'</td><td>'+dm(p.conta)+'</td><td>'+(c.dif==null?'—':nd(c.dif))+'</td><td>'+dm(c.saida)+'</td><td class="'+(c.venceu?'at-t':'')+'">'+c.sit+'</td></tr>'; }).join(""))+'</div>';
+}
+
+/* ---------- o quadro das 12 etapas (igual ao que já estava) ---------- */
+function zoomUi(){ return '<div class="zoom" aria-label="Zoom do quadro"><button onclick="mudaZ(-1)" title="Diminuir" aria-label="Diminuir">−</button><button class="pc'+(Z!==100?' dif':'')+'" onclick="Z=100;tudo()" title="Voltar para 100%">'+Z+'%</button><button onclick="mudaZ(1)" title="Aumentar" aria-label="Aumentar">+</button></div>'; }
+function mudaZ(d){ var i = NIVEIS.indexOf(Z)+d; if(i>=0 && i<NIVEIS.length){ Z = NIVEIS[i]; tudo(); } }
+function dias(p){ return p.et===11 ? '<span>Concluído</span>' : '<span class="'+(atras(p)?'at-t':'')+'"><b>'+nd(p.dias)+'</b></span>'; }
+function card(p){ var f = faseDe(p.et);
+  return '<div class="card'+(atras(p)?' at':'')+'" style="--cor:'+f.cor+'"><div class="l1"><b>'+esc(p.f)+'</b><span>'+brl(pagar(p))+'</span>'+dias(p)+'</div></div>'; }
+function quadro(){
+  var L = vis();
+  var bandas = FASES.map(function(f){ var it = L.filter(function(p){ return p.et>=f.de && p.et<=f.ate; }), tot = it.reduce(function(t,p){ return t+pagar(p); },0), at = it.filter(atras).length;
+    return '<div class="fase '+f.cls+'" style="grid-column:'+(f.de+1)+' / '+(f.ate+2)+'"><span>'+f.n+'<small>'+it.length+(it.length===1?' pedido':' pedidos')+' · '+brl(tot)+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small></span></div>'; }).join("");
+  var cols = ETAPAS.map(function(e,i){ var f = faseDe(i), it = L.filter(function(p){ return p.et===i; }), at = it.filter(atras).length, tot = it.reduce(function(t,p){ return t+pagar(p); },0);
+    var pz = e.pz==="banho" ? 'Pontual '+PRAZO.pontual+' · Ellos '+PRAZO.ellos+' dias' : e.pz ? e.pz+' dias' : '';
+    return '<div class="col" style="--cor:'+f.cor+';grid-column:'+(i+1)+'"><div class="ch"><b><span class="num">'+(i+1)+'</span>'+e.n+'</b><small>'+it.length+(it.length===1?' pedido':' pedidos')+(pz?' · prazo '+pz:'')+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small><small>'+brl(tot)+'</small></div>'
+      +(it.length ? it.map(card).join("") : '<p class="vz">Nenhum pedido nesta etapa.</p>')+'</div>'; }).join("");
+  return '<div class="kan" style="zoom:'+(Z/100)+'">'+bandas+cols+'</div>';
+}
+
+/* ---------- a tela ---------- */
+function topo(){ return '<div class="faixa"><span class="ic"></span><b>Cadastro de peças</b></div><div class="menu"><span class="on">Pedidos</span><span>Controle do mês</span><span>Banho</span><span>Peças</span><span>Fornecedores</span><span>Configurações</span></div>'; }
+function tela(id, bloco){
+  var el = document.getElementById(id), k = el.querySelector(".kan"), x = k ? k.scrollLeft : 0;
+  el.innerHTML = topo()+'<div class="corpo"><div class="head"><div class="tt"><h2>Pedidos de bruto e banho</h2><p>Da escolha das peças até o cadastro na Sorelly.</p></div>'+zoomUi()+'<div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><button class="pri">Novo pedido</button></div>'
+    +'<div class="filtro">'+filtroHtml(id)+'</div>'
+    +'<div class="topo2">'+bloco("pontual")+bloco("ellos")+'</div>'+quadro()+'</div>';
+  var n = el.querySelector(".kan"); if(n) n.scrollLeft = x;
+}
+function filtroHtml(id){
+  var fs = P.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  return '<input id="q-'+id+'" placeholder="Buscar fornecedor ou romaneio" value="'+esc(F.q)+'" oninput="F.q=this.value; desenha()" aria-label="Buscar">'
+   +'<select id="fo-'+id+'" onchange="F.forn=this.value; desenha()" aria-label="Fornecedor"><option value="">Todos os fornecedores</option>'+fs.map(function(x){ return '<option'+(F.forn===x?' selected':'')+'>'+x+'</option>'; }).join("")+'</select>'
+   +'<select id="si-'+id+'" onchange="F.sit=this.value; desenha()" aria-label="Situação"><option value="">Todas as situações</option><option value="aber"'+(F.sit==="aber"?' selected':'')+'>Em aberto</option><option value="atr"'+(F.sit==="atr"?' selected':'')+'>Atrasados</option></select>'
+   +((F.q||F.forn||F.sit) ? '<button onclick="F={q:\'\',forn:\'\',sit:\'\'}; desenha()">Limpar</button>' : '');
+}
+function desenha(){
+  var a = document.activeElement, id = a && a.id ? a.id : "", p = a && a.selectionStart != null ? a.selectionStart : null;
+  tela("E1", b1); tela("E2", b2); tela("E3", b3);
+  if(id){ var n = document.getElementById(id); if(n){ n.focus(); if(p != null && n.setSelectionRange){ try{ n.setSelectionRange(p, p); }catch(x){} } } }
+}
+function tudo(){ desenha(); }
+tudo();
+</script>
+</body>
+</html>

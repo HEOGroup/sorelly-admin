@@ -13,7 +13,7 @@ import { apiAtiva } from "@/apps/montagem/lib/api";
 import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
 
-var TIPOS = {acerto:"Acerto", kit_novo:"Kit novo", reposicao:"Reposição", premio:"Retirada de prêmio", indicacao:"Indicação"};
+var TIPOS = {acerto:"Acerto", kit_novo:"Kit novo", reposicao:"Reposição", premio:"Retirada de prêmio", indicacao:"Brinde de indicação", retornando:"Kit retornando"};
 var COLUNAS = [["Horário", 96], ["Nome", 300], ["Tipo", 180], ["Quem bipou", 180], ["Quem atende na montagem", 240]];
 var TOPO = "linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)";   // um degradê só, do começo ao fim da barra
 var DIAS = ["domingo","segunda","terça","quarta","quinta","sexta","sábado"];

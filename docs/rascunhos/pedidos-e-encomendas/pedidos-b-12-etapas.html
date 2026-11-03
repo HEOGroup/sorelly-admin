@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · opção B com 12 etapas</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  :root{ --bg:#0F0F0F; --cx:#16161A; --fio:rgba(255,255,255,.12); --ouro:#E8B84B; --ruim:#F87171; }
+  body{ background:#000; color:#fff; font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; font-variant-numeric:tabular-nums; }
+  h1{ font-size:18px; } .sub{ margin:2px 0 14px; max-width:980px; }
+  .tela{ background:var(--bg); border:1px solid var(--fio); border-radius:12px; overflow:hidden; }
+  .faixa{ display:flex; align-items:center; gap:10px; height:36px; padding:0 14px; border-bottom:1px solid var(--fio); background:#111114; } .ic{ width:20px; height:20px; border-radius:6px; border:1px solid var(--ouro); display:inline-block; }
+  .menu{ display:flex; gap:2px; height:34px; padding:0 10px; border-bottom:1px solid var(--fio); overflow:hidden; }
+  .menu span{ padding:0 12px; height:30px; display:flex; align-items:center; white-space:nowrap; } .menu span.on{ font-weight:700; color:var(--ouro); box-shadow:inset 0 -2px 0 var(--ouro); }
+  .corpo{ padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .head .tt{ flex:1; min-width:200px; } .head h2{ font-size:18px; line-height:1.2; }
+  .seg{ display:inline-flex; border:1px solid var(--fio); border-radius:8px; overflow:hidden; } .seg span{ height:32px; display:flex; align-items:center; padding:0 14px; } .seg span.on{ background:rgba(232,184,75,.16); color:var(--ouro); font-weight:700; }
+  button,select,input{ font:inherit; color:#fff; background:var(--cx); border:1px solid var(--fio); border-radius:8px; height:32px; padding:0 10px; outline:none; min-width:0; text-align:center; } select option{ color:#111; }
+  button{ cursor:pointer; min-width:96px; white-space:nowrap; } button:hover{ border-color:var(--ouro); } button.pri{ background:rgba(232,184,75,.16); border-color:var(--ouro); color:var(--ouro); font-weight:700; }
+  .filtro{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; } .filtro input{ width:260px; } .filtro select{ width:200px; }
+  /* 12 colunas finas, rolagem para o lado */
+  .kan{ display:grid; grid-auto-flow:column; grid-auto-columns:150px; gap:6px; align-items:start; overflow-x:auto; padding-bottom:6px; }
+  .col{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); padding:5px; display:flex; flex-direction:column; gap:4px; min-width:0; }
+  .ch{ text-align:center; padding:2px 0 6px; border-bottom:1px solid var(--fio); margin-bottom:2px; } .ch b{ display:flex; align-items:center; justify-content:center; min-height:54px; line-height:1.25; } .ch small{ display:block; font-size:11px; }
+  .vz{ text-align:center; padding:8px 0; font-size:12px; }
+  .card{ border:1px solid var(--fio); border-radius:8px; background:#1c1c21; cursor:pointer; text-align:center; padding:5px 6px; display:flex; flex-direction:column; gap:1px; } .card:hover{ border-color:var(--ouro); } .card.at{ border-color:var(--ruim); }
+  .card .nm{ font-weight:700; } .card .vl{ font-weight:700; } .card .ob{ font-size:12px; }
+  .at-t{ color:var(--ruim); font-weight:700; }
+  .nota{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); padding:8px 12px; margin-top:12px; max-width:980px; } .nota b{ display:block; margin-bottom:2px; }
+  .nota ol{ padding-left:20px; columns:2; column-gap:30px; }
+</style>
+</head>
+<body>
+<h1>Pedidos · opção B com 12 etapas</h1>
+<p class="sub">O quadro de uma linha por pedido, agora com as 12 etapas do caminho completo e colunas mais finas (150 px). O nome da etapa aparece inteiro, sem abreviar. A tela rola para o lado arrastando o vazio. Sem faixa de números, visual sóbrio, vermelho só no atrasado. Dados de exemplo, inventados.</p>
+<div class="tela" id="T"></div>
+
+<div class="nota"><b>As 12 etapas, na ordem</b><ol>
+<li>Escolha das peças</li><li>Em separação</li><li>Fechado, aguardando envio para banho</li><li>Enviado</li><li>Chegou no banho</li><li>Enviaram fotos</li><li>Marcus confirmou preços</li><li>Banho</li><li>Enviado para Sorelly</li><li>Chegou na empresa</li><li>Cadastrando</li><li>Finalizado</li></ol>
+<p style="margin-top:4px">Os prazos (Em separação 5 dias, Fechado 2 dias, Banho 10 dias) são os que já existem. As outras etapas ainda não têm prazo: me diga quanto vale cada uma e a barra de atraso passa a funcionar nelas também.</p></div>
+
+<script>
+var ETAPAS = [
+ {n:"Escolha das peças",pz:null}, {n:"Em separação",pz:5}, {n:"Fechado, aguardando envio para banho",pz:2}, {n:"Enviado",pz:null},
+ {n:"Chegou no banho",pz:null}, {n:"Enviaram fotos",pz:null}, {n:"Marcus confirmou preços",pz:null}, {n:"Banho",pz:10},
+ {n:"Enviado para Sorelly",pz:null}, {n:"Chegou na empresa",pz:null}, {n:"Cadastrando",pz:null}, {n:"Finalizado",pz:null} ];
+var P = [
+ {f:"Point",    rom:"",       et:0,  v:18420.00, d:20, pc:640, banho:"Pontual", dias:1},
+ {f:"Mega Sul", rom:"",       et:0,  v:6240.00,  d:18, pc:250, banho:"Pontual", dias:2},
+ {f:"Xangai",   rom:"",       et:1,  v:9870.50,  d:15, pc:310, banho:"Ellos",   dias:6},
+ {f:"Art Ello", rom:"144459", et:2,  v:12300.00, d:15, pc:420, banho:"Ellos",   dias:1},
+ {f:"Point",    rom:"031892", et:2,  v:21760.00, d:25, pc:800, banho:"Pontual", dias:1},
+ {f:"Point",    rom:"035120", et:3,  v:594.00,   d:20, pc:20,  banho:"Pontual", dias:2},
+ {f:"Point",    rom:"035067", et:3,  v:19046.72, d:20, pc:610, banho:"Pontual", dias:4},
+ {f:"Linda",    rom:"144502", et:4,  v:7480.00,  d:10, pc:190, banho:"Ellos",   dias:1},
+ {f:"Point",    rom:"034992", et:5,  v:6611.30,  d:20, pc:230, banho:"Pontual", dias:3},
+ {f:"Point",    rom:"034993", et:5,  v:11000.22, d:20, pc:370, banho:"Pontual", dias:3},
+ {f:"Mega Sul", rom:"031655", et:6,  v:11200.00, d:18, pc:360, banho:"Pontual", dias:1},
+ {f:"Point",    rom:"031640", et:7,  v:15390.00, d:20, pc:520, banho:"Pontual", dias:11},
+ {f:"Tucano",   rom:"002017", et:7,  v:3060.00,  d:12, pc:90,  banho:"Ellos",   dias:4},
+ {f:"Point",    rom:"031601", et:8,  v:9300.00,  d:20, pc:300, banho:"Pontual", dias:2},
+ {f:"Xangai",   rom:"008821", et:9,  v:8115.00,  d:15, pc:280, banho:"Ellos",   dias:1},
+ {f:"Art Ello", rom:"144301", et:10, v:5200.00,  d:15, pc:170, banho:"Ellos",   dias:3},
+ {f:"Mega Sul", rom:"031511", et:11, v:7400.00,  d:18, pc:240, banho:"Pontual", dias:0}
+];
+var F = {q:"", forn:"", sit:""};
+function brl(n){ return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pagar(p){ return p.v*(1-p.d/100); }
+function atras(p){ var z=ETAPAS[p.et].pz; return z!=null && p.dias>z; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function vis(){ return P.filter(function(p){
+  if(F.q && (p.f+" "+p.rom).toLowerCase().indexOf(F.q.toLowerCase())<0) return false;
+  if(F.forn && p.f!==F.forn) return false;
+  if(F.sit==="atr" && !atras(p)) return false; if(F.sit==="aber" && p.et===11) return false; return true; }); }
+function card(p){
+  var extra = p.et===5 ? '<span class="ob">Aguarda o Marcus confirmar preços</span>' : p.et===6 ? '<span class="ob">Preços confirmados</span>' : '';
+  return '<div class="card'+(atras(p)?' at':'')+'"><span class="nm">'+esc(p.f)+'</span><span class="ob">'+(p.rom ? 'Romaneio '+p.rom : 'Sem romaneio')+'</span>'
+   +'<span class="ob">'+p.pc+' peças · banho '+p.banho+'</span><span class="vl">'+brl(pagar(p))+'</span>'
+   +'<span class="'+(atras(p)?'at-t':'ob')+'">'+(p.et===11 ? 'Concluído' : p.dias+(p.dias===1?' dia':' dias')+' na etapa')+'</span>'+extra+'</div>'; }
+function filtro(){
+  var fs = P.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  document.getElementById("F").innerHTML = '<input id="q" placeholder="Buscar fornecedor ou romaneio" value="'+esc(F.q)+'">'
+   +'<select id="fo"><option value="">Todos os fornecedores</option>'+fs.map(function(f){ return '<option'+(F.forn===f?' selected':'')+'>'+f+'</option>'; }).join("")+'</select>'
+   +'<select id="si"><option value="">Todas as situações</option><option value="aber"'+(F.sit==="aber"?' selected':'')+'>Em aberto</option><option value="atr"'+(F.sit==="atr"?' selected':'')+'>Atrasados</option></select>'
+   +((F.q||F.forn||F.sit) ? '<button id="lm">Limpar</button>' : '');
+  document.getElementById("q").oninput = function(){ F.q=this.value; var p=this.selectionStart; desenha(); var i=document.getElementById("q"); i.focus(); i.setSelectionRange(p,p); };
+  document.getElementById("fo").onchange = function(){ F.forn=this.value; filtro(); desenha(); };
+  document.getElementById("si").onchange = function(){ F.sit=this.value; filtro(); desenha(); };
+  var l=document.getElementById("lm"); if(l) l.onclick=function(){ F={q:"",forn:"",sit:""}; filtro(); desenha(); };
+}
+function desenha(){
+  var L = vis();
+  document.getElementById("K").innerHTML = ETAPAS.map(function(e,i){ var it = L.filter(function(p){ return p.et===i; }), at = it.filter(atras).length, tot = it.reduce(function(t,p){ return t+pagar(p); },0);
+    return '<div class="col"><div class="ch"><b>'+e.n+'</b><small>'+it.length+(it.length===1?' pedido':' pedidos')+(e.pz?' · prazo '+e.pz+' dias':'')+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small><small>'+brl(tot)+'</small></div>'
+     +(it.length ? it.map(card).join("") : '<p class="vz">Nenhum pedido nesta etapa.</p>')+'</div>'; }).join("");
+}
+document.getElementById("T").innerHTML = '<div class="faixa"><span class="ic"></span><b>Cadastro de peças</b></div><div class="menu"><span class="on">Pedidos</span><span>Controle do mês</span><span>Banho</span><span>Peças</span><span>Fornecedores</span><span>Configurações</span></div>'
+ +'<div class="corpo"><div class="head"><div class="tt"><h2>Pedidos</h2></div><div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><button class="pri">Novo pedido</button></div>'
+ +'<div class="filtro" id="F"></div><div class="kan" id="K"></div></div>';
+filtro(); desenha();
+</script>
+</body>
+</html>

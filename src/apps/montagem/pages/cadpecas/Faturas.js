@@ -1,6 +1,6 @@
 // Sorelly Admin · montagem — pages/cadpecas/Faturas.js
 // Cadastro de peças → "Faturas Pontual", "Faturas Ellos" (uma tela para cada galvânica, cada uma com os seus serviços) e "Retirar ouro".
-// Quem lança: Nickolas (config.quem.faturas_banho); a diretoria sempre pode. Ligar a fatura aos pedidos de bruto muda o status deles para "Banhado".
+// Quem lança: Nickolas (config.quem.faturas_banho); a diretoria sempre pode. Ligar a fatura aos pedidos de bruto muda o status deles para "Enviado para Sorelly".
 // Retirar ouro: o envio é só registrado; quando a fatura vem com o desconto, registra-se qual fatura e quanto foi descontado.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Faixa, Indicador, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
@@ -57,7 +57,7 @@ function AbaFaturas(p){
             cands.length ? e("div",{className:"flex flex-wrap items-center justify-center gap-x-4 gap-y-1"}, cands.map(function(q){ var on = sel[0].indexOf(q.id)>=0;
               return e("label",{key:q.id, className:"flex cursor-pointer items-center gap-1.5 text-[12px]"}, e("input",{type:"checkbox", checked:on, disabled:!pode, className:"size-4 accent-[#3B82F6]", onChange:function(){ sel[1](on ? sel[0].filter(function(i){ return i!==q.id; }) : sel[0].concat([q.id])); }}),
                 dia(q.data).slice(0, 5)+" · "+(q.romaneio || q.nota || "sem romaneio")+" · "+brl(q.pagar)+" · "+q.status); })) : e("p",{className:"text-center text-[12px] text-white/65"}, "Nenhum pedido deste fornecedor. Lance o pedido de bruto primeiro."),
-            pode && e("div",{className:"mt-2 flex justify-center"}, e(Bt,{tipo:"forte", ic:"check", onClick:function(){ if(x.exec("fat_pedidos", {galv:galv, id:f.id, pedidos:sel[0]})) lig[1](null); }}, "Salvar ligação (pedidos viram Banhado)"))))];
+            pode && e("div",{className:"mt-2 flex justify-center"}, e(Bt,{tipo:"forte", ic:"check", onClick:function(){ if(x.exec("fat_pedidos", {galv:galv, id:f.id, pedidos:sel[0]})) lig[1](null); }}, "Salvar ligação (pedidos viram Enviado para Sorelly)"))))];
         }).reduce(function(a, b){ return a.concat(b); }, [])
         .concat([e("tr",{key:"tot", className:"border-t-2 border-white/25 bg-black/30"}, e(Td,{forte:true, colSpan:5}, "Total ("+tot.n+")"), serv.map(function(s){ return e(Td,{key:s[0], dinheiro:true, forte:true}, brl(vis.reduce(function(a, f){ return a + (f.serv[s[0]]||0); }, 0))); }), e(Td,{dinheiro:true, forte:true}, brl(tot.total)), e(Td,null), e(Td,null), e(Td,null), e(Td,null))])) :
       e(Vazio,{ic:"receipt"}, "Nenhuma fatura neste filtro.")));

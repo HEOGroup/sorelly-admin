@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pedidos · 4 layouts novos</title>
+<style>
+  *{ box-sizing:border-box; margin:0; }
+  :root{ --bg:#0F0F0F; --cx:#16161A; --fio:rgba(255,255,255,.12); --az:#E8B84B; --ok:#4ADE80; --at:#FBBF24; --ruim:#EF4444; --ouro:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE); }
+  body{ background:#000; color:#fff; font:13px/1.4 Inter,system-ui,"Segoe UI",Arial,sans-serif; padding:16px; font-variant-numeric:tabular-nums; }
+  h1{ font-size:18px; } .sub{ margin:2px 0 14px; max-width:980px; }
+  .opcao{ margin-bottom:34px; } .opcao > .rot{ font-weight:700; font-size:15px; } .opcao > .dica{ margin:2px 0 8px; max-width:980px; }
+  .tela{ background:var(--bg); border:1px solid var(--fio); border-radius:12px; overflow:hidden; }
+  .faixa{ display:flex; align-items:center; gap:10px; height:36px; padding:0 14px; border-bottom:1px solid var(--fio); background:#111114; } .ic{ width:20px; height:20px; border-radius:6px; border:1px solid var(--az); display:inline-block; }
+  .menu{ display:flex; align-items:center; gap:2px; height:34px; padding:0 10px; border-bottom:1px solid var(--fio); overflow:hidden; }
+  .menu span{ padding:0 12px; height:30px; display:flex; align-items:center; border-radius:6px; white-space:nowrap; } .menu span.on{ font-weight:700; color:var(--az); box-shadow:inset 0 -2px 0 var(--az); }
+  .corpo{ padding:12px 14px; display:flex; flex-direction:column; gap:10px; }
+  .head{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; } .head .tt{ flex:1; min-width:200px; } .head h2{ font-size:18px; line-height:1.2; }
+  .seg{ display:inline-flex; border:1px solid var(--fio); border-radius:8px; overflow:hidden; } .seg span{ height:32px; display:flex; align-items:center; padding:0 14px; } .seg span.on{ background:rgba(232,184,75,.16); color:var(--az); font-weight:700; }
+  button,select,input{ font:inherit; color:#fff; background:var(--cx); border:1px solid var(--fio); border-radius:8px; height:32px; padding:0 10px; outline:none; min-width:0; text-align:center; } select option{ color:#111; }
+  button{ cursor:pointer; min-width:96px; white-space:nowrap; } button:hover{ border-color:var(--az); } button.pri{ background:rgba(232,184,75,.16); border-color:var(--az); color:var(--az); font-weight:700; }
+  .filtro{ display:flex; flex-wrap:wrap; justify-content:center; gap:8px; } .filtro input{ width:260px; } .filtro select{ width:180px; }
+  .tag{ font-weight:700; white-space:nowrap; }
+    .dia{ font-weight:700; white-space:nowrap; } .dia.at{ color:#F87171; }
+  /* tabelas: topo dourado em degradê único, centralizado, nada abreviado */
+  .rolar{ overflow-x:auto; } table{ width:100%; border-collapse:collapse; text-align:center; background:var(--ouro) no-repeat; background-size:100% 30px; }
+  th{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.05em; font-weight:700; padding:0 10px; color:#1a1306; white-space:nowrap; background:transparent; }
+  td{ height:32px; padding:0 10px; border-top:1px solid var(--fio); background:var(--bg); } tr.at td{ background:rgba(239,68,68,.07); } tr.cl{ cursor:pointer; } tr.cl:hover td{ background:rgba(255,255,255,.06); }
+  .bloco{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); overflow:hidden; } .bloco > .tt{ text-align:center; font-size:12px; font-weight:700; padding:6px 0; background:var(--ouro); color:#1a1306; }
+  /* A: raias por fornecedor */
+  .raia td{ vertical-align:top; padding:6px; } .raia td.f{ vertical-align:middle; width:150px; } .mini{ display:flex; flex-direction:column; gap:4px; align-items:center; }
+  .pil{ display:inline-flex; gap:6px; align-items:center; justify-content:center; border:1px solid var(--fio); background:#1c1c21; border-radius:8px; padding:3px 8px; cursor:pointer; white-space:nowrap; } .pil:hover{ border-color:var(--az); } .pil.at{ border-color:var(--ruim); }
+  .z{ color:rgba(255,255,255,.35); }
+  /* B: quadro de uma linha */
+  .kan{ display:grid; grid-template-columns:repeat(5,minmax(170px,1fr)); gap:8px; align-items:start; overflow-x:auto; }
+  .col{ border:1px solid var(--fio); border-radius:10px; background:var(--cx); padding:6px; display:flex; flex-direction:column; gap:4px; }
+  .col .ch{ text-align:center; padding:2px 0 4px; } .col .ch b{ display:block; } .col .ch small{ font-size:11px; }
+  .lin{ display:grid; grid-template-columns:1fr auto; gap:6px; align-items:center; height:32px; padding:0 8px; border:1px solid var(--fio); border-radius:8px; background:#1c1c21; cursor:pointer; } .lin:hover{ border-color:var(--az); } .lin.at{ border-color:var(--ruim); } .lin .e{ display:flex; gap:6px; align-items:center; }
+  /* C: fila de atenção */
+  .grupo{ display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 0; font-size:11px; text-transform:uppercase; letter-spacing:.06em; font-weight:700; background:rgba(255,255,255,.06); border-top:1px solid var(--fio); }
+  .item{ display:grid; grid-template-columns:150px 1fr 150px 120px 120px; gap:10px; align-items:center; justify-items:center; min-height:40px; padding:4px 12px; border-top:1px solid var(--fio); }
+  .item .motivo{ text-align:center; } .passos{ display:inline-flex; gap:3px; } .passos i{ width:28px; height:8px; border-radius:4px; background:rgba(255,255,255,.18); } .passos i.f{ background:rgba(255,255,255,.75); } .passos i.a{ background:var(--az); }
+  /* D: Pontual x Ellos */
+  .duas{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; align-items:start; }
+  .barra{ position:relative; height:18px; width:100%; min-width:110px; border-radius:9px; background:rgba(255,255,255,.1); overflow:hidden; } .barra div{ height:100%; background:rgba(255,255,255,.35); } .barra.at div{ background:rgba(239,68,68,.55); } .barra span{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; }
+  @media(max-width:900px){ .duas{ grid-template-columns:1fr; } .item{ grid-template-columns:1fr 1fr; } }
+</style>
+</head>
+<body>
+<h1>Pedidos · 4 layouts novos</h1>
+<p class="sub">Tela Pedidos do Cadastro de peças. Todos já seguem as regras novas: <b>sem faixa de números no topo</b>, filtro numa linha só, tabela com topo dourado, tudo centralizado e nada abreviado. Os dados são de exemplo, inventados. O filtro e os pedidos são os mesmos nos quatro: mexa em um e os outros acompanham.</p>
+
+<div class="tela" style="margin-bottom:14px"><div class="corpo"><div class="filtro" id="F"></div></div></div>
+
+<div class="opcao"><div class="rot">Opção A · Raias por fornecedor</div><div class="dica">Cada fornecedor é uma raia. Os pedidos aparecem como pílulas pequenas dentro da etapa onde estão. Dá para ver de uma vez quem trava em qual etapa, sem rolar. Pílula vermelha = atrasado.</div><div class="tela" id="A"></div></div>
+<div class="opcao"><div class="rot">Opção B · Quadro de uma linha por pedido</div><div class="dica">O quadro de hoje, mas cada pedido ocupa só UMA linha de 32 px (fornecedor, dias e valor). Cabe muito mais pedido na tela. Clicar abre a ficha. Bom para quem acompanha 20 ou mais pedidos.</div><div class="tela" id="B"></div></div>
+<div class="opcao"><div class="rot">Opção C · Fila de atenção</div><div class="dica">Responde "o que eu faço agora?". Os pedidos vêm na ordem do que precisa de ação: atrasados, esperando romaneio, esperando banho. Cada linha diz o motivo e tem UM botão. O resto fica para baixo.</div><div class="tela" id="C"></div></div>
+<div class="opcao"><div class="rot">Opção D · Banho: Pontual e Ellos lado a lado</div><div class="dica">Só os pedidos que estão no banho, em duas tabelas: uma da Pontual e outra da Ellos. A barra mostra há quanto tempo cada pedido espera contra o prazo de 10 dias. Os mais antigos ficam no topo. É a tela para cobrar a galvânica.</div><div class="tela" id="D"></div></div>
+
+<script>
+var ETAPAS = [ {n:"Escolha",pz:null}, {n:"Separação",pz:5}, {n:"Fechado",pz:2}, {n:"Banho",pz:10}, {n:"Chegou",pz:null} ];
+var P = [
+ {id:1, f:"Point",    rom:"",       et:0, v:18420.00, d:20, pc:640, banho:"Pontual", dias:1,  tot:1},
+ {id:2, f:"Xangai",   rom:"",       et:1, v:9870.50,  d:15, pc:310, banho:"Ellos",   dias:6,  tot:6},
+ {id:3, f:"Mega Sul", rom:"",       et:0, v:6240.00,  d:18, pc:250, banho:"Pontual", dias:2,  tot:2},
+ {id:4, f:"Art Ello", rom:"144459", et:2, v:12300.00, d:15, pc:420, banho:"Ellos",   dias:1,  tot:8},
+ {id:5, f:"Point",    rom:"031892", et:2, v:21760.00, d:25, pc:800, banho:"Pontual", dias:3,  tot:9},
+ {id:6, f:"Linda",    rom:"144502", et:3, v:7480.00,  d:10, pc:190, banho:"Ellos",   dias:6,  tot:15},
+ {id:7, f:"Point",    rom:"031640", et:3, v:15390.00, d:20, pc:520, banho:"Pontual", dias:11, tot:22},
+ {id:8, f:"Xangai",   rom:"008821", et:4, v:8115.00,  d:15, pc:280, banho:"Ellos",   dias:0,  tot:30},
+ {id:9, f:"Tucano",   rom:"002017", et:3, v:3060.00,  d:12, pc:90,  banho:"Ellos",   dias:4,  tot:12},
+ {id:10,f:"Mega Sul", rom:"031655", et:3, v:11200.00, d:18, pc:360, banho:"Pontual", dias:8,  tot:18},
+ {id:11,f:"Point",    rom:"031601", et:3, v:9300.00,  d:20, pc:300, banho:"Pontual", dias:14, tot:25}
+];
+var F = {q:"", forn:"", sit:""}, SEL = 5;
+function brl(n){ return "R$ "+n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); }
+function pagar(p){ return p.v*(1-p.d/100); }
+function atras(p){ var z=ETAPAS[p.et].pz; return z!=null && p.dias>z; }
+function esc(s){ return String(s).replace(/[&<>"]/g,function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); }
+function tag(f){ return '<span class="tag">'+esc(f)+'</span>'; }
+function dia(p){ var z=ETAPAS[p.et].pz, c = z!=null && p.dias>z ? " at" : ""; return '<span class="dia'+c+'">'+p.dias+' d</span>'; }
+function vis(){ return P.filter(function(p){
+  if(F.q && (p.f+" "+p.rom).toLowerCase().indexOf(F.q.toLowerCase())<0) return false;
+  if(F.forn && p.f!==F.forn) return false;
+  if(F.sit==="atr" && !atras(p)) return false; if(F.sit==="aber" && p.et===4) return false; return true; }); }
+function topo(t, extra){ return '<div class="faixa"><span class="ic"></span><b>Cadastro de peças</b></div><div class="menu"><span class="on">Pedidos</span><span>Controle do mês</span><span>Banho</span><span>Peças</span><span>Fornecedores</span><span>Configurações</span></div>'
+  +'<div class="corpo"><div class="head"><div class="tt"><h2>'+t+'</h2></div>'+(extra||'')+'<button class="pri">Novo pedido</button></div>'; }
+function filtro(){
+  var fs = P.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  document.getElementById("F").innerHTML = '<input id="q" placeholder="Buscar fornecedor ou romaneio" value="'+esc(F.q)+'">'
+   +'<select id="fo"><option value="">Todos os fornecedores</option>'+fs.map(function(f){ return '<option'+(F.forn===f?' selected':'')+'>'+f+'</option>'; }).join("")+'</select>'
+   +'<select id="si"><option value="">Todas as situações</option><option value="aber"'+(F.sit==="aber"?' selected':'')+'>Em aberto</option><option value="atr"'+(F.sit==="atr"?' selected':'')+'>Atrasados</option></select>'
+   +((F.q||F.forn||F.sit) ? '<button id="lm">Limpar</button>' : '');
+  document.getElementById("q").oninput = function(){ F.q=this.value; var p=this.selectionStart; tudo(true); var i=document.getElementById("q"); i.focus(); i.setSelectionRange(p,p); };
+  document.getElementById("fo").onchange = function(){ F.forn=this.value; tudo(); };
+  document.getElementById("si").onchange = function(){ F.sit=this.value; tudo(); };
+  var l=document.getElementById("lm"); if(l) l.onclick=function(){ F={q:"",forn:"",sit:""}; tudo(); };
+}
+
+/* A · raias */
+function A(){
+  var L = vis(), fs = L.map(function(p){ return p.f; }).filter(function(v,i,a){ return a.indexOf(v)===i; }).sort();
+  var cab = '<tr><th>Fornecedor</th>'+ETAPAS.map(function(e){ return '<th>'+e.n+'</th>'; }).join("")+'</tr>';
+  var corpo = fs.map(function(f){ return '<tr class="raia"><td class="f">'+tag(f)+'</td>'+ETAPAS.map(function(e,i){
+    var it = L.filter(function(p){ return p.f===f && p.et===i; });
+    return '<td>'+(it.length ? '<div class="mini">'+it.map(function(p){ return '<span class="pil'+(atras(p)?' at':'')+'">'+(p.rom ? p.rom : 'sem romaneio')+' '+dia(p)+' <b>'+brl(pagar(p))+'</b></span>'; }).join("")+'</div>' : '<span class="z">—</span>')+'</td>'; }).join("")+'</tr>'; }).join("");
+  document.getElementById("A").innerHTML = topo("Pedidos")+'<div class="rolar"><table>'+cab+(corpo || '<tr><td colspan="6">Nenhum pedido neste filtro.</td></tr>')+'</table></div></div>';
+}
+/* B · uma linha por pedido */
+function B(){
+  var L = vis();
+  var cols = ETAPAS.map(function(e,i){ var it = L.filter(function(p){ return p.et===i; }), at = it.filter(atras).length;
+    return '<div class="col"><div class="ch"><b>'+e.n+'</b><small>'+it.length+(it.length===1?' pedido':' pedidos')+(e.pz?' · prazo '+e.pz+' dias':'')+(at?' · '+at+(at>1?' atrasados':' atrasado'):'')+'</small></div>'
+      +(it.length ? it.map(function(p){ return '<div class="lin'+(atras(p)?' at':'')+'" title="Romaneio '+(p.rom||'—')+'">'+'<span class="e">'+tag(p.f)+'<b>'+brl(pagar(p))+'</b></span>'+dia(p)+'</div>'; }).join("") : '<p class="z" style="text-align:center;padding:8px 0">Nenhum pedido nesta etapa.</p>')+'</div>'; }).join("");
+  document.getElementById("B").innerHTML = topo("Pedidos")+'<div class="kan">'+cols+'</div></div>';
+}
+/* C · fila de atenção */
+function motivo(p){
+  if(atras(p)) return ["Atrasado", "Passou do prazo da etapa "+ETAPAS[p.et].n+" há "+(p.dias-ETAPAS[p.et].pz)+" dias", "cobrar"];
+  if(p.et<=1 && !p.rom) return ["Sem romaneio", "Precisa do número do romaneio para fechar", "romaneio"];
+  if(p.et===2) return ["Aguardando envio", "Fechado, esperando seguir para o banho", "enviar"];
+  if(p.et===3) return ["No banho", "Esperando a galvânica "+p.banho, "ver"];
+  return ["Em dia", "Sem ação agora", ""];
+}
+function C(){
+  var L = vis().filter(function(p){ return p.et<4; }), G = {"Atrasado":[], "Sem romaneio":[], "Aguardando envio":[], "No banho":[], "Em dia":[]};
+  L.forEach(function(p){ G[motivo(p)[0]].push(p); });
+  var h = Object.keys(G).filter(function(k){ return G[k].length; }).map(function(k){
+    return '<div class="grupo">'+k+' · '+G[k].length+'</div>'+G[k].sort(function(a,b){ return b.dias-a.dias; }).map(function(p){ var m=motivo(p);
+      return '<div class="item"><span>'+tag(p.f)+'</span><span class="motivo">'+m[1]+'</span><span class="passos">'+ETAPAS.slice(0,4).map(function(e,i){ return '<i class="'+(i<p.et?'f':i===p.et?'a':'')+'" title="'+e.n+'"></i>'; }).join("")+'</span><span>'+dia(p)+' · <b>'+brl(pagar(p))+'</b></span><span>'+(m[2] ? '<button'+(m[0]==="Atrasado"?' class="pri"':'')+'>'+({cobrar:"Cobrar",romaneio:"Romaneio ›",enviar:"Concluir ›",ver:"Abrir"})[m[2]]+'</button>' : '')+'</span></div>'; }).join(""); }).join("");
+  document.getElementById("C").innerHTML = topo("Pedidos")+'<div class="bloco"><div class="tt">O que precisa de ação</div>'+(h || '<p style="text-align:center;padding:12px">Nenhum pedido em aberto neste filtro.</p>')+'</div></div>';
+}
+/* D · Pontual x Ellos */
+function tabBanho(nome){
+  var L = vis().filter(function(p){ return p.et===3 && p.banho===nome; }).sort(function(a,b){ return b.dias-a.dias; });
+  return '<div class="bloco"><div class="tt">'+nome+' · '+L.length+(L.length===1?' pedido no banho':' pedidos no banho')+'</div><div class="rolar"><table><tr><th>Fornecedor</th><th>Romaneio</th><th>Em aberto</th><th>Peças</th><th>A pagar</th></tr>'
+   +(L.length ? L.map(function(p){ var pc=Math.min(100,Math.round(p.dias/10*100)); return '<tr class="'+(atras(p)?'at':'')+'"><td>'+tag(p.f)+'</td><td>'+p.rom+'</td><td><div class="barra'+(atras(p)?' at':'')+'"><div style="width:'+pc+'%"></div><span>'+p.dias+(p.dias===1?' dia':' dias')+' de 10</span></div></td><td>'+p.pc+'</td><td><b>'+brl(pagar(p))+'</b></td></tr>'; }).join("") : '<tr><td colspan="5">Nenhum pedido no banho.</td></tr>')+'</table></div></div>';
+}
+function D(){ document.getElementById("D").innerHTML = topo("Pedidos")+'<div class="duas">'+tabBanho("Pontual")+tabBanho("Ellos")+'</div></div>'; }
+
+function tudo(manter){ if(!manter) filtro(); else { /* só redesenha as telas */ } A(); B(); C(); D(); }
+filtro(); A(); B(); C(); D();
+</script>
+</body>
+</html>

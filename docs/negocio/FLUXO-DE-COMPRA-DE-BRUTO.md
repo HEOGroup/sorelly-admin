@@ -55,7 +55,7 @@ Ellos e Art Ello são do mesmo grupo, mas são duas empresas. Nunca juntar uma c
 
 | Parte do fluxo | Onde está | Situação |
 |---|---|---|
-| Pedido de bruto (fornecedor, romaneio, chegadas, status, peças por categoria) | Cadastro de peças › Pedidos de bruto | Pronto. 138 pedidos de 12/01 a 19/10/2026. |
+| Pedido de bruto (fornecedor, romaneio, chegadas, status, peças por categoria) | Cadastro de peças › Pedidos | Pronto, com 12 etapas em 3 fases (03/11/2026). 138 pedidos de 12/01 a 19/10/2026. |
 | Total comprado por mês | Cadastro de peças › Controle do mês | Pronto. |
 | Fatura de banho ligada ao pedido | Cadastro de peças › Faturas Pontual e Faturas Ellos | Pronto. 88 Pontual e 15 Ellos. |
 | Peso, banho, custo, preço sugerido, markup | Cadastro de peças › Calculadora e Planilhas de cadastro | Pronto. 5 planilhas lidas. |

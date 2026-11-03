@@ -31,6 +31,7 @@ import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
 import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
+import { creditoDisponivel, creditosDaRevendedora } from "@/apps/montagem/domain/garantias-rev";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
@@ -310,9 +311,11 @@ function AppRepresentante(p){
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
     if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
-    setAcertoForm(Object.assign({}, comPag, {garantia:cz ? (cz.garantia||0) : 0, pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
+    setAcertoForm(Object.assign({}, comPag, {garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
   }, [pendAbrir, selId, condicionaisRev.length]);
+  var credGarantia = sel ? creditoDisponivel(s, sel.rev) : 0;
+  useEffect(function(){ if(credGarantia>0 && acertoForm.garantia!==credGarantia) setAcertoForm(function(f0){ return Object.assign({}, f0, {garantia:credGarantia}); }); }, [credGarantia, selId, tela]);   // o crédito lançado pela Garantia vale sempre (a representante não digita) // eslint-disable-line react-hooks/exhaustive-deps
   var toggleCondicional = function(numero){ var o = acertoForm.condicionaisSelecionadas.slice(), i = o.indexOf(numero);
     if(i>=0) o.splice(i,1); else o.push(numero); setAcertoForm(Object.assign({}, acertoForm, {condicionaisSelecionadas:o})); };
   var expositoresRev = sel ? ((s.perfisRev[sel.rev]||{}).expositores || []) : [];
@@ -506,9 +509,11 @@ function AppRepresentante(p){
     blocoAcordeao(2, "star", "#D97706", "Crédito de garantia",
       acertoForm.garantia>0 ? "Desconto de "+BK(acertoForm.garantia)+" na venda" : "Sem desconto de garantia",
       checkOk,
-      [e("div",{key:"g1"},
-        e("p",{className:"mb-1 text-[12px] text-[#8E8E93]"},"Valor de garantia a descontar da venda"),
-        e(CampoReaisAuto,{value:acertoForm.garantia, label:"Crédito de garantia", onChange:function(v){ setAcertoForm(Object.assign({}, acertoForm, {garantia:v||0})); }, className:campoValor+" w-full"}))]),
+      [(function(){ var lista = creditosDaRevendedora(s, sel.rev).filter(function(c){ return !c.usado; }), L = "flex min-h-8 items-center justify-between gap-2 border-t border-white/10 px-1 text-[13px]";
+        if(!lista.length) return e("p",{key:"g0", className:"text-[13px]"}, acertoForm.garantia>0 ? "Crédito de garantia: "+BK(acertoForm.garantia) : "Nenhum crédito liberado pela Garantia.");
+        return e("div",{key:"g1", className:"flex flex-col"},
+          lista.map(function(c){ return e("div",{key:c.id, className:L}, e("span",null,"Garantia"+(c.obs ? " · "+c.obs : "")), e("b",{className:MONO+" whitespace-nowrap"}, BK(c.valor))); }),
+          e("div",{className:"flex min-h-8 items-center justify-between gap-2 rounded-lg bg-[#C9A13B]/20 px-2 text-[13px] font-bold"}, e("span",null,"Desconto na venda"), e("b",{className:MONO+" whitespace-nowrap text-[15px]"}, BK(acertoForm.garantia)))); })()]),
     // Trocas, layout 1 (aprovado pelo Marcus em 02/11/2026): lista das trocas lançadas, "+ Troca" abre um formulário em 3 passos (tipo → peça quebrada → peça nova) com a conta ao vivo.
     blocoAcordeao(8, "undo", "#EA580C", "Trocas",
       (acertoForm.trocas||[]).length ? acertoForm.trocas.length+" troca(s) · "+(dv.trocasAjuste>=0 ? "soma " : "desconta ")+BK(Math.abs(dv.trocasAjuste))+" na venda" : "Peça quebrada trocada por outra",
@@ -818,7 +823,7 @@ function AppRepresentante(p){
       ["Brindes", brindeBloqueio ? "Sem brinde" : acertoForm.brindes.length+" peça(s) lançada(s)"],
       ["Kit novo", !acertoForm.pagamentos.length ? "—" : kitNovoLiberado ? "Liberado" : "Não liberado"]],
     onVoltar:function(){ setTela("calcacerto"); },
-    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:true})); setTela("fechamento"); }});
+    onConcluir:function(r){ d(payloadAcerto({assinatura:r.assinatura, regrasLidas:true})); d({type:"GR", op:"credito_usar", revendedora:sel.rev, kitId:kitSel.id, por:"Acerto"}); setTela("fechamento"); }});
   // Fechar atendimento: mensagem pronta para a revendedora e para o grupo da empresa
   var msgs = kitSel && previaAcerto ? mensagemFechamento({nome:sel.rev, rep:l.rep, data:isoDia(new Date()), dv:dv, form:acertoForm, condFicam:condAbertasFicam, expFicam:expFicam, kitConf:kitConfDe(kitSel.id),
     remarcacoes:(kitSel.remarcacoesLista||[]).length ? kitSel.remarcacoesLista.length+" ("+vezCobravel(kitSel.remarcacoesLista)+" com multa)" : ""}) : null;

@@ -41,7 +41,8 @@ var MENU_CADASTRO = [
   {nome:"Kits novos", itens:[M("Kits novos","kitnovo"), M("Pendências","knpendencias"), M("Consolidado","knconsolidado"), M("Regras","knregras")]},
   {nome:"Desempenho", itens:[M("Desempenho do cadastro","desempenhocad"), M("Indicações","indicacoes"), M("Avaliações","avaliacoes")]},
   M("Representantes","repcad"),
-  M("Mensagens prontas","msgcad")
+  M("Mensagens prontas","msgcad"),
+  M("Folders","folderscad")
 ];
 
 // Menu do Cadastro de peças (29/10/2026, pedido do Marcus: igual ao Financeiro, com as telas no menu do topo e não em abas dentro da tela). ORDEM DO FLUXO: pedidos de bruto (tela mãe) → controle do mês → banho → peças (cadastro e preço) → fornecedores → configurações. Plano das próximas telas em docs/negocio/FLUXO-DE-COMPRA-DE-BRUTO.md (seção 11).
@@ -103,7 +104,7 @@ var MENU_REVENDEDORAS = [M("Cadastro","revbase"), M("Kits e vendas","revkits"), 
 var MENU_METAS = [M("Revendedoras","metrev"), M("Acompanhamento","metacomp"), M("Histórico","methist"), M("Notificações","metnotif"), M("Regras","metregras")];   // Metas das revendedoras (retomadas em 02/11/2026); as outras telas (Campanha, Simulador, Acompanhamento, Brindes, Histórico, Regras) vêm depois
 var MENU_ATENDIMENTO = [M("Revendedoras","intrevs"), M("Listagens","intlist"), M("Atendimento Sorelly","intcalc"), M("Consolidado Sorelly","intcons")];
 var MENU_ESTOQUE = [M("Compras e estoque de material","compras")];
-var MENU_GARANTIA = [M("Garantia","garantia")];
+var MENU_GARANTIA = [M("Garantia","garantia"), M("Créditos","garantiacred")];
 var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
@@ -175,6 +176,8 @@ var SETORES = [
       T("repcad","Representantes")]},
     {nome:"Mensagens prontas", telas:[
       T("msgcad","Mensagens prontas")]},
+    {nome:"Folders", telas:[
+      T("folderscad","Folders")]},
     {nome:"Avaliações", telas:[
       T("avaliacoes","Avaliações")]},
     {nome:"Kits novos", telas:[
@@ -217,7 +220,8 @@ var SETORES = [
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
     {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
   {id:"garantia", nome:"Garantia", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
-    {nome:"Garantias", telas:[T("garantia","Garantia")]}]},
+    {nome:"Garantias", telas:[T("garantia","Garantia")]},
+    {nome:"Créditos", telas:[T("garantiacred","Créditos")]}]},
   {id:"posvendas", nome:"Pós-vendas", ic:"phone", cor:"#EC4899", menu:MENU_POSVENDAS, semAbas:true, areas:[
     {nome:"Contatos", telas:[T("posvendas","Pós-vendas")]}]},
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
