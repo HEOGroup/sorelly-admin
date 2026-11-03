@@ -109,6 +109,8 @@ var NOVAS_PADRAO = {
   atrasoAcerto:[{ate:7, comissaoPct:5, brindePct:5}, {ate:15, comissaoPct:10, brindePct:10}, {ate:30, comissaoPct:15, brindePct:15},
     {ate:45, comissaoPct:20, brindePct:20}, {ate:59, comissaoPct:25, brindePct:25}]
 };
+// Motivos que isentam a multa da remarcação (02/11/2026, Marcus: a representante marca um deles; a lista cresce aqui)
+var MOTIVOS_ISENCAO = ["Falecimento na família", "Doença da revendedora", "Doença na família", "Internação ou cirurgia", "Acidente", "Parto ou maternidade", "Chuva forte ou alagamento", "Feriado ou data comemorativa", "Atraso da própria Sorelly", "Pedido da representante autorizado pela empresa", "Outro"];
 function r2n(n){ return Math.round(n*100)/100; }
 function hojeIso(){ var d = new Date(); return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2); }
 // perda por dias de acerto atrasado: {comissaoPct, brindePct, tudo}
@@ -433,6 +435,6 @@ function diffVersoes(atual, anterior){
   return {faixas:faixas, gerais:gerais};
 }
 
-export { NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
+export { MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
   faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
   formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };

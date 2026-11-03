@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pré-acerto · contador com rótulos</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:760px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:340px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+  .quem{padding:6px 0 8px;border-bottom:1px solid var(--linha)}
+  .quem b{display:block;font-weight:600}
+  .quem span{font-size:11px}
+  .info{width:32px;height:32px;border-radius:50%;border:1px solid var(--linha);background:#fff;font-weight:700;font-style:italic;font-family:Georgia,serif;font-size:15px;cursor:pointer;flex:none}
+  .info.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,select,input{font:inherit;color:inherit}
+  .x{width:32px;height:32px;border:0;background:transparent;font-size:18px;cursor:pointer;flex:none}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:48px;border-bottom:1px solid var(--linha)}
+  .l b{font-weight:600}
+  .l small{display:block;font-size:11px;font-weight:400}
+  .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:12px 0 2px;display:flex;justify-content:space-between}
+  .fim{display:flex;align-items:center;justify-content:space-between;min-height:28px}
+  .fim.ouro{border-top:2px solid var(--ouro);margin-top:8px}
+  .fim.total b,.fim.total .num{font-size:15px}
+  .fim.sub{font-size:11px;min-height:22px}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.cheio{background:var(--texto);color:#fff;border-color:var(--texto);width:100%;margin-top:12px}
+  .btn.mini{width:32px;padding:0}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;width:100%}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .travado{padding:8px 0;font-weight:600;text-align:center}
+  .linha-add{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--linha)}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:8px}
+  .pill{display:inline-block;border:1px solid var(--texto);border-radius:999px;padding:1px 8px;font-size:11px;font-weight:700;margin-right:4px;white-space:nowrap}
+  .dois{display:flex;flex-direction:column;align-items:flex-end;font-size:11px;line-height:1.25}
+  .col{display:grid;grid-template-columns:62px 62px;text-align:right}
+  .cabcol{font-size:11px;font-weight:700;text-transform:uppercase}
+  .regras{margin:8px 0;border-bottom:1px solid var(--linha)}
+  .regras .r{display:flex;justify-content:space-between;min-height:28px;align-items:center;border-top:1px solid var(--linha)}
+  .regras .r.cab{font-size:11px;font-weight:700;text-transform:uppercase;border-top:0;margin-top:8px}
+  .regras p{padding:6px 0}
+</style>
+</head>
+<body>
+<h1>Pré-acerto · contador de dias com rótulos</h1>
+<p class="sub">Todo percentual agora diz <b>o que é</b>: <b>Comissão</b> ou <b>Brinde</b>. O resultado mostra de onde veio cada perda (remarcação e atraso). As 4 telas têm o contador de dias. Muda só o jeito de rotular. Sem degradê. Tudo funciona.</p>
+
+<div class="grade">
+  <section class="caixa"><h2>1 · Texto completo</h2><p class="nota">Cada linha diz: "Comissão −5% · Brinde −15%".</p><div class="tel"><div class="cart" id="P1"></div></div></section>
+  <section class="caixa"><h2>2 · Dois números empilhados</h2><p class="nota">À direita, dois números pequenos, um sobre o outro, cada um com seu nome.</p><div class="tel"><div class="cart" id="P2"></div></div></section>
+  <section class="caixa"><h2>3 · Etiquetas</h2><p class="nota">Etiquetas com contorno: [Comissão −5%] [Brinde −15%].</p><div class="tel"><div class="cart" id="P3"></div></div></section>
+  <section class="caixa"><h2>4 · Duas colunas</h2><p class="nota">Cabeçalho fixo "Comissão | Brinde" e os valores caem embaixo, em colunas.</p><div class="tel"><div class="cart" id="P4"></div></div></section>
+</div>
+
+<script>
+var BASE = 45, ESCADA = [[5,15],[8,50],[15,100]], MOTIVOS = ["Falecimento na família","Doença","Problema pessoal","Outro"];
+var ATR = [[7,5,5],[15,10,10],[30,15,15],[45,20,20],[59,25,25]];
+var mk = function(){ return {info:false, salvo:false, lista:[{t:"multa"}], abre:false, novo:"multa", motivo:MOTIVOS[0], atraso:5}; };
+var S = {P1:mk(), P2:mk(), P3:mk(), P4:mk()};
+var n = function(s){ return s.lista.filter(function(x){ return x.t==="multa"; }).length; };
+var rem = function(k){ var e = k>0 ? ESCADA[Math.min(k,3)-1] : [0,0]; return {c:e[0], b:e[1]}; };
+var atr = function(d){ if(d<=0) return {c:0,b:0,tudo:false}; if(d>=60) return {c:BASE,b:100,tudo:true}; var x = ATR.find(function(y){ return d<=y[0]; }); return {c:x[1],b:x[2],tudo:false}; };
+
+// valores de uma linha, no estilo da tela
+function vals(id, c, b, nada){
+  if(nada) return '<span class="num">não pesa</span>';
+  if(id==="P1") return '<span class="num">Comissão −'+c+'% · Brinde −'+b+'%</span>';
+  if(id==="P2") return '<span class="dois"><span>Comissão <b class="num">−'+c+'%</b></span><span>Brinde <b class="num">−'+b+'%</b></span></span>';
+  if(id==="P3") return '<span><span class="pill">Comissão −'+c+'%</span><span class="pill" style="margin:0">Brinde −'+b+'%</span></span>';
+  return '<span class="col"><b class="num">−'+c+'%</b><b class="num">−'+b+'%</b></span>'; }
+var cabecalho = function(id){ return id==="P4" ? '<span class="col cabcol"><span>Comissão</span><span>Brinde</span></span>' : ''; };
+
+function listaRem(id){ var s = S[id], k = 0;
+  var l = s.lista.map(function(x,i){ if(x.t==="multa") k++; var e = rem(k), multa = x.t==="multa";
+    return '<div class="l"><div><b>'+(i+1)+'ª remarcação</b><small>'+(multa?'Com multa':'Isenta · '+x.m)+'</small></div><span style="display:flex;align-items:center">'+vals(id, e.c, e.b, !multa)+(s.salvo?'':'<button class="x" data-del="'+id+':'+i+'" aria-label="Tirar">×</button>')+'</span></div>'; }).join('') || '<div class="l"><b>Nenhuma remarcação</b></div>';
+  var r = rem(n(s));
+  var add = s.salvo ? '' : '<div class="linha-add"><button class="btn" data-abre="'+id+'">+ Remarcação</button>'+'</div>';
+  var form = s.abre && !s.salvo ? '<div class="form"><div class="seg"><button data-tipo="'+id+':multa" class="'+(s.novo==="multa"?'on':'')+'">Com multa</button><button data-tipo="'+id+':isenta" class="'+(s.novo==="isenta"?'on':'')+'">Isenta</button></div>'+(s.novo==="isenta"?'<select class="campo" data-motivo="'+id+'" aria-label="Motivo da isenção">'+MOTIVOS.map(function(m){ return '<option'+(m===s.motivo?' selected':'')+'>'+m+'</option>'; }).join('')+'</select>':'')+'<button class="btn" data-add="'+id+'">Adicionar</button></div>' : '';
+  return '<div class="sec"><span>Remarcações</span>'+cabecalho(id)+'</div>'+l+add+form; }
+
+function atrasoBloco(id){ var s = S[id], d = s.atraso, a = atr(d);
+  var ctl = s.salvo ? '<span class="num">'+d+' dias</span>' : '<span style="display:flex;align-items:center;gap:6px"><button class="btn mini" data-atr="'+id+':-1">−</button><span class="num" style="min-width:56px;text-align:center">'+d+' dias</span><button class="btn mini" data-atr="'+id+':1">+</button></span>';
+  var ef = d<=0 ? '<span class="num">no prazo</span>' : (a.tudo ? '<span class="num">perde tudo</span>' : vals(id, a.c, a.b));
+  return '<div class="sec"><span>Atraso do acerto</span>'+cabecalho(id)+'</div><div class="l"><div><b>Dias de atraso</b><small>Depois de 03/11/2026</small></div>'+ctl+'</div><div class="l" style="min-height:40px"><span>Perda pelo atraso</span>'+ef+'</div>'; }
+
+function fim(id){ var s = S[id], r = rem(n(s)), a = atr(s.atraso), c = a.tudo ? 0 : Math.max(0, BASE-r.c-a.c), b = a.tudo ? 100 : Math.min(100, r.b+a.b);
+  return '<div class="fim ouro total"><b>Comissão final</b><span class="num">'+BASE+'% → '+c+'%</span></div>'
+   +'<div class="fim sub"><span>Perda pelas remarcações</span><span class="num">−'+r.c+'%</span></div><div class="fim sub"><span>Perda pelo atraso</span><span class="num">'+(a.tudo?'tudo':'−'+a.c+'%')+'</span></div>'
+   +'<div class="fim total" style="margin-top:6px"><b>Brinde perdido</b><span class="num">−'+b+'%</span></div>'
+   +'<div class="fim sub"><span>Pelas remarcações</span><span class="num">−'+r.b+'%</span></div><div class="fim sub"><span>Pelo atraso</span><span class="num">'+(a.tudo?'tudo':'−'+a.b+'%')+'</span></div>'
+   +(a.tudo?'<div class="travado">60 dias ou mais: perde tudo (jurídico)</div>':''); }
+
+function regras(){ return '<div class="regras"><div class="r cab"><span>Remarcação com multa</span><span>Comissão · Brinde</span></div><div class="r"><span>1ª remarcação</span><span class="num">−5% · −15%</span></div><div class="r"><span>2ª remarcação</span><span class="num">−8% · −50%</span></div><div class="r"><span>3ª ou mais</span><span class="num">−15% · −100%</span></div><p>A remarcação isenta, com motivo, não pesa.</p><div class="r cab"><span>Atraso do acerto</span><span>Comissão · Brinde</span></div><div class="r"><span>Até 7 dias</span><span class="num">−5% · −5%</span></div><div class="r"><span>Até 15 dias</span><span class="num">−10% · −10%</span></div><div class="r"><span>Até 30 dias</span><span class="num">−15% · −15%</span></div><div class="r"><span>Até 45 dias</span><span class="num">−20% · −20%</span></div><div class="r"><span>Até 59 dias</span><span class="num">−25% · −25%</span></div><div class="r"><span>60 dias ou mais</span><span class="num">perde tudo</span></div></div>'; }
+function topo(id){ return '<div class="topo"><b>Pré-acerto</b><button class="info'+(S[id].info?' on':'')+'" data-info="'+id+'" aria-label="Regras">i</button></div><div class="quem"><b>Francelle Schmidt Alves Pinto dos Santos</b><span>Acerto previsto para 03/11/2026</span></div>'+(S[id].info?regras():''); }
+function salvar(id){ return S[id].salvo ? '<div class="travado">Salvo. No acerto fica travado.</div><button class="btn cheio" data-edita="'+id+'">Editar pré-acerto</button>' : '<button class="btn cheio" data-salva="'+id+'">Salvar pré-acerto</button>'; }
+function desenha(){ ["P1","P2","P3","P4"].forEach(function(id){ document.getElementById(id).innerHTML = topo(id)+listaRem(id)+atrasoBloco(id)+fim(id)+salvar(id); }); }
+function adicionar(id){ var s = S[id]; s.lista.push(s.novo==="multa" ? {t:"multa"} : {t:"isenta", m:s.motivo}); s.abre = false; }
+document.addEventListener("change", function(ev){ var t = ev.target; if(t.dataset.motivo){ S[t.dataset.motivo].motivo = t.value; desenha(); } });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.info) S[d.info].info = !S[d.info].info;
+  else if(d.salva) S[d.salva].salvo = true;
+  else if(d.edita) S[d.edita].salvo = false;
+  else if(d.abre) S[d.abre].abre = !S[d.abre].abre;
+  else if(d.tipo){ var t = d.tipo.split(":"); S[t[0]].novo = t[1]; }
+  else if(d.add) adicionar(d.add);
+  else if(d.del){ var x = d.del.split(":"); S[x[0]].lista.splice(+x[1],1); }
+  else if(d.atr){ var q = d.atr.split(":"); S[q[0]].atraso = Math.max(0, Math.min(60, S[q[0]].atraso + (+q[1]))); }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

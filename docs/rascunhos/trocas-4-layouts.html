@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Trocas · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:720px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button,select,input{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .topo{display:flex;align-items:center;justify-content:space-between;min-height:32px}
+  .topo b{font-size:13px}
+  .sub2{font-size:11px;padding-bottom:6px;border-bottom:1px solid var(--linha)}
+  .info{width:32px;height:32px;border-radius:50%;border:1px solid var(--linha);background:#fff;font-weight:700;font-style:italic;font-family:Georgia,serif;font-size:13px;cursor:pointer}
+  .info.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .sec{display:flex;align-items:center;justify-content:space-between;min-height:32px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:36px;border-bottom:1px solid var(--linha)}
+  .l .n{font-weight:600}
+  .l small{display:block;font-size:11px}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.esc{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .btn.peq{height:28px;padding:0 10px}
+  .btn:disabled{opacity:.4;cursor:default}
+  .x{width:28px;height:32px;border:0;background:transparent;font-size:13px;cursor:pointer}
+  .campo{height:32px;border:1px solid #CFC7B2;border-radius:8px;background:#fff;padding:0 8px;width:100%;font-size:13px}
+  .campo.cod{text-transform:uppercase;font-weight:600}
+  .campo.val{text-align:right;font-weight:600}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer;font-size:11px;line-height:1.15}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:8px}
+  .rot{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .tab{display:grid;grid-template-columns:54px 1fr 1fr;gap:6px;align-items:center}
+  .live{display:flex;justify-content:space-between;align-items:center;min-height:32px;border-top:2px solid var(--ouro)}
+  .live .num{font-size:13px}
+  .tot{display:flex;justify-content:space-between;align-items:center;min-height:36px;border-top:2px solid var(--ouro);margin-top:4px}
+  .tag{display:inline-block;border:1px solid var(--texto);border-radius:999px;padding:0 7px;font-size:11px;font-weight:700;white-space:nowrap}
+  .pas{display:flex;gap:6px;align-items:center;font-size:11px;font-weight:700;text-transform:uppercase}
+  .pas i{width:20px;height:20px;border-radius:50%;background:var(--texto);color:#fff;display:grid;place-items:center;font-style:normal;font-size:11px}
+  .regras{margin:4px 0;border-bottom:1px solid var(--linha)}
+  .regras p{padding:6px 0;border-top:1px solid var(--linha)}
+  .vazio{padding:10px 0;border-bottom:1px solid var(--linha)}
+</style>
+</head>
+<body>
+<h1>Trocas · 4 layouts</h1>
+<p class="sub">A troca tem <b>duas regras</b>: peça <b>deste kit</b> (a nova entra na venda pelo valor cheio) e peça <b>de outro mês</b> (entra só a diferença: nova menos quebrada). Cada layout deixa essa diferença clara. Sem degradê. Tudo funciona. Dados de exemplo.</p>
+<div class="grade">
+  <section class="caixa"><h2>1 · Em 3 passos</h2><p class="nota">Passo 1 tipo, passo 2 peça quebrada, passo 3 peça nova. Uma coisa de cada vez.</p><div class="tel"><div class="cart" id="T1"></div></div></section>
+  <section class="caixa"><h2>2 · Tabela única</h2><p class="nota">Uma grade com duas linhas (Quebrada e Nova) e colunas Código e Valor. Tudo à vista.</p><div class="tel"><div class="cart" id="T2"></div></div></section>
+  <section class="caixa"><h2>3 · De → Para</h2><p class="nota">Cada troca é uma linha: código que voltou → código que ficou. Os valores vêm embaixo.</p><div class="tel"><div class="cart" id="T3"></div></div></section>
+  <section class="caixa"><h2>4 · Pergunta primeiro</h2><p class="nota">Pergunta: "A peça que quebrou já foi paga em outro mês?" A resposta mostra a regra e a conta ao vivo.</p><div class="tel"><div class="cart" id="T4"></div></div></section>
+</div>
+
+<script>
+var R = function(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var mk = function(){ return {info:false, abre:false, tipo:"mes", aCod:"", aVal:"", nCod:"", nVal:"", lista:[{tipo:"mes",aCod:"AB123",aVal:60,nCod:"CD456",nVal:60},{tipo:"anterior",aCod:"EF789",aVal:80,nCod:"GH012",nVal:70}], passo:1, paga:null}; };
+var S = {T1:mk(), T2:mk(), T3:mk(), T4:mk()};
+var num = function(v){ var x = parseFloat(String(v).replace(/\./g,"").replace(",",".")); return isNaN(x) ? 0 : x; };
+var ajuste = function(t){ return t.tipo==="anterior" ? t.nVal - t.aVal : t.nVal; };
+var totalAj = function(s){ return s.lista.reduce(function(t,x){ return t + ajuste(x); }, 0); };
+var codOk = function(c){ return /^[A-Z]{2}\d{3,4}$/.test(c.trim().toUpperCase()); };
+var pode = function(s){ return codOk(s.aCod) && codOk(s.nCod) && num(s.aVal)>0 && num(s.nVal)>0; };
+var sinal = function(v){ return (v>=0 ? "+ " : "− ") + R(Math.abs(v)); };
+var live = function(s){ var t = {tipo:s.tipo,aVal:num(s.aVal),nVal:num(s.nVal)}; return ajuste(t); };
+var REGRA_MES = "Peça deste kit: a peça nova entra na venda pelo valor cheio. A quebrada volta para a empresa.";
+var REGRA_ANT = "Peça de outro mês (já foi paga): entra na venda só a diferença, nova menos quebrada. Se a nova for mais barata, desconta.";
+var campo = function(id, k, cls, ph, v, lb){ return '<input class="campo '+cls+'" data-in="'+id+':'+k+'" placeholder="'+ph+'" aria-label="'+lb+'" inputmode="'+(cls==="val"?"decimal":"text")+'" value="'+v+'" maxlength="'+(cls==="val"?10:6)+'">'; };
+var liveBox = function(id){ var s = S[id]; return '<div class="live"><span>'+(s.tipo==="anterior" ? "Entra na venda (nova − quebrada)" : "Entra na venda (valor da nova)")+'</span><span class="num" data-live="'+id+'">'+sinal(live(s))+'</span></div>'; };
+var botaoAdd = function(id){ return '<button class="btn esc" data-add="'+id+'"'+(pode(S[id])?'':' disabled')+'>Lançar troca</button>'; };
+
+function topo(id){ var s = S[id]; return '<div class="topo"><b>Trocas</b><button class="info'+(s.info?' on':'')+'" data-info="'+id+'" aria-label="Regras">i</button></div><div class="sub2">Peça quebrada trocada por outra</div>'+(s.info?'<div class="regras"><p><b>Deste kit.</b> '+REGRA_MES+'</p><p><b>De outro mês.</b> '+REGRA_ANT+'</p></div>':''); }
+function itens(id, est){ var s = S[id];
+  return s.lista.map(function(t,i){ var a = ajuste(t), tag = '<span class="tag">'+(t.tipo==="anterior"?"Outro mês":"Deste kit")+'</span>';
+    var meio = est==="deipara" ? '<div><span class="n num">'+t.aCod+' → '+t.nCod+'</span><small>'+R(t.aVal)+' → '+R(t.nVal)+' · '+(t.tipo==="anterior"?"Outro mês":"Deste kit")+'</small></div>' : '<div><span class="n num">'+t.aCod+' → '+t.nCod+'</span><small>'+(t.tipo==="anterior"?"Outro mês · já foi paga":"Deste kit · quebrou neste mês")+'</small></div>';
+    return '<div class="l">'+meio+'<span style="display:flex;align-items:center"><span class="num">'+sinal(a)+'</span><button class="x" data-del="'+id+':'+i+'" aria-label="Tirar troca">×</button></span></div>'; }).join('') || '<div class="vazio">Nenhuma troca lançada.</div>'; }
+function rodape(id){ var s = S[id], v = totalAj(s); return s.lista.length ? '<div class="tot"><b>Ajuste na venda</b><span class="num" style="font-size:13px">'+sinal(v)+'</span></div>' : ''; }
+function cab(id){ var s = S[id]; return '<div class="sec"><span>Lançadas</span><button class="btn peq" data-abre="'+id+'">'+(s.abre?'Cancelar':'+ Troca')+'</button></div>'; }
+var tipoSeg = function(id){ var s = S[id]; return '<div class="seg"><button data-tipo="'+id+':mes" class="'+(s.tipo==="mes"?'on':'')+'">Peça deste kit<br>quebrou neste mês</button><button data-tipo="'+id+':anterior" class="'+(s.tipo==="anterior"?'on':'')+'">Peça de outro mês<br>já foi paga</button></div>'; };
+
+function f1(){ var s = S.T1, p = s.passo; var pas = [1,2,3].map(function(n){ return '<span class="pas" style="opacity:'+(n===p?1:.45)+'"><i>'+n+'</i>'+['Tipo','Quebrada','Nova'][n-1]+'</span>'; }).join('');
+  var corpo = p===1 ? tipoSeg("T1")+'<p style="font-size:11px">'+(s.tipo==="anterior"?REGRA_ANT:REGRA_MES)+'</p><button class="btn esc" data-passo="T1:2">Continuar</button>'
+    : p===2 ? '<span class="rot">Peça que voltou quebrada</span><div class="par">'+campo("T1","aCod","cod","AB123",s.aCod,"Código da peça quebrada")+campo("T1","aVal","val","R$ 0,00",s.aVal,"Valor da peça quebrada")+'</div><div class="par"><button class="btn" data-passo="T1:1">Voltar</button><button class="btn esc" data-passo="T1:3">Continuar</button></div>'
+    : '<span class="rot">Peça nova que ela ficou</span><div class="par">'+campo("T1","nCod","cod","CD456",s.nCod,"Código da peça nova")+campo("T1","nVal","val","R$ 0,00",s.nVal,"Valor da peça nova")+'</div>'+liveBox("T1")+'<div class="par"><button class="btn" data-passo="T1:2">Voltar</button>'+botaoAdd("T1")+'</div>';
+  return topo("T1")+itens("T1")+cab("T1")+(s.abre?'<div class="form"><div style="display:flex;gap:10px">'+pas+'</div>'+corpo+'</div>':'')+rodape("T1"); }
+
+function f2(){ var s = S.T2;
+  var form = '<div class="form">'+tipoSeg("T2")+'<div class="tab"><span></span><span class="rot">Código</span><span class="rot" style="text-align:right">Valor</span>'
+    +'<span class="rot">Quebrada</span>'+campo("T2","aCod","cod","AB123",s.aCod,"Código da peça quebrada")+campo("T2","aVal","val","R$ 0,00",s.aVal,"Valor da peça quebrada")
+    +'<span class="rot">Nova</span>'+campo("T2","nCod","cod","CD456",s.nCod,"Código da peça nova")+campo("T2","nVal","val","R$ 0,00",s.nVal,"Valor da peça nova")+'</div>'+liveBox("T2")+botaoAdd("T2")+'</div>';
+  return topo("T2")+itens("T2")+cab("T2")+(s.abre?form:'')+rodape("T2"); }
+
+function f3(){ var s = S.T3;
+  var form = '<div class="form">'+tipoSeg("T3")+'<span class="rot">De → Para</span><div style="display:grid;grid-template-columns:1fr 16px 1fr;gap:4px;align-items:center">'+campo("T3","aCod","cod","Quebrada",s.aCod,"Código da peça quebrada")+'<span style="text-align:center">→</span>'+campo("T3","nCod","cod","Nova",s.nCod,"Código da peça nova")+'</div>'
+    +'<div style="display:grid;grid-template-columns:1fr 16px 1fr;gap:4px;align-items:center">'+campo("T3","aVal","val","R$ 0,00",s.aVal,"Valor da peça quebrada")+'<span></span>'+campo("T3","nVal","val","R$ 0,00",s.nVal,"Valor da peça nova")+'</div>'+liveBox("T3")+botaoAdd("T3")+'</div>';
+  return topo("T3")+itens("T3","deipara")+cab("T3")+(s.abre?form:'')+rodape("T3"); }
+
+function f4(){ var s = S.T4, r = s.paga;
+  var perg = '<span class="rot">A peça que quebrou já foi paga em outro mês?</span><div class="seg"><button data-paga="T4:nao" class="'+(r==="nao"?'on':'')+'">Não, é deste kit</button><button data-paga="T4:sim" class="'+(r==="sim"?'on':'')+'">Sim, outro mês</button></div>';
+  var resto = r ? '<p style="font-size:11px">'+(r==="sim"?REGRA_ANT:REGRA_MES)+'</p><div class="par">'+campo("T4","aCod","cod","Quebrada AB123",s.aCod,"Código da peça quebrada")+campo("T4","aVal","val","R$ 0,00",s.aVal,"Valor da peça quebrada")+'</div><div class="par">'+campo("T4","nCod","cod","Nova CD456",s.nCod,"Código da peça nova")+campo("T4","nVal","val","R$ 0,00",s.nVal,"Valor da peça nova")+'</div>'+liveBox("T4")+botaoAdd("T4") : '';
+  return topo("T4")+itens("T4")+cab("T4")+(s.abre?'<div class="form">'+perg+resto+'</div>':'')+rodape("T4"); }
+
+function desenha(){ document.getElementById("T1").innerHTML = f1(); document.getElementById("T2").innerHTML = f2(); document.getElementById("T3").innerHTML = f3(); document.getElementById("T4").innerHTML = f4(); }
+function atualizaVivo(id){ var s = S[id], el = document.querySelector('[data-live="'+id+'"]'); if(el) el.textContent = sinal(live(s)); var b = document.querySelector('[data-add="'+id+'"]'); if(b) b.disabled = !pode(s); }
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.dataset.in) return; var a = t.dataset.in.split(":"), s = S[a[0]], k = a[1];
+  s[k] = k.slice(1)==="Cod" ? t.value.toUpperCase().replace(/[^A-Z0-9]/g,"") : t.value.replace(/[^0-9,.]/g,""); if(k.slice(1)==="Cod") t.value = s[k]; atualizaVivo(a[0]); });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.info) S[d.info].info = !S[d.info].info;
+  else if(d.abre){ var s0 = S[d.abre]; s0.abre = !s0.abre; s0.passo = 1; s0.paga = null; }
+  else if(d.tipo){ var t = d.tipo.split(":"); S[t[0]].tipo = t[1]; }
+  else if(d.passo){ var p = d.passo.split(":"); S[p[0]].passo = +p[1]; }
+  else if(d.paga){ var q = d.paga.split(":"); S[q[0]].paga = q[1]; S[q[0]].tipo = q[1]==="sim" ? "anterior" : "mes"; }
+  else if(d.add){ var s = S[d.add]; s.lista.push({tipo:s.tipo, aCod:s.aCod.toUpperCase(), aVal:num(s.aVal), nCod:s.nCod.toUpperCase(), nVal:num(s.nVal)}); s.aCod = s.nCod = s.aVal = s.nVal = ""; s.abre = false; s.passo = 1; s.paga = null; }
+  else if(d.del){ var x = d.del.split(":"); S[x[0]].lista.splice(+x[1],1); }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

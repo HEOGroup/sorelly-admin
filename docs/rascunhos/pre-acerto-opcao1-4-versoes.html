@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pré-acerto · opção 1, 4 versões</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:720px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+  .topo b{font-size:13px;font-weight:700}
+  .quem{padding:6px 0 8px;border-bottom:1px solid var(--linha)}
+  .quem b{display:block;font-weight:600}
+  .quem span{font-size:11px}
+  .info{width:32px;height:32px;border-radius:50%;border:1px solid var(--linha);background:#fff;font-weight:700;font-style:italic;font-family:Georgia,serif;font-size:15px;cursor:pointer;flex:none}
+  .info.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,select,input{font:inherit;color:inherit}
+  .x{width:32px;height:32px;border:0;background:transparent;font-size:18px;cursor:pointer;flex:none}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;border-bottom:1px solid var(--linha)}
+  .l b{font-weight:600}
+  .l small{display:block;font-size:11px;font-weight:400}
+  .fim{display:flex;align-items:center;justify-content:space-between;min-height:30px}
+  .fim.ouro{border-top:2px solid var(--ouro);margin-top:6px}
+  .fim .num{font-size:15px}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.cheio{background:var(--texto);color:#fff;border-color:var(--texto);width:100%;margin-top:12px}
+  .btn.grande{width:100%;text-align:left;padding:0 12px}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;width:100%}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .oculto{display:none!important}
+  .travado{padding:8px 0;font-weight:600;text-align:center}
+  .linha-add{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--linha)}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:8px}
+  .rad{display:flex;align-items:center;gap:8px;min-height:32px;cursor:pointer}
+  .bolinha{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--texto);flex:none}
+  .rad.on .bolinha{background:var(--texto);box-shadow:inset 0 0 0 3px #fff}
+  .ord{width:28px;height:28px;border-radius:50%;border:1px solid var(--texto);display:grid;place-items:center;font-weight:700;flex:none}
+  /* regras: só linhas finas, sem degradê (o degradê é das planilhas) */
+  .regras{margin:8px 0;border-bottom:1px solid var(--linha)}
+  .regras .r{display:flex;justify-content:space-between;min-height:28px;align-items:center;border-top:1px solid var(--linha)}
+  .regras .r.cab{border-top:0;font-size:11px;font-weight:700;text-transform:uppercase}
+  .regras p{padding:6px 0}
+</style>
+</head>
+<body>
+<h1>Pré-acerto · opção 1, 4 versões</h1>
+<p class="sub">Refiz a opção 1 (lista de remarcações). <b>Sem degradê</b>: no app só linhas finas e um fio dourado liso no resultado. As regras ficam no botão <b>i</b>. Salvar trava tudo para o acerto ("é o sistema"). Tudo funciona. Dados de exemplo.</p>
+
+<div class="grade">
+  <section class="caixa"><h2>1 · Linhas simples</h2><p class="nota">Cada remarcação é uma linha com o efeito embaixo do nome. "+ Remarcação" à esquerda, efeito total à direita.</p><div class="tel"><div class="cart" id="P1"></div></div></section>
+  <section class="caixa"><h2>2 · Toque e escolha</h2><p class="nota">O "+ Remarcação" abre dois botões grandes: Com multa e Isenta. A isenta pede o motivo numa lista de escolha única.</p><div class="tel"><div class="cart" id="P2"></div></div></section>
+  <section class="caixa"><h2>3 · Numeradas</h2><p class="nota">Um círculo com o número (1, 2, 3) à esquerda de cada remarcação e o efeito à direita, na mesma linha.</p><div class="tel"><div class="cart" id="P3"></div></div></section>
+  <section class="caixa"><h2>4 · Com a data</h2><p class="nota">Cada remarcação guarda o dia em que a revendedora remarcou. A representante marca a data ao adicionar.</p><div class="tel"><div class="cart" id="P4"></div></div></section>
+</div>
+
+<script>
+var BASE = 45, ESCADA = [[5,15],[8,50],[15,100]], MOTIVOS = ["Falecimento na família","Doença","Problema pessoal","Outro"];
+var quem = '<div class="quem"><b>Francelle Schmidt Alves Pinto dos Santos</b><span>Acerto previsto para 03/11/2026</span></div>';
+var mk = function(l){ return {info:false, salvo:false, lista:l, abre:false, novo:"multa", motivo:MOTIVOS[0], data:"2026-10-28"}; };
+var S = {P1:mk([{t:"multa",d:"2026-10-20"}]), P2:mk([{t:"multa",d:"2026-10-20"}]), P3:mk([{t:"multa",d:"2026-10-20"}]), P4:mk([{t:"multa",d:"2026-10-20"}])};
+var dBr = function(d){ var p = d.split("-"); return p[2]+"/"+p[1]+"/"+p[0]; };
+var n = function(s){ return s.lista.filter(function(x){ return x.t==="multa"; }).length; };
+var efeito = function(k){ var e = k>0 ? ESCADA[Math.min(k,3)-1] : [0,0]; return {c:e[0], b:e[1], final:Math.max(0,BASE-e[0])}; };
+var fim = function(s){ var e = efeito(n(s)); return '<div class="fim ouro"><span>Comissão</span><span class="num">'+BASE+'% → '+e.final+'%</span></div><div class="fim"><span>Brinde</span><span class="num">−'+e.b+'%</span></div>'; };
+var infoBtn = function(id){ return '<button class="info'+(S[id].info?' on':'')+'" data-info="'+id+'" aria-label="Regras">i</button>'; };
+var regras = function(){ return '<div class="regras"><div class="r cab"><span>Remarcação com multa</span><span>Comissão · Brinde</span></div><div class="r"><span>1ª remarcação</span><span class="num">−5% · −15%</span></div><div class="r"><span>2ª remarcação</span><span class="num">−8% · −50%</span></div><div class="r"><span>3ª ou mais</span><span class="num">−15% · −100%</span></div><p>A remarcação isenta, com motivo, não pesa e não avança a escada.</p><div class="r cab"><span>Atraso do acerto</span><span>Comissão · Brinde</span></div><div class="r"><span>Até 7 dias</span><span class="num">−5% · −5%</span></div><div class="r"><span>Até 15 dias</span><span class="num">−10% · −10%</span></div><div class="r"><span>Até 30 dias</span><span class="num">−15% · −15%</span></div><div class="r"><span>Até 45 dias</span><span class="num">−20% · −20%</span></div><div class="r"><span>Até 59 dias</span><span class="num">−25% · −25%</span></div><div class="r"><span>60 dias ou mais</span><span class="num">perde tudo</span></div></div>'; };
+var topo = function(id){ return '<div class="topo"><b>Pré-acerto</b>'+infoBtn(id)+'</div>'+quem+(S[id].info?regras():''); };
+var motivoSel = function(id, v){ return '<select class="campo" data-motivo="'+id+'" aria-label="Motivo da isenção">'+MOTIVOS.map(function(m){ return '<option'+(m===v?' selected':'')+'>'+m+'</option>'; }).join('')+'</select>'; };
+var salvar = function(id){ return S[id].salvo ? '<div class="travado">Salvo. No acerto fica travado.</div><button class="btn cheio" data-edita="'+id+'">Editar pré-acerto</button>' : '<button class="btn cheio" data-salva="'+id+'">Salvar pré-acerto</button>'; };
+var efTxt = function(t, k){ var e = ESCADA[Math.min(k,3)-1]; return t==="multa" ? '−'+e[0]+'% · −'+e[1]+'%' : 'não pesa'; };
+var seg = function(id, v){ return '<div class="seg"><button data-tipo="'+id+':multa" class="'+(v==="multa"?'on':'')+'">Com multa</button><button data-tipo="'+id+':isenta" class="'+(v==="isenta"?'on':'')+'">Isenta</button></div>'; };
+
+function lista(id, estilo){ var s = S[id], k = 0;
+  return s.lista.map(function(x,i){ if(x.t==="multa") k++; var nome = (i+1)+'ª remarcação', tipo = x.t==="multa" ? 'Com multa' : 'Isenta · '+x.m, ef = efTxt(x.t,k), rm = s.salvo ? '' : '<button class="x" data-del="'+id+':'+i+'" aria-label="Tirar">×</button>';
+    if(estilo==="simples") return '<div class="l"><div><b>'+nome+'</b><small>'+tipo+' · '+ef+'</small></div>'+rm+'</div>';
+    if(estilo==="escolha") return '<div class="l"><div><b>'+tipo+'</b><small>'+nome+'</small></div><span class="num">'+ef+'</span>'+rm+'</div>';
+    if(estilo==="num") return '<div class="l"><span class="ord">'+(i+1)+'</span><div style="flex:1"><b>'+tipo+'</b></div><span class="num">'+ef+'</span>'+rm+'</div>';
+    return '<div class="l"><div><b>'+nome+'</b><small>'+dBr(x.d)+' · '+tipo+'</small></div><span class="num">'+ef+'</span>'+rm+'</div>'; }).join('') || '<div class="l"><b>Nenhuma remarcação</b></div>'; }
+
+function efeitoTotal(s){ var e = efeito(n(s)); return n(s) ? '−'+e.c+'% · −'+e.b+'%' : 'sem perda'; }
+function adicionar(id){ var s = S[id]; s.lista.push(s.novo==="multa" ? {t:"multa", d:s.data} : {t:"isenta", m:s.motivo, d:s.data}); s.abre = false; }
+
+var ATR=[[7,5,5],[15,10,10],[30,15,15],[45,20,20],[59,25,25]];
+function atr(d){ if(d<=0) return {c:0,b:0,tudo:false}; if(d>=60) return {c:BASE,b:100,tudo:true}; var x=ATR.find(function(y){return d<=y[0];}); return {c:x[1],b:x[2],tudo:false}; }
+function fim1(s){ var e=efeito(n(s)), a=atr(s.atraso||0); var c=a.tudo?0:Math.max(0,BASE-e.c-a.c), b=a.tudo?100:Math.min(100,e.b+a.b);
+  return '<div class="fim ouro"><span>Comissão</span><span class="num">'+BASE+'% → '+c+'%</span></div><div class="fim"><span>Brinde</span><span class="num">−'+b+'%</span></div>'+(a.tudo?'<div class="travado">60 dias ou mais: perde tudo (jurídico)</div>':''); }
+function atrasoBloco(s,tr){ var d=s.atraso||0, a=atr(d), ef=d<=0?'no prazo':(a.tudo?'perde tudo':'−'+a.c+'% · −'+a.b+'%');
+  return '<div class="l"><div><b>Atraso do acerto</b><small>Dias depois de 03/11/2026 · '+ef+'</small></div>'+(tr?'<span class="num">'+d+' dias</span>':'<div style="display:flex;align-items:center;gap:6px"><button class="btn" data-atr="-1" style="width:32px;padding:0">−</button><span class="num" style="min-width:56px;text-align:center">'+d+' dias</span><button class="btn" data-atr="1" style="width:32px;padding:0">+</button></div>')+'</div>'; }
+function p1(){ var s=S.P1, tr=s.salvo;
+  return topo("P1")+lista("P1","simples")+(tr?'':'<div class="linha-add"><button class="btn" data-abre="P1">+ Remarcação</button><span class="num">'+efeitoTotal(s)+'</span></div>')
+  +(s.abre&&!tr?'<div class="form">'+seg("P1",s.novo)+(s.novo==="isenta"?motivoSel("P1",s.motivo):'')+'<button class="btn" data-add="P1">Adicionar</button></div>':'')+atrasoBloco(s,tr)+fim1(s)+salvar("P1"); }
+
+function p2(){ var s=S.P2, tr=s.salvo;
+  var abre = s.abre&&!tr ? '<div class="form"><button class="btn grande" data-direto="P2:multa">Com multa</button><button class="btn grande" data-direto="P2:isenta">Isenta</button></div>' : '';
+  var motivos = s.pedeMotivo&&!tr ? '<div class="form"><b style="font-weight:600">Motivo da isenta</b>'+MOTIVOS.map(function(m){ return '<div class="rad'+(s.motivo===m?' on':'')+'" data-radio="P2:'+m+'"><span class="bolinha"></span>'+m+'</div>'; }).join('')+'<button class="btn" data-add2="P2">Adicionar</button></div>' : '';
+  return topo("P2")+lista("P2","escolha")+(tr?'':'<div class="linha-add"><button class="btn" data-abre="P2">+ Remarcação</button><span class="num">'+efeitoTotal(s)+'</span></div>')+abre+motivos+fim(s)+salvar("P2"); }
+
+function p3(){ var s=S.P3, tr=s.salvo;
+  return topo("P3")+lista("P3","num")+(tr?'':'<div class="linha-add"><button class="btn" data-abre="P3">+ Remarcação</button><span class="num">'+efeitoTotal(s)+'</span></div>')
+  +(s.abre&&!tr?'<div class="form">'+seg("P3",s.novo)+(s.novo==="isenta"?motivoSel("P3",s.motivo):'')+'<button class="btn" data-add="P3">Adicionar</button></div>':'')+fim(s)+salvar("P3"); }
+
+function p4(){ var s=S.P4, tr=s.salvo;
+  return topo("P4")+lista("P4","data")+(tr?'':'<div class="linha-add"><button class="btn" data-abre="P4">+ Remarcação</button><span class="num">'+efeitoTotal(s)+'</span></div>')
+  +(s.abre&&!tr?'<div class="form"><b style="font-weight:600">Dia em que remarcou</b><input class="campo" type="date" data-data="P4" value="'+s.data+'">'+seg("P4",s.novo)+(s.novo==="isenta"?motivoSel("P4",s.motivo):'')+'<button class="btn" data-add="P4">Adicionar</button></div>':'')+fim(s)+salvar("P4"); }
+
+function desenha(){ document.getElementById("P1").innerHTML = p1(); document.getElementById("P2").innerHTML = p2(); document.getElementById("P3").innerHTML = p3(); document.getElementById("P4").innerHTML = p4(); }
+document.addEventListener("change", function(ev){ var t = ev.target; if(t.dataset.motivo){ S[t.dataset.motivo].motivo = t.value; desenha(); } else if(t.dataset.data){ S[t.dataset.data].data = t.value; desenha(); } });
+document.addEventListener("click", function(ev){ var r = ev.target.closest("[data-radio]"); if(r){ var a = r.dataset.radio.split(":"); S[a[0]].motivo = a[1]; desenha(); return; }
+  var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.atr) S.P1.atraso = Math.max(0, Math.min(60, (S.P1.atraso||0) + (+d.atr)));
+  else if(d.info) S[d.info].info = !S[d.info].info;
+  else if(d.salva) S[d.salva].salvo = true;
+  else if(d.edita) S[d.edita].salvo = false;
+  else if(d.abre){ S[d.abre].abre = !S[d.abre].abre; S[d.abre].pedeMotivo = false; }
+  else if(d.tipo){ var t = d.tipo.split(":"); S[t[0]].novo = t[1]; }
+  else if(d.add) adicionar(d.add);
+  else if(d.direto){ var q = d.direto.split(":"); S[q[0]].novo = q[1]; if(q[1]==="multa") adicionar(q[0]); else { S[q[0]].abre = false; S[q[0]].pedeMotivo = true; } }
+  else if(d.add2){ adicionar(d.add2); S[d.add2].pedeMotivo = false; }
+  else if(d.del){ var x = d.del.split(":"); S[x[0]].lista.splice(+x[1],1); }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

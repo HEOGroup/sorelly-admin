@@ -74,7 +74,7 @@ function Coluna(p){
 
 // Revendedora e representante dividem o mesmo contexto (os kits da revendedora vêm da representante escolhida); cada um só aparece se estiver ligado em "Celulares"
 var DEMO_REV = "Francelle Schmidt Alves Pinto dos Santos";
-var CENARIO_COMPLETO = {venda:8278, conds:[{n:"99011", p:60}, {n:"99012", p:55}, {n:"99013", p:45}, {n:"99014", p:40}], vendidas:68, pago:4326, brindes:[
+var CENARIO_COMPLETO = {garantia:100, venda:8278, conds:[{n:"99011", p:60}, {n:"99012", p:55}, {n:"99013", p:45}, {n:"99014", p:40}], vendidas:68, pago:4326, brindes:[
   {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
   {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
 function ColsRepRev(p){

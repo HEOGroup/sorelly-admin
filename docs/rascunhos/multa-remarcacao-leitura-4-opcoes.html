@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multa por remarcação · 4 opções</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --cinza:#64748B; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:720px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .cab{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--linha);cursor:pointer;width:100%;background:none;border-left:0;border-right:0;border-top:0;text-align:left}
+  .ico{width:32px;height:32px;border-radius:8px;background:#F4EFE0;color:#8A6A12;display:grid;place-items:center;font-weight:700;flex:none}
+  .cab b{flex:1;font-size:13px}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-size:11px;font-weight:700;padding:1px 8px}
+  .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;min-height:32px;display:flex;align-items:center;justify-content:space-between}
+  .trava{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;text-transform:uppercase}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;border-bottom:1px solid var(--linha)}
+  .l small{font-size:11px;display:block}
+  .fim{display:flex;justify-content:space-between;align-items:center;min-height:36px;border-top:2px solid var(--ouro);margin-top:4px}
+  .fim .num{font-size:13px}
+  .tab{display:grid;grid-template-columns:1.1fr 1fr 1fr 1fr;text-align:right;align-items:center;border-bottom:1px solid var(--linha);min-height:32px}
+  .tab>:first-child{text-align:left;font-weight:600}
+  .tab.cabt{font-size:11px;font-weight:700;text-transform:uppercase}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:6px 0}
+  .card{border:1px solid var(--linha);border-radius:10px;padding:8px 10px}
+  .card .t{font-size:11px;font-weight:700;text-transform:uppercase}
+  .card .v{font-size:13px;font-weight:700;margin-top:2px}
+  .card small{font-size:11px;display:block}
+  .frase{padding:10px 0;border-bottom:1px solid var(--linha);line-height:1.45}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer}
+  .btn.peq{height:28px}
+  .oculto{display:none}
+  .info{width:32px;height:32px;border-radius:50%;border:1px solid var(--linha);background:#fff;font:italic 700 13px Georgia,serif;cursor:pointer}
+</style>
+</head>
+<body>
+<h1>Multa por remarcação · 4 opções</h1>
+<p class="sub">Este bloco do acerto é <b>só leitura</b>. Tudo vem do Pré-acerto e chega <b>travado</b> ("é o sistema, não fui eu que coloquei"). Exemplo: <b>1 remarcação com multa</b> e <b>9 dias de atraso</b>. Sem cores e sem degradê: só dourado e linhas finas. Toque no título do bloco para abrir e fechar.</p>
+<div class="grade">
+  <section class="caixa"><h2>1 · Lista com cadeado</h2><p class="nota">Três linhas: Remarcações, Atraso e Total. O cadeado mostra que não dá para mudar.</p><div class="tel"><div class="cart" id="A1"></div></div></section>
+  <section class="caixa"><h2>2 · Tabela</h2><p class="nota">Uma tabela pequena: Comissão e Brinde nas linhas; Remarcação, Atraso e Total nas colunas.</p><div class="tel"><div class="cart" id="A2"></div></div></section>
+  <section class="caixa"><h2>3 · Dois cartões</h2><p class="nota">Dois cartões lado a lado (Remarcações e Atraso) e uma linha de resultado embaixo.</p><div class="tel"><div class="cart" id="A3"></div></div></section>
+  <section class="caixa"><h2>4 · Frase e conta</h2><p class="nota">Uma frase simples diz o que ela perde. O botão "Ver a conta" abre os números.</p><div class="tel"><div class="cart" id="A4"></div></div></section>
+</div>
+<script>
+var D = {rem:[{t:"multa"}], dias:9, rc:5, rb:15, ac:10, ab:10};
+var tc = D.rc + D.ac, tb = D.rb + D.ab;
+var abertos = {A1:true, A2:true, A3:true, A4:true}, conta = false;
+var lock = '<span class="trava">Travado · definido no pré-acerto</span>';
+var cabecalho = function(id){ return '<button class="cab" data-tg="'+id+'"><span class="ico">▦</span><b>Multa por remarcação</b><span class="selo">'+D.rem.length+'</span><span>'+(abertos[id]?'▾':'▸')+'</span></button>'; };
+var remLinhas = function(){ return D.rem.map(function(r,i){ return '<div class="l"><span>'+(i+1)+'ª remarcação</span><span class="num">Com multa</span></div>'; }).join(''); };
+var CB = function(c,b){ return 'Comissão −'+c+'% · Brinde −'+b+'%'; };
+var corpo = {
+ A1: function(){ return '<div class="sec">'+lock+'</div>'
+   +'<div class="l"><div>Remarcações<small>1 com multa</small></div><span class="num">'+CB(D.rc,D.rb)+'</span></div>'
+   +'<div class="l"><div>Atraso do acerto<small>'+D.dias+' dias</small></div><span class="num">'+CB(D.ac,D.ab)+'</span></div>'
+   +'<div class="fim"><b>Total</b><span class="num">'+CB(tc,tb)+'</span></div>'; },
+ A2: function(){ return '<div class="sec">'+lock+'</div>'+remLinhas()
+   +'<div class="l"><span>Dias de atraso</span><span class="num">'+D.dias+' dias</span></div>'
+   +'<div class="tab cabt" style="margin-top:6px"><span></span><span>Remarcação</span><span>Atraso</span><span>Total</span></div>'
+   +'<div class="tab"><span>Comissão</span><span class="num">−'+D.rc+'%</span><span class="num">−'+D.ac+'%</span><b class="num" style="font-size:13px">−'+tc+'%</b></div>'
+   +'<div class="tab"><span>Brinde</span><span class="num">−'+D.rb+'%</span><span class="num">−'+D.ab+'%</span><b class="num" style="font-size:13px">−'+tb+'%</b></div>'; },
+ A3: function(){ return '<div class="sec">'+lock+'</div><div class="duas">'
+   +'<div class="card"><div class="t">Remarcações</div><div class="v">1 com multa</div><small>'+CB(D.rc,D.rb)+'</small></div>'
+   +'<div class="card"><div class="t">Atraso</div><div class="v">'+D.dias+' dias</div><small>'+CB(D.ac,D.ab)+'</small></div></div>'
+   +'<div class="fim"><b>Perda total</b><span class="num">Comissão −'+tc+'% · Brinde −'+tb+'%</span></div>'; },
+ A4: function(){ return '<div class="sec">'+lock+'</div><p class="frase">Esta revendedora tem <b>1 remarcação com multa</b> e <b>'+D.dias+' dias de atraso</b>. Ela perde <b>'+tc+'% da comissão</b> e <b>'+tb+'% do brinde</b>.</p>'
+   +'<div class="sec"><span></span><button class="btn peq" data-conta="1">'+(conta?'Esconder a conta':'Ver a conta')+'</button></div>'
+   +(conta?'<div class="tab cabt"><span></span><span>Remarcação</span><span>Atraso</span><span>Total</span></div><div class="tab"><span>Comissão</span><span class="num">−'+D.rc+'%</span><span class="num">−'+D.ac+'%</span><b class="num" style="font-size:13px">−'+tc+'%</b></div><div class="tab"><span>Brinde</span><span class="num">−'+D.rb+'%</span><span class="num">−'+D.ab+'%</span><b class="num" style="font-size:13px">−'+tb+'%</b></div>':''); }
+};
+function desenha(){ ["A1","A2","A3","A4"].forEach(function(id){ document.getElementById(id).innerHTML = cabecalho(id)+(abertos[id]?corpo[id]():''); }); }
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return;
+  if(b.dataset.tg) abertos[b.dataset.tg] = !abertos[b.dataset.tg]; else if(b.dataset.conta) conta = !conta; else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

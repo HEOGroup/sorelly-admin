@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendas e pagamentos · 4 opções</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --campo:#CFC7B2; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:760px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button,select,input{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .cab{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--linha)}
+  .ico{width:32px;height:32px;border-radius:8px;background:#F4EFE0;color:#8A6A12;display:grid;place-items:center;font-weight:700;flex:none}
+  .cab b{flex:1;font-size:13px}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-size:11px;font-weight:700;padding:1px 8px}
+  .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;min-height:32px;display:flex;align-items:center;justify-content:space-between;padding-top:6px}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;border-bottom:1px solid var(--linha)}
+  .l small{font-size:11px;display:block}
+  .l.fin{border-bottom:0;border-top:2px solid var(--ouro);margin-top:4px;min-height:36px}
+  .l.fin .num{font-size:13px}
+  .l.mais,.l.menos{padding-left:0}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.esc{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .btn.ouro{background:var(--ouro);color:#fff;border-color:var(--ouro)}
+  .btn.cheio{width:100%}
+  .btn.peq{height:28px;padding:0 10px}
+  .btn:disabled{opacity:.4}
+  .mini{width:32px;height:32px;padding:0}
+  .x{width:28px;height:32px;border:0;background:transparent;font-size:13px;cursor:pointer}
+  .campo{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:100%;font-size:13px}
+  .campo.val{text-align:right;font-weight:600}
+  .grande{height:32px;font-size:13px}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden;margin:6px 0}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer;font-size:11px}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .chips{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;padding:6px 0}
+  .chips button{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;cursor:pointer;font-size:11px;font-weight:600}
+  .chips button.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .aviso{padding:8px 0;font-weight:600;line-height:1.4}
+  .tabela{display:grid;grid-template-columns:1fr 1fr;gap:0 10px}
+  .cel{padding:4px 0;border-bottom:1px solid var(--linha)}
+  .cel .t{font-size:11px;font-weight:700;text-transform:uppercase}
+  .tag{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--texto);border-radius:999px;padding:0 4px 0 10px;height:28px;margin:2px 4px 2px 0;font-size:11px;font-weight:600}
+  .tag .x{width:22px;height:22px}
+</style>
+</head>
+<body>
+<h1>Vendas e pagamentos · 4 opções</h1>
+<p class="sub">O bloco antigo mistura tudo numa fila só. Aqui o exemplo é a Francelle: <b>vendeu R$ 4.000,00</b>, tem <b>R$ 100,00 de garantia</b>, <b>R$ 60,00 de trocas</b>, <b>1 multa e 9 dias de atraso</b> (comissão 40% menos 15% = 25%). Já tem um Pix de R$ 1.500,00. Sem cores e sem degradê. Tudo funciona: digite a venda, lance pagamentos, negocie. Valor digitado vale ao sair do campo.</p>
+<div class="grade">
+  <section class="caixa"><h2>1 · Seções</h2><p class="nota">Tudo em uma tela, em 3 seções com títulos: Venda, Conta e Pagamentos.</p><div class="tel"><div class="cart" id="V1"></div></div></section>
+  <section class="caixa"><h2>2 · Abas</h2><p class="nota">Três abas dentro do bloco: Venda, Pagamentos e Falta. Embaixo fica sempre "Total a pagar" e "Falta".</p><div class="tel"><div class="cart" id="V2"></div></div></section>
+  <section class="caixa"><h2>3 · Extrato</h2><p class="nota">Uma coluna só, como um extrato: vendas somam, descontos subtraem, pagamentos baixam até a falta.</p><div class="tel"><div class="cart" id="V3"></div></div></section>
+  <section class="caixa"><h2>4 · Toque na forma</h2><p class="nota">Conta pequena em cima. Para pagar, ela toca na forma (Pix, Link, Crédito...) e o valor já vem com o que falta.</p><div class="tel"><div class="cart" id="V4"></div></div></section>
+</div>
+<script>
+var R = function(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var num = function(v){ var s = String(v).trim(); if(s.indexOf(",")>=0) s = s.replace(/\./g,"").replace(",","."); var x = parseFloat(s); return isNaN(x) ? 0 : x; };
+var FORMAS = ["Pix","Link","Crédito","Débito","Dinheiro","Acerto com loja"];
+var FAIXAS = [[7000,45],[5000,45],[2500,40],[1600,40],[1000,35],[700,30],[500,25],[300,15],[0,0]];
+var GARANTIA = 100, TROCAS = 60, PERDA = 15, TAG = 5;
+var mk = function(){ return {venda:4000, tags:1, pags:[{forma:"Pix", data:"02/11", valor:1500}], form:false, forma:"Pix", aba:"venda", acordo:null, acordoTxt:""}; };
+var S = {V1:mk(), V2:mk(), V3:mk(), V4:mk()};
+function calc(s){ var liq = Math.max(0, s.venda + TROCAS - GARANTIA), base = (FAIXAS.find(function(f){ return liq>=f[0]; })||[0,0])[1], pct = base>0 ? Math.max(0, base-PERDA) : 0,
+  comissao = liq*pct/100, acerto = liq-comissao, taxa = liq<300 ? 35 : 0, tags = s.tags*TAG, total = acerto+taxa+tags, pago = s.pags.reduce(function(t,p){ return t+p.valor; },0), falta = Math.max(0, total-pago);
+  return {liq:liq, base:base, pct:pct, comissao:comissao, acerto:acerto, taxa:taxa, tags:tags, total:total, pago:pago, falta:falta}; }
+var hoje = function(){ var d = new Date(); return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2); };
+var inp = function(id,k,v,cls){ return '<input class="campo '+(cls||'val')+' grande" data-in="'+id+':'+k+'" inputmode="decimal" value="'+v+'" aria-label="'+k+'">'; };
+var cabecalho = function(id){ var c = calc(S[id]); return '<div class="cab"><span class="ico">▤</span><b>Vendas e pagamentos</b>'+(c.falta<0.01?'<span class="selo">Quitado</span>':'<span class="selo" style="background:#64748B">'+R(c.falta)+'</span>')+'</div>'; };
+
+// peças repetidas
+function campoVenda(id){ var s = S[id]; return '<div class="l"><span>Valor total vendido</span><span style="width:130px">'+inp(id,"venda",s.venda.toFixed(2).replace(".",","))+'</span></div>'; }
+function tagsLinha(id){ var s = S[id]; return '<div class="l"><div>Tags riscadas ou perdidas<small>'+R(TAG)+' cada · soma no pagamento</small></div><span style="display:flex;align-items:center;gap:4px"><button class="btn mini" data-tag="'+id+':-1">−</button><b class="num" style="width:20px;text-align:center">'+s.tags+'</b><button class="btn mini" data-tag="'+id+':1">+</button></span></div>'; }
+function linhaConta(rot, val, fin){ return '<div class="l'+(fin?' fin':'')+'"><span>'+(fin?'<b>'+rot+'</b>':rot)+'</span><span class="num">'+val+'</span></div>'; }
+function pagLinhas(id){ var s = S[id]; return s.pags.map(function(p,i){ return '<div class="l"><div>Pag. '+(i+1)+' · '+p.forma+'<small>'+p.data+'</small></div><span style="display:flex;align-items:center"><span class="num">'+R(p.valor)+'</span><button class="x" data-del="'+id+':'+i+'" aria-label="Tirar pagamento">×</button></span></div>'; }).join('') || '<div class="l"><span>Nenhum pagamento lançado.</span></div>'; }
+function formPag(id, comForma){ var s = S[id], c = calc(s);
+  return '<div class="form">'+(comForma?'':'<select class="campo" data-forma="'+id+'" aria-label="Forma de pagamento">'+FORMAS.map(function(f){ return '<option'+(f===s.forma?' selected':'')+'>'+f+'</option>'; }).join('')+'</select>')
+   +'<div class="par"><input class="campo" data-data="'+id+'" value="'+hoje()+'" aria-label="Data do pagamento"><input class="campo val" data-valor="'+id+'" value="'+c.falta.toFixed(2).replace(".",",")+'" inputmode="decimal" aria-label="Valor do pagamento"></div>'
+   +'<div class="par"><button class="btn" data-form="'+id+':0">Cancelar</button><button class="btn esc" data-lancar="'+id+'">Lançar pagamento</button></div></div>'; }
+function negociar(id){ var s = S[id], c = calc(s); if(c.falta<0.01) return '';
+  if(s.acordo==="neg") return '<p class="aviso">'+s.acordoTxt+'</p><button class="btn cheio" data-acordo="'+id+':nenhum">Remover acordo</button>';
+  if(s.acordo==="rec") return '<p class="aviso">Sem brinde. Nota promissória em 48 h úteis.</p><button class="btn cheio" data-acordo="'+id+':nenhum">Desfazer</button>';
+  if(s.acordo==="form") return '<div class="form"><div class="par"><input class="campo" data-adata="'+id+'" value="'+hoje()+'" aria-label="Data da parcela"><input class="campo val" data-avalor="'+id+'" value="'+c.falta.toFixed(2).replace(".",",")+'" inputmode="decimal" aria-label="Valor da parcela"></div><div class="par"><button class="btn" data-acordo="'+id+':nenhum">Cancelar</button><button class="btn esc" data-acordo="'+id+':salvar">Salvar acordo</button></div></div>';
+  return '<div class="par" style="margin-top:6px"><button class="btn" data-acordo="'+id+':form">Negociar o que falta</button><button class="btn" data-acordo="'+id+':rec">Não quis negociar</button></div>'; }
+function botaoLancar(id){ var s = S[id]; return s.form ? formPag(id) : '<button class="btn esc cheio" style="margin-top:6px" data-form="'+id+':1">+ Lançar pagamento</button>'; }
+
+function v1(){ var id="V1", s=S[id], c=calc(s);
+  return cabecalho(id)+'<div class="sec">Venda</div>'+campoVenda(id)
+   +linhaConta("Trocas", "+ "+R(TROCAS))+linhaConta("Crédito de garantia", "− "+R(GARANTIA))+tagsLinha(id)
+   +'<div class="sec">Conta</div>'+linhaConta("Venda líquida", R(c.liq))+linhaConta("Comissão "+c.pct+"%", "− "+R(c.comissao))+linhaConta("Acerto", R(c.acerto))
+   +(c.taxa?linhaConta("Taxa de deslocamento","+ "+R(c.taxa)):'')+(c.tags?linhaConta("Tags","+ "+R(c.tags)):'')+linhaConta("Total a pagar", R(c.total), true)
+   +'<div class="sec">Pagamentos</div>'+pagLinhas(id)+botaoLancar(id)+linhaConta("Total pago", R(c.pago))+(c.falta>=0.01?linhaConta("Falta do acerto", R(c.falta), true):'')+negociar(id); }
+
+function v2(){ var id="V2", s=S[id], c=calc(s), ab = s.aba;
+  var abas = '<div class="seg"><button data-aba="'+id+':venda" class="'+(ab==="venda"?'on':'')+'">Venda</button><button data-aba="'+id+':pag" class="'+(ab==="pag"?'on':'')+'">Pagamentos</button><button data-aba="'+id+':falta" class="'+(ab==="falta"?'on':'')+'">Falta</button></div>';
+  var corpo = ab==="venda" ? campoVenda(id)+linhaConta("Trocas","+ "+R(TROCAS))+linhaConta("Crédito de garantia","− "+R(GARANTIA))+tagsLinha(id)+linhaConta("Venda líquida", R(c.liq))+linhaConta("Comissão "+c.pct+"%","− "+R(c.comissao))+linhaConta("Acerto", R(c.acerto))
+    : ab==="pag" ? pagLinhas(id)+botaoLancar(id)+linhaConta("Total pago", R(c.pago))
+    : (c.falta>=0.01 ? '<p class="aviso">Falta '+R(c.falta)+' para quitar o acerto.</p>'+negociar(id) : '<p class="aviso">Acerto quitado. Nada em aberto.</p>');
+  return cabecalho(id)+abas+corpo+linhaConta("Total a pagar", R(c.total), true)+'<div class="l" style="border-bottom:0"><span>Falta</span><span class="num">'+R(c.falta)+'</span></div>'; }
+
+function v3(){ var id="V3", s=S[id], c=calc(s);
+  return cabecalho(id)+campoVenda(id)+linhaConta("+ Trocas", R(TROCAS))+linhaConta("− Crédito de garantia", R(GARANTIA))+linhaConta("Venda líquida", R(c.liq))
+   +linhaConta("− Comissão "+c.pct+"%", R(c.comissao))+(c.taxa?linhaConta("+ Taxa de deslocamento", R(c.taxa)):'')+tagsLinha(id)
+   +linhaConta("Total a pagar", R(c.total), true)
+   +s.pags.map(function(p,i){ return '<div class="l"><span>− Pag. '+(i+1)+' · '+p.forma+' · '+p.data+'</span><span style="display:flex;align-items:center"><span class="num">'+R(p.valor)+'</span><button class="x" data-del="'+id+':'+i+'" aria-label="Tirar pagamento">×</button></span></div>'; }).join('')
+   +botaoLancar(id)+linhaConta("Falta", R(c.falta), true)+negociar(id); }
+
+function v4(){ var id="V4", s=S[id], c=calc(s);
+  var chips = '<div class="chips">'+FORMAS.map(function(f){ return '<button data-chip="'+id+':'+f+'" class="'+(s.form&&s.forma===f?'on':'')+'">'+f+'</button>'; }).join('')+'</div>';
+  return cabecalho(id)+campoVenda(id)+tagsLinha(id)+linhaConta("Total a pagar", R(c.total), true)
+   +'<div class="sec">Pagamentos</div>'+(s.pags.length?'<div style="padding:4px 0">'+s.pags.map(function(p,i){ return '<span class="tag">'+p.forma+' · '+R(p.valor)+'<button class="x" data-del="'+id+':'+i+'" aria-label="Tirar pagamento">×</button></span>'; }).join('')+'</div>':'')
+   +(c.falta>=0.01?'<div class="sec" style="padding-top:0">Como ela pagou o resto?</div>'+chips+(s.form?formPag(id,true):''):'<p class="aviso">Acerto quitado.</p>')
+   +linhaConta("Falta", R(c.falta), c.falta>=0.01)+negociar(id); }
+
+function desenha(){ document.getElementById("V1").innerHTML = v1(); document.getElementById("V2").innerHTML = v2(); document.getElementById("V3").innerHTML = v3(); document.getElementById("V4").innerHTML = v4(); }
+document.addEventListener("change", function(ev){ var t = ev.target, d = t.dataset;
+  if(d.in){ var a = d.in.split(":"); S[a[0]][a[1]] = num(t.value); desenha(); }
+  else if(d.forma){ S[d.forma].forma = t.value; } });
+document.addEventListener("keydown", function(ev){ if(ev.key==="Enter" && ev.target.dataset.in) ev.target.blur(); });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.tag){ var a = d.tag.split(":"); S[a[0]].tags = Math.max(0, S[a[0]].tags + (+a[1])); }
+  else if(d.aba){ var q = d.aba.split(":"); S[q[0]].aba = q[1]; }
+  else if(d.form){ var f = d.form.split(":"); S[f[0]].form = f[1]==="1"; }
+  else if(d.chip){ var c = d.chip.split(":"); S[c[0]].forma = c[1]; S[c[0]].form = true; }
+  else if(d.lancar){ var id = d.lancar, root = document.getElementById(id), v = num(root.querySelector("[data-valor]").value), dt = root.querySelector("[data-data]").value; var s = S[id]; if(v<=0) return; s.pags.push({forma:s.forma, data:dt, valor:v}); s.form = false; }
+  else if(d.del){ var x = d.del.split(":"); S[x[0]].pags.splice(+x[1],1); }
+  else if(d.acordo){ var z = d.acordo.split(":"), s2 = S[z[0]];
+    if(z[1]==="salvar"){ var root2 = document.getElementById(z[0]); var v2_ = num(root2.querySelector("[data-avalor]").value), dt2 = root2.querySelector("[data-adata]").value; s2.acordo = "neg"; s2.acordoTxt = "Acordo salvo: "+R(v2_)+" em "+dt2+(Math.abs(v2_-calc(s2).falta)<0.01 ? ". Cobre o que falta: brinde liberado." : ". Precisa cobrir exatamente o que falta para liberar o brinde."); }
+    else s2.acordo = z[1]==="nenhum" ? null : z[1]; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

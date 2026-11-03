@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pré-acerto · 4 opções</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:720px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px}
+  .topo b{font-size:13px;font-weight:700}
+  .quem{padding:6px 0 8px;border-bottom:1px solid var(--linha)}
+  .quem b{display:block;font-weight:600}
+  .quem span{font-size:11px}
+  .info{width:32px;height:32px;border-radius:50%;border:1px solid var(--linha);background:#fff;font-weight:700;font-style:italic;font-family:Georgia,serif;font-size:15px;cursor:pointer;flex:none}
+  .info.on{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button,select{font:inherit;color:inherit}
+  .passo{width:32px;height:32px;border-radius:8px;background:#fff;border:1px solid var(--linha);font-weight:700;font-size:20px;line-height:1;cursor:pointer;flex:none}
+  .valor{min-width:28px;text-align:center;font-size:15px}
+  .ctl{display:flex;align-items:center;gap:2px;flex:none}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:44px;border-bottom:1px solid var(--linha)}
+  .l b{font-weight:600}
+  .l small{display:block;font-size:11px;font-weight:400}
+  .fim{display:flex;align-items:center;justify-content:space-between;min-height:30px}
+  .fim.ouro{border-top:2px solid var(--ouro);margin-top:6px}
+  .fim .num{font-size:15px}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.cheio{background:var(--texto);color:#fff;border-color:var(--texto);width:100%;margin-top:12px}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 8px;width:100%}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .oculto{display:none!important}
+  .travado{padding:8px 0;font-weight:600;text-align:center}
+  .regras{margin:8px 0}
+  .regras table{width:100%;border-collapse:collapse;text-align:center}
+  .regras th{height:28px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);padding:0 4px}
+  .regras td{height:28px;border-bottom:1px solid var(--linha);padding:0 4px}
+  .regras p{padding:4px 0}
+  .linha-add{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 0;border-bottom:1px solid var(--linha)}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:8px}
+  .duas{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--linha)}
+  .duas > div{padding:10px 4px;text-align:center}
+  .duas > div:first-child{border-right:1px solid var(--linha)}
+  .duas .rot{display:block;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px}
+  .duas .ctl{justify-content:center}
+</style>
+</head>
+<body>
+<h1>Pré-acerto · 4 opções</h1>
+<p class="sub">Tela que a representante preenche <b>antes</b> do acerto, sozinha, para cada revendedora. Só duas coisas: <b>remarcações com multa</b> e <b>remarcações isentas</b> (com motivo). Quando ela toca em <b>Salvar pré-acerto</b>, os dados ficam <b>travados</b> e chegam assim na calculadora do acerto: "é o sistema". As regras ficam no botão <b>i</b>. Tudo funciona. Dados de exemplo.</p>
+
+<div class="grade">
+  <section class="caixa"><h2>1 · Lista de remarcações</h2><p class="nota">Cada remarcação vira uma linha (1ª, 2ª...). O botão "+ Remarcação" fica à esquerda e o efeito à direita, igual ao bloco Condicionais.</p><div class="tel"><div class="cart" id="O1"></div></div></section>
+  <section class="caixa"><h2>2 · Dois contadores</h2><p class="nota">Duas linhas, nome e controle: com multa e isentas. O motivo das isentas aparece só quando há isenta.</p><div class="tel"><div class="cart" id="O2"></div></div></section>
+  <section class="caixa"><h2>3 · Duas colunas</h2><p class="nota">Com multa e Isentas lado a lado, com o nome em cima. Ocupa menos altura.</p><div class="tel"><div class="cart" id="O3"></div></div></section>
+  <section class="caixa"><h2>4 · Uma escolha por remarcação</h2><p class="nota">Três linhas fixas (1ª, 2ª, 3ª ou mais). Em cada uma ela escolhe: Nenhuma, Com multa ou Isenta. Só o escolhido fica preto.</p><div class="tel"><div class="cart" id="O4"></div></div></section>
+</div>
+
+<script>
+var BASE = 45, ESCADA = [[5,15],[8,50],[15,100]], MOTIVOS = ["Falecimento na família","Doença","Problema pessoal","Outro"];
+var quem = '<div class="quem"><b>Francelle Schmidt Alves Pinto dos Santos</b><span>Acerto previsto para 03/11/2026</span></div>';
+var info = function(id){ return '<button class="info'+(S[id].info?' on':'')+'" data-info="'+id+'" aria-label="Regras">i</button>'; };
+var regras = function(){ return '<div class="regras"><table><thead><tr><th>Remarcação com multa</th><th>Comissão</th><th>Brinde</th></tr></thead><tbody><tr><td>1ª remarcação</td><td>−5%</td><td>−15%</td></tr><tr><td>2ª remarcação</td><td>−8%</td><td>−50%</td></tr><tr><td>3ª ou mais</td><td>−15%</td><td>−100%</td></tr></tbody></table><p>A remarcação isenta, com motivo, não pesa e não avança a escada.</p></div>'; };
+var motivoSel = function(id, v){ return '<select class="campo" data-motivo="'+id+'" aria-label="Motivo da isenção">'+MOTIVOS.map(function(m){ return '<option'+(m===v?' selected':'')+'>'+m+'</option>'; }).join('')+'</select>'; };
+var efeito = function(n){ var e = n>0 ? ESCADA[Math.min(n,3)-1] : [0,0]; return {c:e[0], b:e[1], final:Math.max(0,BASE-e[0])}; };
+var fim = function(n){ var e = efeito(n); return '<div class="fim ouro"><span>Comissão</span><span class="num">'+BASE+'% → '+e.final+'%</span></div><div class="fim"><span>Brinde</span><span class="num">−'+e.b+'%</span></div>'; };
+var st = function(id, k, v){ return '<span class="ctl"><button class="passo" data-m="'+id+':'+k+'" aria-label="Menos">−</button><span class="num valor">'+v+'</span><button class="passo" data-p="'+id+':'+k+'" aria-label="Mais">+</button></span>'; };
+var salvar = function(id){ return S[id].salvo ? '<div class="travado">Salvo. No acerto fica travado.</div><button class="btn cheio" data-edita="'+id+'">Editar pré-acerto</button>' : '<button class="btn cheio" data-salva="'+id+'">Salvar pré-acerto</button>'; };
+var topo = function(id){ return '<div class="topo"><b>Pré-acerto</b>'+info(id)+'</div>'+quem+(S[id].info?regras():''); };
+
+var S = {
+  O1:{info:false, salvo:false, lista:[{t:"multa"}], abre:false, novo:"multa", motivo:MOTIVOS[0]},
+  O2:{info:false, salvo:false, multas:1, isentas:1, motivo:MOTIVOS[0]},
+  O3:{info:false, salvo:false, multas:1, isentas:1, motivo:MOTIVOS[0]},
+  O4:{info:false, salvo:false, slots:["multa",null,null], motivo:MOTIVOS[0]}
+};
+var nMultas = function(id){ var s=S[id]; return id==="O1" ? s.lista.filter(function(x){return x.t==="multa";}).length : id==="O4" ? s.slots.filter(function(x){return x==="multa";}).length : s.multas; };
+
+function o1(){ var s=S.O1, n=0, trava=s.salvo;
+  var linhas = s.lista.map(function(x,i){ if(x.t==="multa") n++; var e = x.t==="multa" ? ESCADA[Math.min(n,3)-1] : null;
+    return '<div class="l"><div><b>'+(i+1)+'ª remarcação</b><small>'+(x.t==="multa" ? 'Com multa · −'+e[0]+'% comissão · −'+e[1]+'% brinde' : 'Isenta · '+x.m)+'</small></div>'+(trava?'':'<button class="passo" data-del="'+i+'" aria-label="Tirar">×</button>')+'</div>'; }).join('') || '<div class="l"><b>Nenhuma remarcação</b></div>';
+  var form = s.abre && !trava ? '<div class="form"><div class="seg"><button data-tipo="multa" class="'+(s.novo==="multa"?'on':'')+'">Com multa</button><button data-tipo="isenta" class="'+(s.novo==="isenta"?'on':'')+'">Isenta</button></div>'+(s.novo==="isenta"?motivoSel("O1",s.motivo):'')+'<button class="btn" data-add="1">Adicionar</button></div>' : '';
+  var e = efeito(nMultas("O1"));
+  return topo("O1")+linhas+(trava?'':'<div class="linha-add"><button class="btn" data-abre="1">+ Remarcação</button><span class="num">'+(nMultas("O1")?'−'+e.c+'% · −'+e.b+'%':'sem perda')+'</span></div>')+form+fim(nMultas("O1"))+salvar("O1"); }
+
+function o2(){ var s=S.O2, trava=s.salvo;
+  var ctl = function(k,v){ return trava ? '<span class="num valor">'+v+'</span>' : st("O2",k,v); };
+  return topo("O2")+'<div class="l"><b>Remarcações com multa</b>'+ctl("multas",s.multas)+'</div><div class="l"><b>Remarcações isentas</b>'+ctl("isentas",s.isentas)+'</div>'
+  +(s.isentas>0 ? '<div class="form"><b style="font-weight:600">Motivo das isentas</b>'+(trava?'<span>'+s.motivo+'</span>':motivoSel("O2",s.motivo))+'</div>' : '')+fim(s.multas)+salvar("O2"); }
+
+function o3(){ var s=S.O3, trava=s.salvo;
+  var ctl = function(k,v){ return trava ? '<span class="num valor">'+v+'</span>' : st("O3",k,v); };
+  return topo("O3")+'<div class="duas"><div><span class="rot">Com multa</span>'+ctl("multas",s.multas)+'</div><div><span class="rot">Isentas</span>'+ctl("isentas",s.isentas)+'</div></div>'
+  +(s.isentas>0 ? '<div class="form"><b style="font-weight:600">Motivo das isentas</b>'+(trava?'<span>'+s.motivo+'</span>':motivoSel("O3",s.motivo))+'</div>' : '')+fim(s.multas)+salvar("O3"); }
+
+function o4(){ var s=S.O4, trava=s.salvo, tem = s.slots.indexOf("isenta")>=0, n=0;
+  var rot = ["1ª remarcação","2ª remarcação","3ª ou mais"];
+  var linhas = s.slots.map(function(v,i){ return '<div class="l" style="flex-direction:column;align-items:stretch;gap:4px;padding:8px 0"><b>'+rot[i]+'</b>'+(trava?'<span>'+(v==="multa"?"Com multa":v==="isenta"?"Isenta":"Nenhuma")+'</span>':'<div class="seg">'+[[null,"Nenhuma"],["multa","Com multa"],["isenta","Isenta"]].map(function(o){ return '<button data-slot="'+i+':'+(o[0]||"")+'" class="'+(v===o[0]?'on':'')+'">'+o[1]+'</button>'; }).join('')+'</div>')+'</div>'; }).join('');
+  return topo("O4")+linhas+(tem ? '<div class="form"><b style="font-weight:600">Motivo das isentas</b>'+(trava?'<span>'+s.motivo+'</span>':motivoSel("O4",s.motivo))+'</div>' : '')+fim(nMultas("O4"))+salvar("O4"); }
+
+function desenha(){ document.getElementById("O1").innerHTML = o1(); document.getElementById("O2").innerHTML = o2(); document.getElementById("O3").innerHTML = o3(); document.getElementById("O4").innerHTML = o4(); }
+
+document.addEventListener("change", function(ev){ var m = ev.target.dataset.motivo; if(m){ S[m].motivo = ev.target.value; desenha(); } });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  var id = b.closest(".cart") ? b.closest(".cart").id : null;
+  if(d.info){ S[d.info].info = !S[d.info].info; }
+  else if(d.m){ var a = d.m.split(":"); S[a[0]][a[1]] = Math.max(0, S[a[0]][a[1]]-1); }
+  else if(d.p){ var a2 = d.p.split(":"); S[a2[0]][a2[1]] += 1; }
+  else if(d.salva){ S[d.salva].salvo = true; }
+  else if(d.edita){ S[d.edita].salvo = false; }
+  else if(d.abre){ S.O1.abre = !S.O1.abre; }
+  else if(d.tipo){ S.O1.novo = d.tipo; }
+  else if(d.add){ S.O1.lista.push(S.O1.novo==="multa" ? {t:"multa"} : {t:"isenta", m:S.O1.motivo}); S.O1.abre = false; }
+  else if(d.del){ S.O1.lista.splice(+d.del,1); }
+  else if(d.slot){ var p3 = d.slot.split(":"); S.O4.slots[+p3[0]] = p3[1] || null; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

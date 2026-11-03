@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendas e pagamentos · bloco único</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4DCC6; --ouro:#C9A13B; --campo:#CFC7B2; --bege:#F4EEDB; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:640px}
+  .tel{width:100%;max-width:330px;margin:0 auto}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button,select,input{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  .cab{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--linha);margin-bottom:6px}
+  .ico{width:32px;height:32px;border-radius:8px;background:#F4EFE0;color:#8A6A12;display:grid;place-items:center;font-weight:600;flex:none}
+  .cab b{flex:1;font-size:13px;font-weight:600}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-size:11px;font-weight:600;padding:1px 8px}
+  .selo.c{background:#64748B}
+  .r{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;border-bottom:1px solid var(--linha);white-space:nowrap}
+  .v{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end}
+  .sg{font-style:normal;font-weight:600;width:12px;text-align:center}
+  /* bloco único: venda líquida, comissão e valor a pagar, juntos */
+  .junto{background:var(--bege);border-radius:10px;padding:0 10px;margin:4px 0}
+  .junto .r:last-child{border-bottom:0}
+  .junto .r.fim{font-weight:600}
+  .falta{background:var(--bege);border-radius:10px;padding:0 10px;margin-top:4px;border-bottom:0;min-height:36px;font-weight:600}
+  .btn{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.esc{background:var(--texto);color:#fff;border-color:var(--texto);font-weight:600}
+  .btn.cheio{width:100%}
+  .mais{border:0;background:none;font-size:11px;text-decoration:underline;cursor:pointer;height:28px;padding:0}
+  .x{width:24px;height:32px;border:0;background:transparent;font-size:13px;cursor:pointer}
+  .campo{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:100%;font-size:13px}
+  .din{display:inline-flex;align-items:center;height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:112px;gap:2px}
+  .din input{border:0;outline:0;width:100%;min-width:0;text-align:right;font-weight:600;background:none;padding:0;height:30px}
+  .din .rs,.din .ct{font-weight:600}
+  .din.larga{width:100%}
+  .form{padding:8px 0;display:flex;flex-direction:column;gap:6px}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .aviso{padding:8px 0;line-height:1.4}
+  .lanc{margin:8px 0 0}
+</style>
+</head>
+<body>
+<h1>Vendas e pagamentos · bloco único</h1>
+<p class="sub">Uma versão só. <b>Venda líquida, Comissão e Valor a pagar</b> ficam <b>juntos no mesmo bloco</b>. A comissão mostra <b>25% − R$ 990,00</b> na mesma linha. Saíram os sinais de igual. As fontes seguem o padrão (13 px e 11 px, nada gigante). Digite 888 e vira R$ 888,00.</p>
+<div class="tel"><div class="cart" id="U"></div></div>
+<script>
+var R = function(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var FORMAS = ["Pix","Link","Crédito","Débito","Dinheiro","Acerto com loja"];
+var FAIXAS = [[7000,45],[5000,45],[2500,40],[1600,40],[1000,35],[700,30],[500,25],[300,15],[0,0]];
+var GARANTIA = 100, TROCAS = 60, PERDA = 15, TAG = 5;
+var limpa = function(v){ var s = String(v).replace(/[^0-9,]/g,""), i = s.indexOf(","); if(i>=0) s = s.slice(0,i+1)+s.slice(i+1).replace(/,/g,"").slice(0,2); return s.replace(/^0+(?=\d)/,""); };
+var paraNum = function(raw){ var p = String(raw||"").split(","); return parseFloat((p[0]||"0")+"."+(p[1]||"0")) || 0; };
+var milhar = function(raw){ var p = String(raw||"").split(","); var i = (p[0]||"").replace(/\B(?=(\d{3})+(?!\d))/g,"."); return p.length>1 ? i+","+p[1] : i; };
+var sufixo = function(raw){ var r = String(raw||""); if(r==="") return ",00"; var p = r.split(","); if(p.length===1) return ",00"; return p[1].length===0 ? "00" : p[1].length===1 ? "0" : ""; };
+var deNum = function(n){ return n.toFixed(2).replace(".",",").replace(/,00$/,"").replace(/(,\d)0$/,"$1"); };
+var s = {venda:4000, tags:0, pags:[{forma:"Pix", data:"02/11", valor:1500}], form:false, forma:"Pix", acordo:null, acordoTxt:"", txt:{venda:"4000"}};
+function calc(){ var liq = Math.max(0, s.venda + TROCAS - GARANTIA), base = (FAIXAS.find(function(f){ return liq>=f[0]; })||[0,0])[1], pct = base>0 ? Math.max(0, base-PERDA) : 0,
+  comissao = liq*pct/100, taxa = liq<300 ? 35 : 0, tags = s.tags*TAG, total = liq-comissao+taxa+tags, pago = s.pags.reduce(function(t,p){ return t+p.valor; },0), falta = Math.max(0, total-pago);
+  return {liq:liq, pct:pct, comissao:comissao, taxa:taxa, tags:tags, total:total, pago:pago, falta:falta}; }
+var hoje = function(){ var d = new Date(); return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2); };
+function din(k,larga){ var raw = s.txt[k]||""; return '<span class="din'+(larga?' larga':'')+'"><span class="rs">R$</span><input data-din="'+k+'" inputmode="numeric" autocomplete="off" aria-label="Valor em reais" value="'+milhar(raw)+'"><span class="ct">'+sufixo(raw)+'</span></span>'; }
+function L(sig, rot, val, cls){ return '<div class="r '+(cls||'')+'"><span>'+rot+'</span><span class="v"><i class="sg">'+sig+'</i><span class="num">'+val+'</span></span></div>'; }
+function negociar(c){ if(c.falta<0.01) return '';
+  if(s.acordo==="neg") return '<p class="aviso">'+s.acordoTxt+'</p><button class="btn cheio" data-acordo="nenhum">Remover acordo</button>';
+  if(s.acordo==="rec") return '<p class="aviso">Sem brinde. Nota promissória em 48 h úteis.</p><button class="btn cheio" data-acordo="nenhum">Desfazer</button>';
+  if(s.acordo==="form") return '<div class="form"><div class="par"><input class="campo" data-adata value="'+hoje()+'" aria-label="Data da parcela">'+din("av",true)+'</div><div class="par"><button class="btn" data-acordo="nenhum">Cancelar</button><button class="btn esc" data-acordo="salvar">Salvar acordo</button></div></div>';
+  return '<div class="par" style="margin-top:8px"><button class="btn" data-acordo="form">Negociar o que falta</button><button class="btn" data-acordo="rec">Não quis negociar</button></div>'; }
+function desenha(){ var c = calc();
+  var tagLinha = s.tags ? '<div class="r"><span>Tags riscadas ('+s.tags+')</span><span class="v"><i class="sg">+</i><span class="num">'+R(c.tags)+'</span><button class="x" data-tag="-1" aria-label="Tirar uma tag">×</button></span></div>' : '';
+  var form = s.form ? '<div class="form"><select class="campo" data-forma aria-label="Forma de pagamento">'+FORMAS.map(function(f){ return '<option'+(f===s.forma?' selected':'')+'>'+f+'</option>'; }).join('')+'</select><div class="par"><input class="campo" data-data value="'+hoje()+'" aria-label="Data do pagamento">'+din("pv",true)+'</div><div class="par"><button class="btn" data-form="0">Cancelar</button><button class="btn esc" data-lancar>Lançar pagamento</button></div></div>'
+    : '<button class="btn esc cheio lanc" data-form="1">+ Lançar pagamento</button>';
+  document.getElementById("U").innerHTML =
+    '<div class="cab"><span class="ico">▤</span><b>Vendas e pagamentos</b>'+(c.falta<0.01?'<span class="selo">Quitado</span>':'<span class="selo c">'+R(c.falta)+'</span>')+'</div>'
+    +'<div class="r"><span>Valor vendido</span><span class="v"><i class="sg"></i>'+din("venda")+'</span></div>'+L("+","Trocas",R(TROCAS))+L("−","Crédito de garantia",R(GARANTIA))
+    +'<div class="junto">'+L("","Venda líquida",R(c.liq))
+      +'<div class="r"><span>Comissão</span><span class="v"><span class="num">'+c.pct+'%</span><span class="num">− '+R(c.comissao)+'</span></span></div>'
+      +(c.taxa?L("+","Taxa de deslocamento",R(c.taxa)):'')+tagLinha+L("","Valor a pagar",R(c.total),"fim")+'</div>'
+    +'<div style="margin-top:6px">'+s.pags.map(function(p,i){ return '<div class="r"><span><b style="font-weight:600">'+p.data+'</b> '+p.forma+'</span><span class="v"><i class="sg">−</i><span class="num">'+R(p.valor)+'</span><button class="x" data-del="'+i+'" aria-label="Tirar pagamento">×</button></span></div>'; }).join('')+'</div>'
+    +'<div class="r falta"><span>Falta</span><span class="v"><span class="num">'+R(c.falta)+'</span></span></div>'
+    +'<div style="text-align:right"><button class="mais" data-tag="1">+ Tag riscada</button></div>'
+    +form+negociar(c); }
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.dataset.din) return; var k = t.dataset.din, raw = limpa(t.value); s.txt[k] = raw; if(k==="venda") s.venda = paraNum(raw);
+  desenha(); var n = document.querySelector('[data-din="'+k+'"]'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } });
+document.addEventListener("change", function(ev){ if(ev.target.hasAttribute("data-forma")) s.forma = ev.target.value; });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.tag!==undefined) s.tags = Math.max(0, s.tags + (+d.tag));
+  else if(d.form!==undefined){ s.form = d.form==="1"; if(s.form) s.txt.pv = deNum(calc().falta); }
+  else if(d.lancar!==undefined){ var v = paraNum(s.txt.pv), dt = document.querySelector('[data-data]').value; if(v<=0) return; s.pags.push({forma:s.forma, data:dt, valor:v}); s.form = false; }
+  else if(d.del!==undefined) s.pags.splice(+d.del,1);
+  else if(d.acordo!==undefined){ var z = d.acordo;
+    if(z==="form"){ s.acordo = "form"; s.txt.av = deNum(calc().falta); }
+    else if(z==="salvar"){ var v2 = paraNum(s.txt.av), dt2 = document.querySelector('[data-adata]').value; s.acordo = "neg"; s.acordoTxt = "Acordo salvo: "+R(v2)+" em "+dt2+(Math.abs(v2-calc().falta)<0.01 ? ". Cobre o que falta: brinde liberado." : ". Precisa cobrir exatamente o que falta para liberar o brinde."); }
+    else s.acordo = z==="nenhum" ? null : z; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Vendas e pagamentos · extrato A, 4 opções</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4DCC6; --ouro:#C9A13B; --campo:#CFC7B2; --bege:#F7F3E8; --bege2:#EADFC2; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:#fff;font:13px/1.3 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:800px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:12px 14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  button,select,input{font:inherit;color:inherit}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  .cab{display:flex;align-items:center;gap:10px;min-height:44px;border-bottom:1px solid var(--linha);margin-bottom:6px}
+  .ico{width:32px;height:32px;border-radius:8px;background:#F4EFE0;color:#8A6A12;display:grid;place-items:center;font-weight:700;flex:none}
+  .cab b{flex:1;font-size:13px}
+  .selo{border-radius:999px;background:var(--ouro);color:#fff;font-size:11px;font-weight:700;padding:1px 8px}
+  .selo.c{background:#64748B}
+  /* linha: rótulo à esquerda, sinal + valor juntos à direita */
+  .r{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;border-bottom:1px solid var(--linha)}
+  .r small{font-size:11px;display:block}
+  .v{display:inline-flex;align-items:center;gap:5px;justify-content:flex-end}
+  .sg{font-style:normal;font-weight:700;width:12px;text-align:center}
+  .res{font-weight:700}
+  .btn{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 12px;font-weight:600;cursor:pointer;white-space:nowrap}
+  .btn.esc{background:var(--texto);color:#fff;border-color:var(--texto)}
+  .btn.cheio{width:100%}
+  .btn.mini{width:32px;padding:0}
+  .x{width:28px;height:32px;border:0;background:transparent;font-size:13px;cursor:pointer}
+  .campo{height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:100%;font-size:13px}
+  .din{display:inline-flex;align-items:center;height:32px;border:1px solid var(--campo);border-radius:8px;background:#fff;padding:0 8px;width:116px;gap:2px}
+  .din input{border:0;outline:0;width:100%;min-width:0;text-align:right;font-weight:600;background:none;padding:0;height:30px}
+  .din .rs,.din .ct{font-weight:600;white-space:nowrap}
+  .din.larga{width:100%}
+  .form{padding:8px 0;border-bottom:1px solid var(--linha);display:flex;flex-direction:column;gap:6px}
+  .par{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .aviso{padding:8px 0;font-weight:600;line-height:1.4}
+  /* 1 · blocos em tom */
+  .t1 .bloco{background:var(--bege);border-radius:10px;padding:2px 10px;margin:6px 0}
+  .t1 .bloco .r{border-bottom:1px solid var(--linha)}
+  .t1 .bloco .r.res{background:var(--bege2);margin:0 -10px;padding:0 10px;border-bottom:0;border-radius:0 0 10px 10px;min-height:36px}
+  /* 2 · resultado em faixa escura */
+  .t2 .r.res{background:var(--texto);color:#fff;border-radius:8px;padding:0 10px;margin:4px 0;border-bottom:0;min-height:36px}
+  /* 3 · recuo com linha à esquerda */
+  .t3 .r.fil{margin-left:8px;padding-left:10px;border-left:3px solid var(--ouro)}
+  .t3 .r.res{background:var(--bege2);padding:0 8px;border-radius:6px;margin:3px 0;border-bottom:0;min-height:36px}
+  /* 4 · cartões numerados */
+  .t4 .cartao{border:1px solid var(--linha);border-radius:10px;margin:8px 0;overflow:hidden}
+  .t4 .cartao .tit{background:var(--bege);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:6px 10px;min-height:28px;display:flex;align-items:center}
+  .t4 .cartao .r{padding:0 10px}
+  .t4 .cartao .r.res{background:var(--bege2);border-bottom:0;min-height:36px}
+  .t4 .cartao .form,.t4 .cartao .par,.t4 .cartao .aviso,.t4 .cartao>.btn{margin:6px 10px;width:calc(100% - 20px)}
+  .t4 .cartao .par{width:calc(100% - 20px)}
+</style>
+</head>
+<body>
+<h1>Vendas e pagamentos · extrato A, 4 opções</h1>
+<p class="sub">Refiz o extrato A com o que você pediu: o <b>sinal (+ − =) fica colado no número</b>; a <b>Venda líquida</b>, o <b>Total a pagar</b> e a <b>Falta</b> têm outro tom para mostrar que as linhas de cima são a conta deles; a barra do valor vendido ficou <b>menor</b>; e não é só linha fina. Sem cores fortes: só bege e marrom. O campo de dinheiro é automático (888 vira R$ 888,00). Fiz <b>4 versões</b>; se você queria 8, me avise e eu faço mais 4.</p>
+<div class="grade">
+  <section class="caixa"><h2>1 · Blocos em tom</h2><p class="nota">Cada parte da conta fica num bloco bege. O resultado é a faixa mais escura no fim do bloco.</p><div class="tel"><div class="cart t1" id="X1"></div></div></section>
+  <section class="caixa"><h2>2 · Resultado escuro</h2><p class="nota">Venda líquida, Total a pagar e Falta viram faixas marrons com letra branca. O resto fica claro.</p><div class="tel"><div class="cart t2" id="X2"></div></div></section>
+  <section class="caixa"><h2>3 · Linha dourada</h2><p class="nota">As linhas que formam o resultado ganham uma linha dourada à esquerda. O resultado é a faixa bege.</p><div class="tel"><div class="cart t3" id="X3"></div></div></section>
+  <section class="caixa"><h2>4 · Cartões numerados</h2><p class="nota">3 cartões: 1 Venda, 2 Conta, 3 Pagamento. Cada um termina na sua faixa de resultado.</p><div class="tel"><div class="cart t4" id="X4"></div></div></section>
+</div>
+<script>
+var R = function(n){ return "R$ " + Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var FORMAS = ["Pix","Link","Crédito","Débito","Dinheiro","Acerto com loja"];
+var FAIXAS = [[7000,45],[5000,45],[2500,40],[1600,40],[1000,35],[700,30],[500,25],[300,15],[0,0]];
+var GARANTIA = 100, TROCAS = 60, PERDA = 15, TAG = 5;
+var limpa = function(v){ var s = String(v).replace(/[^0-9,]/g,""), i = s.indexOf(","); if(i>=0) s = s.slice(0,i+1)+s.slice(i+1).replace(/,/g,"").slice(0,2); return s.replace(/^0+(?=\d)/,""); };
+var paraNum = function(raw){ var p = String(raw||"").split(","); return parseFloat((p[0]||"0")+"."+(p[1]||"0")) || 0; };
+var milhar = function(raw){ var p = String(raw||"").split(","); var i = (p[0]||"").replace(/\B(?=(\d{3})+(?!\d))/g,"."); return p.length>1 ? i+","+p[1] : i; };
+var sufixo = function(raw){ var r = String(raw||""); if(r==="") return ",00"; var p = r.split(","); if(p.length===1) return ",00"; return p[1].length===0 ? "00" : p[1].length===1 ? "0" : ""; };
+var deNum = function(n){ return n.toFixed(2).replace(".",",").replace(/,00$/,"").replace(/(,\d)0$/,"$1"); };
+var mk = function(){ return {venda:4000, tags:1, pags:[{forma:"Pix", data:"02/11", valor:1500}], form:false, forma:"Pix", acordo:null, acordoTxt:"", txt:{venda:"4000"}}; };
+var S = {X1:mk(), X2:mk(), X3:mk(), X4:mk()};
+function calc(s){ var liq = Math.max(0, s.venda + TROCAS - GARANTIA), base = (FAIXAS.find(function(f){ return liq>=f[0]; })||[0,0])[1], pct = base>0 ? Math.max(0, base-PERDA) : 0,
+  comissao = liq*pct/100, acerto = liq-comissao, taxa = liq<300 ? 35 : 0, tags = s.tags*TAG, total = acerto+taxa+tags, pago = s.pags.reduce(function(t,p){ return t+p.valor; },0), falta = Math.max(0, total-pago);
+  return {liq:liq, pct:pct, comissao:comissao, taxa:taxa, tags:tags, total:total, pago:pago, falta:falta}; }
+var hoje = function(){ var d = new Date(); return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2); };
+function din(id,k,larga){ var raw = S[id].txt[k]||""; return '<span class="din'+(larga?' larga':'')+'"><span class="rs">R$</span><input data-din="'+id+':'+k+'" inputmode="numeric" autocomplete="off" aria-label="Valor em reais" value="'+milhar(raw)+'"><span class="ct">'+sufixo(raw)+'</span></span>'; }
+function cabecalho(id){ var c = calc(S[id]); return '<div class="cab"><span class="ico">▤</span><b>Vendas e pagamentos</b>'+(c.falta<0.01?'<span class="selo">Quitado</span>':'<span class="selo c">'+R(c.falta)+'</span>')+'</div>'; }
+function stepTags(id){ var s = S[id]; return '<span style="display:inline-flex;align-items:center;gap:4px"><button class="btn mini" data-tag="'+id+':-1" aria-label="Menos uma tag">−</button><b class="num" style="width:18px;text-align:center">'+s.tags+'</b><button class="btn mini" data-tag="'+id+':1" aria-label="Mais uma tag">+</button></span>'; }
+// linha com sinal colado no número
+function L(sig, rot, val, o){ o = o||{}; return '<div class="r'+(o.res?' res':'')+(o.fil?' fil':'')+'"><span>'+rot+(o.sub?'<small>'+o.sub+'</small>':'')+'</span><span class="v">'+(o.antes||'')+'<i class="sg">'+sig+'</i><span class="num">'+val+'</span>'+(o.depois||'')+'</span></div>'; }
+function Lraw(sig, rot, html, o){ o = o||{}; return '<div class="r'+(o.fil?' fil':'')+'"><span>'+rot+(o.sub?'<small>'+o.sub+'</small>':'')+'</span><span class="v"><i class="sg">'+sig+'</i>'+html+'</span></div>'; }
+function formPag(id){ var s = S[id];
+  return '<div class="form"><select class="campo" data-forma="'+id+'" aria-label="Forma de pagamento">'+FORMAS.map(function(f){ return '<option'+(f===s.forma?' selected':'')+'>'+f+'</option>'; }).join('')+'</select>'
+   +'<div class="par"><input class="campo" data-data="'+id+'" value="'+hoje()+'" aria-label="Data do pagamento">'+din(id,"pv",true)+'</div>'
+   +'<div class="par"><button class="btn" data-form="'+id+':0">Cancelar</button><button class="btn esc" data-lancar="'+id+'">Lançar pagamento</button></div></div>'; }
+function botaoLancar(id){ return S[id].form ? formPag(id) : '<button class="btn esc cheio" style="margin:6px 0" data-form="'+id+':1">+ Lançar pagamento</button>'; }
+function negociar(id){ var s = S[id], c = calc(s); if(c.falta<0.01) return '';
+  if(s.acordo==="neg") return '<p class="aviso">'+s.acordoTxt+'</p><button class="btn cheio" data-acordo="'+id+':nenhum">Remover acordo</button>';
+  if(s.acordo==="rec") return '<p class="aviso">Sem brinde. Nota promissória em 48 h úteis.</p><button class="btn cheio" data-acordo="'+id+':nenhum">Desfazer</button>';
+  if(s.acordo==="form") return '<div class="form"><div class="par"><input class="campo" data-adata="'+id+'" value="'+hoje()+'" aria-label="Data da parcela">'+din(id,"av",true)+'</div><div class="par"><button class="btn" data-acordo="'+id+':nenhum">Cancelar</button><button class="btn esc" data-acordo="'+id+':salvar">Salvar acordo</button></div></div>';
+  return '<div class="par" style="margin:6px 0"><button class="btn" data-acordo="'+id+':form">Negociar o que falta</button><button class="btn" data-acordo="'+id+':rec">Não quis negociar</button></div>'; }
+// os três grupos da conta
+function g1(id,o){ var s = S[id], c = calc(s); o = o||{};
+  return [ Lraw("", "Valor vendido", din(id,"venda"), o), L("+","Trocas",R(TROCAS),o), L("−","Crédito de garantia",R(GARANTIA),o) ].join('')+L("=","Venda líquida",R(c.liq),{res:true}); }
+function g2(id,o){ var s = S[id], c = calc(s); o = o||{};
+  return L("−","Comissão "+c.pct+"%",R(c.comissao),o)+Lraw("+","Tags riscadas", '<span class="num">'+R(c.tags)+'</span>'+stepTags(id), Object.assign({sub:R(TAG)+" cada"},o))+(c.taxa?L("+","Taxa de deslocamento",R(c.taxa),o):'')+L("=","Total a pagar",R(c.total),{res:true}); }
+function g3(id,o){ var s = S[id], c = calc(s); o = o||{};
+  return s.pags.map(function(p,i){ return L("−","Pag. "+(i+1)+" · "+p.forma, R(p.valor), Object.assign({sub:p.data, depois:'<button class="x" data-del="'+id+':'+i+'" aria-label="Tirar pagamento">×</button>'},o)); }).join('')+L("=","Falta",R(c.falta),{res:true}); }
+function fim(id){ return botaoLancar(id)+negociar(id); }
+
+function x1(){ var id="X1"; return cabecalho(id)+'<div class="bloco">'+g1(id)+'</div><div class="bloco">'+g2(id)+'</div><div class="bloco">'+g3(id)+'</div>'+fim(id); }
+function x2(){ var id="X2"; return cabecalho(id)+g1(id)+g2(id)+g3(id)+fim(id); }
+function x3(){ var id="X3", o = {fil:true}; return cabecalho(id)+g1(id,o)+g2(id,o)+g3(id,o)+fim(id); }
+function x4(){ var id="X4";
+  var g = function(tit, corpo){ return '<div class="cartao"><div class="tit">'+tit+'</div>'+corpo+'</div>'; };
+  return cabecalho(id)+g("1 · Venda", g1(id))+g("2 · Conta", g2(id))+g("3 · Pagamento", g3(id)+fim(id).replace(/^/,'')); }
+
+function desenha(){ ["X1","X2","X3","X4"].forEach(function(id,i){ document.getElementById(id).innerHTML = [x1,x2,x3,x4][i](); }); }
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.dataset.din) return; var a = t.dataset.din.split(":"), raw = limpa(t.value), s = S[a[0]]; s.txt[a[1]] = raw; if(a[1]==="venda") s.venda = paraNum(raw);
+  desenha(); var n = document.querySelector('[data-din="'+t.dataset.din+'"]'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } });
+document.addEventListener("change", function(ev){ var t = ev.target; if(t.dataset.forma) S[t.dataset.forma].forma = t.value; });
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; var d = b.dataset;
+  if(d.tag){ var a = d.tag.split(":"); S[a[0]].tags = Math.max(0, S[a[0]].tags + (+a[1])); }
+  else if(d.form){ var f = d.form.split(":"), s1 = S[f[0]]; s1.form = f[1]==="1"; if(s1.form) s1.txt.pv = deNum(calc(s1).falta); }
+  else if(d.lancar){ var id = d.lancar, s = S[id], v = paraNum(s.txt.pv), dt = document.querySelector('#'+id+' [data-data]').value; if(v<=0) return; s.pags.push({forma:s.forma, data:dt, valor:v}); s.form = false; }
+  else if(d.del){ var x = d.del.split(":"); S[x[0]].pags.splice(+x[1],1); }
+  else if(d.acordo){ var z = d.acordo.split(":"), s2 = S[z[0]];
+    if(z[1]==="form"){ s2.acordo = "form"; s2.txt.av = deNum(calc(s2).falta); }
+    else if(z[1]==="salvar"){ var v2 = paraNum(s2.txt.av), dt2 = document.querySelector('#'+z[0]+' [data-adata]').value; s2.acordo = "neg"; s2.acordoTxt = "Acordo salvo: "+R(v2)+" em "+dt2+(Math.abs(v2-calc(s2).falta)<0.01 ? ". Cobre o que falta: brinde liberado." : ". Precisa cobrir exatamente o que falta para liberar o brinde."); }
+    else s2.acordo = z[1]==="nenhum" ? null : z[1]; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

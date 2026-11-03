@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multa por remarcação · 4 layouts limpos</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --cartao:#FFFFFF; --texto:#1F1A10; --linha:#E4E0D6; --ouro:#C9A13B; --ouro-escuro:#8A6A14; --branco:#FFFFFF; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--branco);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 48px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 20px;max-width:700px}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:20px;max-width:1500px;margin:0 auto}
+  .caixa{background:var(--painel);border:1px solid #2A2A2E;border-radius:12px;padding:14px;display:flex;flex-direction:column;align-items:center;gap:10px}
+  .caixa h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;align-self:flex-start}
+  .nota{align-self:flex-start}
+  .tel{width:100%;max-width:330px}
+  .cart{background:var(--cartao);color:var(--texto);border-radius:18px;padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+  .tit{font-weight:700;font-size:13px;padding-bottom:8px;border-bottom:1px solid var(--linha)}
+  .num{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+  button{font:inherit;color:inherit;cursor:pointer}
+  .passo{width:32px;height:32px;border-radius:8px;background:#fff;border:1px solid var(--linha);font-weight:700;font-size:20px;line-height:1;flex:none}
+  .valor{min-width:30px;text-align:center;font-size:15px}
+  .ctl{display:flex;align-items:center;gap:4px;flex:none}
+  .l{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;border-bottom:1px solid var(--linha)}
+  .l small{display:block;font-size:11px;font-weight:400}
+  .l b{font-weight:600}
+  .fim{display:flex;align-items:center;justify-content:space-between;min-height:34px}
+  .fim.ouro{border-top:2px solid var(--ouro);margin-top:6px}
+  .fim .num{font-size:15px}
+  .seg{display:flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden;margin:6px 0 2px}
+  .seg button{flex:1;height:32px;border:0;border-right:1px solid var(--linha);background:#fff}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--texto);color:#fff;font-weight:600}
+  .secao{padding:10px 0;border-bottom:1px solid var(--linha)}
+  .secao > b{font-weight:600;display:block}
+  .botoes{display:flex;flex-wrap:wrap;gap:6px;padding:10px 0}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#fff;padding:0 10px;font-weight:600}
+  .remove{width:28px;height:28px;border:0;background:transparent;font-size:16px}
+  .vazio{padding:14px 0;text-align:center;border-bottom:1px solid var(--linha)}
+  /* tabela (topo dourado em degradê, nada abreviado, centralizada) */
+  table{width:100%;border-collapse:collapse;text-align:center}
+  thead th{height:34px;font-size:11px;text-transform:uppercase;font-weight:700;color:#1B1409;background:linear-gradient(90deg,#B8862B,#E8B84B,#F1E4C6);padding:0 4px}
+  td{padding:6px 4px;border-bottom:1px solid var(--linha);vertical-align:middle}
+  tfoot td{font-weight:700;border-bottom:0;border-top:2px solid var(--ouro)}
+  .pq{width:28px;height:28px;font-size:16px}
+</style>
+</head>
+<body>
+<h1>Multa por remarcação · 4 layouts limpos</h1>
+<p class="sub">Sem etiquetas coloridas, sem botões vermelhos e verdes, sem caixas dentro de caixa. Só texto escuro, fios finos e um toque de dourado no resultado. As regras são as reais: remarcação com multa (1ª −5% comissão e −15% brinde · 2ª −8% e −50% · 3ª ou mais −15% e −100%; a isenta não pesa), atraso do acerto (até 7 dias −5% · 15 −10% · 30 −15% · 45 −20% · 59 −25% · 60 ou mais perde tudo) e multa do valor pendente (10%, mais 1% ao dia depois de 15 dias, teto 10%). Tudo funciona. Dados de exemplo.</p>
+
+<div class="grade">
+  <section class="caixa"><h2>1 · Linhas limpas</h2><p class="nota">Quatro linhas iguais: nome, uma frase curta com o efeito e o controle. Fecha com comissão e brinde.</p><div class="tel"><div class="cart" id="V1"></div></div></section>
+  <section class="caixa"><h2>2 · Tabela fina</h2><p class="nota">Planilha com topo dourado: regra, quantidade, comissão e brinde. Perda total no rodapé.</p><div class="tel"><div class="cart" id="V2"></div></div></section>
+  <section class="caixa"><h2>3 · Escolhas</h2><p class="nota">Cada regra é uma escolha de um toque: botões lado a lado, só o escolhido fica preto.</p><div class="tel"><div class="cart" id="V3"></div></div></section>
+  <section class="caixa"><h2>4 · Só o que se aplica</h2><p class="nota">Começa vazio ("Nenhuma multa"). Só aparece a linha do que realmente foi aplicado, com botões para acrescentar.</p><div class="tel"><div class="cart" id="V4"></div></div></section>
+</div>
+
+<script>
+var BASE = 45, PEND = 226.90, ESCADA = [[5,15],[8,50],[15,100]];
+var S = {multas:1, isentas:1, atraso:3, pend:18, v4:{multas:true, isentas:true, atraso:true, pend:false}};
+var brl = function(x){ return "R$ "+x.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+function atr(d){ if(d<=0) return {c:0,b:0,t:"em dia"}; if(d>=60) return {c:100,b:100,t:"perde toda a comissão e todo o brinde · jurídico",tudo:true};
+  var f=[[7,5],[15,10],[30,15],[45,20],[59,25]]; for(var i=0;i<f.length;i++) if(d<=f[i][0]) return {c:f[i][1],b:f[i][1],t:"até "+f[i][0]+" dias: −"+f[i][1]+"% comissão · −"+f[i][1]+"% brinde"}; }
+function calc(){
+  var m = S.multas, e = m>0 ? ESCADA[Math.min(m,3)-1] : [0,0], a = atr(S.atraso), extra = Math.min(10, Math.max(0, S.pend-15)), pct = 10+extra;
+  var com = a.tudo ? 100 : e[0]+a.c, bri = Math.min(100, e[1]+a.b);
+  return {e:e, a:a, pct:pct, multaPen:PEND*pct/100, com:com, bri:bri, final:a.tudo ? 0 : Math.max(0, BASE-com)};
+}
+var st = function(k, v, min){ return '<span class="ctl"><button class="passo" data-m="'+k+'" aria-label="Menos">−</button><span class="num valor">'+v+'</span><button class="passo" data-p="'+k+'" aria-label="Mais">+</button></span>'; };
+var txtRem = function(c){ return S.multas ? S.multas+"ª com multa: −"+c.e[0]+"% comissão · −"+c.e[1]+"% brinde" : "sem multa"; };
+var txtPen = function(c){ return "multa de "+c.pct+"% sobre "+brl(PEND)+" = "+brl(c.multaPen); };
+var resultado = function(c){ return '<div class="fim ouro"><span>Comissão</span><span class="num">'+(c.a.tudo ? 'perde tudo' : BASE+'% → '+c.final+'%')+'</span></div><div class="fim"><span>Brinde</span><span class="num">−'+c.bri+'%</span></div>'; };
+
+function v1(c){ return '<div class="tit">Multa por remarcação</div>'
+  +'<div class="l"><div><b>Remarcações com multa</b><small>'+txtRem(c)+'</small></div>'+st("multas",S.multas)+'</div>'
+  +'<div class="l"><div><b>Remarcações isentas</b><small>não pesam · motivo registrado</small></div>'+st("isentas",S.isentas)+'</div>'
+  +'<div class="l"><div><b>Dias de atraso do acerto</b><small>'+c.a.t+'</small></div>'+st("atraso",S.atraso)+'</div>'
+  +'<div class="l"><div><b>Dias com valor pendente</b><small>'+txtPen(c)+'</small></div>'+st("pend",S.pend)+'</div>'
+  +resultado(c); }
+
+function v2(c){ return '<div class="tit" style="border:0;padding-bottom:6px">Multa por remarcação</div><table><thead><tr><th>Regra</th><th>Quantidade</th><th>Comissão</th><th>Brinde</th></tr></thead><tbody>'
+  +'<tr><td>Remarcação com multa</td><td>'+st("multas",S.multas)+'</td><td class="num">'+(S.multas?'−'+c.e[0]+'%':'0%')+'</td><td class="num">'+(S.multas?'−'+c.e[1]+'%':'0%')+'</td></tr>'
+  +'<tr><td>Remarcação isenta</td><td>'+st("isentas",S.isentas)+'</td><td class="num">0%</td><td class="num">0%</td></tr>'
+  +'<tr><td>Dias de atraso</td><td>'+st("atraso",S.atraso)+'</td><td class="num">'+(c.a.tudo?'100%':'−'+c.a.c+'%')+'</td><td class="num">−'+c.a.b+'%</td></tr>'
+  +'<tr><td>Dias com valor pendente</td><td>'+st("pend",S.pend)+'</td><td class="num" colspan="2">'+brl(c.multaPen)+'</td></tr>'
+  +'</tbody><tfoot><tr><td colspan="2">Perda total</td><td class="num">−'+c.com+'%</td><td class="num">−'+c.bri+'%</td></tr></tfoot></table>'; }
+
+function v3(c){ var m = Math.min(S.multas,3);
+  var faixas = [[0,"Em dia"],[7,"7"],[15,"15"],[30,"30"],[45,"45"],[59,"59"],[60,"60+"]], at = S.atraso;
+  var on = function(d){ return d===0 ? at===0 : d===60 ? at>=60 : (at>0 && at<=d && (faixas[faixas.findIndex(function(f){return f[0]===d;})-1][0] < at)); };
+  return '<div class="tit">Multa por remarcação</div>'
+  +'<div class="secao"><b>Remarcações com multa</b><div class="seg">'+[0,1,2,3].map(function(n){ return '<button data-set="multas" data-v="'+n+'" class="'+(m===n?'on':'')+'">'+(n===0?'Nenhuma':n===3?'3 ou mais':n+'ª')+'</button>'; }).join('')+'</div><small>'+txtRem(c)+'</small></div>'
+  +'<div class="secao"><b>Dias de atraso do acerto</b><div class="seg">'+faixas.map(function(f){ return '<button data-set="atraso" data-v="'+(f[0]===0?0:f[0]===60?60:f[0])+'" class="'+(on(f[0])?'on':'')+'">'+f[1]+'</button>'; }).join('')+'</div><small>'+c.a.t+'</small></div>'
+  +'<div class="l"><div><b>Dias com valor pendente</b><small>'+txtPen(c)+'</small></div>'+st("pend",S.pend)+'</div>'
+  +resultado(c); }
+
+function v4(c){ var f = S.v4, linhas = '';
+  if(f.multas) linhas += '<div class="l"><div><b>Remarcação com multa</b><small>'+txtRem(c)+'</small></div><span class="ctl">'+st("multas",S.multas)+'<button class="remove" data-off="multas" aria-label="Tirar">×</button></span></div>';
+  if(f.isentas) linhas += '<div class="l"><div><b>Remarcação isenta</b><small>não pesa · motivo registrado</small></div><span class="ctl">'+st("isentas",S.isentas)+'<button class="remove" data-off="isentas" aria-label="Tirar">×</button></span></div>';
+  if(f.atraso) linhas += '<div class="l"><div><b>Atraso do acerto</b><small>'+c.a.t+'</small></div><span class="ctl">'+st("atraso",S.atraso)+'<button class="remove" data-off="atraso" aria-label="Tirar">×</button></span></div>';
+  if(f.pend) linhas += '<div class="l"><div><b>Valor pendente</b><small>'+txtPen(c)+'</small></div><span class="ctl">'+st("pend",S.pend)+'<button class="remove" data-off="pend" aria-label="Tirar">×</button></span></div>';
+  var nenhum = !f.multas && !f.isentas && !f.atraso && !f.pend;
+  var add = [["multas","+ Remarcação"],["isentas","+ Isenta"],["atraso","+ Atraso"],["pend","+ Pendente"]].filter(function(x){ return !f[x[0]]; }).map(function(x){ return '<button class="btn" data-on="'+x[0]+'">'+x[1]+'</button>'; }).join('');
+  return '<div class="tit">Multa por remarcação</div>'+(nenhum ? '<div class="vazio">Nenhuma multa</div>' : linhas)+(add ? '<div class="botoes">'+add+'</div>' : '')+(nenhum ? '' : resultado(c)); }
+
+function desenha(){ var c = calc();
+  document.getElementById("V1").innerHTML = v1(c); document.getElementById("V2").innerHTML = v2(c);
+  document.getElementById("V3").innerHTML = v3(c); document.getElementById("V4").innerHTML = v4(c); }
+
+document.addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return;
+  if(b.dataset.m){ S[b.dataset.m] = Math.max(0, S[b.dataset.m]-1); if(S.v4 && S[b.dataset.m]===0 && b.closest("#V4") && (b.dataset.m==="multas"||b.dataset.m==="isentas")){} }
+  else if(b.dataset.p){ S[b.dataset.p] += 1; if(b.dataset.p==="atraso" && S.atraso>60) S.atraso = 60; }
+  else if(b.dataset.set){ S[b.dataset.set] = +b.dataset.v; }
+  else if(b.dataset.off){ S.v4[b.dataset.off] = false; if(b.dataset.off!=="pend") S[b.dataset.off] = 0; else S.pend = 0; }
+  else if(b.dataset.on){ S.v4[b.dataset.on] = true; if(S[b.dataset.on]===0) S[b.dataset.on] = b.dataset.on==="pend" ? 16 : 1; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

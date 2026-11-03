@@ -647,6 +647,12 @@ function reducer(s, a){
           return {remarcacoesLista:lista, remarcacoes:lista.length}; })},
         "Remarcação removida");
     }
+    // Pré-acerto (02/11/2026, Marcus): a representante preenche ANTES do acerto os dias de atraso (as remarcações já ficam em remarcacoesLista). No acerto os dois chegam travados.
+    case "KIT_PRE_ACERTO": {
+      k = kitDe(s, a.id); if(!k) return s;
+      return com(s, {kits: mapKit(s, a.id, function(){ return {preAcerto:{atrasoDias:Math.max(0, Math.min(99, Math.floor(a.atrasoDias||0))), em:agora}}; })},
+        "Pré-acerto salvo para "+k.rev);
+    }
     // Fecha o acerto de um kit de revenda normal: calcula comissão/brinde pela regra carimbada no kit e grava no consolidado.
     case "ACERTO_REGISTRAR": {
       k = kitDe(s, a.id); if(!k) return s;

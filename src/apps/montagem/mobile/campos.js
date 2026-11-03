@@ -13,6 +13,41 @@ function CampoDinheiro(p){
     onChange:function(ev){ var bruto = ev.target.value.replace(/\D/g,""), dig = bruto.replace(/^0+/,"").slice(0,11); p.onChange(dig ? Number(dig)/100 : (p.mostraZero && bruto ? 0 : null)); }});
 }
 
+
+// Dinheiro automático (02/11/2026, Marcus): o que se digita são reais inteiros e o ",00" aparece sozinho (888 → R$ 888,00 · 10 → R$ 10,00).
+// Para centavos, digita a vírgula (888,5 → R$ 888,50). Usado na Calculadora de acertos do app; o CampoDinheiro (centavos subindo) segue nas outras telas.
+function milharAuto(i){ return String(i||"0").replace(/\B(?=(\d{3})+(?!\d))/g, "."); }
+function rawDeNumero(n, mostraZero){
+  if(!n && !(mostraZero && n===0)) return {int:"", dec:null};
+  var inteiro = Math.floor(n), cent = Math.round((n-inteiro)*100);
+  return {int:String(inteiro), dec: cent ? (cent%10===0 ? String(cent/10) : String(cent).padStart(2,"0")) : null};
+}
+function numeroDeRaw(r){ if(r.int==="" && r.dec===null) return null; return parseFloat((r.int||"0")+"."+(r.dec||"0")); }
+function textoDeRaw(r){ if(r.int==="" && r.dec===null) return ""; return "R$ "+milharAuto(r.int)+","+(r.dec===null ? "00" : r.dec); }
+function CampoReaisAuto(p){
+  var a = useState(function(){ return rawDeNumero(p.value, p.mostraZero); }), raw = a[0], setRaw = a[1];
+  var ref = useRef(null);
+  useEffect(function(){ var atual = numeroDeRaw(raw); if((atual||0)!==(p.value||0)) setRaw(rawDeNumero(p.value, p.mostraZero)); }, [p.value]);
+  useEffect(function(){ var el = ref.current; if(el && document.activeElement===el){ try{ el.setSelectionRange(el.value.length, el.value.length); }catch(x){} } }, [raw]);
+  var muda = function(ev){
+    var tx = ev.target.value, digs = tx.replace(/\D/g,""), antes = textoDeRaw(raw).replace(/\D/g,""), nr;
+    if(digs.length===0 && !/,/.test(tx)) nr = {int:"", dec:null};                                        // apagou tudo
+    else if(raw.dec===null){
+      if((tx.match(/,/g)||[]).length>1) nr = {int:raw.int, dec:""};                                   // digitou a vírgula: abre os centavos
+      else if(digs.length-antes.length>1) nr = {int:digs.replace(/^0+(?=\d)/,"").slice(0,9), dec:null};   // colou um valor
+      else if(digs.length>antes.length) nr = {int:(raw.int+digs.slice(-1)).replace(/^0+(?=\d)/,"").slice(0,9), dec:null};
+      else if(digs.length<antes.length) nr = {int:raw.int.slice(0,-1), dec:null};
+      else nr = raw;
+    } else {
+      var s2 = tx.replace(/[^0-9,]/g,""), i = s2.indexOf(",");
+      nr = i<0 ? {int:s2.replace(/^0+(?=\d)/,"").slice(0,9), dec:null} : {int:s2.slice(0,i).replace(/^0+(?=\d)/,"").slice(0,9), dec:s2.slice(i+1).replace(/,/g,"").slice(0,2)};
+    }
+    setRaw(nr); p.onChange(numeroDeRaw(nr));
+  };
+  var sai = function(){ if(raw.dec!==null && raw.dec.length<2){ var d = raw.dec.padEnd(2,"0"), nr = {int:raw.int, dec: d==="00" ? null : d}; setRaw(nr); p.onChange(numeroDeRaw(nr)); } };
+  return e("input",{ref:ref, inputMode:"decimal", autoComplete:"off", value:textoDeRaw(raw), placeholder:p.placeholder || "R$ 0,00", "aria-label":p.label, disabled:p.disabled, className:p.className, onChange:muda, onBlur:sai});
+}
+
 // Valor em reais inteiros (peça de brinde não tem centavo): digita 56 e aparece "R$ 56".
 function CampoReais(p){
   return e("input",{inputMode:"numeric", autoComplete:"off", value: p.value ? "R$ "+Number(p.value).toLocaleString("pt-BR") : "", placeholder:p.placeholder || "R$ 0",
@@ -70,4 +105,4 @@ function AssinaturaDigital(p){
         e(Icon,{n:"trash", s:12}), "Limpar")));
 }
 
-export { brlApp, CampoReais, CampoDinheiro, rotuloPagamento, AssinaturaDigital };
+export { brlApp, CampoReais, CampoReaisAuto, CampoDinheiro, rotuloPagamento, AssinaturaDigital };
