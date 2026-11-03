@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regras do Pix · 4 layouts</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --linha:#2A2A2E; --ouro:#C9A13B; --texto:#FFFFFF; --ok:#22C55E; --alerta:#EAB308; --ruim:#EF4444; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--texto);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 56px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 18px;max-width:820px}
+  .lay{max-width:1080px;margin:0 auto 26px}
+  .lay>h2{font-size:13px;font-weight:700;color:var(--ouro);text-transform:uppercase;letter-spacing:.08em;margin-bottom:2px}
+  .lay>p{margin-bottom:8px}
+  .tela{background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:12px}
+  .cab{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:32px;margin-bottom:8px}
+  .cab b{font-size:13px}
+  button,select,input{font:inherit;color:inherit}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#1E1E21;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.on{background:var(--ouro);color:#1B1409;border-color:var(--ouro);font-weight:600}
+  .btn.peq{height:28px;padding:0 8px}
+  .seg{display:inline-flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .seg button{height:32px;padding:0 14px;border:0;border-right:1px solid var(--linha);background:#1E1E21;cursor:pointer}
+  .seg button:last-child{border-right:0}
+  .seg button.on{background:var(--ouro);color:#1B1409;font-weight:600}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#0F0F11;padding:0 8px;width:100%;text-align:center}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  /* tabelas: topo dourado em degradê (padrão do admin) */
+  table{width:100%;border-collapse:collapse}
+  /* UM degradê só: a barra inteira do cabeçalho (thead), nunca um degradê por célula */
+  thead tr{background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+  th{background:transparent;color:#1A1306;font-size:13px;font-weight:600;height:32px;padding:0 10px;text-align:center;white-space:nowrap;border-right:1px solid rgba(0,0,0,.42)}
+  th:last-child{border-right:0}
+  td{height:34px;padding:0 8px;text-align:center;border-top:1px solid var(--linha);vertical-align:middle}
+  .ok{color:var(--ok)} .alerta{color:var(--alerta)} .ruim{color:var(--ruim)}
+  .desl td{opacity:.45}
+  .grade2{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
+  .grade2b{display:grid;grid-template-columns:1.4fr 1fr;gap:12px}
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px;align-items:end}
+  .form label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;text-align:center}
+  .res{border:1px solid var(--linha);border-radius:10px;padding:10px;text-align:center;margin-top:8px}
+  .res b{display:block;font-size:13px;margin-bottom:2px}
+  .res small{font-size:11px}
+  .barra{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;border:1px solid var(--linha);border-radius:10px;padding:8px;margin-bottom:10px;background:#101012}
+  .barra label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+  .barra .campo{width:110px}
+  .linhaf{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px;border-top:1px solid var(--linha);text-align:left}
+  .linhaf .t{font-size:11px}
+  .sec{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--ouro);margin:10px 0 4px;text-align:center}
+  .sec:first-child{margin-top:0}
+  .frases p{padding:6px 8px;border-top:1px solid var(--linha);text-align:center}
+  .frases p:first-child{border-top:0}
+  .grave{box-shadow:inset 2px 0 0 var(--ruim)}
+</style>
+</head>
+<body>
+<h1>Regras do Pix · 4 layouts</h1>
+<p class="sub">Esta tela fica em <b>Financeiro → Pagamentos → Regras do Pix</b> (hoje as regras estão em Saldo das contas, no lugar errado). Em vez de vários blocos, aqui são <b>4 jeitos de juntar tudo</b>: regras, teste e orientação do caixa. Tudo funciona: ligue e desligue regras, mude a ordem e teste valores. Os números do caixa são <b>inventados</b> (só para o desenho).</p>
+
+<div class="lay"><h2>1 · Abas</h2><p>Uma coisa de cada vez: Regras, Testar e Caixa.</p><div class="tela" id="L1"></div></div>
+<div class="lay"><h2>2 · Duas colunas</h2><p>Regras à esquerda, teste à direita, caixa embaixo. Tudo na mesma tela, sem blocos separados.</p><div class="tela" id="L2"></div></div>
+<div class="lay"><h2>3 · Barra de teste no topo</h2><p>O teste vira uma barra de uma linha, que responde na hora. Embaixo: regras e "quem precisa de Pix primeiro".</p><div class="tela" id="L3"></div></div>
+<div class="lay"><h2>4 · Lista corrida</h2><p>Um painel só, de cima para baixo: orientação em frases, regras em linhas e o teste no fim.</p><div class="tela" id="L4"></div></div>
+
+<script>
+var R = function(n){ return (n<0?"−":"")+"R$ "+Math.abs(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var num = function(v){ var s=String(v||"").trim(); if(s.indexOf(",")>=0) s=s.replace(/\./g,"").replace(",","."); var x=parseFloat(s); return isNaN(x)?0:x; };
+var REGRAS = [
+  {n:"Link e Pix acima de R$ 1.500", q:{link:true,pixMin:1500}, a:"perguntar", on:true},
+  {n:"Pix acima de R$ 3.000", q:{pixMin:3000}, a:"perguntar", on:true},
+  {n:"Muito dinheiro e valor alto", q:{dinPct:70,totalMin:3000}, a:"perguntar", on:true},
+  {n:"Muito dinheiro e pouco Pix", q:{dinPct:70,pixMax:300}, a:"Itaú PJ · Marco", on:true}];
+var CAIXA = [ // números inventados
+  {id:"46",nome:"CNPJ 46",saldo:-40000,limite:75000,folha:70000,dia:"03/11"},
+  {id:"67",nome:"CNPJ 67",saldo:3000,limite:0,folha:25000,dia:"02/11"},
+  {id:"34",nome:"CNPJ 34",saldo:-150000,limite:185000,folha:33000,dia:"03/11"},
+  {id:"59",nome:"CNPJ 59",saldo:0,limite:130000,folha:30000,dia:"03/11"}].map(function(c){ c.folga=c.saldo+c.limite; c.falta=Math.max(0,c.folha-c.folga); c.apos=c.folga-c.folha; return c; }).sort(function(a,b){ return a.apos-b.apos; });
+var NEG = [{n:"Itaú Marco PJ",s:-30000,l:0},{n:"Sicredi Rotativo 34",s:-64900,l:65000},{n:"Safra 46",s:-24500,l:25000},{n:"Unicred 34",s:-19500,l:20000}].map(function(x){ x.f=x.s+x.l; return x; });
+var quando = function(q){ var t=[]; if(q.link) t.push("teve link"); if(q.dinPct) t.push("dinheiro ≥ "+q.dinPct+"%"); if(q.pixMin) t.push("Pix ≥ R$ "+q.pixMin.toLocaleString("pt-BR")); if(q.pixMax) t.push("Pix < R$ "+q.pixMax); if(q.totalMin) t.push("total ≥ R$ "+q.totalMin.toLocaleString("pt-BR")); return t.join(" e "); };
+var casa = function(r,c){ var q=r.q, total=c.din+c.pix+c.link; if(q.link && !c.linkCnpj) return false; if(q.pixMin && !(c.pix>=q.pixMin)) return false; if(q.pixMax && !(c.pix<q.pixMax)) return false; if(q.dinPct && !(total>0 && c.din/total*100>=q.dinPct)) return false; if(q.totalMin && !(total>=q.totalMin)) return false; return true; };
+function testa(c){ if(!(c.pix>0)) return {t:"vazio",titulo:"Digite o valor do Pix",motivo:""};
+  var r = REGRAS.filter(function(x){ return x.on && casa(x,c); })[0];
+  if(r) return r.a==="perguntar" ? {t:"alerta",titulo:"Perguntar à empresa",motivo:"Regra: "+r.n} : {t:"ok",titulo:"Mandar para "+r.a,motivo:"Regra: "+r.n};
+  if(c.linkCnpj) return {t:"ok",titulo:"Mesmo CNPJ do link ("+c.linkCnpj+")",motivo:"Sugestão do caixa: a conta Pix mais apertada do CNPJ "+c.linkCnpj+"."};
+  return {t:"neutro",titulo:"Nenhuma regra decide",motivo:"Sugestão do caixa: "+CAIXA[0].nome+" é o que mais precisa de Pix agora."}; }
+var S = {aba:"regras", c:{din:"",pix:"",link:"",linkCnpj:""}};
+var cv = function(){ return {din:num(S.c.din), pix:num(S.c.pix), link:num(S.c.link), linkCnpj:S.c.linkCnpj}; };
+
+function tabRegras(){ return '<table><thead><tr><th>Ordem</th><th>Regra</th><th>Quando</th><th>Faz</th><th>Ações</th></tr></thead><tbody>'+REGRAS.map(function(r,i){
+  return '<tr class="'+(r.on?'':'desl')+'"><td class="num">'+(i+1)+'º</td><td>'+r.n+'</td><td>Se '+quando(r.q)+'</td><td><b class="'+(r.a==="perguntar"?"alerta":"ok")+'">'+(r.a==="perguntar"?"Perguntar à empresa":r.a)+'</b></td>'
+  +'<td><button class="btn peq" data-up="'+i+'"'+(i===0?' disabled':'')+'>↑</button> <button class="btn peq" data-down="'+i+'"'+(i===REGRAS.length-1?' disabled':'')+'>↓</button> <button class="btn peq" data-onoff="'+i+'">'+(r.on?'Desligar':'Ligar')+'</button></td></tr>'; }).join('')+'</tbody></table>'; }
+function tabCaixa(){ return '<table><thead><tr><th>Ordem</th><th>CNPJ</th><th>Saldo</th><th>Limite</th><th>Folga</th><th>Folha</th><th>Situação</th></tr></thead><tbody>'+CAIXA.map(function(c,i){
+  return '<tr><td class="num">'+(i+1)+'º</td><td>'+c.nome+'</td><td class="num '+(c.saldo<0?'ruim':'ok')+'">'+R(c.saldo)+'</td><td class="num">'+R(c.limite)+'</td><td class="num">'+R(c.folga)+'</td><td class="num">'+R(c.folha)+' <span style="font-size:11px">('+c.dia+')</span></td><td><b class="'+(c.falta>0?'ruim':'ok')+'">'+(c.falta>0?'Folha não cabe':'Folgado')+'</b></td></tr>'; }).join('')+'</tbody></table>'; }
+function tabNeg(){ return '<table><thead><tr><th>Conta negativa</th><th>Saldo</th><th>Limite</th><th>Folga</th></tr></thead><tbody>'+NEG.map(function(x){ return '<tr><td>'+x.n+'</td><td class="num ruim">'+R(x.s)+'</td><td class="num">'+R(x.l)+'</td><td class="num '+(x.f<1000?'ruim':'alerta')+'">'+R(x.f)+'</td></tr>'; }).join('')+'</tbody></table>'; }
+function frases(){ return '<div class="frases">'+CAIXA.map(function(c,i){ return '<p class="'+(c.falta>0?'grave':'')+'"><b>'+(i+1)+'º '+c.nome+'</b> · saldo '+R(c.saldo)+', limite '+R(c.limite)+'. Folha de '+R(c.folha)+' em '+c.dia+'. '+(c.falta>0?'Faltam <b class="ruim">'+R(c.falta)+'</b> para cobrir.':'Cabe na folga.')+'</p>'; }).join('')+'</div>'; }
+var CNPJS=["34","46","59","67"];
+function formTeste(){ return '<div class="form"><label>Pagou com link no CNPJ<select class="campo" data-in="linkCnpj"><option value="">Sem link</option>'+CNPJS.map(function(x){ return '<option value="'+x+'"'+(S.c.linkCnpj===x?' selected':'')+'>CNPJ '+x+'</option>'; }).join('')+'</select></label>'
+  +'<label>Dinheiro (R$)<input class="campo" data-in="din" inputmode="decimal" value="'+S.c.din+'"></label><label>Pix (R$)<input class="campo" data-in="pix" inputmode="decimal" value="'+S.c.pix+'"></label></div>'; }
+function resultado(){ var r = testa(cv()); var cor = r.t==="ok"?"ok":r.t==="alerta"?"alerta":""; return '<div class="res"><b class="'+cor+'">'+r.titulo+'</b><small>'+r.motivo+'</small></div>'; }
+function barraTeste(){ var r = testa(cv()); var cor = r.t==="ok"?"ok":r.t==="alerta"?"alerta":"";
+  return '<div class="barra"><b style="font-size:11px;text-transform:uppercase">Testar</b><label>Link<select class="campo" data-in="linkCnpj" style="width:104px"><option value="">Sem</option>'+CNPJS.map(function(x){ return '<option value="'+x+'"'+(S.c.linkCnpj===x?' selected':'')+'>CNPJ '+x+'</option>'; }).join('')+'</select></label>'
+  +'<label>Dinheiro<input class="campo" data-in="din" inputmode="decimal" value="'+S.c.din+'"></label><label>Pix<input class="campo" data-in="pix" inputmode="decimal" value="'+S.c.pix+'"></label><span>→</span><b class="'+cor+'">'+r.titulo+'</b><small>'+r.motivo+'</small></div>'; }
+var casosProntos = function(){ return '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-bottom:8px">'+[["R$ 500 dinheiro + R$ 100 Pix",{din:"500",pix:"100",link:"",linkCnpj:""}],["R$ 3.000 dinheiro + R$ 1.000 Pix",{din:"3000",pix:"1000",link:"",linkCnpj:""}],["Link 59 + Pix R$ 1.600",{din:"",pix:"1600",link:"4000",linkCnpj:"59"}],["Só Pix R$ 400",{din:"",pix:"400",link:"",linkCnpj:""}]].map(function(x,i){ return '<button class="btn peq" data-caso="'+i+'">'+x[0]+'</button>'; }).join('')+'</div>'; };
+var CASOS = [{din:"500",pix:"100",link:"",linkCnpj:""},{din:"3000",pix:"1000",link:"",linkCnpj:""},{din:"",pix:"1600",link:"4000",linkCnpj:"59"},{din:"",pix:"400",link:"",linkCnpj:""}];
+
+function l1(){ var a=S.aba;
+  return '<div class="cab"><b>Regras do Pix</b><span class="seg"><button data-aba="regras" class="'+(a==="regras"?'on':'')+'">Regras</button><button data-aba="testar" class="'+(a==="testar"?'on':'')+'">Testar</button><button data-aba="caixa" class="'+(a==="caixa"?'on':'')+'">Caixa</button></span></div>'
+   +(a==="regras"?tabRegras():a==="testar"?casosProntos()+formTeste()+resultado():frases()+'<div style="height:8px"></div>'+tabNeg()); }
+function l2(){ return '<div class="cab"><b>Regras do Pix</b><span style="font-size:11px">Valem na ordem: a primeira que combina decide</span></div>'
+  +'<div class="grade2"><div><div class="sec">Regras</div>'+tabRegras()+'</div><div><div class="sec">Testar</div>'+casosProntos()+formTeste()+resultado()+'</div></div>'
+  +'<div class="sec" style="margin-top:14px">Caixa · quem precisa de Pix primeiro</div>'+tabCaixa(); }
+function l3(){ return '<div class="cab"><b>Regras do Pix</b></div>'+barraTeste()+casosProntos()
+  +'<div class="grade2b"><div><div class="sec">Regras</div>'+tabRegras()+'</div><div><div class="sec">Quem precisa de Pix primeiro</div>'+frases()+'</div></div>'; }
+function l4(){ return '<div class="cab"><b>Regras do Pix</b></div>'
+  +'<div class="sec">Orientação do caixa</div>'+frases()
+  +'<div class="sec">Regras</div>'+REGRAS.map(function(r,i){ return '<div class="linhaf" style="'+(r.on?'':'opacity:.45')+'"><span><b>'+(i+1)+'º</b> '+r.n+' <span class="t">· se '+quando(r.q)+'</span></span><span style="display:flex;align-items:center;gap:6px"><b class="'+(r.a==="perguntar"?"alerta":"ok")+'">'+(r.a==="perguntar"?"Perguntar":r.a)+'</b><button class="btn peq" data-up="'+i+'"'+(i===0?' disabled':'')+'>↑</button><button class="btn peq" data-down="'+i+'"'+(i===REGRAS.length-1?' disabled':'')+'>↓</button><button class="btn peq" data-onoff="'+i+'">'+(r.on?'Desligar':'Ligar')+'</button></span></div>'; }).join('')
+  +'<div class="sec">Testar</div>'+barraTeste(); }
+function desenha(){ var foco=document.activeElement&&document.activeElement.dataset?document.activeElement.dataset.in:null, sel=document.activeElement&&document.activeElement.selectionStart;
+  document.getElementById("L1").innerHTML=l1(); document.getElementById("L2").innerHTML=l2(); document.getElementById("L3").innerHTML=l3(); document.getElementById("L4").innerHTML=l4();
+  if(foco){ var n=document.querySelectorAll('[data-in="'+foco+'"]'); var alvo=Array.from(n).find(function(x){ return x===document.activeElement; }); } }
+document.addEventListener("input", function(ev){ var t=ev.target; if(!t.dataset.in) return; S.c[t.dataset.in]=t.value; var pos=t.selectionStart, idx=Array.from(document.querySelectorAll('[data-in="'+t.dataset.in+'"]')).indexOf(t), lay=t.closest(".tela").id; desenha();
+  var novo=document.getElementById(lay).querySelectorAll('[data-in="'+t.dataset.in+'"]')[0]; if(novo && novo.tagName==="INPUT"){ novo.focus(); try{ novo.setSelectionRange(pos,pos); }catch(e){} } });
+document.addEventListener("change", function(ev){ var t=ev.target; if(t.tagName==="SELECT" && t.dataset.in){ S.c[t.dataset.in]=t.value; desenha(); } });
+document.addEventListener("click", function(ev){ var b=ev.target.closest("button"); if(!b) return; var d=b.dataset;
+  if(d.aba) S.aba=d.aba; else if(d.caso!==undefined) S.c=Object.assign({},CASOS[+d.caso]);
+  else if(d.onoff!==undefined) REGRAS[+d.onoff].on=!REGRAS[+d.onoff].on;
+  else if(d.up!==undefined){ var i=+d.up; if(i>0){ var t=REGRAS[i]; REGRAS[i]=REGRAS[i-1]; REGRAS[i-1]=t; } }
+  else if(d.down!==undefined){ var j=+d.down; if(j<REGRAS.length-1){ var u=REGRAS[j]; REGRAS[j]=REGRAS[j+1]; REGRAS[j+1]=u; } }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>

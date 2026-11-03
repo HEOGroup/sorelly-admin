@@ -13,11 +13,11 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Contas das representantes","dircontas"), M("Regras do Pix","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
+  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Regras e contas","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
   M("Resultado do mês","resultado"),   // visão-mãe (Marcus, 27/10/2026): receber × pagar, entrou de verdade; ver docs/negocio/RESULTADO-DO-MES.md
   M("Previsão de caixa","previsaocaixa"),   // palavra direta no topo (Marcus, 26/10/2026: estava escondida demais dentro de Saldos e análises › Saldo das contas)
   {nome:"Saldos e análises", itens:[
-    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Regras do Pix","chavespix"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
+    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
     M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
     M("Estoque Sorelly","estoquesorelly")]},
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
@@ -127,10 +127,10 @@ var SETORES = [
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
     {nome:"Resultado", telas:[T("resultado","Resultado do mês")]},
-    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dircontas","Contas das representantes"), T("dirregras","Regras do Pix"), T("cpagamentos","Controle de pagamentos")]},
+    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Regras e contas"), T("cpagamentos","Controle de pagamentos")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
-      ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Chaves Pix e regras")]],
+      ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Contas Pix")]],
       ["Dinheiro", [T("dinheiro","Dinheiro")]],
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
     G("Fiscal", [

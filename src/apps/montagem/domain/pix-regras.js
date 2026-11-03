@@ -40,10 +40,14 @@ function regraCasa(r, lf, linha){
   if(tem("pixMin") && !(linha.valor >= Number(q.pixMin))) return false;
   if(tem("pixMax") && !(linha.valor < Number(q.pixMax))) return false;
   if(tem("totalMin") && !(total >= Number(q.totalMin))) return false;
+  if(q.comLink && !pagamentos(lf).some(ehCartaoOuLink)) return false;   // 02/11/2026: "se teve link e..."
   return tem("dinheiroPctMin") || tem("pixMin") || tem("pixMax") || tem("totalMin");
 }
 // conta sugerida para um Pix: {conta, motivo} ou null (fica na fila)
-function sugerirPix(px, lf, linha, todos){
+function sugerirPix(px, lf, linha, todos, sc){
+  // regras "perguntar à empresa" (Marcus, 02/11/2026): valem antes do link, da conta fixa e das outras regras; não importa o resto
+  var rsP = px.regras||[];
+  for(var ip=0; ip<rsP.length; ip++){ if(rsP[ip].ativa!==false && rsP[ip].acao==="perguntar" && regraCasa(rsP[ip], lf, linha)) return {perguntar:true, motivo:"Regra: "+rsP[ip].nome}; }
   var outras = pagamentos(lf).filter(ehCartaoOuLink);
   if(outras.some(function(l){ return !contasDefinidas(l); })) return null;                       // link/cartão ainda sem conta: o Pix espera
   var cn = cnpjsDe(px, outras);
@@ -93,6 +97,7 @@ function pxAplicar(px, lf, todos){
   linhas = linhas.map(function(l){
     if(l.tipo!=="pagamento" || l.forma!=="pix" || !semConta(l)) return l;
     var s = sugerirPix(px, base, l, todos); if(!s) return l;
+    if(s.perguntar){ if(l.pergunta===s.motivo) return l; mud = true; return Object.assign({}, l, {pergunta:s.motivo}); }   // fica na fila, com o motivo da pergunta
     mud = true; return Object.assign({}, l, {partes:parte(s.conta, l.valor, false), enviada:true, auto:s.motivo}, s.repFixa ? {repFixa:s.repFixa} : null);
   });
   return mud ? Object.assign({}, lf, {linhas:linhas}) : lf;
@@ -122,9 +127,39 @@ function pxMigrar(px, s){
     px.chavesV = 1;
   }
   px.contas.forEach(function(c){ if(!c.caixaId && CAIXA_DE_PIX[c.label]) c.caixaId = CAIXA_DE_PIX[c.label]; });
+  pxRegrasExemplo(px);
   // toda conta Pix cadastrada precisa aparecer na lista de contas dos pagamentos (formas de pagamento)
   if(s && s.formasPagamento) s.formasPagamento = s.formasPagamento.map(function(f){ if(f.k!=="pix") return f; var falta = px.contas.map(function(c){ return c.label; }).filter(function(l){ return f.descricoes.indexOf(l)<0; }); return falta.length ? Object.assign({}, f, {descricoes:f.descricoes.concat(falta)}) : f; });
   return px;
+}
+// Simulador (02/11/2026): c = {rep, linkCnpj ("" = sem link), link (valor), dinheiro, pix}. Devolve {tipo:"conta"|"perguntar"|"fila"|"erro", conta, cnpj, motivo, passos:[texto]}.
+function pxSimular(px, c){
+  var pix = Number(c.pix)||0, din = Number(c.dinheiro)||0, lk = Number(c.link)||0, linhas = [], passos = [];
+  if(!(pix>0)) return {tipo:"erro", motivo:"Informe o valor do Pix.", passos:[]};
+  if(c.linkCnpj){
+    var lb = ((CONTAS_PAGAMENTO.link||[]).map(function(x){ return x.label; })).find(function(x){ return cnpjDoTexto(x)===c.linkCnpj; });
+    if(!lb) return {tipo:"erro", motivo:"Não há conta de link cadastrada no CNPJ "+c.linkCnpj+".", passos:[]};
+    linhas.push({tipo:"pagamento", forma:"link", valor:lk>0 ? lk : 1, partes:[{descricao:lb, valor:lk>0 ? lk : 1, ok:true}], enviada:true});
+  }
+  if(din>0) linhas.push({tipo:"pagamento", forma:"dinheiro", valor:din, partes:[{descricao:"DINHEIRO", valor:din, ok:true}], enviada:true});
+  var linha = {tipo:"pagamento", forma:"pix", valor:pix, partes:[]}; linhas.push(linha);
+  var lf = {origem:c.rep ? "rep" : "interno", por:c.rep||"", linhas:linhas};
+  (px.regras||[]).forEach(function(r){ if(r.ativa===false) return; passos.push((regraCasa(r, lf, linha) ? "COMBINA · " : "não combina · ")+r.nome+(r.acao==="perguntar" ? " → perguntar" : r.destino ? " → "+r.destino : "")); });
+  var s = sugerirPix(px, lf, linha, []);
+  if(!s) return {tipo:"fila", motivo:"Nenhuma regra resolveu. O Pix fica na fila para o Lucas ou a diretoria definirem.", passos:passos};
+  if(s.perguntar) return {tipo:"perguntar", motivo:s.motivo, passos:passos};
+  return {tipo:"conta", conta:s.conta, cnpj:cnpjDaConta(px, s.conta), motivo:s.motivo, passos:passos};
+}
+// regras de exemplo (02/11/2026, Marcus: "cria algumas regras para testarmos"): entram uma vez, na frente; o Financeiro edita, liga e desliga na tela Chaves Pix e regras
+function pxRegrasExemplo(px, forcar){
+  if(px.regrasExV===1 && !forcar) return px;
+  var exemplos = [
+    {id:"ex_link_1500", nome:"Link e Pix acima de R$ 1.500: perguntar à empresa", quando:{comLink:true, pixMin:1500}, acao:"perguntar", destino:"", ativa:true},
+    {id:"ex_pix_3000", nome:"Pix acima de R$ 3.000: perguntar à empresa", quando:{pixMin:3000}, acao:"perguntar", destino:"", ativa:true},
+    {id:"ex_dinheiro_grande", nome:"Muito dinheiro e valor alto: perguntar à empresa", quando:{dinheiroPctMin:70, totalMin:3000}, acao:"perguntar", destino:"", ativa:true},
+    {id:"ex_pouco_pix", nome:"Muito dinheiro e pouco Pix: Itaú PJ", quando:{dinheiroPctMin:70, pixMax:300}, destino:"PIX - ITAÚ PJ - MARCO", ativa:true}];
+  px.regras = exemplos.filter(function(x){ return !(px.regras||[]).some(function(r){ return r.id===x.id; }); }).concat(px.regras||[]);
+  px.regrasExV = 1; return px;
 }
 function pxReduz(s, a){
   var px = JSON.parse(JSON.stringify(s.px)), recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg, extra){ return {patch:Object.assign({px:px}, extra||{}), msg:msg}; };
@@ -146,7 +181,8 @@ function pxReduz(s, a){
       var rp0 = px.reps.find(function(x){ return x.representante===nm0; }); if(!rp0){ rp0 = {representante:nm0, cnpj:"", contaPix:"", obs:""}; px.reps.push(rp0); }
       Object.assign(rp0, a.patch||{}); if(a.patch && ("valorMax" in a.patch || "contaPix" in a.patch)) rp0.desde = Date.now();   // mudou a conta ou o limite de valor: recomeça a contagem do que já foi enviado
       if(!rp0.cnpj && !rp0.contaPix && !rp0.obs && !rp0.ate && !rp0.valorMax) px.reps = px.reps.filter(function(x){ return x!==rp0; }); return ok(); }
-    case "regra_add": { var nm = String(a.nome||"").trim(); if(!nm) return recusa("Dê um nome para a regra."); px.regras.push({id:uid("r"), nome:nm, ativa:true, quando:a.quando||{}, destino:a.destino||""}); return ok("Regra criada"); }
+    case "regras_exemplo": { pxRegrasExemplo(px, !!a.forcar); return ok(a.forcar ? "Regras de exemplo trazidas" : undefined); }
+    case "regra_add": { var nm = String(a.nome||"").trim(); if(!nm) return recusa("Dê um nome para a regra."); px.regras.push({id:uid("r"), nome:nm, ativa:true, quando:a.quando||{}, destino:a.destino||"", acao:a.acao||""}); return ok("Regra criada"); }
     case "regra_set": { var r = px.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
     case "regra_del": { px.regras = px.regras.filter(function(x){ return x.id!==a.id; }); return ok("Regra excluída"); }
     case "regra_mover": { var i = px.regras.findIndex(function(x){ return x.id===a.id; }), j = i+(a.dir||0); if(i<0 || j<0 || j>=px.regras.length) return recusa(""); var t = px.regras[i]; px.regras[i] = px.regras[j]; px.regras[j] = t; return ok(); }
@@ -179,4 +215,4 @@ function cpAplicarExtras(cp, por, agora){
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
 function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado };
+export {cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, pxSimular, cnpjDoTexto };

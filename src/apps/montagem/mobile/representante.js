@@ -575,7 +575,7 @@ function AppRepresentante(p){
     blocoAcordeao(3, "grafico", "#2563EB", "Vendas e pagamentos",
       !previaBase ? "Preencha o valor vendido" : quitado ? BK(acertoForm.vendaBruta)+" · quitado" : BK(acertoForm.vendaBruta)+" · restante "+BK(restanteTotal),
       !previaBase ? badgeTxt("Pendente","#64748B") : quitado ? checkOk : acertoForm.recusouNegociar || acordoValido ? checkOk : badgeTxt("","#64748B"),
-      [e("div",{key:"fech", className:"overflow-hidden rounded-xl border border-white/15"}, [
+      [e("div",{key:"fech", className:"overflow-hidden rounded-xl border border-[#C9A13B]/70"}, [
           linhaFech("vv","t1","Valor vendido", e(CampoReaisAuto,{value:acertoForm.vendaBruta, mostraZero:true, label:"Valor total vendido", onChange:function(v){ setAcertoForm(Object.assign({}, acertoForm, {vendaBruta:v})); }, className:campoValor})),
           previaAcerto && dv.trocasAjuste!==0 && linhaFech("tr","t1","Trocas", valorFech(dv.trocasAjuste>0 ? "+" : "−", BK(Math.abs(dv.trocasAjuste)))),
           previaAcerto && acertoForm.garantia>0 && linhaFech("gr","t1","Crédito de garantia", valorFech("−", BK(acertoForm.garantia))),
@@ -593,18 +593,18 @@ function AppRepresentante(p){
       !previaBase ? null : e(React.Fragment,{key:"pg"},
           e(LinksDoAcerto,{key:"lkacerto", rev:sel.rev, pagamentos:acertoForm.pagamentos, falta:faltaAtual, formasLink:formaDe("link").descricoes, onUsar:function(lin){ setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([lin])})); }}),
           // Pagamentos (02/11/2026, Marcus): uma linha por pagamento (✓ = já pago por link, sem ×); "+ Lançar pagamento" é um acordeão com menus suspensos de forma e conta (a lista de contas é a do Financeiro; a revendedora define em qual pagou)
-          e("div",{key:"pagbox", className:"flex flex-col gap-1.5 rounded-xl border border-white/15 p-2.5"},
+          e("div",{key:"pagbox", className:"flex flex-col gap-1.5 rounded-xl border border-[#C9A13B]/70 p-2"},
           e("div",{key:"lanc0", className:"flex flex-col"},
-            e("p",{className:"flex min-h-8 items-center text-[11px] font-semibold"}, "Pagamentos ("+acertoForm.pagamentos.length+")"+(acertoForm.pagamentos.some(function(p){ return p.jaPagoLink; }) ? " · ✓ já pago por link" : "")),
+            e("p",{className:"flex min-h-8 items-center text-[13px] font-semibold"}, "Pagamentos ("+acertoForm.pagamentos.length+")"+(acertoForm.pagamentos.some(function(p){ return p.jaPagoLink; }) ? " · ✓ já pago por link" : "")),
             acertoForm.pagamentos.map(function(p,i){ var rot = rotPag(p), sp = rot.indexOf(" "), hojeP = isoDia(new Date());
-              return e("div",{key:i, className:"flex min-h-8 items-center justify-between gap-2 border-b border-white/10"},
-                e("span",{className:"min-w-0 text-[13px]"}, p.jaPagoLink ? "✓ " : "", e("b",{className:"font-semibold"}, sp<0 ? rot : rot.slice(0, sp)), sp<0 ? "" : rot.slice(sp),
+              return e("div",{key:i, className:"flex min-h-9 items-center justify-between gap-2 border-b border-white/10"},
+                e("span",{className:"min-w-0 whitespace-nowrap text-[13px]"}, p.jaPagoLink ? "✓ " : "", e("b",{className:"font-semibold"}, sp<0 ? rot : rot.slice(0, sp)), sp<0 ? "" : rot.slice(sp),
                   p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null),
-                e("span",{className:"flex shrink-0 items-center gap-1"},
-                  e("b",{className:MONO+" text-[13px]"}, BK(p.valor)),
-                  p.jaPagoLink ? e("span",{className:"size-6"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
+                e("span",{className:"flex shrink-0 items-center gap-0.5"},
+                  e("b",{className:MONO+" text-[14px]"}, BK(p.valor)),
+                  p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
-                    "aria-label":"Remover lançamento", className:"grid size-6 place-items-center text-[13px]"}, "×"))); })),
+                    "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
           (function(){
             var fm = lancForm.forma, pedeCta = ["pix","link","credito","debito"].indexOf(fm)>=0, ctas = fm ? (formaDe(fm).descricoes||[]) : [];
             var contaCurta = function(c){ return rotuloPagamento({descricao:c}).replace(/^(Pix|Link|Crédito|Débito)\s+/, ""); };   // a forma já está escrita em cima: embaixo só o nome da conta
@@ -648,8 +648,8 @@ function AppRepresentante(p){
                   className:"h-8 w-full rounded-lg text-[13px] font-bold disabled:opacity-40 "+BR2, style:{background:"#C9A13B"}}, "Lançar pagamento")));
           })(),
           e("div",{key:"tot", className:"flex items-center justify-between gap-2 border-t border-white/10 pt-2 text-[13px] font-bold"},
-            e("span",null,"Total pago"), e("span",{className:MONO}, BK(totalPagoAtual))),
-          restanteTotal>0.009 && e("div",{key:"falta", className:"flex min-h-9 items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#C9A13B]/20 px-3 text-[13px] font-semibold"}, e("span",null,"Falta"), e("b",{className:MONO}, BK(restanteTotal)))),
+            e("span",null,"Total pago"), e("span",{className:MONO+" text-[15px]"}, BK(totalPagoAtual))),
+          restanteTotal>0.009 && e("div",{key:"falta", className:"flex min-h-9 items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#C9A13B]/20 px-3 text-[13px] font-semibold"}, e("span",null,"Falta"), e("b",{className:MONO+" text-[15px]"}, BK(restanteTotal)))),
           !quitado && !acordoExistente && !negociarAberto && !acertoForm.recusouNegociar && e("div",{key:"neg0", className:"flex gap-2"},
             e("button",{onClick:function(){ setNegociarAberto(true);
                 if(!acertoForm.acordoParcelas.length) setAcertoForm(Object.assign({}, acertoForm, {acordoParcelas:[{data:isoDia(new Date()), valor:null}]})); },

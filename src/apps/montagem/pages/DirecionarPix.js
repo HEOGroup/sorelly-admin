@@ -3,6 +3,9 @@
 // e os das REPRESENTANTES (chegam do app), divide cada um em vários destinos e CONFIRMA sempre. O sistema sugere com o motivo escrito (regras em lista, com liga/desliga). Lógica em domain/direcionar-pix.js.
 // Quando um destino tem orientação aberta (aba Orientações), confirmar também lança o Pix nela.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
+import { orientacaoCaixa } from "@/apps/montagem/domain/orientacao-pix";
+import { Orientacao } from "@/apps/montagem/pages/SimuladorPix";
 import { Botao, CAMPO, FaixaTotais, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { setBaixas, setClasse, setLancamentos, setPf, filtrar } from "@/apps/montagem/domain/contas-empresa";
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
@@ -121,7 +124,7 @@ function AbaDirecionar(){
   var fornAbertos = fornecedoresDoMes(cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
   var totalFalta = r2(fornAbertos.reduce(function(tt, f){ return tt+f.total; }, 0));
   var partes = sel ? partesDe(sel) : [], temPix = partes.some(function(z){ return z.forma==="pix"; });
-  var ctxSug = {pontual:fornAbertos.filter(function(f){ return /^Pontual/.test(f.nome); }), cp:cp, regras:dp.regras, cnpjs:ctxCnpj, contasRep:dp.contasRep||{}, limiteAlto:dp.limiteAlto||7000, cnpjDaRep:function(rep){ return cnpjDaRep(s, rep); }};
+  var ctxSug = {pontual:fornAbertos.filter(function(f){ return /^Pontual/.test(f.nome); }), cp:cp, regras:dp.regras, cnpjs:ctxCnpj, contasRep:dp.contasRep||{}, contasRepExtra:dp.contasRepExtra||{}, regrasPx:(s.px && s.px.regras)||[], limiteAlto:dp.limiteAlto||7000, cnpjDaRep:function(rep){ return cnpjDaRep(s, rep); }};
   var fazDe = function(forma, valor){ return sugerir(Object.assign({}, sel, {valor:valor, forma:forma}), ctxSug); };
   var div = sel ? (drafts[sel.id] || []) : [], restante = sel ? r2(sel.valor-soma(div)) : 0;
   var setDiv = function(l){ var n = Object.assign({}, drafts); n[sel.id] = l; setDrafts(n); setErro(""); };
@@ -382,10 +385,12 @@ function AbaRegrasPix(){
     c.edita && e("div",{className:"flex justify-end"}, e(Botao,{onClick:function(){ c.d({type:"DP", op:"demo"}); }, title:"Volta os pedidos de teste para a fila"}, "Recarregar pedidos de teste")));
 }
 
-// ── Contas das representantes: o Lucas marca 1 ou 2 vezes por dia a conta de envio de cada representante (24/10/2026). Sem marca, vale o CNPJ da maquininha ou do link dela.
+// ── Contas das representantes (Marcus, 02/11/2026): o Lucas deixa definida a conta de cada representante (à noite, no fim de semana). Planilha com a barra dourada inteira: conta fixa, vale até e limite de valor.
+// Sem marca, vale o CNPJ da maquininha ou do link dela. A fila do Direcionar usa esta lista; o que as regras mandam perguntar cai lá.
 function AbaContasRep(){
-  var c = useDP(), s = c.s, cp = c.cp, dp = c.dp, fixas = dp.contasRep || {};
-  // todas as representantes que o sistema conhece: as do Link de pagamento (maquininha/link), as que já são destino e as que já mandaram Pix
+  var c = useDP(), s = c.s, cp = c.cp, dp = c.dp, fixas = dp.contasRep || {}, extra = dp.contasRepExtra || {};
+  var cx = useState(false), mostraCaixa = cx[0], setMostraCaixa = cx[1];
+  var o = s.saldosContas ? orientacaoCaixa(s.saldosContas, hojeIsoCp(), 10) : null;
   var vistos = {}, reps = [];
   var junta = function(n){ n = String(n||"").replace(/^Representante\s+/i, "").trim(); if(!n) return; var ja = reps.filter(function(r){ return mesmaRep(r.nome, n); })[0]; if(ja){ if(n.length>ja.nome.length){ ja.nome = n; ja.id = n; } return; } reps.push({id:n, nome:n}); };
   ((s.lp && s.lp.vinculos) || []).forEach(function(v){ junta(v.representante); });
@@ -394,22 +399,37 @@ function AbaContasRep(){
   reps.sort(function(a, b){ return a.nome.localeCompare(b.nome); });
   var contas = cp.destinos.filter(function(d){ return d.ativo && (d.tipo==="CNPJ" || d.tipo==="FORNECEDOR" || d.tipo==="PRESTADOR"); });
   var chave = function(r){ return r.nome.replace(/^Representante\s+/i, ""); };
-  var nFix = reps.filter(function(r){ return fixas[chave(r)] || fixas[r.nome]; }).length;
+  var fixaDe = function(r){ return fixas[chave(r)] || fixas[r.nome] || ""; };
+  var chaveDe = function(r){ return fixas[chave(r)] ? chave(r) : fixas[r.nome] ? r.nome : chave(r); };
+  var nFix = reps.filter(function(r){ return fixaDe(r); }).length;
   var meiosDe = function(nome){ var lp = s.lp; if(!lp) return "—"; var v = vinculoDeRep(lp, nome); if(!v) return "—"; var l = []; (lp.meios||[]).forEach(function(m){ if(m.id===v.maquininhaId || m.id===v.linkId) l.push(m.nome); }); return l.length ? l.join(" · ") : "—"; };
+  var autoDe = function(r){ var cn = cnpjDaRep(s, chave(r)); return cn ? "Conta do CNPJ "+cn : o && o.cnpjs.length ? "Pelo caixa: CNPJ "+o.cnpjs[0].id : "Fila do Direcionar"; };
+  var sugerirCaixa = function(r){ var alvo = cnpjDaRep(s, chave(r)) || (o && o.cnpjs.length ? o.cnpjs[0].id : ""), d = alvo ? cp.destinos.find(function(x){ return x.ativo && x.nome.indexOf("CNPJ "+alvo)===0; }) : null; if(d) c.d({type:"DP", op:"fixa", rep:chave(r), destinoId:d.id}); };
+  var BT = "h-7 rounded-md border border-border px-2 text-[13px] hover:bg-white/10 disabled:opacity-40";
   return e("div",{className:"flex flex-col gap-3"},
-    e(FaixaTotais,{itens:[{t:"Representantes", v:String(reps.length)}, {t:"Com conta fixa", v:String(nFix), cor:nFix ? "text-success" : ""}, {t:"Automático (CNPJ da maquininha)", v:String(reps.length-nFix)}, {t:"Valor fora do normal", v:BKC(dp.limiteAlto || 7000), cor:"text-warning"}]}),
-    Secao("Conta de cada representante", "marque a conta; vale para os próximos Pix dela", e("div",{className:"flex flex-col"},
-      e("p",{className:"border-b border-border px-3 py-2 text-[13px] text-foreground"}, "Sem marca, o sistema sugere o CNPJ da maquininha ou do link da representante. Pix de valor fora do normal ignora a conta marcada e sobe para o Lucas definir."),
-      e(TabelaP,{minW:760, cols:[{t:"Representante", w:200}, {t:"Maquininha ou link"}, {t:"CNPJ dela", w:90}, {t:"Conta de envio", w:280}, {t:"", w:90}]},
-        reps.map(function(r){ var k = chave(r), fx = fixas[k] || fixas[r.nome] || "", cn = cnpjDaRep(s, k);
-          return e(Tr,{key:r.id},
-            e(Td,{forte:true, title:r.nome}, k), e(Td,{title:meiosDe(k)}, meiosDe(k)), e(Td,null, cn ? "CNPJ "+cn : "—"),
-            e("td",{className:"border-b border-border px-1.5"}, e("select",{value:fx, disabled:!c.edita, "aria-label":"Conta de envio de "+k, onChange:function(ev){ c.d({type:"DP", op:"fixa", rep:k, destinoId:ev.target.value}); }, className:CAMPO+" truncate"},
-              e("option",{value:""}, cn ? "Automático · CNPJ "+cn : "Automático"), contas.map(function(d){ return e("option",{key:d.id, value:d.id}, tipoNome(d.tipo)+" · "+d.nome); }))),
-            e("td",{className:"border-b border-border px-1.5 text-center"}, fx ? e("span",{className:"inline-flex h-6 items-center rounded px-2 text-[13px] font-bold", style:{background:"#4ade8026", color:"#4ade80"}}, "FIXA") : e("span",{className:"text-[13px] text-foreground/70"}, "auto"))); })))),
-    Secao("Valor fora do normal", "sobe para o Lucas e passa na frente da fila", e("div",{className:"flex flex-wrap items-end gap-3 px-3 py-3"},
-      e("div",{style:{minWidth:220}}, e(Rotulo,{t:"A partir de (R$)", id:"dp-lim"}), e(CampoDinheiro,{value:dp.limiteAlto || 7000, label:"Valor fora do normal", disabled:!c.edita, className:CAMPO+" text-right tabular-nums", onChange:function(v){ if(v>0) c.d({type:"DP", op:"limite", valor:v}); }})),
-      e("p",{className:"min-w-0 flex-1 text-[13px] text-foreground"}, "Um Pix desse valor, de qualquer representante, não usa a conta fixa. Ele passa na frente da fila e o Lucas escolhe a conta."))));
+    o && e("div",{className:"flex flex-wrap items-center justify-center gap-3 rounded-lg border border-border px-3 py-2 text-center text-[13px]"},
+      e("span",null, e("b",null, "Caixa de hoje: "), "mande o Pix primeiro para o CNPJ "+o.cnpjs.map(function(x){ return x.id; }).join(", depois ")+"."),
+      e("button",{type:"button", onClick:function(){ setMostraCaixa(!mostraCaixa); }, className:BT}, mostraCaixa ? "Esconder o caixa" : "Ver o caixa")),
+    mostraCaixa && e(Orientacao,{o:o}),
+    e(GradeFiltro,{chave:"contasrep", rows:reps, cols:[
+      {k:"rep", t:"Representante", forte:true, v:function(r){ return chave(r); }},
+      {k:"meio", t:"Maquininha ou link", v:function(r){ return meiosDe(chave(r)); }},
+      {k:"auto", t:"Se ficar automático", v:function(r){ return autoDe(r); }},
+      {k:"fixa", t:"Conta fixa", min:230, semFiltro:true, v:function(r){ return fixaDe(r); }, cel:function(r){ var fx = fixaDe(r);
+        return e("select",{value:fx, disabled:!c.edita, "aria-label":"Conta fixa de "+chave(r), onChange:function(ev){ c.d({type:"DP", op:"fixa", rep:chave(r), destinoId:ev.target.value}); }, className:CAMPO+" w-full"},
+          e("option",{value:""}, "Automático"), contas.map(function(d){ return e("option",{key:d.id, value:d.id}, tipoNome(d.tipo)+" · "+d.nome); })); }},
+      {k:"ate", t:"Vale até", min:160, semFiltro:true, v:function(r){ return (extra[chaveDe(r)]||{}).ate || ""; }, cel:function(r){ var fx = fixaDe(r), k = chaveDe(r);
+        return e("input",{type:"date", value:(extra[k]||{}).ate||"", disabled:!c.edita || !fx, "aria-label":"Conta fixa vale até, "+chave(r), onChange:function(ev){ c.d({type:"DP", op:"fixa_extra", rep:k, patch:{ate:ev.target.value}}); }, className:CAMPO+" w-full text-center"}); }},
+      {k:"lim", t:"Limite de valor", min:150, semFiltro:true, v:function(r){ return (extra[chaveDe(r)]||{}).limite || 0; }, cel:function(r){ var fx = fixaDe(r), k = chaveDe(r);
+        return e(CampoDinheiro,{value:(extra[k]||{}).limite||null, label:"Limite de valor, "+chave(r), disabled:!c.edita || !fx, placeholder:"Sem limite", className:CAMPO+" w-full text-center tabular-nums", onChange:function(v){ c.d({type:"DP", op:"fixa_extra", rep:k, patch:{limite:v||0}}); }}); }},
+      {k:"sit", t:"Situação", forte:true, v:function(r){ return fixaDe(r) ? "Fixa" : "Automática"; }, cor:function(r){ return fixaDe(r) ? "text-green-400" : ""; }},
+      {k:"aj", t:"Ajuda", min:290, semFiltro:true, v:function(){ return ""; }, cel:function(r){ var fx = fixaDe(r);
+        return e("span",{className:"flex items-center justify-center gap-1.5"},
+          e("button",{type:"button", disabled:!c.edita, onClick:function(){ sugerirCaixa(r); }, className:BT}, "Sugerir pelo caixa"),
+          e("button",{type:"button", disabled:!c.edita || !fx, onClick:function(){ c.d({type:"DP", op:"fixa", rep:chave(r), destinoId:""}); }, className:BT}, "Limpar")); }}]}),
+    Secao("Valor fora do normal", "sobe para a fila do Direcionar e passa na frente", e("div",{className:"flex flex-wrap items-end justify-center gap-3 px-3 py-3"},
+      e("div",{style:{minWidth:220}}, e(Rotulo,{t:"A partir de (R$)", id:"dp-lim"}), e(CampoDinheiro,{value:dp.limiteAlto || 7000, label:"Valor fora do normal", disabled:!c.edita, className:CAMPO+" text-center tabular-nums", onChange:function(v){ if(v>0) c.d({type:"DP", op:"limite", valor:v}); }})),
+      e("p",{className:"min-w-0 flex-1 text-center text-[13px] text-foreground"}, "Um Pix desse valor, de qualquer representante, não usa a conta fixa. Ele cai na fila do Direcionar e o Lucas escolhe a conta. "+nFix+" de "+reps.length+" representantes com conta fixa."))));
 }
 
 export { AbaDirecionar, AbaContasRep, AbaRegrasPix };

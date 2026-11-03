@@ -41,6 +41,21 @@ function dpDemo(){
 
 // ── contexto por CNPJ (contas a pagar de hoje/amanhã/atrasadas + disponível) montado pela tela
 // ── sugestão: devolve {opcoes:[{destinoId, nome, motivo, valor}], regras:[{n, texto, estado:"usada"|"nao_se_aplica"|"info"}], semContaFixa}
+// Regras editáveis do Pix (s.px.regras, tela Pagamentos → Regras e contas): casam pelo que a venda já pagou (dinheiro, link, cartão) e pelo valor do Pix. Marcus, 02/11/2026.
+function cenarioPix(pix){
+  var pg = pix.pagos||[], soma = function(fn){ return r2(pg.filter(fn).reduce(function(t, p){ return t+(p.valor||0); }, 0)); };
+  var din = soma(function(p){ return p.forma==="dinheiro"; }), link = soma(function(p){ return p.forma==="link"; }), cartao = soma(function(p){ return p.forma==="getnet" || p.forma==="credito" || p.forma==="debito" || p.forma==="maquininha"; });
+  return {din:din, pix:pix.valor||0, total:r2(din+link+cartao+(pix.valor||0)), comLink:link>0 || cartao>0};
+}
+function regraPixCasa(r, c){
+  var q = r.quando||{}, tem = function(k){ return q[k]!==undefined && q[k]!==null && q[k]!==""; };
+  if(q.comLink && !c.comLink) return false;
+  if(tem("pixMin") && !(c.pix>=Number(q.pixMin))) return false;
+  if(tem("pixMax") && !(c.pix<Number(q.pixMax))) return false;
+  if(tem("dinheiroPctMin") && !(c.total>0 && c.din/c.total*100>=Number(q.dinheiroPctMin)-0.0001)) return false;
+  if(tem("totalMin") && !(c.total>=Number(q.totalMin))) return false;
+  return tem("pixMin") || tem("pixMax") || tem("dinheiroPctMin") || tem("totalMin");
+}
 function sugerir(pix, ctx){
   var cp = ctx.cp, regras = (ctx.regras || []).filter(function(r){ return r.ativa; }), resumo = [], opcoes = [], usada = null;
   var dest = function(nome){ return cp.destinos.find(function(d){ return d.ativo && d.nome.indexOf(nome)===0; }); };
@@ -50,6 +65,20 @@ function sugerir(pix, ctx){
   var add = function(d, motivo, valor, n){ if(!d || opcoes.some(function(o){ return o.destinoId===d.id; })) return; opcoes.push({destinoId:d.id, nome:d.nome, motivo:motivo, valor:valor==null ? pix.valor : r2(valor), regra:n}); };
   // conta fixa da representante (24/10/2026): a que o Lucas marcou; sem marca, o CNPJ da maquininha ou do link dela. Valor fora do normal NÃO usa conta fixa: sobe para o Lucas definir.
   var limite = ctx.limiteAlto || 7000, alto = pix.valor>=limite;
+  var normN = function(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); };
+  var ex = ctx.regrasPx||[], cen = cenarioPix(pix);
+  for(var ix=0; ix<ex.length; ix++){
+    var rx = ex[ix]; if(rx.ativa===false || !regraPixCasa(rx, cen)) continue;
+    if(rx.acao==="perguntar"){
+      resumo.push({n:20, texto:"Regra do Pix: "+rx.nome+". Perguntar à empresa antes de definir a conta.", estado:"usada"});
+      return {opcoes:[], regras:resumo, semContaFixa:pix.origem==="interno", alto:alto, perguntar:true, motivoPergunta:rx.nome};
+    }
+    if(rx.destino){   // conta da regra: acha o destino cujo nome tem as palavras da conta (ex.: "PIX - ITAÚ PJ - MARCO")
+      var pal = normN(rx.destino).replace(/^pix\s*-\s*/, "").split(/[^a-z0-9]+/).filter(function(w){ return w.length>=2; }), dx = cp.destinos.find(function(d){ var nn = normN(d.nome); return d.ativo && pal.length && pal.every(function(w){ return nn.indexOf(w)>=0; }); });
+      if(dx){ add(dx, "Regra do Pix: "+rx.nome+".", null, 21); resumo.push({n:21, texto:"Regra do Pix: "+rx.nome, estado:"usada"}); break; }
+      resumo.push({n:21, texto:"Regra do Pix: "+rx.nome+" manda para "+rx.destino+" (sem destino igual cadastrado)", estado:"info"}); break;
+    }
+  }
   if(pix.origem==="rep"){
     if(alto) resumo.push({n:13, texto:"Valor fora do normal (R$ "+limite.toLocaleString("pt-BR")+" ou mais): o Lucas define a conta", estado:"info"});
     else {
@@ -57,6 +86,9 @@ function sugerir(pix, ctx){
       var nm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim(); }, mesma = function(a, b){ a = nm(a); b = nm(b); return a===b || a.indexOf(b+" ")===0 || b.indexOf(a+" ")===0; };
       var chaveFixa = Object.keys(ctx.contasRep||{}).filter(function(k){ return mesma(k, pix.repOrigem); })[0];
       var fixa = chaveFixa ? ctx.contasRep[chaveFixa] : "", d0 = fixa ? cp.destinos.find(function(d){ return d.id===fixa && d.ativo; }) : null;
+      var xt = (ctx.contasRepExtra||{})[chaveFixa] || {}, hoje0 = new Date().toISOString().slice(0, 10);
+      if(d0 && xt.ate && xt.ate<hoje0){ d0 = null; resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem+" venceu em "+xt.ate.split("-").reverse().join("/"), estado:"info"}); }
+      else if(d0 && xt.limite>0 && pix.valor>xt.limite){ d0 = null; resumo.push({n:11, texto:"Pix acima do limite da conta fixa de "+pix.repOrigem+" ("+brl(xt.limite)+")", estado:"info"}); }
       if(d0){ add(d0, "Conta fixa de "+pix.repOrigem+", marcada pelo Lucas.", null, 11); resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem, estado:"usada"}); }
       else { var cn = ctx.cnpjDaRep ? ctx.cnpjDaRep(pix.repOrigem) : ""; var dc0 = cn ? dest("CNPJ "+cn) : null;
         if(dc0){ add(dc0, "A maquininha ou o link de "+pix.repOrigem+" é do CNPJ "+cn+".", null, 12); resumo.push({n:12, texto:"Maquininha ou link de "+pix.repOrigem+": CNPJ "+cn, estado:"usada"}); } }
@@ -97,7 +129,8 @@ function dpReduz(s, a){
       if(!p2.divisoes.length) return recusa("Escolha pelo menos um destino."); if(Math.abs(soma-p2.valor)>0.009) return recusa("A soma dos destinos precisa fechar com "+brl(p2.valor)+"."); p2.status = "direcionado"; p2.confirmadoPor = por; p2.confirmadoEm = Date.now(); return ok("Pix direcionado"); }
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
     case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
-    case "fixa": { dp.contasRep = dp.contasRep || {}; if(a.destinoId) dp.contasRep[a.rep] = a.destinoId; else delete dp.contasRep[a.rep]; return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
+    case "fixa": { dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {}; if(a.destinoId) dp.contasRep[a.rep] = a.destinoId; else { delete dp.contasRep[a.rep]; delete dp.contasRepExtra[a.rep]; } return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
+    case "fixa_extra": { dp.contasRepExtra = dp.contasRepExtra || {}; var xe = dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep], a.patch||{}); if(!xe.ate && !(xe.limite>0)) delete dp.contasRepExtra[a.rep]; return ok(); }
     case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || 7000; return ok("Valor fora do normal salvo"); }
     case "demo": { dp.pix = dpDemo().pix; return ok("Pedidos de teste recarregados"); }
   }

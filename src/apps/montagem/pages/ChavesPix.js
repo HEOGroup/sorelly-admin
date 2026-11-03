@@ -26,30 +26,6 @@ function Dividir(p){
     e("div",{className:"flex flex-col gap-1.5 p-3"}, lista.map(function(o){ return e("div",{key:o.lf.id, className:"rounded-lg bg-black/25 px-3 py-2 text-center text-[13px]"}, e("b",null, o.lf.nome), " · cartão/link no CNPJ "+o.d.cartao.join(", ")+" · Pix no CNPJ "+o.d.pix.join(", ")); })));
 }
 
-function Regras(p){
-  var X = p.X, px = X.px, st = useState({nome:"", dinheiroPctMin:"", pixMin:"", pixMax:"", totalMin:"", destino:""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
-  var ativas = px.contas.filter(function(c){ return c.ativa; });
-  var optConta = function(){ return [e("option",{key:"_", value:""}, "Escolha a conta")].concat(ativas.map(function(c){ return e("option",{key:c.id, value:c.id}, c.label); })); };
-  var quando = function(r){ var q = r.quando||{}, t = []; if(q.dinheiroPctMin!==undefined && q.dinheiroPctMin!=="") t.push("dinheiro ≥ "+q.dinheiroPctMin+"% do pago"); if(q.pixMin!==undefined && q.pixMin!=="") t.push("Pix ≥ R$ "+q.pixMin); if(q.pixMax!==undefined && q.pixMax!=="") t.push("Pix < R$ "+q.pixMax); if(q.totalMin!==undefined && q.totalMin!=="") t.push("total pago ≥ R$ "+q.totalMin); return t.join(" e ") || "sem condição"; };
-  var salvar = function(){ var q = {}; ["dinheiroPctMin","pixMin","pixMax","totalMin"].forEach(function(k){ if(f[k]!=="") q[k] = Number(String(f[k]).replace(",", ".")); }); X.go("regra_add", {nome:f.nome, quando:q, destino:f.destino}); st[1]({nome:"", dinheiroPctMin:"", pixMin:"", pixMax:"", totalMin:"", destino:""}); };
-  return e(BlocoBarra,{cor:"azul", t:"Regras automáticas", sub:"Valem na ordem: a primeira que combina decide a conta do Pix", dir:String(px.regras.length), compacto:true}, e("div",{className:"flex flex-col gap-2 p-3"},
-    px.regras.length ? px.regras.map(function(r, i){ return e("div",{key:r.id, className:"flex flex-wrap items-center justify-center gap-2 rounded-xl bg-black/25 px-3 py-2 text-[13px] "+(r.ativa===false ? "opacity-50" : "")},
-      e("b",{className:"text-[#93C5FD]"}, (i+1)+"."), e("b",null, r.nome), e("span",{className:"text-white/75"}, "Se "+quando(r)+" → "), e("b",null, r.destino || "sem conta"),
-      X.edita && e("div",{className:"flex items-center gap-1"},
-        e(Btn,{v:"ghost", sm:true, disabled:i===0, onClick:function(){ X.go("regra_mover", {id:r.id, dir:-1}); }}, "↑"), e(Btn,{v:"ghost", sm:true, disabled:i===px.regras.length-1, onClick:function(){ X.go("regra_mover", {id:r.id, dir:1}); }}, "↓"),
-        e(Btn,{v:"ghost", sm:true, onClick:function(){ X.go("regra_set", {id:r.id, patch:{ativa:r.ativa===false}}); }}, r.ativa===false ? "Ligar" : "Desligar"),
-        e(Btn,{v:"ghost", sm:true, onClick:function(){ if(window.confirm("Excluir a regra "+r.nome+"?")) X.go("regra_del", {id:r.id}); }}, "Excluir"))); })
-      : e("p",{className:"py-2 text-center text-[13px] text-white/60"}, "Nenhuma regra ainda. Crie abaixo (ex.: dinheiro ≥ 70% → PIX - ITAÚ PJ - MARCO)."),
-    X.edita && e("div",{className:"grid gap-2 rounded-xl bg-black/25 p-2.5", style:{gridTemplateColumns:"repeat(auto-fit, minmax(9.5rem, 1fr))"}},
-      e(Campo,{rot:"Nome da regra"}, e("input",{value:f.nome, "aria-label":"Nome da regra", className:IN+" text-center w-full", onChange:function(ev){ set({nome:ev.target.value}); }})),
-      e(Campo,{rot:"Dinheiro a partir de (% do pago)"}, e("input",{value:f.dinheiroPctMin, inputMode:"decimal", "aria-label":"Dinheiro a partir de", className:IN+" text-center w-full", onChange:function(ev){ set({dinheiroPctMin:ev.target.value}); }})),
-      e(Campo,{rot:"Pix a partir de (R$)"}, e("input",{value:f.pixMin, inputMode:"decimal", "aria-label":"Pix a partir de", className:IN+" text-center w-full", onChange:function(ev){ set({pixMin:ev.target.value}); }})),
-      e(Campo,{rot:"Pix abaixo de (R$)"}, e("input",{value:f.pixMax, inputMode:"decimal", "aria-label":"Pix abaixo de", className:IN+" text-center w-full", onChange:function(ev){ set({pixMax:ev.target.value}); }})),
-      e(Campo,{rot:"Total pago a partir de (R$)"}, e("input",{value:f.totalMin, inputMode:"decimal", "aria-label":"Total pago a partir de", className:IN+" text-center w-full", onChange:function(ev){ set({totalMin:ev.target.value}); }})),
-      e(Campo,{rot:"Mandar o Pix para"}, e(Sel,{rot:"Conta", value:f.destino, onChange:function(v){ set({destino:v}); }}, optConta())),
-      e("div",{className:"flex items-end justify-center"}, e(Btn,{v:"primary", ic:"plus", disabled:!f.nome.trim() || !f.destino || !["dinheiroPctMin","pixMin","pixMax","totalMin"].some(function(k){ return f[k]!==""; }), onClick:salvar}, "Criar regra")))));
-}
-
 // Conta fixa do Pix por representante: o Pix dela vai para essa conta (ou para a conta padrão do CNPJ da maquininha dela). Vale depois do "mesmo CNPJ do link/cartão da venda" e antes das regras gerais.
 function RepsContaFixa(p){
   var X = p.X, px = X.px, reps = px.reps || [], ativas = px.contas.filter(function(c){ return c.ativa; });
@@ -114,6 +90,6 @@ function AbaChavesPix(){
     e(PageHead,{t:"Chaves Pix e regras", sub:"O sistema decide sozinho a conta de cada pagamento do atendimento interno e dos pedidos das representantes. O que não tiver regra cai em Controle de pagamentos para alguém definir."}),
     e(Faixa,{n:4}, e(Indicador,{t:"Contas Pix ativas", v:String(px.contas.filter(function(c){ return c.ativa; }).length), cor:"info"}), e(Indicador,{t:"Regras ligadas", v:String(px.regras.filter(function(r){ return r.ativa!==false; }).length), cor:"total"}),
       e(Indicador,{t:"Contas sem CNPJ", v:String(px.contas.filter(function(c){ return c.ativa && !c.cnpj; }).length), cor:"neutro"}), e(Indicador,{t:"Vendas para dividir", v:String(div), cor:div ? "ruim" : "ok"})),
-    e(Contas,{X:X}), e(Dividir,{X:X}), e(Regras,{X:X}), e(Maquininha,{X:X}), e(RepsContaFixa,{X:X}));   // as chaves Pix (copiar/editar) vêm primeiro
+    e(Contas,{X:X}), e(Dividir,{X:X}), e(Maquininha,{X:X}), e(RepsContaFixa,{X:X}));   // as chaves Pix (copiar/editar) vêm primeiro
 }
 export { AbaChavesPix };

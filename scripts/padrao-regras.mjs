@@ -77,6 +77,10 @@ export function conferirLinhas(arquivo, linhas, op){
     if(ehPagina(arquivo) && /\be\(\s*["'](table|thead)["']|<(table|thead)\b/.test(codigo))
       add("tabela feita à mão (use TabelaP ou TabelaPlanilha: o topo dourado em degradê vem da peça)", l);
 
+    // 2e-bis. A peça antiga Tab/Td de padrao.js tem cabeçalho cinza, sem a barra dourada (02/11/2026, Marcus: "travou errado"). Em pages/ use GradeFiltro (planilha com filtro), TabelaP ou TabelaPlanilha.
+    if(ehPagina(arquivo) && /\be\(\s*Tab\s*,|\bimport\b[^;]*\bTab\b[^;]*components\/padrao["']/.test(codigo))
+      add("tabela com a peça antiga Tab (cabeçalho cinza): use GradeFiltro, TabelaP ou TabelaPlanilha, que trazem a barra dourada inteira", l);
+
     // 3. altura de campo, botão e linha: 32 px (h-8); cabeçalho de tabela 30 px
     if(PISTA_CAMPO.test(codigo)){
       var ma = /\bh-(6|7|9|10|11|12)\b/.exec(codigo);

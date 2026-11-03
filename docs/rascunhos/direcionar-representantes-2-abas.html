@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Regras e contas das representantes · 2 abas</title>
+<style>
+  :root{ --fundo:#0B0B0C; --painel:#151517; --linha:#2A2A2E; --ouro:#C9A13B; --texto:#FFFFFF; --ok:#4ADE80; --alerta:#F5C14B; --ruim:#F87171; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--fundo);color:var(--texto);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 16px 56px}
+  h1{font-size:20px;font-weight:700;text-align:center}
+  .sub{text-align:center;margin:4px auto 16px;max-width:860px}
+  .tela{max-width:1120px;margin:0 auto;background:var(--painel);border:1px solid var(--linha);border-radius:12px;padding:12px}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+  .topo b{font-size:16px}
+  button,select,input{font:inherit;color:inherit}
+  .abas{display:inline-flex;border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .abas button{height:32px;padding:0 18px;border:0;border-right:1px solid var(--linha);background:#1E1E21;cursor:pointer}
+  .abas button:last-child{border-right:0}
+  .abas button.on{background:var(--ouro);color:#1B1409;font-weight:600}
+  .btn{height:32px;border:1px solid var(--linha);border-radius:8px;background:#1E1E21;padding:0 12px;cursor:pointer;white-space:nowrap}
+  .btn.peq{height:28px;padding:0 8px}
+  .btn.ouro{background:var(--ouro);color:#1B1409;border-color:var(--ouro);font-weight:600}
+  .btn:disabled{opacity:.4;cursor:default}
+  .campo{height:32px;border:1px solid var(--linha);border-radius:8px;background:#0F0F11;padding:0 8px;width:100%;text-align:center}
+  .num{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+  /* UM degradê só, na barra inteira (igual à GradeFiltro) */
+  table{width:100%;border-collapse:collapse}
+  thead tr{background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+  th{background:transparent;color:#1A1306;font-size:13px;font-weight:600;height:32px;padding:0 10px;text-align:center;white-space:nowrap;border-right:1px solid rgba(0,0,0,.42)}
+  th:last-child{border-right:0}
+  td{min-height:34px;padding:6px 10px;text-align:center;border-top:1px solid var(--linha);vertical-align:middle}
+  .tw{border:1px solid var(--linha);border-radius:8px;overflow:hidden;overflow-x:auto}
+  .ok{color:var(--ok)} .alerta{color:var(--alerta)} .ruim{color:var(--ruim)}
+  .desl td{opacity:.45}
+  .faixa{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:10px;border:1px solid var(--linha);border-radius:8px;padding:8px 10px;margin-bottom:10px;text-align:center}
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(125px,1fr));gap:8px;align-items:end;border:1px solid var(--linha);border-radius:8px;padding:10px;margin-top:10px}
+  .form label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;text-align:center}
+  .teste{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;border:1px solid var(--linha);border-radius:8px;padding:8px;margin-top:10px;background:#101012}
+  .teste label{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600}
+  .teste .campo{width:104px}
+  .nota{font-size:11px;text-align:center;padding:6px 0}
+  .tag{display:inline-block;border:1px solid currentColor;border-radius:999px;padding:0 8px;font-size:11px;font-weight:700}
+</style>
+</head>
+<body>
+<h1>Regras e contas das representantes · 2 abas</h1>
+<p class="sub">Tela nova em <b>Financeiro → Pagamentos</b>, ao lado do <b>Direcionar</b> (a fila que já existe). A fila continua recebendo os pedidos das representantes, e é lá que cai o que as regras mandam <b>perguntar à empresa</b>. Esta tela é para o <b>Lucas deixar tudo definido antes</b> (à noite, no fim de semana): aba <b>Regras</b> (editar) e aba <b>Contas das representantes</b> (a conta de cada uma). Tabelas com a barra dourada inteira. Dados e números do caixa são <b>inventados</b>.</p>
+<div class="tela" id="T"></div>
+<script>
+var R = function(n){ return (n<0?"−":"")+"R$ "+Math.abs(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var num = function(v){ var s=String(v||"").trim(); if(s.indexOf(",")>=0) s=s.replace(/\./g,"").replace(",","."); var x=parseFloat(s); return isNaN(x)?0:x; };
+var CONTAS = ["Itaú PJ · Marco","Sicredi Serenity 59","Safra Serenity 59","Sicredi Sorelly 46","Safra 46","Unicred 46","Sicredi Sorelly 34","Safra 34","Sicredi Axis 67","Itaú Empresas Axis 67","Pix Point"];
+var CONTA_CNPJ = {"59":"Sicredi Serenity 59","46":"Sicredi Sorelly 46","34":"Sicredi Sorelly 34","67":"Sicredi Axis 67"};
+var CAIXA = [{id:"46",apos:-40000},{id:"67",apos:-22000},{id:"34",apos:-3000},{id:"59",apos:99000}]; // inventado: ordem de quem precisa de Pix
+var CAIXA_TXT = [["46","saldo −R$ 40.000,00 · limite R$ 75.000,00 · folha R$ 70.000,00 em 03/11","Faltam R$ 35.000,00"],["67","saldo R$ 3.000,00 · sem limite · folha R$ 25.000,00 em 02/11","Faltam R$ 22.000,00"],["34","saldo −R$ 150.000,00 · limite R$ 185.000,00 · folha R$ 33.000,00 em 03/11","Faltam R$ 3.000,00"],["59","saldo R$ 0,00 · limite R$ 130.000,00 · folha R$ 30.000,00 em 03/11","Cabe na folga"]];
+var REGRAS = [
+  {n:"Link e Pix acima de R$ 1.500", q:{link:true,pixMin:1500}, a:"perguntar", on:true},
+  {n:"Pix acima de R$ 3.000", q:{pixMin:3000}, a:"perguntar", on:true},
+  {n:"Muito dinheiro e valor alto", q:{dinPct:70,totalMin:3000}, a:"perguntar", on:true},
+  {n:"Muito dinheiro e pouco Pix", q:{dinPct:70,pixMax:300}, a:"Itaú PJ · Marco", on:true}];
+var REPS = [ // inventado
+  {nome:"Dayanne", meio:"Maquininha CNPJ 59", cnpj:"59", fixa:"", ate:"", limite:""},
+  {nome:"Thalita", meio:"Maquininha CNPJ 34", cnpj:"34", fixa:"Safra 34", ate:"", limite:"20000"},
+  {nome:"Veridiana", meio:"Link CNPJ 46", cnpj:"46", fixa:"", ate:"", limite:""},
+  {nome:"Anne", meio:"Maquininha CNPJ 46", cnpj:"46", fixa:"Sicredi Sorelly 46", ate:"2026-11-08", limite:""},
+  {nome:"Lysie", meio:"Sem maquininha", cnpj:"", fixa:"", ate:"", limite:""},
+  {nome:"Jessica", meio:"Maquininha CNPJ 67", cnpj:"67", fixa:"", ate:"", limite:""}];
+var S = {aba:"regras", caixa:false, alto:"7000", f:{n:"",link:false,dinPct:"",pixMin:"",pixMax:"",totalMin:"",a:"perguntar",conta:CONTAS[0]}, t:{din:"",pix:"",link:"",linkCnpj:""}};
+var quando = function(q){ var t=[]; if(q.link) t.push("teve link"); if(q.dinPct) t.push("dinheiro ≥ "+q.dinPct+"%"); if(q.pixMin) t.push("Pix ≥ R$ "+q.pixMin.toLocaleString("pt-BR")); if(q.pixMax) t.push("Pix < R$ "+q.pixMax.toLocaleString("pt-BR")); if(q.totalMin) t.push("total ≥ R$ "+q.totalMin.toLocaleString("pt-BR")); return t.join(" e ")||"sem condição"; };
+var casa = function(r,c){ var q=r.q, total=c.din+c.pix+c.link; if(q.link && !c.linkCnpj) return false; if(q.pixMin && !(c.pix>=q.pixMin)) return false; if(q.pixMax && !(c.pix<q.pixMax)) return false; if(q.dinPct && !(total>0 && c.din/total*100>=q.dinPct)) return false; if(q.totalMin && !(total>=q.totalMin)) return false; return true; };
+function decide(c){ var r = REGRAS.filter(function(x){ return x.on && casa(x,c); })[0];
+  if(r) return r.a==="perguntar" ? {t:"perguntar",txt:"Perguntar à empresa",motivo:r.n} : {t:"conta",txt:r.a,motivo:r.n};
+  if(c.linkCnpj) return {t:"conta",txt:CONTA_CNPJ[c.linkCnpj],motivo:"Mesmo CNPJ do link ("+c.linkCnpj+")"};
+  return {t:"conta",txt:CONTA_CNPJ[CAIXA[0].id],motivo:"Sugestão do caixa: CNPJ "+CAIXA[0].id+" precisa de Pix"}; }
+var opcoes = function(sel){ return CONTAS.map(function(c){ return '<option'+(c===sel?' selected':'')+'>'+c+'</option>'; }).join(''); };
+
+function abaRegras(){
+  var f=S.f, t=S.t, d = t.pix ? decide({din:num(t.din),pix:num(t.pix),link:num(t.link),linkCnpj:t.linkCnpj}) : null;
+  return '<div class="tw"><table><thead><tr><th>Ordem</th><th>Regra</th><th>Quando</th><th>O que faz</th><th>Ligada</th><th>Mudar</th></tr></thead><tbody>'
+    +REGRAS.map(function(r,i){ return '<tr class="'+(r.on?'':'desl')+'"><td class="num">'+(i+1)+'º</td><td>'+r.n+'</td><td>Se '+quando(r.q)+'</td><td><b class="'+(r.a==="perguntar"?"alerta":"ok")+'">'+(r.a==="perguntar"?"Perguntar à empresa":"Mandar para "+r.a)+'</b></td>'
+      +'<td><button class="btn peq" data-onoff="'+i+'">'+(r.on?'Sim':'Não')+'</button></td>'
+      +'<td><button class="btn peq" data-up="'+i+'"'+(i===0?' disabled':'')+'>↑</button> <button class="btn peq" data-down="'+i+'"'+(i===REGRAS.length-1?' disabled':'')+'>↓</button> <button class="btn peq" data-del="'+i+'">Excluir</button></td></tr>'; }).join('')+'</tbody></table></div>'
+    +'<p class="nota">O sistema olha as regras de cima para baixo. A primeira que serve decide. O Lucas confirma sempre.</p>'
+    +'<div class="form"><label>Nome da regra<input class="campo" data-f="n" value="'+f.n+'"></label>'
+    +'<label>Teve link ou cartão<select class="campo" data-f="link"><option value="">Tanto faz</option><option value="1"'+(f.link?' selected':'')+'>Sim</option></select></label>'
+    +'<label>Dinheiro a partir de (%)<input class="campo" data-f="dinPct" value="'+f.dinPct+'" inputmode="decimal"></label>'
+    +'<label>Pix a partir de (R$)<input class="campo" data-f="pixMin" value="'+f.pixMin+'" inputmode="decimal"></label>'
+    +'<label>Pix abaixo de (R$)<input class="campo" data-f="pixMax" value="'+f.pixMax+'" inputmode="decimal"></label>'
+    +'<label>Total pago a partir de (R$)<input class="campo" data-f="totalMin" value="'+f.totalMin+'" inputmode="decimal"></label>'
+    +'<label>O que fazer<select class="campo" data-f="a"><option value="perguntar"'+(f.a==="perguntar"?' selected':'')+'>Perguntar à empresa</option><option value="conta"'+(f.a==="conta"?' selected':'')+'>Mandar para uma conta</option></select></label>'
+    +(f.a==="conta"?'<label>Conta<select class="campo" data-f="conta">'+opcoes(f.conta)+'</select></label>':'')
+    +'<button class="btn ouro" data-add="1"'+(f.n.trim()?'':' disabled')+'>Criar regra</button></div>'
+    +'<div class="teste"><b style="font-size:11px;text-transform:uppercase">Testar</b><label>Link<select class="campo" data-t="linkCnpj"><option value="">Sem</option>'+["34","46","59","67"].map(function(x){ return '<option value="'+x+'"'+(t.linkCnpj===x?' selected':'')+'>CNPJ '+x+'</option>'; }).join('')+'</select></label>'
+    +'<label>Dinheiro<input class="campo" data-t="din" value="'+t.din+'" inputmode="decimal"></label><label>Pix<input class="campo" data-t="pix" value="'+t.pix+'" inputmode="decimal"></label><span>→</span>'
+    +(d?'<b class="'+(d.t==="perguntar"?"alerta":"ok")+'">'+(d.t==="perguntar"?"Perguntar à empresa":"Mandar para "+d.txt)+'</b><span style="font-size:11px">'+d.motivo+'</span>':'<span style="font-size:11px">Digite o Pix para ver o resultado</span>')+'</div>'; }
+
+function abaReps(){
+  var nFix = REPS.filter(function(r){ return r.fixa; }).length;
+  var faixa = '<div class="faixa"><span><b>Caixa de hoje:</b> mande o Pix primeiro para o <b>CNPJ '+CAIXA.map(function(c){ return c.id; }).join(', depois ')+'</b></span><button class="btn peq" data-caixa="1">'+(S.caixa?'Esconder o caixa':'Ver o caixa')+'</button></div>';
+  var caixa = S.caixa ? '<div class="tw" style="margin-bottom:10px"><table><thead><tr><th>Ordem</th><th>CNPJ</th><th>Situação do caixa</th><th>Folha</th></tr></thead><tbody>'+CAIXA_TXT.map(function(c,i){ return '<tr><td class="num">'+(i+1)+'º</td><td>CNPJ '+c[0]+'</td><td>'+c[1]+'</td><td><b class="'+(c[2]==="Cabe na folga"?"ok":"ruim")+'">'+c[2]+'</b></td></tr>'; }).join('')+'</tbody></table></div>' : '';
+  var linhas = REPS.map(function(r,i){ var auto = r.cnpj ? CONTA_CNPJ[r.cnpj]+" (CNPJ "+r.cnpj+")" : CONTA_CNPJ[CAIXA[0].id]+" (caixa)";
+    return '<tr><td><b>'+r.nome+'</b></td><td>'+r.meio+'</td><td>'+auto+'</td>'
+      +'<td><select class="campo" style="width:200px" data-fixa="'+i+'"><option value="">Automático</option>'+opcoes(r.fixa)+'</select></td>'
+      +'<td><input class="campo" type="date" style="width:150px" data-ate="'+i+'" value="'+r.ate+'"'+(r.fixa?'':' disabled')+'></td>'
+      +'<td><input class="campo" style="width:120px" data-lim="'+i+'" inputmode="decimal" value="'+r.limite+'" placeholder="Sem limite"'+(r.fixa?'':' disabled')+'></td>'
+      +'<td>'+(r.fixa?'<span class="tag ok">Fixa</span>':'<span class="tag">Automática</span>')+'</td>'
+      +'<td><button class="btn peq" data-sug="'+i+'">Sugerir pelo caixa</button> <button class="btn peq" data-limpa="'+i+'"'+(r.fixa?'':' disabled')+'>Limpar</button></td></tr>'; }).join('');
+  return faixa+caixa+'<div class="tw"><table><thead><tr><th>Representante</th><th>Maquininha ou link</th><th>Se ficar automático</th><th>Conta fixa</th><th>Vale até</th><th>Limite de valor</th><th>Situação</th><th>Ajuda</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'
+    +'<div class="form" style="grid-template-columns:minmax(200px,260px) 1fr"><label>Valor fora do normal (R$)<input class="campo" data-alto="1" inputmode="decimal" value="'+S.alto+'"></label><p class="nota" style="text-align:left;align-self:center">Um Pix desse valor, de qualquer representante, não usa a conta fixa: ele cai na fila do <b>Direcionar</b> para a empresa definir.</p></div>'
+    +'<p class="nota">'+nFix+' de '+REPS.length+' com conta fixa. Sem conta fixa, vale o CNPJ da maquininha ou do link. As regras da aba Regras olham primeiro; o que mandam perguntar cai na fila do Direcionar.</p>'; }
+
+function desenha(){
+    document.getElementById("T").innerHTML = '<div class="topo"><b>Regras e contas das representantes</b><span class="abas"><button data-aba="regras" class="'+(S.aba==="regras"?'on':'')+'">Regras</button><button data-aba="reps" class="'+(S.aba==="reps"?'on':'')+'">Contas das representantes</button></span></div>'
+    +(S.aba==="regras" ? abaRegras() : abaReps()); }
+var foco = function(){ var a=document.activeElement; return a && a.dataset && (a.dataset.f||a.dataset.t) ? {k:(a.dataset.f?'f':'t'), n:a.dataset.f||a.dataset.t, pos:a.selectionStart} : null; };
+document.addEventListener("input", function(ev){ var x=ev.target; if(x.tagName!=="INPUT") return; if(x.dataset.lim!==undefined){ REPS[+x.dataset.lim].limite=x.value; return; } if(x.dataset.alto){ S.alto=x.value; return; } var k=x.dataset.f?'f':x.dataset.t?'t':null; if(!k) return; S[k][x.dataset.f||x.dataset.t]=x.value; var pos=x.selectionStart, n=x.dataset.f||x.dataset.t; desenha(); var nv=document.querySelector('[data-'+k+'="'+n+'"]'); if(nv){ nv.focus(); try{ nv.setSelectionRange(pos,pos); }catch(e){} } });
+document.addEventListener("change", function(ev){ var x=ev.target; if(x.tagName!=="SELECT") return;
+  if(x.dataset.f){ S.f[x.dataset.f]=x.dataset.f==="link"?!!x.value:x.value; desenha(); } else if(x.dataset.t){ S.t[x.dataset.t]=x.value; desenha(); } else if(x.dataset.fixa!==undefined){ var rr=REPS[+x.dataset.fixa]; rr.fixa=x.value; if(!x.value){ rr.ate=""; rr.limite=""; } desenha(); } else if(x.dataset.ate!==undefined){ REPS[+x.dataset.ate].ate=x.value; } });
+document.addEventListener("click", function(ev){ var b=ev.target.closest("button"); if(!b) return; var d=b.dataset;
+  if(d.aba) S.aba=d.aba; else if(d.caixa) S.caixa=!S.caixa;
+  else if(d.onoff!==undefined) REGRAS[+d.onoff].on=!REGRAS[+d.onoff].on;
+  else if(d.up!==undefined){ var i=+d.up; if(i>0){ var t=REGRAS[i]; REGRAS[i]=REGRAS[i-1]; REGRAS[i-1]=t; } }
+  else if(d.down!==undefined){ var j=+d.down; if(j<REGRAS.length-1){ var u=REGRAS[j]; REGRAS[j]=REGRAS[j+1]; REGRAS[j+1]=u; } }
+  else if(d.del!==undefined) REGRAS.splice(+d.del,1);
+  else if(d.add){ var f=S.f, q={}; if(f.link) q.link=true; ["dinPct","pixMin","pixMax","totalMin"].forEach(function(k){ if(f[k]!=="") q[k]=num(f[k]); }); REGRAS.push({n:f.n.trim(),q:q,a:f.a==="perguntar"?"perguntar":f.conta,on:true}); S.f={n:"",link:false,dinPct:"",pixMin:"",pixMax:"",totalMin:"",a:"perguntar",conta:CONTAS[0]}; }
+  else if(d.sug!==undefined){ REPS[+d.sug].fixa = REPS[+d.sug].cnpj ? CONTA_CNPJ[REPS[+d.sug].cnpj] : CONTA_CNPJ[CAIXA[0].id]; }
+  else if(d.limpa!==undefined){ var z=REPS[+d.limpa]; z.fixa=""; z.ate=""; z.limite=""; }
+  else return; desenha(); });
+desenha();
+</script>
+</body>
+</html>
