@@ -55,7 +55,7 @@ function TelaAssinatura(p){
               e("input",{type:"checkbox", checked:!!checks[i], onChange:function(){ alterna(i); }, className:"mt-0.5 size-4 shrink-0"}),
               e("span",null, e("b",{className:"text-[#111827]"}, r.t+". "), r.x)); })
           : e(React.Fragment,null,
-              regras.map(function(r,i){ return e("p",{key:i}, e("b",{className:"text-[#111827]"}, r.t+". "), r.x); }),
+              !p.onAbrirRegras && regras.map(function(r,i){ return e("p",{key:i}, e("b",{className:"text-[#111827]"}, r.t+". "), r.x); }),   // com o botão "Abrir as regras" o texto não é repetido aqui (Marcus, 03/11/2026)
               e("label",{className:"mt-1 flex items-center gap-2.5 rounded-xl bg-emerald-50 px-3 py-2.5 text-[13px] font-semibold text-emerald-900"},
                 e("input",{type:"checkbox", checked:ciente, onChange:function(ev){ setCiente(ev.target.checked); }, className:"size-5 shrink-0"}),
                 "A revendedora leu e entendeu as regras passadas"))),
