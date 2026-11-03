@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.26", data:"2026-11-02", titulo:"SorellyChat: aviso de mensagem embaixo", itens:[
+    {tipo:"melhoria", area:"SorellyChat · avisos de mensagem", txt:"O aviso de mensagem nova agora fica embaixo: dentro do SorellyChat, um pouco acima do campo de enviar mensagem (não cobre mais o alto da conversa); fora do chat, no canto de baixo, acima da bolinha do SorellyChat. Várias mensagens da mesma pessoa aparecem uma em cima da outra: só a última aparece inteira e o número (2, 3, 4, 5…) mostra quantas são."}
+  ]},
  {v:"0.18.25", data:"2026-11-02", titulo:"Navegador cheio: estado guardado comprimido", itens:[
     {tipo:"correção", area:"Sistema · navegador cheio", txt:"O aviso Sem espaço para salvar neste navegador acontecia porque o Admin guardava 4 MB de dados reais no navegador. Agora o estado é gravado comprimido (de 3,9 MB para cerca de 0,5 MB, lib/estado-comprimido.js) e a gravação espera 0,4 s depois da última mudança e acontece também ao esconder ou fechar a aba. Com o servidor ligado, módulo que o servidor já confirmou não é mais guardado no navegador (exceto kn, agend, cl e ri, que o app de Kits novos lê de lá). Os arquivos de Kits novos que leem esse dado aceitam os dois formatos."}
   ]},
