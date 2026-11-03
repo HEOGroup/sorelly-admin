@@ -615,7 +615,7 @@ function criarGrupo(p){
   mudar(function(s){ var o = {}; o[id] = [];
     // grupo de setor (p.porFuncionaria): aba Geral + uma conversa com cada funcionária, no topo (mesmo desenho do Agendamento e da Montagem)
     var extra = p.porFuncionaria ? {paralelas:true, funcionarias:p.membros.filter(function(x){ return x!==p.eu && !ehDirecaoCid(x); }), supervisores:[]} : {};
-    return Object.assign({}, s, {convs:s.convs.concat([Object.assign({id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}, extra)]), msgs:Object.assign({}, s.msgs, o)}); });
+    return Object.assign({}, s, {convs:s.convs.concat([Object.assign({id:id, tipo:"grupo", nome:p.nome, descr:p.descr||"", foto:p.foto||null, setorId:p.setorId||null, membros:[p.eu].concat(p.membros.filter(function(x){ return x!==p.eu; })), admins:[p.eu], criada:Date.now(), base:Date.now(), fixaPor:{}}, extra)]), msgs:Object.assign({}, s.msgs, o)}); });
   inserir(id, {id:uid("m"), de:p.eu, t:Date.now(), tipo:"sistema", texto:contato(p.eu).nome+" criou o grupo \""+p.nome+"\"", status:"lido", reacoes:{}, mencoes:[]});
   return id;
 }
@@ -654,7 +654,13 @@ function garantirGruposSetor(eu){
     ordem.forEach(function(c){ var k = sem(c.nome); if(!vistos[k]) vistos[k] = c.id; else if((estado.msgs[c.id]||[]).length<=1) dup.push(c.id); });
     if(dup.length) mudar(function(s){ return Object.assign({}, s, {convs:s.convs.map(function(c){ return dup.indexOf(c.id)>=0 ? Object.assign({}, c, {excluido:true}) : c; })}); }); })();
   var existe = function(n){ return estado.convs.some(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(n); }) || novos.some(function(g){ return sem(g.nome)===sem(n); }); }, novos = [];
-  var mk = function(nome, d){ novos.push({id:idAuto(nome), tipo:"grupo", nome:nome, descr:"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:true, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
+  var mk = function(nome, d){ novos.push({id:idAuto(nome), tipo:"grupo", nome:nome, descr:"", foto:d.foto||null, membros:[eu].concat((d.membros||[]).filter(function(x){ return x!==eu; })), admins:[eu].concat((d.admins||[]).filter(function(x){ return x!==eu; })), paralelas:!d.simples, setorId:d.setorId||null, funcionarias:d.funcionarias, supervisores:d.supervisores||[], criada:Date.now(), base:Date.now(), fixaPor:{}}); };
+  // Grupos de gestão (Marcus, 02/11/2026): conversa normal só entre as pessoas listadas, sem abas por funcionária. O setor continua sendo um grupo à parte.
+  var gestao = function(nome, setorId, nomes){ var ids = nomes.map(function(n){ return idPorNome(n); }).filter(Boolean), ja = estado.convs.find(function(c){ return c.tipo==="grupo" && !c.excluido && sem(c.nome)===sem(nome); });
+    if(ja){ if(!ja.setorId) atualizarGrupo(ja.id, {setorId:setorId}); return; }   // grupo criado antes de existir a tela Grupos do setor: só ganha a marca do setor
+    if(ids.length>1) mk(nome, {simples:true, setorId:setorId, membros:ids}); };
+  gestao("Financeiro (gestão)", "financeiro", ["Marcus","Nickolas","Lucas","Nayale","Anamaria","Ana Beatriz","Marco Antonio"]);
+  gestao("Agendamento (gestão)", "agendamento", ["Marcus","Lucas","Nickolas","Priscila","Maria Claudia","Mariana","Ana Maria Divino","Tamara"]);
   GRUPOS_SETOR.forEach(function(g){ if(!existe(g[0])) mk(g[0], g[1]()); });
   var porSetor = {}; CONTATOS.forEach(function(c){ if(c.tipo==="func" && c.setorCurto && ["Diretoria","Família"].indexOf(c.setorCurto)<0 && !ehDirecaoCid(c.id)) (porSetor[c.setorCurto] = porSetor[c.setorCurto] || []).push(c.id); });
   // H&O Apps = grupo da Tecnologia (Marcus, 30/10/2026): Marcus, Leonardo, Lucas, Nickolas, Priscila e Maria (Claudia, do RH), sem a Anamaria. Abas no topo para abrir a conversa de cada um (menos o Marcus): Leonardo, Lucas, Nickolas, Priscila e Maria. Foto da H&O Apps e Sorelly.
