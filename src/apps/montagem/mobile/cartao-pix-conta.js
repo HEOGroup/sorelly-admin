@@ -20,7 +20,7 @@ function BotaoCopiar(p){
 
 function CartaoPixConta(p){
   var cx = use(), d = dadosPixDaConta(cx.state, p.rotulo);
-  if(!d) return e("span",{className:"text-[13px]"}, "A chave Pix desta conta ainda não está cadastrada no Financeiro.");
+  if(!d) return e("div",{className:"mt-1 flex flex-col gap-1 text-[13px]"}, e("span",null, "Conta: "+p.rotulo+". A chave Pix desta conta ainda não está cadastrada no Financeiro."), p.lado && e("div",{className:"flex"}, p.lado));
   return e("div",{className:"mt-1 flex flex-col gap-1 rounded-lg border border-[#CA8A04]/60 px-2.5 py-1.5 text-[13px]"},
     e("b",{className:"font-semibold"}, "Chave Pix para a revendedora"),
     e("span",null, "Empresa: "+d.empresa),
@@ -28,8 +28,8 @@ function CartaoPixConta(p){
     d.cnpj && e("span",null, "CNPJ: "+d.cnpj),
     e("span",{className:"font-semibold"}, "Chave ("+(ROT_TIPO[d.tipo] || "Pix")+"):"),
     e("span",{className:"break-all font-mono text-[13px] font-bold", "aria-label":"Chave Pix"}, d.chave),
-    e("div",{className:"mt-0.5 flex gap-1.5"},
-      e(BotaoCopiar,{texto:d.chave, rot:"Copiar chave"}),
-      e(BotaoCopiar,{texto:mensagemPixEmpresa(d), rot:"Copiar mensagem"})));
+    e("div",{className:"mt-0.5 flex items-stretch gap-1.5"},
+      e(BotaoCopiar,{texto:mensagemPixEmpresa(d), rot:"Copiar"}),
+      p.lado));   // Copiar (a mensagem com a chave) e Anexar comprovante, numa linha só (Marcus, 04/11/2026)
 }
 export { CartaoPixConta };
