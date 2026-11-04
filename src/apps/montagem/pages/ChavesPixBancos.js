@@ -6,7 +6,7 @@
 // A tela Funcionários (RH) mostra a chave daqui e manda para cá quem quiser editar (s.cpxFoco).
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
-import { AbasTela, Bloco, BlocoFiltros, Botao, CAMPO, CampoBusca, CampoSel, TabelaP } from "@/apps/montagem/components/padrao-fin";
+import { AbasTela, Bloco, Botao, CAMPO, Segmentado, TabelaP } from "@/apps/montagem/components/padrao-fin";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
@@ -120,14 +120,12 @@ export function AbaChavesPixBancos(){
   var H = CAB[aba].slice(); if(aba==="func") H[0] = modoFunc==="cnpj" ? "Setor" : "CNPJ";
   var colunas = [{t:H[0], w:"15rem"}, {t:H[1], w:"15rem"}, {t:"Tipo de chave", w:"9rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"11rem"}, {t:"Quem alterou", w:"9rem"}];
   return e(Pagina,null,
-    // abas visíveis + Editar na mesma linha (o nome da tela já está na faixa do topo)
-    e("div",{className:"flex flex-wrap items-end justify-between gap-2"},
+    // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
+    e("div",{className:"flex flex-wrap items-center gap-2"},
       e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setBusca(""); }}),
-      e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar")),
-    // filtros no topo
-    e(BlocoFiltros,{onLimpar:busca ? function(){ setBusca(""); } : null},
-      e(CampoBusca,{t:"Buscar", id:"cpx-busca", value:busca, placeholder:"Nome, banco, chave ou quem alterou", onChange:setBusca}),
-      aba==="func" && e(CampoSel,{t:"Organizar por", id:"cpx-org", value:modoFunc, onChange:setModoFunc, opcoes:[["cnpj", "CNPJ"], ["setor", "Setor"]]})),
+      e("input",{type:"search", value:busca, placeholder:"Buscar nome, banco, chave ou quem alterou", "aria-label":"Buscar", className:CAMPO+" ml-1 max-w-72", onChange:function(ev){ setBusca(ev.target.value); }}),
+      aba==="func" && e(Segmentado,{opcoes:[["cnpj", "Por CNPJ"], ["setor", "Por setor"]], atual:modoFunc, onMudar:setModoFunc}),
+      e("span",{className:"ml-auto"}, e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
     visiveis.map(function(b){
       return e(Bloco,{key:b.id, t:b.nome},
