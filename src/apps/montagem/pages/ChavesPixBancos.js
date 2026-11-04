@@ -131,7 +131,7 @@ export function AbaChavesPixBancos(){
       aba==="func" && e(Segmentado,{opcoes:[["cnpj", "Por CNPJ"], ["setor", "Por setor"]], atual:modoFunc, onMudar:setModoFunc}),
       e("span",{className:"ml-auto"}, e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
-    aba==="cnpjs" ? e(TabelaP,{minW:1000, cols:colunas}, visiveis.reduce(function(l, b){ return l.concat(b.rows); }, []).map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
+    aba==="cnpjs" ? visiveis.map(function(b){ return e(TabelaP,{key:b.id, minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); })); })   // uma tabela por CNPJ, sem a moldura do bloco (Marcus, 04/11/2026)
     : visiveis.map(function(b){
       return e(Bloco,{key:b.id, t:b.nome},
         b.rows.length ? e(TabelaP,{minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
