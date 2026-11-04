@@ -52,15 +52,28 @@ function empresaDoBloco(sc, blocoId){
   if(/h&o|\bho\b/i.test(txt)) return EMPRESA_CURTA["HO"]; if(/\b34\b|atac/i.test(txt)) return EMPRESA_CURTA["34"]; if(/\b46\b|mayz|shopping/i.test(txt)) return EMPRESA_CURTA["46"];
   if(/\b59\b|serenity/i.test(txt)) return EMPRESA_CURTA["59"]; if(/\b67\b|axis/i.test(txt)) return EMPRESA_CURTA["67"]; return "";
 }
-function mensagemPixDaChave(s, chave){
-  var sc = (s && s.saldosContas) || {}, px = (s && s.px) || {}, ch = String(chave||"").trim(); if(!ch) return "";
+// dados da conta da empresa dona da chave (banco, empresa, CNPJ, tipo e chave); null se a chave não é de conta da empresa
+function dadosPixDaChave(s, chave){
+  var sc = (s && s.saldosContas) || {}, px = (s && s.px) || {}, ch = String(chave||"").trim(); if(!ch) return null;
   // chave salva no Caixa ou, se o estado ainda não a tem, a do arquivo local (pela conta)
   var k = (px.contas||[]).find(function(x){ return x.caixaId && String(x.chave||"").trim()===ch; }), conta = k ? (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }) : null;
   if(!conta){ conta = (sc.contas||[]).find(function(c){ var a = chaveAdminDaConta(c.nome); return a && String(a.chave).trim()===ch; }); if(conta) k = chaveAdminDaConta(conta.nome); }
-  if(!conta || !k) return "";
-  var empresa = empresaDoBloco(sc, conta.bloco); if(!empresa) return "";
+  if(!conta || !k) return null;
+  var empresa = empresaDoBloco(sc, conta.bloco); if(!empresa) return null;
   var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }) || chaveAdminDaConta(c.nome); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
-  return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
+  return {banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch};
+}
+function mensagemPixDaChave(s, chave){ var d = dadosPixDaChave(s, chave); return d ? mensagemPixEmpresa(d) : ""; }
+// a conta escolhida pelo financeiro chega ao app como o rótulo do cadastro (ex.: "PIX - SICREDI - SERENITY - 59"): devolve os dados da chave dela
+function dadosPixDaConta(s, rotulo){
+  var px = (s && s.px) || {}, sc = (s && s.saldosContas) || {}, n = function(x){ return String(x||"").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase(); };
+  var ultimo = String(rotulo||"").split(" · ").pop();   // o Direcionar grava "Destino · conta": vale o que vem depois do último " · "
+  var k = (px.contas||[]).find(function(c){ return c.label===rotulo || c.label===ultimo || c.label==="PIX - "+ultimo; });
+  var conta = k ? (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }) : (sc.contas||[]).find(function(c){ return n(c.nome)===n(ultimo); });
+  if(!k && conta) k = (px.contas||[]).find(function(c){ return c.caixaId===conta.id; });
+  var ch = k ? String(k.chave||"").trim() : "";
+  if(!ch && conta){ var a = chaveAdminDaConta(conta.nome); ch = a ? String(a.chave).trim() : ""; }   // estado salvo sem a chave: vale a do arquivo local
+  return ch ? dadosPixDaChave(s, ch) : null;
 }
 
-export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave };
+export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave, dadosPixDaChave, dadosPixDaConta };

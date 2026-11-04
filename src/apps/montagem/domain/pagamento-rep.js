@@ -34,7 +34,7 @@ function estadoPagRep(lancFin, kitId, pid){
   var lf = pedidoDe(lancFin, kitId), l = lf && lf.linhas.find(function(x){ return x.pid===pid; });
   if(!l) return null;
   var def = contasDefinidas(l) && contasEnviadas(l), ps = l.partes || [];
-  return {aguardando:!def, conta:def ? ps.map(function(q){ return q.descricao; }).join(" + ") : "", auto:l.auto || "", ts:l.pedidoTs || (lf && lf.enviadoTs) || 0, pago:def && ps.every(function(q){ return q.ok; })};
+  return {aguardando:!def, conta:def ? ps.map(function(q){ return q.descricao; }).join(" + ") : "", partes:def ? ps.map(function(q){ return q.descricao; }) : [], auto:l.auto || "", ts:l.pedidoTs || (lf && lf.enviadoTs) || 0, pago:def && ps.every(function(q){ return q.ok; })};
 }
 // pagamentos do pedido no formato do formulário do acerto (se a representante sair da tela e voltar antes de registrar)
 function pagamentosDoPedido(lancFin, kitId){
