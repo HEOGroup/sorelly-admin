@@ -28,7 +28,7 @@ var dh = function(ts){ if(!ts) return "—"; var d = new Date(ts); return String
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 var palavras = function(t){ return norm(t).split(/\s+/).filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
 var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"], ["rep", "Representantes"], ["func", "Funcionários"]];   // ordem do Marcus (04/11/2026)
-var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], rep:["Vínculo", "Representante"], pes:["Banco", "Nome"], prest:["Serviço", "Prestador"]};
+var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], rep:["Vínculo", "Representante"], pes:["Tipo", "Nome"], prest:["Serviço", "Prestador"]};
 // ajustes do Marcus (20/10/2026) para os prestadores do Financeiro familiar: quem sai, nomes e serviços; a Greice é de todos (universal)
 var OCULTAR = ["julia marketing", "marcus poupanca", "greicy anamaria", "greyci ana beatriz", "lucas castilho"];
 var NOME_EXIBE = {"greicy":"Greice", "ulisses detran":"Serviço Detran"};
@@ -57,7 +57,7 @@ function LinhaChave(p){
     e("td",{className:CEL, title:r.fav || undefined}, resumoFav(r.fav) || "—"),
     e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
     e("td",{className:CEL+" whitespace-nowrap"}, ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
-      : e("span",{className:"inline-flex items-center justify-center gap-2"}, e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"), r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}))),
+      : e("span",{className:"flex w-full items-center justify-start gap-2"}, r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}), e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"))),   // botão Pix primeiro e a chave alinhada pela esquerda (Marcus, 04/11/2026)
     e("td",{className:CEL}, dh(r.em)),
     e("td",{className:CEL}, r.por || "—"));
 }
@@ -110,7 +110,7 @@ export function AbaChavesPixBancos(){
   // ── Família: contas pessoais, um bloco por pessoa (sempre aberto)
   var personas = (s.ff && s.ff.personas) || [], idDaPessoa = function(nome){ var n = norm(nome); var p = personas.find(function(x){ return norm(x.nome)===n; }); return p ? p.id : n.split(" ")[0]; };
   var rowsPorPessoa = {};
-  if(viewFam) Object.keys(cch).filter(function(k){ return cch[k].grupo==="pes"; }).forEach(function(k){ var pid = idDaPessoa(cch[k].nome); (rowsPorPessoa[pid] = rowsPorPessoa[pid] || []).push(rowDeChave(k, cch[k].banco || "", cch[k].nome, {grupo:"pes", nome:cch[k].nome, banco:cch[k].banco, servico:cch[k].servico})); });
+  if(viewFam) Object.keys(cch).filter(function(k){ return cch[k].grupo==="pes"; }).forEach(function(k){ var pid = idDaPessoa(cch[k].nome); (rowsPorPessoa[pid] = rowsPorPessoa[pid] || []).push(rowDeChave(k, "Conta pessoal", cch[k].nome, {grupo:"pes", nome:cch[k].nome, banco:cch[k].banco, servico:cch[k].servico})); });
   var blocosPes = viewFam ? ORDEM_PESSOAS.map(function(pid){ return {id:"pes|"+pid, nome:NOME_PESSOA[pid], cor:COR_PESSOA[pid], fixo:true, vazio:"Nenhuma chave cadastrada", rows:rowsPorPessoa[pid] || []}; }) : [];
 
   // ── Prestadores de serviço: empresa + particulares (por pessoa) + universal (Greice); quem já é funcionário não repete
@@ -123,7 +123,8 @@ export function AbaChavesPixBancos(){
     var row = {id:"ff|"+x.id, c1:SERVICO_EXIBE[n] || x.servico || "Particular", c2:NOME_EXIBE[n] || x.nome, banco:sd ? sd[3] : "", fav:sd ? (sd[7] || "") : "", chave:sd ? sd[6] : (x.chavePix||""), tipo:sd ? sd[5] : (x.chavePixTipo || tipoDe(x.chavePix)), em:x.chavePixEm||0, por:x.chavePixPor||"", salva:function(pt){ d({type:"FF", op:"prest_set", id:x.id, por:eu, patch:{chavePix:pt.chave, chavePixTipo:pt.tipo, chavePixEm:Date.now(), chavePixPor:eu}}); }};
     if(UNIVERSAL.indexOf(n)>=0) universais.push(row); else { var dono = x.responsavelId || "marcus"; (porDono[dono] = porDono[dono] || []).push(row); } });
   var blocosPrest = [{id:"pr|empresa", nome:"Empresa (Sorelly)", cor:COR_PESSOA.empresa, fixo:true, vazio:"Nenhum prestador cadastrado", rows:rowsEmp}];
-  if(viewFam) blocosPrest = blocosPrest.concat(["marcus", "anamaria", "marco", "anabeatriz"].map(function(pid){ return {id:"pr|"+pid, nome:NOME_PESSOA[pid]+" · particular", cor:COR_PESSOA[pid], fixo:true, vazio:"Nenhum prestador cadastrado", rows:porDono[pid] || []}; }), [{id:"pr|universal", nome:"Universal · usado por todos", cor:COR_PESSOA.universal, fixo:true, vazio:"Nenhum prestador cadastrado", rows:universais}]);
+  // os prestadores particulares ficam na aba Sócios, dentro do grupo de cada sócio; a aba Prestadores fica só com os da empresa (Marcus, 04/11/2026)
+  if(viewFam){ blocosPes = blocosPes.map(function(b){ var pid = b.id.slice(4); return Object.assign({}, b, {vazio:"Nenhuma chave cadastrada", rows:b.rows.concat(porDono[pid] || [])}); }).concat([{id:"pes|universal", nome:"Universal · usado por todos", cor:COR_PESSOA.universal, fixo:true, vazio:"Nenhum prestador cadastrado", rows:universais}]); }
 
   var todos = {cnpjs:blocosCnpj, forn:blocosForn, func:blocosFunc, rep:blocosRep, pes:blocosPes, prest:blocosPrest}, blocos = todos[aba];
   var q = norm(busca);
@@ -141,9 +142,9 @@ export function AbaChavesPixBancos(){
   var aberto = function(b){ return abertos[b.id]===undefined ? aba!=="func" : abertos[b.id]; };
   var alterna = function(id){ var o = Object.assign({}, abertos); o[id] = abertos[id]===undefined ? aba==="func" : !abertos[id]; setAbertos(o); };
   var todosAbertos = visiveis.length>0 && visiveis.every(aberto);
-  var temBanco = aba!=="cnpjs" && aba!=="pes";
+  var temBanco = aba!=="cnpjs";
   var resumoDe = function(b){ var n = b.rows.length, sem = b.rows.filter(function(r){ return !r.chave; }).length; return b.nome+" · "+n+(aba==="cnpjs" ? (n===1 ? " conta" : " contas") : (n===1 ? " chave" : " chaves"))+(sem ? " · "+sem+" sem chave" : ""); };
-  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:"11rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"11rem"}, {t:"Tipo de chave", w:"7rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"9rem"}, {t:"Quem alterou", w:"6.5rem"}]); };
+  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:"11rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"11rem"}, {t:"Tipo de chave", w:"7rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"11.5rem"}, {t:"Quem alterou", w:"8.5rem"}]); };
   return e(Pagina,null,
     // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
     e("div",{className:"flex flex-wrap items-center gap-2"},
@@ -154,7 +155,7 @@ export function AbaChavesPixBancos(){
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
     visiveis.map(function(b){
       if(!aberto(b)) return e(BarraGrupo,{key:b.id, texto:resumoDe(b), onClick:function(){ alterna(b.id); }});
-      return e(TabelaP,{key:b.id, minW:1400, cols:colunasDe(b)}, b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui")));
+      return e(TabelaP,{key:b.id, minW:1500, cols:colunasDe(b)}, b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui")));
     }),
     !visiveis.length && e("p",{className:"py-6 text-center text-[13px] text-foreground"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
 }
