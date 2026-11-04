@@ -43,7 +43,7 @@ Condicionais (devolve depois de faturar); comissões a todos os setores; Inadimp
 | Resultado do mês | `/financeiro/resultado-do-mes` |
 | Previsão de caixa | `/financeiro/previsao-de-caixa` |
 | Contas bancárias | `/financeiro/caixa` |
-| Chaves Pix | `/financeiro/chaves-pix-dos-bancos` |
+| Chaves Pix (pasta própria: `chaves-pix/`) | `/financeiro/chaves-pix-dos-bancos` |
 | Regras do Pix | `/financeiro/chaves-pix-e-regras` |
 | Dinheiro | `/financeiro/dinheiro` |
 | Taxas e adquirentes | `/financeiro/adquirentes-e-taxas` |
