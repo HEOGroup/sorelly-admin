@@ -146,6 +146,10 @@ function dpReduz(s, a){
     // pedido de conta feito no app da representante (acerto): entra na fila do Direcionar; quando o financeiro confirma, a conta volta para o app (reducer DP)
     case "rep_pedir": { if(!a.pid || !(a.valor>0)) return recusa("Pedido sem valor."); if(dp.pix.some(function(x){ return x.pid===a.pid; })) return ok();
       dp.pix.push({id:uid("p"), origem:"rep", atendente:"", quem:"Representante "+(a.rep||""), repOrigem:a.rep||"", revendedora:a.rev||"", kitId:a.kitId, pid:a.pid, vendas:0, aPagar:a.valor, pagos:[], valor:a.valor, maq:"", obs:a.obs||"", recebidoEm:Date.now(), status:"fila", divisoes:[], forma:a.forma==="link" ? "link" : "pix", comprovante:a.comprovante||null}); return ok(); }
+    // vendas, valor a pagar e demais pagamentos do acerto (dinheiro, link, cartão, Pix já direcionado) para o financeiro ver tudo, como no Interno
+    case "rep_ctx": { dp.pix.forEach(function(x){ if(x.kitId!==a.kitId || x.origem!=="rep") return; var ctx = a.ctx || {};
+        x.vendas = ctx.vendas>0 ? ctx.vendas : 0; x.aPagar = ctx.aPagar>0 ? ctx.aPagar : x.valor;
+        x.pagos = (ctx.pagos||[]).filter(function(p){ return p.pid!==x.pid && !dp.pix.some(function(y){ return y.pid && y.pid===p.pid && y.status==="fila"; }); }).map(function(p){ return {forma:p.forma, valor:p.valor, cnpj:p.cnpj||"", parc:p.parc||0, obs:p.obs||""}; }); }); return ok(); }
     case "rep_remover": { dp.pix = dp.pix.filter(function(x){ return !(x.pid===a.pid && x.status==="fila"); }); return ok(); }
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
     case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }

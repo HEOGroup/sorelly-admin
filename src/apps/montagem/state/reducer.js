@@ -993,8 +993,10 @@ function reducer(s, a){
       if(a.op==="pedir"){ if(!a.kitId || !a.pid || !(a.valor>0)) return s;
         var sPed = com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)}, "Conta solicitada ao financeiro: "+BK(a.valor));
         var fmL = {pix:"Pix", link:"Link de pagamento", credito:"Cartão de crédito", debito:"Cartão de débito"}[a.forma] || a.forma;
-        return sincContasRep(Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch)); }
-      if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); return Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); }
+        var sPed2 = Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch);
+        return sincContasRep(Object.assign({}, sPed2, dpReduz(sPed2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch)); }
+      if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
+      if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }
     case "INT_REMOVER":
