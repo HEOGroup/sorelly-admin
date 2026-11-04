@@ -996,6 +996,9 @@ function reducer(s, a){
         var sPed2 = Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch);
         return sincContasRep(Object.assign({}, sPed2, dpReduz(sPed2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch)); }
       if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
+      if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;
+          return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:{nome:a.anexo.nome, url:a.anexo.dados||null}})]}); })}); })});
+        return com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro"); }
       if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }

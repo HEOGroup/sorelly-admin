@@ -309,7 +309,7 @@ function AppRepresentante(p){
       var listaPag = function(pg){ var lk = arred(pg*.30), px = arred(pg*.30), cr = arred(pg*.25), dn = arred(pg-lk-px-cr);
         var descLink = (formaDe("link").descricoes||[])[0] || "LINK - SICREDI - SERENITY - 59";
         return [{forma:"link", descricao:descLink, parcelas:1, data:hoje, valor:lk, anexo:null, jaPagoLink:true},
-          {forma:"pix", descricao:"", pid:"pexemplo"+kitSel.id, parcelas:1, data:hoje, valor:px, anexo:{nome:"comprovante-pix.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
+          {forma:"pix", descricao:"", pid:"pexemplo"+kitSel.id, parcelas:1, data:hoje, valor:px, anexo:null},
           {forma:"credito", descricao:"CRÉDITO - CIELO - P", parcelas:3, data:hoje, valor:cr, anexo:{nome:"comprovante-cartao.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
           {forma:"dinheiro", descricao:(formaDe("dinheiro").descricoes||[])[0] || "Dinheiro", parcelas:1, data:hoje, valor:dn, anexo:null}]; };
       var fimF = Object.assign({}, base, {garantia:cz.garantia||0, atrasoDias:9, brindes:brindes, pecasVendidas:cz.vendidas}), pagoF = valor;
@@ -434,6 +434,7 @@ function AppRepresentante(p){
   var vendaMotivo = dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta;
   var minVendaGeral = (dv.novas && dv.novas.minimoRepresentante) || NOVAS_PADRAO.minimoRepresentante, motivosVB = (dv.novas && dv.novas.motivosVendaBaixa) || NOVAS_PADRAO.motivosVendaBaixa;
   var vendaBaixa = vendaMotivo!=null && vendaMotivo < minVendaGeral;
+  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && !es.aguardando && !p.anexo; }).length;   // Pix, link e cartão: conta do financeiro + comprovante antes de fechar
   var faltaMotivoVB = vendaBaixa && (!acertoForm.motivoVendaBaixa || (acertoForm.motivoVendaBaixa==="Outro" && !(acertoForm.motivoVendaBaixaTexto||"").trim()));
   var motivoVB = !vendaBaixa ? "" : acertoForm.motivoVendaBaixa==="Outro" ? (acertoForm.motivoVendaBaixaTexto||"").trim() : (acertoForm.motivoVendaBaixa||"");
   var payloadAcerto = function(extra){
@@ -634,10 +635,19 @@ function AppRepresentante(p){
           acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p);
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
-              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta)); }),
+              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta),
+              !es.aguardando && (p.anexo
+                ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
+                : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
+                    e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"),
+                    e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante do pagamento", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
+                      var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
+                        setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
+                        if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
+                      if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
           (function(){
             var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
-            var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja";   // dinheiro e inadimplência não têm comprovante
+            var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja" && !pedeCta;   // dinheiro e inadimplência não têm comprovante; Pix, link e cartão: o comprovante vem DEPOIS, quando o financeiro responder a conta (Marcus, 04/11/2026)
             var pronto = !!(fm && lancForm.data && lancForm.valor>0 && (!pedeComp || lancForm.anexo));
             var abre = function(){ if(lancAberto){ setLancAberto(false); setLancForm(LANC_VAZIO); } else { setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); } };
             return e("div",{key:"lanc1", className:"mt-1 overflow-hidden rounded-xl border border-white/15"},
@@ -834,8 +844,8 @@ function AppRepresentante(p){
           acertoForm.motivoVendaBaixa==="Outro" && e("input",{value:acertoForm.motivoVendaBaixaTexto||"", placeholder:"Escreva o motivo", maxLength:140,
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
             className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
-        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente, onClick:function(){ setTela("assinaracerto"); },
-          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : "Confirmar acerto")]);
+        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente || aguardaContaN>0 || semCompN>0, onClick:function(){ setTela("assinaracerto"); },
+          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : aguardaContaN>0 ? "Aguardando a conta do financeiro" : semCompN>0 ? "Anexe o comprovante do pagamento" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",
