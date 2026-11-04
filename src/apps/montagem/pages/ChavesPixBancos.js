@@ -9,7 +9,7 @@ import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
 import { AbasTela, Bloco, Botao, CAMPO, Segmentado, TabelaP } from "@/apps/montagem/components/padrao-fin";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { chaveAdminDaConta, contaDaCaixa, extraSeed, extrasSeed } from "@/apps/montagem/domain/pix-regras";
+import { chaveAdminDaConta, contaDaCaixa, extraSeed, extrasSeed, funcSeed } from "@/apps/montagem/domain/pix-regras";
 import { bancoDaConta, cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
@@ -97,7 +97,7 @@ export function AbaChavesPixBancos(){
 
   // ── Funcionários: como na tela Funcionários do RH (por CNPJ ou por setor)
   var cn = cnpjsDe(s.cnpjs), nomeCnpjDe = function(id){ var c = cn.find(function(x){ return x.id===id; }); return c ? (c.num ? "CNPJ "+c.num+" · " : "")+c.nome : "CNPJ a informar"; };
-  var funcs = funcionarios(), rowDeFunc = function(f, c1){ var k = cpf[f.nome] || {}; return {id:f.nome, c1:c1, c2:f.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaFunc(f.nome)}; };
+  var funcs = funcionarios(), rowDeFunc = function(f, c1){ var k = cpf[f.nome] || {}, sd = !k.chave ? funcSeed(f.nome) : null; if(sd) k = Object.assign({}, k, {chave:sd[2], chaveTipo:sd[1], banco:sd[3]}); return {id:f.nome, c1:c1, c2:f.nome, banco:k.banco || "", chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaFunc(f.nome)}; };
   var blocosFunc = modoFunc==="setor"
     ? FUNCIONARIOS_POR_SETOR.map(function(st, i){ return {id:"s|"+st[0], nome:st[0], cor:["#B8892B", "#BE185D", "#0F766E", "#1D4ED8", "#6D28D9", "#0E7490", "#B45309", "#15803D", "#9333EA", "#DC2626"][i % 10], rows:funcs.filter(function(f){ return f.setor===st[0]; }).map(function(f){ return rowDeFunc(f, nomeCnpjDe(f.cnpj)); })}; })
     : cn.map(function(c){ return {id:"c|"+c.id, nome:(c.num ? "CNPJ "+c.num+" · " : "")+c.nome, cor:c.cor || "#64748B", rows:funcs.filter(function(f){ return f.cnpj===c.id; }).map(function(f){ return rowDeFunc(f, f.setor); })}; }).concat([{id:"c|", nome:"CNPJ a informar", cor:"#64748B", rows:funcs.filter(function(f){ return !f.cnpj; }).map(function(f){ return rowDeFunc(f, f.setor); })}]);

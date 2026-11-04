@@ -200,6 +200,8 @@ var nrNome = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]
 // acha a chave pelo nome (completo ou curto, ex.: "Nagela" acha "Nagela Eliney Hess")
 // chaves do arquivo local que o estado salvo (ou o do servidor) ainda não tem: contas por nome e pessoas/prestadores/fornecedores por id (Marcus, 04/11/2026)
 function chaveAdminDaConta(nomeConta){ var x = CHAVES_ADMIN && CHAVES_ADMIN.chaves ? CHAVES_ADMIN.chaves.find(function(z){ return normConta(z[0])===normConta(nomeConta); }) : null; return x ? {chave:x[2], chaveTipo:x[1]} : null; }
+// chave Pix de funcionária no arquivo local (planilha Controle Pix, 04/11/2026): [nome no sistema, tipo, chave, banco]
+function funcSeed(nome){ var l = CHAVES_ADMIN && CHAVES_ADMIN.func ? CHAVES_ADMIN.func : []; return l.find(function(x){ return x[0]===nome; }) || null; }
 function extrasSeed(){ return (CHAVES_ADMIN && CHAVES_ADMIN.extras) || []; }
 function chavePixRep(chaves, nomeRep){ var mine = nrNome(nomeRep); if(!mine) return ""; var cch = chaves || {}, nomes = {};
   Object.keys(cch).forEach(function(k){ if(cch[k].grupo==="rep") nomes[k] = {nome:cch[k].nome, chave:cch[k].chave}; });
@@ -209,4 +211,4 @@ function chavePixRep(chaves, nomeRep){ var mine = nrNome(nomeRep); if(!mine) ret
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
 function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {chaveAdminDaConta, extrasSeed, chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };
+export {funcSeed, chaveAdminDaConta, extrasSeed, chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };
