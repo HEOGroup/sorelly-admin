@@ -40,8 +40,10 @@ var FAV_EMPRESA = {"34":"Sorelly Comércio Atacadista de Semijoias", "46":"Mayz 
 var NOME_PESSOA = {"marcus":"Marcus", "anamaria":"Anamaria", "marco":"Marco Antonio", "anabeatriz":"Ana Beatriz Hess", "lucas":"Lucas"};
 
 // uma linha da tabela (padrão: TabelaP com topo dourado, células centralizadas, nada abreviado). Com o botão Editar ligado, tipo e chave viram campos e gravam ao sair do campo (data e quem alterou).
-var CEL = "h-8 border-b border-border px-2.5 py-1 text-center text-[13px] leading-snug";   // texto longo quebra em 2 linhas, nunca é cortado
+var CEL = "h-8 whitespace-nowrap border-b border-border px-2.5 py-1 text-center text-[13px] leading-snug";   // nenhuma linha quebra (Marcus, 04/11/2026): as colunas têm largura para o texto inteiro
 // favorecido sempre resumido: as duas primeiras palavras (Marcus, 04/11/2026); o nome completo fica no title
+var PARTICULAS = ["de", "da", "do", "dos", "das", "e"];
+var nome3 = function(t){ var ws = String(t||"").trim().split(/\s+/), n = 0, out = []; for(var i = 0; i<ws.length; i++){ var sig = PARTICULAS.indexOf(ws[i].toLowerCase())<0; if(sig && n===3) break; if(sig) n++; out.push(ws[i]); } while(out.length && PARTICULAS.indexOf(out[out.length-1].toLowerCase())>=0) out.pop(); return out.join(" "); };
 var resumoFav = function(t){ return String(t||"").trim().split(/\s+/).slice(0, 2).join(" "); };
 // grupo FECHADO: só uma barra dourada de largura inteira, resumo numa linha só começando pela esquerda (Marcus, 04/11/2026); aberto vira a tabela com as colunas
 function BarraGrupo(p){
@@ -52,7 +54,7 @@ function LinhaChave(p){
   var salvaChave = function(v){ v = v.trim(); if(v!==r.chave) r.salva({chave:v, tipo:r.tipo || tipoDe(v)}); };
   return e("tr",{className:p.i%2 ? "bg-white/[.03]" : ""},
     e("td",{className:CEL}, r.c1),
-    e("td",{className:CEL+" font-semibold"}, r.c2),
+    e("td",{className:CEL+" font-semibold", title:r.c2}, nome3(r.c2)),
     p.temBanco && e("td",{className:CEL}, r.banco || "—"),
     e("td",{className:CEL, title:r.fav || undefined}, resumoFav(r.fav) || "—"),
     e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
@@ -65,7 +67,7 @@ function LinhaChave(p){
 export function AbaChavesPixBancos(){
   var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
   // completa com as chaves do arquivo local quando o estado salvo ainda não as tem (o estado do servidor manda, e pode estar atrás)
-  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:cur.nome || x[2], banco:cur.banco || x[3], servico:cur.servico || x[4], favorecido:cur.favorecido || x[7] || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });
+  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:x[2] || cur.nome, banco:x[3] || cur.banco, servico:x[4] || cur.servico, favorecido:x[7] || cur.favorecido || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });   // nome, banco, serviço e favorecido do arquivo valem sobre o estado salvo (o Marcus acerta os textos aqui)
   var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
   var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1];
@@ -147,7 +149,7 @@ export function AbaChavesPixBancos(){
   var todosAbertos = visiveis.length>0 && visiveis.every(aberto);
   var temBanco = aba!=="cnpjs";
   var resumoDe = function(b){ var n = b.rows.length, sem = b.rows.filter(function(r){ return !r.chave; }).length; return b.nome+" · "+n+(aba==="cnpjs" ? (n===1 ? " conta" : " contas") : (n===1 ? " chave" : " chaves"))+(sem ? " · "+sem+" sem chave" : ""); };
-  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:"11rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"11rem"}, {t:"Tipo de chave", w:"7rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"11.5rem"}, {t:"Quem alterou", w:"8.5rem"}]); };
+  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:aba==="cnpjs" ? "9rem" : "13rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"10rem"}, {t:"Tipo de chave", w:"6.5rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"10.5rem"}, {t:"Quem alterou", w:"8rem"}]); };
   return e(Pagina,{className:"-ml-3 -mt-4"},   // sobe e vai um pouco mais para a esquerda (Marcus, 04/11/2026)
     // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
     e("div",{className:"flex flex-wrap items-center gap-2"},
@@ -158,7 +160,7 @@ export function AbaChavesPixBancos(){
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
     visiveis.map(function(b){
       if(!aberto(b)) return e(BarraGrupo,{key:b.id, texto:resumoDe(b), onClick:function(){ alterna(b.id); }});
-      return e(TabelaP,{key:b.id, minW:1500, cols:colunasDe(b)}, b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui")));
+      return e(TabelaP,{key:b.id, minW:1540, cols:colunasDe(b)}, b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui")));
     }),
     !visiveis.length && e("p",{className:"py-6 text-center text-[13px] text-foreground"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
 }
