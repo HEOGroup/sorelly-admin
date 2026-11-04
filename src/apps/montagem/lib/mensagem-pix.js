@@ -10,10 +10,10 @@
 //   marcooliveira070864@gmail.com   ← a chave fica sempre na linha de baixo
 //
 //   Envie o comprovante após o pagamento.
-// O botão "Copiar" (components/copiar-chave.js) copia esta mensagem quando a chave foi registrada aqui pela tela Chaves Pix.
+// O botão "Copiar" (components/copiar-chave.js) copia esta mensagem sempre que a chave é de uma conta da empresa (mensagemPixDaChave).
 var BANCOS = ["Sicredi", "Itaú", "Caixa", "Safra", "Unicred", "Stone", "Bradesco", "Santander", "Nubank", "Inter"];
 var TIPO = {CNPJ:"CNPJ", CPF:"CPF", EMAIL:"E-mail", TELEFONE:"Telefone", ALEATORIA:"Aleatória"};
-var MENSAGENS = {};
+var EMPRESA_CURTA = {"34":"Sorelly Atacadista", "46":"Mayz Comércio de Moda", "59":"Serenity", "67":"Axis", "HO":"H&O Apps", "ho":"H&O Apps"};
 
 // "Sicredi Sorelly 34" → "Sicredi"; "Caixa Econômica 34" → "Caixa Econômica"
 function bancoDaConta(nome){
@@ -33,7 +33,14 @@ function mensagemPixEmpresa(d){
   linhas.push("", "🔑 *Chave ("+(TIPO[d.tipo] || "Pix")+"):*", d.chave, "", "Envie o comprovante após o pagamento.");   // a chave SEMPRE na linha de baixo (Marcus, 04/11/2026)
   return linhas.join("\n");
 }
-var registrarMensagemPix = function(chave, msg){ if(chave && msg) MENSAGENS[String(chave)] = msg; };
-var mensagemDaChave = function(chave){ return MENSAGENS[String(chave)] || ""; };
+// Copiar uma chave Pix de CONTA DA EMPRESA já sai nesta mensagem, em qualquer tela (Marcus, 04/11/2026). Chave de outra pessoa: devolve "" e o botão copia só a chave.
+function tipoDaChave(chave){ var s = String(chave||"").trim(), n = s.replace(/D/g, ""); if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(n.length===14) return "CNPJ"; return ""; }
+function mensagemPixDaChave(s, chave){
+  var sc = (s && s.saldosContas) || {}, px = (s && s.px) || {}, ch = String(chave||"").trim(); if(!ch) return "";
+  var k = (px.contas||[]).find(function(x){ return x.caixaId && String(x.chave||"").trim()===ch; }); if(!k) return "";
+  var conta = (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }); if(!conta || !EMPRESA_CURTA[conta.bloco]) return "";
+  var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
+  return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:EMPRESA_CURTA[conta.bloco], cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
+}
 
-export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, registrarMensagemPix, mensagemDaChave };
+export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixDaChave };
