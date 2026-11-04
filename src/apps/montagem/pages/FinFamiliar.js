@@ -12,6 +12,7 @@ import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Indicador, Pagina } from "@/apps/montagem/components/padrao";
 import { Bloco, BlocoFiltros, Botao, CAMPO, CampoSel, Rotulo, TabelaP } from "@/apps/montagem/components/padrao-fin";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { e, useState } from "@/shared/react";
 import React from "react";
@@ -253,14 +254,23 @@ function CartaoPix(p){
       e("td",{className:TC}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
   });
   fecha();
+  // 3 blocos de resumo no topo do cartão (Marcus, 04/11/2026): Total, Enviado por favorecido e Por dia (por mês em "Todos os meses"). Mês que já passou não mostra meta.
+  var vl = lista.filter(function(x){ return stDe(x)!=="NAOIDENT"; }), recL = r2(vl.reduce(function(s, x){ return s+x.valor; }, 0)), atual = !todos && ym===hojeYm();
+  var pct = function(v, base){ return base>0 ? (v/base*100).toFixed(1).replace(".", ",")+"%" : ""; };
+  var porFav = {}, porDia = {}, nDia = {};
+  vl.forEach(function(x){ var k = prestDe(x.contaId), d = todos ? x.data.slice(0,7) : x.data; porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
+  var linTotal = todos ? [{r:"Recebido", v:BK(recL), p:vl.length+" PIX", total:true}]
+    : [{r:"Recebido", v:BK(t.pix.recebido), p:vl.length+" PIX", total:true}, {r:"Direto", v:BK(dv.direto), p:pct(dv.direto, t.pix.recebido)}, {r:"Prestadores", v:BK(dv.prestadores), p:pct(dv.prestadores, t.pix.recebido)}]
+      .concat(atual && t.pix.meta>0 ? [{r:"Meta do mês", v:BK(t.pix.meta), p:""}, {r:"Falta", v:BK(t.pix.restante), p:Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta"}] : []);
+  var linFav = Object.keys(porFav).sort(function(a, b){ return porFav[b]-porFav[a]; }).map(function(k){ return {r:k==="—" ? "Sem favorecido" : k, v:BK(porFav[k]), p:pct(porFav[k], recL)}; });
+  var linDia = Object.keys(porDia).sort().reverse().map(function(d){ return {r:todos ? nomeMes(d) : br(d), v:BK(porDia[d]), p:nDia[d]+(nDia[d]>1 ? " PIX" : " PIX")}; });
   return e(Bloco,{ouro:true, t:pe.nome, dir:e("span",{className:"tabular-nums"}, (todos ? "Todos os meses" : nomeMes(ym))+" · "+BK(todos ? recTodos : t.pix.recebido))},
-    e("div",{className:"pb-3 pt-2"}, todos
-      ? e(TabelaP,{minW:400, cols:[{t:"Recebido"}, {t:"PIX lançados"}]}, e("tr",{key:"r"}, e("td",{className:TC}, BK(recTodos)), e("td",{className:TC}, String(lista.length))))
-      : e(TabelaP,{minW:760, cols:[{t:"Recebido"}, {t:"Meta (R$)", w:170}, {t:"Falta"}, {t:"% da meta", w:100}, {t:"Direto"}, {t:"Prestadores"}]}, e("tr",{key:"r"},
-          e("td",{className:TC}, BK(t.pix.recebido)),
-          e("td",{className:TC}, e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
-          e("td",{className:TC}, BK(t.pix.restante)), e("td",{className:TC}, t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"%" : "—"),
-          e("td",{className:TC}, BK(dv.direto)), e("td",{className:TC}, BK(dv.prestadores))))),
+    e("div",{className:"grid grid-cols-1 items-start gap-3 py-3 md:grid-cols-3"},
+      e(BlocoResumo,{t:todos ? "Total de todos os meses" : "Total do mês", cab:["Item", "Valor", "Parte"], linhas:linTotal}),
+      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:"Enviado por favorecido", cab:["Favorecido", "Enviado", "Do total"], linhas:linFav.length ? linFav : [{r:"Nenhum PIX", v:BK(0), p:""}]})),
+      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:todos ? "Por mês" : "Por dia", cab:[todos ? "Mês" : "Dia", "Total", "PIX"], linhas:linDia.length ? linDia : [{r:"Nenhum PIX", v:BK(0), p:""}]}))),
+    atual && e("div",{className:"flex items-center justify-center gap-2 pb-3 text-[13px]"}, "Meta do mês (R$):",
+      e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
     e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 border-t border-border pb-3 pt-3 md:grid-cols-[130px_120px_minmax(0,1fr)_minmax(0,1fr)_120px]"},
       e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e("div",null, e(Rotulo,{t:"Valor (R$)"}), e("input",{value:f.valor, "aria-label":"Valor", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setF(Object.assign({}, f, {valor:ev.target.value.replace(/[^\d,.]/g,"")})); }, onKeyDown:function(ev){ if(ev.key==="Enter") anotar(); }})),
