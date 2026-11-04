@@ -4,7 +4,7 @@
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
  {v:"0.18.51", data:"2026-11-04", titulo:"PIX revendedoras: conferência em menu e resumo em tabela", itens:[
-  {tipo:"melhoria", area:"Financeiro familiar", txt:"A conferência é um menu na própria linha: Confirmado, Não identificado, Divergência de valor ou Divergência de conta (as duas últimas abrem o bloco para informar o valor ou a conta certa; "Ver" reabre). O resumo do sócio (Recebido, Meta, Falta, % da meta, Direto, Prestadores) virou uma tabela com topo dourado."},
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A conferência é um menu na própria linha: Confirmado, Não identificado, Divergência de valor ou Divergência de conta (as duas últimas abrem o bloco para informar o valor ou a conta certa; o botão Ver reabre). O resumo do sócio (Recebido, Meta, Falta, % da meta, Direto, Prestadores) virou uma tabela com topo dourado."},
  ]},
  {v:"0.18.50", data:"2026-11-04", titulo:"PIX revendedoras: banco, conta e prestador separados; conferência com divergência", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"A tabela tem colunas separadas: Banco, Conta e Prestador. A conferência não tem mais Rejeitado: agora é Confirmado, Não identificado (fora da soma) ou Divergência. Divergência abre um bloco para informar o valor que entrou de verdade ou a conta certa, com observação; o valor ou a conta corrigidos passam a valer nas somas e o informado antes aparece no bloco. PIX antigos rejeitados viram Não identificado."},
