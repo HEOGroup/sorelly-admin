@@ -43,6 +43,10 @@ var NOME_PESSOA = {"marcus":"Marcus", "anamaria":"Anamaria", "marco":"Marco Anto
 var CEL = "h-8 border-b border-border px-2.5 py-1 text-center text-[13px] leading-snug";   // texto longo quebra em 2 linhas, nunca é cortado
 // favorecido sempre resumido: as duas primeiras palavras (Marcus, 04/11/2026); o nome completo fica no title
 var resumoFav = function(t){ return String(t||"").trim().split(/\s+/).slice(0, 2).join(" "); };
+// grupo FECHADO: só uma barra dourada de largura inteira, resumo numa linha só começando pela esquerda (Marcus, 04/11/2026); aberto vira a tabela com as colunas
+function BarraGrupo(p){
+  return e("button",{type:"button", "aria-expanded":false, title:"Abrir o grupo", onClick:p.onClick, className:"flex h-8 w-full cursor-pointer items-center rounded-lg px-3 text-left text-[13px] font-semibold whitespace-nowrap text-[#1a1306]", style:{background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)"}}, "▸ "+p.texto);
+}
 function LinhaChave(p){
   var r = p.r, ed = p.edita;
   var salvaChave = function(v){ v = v.trim(); if(v!==r.chave) r.salva({chave:v, tipo:r.tipo || tipoDe(v)}); };
@@ -149,7 +153,8 @@ export function AbaChavesPixBancos(){
       e("span",{className:"ml-auto flex gap-2"}, e(Botao,{onClick:function(){ abre(!todosAbertos); }, title:todosAbertos ? "Fechar todos os grupos" : "Abrir todos os grupos"}, todosAbertos ? "Fechar todos" : "Abrir todos"), e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
     visiveis.map(function(b){
-      return e(TabelaP,{key:b.id, minW:1400, cols:colunasDe(b)}, aberto(b) ? (b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui"))) : null);
+      if(!aberto(b)) return e(BarraGrupo,{key:b.id, texto:resumoDe(b), onClick:function(){ alterna(b.id); }});
+      return e(TabelaP,{key:b.id, minW:1400, cols:colunasDe(b)}, b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui")));
     }),
     !visiveis.length && e("p",{className:"py-6 text-center text-[13px] text-foreground"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
 }
