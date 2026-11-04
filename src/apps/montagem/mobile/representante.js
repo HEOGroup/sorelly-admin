@@ -646,7 +646,7 @@ function AppRepresentante(p){
                         if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
                       if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
           acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
-            var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.tipo==="REPRESENTANTE" && String(z.nome||"").trim().toLowerCase()===String(l.rep||"").trim().toLowerCase(); }), chave = dest && dest.chavePix;   // chave cadastrada em Controle de pagamentos › Destinos (tipo Representante)
+            var nr = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase(); }, cch = (s.cp && s.cp.chaves) || {}, mine = nr(l.rep), kRep = Object.keys(cch).filter(function(k){ return cch[k].grupo==="rep" && mine && (nr(cch[k].nome).indexOf(mine)===0 || mine.indexOf(nr(cch[k].nome))===0); }).sort(function(a, b){ return nr(cch[b].nome).length-nr(cch[a].nome).length; })[0], chave = kRep ? cch[kRep].chave : "";   // chave cadastrada em Financeiro › Chaves Pix › Representantes
             return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, "Pix representante"),
               chave ? e("span",{className:"break-all"}, "Chave Pix: "+chave) : e("span",null,"Chave Pix da representante ainda não cadastrada."),

@@ -10,7 +10,7 @@ import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contaDaCaixa } from "@/apps/montagem/domain/pix-regras";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { FUNCIONARIOS_POR_SETOR, funcionarios } from "@/apps/montagem/domain/pessoas";
+import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
@@ -29,8 +29,8 @@ var GRADE = "grid grid-cols-[15rem_14rem_7.5rem_minmax(15rem,1fr)_9.5rem_7.5rem]
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 var palavras = function(t){ return norm(t).split(/\s+/).filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
 var BTN = "h-9 rounded-lg px-4 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125";
-var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["func", "Funcionários"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"]];
-var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], pes:["Banco", "Nome"], prest:["Serviço", "Prestador"]};
+var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["func", "Funcionários"], ["rep", "Representantes"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"]];
+var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], rep:["Vínculo", "Representante"], pes:["Banco", "Nome"], prest:["Serviço", "Prestador"]};
 // ajustes do Marcus (20/10/2026) para os prestadores do Financeiro familiar: quem sai, nomes e serviços; a Greice é de todos (universal)
 var OCULTAR = ["julia marketing", "marcus poupanca", "greicy anamaria", "greyci ana beatriz", "lucas castilho"];
 var NOME_EXIBE = {"greicy":"Greice", "ulisses detran":"Serviço Detran"};
@@ -88,6 +88,10 @@ export function AbaChavesPixBancos(){
   var palavrasFunc = funcs.map(function(f){ return palavras(f.nome); });
   var jaFunc = function(nome){ var pw = palavras(nome); return pw.length>0 && palavrasFunc.some(function(fw){ return pw.every(function(w){ return fw.indexOf(w)>=0; }); }); };
 
+  // ── Representantes (04/11/2026, Marcus: todas as chaves Pix num lugar só): a lista vem de Pessoas; a chave fica guardada pelo nome em s.cp.chaves e o app da representante lê daqui (Pix representante)
+  var rowsRep = REPRESENTANTES.map(function(r){ return rowDeChave("rep|"+r.nome, r.tambemFunc ? "Também funcionária" : "Representante", r.nome, {grupo:"rep", nome:r.nome}); });
+  var blocosRep = [{id:"rep", nome:"Representantes", cor:"#0E7490", fixo:true, rows:rowsRep}];
+
   // ── Família: contas pessoais, um bloco por pessoa (sempre aberto)
   var personas = (s.ff && s.ff.personas) || [], idDaPessoa = function(nome){ var n = norm(nome); var p = personas.find(function(x){ return norm(x.nome)===n; }); return p ? p.id : n.split(" ")[0]; };
   var rowsPorPessoa = {};
@@ -105,7 +109,7 @@ export function AbaChavesPixBancos(){
   var blocosPrest = [{id:"pr|empresa", nome:"Empresa (Sorelly)", cor:COR_PESSOA.empresa, fixo:true, vazio:"Nenhum prestador cadastrado", rows:rowsEmp}];
   if(viewFam) blocosPrest = blocosPrest.concat(["marcus", "anamaria", "marco", "anabeatriz"].map(function(pid){ return {id:"pr|"+pid, nome:NOME_PESSOA[pid]+" · particular", cor:COR_PESSOA[pid], fixo:true, vazio:"Nenhum prestador cadastrado", rows:porDono[pid] || []}; }), [{id:"pr|universal", nome:"Universal · usado por todos", cor:COR_PESSOA.universal, fixo:true, vazio:"Nenhum prestador cadastrado", rows:universais}]);
 
-  var todos = {cnpjs:blocosCnpj, forn:blocosForn, func:blocosFunc, pes:blocosPes, prest:blocosPrest}, blocos = todos[aba];
+  var todos = {cnpjs:blocosCnpj, forn:blocosForn, func:blocosFunc, rep:blocosRep, pes:blocosPes, prest:blocosPrest}, blocos = todos[aba];
   var q = norm(busca);
   var visiveis = blocos.map(function(b){
     var casaB = !q || norm(b.nome).indexOf(q)>=0;
