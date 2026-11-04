@@ -24,6 +24,21 @@ var PISTA_NUMERO = /tabular-nums|brl\(|din\(|inteiro\(|Dinheiro|Indicador|\bMONO
 var PISTA_CAMPO = /"(input|select|button|textarea|tr)"|Botao|CAMPO|INPUT|MoneyInput|NumInput|CampoSel|CampoBusca|BarraFiltros|Segmentado/;
 var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
 
+// 2g. A PEÇA DE TABELA TEM QUE SER DOURADA DE VERDADE (Marcus, 03/11/2026: "tem que colocar na trava dura"). As regras 2e e 2e-bis mandam usar TabelaP/TabelaPlanilha/TabelaOuro "porque elas já trazem o topo dourado".
+// Esta conferência garante que é verdade: lê a própria peça (sempre, não só quando ela muda) e reprova se o degradê dourado sumir ou se o topo voltar a ser cinza (bg-white/5, bg-muted).
+export var PECAS_TABELA = [["src/apps/montagem/components/padrao-fin.js", "TabelaP"], ["src/apps/montagem/components/tabela-planilha.js", "TabelaPlanilha"], ["src/apps/montagem/components/tabela-ouro.js", "TabelaOuro"]];
+export function conferirPecaTabela(arquivo, conteudo){
+  var item = PECAS_TABELA.filter(function(x){ return norm(arquivo).endsWith(x[0]); })[0];
+  if(!item) return [];
+  var ini = conteudo.indexOf("function " + item[1] + "(");
+  if(ini < 0) return [item[1] + ": a função da peça de tabela não foi encontrada em " + item[0]];
+  var resto = conteudo.slice(ini + 10), fim = resto.search(/\n(function |export )/), corpo = fim < 0 ? resto : resto.slice(0, fim), erros = [];
+  var dourado = /9A6F1E/i.test(corpo) || (/\bBARRA_OURO\b/.test(corpo) && /BARRA_OURO\s*=\s*\{[^}]*9A6F1E/i.test(conteudo));   // o degradê pode estar numa constante do arquivo
+  if(!dourado) erros.push(item[1] + ": o topo da tabela perdeu o degradê dourado (linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)); toda tabela tem topo dourado em degradê");
+  if(/<th|"th"/.test(corpo) && /bg-white\/5|bg-muted|bg-sidebar/.test(corpo)) erros.push(item[1] + ": cabeçalho com fundo cinza (bg-white/5, bg-muted ou bg-sidebar): o topo é dourado em degradê, UM só na tabela inteira");
+  return erros;
+}
+
 /**
  * Confere linhas (novas ou mudadas) de um arquivo. Devolve a lista de erros em texto.
  * @param {string} arquivo caminho

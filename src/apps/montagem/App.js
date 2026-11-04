@@ -196,6 +196,8 @@ function App(){
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);
+  if(permitidas && permitidas.indexOf("folderscad")<0) permitidas = permitidas.concat(["folderscad"]);
+  if(permitidas && permitidas.indexOf("informativos")<0) permitidas = permitidas.concat(["informativos"]);   // Folders e informativos (Representantes) também são de todo mundo (Marcus, 04/11/2026)   // Folders (Cadastro de revendedoras) são de todo mundo (Marcus, 04/11/2026): PDFs e mensagens para qualquer pessoa mandar à candidata
   if(permitidas && permitidas.indexOf("aulas")<0) permitidas = permitidas.concat(["aulas"]);   // as aulas do setor são de todo mundo (cada um vê só as do seu setor)   // pedir melhorias é de todo mundo (28/10/2026)
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
@@ -206,13 +208,13 @@ function App(){
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
-  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas"];
+  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas","folderscad","informativos"];
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas"].indexOf(k)>=0; });
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","folderscad","informativos"].indexOf(k)>=0; });
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];

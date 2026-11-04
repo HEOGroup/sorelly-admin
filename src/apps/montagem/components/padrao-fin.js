@@ -59,7 +59,7 @@ function FaixaTotais(p){
 // bloco com título (barra de 32 px) e conteúdo; dir = elemento à direita do título (ex.: seletor ou contagem)
 function Bloco(p){
   return e("section",{className:"rounded-lg border border-border bg-card/60 "+(p.cls||"")},
-    e("div",{className:"flex h-8 items-center justify-between gap-2 px-3 text-[13px] font-medium text-foreground"}, e("span",{className:"truncate", title:p.t}, p.t), p.dir),
+    e("div",{className:"flex h-8 items-center justify-between gap-2 px-3 text-[13px] font-medium "+(p.ouro ? "rounded-t-md font-semibold text-[#1a1306]" : "text-foreground"), style:p.ouro ? {background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)"} : undefined}, e("span",{title:p.t}, p.t), p.dir),   // ouro: barra de título dourada em degradê (ficha de experiência, 03/11/2026)
     e("div",{className:"px-3 pb-3"}, p.children));
 }
 
@@ -79,9 +79,9 @@ function Segmentado(p){
 // tabela de layout fixo. cols = [{t, w, n}] (w = largura em px; sem w = o espaço que sobrar; n = coluna de número, alinhada à direita)
 function TabelaP(p){
   return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
-    e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined}},
+    e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined, background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left top/100% 30px no-repeat"}},   // topo dourado: UM degradê na tabela inteira, nunca por célula (regra de tabelas, 02/11/2026)
       e("colgroup",null, p.cols.map(function(c, i){ return e("col",{key:i, style:c.w ? {width:c.w} : undefined}); })),
-      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] truncate border-b border-border "+(p.cab || "bg-white/5")+" px-2.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground "+(c.c ? "text-center" : c.n ? "text-right" : "text-left")}, c.t); }))),
+      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] border-b border-border px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c.t); }))),
       e("tbody",null, p.children)));
 }
 // célula e linha da TabelaP. valor (n:true) à direita, fonte tabular; texto à esquerda com corte "…" e title

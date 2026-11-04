@@ -3,6 +3,19 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.58", data:"2026-11-04", titulo:"RH: ficha no layout B3, Folders para todos e topo dourado travado", itens:[
+  {tipo:"melhoria", area:"Acessos → Folders e informativos", txt:"A tela Folders e informativos (Representantes & Kits › Regras) também foi liberada para todas as pessoas do sistema."},
+  {tipo:"melhoria", area:"Acessos → Folders", txt:"A tela Folders (Cadastro de revendedoras) foi liberada para todas as pessoas do sistema, como as Aulas e as Melhorias. Os PDFs, o link e a mensagem para WhatsApp ficam à mão de qualquer um."},
+  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Ficha no layout B3 (escolhido pelo Marcus em 04/11/2026): cartão da colaboradora no topo com foto grande (190 px), informações em 3 grupos (Contrato, Avaliações, Presença) e o anel da nota; Nova ocorrência em linha única logo abaixo; 3 colunas: Pontuação em barras com a nota do gestor, A confirmar e Ocorrências, e Parecer e decisão. Dourado só no título dos blocos."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Todos os blocos da ficha (Informações, Nova ocorrência, Pontuação, A confirmar, Ocorrências e Parecer) têm a barra de título dourada em degradê (opção ouro do Bloco)."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"Clicar na foto da colaboradora (na lista ou na ficha) abre um card grande com a foto, o nome, o setor e a função."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Bloco Informações na ficha: função, setor, admissão, dias de empresa, plano, 1ª e 2ª avaliação, efetivação, entrada, escala, gestor, advertências, faltas, atestados e atrasos desde a admissão."},
+  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Confirmar, descartar e remover viraram botões de ícone (✓, ✕ e lixeira) de 32 px."},
+  {tipo:"correção", area:"Padrão visual → Tabelas", txt:"A peça TabelaP (usada em 44 telas) tinha o topo cinza. Agora tem o topo dourado em degradê, um só na tabela inteira. A folha A4 da ficha também tem topo dourado."},
+  {tipo:"novo", area:"Padrão visual → Trava dura", txt:"Regra 2g: a trava agora lê as peças TabelaP, TabelaPlanilha e TabelaOuro e reprova se o topo dourado sumir ou voltar a ficar cinza. Roda em npm run padrao, conferir, verificar, CI e no hook."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Botão Imprimir abre a folha A4 da ficha (fundo branco, resultado, composição, ocorrências, parecer e linhas de assinatura de Gestor, RH e Direção)."},
+  {tipo:"melhoria", area:"RH → Controle de experiência", txt:"Ficha mais compacta: duas colunas (pontuação e parecer à esquerda; ocorrências à direita), pontos escritos como 9 / 20, sem textos repetidos. Tudo cabe numa tela só."}
+ ]},
  {v:"0.18.57", data:"2026-11-04", titulo:"PIX revendedoras: só os 5 sócios, fechados, e linhas mais compactas", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"Com Todos os sócios, a tela mostra só Marco Antonio, Ana Beatriz, Marcus, Lucas e Anamaria, cada um fechado numa barra dourada; clicar abre o formulário e a tabela (botão Recolher fecha). Ao filtrar um sócio, ele já aparece aberto. As linhas dos blocos de resumo ficaram mais baixas."},
  ]},

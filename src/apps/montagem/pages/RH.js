@@ -241,7 +241,7 @@ function AbaRhExp(){
   var veTodas = temAutorizacao("rh_ficha_lanca", c.s.usuario) || temAutorizacao("rh_ficha_nota", c.s.usuario) || grupoDe(c.s.usuario)==="supervisao";
   if(!veTodas) lista = lista.filter(function(x){ return ehGestorDe(fichaCfg(c.rh), nomeDe(c.s.usuario), x.c.setor); });
   var colabFicha = fichaId ? colaboradoresRh(c.s).find(function(x){ return x.id===fichaId; }) : null;
-  if(colabFicha) return e("div",{className:"flex flex-col gap-4"}, e(PageHead,{t:"Ficha de experiência", sub:"100 pontos: a pessoa perde pontos a cada ocorrência no período de experiência."}),
+  if(colabFicha) return e("div",{className:"flex flex-col gap-2"},
     e(FichaExperiencia,{c:c, colab:colabFicha, voltar:function(){ setFichaId(""); }, agir:function(op, extra){ acao(c, op, extra); }}));
   return e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:"Controle de experiência", sub:"1ª avaliação = admissão + 1º marco; 2ª = admissão + 1º + 2º marco; efetivação = dia seguinte à 2ª. Quem não foi efetivada aparece até 45 dias depois da 2ª avaliação."}),
@@ -249,7 +249,7 @@ function AbaRhExp(){
     e(BlocoPadrao,{t:"Em experiência", dir:e("span",{className:"text-[13px]"}, lista.length+" na lista")}, lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Ninguém em período de experiência no momento.") :
       e(TabelaP,{cols:[{t:"Colaboradora", w:320}, {t:"Admissão", w:100, c:true}, {t:"1ª avaliação", w:110, c:true}, {t:"2ª avaliação", w:110, c:true}, {t:"Efetivação", w:100, c:true}, {t:"Prazo", w:200, c:true}, {t:"Pontos", w:110, c:true}, {t:"Ações", w:190, c:true}]},
         lista.map(function(x){ var ch = x.chip, cor = ch.vencido ? "text-destructive" : ch.aviso ? "text-warning" : "text-success";
-          return e(Tr,{key:x.c.id}, /* padrao-ok: pedido do Marcus em 03/11/2026, foto e nome à esquerda na coluna Colaboradora */ e("td",{title:x.c.setor, className:"border-b border-border px-2.5 py-2 text-left"}, e(Pessoa,{nome:x.c.nome, forte:true, s:48})), e(Td,{c:true}, br(x.c.admissao)), e(Td,{c:true}, br(x.a1)), e(Td,{c:true}, br(x.a2)), e(Td,{c:true}, br(x.ef)), e(Td,{c:true, cor:cor, forte:true}, ch.t), e(Td,{c:true, forte:true}, pontosFicha(c, x.c.id)),
+          return e(Tr,{key:x.c.id}, /* padrao-ok: pedido do Marcus em 03/11/2026, foto e nome à esquerda na coluna Colaboradora */ e("td",{title:x.c.setor, className:"border-b border-border px-2.5 py-2 text-left"}, e(Pessoa,{nome:x.c.nome, setor:x.c.setor, funcao:x.c.funcao, forte:true, s:48})), e(Td,{c:true}, br(x.c.admissao)), e(Td,{c:true}, br(x.a1)), e(Td,{c:true}, br(x.a2)), e(Td,{c:true}, br(x.ef)), e(Td,{c:true, cor:cor, forte:true}, ch.t), e(Td,{c:true, forte:true}, pontosFicha(c, x.c.id)),
             e("td",{className:"h-8 border-b border-border px-2.5 text-center"}, e("span",{className:"inline-flex gap-2"}, e(Botao,{onClick:function(){ setFichaId(x.c.id); }}, "Ficha"), e(Botao,{onClick:function(){ if(window.confirm("Efetivar "+x.c.nome+" hoje?")) acao(c, "efetivar", {id:x.c.id}); }}, "Efetivar")))); }))));
 }
 

@@ -4,6 +4,11 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+
+## 04/11/2026 (RH: ficha de experiência no layout B3, Folders para todos e trava 2g)
+- **Ficha de experiência no layout B3 (Marcus escolheu entre 4 opções):** cartão da colaboradora no topo com a foto grande (clicar abre um card maior), informações em 3 grupos (Contrato, Avaliações, Presença), anel da nota, Nova ocorrência em linha única logo abaixo e 3 colunas (Pontuação, A confirmar e Ocorrências, Parecer e decisão). Dourado só no título dos blocos. Folha A4 de impressão em `lib/ficha-impressao.js`. Opções descartadas em `docs/ideias/ficha-experiencia-*.html`.
+- **Folders liberados para todos (Marcus, 04/11/2026):** as telas Folders (Cadastro de revendedoras) e Folders e informativos (Representantes & Kits › Regras) abrem para qualquer pessoa do sistema, como Aulas e Melhorias (`App.js`).
+- **Trava 2g, topo dourado de verdade (Marcus: "tem que colocar na trava dura"):** a peça `TabelaP` tinha o topo cinza e agora tem o degradê dourado; `conferirPecaTabela` (`scripts/padrao-regras.mjs`) lê as peças TabelaP, TabelaPlanilha e TabelaOuro sempre e reprova se o dourado sumir. As fotos de referência do CI (Faturamento e Contas a pagar) precisam ser aprovadas de novo.
 ## 03/11/2026 (RH: Ficha de experiência com 100 pontos, pedido da Maria/RH)
 - A colaboradora em experiência tem uma ficha de 100 pontos e perde pontos a cada ocorrência. Pesos: assiduidade 20, pontualidade 15, comportamento 20, qualidade 20, produtividade 15, adaptação 10.
 - Produtividade e adaptação: o gestor dá nota de 0 a 10; vale pelo peso (nota 8 em 15 pontos = 12). O total só sai com as duas notas.
