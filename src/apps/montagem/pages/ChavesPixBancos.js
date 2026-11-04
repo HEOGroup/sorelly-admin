@@ -149,7 +149,7 @@ export function AbaChavesPixBancos(){
   var todosAbertos = visiveis.length>0 && visiveis.every(aberto);
   var temBanco = aba!=="cnpjs";
   var resumoDe = function(b){ var n = b.rows.length, sem = b.rows.filter(function(r){ return !r.chave; }).length; return b.nome+" · "+n+(aba==="cnpjs" ? (n===1 ? " conta" : " contas") : (n===1 ? " chave" : " chaves"))+(sem ? " · "+sem+" sem chave" : ""); };
-  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:aba==="cnpjs" ? "9rem" : "13rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"10rem"}, {t:"Tipo de chave", w:"6.5rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"10.5rem"}, {t:"Quem alterou", w:"8rem"}]); };
+  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:aba==="cnpjs" ? "9rem" : "13rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"10rem"}, {t:"Tipo", w:"6.5rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"10.5rem"}, {t:"Quem alterou", w:"8rem"}]); };
   return e(Pagina,{className:"-ml-3 -mt-4"},   // sobe e vai um pouco mais para a esquerda (Marcus, 04/11/2026)
     // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
     e("div",{className:"flex flex-wrap items-center gap-2"},
