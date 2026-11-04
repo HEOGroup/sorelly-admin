@@ -216,9 +216,10 @@ function CartaoPix(p){
   var anotar = function(){ if(!(num(f.valor)>0) || !f.data) return; acao(c, "pix_add", {personaId:pe.id, data:f.data, valor:num(f.valor), origem:f.origem, contaId:f.contaId, forma:f.forma}); setF(Object.assign({}, f, {valor:"", origem:""})); };
   var TC = "h-8 border-b border-border px-2.5 text-center text-[13px] tabular-nums";
   // linhas da tabela: cada dia com os seus PIX e, logo depois, a linha de TOTAL DO DIA (Anamaria, 03/11/2026)
-  var linhas = [], dia = "", soma = 0, fecha = function(){ if(dia) linhas.push(e("tr",{key:"t"+dia, className:"border-t-2 border-border bg-white/5 font-semibold"}, e("td",{className:TC, colSpan:3}, "Total do dia "+br(dia)), e("td",{className:TC}, BK(soma)), e("td",{className:TC, colSpan:2}, ""))); };
+  var linhas = [], dia = "", soma = 0, cont = 0, fecha = function(){ if(dia && cont>1) linhas.push(e("tr",{key:"t"+dia, className:"border-t-2 border-border bg-white/5 font-semibold"}, e("td",{className:TC, colSpan:3}, "Total do dia "+br(dia)+" ("+cont+" PIX)"), e("td",{className:TC}, BK(soma)), e("td",{className:TC, colSpan:2}, ""))); };
   lista.forEach(function(x){
-    if(x.data!==dia){ fecha(); dia = x.data; soma = 0; }
+    if(x.data!==dia){ fecha(); dia = x.data; soma = 0; cont = 0; }
+    cont++;
     if(x.auditoria!=="REJEITADO") soma = r2(soma+x.valor);
     linhas.push(e("tr",{key:x.id},
       e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaLabel(ff, x.contaId)||"—"),
@@ -254,10 +255,9 @@ function AbaFfPix(){
   var mesesOp = Object.keys(Object.keys(comPix).concat([hojeYm()]).reduce(function(o, k){ o[k] = 1; return o; }, {})).sort().reverse();   // só os meses com PIX e o mês de hoje
   var pessoas = ff.personas.filter(function(p){ return p.ativo && p.mostrarPix; });
   return e(Guarda,{c:c}, e(Pagina,null,
-    e(PageHead,{t:"PIX das revendedoras"}),
-    e(BlocoFiltros,{onLimpar:function(){ setYm(ultimo); setQuem(""); }},
-      e(CampoSel,{t:"Mês", id:"pix-mes", value:ym, onChange:setYm, opcoes:[["TODOS", "Todos os meses"]].concat(mesesOp.map(function(k){ return [k, nomeMes(k)]; }))}),
-      e(CampoSel,{t:"Sócio", id:"pix-socio", value:quem, onChange:setQuem, opcoes:[["", "Todos"]].concat(pessoas.map(function(p){ return [p.id, p.nome]; }))})),
+    e(PageHead,{t:"PIX revendedoras"},
+      e("select",{value:ym, "aria-label":"Mês", className:CAMPO+" w-44!", onChange:function(ev){ setYm(ev.target.value); }}, e("option",{value:"TODOS"}, "Todos os meses"), mesesOp.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })),
+      e("select",{value:quem, "aria-label":"Sócio", className:CAMPO+" w-40!", onChange:function(ev){ setQuem(ev.target.value); }}, e("option",{value:""}, "Todos os sócios"), pessoas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); }))),
     pessoas.filter(function(p){ return !quem || p.id===quem; }).map(function(p){ return e(CartaoPix,{key:p.id+ym, c:c, p:p, ym:ym}); })));
 }
 

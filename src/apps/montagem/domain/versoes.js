@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.48", data:"2026-11-04", titulo:"PIX revendedoras: filtros na linha do título e total do dia sem repetir", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tela se chama PIX revendedoras. Mês e Sócio ficam pequenos, na mesma linha do título (sem o bloco Filtros). O total do dia só aparece quando o dia tem 2 PIX ou mais (ex.: Total do dia 21/10/2026 (2 PIX)); com 1 PIX só, o valor da linha já é o total e não se repete."},
+ ]},
  {v:"0.18.47", data:"2026-11-04", titulo:"PIX das revendedoras refeita: compacta, em branco e com total do dia", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"A tela PIX das revendedoras foi refeita só com peças do padrão: título, filtros no topo (mês e sócio), um bloco com barra dourada por sócio, resumo escrito numa linha, formulário numa linha e tabela com topo dourado. O total de cada dia aparece como linha de total dentro da tabela (sem as bolinhas coloridas), e tudo em branco. Abre no último mês com PIX, e há a opção Todos os meses. Pedido do Marcus e da Anamaria."},
  ]},
