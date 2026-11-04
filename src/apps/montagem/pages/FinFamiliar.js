@@ -209,10 +209,9 @@ function EditarPago(p){
 // ───────────────── PIX revendedoras ─────────────────
 // Total do dia só quando o Marcus liga no filtro "Com total por dia" (pedido de 04/11/2026: os PIX vêm em sequência). Refeita em 04/11/2026 (Marcus: compacta, sem bolinhas coloridas, sem topo gigante): só peças do padrão (Bloco com barra dourada, TabelaP, Botao). Resumo escrito em UMA linha, formulário numa linha, tabela com o TOTAL DO DIA dentro dela (linha de total), tudo em branco.
 function DivPix(p){
-  var x = p.x, cbs = p.cbs, ff = p.ff, nd = useState({tipo:(x.div && x.div.tipo) || "valor", valor:fmtN(x.valor), conta:x.contaId||"", obs:(x.div && x.div.obs) || ""}), f = nd[0], set = function(o){ nd[1](Object.assign({}, f, o)); };
+  var x = p.x, cbs = p.cbs, ff = p.ff, nd = useState({tipo:p.tipo, valor:fmtN(x.valor), conta:x.contaId||"", obs:(x.div && x.div.obs) || ""}), f = nd[0], set = function(o){ nd[1](Object.assign({}, f, o)); };
   var salvar = function(){ if(f.tipo==="valor" && !(num(f.valor)>0)) return; if(f.tipo==="conta" && !f.conta) return; acao(p.c, "pix_div", {id:x.id, tipo:f.tipo, valor:num(f.valor), contaId:f.conta, obs:f.obs}); p.onFecha(); };
-  return e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-[170px_minmax(0,1fr)_minmax(0,1fr)_120px_120px]"},
-    e("div",null, e(Rotulo,{t:"Divergência de"}), e("select",{value:f.tipo, "aria-label":"Tipo da divergência", className:CAMPO, onChange:function(ev){ set({tipo:ev.target.value}); }}, e("option",{value:"valor"}, "Valor"), e("option",{value:"conta"}, "Conta"))),
+  return e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px_120px]"},
     f.tipo==="valor"
       ? e("div",null, e(Rotulo,{t:"Valor que entrou de verdade (R$)"}), e("input",{value:f.valor, "aria-label":"Valor real", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set({valor:ev.target.value.replace(/[^\d,.]/g,"")}); }}))
       : e("div",null, e(Rotulo,{t:"Conta em que entrou de verdade"}), e("select",{value:f.conta, "aria-label":"Conta certa", className:CAMPO, onChange:function(ev){ set({conta:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
@@ -226,6 +225,7 @@ function CartaoPix(p){
   var nab = useState(""), abre = nab[0], setAbre = nab[1];
   var rotAud = {CONFIRMADO:"Confirmado", PENDENTE:"Aguardando", NAOIDENT:"Não identificado", DIVERG:"Divergência"};
   var stDe = function(x){ return x.auditoria==="REJEITADO" ? "NAOIDENT" : (x.auditoria || "PENDENTE"); };
+  var valSel = function(x){ var s = stDe(x); return s==="DIVERG" ? ((x.div && x.div.tipo)==="conta" ? "DIVC" : "DIVV") : s; };
   var contaDe = function(id){ return ff.contasBanc.find(function(b){ return b.id===id; }) || {}; };
   var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }); return pr ? pr.nome : "—"; };
   var recTodos = r2(lista.filter(function(x){ return stDe(x)!=="NAOIDENT"; }).reduce(function(s, x){ return s+x.valor; }, 0));
@@ -240,22 +240,25 @@ function CartaoPix(p){
     linhas.push(e("tr",{key:x.id},
       e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, contaDe(x.contaId).nome||"—"), e("td",{className:TC}, prestDe(x.contaId)),
       e("td",{className:TC+(stDe(x)==="NAOIDENT" ? " line-through opacity-60" : "")}, BK(x.valor)),
-      e("td",{className:TC}, e("span",{className:"inline-flex flex-wrap items-center justify-center gap-1.5"},
-        e("b",{className:"text-[13px]"}, stDe(x)==="DIVERG" ? "Divergência de "+((x.div && x.div.tipo)==="conta" ? "conta" : "valor") : rotAud[stDe(x)]),
-        ["CONFIRMADO","NAOIDENT","DIVERG"].filter(function(a){ return a!==stDe(x) || a==="DIVERG"; }).map(function(a){ return e("button",{key:a, type:"button", onClick:function(){ if(a==="DIVERG") setAbre(abre===x.id ? "" : x.id); else acao(c, "pix_aud", {id:x.id, auditoria:a}); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, a==="DIVERG" && stDe(x)==="DIVERG" ? "Ver divergência" : rotAud[a]); }))),
+      e("td",{className:TC}, e("span",{className:"inline-flex items-center justify-center gap-2"},
+        e("select",{value:valSel(x), "aria-label":"Conferência", className:CAMPO+" w-56!", onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") setAbre(x.id+"|valor"); else if(v==="DIVC") setAbre(x.id+"|conta"); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
+          stDe(x)==="PENDENTE" && e("option",{value:"PENDENTE"}, "Aguardando conferência"),
+          e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVV"}, "Divergência de valor"), e("option",{value:"DIVC"}, "Divergência de conta")),
+        stDe(x)==="DIVERG" && e("button",{type:"button", onClick:function(){ setAbre(abre.split("|")[0]===x.id ? "" : x.id+"|"+((x.div && x.div.tipo) || "valor")); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, "Ver"))),
       e("td",{className:TC}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
-    if(abre===x.id) linhas.push(e("tr",{key:"dv"+x.id}, e("td",{colSpan:8, className:"border-b border-border bg-white/5 px-3 py-2"},
+    if(abre.split("|")[0]===x.id) linhas.push(e("tr",{key:"dv"+x.id}, e("td",{colSpan:8, className:"border-b border-border bg-white/5 px-3 py-2"},
       (x.valorOriginal!=null || x.contaOriginal!=null) && e("p",{className:"pb-2 text-center text-[13px]"}, "Informado antes: "+(x.valorOriginal!=null ? BK(x.valorOriginal) : BK(x.valor))+" · "+(x.contaOriginal!=null ? contaLabel(ff, x.contaOriginal) : contaLabel(ff, x.contaId) || "sem conta")),
-      e(DivPix,{key:x.id+(x.div ? x.div.tipo : ""), x:x, c:c, ff:ff, cbs:cbs, onFecha:function(){ setAbre(""); }}))));
+      e(DivPix,{key:abre, tipo:abre.split("|")[1], x:x, c:c, ff:ff, cbs:cbs, onFecha:function(){ setAbre(""); }}))));
   });
   fecha();
   return e(Bloco,{ouro:true, t:pe.nome, dir:e("span",{className:"tabular-nums"}, (todos ? "Todos os meses" : nomeMes(ym))+" · "+BK(todos ? recTodos : t.pix.recebido))},
-    e("div",{className:"flex flex-wrap items-center justify-center gap-x-5 gap-y-1 py-2 text-[13px]"},
-      todos ? [e("span",{key:"r"}, "Recebido: "+BK(recTodos)), e("span",{key:"n"}, "PIX lançados: "+lista.length)]
-      : [e("span",{key:"r"}, "Recebido: "+BK(t.pix.recebido)),
-         e("label",{key:"meta", className:"inline-flex items-center gap-1.5"}, "Meta (R$):", e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-32! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
-         e("span",{key:"f"}, "Falta: "+BK(t.pix.restante)+(t.pix.meta>0 ? " ("+Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta)" : "")),
-         e("span",{key:"d"}, "Direto: "+BK(dv.direto)), e("span",{key:"p"}, "Prestadores: "+BK(dv.prestadores))]),
+    e("div",{className:"pb-2 pt-2"}, todos
+      ? e(TabelaP,{minW:400, cols:[{t:"Recebido"}, {t:"PIX lançados"}]}, e("tr",{key:"r"}, e("td",{className:TC}, BK(recTodos)), e("td",{className:TC}, String(lista.length))))
+      : e(TabelaP,{minW:760, cols:[{t:"Recebido"}, {t:"Meta (R$)", w:170}, {t:"Falta"}, {t:"% da meta", w:100}, {t:"Direto"}, {t:"Prestadores"}]}, e("tr",{key:"r"},
+          e("td",{className:TC}, BK(t.pix.recebido)),
+          e("td",{className:TC}, e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
+          e("td",{className:TC}, BK(t.pix.restante)), e("td",{className:TC}, t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"%" : "—"),
+          e("td",{className:TC}, BK(dv.direto)), e("td",{className:TC}, BK(dv.prestadores))))),
     e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 border-t border-border pb-2 pt-2 md:grid-cols-[130px_120px_minmax(0,1fr)_minmax(0,1fr)_120px]"},
       e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e("div",null, e(Rotulo,{t:"Valor (R$)"}), e("input",{value:f.valor, "aria-label":"Valor", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setF(Object.assign({}, f, {valor:ev.target.value.replace(/[^\d,.]/g,"")})); }, onKeyDown:function(ev){ if(ev.key==="Enter") anotar(); }})),
@@ -263,7 +266,7 @@ function CartaoPix(p){
       e("div",null, e(Rotulo,{t:"Conta que recebeu"}), e("select",{value:f.contaId, "aria-label":"Conta que recebeu", className:CAMPO, onChange:function(ev){ setF(Object.assign({}, f, {contaId:ev.target.value})); }}, e("option",{value:""}, "Sem conta definida"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
       e(Botao,{principal:true, desabilitado:!(num(f.valor)>0) || !f.data, onClick:anotar}, "Anotar PIX")),
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, todos ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
-    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Prestador", w:150}, {t:"Valor", w:120}, {t:"Conferência", w:380}, {t:"", w:56}]}, linhas));
+    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Prestador", w:150}, {t:"Valor", w:120}, {t:"Conferência", w:320}, {t:"", w:56}]}, linhas));
 }
 function AbaFfPix(){
   var c = useFF(); c = Object.assign({}, c, {pode:c.pode || temAutorizacao("ff_pix", c.s.usuario)});   // quem tem só a autorização ff_pix abre esta tela e nenhuma outra da família
