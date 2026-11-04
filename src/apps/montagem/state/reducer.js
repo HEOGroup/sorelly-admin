@@ -687,7 +687,9 @@ function reducer(s, a){
         pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0, kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[],
         assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas}, res);
       var lpU1 = usarLinksNoAcerto(s.lp, a.pagamentos, registro.id, agoraSPLp(), k.rev);   // links de pagamento usados como pagamento ficam marcados (não descontam duas vezes)
-      return com(s, {kits: mapKit(s, a.id, function(){ return {acerto:res, status:"acertado", acertoAssinado:!!a.assinatura}; }),
+      // Venda do app só entra na média quando é de R$ 500 ou mais (Marcus, 04/11/2026): abaixo disso a revendedora pode ter marcado só uma venda ou outra.
+      var vendaAppOk = (a.vendaBruta||0) >= (s.cfg.minVendaApp||0) && (a.vendaBruta||0) > 0;
+      return com(s, {kits: mapKit(s, a.id, function(k1){ var o = {acerto:res, status:"acertado", acertoAssinado:!!a.assinatura}; if(vendaAppOk) o.vendas = [a.vendaBruta].concat((k1.vendas||[]).slice(1)); return o; }),
         acertosConsignado:[registro].concat(aplicarAbatimento(s.acertosConsignado||[], abK, (a.pagamentos||[])[0], registro.id, agora)), lp:lpU1 || s.lp, perfisRev:a.kitNovoOk ? carimboEntrega(s, k.rev) : s.perfisRev},
         "Acerto de "+k.rev+" registrado: "+BK(res.valorAcerto)+" (comissão "+BK(res.comissao)+")");
     }

@@ -320,7 +320,7 @@ function AppRepresentante(p){
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
     if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo, ctx:ctxPed(comPag.pagamentos, d1, comPag.vendaBruta)}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
-    setAcertoForm(Object.assign({}, comPag, {pagamentos:comPag.pagamentos.concat(pagamentosDoPedido(s.lancFin, kitSel.id).filter(function(x){ return !comPag.pagamentos.some(function(y){ return y.pid===x.pid; }); })), garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
+    setAcertoForm(Object.assign({}, comPag, {pagamentos:comPag.pagamentos.concat(pagamentosDoPedido(s.lancFin, kitSel.id, s).filter(function(x){ return !comPag.pagamentos.some(function(y){ return y.pid===x.pid; }); })), garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
   }, [pendAbrir, selId, condicionaisRev.length]);
   var credGarantia = sel ? creditoDisponivel(s, sel.rev) : 0;
@@ -1082,7 +1082,7 @@ function AppRepresentante(p){
   var abrirAcertoNovo = function(){
     // Andrielle Taborda vem com o exemplo que o Marcus pediu já preenchido (condicionais + venda + 1 remarcação), pra testar o resto.
     var demoAndrielle = sel.rev==="Andrielle Taborda", demoMarcia = sel.rev==="Márcia Camargo";   // Márcia: acerto normal de R$ 12.268,00, sem kit novo
-    var pgsPedidos = pagamentosDoPedido(s.lancFin, kitSel.id);   // pagamentos que ela já lançou e pediu conta antes de sair da tela
+    var pgsPedidos = pagamentosDoPedido(s.lancFin, kitSel.id, s);   // pagamentos que ela já lançou e pediu conta antes de sair da tela
     setAcertoForm(Object.assign({}, FORM_ACERTO_VAZIO, demoAndrielle ? {vendaBruta:3000, condicionaisSelecionadas:["091719","092240"]} : demoMarcia ? {vendaBruta:12268, condicionaisSelecionadas:["093801","093802"]} : {}, {vendasAnteriores:vendasAntSistema()}, pgsPedidos.length ? {pagamentos:pgsPedidos} : {}));
     if(demoAndrielle && !(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""});
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(0); setTela("calcacerto"); };
