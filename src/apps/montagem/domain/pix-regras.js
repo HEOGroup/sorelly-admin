@@ -198,6 +198,9 @@ function cpAplicarExtras(cp, por, agora){
 var extraSeed = function(id){ var x = CHAVES_ADMIN && CHAVES_ADMIN.extras ? CHAVES_ADMIN.extras.find(function(z){ return z[0]===id; }) : null; return x ? {chave:x[6], chaveTipo:x[5]} : null; };
 var nrNome = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase(); };
 // acha a chave pelo nome (completo ou curto, ex.: "Nagela" acha "Nagela Eliney Hess")
+// chaves do arquivo local que o estado salvo (ou o do servidor) ainda não tem: contas por nome e pessoas/prestadores/fornecedores por id (Marcus, 04/11/2026)
+function chaveAdminDaConta(nomeConta){ var x = CHAVES_ADMIN && CHAVES_ADMIN.chaves ? CHAVES_ADMIN.chaves.find(function(z){ return normConta(z[0])===normConta(nomeConta); }) : null; return x ? {chave:x[2], chaveTipo:x[1]} : null; }
+function extrasSeed(){ return (CHAVES_ADMIN && CHAVES_ADMIN.extras) || []; }
 function chavePixRep(chaves, nomeRep){ var mine = nrNome(nomeRep); if(!mine) return ""; var cch = chaves || {}, nomes = {};
   Object.keys(cch).forEach(function(k){ if(cch[k].grupo==="rep") nomes[k] = {nome:cch[k].nome, chave:cch[k].chave}; });
   ((CHAVES_ADMIN && CHAVES_ADMIN.extras) || []).forEach(function(x){ if(x[1]==="rep" && !(nomes[x[0]] && nomes[x[0]].chave)) nomes[x[0]] = {nome:x[2], chave:x[6]}; });
@@ -206,4 +209,4 @@ function chavePixRep(chaves, nomeRep){ var mine = nrNome(nomeRep); if(!mine) ret
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
 function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };
+export {chaveAdminDaConta, extrasSeed, chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };

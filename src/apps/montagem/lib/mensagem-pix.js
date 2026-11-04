@@ -1,3 +1,4 @@
+import { chaveAdminDaConta } from "@/apps/montagem/domain/pix-regras";
 // Sorelly Admin · montagem — lib/mensagem-pix.js
 // Mensagem de Pix das CONTAS DA EMPRESA (formato escolhido pelo Marcus em 04/11/2026), pronta para colar no WhatsApp. Sem valor: o valor é combinado na conversa.
 //   *CHAVE PIX*
@@ -44,10 +45,12 @@ function empresaDoBloco(sc, blocoId){
 }
 function mensagemPixDaChave(s, chave){
   var sc = (s && s.saldosContas) || {}, px = (s && s.px) || {}, ch = String(chave||"").trim(); if(!ch) return "";
-  var k = (px.contas||[]).find(function(x){ return x.caixaId && String(x.chave||"").trim()===ch; }); if(!k) return "";
-  var conta = (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }); if(!conta) return "";
+  // chave salva no Caixa ou, se o estado ainda não a tem, a do arquivo local (pela conta)
+  var k = (px.contas||[]).find(function(x){ return x.caixaId && String(x.chave||"").trim()===ch; }), conta = k ? (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }) : null;
+  if(!conta){ conta = (sc.contas||[]).find(function(c){ var a = chaveAdminDaConta(c.nome); return a && String(a.chave).trim()===ch; }); if(conta) k = chaveAdminDaConta(conta.nome); }
+  if(!conta || !k) return "";
   var empresa = empresaDoBloco(sc, conta.bloco); if(!empresa) return "";
-  var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
+  var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }) || chaveAdminDaConta(c.nome); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
   return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
 }
 

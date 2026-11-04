@@ -9,7 +9,7 @@ import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
 import { AbasTela, Bloco, Botao, CAMPO, Segmentado, TabelaP } from "@/apps/montagem/components/padrao-fin";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
+import { chaveAdminDaConta, contaDaCaixa, extraSeed, extrasSeed } from "@/apps/montagem/domain/pix-regras";
 import { cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
@@ -53,7 +53,10 @@ function LinhaChave(p){
 }
 
 export function AbaChavesPixBancos(){
-  var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
+  var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
+  // completa com as chaves do arquivo local quando o estado salvo ainda não as tem (o estado do servidor manda, e pode estar atrás)
+  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ if(!(cch[x[0]] && cch[x[0]].chave)) cch[x[0]] = Object.assign({}, cch[x[0]], {grupo:x[1], nome:x[2], banco:x[3], servico:x[4], chaveTipo:x[5], chave:x[6]}); });
+  var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
   var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1];
   var st = useState(foco ? foco.aba : "cnpjs"), aba = st[0], setAba = st[1];
@@ -68,7 +71,7 @@ export function AbaChavesPixBancos(){
   // ── CNPJs: contas bancárias (aplicações e dinheiro não têm chave Pix; retidos também não)
   var blocosCnpj = (sc.blocos||[]).map(function(b){
     var contas = (sc.contas||[]).filter(function(c){ return c.bloco===b.id && c.tipo!=="CAIXA" && !c.bloqueada && !/rotativo|garantida/i.test(c.nome); });   // Rotativo e Conta Garantida são limite de outra conta: não têm chave Pix própria (Marcus, 04/11/2026)
-    return {id:b.id, nome:NOME_CNPJ[b.id] || b.nome, cor:COR[b.id]||"#64748B", rows:contas.map(function(c){ var k = contaDaCaixa(px, c.id) || {}; return {id:c.id, c1:NOME_CNPJ[b.id] || b.nome, c2:c.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:function(pt){ d({type:"PX", op:"caixa_chave", caixaId:c.id, nome:c.nome, cnpj:c.bloco, em:Date.now(), por:eu, chave:pt.chave, tipo:pt.tipo}); }}; })};
+    return {id:b.id, nome:NOME_CNPJ[b.id] || b.nome, cor:COR[b.id]||"#64748B", rows:contas.map(function(c){ var k = comSeed(contaDaCaixa(px, c.id), c.nome); return {id:c.id, c1:NOME_CNPJ[b.id] || b.nome, c2:c.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:function(pt){ d({type:"PX", op:"caixa_chave", caixaId:c.id, nome:c.nome, cnpj:c.bloco, em:Date.now(), por:eu, chave:pt.chave, tipo:pt.tipo}); }}; })};
   }).filter(function(b){ return b.rows.length; });
 
   // coluna CNPJ: o número completo da empresa (Marcus, 04/11/2026); bloco sem CNPJ (Itaú Marco PJ, particular) mantém o nome
@@ -76,7 +79,7 @@ export function AbaChavesPixBancos(){
     var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = "CNPJ "+cnpjFormatado(rc.chave); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
-  var FORNECEDORES = [["Pontual", "Banho joias"], ["Ellos Galvânica", "Banho joias"], ["MegaSul", "Bruto joias"], ["Linda", "Bruto joias"], ["Tucano", "Bruto joias"], ["Charme", "Bruto joias"], ["Art Ello", "Bruto joias"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"]];
+  var FORNECEDORES = [["Pontual", "Banho joias"], ["Ellos Galvânica", "Banho joias"], ["MegaSul", "Bruto joias"], ["Linda", "Bruto joias"], ["Tucano", "Bruto joias"], ["Charme", "Bruto joias"], ["Art Ello", "Bruto joias"], ["Xangai", "Bruto joias"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"]];
   var rowsForn = FORNECEDORES.map(function(x){ return rowDeChave("forn|"+x[0], x[1], x[0], {grupo:"forn", nome:x[0], servico:x[1]}); });
   var blocosForn = [{id:"forn", nome:"Fornecedores", cor:"#EA580C", fixo:true, rows:rowsForn}];
 

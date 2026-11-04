@@ -14,6 +14,6 @@ function CopiarChave(p){
     try { navigator.clipboard.writeText(txt).then(function(){ fim(1); }, antigo); } catch(x){ antigo(); }
   };
   return e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); ev.preventDefault(); copiar(); }, title:"Copiar a chave Pix", "aria-label":"Copiar a chave Pix",
-    className:"inline-flex h-7 shrink-0 items-center justify-center rounded-md px-2 text-[11.5px] font-bold "+(ok===1 ? "bg-emerald-500/30 text-emerald-100" : ok===2 ? "bg-red-500/30 text-red-100" : "bg-white/10 text-white hover:bg-white/20")}, ok===1 ? "Copiado ✓" : ok===2 ? "Não copiou" : (p.rot || "Copiar Pix"));
+    className:"inline-flex h-8 shrink-0 items-center justify-center rounded-md px-2 text-[11px] font-bold "+(ok===1 ? "bg-emerald-500/30 text-emerald-100" : ok===2 ? "bg-red-500/30 text-red-100" : "bg-white/10 text-white hover:bg-white/20")}, ok===1 ? "Copiado ✓" : ok===2 ? "Não copiou" : (p.rot || "Copiar Pix"));
 }
 export { CopiarChave };
