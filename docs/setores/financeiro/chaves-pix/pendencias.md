@@ -1,16 +1,16 @@
 # Chaves Pix: pendências
 
-Revisado em 04/11/2026. Sem chave real neste arquivo (as chaves ficam no arquivo local).
+Revisado em 04/11/2026 (tarde: chegaram os dados de Ana Claudia, Jessica Tobias, Jessica Castro Reis, Lysie e Marciane). Sem chave real neste arquivo (as chaves ficam no arquivo local).
 
 ## 1. Falta a chave
 | Quem | Grupo |
 |---|---|
-| Ana Claudia Adriano, Jessica Castro Reis, Jessica Tobias da Silva, Mariana Ribeiro Amaral | Representantes |
+| Mariana Ribeiro Amaral | Representante |
 | Amanda de Oliveira Silva | Funcionária (a chave veio cortada na planilha) |
 | Leonardo, Diego Franco | PJ (prestadores) |
 
 ## 2. Tem chave, falta banco e favorecido completo
-Bruna Ribeiro dos Santos, Leticia Adrielle Moroz, Lysie Karine Lencioni, Marciane Silva de Castro (representantes); Priscila Schmidt (prestadora); Pontual (Marli Modesti); Devmaster (Jaime Machado Rodrigues).
+Bruna Ribeiro dos Santos, Leticia Adrielle Moroz (representantes); Ana Claudia Adriano (falta só o nome completo do favorecido); Priscila Schmidt (prestadora); Pontual (Marli Modesti); Devmaster (Jaime Machado Rodrigues).
 
 ## 3. Outras
 | # | Pendência | Quem decide |
