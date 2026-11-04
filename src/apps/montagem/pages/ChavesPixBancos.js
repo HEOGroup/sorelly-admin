@@ -10,7 +10,7 @@ import { AbasTela, Bloco, Botao, CAMPO, Segmentado, TabelaP } from "@/apps/monta
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chaveAdminDaConta, contaDaCaixa, extraSeed, extrasSeed } from "@/apps/montagem/domain/pix-regras";
-import { cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
+import { bancoDaConta, cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
@@ -85,7 +85,7 @@ export function AbaChavesPixBancos(){
   }).filter(function(b){ return b.rows.length; });
 
   // coluna CNPJ: o número completo da empresa (Marcus, 04/11/2026); bloco sem CNPJ (Itaú Marco PJ, particular) mantém o nome
-  blocosCnpj.forEach(function(b){ b.rows.forEach(function(r){ r.fav = FAV_EMPRESA[b.id] || ""; r.c2 = String(r.c2).replace(/\s+(34|46|59|67)$/, ""); });   // coluna Banco sem o número do CNPJ (já está na coluna CNPJ)
+  blocosCnpj.forEach(function(b){ b.rows.forEach(function(r){ r.fav = FAV_EMPRESA[b.id] || ""; r.c2 = bancoDaConta(r.c2); });   // coluna Banco: SÓ o nome do banco (Sicredi, Itaú, Caixa Econômica, Safra, Unicred, Stone, Bradesco), sem empresa nem número do CNPJ (Marcus, 04/11/2026)
     var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = "CNPJ "+cnpjFormatado(rc.chave); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
