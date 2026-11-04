@@ -35,16 +35,22 @@ var NOME_EXIBE = {"greicy":"Greice", "ulisses detran":"Serviço Detran"};
 var SERVICO_EXIBE = {"rebel mode":"Carros Marcus", "68 gang performance":"Carros Marcus", "greicy":"Casa (todos)"};
 var UNIVERSAL = ["greicy"];
 var ORDEM_PESSOAS = ["marcus", "anamaria", "marco", "anabeatriz", "lucas"];
+// favorecido (razão social) de cada CNPJ, como o Marcus passou em 04/11/2026
+var FAV_EMPRESA = {"34":"Sorelly Comércio Atacadista de Semijoias", "46":"Mayz Comércio de Moda Praia, Lingeries e Acessórios Ltda", "59":"Serenity", "67":"Axis Comércio de Joias e Acessórios Ltda", "HO":"H&O Apps", "ho":"H&O Apps"};
 var NOME_PESSOA = {"marcus":"Marcus", "anamaria":"Anamaria", "marco":"Marco Antonio", "anabeatriz":"Ana Beatriz Hess", "lucas":"Lucas"};
 
 // uma linha da tabela (padrão: TabelaP com topo dourado, células centralizadas, nada abreviado). Com o botão Editar ligado, tipo e chave viram campos e gravam ao sair do campo (data e quem alterou).
 var CEL = "h-8 border-b border-border px-2.5 py-1 text-center text-[13px] leading-snug";   // texto longo quebra em 2 linhas, nunca é cortado
+// favorecido sempre resumido: as duas primeiras palavras (Marcus, 04/11/2026); o nome completo fica no title
+var resumoFav = function(t){ return String(t||"").trim().split(/\s+/).slice(0, 2).join(" "); };
 function LinhaChave(p){
   var r = p.r, ed = p.edita;
   var salvaChave = function(v){ v = v.trim(); if(v!==r.chave) r.salva({chave:v, tipo:r.tipo || tipoDe(v)}); };
   return e("tr",{className:p.i%2 ? "bg-white/[.03]" : ""},
     e("td",{className:CEL}, r.c1),
     e("td",{className:CEL+" font-semibold"}, r.c2),
+    p.temBanco && e("td",{className:CEL}, r.banco || "—"),
+    e("td",{className:CEL, title:r.fav || undefined}, resumoFav(r.fav) || "—"),
     e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
     e("td",{className:CEL+" whitespace-nowrap"}, ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
       : e("span",{className:"inline-flex items-center justify-center gap-2"}, e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"), r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}))),
@@ -55,7 +61,7 @@ function LinhaChave(p){
 export function AbaChavesPixBancos(){
   var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
   // completa com as chaves do arquivo local quando o estado salvo ainda não as tem (o estado do servidor manda, e pode estar atrás)
-  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ if(!(cch[x[0]] && cch[x[0]].chave)) cch[x[0]] = Object.assign({}, cch[x[0]], {grupo:x[1], nome:x[2], banco:x[3], servico:x[4], chaveTipo:x[5], chave:x[6]}); });
+  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:cur.nome || x[2], banco:cur.banco || x[3], servico:cur.servico || x[4], favorecido:cur.favorecido || x[7] || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });
   var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
   var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1];
@@ -66,7 +72,7 @@ export function AbaChavesPixBancos(){
   var viewFam = temAutorizacao("financeiro_familia", s.usuario);
   var gravaFunc = function(nome){ return function(pt){ d({type:"CP", op:"func_set", nome:nome, por:eu, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
   var gravaChave = function(id, base){ return function(pt){ d({type:"CP", op:"chave_set", id:id, por:eu, base:base, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
-  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
+  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, banco:k.banco || (base && base.banco) || "", fav:k.favorecido || "", chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
 
   // ── CNPJs: contas bancárias (aplicações e dinheiro não têm chave Pix; retidos também não)
   var blocosCnpj = (sc.blocos||[]).map(function(b){
@@ -75,7 +81,7 @@ export function AbaChavesPixBancos(){
   }).filter(function(b){ return b.rows.length; });
 
   // coluna CNPJ: o número completo da empresa (Marcus, 04/11/2026); bloco sem CNPJ (Itaú Marco PJ, particular) mantém o nome
-  blocosCnpj.forEach(function(b){ b.rows.forEach(function(r){ r.c2 = String(r.c2).replace(/\s+(34|46|59|67)$/, ""); });   // coluna Banco sem o número do CNPJ (já está na coluna CNPJ)
+  blocosCnpj.forEach(function(b){ b.rows.forEach(function(r){ r.fav = FAV_EMPRESA[b.id] || ""; r.c2 = String(r.c2).replace(/\s+(34|46|59|67)$/, ""); });   // coluna Banco sem o número do CNPJ (já está na coluna CNPJ)
     var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = "CNPJ "+cnpjFormatado(rc.chave); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
@@ -110,7 +116,7 @@ export function AbaChavesPixBancos(){
   var porDono = {}, universais = [];
   if(viewFam) ((s.ff && s.ff.prest) || []).filter(function(x){ var n = norm(x.nome); return x.ativo!==false && OCULTAR.indexOf(n)<0 && !jaFunc(x.nome); }).forEach(function(x){ var n = norm(x.nome);
     var sd = !x.chavePixEm ? extrasSeed().find(function(z){ return z[0]==="ffp|"+n; }) : null;   // chave do arquivo local vale enquanto ninguém editou a chave na tela
-    var row = {id:"ff|"+x.id, c1:SERVICO_EXIBE[n] || x.servico || "Particular", c2:NOME_EXIBE[n] || x.nome, chave:sd ? sd[6] : (x.chavePix||""), tipo:sd ? sd[5] : (x.chavePixTipo || tipoDe(x.chavePix)), em:x.chavePixEm||0, por:x.chavePixPor||"", salva:function(pt){ d({type:"FF", op:"prest_set", id:x.id, por:eu, patch:{chavePix:pt.chave, chavePixTipo:pt.tipo, chavePixEm:Date.now(), chavePixPor:eu}}); }};
+    var row = {id:"ff|"+x.id, c1:SERVICO_EXIBE[n] || x.servico || "Particular", c2:NOME_EXIBE[n] || x.nome, banco:sd ? sd[3] : "", fav:sd ? (sd[7] || "") : "", chave:sd ? sd[6] : (x.chavePix||""), tipo:sd ? sd[5] : (x.chavePixTipo || tipoDe(x.chavePix)), em:x.chavePixEm||0, por:x.chavePixPor||"", salva:function(pt){ d({type:"FF", op:"prest_set", id:x.id, por:eu, patch:{chavePix:pt.chave, chavePixTipo:pt.tipo, chavePixEm:Date.now(), chavePixPor:eu}}); }};
     if(UNIVERSAL.indexOf(n)>=0) universais.push(row); else { var dono = x.responsavelId || "marcus"; (porDono[dono] = porDono[dono] || []).push(row); } });
   var blocosPrest = [{id:"pr|empresa", nome:"Empresa (Sorelly)", cor:COR_PESSOA.empresa, fixo:true, vazio:"Nenhum prestador cadastrado", rows:rowsEmp}];
   if(viewFam) blocosPrest = blocosPrest.concat(["marcus", "anamaria", "marco", "anabeatriz"].map(function(pid){ return {id:"pr|"+pid, nome:NOME_PESSOA[pid]+" · particular", cor:COR_PESSOA[pid], fixo:true, vazio:"Nenhum prestador cadastrado", rows:porDono[pid] || []}; }), [{id:"pr|universal", nome:"Universal · usado por todos", cor:COR_PESSOA.universal, fixo:true, vazio:"Nenhum prestador cadastrado", rows:universais}]);
@@ -127,20 +133,23 @@ export function AbaChavesPixBancos(){
   var abre = function(v){ var o = {}; blocos.forEach(function(b){ o[b.id] = v; }); setAbertos(o); };
   var temFechavel = blocos.some(function(b){ return !b.fixo; });
   var H = CAB[aba].slice(); if(aba==="func") H[0] = modoFunc==="cnpj" ? "Setor" : "CNPJ";
-  var colunas = [{t:H[0], w:"15rem"}, {t:H[1], w:"15rem"}, {t:"Tipo de chave", w:"9rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"11rem"}, {t:"Quem alterou", w:"9rem"}];
+  // cada grupo é uma tabela com o resumo no topo dourado (nome, quantas chaves e quantas sem chave); clicar no topo abre/fecha; "Abrir todos" / "Fechar todos" na linha de cima
+  var aberto = function(b){ return abertos[b.id]===undefined ? aba!=="func" : abertos[b.id]; };
+  var alterna = function(id){ var o = Object.assign({}, abertos); o[id] = abertos[id]===undefined ? aba==="func" : !abertos[id]; setAbertos(o); };
+  var todosAbertos = visiveis.length>0 && visiveis.every(aberto);
+  var temBanco = aba!=="cnpjs" && aba!=="pes";
+  var resumoDe = function(b){ var n = b.rows.length, sem = b.rows.filter(function(r){ return !r.chave; }).length; return b.nome+" · "+n+(aba==="cnpjs" ? (n===1 ? " conta" : " contas") : (n===1 ? " chave" : " chaves"))+(sem ? " · "+sem+" sem chave" : ""); };
+  var colunasDe = function(b){ var ab = aberto(b), rs = resumoDe(b); return [{t:e("button",{type:"button", "aria-expanded":ab, onClick:function(){ alterna(b.id); }, className:"w-full cursor-pointer text-center font-semibold uppercase"}, (ab ? "▾ " : "▸ ")+rs), d:rs, w:"22rem"}, {t:H[1], w:"11rem"}].concat(temBanco ? [{t:"Banco", w:"8rem"}] : [], [{t:"Favorecido", w:"11rem"}, {t:"Tipo de chave", w:"7rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"9rem"}, {t:"Quem alterou", w:"6.5rem"}]); };
   return e(Pagina,null,
     // UMA linha só (Marcus, 04/11/2026: compacto): abas visíveis, busca, organizar por (Funcionários) e Editar; o nome da tela já está na faixa do topo
     e("div",{className:"flex flex-wrap items-center gap-2"},
       e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setBusca(""); }}),
       e("input",{type:"search", value:busca, placeholder:"Buscar nome, banco, chave ou quem alterou", "aria-label":"Buscar", className:CAMPO+" ml-1 max-w-72", onChange:function(ev){ setBusca(ev.target.value); }}),
       aba==="func" && e(Segmentado,{opcoes:[["cnpj", "Por CNPJ"], ["setor", "Por setor"]], atual:modoFunc, onMudar:setModoFunc}),
-      e("span",{className:"ml-auto"}, e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
+      e("span",{className:"ml-auto flex gap-2"}, e(Botao,{onClick:function(){ abre(!todosAbertos); }, title:todosAbertos ? "Fechar todos os grupos" : "Abrir todos os grupos"}, todosAbertos ? "Fechar todos" : "Abrir todos"), e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
-    aba==="cnpjs" ? visiveis.map(function(b){ return e(TabelaP,{key:b.id, minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); })); })   // uma tabela por CNPJ, sem a moldura do bloco (Marcus, 04/11/2026)
-    : visiveis.map(function(b){
-      return e(Bloco,{key:b.id, t:b.nome},
-        b.rows.length ? e(TabelaP,{minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
-          : e("p",{className:"py-2 text-center text-[13px] text-foreground"}, b.vazio || "Nada aqui"));
+    visiveis.map(function(b){
+      return e(TabelaP,{key:b.id, minW:1400, cols:colunasDe(b)}, aberto(b) ? (b.rows.length ? b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, temBanco:temBanco}); }) : e("tr",null, e("td",{colSpan:temBanco ? 8 : 7, className:CEL}, b.vazio || "Nada aqui"))) : null);
     }),
     !visiveis.length && e("p",{className:"py-6 text-center text-[13px] text-foreground"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
 }
