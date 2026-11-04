@@ -61,7 +61,7 @@ function LinhaChave(p){
     e("td",{className:CEL, title:r.fav || undefined}, resumoFav(r.fav) || "—"),
     e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
     e("td",{className:CEL+" whitespace-nowrap"}, ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
-      : e("span",{className:"flex w-full items-center justify-start gap-2"}, r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}), e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"))),   // botão Pix primeiro e a chave alinhada pela esquerda (Marcus, 04/11/2026)
+      : e("span",{className:"flex w-full items-center justify-start gap-2"}, r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix", dados:{nome:r.c2, banco:r.banco, favorecido:r.fav, tipo:r.tipo}}), e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"))),   // botão Pix primeiro e a chave alinhada pela esquerda (Marcus, 04/11/2026)
     e("td",{className:CEL}, dh(r.chave ? Math.max(r.em || 0, DATA_CARGA) : 0)),
     e("td",{className:CEL}, r.por || "—"));
 }

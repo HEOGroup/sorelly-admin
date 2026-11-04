@@ -34,6 +34,15 @@ function mensagemPixEmpresa(d){
   linhas.push("", "🔑 *Chave ("+(TIPO[d.tipo] || "Pix")+"):*", d.chave, "", "Envie o comprovante após o pagamento.");   // a chave SEMPRE na linha de baixo (Marcus, 04/11/2026)
   return linhas.join("\n");
 }
+// Pix de PESSOA (funcionária, sócio, prestador, fornecedor, representante): mesma mensagem, com o nome no lugar da empresa (Marcus, 04/11/2026: "de todo mundo tem que ser")
+function mensagemPixPessoa(d){
+  var linhas = ["*CHAVE PIX*", ""];
+  if(d.nome) linhas.push("- *Nome:* "+d.nome);
+  if(d.banco) linhas.push("- *Banco:* "+d.banco);
+  if(d.favorecido && d.favorecido!==d.nome) linhas.push("- *Favorecido:* "+d.favorecido);
+  linhas.push("", "🔑 *Chave ("+(TIPO[d.tipo] || "Pix")+"):*", d.chave, "", "Envie o comprovante após o pagamento.");
+  return linhas.join("\n");
+}
 // Copiar uma chave Pix de CONTA DA EMPRESA já sai nesta mensagem, em qualquer tela (Marcus, 04/11/2026). Chave de outra pessoa: devolve "" e o botão copia só a chave.
 function tipoDaChave(chave){ var s = String(chave||"").trim(), n = s.replace(/\D/g, ""); if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(n.length===14) return "CNPJ"; return ""; }
 // empresa do bloco: pelo id ("34") ou pelo nome do bloco ("Sorelly Atac · 34", "Serenity · 59", "H&O"); assim funciona mesmo em dados salvos com outro nome
@@ -54,4 +63,4 @@ function mensagemPixDaChave(s, chave){
   return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
 }
 
-export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixDaChave };
+export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixPessoa, mensagemPixDaChave };
