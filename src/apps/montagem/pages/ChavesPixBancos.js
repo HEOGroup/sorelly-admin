@@ -69,7 +69,7 @@ export function AbaChavesPixBancos(){
 
   // ── CNPJs: contas bancárias (aplicações e dinheiro não têm chave Pix; retidos também não)
   var blocosCnpj = (sc.blocos||[]).map(function(b){
-    var contas = (sc.contas||[]).filter(function(c){ return c.bloco===b.id && c.tipo!=="CAIXA" && !c.bloqueada; });
+    var contas = (sc.contas||[]).filter(function(c){ return c.bloco===b.id && c.tipo!=="CAIXA" && !c.bloqueada && !/rotativo/i.test(c.nome); });   // Rotativo é o cheque especial de outra conta (ex.: Sicredi 34): não tem chave Pix própria (Marcus, 04/11/2026)
     return {id:b.id, nome:NOME_CNPJ[b.id] || b.nome, cor:COR[b.id]||"#64748B", rows:contas.map(function(c){ var k = contaDaCaixa(px, c.id) || {}; return {id:c.id, c1:NOME_CNPJ[b.id] || b.nome, c2:c.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:function(pt){ d({type:"PX", op:"caixa_chave", caixaId:c.id, nome:c.nome, cnpj:c.bloco, em:Date.now(), por:eu, chave:pt.chave, tipo:pt.tipo}); }}; })};
   }).filter(function(b){ return b.rows.length; });
 
