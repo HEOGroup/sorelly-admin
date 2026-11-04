@@ -413,23 +413,24 @@ function AppRepresentante(p){
   var valorFech = function(sinal, txt){ return e("span",{className:"flex items-center gap-1.5"}, e("i",{className:"w-3 text-center text-[13px] font-semibold not-italic"}, sinal), e("b",{className:MONO+" text-[13px]"}, txt)); };
   var campoSel = "h-8 w-full rounded-lg bg-black/50 px-2 text-[13px] text-white outline-none ring-1 ring-white/10";
   var campoValor = "h-8 w-[7.5rem] rounded-lg bg-black/50 px-2 text-right text-[13px] font-semibold text-white outline-none ring-1 ring-white/10 "+MONO;
-  var linhaCons = function(k, rot, val, fim){ return e("div",{key:k, className:"flex min-h-8 items-center justify-between gap-3 py-1 "+(fim ? "mt-0.5 border-t-2 border-[#C9A13B]" : k==="v" ? "" : "border-t border-white/10")},
-    e("span",{className:"text-[13px] "+(fim ? "font-bold text-amber-200" : BR)}, rot),
-    e("b",{className:MONO+" whitespace-nowrap "+(fim ? "text-[20px] text-amber-200" : "text-[15px] "+BR)}, val)); };
   var headerCalc = kitSel && e("div",{id:"hdr-calc", className:"sticky -top-2 z-20 -mx-4 -mt-2 flex flex-col gap-1.5 bg-[#0B0B0D] px-4 pb-1.5 pt-3 shadow-[0_6px_10px_rgba(0,0,0,.35)]"},
     e("div",{className:"flex items-center gap-2"},
-      e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:douradoArrow}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),
+      e("button",{onClick:function(){setTela("rev");}, "aria-label":"Voltar pra Revendedora", className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"chevron", s:15, className:"rotate-180"})),   // sem borda nem fundo (Marcus, 04/11/2026)
       e("b",{className:douradoTitulo+" min-w-0 flex-1 truncate"}, "Calculadora de Acertos"),
       e("button",{onClick:function(){ setTelaAntes("calcacerto"); setTela("regras"); }, "aria-label":"Ver as regras", title:"Regras",
-        className:"grid size-8 shrink-0 place-items-center rounded-full bg-amber-200 text-[#1B1409]"}, e(Icon,{n:"book", s:16}))),
-    e("div",{className:"flex flex-col gap-0.5 rounded-2xl bg-[#1C1C1E] px-3 py-2 ring-1 ring-amber-200/25"},
+        className:"grid size-8 shrink-0 place-items-center text-amber-200"}, e(Icon,{n:"book", s:16}))),
+    // Bloco compacto (Marcus, 04/11/2026): Vendas e Comissão lado a lado e o Valor do acerto na linha de baixo; fontes menores
+    e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#1C1C1E] px-2.5 py-1.5 ring-1 ring-amber-200/25"},
       e("div",{className:"flex items-center gap-2"},
-        e("p",{className:"min-w-0 flex-1 truncate text-[13.5px] font-extrabold "+BR}, sel.rev),
+        e("p",{className:"min-w-0 flex-1 truncate text-[13px] font-extrabold "+BR}, sel.rev),
         ehPrata && e("span",{className:"shrink-0 rounded-full bg-slate-300 px-2 py-0.5 text-[10.5px] font-black tracking-wider text-slate-900"}, "100% PRATA")),
-      previaAcerto && e("div",{key:"tres", className:"mt-1 flex flex-col"},
-        linhaCons("v", "Vendas", BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta)),
-        linhaCons("c", "Comissão", previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"),
-        linhaCons("a", "Valor do acerto", BK(previaAcerto.valorAcerto), true))));
+      previaAcerto && e("div",{key:"tres", className:"mt-0.5 flex flex-col"},
+        e("div",{className:"flex items-center justify-between gap-3 py-0.5"},
+          e("span",{className:"flex items-baseline gap-1.5 whitespace-nowrap"}, e("span",{className:"text-[11px] "+BR}, "Vendas"), e("b",{className:MONO+" text-[13px] "+BR}, BK(dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta))),
+          e("span",{className:"flex items-baseline gap-1.5 whitespace-nowrap"}, e("span",{className:"text-[11px] "+BR}, "Comissão"), e("b",{className:MONO+" text-[13px] "+BR}, previaAcerto.semFaixa ? "0%" : previaAcerto.comissaoPct+"%"))),
+        e("div",{className:"mt-0.5 flex items-center justify-between gap-3 border-t border-[#C9A13B] pt-0.5"},
+          e("span",{className:"text-[11px] font-bold text-amber-200"}, "Valor do acerto"),
+          e("b",{className:MONO+" whitespace-nowrap text-[16px] text-amber-200"}, BK(previaAcerto.valorAcerto))))));
 
   // Payload único do acerto (usado na assinatura)
   // venda abaixo do mínimo geral (R$ 500, domain/consignado.js): pede o motivo antes de confirmar o acerto
