@@ -34,13 +34,21 @@ function mensagemPixEmpresa(d){
   return linhas.join("\n");
 }
 // Copiar uma chave Pix de CONTA DA EMPRESA já sai nesta mensagem, em qualquer tela (Marcus, 04/11/2026). Chave de outra pessoa: devolve "" e o botão copia só a chave.
-function tipoDaChave(chave){ var s = String(chave||"").trim(), n = s.replace(/D/g, ""); if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(n.length===14) return "CNPJ"; return ""; }
+function tipoDaChave(chave){ var s = String(chave||"").trim(), n = s.replace(/\D/g, ""); if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(n.length===14) return "CNPJ"; return ""; }
+// empresa do bloco: pelo id ("34") ou pelo nome do bloco ("Sorelly Atac · 34", "Serenity · 59", "H&O"); assim funciona mesmo em dados salvos com outro nome
+function empresaDoBloco(sc, blocoId){
+  if(EMPRESA_CURTA[blocoId]) return EMPRESA_CURTA[blocoId];
+  var b = (sc.blocos||[]).find(function(x){ return x.id===blocoId; }), txt = String(blocoId)+" "+String((b && b.nome) || "");
+  if(/h&o|\bho\b/i.test(txt)) return EMPRESA_CURTA["HO"]; if(/\b34\b|atac/i.test(txt)) return EMPRESA_CURTA["34"]; if(/\b46\b|mayz|shopping/i.test(txt)) return EMPRESA_CURTA["46"];
+  if(/\b59\b|serenity/i.test(txt)) return EMPRESA_CURTA["59"]; if(/\b67\b|axis/i.test(txt)) return EMPRESA_CURTA["67"]; return "";
+}
 function mensagemPixDaChave(s, chave){
   var sc = (s && s.saldosContas) || {}, px = (s && s.px) || {}, ch = String(chave||"").trim(); if(!ch) return "";
   var k = (px.contas||[]).find(function(x){ return x.caixaId && String(x.chave||"").trim()===ch; }); if(!k) return "";
-  var conta = (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }); if(!conta || !EMPRESA_CURTA[conta.bloco]) return "";
+  var conta = (sc.contas||[]).find(function(c){ return c.id===k.caixaId; }); if(!conta) return "";
+  var empresa = empresaDoBloco(sc, conta.bloco); if(!empresa) return "";
   var cnpj = ""; (sc.contas||[]).filter(function(c){ return c.bloco===conta.bloco; }).forEach(function(c){ if(cnpj) return; var kk = (px.contas||[]).find(function(x){ return x.caixaId===c.id && x.chave; }); if(kk && (kk.chaveTipo==="CNPJ" || tipoDaChave(kk.chave)==="CNPJ")) cnpj = cnpjFormatado(kk.chave); });
-  return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:EMPRESA_CURTA[conta.bloco], cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
+  return mensagemPixEmpresa({banco:bancoDaConta(conta.nome), empresa:empresa, cnpj:cnpj, tipo:k.chaveTipo || tipoDaChave(ch), chave:ch});
 }
 
 export { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, mensagemPixDaChave };
