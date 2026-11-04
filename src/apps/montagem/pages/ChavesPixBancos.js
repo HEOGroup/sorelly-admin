@@ -10,6 +10,7 @@ import { AbasTela, Bloco, Botao, CAMPO, Segmentado, TabelaP } from "@/apps/monta
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
+import { cnpjFormatado } from "@/apps/montagem/lib/mensagem-pix";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
@@ -70,6 +71,9 @@ export function AbaChavesPixBancos(){
     return {id:b.id, nome:NOME_CNPJ[b.id] || b.nome, cor:COR[b.id]||"#64748B", rows:contas.map(function(c){ var k = contaDaCaixa(px, c.id) || {}; return {id:c.id, c1:NOME_CNPJ[b.id] || b.nome, c2:c.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:function(pt){ d({type:"PX", op:"caixa_chave", caixaId:c.id, nome:c.nome, cnpj:c.bloco, em:Date.now(), por:eu, chave:pt.chave, tipo:pt.tipo}); }}; })};
   }).filter(function(b){ return b.rows.length; });
 
+  // coluna CNPJ: o número completo da empresa (Marcus, 04/11/2026); bloco sem CNPJ (Itaú Marco PJ, particular) mantém o nome
+  blocosCnpj.forEach(function(b){ var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = "CNPJ "+cnpjFormatado(rc.chave); }); });
+
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
   var FORNECEDORES = [["Pontual", "Banho joias"], ["Ellos Galvânica", "Banho joias"], ["MegaSul", "Bruto joias"], ["Linda", "Bruto joias"], ["Tucano", "Bruto joias"], ["Charme", "Bruto joias"], ["Art Ello", "Bruto joias"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"]];
   var rowsForn = FORNECEDORES.map(function(x){ return rowDeChave("forn|"+x[0], x[1], x[0], {grupo:"forn", nome:x[0], servico:x[1]}); });
@@ -127,7 +131,8 @@ export function AbaChavesPixBancos(){
       aba==="func" && e(Segmentado,{opcoes:[["cnpj", "Por CNPJ"], ["setor", "Por setor"]], atual:modoFunc, onMudar:setModoFunc}),
       e("span",{className:"ml-auto"}, e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar"))),
     edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
-    visiveis.map(function(b){
+    aba==="cnpjs" ? e(TabelaP,{minW:1000, cols:colunas}, visiveis.reduce(function(l, b){ return l.concat(b.rows); }, []).map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
+    : visiveis.map(function(b){
       return e(Bloco,{key:b.id, t:b.nome},
         b.rows.length ? e(TabelaP,{minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
           : e("p",{className:"py-2 text-center text-[13px] text-foreground"}, b.vazio || "Nada aqui"));
