@@ -6,6 +6,7 @@
 // Quando a conta chega, o app da representante avisa e o nome da conta é gravado no pagamento do acerto (acertosConsignado[].pagamentos[].descricao).
 import { pxAplicar } from "@/apps/montagem/domain/pix-regras";
 import { contasDefinidas, contasEnviadas } from "@/apps/montagem/domain/atendimento-interno";
+import { bancoDaConta } from "@/apps/montagem/lib/mensagem-pix";
 
 var FORMAS_PEDEM_CONTA = ["pix", "link", "credito", "debito"];
 var pedeConta = function(forma){ return FORMAS_PEDEM_CONTA.indexOf(forma)>=0; };
@@ -37,10 +38,24 @@ function estadoPagRep(lancFin, kitId, pid){
   return {aguardando:!def, conta:def ? ps.map(function(q){ return q.descricao; }).join(" + ") : "", partes:def ? ps.map(function(q){ return q.descricao; }) : [], auto:l.auto || "", ts:l.pedidoTs || (lf && lf.enviadoTs) || 0, pago:def && ps.every(function(q){ return q.ok; })};
 }
 // pagamentos do pedido no formato do formulário do acerto (se a representante sair da tela e voltar antes de registrar)
-function pagamentosDoPedido(lancFin, kitId){
+function pagamentosDoPedido(lancFin, kitId, st){
   var lf = pedidoDe(lancFin, kitId); if(!lf) return [];
   return lf.linhas.filter(function(l){ return l.pid; }).map(function(l){ var q = (l.partes||[])[0] || {}, c = q.comprovante;
-    return {forma:l.forma, descricao:contasDefinidas(l) && contasEnviadas(l) ? l.partes.map(function(z){ return z.descricao; }).join(" + ") : "", parcelas:l.parcelas||1, data:l.data||"", valor:l.valor, anexo:c ? {nome:c.nome, tipo:"", dados:c.url, tamanho:0} : null, pid:l.pid}; });
+    var desc = contasDefinidas(l) && contasEnviadas(l) ? l.partes.map(function(z){ return z.descricao; }).join(" + ") : ""; if(st && l.forma==="pix") desc = rotuloPixDaConta(st, desc);   // o Consolidado só reconhece o rótulo da forma de pagamento
+    return {forma:l.forma, descricao:desc, parcelas:l.parcelas||1, data:l.data||"", valor:l.valor, anexo:c ? {nome:c.nome, tipo:"", dados:c.url, tamanho:0} : null, pid:l.pid}; });
+}
+// O Direcionar grava "Destino · conta" (ex.: "CNPJ 34 · Sorelly Atacadista · Safra 34"); o Consolidado e as Comissões só reconhecem o rótulo da forma de pagamento (ex.: "PIX - SAFRA - 34"). Esta função traduz um para o outro (banco + número do CNPJ); se não achar, mantém o texto (Marcus, 04/11/2026: o Pix tem que cair na coluna da conta).
+var semAcento = function(x){ return String(x||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim(); };
+function rotuloPixDaConta(st, desc){
+  var fp = (st.formasPagamento||[]).find(function(f){ return f.k==="pix"; }); if(!fp || !desc) return desc;
+  return String(desc).split(" + ").map(function(parte){
+    if((fp.descricoes||[]).indexOf(parte)>=0) return parte;
+    var ultimo = parte.split(" · ").pop(), conta = ((st.saldosContas||{}).contas||[]).find(function(c){ return semAcento(c.nome)===semAcento(ultimo); }); if(!conta) return parte;
+    var exato = (fp.descricoes||[]).find(function(d){ return d==="PIX - "+conta.nome; }); if(exato) return exato;   // o cadastro das chaves cria o rótulo "PIX - " + nome da conta
+    var banco = semAcento(bancoDaConta(conta.nome)).split(" ")[0], cnpj = String(conta.bloco||"").replace(/\D/g, "");
+    var re = cnpj ? new RegExp("(^|[^0-9])"+cnpj+"([^0-9]|$)") : null;
+    var ach = (fp.descricoes||[]).find(function(d){ var x = semAcento(d); return x.indexOf(banco)>=0 && (!re || re.test(x)); });
+    return ach || parte; }).join(" + ");
 }
 // grava o nome da conta nos pagamentos já registrados do acerto (e liga o pedido ao acerto); devolve o estado (o mesmo objeto se nada mudou)
 function sincContasRep(st){
@@ -51,7 +66,7 @@ function sincContasRep(st){
     var ps = r.pagamentos.map(function(p){ if(!p.pid) return p;
       var l = lf.linhas.find(function(x){ return x.pid===p.pid; });
       if(!l || !(contasDefinidas(l) && contasEnviadas(l))) return p;
-      var d = l.partes.map(function(q){ return q.descricao; }).join(" + ");
+      var d = l.partes.map(function(q){ return q.descricao; }).join(" + "); if(l.forma==="pix") d = rotuloPixDaConta(st, d);
       return p.descricao===d ? p : Object.assign({}, p, {descricao:d}); });
     if(ps.every(function(p, i){ return p===r.pagamentos[i]; })) return r;
     mud = true; return Object.assign({}, r, {pagamentos:ps});
@@ -59,4 +74,4 @@ function sincContasRep(st){
   return mud ? Object.assign({}, st, {acertosConsignado:ac}) : st;
 }
 
-export { pedeConta, idPedidoRep, pedidoDe, repPedirConta, repRemoverPedido, estadoPagRep, pagamentosDoPedido, sincContasRep };
+export { rotuloPixDaConta, pedeConta, idPedidoRep, pedidoDe, repPedirConta, repRemoverPedido, estadoPagRep, pagamentosDoPedido, sincContasRep };
