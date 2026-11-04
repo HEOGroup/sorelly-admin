@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.47", data:"2026-11-04", titulo:"PIX das revendedoras refeita: compacta, em branco e com total do dia", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tela PIX das revendedoras foi refeita só com peças do padrão: título, filtros no topo (mês e sócio), um bloco com barra dourada por sócio, resumo escrito numa linha, formulário numa linha e tabela com topo dourado. O total de cada dia aparece como linha de total dentro da tabela (sem as bolinhas coloridas), e tudo em branco. Abre no último mês com PIX, e há a opção Todos os meses. Pedido do Marcus e da Anamaria."},
+ ]},
  {v:"0.18.46", data:"2026-11-04", titulo:"Ana Beatriz abre o PIX dos sócios", itens:[
   {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix (Ver e conferir os PIX das revendedoras dos sócios): abre só a tela PIX revendedoras do Financeiro familiar, sem as outras telas da família. Liberada para a Ana Beatriz (pedido dela nos Chamados, autorizado pelo Marcus). Aparece o atalho PIX dos sócios no menu Financeiro. A conta dela continua só de visualização: ela vê, mas não grava."},
  ]},
