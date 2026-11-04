@@ -8,7 +8,7 @@ import { Pagina } from "@/apps/montagem/components/padrao";
 import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { contaDaCaixa } from "@/apps/montagem/domain/pix-regras";
+import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
@@ -65,7 +65,7 @@ export function AbaChavesPixBancos(){
   var viewFam = temAutorizacao("financeiro_familia", s.usuario);
   var gravaFunc = function(nome){ return function(pt){ d({type:"CP", op:"func_set", nome:nome, por:eu, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
   var gravaChave = function(id, base){ return function(pt){ d({type:"CP", op:"chave_set", id:id, por:eu, base:base, patch:{chave:pt.chave, chaveTipo:pt.tipo, chaveEm:Date.now(), chavePor:eu}}); }; };
-  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; return {id:id, c1:c1, c2:c2, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
+  var rowDeChave = function(id, c1, c2, base){ var k = cch[id] || {}; if(!k.chave && id.indexOf("rep|")===0) k = Object.assign({}, k, extraSeed(id) || {}); return {id:id, c1:c1, c2:c2, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:gravaChave(id, base)}; };
 
   // ── CNPJs: contas bancárias (aplicações e dinheiro não têm chave Pix; retidos também não)
   var blocosCnpj = (sc.blocos||[]).map(function(b){

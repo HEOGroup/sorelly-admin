@@ -31,6 +31,7 @@ import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
 import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
+import { chavePixRep } from "@/apps/montagem/domain/pix-regras";
 import { creditoDisponivel, creditosDaRevendedora } from "@/apps/montagem/domain/garantias-rev";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
@@ -646,7 +647,7 @@ function AppRepresentante(p){
                         if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
                       if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
           acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
-            var nr = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").trim().toLowerCase(); }, cch = (s.cp && s.cp.chaves) || {}, mine = nr(l.rep), kRep = Object.keys(cch).filter(function(k){ return cch[k].grupo==="rep" && mine && (nr(cch[k].nome).indexOf(mine)===0 || mine.indexOf(nr(cch[k].nome))===0); }).sort(function(a, b){ return nr(cch[b].nome).length-nr(cch[a].nome).length; })[0], chave = kRep ? cch[kRep].chave : "";   // chave cadastrada em Financeiro › Chaves Pix › Representantes
+            var chave = chavePixRep(s.cp && s.cp.chaves, l.rep);   // chave cadastrada em Financeiro › Chaves Pix › Representantes
             return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, "Pix representante"),
               chave ? e("span",{className:"break-all"}, "Chave Pix: "+chave) : e("span",null,"Chave Pix da representante ainda não cadastrada."),
