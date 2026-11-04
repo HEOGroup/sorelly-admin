@@ -89,7 +89,7 @@ export function AbaChavesPixBancos(){
     var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }); if(rc) b.rows.forEach(function(r){ r.c1 = "CNPJ "+cnpjFormatado(rc.chave); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
-  var FORNECEDORES = [["Pontual", "Banho"], ["Ellos Galvânica", "Banho"], ["MegaSul", "Bruto"], ["Art Ello", "Bruto"], ["Xangai", "Bruto"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"]];
+  var FORNECEDORES = [["Pontual", "Banho"], ["Ellos Galvânica", "Banho"], ["MegaSul", "Bruto"], ["Art Ello", "Bruto"], ["Xangai", "Bruto"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"], ["Madeira Cor", "—"]];
   var rowsForn = FORNECEDORES.map(function(x){ return rowDeChave("forn|"+x[0], x[1], x[0], {grupo:"forn", nome:x[0], servico:x[1]}); });
   var blocosForn = [{id:"forn", nome:"Fornecedores", cor:"#EA580C", fixo:true, rows:rowsForn}];
 
