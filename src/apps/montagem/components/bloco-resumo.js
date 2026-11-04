@@ -15,14 +15,15 @@ function BlocoResumo(p){
     e("h2",{className:"rounded-t-lg border-b border-border px-3 py-2 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]", style:{background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)"}}, p.t),
     p.cab && e("div",{className:"grid h-[30px] items-center border-b border-border bg-white/5 px-3 text-center text-[11px] font-semibold uppercase tracking-[.05em] "+grade},
       p.cab.map(function(c, i){ return e("span",{key:i}, c); })),
-    p.linhas.map(function(l){
+    // alturaMax (px): a lista rola dentro do bloco e o título e o cabeçalho das colunas ficam travados em cima (pedido do Marcus, 04/11/2026); compacto: linhas em 11 px
+    e("div",{className:p.alturaMax ? "overflow-y-auto" : "", style:p.alturaMax ? {maxHeight:p.alturaMax} : undefined}, p.linhas.map(function(l){
       var cor = l.cor ? {color:COR[l.cor]} : undefined;
-      return e("div",{key:l.r, className:"grid min-h-8 items-center gap-2 border-b border-border px-3 py-0.5 text-center text-[13px] last:border-b-0 "+grade+(l.total ? " bg-white/5 font-semibold" : "")},
+      return e("div",{key:l.r, className:"grid min-h-8 items-center gap-2 border-b border-border px-3 py-0.5 text-center "+(p.compacto ? "text-[11px]" : "text-[13px]")+" last:border-b-0 "+grade+(l.total ? " bg-white/5 font-semibold" : "")},
         e("span",null, l.r),
         p.barra
           ? [e("span",{key:"b", className:"block h-2 overflow-hidden rounded bg-white/10"}, e("i",{className:"block h-full bg-[#E8B84B]", style:{width:Math.max(2, Math.round((l.f || 0) * 100))+"%"}})),
              e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v)]
           : [e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v), e("span",{key:"p", className:"tabular-nums"}, l.p || "")]);
-    }));
+    })));
 }
 export { BlocoResumo };
