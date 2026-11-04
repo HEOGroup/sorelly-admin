@@ -211,23 +211,27 @@ function EditarPago(p){
 function DivPix(p){
   var x = p.x, cbs = p.cbs, ff = p.ff, nd = useState({tipo:p.tipo, valor:fmtN(x.valor), conta:x.contaId||"", obs:(x.div && x.div.obs) || ""}), f = nd[0], set = function(o){ nd[1](Object.assign({}, f, o)); };
   var salvar = function(){ if(f.tipo==="valor" && !(num(f.valor)>0)) return; if(f.tipo==="conta" && !f.conta) return; acao(p.c, "pix_div", {id:x.id, tipo:f.tipo, valor:num(f.valor), contaId:f.conta, obs:f.obs}); p.onFecha(); };
-  return e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_120px_120px]"},
+  var antes = x.valorOriginal!=null || x.contaOriginal!=null;
+  return e("div",{className:"fixed z-50 w-72 rounded-md border border-border bg-background p-3 shadow-lg", style:{left:p.left, top:p.top}},
+    e("p",{className:"pb-2 text-center text-[13px] font-semibold"}, "Divergência de "+(f.tipo==="conta" ? "conta" : "valor")),
+    antes && e("p",{className:"pb-2 text-center text-[13px]"}, "Informado antes: "+(x.valorOriginal!=null ? BK(x.valorOriginal) : BK(x.valor))+" · "+(x.contaOriginal!=null ? contaLabel(ff, x.contaOriginal) : contaLabel(ff, x.contaId) || "sem conta")),
     f.tipo==="valor"
-      ? e("div",null, e(Rotulo,{t:"Valor que entrou de verdade (R$)"}), e("input",{value:f.valor, "aria-label":"Valor real", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set({valor:ev.target.value.replace(/[^\d,.]/g,"")}); }}))
-      : e("div",null, e(Rotulo,{t:"Conta em que entrou de verdade"}), e("select",{value:f.conta, "aria-label":"Conta certa", className:CAMPO, onChange:function(ev){ set({conta:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
-    e("div",null, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set({obs:ev.target.value}); }})),
-    e(Botao,{principal:true, onClick:salvar}, "Salvar"),
-    e(Botao,{onClick:p.onFecha}, "Cancelar"));
+      ? e("div",null, e(Rotulo,{t:"Valor que entrou (R$)"}), e("input",{value:f.valor, "aria-label":"Valor real", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set({valor:ev.target.value.replace(/[^\d,.]/g,"")}); }}))
+      : e("div",null, e(Rotulo,{t:"Conta em que entrou"}), e("select",{value:f.conta, "aria-label":"Conta certa", className:CAMPO, onChange:function(ev){ set({conta:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
+    e("div",{className:"pt-2"}, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set({obs:ev.target.value}); }})),
+    e("div",{className:"flex justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:salvar}, "Salvar"), e(Botao,{onClick:p.onFecha}, "Cancelar")));
 }
 function CartaoPix(p){
   var c = p.c, ff = c.ff, pe = p.p, ym = p.ym, todos = ym==="TODOS", t = todos ? null : totaisPersona(ff, pe.id, ym), dv = todos ? null : pixDivisao(ff, pe.id, ym), nf = useState({data:hojeIso(), valor:"", origem:"", contaId:"", forma:"PIX"}), f = nf[0], setF = nf[1];
   var lista = ff.pix.filter(function(x){ return x.personaId===pe.id && (todos || x.data.slice(0,7)===ym); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), cbs = ff.contasBanc.filter(function(b){ return b.ativo && (!b.personaId || b.personaId===pe.id || b.prestadorId); });
-  var nab = useState(""), abre = nab[0], setAbre = nab[1];
+  var nab = useState(""), abre = nab[0], setAbre = nab[1], ab = abre ? abre.split("|") : [];
+  var abrirDiv = function(id, tipo, el){ var r = el.getBoundingClientRect(); setAbre([id, tipo, Math.round(r.left), Math.round(r.bottom)].join("|")); };
   var rotAud = {CONFIRMADO:"Confirmado", PENDENTE:"Aguardando", NAOIDENT:"Não identificado", DIVERG:"Divergência"};
   var stDe = function(x){ return x.auditoria==="REJEITADO" ? "NAOIDENT" : (x.auditoria || "PENDENTE"); };
   var valSel = function(x){ var s = stDe(x); return s==="DIVERG" ? ((x.div && x.div.tipo)==="conta" ? "DIVC" : "DIVV") : s; };
   var contaDe = function(id){ return ff.contasBanc.find(function(b){ return b.id===id; }) || {}; };
-  var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }); return pr ? pr.nome : "—"; };
+  var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }), pe2 = !pr && b.personaId && ff.personas.find(function(y){ return y.id===b.personaId; }); return pr ? pr.nome : pe2 ? pe2.nome : "—"; };
+  var nomeConta = function(id){ var b = contaDe(id), n = String(b.nome || "").replace(/^Conta\s+/i, ""), lo = n.toLowerCase(), bk = String(b.banco || "").toLowerCase(), k = bk ? lo.lastIndexOf(bk) : -1; if(k>0 && lo.slice(k).trim()===bk) n = n.slice(0, k).replace(/[\s—-]+$/, ""); n = n.replace(/\s*\([^)]*\)\s*$/, "").trim(); return n || "—"; };
   var recTodos = r2(lista.filter(function(x){ return stDe(x)!=="NAOIDENT"; }).reduce(function(s, x){ return s+x.valor; }, 0));
   var anotar = function(){ if(!(num(f.valor)>0) || !f.data) return; acao(c, "pix_add", {personaId:pe.id, data:f.data, valor:num(f.valor), origem:f.origem, contaId:f.contaId, forma:f.forma}); setF(Object.assign({}, f, {valor:"", origem:""})); };
   var TC = "h-8 border-b border-border px-2.5 text-center text-[13px] tabular-nums";
@@ -238,35 +242,33 @@ function CartaoPix(p){
     cont++;
     if(stDe(x)!=="NAOIDENT") soma = r2(soma+x.valor);
     linhas.push(e("tr",{key:x.id},
-      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, contaDe(x.contaId).nome||"—"), e("td",{className:TC}, prestDe(x.contaId)),
+      e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, prestDe(x.contaId)),
       e("td",{className:TC+(stDe(x)==="NAOIDENT" ? " line-through opacity-60" : "")}, BK(x.valor)),
       e("td",{className:TC}, e("span",{className:"inline-flex items-center justify-center gap-2"},
-        e("select",{value:valSel(x), "aria-label":"Conferência", className:CAMPO+" w-56!", onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") setAbre(x.id+"|valor"); else if(v==="DIVC") setAbre(x.id+"|conta"); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
-          stDe(x)==="PENDENTE" && e("option",{value:"PENDENTE"}, "Aguardando conferência"),
+        e("select",{value:valSel(x), "aria-label":"Conferência", className:CAMPO+" w-44!", onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
+          stDe(x)==="PENDENTE" && e("option",{value:"PENDENTE"}, "Aguardando"),
           e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVV"}, "Divergência de valor"), e("option",{value:"DIVC"}, "Divergência de conta")),
-        stDe(x)==="DIVERG" && e("button",{type:"button", onClick:function(){ setAbre(abre.split("|")[0]===x.id ? "" : x.id+"|"+((x.div && x.div.tipo) || "valor")); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, "Ver"))),
+        stDe(x)==="DIVERG" && e("button",{type:"button", onClick:function(ev){ if(ab[0]===x.id) setAbre(""); else abrirDiv(x.id, (x.div && x.div.tipo) || "valor", ev.currentTarget); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, "Ver"))),
       e("td",{className:TC}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
-    if(abre.split("|")[0]===x.id) linhas.push(e("tr",{key:"dv"+x.id}, e("td",{colSpan:8, className:"border-b border-border bg-white/5 px-3 py-2"},
-      (x.valorOriginal!=null || x.contaOriginal!=null) && e("p",{className:"pb-2 text-center text-[13px]"}, "Informado antes: "+(x.valorOriginal!=null ? BK(x.valorOriginal) : BK(x.valor))+" · "+(x.contaOriginal!=null ? contaLabel(ff, x.contaOriginal) : contaLabel(ff, x.contaId) || "sem conta")),
-      e(DivPix,{key:abre, tipo:abre.split("|")[1], x:x, c:c, ff:ff, cbs:cbs, onFecha:function(){ setAbre(""); }}))));
   });
   fecha();
   return e(Bloco,{ouro:true, t:pe.nome, dir:e("span",{className:"tabular-nums"}, (todos ? "Todos os meses" : nomeMes(ym))+" · "+BK(todos ? recTodos : t.pix.recebido))},
-    e("div",{className:"pb-2 pt-2"}, todos
+    e("div",{className:"pb-3 pt-2"}, todos
       ? e(TabelaP,{minW:400, cols:[{t:"Recebido"}, {t:"PIX lançados"}]}, e("tr",{key:"r"}, e("td",{className:TC}, BK(recTodos)), e("td",{className:TC}, String(lista.length))))
       : e(TabelaP,{minW:760, cols:[{t:"Recebido"}, {t:"Meta (R$)", w:170}, {t:"Falta"}, {t:"% da meta", w:100}, {t:"Direto"}, {t:"Prestadores"}]}, e("tr",{key:"r"},
           e("td",{className:TC}, BK(t.pix.recebido)),
           e("td",{className:TC}, e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
           e("td",{className:TC}, BK(t.pix.restante)), e("td",{className:TC}, t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"%" : "—"),
           e("td",{className:TC}, BK(dv.direto)), e("td",{className:TC}, BK(dv.prestadores))))),
-    e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 border-t border-border pb-2 pt-2 md:grid-cols-[130px_120px_minmax(0,1fr)_minmax(0,1fr)_120px]"},
+    e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 border-t border-border pb-3 pt-3 md:grid-cols-[130px_120px_minmax(0,1fr)_minmax(0,1fr)_120px]"},
       e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e("div",null, e(Rotulo,{t:"Valor (R$)"}), e("input",{value:f.valor, "aria-label":"Valor", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setF(Object.assign({}, f, {valor:ev.target.value.replace(/[^\d,.]/g,"")})); }, onKeyDown:function(ev){ if(ev.key==="Enter") anotar(); }})),
       e("div",null, e(Rotulo,{t:"Revendedora"}), e("input",{value:f.origem, "aria-label":"Revendedora", className:CAMPO, onChange:function(ev){ setF(Object.assign({}, f, {origem:ev.target.value})); }, onKeyDown:function(ev){ if(ev.key==="Enter") anotar(); }})),
       e("div",null, e(Rotulo,{t:"Conta que recebeu"}), e("select",{value:f.contaId, "aria-label":"Conta que recebeu", className:CAMPO, onChange:function(ev){ setF(Object.assign({}, f, {contaId:ev.target.value})); }}, e("option",{value:""}, "Sem conta definida"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
       e(Botao,{principal:true, desabilitado:!(num(f.valor)>0) || !f.data, onClick:anotar}, "Anotar PIX")),
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, todos ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
-    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Prestador", w:150}, {t:"Valor", w:120}, {t:"Conferência", w:320}, {t:"", w:56}]}, linhas));
+    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:260}, {t:"", w:56}]}, linhas),
+    ab.length>0 && lista.some(function(x){ return x.id===ab[0]; }) && e(DivPix,{key:abre, tipo:ab[1], x:lista.find(function(x){ return x.id===ab[0]; }), c:c, ff:ff, cbs:cbs, left:Math.max(8, Math.min(+ab[2], window.innerWidth-300)), top:Math.max(8, Math.min(+ab[3]+4, window.innerHeight-330)), onFecha:function(){ setAbre(""); }}));
 }
 function AbaFfPix(){
   var c = useFF(); c = Object.assign({}, c, {pode:c.pode || temAutorizacao("ff_pix", c.s.usuario)});   // quem tem só a autorização ff_pix abre esta tela e nenhuma outra da família

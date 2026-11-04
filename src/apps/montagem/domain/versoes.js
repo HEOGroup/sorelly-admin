@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.52", data:"2026-11-04", titulo:"PIX revendedoras: mini bloco de divergência e colunas sem repetição", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A divergência abre um mini bloco ao lado do menu, sem abrir outra linha na tabela. O menu diz só Aguardando. As colunas Banco, Conta e Favorecido não repetem mais o banco: Nubank, Marcus, Marcus; C6 Bank, Pix João Paulo, Show Banca. Mais espaço entre a tabela de resumo, o formulário e a tabela de PIX."},
+ ]},
  {v:"0.18.51", data:"2026-11-04", titulo:"PIX revendedoras: conferência em menu e resumo em tabela", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"A conferência é um menu na própria linha: Confirmado, Não identificado, Divergência de valor ou Divergência de conta (as duas últimas abrem o bloco para informar o valor ou a conta certa; o botão Ver reabre). O resumo do sócio (Recebido, Meta, Falta, % da meta, Direto, Prestadores) virou uma tabela com topo dourado."},
  ]},
