@@ -6,7 +6,8 @@
 //   - Empresa: Serenity
 //   - CNPJ: 59.146.403/0001-96
 //
-//   🔑 Chave (E-mail): ...
+//   🔑 Chave (E-mail):
+//   marcooliveira070864@gmail.com   ← a chave fica sempre na linha de baixo
 //
 //   Envie o comprovante após o pagamento.
 // O botão "Copiar" (components/copiar-chave.js) copia esta mensagem quando a chave foi registrada aqui pela tela Chaves Pix.
@@ -29,7 +30,7 @@ function mensagemPixEmpresa(d){
   if(d.banco) linhas.push("- Banco: "+d.banco);
   if(d.empresa) linhas.push("- Empresa: "+d.empresa);
   if(d.cnpj) linhas.push("- CNPJ: "+d.cnpj);
-  linhas.push("", "🔑 Chave ("+(TIPO[d.tipo] || "Pix")+"): "+d.chave, "", "Envie o comprovante após o pagamento.");
+  linhas.push("", "🔑 Chave ("+(TIPO[d.tipo] || "Pix")+"):", d.chave, "", "Envie o comprovante após o pagamento.");   // a chave SEMPRE na linha de baixo (Marcus, 04/11/2026)
   return linhas.join("\n");
 }
 var registrarMensagemPix = function(chave, msg){ if(chave && msg) MENSAGENS[String(chave)] = msg; };
