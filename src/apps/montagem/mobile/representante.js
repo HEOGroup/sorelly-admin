@@ -31,6 +31,7 @@ import { TelaRegrasComissoes } from "@/apps/montagem/mobile/regras-comissoes-app
 import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
 import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
+import { chavePixRep } from "@/apps/montagem/domain/pix-regras";
 import { creditoDisponivel, creditosDaRevendedora } from "@/apps/montagem/domain/garantias-rev";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
@@ -265,6 +266,10 @@ function AppRepresentante(p){
   var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
+  // Contexto do acerto para o Direcionar (Financeiro): vendas, valor a pagar e todos os pagamentos lançados (igual ao Interno); lista = pagamentos do acerto, com ou sem o que acabou de lançar
+  var ctxPed = function(lista, dd, vb){ dd = dd || dv; var FM = {pix:"pix", pix_representante:"pix", link:"link", credito:"credito", debito:"getnet", dinheiro:"dinheiro"};
+    return {vendas:dd.vendaEfetiva!=null ? dd.vendaEfetiva : (vb!=null ? vb : acertoForm.vendaBruta), aPagar:dd.totalAPagar, pagos:lista.filter(function(p){ return FM[p.forma]; }).map(function(p){ var m = /d+s*$/.exec(p.descricao||"");
+      return {pid:p.pid||"", forma:FM[p.forma], valor:p.valor, cnpj:p.forma==="link" && m ? m[0].trim() : "", parc:p.parcelas>1 ? p.parcelas : 0, obs:p.forma==="pix_representante" ? "Pix representante" : (p.descricao||"")}; })}; };
   // Pagamento: a representante só informa FORMA + VALOR e o pedido de conta segue em segundo plano (Controle de pagamentos); o app nunca espera.
   var estPag = function(pg){ return pg.pid && kitSel ? estadoPagRep(s.lancFin, kitSel.id, pg.pid) : null; };
   var rotPag = function(pg){ if(pg.forma==="acerto_loja") return "Inadimplência"; var es = estPag(pg); return es && es.aguardando ? formaDe(pg.forma).label+(pg.forma==="credito" && pg.parcelas>1 ? " "+pg.parcelas+"x" : "") : rotuloPagamento(es ? Object.assign({}, pg, {descricao:es.conta}) : pg); };
@@ -305,14 +310,14 @@ function AppRepresentante(p){
       var listaPag = function(pg){ var lk = arred(pg*.30), px = arred(pg*.30), cr = arred(pg*.25), dn = arred(pg-lk-px-cr);
         var descLink = (formaDe("link").descricoes||[])[0] || "LINK - SICREDI - SERENITY - 59";
         return [{forma:"link", descricao:descLink, parcelas:1, data:hoje, valor:lk, anexo:null, jaPagoLink:true},
-          {forma:"pix", descricao:"", pid:"pexemplo"+kitSel.id, parcelas:1, data:hoje, valor:px, anexo:{nome:"comprovante-pix.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
+          {forma:"pix", descricao:"", pid:"pexemplo"+kitSel.id, parcelas:1, data:hoje, valor:px, anexo:null},
           {forma:"credito", descricao:"CRÉDITO - CIELO - P", parcelas:3, data:hoje, valor:cr, anexo:{nome:"comprovante-cartao.jpg", tipo:"image/jpeg", dados:null, tamanho:0}},
           {forma:"dinheiro", descricao:(formaDe("dinheiro").descricoes||[])[0] || "Dinheiro", parcelas:1, data:hoje, valor:dn, anexo:null}]; };
       var fimF = Object.assign({}, base, {garantia:cz.garantia||0, atrasoDias:9, brindes:brindes, pecasVendidas:cz.vendidas}), pagoF = valor;
       for(var it=0; it<4; it++){ pagoF = Math.max(0, arred(conta(Object.assign({}, fimF, {pagamentos:listaPag(pagoF)})).totalAPagar-200)); }
       comPag = Object.assign({}, fimF, {pagamentos:listaPag(pagoF)}); d1 = conta(comPag); }
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
-    if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo}); }
+    if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo, ctx:ctxPed(comPag.pagamentos, d1, comPag.vendaBruta)}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
     setAcertoForm(Object.assign({}, comPag, {garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
@@ -430,6 +435,7 @@ function AppRepresentante(p){
   var vendaMotivo = dv.vendaEfetiva!=null ? dv.vendaEfetiva : acertoForm.vendaBruta;
   var minVendaGeral = (dv.novas && dv.novas.minimoRepresentante) || NOVAS_PADRAO.minimoRepresentante, motivosVB = (dv.novas && dv.novas.motivosVendaBaixa) || NOVAS_PADRAO.motivosVendaBaixa;
   var vendaBaixa = vendaMotivo!=null && vendaMotivo < minVendaGeral;
+  var aguardaContaN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && es.aguardando; }).length, semCompN = acertoForm.pagamentos.filter(function(p){ var es = p.pid && estPag(p); return es && !es.aguardando && !p.anexo; }).length;   // Pix, link e cartão: conta do financeiro + comprovante antes de fechar
   var faltaMotivoVB = vendaBaixa && (!acertoForm.motivoVendaBaixa || (acertoForm.motivoVendaBaixa==="Outro" && !(acertoForm.motivoVendaBaixaTexto||"").trim()));
   var motivoVB = !vendaBaixa ? "" : acertoForm.motivoVendaBaixa==="Outro" ? (acertoForm.motivoVendaBaixaTexto||"").trim() : (acertoForm.motivoVendaBaixa||"");
   var payloadAcerto = function(extra){
@@ -624,16 +630,31 @@ function AppRepresentante(p){
                   p.data && p.data!==hojeP ? e("small",{className:"ml-1.5 text-[11px]"}, p.data.split("-").reverse().slice(0,2).join("/")) : null, p.anexo ? e("small",{className:"ml-1.5 text-[11px]"}, "📎") : null, estPag(p) && estPag(p).aguardando ? e("small",{className:"ml-1.5 text-[11px]"}, "aguardando a empresa") : null),
                 e("span",{className:"flex shrink-0 items-center gap-0.5"},
                   e("b",{className:MONO+" text-[14px]"}, BK(p.valor)),
-                  p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid});
+                  p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid, ctx:ctxPed(acertoForm.pagamentos.filter(function(x,j){return j!==i;}))});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                     "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
           acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p);
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
-              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta)); }),
+              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta),
+              !es.aguardando && (p.anexo
+                ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
+                : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
+                    e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"),
+                    e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante do pagamento", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
+                      var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
+                        setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
+                        if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
+                      if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
+          acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
+            var chave = chavePixRep(s.cp && s.cp.chaves, l.rep);   // chave cadastrada em Financeiro › Chaves Pix › Representantes
+            return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
+              e("b",{className:"font-semibold"}, "Pix representante"),
+              chave ? e("span",{className:"break-all"}, "Chave Pix: "+chave) : e("span",null,"Chave Pix da representante ainda não cadastrada."),
+              chave && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(chave); }catch(x){} }, className:"mt-1 h-8 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Copiar chave")); }),
           (function(){
             var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
-            var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja";   // dinheiro e inadimplência não têm comprovante
+            var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja" && !pedeCta;   // dinheiro e inadimplência não têm comprovante; Pix, link e cartão: o comprovante vem DEPOIS, quando o financeiro responder a conta (Marcus, 04/11/2026)
             var pronto = !!(fm && lancForm.data && lancForm.valor>0 && (!pedeComp || lancForm.anexo));
             var abre = function(){ if(lancAberto){ setLancAberto(false); setLancForm(LANC_VAZIO); } else { setLancForm(Object.assign({}, LANC_VAZIO, {valor: restanteTotal>0.009 ? Math.round(restanteTotal*100)/100 : null})); setLancAberto(true); } };
             return e("div",{key:"lanc1", className:"mt-1 overflow-hidden rounded-xl border border-white/15"},
@@ -682,7 +703,8 @@ function AppRepresentante(p){
                 fm!=="acerto_loja" && e("button",{disabled:!pronto, onClick:function(){
                     var pid = pedeCta ? "p"+Date.now().toString(36)+Math.floor(Math.random()*1296).toString(36) : null;
                     var novoPag = Object.assign({}, lancForm, pedeCta ? {descricao:"", pid:pid} : {descricao:(formaDe(fm).descricoes||[])[0] || formaDe(fm).label});   // Pix, link e cartão: o sistema usa a conta fixa dela ou pergunta à empresa; dinheiro e inadimplência não pedem conta
-                    if(pedeCta && kitSel) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pid, forma:lancForm.forma, valor:lancForm.valor, parcelas:lancForm.parcelas||1, data:lancForm.data, anexo:lancForm.anexo});
+                    if(pedeCta && kitSel) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pid, forma:lancForm.forma, valor:lancForm.valor, parcelas:lancForm.parcelas||1, data:lancForm.data, anexo:lancForm.anexo, ctx:ctxPed(acertoForm.pagamentos.concat([novoPag]))});
+                    else if(kitSel) d({type:"REP_PAG", op:"ctx", kitId:kitSel.id, ctx:ctxPed(acertoForm.pagamentos.concat([novoPag]))});
                     setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.concat([novoPag])}));
                     if(totalPagoAtual+lancForm.valor >= previaBase.valorDevido-0.009) setBlocoAberto(4);   // acerto quitado: abre os brindes
                     setLancAberto(false); setLancForm(LANC_VAZIO); },
@@ -829,8 +851,8 @@ function AppRepresentante(p){
           acertoForm.motivoVendaBaixa==="Outro" && e("input",{value:acertoForm.motivoVendaBaixaTexto||"", placeholder:"Escreva o motivo", maxLength:140,
             onChange:function(ev){ setAcertoForm(Object.assign({}, acertoForm, {motivoVendaBaixaTexto:ev.target.value})); },
             className:"h-10 rounded-lg bg-black/50 px-3 text-[14px] text-white outline-none ring-1 ring-white/10"})),
-        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente, onClick:function(){ setTela("assinaracerto"); },
-          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : "Confirmar acerto")]);
+        e("button",{key:"cf", disabled:acertoForm.vendaBruta==null || faltaMotivoVB || travaExcedente || aguardaContaN>0 || semCompN>0, onClick:function(){ setTela("assinaracerto"); },
+          className:"h-11 rounded-2xl text-[14px] font-bold disabled:opacity-40 "+ouro}, faltaMotivoVB ? "Informe o motivo da venda baixa" : travaExcedente ? "Pague a diferença do brinde" : aguardaContaN>0 ? "Aguardando a conta do financeiro" : semCompN>0 ? "Anexe o comprovante do pagamento" : "Confirmar acerto")]);
 
   // Assinatura da revendedora ao finalizar o acerto (deixou o kit): resumo, check de "li e entendi as regras" e assinatura digital.
   var telaAssinarAcerto = kitSel && previaAcerto && e(TelaAssinatura,{titulo:"Assinatura do acerto", nome:sel.rev, modo:"unico",

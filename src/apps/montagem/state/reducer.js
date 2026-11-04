@@ -53,6 +53,7 @@ import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { MODELO_PADRAO } from "@/apps/montagem/domain/condicional-modelo";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
+import { uneItau } from "@/apps/montagem/domain/itau-unico";
 
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
@@ -280,6 +281,7 @@ function reducer(s, a){
     case "PF": { var rPf = pfReduz(s, a); return com(s, rPf.patch, rPf.msg); }
     case "PX": { var rPx = pxReduz(s, a); return com(s, rPx.patch, rPx.msg); }
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
+    case "ITAU_UNIR": return com(uneItau(s), {}, "Itaú: uma conta só (Itaú Marco PJ)");
     case "DP": { var rDp = dpReduz(s, a), sDp = com(s, rDp.patch, rDp.msg);
       // Pix pedido pelo app da representante: ao direcionar aqui, o nome da conta vai para o pagamento do acerto (e o app avisa "Conta recebida")
       if(a.op==="confirma" && rDp.patch.dp){ var pDp = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
@@ -993,8 +995,13 @@ function reducer(s, a){
       if(a.op==="pedir"){ if(!a.kitId || !a.pid || !(a.valor>0)) return s;
         var sPed = com(s, {lancFin:repPedirConta(s.lancFin, s.px, a, agora)}, "Conta solicitada ao financeiro: "+BK(a.valor));
         var fmL = {pix:"Pix", link:"Link de pagamento", credito:"Cartão de crédito", debito:"Cartão de débito"}[a.forma] || a.forma;
-        return sincContasRep(Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch)); }
-      if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); return Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); }
+        var sPed2 = Object.assign({}, sPed, dpReduz(sPed, {op:"rep_pedir", kitId:a.kitId, pid:a.pid, rev:a.rev, rep:a.rep, forma:a.forma, valor:a.valor, obs:fmL+(a.parcelas>1 ? " em "+a.parcelas+"x" : "")+" · pedido pelo app da representante", comprovante:a.anexo && a.anexo.nome ? {nome:a.anexo.nome} : null}).patch);
+        return sincContasRep(Object.assign({}, sPed2, dpReduz(sPed2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch)); }
+      if(a.op==="ctx") return Object.assign({}, s, dpReduz(s, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch);
+      if(a.op==="comprovante"){ var sCp = Object.assign({}, s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(a.kitId)) return x;
+          return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==a.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {partes:[Object.assign({}, q0, {comprovante:{nome:a.anexo.nome, url:a.anexo.dados||null}})]}); })}); })});
+        return com(Object.assign({}, sCp, dpReduz(sCp, {op:"rep_comp", pid:a.pid, nome:a.anexo.nome}).patch), {}, "Comprovante enviado ao financeiro"); }
+      if(a.op==="remover"){ var sRem = com(s, {lancFin:repRemoverPedido(s.lancFin, a.kitId, a.pid)}); var sRem2 = Object.assign({}, sRem, dpReduz(sRem, {op:"rep_remover", pid:a.pid}).patch); return a.ctx ? Object.assign({}, sRem2, dpReduz(sRem2, {op:"rep_ctx", kitId:a.kitId, ctx:a.ctx}).patch) : sRem2; }
       return s;
     }
     case "INT_REMOVER":

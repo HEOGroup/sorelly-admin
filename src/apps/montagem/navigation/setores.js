@@ -18,11 +18,12 @@ var MENU_FINANCEIRO = [
   M("Atividades","finativ"),   // lista do que fica para fazer depois (Marcus, 03/11/2026): palavra direta logo no começo, para não ficar escondida no fim do menu
   M("Previsão de caixa","previsaocaixa"),   // palavra direta no topo (Marcus, 26/10/2026: estava escondida demais dentro de Saldos e análises › Saldo das contas)
   {nome:"Saldos e análises", itens:[
-    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Chaves Pix","chavespixbanco"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
+    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
     M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
     M("Estoque Sorelly","estoquesorelly")]},
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("Contas a pagar","ctalista"),
+    M("Chaves Pix","chavespixbanco"),   // TODAS as chaves Pix num lugar só: CNPJs, fornecedores, funcionários, representantes, sócios e prestadores (Marcus, 04/11/2026: fica em Contas)
     M("Pagas por dia","pagaspordia"),   // escolhe o dia e vê quanto foi pago, por CNPJ (Marcus, 29/10/2026: pedido do financeiro)
     {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
