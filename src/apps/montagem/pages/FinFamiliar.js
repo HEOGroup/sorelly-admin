@@ -207,7 +207,7 @@ function EditarPago(p){
 }
 
 // ───────────────── PIX revendedoras ─────────────────
-// Refeita em 04/11/2026 (Marcus: compacta, sem bolinhas coloridas, sem topo gigante): só peças do padrão (Bloco com barra dourada, TabelaP, Botao). Resumo escrito em UMA linha, formulário numa linha, tabela com o TOTAL DO DIA dentro dela (linha de total), tudo em branco.
+// Total do dia só quando o Marcus liga no filtro "Com total por dia" (pedido de 04/11/2026: os PIX vêm em sequência). Refeita em 04/11/2026 (Marcus: compacta, sem bolinhas coloridas, sem topo gigante): só peças do padrão (Bloco com barra dourada, TabelaP, Botao). Resumo escrito em UMA linha, formulário numa linha, tabela com o TOTAL DO DIA dentro dela (linha de total), tudo em branco.
 function CartaoPix(p){
   var c = p.c, ff = c.ff, pe = p.p, ym = p.ym, todos = ym==="TODOS", t = todos ? null : totaisPersona(ff, pe.id, ym), dv = todos ? null : pixDivisao(ff, pe.id, ym), nf = useState({data:hojeIso(), valor:"", origem:"", contaId:"", forma:"PIX"}), f = nf[0], setF = nf[1];
   var lista = ff.pix.filter(function(x){ return x.personaId===pe.id && (todos || x.data.slice(0,7)===ym); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), cbs = ff.contasBanc.filter(function(b){ return b.ativo && (!b.personaId || b.personaId===pe.id || b.prestadorId); });
@@ -216,7 +216,7 @@ function CartaoPix(p){
   var anotar = function(){ if(!(num(f.valor)>0) || !f.data) return; acao(c, "pix_add", {personaId:pe.id, data:f.data, valor:num(f.valor), origem:f.origem, contaId:f.contaId, forma:f.forma}); setF(Object.assign({}, f, {valor:"", origem:""})); };
   var TC = "h-8 border-b border-border px-2.5 text-center text-[13px] tabular-nums";
   // linhas da tabela: cada dia com os seus PIX e, logo depois, a linha de TOTAL DO DIA (Anamaria, 03/11/2026)
-  var linhas = [], dia = "", soma = 0, cont = 0, fecha = function(){ if(dia && cont>1) linhas.push(e("tr",{key:"t"+dia, className:"border-t-2 border-border bg-white/5 font-semibold"}, e("td",{className:TC, colSpan:3}, "Total do dia "+br(dia)+" ("+cont+" PIX)"), e("td",{className:TC}, BK(soma)), e("td",{className:TC, colSpan:2}, ""))); };
+  var linhas = [], dia = "", soma = 0, cont = 0, fecha = function(){ if(p.porDia && dia) linhas.push(e("tr",{key:"t"+dia, className:"border-t-2 border-border bg-white/5 font-semibold"}, e("td",{className:TC, colSpan:3}, "Total do dia "+br(dia)+(cont>1 ? " ("+cont+" PIX)" : "")), e("td",{className:TC}, BK(soma)), e("td",{className:TC, colSpan:2}, ""))); };
   lista.forEach(function(x){
     if(x.data!==dia){ fecha(); dia = x.data; soma = 0; cont = 0; }
     cont++;
@@ -251,14 +251,15 @@ function AbaFfPix(){
   var ff = c.ff, comPix = {}; ff.pix.forEach(function(x){ comPix[x.data.slice(0,7)] = 1; });
   // abre no último mês que tem PIX lançado (não no mês de hoje, que pode estar vazio); "Todos os meses" mostra tudo
   var ultimo = Object.keys(comPix).filter(function(m){ return m<=hojeYm(); }).sort().pop() || hojeYm();
-  var ms = useState(ultimo), ym = ms[0], setYm = ms[1], pf = useState(""), quem = pf[0], setQuem = pf[1];
+  var ms = useState(ultimo), ym = ms[0], setYm = ms[1], pf = useState(""), quem = pf[0], setQuem = pf[1], pdd = useState(false), porDia = pdd[0], setPorDia = pdd[1];
   var mesesOp = Object.keys(Object.keys(comPix).concat([hojeYm()]).reduce(function(o, k){ o[k] = 1; return o; }, {})).sort().reverse();   // só os meses com PIX e o mês de hoje
   var pessoas = ff.personas.filter(function(p){ return p.ativo && p.mostrarPix; });
   return e(Guarda,{c:c}, e(Pagina,null,
     e(PageHead,{t:"PIX revendedoras"},
       e("select",{value:ym, "aria-label":"Mês", className:CAMPO+" w-44!", onChange:function(ev){ setYm(ev.target.value); }}, e("option",{value:"TODOS"}, "Todos os meses"), mesesOp.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })),
+      e("select",{value:porDia ? "1" : "", "aria-label":"Total por dia", className:CAMPO+" w-48!", onChange:function(ev){ setPorDia(ev.target.value==="1"); }}, e("option",{value:""}, "Sem total por dia"), e("option",{value:"1"}, "Com total por dia")),
       e("select",{value:quem, "aria-label":"Sócio", className:CAMPO+" w-40!", onChange:function(ev){ setQuem(ev.target.value); }}, e("option",{value:""}, "Todos os sócios"), pessoas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); }))),
-    pessoas.filter(function(p){ return !quem || p.id===quem; }).map(function(p){ return e(CartaoPix,{key:p.id+ym, c:c, p:p, ym:ym}); })));
+    pessoas.filter(function(p){ return !quem || p.id===quem; }).map(function(p){ return e(CartaoPix,{key:p.id+ym+porDia, c:c, p:p, ym:ym, porDia:porDia}); })));
 }
 
 // ───────────────── Prestadores ─────────────────
