@@ -209,17 +209,18 @@ function EditarPago(p){
 // ───────────────── PIX revendedoras ─────────────────
 // Total do dia só quando o Marcus liga no filtro "Com total por dia" (pedido de 04/11/2026: os PIX vêm em sequência). Refeita em 04/11/2026 (Marcus: compacta, sem bolinhas coloridas, sem topo gigante): só peças do padrão (Bloco com barra dourada, TabelaP, Botao). Resumo escrito em UMA linha, formulário numa linha, tabela com o TOTAL DO DIA dentro dela (linha de total), tudo em branco.
 function DivPix(p){
-  var x = p.x, cbs = p.cbs, ff = p.ff, nd = useState({tipo:p.tipo, valor:fmtN(x.valor), conta:x.contaId||"", obs:(x.div && x.div.obs) || ""}), f = nd[0], set = function(o){ nd[1](Object.assign({}, f, o)); };
-  var salvar = function(){ if(f.tipo==="valor" && !(num(f.valor)>0)) return; if(f.tipo==="conta" && !f.conta) return; acao(p.c, "pix_div", {id:x.id, tipo:f.tipo, valor:num(f.valor), contaId:f.conta, obs:f.obs}); p.onFecha(); };
-  var antes = x.valorOriginal!=null || x.contaOriginal!=null;
-  return e("div",{className:"fixed z-50 w-72 rounded-md border border-border bg-background p-3 shadow-lg", style:{left:p.left, top:p.top}},
-    e("p",{className:"pb-2 text-center text-[13px] font-semibold"}, "Divergência de "+(f.tipo==="conta" ? "conta" : "valor")),
-    antes && e("p",{className:"pb-2 text-center text-[13px]"}, "Informado antes: "+(x.valorOriginal!=null ? BK(x.valorOriginal) : BK(x.valor))+" · "+(x.contaOriginal!=null ? contaLabel(ff, x.contaOriginal) : contaLabel(ff, x.contaId) || "sem conta")),
+  var x = p.x, cbs = p.cbs, ff = p.ff, nd = useState({tipo:p.tipo, valor:fmtN(x.valor), conta:x.contaId||"", data:x.data, obs:(x.div && x.div.obs) || ""}), f = nd[0], set = function(o){ nd[1](Object.assign({}, f, o)); };
+  var salvar = function(){ if(f.tipo==="valor" && !(num(f.valor)>0)) return; if(f.tipo==="conta" && !f.conta) return; if(f.tipo==="data" && !f.data) return; acao(p.c, "pix_div", {id:x.id, tipo:f.tipo, valor:num(f.valor), contaId:f.conta, data:f.data, obs:f.obs}); p.onFecha(); };
+  var antes = x.valorOriginal!=null || x.contaOriginal!=null || x.dataOriginal!=null;
+  return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/50", onClick:p.onFecha}, e("div",{className:"w-64 rounded-md border border-border bg-background p-3 shadow-lg", onClick:function(ev){ ev.stopPropagation(); }},
+    e("p",{className:"pb-2 text-center text-[13px] font-semibold"}, "Divergência de "+(f.tipo==="conta" ? "conta" : f.tipo==="data" ? "data" : "valor")),
+    antes && e("p",{className:"pb-2 text-center text-[13px]"}, "Informado antes: "+(x.valorOriginal!=null ? BK(x.valorOriginal) : BK(x.valor))+" · "+(x.contaOriginal!=null ? contaLabel(ff, x.contaOriginal) : contaLabel(ff, x.contaId) || "sem conta")+(x.dataOriginal!=null ? " · "+br(x.dataOriginal) : "")),
     f.tipo==="valor"
       ? e("div",null, e(Rotulo,{t:"Valor que entrou (R$)"}), e("input",{value:f.valor, "aria-label":"Valor real", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set({valor:ev.target.value.replace(/[^\d,.]/g,"")}); }}))
+      : f.tipo==="data" ? e("div",null, e(Rotulo,{t:"Data em que entrou"}), e("input",{type:"date", value:f.data, "aria-label":"Data real", className:CAMPO+" text-center", onChange:function(ev){ set({data:ev.target.value}); }}))
       : e("div",null, e(Rotulo,{t:"Conta em que entrou"}), e("select",{value:f.conta, "aria-label":"Conta certa", className:CAMPO, onChange:function(ev){ set({conta:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
     e("div",{className:"pt-2"}, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set({obs:ev.target.value}); }})),
-    e("div",{className:"flex justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:salvar}, "Salvar"), e(Botao,{onClick:p.onFecha}, "Cancelar")));
+    e("div",{className:"flex justify-center gap-2 pt-3"}, e(Botao,{principal:true, onClick:salvar}, "Salvar"), e(Botao,{onClick:p.onFecha}, "Cancelar"))));
 }
 function CartaoPix(p){
   var c = p.c, ff = c.ff, pe = p.p, ym = p.ym, todos = ym==="TODOS", t = todos ? null : totaisPersona(ff, pe.id, ym), dv = todos ? null : pixDivisao(ff, pe.id, ym), nf = useState({data:hojeIso(), valor:"", origem:"", contaId:"", forma:"PIX"}), f = nf[0], setF = nf[1];
@@ -228,7 +229,7 @@ function CartaoPix(p){
   var abrirDiv = function(id, tipo, el){ var r = el.getBoundingClientRect(); setAbre([id, tipo, Math.round(r.left), Math.round(r.bottom)].join("|")); };
   var rotAud = {CONFIRMADO:"Confirmado", PENDENTE:"Aguardando", NAOIDENT:"Não identificado", DIVERG:"Divergência"};
   var stDe = function(x){ return x.auditoria==="REJEITADO" ? "NAOIDENT" : (x.auditoria || "PENDENTE"); };
-  var valSel = function(x){ var s = stDe(x); return s==="DIVERG" ? ((x.div && x.div.tipo)==="conta" ? "DIVC" : "DIVV") : s; };
+  var valSel = function(x){ var s = stDe(x); return s==="DIVERG" ? ((x.div && x.div.tipo)==="conta" ? "DIVC" : (x.div && x.div.tipo)==="data" ? "DIVD" : "DIVV") : s; };
   var contaDe = function(id){ return ff.contasBanc.find(function(b){ return b.id===id; }) || {}; };
   var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }), pe2 = !pr && b.personaId && ff.personas.find(function(y){ return y.id===b.personaId; }); return pr ? pr.nome : pe2 ? pe2.nome : "—"; };
   var nomeConta = function(id){ var b = contaDe(id), n = String(b.nome || "").replace(/^Conta\s+/i, ""), lo = n.toLowerCase(), bk = String(b.banco || "").toLowerCase(), k = bk ? lo.lastIndexOf(bk) : -1; if(k>0 && lo.slice(k).trim()===bk) n = n.slice(0, k).replace(/[\s—-]+$/, ""); n = n.replace(/\s*\([^)]*\)\s*$/, "").trim(); return n || "—"; };
@@ -245,9 +246,9 @@ function CartaoPix(p){
       e("td",{className:TC}, br(x.data)), e("td",{className:TC+" font-semibold"}, x.origem||"—"), e("td",{className:TC}, contaDe(x.contaId).banco||"—"), e("td",{className:TC}, nomeConta(x.contaId)), e("td",{className:TC}, prestDe(x.contaId)),
       e("td",{className:TC+(stDe(x)==="NAOIDENT" ? " line-through opacity-60" : "")}, BK(x.valor)),
       e("td",{className:TC}, e("span",{className:"inline-flex items-center justify-center gap-2"},
-        e("select",{value:valSel(x), "aria-label":"Conferência", className:CAMPO+" w-44!", onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
+        e("select",{value:valSel(x), "aria-label":"Conferência", className:CAMPO+" w-40! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else if(v==="DIVD") abrirDiv(x.id, "data", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
           stDe(x)==="PENDENTE" && e("option",{value:"PENDENTE"}, "Aguardando"),
-          e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVV"}, "Divergência de valor"), e("option",{value:"DIVC"}, "Divergência de conta")),
+          e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVV"}, "Divergência de valor"), e("option",{value:"DIVC"}, "Divergência de conta"), e("option",{value:"DIVD"}, "Divergência de data")),
         stDe(x)==="DIVERG" && e("button",{type:"button", onClick:function(ev){ if(ab[0]===x.id) setAbre(""); else abrirDiv(x.id, (x.div && x.div.tipo) || "valor", ev.currentTarget); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, "Ver"))),
       e("td",{className:TC}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
   });
@@ -267,7 +268,7 @@ function CartaoPix(p){
       e("div",null, e(Rotulo,{t:"Conta que recebeu"}), e("select",{value:f.contaId, "aria-label":"Conta que recebeu", className:CAMPO, onChange:function(ev){ setF(Object.assign({}, f, {contaId:ev.target.value})); }}, e("option",{value:""}, "Sem conta definida"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
       e(Botao,{principal:true, desabilitado:!(num(f.valor)>0) || !f.data, onClick:anotar}, "Anotar PIX")),
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, todos ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
-    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:260}, {t:"", w:56}]}, linhas),
+    : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:220}, {t:"", w:56}]}, linhas),
     ab.length>0 && lista.some(function(x){ return x.id===ab[0]; }) && e(DivPix,{key:abre, tipo:ab[1], x:lista.find(function(x){ return x.id===ab[0]; }), c:c, ff:ff, cbs:cbs, left:Math.max(8, Math.min(+ab[2], window.innerWidth-300)), top:Math.max(8, Math.min(+ab[3]+4, window.innerHeight-330)), onFecha:function(){ setAbre(""); }}));
 }
 function AbaFfPix(){

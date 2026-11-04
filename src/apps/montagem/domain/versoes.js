@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.53", data:"2026-11-04", titulo:"PIX revendedoras: bloco de divergência no centro e divergência de data", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"O bloco da divergência abre no centro da tela, menor, e o menu da conferência ficou menor e centralizado. Nova opção Divergência de data, para quando o PIX entrou em outro dia: a data certa passa a valer e a informada antes aparece no bloco."},
+ ]},
  {v:"0.18.52", data:"2026-11-04", titulo:"PIX revendedoras: mini bloco de divergência e colunas sem repetição", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"A divergência abre um mini bloco ao lado do menu, sem abrir outra linha na tabela. O menu diz só Aguardando. As colunas Banco, Conta e Favorecido não repetem mais o banco: Nubank, Marcus, Marcus; C6 Bank, Pix João Paulo, Show Banca. Mais espaço entre a tabela de resumo, o formulário e a tabela de PIX."},
  ]},
