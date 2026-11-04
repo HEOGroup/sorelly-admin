@@ -10,7 +10,7 @@ Revisado em 04/11/2026 (tarde: chegaram os dados de Ana Claudia, Jessica Tobias,
 | Leonardo, Diego Franco | PJ (prestadores) |
 
 ## 2. Tem chave, falta banco e favorecido completo
-Bruna Ribeiro dos Santos (representante; Leticia Adrielle Moroz já tem banco Nubank e chave, falta só o nome completo do favorecido se for diferente); Ana Claudia Adriano (falta só o nome completo do favorecido); Priscila Schmidt (prestadora); Pontual (Marli Modesti); Devmaster (Jaime Machado Rodrigues).
+Bruna Ribeiro dos Santos (já tem Nubank e CNPJ, 04/11/2026); (Leticia Adrielle Moroz já tem banco Nubank e chave, falta só o nome completo do favorecido se for diferente); Ana Claudia Adriano (falta só o nome completo do favorecido); Priscila Schmidt (prestadora); Pontual (Marli Modesti); Devmaster (Jaime Machado Rodrigues).
 
 ## 3. Outras
 | # | Pendência | Quem decide |

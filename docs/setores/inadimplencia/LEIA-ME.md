@@ -28,7 +28,8 @@ Inadimplência (negocia primeiro)
 ```
 - "Retirar kit" deixa de ser etapa da Inadimplência e passa para dentro do Jurídico.
 - A Inadimplência só negocia. Falhou a 1ª negociação, vai direto ao Jurídico.
-- As regras de cada etapa ainda serão alinhadas com o Marcus.
+- Acordo: 1 chance só (Marcus, 04/11/2026). Faltou o pagamento combinado, vai ao Jurídico.
+- As outras regras de cada etapa ainda serão alinhadas com o Marcus.
 
 ## 2. Regras que valem hoje (lidas do código)
 | # | Regra |

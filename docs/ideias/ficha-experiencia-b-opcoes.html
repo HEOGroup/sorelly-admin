@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ficha de experiência: opções do layout B</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0c0c0d;--s1:#141416;--s2:#1b1b1e;--bd:#2a2a2e;--tx:#f4f4f5;--ouro:#d4a84b;--no:#f87171;--ok:#4ade80;--am:#fbbf24;--topo:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+*{box-sizing:border-box;margin:0}
+body{background:var(--bg);color:var(--tx);font:13px/1.4 Inter,system-ui,sans-serif;font-variant-numeric:tabular-nums;padding:16px;max-width:1360px;margin:0 auto}
+h1{font-size:18px;font-weight:600;text-align:center}
+.sub{margin:2px 0 12px;text-align:center}
+.seg{display:flex;justify-content:center;margin-bottom:10px}
+.seg div{display:inline-flex;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.seg button{height:32px;padding:0 16px;background:transparent;color:var(--tx);border:0;font:inherit;cursor:pointer;min-width:150px}
+.seg button+button{border-left:1px solid var(--bd)}
+.seg button.on{background:var(--ouro);color:#111;font-weight:600}
+.nota{border:1px solid var(--bd);background:var(--s1);border-radius:8px;padding:8px 12px;margin:0 auto 12px;max-width:1100px;text-align:center}
+.nota b{color:var(--ouro)}
+.tela{display:none}.tela.on{display:block}
+.bloco{border:1px solid var(--bd);border-radius:8px;background:var(--s1);overflow:hidden}
+.bloco>.t{height:32px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--s2);border-bottom:1px solid var(--bd);font-weight:600;padding:0 10px}
+.bloco.ouro>.t{background:var(--topo);color:#1a1306;border-bottom:0}
+.bloco>.c{padding:8px 10px}.bloco>.c.sem{padding:0}
+table{width:100%;border-collapse:collapse}
+table.ouro{background:var(--topo) top left/100% 30px no-repeat}
+thead th{height:30px;padding:0 10px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;text-align:center;white-space:nowrap;color:var(--tx);background:var(--s2)}
+table.ouro thead th{background:transparent;color:#1a1306}
+td{padding:4px 10px;height:32px;text-align:center;border-bottom:1px solid var(--bd);vertical-align:middle}
+tr:last-child td{border-bottom:0}
+.no{color:var(--no)}.ok{color:var(--ok)}.am{color:var(--am)}
+.btn{height:32px;padding:0 14px;border:0;border-radius:8px;background:var(--ouro);color:#111;font:inherit;font-weight:700;cursor:pointer;min-width:96px}
+.btn.l{background:transparent;color:var(--tx);border:1px solid var(--bd);font-weight:500}
+.ic{width:32px;height:32px;border:1px solid var(--bd);border-radius:8px;background:var(--s1);font:inherit;font-size:15px;cursor:pointer;display:inline-grid;place-items:center;color:var(--tx)}
+.campo{height:32px;border:1px solid var(--bd);border-radius:6px;background:var(--s2);color:var(--tx);padding:0 10px;display:flex;align-items:center;font:inherit;width:100%}
+.rot{font-size:11px;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:2px;text-align:left}
+.foto{border-radius:50%;background:linear-gradient(135deg,#3a3326,#6b5a2c);display:grid;place-items:center;font-weight:700;color:#f5e7be;flex:none;margin:0 auto}
+.lista{display:flex;flex-direction:column;text-align:left}
+.lista div{display:flex;justify-content:space-between;gap:10px;padding:3px 0;border-bottom:1px solid var(--bd)}
+.lista div:last-child{border-bottom:0}
+.lista small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;align-self:center}
+.grupo{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--ouro);text-align:left;margin:8px 0 2px;padding-bottom:2px;border-bottom:1px solid var(--ouro)}
+.barra{height:8px;border-radius:99px;background:var(--s2);overflow:hidden}.barra i{display:block;height:100%;background:var(--ouro)}
+.col{display:flex;flex-direction:column;gap:8px}
+.abas{display:flex;border-bottom:1px solid var(--bd)}
+.abas button{height:36px;padding:0 16px;background:transparent;border:0;border-bottom:2px solid transparent;color:var(--tx);font:inherit;cursor:pointer;margin-bottom:-1px}
+.abas button.on{border-bottom-color:var(--ouro);font-weight:600}
+.painel{display:none}.painel.on{display:block}
+.novo{display:grid;grid-template-columns:minmax(0,2fr) 140px minmax(0,3fr) 96px;gap:8px;align-items:end}
+.pill{display:inline-block;border:1px solid var(--ok);color:var(--ok);border-radius:99px;padding:2px 12px;font-weight:600}
+.anel{width:120px;height:120px;border-radius:50%;background:conic-gradient(var(--ouro) 0 89%,var(--s2) 89% 100%);display:grid;place-items:center;margin:0 auto}
+.anel div{width:92px;height:92px;border-radius:50%;background:var(--s1);display:grid;place-items:center;font-size:20px;font-weight:700}
+.cartoes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.cartao{border:1px solid var(--bd);background:var(--s2);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.cartao b{font-size:13px}.cartao .n{font-size:20px;font-weight:700}
+</style>
+</head>
+<body>
+<h1>Ficha de experiência: opções do layout B</h1>
+<p class="sub">Todas com a <b>foto grande</b> e as informações <b>organizadas em 3 grupos</b>: Contrato · Avaliações · Presença. Graziella de Antoni dos Anjos, dados de exemplo.</p>
+<div class="nota"><b>Regra da barra dourada:</b> em cada opção ela aparece <b>uma OU outra</b> (título dos blocos ou topo das tabelas). <b>Nova ocorrência</b> fica sempre no topo da área de trabalho. A foto é só um círculo de exemplo.</div>
+<div class="seg"><div>
+<button class="on" onclick="ir(0,this)">B1 · Abas</button>
+<button onclick="ir(1,this)">B2 · Tudo visível</button>
+<button onclick="ir(2,this)">B3 · Cartão no topo</button>
+<button onclick="ir(3,this)">B4 · Cartões de nota</button>
+</div></div>
+
+<!-- ============ B1 ============ -->
+<div class="tela on">
+<div class="nota">Foto grande à esquerda com as informações em <b>3 grupos</b>. À direita, <b>Nova ocorrência no topo</b> e abas (uma por vez, sem rolar). Dourado só no <b>título dos blocos</b>.</div>
+<div style="display:grid;grid-template-columns:290px minmax(0,1fr);gap:8px;align-items:start">
+ <div class="bloco ouro"><div class="t" style="justify-content:center">Colaboradora</div><div class="c" style="text-align:center">
+  <div class="foto" style="width:220px;height:220px;font-size:60px;margin-top:4px">GA</div>
+  <b style="display:block;margin-top:8px">Graziella de Antoni dos Anjos</b>Assistente Administrativo · Cadastro de peças
+  <div style="margin-top:6px"><span class="pill">89 / 100 · Efetivar</span></div>
+  <div class="grupo">Contrato</div><div class="lista"><div><small>Admissão</small><b>22/09/2026</b></div><div><small>Dias de empresa</small><b>42</b></div><div><small>Plano</small><b>15 + 30 dias</b></div><div><small>Entrada</small><b>08:00</b></div><div><small>Escala</small><b>Seg a sáb</b></div></div>
+  <div class="grupo">Avaliações</div><div class="lista"><div><small>1ª avaliação</small><b>07/10/2026</b></div><div><small>2ª avaliação</small><b>06/11/2026</b></div><div><small>Efetivação</small><b>07/11/2026</b></div><div><small>Gestor</small><b>Rayssa</b></div></div>
+  <div class="grupo">Presença no período</div><div class="lista"><div><small>Faltas</small><b>0 · 1 com aviso</b></div><div><small>Atestados</small><b>1</b></div><div><small>Atrasos</small><b>1</b></div><div><small>Advertências</small><b>0</b></div></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn l">Imprimir</button><button class="btn l">Voltar</button></div></div></div>
+ <div class="col">
+  <div class="bloco ouro"><div class="t">Nova ocorrência</div><div class="c"><div class="novo"><div><span class="rot">Tipo</span><span class="campo">Escolha o tipo</span></div><div><span class="rot">Data</span><span class="campo">04/11/2026</span></div><div><span class="rot">Descrição</span><span class="campo">sem diagnóstico nem CID</span></div><button class="btn">Lançar</button></div></div></div>
+  <div class="bloco"><div class="abas"><button class="on" onclick="aba(this,'a1')">Pontuação</button><button onclick="aba(this,'a2')">Ocorrências (3) · a confirmar (1)</button><button onclick="aba(this,'a3')">Parecer e decisão</button></div>
+   <div class="painel on" id="a1"><div class="c"><div style="display:grid;grid-template-columns:150px minmax(0,1fr) 70px 130px;gap:8px 12px;align-items:center;text-align:left">
+     <span>Assiduidade</span><div class="barra"><i style="width:95%"></i></div><b class="ok">19 / 20</b><span>Automático</span>
+     <span>Pontualidade</span><div class="barra"><i style="width:73%"></i></div><b class="am">11 / 15</b><span>Automático</span>
+     <span>Comportamento</span><div class="barra"><i style="width:100%"></i></div><b class="ok">20 / 20</b><span>Automático</span>
+     <span>Qualidade</span><div class="barra"><i style="width:90%"></i></div><b class="ok">18 / 20</b><span>Automático</span>
+     <span>Produtividade</span><div class="barra"><i style="width:80%"></i></div><b>12 / 15</b><span class="campo" style="width:120px;justify-content:center">Nota 8</span>
+     <span>Adaptação</span><div class="barra"><i style="width:90%"></i></div><b>9 / 10</b><span class="campo" style="width:120px;justify-content:center">Nota 9</span></div>
+     <p class="ok" style="margin-top:12px;text-align:center;font-weight:700">89 / 100 · Recomenda efetivar</p></div></div>
+   <div class="painel" id="a2"><div class="c sem"><table><thead><tr><th style="width:100px">Data</th><th>Ocorrência</th><th style="width:120px">Origem</th><th style="width:70px">Pontos</th><th style="width:100px">Ações</th></tr></thead><tbody>
+    <tr style="outline:1px dashed var(--am)"><td>20/10/2026</td><td>Falta com aviso, sem abono <span class="am">(a confirmar)</span></td><td>Presença diária</td><td class="no">−4</td><td><button class="ic ok">✓</button> <button class="ic no">✕</button></td></tr>
+    <tr><td>12/10/2026</td><td>Erro de execução (leve) · etiqueta trocada</td><td>RH</td><td class="no">−2</td><td><button class="ic no">🗑</button></td></tr>
+    <tr><td>06/10/2026</td><td>Atraso acima de 15 minutos</td><td>Presença diária</td><td class="no">−4</td><td><button class="ic no">🗑</button></td></tr>
+    <tr><td>05/10/2026</td><td>Falta com atestado</td><td>Presença diária</td><td class="no">−1</td><td><button class="ic no">🗑</button></td></tr></tbody></table></div></div>
+   <div class="painel" id="a3"><div class="c"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 12px"><div><span class="rot">Decisão</span><span class="campo">Efetivar</span></div><div><span class="rot">Data da avaliação</span><span class="campo">06/11/2026</span></div></div><span class="rot" style="margin-top:6px">Parecer</span><span class="campo" style="height:90px;align-items:flex-start;padding-top:6px;text-align:left">Boa evolução. Precisa melhorar a pontualidade.</span><p style="margin-top:6px;text-align:center">Uso interno: a colaboradora não vê.</p></div></div>
+  </div>
+ </div>
+</div></div>
+
+<!-- ============ B2 ============ -->
+<div class="tela">
+<div class="nota">Mesma foto grande e os 3 grupos. À direita <b>tudo visível sem abas</b>: Nova ocorrência no topo, Pontuação e Ocorrências lado a lado, Parecer embaixo. Dourado só no <b>topo das tabelas</b>; títulos dos blocos escuros.</div>
+<div style="display:grid;grid-template-columns:290px minmax(0,1fr);gap:8px;align-items:start">
+ <div class="bloco"><div class="t" style="justify-content:center">Colaboradora</div><div class="c" style="text-align:center">
+  <div class="foto" style="width:220px;height:220px;font-size:60px;margin-top:4px">GA</div>
+  <b style="display:block;margin-top:8px">Graziella de Antoni dos Anjos</b>Assistente Administrativo · Cadastro de peças
+  <div class="grupo">Contrato</div><div class="lista"><div><small>Admissão</small><b>22/09/2026</b></div><div><small>Dias de empresa</small><b>42</b></div><div><small>Plano</small><b>15 + 30 dias</b></div><div><small>Entrada · escala</small><b>08:00 · seg a sáb</b></div></div>
+  <div class="grupo">Avaliações</div><div class="lista"><div><small>1ª avaliação</small><b>07/10/2026</b></div><div><small>2ª avaliação</small><b>06/11/2026</b></div><div><small>Efetivação</small><b>07/11/2026</b></div><div><small>Gestor</small><b>Rayssa</b></div></div>
+  <div class="grupo">Presença no período</div><div class="lista"><div><small>Faltas</small><b>0 · 1 com aviso</b></div><div><small>Atestados</small><b>1</b></div><div><small>Atrasos</small><b>1</b></div><div><small>Advertências</small><b>0</b></div></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn l">Imprimir</button><button class="btn l">Voltar</button></div></div></div>
+ <div class="col">
+  <div class="bloco"><div class="t">Nova ocorrência</div><div class="c"><div class="novo"><div><span class="rot">Tipo</span><span class="campo">Escolha o tipo</span></div><div><span class="rot">Data</span><span class="campo">04/11/2026</span></div><div><span class="rot">Descrição</span><span class="campo">sem diagnóstico nem CID</span></div><button class="btn">Lançar</button></div></div></div>
+  <div style="display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:8px;align-items:start">
+   <div class="bloco"><div class="t"><span>Pontuação</span><b class="ok">89 / 100</b></div><div class="c sem"><table class="ouro"><thead><tr><th>Categoria</th><th style="width:80px">Pontos</th><th style="width:90px">Nota</th></tr></thead><tbody><tr><td>Assiduidade</td><td class="ok">19 / 20</td><td>Auto</td></tr><tr><td>Pontualidade</td><td class="am">11 / 15</td><td>Auto</td></tr><tr><td>Comportamento</td><td class="ok">20 / 20</td><td>Auto</td></tr><tr><td>Qualidade</td><td class="ok">18 / 20</td><td>Auto</td></tr><tr><td>Produtividade</td><td>12 / 15</td><td>8</td></tr><tr><td>Adaptação</td><td>9 / 10</td><td>9</td></tr></tbody></table></div></div>
+   <div class="col">
+    <div class="bloco"><div class="t"><span>A confirmar da Presença</span><button class="btn" style="height:24px;min-width:0;padding:0 10px">Confirmar todas (1)</button></div><div class="c sem"><table class="ouro"><thead><tr><th style="width:95px">Data</th><th>Ocorrência</th><th style="width:55px">Pts</th><th style="width:90px">Ações</th></tr></thead><tbody><tr><td>20/10/2026</td><td>Falta com aviso, sem abono</td><td class="no">−4</td><td><button class="ic ok">✓</button> <button class="ic no">✕</button></td></tr></tbody></table></div></div>
+    <div class="bloco"><div class="t"><span>Ocorrências</span><span>3 no período</span></div><div class="c sem"><table class="ouro"><thead><tr><th style="width:95px">Data</th><th>Ocorrência</th><th style="width:55px">Pts</th><th style="width:50px"></th></tr></thead><tbody><tr><td>12/10/2026</td><td>Erro de execução (leve)</td><td class="no">−2</td><td><button class="ic no">🗑</button></td></tr><tr><td>06/10/2026</td><td>Atraso acima de 15 min</td><td class="no">−4</td><td><button class="ic no">🗑</button></td></tr><tr><td>05/10/2026</td><td>Falta com atestado</td><td class="no">−1</td><td><button class="ic no">🗑</button></td></tr></tbody></table></div></div>
+   </div>
+  </div>
+  <div class="bloco"><div class="t"><span>Parecer e decisão</span><span>Uso interno: a colaboradora não vê</span></div><div class="c"><div style="display:grid;grid-template-columns:200px 160px minmax(0,1fr);gap:8px;align-items:start"><div><span class="rot">Decisão</span><span class="campo">Efetivar</span></div><div><span class="rot">Data</span><span class="campo">06/11/2026</span></div><div><span class="rot">Parecer</span><span class="campo" style="height:52px;align-items:flex-start;padding-top:6px;text-align:left">Boa evolução. Precisa melhorar a pontualidade.</span></div></div></div></div>
+ </div>
+</div></div>
+
+<!-- ============ B3 ============ -->
+<div class="tela">
+<div class="nota">A foto grande vira um <b>cartão de identidade no topo</b>, com a nota e as ações. Logo abaixo, <b>Nova ocorrência em linha única</b>. Depois 3 colunas de trabalho. Dourado só no <b>título dos blocos</b>.</div>
+<div class="bloco ouro" style="margin-bottom:8px"><div class="t">Colaboradora</div><div class="c"><div style="display:grid;grid-template-columns:200px minmax(0,1fr) 220px;gap:16px;align-items:center">
+ <div class="foto" style="width:190px;height:190px;font-size:54px">GA</div>
+ <div><b style="font-size:13px">Graziella de Antoni dos Anjos</b> · Assistente Administrativo · Cadastro de peças
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0 24px;margin-top:4px">
+   <div><div class="grupo">Contrato</div><div class="lista"><div><small>Admissão</small><b>22/09/2026</b></div><div><small>Dias de empresa</small><b>42</b></div><div><small>Plano</small><b>15 + 30 dias</b></div><div><small>Entrada · escala</small><b>08:00 · seg a sáb</b></div></div></div>
+   <div><div class="grupo">Avaliações</div><div class="lista"><div><small>1ª avaliação</small><b>07/10/2026</b></div><div><small>2ª avaliação</small><b>06/11/2026</b></div><div><small>Efetivação</small><b>07/11/2026</b></div><div><small>Gestor</small><b>Rayssa</b></div></div></div>
+   <div><div class="grupo">Presença no período</div><div class="lista"><div><small>Faltas</small><b>0 · 1 com aviso</b></div><div><small>Atestados</small><b>1</b></div><div><small>Atrasos</small><b>1</b></div><div><small>Advertências</small><b>0</b></div></div></div></div></div>
+ <div style="text-align:center"><div class="anel"><div>89</div></div><span class="pill" style="margin-top:8px">Recomenda efetivar</span><div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn l" style="min-width:90px">Imprimir</button><button class="btn l" style="min-width:90px">Voltar</button></div></div>
+</div></div></div>
+<div class="bloco ouro" style="margin-bottom:8px"><div class="t">Nova ocorrência</div><div class="c"><div class="novo"><div><span class="rot">Tipo</span><span class="campo">Escolha o tipo</span></div><div><span class="rot">Data</span><span class="campo">04/11/2026</span></div><div><span class="rot">Descrição</span><span class="campo">sem diagnóstico nem CID</span></div><button class="btn">Lançar</button></div></div></div>
+<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start">
+ <div class="bloco ouro"><div class="t">Pontuação</div><div class="c" style="display:grid;grid-template-columns:1fr 60px;gap:4px 10px;text-align:left"><span>Assiduidade</span><b class="ok" style="text-align:right">19/20</b><div class="barra" style="grid-column:1/3"><i style="width:95%"></i></div><span>Pontualidade</span><b class="am" style="text-align:right">11/15</b><div class="barra" style="grid-column:1/3"><i style="width:73%"></i></div><span>Comportamento</span><b class="ok" style="text-align:right">20/20</b><div class="barra" style="grid-column:1/3"><i style="width:100%"></i></div><span>Qualidade</span><b class="ok" style="text-align:right">18/20</b><div class="barra" style="grid-column:1/3"><i style="width:90%"></i></div><span>Produtividade · nota 8</span><b style="text-align:right">12/15</b><div class="barra" style="grid-column:1/3"><i style="width:80%"></i></div><span>Adaptação · nota 9</span><b style="text-align:right">9/10</b><div class="barra" style="grid-column:1/3"><i style="width:90%"></i></div></div></div>
+ <div class="col">
+  <div class="bloco ouro"><div class="t"><span>A confirmar da Presença</span><span>1</span></div><div class="c"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;text-align:left"><div><b>Falta com aviso, sem abono</b><br><small>20/10/2026 · −4 pontos</small></div><div><button class="ic ok">✓</button> <button class="ic no">✕</button></div></div></div></div>
+  <div class="bloco ouro"><div class="t"><span>Ocorrências</span><span>3 no período</span></div><div class="c"><div class="lista">
+   <div><span><b>Erro de execução (leve)</b><br><small>12/10/2026 · RH</small></span><span><b class="no">−2</b> <button class="ic no">🗑</button></span></div>
+   <div><span><b>Atraso acima de 15 min</b><br><small>06/10/2026 · Presença</small></span><span><b class="no">−4</b> <button class="ic no">🗑</button></span></div>
+   <div><span><b>Falta com atestado</b><br><small>05/10/2026 · Presença</small></span><span><b class="no">−1</b> <button class="ic no">🗑</button></span></div></div></div></div>
+ </div>
+ <div class="bloco ouro"><div class="t">Parecer e decisão</div><div class="c"><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px 8px"><div><span class="rot">Decisão</span><span class="campo">Efetivar</span></div><div><span class="rot">Data</span><span class="campo">06/11/2026</span></div></div><span class="rot" style="margin-top:6px">Parecer</span><span class="campo" style="height:120px;align-items:flex-start;padding-top:6px;text-align:left">Boa evolução. Precisa melhorar a pontualidade.</span><p style="margin-top:6px;text-align:center">Uso interno: a colaboradora não vê.</p></div></div>
+</div></div>
+
+<!-- ============ B4 ============ -->
+<div class="tela">
+<div class="nota">Foto grande com o <b>anel da nota</b> à esquerda. À direita, <b>Nova ocorrência no topo</b>, a nota de cada categoria em <b>cartões</b> (com o seletor de nota do gestor dentro do cartão) e a tabela de ocorrências. Dourado só no <b>topo da tabela</b>.</div>
+<div style="display:grid;grid-template-columns:290px minmax(0,1fr);gap:8px;align-items:start">
+ <div class="bloco"><div class="t" style="justify-content:center">Colaboradora</div><div class="c" style="text-align:center">
+  <div class="foto" style="width:220px;height:220px;font-size:60px;margin-top:4px">GA</div>
+  <b style="display:block;margin-top:8px">Graziella de Antoni dos Anjos</b>Assistente Administrativo · Cadastro de peças
+  <div class="anel" style="margin-top:10px"><div>89</div></div><div style="margin-top:6px"><span class="pill">Recomenda efetivar</span></div>
+  <div class="grupo">Contrato</div><div class="lista"><div><small>Admissão</small><b>22/09/2026</b></div><div><small>Dias de empresa</small><b>42</b></div><div><small>Plano</small><b>15 + 30 dias</b></div><div><small>Entrada · escala</small><b>08:00 · seg a sáb</b></div></div>
+  <div class="grupo">Avaliações</div><div class="lista"><div><small>1ª avaliação</small><b>07/10/2026</b></div><div><small>2ª avaliação</small><b>06/11/2026</b></div><div><small>Efetivação</small><b>07/11/2026</b></div><div><small>Gestor</small><b>Rayssa</b></div></div>
+  <div class="grupo">Presença no período</div><div class="lista"><div><small>Faltas</small><b>0 · 1 com aviso</b></div><div><small>Atestados</small><b>1</b></div><div><small>Atrasos</small><b>1</b></div><div><small>Advertências</small><b>0</b></div></div>
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:10px"><button class="btn l">Imprimir</button><button class="btn l">Voltar</button></div></div></div>
+ <div class="col">
+  <div class="bloco"><div class="t">Nova ocorrência</div><div class="c"><div class="novo"><div><span class="rot">Tipo</span><span class="campo">Escolha o tipo</span></div><div><span class="rot">Data</span><span class="campo">04/11/2026</span></div><div><span class="rot">Descrição</span><span class="campo">sem diagnóstico nem CID</span></div><button class="btn">Lançar</button></div></div></div>
+  <div class="bloco"><div class="t"><span>Pontuação por categoria</span><span>Dependem de ocorrências, exceto as 2 notas do gestor</span></div><div class="c"><div class="cartoes">
+   <div class="cartao"><b>Assiduidade</b><span class="n ok">19 <small>/ 20</small></span><div class="barra"><i style="width:95%"></i></div><small>−1 · 1 atestado</small></div>
+   <div class="cartao"><b>Pontualidade</b><span class="n am">11 <small>/ 15</small></span><div class="barra"><i style="width:73%"></i></div><small>−4 · 1 atraso</small></div>
+   <div class="cartao"><b>Comportamento</b><span class="n ok">20 <small>/ 20</small></span><div class="barra"><i style="width:100%"></i></div><small>Sem ocorrências</small></div>
+   <div class="cartao"><b>Qualidade</b><span class="n ok">18 <small>/ 20</small></span><div class="barra"><i style="width:90%"></i></div><small>−2 · 1 erro leve</small></div>
+   <div class="cartao"><b>Produtividade</b><span class="n">12 <small>/ 15</small></span><div class="barra"><i style="width:80%"></i></div><span class="campo">Nota do gestor: 8</span></div>
+   <div class="cartao"><b>Adaptação</b><span class="n">9 <small>/ 10</small></span><div class="barra"><i style="width:90%"></i></div><span class="campo">Nota do gestor: 9</span></div></div></div></div>
+  <div class="bloco"><div class="t"><span>Ocorrências</span><span><button class="btn" style="height:24px;min-width:0;padding:0 10px">Confirmar todas (1)</button></span></div><div class="c sem"><table class="ouro"><thead><tr><th style="width:100px">Data</th><th>Ocorrência</th><th style="width:120px">Origem</th><th style="width:70px">Pontos</th><th style="width:100px">Ações</th></tr></thead><tbody>
+   <tr style="outline:1px dashed var(--am)"><td>20/10/2026</td><td>Falta com aviso, sem abono <span class="am">(a confirmar)</span></td><td>Presença diária</td><td class="no">−4</td><td><button class="ic ok">✓</button> <button class="ic no">✕</button></td></tr>
+   <tr><td>12/10/2026</td><td>Erro de execução (leve)</td><td>RH</td><td class="no">−2</td><td><button class="ic no">🗑</button></td></tr>
+   <tr><td>06/10/2026</td><td>Atraso acima de 15 minutos</td><td>Presença diária</td><td class="no">−4</td><td><button class="ic no">🗑</button></td></tr>
+   <tr><td>05/10/2026</td><td>Falta com atestado</td><td>Presença diária</td><td class="no">−1</td><td><button class="ic no">🗑</button></td></tr></tbody></table></div></div>
+  <div class="bloco"><div class="t"><span>Parecer e decisão</span><span>Uso interno: a colaboradora não vê</span></div><div class="c"><div style="display:grid;grid-template-columns:200px 160px minmax(0,1fr);gap:8px;align-items:start"><div><span class="rot">Decisão</span><span class="campo">Efetivar</span></div><div><span class="rot">Data</span><span class="campo">06/11/2026</span></div><div><span class="rot">Parecer</span><span class="campo" style="height:52px;align-items:flex-start;padding-top:6px;text-align:left">Boa evolução. Precisa melhorar a pontualidade.</span></div></div></div></div>
+ </div>
+</div></div>
+
+<script>
+function ir(i,b){document.querySelectorAll('.tela').forEach(function(t,k){t.classList.toggle('on',k===i)});document.querySelectorAll('.seg button').forEach(function(x){x.classList.toggle('on',x===b)})}
+function aba(b,id){document.querySelectorAll('.abas button').forEach(function(x){x.classList.toggle('on',x===b)});document.querySelectorAll('.painel').forEach(function(p){p.classList.toggle('on',p.id===id)})}
+</script>
+</body>
+</html>

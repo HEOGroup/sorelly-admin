@@ -7,5 +7,5 @@
 | 3 | Juros de 1% ao mês da nota promissória: entram na tela ou só no jurídico? | Marcus |
 | 4 | Quem faz cada etapa (cobrança, retirar kit, executar nota). | Marcus |
 | 6 | Mudar a tela para o fluxo novo (LEIA-ME, seção 1b): tirar "Retirar kit" e "Executar nota" da Inadimplência e mandar ao Jurídico quando não houver acordo ou o acordo falhar. Só depois de alinhar as regras. | Marcus |
-| 7 | Alinhar as regras: prazo da negociação, quantas chances, quem negocia, quando passa ao Jurídico. | Marcus |
+| 7 | Alinhar as regras: prazo da negociação (chances: 1 só, definido), quem negocia, quando passa ao Jurídico. | Marcus |
 | 5 | Ligar com a ficha da devedora e a "Dívida antiga" de Contas a receber. | Marcus |
