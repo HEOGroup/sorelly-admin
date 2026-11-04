@@ -228,7 +228,8 @@ function CartaoPix(p){
         e("td",{className:TD}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))); }))))));
 }
 function AbaFfPix(){
-  var c = useFF(), ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ff = c.ff;
+  var c = useFF(); c = Object.assign({}, c, {pode:c.pode || temAutorizacao("ff_pix", c.s.usuario)});   // quem tem só a autorização ff_pix abre esta tela e nenhuma outra da família
+  var ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ff = c.ff;
   return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:"PIX das revendedoras", sub:"O que cada pessoa recebeu das revendedoras no mês, contra a meta. O PIX nasce \"aguardando\"; confirme quando conferir no extrato. PIX que cai em conta de prestador vira repasse sozinho."}),
     e("div",null, e(MesSel,{ym:ym, set:setYm})),

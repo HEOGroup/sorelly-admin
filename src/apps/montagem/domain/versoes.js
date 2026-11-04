@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.46", data:"2026-11-04", titulo:"Ana Beatriz abre o PIX dos sócios", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix (Ver e conferir os PIX das revendedoras dos sócios): abre só a tela PIX revendedoras do Financeiro familiar, sem as outras telas da família. Liberada para a Ana Beatriz (pedido dela nos Chamados, autorizado pelo Marcus). Aparece o atalho PIX dos sócios no menu Financeiro. A conta dela continua só de visualização: ela vê, mas não grava."},
+ ]},
  {v:"0.18.45", data:"2026-11-03", titulo:"RH muda o setor direto e pedidos de bruto ligados à chegada no banho", itens:[
   {tipo:"novo", area:"RH", txt:"Na ficha do colaborador, o RH escolhe o Setor direto, sem pedir. Pedido da Maria Claudia."},
   {tipo:"melhoria", area:"Cadastro de peças", txt:"Pedidos de bruto: ao preencher a data Chegou na Pontual ou Chegou na Ellos, o pedido passa sozinho para Chegou no banho (Aguardando banho) com essa data. A contagem de dias da etapa Banho começa na data da chegada, não no dia em que o status foi atualizado. Pedido da Rayssa."},
