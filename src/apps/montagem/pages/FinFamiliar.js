@@ -254,23 +254,7 @@ function CartaoPix(p){
       e("td",{className:TC}, iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
   });
   fecha();
-  // 3 blocos de resumo no topo do cartão (Marcus, 04/11/2026): Total, Enviado por favorecido e Por dia (por mês em "Todos os meses"). Mês que já passou não mostra meta.
-  var vl = lista.filter(function(x){ return stDe(x)!=="NAOIDENT"; }), recL = r2(vl.reduce(function(s, x){ return s+x.valor; }, 0)), atual = !todos && ym===hojeYm();
-  var pct = function(v, base){ return base>0 ? (v/base*100).toFixed(1).replace(".", ",")+"%" : ""; };
-  var porFav = {}, porDia = {}, nDia = {};
-  vl.forEach(function(x){ var k = prestDe(x.contaId), d = todos ? x.data.slice(0,7) : x.data; porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
-  var linTotal = todos ? [{r:"Recebido", v:BK(recL), p:vl.length+" PIX", total:true}]
-    : [{r:"Recebido", v:BK(t.pix.recebido), p:vl.length+" PIX", total:true}, {r:"Direto", v:BK(dv.direto), p:pct(dv.direto, t.pix.recebido)}, {r:"Prestadores", v:BK(dv.prestadores), p:pct(dv.prestadores, t.pix.recebido)}]
-      .concat(atual && t.pix.meta>0 ? [{r:"Meta do mês", v:BK(t.pix.meta), p:""}, {r:"Falta", v:BK(t.pix.restante), p:Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta"}] : []);
-  var linFav = Object.keys(porFav).sort(function(a, b){ return porFav[b]-porFav[a]; }).map(function(k){ return {r:k==="—" ? "Sem favorecido" : k, v:BK(porFav[k]), p:pct(porFav[k], recL)}; });
-  var linDia = Object.keys(porDia).sort().reverse().map(function(d){ return {r:todos ? nomeMes(d) : br(d), v:BK(porDia[d]), p:nDia[d]+(nDia[d]>1 ? " PIX" : " PIX")}; });
   return e(Bloco,{ouro:true, t:pe.nome, dir:e("span",{className:"tabular-nums"}, (todos ? "Todos os meses" : nomeMes(ym))+" · "+BK(todos ? recTodos : t.pix.recebido))},
-    e("div",{className:"grid grid-cols-1 items-start gap-3 py-3 md:grid-cols-3"},
-      e(BlocoResumo,{t:todos ? "Total de todos os meses" : "Total do mês", cab:["Item", "Valor", "Parte"], linhas:linTotal}),
-      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:"Enviado por favorecido", cab:["Favorecido", "Enviado", "Do total"], linhas:linFav.length ? linFav : [{r:"Nenhum PIX", v:BK(0), p:""}]})),
-      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:todos ? "Por mês" : "Por dia", cab:[todos ? "Mês" : "Dia", "Total", "PIX"], linhas:linDia.length ? linDia : [{r:"Nenhum PIX", v:BK(0), p:""}]}))),
-    atual && e("div",{className:"flex items-center justify-center gap-2 pb-3 text-[13px]"}, "Meta do mês (R$):",
-      e("input",{key:t.pix.meta, defaultValue:t.pix.meta ? fmtN(t.pix.meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==t.pix.meta) acao(c, "pix_meta", {personaId:pe.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})),
     e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 border-t border-border pb-3 pt-3 md:grid-cols-[130px_120px_minmax(0,1fr)_minmax(0,1fr)_120px]"},
       e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
       e("div",null, e(Rotulo,{t:"Valor (R$)"}), e("input",{value:f.valor, "aria-label":"Valor", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setF(Object.assign({}, f, {valor:ev.target.value.replace(/[^\d,.]/g,"")})); }, onKeyDown:function(ev){ if(ev.key==="Enter") anotar(); }})),
@@ -280,6 +264,32 @@ function CartaoPix(p){
     lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, todos ? "Nenhum PIX lançado." : "Nenhum PIX neste mês.")
     : e(TabelaP,{minW:1100, cols:[{t:"Data", w:90}, {t:"Revendedora"}, {t:"Banco", w:120}, {t:"Conta"}, {t:"Favorecido", w:170}, {t:"Valor", w:120}, {t:"Conferência", w:220}, {t:"", w:56}]}, linhas),
     ab.length>0 && lista.some(function(x){ return x.id===ab[0]; }) && e(DivPix,{key:abre, tipo:ab[1], x:lista.find(function(x){ return x.id===ab[0]; }), c:c, ff:ff, cbs:cbs, left:Math.max(8, Math.min(+ab[2], window.innerWidth-300)), top:Math.max(8, Math.min(+ab[3]+4, window.innerHeight-330)), onFecha:function(){ setAbre(""); }}));
+}
+// RESUMO NO TOPO DA TELA (Marcus, 04/11/2026): 3 blocos de todos os sócios juntos; filtrando um sócio, os blocos são só dele. Mês que já passou não mostra meta.
+function ResumoPix(p){
+  var c = p.c, ff = c.ff, ym = p.ym, todos = ym==="TODOS", pes = p.pes, atual = !todos && ym===hojeYm(), ids = {};
+  pes.forEach(function(pe){ ids[pe.id] = 1; });
+  var contaDe = function(id){ return ff.contasBanc.find(function(b){ return b.id===id; }) || {}; };
+  var prestDe = function(id){ var b = contaDe(id), pr = b.prestadorId && ff.prest.find(function(y){ return y.id===b.prestadorId; }), pe2 = !pr && b.personaId && ff.personas.find(function(y){ return y.id===b.personaId; }); return pr ? pr.nome : pe2 ? pe2.nome : "—"; };
+  var vl = ff.pix.filter(function(x){ return ids[x.personaId] && (todos || x.data.slice(0,7)===ym) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; });
+  var recL = r2(vl.reduce(function(s, x){ return s+x.valor; }, 0)), rec = recL, dir = 0, pres = 0, meta = 0, um = pes.length===1 ? pes[0] : null;
+  if(!todos){ rec = 0; pes.forEach(function(pe){ var t = totaisPersona(ff, pe.id, ym), dv = pixDivisao(ff, pe.id, ym); rec += t.pix.recebido; dir += dv.direto; pres += dv.prestadores; meta += t.pix.meta; }); rec = r2(rec); dir = r2(dir); pres = r2(pres); }
+  var pct = function(v, base){ return base>0 ? (v/base*100).toFixed(1).replace(".", ",")+"%" : ""; };
+  var porFav = {}, porDia = {}, nDia = {};
+  vl.forEach(function(x){ var k = prestDe(x.contaId), d = todos ? x.data.slice(0,7) : x.data; porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
+  var linTotal = todos ? [{r:"Recebido", v:BK(recL), p:vl.length+" PIX", total:true}]
+    : [{r:"Recebido", v:BK(rec), p:vl.length+" PIX", total:true}, {r:"Direto", v:BK(dir), p:pct(dir, rec)}, {r:"Prestadores", v:BK(pres), p:pct(pres, rec)}]
+      .concat(atual && meta>0 ? [{r:"Meta do mês", v:BK(meta), p:""}, {r:"Falta", v:BK(Math.max(0, r2(meta-rec))), p:Math.round(rec/meta*100)+"% da meta"}] : []);
+  var linFav = Object.keys(porFav).sort(function(a, b){ return porFav[b]-porFav[a]; }).map(function(k){ return {r:k==="—" ? "Sem favorecido" : k, v:BK(porFav[k]), p:pct(porFav[k], recL)}; });
+  var linDia = Object.keys(porDia).sort().reverse().map(function(d){ return {r:todos ? nomeMes(d) : br(d), v:BK(porDia[d]), p:nDia[d]+" PIX"}; });
+  var quem = um ? " · "+um.nome : " · todos os sócios", vazio = [{r:"Nenhum PIX", v:BK(0), p:""}];
+  return e("div",null,
+    e("div",{className:"grid grid-cols-1 items-start gap-3 pb-3 md:grid-cols-3"},
+      e(BlocoResumo,{t:(todos ? "Total de todos os meses" : "Total do mês")+quem, cab:["Item", "Valor", "Parte"], linhas:linTotal}),
+      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:"Enviado por favorecido"+quem, cab:["Favorecido", "Enviado", "Do total"], linhas:linFav.length ? linFav : vazio})),
+      e("div",{className:"max-h-[340px] overflow-y-auto rounded-lg"}, e(BlocoResumo,{t:(todos ? "Por mês" : "Por dia")+quem, cab:[todos ? "Mês" : "Dia", "Total", "PIX"], linhas:linDia.length ? linDia : vazio}))),
+    um && atual && e("div",{className:"flex items-center justify-center gap-2 pb-3 text-[13px]"}, "Meta do mês de "+um.nome+" (R$):",
+      e("input",{key:meta, defaultValue:meta ? fmtN(meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==meta) acao(c, "pix_meta", {personaId:um.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})));
 }
 function AbaFfPix(){
   var c = useFF(); c = Object.assign({}, c, {pode:c.pode || temAutorizacao("ff_pix", c.s.usuario)});   // quem tem só a autorização ff_pix abre esta tela e nenhuma outra da família
@@ -294,6 +304,7 @@ function AbaFfPix(){
       e("select",{value:ym, "aria-label":"Mês", className:CAMPO+" w-44!", onChange:function(ev){ setYm(ev.target.value); }}, e("option",{value:"TODOS"}, "Todos os meses"), mesesOp.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })),
       e("select",{value:porDia ? "1" : "", "aria-label":"Total por dia", className:CAMPO+" w-48!", onChange:function(ev){ setPorDia(ev.target.value==="1"); }}, e("option",{value:""}, "Sem total por dia"), e("option",{value:"1"}, "Com total por dia")),
       e("select",{value:quem, "aria-label":"Sócio", className:CAMPO+" w-40!", onChange:function(ev){ setQuem(ev.target.value); }}, e("option",{value:""}, "Todos os sócios"), pessoas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); }))),
+    e(ResumoPix,{c:c, ym:ym, pes:pessoas.filter(function(p){ return !quem || p.id===quem; })}),
     pessoas.filter(function(p){ return !quem || p.id===quem; }).map(function(p){ return e(CartaoPix,{key:p.id+ym+porDia, c:c, p:p, ym:ym, porDia:porDia}); })));
 }
 

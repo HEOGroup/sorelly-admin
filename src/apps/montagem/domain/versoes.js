@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.55", data:"2026-11-04", titulo:"PIX revendedoras: blocos do topo somam todos os sócios", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Os 3 blocos (Total, Enviado por favorecido e Por dia) ficam uma vez só no topo da tela. Com Todos os sócios, somam todos; ao filtrar um sócio, mostram só ele. A meta aparece só no mês atual e só ao filtrar um sócio."},
+ ]},
  {v:"0.18.54", data:"2026-11-04", titulo:"PIX revendedoras: 3 blocos de resumo no topo e sem meta em mês que já passou", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"No topo de cada sócio ficam 3 blocos: Total do mês (recebido, direto, prestadores), Enviado por favorecido e Por dia (por mês em Todos os meses). A meta só aparece no mês atual; mês que já passou não mostra meta nem falta. Listas longas rolam dentro do bloco."},
  ]},
