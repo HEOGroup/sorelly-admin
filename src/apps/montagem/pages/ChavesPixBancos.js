@@ -6,29 +6,26 @@
 // A tela Funcionários (RH) mostra a chave daqui e manda para cá quem quiser editar (s.cpxFoco).
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
+import { AbasTela, Bloco, BlocoFiltros, Botao, CAMPO, CampoBusca, CampoSel, TabelaP } from "@/apps/montagem/components/padrao-fin";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
-import { INPUT } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 
 var NOME_CNPJ = {"34":"CNPJ 34 · Sorelly Atacadista", "46":"CNPJ 46 · Mayz Comércio de Moda", "59":"CNPJ 59 · Serenity Porta Joias", "67":"CNPJ 67 · Axis Comércio de Joias", "ho":"H&O Apps", "HO":"H&O Apps", "PART":"Particular", "ITM":"Itaú Marco PJ"};
 var COR = {"34":"#B8892B", "46":"#BE185D", "59":"#0F766E", "67":"#1D4ED8", "ho":"#6D28D9", "HO":"#6D28D9", "PART":"#64748B", "ITM":"#0E7490"};
 var COR_PESSOA = {"marcus":"#EF9F27", "anamaria":"#16A34A", "marco":"#2563EB", "anabeatriz":"#DB2777", "lucas":"#EA580C", "universal":"#7C3AED", "empresa":"#0D9488"};
-var COR_ABA = "#3B82F6";   // todas as partes da barra têm a mesma cor
 var TIPOS = [["", "—"], ["CNPJ", "CNPJ"], ["CPF", "CPF"], ["EMAIL", "E-mail"], ["TELEFONE", "Telefone"], ["ALEATORIA", "Aleatória"]];
 var ROTULO = {CNPJ:"CNPJ", CPF:"CPF", EMAIL:"E-mail", TELEFONE:"Telefone", ALEATORIA:"Aleatória"};
 var COR_TIPO = {CNPJ:"#F59E0B", CPF:"#60A5FA", EMAIL:"#34D399", TELEFONE:"#F472B6", ALEATORIA:"#A78BFA"};
 var cpfValido = function(d){ if(d.length!==11 || /^(d)+$/.test(d)) return false; var c = function(n){ var s = 0; for(var i = 0; i<n; i++) s += Number(d[i])*(n+1-i); var r = (s*10)%11; return r===10 ? 0 : r; }; return c(9)===Number(d[9]) && c(10)===Number(d[10]); };
 var tipoDe = function(ch){ var s = String(ch||"").trim(), d = s.replace(/D/g, ""); if(!s) return ""; if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(d.length===14) return "CNPJ"; if(d.length===11) return (s.indexOf("+")>=0 || !cpfValido(d)) ? "TELEFONE" : "CPF"; if(d.length>=10 && d.length<=13) return "TELEFONE"; return "ALEATORIA"; };
 var dh = function(ts){ if(!ts) return "—"; var d = new Date(ts); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
-var GRADE = "grid grid-cols-[15rem_14rem_7.5rem_minmax(15rem,1fr)_9.5rem_7.5rem] items-center gap-x-3 px-3";
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 var palavras = function(t){ return norm(t).split(/\s+/).filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
-var BTN = "h-9 rounded-lg px-4 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125";
 var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["func", "Funcionários"], ["rep", "Representantes"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"]];
 var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], rep:["Vínculo", "Representante"], pes:["Banco", "Nome"], prest:["Serviço", "Prestador"]};
 // ajustes do Marcus (20/10/2026) para os prestadores do Financeiro familiar: quem sai, nomes e serviços; a Greice é de todos (universal)
@@ -39,19 +36,19 @@ var UNIVERSAL = ["greicy"];
 var ORDEM_PESSOAS = ["marcus", "anamaria", "marco", "anabeatriz", "lucas"];
 var NOME_PESSOA = {"marcus":"Marcus", "anamaria":"Anamaria", "marco":"Marco Antonio", "anabeatriz":"Ana Beatriz Hess", "lucas":"Lucas"};
 
-// uma linha: dados em colunas; com o botão Editar do alto ligado, tipo e chave viram campos
+// uma linha da tabela (padrão: TabelaP com topo dourado, células centralizadas, nada abreviado). Com o botão Editar ligado, tipo e chave viram campos e gravam ao sair do campo (data e quem alterou).
+var CEL = "h-8 border-b border-border px-2.5 py-1 text-center text-[13px] leading-snug";   // texto longo quebra em 2 linhas, nunca é cortado
 function LinhaChave(p){
-  var r = p.r, ed = p.edita, cor = p.cor;
+  var r = p.r, ed = p.edita;
   var salvaChave = function(v){ v = v.trim(); if(v!==r.chave) r.salva({chave:v, tipo:r.tipo || tipoDe(v)}); };
-  return e("div",{className:GRADE+" min-h-[2.6rem] py-1.5", style:{background:p.i%2 ? "#ffffff0d" : "#00000033"}},
-    e("span",{className:"min-w-0 truncate text-left text-[13.5px] font-semibold text-white", title:r.c1}, r.c1),
-    e("span",{className:"min-w-0 truncate text-left text-[14px] font-bold text-white", title:r.c2}, r.c2),
-    ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:INPUT+" h-8! w-full cursor-pointer px-1! text-[12.5px]!", onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(t){ return e("option",{key:t[0], value:t[0]}, t[1]); }))
-      : e("span",{className:"justify-self-center text-center text-[13px] font-semibold text-white"}, ROTULO[r.tipo] || "—"),
-    ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:INPUT+" h-8! w-full text-[13px]!", onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
-      : e("div",{className:"flex min-w-0 items-center gap-2"}, e("span",{className:"min-w-0 truncate text-left font-mono text-[13.5px] font-bold", style:{color:r.chave ? "#fff" : "#FBBF24"}, title:r.chave}, r.chave || "sem chave Pix"), r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"})),
-    e("span",{className:"text-center text-[12.5px] font-semibold text-white"}, dh(r.em)),
-    e("span",{className:"truncate text-center text-[13px] font-semibold text-white"}, r.por || "—"));
+  return e("tr",{className:p.i%2 ? "bg-white/[.03]" : ""},
+    e("td",{className:CEL}, r.c1),
+    e("td",{className:CEL+" font-semibold"}, r.c2),
+    e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
+    e("td",{className:CEL+" whitespace-nowrap"}, ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
+      : e("span",{className:"inline-flex items-center justify-center gap-2"}, e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"), r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}))),
+    e("td",{className:CEL}, dh(r.em)),
+    e("td",{className:CEL}, r.por || "—"));
 }
 
 export function AbaChavesPixBancos(){
@@ -121,26 +118,21 @@ export function AbaChavesPixBancos(){
   var abre = function(v){ var o = {}; blocos.forEach(function(b){ o[b.id] = v; }); setAbertos(o); };
   var temFechavel = blocos.some(function(b){ return !b.fixo; });
   var H = CAB[aba].slice(); if(aba==="func") H[0] = modoFunc==="cnpj" ? "Setor" : "CNPJ";
-  var mbtn = function(k, t){ var on = modoFunc===k; return e("button",{key:k, type:"button", onClick:function(){ setModoFunc(k); }, className:"h-9 rounded-lg px-3 text-[13px] font-bold text-white ring-1 "+(on ? "ring-white/60" : "ring-white/15"), style:{background:on ? COR_ABA : "#ffffff0d"}}, t); };
+  var colunas = [{t:H[0], w:"15rem"}, {t:H[1], w:"15rem"}, {t:"Tipo de chave", w:"9rem"}, {t:"Chave Pix"}, {t:"Data de alteração", w:"11rem"}, {t:"Quem alterou", w:"9rem"}];
   return e(Pagina,null,
+    // abas visíveis + Editar na mesma linha (o nome da tela já está na faixa do topo)
     e("div",{className:"flex flex-wrap items-end justify-between gap-2"},
-      e("div",null, e("h1",{className:"font-heading text-[24px] font-bold leading-tight text-white"}, "Chaves Pix"), e("p",{className:"text-[13.5px] font-semibold text-white"}, "CNPJs, fornecedores, funcionários, sócios e prestadores de serviço."))),
-    // barra que troca de tela: todas da mesma cor
-    e("div",{className:"flex flex-wrap items-center gap-2"}, ABAS.map(function(a){ var on = aba===a[0]; return e("button",{key:a[0], type:"button", onClick:function(){ setAba(a[0]); setBusca(""); }, className:"h-10 rounded-xl px-5 text-[14px] font-bold text-white ring-1 transition "+(on ? "ring-white/60" : "ring-white/15 hover:brightness-125"), style:{background:on ? COR_ABA : "#ffffff0d", boxShadow:on ? "0 0 0 1px "+COR_ABA : undefined}}, a[1]); })),
-    // buscar, abrir/fechar e editar: à esquerda
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-      e("input",{type:"search", value:busca, placeholder:"Buscar nome, banco, chave ou quem alterou", "aria-label":"Buscar", className:INPUT+" h-9! w-72 text-[13px]!", onChange:function(ev){ setBusca(ev.target.value); }}),
-      aba==="func" && e("span",{className:"ml-2 text-[13px] font-semibold text-white"}, "Organizar por:"), aba==="func" && mbtn("cnpj", "CNPJ"), aba==="func" && mbtn("setor", "Setor"),
-      e("button",{type:"button", onClick:function(){ setEdita(!edita); }, className:BTN, title:edita ? "Terminar a edição" : "Abrir os campos para editar", style:{background:edita ? "linear-gradient(135deg,#16A34A,#15803D)" : "linear-gradient(135deg,#3B82F6,#2563EB)"}}, edita ? "✓ Concluir edição" : "✏ Editar")),
-    edita && e("p",{className:"rounded-lg px-3 py-1.5 text-[12.5px] font-semibold text-white", style:{background:"#2563EB33", boxShadow:"inset 0 0 0 1px #3B82F6"}}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
-    e("div",{className:"overflow-x-auto rounded-xl"}, e("div",{className:"flex min-w-[64rem] flex-col gap-2"},
-      e("div",{className:GRADE+" rounded-lg py-2 text-[12px] font-bold uppercase tracking-wide text-[#F3D98B]", style:{background:"#00000066"}}, [[H[0], "text-left"], [H[1], "text-left"], ["Tipo de chave", "text-center"], ["Chave Pix", "text-left"], ["Data de alteração", "text-center"], ["Quem alterou", "text-center"]].map(function(h, i){ return e("span",{key:i, className:h[1]}, h[0]); })),
-      visiveis.map(function(b){
-        var ab = true;
-        return e("div",{key:b.id, className:"overflow-hidden rounded-lg", style:{boxShadow:"inset 0 0 0 1px "+b.cor+"55"}},
-          e("div",{className:"flex flex-wrap items-center gap-x-4 gap-y-0.5 px-3 py-2", style:{background:"linear-gradient(90deg,"+b.cor+"66,"+b.cor+"14)"}},
-            e("span",{className:"text-[15px] font-bold text-white"}, b.nome)),
-          ab && (b.rows.length ? e("div",null, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita, cor:b.cor}); })) : e("p",{className:"px-3 py-2 text-center text-[13px] font-semibold text-white", style:{background:b.cor+"14"}}, b.vazio || "Nada aqui")));
-      }))),
-    !visiveis.length && e("p",{className:"py-6 text-center text-[14px] text-white"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
+      e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setBusca(""); }}),
+      e(Botao,{principal:edita, onClick:function(){ setEdita(!edita); }, title:edita ? "Terminar a edição" : "Abrir os campos para editar"}, edita ? "Concluir edição" : "Editar")),
+    // filtros no topo
+    e(BlocoFiltros,{onLimpar:busca ? function(){ setBusca(""); } : null},
+      e(CampoBusca,{t:"Buscar", id:"cpx-busca", value:busca, placeholder:"Nome, banco, chave ou quem alterou", onChange:setBusca}),
+      aba==="func" && e(CampoSel,{t:"Organizar por", id:"cpx-org", value:modoFunc, onChange:setModoFunc, opcoes:[["cnpj", "CNPJ"], ["setor", "Setor"]]})),
+    edita && e("p",{className:"text-[13px] text-foreground"}, "Edição ligada: mude o tipo ou digite a chave e saia do campo (ou aperte Enter). Grava na hora, com a data e o seu nome."),
+    visiveis.map(function(b){
+      return e(Bloco,{key:b.id, t:b.nome},
+        b.rows.length ? e(TabelaP,{minW:1000, cols:colunas}, b.rows.map(function(r, i){ return e(LinhaChave,{key:r.id+"|"+r.chave+"|"+r.em+"|"+r.tipo, r:r, i:i, edita:edita}); }))
+          : e("p",{className:"py-2 text-center text-[13px] text-foreground"}, b.vazio || "Nada aqui"));
+    }),
+    !visiveis.length && e("p",{className:"py-6 text-center text-[13px] text-foreground"}, (aba==="pes") && !viewFam ? "Esta parte só aparece para quem tem acesso à família (sócios)." : "Nada encontrado."));
 }
