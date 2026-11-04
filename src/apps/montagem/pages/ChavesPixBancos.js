@@ -10,6 +10,7 @@ import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { contaDaCaixa, extraSeed } from "@/apps/montagem/domain/pix-regras";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { bancoDaConta, cnpjFormatado, mensagemPixEmpresa, registrarMensagemPix } from "@/apps/montagem/lib/mensagem-pix";
 import { FUNCIONARIOS_POR_SETOR, REPRESENTANTES, funcionarios } from "@/apps/montagem/domain/pessoas";
 import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
@@ -72,6 +73,11 @@ export function AbaChavesPixBancos(){
     var contas = (sc.contas||[]).filter(function(c){ return c.bloco===b.id && c.tipo!=="CAIXA" && !c.bloqueada && !/rotativo/i.test(c.nome); });   // Rotativo é o cheque especial de outra conta (ex.: Sicredi 34): não tem chave Pix própria (Marcus, 04/11/2026)
     return {id:b.id, nome:NOME_CNPJ[b.id] || b.nome, cor:COR[b.id]||"#64748B", rows:contas.map(function(c){ var k = contaDaCaixa(px, c.id) || {}; return {id:c.id, c1:NOME_CNPJ[b.id] || b.nome, c2:c.nome, chave:k.chave||"", tipo:k.chaveTipo || tipoDe(k.chave), em:k.chaveEm||0, por:k.chavePor||"", salva:function(pt){ d({type:"PX", op:"caixa_chave", caixaId:c.id, nome:c.nome, cnpj:c.bloco, em:Date.now(), por:eu, chave:pt.chave, tipo:pt.tipo}); }}; })};
   }).filter(function(b){ return b.rows.length; });
+
+  // Mensagem de Pix das contas da empresa (formato do Marcus, 04/11/2026): o CNPJ do bloco é a chave do tipo CNPJ de uma das contas dele; o botão Copiar copia a mensagem inteira
+  var EMPRESA_CURTA = {"34":"Sorelly Atacadista", "46":"Mayz Comércio de Moda", "59":"Serenity", "67":"Axis", "HO":"H&O Apps", "ho":"H&O Apps"};
+  blocosCnpj.forEach(function(b){ var rc = b.rows.find(function(r){ return r.tipo==="CNPJ" && cnpjFormatado(r.chave); }), cnpj = rc ? cnpjFormatado(rc.chave) : "";
+    if(EMPRESA_CURTA[b.id]) b.rows.forEach(function(r){ if(r.chave) registrarMensagemPix(r.chave, mensagemPixEmpresa({banco:bancoDaConta(r.c2), empresa:EMPRESA_CURTA[b.id], cnpj:cnpj, tipo:r.tipo, chave:r.chave})); }); });
 
   // ── Fornecedores (nome e o que fornecem, como o Marcus passou); a chave fica guardada pelo nome
   var FORNECEDORES = [["Pontual", "Banho joias"], ["Ellos Galvânica", "Banho joias"], ["MegaSul", "Bruto joias"], ["Linda", "Bruto joias"], ["Tucano", "Bruto joias"], ["Charme", "Bruto joias"], ["Art Ello", "Bruto joias"], ["Point", "Peças"], ["Office Graf", "Gráfica"], ["Devmaster", "Sistema"], ["Ello Print", "Tintas"]];
