@@ -51,7 +51,7 @@ function parcelasDe(ff, filtro, hoje){
 var janela = function(){ var h = hojeYm(), l = []; for(var i=-6; i<=12; i++) l.push(somaMes(h, i)); return l; };   // 6 meses para trás e 12 para a frente
 
 function pixDoMes(ff, pid, ym){
-  var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO"; }).reduce(function(t, x){ return t+x.valor; }, 0);
+  var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; }).reduce(function(t, x){ return t+x.valor; }, 0);
   var b = ff.repasses.filter(function(x){ return x.origemPixPersonaId===pid && !x.origemPixLancId && x.data.slice(0,7)===ym; }).reduce(function(t, x){ return t+x.valor; }, 0);
   return r2(a+b);
 }
@@ -198,7 +198,11 @@ function ffReduz(s, a){
       return ok("PIX anotado (aguardando conferência)", "PIX revendedoras", "Lançou PIX", (l.origem||"sem nome")+" · "+nomeP(a.personaId), money(pv2)); }
     case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
     case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
-    case "pix_aud": { var la = ff.pix.find(function(x){ return x.id===a.id; }); if(!la) return recusa("PIX não encontrado."); la.auditoria = a.auditoria; la.auditadoPor = por; return ok("Conferência salva", "PIX revendedoras", a.auditoria==="CONFIRMADO" ? "Confirmou PIX" : a.auditoria==="REJEITADO" ? "Rejeitou PIX" : "Marcou PIX como aguardando", la.origem||"sem nome", money(la.valor)); }
+    case "pix_div": { var lv = ff.pix.find(function(x){ return x.id===a.id; }); if(!lv) return recusa("PIX não encontrado."); var tp = a.tipo==="conta" ? "conta" : "valor";
+      if(tp==="valor"){ var nv = r2(a.valor); if(!(nv>0)) return recusa("Informe o valor que entrou de verdade."); if(lv.valorOriginal==null) lv.valorOriginal = lv.valor; lv.valor = nv; }
+      else { if(!a.contaId) return recusa("Escolha a conta em que entrou."); if(lv.contaOriginal==null) lv.contaOriginal = lv.contaId; lv.contaId = a.contaId; }
+      lv.auditoria = "DIVERG"; lv.auditadoPor = por; lv.div = {tipo:tp, obs:String(a.obs||"").trim()}; syncRepasse(lv); return ok("Divergência salva", "PIX revendedoras", "Marcou divergência de "+tp, lv.origem||"sem nome", money(lv.valor)); }
+    case "pix_aud": { var la = ff.pix.find(function(x){ return x.id===a.id; }); if(!la) return recusa("PIX não encontrado."); la.auditoria = a.auditoria; la.auditadoPor = por; return ok("Conferência salva", "PIX revendedoras", a.auditoria==="CONFIRMADO" ? "Confirmou PIX" : a.auditoria==="NAOIDENT" ? "Marcou PIX como não identificado" : "Marcou PIX como aguardando", la.origem||"sem nome", money(la.valor)); }
     // ---- prestadores
     case "prest_add": { var pn = String(a.nome||"").trim(); if(!pn) return recusa("Informe o nome."); ff.prest.push({id:uid("pr"), nome:pn, servico:a.servico||"", chavePix:a.chavePix||"", obs:"", responsavelId:a.responsavelId||"", ativo:true}); return ok("Prestador criado", "Prestadores", "Criou prestador", pn); }
     case "prest_set": { var pt = ff.prest.find(function(x){ return x.id===a.id; }); if(!pt) return recusa("Prestador não encontrado."); Object.assign(pt, a.patch); return ok("Salvo", "Prestadores", a.patch.ativo===false ? "Finalizou prestador" : a.patch.ativo===true ? "Reabriu prestador" : "Editou prestador", pt.nome); }

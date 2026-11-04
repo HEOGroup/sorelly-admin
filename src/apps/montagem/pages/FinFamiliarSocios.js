@@ -41,7 +41,7 @@ function AbaFfSocios(){
   var salario = r2(tps.reduce(function(t, x){ return t+x.pro.recebido; }, 0)), contasRest = r2(tps.reduce(function(t, x){ return t+x.contas.restante; }, 0));
   var contaPor = {}; ff.contasBanc.forEach(function(c){ contaPor[c.id] = c; });
   var minhas = {};
-  ff.pix.filter(function(x){ return x.personaId===pid && noPeriodo(x.data) && x.auditoria!=="REJEITADO"; }).forEach(function(x){ var c = contaPor[x.contaId]; if(c && c.prestadorId) return; var k = (c ? c.nome.replace(/^Conta\s+/i, "") : "Sem conta informada")+(c && c.banco ? " ("+c.banco+")" : ""); minhas[k] = r2((minhas[k]||0)+x.valor); });
+  ff.pix.filter(function(x){ return x.personaId===pid && noPeriodo(x.data) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; }).forEach(function(x){ var c = contaPor[x.contaId]; if(c && c.prestadorId) return; var k = (c ? c.nome.replace(/^Conta\s+/i, "") : "Sem conta informada")+(c && c.banco ? " ("+c.banco+")" : ""); minhas[k] = r2((minhas[k]||0)+x.valor); });
   var totMin = r2(Object.keys(minhas).reduce(function(t, k){ return t+minhas[k]; }, 0));
   // prestadores do sócio: responsável, ou que receberam dele (Pix de revendedora ou envio manual)
   var doSocio = function(r, x){ return r.origemPixPersonaId===pid || r.socioId===pid || (!r.origemPixPersonaId && !r.socioId && x.responsavelId===pid); };

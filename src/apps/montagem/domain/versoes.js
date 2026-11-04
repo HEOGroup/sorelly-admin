@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.50", data:"2026-11-04", titulo:"PIX revendedoras: banco, conta e prestador separados; conferência com divergência", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tabela tem colunas separadas: Banco, Conta e Prestador. A conferência não tem mais Rejeitado: agora é Confirmado, Não identificado (fora da soma) ou Divergência. Divergência abre um bloco para informar o valor que entrou de verdade ou a conta certa, com observação; o valor ou a conta corrigidos passam a valer nas somas e o informado antes aparece no bloco. PIX antigos rejeitados viram Não identificado."},
+ ]},
  {v:"0.18.49", data:"2026-11-04", titulo:"PIX revendedoras: sem total por dia, só se ligar no filtro", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"Os PIX de cada sócio vêm em sequência, sem linha de total por dia (o dia não é o período do sócio). No alto há o filtro Sem total por dia / Com total por dia; ligado, cada dia ganha a sua linha de total."},
  ]},
