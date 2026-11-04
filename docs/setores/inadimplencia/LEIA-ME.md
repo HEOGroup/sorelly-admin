@@ -15,6 +15,21 @@ Inadimplência (valor que falta + multa por atraso)
 No prazo → Atrasado → Jurídico (60 dias) → Retirar kit → Executar nota
 ```
 
+## 1b. Fluxo que o Marcus definiu em 04/11/2026 (vale no lugar do fluxo acima; o código ainda usa o antigo)
+```
+Inadimplência (negocia primeiro)
+      │
+      ├─ acordo cumprido ──────────────► quitada
+      │
+      └─ sem acordo, OU acordo não cumprido (faltou o pagamento da 1ª negociação)
+                │
+                ▼
+             Jurídico (inclui retirar o kit e executar a nota)
+```
+- "Retirar kit" deixa de ser etapa da Inadimplência e passa para dentro do Jurídico.
+- A Inadimplência só negocia. Falhou a 1ª negociação, vai direto ao Jurídico.
+- As regras de cada etapa ainda serão alinhadas com o Marcus.
+
 ## 2. Regras que valem hoje (lidas do código)
 | # | Regra |
 |---|---|
