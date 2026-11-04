@@ -30,7 +30,7 @@ var palavras = function(t){ return norm(t).split(/\s+/).filter(function(w){ retu
 var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"], ["rep", "Representantes"], ["func", "Funcionários"]];   // ordem do Marcus (04/11/2026)
 var CAB = {cnpjs:["CNPJ", "Banco"], forn:["Tipo", "Fornecedor"], func:["", "Funcionário"], rep:["Vínculo", "Representante"], pes:["Tipo", "Nome"], prest:["Serviço", "Prestador"]};
 // ajustes do Marcus (20/10/2026) para os prestadores do Financeiro familiar: quem sai, nomes e serviços; a Greice é de todos (universal)
-var OCULTAR = ["julia marketing", "marcus poupanca", "greicy anamaria", "greyci ana beatriz", "lucas castilho"];
+var OCULTAR = ["julia marketing", "marcus poupanca", "greicy anamaria", "greyci ana beatriz", "lucas castilho", "ulisses detran"];
 var NOME_EXIBE = {"greicy":"Greice", "ulisses detran":"Serviço Detran"};
 var SERVICO_EXIBE = {"rebel mode":"Carros Marcus", "68 gang performance":"Carros Marcus", "greicy":"Casa (todos)"};
 var UNIVERSAL = ["greicy"];
@@ -125,7 +125,9 @@ export function AbaChavesPixBancos(){
     if(UNIVERSAL.indexOf(n)>=0) universais.push(row); else { var dono = x.responsavelId || "marcus"; (porDono[dono] = porDono[dono] || []).push(row); } });
   var blocosPrest = [{id:"pr|empresa", nome:"Empresa (Sorelly)", cor:COR_PESSOA.empresa, fixo:true, vazio:"Nenhum prestador cadastrado", rows:rowsEmp}];
   // os prestadores particulares ficam na aba Sócios, dentro do grupo de cada sócio; a aba Prestadores fica só com os da empresa (Marcus, 04/11/2026)
-  if(viewFam){ blocosPes = blocosPes.map(function(b){ var pid = b.id.slice(4); return Object.assign({}, b, {vazio:"Nenhuma chave cadastrada", rows:b.rows.concat(porDono[pid] || [])}); }).concat([{id:"pes|universal", nome:"Universal · usado por todos", cor:COR_PESSOA.universal, fixo:true, vazio:"Nenhum prestador cadastrado", rows:universais}]); }
+  // a Greice é o mesmo Pix do Marcus, da mãe e da irmã: a linha dela aparece no grupo de cada um (Marcus, 04/11/2026); não há mais grupo "Universal"
+  var COM_GREICE = ["marcus", "anamaria", "anabeatriz"];
+  if(viewFam){ blocosPes = blocosPes.map(function(b){ var pid = b.id.slice(4); return Object.assign({}, b, {vazio:"Nenhuma chave cadastrada", rows:b.rows.concat(porDono[pid] || [], COM_GREICE.indexOf(pid)>=0 ? universais : [])}); }); }
 
   var todos = {cnpjs:blocosCnpj, forn:blocosForn, func:blocosFunc, rep:blocosRep, pes:blocosPes, prest:blocosPrest}, blocos = todos[aba];
   var q = norm(busca);
