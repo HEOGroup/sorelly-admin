@@ -4,6 +4,7 @@
 // A única diferença: a tela ativa deixou de ser escolhida por um mapa
 // `aba -> componente` aqui dentro e passou a vir da rota — o conteúdo entra
 // pelo <Outlet/>, e cada página é um chunk carregado sob demanda.
+import { precisaUnirItau } from "@/apps/montagem/domain/itau-unico";
 import { isoDia } from "@/apps/montagem/lib/format";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { rotAlertas } from "@/apps/montagem/domain/rotina";
@@ -127,6 +128,7 @@ function App(){
   // Rotina do dia: a cada minuto confere se algum item seu passou do horário sem o check e avisa (um alerta por item por dia)
   useEffect(function(){ var t = function(){ if(!s.logado || !s.rot) return; var n = new Date(), p = function(x){ return String(x).padStart(2, "0"); };
       rotAlertas(s.rot, s.usuario, n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate()), p(n.getHours())+":"+p(n.getMinutes())).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [s.rot, s.usuario, s.logado]);
+  useEffect(function(){ if(s.logado && precisaUnirItau(s)) d({type:"ITAU_UNIR"}); }, [s.logado, s.saldosContas]);   // Itaú: só existe uma conta (Marcus, 04/11/2026)
   useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
   // Plano 45/60: aprovada sem contato em 24 h e nova data sem venda lançada (um alerta por tipo por dia)
   // avaliação de experiência (03/11/2026): no dia da 1ª e da 2ª avaliação sai um alerta para quem o Tecnologia → Avisos marcar (padrão Maria, Marcus, Nickolas, Lucas); a chave não repete

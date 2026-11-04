@@ -53,6 +53,7 @@ import { ppReduz } from "@/apps/montagem/domain/pedidos-pecas";
 import { ffReduz } from "@/apps/montagem/domain/financeiro-familiar";
 import { MODELO_PADRAO } from "@/apps/montagem/domain/condicional-modelo";
 import { CHAVE, ajustaDiv, com, kitDe, mapKit, novo, registroListagem } from "@/apps/montagem/state/store";
+import { uneItau } from "@/apps/montagem/domain/itau-unico";
 
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
@@ -280,6 +281,7 @@ function reducer(s, a){
     case "PF": { var rPf = pfReduz(s, a); return com(s, rPf.patch, rPf.msg); }
     case "PX": { var rPx = pxReduz(s, a); return com(s, rPx.patch, rPx.msg); }
     case "CP": { var rCp = cpReduz(s, a); return com(s, rCp.patch, rCp.msg); }
+    case "ITAU_UNIR": return com(uneItau(s), {}, "Itaú: uma conta só (Itaú Marco PJ)");
     case "DP": { var rDp = dpReduz(s, a), sDp = com(s, rDp.patch, rDp.msg);
       // Pix pedido pelo app da representante: ao direcionar aqui, o nome da conta vai para o pagamento do acerto (e o app avisa "Conta recebida")
       if(a.op==="confirma" && rDp.patch.dp){ var pDp = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
