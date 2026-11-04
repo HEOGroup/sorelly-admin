@@ -69,7 +69,8 @@ function LinhaChave(p){
 export function AbaChavesPixBancos(){
   var cx = use(), s = cx.state, sc = s.saldosContas, px = s.px, cpf = (s.cp && s.cp.func) || {}, cch0 = (s.cp && s.cp.chaves) || {}, eu = nomeDe(s.usuario), d = cx.dispatch, foco = s.cpxFoco;
   // completa com as chaves do arquivo local quando o estado salvo ainda não as tem (o estado do servidor manda, e pode estar atrás)
-  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:x[2] || cur.nome, banco:x[3] || cur.banco, servico:x[4] || cur.servico, favorecido:x[7] || cur.favorecido || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });   // nome, banco, serviço e favorecido do arquivo valem sobre o estado salvo (o Marcus acerta os textos aqui)
+  var cch = Object.assign({}, cch0); extrasSeed().forEach(function(x){ var cur = cch[x[0]] || {}; if(/@exemplo\.com$/i.test(String(cur.chave||""))) cur = Object.assign({}, cur, {chave:"", chaveTipo:""});   // sobra de teste: chave de exemplo nunca vale
+    cch[x[0]] = Object.assign({}, cur, {grupo:x[1], nome:x[2] || cur.nome, banco:x[3] || cur.banco, servico:x[4] || cur.servico, favorecido:x[7] || cur.favorecido || ""}, cur.chave ? {} : {chaveTipo:x[5], chave:x[6]}); });   // nome, banco, serviço e favorecido do arquivo valem sobre o estado salvo (o Marcus acerta os textos aqui)
   var comSeed = function(k, nome){ return (k && k.chave) ? k : Object.assign({}, k, chaveAdminDaConta(nome) || {}); };
   var sb = useState(foco ? (foco.busca||"") : ""), busca = sb[0], setBusca = sb[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1];
