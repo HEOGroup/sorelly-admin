@@ -24,7 +24,9 @@ var ROTULO = {CNPJ:"CNPJ", CPF:"CPF", EMAIL:"E-mail", TELEFONE:"Telefone", ALEAT
 var COR_TIPO = {CNPJ:"#F59E0B", CPF:"#60A5FA", EMAIL:"#34D399", TELEFONE:"#F472B6", ALEATORIA:"#A78BFA"};
 var cpfValido = function(d){ if(d.length!==11 || /^(d)+$/.test(d)) return false; var c = function(n){ var s = 0; for(var i = 0; i<n; i++) s += Number(d[i])*(n+1-i); var r = (s*10)%11; return r===10 ? 0 : r; }; return c(9)===Number(d[9]) && c(10)===Number(d[10]); };
 var tipoDe = function(ch){ var s = String(ch||"").trim(), d = s.replace(/D/g, ""); if(!s) return ""; if(s.indexOf("@")>=0) return "EMAIL"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(s)) return "ALEATORIA"; if(d.length===14) return "CNPJ"; if(d.length===11) return (s.indexOf("+")>=0 || !cpfValido(d)) ? "TELEFONE" : "CPF"; if(d.length>=10 && d.length<=13) return "TELEFONE"; return "ALEATORIA"; };
-var dh = function(ts){ if(!ts) return "—"; var d = new Date(ts); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0"); };
+// data de alteração: só o DIA, sem horário (Marcus, 04/11/2026); toda chave mostra no mínimo o dia da carga (04/11/2026), e uma edição feita depois mostra o dia dela
+var DATA_CARGA = new Date(2026, 10, 4).getTime();
+var dh = function(ts){ if(!ts) return "—"; var d = new Date(ts); return String(d.getDate()).padStart(2,"0")+"/"+String(d.getMonth()+1).padStart(2,"0")+"/"+d.getFullYear(); };
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 var palavras = function(t){ return norm(t).split(/\s+/).filter(function(w){ return w.length>2 && ["dos","das","del"].indexOf(w)<0; }); };
 var ABAS = [["cnpjs", "CNPJs"], ["forn", "Fornecedores"], ["pes", "Sócios"], ["prest", "Prestadores de serviço"], ["rep", "Representantes"], ["func", "Funcionários"]];   // ordem do Marcus (04/11/2026)
@@ -60,7 +62,7 @@ function LinhaChave(p){
     e("td",{className:CEL}, ed ? e("select",{value:r.tipo, "aria-label":"Tipo de chave Pix de "+r.c2, className:CAMPO, onChange:function(ev){ r.salva({chave:r.chave, tipo:ev.target.value}); }}, TIPOS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); })) : (ROTULO[r.tipo] || "—")),
     e("td",{className:CEL+" whitespace-nowrap"}, ed ? e("input",{key:r.id+"|"+r.chave, defaultValue:r.chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+r.c2, className:CAMPO, onBlur:function(ev){ salvaChave(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})
       : e("span",{className:"flex w-full items-center justify-start gap-2"}, r.chave && e(CopiarChave,{texto:r.chave, rot:"Pix"}), e("span",{className:"font-mono font-semibold", style:r.chave ? undefined : {color:"#FBBF24"}}, r.chave || "sem chave Pix"))),   // botão Pix primeiro e a chave alinhada pela esquerda (Marcus, 04/11/2026)
-    e("td",{className:CEL}, dh(r.em)),
+    e("td",{className:CEL}, dh(r.chave ? Math.max(r.em || 0, DATA_CARGA) : 0)),
     e("td",{className:CEL}, r.por || "—"));
 }
 
