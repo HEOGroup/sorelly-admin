@@ -635,20 +635,23 @@ function AppRepresentante(p){
                   p.jaPagoLink ? e("span",{className:"size-5"}) : e("button",{onClick:function(){ if(p.pid && kitSel) d({type:"REP_PAG", op:"remover", kitId:kitSel.id, pid:p.pid, ctx:ctxPed(acertoForm.pagamentos.filter(function(x,j){return j!==i;}))});
                       setAcertoForm(Object.assign({}, acertoForm, {pagamentos:acertoForm.pagamentos.filter(function(x,j){return j!==i;})})); },
                     "aria-label":"Remover lançamento", className:"grid size-5 place-items-center text-[13px]"}, "×"))); })),
-          acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p);
+          acertoForm.pagamentos.filter(function(p){ return estPag(p); }).map(function(p){ var es = estPag(p), ehPix = p.forma==="pix";
+            var inputAnexo = function(){ return e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante do pagamento", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
+              var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
+                setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
+                if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
+              if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }}); };
+            // Pix: o cartão da chave traz, numa linha só, Copiar e Anexar comprovante (um de cada lado, o texto do anexo em duas linhas) (Marcus, 04/11/2026)
+            var ladoAnexo = p.anexo ? e("span",{className:"flex min-h-8 flex-1 items-center justify-center text-center text-[11px] font-bold leading-tight"}, "✓ Comprovante anexado")
+              : e("label",{className:"flex min-h-8 flex-1 cursor-pointer flex-col items-center justify-center rounded-lg px-2 text-center text-[11px] font-bold leading-tight ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, e("span",null,"Anexar"), e("span",null,"comprovante"), inputAnexo());
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
-              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta),
-              !es.aguardando && p.forma==="pix" && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
-              !es.aguardando && (p.anexo
+              es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : (ehPix ? null : e("span",null,"Faça o pagamento na conta: "+es.conta)),
+              !es.aguardando && ehPix && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot, lado:qi===0 ? ladoAnexo : null}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
+              !es.aguardando && !ehPix && (p.anexo
                 ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
                 : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
-                    e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"),
-                    e("input",{type:"file", accept:"image/*,application/pdf,.pdf,.jpg,.jpeg,.png,.heic,.webp", className:"hidden", "aria-label":"Anexar o comprovante do pagamento", onChange:function(ev){ var fl = ev.target.files && ev.target.files[0]; if(!fl) return;
-                      var salva = function(dados){ var an = {nome:fl.name, tipo:fl.type, dados:dados, tamanho:fl.size};
-                        setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
-                        if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
-                      if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
+                    e("span",null,"Pagou? Anexe o comprovante"), e("span",null,"Anexar"), inputAnexo()))); }),
           acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
             var chave = chavePixRep(s.cp && s.cp.chaves, l.rep);   // chave cadastrada em Financeiro › Chaves Pix › Representantes
             return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
