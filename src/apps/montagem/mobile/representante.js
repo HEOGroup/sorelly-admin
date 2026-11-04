@@ -32,6 +32,7 @@ import { IPhone17ProMax } from "@/apps/montagem/mobile/iphone";
 import { plim } from "@/apps/montagem/components/aviso-pagamentos";
 import { pedeConta, estadoPagRep, pagamentosDoPedido } from "@/apps/montagem/domain/pagamento-rep";
 import { chavePixRep } from "@/apps/montagem/domain/pix-regras";
+import { CartaoPixConta } from "@/apps/montagem/mobile/cartao-pix-conta";
 import { creditoDisponivel, creditosDaRevendedora } from "@/apps/montagem/domain/garantias-rev";
 import { RecebimentoRep } from "@/apps/montagem/mobile/revendedora";
 import { Avatar, PONTO_CEL } from "@/apps/montagem/mobile/theme";
@@ -319,7 +320,7 @@ function AppRepresentante(p){
     if(cz){ if(!(kitSel.remarcacoesLista||[]).length) d({type:"KIT_REMARCAR", id:kitSel.id, isenta:false, motivo:""}); if(!kitSel.preAcerto || kitSel.preAcerto.atrasoDias!==9) d({type:"KIT_PRE_ACERTO", id:kitSel.id, atrasoDias:9}); }   // exemplo Acerto completo: pré-acerto já preenchido com 1 multa e 9 dias de atraso (02/11/2026, Marcus)
     if(cz && !estadoPagRep(s.lancFin, kitSel.id, "pexemplo"+kitSel.id)){ var pxEx = comPag.pagamentos.find(function(x){ return x.pid; }); if(pxEx) d({type:"REP_PAG", op:"pedir", kitId:kitSel.id, rev:sel.rev, rep:l.rep, pid:pxEx.pid, forma:"pix", valor:pxEx.valor, parcelas:1, data:hoje, anexo:pxEx.anexo, ctx:ctxPed(comPag.pagamentos, d1, comPag.vendaBruta)}); }
     var prox = []; for(var q=0; q<Math.min(3, d1.pecasProx ? d1.pecasProx.liberadas : 0); q++) prox.push("P"+(2001+q));
-    setAcertoForm(Object.assign({}, comPag, {garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
+    setAcertoForm(Object.assign({}, comPag, {pagamentos:comPag.pagamentos.concat(pagamentosDoPedido(s.lancFin, kitSel.id).filter(function(x){ return !comPag.pagamentos.some(function(y){ return y.pid===x.pid; }); })), garantia:(function(){ var cg = creditoDisponivel(s, sel.rev); return cg>0 ? cg : (cz ? (cz.garantia||0) : 0); })(), pecasVendidas:cz ? cz.vendidas : 40, brindes:brindes, pecasProxCodigos:prox}));
     setRegEscolha(null); setBrindeIn(BRINDE_IN_VAZIO); setLancAberto(false); setNegociarAberto(false); setBlocoAberto(5); setTela("calcacerto"); setPendAbrir(null);
   }, [pendAbrir, selId, condicionaisRev.length]);
   var credGarantia = sel ? creditoDisponivel(s, sel.rev) : 0;
@@ -637,6 +638,7 @@ function AppRepresentante(p){
             return e("div",{key:"orienta"+p.pid, className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
               e("b",{className:"font-semibold"}, formaDe(p.forma).label+" · "+BK(p.valor)),
               es.aguardando ? e("span",null,"Enviado ao financeiro. A conta para pagar aparece aqui assim que ele responder.") : e("span",null,"Faça o pagamento na conta: "+es.conta),
+              !es.aguardando && p.forma==="pix" && [].concat.apply([], es.partes.map(function(r0){ return String(r0).split(" + "); })).map(function(rot, qi){ return e(CartaoPixConta,{key:"pxc"+p.pid+"-"+qi, rotulo:rot}); }),   // a chave Pix da conta para ela passar à revendedora e copiar (Marcus, 04/11/2026)
               !es.aguardando && (p.anexo
                 ? e("span",{className:"font-semibold"},"✓ Comprovante anexado")
                 : e("label",{className:"mt-1 flex h-8 cursor-pointer items-center justify-between gap-1.5 rounded-lg px-2.5 text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}},
