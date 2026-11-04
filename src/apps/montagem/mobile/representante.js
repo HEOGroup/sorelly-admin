@@ -645,6 +645,12 @@ function AppRepresentante(p){
                         setAcertoForm(function(f0){ return Object.assign({}, f0, {pagamentos:f0.pagamentos.map(function(x){ return x.pid===p.pid ? Object.assign({}, x, {anexo:an}) : x; })}); });
                         if(kitSel) d({type:"REP_PAG", op:"comprovante", kitId:kitSel.id, pid:p.pid, anexo:an}); };
                       if(fl.size>400000){ salva(null); return; } var rd = new FileReader(); rd.onload = function(){ salva(rd.result); }; rd.readAsDataURL(fl); }})))); }),
+          acertoForm.pagamentos.filter(function(p){ return p.forma==="pix_representante"; }).slice(0, 1).map(function(p){
+            var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.tipo==="REPRESENTANTE" && String(z.nome||"").trim().toLowerCase()===String(l.rep||"").trim().toLowerCase(); }), chave = dest && dest.chavePix;   // chave cadastrada em Controle de pagamentos › Destinos (tipo Representante)
+            return e("div",{key:"chaveRep", className:"flex flex-col gap-0.5 rounded-xl border border-white/15 bg-white/[.07] px-3 py-1.5 text-[13px]"},
+              e("b",{className:"font-semibold"}, "Pix representante"),
+              chave ? e("span",{className:"break-all"}, "Chave Pix: "+chave) : e("span",null,"Chave Pix da representante ainda não cadastrada."),
+              chave && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(chave); }catch(x){} }, className:"mt-1 h-8 rounded-lg text-[13px] font-bold ring-1 ring-[#CA8A04]", style:{background:"#F6EFDF", color:"#7A5D12"}}, "Copiar chave")); }),
           (function(){
             var fm = lancForm.forma, pedeCta = !!fm && pedeConta(fm);
             var pedeComp = !!fm && fm!=="dinheiro" && fm!=="acerto_loja" && !pedeCta;   // dinheiro e inadimplência não têm comprovante; Pix, link e cartão: o comprovante vem DEPOIS, quando o financeiro responder a conta (Marcus, 04/11/2026)
