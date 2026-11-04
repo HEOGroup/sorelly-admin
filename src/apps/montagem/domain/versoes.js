@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.57", data:"2026-11-04", titulo:"PIX revendedoras: só os 5 sócios, fechados, e linhas mais compactas", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Com Todos os sócios, a tela mostra só Marco Antonio, Ana Beatriz, Marcus, Lucas e Anamaria, cada um fechado numa barra dourada; clicar abre o formulário e a tabela (botão Recolher fecha). Ao filtrar um sócio, ele já aparece aberto. As linhas dos blocos de resumo ficaram mais baixas."},
+ ]},
  {v:"0.18.56", data:"2026-11-04", titulo:"PIX revendedoras: favorecido por conta, lista com título travado e fonte menor", itens:[
   {tipo:"melhoria", area:"Financeiro familiar", txt:"Com Todos os sócios, o bloco Enviado por favorecido mostra uma linha por conta (favorecido, banco e conta), não só por sócio. As listas rolam dentro do bloco com o título e o cabeçalho das colunas travados em cima, e a fonte dos blocos ficou menor (11 px). BlocoResumo ganhou as opções alturaMax e compacto."},
  ]},

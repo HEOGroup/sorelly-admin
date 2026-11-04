@@ -18,7 +18,7 @@ function BlocoResumo(p){
     // alturaMax (px): a lista rola dentro do bloco e o título e o cabeçalho das colunas ficam travados em cima (pedido do Marcus, 04/11/2026); compacto: linhas em 11 px
     e("div",{className:p.alturaMax ? "overflow-y-auto" : "", style:p.alturaMax ? {maxHeight:p.alturaMax} : undefined}, p.linhas.map(function(l){
       var cor = l.cor ? {color:COR[l.cor]} : undefined;
-      return e("div",{key:l.r, className:"grid min-h-8 items-center gap-2 border-b border-border px-3 py-0.5 text-center "+(p.compacto ? "text-[11px]" : "text-[13px]")+" last:border-b-0 "+grade+(l.total ? " bg-white/5 font-semibold" : "")},
+      return e("div",{key:l.r, className:"grid items-center gap-2 border-b border-border px-3 text-center "+(p.compacto ? "min-h-[22px] py-0 text-[11px]" : "min-h-8 py-0.5 text-[13px]")+" last:border-b-0 "+grade+(l.total ? " bg-white/5 font-semibold" : "")},
         e("span",null, l.r),
         p.barra
           ? [e("span",{key:"b", className:"block h-2 overflow-hidden rounded bg-white/10"}, e("i",{className:"block h-full bg-[#E8B84B]", style:{width:Math.max(2, Math.round((l.f || 0) * 100))+"%"}})),
