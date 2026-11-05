@@ -42,4 +42,13 @@ function aplicaFila(ns){
   return Object.assign({}, ns, {filaNivel:nv, alertas:[alerta].concat(ns.alertas||[])});   // "para" é preenchido pelo reducer (destinosDe)
 }
 
-export { NIVEIS, COR_NIVEL, nivelDe, corDaFila, filaRetornos, qtdFila, quemBipa, podeBiparRetorno, porDia, aplicaFila };
+// Código de retirada (05/11/2026): 4 dígitos que mudam a cada retirada da listagem e a cada dia. O app da representante mostra; a funcionária digita no balcão.
+// O reducer confere de novo (não basta a tela). No app de verdade o servidor gera o código e guarda a validade.
+function codigoRetirada(l, agora){
+  if(!l) return "";
+  var t = String(l.id)+"|"+(l.retiradas||[]).length+"|"+isoDia(new Date(agora||Date.now())), h = 7;
+  for(var i=0;i<t.length;i++) h = (h*31 + t.charCodeAt(i)) % 1000003;
+  return String(1000 + h % 9000);
+}
+
+export { NIVEIS, COR_NIVEL, nivelDe, corDaFila, filaRetornos, qtdFila, quemBipa, podeBiparRetorno, porDia, aplicaFila, codigoRetirada };

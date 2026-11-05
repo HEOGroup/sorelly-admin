@@ -186,8 +186,8 @@ function itensComissao(c, s, agora){
     if(r.tipo==="kit_novo_entrega" || r.tipo==="acerto" && r.kitNovoOk && nfDe(c, r.rev) || r.tipo==="reposicao" || r.tipo==="reposicao_especial"){
       var fin = r.fin && r.fin.k ? r.fin.k : null, repos = r.tipo.indexOf("reposicao")===0, expo = r.tipoKit==="kit_novo_exp" || (r.expositoresMarcados||[]).length>0;
       var nfk = !repos ? nfDe(c, r.rev) : null;
-      var valor = repos ? (c.reposicao!=null ? c.reposicao : (r.comissao||0)) : nfk ? (r.desistencia ? 0 : c.nf.entrega) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 15 (Configurador), com a condicional assinada
-      var man = c.termos[r.id], termo = repos ? true : !!(r.assinatura || man), condOk = !!(rec.prom && rec.prom.ok);   // kit novo só é pago com a condicional assinada
+      var valor = repos ? (r.tipo==="reposicao_especial" ? (r.comissao||0) : c.reposicao!=null ? c.reposicao : (r.comissao||0)) : nfk ? (r.desistencia ? 0 : c.nf.entrega) : (expo ? c.kitNovoExpo : c.kitNovo);   // reposição entregue: R$ 15 (Configurador), com a condicional assinada
+      var man = c.termos[r.id], termo = repos ? true : !!(r.assinatura || man), condOk = repos ? true : !!(rec.prom && rec.prom.ok);   // kit novo só é pago com a condicional assinada; a reposição já vem com a condicional assinada no app (05/11/2026)
       var semFotoExpo = r.tipo==="kit_novo_entrega" && r.tipoKit==="kit_novo_exp" && r.expositorFoto===false;   // kit novo + expositor sem a foto do expositor montado (registro antigo, sem o campo, não entra aqui)
       var libera = fin && conferido && termo && condOk && !semFotoExpo ? Math.max(tsIso(fin.ts), tsIso(rec.em)) : null;
       if(valor>0) poe({id:r.id+"#k", chave:"k", tipo:repos ? "repos" : "kitnovo", r:r, rev:r.rev, data:r.data, ts:tsDe(r), status:r.tipo==="acerto" ? (expo ? "Kit novo + expositor" : "Kit novo") : st, forma:"", conta:fin ? fin.conta : "",

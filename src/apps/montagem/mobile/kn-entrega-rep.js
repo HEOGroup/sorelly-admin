@@ -10,6 +10,7 @@ import { AssinaturaDigital } from "@/apps/montagem/mobile/campos";
 import { ContagemTotal } from "@/apps/montagem/mobile/conf-pecas";
 import { MONO } from "@/apps/montagem/ui/input";
 import { Icon } from "@/apps/montagem/ui/icon";
+import { useCondsReais } from "@/apps/montagem/mobile/conds-reais";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
@@ -32,11 +33,16 @@ function EntregaKNRep(p){
   var confOk = !!res && caixinhas;
   var perfil = (s.perfisRev||{})[k.rev] || {};
   var montou = entrada && entrada.montou, bipou = entrada && entrada.bipou;
+  // 05/11/2026 (Marcus): as condicionais vêm da DevMaster, ligadas pelo CPF da revendedora (etapa 1). Sem CPF ou sem condicional aberta, a conferência não abre.
+  var real = useCondsReais(s, d, k), temConds = real.tem, avisoConds = real.aviso;
 
   var conferenciaUI = e("div",{className:"flex flex-col gap-2.5"},
     (montou || bipou) && e("div",{className:"flex flex-col gap-0.5 rounded-xl bg-[#F6EFDF] px-3 py-2 text-[12px] text-[#161616]"},
       e("b",null,"Registro do kit"), e("span",null,"Montado por "+(montou||"—")+" · Bipado por "+(bipou||"—"))),
-    e(ContagemTotal,{s:s, d:d, k:k}),   // contagem do total de peças na própria etapa (03/11/2026, Marcus); a bipagem volta quando existir
+    temConds
+      ? e("p",{className:"rounded-xl bg-[#F6EFDF] px-3 py-2 text-[12px] text-[#161616]"}, "Condicionais da DevMaster: "+k.condsReais.map(function(c){ return c.numero+" ("+c.pecas+" peças)"; }).join(", "))
+      : e("p",{className:"rounded-xl bg-[#FEE2E2] px-3 py-2 text-[12.5px] font-semibold text-[#991B1B]"}, avisoConds),
+    temConds && e(ContagemTotal,{s:s, d:d, k:k}),   // contagem do total de peças na própria etapa (03/11/2026, Marcus); a bipagem volta quando existir
     e("label",{className:"flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 text-[13px] font-semibold text-[#111827] ring-1 ring-[#E5E7EB]"},
       e("input",{type:"checkbox", checked:caixinhas, onChange:function(ev){ setCaixinhas(ev.target.checked); }, className:"size-5 shrink-0"}), "Entreguei as caixinhas de presente"));
 

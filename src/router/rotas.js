@@ -116,6 +116,7 @@ const montagem = {
     pagina("compras-joias-representantes", () => import("@/apps/montagem/pages/ComprasJoias"), "AbaComprasJoias"),
     pagina("consolidado-representantes", () => import("@/apps/montagem/pages/ConsolidadoRepresentantes"), "AbaConsolidadoRep"),
     pagina("placar-representantes", () => import("@/apps/montagem/pages/PlacarRepresentantes"), "AbaPlacarRep"),
+    pagina("painel-representantes", () => import("@/apps/montagem/pages/RepresentantesApp"), "AbaRepresentantesApp"),
     pagina("controle-de-kits", () => import("@/apps/montagem/pages/ControleKits"), "AbaControleKits"),
     pagina("inadimplencia-financeira", () => import("@/apps/montagem/pages/InadimplenciaFin"), "AbaInadimplenciaFin"),
     pagina("comissoes", () => import("@/apps/montagem/pages/Comissoes"), "AbaComissoes"),

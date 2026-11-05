@@ -71,16 +71,18 @@ function tabela(cab, linhas, grid){
 // ── Etapa 1: confirmar só o NOME e o ENDEREÇO (referências à vista). A representante pode corrigir; o que estava antes fica no histórico. ──
 var foneMask = function(v){ var x = (v||"").replace(/\D/g,"").slice(0,11); if(x.length<=2) return x.length ? "("+x : x; if(x.length<=6) return "("+x.slice(0,2)+") "+x.slice(2);
   if(x.length<=10) return "("+x.slice(0,2)+") "+x.slice(2,6)+"-"+x.slice(6); return "("+x.slice(0,2)+") "+x.slice(2,7)+"-"+x.slice(7); };
+var cpfMask = function(v){ var x = String(v||"").replace(/\D/g,"").slice(0,11); return x.replace(/^(\d{3})(\d)/, "$1.$2").replace(/^(\d{3})\.(\d{3})(\d)/, "$1.$2.$3").replace(/\.(\d{3})(\d)/, ".$1-$2"); };
 function DadosKN(p){
   var k = p.k, pf = p.perfil || {};
   var nome = pf.nomeCompleto || k.rev, end = pf.enderecoCasa!==undefined ? pf.enderecoCasa : (k.endereco || k.bairro || "");
   var refs = [0,1,2].map(function(i){ return Object.assign({nome:"", rel:"", fone:""}, (pf.refs||[])[i]); });
   var ed = useState(false), edita = ed[0], setEdita = ed[1];
   var dr = useState(null), rascunho = dr[0], setRascunho = dr[1];
-  var abre = function(){ setRascunho({nome:nome, end:end, refs:refs.map(function(r){ return Object.assign({}, r); })}); setEdita(true); };
+  var cpf = pf.cpf || "", cpfOk = function(v){ return String(v||"").replace(/\D/g,"").length===11; };   // o CPF liga a revendedora nova à DevMaster (peças da condicional)
+  var abre = function(){ setRascunho({nome:nome, end:end, cpf:cpf, refs:refs.map(function(r){ return Object.assign({}, r); })}); setEdita(true); };
   var salva = function(){
-    var mudou = rascunho.nome!==nome || rascunho.end!==end || JSON.stringify(rascunho.refs)!==JSON.stringify(refs);
-    if(mudou) p.d({type:"SALVAR_PERFIL_REV", chave:k.rev, patch:{nomeCompleto:rascunho.nome, enderecoCasa:rascunho.end, refs:rascunho.refs,
+    var mudou = rascunho.nome!==nome || rascunho.end!==end || rascunho.cpf!==cpf || JSON.stringify(rascunho.refs)!==JSON.stringify(refs);
+    if(mudou) p.d({type:"SALVAR_PERFIL_REV", chave:k.rev, patch:{nomeCompleto:rascunho.nome, enderecoCasa:rascunho.end, cpf:rascunho.cpf, refs:rascunho.refs,
       historicoDados:[{em:new Date().toISOString(), antes:{nome:nome, endereco:end, refs:refs}, depois:{nome:rascunho.nome, endereco:rascunho.end, refs:rascunho.refs}}].concat(pf.historicoDados||[])}});
     setEdita(false); };
   var CAMPO = "h-9 w-full rounded-lg bg-[#F4F5F7] px-2 text-[13px] text-[#111827] outline-none ring-1 ring-black/10";
@@ -91,12 +93,13 @@ function DadosKN(p){
   return e("div",{className:"flex flex-col gap-2"},
     !edita
       ? e("div",{className:"rounded-xl bg-white px-2.5 py-1 "+ANEL},
-          linha("user","Confirme o nome", nome), linha("lista","Confirme o endereço", end),
+          linha("user","Confirme o nome", nome), linha("lista","Confirme o endereço", end), linha("cadastro","Confirme o CPF", cpf ? cpfMask(cpf) : "Informe o CPF para buscar as peças na DevMaster"),
           e("div",{key:"refs", className:"py-1.5"}, e("span",{className:"mb-1 block text-[10px] font-bold uppercase tracking-wide", style:{color:SUB}},"Telefones de referência"),
             refs.filter(function(r){ return r.nome || r.fone; }).map(function(r,i){ return e("div",{key:i, className:"flex items-baseline justify-between gap-2 text-[12.5px] leading-snug", style:{color:TXT}},
               e("span",{className:"min-w-0 truncate"}, e("b",null,r.nome), r.rel ? " ("+r.rel+")" : ""), e("b",{className:"shrink-0 text-[12px]", style:{color:"#15803D"}}, r.fone)); })))
       : e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-white p-2.5 "+ANEL},
           e("input",{value:rascunho.nome, "aria-label":"Nome", placeholder:"Nome completo", onChange:function(ev){ setRascunho(Object.assign({}, rascunho, {nome:ev.target.value})); }, className:CAMPO}),
+          e("input",{value:cpfMask(rascunho.cpf), inputMode:"numeric", "aria-label":"CPF", placeholder:"CPF (000.000.000-00)", onChange:function(ev){ setRascunho(Object.assign({}, rascunho, {cpf:ev.target.value.replace(/\D/g,"").slice(0,11)})); }, className:CAMPO}),
           e("input",{value:rascunho.end, "aria-label":"Endereço", placeholder:"Rua, número - bairro, cidade - UF", onChange:function(ev){ setRascunho(Object.assign({}, rascunho, {end:ev.target.value})); }, className:CAMPO}),
           rascunho.refs.map(function(r,i){ var up = function(campo, v){ var n2 = rascunho.refs.map(function(x){ return Object.assign({}, x); }); n2[i][campo] = v; setRascunho(Object.assign({}, rascunho, {refs:n2})); };
             return e("div",{key:i, className:"flex gap-1.5"},
@@ -247,7 +250,7 @@ function conteudoPasso(n, ctx){
     e("div",{key:"rh", className:"flex items-center gap-2.5 rounded-xl bg-white p-2.5 "+ANEL}, e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-[#FEF3C7] text-[#B45309]"}, e(Icon,{n:"users", s:18})),
       e("div",{className:"min-w-0"}, e("b",{className:"block text-[13px]", style:{color:TXT}},"RH"), e("span",{className:"block text-[11.5px]", style:{color:SUB}},"Para enviar currículo e trabalhar na empresa"))),
     e("div",{key:"cn", className:"flex flex-col gap-1.5 rounded-xl bg-[#F0FDF4] p-2.5"}, e("b",{className:"text-[12.5px]", style:{color:"#166534"}},"Você será adicionada a:"),
-      ["Canal Oficial da Sorelly","Grupo de Revendedoras","Grupo do Leilão"].map(function(c){ return e("span",{key:c, className:"flex items-center gap-2 text-[12.5px]", style:{color:"#166534"}}, e(Icon,{n:"check", s:14}), c); }),
+      ["Canal Oficial da Sorelly","Grupo de Revendedoras"].map(function(c){ return e("span",{key:c, className:"flex items-center gap-2 text-[12.5px]", style:{color:"#166534"}}, e(Icon,{n:"check", s:14}), c); }),
       e("span",{className:"text-[11.5px]", style:{color:"#15803D"}},"Acompanhe os comunicados de cada um.")));
 
   case "conferencia": return ctx.conferencia || e("div",{className:"flex flex-col gap-2"},

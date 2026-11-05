@@ -15,8 +15,8 @@ import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
-import { passoAtual } from "@/apps/montagem/domain/kit-novo-entrega";
-import { aplicaFila } from "@/apps/montagem/domain/retornos";
+import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
+import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
 import { agendReduz, sincPrevistosAcertos } from "@/apps/montagem/domain/agendamento";
@@ -71,6 +71,20 @@ function aplicarAbatimento(lista, ab, pag0, novoId, agora){
   if(!ab.total) return lista;
   return lista.map(function(r){ var v = ab.abat[r.id]; if(!v) return r;
     return Object.assign({}, r, {pagamentos:(r.pagamentos||[]).concat([{forma:(pag0||{}).forma||"pix", descricao:(pag0||{}).descricao||"", parcelas:1, data:isoDia(new Date(agora)), valor:v, anexo:null, extra:true, ts:agora, por:"Abatido no acerto seguinte", deAcerto:novoId}])}); });
+}
+// Conferência das peças (05/11/2026): grava o resultado e o ERRO de quem BIPOU o kit na empresa (nunca de quem montou). Vale para a contagem por
+// quantidade (CONF_QTD, a de hoje) e para a bipagem peça a peça (CONF_FINALIZAR). Contar de novo SUBSTITUI o erro anterior do mesmo kit
+// (não soma duas vezes); o histórico da revendedora guarda todas as contagens, para o setor ver quem contou de novo.
+function gravaConferencia(s, kC, res, confNovo, agora){
+  var lC = s.listagens.find(function(x){ return x.id===kC.lid; });
+  var reg = {id:"EB"+agora, kitId:kC.id, rev:kC.rev, rep:lC ? lC.rep : "", data:isoDia(new Date(agora)), em:agora, bipId:kC.bipId||null, bipadora:kC.bipId ? nomeDe(kC.bipId) : "Sem registro de quem bipou",
+    montadora:kC.montId ? nomeDe(kC.montId) : "—", condicionais:res.conds, esperadas:res.esperadas, lidas:res.lidas, faltas:res.faltas, nFaltas:res.nFaltas, sobras:res.sobras, nSobras:res.nSobras, erros:res.erros, porQuantidade:!!res.porQuantidade};
+  var cb = Object.assign({}, s.confBip); cb[kC.id] = confNovo;
+  var pf = Object.assign({}, s.perfisRev), perf = Object.assign({}, pf[kC.rev]);
+  perf.conferenciasKit = [{em:agora, erros:res.erros, faltas:res.nFaltas, sobras:res.nSobras, bipadora:reg.bipadora, porQuantidade:!!res.porQuantidade}].concat(perf.conferenciasKit||[]); pf[kC.rev] = perf;
+  var lista = (s.errosBipagem||[]).filter(function(x){ return x.kitId!==kC.id; });
+  return {confBip:cb, perfisRev:pf, errosBipagem: res.erros>0 ? [reg].concat(lista) : lista,
+    kits:s.kits.map(function(x){ return x.id!==kC.id ? x : Object.assign({}, x, {errosBip:res.erros, erroBipId:res.erros>0 ? reg.id : null}); }), _bipadora:reg.bipadora};
 }
 function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
@@ -467,13 +481,16 @@ function reducer(s, a){
       var ids = s.kits.filter(function(x){return x.lid===lidR && x.status==="bipado" &&
         montadorValido(x.montId) && (a.type==="RETIRAR_KIT" ? x.id===a.id : (!a.ids || a.ids.indexOf(x.id)>=0));}).map(function(x){return x.id;});
       if(!ids.length){ var semMR = s.kits.some(function(x){ return x.lid===lidR && x.status==="bipado" && !montadorValido(x.montId); }); return semMR ? com(s, {}, "Informe quem montou este kit antes da retirada", "alerta") : s; }
-      var por = a.por || SUPERVISORA.id;
-      var kits2 = s.kits.map(function(x){ return ids.indexOf(x.id)>=0 ? Object.assign({},x,{status:"retirado", retEm:agora, retPor:por, retSozinha:!!a.sozinha, retConf: a.app ? "confirmação no app da representante" : a.sozinha && !(a.codigo && a.assinatura) ? "retirada sozinha na empresa, com a funcionária" : a.codigo && a.assinatura ? "código e assinatura" : "sem confirmação"}) : x; });
-      var todos = kits2.filter(function(x){return x.lid===lidR;}).every(function(x){return x.status==="retirado";});
       var lst = s.listagens.find(function(l){return l.id===lidR;});
+      // 05/11/2026: o reducer confere a retirada (a tela sozinha não basta). Vale: confirmação no app, retirada sozinha na empresa, ou código certo + assinatura.
+      var codOkR = !!a.cod && String(a.cod)===codigoRetirada(lst, agora);
+      if(!a.app && !a.sozinha && !(codOkR && a.assinatura)) return com(s, {}, a.cod && !codOkR ? "Código de retirada não confere" : "Retirada precisa do código e da assinatura", "alerta");
+      var por = a.por || SUPERVISORA.id;
+      var kits2 = s.kits.map(function(x){ return ids.indexOf(x.id)>=0 ? Object.assign({},x,{status:"retirado", retEm:agora, retPor:por, retSozinha:!!a.sozinha, retConf: a.app ? "confirmação no app da representante" : a.sozinha && !(codOkR && a.assinatura) ? "retirada sozinha na empresa, com a funcionária" : "código e assinatura"}) : x; });
+      var todos = kits2.filter(function(x){return x.lid===lidR;}).every(function(x){return x.status==="retirado";});
       var patchR = {kits:kits2, listagens: s.listagens.map(function(l){ return l.id!==lidR ? l : Object.assign({}, l,
-        {fechada:todos, concluidaEm: todos ? agora : null, retiradas:l.retiradas.concat([{em:agora, por:por, qtd:ids.length, kits:ids,
-          codigo:!!a.codigo, assinatura:a.assinatura||null, sozinha:!!a.sozinha, acompanhou:a.sozinha ? por : null}])}); })};
+        {fechada:todos, concluidaEm: todos ? agora : null, retiradas:(l.retiradas||[]).concat([{em:agora, por:por, qtd:ids.length, kits:ids,
+          codigo:codOkR || !!a.app, assinatura:a.assinatura||null, sozinha:!!a.sozinha, acompanhou:a.sozinha ? por : null}])}); })};
       // Listagem concluída: vai para o Consolidado com o retrato dos kits
       if(todos) patchR.histListagens = [Object.assign(registroListagem(lst, kits2, agora), {sozinha:lst.retiradas.some(function(r){return r.sozinha;}) || !!a.sozinha})].concat(s.histListagens||[]);
       var nomeK = a.type==="RETIRAR_KIT" ? kitDe(s, a.id).rev+" retirado" : ids.length+(ids.length>1?" kits retirados":" kit retirado");
@@ -521,7 +538,10 @@ function reducer(s, a){
     case "CRIAR_LISTAGEM": {
       var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
         data:a.data||isoDia(new Date(agora)), fechada:false, retiradas:[]};
-      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+a.horario+" criada para "+a.rep);
+      // 05/11/2026: não cria no passado nem repete (mesmo dia, horário e destino da mesma representante); dois toques seguidos não criam duas
+      if(novaL.data<isoDia(new Date(agora))) return com(s, {}, "O dia da listagem não pode ser no passado", "alerta");
+      if(s.listagens.some(function(x){ return x.rep===novaL.rep && !x.fechada && x.data===novaL.data && x.horario===novaL.horario && x.destino===novaL.destino; })) return com(s, {}, "Já existe uma listagem de "+novaL.rep+" neste dia, horário e destino", "alerta");
+      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+novaL.horario+" criada para "+novaL.rep);
     }
     case "FECHAR_MES": {
       if(s.mesFechado) return s;
@@ -601,7 +621,7 @@ function reducer(s, a){
       var pr = (s.retPend||[]).find(function(p){return p.id===a.id;}); if(!pr) return s;
       var s2 = Object.assign({}, s, {retPend:(s.retPend||[]).filter(function(p){return p.id!==a.id;})});
       if(!a.aceita) return com(s2, {}, "A representante recusou a retirada", "atencao");
-      return reducer(s2, {type:"RETIRAR", lid:pr.lid, ids:pr.ids, por:pr.por, codigo:true, app:true});
+      return reducer(s2, {type:"RETIRAR", lid:pr.lid, ids:pr.ids, por:pr.por, app:true});
     }
     // App da revendedora: confirma que recebeu, se as peças conferem e se gostou do kit
     // Representante organiza os atendimentos: horário de cada revendedora
@@ -641,7 +661,14 @@ function reducer(s, a){
         nv.nome+" entrou na listagem de "+ln.rep+(a.autorizador ? " (autorizado por "+nomeDe(a.autorizador)+")" : a.foraPrazo ? " como atrasado" : ""));
     }
     // Avaliação da representante no app dela: nota do kit e peças faltando (desconta da bipadora)
-    case "AVALIAR": return com(s, {kits: mapKit(s, a.id, function(){ return {aval:{nota:a.nota, faltas:a.faltas}}; })}, "Avaliação enviada");
+    // Avaliação do kit retirado (05/11/2026): uma vez só, só kit retirado. Se o kit já teve a conferência das peças, a falta já está lá (errosBip):
+    // a avaliação não conta de novo (resumoBipadora soma aval.faltas + errosBip).
+    case "AVALIAR": {
+      k = kitDe(s, a.id); if(!k || k.status!=="retirado" || k.aval) return s;
+      var nAv = Math.max(1, Math.min(5, Math.round(Number(a.nota)||0)));
+      var faltAv = ((s.confBip||{})[k.id]||{}).fim ? 0 : Math.max(0, Math.floor(Number(a.faltas)||0));
+      return com(s, {kits: mapKit(s, a.id, function(){ return {aval:{nota:nAv, faltas:faltAv}}; })}, "Avaliação enviada");
+    }
     // Representante marca uma remarcação deste kit (antes do acerto): cada remarcação entra na lista com sua própria
     // isenção (motivo justificado, ex.: falecimento na família) — remarcação isenta não pesa multa nem avança a escada.
     case "KIT_REMARCAR": {
@@ -1036,6 +1063,7 @@ function reducer(s, a){
     // Reposição ou expositor: nunca passa pela tabela de faixas, comissão fixa (kit) ou manual (reposição especial).
     case "REPOSICAO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
+      if(k.reposicaoEntregue) return com(s, {}, "Reposição de "+k.rev+" já foi entregue");   // nunca grava duas vezes (toque duplo ou voltar e refazer), 05/11/2026
       var comissaoFixa = a.especial ? (a.comissaoManual||0) : ((s.comis||{}).reposicao!=null ? s.comis.reposicao : 15);   // R$ 15 por reposição entregue (Configurador de comissões)
       var registroRep = {id:"AC"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo: a.especial ? "reposicao_especial" : "reposicao", tipoKit:"reposicao", data:isoDia(new Date(agora)), comissao:comissaoFixa, valorAcerto:0, vendaLiquida:0,
@@ -1051,6 +1079,7 @@ function reducer(s, a){
     // e assinatura digital da revendedora. Fica gravado no kit e no consolidado do consignado.
     case "KITNOVO_ENTREGAR": {
       k = kitDe(s, a.id); if(!k) return s;
+      if(k.kitNovoEntregue) return s;   // toque duplo: a entrega (e a comissão de kit novo) só vale uma vez
       var regEntrega = {id:"KN"+agora, kitId:k.id, rev:k.rev, rep:(function(){ var l = s.listagens.find(function(x){return x.id===k.lid;}); return l?l.rep:null; })(),
         tipo:"kit_novo_entrega", tipoKit:k.tipoKit||"kit_novo", data:isoDia(new Date(agora)), condicionais:a.condicionais||[], pecasTotal:a.pecasTotal||0,
         pecasFaltaram:a.pecasFaltaram||0, obsDivergencia:a.obsDivergencia||"", regrasLidas:a.regrasLidas||[], assinatura:a.assinatura||null,
@@ -1103,16 +1132,24 @@ function reducer(s, a){
       else delete cb0[a.kitId];
       return com(s, {confBip:cb0}, a.type==="CONF_LIBERAR" ? "Kit liberado: pode começar a bipar" : null);
     }
+    // 05/11/2026: condicionais REAIS do kit, lidas da DevMaster (rota /api/representante/condicionais). Sem dado falso.
+    case "KIT_CONDS_REAIS": {
+      if(!kitDe(s, a.kitId)) return s;
+      return com(s, {kits:mapKit(s, a.kitId, function(){ return {condsReais:a.conds||[], condsReaisEm:agora}; })}, null);
+    }
     case "CONF_QTD": {   // 03/11/2026: conferência só por QUANTIDADE (ainda sem bipagem): contagem = {numeroDaCondicional: quantidade}
       var kQ = kitDe(s, a.kitId); if(!kQ) return s;
+      if(!condicionaisDoKit(kQ).length) return com(s, {}, "Sem condicional da DevMaster para este kit: não dá para conferir", "alerta");
+      if(((s.confBip||{})[a.kitId]||{}).fim) return s;   // já contada: para contar de novo, primeiro "Contar de novo" (CONF_REINICIAR)
       var condsQ = condicionaisDoKit(kQ), esperQ = 0, lidasQ = 0, faltasQ = [], sobrasQ = [];   // a representante conta tudo junto (as peças das condicionais vêm misturadas): compara só o TOTAL
       condsQ.forEach(function(c){ esperQ += totaisDe(c).pecas; });
       var ctQ = Math.max(0, parseInt(a.total, 10)||0); lidasQ = Math.min(esperQ, ctQ);
       if(ctQ<esperQ) faltasQ.push({cond:"", codigo:"Total do kit", desc:"", qtd:esperQ-ctQ}); else if(ctQ>esperQ) sobrasQ.push({codigo:"Total do kit", qtd:ctQ-esperQ});
       var nFQ = faltasQ.reduce(function(t,f){ return t+f.qtd; },0), nSQ = sobrasQ.reduce(function(t,x){ return t+x.qtd; },0);
       var resQ = {esperadas:esperQ, lidas:lidasQ, faltas:faltasQ, nFaltas:nFQ, sobras:sobrasQ, nSobras:nSQ, erros:nFQ, conds:condsQ.map(function(c){ return c.numero; }), porQuantidade:true};
-      var cbQ = Object.assign({}, s.confBip||{}); cbQ[a.kitId] = Object.assign({}, cbQ[a.kitId]||{}, {lib:(cbQ[a.kitId]||{}).lib||agora, ini:agora, fim:agora, total:ctQ, resultado:resQ, erros:[]});
-      return com(s, {confBip:cbQ}, nFQ>0 ? "Quantidade conferida: faltaram "+nFQ+" peça(s)" : "Quantidade conferida: "+lidasQ+" de "+esperQ+" peças");
+      var anQ = (s.confBip||{})[a.kitId]||{};
+      var ptQ = gravaConferencia(s, kQ, resQ, Object.assign({}, anQ, {lib:anQ.lib||agora, ini:agora, fim:agora, total:ctQ, resultado:resQ, erros:[]}), agora), bipQ = ptQ._bipadora; delete ptQ._bipadora;
+      return com(s, ptQ, nFQ>0 ? "Quantidade conferida: faltaram "+nFQ+" peça(s), erro de bipagem de "+bipQ : "Quantidade conferida: "+lidasQ+" de "+esperQ+" peças");
     }
     case "CONF_NOTA": {   // a representante anota as peças que faltaram (conferência por quantidade); fica no registro da conferência
       var cbN = Object.assign({}, s.confBip||{}), anN = cbN[a.kitId]; if(!anN || !anN.fim) return s;
@@ -1124,7 +1161,7 @@ function reducer(s, a){
       if(!idsRK.length) return s;
       var cbRK = Object.assign({}, s.confBip||{}), enRK = Object.assign({}, s.entregasKN||{}); idsRK.forEach(function(id){ delete cbRK[id]; delete enRK[id]; });
       var prRK = Object.assign({}, s.perfisRev||{}); if(prRK[a.rev]){ var ppRK = Object.assign({}, prRK[a.rev]); delete ppRK.condicionaisAbertas; delete ppRK.termoConsignado; prRK[a.rev] = ppRK; }
-      return com(s, {kits:s.kits.filter(function(k){ return idsRK.indexOf(k.id)<0; }), confBip:cbRK, entregasKN:enRK, perfisRev:prRK, acertosConsignado:(s.acertosConsignado||[]).filter(function(r){ return idsRK.indexOf(r.kitId)<0; })}, null);
+      return com(s, {kits:s.kits.filter(function(k){ return idsRK.indexOf(k.id)<0; }), confBip:cbRK, entregasKN:enRK, perfisRev:prRK, errosBipagem:(s.errosBipagem||[]).filter(function(x){ return idsRK.indexOf(x.kitId)<0; }), acertosConsignado:(s.acertosConsignado||[]).filter(function(r){ return idsRK.indexOf(r.kitId)<0; })}, null);
     }
     case "CONF_BIPAR": {
       var kB = kitDe(s, a.kitId), cfB = (s.confBip||{})[a.kitId]; if(!kB || !cfB || !cfB.ini || cfB.fim) return s;
@@ -1133,19 +1170,13 @@ function reducer(s, a){
     }
     case "CONF_FINALIZAR": {
       var kF = kitDe(s, a.kitId), cfF = (s.confBip||{})[a.kitId]; if(!kF || !cfF || !cfF.ini || cfF.fim) return s;
-      var resF = resultadoConf(condicionaisDoKit(kF), cfF), lF = s.listagens.find(function(x){ return x.id===kF.lid; });
-      var regF = {id:"EB"+agora, kitId:kF.id, rev:kF.rev, rep:lF ? lF.rep : "", data:isoDia(new Date(agora)), em:agora, bipId:kF.bipId||null, bipadora:kF.bipId ? nomeDe(kF.bipId) : "—",
-        montadora:kF.montId ? nomeDe(kF.montId) : "—", condicionais:resF.conds, esperadas:resF.esperadas, lidas:resF.lidas, faltas:resF.faltas, nFaltas:resF.nFaltas, sobras:resF.sobras, nSobras:resF.nSobras, erros:resF.erros};
-      var cbF = Object.assign({}, s.confBip); cbF[a.kitId] = Object.assign({}, cfF, {fim:agora, resultado:resF});
-      var pF = Object.assign({}, s.perfisRev), perfF = Object.assign({}, pF[kF.rev]);
-      perfF.conferenciasKit = [{em:agora, erros:resF.erros, faltas:resF.nFaltas, sobras:resF.nSobras, bipadora:regF.bipadora}].concat(perfF.conferenciasKit||[]); pF[kF.rev] = perfF;
-      return com(s, {confBip:cbF, perfisRev:pF,
-        errosBipagem:resF.erros>0 ? [regF].concat(s.errosBipagem||[]) : (s.errosBipagem||[]),
-        kits:resF.erros>0 ? s.kits.map(function(x){ return x.id===kF.id ? Object.assign({}, x, {errosBip:(x.errosBip||0)+resF.erros, erroBipId:regF.id}) : x; }) : s.kits},
-        resF.erros>0 ? "Conferência registrada: "+resF.erros+" erro(s) de bipagem de "+regF.bipadora : "Conferência concluída sem erros");
+      var resF = resultadoConf(condicionaisDoKit(kF), cfF);
+      var ptF = gravaConferencia(s, kF, resF, Object.assign({}, cfF, {fim:agora, resultado:resF}), agora), bipF = ptF._bipadora; delete ptF._bipadora;
+      return com(s, ptF, resF.erros>0 ? "Conferência registrada: "+resF.erros+" erro(s) de bipagem de "+bipF : "Conferência concluída sem erros");
     }
     case "KN_ENT_CONCLUIR": {
-      var entF = (s.entregasKN||{})[a.kitId]; if(!entF) return s;
+      var entF = (s.entregasKN||{})[a.kitId]; if(!entF || entF.status==="concluida") return s;
+      if(passoAtual(entF) < TOTAL_PASSOS) return s;   // só conclui com as etapas 1 a 15 feitas pelas duas
       var entFN = {}; entFN[a.kitId] = Object.assign({}, entF, {assinatura:a.assinatura||"assinado", status:"concluida", fim:agora});
       var kEntF = kitDe(s, a.kitId);
       return com(s, {entregasKN:Object.assign({}, s.entregasKN, entFN), perfisRev:kEntF ? carimboEntrega(s, kEntF.rev) : s.perfisRev}, null);

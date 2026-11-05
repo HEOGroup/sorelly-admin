@@ -3,12 +3,53 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.64", data:"2026-11-05", titulo:"App da representante: tirado o bloco Previstas para hoje", itens:[
+  {tipo:"melhoria", area:"App da representante", txt:"O bloco Previstas para hoje saiu da aba Listagens (pedido do Marcus). As listagens reais serão postas a partir das listagens que ele vai passar. A data do acerto das revendedoras reais continua vindo da agenda da DevMaster."},
+ ]},
+ {v:"0.18.63", data:"2026-11-05", titulo:"App da representante: situação do kit só com o que importa para ela", itens:[
+  {tipo:"correção", area:"App da representante", txt:"O selo da situação do kit mostra só: Na fila, Montando, Aguardando bipagem, Bipando, Pronto para retirar e Retirado (e Condicional para retirar nos casos sem kit). Sumiu Aguardando o valor do kit, que é etapa interna da supervisão. O selo atualiza sozinho conforme a montagem e a bipagem andam, porque lê o mesmo kit da listagem."},
+ ]},
+ {v:"0.18.62", data:"2026-11-05", titulo:"App da representante: revendedoras reais previstas para hoje entram na listagem", itens:[
+  {tipo:"novo", area:"App da representante", txt:"A aba Listagens tem o bloco Previstas para hoje: as revendedoras REAIS da representante com acerto previsto para hoje (nome, cidade e telefone da DevMaster). Um toque em Colocar na listagem põe a revendedora na listagem de hoje. Nada é criado sozinho ao abrir o app. Sem listagem de hoje, o bloco pede para criar uma."},
+  {tipo:"correção", area:"App da representante", txt:"A data do acerto das revendedoras reais vinha vazia. Agora vem da agenda da DevMaster: a atividade ACERTOS marcada (vale a data dela) ou, sem atividade, a devolução prevista do kit. Aparece no cartão de cada revendedora e em Alterar data do acerto."},
+ ]},
+ {v:"0.18.61", data:"2026-11-05", titulo:"Painel das representantes com dados reais do app e a tela Apps abrindo numa representante real", itens:[
+  {tipo:"novo", area:"Representantes & Kits", txt:"Tela nova Painel das representantes (Representantes › Painel): as 28 representantes do app com situação, comissão, quantas revendedoras cada uma tem no app, quantas têm vendas, vendido, valor de acerto, peças e condicionais (ciclo atual), com a linha de total. Dados reais lidos da API do app, só leitura, cache de 5 minutos, botão Atualizar do app. Só a Diretoria."},
+  {tipo:"novo", area:"Representantes & Kits", txt:"Botão Ver no app em cada linha: abre a tela Apps já no app dessa representante, com as revendedoras reais dela (DevMaster)."},
+  {tipo:"correção", area:"Apps", txt:"A tela Apps deixou de abrir na simulação da Anamaria com revendedoras inventadas (Beatriz Nogueira e outras). Agora abre na última representante real escolhida (primeira vez: Dayanne). O app mostra duas linhas novas nos cartões: Revendedoras no app e Vendido no app."},
+  {tipo:"correção", area:"Servidor", txt:"A leitura da API do app usa as autoridades de certificado do Windows (como a DevMaster), porque o antivírus troca o certificado da conexão segura. A verificação do certificado continua ligada."},
+ ]},
+ {v:"0.18.60", data:"2026-11-05", titulo:"App da representante: criar listagem na aba Listagens e tela Alterar data no padrão da calculadora", itens:[
+  {tipo:"novo", area:"App da representante", txt:"A aba Listagens tem o botão Nova listagem: dia, horário da retirada e destino (Curitiba ou cidade da região metropolitana; fora de Curitiba é viagem, sem limite de revendedoras). A mesma peça cria a listagem na tela da revendedora, em Agendar atendimento e em Solicitar kit. Não cria no passado nem repete o mesmo dia, horário e destino."},
+  {tipo:"melhoria", area:"App da representante", txt:"Tela da revendedora mais compacta: nome e telefone em linhas baixas, status numa linha só (Hoje · tipo do kit), botões Agendar atendimento, Realizar atendimento, Pré-acerto e Alterar data com 32 px e texto de uma linha. Ocupa bem menos altura."},
+  {tipo:"correção", area:"App da representante", txt:"O botão continua Realizar atendimento. Ao tocar, o app já sabe a situação da revendedora pelo tipo do kit: liga só Realizar acerto + kit, Entregar kit novo ou Entregar reposição (marcada como Situação dela) e deixa as outras cinza com Não se aplica. Sem o texto Em breve. O status Hoje não empurra mais o selo para fora quando o texto é longo."},
+  {tipo:"correção", area:"App da representante", txt:"A janela Você gostaria de atualizar remarcações e multas? abria sobre a tela inteira do navegador, fora do celular. Agora abre dentro do app."},
+  {tipo:"melhoria", area:"App da representante", txt:"Nomes das situações do kit em linguagem da representante: Pegar condicionais virou Condicional para retirar; Bipado virou Pronto para retirar; Na fila virou Na fila de montagem; Aguardando bipagem virou Kit montado, falta bipar; e os demais. O admin mantém os nomes antigos. Lista completa em docs/rascunhos/app-representante-situacoes.html."},
+  {tipo:"correção", area:"Alterar data do acerto", txt:"A tela abre como tela própria, clara, com seta de voltar e campos de 32 px, no mesmo desenho da calculadora de acertos (antes abria um bloco preto sobre a tela inicial). Revendedora sem data de acerto no sistema: a tela pede a data atual (antes o botão ficava desligado para sempre). Data antes da atual não vale mais como mudança na hora."},
+ ]},
+ {v:"0.18.60", data:"2026-11-05", titulo:"Comissões das representantes: topo compacto, no padrão novo", itens:[
+  {tipo:"melhoria", area:"Comissões", txt:"Filtros numa linha curta ao lado do título (Representante, Mês, Ano e Configurar comissões), sem bloco grande. Gasolina e Relatório de taxas em uma linha cada. Os 6 cartões de totais saíram (proibidos desde 02/11/2026): viraram o bloco Resumo, em lista, ao lado do Pix representante e do Recebido por conta. Abrir todas e a legenda dos 5 números foram para o bloco Comissões pagas e o que falta. A lista das representantes sobe na tela."},
+ ]},
+ {v:"0.18.59", data:"2026-11-05", titulo:"Reposição: agendar no app e no admin, peças da DevMaster e comissão que libera", itens:[
+  {tipo:"novo", area:"App da representante", txt:"Agendar atendimento tem a escolha Acerto + kit ou Reposição. A reposição mostra quantas a representante já agendou na semana (limite de 10, de segunda a domingo; o número vem de Encomendas e reposições → Regras) e trava ao chegar no limite."},
+  {tipo:"novo", area:"Listagens (admin)", txt:"Kit de última hora tem o campo Tipo: Acerto + kit ou Reposição. O agendamento também agenda reposição."},
+  {tipo:"correção", area:"Entregar reposição", txt:"As peças vêm da DevMaster pelo CPF da revendedora, igual ao kit novo. Sem CPF, a tela pede o CPF; CPF errado tem o botão Trocar o CPF."},
+  {tipo:"correção", area:"Comissões", txt:"A comissão de R$ 15,00 da reposição ficava travada para sempre em Condicional não assinada. Agora a assinatura do app basta. Reposição especial paga o valor manual."},
+  {tipo:"correção", area:"Entregar reposição", txt:"A mesma reposição não é gravada duas vezes (toque duplo ou voltar e refazer)."},
+ ]},
+ {v:"0.18.58", data:"2026-11-05", titulo:"App da representante: retirada com código de verdade e falta na conferência vira erro de quem bipou", itens:[
+  {tipo:"correção", area:"Retirada do kit", txt:"O código de retirada muda a cada retirada e a cada dia (antes era fixo, e 1234 para a maioria). O sistema confere o código e a assinatura, não só a tela. A dica com o código saiu da janela de retirada do admin. O código aparece no cartão da listagem do app da representante quando há kit bipado (antes ficava numa tela que nenhum botão abria)."},
+  {tipo:"correção", area:"Conferência das peças", txt:"A falta na contagem do total vira erro de bipagem de quem BIPOU o kit (Erros de bipagem, desconto da bipadora e histórico da revendedora). Contar de novo substitui o erro anterior, sem somar duas vezes; o histórico guarda todas as contagens."},
+  {tipo:"correção", area:"Avaliar kits", txt:"Avaliação vale uma vez só e só para kit retirado. Kit já conferido mostra a falta da conferência e não conta a falta de novo. Nota limitada de 1 a 5."},
+  {tipo:"correção", area:"Alterar data do acerto", txt:"Não aceita pedido com a mesma data do acerto atual."},
+ ]},
  {v:"0.18.42", data:"2026-11-03", titulo:"Chamados: data de acerto no Link de pagamento, kit novo R$ 7.000, Pix por dia, valor liberado", itens:[
   {tipo:"correção", area:"Link de pagamento", txt:"Não dava para salvar a data do acerto em link já solicitado ou pago: a conferência da data estava errada e recusava qualquer data. Corrigido (Hellen). O mesmo erro no mês inicial do Top 50 das Encomendas também foi corrigido."},
   {tipo:"melhoria", area:"Kits novos", txt:"Todo kit novo que chega do Cadastro entra com o valor padrão de R$ 7.000,00. A Michele edita à mão quando a Direção aprova outro valor."},
   {tipo:"novo", area:"Financeiro familiar", txt:"PIX das revendedoras: faixa Total por dia, com a soma dos PIX de cada dia (Anamaria)."},
   {tipo:"novo", area:"Atendimento interno", txt:"Na ficha da revendedora, campo Valor liberado (reposição ou kit novo). O valor vai para a Observação da listagem do dia (Tamara)."},
   {tipo:"melhoria", area:"RH", txt:"A lista Colaboradora no lançamento de atraso e falta fica em ordem alfabética (Ana Paula)."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"A agenda da Tamara passa a ter horários de meia em meia hora (08:00, 08:30, 09:00... até 17:30). Os limites de 3 por horário e 15 por dia continuam e serão revistos com ela. Sábado marca das 08:00 às 10:30."},
  ]},
  {v:"0.18.47", data:"2026-11-03", titulo:"RH: Ficha de experiência com 100 pontos", itens:[
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada colaboradora em experiência tem uma ficha de 100 pontos. Ela perde pontos a cada ocorrência (falta, atraso, comportamento, erro). O gestor dá nota de 0 a 10 em produtividade e adaptação. O sistema mostra a recomendação: efetivar (85 a 100), acompanhar (70 a 84) ou não efetivar. A colaboradora nunca vê a ficha. Botão Imprimir ficha."},
@@ -18,6 +59,17 @@ var VERSOES = [
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada setor tem um gestor que dá a nota do gestor e vê só as fichas do próprio setor. A lista de gestores fica em Configurador do RH → Ficha de experiência → Gestores por setor."},
   {tipo:"novo", area:"RH → Controle de experiência", txt:"A foto da colaboradora (a mesma do perfil do SorellyChat) aparece ao lado do nome na lista e no topo da ficha. Sem foto, aparecem as iniciais. Na lista, a coluna Colaboradora fica à esquerda, com foto de 48 px dentro de uma linha mais alta (pedido do Marcus; exceção `padrao-ok` à regra de centralizar)."},
   {tipo:"novo", area:"Avisos → Avaliação de experiência", txt:"No dia da 1ª e da 2ª avaliação (e até 3 dias depois) sai um alerta para a Maria, Marcus, Nickolas e Lucas. Um clique em Abrir tela leva direto à ficha da colaboradora, com a pontuação e as notas, para decidir se efetiva. Quem recebe muda em Tecnologia → Avisos."},
+  {tipo:"melhoria", area:"Acessos → Folders e informativos", txt:"A tela Folders e informativos (Representantes & Kits › Regras) também foi liberada para todas as pessoas do sistema."},
+  {tipo:"melhoria", area:"Acessos → Folders", txt:"A tela Folders (Cadastro de revendedoras) foi liberada para todas as pessoas do sistema, como as Aulas e as Melhorias. Os PDFs, o link e a mensagem para WhatsApp ficam à mão de qualquer um."},
+  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Ficha no layout B3 (escolhido pelo Marcus em 04/11/2026): cartão da colaboradora no topo com foto grande (190 px), informações em 3 grupos (Contrato, Avaliações, Presença) e o anel da nota; Nova ocorrência em linha única logo abaixo; 3 colunas: Pontuação em barras com a nota do gestor, A confirmar e Ocorrências, e Parecer e decisão. Dourado só no título dos blocos."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Todos os blocos da ficha (Informações, Nova ocorrência, Pontuação, A confirmar, Ocorrências e Parecer) têm a barra de título dourada em degradê (opção ouro do Bloco)."},
+  {tipo:"novo", area:"RH → Controle de experiência", txt:"Clicar na foto da colaboradora (na lista ou na ficha) abre um card grande com a foto, o nome, o setor e a função."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Bloco Informações na ficha: função, setor, admissão, dias de empresa, plano, 1ª e 2ª avaliação, efetivação, entrada, escala, gestor, advertências, faltas, atestados e atrasos desde a admissão."},
+  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Confirmar, descartar e remover viraram botões de ícone (✓, ✕ e lixeira) de 32 px."},
+  {tipo:"correção", area:"Padrão visual → Tabelas", txt:"A peça TabelaP (usada em 44 telas) tinha o topo cinza. Agora tem o topo dourado em degradê, um só na tabela inteira. A folha A4 da ficha também tem topo dourado."},
+  {tipo:"novo", area:"Padrão visual → Trava dura", txt:"Regra 2g: a trava agora lê as peças TabelaP, TabelaPlanilha e TabelaOuro e reprova se o topo dourado sumir ou voltar a ficar cinza. Roda em npm run padrao, conferir, verificar, CI e no hook."},
+  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Botão Imprimir abre a folha A4 da ficha (fundo branco, resultado, composição, ocorrências, parecer e linhas de assinatura de Gestor, RH e Direção)."},
+  {tipo:"melhoria", area:"RH → Controle de experiência", txt:"Ficha mais compacta: duas colunas (pontuação e parecer à esquerda; ocorrências à direita), pontos escritos como 9 / 20, sem textos repetidos. Tudo cabe numa tela só."},
   {tipo:"melhoria", area:"RH → Controle de experiência", txt:"A lista passou para o padrão visual (topo dourado, nada abreviado) e ganhou a coluna Pontos."}
  ]},
  {v:"0.18.45", data:"2026-11-03", titulo:"Pedidos: campo Fotos enviadas e os 3 pedidos da Point corrigidos", itens:[

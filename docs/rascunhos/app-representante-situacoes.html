@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App da representante: situações e opções do atendimento</title>
+<style>
+  body{margin:0;padding:24px 16px;background:#0B0B0D;color:#F5F1E6;font:13px/1.4 Inter,system-ui,sans-serif}
+  main{max-width:880px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+  h1{font-size:20px;margin:0}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:#E8B84B;margin:0 0 8px}
+  p{margin:0 0 6px}
+  .caixa{background:#161618;border:1px solid #2B2B2F;border-radius:14px;padding:14px}
+  table{width:100%;border-collapse:collapse}
+  th{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:#E8B84B;text-align:left;padding:6px 8px;border-bottom:2px solid #C9A13B}
+  td{padding:6px 8px;border-bottom:1px solid #2B2B2F;vertical-align:top}
+  .sel{display:inline-block;padding:2px 10px;border-radius:999px;font-weight:700;font-size:12px}
+  .aviso{background:#FFF7E6;color:#B45309}.cinza{background:#EEE;color:#555}.roxo{background:#F1E8FF;color:#6D28D9}
+  .alerta{background:#FDECEC;color:#B91C1C}.info{background:#E7F3FF;color:#1D4ED8}.ok{background:#E6F6EC;color:#15803D}
+  .app{background:#fff;color:#111827;border-radius:18px;padding:12px;width:330px;display:flex;flex-direction:column;gap:6px}
+  .linha{display:flex;align-items:center;gap:8px;min-height:32px;padding:4px 10px;border-radius:12px;border:1px solid #E9DDBB}
+  .linha.on{background:#FBF5E3}.linha.off{opacity:.5}
+  .ic{width:28px;height:28px;border-radius:10px;display:grid;place-items:center;font-size:14px}
+  .nota{margin-left:auto;font-size:11px;font-weight:700}
+  .botao{height:32px;border-radius:12px;background:#C9A13B;color:#fff;font-weight:800;font-size:11px;display:grid;place-items:center}
+  .grade{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:12px}
+  small{color:#B8B2A2}
+</style>
+</head>
+<body>
+<main>
+  <h1>App da representante: situações e opções do atendimento</h1>
+  <p><small>Rascunho de 05/11/2026. O que está escrito abaixo já está no app (aba Apps).</small></p>
+
+  <section class="caixa">
+    <h2>1. O que é "Pegar condicionais"</h2>
+    <p>É a situação de um kit <b>sem peças</b>: a revendedora vai sair, ou só precisa de uma condicional. A funcionária da empresa imprime o papel da condicional e a representante só <b>retira</b> esse papel. Não tem montagem nem bipagem de kit. O nome antigo vinha da montagem e confundia. Agora o app fala "Condicional para retirar".</p>
+  </section>
+
+  <section class="caixa">
+    <h2>2. Selo da situação (só o que importa para a representante)</h2>
+    <p>O selo lê o mesmo kit da listagem e muda sozinho conforme a montagem e a bipagem andam. Etapas internas (valor do kit, conferência da supervisão, ajuste) aparecem como "Na fila" ou "Montando".</p>
+    <table>
+      <tr><th>Etapa interna (admin)</th><th>O que a representante vê</th><th>Significado</th></tr>
+      <tr><td>Aguardando valor · Na fila</td><td><span class="sel cinza">Na fila</span></td><td>O kit ainda não começou a ser montado.</td></tr>
+      <tr><td>Montando · Para conferir · Voltou para ajuste</td><td><span class="sel roxo">Montando</span></td><td>O kit está sendo montado e conferido na empresa.</td></tr>
+      <tr><td>Aguardando bipagem</td><td><span class="sel info">Aguardando bipagem</span></td><td>Montado. Falta bipar.</td></tr>
+      <tr><td>Bipando</td><td><span class="sel aviso">Bipando</span></td><td>A bipadora está bipando agora.</td></tr>
+      <tr><td>Bipado</td><td><span class="sel ok">Pronto para retirar</span></td><td>Pode retirar na empresa (use o código da listagem).</td></tr>
+      <tr><td>Retirado</td><td><span class="sel cinza">Retirado</span></td><td>A representante já levou o kit.</td></tr>
+      <tr><td>Pegar condicionais (sem kit)</td><td><span class="sel aviso">Condicional para retirar</span></td><td>Sem kit. Só retirar o papel da condicional.</td></tr>
+      <tr><td>Conferir condicional</td><td><span class="sel aviso">Conferindo a condicional</span></td><td>A empresa confere a condicional antes de liberar.</td></tr>
+    </table>
+  </section>
+
+  <section class="caixa">
+    <h2>3. Tipos de atendimento (o que o sistema já sabe da revendedora)</h2>
+    <table>
+      <tr><th>Tipo no sistema</th><th>Aparece como</th><th>Botão ligado em "Realizar atendimento"</th></tr>
+      <tr><td>Acerto + kit</td><td>Acerto + kit</td><td>Realizar acerto + kit</td></tr>
+      <tr><td>Acerto + expositor</td><td>Acerto + expositor</td><td>Realizar acerto + kit</td></tr>
+      <tr><td>Kit novo</td><td>Kit novo</td><td>Entregar kit novo</td></tr>
+      <tr><td>Kit novo + expositor</td><td>Kit novo + expositor</td><td>Entregar kit novo</td></tr>
+      <tr><td>Reposição</td><td>Reposição</td><td>Entregar reposição</td></tr>
+      <tr><td>Só condicional</td><td>Só condicional</td><td>Realizar acerto + kit</td></tr>
+      <tr><td>Saída da revendedora</td><td>Saída da revendedora</td><td>Realizar acerto + kit</td></tr>
+    </table>
+  </section>
+
+  <section>
+    <h2>4. Menu "Realizar atendimento" (só a situação dela fica ligada)</h2>
+    <div class="grade">
+      <div>
+        <p><b>Revendedora de acerto</b></p>
+        <div class="app">
+          <div class="botao">Realizar atendimento ⌄</div>
+          <div class="linha on"><span class="ic" style="background:#16A34A1F;color:#16A34A">▦</span><b>Realizar acerto + kit</b><span class="nota" style="color:#8A6A12">Situação dela</span></div>
+          <div class="linha off"><span class="ic" style="background:#DB27771F;color:#DB2777">＋</span><b>Entregar kit novo</b><span class="nota">Não se aplica</span></div>
+          <div class="linha off"><span class="ic" style="background:#0891B21F;color:#0891B2">▣</span><b>Entregar reposição</b><span class="nota">Não se aplica</span></div>
+        </div>
+      </div>
+      <div>
+        <p><b>Revendedora de kit novo</b></p>
+        <div class="app">
+          <div class="botao">Realizar atendimento ⌄</div>
+          <div class="linha off"><span class="ic" style="background:#16A34A1F;color:#16A34A">▦</span><b>Realizar acerto + kit</b><span class="nota">Não se aplica</span></div>
+          <div class="linha on"><span class="ic" style="background:#DB27771F;color:#DB2777">＋</span><b>Entregar kit novo</b><span class="nota" style="color:#8A6A12">Situação dela</span></div>
+          <div class="linha off"><span class="ic" style="background:#0891B21F;color:#0891B2">▣</span><b>Entregar reposição</b><span class="nota">Não se aplica</span></div>
+        </div>
+      </div>
+      <div>
+        <p><b>Revendedora de reposição</b></p>
+        <div class="app">
+          <div class="botao">Realizar atendimento ⌄</div>
+          <div class="linha off"><span class="ic" style="background:#16A34A1F;color:#16A34A">▦</span><b>Realizar acerto + kit</b><span class="nota">Não se aplica</span></div>
+          <div class="linha off"><span class="ic" style="background:#DB27771F;color:#DB2777">＋</span><b>Entregar kit novo</b><span class="nota">Não se aplica</span></div>
+          <div class="linha on"><span class="ic" style="background:#0891B21F;color:#0891B2">▣</span><b>Entregar reposição</b><span class="nota" style="color:#8A6A12">Situação dela</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="caixa">
+    <h2>5. Janela "Você gostaria de atualizar remarcações e multas?"</h2>
+    <p>Antes ela aparecia sobre a tela inteira do navegador (fora do celular). Agora abre <b>dentro do app</b>, só sobre a tela do celular.</p>
+  </section>
+</main>
+</body>
+</html>

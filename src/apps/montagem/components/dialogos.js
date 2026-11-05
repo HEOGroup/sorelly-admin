@@ -2,6 +2,7 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, kitsNaListagem, listagemCheia } from "@/apps/montagem/domain/regras";
+import { codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -12,7 +13,7 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 
 function DlgNovoKit(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
-  var st = useState({rev:"", bairro:"", v1:0, v2:0, v3:0, prio:false}), f = st[0], set = st[1];
+  var st = useState({rev:"", bairro:"", v1:0, v2:0, v3:0, prio:false, tipo:"acerto_kit"}), f = st[0], set = st[1];   // tipo: acerto + kit ou reposição (05/11/2026: o agendamento também agenda reposição)
   function up(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); }
   var vendas = [f.v1,f.v2,f.v3].filter(function(x){return x>0;});
   var campo = function(lb, ch){ return e("label",{className:"flex flex-col gap-1.5"}, e("span",{className:"text-sm font-medium"}, lb), ch); };
@@ -22,8 +23,10 @@ function DlgNovoKit(p){
       sub: cheia ? "Listagem cheia ("+kitsNaListagem(s,p.lid)+"/"+capacidadeListagem(lig)+"): escolha outra listagem" : "Entra como aguardando valor at\u00e9 a Deysiane confirmar",
       confirmar:"Incluir kit", icone:"plus",
       desabilitado:!f.rev.trim() || cheia, onClose:p.fechar,
-      onConfirmar:function(){ d({type:"ADD_KIT", lid:p.lid, rev:f.rev.trim(), bairro:f.bairro.trim(), vendas:vendas, prio:f.prio}); set({rev:"",bairro:"",v1:0,v2:0,v3:0,prio:false}); p.fechar(); }},
+      onConfirmar:function(){ var rep = f.tipo==="reposicao"; d({type:"ADD_KIT", lid:p.lid, rev:f.rev.trim(), bairro:f.bairro.trim(), vendas:rep ? [] : vendas, prio:f.prio, tipoKit:rep ? "reposicao" : "acerto_kit"}); set({rev:"",bairro:"",v1:0,v2:0,v3:0,prio:false,tipo:"acerto_kit"}); p.fechar(); }},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
+      campo("Tipo", e("select",{className:INPUT+" h-8 text-[13px]", value:f.tipo||"acerto_kit", "aria-label":"Tipo do atendimento", onChange:function(ev){up("tipo",ev.target.value);}},
+        e("option",{value:"acerto_kit"},"Acerto + kit"), e("option",{value:"reposicao"},"Reposição"))),
       campo("Revendedora", e("input",{className:INPUT, value:f.rev, onChange:function(ev){up("rev",ev.target.value);}})),
       campo("Bairro", e("input",{className:INPUT, value:f.bairro, onChange:function(ev){up("bairro",ev.target.value);}})),
       campo("\u00daltima venda", e(MoneyInput,{value:f.v1, onChange:function(v){up("v1",v);}})),
@@ -32,7 +35,6 @@ function DlgNovoKit(p){
       e("label",{className:"flex items-center gap-2 self-end text-sm font-medium"}, e("input",{type:"checkbox", checked:f.prio, onChange:function(){up("prio",!f.prio);}, className:"size-4 accent-primary"}), "Priorit\u00e1rio")),
     vendas.length>0 && e("p",{className:"text-sm text-muted-foreground"},"Kit sugerido pela m\u00e9dia: ", e("b",{className:MONO+" text-primary"}, BK(sugerido(vendas, use().state.cfg)))));
 }
-function codigoRetirada(l){ return {L1:"4821", L2:"7364", L3:"2957", L4:"6148"}[l.id] || "1234"; }
 function Assinatura(p){
   var ref = useRef(null), des = useRef(false);
   var ponto = function(ev){ var c = ref.current, r = c.getBoundingClientRect(); return [(ev.clientX-r.left)*c.width/r.width, (ev.clientY-r.top)*c.height/r.height]; };
@@ -69,7 +71,7 @@ function DlgRetirada(p){
   return e(Modal,{open:!!p.lid, titulo:"Fazer retirada", sub: l ? l.rep+" \u00b7 "+prontos.length+(prontos.length===1?" kit bipado dispon\u00edvel":" kits bipados dispon\u00edveis")+(outros?" \u00b7 "+outros+" ainda em produ\u00e7\u00e3o":"") : "",
       confirmar: ids.length ? "Confirmar retirada de "+ids.length+(ids.length===1?" kit":" kits") : "Marque os kits", icone:"check",
       desabilitado: !ids.length || (!sozinha && (!codOk || !ass)), onClose:p.fechar,
-      onConfirmar:function(){ d({type:"RETIRAR", lid:p.lid, ids:ids, por:s.usuario, assinatura:ass, codigo:codOk, sozinha:sozinha}); p.fechar(); }},
+      onConfirmar:function(){ d({type:"RETIRAR", lid:p.lid, ids:ids, por:s.usuario, assinatura:ass, cod:cod, sozinha:sozinha}); p.fechar(); }},
     // retirou sozinha: a representante veio na empresa e levou os kits; a funcion\u00e1ria logada faz a retirada junto. S\u00f3 marca.
     e("label",{className:"flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2.5 text-sm "+(sozinha ? "border-primary bg-primary/10" : "border-border hover:bg-muted/40")},
       e("input",{type:"checkbox", checked:sozinha, onChange:alternaSozinha, className:"size-4 accent-primary"}),
@@ -92,8 +94,7 @@ function DlgRetirada(p){
       e("div",{className:"flex items-center gap-2"},
         e("input",{inputMode:"numeric", maxLength:4, value:cod, placeholder:"0000", onChange:function(ev){setCod(ev.target.value.replace(/\D/g,"").slice(0,4));},
           className:INPUT+" w-32 text-center text-lg! tracking-[.4em] "+MONO+(cod.length===4 ? (codOk?" border-success!":" border-destructive!") : "")}),
-        cod.length===4 && e("span",{className:"text-sm font-semibold "+(codOk?"text-success":"text-destructive")}, codOk ? "C\u00f3digo confere" : "C\u00f3digo n\u00e3o confere")),
-      l && e("span",{className:"text-[12px] text-muted-foreground"},"Demonstra\u00e7\u00e3o: o c\u00f3digo de "+l.rep+" \u00e9 "+codigoRetirada(l)+".")),
+        cod.length===4 && e("span",{className:"text-sm font-semibold "+(codOk?"text-success":"text-destructive")}, codOk ? "C\u00f3digo confere" : "C\u00f3digo n\u00e3o confere"))),
     // 3) assinatura
     e(Assinatura,{key:chave, onChange:setAss}),
     e("p",{className:"text-[12px] text-muted-foreground"},"Entregue por ", e("b",{className:"text-foreground"}, nomeDe(s.usuario)), " (login). Data, hora, kits, c\u00f3digo e assinatura ficam registrados na listagem."));

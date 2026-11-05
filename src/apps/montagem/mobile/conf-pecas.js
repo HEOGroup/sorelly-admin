@@ -5,6 +5,7 @@
 // ficam o campo para digitar o código e o botão de simular a leitura (para testar).
 import { condicionaisDoKit, itensDe, resultado, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { useCondsReais } from "@/apps/montagem/mobile/conds-reais";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
@@ -18,6 +19,7 @@ var CARD = "rounded-2xl bg-white p-3 ring-1 ring-[#E5E7EB]";
 
 function ConfPecas(p){
   var s = p.s, d = p.d, k = p.k, conf = (s.confBip||{})[k.id] || {};
+  var real = useCondsReais(s, d, k);   // condicionais reais da DevMaster (05/11/2026)
   var conds = condicionaisDoKit(k), tot = totaisKit(conds);
   var cd = useState(""), codigo = cd[0], setCodigo = cd[1];
   var nt = useState(""), notaTxt = nt[0], setNotaTxt = nt[1];   // peças que faltaram, anotadas pela representante (opcional)
@@ -38,6 +40,8 @@ function ConfPecas(p){
       e("b",{className:"text-[13px] text-[#111827]"},"Condicional "+c.numero), e("span",{className:MONO+" text-[12px] text-[#6B7280]"}, t.modelos+" modelos · "+t.pecas+" peças · "+BR(t.valor))); }),
     e("p",{className:"text-[11.5px] text-[#6B7280]"},"Bipado na empresa por "+bipadora+" · montado por "+montadora));
 
+  // sem condicional real da DevMaster não há o que conferir (nada de peça inventada)
+  if(!conds.length) return e("p",{className:"rounded-xl bg-[#FEE2E2] px-3 py-2 text-[12.5px] font-semibold text-[#991B1B]"}, real.aviso || "Sem condicional da DevMaster para este kit.");
   // 1) liberar
   if(!conf.lib) return e("div",{className:"flex flex-col gap-2.5"},
     e("p",{className:"text-[12.5px] text-[#374151]"},"Depois de explicar as regras para a revendedora, libere o kit para entregar e conferir as peças."), resumo,
@@ -69,7 +73,7 @@ function ConfPecas(p){
         e("b",{className:"text-[13px] text-[#991B1B]"}, r.porQuantidade ? "Quantidade conferida: "+r.lidas+" de "+r.esperadas+" peças" : "Conferência concluída com "+r.erros+(r.erros===1 ? " erro" : " erros")),
         r.nFaltas>0 && e("span",{className:"text-[12px] text-[#991B1B]"}, r.porQuantidade ? "Faltaram "+r.nFaltas+" peça(s) no total." : "Faltaram "+r.nFaltas+" peça(s): "+r.faltas.map(function(f){ return f.codigo+(f.qtd>1 ? " (×"+f.qtd+")" : ""); }).join(", ")),
         r.nSobras>0 && e("span",{className:"text-[12px] text-[#92400E]"},"Peça(s) de outro kit (ficaram com a revendedora, só registrado): "+r.sobras.map(function(x){ return x.codigo; }).join(", ")),
-        e("span",{className:"text-[11.5px] text-[#991B1B]"}, r.porQuantidade ? "Diferença de quantidade registrada para o setor conferir." : "Registrado como erro de "+bipadora+" (quem bipou o kit) no Consolidado e na Listagem.")),
+        e("span",{className:"text-[11.5px] text-[#991B1B]"}, "Registrado como erro de "+bipadora+" (quem bipou o kit) no Consolidado e na Listagem.")),
     r.porQuantidade && r.erros>0 && e("div",{className:CARD+" flex flex-col gap-2"},
       e("b",{className:"text-[13px] text-[#111827]"},"Sabe quais peças faltaram?"),
       conf.nota ? e("p",{className:"text-[13px] text-[#374151]"},"Anotado: "+conf.nota)
@@ -78,7 +82,7 @@ function ConfPecas(p){
             e("input",{value:notaTxt, maxLength:200, placeholder:"Ex.: AB123, CD456", "aria-label":"Peças que faltaram", onChange:function(ev){ setNotaTxt(ev.target.value); }, className:"h-10 rounded-lg bg-white px-3 text-[13px] text-[#111827] outline-none ring-1 ring-[#E5E7EB]"}),
             e("button",{disabled:!notaTxt.trim(), onClick:function(){ d({type:"CONF_NOTA", kitId:k.id, nota:notaTxt.trim()}); setNotaTxt(""); }, className:"h-10 rounded-xl bg-[#3F3F46] text-[13px] font-bold txt-branco disabled:opacity-40"},"Salvar anotação"))),
     p.onContinuar && e("button",{onClick:p.onContinuar, className:BTN},"Continuar"),
-    e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12px] font-semibold text-[#6B7280]"},"Refazer a conferência (teste)")); }
+    e("button",{onClick:function(){ d({type:"CONF_REINICIAR", kitId:k.id}); }, className:"h-9 rounded-xl bg-[#F3F4F6] text-[12px] font-semibold text-[#6B7280]"},"Contar de novo")); }
   // 3) bipando
   var ult = conf.ultimo, pct = tot.pecas ? Math.round(lidas/tot.pecas*100) : 0, falta = tot.pecas-lidas;
   var aviso = !ult ? null : ult.tipo==="ok" ? ["#DCFCE7","#15803D","✓ OK · "+ult.codigo+" · "+ult.desc]
@@ -127,7 +131,7 @@ function ContagemTotal(p){
       e("b",{className:"text-[13px] "+(r.erros ? "text-[#991B1B]" : "text-[#161616]")}, "Quantidade conferida: "+r.lidas+" de "+r.esperadas+" peças"),
       r.nFaltas>0 && e("span",{className:"text-[12.5px] text-[#991B1B]"},"Faltaram "+r.nFaltas+" peça(s) no total."),
       r.nSobras>0 && e("span",{className:"text-[12.5px] text-[#92400E]"},"Sobraram "+r.nSobras+" peça(s) no total."),
-      r.erros>0 && e("span",{className:"text-[12px] text-[#991B1B]"},"Diferença registrada para o setor conferir.")),
+      r.erros>0 && e("span",{className:"text-[12px] text-[#991B1B]"},k.bipId ? "Registrado como erro de "+nomeDe(k.bipId)+" (quem bipou o kit)." : "Registrado como erro de bipagem. O kit está sem o nome de quem bipou.")),
     r.porQuantidade && r.erros>0 && (conf.nota
       ? e("p",{className:"text-[13px]"},"Peças que faltaram, anotadas: "+conf.nota)
       : e("div",{className:"flex flex-col gap-1.5"},
