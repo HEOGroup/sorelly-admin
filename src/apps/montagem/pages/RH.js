@@ -7,8 +7,9 @@ import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
 import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
   parseHoras, porEmpresaStats, presencaDe, relatorioAdvertencias, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
-import { Dinheiro } from "@/apps/montagem/components/padrao";
-import { Bloco as BlocoPadrao, Botao, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { Dinheiro, Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { Bloco as BlocoPadrao, Botao, CAMPO, CampoSel, Rotulo, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { FichaExperiencia, ConfigFicha, Pessoa } from "@/apps/montagem/pages/rh/FichaExperiencia";
 import { ehGestorDe, fichaCfg, fichaDe, resultadoFicha } from "@/apps/montagem/domain/rh-ficha";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
@@ -207,37 +208,51 @@ function AbaRhColab(){
 
 // ───────────────── Advertências ─────────────────
 function AbaRhAdv(){
-  var c = useRh(), rh = c.rh, cfg = rh.config, ano = new Date().getFullYear(), nf = useState({colabId:"", data:hojeIso(), tipoId:"", motivoId:"", dias:"", obs:""}), f = nf[0], setF = nf[1], bq = useState(""), buscaAdv = bq[0], setBuscaAdv = bq[1], rm = useState(hojeIso().slice(0,7)), mesRel = rm[0], setMesRel = rm[1], rt = useState({mes:"", txt:""}), edRel = rt[0], setEdRel = rt[1];
+  // Tela refeita no padrão compacto (pedido do Marcus, 05/11/2026): sem faixa de números, formulário em uma linha, resumos em blocos de lista e tabela do padrão.
+  var c = useRh(), rh = c.rh, cfg = rh.config, ano = new Date().getFullYear(), vazio = {colabId:"", data:hojeIso(), tipoId:"", motivoId:"", dias:"", obs:""};
+  var nf = useState(vazio), f = nf[0], setF = nf[1], bq = useState(""), buscaAdv = bq[0], setBuscaAdv = bq[1], rm = useState(hojeIso().slice(0,7)), mesRel = rm[0], setMesRel = rm[1], rt = useState({mes:"", txt:""}), edRel = rt[0], setEdRel = rt[1], ea = useState(""), editAdv = ea[0], setEditAdv = ea[1];
   var colabs = colaboradoresRh(c.s), nomeDe2 = function(id){ var x = colabs.find(function(y){ return y.id===id; }); return x ? x.nome : "—"; }, listaTodas = advertenciasComSeq(rh), res = resumoAdvertencias(rh, ano);
-  var semAc = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }, nq = semAc(buscaAdv);
+  var semAc = function(t2){ return String(t2||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }, nq = semAc(buscaAdv);
   var lista = listaTodas.filter(function(x){ return !nq || semAc(nomeDe2(x.colabId)).indexOf(nq)>=0; });   // pesquisa por nome (pedido da Ana Paula, 05/11/2026)
   var textoRel = edRel.mes===mesRel ? edRel.txt : relatorioAdvertencias(rh, mesRel, nomeDe2);
   var copiarRel = function(){ try{ navigator.clipboard.writeText(textoRel); c.d({type:"AVISO", txt:"Relatório copiado! Já pode colar no WhatsApp."}); }catch(x){} };
   var tipo = cfg.tiposAdv.find(function(x){ return x.id===f.tipoId; }), nm = function(l, id){ var x = cfg[l].find(function(y){ return y.id===id; }); return x ? x.nome : "—"; };
-  var porPessoa = Object.keys(res).map(function(id){ return {id:id, n:res[id], flag:flagAdv(res[id])}; }).sort(function(a, b){ return b.n-a.n; });
-  var corFlag = function(g){ return g==="Reincidente" ? "#EF4444" : g==="Em observação" ? "#F59E0B" : "#22C55E"; };
-  return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Advertências", sub:"A 1ª do ano é Regular, a 2ª fica Em observação e a 3ª em diante é Reincidente (conta por ano-calendário). Advertência não se apaga."}),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-4"}, e(Tile,{t:"No ano", v:int(lista.filter(function(x){ return x.data.slice(0,4)===String(ano); }).length), cor:"#E8B84B"}), e(Tile,{t:"Pessoas advertidas", v:int(porPessoa.length), cor:"#60A5FA"}),
-      e(Tile,{t:"Em observação", v:int(porPessoa.filter(function(x){ return x.flag==="Em observação"; }).length), cor:"#F59E0B"}), e(Tile,{t:"Reincidentes", v:int(porPessoa.filter(function(x){ return x.flag==="Reincidente"; }).length), cor:"#EF4444"})),
-    e(BlocoBarra,{cor:"ouro", t:"Nova advertência"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"},
-      e(Campo,{rot:"Colaboradora"}, e(Sel,{value:f.colabId, label:"Colaboradora", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {colabId:v})); }}, e("option",{value:""}, "Escolha…"), colabs.slice().sort(function(a, b){ return String(a.nome).localeCompare(String(b.nome), "pt-BR"); }).filter(function(x){ return x.status!=="DESLIGADO"; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
-      e(Campo,{rot:"Data"}, e("input",{type:"date", value:f.data, className:INPUT+" h-10! w-44", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
-      e(Campo,{rot:"Tipo"}, e(Sel,{value:f.tipoId, label:"Tipo", className:"w-44", onChange:function(v){ setF(Object.assign({}, f, {tipoId:v})); }}, e("option",{value:""}, "Escolha…"), cfg.tiposAdv.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
-      e(Campo,{rot:"Motivo"}, e(Sel,{value:f.motivoId, label:"Motivo", className:"w-56", onChange:function(v){ setF(Object.assign({}, f, {motivoId:v})); }}, e("option",{value:""}, "Escolha…"), cfg.motivosAdv.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))),
-      tipo && tipo.suspensao && e(Campo,{rot:"Dias de suspensão"}, e("input",{value:f.dias, inputMode:"numeric", className:INPUT+" h-10! w-28 text-center", onChange:function(ev){ setF(Object.assign({}, f, {dias:ev.target.value.replace(/\D/g,"")})); }})),
-      e(Campo,{rot:"Observação", className:"min-w-[12rem] flex-1"}, e("input",{value:f.obs, className:INPUT+" h-10!", onChange:function(ev){ setF(Object.assign({}, f, {obs:ev.target.value})); }})),
-      e(Btn,{v:"primary", disabled:!f.colabId || !f.tipoId || !f.motivoId, onClick:function(){ acao(c, "adv_add", f); setF(Object.assign({}, f, {obs:"", dias:""})); }}, "Registrar"))),
-    e(BlocoBarra,{cor:"ouro", t:"Relatório mensal", sub:"texto pronto para o WhatsApp; pode editar antes de copiar"}, e("div",{className:"flex flex-col gap-3 p-4"},
-      e("div",{className:"flex flex-wrap items-center gap-2"}, e("input",{type:"month", value:mesRel, "aria-label":"Mês do relatório", className:INPUT+" h-8! w-44", onChange:function(ev){ if(ev.target.value) setMesRel(ev.target.value); }}), e(Btn,{v:"primary", onClick:copiarRel}, "Copiar texto"), edRel.mes===mesRel && e(Btn,{v:"ghost", onClick:function(){ setEdRel({mes:"", txt:""}); }}, "Desfazer edição")),
-      e("textarea",{value:textoRel, "aria-label":"Texto do relatório mensal", rows:14, className:INPUT+" w-full font-mono text-[13px]", onChange:function(ev){ setEdRel({mes:mesRel, txt:ev.target.value}); }}))),
-    e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]"},
-      e(BlocoBarra,{cor:"ouro", t:"Lançamentos", sub:(lista.length===listaTodas.length ? lista.length+" no total" : lista.length+" de "+listaTodas.length)}, e("div",{className:"flex items-center gap-2 border-b border-border p-3"}, e("input",{value:buscaAdv, placeholder:"Buscar colaboradora", "aria-label":"Buscar colaboradora", className:INPUT+" h-8! w-64", onChange:function(ev){ setBuscaAdv(ev.target.value); }}), buscaAdv && e(Btn,{v:"ghost", onClick:function(){ setBuscaAdv(""); }}, "Limpar")), lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13px] text-muted-foreground"}, listaTodas.length ? "Nenhuma advertência com esse nome." : "Nenhuma advertência registrada.") :
-        e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Data"), th("Colaboradora"), th("Tipo"), th("Motivo"), th("Nº no ano"), th("Situação")])),
-          e("tbody",null, lista.map(function(x){ return e("tr",{key:x.id, className:"border-b border-border/60"}, e("td",{className:TD}, br(x.data)), e("td",{className:TD+" font-semibold"}, nomeDe2(x.colabId), x.obs && e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, x.obs)),
-            e("td",{className:TD}, nm("tiposAdv", x.tipoId)+(x.dias ? " · "+x.dias+" dias" : "")), e("td",{className:TD}, nm("motivosAdv", x.motivoId)), e("td",{className:TD+" "+MONO}, x.seq+"ª"),
-            e("td",{className:TD}, e("span",{className:"rounded-full px-2.5 py-0.5 text-[11.5px] font-bold", style:{background:corFlag(x.flag)+"26", color:corFlag(x.flag)}}, x.flag))); }))))),
-      e(BlocoBarra,{cor:"ouro", t:"Resumo de "+ano}, e("div",{className:"flex flex-col divide-y divide-white/10 px-4 py-1"}, porPessoa.length===0 ? e("p",{className:"py-4 text-[13px] text-muted-foreground"}, "Sem advertências neste ano.") : porPessoa.map(function(x){ return e("div",{key:x.id, className:"flex items-center justify-between gap-2 py-2 text-[13px]"}, e("span",{className:"truncate"}, nomeDe2(x.id)), e("span",{className:"flex shrink-0 items-center gap-2"}, e("b",{className:MONO}, x.n), e("span",{className:"rounded-full px-2 py-0.5 text-[10.5px] font-bold", style:{background:corFlag(x.flag)+"26", color:corFlag(x.flag)}}, x.flag))); })))));
+  var porPessoa = Object.keys(res).map(function(id){ return {id:id, n:res[id], flag:flagAdv(res[id])}; }).sort(function(a2, b2){ return b2.n-a2.n || nomeDe2(a2.id).localeCompare(nomeDe2(b2.id), "pt-BR"); });
+  var corLinha = function(g){ return g==="Reincidente" ? "ruim" : g==="Em observação" ? "alerta" : "ok"; }, corFlag = function(g){ return g==="Reincidente" ? "#EF4444" : g==="Em observação" ? "#F59E0B" : "#22C55E"; };
+  var set = function(k, v){ var o = Object.assign({}, f); o[k] = v; setF(o); };
+  var salvar = function(){ if(editAdv){ acao(c, "adv_edit", Object.assign({id:editAdv}, f)); setEditAdv(""); setF(vazio); } else { acao(c, "adv_add", f); setF(Object.assign({}, f, {obs:"", dias:""})); } };
+  var ativas = colabs.filter(function(x){ return x.status!=="DESLIGADO"; }).sort(function(a2, b2){ return String(a2.nome).localeCompare(String(b2.nome), "pt-BR"); });
+  var linResumo = [{r:"No ano", v:int(listaTodas.filter(function(x){ return x.data.slice(0,4)===String(ano); }).length), total:true}, {r:"Pessoas advertidas", v:int(porPessoa.length)},
+    {r:"Em observação", v:int(porPessoa.filter(function(x){ return x.flag==="Em observação"; }).length), cor:"alerta"}, {r:"Reincidentes", v:int(porPessoa.filter(function(x){ return x.flag==="Reincidente"; }).length), cor:"ruim"}];
+  var linPessoa = porPessoa.map(function(x){ return {r:nomeDe2(x.id), v:String(x.n), p:x.flag, cor:corLinha(x.flag)}; });
+  var CEL = "h-8 border-b border-border px-2.5 text-center text-[13px]";
+  return e(Pagina,null,
+    e(PageHead,{t:"Advertências", sub:"1ª do ano Regular, 2ª Em observação, 3ª em diante Reincidente. Não se apaga; corrija com Editar."}),
+    e(BlocoPadrao,{ouro:true, t:editAdv ? "Corrigir advertência" : "Nova advertência"},
+      e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 pt-3 md:grid-cols-6"},
+        e(CampoSel,{t:"Colaboradora", value:f.colabId, cls:"md:col-span-2", onChange:function(v){ set("colabId", v); }, opcoes:[["", "Escolha"]].concat(ativas.map(function(x){ return [x.id, x.nome]; }))}),
+        e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ set("data", ev.target.value); }})),
+        e(CampoSel,{t:"Tipo", value:f.tipoId, onChange:function(v){ set("tipoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.tiposAdv.map(function(x){ return [x.id, x.nome]; }))}),
+        e(CampoSel,{t:"Motivo", value:f.motivoId, cls:"md:col-span-2", onChange:function(v){ set("motivoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.motivosAdv.map(function(x){ return [x.id, x.nome]; }))}),
+        tipo && tipo.suspensao && e("div",null, e(Rotulo,{t:"Dias"}), e("input",{value:f.dias, inputMode:"numeric", "aria-label":"Dias de suspensão", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set("dias", ev.target.value.replace(/\D/g,"")); }})),
+        e("div",{className:"col-span-2 "+(tipo && tipo.suspensao ? "md:col-span-3" : "md:col-span-4")}, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set("obs", ev.target.value); }})),
+        e("div",{className:"col-span-2 flex items-end gap-2"}, e(Botao,{principal:true, desabilitado:!f.colabId || !f.tipoId || !f.motivoId, onClick:salvar}, editAdv ? "Salvar alteração" : "Registrar"), editAdv && e(Botao,{onClick:function(){ setEditAdv(""); setF(vazio); }}, "Cancelar")))),
+    e("div",{className:"grid grid-cols-1 items-start gap-2.5 md:grid-cols-3"},
+      e(BlocoResumo,{t:"Resumo de "+ano, compacto:true, cab:["Item", "Quantidade", ""], linhas:linResumo}),
+      e(BlocoResumo,{t:"Por colaboradora · "+ano, compacto:true, alturaMax:132, cab:["Colaboradora", "Advertências", "Situação"], linhas:linPessoa.length ? linPessoa : [{r:"Nenhuma advertência", v:"0", p:""}]}),
+      e(BlocoPadrao,{ouro:true, t:"Relatório mensal", dir:e("span",{className:"inline-flex items-center gap-2"}, e("input",{type:"month", value:mesRel, "aria-label":"Mês do relatório", className:CAMPO+" w-48! text-center", onChange:function(ev){ if(ev.target.value) setMesRel(ev.target.value); }}))},
+        e("div",{className:"flex flex-col gap-2 pt-2"},
+          e("textarea",{value:textoRel, "aria-label":"Texto do relatório mensal", rows:5, className:"w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary", onChange:function(ev){ setEdRel({mes:mesRel, txt:ev.target.value}); }}),
+          e("div",{className:"flex items-center justify-center gap-2"}, e(Botao,{principal:true, onClick:copiarRel}, "Copiar texto"), edRel.mes===mesRel && e(Botao,{onClick:function(){ setEdRel({mes:"", txt:""}); }}, "Desfazer edição"))))),
+    e(BlocoPadrao,{ouro:true, t:"Lançamentos", dir:e("span",{className:"tabular-nums"}, lista.length===listaTodas.length ? lista.length+" no total" : lista.length+" de "+listaTodas.length)},
+      e("div",{className:"flex items-end gap-2 pb-2 pt-2"}, e("div",{className:"w-72"}, e(Rotulo,{t:"Buscar colaboradora"}), e("input",{value:buscaAdv, "aria-label":"Buscar colaboradora", className:CAMPO, onChange:function(ev){ setBuscaAdv(ev.target.value); }})), buscaAdv && e(Botao,{onClick:function(){ setBuscaAdv(""); }}, "Limpar")),
+      lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, listaTodas.length ? "Nenhuma advertência com esse nome." : "Nenhuma advertência registrada.") :
+      e(TabelaP,{cols:[{t:"Data", w:112, c:true}, {t:"Colaboradora", w:270}, {t:"Tipo", w:140, c:true}, {t:"Motivo", w:220, c:true}, {t:"Nº no ano", w:100, c:true}, {t:"Situação", w:130, c:true}, {t:"Observação", w:230, c:true}, {t:"Ações", w:96, c:true}], minW:1300},
+        lista.map(function(x){ return e(Tr,{key:x.id}, e(Td,{c:true}, br(x.data)), e(Td,{forte:true}, nomeDe2(x.colabId)),
+          e(Td,{c:true}, nm("tiposAdv", x.tipoId)+(x.dias ? " · "+x.dias+(x.dias===1 ? " dia" : " dias") : "")), e(Td,{c:true}, nm("motivosAdv", x.motivoId)), e(Td,{c:true}, x.seq+"ª"),
+          e(Td,{c:true}, e("span",{className:"rounded-full px-2.5 py-0.5 text-[11px] font-bold", style:{background:corFlag(x.flag)+"26", color:corFlag(x.flag)}}, x.flag)),
+          e("td",{className:CEL+" py-0.5 text-[11px] leading-tight"}, x.obs || ""),
+          e(Td,{c:true}, e("button",{type:"button", className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10", onClick:function(){ setF({colabId:x.colabId, data:x.data, tipoId:x.tipoId, motivoId:x.motivoId, dias:x.dias ? String(x.dias) : "", obs:x.obs || ""}); setEditAdv(x.id); try{ window.scrollTo({top:0, behavior:"smooth"}); }catch(er){} }}, "Editar"))); }))));
 }
 
 // ───────────────── Controle de experiência ─────────────────

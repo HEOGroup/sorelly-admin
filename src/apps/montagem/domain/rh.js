@@ -185,7 +185,7 @@ function relatorioAdvertencias(rh, ym, nomeDe){
   var nomeColab = nomeDe || function(id){ return id; };
   var PLURAL = {verbal:"verbais", escrita:"escritas", escrito:"escritos"};
   var porTipo = {}; lista.forEach(function(a){ var t = nomeTipo(a.tipoId), o = porTipo[t.nome] || (porTipo[t.nome] = {n:0, dias:0, susp:t.suspensao}); o.n++; o.dias += Number(a.dias||0); });
-  var linhasTipo = Object.keys(porTipo).map(function(k){ var o = porTipo[k];
+  var linhasTipo = Object.keys(porTipo).sort(function(a, b){ return porTipo[b].n-porTipo[a].n || a.localeCompare(b, "pt-BR"); }).map(function(k){ var o = porTipo[k];
     if(o.susp) return "- "+o.n+(o.n===1 ? " suspensão" : " suspensões")+" de "+o.dias+(o.dias===1 ? " dia" : " dias")+(o.n>1 ? " no total" : "");
     return "- "+o.n+(o.n===1 ? " advertência " : " advertências ")+(o.n===1 ? k.toLowerCase() : (PLURAL[k.toLowerCase()] || k.toLowerCase())); });
   var porMotivo = {}; lista.forEach(function(a){ var k = nomeMotivo(a.motivoId); porMotivo[k] = (porMotivo[k]||0)+1; });
@@ -291,6 +291,9 @@ function rhReduz(s, a){
     case "adv_add": { if(!a.colabId || !a.data || !a.tipoId || !a.motivoId) return recusa("Escolha colaborador, data, tipo e motivo.");
       var tp = cfg.tiposAdv.find(function(x){ return x.id===a.tipoId; }); var dias = tp && tp.suspensao ? Number(a.dias||0) : 0; if(tp && tp.suspensao && !(dias>0)) return recusa("Informe os dias de suspensão.");
       rh.adv.push({id:novoId("ad-"), colabId:a.colabId, data:a.data, tipoId:a.tipoId, motivoId:a.motivoId, dias:dias, obs:String(a.obs||"").trim(), por:por, em:Date.now()}); return ok("Advertência registrada"); }
+    case "adv_edit": { var ax = rh.adv.find(function(x){ return x.id===a.id; }); if(!ax) return recusa("Advertência não encontrada."); if(!a.colabId || !a.data || !a.tipoId || !a.motivoId) return recusa("Escolha colaborador, data, tipo e motivo.");
+      var tpe = cfg.tiposAdv.find(function(x){ return x.id===a.tipoId; }); var diasE = tpe && tpe.suspensao ? Number(a.dias||0) : 0; if(tpe && tpe.suspensao && !(diasE>0)) return recusa("Informe os dias de suspensão.");
+      Object.assign(ax, {colabId:a.colabId, data:a.data, tipoId:a.tipoId, motivoId:a.motivoId, dias:diasE, obs:String(a.obs||"").trim(), editadoPor:por, editadoEm:Date.now()}); return ok("Advertência corrigida"); }
     case "efetivar": { var ce = colaboradoresRh(s).find(function(x){ return x.id===a.id; }); if(!ce) return recusa("Colaborador não encontrado."); if(ce.status==="DESLIGADO") return recusa("Colaboradora desligada."); if(ce.efetivadoEm) return recusa("Já efetivada.");
       rh.colab[a.id] = Object.assign({}, rh.colab[a.id], {efetivadoEm:hojeIso(), efetivadoPor:por}); return ok(ce.nome+" efetivada"); }
     // ---- ficha de experiência (100 pontos): ocorrências, notas do gestor, parecer

@@ -52,7 +52,7 @@ var MOTIVOS_NAO_CONCLUSAO = STATUS_SEM_SUCESSO.concat(["expirado", "cancelado", 
 var EXIGE_MOTIVO = {cancelado:1, recusado:1};
 var MAX_PARCELAS = 12;   // limite técnico da tabela de taxas (o limite sem juros do link vem da configuração)
 var PRAZO_PADRAO = {primeira:30, intervalo:30, antecipado:1};   // dias para o crédito sem antecipação (1ª parcela, entre parcelas) e com antecipação
-var CONFIG_PADRAO = {horaLimite:18, minimo:80, parcelaMinima:50, maxParcelasSemJuros:10, faixas:[{ate:80, max:1}, {ate:400, max:4}, {ate:1500, max:6}], validadeHoras:12, tentativasDia:3, antecipaPadrao:true, bonus:{faixas:[], obs:""}};   // bonus.faixas = [{min, valor}]: valor pago no mês >= min dá o bônus do setor (editável em Análises)
+var CONFIG_PADRAO = {horaLimite:18, minimo:80, parcelaMinima:50, maxParcelasSemJuros:10, faixas:[{ate:80, max:1}, {ate:400, max:4}, {ate:1500, max:6}], validadeHoras:48, avisoHoras:12, tentativasDia:3, antecipaPadrao:true, bonus:{faixas:[], obs:""}};   // bonus.faixas = [{min, valor}]: valor pago no mês >= min dá o bônus do setor (editável em Análises)
 // Lista de maquininhas por representante (19/10/2026): uma linha por máquina física. Dados reais só em domain/maquininhas.local.js (gitignored); sem o arquivo, nada muda.
 var MAQ = (function(){ try { var m = globLocal("apps/montagem/domain/maquininhas.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
 var ROTULO_STATUS_FN = function(s){ return ROTULO_STATUS[s] || s; };
@@ -114,6 +114,7 @@ function lpMigrar(lp){
   if(!lp) return lpDemo(); var maqV = lp.maqListaV, base = lpDemo(), traz = base.importV===1 && lp.importV!==1;   // traz = estado salvo antes da carga da planilha: acrescenta o que veio do arquivo local
   Object.keys(base).forEach(function(k){ if(lp[k]===undefined) lp[k] = base[k]; });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(lp.config[k]===undefined) lp.config[k] = CONFIG_PADRAO[k]; });
+  if(lp.validadeV!==1){ lp.validadeV = 1; lp.config.validadeHoras = 48; lp.config.avisoHoras = 12; }   // 05/11/2026: o link vale 48 h no sistema de pagamento; a revendedora continua sendo avisada de 12 h
   if(lp.regrasV!==2){ lp.regrasV = 2; ["minimo", "parcelaMinima", "maxParcelasSemJuros", "faixas"].forEach(function(k){ lp.config[k] = clone(CONFIG_PADRAO[k]); }); }   // regras por faixa de valor (19/10/2026): mínimo R$ 80 · 1x, 4x, 6x, 10x
   if(traz){ ["meios", "vinculos", "revendedoras", "solicitacoes"].forEach(function(k){ var ids = {}; lp[k].forEach(function(x){ ids[x.id] = 1; }); base[k].forEach(function(x){ if(!ids[x.id]) lp[k].push(x); }); }); lp.importV = 1; if(!(lp.config.bonus && lp.config.bonus.faixas && lp.config.bonus.faixas.length) && base.config.bonus) lp.config.bonus = base.config.bonus; }
   if(lp.demoVendasV!==1){ lp.demoVendasV = 1; if(!(lp.vendasApp||[]).some(function(v){ return v.demo; })) lp.vendasApp = (lp.vendasApp||[]).concat(demoVendasApp()); }   // 6 vendas de demonstração (Beatriz Nogueira)
@@ -500,7 +501,7 @@ function lpReduz(s, a){
   switch(a.op){
     case "config_salvar": {
       var c = a.config || {};
-      var v = {minimo:num(c.minimo), parcelaMinima:num(c.parcelaMinima), maxParcelasSemJuros:Math.round(num(c.maxParcelasSemJuros)), validadeHoras:num(c.validadeHoras), tentativasDia:Math.round(num(c.tentativasDia))};
+      var v = {minimo:num(c.minimo), parcelaMinima:num(c.parcelaMinima), maxParcelasSemJuros:Math.round(num(c.maxParcelasSemJuros)), validadeHoras:num(c.validadeHoras), avisoHoras:num(c.avisoHoras) || 12, tentativasDia:Math.round(num(c.tentativasDia))};
       if(c.faixas){ v.faixas = c.faixas.map(function(z){ return {ate:r2(num(z.ate)), max:Math.round(num(z.max))}; }); var ant = 0;
         for(var q = 0; q<v.faixas.length; q++){ if(!(v.faixas[q].ate>ant) || v.faixas[q].max<1 || v.faixas[q].max>v.maxParcelasSemJuros) return recusa("Confira as faixas de parcelamento: valores crescentes e parcelas até o máximo."); ant = v.faixas[q].ate; } }
       if(v.minimo<=0 || v.parcelaMinima<=0 || v.maxParcelasSemJuros<1 || v.maxParcelasSemJuros>MAX_PARCELAS || v.validadeHoras<=0 || v.tentativasDia<1) return recusa("Confira os valores das regras do link.");

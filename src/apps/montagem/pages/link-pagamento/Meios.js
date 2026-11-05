@@ -125,9 +125,9 @@ function AbaLpMeios(){
       onSalvar:function(v){ return L.exec("isencao_vendido", {grupo:modal.iso.grupo, vendido:v.vendido}); }}),
     modal && !modal.iso && e(MeioJanela,{key:modal.m ? modal.m.id : "novo", L:L, ini:ini(modal.m), fechar:function(){ md[1](null); }}),
     rg[0] && e(Editor,{t:"Regras do link de pagamento", sub:"Valem para todas as solicitações.", nc:3, titulos:["Valores e prazos", "Faixas 1 e 2", "Faixa 3 e teto"], fechar:function(){ rg[1](false); },
-      ini:{minimo:cfg.minimo, parcelaMinima:cfg.parcelaMinima, maxParcelasSemJuros:String(cfg.maxParcelasSemJuros), validadeHoras:String(cfg.validadeHoras), tentativasDia:String(cfg.tentativasDia),
+      ini:{minimo:cfg.minimo, parcelaMinima:cfg.parcelaMinima, maxParcelasSemJuros:String(cfg.maxParcelasSemJuros), validadeHoras:String(cfg.validadeHoras), avisoHoras:String(cfg.avisoHoras), tentativasDia:String(cfg.tentativasDia),
         f1ate:cfg.faixas[0].ate, f1max:String(cfg.faixas[0].max), f2ate:cfg.faixas[1].ate, f2max:String(cfg.faixas[1].max), f3ate:cfg.faixas[2].ate, f3max:String(cfg.faixas[2].max)},
-      campos:[{k:"minimo", rot:"Valor mínimo do link", tipo:"dinheiro"}, {k:"parcelaMinima", rot:"Parcela mínima", tipo:"dinheiro"}, {k:"validadeHoras", rot:"Validade do link (horas)", tipo:"num", min:1}, {k:"tentativasDia", rot:"Tentativas por dia", tipo:"num", min:1},
+      campos:[{k:"minimo", rot:"Valor mínimo do link", tipo:"dinheiro"}, {k:"parcelaMinima", rot:"Parcela mínima", tipo:"dinheiro"}, {k:"validadeHoras", rot:"Validade do link (horas)", tipo:"num", min:1}, {k:"avisoHoras", rot:"Aviso à revendedora (horas)", tipo:"num", min:1}, {k:"tentativasDia", rot:"Tentativas por dia", tipo:"num", min:1},
         {k:"f1ate", rot:"Faixa 1: até (R$)", tipo:"dinheiro"}, {k:"f1max", rot:"Faixa 1: parcelas", tipo:"num", min:1}, {k:"f2ate", rot:"Faixa 2: até (R$)", tipo:"dinheiro"}, {k:"f2max", rot:"Faixa 2: parcelas", tipo:"num", min:1},
         {k:"f3ate", rot:"Faixa 3: até (R$)", tipo:"dinheiro"}, {k:"f3max", rot:"Faixa 3: parcelas", tipo:"num", min:1}, {k:"maxParcelasSemJuros", rot:"Acima da faixa 3: parcelas", tipo:"num", min:1, max:MAX_PARCELAS}],
       onSalvar:function(v){ return L.exec("config_salvar", {config:Object.assign({}, v, {faixas:[{ate:v.f1ate, max:v.f1max}, {ate:v.f2ate, max:v.f2max}, {ate:v.f3ate, max:v.f3max}]})}); }}));

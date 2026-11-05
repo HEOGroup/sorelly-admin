@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.65", data:"2026-11-05", titulo:"Chamados: link vale 48 h e editar advertência", itens:[
+  {tipo:"melhoria", area:"Link de pagamento", txt:"O link agora vale 48 h no sistema (antes marcava Expirado às 12 h e dava retrabalho). A revendedora continua sendo avisada de 12 h no app. As duas horas ficam em Meios e acessos → Regras (Validade do link e Aviso à revendedora). Pedido da Hellen."},
+  {tipo:"novo", area:"RH → Advertências", txt:"Botão Editar em cada advertência: carrega os dados no formulário de cima (Corrigir advertência) e salva a correção, guardando quem corrigiu e quando. Excluir continua não existindo (decisão do Marcus). Pedido da Ana Paula."},
+  {tipo:"melhoria", area:"RH → Advertências", txt:"Tela refeita no padrão compacto (pedido do Marcus): saiu a faixa de números do topo; formulário em duas linhas de 32 px; blocos Resumo e Por colaboradora em lista; Relatório mensal em bloco pequeno; Lançamentos na tabela do padrão (topo dourado, tudo centralizado) com coluna Observação e botão Editar."},
+  {tipo:"melhoria", area:"RH → Advertências", txt:"No Relatório mensal, os tipos saem do mais frequente para o menos frequente (como no modelo da Maria Claudia)."},
+ ]},
  {v:"0.18.64", data:"2026-11-05", titulo:"App da representante: tirado o bloco Previstas para hoje", itens:[
   {tipo:"melhoria", area:"App da representante", txt:"O bloco Previstas para hoje saiu da aba Listagens (pedido do Marcus). As listagens reais serão postas a partir das listagens que ele vai passar. A data do acerto das revendedoras reais continua vindo da agenda da DevMaster."},
  ]},
