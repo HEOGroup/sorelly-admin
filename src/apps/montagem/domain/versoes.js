@@ -42,6 +42,7 @@ var VERSOES = [
   {tipo:"correção", area:"Conferência das peças", txt:"A falta na contagem do total vira erro de bipagem de quem BIPOU o kit (Erros de bipagem, desconto da bipadora e histórico da revendedora). Contar de novo substitui o erro anterior, sem somar duas vezes; o histórico guarda todas as contagens."},
   {tipo:"correção", area:"Avaliar kits", txt:"Avaliação vale uma vez só e só para kit retirado. Kit já conferido mostra a falta da conferência e não conta a falta de novo. Nota limitada de 1 a 5."},
   {tipo:"correção", area:"Alterar data do acerto", txt:"Não aceita pedido com a mesma data do acerto atual."},
+ ]},
  {v:"0.18.61", data:"2026-11-05", titulo:"RH: pesquisa e relatório mensal nas Advertências", itens:[
   {tipo:"novo", area:"RH → Advertências", txt:"Bloco Relatório mensal: escolhe o mês e o sistema monta o texto para o WhatsApp no modelo da Maria Claudia (resumo por tipo, principais motivos e colaboradores com mais de uma medida no mês). O texto pode ser editado antes de copiar."},
   {tipo:"melhoria", area:"RH → Advertências", txt:"Campo Buscar colaboradora acima da lista de Lançamentos (pedido da Ana Paula). Ignora acento e maiúscula."},
@@ -128,17 +129,6 @@ var VERSOES = [
   {tipo:"novo", area:"RH → Controle de experiência", txt:"Cada setor tem um gestor que dá a nota do gestor e vê só as fichas do próprio setor. A lista de gestores fica em Configurador do RH → Ficha de experiência → Gestores por setor."},
   {tipo:"novo", area:"RH → Controle de experiência", txt:"A foto da colaboradora (a mesma do perfil do SorellyChat) aparece ao lado do nome na lista e no topo da ficha. Sem foto, aparecem as iniciais. Na lista, a coluna Colaboradora fica à esquerda, com foto de 48 px dentro de uma linha mais alta (pedido do Marcus; exceção `padrao-ok` à regra de centralizar)."},
   {tipo:"novo", area:"Avisos → Avaliação de experiência", txt:"No dia da 1ª e da 2ª avaliação (e até 3 dias depois) sai um alerta para a Maria, Marcus, Nickolas e Lucas. Um clique em Abrir tela leva direto à ficha da colaboradora, com a pontuação e as notas, para decidir se efetiva. Quem recebe muda em Tecnologia → Avisos."},
-  {tipo:"melhoria", area:"Acessos → Folders e informativos", txt:"A tela Folders e informativos (Representantes & Kits › Regras) também foi liberada para todas as pessoas do sistema."},
-  {tipo:"melhoria", area:"Acessos → Folders", txt:"A tela Folders (Cadastro de revendedoras) foi liberada para todas as pessoas do sistema, como as Aulas e as Melhorias. Os PDFs, o link e a mensagem para WhatsApp ficam à mão de qualquer um."},
-  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Ficha no layout B3 (escolhido pelo Marcus em 04/11/2026): cartão da colaboradora no topo com foto grande (190 px), informações em 3 grupos (Contrato, Avaliações, Presença) e o anel da nota; Nova ocorrência em linha única logo abaixo; 3 colunas: Pontuação em barras com a nota do gestor, A confirmar e Ocorrências, e Parecer e decisão. Dourado só no título dos blocos."},
-  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Todos os blocos da ficha (Informações, Nova ocorrência, Pontuação, A confirmar, Ocorrências e Parecer) têm a barra de título dourada em degradê (opção ouro do Bloco)."},
-  {tipo:"novo", area:"RH → Controle de experiência", txt:"Clicar na foto da colaboradora (na lista ou na ficha) abre um card grande com a foto, o nome, o setor e a função."},
-  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Bloco Informações na ficha: função, setor, admissão, dias de empresa, plano, 1ª e 2ª avaliação, efetivação, entrada, escala, gestor, advertências, faltas, atestados e atrasos desde a admissão."},
-  {tipo:"melhoria", area:"RH → Ficha de experiência", txt:"Confirmar, descartar e remover viraram botões de ícone (✓, ✕ e lixeira) de 32 px."},
-  {tipo:"correção", area:"Padrão visual → Tabelas", txt:"A peça TabelaP (usada em 44 telas) tinha o topo cinza. Agora tem o topo dourado em degradê, um só na tabela inteira. A folha A4 da ficha também tem topo dourado."},
-  {tipo:"novo", area:"Padrão visual → Trava dura", txt:"Regra 2g: a trava agora lê as peças TabelaP, TabelaPlanilha e TabelaOuro e reprova se o topo dourado sumir ou voltar a ficar cinza. Roda em npm run padrao, conferir, verificar, CI e no hook."},
-  {tipo:"novo", area:"RH → Ficha de experiência", txt:"Botão Imprimir abre a folha A4 da ficha (fundo branco, resultado, composição, ocorrências, parecer e linhas de assinatura de Gestor, RH e Direção)."},
-  {tipo:"melhoria", area:"RH → Controle de experiência", txt:"Ficha mais compacta: duas colunas (pontuação e parecer à esquerda; ocorrências à direita), pontos escritos como 9 / 20, sem textos repetidos. Tudo cabe numa tela só."},
   {tipo:"melhoria", area:"RH → Controle de experiência", txt:"A lista passou para o padrão visual (topo dourado, nada abreviado) e ganhou a coluna Pontos."}
  ]},
  {v:"0.18.45", data:"2026-11-03", titulo:"Pedidos: campo Fotos enviadas e os 3 pedidos da Point corrigidos", itens:[
