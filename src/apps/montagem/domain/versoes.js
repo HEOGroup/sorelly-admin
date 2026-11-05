@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.60", data:"2026-11-05", titulo:"Anamaria: acesso a tudo", itens:[
+  {tipo:"melhoria", area:"Acessos e autorizações", txt:"A Anamaria (29) passou a ter todas as autorizações do catálogo, como o Leonardo e o Marcus, e a abrir também a tela Apps e os apps de celular. As telas do menu foram todas liberadas na conta dela (sem lista curta)."},
+ ]},
  {v:"0.18.59", data:"2026-11-05", titulo:"PIX revendedoras: meta de cada sócio em uma linha", itens:[
   {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"No bloco Total do mês, com Todos os sócios e o mês atual, a meta de cada sócio aparece em uma linha (valor e porcentagem da meta já recebida), seguida da soma Meta do mês e do Falta."},
  ]},
