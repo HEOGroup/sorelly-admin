@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.59", data:"2026-11-05", titulo:"PIX revendedoras: meta de cada sócio em uma linha", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"No bloco Total do mês, com Todos os sócios e o mês atual, a meta de cada sócio aparece em uma linha (valor e porcentagem da meta já recebida), seguida da soma Meta do mês e do Falta."},
+ ]},
  {v:"0.18.58", data:"2026-11-04", titulo:"RH: ficha no layout B3, Folders para todos e topo dourado travado", itens:[
   {tipo:"melhoria", area:"Acessos → Folders e informativos", txt:"A tela Folders e informativos (Representantes & Kits › Regras) também foi liberada para todas as pessoas do sistema."},
   {tipo:"melhoria", area:"Acessos → Folders", txt:"A tela Folders (Cadastro de revendedoras) foi liberada para todas as pessoas do sistema, como as Aulas e as Melhorias. Os PDFs, o link e a mensagem para WhatsApp ficam à mão de qualquer um."},
