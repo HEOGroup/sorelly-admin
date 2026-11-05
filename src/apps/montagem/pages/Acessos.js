@@ -19,7 +19,7 @@ var QUEM = {
   supervisao: ["Marcus","Anamaria","Lucas"],
   familia: nomes(DIRECAO_FAMILIA).concat(nomes(FAMILIA)), supervisora: [SUPERVISORA.nome], agendamento: nomes(AGENDAMENTO), financeiro: nomes(FINANCEIRO),
   inadimplencia: [AMANDA_M.nome], bipadora: nomes(BIPADORAS).concat([ATENDENTE_PECAS.nome]), montadora: nomes(MONTADORAS), listagens: [LISTAGENS_RESP.nome], kitnovo: [KITNOVO.nome], cadastropecas: nomes(CADASTRO_PECAS),
-  representante: ["24 representantes (ainda sem login)"], linkcadastro: ["Hellen"], garantia: ["Setor Garantia"], basico: ["Demais funcionários"]};   // faltavam: a tela quebrava ao abrir (04/11/2026)
+  representante: ["24 representantes (ainda sem login)"], linkcadastro: ["Hellen"], garantia: ["Setor Garantia"], encomendas: ["Agatha", "Elen", "Eduarda Gabriela"], basico: ["Demais funcionários"]};   // faltavam: a tela quebrava ao abrir (04/11/2026)
 
 function AbaAcessos(){
   var cx = use(), s = cx.state, d = cx.dispatch, edita = EDITORES.indexOf(s.usuario)>=0;

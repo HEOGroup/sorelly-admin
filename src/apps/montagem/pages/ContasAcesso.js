@@ -17,7 +17,7 @@ var SETORES = [["rh","RH"], ["cobranca","Cobrança"], ["socios","Sócios"], ["fi
 var ROTULO_STATUS = {aguardando:"Aguardando", ativo:"Ativo", bloqueado:"Bloqueado"};
 var COR_STATUS = {aguardando:"text-warning", ativo:"text-success", bloqueado:"text-destructive"};
 
-var GRUPOS_ACESSO = ["supervisao","familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","basico"];
+var GRUPOS_ACESSO = ["supervisao","familia","supervisora","agendamento","financeiro","inadimplencia","bipadora","montadora","listagens","kitnovo","cadastropecas","encomendas","basico"];
 var pessoasDoSistema = EQUIPE.map(function(p){ return {id:p.id, nome:p.nome}; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
 function dataCurta(t){ try { return new Date(t).toLocaleDateString("pt-BR"); } catch(x){ return ""; } }
 
