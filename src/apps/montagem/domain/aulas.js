@@ -50,7 +50,10 @@ var AULAS = [
    passos:["Abra Financeiro → Contas → Pagas por dia.", "Veja o Total do dia e o valor de cada CNPJ na faixa de cima.", "Use Dia anterior, Hoje e Dia seguinte para trocar o dia.", "Em CNPJ, escolha um CNPJ para ver só ele.", "Em Buscar, escreva o fornecedor, a natureza ou o valor."]},
   {id:"fin-excluir-lancamento", setores:["financeiro"], modulo:"Contas", titulo:"Excluir um lançamento feito à mão", dur:"1:02",
    url:"/tutoriais/excluir-lancamento-video.html", video:"/tutoriais/videos/excluir-lancamento.webm",
-   passos:["Abra Financeiro → Contas → Contas a pagar.", "Clique na aba A pagar e ache o lançamento.", "Clique na linha. A janela da conta abre.", "Embaixo, à esquerda, clique em Excluir lançamento.", "Confirme em OK.", "Só lançamento feito à mão (botão Lançar conta) pode ser excluído. Para pagar, use Registrar pagamento."]}
+   passos:["Abra Financeiro → Contas → Contas a pagar.", "Clique na aba A pagar e ache o lançamento.", "Clique na linha. A janela da conta abre.", "Embaixo, à esquerda, clique em Excluir lançamento.", "Confirme em OK.", "Só lançamento feito à mão (botão Lançar conta) pode ser excluído. Para pagar, use Registrar pagamento."]},
+  {id:"fin-trocar-cnpj", setores:["financeiro"], modulo:"Contas", titulo:"Trocar o CNPJ de uma conta (mesmo paga)", dur:"1:08",
+   url:"/tutoriais/trocar-cnpj-video.html", video:"/tutoriais/videos/trocar-cnpj.webm",
+   passos:["Abra Financeiro → Contas → Contas a pagar.", "Clique na aba Pagas (ou A pagar) e ache a conta.", "Clique na linha. A janela da conta abre.", "No quadro CNPJ da conta, escolha o CNPJ certo.", "Clique em Trocar CNPJ e confirme em OK.", "Errou? Abra a conta de novo e clique em Voltar ao original. A troca fica no histórico."]}
 ];
 
 var norm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.66", data:"2026-11-05", titulo:"Aula: trocar o CNPJ de uma conta", itens:[
+  {tipo:"novo", area:"Aulas → Financeiro", txt:"Aula nova Trocar o CNPJ de uma conta (mesmo paga), 1:08, tela inteira: Contas a pagar → Pagas → linha da conta → CNPJ da conta → Trocar CNPJ → OK, e como Voltar ao original. Responde o chamado da Nayale (a troca já existia desde 02/11/2026)."},
+ ]},
  {v:"0.18.65", data:"2026-11-05", titulo:"Chamados: link vale 48 h e editar advertência", itens:[
   {tipo:"melhoria", area:"Link de pagamento", txt:"O link agora vale 48 h no sistema (antes marcava Expirado às 12 h e dava retrabalho). A revendedora continua sendo avisada de 12 h no app. As duas horas ficam em Meios e acessos → Regras (Validade do link e Aviso à revendedora). Pedido da Hellen."},
   {tipo:"novo", area:"RH → Advertências", txt:"Botão Editar em cada advertência: carrega os dados no formulário de cima (Corrigir advertência) e salva a correção, guardando quem corrigiu e quando. Excluir continua não existindo (decisão do Marcus). Pedido da Ana Paula."},
