@@ -35,7 +35,7 @@ td{height:32px;padding:0 12px;border-top:1px solid var(--fio)}.n{text-align:righ
 .legenda{position:absolute;left:0;right:0;bottom:0;z-index:5;min-height:62px;border-top:1px solid var(--ouro);background:rgba(15,16,19,.96);padding:10px 20px 10px 244px;display:flex;gap:12px;align-items:center;font-size:16px}
 .legenda .nn{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
 .prog{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:6;background:var(--painel2)}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
-#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
+#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .5s ease-in-out,top .5s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
 #mao svg{width:22px;height:22px}#mao.toque::after{content:"";position:absolute;left:-10px;top:-10px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ouro);animation:o .5s ease-out}
 @keyframes o{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
 #reco{position:absolute;right:12px;top:10px;z-index:7;height:24px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);font:11px Inter,system-ui,sans-serif;padding:0 10px;cursor:pointer}
@@ -82,7 +82,7 @@ tr.alvo.hov td{background:rgba(255,255,255,.08)}
   <button id="reco">Recomeçar</button>
 </div>
 <script>
-var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 66000;
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 37000;
 if(/gravar=1/.test(location.search)) document.body.classList.add("gravar");
 var cnpj = "67";
 var LINHAS = [["3d Industria de Acrilicos LTDA EPP","03/11","#","ADM 0001411","3d Acrilicos","R$ 1.008,22","Pago 03/11"],["Agatha Kristye Lencioni Mota","03/11","46","VR 000000766","Vale Alimentação","R$ 425,00","Pago 03/11"],["Amanda de Miranda Gonçalves","03/11","46","VR 000000765","Vale Alimentação","R$ 475,00","Pago 03/11"]];
@@ -95,7 +95,7 @@ var desenha = function(){
 };
 var vai = function(id, ini, fn){
   em(ini, function(){ var r = $(id).getBoundingClientRect(), s = $("sis").getBoundingClientRect(); $("mao").style.left = (r.left - s.left + Math.min(40, r.width/2))+"px"; $("mao").style.top = (r.top - s.top + r.height/2)+"px"; $(id).classList.add("hov"); });
-  em(ini+1000, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); var el = $(id); if(el) el.classList.remove("hov"); if(fn) fn(); });
+  em(ini+600, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); var el = $(id); if(el) el.classList.remove("hov"); if(fn) fn(); });
 };
 var inicia = function(){
   limpa(); t0 = Date.now(); cnpj = "67";
@@ -104,25 +104,25 @@ var inicia = function(){
   $("selC").textContent = "CNPJ 67 · Axis Joias ▾"; $("selC").classList.remove("foco"); $("bTroca").style.opacity = ".45"; $("bVolta").style.display = "none"; $("sub2").textContent = "ADM 0001411 · parcela 02 · CNPJ 67 · 3d Acrilicos";
   $("mIni").className = "it on"; $("mFin").className = "it"; desenha();
   em(200, function(){ cena(1, "Esta é a tela <b>Início</b>. Olhe o <b>menu do lado esquerdo</b>."); });
-  em(3500, function(){ cena(2, "No menu da esquerda, clique em <b>Financeiro</b>."); });
-  vai("mFin", 4500, function(){ $("mIni").className = "it"; $("mFin").className = "it on"; $("tIni").className = "tela"; $("tFin").className = "tela v"; $("tit").textContent = "Financeiro"; });
-  em(7500, function(){ cena(3, "Na barra de cima, clique em <b>Contas</b>."); });
-  vai("mContas", 8500, function(){ $("drop").className = "drop v"; });
-  em(11500, function(){ cena(4, "Na lista que abriu, clique em <b>Contas a pagar</b>."); });
-  vai("mCP", 12500, function(){ $("drop").className = "drop"; $("tCP").style.display = "flex"; $("sub").textContent = "› Contas a pagar"; });
-  em(15500, function(){ cena(5, "Clique na aba <b>Pagas</b>. A conta já foi baixada, mas ainda dá para trocar o CNPJ dela."); });
-  vai("aPg", 16500, function(){ $("aPg").className = "on"; });
-  em(20500, function(){ cena(6, "Clique na <b>linha</b> da conta. A janela da conta abre."); });
-  vai("linhaAlvo", 21500, function(){ $("jan").className = "jan v"; });
-  em(26500, function(){ cena(7, "No quadro <b>CNPJ da conta</b>, escolha o CNPJ certo na lista."); });
-  vai("selC", 27500, function(){ $("selC").textContent = "CNPJ 59 · Serenity ▾"; $("selC").classList.add("foco"); $("bTroca").style.opacity = "1"; });
-  em(32500, function(){ cena(8, "Clique em <b>Trocar CNPJ</b>."); });
-  vai("bTroca", 33500, function(){ $("conf").className = "conf v"; });
-  em(38500, function(){ cena(9, "O sistema pergunta se tem certeza. Clique em <b>OK</b>."); });
-  vai("bOk", 39500, function(){ $("conf").className = "conf"; cnpj = "59"; $("sub2").textContent = "ADM 0001411 · parcela 02 · CNPJ 59 · 3d Acrilicos"; $("selC").classList.remove("foco"); $("bVolta").style.display = "inline-flex"; desenha(); });
-  em(45000, function(){ cena(10, "Pronto: a conta agora é do <b>CNPJ 59</b>. Em toda a lista e nos totais por CNPJ ela já aparece no CNPJ novo. A troca fica no histórico."); });
-  em(52000, function(){ cena(11, "Errou? Abra a conta de novo e clique em <b>Voltar ao original</b>. Ela volta para o CNPJ que veio da DevMaster."); });
-  em(60000, function(){ cena(12, "<b>Atenção:</b> só quem tem a autorização de pagar contas vê o quadro CNPJ da conta. O valor e o pagamento não mudam, só o CNPJ."); });
+  em(2200, function(){ cena(2, "No menu da esquerda, clique em <b>Financeiro</b>."); });
+  vai("mFin", 2800, function(){ $("mIni").className = "it"; $("mFin").className = "it on"; $("tIni").className = "tela"; $("tFin").className = "tela v"; $("tit").textContent = "Financeiro"; });
+  em(4300, function(){ cena(3, "Na barra de cima, clique em <b>Contas</b>."); });
+  vai("mContas", 4800, function(){ $("drop").className = "drop v"; });
+  em(6400, function(){ cena(4, "Na lista que abriu, clique em <b>Contas a pagar</b>."); });
+  vai("mCP", 6900, function(){ $("drop").className = "drop"; $("tCP").style.display = "flex"; $("sub").textContent = "› Contas a pagar"; });
+  em(8500, function(){ cena(5, "Clique na aba <b>Pagas</b>. A conta já foi baixada, mas ainda dá para trocar o CNPJ dela."); });
+  vai("aPg", 9000, function(){ $("aPg").className = "on"; });
+  em(10600, function(){ cena(6, "Clique na <b>linha</b> da conta. A janela da conta abre."); });
+  vai("linhaAlvo", 11100, function(){ $("jan").className = "jan v"; });
+  em(12700, function(){ cena(7, "No quadro <b>CNPJ da conta</b>, escolha o CNPJ certo na lista."); });
+  vai("selC", 13200, function(){ $("selC").textContent = "CNPJ 59 · Serenity ▾"; $("selC").classList.add("foco"); $("bTroca").style.opacity = "1"; });
+  em(14800, function(){ cena(8, "Clique em <b>Trocar CNPJ</b>."); });
+  vai("bTroca", 15300, function(){ $("conf").className = "conf v"; });
+  em(16900, function(){ cena(9, "O sistema pergunta se tem certeza. Clique em <b>OK</b>."); });
+  vai("bOk", 17400, function(){ $("conf").className = "conf"; cnpj = "59"; $("sub2").textContent = "ADM 0001411 · parcela 02 · CNPJ 59 · 3d Acrilicos"; $("selC").classList.remove("foco"); $("bVolta").style.display = "inline-flex"; desenha(); });
+  em(19000, function(){ cena(10, "Pronto: a conta agora é do <b>CNPJ 59</b>. Em toda a lista e nos totais por CNPJ ela já aparece no CNPJ novo. A troca fica no histórico."); });
+  em(25000, function(){ cena(11, "Errou? Abra a conta de novo e clique em <b>Voltar ao original</b>. Ela volta para o CNPJ que veio da DevMaster."); });
+  em(31000, function(){ cena(12, "<b>Atenção:</b> só quem tem a autorização de pagar contas vê o quadro CNPJ da conta. O valor e o pagamento não mudam, só o CNPJ."); });
 };
 $("reco").onclick = inicia;
 setInterval(function(){ $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);

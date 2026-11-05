@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.67", data:"2026-11-05", titulo:"Aula Trocar o CNPJ: versão rápida", itens:[
+  {tipo:"melhoria", area:"Aulas → Financeiro", txt:"A aula Trocar o CNPJ de uma conta ficou mais rápida: de 1:08 para 0:37, com os mesmos passos e a tela inteira. A troca foi testada de verdade e desfeita na conta de exemplo."},
+ ]},
  {v:"0.18.66", data:"2026-11-05", titulo:"Aula: trocar o CNPJ de uma conta", itens:[
   {tipo:"novo", area:"Aulas → Financeiro", txt:"Aula nova Trocar o CNPJ de uma conta (mesmo paga), 1:08, tela inteira: Contas a pagar → Pagas → linha da conta → CNPJ da conta → Trocar CNPJ → OK, e como Voltar ao original. Responde o chamado da Nayale (a troca já existia desde 02/11/2026)."},
  ]},
