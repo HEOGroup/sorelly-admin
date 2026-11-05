@@ -83,7 +83,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Montagem", itens:[M("Produção","producao"), M("Listagens","painel"), M("Condicionais","condicionais"), M("Calculadora de kits","calc"), M("Análise de vendas","vendas"), M("Preferências do kit","prefkit"), M("Pedir peças","pedirpecas")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp")]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
-  {nome:"Representantes", itens:[M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
+  {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
   {nome:"Financeiro", itens:[M("Comissões","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência","inadimp"), M("Compras de joias","comprasrep")]},
   {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto"), M("Folders e informativos","informativos"), M("Configurações","configrep")]}
 ];
@@ -194,7 +194,7 @@ var SETORES = [
   {id:"metas", nome:"Metas", ic:"grafico", cor:"#D4A84B", menu:MENU_METAS, semAbas:true, areas:[
     {nome:"Metas", telas:[T("metrev","Revendedoras"), T("metacomp","Acompanhamento"), T("methist","Histórico"), T("metnotif","Notificações"), T("metregras","Regras")]}]},   // metas por revendedora, mês a mês (02/11/2026); por ora só Diretoria
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
-    {nome:"Representantes", telas:[T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
+    {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("informativos","Folders e informativos"), T("configrep","Configurações")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},

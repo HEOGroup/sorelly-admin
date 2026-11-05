@@ -93,6 +93,7 @@ export const SLUG_DA_ABA = {
   configrep: "configuracoes-representantes",
   consrep: "consolidado-representantes",
   placar: "placar-representantes",
+  reppainel: "painel-representantes",
   controlekits: "controle-de-kits",
   inadfin: "inadimplencia-financeira",
   comissoes: "comissoes",

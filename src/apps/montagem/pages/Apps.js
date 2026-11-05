@@ -78,6 +78,7 @@ var CENARIO_COMPLETO = {garantia:100, venda:8278, conds:[{n:"99011", p:60}, {n:"
   {cat:"bb", codigo:"BB0025", valor:68}, {cat:"bb", codigo:"BBP028", valor:88}, {cat:"bb", codigo:"BB0254", valor:68}, {cat:"bb", codigo:"BB0036", valor:28}, {cat:"bb", codigo:"BB0235", valor:122},
   {cat:"normal", codigo:"CL0125", valor:68}, {cat:"normal", codigo:"P0235", valor:128}, {cat:"normal", codigo:"B0215", valor:168}, {cat:"normal", codigo:"T0025", valor:68}]};   // brindes passados pelo Marcus em 02/11/2026   // acerto real de 19/10 da DevMaster (valor 4.552,90), 95% pago
 // SIMULAÇÃO que a tela Apps abre sempre (Marcus, 03/11/2026): representante Anamaria com 5 revendedoras (1 kit novo, 2 acertos, 1 reposição e 1 saída) e a revendedora Juliana, do app da revendedora, já com R$ 1.500,00 em vendas lançadas.
+var CHAVE_REP_APP = "sorelly_app_rep";   // última representante aberta (também gravada pelo Painel das representantes › Ver no app)
 var SIM_REP = "Anamaria", SIM_REV_APP = "Juliana Martins Souza";
 var SIM_REVS = [
   {rev:"Camila Ferreira Lopes", tipoKit:"kit_novo", vendas:[], cod:"900101", fone:"41999900101"},
@@ -90,7 +91,11 @@ function ColsRepRev(p){
   var ksReais = s.kits.filter(function(k){ return k.status==="retirado" || k.status==="bipado"; });
   var ksSorelly = (s.internos||[]).map(function(it){ return {id:"INT-"+it.id, rev:titulo(it.nome), rep:"Sorelly", interno:true, internoId:it.id, vendas:[it.vendaApp||0], status:"retirado", tipoKit:"acerto_kit", lid:null}; });
   var rv = useState({logado:true, id:null}), rev = rv[0], setRev = rv[1];   // abre no app da Juliana (R$ 1.500,00 em vendas) quando a representante é a Anamaria
-  var rp = useState(function(){ try{ if(/[?&]acerto=1/.test(window.location.search)) return {logado:true, id:"ACERTO_COMPLETO", nome:"Nagela", demo:true, n:Date.now()}; }catch(x){} return {logado:true, id:"R:"+SIM_REP, nome:SIM_REP, sim:true}; }), rep = rp[0], setRep = rp[1];   // a tela abre sempre na simulação da Anamaria   // /apps?acerto=1 abre direto o exemplo Acerto completo (02/11/2026)
+  var rp = useState(function(){ try{ if(/[?&]acerto=1/.test(window.location.search)) return {logado:true, id:"ACERTO_COMPLETO", nome:"Nagela", demo:true, n:Date.now()}; }catch(x){}
+    // 05/11/2026 (Marcus): a tela abre numa representante REAL (a última que foi escolhida; sem escolha, a Dayanne), com as revendedoras reais dela. A simulação da Anamaria saiu da abertura.
+    var reais0 = ((s.agend && s.agend.config && s.agend.config.representantes) || []).filter(function(r){ return r.ativo && r.codigo!=="02"; }), salvo = ""; try{ salvo = localStorage.getItem(CHAVE_REP_APP) || ""; }catch(x){}
+    var r0 = reais0.find(function(r){ return r.nome===salvo; }) || reais0.find(function(r){ return r.nome==="Dayanne"; }) || reais0[0];
+    return r0 ? {logado:true, id:"R:"+r0.nome, nome:r0.nome} : {logado:true, id:"R:"+SIM_REP, nome:SIM_REP, sim:true}; }), rep = rp[0], setRep = rp[1];   // /apps?acerto=1 abre direto o exemplo Acerto completo (02/11/2026)
   // representantes REAIS (lista do Agendamento): escolher uma abre o app dela com todas as revendedoras (01/11/2026, Marcus)
   var repsReais = ((s.agend && s.agend.config && s.agend.config.representantes) || []).filter(function(r){ return r.ativo && r.codigo!=="02"; });
   var listDe = function(nome){ return s.listagens.find(function(x){ return x.rep===nome && !x.fechada; }) || s.listagens.find(function(x){ return x.rep===nome; }); };
@@ -123,7 +128,7 @@ function ColsRepRev(p){
     p.rep && e(Coluna,{key:"rep", f:p.f, ordem:0, cor:COR_CEL.rep, age:!!(p.age && p.age.rep), nome:"Representante", sub:"App para iOS ou Android", zoom:0.806,
       pessoa:rep.logado ? (sorelly ? "Sorelly" : titulo(lAtual.rep)) : null,
       seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.atalho ? rep.id : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
-        onEscolher:function(g, i){ if(i && (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO")) cx0.dispatch({type:"SIM_REINICIAR_KIT", rev:i.id==="KIT_NOVO_DEMO" ? "Camila Ferreira Lopes" : "Renata Alves Costa"}); setRep(!i ? {logado:false, id:null} : (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO") ? {logado:true, id:i.id, nome:SIM_REP, sim:true, atalho:i.id==="KIT_NOVO_DEMO" ? "kitnovo" : "reposicao", n:Date.now()} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? {logado:true, id:i.id, nome:i.rep} : {logado:true, id:i.id}); }},
+        onEscolher:function(g, i){ if(i && (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO")) cx0.dispatch({type:"SIM_REINICIAR_KIT", rev:i.id==="KIT_NOVO_DEMO" ? "Camila Ferreira Lopes" : "Renata Alves Costa"}); setRep(!i ? {logado:false, id:null} : (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO") ? {logado:true, id:i.id, nome:SIM_REP, sim:true, atalho:i.id==="KIT_NOVO_DEMO" ? "kitnovo" : "reposicao", n:Date.now()} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? (function(){ try{ localStorage.setItem(CHAVE_REP_APP, i.rep); }catch(x){} return {logado:true, id:i.id, nome:i.rep}; })() : {logado:true, id:i.id}); }},
       celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : lAtual.id ? e(AppRepresentante,{key:lAtual.id, l:lAtual, abrir:rep.demo && demoKit ? {rev:DEMO_REV, n:rep.n, cenario:CENARIO_COMPLETO} : rep.atalho ? {rev:rep.atalho==="kitnovo" ? "Camila Ferreira Lopes" : "Renata Alves Costa", n:rep.n, destino:rep.atalho} : null}) : e(IPhone17ProMax,null, e("p",{className:"p-6 text-center text-[13px]"}, "Escolha uma representante no seletor acima do celular."))) : e(IPhone17ProMax,null, entradaRep)}));
 }
 
