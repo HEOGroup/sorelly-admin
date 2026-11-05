@@ -6,7 +6,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
 import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
-  parseHoras, porEmpresaStats, presencaDe, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
+  parseHoras, porEmpresaStats, presencaDe, relatorioAdvertencias, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { Bloco as BlocoPadrao, Botao, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { FichaExperiencia, ConfigFicha, Pessoa } from "@/apps/montagem/pages/rh/FichaExperiencia";
@@ -207,8 +207,12 @@ function AbaRhColab(){
 
 // ───────────────── Advertências ─────────────────
 function AbaRhAdv(){
-  var c = useRh(), rh = c.rh, cfg = rh.config, ano = new Date().getFullYear(), nf = useState({colabId:"", data:hojeIso(), tipoId:"", motivoId:"", dias:"", obs:""}), f = nf[0], setF = nf[1];
-  var colabs = colaboradoresRh(c.s), nomeDe2 = function(id){ var x = colabs.find(function(y){ return y.id===id; }); return x ? x.nome : "—"; }, lista = advertenciasComSeq(rh), res = resumoAdvertencias(rh, ano);
+  var c = useRh(), rh = c.rh, cfg = rh.config, ano = new Date().getFullYear(), nf = useState({colabId:"", data:hojeIso(), tipoId:"", motivoId:"", dias:"", obs:""}), f = nf[0], setF = nf[1], bq = useState(""), buscaAdv = bq[0], setBuscaAdv = bq[1], rm = useState(hojeIso().slice(0,7)), mesRel = rm[0], setMesRel = rm[1], rt = useState({mes:"", txt:""}), edRel = rt[0], setEdRel = rt[1];
+  var colabs = colaboradoresRh(c.s), nomeDe2 = function(id){ var x = colabs.find(function(y){ return y.id===id; }); return x ? x.nome : "—"; }, listaTodas = advertenciasComSeq(rh), res = resumoAdvertencias(rh, ano);
+  var semAc = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }, nq = semAc(buscaAdv);
+  var lista = listaTodas.filter(function(x){ return !nq || semAc(nomeDe2(x.colabId)).indexOf(nq)>=0; });   // pesquisa por nome (pedido da Ana Paula, 05/11/2026)
+  var textoRel = edRel.mes===mesRel ? edRel.txt : relatorioAdvertencias(rh, mesRel, nomeDe2);
+  var copiarRel = function(){ try{ navigator.clipboard.writeText(textoRel); c.d({type:"AVISO", txt:"Relatório copiado! Já pode colar no WhatsApp."}); }catch(x){} };
   var tipo = cfg.tiposAdv.find(function(x){ return x.id===f.tipoId; }), nm = function(l, id){ var x = cfg[l].find(function(y){ return y.id===id; }); return x ? x.nome : "—"; };
   var porPessoa = Object.keys(res).map(function(id){ return {id:id, n:res[id], flag:flagAdv(res[id])}; }).sort(function(a, b){ return b.n-a.n; });
   var corFlag = function(g){ return g==="Reincidente" ? "#EF4444" : g==="Em observação" ? "#F59E0B" : "#22C55E"; };
@@ -224,8 +228,11 @@ function AbaRhAdv(){
       tipo && tipo.suspensao && e(Campo,{rot:"Dias de suspensão"}, e("input",{value:f.dias, inputMode:"numeric", className:INPUT+" h-10! w-28 text-center", onChange:function(ev){ setF(Object.assign({}, f, {dias:ev.target.value.replace(/\D/g,"")})); }})),
       e(Campo,{rot:"Observação", className:"min-w-[12rem] flex-1"}, e("input",{value:f.obs, className:INPUT+" h-10!", onChange:function(ev){ setF(Object.assign({}, f, {obs:ev.target.value})); }})),
       e(Btn,{v:"primary", disabled:!f.colabId || !f.tipoId || !f.motivoId, onClick:function(){ acao(c, "adv_add", f); setF(Object.assign({}, f, {obs:"", dias:""})); }}, "Registrar"))),
+    e(BlocoBarra,{cor:"ouro", t:"Relatório mensal", sub:"texto pronto para o WhatsApp; pode editar antes de copiar"}, e("div",{className:"flex flex-col gap-3 p-4"},
+      e("div",{className:"flex flex-wrap items-center gap-2"}, e("input",{type:"month", value:mesRel, "aria-label":"Mês do relatório", className:INPUT+" h-8! w-44", onChange:function(ev){ if(ev.target.value) setMesRel(ev.target.value); }}), e(Btn,{v:"primary", onClick:copiarRel}, "Copiar texto"), edRel.mes===mesRel && e(Btn,{v:"ghost", onClick:function(){ setEdRel({mes:"", txt:""}); }}, "Desfazer edição")),
+      e("textarea",{value:textoRel, "aria-label":"Texto do relatório mensal", rows:14, className:INPUT+" w-full font-mono text-[13px]", onChange:function(ev){ setEdRel({mes:mesRel, txt:ev.target.value}); }}))),
     e("div",{className:"grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]"},
-      e(BlocoBarra,{cor:"ouro", t:"Lançamentos", sub:lista.length+" no total"}, lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13px] text-muted-foreground"}, "Nenhuma advertência registrada.") :
+      e(BlocoBarra,{cor:"ouro", t:"Lançamentos", sub:(lista.length===listaTodas.length ? lista.length+" no total" : lista.length+" de "+listaTodas.length)}, e("div",{className:"flex items-center gap-2 border-b border-border p-3"}, e("input",{value:buscaAdv, placeholder:"Buscar colaboradora", "aria-label":"Buscar colaboradora", className:INPUT+" h-8! w-64", onChange:function(ev){ setBuscaAdv(ev.target.value); }}), buscaAdv && e(Btn,{v:"ghost", onClick:function(){ setBuscaAdv(""); }}, "Limpar")), lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13px] text-muted-foreground"}, listaTodas.length ? "Nenhuma advertência com esse nome." : "Nenhuma advertência registrada.") :
         e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Data"), th("Colaboradora"), th("Tipo"), th("Motivo"), th("Nº no ano"), th("Situação")])),
           e("tbody",null, lista.map(function(x){ return e("tr",{key:x.id, className:"border-b border-border/60"}, e("td",{className:TD}, br(x.data)), e("td",{className:TD+" font-semibold"}, nomeDe2(x.colabId), x.obs && e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, x.obs)),
             e("td",{className:TD}, nm("tiposAdv", x.tipoId)+(x.dias ? " · "+x.dias+" dias" : "")), e("td",{className:TD}, nm("motivosAdv", x.motivoId)), e("td",{className:TD+" "+MONO}, x.seq+"ª"),
