@@ -112,6 +112,13 @@ function exMigrar(ex){
   Object.keys(base).forEach(function(k){ if(ex[k]===undefined) ex[k] = clone(base[k]); });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(ex.config[k]===undefined) ex.config[k] = CONFIG_PADRAO[k]; });
   ex.condicionais.forEach(function(c){ if(!c.fotos) c.fotos = {endereco:null, expositor:null, avaria:null, avaria2:null}; if(!c.itens) c.itens = []; });
+  // cópia do admin antigo (06/11/2026): quando o arquivo local traz uma "versao" nova, os dados do admin antigo substituem os do sistema (só vale enquanto o setor usa um dos dois: a data da cópia fica em ex.importVersao)
+  if(LOCAL && LOCAL.versao && ex.importVersao!==LOCAL.versao){
+    var d = exDemo(), chaves = d.fila.map(function(f){ return telefoneKey(f.telefone); });
+    // quem entrou na fila só no sistema novo (telefone que não está na cópia) continua na fila
+    ex.fila.forEach(function(f){ if(chaves.indexOf(telefoneKey(f.telefone))<0){ f.id = "fl"+(++d.seq); d.fila.push(f); } });
+    ex.estoque = d.estoque; ex.fila = d.fila; ex.clientes = d.clientes; ex.condicionais = d.condicionais; ex.seq = d.seq; ex.seqNumero = d.seqNumero; ex.importVersao = LOCAL.versao;
+  }
   return ex;
 }
 

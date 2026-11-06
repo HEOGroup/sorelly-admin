@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.92", data:"2026-11-06", titulo:"Expositores e Encomendas: dados do admin antigo e das planilhas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Expositores", txt:"Carga da cópia do admin antigo (estoque, fila, clientes e condicionais de expositor) e do histórico das planilhas do setor, a partir dos arquivos locais. Quem entrou na fila só no sistema novo continua na fila."},
+  {tipo:"correção", area:"Sistema", txt:"Os dados de Expositores e de Encomendas que voltam do servidor passam de novo pela carga da cópia; antes o servidor apagava a cópia recém-carregada."}
+ ]},
  {v:"0.18.91", data:"2026-11-06", titulo:"Kits novos: Aguardando peça e contador de Aguardando bipagem", itens:[
   {tipo:"novo", area:"Kits novos", txt:"Nova coluna Aguardando peça (ao lado de Liberado), pedida pela Michele: kit parado de propósito por falta de peça, de representante ou de cadastro. O kit continua na etapa dele, não conta como atrasado, não tem prazo e tem barra amarela. Para mover: botão ⋯ do cartão → Aguardando peça; para tirar, ⋯ → voltar à etapa. Também aparece como aba na Planilha, como opção em Situação e como selo no kit."},
   {tipo:"melhoria", area:"Kits novos", txt:"Resumo do mês ganhou Aguardando bipagem (Liberado e Solicitado que não estão em Aguardando peça) e Aguardando peça. O bloco Por etapa ganhou a linha Aguardando peça e corrigiu a contagem de Cancelado. Atrasadas agora não incluem os kits em Aguardando peça."},

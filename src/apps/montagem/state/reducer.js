@@ -39,8 +39,8 @@ import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
-import { erReduz } from "@/apps/montagem/domain/encomendas";
-import { exReduz } from "@/apps/montagem/domain/expositores";
+import { erReduz, erMigrar } from "@/apps/montagem/domain/encomendas";
+import { exReduz, exMigrar } from "@/apps/montagem/domain/expositores";
 import { eqReduz } from "@/apps/montagem/domain/equipes";
 import { infReduz } from "@/apps/montagem/domain/informativos";
 import { pkReduz } from "@/apps/montagem/domain/preferencias-kit";
@@ -266,6 +266,9 @@ function reducer(s, a){
       }
       if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
+      // Expositores e Encomendas vindos do servidor: refazem a migração (cópia do admin antigo e planilhas, 06/11/2026). A marca de versão vale a DO SERVIDOR (se ele não tem, a cópia entra de novo); o que veio do navegador não conta.
+      if(a.chave==="ex"){ var mEx = Object.assign({}, s.ex, a.conteudo); mEx.importVersao = a.conteudo ? a.conteudo.importVersao : undefined; return Object.assign({}, s, {ex:exMigrar(mEx)}); }
+      if(a.chave==="er"){ var mEr = Object.assign({}, s.er, a.conteudo); mEr.historicoVersao = a.conteudo ? a.conteudo.historicoVersao : undefined; mEr.top50Lista = a.conteudo ? a.conteudo.top50Lista : undefined; return Object.assign({}, s, {er:erMigrar(mEr)}); }
       return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
     }
     case "ROT": { var rRot = rotReduz(s, a); return com(s, rRot.patch, rRot.msg); }   // Rotina do dia
