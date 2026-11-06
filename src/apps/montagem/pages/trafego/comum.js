@@ -22,7 +22,7 @@ function CampoNum(p){
 }
 function CampoTexto(p){
   return e("div",{className:"min-w-0 "+(p.cls||"")}, e(Rotulo,{t:p.t, id:p.id}),
-    e("input",{id:p.id, type:p.tipo||"text", value:p.value, max:p.max, maxLength:p.maxLength, placeholder:p.placeholder||"", onChange:function(ev){ p.onChange(ev.target.value); }, className:CAMPO}));
+    e("input",{id:p.id, type:p.tipo||"text", value:p.value, min:p.min, max:p.max, maxLength:p.maxLength, placeholder:p.placeholder||"", onChange:function(ev){ p.onChange(ev.target.value); }, className:CAMPO}));
 }
 // campo de dinheiro (digita só números, o valor sobe: 195000 vira R$ 1.950,00), com rótulo e a altura de 32 px dos outros campos
 function CampoDin(p){

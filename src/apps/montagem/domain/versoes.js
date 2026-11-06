@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.89", data:"2026-11-06", titulo:"Tráfego pago: consulta por data", itens:[
+  {tipo:"melhoria", area:"Marketing", txt:"Em Tráfego pago › Dia a dia, o bloco Filtros ganhou Data inicial e Data final (pedido do Diego). Com uma data só, a tabela mostra aquele dia; com as duas, o período. Com data preenchida, ela vale no lugar do mês. O botão Limpar volta ao mês."}
+ ]},
  {v:"0.18.88", data:"2026-11-06", titulo:"Atendimento Sorelly: valor a pagar sem multa antes do pagamento", itens:[
   {tipo:"correção", area:"Atendimento Sorelly", txt:"O valor a pagar não soma mais a multa de 10% antes de existir pagamento, acordo ou recusa. Exemplo: venda de R$ 788,00 com 30% de comissão paga R$ 551,60 (antes mostrava R$ 606,76). Com pagamento parcial, a multa de 10% continua só sobre o que ficou pendente. Vale também para o app da representante."},
  ]},
