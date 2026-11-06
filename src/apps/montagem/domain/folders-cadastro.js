@@ -3,10 +3,10 @@
 // O arquivo fica em public/regras/ (abre em /regras/...). Fonte de cada folder em materiais-do-app/ (HTML + PDF). Folder novo: acrescentar aqui.
 // resumo = 2 páginas para quem quer se cadastrar (8 páginas já assusta); completo = regulamento para quem já é revendedora.
 var FOLDERS = [
-  {id:"resumo", nome:"Folder resumido", publico:"Candidatas a revendedora", paginas:2, arquivo:"/regras/FOLDER-RESUMO-REVENDEDORA.pdf", atualizado:"2026-11-03",
+  {id:"resumo", nome:"Guia resumido", publico:"Candidatas a revendedora", paginas:2, capa:"/regras/resumo-1.png", arquivo:"/regras/FOLDER-RESUMO-REVENDEDORA.pdf", atualizado:"2026-11-03",
     quando:"Enviar para quem quer se cadastrar",
     msg:"Olá! Aqui está o resumo de como funciona ser revendedora Sorelly: como ganhar, as comissões e o que combinamos. É rapidinho de ler."},
-  {id:"completo", nome:"Regulamento completo", publico:"Revendedoras cadastradas", paginas:8, arquivo:"/regras/GUIA-DA-REVENDEDORA.pdf", atualizado:"2026-11-03",
+  {id:"completo", nome:"Guia da revendedora", publico:"Revendedoras cadastradas", paginas:8, capa:"/regras/rev-1.png", arquivo:"/regras/GUIA-DA-REVENDEDORA.pdf", atualizado:"2026-11-03",
     quando:"Enviar depois do cadastro aprovado",
     msg:"Olá! Aqui está o regulamento completo da revendedora Sorelly, com as regras e comissões atualizadas."}
 ];

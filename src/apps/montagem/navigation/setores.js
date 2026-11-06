@@ -44,8 +44,7 @@ var MENU_CADASTRO = [
   {nome:"Kits novos", itens:[M("Kits novos","kitnovo"), M("Pendências","knpendencias"), M("Consolidado","knconsolidado"), M("Regras","knregras"), M("Representantes","knrepresentantes"), M("Entregues","knentregues")]},
   {nome:"Desempenho", itens:[M("Desempenho do cadastro","desempenhocad"), M("Indicações","indicacoes"), M("Avaliações","avaliacoes")]},
   M("Representantes","repcad"),
-  M("Mensagens prontas","msgcad"),
-  M("Folders","folderscad")
+  M("Mensagens prontas","msgcad")
 ];
 
 // Menu do Cadastro de peças (29/10/2026, pedido do Marcus: igual ao Financeiro, com as telas no menu do topo e não em abas dentro da tela). ORDEM DO FLUXO: pedidos de bruto (tela mãe) → controle do mês → banho → peças (cadastro e preço) → fornecedores → configurações. Plano das próximas telas em docs/negocio/FLUXO-DE-COMPRA-DE-BRUTO.md (seção 11).
@@ -85,7 +84,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
   {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
   {nome:"Financeiro", itens:[M("Comissões","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência","inadimp"), M("Compras de joias","comprasrep")]},
-  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto"), M("Folders e informativos","informativos"), M("Configurações","configrep")]}
+  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto"), M("Configurações","configrep")]}
 ];
 
 // Menu do RH (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o dia → pessoas → contratos → acessos → configurar. Nenhuma tela saiu: só mudou de lugar. Contratos ganhou Crédito bancário, Aluguéis e Consórcios.
@@ -180,8 +179,6 @@ var SETORES = [
       T("repcad","Representantes")]},
     {nome:"Mensagens prontas", telas:[
       T("msgcad","Mensagens prontas")]},
-    {nome:"Folders", telas:[
-      T("folderscad","Folders")]},
     {nome:"Avaliações", telas:[
       T("avaliacoes","Avaliações")]},
     {nome:"Kits novos", telas:[
@@ -196,7 +193,7 @@ var SETORES = [
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
-    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("informativos","Folders e informativos"), T("configrep","Configurações")]},
+    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("configrep","Configurações")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
@@ -260,6 +257,8 @@ var SETORES = [
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
     {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), T("trafego","Tráfego pago"), T("criativos","Criativos")]}]},
+  // Regras (05/11/2026, Marcus): setor próprio, todos os funcionários veem; só o Guia resumido e o Guia da revendedora em PDF (saiu de Cadastro de revendedoras → Folders)
+  {id:"regrasguias", nome:"Regras", ic:"book", cor:"#E8B84B", direto:T("regrasguias","Regras")},
   // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)
   {id:"aulas", nome:"Aulas do setor", ic:"book", cor:"#14B8A6", direto:T("aulas","Aulas do setor")}
 ];

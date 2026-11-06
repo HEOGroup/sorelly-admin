@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.73", data:"2026-11-05", titulo:"Setor Regras: Guia resumido e Guia da revendedora", itens:[
+  {tipo:"novo", area:"Regras", txt:"Setor novo Regras, aberto para todos os funcionários: um bloco só com os dois guias em PDF (Guia resumido e Guia da revendedora), cada um com a capa, o botão Ver guia e o botão Copiar link."},
+  {tipo:"melhoria", area:"Cadastro de revendedoras", txt:"A tela Folders saiu do Cadastro de revendedoras (os guias agora ficam no setor Regras)."},
+  {tipo:"melhoria", area:"Representantes e Kits", txt:"A tela Folders e informativos foi apagada do menu Regras dos representantes."},
+ ]},
  {v:"0.18.72", data:"2026-11-05", titulo:"Marketing: Criativos viram tela própria", itens:[
   {tipo:"melhoria", area:"Marketing", txt:"Os criativos saíram de dentro do Tráfego pago e ganharam tela própria no menu de cima do Marketing (Marketing, Campanhas, Tráfego pago, Criativos). A tela tem duas visões: Cartões (um cartão por anúncio, com posição, cadastradas, custo por cadastrada, leads, aprovadas, investimento e link) e Planilha, com filtros de mês e plataforma."},
   {tipo:"melhoria", area:"Acessos", txt:"O Diego, gestor de tráfego, abre Tráfego pago e Criativos pela pessoa dele."}
