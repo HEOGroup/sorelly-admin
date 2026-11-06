@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.88", data:"2026-11-06", titulo:"Atendimento Sorelly: valor a pagar sem multa antes do pagamento", itens:[
+  {tipo:"correção", area:"Atendimento Sorelly", txt:"O valor a pagar não soma mais a multa de 10% antes de existir pagamento, acordo ou recusa. Exemplo: venda de R$ 788,00 com 30% de comissão paga R$ 551,60 (antes mostrava R$ 606,76). Com pagamento parcial, a multa de 10% continua só sobre o que ficou pendente. Vale também para o app da representante."},
+ ]},
  {v:"0.18.87", data:"2026-11-06", titulo:"Resumo de pagamentos: Limite em layout B, sem blocos de números no topo, Aprovar no Aguardando aprovação", itens:[
   {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"Saíram os 5 blocos de números do topo (A pagar, Pago, Falta pagar, Pago do total e Maquininha): o % pago foi para a linha Total de cada tabela e a maquininha para uma linha de texto no fim. As tabelas viraram fileiras de campos (layout D), sem dourado e sem linha quebrada. O Limite de fornecedores ficou em layout B: tabela por tipo em cima; embaixo, meses com folga à esquerda e semáforo vertical à direita; regras atrás do botão Regras do limite."},
   {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"Negociação pendente de aprovação do limite mensal sumia do Resumo (chamado do Lucas, caso do Castilho). Agora aparece no bloco Aguardando aprovação, com fornecedor, data, valor, motivo e os botões Aprovar e Excluir."},

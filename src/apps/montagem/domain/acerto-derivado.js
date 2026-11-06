@@ -77,7 +77,9 @@ function derivarAcerto(p){
   // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda
   var valorTag = gerais.taxaTagExtraviada!=null ? gerais.taxaTagExtraviada : 5, tagsValor = Math.round((form.tagsDanificadas||0)*valorTag*100)/100;
   // regras de 27/10/2026: a multa do valor pendente soma no total a pagar (decisão do Marcus, 26/10/2026)
-  var multasSoma = novas && previaAcerto ? (previaAcerto.multas||0) : 0;
+  // 06/11/2026 (Marcus): a multa só entra depois que existe pagamento lançado, acordo ou recusa. Antes disso nada foi pago AINDA e o valor a pagar é só o do acerto (ex.: venda R$ 788,00 − 30% = R$ 551,60, sem os 10%).
+  var multaAplica = !!(novas && previaAcerto && (form.pagamentos.length>0 || acordoExistente || form.recusouNegociar));
+  var multasSoma = multaAplica ? (previaAcerto.multas||0) : 0;
   var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma)*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
   // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
@@ -90,7 +92,7 @@ function derivarAcerto(p){
     acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,
-    totalAPagar:totalAPagar, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
+    totalAPagar:totalAPagar, multaAplica:multaAplica, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
 }
 
 export { FORM_ACERTO_VAZIO, derivarAcerto };
