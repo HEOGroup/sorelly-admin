@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.81", data:"2026-11-06", titulo:"PIX revendedoras: blocos do resumo com a mesma altura", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os blocos Total do mês, Enviado por favorecido e Por dia (e a Divisão da família, na Casa) agora têm a mesma altura, e a lista de cada um rola por dentro. O Por dia ficou mais baixo e os outros mais altos. Pedido do Marcus."},
+ ]},
  {v:"0.18.80", data:"2026-11-06", titulo:"PIX revendedoras: filtro na lista de cada sócio e correção", itens:[
   {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Filtro em cima da lista de cada sócio (e da Casa) para a conferência das meninas: Buscar (revendedora, valor, data ou conta), Conta e Conferência, com o botão Limpar e a contagem (ex.: 43 de 50 PIX). O total do cartão continua o de todos os PIX. Pedido do Lucas."},
   {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Corrigido um erro da versão anterior que fazia a tela PIX revendedoras mostrar Algo deu errado (um comentário cortou uma linha do código)."},

@@ -279,6 +279,7 @@ function CartaoPix(p){
     ab.length>0 && lista.some(function(x){ return x.id===ab[0]; }) && e(DivPix,{key:abre, tipo:ab[1], x:lista.find(function(x){ return x.id===ab[0]; }), c:c, ff:ff, cbs:cbs, left:Math.max(8, Math.min(+ab[2], window.innerWidth-300)), top:Math.max(8, Math.min(+ab[3]+4, window.innerHeight-330)), onFecha:function(){ setAbre(""); }})));
 }
 // RESUMO NO TOPO DA TELA (Marcus, 04/11/2026): 3 blocos de todos os sócios juntos; filtrando um sócio, os blocos são só dele. Mês que já passou não mostra meta.
+var ALT_RESUMO = 232;   // os 3 (ou 4) blocos do resumo têm a MESMA altura; a lista rola dentro (Marcus, 06/11/2026)
 function ResumoPix(p){
   var c = p.c, ff = c.ff, ym = p.ym, todos = ym==="TODOS", pes = p.pes, atual = !todos && ym===hojeYm(), ids = {};
   pes.forEach(function(pe){ ids[pe.id] = 1; });
@@ -304,10 +305,10 @@ function ResumoPix(p){
   var linDiv = famIds.map(function(id, i){ var pp = ff.personas.find(function(y){ return y.id===id; }); return {r:pp ? pp.nome : id, v:BK(i===0 ? r2(parte+resto) : parte), p:famIds.length ? pct(1, famIds.length) : ""}; }).concat([{r:"Total da Casa", v:BK(recL), p:"", total:true}]);
   return e("div",null,
     e("div",{className:"grid grid-cols-1 items-start gap-3 pb-3 "+(casa ? "md:grid-cols-4" : "md:grid-cols-3")},
-      e(BlocoResumo,{t:(todos ? "Total de todos os meses" : "Total do mês")+quem, compacto:true, cab:["Item", "Valor", "Parte"], linhas:linTotal}),
-      e(BlocoResumo,{t:"Enviado por favorecido"+quem, compacto:true, alturaMax:320, cab:["Favorecido", "Enviado", "Do total"], linhas:linFav.length ? linFav : vazio}),
-      e(BlocoResumo,{t:(todos ? "Por mês" : "Por dia")+quem, compacto:true, alturaMax:320, cab:[todos ? "Mês" : "Dia", "Total", "PIX"], linhas:linDia.length ? linDia : vazio}),
-      casa && e(BlocoResumo,{t:"Divisão da família", compacto:true, cab:["Pessoa", "Parte", "Fração"], linhas:linDiv})),
+      e(BlocoResumo,{t:(todos ? "Total de todos os meses" : "Total do mês")+quem, compacto:true, altura:ALT_RESUMO, cab:["Item", "Valor", "Parte"], linhas:linTotal}),
+      e(BlocoResumo,{t:"Enviado por favorecido"+quem, compacto:true, altura:ALT_RESUMO, cab:["Favorecido", "Enviado", "Do total"], linhas:linFav.length ? linFav : vazio}),
+      e(BlocoResumo,{t:(todos ? "Por mês" : "Por dia")+quem, compacto:true, altura:ALT_RESUMO, cab:[todos ? "Mês" : "Dia", "Total", "PIX"], linhas:linDia.length ? linDia : vazio}),
+      casa && e(BlocoResumo,{t:"Divisão da família", compacto:true, altura:ALT_RESUMO, cab:["Pessoa", "Parte", "Fração"], linhas:linDiv})),
     um && atual && e("div",{className:"flex items-center justify-center gap-2 pb-3 text-[13px]"}, "Meta do mês de "+um.nome+" (R$):",
       e("input",{key:meta, defaultValue:meta ? fmtN(meta) : "", placeholder:"definir", "aria-label":"Meta do mês", className:CAMPO+" w-36! text-center tabular-nums", onBlur:function(ev){ var v = num(ev.target.value); if(v!==meta) acao(c, "pix_meta", {personaId:um.id, ym:ym, valor:v}); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }})));
 }
