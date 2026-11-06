@@ -67,7 +67,6 @@ const montagem = {
     pagina("agendamento-historico", () => import("@/apps/montagem/pages/AgendamentoAnalises"), "AbaAgAnalises"),
     pagina("comissoes-bonus-agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgComissoes"),
     pagina("ff-home", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfHome"),
-    pagina("ff-alertas", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfAlertas"),
     pagina("ff-contas-a-pagar", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfContas"),
     pagina("ff-contas-pagas", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfPagas"),
     pagina("ff-pix-revendedoras", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfPix"),

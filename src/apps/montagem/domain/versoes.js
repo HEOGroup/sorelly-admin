@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.84", data:"2026-11-06", titulo:"Financeiro familiar: Contas a pagar refeita e Alertas excluída", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → Contas a pagar da família", txt:"Tela refeita no padrão: título e botão Lançar conta na mesma linha; bloco Resumo (pendentes, parciais, atrasadas e total) ao lado de um bloco Filtros com campos que mostram o texto inteiro; tabela com topo dourado, tudo centralizado e cada conta em uma linha só (a observação virou uma coluna). Pedido do Marcus."},
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A aba Alertas foi excluída do menu e do sistema (pedido do Marcus)."},
+ ]},
  {v:"0.18.83", data:"2026-11-06", titulo:"PIX revendedoras: Direto e Prestadores em Todos os meses", itens:[
   {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Com Todos os meses escolhido, o bloco Total passou a mostrar Direto e Prestadores (somados mês a mês), como já mostrava num mês só. Antes só aparecia o Recebido. Pergunta do Marcus."},
  ]},

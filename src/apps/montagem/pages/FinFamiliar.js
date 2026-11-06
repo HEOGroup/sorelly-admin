@@ -4,14 +4,14 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
-import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, alertasDe, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
+import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Indicador, Pagina } from "@/apps/montagem/components/padrao";
-import { Bloco, BlocoFiltros, Botao, CAMPO, CampoSel, Rotulo, TabelaP } from "@/apps/montagem/components/padrao-fin";
+import { Bloco, BlocoFiltros, Botao, CAMPO, CampoSel, Rotulo, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { e, useState } from "@/shared/react";
@@ -68,24 +68,6 @@ function AbaFfHome(){
 }
 
 // ───────────────── Alertas ─────────────────
-function AbaFfAlertas(){
-  var c = useFF(), ff = c.ff, al = alertasDe(ff), nf = useState({tipo:"CONTAS_MES_ACIMA", limite:"", personaId:""}), f = nf[0], setF = nf[1];
-  return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Alertas", sub:"O que precisa de atenção neste mês: prazos de dívida, contas atrasadas, PIX esperando conferência e os alertas que você mesmo cria."}),
-    e(BlocoBarra,{cor:"azul", t:"Agora", sub:al.length+(al.length===1 ? " alerta" : " alertas"), dir:String(al.length)}, al.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13.5px] text-success"}, "✓ Nada a resolver agora.") :
-      e("div",{className:"flex flex-col gap-2 p-4"}, al.map(function(x, i){ return e("div",{key:i, className:"flex items-start gap-3 rounded-xl border px-4 py-2.5 "+(x.grave ? "border-destructive/40 bg-destructive/10" : "border-warning/40 bg-warning/10")}, e(Ph,{n:"warning", s:18, fill:true, className:x.grave ? "text-destructive" : "text-warning"}), e("span",null, e("b",{className:"block text-[14px]"}, x.titulo), e("span",{className:"text-[13px] opacity-90"}, x.texto))); }))),
-    e(BlocoBarra,{cor:"azul", t:"Meus alertas (regras)", sub:"dispara quando o limite é passado no mês corrente"}, e("div",{className:"flex flex-col gap-3 p-4"},
-      e("div",{className:"flex flex-wrap items-end gap-3"},
-        e(Campo,{rot:"Quando"}, e(Sel,{value:f.tipo, label:"Tipo", className:"w-72", onChange:function(v){ setF(Object.assign({}, f, {tipo:v})); }}, TIPOS_REGRA.map(function(t){ return e("option",{key:t[0], value:t[0]}, t[1]); }))),
-        e(Campo,{rot:"Limite"}, e(Txt,{value:f.limite, label:"Limite", className:"w-32 text-center", ph:"0", onChange:function(v){ setF(Object.assign({}, f, {limite:v.replace(/[^\d,.]/g,"")})); }})),
-        e(Campo,{rot:"Para"}, e(Sel,{value:f.personaId, label:"Pessoa", onChange:function(v){ setF(Object.assign({}, f, {personaId:v})); }}, e("option",{value:""}, "Todos"), ff.personas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); }))),
-        e(Btn,{v:"primary", disabled:!(num(f.limite)>0), onClick:function(){ acao(c, "regra_add", {tipo:f.tipo, limite:num(f.limite), personaId:f.personaId}); setF(Object.assign({}, f, {limite:""})); }}, "Criar regra")),
-      ff.regras.length>0 && e("div",{className:"flex flex-col divide-y divide-white/10"}, ff.regras.map(function(r){ return e("div",{key:r.id, className:"flex flex-wrap items-center justify-between gap-2 py-2 text-[13.5px]"},
-        e("span",null, (TIPOS_REGRA.find(function(t){ return t[0]===r.tipo; })||[])[1]+": ", e("b",{className:MONO}, int(r.limite)), " · "+(r.personaId ? pessoaNome(ff, r.personaId) : "todos")),
-        e("span",{className:"flex items-center gap-2"}, e("label",{className:"flex cursor-pointer items-center gap-1.5 text-[12.5px]"}, e("input",{type:"checkbox", checked:r.ativo, className:"size-4", onChange:function(ev){ acao(c, "regra_set", {id:r.id, patch:{ativo:ev.target.checked}}); }}), "ativa"), iconBtn("trash", "Excluir", function(){ acao(c, "regra_del", {id:r.id}); }, true))); }))))));
-}
-
-// ───────────────── Contas a pagar ─────────────────
 function ModalPagar(p){
   var c = p.c, x = p.x, st = useState({paraQuem:(x.conta.rateio && x.conta.rateio.length ? FAMILIA4 : x.conta.personaId), valor:fmtN(x.restante), em:hojeIso(), forma:"PIX", contaTxt:contaLabel(c.ff, x.conta.contaBancId), obs:"", dividir:false, linhas:[{valor:"", forma:"PIX", contaTxt:""}, {valor:"", forma:"Dinheiro", contaTxt:""}]}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var somaL = r2(f.linhas.reduce(function(t, l){ return t+num(l.valor); }, 0)), falta = r2(x.restante-somaL);
@@ -142,25 +124,32 @@ function AbaFfContas(){
   var totR = r2(lista.reduce(function(t, x){ return t+x.restante; }, 0)), atr = r2(lista.filter(function(x){ return x.atrasada; }).reduce(function(t, x){ return t+x.restante; }, 0));
   var trans = ff.transf.filter(function(t){ return !f.ym || t.data.slice(0,7)===f.ym; }).sort(function(a, b){ return b.data.localeCompare(a.data); });
   var cbs = ff.contasBanc.filter(function(b){ return b.ativo; });
-  return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Contas a pagar", sub:"O que ainda falta pagar. Pagou? Clique em Pagar (total ou parcial, ou dividido entre formas). Vencimento no dia 31 em fevereiro vira o último dia do mês."}),
-    e("div",{className:"grid grid-cols-2 gap-3 xl:grid-cols-4"}, e(Tile,{t:"Falta pagar", v:BK(totR), cor:"#F472B6", sub:lista.length+" parcelas"}), e(Tile,{t:"Atrasado", v:BK(atr), cor:atr>0 ? "#EF4444" : "#4ADE80", sub:atr>0 ? "já venceu" : "tudo em dia"}),
-      e(Tile,{t:"Pendentes", v:int(lista.filter(function(x){ return x.status==="PENDENTE"; }).length), cor:"#E8B84B"}), e(Tile,{t:"Parciais", v:int(lista.filter(function(x){ return x.status==="PARCIAL"; }).length), cor:"#F59E0B"})),
-    e("div",{className:"flex flex-wrap items-end gap-3 rounded-xl bg-card px-4 py-3 ring-1 ring-[#EC4899]/30"},
-      e(MesSel,{ym:f.ym, set:function(v){ set({ym:v}); }, todos:true}),
-      e(Sel,{value:f.pessoa, label:"Pessoa", className:"w-44", onChange:function(v){ set({pessoa:v}); }}, e("option",{value:""}, "Todas as pessoas"), ff.personas.map(function(p){ return e("option",{key:p.id, value:p.id}, p.nome); })),
-      e(Sel,{value:f.cat, label:"Categoria", className:"w-48", onChange:function(v){ set({cat:v}); }}, e("option",{value:""}, "Todas as categorias"), ff.categorias.map(function(k){ return e("option",{key:k.chave, value:k.chave}, k.nome); })),
-      e(Sel,{value:f.status, label:"Situação", className:"w-40", onChange:function(v){ set({status:v}); }}, e("option",{value:""}, "Qualquer situação"), e("option",{value:"pendente"}, "Pendente"), e("option",{value:"parcial"}, "Parcial"), e("option",{value:"atrasado"}, "Atrasado")),
-      e(Txt,{value:f.busca, ph:"Buscar descrição, beneficiário ou valor", label:"Buscar", className:"w-64", onChange:function(v){ set({busca:v}); }}), e("span",{className:"flex-1"}), e(Btn,{v:"primary", onClick:function(){ setModal({tipo:"conta"}); }}, "+ Lançar conta")),
-    e(BlocoBarra,{cor:"azul", t:"A pagar", sub:f.ym ? nomeMes(f.ym) : "todos os meses (6 para trás, 12 para a frente)", dir:BK(totR)},
-      lista.length===0 ? e("p",{className:"px-4 py-8 text-center text-[13.5px] text-muted-foreground"}, "Nada para pagar neste filtro.") :
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"}, e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Vence"), th("Pessoa"), th("Descrição"), th("Categoria"), th("Beneficiário"), th("Valor"), th("Falta"), th("Situação"), th("")])),
-        e("tbody",null, lista.map(function(x){ return e("tr",{key:x.chave, className:"border-b border-border/60"},
-          e("td",{className:TD+" "+MONO}, br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4))), e("td",{className:TD}, e("span",{className:"inline-flex items-center gap-1.5"}, e("span",{className:"size-2.5 rounded-full", style:{background:corPessoa(ff, x.conta.personaId)}}), pessoaNome(ff, x.conta.personaId)+(x.conta.rateio && x.conta.rateio.length ? " ÷"+x.conta.rateio.length : ""))),
-          e("td",{className:TD+" font-semibold"}, x.conta.descricao, x.conta.obs && e("span",{className:"block text-[11.5px] font-normal text-muted-foreground"}, x.conta.obs)), e("td",{className:TD}, catNome(ff, x.conta.categoria)), e("td",{className:TD}, x.conta.beneficiario||"—"),
-          e("td",{className:TD+" "+MONO}, BK(x.valor)), e("td",{className:TD+" font-bold "+MONO}, BK(x.restante), x.pago>0 && e("span",{className:"block text-[11px] font-normal text-muted-foreground"}, "pago "+BK(x.pago))), e("td",{className:TD}, statusChip(x)),
-          e("td",{className:TD}, e("div",{className:"flex items-center gap-1.5"}, e(Btn,{v:"primary", sm:true, onClick:function(){ setModal({tipo:"pagar", x:x}); }}, "Pagar"), iconBtn("pencil-simple", "Corrigir o valor deste mês", function(){ var v = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v!==null && num(v)>0) acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v)}); }),
-            iconBtn("gear-six", "Editar a conta", function(){ setModal({tipo:"conta", x:x.conta}); }), iconBtn("trash", "Excluir a conta inteira", function(){ if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")) acao(c, "conta_del", {id:x.conta.id}); }, true)))); }))))),
+  var pend = lista.filter(function(x){ return x.status==="PENDENTE"; }), parc = lista.filter(function(x){ return x.status==="PARCIAL"; }), atrL = lista.filter(function(x){ return x.atrasada; });
+  var somaR = function(l){ return r2(l.reduce(function(s, x){ return s+x.restante; }, 0)); };
+  var filtrando = !!(f.pessoa || f.cat || f.status || f.busca.trim() || f.ym!==hojeYm());
+  var op = function(l, todos){ return [["", todos]].concat(l); };
+  return e(Guarda,{c:c}, e(Pagina,null,
+    e(PageHead,{t:"Contas a pagar da família"}, e(Botao,{principal:true, onClick:function(){ setModal({tipo:"conta"}); }}, "+ Lançar conta")),
+    e("div",{className:"grid grid-cols-1 items-start gap-2.5 lg:grid-cols-[340px_minmax(0,1fr)]"},
+      e(BlocoResumo,{t:"Resumo · "+(f.ym ? nomeMes(f.ym) : "todos os meses"), compacto:true, cab:["Situação", "Falta pagar", "Parcelas"], rodape:{r:"Total", v:BK(totR), p:String(lista.length)}, linhas:[
+        {r:"Pendentes", v:BK(somaR(pend)), p:String(pend.length)}, {r:"Parciais", v:BK(somaR(parc)), p:String(parc.length)}, {r:"Atrasadas", v:BK(atr), p:String(atrL.length), cor:atr>0 ? "ruim" : "ok", pcor:atr>0 ? "ruim" : undefined}]}),
+      e(BlocoFiltros,{onLimpar:filtrando ? function(){ set({ym:hojeYm(), pessoa:"", cat:"", status:"", busca:""}); } : undefined},
+        e(CampoSel,{t:"Mês", id:"ff-mes", value:f.ym, onChange:function(v){ set({ym:v}); }, opcoes:op(janela().map(function(k){ return [k, nomeMes(k)]; }), "Todos os meses")}),
+        e(CampoSel,{t:"Pessoa", id:"ff-pessoa", value:f.pessoa, onChange:function(v){ set({pessoa:v}); }, opcoes:op(ff.personas.map(function(p){ return [p.id, p.nome]; }), "Todas as pessoas")}),
+        e(CampoSel,{t:"Categoria", id:"ff-cat", value:f.cat, onChange:function(v){ set({cat:v}); }, opcoes:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}),
+        e(CampoSel,{t:"Situação", id:"ff-sit", value:f.status, onChange:function(v){ set({status:v}); }, opcoes:[["", "Qualquer situação"], ["pendente", "Pendente"], ["parcial", "Parcial"], ["atrasado", "Atrasado"]]}),
+        e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Buscar", id:"ff-busca"}), e("input",{id:"ff-busca", type:"search", value:f.busca, placeholder:"Descrição, beneficiário ou valor", className:CAMPO, onChange:function(ev){ set({busca:ev.target.value}); }})))),
+    e(Bloco,{ouro:true, t:"A pagar", dir:e("span",{className:"tabular-nums"}, (f.ym ? nomeMes(f.ym) : "Todos os meses")+" · "+BK(totR))},
+      lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Nada para pagar neste filtro.") :
+      e(TabelaP,{minW:1640, cols:[{t:"Vence", w:90, c:true}, {t:"Pessoa", w:190, c:true}, {t:"Descrição", w:320, c:true}, {t:"Categoria", w:120, c:true}, {t:"Beneficiário", w:160, c:true}, {t:"Valor", w:120, c:true}, {t:"Falta", w:120, c:true}, {t:"Situação", w:110, c:true}, {t:"Observação", w:230, c:true}, {t:"Ações", w:220, c:true}]},
+        lista.map(function(x){ return e(Tr,{key:x.chave},
+          e(Td,{c:true}, br(x.venc).slice(0,5)+(f.ym ? "" : "/"+x.ym.slice(2,4))),
+          e(Td,{c:true, title:pessoaNome(ff, x.conta.personaId)}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, e("span",{className:"size-2.5 rounded-full", style:{background:corPessoa(ff, x.conta.personaId)}}), pessoaNome(ff, x.conta.personaId)+(x.conta.rateio && x.conta.rateio.length ? " ÷"+x.conta.rateio.length : ""))),
+          e(Td,{c:true, forte:true}, x.conta.descricao), e(Td,{c:true}, catNome(ff, x.conta.categoria)), e(Td,{c:true}, x.conta.beneficiario||"—"),
+          e(Td,{c:true}, BK(x.valor)), e(Td,{c:true, forte:true, title:x.pago>0 ? "Já pago "+BK(x.pago) : undefined}, BK(x.restante)), e(Td,{c:true}, statusChip(x)),
+          e(Td,{c:true}, x.conta.obs||"—"),
+          e(Td,{c:true}, e("div",{className:"flex items-center justify-center gap-1.5"}, e(Botao,{principal:true, onClick:function(){ setModal({tipo:"pagar", x:x}); }}, "Pagar"), iconBtn("pencil-simple", "Corrigir o valor deste mês", function(){ var v = window.prompt("Novo valor de "+nomeMes(x.ym)+" (R$):", fmtN(x.valor)); if(v!==null && num(v)>0) acao(c, "parc_valor", {id:x.conta.id, ym:x.ym, valor:num(v)}); }),
+            iconBtn("gear-six", "Editar a conta", function(){ setModal({tipo:"conta", x:x.conta}); }), iconBtn("trash", "Excluir a conta inteira", function(){ if(window.confirm("Excluir \""+x.conta.descricao+"\" com TODAS as parcelas e pagamentos?")) acao(c, "conta_del", {id:x.conta.id}); }, true)))); }))),
     e(BlocoBarra,{cor:"azul", t:"Transferências entre contas", sub:"só um registro: não entra nos totais"}, e("div",{className:"flex flex-col gap-3 p-4"},
       e("div",{className:"flex flex-wrap items-end gap-3"}, e(Campo,{rot:"De"}, e(Sel,{value:tr.origem, label:"Origem", className:"w-56", onChange:function(v){ setTr(Object.assign({}, tr, {origem:v})); }}, e("option",{value:""}, "Escolha…"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
         e(Campo,{rot:"Para"}, e(Sel,{value:tr.destino, label:"Destino", className:"w-56", onChange:function(v){ setTr(Object.assign({}, tr, {destino:v})); }}, e("option",{value:""}, "Escolha…"), cbs.map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
@@ -459,4 +448,4 @@ function AbaFfConfig(){
       ff.liberados.length>0 && e("div",{className:"flex flex-wrap gap-2"}, ff.liberados.slice().sort().map(function(k){ return e("span",{key:k, className:"flex items-center gap-2 rounded-full bg-warning/20 px-3 py-1 text-[12.5px] font-bold text-warning"}, nomeMes(k)+" liberado", e("button",{onClick:function(){ acao(c, "mes_revogar", {ym:k}); }, className:"underline"}, "travar")); }))))));
 }
 
-export { AbaFfHome, AbaFfAlertas, AbaFfContas, AbaFfPagas, AbaFfPix, AbaFfPrest, AbaFfProlab, AbaFfRelatorio, AbaFfHist, AbaFfConfig };
+export { AbaFfHome, AbaFfContas, AbaFfPagas, AbaFfPix, AbaFfPrest, AbaFfProlab, AbaFfRelatorio, AbaFfHist, AbaFfConfig };

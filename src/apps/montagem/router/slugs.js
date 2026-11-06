@@ -65,7 +65,6 @@ export const SLUG_DA_ABA = {
   dircontas: "pagamentos-contas-das-representantes",
   dirregras: "pagamentos-regras-do-pix",
   ffhome: "ff-home",
-  ffalertas: "ff-alertas",
   ffcontas: "ff-contas-a-pagar",
   ffpagas: "ff-contas-pagas",
   ffpix: "ff-pix-revendedoras",
