@@ -10,6 +10,10 @@ var VERSOES = [
   {tipo:"novo", area:"Kits novos", txt:"A planilha da Michele (Kits Novos 2026) foi importada: 2.604 kits em 6 regiões (Curitiba e região, Maringá, Litoral do Paraná, Ponta Grossa, Joinville e Santa Catarina). A planilha para de ser atualizada; tudo passa a ser feito no sistema. Cadastrada vale como Liberado."},
   {tipo:"novo", area:"Kits novos", txt:"Novo filtro Região no bloco de filtros, antes de Representante. Só aparece quando há mais de uma região nos dados. Kit criado dentro do sistema conta como Curitiba e região."}
  ]},
+ {v:"0.18.94", data:"2026-11-06", titulo:"Criativos: envio de vídeo e imagem", itens:[
+  {tipo:"novo", area:"Marketing", txt:"Em Marketing › Criativos, o formulário ganhou Arquivos do criativo: o Diego envia vídeo (MP4, MOV, WebM) ou imagem (JPG, PNG, WebP), até 12 arquivos de 600 MB cada. Para carrossel, escolhe todas as telas de uma vez. O vídeo toca no próprio cartão e o carrossel troca de tela por números. O arquivo fica no Vercel Blob (envio direto do navegador, com o login conferido em /api/criativos/upload); o criativo guarda só o endereço."},
+  {tipo:"novo", area:"Tecnologia", txt:"Novo pacote @vercel/blob. Para funcionar, o Blob (loja pública) precisa estar ligado ao projeto na Vercel, que cria a variável BLOB_READ_WRITE_TOKEN."}
+ ]},
  {v:"0.18.92", data:"2026-11-06", titulo:"Expositores e Encomendas: dados do admin antigo e das planilhas", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Expositores", txt:"Carga da cópia do admin antigo (estoque, fila, clientes e condicionais de expositor) e do histórico das planilhas do setor, a partir dos arquivos locais. Quem entrou na fila só no sistema novo continua na fila."},
   {tipo:"correção", area:"Sistema", txt:"Os dados de Expositores e de Encomendas que voltam do servidor passam de novo pela carga da cópia; antes o servidor apagava a cópia recém-carregada."}

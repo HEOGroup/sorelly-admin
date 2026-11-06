@@ -43,4 +43,4 @@ function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ i
 async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar, grupo:u.grupo || grupoPorSetores(u.setores), cid:u.cid, nome:u.nome}); return j.usuario; }
 function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, nomeDaConta };
+export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, nomeDaConta };
