@@ -3,8 +3,9 @@
 import { ETAPAS, aberto, atrasado, dataEtapa, dataFim, diasNaEtapa, etapaDe } from "@/apps/kits-novos/domain/etapas";
 import { diasDesde, tsDe } from "@/apps/kits-novos/lib/datas";
 import { use } from "@/apps/kits-novos/state/context";
+import { respostasDoApp } from "@/apps/kits-novos/lib/bridge-montagem";
 import { Kanban } from "@/shared/kanban";
-import { e } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 var COR = {cadastrada:"#9ca3af", liberado:"#a78bfa", solicitado:"#d4a64a", aceito:"#f0c36b", contato:"#38bdf8", agendado:"#c084fc", montando:"#facc15", bipado:"#60a5fa", retirado:"#fb923c", entregue:"#4ade80", devolvido:"#22d3ee", cancelado:"#f87171"};
 
@@ -17,11 +18,22 @@ function CartaoKit(p){
     c.prof && e("span",{className:"text-[11.5px] leading-tight text-white/60", title:"Profissão"}, c.prof),
     e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
       aberto(c) && e("span",{className:"font-mono text-[11.5px] font-semibold "+(atr?"text-destructive":"text-white/80")}, diasNaEtapa(c)+(diasNaEtapa(c)===1?" dia":" dias")+(atr?" (atrasada)":"")),
-      expo && e("span",{className:"rounded-md bg-warning/20 px-1.5 text-[11px] font-semibold text-warning"}, "Expositor")));
+      expo && e("span",{className:"rounded-md bg-warning/20 px-1.5 text-[11px] font-semibold text-warning"}, "Expositor")),
+    p.resp && e(SeloApp,{r:p.resp}));
+}
+// Resposta da representante no APP REAL (05/11/2026): agendou (dia e período), já entrou na listagem dela ou recusou (volta sem representante)
+var PERIODO = {manha:"manhã", tarde:"tarde", noite:"noite"};
+var diaBR = function(i){ return i ? String(i).slice(8, 10)+"/"+String(i).slice(5, 7) : ""; };
+function SeloApp(p){
+  var r = p.r, txt = r.tipo==="recusado" ? "Recusou no app"+(r.rep ? " · "+r.rep : "") : (r.tipo==="na listagem" ? "Na listagem do app" : "Agendado no app")+(r.data ? " · "+diaBR(r.data) : "")+(r.periodo ? " · "+(PERIODO[r.periodo]||r.periodo) : "");
+  return e("span",{title:r.tipo==="recusado" && r.motivo ? "Motivo: "+r.motivo : txt, className:"rounded-md px-1.5 text-[11px] font-semibold "+(r.tipo==="recusado" ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success")}, txt);
 }
 
 function Quadro(p){
   var cx = use(), s = cx.state, d = cx.dispatch, cs = p.dados;
+  var tk = useState(0), setTick = tk[1];   // resposta do app chega pelo servidor: redesenha a cada 20 s
+  useEffect(function(){ var t = setInterval(function(){ setTick(function(n){ return n+1; }); }, 20000); return function(){ clearInterval(t); }; }, []);
+  var resps = respostasDoApp();
   var grupos = ETAPAS.concat([{k:"cancelado", nome:"Cancelado"}]).filter(function(g){ return !s.filtro.st || s.filtro.st===g.k; });
   var colunas = grupos.map(function(g){
     var itens = cs.filter(function(c){ return c.st===g.k && (aberto(c) || diasDesde(dataFim(c)) <= s.cfg.ocultarApos); })
@@ -43,7 +55,7 @@ function Quadro(p){
     aviso("Mova uma etapa por vez.");
   };
   return e(Kanban,{colunas:colunas, onMover:mover, vazio:"Nenhuma revendedora nesta etapa.",
-    card:function(c){ return e(CartaoKit,{c:c, abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
+    card:function(c){ return e(CartaoKit,{c:c, resp:resps[c.id] || null, abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
 }
 
 export { Quadro };

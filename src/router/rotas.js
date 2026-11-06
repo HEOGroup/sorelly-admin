@@ -63,6 +63,7 @@ const montagem = {
     pagina("agendamento-abertura", () => import("@/apps/montagem/pages/AgendamentoPainel"), "AbaAgPainel"),   // 02/11/2026: a Abertura do mês deixou de existir; o endereço antigo abre o Painel
     pagina("agendamento-configurador", () => import("@/apps/montagem/pages/AgendamentoPainel"), "AbaAgPainel"),   // 02/11/2026: o Configurador do Agendamento deixou de existir (tudo vem da DevMaster); o endereço antigo abre o Painel
     pagina("agendamento-atividades", () => import("@/apps/montagem/pages/AgendamentoAtividades"), "AbaAgAtividades"),
+    pagina("agendamento-pedidos-do-app", () => import("@/apps/montagem/pages/PedidosDataApp"), "AbaPedidosDataApp"),   // pedidos de data do app real da representante (05/11/2026)
     pagina("agendamento-analises", () => import("@/apps/montagem/pages/AgendamentoAnalises"), "AbaAgAnalises"),
     pagina("agendamento-historico", () => import("@/apps/montagem/pages/AgendamentoAnalises"), "AbaAgAnalises"),
     pagina("comissoes-bonus-agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgComissoes"),

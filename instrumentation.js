@@ -5,4 +5,8 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { agendarRevendedorasDiarias } = await import("./src/server/revendedoras-dia.js");
   agendarRevendedorasDiarias();
+  // App real da representante (05/11/2026): kits novos para o app, respostas de volta e aviso "kit pronto", a cada 60 s.
+  // Só liga com APP_REP_SINCRONIZAR=1 (o .env de desenvolvimento aponta para a API de produção do app).
+  const { agendarSincronizacao } = await import("./src/server/app-rep/sincronizar.js");
+  agendarSincronizacao();
 }
