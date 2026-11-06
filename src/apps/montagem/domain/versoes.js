@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.83", data:"2026-11-06", titulo:"PIX revendedoras: Direto e Prestadores em Todos os meses", itens:[
+  {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Com Todos os meses escolhido, o bloco Total passou a mostrar Direto e Prestadores (somados mês a mês), como já mostrava num mês só. Antes só aparecia o Recebido. Pergunta do Marcus."},
+ ]},
  {v:"0.18.82", data:"2026-11-06", titulo:"PIX revendedoras: total fixo no fundo de cada bloco", itens:[
   {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os blocos do resumo ficaram um pouco mais altos (272 px) e o total saiu da primeira linha: agora é uma linha fixa no fundo de cada bloco (Recebido, Total enviado e Total, com a quantidade de PIX), e a lista rola por cima dela. Pedido do Marcus."},
  ]},

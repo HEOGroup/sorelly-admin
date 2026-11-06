@@ -290,12 +290,13 @@ function ResumoPix(p){
   var nomesFav = {}, casa = !!p.casa;
   var vl = ff.pix.filter(function(x){ return (casa ? pixCasa(ff, x) : ids[x.personaId] && !pixCasa(ff, x)) && (todos || x.data.slice(0,7)===ym) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; });
   var recL = r2(vl.reduce(function(s, x){ return s+x.valor; }, 0)), rec = recL, dir = 0, pres = 0, meta = 0, um = pes.length===1 ? pes[0] : null;
-  if(!todos && !casa){ rec = 0; pes.forEach(function(pe){ var t = totaisPersona(ff, pe.id, ym), dv = pixDivisao(ff, pe.id, ym); rec += t.pix.recebido; dir += dv.direto; pres += dv.prestadores; meta += t.pix.meta; }); rec = r2(rec); dir = r2(dir); pres = r2(pres); }
+  if(!casa){ var mesesC = todos ? Object.keys(vl.reduce(function(o, x){ o[x.data.slice(0,7)] = 1; return o; }, {})) : [ym]; rec = 0;   // Direto e Prestadores também em "Todos os meses": soma mês a mês (Marcus, 06/11/2026)
+    pes.forEach(function(pe){ mesesC.forEach(function(m){ var dv = pixDivisao(ff, pe.id, m); rec += pixDoMes(ff, pe.id, m); dir += dv.direto; pres += dv.prestadores; if(!todos) meta += (ff.pixMeta[pe.id+"|"+m]||0); }); }); rec = r2(rec); dir = r2(dir); pres = r2(pres); }
   var pct = function(v, base){ return base>0 ? (v/base*100).toFixed(1).replace(".", ",")+"%" : ""; };
   var porFav = {}, porDia = {}, nDia = {};
   vl.forEach(function(x){ var k = x.contaId || "—", d = todos ? x.data.slice(0,7) : x.data; nomesFav[k] = rotuloFav(x.contaId); porFav[k] = r2((porFav[k]||0)+x.valor); porDia[d] = r2((porDia[d]||0)+x.valor); nDia[d] = (nDia[d]||0)+1; });
-  var rodTotal = {r:"Recebido", v:BK(todos || casa ? recL : rec), p:vl.length+" PIX"}, rodFav = {r:"Total enviado", v:BK(recL), p:vl.length+" PIX"}, rodDia = {r:"Total", v:BK(recL), p:vl.length+" PIX"};   // o total fica numa linha fixa no fundo de cada bloco
-  var linTotal = todos || casa ? []
+  var rodTotal = {r:"Recebido", v:BK(casa ? recL : rec), p:vl.length+" PIX"}, rodFav = {r:"Total enviado", v:BK(recL), p:vl.length+" PIX"}, rodDia = {r:"Total", v:BK(recL), p:vl.length+" PIX"};   // o total fica numa linha fixa no fundo de cada bloco
+  var linTotal = casa ? []
     : [{r:"Direto", v:BK(dir), p:pct(dir, rec)}, {r:"Prestadores", v:BK(pres), p:pct(pres, rec)}]
       .concat(atual && !um ? pes.filter(function(pe){ return ["marco", "anabeatriz", "marcus", "lucas", "anamaria"].indexOf(pe.id)>=0; }).map(function(pe){ var t = totaisPersona(ff, pe.id, ym); return {r:"Meta · "+pe.nome, v:t.pix.meta>0 ? BK(t.pix.meta) : "Sem meta", p:t.pix.meta>0 ? Math.round(t.pix.recebido/t.pix.meta*100)+"% da meta" : ""}; }) : [])   // meta de cada sócio em uma linha (Marcus, 04/11/2026)
       .concat(atual && meta>0 ? [{r:"Meta do mês", v:BK(meta), p:"", total:!um}, {r:"Falta", v:BK(Math.max(0, r2(meta-rec))), p:Math.round(rec/meta*100)+"% da meta"}] : []);
