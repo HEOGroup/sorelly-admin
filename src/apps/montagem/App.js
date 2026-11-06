@@ -50,7 +50,7 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial, paraSalvar } from "@/apps/montagem/state/store";
@@ -216,6 +216,7 @@ function App(){
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
   if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","folderscad","informativos"].indexOf(k)>=0; });
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
+  if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
