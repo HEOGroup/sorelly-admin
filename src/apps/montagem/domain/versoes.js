@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.80", data:"2026-11-06", titulo:"PIX revendedoras: filtro na lista de cada sócio e correção", itens:[
+  {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Filtro em cima da lista de cada sócio (e da Casa) para a conferência das meninas: Buscar (revendedora, valor, data ou conta), Conta e Conferência, com o botão Limpar e a contagem (ex.: 43 de 50 PIX). O total do cartão continua o de todos os PIX. Pedido do Lucas."},
+  {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Corrigido um erro da versão anterior que fazia a tela PIX revendedoras mostrar Algo deu errado (um comentário cortou uma linha do código)."},
+ ]},
  {v:"0.18.79", data:"2026-11-06", titulo:"PIX revendedoras: Casa/Praia some do seletor enquanto não tem PIX", itens:[
   {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"No seletor Sócio, as casas sem nenhum PIX lançado (hoje, a Casa/Praia) ficam escondidas para não confundir com a Casa. Quando tiverem PIX, aparecem sozinhas."},
  ]},
