@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.75", data:"2026-11-05", titulo:"Encomendas: histórico das planilhas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições", txt:"O sistema importa o histórico das planilhas do setor (controle de reposição e encomendas, comprovantes do João e liberadas do Marcus) como pedidos concluídos, e aceita os tipos Leilão, Troca, E-commerce, Modelo e Brinde. Os dados reais ficam só no arquivo local, fora do Git."}
+ ]},
  {v:"0.18.74", data:"2026-11-05", titulo:"Contas de acesso: busca por pessoa", itens:[
   {tipo:"melhoria", area:"Acessos e autorizações", txt:"A aba Contas ganhou o bloco Filtros no topo: Buscar pessoa (nome, usuário, e-mail, pessoa do sistema ou setor, sem diferença de acento ou maiúscula) e Situação (Todas, Aguardando, Ativo, Bloqueado), com o botão Limpar."}
  ]},

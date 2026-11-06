@@ -38,7 +38,7 @@ function somaMeses(dia, n){
 
 // ---------- vocabulário ----------
 var TIPOS = [["reposicao", "Reposição"], ["expositor", "Expositor"], ["encomenda", "Encomenda"]];
-var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda"};
+var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda", leilao:"Leilão", troca:"Troca", ecommerce:"E-commerce", modelo:"Modelo", brinde:"Brinde"};   // os 5 últimos só aparecem no histórico importado das planilhas do setor (05/11/2026)
 var COR_TIPO = {reposicao:"#60A5FA", expositor:"#F3D98B", encomenda:"#F97316"};
 var ICONE_TIPO = {reposicao:"arrows-clockwise", expositor:"storefront", encomenda:"package"};
 var STATUS = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "concluido", "recusado", "cancelado"];
@@ -120,7 +120,16 @@ function erMigrar(er){
   er.revendedoras.forEach(function(r){ if(!r.vendas) r.vendas = {}; });
   // lista oficial do Top 50 (planilha do Marcus, 29/10/2026): quem estava no Top 50 e não está na lista sai; quem está entra, com última venda, acerto, montagem e observações
   if(LOCAL && LOCAL.listaVersao && er.top50Lista!==LOCAL.listaVersao){ aplicarLista(er, LOCAL.revendedoras || [], true, "sistema", agoraSP(), "Lista do Top 50 de "+LOCAL.listaVersao); er.top50Lista = LOCAL.listaVersao; }
+  // histórico das planilhas do setor (05/11/2026): pedidos já entregues (controle de reposição e encomendas, comprovantes do João e liberadas do Marcus). Importa de novo quando historicoVersao muda; só mexe nos pedidos marcados origem "planilha".
+  if(LOCAL && LOCAL.historicoVersao && er.historicoVersao!==LOCAL.historicoVersao){ importarHistorico(er, LOCAL); er.historicoVersao = LOCAL.historicoVersao; }
   er.v = 5; return er;
+}
+function importarHistorico(er, L){
+  er.pedidos = er.pedidos.filter(function(p){ return p.origem!=="planilha"; });
+  (L.liberadas||[]).forEach(function(x){ var r = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, x.nome); });
+    if(!r){ r = {id:"R"+(++er.seq), nome:x.nome, telefone:"", representante:x.representante||"", media3m:0, maiorVenda:0, vendas:{}, bloqueadaAte:"", atualizadoEm:agoraSP()}; er.revendedoras.push(r); }
+    r.marcus = true; if(x.representante && !r.representante) r.representante = x.representante; });
+  (L.historico||[]).forEach(function(h){ var p = clone(h); p.id = "P"+(++er.seq); var rv = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, p.revendedora); }); if(rv) p.revendedoraId = rv.id; er.pedidos.push(p); });
 }
 // Aplica uma lista de revendedoras como Top 50 (mesclando com o que já existe). linhas = [{nome, telefone?, representante?, ultimaVenda?, dataAcerto?, sitMont?, respMont?, obs?}]
 // substituir = quem está no Top 50 e não está na lista sai (fica no histórico). Telefone só preenche se estava vazio; os demais campos da planilha valem.
