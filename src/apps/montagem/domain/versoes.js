@@ -12,6 +12,7 @@ var VERSOES = [
   {tipo:"novo", area:"Agendamento → Pedidos do app", txt:"Tela nova com os pedidos de mudança da data do acerto feitos no app: Aguardando, Alteradas na hora (até 5 dias) e Decididos. A Diretoria aprova ou reprova (reprovar pede motivo; sem aprovação vale a multa de remarcação)."},
   {tipo:"novo", area:"Kits novos", txt:"O kit novo direcionado pela Michele chega sozinho ao app da representante; a resposta volta (agendou: entra na listagem aberta do dia; recusou: volta para a Michele e conta para o bloqueio de 2 recusas). Aviso \"Kit pronto para retirar\" no celular quando o kit é bipado. Liga com APP_REP_SINCRONIZAR=1."},
   {tipo:"novo", area:"Comissões", txt:"O app mostra só as comissões da representante (mesma régua de Financeiro → Comissões: datas A/B, janela, km com corte às 13h de Brasília, combustível, Pix direto, Entrega na empresa, pagamento não identificado). A configuração de comissões do Financeiro vai ao servidor (cf_comis)."},
+ ]},
  {v:"0.18.94", data:"2026-11-06", titulo:"Pix dos sócios só para consulta (Bruna)", itens:[
   {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix_ver (Ver os PIX das revendedoras dos sócios, só consulta): abre só a tela PIX dos sócios, sem o formulário Anotar PIX, sem apagar, sem mudar a conferência e sem editar a meta. Padrão: Bruna (chamado de 05/11/2026). O atalho PIX dos sócios do menu Financeiro aparece para quem tem ff_pix ou ff_pix_ver."}
  ]},
