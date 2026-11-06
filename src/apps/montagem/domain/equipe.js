@@ -82,7 +82,7 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // mas o acesso deles é editável. Sócios = fixo.
 // Só Início, SorellyChat e Melhorias por enquanto (Marcus, 29/10/2026): Bruna (36), as montadoras (1 a 7, 19 a 21) e Elen, Agatha e Eduarda (39 a 41, que ainda ganham o setor Encomendas pela conta). Vale também no "atuar como". Tirar o id daqui quando for liberar telas novas.
 // Telas liberadas pela PESSOA, além do que a conta traz (05/11/2026, Marcus): Diego (46) abre Marketing › Tráfego pago mesmo que a conta tenha sido criada sem a lista de telas.
-var TELAS_DA_PESSOA = {46:["trafego"]};
+var TELAS_DA_PESSOA = {46:["trafego","criativos"]};
 function telasDaPessoa(id){ return TELAS_DA_PESSOA[id] || []; }
 var SO_CHAT = [46, 36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
 function grupoDe(id){

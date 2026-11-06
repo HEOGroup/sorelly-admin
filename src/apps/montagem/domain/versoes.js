@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.72", data:"2026-11-05", titulo:"Marketing: Criativos viram tela própria", itens:[
+  {tipo:"melhoria", area:"Marketing", txt:"Os criativos saíram de dentro do Tráfego pago e ganharam tela própria no menu de cima do Marketing (Marketing, Campanhas, Tráfego pago, Criativos). A tela tem duas visões: Cartões (um cartão por anúncio, com posição, cadastradas, custo por cadastrada, leads, aprovadas, investimento e link) e Planilha, com filtros de mês e plataforma."},
+  {tipo:"melhoria", area:"Acessos", txt:"O Diego, gestor de tráfego, abre Tráfego pago e Criativos pela pessoa dele."}
+ ]},
  {v:"0.18.71", data:"2026-11-05", titulo:"Kits novos: tela mais compacta e Representantes e Entregues no menu", itens:[
   {tipo:"melhoria", area:"Kits novos", txt:"A faixa de números do topo saiu. Os mesmos números viraram um bloco só (Resumo do mês), ao lado dos filtros. Os filtros ficaram menores, em uma linha, com o seletor Quadro/Planilha logo ao lado."},
   {tipo:"novo", area:"Cadastro de revendedoras → Kits novos", txt:"Representantes e Entregues viraram telas próprias no menu Kits novos, na ordem: Kits novos, Pendências, Consolidado, Regras, Representantes e Entregues. Antes eram botões dentro da tela Kits novos."},

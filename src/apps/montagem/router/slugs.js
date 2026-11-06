@@ -130,6 +130,7 @@ export const SLUG_DA_ABA = {
   posvendas: "pos-vendas",
   marketing: "marketing",
   trafego: "trafego-pago",
+  criativos: "criativos",
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",
   enctop50: "top-50",
