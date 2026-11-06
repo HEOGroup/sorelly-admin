@@ -4,6 +4,11 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 06/11/2026 (Resumo de pagamentos, layout D e B)
+- **REGRA FIXA (06/11/2026, Marcus: "vc não consegue colocar nas regras o padrão?"):** o **layout D** (fileira de campos, fio fino, cabeçalho e total em faixa escura, nada quebra, sem dourado) passa a ser o padrão de TODA tabela nova ou mexida e SUBSTITUI o topo dourado de 02/11/2026. Peças `TabelaCampos` e `FileiraCampos` em `components/padrao-fin.js`. Gravado em `docs/design/PADRAO-VISUAL.md` (seção "REGRA FIXA · TABELAS EM LAYOUT D"), no `CLAUDE.md` e na trava dura (`padrao-regras.mjs`, 2e e 2h: reprova `TabelaP` e tabela feita à mão só na hora de editar; telas antigas não travam o CI). `TabelaPlanilha`/`GradeFiltro` (planilha com filtro) continuam até haver peça nova.
+- **Resumo de pagamentos a fornecedores:** o Marcus não quis os 5 blocos de números do topo; saíram. Escolheu o layout D (tabelas) e o **layout B** para o Limite de fornecedores (`docs/ideias/geral-limite-4-layouts.html`): tabela por tipo em cima; embaixo, meses com folga à esquerda e semáforo vertical à direita. Aprovar/Excluir passaram para o bloco "Aguardando aprovação".
+- Chamado do Lucas (05/11/2026): negociação pendente de aprovação do limite mensal sumia do Resumo; agora aparece em "Aguardando aprovação · não entram nos totais".
+
 ## 05/11/2026 (App da representante com dados REAIS, pedido do Marcus)
 - Nada de revendedora inventada no app da representante. A tela Apps abre numa representante REAL (última escolhida; primeira vez Dayanne) com a carteira real da DevMaster. As opções "Acerto completo", "Kit novo" e "Reposição" continuam no seletor só como exemplos marcados.
 - Tela nova Representantes › Painel das representantes (`pages/RepresentantesApp.js`, servidor `src/server/representantes-app.js`, rota `/api/representantes/painel`): por representante, revendedoras no app e total vendido, vindos da API do app (`/admin/representantes` + `/representantes/home-summary`). Só leitura, só Diretoria. O código da representante no app é o mesmo do vendedor na DevMaster (Dayanne = 75).

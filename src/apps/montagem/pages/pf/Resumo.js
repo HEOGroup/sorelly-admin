@@ -8,7 +8,9 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { cicloDe, contaForn, ehPrestador, hojeIso, janelasDoForn, lancDaJanela, mesAtual, mesLabel, mqAplicado, mqBruto, mqDescontoNoMes, mqOrigensDoMes, mqPassadasDoMes, mqParcela, pagoPix, statusConta } from "@/apps/montagem/domain/pf";
 import { LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
-import { COR, Chip, Etiqueta, Sel, corForn, TD, Tile, brl, dbr, th, usePf } from "@/apps/montagem/pages/pf/ui";
+import { FileiraCampos, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
+import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
+import { COR, Chip, Etiqueta, Sel, corForn, TD, Tile, brl, dbr, op, th, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { JanelaPedido, pedidoNovo } from "@/apps/montagem/pages/pf/Negociacoes";
 import { ModalForn } from "@/apps/montagem/pages/pf/Fornecedores";
@@ -336,15 +338,26 @@ function GeralInterno(P){
   var lf = linhasDe(fornecedores, mes), lp = linhasDe(prestadores, mes), todosL = lf.concat(lp);
   var total = somaC(todosL, "total"), pago = somaC(todosL, "pago"), falta = total-pago;
   var mqMes = pf.mqFornId ? {bruto:mqBruto(pf, mes), desc:mqDescontoNoMes(pf, mes)} : null;
-  var bloco = function(titulo, linhas){ return e(BlocoBarra,{t:titulo, cor:"azul", compacto:true, dir:brl(somaC(linhas, "total"))}, e("div",{className:"overflow-x-auto p-3"}, e("table",{className:"w-full border-collapse"},
-    e("thead",null, e("tr",null, th("Fornecedor"), th("A pagar","text-right"), th("Pago","text-right"), th("Saldo","text-right"), th("Próximo prazo"), th("Status"))),
-    e("tbody",null, !linhas.length ? e("tr",null, e("td",{colSpan:6, className:"px-3 py-6 text-center text-[14px] text-white"}, "Nada neste mês.")) : linhas.map(function(x){ return Linha({abrir:abrirForn, f:x.f, c:x.c, mes:mes, pf:pf, hoje:hoje, formato:formato, abertos:abertos, alterna:alterna}); }),
-      linhas.length>0 && e("tr",{className:"bg-black/25 font-bold"}, e("td",{className:TD}, "Total"), e("td",{className:tdn}, brl(somaC(linhas, "total"))), e("td",{className:tdn, style:{color:COR.green}}, brl(somaC(linhas, "pago"))), e("td",{className:tdn, style:{color:COR.red}}, brl(somaC(linhas, "aberto"))), e("td",{className:TD}), e("td",{className:TD})))))); };
+  // negociação pendente de aprovação (limite mensal) não entra na conta; aparece aqui no mês da negociação ou de qualquer parcela (chamado do Lucas, 06/11/2026)
+  var pendMes = (pf.pedidos||[]).filter(function(pd){ return pd.aprov==="pendente" && (String(pd.data||"").slice(0,7)===mes || (pd.parcelas||[]).some(function(p){ return String(p.venc||"").slice(0,7)===mes; })); });
+  var somaPend = pendMes.reduce(function(a, pd){ return a+(+pd.total||0); }, 0);
+  var podeAprovar = temAutorizacao("pf_limite_aprova", c.s.usuario);
+  var btnAprova = function(rot, cor, dis, fn){ return e("button",{type:"button", disabled:dis, onClick:fn, className:"h-8 whitespace-nowrap rounded-lg px-3 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125 disabled:opacity-40", style:{background:cor}}, rot); };
+  var COLS_F = [{t:"Fornecedor", w:"22%"}, {t:"A pagar", w:"16%"}, {t:"Pago", w:"16%"}, {t:"Saldo", w:"16%"}, {t:"Próximo prazo", w:"15%"}, {t:"Status"}];
+  var bloco = function(titulo, linhas){ var tt = somaC(linhas, "total"), tp = somaC(linhas, "pago"); return e(BlocoBarra,{t:titulo, cor:"azul", compacto:true, dir:brl(tt)}, e("div",{className:"p-3"}, e(TabelaCampos,{cols:COLS_F, minW:"60rem"},
+    !linhas.length ? e(FileiraCampos,{cells:["Nada neste mês.", "", "", "", "", ""]}) : linhas.map(function(x){ var cc = x.c, st = statusConta(cc);
+      return e(FileiraCampos,{key:x.f.id, onClick:function(){ abrirForn(x.f.id); }, cells:[{v:x.f.nome}, brl(cc.total), {v:brl(cc.pago), cor:cc.pago>0.005 ? COR.green : undefined}, {v:brl(cc.aberto), cor:cc.aberto>0.005 ? COR.red : COR.green}, cc.dMin ? dbr(cc.dMin) : "—", {v:"● "+st.texto, cor:COR[st.cor] || COR.gray}]}); }),
+    linhas.length>0 && e(FileiraCampos,{total:true, cells:["Total", brl(tt), {v:brl(tp), cor:COR.green}, {v:brl(somaC(linhas, "aberto")), cor:COR.red}, "", (tt>0 ? Math.round(tp/tt*100) : 0)+"% pago"]})))); };
   return e("div",{className:"flex flex-col gap-3"},
     e(PageHead,{t:"Geral · "+mesLabel(mes+"-01"), sub:"O resumo do mês de cada fornecedor e prestador de serviço, ao vivo. Clique numa linha para abrir as 3 dezenas do mês e as 3 do mês seguinte."}), seletor,
-    e("div",{className:"grid grid-cols-2 gap-3 md:grid-cols-5"}, e(Tile,{t:"A pagar no mês", v:brl(total), cor:"#CBD5E1", sub:todosL.length+" fornecedores e prestadores"}), e(Tile,{t:"Pago", v:brl(pago), cor:COR.green}), e(Tile,{t:"Falta pagar", v:brl(Math.max(0, falta)), cor:falta>0.005 ? COR.red : COR.green}), e(Tile,{t:"Pago do total", v:(total>0 ? Math.round(pago/total*100) : 0)+"%", cor:"#CBD5E1"}), mqMes && e(Tile,{t:"Maquininha no mês", v:brl(mqMes.bruto), cor:"#CBD5E1", sub:"desconto caindo: "+brl(mqMes.desc)})),
     e(LimiteMes,{pf:pf, mes:mes}),
-    bloco("Fornecedores", lf), bloco("Prestadores de serviço", lp));
+    pendMes.length>0 && e(BlocoBarra,{t:"Aguardando aprovação · não entram nos totais", cor:"azul", compacto:true, dir:brl(somaPend)}, e("div",{className:"flex flex-col gap-2 p-3"}, e(TabelaCampos,{cols:[{t:"Fornecedor", w:"14%"}, {t:"Negociação", w:"10%"}, {t:"Data", w:"10%"}, {t:"Valor", w:"12%"}, {t:"Motivo"}, {t:"Ações", w:"14rem"}], minW:"90rem"},
+      pendMes.map(function(pd){ var fo = pf.fornecedores.find(function(x){ return x.id===pd.fornId; });
+        return e(FileiraCampos,{key:pd.id, cells:[fo ? fo.nome : "—", pd.numero||"Negociação", dbr(pd.data), {v:brl(pd.total)}, pd.aprovMotivo||"Aguardando aprovação do limite mensal",
+          e("span",{className:"flex gap-2"}, btnAprova("Aprovar", "#16A34A", !podeAprovar, function(){ op(c, "pedido_aprovar", {id:pd.id}); }), btnAprova("Excluir", "#DC2626", !c.edita, function(){ if(window.confirm("Excluir o pedido pendente de "+(fo ? fo.nome : "")+"?")) op(c, "pedido_del", {id:pd.id}); }))]}); })),
+      !podeAprovar && e("p",{className:"text-[13px] text-white"}, "Só quem tem a autorização de aprovar o limite aprova (padrão: Marcus)."))),
+    bloco("Fornecedores", lf), bloco("Prestadores de serviço", lp),
+    mqMes && e("div",{className:"text-[13px] text-white"}, "Maquininha no mês: "+brl(mqMes.bruto)+" · desconto caindo: "+brl(mqMes.desc)));
 }
 
 // casca da Geral: guarda as janelas de "Lançar negociação" e de "Novo fornecedor / prestador de serviço" (as mesmas das telas de Negociações e Fornecedores)
