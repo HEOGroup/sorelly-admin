@@ -24,6 +24,8 @@ function BlocoResumo(p){
           ? [e("span",{key:"b", className:"block h-2 overflow-hidden rounded bg-white/10"}, e("i",{className:"block h-full bg-[#E8B84B]", style:{width:Math.max(2, Math.round((l.f || 0) * 100))+"%"}})),
              e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v)]
           : [e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v), e("span",{key:"p", className:"tabular-nums", style:l.pcor ? {color:COR[l.pcor]} : undefined}, l.p || "")]);
-    })));
+    })),
+    p.rodape && e("div",{className:"grid items-center gap-2 rounded-b-lg border-t border-border bg-white/5 px-3 text-center font-semibold "+(p.compacto ? "min-h-[26px] text-[11px]" : "min-h-8 text-[13px]")+" "+grade},
+      e("span",null, p.rodape.r), e("b",{className:"font-semibold tabular-nums"}, p.rodape.v), e("span",{className:"tabular-nums"}, p.rodape.p || "")));
 }
 export { BlocoResumo };
