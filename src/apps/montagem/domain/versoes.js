@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.86", data:"2026-11-06", titulo:"Barras douradas coladas: só o topo da tabela é dourado", itens:[
+  {tipo:"correção", area:"Financeiro familiar → Contas a pagar da família e RH → Advertências", txt:"Tirei a barra dourada do título A pagar (e de Lançamentos nas Advertências) para não ficarem duas barras douradas coladas: agora só o topo da tabela é dourado. Pedido do Marcus."},
+ ]},
  {v:"0.18.85", data:"2026-11-06", titulo:"Financeiro familiar: Home só com meses que já chegaram e Total do ano", itens:[
   {tipo:"melhoria", area:"Financeiro familiar → Home da família", txt:"O seletor de mês mostra só os meses que já chegaram (antes mostrava até 12 meses à frente) e ganhou Total 2026 (e Total 2027 a partir de janeiro de 2027), que soma os 12 meses de pró-labore, contas e PIX de cada pessoa. Pedido do Marcus."},
  ]},

@@ -148,7 +148,7 @@ function AbaFfContas(){
         e(CampoSel,{t:"Categoria", id:"ff-cat", value:f.cat, onChange:function(v){ set({cat:v}); }, opcoes:op(ff.categorias.map(function(k){ return [k.chave, k.nome]; }), "Todas as categorias")}),
         e(CampoSel,{t:"Situação", id:"ff-sit", value:f.status, onChange:function(v){ set({status:v}); }, opcoes:[["", "Qualquer situação"], ["pendente", "Pendente"], ["parcial", "Parcial"], ["atrasado", "Atrasado"]]}),
         e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Buscar", id:"ff-busca"}), e("input",{id:"ff-busca", type:"search", value:f.busca, placeholder:"Descrição, beneficiário ou valor", className:CAMPO, onChange:function(ev){ set({busca:ev.target.value}); }})))),
-    e(Bloco,{ouro:true, t:"A pagar", dir:e("span",{className:"tabular-nums"}, (f.ym ? nomeMes(f.ym) : "Todos os meses")+" · "+BK(totR))},
+    e(Bloco,{t:"A pagar", dir:e("span",{className:"tabular-nums"}, (f.ym ? nomeMes(f.ym) : "Todos os meses")+" · "+BK(totR))},
       lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Nada para pagar neste filtro.") :
       e(TabelaP,{minW:1640, cols:[{t:"Vence", w:90, c:true}, {t:"Pessoa", w:190, c:true}, {t:"Descrição", w:320, c:true}, {t:"Categoria", w:120, c:true}, {t:"Beneficiário", w:160, c:true}, {t:"Valor", w:120, c:true}, {t:"Falta", w:120, c:true}, {t:"Situação", w:110, c:true}, {t:"Observação", w:230, c:true}, {t:"Ações", w:220, c:true}]},
         lista.map(function(x){ return e(Tr,{key:x.chave},
