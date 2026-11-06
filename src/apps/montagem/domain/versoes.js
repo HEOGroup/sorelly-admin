@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.90", data:"2026-11-06", titulo:"Direcionar: pedidos de teste saem", itens:[
+  {tipo:"correção", area:"Controle de pagamentos", txt:"Os 11 pedidos \"Interno\" de teste saíram do Direcionar (Vendas aguardando direcionar). Só entra o que as funcionárias do atendimento lançarem de verdade. As orientações de teste do Pix das representantes foram apagadas do servidor (com cópia de segurança)."},
+ ]},
  {v:"0.18.89", data:"2026-11-06", titulo:"Tráfego pago: consulta por data", itens:[
   {tipo:"melhoria", area:"Marketing", txt:"Em Tráfego pago › Dia a dia, o bloco Filtros ganhou Data inicial e Data final (pedido do Diego). Com uma data só, a tabela mostra aquele dia; com as duas, o período. Com data preenchida, ela vale no lugar do mês. O botão Limpar volta ao mês."}
  ]},

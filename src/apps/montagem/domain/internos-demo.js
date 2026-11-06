@@ -8,17 +8,17 @@
 import { FORM_ACERTO_VAZIO } from "@/apps/montagem/domain/acerto-derivado";
 import { calcularAcerto, textoRegras, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { BIPADORAS } from "@/apps/montagem/domain/equipe";
-import { internosReais, pedidosReais } from "@/apps/montagem/domain/revendedoras-reais";
+import { internosReais } from "@/apps/montagem/domain/revendedoras-reais";
 
 var ANO = "2026-10";
 var LISTAGEM_INTERNA = [];   // a lista vem de revendedoras-reais.js (arquivo local com os dados reais); sem ela a agenda fica vazia
-var VERSAO_INTERNOS = 11;   // sobe quando a lista muda: o estado salvo troca os de demonstração antigos
+var VERSAO_INTERNOS = 12;   // sobe quando a lista muda: o estado salvo troca os de demonstração antigos
 
 // 14/10/2026: o Marcus mandou a planilha real; os dados de mentira saíram. Ninguém vem marcado como atendido: as funcionárias preenchem e realizam cada atendimento,
 // e os pedidos de pagamento de hoje já nascem prontos para definir a conta, anexar comprovante e conferir.
 function internosDemo(s){
   var v = versaoVigente(s), internos = internosReais(v ? v.id : null);
-  return {internos:internos, acertos:[], lancFin:pedidosReais(internos)};
+  return {internos:internos, acertos:[], lancFin:[]};   // 06/11/2026 (Marcus): os pedidos de pagamento de teste (pedidosReais) saíram do Direcionar; só entra o que as funcionárias lançarem de verdade
 }
 
 // Termo do consignado já assinado em setembro (a revendedora voltou este mês): leu, confirmou e assinou todas as informações
