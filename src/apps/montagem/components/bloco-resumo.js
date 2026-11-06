@@ -23,7 +23,7 @@ function BlocoResumo(p){
         p.barra
           ? [e("span",{key:"b", className:"block h-2 overflow-hidden rounded bg-white/10"}, e("i",{className:"block h-full bg-[#E8B84B]", style:{width:Math.max(2, Math.round((l.f || 0) * 100))+"%"}})),
              e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v)]
-          : [e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v), e("span",{key:"p", className:"tabular-nums"}, l.p || "")]);
+          : [e("b",{key:"v", className:"font-semibold tabular-nums", style:cor}, l.v), e("span",{key:"p", className:"tabular-nums", style:l.pcor ? {color:COR[l.pcor]} : undefined}, l.p || "")]);
     })));
 }
 export { BlocoResumo };

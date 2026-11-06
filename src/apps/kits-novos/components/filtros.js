@@ -18,16 +18,17 @@ var LIMPO = {busca:"", st:"", rep:"", cid:"", mes:"", ent:"", so:""};
 
 // p.ocultar = lista de filtros que não fazem sentido na tela atual (ex.: ["so"]). p.fim = peça colocada no fim da linha (o seletor Quadro/Planilha).
 // Compacto (Marcus, 05/11/2026): uma linha só, campos de 32 px, sem barra de título.
+var FC = "h-8 w-full min-w-0 rounded-md border border-border bg-card px-2 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";   // campo de 32 px com texto de 11 px
 function Filtros(p){
   var cx = use(), s = cx.state, d = cx.dispatch, f = s.filtro, up = function(k,v){ var o={}; o[k]=v; d({type:"FILTRO", f:o}); };
   var oc = p.ocultar || [], vis = function(k){ return oc.indexOf(k)<0; }, l = p.listas;
   var ops = function(lista, todos){ return [["", todos]].concat(lista.map(function(o){ return [o, o]; })); };
   var atras = s.dados.filter(function(c){return atrasado(c,s.cfg);}).length;
   var algum = f.busca||f.st||(vis("rep")&&f.rep)||(vis("cid")&&f.cid)||f.mes||(vis("ent")&&f.ent)||(vis("so")&&f.so);
-  var sel = function(k, rot, opcoes){ return e("div",{key:k, className:"w-40 min-w-0"}, e(Rotulo,{t:rot, id:"kn-"+k}), e("select",{id:"kn-"+k, value:f[k], className:CAMPO, onChange:function(ev){ up(k, ev.target.value); }}, opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))); };
+  var sel = function(k, rot, opcoes){ return e("div",{key:k, className:"w-32 min-w-0"}, e(Rotulo,{t:rot, id:"kn-"+k}), e("select",{id:"kn-"+k, value:f[k], className:FC, onChange:function(ev){ up(k, ev.target.value); }}, opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))); };
   return e("section",{className:"rounded-lg border border-border bg-card/60 p-2"},
-    e("div",{className:"flex flex-wrap items-end gap-2"},
-      e("div",{className:"min-w-[10rem] flex-1"}, e(Rotulo,{t:"Buscar", id:"kn-busca"}), e("input",{id:"kn-busca", type:"search", value:f.busca, placeholder:p.placeholder||"Nome, bairro, cidade ou profissão", className:CAMPO, onChange:function(ev){ up("busca", ev.target.value); }})),
+    e("div",{className:"flex items-end gap-2"},
+      e("div",{className:"min-w-0 flex-1"}, e(Rotulo,{t:"Buscar", id:"kn-busca"}), e("input",{id:"kn-busca", type:"search", value:f.busca, placeholder:p.placeholder||"Nome, bairro, cidade ou profissão", className:FC, onChange:function(ev){ up("busca", ev.target.value); }})),
       vis("rep") && sel("rep", "Representante", ops(l.reps, "Todas")), vis("cid") && sel("cid", "Cidade", ops(l.cids, "Todas")), vis("ent") && sel("ent", "Entrada", ops(l.ents, "Todas")),
       sel("mes", "Mês", ops(MESES.filter(function(m){return l.meses.indexOf(m)>=0;}), "Todos")),
       vis("so") && sel("so", "Situação", [["", "Todas"], ["abertos", "Em aberto"], ["atrasadas", "Atrasadas ("+atras+")"]]),

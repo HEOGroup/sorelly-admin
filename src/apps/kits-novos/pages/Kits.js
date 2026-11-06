@@ -4,7 +4,7 @@ import { AbasTela, Botao, Segmentado } from "@/apps/montagem/components/padrao-f
 import { Filtros, filtrar } from "@/apps/kits-novos/components/filtros";
 import { Planilha } from "@/apps/kits-novos/components/fluxo";
 import { Entregues } from "@/apps/kits-novos/components/entregues";
-import { KPIs } from "@/apps/kits-novos/components/kpis";
+import { KPIs, PorEtapa } from "@/apps/kits-novos/components/kpis";
 import { Quadro } from "@/apps/kits-novos/components/quadro";
 import { Representantes } from "@/apps/kits-novos/components/representantes";
 import { ETAPAS } from "@/apps/kits-novos/domain/etapas";
@@ -24,11 +24,11 @@ function AbaKits(p){
   var contar = function(k){ return base.filter(function(c){ return !k || c.st===k; }).length; };
   var abas = [["", "Todas "+contar("")]].concat(ETAPAS.concat([{k:"cancelado", nome:"Cancelado"}]).map(function(x){ return [x.k, x.nome+" "+contar(x.k)]; }));
   return e(React.Fragment,null,
-    e(PageHead,{t:"Kits novos", sub:"Curitiba e região. Do cadastro até a entrega do kit."},
+    e(PageHead,{t:"Kits novos", sub:""},
+      e(Segmentado,{opcoes:[["quadro","Quadro"],["planilha","Planilha"]], atual:modo, onMudar:function(m){ d({type:"MODO", modo:m}); }}),
       e(Botao,{principal:true, onClick:function(){ d({type:"DIALOGO", d:{tipo:"nova"}}); }}, "Nova revendedora")),
-    e("div",{className:"grid grid-cols-1 items-start gap-2.5 lg:grid-cols-[minmax(0,1fr)_300px]"},
-      e(Filtros,{listas:p.listas, fim:e(Segmentado,{opcoes:[["quadro","Quadro"],["planilha","Planilha"]], atual:modo, onMudar:function(m){ d({type:"MODO", modo:m}); }})}),
-      e(KPIs)),
+    e("div",{className:"grid grid-cols-1 items-start gap-2.5 md:grid-cols-2"}, e(KPIs), e(PorEtapa)),
+    e(Filtros,{listas:p.listas}),
     plan && e(AbasTela,{abas:abas, atual:s.filtro.st||"", onMudar:function(k){ d({type:"FILTRO", f:{st:k}}); }}),
     plan ? e(Planilha,{dados:dados}) : e(Quadro,{dados:dados}));
 }
