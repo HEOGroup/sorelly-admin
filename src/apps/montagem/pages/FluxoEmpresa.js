@@ -49,7 +49,7 @@ var NOS = {
 
 // telas do setor no sistema: [nome, status (pronto · quase · trazer · breve), % concluído]. Progresso do setor = média dos %.
 var TELAS = {
-  mkt:[["Campanhas","breve",0],["Tráfego pago","breve",0]], leads:[["Painel de leads","breve",0]],
+  mkt:[["Campanhas","breve",0],["Tráfego pago","pronto",100]], leads:[["Painel de leads","breve",0]],
   cad:[["Revendedoras (ficha única)","trazer",0],["Revendedoras diárias","trazer",0],["Aprovação de cadastro","trazer",0],["Origem e campanhas","trazer",0],["Registros do cadastro","trazer",0]],
   kn:[["Kits novos","pronto",100],["Pendências","pronto",100],["Consolidado","pronto",100],["Regras","pronto",100],["Configurador","pronto",100]],
   rev:[["Ficha única da revendedora","trazer",0],["App da revendedora","pronto",100]],

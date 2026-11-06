@@ -127,6 +127,7 @@ export const SLUG_DA_ABA = {
   garantiacred: "creditos",
   posvendas: "pos-vendas",
   marketing: "marketing",
+  trafego: "trafego-pago",
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",
   enctop50: "top-50",

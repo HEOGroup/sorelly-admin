@@ -36,6 +36,7 @@ import { ceReduz } from "@/apps/montagem/domain/compras-estoque";
 import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
+import { tpReduz } from "@/apps/montagem/domain/trafego";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
 import { erReduz } from "@/apps/montagem/domain/encomendas";
@@ -285,6 +286,7 @@ function reducer(s, a){
     case "MEL": { var rMel = melReduz(s, a); return com(s, rMel.patch, rMel.msg); }   // Solicitações de melhorias (enviar, situação, resposta)
     case "GA": { var rGa = gaReduz(s, a); return com(s, rGa.patch, rGa.msg); }   // Garantia (só o atalho para o site externo)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
+    case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
     case "FX": { var rFx = fxReduz(s, a); return com(s, rFx.patch, rFx.msg); }   // Fiscal (ILF, sublimite, entradas, saídas, contas por CNPJ)
     case "EQ": { var rEq = eqReduz(s, a); return com(s, rEq.patch, rEq.msg); }   // Equipes: organograma de departamentos

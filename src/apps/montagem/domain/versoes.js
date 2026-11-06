@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.70", data:"2026-11-05", titulo:"Marketing: Tráfego pago (Google Ads e Meta Ads)", itens:[
+  {tipo:"novo", area:"Marketing", txt:"Tela nova Marketing › Tráfego pago, feita a partir da planilha do Diego: Investimento (Google, Meta sem e com imposto de 12,15% e total), Mês a mês, Dia a dia (lançar e editar o dia de cada plataforma) e Criativos (ranking dos anúncios que mais trouxeram cadastradas). O imposto do Meta fica em Configurador geral › Tráfego pago. Números conferidos com a planilha. Leads, aprovadas e cadastradas entram à mão; ligação com o Cadastro de revendedoras e com o Gerenciador de Anúncios ainda não existe."},
+ ]},
  {v:"0.18.69", data:"2026-11-05", titulo:"Encomendas e reposições: acesso do setor e 3 mensagens", itens:[
   {tipo:"novo", area:"Acessos e autorizações", txt:"Novo grupo de acesso Encomendas e reposições, com as 6 telas do setor (Funil de pedidos, Ida na empresa, Top 50, Representantes, Expositores e Regras e mensagens). Agatha, Elen e Eduarda Gabriela estavam em Acesso básico e não abriam essas telas."},
   {tipo:"novo", area:"Encomendas e reposições", txt:"Três mensagens prontas do resumo das meninas: Sem atendimento no setor, Peças reservadas para o próximo kit e Peças luxo (média abaixo do mínimo), em Regras e mensagens."},

@@ -119,7 +119,7 @@ var MENU_JURIDICO = [
   M("Marcas e patentes", undefined, {breve:true})
 ];
 var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
-var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago", undefined, {breve:true})];
+var MENU_MARKETING = [M("Marketing","marketing"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego")];
 
 var SETORES = [
   // Grupo "Geral" (28/10/2026, reorganização do menu lateral): Início, SorellyChat e Dashboard juntos no topo.
@@ -259,7 +259,7 @@ var SETORES = [
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
-    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), B("Tráfego pago")]}]},
+    {nome:"Marketing", telas:[T("marketing","Marketing"), B("Campanhas"), T("trafego","Tráfego pago")]}]},
   // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)
   {id:"aulas", nome:"Aulas do setor", ic:"book", cor:"#14B8A6", direto:T("aulas","Aulas do setor")}
 ];

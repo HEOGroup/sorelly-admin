@@ -13,6 +13,7 @@ export const SETORES_DO_MODULO = {
   er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem"], cpc: ["pecas"],
   mk: ["marketing"], gr: ["garantia"],
+  tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   pfmes: ["financeiro"],   // resumo do mês dos fornecedores (planilha Pag Fornecedores, RESUMO MÊS): gravado por scripts/planilha-fornecedores.mjs, lido pelo Direcionar Pix (28/10/2026)
   agrev: ["agendamento"],   // alterações da Agenda de revendedoras (troca de representante, data do acerto, observação) feitas pela Ana Maria enquanto a DevMaster ainda manda (29/10/2026)

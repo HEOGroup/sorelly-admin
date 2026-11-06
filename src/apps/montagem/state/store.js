@@ -30,6 +30,7 @@ import { ceDemo, ceMigrar } from "@/apps/montagem/domain/compras-estoque";
 import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
 import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
+import { tpMigrar } from "@/apps/montagem/domain/trafego";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
 import { erDemo, erMigrar } from "@/apps/montagem/domain/encomendas";
@@ -451,6 +452,7 @@ function inicial(){
     s.mel = melMigrar(s.mel);   // Solicitações de melhorias
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
+    s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos
     s.inf = infMigrar(s.inf);   // Folders e informativos: cria com as regras do acerto ou completa campos novos
