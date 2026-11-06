@@ -48,23 +48,32 @@ var casaValor = function(q, v){ if(!q) return true; var bruto = q.replace(/\./g,
 var iconBtn = function(ic, titulo, fn, perigo){ return e("button",{key:ic+titulo, onClick:fn, title:titulo, "aria-label":titulo, className:"grid size-8 place-items-center rounded-lg bg-muted/50 text-muted-foreground "+(perigo ? "hover:bg-destructive/20 hover:text-destructive" : "hover:bg-white/15 hover:text-white")}, e(Ph,{n:ic, s:15})); };
 
 // ───────────────── Home ─────────────────
+// Totais do ano: soma dos 12 meses (pró-labore, contas e PIX) de cada pessoa
+function totaisAno(ff, pid, ano){
+  var ts = []; for(var i=1; i<=12; i++) ts.push(totaisPersona(ff, pid, ano+"-"+(i<10 ? "0" : "")+i));
+  var s = function(fn){ return r2(ts.reduce(function(a, x){ return a+fn(x); }, 0)); };
+  return {contas:{total:s(function(x){ return x.contas.total; }), pago:s(function(x){ return x.contas.pago; }), restante:s(function(x){ return x.contas.restante; }), pendentes:ts.reduce(function(a, x){ return a+x.contas.pendentes; }, 0)},
+    pro:{total:s(function(x){ return x.pro.total; }), recebido:s(function(x){ return x.pro.recebido; }), restante:s(function(x){ return x.pro.restante; })},
+    pix:{meta:s(function(x){ return x.pix.meta; }), recebido:s(function(x){ return x.pix.recebido; }), restante:s(function(x){ return x.pix.restante; })}};
+}
 function AbaFfHome(){
-  var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1];
+  var c = useFF(), ff = c.ff, ms = useState(hojeYm()), ym = ms[0], setYm = ms[1], ANO = /^ANO:/.test(ym) ? ym.slice(4) : "";
+  var mesesOp = janela().filter(function(k){ return k<=hojeYm(); }), anosOp = mesesOp.map(function(k){ return k.slice(0,4); }).filter(function(a, i, l){ return l.indexOf(a)===i; });
   var ir = function(aba){ c.d({type:"ABA", aba:aba}); };
   var bloco = function(t, linhas, aba, cor){ return e("button",{key:t, type:"button", onClick:function(){ ir(aba); }, className:"flex flex-col gap-1 rounded-xl bg-black/25 p-3 text-left transition hover:bg-black/35"},
     e("span",{className:"text-[11px] font-bold uppercase tracking-[.12em]", style:{color:cor}}, t), linhas.map(function(l){ return e("span",{key:l[0], className:"flex items-center justify-between text-[13px]"}, e("span",{className:"text-white/75"}, l[0]), e("b",{className:MONO}, l[1])); })); };
   return e(Guarda,{c:c}, e("div",{className:"flex flex-col gap-4"},
     e(PageHead,{t:"Financeiro Familiar", sub:"A foto do mês de cada pessoa: pró-labore, contas a pagar e PIX das revendedoras. Clique num bloco para abrir a tela."}),
-    e("div",null, e(MesSel,{ym:ym, set:setYm})),
+    e("div",null, e(Sel,{value:ym, label:"Mês", className:"w-52", onChange:setYm}, mesesOp.map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); }), anosOp.map(function(a){ return e("option",{key:"ano"+a, value:"ANO:"+a}, "Total "+a); }))),
     ff.personas.filter(function(p){ return p.ativo; }).length===0 ? e("p",{className:"rounded-xl bg-muted/30 px-4 py-6 text-center text-[14px] text-muted-foreground"}, "Nenhuma pessoa ativa. Crie em Configurações.") :
-    e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-2"}, ff.personas.filter(function(p){ return p.ativo; }).map(function(p){ var t = totaisPersona(ff, p.id, ym);
+    e("div",{className:"grid grid-cols-1 gap-4 xl:grid-cols-2"}, ff.personas.filter(function(p){ return p.ativo; }).map(function(p){ var t = ANO ? totaisAno(ff, p.id, ANO) : totaisPersona(ff, p.id, ym);
       return e("div",{key:p.id, className:"flex flex-col gap-3 rounded-2xl p-4", style:{background:"linear-gradient(135deg,"+p.cor+"3d,"+p.cor+"0d 70%)", boxShadow:"inset 0 0 0 1px "+p.cor+"66"}},
         e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[17px]"}, p.nome), e("span",{className:"rounded-full bg-black/30 px-2.5 py-0.5 text-[11px] font-bold"}, p.tipo==="SOCIO" ? "Sócio" : "Família")),
         e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-3"},
           p.mostrarProlabore && bloco("Pró-labore", [["Recebido", BK(t.pro.recebido)], ["Restante", BK(t.pro.restante)], ["Total", BK(t.pro.total)]], "ffprolab", p.cor),
           p.mostrarContas && bloco("Contas a pagar", [["Pago", BK(t.contas.pago)], ["Restante", BK(t.contas.restante)], ["Total", BK(t.contas.total)], ["Pendentes", String(t.contas.pendentes)]], "ffcontas", p.cor),
           p.mostrarPix && bloco("PIX revendedora", [["Enviado", BK(t.pix.recebido)], ["Restante", BK(t.pix.restante)], ["Meta", BK(t.pix.meta)]], "ffpix", p.cor)),
-        e("div",{className:"flex items-center justify-between rounded-xl bg-black/30 px-3 py-2 text-[13.5px]"}, e("span",null, "A pagar no mês (contas + pró-labore)"), e("b",{className:MONO+" text-[17px]"}, BK(t.contas.total+t.pro.total)))); }))));
+        e("div",{className:"flex items-center justify-between rounded-xl bg-black/30 px-3 py-2 text-[13px]"}, e("span",null, ANO ? "A pagar no ano (contas + pró-labore)" : "A pagar no mês (contas + pró-labore)"), e("b",{className:MONO+" text-[17px]"}, BK(t.contas.total+t.pro.total)))); }))));
 }
 
 // ───────────────── Alertas ─────────────────

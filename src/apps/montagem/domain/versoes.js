@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.85", data:"2026-11-06", titulo:"Financeiro familiar: Home só com meses que já chegaram e Total do ano", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → Home da família", txt:"O seletor de mês mostra só os meses que já chegaram (antes mostrava até 12 meses à frente) e ganhou Total 2026 (e Total 2027 a partir de janeiro de 2027), que soma os 12 meses de pró-labore, contas e PIX de cada pessoa. Pedido do Marcus."},
+ ]},
  {v:"0.18.84", data:"2026-11-06", titulo:"Financeiro familiar: Contas a pagar refeita e Alertas excluída", itens:[
   {tipo:"melhoria", area:"Financeiro familiar → Contas a pagar da família", txt:"Tela refeita no padrão: título e botão Lançar conta na mesma linha; bloco Resumo (pendentes, parciais, atrasadas e total) ao lado de um bloco Filtros com campos que mostram o texto inteiro; tabela com topo dourado, tudo centralizado e cada conta em uma linha só (a observação virou uma coluna). Pedido do Marcus."},
   {tipo:"melhoria", area:"Financeiro familiar", txt:"A aba Alertas foi excluída do menu e do sistema (pedido do Marcus)."},
