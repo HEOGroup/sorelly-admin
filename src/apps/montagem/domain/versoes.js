@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.79", data:"2026-11-06", titulo:"PIX revendedoras: Casa/Praia some do seletor enquanto não tem PIX", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"No seletor Sócio, as casas sem nenhum PIX lançado (hoje, a Casa/Praia) ficam escondidas para não confundir com a Casa. Quando tiverem PIX, aparecem sozinhas."},
+ ]},
  {v:"0.18.78", data:"2026-11-06", titulo:"PIX revendedoras: a Casa separada dos sócios", itens:[
   {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Nova opção Casa: reúne os PIX da pessoa Casa/Família (Ana Beatriz, Anamaria e Itaú Black), com os próprios totais (mês, por favorecido e por dia) e o bloco Divisão da família, em partes iguais entre Marcus, Anamaria, Marco Antonio e Ana Beatriz (o Lucas não entra). Em outubro bate com o sistema antigo: 25 PIX e R$ 30.159,10."},
   {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os PIX da Casa saíram do total do mês, do Enviado por favorecido, do Por dia e das metas dos sócios, e dos cartões de cada sócio. Na lista de todos os sócios, a Casa é a última barra. Pedido do Lucas."},
