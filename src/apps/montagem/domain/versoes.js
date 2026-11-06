@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.78", data:"2026-11-06", titulo:"PIX revendedoras: a Casa separada dos sócios", itens:[
+  {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Nova opção Casa: reúne os PIX da pessoa Casa/Família (Ana Beatriz, Anamaria e Itaú Black), com os próprios totais (mês, por favorecido e por dia) e o bloco Divisão da família, em partes iguais entre Marcus, Anamaria, Marco Antonio e Ana Beatriz (o Lucas não entra). Em outubro bate com o sistema antigo: 25 PIX e R$ 30.159,10."},
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os PIX da Casa saíram do total do mês, do Enviado por favorecido, do Por dia e das metas dos sócios, e dos cartões de cada sócio. Na lista de todos os sócios, a Casa é a última barra. Pedido do Lucas."},
+ ]},
  {v:"0.18.77", data:"2026-11-05", titulo:"Kits novos: cartões compactos (modelo B)", itens:[
   {tipo:"melhoria", area:"Kits novos", txt:"Cartões do quadro refeitos no modelo B, escolhido pelo Marcus: duas linhas (nome e dias na etapa; representante, bairro, cidade e profissão), barra vermelha na lateral para atrasada e verde para no prazo. O Mover para saiu do cartão e ficou no botão ⋯. As colunas ficaram mais largas e com mais espaço entre elas. Cada cartão passou de cerca de 112 px para cerca de 48 px."},
  ]},
