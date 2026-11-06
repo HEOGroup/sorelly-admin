@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.71", data:"2026-11-05", titulo:"Kits novos: tela mais compacta e Representantes e Entregues no menu", itens:[
+  {tipo:"melhoria", area:"Kits novos", txt:"A faixa de números do topo saiu. Os mesmos números viraram um bloco só (Resumo do mês), ao lado dos filtros. Os filtros ficaram menores, em uma linha, com o seletor Quadro/Planilha logo ao lado."},
+  {tipo:"novo", area:"Cadastro de revendedoras → Kits novos", txt:"Representantes e Entregues viraram telas próprias no menu Kits novos, na ordem: Kits novos, Pendências, Consolidado, Regras, Representantes e Entregues. Antes eram botões dentro da tela Kits novos."},
+  {tipo:"melhoria", area:"Kits novos → Entregues", txt:"A faixa de 3 números da tela Entregues também virou um bloco de lista (Resumo das entregas)."},
+ ]},
  {v:"0.18.70", data:"2026-11-05", titulo:"Marketing: Tráfego pago (Google Ads e Meta Ads)", itens:[
   {tipo:"novo", area:"Marketing", txt:"Tela nova Marketing › Tráfego pago, feita a partir da planilha do Diego: Investimento (Google, Meta sem e com imposto de 12,15% e total), Mês a mês, Dia a dia (lançar e editar o dia de cada plataforma) e Criativos (ranking dos anúncios que mais trouxeram cadastradas). O imposto do Meta fica em Configurador geral › Tráfego pago. Números conferidos com a planilha. Leads, aprovadas e cadastradas entram à mão; ligação com o Cadastro de revendedoras e com o Gerenciador de Anúncios ainda não existe."},
  ]},

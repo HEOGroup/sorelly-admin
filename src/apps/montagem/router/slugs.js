@@ -109,6 +109,8 @@ export const SLUG_DA_ABA = {
   knpendencias: "kits-novos-pendencias",
   knconsolidado: "kits-novos-consolidado",
   knregras: "kits-novos-regras",
+  knrepresentantes: "kits-novos-representantes",
+  knentregues: "kits-novos-entregues",
   knconfigurador: "kits-novos-configurador",
   config: "configurador",
   avisos: "avisos",

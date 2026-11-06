@@ -1,6 +1,7 @@
 // Sorelly Admin · kits novos Curitiba — components/entregues.js
 // Listagem dos kits novos entregues, do mais recente para o mais antigo (padrão do Financeiro: faixa de totais + tabela de linhas de 32 px).
-import { FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
+import { TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { atrasado, diasNaEtapa, entregou } from "@/apps/kits-novos/domain/etapas";
 import { dataBR, diasEntre, tsDe } from "@/apps/kits-novos/lib/datas";
 import { N1 } from "@/apps/kits-novos/lib/format";
@@ -15,7 +16,7 @@ function Entregues(p){
   var dias = cs.map(function(c){ return diasEntre(c.cad, c.ret); }).filter(function(x){ return x!=null && x>=0; });
   var media = dias.length ? dias.reduce(function(a,b){return a+b;},0)/dias.length : null, noPrazo = dias.length ? dias.filter(function(x){ return x<=s.cfg.metaDias; }).length/dias.length*100 : null;
   return e("div",{className:"flex flex-col gap-3"},
-    e(FaixaTotais,{itens:[{t:"Kits entregues", v:String(cs.length), cor:"text-success"}, {t:"Dias do cadastro à entrega", v:media==null ? "—" : N1(media)+" d"}, {t:"Meta "+s.cfg.metaDias+" dias", v:noPrazo==null ? "—" : N1(noPrazo)+"%", cor:"text-success"}]}),
+    e("div",{className:"w-full max-w-xs"}, e(BlocoResumo,{t:"Resumo das entregas", compacto:true, cab:["Item", "Valor", ""], linhas:[{r:"Kits entregues", v:String(cs.length), cor:"ok"}, {r:"Dias do cadastro à entrega", v:media==null ? "—" : N1(media)+" dias"}, {r:"Meta de "+s.cfg.metaDias+" dias", v:noPrazo==null ? "—" : N1(noPrazo)+"%", cor:"ok"}]})),
     e(TabelaP,{minW:1130, cols:[{t:"Revendedora", w:220}, {t:"Representante", w:150}, {t:"Bairro", w:140}, {t:"Cidade", w:150}, {t:"Profissão", w:150}, {t:"Cadastro", w:84, n:1}, {t:"Entrega", w:84, n:1}, {t:"Dias", w:60, n:1}, {t:"Condicional", w:170}]},
       cs.slice(0, lim).map(function(c){ var n = diasEntre(c.cad, c.ret);
         return e(Tr,{key:c.id, onClick:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }},

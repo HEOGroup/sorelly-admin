@@ -134,6 +134,8 @@ const montagem = {
     paginaKN("kits-novos-pendencias", "AbaPendenciasEmbutido"),
     paginaKN("kits-novos-consolidado", "AbaConsolidadoKNEmbutido"),
     paginaKN("kits-novos-regras", "AbaRegrasKNEmbutido"),
+    paginaKN("kits-novos-representantes", "AbaKitsRepresentantesEmbutido"),
+    paginaKN("kits-novos-entregues", "AbaKitsEntreguesEmbutido"),
     paginaKN("kits-novos-configurador", "AbaConfigKNEmbutido"),
     pagina("configurador", () => import("@/apps/montagem/pages/ConfiguradorGeral"), "AbaConfiguradorGeral"),
     pagina("estoque-sorelly", () => import("@/apps/montagem/pages/EstoqueSorelly"), "AbaEstoqueSorelly"),
