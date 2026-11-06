@@ -22,21 +22,25 @@ function reducer(s, a){
     case "PERFIL_SALVAR": { var pf = Object.assign({}, s.perfis); pf[a.nome] = a.perfil; return com(s, {perfis:pf, dialogo:null}, "Mapa de "+a.nome+" salvo"); }
     case "AVISO": return com(s, {}, a.txt, "atencao");
     case "LIMPAR_AVISO": return com(s, {aviso:null});
+    case "SEGURAR": {
+      c = s.dados.find(function(x){return x.id===a.id;}); if(!c || !aberto(c) || c.st==="entregue") return s;
+      return com(s, {dados:mapC(s, a.id, function(x){ var p = a.on ? {ap:true, apEm:hojeISO()} : {ap:false, apEm:null}; return Object.assign(p, reg(x, s, a.on ? "Aguardando peça" : "Saiu de Aguardando peça")); })}, c.nome+(a.on ? " ficou em Aguardando peça" : " voltou para "+etapaDe(c).nome.toLowerCase()), a.on ? "atencao" : undefined);
+    }
     case "AVANCAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c || !aberto(c)) return s;
       var prox = ETAPAS[etapaDe(c).n]; if(!prox) return s;
       var data = a.data || hojeISO(), extra = a.extra || {};
-      return com(s, {dados:mapC(s, a.id, function(x){ var p = Object.assign({st:prox.k}, extra); p[prox.campo] = data;
+      return com(s, {dados:mapC(s, a.id, function(x){ var p = Object.assign({st:prox.k, ap:false, apEm:null}, extra); p[prox.campo] = data;
         return Object.assign(p, reg(x, s, "Avan\u00e7ou para "+prox.nome+(extra.retirada?", retirada "+extra.retirada:""))); }), dialogo:null}, c.nome+" agora est\u00e1 "+prox.nome.toLowerCase());
     }
     case "VOLTAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); var et = etapaDe(c); if(!c || !et || et.n<=1) return s;
       var ant = ETAPAS[et.n-2];
-      return com(s, {dados:mapC(s, a.id, function(x){ var p = {st:ant.k}; p[et.campo] = null; return Object.assign(p, reg(x, s, "Voltou para "+ant.nome+": "+a.motivo)); }), dialogo:null}, c.nome+" voltou para "+ant.nome.toLowerCase(), "atencao");
+      return com(s, {dados:mapC(s, a.id, function(x){ var p = {st:ant.k, ap:false, apEm:null}; p[et.campo] = null; return Object.assign(p, reg(x, s, "Voltou para "+ant.nome+": "+a.motivo)); }), dialogo:null}, c.nome+" voltou para "+ant.nome.toLowerCase(), "atencao");
     }
     case "CANCELAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c) return s;
-      return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({st:"cancelado", stAnterior:x.st, ret:hojeISO(), obs:(x.obs?x.obs+" | ":"")+"Cancelado: "+a.motivo}, reg(x, s, "Cancelado: "+a.motivo)); }), dialogo:null}, c.nome+" cancelada", "atencao");
+      return com(s, {dados:mapC(s, a.id, function(x){ return Object.assign({st:"cancelado", stAnterior:x.st, ap:false, apEm:null, ret:hojeISO(), obs:(x.obs?x.obs+" | ":"")+"Cancelado: "+a.motivo}, reg(x, s, "Cancelado: "+a.motivo)); }), dialogo:null}, c.nome+" cancelada", "atencao");
     }
     case "REATIVAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c || c.st!=="cancelado") return s;

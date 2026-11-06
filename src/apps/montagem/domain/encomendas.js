@@ -38,7 +38,7 @@ function somaMeses(dia, n){
 
 // ---------- vocabulário ----------
 var TIPOS = [["reposicao", "Reposição"], ["expositor", "Expositor"], ["encomenda", "Encomenda"]];
-var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda"};
+var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda", leilao:"Leilão", troca:"Troca", ecommerce:"E-commerce", modelo:"Modelo", brinde:"Brinde"};   // os 5 últimos só aparecem no histórico importado das planilhas do setor (05/11/2026)
 var COR_TIPO = {reposicao:"#60A5FA", expositor:"#F3D98B", encomenda:"#F97316"};
 var ICONE_TIPO = {reposicao:"arrows-clockwise", expositor:"storefront", encomenda:"package"};
 var STATUS = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "concluido", "recusado", "cancelado"];
@@ -120,7 +120,16 @@ function erMigrar(er){
   er.revendedoras.forEach(function(r){ if(!r.vendas) r.vendas = {}; });
   // lista oficial do Top 50 (planilha do Marcus, 29/10/2026): quem estava no Top 50 e não está na lista sai; quem está entra, com última venda, acerto, montagem e observações
   if(LOCAL && LOCAL.listaVersao && er.top50Lista!==LOCAL.listaVersao){ aplicarLista(er, LOCAL.revendedoras || [], true, "sistema", agoraSP(), "Lista do Top 50 de "+LOCAL.listaVersao); er.top50Lista = LOCAL.listaVersao; }
+  // histórico das planilhas do setor (05/11/2026): pedidos já entregues (controle de reposição e encomendas, comprovantes do João e liberadas do Marcus). Importa de novo quando historicoVersao muda; só mexe nos pedidos marcados origem "planilha".
+  if(LOCAL && LOCAL.historicoVersao && er.historicoVersao!==LOCAL.historicoVersao){ importarHistorico(er, LOCAL); er.historicoVersao = LOCAL.historicoVersao; }
   er.v = 5; return er;
+}
+function importarHistorico(er, L){
+  er.pedidos = er.pedidos.filter(function(p){ return p.origem!=="planilha"; });
+  (L.liberadas||[]).forEach(function(x){ var r = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, x.nome); });
+    if(!r){ r = {id:"R"+(++er.seq), nome:x.nome, telefone:"", representante:x.representante||"", media3m:0, maiorVenda:0, vendas:{}, bloqueadaAte:"", atualizadoEm:agoraSP()}; er.revendedoras.push(r); }
+    r.marcus = true; if(x.representante && !r.representante) r.representante = x.representante; });
+  (L.historico||[]).forEach(function(h){ var p = clone(h); p.id = "P"+(++er.seq); var rv = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, p.revendedora); }); if(rv) p.revendedoraId = rv.id; er.pedidos.push(p); });
 }
 // Aplica uma lista de revendedoras como Top 50 (mesclando com o que já existe). linhas = [{nome, telefone?, representante?, ultimaVenda?, dataAcerto?, sitMont?, respMont?, obs?}]
 // substituir = quem está no Top 50 e não está na lista sai (fica no histórico). Telefone só preenche se estava vazio; os demais campos da planilha valem.
@@ -406,7 +415,8 @@ function mensagemSolicitacao(config, so, link){
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
   ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
-  ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"]];
+  ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"],
+  ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
   var v = (c.valores||[]).slice().sort(function(a, b){ return a.de-b.de; });
   var linhas = ["🔴 *Abaixo de "+formatarReais(v.length ? v[0].de : 0)+":* sem direito"];
@@ -441,6 +451,12 @@ function mensagemPadrao(config, k){
     "Depois do pagamento, envie o *comprovante* por mensagem escrita. *Sem o comprovante a reposição não é liberada.*"].join("\n");
   if(k==="atendimento") return ["💬 *ATENDIMENTO: REGRAS*", "", "✍️ Somente *mensagens escritas*", "📷 *Poucas fotos*, só o necessário", "🚫 *Sem áudio.* Quem insistir em áudio será *bloqueada*",
     "⏳ Aguarde o retorno da equipe. Nenhum prazo é prometido na hora."].join("\n");
+  // mensagens do resumo das meninas (PDF do setor, 03/11/2026)
+  if(k==="sem_atendimento") return ["No momento, não estamos mais atendendo solicitações de encomendas e reposições pelo setor.", "", "Você pode verificar com sua representante a possibilidade de realizar a reposição. Assim, caso haja a liberação da reposição ela poderá separar as peças disponíveis para você e combinar a entrega.", "",
+    "Caso não seja possível realizar a reposição, você pode adicionar suas preferências diretamente no aplicativo Sorelly, para que sejam consideradas na montagem do seu próximo kit. ☺️"].join("\n");
+  if(k==="pecas_reservadas") return ["Localizei essas peças e vou mantê-las reservadas para você. 😊 Assim que conseguir, por gentileza, me confirme quais deseja deixar reservadas para o próximo kit.", "",
+    "Só peço que me confirme assim que possível, pois não conseguimos manter peças reservadas por muito tempo. Caso não vá ficar com alguma delas, precisaremos liberá-las para inclusão em outros kits. Agradeço pela compreensão! 💕"].join("\n");
+  if(k==="pecas_luxo") return ["Infelizmente, as peças luxo são disponibilizadas somente para revendedoras que atingem uma média de vendas de "+R(r.mediaMinima)+" ou mais. Dessa forma, ao atingir essa média, você passa a ter acesso à disponibilidade dessas peças. ☺️"].join("\n");
   if(k==="ida_empresa") return ["📦 *REPOSIÇÃO NA EMPRESA: FLUXO*", "", "⏱️ *Tempo máximo: "+r.minutosEscolha+" minutos*", L, "",
     "1️⃣ A *bipagem* recebe a revendedora.", "2️⃣ A *bipagem* encaminha à *sala de Encomendas*.", "3️⃣ *Encomendas* confere a *média de vendas* e o *valor da reposição*.", "4️⃣ *Encomendas* chama a *atendente*.",
     "5️⃣ *Atendimento das peças:* mostrar as peças na frente, pedir ajuda a Encomendas, ver as gavetas da produção, procurar na mesa de produção.", "6️⃣ A atendente *conclui* e chama a *Deysiane*.", "7️⃣ A *Deysiane* define *quem bipa* a reposição.", "",

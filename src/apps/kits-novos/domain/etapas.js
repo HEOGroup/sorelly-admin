@@ -27,8 +27,10 @@ function entregou(c){ return c.st==="entregue" || c.st==="devolvido"; }
 function emCurso(c){ return aberto(c) && c.st!=="entregue"; }
 // data em que o kit saiu de vez do funil (condicional devolvida; sem ela, a da entrega)
 function dataFim(c){ return c.dev || c.ret; }
-function atrasado(c, cfg){ return aberto(c) && diasNaEtapa(c) > prazoDe(c, cfg); }
+// Aguardando peça: kit parado de propósito (falta de peça, de representante ou de cadastro). Só vale antes da entrega e NÃO conta como atrasado.
+function seguro(c){ return aberto(c) && c.st!=="entregue" && !!c.ap; }
+function atrasado(c, cfg){ return aberto(c) && !seguro(c) && diasNaEtapa(c) > prazoDe(c, cfg); }
 function mesDe(c){ return c.cad ? MESES[+c.cad.split("-")[1]-1] : c.mes; }
 function contatosFeitos(c){ return (c.c1?1:0)+(c.c2?1:0)+(c.c3?1:0); }
 
-export { ETAPAS, ETAPA, LEGADO, estadoAtual, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, atrasado, mesDe, contatosFeitos };
+export { ETAPAS, ETAPA, LEGADO, estadoAtual, etapaDe, dataEtapa, diasNaEtapa, prazoDe, aberto, entregou, emCurso, dataFim, seguro, atrasado, mesDe, contatosFeitos };

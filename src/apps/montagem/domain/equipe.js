@@ -39,6 +39,7 @@ var SUPERVISORA = {id:11, nome:"Deysiane"};
 var DIRETORIA = [{id:16, nome:"Marcus"}, {id:17, nome:"Nickolas"}, {id:28, nome:"Lucas"}];
 var LEONARDO = {id:44, nome:"Leonardo"};   // desenvolvedor: acesso total (conta com pessoa_id 44)
 var KITNOVO = {id:18, nome:"Michele"};
+var TRAFEGO = {id:46, nome:"Diego", completo:"Diego Franco"};   // gestor de tráfego (PJ, 05/11/2026): conta com acesso básico + só a tela Marketing › Tráfego pago (grupo "basico" fixo em SO_CHAT; a tela vem da conta, em abas)
 var CADASTRO_REV = [{id:45, nome:"Camilly"}];   // Cadastro de revendedoras: mesmo grupo de acesso da Michele (Kits novos e Cadastro)
 // Cadastro de peças (23/10/2026): Rayssa (supervisora) e Graziella lançam as peças e respondem os pedidos da produção (Cadastro de peças → Solicitações)
 var CADASTRO_PECAS = [{id:42, nome:"Rayssa"}, {id:43, nome:"Graziella"}];
@@ -48,7 +49,7 @@ var FINANCEIRO = [{id:27, nome:"Nayale"}, {id:36, nome:"Bruna"}];   // Bruna faz
 // Agendamento (acertos): todos do setor lançam; gerenciam (abrir/fechar o mês e configurar) a Diretoria e quem estiver marcado no Configurador (padrão: Ana Maria)
 function podeGerirAgend(id, ag){ return DIRETORIA.some(function(x){ return x.id===id; }) || (((ag && ag.config && ag.config.gerentes) || [24]).indexOf(id)>=0); }
 var ACAO_AGENDAMENTO = [24,25,26], ACAO_FINANCEIRO = [27,36];
-var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[LEONARDO],[KITNOVO],CADASTRO_REV,CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
+var EQUIPE = MONTADORAS.concat(BIPADORAS,[ATENDENTE_PECAS],ACESSO_TOTAL,[AMANDA_M],FAMILIA,[SUPERVISORA],DIRETORIA,[LEONARDO],[TRAFEGO],[KITNOVO],CADASTRO_REV,CADASTRO_PECAS,[LISTAGENS_RESP],AGENDAMENTO,FINANCEIRO);
 // Quem pode ser montador de um kit: pessoa que existe na equipe e é da montagem ou da supervisão/diretoria (bipadora, financeiro etc. não montam)
 function montadorValido(id){ return id!=null && nomeDe(id)!=="—" && (MONTADORAS.some(function(m){ return m.id===id; }) || papelDe(id)==="supervisao"); }
 // Quem libera a exceção do kit acima do limite de Encomendas: Marcus e Deysiane
@@ -80,7 +81,10 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // Grupo de ACESSO (menu e blocos de cada tela). Diferente do papel (função na montagem): Nickolas e Deysiane seguem como supervisão nas ações,
 // mas o acesso deles é editável. Sócios = fixo.
 // Só Início, SorellyChat e Melhorias por enquanto (Marcus, 29/10/2026): Bruna (36), as montadoras (1 a 7, 19 a 21) e Elen, Agatha e Eduarda (39 a 41, que ainda ganham o setor Encomendas pela conta). Vale também no "atuar como". Tirar o id daqui quando for liberar telas novas.
-var SO_CHAT = [36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
+// Telas liberadas pela PESSOA, além do que a conta traz (05/11/2026, Marcus): Diego (46) abre Marketing › Tráfego pago mesmo que a conta tenha sido criada sem a lista de telas.
+var TELAS_DA_PESSOA = {46:["trafego","criativos"]};
+function telasDaPessoa(id){ return TELAS_DA_PESSOA[id] || []; }
+var SO_CHAT = [46, 36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
 function grupoDe(id){
   if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
@@ -115,4 +119,4 @@ var BIPA_RETORNO_PADRAO = function(){ return BIPADORAS.map(function(b){ return b
 function podeDecidirCadastro(id){ return temAutorizacao("cadastro_decide", id); }
 // quem está na lista de pessoas do sistema (pessoa desconhecida não pode ganhar acesso total por padrão)
 var pessoaConhecida = function(id){ return !!GRUPO_CONTA[id] || EQUIPE.some(function(p){ return p.id===id; }); };
-export { definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, LEONARDO, KITNOVO, EQUIPE, nomeDe, papelDe };
+export { telasDaPessoa, definirContaEquipe, pessoaConhecida, CADASTRO_PECAS, ENCOMENDAS_IDS, montadorValido, podeLiberarExcecao, podeDecidirCadastro, podeGerirAgend, BLOCOS, definirBlocos,BIPA_RETORNO_PADRAO,  veBloco, grupoDe, AMANDA_M, DIRECAO_FAMILIA, ACESSO_TOTAL, FAMILIA, ATENDENTE_PECAS, podeConfigComissao, podeConferirPag, AGENDAMENTO, FINANCEIRO, veTotais, podeAgendar, podeBipRetorno, podeFinanceiro, MONTADORAS, BIPADORAS, LISTAGENS_RESP, SUPERVISORA, DIRETORIA, LEONARDO, KITNOVO, EQUIPE, nomeDe, papelDe };

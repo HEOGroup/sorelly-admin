@@ -84,6 +84,23 @@ function TabelaP(p){
       e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] border-b border-border px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c.t); }))),
       e("tbody",null, p.children)));
 }
+// TABELA DE CAMPOS (layout D, escolhido pelo Marcus em 06/11/2026): cada item é uma fileira de campos separados por fio fino, sem dourado.
+// Nada quebra de linha e nada é cortado: as colunas têm largura fixa (cols[].w) e a última pode ser "1fr". Cabeçalho e total em faixa escura.
+// Uso: e(TabelaCampos,{cols:[{t:"Fornecedor", w:"20%"}, ...], minW:"60rem"}, e(FileiraCampos,{cells:["Pontual", {v:brl(10), cor:"#22C55E"}]}), ...)
+var FIO = "border-[#2a2c31]";
+function TabelaCampos(p){
+  var grade = p.cols.map(function(c){ return c.w || "1fr"; }).join(" ");
+  return e("div",{className:"overflow-x-auto rounded-lg border "+FIO},
+    e("div",{style:{minWidth:p.minW||undefined, "--grade":grade}},
+      e("div",{className:"grid bg-[#1c1d21]", style:{gridTemplateColumns:"var(--grade)"}}, p.cols.map(function(c, i){ return e("div",{key:i, title:c.d || c.t, className:"flex h-[30px] items-center justify-center whitespace-nowrap border-l px-3 text-[11px] font-semibold uppercase tracking-[.05em] text-white first:border-l-0 "+FIO}, c.t); })),
+      p.children));
+}
+// cells: texto, elemento ou {v, cor}. total:true = faixa escura em negrito. onClick: fileira clicável.
+function FileiraCampos(p){
+  return e("div",{onClick:p.onClick, title:p.title, className:"grid border-t "+FIO+(p.total ? " bg-[#1c1d21] font-bold" : "")+(p.onClick ? " cursor-pointer hover:bg-white/5" : ""), style:{gridTemplateColumns:"var(--grade)"}},
+    p.cells.map(function(c, i){ var obj = c!==null && typeof c==="object" && !React.isValidElement(c) && c.v!==undefined;
+      return e("div",{key:i, className:"flex h-8 items-center justify-center whitespace-nowrap border-l px-3 text-[13px] tabular-nums first:border-l-0 "+FIO, style:obj && c.cor ? {color:c.cor} : undefined}, obj ? c.v : c); }));
+}
 // célula e linha da TabelaP. valor (n:true) à direita, fonte tabular; texto à esquerda com corte "…" e title
 var TD = "h-8 border-b border-border px-2.5 ";
 function Td(p){
@@ -126,4 +143,4 @@ function TabelaSimples(p){
       e("tbody",null, p.children)));
 }
 
-export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, Bloco, FaixaTotais, AbasTela, Segmentado, TabelaP, Td, Tr, Tile, Aviso, LinhaCampo, Secao, BotaoRemover, TabelaSimples, CabSimples, TdSimples };
+export { COR, corSinal, brl, inteiro, H, CAMPO, Rotulo, CampoSel, CampoBusca, Botao, BlocoFiltros, Bloco, FaixaTotais, AbasTela, Segmentado, TabelaP, TabelaCampos, FileiraCampos, Td, Tr, Tile, Aviso, LinhaCampo, Secao, BotaoRemover, TabelaSimples, CabSimples, TdSimples };

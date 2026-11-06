@@ -12,6 +12,107 @@ var VERSOES = [
   {tipo:"novo", area:"Agendamento → Pedidos do app", txt:"Tela nova com os pedidos de mudança da data do acerto feitos no app: Aguardando, Alteradas na hora (até 5 dias) e Decididos. A Diretoria aprova ou reprova (reprovar pede motivo; sem aprovação vale a multa de remarcação)."},
   {tipo:"novo", area:"Kits novos", txt:"O kit novo direcionado pela Michele chega sozinho ao app da representante; a resposta volta (agendou: entra na listagem aberta do dia; recusou: volta para a Michele e conta para o bloqueio de 2 recusas). Aviso \"Kit pronto para retirar\" no celular quando o kit é bipado. Liga com APP_REP_SINCRONIZAR=1."},
   {tipo:"novo", area:"Comissões", txt:"O app mostra só as comissões da representante (mesma régua de Financeiro → Comissões: datas A/B, janela, km com corte às 13h de Brasília, combustível, Pix direto, Entrega na empresa, pagamento não identificado). A configuração de comissões do Financeiro vai ao servidor (cf_comis)."},
+ {v:"0.18.94", data:"2026-11-06", titulo:"Pix dos sócios só para consulta (Bruna)", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix_ver (Ver os PIX das revendedoras dos sócios, só consulta): abre só a tela PIX dos sócios, sem o formulário Anotar PIX, sem apagar, sem mudar a conferência e sem editar a meta. Padrão: Bruna (chamado de 05/11/2026). O atalho PIX dos sócios do menu Financeiro aparece para quem tem ff_pix ou ff_pix_ver."}
+ ]},
+ {v:"0.18.93", data:"2026-11-06", titulo:"Kits novos: planilha de hoje no sistema e filtro por região", itens:[
+  {tipo:"novo", area:"Kits novos", txt:"A planilha da Michele (Kits Novos 2026) foi importada: 2.604 kits em 6 regiões (Curitiba e região, Maringá, Litoral do Paraná, Ponta Grossa, Joinville e Santa Catarina). A planilha para de ser atualizada; tudo passa a ser feito no sistema. Cadastrada vale como Liberado."},
+  {tipo:"novo", area:"Kits novos", txt:"Novo filtro Região no bloco de filtros, antes de Representante. Só aparece quando há mais de uma região nos dados. Kit criado dentro do sistema conta como Curitiba e região."}
+ ]},
+ {v:"0.18.94", data:"2026-11-06", titulo:"Criativos: envio de vídeo e imagem", itens:[
+  {tipo:"novo", area:"Marketing", txt:"Em Marketing › Criativos, o formulário ganhou Arquivos do criativo: o Diego envia vídeo (MP4, MOV, WebM) ou imagem (JPG, PNG, WebP), até 12 arquivos de 600 MB cada. Para carrossel, escolhe todas as telas de uma vez. O vídeo toca no próprio cartão e o carrossel troca de tela por números. O arquivo fica no Vercel Blob (envio direto do navegador, com o login conferido em /api/criativos/upload); o criativo guarda só o endereço."},
+  {tipo:"novo", area:"Tecnologia", txt:"Novo pacote @vercel/blob. Para funcionar, o Blob (loja pública) precisa estar ligado ao projeto na Vercel, que cria a variável BLOB_READ_WRITE_TOKEN."}
+ ]},
+ {v:"0.18.92", data:"2026-11-06", titulo:"Expositores e Encomendas: dados do admin antigo e das planilhas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Expositores", txt:"Carga da cópia do admin antigo (estoque, fila, clientes e condicionais de expositor) e do histórico das planilhas do setor, a partir dos arquivos locais. Quem entrou na fila só no sistema novo continua na fila."},
+  {tipo:"correção", area:"Sistema", txt:"Os dados de Expositores e de Encomendas que voltam do servidor passam de novo pela carga da cópia; antes o servidor apagava a cópia recém-carregada."}
+ ]},
+ {v:"0.18.91", data:"2026-11-06", titulo:"Kits novos: Aguardando peça e contador de Aguardando bipagem", itens:[
+  {tipo:"novo", area:"Kits novos", txt:"Nova coluna Aguardando peça (ao lado de Liberado), pedida pela Michele: kit parado de propósito por falta de peça, de representante ou de cadastro. O kit continua na etapa dele, não conta como atrasado, não tem prazo e tem barra amarela. Para mover: botão ⋯ do cartão → Aguardando peça; para tirar, ⋯ → voltar à etapa. Também aparece como aba na Planilha, como opção em Situação e como selo no kit."},
+  {tipo:"melhoria", area:"Kits novos", txt:"Resumo do mês ganhou Aguardando bipagem (Liberado e Solicitado que não estão em Aguardando peça) e Aguardando peça. O bloco Por etapa ganhou a linha Aguardando peça e corrigiu a contagem de Cancelado. Atrasadas agora não incluem os kits em Aguardando peça."},
+ ]},
+ {v:"0.18.90", data:"2026-11-06", titulo:"Direcionar: pedidos de teste saem", itens:[
+  {tipo:"correção", area:"Controle de pagamentos", txt:"Os 11 pedidos \"Interno\" de teste saíram do Direcionar (Vendas aguardando direcionar). Só entra o que as funcionárias do atendimento lançarem de verdade. As orientações de teste do Pix das representantes foram apagadas do servidor (com cópia de segurança)."},
+ ]},
+ {v:"0.18.89", data:"2026-11-06", titulo:"Tráfego pago: consulta por data", itens:[
+  {tipo:"melhoria", area:"Marketing", txt:"Em Tráfego pago › Dia a dia, o bloco Filtros ganhou Data inicial e Data final (pedido do Diego). Com uma data só, a tabela mostra aquele dia; com as duas, o período. Com data preenchida, ela vale no lugar do mês. O botão Limpar volta ao mês."}
+ ]},
+ {v:"0.18.88", data:"2026-11-06", titulo:"Atendimento Sorelly: valor a pagar sem multa antes do pagamento", itens:[
+  {tipo:"correção", area:"Atendimento Sorelly", txt:"O valor a pagar não soma mais a multa de 10% antes de existir pagamento, acordo ou recusa. Exemplo: venda de R$ 788,00 com 30% de comissão paga R$ 551,60 (antes mostrava R$ 606,76). Com pagamento parcial, a multa de 10% continua só sobre o que ficou pendente. Vale também para o app da representante."},
+ ]},
+ {v:"0.18.87", data:"2026-11-06", titulo:"Resumo de pagamentos: Limite em layout B, sem blocos de números no topo, Aprovar no Aguardando aprovação", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"Saíram os 5 blocos de números do topo (A pagar, Pago, Falta pagar, Pago do total e Maquininha): o % pago foi para a linha Total de cada tabela e a maquininha para uma linha de texto no fim. As tabelas viraram fileiras de campos (layout D), sem dourado e sem linha quebrada. O Limite de fornecedores ficou em layout B: tabela por tipo em cima; embaixo, meses com folga à esquerda e semáforo vertical à direita; regras atrás do botão Regras do limite."},
+  {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"Negociação pendente de aprovação do limite mensal sumia do Resumo (chamado do Lucas, caso do Castilho). Agora aparece no bloco Aguardando aprovação, com fornecedor, data, valor, motivo e os botões Aprovar e Excluir."},
+  {tipo:"novo", area:"Padrão visual", txt:"Regra fixa gravada: toda tabela nova ou mexida usa TabelaCampos + FileiraCampos (padrao-fin.js). A trava dura reprova TabelaP e tabela feita à mão na hora de editar (hook); o conferir e o CI não reprovam telas antigas."}
+ ]},
+ {v:"0.18.86", data:"2026-11-06", titulo:"Barras douradas coladas: só o topo da tabela é dourado", itens:[
+  {tipo:"correção", area:"Financeiro familiar → Contas a pagar da família e RH → Advertências", txt:"Tirei a barra dourada do título A pagar (e de Lançamentos nas Advertências) para não ficarem duas barras douradas coladas: agora só o topo da tabela é dourado. Pedido do Marcus."},
+ ]},
+ {v:"0.18.85", data:"2026-11-06", titulo:"Financeiro familiar: Home só com meses que já chegaram e Total do ano", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → Home da família", txt:"O seletor de mês mostra só os meses que já chegaram (antes mostrava até 12 meses à frente) e ganhou Total 2026 (e Total 2027 a partir de janeiro de 2027), que soma os 12 meses de pró-labore, contas e PIX de cada pessoa. Pedido do Marcus."},
+ ]},
+ {v:"0.18.84", data:"2026-11-06", titulo:"Financeiro familiar: Contas a pagar refeita e Alertas excluída", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → Contas a pagar da família", txt:"Tela refeita no padrão: título e botão Lançar conta na mesma linha; bloco Resumo (pendentes, parciais, atrasadas e total) ao lado de um bloco Filtros com campos que mostram o texto inteiro; tabela com topo dourado, tudo centralizado e cada conta em uma linha só (a observação virou uma coluna). Pedido do Marcus."},
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A aba Alertas foi excluída do menu e do sistema (pedido do Marcus)."},
+ ]},
+ {v:"0.18.83", data:"2026-11-06", titulo:"PIX revendedoras: Direto e Prestadores em Todos os meses", itens:[
+  {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Com Todos os meses escolhido, o bloco Total passou a mostrar Direto e Prestadores (somados mês a mês), como já mostrava num mês só. Antes só aparecia o Recebido. Pergunta do Marcus."},
+ ]},
+ {v:"0.18.82", data:"2026-11-06", titulo:"PIX revendedoras: total fixo no fundo de cada bloco", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os blocos do resumo ficaram um pouco mais altos (272 px) e o total saiu da primeira linha: agora é uma linha fixa no fundo de cada bloco (Recebido, Total enviado e Total, com a quantidade de PIX), e a lista rola por cima dela. Pedido do Marcus."},
+ ]},
+ {v:"0.18.81", data:"2026-11-06", titulo:"PIX revendedoras: blocos do resumo com a mesma altura", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os blocos Total do mês, Enviado por favorecido e Por dia (e a Divisão da família, na Casa) agora têm a mesma altura, e a lista de cada um rola por dentro. O Por dia ficou mais baixo e os outros mais altos. Pedido do Marcus."},
+ ]},
+ {v:"0.18.80", data:"2026-11-06", titulo:"PIX revendedoras: filtro na lista de cada sócio e correção", itens:[
+  {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Filtro em cima da lista de cada sócio (e da Casa) para a conferência das meninas: Buscar (revendedora, valor, data ou conta), Conta e Conferência, com o botão Limpar e a contagem (ex.: 43 de 50 PIX). O total do cartão continua o de todos os PIX. Pedido do Lucas."},
+  {tipo:"correção", area:"Financeiro familiar → PIX revendedoras", txt:"Corrigido um erro da versão anterior que fazia a tela PIX revendedoras mostrar Algo deu errado (um comentário cortou uma linha do código)."},
+ ]},
+ {v:"0.18.79", data:"2026-11-06", titulo:"PIX revendedoras: Casa/Praia some do seletor enquanto não tem PIX", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"No seletor Sócio, as casas sem nenhum PIX lançado (hoje, a Casa/Praia) ficam escondidas para não confundir com a Casa. Quando tiverem PIX, aparecem sozinhas."},
+ ]},
+ {v:"0.18.78", data:"2026-11-06", titulo:"PIX revendedoras: a Casa separada dos sócios", itens:[
+  {tipo:"novo", area:"Financeiro familiar → PIX revendedoras", txt:"Nova opção Casa: reúne os PIX da pessoa Casa/Família (Ana Beatriz, Anamaria e Itaú Black), com os próprios totais (mês, por favorecido e por dia) e o bloco Divisão da família, em partes iguais entre Marcus, Anamaria, Marco Antonio e Ana Beatriz (o Lucas não entra). Em outubro bate com o sistema antigo: 25 PIX e R$ 30.159,10."},
+  {tipo:"melhoria", area:"Financeiro familiar → PIX revendedoras", txt:"Os PIX da Casa saíram do total do mês, do Enviado por favorecido, do Por dia e das metas dos sócios, e dos cartões de cada sócio. Na lista de todos os sócios, a Casa é a última barra. Pedido do Lucas."},
+ ]},
+ {v:"0.18.77", data:"2026-11-05", titulo:"Kits novos: cartões compactos (modelo B)", itens:[
+  {tipo:"melhoria", area:"Kits novos", txt:"Cartões do quadro refeitos no modelo B, escolhido pelo Marcus: duas linhas (nome e dias na etapa; representante, bairro, cidade e profissão), barra vermelha na lateral para atrasada e verde para no prazo. O Mover para saiu do cartão e ficou no botão ⋯. As colunas ficaram mais largas e com mais espaço entre elas. Cada cartão passou de cerca de 112 px para cerca de 48 px."},
+ ]},
+ {v:"0.18.76", data:"2026-11-05", titulo:"Kits novos: topo com 2 blocos e filtros em uma linha", itens:[
+  {tipo:"melhoria", area:"Kits novos", txt:"Topo refeito (versão A escolhida pelo Marcus): só o título Kits novos com o seletor Quadro/Planilha e o botão Nova revendedora; dois blocos de lista lado a lado (Resumo do mês e Por etapa, com cartões e atrasados de cada etapa; Devolvido e Cancelado só do mês); e os filtros em uma linha só, com fonte menor (11 px)."},
+ ]},
+ {v:"0.18.75", data:"2026-11-05", titulo:"Encomendas: histórico das planilhas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições", txt:"O sistema importa o histórico das planilhas do setor (controle de reposição e encomendas, comprovantes do João e liberadas do Marcus) como pedidos concluídos, e aceita os tipos Leilão, Troca, E-commerce, Modelo e Brinde. Os dados reais ficam só no arquivo local, fora do Git."}
+ ]},
+ {v:"0.18.74", data:"2026-11-05", titulo:"Contas de acesso: busca por pessoa", itens:[
+  {tipo:"melhoria", area:"Acessos e autorizações", txt:"A aba Contas ganhou o bloco Filtros no topo: Buscar pessoa (nome, usuário, e-mail, pessoa do sistema ou setor, sem diferença de acento ou maiúscula) e Situação (Todas, Aguardando, Ativo, Bloqueado), com o botão Limpar."}
+ ]},
+ {v:"0.18.73", data:"2026-11-05", titulo:"Setor Regras: Guia resumido e Guia da revendedora", itens:[
+  {tipo:"novo", area:"Regras", txt:"Setor novo Regras, aberto para todos os funcionários: um bloco só com os dois guias em PDF (Guia resumido e Guia da revendedora), cada um com a capa, o botão Ver guia e o botão Copiar link."},
+  {tipo:"melhoria", area:"Cadastro de revendedoras", txt:"A tela Folders saiu do Cadastro de revendedoras (os guias agora ficam no setor Regras)."},
+  {tipo:"melhoria", area:"Representantes e Kits", txt:"A tela Folders e informativos foi apagada do menu Regras dos representantes."},
+ ]},
+ {v:"0.18.72", data:"2026-11-05", titulo:"Marketing: Criativos viram tela própria", itens:[
+  {tipo:"melhoria", area:"Marketing", txt:"Os criativos saíram de dentro do Tráfego pago e ganharam tela própria no menu de cima do Marketing (Marketing, Campanhas, Tráfego pago, Criativos). A tela tem duas visões: Cartões (um cartão por anúncio, com posição, cadastradas, custo por cadastrada, leads, aprovadas, investimento e link) e Planilha, com filtros de mês e plataforma."},
+  {tipo:"melhoria", area:"Acessos", txt:"O Diego, gestor de tráfego, abre Tráfego pago e Criativos pela pessoa dele."}
+ ]},
+ {v:"0.18.71", data:"2026-11-05", titulo:"Kits novos: tela mais compacta e Representantes e Entregues no menu", itens:[
+  {tipo:"melhoria", area:"Kits novos", txt:"A faixa de números do topo saiu. Os mesmos números viraram um bloco só (Resumo do mês), ao lado dos filtros. Os filtros ficaram menores, em uma linha, com o seletor Quadro/Planilha logo ao lado."},
+  {tipo:"novo", area:"Cadastro de revendedoras → Kits novos", txt:"Representantes e Entregues viraram telas próprias no menu Kits novos, na ordem: Kits novos, Pendências, Consolidado, Regras, Representantes e Entregues. Antes eram botões dentro da tela Kits novos."},
+  {tipo:"melhoria", area:"Kits novos → Entregues", txt:"A faixa de 3 números da tela Entregues também virou um bloco de lista (Resumo das entregas)."},
+ ]},
+ {v:"0.18.70", data:"2026-11-05", titulo:"Marketing: Tráfego pago (Google Ads e Meta Ads)", itens:[
+  {tipo:"novo", area:"Marketing", txt:"Tela nova Marketing › Tráfego pago, feita a partir da planilha do Diego: Investimento (Google, Meta sem e com imposto de 12,15% e total), Mês a mês, Dia a dia (lançar e editar o dia de cada plataforma) e Criativos (ranking dos anúncios que mais trouxeram cadastradas). O imposto do Meta fica em Configurador geral › Tráfego pago. Números conferidos com a planilha. Leads, aprovadas e cadastradas entram à mão; ligação com o Cadastro de revendedoras e com o Gerenciador de Anúncios ainda não existe."},
+ ]},
+ {v:"0.18.69", data:"2026-11-05", titulo:"Encomendas e reposições: acesso do setor e 3 mensagens", itens:[
+  {tipo:"novo", area:"Acessos e autorizações", txt:"Novo grupo de acesso Encomendas e reposições, com as 6 telas do setor (Funil de pedidos, Ida na empresa, Top 50, Representantes, Expositores e Regras e mensagens). Agatha, Elen e Eduarda Gabriela estavam em Acesso básico e não abriam essas telas."},
+  {tipo:"novo", area:"Encomendas e reposições", txt:"Três mensagens prontas do resumo das meninas: Sem atendimento no setor, Peças reservadas para o próximo kit e Peças luxo (média abaixo do mínimo), em Regras e mensagens."},
+ ]},
+ {v:"0.18.68", data:"2026-11-05", titulo:"Aula: lançar e corrigir o saldo das contas", itens:[
+  {tipo:"novo", area:"Aulas → Financeiro", txt:"Aula nova Lançar e corrigir o saldo das contas (0:36, tela inteira): Saldos e análises → Contas bancárias → Lançar saldos, digitar, Fechar e Editar. Responde o chamado da Anamaria."},
+ ]},
+ {v:"0.18.67", data:"2026-11-05", titulo:"Aula Trocar o CNPJ: versão rápida", itens:[
+  {tipo:"melhoria", area:"Aulas → Financeiro", txt:"A aula Trocar o CNPJ de uma conta ficou mais rápida: de 1:08 para 0:37, com os mesmos passos e a tela inteira. A troca foi testada de verdade e desfeita na conta de exemplo."},
  ]},
  {v:"0.18.66", data:"2026-11-05", titulo:"Aula: trocar o CNPJ de uma conta", itens:[
   {tipo:"novo", area:"Aulas → Financeiro", txt:"Aula nova Trocar o CNPJ de uma conta (mesmo paga), 1:08, tela inteira: Contas a pagar → Pagas → linha da conta → CNPJ da conta → Trocar CNPJ → OK, e como Voltar ao original. Responde o chamado da Nayale (a troca já existia desde 02/11/2026)."},

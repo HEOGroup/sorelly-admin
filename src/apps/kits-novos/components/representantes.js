@@ -62,7 +62,7 @@ function Representantes(p){
   var cx = use(), s = cx.state, d = cx.dispatch, sub = SUBS.some(function(x){ return x[0]===s.subRep; }) ? s.subRep : "controle";
   return e("div",{className:"flex flex-col gap-3"},
     e(AbasTela,{abas:SUBS, atual:sub, onMudar:function(k){ d({type:"SUBREP", sub:k}); }}),
-    (sub==="controle" || sub==="fluxo") && e(Filtros,{listas:p.listas, ocultar:["rep","cid","ent","so"], placeholder:"Buscar representante"}),
+    (sub==="controle" || sub==="fluxo") && e(Filtros,{listas:p.listas, ocultar:["reg","rep","cid","ent","so"], placeholder:"Buscar representante"}),
     sub==="controle" ? e(Controle) : sub==="fluxo" ? e(RepFluxo) : sub==="regioes" ? e(RepRegioes) : sub==="horarios" ? e(RepHorarios) : sub==="viagens" ? e(RepViagens) : e(RepIndicar));
 }
 

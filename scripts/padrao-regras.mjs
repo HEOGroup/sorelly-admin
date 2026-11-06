@@ -90,11 +90,15 @@ export function conferirLinhas(arquivo, linhas, op){
 
     // 2e. TOPO DOURADO (Marcus, 02/11/2026): toda tabela tem cabeçalho dourado em degradê. Tabela feita à mão em pages/ não tem: use TabelaP (padrao-fin.js) ou TabelaPlanilha (tabela-planilha.js), que já trazem o topo dourado.
     if(ehPagina(arquivo) && /\be\(\s*["'](table|thead)["']|<(table|thead)\b/.test(codigo))
-      add("tabela feita à mão (use TabelaP ou TabelaPlanilha: o topo dourado em degradê vem da peça)", l);
+      add("tabela feita à mão (use TabelaCampos/FileiraCampos de padrao-fin.js: layout D, 06/11/2026; planilha com filtro: TabelaPlanilha)", l);
 
     // 2e-bis. A peça antiga Tab/Td de padrao.js tem cabeçalho cinza, sem a barra dourada (02/11/2026, Marcus: "travou errado"). Em pages/ use GradeFiltro (planilha com filtro), TabelaP ou TabelaPlanilha.
     if(ehPagina(arquivo) && /\be\(\s*Tab\s*,|\bimport\b[^;]*\bTab\b[^;]*components\/padrao["']/.test(codigo))
-      add("tabela com a peça antiga Tab (cabeçalho cinza): use GradeFiltro, TabelaP ou TabelaPlanilha, que trazem a barra dourada inteira", l);
+      add("tabela com a peça antiga Tab (cabeçalho cinza): use TabelaCampos/FileiraCampos (layout D) ou, para planilha com filtro, GradeFiltro/TabelaPlanilha", l);
+
+    // 2h. LAYOUT D (Marcus, 06/11/2026: "não quero linhas quebradas, nada dourado, tudo ordenado"): tabela simples = TabelaCampos + FileiraCampos (padrao-fin.js): fileira de campos com fio fino, cabeçalho e total em faixa escura, colunas de largura fixa, nada quebra. TabelaP (topo dourado) não entra mais em tela mexida. (A trava reprova só na hora de editar, no hook; telas antigas que já usam TabelaP não travam o conferir nem o CI até serem mexidas.)
+    if(op.aoEditar && ehPagina(arquivo) && /\be\(\s*TabelaP\s*,|\bimport\b[^;]*\bTabelaP\b[^;]*padrao-fin/.test(codigo))
+      add("TabelaP (topo dourado) saiu em 06/11/2026: use TabelaCampos + FileiraCampos de padrao-fin.js (layout D)", l);
 
     // 2f. UM DEGRADÊ SÓ (Marcus, 02/11/2026): o topo dourado é um degradê esticado na barra inteira; nunca um degradê por célula.
     if(/"(td|th)"|<t[dh]\b|\bTh\b|\bTd\b/.test(codigo) && /gradient|degrade\(/.test(codigo))

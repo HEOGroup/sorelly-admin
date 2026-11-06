@@ -4,6 +4,7 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **06/11/2026** (diário, Resumo de pagamentos, layout D): o Marcus não quis linha quebrada nem dourado, viu 4 layouts em HTML (`docs/ideias/resumo-pagamentos-4-layouts.html`) e escolheu o **D** (fileira de campos, fio fino, cabeçalho e total em faixa escura). Peça `TabelaCampos`/`FileiraCampos` em `padrao-fin.js`, usada só nas tabelas do Resumo de Pagamentos a fornecedores. Pendente: o Marcus dizer se vale para todas as tabelas.
 - **03/11/2026** (diário, Financeiro: Atividades, Resultado do mês e regras de caixa): **Financeiro › Atividades** (`/financeiro/atividades`, módulo `finativ`): lista do que fica para fazer depois; a pessoa escreve atividade, detalhes, quando e responsável; conclui com resposta opcional.
 - **03/11/2026** (diário, mesma seção): **Resultado do mês, aba Resumo** (versão 3 de 2 blocos): o mês escolhido à esquerda (nota fiscal x dinheiro) e os meses ao redor e os que vêm à direita.
 - **03/11/2026** (diário, mesma seção): **Saldo na virada do mês:** fecha pelo saldo final do último dia, do extrato do banco; o início do mês seguinte é o mesmo número. Dia sem lançamento repete o anterior.
