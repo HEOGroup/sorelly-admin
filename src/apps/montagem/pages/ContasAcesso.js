@@ -3,13 +3,12 @@
 // Uma tabela só (04/11/2026, pedido do Marcus: igual às outras telas, com as travas do padrão visual): topo dourado, tudo centralizado, nada abreviado e sem faixa de totais.
 // Cada linha tem login, senha e as ações (Liberar, Bloquear, Copiar mensagem, Nova senha); clicar na linha abre os setores que a pessoa pode abrir.
 // Só funciona com o servidor ligado (lib/api.js). Quem não é da Diretoria recebe aviso do próprio servidor. Código do servidor: src/server/contas.js e app/api/contas.
-import { Botao, Bloco, CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { Botao, CAMPO } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { EQUIPE } from "@/apps/montagem/domain/equipe";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
-import { reabrirEscolha, restaurarCopiaAntesServidor, temCopiaAntesServidor } from "@/apps/montagem/lib/sync-modulos";
 import { e, useEffect, useState } from "@/shared/react";
 
 // mesmos nomes do servidor (src/server/permissoes.js → SETORES_VALIDOS)
@@ -70,11 +69,6 @@ function AbaContas(){
 
   return e(Pagina,null,
     erro && e("p",{role:"alert", className:"rounded-lg bg-destructive/15 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, erro),
-    e(Bloco,{t:"Dados deste navegador"},
-      e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
-        e("span",{className:"text-[13px]"}, "Escolher de novo qual cópia dos dados vale (a deste navegador ou a do servidor)."),
-        e(Botao,{onClick:reabrirEscolha}, "Escolher de novo"),
-        temCopiaAntesServidor() && e(Botao,{onClick:restaurarCopiaAntesServidor, title:"Devolve à tela o que estava neste navegador antes de você usar o servidor"}, "Voltar a cópia de antes"))),
     contas===null && !erro ? e("p",{className:"p-3 text-center text-[13px]"}, "Carregando")
     : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, semContagem:true, detalhe:detalhe, vazio:"Ninguém criou conta ainda. Quem criar na tela de entrada aparece aqui como Aguardando."}));
 }
