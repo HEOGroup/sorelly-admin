@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.74", data:"2026-11-05", titulo:"Contas de acesso: busca por pessoa", itens:[
+  {tipo:"melhoria", area:"Acessos e autorizações", txt:"A aba Contas ganhou o bloco Filtros no topo: Buscar pessoa (nome, usuário, e-mail, pessoa do sistema ou setor, sem diferença de acento ou maiúscula) e Situação (Todas, Aguardando, Ativo, Bloqueado), com o botão Limpar."}
+ ]},
  {v:"0.18.73", data:"2026-11-05", titulo:"Setor Regras: Guia resumido e Guia da revendedora", itens:[
   {tipo:"novo", area:"Regras", txt:"Setor novo Regras, aberto para todos os funcionários: um bloco só com os dois guias em PDF (Guia resumido e Guia da revendedora), cada um com a capa, o botão Ver guia e o botão Copiar link."},
   {tipo:"melhoria", area:"Cadastro de revendedoras", txt:"A tela Folders saiu do Cadastro de revendedoras (os guias agora ficam no setor Regras)."},

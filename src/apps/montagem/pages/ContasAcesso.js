@@ -3,7 +3,7 @@
 // Uma tabela só (04/11/2026, pedido do Marcus: igual às outras telas, com as travas do padrão visual): topo dourado, tudo centralizado, nada abreviado e sem faixa de totais.
 // Cada linha tem login, senha e as ações (Liberar, Bloquear, Copiar mensagem, Nova senha); clicar na linha abre os setores que a pessoa pode abrir.
 // Só funciona com o servidor ligado (lib/api.js). Quem não é da Diretoria recebe aviso do próprio servidor. Código do servidor: src/server/contas.js e app/api/contas.
-import { Botao, Bloco, CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { Botao, Bloco, BlocoFiltros, CampoBusca, CampoSel, CAMPO } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { EQUIPE } from "@/apps/montagem/domain/equipe";
@@ -27,7 +27,7 @@ function novaSenha(){ return "sorelly" + (1000 + Math.floor(Math.random() * 9000
 var parar = function(ev){ ev.stopPropagation(); };   // mexer num campo da linha não abre nem fecha o detalhe
 
 function AbaContas(){
-  var sc = useState(null), contas = sc[0], setContas = sc[1], se = useState(""), erro = se[0], setErro = se[1], sp = useState(""), copiado = sp[0], setCopiado = sp[1];
+  var sc = useState(null), contas = sc[0], setContas = sc[1], se = useState(""), erro = se[0], setErro = se[1], sp = useState(""), copiado = sp[0], setCopiado = sp[1], sb = useState(""), busca = sb[0], setBusca = sb[1], ss = useState(""), sit = ss[0];
   var carrega = function(){ chamar("GET", "/contas").then(function(j){ setContas(j.contas); setErro(""); }).catch(function(x){ setErro(x.message); }); };
   useEffect(function(){ if(apiAtiva()) carrega(); }, []);
   var muda = function(id, corpo){ chamar("PATCH", "/contas/"+id, corpo).then(function(j){ setContas(function(l){ return l.map(function(c){ return c.id===id ? j.conta : c; }); }); setErro(""); }).catch(function(x){ setErro(x.message); }); };
@@ -35,6 +35,10 @@ function AbaContas(){
   if(!apiAtiva()) return e(Pagina,null, e("p",{className:"rounded-lg bg-warning/15 px-3 py-2 text-center text-[13px] font-semibold text-warning"}, "As contas só existem com o sistema ligado ao servidor (sem servidor não há login)."));
   var nomePessoa = function(id){ var x = pessoasDoSistema.find(function(p){ return p.id===id; }); return x ? x.nome : ""; };
   var linhas = (contas || []).map(function(c){ return {id:c.id, c:c, nome:c.nome, email:c.email, login:c.login || "", statusLb:ROTULO_STATUS[c.status] || c.status, pessoa:nomePessoa(c.pessoaId), grupo:c.grupo ? (PAPEL_LB[c.grupo] || c.grupo) : "Pela lista do sistema", perfil:c.perfil==="ADMIN" ? "Diretoria" : "Setor", cid:c.cid || "", senha:c.senhaProvisoria || "já trocou", criada:dataCurta(c.criadoEm), liberadaPor:c.status==="ativo" ? (c.aprovadoPor || "") : ""}; });
+  // busca (05/11/2026, Marcus): por nome, usuário, e-mail, pessoa do sistema, grupo ou setor; e filtro de situação. A busca ignora acento e maiúscula.
+  var norm = function(t){ return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+  var termo = norm(busca).trim(), todasLinhas = linhas.length;
+  linhas = linhas.filter(function(l){ return (!sit || l.c.status===sit) && (!termo || norm([l.nome, l.login, l.email, l.pessoa, l.grupo, l.perfil, (l.c.setores || []).join(" ")].join(" ")).indexOf(termo)>=0); });
 
   var cols = [
     {k:"nome", t:"Nome"},
@@ -70,12 +74,15 @@ function AbaContas(){
 
   return e(Pagina,null,
     erro && e("p",{role:"alert", className:"rounded-lg bg-destructive/15 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, erro),
+    e(BlocoFiltros,{onLimpar:function(){ setBusca(""); ss[1](""); }},
+      e(CampoBusca,{t:"Buscar pessoa", id:"ct-busca", value:busca, onChange:setBusca, placeholder:"Nome, usuário, e-mail ou setor"}),
+      e(CampoSel,{t:"Situação", id:"ct-sit", value:sit, onChange:ss[1], opcoes:[["", "Todas"], ["aguardando", "Aguardando"], ["ativo", "Ativo"], ["bloqueado", "Bloqueado"]]})),
     e(Bloco,{t:"Dados deste navegador"},
       e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
         e("span",{className:"text-[13px]"}, "Escolher de novo qual cópia dos dados vale (a deste navegador ou a do servidor)."),
         e(Botao,{onClick:reabrirEscolha}, "Escolher de novo"),
         temCopiaAntesServidor() && e(Botao,{onClick:restaurarCopiaAntesServidor, title:"Devolve à tela o que estava neste navegador antes de você usar o servidor"}, "Voltar a cópia de antes"))),
     contas===null && !erro ? e("p",{className:"p-3 text-center text-[13px]"}, "Carregando")
-    : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, semContagem:true, detalhe:detalhe, vazio:"Ninguém criou conta ainda. Quem criar na tela de entrada aparece aqui como Aguardando."}));
+    : e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, semContagem:true, detalhe:detalhe, vazio:todasLinhas ? "Nenhuma conta com esse filtro. Use Limpar." : "Ninguém criou conta ainda. Quem criar na tela de entrada aparece aqui como Aguardando."}));
 }
 export { AbaContas };
