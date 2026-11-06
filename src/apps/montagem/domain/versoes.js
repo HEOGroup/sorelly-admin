@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.94", data:"2026-11-06", titulo:"Pix dos sócios só para consulta (Bruna)", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix_ver (Ver os PIX das revendedoras dos sócios, só consulta): abre só a tela PIX dos sócios, sem o formulário Anotar PIX, sem apagar, sem mudar a conferência e sem editar a meta. Padrão: Bruna (chamado de 05/11/2026). O atalho PIX dos sócios do menu Financeiro aparece para quem tem ff_pix ou ff_pix_ver."}
+ ]},
  {v:"0.18.93", data:"2026-11-06", titulo:"Kits novos: planilha de hoje no sistema e filtro por região", itens:[
   {tipo:"novo", area:"Kits novos", txt:"A planilha da Michele (Kits Novos 2026) foi importada: 2.604 kits em 6 regiões (Curitiba e região, Maringá, Litoral do Paraná, Ponta Grossa, Joinville e Santa Catarina). A planilha para de ser atualizada; tudo passa a ser feito no sistema. Cadastrada vale como Liberado."},
   {tipo:"novo", area:"Kits novos", txt:"Novo filtro Região no bloco de filtros, antes de Representante. Só aparece quando há mais de uma região nos dados. Kit criado dentro do sistema conta como Curitiba e região."}
