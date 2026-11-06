@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.91", data:"2026-11-06", titulo:"Kits novos: Aguardando peça e contador de Aguardando bipagem", itens:[
+  {tipo:"novo", area:"Kits novos", txt:"Nova coluna Aguardando peça (ao lado de Liberado), pedida pela Michele: kit parado de propósito por falta de peça, de representante ou de cadastro. O kit continua na etapa dele, não conta como atrasado, não tem prazo e tem barra amarela. Para mover: botão ⋯ do cartão → Aguardando peça; para tirar, ⋯ → voltar à etapa. Também aparece como aba na Planilha, como opção em Situação e como selo no kit."},
+  {tipo:"melhoria", area:"Kits novos", txt:"Resumo do mês ganhou Aguardando bipagem (Liberado e Solicitado que não estão em Aguardando peça) e Aguardando peça. O bloco Por etapa ganhou a linha Aguardando peça e corrigiu a contagem de Cancelado. Atrasadas agora não incluem os kits em Aguardando peça."},
+ ]},
  {v:"0.18.90", data:"2026-11-06", titulo:"Direcionar: pedidos de teste saem", itens:[
   {tipo:"correção", area:"Controle de pagamentos", txt:"Os 11 pedidos \"Interno\" de teste saíram do Direcionar (Vendas aguardando direcionar). Só entra o que as funcionárias do atendimento lançarem de verdade. As orientações de teste do Pix das representantes foram apagadas do servidor (com cópia de segurança)."},
  ]},

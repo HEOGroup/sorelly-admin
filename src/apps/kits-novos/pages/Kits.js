@@ -7,7 +7,7 @@ import { Entregues } from "@/apps/kits-novos/components/entregues";
 import { KPIs, PorEtapa } from "@/apps/kits-novos/components/kpis";
 import { Quadro } from "@/apps/kits-novos/components/quadro";
 import { Representantes } from "@/apps/kits-novos/components/representantes";
-import { ETAPAS } from "@/apps/kits-novos/domain/etapas";
+import { ETAPAS, seguro } from "@/apps/kits-novos/domain/etapas";
 import { use } from "@/apps/kits-novos/state/context";
 import { PageHead } from "@/apps/kits-novos/ui/page";
 import { e } from "@/shared/react";
@@ -21,8 +21,8 @@ function AbaKits(p){
   var dados = filtrar(s), plan = modo==="planilha";
   // contagem de cada etapa com os filtros atuais (menos a própria etapa), para as abas da planilha
   var base = filtrar(Object.assign({}, s, {filtro:Object.assign({}, s.filtro, {st:""})}));
-  var contar = function(k){ return base.filter(function(c){ return !k || c.st===k; }).length; };
-  var abas = [["", "Todas "+contar("")]].concat(ETAPAS.concat([{k:"cancelado", nome:"Cancelado"}]).map(function(x){ return [x.k, x.nome+" "+contar(x.k)]; }));
+  var contar = function(k){ return base.filter(function(c){ return !k || (k==="aguardando" ? seguro(c) : c.st===k && !seguro(c)); }).length; };
+  var abas = [["", "Todas "+contar("")]].concat(ETAPAS.slice(0, 1).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(1), [{k:"cancelado", nome:"Cancelado"}]).map(function(x){ return [x.k, x.nome+" "+contar(x.k)]; }));
   return e(React.Fragment,null,
     e(PageHead,{t:"Kits novos", sub:""},
       e(Segmentado,{opcoes:[["quadro","Quadro"],["planilha","Planilha"]], atual:modo, onMudar:function(m){ d({type:"MODO", modo:m}); }}),
