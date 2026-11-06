@@ -13,6 +13,7 @@ import { COMIS0 } from "@/apps/montagem/domain/comissoes";
 import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
 import { formasPagamentoPadrao, normalizarVersao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
+import { espelharAdmin } from "@/apps/montagem/domain/app-rep";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
 import { agendDemo, sincPrevistosAcertos } from "@/apps/montagem/domain/agendamento";
 import { globLocal } from "@/lib/glob-local";
@@ -305,6 +306,7 @@ function novo(){
 }
 function inicial(){
   try { var j = localStorage.getItem(CHAVE); if(j){ var s = lerEstado(j); if(s && s.v===4){ s.aviso=null;
+    s._rpoPronto = false; s._rpfPronto = false;   // app da representante: só espelha depois que o servidor mandar os dados nesta sessão (domain/app-rep.js)
     var base0 = novo(); CHAVES_SINCRONIZADAS.forEach(function(k){ if(s[k]===undefined && base0[k]!==undefined) s[k] = base0[k]; });   // módulos que já estão no servidor não vão para o navegador: entram com o padrão e o servidor troca logo depois (02/11/2026)
     // listagens de demonstração antigas são trocadas pelas novas (dias 6, 7 e 8, nada bipado)
     if(s.demoListagens!==VERSAO_LISTAGENS){ var dn = novoDia(); s.listagens = dn.listagens; s.kits = dn.kits; s.retPend = []; s.entregasKN = {}; s.abertas = {L1:true, L2:true}; s.kitAberto = null; s.demoListagens = VERSAO_LISTAGENS; s.perfisRev = Object.assign({}, s.perfisRev, {"Beatriz Nogueira":{profissao:"Nail Designer", enderecoCasa:"Rua Fictícia S, 210 - Centro, Curitiba - PR", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR", fone1:"(41) 00000-0088", fone2:"(41) 99900-0088", refs:[{nome:"Maria Aparecida", rel:"Mãe", fone:"(41) 99812-3344"}, {nome:"João Carlos", rel:"Esposo", fone:"(41) 98745-6120"}, {nome:"Rosângela Silva", rel:"Irmã", fone:"(41) 99133-8870"}]}}); }
@@ -528,7 +530,24 @@ function inicial(){
 function mapKit(s, id, fn){ return s.kits.map(function(k){ return k.id===id ? Object.assign({},k,fn(k)) : k; }); }
 // kits novos direcionados (módulo kn do servidor): cada kit KN* de s.novas é espelhado em s.kn["k_"+id], uma chave por kit, para chegar ao app da representante em qualquer aparelho
 function espelharKn(n){ if(!n.novas) return n; var kn = null; n.novas.forEach(function(x){ if(!x || String(x.id).indexOf("KN")!==0) return; var k = "k_"+x.id; if(JSON.stringify((n.kn||{})[k])!==JSON.stringify(x)){ kn = kn || Object.assign({}, n.kn); kn[k] = x; } }); return kn ? Object.assign({}, n, {kn:kn}) : n; }
-function com(s, patch, txt, tom){ var n = Object.assign({}, s, patch); if(patch && patch.novas) n = espelharKn(n); if(txt) n.aviso = {txt:txt, tom:tom||"ok", t:Date.now()}; return n; }
+// app real da representante (domain/app-rep.js): o que a equipe muda em listagens, kits e acertos que vieram do app vira chave do admin (lx_, kx_, ax_)
+// em s.rpo / s.rpf, que o lib/sync-modulos.js envia ao servidor. Só depois que o servidor já mandou os dados do app (_rpoPronto / _rpfPronto).
+function espelharApp(n, patch){
+  if(!(patch.kits || patch.listagens || patch.acertosConsignado || patch.comis)) return n;
+  if(!(n._rpoPronto || n._rpfPronto)) return n;
+  var m = espelharAdmin(n, nomeDe) || {};
+  // configuração de comissões (régua, % e grupo de cada representante, gasolina, pagamentos lançados): o servidor calcula "só as minhas comissões" com ela
+  if(patch.comis && n._rpfPronto && n.comis){
+    var cf = Object.assign({}, n.comis); delete cf.kmDia;
+    if(JSON.stringify(cf)!==JSON.stringify((n.rpf||{}).cf_comis)) m.rpf = Object.assign({}, m.rpf, {cf_comis:cf});
+  }
+  if(!m.rpo && !m.rpf) return n;
+  var o = Object.assign({}, n);
+  if(m.rpo) o.rpo = Object.assign({}, n.rpo, m.rpo);
+  if(m.rpf) o.rpf = Object.assign({}, n.rpf, m.rpf);
+  return o;
+}
+function com(s, patch, txt, tom){ var n = Object.assign({}, s, patch); if(patch && patch.novas) n = espelharKn(n); if(patch) n = espelharApp(n, patch); if(txt) n.aviso = {txt:txt, tom:tom||"ok", t:Date.now()}; return n; }
 function kitDe(s,id){ return s.kits.find(function(k){return k.id===id;}); }
 function ajustaDiv(s, montId, delta){
   return s.montadoras.map(function(m){ return m.id!==montId ? m :

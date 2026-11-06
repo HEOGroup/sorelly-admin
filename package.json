@@ -25,6 +25,7 @@
     "criar-admin": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/criar-admin.mjs",
     "conferir": "node scripts/conferir-build.mjs",
     "ver-modulos": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/ver-modulos.mjs",
+    "migrar-app-representante": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/migrar-app-representante.mjs",
     "teste-devmaster2": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/teste-devmaster2.mjs",
     "explorar-devmaster2": "node --env-file-if-exists=.env --env-file-if-exists=.env.local scripts/explorar-devmaster2.mjs"
   },

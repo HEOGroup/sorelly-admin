@@ -16,6 +16,7 @@ import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
+import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
@@ -251,10 +252,20 @@ function reducer(s, a){
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
+      if(a.chave==="rpo" || a.chave==="rpf"){   // app real da representante (domain/app-rep.js): guarda as chaves cruas e remonta listagens, kits e acertos das telas
+        var sRp = Object.assign({}, s); sRp[a.chave] = Object.assign({}, s[a.chave], a.conteudo); sRp[a.chave==="rpo" ? "_rpoPronto" : "_rpfPronto"] = true;
+        return Object.assign(sRp, aplicarAppNoEstado(sRp));
+      }
       if(a.chave==="kn"){   // kits novos vindos do servidor: entram (ou atualizam) na lista de novas da representante
         var nvK = (s.novas||[]).slice();
-        Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
-        return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
+        Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id || k.indexOf("k_")!==0) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
+        // recusas feitas no APP REAL (src/server/app-rep/sincronizar.js grava em recusasApp): entram em s.recusas e contam para o bloqueio (cfg.recusasBloqueio)
+        var recK = (s.recusas||[]).slice(), blK = Object.assign({}, s.bloqueioNovas), novaRec = false;
+        nvK.forEach(function(it){ (it.recusasApp||[]).forEach(function(x){
+          if(recK.some(function(y){ return y.rep===x.rep && y.rev===x.rev && y.iso===x.iso; })) return;
+          recK.unshift(x); novaRec = true;
+          if(recK.filter(function(y){ return y.rep===x.rep; }).length >= ((s.cfg||{}).recusasBloqueio||2)) blK[x.rep] = true; }); });
+        return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK}, novaRec ? {recusas:recK, bloqueioNovas:blK} : {});
       }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor

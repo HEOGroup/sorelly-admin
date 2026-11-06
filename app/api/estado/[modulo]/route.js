@@ -8,9 +8,27 @@ export const runtime = "nodejs";
 import { json, erro, rota, corpo, invalido } from "@/server/http";
 import { consulta } from "@/server/db";
 import { podeModulo } from "@/server/permissoes";
+import { donoDaChave, ehModuloItens, gravarItens, lerItens, versaoItens } from "@/server/estado-itens";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 const nega = () => erro("Você não tem acesso a este módulo.", 403);
+
+// Módulos "por item" (rpo, rpf: ligação com o app real da representante, src/server/estado-itens.js): uma linha por chave.
+// GET ?desde=<versão> devolve só as chaves que mudaram depois (o navegador junta). PUT grava SÓ as chaves do admin (lx_, kx_, ax_);
+// as do app (gravadas pelas rotas de serviço) são ignoradas aqui: um navegador com cópia velha nunca apaga o que o app mandou.
+async function getItens(modulo, desde) {
+  const v = await versaoItens(modulo);
+  const parcial = desde !== undefined && desde > 0 && desde <= v;
+  const r = await lerItens(modulo, parcial ? desde : undefined);
+  if (parcial && r.vazio) return json({ modulo, versao: Math.max(v, desde), igual: true });
+  return json({ modulo, versao: Math.max(r.versao, v), conteudo: r.conteudo, parcial });
+}
+async function putItens(modulo, chaves, eu) {
+  const doAdmin = {}, ignoradas = [];
+  Object.entries(chaves).forEach(([k, v]) => { if (donoDaChave(k) === "admin") doAdmin[k] = v; else ignoradas.push(k); });
+  const versao = Object.keys(doAdmin).length ? await gravarItens(modulo, doAdmin, "admin", eu.id) : await versaoItens(modulo);
+  return json({ ok: true, versao, ignoradas });
+}
 
 // ?desde=<versão que o navegador já tem>: se não mudou, responde só {igual:true} (poupa banda: a consulta roda a cada 20 s)
 export const GET = rota(async (req, { eu, params, url }) => {
@@ -20,6 +38,7 @@ export const GET = rota(async (req, { eu, params, url }) => {
   if (q !== null && !/^-?\d+$/.test(q)) throw invalido("desde");
   const desde = q === null ? undefined : Number(q);
   if (!podeModulo(eu, modulo)) return nega();
+  if (ehModuloItens(modulo)) return getItens(modulo, desde);
   const v = await consulta("select versao from sorelly.estado_modulo where modulo = $1", [modulo]);
   const versao = v.rows[0] ? v.rows[0].versao : 0;
   if (desde !== undefined && versao > 0 && versao === desde) return json({ modulo, versao, igual: true });
@@ -34,6 +53,7 @@ export const PUT = rota(async (req, { eu, params }) => {
   const b = await corpo(req, 20 * 1024 * 1024);
   if (!b.chaves || typeof b.chaves !== "object" || Array.isArray(b.chaves) || !Object.keys(b.chaves).length) throw invalido("chaves");
   if (!podeModulo(eu, modulo)) return nega();
+  if (ehModuloItens(modulo)) return putItens(modulo, b.chaves, eu);
   if (eu.perfil !== "ADMIN" && modulo !== "mel" && modulo !== "kn" && modulo !== "agrev" && modulo !== "rhsol" && modulo !== "finativ") {   // mel e kn: qualquer funcionário pode criar o módulo ao enviar o 1º pedido / 1º kit novo
     const ja = await consulta("select 1 from sorelly.estado_modulo where modulo = $1", [modulo]);
     if (!ja.rowCount) return erro("Este módulo ainda não recebeu a carga inicial. Peça à Diretoria.", 403);

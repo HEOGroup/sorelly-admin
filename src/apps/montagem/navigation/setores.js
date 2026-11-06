@@ -73,6 +73,7 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
   M("Revendedoras","agrevs"),
   M("Representantes","agreps"),
   M("Atividades","agatividades"),
+  M("Pedidos do app","agpedidosapp"),   // 05/11/2026: pedidos de mudança da data do acerto feitos no app da representante
   M("Análises","aganalises")
 ];
 
@@ -163,7 +164,7 @@ var SETORES = [
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
     {nome:"Painel", telas:[T("agpainel","Painel")]}, {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
-    {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
+    {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Pedidos do app", telas:[T("agpedidosapp","Pedidos do app")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
   // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto
   {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", menu:MENU_CADASTRO, areas:[

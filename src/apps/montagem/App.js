@@ -16,7 +16,6 @@ import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos"
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
-import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { ZoomTela } from "@/apps/montagem/components/zoom-tela";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
@@ -120,7 +119,7 @@ function App(){
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
   definirPfMes(s.pfmes && s.pfmes.dados);   // resumo do mês dos fornecedores vindo do servidor
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
-  var modoSync = useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão); "pendente" = a Diretoria escolhe quem manda na primeira vez
+  useSyncModulos(s, d);   // módulos que ficam no servidor: sincroniza sempre que há servidor e login (o servidor manda)
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
   // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
   useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
@@ -281,7 +280,7 @@ function App(){
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
-    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
+    e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
@@ -347,7 +346,7 @@ function App(){
               return e("button",{key:t.nome+k, onClick:function(){ abrirTela(t); setAreaTopo(null); }, className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-2.5 py-1 text-left text-[13px] leading-tight "+(t.breve ? "opacity-55 " : "")+(on ? "bg-primary/15 font-semibold text-primary" : "hover:bg-white/5")},
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
-    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
+    e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
     chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
     e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar

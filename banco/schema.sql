@@ -2557,6 +2557,21 @@ CREATE TABLE IF NOT EXISTS sorelly.estado_modulo (
   atualizado_em timestamptz NOT NULL DEFAULT now()
 );
 
+-- módulos "por item" do app real da representante (05/11/2026; src/server/estado-itens.js e src/apps/montagem/domain/app-rep.js):
+-- uma linha por chave; dono = "app" (gravado só pelas rotas de serviço) ou "admin" (gravado pelo navegador via /api/estado). seq = versão para leitura incremental.
+CREATE SEQUENCE IF NOT EXISTS sorelly.estado_item_seq;
+CREATE TABLE IF NOT EXISTS sorelly.estado_item (
+  modulo text NOT NULL,
+  chave text NOT NULL,
+  valor jsonb NOT NULL,
+  dono text NOT NULL,
+  seq bigint NOT NULL DEFAULT nextval('sorelly.estado_item_seq'),
+  atualizado_por text,
+  atualizado_em timestamptz NOT NULL DEFAULT now(),
+  PRIMARY KEY (modulo, chave)
+);
+CREATE INDEX IF NOT EXISTS estado_item_seq_idx ON sorelly.estado_item (modulo, seq);
+
 -- setores de cada pessoa (define quais módulos ela abre no servidor; ver servidor/src/permissoes.js)
 ALTER TABLE sorelly.usuario_login ADD COLUMN IF NOT EXISTS setores text[] NOT NULL DEFAULT '{}';
 

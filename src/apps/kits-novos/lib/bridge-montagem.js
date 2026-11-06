@@ -50,6 +50,47 @@ export function direcionarParaRepresentante(c, rep) {
   }
 }
 
+// ── App REAL da representante (05/11/2026): resposta dela no quadro e quadro → app ──
+// O servidor (src/server/app-rep/sincronizar.js) grava a resposta do app no kit do módulo kn (agendamentoApp, recusasApp, status "na listagem")
+// e o navegador guarda o kn no app de montagem. Aqui o quadro lê isso, sem ler o estado inteiro a cada cartão (cache de 5 s).
+var cacheResp = { em: 0, mapa: {} };
+/** {idDoCartão: {tipo:"agendado"|"na listagem"|"recusado", data, periodo, motivo, rep}} das respostas dadas no app. */
+export function respostasDoApp() {
+  if (Date.now() - cacheResp.em < 5000) return cacheResp.mapa;
+  var mapa = {};
+  try {
+    var raw = localStorage.getItem(CHAVE_MONTAGEM);
+    var s = raw ? lerEstado(raw) : null;
+    Object.keys((s && s.kn) || {}).forEach(function (k) {
+      var it = s.kn[k]; if (!it || !it.id || String(it.id).indexOf("KN") !== 0) return;
+      var id = String(it.id).slice(2), rec = (it.recusasApp || [])[(it.recusasApp || []).length - 1];
+      if (it.status === "aguardando" && rec) mapa[id] = { tipo: "recusado", motivo: rec.motivo || "", rep: rec.rep, data: rec.iso };
+      else if (it.status === "na listagem") mapa[id] = { tipo: "na listagem", data: it.agendamentoApp && it.agendamentoApp.data, periodo: it.agendamentoApp && it.agendamentoApp.periodo };
+      else if (it.agendamentoApp && it.agendamentoApp.data) mapa[id] = { tipo: "agendado", data: it.agendamentoApp.data, periodo: it.agendamentoApp.periodo };
+    });
+  } catch (x) { /* sem estado do app de montagem */ }
+  cacheResp = { em: Date.now(), mapa: mapa };
+  return mapa;
+}
+
+/** O quadro mudou um kit que já foi para o app: entregue, cancelado, voltou para Liberado ou excluído = sai do app da representante. */
+export function situacaoNoApp(cId, situacao) {
+  try {
+    var raw = localStorage.getItem(CHAVE_MONTAGEM);
+    if (!raw) return;
+    var s = lerEstado(raw);
+    if (!s || s.v !== 4) return;
+    var id = "KN" + cId, kn = Object.assign({}, s.kn), atual = kn["k_" + id] || (s.novas || []).find(function (n) { return n.id === id; });
+    if (!atual) return;   // nunca foi para o app
+    var novo = Object.assign({}, atual, situacao === "entregue" ? { status: "entregue" } : { status: "aguardando", rep: null, saiuDoApp: situacao });
+    enviarKitAoServidor(novo);
+    kn["k_" + id] = novo; s.kn = kn;
+    s.novas = (s.novas || []).map(function (n) { return n.id === id ? novo : n; });
+    localStorage.setItem(CHAVE_MONTAGEM, textoDoEstado(s));
+    cacheResp.em = 0;
+  } catch (x) { /* sem estado do app de montagem */ }
+}
+
 /** Nome da opção "Sorelly" na lista de representantes: o kit vai para a lista da Tamara (Atendimento interno › Revendedoras). */
 export const REP_SORELLY = "Sorelly (atendimento interno)";
 
