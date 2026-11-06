@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.93", data:"2026-11-06", titulo:"Kits novos: planilha de hoje no sistema e filtro por região", itens:[
+  {tipo:"novo", area:"Kits novos", txt:"A planilha da Michele (Kits Novos 2026) foi importada: 2.604 kits em 6 regiões (Curitiba e região, Maringá, Litoral do Paraná, Ponta Grossa, Joinville e Santa Catarina). A planilha para de ser atualizada; tudo passa a ser feito no sistema. Cadastrada vale como Liberado."},
+  {tipo:"novo", area:"Kits novos", txt:"Novo filtro Região no bloco de filtros, antes de Representante. Só aparece quando há mais de uma região nos dados. Kit criado dentro do sistema conta como Curitiba e região."}
+ ]},
  {v:"0.18.92", data:"2026-11-06", titulo:"Expositores e Encomendas: dados do admin antigo e das planilhas", itens:[
   {tipo:"novo", area:"Encomendas e reposições → Expositores", txt:"Carga da cópia do admin antigo (estoque, fila, clientes e condicionais de expositor) e do histórico das planilhas do setor, a partir dos arquivos locais. Quem entrou na fila só no sistema novo continua na fila."},
   {tipo:"correção", area:"Sistema", txt:"Os dados de Expositores e de Encomendas que voltam do servidor passam de novo pela carga da cópia; antes o servidor apagava a cópia recém-carregada."}
