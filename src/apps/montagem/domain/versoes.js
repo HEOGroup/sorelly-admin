@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.77", data:"2026-11-05", titulo:"Kits novos: cartões compactos (modelo B)", itens:[
+  {tipo:"melhoria", area:"Kits novos", txt:"Cartões do quadro refeitos no modelo B, escolhido pelo Marcus: duas linhas (nome e dias na etapa; representante, bairro, cidade e profissão), barra vermelha na lateral para atrasada e verde para no prazo. O Mover para saiu do cartão e ficou no botão ⋯. As colunas ficaram mais largas e com mais espaço entre elas. Cada cartão passou de cerca de 112 px para cerca de 48 px."},
+ ]},
  {v:"0.18.76", data:"2026-11-05", titulo:"Kits novos: topo com 2 blocos e filtros em uma linha", itens:[
   {tipo:"melhoria", area:"Kits novos", txt:"Topo refeito (versão A escolhida pelo Marcus): só o título Kits novos com o seletor Quadro/Planilha e o botão Nova revendedora; dois blocos de lista lado a lado (Resumo do mês e Por etapa, com cartões e atrasados de cada etapa; Devolvido e Cancelado só do mês); e os filtros em uma linha só, com fonte menor (11 px)."},
  ]},
