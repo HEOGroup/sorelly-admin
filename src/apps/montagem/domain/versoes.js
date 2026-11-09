@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.99", data:"2026-11-09", titulo:"Resumo do grupo: topo compacto", itens:[
+  {tipo:"melhoria", area:"Financeiro → Resumo do grupo", txt:"Abas dos sócios, mês e filtro Mostrar agora ficam numa linha só, sem o bloco Filtros. O topo ocupa bem menos espaço."}
+ ]},
  {v:"0.18.98", data:"2026-11-09", titulo:"Resumo do grupo: primeira palavra do menu do Financeiro", itens:[
   {tipo:"melhoria", area:"Financeiro → menu", txt:"Resumo do grupo passou para o começo do menu do Financeiro, antes de Pagamentos, para ficar fácil de achar."}
  ]},

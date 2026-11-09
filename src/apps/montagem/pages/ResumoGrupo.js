@@ -2,7 +2,7 @@
 // RESUMO DO GRUPO (Marcus, 09/11/2026): o quadro que o Lucas mandava todo dia no grupo dos sócios, agora sai do sistema.
 // Abas no topo: Geral e cada sócio (e a Casa). Cada aba tem a tabela, a mensagem copiável do WhatsApp e a imagem para baixar.
 // Os números vêm do Pagamentos a fornecedores (s.pf) e do Financeiro familiar (s.ff); a conta fica em domain/resumo-grupo.js.
-import { Bloco, BlocoFiltros, Botao, CampoSel, FileiraCampos, Segmentado, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
+import { Bloco, Botao, CAMPO, FileiraCampos, Segmentado, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { hojeIso, hojeYm, janela, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
@@ -85,10 +85,11 @@ function AbaResumoGrupo(){
   var abas = [["geral", "Geral"]].concat(SOCIOS.map(function(x){ return [x[0], x[1]]; }));
   return e(Pagina,null,
     e(PageHead,{t:"Resumo do grupo", sub:""}, e(Botao,{onClick:function(){ baixar(R, socioId); }}, "Baixar imagem"), e(Botao,{principal:true, onClick:copiar}, copiado ? "Copiado ✓" : "Copiar mensagem")),
-    e("div",{className:"overflow-x-auto"}, e(Segmentado,{opcoes:abas, atual:aba, onMudar:setAba})),
-    e(BlocoFiltros,null,
-      e(CampoSel,{t:"Mês", id:"rg-mes", value:ym, onChange:setYm, opcoes:janela().map(function(k){ return [k, nomeMes(k)]; })}),
-      e(CampoSel,{t:"Mostrar", id:"rg-mostrar", value:modo, onChange:setModo, opcoes:[["", "Tudo"], ["aberto", "Só em aberto"], ["atraso", "Só atrasados ✕"]]})),
+    // topo compacto (Marcus, 09/11/2026): abas, mês e filtro na MESMA linha, sem o bloco "Filtros" e sem rótulos em cima
+    e("div",{className:"flex flex-wrap items-center gap-2"},
+      e("div",{className:"min-w-0 overflow-x-auto"}, e(Segmentado,{opcoes:abas, atual:aba, onMudar:setAba})),
+      e("select",{value:ym, "aria-label":"Mês", title:"Mês", className:CAMPO+" w-40!", onChange:function(ev){ setYm(ev.target.value); }}, janela().map(function(k){ return e("option",{key:k, value:k}, nomeMes(k)); })),
+      e("select",{value:modo, "aria-label":"Mostrar", title:"Mostrar", className:CAMPO+" w-36!", onChange:function(ev){ setModo(ev.target.value); }}, [["", "Tudo"], ["aberto", "Só em aberto"], ["atraso", "Só atrasados ✕"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
     e("div",{className:"grid grid-cols-1 items-start gap-2.5 xl:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]"},
       e("div",{className:"flex flex-col gap-2.5"},
         !socioId ? [tabela("Fornecedores", R.fornecedores), tabela("Prestadores da empresa", R.prestadores), tabela("Sócios e Casa", R.socios),
