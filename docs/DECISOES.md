@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Resumo do grupo: copiar a mensagem)
+- Marcus (09/11/2026): a mensagem de texto do Resumo do grupo tem que ter o botão de copiar **junto do texto**. O botão "Copiar mensagem" agora aparece também dentro do quadro "Mensagem para o grupo" (`pages/ResumoGrupo.js`); o do topo continua.
+
 ## 09/11/2026 (Resumo do grupo: aba do sócio)
 - Marcus (09/11/2026): Priscila (R$ 3.734,42, 10/11), Lucas Castilho e Madeira Cor são prestadores **da Sorelly**, que a empresa paga por fora; não são do Marcus. Na aba de um sócio do **Resumo do grupo** aparece **só o que é do sócio**: a linha dele e os prestadores particulares dele. Os prestadores da empresa ficam só no resumo geral. Mudou `visaoSocio` e a mensagem em `domain/resumo-grupo.js`, e a tela e a imagem em `pages/ResumoGrupo.js`.
 ## 09/11/2026 (Comissões especiais: grupos passados pelo Marcus)

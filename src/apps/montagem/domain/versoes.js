@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.105", data:"2026-11-09", titulo:"Resumo do grupo: botão Copiar dentro do quadro da mensagem", itens:[
+  {tipo:"melhoria", area:"Financeiro → Resumo do grupo", txt:"O quadro Mensagem para o grupo ganhou o botão Copiar mensagem, ao lado do texto do WhatsApp (o botão do topo da página continua)."}
+ ]},
  {v:"0.18.104", data:"2026-11-09", titulo:"Atendimento interno: comissão especial, incluir cliente, dívida anterior e regra A", itens:[
   {tipo:"novo", area:"Atendimento interno", txt:"Comissão especial por revendedora, fixa na ficha (Revendedoras internas › ficha › Comissão especial): porcentagem por faixa de venda, pontos de corte livres (ex.: acima de R$ 1.500,00) ou pontos a mais em todas as faixas (5 faz 15% virar 20%). Só a comissão muda; brindes, taxa e multas seguem a tabela. Só a Diretoria edita. Vale na Atendimento Sorelly, no acerto da representante, no app da representante e no app da revendedora. Pedido da Edna."},
   {tipo:"novo", area:"Atendimento interno", txt:"Botão + Incluir cliente em Revendedoras internas, para quem vem sem condicional aberta (kit retornando, kit novo, brinde de indicação). O nome vem de uma busca nas clientes cadastradas da DevMaster (nova rota /api/clientes-busca, só leitura): nome, código, cidade e situação. Nome digitado à mão só no Brinde de indicação. Mesmas regras da agenda (3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados). Pedido da Tamara."},

@@ -99,7 +99,7 @@ function AbaResumoGrupo(){
               e(FileiraCampos,{total:true, cells:["Geral (com sócios)", brl(R.totais.geral.aPagar), brl(R.totais.geral.pago), brl(R.totais.geral.falta), ""]})))]
         : [tabela("Sócio · "+nomeMes(ym), V.socio), tabelaP("Prestadores particulares em aberto", V.particulares)],
         e("p",{className:"text-[13px]"}, "✕ = venceu e não foi pago. Verde = quitado. Amarelo = em aberto.")),
-      e(Bloco,{t:"Mensagem para o grupo", dir:"texto do WhatsApp"}, e("pre",{className:"max-h-[640px] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-black/30 p-3 text-[13px]"}, texto))));
+      e(Bloco,{t:"Mensagem para o grupo", dir:"texto do WhatsApp"}, e("div",{className:"mb-2 flex justify-end"}, e(Botao,{principal:true, onClick:copiar}, copiado ? "Copiado ✓" : "Copiar mensagem")), e("pre",{className:"max-h-[640px] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-black/30 p-3 text-[13px]"}, texto))));
 }
 
 export { AbaResumoGrupo };
