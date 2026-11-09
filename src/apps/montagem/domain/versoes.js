@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.63", data:"2026-11-09", titulo:"Agendamento: aba Expositores", itens:[
+  {tipo:"novo", area:"Agendamento", txt:"O setor Agendamento ganhou a aba Expositores no menu, para dar baixa quando o expositor volta (devolução). É a mesma tela do setor Encomendas, com os mesmos dados. A liberação vale no menu, em Acessos e no servidor."}
+ ]},
  {v:"0.18.62", data:"2026-11-09", titulo:"Pedidos: bloco com banho em forma de conta e planilha em layout D", itens:[
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Bloco do pedido que já tem banho: primeira linha com a galvânica, o fornecedor, o romaneio e os dias; segunda linha, separada por um fio, em forma de conta: Bruto + Banho = total do pedido (o total em destaque, à direita)."},
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A Planilha passou para o layout D (colunas de largura fixa, nada quebra) e ganhou as colunas Banho R$ e Total, com a soma no rodapé."}

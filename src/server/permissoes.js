@@ -11,7 +11,7 @@ export const SETORES_DO_MODULO = {
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
   er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)
-  pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem"], cpc: ["pecas"],
+  pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"],   // agendamento dá baixa quando o expositor volta (09/11/2026) cpc: ["pecas"],
   mk: ["marketing"], gr: ["garantia"],
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026

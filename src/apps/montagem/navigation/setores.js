@@ -76,7 +76,8 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
   M("Representantes","agreps"),
   M("Atividades","agatividades"),
   M("Pedidos do app","agpedidosapp"),   // 05/11/2026: pedidos de mudança da data do acerto feitos no app da representante
-  M("Análises","aganalises")
+  M("Análises","aganalises"),
+  M("Expositores","expositores")   // 09/11/2026: o agendamento dá baixa quando o expositor volta (a tela é a mesma do setor Encomendas)
 ];
 
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
