@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Prestadores fora da aprovação do teto)
+- Marcus (09/11/2026): "tira isso de aprovação". Pedido de **prestador de serviço** (e sócio, Casa, Mídia) **nunca espera aprovação** do teto mensal. O pedido do Higor Segurança (R$ 4.000, 06/11) estava pendente por uma marca antiga, criada antes da regra de 09/11. Liberados no banco os 5 pedidos presos (Higor #127, Lucas Castilho #125 e #126, Priscila #129, Madeira Cor #130) com cópia em `sorelly.bkp_20261109_pf_prestadores` (módulo `pf` versão 71). No código, `pendenteReal` (`domain/pf-limite.js`) ignora a marca de pendente de quem é fora do teto, para nenhuma tela antiga trazer o problema de volta. Os 6 pedidos de fornecedores (#119, 120, 122, 123, 124, 128) continuam pendentes de verdade.
+
 ## 09/11/2026 (Cheque nas negociações)
 - Chamado do Nickolas (06/11/2026): na janela **Lançar pedido** (Pagamentos a fornecedores › Negociações) faltava a forma **Cheque** nas parcelas com NF. A lista era fixa no código (Boleto, Pix empresa, Cartão). Acrescentado Cheque; a forma já existia no domínio (`FORMAS` em `domain/pf.js`) e na janela de lançar parcela. Não foi preciso mexer nos fornecedores.
 

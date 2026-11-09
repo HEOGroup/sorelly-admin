@@ -6,7 +6,7 @@ import { globLocal } from "@/lib/glob-local";
 // Dados reais (valores, revendedoras) ficam em pf-dados.local.js (gitignored); sem esse arquivo o estado nasce vazio.
 // Funções que no HTML devolviam HTML (badge, prazoTxt...) aqui devolvem DADOS ({texto, cor}); cor: gray|green|red|orange|blue|purple|cyan|yellow.
 
-import { impactoPedido, motivoImpacto } from "@/apps/montagem/domain/pf-limite";
+import { impactoPedido, motivoImpacto, pendenteReal } from "@/apps/montagem/domain/pf-limite";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 
 // pagamentos novos que estão na planilha "Pag. Fornecedores Nova 2026" e ainda não estavam no sistema (arquivo local gitignored)
@@ -321,7 +321,7 @@ function calcJanelasDoForn(pf, fid){
   var f = forn(pf, fid); if(!f) return [];
   var porMes = {};
   pf.pedidos.forEach(function(pd){
-    if(pd.fornId!==fid || pd.aprov==="pendente") return;   // pendente de aprovação (limite mensal) ainda não está lançado
+    if(pd.fornId!==fid || pendenteReal(pf, pd)) return;   // pendente de aprovação (limite mensal) ainda não está lançado
     pd.parcelas.forEach(function(p, idx){
       if(FORMAS[p.forma].nf!=="sem") return;   // só sem NF / Pix entra na conta
       var mes = p.venc.slice(0,7);

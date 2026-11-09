@@ -7,6 +7,7 @@
 // As contas ficam em domain/pf.js (contaForn, janelasDoForn, pagoPix, mqAplicado, mq*); aqui só o desenho. Sócios ficam no Financeiro familiar.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { cicloDe, contaForn, ehPrestador, hojeIso, janelasDoForn, lancDaJanela, mesAtual, mesLabel, mqAplicado, mqBruto, mqDescontoNoMes, mqOrigensDoMes, mqPassadasDoMes, mqParcela, pagoPix, statusConta } from "@/apps/montagem/domain/pf";
+import { pendenteReal } from "@/apps/montagem/domain/pf-limite";
 import { LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
 import { FileiraCampos, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
@@ -346,7 +347,7 @@ function GeralInterno(P){
   var total = somaC(todosL, "total"), pago = somaC(todosL, "pago"), falta = total-pago;
   var mqMes = pf.mqFornId ? {bruto:mqBruto(pf, mes), desc:mqDescontoNoMes(pf, mes)} : null;
   // negociação pendente de aprovação (limite mensal) não entra na conta; aparece aqui no mês da negociação ou de qualquer parcela (chamado do Lucas, 06/11/2026)
-  var pendMes = (pf.pedidos||[]).filter(function(pd){ return pd.aprov==="pendente" && (String(pd.data||"").slice(0,7)===mes || (pd.parcelas||[]).some(function(p){ return String(p.venc||"").slice(0,7)===mes; })); });
+  var pendMes = (pf.pedidos||[]).filter(function(pd){ return pendenteReal(pf, pd) && (String(pd.data||"").slice(0,7)===mes || (pd.parcelas||[]).some(function(p){ return String(p.venc||"").slice(0,7)===mes; })); });
   var somaPend = pendMes.reduce(function(a, pd){ return a+(+pd.total||0); }, 0);
   var podeAprovar = temAutorizacao("pf_limite_aprova", c.s.usuario);
   var btnAprova = function(rot, cor, dis, fn){ return e("button",{type:"button", disabled:dis, onClick:fn, className:"h-8 whitespace-nowrap rounded-lg px-3 text-[13px] font-bold text-white ring-1 ring-white/25 hover:brightness-125 disabled:opacity-40", style:{background:cor}}, rot); };

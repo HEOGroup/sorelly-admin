@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.100", data:"2026-11-09", titulo:"Prestadores não ficam mais pendentes de aprovação do teto", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores → Resumo e Limite", txt:"Pedidos de prestador de serviço, sócio, Casa e Mídia ficam fora do teto mensal e nunca esperam aprovação. Pedidos criados antes dessa regra (Higor Segurança, Lucas Castilho, Priscila, Madeira Cor) ainda estavam marcados como pendentes e sumiam do Resumo; a marca antiga agora é ignorada (função pendenteReal) e os 5 pedidos foram liberados no banco. Os pedidos de fornecedores (bruto, banho) continuam esperando aprovação quando passam do teto."}
+ ]},
  {v:"0.18.99", data:"2026-11-09", titulo:"Resumo do grupo: topo compacto", itens:[
   {tipo:"melhoria", area:"Financeiro → Resumo do grupo", txt:"Abas dos sócios, mês e filtro Mostrar agora ficam numa linha só, sem o bloco Filtros. O topo ocupa bem menos espaço."}
  ]},
