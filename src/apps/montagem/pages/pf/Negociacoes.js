@@ -444,10 +444,7 @@ function JanelaDetalhe(p){
   var lin = function(rot, a, de, rest, k){ var fecha = Math.abs(rest)<0.005; return e("div",{key:k, className:"flex flex-wrap items-center justify-between gap-2 text-[13.5px]"}, e("span",{className:"text-white/90"}, rot), e("b",{className:MONO, style:tom(fecha ? "green" : "orange")}, brl(a)+" de "+brl(de)+(fecha ? " ✓" : " · faltam "+brl(rest)))); };
   return e(Modal,{largo:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+pd.cnpj+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
     e("div",{className:"flex"}, nfChip),
-    (pd.descricao || pd.limite || pd.pixMin) && e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-[#3B82F6]/10 px-4 py-3 ring-1 ring-[#3B82F6]/40"},
-      Rot("O que estamos pagando"),
-      pd.descricao && e("p",{className:"text-[14px] text-white"}, pd.descricao),
-      pd.limite && AL("Pagar até", dbr(pd.limite), null, "l"), pd.pixMin>0 && AL("Valor mínimo de cada pix", brl(pd.pixMin), null, "m")),
+    // Bloco azul "O que estamos pagando / Pagar até / Valor mínimo de cada pix" REMOVIDO do detalhe do pedido (chamado do Lucas, 09/11/2026, opção A): era informação repetida e a data "Pagar até" podia não bater com as parcelas. O prazo vale pelo vencimento das próprias parcelas.
     e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-5"},
       e(Tile,{t:"Valor do pedido", v:brl(pd.total), cor:"#fff"}), e(Tile,{t:"Com NF", v:brl(pd.comNF), cor:COR.blue}), e(Tile,{t:"Sem NF", v:brl(pd.semNF), cor:COR.orange}),
       e(Tile,{t:"Já pago", v:brl(D.pago), cor:COR.green}), e(Tile,{t:"Em aberto", v:brl(D.aberto), cor:D.aberto>0.005 ? COR.red : "#fff"})),

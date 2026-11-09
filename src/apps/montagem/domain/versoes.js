@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.106", data:"2026-11-09", titulo:"Negociações: detalhe do pedido sem o bloco O que estamos pagando", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Negociações", txt:"O detalhe do pedido não mostra mais o bloco azul com O que estamos pagando, Pagar até e Valor mínimo de cada pix (chamado do Lucas, opção A). A data Pagar até podia não bater com as parcelas. O prazo agora vale pelo vencimento das próprias parcelas."}]},
  {v:"0.18.63", data:"2026-11-09", titulo:"Controle do mês: compras de bruto e banho dos pedidos", itens:[
   {tipo:"melhoria", area:"Cadastro de peças → Controle do mês", txt:"O banho agora é o valor lançado nos pedidos (conta no mês em que chegou na empresa) e o total do mês é bruto + banho. A tabela Mês a mês ganhou as colunas Banho e Total; o banho das faturas ficou numa coluna à parte, só para conferir. Telas em layout D e sem a faixa de números no topo."}
  ]},

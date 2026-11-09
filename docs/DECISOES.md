@@ -4,6 +4,10 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Negociações: chamados do Lucas e do Marcus)
+- **Detalhe do pedido sem o bloco "O que estamos pagando" (chamado do Lucas, opção A, 09/11/2026):** saiu o bloco azul com a descrição, "Pagar até" e "Valor mínimo de cada pix". O prazo vale pelo vencimento das próprias parcelas. Os campos de data limite, pix mínimo e resumo continuam no formulário de lançar a negociação do prestador (e as colunas Pagar até e Pix mínimo no bloco Prestadores de serviço — pendente); só o bloco repetido do detalhe saiu. Código: `pages/pf/Negociacoes.js`.
+- **Vencimento mês a mês (chamado do Marcus e do Nickolas, 29/10/2026):** a regra já estava em `addMeses` (`domain/pf.js`): mesmo dia no mês seguinte, ou o último dia se o mês for mais curto (31/12 → 31/01, 28/02, 31/03, 30/04), sem acumular erro; data inexistente como 31/04 é recusada ao salvar (`dataValida`). Testada em 09/11/2026.
+
 ## 09/11/2026 (Cadastro de peças: Controle do mês com o banho dos pedidos)
 - **Controle do mês (Marcus, 09/11/2026: "compras de bruto e ouro, atualiza"):** o banho do mês é a soma do valor do banho lançado nos pedidos, contado no mês em que chegou na empresa; total do mês = bruto a pagar + banho. As faturas de banho ligadas (Faturas Pontual e Ellos) continuam numa coluna à parte (Banho faturado), só para conferência. Código: `controleMes` e `mesesCpc` (domain/cadastro-pecas.js) e pages/cadpecas/Controle.js (layout D).
 
