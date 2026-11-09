@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.61", data:"2026-11-09", titulo:"Pedidos: resumo por mês e bruto + banho no bloco", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"No alto da tela, o Resumo por mês: quanto foi comprado de bruto e de banho em cada um dos últimos 4 meses. O bruto conta no mês da compra e o banho no mês em que chegou na empresa, porque o bruto pode fechar num mês e o banho no seguinte."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O bloco do pedido que já tem banho ganha uma segunda linha: Bruto R$ X + Banho R$ Y. O valor da primeira linha é a soma."}
+ ]},
  {v:"0.18.60", data:"2026-11-09", titulo:"Cadastro de peças: aba Compras, valor do banho no pedido e ficha nova", itens:[
   {tipo:"novo", area:"Cadastro de peças → Compras", txt:"Aba nova, antes de Pedidos. 1 · Adereço: fotos, código e preço de cada foto, romaneio em PDF lido pelo sistema e foto ligada à linha pelo código. 2 · Banho: banho de cada peça (Prata, Ouro flash, Ouro 1 a 5 ou um novo; verniz só no ouro), em lote. 3 · Recebido: quantidade que a Pontual confirmou. Gera o romaneio da Pontual e o da Rayssa em PDF, com foto grande e sem nenhum preço."},
   {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Valor do banho (a Rayssa digita) e fatura do banho (uma ou mais fotos), obrigatórios para marcar Chegou na empresa. O bloco do pedido e a ficha mostram o Total do pedido = bruto a pagar + banho."},

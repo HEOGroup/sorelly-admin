@@ -59,6 +59,19 @@ function etapaPed(p){ return ETAPA_DO_STATUS[p.status] || "nobanho"; }
 // O total do pedido é o bruto a pagar + o banho.
 function banhoCompleto(p){ return numPonto(p.valorBanho)>0 && Array.isArray(p.faturasBanho) && p.faturasBanho.length>0; }
 function totalPed(p){ return r2(numPonto(p.pagar)+numPonto(p.valorBanho)); }
+// Resumo por mês (Marcus, 09/11/2026): o BRUTO conta no mês da compra (data do pedido) e o BANHO no mês em que chegou na empresa (ou, sem essa data, em que o valor foi lançado), porque um pedido
+// comprado num mês pode ter o banho no mês seguinte. Devolve os últimos n meses terminando no mês de "ref" (data ISO): [{mes:"2026-11", bruto, banho}].
+function dataBanho(p){ return trim(p.chegSorelly) || trim(p.banhoEm) || trim(p.statusEm); }   // sem data de chegada nem de lançamento, vale o dia em que o pedido entrou na etapa atual
+function resumoMesesCompra(pedidos, n, ref){
+  var y = parseInt(String(ref).slice(0, 4), 10), m = parseInt(String(ref).slice(5, 7), 10), out = [], idx = {};
+  for(var i = n-1; i>=0; i--){ var t = y*12+(m-1)-i, k = Math.floor(t/12)+"-"+("0"+(t%12+1)).slice(-2); idx[k] = {mes:k, bruto:0, banho:0}; out.push(idx[k]); }
+  (pedidos||[]).forEach(function(p){
+    var a = idx[String(p.data||"").slice(0, 7)]; if(a) a.bruto += numPonto(p.pagar);
+    var d = dataBanho(p), b = d && numPonto(p.valorBanho)>0 ? idx[d.slice(0, 7)] : null; if(b) b.banho += numPonto(p.valorBanho);
+  });
+  out.forEach(function(o){ o.bruto = r2(o.bruto); o.banho = r2(o.banho); });
+  return out;
+}
 function romaneioCompleto(p){ return !!(trim(p.romaneio) && p.romaneioArq && p.romaneioArq.key); }
 function fasePed(k){ return (ETAPAS_PED.find(function(x){ return x[0]===k; })||[])[2] || "banho"; }
 function chegouPed(p){ return idxEtapa(etapaPed(p))>=idxEtapa("chegou"); }   // já está na Sorelly (Chegou na empresa, Cadastrando ou Finalizado)
@@ -286,7 +299,7 @@ function cpcReduz(s, a){
         pe.romaneioArq = ra && typeof ra==="object" && /^an_[a-z0-9]{6,40}$/.test(String(ra.key)) ? {key:String(ra.key), nome:trim(ra.nome).slice(0, 120), mime:trim(ra.mime).slice(0, 60), tam:Math.max(0, Math.round(num(ra.tam))), em:hojeISO(), por:por} : null;
       }
       if(a.vernizNovo!==undefined) pe.vernizNovo = a.vernizNovo===true || a.vernizNovo==="sim";
-      if(a.valorBanho!==undefined) pe.valorBanho = Math.max(0, numPonto(a.valorBanho));   // valor do banho, em reais (a Rayssa digita)
+      if(a.valorBanho!==undefined){ pe.valorBanho = Math.max(0, numPonto(a.valorBanho)); pe.banhoEm = pe.valorBanho>0 ? (pe.banhoEm || hojeISO()) : ""; }   // banhoEm: dia em que o valor do banho foi lançado (conta no resumo por mês quando não há data de chegada)   // valor do banho, em reais (a Rayssa digita)
       if(a.faturasBanho!==undefined) pe.faturasBanho = (Array.isArray(a.faturasBanho) ? a.faturasBanho : []).filter(function(f){ return f && /^an_[a-z0-9]{6,40}$/.test(String(f.key)); }).slice(0, 10).map(function(f){ return {key:String(f.key), nome:trim(f.nome).slice(0, 120), mime:trim(f.mime).slice(0, 60), tam:Math.max(0, Math.round(num(f.tam))), em:f.em || hojeISO(), por:f.por || por}; });   // fotos das faturas do banho
       if(a.status!==undefined && a.status!==pe.status){
         if(STATUS_PED.indexOf(a.status)<0) return recusa("Status inválido.");
@@ -367,4 +380,4 @@ function podeFazer(c, atividade, nome, admin){
 }
 function brl(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function pct0(f){ return Math.round((f||0)*100)+"%"; }
-export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, prazoPed, romaneioCompleto, banhoCompleto, totalPed, naGalvanica, diasNaGalvanica, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcDoServidor, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };
+export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, prazoPed, romaneioCompleto, banhoCompleto, totalPed, resumoMesesCompra, naGalvanica, diasNaGalvanica, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcDoServidor, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };

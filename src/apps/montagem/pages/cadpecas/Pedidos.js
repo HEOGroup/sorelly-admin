@@ -5,9 +5,9 @@
 // Quem lança: Rayssa e Graziella (config.quem.pedidos_bruto); a diretoria sempre pode. "Enviado para Sorelly" entra sozinho quando uma fatura de banho é ligada ao pedido.
 // Editar chegadas, valores e peças por categoria: botão "Abrir ficha" dentro do cartão (ou clique na linha da planilha).
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { Botao, Segmentado, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
+import { Botao, FileiraCampos, Segmentado, TabelaCampos, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
-import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
+import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, resumoMesesCompra, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
 import { Cel, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -155,12 +155,25 @@ function AbaPedidos(){
         e(Segmentado,{opcoes:[["quadro", "Quadro"], ["planilha", "Planilha"]], atual:modo, onMudar:md[1]}),
         pode && e(Botao,{principal:true, onClick:function(){ ir({tipo:"novo"}); }}, "Novo pedido")),
       filtros,
+      e(ResumoMeses,{pedidos:c.pedidos, hoje:hoje}),
       !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
       modo==="planilha" ? planilha : quadro),
     modal && modal.tipo==="novo" && e(NovoPedido,{x:x, forns:forns, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="banho" && e(FaturaBanho,{x:x, id:modal.id, para:modal.para, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="romaneio" && e(Romaneio,{x:x, id:modal.id, para:modal.para, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="ficha" && e(Ficha,{x:x, id:modal.id, pode:pode, hoje:hoje, cfg:cfg, avancar:avancar, fechar:function(){ ir(null); }}));
+}
+
+// resumo por mês no alto da tela: quanto foi comprado de bruto e de banho em cada um dos últimos 4 meses (Marcus, 09/11/2026). O bruto conta no mês da compra; o banho, no mês em que chegou na empresa.
+function ResumoMeses(p){
+  var ms = resumoMesesCompra(p.pedidos, 4, p.hoje);
+  return e("div",{className:"flex flex-col gap-1"},
+    e("h3",{className:"text-[11px] font-medium uppercase tracking-[.07em]"}, "Resumo por mês · comprado"),
+    e(TabelaCampos,{cols:[{t:"", w:"16%"}].concat(ms.map(function(m){ return {t:cap(rotuloMes(m.mes))}; })), minW:"44rem"},
+      e(FileiraCampos,{cells:["Bruto"].concat(ms.map(function(m){ return brl(m.bruto); }))}),
+      e(FileiraCampos,{cells:["Banho"].concat(ms.map(function(m){ return brl(m.banho); }))}),
+      e(FileiraCampos,{total:true, cells:["Total"].concat(ms.map(function(m){ return brl(m.bruto+m.banho); }))})),
+    e("p",{className:"text-[11px]"}, "O bruto conta no mês da compra. O banho conta no mês em que chegou na empresa."));
 }
 
 // texto do prazo de uma etapa: "5 dias"; no Banho, o de cada galvânica
@@ -173,10 +186,12 @@ function Cartao(p){
   var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje, p.cfg), b = banhoPed(pd), cor = COR_FASE[fasePed(et)];
   var dGal = naGalvanica(pd) ? diasNaGalvanica(pd, p.hoje) : null, diasCartao = dGal!=null ? dGal : diasNaEtapa(pd, p.hoje);
   return e("div",{"data-sem-arrastar":true, className:"rounded-lg bg-card text-left ring-1 "+(atr ? "ring-destructive" : "ring-white/10 hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+cor}},
-    e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-nowrap items-center justify-between gap-2 whitespace-nowrap px-2 py-1 pl-3 text-left text-[13px]"},
+    e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-col justify-center gap-0.5 px-2 py-1 pl-3 text-left text-[13px]"},
+      e("div",{className:"flex flex-nowrap items-center justify-between gap-2 whitespace-nowrap"},
       e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio && e("span",{className:"text-[11px]"}, " · "+pd.romaneio), et==="fechado" && faltaRomaneio(pd) && e("span",{className:"text-[11px] font-semibold text-destructive", title:"Falta: "+faltaRomaneio(pd)+" (a etapa só anda com o número e o arquivo do romaneio)"}, " · "+faltaRomaneio(pd))),
       e("span",{className:"whitespace-nowrap text-[11px] tabular-nums", title:pd.valorBanho>0 ? "Bruto "+brl(pd.pagar)+" + banho "+brl(pd.valorBanho) : "Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
-      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))));
+      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
+      pd.valorBanho>0 && e("span",{className:"whitespace-nowrap text-[11px] tabular-nums"}, "Bruto "+brl(pd.pagar)+" + Banho "+brl(pd.valorBanho))));
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }

@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Cadastro de peças: resumo por mês e bloco com banho)
+- **Resumo por mês e bloco com banho (Marcus, 09/11/2026):** no alto de Pedidos, tabela com bruto e banho comprados nos últimos 4 meses. Bruto = mês da compra (data do pedido, valor a pagar); banho = mês em que chegou na empresa (`chegSorelly`; sem ela, `banhoEm`, o dia em que o valor foi lançado; sem ela, o dia da etapa atual). Um pedido pode ter o bruto num mês e o banho no seguinte. O bloco com banho mostra segunda linha: Bruto + Banho (a primeira linha mostra a soma). Código: `resumoMesesCompra` e `dataBanho` em domain/cadastro-pecas.js.
+
 ## 09/11/2026 (Cadastro de peças: aba Compras, valor do banho e ficha do pedido)
 - **Aba Compras (Marcus, 06/11/2026):** nova aba antes de Pedidos, só com o fornecedor de bruto Adereço (apelido Point), ligado à Pontual. Fotos do Adereço → romaneio em PDF → a foto viaja até o fim (1 · Adereço, 2 · Banho, 3 · Recebido). O texto "11/30" na foto é o PREÇO (R$ 11,30); o peso é ignorado; o preço da foto recebe o desconto do romaneio (25%). Os PDFs da Pontual e da Rayssa nunca mostram preço. Código: `domain/compra-bruto.js`, `lib/romaneio-html.js`, `pages/cadpecas/Compras.js`, dados em `s.cpc.compras`. Pendente: fotos reais; ligar a compra ao Pedido de bruto; o botão Fotos de teste sai depois.
 - **Banho no pedido (Marcus, 09/11/2026):** quando o pedido CHEGA NA EMPRESA é obrigatório lançar o valor do banho (a Rayssa digita) e anexar a(s) foto(s) da fatura. Total do pedido = bruto a pagar + banho. Campos `valorBanho` e `faturasBanho`; regra em `ped_edit`; janela `FaturaBanho`. Pedidos que já passaram de Chegou na empresa ficam com banho 0.
