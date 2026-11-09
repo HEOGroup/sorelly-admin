@@ -115,15 +115,11 @@ function cpcDemo(){
   ].forEach(function(p){ c.solic.push({id:novoId(c, "s"), titulo:p[0], texto:p[1], estado:"pedido", por:"Sistema", em:hojeISO()}); });
   return c;
 }
-// Cadastro de peças que chega do servidor (lib/sync-modulos.js → ação SYNC_MODULO): junta com o que está na tela e refaz a migração. Se os pedidos que chegaram ainda não trazem a marca da correção de 03/11/2026 (fix.banho1103), a correção roda de novo, porque o servidor guarda a versão antiga e estava devolvendo as etapas velhas por cima.
+// Cadastro de peças que chega do servidor (lib/sync-modulos.js → ação SYNC_MODULO): junta com o que está na tela e refaz a migração dos nomes de etapa.
+// ATENÇÃO (06/11/2026): o servidor manda SÓ as chaves que mudaram, então "conteudo" quase nunca traz "fix". Por isso NÃO se pode concluir que o servidor ainda não tem as correções únicas
+// (fix.banho1103, fix.pontual12) só porque "fix" não veio: foi isso que, a cada atualização, jogava para Banho todo pedido que a Rayssa mudava para Chegou no banho. O servidor já tem as correções.
 function cpcDoServidor(atual, conteudo){
-  var n = clone(Object.assign({}, atual, conteudo));
-  if(conteudo){
-    var fx = conteudo.fix || {}; n.fix = Object.assign({}, n.fix);
-    if(conteudo.pedidos && !fx.banho1103) n.fix.banho1103 = 0;
-    if((conteudo.pedidos || conteudo.config) && !fx.pontual12) n.fix.pontual12 = 0;
-  }
-  return cpcMigrar(n);
+  return cpcMigrar(clone(Object.assign({}, atual, conteudo)));
 }
 function cpcMigrar(c){
   if(!c || typeof c!=="object") return cpcDemo();
@@ -134,11 +130,11 @@ function cpcMigrar(c){
   // correção única (Marcus, 03/11/2026): os pedidos que estavam em "Chegou no banho" já estão em produção, na etapa Banho (8). A marca fix.banho1103 impede de repetir; a data da etapa fica na chegada na galvânica para os dias continuarem certos.
   if(!c.fix) c.fix = {};
   if(!c.fix.banho1103){
-    c.pedidos.forEach(function(p){ if(p.status==="Chegou no banho"){ p.status = "Banho"; p.statusEm = p.chegPontual || p.chegEllos || p.statusEm || hojeISO(); } });
+    c.pedidos.forEach(function(p){ if(p.status==="Chegou no banho" && (!p.statusEm || p.statusEm<="2026-11-03")){ p.status = "Banho"; p.statusEm = p.chegPontual || p.chegEllos || p.statusEm || hojeISO(); } });
     c.fix.banho1103 = 1;
   }
   // a Pontual confirmou em 03/11/2026: 12 dias contados da chegada (+2 com verniz novo). Marca fix.pontual12 impede de repetir.
-  if(!c.fix.pontual12){ c.config.prazoBanho = Object.assign({}, c.config.prazoBanho, {pontual:12}); c.fix.pontual12 = 1; }
+  if(!c.fix.pontual12){ if(numPonto((c.config.prazoBanho||{}).pontual)===10) c.config.prazoBanho = Object.assign({}, c.config.prazoBanho, {pontual:12}); c.fix.pontual12 = 1; }
   c.pedidos.forEach(function(p){ if(STATUS_PED.indexOf(p.status)<0) p.status = statusMigra(p); if(p.contaBanho===undefined) p.contaBanho = ""; if(p.vernizNovo===undefined) p.vernizNovo = false; if(p.fotosEm===undefined) p.fotosEm = ""; });   // 03/11/2026: status antigos viram as 12 etapas
   c.lotes.forEach(function(l){ l.tabela.forEach(function(t){ t.tipo = normBanho(t.tipo); }); l.linhas.forEach(function(x){ x.banho = normBanho(x.banho); x.fornecedor = normForn(x.fornecedor); }); });   // nomes do banho e dos fornecedores padronizados
   return c;
