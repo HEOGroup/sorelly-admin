@@ -71,6 +71,7 @@ const montagem = {
     pagina("ff-contas-a-pagar", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfContas"),
     pagina("ff-contas-pagas", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfPagas"),
     pagina("ff-pix-revendedoras", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfPix"),
+    pagina("ff-resumo-do-grupo", () => import("@/apps/montagem/pages/ResumoGrupo"), "AbaResumoGrupo"),   // quadro do grupo dos sócios (09/11/2026)
     pagina("ff-socios", () => import("@/apps/montagem/pages/FinFamiliarSocios"), "AbaFfSocios"),
     pagina("ff-prestadores", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfPrest"),
     pagina("ff-pro-labores", () => import("@/apps/montagem/pages/FinFamiliar"), "AbaFfProlab"),

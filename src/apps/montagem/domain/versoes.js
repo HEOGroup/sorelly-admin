@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.97", data:"2026-11-09", titulo:"Resumo do grupo", itens:[
+  {tipo:"novo", area:"Financeiro → Resumo do grupo", txt:"Tela nova com o quadro que o Lucas mandava no grupo dos sócios. Abas no topo: Geral, Marcus, Anamaria, Marco Antonio, Ana Beatriz, Lucas e Casa. Mostra fornecedores, prestadores da empresa, sócios e Casa, e os prestadores particulares de cada sócio (68 Gang, Rebel Mode, Show Banca, Greicy...). Atrasado leva ✕. Cada aba tem o botão Copiar mensagem (texto do WhatsApp com negrito) e Baixar imagem (PNG para o celular)."}
+ ]},
  {v:"0.18.62", data:"2026-11-09", titulo:"Pagamentos a fornecedores: Cheque na janela Lançar pedido", itens:[
   {tipo:"correção", area:"Pagamentos a fornecedores → Negociações", txt:"Na janela Lançar pedido, as parcelas com nota fiscal só ofereciam Boleto, Pix empresa e Cartão. Agora oferecem também Cheque (a forma já existia no sistema; só faltava na lista). Os textos de ajuda da janela também citam cheque. Pedido do Nickolas (chamado de 06/11/2026)."}
  ]},

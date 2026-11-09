@@ -34,6 +34,7 @@ var MENU_FINANCEIRO = [
     {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
     M("Link de pagamento","linkrel")]},
   {nome:"Fiscal", itens:[M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")]},   // Fiscal dentro do Financeiro (23/10/2026, pedido do Marcus; CNPJs entrou aqui em 28/10/2026 — saiu de setor próprio)
+  Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}),   // o quadro que o Lucas mandava no grupo dos sócios (Marcus, 09/11/2026)
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"})   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
 ];
@@ -146,7 +147,7 @@ var SETORES = [
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
       ["Contas a pagar", [T("ctalista","Contas a pagar"), T("pagaspordia","Pagas por dia"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
-      ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras")]],
+      ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras"), T("ffgrupo","Resumo do grupo")]],
       ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [
       ["Principal", [T("pfresumo","Geral"), T("pflanc","Lançamento de pagamentos"), T("pfneg","Negociações"), T("pfmaq","Maquininha Banho")]],

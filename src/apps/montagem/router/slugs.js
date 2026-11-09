@@ -69,6 +69,7 @@ export const SLUG_DA_ABA = {
   ffcontas: "ff-contas-a-pagar",
   ffpagas: "ff-contas-pagas",
   ffpix: "ff-pix-revendedoras",
+  ffgrupo: "ff-resumo-do-grupo",
   ffprest: "ff-prestadores",
   ffsocios: "ff-socios",
   ffprolab: "ff-pro-labores",
