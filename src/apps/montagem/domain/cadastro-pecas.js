@@ -59,17 +59,18 @@ function etapaPed(p){ return ETAPA_DO_STATUS[p.status] || "nobanho"; }
 // O total do pedido é o bruto a pagar + o banho.
 function banhoCompleto(p){ return numPonto(p.valorBanho)>0 && Array.isArray(p.faturasBanho) && p.faturasBanho.length>0; }
 function totalPed(p){ return r2(numPonto(p.pagar)+numPonto(p.valorBanho)); }
-// Resumo por mês (Marcus, 09/11/2026): o BRUTO conta no mês da compra (data do pedido) e o BANHO no mês em que chegou na empresa (ou, sem essa data, em que o valor foi lançado), porque um pedido
-// comprado num mês pode ter o banho no mês seguinte. Devolve os últimos n meses terminando no mês de "ref" (data ISO): [{mes:"2026-11", bruto, banho}].
-function dataBanho(p){ return trim(p.chegSorelly) || trim(p.banhoEm) || trim(p.statusEm); }   // sem data de chegada nem de lançamento, vale o dia em que o pedido entrou na etapa atual
-function resumoMesesCompra(pedidos, n, ref){
-  var y = parseInt(String(ref).slice(0, 4), 10), m = parseInt(String(ref).slice(5, 7), 10), out = [], idx = {};
-  for(var i = n-1; i>=0; i--){ var t = y*12+(m-1)-i, k = Math.floor(t/12)+"-"+("0"+(t%12+1)).slice(-2); idx[k] = {mes:k, bruto:0, banho:0}; out.push(idx[k]); }
-  (pedidos||[]).forEach(function(p){
-    var a = idx[String(p.data||"").slice(0, 7)]; if(a) a.bruto += numPonto(p.pagar);
-    var d = dataBanho(p), b = d && numPonto(p.valorBanho)>0 ? idx[d.slice(0, 7)] : null; if(b) b.banho += numPonto(p.valorBanho);
-  });
-  out.forEach(function(o){ o.bruto = r2(o.bruto); o.banho = r2(o.banho); });
+// Resumo por mês (Marcus, 09/11/2026): o BRUTO conta no mês da compra (data do pedido, valor a pagar) e o BANHO no mês da FATURA do banho (Faturas Pontual e Ellos, que cobrem o ano inteiro), porque um
+// pedido comprado num mês pode ter o banho no mês seguinte. A tela abre com os últimos 3 meses; "Todos os meses" lista o ano como uma planilha.
+function ultimosMeses(ref, n){   // n meses terminando no mês de "ref" (data ISO), do mais antigo para o mais novo: ["2026-09", "2026-10", "2026-11"]
+  var y = parseInt(String(ref).slice(0, 4), 10), m = parseInt(String(ref).slice(5, 7), 10), out = [];
+  for(var i = n-1; i>=0; i--){ var t = y*12+(m-1)-i; out.push(Math.floor(t/12)+"-"+("0"+(t%12+1)).slice(-2)); }
+  return out;
+}
+function resumoCompras(c, meses){   // [{mes, bruto, banho, total, custo, dif}] na ordem recebida. custo = custo das peças VENDIDAS + BRINDE do mês (DevMaster, só revendedoras; c.custoMes); dif = comprado - custo (positivo = comprou mais do que saiu)
+  var idx = {}, out = meses.map(function(k){ idx[k] = {mes:k, bruto:0, banho:0, total:0, custo:null, dif:null}; return idx[k]; });
+  (c.pedidos||[]).forEach(function(p){ var o = idx[mesDe(p.data)]; if(o) o.bruto += numPonto(p.pagar); });
+  c.fatP.concat(c.fatE).forEach(function(f){ var o = idx[mesDe(f.data)]; if(o) o.banho += valorFatura(f); });
+  out.forEach(function(o){ o.bruto = r2(o.bruto); o.banho = r2(o.banho); o.total = r2(o.bruto+o.banho); var cm = c.custoMes && c.custoMes[o.mes]; if(cm && cm.total!=null){ o.custo = r2(numPonto(cm.total)); o.dif = r2(o.total-o.custo); } });
   return out;
 }
 function romaneioCompleto(p){ return !!(trim(p.romaneio) && p.romaneioArq && p.romaneioArq.key); }
@@ -102,7 +103,7 @@ function prazoPed(cfg, p){   // prazo em dias do pedido na etapa em que está (n
 function atrasadoPed(p, hoje, cfg){ var z = prazoPed(cfg, p); if(z==null) return false; var d = naGalvanica(p) ? diasNaGalvanica(p, hoje) : null; if(d==null) d = diasNaEtapa(p, hoje); return d>z; }
 function novoId(c, p){ c.seq = (c.seq||0) + 1; return p + c.seq; }
 
-function novoCpc(){ return {seq:0, lotes:[], pedidos:[], compras:[], fatP:[], fatE:[], envios:[], solic:[], config:clone(CONFIG_PADRAO), historico:[], fix:{}}; }
+function novoCpc(){ return {seq:0, lotes:[], pedidos:[], compras:[], custoMes:{}, fatP:[], fatE:[], envios:[], solic:[], config:clone(CONFIG_PADRAO), historico:[], fix:{}}; }
 function pedidoNovo(c, x){
   var cats = {}; CATS.forEach(function(k){ var v = Math.round(num((x.cats||{})[k[0]])); if(v>0) cats[k[0]] = v; });
   var valor = numPonto(x.valor), desc = Math.min(1, Math.max(0, numPonto(x.desc)));
@@ -211,15 +212,12 @@ function controleMes(c, mes){
     Object.keys(p.cats||{}).forEach(function(k){ cat[k] = (cat[k]||0) + (p.cats[k]||0); }); });
   t.desc = t.valor>0 ? (t.valor-t.pagar)/t.valor : 0;
   var fat = c.fatP.concat(c.fatE).filter(function(f){ return mesDe(f.data)===mes; }), banho = fat.reduce(function(s, f){ return s + valorFatura(f); }, 0);
-  // banho lançado nos pedidos (Marcus, 09/11/2026): conta no mês em que chegou na empresa (dataBanho); banho = só das faturas ligadas
-  var banhoPed = r2(c.pedidos.reduce(function(s, p){ return s + (numPonto(p.valorBanho)>0 && mesDe(dataBanho(p))===mes ? numPonto(p.valorBanho) : 0); }, 0));
-  return {t:t, banho:banho, banhoPed:banhoPed, faturas:fat.length, forn:Object.keys(forn).map(function(k){ var x = forn[k]; x.desc = x.valor>0 ? (x.valor-x.pagar)/x.valor : 0; return x; }).sort(function(a, b){ return b.pagar-a.pagar; }),
+  return {t:t, banho:banho, faturas:fat.length, forn:Object.keys(forn).map(function(k){ var x = forn[k]; x.desc = x.valor>0 ? (x.valor-x.pagar)/x.valor : 0; return x; }).sort(function(a, b){ return b.pagar-a.pagar; }),
     cats:CATS.map(function(k){ return {k:k[0], nome:k[1], q:cat[k[0]]||0}; }).filter(function(x){ return x.q>0; })};
 }
 /** meses que têm compra ou fatura, do mais novo para o mais antigo */
 function mesesCpc(c){
   var m = {}; c.pedidos.forEach(function(p){ if(mesDe(p.data)) m[mesDe(p.data)] = 1; }); c.fatP.concat(c.fatE).forEach(function(f){ if(mesDe(f.data)) m[mesDe(f.data)] = 1; });
-  c.pedidos.forEach(function(p){ if(numPonto(p.valorBanho)>0 && mesDe(dataBanho(p))) m[mesDe(dataBanho(p))] = 1; });   // mês do banho lançado no pedido
   return Object.keys(m).sort().reverse();
 }
 
@@ -383,4 +381,4 @@ function podeFazer(c, atividade, nome, admin){
 }
 function brl(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); }
 function pct0(f){ return Math.round((f||0)*100)+"%"; }
-export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, prazoPed, romaneioCompleto, banhoCompleto, totalPed, resumoMesesCompra, naGalvanica, diasNaGalvanica, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcDoServidor, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };
+export { STATUS_PED, ETAPAS_PED, FASES_PED, PRAZO_ETAPA, prazoEtapa, prazoPed, romaneioCompleto, banhoCompleto, totalPed, ultimosMeses, resumoCompras, naGalvanica, diasNaGalvanica, etapaPed, fasePed, chegouPed, banhoPed, statusDaEtapa, diasNaEtapa, atrasadoPed, CATS, SERV, ATIVIDADES, valorFatura, pecasPedido, controleMes, mesesCpc, podeFazer, normBanho, GALVANICAS, ESTADOS_SOL, CONFIG_PADRAO, cpcDemo, cpcMigrar, cpcDoServidor, cpcReduz, calcLinha, resumoLote, porFornecedor, precoParaMarkup, rgDe, brl, pct0, numPonto };

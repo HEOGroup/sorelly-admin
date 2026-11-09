@@ -92,7 +92,7 @@ function TabelaCampos(p){
   var grade = p.cols.map(function(c){ return c.w || "1fr"; }).join(" ");
   return e("div",{className:"overflow-x-auto rounded-lg border "+FIO},
     e("div",{style:{minWidth:p.minW||undefined, "--grade":grade}},
-      e("div",{className:"grid bg-[#1c1d21]", style:{gridTemplateColumns:"var(--grade)"}}, p.cols.map(function(c, i){ return e("div",{key:i, title:c.d || c.t, className:"flex h-[30px] items-center justify-center whitespace-nowrap border-l px-3 text-[11px] font-semibold uppercase tracking-[.05em] text-white first:border-l-0 "+FIO}, c.t); })),
+      e("div",{className:"grid bg-[#1c1d21]", style:{gridTemplateColumns:"var(--grade)"}}, p.cols.map(function(c, i){ return e("div",{key:i, title:c.d || c.t, className:"flex h-[30px] items-center justify-center whitespace-nowrap border-l px-3 text-[11px] font-semibold uppercase tracking-[.05em] text-white first:border-l-0 "+FIO, style:c.cor ? {background:c.cor+"40", boxShadow:"inset 0 3px 0 "+c.cor} : undefined}, c.t); })),   // c.cor (opcional): cabeçalho da coluna tingido, para agrupar colunas por cor
       p.children));
 }
 // cells: texto, elemento ou {v, cor}. total:true = faixa escura em negrito. onClick: fileira clicável. alto: altura em px da fileira (só para linha com foto; padrão 32 px).

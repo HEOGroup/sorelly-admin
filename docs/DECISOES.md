@@ -4,6 +4,18 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Pedidos: custo vendido + brinde e diferença por mês)
+- **Custo vendido + brinde (Marcus, 09/11/2026):** no resumo por mês de Pedidos, mais uma coluna com o CUSTO (aci_custoprod x quantidade, DevMaster) das peças VENDIDAS (TES S001/S002; até fev/2026 também S501/S502) e de BRINDE (S009/S503) a revendedoras, sem funcionárias (grupo 0002), sem leilão (vendedor EK) e sem item cancelado; e uma coluna Diferença = comprado (bruto + banho) menos esse custo (positivo = comprou mais do que saiu). Os valores ficam em `s.cpc.custoMes` (por mês, calculados por script de leitura na DevMaster); atualizar o mês corrente de tempos em tempos. Troca, indicação e premiação não entram. FILTRO E CORES (Marcus, 09/11/2026): o resumo tem o filtro Mês atual | 3 meses | 2026, sempre com as mesmas colunas (mês, bruto, banho, comprado, custo vendido + brinde, diferença); diferença VERDE = o estoque aumentou (comprou mais do que saiu), VERMELHA = o estoque diminuiu. TOPO EM CORES: o cabeçalho tem uma cor por grupo (Bruto, Banho e Comprado = azul; Custo vendido + brinde = dourado; Diferença = turquesa); a peça `TabelaCampos` aceita `cor` em cada coluna. Pendente: rotina automática para atualizar o mês corrente.
+
+
+## 09/11/2026 (Pedidos: total em cada etapa e fase)
+- **Totais no quadro (Marcus, 09/11/2026):** cada etapa mostra "N pedidos" em letra maior e o valor total (bruto + banho do pedido); cada fase mostra a quantidade e o total na faixa. Etapas e faixa da Empresa (chegou na Sorelly em diante) mostram também total de bruto, total de banho e total. Código: `somasPed` em pages/cadpecas/Pedidos.js.
+
+
+## 09/11/2026 (Cadastro de peças: resumo de 3 meses e do ano, banho pelas faturas)
+- **Resumo por mês (Marcus, 09/11/2026):** no alto de Pedidos abre com os ÚLTIMOS 3 MESES e o total deles; "Todos os meses" mostra o ano como planilha (mês, bruto, banho, total). BRUTO = valor a pagar dos pedidos no mês da compra. BANHO = faturas da Pontual e da Ellos no mês da fatura (as faturas cobrem janeiro a novembro e batem com as planilhas Pontual Pedidos e Ellos Pedidos, exceto: outubro falta a fatura 13401 da Mega Sul, R$ 22.226,64, vazia no sistema, e novembro falta R$ 18,57). O valor do banho lançado em cada pedido (ficha) serve só para o total do pedido e o bloco; não entra no resumo, para não contar duas vezes. A Controle do mês usa a mesma conta. Código: `ultimosMeses` e `resumoCompras` (domain/cadastro-pecas.js). Pendente: ligar cada fatura aos seus pedidos (caminho B) para dividir o banho por pedido.
+
+
 ## 09/11/2026 (Negociações: chamados do Lucas e do Marcus)
 - **Detalhe do pedido sem o bloco "O que estamos pagando" (chamado do Lucas, opção A, 09/11/2026):** saiu o bloco azul com a descrição, "Pagar até" e "Valor mínimo de cada pix". O prazo vale pelo vencimento das próprias parcelas. Os campos de data limite, pix mínimo e resumo continuam no formulário de lançar a negociação do prestador (e as colunas Pagar até e Pix mínimo no bloco Prestadores de serviço — pendente); só o bloco repetido do detalhe saiu. Código: `pages/pf/Negociacoes.js`.
 - **Vencimento mês a mês (chamado do Marcus e do Nickolas, 29/10/2026):** a regra já estava em `addMeses` (`domain/pf.js`): mesmo dia no mês seguinte, ou o último dia se o mês for mais curto (31/12 → 31/01, 28/02, 31/03, 30/04), sem acumular erro; data inexistente como 31/04 é recusada ao salvar (`dataValida`). Testada em 09/11/2026.

@@ -7,7 +7,7 @@
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { Botao, FileiraCampos, Segmentado, TabelaCampos, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
-import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, resumoMesesCompra, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
+import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, ultimosMeses, resumoCompras, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
 import { Cel, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -121,17 +121,20 @@ function AbaPedidos(){
   var bandas = FASES_PED.map(function(fa){
     var idx = ETAPAS_PED.map(function(k, i){ return k[2]===fa[0] && mostra[i] ? i : -1; }).filter(function(i){ return i>=0; });
     if(!idx.length) return null;
-    var it = vis.filter(function(p){ return fasePed(etapaPed(p))===fa[0]; }), tot = it.reduce(function(t, p){ return t+p.pagar; }, 0), at = it.filter(function(p){ return atrasadoPed(p, hoje, cfg); }).length, cor = COR_FASE[fa[0]];
+    var it = vis.filter(function(p){ return fasePed(etapaPed(p))===fa[0]; }), sm = somasPed(it), cor = COR_FASE[fa[0]];
     return e("div",{key:"f-"+fa[0], className:"relative h-9 overflow-hidden rounded-lg border", style:{gridRow:1, gridColumn:pos[idx[0]]+" / "+(pos[idx[idx.length-1]]+1), borderColor:cor, background:cor+"2E"}},
-      e("span",{className:"sticky left-0 right-0 flex h-full items-center justify-center gap-2 whitespace-nowrap text-[13px]"}, e("b",null, fa[1]), e("span",{className:"tabular-nums"}, plural(it.length, "pedido", "pedidos"))));
+      e("span",{className:"sticky left-0 right-0 flex h-full items-center justify-center gap-3 whitespace-nowrap text-[13px]"}, e("b",null, fa[1]), e("b",{className:"tabular-nums"}, plural(it.length, "pedido", "pedidos")),
+        fa[0]==="empresa" ? e("span",{className:"tabular-nums"}, "Bruto "+brl(sm.bruto)+" · Banho "+brl(sm.banho)+" · Total ", e("b",null, brl(sm.total))) : e("b",{className:"tabular-nums"}, "Total "+brl(sm.total))));
   });
   var colunas = ETAPAS_PED.map(function(k, i){
     if(!mostra[i]) return null;
-    var cor = COR_FASE[k[2]], it = vis.filter(function(p){ return etapaPed(p)===k[0]; }), at = it.filter(function(p){ return atrasadoPed(p, hoje, cfg); }).length, tot = it.reduce(function(t, p){ return t+p.pagar; }, 0), z = prazoTxt(cfg, k[0]);
+    var cor = COR_FASE[k[2]], it = vis.filter(function(p){ return etapaPed(p)===k[0]; }), sm = somasPed(it);
     return e("section",{key:k[0], className:"flex min-w-0 flex-col gap-1.5 rounded-xl bg-black/20 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:pos[i], borderTop:"3px solid "+cor}},
       e("div",{className:"flex flex-col items-center gap-0.5 border-b border-white/10 pb-1.5 text-center"},
         e("b",{className:"flex min-h-9 items-center justify-center gap-1.5 text-[13px] leading-tight"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px]", style:{border:"1px solid "+cor, color:cor}}, i+1), k[1]),
-        e("span",{className:"text-[11px]"}, plural(it.length, "pedido", "pedidos"))),
+        e("span",{className:"text-[13px] font-semibold"}, plural(it.length, "pedido", "pedidos")),
+        e("span",{className:"text-[16px] font-bold tabular-nums"}, brl(sm.total)),
+        k[2]==="empresa" && e("span",{className:"text-[11px] tabular-nums"}, "Bruto "+brl(sm.bruto)+" + Banho "+brl(sm.banho))),
       it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); }));
   });
   var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 400px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
@@ -154,7 +157,7 @@ function AbaPedidos(){
         e(Segmentado,{opcoes:[["quadro", "Quadro"], ["planilha", "Planilha"]], atual:modo, onMudar:md[1]}),
         pode && e(Botao,{principal:true, onClick:function(){ ir({tipo:"novo"}); }}, "Novo pedido")),
       filtros,
-      e(ResumoMeses,{pedidos:c.pedidos, hoje:hoje}),
+      e(ResumoMeses,{c:c, hoje:hoje}),
       !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
       modo==="planilha" ? planilha : quadro),
     modal && modal.tipo==="novo" && e(NovoPedido,{x:x, forns:forns, fechar:function(){ ir(null); }}),
@@ -163,16 +166,28 @@ function AbaPedidos(){
     modal && modal.tipo==="ficha" && e(Ficha,{x:x, id:modal.id, pode:pode, hoje:hoje, cfg:cfg, avancar:avancar, fechar:function(){ ir(null); }}));
 }
 
-// resumo por mês no alto da tela: quanto foi comprado de bruto e de banho em cada um dos últimos 4 meses (Marcus, 09/11/2026). O bruto conta no mês da compra; o banho, no mês em que chegou na empresa.
+// somas de um grupo de pedidos: bruto (a pagar), banho lançado e total (bruto + banho)
+function somasPed(it){ var s = {bruto:0, banho:0, total:0}; it.forEach(function(p){ s.bruto += p.pagar || 0; s.banho += p.valorBanho || 0; s.total += totalPed(p); }); return s; }
+
+// resumo por mês no alto da tela (Marcus, 09/11/2026): filtro Mês atual | 3 meses | 2026, sempre com as MESMAS colunas (mês, bruto, banho, comprado, custo vendido + brinde, diferença).
+// Bruto = valor a pagar dos pedidos no mês da compra; banho = faturas da Pontual e da Ellos no mês da fatura; custo vendido + brinde = DevMaster (s.cpc.custoMes).
+// Diferença = comprado - custo: verde = o estoque AUMENTOU (comprou mais do que saiu), vermelho = o estoque DIMINUIU.
+var COR_RES = {mes:"#A78BFA", compra:"#5B8DEF", custo:"#E8B84B", dif:"#2DD4BF"};   // cabeçalho do resumo: comprado (bruto, banho e total) azul, custo vendido + brinde dourado, diferença turquesa (Marcus, 09/11/2026)
 function ResumoMeses(p){
-  var ms = resumoMesesCompra(p.pedidos, 4, p.hoje);
-  return e("div",{className:"flex flex-col gap-1"},
-    e("h3",{className:"text-[11px] font-medium uppercase tracking-[.07em]"}, "Resumo por mês · comprado"),
-    e(TabelaCampos,{cols:[{t:"", w:"16%"}].concat(ms.map(function(m){ return {t:cap(rotuloMes(m.mes))}; })), minW:"44rem"},
-      e(FileiraCampos,{cells:["Bruto"].concat(ms.map(function(m){ return brl(m.bruto); }))}),
-      e(FileiraCampos,{cells:["Banho"].concat(ms.map(function(m){ return brl(m.banho); }))}),
-      e(FileiraCampos,{total:true, cells:["Total"].concat(ms.map(function(m){ return brl(m.bruto+m.banho); }))})),
-    e("p",{className:"text-[11px]"}, "O bruto conta no mês da compra. O banho conta no mês em que chegou na empresa."));
+  var st = useState("3"), modo = st[0];
+  var meses = modo==="mes" ? ultimosMeses(p.hoje, 1) : modo==="ano" ? mesesCpc(p.c).filter(function(k){ return k.slice(0, 4)==="2026"; }).sort() : ultimosMeses(p.hoje, 3);
+  var ls = resumoCompras(p.c, meses);
+  var soma = ls.reduce(function(t, l){ t.bruto += l.bruto; t.banho += l.banho; t.total += l.total; if(l.custo!=null){ t.custo += l.custo; t.totalComCusto += l.total; t.nCusto++; } return t; }, {bruto:0, banho:0, total:0, custo:0, totalComCusto:0, nCusto:0});
+  var difTot = soma.nCusto ? soma.totalComCusto-soma.custo : null;   // a diferença total só conta os meses que têm custo
+  var cdif = function(v){ return v==null ? "—" : {v:(v>0 ? "+" : "")+brl(v), cor:v>0 ? "#4ADE80" : v<0 ? "#F87171" : undefined}; };
+  var linhas = ls.map(function(l){ return e(FileiraCampos,{key:l.mes, cells:[cap(rotuloMes(l.mes)), brl(l.bruto), brl(l.banho), e("b",null, brl(l.total)), l.custo==null ? "—" : brl(l.custo), cdif(l.dif)]}); });
+  if(ls.length>1) linhas.push(e(FileiraCampos,{key:"t", total:true, cells:["Total", brl(soma.bruto), brl(soma.banho), brl(soma.total), soma.nCusto ? brl(soma.custo) : "—", cdif(difTot)]}));
+  return e("div",{className:"flex flex-col gap-1.5"},
+    e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
+      e("h3",{className:"text-[11px] font-medium uppercase tracking-[.07em]"}, "Resumo por mês · comprado"),
+      e(Segmentado,{opcoes:[["mes", "Mês atual"], ["3", "3 meses"], ["ano", "2026"]], atual:modo, onMudar:st[1]})),
+    e(TabelaCampos,{cols:[{t:"Mês", w:"18%", cor:COR_RES.mes}, {t:"Bruto", w:"15%", cor:COR_RES.compra}, {t:"Banho", w:"15%", cor:COR_RES.compra}, {t:"Comprado (total)", w:"17%", cor:COR_RES.compra}, {t:"Custo vendido + brinde", w:"18%", cor:COR_RES.custo}, {t:"Diferença", cor:COR_RES.dif}], minW:"60rem"}, linhas),
+    e("p",{className:"text-[11px]"}, "Bruto no mês da compra; banho no mês da fatura. Custo vendido + brinde = custo das peças vendidas e dadas de brinde às revendedoras no mês (DevMaster). Diferença = comprado menos custo: verde = o estoque aumentou, vermelho = o estoque diminuiu."));
 }
 
 // texto do prazo de uma etapa: "5 dias"; no Banho, o de cada galvânica

@@ -3,6 +3,16 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.66", data:"2026-11-09", titulo:"Pedidos: custo vendido + brinde e diferença no resumo por mês", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"O resumo por mês (últimos 3 meses e Todos os meses) ganhou duas colunas: Custo vendido + brinde (o custo das peças vendidas e dadas de brinde às revendedoras no mês, da DevMaster, sem funcionárias e sem leilão) e Diferença (comprado menos custo). Verde = o estoque aumentou (comprou mais do que saiu); vermelho = o estoque diminuiu. O resumo tem o filtro Mês atual, 3 meses ou 2026, sempre com as mesmas colunas. O topo da tabela tem uma cor por grupo: Bruto, Banho e Comprado em azul; Custo vendido + brinde em dourado; Diferença em turquesa."}
+ ]},
+ {v:"0.18.65", data:"2026-11-09", titulo:"Pedidos: valor total em cada etapa e em cada fase", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Cada etapa do quadro mostra a quantidade de pedidos em letra maior e o valor total (bruto + banho). Cada fase (Compra, Banho, Empresa) mostra a quantidade e o total na faixa de cima. Nas etapas da Empresa, e na faixa Empresa, aparecem também o total de bruto, o total de banho e o total geral."}
+ ]},
+ {v:"0.18.64", data:"2026-11-09", titulo:"Pedidos: resumo dos últimos 3 meses e do ano com o banho das faturas", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O resumo por mês abre com os últimos 3 meses e o total deles (bruto, banho e total). O botão Todos os meses mostra o ano como planilha: mês, bruto, banho e total, com a soma no fim. O banho vem das faturas da Pontual e da Ellos, pelo mês da fatura, e o bruto do valor a pagar dos pedidos, pelo mês da compra."},
+  {tipo:"correção", area:"Cadastro de peças → Controle do mês", txt:"O banho do mês passou a ser o das faturas (a mesma conta do resumo de Pedidos), no lugar do valor lançado em cada pedido, que só existe para os pedidos novos. A coluna Banho faturado saiu."}
+ ]},
  {v:"0.18.106", data:"2026-11-09", titulo:"Negociações: detalhe do pedido sem o bloco O que estamos pagando", itens:[
   {tipo:"melhoria", area:"Pagamentos a fornecedores → Negociações", txt:"O detalhe do pedido não mostra mais o bloco azul com O que estamos pagando, Pagar até e Valor mínimo de cada pix (chamado do Lucas, opção A). A data Pagar até podia não bater com as parcelas. O prazo agora vale pelo vencimento das próprias parcelas."}]},
  {v:"0.18.63", data:"2026-11-09", titulo:"Controle do mês: compras de bruto e banho dos pedidos", itens:[
