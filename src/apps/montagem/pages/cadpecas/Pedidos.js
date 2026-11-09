@@ -5,7 +5,7 @@
 // Quem lança: Rayssa e Graziella (config.quem.pedidos_bruto); a diretoria sempre pode. "Enviado para Sorelly" entra sozinho quando uma fatura de banho é ligada ao pedido.
 // Editar chegadas, valores e peças por categoria: botão "Abrir ficha" dentro do cartão (ou clique na linha da planilha).
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
-import { Botao, FileiraCampos, Segmentado, TabelaCampos, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
+import { Botao, FileiraCampos, Segmentado, TabelaCampos, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
 import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, resumoMesesCompra, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
 import { Cel, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
@@ -136,16 +136,15 @@ function AbaPedidos(){
   });
   var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 400px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
 
-  var tot = vis.reduce(function(t, p){ t.valor += p.valor; t.pagar += p.pagar; t.pecas += pecasPedido(p); return t; }, {valor:0, pagar:0, pecas:0});
-  var planilha = vis.length ? e(TabelaP,{minW:1280, cols:[{t:"Compra", w:76}, {t:"Fornecedor", w:130}, {t:"Romaneio", w:92}, {t:"Etapa", w:250}, {t:"Dias", w:56}, {t:"Peças", w:70}, {t:"Valor", w:116}, {t:"Desc.", w:66}, {t:"A pagar", w:116}, {t:"Banho", w:84}, {t:"", w:104}]},
-    vis.slice(0, 300).map(function(p){ var et = etapaPed(p), prox = proxima(p);
-      return e(Tr,{key:p.id, alerta:atrasadoPed(p, hoje, cfg), onClick:function(){ ir({tipo:"ficha", id:p.id}); }},
-        e(Td,null, dia(p.data)), e(Td,{forte:true}, p.forn), e(Td,null, p.romaneio || "—"), e(Td,null, nomeEtapa(et)),
-        e(Td,null, et==="finalizado" ? "—" : diasNaEtapa(p, hoje)), e(Td,null, pecasPedido(p) || "—"), e(Td,null, brl(p.valor)),
-        e(Td,null, Math.round(p.desc*10000)/100+"%"), e(Td,{forte:true}, brl(p.pagar)), e(Td,null, banhoPed(p) || "—"),
-        e(Td,null, pode && prox && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); avancar(p); }, className:"h-8 rounded border border-border px-2 text-[13px] hover:bg-white/10"}, "Concluir ›")));
-    }).concat([e(Tr,{key:"total", total:true}, e(Td,{forte:true}, "Total"), e(Td,null, plural(vis.length, "pedido", "pedidos")), e(Td,null), e(Td,null), e(Td,null), e(Td,{forte:true}, tot.pecas), e(Td,{forte:true}, brl(tot.valor)),
-      e(Td,{forte:true}, tot.valor>0 ? Math.round((1-tot.pagar/tot.valor)*1000)/10+"%" : "—"), e(Td,{forte:true}, brl(tot.pagar)), e(Td,null), e(Td,null))])) : e(Vazio,{ic:"package"}, "Nenhum pedido neste filtro.");
+  var tot = vis.reduce(function(t, p){ t.valor += p.valor; t.pagar += p.pagar; t.banho += p.valorBanho || 0; t.pecas += pecasPedido(p); return t; }, {valor:0, pagar:0, banho:0, pecas:0});
+  // planilha em layout D (TabelaCampos + FileiraCampos, 06/11/2026): colunas de largura fixa, nada quebra; bruto, banho e total do pedido lado a lado
+  var planilha = vis.length ? e(TabelaCampos,{minW:"1560px", cols:[{t:"Compra", w:"84px"}, {t:"Fornecedor", w:"130px"}, {t:"Romaneio", w:"100px"}, {t:"Etapa", w:"260px"}, {t:"Dias", w:"64px"}, {t:"Peças", w:"70px"}, {t:"Valor", w:"124px"}, {t:"Desc.", w:"70px"}, {t:"A pagar (bruto)", w:"130px"}, {t:"Banho R$", w:"124px"}, {t:"Total", w:"130px"}, {t:"Galvânica", w:"90px"}, {t:"", w:"1fr"}]},
+    vis.slice(0, 300).map(function(p){ var et = etapaPed(p), prox = proxima(p), atr = atrasadoPed(p, hoje, cfg);
+      return e(FileiraCampos,{key:p.id, onClick:function(){ ir({tipo:"ficha", id:p.id}); }, cells:[dia(p.data), e("b",null, p.forn), p.romaneio || "—", nomeEtapa(et),
+        et==="finalizado" ? "—" : (atr ? {v:String(diasNaEtapa(p, hoje)), cor:"#F87171"} : diasNaEtapa(p, hoje)), pecasPedido(p) || "—", brl(p.valor), Math.round(p.desc*10000)/100+"%", e("b",null, brl(p.pagar)),
+        p.valorBanho>0 ? brl(p.valorBanho) : "—", e("b",null, brl(totalPed(p))), banhoPed(p) || "—",
+        pode && prox ? e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); avancar(p); }, className:"h-8 rounded border border-border px-2 text-[13px] hover:bg-white/10"}, "Concluir ›") : ""]});
+    }).concat([e(FileiraCampos,{key:"total", total:true, cells:["Total", plural(vis.length, "pedido", "pedidos"), "", "", "", tot.pecas, brl(tot.valor), tot.valor>0 ? Math.round((1-tot.pagar/tot.valor)*1000)/10+"%" : "—", brl(tot.pagar), brl(tot.banho), brl(tot.pagar+tot.banho), "", ""]})])) : e(Vazio,{ic:"package"}, "Nenhum pedido neste filtro.");
 
   return e(Pagina,null,
     e("section",{className:"flex flex-col gap-3 rounded-lg border-2 border-white/30 bg-card/60 p-3"},   // tudo da tela (título, filtros e quadro) num bloco só com borda (Marcus, 03/11/2026)
@@ -189,9 +188,11 @@ function Cartao(p){
     e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-col justify-center gap-0.5 px-2 py-1 pl-3 text-left text-[13px]"},
       e("div",{className:"flex flex-nowrap items-center justify-between gap-2 whitespace-nowrap"},
       e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio && e("span",{className:"text-[11px]"}, " · "+pd.romaneio), et==="fechado" && faltaRomaneio(pd) && e("span",{className:"text-[11px] font-semibold text-destructive", title:"Falta: "+faltaRomaneio(pd)+" (a etapa só anda com o número e o arquivo do romaneio)"}, " · "+faltaRomaneio(pd))),
-      e("span",{className:"whitespace-nowrap text-[11px] tabular-nums", title:pd.valorBanho>0 ? "Bruto "+brl(pd.pagar)+" + banho "+brl(pd.valorBanho) : "Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
+      !(pd.valorBanho>0) && e("span",{className:"ml-auto whitespace-nowrap text-[11px] tabular-nums", title:"Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
       e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
-      pd.valorBanho>0 && e("span",{className:"whitespace-nowrap text-[11px] tabular-nums"}, "Bruto "+brl(pd.pagar)+" + Banho "+brl(pd.valorBanho))));
+      // com banho: segunda linha em forma de conta, Bruto + Banho = total (o total em destaque à direita)
+      pd.valorBanho>0 && e("div",{className:"mt-0.5 flex flex-nowrap items-baseline justify-between gap-2 whitespace-nowrap border-t border-white/10 pt-1 text-[11px] tabular-nums", title:"Bruto + banho = total do pedido"},
+        e("span",null, "Bruto ", e("b",null, brl(pd.pagar))), e("span",null, "+ Banho ", e("b",null, brl(pd.valorBanho))), e("span",{className:"text-[13px]"}, "= ", e("b",null, brl(totalPed(pd)))))));
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }

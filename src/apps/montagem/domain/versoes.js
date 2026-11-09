@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.62", data:"2026-11-09", titulo:"Pedidos: bloco com banho em forma de conta e planilha em layout D", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Bloco do pedido que já tem banho: primeira linha com a galvânica, o fornecedor, o romaneio e os dias; segunda linha, separada por um fio, em forma de conta: Bruto + Banho = total do pedido (o total em destaque, à direita)."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A Planilha passou para o layout D (colunas de largura fixa, nada quebra) e ganhou as colunas Banho R$ e Total, com a soma no rodapé."}
+ ]},
  {v:"0.18.97", data:"2026-11-09", titulo:"Resumo do grupo", itens:[
   {tipo:"novo", area:"Financeiro → Resumo do grupo", txt:"Tela nova com o quadro que o Lucas mandava no grupo dos sócios. Abas no topo: Geral, Marcus, Anamaria, Marco Antonio, Ana Beatriz, Lucas e Casa. Mostra fornecedores, prestadores da empresa, sócios e Casa, e os prestadores particulares de cada sócio (68 Gang, Rebel Mode, Show Banca, Greicy...). Atrasado leva ✕. Cada aba tem o botão Copiar mensagem (texto do WhatsApp com negrito) e Baixar imagem (PNG para o celular)."}
  ]},
