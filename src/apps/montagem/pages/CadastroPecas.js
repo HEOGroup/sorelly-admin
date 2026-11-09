@@ -26,7 +26,7 @@ function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}
 function AbaPecasCompras(){ return e(AbaCompras,null); }
 function AbaCadastroPecas(){ return e(AbaPedidos,null); }
 function AbaPecasSolicitacoes(){ var n = contagem(use().state.pp).aberto; return Tela("Solicitações", n ? n+" pedido"+(n===1 ? "" : "s")+" de peças da produção em aberto." : "Pedidos de peças da produção para o cadastro.", e(AbaSolicitacoes,null)); }
-function AbaPecasControle(){ return Tela("Controle do mês", "Quanto foi comprado de bruto em cada mês e o banho faturado.", e(AbaControle,null)); }
+function AbaPecasControle(){ return Tela("Controle do mês", "Quanto foi comprado de bruto e de banho em cada mês.", e(AbaControle,null)); }
 function AbaPecasFaturasPontual(){ return Tela("Faturas Pontual", "Faturas de banho da Pontual ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"pontual"})); }
 function AbaPecasFaturasEllos(){ return Tela("Faturas Ellos", "Faturas de banho da Ellos ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"ellos"})); }
 function AbaPecasOuro(){ return Tela("Retirar ouro", "Ouro e prata enviados ao banho e o que já foi descontado em fatura.", e(AbaRetirarOuro,null)); }

@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Cadastro de peças: Controle do mês com o banho dos pedidos)
+- **Controle do mês (Marcus, 09/11/2026: "compras de bruto e ouro, atualiza"):** o banho do mês é a soma do valor do banho lançado nos pedidos, contado no mês em que chegou na empresa; total do mês = bruto a pagar + banho. As faturas de banho ligadas (Faturas Pontual e Ellos) continuam numa coluna à parte (Banho faturado), só para conferência. Código: `controleMes` e `mesesCpc` (domain/cadastro-pecas.js) e pages/cadpecas/Controle.js (layout D).
+
 ## 09/11/2026 (Resumo do grupo: copiar a mensagem)
 - Marcus (09/11/2026): a mensagem de texto do Resumo do grupo tem que ter o botão de copiar **junto do texto**. O botão "Copiar mensagem" agora aparece também dentro do quadro "Mensagem para o grupo" (`pages/ResumoGrupo.js`); o do topo continua.
 

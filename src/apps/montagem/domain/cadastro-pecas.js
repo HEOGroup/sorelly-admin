@@ -211,12 +211,15 @@ function controleMes(c, mes){
     Object.keys(p.cats||{}).forEach(function(k){ cat[k] = (cat[k]||0) + (p.cats[k]||0); }); });
   t.desc = t.valor>0 ? (t.valor-t.pagar)/t.valor : 0;
   var fat = c.fatP.concat(c.fatE).filter(function(f){ return mesDe(f.data)===mes; }), banho = fat.reduce(function(s, f){ return s + valorFatura(f); }, 0);
-  return {t:t, banho:banho, faturas:fat.length, forn:Object.keys(forn).map(function(k){ var x = forn[k]; x.desc = x.valor>0 ? (x.valor-x.pagar)/x.valor : 0; return x; }).sort(function(a, b){ return b.pagar-a.pagar; }),
+  // banho lançado nos pedidos (Marcus, 09/11/2026): conta no mês em que chegou na empresa (dataBanho); banho = só das faturas ligadas
+  var banhoPed = r2(c.pedidos.reduce(function(s, p){ return s + (numPonto(p.valorBanho)>0 && mesDe(dataBanho(p))===mes ? numPonto(p.valorBanho) : 0); }, 0));
+  return {t:t, banho:banho, banhoPed:banhoPed, faturas:fat.length, forn:Object.keys(forn).map(function(k){ var x = forn[k]; x.desc = x.valor>0 ? (x.valor-x.pagar)/x.valor : 0; return x; }).sort(function(a, b){ return b.pagar-a.pagar; }),
     cats:CATS.map(function(k){ return {k:k[0], nome:k[1], q:cat[k[0]]||0}; }).filter(function(x){ return x.q>0; })};
 }
 /** meses que têm compra ou fatura, do mais novo para o mais antigo */
 function mesesCpc(c){
   var m = {}; c.pedidos.forEach(function(p){ if(mesDe(p.data)) m[mesDe(p.data)] = 1; }); c.fatP.concat(c.fatE).forEach(function(f){ if(mesDe(f.data)) m[mesDe(f.data)] = 1; });
+  c.pedidos.forEach(function(p){ if(numPonto(p.valorBanho)>0 && mesDe(dataBanho(p))) m[mesDe(dataBanho(p))] = 1; });   // mês do banho lançado no pedido
   return Object.keys(m).sort().reverse();
 }
 
