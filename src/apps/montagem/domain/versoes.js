@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.62", data:"2026-11-09", titulo:"Pagamentos a fornecedores: Cheque na janela Lançar pedido", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores → Negociações", txt:"Na janela Lançar pedido, as parcelas com nota fiscal só ofereciam Boleto, Pix empresa e Cartão. Agora oferecem também Cheque (a forma já existia no sistema; só faltava na lista). Os textos de ajuda da janela também citam cheque. Pedido do Nickolas (chamado de 06/11/2026)."}
+ ]},
  {v:"0.18.61", data:"2026-11-09", titulo:"Pedidos: resumo por mês e bruto + banho no bloco", itens:[
   {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"No alto da tela, o Resumo por mês: quanto foi comprado de bruto e de banho em cada um dos últimos 4 meses. O bruto conta no mês da compra e o banho no mês em que chegou na empresa, porque o bruto pode fechar num mês e o banho no seguinte."},
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O bloco do pedido que já tem banho ganha uma segunda linha: Bruto R$ X + Banho R$ Y. O valor da primeira linha é a soma."}

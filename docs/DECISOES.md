@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Cheque nas negociações)
+- Chamado do Nickolas (06/11/2026): na janela **Lançar pedido** (Pagamentos a fornecedores › Negociações) faltava a forma **Cheque** nas parcelas com NF. A lista era fixa no código (Boleto, Pix empresa, Cartão). Acrescentado Cheque; a forma já existia no domínio (`FORMAS` em `domain/pf.js`) e na janela de lançar parcela. Não foi preciso mexer nos fornecedores.
+
 ## 09/11/2026 (Cadastro de peças: resumo por mês e bloco com banho)
 - **Resumo por mês e bloco com banho (Marcus, 09/11/2026):** no alto de Pedidos, tabela com bruto e banho comprados nos últimos 4 meses. Bruto = mês da compra (data do pedido, valor a pagar); banho = mês em que chegou na empresa (`chegSorelly`; sem ela, `banhoEm`, o dia em que o valor foi lançado; sem ela, o dia da etapa atual). Um pedido pode ter o bruto num mês e o banho no seguinte. O bloco com banho mostra segunda linha: Bruto + Banho (a primeira linha mostra a soma). Código: `resumoMesesCompra` e `dataBanho` em domain/cadastro-pecas.js.
 
