@@ -52,7 +52,7 @@ function desenhar(R, socioId){
     SOCIOS.forEach(function(s){ if((R.particulares[s[0]]||[]).length) tabP("Particulares · "+s[1], R.particulares[s[0]]); });
     blocos.push({t:"Totais", cab:["Total", "A pagar", "Pago", "Falta", ""], w:[.34, .16, .16, .18, .16], l:[
       {c:["Sem sócios", brl(R.totais.semSocios.aPagar), brl(R.totais.semSocios.pago), brl(R.totais.semSocios.falta), ""]}, {c:["Geral", brl(R.totais.geral.aPagar), brl(R.totais.geral.pago), brl(R.totais.geral.falta), ""], negrito:true}]});
-  } else { tab("Sócio", V.socio); tabP("Prestadores da empresa em aberto", V.prestadores); tabP("Prestadores particulares em aberto", V.particulares); }
+  } else { tab("Sócio", V.socio); tabP("Prestadores particulares em aberto", V.particulares); }
   var W = 1200, LH = 44, topo = 110, linhas = blocos.reduce(function(t, b){ return t+2+Math.max(1, b.l.length); }, 0), H = topo+linhas*LH+blocos.length*18+40;
   var cv = document.createElement("canvas"); cv.width = W; cv.height = H; var g = cv.getContext("2d");
   g.fillStyle = "#0f1012"; g.fillRect(0, 0, W, H); g.fillStyle = "#fff"; g.textBaseline = "middle"; g.textAlign = "left";
@@ -97,7 +97,7 @@ function AbaResumoGrupo(){
             e(Bloco,{key:"tot", t:"Totais do mês"}, e(TabelaCampos,{cols:COLS, minW:"46rem"},
               e(FileiraCampos,{cells:["Sem sócios", brl(R.totais.semSocios.aPagar), brl(R.totais.semSocios.pago), {v:brl(R.totais.semSocios.falta), cor:AVISO}, ""]}),
               e(FileiraCampos,{total:true, cells:["Geral (com sócios)", brl(R.totais.geral.aPagar), brl(R.totais.geral.pago), brl(R.totais.geral.falta), ""]})))]
-        : [tabela("Sócio · "+nomeMes(ym), V.socio), tabelaP("Prestadores da empresa em aberto", V.prestadores), tabelaP("Prestadores particulares em aberto", V.particulares)],
+        : [tabela("Sócio · "+nomeMes(ym), V.socio), tabelaP("Prestadores particulares em aberto", V.particulares)],
         e("p",{className:"text-[13px]"}, "✕ = venceu e não foi pago. Verde = quitado. Amarelo = em aberto.")),
       e(Bloco,{t:"Mensagem para o grupo", dir:"texto do WhatsApp"}, e("pre",{className:"max-h-[640px] overflow-auto whitespace-pre-wrap rounded-md border border-border bg-black/30 p-3 text-[13px]"}, texto))));
 }

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.103", data:"2026-11-09", titulo:"Resumo do grupo: a aba de cada sócio mostra só o que é dele", itens:[
+  {tipo:"correção", area:"Financeiro → Resumo do grupo", txt:"Na aba de um sócio (Marcus, Anamaria, Lucas...) apareciam os prestadores da empresa em aberto (Priscila, Lucas Castilho, Madeira Cor...), que a Sorelly paga por fora. Agora a aba do sócio mostra só a linha dele e os prestadores particulares dele. Os prestadores da empresa aparecem só no resumo geral. Vale também para a imagem e para a mensagem do WhatsApp."}
+ ]},
  {v:"0.18.102", data:"2026-11-09", titulo:"Listagens da representante: título legível e listagem de exemplo cheia", itens:[
   {tipo:"correção", area:"App da representante › Listagens", txt:"O nome do dia no cartão escuro de resumo ficava escuro sobre fundo escuro. Agora é branco, como na Calculadora de acertos (a Excluir também)."},
   {tipo:"melhoria", area:"App da representante › Listagens", txt:"A Lista agora mostra os próximos 14 dias (sem domingo), em aberto, mesmo sem listagem: cada dia diz até quando dá para criar (2 dias úteis antes, 07:30) ou que o prazo encerrou. Tocar num dia sem listagem abre a tela do dia com o botão Criar listagem neste dia."},

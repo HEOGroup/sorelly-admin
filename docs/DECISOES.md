@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Resumo do grupo: aba do sócio)
+- Marcus (09/11/2026): Priscila (R$ 3.734,42, 10/11), Lucas Castilho e Madeira Cor são prestadores **da Sorelly**, que a empresa paga por fora; não são do Marcus. Na aba de um sócio do **Resumo do grupo** aparece **só o que é do sócio**: a linha dele e os prestadores particulares dele. Os prestadores da empresa ficam só no resumo geral. Mudou `visaoSocio` e a mensagem em `domain/resumo-grupo.js`, e a tela e a imagem em `pages/ResumoGrupo.js`.
+
 ## 09/11/2026 (Prestadores fora da aprovação do teto)
 - Marcus (09/11/2026): "tira isso de aprovação". Pedido de **prestador de serviço** (e sócio, Casa, Mídia) **nunca espera aprovação** do teto mensal. O pedido do Higor Segurança (R$ 4.000, 06/11) estava pendente por uma marca antiga, criada antes da regra de 09/11. Liberados no banco os 5 pedidos presos (Higor #127, Lucas Castilho #125 e #126, Priscila #129, Madeira Cor #130) com cópia em `sorelly.bkp_20261109_pf_prestadores` (módulo `pf` versão 71). No código, `pendenteReal` (`domain/pf-limite.js`) ignora a marca de pendente de quem é fora do teto, para nenhuma tela antiga trazer o problema de volta. Os 6 pedidos de fornecedores (#119, 120, 122, 123, 124, 128) continuam pendentes de verdade.
 
