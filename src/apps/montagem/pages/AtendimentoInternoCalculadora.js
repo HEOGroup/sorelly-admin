@@ -18,7 +18,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
-import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin } from "@/apps/montagem/domain/atendimento-interno";
+import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
@@ -100,6 +100,17 @@ function AbaIntCalculadora(){
   }, []);
   return e("div",{ref:ref, className:"flex flex-col gap-5", style:zoom>1 ? {zoom:zoom} : undefined}, e(AtendimentoInterno));
 }
+// Bloco no MEIO da tela com o aviso do tempo de escolha do kit, que a FUNCIONÁRIA LÊ EM VOZ ALTA para a revendedora. Só fecha no botão "Li para ela": o texto é para ser lido, não pulado.
+function AvisoLeitura(p){
+  return e("div",{className:"fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3", role:"dialog", "aria-modal":"true", "aria-label":p.titulo},
+    e("div",{className:"flex w-full max-w-[560px] flex-col gap-3 rounded-xl border border-[#E8B84B]/40 bg-[#131315] p-4"},
+      e("b",{className:"text-[13px] text-[#E8B84B]"}, p.titulo),
+      e("p",{className:"text-[13px] leading-relaxed"}, "“"+p.texto+"”"),
+      e("div",{className:"flex flex-wrap items-center justify-end gap-2"},
+        p.onCancelar && e("button",{type:"button", onClick:p.onCancelar, className:"h-8 rounded-lg px-3 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Voltar"),
+        e("button",{type:"button", onClick:p.onOk, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a]", style:{background:"linear-gradient(135deg,#F1D58A,#C9962F)"}}, p.botao))));
+}
+
 function AtendimentoInterno(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var hoje = isoDia(new Date());
@@ -127,6 +138,7 @@ function AtendimentoInterno(){
 
   var internos = s.internos || [];
   var tk = useState(0), tick = tk[1];                       // faz o relógio da escolha do kit andar a cada segundo
+  var aiS = useState(false), avisoIni = aiS[0], setAvisoIni = aiS[1];   // janela "leia antes de começar a escolher" (09/11/2026)
   var agenda = internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var sel = internos.find(function(x){ return x.id===s.intSel; }) || null;
   useEffect(function(){ if(!(sel && sel.escolhaIni && !sel.escolhaFim)) return; var i = setInterval(function(){ tick(function(n){ return n+1; }); }, 1000); return function(){ clearInterval(i); }; },
@@ -642,7 +654,9 @@ function AtendimentoInterno(){
   var escolhendo = !!sel.escolhaIni && !sel.escolhaFim, decorridoSeg = sel.escolhaIni ? Math.max(0, Math.floor(((sel.escolhaFim || Date.now())-sel.escolhaIni)/1000)) : 0;
   var relogio = function(seg){ return String(Math.floor(seg/60)).padStart(2,"0")+":"+String(seg%60).padStart(2,"0"); };
   var estourou = !!maxEscolhaMin && sel.escolhaIni && decorridoSeg>maxEscolhaMin*60 && !sel.escolhaFim;
-  var iniciarEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaIni:Date.now(), escolhaFim:null}}); };
+  var iniciarEscolha = function(){ setAvisoIni(true); };   // primeiro a funcionária lê o aviso do tempo; o relógio só liga depois do "Li e expliquei"
+  var confirmaInicioEscolha = function(){ setAvisoIni(false); d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaIni:Date.now(), escolhaFim:null, escolhaAvisoIni:Date.now(), escolhaAvisoFim:null}}); };
+  var confirmaFimEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaAvisoFim:Date.now()}}); };
   var terminarEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaFim:Date.now()}}); };
   var durMin = sel && sel.inicioTs && sel.fimTs ? Math.max(1, Math.round((sel.fimTs-sel.inicioTs)/60000)) : null;
   // ENTER avança para o próximo campo (sem usar o mouse)
@@ -734,7 +748,9 @@ function AtendimentoInterno(){
             cols.map(function(c,i){ return e("div",{key:"h"+i, className:"flex h-[30px] items-center justify-center overflow-hidden whitespace-nowrap border-b border-primary/40 bg-primary/15 px-1 "+(i ? "border-l border-l-primary/30 " : "")+CAP}, c[0]); }),
             cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30 " : "")+(i<3 ? "bg-primary/15" : "")}, c[1]); }));   // nome, horário e situação: só leitura, com fundo colorido
         })(),
-        estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando.")
+        estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
+        avisoIni && e(AvisoLeitura,{key:"avIni", titulo:"Leia para a revendedora antes de começar", texto:textoAntesEscolha(maxEscolhaMin), botao:"Li para ela · começar o tempo", onOk:confirmaInicioEscolha, onCancelar:function(){ setAvisoIni(false); }}),
+        estourou && !sel.escolhaAvisoFim && e(AvisoLeitura,{key:"avFim", titulo:"O tempo acabou. Leia para a revendedora", texto:textoFimEscolha(maxEscolhaMin), botao:"Li para ela", onOk:confirmaFimEscolha})
   ]);
   var cartao = function(corpo){ return e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, topoCard, corpo); };
 

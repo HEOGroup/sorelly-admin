@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.107", data:"2026-11-09", titulo:"Atendimento Sorelly: textos para ler no tempo de escolha do kit", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Ao tocar em Começou (escolha do kit), abre no meio da tela um bloco para a funcionária ler em voz alta para a revendedora, com o tempo que ela tem (até R$ 7.000 = 30 min; até R$ 12.000 = 45 min; até R$ 17.000 = 1 hora; acima = 2 horas); o relógio só liga depois do botão Li para ela. Quando o tempo acaba, abre sozinho um segundo bloco, educado: outras revendedoras esperam e é hora de finalizar a escolha. O bloco só fecha no botão Li para ela."}
+ ]},
  {v:"0.18.66", data:"2026-11-09", titulo:"Pedidos: custo vendido + brinde e diferença no resumo por mês", itens:[
   {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"O resumo por mês (últimos 3 meses e Todos os meses) ganhou duas colunas: Custo vendido + brinde (o custo das peças vendidas e dadas de brinde às revendedoras no mês, da DevMaster, sem funcionárias e sem leilão) e Diferença (comprado menos custo). Verde = o estoque aumentou (comprou mais do que saiu); vermelho = o estoque diminuiu. O resumo tem o filtro Mês atual, 3 meses ou 2026, sempre com as mesmas colunas. O topo da tabela tem uma cor por grupo: Bruto, Banho e Comprado em azul; Custo vendido + brinde em dourado; Diferença em turquesa."}
  ]},

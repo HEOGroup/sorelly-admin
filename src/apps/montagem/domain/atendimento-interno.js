@@ -13,7 +13,17 @@ function tempoMaxEscolhaMin(valorKit){
   return f ? f.min : null;
 }
 
-export { TOLERANCIA_CHEGADA_MIN, DESCONTO_BRINDE_ATRASO, TEMPO_ESCOLHA_KIT, tempoMaxEscolhaMin };
+// TEXTOS DO TEMPO DE ESCOLHA (Marcus, 09/11/2026): aparecem no meio da tela quando ela começa a escolher e quando o tempo acaba; a FUNCIONÁRIA LÊ EM VOZ ALTA para a revendedora.
+// Escritos para não soar chatos: simples, educados e sem culpa. O tempo vem do valor do kit (TEMPO_ESCOLHA_KIT).
+function minutosTxt(min){ return min>=120 && min%60===0 ? (min/60)+" horas" : min===60 ? "1 hora" : min+" minutos"; }
+function textoAntesEscolha(min){
+  return "Agora você vai escolher as peças do seu kit. "+(min>0 ? "Você tem "+minutosTxt(min)+" para escolher, e esse tempo é suficiente para ver tudo com calma. " : "Existe um tempo combinado para a escolha, suficiente para ver tudo com calma. ")+"Esse tempo ajuda a atender todas as revendedoras do dia sem ninguém esperar demais. Eu aviso você quando o tempo acabar. Combinado?";
+}
+function textoFimEscolha(min){
+  return "O tempo da escolha "+(min>0 ? "("+minutosTxt(min)+") " : "")+"chegou ao fim. Tem outras revendedoras esperando o atendimento, por isso vou pedir para você finalizar a escolha agora. Se já separou tudo, é só me entregar as peças que eu confiro. Muito obrigada pela compreensão!";
+}
+
+export { TOLERANCIA_CHEGADA_MIN, DESCONTO_BRINDE_ATRASO, TEMPO_ESCOLHA_KIT, tempoMaxEscolhaMin, minutosTxt, textoAntesEscolha, textoFimEscolha };
 
 // Pagamentos enviados ao financeiro: cada linha (forma + valor) é dividida em "partes" (uma por conta). Estado da linha:
 // aguardando (falta definir as contas) → conta (contas definidas, falta comprovante/OK) → ok (tudo conferido) · ou isento (só diferença de brinde).
