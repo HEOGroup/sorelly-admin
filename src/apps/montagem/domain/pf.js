@@ -245,6 +245,9 @@ function pfMigrar(pf){
     LOCAL.mqExtra.forEach(function(x){ var k = x.rev.toLowerCase()+"|"+x.valor; if(jaTem[k]>0){ jaTem[k]--; return; } pf.mqPassadas.push(Object.assign({id:pf.seq.mqP++}, x)); });
     pf.mqImp2 = true; invalidar(pf);
   }
+  // prestador de serviço não passa por aprovação de limite: o que já estava pendente vira lançado (Marcus, 09/11/2026)
+  var libPrest = false; pf.pedidos.forEach(function(pd){ if(pd.aprov==="pendente" && ehPrestador(forn(pf, pd.fornId))){ delete pd.aprov; delete pd.aprovMotivo; libPrest = true; } });
+  if(libPrest) invalidar(pf);
   return pf;
 }
 // negociações em aberto dos prestadores de serviço (para o bloco "O que estamos pagando" e o botão "Ver negociação")

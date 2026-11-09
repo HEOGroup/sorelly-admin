@@ -17,6 +17,7 @@ function limiteDe(pf){ var l = (pf && pf.limite) || {}; return {teto:l.teto>0 ? 
 
 // classificação padrão pelo nome (o Marcus ajusta fornecedor a fornecedor no próprio bloco)
 function classePadrao(f){
+  if(f && (f.tipo==="prestador" || /^Prestador/.test(f.cat||""))) return "fora";   // prestador de serviço não conta no teto nem no limite por categoria (Marcus, 09/11/2026)
   var n = String((f && f.nome) || "").toLowerCase();
   if((f && f.vinculo==="socio") || /s[óo]cio|casa|facebook|google|m[ií]dia|meta ads/.test(n)) return "fora";
   if(/point|mega ?sul|art ?ello|xangai|linda|tucano|charme|bruto/.test(n)) return "bruto";

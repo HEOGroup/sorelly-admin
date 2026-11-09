@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.95", data:"2026-11-09", titulo:"Prestadores de serviço: fora do teto mensal e sempre no resumo", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"Prestador de serviço (Castilho, Higor, Priscila e os outros) não passa mais pelo teto mensal de R$ 300.000,00 nem pelo limite por categoria. As negociações de prestador que estavam em Aguardando aprovação entram como lançadas."},
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"No resumo do mês, o que o prestador não pagou passa para o mês seguinte e a linha aparece em atraso, em vez de sumir quando o mês acaba."}
+ ]},
  {v:"0.19.1", data:"2026-11-06", titulo:"O servidor sempre manda", itens:[
   {tipo:"correção", area:"Servidor", txt:"A Diretoria passa a receber os dados do servidor assim que entra, como todo mundo. Saiu a escolha \"Dados: Deste navegador / Do servidor\" (que pausava tudo até alguém escolher e deixava o Consolidado Representante vazio) e o bloco \"Dados deste navegador\" de Contas e acesso."},
  ]},

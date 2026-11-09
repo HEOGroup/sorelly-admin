@@ -335,7 +335,14 @@ function GeralInterno(P){
   }
 
   // ── mensal (padrão): todos os fornecedores e prestadores do mês; cada linha abre o mês e o mês seguinte no formato escolhido
-  var lf = linhasDe(fornecedores, mes), lp = linhasDe(prestadores, mes), todosL = lf.concat(lp);
+  // Prestador de serviço (Marcus, 09/11/2026): a negociação não some quando o mês passa. O que ficou em aberto dos meses anteriores entra neste mês e a linha fica em atraso.
+  var linhasPrest = function(lista, m){ return lista.map(function(f){
+    var c = contaForn(pf, f.id, m), meses = {}, ab = 0, n = 0, venc = null;
+    janelasDoForn(pf, f.id).forEach(function(j){ if(j.mes<m) meses[j.mes] = 1; });
+    Object.keys(meses).forEach(function(mm){ contaForn(pf, f.id, mm).datas.forEach(function(d){ if(d.aberto>0.005){ ab += d.aberto; n++; if(!venc || d.venc<venc) venc = d.venc; } }); });
+    if(ab>0.005) c = Object.assign({}, c, {total:c.total+ab, aberto:c.aberto+ab, qtdDatas:c.qtdDatas+n, dMin:(!c.dMin || venc<c.dMin) ? venc : c.dMin, dMax:venc});
+    return {f:f, c:c}; }).filter(function(x){ return x.c.qtdDatas>0; }); };
+  var lf = linhasDe(fornecedores, mes), lp = linhasPrest(prestadores, mes), todosL = lf.concat(lp);
   var total = somaC(todosL, "total"), pago = somaC(todosL, "pago"), falta = total-pago;
   var mqMes = pf.mqFornId ? {bruto:mqBruto(pf, mes), desc:mqDescontoNoMes(pf, mes)} : null;
   // negociação pendente de aprovação (limite mensal) não entra na conta; aparece aqui no mês da negociação ou de qualquer parcela (chamado do Lucas, 06/11/2026)
