@@ -9,6 +9,7 @@ var TIPOS = [
   {k:"exp_avaliacao", t:"Chegou a data da avaliação de experiência", desc:"No dia da 1ª e da 2ª avaliação de cada colaboradora em experiência (e até 3 dias depois). Um clique em Abrir tela leva direto à ficha dela, com a pontuação e as notas, para decidir se efetiva. Um alerta por colaboradora e por avaliação.", padrao:[38,16,17,28]},
   {k:"p45_pedido", t:"Pedido de mudança de data (app da representante)", desc:"Quando a representante pede, pelo app, uma data de acerto mais de 5 dias depois da atual. Aprovar em Agendamento → Plano 45/60 → Aprovação → Pedidos do app. Sem aprovação vale a multa de remarcação.", padrao:[16,17,28]},
   {k:"p45_contato", t:"Plano 45/60: aprovada sem contato", desc:"Uma vez por dia, quando há revendedora aprovada no plano 45/60 há mais de 24 horas sem contato registrado.", padrao:[16,17,28,24,25,26]},
+  {k:"listagem_excluida", t:"Revendedora excluída da listagem", desc:"Quando a representante exclui uma revendedora da listagem pelo app (ela diz quem desmarcou e o motivo). O aviso diz a situação do kit (na fila, montando, montado ou bipado) e o que fazer com as peças. A montadora só é avisada se o kit já estava sendo montado.", padrao:[11]},
   {k:"p45_venda", t:"Plano 45/60: nova data sem venda lançada", desc:"Uma vez por dia, quando a nova data de uma aprovada já chegou e a venda do ciclo não foi lançada.", padrao:[16,17,28,24,25,26]}
 ];
 var GRUPOS_PESSOAS = [

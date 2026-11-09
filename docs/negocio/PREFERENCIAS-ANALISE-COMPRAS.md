@@ -148,3 +148,45 @@ Marcus avisou que as revendedoras usam o app. Conferido: em `GET /admin/reseller
 - **Não usam de verdade: 356 (17%).** Por representante, mais revendedoras sem uso: Veridiana 54 de 192 (28%), Fabila 28 de 108 (26%), Mayara 23, Marciane 21, Bruna 21, Dayanne 21. Maior percentual (30 ou mais revendedoras): Thalita - Litoral Pr 37%, Veridiana 28%, Anne - Pg 27%, Thalita - Sc 26%, Fabila 26%.
 - Os dados de pedidos só mostram quem lança venda; não provam que lançam TODAS as vendas do acerto (isso exigiria comparar com a DevMaster).
 - Mensagens por representante refeitas com este critério (29): `docs/setores/representantes/mensagens-representantes-sem-app.local.md`.
+
+## Colar de letras: pedido no app x vendido nos últimos 90 dias (09/11/2026)
+Pedidos: letras marcadas por 4.971 menções nas preferências (2.004 revendedoras com kit ativo). Vendas: DevMaster, vendas fechadas de 11/08 a 09/11/2026 (6.631 vendas), colares e chokers com "LETRA" no nome, TES S001/S002: 2.160 peças.
+**Limite importante:** só 67% (1.444 peças) têm a letra no nome ou no código (ex.: `CL2384J`, "LETRA M CRAVEJADA"). 19% (420) são produtos genéricos sem letra (CL1641, CL1693, CL1751: o fornecedor lista as letras em `aaa_codrefforn`, mas a venda não grava qual) e 14% (296) são "letras pequenas" com várias letras. Venda também depende do que foi enviado, então mostra o que saiu, não só o que se quer.
+| # | Letra | Pedidos no app | Vendidas (letra identificada) | Nota (média das duas partes) | Ouro nas vendas |
+|---|---|---|---|---|---|
+| 1 | M | 530 (10,7%) | 218 (15,1%) | 12,9% | 51% |
+| 2 | A | 728 (14,6%) | 103 (7,1%) | 10,9% | 43% |
+| 3 | L | 401 (8,1%) | 108 (7,5%) | 7,8% | 43% |
+| 4 | J | 354 (7,1%) | 97 (6,7%) | 6,9% | 69% |
+| 5 | S | 242 (4,9%) | 87 (6,0%) | 5,4% | 40% |
+| 6 | D | 213 (4,3%) | 93 (6,4%) | 5,4% | 41% |
+| 7 | G | 279 (5,6%) | 73 (5,1%) | 5,3% | 92% |
+| 8 | R | 255 (5,1%) | 74 (5,1%) | 5,1% | 42% |
+| 9 | T | 203 (4,1%) | 85 (5,9%) | 5,0% | 40% |
+| 10 | C | 302 (6,1%) | 54 (3,7%) | 4,9% | 43% |
+| 11 | E | 261 (5,3%) | 56 (3,9%) | 4,6% | 45% |
+| 12 | N | 133 (2,7%) | 85 (5,9%) | 4,3% | 35% |
+| 13 | B | 218 (4,4%) | 60 (4,2%) | 4,3% | 27% |
+| 14 | K | 204 (4,1%) | 62 (4,3%) | 4,2% | 39% |
+| 15 | I | 110 (2,2%) | 55 (3,8%) | 3,0% | 40% |
+| 16 | P | 139 (2,8%) | 43 (3,0%) | 2,9% | 37% |
+| 17 | F | 157 (3,2%) | 36 (2,5%) | 2,8% | 14% |
+| 18 | V | 131 (2,6%) | 32 (2,2%) | 2,4% | 47% |
+| 19 | H | 54 (1,1%) | 20 (1,4%) | 1,2% | 35% |
+| 20 | Y | 30 (0,6%) | 2 | 0,4% | 0% |
+Quase não saem: W (17 pedidos, 0 vendas), Q, Z, O, U. Norte: as 10 primeiras letras cobrem 70% e as 15 primeiras 90%. Metal: G quase só ouro (92%), J ouro (69%), F e B prata (86% e 73%); as outras ficam em torno de 60% prata. Para medir letra de verdade falta gravar a letra na venda dos produtos genéricos (CL1641, CL1693, CL1751).
+
+## Colar de filhos: pedido no app x vendido nos últimos 90 dias (09/11/2026)
+Pedidos: nº de revendedoras que marcaram cada composição (3.751 marcações). Vendas: DevMaster, 11/08 a 09/11/2026, colares com MENINO/MENINA no nome (1.081 peças; a composição vem do nome do produto).
+| Composição | Pedidos no app | Vendidas | Ouro/prata vendidos |
+|---|---|---|---|
+| 1 menino | 753 (20,1%) | 391 (36,2%) | 202 / 189 |
+| 1 menina | 704 (18,8%) | 521 (48,2%) | 254 / 267 |
+| 1 menino + 1 menina | 692 (18,4%) | 16 (1,5%) | 15 / 1 |
+| 2 meninos | 412 (11,0%) | 48 (4,4%) | 33 / 15 |
+| 2 meninas | 409 (10,9%) | 39 (3,6%) | 30 / 9 |
+| 2 meninos + 1 menina | 254 (6,8%) | 11 (1,0%) | 11 / 0 |
+| 2 meninas + 1 menino | 244 (6,5%) | 23 (2,1%) | 23 / 0 |
+| 3 meninas | 149 (4,0%) | 16 (1,5%) | 8 / 8 |
+| 3 meninos | 134 (3,6%) | 16 (1,5%) | 16 / 0 |
+**Leitura:** venda mostra o que existe e foi enviado. Menino + menina tem 692 pedidos e quase nenhum produto (só 16 vendidas): oportunidade de compra. Dois filhos e três filhos têm pedido forte (cerca de 36% somados) e vendem pouco (cerca de 14%).

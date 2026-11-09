@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listagem da representante: 4 layouts</title>
+<style>
+:root{--ouro:#C9A13B;--ouro-claro:#F5E6BE;--preto:#111;--cinza:#F2F2F4;--borda:#E5E7EB;--txt:#111827;--txt2:#374151;--ok:#16A34A;--alerta:#D97706;--ruim:#DC2626;--azul:#2563EB}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0d0f;color:#f3f3f3;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45}
+.pagina{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:34px 0 4px;color:#F5D68A}
+.sub{color:#e5e5e5;margin:0 0 12px}
+.caixa{background:#1a1a1d;border:1px solid #2f2f35;border-radius:12px;padding:14px 16px;margin:12px 0}
+.caminhos{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cam b{color:#F5D68A}
+.seta{color:#F5D68A;font-weight:700}
+table.reg{width:100%;border-collapse:collapse;font-size:13px}
+table.reg td{border-top:1px solid #2f2f35;padding:6px 8px;vertical-align:top}
+table.reg td:first-child{color:#F5D68A;width:34%;font-weight:600}
+.par{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.tel{width:300px;background:var(--cinza);color:var(--txt);border-radius:34px;border:8px solid #000;box-shadow:0 0 0 2px #3a3a3f;overflow:hidden;position:relative}
+.tel .nome{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#6B7280;font-weight:700;margin:0 0 4px}
+.topo{background:#000;color:var(--ouro);padding:14px 14px 12px;display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.08em;font-size:13px;text-transform:uppercase}
+.topo i{width:26px;height:26px;border-radius:50%;background:#222;display:inline-grid;place-items:center;font-style:normal;color:var(--ouro)}
+.corpo{padding:10px;display:flex;flex-direction:column;gap:8px;min-height:520px}
+.btn{height:32px;border-radius:12px;border:0;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;width:100%}
+.btn.p{background:var(--ouro);color:#fff}
+.btn.s{background:#fff;color:var(--txt);border:1px solid var(--borda)}
+.btn.r{background:#fff;color:var(--ruim);border:1px solid #FCA5A5}
+.btn.cinza{background:#E5E7EB;color:#9CA3AF}
+.chips{display:flex;gap:6px;overflow:hidden}
+.chip{flex:0 0 auto;border-radius:999px;padding:5px 10px;font-size:12px;font-weight:700;background:#fff;border:1px solid var(--borda);color:var(--txt2)}
+.chip.on{background:var(--ouro);color:#fff;border-color:var(--ouro)}
+.chip.off{background:#E5E7EB;color:#9CA3AF}
+.card{background:#fff;border:1px solid var(--borda);border-radius:16px;padding:10px 12px}
+.card.ouro{background:linear-gradient(135deg,#fff 0%,var(--ouro-claro) 100%)}
+.lin{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid #F1F1F3}
+.lin:first-child{border-top:0}
+.lin .n{flex:1;min-width:0;font-weight:700;font-size:13px}
+.lin .n small{display:block;font-weight:500;color:var(--txt2);font-size:11px}
+.pill{border-radius:999px;padding:2px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+.pill.fila{background:#E5E7EB;color:#374151}
+.pill.mont{background:#FEF3C7;color:#B45309}
+.pill.feito{background:#DBEAFE;color:#1D4ED8}
+.pill.pronto{background:#DCFCE7;color:#15803D}
+.pill.ruim{background:#FEE2E2;color:#B91C1C}
+.mais{width:26px;height:26px;border-radius:8px;border:1px solid var(--borda);display:grid;place-items:center;font-weight:800;color:var(--txt2)}
+.barra{height:8px;border-radius:6px;background:#E5E7EB;overflow:hidden}
+.barra i{display:block;height:100%;background:var(--ouro)}
+.barra.cheia i{background:var(--ruim)}
+.linha2{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.t12{font-size:12px;color:var(--txt2)}
+.aviso{border-radius:12px;padding:8px 10px;font-size:12px;font-weight:600}
+.aviso.am{background:#FEF3C7;color:#92400E}
+.aviso.vm{background:#FEE2E2;color:#991B1B}
+.aviso.az{background:#DBEAFE;color:#1E40AF}
+.aviso.vd{background:#DCFCE7;color:#166534}
+.cx{width:18px;height:18px;border-radius:6px;border:2px solid #9CA3AF;display:inline-block;flex:0 0 auto}
+.cx.on{background:var(--ouro);border-color:var(--ouro);position:relative}
+.cx.on:after{content:"✓";position:absolute;inset:0;color:#fff;font-size:12px;display:grid;place-items:center;font-weight:800}
+.cx.trava{background:#E5E7EB;border-color:#D1D5DB}
+.folha{background:rgba(0,0,0,.45);position:absolute;inset:0;display:flex;align-items:flex-end}
+.folha .in{background:#fff;width:100%;border-radius:22px 22px 0 0;padding:12px;display:flex;flex-direction:column;gap:8px}
+.seg{display:flex;border:1px solid var(--borda);border-radius:12px;overflow:hidden}
+.seg span{flex:1;text-align:center;padding:6px;font-size:12px;font-weight:700;background:#fff}
+.seg span.on{background:var(--ouro);color:#fff}
+.dias{display:grid;grid-template-columns:repeat(5,1fr);gap:5px}
+.dia{background:#fff;border:1px solid var(--borda);border-radius:12px;padding:6px 2px;text-align:center;font-size:11px;font-weight:700}
+.dia b{display:block;font-size:14px}
+.dia.on{border-color:var(--ouro);box-shadow:0 0 0 2px var(--ouro-claro)}
+.dia.fechado{background:#E5E7EB;color:#9CA3AF}
+.dia .b{height:5px;border-radius:4px;background:#E5E7EB;margin:4px 6px 0;overflow:hidden}
+.dia .b i{display:block;height:100%;background:var(--ouro)}
+.dia .b.c i{background:var(--ruim)}
+.legenda{font-size:12px;color:#e5e5e5;margin-top:8px;max-width:640px;margin-left:auto;margin-right:auto;text-align:center}
+.rot{display:inline-block;background:#F5D68A;color:#1a1306;font-weight:800;border-radius:8px;padding:2px 10px;margin-right:8px}
+@media(max-width:700px){.caminhos{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="pagina">
+<h1>Listagem da representante: 4 layouts</h1>
+<p class="sub">Desenho do app da representante (cores do app: fundo claro, topo preto, botão dourado). Nomes e números são de exemplo. A representante nunca vê valor do kit.</p>
+
+<div class="caixa">
+<b style="color:#F5D68A">Os 2 caminhos da representante (mesma regra nos dois)</b>
+<div class="caminhos" style="margin-top:8px">
+<div class="cam"><b>Caminho 1: pela LISTAGEM</b><br>Abre a listagem do dia <span class="seta">→</span> toca em <b>Adicionar da minha carteira</b> <span class="seta">→</span> marca várias revendedoras <span class="seta">→</span> confirma.</div>
+<div class="cam"><b>Caminho 2: pela REVENDEDORA</b><br>Abre <b>Minhas revendedoras</b> <span class="seta">→</span> toca em <b>Encaixar</b> na revendedora <span class="seta">→</span> escolhe a listagem (ou cria uma) <span class="seta">→</span> confirma.</div>
+</div>
+<table class="reg" style="margin-top:10px">
+<tr><td>Uma listagem por dia</td><td>Até 2 horários de retirada. Limite de 15 kits no dia inteiro (viagem sem limite).</td></tr>
+<tr><td>Uma revendedora por dia</td><td>Ela não entra em duas listagens no mesmo dia. O sistema trava e mostra em qual listagem ela já está.</td></tr>
+<tr><td>Prazo</td><td>2 dias úteis antes da retirada, até 07:30. Passou do prazo: trava, e só a Deysiane libera (com motivo).</td></tr>
+<tr><td>Excluir</td><td>A representante pode excluir. Ela marca quem desmarcou (revendedora ou ela) e o motivo. Revendedora desmarcou: a multa já sobe, se for o caso. A Deysiane é avisada sempre; a montadora só se estiver no meio do kit.</td></tr>
+<tr><td>Retirada</td><td>Ela pode retirar 1 ou 2 kits se já estiverem prontos.</td></tr>
+</table>
+</div>
+
+<!-- ================= LAYOUT 1 ================= -->
+<h2><span class="rot">1</span>Por dia: lista de revendedoras</h2>
+<p class="sub">O mais parecido com o app de hoje. Dias no alto, a listagem do dia embaixo, cada revendedora com a situação do kit e um menu ⋯ para excluir. Caminho 1 em destaque.</p>
+<div class="par">
+<div class="tel"><div class="topo"><i>‹</i>Listagens</div><div class="corpo">
+ <div class="chips"><span class="chip">Hoje 09/11</span><span class="chip">Qua 11/11</span><span class="chip on">Qui 12/11</span><span class="chip">Sex 13/11</span></div>
+ <div class="card ouro">
+  <div class="linha2"><b>Quinta 12/11 · Curitiba</b><span class="pill pronto">7/15</span></div>
+  <div class="t12">Retirada 10:00 e 15:00</div>
+  <div class="barra" style="margin:6px 0 4px"><i style="width:47%"></i></div>
+  <div class="t12">Incluir até terça 10/11, 07:30</div>
+ </div>
+ <div class="card">
+  <div class="lin"><div class="n">Ana Paula S.<small>Acerto + kit · 10:00</small></div><span class="pill fila">Na fila</span><span class="mais">⋯</span></div>
+  <div class="lin"><div class="n">Beatriz L.<small>Acerto + kit · 10:00</small></div><span class="pill mont">Montando</span><span class="mais">⋯</span></div>
+  <div class="lin"><div class="n">Carla M.<small>Reposição · 10:00</small></div><span class="pill feito">Montado</span><span class="mais">⋯</span></div>
+  <div class="lin"><div class="n">Daniela R.<small>Acerto + kit · 15:00</small></div><span class="pill pronto">Pronto</span><span class="mais">⋯</span></div>
+  <div class="lin"><div class="n">Elaine T.<small>Kit novo · 15:00</small></div><span class="pill fila">Na fila</span><span class="mais">⋯</span></div>
+ </div>
+ <div class="btn p">+ Adicionar da minha carteira</div>
+ <div class="btn s">Nova listagem</div>
+</div></div>
+
+<div class="tel"><div class="topo"><i>‹</i>Listagens</div><div class="corpo" style="opacity:.55">
+ <div class="card"><div class="lin"><div class="n">Beatriz L.<small>Acerto + kit</small></div><span class="pill mont">Montando</span></div></div>
+</div>
+<div class="folha"><div class="in">
+ <p class="nome">Excluir da listagem</p>
+ <div class="card ouro"><b>Beatriz L.</b> <span class="pill mont">Montando</span><div class="t12">Quinta 12/11 · 10:00</div></div>
+ <p class="nome" style="margin-top:2px">Quem desmarcou?</p>
+ <div class="seg"><span class="on">A revendedora</span><span>Eu (representante)</span></div>
+ <p class="nome">Motivo</p>
+ <div class="chips" style="flex-wrap:wrap"><span class="chip on">Desistiu</span><span class="chip">Mudou o dia</span><span class="chip">Sem dinheiro</span><span class="chip">Viagem</span><span class="chip">Outro</span></div>
+ <div class="aviso am">Pelo prazo, esta desistência gera multa de 5% da comissão.</div>
+ <div class="aviso az">A Deysiane e a montadora serão avisadas: o kit está sendo montado.</div>
+ <div style="display:flex;gap:8px"><div class="btn s">Cancelar</div><div class="btn r">Excluir</div></div>
+</div></div></div>
+</div>
+<p class="legenda">Esquerda: tela principal. Direita: excluir. O texto do aviso muda conforme a situação do kit (na fila, montando, montado, bipado).</p>
+
+<!-- ================= LAYOUT 2 ================= -->
+<h2><span class="rot">2</span>Por situação: quadro do kit</h2>
+<p class="sub">A representante vê onde cada kit está: na fila, montando, montado, pronto. O foco é acompanhar e retirar 1 ou 2 kits prontos. O botão de adicionar fica fixo embaixo.</p>
+<div class="par">
+<div class="tel"><div class="topo"><i>‹</i>Quinta 12/11</div><div class="corpo">
+ <div class="card ouro"><div class="linha2"><b>7 de 15 kits</b><span class="t12">Retirada 10:00 e 15:00</span></div><div class="barra" style="margin-top:6px"><i style="width:47%"></i></div></div>
+ <div class="card">
+  <div class="linha2"><b>Pronto para retirar</b><span class="pill pronto">2</span></div>
+  <div class="lin"><span class="cx on"></span><div class="n">Daniela R.</div><span class="t12">10:00</span></div>
+  <div class="lin"><span class="cx on"></span><div class="n">Fernanda K.</div><span class="t12">10:00</span></div>
+  <div class="btn p" style="margin-top:6px">Retirar 2 kits agora</div>
+ </div>
+ <div class="card"><div class="linha2"><b>Montado</b><span class="pill feito">1</span></div><div class="lin"><div class="n">Carla M.<small>falta bipar</small></div><span class="mais">⋯</span></div></div>
+ <div class="card"><div class="linha2"><b>Montando</b><span class="pill mont">1</span></div><div class="lin"><div class="n">Beatriz L.</div><span class="mais">⋯</span></div></div>
+ <div class="card"><div class="linha2"><b>Na fila</b><span class="pill fila">3</span></div><div class="lin"><div class="n">Ana Paula S.</div><span class="mais">⋯</span></div><div class="lin"><div class="n">Elaine T.</div><span class="mais">⋯</span></div><div class="lin"><div class="n">Gisele P.</div><span class="mais">⋯</span></div></div>
+ <div class="btn p">+ Adicionar da minha carteira</div>
+</div></div>
+
+<div class="tel"><div class="topo"><i>‹</i>Retirar kits</div><div class="corpo">
+ <p class="nome">Kits prontos da listagem de quinta</p>
+ <div class="card">
+  <div class="lin"><span class="cx on"></span><div class="n">Daniela R.<small>Acerto + kit</small></div><span class="pill pronto">Pronto</span></div>
+  <div class="lin"><span class="cx on"></span><div class="n">Fernanda K.<small>Acerto + kit</small></div><span class="pill pronto">Pronto</span></div>
+  <div class="lin"><span class="cx trava"></span><div class="n" style="color:#9CA3AF">Carla M.<small>Montado, falta bipar</small></div><span class="pill feito">Montado</span></div>
+ </div>
+ <div class="aviso vd">Você escolheu 2 kits. Os outros ficam na listagem para outra retirada.</div>
+ <div class="card ouro" style="text-align:center"><div class="t12">Código de retirada</div><b style="font-size:24px;letter-spacing:.2em">4 8 2 1</b></div>
+ <div class="btn p">Confirmar retirada de 2 kits</div>
+ <div class="btn s">Voltar</div>
+</div></div>
+</div>
+<p class="legenda">Esquerda: kits agrupados por situação. Direita: retirada parcial (1 ou 2 kits prontos). Excluir continua no menu ⋯ de cada kit, igual ao layout 1.</p>
+
+<!-- ================= LAYOUT 3 ================= -->
+<h2><span class="rot">3</span>Pela semana: agenda com limite e prazo</h2>
+<p class="sub">Uma faixa com os dias, cada um com a barra de vagas (15 por dia) e o prazo. Dia cheio fica vermelho; prazo vencido fica cinza. Ajuda a decidir em que dia encaixar.</p>
+<div class="par">
+<div class="tel"><div class="topo"><i>‹</i>Listagens</div><div class="corpo">
+ <div class="dias">
+  <div class="dia fechado">Seg<b>09</b><div class="b"><i style="width:60%"></i></div><span style="font-size:9px">prazo fechou</span></div>
+  <div class="dia fechado">Ter<b>10</b><div class="b"><i style="width:100%"></i></div><span style="font-size:9px">prazo fechou</span></div>
+  <div class="dia">Qua<b>11</b><div class="b c"><i style="width:100%"></i></div><span style="font-size:9px;color:#B91C1C">cheia 15/15</span></div>
+  <div class="dia on">Qui<b>12</b><div class="b"><i style="width:47%"></i></div><span style="font-size:9px">7/15</span></div>
+  <div class="dia">Sex<b>13</b><div class="b"><i style="width:7%"></i></div><span style="font-size:9px">1/15</span></div>
+ </div>
+ <div class="aviso az">Quinta 12/11: incluir até terça 10/11, 07:30.</div>
+ <div class="card">
+  <div class="linha2"><b>Quinta 12/11 · Curitiba</b><span class="t12">10:00 e 15:00</span></div>
+  <div class="lin"><div class="n">Ana Paula S.<small>10:00</small></div><span class="pill fila">Na fila</span></div>
+  <div class="lin"><div class="n">Beatriz L.<small>10:00</small></div><span class="pill mont">Montando</span></div>
+  <div class="lin"><div class="n">Carla M.<small>10:00</small></div><span class="pill feito">Montado</span></div>
+  <div class="lin"><div class="n">Daniela R.<small>15:00</small></div><span class="pill pronto">Pronto</span></div>
+  <div class="t12" style="padding-top:6px">+ 3 revendedoras</div>
+ </div>
+ <div class="btn p">+ Adicionar da minha carteira</div>
+ <div class="btn s">Nova listagem</div>
+</div></div>
+
+<div class="tel"><div class="topo"><i>‹</i>Nova listagem</div><div class="corpo">
+ <p class="nome">Dia</p>
+ <div class="dias">
+  <div class="dia fechado">Seg<b>09</b></div><div class="dia fechado">Ter<b>10</b></div><div class="dia fechado">Qua<b>11</b></div><div class="dia on">Qui<b>12</b></div><div class="dia">Sex<b>13</b></div>
+ </div>
+ <div class="t12">Dias em cinza: prazo vencido. Você já tem listagem na quarta (cheia) e na quinta.</div>
+ <p class="nome">Horários de retirada (até 2)</p>
+ <div class="chips" style="flex-wrap:wrap"><span class="chip on">10:00</span><span class="chip on">15:00</span><span class="chip">09:00</span><span class="chip">11:00</span><span class="chip">14:00</span><span class="chip">16:00</span></div>
+ <p class="nome">Destino</p>
+ <div class="card">Curitiba <span class="t12">(limite de 15 kits no dia)</span></div>
+ <div class="aviso am">Você já tem uma listagem na quinta 12/11. Cada representante tem uma listagem por dia. Para mudar o horário, edite a que existe.</div>
+ <div class="btn cinza">Criar listagem</div>
+ <div class="btn s">Editar a listagem de quinta</div>
+</div></div>
+</div>
+<p class="legenda">Esquerda: faixa da semana com vagas e prazo. Direita: criar listagem. Como ela já tem listagem na quinta, o botão trava e oferece editar.</p>
+
+<!-- ================= LAYOUT 4 ================= -->
+<h2><span class="rot">4</span>Pela carteira: revendedora primeiro, encaixar na listagem</h2>
+<p class="sub">Caminho 2 em destaque. A representante parte da lista das suas revendedoras (ordenada por quem vence primeiro) e toca em Encaixar. A listagem é escolhida na hora, e o sistema mostra o que está travado e por quê.</p>
+<div class="par">
+<div class="tel"><div class="topo"><i>‹</i>Minhas revendedoras</div><div class="corpo">
+ <div class="chips"><span class="chip on">Vencem logo</span><span class="chip">Sem listagem</span><span class="chip">Já agendadas</span></div>
+ <div class="card">
+  <div class="lin"><div class="n">Ana Paula S.<small>Acerto em 12/11</small></div><span class="pill pronto">Qui 12/11</span></div>
+  <div class="lin"><div class="n">Marcia B.<small>Acerto em 12/11</small></div><span class="pill ruim">Encaixar</span></div>
+  <div class="lin"><div class="n">Patrícia G.<small>Acerto em 13/11</small></div><span class="pill ruim">Encaixar</span></div>
+  <div class="lin"><div class="n">Rita C.<small>Acerto atrasado 3 dias</small></div><span class="pill ruim">Encaixar</span></div>
+  <div class="lin"><div class="n">Sandra V.<small>Acerto em 16/11</small></div><span class="pill fila">Encaixar</span></div>
+  <div class="lin"><div class="n">Tatiane O.<small>Acerto em 18/11</small></div><span class="pill fila">Encaixar</span></div>
+ </div>
+ <div class="t12" style="text-align:center">Vermelho: acerto vence nos próximos dias e ainda não está em listagem.</div>
+</div></div>
+
+<div class="tel"><div class="topo"><i>‹</i>Minhas revendedoras</div><div class="corpo" style="opacity:.55">
+ <div class="card"><div class="lin"><div class="n">Marcia B.<small>Acerto em 12/11</small></div></div></div>
+</div>
+<div class="folha"><div class="in">
+ <p class="nome">Encaixar Marcia B. em uma listagem</p>
+ <div class="card ouro" style="border:2px solid var(--ouro)"><div class="linha2"><b>Qui 12/11 · Curitiba</b><span class="pill pronto">7/15</span></div><div class="t12">Retirada 10:00 e 15:00 · incluir até 10/11 07:30</div></div>
+ <div class="card"><div class="linha2"><b>Sex 13/11 · Curitiba</b><span class="pill pronto">1/15</span></div><div class="t12">Incluir até 11/11 07:30</div></div>
+ <div class="card" style="background:#F3F4F6;color:#9CA3AF"><div class="linha2"><b>Qua 11/11 · Curitiba</b><span class="pill ruim">Cheia</span></div><div class="t12">15 de 15 kits</div></div>
+ <div class="btn s">+ Nova listagem</div>
+ <p class="nome">Tipo do kit</p>
+ <div class="chips" style="flex-wrap:wrap"><span class="chip on">Acerto + kit</span><span class="chip">Reposição</span><span class="chip">Kit novo</span></div>
+ <div class="btn p">Colocar na listagem de quinta</div>
+</div></div></div>
+</div>
+<p class="legenda">Esquerda: carteira com o que vence primeiro. Direita: escolher a listagem. Se a revendedora já estiver em outra listagem no mesmo dia, o sistema mostra "Ela já está na listagem de quinta (10:00)" e não deixa encaixar de novo.</p>
+
+<div class="caixa" style="margin-top:34px">
+<b style="color:#F5D68A">Como escolher</b>
+<table class="reg">
+<tr><td>Layout 1</td><td>O mais parecido com hoje. Menos novidade, mais fácil de aprender.</td></tr>
+<tr><td>Layout 2</td><td>Melhor para acompanhar o kit e retirar 1 ou 2 prontos.</td></tr>
+<tr><td>Layout 3</td><td>Melhor para planejar a semana, com limite e prazo à vista.</td></tr>
+<tr><td>Layout 4</td><td>Melhor para quem pensa pela revendedora (caminho 2).</td></tr>
+<tr><td>Dá para juntar</td><td>Por exemplo: layout 3 no alto (semana) + layout 2 embaixo (situação) + botão Encaixar do layout 4 dentro da ficha da revendedora.</td></tr>
+</table>
+</div>
+</div>
+</body>
+</html>

@@ -85,7 +85,17 @@ var SIM_REVS = [
   {rev:SIM_REV_APP, tipoKit:"acerto_kit", vendas:[1500], cod:"900102", fone:"41999900102"},
   {rev:"Patricia Gomes Ribeiro", tipoKit:"acerto_kit", vendas:[2300], cod:"900103", fone:"41999900103"},
   {rev:"Renata Alves Costa", tipoKit:"reposicao", vendas:[1800], cod:"900104", fone:"41999900104"},
-  {rev:"Beatriz Nogueira Dias", tipoKit:"saiu", vendas:[1100], cod:"900105", fone:"41999900105"}];
+  {rev:"Beatriz Nogueira Dias", tipoKit:"saiu", vendas:[1100], cod:"900105", fone:"41999900105"},
+  // 09/11/2026 (Marcus): listagem de exemplo cheia, 13 revendedoras entre kit novo, reposição e acerto + kit, para ver a tela de Listagens com conteúdo
+  {rev:"Larissa Moreira Campos", tipoKit:"kit_novo", vendas:[], cod:"900106", fone:"41999900106", st:"montando", valor:8000},
+  {rev:"Fernanda Prado Lima", tipoKit:"kit_novo", vendas:[], cod:"900107", fone:"41999900107", st:"montado", valor:7000},
+  {rev:"Juliana Rocha Teixeira", tipoKit:"kit_novo", vendas:[], cod:"900108", fone:"41999900108", st:"bipado", valor:7000},
+  {rev:"Mariana Duarte Pinto", tipoKit:"kit_novo", vendas:[], cod:"900109", fone:"41999900109", st:"pendente", valor:7000},
+  {rev:"Tatiane Borges Neves", tipoKit:"reposicao", vendas:[2100], cod:"900110", fone:"41999900110", st:"montando", valor:10000},
+  {rev:"Cristiane Lopes Vieira", tipoKit:"reposicao", vendas:[1650], cod:"900111", fone:"41999900111", st:"bipado", valor:8000},
+  {rev:"Aline Castro Ribeiro", tipoKit:"reposicao", vendas:[2800], cod:"900112", fone:"41999900112", st:"montado", valor:12000},
+  {rev:"Gabriela Menezes Souza", tipoKit:"acerto_kit", vendas:[3200], cod:"900113", fone:"41999900113", st:"bipado", valor:15000},
+  {rev:"Vanessa Lima Cardoso", tipoKit:"acerto_kit", vendas:[1250], cod:"900114", fone:"41999900114", st:"bipando", valor:6000}];
 function ColsRepRev(p){
   var cx0 = use(), s = cx0.state;
   var ksReais = s.kits.filter(function(k){ return k.status==="retirado" || k.status==="bipado"; });
@@ -110,13 +120,15 @@ function ColsRepRev(p){
   var faltaSim = lSim ? SIM_REVS.find(function(x){ return !kitsSim.some(function(k){ return k.rev===x.rev; }); }) : null;
   var difSim = lSim ? kitsSim.find(function(k){ var x = SIM_REVS.find(function(y){ return y.rev===k.rev; }); return x && ((k.vendas||[])[0]||0)!==(x.vendas[0]||0); }) : null;   // o vendido da simulação volta ao combinado
   useEffect(function(){ if(difSim) cx0.dispatch({type:"KIT_VENDAS", id:difSim.id, vendas:SIM_REVS.find(function(y){ return y.rev===difSim.rev; }).vendas}); }, [difSim && difSim.id, difSim && (difSim.vendas||[])[0]]);
+  var stSim = lSim ? kitsSim.find(function(k){ var x = SIM_REVS.find(function(y){ return y.rev===k.rev; }); return x && x.st && k.status!==x.st; }) : null;   // listagem cheia de exemplo: situações variadas (09/11/2026)
+  useEffect(function(){ if(stSim){ var x = SIM_REVS.find(function(y){ return y.rev===stSim.rev; }); cx0.dispatch({type:"SIM_STATUS_KIT", rev:stSim.rev, lid:stSim.lid, status:x.st, valor:x.valor}); } }, [stSim && stSim.id, stSim && stSim.status]);
   useEffect(function(){ if(!lSim || !faltaSim) return; cx0.dispatch({type:"ADD_KIT", lid:lSim.id, rev:faltaSim.rev, bairro:"Curitiba", vendas:faltaSim.vendas, cod:faltaSim.cod, fone:faltaSim.fone, tipoKit:faltaSim.tipoKit, porApp:true, hora:null}); }, [lSim && lSim.id, faltaSim && faltaSim.rev, s.kits.length]);
   var sorelly = rep.logado && rep.id==="SORELLY";
   var ks = sorelly ? ksSorelly : rep.logado ? ksReais.filter(function(k){ return listagemDe(s,k).rep===lAtual.rep; }) : ksReais;
   if(rep.sim && lSim) ks = ks.concat(kitsSim.filter(function(k){ return !ks.some(function(x){ return x.id===k.id; }); }));   // simulação: todos os kits da Anamaria aparecem para escolher a revendedora
   var kAtual = ks.find(function(x){ return x.id===rev.id; }) || (rep.sim && ks.find(function(x){ return x.rev===SIM_REV_APP; })) || ks[0];
   var gruposRev = ks.length ? [{itens:ks.map(function(k){ return {id:k.id, nome:k.rev, sub:k.interno ? "Sorelly · atendimento interno" : listagemDe(s,k).rep+" · "+STATUS_LB[k.status]}; })}] : [];
-  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"KIT_NOVO_DEMO", nome:"Kit novo", cod:"exemplo"}, {id:"REPOSICAO_DEMO", nome:"Reposição", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
+  var gruposRep = [{itens:[{id:"ACERTO_COMPLETO", nome:"Acerto completo", cod:"exemplo"}, {id:"KIT_NOVO_DEMO", nome:"Kit novo", cod:"exemplo"}, {id:"REPOSICAO_DEMO", nome:"Reposição", cod:"exemplo"}, {id:"LISTAGEM_DEMO", nome:"Listagem cheia", cod:"exemplo"}, {id:"SORELLY", nome:"Sorelly", cod:"02"}].concat(repsReais.map(function(r){ return {id:"R:"+r.nome, nome:titulo(r.nome), cod:r.codigo, rep:r.nome}; }))}];
   var entradaRev = e(Entrada,{titulo:"App da revendedora", onEntrar:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }, onTeste:function(){ setRev({logado:true, id:kAtual && kAtual.id}); }});
   var entradaRep = e(Entrada,{altura:722, titulo:"App da representante", onEntrar:function(){ setRep({logado:true, id:lAtual.id}); }, onTeste:function(){ setRep({logado:true, id:lAtual.id}); }});
   return e(React.Fragment,null,
@@ -127,8 +139,8 @@ function ColsRepRev(p){
       celular: rev.logado && kAtual ? e(AppRevendedora,{key:kAtual.id, k:kAtual}) : e(IPhone15,null, entradaRev)}),
     p.rep && e(Coluna,{key:"rep", f:p.f, ordem:0, cor:COR_CEL.rep, age:!!(p.age && p.age.rep), nome:"Representante", sub:"App para iOS ou Android", zoom:0.806,
       pessoa:rep.logado ? (sorelly ? "Sorelly" : titulo(lAtual.rep)) : null,
-      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.atalho ? rep.id : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
-        onEscolher:function(g, i){ if(i && (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO")) cx0.dispatch({type:"SIM_REINICIAR_KIT", rev:i.id==="KIT_NOVO_DEMO" ? "Camila Ferreira Lopes" : "Renata Alves Costa"}); setRep(!i ? {logado:false, id:null} : (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO") ? {logado:true, id:i.id, nome:SIM_REP, sim:true, atalho:i.id==="KIT_NOVO_DEMO" ? "kitnovo" : "reposicao", n:Date.now()} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? (function(){ try{ localStorage.setItem(CHAVE_REP_APP, i.rep); }catch(x){} return {logado:true, id:i.id, nome:i.rep}; })() : {logado:true, id:i.id}); }},
+      seletorProps:{rotulo:"Escolher representante", atual:rep.logado ? "Representante: "+(sorelly ? "Sorelly" : titulo(lAtual.rep)) : "Escolher representante", atualId:rep.logado ? (sorelly ? "SORELLY" : rep.demo ? "ACERTO_COMPLETO" : rep.listaDemo ? rep.id : rep.atalho ? rep.id : rep.nome ? "R:"+rep.nome : lAtual.id) : null, grupos:gruposRep,
+        onEscolher:function(g, i){ if(i && (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO")) cx0.dispatch({type:"SIM_REINICIAR_KIT", rev:i.id==="KIT_NOVO_DEMO" ? "Camila Ferreira Lopes" : "Renata Alves Costa"}); setRep(!i ? {logado:false, id:null} : i.id==="LISTAGEM_DEMO" ? {logado:true, id:i.id, nome:SIM_REP, sim:true, listaDemo:true, n:Date.now()} : (i.id==="KIT_NOVO_DEMO" || i.id==="REPOSICAO_DEMO") ? {logado:true, id:i.id, nome:SIM_REP, sim:true, atalho:i.id==="KIT_NOVO_DEMO" ? "kitnovo" : "reposicao", n:Date.now()} : i.id==="ACERTO_COMPLETO" ? {logado:true, id:i.id, nome:"Nagela", demo:true, n:Date.now()} : /^R:/.test(i.id) ? (function(){ try{ localStorage.setItem(CHAVE_REP_APP, i.rep); }catch(x){} return {logado:true, id:i.id, nome:i.rep}; })() : {logado:true, id:i.id}); }},
       celular: rep.logado ? (sorelly ? e(IPhone17ProMax,null, e(AppSorelly,{s:s})) : lAtual.id ? e(AppRepresentante,{key:lAtual.id, l:lAtual, abrir:rep.demo && demoKit ? {rev:DEMO_REV, n:rep.n, cenario:CENARIO_COMPLETO} : rep.atalho ? {rev:rep.atalho==="kitnovo" ? "Camila Ferreira Lopes" : "Renata Alves Costa", n:rep.n, destino:rep.atalho} : null}) : e(IPhone17ProMax,null, e("p",{className:"p-6 text-center text-[13px]"}, "Escolha uma representante no seletor acima do celular."))) : e(IPhone17ProMax,null, entradaRep)}));
 }
 

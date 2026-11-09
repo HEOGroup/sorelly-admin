@@ -6,14 +6,15 @@ import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
-import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
-import { BIPADORAS, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
+import { BIPADORAS, DIRETORIA, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
+import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
@@ -521,6 +522,10 @@ function reducer(s, a){
     case "ADD_KIT": {
       var l = s.listagens.find(function(x){return x.id===a.lid;}); if(!l || l.fechada) return s;
       if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+l.horario+" j\u00e1 est\u00e1 com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(l)+" revendedoras: escolha outra listagem", "alerta");
+      // 09/11/2026 (Marcus e Deysiane): a representante n\u00e3o inclui depois do prazo (2 dias \u00fateis antes, at\u00e9 07:30; s\u00f3 a supervis\u00e3o libera) e a revendedora s\u00f3 entra em uma listagem por dia
+      if(a.porRep && passouPrazo(l, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(l.data)+" ("+prazoDaListagem(l, s.cfg).texto+"). S\u00f3 a Deysiane libera.", "alerta");
+      var jaNoDia = kitDaRevNoDia(s, a.rev, l.data, null);
+      if(jaNoDia && (a.porRep || jaNoDia.lid===a.lid)) return com(s, {}, a.rev+" j\u00e1 est\u00e1 em uma listagem de "+tituloDoDia(l.data)+". Cada revendedora entra em uma listagem por dia.", "alerta");
       var nk = kit(a.lid, a.rev, a.bairro||"\u2014", 5000, a.prio, {sem:true});
       nk.id = "U"+agora; nk.vendas = a.vendas||[]; nk.ultimaHora = true; nk.atrasado = !!a.atrasado;
       nk.ordem = s.kits.filter(function(x){return x.lid===a.lid;}).length + 1;
@@ -554,10 +559,24 @@ function reducer(s, a){
     case "CRIAR_LISTAGEM": {
       var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
         data:a.data||isoDia(new Date(agora)), fechada:false, retiradas:[]};
-      // 05/11/2026: não cria no passado nem repete (mesmo dia, horário e destino da mesma representante); dois toques seguidos não criam duas
+      if(a.horario2 && a.horario2!==novaL.horario) novaL.horario2 = a.horario2;   // 09/11/2026: até 2 horários de retirada na mesma listagem
+      // 05/11/2026: não cria no passado; dois toques seguidos não criam duas
       if(novaL.data<isoDia(new Date(agora))) return com(s, {}, "O dia da listagem não pode ser no passado", "alerta");
-      if(s.listagens.some(function(x){ return x.rep===novaL.rep && !x.fechada && x.data===novaL.data && x.horario===novaL.horario && x.destino===novaL.destino; })) return com(s, {}, "Já existe uma listagem de "+novaL.rep+" neste dia, horário e destino", "alerta");
-      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+novaL.horario+" criada para "+novaL.rep);
+      // 09/11/2026 (Marcus): UMA listagem por representante por dia; passou do prazo, só a supervisão cria
+      if(listagensDoDia(s, novaL.rep, novaL.data).length>0) return com(s, {}, "Você já tem uma listagem em "+tituloDoDia(novaL.data)+". Cada representante tem uma listagem por dia, com até 2 horários.", "alerta");
+      if(a.porRep && passouPrazo(novaL, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(novaL.data)+" ("+prazoDaListagem(novaL, s.cfg).texto+"). Só a Deysiane libera.", "alerta");
+      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+tituloDoDia(novaL.data)+" criada para "+novaL.rep);
+    }
+    // 09/11/2026 (Marcus e Deysiane): a representante exclui a revendedora da listagem. Ela diz quem desmarcou e o motivo; a Deysiane é avisada sempre
+    // e a montadora só se o kit já estava sendo montado. Bipado volta ao estoque pelo sistema antes; montado sem bipar vai direto para outros kits.
+    case "REMOVER_KIT": {
+      var kX = kitDe(s, a.id); if(!kX || kX.status==="retirado") return s;
+      var lX = s.listagens.find(function(x){ return x.id===kX.lid; }) || {}, acX = acaoDoKitExcluido(kX.status), quemX = a.quem==="revendedora" ? "revendedora" : "representante";
+      var regX = {id:"EX"+agora, kitId:kX.id, rev:kX.rev, lid:kX.lid, rep:lX.rep||"", data:lX.data||null, horario:lX.horario||"", status:kX.status, tipoKit:kX.tipoKit||"", quem:quemX, motivo:a.motivo||"", por:a.por||"", em:agora, acao:acX.k, multa:quemX==="revendedora" ? "a_definir" : null, montId:kX.montId||null};
+      var txtX = (lX.rep||"A representante").split(" ")[0]+" excluiu "+kX.rev+" de "+(lX.data ? tituloDoDia(lX.data) : "uma listagem")+" ("+(quemX==="revendedora" ? "a revendedora desmarcou" : "a representante desmarcou")+(a.motivo ? ": "+a.motivo : "")+"). "+acX.texto;
+      var alX = [{id:"AL"+agora, tipo:"listagem_excluida", chave:"listagem_excluida:"+kX.id, ref:kX.id, titulo:"Revendedora excluída da listagem", texto:txtX, para:destinosDe(s, "listagem_excluida"), aba:"painel", dados:null, cor:acX.k==="estoque" || acX.k==="montadora" ? "#DC2626" : "#D97706", ts:agora, lidoPor:[]}];
+      if(acX.k==="montadora" && kX.montId) alX.push({id:"AM"+agora, tipo:"listagem_excluida", chave:"listagem_excluida_mont:"+kX.id, ref:kX.id, titulo:"Kit cancelado: pare de montar", texto:kX.rev+": a representante excluiu este kit da listagem. "+acX.texto, para:[kX.montId], aba:"painel", dados:null, cor:"#DC2626", ts:agora, lidoPor:[]});
+      return com(s, {kits:s.kits.filter(function(x){ return x.id!==kX.id; }), kitsExcluidos:[regX].concat(s.kitsExcluidos||[]).slice(0,300), alertas:alX.concat(s.alertas||[]).slice(0,200)}, kX.rev+" saiu da listagem. A Deysiane foi avisada"+(acX.k==="montadora" ? " e a montadora também" : ""));
     }
     case "FECHAR_MES": {
       if(s.mesFechado) return s;
@@ -1171,6 +1190,11 @@ function reducer(s, a){
       var cbN = Object.assign({}, s.confBip||{}), anN = cbN[a.kitId]; if(!anN || !anN.fim) return s;
       cbN[a.kitId] = Object.assign({}, anN, {nota:String(a.nota||"").slice(0, 200), notaEm:agora});
       return com(s, {confBip:cbN}, "Peças que faltaram anotadas");
+    }
+    // simulação da aba Apps (09/11/2026, Marcus): dá a situação (montando, montado, pronto...) a um kit de exemplo da listagem cheia, só para ver a tela
+    case "SIM_STATUS_KIT": {
+      var kSS = s.kits.find(function(x){ return x.rev===a.rev && x.lid===a.lid; }); if(!kSS || kSS.status===a.status) return s;
+      return com(s, {kits:mapKit(s, kSS.id, function(){ return {status:a.status, valor:a.valor || kSS.valor || null}; })}, null);
     }
     case "SIM_REINICIAR_KIT": {   // atalhos Kit novo e Reposição da aba Apps: o kit de exemplo é refeito do zero toda vez (nada depende de teste guardado antes)
       var idsRK = s.kits.filter(function(x){ return x.rev===a.rev; }).map(function(x){ return x.id; });

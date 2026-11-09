@@ -304,3 +304,15 @@ Metal: pulseira quase toda prata (4 ouro e 10 prata); colar 17 ouro e 22 prata; 
 - **Dá:** totais da conta (clientes, pedidos, valor vendido, peças vendidas, último pedido), vendas por mês com valor, peças e ticket por peça (`GET /admin/resellers/:id/monthly-history`), e os 10 últimos pedidos com data, status, forma de pagamento e nome da cliente (`GET /admin/resellers/:id`).
 - **Não dá:** a lista das PEÇAS de cada pedido (tipo, metal, tamanho, preço). Essas rotas só abrem com o login da própria revendedora (401 com a chave de administrador; `/admin/resellers/:id/sales` e `/items` não existem). Para o Kit perfeito ler peça por peça do app, o Leonardo precisa criar uma rota de leitura de administrador.
 - **Conferência (Elisiane 000696):** app = 56 peças e R$ 4.560 no total; DevMaster = 56 peças e R$ 4.744 nas 3 últimas vendas. Bate. Por mês não bate (o app conta a data do pedido da cliente; a DevMaster conta a data do acerto): out. R$ 1.604 x R$ 1.499 · set. R$ 920 x R$ 1.972 · ago. R$ 394 x R$ 1.344. Cíntia (001655): app 204 peças e R$ 17.107; DevMaster 3 últimas vendas R$ 15.217.
+
+## Mais 3 revendedoras que gostaram do kit (09/11/2026): Paula, Giovana e Juliana
+Marcus mandou os nomes (Paula Daniele de Faria 008861, Giovana da Silva Pressel 009825, Juliana Dias Lopes 009028). Mesma conta do caso Elisiane: média oficial -> `tabelaKit` (alto) -> `pecasKit` -> fator 0,5 a 1,5. A linha de R$ 17.000 não existe em `pecasKit`: usei a média das linhas de R$ 16 mil e R$ 18 mil.
+| | Paula | Giovana | Juliana |
+|---|---|---|---|
+| Vendas (3 meses) | R$ 5.972 · 4.234 · 4.816 | R$ 1.437 · 1.383 · 2.437 | R$ 2.946 · 1.256 · 1.292 |
+| Média (sem brinde) | R$ 4.903 | R$ 1.652 | R$ 1.736 |
+| Kit pela tabela | R$ 17.000 | R$ 12.000 | R$ 12.000 |
+| Kit enviado agora | R$ 15.516 | R$ 11.961 | R$ 12.046 |
+| Giro dos kits anteriores (tipos mais altos) | conjunto 57%, infantil 55%, brinco 29% | conjunto 33%, infantil 30%, brinco 18% | masculino 45%, choker 33%, infantil 33% |
+Proposta (peças por tipo, tabela -> proposta): Paula: colar 34->41, pulseira 34->17, conjunto 6->9, brinco 75->87, anel 28->18, infantil 7->11, masculino 7->10, tornozeleira 4->2. Giovana: colar 24->25, pulseira 24->17, conjunto 4->4, brinco 54->68, anel 20->12, infantil 4->6, masculino 5->2, tornozeleira 3->4. Juliana: colar 24->39, pulseira 24->23, conjunto 4->2, brinco 54->45, anel 20->12, infantil 4->7, masculino 5->8, tornozeleira 3->2.
+**Padrões das 6 (Elisiane, Franciane, Cíntia, Paula, Giovana, Juliana):** em todas a tabela manda pulseira e anel a mais do que elas vendem (pulseira cai de 24 para 11-23; anel de 20 para 12-18) e brinco e colar a menos. Gostar do kit NÃO quer dizer giro alto: a Giovana gostou e vende só 8% a 18% do que recebe nos tipos principais. Preferências da Giovana: não vende bracelete nem pingente; pediu piercing, colar verde, anel ponta de dedo e anel tamanho 25 na observação; conjunto só prata. Juliana: letras B, D, J em ouro e L nos dois; masculino só prata. Paula: letras A, T (os dois), F (prata), H (prata), R (ouro).

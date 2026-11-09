@@ -3,6 +3,17 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.102", data:"2026-11-09", titulo:"Listagens da representante: título legível e listagem de exemplo cheia", itens:[
+  {tipo:"correção", area:"App da representante › Listagens", txt:"O nome do dia no cartão escuro de resumo ficava escuro sobre fundo escuro. Agora é branco, como na Calculadora de acertos (a Excluir também)."},
+  {tipo:"melhoria", area:"App da representante › Listagens", txt:"A Lista agora mostra os próximos 14 dias (sem domingo), em aberto, mesmo sem listagem: cada dia diz até quando dá para criar (2 dias úteis antes, 07:30) ou que o prazo encerrou. Tocar num dia sem listagem abre a tela do dia com o botão Criar listagem neste dia."},
+  {tipo:"melhoria", area:"App da representante › Listagens", txt:"Cada revendedora na tela do dia mostra o valor de venda dela (R$ com centavos, ou Sem venda) junto da situação do kit. O valor do kit a representante continua sem ver."},
+  {tipo:"novo", area:"Apps", txt:"Nova opção no seletor de representante: Listagem cheia (exemplo), com 14 revendedoras entre kit novo, reposição e acerto + kit, com situações variadas (Na fila, Montando, Montado, Bipando e Pronto), para ver a tela de Listagens com conteúdo."},
+ ]},
+ {v:"0.18.101", data:"2026-11-09", titulo:"Listagens da representante: versão 1 (dia, calendário, prazo e exclusão)", itens:[
+  {tipo:"novo", area:"App da representante › Listagens", txt:"Lista (um bloco por dia) e Calendário (mês inteiro, com botão para trocar). O nome do dia aparece por extenso (Quinta-feira, 12/11). Ao tocar no dia abre a tela do dia, com o resumo, as revendedoras e o menu Ações da listagem. A seta da barra preta volta uma tela por vez. A representante não vê valor do kit."},
+  {tipo:"novo", area:"App da representante › Listagens", txt:"Excluir uma revendedora da listagem, com menus: quem desmarcou (a revendedora ou a representante) e o motivo. A Deysiane é avisada sempre (Tecnologia › Avisos, tipo novo); a montadora só se o kit já estava sendo montado. O aviso diz o que fazer com o kit: cancelar, distribuir as peças ou devolver ao estoque."},
+  {tipo:"melhoria", area:"Listagens", txt:"Regras novas no sistema: uma listagem por representante por dia, com até 2 horários de retirada; uma revendedora só entra em uma listagem por dia; a representante não inclui depois do prazo (2 dias úteis antes da retirada, até 07:30; só a Deysiane libera). Nova listagem agora só com menus suspensos, e os dias sem prazo aparecem apagados."},
+ ]},
  {v:"0.18.100", data:"2026-11-09", titulo:"Prestadores não ficam mais pendentes de aprovação do teto", itens:[
   {tipo:"correção", area:"Pagamentos a fornecedores → Resumo e Limite", txt:"Pedidos de prestador de serviço, sócio, Casa e Mídia ficam fora do teto mensal e nunca esperam aprovação. Pedidos criados antes dessa regra (Higor Segurança, Lucas Castilho, Priscila, Madeira Cor) ainda estavam marcados como pendentes e sumiam do Resumo; a marca antiga agora é ignorada (função pendenteReal) e os 5 pedidos foram liberados no banco. Os pedidos de fornecedores (bruto, banho) continuam esperando aprovação quando passam do teto."}
  ]},
