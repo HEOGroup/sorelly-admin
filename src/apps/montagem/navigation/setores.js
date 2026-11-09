@@ -13,6 +13,7 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
+  Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}),   // 1ª palavra do menu do Financeiro, antes de Pagamentos (Marcus, 09/11/2026)
   {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Regras e contas","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
   M("Resultado do mês","resultado"),   // visão-mãe (Marcus, 27/10/2026): receber × pagar, entrou de verdade; ver docs/negocio/RESULTADO-DO-MES.md
   M("Atividades","finativ"),   // lista do que fica para fazer depois (Marcus, 03/11/2026): palavra direta logo no começo, para não ficar escondida no fim do menu
@@ -34,7 +35,6 @@ var MENU_FINANCEIRO = [
     {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
     M("Link de pagamento","linkrel")]},
   {nome:"Fiscal", itens:[M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")]},   // Fiscal dentro do Financeiro (23/10/2026, pedido do Marcus; CNPJs entrou aqui em 28/10/2026 — saiu de setor próprio)
-  Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}),   // o quadro que o Lucas mandava no grupo dos sócios (Marcus, 09/11/2026)
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"})   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
 ];

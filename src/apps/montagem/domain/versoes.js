@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.98", data:"2026-11-09", titulo:"Resumo do grupo: primeira palavra do menu do Financeiro", itens:[
+  {tipo:"melhoria", area:"Financeiro → menu", txt:"Resumo do grupo passou para o começo do menu do Financeiro, antes de Pagamentos, para ficar fácil de achar."}
+ ]},
  {v:"0.18.63", data:"2026-11-09", titulo:"Agendamento: aba Expositores", itens:[
   {tipo:"novo", area:"Agendamento", txt:"O setor Agendamento ganhou a aba Expositores no menu, para dar baixa quando o expositor volta (devolução). É a mesma tela do setor Encomendas, com os mesmos dados. A liberação vale no menu, em Acessos e no servidor."}
  ]},
