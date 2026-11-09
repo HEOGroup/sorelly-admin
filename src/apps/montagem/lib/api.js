@@ -13,7 +13,7 @@ function guardaToken(t){ try { if(t) localStorage.setItem(CHAVE_TOKEN, t); else 
 
 // metodo: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; devolve o JSON ou joga Error com a mensagem do servidor
 async function chamar(metodo, caminho, corpo){
-  var h = {"content-type":"application/json"}; if(token()) h.authorization = "Bearer "+token();
+  var h = {"content-type":"application/json", "x-sorelly-build":"2026-11-09"}; if(token()) h.authorization = "Bearer "+token();   // x-sorelly-build: o servidor reconhece a tela nova e protege dados de telas antigas ainda abertas (ver app/api/estado/[modulo]/route.js)
   var r;
   try { r = await fetch(base()+caminho, {method:metodo, headers:h, body:corpo!==undefined ? JSON.stringify(corpo) : undefined}); }
   catch(x){ throw new Error("Sem conexão com o servidor."); }

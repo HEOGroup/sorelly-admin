@@ -58,6 +58,17 @@ export const PUT = rota(async (req, { eu, params }) => {
     const ja = await consulta("select 1 from sorelly.estado_modulo where modulo = $1", [modulo]);
     if (!ja.rowCount) return erro("Este módulo ainda não recebeu a carga inicial. Peça à Diretoria.", 403);
   }
+  // GUARDA TEMPORÁRIA (09/11/2026, Cadastro de peças): uma tela ANTIGA que ficou aberta (sem o cabeçalho x-sorelly-build) ainda roda a correção velha de 03/11 a cada atualização e devolve para "Banho"
+  // os pedidos que a Rayssa mudou para "Chegou no banho" (a marca do erro é o statusEm igual à data de chegada). Aqui o servidor desfaz só isso. Pode sair quando todas as telas forem atualizadas (uns dias).
+  if (modulo === "cpc" && !req.headers.get("x-sorelly-build") && Array.isArray(b.chaves.pedidos)) {
+    const at = await consulta("select conteudo->'pedidos' as p from sorelly.estado_modulo where modulo = 'cpc'");
+    const velhos = {};
+    ((at.rows[0] && at.rows[0].p) || []).forEach((p) => { velhos[p.id] = p; });
+    b.chaves.pedidos = b.chaves.pedidos.map((p) => {
+      const o = velhos[p.id];
+      return o && o.status === "Chegou no banho" && p.status === "Banho" && p.statusEm && p.statusEm === (p.chegPontual || p.chegEllos) ? { ...p, status: o.status, statusEm: o.statusEm } : p;
+    });
+  }
   const r = await consulta(
     `insert into sorelly.estado_modulo (modulo, conteudo, versao, atualizado_por) values ($1, $2::jsonb, 1, $3)
      on conflict (modulo) do update set conteudo = sorelly.estado_modulo.conteudo || excluded.conteudo, versao = sorelly.estado_modulo.versao + 1, atualizado_por = excluded.atualizado_por, atualizado_em = now()
