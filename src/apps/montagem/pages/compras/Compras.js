@@ -275,4 +275,4 @@ function AbaCompraVisao(props){
     ac.janelas());
 }
 
-export { AbaCompraQuadro, AbaCompraPlanilha, AbaCompraVisao };
+export { AbaCompraQuadro, AbaCompraPlanilha, AbaCompraVisao, COLUNAS, COL_DE, FINAIS, CartaoCompra, baseLista, mover, ultimoEm };   // as peças do quadro também servem ao Painel (PainelComprasEstoque.js)

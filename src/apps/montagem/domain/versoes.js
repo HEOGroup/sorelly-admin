@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.96", data:"2026-11-09", titulo:"Compras e estoque de material: painel com o estoque em cima e as compras embaixo (layout D1)", itens:[
+  {tipo:"novo", area:"Materiais e Estoque → Compras e estoque de material", txt:"Nova primeira aba, Compras e estoque, que abre por padrão. Em cima, lado a lado: a planilha do estoque com a coluna Contar (digita a quantidade e dá OK na própria linha; a data é hoje e quem contou é quem está logado) e a lista Precisa de compra (crítico e atenção, com o botão Solicitar que abre o pedido de compra de material). Embaixo, o quadro de Compras (aprovar, liberar, comprar, receber, entregar), sem a faixa de números. Uma barra de filtros só (busca, setor, itens, urgência), Ocultar vazias e filtro de categoria. Cada tabela mostra 12 linhas e o botão Ver mais. As outras abas continuam como estavam."}
+ ]},
  {v:"0.18.95", data:"2026-11-09", titulo:"Prestadores de serviço: fora do teto mensal e sempre no resumo", itens:[
   {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"Prestador de serviço (Castilho, Higor, Priscila e os outros) não passa mais pelo teto mensal de R$ 300.000,00 nem pelo limite por categoria. As negociações de prestador que estavam em Aguardando aprovação entram como lançadas."},
   {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"No resumo do mês, o que o prestador não pagou passa para o mês seguinte e a linha aparece em atraso, em vez de sumir quando o mês acaba."}

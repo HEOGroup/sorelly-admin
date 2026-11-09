@@ -3,17 +3,19 @@
 // Estoque Sorelly (estoque geral de peças, mês a mês) NÃO é esta tela: mora no Financeiro.
 import { AbaCompraPlanilha, AbaCompraQuadro, AbaCompraVisao } from "@/apps/montagem/pages/compras/Compras";
 import { AbaCompraCadastros, AbaCompraConfig, AbaEstoqueMaterial, AbaEstoqueMovimentos, AbaEstoqueSolicitacoes } from "@/apps/montagem/pages/compras/EstoqueCadastros";
+import { PainelComprasEstoque } from "@/apps/montagem/pages/compras/PainelComprasEstoque";
 import { Abas } from "@/apps/montagem/components/padrao";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS = [["quadro","Quadro de compras"], ["planilha","Planilha de compras"], ["visao","Visão geral"], ["estoque","Estoque de material"], ["movimentos","Movimentos"], ["solicitacoes","Pedidos de material"], ["cadastros","Cadastros"], ["config","Configurações"]];
+var ABAS = [["painel","Compras e estoque"], ["quadro","Quadro de compras"], ["planilha","Planilha de compras"], ["visao","Visão geral"], ["estoque","Estoque de material"], ["movimentos","Movimentos"], ["solicitacoes","Pedidos de material"], ["cadastros","Cadastros"], ["config","Configurações"]];
 var COR = "#3B82F6";   // cor do setor (azul, igual ao Financeiro)
 
 function AbaComprasEstoque(){
-  var st = useState({aba:"quadro", filtro:null}), v = st[0];
+  var st = useState({aba:"painel", filtro:null}), v = st[0];   // abre no Painel (estoque em cima, compras embaixo; layout D1 de 09/11/2026)
   var ir = function(aba, filtro){ st[1]({aba:aba, filtro:filtro||null}); };
-  var corpo = v.aba==="quadro" ? e(AbaCompraQuadro,{key:"q"+JSON.stringify(v.filtro), filtroInicial:v.filtro})
+  var corpo = v.aba==="painel" ? e(PainelComprasEstoque,null)
+    : v.aba==="quadro" ? e(AbaCompraQuadro,{key:"q"+JSON.stringify(v.filtro), filtroInicial:v.filtro})
     : v.aba==="planilha" ? e(AbaCompraPlanilha,null)
     : v.aba==="visao" ? e(AbaCompraVisao,{onIrQuadro:function(f){ ir("quadro", f); }})
     : v.aba==="estoque" ? e(AbaEstoqueMaterial,null)
