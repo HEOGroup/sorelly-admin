@@ -7,10 +7,11 @@
 import { Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { Botao, Segmentado, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
-import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, prazoPed, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
-import { Cel, Sl, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
+import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa } from "@/apps/montagem/domain/cadastro-pecas";
+import { Cel, useCpc } from "@/apps/montagem/pages/cadpecas/visualCad";
 import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { PageHead } from "@/apps/montagem/ui/page";
+import { abrirAnexo, enviarAnexo, lerArquivo } from "@/apps/montagem/lib/anexo";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var CAMPO = "h-8 rounded-md border border-border bg-card px-2.5 text-center text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-primary";
@@ -31,14 +32,14 @@ function hojeISO(){ return hojeSP(); }
 function numPct(t){ return String(t||"").trim()==="" ? 0 : parseFloat(String(t).replace(",", "."))/100 || 0; }
 function proxima(p){ var i = ETAPAS_PED.findIndex(function(k){ return k[0]===etapaPed(p); }); return i>=0 && i<ETAPAS_PED.length-1 ? ETAPAS_PED[i+1][0] : null; }
 function nomeEtapa(k){ return (ETAPAS_PED.find(function(x){ return x[0]===k; })||[])[1] || k; }
-function diasDesde(iso, hoje){ var a = Date.parse(String(iso||"")+"T12:00:00"), b = Date.parse(String(hoje)+"T12:00:00"); return isNaN(a) || isNaN(b) ? 0 : Math.max(0, Math.round((b-a)/86400000)); }
 function txtDias(n){ return n+(n===1 ? " dia" : " dias"); }
 function lerZoom(){ try { var z = parseInt(window.localStorage.getItem(CHAVE_ZOOM), 10); return NIVEIS_ZOOM.indexOf(z)>=0 ? z : 100; } catch(x){ return 100; } }
 function lerVazias(){ try { return window.localStorage.getItem(CHAVE_VAZIAS)!=="0"; } catch(x){ return true; } }
 function gravaVazias(v){ try { window.localStorage.setItem(CHAVE_VAZIAS, v ? "1" : "0"); } catch(x){} }
 function gravaZoom(z){ try { window.localStorage.setItem(CHAVE_ZOOM, String(z)); } catch(x){} }
 function plural(n, um, varios){ return n+" "+(n===1 ? um : varios); }
-function semRomaneio(p){ var et = etapaPed(p); return (et==="escolha" || et==="separacao") && !p.romaneio; }
+function semRomaneio(p){ return etapaPed(p)==="fechado" && !romaneioCompleto(p); }   // etapa 3 sem romaneio (número e arquivo): aguarda e não anda
+function faltaRomaneio(p){ return !p.romaneio ? "romaneio" : !(p.romaneioArq && p.romaneioArq.key) ? "arquivo" : ""; }   // o que falta, em uma palavra, em vermelho no bloco
 
 // zoom do quadro: menos, porcentagem (volta para 100%) e mais, igual ao dos apps
 function Zoom(p){
@@ -78,11 +79,10 @@ function Periodo(p){
 function AbaPedidos(){
   var x = useCpc(), c = x.c, cfg = c.config, meses = mesesCpc(c), pode = podeFazer(c, "pedidos_bruto", x.por, x.admin), hoje = hojeISO();
   var md = useState("quadro"), modo = md[0], fl = useState(Object.assign({per:{tipo:meses[0] ? "mes" : "todos", mes:meses[0] || "", de:"", ate:""}}, VAZIO_F)), f = fl[0], mo = useState(null), modal = mo[0];
-  var zs = useState(lerZoom), zoom = zs[0], ab = useState({}), aberto = ab[0], vzs = useState(lerVazias), mostraVazias = vzs[0];
+  var zs = useState(lerZoom), zoom = zs[0], vzs = useState(lerVazias), mostraVazias = vzs[0];
   var set = function(k, v){ var n = Object.assign({}, f); n[k] = v; fl[1](n); };
   var setZoom = function(z){ zs[1](z); gravaZoom(z); };
   var alternaVazias = function(){ var v = !mostraVazias; vzs[1](v); gravaVazias(v); };
-  var alterna = function(id){ var n = Object.assign({}, aberto); n[id] = !n[id]; ab[1](n); };
   var forns = c.pedidos.map(function(p){ return p.forn; }).filter(function(v, i, a){ return a.indexOf(v)===i; }).sort();
   var q = f.q.trim().toLowerCase();
   // o período (todo o período, um mês ou entre duas datas da compra) só vale para os pedidos FINALIZADOS; o que está em aberto aparece sempre, mesmo de 45 dias atrás (Marcus, 03/11/2026)
@@ -97,7 +97,8 @@ function AbaPedidos(){
 
   var avancar = function(p){
     var prox = proxima(p); if(!prox || !pode) return;
-    if(semRomaneio(p) && prox!=="separacao"){ ir({tipo:"romaneio", id:p.id, para:prox}); return; }
+    if(semRomaneio(p)){ ir({tipo:"romaneio", id:p.id, para:prox}); return; }
+    if(prox==="chegou" && !banhoCompleto(p)){ ir({tipo:"banho", id:p.id, para:prox}); return; }   // chegou na empresa: valor e fatura do banho são obrigatórios
     x.exec("ped_edit", {id:p.id, status:statusDaEtapa(p, prox)});
   };
 
@@ -122,7 +123,7 @@ function AbaPedidos(){
     if(!idx.length) return null;
     var it = vis.filter(function(p){ return fasePed(etapaPed(p))===fa[0]; }), tot = it.reduce(function(t, p){ return t+p.pagar; }, 0), at = it.filter(function(p){ return atrasadoPed(p, hoje, cfg); }).length, cor = COR_FASE[fa[0]];
     return e("div",{key:"f-"+fa[0], className:"relative h-9 overflow-hidden rounded-lg border", style:{gridRow:1, gridColumn:pos[idx[0]]+" / "+(pos[idx[idx.length-1]]+1), borderColor:cor, background:cor+"2E"}},
-      e("span",{className:"sticky left-0 right-0 flex h-full items-center justify-center gap-2 whitespace-nowrap text-[13px]"}, e("b",null, fa[1]), e("span",{className:"tabular-nums"}, plural(it.length, "pedido", "pedidos")+" · "+brl(tot)+(at ? " · "+plural(at, "atrasado", "atrasados") : ""))));
+      e("span",{className:"sticky left-0 right-0 flex h-full items-center justify-center gap-2 whitespace-nowrap text-[13px]"}, e("b",null, fa[1]), e("span",{className:"tabular-nums"}, plural(it.length, "pedido", "pedidos"))));
   });
   var colunas = ETAPAS_PED.map(function(k, i){
     if(!mostra[i]) return null;
@@ -130,11 +131,10 @@ function AbaPedidos(){
     return e("section",{key:k[0], className:"flex min-w-0 flex-col gap-1.5 rounded-xl bg-black/20 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:pos[i], borderTop:"3px solid "+cor}},
       e("div",{className:"flex flex-col items-center gap-0.5 border-b border-white/10 pb-1.5 text-center"},
         e("b",{className:"flex min-h-9 items-center justify-center gap-1.5 text-[13px] leading-tight"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px]", style:{border:"1px solid "+cor, color:cor}}, i+1), k[1]),
-        e("span",{className:"text-[11px]"}, plural(it.length, "pedido", "pedidos")+(z ? " · prazo "+z : "")+(at ? " · "+plural(at, "atrasado", "atrasados") : "")),
-        e("span",{className:"text-[11px] tabular-nums"}, brl(tot))),
-      it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, pode:pode, aberto:!!aberto[p.id], alterna:alterna, avancar:avancar, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); }));
+        e("span",{className:"text-[11px]"}, plural(it.length, "pedido", "pedidos"))),
+      it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); }));
   });
-  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 340px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
+  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 400px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
 
   var tot = vis.reduce(function(t, p){ t.valor += p.valor; t.pagar += p.pagar; t.pecas += pecasPedido(p); return t; }, {valor:0, pagar:0, pecas:0});
   var planilha = vis.length ? e(TabelaP,{minW:1280, cols:[{t:"Compra", w:76}, {t:"Fornecedor", w:130}, {t:"Romaneio", w:92}, {t:"Etapa", w:250}, {t:"Dias", w:56}, {t:"Peças", w:70}, {t:"Valor", w:116}, {t:"Desc.", w:66}, {t:"A pagar", w:116}, {t:"Banho", w:84}, {t:"", w:104}]},
@@ -158,6 +158,7 @@ function AbaPedidos(){
       !pode && e("p",{className:"text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
       modo==="planilha" ? planilha : quadro),
     modal && modal.tipo==="novo" && e(NovoPedido,{x:x, forns:forns, fechar:function(){ ir(null); }}),
+    modal && modal.tipo==="banho" && e(FaturaBanho,{x:x, id:modal.id, para:modal.para, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="romaneio" && e(Romaneio,{x:x, id:modal.id, para:modal.para, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="ficha" && e(Ficha,{x:x, id:modal.id, pode:pode, hoje:hoje, cfg:cfg, avancar:avancar, fechar:function(){ ir(null); }}));
 }
@@ -167,76 +168,144 @@ function prazoTxt(cfg, k){
   if(["nobanho", "fotos", "precos", "banho"].indexOf(k)>=0){ var a = prazoEtapa(cfg, "banho", {chegPontual:"x"}), b = prazoEtapa(cfg, "banho", {chegEllos:"x"}); if(!a && !b) return ""; return a===b ? a+" dias" : "Pontual "+(a || "—")+" · Ellos "+(b || "—")+" dias"; }
   var z = prazoEtapa(cfg, k); return z ? z+" dias" : "";
 }
-function Par(p){ return [e("span",{key:"r", className:"text-[11px] font-medium uppercase tracking-[.04em]"}, p.t), e("span",{key:"v", className:"text-right text-[13px] font-bold"}, p.v)]; }
-
-// cartão do quadro: fechado = fornecedor, valor e dias; clicando abre os detalhes e o botão de avançar
+// cartão do quadro: UMA linha (banho · fornecedor · romaneio, valor e dias). Clicar abre a ficha do pedido direto; o quadro fica na tela (Marcus, 04/11/2026).
 function Cartao(p){
-  var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje, p.cfg), prox = proxima(pd), b = banhoPed(pd), cor = COR_FASE[fasePed(et)];
-  var dGal = naGalvanica(pd) ? diasNaGalvanica(pd, p.hoje) : null, diasCartao = dGal!=null ? dGal : diasNaEtapa(pd, p.hoje), pz = prazoPed(p.cfg, pd);
-  var chegBanho = pd.chegPontual ? "Pontual "+dia(pd.chegPontual) : pd.chegEllos ? "Ellos "+dia(pd.chegEllos) : "—";
+  var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje, p.cfg), b = banhoPed(pd), cor = COR_FASE[fasePed(et)];
+  var dGal = naGalvanica(pd) ? diasNaGalvanica(pd, p.hoje) : null, diasCartao = dGal!=null ? dGal : diasNaEtapa(pd, p.hoje);
   return e("div",{"data-sem-arrastar":true, className:"rounded-lg bg-card text-left ring-1 "+(atr ? "ring-destructive" : "ring-white/10 hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+cor}},
-    e("button",{type:"button", "aria-expanded":p.aberto, onClick:function(){ p.alterna(pd.id); }, className:"flex min-h-8 w-full flex-wrap items-center justify-start gap-x-2 gap-y-0.5 px-2 py-1 pl-3 text-left text-[13px]"},
-      e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio ? " · "+pd.romaneio : ""),
-      e("span",{className:"whitespace-nowrap text-[11px] tabular-nums"}, brl(pd.pagar)),
-      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
-    p.aberto && e("div",{className:"flex flex-col gap-1.5 border-t border-white/10 py-1.5 pl-3 pr-2"},
-      e("div",{className:"grid grid-cols-[1fr_auto] items-center gap-x-2 gap-y-0.5 text-left"},
-        e(Par,{t:"Romaneio", v:pd.romaneio || "—"}), e(Par,{t:dGal!=null ? "Dias na galvânica" : "Na etapa", v:e("span",{className:atr ? "text-destructive" : ""}, et==="finalizado" ? "Concluído" : txtDias(diasCartao)+(pz ? " de "+pz : "")+(atr ? " · atrasado" : ""))}), e(Par,{t:"Comprado em", v:dia(pd.data)}), e(Par,{t:"Dias desde a compra", v:diasDesde(pd.data, p.hoje)}),
-        e(Par,{t:"Nota", v:pd.nota || "—"}), e(Par,{t:"Valor da lista", v:brl(pd.valor)}), e(Par,{t:"Desconto", v:Math.round(pd.desc*10000)/100+"%"}),
-        e(Par,{t:"Peças", v:pecasPedido(pd) || "—"}), e(Par,{t:"Banho", v:e("span",{style:b ? {color:COR_BANHO[b]} : undefined}, b || "a definir")}), e(Par,{t:"Chegada no banho", v:chegBanho}), e(Par,{t:"Fotos enviadas", v:pd.fotosEm ? dia(pd.fotosEm) : "—"}),
-        e(Par,{t:"Data que o banho conta", v:pd.contaBanho ? dia(pd.contaBanho) : "—"}), e(Par,{t:"Chegada na Sorelly", v:pd.chegSorelly ? dia(pd.chegSorelly) : "—"})),
-      e("div",{className:"flex flex-col gap-1.5"},
-        p.pode && prox && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.avancar(pd); }, className:"h-8 w-full rounded-md border border-primary bg-primary/20 text-[13px] font-semibold text-primary hover:bg-primary/30"}, semRomaneio(pd) && prox!=="separacao" ? "Romaneio ›" : "Concluir ›"),
-        e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.ficha(); }, className:"h-8 w-full rounded-md border border-border text-[13px] hover:bg-white/10"}, "Abrir ficha"))));
+    e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-nowrap items-center justify-between gap-2 whitespace-nowrap px-2 py-1 pl-3 text-left text-[13px]"},
+      e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio && e("span",{className:"text-[11px]"}, " · "+pd.romaneio), et==="fechado" && faltaRomaneio(pd) && e("span",{className:"text-[11px] font-semibold text-destructive", title:"Falta: "+faltaRomaneio(pd)+" (a etapa só anda com o número e o arquivo do romaneio)"}, " · "+faltaRomaneio(pd))),
+      e("span",{className:"whitespace-nowrap text-[11px] tabular-nums", title:pd.valorBanho>0 ? "Bruto "+brl(pd.pagar)+" + banho "+brl(pd.valorBanho) : "Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
+      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))));
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }
 function Coluna(p){ return e("section",{className:"flex min-w-0 flex-col gap-2 rounded-xl bg-black/20 p-3 ring-1 ring-white/10"}, e("h3",{className:"border-b border-white/10 pb-1 text-center text-[11px] font-medium uppercase tracking-[.07em]"}, p.t), p.children); }
 
-// ficha do pedido: dados (editáveis), etapas e ações
+// ficha do pedido (layout A escolhido pelo Marcus em 09/11/2026): três blocos lado a lado — Bruto (compra), Banho e Empresa — com as etapas em faixa embaixo e as ações no rodapé.
+// Cada bloco tem a cor da fase no fio de cima; o resumo em dinheiro fica no fim do bloco (bruto a pagar, banho e total do pedido = bruto + banho).
+function CampoF(p){   // rótulo em cima, campo de 32 px embaixo; grava ao sair do campo (ou Enter) só se mudou
+  var ini = p.v==null ? "" : String(p.v);
+  return e("label",{className:"min-w-0 "+(p.cls||"")}, e("span",{className:"mb-0.5 block text-[11px] font-medium uppercase tracking-[.05em]"}, p.t),
+    p.opcoes ? e("select",{value:p.v, disabled:p.off, "aria-label":p.rot || p.t, onChange:function(ev){ p.onSet(ev.target.value); }, className:CAMPO+" w-full cursor-pointer"}, p.opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))
+      : e("input",{key:ini, defaultValue:ini, type:p.data ? "date" : "text", readOnly:p.off, inputMode:p.data || p.texto ? undefined : "decimal", placeholder:p.dica, "aria-label":p.rot || p.t,
+        onBlur:function(ev){ if(!p.off && ev.target.value!==ini) p.onSet(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }, className:INP+(p.off ? " opacity-70" : "")}));
+}
+function BlocoF(p){
+  return e("section",{className:"flex min-w-0 flex-col gap-2.5 rounded-xl border border-white/10 bg-black/20 p-3", style:{borderTop:"3px solid "+p.cor}},
+    e("h3",{className:"flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.07em]"}, e("span",{className:"size-2.5 rounded-full", style:{background:p.cor}}), p.t, p.nota && e("span",{className:"ml-auto text-[11px] font-medium normal-case tracking-normal"}, p.nota)),
+    p.children,
+    p.resumo && e("div",{className:"mt-auto flex flex-col gap-1 rounded-lg bg-[#1c1d21] px-3 py-2"}, p.resumo));
+}
+function Resumo(p){ return e("div",{className:"flex items-center justify-between gap-3 text-[13px]"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), e("b",{className:"tabular-nums "+(p.grande ? "text-[18px]" : "")}, p.v)); }
+
 function Ficha(p){
   var x = p.x, pd = x.c.pedidos.find(function(o){ return o.id===p.id; }), ob = useState(null), pode = p.pode;
   if(!pd) return null;
-  var set = function(k){ return function(v){ x.exec("ped_edit", Object.assign({id:pd.id}, (function(){ var o = {}; o[k] = v; return o; })())); }; };
+  var set = function(k){ return function(v){ x.exec("ped_edit", Object.assign({id:pd.id}, (function(o){ o[k] = v; return o; })({}))); }; };
   var et = etapaPed(pd), i0 = ETAPAS_PED.findIndex(function(k){ return k[0]===et; }), prox = proxima(pd), gal = banhoPed(pd);
-  var dados = e(Coluna,{key:"d", t:"Dados"},
-    e(Linha,{t:"Compra"}, e(Cel,{v:pd.data, data:true, off:!pode, rot:"Data da compra", w:"w-32", onSet:set("data")})),
-    e(Linha,{t:"Fornecedor"}, e(Cel,{v:pd.forn, texto:true, off:!pode, rot:"Fornecedor", w:"w-32", onSet:set("forn")})),
-    e(Linha,{t:"Nota"}, e(Cel,{v:pd.nota, texto:true, off:!pode, rot:"Nota", w:"w-32", onSet:set("nota")})),
-    e(Linha,{t:"Romaneio"}, e(Cel,{v:pd.romaneio, texto:true, off:!pode, rot:"Romaneio", w:"w-32", onSet:set("romaneio")})),
-    e(Linha,{t:"Valor R$"}, e(Cel,{v:pd.valor, off:!pode, rot:"Valor do pedido", w:"w-32", onSet:set("valor")})),
-    e(Linha,{t:"Desconto %"}, e(Cel,{v:Math.round(pd.desc*10000)/100, off:!pode, rot:"Desconto em %", w:"w-32", onSet:set("desc")})),
-    e(Linha,{t:"A pagar"}, e("b",{className:"tabular-nums"}, brl(pd.pagar))),
-    e(Linha,{t:"Chegou na Pontual"}, e(Cel,{v:pd.chegPontual, data:true, off:!pode, rot:"Chegada na Pontual", w:"w-32", onSet:set("chegPontual")})),
-    e(Linha,{t:"Chegou na Ellos"}, e(Cel,{v:pd.chegEllos, data:true, off:!pode, rot:"Chegada na Ellos", w:"w-32", onSet:set("chegEllos")})),
-    e(Linha,{t:"Fotos enviadas"}, e(Cel,{v:pd.fotosEm, data:true, off:!pode, rot:"Fotos enviadas em", w:"w-32", onSet:set("fotosEm")})),
-    e(Linha,{t:"Verniz novo"}, e(Sl,{v:pd.vernizNovo ? "sim" : "nao", set:set("vernizNovo"), off:!pode, rot:"Tem verniz novo (+2 dias na Pontual)", opcoes:[["nao", "Não"], ["sim", "Sim (+2 dias)"]], className:"w-44 h-8!"})),
-    e(Linha,{t:"Data que "+(gal ? "a "+gal : "o banho")+" conta"}, e(Cel,{v:pd.contaBanho, data:true, off:!pode, rot:"Data que o banho conta", w:"w-32", onSet:set("contaBanho")})),
-    e(Linha,{t:"Chegou na Sorelly"}, e(Cel,{v:pd.chegSorelly, data:true, off:!pode, rot:"Chegada na Sorelly", w:"w-32", onSet:set("chegSorelly")})));
-  var linha = e(Coluna,{key:"e", t:"Etapas"}, ETAPAS_PED.map(function(k, i){ var feito = i<i0, atual = i===i0, atr = atual && atrasadoPed(pd, p.hoje, p.cfg), cor = COR_FASE[k[2]];
-    return e("div",{key:k[0], className:"flex items-start gap-2.5 py-0.5"},
-      e("span",{className:"mt-0.5 grid size-4 shrink-0 place-items-center rounded-full border-2", style:feito ? {borderColor:"#4ADE80", background:"#4ADE80"} : atual ? {borderColor:cor, background:cor} : {borderColor:cor, borderStyle:"dashed"}}),
-      e("div",{className:"min-w-0"}, e("b",{className:"block text-[13px]"}, k[1]),
-        e("span",{className:"block text-[13px] "+(atr ? "font-semibold text-destructive" : "")}, feito ? "Concluída" : atual ? (et==="finalizado" ? "Pedido finalizado" : (naGalvanica(pd) && diasNaGalvanica(pd, p.hoje)!=null ? txtDias(diasNaGalvanica(pd, p.hoje))+" na galvânica (desde a chegada)" : txtDias(diasNaEtapa(pd, p.hoje))+" nesta etapa")+(atr ? " · atrasado" : "")) : prazoTxt(p.cfg, k[0]) ? "Prazo de "+prazoTxt(p.cfg, k[0]) : ""))); }));
-  var acoes = e(Coluna,{key:"a", t:"Ações"},
-    pode && prox && e(Botao,{principal:true, onClick:function(){ p.avancar(pd); }}, "Concluir ›"),
-    e(Linha,{t:"Status"}, e(Sl,{v:pd.status, set:set("status"), off:!pode, rot:"Status do pedido", opcoes:STATUS_PED.map(function(t){ return [t, t]; }), className:"w-56 h-8!"})),
+  var bruto = e(BlocoF,{key:"b", t:"Bruto", cor:COR_FASE.compra, nota:"Compra",
+    resumo:[e(Resumo,{key:"v", t:"Valor", v:brl(pd.valor)}), e(Resumo,{key:"p", t:"A pagar (bruto)", v:brl(pd.pagar), grande:true})]},
+    e("div",{className:"grid grid-cols-2 gap-2"},
+      e(CampoF,{t:"Compra", v:pd.data, data:true, off:!pode, onSet:set("data")}), e(CampoF,{t:"Fornecedor", v:pd.forn, texto:true, off:!pode, onSet:set("forn")}),
+      e(CampoF,{t:"Nota", v:pd.nota, texto:true, off:!pode, onSet:set("nota")}), e(CampoF,{t:"Romaneio", v:pd.romaneio, texto:true, off:!pode, onSet:set("romaneio")})),
+    e(Linha,{t:"Arquivo do romaneio"}, e(AnexoCampo,{atual:pd.romaneioArq, off:!pode, onMudou:function(m){ x.exec("ped_edit", {id:pd.id, romaneioArq:m}); }})),
+    e("div",{className:"grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5"},
+      e(CampoF,{t:"Valor R$", v:pd.valor, off:!pode, onSet:set("valor")}), e(CampoF,{t:"Desconto %", v:Math.round(pd.desc*10000)/100, off:!pode, onSet:set("desc")})));
+  var banho = e(BlocoF,{key:"n", t:"Banho", cor:COR_FASE.banho, nota:gal || "Galvânica a definir",
+    resumo:[e(Resumo,{key:"v", t:"Valor do banho", v:brl(pd.valorBanho || 0), grande:true})]},
+    e("div",{className:"grid grid-cols-2 gap-2"},
+      e(CampoF,{t:"Chegou na Pontual", v:pd.chegPontual, data:true, off:!pode, onSet:set("chegPontual")}), e(CampoF,{t:"Chegou na Ellos", v:pd.chegEllos, data:true, off:!pode, onSet:set("chegEllos")}),
+      e(CampoF,{t:"Fotos enviadas", v:pd.fotosEm, data:true, off:!pode, onSet:set("fotosEm")}), e(CampoF,{t:"Verniz novo", v:pd.vernizNovo ? "sim" : "nao", off:!pode, rot:"Tem verniz novo (+2 dias na Pontual)", opcoes:[["nao", "Não"], ["sim", "Sim (+2 dias)"]], onSet:set("vernizNovo")}),
+      e(CampoF,{t:"Data que "+(gal ? "a "+gal : "o banho")+" conta", v:pd.contaBanho, data:true, off:!pode, onSet:set("contaBanho"), cls:"col-span-2"})),
+    e("div",{className:"grid grid-cols-2 gap-2 border-t border-white/10 pt-2.5"},
+      e(CampoF,{t:"Valor do banho R$", v:pd.valorBanho || "", dica:"0", off:!pode, onSet:set("valorBanho")})),
+    e(Linha,{t:"Fatura do banho"}, e(AnexosCampo,{lista:pd.faturasBanho, off:!pode, onMudou:function(l){ x.exec("ped_edit", {id:pd.id, faturasBanho:l}); }})));
+  var empresa = e(BlocoF,{key:"m", t:"Empresa", cor:COR_FASE.empresa, nota:"Chegada",
+    resumo:[e(Resumo,{key:"b", t:"Bruto", v:brl(pd.pagar)}), e(Resumo,{key:"n", t:"Banho", v:brl(pd.valorBanho || 0)}), e(Resumo,{key:"t", t:"Total do pedido", v:brl(totalPed(pd)), grande:true})]},
+    e(CampoF,{t:"Chegou na Sorelly", v:pd.chegSorelly, data:true, off:!pode, onSet:set("chegSorelly")}),
+    e(CampoF,{t:"Observação", v:pd.obs, texto:true, off:!pode, onSet:set("obs")}),
     e("button",{type:"button", onClick:function(){ ob[1](!ob[0]); }, className:"h-8 rounded-md border border-border text-[13px] hover:bg-white/10"}, "Peças por categoria · "+(pecasPedido(pd) || "0")),
-    ob[0] && e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1"}, CATS.map(function(k){ return e("label",{key:k[0], className:"flex items-center justify-between gap-1 text-[13px]"}, k[1], e(Cel,{v:pd.cats[k[0]] || "", dica:"0", off:!pode, rot:k[1], w:"w-14", onSet:function(q){ x.exec("ped_edit", {id:pd.id, cat:k[0], qtd:q}); }})); })),
-    e(Linha,{t:"Observação"}), e(Cel,{v:pd.obs, texto:true, off:!pode, rot:"Observação", w:"w-full", onSet:set("obs")}),
-    pode && e(Botao,{onClick:function(){ if(window.confirm("Remover o pedido de "+pd.forn+"?")){ x.exec("ped_del", {id:pd.id}); p.fechar(); } }}, "Remover pedido"));
-  return e(Janela,{t:"Pedido de "+pd.forn, sub:(pd.romaneio ? "Romaneio "+pd.romaneio+" · " : "")+nomeEtapa(et), fechar:p.fechar, colunas:[dados, linha, acoes]});
+    ob[0] && e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1"}, CATS.map(function(k){ return e("label",{key:k[0], className:"flex items-center justify-between gap-1 text-[13px]"}, k[1], e(Cel,{v:pd.cats[k[0]] || "", dica:"0", off:!pode, rot:k[1], w:"w-14", onSet:function(q){ x.exec("ped_edit", {id:pd.id, cat:k[0], qtd:q}); }})); })));
+  var etapas = e("div",{key:"e", className:"grid gap-2", style:{gridColumn:"1 / -1", gridTemplateColumns:"repeat(auto-fit, minmax(15rem, 1fr))"}}, FASES_PED.map(function(fa){
+    return e("div",{key:fa[0], className:"min-w-0 rounded-xl border border-white/10 px-3 py-2"},
+      e("h4",{className:"mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.07em]"}, e("span",{className:"size-2.5 rounded-full", style:{background:COR_FASE[fa[0]]}}), fa[1]),
+      ETAPAS_PED.map(function(k, i){ if(k[2]!==fa[0]) return null;
+        var feito = i<i0, atual = i===i0, atr = atual && atrasadoPed(pd, p.hoje, p.cfg), cor = COR_FASE[k[2]];
+        return e("div",{key:k[0], className:"py-0.5"},
+          e("div",{className:"flex items-center gap-2 text-[13px] "+(atual ? "font-semibold" : "")},
+            e("span",{className:"size-3 shrink-0 rounded-full border-2", style:feito ? {borderColor:"#4ADE80", background:"#4ADE80"} : atual ? {borderColor:cor, background:cor} : {borderColor:cor, borderStyle:"dashed"}}), k[1]),
+          atual && e("span",{className:"ml-5 block text-[11px] "+(atr ? "font-semibold text-destructive" : "")}, et==="finalizado" ? "Pedido finalizado" : (naGalvanica(pd) && diasNaGalvanica(pd, p.hoje)!=null ? txtDias(diasNaGalvanica(pd, p.hoje))+" na galvânica" : txtDias(diasNaEtapa(pd, p.hoje))+" nesta etapa")+(prazoTxt(p.cfg, k[0]) ? " · prazo "+prazoTxt(p.cfg, k[0]) : "")+(atr ? " · atrasado" : ""))); }));
+  }));
+  var rodape = [
+    pode && e(Botao,{key:"r", onClick:function(){ if(window.confirm("Remover o pedido de "+pd.forn+"?")){ x.exec("ped_del", {id:pd.id}); p.fechar(); } }}, "Remover pedido"),
+    e("select",{key:"s", value:pd.status, disabled:!pode, "aria-label":"Status do pedido", title:"Status do pedido", onChange:function(ev){ set("status")(ev.target.value); }, className:CAMPO+" w-64 cursor-pointer"}, STATUS_PED.map(function(t){ return e("option",{key:t, value:t}, t); })),
+    pode && prox && e(Botao,{key:"c", principal:true, onClick:function(){ p.avancar(pd); }}, "Concluir ›")];
+  return e(Janela,{t:"Pedido de "+pd.forn, sub:(pd.romaneio ? "Romaneio "+pd.romaneio+" · " : "")+nomeEtapa(et), fechar:p.fechar, colunas:[bruto, banho, empresa, etapas], rodape:rodape});
 }
 
-// pedir o romaneio antes de fechar o pedido (o pedido fecha no romaneio)
-function Romaneio(p){
-  var pd = p.x.c.pedidos.find(function(o){ return o.id===p.id; }), v = useState("");
+
+// campo do arquivo do romaneio (foto ou PDF): anexar, trocar, abrir e tirar. O arquivo vai para o servidor; o pedido guarda só a chave e o nome.
+function AnexoCampo(p){
+  var st = useState(""), msg = st[0], a = p.atual;
+  var abre = function(){ abrirAnexo(a.key).catch(function(x){ st[1](x.message || "Não consegui abrir o arquivo."); }); };
+  var escolhe = function(ev){
+    var f = ev.target.files && ev.target.files[0]; ev.target.value = ""; if(!f) return;
+    st[1]("Enviando o arquivo...");
+    lerArquivo(f).then(function(ar){ return enviarAnexo("cpc", ar); }).then(function(m){ st[1](""); p.onMudou(m); }).catch(function(x){ st[1](x.message || "Não consegui enviar o arquivo."); });
+  };
+  var bt = "h-8 rounded-md border border-border px-2.5 text-[13px] hover:bg-white/10";
+  return e("div",{className:"flex flex-col items-end gap-1 text-right text-[13px]"},
+    a && a.key && e("span",{className:"break-all"}, a.nome),
+    e("div",{className:"flex flex-wrap items-center justify-end gap-1.5"},
+      a && a.key && e("button",{type:"button", onClick:abre, className:bt}, "Abrir"),
+      !p.off && e("label",{className:"inline-flex cursor-pointer items-center "+bt}, a && a.key ? "Trocar" : "Anexar arquivo", e("input",{type:"file", accept:"image/*,application/pdf", onChange:escolhe, className:"hidden", "aria-label":"Arquivo do romaneio"})),
+      a && a.key && !p.off && e("button",{type:"button", onClick:function(){ p.onMudou(null); }, className:bt}, "Tirar")),
+    msg && e("span",null, msg));
+}
+
+// várias fotos (as faturas do banho): cada uma com Abrir e Tirar; "Anexar foto" acrescenta
+function AnexosCampo(p){
+  var st = useState(""), msg = st[0], lista = p.lista || [];
+  var escolhe = function(ev){
+    var fs = [].slice.call(ev.target.files || []); ev.target.value = ""; if(!fs.length) return;
+    st[1]("Enviando...");
+    Promise.all(fs.map(function(f){ return lerArquivo(f).then(function(ar){ return enviarAnexo("cpc", ar); }); })).then(function(ms){ st[1](""); p.onMudou(lista.concat(ms)); }).catch(function(x){ st[1](x.message || "Não consegui enviar o arquivo."); });
+  };
+  var bt = "h-8 rounded-md border border-border px-2.5 text-[13px] hover:bg-white/10";
+  return e("div",{className:"flex flex-col items-end gap-1 text-right text-[13px]"},
+    lista.map(function(a, i){ return e("div",{key:a.key, className:"flex flex-wrap items-center justify-end gap-1.5"}, e("span",{className:"break-all"}, a.nome || "Fatura "+(i+1)),
+      e("button",{type:"button", onClick:function(){ abrirAnexo(a.key).catch(function(x){ st[1](x.message || "Não consegui abrir o arquivo."); }); }, className:bt}, "Abrir"),
+      !p.off && e("button",{type:"button", onClick:function(){ p.onMudou(lista.filter(function(o){ return o.key!==a.key; })); }, className:bt}, "Tirar")); }),
+    !p.off && e("label",{className:"inline-flex cursor-pointer items-center "+bt}, lista.length ? "Anexar outra foto" : "Anexar foto", e("input",{type:"file", accept:"image/*,application/pdf", multiple:true, onChange:escolhe, className:"hidden", "aria-label":"Foto da fatura do banho"})),
+    msg && e("span",{className:"text-[13px] text-warning"}, msg));
+}
+
+// Chegou na empresa: o valor do banho e a foto da fatura são obrigatórios (Marcus, 09/11/2026); o total do pedido passa a ser bruto + banho
+function FaturaBanho(p){
+  var pd = p.x.c.pedidos.find(function(o){ return o.id===p.id; }), v = useState(pd && pd.valorBanho ? String(pd.valorBanho).replace(".", ",") : ""), ls = useState(pd ? pd.faturasBanho || [] : []);
   if(!pd) return null;
-  var ok = function(){ if(p.x.exec("ped_edit", {id:pd.id, romaneio:v[0], status:statusDaEtapa(pd, p.para)})) p.fechar(); };
-  return e(Janela,{t:"Romaneio do pedido", sub:pd.forn, fechar:p.fechar, colunas:[e(Coluna,{key:"r", t:"Fechar o pedido"},
-    e("p",{className:"text-center text-[13px]"}, "Informe o número do romaneio para fechar o pedido."),
-    e("input",{value:v[0], autoFocus:true, onChange:function(ev){ v[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Romaneio", "aria-label":"Romaneio", className:INP}),
-    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!v[0].trim(), onClick:ok}, "Fechar pedido")))]});
+  var valor = parseFloat(String(v[0]).replace(/\./g, "").replace(",", ".")) || 0, pronto = valor>0 && ls[0].length>0;
+  var ok = function(){ if(pronto && p.x.exec("ped_edit", {id:pd.id, valorBanho:v[0], faturasBanho:ls[0], status:statusDaEtapa(pd, p.para)})) p.fechar(); };
+  return e(Janela,{t:"Banho do pedido", sub:pd.forn+(pd.romaneio ? " · Romaneio "+pd.romaneio : ""), fechar:p.fechar, colunas:[e(Coluna,{key:"b", t:"Chegou na empresa"},
+    e("p",{className:"text-center text-[13px]"}, "Informe o valor do banho e anexe a foto da fatura que a galvânica enviou."),
+    e("input",{value:v[0], autoFocus:true, inputMode:"decimal", onChange:function(ev){ v[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Valor do banho R$", "aria-label":"Valor do banho", className:INP}),
+    e(AnexosCampo,{lista:ls[0], onMudou:function(l){ ls[1](l); }}),
+    e("p",{className:"text-center text-[13px]"}, "Total do pedido: ", e("b",{className:"tabular-nums"}, brl(totalPed(Object.assign({}, pd, {valorBanho:valor}))))),
+    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e concluir")))]});
+}
+
+// o pedido espera o romaneio na etapa 3 e só segue com o número E o arquivo salvos (Marcus, 04/11/2026)
+function Romaneio(p){
+  var pd = p.x.c.pedidos.find(function(o){ return o.id===p.id; }), v = useState(pd ? pd.romaneio || "" : ""), ar = useState(pd ? pd.romaneioArq : null);
+  if(!pd) return null;
+  var pronto = !!v[0].trim() && !!(ar[0] && ar[0].key);
+  var ok = function(){ if(pronto && p.x.exec("ped_edit", {id:pd.id, romaneio:v[0], romaneioArq:ar[0], status:statusDaEtapa(pd, p.para)})) p.fechar(); };
+  return e(Janela,{t:"Romaneio do pedido", sub:pd.forn, fechar:p.fechar, colunas:[e(Coluna,{key:"r", t:"Aguardando romaneio"},
+    e("p",{className:"text-center text-[13px]"}, "O pedido só segue para Em trânsito com o número e o arquivo do romaneio salvos."),
+    e("input",{value:v[0], autoFocus:true, onChange:function(ev){ v[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Número do romaneio", "aria-label":"Romaneio", className:INP}),
+    e(AnexoCampo,{atual:ar[0], onMudou:function(m){ ar[1](m); }}),
+    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e enviar")))]});
 }
 
 // novo pedido (a escolha das peças com preço vem na tela Compras, a ser criada)
@@ -245,7 +314,7 @@ function NovoPedido(p){
   var campo = function(k, rot, extra){ return e("label",{className:"flex flex-col gap-0.5"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, rot),
     e("input",Object.assign({value:v[k], onChange:function(ev){ var n = Object.assign({}, v); n[k] = ev.target.value; nv[1](n); }, "aria-label":rot, className:INP}, extra||{}))); };
   var lancar = function(){ if(p.x.exec("ped_add", {forn:v.forn, data:v.data || hojeISO(), nota:v.nota, romaneio:v.romaneio, valor:v.valor, desc:numPct(v.desc), status:"Escolha das peças"})) p.fechar(); };
-  return e(Janela,{t:"Novo pedido de bruto", sub:"O pedido entra na etapa Escolha das peças.", fechar:p.fechar, colunas:[e(Coluna,{key:"n", t:"Dados do pedido"},
+  return e(Janela,{t:"Novo pedido de bruto", sub:"O pedido entra na etapa Escolha das peças. O valor pode ficar vazio até acabar a escolha.", fechar:p.fechar, colunas:[e(Coluna,{key:"n", t:"Dados do pedido"},
     e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-3"},
       campo("forn", "Fornecedor", {list:"cpc-forns"}), e("datalist",{id:"cpc-forns"}, p.forns.map(function(n){ return e("option",{key:n, value:n}); })),
       campo("data", "Data da compra", {type:"date"}), campo("nota", "Nota"), campo("romaneio", "Romaneio"), campo("valor", "Valor R$", {inputMode:"decimal"}), campo("desc", "Desconto %", {inputMode:"decimal"})),

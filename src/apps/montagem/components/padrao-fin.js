@@ -95,11 +95,11 @@ function TabelaCampos(p){
       e("div",{className:"grid bg-[#1c1d21]", style:{gridTemplateColumns:"var(--grade)"}}, p.cols.map(function(c, i){ return e("div",{key:i, title:c.d || c.t, className:"flex h-[30px] items-center justify-center whitespace-nowrap border-l px-3 text-[11px] font-semibold uppercase tracking-[.05em] text-white first:border-l-0 "+FIO}, c.t); })),
       p.children));
 }
-// cells: texto, elemento ou {v, cor}. total:true = faixa escura em negrito. onClick: fileira clicável.
+// cells: texto, elemento ou {v, cor}. total:true = faixa escura em negrito. onClick: fileira clicável. alto: altura em px da fileira (só para linha com foto; padrão 32 px).
 function FileiraCampos(p){
   return e("div",{onClick:p.onClick, title:p.title, className:"grid border-t "+FIO+(p.total ? " bg-[#1c1d21] font-bold" : "")+(p.onClick ? " cursor-pointer hover:bg-white/5" : ""), style:{gridTemplateColumns:"var(--grade)"}},
     p.cells.map(function(c, i){ var obj = c!==null && typeof c==="object" && !React.isValidElement(c) && c.v!==undefined;
-      return e("div",{key:i, className:"flex h-8 items-center justify-center whitespace-nowrap border-l px-3 text-[13px] tabular-nums first:border-l-0 "+FIO, style:obj && c.cor ? {color:c.cor} : undefined}, obj ? c.v : c); }));
+      return e("div",{key:i, className:"flex items-center justify-center whitespace-nowrap border-l px-3 text-[13px] tabular-nums first:border-l-0 "+(p.alto ? "" : "h-8 ")+FIO, style:obj && c.cor ? (p.alto ? {color:c.cor, height:p.alto} : {color:c.cor}) : (p.alto ? {height:p.alto} : undefined)}, obj ? c.v : c); }));
 }
 // célula e linha da TabelaP. valor (n:true) à direita, fonte tabular; texto à esquerda com corte "…" e title
 var TD = "h-8 border-b border-border px-2.5 ";

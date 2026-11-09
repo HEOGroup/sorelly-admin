@@ -139,6 +139,7 @@ export const SLUG_DA_ABA = {
   equipes: "equipes",
   estoquesorelly: "estoque-sorelly",
   producao: "producao",
+  cpcompras: "cadastro-de-pecas-compras",
   cadpecas: "cadastro-de-pecas-pedidos",
   cpsol: "cadastro-de-pecas-solicitacoes",
   cpctrl: "cadastro-de-pecas-controle-do-mes",

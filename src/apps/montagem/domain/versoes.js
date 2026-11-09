@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.60", data:"2026-11-09", titulo:"Cadastro de peças: aba Compras, valor do banho no pedido e ficha nova", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Compras", txt:"Aba nova, antes de Pedidos. 1 · Adereço: fotos, código e preço de cada foto, romaneio em PDF lido pelo sistema e foto ligada à linha pelo código. 2 · Banho: banho de cada peça (Prata, Ouro flash, Ouro 1 a 5 ou um novo; verniz só no ouro), em lote. 3 · Recebido: quantidade que a Pontual confirmou. Gera o romaneio da Pontual e o da Rayssa em PDF, com foto grande e sem nenhum preço."},
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Valor do banho (a Rayssa digita) e fatura do banho (uma ou mais fotos), obrigatórios para marcar Chegou na empresa. O bloco do pedido e a ficha mostram o Total do pedido = bruto a pagar + banho."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Ficha do pedido refeita (layout A): três blocos lado a lado, Bruto, Banho e Empresa, com as 12 etapas em 3 fases embaixo e as ações no rodapé."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Romaneio do pedido: número e arquivo (foto ou PDF) obrigatórios para sair da etapa 3; o arquivo fica no servidor. Etapa Enviado passou a se chamar Em trânsito. Quadro de 12 etapas em 3 fases, bloco do pedido em uma linha."}
+ ]},
  {v:"0.18.96", data:"2026-11-09", titulo:"Compras e estoque de material: painel com o estoque em cima e as compras embaixo (layout D1)", itens:[
   {tipo:"novo", area:"Materiais e Estoque → Compras e estoque de material", txt:"Nova primeira aba, Compras e estoque, que abre por padrão. Em cima, lado a lado: a planilha do estoque com a coluna Contar (digita a quantidade e dá OK na própria linha; a data é hoje e quem contou é quem está logado) e a lista Precisa de compra (crítico e atenção, com o botão Solicitar que abre o pedido de compra de material). Embaixo, o quadro de Compras (aprovar, liberar, comprar, receber, entregar), sem a faixa de números. Uma barra de filtros só (busca, setor, itens, urgência), Ocultar vazias e filtro de categoria. Cada tabela mostra 12 linhas e o botão Ver mais. As outras abas continuam como estavam."}
  ]},

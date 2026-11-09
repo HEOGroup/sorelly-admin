@@ -8,6 +8,7 @@ import { AbaControle } from "@/apps/montagem/pages/cadpecas/Controle";
 import { AbaFaturas, AbaRetirarOuro } from "@/apps/montagem/pages/cadpecas/Faturas";
 import { AbaLotes } from "@/apps/montagem/pages/cadpecas/Lotes";
 import { AbaConfigCad, AbaDevMaster, AbaFornecedores } from "@/apps/montagem/pages/cadpecas/Outras";
+import { AbaCompras } from "@/apps/montagem/pages/cadpecas/Compras";
 import { AbaPedidos } from "@/apps/montagem/pages/cadpecas/Pedidos";
 import { AbaSolicitacoes } from "@/apps/montagem/pages/cadpecas/Solicitacoes";
 import { contagem } from "@/apps/montagem/domain/pedidos-pecas";
@@ -21,6 +22,8 @@ var LOTE = {id:""};
 function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:t, sub:sub}), corpo); }
 
 // Pedidos de bruto = tela mãe do setor (tem o próprio título, quadro e planilha)
+// Compras = fotos e romaneio do fornecedor de bruto, banho e recebido (tem o próprio título)
+function AbaPecasCompras(){ return e(AbaCompras,null); }
 function AbaCadastroPecas(){ return e(AbaPedidos,null); }
 function AbaPecasSolicitacoes(){ var n = contagem(use().state.pp).aberto; return Tela("Solicitações", n ? n+" pedido"+(n===1 ? "" : "s")+" de peças da produção em aberto." : "Pedidos de peças da produção para o cadastro.", e(AbaSolicitacoes,null)); }
 function AbaPecasControle(){ return Tela("Controle do mês", "Quanto foi comprado de bruto em cada mês e o banho faturado.", e(AbaControle,null)); }
@@ -34,4 +37,4 @@ function AbaPecasFornecedores(){ return Tela("Fornecedores", "Quanto cada fornec
 function AbaPecasDevMaster(){ return Tela("DevMaster", "Pedidos de alteração para a DevMaster.", e(AbaDevMaster,null)); }
 function AbaPecasConfig(){ return Tela("Configurações", "Regras do cadastro de peças e quem lança cada atividade.", e(AbaConfigCad,null)); }
 
-export { AbaCadastroPecas, AbaPecasSolicitacoes, AbaPecasControle, AbaPecasFaturasPontual, AbaPecasFaturasEllos, AbaPecasOuro, AbaPecasBanho, AbaPecasLotes, AbaPecasCalculadora, AbaPecasFornecedores, AbaPecasDevMaster, AbaPecasConfig };
+export { AbaPecasCompras, AbaCadastroPecas, AbaPecasSolicitacoes, AbaPecasControle, AbaPecasFaturasPontual, AbaPecasFaturasEllos, AbaPecasOuro, AbaPecasBanho, AbaPecasLotes, AbaPecasCalculadora, AbaPecasFornecedores, AbaPecasDevMaster, AbaPecasConfig };
