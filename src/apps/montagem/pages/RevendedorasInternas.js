@@ -2,14 +2,15 @@
 // Kits → Atendimento interno → Revendedoras. Controle das revendedoras que acertam na própria Sorelly:
 // tabela (ciclo, vendas, próxima data, situação) e calendário em tela cheia com o que está agendado por dia.
 // A agendadora trabalha por aqui: contata, agenda, confirma na véspera e manda o lembrete (textos prontos).
-import { modalidadeDe } from "@/apps/montagem/domain/consignado";
-import { nomeDe } from "@/apps/montagem/domain/equipe";
+import { modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, motivoNaoMarcar, parteData, CICLOS, SITUACOES, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, resumoMulta, multaDaVez, avisoRemarcacao, mensagemRegras, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
+import { FileiraCampos, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
@@ -132,6 +133,49 @@ var CLASSE_COND = function(t){ return t==="Kit principal" ? "k-t" : t==="Kit ext
 // passos de cada tipo (o bloco de registrar mostra um por vez; o que já foi escolhido vira uma etiqueta que dá para trocar)
 var PASSOS = {marcado:["quando"], remarcado:["motivo","quando","autorizado"], nao_veio:["motivo","autorizado"], desmarcado:["motivo","autorizado"], ciclo:["ciclo"]};
 var PASSO_ROTULO = {motivo:"Por quê?", quando:"Novo dia e hora", autorizado:"Quem autorizou?", ciclo:"Novo ciclo"};
+
+// COMISSÃO ESPECIAL (Edna, 09/11/2026): algumas revendedoras têm comissão diferente da tabela (ex.: Lorena Barbosa, 40% até R$ 999,99 e 50% de R$ 1.000,00 em diante). Fica fixa na ficha e a Atendimento Sorelly já calcula com ela.
+// Só a % de comissão muda; os brindes, a taxa e as multas seguem a tabela normal. Quem vê: o setor todo. Quem muda: só a Diretoria.
+function ComissaoEspecial(p){
+  var r = p.r, s = p.s, esp = r.comissaoEspecial || null, vig = versaoVigente(s), ef = vig ? versaoEfetiva(vig, "padrao") : null;
+  var faixasBase = ef ? ef.faixas.slice().sort(function(a, b){ return a.min-b.min; }) : [];
+  var ab = useState(false), aberto = ab[0], setAberto = ab[1];
+  var vs = useState(function(){ return Object.assign({}, esp || {}); }), vals = vs[0], setVals = vs[1];
+  var ns = useState(""), novaFaixa = ns[0], setNovaFaixa = ns[1];
+  // linhas = faixas da tabela + pontos de corte extras (ex.: acima de R$ 1.500,00); a coluna Tabela normal mostra a % da faixa em que o corte cai
+  var extras = Object.keys(vals).filter(function(k){ return k!=="mais"; }).map(Number).filter(function(m){ return isFinite(m) && faixasBase.every(function(f){ return f.min!==m; }); });
+  var faixas = faixasBase.concat(extras.map(function(m){ var dentro = faixasBase.filter(function(f){ return f.min<=m; }).pop(); return {min:m, pct:dentro ? dentro.pct : 0, extra:true}; })).sort(function(a, b){ return a.min-b.min; });
+  var maisV = vals.mais==null ? "" : String(vals.mais), trocaMais = function(v){ var n = Object.assign({}, vals); n.mais = v.replace(/[^\d.,]/g, "").replace(",", "."); setVals(n); };
+  var addFaixa = function(){ var n = Number(String(novaFaixa).replace(",", ".")); if(!isFinite(n) || n<=0) return; var k = String(n); if(vals[k]!==undefined) return; var v = Object.assign({}, vals); v[k] = ""; setVals(v); setNovaFaixa(""); };
+  var podeEditar = DIRETORIA.some(function(x){ return x.id===s.usuario; });
+  var resumo = esp ? (esp.mais>0 ? "mais "+esp.mais+" pontos" : faixas.filter(function(f){ return esp[String(f.min)]!=null; }).map(function(f){ return esp[String(f.min)]+"%"; }).filter(function(x, i, a){ return a.indexOf(x)===i; }).join(" · ")) : "";
+  var troca = function(min, v){ var n = Object.assign({}, vals); n[String(min)] = v.replace(/[^\d.,]/g, "").replace(",", "."); setVals(n); };
+  var repetir = function(i){ var n = Object.assign({}, vals), v = n[String(faixas[i].min)]; faixas.slice(i+1).forEach(function(f){ n[String(f.min)] = v; }); setVals(n); };
+  var salvar = function(){ p.d({type:"REVINT_COM_ESPECIAL", id:r.id, faixas:vals}); setAberto(false); };
+  var normal = function(){ if(!window.confirm("Voltar "+r.nome+" para a tabela normal de comissões?")) return; setVals({}); p.d({type:"REVINT_COM_ESPECIAL", id:r.id, faixas:null}); setAberto(false); };
+  return e("div",{className:"border-t border-[rgba(241,213,138,.16)] px-4 py-2"},
+    e("button",{type:"button", onClick:function(){ setAberto(!aberto); }, className:"flex items-center gap-2 text-[13px] font-semibold text-[#F1D58A]"},
+      "Comissão especial "+(aberto ? "▴" : "▾"), e("span",{className:"font-normal text-foreground"}, esp ? "· Especial ("+resumo+")" : "· Tabela normal")),
+    aberto && e("div",{className:"mt-2 flex flex-col gap-2"},
+      e("p",{className:"text-[13px]"}, "Só a comissão muda. Os brindes seguem a tabela normal. Deixe em branco a faixa que fica igual à tabela."),
+      podeEditar ? e("label",{className:"flex flex-wrap items-center gap-2 text-[13px]"}, "Ou some pontos em TODAS as faixas (ex.: 5 faz 15% virar 20%):", e("input",{value:maisV, inputMode:"decimal", maxLength:4, placeholder:"0", "aria-label":"Pontos a mais em todas as faixas", className:CAMPO+"w-16! text-center!", onChange:function(ev){ trocaMais(ev.target.value); }}), e("span",null,"pontos"))
+        : (maisV!=="" && Number(maisV)>0 && e("p",{className:"text-[13px] font-bold"}, "Mais "+maisV+" pontos em todas as faixas.")),
+      e("div",{className:"max-w-[460px]"}, e(TabelaCampos,{cols:[{t:"Venda a partir de", w:"36%"}, {t:"Tabela normal", w:"24%"}, {t:"Comissão especial"}], minW:"24rem"}, faixas.map(function(f, i){ var v = vals[String(f.min)]; v = v==null ? "" : String(v);
+        return e(FileiraCampos,{key:f.min, cells:[BK(f.min), f.pct+"%", podeEditar
+          ? e("span",{className:"inline-flex items-center gap-1"}, e("input",{value:v, inputMode:"decimal", maxLength:5, "aria-label":"Comissão especial a partir de "+BK(f.min), placeholder:"—", className:CAMPO+"w-20! text-center!", onChange:function(ev){ troca(f.min, ev.target.value); }}), e("span",null,"%"),
+              e("button",{type:"button", title:"Repetir este valor nas faixas de baixo", "aria-label":"Repetir este valor nas faixas de baixo", disabled:v==="", onClick:function(){ repetir(i); }, className:"h-8 rounded-md px-2 text-[13px] font-bold text-[#E8B84B] hover:bg-white/10 disabled:opacity-40"}, "↓"))
+          : e("b",{className:MONO}, v==="" ? "—" : v+"%")]}); }))),
+      podeEditar && e("div",{className:"flex flex-wrap items-center gap-2"},
+        e("span",{className:"text-[13px]"}, "Outro ponto de corte, a partir de R$"),
+        e("input",{value:novaFaixa, inputMode:"decimal", maxLength:9, placeholder:"1500,01", "aria-label":"Novo ponto de corte", className:CAMPO+"w-28! text-center!", onChange:function(ev){ setNovaFaixa(ev.target.value.replace(/[^\d.,]/g, "")); }, onKeyDown:function(ev){ if(ev.key==="Enter") addFaixa(); }}),
+        e("button",{type:"button", disabled:!novaFaixa, onClick:addFaixa, className:"h-8 rounded-lg px-3 text-[13px] font-bold ring-1 ring-[rgba(241,213,138,.4)] hover:bg-white/10 disabled:opacity-40"}, "Adicionar")),
+      podeEditar
+        ? e("div",{className:"flex flex-wrap items-center gap-2"},
+            e("button",{type:"button", onClick:salvar, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a]", style:BTN_OURO}, "Salvar comissão especial"),
+            esp && e("button",{type:"button", onClick:normal, className:"h-8 rounded-lg px-3 text-[13px] font-bold ring-1 ring-[rgba(241,213,138,.4)] hover:bg-white/10"}, "Voltar à tabela normal"),
+            esp && r.comissaoEspecialPor && e("span",{className:"text-[13px]"}, "Salva por "+r.comissaoEspecialPor+(r.comissaoEspecialEm ? " em "+fmtDataBR(isoDia(new Date(r.comissaoEspecialEm))) : "")))
+        : e("p",{className:"text-[13px]"}, "Só a Diretoria muda a comissão especial.")));
+}
 
 function Detalhes(p){
   var r = p.r, cx = p.cx, s = cx.state, d = cx.dispatch, hojeIso = p.hojeIso, eu = nomeDe(s.usuario);
@@ -276,6 +320,9 @@ function Detalhes(p){
               e("tbody",null, expos.map(function(c, i){ return e("tr",{key:(c.n||"")+i, className:"border-t border-[rgba(241,213,138,.16)]"},
                 e("td",{className:"px-2 py-0.5 font-bold "+MONO}, c.n||"—"), e("td",{className:"px-2 py-0.5 text-[#cdbf9f]"}, c.e ? "emitido "+c.e.slice(8)+"/"+c.e.slice(5,7)+"/"+c.e.slice(0,4) : ""),
                 e("td",{className:"px-2 py-0.5 text-right "+MONO}, c.p+(c.p===1 ? " peça" : " peças")), e("td",{className:"px-2 py-0.5 text-right "+MONO}, BK(c.v))); })))))),
+
+    // comissão especial (só a % de comissão; brindes iguais)
+    e(ComissaoEspecial,{r:r, s:s, d:d}),
 
     // vendas de 2026 e histórico (fechado: abre quando precisar)
     e("div",{className:"border-t border-[rgba(241,213,138,.16)] px-4 py-2"},
@@ -486,11 +533,75 @@ function KitsNovosParaAgendar(p){
   ];
   return e("div",{className:"flex flex-col"},
     e(Etiqueta,{nome:"Kits novos", info:lista.length+" para agendar", extra:"Vêm direto do setor Kits novos"+(ex && !reais.length ? " · EXEMPLO, nada é gravado" : "")}),
-    e(GradeFiltro,{chave:"kitsnovos", rows:linhas, cols:colunas, vazio:"Nenhum kit novo para agendar. Quando a Michele mandar um kit para a Sorelly, ele aparece aqui."}));
+    lista.length===0 ? null : e(GradeFiltro,{chave:"kitsnovos", rows:linhas, cols:colunas, vazio:"Nenhum kit novo para agendar. Quando a Michele mandar um kit para a Sorelly, ele aparece aqui."}));
+}
+
+// INCLUIR CLIENTE (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não aparece na lista.
+// O NOME vem sempre de uma busca nas clientes cadastradas (DevMaster, rota /api/clientes-busca): aparece nome, código, cidade e situação, e a Tamara escolhe uma. Nada de nome digitado à mão (Marcus, 09/11/2026).
+// Única exceção: Brinde de indicação, que pode ser de pessoa sem cadastro; ali aparece a opção "Usar o nome digitado". Escolhida a cliente, tipo, dia e hora, ela entra já agendada na listagem do dia, sem condicional inventada.
+var TIPOS_AVULSA = [["kit_novo", "Kit novo"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"], ["reposicao", "Reposição"], ["acerto", "Acerto"]];
+var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+var semZeros = function(c){ return String(c||"").replace(/\D/g, "").replace(/^0+/, ""); };
+function JanelaIncluirCliente(p){
+  var fs = useState({tipo:"kit_novo", data:p.hojeIso, hora:"", quer:"", valor:0, fone:""}), form = fs[0], setForm = fs[1];
+  var bs = useState(""), busca = bs[0], setBusca = bs[1], ss = useState(null), sel = ss[0], setSel = ss[1];
+  var rs = useState({itens:[], buscando:false, aviso:""}), res = rs[0], setRes = rs[1], cont = React.useRef(0);
+  var set = function(k, v){ var n = Object.assign({}, form); n[k] = v; if(k==="data") n.hora = ""; if(k==="tipo" && v!=="indicacao" && sel && sel.semCadastro){ setSel(null); } setForm(n); };
+  var escolher = function(c){ setSel(c); setBusca(""); setRes({itens:[], buscando:false, aviso:""}); if(c.celular) setForm(Object.assign({}, form, {fone:c.celular})); };
+  // busca com espera de meio segundo depois da última letra; resposta antiga é jogada fora
+  useEffect(function(){
+    var q = busca.trim(), num = /^\d+$/.test(q);
+    if(sel || (!num && q.length<3)){ setRes({itens:[], buscando:false, aviso:""}); return undefined; }
+    var minha = ++cont.current;
+    var t = setTimeout(function(){
+      if(!apiAtiva()){   // sem servidor: só as clientes que já estão na lista do sistema
+        var l = p.lista.filter(function(r){ return num ? semZeros(r.devmaster)===semZeros(q) : semAcento(r.nome).indexOf(semAcento(q))>=0; }).slice(0, 15).map(function(r){ return {cod:r.devmaster||"", nome:r.nome, cidade:r.cidade||"", celular:((r.contatos||[])[0]||{}).fone||"", situacao:"Na lista"}; });
+        setRes({itens:l, buscando:false, aviso:"Servidor desligado: mostrando só as clientes que já estão na lista."}); return; }
+      setRes({itens:[], buscando:true, aviso:""});
+      chamar("GET", "/clientes-busca?q="+encodeURIComponent(q)).then(function(r){ if(minha===cont.current) setRes({itens:r.itens||[], buscando:false, aviso:""}); })
+        .catch(function(x){ if(minha===cont.current) setRes({itens:[], buscando:false, aviso:x.message || "Não consegui buscar."}); });
+    }, 450);
+    return function(){ clearTimeout(t); };
+  }, [busca, sel]);
+  var naListaDe = function(c){ var cod = semZeros(c.cod); return p.lista.find(function(r){ return (cod && semZeros(r.devmaster)===cod) || (!cod && semAcento(r.nome)===semAcento(c.nome)); }); };
+  var jaNaLista = sel ? naListaDe(sel) : null;
+  var horas = form.data ? horasDoDia(form.data) : [];
+  var motivo = form.data && form.hora ? motivoNaoMarcar(p.lista, form.data, form.hora, null) : (form.data && horas.length===0 ? motivoNaoMarcar(p.lista, form.data, "08:00", null) : "");
+  var pronto = !!sel && !jaNaLista && !!form.data && !!form.hora && !motivo;
+  var campo = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-1"}, e("span",{className:ROTULO}, rot), el); };
+  var q0 = busca.trim(), mostraLista = !sel && (/^\d+$/.test(q0) || q0.length>=3);
+  return e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }},
+    e("div",{className:"relative my-auto flex w-full max-w-[640px] flex-col gap-3 rounded-xl border bg-[#131315] p-4 "+BORDA},
+      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, "Incluir cliente na listagem"), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 rounded-lg px-2.5 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Fechar ✕")),
+      e("p",{className:"text-[13px]"}, "Para quem vem à Sorelly e não está na lista: kit retornando, kit novo ou brinde de indicação. Escolha a cliente entre as cadastradas."),
+      sel
+        ? campo("Cliente", e("div",{className:"flex min-h-8 flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1 "+BORDA},
+            e("span",{className:"text-[13px]"}, e("b",null, sel.nome), sel.cod ? e("span",{className:MONO+" ml-2 font-bold text-[#E8B84B]"}, "Cód. "+sel.cod) : e("span",{className:"ml-2 font-bold text-[#E8B84B]"}, "Sem cadastro"), sel.cidade ? e("span",{className:"ml-2"}, sel.cidade+(sel.uf ? "/"+sel.uf : "")) : null),
+            e("button",{type:"button", onClick:function(){ setSel(null); }, className:"h-8 rounded-md px-2.5 text-[13px] font-bold text-[#E8B84B] hover:bg-white/10"}, "Trocar")))
+        : campo("Cliente (nome ou código)", e("input",{value:busca, autoFocus:true, maxLength:80, placeholder:"Digite o nome (3 letras) ou o código", className:CAMPO, onChange:function(ev){ setBusca(ev.target.value); }})),
+      mostraLista && e("div",{className:"flex max-h-[240px] flex-col overflow-y-auto rounded-lg border "+BORDA},
+        res.buscando && e("p",{className:"px-2.5 py-2 text-[13px]"}, "Buscando nas clientes cadastradas…"),
+        !res.buscando && res.aviso && e("p",{className:"px-2.5 py-2 text-[13px] text-[#fca5a5]"}, res.aviso),
+        !res.buscando && res.itens.length===0 && !res.aviso && e("p",{className:"px-2.5 py-2 text-[13px]"}, "Nenhuma cliente cadastrada com esse nome ou código."),
+        res.itens.map(function(c){ var nl = naListaDe(c);
+          return e("button",{key:c.cod||c.nome, type:"button", onClick:function(){ if(nl){ p.abrir(nl.id); p.fechar(); } else escolher(c); }, className:"grid min-h-8 grid-cols-[minmax(0,1fr)_70px_150px_90px] items-center gap-2 border-b px-2.5 text-left text-[13px] last:border-b-0 hover:bg-white/10 "+BORDA},
+            e("span",{className:"font-semibold"}, c.nome), e("span",{className:MONO+" text-[#E8B84B]"}, c.cod), e("span",null, c.cidade||"—"), e("span",{className:"text-[11px] font-bold "+(c.situacao==="Ativa" ? "text-[#bbf7d0]" : c.situacao==="Na lista" ? "" : "text-[#fca5a5]")}, nl ? "Já na lista" : c.situacao)); }),
+        form.tipo==="indicacao" && q0.length>=3 && !/^\d+$/.test(q0) && e("button",{type:"button", onClick:function(){ escolher({cod:"", nome:q0.toUpperCase(), cidade:"", celular:"", semCadastro:true}); }, className:"flex min-h-8 items-center gap-2 px-2.5 text-left text-[13px] font-bold text-[#E8B84B] hover:bg-white/10"}, "Não está cadastrada? Usar “"+q0.toUpperCase()+"” só para retirar o brinde")),
+      jaNaLista && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] text-[#fca5a5] "+BORDA}, e("span",null, "Essa cliente já está na lista. Agende pela ficha dela."), e("button",{type:"button", onClick:function(){ p.abrir(jaNaLista.id); p.fechar(); }, className:"h-8 rounded-md px-2.5 font-bold text-[#E8B84B] hover:bg-white/10"}, "Abrir a ficha")),
+      e("div",{className:"grid gap-2 md:grid-cols-2"},
+        campo("Tipo", e("select",{value:form.tipo, className:CAMPO, onChange:function(ev){ set("tipo", ev.target.value); }}, TIPOS_AVULSA.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
+        campo("Telefone (opcional)", e("input",{value:form.fone, maxLength:20, placeholder:"(41) 90000-0000", className:CAMPO, onChange:function(ev){ set("fone", ev.target.value); }})),
+        campo("O que a cliente quer", e("input",{value:form.quer, maxLength:200, placeholder:"Ex.: retirar o brinde", className:CAMPO, onChange:function(ev){ set("quer", ev.target.value); }})),
+        campo("Valor liberado (reposição ou kit novo)", e(CampoDinheiro,{value:form.valor, label:"Valor liberado (reposição ou kit novo)", className:CAMPO, onChange:function(v){ set("valor", v); }})),
+        campo("Dia", e("input",{type:"date", value:form.data, className:CAMPO, onChange:function(ev){ set("data", ev.target.value); }})),
+        campo("Hora", e("select",{value:form.hora, className:CAMPO, onChange:function(ev){ set("hora", ev.target.value); }}, e("option",{value:""}, "Escolha"), horas.map(function(h){ return e("option",{key:h, value:h}, h); })))),
+      motivo && e("p",{className:"text-[13px] text-[#fca5a5]"}, motivo),
+      e("button",{type:"button", disabled:!pronto, onClick:function(){ p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:form.data, hora:form.hora, quer:form.quer, valor:form.valor}); p.irParaDia(form.data); p.fechar(); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, "Incluir na listagem")));
 }
 
 function AbaRevendedorasInternas(){
   var cx = use(), s = cx.state, hojeIso = isoDia(new Date());
+  var iv = useState(false), incluindo = iv[0], setIncluindo = iv[1];
   // DevMaster: busca no servidor as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra aqui as que ainda não existem
   var sdm = useState(""), msgDm = sdm[0], setMsgDm = sdm[1], cdm = useState(false), buscandoDm = cdm[0], setBuscandoDm = cdm[1];
   var buscarDm = function(auto){
@@ -517,8 +628,10 @@ function AbaRevendedorasInternas(){
     e("div",{className:"flex flex-wrap items-center gap-2"},
         e("div",{className:"inline-flex overflow-hidden rounded-lg border "+BORDA}, segBtn("lista","Lista"), segBtn("calendario","Calendário")),
         e("button",{type:"button", disabled:buscandoDm, onClick:function(){ buscarDm(); }, title:"Busca na DevMaster as revendedoras do vendedor Sorelly (02, FE e BY) e cadastra as que faltam", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold disabled:opacity-50", style:BTN_OURO2}, "↻ Buscar da DevMaster"),
+        e("button",{type:"button", onClick:function(){ setIncluindo(true); }, title:"Para quem vem à Sorelly e não está na lista (kit retornando, kit novo, brinde de indicação)", className:"h-8 rounded-lg px-3.5 text-[13px] font-bold", style:BTN_OURO2}, "+ Incluir cliente"),
         msgDm && e("span",{className:"text-[13px]"}, msgDm)));
   return e(React.Fragment,null,
+    incluindo && e(JanelaIncluirCliente,{lista:todas, hojeIso:hojeIso, dispatch:cx.dispatch, abrir:setAberto, irParaDia:irParaDia, fechar:function(){ setIncluindo(false); }}),
     visao==="lista"
       ? e("div",{className:"flex flex-col gap-3"},
           e("div",{className:"grid gap-3 lg:grid-cols-[minmax(0,640px)_minmax(0,1fr)]"},

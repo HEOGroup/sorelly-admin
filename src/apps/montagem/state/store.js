@@ -522,6 +522,7 @@ function inicial(){
     if(!s.comis) s.comis = JSON.parse(JSON.stringify(COMIS0));
     if(s.comis.fixoV!==2){ s.comis.fixoV = 2; s.comis.combSemEnvio = COMIS0.combSemEnvio; }   // valor fixo do combustível sem km no prazo baixou para R$ 200,00
     if(s.demoAcertos!==VERSAO_DEMO){ s.demoAcertos = VERSAO_DEMO; s.acertosConsignado = acertosDemo(s).concat((s.acertosConsignado||[]).filter(function(r){ return !r.demo; })); }
+    if(s.limpaTesteV!==1){ s.limpaTesteV = 1; s.acertosConsignado = (s.acertosConsignado||[]).filter(function(r){ return r.origem==="interno" && !r.demo; }); }   // 06/11/2026 (Marcus): tira do Consolidado os acertos de teste (demonstração e feitos no app de teste da representante); ficam só os acertos reais do Atendimento interno
     if(s.filaSimV!==3){ s.filaSimV = 3; s.filaSimulada = Math.max(0, 10 - filaRetornos(s).length); s.filaNivel = -1; s.alertas = (s.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); s = aplicaFila(s); }   // simulação: 45 kits aguardando bipagem (3 reais + 34) e o alerta já sobe
     s.visao = "supervisao";
     return s; } } } catch(x){}

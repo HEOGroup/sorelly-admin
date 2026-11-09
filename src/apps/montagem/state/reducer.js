@@ -732,7 +732,7 @@ function reducer(s, a){
       k = kitDe(s, a.id); if(!k) return s;
       if(k.status==="acertado" && (s.acertosConsignado||[]).some(function(r0){ return r0.kitId===k.id && r0.tipo==="acerto"; })) return s;   // dois toques em "Finalizar acerto" não geram dois registros nem comissão em dobro
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
-      var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK);
+      var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK, comissaoEspecialDe(s, k.rev));   // comissão especial da revendedora (09/11/2026)
       var abK = abaterDividas(s, k.rev, a.pagamentos, null);
       var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
         valorPago:(a.valorPago||0) > abK.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abK.total), atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
@@ -977,6 +977,33 @@ function reducer(s, a){
       else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
+    // Comissão especial (Edna, 09/11/2026): porcentagem de comissão por faixa de venda, fixa na ficha da revendedora; os brindes seguem a tabela normal. Só a Diretoria muda (a tela já esconde o botão; o sistema confere de novo aqui).
+    // a.faixas = {"300":40, "1000":50} (chave = valor inicial da faixa); vazio ou null = volta à tabela normal.
+    case "REVINT_COM_ESPECIAL": {
+      var rE = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rE) return s;
+      if(!DIRETORIA.some(function(x){ return x.id===s.usuario; })) return s;
+      var limpo = {}; Object.keys(a.faixas||{}).slice(0, 13).forEach(function(k){ var v = a.faixas[k], n = Number(v); if(v!=="" && v!=null && isFinite(n) && n>=0 && n<=100 && (k==="mais" ? n<=50 : (isFinite(Number(k)) && Number(k)>=0))) limpo[k] = n; });
+      var temE = Object.keys(limpo).length>0;
+      return com(s, {revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {comissaoEspecial:temE ? limpo : null, comissaoEspecialPor:temE ? nomeDe(s.usuario) : null, comissaoEspecialEm:temE ? Date.now() : null}); })},
+        temE ? "Comissão especial salva para "+rE.nome.split(" ")[0] : "Comissão de "+rE.nome.split(" ")[0]+" voltou à tabela normal");
+    }
+    // Cliente avulsa (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não está na lista; ela entra à mão, já agendada, sem condicional inventada.
+    case "REVINT_AVULSA": {
+      var nomeAv = String(a.nome||"").trim(); if(!nomeAv || !a.data || !a.hora) return s;
+      var nmAv = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+      var codAv = String(a.cod||"").replace(/\D/g, "").replace(/^0+/, "");
+      if(!codAv && a.tipo!=="indicacao") return s;   // só o brinde de indicação aceita nome sem cadastro (Marcus, 09/11/2026): todo o resto vem das clientes cadastradas na DevMaster
+      if((s.revInternas||[]).some(function(r){ return nmAv(r.nome)===nmAv(nomeAv) || (codAv && String(r.devmaster||"").replace(/^0+/, "")===codAv); })) return s;   // já está na lista: usar a ficha dela
+      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
+      var hvAv = {data:null, venda:null, acerto:null}, vigAv = versaoVigente(s);
+      var vLibAv = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";
+      var rAv = {id:"RA"+agora, nome:nomeAv, ciclo:30, proximoManual:null, proximoDm:null, situacao:"agendada", agend:{data:a.data, hora:a.hora}, internoId:null, hist:[hvAv, hvAv, hvAv],
+        contatos:a.fone ? [{nome:"WhatsApp da cliente", fone:a.fone}] : [], prata:false, devmaster:String(a.cod||"").trim(), cidade:a.cidade || "", obs:"", registro:[], conds:[], avulsa:true, semCadastro:!codAv,
+        tipoAtend:a.tipo || "acerto", quer:a.quer || "", valorLiberado:a.valor || null};
+      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Incluída à mão em Revendedoras internas")+vLibAv, condicionais:[], vendasAnt:[]});
+      rAv.internoId = itAv.id;
+      return com(s, {internos:[itAv].concat(s.internos||[]), revInternas:[rAv].concat(s.revInternas||[])}, nomeAv.split(" ")[0]+" incluída para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
+    }
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
     case "REVINT_ATENDER": {
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
@@ -1077,7 +1104,7 @@ function reducer(s, a){
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
-      var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI);
+      var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI, comissaoEspecialDe(s, it.nome));   // comissão especial da revendedora (Edna, 09/11/2026)
       var abI = abaterDividas(s, it.nome, a.pagamentos, null);
       var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
         valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);

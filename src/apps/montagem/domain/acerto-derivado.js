@@ -12,7 +12,7 @@ var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas
 // form: no formato de FORM_ACERTO_VAZIO · condicionais: [{numero, pecas}] em aberto da revendedora
 function derivarAcerto(p){
   var form = p.form, ehPrata = p.modalidade==="prata";
-  var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade) : null;
+  var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade, p.especial) : null;   // p.especial: comissão especial da revendedora (Atendimento interno)
   var gerais = versao ? versao.gerais : {};
   var totalPagoAtual = totalPago(form.pagamentos);
   // Dívida de acertos anteriores (p.dividaAnterior): o que ela paga agora quita primeiro a dívida mais antiga, o resto vai para este acerto

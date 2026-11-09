@@ -6,7 +6,7 @@ import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
-import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, comissaoEspecialDe, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
@@ -158,6 +158,7 @@ function AtendimentoInterno(){
   var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
   var modalidade = sel ? modalidadeDe(s, sel.nome) : "padrao", ehPrata = modalidade==="prata";
+  var especialRev = sel ? comissaoEspecialDe(s, sel.nome) : null;   // comissão especial da revendedora (ficha em Revendedoras internas; Edna, 09/11/2026): muda só a % de comissão, brindes iguais
   var versaoBase = sel ? ((s.regrasConsignado.versoes||[]).find(function(v){ return v.id===sel.regrasVersaoId; }) || versaoVigente(s)) : null;
   var remarcs = sel ? (sel.remarcacoesLista||[]) : [];
   var condicionais = sel ? (sel.condicionais||[]) : [];
@@ -166,8 +167,10 @@ function AtendimentoInterno(){
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, chegouMuitoAtrasada = atrasoChegada>TOLERANCIA_CHEGADA_MIN;
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
-  var dv = derivarAcerto({brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
+  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
   var pa = dv.previaAcerto, versao = dv.versao, pxm = dv.pecasProx;
+  // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
+  var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
   var jaFeito = !!sel && sel.status==="acertado";
   // média das vendas: venda de agora (vem da tela) + até 2 anteriores digitadas; divide pelas que existem. Só a venda de agora = ela é a média.
   var cfg = s.cfg || {}, estoqueAtivo = cfg.tabelaAtiva==="baixo" ? "baixo" : "alto";
@@ -211,10 +214,11 @@ function AtendimentoInterno(){
     setMForm({nome:"", hora:"", cond:""}); setMAberto(false); };
   // tabela de comissões da modalidade escolhida lá em cima; dá para abrir a do outro kit também
   var tabelaComissao = function(mod){
-    var vb = versaoBase || versaoVigente(s), ve = vb ? versaoEfetiva(vb, mod) : null; if(!ve) return null;
+    var vb = versaoBase || versaoVigente(s), ve = vb ? versaoEfetiva(vb, mod, especialRev) : null; if(!ve) return null;
     var faixas = ve.faixas.slice().sort(function(a,b){ return a.min-b.min; });
     var corTab = mod==="prata" ? "#64748B" : "#B8862B";
     return e("div",{key:mod, className:"overflow-hidden rounded-xl ring-1", style:{boxShadow:"0 0 0 1px "+corTab+"66", background:corTab+"12"}},
+      ve.comissaoEspecial && e("div",{className:"px-2 py-1 text-center text-[13px] font-bold text-warning"}, "Comissão especial desta revendedora (os brindes seguem a tabela normal)"),
       e("table",{className:"w-full border-collapse text-center"},
         e("thead",null, e("tr",null, ["Venda a partir de","Comissão","Brinde normal","Brinde select"].map(function(t){ return e("th",{key:t, className:"border-b border-r border-border/60 px-1.5 py-1.5 text-[11px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground last:border-r-0"}, t); }))),
         e("tbody",null, faixas.map(function(f,i){
@@ -266,6 +270,7 @@ function AtendimentoInterno(){
       className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
       e("span",{className:"min-w-0 flex-1 truncate font-semibold", title:x.nome}, doisNomes(x.nome)),
+      !feito && totalDividaAnterior(s.acertosConsignado, x.nome)>0.009 && e("span",{className:"shrink-0 rounded-md bg-destructive/20 px-2 py-1 text-[11px] font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, "Dívida "+din(totalDividaAnterior(s.acertosConsignado, x.nome))),
       e("span",{className:"shrink-0 rounded-md px-2 py-1 text-[11px] font-bold "+st[1]}, st[0]));
   };
   var CABEC = "flex h-8 items-center justify-between gap-2 bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold";
@@ -385,8 +390,7 @@ function AtendimentoInterno(){
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-medium text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
     (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
       e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPD+" h-8! w-16! cursor-not-allowed px-1! text-center! opacity-60"})),
-    dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
-      "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
+    avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
       pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
         : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
@@ -774,7 +778,7 @@ function AtendimentoInterno(){
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))));
   var notasVendas = e("div",{className:"flex flex-col gap-1"},
-    dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
+    avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
 

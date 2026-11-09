@@ -2,7 +2,7 @@
 // RecebimentoRep: confirmação de recebimento dos kits na tela da representante.
 // AppRevendedora: clone da tela inicial do app real da revendedora (o app de verdade fica nas lojas de aplicativos).
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
-import { calcularAcerto, modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, comissaoEspecialDe, modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { BK, BKC } from "@/apps/montagem/lib/format";
@@ -66,7 +66,7 @@ function AppRevendedora(p){
   var ts = useState(function(){ var t = window.__revTelaIni; window.__revTelaIni = null; return t || "inicio"; }), tela = ts[0], setTela = ts[1];   // atalho do admin (Preferências do kit) abre direto numa tela
   var ab = useState(null), aberto = ab[0], setAberto = ab[1];
   var vig = versaoVigente(s), mod = modalidadeDe(s, k.rev), perfil = (s.perfisRev||{})[k.rev] || {};
-  var versao = vig ? versaoEfetiva(vig, mod) : null;
+  var versao = vig ? versaoEfetiva(vig, mod, comissaoEspecialDe(s, k.rev)) : null;   // comissão especial da revendedora (09/11/2026)
   var total = ((k.vendas||[])[0] || 0) + (s.lp ? vendidoNoApp(s.lp, k.rev, hojeSP().slice(0, 7)) : 0);   // vendido do mês + vendas feitas no app
   var res = versao ? calcularAcerto({vendaBruta:total, devolvida:0, garantia:0, vez:0, valorPago:null, atrasoDias:0}, versao) : null;
   var metaMin = versao ? Math.min.apply(null, versao.faixas.filter(function(f){ return f.pct>0; }).map(function(f){ return f.min; }).concat([Infinity])) : 0;

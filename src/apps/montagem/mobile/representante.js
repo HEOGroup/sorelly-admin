@@ -284,7 +284,8 @@ function AppRepresentante(p){
   var ehKitNovoHoje = !!kitSel && (kitSel.tipoKit||"").indexOf("kit_novo")===0;
   var modalidadeKit = sel ? modalidadeDe(s, sel.rev) : "padrao", ehPrata = modalidadeKit==="prata";
   var versaoBaseSel = kitSel ? versaoDoKit(s, kitSel) : null;
-  var versaoSel = versaoBaseSel ? versaoEfetiva(versaoBaseSel, modalidadeKit) : null;
+  var especialSel = sel ? comissaoEspecialDe(s, sel.rev) : null;   // comissão especial da revendedora (ficha em Atendimento interno › Revendedoras), 09/11/2026
+  var versaoSel = versaoBaseSel ? versaoEfetiva(versaoBaseSel, modalidadeKit, especialSel) : null;
   var formas = s.formasPagamento || formasPagamentoPadrao();
   var formaDe = function(k){ var fd = formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; return k==="acerto_loja" ? Object.assign({}, fd, {label:"Inadimplência"}) : fd; };   // acerto com loja = inadimplência para a representante (02/11/2026, Marcus)
   // Pagamento: soma de todos os lançamentos (cada um entra inteiro, sem dividir por parcela). Se faltar algo e existir
@@ -308,7 +309,7 @@ function AppRepresentante(p){
   }, [kitSel && kitSel.id, codDm]);
   // Depois de registrado, o acerto deste kit NÃO conta como dívida anterior (senão o pendente é contado duas vezes e a mensagem de fechamento sai errada)
   var regDoKit = kitSel ? (s.acertosConsignado||[]).find(function(r0){ return r0.kitId===kitSel.id && r0.tipo==="acerto"; }) : null;
-  var dv = derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
+  var dv = derivarAcerto({finalizado:!!jaAcertado, versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:vezAtual, form:acertoForm, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.rev, regDoKit && regDoKit.id) : 0});
   var totalPagoAtual = dv.totalPagoAtual, acordoSoma = dv.acordoSoma, previaBase = dv.previaBase, faltaAtual = dv.faltaAtual, quitado = dv.quitado,
     acordoExistente = dv.acordoExistente, acordoValido = dv.acordoValido, previaAcerto = dv.previaAcerto, pecasCondSelecionadas = dv.pecasCondSelecionadas, pecasADevolver = dv.pecasADevolver;
   // Contexto do acerto para o Direcionar (Financeiro): vendas, valor a pagar e todos os pagamentos lançados (igual ao Interno); lista = pagamentos do acerto, com ou sem o que acabou de lançar
@@ -339,8 +340,8 @@ function AppRepresentante(p){
     var iguais = !cz || (condicionaisRev.length===cz.conds.length && cz.conds.every(function(c){ return condicionaisRev.some(function(x){ return x.numero===c.n && x.pecas===c.p; }); }));
     if(!iguais){ d({type:"REV_COND_DEFINIR", rev:sel.rev, lista:cz.conds.map(function(c){ return {numero:c.n, pecas:c.p, manual:true}; })}); return; }   // exemplo: a revendedora fica com exatamente estas condicionais; roda de novo quando entrarem
     var conds = cz ? cz.conds.map(function(c){ return c.n; }) : condicionaisRev.slice(0,2).map(function(c){ return c.numero; }), hoje = isoDia(new Date());
-    var conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:vezAtual, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };
-    if(cz) conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, vez:1, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };   // exemplo: já conta com 1 multa de remarcação
+    var conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:vezAtual, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };
+    if(cz) conta = function(form){ return derivarAcerto({versaoBase:versaoBaseSel, modalidade:modalidadeKit, especial:especialSel, vez:1, form:form, condicionais:condicionaisRev, autoPecas:true, dividaAnterior:totalDividaAnterior(s.acertosConsignado, sel.rev)}); };   // exemplo: já conta com 1 multa de remarcação
     var base = Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:cz ? cz.venda : 3000, condicionaisSelecionadas:conds});
     var valor = conta(base).previaBase ? conta(base).previaBase.valorDevido : 0;
     var comPag = Object.assign({}, base, {pagamentos:[{forma:"pix", descricao:"PIX - POINT", parcelas:1, data:hoje, valor:cz ? cz.pago : valor, anexo:null}]});
