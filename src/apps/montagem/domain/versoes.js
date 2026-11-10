@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.159", data:"2026-11-10", titulo:"Kit retornando: média das 3 últimas vendas e valor do kit", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando mostra a média das 3 últimas vendas da revendedora (busca na DevMaster) e o Valor do kit liberado pela tabela. Só dado real; sem vendas, pede para definir o valor à mão. Rota nova /api/revendedoras/<código>/vendas."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"O botão Acerto | Retornando | Kit novo quebrava o texto em duas linhas; agora fica em uma linha."}]},
  {v:"0.18.158", data:"2026-11-10", titulo:"Marketing: Fotos de catálogo", itens:[
   {tipo:"novo", area:"Marketing › Fotos de catálogo", txt:"Planilha de controle das fotos das peças novas (foto, editada, na DevMaster), com filtro em cada coluna e faixa fina por dia. Trouxe os 17.359 códigos da planilha Fotos App Sorelly; novos entram colando do Excel e cada etapa guarda quem e quando. O servidor guarda um registro por código. Tabela com botão Mostrar mais (300 por vez)."}]},
  {v:"0.18.157", data:"2026-11-09", titulo:"Funil de pedidos no formato do Pedidos + Separar peças", itens:[

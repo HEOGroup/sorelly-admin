@@ -17,6 +17,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
+import { chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -211,6 +212,11 @@ function AtendimentoInterno(){
   var mediaVendas = avKit.media;
   var faixaKit = avKit.liberado ? tabKit.find(function(x){ return mediaVendas>=x.min; }) : null;
   var kitLiberado = faixaKit ? faixaKit.kit : null;
+  // Kit retornando (Marcus, 10/11/2026): média das 3 últimas vendas da revendedora = valor do kit. Só dado REAL: DevMaster (rota /vendas) ou histórico da agenda; nunca o histórico de demonstração
+  var codDm = rInt && rInt.devmaster ? String(rInt.devmaster) : (sel && sel.devmaster ? String(sel.devmaster) : "");
+  var histRet = sel && sel.tipo==="retornando" ? (sel.vendasDm && sel.vendasDm.length ? sel.vendasDm.map(function(x){ return {data:x.d, venda:x.v}; }) : (temHist ? rInt.hist : null)) : null;
+  var avRet = histRet ? avaliarKit(histRet, null, cfg, hoje.slice(0,7)) : null;
+  var kitRet = avRet && avRet.liberado ? ((tabKit.find(function(x){ return avRet.media>=x.min; }) || {}).kit || null) : null;
   // média acima do limite do Marcus: não aparece aviso na tela, vai alerta direto para quem estiver em Tecnologia → Avisos (uma vez por atendimento)
   useEffect(function(){
     if(sel && !jaFeito && mediaVendas!==null && cfg.limiteMarcus && mediaVendas>cfg.limiteMarcus)
@@ -318,7 +324,12 @@ function AtendimentoInterno(){
 
   // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela (erro #300 do React) ao fechar a aba do atendimento.
   useEffect(function(){ if(sel && !jaFeito && !sel.bipou && !visor) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null, visor]);
-  useEffect(function(){ if(visor && sel) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho||{})); }, [visor, sel ? JSON.stringify(sel.rascunho||{}) : ""]);   // acompanha ao vivo o que a atendente preenche
+  useEffect(function(){ if(visor && sel) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho||{})); }, [visor, sel ? JSON.stringify(sel.rascunho||{}) : ""]);
+  // Kit retornando: busca as 3 últimas vendas na DevMaster uma vez e guarda no atendimento
+  useEffect(function(){
+    if(!sel || sel.tipo!=="retornando" || visor || sel.vendasDm || sel.vendasDmErro || !codDm) return;
+    chamar("GET", "/revendedoras/"+encodeURIComponent(codDm)+"/vendas").then(function(j){ var v = (j && Array.isArray(j.vendas)) ? j.vendas.slice(0, 3) : []; d({type:"INT_ATUALIZAR", id:sel.id, patch: v.length ? {vendasDm:v} : {vendasDmErro:true}}); }).catch(function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendasDmErro:true}}); });
+  }, [sel ? sel.id : null, sel ? sel.tipo : null, codDm, visor]);   // acompanha ao vivo o que a atendente preenche
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
     pagina(e("div",{className:"flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-16 text-center text-[13px] text-muted-foreground"},
       "Nenhum atendimento aberto.", e("span",{className:"font-semibold text-foreground"}, "Escolha o nome da cliente na fila do dia."))));
@@ -742,7 +753,7 @@ function AtendimentoInterno(){
           var kitSel = e("span",{role:"group", "aria-label":"Kit da revendedora", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["padrao","Ouro"],["prata","Prata"]].map(function(o){ var on = modTab===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ escolherMod(o[0]); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "bg-card hover:bg-white/10")}, o[1]); }));
           var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"],["kit_novo","Kit novo"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
-            return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
+            return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 whitespace-nowrap px-2 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
           var avisosTopo = [];
           if(sel.obs) avisosTopo.push(["Observação", sel.obs+(sel.encomenda ? " · Encomenda "+sel.encomenda : "")]);
           if(remarcs.length) avisosTopo.push(["Remarcação", remarcs.length+"× "+(nMulta ? "com multa" : "isenta")+remarcs.map(function(rm){ return " · "+(rm.isenta ? "isenta ("+(rm.motivo||"")+")" : "com multa")+(rm.autorizadoPor ? ", autorizada por "+rm.autorizadoPor : ""); }).join("")]);
@@ -957,6 +968,11 @@ function AtendimentoInterno(){
   var estVendas = e("div",{className:"flex min-w-0 flex-1 flex-col"}, metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Vendas", [tabVendas, notasVendas], "", "gap-0! p-0"), lado("Acerto", tabAcerto, "", "gap-0! p-0")));
   var estEscolha = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Escolha do kit · "+(sel.tipo==="kit_novo" ? "Kit novo" : "Kit retornando"), e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
     e("p",{className:"font-semibold"}, "A revendedora escolhe as peças do kit. Tempo máximo: 60 minutos."),
+    sel.tipo==="retornando" && e("div",{className:"flex w-full max-w-md flex-col gap-1 rounded-md border border-primary/50 bg-primary/10 px-3 py-2 text-left font-semibold"},
+      !histRet ? e("span",null, !codDm ? "Sem código DevMaster desta revendedora: defina o valor do kit à mão." : sel.vendasDmErro ? "Sem vendas anteriores na DevMaster: defina o valor do kit à mão." : "Buscando as últimas vendas na DevMaster…") : [
+        e("div",{key:"t", className:"flex justify-between"}, e("span",null,"Média das últimas "+avRet.lista.length+" vendas"), e("b",null, avRet.media!=null ? din(avRet.media) : "—")),
+        avRet.lista.map(function(x,i){ return e("div",{key:i, className:"flex justify-between pl-3 font-medium"}, e("span",null, x.mes.slice(5)+"/"+x.mes.slice(0,4)), e("span",null, din(x.venda))); }),
+        e("div",{key:"k", className:"flex justify-between border-t border-primary/40 pt-1 text-primary"}, e("span",null,"Valor do kit liberado"), e("b",null, kitRet ? din(kitRet) : "Não libera"+(avRet.motivo ? " · "+avRet.motivo : "")))]),
     sel.tipo==="kit_novo" && (valorKitNovo>0 ? e("p",{className:"rounded-md border border-primary/50 bg-primary/10 px-3 py-2 font-semibold"}, "Valor do kit liberado: "+din(valorKitNovo)+" · definido pela Michele") : e("p",{className:"font-semibold text-destructive"}, "A Michele ainda não lançou o valor deste kit novo.")),
     !sel.escolhaIni ? e("p",null, "Clique em ⏱ Começou, no topo, quando ela começar a escolher.") : sel.escolhaFim ? e("p",{className:"font-semibold text-success"}, "✓ Escolha terminada em "+relogio(decorridoSeg)+". Clique em Próxima e explique as regras.") : e("p",{className:"font-semibold"}, "Escolhendo há "+relogio(decorridoSeg)+" de 60:00. Clique em ■, no topo, quando ela terminar.")), "flex-1", "p-0"));
   var ESTS = retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
