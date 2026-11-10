@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.118", data:"2026-11-10", titulo:"Atendimento Sorelly: fila mostra Atendendo e quem atende pelo pedido de pagamento", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a atendente manda o pedido de pagamento ao financeiro, a fila de todos mostra Atendendo e o nome dela, mesmo se o computador dela ainda estiver com a tela antiga."}]},
  {v:"0.18.117", data:"2026-11-10", titulo:"Tempo real: atendimentos e pedidos em até 5 segundos + aviso de versão nova", itens:[
   {tipo:"melhoria", area:"Atendimento interno e Financeiro", txt:"Os atendimentos em andamento e os pedidos de conta chegam aos outros computadores em até 5 segundos (antes 20)."},
   {tipo:"novo", area:"Sistema", txt:"Quem está com a tela aberta desde antes de uma publicação vê o aviso \"Há uma versão nova do sistema\" com o botão Atualizar agora. Tela antiga não mandava os dados novos."}]},

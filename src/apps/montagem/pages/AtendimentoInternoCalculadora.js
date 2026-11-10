@@ -278,7 +278,8 @@ function AtendimentoInterno(){
   var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
   var itemFila = function(x){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
-    var st = feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs) ? ["Atendendo","bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
+    var st = feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
     return e("button",{key:x.id, type:"button", onClick:function(){ if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
       className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
