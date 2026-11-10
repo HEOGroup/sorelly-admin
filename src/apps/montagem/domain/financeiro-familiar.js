@@ -50,8 +50,12 @@ function parcelasDe(ff, filtro, hoje){
 }
 var janela = function(){ var h = hojeYm(), l = []; for(var i=-6; i<=12; i++) l.push(somaMes(h, i)); return l; };   // 6 meses para trás e 12 para a frente
 
+// CASA (Lucas, 05/11/2026; igual ao sistema antigo): PIX lançado na pessoa "Casa/Família" (personaId familia) é da Casa e não entra nos números dos sócios. Conferido com o antigo em outubro: Ana Beatriz 2 PIX R$ 2.691,00, Anamaria (Caixa) 7 PIX R$ 10.956,20, Itaú Black 16 PIX R$ 16.511,90. CASA_CONTAS só dá o nome do favorecido na tela da Casa.
+var CASA_CONTAS = {cmsorluqk000102juthewf8x5:"Ana Beatriz", cb4:"Anamaria", cb7:"Itaú Black", cmtcyoby6000002l8un1db5h7:"Itaú Black"};
+function casaDe(ff, contaId){ var b = (ff.contasBanc||[]).find(function(y){ return y.id===contaId; }); return (b && b.casaNome) || CASA_CONTAS[contaId] || ""; }
+function pixCasa(ff, x){ return x.personaId==="familia"; }
 function pixDoMes(ff, pid, ym){
-  var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO"; }).reduce(function(t, x){ return t+x.valor; }, 0);
+  var a = ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT" && !pixCasa(ff, x); }).reduce(function(t, x){ return t+x.valor; }, 0);
   var b = ff.repasses.filter(function(x){ return x.origemPixPersonaId===pid && !x.origemPixLancId && x.data.slice(0,7)===ym; }).reduce(function(t, x){ return t+x.valor; }, 0);
   return r2(a+b);
 }
@@ -71,7 +75,7 @@ function totaisPersona(ff, pid, ym){
   var contas = ps.filter(function(x){ return x.conta.categoria!=="PRO_LABORE"; }), pro = ps.filter(function(x){ return x.conta.categoria==="PRO_LABORE"; });
   var meta = ff.pixMeta[pid+"|"+ym]||0, rec = pixDoMes(ff, pid, ym);
   return {contas:{total:soma(contas,"valor"), pago:soma(contas,"pago"), restante:soma(contas,"restante"), pendentes:contas.filter(function(x){ return x.status!=="PAGO"; }).length, atrasado:r2(contas.filter(function(x){ return x.atrasada; }).reduce(function(t, x){ return t+x.restante; }, 0))},
-    pro:{total:soma(pro,"valor"), recebido:soma(pro,"pago"), restante:soma(pro,"restante")}, pix:{meta:meta, recebido:rec, restante:r2(Math.max(0, meta-rec)), pendentesAud:ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria==="PENDENTE"; }).length},
+    pro:{total:soma(pro,"valor"), recebido:soma(pro,"pago"), restante:soma(pro,"restante")}, pix:{meta:meta, recebido:rec, restante:r2(Math.max(0, meta-rec)), pendentesAud:ff.pix.filter(function(x){ return x.personaId===pid && x.data.slice(0,7)===ym && x.auditoria==="PENDENTE" && !pixCasa(ff, x); }).length},
     todasContas:soma(ps,"valor")};
 }
 // Baixa das dívidas de um prestador: o que foi enviado (ou descontado) com divId vai direto naquela dívida; o que está sem divId baixa a mais antiga em aberto.
@@ -198,7 +202,12 @@ function ffReduz(s, a){
       return ok("PIX anotado (aguardando conferência)", "PIX revendedoras", "Lançou PIX", (l.origem||"sem nome")+" · "+nomeP(a.personaId), money(pv2)); }
     case "pix_set": { var lx = ff.pix.find(function(x){ return x.id===a.id; }); if(!lx) return recusa("PIX não encontrado."); Object.assign(lx, a.patch); if(a.patch.valor!==undefined) lx.valor = r2(lx.valor); syncRepasse(lx); return ok("PIX atualizado", "PIX revendedoras", "Editou PIX", lx.origem||"sem nome"); }
     case "pix_del": { var ld = ff.pix.find(function(x){ return x.id===a.id; }); if(!ld) return recusa("PIX não encontrado."); ff.pix = ff.pix.filter(function(x){ return x.id!==a.id; }); ff.repasses = ff.repasses.filter(function(r){ return r.origemPixLancId!==a.id; }); return ok("PIX excluído", "PIX revendedoras", "Excluiu PIX", ld.origem||"sem nome", money(ld.valor)); }
-    case "pix_aud": { var la = ff.pix.find(function(x){ return x.id===a.id; }); if(!la) return recusa("PIX não encontrado."); la.auditoria = a.auditoria; la.auditadoPor = por; return ok("Conferência salva", "PIX revendedoras", a.auditoria==="CONFIRMADO" ? "Confirmou PIX" : a.auditoria==="REJEITADO" ? "Rejeitou PIX" : "Marcou PIX como aguardando", la.origem||"sem nome", money(la.valor)); }
+    case "pix_div": { var lv = ff.pix.find(function(x){ return x.id===a.id; }); if(!lv) return recusa("PIX não encontrado."); var tp = a.tipo==="conta" ? "conta" : a.tipo==="data" ? "data" : "valor";
+      if(tp==="valor"){ var nv = r2(a.valor); if(!(nv>0)) return recusa("Informe o valor que entrou de verdade."); if(lv.valorOriginal==null) lv.valorOriginal = lv.valor; lv.valor = nv; }
+      else if(tp==="data"){ if(!a.data) return recusa("Informe a data em que entrou."); if(lv.dataOriginal==null) lv.dataOriginal = lv.data; lv.data = a.data; }
+      else { if(!a.contaId) return recusa("Escolha a conta em que entrou."); if(lv.contaOriginal==null) lv.contaOriginal = lv.contaId; lv.contaId = a.contaId; }
+      lv.auditoria = "DIVERG"; lv.auditadoPor = por; lv.div = {tipo:tp, obs:String(a.obs||"").trim()}; syncRepasse(lv); return ok("Divergência salva", "PIX revendedoras", "Marcou divergência de "+tp, lv.origem||"sem nome", money(lv.valor)); }
+    case "pix_aud": { var la = ff.pix.find(function(x){ return x.id===a.id; }); if(!la) return recusa("PIX não encontrado."); la.auditoria = a.auditoria; la.auditadoPor = por; return ok("Conferência salva", "PIX revendedoras", a.auditoria==="CONFIRMADO" ? "Confirmou PIX" : a.auditoria==="NAOIDENT" ? "Marcou PIX como não identificado" : "Marcou PIX como aguardando", la.origem||"sem nome", money(la.valor)); }
     // ---- prestadores
     case "prest_add": { var pn = String(a.nome||"").trim(); if(!pn) return recusa("Informe o nome."); ff.prest.push({id:uid("pr"), nome:pn, servico:a.servico||"", chavePix:a.chavePix||"", obs:"", responsavelId:a.responsavelId||"", ativo:true}); return ok("Prestador criado", "Prestadores", "Criou prestador", pn); }
     case "prest_set": { var pt = ff.prest.find(function(x){ return x.id===a.id; }); if(!pt) return recusa("Prestador não encontrado."); Object.assign(pt, a.patch); return ok("Salvo", "Prestadores", a.patch.ativo===false ? "Finalizou prestador" : a.patch.ativo===true ? "Reabriu prestador" : "Editou prestador", pt.nome); }
@@ -226,5 +235,5 @@ function ffReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
+export { casaDe, pixCasa, ultimoDia, MESES, FORMAS, FORMAS_REPASSE, TIPOS_REGRA, ACESSO_FF, r2, hojeIso, hojeYm, somaMes, vencIso, nomeMes, br, diasEntre, semanaDoDia, chaveCategoria, ffDemo, ffLocal, FAMILIA4, daPessoa, membrosFamilia, pagoDe, statusDe, parcelasDe, janela, pixDoMes, pixDivisao,
   totaisPersona, saldoPrestador, baixaDividas, vigenciaEm, liquidoDe, alertasDe, relatorioMes, ffReduz };

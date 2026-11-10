@@ -30,6 +30,8 @@ import { ceDemo, ceMigrar } from "@/apps/montagem/domain/compras-estoque";
 import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
 import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
+import { tpMigrar } from "@/apps/montagem/domain/trafego";
+import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
 import { erDemo, erMigrar } from "@/apps/montagem/domain/encomendas";
@@ -199,6 +201,25 @@ function aplicaAbreNov(s){
   s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-11-01":2047});
   return s;
 }
+// 09/11/2026 (Marcus): FATURAMENTO DE NOVEMBRO, relatório de notas fiscais, ACUMULADO do mês dia a dia: 01 e 02/11 = 0 (domingo e Finados); 03/11 = 22 acertos e R$ 15.068,70; 04/11 = 58 e R$ 37.595,31; 05/11 = 99 e R$ 65.156,26; 06/11 = 208 e R$ 149.878,21; 07 e 08/11 repetem o dia 06 (fim de semana, sem acerto novo). O dia de cada data = diferença para o dia anterior. Previsto de novembro = 1.975 (aplicaAbreNov); Carregar não informado = 0. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFatNov(s){
+  var DIAS = [["2026-11-01", 0, 0], ["2026-11-02", 0, 0], ["2026-11-03", 15068.70, 22], ["2026-11-04", 37595.31, 58], ["2026-11-05", 65156.26, 99], ["2026-11-06", 149878.21, 208], ["2026-11-07", 149878.21, 208], ["2026-11-08", 149878.21, 208], ["2026-11-09", 244095.26, 326]];
+  s.faturamentoDiario = Object.assign({}, s.faturamentoDiario); s.contasPagasDiario = Object.assign({}, s.contasPagasDiario);
+  s.carregarDia = Object.assign({}, s.carregarDia); s.restanteDia = Object.assign({}, s.restanteDia);
+  var rv = Object.keys(s.revendedorasDiario||{}).sort(), rvN = rv.length ? s.revendedorasDiario[rv[rv.length-1]] : 2047, ant = {recebido:0, acertos:0};
+  DIAS.forEach(function(d){
+    var k = d[0];
+    s.faturamentoDiario[k] = Object.assign({}, s.faturamentoDiario[k], {recebido:d[1], acertos:d[2], revendedoras:(s.faturamentoDiario[k]||{}).revendedoras || rvN, fixadoEm:Date.now(), parcial:false});
+    s.contasPagasDiario[k] = Object.assign({cnpjs:{}, contasPorFora:0}, s.contasPagasDiario[k], {faturado:Math.round((d[1]-ant.recebido)*100)/100, acertos:d[2]-ant.acertos});
+    var cg = k==="2026-11-09" ? 13 : 0;   // 09/11: 13 vendas no Carregar; faltam 1.634 contando elas (1.621 a realizar + 13), valor das 19h50
+    s.carregarDia[k] = cg; s.restanteDia[k] = {feitos:d[2], carregar:cg, aRealizar:k==="2026-11-09" ? 1621 : 1975-d[2]};
+    ant = {recebido:d[1], acertos:d[2]};
+  });
+  s.revendedorasDiario = Object.assign({}, s.revendedorasDiario, {"2026-11-09":2099}); s.faturamentoDiario["2026-11-09"] = Object.assign({}, s.faturamentoDiario["2026-11-09"], {revendedoras:2099});   // 09/11: 2.099 revendedoras ativas (Marcus, atualizado às 19h50)
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-11":{aRealizar:1621, carregar:13}});
+  if(s.fatHoje && s.fatHoje.data<="2026-11-09") s.fatHoje = null;
+  return s;
+}
 // 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
 function aplicaAgendReal(s){
   if(!AG_REAL || !s.agend || !s.agend.config) return s;
@@ -256,7 +277,7 @@ function novo(){
     contasPagasDiario:JSON.parse(JSON.stringify(CONTAS_PAGAS_DIARIO_DEMO)), inadFin:JSON.parse(JSON.stringify(INAD_FIN0)), comprasInt:JSON.parse(JSON.stringify(COMPRAS_INT0)), cpdV:VERSAO_CPD, negPix:{Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}}, fatHojeV:8, fatHoje:null, fat14FixV:2, rev14V:1, fatHoje14V:1, revAtualizadoEm:{"2026-10-14":1792022400000},
     saldosContas:saldosContas0(), saldosV:13,     fiscal:JSON.parse(JSON.stringify(FISCAL0)), contasCnpj:JSON.parse(JSON.stringify(CONTAS_CNPJ0)),
     avisosCfg:{media_alta:[11,16,17]}, alertas:[],
-    mesFechado:null, visao:"supervisao", bipadora:9, usuario:16, logado:true, aba:"painel", celular:1, telaCel:"proximo",
+    mesFechado:null, visao:"supervisao", bipadora:9, usuario:16, logado:true, aba:"painel", celular:1, telaCel:"inicio",
     abertas:{L1:true, L2:true}, kitAberto:null, extrato:null, filtroReg:"todas", aviso:null, demoAcertos:VERSAO_DEMO, demoListagens:VERSAO_LISTAGENS, lysieDemoV:1, lysieNovasV:1, dayanneNormalV:1};
   st.acertosConsignado = acertosDemo(st);   // 10 acertos do mês (pedido do Marcus)
   if(FAT_DIA_LOCAL){ st.fatDiaV = 3; st.fatDia = Object.assign({}, FAT_DIA_LOCAL); st.faturamentoDiario = acumularFaturamento(st.fatDia, st.faturamentoDiario); }   // acertos e faturamento de 01 a 13/10 dia a dia, também no estado novo
@@ -274,6 +295,7 @@ function novo(){
   st.mel = {};   // Solicitações de melhorias (uma chave por pedido; vem do servidor)
   st.ga = gaDemo();   // Garantia (só o link do site externo)
   st.mk = mkDemo();   // Marketing (vazio; dados reais só no arquivo local)
+  st.fc = fcDemo();   // Marketing › Fotos de catálogo (vazio; histórico da planilha só no arquivo local)
   st.ce = ceDemo();   // Compras e Estoque interno de materiais (vazio; dados reais só no arquivo local)
   st.fx = fxDemo();   // Fiscal (vazio; dados reais só no arquivo local)
   st.inf = infDemo();   // Folders e informativos dos apps da revendedora e da representante
@@ -286,7 +308,7 @@ function novo(){
   st.pp = ppDemo();   // Pedidos de peças da produção ao cadastro (vazio)
   st.pr = prDemo();   // Produção de peças (vazio; dados reais só no arquivo local)
   st.px = pxDemo();   // Chaves Pix e regras (contas automáticas do atendimento interno)
-  st.dp = dpDemo(); st.cp = cpAjustar(cpDemo()); st.cpV3 = 4;   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.dp = dpDemo(); st.dp.pix = []; st.dpZerado = 2; st.cp = cpAjustar(cpDemo()); st.cpV3 = 4;   // Controle de pagamentos (Financeiro): destinos e orientações
   st.cpe = {classe:{}, lanc:bonusNickolas()};   // Contas a pagar: o que o Marcus marcou como Sorelly ou Família em cada conta do DevMaster
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
@@ -384,7 +406,8 @@ function inicial(){
     if(s.fat28V!==1){ s.fat28V = 1; aplicaFat28(s); }
     if(s.fat30V!==2){ s.fat30V = 2; aplicaFat30(s); }   // v2: só o dia 29 (o 30 sai até o Marcus mandar o certo)
     if(s.fecha10V!==3){ s.fecha10V = 3; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
-    if(s.nov26V!==2){ s.nov26V = 2; aplicaAbreNov(s); }   // 01/11/2026: novembro abre com 2.047 revendedoras, 1.975 previstos e Carregar 0
+    if(s.nov26V!==2){ s.nov26V = 2; aplicaAbreNov(s); }
+    if(s.fatNov1V!==2){ s.fatNov1V = 2; aplicaFatNov(s); }   // 09/11/2026: faturamento de 01 a 09/11 (321 acertos e R$ 240.392,16 acumulados, 13 no Carregar)   // 01/11/2026: novembro abre com 2.047 revendedoras, 1.975 previstos e Carregar 0
     aplicaAgendPatches(s);   // 01/11/2026: abertura de novembro, metas 96/97/98% e viagens do Agendamento (ajustes guardados dentro do próprio agend: state/agend-patches.js)
     aplicaFdFixos(s);   // 01/11/2026: setembro e outubro fechados e abertura de novembro, por valor (state/fd-patches.js)
     if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
@@ -433,7 +456,8 @@ function inicial(){
     if(s.ff && !s.ffImp3){ s.ffImp3 = true; var ffY = ffLocal(); if(ffY){ (ffY.dividas||[]).filter(function(x){ return /^x_/.test(x.id) && !(s.ff.dividas||[]).some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.dividas.push(x); var pr = (s.ff.prest||[]).find(function(q){ return q.id===x.prestId; }); if(pr) pr.ativo = true; }); } }   // dívidas que o Marcus passou à mão (ex.: Amanda, total R$ 350)
     if(s.ff && !s.ffImp2){ s.ffImp2 = true; var ffX = ffLocal(); if(ffX){ ffX.contas.filter(function(c){ return /^x_/.test(c.id) && !s.ff.contas.some(function(k){ return k.id===c.id; }); }).forEach(function(c){ s.ff.contas.push(c); s.ff.parcelas[c.id] = ffX.parcelas[c.id]; }); } }   // contas que o Marcus passou e não existem no admin antigo (ex.: aluguel Uphills)
     if(!s.cp) s.cp = cpDemo();
-    if(!s.dp || s.dpV!==8){ s.dp = dpDemo(); s.dpV = 8; }   // v2 (24/10/2026): pedidos com forma Pix, Maquininha ou Link   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
+    if(!s.dp || s.dpV!==8){ s.dp = dpDemo(); s.dp.pix = []; s.dpV = 8; }
+    if(s.dpZerado!==2){ s.dp = Object.assign({}, s.dp, {pix:(s.dp.pix||[]).filter(function(x){ return x.internoId || x.pid; })}); s.dpZerado = 2; }   // 09/11/2026 (Marcus): a fila do Direcionar começa ZERADA (saem os pedidos de teste); a partir daqui os pedidos vêm do servidor (módulo "pag")   // v2 (24/10/2026): pedidos com forma Pix, Maquininha ou Link   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
     if(s.cp && s.cpV3!==4){ s.cp = cpAjustar(s.cp); s.cpV3 = 4; }
     if(!s.px) s.px = pxDemo();
     s.px = pxMigrar(s.px, s);   // traz as contas Pix reais (sem chave) do arquivo local, uma vez
@@ -451,6 +475,8 @@ function inicial(){
     s.mel = melMigrar(s.mel);   // Solicitações de melhorias
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
+    s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
+    s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos
     s.inf = infMigrar(s.inf);   // Folders e informativos: cria com as regras do acerto ou completa campos novos
@@ -518,6 +544,7 @@ function inicial(){
     if(!s.comis) s.comis = JSON.parse(JSON.stringify(COMIS0));
     if(s.comis.fixoV!==2){ s.comis.fixoV = 2; s.comis.combSemEnvio = COMIS0.combSemEnvio; }   // valor fixo do combustível sem km no prazo baixou para R$ 200,00
     if(s.demoAcertos!==VERSAO_DEMO){ s.demoAcertos = VERSAO_DEMO; s.acertosConsignado = acertosDemo(s).concat((s.acertosConsignado||[]).filter(function(r){ return !r.demo; })); }
+    if(s.limpaTesteV!==1){ s.limpaTesteV = 1; s.acertosConsignado = (s.acertosConsignado||[]).filter(function(r){ return r.origem==="interno" && !r.demo; }); }   // 06/11/2026 (Marcus): tira do Consolidado os acertos de teste (demonstração e feitos no app de teste da representante); ficam só os acertos reais do Atendimento interno
     if(s.filaSimV!==3){ s.filaSimV = 3; s.filaSimulada = Math.max(0, 10 - filaRetornos(s).length); s.filaNivel = -1; s.alertas = (s.alertas||[]).filter(function(x){ return x.tipo!=="fila_retorno"; }); s = aplicaFila(s); }   // simulação: 45 kits aguardando bipagem (3 reais + 34) e o alerta já sobe
     s.visao = "supervisao";
     return s; } } } catch(x){}

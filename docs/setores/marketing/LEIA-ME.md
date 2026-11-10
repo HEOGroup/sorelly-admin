@@ -18,25 +18,29 @@ Cadastro de revendedoras (leads)
 ## 2. Quem
 | Quem | Papel |
 |---|---|
-| Julia (líder citada em 08/10/2026; a confirmar, a planilha mostra saída em 15/10); tráfego pago com o Diego | Líder do setor |
-| Beatriz | Social media (1) |
-| Rebeca | Assistente de marketing digital (1) |
+| Lucas Castilho | Foto e edição (prestador dentro da empresa) |
+| Funcionária nova (10/11/2026) | Foto e edição |
+| Beatriz | Social media (de atestado em 10/11/2026) |
+| Diego | Tráfego pago |
+| Julia e Rebeca | Saíram em 15/10/2026 |
 
 ## 3. Regras que valem
 | # | Regra |
 |---|---|
-| — | Nenhuma regra própria registrada ainda (a confirmar) |
+| 1 | Tráfego pago: o investimento se digita SEM imposto; Meta com imposto = × (1 + 12,15%); total das plataformas = Google + Meta com imposto |
+| 2 | Custo por cadastrada = investimento ÷ cadastradas. Aprovadas zero com cadastradas = não lançadas (mostra "—") |
 
 ## 4. Onde ficam as coisas
 | O quê | Onde |
 |---|---|
 | Marketing | `/marketing/painel` |
 | Campanhas | Em breve |
-| Tráfego pago | Em breve |
+| Fotos de catálogo | `/marketing/fotos-de-catalogo` (planilha das fotos das peças novas: foto, edição, DevMaster) |
+| Tráfego pago | `/marketing/trafego-pago` (Investimento, Mês a mês, Dia a dia, Criativos) |
 | Pessoas (dados reais) | `docs/setores/marketing/pessoas.local.md` (só neste PC) |
 | Integração com os outros setores | `docs/negocio/INTEGRACAO-ENTRE-SETORES.md` |
 
-Código das telas: `pages/Marketing.js`.
+Código das telas: `pages/Marketing.js` e `pages/Trafego.js` (`pages/trafego/*`, domínio `domain/trafego.js`, estado `s.tp`).
 
 ## 5. Em aberto (principais)
 - Tela do setor (em breve).

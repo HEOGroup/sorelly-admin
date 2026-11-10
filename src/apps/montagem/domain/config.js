@@ -35,6 +35,8 @@ var CFG0 = {
   perdaRecusa:0.3, recusasBloqueio:2, perdaDiaParado:0.2, diasParadosTolerancia:1,
   // Pedido da representante: precisa chegar com esta antecedência; depois disso conta como atrasado
   prazoPedidoHoras:48,
+  // Listagem da representante (09/11/2026, Marcus e Deysiane): a representante só inclui revendedora até 2 dias úteis antes da retirada, às 07:30 (depois, só a supervisão libera)
+  listagemPrazoDiasUteis:2, listagemPrazoHora:"07:30",
   // Duas tabelas de kit: estoque alto (mais peças) e estoque baixo (menos peças). A ativa vale para a sugestão.
   tabelaAtiva:"alto",
   tabelaKit:[{min:5000,kit:20000},{min:4000,kit:17000},{min:2500,kit:15000},{min:1600,kit:12000},

@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Geral · Limite de fornecedores · 4 layouts</title>
+<style>
+  :root{ --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c; --ok:#34d399; --alerta:#fbbf24; --ruim:#f87171; --azul:#3b82f6; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.2 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px} .sub{margin:0 0 16px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section{max-width:1240px;margin:0 auto 38px}
+  .tag{margin-bottom:10px} .tag b{font-size:15px;margin-right:10px}
+  .tela{border:1px dashed var(--linha2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
+  .cab h2{margin:0;font-size:18px} .cab p{margin:4px 0 0}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .barra{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 14px;border-bottom:1px solid var(--linha);font-weight:600}
+  .corpo{padding:10px;display:flex;flex-direction:column;gap:10px}
+  .rolagem{overflow-x:auto}
+  .grade{border:1px solid var(--linha);border-radius:8px;min-width:900px}
+  .gl{display:grid}
+  .gl > div{height:32px;display:flex;align-items:center;justify-content:center;white-space:nowrap;border-left:1px solid var(--linha);padding:0 10px;font-variant-numeric:tabular-nums}
+  .gl > div:first-child{border-left:0}
+  .gl.h > div{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--bloco2)}
+  .gl.t > div{background:var(--bloco2);font-weight:700}
+  .gl + .gl{border-top:1px solid var(--linha)}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)}
+  .bar{display:inline-block;width:56px;height:8px;border-radius:99px;background:#ffffff26;overflow:hidden;margin-right:8px;vertical-align:middle}
+  .bar i{display:block;height:100%}
+  .btn{height:32px;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;background:transparent;color:#fff;font:inherit;cursor:pointer}
+  .btn.on{background:var(--azul);border-color:var(--azul)}
+  .linhaBt{display:flex;gap:8px;flex-wrap:wrap}
+  .duas{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:10px}
+  @media(max-width:1000px){.duas{grid-template-columns:1fr}}
+  .nota{max-width:1240px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+  /* C: linhas com barra grande */
+  .tipo{display:grid;grid-template-columns:170px 1fr 150px 150px;align-items:center;gap:0;border-top:1px solid var(--linha);min-width:900px}
+  .tipo:first-child{border-top:0}
+  .tipo > div{height:44px;display:flex;align-items:center;padding:0 12px;white-space:nowrap}
+  .big{flex:1;height:12px;border-radius:99px;background:#ffffff1f;overflow:hidden;position:relative}
+  .big i{position:absolute;left:0;top:0;bottom:0}
+  .big u{position:absolute;top:-3px;bottom:-3px;width:2px;background:#fff;left:100%}
+  .calor{display:grid;gap:0}
+  .calor .c{height:32px;display:flex;align-items:center;justify-content:center;border-left:1px solid var(--linha);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap}
+  .painel[hidden]{display:none}
+</style>
+</head>
+<body>
+<h1>Geral · Novembro/2026 · Limite de fornecedores · 4 layouts</h1>
+<p class="sub">Esta é a tela do seu print. Sem os 5 blocos do topo, sem dourado, sem linha quebrada, com os mesmos números. Cada layout muda só a forma de arrumar o Limite, o semáforo e os meses com folga.</p>
+<div class="nav"><a href="#A">A · Tudo empilhado</a><a href="#B">B · Duas colunas</a><a href="#C">C · Barra de uso</a><a href="#D">D · Abas</a></div>
+<div id="raiz"></div>
+<div class="nota"><p><b>Como escolher:</b> diga a letra. Eu aplico na tela Geral e no Limite do ano.</p><p><b>Já no sistema hoje:</b> o layout A (tudo empilhado), que foi o que montei sem você ver as opções.</p></div>
+
+<script>
+var R = function(n){ return (n<0?"−":"") + "R$ " + Math.abs(n).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var TIPOS = [
+ {n:"Total do mês", lim:300000, uso:377322.04, cor:"#f87171", quem:"Pix R$ 268.000,00 · Boleto, cheque, cartão R$ 109.000,00", forte:true},
+ {n:"Banho", lim:150000, uso:273751.38, cor:"#a78bfa", quem:"Pontual R$ 236.000,00 · Ellos Galvânica R$ 38.000,00"},
+ {n:"Bruto", lim:100000, uso:85311.79, cor:"#2dd4bf", quem:"Point R$ 45.000,00 · Mega Sul R$ 29.000,00 · Art Ello Bruto R$ 9.000,00"},
+ {n:"Serviços e produtos", lim:50000, uso:18258.87, cor:"#fbbf24", quem:"Office Graf R$ 15.000,00 · Ello Print R$ 3.000,00 · Devmaster R$ 782,00"}];
+var MESES = [
+ {m:"Dezembro/2026", l:338524.08, b:-83000, br:14000, s:31000}, {m:"Janeiro/2027", l:255475.08, b:-38000, br:54000, s:29000},
+ {m:"Fevereiro/2027", l:170399.96, b:23000, br:77000, s:29000}, {m:"Março/2027", l:118286.44, b:59000, br:84000, s:38000}];
+var TETO = 300000;
+var SEM = [["Até 80%","Tranquilo","#34d399"],["80 a 90%","Atenção","#fbbf24"],["90 a 100%","Só com aprovação","#fb923c"],["Acima de 100%","Não fecha nada novo","#f87171"]];
+var REGRAS = [["Boleto, cheque e cartão","Entram no mês do vencimento"],["Pix","Entra no mês da negociação (mês de referência)"],["Teto","Soma Pix, boleto, cheque e cartão de todos os fornecedores"],["Cada tipo","Tem o seu teto; se estourar, não pega a sobra do outro sem aprovação"],["Fora do teto","Sócios, Casa e Mídia (Facebook e Google) são controlados à parte"],["Fechar negociação","Ver a folga do mês e do tipo; não coube, joga para um mês com folga; só lança depois de aprovado; nada é pago sem confirmação"]];
+var sem = function(p){ return p<=80?SEM[0]:p<=90?SEM[1]:p<=100?SEM[2]:SEM[3]; };
+var folga = function(x){ var f = x.lim-x.uso; return f<0 ? ['passou '+R(-f),'ruim'] : [R(f),'ok']; };
+var grade = function(cols, head, rows, extra){ var g = 'grid-template-columns:'+cols;
+  return '<div class="rolagem"><div class="grade"><div class="gl h" style="'+g+'">'+head.map(function(h){ return '<div>'+h+'</div>'; }).join("")+'</div>'+rows.map(function(r){ return '<div class="gl '+(r.t?'t':'')+'" style="'+g+'">'+r.c.map(function(c){ return '<div class="'+(c&&c.k||'')+'">'+(c&&c.v!==undefined?c.v:c)+'</div>'; }).join("")+'</div>'; }).join("")+'</div></div>'; };
+var pontoT = function(x){ return '<b><span style="color:'+x.cor+'">● </span>'+x.n+'</b>'; };
+var pctT = function(x){ var p = x.uso/x.lim*100, s = sem(p); return '<span style="color:'+s[2]+';display:flex;align-items:center"><span class="bar"><i style="width:'+Math.min(100,p)+'%;background:'+s[2]+'"></i></span>'+Math.round(p)+'% · '+s[1]+'</span>'; };
+var tabLimite = function(){ return grade("13% 11% 12% 10% 15% 20% 1fr", ["Tipo","Limite","Lançado","Pendente","Folga","% do limite","Quem pesa"],
+  TIPOS.map(function(x){ var f = folga(x); return {t:x.forte, c:[pontoT(x), R(x.lim), R(x.uso), "—", {v:f[0],k:f[1]}, pctT(x), x.quem]}; })); };
+var semLinha = function(){ var p = TIPOS[0].uso/TETO*100, ativa = sem(p)[1];
+  return grade("1fr 1fr 1fr 1fr", SEM.map(function(s){ return s[0]; }), [{c:SEM.map(function(s){ return {v:(s[1]===ativa?"● ":"")+s[1], k:""}; }).map(function(c,i){ return s2(c,i,ativa); })}]); };
+var s2 = function(c,i,ativa){ return SEM[i][1]===ativa ? {v:'<span style="color:'+SEM[i][2]+'">'+c.v+'</span>'} : c.v; };
+var tabFolgas = function(){ return grade("20% 16% 20% 14% 14% 1fr", ["Mês","Lançado","Folga","Banho","Bruto","Serviços"], MESES.map(function(m){ var f = TETO-m.l, s = sem(m.l/TETO*100);
+  var k = function(v){ return {v:R(v), k:v<0?'ruim':''}; };
+  return {c:['<b><span style="color:'+s[2]+'">● </span>'+m.m+'</b>', R(m.l), {v:f<0?'passou '+R(-f):R(f), k:f<0?'ruim':'ok'}, k(m.b), k(m.br), k(m.s)]}; })); };
+var tabRegras = function(){ return grade("26% 1fr", ["Regra","O que vale"], REGRAS.map(function(r){ return {c:[r[0], r[1]]}; })); };
+var cabTela = '<div class="cab"><h2>Geral · Novembro/2026</h2><p>O resumo do mês de cada fornecedor e prestador de serviço, ao vivo.</p></div>';
+var bloco = function(t, dir, corpo){ return '<div class="bloco"><div class="barra"><span>'+t+'</span><span>'+(dir||'')+'</span></div><div class="corpo">'+corpo+'</div></div>'; };
+var botoes = '<div class="linhaBt"><button class="btn">Regras do limite</button><button class="btn">Classificação dos fornecedores</button><button class="btn">Ajustar tetos</button></div>';
+var titulo = 'Limite de fornecedores · Novembro/2026', dir = '126% · Não fecha nada novo';
+
+function LA(){ return bloco(titulo, dir, tabLimite()+semLinha()+'<b>Meses com folga · para jogar Pix e parcelas</b>'+tabFolgas()+botoes); }
+function LB(){ return bloco(titulo, dir, tabLimite()+'<div class="duas"><div style="display:flex;flex-direction:column;gap:6px"><b>Meses com folga · para jogar Pix e parcelas</b>'+tabFolgas()+'</div><div style="display:flex;flex-direction:column;gap:6px"><b>Semáforo do mês</b>'+semVertical()+'</div></div>'+botoes); }
+function semVertical(){ var p = TIPOS[0].uso/TETO*100, ativa = sem(p)[1];
+  return '<div class="grade" style="min-width:0">'+SEM.map(function(s,i){ var on = s[1]===ativa; return '<div class="gl" style="grid-template-columns:130px 1fr"><div style="'+(on?'color:'+s[2]+';font-weight:700':'')+'">'+(on?'● ':'')+s[0]+'</div><div style="'+(on?'color:'+s[2]+';font-weight:700':'')+'">'+s[1]+'</div></div>'; }).join("")+'</div>'; }
+function LC(){
+  var barras = '<div class="rolagem"><div class="grade" style="padding:0">'+TIPOS.map(function(x){ var p = x.uso/x.lim*100, s = sem(p), f = folga(x), w = Math.min(100, p/Math.max(p,100)*100), marca = 100/Math.max(p,100)*100;
+    return '<div class="tipo"><div>'+pontoT(x)+'</div><div><div class="big"><i style="width:'+Math.min(100,p/Math.max(p,100)*100)+'%;background:'+s[2]+'"></i><u style="left:'+marca+'%"></u></div></div><div style="justify-content:center;color:'+s[2]+'">'+Math.round(p)+'% · '+s[1]+'</div><div class="'+f[1]+'" style="justify-content:center">'+f[0]+'</div></div>'+'<div class="tipo" style="grid-template-columns:170px 1fr 150px 150px;border-top:0;min-width:900px"><div style="height:30px"></div><div style="height:30px;font-size:12px">Lançado '+R(x.uso)+' de '+R(x.lim)+' · '+x.quem+'</div><div style="height:30px"></div><div style="height:30px"></div></div>'; }).join("")+'</div></div>';
+  var cal = '<div class="rolagem"><div class="grade"><div class="gl h" style="grid-template-columns:20% repeat(5,1fr)"><div>Mês</div><div>Lançado</div><div>Folga</div><div>Banho</div><div>Bruto</div><div>Serviços</div></div>'+MESES.map(function(m){ var s = sem(m.l/TETO*100), f = TETO-m.l;
+    var cel = function(v,cor){ return '<div style="background:'+(v<0?'#f8717126':'#34d39914')+'" class="'+(v<0?'ruim':'')+'">'+R(v)+'</div>'; };
+    return '<div class="gl" style="grid-template-columns:20% repeat(5,1fr)"><div><b><span style="color:'+s[2]+'">● </span>'+m.m+'</b></div><div>'+R(m.l)+'</div><div style="background:'+(f<0?'#f8717126':'#34d39914')+'" class="'+(f<0?'ruim':'ok')+'">'+(f<0?'passou '+R(-f):R(f))+'</div>'+cel(m.b)+cel(m.br)+cel(m.s)+'</div>'; }).join("")+'</div></div>';
+  return bloco(titulo, dir, barras+'<b>Meses com folga · verde sobra, vermelho passou</b>'+cal+semLinha()+botoes); }
+function LD(){
+  var abas = ["Limite do mês","Meses com folga","Semáforo e regras"];
+  var corpo = ['<div class="painel" data-p="0">'+tabLimite()+'</div>','<div class="painel" data-p="1" hidden>'+tabFolgas()+'</div>','<div class="painel" data-p="2" hidden>'+semLinha()+tabRegras()+'</div>'].join("");
+  return bloco(titulo, dir, '<div class="tabs">'+abas.map(function(a,i){ return '<button class="btn '+(i===0?'on':'')+'" data-aba="'+i+'">'+a+'</button>'; }).join("")+'<span style="flex:1"></span><button class="btn">Classificação dos fornecedores</button><button class="btn">Ajustar tetos</button></div>'+corpo); }
+
+var NOMES = {A:["Tudo empilhado","Limite, depois o semáforo em uma linha, depois os meses com folga. É a leitura de cima para baixo, uma tabela por vez."],
+             B:["Duas colunas","Limite em cima. Embaixo, meses com folga à esquerda e o semáforo à direita. Gasta menos altura."],
+             C:["Barra de uso","Cada tipo é uma linha com barra grande (a marca branca é o limite) e os valores embaixo. Os meses com folga ficam em células verde e vermelha. Dá para ver o estouro sem ler número."],
+             D:["Abas","Uma tabela por vez: Limite, Meses com folga, Semáforo e regras. É o que mais economiza espaço."]};
+var fn = {A:LA,B:LB,C:LC,D:LD}, html = "";
+["A","B","C","D"].forEach(function(k){
+  html += '<section id="'+k+'"><div class="tag"><b>Layout '+k+' · '+NOMES[k][0]+'</b>'+NOMES[k][1]+'</div><div class="tela">'+cabTela+fn[k]()+
+    '<div style="font-size:13px">Abaixo vêm: Aguardando aprovação, Fornecedores, Prestadores de serviço e Calendário de vencimentos (sem mudança entre os layouts).</div></div></section>'; });
+document.getElementById("raiz").innerHTML = html;
+document.querySelectorAll("[data-aba]").forEach(function(b){ b.addEventListener("click", function(){ var bloco = b.closest(".bloco"), i = b.getAttribute("data-aba");
+  bloco.querySelectorAll("[data-aba]").forEach(function(x){ x.classList.toggle("on", x===b); }); bloco.querySelectorAll(".painel").forEach(function(p){ p.hidden = p.getAttribute("data-p")!==i; }); }); });
+</script>
+</body>
+</html>

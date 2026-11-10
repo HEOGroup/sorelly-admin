@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing · Fotos de catálogo · 4 layouts da planilha</title>
+<style>
+  :root{--fundo:#0e0f11;--bloco:#16171a;--bloco2:#1c1d21;--linha:#34363c;--ouro:#E8B84B;--ouro-esc:#1a1306;--ok:#4ADE80;--alerta:#FBBF24;--ruim:#EF4444;--azul:#5B8DEF;--roxo:#A78BFA;--verde:#2DD4BF}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}.sub{margin:0 0 14px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha);border-radius:8px;color:#fff;text-decoration:none}
+  section.lay{max-width:1320px;margin:0 auto 54px}
+  .tag{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;border-bottom:1px solid var(--linha);padding-bottom:8px;flex-wrap:wrap}.tag b{font-size:15px}
+  .menu{display:flex;gap:6px;margin-bottom:10px}.menu span{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha);border-radius:8px}.menu span.at{border-color:var(--ouro);color:var(--ouro)}
+  .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}.head h2{margin:0;font-size:16px}
+  .btn{height:32px;display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;border:1px solid var(--linha);background:var(--bloco);color:#fff;font:inherit;cursor:pointer}
+  .btn.p{background:var(--ouro);color:var(--ouro-esc);border-color:var(--ouro);font-weight:600}
+  .bl{background:var(--bloco);border:1px solid var(--linha);border-radius:8px;overflow:hidden}
+  .bl>h3{margin:0;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bloco2);border-bottom:1px solid var(--linha);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .grade{display:grid;gap:10px;margin-bottom:10px;align-items:start}
+  .g3{grid-template-columns:1fr 1.7fr 1.3fr}.g2{grid-template-columns:1fr 1.6fr}.g21{grid-template-columns:1.3fr 1fr}
+  @media(max-width:1000px){.g3,.g2,.g21{grid-template-columns:1fr}}
+  table{border-collapse:collapse;width:100%}
+  th,td{text-align:center;white-space:nowrap;padding:0 10px;border:1px solid var(--linha);font-variant-numeric:tabular-nums}
+  th{height:30px;background:var(--bloco2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  td{height:32px}
+  table:not(.L) th{white-space:normal;line-height:1.15;padding:3px 8px}
+  tr.tt td{background:var(--bloco2);font-weight:700}
+  .rol{overflow-x:auto}
+  .ok{color:var(--ok)}.ruim{color:var(--ruim)}.alerta{color:var(--alerta)}
+  .barra{display:inline-block;width:100%;min-width:90px;height:8px;border-radius:4px;background:#2a2c31;overflow:hidden;vertical-align:middle}.barra i{display:block;height:100%}
+  /* listagem */
+  .L th.f,.L td.f{border-top:3px solid var(--azul)}.L th.e{border-top:3px solid var(--roxo)}.L th.s{border-top:3px solid var(--verde)}
+  th button{all:unset;box-sizing:border-box;width:100%;height:30px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  th button:hover{background:rgba(255,255,255,.06)}th button.fl{color:var(--ouro)}th{padding:0}
+  .barrafil{display:flex;align-items:center;gap:10px;margin:0 0 8px;min-height:32px}
+  .mc{position:fixed;z-index:50;width:250px;background:#1c1d21;border:1px solid var(--linha);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.6);padding:6px 0}
+  .mc .it{display:block;width:100%;height:32px;padding:0 12px;text-align:left;background:none;border:0;color:#fff;font:inherit;cursor:pointer}.mc .it:hover{background:rgba(255,255,255,.07)}
+  .mc input[type=text]{margin:4px 10px;width:calc(100% - 20px);height:32px;background:var(--fundo);color:#fff;border:1px solid var(--linha);border-radius:8px;padding:0 10px;font:inherit}
+  .mc .lista{max-height:190px;overflow:auto;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha);margin:4px 0}
+  .mc label{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;cursor:pointer}.mc label:hover{background:rgba(255,255,255,.07)}
+  .abas{display:flex;gap:6px;margin-bottom:10px;border-bottom:1px solid var(--linha)}
+  .abas button{height:32px;padding:0 16px;background:none;border:0;border-bottom:2px solid transparent;color:#fff;font:inherit;cursor:pointer}.abas button.at{border-bottom-color:var(--ouro);color:var(--ouro)}
+  .painel{display:none}.painel.at{display:block}
+  .linha1{display:flex;gap:18px;flex-wrap:wrap;align-items:center;justify-content:center;padding:8px 12px;margin-bottom:10px}
+  .linha1 b{font-variant-numeric:tabular-nums}
+  details.cat{border-bottom:1px solid var(--linha)}details.cat summary{list-style:none;display:grid;grid-template-columns:30px 1.2fr .6fr .6fr .6fr .6fr 1.2fr;align-items:center;min-height:34px;cursor:pointer;text-align:center;font-variant-numeric:tabular-nums}
+  details.cat summary::-webkit-details-marker{display:none}details.cat summary:hover{background:rgba(255,255,255,.04)}details.cat[open] summary{background:var(--bloco2)}
+  .nota{max-width:1320px;margin:0 auto;border-top:1px solid var(--linha);padding-top:14px}.nota li{margin:4px 0}
+</style>
+</head>
+<body>
+<div style="max-width:1320px;margin:0 auto">
+  <h1>Marketing › Fotos de catálogo · 4 layouts no jeito da planilha</h1>
+  <p class="sub">Sem quadro de cartões. Todos têm o que a planilha antiga tem: resumo com porcentagem e barra, progresso por categoria, produção diária e a listagem com Foto, Editada e Sistema (quem fez cada etapa). Os números e os códigos são os reais da planilha (17.359 códigos); a listagem mostra uma amostra de 54 linhas.</p>
+  <div class="nav"><a href="#L1">1 · Igual à planilha</a><a href="#L2">2 · Resumo largo em cima</a><a href="#L3">3 · Listagem primeiro, relatórios em abas</a><a href="#L4">4 · Listagem por categoria</a></div>
+</div>
+
+<!-- 1 -->
+<section class="lay" id="L1">
+  <div class="tag"><b>1 · Igual à planilha</b><span>Três relatórios lado a lado em cima, listagem completa embaixo. É a ordem da planilha Controle Oficial.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar códigos</button></div></div>
+  <div class="grade g3"><div class="bl" id="r1a"></div><div class="bl" id="r1b"></div><div class="bl" id="r1c"></div></div>
+  <div class="barrafil" id="bf1"></div>
+  <div class="bl"><div class="rol"><table class="L" id="t1"></table></div></div>
+</section>
+
+<!-- 2 -->
+<section class="lay" id="L2">
+  <div class="tag"><b>2 · Resumo largo em cima</b><span>Resumo geral com as três barras bem largas, categorias e produção embaixo, uma ao lado da outra.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar códigos</button></div></div>
+  <div class="bl" style="margin-bottom:10px" id="r2a"></div>
+  <div class="grade g2"><div class="bl" id="r2b"></div><div class="bl" id="r2c"></div></div>
+  <div class="barrafil" id="bf2"></div>
+  <div class="bl"><div class="rol"><table class="L" id="t2"></table></div></div>
+</section>
+
+<!-- 3 -->
+<section class="lay" id="L3">
+  <div class="tag"><b>3 · Listagem primeiro, relatórios em abas</b><span>A listagem aparece logo. Uma linha de texto com os totais em cima e os relatórios nas abas Categorias e Produção diária.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar códigos</button></div></div>
+  <div class="bl linha1" id="r3a"></div>
+  <div class="abas" id="ab3"><button class="at" data-p="p31">Listagem</button><button data-p="p32">Progresso por categoria</button><button data-p="p33">Produção diária</button></div>
+  <div class="painel at" id="p31"><div class="barrafil" id="bf3"></div><div class="bl"><div class="rol"><table class="L" id="t3"></table></div></div></div>
+  <div class="painel" id="p32"><div class="bl" id="r3b"></div></div>
+  <div class="painel" id="p33"><div class="bl" id="r3c"></div></div>
+</section>
+
+<!-- 4 -->
+<section class="lay" id="L4">
+  <div class="tag"><b>4 · Listagem por categoria</b><span>O progresso por categoria vira a própria listagem: cada categoria tem barra, e abrir mostra os códigos dela. Resumo e produção ficam ao lado.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar códigos</button></div></div>
+  <div class="grade g21"><div class="bl" id="r4a"></div><div class="bl" id="r4c"></div></div>
+  <div class="bl"><h3>Categorias (clique para abrir os códigos)</h3>
+    <div style="display:grid;grid-template-columns:30px 1.2fr .6fr .6fr .6fr .6fr 1.2fr;min-height:30px;align-items:center;text-align:center;background:var(--bloco2);border-bottom:1px solid var(--linha);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em"><span></span><span>Categoria</span><span>Total</span><span>Foto</span><span>Editada</span><span>Sistema</span><span>Progresso</span></div>
+    <div id="cat4"></div></div>
+</section>
+
+<div class="nota"><b>O que tem nos 4</b>
+  <ul>
+    <li>Listagem no jeito da planilha: Código, Categoria, Foto (quem), Editada (quem), Sistema (quem), Observações. As três etapas têm uma cor no topo: azul, roxo e verde.</li>
+    <li>Filtro no título de cada coluna (clique para testar). Sem filtros soltos em cima, sem quadro, sem cartões.</li>
+    <li>Tabelas escuras com grade e tudo centralizado. Sem dourado no cabeçalho.</li>
+    <li>"Quem" aparece em branco quando a planilha não tem o nome (quase ninguém tem o nome de quem fotografou ou editou). Daqui para frente o sistema grava a pessoa e a hora de cada etapa.</li>
+  </ul></div>
+
+<script>
+var D = {"tot":{"total":17359,"f":9233,"e":9233,"s":9436,"div":125,"sem":7914},"cats":[{"p":"B","n":"Brincos","t":4720,"f":2418,"e":2416,"s":2469},{"p":"CL","n":"Colares","t":2473,"f":1271,"e":1271,"s":1299},{"p":"A","n":"Anéis","t":1967,"f":1024,"e":1024,"s":1028},{"p":"P","n":"Pulseiras","t":1855,"f":1129,"e":1128,"s":1167},{"p":"BB","n":"Brincos Select","t":1510,"f":976,"e":976,"s":991},{"p":"M","n":"Masculino","t":802,"f":263,"e":263,"s":274},{"p":"SP","n":"Sorelly Premium","t":800,"f":437,"e":439,"s":456},{"p":"I","n":"Infantil","t":703,"f":323,"e":323,"s":329},{"p":"CK","n":"Choker","t":627,"f":429,"e":429,"s":440},{"p":"CC","n":"Conjuntos","t":457,"f":247,"e":247,"s":250},{"p":"T","n":"Tornozeleiras","t":256,"f":119,"e":118,"s":119},{"p":"PI","n":"Pingentes","t":183,"f":44,"e":45,"s":44},{"p":"2B","n":"Brinco Duo","t":150,"f":82,"e":82,"s":82},{"p":"BT","n":"Bracelete","t":126,"f":113,"e":113,"s":115},{"p":"COL","n":"Collection","t":119,"f":103,"e":103,"s":104},{"p":"PJ","n":"Porta joias","t":104,"f":73,"e":73,"s":73},{"p":"BBA","n":"Anéis Select","t":100,"f":51,"e":52,"s":60},{"p":"BBP","n":"Pulseiras Select","t":100,"f":28,"e":28,"s":29},{"p":"AA","n":"Collection AA","t":100,"f":34,"e":34,"s":34},{"p":"ES","n":"Religiosos","t":91,"f":22,"e":22,"s":23},{"p":"BBC","n":"Colares Select","t":50,"f":10,"e":10,"s":10},{"p":"—","n":"Outras","t":38,"f":35,"e":35,"s":38},{"p":"AP","n":"Anel Prata 925","t":28,"f":2,"e":2,"s":2}],"hist":[{"dia":"2026-11-09","fotos":124,"editadas":58,"sistema":56},{"dia":"2026-11-06","fotos":396,"editadas":116,"sistema":116},{"dia":"2026-11-05","fotos":42,"editadas":42,"sistema":42},{"dia":"2026-10-30","fotos":370,"editadas":0,"sistema":0},{"dia":"2026-09-14","fotos":135,"editadas":49,"sistema":49},{"dia":"2026-09-11","fotos":169,"editadas":57,"sistema":68},{"dia":"2026-09-10","fotos":0,"editadas":65,"sistema":46},{"dia":"2026-09-09","fotos":390,"editadas":58,"sistema":38},{"dia":"2026-09-04","fotos":0,"editadas":40,"sistema":46},{"dia":"2026-09-03","fotos":383,"editadas":10,"sistema":10},{"dia":"2026-09-02","fotos":20,"editadas":4,"sistema":22},{"dia":"2026-09-01","fotos":5,"editadas":19,"sistema":19}],"rows":[["A2039","Anéis",1,"",1,"",1,"BEATRIZ","",""],["A1215","Anéis",1,"",1,"",1,"BEATRIZ","",""],["A1787","Anéis",1,"",1,"",1,"REBECA","",""],["B0846","Brincos",1,"",1,"",1,"REBECA","",""],["B2311","Brincos",1,"",1,"",1,"REBECA","",""],["B3108","Brincos",1,"",1,"",1,"REBECA","",""],["B3751","Brincos",1,"",1,"MARKETING",1,"REBECA","",""],["B4161","Brincos",1,"",1,"",1,"REBECA","",""],["B4526","Brincos",1,"",1,"",1,"REBECA","",""],["B4857","Brincos",1,"",1,"",1,"REBECA","",""],["CC0319","Conjuntos",1,"",1,"",1,"BEATRIZ","",""],["CL0911","Colares",1,"",1,"",1,"REBECA","","-"],["CL1746","Colares",0,"",0,"",1,"Kaillany","Aguardando",""],["CL2303","Colares",1,"",1,"",1,"REBECA","",""],["I0362","Infantil",1,"",1,"",1,"REBECA","",""],["P0657","Pulseiras",1,"",1,"",1,"REBECA","",""],["P1374","Pulseiras",1,"",1,"",1,"BEATRIZ","",""],["P1755","Pulseiras",1,"",1,"",1,"REBECA","",""],["P2013","Pulseiras",1,"",1,"",1,"REBECA","",""],["M0784","Masculino",1,"",1,"",1,"REBECA","",""],["CK0390","Choker",1,"",1,"",1,"REBECA","",""],["SP0344","Sorelly Premium",1,"",1,"",1,"REBECA","",""],["B0134","Brincos",1,"",1,"",1,"REBECA","",""],["BB0882","Brincos Select",1,"",1,"",1,"REBECA","",""],["BB1279","Brincos Select",1,"",1,"",1,"REBECA","",""],["2B0041","Brinco Duo",1,"",1,"",1,"BEATRIZ","",""],["A2062","Anéis",0,"",0,"",0,"","",""],["A0694","Anéis",0,"",0,"",0,"","",""],["A1191","Anéis",0,"",0,"",0,"","",""],["B0625","Brincos",0,"",0,"",0,"","",""],["B1032","Brincos",0,"",0,"",0,"","",""],["B1473","Brincos",0,"",0,"",0,"","",""],["B1953","Brincos",0,"",0,"",0,"","",""],["B2420","Brincos",0,"",0,"",0,"","",""],["B3007","Brincos",0,"",0,"",0,"","",""],["B4058","Brincos",0,"",0,"",0,"","",""],["CL0455","Colares",0,"",0,"",0,"","",""],["CL0862","Colares",0,"",0,"",0,"","",""],["CL1357","Colares",0,"",0,"",0,"","",""],["I0112","Infantil",0,"",0,"",0,"","",""],["I0790","Infantil",0,"",0,"",0,"","",""],["P0818","Pulseiras",0,"",0,"",0,"","",""],["M0200","Masculino",0,"",0,"",0,"","",""],["M0604","Masculino",0,"",0,"",0,"","",""],["PI0148","Pingentes",0,"",0,"",0,"","",""],["SP0142","Sorelly Premium",0,"",0,"",0,"","",""],["BB0177","Brincos Select",0,"",0,"",0,"","",""],["BB0941","Brincos Select",0,"",0,"",0,"","",""],["A0300","Anéis",0,"",0,"",0,"","Repetido","A0476"],["B3675","Brincos",1,"",1,"REBECA",0,"AGATHA","Diversas",""],["CL2246","Colares",0,"",0,"",0,"","Diversas",""],["T0095","Tornozeleiras",0,"",0,"",0,"","Aguardando","-"],["T0170","Tornozeleiras",0,"",0,"",0,"","Aguardando","-"],["CK0083","Choker",0,"",0,"Marketing",0,"REBECA","Diversas",""]]};
+var N = function(v){ return Number(v).toLocaleString('pt-BR') };
+var PC = function(n, t){ return t ? (n/t*100).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%' : '—' };
+var T = D.tot;
+function dia(iso){ return iso.slice(8)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) }
+function barra(n,t,cor){ return '<span class="barra"><i style="width:'+Math.max(2,Math.round(n/t*100))+'%;background:'+cor+'"></i></span>' }
+
+/* blocos de relatório */
+function resumo(grande){
+  var l=[['Foto','var(--azul)',T.f],['Editada','var(--roxo)',T.e],['Sistema (DevMaster)','var(--verde)',T.s]];
+  return '<h3>Resumo geral</h3><table><tr><th style="width:34%">Etapa</th><th style="width:16%">Códigos</th><th style="width:14%">% do total</th>'+(grande?'<th>Progresso</th>':'')+'</tr>'+
+   '<tr class="tt"><td>Total de códigos</td><td>'+N(T.total)+'</td><td>100%</td>'+(grande?'<td></td>':'')+'</tr>'+
+   l.map(function(x){return '<tr><td>'+x[0]+'</td><td><b>'+N(x[2])+'</b></td><td>'+PC(x[2],T.total)+'</td>'+(grande?'<td style="padding:0 16px">'+barra(x[2],T.total,x[1])+'</td>':'')+'</tr>'}).join('')+
+   '<tr><td>Sem foto</td><td class="ruim"><b>'+N(T.sem)+'</b></td><td>'+PC(T.sem,T.total)+'</td>'+(grande?'<td style="padding:0 16px">'+barra(T.sem,T.total,'var(--ruim)')+'</td>':'')+'</tr>'+
+   '<tr><td>Diversas</td><td>'+N(T.div)+'</td><td>'+PC(T.div,T.total)+'</td>'+(grande?'<td></td>':'')+'</tr></table>';
+}
+function categorias(){
+  return '<h3>Progresso por categoria</h3><div class="rol" style="max-height:260px;overflow:auto"><table><tr><th>Cód.</th><th>Categoria</th><th>Total</th><th>Foto</th><th>% foto</th><th>Editada</th><th>% editada</th><th>Sistema</th><th>% sistema</th></tr>'+
+   D.cats.map(function(c){return '<tr><td>'+c.p+'</td><td>'+c.n+'</td><td>'+N(c.t)+'</td><td>'+N(c.f)+'</td><td>'+PC(c.f,c.t)+'</td><td>'+N(c.e)+'</td><td>'+PC(c.e,c.t)+'</td><td>'+N(c.s)+'</td><td>'+PC(c.s,c.t)+'</td></tr>'}).join('')+
+   '<tr class="tt"><td></td><td>Total</td><td>'+N(T.total)+'</td><td>'+N(T.f)+'</td><td>'+PC(T.f,T.total)+'</td><td>'+N(T.e)+'</td><td>'+PC(T.e,T.total)+'</td><td>'+N(T.s)+'</td><td>'+PC(T.s,T.total)+'</td></tr></table></div>';
+}
+function producao(){
+  var h=D.hist, m=function(k){return Math.round(h.reduce(function(t,x){return t+x[k]},0)/h.length)};
+  return '<h3>Produção diária</h3><table><tr><th>Data</th><th>Fotos tiradas</th><th>Fotos editadas</th><th>Fotos no sistema</th></tr>'+
+   h.map(function(x){return '<tr><td>'+dia(x.dia)+'</td><td>'+N(x.fotos)+'</td><td>'+N(x.editadas)+'</td><td>'+N(x.sistema)+'</td></tr>'}).join('')+
+   '<tr class="tt"><td>Média por dia</td><td>'+N(m('fotos'))+'</td><td>'+N(m('editadas'))+'</td><td>'+N(m('sistema'))+'</td></tr></table>';
+}
+function linhaTexto(){ return '<span>Total <b>'+N(T.total)+'</b></span><span style="color:var(--azul)">Foto <b>'+N(T.f)+'</b> ('+PC(T.f,T.total)+')</span><span style="color:var(--roxo)">Editada <b>'+N(T.e)+'</b> ('+PC(T.e,T.total)+')</span><span style="color:var(--verde)">Sistema <b>'+N(T.s)+'</b> ('+PC(T.s,T.total)+')</span><span class="ruim">Sem foto <b>'+N(T.sem)+'</b></span><span>Diversas <b>'+N(T.div)+'</b></span>'; }
+document.getElementById('r1a').innerHTML=resumo(false); document.getElementById('r1b').innerHTML=categorias(); document.getElementById('r1c').innerHTML=producao();
+document.getElementById('r2a').innerHTML=resumo(true); document.getElementById('r2b').innerHTML=categorias(); document.getElementById('r2c').innerHTML=producao();
+document.getElementById('r3a').innerHTML=linhaTexto(); document.getElementById('r3b').innerHTML=categorias(); document.getElementById('r3c').innerHTML=producao();
+document.getElementById('r4a').innerHTML=resumo(true); document.getElementById('r4c').innerHTML=producao();
+
+/* listagem com filtro na coluna */
+var COLS=[['Código','cod',''],['Categoria','cat',''],['Foto','f','f'],['Quem fotografou','fq','f'],['Editada','e','e'],['Quem editou','eq','e'],['Sistema','s','s'],['Quem subiu','sq','s'],['Observações','obs','']];
+var LIN=D.rows.map(function(r){return {cod:r[0],cat:r[1],f:r[2]?'Ok':(r[8]||'—'),fq:r[3]||'—',e:r[4]?'Ok':'—',eq:r[5]||'—',s:r[6]?'Ok':(r[8]&&!r[2]?r[8]:'—'),sq:r[7]||'—',obs:r[9]||'—'}});
+var CMP=new Intl.Collator('pt-BR',{numeric:true});
+function cel(l,k){var v=l[k]; if(v==='Ok') return '<span class="ok">Ok</span>'; if(v==='—') return v; if(['Aguardando','Diversas','Repetido'].indexOf(v)>=0) return '<span class="alerta">'+v+'</span>'; return v}
+function Planilha(id,bf){
+  var t=document.getElementById(id), fil={}, ord=null, menu=null;
+  function vis(){var l=LIN.filter(function(x){return COLS.every(function(c){var f=fil[c[1]];return !f||f[x[c[1]]]})}); if(ord) l=l.slice().sort(function(a,b){return CMP.compare(String(a[ord.k]),String(b[ord.k]))*ord.d}); return l}
+  function des(){var l=vis(); var h='<tr>'+COLS.map(function(c){var on=fil[c[1]]||(ord&&ord.k==c[1]);return '<th class="'+c[2]+'"><button data-k="'+c[1]+'" class="'+(on?'fl':'')+'">'+c[0]+' <span>'+(on?'▼':'▾')+'</span></button></th>'}).join('')+'</tr>';
+    l.forEach(function(x){h+='<tr>'+COLS.map(function(c){return '<td'+(c[2]?'':'')+'>'+cel(x,c[1])+'</td>'}).join('')+'</tr>'});
+    if(!l.length) h+='<tr><td colspan="'+COLS.length+'" style="height:60px">Nenhum código com esses filtros.</td></tr>';
+    t.innerHTML=h; t.querySelectorAll('th button').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();abre(b)}});
+    var nf=Object.keys(fil).length+(ord?1:0);
+    document.getElementById(bf).innerHTML=nf?'<button class="btn" id="lim'+id+'">Limpar filtros e ordem</button><span>'+l.length+' de '+LIN.length+' linhas (amostra)</span>':'<span><b>'+N(T.total)+'</b> códigos na versão real · amostra de '+LIN.length+' linhas aqui · clique no título da coluna para filtrar</span>';
+    var lb=document.getElementById('lim'+id); if(lb) lb.onclick=function(){fil={};ord=null;des()}}
+  function fecha(){if(menu){menu.remove();menu=null}}
+  function abre(b){fecha();var k=b.dataset.k,vals=[];LIN.forEach(function(x){if(vals.indexOf(x[k])<0)vals.push(x[k])});vals.sort(function(a,b){return CMP.compare(a,b)});
+    var marc=fil[k]?Object.assign({},fil[k]):null; menu=document.createElement('div');menu.className='mc';var rc=b.getBoundingClientRect();menu.style.top=(rc.bottom+2)+'px';menu.style.left=Math.min(rc.left,innerWidth-260)+'px';
+    function lista(q){return vals.filter(function(v){return !q||String(v).toLowerCase().indexOf(q.toLowerCase())>=0}).map(function(v){return '<label><input type="checkbox" data-v="'+v+'"'+((!marc||marc[v])?' checked':'')+'> '+v+'</label>'}).join('')}
+    menu.innerHTML='<button class="it" data-o="1">Ordenar de A a Z</button><button class="it" data-o="-1">Ordenar de Z a A</button><input type="text" placeholder="Buscar"><div class="lista">'+lista('')+'</div><button class="it" data-a="1">Aplicar filtro</button>'+(fil[k]?'<button class="it" data-a="0">Limpar o filtro desta coluna</button>':'');
+    document.body.appendChild(menu);menu.onclick=function(ev){ev.stopPropagation()};
+    menu.querySelectorAll('[data-o]').forEach(function(x){x.onclick=function(){ord={k:k,d:+x.dataset.o};fecha();des()}});
+    var inp=menu.querySelector('input[type=text]'),box=menu.querySelector('.lista');
+    function liga(){box.querySelectorAll('input').forEach(function(i){i.onchange=function(){if(!marc){marc={};vals.forEach(function(v){marc[v]=true})}marc[i.dataset.v]=i.checked}})}liga();inp.oninput=function(){box.innerHTML=lista(inp.value);liga()};
+    menu.querySelector('[data-a="1"]').onclick=function(){var todos=!marc||vals.every(function(v){return marc[v]});if(todos)delete fil[k];else fil[k]=marc;fecha();des()};
+    var lm=menu.querySelector('[data-a="0"]');if(lm)lm.onclick=function(){delete fil[k];fecha();des()}}
+  document.addEventListener('click',fecha);des();
+}
+Planilha('t1','bf1');Planilha('t2','bf2');Planilha('t3','bf3');
+
+/* abas do layout 3 */
+document.querySelectorAll('#ab3 button').forEach(function(b){b.onclick=function(){document.querySelectorAll('#ab3 button').forEach(function(x){x.classList.remove('at')});['p31','p32','p33'].forEach(function(p){document.getElementById(p).classList.remove('at')});b.classList.add('at');document.getElementById(b.dataset.p).classList.add('at')}});
+
+/* layout 4: categorias que abrem */
+document.getElementById('cat4').innerHTML=D.cats.map(function(c){
+  var ex=D.rows.filter(function(r){return r[1]===c.n}).slice(0,6);
+  var corpo=ex.length?'<table><tr><th>Código</th><th>Foto</th><th>Quem fotografou</th><th>Editada</th><th>Quem editou</th><th>Sistema</th><th>Quem subiu</th><th>Observações</th></tr>'+ex.map(function(r){return '<tr><td>'+r[0]+'</td><td>'+(r[2]?'<span class="ok">Ok</span>':'—')+'</td><td>'+(r[3]||'—')+'</td><td>'+(r[4]?'<span class="ok">Ok</span>':'—')+'</td><td>'+(r[5]||'—')+'</td><td>'+(r[6]?'<span class="ok">Ok</span>':'—')+'</td><td>'+(r[7]||'—')+'</td><td>'+(r[9]||'—')+'</td></tr>'}).join('')+'</table><div style="padding:6px;text-align:center">Amostra: '+ex.length+' de '+N(c.t)+' códigos (a versão real mostra todos, 300 por vez)</div>':'<div style="padding:10px;text-align:center">Sem códigos na amostra desta página. A versão real lista os '+N(c.t)+' códigos.</div>';
+  return '<details class="cat"><summary><span>▸</span><b>'+c.n+'</b><span>'+N(c.t)+'</span><span>'+PC(c.f,c.t)+'</span><span>'+PC(c.e,c.t)+'</span><span>'+PC(c.s,c.t)+'</span><span style="padding:0 16px">'+barra(c.s,c.t,'var(--verde)')+'</span></summary>'+corpo+'</details>'}).join('');
+</script>
+</body>
+</html>

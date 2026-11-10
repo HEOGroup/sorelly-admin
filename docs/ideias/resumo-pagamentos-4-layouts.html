@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resumo de pagamentos · 4 layouts</title>
+<style>
+  :root{
+    --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c;
+    --texto:#ffffff; --neutro:#8ab4ff; --ok:#34d399; --alerta:#fbbf24; --ruim:#f87171;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.2 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}
+  .sub{margin:0 0 18px;font-size:13px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section{max-width:1180px;margin:0 auto 34px}
+  .tag{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+  .tag b{font-size:15px}
+  .tag span{font-size:13px}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;margin-bottom:12px;overflow:hidden}
+  .barra{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 14px;border-bottom:1px solid var(--linha);font-weight:600}
+  .barra .v{font-variant-numeric:tabular-nums}
+  .rolagem{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;table-layout:fixed;min-width:980px}
+  th,td{white-space:nowrap;text-align:center;padding:0 12px;font-variant-numeric:tabular-nums}
+  th{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  td{height:32px}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)}
+  .pilula{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border-radius:999px;font-size:12px;border:1px solid var(--linha2)}
+  .ponto{width:7px;height:7px;border-radius:50%;display:inline-block;background:var(--alerta)}
+  .nota{max-width:1180px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+
+  /* A · Planilha: grade fina completa, cabeçalho cinza escuro */
+  .A th{background:#23252a;border:1px solid var(--linha2)}
+  .A td{border:1px solid var(--linha)}
+  .A tr.total td{background:#1f2024;font-weight:700}
+
+  /* B · Linhas limpas: só divisória horizontal, cabeçalho com fio azul */
+  .B th{border-bottom:2px solid var(--neutro)}
+  .B td{border-bottom:1px solid var(--linha)}
+  .B tbody tr:hover td{background:var(--bloco2)}
+  .B tr.total td{border-top:2px solid var(--linha2);font-weight:700}
+
+  /* C · Zebra com faixa lateral: listras alternadas e marca de estado na esquerda */
+  .C th{background:var(--bloco2)}
+  .C tbody tr:nth-child(even) td{background:#1a1b1f}
+  .C td:first-child{border-left:3px solid transparent}
+  .C tr.s-aberto td:first-child{border-left-color:var(--alerta)}
+  .C tr.s-pago td:first-child{border-left-color:var(--ok)}
+  .C tr.total td{background:#23252a;font-weight:700}
+
+  /* D · Cartão em linha: cada item é uma fileira de campos com rótulo em cima */
+  .D .item{display:grid;align-items:center;gap:0;border-bottom:1px solid var(--linha);min-width:980px}
+  .D .item:last-child{border-bottom:0}
+  .D .item > div{padding:9px 12px;text-align:center;white-space:nowrap;border-left:1px solid var(--linha)}
+  .D .item > div:first-child{border-left:0}
+  .D .rot{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
+  .D .val{font-size:13px;font-variant-numeric:tabular-nums}
+  .D .cab{background:var(--bloco2)}
+</style>
+</head>
+<body>
+<h1>Resumo de pagamentos a fornecedores · 4 layouts</h1>
+<p class="sub">Mesmos dados nos quatro. Nenhuma linha quebra, nada dourado, cor só para estado (verde pago, amarelo aberto, vermelho falta).</p>
+<div class="nav"><a href="#A">A · Planilha</a><a href="#B">B · Linhas limpas</a><a href="#C">C · Zebra com faixa</a><a href="#D">D · Fileira de campos</a></div>
+
+<div id="raiz"></div>
+
+<div class="nota">
+  <p><b>Como escolher:</b> diga a letra. O layout escolhido entra nas peças <code>TabelaP</code> e <code>TabelaPlanilha</code> e vale para todas as tabelas do sistema.</p>
+  <p><b>Atenção:</b> a regra de 02/11/2026 manda topo dourado em toda tabela. Escolhendo uma destas opções, a regra muda e eu atualizo a trava dura junto.</p>
+</div>
+
+<script>
+var brl = function(n){ return "R$ " + n.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var PEND = [{f:"Lucas Castilho", n:"11/2026", d:"05/11/2026", v:4500, m:"Teto de dezembro/2026: R$ 338.524,00 + R$ 2.250,00 passa de R$ 300.000,00"}];
+var FORN = [
+  {f:"Pontual",        a:168812.39, p:46316.67, d:"20/11/2026"},
+  {f:"Point",          a:45080.00,  p:0,        d:"20/11/2026"},
+  {f:"Office Graf",    a:12466.40,  p:0,        d:"15/11/2026"},
+  {f:"Ellos Galvânica",a:23954.57,  p:0,        d:"15/11/2026"},
+  {f:"Mega Sul",       a:8586.48,   p:0,        d:"20/11/2026"},
+  {f:"Art Ello Bruto", a:7861.35,   p:0,        d:"20/11/2026"},
+  {f:"Devmaster",      a:781.87,    p:0,        d:"15/11/2026"}
+];
+var soma = function(k){ return FORN.reduce(function(t,x){ return t + (k==="s" ? x.a-x.p : x[k]); },0); };
+var estado = function(x){ return (x.a-x.p)<=0.005 ? ["Quitado","ok"] : ["Em aberto","alerta"]; };
+
+function tabelaPend(){
+  return '<div class="rolagem"><table><colgroup><col style="width:16%"><col style="width:12%"><col style="width:12%"><col style="width:14%"><col></colgroup>'+
+    '<thead><tr><th>Fornecedor</th><th>Negociação</th><th>Data</th><th>Valor</th><th>Motivo</th></tr></thead><tbody>'+
+    PEND.map(function(x){ return '<tr><td>'+x.f+'</td><td>'+x.n+'</td><td>'+x.d+'</td><td><b>'+brl(x.v)+'</b></td><td>'+x.m+'</td></tr>'; }).join("")+
+    '</tbody></table></div>';
+}
+function tabelaForn(cls){
+  var linhas = FORN.map(function(x){ var e = estado(x), s = x.a-x.p;
+    return '<tr class="'+(s>0.005?"s-aberto":"s-pago")+'"><td>'+x.f+'</td><td>'+brl(x.a)+'</td><td class="'+(x.p>0?"ok":"")+'">'+brl(x.p)+'</td><td class="'+(s>0.005?"ruim":"ok")+'">'+brl(s)+'</td><td>'+x.d+'</td><td><span class="pilula"><span class="ponto" style="background:var(--'+(e[1]==="ok"?"ok":"alerta")+')"></span>'+e[0]+'</span></td></tr>'; }).join("");
+  return '<div class="rolagem"><table><colgroup><col style="width:20%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col style="width:16%"><col></colgroup>'+
+    '<thead><tr><th>Fornecedor</th><th>A pagar</th><th>Pago</th><th>Saldo</th><th>Próximo prazo</th><th>Status</th></tr></thead><tbody>'+linhas+
+    '<tr class="total"><td>Total</td><td>'+brl(soma("a"))+'</td><td class="ok">'+brl(soma("p"))+'</td><td class="ruim">'+brl(soma("s"))+'</td><td></td><td></td></tr></tbody></table></div>';
+}
+function blocoD(){
+  var gp = "grid-template-columns:16% 12% 12% 14% 1fr";
+  var pend = '<div class="item cab" style="'+gp+'"><div><span class="rot">Fornecedor</span></div><div><span class="rot">Negociação</span></div><div><span class="rot">Data</span></div><div><span class="rot">Valor</span></div><div><span class="rot">Motivo</span></div></div>'+
+    PEND.map(function(x){ return '<div class="item" style="'+gp+'"><div class="val">'+x.f+'</div><div class="val">'+x.n+'</div><div class="val">'+x.d+'</div><div class="val"><b>'+brl(x.v)+'</b></div><div class="val">'+x.m+'</div></div>'; }).join("");
+  var gf = "grid-template-columns:20% 16% 16% 16% 16% 1fr";
+  var forn = '<div class="item cab" style="'+gf+'"><div><span class="rot">Fornecedor</span></div><div><span class="rot">A pagar</span></div><div><span class="rot">Pago</span></div><div><span class="rot">Saldo</span></div><div><span class="rot">Próximo prazo</span></div><div><span class="rot">Status</span></div></div>'+
+    FORN.map(function(x){ var e = estado(x), s = x.a-x.p;
+      return '<div class="item" style="'+gf+'"><div class="val"><b>'+x.f+'</b></div><div class="val">'+brl(x.a)+'</div><div class="val '+(x.p>0?"ok":"")+'">'+brl(x.p)+'</div><div class="val '+(s>0.005?"ruim":"ok")+'">'+brl(s)+'</div><div class="val">'+x.d+'</div><div class="val '+e[1]+'">● '+e[0]+'</div></div>'; }).join("")+
+    '<div class="item cab" style="'+gf+'"><div class="val"><b>Total</b></div><div class="val"><b>'+brl(soma("a"))+'</b></div><div class="val ok"><b>'+brl(soma("p"))+'</b></div><div class="val ruim"><b>'+brl(soma("s"))+'</b></div><div></div><div></div></div>';
+  return [pend, forn];
+}
+
+var NOMES = {A:["Planilha","Grade fina em todas as células, cabeçalho cinza escuro. É o mais próximo de uma planilha de Excel."],
+             B:["Linhas limpas","Sem grade vertical. Só uma divisória fina entre as linhas e um fio azul no cabeçalho. O mais leve."],
+             C:["Zebra com faixa","Linhas alternadas e uma marca de cor na esquerda: amarelo = em aberto, verde = quitado. Dá para ler o estado sem ler a palavra."],
+             D:["Fileira de campos","Cada item é uma fileira com colunas separadas por fio vertical, sem tabela de verdade. Cabeçalho e total em faixa."]};
+var html = "";
+["A","B","C","D"].forEach(function(k){
+  var corpoP, corpoF;
+  if(k==="D"){ var d = blocoD(); corpoP = '<div class="rolagem">'+d[0]+'</div>'; corpoF = '<div class="rolagem">'+d[1]+'</div>'; }
+  else { corpoP = tabelaPend(); corpoF = tabelaForn(); }
+  html += '<section id="'+k+'" class="'+k+'"><div class="tag"><b>Layout '+k+' · '+NOMES[k][0]+'</b><span>'+NOMES[k][1]+'</span></div>'+
+    '<div class="bloco"><div class="barra"><span>Aguardando aprovação · não entram nos totais</span><span class="v">'+brl(PEND[0].v)+'</span></div>'+corpoP+'</div>'+
+    '<div class="bloco"><div class="barra"><span>Fornecedores</span><span class="v">'+brl(soma("a"))+'</span></div>'+corpoF+'</div></section>';
+});
+document.getElementById("raiz").innerHTML = html;
+</script>
+</body>
+</html>

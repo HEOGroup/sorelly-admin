@@ -1,0 +1,247 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing · Fotos de catálogo · 4 layouts (versão 2)</title>
+<style>
+  :root{
+    --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c;
+    --ouro:#E8B84B; --ouro-esc:#1a1306; --ok:#4ADE80; --alerta:#FBBF24; --ruim:#EF4444; --info:#60A5FA;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}
+  .sub{margin:0 0 14px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section.lay{max-width:1280px;margin:0 auto 50px}
+  .tag{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;border-bottom:1px solid var(--linha);padding-bottom:8px;flex-wrap:wrap}
+  .tag b{font-size:15px}
+  .menu{display:flex;gap:6px;margin-bottom:10px}
+  .menu span{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha);border-radius:8px}
+  .menu span.at{border-color:var(--ouro);color:var(--ouro)}
+  .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .head h2{margin:0;font-size:16px}
+  .btn{height:32px;display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;border:1px solid var(--linha2);background:var(--bloco);color:#fff;font:inherit;cursor:pointer}
+  .btn.p{background:var(--ouro);color:var(--ouro-esc);border-color:var(--ouro);font-weight:600}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .bloco > h3{margin:0;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bloco2);border-bottom:1px solid var(--linha);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .resumos{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:10px;margin-bottom:10px}
+  .li{display:grid;grid-template-columns:1.6fr 1fr 1fr;align-items:center;min-height:30px;border-bottom:1px solid var(--linha);text-align:center;font-variant-numeric:tabular-nums}
+  .li:last-child{border-bottom:0}
+  .li.tt{background:var(--bloco2);font-weight:600}
+  .li > *{padding:0 8px;white-space:nowrap}
+  .cab{background:var(--bloco2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;min-height:28px}
+  .rol{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;table-layout:fixed;min-width:1500px}
+  th,td{white-space:nowrap;text-align:center;padding:0 10px;font-variant-numeric:tabular-nums}
+  th{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;padding:0;position:relative}
+  th button{all:unset;box-sizing:border-box;width:100%;height:30px;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  th button:hover{background:rgba(255,255,255,.06)}
+  th button .f{font-size:10px}
+  th button.fl .f{color:var(--ouro)}
+  td{height:32px}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)} .info{color:var(--info)}
+  .rodape{padding:8px 12px;border-top:1px solid var(--linha);text-align:center}
+  .barrafil{display:flex;align-items:center;gap:10px;margin-bottom:8px;min-height:32px}
+  /* grade completa (1) */
+  .G1 th{background:#23252a;border:1px solid var(--linha2)}
+  .G1 td{border:1px solid var(--linha)}
+  /* linhas limpas (2) */
+  .G2 th{background:var(--bloco2);border-bottom:2px solid var(--linha2)}
+  .G2 td{border-bottom:1px solid var(--linha)}
+  .G2 tbody tr:hover td{background:var(--bloco2)}
+  /* zebra com fio por coluna (3) */
+  .G3 th{background:#1c1d21;border:1px solid var(--linha)}
+  .G3 td{border-left:1px solid var(--linha);border-right:1px solid var(--linha)}
+  .G3 tbody tr:nth-child(even) td{background:#1a1b1f}
+  /* agrupado por dia (4) */
+  .G4 th{background:#23252a;border:1px solid var(--linha2)}
+  .G4 td{border:1px solid var(--linha)}
+  .G4 tr.dia td{background:#1c1d21;height:30px;font-weight:600;border-top:2px solid var(--linha2)}
+  /* menu de coluna */
+  .mc{position:fixed;z-index:50;width:260px;background:#1c1d21;border:1px solid var(--linha2);border-radius:10px;box-shadow:0 12px 30px rgba(0,0,0,.6);padding:6px 0;text-align:left;font-size:13px;font-weight:400;text-transform:none;letter-spacing:0}
+  .mc .it{display:block;width:100%;height:32px;padding:0 12px;text-align:left;background:none;border:0;color:#fff;font:inherit;cursor:pointer}
+  .mc .it:hover{background:rgba(255,255,255,.07)}
+  .mc .it.at{color:var(--ouro)}
+  .mc input[type=text]{margin:4px 10px;width:calc(100% - 20px);height:32px;background:var(--fundo);color:#fff;border:1px solid var(--linha2);border-radius:8px;padding:0 10px;font:inherit}
+  .mc .lista{max-height:200px;overflow:auto;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha);margin:4px 0}
+  .mc label{display:flex;align-items:center;gap:8px;height:30px;padding:0 12px;cursor:pointer}
+  .mc label:hover{background:rgba(255,255,255,.07)}
+  /* lateral (3) */
+  .lat{display:grid;grid-template-columns:300px 1fr;gap:10px;align-items:start}
+  .lat .col{display:flex;flex-direction:column;gap:10px}
+  @media(max-width:900px){.lat{grid-template-columns:1fr}}
+  /* recolhível (4) */
+  .rec > h3{cursor:pointer;justify-content:space-between;padding:0 14px}
+  .rec .corpo{padding:10px}
+  .rec.fechado .corpo{display:none}
+  .nota{max-width:1280px;margin:0 auto;border-top:1px solid var(--linha);padding-top:14px}
+  .nota li{margin:4px 0}
+</style>
+</head>
+<body>
+
+<div style="max-width:1280px;margin:0 auto">
+  <h1>Marketing › Fotos de catálogo · 4 layouts (versão 2)</h1>
+  <p class="sub">Mudanças pedidas: sem filtros em cima; o filtro fica NO título de cada coluna (clique no título: ordenar, buscar e marcar valores, igual ao Agendamento). Sem a coluna "Origem" (todos são novos). Sem as colunas "Foto" e "Editada": o <b>Status</b> mostra a etapa. Ordem: Código, Categoria, Foto em, Quem fotografou, Status, Editada em, Quem editou, Subida na DevMaster em, Quem subiu. Números e nomes são EXEMPLO.</p>
+  <div class="nav"><a href="#L1">1 · Resumos em cima, grade completa</a><a href="#L2">2 · Um bloco de resumo, linhas limpas</a><a href="#L3">3 · Resumo na lateral, zebra</a><a href="#L4">4 · Agrupado por dia</a></div>
+</div>
+
+<!-- ============ 1 ============ -->
+<section class="lay" id="L1">
+  <div class="tag"><b>1 · Resumos em cima, grade completa</b><span>O modelo A que você aprovou: três blocos de lista e a planilha com todas as linhas de grade.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar código</button></div></div>
+  <div class="resumos" id="r1"></div>
+  <div class="barrafil" id="bf1"></div>
+  <div class="bloco"><div class="rol"><table class="G1" id="t1"></table></div><div class="rodape" id="rp1"></div></div>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="lay" id="L2">
+  <div class="tag"><b>2 · Um bloco de resumo, linhas limpas</b><span>Os três resumos dentro de UM bloco só, separados por fio. Tabela só com linhas horizontais.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar código</button></div></div>
+  <div class="bloco" style="margin-bottom:10px"><h3>Resumo · 10/11/2026</h3><div id="r2" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr))"></div></div>
+  <div class="barrafil" id="bf2"></div>
+  <div class="bloco"><div class="rol"><table class="G2" id="t2"></table></div><div class="rodape" id="rp2"></div></div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="lay" id="L3">
+  <div class="tag"><b>3 · Resumo na lateral, zebra</b><span>Os resumos ficam empilhados na esquerda e a planilha ocupa o resto. A tabela sobe mais na tela.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar código</button></div></div>
+  <div class="lat">
+    <div class="col" id="r3"></div>
+    <div>
+      <div class="barrafil" id="bf3"></div>
+      <div class="bloco"><div class="rol"><table class="G3" id="t3"></table></div><div class="rodape" id="rp3"></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="lay" id="L4">
+  <div class="tag"><b>4 · Agrupado por dia, resumo recolhível</b><span>Clique na barra do resumo para abrir ou fechar. A planilha tem uma linha de título por dia com o total do dia.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar código</button></div></div>
+  <div class="bloco rec" id="rec4" style="margin-bottom:10px"><h3 onclick="document.getElementById('rec4').classList.toggle('fechado')"><span>Resumo · 10/11/2026</span><span>Abrir ou fechar</span></h3><div class="corpo"><div class="resumos" id="r4" style="margin:0"></div></div></div>
+  <div class="barrafil" id="bf4"></div>
+  <div class="bloco"><div class="rol"><table class="G4" id="t4"></table></div><div class="rodape" id="rp4"></div></div>
+</section>
+
+<div class="nota">
+  <b>O que mudou</b>
+  <ul>
+    <li>Nenhum filtro solto em cima da tabela. Só o filtro de cada coluna, e um botão "Limpar filtros" aparece quando há filtro.</li>
+    <li>Clique em qualquer título de coluna da tabela para testar: ordenar de A a Z, de Z a A, buscar e marcar valores. Os quatro layouts funcionam.</li>
+    <li>O Status vem das datas: sem foto, fotografada, editada ou na DevMaster. Ninguém marca duas vezes.</li>
+    <li>O tempo de edição saiu da tabela. Ele aparece no resumo (média) e dá para calcular das duas datas.</li>
+  </ul>
+</div>
+
+<script>
+/* ---------- dados de exemplo (48 códigos novos) ---------- */
+var CATS=['Brincos Select','Pulseiras','Colares','Anéis','Brinco Duo','Choker','Conjuntos','Masculino'];
+var PRE={'Brincos Select':'BB','Pulseiras':'P','Colares':'CL','Anéis':'A','Brinco Duo':'2B','Choker':'CK','Conjuntos':'CC','Masculino':'M'};
+var PES=['Lucas Castilho','Funcionária nova','Beatriz'];
+function pad(n){return (n<10?'0':'')+n}
+var DADOS=[];
+(function(){
+  var seed=7; function r(){seed=(seed*9301+49297)%233280;return seed/233280}
+  var dias=[[10,11],[9,11],[6,11],[5,11]]; var n=0;
+  dias.forEach(function(d,di){
+    var q=di==0?18:10;
+    for(var i=0;i<q;i++){
+      var cat=CATS[Math.floor(r()*CATS.length)]; var cod=PRE[cat]+(1600+n*3+Math.floor(r()*3)); n++;
+      var h=8+Math.floor(r()*3), m=Math.floor(r()*60);
+      var nivel; var x=r();
+      if(di==0) nivel= x<.3?0 : x<.55?1 : x<.8?2 : 3; else nivel= x<.08?0 : x<.15?1 : x<.3?2 : 3;
+      var fq=PES[Math.floor(r()*2)], eq=PES[0], sq=PES[0];
+      var base=pad(d[0])+'/'+pad(d[1])+' ';
+      var l={cod:cod,cat:cat,dia:pad(d[0])+'/'+pad(d[1])+'/2026',fotoEm:'',fotoQuem:'',status:'Sem foto',edEm:'',edQuem:'',subEm:'',subQuem:''};
+      if(nivel>=1){l.fotoEm=base+pad(h)+':'+pad(m);l.fotoQuem=fq;l.status='Fotografada'}
+      if(nivel>=2){l.edEm=base+pad(h+1)+':'+pad((m+20)%60);l.edQuem=eq;l.status='Editada'}
+      if(nivel>=3){l.subEm=base+pad(h+2)+':'+pad((m+5)%60);l.subQuem=sq;l.status='Na DevMaster'}
+      DADOS.push(l);
+    }
+  });
+})();
+var COLS=[['Código','cod','7%'],['Categoria','cat','10%'],['Foto em','fotoEm','10%'],['Quem fotografou','fotoQuem','12%'],['Status','status','11%'],['Editada em','edEm','10%'],['Quem editou','edQuem','11%'],['Subida na DevMaster em','subEm','14%'],['Quem subiu','subQuem','11%']];
+var COR={'Sem foto':'ruim','Fotografada':'alerta','Editada':'info','Na DevMaster':'ok'};
+var CMP=new Intl.Collator('pt-BR',{numeric:true});
+
+/* ---------- planilha com filtro na coluna ---------- */
+function Planilha(cfg){
+  var t=document.getElementById(cfg.id), filtros={}, ordem=null, menu=null;
+  function vv(l,k){return l[k]===''?'—':l[k]}
+  function visiveis(){
+    var l=DADOS.filter(function(x){return COLS.every(function(c){var f=filtros[c[1]];return !f||f[vv(x,c[1])]})});
+    if(ordem) l=l.slice().sort(function(a,b){return CMP.compare(String(vv(a,ordem.k)),String(vv(b,ordem.k)))*ordem.dir});
+    return l;
+  }
+  function celula(l,c){var v=vv(l,c[1]);if(c[1]=='status')return '<span class="'+COR[v]+'">● '+v+'</span>';return v}
+  function desenha(){
+    var l=visiveis(), h='<colgroup>'+COLS.map(function(c){return '<col style="width:'+c[2]+'">'}).join('')+'</colgroup><thead><tr>';
+    COLS.forEach(function(c){var f=!!filtros[c[1]]||(ordem&&ordem.k==c[1]);h+='<th><button data-k="'+c[1]+'" class="'+(f?'fl':'')+'">'+c[0]+' <span class="f">'+(f?'▼':'▾')+'</span></button></th>'});
+    h+='</tr></thead><tbody>';
+    var dia=null;
+    l.forEach(function(x){
+      if(cfg.agrupar && x.dia!==dia){dia=x.dia;var g=l.filter(function(y){return y.dia===dia});
+        var ft=g.filter(function(y){return y.fotoEm}).length, ed=g.filter(function(y){return y.edEm}).length, sb=g.filter(function(y){return y.subEm}).length;
+        h+='<tr class="dia"><td colspan="'+COLS.length+'">'+dia+' · '+g.length+' cadastrados · '+ft+' fotografados · '+ed+' editados · '+sb+' na DevMaster</td></tr>'}
+      h+='<tr>'+COLS.map(function(c){return '<td>'+celula(x,c)+'</td>'}).join('')+'</tr>';
+    });
+    if(!l.length) h+='<tr><td colspan="'+COLS.length+'" style="height:60px">Nenhum código com esses filtros.</td></tr>';
+    t.innerHTML=h+'</tbody>';
+    t.querySelectorAll('th button').forEach(function(b){b.onclick=function(ev){ev.stopPropagation();abre(b)}});
+    var nf=Object.keys(filtros).length+(ordem?1:0);
+    document.getElementById(cfg.bf).innerHTML=nf?'<button class="btn" id="lim'+cfg.id+'">Limpar filtros e ordem</button><span>'+l.length+' de '+DADOS.length+' códigos</span>':'<span>'+DADOS.length+' códigos · clique no título de uma coluna para filtrar ou ordenar</span>';
+    var lb=document.getElementById('lim'+cfg.id); if(lb) lb.onclick=function(){filtros={};ordem=null;desenha()};
+    document.getElementById(cfg.rp).textContent='Mostrando '+l.length+' de '+DADOS.length+' códigos (exemplo). Na versão real: 17.342 códigos, com rolagem e paginação.';
+  }
+  function fecha(){if(menu){menu.remove();menu=null}}
+  function abre(b){
+    fecha(); var k=b.dataset.k, c=COLS.filter(function(x){return x[1]==k})[0];
+    var vals=[]; DADOS.forEach(function(x){var v=vv(x,k); if(vals.indexOf(v)<0) vals.push(v)}); vals.sort(function(a,b){return CMP.compare(a,b)});
+    var marc=filtros[k]?Object.assign({},filtros[k]):null;
+    menu=document.createElement('div'); menu.className='mc';
+    var rc=b.getBoundingClientRect(); menu.style.top=(rc.bottom+2)+'px'; menu.style.left=Math.min(rc.left,innerWidth-270)+'px';
+    function lista(q){
+      return vals.filter(function(v){return !q||String(v).toLowerCase().indexOf(q.toLowerCase())>=0}).map(function(v){
+        var on=!marc||marc[v]; return '<label><input type="checkbox" data-v="'+v+'"'+(on?' checked':'')+'> '+v+'</label>'}).join('');
+    }
+    menu.innerHTML='<button class="it'+(ordem&&ordem.k==k&&ordem.dir==1?' at':'')+'" data-o="1">Ordenar de A a Z</button><button class="it'+(ordem&&ordem.k==k&&ordem.dir==-1?' at':'')+'" data-o="-1">Ordenar de Z a A</button>'+(ordem&&ordem.k==k?'<button class="it" data-o="0">Tirar a ordenação</button>':'')+'<input type="text" placeholder="Buscar"><div class="lista">'+lista('')+'</div><button class="it" data-a="ok">Aplicar filtro</button>'+(filtros[k]?'<button class="it" data-a="lim">Limpar o filtro desta coluna</button>':'');
+    document.body.appendChild(menu);
+    menu.onclick=function(ev){ev.stopPropagation()};
+    menu.querySelectorAll('[data-o]').forEach(function(x){x.onclick=function(){var d=+x.dataset.o;ordem=d?{k:k,dir:d}:null;fecha();desenha()}});
+    var inp=menu.querySelector('input[type=text]'), box=menu.querySelector('.lista');
+    function liga(){box.querySelectorAll('input').forEach(function(i){i.onchange=function(){if(!marc){marc={};vals.forEach(function(v){marc[v]=true})}marc[i.dataset.v]=i.checked}})}
+    liga(); inp.oninput=function(){box.innerHTML=lista(inp.value);liga()};
+    menu.querySelector('[data-a=ok]').onclick=function(){var todos=!marc||vals.every(function(v){return marc[v]}); if(todos) delete filtros[k]; else filtros[k]=marc; fecha();desenha()};
+    var lm=menu.querySelector('[data-a=lim]'); if(lm) lm.onclick=function(){delete filtros[k];fecha();desenha()};
+  }
+  document.addEventListener('click',fecha);
+  desenha();
+}
+
+/* ---------- blocos de resumo (lista escrita) ---------- */
+function BH(){return '<div class="bloco"><h3>Hoje · 10/11/2026</h3><div class="li cab"><span>Etapa</span><span>Quantidade</span><span>Meta</span></div><div class="li"><span>Códigos cadastrados</span><b>64</b><span>—</span></div><div class="li"><span>Fotografados</span><b>38</b><span>64</span></div><div class="li"><span>Editados</span><b>21</b><span>64</span></div><div class="li"><span>Na DevMaster</span><b>14</b><span>64</span></div><div class="li tt"><span>Sem foto (novos)</span><b class="ruim">26</b><span>0</span></div></div>'}
+function BT(){return '<div class="bloco"><h3>Tempo médio por código</h3><div class="li cab"><span>Etapa</span><span>Hoje</span><span>Mês</span></div><div class="li"><span>Foto</span><b>4 min</b><span>5 min</span></div><div class="li"><span>Edição</span><b>7 min</b><span>6 min</span></div><div class="li"><span>Subir na DevMaster</span><b>2 min</b><span>2 min</span></div><div class="li tt"><span>Total por código</span><b>13 min</b><span>13 min</span></div></div>'}
+function BD(){return '<div class="bloco"><h3>Produção dos últimos dias</h3><div class="li cab"><span>Dia</span><span>Fotos</span><span>Na DevMaster</span></div><div class="li"><span>10/11 (hoje)</span><b>38</b><b>14</b></div><div class="li"><span>09/11</span><b>47</b><b>28</b></div><div class="li"><span>06/11</span><b>62</b><b>40</b></div><div class="li tt"><span>Média por dia</span><b>52</b><b>36</b></div></div>'}
+function sem(h){return h.replace('<div class="bloco">','<div>').replace(/<h3>/,'<h3 style="border-top:0">')}
+document.getElementById('r1').innerHTML=BH()+BT()+BD();
+document.getElementById('r2').innerHTML=[BH(),BT(),BD()].map(function(b,i){return '<div style="'+(i?'border-left:1px solid var(--linha)':'')+'">'+b.replace('class="bloco"','style="border:0;border-radius:0;background:none"')+'</div>'}).join('');
+document.getElementById('r3').innerHTML=BH()+BT()+BD();
+document.getElementById('r4').innerHTML=BH()+BT()+BD();
+Planilha({id:'t1',bf:'bf1',rp:'rp1'});
+Planilha({id:'t2',bf:'bf2',rp:'rp2'});
+Planilha({id:'t3',bf:'bf3',rp:'rp3'});
+Planilha({id:'t4',bf:'bf4',rp:'rp4',agrupar:true});
+</script>
+</body>
+</html>

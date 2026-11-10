@@ -44,6 +44,7 @@ import { AvisoMelhorias } from "@/apps/montagem/components/aviso-melhorias";
 import { BotaoNotificacoes } from "@/apps/montagem/components/botao-notificacoes";
 import { ContaMenu, PilulaSituacao } from "@/apps/montagem/components/seletor-acesso";
 import { IrPara } from "@/apps/montagem/components/ir-para";
+import { RelogioProgresso } from "@/apps/montagem/components/relogio-progresso";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
 import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
@@ -130,6 +131,8 @@ function App(){
       rotAlertas(s.rot, s.usuario, n.getFullYear()+"-"+p(n.getMonth()+1)+"-"+p(n.getDate()), p(n.getHours())+":"+p(n.getMinutes())).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [s.rot, s.usuario, s.logado]);
   useEffect(function(){ if(s.logado && precisaUnirItau(s)) d({type:"ITAU_UNIR"}); }, [s.logado, s.saldosContas]);   // Itaú: só existe uma conta (Marcus, 04/11/2026)
   useEffect(function(){ var t = function(){ if(s.logado && s.agend && precisaVirar(s.agend, chaveMes(new Date()))) d({type:"AG", op:"virar", por:"Automático"}); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.agend, s.logado]);
+  // atualização automática do dia (09/11/2026): às 10h o servidor lê a DevMaster (revendedoras e faturamento do relatório de notas fiscais). O agendador da Vercel faz isso sozinho; aqui é a reserva: quem abrir o sistema depois das 10h dispara (o servidor só grava o que ainda falta)
+  useEffect(function(){ var t = function(){ if(s.logado && srv.apiAtiva() && new Date().getHours()>=10) srv.chamar("POST", "/automatico/dia").catch(function(){}); }; t(); var iv = setInterval(t, 1800000); return function(){ clearInterval(iv); }; }, [s.logado]);
   // Plano 45/60: aprovada sem contato em 24 h e nova data sem venda lançada (um alerta por tipo por dia)
   // avaliação de experiência (03/11/2026): no dia da 1ª e da 2ª avaliação sai um alerta para quem o Tecnologia → Avisos marcar (padrão Maria, Marcus, Nickolas, Lucas); a chave não repete
   useEffect(function(){ var t = function(){ if(!s.logado || !s.rh) return; experienciaAlertas(s).forEach(function(al){ d(Object.assign({type:"ALERTA_ADD"}, al)); }); }; t(); var iv = setInterval(t, 600000); return function(){ clearInterval(iv); }; }, [s.rh, s.logado]);
@@ -196,6 +199,8 @@ function App(){
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);
+  if(permitidas && permitidas.indexOf("regrasguias")<0) permitidas = permitidas.concat(["regrasguias"]);   // Regras (guias em PDF): de todo mundo (Marcus, 05/11/2026)
+  if(permitidas && permitidas.indexOf("informativos")<0) permitidas = permitidas.concat(["informativos"]);   // Folders e informativos (Representantes) também são de todo mundo (Marcus, 04/11/2026)   // Folders (Cadastro de revendedoras) são de todo mundo (Marcus, 04/11/2026): PDFs e mensagens para qualquer pessoa mandar à candidata
   if(permitidas && permitidas.indexOf("aulas")<0) permitidas = permitidas.concat(["aulas"]);   // as aulas do setor são de todo mundo (cada um vê só as do seu setor)   // pedir melhorias é de todo mundo (28/10/2026)
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
@@ -206,13 +211,13 @@ function App(){
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
   // Menu por pessoa (Diretoria define em RH → Acessos e autorizações → Contas): telas liberadas (abas) e setores escondidos (ocultar). Início e Chat sempre ficam. Vale para o menu e os cartões do Início.
   // conta ligada a alguém que NÃO está na lista de pessoas do sistema: só o básico (a lista antiga dava acesso total por engano)
-  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas"];
+  if(srv.apiAtiva() && !srv.ehAdmin() && !pessoaConhecida(s.usuario)) permitidas = ["inicio","whats","melhorias","aulas","regrasguias"];
   var abasConta = srv.apiAtiva() && !soMarcus ? srv.abasDaConta() : null, ocultosConta = srv.apiAtiva() && !soMarcus ? srv.ocultosDaConta() : null;
   // "set_cadastro" libera todas as telas do setor Cadastro; "pfneg" libera só aquela tela
   var abasDoSetor = function(id){ var st = SETORES.find(function(x){ return x.id===id; }); if(!st) return []; if(st.direto) return [st.direto.aba]; var r = [];
     (st.areas||[]).forEach(function(ar){ (ar.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); (ar.grupos||[]).forEach(function(g){ (g.telas||[]).forEach(function(tl){ if(tl.aba) r.push(tl.aba); }); }); }); return r; };
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
-  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas"].indexOf(k)>=0; });
+  if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","regrasguias"].indexOf(k)>=0; });
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
@@ -223,21 +228,21 @@ function App(){
   var donoTitulo = aba==="breve" ? null : setorDaAba(aba), setorTitulo = donoTitulo ? donoTitulo.nome : "Sorelly Admin";
   useEffect(function(){ document.title = titulo+" · "+setorTitulo; }, [titulo, setorTitulo]);   // título da aba do navegador: Tela · Setor (pedido do Marcus, 28/10/2026)
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
-  var visao = s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // dois modos: Admin (a Sorelly) e Marcus (sistema particular, só ele)
+  var visao = (s.visaoMenu==="pontual" || /^pont/.test(aba)) && s.usuario===16 ? "pontual" : s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffalertas","ffcontas","ffpagas","ffpix","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
       var gs = ar.grupos ? ar.grupos.map(function(g){ return {titulo:g.titulo, telas:g.telas.filter(pode)}; }).filter(function(g){ return g.telas.length; }) : null;
       return Object.assign({}, ar, {telas:ts, grupos:gs}); }).filter(Boolean);
-    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : st.id.indexOf("marcus")!==0; }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
+    return ars.length ? Object.assign({}, st, {areas:ars}) : null; }).filter(Boolean).filter(function(st){ return visao==="marcus" ? st.id.indexOf("marcus")===0 : visao==="pontual" ? st.id==="pontual" : (st.id.indexOf("marcus")!==0 && st.id!=="pontual"); }).filter(function(st){ var lig = setoresLigados(); return !lig || visao==="marcus" || visao==="pontual" || lig.indexOf(st.id)>=0; });   // fase de subida: só os setores ligados
   definirSetoresInicio(setoresV.filter(function(st){ return st.id!=="inicio"; }));   // a página inicial mostra os mesmos setores do menu lateral
   useEffect(function(){ if(s.logado) registrarVisita(s.usuario, aba); }, [aba]);   // telas visitadas recentemente (página inicial)
   var abrirTela = function(t){ navigate(t.breve ? caminhoDaAba("breve", t.nome) : caminhoDaAba(t.aba)); setMenu(false); };
   // menu em cascata (Financeiro): Contas a pagar leva junto o modo escolhido (Sorelly, Família ou Sorelly + Família)
   var abrirMenu = function(n){ if(n.modo){ try{ sessionStorage.setItem("cta_sel", n.modo); }catch(x){} window.dispatchEvent(new CustomEvent("cta-modo", {detail:n.modo})); } abrirTela({aba:n.aba, nome:n.nome, breve:n.breve}); };
-  var podeMenu = function(n){ return n.perm ? temAutorizacao(n.perm, s.usuario) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
+  var podeMenu = function(n){ return n.perm ? String(n.perm).split(",").some(function(k){ return temAutorizacao(k, s.usuario); }) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
   var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
@@ -257,7 +262,7 @@ function App(){
   var setorAtual = (function(){ var ach = []; setoresV.map(comoSetor).forEach(function(st){ var f = null; st.areas.forEach(function(ar){ ar.telas.forEach(function(t){ if(!f && ativaTela(t)) f = {st:st, ar:ar}; }); }); if(f) ach.push(f); });
     return ach.find(function(x){ return x.st.id===setorAb; }) || ach[0] || null; })();
   // tela que não está em nenhum setor (ex.: Configurador, Painel dos acertos): entra na faixa de telas abertas como "Sistema"
-  if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
+  if(!setorAtual && aba && aba!=="breve" && (visao==="marcus")===/^marcus/.test(aba) && (visao==="pontual")===/^pont/.test(aba)) setorAtual = {st:{id:"sistema", nome:"Sistema", ic:"grid4", cor:"#D9A63A", menu:[{nome:titulo, aba:aba}], areas:[]}, ar:{nome:"Sistema"}};
   setPlano(!!(setorAtual && setorAtual.st.id==="financeiro"));   // visual plano nas peças compartilhadas (lib/estilo-plano.js)
   var navPerg = !!(setorAtual && setorAtual.st.menu);
   // caminho no topo = o caminho REAL do menu (ex.: Financeiro / Contas / Fornecedores / Cadastro), não a organização antiga das áreas
@@ -285,11 +290,11 @@ function App(){
     e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col sombra-lado bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
       e("div",{className:"relative flex h-28 items-center justify-center sombra-baixo px-4"},
-        e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),
+        visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-20 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
       !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
-        [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"]].map(function(x){
-          return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
+        [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"],["pontual","Pontual","O sistema da Pontual (empresa de banho)"]].map(function(x){
+          return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : x[0]==="pontual" ? "pontclientes" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
@@ -298,9 +303,9 @@ function App(){
             e("div",{className:"mt-2.5 px-1.5 pb-0.5 first:mt-0"},
               e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
             lst.map(linhaSetor)); }),
-        !permitidas && e("div",{className:"my-2 border-t border-sidebar-border"}),
-        !permitidas && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
-        urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
+        !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),
+        !permitidas && visao!=="pontual" && SETORES_BAIXO.filter(function(st){ var lig = setoresLigados(); return pode(st.direto) && (!lig || lig.indexOf(st.id)>=0); }).map(linhaSetor),
+        visao!=="pontual" && urlAdminAntigo() && papel!=="basico" && (!srv.apiAtiva() || srv.ehAdmin()) && e("a",{href:urlAdminAntigo(), target:"_blank", rel:"noreferrer", className:"mt-2 flex h-9 items-center gap-2 rounded-lg bg-white/10 px-3 text-sm font-semibold hover:bg-white/15"}, "↗ Admin antigo"),
         e("p",{className:(permitidas ? "mt-auto " : "mt-2 ")+"px-2.5 text-xs text-muted-foreground"},"Acesso de "+nomeDe(s.usuario)+" · "+PAPEL_LB[papel]))),
     menu && e("div",{className:"fixed inset-0 z-30 bg-black/60 md:hidden", onClick:function(){setMenu(false);}}),
     !recolhido && e("div",{onMouseDown:arrastarMenu, title:"Arraste para aumentar ou diminuir o menu", "aria-label":"Mudar a largura do menu",
@@ -319,10 +324,11 @@ function App(){
             className:"flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-bold transition-transform hover:-translate-y-px", style: on ? {background:x[3], color:"#fff", boxShadow:"0 2px 10px "+x[3]+"66"} : {background:x[3]+"26", color:x[3], boxShadow:"inset 0 0 0 1px "+x[3]+"55"}},
             e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
 
-        e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:podeMenu}),
-        e(PilulaSituacao),
-        e(BotaoNotificacoes),
-        e("button",{className:"relative grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22}), e(BadgeNaoLidas,{eu:euChat})),
+        e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
+        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
+        visao!=="pontual" && e(PilulaSituacao),
+        visao!=="pontual" && e(BotaoNotificacoes),
+        visao!=="pontual" && e("button",{className:"relative grid size-9 place-items-center rounded-lg "+(chatBotao ? "bg-[#E8B84B]/25 ring-1 ring-[#E8B84B]" : "hover:bg-muted/50"), "aria-label":chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", title:chatBotao ? "Esconder o botão do SorellyChat" : "Mostrar o botão do SorellyChat", onClick:alternaChatBotao}, e(LogoChat,{s:22}), e(BadgeNaoLidas,{eu:euChat})),
         e(ContaMenu,{zoom:e(ZoomTela), onTema:toggleTema})),
       navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-12 items-center py-1.5"},
@@ -345,11 +351,11 @@ function App(){
                 t.ic ? e("span",{className:"grid size-6 shrink-0 place-items-center rounded-md", style:{background:t.icCor+"26", color:t.icCor, boxShadow:"inset 0 0 0 1px "+t.icCor+"55"}}, e(Icon,{n:t.ic, s:13, peso:"fill"})) : e(MarcaTela,{t:t}), e("span",{className:"min-w-0 flex-1"}, t.nome.replace(/\n/g," "))); }))); })(),
       e("main",{className:"flex flex-col gap-5 p-4 md:p-6"}, e(Outlet))),
     e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}), e(BuscaTela),
-    chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
-    e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
+    visao!=="pontual" && chatBotao && aba!=="whats" && aba!=="apps" && e(ChatMini,{eu:euChat, direcao:ehDirecao(s.usuario), abrirCompleto:function(){ navigate(caminhoDaAba("whats")); setColArea(null); }}),
+    visao!=="pontual" && e(ChatGlobal,{eu:euChat, abrir:function(){ if(aba!=="whats") efem({mini:true}); }}),
     // o aviso "pagamento para conferir" (components/aviso-pagamentos.js) está desligado a pedido do Marcus (14/10/2026); religar quando o assunto voltar
-    e(AvisoMelhorias,{abrirMelhorias:function(){ navigate(caminhoDaAba("melhorias")); setColArea(null); }}),   // resposta nova nas Melhorias (02/11/2026)
-    e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }, abrirTela:function(aba){ navigate(caminhoDaAba(aba)); setColArea(null); }}));
+    visao!=="pontual" && e(AvisoMelhorias,{abrirMelhorias:function(){ navigate(caminhoDaAba("melhorias")); setColArea(null); }}),   // resposta nova nas Melhorias (02/11/2026)
+    visao!=="pontual" && e(AvisoAlertas,{abrirAtendimento:function(id){ d({type:"INT_SEL", id:id}); navigate(caminhoDaAba("intcalc")); setColArea(null); }, abrirTela:function(aba){ navigate(caminhoDaAba(aba)); setColArea(null); }}));
 }
 
 export default App;

@@ -6,7 +6,7 @@
 import { contarRevendedorasHoje } from "./revendedoras.js";
 import { consulta } from "./db.js";
 
-const HORA_EXECUCAO = 18;   // 18h, horário de Brasília — fim de tarde, como o Marcus pediu (depois do movimento do dia, antes do fechamento)
+const HORA_EXECUCAO = 10;   // 10h, horário de Brasília (Marcus, 09/11/2026: o número do dia não pode depender dele abrir o sistema; antes era 18h)
 const CONFERIR_A_CADA = 15 * 60 * 1000;
 
 function isoDiaHoje() {

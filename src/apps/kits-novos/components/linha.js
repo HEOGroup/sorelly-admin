@@ -44,9 +44,8 @@ function Linha(p){
     e(Td,{c:true, title:c.mod+" "+BK(c.val)}, c.mod+" "+BK(c.val)),
     e(Td,{c:true, cor:sitCor, forte:atr, title:atr ? sit+", atrasada "+(diasNaEtapa(c)-prazoDe(c, s.cfg))+" dias" : sit}, atr ? sit+" · atrasada "+(diasNaEtapa(c)-prazoDe(c, s.cfg))+"d" : sit),
     e(Td,{c:true, cor:(c.desm||0)>=s.cfg.maxDesmarcacoes ? "text-destructive" : al.length ? "text-warning" : "text-foreground/40"}, al.length ? al.join(" · ") : "—"),
-    dt(E("liberado")), dt(E("solicitado")), dt(E("aceito")), dt(E("contato")), dt(E("agendado")),
-    e(Td,{c:true, title:c.agDia ? "Marcada com a revendedora: "+dataBR(c.agDia)+(c.agPer ? ", "+c.agPer.toLowerCase() : "") : ""}, c.agDia ? dataBR(c.agDia).slice(0,5)+(c.agPer ? " "+c.agPer.charAt(0) : "") : "—"),
-    dt(E("montando")), dt(E("bipado")), dt(E("retirado")), dt(E("entregue")), dt(E("devolvido")),
+    dt(E("liberado")), dt(E("solicitado")),
+    dt(E("bipado")), dt(E("entregue")), dt(E("devolvido")),
     e(Td,{c:true}, c.retirada || "—"),
     e(Td,{c:true}, e("span",{className:"flex justify-center gap-1"},
       prox && e("button",{type:"button", title:"Avançar para "+prox.nome.toLowerCase(), onClick:function(ev){ ev.stopPropagation(); d({type:"DIALOGO", d:{tipo:"avancar", id:c.id}}); },
@@ -54,7 +53,7 @@ function Linha(p){
       e("button",{type:"button", "aria-label":"Mais ações", onClick:function(ev){ ev.stopPropagation(); abrir(); }, className:"grid size-6 place-items-center rounded-md hover:bg-white/10"}, e(Icon,{n:"dots", s:15})))));
 }
 var COLS = [{t:"Dias", w:52, c:1}, {t:"Cadastro", w:84, c:1}, {t:"Nome", w:220, c:1}, {t:"Bairro", w:140, c:1}, {t:"Cidade", w:160, c:1}, {t:"Profissão", w:170, c:1}, {t:"Entrada", w:104, c:1}, {t:"Representante", w:150, c:1},
-  {t:"Kit", w:140, c:1}, {t:"Situação", w:210, c:1}, {t:"Alertas", w:200, c:1}, {t:"Liberado", w:80, c:1}, {t:"Solicitado", w:100, c:1}, {t:"Aceito", w:68, c:1}, {t:"Contato", w:74, c:1}, {t:"Agendado", w:88, c:1}, {t:"Marcada", w:84, c:1}, {t:"Montando", w:84, c:1}, {t:"Bipado", w:70, c:1}, {t:"Retirado", w:80, c:1}, {t:"Entrega", w:76, c:1}, {t:"Devolvido", w:86, c:1}, {t:"Retirada", w:140, c:1}, {t:"", w:130, c:1}];
+  {t:"Kit", w:140, c:1}, {t:"Situação", w:210, c:1}, {t:"Alertas", w:200, c:1}, {t:"Liberado", w:80, c:1}, {t:"Solicitado", w:100, c:1}, {t:"Bipado", w:70, c:1}, {t:"Entrega", w:76, c:1}, {t:"Devolvido", w:86, c:1}, {t:"Retirada", w:140, c:1}, {t:"", w:130, c:1}];
 var LARGURA = COLS.reduce(function(t, c){ return t + c.w; }, 0);
 
 export { Linha, COLS, LARGURA };

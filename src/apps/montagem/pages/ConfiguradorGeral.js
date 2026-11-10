@@ -9,6 +9,7 @@ import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { AbaConfig } from "@/apps/montagem/pages/Config";
 import { AbaConfigAvisos } from "@/apps/montagem/pages/ConfigAvisos";
 import { AbaConfigRepresentantes } from "@/apps/montagem/pages/ConfigRepresentantes";
+import { AbaConfigTrafego } from "@/apps/montagem/pages/trafego/ConfigTrafego";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useEffect, useState } from "@/shared/react";
@@ -51,7 +52,7 @@ function ConfigPrevisao(){
       e("p",{className:"text-[12.5px] text-white/65"}, "Padrão combinado: novembro +5% e dezembro +15%. A Visão geral e a Previsão de faturamento usam estes valores na hora.")));
 }
 
-var SECOES = [["previsao","Previsão de faturamento", ConfigPrevisao], ["montagem","Montagem e bipagem", AbaConfig], ["rep","Representantes", AbaConfigRepresentantes], ["kn","Kit novo", ConfigKitNovo], ["avisos","Avisos e alertas", AbaConfigAvisos], ["bipa","Quem bipa os retornos", ConfigQuemBipa]];
+var SECOES = [["previsao","Previsão de faturamento", ConfigPrevisao], ["montagem","Montagem e bipagem", AbaConfig], ["rep","Representantes", AbaConfigRepresentantes], ["kn","Kit novo", ConfigKitNovo], ["avisos","Avisos e alertas", AbaConfigAvisos], ["bipa","Quem bipa os retornos", ConfigQuemBipa], ["trafego","Tráfego pago", AbaConfigTrafego]];
 
 function AbaConfiguradorGeral(){
   var sc = useState(function(){ try{ var h = sessionStorage.getItem("sorelly_cfg_secao"); if(h){ sessionStorage.removeItem("sorelly_cfg_secao"); return h; } }catch(x){} return "montagem"; }), sec = sc[0], setSec = sc[1], atual = SECOES.find(function(x){ return x[0]===sec; }) || SECOES[0];

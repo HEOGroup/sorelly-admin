@@ -334,7 +334,7 @@ function JanelaPedido(p){
     var cab = pt==="com" ? ["Forma","Vencimento","Valor (R$)","Nº parc.","Conta / bandeira","Status",""] : ["Forma","Vencimento","Valor (R$)","Conta / origem","Status",""];
     return e("div",{className:"flex flex-col gap-2 rounded-xl bg-muted/25 p-3 ring-1 "+(pt==="com" ? "ring-[#3B82F6]/40" : "ring-[#3B82F6]/40")},
       e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
-        e("div",{className:"flex flex-wrap items-center gap-2"}, e(Chip,{cor:pt==="com" ? "blue" : "orange"}, pt==="com" ? "Parcelas com NF" : "Parcelas sem NF"), e("span",{className:"text-[13px] text-white/80"}, pt==="com" ? "boleto · pix empresa · cartão" : "pix revendedora")),
+        e("div",{className:"flex flex-wrap items-center gap-2"}, e(Chip,{cor:pt==="com" ? "blue" : "orange"}, pt==="com" ? "Parcelas com NF" : "Parcelas sem NF"), e("span",{className:"text-[13px] text-white/80"}, pt==="com" ? "boleto · pix empresa · cartão · cheque" : "pix revendedora")),
         e("div",{className:"flex items-center gap-2"},
           e("input",{type:"number", min:"1", value:ped[qk], title:"Quantidade", "aria-label":"Quantidade de parcelas", className:INPUT+" h-8! w-16 px-2!", onChange:function(ev){ var o = {}; o[qk] = ev.target.value; upd(o); }}),
           e(Btn,{neutro:true, onClick:dividir}, "Dividir saldo em Nx"), e(Btn,{ic:"plus", onClick:function(){ add(linhaNova(pt, ped.data || "2026-09-15")); }}, "Parcela"))),
@@ -342,7 +342,7 @@ function JanelaPedido(p){
       lines.length ? lines.map(function(l, i){
         return e("div",{key:i, className:"grid items-center gap-1.5 [&_input]:text-[12px]! [&_select]:text-[12px]! "+grade},
           pt==="com"
-            ? e(Sl,{value:l.forma, label:"Forma", onChange:function(v){ set(i, "forma", v); }}, e("option",{value:"boleto"}, "Boleto"), e("option",{value:"pix_empresa"}, "Pix empresa"), e("option",{value:"cartao"}, "Cartão"))
+            ? e(Sl,{value:l.forma, label:"Forma", onChange:function(v){ set(i, "forma", v); }}, e("option",{value:"boleto"}, "Boleto"), e("option",{value:"pix_empresa"}, "Pix empresa"), e("option",{value:"cartao"}, "Cartão"), e("option",{value:"cheque"}, "Cheque"))
             : e("span",{className:"truncate rounded-lg bg-[#3B82F6]/15 px-2 py-2 text-[13px] font-semibold", style:tom("orange")}, "Pix revendedora"),
           e(In,{type:"date", value:l.venc, label:"Vencimento", onChange:function(v){ set(i, "venc", v); }}),
           e(Dinheiro,{out:"ponto", value:l.valor, label:"Valor", className:"w-full min-w-0 px-1.5! text-[12px]!", onChange:function(v){ set(i, "valor", v); }}),
@@ -395,7 +395,7 @@ function JanelaPedido(p){
       e(Campo,{rot:"CNPJ faturado (parte com NF)"}, e(Sl,{value:ped.cnpj, label:"CNPJ faturado", onChange:function(v){ upd({cnpj:v}); }}, CNPJS.map(function(k){ return e("option",{key:k}, k); }))),
       e(Campo,{rot:"Nº da nota fiscal"}, e(Txt,{value:X.com>0.005 ? ped.nfNum : "", disabled:X.com<=0.005, ph:"Ex.: 12345", label:"Nº da nota fiscal", onChange:function(v){ upd({nfNum:v}); }}))),
     e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 px-4 py-3"},
-      AL("Com NF — pagável por boleto, pix empresa ou cartão", brl(X.com), null, "a"), AL("Sem NF — pagável por pix revendedora", brl(X.sem), null, "b"),
+      AL("Com NF — pagável por boleto, pix empresa, cartão ou cheque", brl(X.com), null, "a"), AL("Sem NF — pagável por pix revendedora", brl(X.sem), null, "b"),
       e("div",{className:"mt-1 border-t border-border pt-2"}, AL("Diferença em relação ao valor do pedido", X.fecha ? "fecha certo ✓" : brl(X.dif), tom(X.fecha ? "green" : "red"), "c"))),
     parte("com"), parte("sem"),
     e("div",{className:"flex justify-end gap-2 pt-1"}, e(Btn,{g:true, neutro:true, onClick:fechar}, "Cancelar"), e(Btn,{g:true, onClick:salvar}, "Salvar pedido e parcelas")));
@@ -444,15 +444,12 @@ function JanelaDetalhe(p){
   var lin = function(rot, a, de, rest, k){ var fecha = Math.abs(rest)<0.005; return e("div",{key:k, className:"flex flex-wrap items-center justify-between gap-2 text-[13.5px]"}, e("span",{className:"text-white/90"}, rot), e("b",{className:MONO, style:tom(fecha ? "green" : "orange")}, brl(a)+" de "+brl(de)+(fecha ? " ✓" : " · faltam "+brl(rest)))); };
   return e(Modal,{largo:true, t:(f ? f.nome : "—")+" · Pedido "+pd.numero, sub:dbr(pd.data)+" · "+pd.cnpj+(pd.nfNum ? " · NF "+pd.nfNum : ""), fechar:p.fechar},
     e("div",{className:"flex"}, nfChip),
-    (pd.descricao || pd.limite || pd.pixMin) && e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-[#3B82F6]/10 px-4 py-3 ring-1 ring-[#3B82F6]/40"},
-      Rot("O que estamos pagando"),
-      pd.descricao && e("p",{className:"text-[14px] text-white"}, pd.descricao),
-      pd.limite && AL("Pagar até", dbr(pd.limite), null, "l"), pd.pixMin>0 && AL("Valor mínimo de cada pix", brl(pd.pixMin), null, "m")),
+    // Bloco azul "O que estamos pagando / Pagar até / Valor mínimo de cada pix" REMOVIDO do detalhe do pedido (chamado do Lucas, 09/11/2026, opção A): era informação repetida e a data "Pagar até" podia não bater com as parcelas. O prazo vale pelo vencimento das próprias parcelas.
     e("div",{className:"grid grid-cols-2 gap-2 lg:grid-cols-5"},
       e(Tile,{t:"Valor do pedido", v:brl(pd.total), cor:"#fff"}), e(Tile,{t:"Com NF", v:brl(pd.comNF), cor:COR.blue}), e(Tile,{t:"Sem NF", v:brl(pd.semNF), cor:COR.orange}),
       e(Tile,{t:"Já pago", v:brl(D.pago), cor:COR.green}), e(Tile,{t:"Em aberto", v:brl(D.aberto), cor:D.aberto>0.005 ? COR.red : "#fff"})),
     e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 px-4 py-3"},
-      lin("Parcelas alocadas na parte com NF — boleto · pix empresa · cartão", D.comAloc, pd.comNF, D.restCom, "a"), lin("Parcelas alocadas na parte sem NF — pix revendedora", D.semAloc, pd.semNF, D.restSem, "b")),
+      lin("Parcelas alocadas na parte com NF — boleto · pix empresa · cartão · cheque", D.comAloc, pd.comNF, D.restCom, "a"), lin("Parcelas alocadas na parte sem NF — pix revendedora", D.semAloc, pd.semNF, D.restSem, "b")),
     Rot("Parcelas"),
     Rolagem([
       e("thead",{key:"h"}, e("tr",null, th("Nº"), th("Forma"), th("NF"), th("Vencimento"), th("Conta / bandeira"), th("Valor", TN), th("Status"), th(" "))),

@@ -66,7 +66,7 @@ function rotuloNumero(c){ return c.codigoDevmaster!=null ? String(c.codigoDevmas
 function textoBuscaNumero(c){ var p = [String(c.numero), rotuloNumero(c)]; if(c.codigoDevmaster!=null) p.push(String(c.codigoDevmaster)); return p.join(" "); }
 
 // ---------- estado ----------
-function exVazio(){ return {v:1, seq:0, seqNumero:0, config:clone(CONFIG_PADRAO), estoque:[], fila:[], clientes:[], condicionais:[], log:[]}; }
+function exVazio(){ return {v:1, seq:0, seqNumero:0, config:clone(CONFIG_PADRAO), estoque:[], fila:[], clientes:[], condicionais:[], obsCampo:{}, log:[]}; }   // obsCampo = observação por revendedora na aba Com revendedoras: {código da DevMaster: {txt, por, em}}
 function proximoId(ex, prefixo, dado){ var id = dado && dado.id ? String(dado.id) : (prefixo+(++ex.seq)); var n = Number(String(id).replace(/\D/g, "")); if(n>ex.seq && String(id).indexOf(prefixo)===0) ex.seq = n; return id; }
 function novoEstoque(ex, d, agora, por){
   return {id:proximoId(ex, "ei", d), codigo:trim(d.codigo), nome:trim(d.nome), valorUnitario:Math.max(0, r2(num(d.valorUnitario))), quantidade:Math.max(0, Math.floor(num(d.quantidade))),
@@ -112,6 +112,13 @@ function exMigrar(ex){
   Object.keys(base).forEach(function(k){ if(ex[k]===undefined) ex[k] = clone(base[k]); });
   Object.keys(CONFIG_PADRAO).forEach(function(k){ if(ex.config[k]===undefined) ex.config[k] = CONFIG_PADRAO[k]; });
   ex.condicionais.forEach(function(c){ if(!c.fotos) c.fotos = {endereco:null, expositor:null, avaria:null, avaria2:null}; if(!c.itens) c.itens = []; });
+  // cópia do admin antigo (06/11/2026): quando o arquivo local traz uma "versao" nova, os dados do admin antigo substituem os do sistema (só vale enquanto o setor usa um dos dois: a data da cópia fica em ex.importVersao)
+  if(LOCAL && LOCAL.versao && ex.importVersao!==LOCAL.versao){
+    var d = exDemo(), chaves = d.fila.map(function(f){ return telefoneKey(f.telefone); });
+    // quem entrou na fila só no sistema novo (telefone que não está na cópia) continua na fila
+    ex.fila.forEach(function(f){ if(chaves.indexOf(telefoneKey(f.telefone))<0){ f.id = "fl"+(++d.seq); d.fila.push(f); } });
+    ex.estoque = d.estoque; ex.fila = d.fila; ex.clientes = d.clientes; ex.condicionais = d.condicionais; ex.seq = d.seq; ex.seqNumero = d.seqNumero; ex.importVersao = LOCAL.versao;
+  }
   return ex;
 }
 
@@ -414,6 +421,14 @@ function exReduz(s, a){
     case "cond_foto_del": {
       var cx = cond(); if(!cx) return recusa(NAO_ACHOU); if(SLOTS_FOTO.indexOf(a.slot)<0) return recusa("Lugar de foto inválido.");
       cx.fotos[a.slot] = null; cx.atualizadoEm = agora; cx.atualizadoPor = por; return ok("Foto removida do expositor nº "+rotuloNumero(cx)+".");
+    }
+
+    // ----- observação da aba Com revendedoras (09/11/2026): texto livre por revendedora (código da DevMaster); texto vazio apaga -----
+    case "obs_rev": {
+      var codObs = trim(a.cod); if(!codObs) return recusa("Informe a revendedora."); var txtObs = trim(a.txt);
+      if(!ex.obsCampo) ex.obsCampo = {};
+      if(!txtObs){ if(!ex.obsCampo[codObs]) return recusa("Nada para apagar."); delete ex.obsCampo[codObs]; return ok("Observação da revendedora "+codObs+" apagada."); }
+      ex.obsCampo[codObs] = {txt:txtObs, por:por, em:agora}; return ok("Observação da revendedora "+codObs+" salva.");
     }
 
     // ----- base de clientes -----

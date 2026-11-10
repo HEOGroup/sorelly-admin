@@ -8,11 +8,13 @@ import { Avatar } from "@/apps/montagem/mobile/theme";
 import { use } from "@/apps/montagem/state/context";
 import { Card } from "@/apps/montagem/ui/card";
 import { PageHead } from "@/apps/montagem/ui/page";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 import React from "react";
 
 function AbaCelularFunc(){
-  var s = use().state;
+  var cx = use(), s = cx.state, d = cx.dispatch, temEx = s.listagens.some(function(x){ return String(x.id).indexOf("LEX")===0; });
+  // Marcus, 09/11/2026: o celular das funcionárias já abre com as 3 listagens de exemplo (uma vez por sessão do navegador), para testar como se fosse real; "Tirar" apaga
+  useEffect(function(){ try{ if(!temEx && !sessionStorage.getItem("sorelly_lex_tirado")) d({type:"SIM_LISTAGENS_EXEMPLO"}); }catch(x){} }, [s.listagens]);   // eslint-disable-line react-hooks/exhaustive-deps
   var doUsuario = acessoDoUsuario(s.usuario);   // quem já está logado no sistema cai direto no app dela, sem escolher nada
   var it = useState(doUsuario), inte = it[0], setInte = it[1];
   var entrada = e(Entrada,{titulo:"App das funcionárias", onEntrar:function(){ setInte(doUsuario || {pessoa:ACESSOS[0].pessoas[0], acesso:ACESSOS[0]}); }, onTeste:function(){ setInte(doUsuario || {pessoa:ACESSOS[0].pessoas[0], acesso:ACESSOS[0]}); }});
@@ -28,6 +30,10 @@ function AbaCelularFunc(){
             return e("button",{key:x.id, onClick:function(){ setInte({pessoa:x, acesso:ac}); },
                 className:"flex items-center gap-3 rounded-lg px-2 py-2 text-left "+(on?"bg-sidebar-accent ring-1 ring-primary/40":"hover:bg-muted/50")},
               e(Avatar,{nome:x.nome, i:i, className:"size-8 text-sm"}), e("b",{className:"text-sm"}, x.nome)); })); }),
+        e("div",{className:"mt-2 flex flex-col gap-1.5 border-t border-border px-2 pt-2"},
+          e("p",{className:"text-[11px] font-bold uppercase tracking-wide text-foreground"}, "Listagens de exemplo"),
+          e("button",{onClick:function(){ try{ sessionStorage.removeItem("sorelly_lex_tirado"); }catch(x){} d({type:"SIM_LISTAGENS_EXEMPLO"}); }, className:"h-8 rounded-lg bg-primary/20 text-[13px] font-semibold text-primary hover:bg-primary/30"}, temEx ? "Refazer as 3 listagens de exemplo" : "Carregar 3 listagens de exemplo"),
+          temEx && e("button",{onClick:function(){ try{ sessionStorage.setItem("sorelly_lex_tirado", "1"); }catch(x){} d({type:"SIM_LISTAGENS_EXEMPLO", limpar:true}); }, className:"h-8 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"}, "Tirar as listagens de exemplo")),
         inte && e("button",{onClick:function(){ setInte(null); }, className:"mt-1 h-9 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"},"Sair do celular"))));
 }
 

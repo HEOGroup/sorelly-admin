@@ -3,4 +3,4 @@ export const runtime = "nodejs";
 import { json, rota } from "@/server/http";
 import { consulta } from "@/server/db";
 
-export const GET = rota(async () => { await consulta("select 1"); return json({ ok: true }); }, { publica: true });
+export const GET = rota(async () => { await consulta("select 1"); return json({ ok: true, versao: process.env.VERCEL_GIT_COMMIT_SHA || "" }); }, { publica: true });

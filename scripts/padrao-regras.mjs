@@ -24,6 +24,21 @@ var PISTA_NUMERO = /tabular-nums|brl\(|din\(|inteiro\(|Dinheiro|Indicador|\bMONO
 var PISTA_CAMPO = /"(input|select|button|textarea|tr)"|Botao|CAMPO|INPUT|MoneyInput|NumInput|CampoSel|CampoBusca|BarraFiltros|Segmentado/;
 var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
 
+// 2g. A PEÇA DE TABELA TEM QUE SER DOURADA DE VERDADE (Marcus, 03/11/2026: "tem que colocar na trava dura"). As regras 2e e 2e-bis mandam usar TabelaP/TabelaPlanilha/TabelaOuro "porque elas já trazem o topo dourado".
+// Esta conferência garante que é verdade: lê a própria peça (sempre, não só quando ela muda) e reprova se o degradê dourado sumir ou se o topo voltar a ser cinza (bg-white/5, bg-muted).
+export var PECAS_TABELA = [["src/apps/montagem/components/padrao-fin.js", "TabelaP"], ["src/apps/montagem/components/tabela-planilha.js", "TabelaPlanilha"], ["src/apps/montagem/components/tabela-ouro.js", "TabelaOuro"]];
+export function conferirPecaTabela(arquivo, conteudo){
+  var item = PECAS_TABELA.filter(function(x){ return norm(arquivo).endsWith(x[0]); })[0];
+  if(!item) return [];
+  var ini = conteudo.indexOf("function " + item[1] + "(");
+  if(ini < 0) return [item[1] + ": a função da peça de tabela não foi encontrada em " + item[0]];
+  var resto = conteudo.slice(ini + 10), fim = resto.search(/\n(function |export )/), corpo = fim < 0 ? resto : resto.slice(0, fim), erros = [];
+  var dourado = /9A6F1E/i.test(corpo) || (/\bBARRA_OURO\b/.test(corpo) && /BARRA_OURO\s*=\s*\{[^}]*9A6F1E/i.test(conteudo));   // o degradê pode estar numa constante do arquivo
+  if(!dourado) erros.push(item[1] + ": o topo da tabela perdeu o degradê dourado (linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)); toda tabela tem topo dourado em degradê");
+  if(/<th|"th"/.test(corpo) && /bg-white\/5|bg-muted|bg-sidebar/.test(corpo)) erros.push(item[1] + ": cabeçalho com fundo cinza (bg-white/5, bg-muted ou bg-sidebar): o topo é dourado em degradê, UM só na tabela inteira");
+  return erros;
+}
+
 /**
  * Confere linhas (novas ou mudadas) de um arquivo. Devolve a lista de erros em texto.
  * @param {string} arquivo caminho
@@ -75,15 +90,23 @@ export function conferirLinhas(arquivo, linhas, op){
 
     // 2e. TOPO DOURADO (Marcus, 02/11/2026): toda tabela tem cabeçalho dourado em degradê. Tabela feita à mão em pages/ não tem: use TabelaP (padrao-fin.js) ou TabelaPlanilha (tabela-planilha.js), que já trazem o topo dourado.
     if(ehPagina(arquivo) && /\be\(\s*["'](table|thead)["']|<(table|thead)\b/.test(codigo))
-      add("tabela feita à mão (use TabelaP ou TabelaPlanilha: o topo dourado em degradê vem da peça)", l);
+      add("tabela feita à mão (use TabelaCampos/FileiraCampos de padrao-fin.js: layout D, 06/11/2026; planilha com filtro: TabelaPlanilha)", l);
 
     // 2e-bis. A peça antiga Tab/Td de padrao.js tem cabeçalho cinza, sem a barra dourada (02/11/2026, Marcus: "travou errado"). Em pages/ use GradeFiltro (planilha com filtro), TabelaP ou TabelaPlanilha.
     if(ehPagina(arquivo) && /\be\(\s*Tab\s*,|\bimport\b[^;]*\bTab\b[^;]*components\/padrao["']/.test(codigo))
-      add("tabela com a peça antiga Tab (cabeçalho cinza): use GradeFiltro, TabelaP ou TabelaPlanilha, que trazem a barra dourada inteira", l);
+      add("tabela com a peça antiga Tab (cabeçalho cinza): use TabelaCampos/FileiraCampos (layout D) ou, para planilha com filtro, GradeFiltro/TabelaPlanilha", l);
+
+    // 2h. LAYOUT D (Marcus, 06/11/2026: "não quero linhas quebradas, nada dourado, tudo ordenado"): tabela simples = TabelaCampos + FileiraCampos (padrao-fin.js): fileira de campos com fio fino, cabeçalho e total em faixa escura, colunas de largura fixa, nada quebra. TabelaP (topo dourado) não entra mais em tela mexida. (A trava reprova só na hora de editar, no hook; telas antigas que já usam TabelaP não travam o conferir nem o CI até serem mexidas.)
+    if(op.aoEditar && ehPagina(arquivo) && /\be\(\s*TabelaP\s*,|\bimport\b[^;]*\bTabelaP\b[^;]*padrao-fin/.test(codigo))
+      add("TabelaP (topo dourado) saiu em 06/11/2026: use TabelaCampos + FileiraCampos de padrao-fin.js (layout D)", l);
 
     // 2f. UM DEGRADÊ SÓ (Marcus, 02/11/2026): o topo dourado é um degradê esticado na barra inteira; nunca um degradê por célula.
     if(/"(td|th)"|<t[dh]\b|\bTh\b|\bTd\b/.test(codigo) && /gradient|degrade\(/.test(codigo))
       add("degradê dentro da célula (o topo dourado é UM degradê na barra inteira, não um por célula)", l);
+
+    // 2i. SEM CHIPS NEM PÍLULAS (Marcus, 09/11/2026: "eu não quero nunca mais isso"): botão arredondado em forma de pílula para marcar várias opções (ex.: Peito, Costas, Ombros...) é proibido. Escolha de uma opção = select (CampoSel); várias opções = menu suspenso com marcação (MenuMulti de padrao-fin.js); 2 a 5 opções da mesma visão = Segmentado.
+    if(/\b(var|let|const|function)\s+chip\w*\b/.test(codigo) || (/["']button["']|<button\b/.test(codigo) && /\brounded-full\b/.test(codigo) && /\bpx-\d/.test(codigo)))
+      add("chip/pílula (proibido em 09/11/2026: uma opção = select; várias = menu suspenso MenuMulti; 2 a 5 da mesma visão = Segmentado)", l);
 
     // 3. altura de campo, botão e linha: 32 px (h-8); cabeçalho de tabela 30 px
     if(PISTA_CAMPO.test(codigo)){

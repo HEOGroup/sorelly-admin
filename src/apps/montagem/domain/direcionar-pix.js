@@ -20,8 +20,8 @@ var REGRAS0 = [
 // pagos: o que a revendedora já pagou por outras formas {forma:"dinheiro"|"link"|"getnet"|"credito"|"pix", valor, cnpj?, parc?, obs?}; valor = o Pix que falta definir a conta
 function dpDemo(){
   var agora = Date.now(), min = function(m){ return agora-m*60000; };
-  var it = function(quem, atend, vendas, aPagar, pagos, valor, mAtras, obs){ return {id:uid("p"), origem:"interno", atendente:atend, quem:quem, vendas:vendas, aPagar:aPagar, pagos:pagos, valor:valor, obs:obs||"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
-  var rp = function(quem, maq, valor, mAtras, repOrigem){ return {id:uid("p"), origem:"rep", atendente:"", quem:quem, repOrigem:repOrigem, vendas:0, aPagar:valor, pagos:[], valor:valor, maq:maq, obs:"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix"}; };
+  var it = function(quem, atend, vendas, aPagar, pagos, valor, mAtras, obs){ return {id:uid("p"), origem:"interno", atendente:atend, quem:quem, vendas:vendas, aPagar:aPagar, pagos:pagos, valor:valor, obs:obs||"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix", demo:true}; };
+  var rp = function(quem, maq, valor, mAtras, repOrigem){ return {id:uid("p"), origem:"rep", atendente:"", quem:quem, repOrigem:repOrigem, vendas:0, aPagar:valor, pagos:[], valor:valor, maq:maq, obs:"", recebidoEm:min(mAtras), status:"fila", divisoes:[], forma:"pix", demo:true}; };
   return {v:1, regras:JSON.parse(JSON.stringify(REGRAS0)), pix:[
     it("Ingrid Martins dos Santos", "Edna", 1556.00, 1011.40, [{forma:"dinheiro", valor:190}], 821.40, 52),
     it("Bianka dos Santos Sutil", "Kawany", 1838.00, 1102.80, [], 1102.80, 47),
@@ -140,12 +140,12 @@ function dpReduz(s, a){
   var dp = JSON.parse(JSON.stringify(s.dp || dpDemo())), por = a.por || "—", recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{dp:dp}, msg:msg}; };
   var pix = function(id){ return dp.pix.find(function(x){ return x.id===id; }); };
   switch(a.op){
-    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix"}; }); return ok(); }
+    case "divisao": { var p = pix(a.id); if(!p) return recusa("Pix não encontrado."); p.divisoes = (a.divisoes||[]).map(function(d){ return {destinoId:d.destinoId, valor:r2(d.valor), regra:d.regra||0, conta:d.conta||"", via:d.via||"pix", parte:d.parte||""}; }); return ok(); }   // parte (forma#n) liga a divisão à linha do pedido do atendimento interno
     case "confirma": { var p2 = pix(a.id); if(!p2) return recusa("Pix não encontrado."); var soma = r2((p2.divisoes||[]).reduce(function(t, d){ return t+d.valor; }, 0));
       if(!p2.divisoes.length) return recusa("Escolha pelo menos um destino."); if(Math.abs(soma-p2.valor)>0.009) return recusa("A soma dos destinos precisa fechar com "+brl(p2.valor)+"."); p2.status = "direcionado"; p2.confirmadoPor = por; p2.confirmadoEm = Date.now(); return ok("Pix direcionado"); }
     // pedido de conta feito no app da representante (acerto): entra na fila do Direcionar; quando o financeiro confirma, a conta volta para o app (reducer DP)
     case "rep_pedir": { if(!a.pid || !(a.valor>0)) return recusa("Pedido sem valor."); if(dp.pix.some(function(x){ return x.pid===a.pid; })) return ok();
-      dp.pix.push({id:uid("p"), origem:"rep", atendente:"", quem:"Representante "+(a.rep||""), repOrigem:a.rep||"", revendedora:a.rev||"", kitId:a.kitId, pid:a.pid, vendas:0, aPagar:a.valor, pagos:[], valor:a.valor, maq:"", obs:a.obs||"", recebidoEm:Date.now(), status:"fila", divisoes:[], forma:a.forma==="link" ? "link" : "pix", comprovante:a.comprovante||null}); return ok(); }
+      dp.pix.push({id:uid("p"), origem:"rep", atendente:"", quem:"Representante "+(a.rep||""), repOrigem:a.rep||"", revendedora:a.rev||"", kitId:a.kitId, pid:a.pid, vendas:0, aPagar:a.valor, pagos:[], valor:a.valor, maq:"", obs:a.obs||"", recebidoEm:Date.now(), status:"fila", divisoes:[], forma:a.forma==="link" ? "link" : (a.forma==="credito" || a.forma==="debito") ? "maquininha" : "pix", comprovante:a.comprovante||null}); return ok(); }
     // vendas, valor a pagar e demais pagamentos do acerto (dinheiro, link, cartão, Pix já direcionado) para o financeiro ver tudo, como no Interno
     case "rep_ctx": { dp.pix.forEach(function(x){ if(x.kitId!==a.kitId || x.origem!=="rep") return; var ctx = a.ctx || {};
         x.vendas = ctx.vendas>0 ? ctx.vendas : 0; x.aPagar = ctx.aPagar>0 ? ctx.aPagar : x.valor;
@@ -159,6 +159,16 @@ function dpReduz(s, a){
     case "fixa_extra": { dp.contasRepExtra = dp.contasRepExtra || {}; var xe = dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep], a.patch||{}); if(!xe.ate && !(xe.limite>0) && !xe.auto && !xe.conferida) delete dp.contasRepExtra[a.rep]; return ok(); }
     case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || 7000; return ok("Valor fora do normal salvo"); }
     case "demo": { dp.pix = dpDemo().pix; return ok("Pedidos de teste recarregados"); }
+    // pedido do ATENDIMENTO INTERNO (Marcus, 09/11/2026): a funcionária deu "OK, enviar ao financeiro" e algum pagamento ainda não tem conta (Pix, link).
+    // Entra na fila do Direcionar para TODO o Financeiro (servidor, módulo "pag"); ao confirmar, a conta volta para a Atendimento Sorelly (reducer DP).
+    // a.abertas = [{forma, valor, linha}] (linha = posição no lançamento s.lancFin), a.pagos = o que já está resolvido (dinheiro, cartão na maquininha única...)
+    case "int_pedir": { var idI = "PI"+a.internoId, pI = pix(idI);
+      if(!(a.abertas||[]).length){ if(pI && pI.status==="fila") dp.pix = dp.pix.filter(function(x){ return x.id!==idI; }); return ok(); }
+      var valI = r2(a.abertas.reduce(function(t, l){ return t+l.valor; }, 0));
+      var novoI = {id:idI, origem:"interno", internoId:a.internoId, atendente:a.atendente||"", quem:a.nome||"", vendas:a.vendas||0, aPagar:a.aPagar||valI, pagos:a.pagos||[], valor:valI,
+        partes:a.abertas.map(function(l){ return {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
+      dp.pix = pI ? dp.pix.map(function(x){ return x.id===idI ? novoI : x; }) : dp.pix.concat([novoI]); return ok(); }
+    case "zerar_testes": { dp.pix = (dp.pix||[]).filter(function(x){ return !x.demo; }); return ok(); }
   }
   return recusa("Ação desconhecida.");
 }

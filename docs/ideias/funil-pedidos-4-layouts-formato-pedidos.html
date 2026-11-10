@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funil de pedidos · 4 layouts no formato Pedidos</title>
+<style>
+:root{--fundo:#0E0F12;--card:#15171B;--card2:#1B1E23;--fio:#2A2E36;--fio2:#3A3F48;--texto:#F2F0EA;--ouro:#D6B25C;--ruim:#EF4444;--ok:#4CC38A;
+ --f1:#5B8DEF;--f2:#A78BFA;--f3:#2DD4BF;--f4:#4CC38A;--f0:#D6B25C}
+*{box-sizing:border-box}body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 24px 70px}
+h1{font-size:15px;margin:0 0 4px;color:var(--ouro)}h2{font-size:13px;margin:34px 0 4px;color:var(--ouro)}p.n{margin:0 0 10px;max-width:1000px}
+/* espaçamento padrão (igual ao Pedidos de bruto e banho): bloco p-3 com gap-3; colunas p-1.5 com gap-1.5; faixas h-9; botões e campos h-8 */
+.bloco{border:2px solid rgba(255,255,255,.3);border-radius:8px;background:rgba(21,23,27,.6);padding:12px;display:flex;flex-direction:column;gap:12px}
+.cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.cab b{font-size:15px;display:block}.cab small{font-size:11px;display:block;margin-top:2px}
+.dir{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.btn{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--card);display:flex;align-items:center;justify-content:center;padding:0 12px;white-space:nowrap}
+.btn.p{background:rgba(214,178,92,.2);border-color:var(--ouro);color:var(--ouro);font-weight:600}
+.btn.sq{width:32px;padding:0}
+.zoom{display:flex;height:32px;border:1px solid var(--fio2);border-radius:6px;overflow:hidden;background:var(--card)}.zoom span{display:flex;align-items:center;justify-content:center;width:32px}.zoom span:nth-child(2){width:64px;border:0 solid var(--fio2);border-left-width:1px;border-right-width:1px}
+.seg{display:inline-flex;border:1px solid var(--fio2);border-radius:6px;overflow:hidden}.seg span{height:32px;display:flex;align-items:center;padding:0 12px}.seg span+span{border-left:1px solid var(--fio2)}.seg .on{background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600}
+.fil{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.inp{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--card);display:flex;align-items:center;justify-content:space-between;padding:0 10px;white-space:nowrap}.w80{width:320px}.w52{width:208px}
+.resumo{margin-left:auto;font-size:13px}
+.rolagem{overflow-x:auto;padding-bottom:8px}
+.quadro{display:grid;align-items:start;column-gap:8px;row-gap:6px;width:max-content}
+.faixa{height:36px;border:1px solid;border-radius:8px;display:flex;align-items:center;gap:12px;padding:0 10px;white-space:nowrap;overflow:hidden}
+.faixa .tg{height:32px;width:32px;display:grid;place-items:center;border-radius:6px;flex:0 0 auto}
+.faixa b{font-weight:600}.faixa .ct{margin-left:auto}
+.col{border-radius:12px;background:rgba(0,0,0,.2);padding:6px;display:flex;flex-direction:column;gap:6px;box-shadow:0 0 0 1px rgba(255,255,255,.1);border-top:3px solid var(--c)}
+.chd{display:flex;flex-direction:column;align-items:center;gap:2px;border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:6px;text-align:center}
+.chd .t{min-height:34px;display:flex;align-items:center;justify-content:center;gap:6px;font-weight:600;line-height:1.2}
+.num{width:20px;height:20px;border-radius:50%;border:1px solid var(--c);color:var(--c);display:grid;place-items:center;font-size:11px;font-weight:400}
+.chd .q{font-weight:600}.chd .a{font-size:11px}
+.tgl{height:32px;width:32px;border:1px solid var(--fio2);border-radius:6px;display:grid;place-items:center;background:var(--card);margin-left:4px}
+.ccab{display:flex;align-items:center;justify-content:space-between;width:100%}
+.cd{border-radius:8px;background:var(--card);box-shadow:inset 3px 0 0 var(--c),0 0 0 1px rgba(255,255,255,.1);padding:4px 8px 4px 12px;display:flex;flex-direction:column;gap:2px;min-height:32px}
+.cd.at{box-shadow:inset 3px 0 0 var(--ruim),0 0 0 1px var(--ruim)}
+.l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline;white-space:nowrap}.l1 b{font-weight:600}
+.l2{font-size:11px;white-space:nowrap}
+.l3{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:11px;border-top:1px solid rgba(255,255,255,.1);padding-top:4px;margin-top:2px}
+.go{height:32px;border:1px solid var(--ouro);border-radius:6px;background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600;display:flex;align-items:center;padding:0 10px;white-space:nowrap}
+.r{color:var(--ruim)}.v{color:var(--ok)}.t{font-variant-numeric:tabular-nums}
+.fino{width:44px;padding:8px 0;align-items:center;gap:8px;border-top:3px solid var(--c)}
+.fino .vt{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;white-space:nowrap}
+.fotos{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.ft{aspect-ratio:1;border-radius:6px;border:1px solid var(--fio2);display:grid;place-items:center;font-size:11px;background:linear-gradient(135deg,#2a2418,#14110a)}.ft.b{background:linear-gradient(135deg,#2b2f36,#14161a)}
+.gav{width:300px;border-radius:12px;background:rgba(0,0,0,.2);box-shadow:0 0 0 1px rgba(255,255,255,.1);border-top:3px solid var(--f0);padding:6px;display:flex;flex-direction:column;gap:6px}
+.gavf{width:44px;border-radius:12px;background:rgba(0,0,0,.2);box-shadow:0 0 0 1px rgba(255,255,255,.1);border-top:3px solid var(--f0);padding:8px 0;display:flex;flex-direction:column;align-items:center;gap:8px}
+.dd{display:flex;gap:8px;align-items:flex-start}.dd>.rolagem{flex:1;min-width:0}
+.leg{font-size:11px;margin-top:6px}
+</style></head><body>
+<h1>Funil de pedidos · 4 layouts no formato da tela Pedidos (Cadastro de peças)</h1>
+<p class="n">Mesmo formato do Pedidos de bruto e banho: tudo num bloco com borda, título com os botões à direita (Ocultar colunas vazias, Zoom, Quadro | Planilha | Revendedoras, Novo pedido), filtros numa linha, faixas coloridas por fase e colunas numeradas. As etapas do funil continuam as mesmas (só ganham fase e número). Espaçamento igual ao Pedidos: bloco com 12 px de respiro, 12 px entre as partes, 6 px dentro da coluna, campos e botões de 32 px. Nomes inventados.</p>
+<div id="app"></div>
+<script>
+var ET=[["novo","Novo",1],["conferindo","Conferindo",1],["comprovante","Aguardando comprovante",1],["separando","Separando",2],["agendado","Agendado",2],["representante","Com a representante",3],["atendimento","Em atendimento",3],["bipagem","Bipagem",3],["concluido","Concluída",4],["recusado","Recusado ou cancelado",4]];
+var FASES=[[1,"Entrada","--f1"],[2,"Preparo","--f2"],[3,"Atendimento","--f3"],[4,"Fim","--f4"]];
+var CAN={entrega:"Entrega",representante:"Representante",empresa:"Empresa",encomenda:"Encomenda"};
+var NOM=["Camila Rocha","Beatriz Lima","Helena Prado","Fernanda Alves","Juliana Souza","Patrícia Gomes","Larissa Teixeira","Aline Mendes","Carolina Dias","Renata Barros","Priscila Nunes","Vanessa Castro","Michele Ramos","Tatiane Freitas","Daniela Moraes","Bruna Cardoso","Luciana Pires","Simone Araújo","Gabriela Costa","Sabrina Lopes","Roberta Melo","Elisa Andrade","Mônica Vieira","Paula Duarte","Letícia Farias","Natália Borges","Cristina Rios","Débora Santos"];
+var DIST=[3,5,2,4,3,2,2,2,6,0],P=[],n=0,RS=["Agatha","Elen","Eduarda"];
+ET.forEach(function(e,i){for(var j=0;j<DIST[i];j++){P.push({nome:NOM[n%NOM.length],et:e[0],can:["entrega","representante","empresa","encomenda"][(n+i)%4],min:(n*41+i*60)%1700,at:(n%6===2&&i<8),med:2000+((n*731)%6000),max:3000+((n*911)%7000),resp:RS[n%3]});n++}});
+var AT=[{nome:"Helena Prado",f:12,obs:"dourado, é para ela mesma",min:95,st:"Separando"},{nome:"Fernanda Alves",f:4,obs:"prata, anel grosso",min:340,st:"Separando"},{nome:"Larissa Teixeira",f:6,obs:"colar letra ouro",min:760,st:"Pronto"},{nome:"Carolina Dias",f:3,obs:"brincos de festa, dourado",min:1500,st:"Separando"},{nome:"Renata Barros",f:5,obs:"cordão baiano grosso",min:2900,st:"Separando"}];
+var R=function(v){return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2})};
+var T=function(m){return m<60?m+" min":m<1440?Math.floor(m/60)+" h":Math.floor(m/1440)+" d"};
+var CORF={1:"var(--f1)",2:"var(--f2)",3:"var(--f3)",4:"var(--f4)"};
+var abertos=P.filter(function(p){return p.et!=="concluido"&&p.et!=="recusado"}).length,atr=P.filter(function(p){return p.at}).length;
+function cab(extra){return '<div class="cab"><div><b>Funil de pedidos</b><small>Reposição e encomenda: do pedido até a entrega.</small></div><div class="dir">'+(extra||"")+'<div class="zoom"><span>−</span><span class="t">100%</span><span>+</span></div><div class="seg"><span class="on">Quadro</span><span>Planilha</span><span>Revendedoras</span></div><div class="btn p">Novo pedido</div></div></div>'}
+function fil(){return '<div class="fil"><div class="inp w80">Buscar revendedora, representante ou encomenda</div><div class="inp w52">Canal: todos <span>▾</span></div><div class="inp w52">Responsável: todas <span>▾</span></div><div class="inp w52">Grupo e assunto <span>▾</span></div><div class="resumo">Em aberto <b>'+abertos+'</b> · Atrasados <b class="r">'+atr+'</b></div></div>'}
+function cartao(p){var f=ET.filter(function(e){return e[0]===p.et})[0][2];return '<div class="cd'+(p.at?" at":"")+'" style="--c:'+CORF[f]+'"><div class="l1"><span><b>'+p.nome+'</b></span><b class="t'+(p.at?" r":"")+'" style="font-size:11px">'+T(p.min)+'</b></div><div class="l2">'+CAN[p.can]+' · '+p.resp+'</div><div class="l3"><span class="t">Média '+R(p.med).replace(",00","")+' · Máx '+R(p.max).replace(",00","")+'</span><span class="go">'+(p.et==="novo"?"Conferir ›":p.et==="separando"?"Agendar ›":"Avançar ›")+'</span></div></div>'}
+function lista(et){return P.filter(function(p){return p.et===et})}
+function colHtml(e,i,col,rowSpan){var l=lista(e[0]),f=e[2],atrN=l.filter(function(p){return p.at}).length;return '<section class="col" style="--c:'+CORF[f]+';grid-row:2;grid-column:'+col+';width:300px"><div class="chd"><div class="ccab"><span class="tg_" style="width:32px"></span><div class="t"><span class="num">'+(i+1)+'</span>'+e[1]+'</div>'+(rowSpan||'<span style="width:32px"></span>')+'</div><span class="q">'+l.length+(l.length===1?" pedido":" pedidos")+'</span><span class="a '+(atrN?"r":"")+'">'+(atrN?atrN+(atrN>1?" atrasados":" atrasado"):"prazo 24 h")+'</span></div>'+l.map(cartao).join("")+'</section>'}
+function fino(e,i,col){var l=lista(e[0]);return '<section class="col fino" style="--c:'+CORF[e[2]]+';grid-row:2;grid-column:'+col+'"><div class="tgl">▸</div><b class="t">'+l.length+'</b><span class="vt">'+(i+1)+' · '+e[1]+'</span></section>'}
+function band(f,c1,c2,aberto,tog){var l=ET.filter(function(e){return e[2]===f[0]}),qt=0,at=0;l.forEach(function(e){lista(e[0]).forEach(function(p){qt++;if(p.at)at++})});var cor="var("+f[2]+")";
+ return '<div class="faixa" style="grid-row:1;grid-column:'+c1+' / '+(c2+1)+';border-color:'+cor+';background:color-mix(in srgb,'+cor+' 18%,transparent)">'+(tog?'<span class="tg" style="border:1px solid var(--fio2);background:var(--card)">'+(aberto?"▾":"▸")+'</span>':"")+'<b>'+f[1]+'</b><b class="t">'+qt+(qt===1?" pedido":" pedidos")+'</b>'+(at?'<span class="r">'+at+' atrasados</span>':"")+(!aberto?'<span class="ct">'+l.map(function(e){return lista(e[0]).length+" "+e[1].toLowerCase()}).filter(function(t){return t[0]!=="0"}).join(" · ")+'</span>':"")+'</div>'}
+function atCartao(a){var m="";for(var i=0;i<4;i++)m+='<div class="ft'+(i%2?" b":"")+'">'+(i===3&&a.f>4?"+"+(a.f-3):"")+'</div>';return '<div class="cd" style="--c:var(--f0)"><div class="l1"><b>'+a.nome+'</b><b class="t" style="font-size:11px">'+T(a.min)+'</b></div><div class="fotos">'+m+'</div><div style="font-size:13px">'+a.obs+'</div><div class="l3"><span>'+a.st+' · Marcus</span><span class="go">'+(a.st==="Pronto"?"Entregue ›":"Pronto ›")+'</span></div></div>'}
+function atColuna(abrir){return '<section class="col" style="--c:var(--f0);grid-row:2;grid-column:1;width:300px"><div class="chd"><div class="ccab"><span style="width:32px"></span><div class="t">Separar peças</div>'+(abrir||'<div class="btn sq" title="Novo item">+</div>')+'</div><span class="q">'+AT.length+' revendedoras</span><span class="a">Foto e observação</span></div>'+AT.map(atCartao).join("")+'</section>'}
+var H="";
+// 1
+(function(){var cols="",bands="",c=1;
+ bands+='<div class="faixa" style="grid-row:1;grid-column:1 / 2;border-color:var(--f0);background:color-mix(in srgb,var(--f0) 18%,transparent)"><b>Atenção</b><b class="t">'+AT.length+'</b></div>';cols+=atColuna();c=2;
+ FASES.forEach(function(f){var es=ET.map(function(e,i){return [e,i]}).filter(function(x){return x[0][2]===f[0]&&(lista(x[0][0]).length>0)});if(!es.length)return;bands+=band(f,c,c+es.length-1,true,false);es.forEach(function(x){cols+=colHtml(x[0],x[1],c);c++})});
+ var nVaz=ET.filter(function(e){return lista(e[0]).length===0}).length;
+ H+='<h2>1 · Igual ao Pedidos, com a coluna Atenção na frente</h2><p class="n">É o formato do Pedidos de bruto e banho: faixas por fase em cima das colunas numeradas. O botão <b>Ocultar colunas vazias ('+nVaz+')</b> abre e fecha as colunas sem pedido (hoje estão ocultas). A coluna Atenção · Separar peças é a primeira, com as fotos e a observação.</p><div class="bloco">'+cab('<div class="btn">Ocultar colunas vazias ('+nVaz+')</div>')+fil()+'<div class="rolagem"><div class="quadro" style="grid-template-rows:auto 1fr;grid-template-columns:repeat('+(c-1)+',300px)">'+bands+cols+'</div></div></div>'})();
+// 2: fases que abrem e fecham
+(function(){var bands="",cols="",c=1;var abertas={1:true,2:true,3:false,4:false};
+ bands+='<div class="faixa" style="grid-row:1;grid-column:1 / 2;border-color:var(--f0);background:color-mix(in srgb,var(--f0) 18%,transparent)"><span class="tg" style="border:1px solid var(--fio2);background:var(--card)">▾</span><b>Atenção</b><b class="t">'+AT.length+'</b></div>';cols+=atColuna();c=2;
+ FASES.forEach(function(f){var es=ET.map(function(e,i){return [e,i]}).filter(function(x){return x[0][2]===f[0]});var ab=abertas[f[0]];if(ab){var vis=es.filter(function(x){return lista(x[0][0]).length>0});bands+=band(f,c,c+vis.length-1,true,true);vis.forEach(function(x){cols+=colHtml(x[0],x[1],c);c++})}else{bands+=band(f,c,c,false,true);cols+='<section class="col" style="--c:'+CORF[f[0]]+';grid-row:2;grid-column:'+c+';width:300px;min-height:44px;padding:8px;font-size:11px;text-align:center">Fechada. Clique em ▸ para abrir '+es.length+' etapas.</section>';c++}});
+ H+='<h2>2 · Fases que abrem e fecham</h2><p class="n">Cada fase tem o botão ▾ / ▸ na faixa. Fechada, a fase vira só a faixa com o resumo ("2 bipagem · 6 concluídas") e as colunas somem. O botão <b>Fechar todas</b> / <b>Abrir todas</b> fica no alto. Mostra só o que você está trabalhando agora.</p><div class="bloco">'+cab('<div class="btn">Fechar todas as fases</div><div class="btn">Ocultar colunas vazias (1)</div>')+fil()+'<div class="rolagem"><div class="quadro" style="grid-template-rows:auto 1fr;grid-template-columns:repeat('+(c-1)+',300px)">'+bands+cols+'</div></div></div>'})();
+// 3: colunas que abrem e fecham
+(function(){var bands="",cols="",c=1;var fech={conferindo:0,agendado:1,bipagem:1,concluido:1};
+ bands+='<div class="faixa" style="grid-row:1;grid-column:1 / 2;border-color:var(--f0);background:color-mix(in srgb,var(--f0) 18%,transparent)"><b>Atenção</b><b class="t">'+AT.length+'</b></div>';cols+=atColuna();c=2;
+ FASES.forEach(function(f){var es=ET.map(function(e,i){return [e,i]}).filter(function(x){return x[0][2]===f[0]&&lista(x[0][0]).length>0});if(!es.length)return;var n=es.length;bands+=band(f,c,c+n-1,true,false);es.forEach(function(x){if(fech[x[0][0]])cols+=fino(x[0],x[1],c);else cols+=colHtml(x[0],x[1],c,'<div class="tgl" title="Fechar a coluna">▾</div>');c++})});
+ var tpl=[];for(var i=1;i<c;i++)tpl.push("");var temp=[],cc=1;temp.push("300px");FASES.forEach(function(f){ET.forEach(function(e){if(e[2]===f[0]&&lista(e[0]).length>0)temp.push(fech[e[0]]?"44px":"300px")})});
+ H+='<h2>3 · Colunas que abrem e fecham</h2><p class="n">Cada coluna tem o botão ▾ no cabeçalho. Fechada, vira a tira fina de 44 px com o número, o zero ou o total e o nome em pé; clicar em ▸ abre de novo. O botão <b>Recolher todas</b> deixa todas em tira e você abre só a que quer. A escolha fica lembrada neste navegador.</p><div class="bloco">'+cab('<div class="btn">Recolher todas</div><div class="btn">Ocultar colunas vazias (1)</div>')+fil()+'<div class="rolagem"><div class="quadro" style="grid-template-rows:auto 1fr;grid-template-columns:'+temp.join(" ")+'">'+bands+cols+'</div></div></div>'})();
+// 4: gaveta
+(function(){function quadro(){var bands="",cols="",c=1;FASES.forEach(function(f){var es=ET.map(function(e,i){return [e,i]}).filter(function(x){return x[0][2]===f[0]&&lista(x[0][0]).length>0});if(!es.length)return;bands+=band(f,c,c+es.length-1,true,false);es.forEach(function(x){cols+=colHtml(x[0],x[1],c);c++})});return '<div class="rolagem"><div class="quadro" style="grid-template-rows:auto 1fr;grid-template-columns:repeat('+(c-1)+',300px)">'+bands+cols+'</div></div>'}
+ var aberta='<div class="gav"><div class="chd"><div class="ccab"><div class="tgl" title="Fechar a gaveta" style="margin:0">◂</div><div class="t">Atenção · Separar peças</div><div class="btn sq">+</div></div><span class="q">'+AT.length+' revendedoras</span></div>'+AT.map(atCartao).join("")+'</div>';
+ var fechada='<div class="gavf"><div class="tgl" title="Abrir a gaveta" style="margin:0">▸</div><b class="t">'+AT.length+'</b><span style="writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;white-space:nowrap">Atenção · Separar peças</span></div>';
+ H+='<h2>4 · Gaveta de Atenção que abre e fecha</h2><p class="n">A coluna Atenção · Separar peças é uma gaveta à esquerda com o botão ◂ / ▸. Aberta (primeira tela), mostra as fotos e a observação. Fechada (segunda tela), vira uma tira de 44 px com o número e o quadro dos pedidos ganha toda a largura. O quadro fica igual ao do Pedidos.</p><div class="bloco">'+cab('<div class="btn">Ocultar colunas vazias (1)</div>')+fil()+'<div class="dd">'+aberta+quadro()+'</div></div><div class="leg">Gaveta fechada:</div><div class="bloco" style="margin-top:6px">'+cab('<div class="btn">Ocultar colunas vazias (1)</div>')+fil()+'<div class="dd">'+fechada+quadro()+'</div></div>'})();
+document.getElementById("app").innerHTML=H;
+</script></body></html>

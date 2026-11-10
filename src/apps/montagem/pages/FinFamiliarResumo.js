@@ -75,7 +75,7 @@ function ResumoSocio(p){
   // Pix de revendedoras: o que caiu nas contas do sócio × o que foi direto para prestadores de serviço (conta do prestador, ou repasse manual)
   var noP = function(iso){ return M.indexOf(iso.slice(0, 7))>=0; }, contaPor = {}; ff.contasBanc.forEach(function(c){ contaPor[c.id] = c; });
   var minhas = {}, prests = {}, totMinhas = 0, totPrest = 0;
-  ff.pix.filter(function(x){ return x.personaId===pid && noP(x.data) && x.auditoria!=="REJEITADO"; }).forEach(function(x){ var c = contaPor[x.contaId];
+  ff.pix.filter(function(x){ return x.personaId===pid && noP(x.data) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; }).forEach(function(x){ var c = contaPor[x.contaId];
     if(c && c.prestadorId){ prests[c.prestadorId] = r2((prests[c.prestadorId]||0)+x.valor); totPrest = r2(totPrest+x.valor); }
     else { var k = c ? c.nome.replace(/^Conta\s+/i, "") : "Sem conta informada"; minhas[k] = r2((minhas[k]||0)+x.valor); totMinhas = r2(totMinhas+x.valor); } });
   ff.repasses.filter(function(x){ return x.origemPixPersonaId===pid && !x.origemPixLancId && noP(x.data); }).forEach(function(x){ prests[x.prestId] = r2((prests[x.prestId]||0)+x.valor); totPrest = r2(totPrest+x.valor); });

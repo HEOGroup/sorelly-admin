@@ -78,7 +78,7 @@ function TelaLinksRev(p){
     recusa && e("p",{className:"rounded-lg px-2.5 py-1.5 text-[12px] font-semibold "+(/bandeira/.test(recusa) ? "bg-[#FEF3C7] text-[#92400E]" : "bg-[#FEE2E2] text-[#B91C1C]")}, recusa),   // faltar a bandeira é uma dica (amarelo), não um erro (vermelho)
     enviado && e("p",{className:"rounded-lg bg-[#DCFCE7] px-2.5 py-1.5 text-[12px] font-bold text-[#15803D]"}, enviado),
     e("button",{disabled:!valor || !!recusa || !bandeira, onClick:enviar, className:"flex h-11 items-center justify-center gap-2 rounded-xl text-[14px] font-bold disabled:opacity-40 "+BR, style:{background:"#C9A13B"}}, e(Icon,{n:"send", s:15}), "Solicitar link"),
-    e("p",{className:"text-center text-[11px] leading-snug text-[#7A6730]"}, "Mínimo "+formatarReais(cfg.minimo)+" · parcela mínima "+formatarReais(cfg.parcelaMinima)+" · o link vale "+cfg.validadeHoras+" h · até "+cfg.tentativasDia+" pedidos por dia. Atendimento em horário comercial."),
+    e("p",{className:"text-center text-[11px] leading-snug text-[#7A6730]"}, "Mínimo "+formatarReais(cfg.minimo)+" · parcela mínima "+formatarReais(cfg.parcelaMinima)+" · o link vale "+(cfg.avisoHoras || 12)+" h · até "+cfg.tentativasDia+" pedidos por dia. Atendimento em horário comercial."),
     e("div",{className:"flex flex-col gap-0.5 rounded-lg bg-white/70 p-2"}, textoFaixas(cfg).map(function(f){ return e("div",{key:f[0], className:"flex items-center justify-between text-[11.5px] text-[#5B4A1E]"}, e("span",null, f[0]), e("b",null, f[1])); })));
   var meus = e("div",{key:"m", className:"flex flex-col gap-2"},
     e("p",{className:"px-1 text-[11px] font-bold uppercase tracking-wider text-[#6B7280]"}, "Meus links · "+lista.length),

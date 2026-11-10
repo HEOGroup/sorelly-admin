@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App da montadora: 4 layouts da tela inicial</title>
+<style>
+:root{--ouro:#C9A13B;--ouro2:#F0D58A;--cre:#F7E8BF;--ouro-esc:#B8862B;--fundo:#F5F5F6;--borda:#E5E7EB;--txt:#111827;--txt2:#4B5563;--ok:#16A34A;--vm:#DC2626;--az:#2563EB}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0d0f;color:#f3f3f3;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45}
+.pg{max-width:1500px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:#e5e5e5;margin:0 0 12px;max-width:900px}
+.par{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.col{width:330px}
+.cap{text-align:center;font-weight:800;color:var(--ouro2);margin-bottom:6px;font-size:13px}
+.leg{font-size:12px;color:#e5e5e5;margin-top:10px;text-align:center}
+.tel{width:330px;background:var(--fundo);color:var(--txt);border-radius:36px;border:8px solid #000;box-shadow:0 0 0 2px #3a3a3f;overflow:hidden;display:flex;flex-direction:column;min-height:640px}
+.topo{background:#000;color:var(--ouro2);border-radius:0 0 26px 26px;padding:16px 16px 18px;display:flex;align-items:center;justify-content:space-between;font-weight:800;letter-spacing:.16em;font-size:12px;text-transform:uppercase}
+.topo i{font-style:normal;font-size:18px;width:22px;text-align:center}
+.corpo{padding:10px;display:flex;flex-direction:column;gap:9px;flex:1}
+.bl{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.bh{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--cre);color:var(--ouro-esc);display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+.tt{flex:1;min-width:0;font-weight:800;font-size:13.5px}
+.tt small{display:block;font-weight:600;font-size:11px;color:var(--txt2)}
+.cv{color:#6B7280;font-size:13px}
+.av{width:38px;height:38px;border-radius:50%;background:var(--ouro);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px;flex:0 0 auto}
+.ib{width:32px;height:32px;border-radius:50%;background:#fff;border:1px solid var(--borda);display:grid;place-items:center;font-size:14px}
+.pes{display:flex;align-items:center;gap:10px;padding:2px}
+.pes .n{flex:1;font-weight:800;font-size:15px}
+.pes .n small{display:block;font-weight:600;font-size:11px;color:var(--txt2)}
+.res{background:#202023;border-radius:16px;padding:10px 12px;color:#fff}
+.res .l{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#e5e7eb;padding:3px 0}
+.res .l strong{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#fff}
+.res .g{border-top:1px solid var(--ouro);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;align-items:baseline}
+.res .g span{color:var(--ouro2);font-size:12px;font-weight:700}
+.res .g strong{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--ouro2)}
+.tab{border:1px solid var(--ouro2);border-radius:12px;overflow:hidden}
+.tab .r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #F3E8C8;font-size:13px}
+.tab .r:first-child{border-top:0}
+.tab .r span{color:var(--txt2)}
+.tab .r strong{font-family:ui-monospace,Consolas,monospace;font-size:13px}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ouro-esc)}
+select{height:36px;width:100%;border:1px solid var(--borda);border-radius:12px;background:#fff;color:var(--txt);font:600 13px Inter,system-ui,Arial,sans-serif;padding:0 10px}
+.bt{height:36px;border-radius:12px;border:0;font:800 13px Inter,system-ui,Arial,sans-serif;display:flex;align-items:center;justify-content:center;width:100%}
+.bt.p{background:linear-gradient(135deg,#D8B450,var(--ouro));color:#fff}
+.bt.s{background:#fff;color:var(--txt);border:1px solid var(--borda)}
+.st{font-size:11px;font-weight:700;white-space:nowrap}
+.st:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#9CA3AF}
+.st.mont{color:#B45309}.st.mont:before{background:#F59E0B}
+.st.fila{color:#1D4ED8}.st.fila:before{background:#3B82F6}
+.st.pronto{color:#15803D}.st.pronto:before{background:#22C55E}
+.rv{display:flex;align-items:center;gap:8px;padding:8px 12px;border-top:1px solid #F3E8C8;font-size:13px}
+.rv:first-child{border-top:0}
+.rv .n{flex:1;min-width:0;font-weight:700}
+.rv .n small{display:block;font-weight:500;color:var(--txt2);font-size:11px}
+.num3{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.num3 div{text-align:center;padding:9px 4px;border-left:1px solid #F3E8C8}
+.num3 div:first-child{border-left:0}
+.num3 b{display:block;font-family:ui-monospace,Consolas,monospace;font-size:20px}
+.num3 span{font-size:11px;font-weight:700;color:var(--txt2)}
+.linha{text-align:center;font-size:12px;font-weight:700;color:var(--txt2)}
+.linha b{color:var(--txt);font-family:ui-monospace,Consolas,monospace}
+.dock{display:flex;background:#000;border-radius:22px 22px 0 0;padding:8px 6px 10px;margin-top:auto}
+.dock div{flex:1;text-align:center;font-size:11px;font-weight:700;color:#cfcfd4}
+.dock div i{display:block;font-style:normal;font-size:17px;margin-bottom:1px}
+.dock .on{color:var(--ouro2)}
+.pro{background:#202023;border-radius:16px;padding:12px;color:#fff}
+.pro small{color:var(--ouro2);font-weight:800;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
+.pro b{display:block;font-size:18px;margin:2px 0 6px}
+.pro .l{display:flex;justify-content:space-between;font-size:12px;color:#e5e7eb;padding:2px 0}
+.pro .l strong{color:#fff}
+.aviso{background:#FEF3C7;color:#92400E;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:600}
+.caixa{background:#1a1a1d;border:1px solid #2f2f35;border-radius:12px;padding:14px 16px;margin:14px 0}
+</style>
+</head>
+<body>
+<div class="pg">
+<h1>App da montadora: 4 layouts da tela inicial</h1>
+<p class="sub">Hoje a tela tem a faixa da Pamela, 4 abas apertadas, 3 números e o kit. Aqui estão 4 formas novas, no mesmo estilo da Calculadora de acertos e das Listagens da representante (barra preta padrão, cartões brancos, número com letra de máquina, ouro só no destaque). A montadora <b>não vê valor em R$</b>. Os dados são de exemplo (Pamela, 09/11).</p>
+
+<div class="par">
+
+<!-- 1 -->
+<div class="col"><div class="cap">1 · Cartões de atalho (igual às Listagens)</div>
+<div class="tel">
+ <div class="topo"><i>‹</i><span>Montagem de kits</span><i>💬</i></div>
+ <div class="corpo">
+  <div class="pes"><div class="av">P</div><div class="n"><small>Conectada como</small>Pamela</div><div class="ib">⎋</div></div>
+  <div class="bl tab"><div class="num3"><div><b style="color:var(--az)">0</b><span>Kits hoje</span></div><div><b style="color:#15803D">4,7</b><span>Sua nota</span></div><div><b style="color:#8A6A12">162</b><span>Kits no mês</span></div></div></div>
+  <div class="bl"><div class="bh"><div class="ic">▶</div><div class="tt">Próximo kit<small>Beatriz Nogueira · 1º da fila</small></div><span class="cv">›</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">☰</div><div class="tt">Listagens<small>3 listagens de hoje · 22 kits</small></div><span class="cv">›</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">★</div><div class="tt">Resultados<small>Nota 4,7 · 2 avaliações novas</small></div><span class="cv">›</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">✚</div><div class="tt">Pedir peça<small>Nenhuma resposta nova</small></div><span class="cv">›</span></div></div>
+ </div></div>
+<div class="leg">Sem abas. Cada coisa vira um cartão e abre outra tela, como na representante. Os números ficam numa linha só.</div></div>
+
+<!-- 2 -->
+<div class="col"><div class="cap">2 · Kit em destaque no topo</div>
+<div class="tel">
+ <div class="topo"><i>‹</i><span>Montagem de kits</span><i>💬</i></div>
+ <div class="corpo">
+  <div class="pes"><div class="av">P</div><div class="n"><small>Conectada como</small>Pamela</div><div class="ib">⎋</div></div>
+  <div class="pro"><small>Próximo kit · 1º da fila</small><b>Beatriz Nogueira</b>
+   <div class="l"><span>Tipo</span><strong>Kit novo</strong></div>
+   <div class="l"><span>Representante</span><strong>Dayanne</strong></div>
+   <div class="l"><span>Retirada</span><strong>Hoje 10:00</strong></div>
+   <div style="margin-top:9px"><div class="bt p">Iniciar montagem</div></div></div>
+  <div class="bl tab"><div class="num3"><div><b style="color:var(--az)">0</b><span>Hoje</span></div><div><b style="color:#15803D">4,7</b><span>Nota</span></div><div><b style="color:#8A6A12">162</b><span>No mês</span></div></div></div>
+  <label class="f">Ir para<select><option>Próximo kit</option><option>Listagens</option><option>Resultados</option><option>Pedir peça</option></select></label>
+ </div></div>
+<div class="leg">A montadora abre e já vê o que fazer. Um botão grande. O menu suspenso troca de tela.</div></div>
+
+<!-- 3 -->
+<div class="col"><div class="cap">3 · Barra de baixo (como app de celular)</div>
+<div class="tel">
+ <div class="topo"><i>‹</i><span>Próximo kit</span><i>💬</i></div>
+ <div class="corpo">
+  <div class="linha">Pamela · Hoje <b>0</b> · Nota <b>4,7</b> · Mês <b>162</b></div>
+  <div class="bl">
+   <div class="bh"><div class="ic">▶</div><div class="tt">Beatriz Nogueira<small>Kit novo · Dayanne · 10:00</small></div><span class="st fila">1º da fila</span></div>
+   <div style="padding:0 10px 10px"><div class="tab">
+    <div class="r"><span>Peças</span><strong>Ver lista</strong></div>
+    <div class="r"><span>Preferências</span><strong>Ver</strong></div>
+    <div class="r"><span>Observação</span><strong>Nenhuma</strong></div></div>
+    <div style="margin-top:8px"><div class="bt p">Iniciar montagem</div></div></div>
+  </div>
+  <div class="aviso">2 kits aguardam o valor da Deysiane.</div>
+ </div>
+ <div class="dock"><div class="on"><i>▶</i>Próximo</div><div><i>☰</i>Listagens</div><div><i>★</i>Resultados</div><div><i>✚</i>Pedir peça</div></div>
+</div>
+<div class="leg">As 4 abas descem para uma barra fixa embaixo, no alcance do polegar. A tela de cima fica limpa.</div></div>
+
+<!-- 4 -->
+<div class="col"><div class="cap">4 · Fila do dia por listagem</div>
+<div class="tel">
+ <div class="topo"><i>‹</i><span>Montagem de kits</span><i>💬</i></div>
+ <div class="corpo">
+  <div class="pes"><div class="av">P</div><div class="n"><small>Conectada como</small>Pamela · nota 4,7</div><div class="ib">⎋</div></div>
+  <label class="f">Ver<select><option>Fila do dia</option><option>Resultados</option><option>Pedir peça</option></select></label>
+  <div class="bl">
+   <div class="bh"><div class="ic">D</div><div class="tt">Dayanne · 10:00<small>3 de 8 prontos</small></div><span class="cv">⌃</span></div>
+   <div class="rv"><div class="n">Beatriz Nogueira<small>Kit novo</small></div><span class="st fila">Na fila</span></div>
+   <div class="rv"><div class="n">Marcia Camargo<small>Acerto + kit</small></div><span class="st fila">Na fila</span></div>
+   <div class="rv"><div class="n">Vanessa Prado<small>Reposição</small></div><span class="st mont">Montando</span></div>
+   <div class="rv"><div class="n">Andrielle Taborda<small>Acerto + kit</small></div><span class="st pronto">Pronto</span></div>
+  </div>
+  <div class="bl"><div class="bh"><div class="ic">L</div><div class="tt">Lysie · 14:00<small>2 de 6 prontos</small></div><span class="cv">⌄</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">T</div><div class="tt">Thalita · 16:00 · Ponta Grossa<small>2 de 8 prontos</small></div><span class="cv">⌄</span></div></div>
+ </div></div>
+<div class="leg">A tela inicial é a fila de kits, por horário de retirada. Mostra o que é urgente. Resultados e Pedir peça ficam no menu suspenso.</div></div>
+
+</div>
+
+<div class="caixa">
+<b style="color:var(--ouro2)">Comparação</b>
+<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:6px">
+<tr><td style="padding:6px 8px;border-top:1px solid #2f2f35;color:var(--ouro2);font-weight:600;width:22%">1 · Cartões</td><td style="padding:6px 8px;border-top:1px solid #2f2f35">Mais igual às outras telas. Exige 1 toque a mais para ver o kit.</td></tr>
+<tr><td style="padding:6px 8px;border-top:1px solid #2f2f35;color:var(--ouro2);font-weight:600">2 · Kit em destaque</td><td style="padding:6px 8px;border-top:1px solid #2f2f35">Mais rápido para trabalhar. Tem só o próximo kit, sem ver a fila toda.</td></tr>
+<tr><td style="padding:6px 8px;border-top:1px solid #2f2f35;color:var(--ouro2);font-weight:600">3 · Barra de baixo</td><td style="padding:6px 8px;border-top:1px solid #2f2f35">Fica parecido com app de verdade. Foge do padrão de menu suspenso do Marcus (é navegação, não escolha).</td></tr>
+<tr><td style="padding:6px 8px;border-top:1px solid #2f2f35;color:var(--ouro2);font-weight:600">4 · Fila por listagem</td><td style="padding:6px 8px;border-top:1px solid #2f2f35">Liga a montadora às listagens da representante. Mostra urgência por horário.</td></tr>
+</table></div>
+</div>
+</body>
+</html>

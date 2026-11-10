@@ -62,3 +62,17 @@ Para cada CNPJ: contas a pagar de **hoje**, **amanhã** e **até o fim do mês**
 25. **A representante NÃO escolhe entre várias contas.** A conta do Pix dela é sempre a **fixa** (aba Contas das representantes) ou a **empresa define** (pergunta). No app ela só informa a forma e o valor; o pedido de conta segue em segundo plano e os brindes já liberam. (Isto desfaz o menu de contas que entrou no app em 02/11/2026.)
 26. **Regra aplicada com as maquininhas e links que já existem** (`dpAplicarMaquininhas`, botão "Aplicar as maquininhas e links" e aplicação automática uma vez): quem já tem maquininha ou link vira conta fixa do CNPJ dela; quem não tem fica "Perguntar à empresa". Marca "Fixa · falta conferir" até o Lucas conferir (botão Conferir). Em 03/11/2026: 22 de 25 representantes com conta fixa, 3 sem maquininha.
 27. O "Testar uma situação" saiu da tela Regras e contas (pedido do Marcus).
+
+## 09/11/2026 — Pix da representante: o app PEDE a conta (alinhamento para o Leonardo)
+- Erro no app real (Leonardo): a representante escolhe a conta numa lista. **Errado.** O app só informa forma, valor, parcelas e comprovante, e PEDE a conta. O pedido vai ao Direcionar (Financeiro). As regras do Lucas respondem sozinhas; o que elas não resolvem fica na fila. O app não espera: mostra "Aguardando conta" e avisa quando a conta chega.
+- O Lucas define as contas **por REPRESENTANTE**, antes (Regras e contas). À noite ele divide as contas à mão entre as representantes.
+- **Uma venda, um CNPJ (regra principal).** Dividir a venda (2 CNPJs, ou CNPJ + conta de fora, ex.: Link 59 + Pix Point, Pix Itaú Black + Link 59) é permitido (grupo econômico, aprovado pela contabilidade), mas dá trabalho e abre espaço para erro: a **Bruna (faturamento)** separa e faz 2 vendas na DevMaster. Evitar.
+- O Pix segue o CNPJ da maquininha/link da representante. **Pix acima de R$ 1.500 = vale verificar** se compensa mandar para outro CNPJ ou conta de fora; quem responde: **Lucas, Marcus ou Anamaria**, pelo app (sem ligação).
+- **Dinheiro fatura junto** no CNPJ da venda.
+- **Mais de 80% da venda em dinheiro:** o Pix vai para uma conta que NÃO é da empresa.
+- Venda só com Pix (sem link nem cartão): nada a dividir; vai para a conta que mais precisa.
+- O sistema tem que pesar: saldo de cada conta, contas a pagar de cada CNPJ, quanto falta em cada conta, contas negativas (mais antigas e maiores) e fornecedores, contra o trabalho de dividir a venda.
+- Teste do Marcus (5 vendas inventadas): Link 59 + Pix 800 → Pix 59; Link 34 + Pix 5.000 → Pix 34 (34 era a que mais precisava); só Pix 1.200 (maquininha 46) → 34; Débito 67 + Pix 2.400 → 67 ou fornecedor (67 não precisava). Crédito sempre mostra a conta (maquininha).
+- No código hoje: o limite de "valor alto" do Direcionar está em R$ 7.000 (`limiteAlto` em `domain/direcionar-pix.js`); passa a ser R$ 1.500 quando formos fazer. Falta: idade/valor da conta negativa, turno dia × noite, peso da divisão da venda.
+- **Prioridade do Pix (Marcus, 09/11/2026, 20h):** conta negativa: pesa mais o VALOR negativo (não o tempo). Contas a pagar: hoje é o mais urgente, depois amanhã e assim por diante, mas olhando os dias com mais contas. O sistema precisa de um **fluxo de caixa por CNPJ**: saldo de hoje + o que deve entrar (comparando com o mês passado) − contas a pagar de cada dia = quanto mandar para cada conta.
+- Análise de 09/11/2026: nenhum saldo de conta lançado em novembro (o último é 28/10, do admin antigo). Sem o saldo do dia, o fluxo por conta não fecha.

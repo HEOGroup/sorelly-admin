@@ -6,14 +6,15 @@ import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
-import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
-import { BIPADORAS, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
+import { BIPADORAS, DIRETORIA, KITNOVO, SUPERVISORA, montadorValido, nomeDe, papelDe } from "@/apps/montagem/domain/equipe";
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
+import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
@@ -24,7 +25,7 @@ import { p45Reduz } from "@/apps/montagem/domain/plano45-60";
 import { rhReduz } from "@/apps/montagem/domain/rh";
 import { metasReduz } from "@/apps/montagem/domain/metas-setor";
 import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
-import { dpReduz } from "@/apps/montagem/domain/direcionar-pix";
+import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { pfReduz } from "@/apps/montagem/domain/pf";
@@ -36,10 +37,12 @@ import { ceReduz } from "@/apps/montagem/domain/compras-estoque";
 import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
+import { tpReduz } from "@/apps/montagem/domain/trafego";
+import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
-import { erReduz } from "@/apps/montagem/domain/encomendas";
-import { exReduz } from "@/apps/montagem/domain/expositores";
+import { erReduz, erMigrar } from "@/apps/montagem/domain/encomendas";
+import { exReduz, exMigrar } from "@/apps/montagem/domain/expositores";
 import { eqReduz } from "@/apps/montagem/domain/equipes";
 import { infReduz } from "@/apps/montagem/domain/informativos";
 import { pkReduz } from "@/apps/montagem/domain/preferencias-kit";
@@ -96,7 +99,7 @@ function reducer(s, a){
     case "LOGIN": {
       var pp = papelDe(a.id);
       var abaIni = !a.atuando && (pp==="montadora" || pp==="bipadora") ? "whats" : "inicio";   // "atuar como" (a.atuando) sempre começa no Início   // todo mundo começa na página inicial (27/10/2026); montadora e bipadora, no SorellyChat (28/10/2026)
-      return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"proximo"}, "Acesso de "+nomeDe(a.id));
+      return com(s, {usuario:a.id, logado:true, aba:abaIni, celular: pp==="montadora" ? a.id : s.celular, telaCel:"inicio"}, "Acesso de "+nomeDe(a.id));
     }
     case "SAIR": return com(s, {logado:false});
     case "ACESSO_SET": { var ac = Object.assign({}, s.acessos); if(a.abas) ac[a.papel] = a.abas; else delete ac[a.papel]; return com(s, {acessos:ac}, a.abas ? "Acessos salvos" : "Acessos voltaram ao padrão"); }
@@ -255,8 +258,31 @@ function reducer(s, a){
         Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
         return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
       }
-      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
+      if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
+      if(a.chave==="lst"){   // listagens de retirada e os kits delas vindos do servidor (05/11/2026): as duas listas entram inteiras, não se misturam com as do navegador
+        var pLst = {}; if(a.conteudo && Array.isArray(a.conteudo.listagens)) pLst.listagens = a.conteudo.listagens; if(a.conteudo && Array.isArray(a.conteudo.kits)) pLst.kits = a.conteudo.kits;
+        return Object.keys(pLst).length ? Object.assign({}, s, pLst) : s; }
+      if(a.chave==="fc"){   // Fotos de catálogo vindas do servidor (10/11/2026): c_<código> = um código (null = excluído), m = histórico e categorias da planilha antiga
+        var fcS = Object.assign({v:1, categorias:[], historico:[], codigos:[]}, s.fc), fcCods = (fcS.codigos||[]).slice(), fcMapa = new Map(), fcTira = {};
+        fcCods.forEach(function(c, i){ fcMapa.set(c.cod, i); });
+        Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
+          if(k==="m"){ if(v){ if(Array.isArray(v.historico) && v.historico.length) fcS.historico = v.historico; if(Array.isArray(v.categorias) && v.categorias.length) fcS.categorias = v.categorias; if(v.semeado) fcS.semeado = true; } return; }
+          if(k.indexOf("c_")!==0) return; var cod = k.slice(2), ix = fcMapa.get(cod);
+          if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
+        if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
+        fcS.codigos = fcCods; return Object.assign({}, s, {fc:fcS}); }
+      if(a.chave==="int"){   // atendimentos do Atendimento interno vindos do servidor (10/11/2026): i_<id> = atendimento; null = tirado da lista
+        var inP = (s.internos||[]).slice();
+        Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("i_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = inP.findIndex(function(x){ return x.id===id; });
+          if(v===null){ if(ix>=0) inP.splice(ix, 1); } else if(ix>=0) inP[ix] = v; else inP.unshift(v); });
+        return Object.assign({}, s, {internos:inP}); }
+      if(a.chave==="pag"){   // pedidos de conta vindos do servidor (09/11/2026): lf_ = s.lancFin, dp_ = fila do Direcionar; null = pedido apagado
+        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice();
+        var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
+        Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
+          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); });
+        dpP.pix = pixP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
@@ -265,6 +291,9 @@ function reducer(s, a){
       }
       if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
+      // Expositores e Encomendas vindos do servidor: refazem a migração (cópia do admin antigo e planilhas, 06/11/2026). A marca de versão vale a DO SERVIDOR (se ele não tem, a cópia entra de novo); o que veio do navegador não conta.
+      if(a.chave==="ex"){ var mEx = Object.assign({}, s.ex, a.conteudo); mEx.importVersao = a.conteudo ? a.conteudo.importVersao : undefined; return Object.assign({}, s, {ex:exMigrar(mEx)}); }
+      if(a.chave==="er"){ var mEr = Object.assign({}, s.er, a.conteudo); mEr.historicoVersao = a.conteudo ? a.conteudo.historicoVersao : undefined; mEr.top50Lista = a.conteudo ? a.conteudo.top50Lista : undefined; return Object.assign({}, s, {er:erMigrar(mEr)}); }
       return Object.assign({}, s, {[a.chave]:Object.assign({}, s[a.chave], a.conteudo)});   // vindo do servidor (lib/sync-modulos.js): sem aviso e sem eco
     }
     case "ROT": { var rRot = rotReduz(s, a); return com(s, rRot.patch, rRot.msg); }   // Rotina do dia
@@ -284,6 +313,8 @@ function reducer(s, a){
     case "ER": { var rEr = erReduz(s, a); return com(s, rEr.patch, rEr.msg); }   // Encomendas e reposições (pedidos, direito, bloqueio)
     case "MEL": { var rMel = melReduz(s, a); return com(s, rMel.patch, rMel.msg); }   // Solicitações de melhorias (enviar, situação, resposta)
     case "GA": { var rGa = gaReduz(s, a); return com(s, rGa.patch, rGa.msg); }   // Garantia (só o atalho para o site externo)
+    case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
+    case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
     case "FX": { var rFx = fxReduz(s, a); return com(s, rFx.patch, rFx.msg); }   // Fiscal (ILF, sublimite, entradas, saídas, contas por CNPJ)
@@ -303,7 +334,13 @@ function reducer(s, a){
           var descD = (pDp.divisoes||[]).map(function(d){ return nomeD(d.destinoId)+(d.conta ? " · "+d.conta : ""); }).join(" + ") || "Conta definida";
           var lfD = (sDp.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(pDp.kitId)) return x;
             return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==pDp.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {enviada:true, partes:[{descricao:descD, valor:l.valor, comprovante:q0.comprovante||null, ok:false}]}); })}); });
-          sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); } }
+          sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); }
+        // pedido do atendimento interno (09/11/2026): cada parte (forma#n) é uma linha do lançamento; a conta escolhida volta para a Atendimento Sorelly
+        if(pDp && pDp.internoId && pDp.status==="direcionado"){ var nomeI = function(id){ var d = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===id; }); return d ? d.nome : ""; };
+          var porLinha = {}; (pDp.partes||[]).forEach(function(pt, n){ var li = (pDp.linhas||[])[n]; if(li==null) return; var ds = (pDp.divisoes||[]).filter(function(d){ return d.parte===(pt.forma||"pix")+"#"+n; });
+            if(ds.length) porLinha[li] = ds.map(function(d){ return {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; }); });
+          sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
+            return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
@@ -334,7 +371,7 @@ function reducer(s, a){
       cc[a.ano] = cc[a.ano]||{}; cc[a.ano][a.id] = cc[a.ano][a.id]||{}; cc[a.ano][a.id][a.mes] = a.valor;
       return com(s, {contasCnpj:cc});
     }
-    case "CEL": return com(s, {celular:a.id, telaCel:"proximo"});
+    case "CEL": return com(s, {celular:a.id, telaCel:"inicio"});
     case "TELACEL": return com(s, {telaCel:a.t});
     case "RHSOL": { var rs = Object.assign({}, s.rhsol); if(a.op==="add") rs[a.item.id] = a.item; else if(a.op==="set" && rs[a.id]) rs[a.id] = Object.assign({}, rs[a.id], a.patch); return com(s, {rhsol:rs}); }   // solicitações de mudança de cadastro (RH → Solicitações); módulo "rhsol" do servidor, uma chave por pedido
     case "TOGGLE": var o = Object.assign({}, s.abertas); o[a.id] = !o[a.id]; return com(s, {abertas:o});
@@ -505,6 +542,10 @@ function reducer(s, a){
     case "ADD_KIT": {
       var l = s.listagens.find(function(x){return x.id===a.lid;}); if(!l || l.fechada) return s;
       if(listagemCheia(s, a.lid)) return com(s, {}, "Listagem de "+l.horario+" j\u00e1 est\u00e1 com "+kitsNaListagem(s, a.lid)+"/"+capacidadeListagem(l)+" revendedoras: escolha outra listagem", "alerta");
+      // 09/11/2026 (Marcus e Deysiane): a representante n\u00e3o inclui depois do prazo (2 dias \u00fateis antes, at\u00e9 07:30; s\u00f3 a supervis\u00e3o libera) e a revendedora s\u00f3 entra em uma listagem por dia
+      if(a.porRep && passouPrazo(l, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(l.data)+" ("+prazoDaListagem(l, s.cfg).texto+"). S\u00f3 a Deysiane libera.", "alerta");
+      var jaNoDia = kitDaRevNoDia(s, a.rev, l.data, null);
+      if(jaNoDia && (a.porRep || jaNoDia.lid===a.lid)) return com(s, {}, a.rev+" j\u00e1 est\u00e1 em uma listagem de "+tituloDoDia(l.data)+". Cada revendedora entra em uma listagem por dia.", "alerta");
       var nk = kit(a.lid, a.rev, a.bairro||"\u2014", 5000, a.prio, {sem:true});
       nk.id = "U"+agora; nk.vendas = a.vendas||[]; nk.ultimaHora = true; nk.atrasado = !!a.atrasado;
       nk.ordem = s.kits.filter(function(x){return x.lid===a.lid;}).length + 1;
@@ -538,10 +579,24 @@ function reducer(s, a){
     case "CRIAR_LISTAGEM": {
       var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
         data:a.data||isoDia(new Date(agora)), fechada:false, retiradas:[]};
-      // 05/11/2026: não cria no passado nem repete (mesmo dia, horário e destino da mesma representante); dois toques seguidos não criam duas
+      if(a.horario2 && a.horario2!==novaL.horario) novaL.horario2 = a.horario2;   // 09/11/2026: até 2 horários de retirada na mesma listagem
+      // 05/11/2026: não cria no passado; dois toques seguidos não criam duas
       if(novaL.data<isoDia(new Date(agora))) return com(s, {}, "O dia da listagem não pode ser no passado", "alerta");
-      if(s.listagens.some(function(x){ return x.rep===novaL.rep && !x.fechada && x.data===novaL.data && x.horario===novaL.horario && x.destino===novaL.destino; })) return com(s, {}, "Já existe uma listagem de "+novaL.rep+" neste dia, horário e destino", "alerta");
-      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+novaL.horario+" criada para "+novaL.rep);
+      // 09/11/2026 (Marcus): UMA listagem por representante por dia; passou do prazo, só a supervisão cria
+      if(listagensDoDia(s, novaL.rep, novaL.data).length>0) return com(s, {}, "Você já tem uma listagem em "+tituloDoDia(novaL.data)+". Cada representante tem uma listagem por dia, com até 2 horários.", "alerta");
+      if(a.porRep && passouPrazo(novaL, agora, s.cfg)) return com(s, {}, "Prazo encerrado para "+tituloDoDia(novaL.data)+" ("+prazoDaListagem(novaL, s.cfg).texto+"). Só a Deysiane libera.", "alerta");
+      return com(s, {listagens: s.listagens.concat([novaL])}, "Listagem de "+tituloDoDia(novaL.data)+" criada para "+novaL.rep);
+    }
+    // 09/11/2026 (Marcus e Deysiane): a representante exclui a revendedora da listagem. Ela diz quem desmarcou e o motivo; a Deysiane é avisada sempre
+    // e a montadora só se o kit já estava sendo montado. Bipado volta ao estoque pelo sistema antes; montado sem bipar vai direto para outros kits.
+    case "REMOVER_KIT": {
+      var kX = kitDe(s, a.id); if(!kX || kX.status==="retirado") return s;
+      var lX = s.listagens.find(function(x){ return x.id===kX.lid; }) || {}, acX = acaoDoKitExcluido(kX.status), quemX = a.quem==="revendedora" ? "revendedora" : "representante";
+      var regX = {id:"EX"+agora, kitId:kX.id, rev:kX.rev, lid:kX.lid, rep:lX.rep||"", data:lX.data||null, horario:lX.horario||"", status:kX.status, tipoKit:kX.tipoKit||"", quem:quemX, motivo:a.motivo||"", por:a.por||"", em:agora, acao:acX.k, multa:quemX==="revendedora" ? "a_definir" : null, montId:kX.montId||null};
+      var txtX = (lX.rep||"A representante").split(" ")[0]+" excluiu "+kX.rev+" de "+(lX.data ? tituloDoDia(lX.data) : "uma listagem")+" ("+(quemX==="revendedora" ? "a revendedora desmarcou" : "a representante desmarcou")+(a.motivo ? ": "+a.motivo : "")+"). "+acX.texto;
+      var alX = [{id:"AL"+agora, tipo:"listagem_excluida", chave:"listagem_excluida:"+kX.id, ref:kX.id, titulo:"Revendedora excluída da listagem", texto:txtX, para:destinosDe(s, "listagem_excluida"), aba:"painel", dados:null, cor:acX.k==="estoque" || acX.k==="montadora" ? "#DC2626" : "#D97706", ts:agora, lidoPor:[]}];
+      if(acX.k==="montadora" && kX.montId) alX.push({id:"AM"+agora, tipo:"listagem_excluida", chave:"listagem_excluida_mont:"+kX.id, ref:kX.id, titulo:"Kit cancelado: pare de montar", texto:kX.rev+": a representante excluiu este kit da listagem. "+acX.texto, para:[kX.montId], aba:"painel", dados:null, cor:"#DC2626", ts:agora, lidoPor:[]});
+      return com(s, {kits:s.kits.filter(function(x){ return x.id!==kX.id; }), kitsExcluidos:[regX].concat(s.kitsExcluidos||[]).slice(0,300), alertas:alX.concat(s.alertas||[]).slice(0,200)}, kX.rev+" saiu da listagem. A Deysiane foi avisada"+(acX.k==="montadora" ? " e a montadora também" : ""));
     }
     case "FECHAR_MES": {
       if(s.mesFechado) return s;
@@ -697,7 +752,7 @@ function reducer(s, a){
       k = kitDe(s, a.id); if(!k) return s;
       if(k.status==="acertado" && (s.acertosConsignado||[]).some(function(r0){ return r0.kitId===k.id && r0.tipo==="acerto"; })) return s;   // dois toques em "Finalizar acerto" não geram dois registros nem comissão em dobro
       var versaoK0 = versaoDoKit(s, k); if(!versaoK0) return s;
-      var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK);
+      var modK = a.modalidade || modalidadeDe(s, k.rev), versaoK = versaoEfetiva(versaoK0, modK, comissaoEspecialDe(s, k.rev));   // comissão especial da revendedora (09/11/2026)
       var abK = abaterDividas(s, k.rev, a.pagamentos, null);
       var res = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:a.devolvida||0, garantia:a.garantia||0, vez:vezCobravel(k.remarcacoesLista),
         valorPago:(a.valorPago||0) > abK.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abK.total), atrasoDias:(modK==="prata" || versaoK.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0}, versaoK);
@@ -901,7 +956,13 @@ function reducer(s, a){
       var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && !!a.isenta, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
       var patchRg = {registro:[ent].concat(rg.registro||[])}, intsRg = s.internos||[], exRg = intsRg.find(function(x){ return x.id===rg.internoId && x.status!=="acertado"; });
       if(comDia){ patchRg.agend = {data:ent.dia, hora:ent.hora}; patchRg.situacao = "agendada"; if(exRg) intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {data:ent.dia, hora:ent.hora}); }); }
-      if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){ patchRg.agend = null; patchRg.situacao = "contato"; if(exRg && exRg.status==="agendado"){ intsRg = intsRg.filter(function(x){ return x.id!==exRg.id; }); patchRg.internoId = null; } }
+      if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){
+        // 10/11/2026 (Marcus): quem cancelou NÃO sai da lista do Atendimento Sorelly; fica como "Cancelada" (e a lista de todos mostra, pelo servidor)
+        var motCanc = a.tipo==="nao_veio" ? "Não veio" : "Desmarcou";
+        if(exRg && exRg.status==="agendado" && !exRg.inicioTs){ intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {status:"cancelado", canceladoTs:agoraRg, canceladoMotivo:motCanc}); }); }
+        else if(!exRg && rg.agend && rg.agend.data){ var vigRg = versaoVigente(s); intsRg = [internoDeAgendada(rg, vigRg ? vigRg.id : null, agoraRg, {id:"IRV"+rg.id, status:"cancelado", canceladoTs:agoraRg, canceladoMotivo:motCanc, obs:"Agendada pela Tamara (DevMaster)", condicionais:[], tipo:rg.kitNovo ? "kit_novo" : "acerto"})].concat(intsRg); }
+        patchRg.agend = null; patchRg.situacao = "contato"; patchRg.internoId = null;
+      }
       if(tpMulta && exRg && exRg.status==="agendado" && a.tipo==="remarcado") intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).concat([{isenta:ent.isenta, motivo:ent.isenta ? (ent.motivo||ent.autorizado||"autorizada") : "", em:agoraRg}])}); });
       if(a.tipo==="ciclo" && ent.ciclo){ patchRg.ciclo = ent.ciclo; patchRg.proximoManual = null; }
       if(a.tipo==="contato" || a.tipo==="t1" || a.tipo==="t2" || a.tipo==="t3" || a.tipo==="quer_vir") if(rg.situacao==="contatar") patchRg.situacao = "contato";
@@ -942,13 +1003,40 @@ function reducer(s, a){
       else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
       return com(s, {internos:intsR, revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : rrN; })}, rr.nome.split(" ")[0]+" agendada para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
+    // Comissão especial (Edna, 09/11/2026): porcentagem de comissão por faixa de venda, fixa na ficha da revendedora; os brindes seguem a tabela normal. Só a Diretoria muda (a tela já esconde o botão; o sistema confere de novo aqui).
+    // a.faixas = {"300":40, "1000":50} (chave = valor inicial da faixa); vazio ou null = volta à tabela normal.
+    case "REVINT_COM_ESPECIAL": {
+      var rE = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rE) return s;
+      if(!DIRETORIA.some(function(x){ return x.id===s.usuario; })) return s;
+      var limpo = {}; Object.keys(a.faixas||{}).slice(0, 13).forEach(function(k){ var v = a.faixas[k], n = Number(v); if(v!=="" && v!=null && isFinite(n) && n>=0 && n<=100 && (k==="mais" ? n<=50 : (isFinite(Number(k)) && Number(k)>=0))) limpo[k] = n; });
+      var temE = Object.keys(limpo).length>0;
+      return com(s, {revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {comissaoEspecial:temE ? limpo : null, comissaoEspecialPor:temE ? nomeDe(s.usuario) : null, comissaoEspecialEm:temE ? Date.now() : null}); })},
+        temE ? "Comissão especial salva para "+rE.nome.split(" ")[0] : "Comissão de "+rE.nome.split(" ")[0]+" voltou à tabela normal");
+    }
+    // Cliente avulsa (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não está na lista; ela entra à mão, já agendada, sem condicional inventada.
+    case "REVINT_AVULSA": {
+      var nomeAv = String(a.nome||"").trim(); if(!nomeAv || !a.data || !a.hora) return s;
+      var nmAv = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
+      var codAv = String(a.cod||"").replace(/\D/g, "").replace(/^0+/, "");
+      if(!codAv && a.tipo!=="indicacao") return s;   // só o brinde de indicação aceita nome sem cadastro (Marcus, 09/11/2026): todo o resto vem das clientes cadastradas na DevMaster
+      if((s.revInternas||[]).some(function(r){ return nmAv(r.nome)===nmAv(nomeAv) || (codAv && String(r.devmaster||"").replace(/^0+/, "")===codAv); })) return s;   // já está na lista: usar a ficha dela
+      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
+      var hvAv = {data:null, venda:null, acerto:null}, vigAv = versaoVigente(s);
+      var vLibAv = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";
+      var rAv = {id:"RA"+agora, nome:nomeAv, ciclo:30, proximoManual:null, proximoDm:null, situacao:"agendada", agend:{data:a.data, hora:a.hora}, internoId:null, hist:[hvAv, hvAv, hvAv],
+        contatos:a.fone ? [{nome:"WhatsApp da cliente", fone:a.fone}] : [], prata:false, devmaster:String(a.cod||"").trim(), cidade:a.cidade || "", obs:"", registro:[], conds:[], avulsa:true, semCadastro:!codAv,
+        tipoAtend:a.tipo || "acerto", quer:a.quer || "", valorLiberado:a.valor || null};
+      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Incluída à mão em Revendedoras internas")+vLibAv, condicionais:[], vendasAnt:[]});
+      rAv.internoId = itAv.id;
+      return com(s, {internos:[itAv].concat(s.internos||[]), revInternas:[rAv].concat(s.revInternas||[])}, nomeAv.split(" ")[0]+" incluída para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
+    }
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
     case "REVINT_ATENDER": {
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
-      if((s.internos||[]).some(function(x){ return x.id===ra.internoId; })) return s;
+      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId; })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
         condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
-        vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.kitNovo ? "kit_novo" : "acerto"});
+        vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});
       return com(s, {internos:[itA].concat(s.internos||[]), revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {internoId:itA.id}); })});
     }
     case "REVINT_CANCELAR": {
@@ -1006,7 +1094,14 @@ function reducer(s, a){
       var mesmosPag = !!antF && chavePagF(linhasF)===chavePagF(antF.linhas);          // se os pagamentos não mudaram, a etapa dos comprovantes continua valendo
       var novoF = {id:"LF"+a.internoId, internoId:a.internoId, nome:a.nome, enviadoTs:agora, por:a.por||"", resumo:a.resumo || (antF && antF.resumo) || null, linhas:linhasF, etapaComprovantes:mesmosPag && !!antF.etapaComprovantes, finalizado:false, conferido:false};
       novoF = pxAplicar(s.px, novoF, s.lancFin);   // dinheiro, maquininha única e Pix com conta decidida pelas regras já entram resolvidos
-      return com(s, {lancFin:antF ? (s.lancFin||[]).map(function(x){ return x.internoId===a.internoId ? novoF : x; }) : [novoF].concat(s.lancFin||[])}, "Enviado ao financeiro: "+a.nome);
+      var sF = com(s, {lancFin:antF ? (s.lancFin||[]).map(function(x){ return x.internoId===a.internoId ? novoF : x; }) : [novoF].concat(s.lancFin||[])}, "Enviado ao financeiro: "+a.nome);
+      // o que ainda não tem conta (Pix, link) vai para a fila do Direcionar de todo o Financeiro (09/11/2026)
+      var formaDp = function(f){ return f==="link" ? "link" : (f==="credito" || f==="debito") ? "maquininha" : "pix"; };
+      var abertasF = [], pagosF = [];
+      novoF.linhas.forEach(function(l, i){ if(l.tipo!=="pagamento" || l.isento) return;
+        if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
+        else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
+      return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
     }
     case "FIN_ETAPA": {
       return com(s, {lancFin:(s.lancFin||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, a.patch); })});
@@ -1039,10 +1134,19 @@ function reducer(s, a){
       return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).concat([{isenta:!!a.isenta, motivo:a.isenta ? (a.motivo||"") : "", em:agora}])}); })});
     case "INT_REMARCAR_REMOVER":
       return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).filter(function(r,i){ return i!==a.indice; })}); })});
+    // Kit retornando (10/11/2026): vai a venda de novo, como kit novo. Sem acerto, sem pagamento: escolhe o kit (60 min), a atendente explica as regras, a revendedora assina. Não cria acerto no Consolidado.
+    case "INT_RETORNANDO_FIM": {
+      var itR = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!itR) return s;
+      var vR = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itR.regrasVersaoId; }) || versaoVigente(s); if(!vR) return s;
+      var modR = modalidadeDe(s, itR.nome), vEfR = versaoEfetiva(vR, modR, comissaoEspecialDe(s, itR.nome));
+      var zeroR = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, vEfR);
+      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
+      return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
+    }
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
-      var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI);
+      var modI = a.modalidade || modalidadeDe(s, it.nome), vEf = versaoEfetiva(vBase, modI, comissaoEspecialDe(s, it.nome));   // comissão especial da revendedora (Edna, 09/11/2026)
       var abI = abaterDividas(s, it.nome, a.pagamentos, null);
       var resI = calcularAcerto({vendaBruta:a.vendaBruta, devolvida:0, garantia:a.garantia||0, vez:vezCobravel(it.remarcacoesLista),
         valorPago:(a.valorPago||0) > abI.pago+0.009 ? a.valorPago : Math.max(0, (a.valorPago||0)-abI.total), atrasoDias:(modI==="prata" || vEf.novas) ? (a.atrasoDias||0) : 0, diasQuitacao:a.diasQuitacao||0, semTaxa:true}, vEf);
@@ -1155,6 +1259,58 @@ function reducer(s, a){
       var cbN = Object.assign({}, s.confBip||{}), anN = cbN[a.kitId]; if(!anN || !anN.fim) return s;
       cbN[a.kitId] = Object.assign({}, anN, {nota:String(a.nota||"").slice(0, 200), notaEm:agora});
       return com(s, {confBip:cbN}, "Peças que faltaram anotadas");
+    }
+    // 3 listagens de EXEMPLO para ver o app da funcionária e a Listagem do admin (09/11/2026, Marcus). Tudo com id LEX/KX; "limpar" tira só o exemplo.
+    case "SIM_LISTAGENS_EXEMPLO": {
+      var idsEx = s.listagens.filter(function(x){ return String(x.id).indexOf("LEX")===0; }).map(function(x){ return x.id; });
+      var base = {listagens:s.listagens.filter(function(x){ return idsEx.indexOf(x.id)<0; }), kits:s.kits.filter(function(k){ return idsEx.indexOf(k.lid)<0; }), registros:(s.registros||[]).filter(function(x){ return !x.ex; })};
+      if(a.limpar) return com(s, base, "Listagens de exemplo removidas");
+      var pamEx = (s.montadoras||[]).find(function(m){ return m.nome==="Pamela"; }), outrasEx = (s.montadoras||[]).filter(function(m){ return !pamEx || m.id!==pamEx.id; }).map(function(m){ return m.id; });
+      var hojeEx = isoDia(new Date(agora)), M = function(min){ return agora - min*60000; };
+      var LX = [
+        {id:"LEX1", rep:"Dayanne", destino:"Curitiba", viagem:false, horario:"10:00", kits:[
+          ["Andrielle Taborda","Tatuquara","acerto_kit",12000,"bipado"],["Silvana Ramos","Sitio Cercado","acerto_kit",8000,"bipando"],["Beatriz Nogueira","Portão","kit_novo",7000,"montado"],
+          ["Vanessa Prado","Água Verde","reposicao",2500,"montando"],["Marcia Camargo","Bigorrilho","acerto_kit",9000,"pendente"],["Cintia Souza","Cajuru","acerto_kit",6000,"pendente"],
+          ["Roberta Lemos","Batel","kit_novo",null,"semvalor"],["Patricia Lima","Fazendinha","acerto_kit",null,"semvalor"]]},
+        {id:"LEX2", rep:"Lysie", destino:"Curitiba", viagem:false, horario:"14:00", kits:[
+          ["Camila Duarte","Pinheirinho","acerto_kit",10000,"montado"],["Daiane Rocha","Boqueirão","acerto_kit",5000,"montando"],["Elisangela Matos","Uberaba","kit_novo",7000,"pendente"],
+          ["Fabiana Alves","Hauer","reposicao",2000,"retirado"],["Gisele Pires","CIC","acerto_kit",null,"semvalor"],["Helena Barros","Santa Felicidade","acerto_kit",14000,"supervisao"]]},
+        {id:"LEX3", rep:"Thalita", destino:"Ponta Grossa", viagem:true, horario:"16:00", kits:[
+          ["Ingrid Moura","Centro PG","acerto_kit",20000,"pendente"],["Joana Telles","Oficinas PG","acerto_kit",12000,"montando"],["Karina Vaz","Uvaranas PG","acerto_kit",9000,"bipado"],
+          ["Leticia Gomes","Nova Ruséia PG","kit_novo",7000,"montado"],["Monica Reis","Contorno PG","acerto_kit",6000,"pendente"],["Natalia Cruz","Centro PG","reposicao",3000,"pendente"],
+          ["Olivia Pinto","Boa Vista PG","acerto_kit",null,"semvalor"],["Paula Dias","Ronda PG","acerto_kit",15000,"supervisao"]]}];
+      // vendas dos últimos 90 dias (peças por categoria) e preferências INVENTADAS para os kits de exemplo: servem para ver o COMO MONTAR (domain/kit-perfeito.js)
+      var PERFIS_EX = [
+        {mix:{"Colares ouro":14,"Colares prata":3,"Pulseiras ouro":6,"Pulseiras prata":2,"Conjuntos ouro":2,"Brincos grandes":3,"Brincos (B)":30,"Brincos Select (BB)":10,"Anéis":9,"Peças infantis":1}, pref:[{titulo:"Metal",texto:"Ouro 80% / Prata 20%"},{titulo:"Colares",texto:"Letras e pingentes delicados"},{titulo:"Brincos",texto:"Pequenos, sem argola grande"},{titulo:"Evitar",texto:"Peças religiosas"},{titulo:"Pulseiras",texto:"Finas, nada de pulseira larga"},{titulo:"Anéis",texto:"Tamanhos 14 a 18"},{titulo:"Conjuntos",texto:"Prefere conjunto com colar e brinco"},{titulo:"Pedras",texto:"Zircônia branca e rosa"},{titulo:"Brincos grandes",texto:"Só argola média, sem pendente longo"},{titulo:"Tornozeleira",texto:"Não vende"}]},
+        {mix:{"Colares ouro":4,"Colares prata":12,"Pulseiras prata":8,"Pulseiras ouro":2,"Trios de argolas prata":2,"Brincos grandes":5,"Brincos (B)":18,"Anéis":16,"Peças masculinas":2}, pref:[{titulo:"Metal",texto:"Prata 70% / Ouro 30%"},{titulo:"Anéis",texto:"Tamanhos 16 a 22, lisos e com pedra"},{titulo:"Colares",texto:"Compridos"},{titulo:"Brincos",texto:"Argola e ear cuff"},{titulo:"Pulseiras",texto:"Riviera e corrente grossa"},{titulo:"Conjuntos",texto:"Poucos"},{titulo:"Pedras",texto:"Cristal azul e verde"},{titulo:"Masculino",texto:"Corrente e pulseira masculina"},{titulo:"Evitar",texto:"Peças religiosas e folheadas"}]},
+        {mix:{"Colares ouro":9,"Colares prata":7,"Pulseiras ouro":5,"Pulseiras prata":4,"Conjuntos ouro":3,"Conjuntos prata":1,"Brincos grandes":2,"Brincos (B)":22,"Brincos Select (BB)":14,"Anéis":11,"Peças infantis":4}, pref:[{titulo:"Metal",texto:"Ouro 55% / Prata 45%"},{titulo:"Infantil",texto:"Gosta de peças infantis"},{titulo:"Brincos",texto:"Muitos brincos pequenos e BB"},{titulo:"Colares",texto:"Choker e colar curto"},{titulo:"Pulseiras",texto:"Berloque"},{titulo:"Anéis",texto:"Ajustáveis"},{titulo:"Pedras",texto:"Pérola e zircônia colorida"},{titulo:"Evitar",texto:"Peças muito grandes"},{titulo:"Observação",texto:"Cliente gosta de novidade em todo kit"}]}];
+      var desigEx = (s.montadoras||[]).filter(function(m){ return m.encomendas; }).map(function(m){ return m.id; });
+      var novasL = [], novosK = [], mont = (s.montadoras||[]).map(function(m){ return m.id; }), bip = (BIPADORAS||[]).map(function(b){ return b.id; });
+      LX.forEach(function(L, li){
+        novasL.push({id:L.id, rep:L.rep, destino:L.destino, viagem:L.viagem, horario:L.horario, data:hojeEx, fechada:false, retiradas:[]});
+        L.kits.forEach(function(x, i){
+          var st = x[4], sem = st==="semvalor", ex = {sem:sem, st:{}};
+          var nk = kit(L.id, x[0], x[1], x[3] || 5000, i===0 && li===0, ex);
+          nk.id = "KX"+(li+1)+"_"+(i+1); nk.ordem = i+1; nk.tipoKit = x[2]; nk.tipo = x[2]==="kit_novo" ? "kit_novo" : nk.tipo; nk.porApp = true; nk.fone = "";
+          nk.cond = {nums:[], pegas:false, chkM:{}, chkB:{}, faltas:{}, impressas:{}, novas:[]}; nk.horaAtend = null; nk.remarcacoes = 0; nk.remarcacoesLista = []; nk.regrasVersaoId = null;
+          if(!sem && x[2]!=="reposicao"){ var pf = PERFIS_EX[(li+i)%3]; nk.mix = pf.mix; nk.prefDemo = pf.pref; if(st==="pendente" && desigEx.length){ nk.prio = true; nk.designada = desigEx.shift(); } }   // a supervisão pediu este kit: cada montadora de Encomendas (as únicas que montam kit acima do limite) recebe um com vendas e preferências   // prioridade: os kits de exemplo com vendas e preferências saem primeiro na fila
+          if(!sem){ nk.valor = x[3]; nk.status = st; nk.defPor = 11; nk.defEm = M(120); }
+          var m1 = pamEx && st!=="montando" && i%2===0 ? pamEx.id : outrasEx[(li*3+i)%outrasEx.length], b1 = bip[(li+i)%bip.length];
+          if(st==="montando"){ nk.montId = m1; nk.iniM = M(12); }
+          if(st==="montado" || st==="supervisao" || st==="bipando" || st==="bipado" || st==="retirado"){ nk.montId = m1; nk.iniM = M(45); nk.fimM = M(20); nk.tempoM = nk.fimM ? nk.iniM - nk.fimM : null; nk.tempoM = 25*60000; }
+          if(st==="bipando"){ nk.bipId = b1; nk.iniB = M(6); }
+          if(st==="bipado" || st==="retirado"){ nk.bipId = b1; nk.iniB = M(15); nk.fimB = M(8); nk.valorReal = x[3]; }
+          if(st==="retirado"){ nk.retEm = M(3); nk.retPor = L.rep; }
+          novosK.push(nk);
+        });
+      });
+      var avalEx = pamEx ? [["Camila Duarte",5,"Veio tudo do jeito que eu pedi. Gostei muito!","09/11"],["Andrielle Taborda",5,"Kit lindo e bem organizado.","08/11"],["Silvana Ramos",4,"Faltou só um brinco que pedi.","07/11"]].map(function(x){ return {tipo:"aval", ex:true, montId:pamEx.id, rev:x[0], nota:x[1], obs:x[2], dia:x[3]}; }) : [];
+      return com(s, {listagens:base.listagens.concat(novasL), kits:base.kits.concat(novosK), registros:base.registros.concat(avalEx)}, "3 listagens de exemplo carregadas (Dayanne, Lysie e Thalita)");
+    }
+    // simulação da aba Apps (09/11/2026, Marcus): dá a situação (montando, montado, pronto...) a um kit de exemplo da listagem cheia, só para ver a tela
+    case "SIM_STATUS_KIT": {
+      var kSS = s.kits.find(function(x){ return x.rev===a.rev && x.lid===a.lid; }); if(!kSS || kSS.status===a.status) return s;
+      return com(s, {kits:mapKit(s, kSS.id, function(){ return {status:a.status, valor:a.valor || kSS.valor || null}; })}, null);
     }
     case "SIM_REINICIAR_KIT": {   // atalhos Kit novo e Reposição da aba Apps: o kit de exemplo é refeito do zero toda vez (nada depende de teste guardado antes)
       var idsRK = s.kits.filter(function(x){ return x.rev===a.rev; }).map(function(x){ return x.id; });

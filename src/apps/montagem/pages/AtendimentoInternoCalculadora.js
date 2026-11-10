@@ -6,7 +6,7 @@ import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
-import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, comissaoEspecialDe, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
@@ -18,7 +18,7 @@ import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
-import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin } from "@/apps/montagem/domain/atendimento-interno";
+import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
 import React from "react";
 
@@ -79,7 +79,8 @@ var lerComprovante = function(arq, fim){
 var onEnter = function(fn){ return function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); fn(); } }; };
 
 // o conteúdo cresce junto com a largura disponível (muda quando o menu lateral abre ou fecha): a partir de 1500 px, até 1,5x
-var zoomDaLargura = function(w){ return w>1500 ? Math.min(1.5, Math.round(w/1500*100)/100) : 1; };
+// 10/11/2026 (Marcus: "a tela está gigante, no admin normal é bem menor"): o zoom automático saiu; o tamanho é o padrão (13 px fixo) e quem quiser maior usa o botão de tamanho do sistema no topo.
+var zoomDaLargura = function(){ return 1; };
 // bloco com cabeçalho em degradê (mesmo padrão do BlocoBarra) que abre e fecha ao clicar; fechado, só sobra a barra
 function BlocoRecolhivel(p){
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
@@ -100,6 +101,17 @@ function AbaIntCalculadora(){
   }, []);
   return e("div",{ref:ref, className:"flex flex-col gap-5", style:zoom>1 ? {zoom:zoom} : undefined}, e(AtendimentoInterno));
 }
+// Bloco no MEIO da tela com o aviso do tempo de escolha do kit, que a FUNCIONÁRIA LÊ EM VOZ ALTA para a revendedora. Só fecha no botão "Li para ela": o texto é para ser lido, não pulado.
+function AvisoLeitura(p){
+  return e("div",{className:"fixed inset-0 z-50 flex items-center justify-center bg-black/65 p-3", role:"dialog", "aria-modal":"true", "aria-label":p.titulo},
+    e("div",{className:"flex w-full max-w-[560px] flex-col gap-3 rounded-xl border border-[#E8B84B]/40 bg-[#131315] p-4"},
+      e("b",{className:"text-[13px] text-[#E8B84B]"}, p.titulo),
+      e("p",{className:"text-[13px] leading-relaxed"}, "“"+p.texto+"”"),
+      e("div",{className:"flex flex-wrap items-center justify-end gap-2"},
+        p.onCancelar && e("button",{type:"button", onClick:p.onCancelar, className:"h-8 rounded-lg px-3 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Voltar"),
+        e("button",{type:"button", onClick:p.onOk, className:"h-8 rounded-lg px-4 text-[13px] font-bold text-[#17110a]", style:{background:"linear-gradient(135deg,#F1D58A,#C9962F)"}}, p.botao))));
+}
+
 function AtendimentoInterno(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var hoje = isoDia(new Date());
@@ -127,6 +139,7 @@ function AtendimentoInterno(){
 
   var internos = s.internos || [];
   var tk = useState(0), tick = tk[1];                       // faz o relógio da escolha do kit andar a cada segundo
+  var aiS = useState(false), avisoIni = aiS[0], setAvisoIni = aiS[1];   // janela "leia antes de começar a escolher" (09/11/2026)
   var agenda = internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var sel = internos.find(function(x){ return x.id===s.intSel; }) || null;
   useEffect(function(){ if(!(sel && sel.escolhaIni && !sel.escolhaFim)) return; var i = setInterval(function(){ tick(function(n){ return n+1; }); }, 1000); return function(){ clearInterval(i); }; },
@@ -139,7 +152,7 @@ function AtendimentoInterno(){
     else if(sel && sel.vendaApp>0) setForm(Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:sel.vendaApp}));   // o valor vendido vem direto do app da revendedora
   }, [sel ? sel.id : null]);
   // guarda o que a funcionária já preencheu deste atendimento (se sair da tela ou atender outra pessoa, ao voltar está tudo lá)
-  useEffect(function(){ if(!sel || form===FORM_ACERTO_VAZIO || sel.status==="acertado") return; d({type:"INT_ATUALIZAR", id:sel.id, patch:{rascunho:form}}); }, [form]);
+  useEffect(function(){ if(!sel || visor || form===FORM_ACERTO_VAZIO || sel.status==="acertado") return; d({type:"INT_ATUALIZAR", id:sel.id, patch:{rascunho:form}}); }, [form]);
   useEffect(function(){ setVerKit(null); }, [sel ? sel.id : null, sel ? sel.nome : null]);
   // agenda e tabela do kit ficam à direita em dropdown; ao iniciar um atendimento os dois fecham (dá para abrir de novo)
   var ga = useState(true), agendaAberta = ga[0], setAgendaAberta = ga[1];
@@ -158,6 +171,7 @@ function AtendimentoInterno(){
   var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
   var modalidade = sel ? modalidadeDe(s, sel.nome) : "padrao", ehPrata = modalidade==="prata";
+  var especialRev = sel ? comissaoEspecialDe(s, sel.nome) : null;   // comissão especial da revendedora (ficha em Revendedoras internas; Edna, 09/11/2026): muda só a % de comissão, brindes iguais
   var versaoBase = sel ? ((s.regrasConsignado.versoes||[]).find(function(v){ return v.id===sel.regrasVersaoId; }) || versaoVigente(s)) : null;
   var remarcs = sel ? (sel.remarcacoesLista||[]) : [];
   var condicionais = sel ? (sel.condicionais||[]) : [];
@@ -166,9 +180,22 @@ function AtendimentoInterno(){
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, chegouMuitoAtrasada = atrasoChegada>TOLERANCIA_CHEGADA_MIN;
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
-  var dv = derivarAcerto({brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
+  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
   var pa = dv.previaAcerto, versao = dv.versao, pxm = dv.pecasProx;
+  // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
+  var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
   var jaFeito = !!sel && sel.status==="acertado";
+  // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
+  // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras e assinatura → finalizar
+  var retornando = !!sel && (sel.tipo==="retornando" || sel.tipo==="kit_novo");   // fluxo curto: Kit retornando e Kit novo (Marcus, 10/11/2026: kit novo precisa de outra tela; a revendedora já assina a condicional, então não assina aqui)
+  var temVenda = retornando || form.vendaBruta>0 || form.semVenda===true;
+  // Kit novo: o valor do kit é o que a Michele lançou nos Kits novos (módulo kn, pelo nome da revendedora); aparece como valor liberado (Marcus, 10/11/2026)
+  var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };
+  var knDela = sel && sel.tipo==="kit_novo" ? (Object.keys(s.kn||{}).map(function(k){ return s.kn[k]; }).filter(function(x){ return x && x.nome && normNome(x.nome)===normNome(sel.nome); }).sort(function(a,b){ return String(b.cadastro||"").localeCompare(String(a.cadastro||"")); })[0] || null) : null;
+  var valorKitNovo = knDela && knDela.valor>0 ? knDela.valor : 0;
+  // Só acompanhar (10/11/2026, Marcus: "se eu clicar na aba posso ver o atendimento em tempo real"): atendimento que OUTRA pessoa começou abre somente leitura e acompanha o que ela preenche
+  var quemAtende = sel ? (sel.iniciadoPor || (((s.lancFin||[]).find(function(l){ return l.internoId===sel.id; })||{}).por) || "") : "";
+  var visor = !!sel && !jaFeito && !!quemAtende && String(quemAtende).split(" ")[0]!==String(nomeDe(s.usuario)).split(" ")[0];
   // média das vendas: venda de agora (vem da tela) + até 2 anteriores digitadas; divide pelas que existem. Só a venda de agora = ela é a média.
   var cfg = s.cfg || {}, estoqueAtivo = cfg.tabelaAtiva==="baixo" ? "baixo" : "alto";
   var MESES_CURTO = ["jan","fev","mar","abr","mai","jun","jul","ago","set","out","nov","dez"];
@@ -211,10 +238,11 @@ function AtendimentoInterno(){
     setMForm({nome:"", hora:"", cond:""}); setMAberto(false); };
   // tabela de comissões da modalidade escolhida lá em cima; dá para abrir a do outro kit também
   var tabelaComissao = function(mod){
-    var vb = versaoBase || versaoVigente(s), ve = vb ? versaoEfetiva(vb, mod) : null; if(!ve) return null;
+    var vb = versaoBase || versaoVigente(s), ve = vb ? versaoEfetiva(vb, mod, especialRev) : null; if(!ve) return null;
     var faixas = ve.faixas.slice().sort(function(a,b){ return a.min-b.min; });
     var corTab = mod==="prata" ? "#64748B" : "#B8862B";
     return e("div",{key:mod, className:"overflow-hidden rounded-xl ring-1", style:{boxShadow:"0 0 0 1px "+corTab+"66", background:corTab+"12"}},
+      ve.comissaoEspecial && e("div",{className:"px-2 py-1 text-center text-[13px] font-bold text-warning"}, "Comissão especial desta revendedora (os brindes seguem a tabela normal)"),
       e("table",{className:"w-full border-collapse text-center"},
         e("thead",null, e("tr",null, ["Venda a partir de","Comissão","Brinde normal","Brinde select"].map(function(t){ return e("th",{key:t, className:"border-b border-r border-border/60 px-1.5 py-1.5 text-[11px] font-semibold uppercase leading-tight tracking-wide text-muted-foreground last:border-r-0"}, t); }))),
         e("tbody",null, faixas.map(function(f,i){
@@ -255,22 +283,25 @@ function AtendimentoInterno(){
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
   // ── Tela nova (29/10/2026): fila do dia à esquerda, comissões / valor do kit / regras embaixo dela, atendimento à direita ──
-  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId; }); })
+  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId || x.id==="IRV"+r.id; }); })
     .map(function(r){ return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, hora:r.agend.hora, status:"agendado"}; });
   var listaDia = agenda.concat(virtuaisHoje).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
   var itemFila = function(x){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
-    var st = feito ? ["Feita","bg-success/20 text-success"] : on ? ["Atendendo","bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
-    return e("button",{key:x.id, type:"button", onClick:function(){ if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
+    var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
+    var canc = x.status==="cancelado";
+    var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    return e("button",{key:x.id, type:"button", onClick:function(){ if(canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
       className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
       e("span",{className:"min-w-0 flex-1 truncate font-semibold", title:x.nome}, doisNomes(x.nome)),
+      !feito && totalDividaAnterior(s.acertosConsignado, x.nome)>0.009 && e("span",{className:"shrink-0 rounded-md bg-destructive/20 px-2 py-1 text-[11px] font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, "Dívida "+din(totalDividaAnterior(s.acertosConsignado, x.nome))),
       e("span",{className:"shrink-0 rounded-md px-2 py-1 text-[11px] font-bold "+st[1]}, st[0]));
   };
   var CABEC = "flex h-8 items-center justify-between gap-2 bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold";
   var filaDia = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
-    e("div",{className:CABEC}, e("h2",{className:"text-[13px] font-semibold"}, "Hoje · "+hoje.split("-").reverse().slice(0,2).join("/")), e("span",{className:"text-[13px] font-bold"}, feitosHoje+" de "+listaDia.length+" feitos")),
+    e("div",{className:CABEC}, e("h2",{className:"text-[13px] font-semibold"}, "Hoje · "+hoje.split("-").reverse().slice(0,2).join("/")), e("span",{className:"text-[13px] font-bold"}, feitosHoje+" de "+listaDia.filter(function(x){ return x.status!=="cancelado"; }).length+" feitos")),
     e("div",{className:"flex flex-col gap-1 p-2"},
       listaDia.length ? listaDia.map(itemFila) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje.")));
   var vApoio = versaoBase || versaoVigente(s);
@@ -286,7 +317,8 @@ function AtendimentoInterno(){
   };
 
   // Fica antes do "if(!sel) return": hook depois de um return condicional muda a ordem dos hooks e derruba a tela (erro #300 do React) ao fechar a aba do atendimento.
-  useEffect(function(){ if(sel && !jaFeito && !sel.bipou) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null]);
+  useEffect(function(){ if(sel && !jaFeito && !sel.bipou && !visor) d({type:"INT_ATUALIZAR", id:sel.id, patch:{bipou:nomeDe(s.usuario)}}); }, [sel ? sel.id : null, visor]);
+  useEffect(function(){ if(visor && sel) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho||{})); }, [visor, sel ? JSON.stringify(sel.rascunho||{}) : ""]);   // acompanha ao vivo o que a atendente preenche
   if(!sel) return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined},
     pagina(e("div",{className:"flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border p-16 text-center text-[13px] text-muted-foreground"},
       "Nenhum atendimento aberto.", e("span",{className:"font-semibold text-foreground"}, "Escolha o nome da cliente na fila do dia."))));
@@ -377,7 +409,7 @@ function AtendimentoInterno(){
   var heroVendas = e("div",{className:"flex flex-col gap-2"},
     e("div",{className:"flex flex-col gap-2"},
       tile("Desconto crédito", e(CampoDinheiro,{value:form.garantia, label:"Desconto de crédito (garantia)", onChange:function(v){ up({garantia:v||0}); }, className:CPD+" h-8! w-52! text-right! text-[17px]! text-white!"}), "#E8B84B"),
-      tile("Vendas", e(CampoDinheiro,{value:form.vendaBruta, label:"Valor total vendido", onChange:function(v){ up({vendaBruta:v}); }, className:CPD+" h-8! w-52! text-right! text-[17px]! text-white!"}), "#E8B84B"),
+      tile("Vendas", e(CampoDinheiro,{value:form.vendaBruta, label:"Valor total vendido", onChange:function(v){ up({vendaBruta:v, semVenda:false}); }, className:CPD+" h-8! w-52! text-right! text-[17px]! text-white!"}), "#E8B84B"),
       tile("Líquida", numTile(pa ? din(pa.vendaLiquida) : "—"), "#E8B84B"),
       tile("Comissão", numTile(pa ? pa.comissaoPct+"%" : "—"), "#E8B84B"),
       tile("Brinde que libera", pa ? e("span",{className:"flex items-center gap-3 text-[14px] font-bold"}, "Normal "+din(faixaBr ? Math.round(faixaBr.bn*fatorBr) : 0), e("span",{className:"text-muted-foreground"},"·"), "Select "+din(faixaBr ? Math.round(faixaBr.bb*fatorBr) : 0)) : numTile("—"), "#E8B84B"),
@@ -385,12 +417,11 @@ function AtendimentoInterno(){
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-medium text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
     (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, dv.novas ? "Dias de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
       e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPD+" h-8! w-16! cursor-not-allowed px-1! text-center! opacity-60"})),
-    dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
-      "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
+    avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
       pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
         : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
-    dv.novas && pa && dv.faltaAtual>0.009 && e("div",{className:"flex flex-col items-end gap-1"},
+    dv.novas && pa && dv.faltaAtual>0.009 && dv.multaAplica && e("div",{className:"flex flex-col items-end gap-1"},
       e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, "Dias com valor pendente (prazo "+((versao.novas||{}).prazoQuitarDias||15)+")",
         e("input",{type:"number", min:0, value:form.diasQuitacao||0, "aria-label":"Dias com valor pendente", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({diasQuitacao:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
       e("p",{className:"text-[13px] font-semibold text-destructive"}, "Multa de "+din(pa.multaPendente)+(pa.multaAtrasoQuitacao>0 ? " + "+din(pa.multaAtrasoQuitacao)+" de atraso" : "")+" sobre "+din(pa.pendente)+" pendente. Próximo kit só depois de quitar.")),
@@ -433,7 +464,7 @@ function AtendimentoInterno(){
   var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-3"},
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
       e("b",{className:"text-[13px] uppercase tracking-wide"}, "Financeiro"+(lancFin ? (lancFin.conferido ? " · tudo conferido" : " · enviado às "+hhmmDeTs(lancFin.enviadoTs)) : "")),
-      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario)}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
+      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:form.vendaBruta||0, aPagar:dv.totalAPagar||0}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
     (!lancFin || alterado) && linhasEnvio.length>0 && !fechouPagamentos && e("p",{className:"text-[13px] font-semibold text-muted-foreground"},"Para enviar: feche todas as formas de pagamento (sem valor pendente) ou resolva a negociação."),
     alterado && e("p",{className:"text-[13px] font-semibold text-warning"},"Os pagamentos mudaram depois do envio: reenvie para o financeiro conferir de novo."),
     // etapa 1: comprovantes dos pagamentos anexados → OK libera os brindes · etapa 2: depois dos brindes (e da diferença, se houver) → finaliza e o financeiro confere
@@ -539,9 +570,9 @@ function AtendimentoInterno(){
         e("p",{className:"text-center text-[13px] text-muted-foreground"},"O brinde só é entregue depois do pagamento."));
 
   // ── 4 · Condicional nova: só no final. Ela continua vendendo? Se não: por causa das regras ou porque não quis ──
-  var semPag = !dv.previaBase || !form.pagamentos.length;
+  var semPag = !dv.previaBase || (!form.pagamentos.length && !form.semVenda);   // venda R$ 0,00 não tem pagamento
   var condFicam = condicionais.filter(function(c){ return condsSel.indexOf(c.numero)<0; });
-  var continuaEf = !dv.previaBase ? "" : !dv.kitNovoLiberado ? "nao_regras" : (form.continua||"");
+  var continuaEf = retornando ? "retornando" : !dv.previaBase ? "" : !dv.kitNovoLiberado ? "nao_regras" : (form.continua||"");
   var escolhas = [["sim","✓ Continua vendendo","#16A34A", !dv.kitNovoLiberado],["nao_regras","✗ Não pode (regras)","#DC2626", false],["nao_quer","✗ Não quer continuar","#D97706", false]];
   var pNova = semPag ? e("p",{className:"rounded-lg border border-dashed border-border p-3 text-center text-[13px] text-muted-foreground"},"Lance vendas e pagamentos primeiro.")
     : e(React.Fragment,null,
@@ -578,8 +609,8 @@ function AtendimentoInterno(){
   var cienteOk = regras.length>0 && regras.every(function(r,i){ return !!regrasOk[i]; });
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
-  var pronto = !jaFeito && !!form.vendaBruta && cienteOk && !!assinatura && !!continuaEf;
-  var registrar = function(){
+  var pronto = !jaFeito && temVenda && cienteOk && (retornando ? !!sel.escolhaFim : (!!assinatura && !!continuaEf));
+  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assinatura, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
@@ -589,7 +620,7 @@ function AtendimentoInterno(){
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
   };
-  var msgs = jaFeito && form.vendaBruta && pa ? mensagemFechamento({nome:sel.nome, origem:"interno", data:isoDia(new Date()), dv:dv, form:formD, condFicam:condFicam, expFicam:[],
+  var msgs = jaFeito && temVenda && pa ? mensagemFechamento({nome:sel.nome, origem:"interno", data:isoDia(new Date()), dv:dv, form:formD, condFicam:condFicam, expFicam:[],
     remarcacoes:remarcs.length ? remarcs.length+" ("+vezCobravel(remarcs)+" com multa)" : ""}) : null;
   var copiarMsg = function(chave, txt){ try{ navigator.clipboard.writeText(txt); }catch(x){} setMsgCopiada(chave); setTimeout(function(){ setMsgCopiada(null); }, 1600); };
   var dataBR = function(ts){ return new Date(ts).toLocaleDateString("pt-BR"); };
@@ -624,21 +655,23 @@ function AtendimentoInterno(){
                 r.x.length>curto(r.x).length && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); var o = Object.assign({}, regraMais); o[i] = !aberta; setRegraMais(o); }, className:"self-start text-[13px] font-bold text-primary hover:underline"}, aberta ? "menos" : "ver mais"))); })),
           e("p",{className:"text-center text-[13px] font-semibold "+(cienteOk ? "text-success" : "text-muted-foreground")}, cienteOk ? "✓ Todas as regras passadas" : nRegras+" de "+regras.length+" regras passadas"),
           cienteOk && e("div",{className:"flex flex-col items-center gap-1"}, e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+sel.nome+" (com o mouse)"})),
-          e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, "Confirmar e registrar acerto"),
-          !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !form.vendaBruta ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : !cienteOk ? "Marque todas as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
+          e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, retornando ? "Finalizar atendimento" : "Confirmar e registrar acerto"),
+          !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !temVenda ? "Falta o valor vendido (ou marque Não teve venda)." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : !cienteOk ? "Marque todas as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
 
   var conteudos = [null, null, null, null, null, null];
   // situação de cada seção: ✓ concluída
-  var feitoPasso = [condicionais.length>0 && condicionais.every(function(c){ return c.pecas>0; }), form.vendaBruta>0, !!dv.previaBase && (dv.quitado || dv.acordoValido || form.recusouNegociar), !!pa && (!!dv.brindeBloqueio || form.brindes.length>0), !!continuaEf && (continuaEf!=="sim" || !!form.novaCond), jaFeito];
+  var feitoPasso = [condicionais.length>0 && condicionais.every(function(c){ return c.pecas>0; }), temVenda, !!dv.previaBase && (dv.quitado || dv.acordoValido || form.recusouNegociar), !!pa && (!!dv.brindeBloqueio || form.brindes.length>0), !!continuaEf && (continuaEf!=="sim" || !!form.novaCond), jaFeito];
   var nFeitos = feitoPasso.filter(Boolean).length;
-  var temPa = !!pa && form.vendaBruta>0;
-  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime(), chegada:sel.chegada||horaAgora()}}); };
+  var temPa = !!pa && temVenda;
+  var iniciar = function(){ var n = new Date(); d({type:"INT_ATUALIZAR", id:sel.id, patch:{inicio:hhmmDeTs(n.getTime()), inicioTs:n.getTime(), chegada:sel.chegada||horaAgora(), iniciadoPor:nomeDe(s.usuario)}}); };
   // relógio da escolha do kit: a funcionária dá OK quando a revendedora começa a escolher; o tempo máximo depende do valor do kit
-  var maxEscolhaMin = tempoMaxEscolhaMin(kitLiberado);
+  var maxEscolhaMin = retornando ? 60 : tempoMaxEscolhaMin(kitLiberado);   // kit retornando: 1 hora fixa
   var escolhendo = !!sel.escolhaIni && !sel.escolhaFim, decorridoSeg = sel.escolhaIni ? Math.max(0, Math.floor(((sel.escolhaFim || Date.now())-sel.escolhaIni)/1000)) : 0;
   var relogio = function(seg){ return String(Math.floor(seg/60)).padStart(2,"0")+":"+String(seg%60).padStart(2,"0"); };
   var estourou = !!maxEscolhaMin && sel.escolhaIni && decorridoSeg>maxEscolhaMin*60 && !sel.escolhaFim;
-  var iniciarEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaIni:Date.now(), escolhaFim:null}}); };
+  var iniciarEscolha = function(){ setAvisoIni(true); };   // primeiro a funcionária lê o aviso do tempo; o relógio só liga depois do "Li e expliquei"
+  var confirmaInicioEscolha = function(){ setAvisoIni(false); d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaIni:Date.now(), escolhaFim:null, escolhaAvisoIni:Date.now(), escolhaAvisoFim:null}}); };
+  var confirmaFimEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaAvisoFim:Date.now()}}); };
   var terminarEscolha = function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{escolhaFim:Date.now()}}); };
   var durMin = sel && sel.inicioTs && sel.fimTs ? Math.max(1, Math.round((sel.fimTs-sel.inicioTs)/60000)) : null;
   // ENTER avança para o próximo campo (sem usar o mouse)
@@ -708,6 +741,8 @@ function AtendimentoInterno(){
           // topo em tabela fina (versão 4): rótulos em cima, valores embaixo
           var kitSel = e("span",{role:"group", "aria-label":"Kit da revendedora", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["padrao","Ouro"],["prata","Prata"]].map(function(o){ var on = modTab===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ escolherMod(o[0]); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "bg-card hover:bg-white/10")}, o[1]); }));
+          var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"],["kit_novo","Kit novo"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
+            return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
           var avisosTopo = [];
           if(sel.obs) avisosTopo.push(["Observação", sel.obs+(sel.encomenda ? " · Encomenda "+sel.encomenda : "")]);
           if(remarcs.length) avisosTopo.push(["Remarcação", remarcs.length+"× "+(nMulta ? "com multa" : "isenta")+remarcs.map(function(rm){ return " · "+(rm.isenta ? "isenta ("+(rm.motivo||"")+")" : "com multa")+(rm.autorizadoPor ? ", autorizada por "+rm.autorizadoPor : ""); }).join("")]);
@@ -723,6 +758,7 @@ function AtendimentoInterno(){
             ["Situação", cSit, "auto"],
             ["Kit", kitSel, "auto"]
           ];
+          if(!jaFeito && (!sel.tipo || sel.tipo==="acerto" || sel.tipo==="retornando" || sel.tipo==="kit_novo")) cols.push(["Tipo", tipoSel, "auto"]);
           cols.push(["Atendimento", cInicio, "auto"]);
           if(sel.inicioTs || jaFeito) cols.push(["Escolha do kit", cEscolha, "auto"]);
           if(jaFeito) cols.push(["Quem atende na montagem", cAtende, "auto"]);   // só depois de finalizar o acerto
@@ -730,7 +766,9 @@ function AtendimentoInterno(){
             cols.map(function(c,i){ return e("div",{key:"h"+i, className:"flex h-[30px] items-center justify-center overflow-hidden whitespace-nowrap border-b border-primary/40 bg-primary/15 px-1 "+(i ? "border-l border-l-primary/30 " : "")+CAP}, c[0]); }),
             cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30 " : "")+(i<3 ? "bg-primary/15" : "")}, c[1]); }));   // nome, horário e situação: só leitura, com fundo colorido
         })(),
-        estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando.")
+        estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
+        avisoIni && e(AvisoLeitura,{key:"avIni", titulo:"Leia para a revendedora antes de começar", texto:textoAntesEscolha(maxEscolhaMin), botao:"Li para ela · começar o tempo", onOk:confirmaInicioEscolha, onCancelar:function(){ setAvisoIni(false); }}),
+        estourou && !sel.escolhaAvisoFim && e(AvisoLeitura,{key:"avFim", titulo:"O tempo acabou. Leia para a revendedora", texto:textoFimEscolha(maxEscolhaMin), botao:"Li para ela", onOk:confirmaFimEscolha})
   ]);
   var cartao = function(corpo){ return e("div",{className:"@container flex min-w-0 flex-col overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"}, topoCard, corpo); };
 
@@ -756,7 +794,8 @@ function AtendimentoInterno(){
   var pctDesc = pa ? pa.descontoRemarcacao.comissaoPct+pa.atrasoPct : 0;
   var tabVendas = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
-    linhaKV("Quanto vendeu", e(CampoDinheiro,{value:form.vendaBruta, label:"Valor total vendido", className:CPT, onChange:function(v){ up({vendaBruta:v}); }})),
+    linhaKV("Quanto vendeu", e(CampoDinheiro,{value:form.vendaBruta, label:"Valor total vendido", className:CPT, onChange:function(v){ up({vendaBruta:v, semVenda:false}); }})),
+    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:"m-2 h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"),
     linhaKV("Peças vendidas", e("input",{value:totalVendidas>0 ? totalVendidas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Quantidade de peças vendidas", className:CPT, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendidasTotal:Number(soDigitos(ev.target.value,4))||0}}); }}), {z:true}),
     form.vendaBruta>0 && !sel.creditoVisto && !jaFeito && e("div",{key:"cc", className:"m-2 flex flex-col items-center gap-1.5 rounded-md border-2 border-primary bg-primary/15 p-2 text-center text-[13px] "+BRILHO},
       e("b",null,"Desconto de crédito"), e("span",null,"Esse crédito vem do setor de Trocas. Preencha só se o setor informar."),
@@ -774,7 +813,7 @@ function AtendimentoInterno(){
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))));
   var notasVendas = e("div",{className:"flex flex-col gap-1"},
-    dv.dividaAnterior>0 && pa && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, "Dívida anterior de "+din(dv.dividaAnterior)+": o pagamento quita primeiro a dívida antiga ("+din(dv.abateDivida)+" já abatidos)."),
+    avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
 
@@ -899,7 +938,7 @@ function AtendimentoInterno(){
     nums.map(function(x,i){ return e("div",{key:i, className:LIN+" grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"+(i%2 ? " bg-white/[0.03]" : "")}, e("span",{className:"whitespace-nowrap"},x[0]), e("b",{className:"text-[13px] font-semibold"}, x[1])); }),
     e("div",{className:"flex-1"}),
     e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"}, e("button",{type:"button", onClick:marcarLida, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(regrasOk[rSel] ? "border-foreground/25 bg-card" : "border-primary bg-primary text-primary-foreground")}, regrasOk[rSel] ? "✓ Regra lida · desfazer" : "Li e expliquei esta regra"),
-      cienteOk && e("button",{type:"button", disabled:!form.vendaBruta || !continuaEf, onClick:function(){ setAssAberta(true); }, title:!form.vendaBruta ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Abre a assinatura da revendedora", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "✍ Assinar e registrar")));
+      cienteOk && e("button",{type:"button", disabled:!temVenda || !continuaEf, onClick:function(){ if(retornando) registrar(); else setAssAberta(true); }, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Abre a assinatura da revendedora", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Finalizar atendimento" : "✍ Assinar e registrar")));
   var est4 = (jaFeito || msgs) ? e("div",{className:"flex flex-1 flex-col gap-3 p-3"}, pRegras)
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},
         termoAnt && e("div",{className:"flex justify-center gap-1.5 border-b border-foreground/25 p-2"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
@@ -916,10 +955,15 @@ function AtendimentoInterno(){
       sel.condOk || jaFeito ? e("span",{className:CX+"w-auto! border-success text-success"}, "✓ Condicionais confirmadas") : e("button",{type:"button", disabled:!condPronta, onClick:confCond, title:condPronta ? "" : "Falta o número, o valor e as peças de cada condicional.", className:"h-8 min-w-48 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(condPronta ? BRILHO : "")}, "Confirmar condicionais"),
       sel.condOk && !jaFeito && e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{condOk:false}}); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Corrigir")));
   var estVendas = e("div",{className:"flex min-w-0 flex-1 flex-col"}, metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Vendas", [tabVendas, notasVendas], "", "gap-0! p-0"), lado("Acerto", tabAcerto, "", "gap-0! p-0")));
-  var ESTS = [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
-  var feitoE = ESTS.map(function(x){ return x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
-  var libE = ESTS.map(function(x,i){ return jaFeito || (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : form.vendaBruta>0); });
-  var valE = ["", form.vendaBruta>0 ? din(form.vendaBruta) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
+  var estEscolha = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Escolha do kit · "+(sel.tipo==="kit_novo" ? "Kit novo" : "Kit retornando"), e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
+    e("p",{className:"font-semibold"}, "A revendedora escolhe as peças do kit. Tempo máximo: 60 minutos."),
+    sel.tipo==="kit_novo" && (valorKitNovo>0 ? e("p",{className:"rounded-md border border-primary/50 bg-primary/10 px-3 py-2 font-semibold"}, "Valor do kit liberado: "+din(valorKitNovo)+" · definido pela Michele") : e("p",{className:"font-semibold text-destructive"}, "A Michele ainda não lançou o valor deste kit novo.")),
+    !sel.escolhaIni ? e("p",null, "Clique em ⏱ Começou, no topo, quando ela começar a escolher.") : sel.escolhaFim ? e("p",{className:"font-semibold text-success"}, "✓ Escolha terminada em "+relogio(decorridoSeg)+". Clique em Próxima e explique as regras.") : e("p",{className:"font-semibold"}, "Escolhendo há "+relogio(decorridoSeg)+" de 60:00. Clique em ■, no topo, quando ela terminar.")), "flex-1", "p-0"));
+  var ESTS = retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
+  var feitoE = ESTS.map(function(x){ return x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
+  var libE = ESTS.map(function(x,i){ return jaFeito || (retornando ? (i===0 ? !!sel.inicioTs : !!sel.escolhaFim) : (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : temVenda)); });
+  var valE = ["", temVenda ? din(form.vendaBruta||0) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
+  if(retornando) valE = [sel.escolhaFim ? relogio(decorridoSeg) : "", valE[6]];
   var estAt = Math.min(passoAt, ESTS.length-1);
   var lateral = e("div",{className:"flex flex-col border-2 border-primary/50"},
     ESTS.map(function(x,i){ var on = i===estAt, liv = libE[i], ok = feitoE[i] && liv && (i<4 || feitoE[2]);
@@ -929,9 +973,10 @@ function AtendimentoInterno(){
     e("div",{className:"flex justify-center gap-2 border-t-2 border-primary/50 p-2"},
       e("button",{type:"button", disabled:estAt===0, onClick:function(){ setPassoAt(estAt-1); }, className:"h-8 w-[5.5rem] rounded-md border-2 border-primary/50 bg-card text-[13px] font-medium hover:bg-white/10 disabled:opacity-40"}, "‹ Voltar"),
       e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 ? BRILHO : "")}, "Próxima ›")));
-  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : [estCond, estVendas, est1, estKit, est2, est3, est4][estAt];
+  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : (retornando ? [estEscolha, est4] : [estCond, estVendas, est1, estKit, est2, est3, est4])[estAt];
   var SHELL = "grid min-h-[402px] grid-cols-[14rem_minmax(0,1fr)]";
-  var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"flex min-w-0 flex-col"}, estFn));
+  // 10/11/2026 (Marcus: "a tela tem que ser responsiva"): o @container fica NA ÁREA DE CONTEÚDO (sem a coluna das etapas), assim "duas colunas" só vale quando cabem de verdade; antes media o cartão inteiro e apertava as tabelas em notebook
+  var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"@container flex min-w-0 flex-col"}, estFn));
 
   // ── resumo do acerto: condicionais, brinde normal, brinde select e conta; sai em PDF ──
   var GRES = " grid-cols-[minmax(0,1fr)_3rem_6rem]";
@@ -976,9 +1021,11 @@ function AtendimentoInterno(){
       e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, "Assinatura de "+sel.nome), e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAssAberta(false); }, className:"h-8 w-8 rounded-md border border-foreground/25 bg-card text-[13px] hover:bg-white/10"}, "×")),
       e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+sel.nome+" (com o mouse)"}),
       e("div",{className:"flex justify-end gap-2"}, e("button",{type:"button", onClick:function(){ setAssAberta(false); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-4 text-[13px] hover:bg-white/10"}, "Cancelar"),
-        e("button",{type:"button", disabled:!pronto, onClick:function(){ registrar(); setAssAberta(false); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Confirmar e registrar acerto")),
+        e("button",{type:"button", disabled:!pronto, onClick:function(){ registrar(); setAssAberta(false); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Confirmar e finalizar kit retornando" : "Confirmar e registrar acerto")),
       !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !assinatura ? "Falta a assinatura da revendedora." : "Confira o que falta antes de registrar.")));
-  return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined}, pagina(e("div",{className:"flex min-w-0 flex-col gap-3"}, cartao(corpo), resumoBloco)), janelaAss);
+  return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined}, pagina(e("div",{className:"flex min-w-0 flex-col gap-3"},
+    visor && e("div",{role:"status", className:"rounded-lg border border-primary bg-primary/15 px-3 py-2 text-center text-[13px] font-semibold"}, "Só acompanhando · "+String(quemAtende).split(" ")[0]+" está atendendo. A tela atualiza sozinha."),
+    e("div",{className:"contents", style:visor ? {pointerEvents:"none"} : undefined}, cartao(corpo), retornando ? null : resumoBloco))), janelaAss);
 }
 
 export { AbaIntCalculadora };

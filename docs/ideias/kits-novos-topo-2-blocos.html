@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kits novos · topo com 2 blocos</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ruim:#EF4444;--ok:#4CC38A;--at:#F2B544}
+*{box-sizing:border-box}body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.4 Inter,system-ui,sans-serif;padding:20px 24px 50px}
+h2{font-size:15px;margin:30px 0 4px;color:var(--ouro)}p.n{margin:0 0 10px;color:#D8D5CD;max-width:900px}
+.mock{border:1px dashed var(--fio2);border-radius:10px;padding:14px;background:#0B0C0F;max-width:1180px}
+.topo{display:flex;align-items:center;gap:12px;height:32px;margin-bottom:10px}
+.topo h1{font-size:20px;margin:0;font-weight:600}
+.seg{display:inline-flex;border:1px solid var(--fio2);border-radius:6px;overflow:hidden}
+.seg span{height:32px;padding:0 12px;display:inline-flex;align-items:center}
+.seg .on{background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600}.seg span+span{border-left:1px solid var(--fio2)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--fio2);background:var(--painel);display:inline-flex;align-items:center;white-space:nowrap}
+.btn.ouro{border-color:var(--ouro);color:var(--ouro);background:rgba(214,178,92,.15);font-weight:600}.sp{margin-left:auto}
+.blocos{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start}
+.bl{border:1px solid var(--fio);border-radius:8px;background:rgba(21,23,27,.6);overflow:hidden}
+.bl .tit{height:30px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--tinta);background:linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)}
+.bl .cab,.bl .l{display:grid;grid-template-columns:1.5fr 1fr 1fr;gap:8px;align-items:center;text-align:center;padding:0 12px}
+.bl .cab{height:26px;background:rgba(255,255,255,.05);font-size:11px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.bl .l{height:24px;border-top:1px solid var(--fio);font-size:12px}.bl .l b{font-variant-numeric:tabular-nums}
+.bl .l.t{background:rgba(255,255,255,.05);font-weight:600}.r{color:var(--ruim)}.v{color:var(--ok)}
+.filt{border:1px solid var(--fio);border-radius:8px;background:rgba(21,23,27,.6);padding:8px;display:grid;gap:8px 10px}
+.filt.l1{grid-template-columns:repeat(4,1fr)}
+.filt label{display:block;font-size:11px;font-weight:500;letter-spacing:.05em;text-transform:uppercase;margin-bottom:2px}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;justify-content:space-between;color:#D8D5CD}
+.in.s::after{content:"▾";font-size:10px}
+.lim{display:flex;align-items:flex-end;justify-content:flex-end}
+.fim{margin-top:10px;border-top:1px dashed var(--fio2);padding-top:8px;color:#B8B5AC;font-size:12px;text-align:center}
+.nota{margin-top:14px;color:#B8B5AC;font-size:12px}
+</style></head><body>
+<h1 style="font-size:20px;margin:0 0 4px">Kits novos · topo com 2 blocos</h1>
+<p class="n">Sem os cartões das etapas no topo (eles eram só enfeite do desenho). Agora são <b>2 blocos de lista, lado a lado</b>, no mesmo estilo do Resumo do mês, e <b>2 linhas de filtros</b>. O bloco novo é o <b>Por etapa</b>: quantos kits estão em cada etapa e quantos estão atrasados. Nomes e números são de exemplo.</p>
+
+<h2>Versão A · Blocos em cima, filtros embaixo</h2>
+<div class="mock">
+  <div class="topo"><h1>Kits novos</h1><div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><span class="btn ouro sp">Nova revendedora</span></div>
+  <div class="blocos">
+    <div class="bl"><div class="tit">Resumo do mês</div><div class="cab"><span>Item</span><span>Quantidade</span><span></span></div>
+      <div class="l"><span>Entradas no mês</span><b>17</b><span></span></div><div class="l"><span>Em aberto</span><b>179</b><span></span></div><div class="l"><span>Atrasadas</span><b class="r">270</b><span></span></div><div class="l"><span>Entregues no mês</span><b>0</b><span></span></div><div class="l"><span>Condicional</span><b class="r">106</b><span></span></div><div class="l"><span>Cancelados no mês</span><b>0</b><span></span></div><div class="l"><span>Meta de 7 dias</span><b class="v">56,5%</b><span></span></div></div>
+    <div class="bl"><div class="tit">Por etapa</div><div class="cab"><span>Etapa</span><span>Cartões</span><span>Atrasados</span></div>
+      <div class="l"><span>Liberado</span><b>108</b><b class="r">100</b></div><div class="l"><span>Solicitado</span><b>55</b><b class="r">55</b></div><div class="l"><span>Bipado</span><b>24</b><b class="r">9</b></div><div class="l"><span>Entregue</span><b>106</b><b class="r">106</b></div><div class="l"><span>Devolvido</span><b>8</b><b>0</b></div><div class="l"><span>Cancelado</span><b>0</b><b>0</b></div><div class="l t"><span>Total em aberto</span><b>179</b><b class="r">270</b></div></div>
+  </div>
+  <div class="filt l1" style="margin-top:10px">
+    <div style="grid-column:span 2"><label>Buscar</label><div class="in">Nome, bairro, cidade ou profissão</div></div>
+    <div><label>Representante</label><div class="in s">Todas</div></div>
+    <div><label>Cidade</label><div class="in s">Todas</div></div>
+    <div><label>Entrada</label><div class="in s">Todas</div></div>
+    <div><label>Mês</label><div class="in s">Todos</div></div>
+    <div><label>Situação</label><div class="in s">Todas</div></div>
+
+    <div class="lim"><span class="btn">Limpar</span></div>
+  </div>
+  <div class="fim">▼ aqui começa o quadro (ou a planilha)</div>
+</div>
+
+<h2>Versão B · Filtros em cima, blocos embaixo</h2>
+<div class="mock">
+  <div class="topo"><h1>Kits novos</h1><div class="seg"><span class="on">Quadro</span><span>Planilha</span></div><span class="btn ouro sp">Nova revendedora</span></div>
+  <div class="filt l1">
+    <div style="grid-column:span 2"><label>Buscar</label><div class="in">Nome, bairro, cidade ou profissão</div></div>
+    <div><label>Representante</label><div class="in s">Todas</div></div>
+    <div><label>Cidade</label><div class="in s">Todas</div></div>
+    <div><label>Entrada</label><div class="in s">Todas</div></div>
+    <div><label>Mês</label><div class="in s">Todos</div></div>
+    <div><label>Situação</label><div class="in s">Todas</div></div>
+
+    <div class="lim"><span class="btn">Limpar</span></div>
+  </div>
+  <div class="blocos" style="margin-top:10px">
+    <div class="bl"><div class="tit">Resumo do mês</div><div class="cab"><span>Item</span><span>Quantidade</span><span></span></div>
+      <div class="l"><span>Entradas no mês</span><b>17</b><span></span></div><div class="l"><span>Em aberto</span><b>179</b><span></span></div><div class="l"><span>Atrasadas</span><b class="r">270</b><span></span></div><div class="l"><span>Entregues no mês</span><b>0</b><span></span></div><div class="l"><span>Condicional</span><b class="r">106</b><span></span></div><div class="l"><span>Cancelados no mês</span><b>0</b><span></span></div><div class="l"><span>Meta de 7 dias</span><b class="v">56,5%</b><span></span></div></div>
+    <div class="bl"><div class="tit">Por etapa</div><div class="cab"><span>Etapa</span><span>Cartões</span><span>Atrasados</span></div>
+      <div class="l"><span>Liberado</span><b>108</b><b class="r">100</b></div><div class="l"><span>Solicitado</span><b>55</b><b class="r">55</b></div><div class="l"><span>Bipado</span><b>24</b><b class="r">9</b></div><div class="l"><span>Entregue</span><b>106</b><b class="r">106</b></div><div class="l"><span>Devolvido</span><b>8</b><b>0</b></div><div class="l"><span>Cancelado</span><b>0</b><b>0</b></div><div class="l t"><span>Total em aberto</span><b>179</b><b class="r">270</b></div></div>
+  </div>
+  <div class="fim">▼ aqui começa o quadro (ou a planilha)</div>
+</div>
+
+<p class="nota">Responda <b>A</b> ou <b>B</b>. Se quiser outra coisa no bloco "Por etapa" (por exemplo, por representante), me diga.</p>
+</body></html>

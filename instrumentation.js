@@ -5,4 +5,10 @@ export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
   const { agendarRevendedorasDiarias } = await import("./src/server/revendedoras-dia.js");
   agendarRevendedorasDiarias();
+  // 09/11/2026: revendedoras e faturamento do relatório de notas fiscais, todo dia a partir das 10h (no site publicado quem chama é o agendador da Vercel, vercel.json)
+  const { agendarAutomaticoDiario } = await import("./src/server/automatico-dia.js");
+  agendarAutomaticoDiario();
+  // 10/11/2026: Marketing › Fotos de catálogo lê os produtos novos da DevMaster a cada 5 minutos, sem precisar de tela aberta
+  const { agendarFotosDm } = await import("./src/server/fotos-dm.js");
+  agendarFotosDm();
 }

@@ -9,15 +9,16 @@ import { AbaExEstoque } from "@/apps/montagem/pages/expositores/EstoqueEx";
 import { AbaExFila } from "@/apps/montagem/pages/expositores/Fila";
 import { AbaExFotosKN } from "@/apps/montagem/pages/expositores/FotosKitNovo";
 import { AbaExQuadro } from "@/apps/montagem/pages/expositores/Quadro";
+import { AbaExSemKit } from "@/apps/montagem/pages/expositores/SemKit";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS = [["quadro", "Quadro"], ["fila", "Fila de espera"], ["danificados", "Danificados"], ["estoque", "Estoque de expositores"], ["clientes", "Clientes"], ["fotos", "Fotos dos kits novos"]];
-var CORPOS = {quadro:AbaExQuadro, fila:AbaExFila, danificados:AbaExDanificados, estoque:AbaExEstoque, clientes:AbaExClientes, fotos:AbaExFotosKN};
+var ABAS = [["semkit", "Com revendedoras"], ["quadro", "Quadro"], ["fila", "Fila de espera"], ["danificados", "Danificados"], ["estoque", "Estoque de expositores"], ["clientes", "Clientes"], ["fotos", "Fotos dos kits novos"]];
+var CORPOS = {semkit:AbaExSemKit, quadro:AbaExQuadro, fila:AbaExFila, danificados:AbaExDanificados, estoque:AbaExEstoque, clientes:AbaExClientes, fotos:AbaExFotosKN};
 var COR = "#F97316";   // laranja (setor Cadastro de revendedoras)
 
 function AbaExpositoresModulo(){
-  var st = useState("quadro"), aba = st[0], Corpo = CORPOS[aba] || AbaExQuadro;
+  var st = useState("semkit"), aba = st[0], Corpo = CORPOS[aba] || AbaExSemKit;
   return e(Pagina, null,
     e(PageHead,{t:"Expositores", sub:"Montagem, saída, devolução e controle dos expositores emprestados às clientes."}),
     e(Abas,{abas:ABAS, atual:aba, onMudar:st[1], cor:COR}),

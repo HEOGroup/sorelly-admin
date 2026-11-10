@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compras e estoque de material · 4 layouts</title>
+<style>
+  :root{ --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c; --ok:#34d399; --alerta:#fbbf24; --ruim:#f87171; --azul:#3b82f6; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.2 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 70px}
+  h1{font-size:16px;margin:0 0 4px} .sub{margin:0 0 16px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section{max-width:1280px;margin:0 auto 44px}
+  .tag{margin-bottom:10px} .tag b{font-size:15px;margin-right:10px}
+  .tela{border:1px dashed var(--linha2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .cab h2{margin:0;font-size:18px} .cab p{margin:4px 0 0}
+  .abas{display:flex;gap:6px;flex-wrap:wrap}
+  .aba{height:32px;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;background:transparent;color:#fff;font:inherit;cursor:pointer;white-space:nowrap}
+  .aba.on{background:var(--azul);border-color:var(--azul);font-weight:600}
+  .aba.peq{height:30px}
+  .filtros{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;padding:10px;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px 10px;align-items:end}
+  .filtros .busca{grid-column:span 2}
+  .filtros label{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  input,select{height:32px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco2);color:#fff;font:inherit;padding:0 10px;text-align:center;width:100%}
+  .btn{height:32px;min-width:96px;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;background:transparent;color:#fff;font:inherit;cursor:pointer;white-space:nowrap}
+  .btn.prim{background:var(--azul);border-color:var(--azul);font-weight:600}
+  .btn:disabled{opacity:.4;cursor:default}
+  .acoes{display:flex;gap:8px;justify-content:flex-end;grid-column:span 2}
+  .resumo{margin:0}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .barra{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 14px;border-bottom:1px solid var(--linha);font-weight:600;cursor:pointer}
+  .corpo{padding:10px;display:flex;flex-direction:column;gap:10px}
+  .rolagem{overflow-x:auto}
+  .grade{border:1px solid var(--linha);border-radius:8px}
+  .gl{display:grid}
+  .gl > div{height:32px;display:flex;align-items:center;justify-content:center;white-space:nowrap;border-left:1px solid var(--linha);padding:0 10px;font-variant-numeric:tabular-nums}
+  .gl > div:first-child{border-left:0}
+  .gl.h > div{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--bloco2)}
+  .gl + .gl{border-top:1px solid var(--linha)}
+  .gl.sel{background:#3b82f622} .gl.clic{cursor:pointer} .gl.clic:hover{background:#ffffff0d}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)}
+  .ponto{margin-right:6px}
+  .duas{display:grid;grid-template-columns:minmax(0,1.7fr) minmax(0,1fr);gap:10px}
+  @media(max-width:1000px){.duas{grid-template-columns:1fr}.filtros{grid-template-columns:repeat(2,minmax(0,1fr))}}
+  .painel{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;align-self:start}
+  .painel h3{margin:0;font-size:15px;text-align:center}
+  .par{display:grid;grid-template-columns:140px 1fr;border-top:1px solid var(--linha)}
+  .par div{height:32px;display:flex;align-items:center;justify-content:center;white-space:nowrap}
+  .par div:first-child{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .linhaBt{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .nota{max-width:1280px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+  .contar{display:flex;gap:6px;align-items:center;justify-content:center}
+  .contar input{width:76px}
+</style>
+</head>
+<body>
+<h1>Compras e estoque de material · Estoque de material · 4 layouts</h1>
+<p class="sub">Dados reais importados do admin antigo (amostra de 24 dos 208 materiais). Sem blocos de números no topo, sem dourado, nada quebra, filtros no topo, 32 px, tudo centralizado. Clique nas abas, filtre e escolha uma linha para testar.</p>
+<div class="nav"><a href="#A">A · Por categoria</a><a href="#B">B · Planilha única</a><a href="#C">C · Precisa de ação</a><a href="#D">D · Lista e detalhe</a></div>
+<div id="raiz"></div>
+<div class="nota">
+  <p><b>Como escolher:</b> diga a letra. Eu aplico na aba Estoque de material e mantenho o mesmo padrão nas outras abas da tela.</p>
+  <p><b>O que sai em todos:</b> os 4 blocos coloridos de números do topo (Críticos, Em atenção, Aguardando aprovação, Compras chegando) e o botão "Próxima contagem" solto. O que importa vira uma linha de texto e o filtro de situação.</p>
+  <p><b>Regra de situação usada aqui (exemplo):</b> Crítico = atual abaixo do mínimo; Atenção = até 130% do mínimo; OK = acima disso. É a regra de "Atenção até 130%" da configuração. Confirmo com o código antes de aplicar.</p>
+</div>
+
+<script>
+var TIPOS = [["materiais_embalagens","Materiais e Embalagens"],["limpeza","Limpeza"],["materiais_producao","Materiais de Produção"]];
+// [tipo, categoria, nº, material, unidade, fornecedor, mínimo, atual, última contagem, compra, observação]
+var D = [
+ ["materiais_embalagens","EMBALAGENS",1,"PLÁSTICO 5x7cm","UN","Distribuidora Santa Ana",30000,43000,"05/11/2026","Não precisa comprar",""],
+ ["materiais_embalagens","EMBALAGENS",2,"PLÁSTICO 6x9cm","UN","Distribuidora Santa Ana",25000,73000,"05/11/2026","Aguardando entrega",""],
+ ["materiais_embalagens","EMBALAGENS",6,"PLÁSTICO 12x18cm","UN","7 Embalagens",2000,3000,"19/10/2026","Não precisa comprar",""],
+ ["materiais_embalagens","ESCRITÓRIO",1,"FITA ADESIVA","UN","Mercado Livre",10,58,"05/11/2026","Não precisa comprar",""],
+ ["materiais_embalagens","ESCRITÓRIO",2,"SACOLA KRAFT","UN","Mercado Livre",10,0,"31/08/2026","Aguardar","Para atacado"],
+ ["materiais_embalagens","ESCRITÓRIO",3,"PAPEL A4","PCT","Mercado Livre",15,20,"30/10/2026","Não precisa comprar",""],
+ ["materiais_embalagens","MALETAS",1,"MALETA NORMAL","UN","CM3",150,125,"03/11/2026","Não precisa comprar",""],
+ ["materiais_embalagens","MALETAS",5,"MALETA GRANDE C/ DIVISÓRIA","UN","CM3",50,0,"03/11/2026","Não precisa comprar",""],
+ ["materiais_embalagens","EXPOSITORES",2,"EXPOSITOR DE PULSEIRAS","UN","DaVinci",100,47,"05/11/2026","Não precisa comprar",""],
+ ["materiais_embalagens","TINTA IMPRESSORAS",1,"TINTA EPSON L3150/L3250 PRETA","UN","Eloprint",3,6,"30/10/2026","Não precisa comprar",""],
+ ["materiais_embalagens","TAG TRIO 1",6,"TAG TRIO | PEQUENA | PRATA | COLLECTION","UN","OFFICE GRAFF",2000,700,"21/10/2026","Aguardar",""],
+ ["materiais_embalagens","TAG CONJUNTO",8,"TAG CONJUNTO | MÉDIA | PRATA | COLLECTION","UN","OFFICE GRAFF",2000,900,"20/10/2026","Não precisa comprar",""],
+ ["materiais_embalagens","TAG CORAÇÃO 1",5,"TAG CORAÇÃO | MÉDIA | PRATA | PADRÃO","UN","OFFICE GRAFF",2000,500,"21/10/2026","Não precisa comprar",""],
+ ["limpeza","LIMPEZA GERAL",1,"Detergente neutro 5L","un","NATURALLE",2,2,"20/10/2026","Não precisa comprar",""],
+ ["limpeza","LIMPEZA GERAL",6,"Álcool 70%","un","—",5,3,"27/10/2026","Aguardando aprovação",""],
+ ["limpeza","LIMPEZA GERAL",9,"Pinho sol 3,8L","un","—",1,0,"27/10/2026","Aguardando aprovação",""],
+ ["limpeza","DESCARTÁVEIS",6,"Saco de lixo 40L","pct","D Clinica",2,2,"27/10/2026","Aguardando aprovação",""],
+ ["limpeza","DESCARTÁVEIS",12,"Copo descartável 50ml","pct","D CLINICA",2,74,"27/10/2026","Não precisa comprar",""],
+ ["limpeza","MERCADO",5,"Açúcar 5kg","un","Mercado",2,2,"27/10/2026","Aguardando aprovação","comprar urgente"],
+ ["materiais_producao","FECHOS",4,"Fecho lagosta ouro 1mm","g","MegaSul",100,134,"20/08/2026","Não precisa comprar",""],
+ ["materiais_producao","CONTRA ARGOLAS",5,"Argola lagosta fina prata (P)","g","MegaSul",500,106,"20/08/2026","Não precisa comprar",""],
+ ["materiais_producao","TARRAXAS",4,"Tarraxa baby prata","g","Pontual",50,45,"20/08/2026","Não precisa comprar",""],
+ ["materiais_producao","VENEZIANAS",5,"Veneziana ouro 50cm","un","MegaSul",1500,1300,"27/10/2026","Não precisa comprar",""],
+ ["materiais_producao","VENEZIANAS",16,"Bipartida ouro 50cm","un","MegaSul",1000,600,"16/10/2026","Não precisa comprar",""]
+].map(function(r){ return {tipo:r[0],cat:r[1],n:r[2],mat:r[3],un:r[4],forn:r[5],min:r[6],atual:r[7],ult:r[8],compra:r[9],obs:r[10]}; });
+var sit = function(x){ var p = x.atual/x.min; return x.atual<x.min ? ["Crítico","ruim"] : (p<=1.3 ? ["Atenção","alerta"] : ["OK","ok"]); };
+var num = function(n){ return n.toLocaleString("pt-BR"); };
+var COR = {ruim:"var(--ruim)", alerta:"var(--alerta)", ok:"var(--ok)"};
+var ponto = function(k,t){ return '<span class="'+k+'"><span class="ponto">●</span>'+t+'</span>'; };
+
+var E = {A:{tipo:0,q:"",sit:"",compra:"",sel:null}, B:{tipo:0,q:"",sit:"",compra:"",sel:null}, C:{tipo:0,q:"",sit:"",compra:"",sel:null,mostra:false}, D:{tipo:0,q:"",sit:"",compra:"",sel:0}};
+var TABS = ["Quadro de compras","Planilha de compras","Visão geral","Estoque de material","Movimentos","Pedidos de material","Cadastros","Configurações"];
+
+function filtrados(k){ var e = E[k], t = TIPOS[e.tipo][0], q = e.q.toLowerCase();
+  return D.filter(function(x){ if(x.tipo!==t) return false; if(q && (x.mat+" "+x.forn+" "+x.cat).toLowerCase().indexOf(q)<0) return false; if(e.sit && sit(x)[0]!==e.sit) return false; if(e.compra && x.compra!==e.compra) return false; return true; }); }
+function cabecalho(k, extra){ var e = E[k], lista = filtrados(k), crit = lista.filter(function(x){ return sit(x)[0]==="Crítico"; }).length;
+  return '<div class="cab"><h2>Compras e estoque de material</h2><p>Solicitações, aprovação, compra, recebimento e estoque de material.</p></div>'+
+   '<div class="abas">'+TABS.map(function(t,i){ return '<button class="aba '+(i===3?'on':'')+'">'+t+'</button>'; }).join("")+'</div>'+
+   '<div class="abas">'+TIPOS.map(function(t,i){ return '<button class="aba peq '+(i===e.tipo?'on':'')+'" data-k="'+k+'" data-tipo="'+i+'">'+t[1]+'</button>'; }).join("")+'</div>'+
+   '<div class="filtros">'+
+    '<label class="busca">Buscar<input type="search" data-k="'+k+'" data-f="q" value="'+e.q+'" placeholder="Material, fornecedor ou categoria"></label>'+
+    '<label>Situação do estoque<select data-k="'+k+'" data-f="sit"><option value="">Todas</option>'+["Crítico","Atenção","OK"].map(function(s){ return '<option '+(e.sit===s?'selected':'')+'>'+s+'</option>'; }).join("")+'</select></label>'+
+    '<label>Situação da compra<select data-k="'+k+'" data-f="compra"><option value="">Todas</option>'+["Não precisa comprar","Aguardar","Aguardando aprovação","Aguardando entrega"].map(function(s){ return '<option '+(e.compra===s?'selected':'')+'>'+s+'</option>'; }).join("")+'</select></label>'+
+    '<div class="acoes"><button class="btn" data-k="'+k+'" data-limpar="1">Limpar</button><button class="btn prim">+ Novo material</button></div>'+
+   '</div>'+
+   '<p class="resumo">'+lista.length+' materiais nesta aba · '+crit+' em situação crítica · próxima contagem: segunda, 09/11/2026</p>';
+}
+function tabela(cols, linhas, att){ var g = 'grid-template-columns:'+cols.map(function(c){ return c[1]||"1fr"; }).join(" ");
+  return '<div class="rolagem"><div class="grade" style="min-width:'+(att&&att.min||900)+'px"><div class="gl h" style="'+g+'">'+cols.map(function(c){ return '<div>'+c[0]+'</div>'; }).join("")+'</div>'+
+   linhas.map(function(l){ return '<div class="gl'+(l.cls?' '+l.cls:'')+'" style="'+g+'"'+(l.attr||'')+'>'+l.c.map(function(c){ return '<div>'+c+'</div>'; }).join("")+'</div>'; }).join("")+'</div></div>'; }
+var porCat = function(lista){ var o = {}, ord = []; lista.forEach(function(x){ if(!o[x.cat]){ o[x.cat] = []; ord.push(x.cat); } o[x.cat].push(x); }); return ord.map(function(c){ return [c,o[c]]; }); };
+var colunasBase = [["Nº","56px"],["Material","1.6fr"],["Unid.","70px"],["Fornecedor","1.1fr"],["Mínimo","90px"],["Atual","90px"],["Estoque","110px"],["Compra","170px"],["Última contagem","130px"]];
+var linhaBase = function(x){ var s = sit(x); return [x.n, '<b>'+x.mat+'</b>', x.un, x.forn, num(x.min), '<b>'+num(x.atual)+'</b>', ponto(s[1],s[0]), x.compra, x.ult]; };
+
+function LA(){ var lista = filtrados("A");
+  var blocos = porCat(lista).map(function(p){ var crit = p[1].filter(function(x){ return sit(x)[0]==="Crítico"; }).length;
+    return '<div class="bloco"><div class="barra"><span>'+p[0]+'</span><span>'+p[1].length+' itens'+(crit?' · '+crit+' críticos':'')+'</span></div><div class="corpo">'+
+      tabela(colunasBase.concat([["Ações","150px"]]), p[1].map(function(x){ return {c:linhaBase(x).concat(['<span class="linhaBt"><button class="btn" style="min-width:70px">Contar</button><button class="btn" style="min-width:70px">Editar</button></span>'])}; }), {min:1100})+'</div></div>'; }).join("");
+  return cabecalho("A")+(blocos||'<p>Nenhum material com esse filtro.</p>'); }
+
+function LB(){ var lista = filtrados("B").slice().sort(function(a,b){ return a.cat.localeCompare(b.cat) || a.n-b.n; });
+  var cols = [["Categoria","170px"],["Nº","56px"],["Material","1.6fr"],["Unid.","70px"],["Fornecedor","1.1fr"],["Mínimo","90px"],["Atual","90px"],["Estoque","110px"],["Compra","170px"],["Última contagem","130px"],["Contar hoje","190px"]];
+  var linhas = lista.map(function(x){ var s = sit(x); return {c:[x.cat, x.n, '<b>'+x.mat+'</b>', x.un, x.forn, num(x.min), '<b>'+num(x.atual)+'</b>', ponto(s[1],s[0]), x.compra, x.ult, '<span class="contar"><input placeholder="'+num(x.atual)+'" inputmode="numeric"><button class="btn" style="min-width:56px">OK</button></span>']}; });
+  return cabecalho("B")+'<div class="bloco"><div class="barra"><span>Todos os materiais · '+TIPOS[E.B.tipo][1]+'</span><span>'+lista.length+' itens</span></div><div class="corpo">'+tabela(cols, linhas, {min:1500})+
+   '<div class="linhaBt"><button class="btn">Salvar contagem</button><button class="btn">Exportar planilha</button></div></div></div>'; }
+
+function LC(){ var lista = filtrados("C"), acao = lista.filter(function(x){ return sit(x)[0]!=="OK"; }).sort(function(a,b){ return (a.atual/a.min)-(b.atual/b.min); }), ok = lista.filter(function(x){ return sit(x)[0]==="OK"; });
+  var cols = [["Material","1.6fr"],["Categoria","170px"],["Atual","90px"],["Mínimo","90px"],["Falta","100px"],["Estoque","110px"],["Compra","170px"],["Ação","190px"]];
+  var linhas = acao.map(function(x){ var s = sit(x), falta = Math.max(0,x.min-x.atual), pode = x.compra==="Não precisa comprar";
+    return {c:['<b>'+x.mat+'</b>', x.cat, '<b>'+num(x.atual)+'</b>', num(x.min), falta>0?'<span class="ruim">'+num(falta)+'</span>':'0', ponto(s[1],s[0]), x.compra, pode?'<button class="btn prim" style="min-width:150px">Solicitar compra</button>':'<span>Já em andamento</span>']}; });
+  var tabOk = tabela(colunasBase, ok.map(function(x){ return {c:linhaBase(x)}; }), {min:1000});
+  return cabecalho("C")+'<div class="bloco"><div class="barra"><span>Precisa de ação</span><span>'+acao.length+' itens</span></div><div class="corpo">'+(acao.length?tabela(cols, linhas, {min:1100}):'<p>Nada crítico nem em atenção.</p>')+'</div></div>'+
+   '<div class="bloco"><div class="barra" data-k="C" data-mostra="1"><span>Em dia</span><span>'+ok.length+' itens · '+(E.C.mostra?'ocultar':'mostrar')+'</span></div>'+(E.C.mostra?'<div class="corpo">'+tabOk+'</div>':'')+'</div>'; }
+
+function LD(){ var lista = filtrados("D"); if(E.D.sel>=lista.length) E.D.sel = 0; var x = lista[E.D.sel];
+  var cols = [["Material","1.6fr"],["Atual","90px"],["Mínimo","90px"],["Estoque","110px"],["Compra","170px"]];
+  var linhas = lista.map(function(m,i){ var s = sit(m); return {cls:'clic'+(i===E.D.sel?' sel':''), attr:' data-k="D" data-sel="'+i+'"', c:['<b>'+m.mat+'</b>', '<b>'+num(m.atual)+'</b>', num(m.min), ponto(s[1],s[0]), m.compra]}; });
+  var det = x ? (function(){ var s = sit(x); var p = function(r,v){ return '<div class="par"><div>'+r+'</div><div>'+v+'</div></div>'; };
+    return '<div class="painel"><h3>'+x.mat+'</h3>'+p("Categoria",x.cat)+p("Nº",x.n)+p("Unidade",x.un)+p("Fornecedor",x.forn)+p("Estoque mínimo",num(x.min))+p("Estoque atual","<b>"+num(x.atual)+"</b>")+p("Situação",ponto(s[1],s[0]))+p("Compra",x.compra)+p("Última contagem",x.ult)+p("Observações",x.obs||"—")+
+     '<div class="linhaBt" style="padding-top:6px"><button class="btn prim">Contar</button><button class="btn">Entrada</button><button class="btn">Saída</button><button class="btn">Solicitar compra</button><button class="btn">Editar</button></div></div>'; })() : '<div class="painel"><h3>Nenhum material</h3></div>';
+  return cabecalho("D")+'<div class="duas"><div class="bloco"><div class="barra"><span>Materiais · '+TIPOS[E.D.tipo][1]+'</span><span>'+lista.length+' itens</span></div><div class="corpo">'+tabela(cols, linhas, {min:720})+'</div></div>'+det+'</div>'; }
+
+var NOMES = {A:["Por categoria","Cada categoria é um bloco com a sua tabela e o resumo dela na barra. É o mais próximo da tela de hoje, só que em fileiras e sem os 4 blocos de números."],
+             B:["Planilha única","Uma tabela só com todos os itens da aba, ordenada por categoria, e a coluna Contar hoje para lançar a contagem direto na linha. É o mais rápido para contar às segundas, quartas e sextas."],
+             C:["Precisa de ação","Em cima só o que está crítico ou em atenção, do mais urgente para o menos, com o botão Solicitar compra. O que está em dia fica fechado embaixo."],
+             D:["Lista e detalhe","Lista enxuta à esquerda; ao escolher um material, o detalhe e as ações (Contar, Entrada, Saída, Solicitar compra) aparecem à direita."]};
+var F = {A:LA,B:LB,C:LC,D:LD};
+function desenha(k){ var s = document.getElementById("sec"+k); if(!s) return; s.innerHTML = F[k](); }
+var html = "";
+["A","B","C","D"].forEach(function(k){ html += '<section id="'+k+'"><div class="tag"><b>Layout '+k+' · '+NOMES[k][0]+'</b>'+NOMES[k][1]+'</div><div class="tela" id="sec'+k+'"></div></section>'; });
+document.getElementById("raiz").innerHTML = html;
+["A","B","C","D"].forEach(desenha);
+document.addEventListener("click", function(ev){ var t = ev.target.closest("[data-k]"); if(!t) return; var k = t.getAttribute("data-k"), e = E[k];
+  if(t.hasAttribute("data-tipo")){ e.tipo = +t.getAttribute("data-tipo"); e.sel = 0; if(k==="D") e.sel = 0; }
+  else if(t.hasAttribute("data-limpar")){ e.q = ""; e.sit = ""; e.compra = ""; }
+  else if(t.hasAttribute("data-sel")){ e.sel = +t.getAttribute("data-sel"); }
+  else if(t.hasAttribute("data-mostra")){ e.mostra = !e.mostra; }
+  else return; desenha(k); });
+document.addEventListener("change", function(ev){ var t = ev.target; if(!t.getAttribute) return; var k = t.getAttribute("data-k"); if(!k) return; E[k][t.getAttribute("data-f")] = t.value; if(k==="D") E.D.sel = 0; desenha(k); });
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.getAttribute || t.getAttribute("data-f")!=="q") return; var k = t.getAttribute("data-k"), pos = t.selectionStart; E[k].q = t.value; if(k==="D") E.D.sel = 0; desenha(k); var n = document.querySelector('#sec'+k+' input[data-f="q"]'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(x){} } });
+</script>
+</body>
+</html>

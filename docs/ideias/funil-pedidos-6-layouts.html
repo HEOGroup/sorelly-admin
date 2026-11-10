@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Funil de pedidos · 6 layouts</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--faixa:#1c1d21;--fio:#2A2E36;--fio2:#3A3F48;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ruim:#EF4444;--ok:#4CC38A;--at:#F2B544}
+*{box-sizing:border-box}body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 24px 60px}
+h1{font-size:15px;margin:0 0 4px;color:var(--ouro)}p.n{margin:0 0 12px;max-width:980px}
+h2{font-size:13px;margin:34px 0 4px;color:var(--ouro)}
+.mock{border:1px dashed var(--fio2);border-radius:10px;padding:12px;background:#0B0C0F;max-width:1240px;overflow:hidden}
+.topo{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:8px}
+.topo b{font-size:15px}.topo small{display:block;font-size:11px}
+.dir{display:flex;gap:8px;align-items:center}
+.seg{display:inline-flex;border:1px solid var(--fio2);border-radius:6px;overflow:hidden}
+.seg span{height:32px;display:flex;align-items:center;padding:0 12px;white-space:nowrap}.seg span+span{border-left:1px solid var(--fio2)}
+.seg .on{background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600}
+.btn{height:32px;min-width:96px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);display:flex;align-items:center;justify-content:center;padding:0 14px;white-space:nowrap}
+.btn.p{background:rgba(214,178,92,.2);border-color:var(--ouro);color:var(--ouro);font-weight:600}
+.sq{width:32px;height:32px;min-width:0;padding:0}
+.barra{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.inp{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);display:flex;align-items:center;justify-content:space-between;padding:0 10px;white-space:nowrap;gap:10px}
+.inp.b{flex:1;min-width:110px;justify-content:flex-start}.inp.s{width:128px}
+.res{margin-left:auto;font-size:11px;white-space:nowrap}.res b{font-weight:600}
+.r{color:var(--ruim)}.v{color:var(--ok)}.t{font-variant-numeric:tabular-nums}
+.k{display:flex;gap:8px;align-items:flex-start}
+.col{flex:1;min-width:0;border:1px solid var(--fio);border-radius:8px;background:rgba(21,23,27,.6);padding:8px;display:flex;flex-direction:column;gap:6px;border-top:3px solid #6B7280}
+.col.fino{flex:0 0 38px;padding:8px 0;align-items:center;gap:8px}
+.col.fino .vt{writing-mode:vertical-rl;transform:rotate(180deg);font-size:11px;white-space:nowrap}
+.col.c1{border-top-color:#7C6AE6}.col.c2{border-top-color:#C79B2E}.col.c3{border-top-color:#3B82F6}.col.c4{border-top-color:#14B8A6}.col.c5{border-top-color:#4CC38A}
+.ch{display:flex;justify-content:space-between;align-items:baseline}.ch b{font-size:13px}.ch small{font-size:11px}
+.cd{border:1px solid var(--fio2);border-radius:7px;background:var(--painel);padding:6px 8px;display:grid;gap:2px;position:relative;overflow:hidden}
+.cd::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cc,#6B7280)}
+.cd.at::before{background:var(--ruim)}
+.l1{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding-left:4px}.l1 b{font-size:13px;font-weight:600;white-space:nowrap}
+.l2{display:flex;justify-content:space-between;gap:8px;align-items:center;font-size:11px;padding-left:4px}
+.mais{height:32px;border:1px dashed var(--fio2);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px}
+.sel{border:1px solid var(--fio);border-radius:8px;overflow:hidden;margin-bottom:6px}
+.sh{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;background:var(--faixa);font-weight:600;border-left:3px solid var(--ec,#6B7280)}
+.sh small{font-weight:400;font-size:11px}
+.lin{display:grid;grid-template-columns:minmax(0,2fr) 120px 110px 110px 90px 110px 36px;align-items:center;height:32px;border-top:1px solid var(--fio);padding:0 8px;gap:8px}
+.lin>*{text-align:center;white-space:nowrap;overflow:hidden}.lin>:first-child{text-align:left}
+.lin.cab{height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;background:var(--faixa);border-top:0}
+.tab{border:1px solid var(--fio);border-radius:8px;overflow:hidden}
+.tab .lin{grid-template-columns:84px minmax(0,2fr) 120px 110px 110px 90px 120px 70px 36px}
+.etp{display:flex;gap:0;margin-bottom:8px;overflow:hidden}
+.pg{height:32px;display:flex;align-items:center;justify-content:space-between;padding:0 10px;border-top:1px solid var(--fio);font-size:11px;background:var(--faixa)}
+.dd{display:flex;gap:10px;align-items:flex-start}
+.lista{width:330px;border:1px solid var(--fio);border-radius:8px;overflow:hidden;flex:0 0 330px}
+.it{display:grid;grid-template-columns:minmax(0,1fr) 92px 56px;gap:6px;align-items:center;height:32px;border-top:1px solid var(--fio);padding:0 8px;position:relative}
+.it.on{background:rgba(214,178,92,.14)}.it>:nth-child(n+2){text-align:center;font-size:11px}
+.det{flex:1;min-width:0;border:1px solid var(--fio);border-radius:8px;background:var(--painel);padding:12px;display:flex;flex-direction:column;gap:10px}
+.fotos{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:6px}
+.ft{aspect-ratio:1;border-radius:6px;border:1px solid var(--fio2);display:grid;place-items:center;font-size:11px;background:linear-gradient(135deg,#2a2418,#14110a)}
+.ft.pr{background:linear-gradient(135deg,#2b2f36,#14161a)}
+.etapas{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--fio);border-radius:6px;overflow:hidden}
+.etapas div{height:32px;display:flex;align-items:center;justify-content:center;font-size:11px}.etapas div+div{border-left:1px solid var(--fio)}
+.etapas .on{background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600}
+.obs{border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:8px 10px}
+.rot{font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.aten{width:270px;flex:0 0 270px;border:1px solid var(--fio);border-radius:8px;background:rgba(21,23,27,.6);padding:8px;display:flex;flex-direction:column;gap:6px;border-top:3px solid var(--ouro)}
+.mini{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.mini .ft{border-radius:4px;font-size:10px}
+.sp{display:grid;gap:6px;padding:6px 8px;border:1px solid var(--fio2);border-radius:7px;background:var(--painel)}
+.go{display:flex;gap:6px;align-items:center}
+.nota{margin-top:8px;font-size:11px}
+</style></head><body>
+<h1>Funil de pedidos · 6 layouts</h1>
+<p class="n">Todos seguem o padrão: sem faixa de totais no topo, filtros numa linha só de 32 px (o resto vai em "Filtros ▾"), nada de chips, dourado só no botão principal e na aba ativa, cartões compactos. Os nomes são inventados. O resumo ("Em aberto · Atrasados") vira uma linha de texto na barra, não cartões de números.</p>
+<div id="app"></div>
+<script>
+var ETAPAS=[["novo","Novo"],["conferindo","Conferindo"],["comprovante","Comprovante"],["separando","Separando"],["agendado","Agendado"],["representante","Com representante"],["atendimento","Em atendimento"],["bipagem","Bipagem"],["concluido","Concluída"]];
+var CANAL={entrega:["Entrega","#14B8A6"],representante:["Representante","#7C6AE6"],empresa:["Empresa","#EF9F27"],encomenda:["Encomenda","#F97316"],separar:["Separar peças","#D6B25C"]};
+var NOMES=["Camila Rocha","Beatriz Lima","Helena Prado","Fernanda Alves","Juliana Souza","Patrícia Gomes","Larissa Teixeira","Aline Mendes","Carolina Dias","Renata Barros","Priscila Nunes","Vanessa Castro","Michele Ramos","Tatiane Freitas","Daniela Moraes","Bruna Cardoso","Luciana Pires","Simone Araújo","Gabriela Costa","Sabrina Lopes","Roberta Melo","Elisa Andrade","Mônica Vieira","Paula Duarte","Letícia Farias","Natália Borges","Cristina Rios","Débora Santos","Isabela Matos","Marina Campos","Raquel Pinto","Sônia Peixoto","Talita Cunha","Viviane Reis","Yara Monteiro","Zilda Faria"];
+var CAN=["entrega","representante","empresa","encomenda","separar"],RESP=["Agatha","Elen","Eduarda","Agatha","Elen"];
+var DIST=[5,8,2,6,4,3,2,3,7],P=[],n=0;
+ETAPAS.forEach(function(et,i){for(var j=0;j<DIST[i];j++){var c=(n%5===4&&i<6)?"separar":CAN[(n+i)%4];if(c==="separar"&&i>5)c="entrega";
+ P.push({nome:NOMES[n%NOMES.length],etapa:et[0],canal:c,min:(n*37+i*55)%1500,atraso:(n%7===3&&i<8),media:2000+((n*731)%6000),max:3000+((n*911)%7000),resp:RESP[n%5],fotos:c==="separar"?3+(n%6):0,obs:c==="separar"?["dourado, é para ela mesma","prata, anel grosso","colar letra ouro","brincos de festa, dourado","cordão baiano grosso"][n%5]:""});n++;}});
+var R=function(v){return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2})};
+var T=function(m){return m<60?m+" min":m<1440?Math.floor(m/60)+" h":Math.floor(m/1440)+" d"};
+var EL=function(k){return ETAPAS.filter(function(e){return e[0]===k})[0][1]};
+var por=function(k){return P.filter(function(p){return p.etapa===k})};
+var abertos=P.filter(function(p){return p.etapa!=="concluido"}).length,atras=P.filter(function(p){return p.atraso}).length;
+function topo(extra){return '<div class="topo"><div><b>Funil de pedidos</b><small>Reposição e encomenda: do pedido até a entrega.</small></div><div class="dir"><div class="seg"><span class="on">Quadro</span><span>Planilha</span><span>Revendedoras</span></div>'+(extra||"")+'<div class="btn p">Novo pedido</div></div></div>'}
+function barra(extra){return '<div class="barra"><div class="inp b">Buscar revendedora…</div><div class="inp s">Canal <span>▾</span></div><div class="inp s">Responsável <span>▾</span></div><div class="inp s">Filtros <span>▾</span></div><div class="btn">Limpar</div><div class="res">Em aberto <b>'+abertos+'</b> · Atrasados <b class="r">'+atras+'</b>'+(extra||"")+'</div></div>'}
+function cartao(p){var c=CANAL[p.canal];return '<div class="cd'+(p.atraso?" at":"")+'" style="--cc:'+c[1]+'"><div class="l1"><b>'+p.nome+'</b><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span></div><div class="l2"><span>'+c[0]+(p.fotos?" · "+p.fotos+" fotos":"")+' · '+p.resp+'</span><span class="btn sq" style="height:24px;width:24px">›</span></div></div>'}
+function cartaoMedia(p){var c=CANAL[p.canal];return '<div class="cd'+(p.atraso?" at":"")+'" style="--cc:'+c[1]+'"><div class="l1"><b>'+p.nome+'</b><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span></div><div class="l2"><span class="t">'+(p.fotos?p.fotos+" fotos · "+p.obs:"Média "+R(p.media).replace(",00","")+" · Máx "+R(p.max).replace(",00",""))+'</span><span class="btn sq" style="height:24px;width:24px">›</span></div></div>'}
+function circ(p){var c=CANAL[p.canal];return '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:'+c[1]+';margin-right:6px"></span>'}
+function secao(t,nota,h){return '<h2>'+t+'</h2><p class="n">'+nota+'</p><div class="mock">'+h+'</div>'}
+var H="";
+// A: quadro enxuto
+(function(){var cols=ETAPAS.map(function(e,i){var l=por(e[0]);if(!l.length)return '<div class="col fino"><b class="t">0</b><span class="vt">'+e[1]+'</span></div>';
+ var vis=l.slice(0,5);return '<div class="col c'+(1+i%5)+'"><div class="ch"><b>'+e[1]+'</b><small class="t">'+l.length+'</small></div>'+vis.map(cartaoMedia).join("")+(l.length>5?'<div class="mais">Ver mais · '+(l.length-5)+'</div>':"")+'</div>'}).slice(0,6).join("");
+ H+=secao("A · Quadro enxuto","Uma linha de ferramentas no lugar do bloco de filtros. Cartão de 2 linhas. Etapa vazia vira uma tira fina com o zero. Mostra as etapas com movimento, o resto rola para o lado.",topo()+barra()+'<div class="k">'+cols+'</div>')})();
+// B: faixas por etapa
+(function(){var s=ETAPAS.map(function(e,i){var l=por(e[0]);var aberta=i===1||i===3||i===0;var h='<div class="sel"><div class="sh" style="--ec:'+["#7C6AE6","#C79B2E","#3B82F6","#14B8A6","#4CC38A"][i%5]+'"><span>'+(aberta?"▾":"▸")+' '+e[1]+' <small class="t">· '+l.length+'</small></span><small>'+(l.filter(function(p){return p.atraso}).length?'<span class="r">'+l.filter(function(p){return p.atraso}).length+' atrasados</span>':"")+'</small></div>';
+ if(aberta){h+='<div class="lin cab"><span>Revendedora</span><span>Canal</span><span>Média</span><span>Máximo</span><span>Tempo</span><span>Responsável</span><span></span></div>'+l.slice(0,4).map(function(p){return '<div class="lin"><span><b>'+circ(p)+p.nome+'</b></span><span>'+CANAL[p.canal][0]+'</span><span class="t">'+R(p.media)+'</span><span class="t">'+R(p.max)+'</span><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span><span>'+p.resp+'</span><span class="btn sq" style="height:24px;width:24px">›</span></div>'}).join("")+(l.length>4?'<div class="pg"><span>Mostrando 4 de '+l.length+'</span><span>Ver todas ▸</span></div>':"")}
+ return h+'</div>'}).join("");
+ H+=secao("B · Faixas por etapa","Cada etapa é uma faixa que abre e fecha. Linha de 32 px com tudo alinhado em colunas. Cabe muito mais revendedora na tela que no quadro, e as etapas vazias ocupam uma linha.",topo()+barra()+s)})();
+// C: abas de etapa + tabela
+(function(){var et=ETAPAS.map(function(e,i){return '<span class="'+(i===1?"on":"")+'">'+e[1]+' '+por(e[0]).length+'</span>'}).join("");
+ var l=por("conferindo").concat(por("novo")).slice(0,10);
+ var rows=l.map(function(p,i){return '<div class="lin"><span class="t">'+String(4100+i*7)+'</span><span><b>'+p.nome+'</b></span><span>'+CANAL[p.canal][0]+'</span><span class="t">'+R(p.media)+'</span><span class="t">'+R(p.max)+'</span><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span><span>'+p.resp+'</span><span class="t">'+(p.fotos?p.fotos:"—")+'</span><span class="btn sq" style="height:24px;width:24px">›</span></div>'}).join("");
+ H+=secao("C · Etapa em abas + tabela","As etapas viram um seletor com a contagem. Você olha uma etapa por vez, numa tabela de fileiras (layout D) com filtro no título. É a tela mais alta e mais limpa. Perde a visão de todas as etapas ao mesmo tempo.",topo()+'<div class="barra"><div class="inp b">Buscar revendedora…</div><div class="inp s">Canal <span>▾</span></div><div class="inp s">Responsável <span>▾</span></div><div class="btn">Limpar</div><div class="res">Em aberto <b>'+abertos+'</b> · Atrasados <b class="r">'+atras+'</b></div></div><div class="etp"><div class="seg" style="flex-wrap:nowrap">'+et+'</div></div><div class="tab"><div class="lin cab"><span>Pedido</span><span>Revendedora</span><span>Canal</span><span>Média</span><span>Máximo</span><span>Tempo</span><span>Responsável</span><span>Fotos</span><span></span></div>'+rows+'<div class="pg"><span>Mostrando 10 de '+(por("conferindo").length+por("novo").length)+'</span><span>Próxima ▸</span></div></div>')})();
+// D: 4 grupos
+(function(){var G=[["Entrada",["novo","conferindo","comprovante"]],["Preparo",["separando","agendado"]],["Atendimento",["representante","atendimento","bipagem"]],["Concluídas",["concluido"]]];
+ var cols=G.map(function(g,i){var l=[];g[1].forEach(function(k){por(k).forEach(function(p){l.push(p)})});
+ return '<div class="col c'+(1+i)+'"><div class="ch"><b>'+g[0]+'</b><small class="t">'+l.length+'</small></div>'+l.slice(0,9).map(function(p){var c=CANAL[p.canal];return '<div class="cd'+(p.atraso?" at":"")+'" style="--cc:'+c[1]+';padding:0 8px;height:32px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center"><b style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;padding-left:4px">'+p.nome+'</b><span style="font-size:11px;white-space:nowrap">'+EL(p.etapa)+'</span><span class="t'+(p.atraso?" r":"")+'" style="font-size:11px;width:38px;text-align:right">'+T(p.min)+'</span></div>'}).join("")+(l.length>9?'<div class="mais">Ver mais · '+(l.length-9)+'</div>':"")+'</div>'}).join("");
+ H+=secao("D · Quatro grupos, cartão de uma linha","As 9 etapas viram 4 grupos. O cartão tem 32 px: nome, a etapa em texto e o tempo. Cabem 9 por coluna na primeira tela. Para ver o detalhe, clica no cartão. Ideal para muitas revendedoras.",topo()+barra()+'<div class="k">'+cols+'</div>')})();
+// E: lista + detalhe
+(function(){var l=P.filter(function(p){return p.etapa!=="concluido"}).slice(0,14);var sel=l.filter(function(p){return p.canal==="separar"})[0]||l[0];
+ var rows=l.map(function(p){return '<div class="it'+(p===sel?" on":"")+'"><b style="font-weight:600;white-space:nowrap;overflow:hidden">'+circ(p)+p.nome+'</b><span>'+EL(p.etapa)+'</span><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span></div>'}).join("");
+ var fotos=[];for(var i=0;i<(sel.fotos||6);i++)fotos.push('<div class="ft'+(i%3===2?" pr":"")+'">foto '+(i+1)+'</div>');
+ H+=secao("E · Lista à esquerda, detalhe à direita","Para muitas revendedoras: a lista é de 32 px por linha e fica sempre na tela. Ao clicar, o pedido abre ao lado com as fotos grandes, a observação e as etapas. Serve bem ao novo tipo Separar peças.",topo()+'<div class="barra"><div class="inp b">Buscar revendedora…</div><div class="inp s">Canal <span>▾</span></div><div class="inp s">Responsável <span>▾</span></div><div class="btn">Limpar</div><div class="res">Em aberto <b>'+abertos+'</b> · Atrasados <b class="r">'+atras+'</b></div></div><div class="dd"><div class="lista"><div class="it" style="background:var(--faixa);border-top:0;height:30px;font-size:11px;text-transform:uppercase;letter-spacing:.05em"><span>Revendedora</span><span>Etapa</span><span>Tempo</span></div>'+rows+'</div><div class="det"><div class="topo" style="margin:0"><div><b>'+sel.nome+'</b><small>'+CANAL[sel.canal][0]+' · pedido por Marcus · '+sel.resp+' separa</small></div><div class="dir"><div class="btn">Mover para…</div><div class="btn p">Concluir ›</div></div></div><div class="rot">Fotos</div><div class="fotos">'+fotos.slice(0,6).join("")+'</div><div class="rot">Observação</div><div class="obs">'+(sel.obs||"Sem observação")+'</div><div class="etapas"><div>Para separar</div><div class="on">Separando</div><div>Pronto</div><div>Entregue</div></div></div></div>')})();
+// F: coluna de atenção + quadro
+(function(){var sp=P.filter(function(p){return p.canal==="separar"&&p.etapa!=="concluido"}).slice(0,5);
+ var at='<div class="aten"><div class="ch"><b>Atenção · Separar peças</b><small class="t">'+sp.length+'</small></div>'+sp.map(function(p){var m=[];for(var i=0;i<4;i++)m.push('<div class="ft'+(i%2?" pr":"")+'">'+(i===3&&p.fotos>4?"+"+(p.fotos-3):"")+'</div>');return '<div class="sp"><div class="l1" style="padding:0"><b>'+p.nome+'</b><span class="t'+(p.atraso?" r":"")+'">'+T(p.min)+'</span></div><div class="mini">'+m.join("")+'</div><div style="font-size:11px">'+p.obs+'</div><div class="l2" style="padding:0"><span>'+EL(p.etapa)+' · '+p.resp+'</span><span class="btn sq" style="height:24px;width:24px">›</span></div></div>'}).join("")+'<div class="mais">Ver todas · 21</div></div>';
+ var E=["novo","conferindo","separando","agendado","concluido"];
+ var cols=E.map(function(k,i){var l=por(k).filter(function(p){return p.canal!=="separar"});return '<div class="col c'+(1+i%5)+'"><div class="ch"><b>'+EL(k)+'</b><small class="t">'+l.length+'</small></div>'+l.slice(0,6).map(cartao).join("")+(l.length>6?'<div class="mais">Ver mais · '+(l.length-6)+'</div>':"")+'</div>'}).join("");
+ H+=secao("F · Coluna fixa de atenção + quadro enxuto","As revendedoras que precisam de atenção (separar peças) ficam numa coluna fixa à esquerda, com miniaturas das fotos e a observação. O quadro dos pedidos normais fica ao lado, com cartão compacto. Você vê as duas coisas sem trocar de tela.",topo()+barra()+'<div class="dd">'+at+'<div class="k" style="flex:1;min-width:0">'+cols+'</div></div>')})();
+document.getElementById("app").innerHTML=H;
+</script></body></html>

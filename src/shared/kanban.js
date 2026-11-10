@@ -10,6 +10,9 @@
 //     unidade: ["revendedora","revendedoras"],                // (opcional) como contar no cabeçalho da coluna
 //     semMover: true,                                         // (opcional) esconde o "Mover para…" (o detalhe abre ao clicar e tem o botão de avançar)
 //     onAbrir: function(item){ ... }                          // (opcional) clique no cartão (fora do "Mover para…")
+//     compacto: true,                                         // (opcional) cartão baixo e à esquerda, colunas mais largas e com mais espaço (Kits novos, 05/11/2026)
+//     corBarra: function(item, coluna){ return "#EF4444"; }  // (opcional, com compacto) cor da barra da lateral do cartão; sem isso vale a cor da coluna
+//     recolherVazias: true,                                   // (opcional) coluna sem cartão vira uma tira fina com o título em pé e o zero (ainda aceita soltar cartão); Funil de pedidos, 09/11/2026
 //   })
 // Cada coluna mostra no máximo `limite` cartões (padrão 30) e um botão "Ver mais" (nada de rolagem dentro da coluna).
 // Colunas ficam lado a lado e ajustam-se à largura: a lista rola para o lado arrastando o vazio (comportamento global do sistema).
@@ -24,7 +27,7 @@ function Cartao(p){
   return e("div",{draggable:it.arrastavel!==false, "data-sem-arrastar":true,
     onDragStart:function(ev){ try{ ev.dataTransfer.setData("text/plain", String(it.id)); ev.dataTransfer.effectAllowed = "move"; }catch(x){} p.setArrastando({item:it, de:c.k}); st[1](true); },
     onDragEnd:function(){ p.setArrastando(null); st[1](false); },
-    className:"flex flex-col gap-1.5 rounded-lg bg-card p-2.5 text-center ring-1 ring-white/10 transition "+(arr ? "opacity-40" : it.arrastavel===false ? "" : "cursor-grab hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+c.cor}},
+    className:(p.compacto ? "flex flex-col gap-0 rounded-lg bg-card py-1.5 pl-3 pr-2 text-left ring-1 ring-white/10 transition " : "flex flex-col gap-1.5 rounded-lg bg-card p-2.5 text-center ring-1 ring-white/10 transition ")+(arr ? "opacity-40" : it.arrastavel===false ? "" : "cursor-grab hover:ring-white/30"), style:{boxShadow:"inset "+(p.compacto ? "4px" : "3px")+" 0 0 "+(p.compacto && p.corBarra ? p.corBarra(it, c) : c.cor)}},
     e("div",{onClick:p.onAbrir ? function(){ p.onAbrir(it, c); } : undefined, className:p.onAbrir ? "cursor-pointer" : ""}, p.card(it, c)),
     !p.semMover && e("select",{value:"", "aria-label":"Mover para", onChange:function(ev){ var para = ev.target.value; if(para) p.onMover(it, c.k, para); }, className:"h-7 w-full cursor-pointer rounded-md bg-black/30 px-1 text-center text-[11.5px] text-white/70 ring-1 ring-white/10"},
       e("option",{value:""}, "Mover para…"), cols.filter(function(x){ return x.k!==c.k && aceitaItem(x, it, c.k); }).map(function(x){ return e("option",{key:x.k, value:x.k}, x.titulo); })));
@@ -32,25 +35,27 @@ function Cartao(p){
 
 function Coluna(p){
   var c = p.coluna, st = useState(false), sobre = st[0], vm = useState(false), todos = vm[0];
-  var lim = c.limite || LIMITE, itens = todos ? c.itens : c.itens.slice(0, lim);
+  var lim = c.limite || LIMITE, itens = todos ? c.itens : c.itens.slice(0, lim), fina = p.recolherVazias && !c.itens.length && !p.arrastando;
   var aceita = p.arrastando ? aceitaItem(c, p.arrastando.item, p.arrastando.de) : c.aceita!==false;
   return e("section",{
       onDragOver:function(ev){ if(aceita && p.arrastando && p.arrastando.de!==c.k){ ev.preventDefault(); if(!sobre) st[1](true); } },
       onDragLeave:function(){ st[1](false); },
       onDrop:function(ev){ ev.preventDefault(); st[1](false); if(aceita && p.arrastando && p.arrastando.de!==c.k) p.onMover(p.arrastando.item, p.arrastando.de, c.k); p.setArrastando(null); },
-      className:"flex min-w-0 flex-col gap-2 rounded-xl bg-black/20 p-2 transition "+(sobre ? "ring-2" : "ring-1 ring-white/10"), style:sobre ? {boxShadow:"0 0 0 2px "+c.cor} : undefined},
-    e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-center", style:{background:c.cor+"33", boxShadow:"inset 0 0 0 1px "+c.cor+"88"}},
+      className:"flex min-w-0 flex-col "+(fina ? "items-center gap-2 px-0 py-2.5 " : p.compacto ? "gap-1.5 p-2.5 " : "gap-2 p-2 ")+"rounded-xl bg-black/20 transition "+(sobre ? "ring-2" : "ring-1 ring-white/10"), style:sobre ? {boxShadow:"0 0 0 2px "+c.cor} : fina ? {boxShadow:"inset 0 3px 0 "+c.cor} : undefined},
+    fina ? e("span",{className:"font-mono text-[13px]"}, "0") : null,
+    fina ? e("span",{title:c.titulo, className:"whitespace-nowrap text-[11px]", style:{writingMode:"vertical-rl", transform:"rotate(180deg)"}}, c.titulo) : null,
+    fina ? null : e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-center", style:{background:c.cor+"33", boxShadow:"inset 0 0 0 1px "+c.cor+"88"}},
       e("b",{className:"text-[13px] leading-tight"}, c.titulo),
       e("span",{className:"font-mono text-[12px] text-white/80"}, c.itens.length+" "+((p.unidade||["cartão","cartões"])[c.itens.length===1 ? 0 : 1])),
       c.dica && e("span",{className:"text-[10.5px] leading-tight text-white/60"}, c.dica)),
-    itens.length ? itens.map(function(it){ return e(Cartao,{key:it.id, item:it, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, semMover:p.semMover, setArrastando:p.setArrastando}); })
+    fina ? null : itens.length ? itens.map(function(it){ return e(Cartao,{key:it.id, item:it, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, semMover:p.semMover, compacto:p.compacto, corBarra:p.corBarra, setArrastando:p.setArrastando}); })
       : e("p",{className:"px-2 py-4 text-center text-[12.5px] text-white/50"}, p.vazio || "Nenhum cartão nesta etapa."),
-    !todos && c.itens.length>lim && e("button",{type:"button", onClick:function(){ vm[1](true); }, className:"rounded-lg bg-white/10 py-1.5 text-[12px] font-bold hover:bg-white/15"}, "Ver mais "+(c.itens.length-lim)));
+    !fina && !todos && c.itens.length>lim && e("button",{type:"button", onClick:function(){ vm[1](true); }, className:"h-8 rounded-lg bg-white/10 text-[13px] font-bold hover:bg-white/15"}, "Ver mais "+(c.itens.length-lim)));
 }
 
 function Kanban(p){
   var st = useState(null), arrastando = st[0], n = p.colunas.length;
-  return e("div",{className:"overflow-x-auto pb-1"}, e("div",{className:"grid items-start gap-2", style:{gridTemplateColumns:"repeat("+n+", minmax(14.5rem, 1fr))"}},
-    p.colunas.map(function(c){ return e(Coluna,{key:c.k, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, unidade:p.unidade, vazio:p.vazio, semMover:p.semMover, arrastando:arrastando, setArrastando:st[1]}); })));
+  return e("div",{className:"overflow-x-auto pb-1"}, e("div",{className:"grid items-start "+(p.compacto ? "gap-3" : "gap-2"), style:{gridTemplateColumns:p.recolherVazias ? p.colunas.map(function(c){ return !c.itens.length && !arrastando ? "3rem" : "minmax("+(p.compacto ? "16rem" : "14.5rem")+", 1fr)"; }).join(" ") : "repeat("+n+", minmax("+(p.compacto ? "18rem" : "14.5rem")+", 1fr))"}},
+    p.colunas.map(function(c){ return e(Coluna,{key:c.k, coluna:c, colunas:p.colunas, card:p.card, onMover:p.onMover, onAbrir:p.onAbrir, unidade:p.unidade, vazio:p.vazio, semMover:p.semMover, compacto:p.compacto, corBarra:p.corBarra, recolherVazias:p.recolherVazias, arrastando:arrastando, setArrastando:st[1]}); })));
 }
 export { Kanban };

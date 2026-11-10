@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Kits novos · 4 modelos de cartão</title>
+<style>
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ruim:#EF4444;--ok:#4CC38A;--at:#F2B544;--mut:#B8B5AC}
+*{box-sizing:border-box}body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.35 Inter,system-ui,sans-serif;padding:20px 24px 50px}
+h2{font-size:15px;margin:30px 0 4px;color:var(--ouro)}p.n{margin:0 0 10px;color:#D8D5CD;max-width:920px}
+.mock{border:1px dashed var(--fio2);border-radius:10px;padding:14px;background:#0B0C0F;max-width:1180px}
+.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+.col{border:1px solid var(--fio);border-radius:8px;background:rgba(21,23,27,.6);padding:10px;display:flex;flex-direction:column;gap:6px}
+.col.a{border-top:3px solid #7C6AE6}.col.b{border-top:3px solid #C79B2E}.col.c{border-top:3px solid #3B82F6}
+.ch{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px}.ch b{font-size:13px}.ch small{font-size:11px;color:var(--mut)}
+.cd{border:1px solid var(--fio2);border-radius:7px;background:var(--painel);position:relative}
+.r{color:var(--ruim)}.v{color:var(--ok)}.m{color:var(--mut)}.t{font-variant-numeric:tabular-nums}
+.tag{font-size:10.5px;border-radius:4px;padding:0 5px;background:rgba(242,181,68,.2);color:var(--at);font-weight:600;margin-left:6px}
+.dots{font-size:15px;line-height:1;color:var(--mut);padding:0 4px}
+.atual{padding:8px;text-align:center;display:flex;flex-direction:column;gap:3px;align-items:center}.atual b{font-size:13px}.atual span{font-size:11.5px}
+.atual .sel{margin-top:4px;height:32px;width:100%;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#D8D5CD}
+/* A */
+.A{padding:6px 10px;display:grid;gap:1px}.A .l1{display:flex;justify-content:space-between;gap:8px}.A .l1 b{font-size:13px}.A .l2{display:flex;justify-content:space-between;font-size:11px;color:var(--mut)}
+/* B */
+.B{padding:6px 8px 6px 12px;display:grid;gap:1px;overflow:hidden}.B::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}.B.at::before{background:var(--ruim)}.B.ok::before{background:var(--ok)}
+.B .l1{display:flex;justify-content:space-between;gap:8px;align-items:center}.B .l2{font-size:11px;color:var(--mut)}
+/* C */
+.C{height:30px;display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center;padding:0 10px}.C b{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden}.C .rp{font-size:11px;color:var(--mut)}
+/* D */
+.D{padding:6px 8px;display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:8px;align-items:center}
+.av{width:30px;height:30px;border-radius:50%;background:rgba(214,178,92,.18);border:1px solid rgba(214,178,92,.5);display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--ouro)}
+.D .l1{display:flex;justify-content:space-between;gap:6px}.D .l2{font-size:11px;color:var(--mut)}
+.go{width:26px;height:26px;border-radius:6px;border:1px solid var(--fio2);display:grid;place-items:center;font-size:12px;background:var(--painel2)}
+.nota{margin-top:14px;color:var(--mut);font-size:12px}
+</style></head><body>
+<h1 style="font-size:20px;margin:0 0 4px">Kits novos · 4 modelos de cartão</h1>
+<p class="n">Os cartões de hoje têm cerca de <b>112 px</b> de altura (5 linhas + o menu Mover para). Os 4 modelos abaixo têm de <b>30 a 50 px</b>: cabem de 2 a 3 vezes mais cartões na tela. As colunas também ficam <b>mais largas e com mais espaço entre elas</b> (3 colunas à vista, as outras rolam para o lado). O "Mover para…" sai do cartão: vai para o botão <b>⋯</b> (ou para a seta →). Nomes e números são de exemplo.</p>
+
+<h2>Hoje (para comparar)</h2>
+<div class="mock"><div class="cols">
+  <div class="col a"><div class="ch"><b>Liberado</b><small>108 cartões</small></div>
+    <div class="cd atual"><b>Alice Fernandes dos Santos</b><span class="m">Jéssica</span><span>Centro · Campo Magro</span><span class="m">Professora</span><span class="r t">35 dias (atrasada)</span><div class="sel">Mover para… <span>▾</span></div></div>
+    <div class="cd atual"><b>↻ Amanda Klostermann Rafael</b><span class="m">sem representante</span><span>Cajuru · Curitiba</span><span class="r t">22 dias (atrasada)</span><div class="sel">Mover para… <span>▾</span></div></div></div>
+</div></div>
+
+<h2>Modelo A · Duas linhas simples</h2>
+<p class="n">Linha 1: nome e dias na etapa. Linha 2: representante, bairro e cidade. Profissão sai do cartão (aparece ao abrir). Altura: ~46 px.</p>
+<div class="mock"><div class="cols">
+  <div class="col a"><div class="ch"><b>Liberado</b><small>108 cartões</small></div>
+    <div class="cd A"><div class="l1"><b>Alice Fernandes dos Santos</b><span class="r t">35 d</span></div><div class="l2"><span>Jéssica · Campo Magro, Curitiba</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>↻ Amanda Klostermann Rafael</b><span class="r t">22 d</span></div><div class="l2"><span>sem representante · Cajuru, Curitiba</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>Lyandra Cristine dos Santos <span class="tag">Expositor</span></b><span class="v t">3 d</span></div><div class="l2"><span>Jéssica · Boqueirão, Curitiba</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>Maria Jandira Santos da Costa</b><span class="r t">14 d</span></div><div class="l2"><span>Ana Cláudia · Capão Raso, Curitiba</span><span class="dots">⋯</span></div></div></div>
+  <div class="col b"><div class="ch"><b>Solicitado</b><small>55 cartões</small></div>
+    <div class="cd A"><div class="l1"><b>Margareth Moreira Kuttoche</b><span class="r t">8 d</span></div><div class="l2"><span>Jéssica · Vila Torres, Campo Largo</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>Stephanie Karoliny Nascimento</b><span class="r t">8 d</span></div><div class="l2"><span>Jéssica · Cidade Industrial, Curitiba</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>Rafaelia Costa Stella</b><span class="v t">2 d</span></div><div class="l2"><span>Jéssica · Centro, Curitiba</span><span class="dots">⋯</span></div></div></div>
+  <div class="col c"><div class="ch"><b>Bipado</b><small>24 cartões</small></div>
+    <div class="cd A"><div class="l1"><b>Gabriela Kerches Jorge</b><span class="r t">10 d</span></div><div class="l2"><span>Veridiana · Novo Mundo, Curitiba</span><span class="dots">⋯</span></div></div>
+    <div class="cd A"><div class="l1"><b>Gysiaine de Oliveira Veloso</b><span class="v t">1 d</span></div><div class="l2"><span>Ana Cláudia · Alto Boqueirão</span><span class="dots">⋯</span></div></div></div>
+</div></div>
+
+<h2>Modelo B · Barra de cor na lateral</h2>
+<p class="n">Igual ao A, mas o atraso aparece como uma <b>barra vermelha</b> na lateral (verde se está no prazo). Dá para ver os atrasados só de bater o olho. Altura: ~48 px.</p>
+<div class="mock"><div class="cols">
+  <div class="col a"><div class="ch"><b>Liberado</b><small>108 cartões</small></div>
+    <div class="cd B at"><div class="l1"><b>Alice Fernandes dos Santos</b><span class="t m">35 d <span class="dots">⋯</span></span></div><div class="l2">Jéssica · Campo Magro, Curitiba · Professora</div></div>
+    <div class="cd B at"><div class="l1"><b>↻ Amanda Klostermann Rafael</b><span class="t m">22 d <span class="dots">⋯</span></span></div><div class="l2">sem representante · Cajuru, Curitiba</div></div>
+    <div class="cd B ok"><div class="l1"><b>Lyandra Cristine dos Santos <span class="tag">Expositor</span></b><span class="t m">3 d <span class="dots">⋯</span></span></div><div class="l2">Jéssica · Boqueirão, Curitiba</div></div>
+    <div class="cd B at"><div class="l1"><b>Maria Jandira Santos da Costa</b><span class="t m">14 d <span class="dots">⋯</span></span></div><div class="l2">Ana Cláudia · Capão Raso, Curitiba</div></div></div>
+  <div class="col b"><div class="ch"><b>Solicitado</b><small>55 cartões</small></div>
+    <div class="cd B at"><div class="l1"><b>Margareth Moreira Kuttoche</b><span class="t m">8 d <span class="dots">⋯</span></span></div><div class="l2">Jéssica · Vila Torres, Campo Largo</div></div>
+    <div class="cd B at"><div class="l1"><b>Stephanie Karoliny Nascimento</b><span class="t m">8 d <span class="dots">⋯</span></span></div><div class="l2">Jéssica · Cidade Industrial, Curitiba</div></div>
+    <div class="cd B ok"><div class="l1"><b>Rafaelia Costa Stella</b><span class="t m">2 d <span class="dots">⋯</span></span></div><div class="l2">Jéssica · Centro, Curitiba</div></div></div>
+  <div class="col c"><div class="ch"><b>Bipado</b><small>24 cartões</small></div>
+    <div class="cd B at"><div class="l1"><b>Gabriela Kerches Jorge</b><span class="t m">10 d <span class="dots">⋯</span></span></div><div class="l2">Veridiana · Novo Mundo, Curitiba</div></div>
+    <div class="cd B ok"><div class="l1"><b>Gysiaine de Oliveira Veloso</b><span class="t m">1 d <span class="dots">⋯</span></span></div><div class="l2">Ana Cláudia · Alto Boqueirão</div></div></div>
+</div></div>
+
+<h2>Modelo C · Uma linha só (como linha de lista)</h2>
+<p class="n">O mais compacto: nome e representante na mesma linha, dias à direita. Bairro e cidade aparecem ao passar o mouse e ao abrir o cartão. Altura: ~30 px (cabem uns 20 cartões por coluna na tela).</p>
+<div class="mock"><div class="cols">
+  <div class="col a"><div class="ch"><b>Liberado</b><small>108 cartões</small></div>
+    <div class="cd C"><b>Alice Fernandes dos Santos</b><span class="rp">Jéssica</span><span class="r t">35 d</span></div>
+    <div class="cd C"><b>↻ Amanda Klostermann Rafael</b><span class="rp">sem rep.</span><span class="r t">22 d</span></div>
+    <div class="cd C"><b>Lyandra Cristine dos Santos <span class="tag">Exp.</span></b><span class="rp">Jéssica</span><span class="v t">3 d</span></div>
+    <div class="cd C"><b>Maria Jandira Santos da Costa</b><span class="rp">Ana Cláudia</span><span class="r t">14 d</span></div>
+    <div class="cd C"><b>Gabriela Gobbi da Silva</b><span class="rp">Viviane</span><span class="r t">253 d</span></div></div>
+  <div class="col b"><div class="ch"><b>Solicitado</b><small>55 cartões</small></div>
+    <div class="cd C"><b>Margareth Moreira Kuttoche</b><span class="rp">Jéssica</span><span class="r t">8 d</span></div>
+    <div class="cd C"><b>Stephanie Karoliny Nascimento</b><span class="rp">Jéssica</span><span class="r t">8 d</span></div>
+    <div class="cd C"><b>Rafaelia Costa Stella</b><span class="rp">Jéssica</span><span class="v t">2 d</span></div></div>
+  <div class="col c"><div class="ch"><b>Bipado</b><small>24 cartões</small></div>
+    <div class="cd C"><b>Gabriela Kerches Jorge</b><span class="rp">Veridiana</span><span class="r t">10 d</span></div>
+    <div class="cd C"><b>Gysiaine de Oliveira Veloso</b><span class="rp">Ana Cláudia</span><span class="v t">1 d</span></div></div>
+</div></div>
+
+<h2>Modelo D · Iniciais + seta de avançar</h2>
+<p class="n">Círculo com as iniciais da revendedora, duas linhas e uma <b>seta →</b> que avança o cartão para a próxima etapa com um clique (o menu completo fica no ⋯). Altura: ~46 px.</p>
+<div class="mock"><div class="cols">
+  <div class="col a"><div class="ch"><b>Liberado</b><small>108 cartões</small></div>
+    <div class="cd D"><div class="av">AF</div><div><div class="l1"><b>Alice Fernandes dos Santos</b><span class="r t">35 d</span></div><div class="l2">Jéssica · Campo Magro, Curitiba</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">AK</div><div><div class="l1"><b>↻ Amanda Klostermann Rafael</b><span class="r t">22 d</span></div><div class="l2">sem representante · Cajuru, Curitiba</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">LC</div><div><div class="l1"><b>Lyandra Cristine dos Santos</b><span class="v t">3 d</span></div><div class="l2">Jéssica · Boqueirão <span class="tag" style="margin-left:2px">Exp.</span></div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">MJ</div><div><div class="l1"><b>Maria Jandira Santos da Costa</b><span class="r t">14 d</span></div><div class="l2">Ana Cláudia · Capão Raso, Curitiba</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div></div>
+  <div class="col b"><div class="ch"><b>Solicitado</b><small>55 cartões</small></div>
+    <div class="cd D"><div class="av">MM</div><div><div class="l1"><b>Margareth Moreira Kuttoche</b><span class="r t">8 d</span></div><div class="l2">Jéssica · Vila Torres, Campo Largo</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">SK</div><div><div class="l1"><b>Stephanie Karoliny Nascimento</b><span class="r t">8 d</span></div><div class="l2">Jéssica · Cidade Industrial</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">RC</div><div><div class="l1"><b>Rafaelia Costa Stella</b><span class="v t">2 d</span></div><div class="l2">Jéssica · Centro, Curitiba</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div></div>
+  <div class="col c"><div class="ch"><b>Bipado</b><small>24 cartões</small></div>
+    <div class="cd D"><div class="av">GK</div><div><div class="l1"><b>Gabriela Kerches Jorge</b><span class="r t">10 d</span></div><div class="l2">Veridiana · Novo Mundo, Curitiba</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div>
+    <div class="cd D"><div class="av">GO</div><div><div class="l1"><b>Gysiaine de Oliveira Veloso</b><span class="v t">1 d</span></div><div class="l2">Ana Cláudia · Alto Boqueirão</div></div><div style="display:flex;gap:4px"><span class="go">→</span><span class="go">⋯</span></div></div></div>
+</div></div>
+
+<p class="nota">Altura de cada cartão: hoje ~112 px · A ~46 px · B ~48 px · C ~30 px · D ~46 px. Responda com a letra (A, B, C ou D) ou misture ("lateral da B com a seta da D"). Se o nome comprido não couber em uma linha, ele quebra para a segunda (nada de "…").</p>
+</body></html>

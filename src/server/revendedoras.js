@@ -260,7 +260,7 @@ export async function listaAgenda({ forcar = false } = {}) {
     const iso = (d) => d.toISOString().slice(0, 19);
     const dia = (x) => String(x || "").slice(0, 10);
     const limite = iso(new Date(hoje.getTime() + DIAS_AGENDA * 86400000));
-    const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc", "afi_obs", "afi_codagendamento"];
+    const campos = ["afi_codigo", "afi_cliente", "afi_vendedor", "afi_data", "afi_xreposicao", "afi_prevdevol", "afi_qtditens", "afi_valormerc", "afi_obs", "afi_codagendamento", "afi_dataacerto"];
     // AGENDADO DE VERDADE (Marcus, 02/11/2026): o código de agendamento da condicional (afi_codagendamento) fica gravado para sempre, mesmo depois que a data mudou (ex.: atividade de 21/08 ainda ligada a um acerto de 30/11). Quem está agendado é quem tem
     // uma atividade de ACERTOS PENDENTE na agenda da DevMaster (dmaik) com data marcada de hoje em diante; a data que vale é a da atividade.
     const [cond, vend, atividades] = await Promise.all([todasAsPaginas("dmafi", { filtro: { afi_status: "A", afi_prevdevol: { lte: limite } }, campos }), vendedores(),
@@ -283,7 +283,8 @@ export async function listaAgenda({ forcar = false } = {}) {
         cod, nome: nomeNormal(p.aam_nome), celular: p.aam_celular || p.aam_whatsapp || "", cidade: m.nome || "", uf: m.uf || String(p.aam_estado || "").toUpperCase(),
         repCod: rep, representante: rep ? (vend.get(rep) || rep) : "Sem representante",
         prev: base[0] ? dia(base[0].afi_prevdevol) : "", emissao: kp ? dia(kp.afi_data) : "",
-        agendaEm: agendadaEm.get(cod) || "",
+        // 05/11/2026 (Ana Maria): o Agendamento marca nas DUAS. A Agenda monta as listagens, então vale primeiro; sem ela, vale a Data Acerto da condicional (de hoje em diante), que é o dia que a representante pediu o kit no grupo de encomendas.
+        agendaEm: agendadaEm.get(cod) || lista.map((x) => dia(x.afi_dataacerto)).filter((d) => d && d >= dia(iso(hoje))).sort()[0] || "",
         conds: lista.map((x) => ({ n: String(x.afi_codigo || "").trim(), t: tipos.get(x.afi_codigo), e: dia(x.afi_data), d: dia(x.afi_prevdevol), p: Number(x.afi_qtditens) || 0, v: Number(x.afi_valormerc) || 0, vd: String(x.afi_vendedor || "").trim() })),
         kits: lista.length, pecas: lista.reduce((s, x) => s + (Number(x.afi_qtditens) || 0), 0), valor: Math.round(lista.reduce((s, x) => s + (Number(x.afi_valormerc) || 0), 0) * 100) / 100,
         ...casosDe(lista, dia, iso(hoje).slice(0, 10)),

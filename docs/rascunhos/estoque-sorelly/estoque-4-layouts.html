@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Estoque Sorelly · 4 layouts em tabelas</title>
+<style>
+  :root{ --bg:#0f0f11; --card:#17181b; --fio:#2a2c31; --cab:#1c1d21; --txt:#f4f4f5; --ouro:#E8B84B; --azul:#5B8DEF; --roxo:#A78BFA; --tur:#2DD4BF; --verde:#4ADE80; --verm:#F87171; }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--txt);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif;padding:20px 16px 60px}
+  h1{font-size:18px;text-align:center;margin-bottom:4px}.sub{text-align:center;margin-bottom:22px}
+  .opcao{max-width:1240px;margin:0 auto 34px}
+  .rot{display:flex;align-items:center;gap:10px;margin-bottom:8px}.rot b{background:var(--ouro);color:#1a1306;border-radius:6px;padding:2px 10px}
+  .jan{background:var(--card);border:1px solid var(--fio);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:12px}
+  h3{font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:5px}
+  .abas{display:flex;gap:4px;border-bottom:1px solid var(--fio)}.abas span{padding:6px 12px}.abas .on{color:var(--ouro);font-weight:600;border-bottom:2px solid var(--ouro)}
+  .aviso{border:1px solid #6b5316;background:#2a2210;border-radius:8px;padding:6px 12px;text-align:center}
+  .tw{overflow-x:auto;border:1px solid var(--fio);border-radius:8px}
+  table{border-collapse:collapse;width:100%;min-width:780px}
+  th{background:var(--cab);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600;height:30px;padding:0 8px;border-left:1px solid var(--fio);white-space:nowrap}
+  td{height:32px;padding:0 8px;border-top:1px solid var(--fio);border-left:1px solid var(--fio);text-align:center;white-space:nowrap;font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{border-left:0}
+  tr.tot td{background:var(--cab);font-weight:700}
+  tr.hoje td{background:#1b2230}
+  .azul{box-shadow:inset 0 3px 0 var(--azul);background:#5B8DEF40}.dour{box-shadow:inset 0 3px 0 var(--ouro);background:#E8B84B40}.rox{box-shadow:inset 0 3px 0 var(--roxo);background:#A78BFA40}.turq{box-shadow:inset 0 3px 0 var(--tur);background:#2DD4BF40}
+  .up{color:var(--verde)}.dn{color:var(--verm)}.nd{opacity:.6}
+  .duas{display:grid;grid-template-columns:1fr 1fr;gap:12px}.duas table{min-width:0}
+  .nota{font-size:11px}
+  @media(max-width:900px){.duas{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<h1>Estoque Sorelly · 4 layouts em tabelas</h1>
+<p class="sub">Dados reais do admin antigo (fotos de 15/04 a 01/10) e a linha "Hoje" calculada agora na DevMaster (só o lado das revendedoras). Verde = estoque aumentou, vermelho = diminuiu.</p>
+
+<script>
+// ───── dados (reais) ─────
+var P=[ // foto do estoque
+ {d:"15/04",q:1850,ip:155265,ic:1223917.06,iv:9831312.86,rp:220706,rc:2468467.73,rv:19442892.00,est:1},
+ {d:"01/05",q:1878,ip:163520,ic:1342230.58,iv:10703679.00,rp:209329,rc:2334470.21,rv:18308613.00},
+ {d:"01/06",q:1907,ip:171179,ic:1442760.66,iv:11200000.00,rp:213626,rc:2382000.00,rv:18503735.00,est:1},
+ {d:"01/07",q:1826,ip:169035,ic:1517490.40,iv:11100000.00,rp:220217,rc:2456000.00,rv:18731722.00,est:1},
+ {d:"01/08",q:1946,ip:161757,ic:1407201.14,iv:11014300.10,rp:232094,rc:3045733.00,rv:20263361.00,est:1},
+ {d:"01/09",q:1946,ip:161757,ic:1407201.14,iv:11014300.10,rp:232094,rc:3045733.00,rv:20263361.00,cop:1},
+ {d:"01/10",q:2024,ip:143049,ic:1616583.87,iv:12388532.10,rp:225578,rc:2521208.06,rv:19123221.00}
+];
+var HOJE={d:"09/11 (hoje)",q:2099,rp:246696,rv:20731813.00,cond:2961};   // condicionais abertos, devolução até 31/12/2026 (DevMaster)
+var F=[ // fechamento do mês
+ {m:"jan",v:2527330.59,r:1401103.26},{m:"fev",v:1829615.14,r:1016707.43},{m:"mar",v:2129250.02,r:1186624.04},{m:"abr",v:2341501.15,r:1265829.17},
+ {m:"mai",v:2577440.48,r:1428883.21},{m:"jun",v:2722091.60,r:1509075.00},{m:"jul",v:2330714.65,r:1260794.83,cv:241571.08,bv:1639937.53,bc:45100.51}
+];
+function n(x){return x==null?"—":x.toLocaleString("pt-BR")}
+function r(x){return x==null?"—":"R$ "+x.toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2})}
+function pc(x){return x==null?"—":x.toFixed(1).replace(".",",")+"%"}
+function cls(v){return v>0?"up":v<0?"dn":""}
+function sgn(f,v){return v==null?"—":'<span class="'+cls(v)+'">'+(v>0?"+":"")+f(v)+"</span>"}
+P.forEach(function(p,i){p.tp=p.ip+p.rp;p.tc=p.ic+p.rc;p.tv=p.iv+p.rv;p.mk=p.tv/p.tc;p.rec=p.tv*0.55;p.mg=p.rec-p.tc;var a=P[i-1];p.dp=a?p.tp-a.tp:null;p.dc=a?p.tc-a.tc:null;p.dv=a?p.tv-a.tv:null;p.dpc=a?(p.tc/a.tc-1)*100:null});
+function tabela(cab,linhas,extra){return '<div class="tw"><table><thead><tr>'+cab+'</tr></thead><tbody>'+linhas+'</tbody></table></div>'}
+</script>
+
+<!-- ═════ A ═════ -->
+<section class="opcao"><div class="rot"><b>A</b><span>Planilha mensal: uma linha por foto, tudo lado a lado (interno · revendedoras · total · variação)</span></div>
+<div class="jan"><div class="abas"><span class="on">Resumo geral</span><span>Preenchimento</span><span>Configurador</span></div>
+<div class="aviso">Falta a foto do estoque de nov/2026 · Falta o fechamento de out/2026</div>
+<div><h3>Posição do estoque por foto</h3><div id="A1"></div><p class="nota">Linha azul = hoje, calculada na DevMaster (condicionais abertos com devolução até 31/12/2026). Linhas esmaecidas = valores estimados no admin antigo.</p></div>
+<div><h3>Fechamento do mês</h3><div id="A2"></div></div></div></section>
+
+<!-- ═════ B ═════ -->
+<section class="opcao"><div class="rot"><b>B</b><span>Dois blocos: Interno e Com revendedoras, cada um com a sua tabela e a sua cor; total embaixo</span></div>
+<div class="jan"><div class="abas"><span class="on">Resumo geral</span><span>Preenchimento</span><span>Configurador</span></div>
+<div class="duas"><div><h3>Interno (Sorelly)</h3><div id="B1"></div></div><div><h3>Com revendedoras</h3><div id="B2"></div></div></div>
+<div><h3>Total (interno + revendedoras)</h3><div id="B3"></div></div></div></section>
+
+<!-- ═════ C ═════ -->
+<section class="opcao"><div class="rot"><b>C</b><span>Posição de hoje contra 1 mês e 3 meses atrás + série curta</span></div>
+<div class="jan"><div class="abas"><span class="on">Resumo geral</span><span>Preenchimento</span><span>Configurador</span></div>
+<div><h3>Posição atual e variação</h3><div id="C1"></div></div>
+<div><h3>Série mensal (peças, custo, venda, markup)</h3><div id="C2"></div></div></div></section>
+
+<!-- ═════ D ═════ -->
+<section class="opcao"><div class="rot"><b>D</b><span>Planilha invertida: indicadores nas linhas, meses nas colunas (como uma planilha de controle)</span></div>
+<div class="jan"><div class="abas"><span class="on">Resumo geral</span><span>Preenchimento</span><span>Configurador</span></div>
+<div><h3>Indicadores por mês</h3><div id="D1"></div></div></div></section>
+
+<script>
+var u=P[P.length-1], H=HOJE;
+// A1
+var cabA='<th rowspan=2>Foto</th><th rowspan=2>Revend.</th><th colspan=3 class="azul">Interno</th><th colspan=3 class="dour">Com revendedoras</th><th colspan=4 class="turq">Total</th><th colspan=2 class="rox">Variação (custo)</th>'
+ +'</tr><tr><th class="azul">Peças</th><th class="azul">Custo</th><th class="azul">Venda</th><th class="dour">Peças</th><th class="dour">Custo</th><th class="dour">Venda</th><th class="turq">Peças</th><th class="turq">Custo</th><th class="turq">Venda</th><th class="turq">Markup</th><th class="rox">R$</th><th class="rox">%</th>';
+var lA=P.map(function(p){return '<tr class="'+(p.est?"nd":"")+'"><td>'+p.d+'</td><td>'+n(p.q)+'</td><td>'+n(p.ip)+'</td><td>'+r(p.ic)+'</td><td>'+r(p.iv)+'</td><td>'+n(p.rp)+'</td><td>'+r(p.rc)+'</td><td>'+r(p.rv)+'</td><td><b>'+n(p.tp)+'</b></td><td><b>'+r(p.tc)+'</b></td><td><b>'+r(p.tv)+'</b></td><td>'+p.mk.toFixed(2).replace(".",",")+'×</td><td>'+sgn(r,p.dc)+'</td><td>'+sgn(pc,p.dpc)+'</td></tr>'}).join('')
+ +'<tr class="hoje"><td>'+H.d+'</td><td>'+n(H.q)+'</td><td colspan=3>falta o relatório do estoque interno</td><td>'+n(H.rp)+'</td><td>a calcular</td><td>'+r(H.rv)+'</td><td colspan=4>—</td><td colspan=2>—</td></tr>';
+document.getElementById("A1").innerHTML=tabela(cabA,lA);
+var cabA2='<th>Mês</th><th class="azul">Vendido na ponta</th><th class="azul">Recebido</th><th class="dour">Custo do vendido</th><th class="dour">Brindes (valor)</th><th class="dour">Brindes (custo)</th><th class="turq">Saída (vendido + brindes)</th>';
+var lA2=F.map(function(f){return '<tr><td>'+f.m+'/26</td><td>'+r(f.v)+'</td><td>'+r(f.r)+'</td><td>'+r(f.cv)+'</td><td>'+r(f.bv)+'</td><td>'+r(f.bc)+'</td><td>'+(f.bv!=null?'<b>'+r(f.v+f.bv)+'</b>':'—')+'</td></tr>'}).join('');
+document.getElementById("A2").innerHTML=tabela(cabA2,lA2);
+// B
+document.getElementById("B1").innerHTML=tabela('<th>Foto</th><th>Peças</th><th>Custo</th><th>Venda</th><th>Markup</th>',P.map(function(p){return '<tr class="'+(p.est?"nd":"")+'"><td>'+p.d+'</td><td>'+n(p.ip)+'</td><td>'+r(p.ic)+'</td><td>'+r(p.iv)+'</td><td>'+(p.iv/p.ic).toFixed(2).replace(".",",")+'×</td></tr>'}).join(''));
+document.getElementById("B2").innerHTML=tabela('<th>Foto</th><th>Revend.</th><th>Peças</th><th>Custo</th><th>Venda</th>',P.map(function(p){return '<tr class="'+(p.est?"nd":"")+'"><td>'+p.d+'</td><td>'+n(p.q)+'</td><td>'+n(p.rp)+'</td><td>'+r(p.rc)+'</td><td>'+r(p.rv)+'</td></tr>'}).join('')+'<tr class="hoje"><td>'+H.d+'</td><td>'+n(H.q)+'</td><td>'+n(H.rp)+'</td><td>a calcular</td><td>'+r(H.rv)+'</td></tr>');
+document.getElementById("B3").innerHTML=tabela('<th>Foto</th><th>Peças</th><th>Δ peças</th><th>Custo</th><th>Δ custo</th><th>Venda</th><th>Recebimento (55%)</th><th>Margem</th><th>Markup</th>',P.map(function(p){return '<tr class="'+(p.est?"nd":"")+'"><td>'+p.d+'</td><td>'+n(p.tp)+'</td><td>'+sgn(n,p.dp)+'</td><td>'+r(p.tc)+'</td><td>'+sgn(r,p.dc)+'</td><td>'+r(p.tv)+'</td><td>'+r(p.rec)+'</td><td>'+r(p.mg)+'</td><td>'+p.mk.toFixed(2).replace(".",",")+'×</td></tr>'}).join(''));
+// C
+var p3=P[P.length-4]||P[0], p1=P[P.length-2];
+function lin(nome,hoje,m1,m3,f){return '<tr><td><b>'+nome+'</b></td><td>'+f(hoje)+'</td><td>'+f(m1)+'</td><td>'+sgn(f,hoje==null||m1==null?null:hoje-m1)+'</td><td>'+f(m3)+'</td><td>'+sgn(f,hoje==null||m3==null?null:hoje-m3)+'</td></tr>'}
+document.getElementById("C1").innerHTML=tabela('<th>Item</th><th class="azul">Última foto (01/10)</th><th class="dour">Foto de 01/09</th><th class="dour">Δ</th><th class="rox">Foto de 01/07</th><th class="rox">Δ</th>',
+ lin("Revendedoras",u.q,p1.q,p3.q,n)+lin("Peças interno",u.ip,p1.ip,p3.ip,n)+lin("Custo interno",u.ic,p1.ic,p3.ic,r)+lin("Venda interno",u.iv,p1.iv,p3.iv,r)+lin("Peças com revendedoras",u.rp,p1.rp,p3.rp,n)+lin("Custo com revendedoras",u.rc,p1.rc,p3.rc,r)+lin("Venda com revendedoras",u.rv,p1.rv,p3.rv,r)
+ +'<tr class="tot"><td>Total (custo)</td><td>'+r(u.tc)+'</td><td>'+r(p1.tc)+'</td><td>'+sgn(r,u.tc-p1.tc)+'</td><td>'+r(p3.tc)+'</td><td>'+sgn(r,u.tc-p3.tc)+'</td></tr>');
+document.getElementById("C2").innerHTML=tabela('<th>Foto</th><th>Peças</th><th>Custo</th><th>Venda</th><th>Markup</th><th>Δ custo</th>',P.map(function(p){return '<tr class="'+(p.est?"nd":"")+'"><td>'+p.d+'</td><td>'+n(p.tp)+'</td><td>'+r(p.tc)+'</td><td>'+r(p.tv)+'</td><td>'+p.mk.toFixed(2).replace(".",",")+'×</td><td>'+sgn(pc,p.dpc)+'</td></tr>'}).join(''));
+// D
+var cabD='<th>Indicador</th>'+P.map(function(p){return '<th>'+p.d+'</th>'}).join('')+'<th class="rox">Última variação</th>';
+function lD(nome,k,f,cor){var v=P.map(function(p){return p[k]});return '<tr><td><b>'+nome+'</b></td>'+v.map(function(x,i){return '<td class="'+(P[i].est?"nd":"")+'">'+f(x)+'</td>'}).join('')+'<td>'+sgn(f,v[v.length-1]-v[v.length-2])+'</td></tr>'}
+function secao(t,c){return '<tr><td colspan="'+(P.length+2)+'" class="'+c+'" style="text-align:left;font-weight:700;height:26px;font-size:11px;text-transform:uppercase;letter-spacing:.06em">'+t+'</td></tr>'}
+document.getElementById("D1").innerHTML=tabela(cabD,
+ secao("Revendedoras","turq")+lD("Revendedoras ativas","q",n)
+ +secao("Interno","azul")+lD("Peças","ip",n)+lD("Custo","ic",r)+lD("Preço de venda","iv",r)
+ +secao("Com revendedoras","dour")+lD("Peças","rp",n)+lD("Custo","rc",r)+lD("Preço de venda","rv",r)
+ +secao("Total","rox")+lD("Peças","tp",n)+lD("Custo","tc",r)+lD("Preço de venda","tv",r)+lD("Recebimento esperado (55%)","rec",r)+lD("Margem Sorelly","mg",r)
+ +'<tr><td><b>Markup</b></td>'+P.map(function(p){return '<td>'+p.mk.toFixed(2).replace(".",",")+'×</td>'}).join('')+'<td>—</td></tr>');
+</script>
+</body>
+</html>

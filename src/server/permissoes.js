@@ -11,13 +11,20 @@ export const SETORES_DO_MODULO = {
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
   er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)
-  pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem"], cpc: ["pecas"],
+  pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],
+  fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
+  tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
+  es: ["financeiro"],   // Estoque Sorelly (Financeiro, 09/11/2026): posição mensal do estoque de peças, números altos; só Financeiro e Diretoria
   pfmes: ["financeiro"],   // resumo do mês dos fornecedores (planilha Pag Fornecedores, RESUMO MÊS): gravado por scripts/planilha-fornecedores.mjs, lido pelo Direcionar Pix (28/10/2026)
   agrev: ["agendamento"],   // alterações da Agenda de revendedoras (troca de representante, data do acerto, observação) feitas pela Ana Maria enquanto a DevMaster ainda manda (29/10/2026)
   ri: ["agendamento"],   // revendedoras do atendimento interno (lista, contatos e agenda da Tamara): Agendamento e Diretoria (28/10/2026)
   chathor: ["*"],   // horário de trabalho de cada colaborador para a faixa do alto da conversa do SorellyChat (só nome, entrada, saída e dias; sem salário nem CPF)
+  kndados: ["kitsnovos", "cadastro"],   // planilha de kits novos da Michele (03/11/2026): dados reais só no servidor, nunca no Git
+  lst: ["*"],   // listagens de retirada e os kits delas (05/11/2026, Marcus): a Montagem, a Bipagem, as Condicionais e as representantes veem a MESMA listagem em qualquer aparelho. Dados reais só no servidor, nunca no Git.
+  int: ["*"],   // atendimentos do Atendimento interno (10/11/2026, Marcus): quem atende e quem acompanha veem o mesmo atendimento em andamento; uma chave por atendimento
+  pag: ["*"],   // pedidos de conta (09/11/2026, Marcus): o atendimento interno e as representantes ENVIAM, e TODO o Financeiro recebe na fila do Direcionar; uma chave por pedido
   kn: ["*"],   // kits novos direcionados pela Michele às representantes (29/10/2026): todo mundo logado lê, para o kit chegar no app da representante em qualquer aparelho
   mel: ["*"],   // solicitações de melhorias (28/10/2026): todo funcionário lê e envia; quem responde (Diretoria e Desenvolvimento) é regra da tela
   inicio: ["*"],   // comunicados da página inicial (27/10/2026): todo mundo logado lê; quem publica é a Diretoria (regra da tela)

@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/automatico/dia",
+      "schedule": "0 13 * * *"
+    },
+    {
+      "path": "/api/automatico/dia",
+      "schedule": "0 17 * * *"
+    },
+    {
+      "path": "/api/automatico/fotos-dm",
+      "schedule": "*/10 * * * *"
+    }
+  ]
+}

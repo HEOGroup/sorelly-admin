@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketing · Fotos de catálogo · 4 layouts</title>
+<style>
+  :root{
+    --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c;
+    --texto:#ffffff; --ouro:#E8B84B; --ouro-esc:#1a1306; --ok:#4ADE80; --alerta:#FBBF24; --ruim:#EF4444;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:var(--texto);font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}
+  .sub{margin:0 0 14px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section.lay{max-width:1240px;margin:0 auto 46px}
+  .tag{display:flex;align-items:baseline;gap:10px;margin-bottom:10px;border-bottom:1px solid var(--linha);padding-bottom:8px}
+  .tag b{font-size:15px}
+  .menu{display:flex;gap:6px;margin-bottom:10px}
+  .menu span{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha);border-radius:8px}
+  .menu span.at{border-color:var(--ouro);color:var(--ouro)}
+  .head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .head h2{margin:0;font-size:16px}
+  .btn{height:32px;display:inline-flex;align-items:center;padding:0 14px;border-radius:8px;border:1px solid var(--linha2);background:var(--bloco);color:#fff;font:inherit;cursor:pointer}
+  .btn.p{background:var(--ouro);color:var(--ouro-esc);border-color:var(--ouro);font-weight:600}
+  .seg{display:inline-flex;border:1px solid var(--linha2);border-radius:8px;overflow:hidden}
+  .seg button{height:30px;padding:0 14px;background:none;border:0;color:#fff;font:inherit;cursor:pointer;border-right:1px solid var(--linha2)}
+  .seg button:last-child{border-right:0}
+  .seg button.at{background:var(--ouro);color:var(--ouro-esc);font-weight:600}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .bloco > h3{margin:0;height:30px;display:flex;align-items:center;justify-content:center;background:var(--bloco2);border-bottom:1px solid var(--linha);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .resumos{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:10px;margin-bottom:10px}
+  .li{display:grid;grid-template-columns:1.6fr 1fr 1fr;align-items:center;min-height:30px;border-bottom:1px solid var(--linha);text-align:center;font-variant-numeric:tabular-nums}
+  .li:last-child{border-bottom:0}
+  .li.tt{background:var(--bloco2);font-weight:600}
+  .li > *{padding:0 8px;white-space:nowrap}
+  .li.c4{grid-template-columns:1.6fr 1fr 1fr 1fr}
+  .cab{background:var(--bloco2);font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;min-height:28px}
+  .filtros{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px;margin-bottom:10px}
+  .filtros label{display:flex;flex-direction:column;gap:4px;font-size:11px;text-transform:uppercase;letter-spacing:.05em;text-align:center}
+  .filtros select,.filtros input{height:32px;background:var(--fundo);color:#fff;border:1px solid var(--linha2);border-radius:8px;padding:0 10px;font:13px Inter,system-ui,sans-serif;text-align:center}
+  .rol{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;table-layout:fixed;min-width:1320px}
+  th,td{white-space:nowrap;text-align:center;padding:0 10px;font-variant-numeric:tabular-nums;border:1px solid var(--linha)}
+  th{height:30px;background:#1c1d21;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  td{height:32px}
+  tr.total td{background:#1c1d21;font-weight:700}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)}
+  .rodape{padding:8px 12px;border-top:1px solid var(--linha);text-align:center}
+  .aviso{margin:0 0 10px;padding:8px 12px;border:1px dashed var(--linha2);border-radius:8px;text-align:center}
+  /* kanban */
+  .kan{display:grid;grid-template-columns:repeat(4,minmax(220px,1fr));gap:10px;overflow-x:auto}
+  .col{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;border-top:3px solid var(--cor)}
+  .col > .t{padding:8px 10px;border-bottom:1px solid var(--linha);text-align:center}
+  .col > .t b{display:block}
+  .cards{padding:8px;display:flex;flex-direction:column;gap:8px}
+  .card{border:1px solid var(--linha2);border-radius:8px;background:var(--bloco2);overflow:hidden}
+  .card .fx{display:flex;justify-content:space-between;padding:4px 10px;background:var(--fundo);border-bottom:1px solid var(--linha);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+  .card .co{padding:8px 10px;text-align:center;display:flex;flex-direction:column;gap:4px}
+  .card .co b{font-size:13px}
+  .card .bt{margin:0 10px 10px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:8px;border:1px solid var(--linha2);background:var(--bloco);cursor:pointer}
+  .card .bt.ouro{background:var(--ouro);color:var(--ouro-esc);border-color:var(--ouro);font-weight:600}
+  /* pessoas */
+  .pess{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:10px}
+  .pessoa > .t{padding:10px;text-align:center;border-bottom:1px solid var(--linha)}
+  .pessoa .barra{height:8px;margin:8px 12px 0;background:var(--linha);border-radius:4px;overflow:hidden}
+  .pessoa .barra i{display:block;height:100%;background:var(--ouro)}
+  .fil{display:grid;grid-template-columns:1.2fr 1fr 1fr 1fr;align-items:center;min-height:32px;border-bottom:1px solid var(--linha);text-align:center}
+  .fil:last-child{border-bottom:0}
+  .fil > *{border-left:1px solid var(--linha);height:32px;display:flex;align-items:center;justify-content:center}
+  .fil > *:first-child{border-left:0}
+  .fil .x{cursor:pointer}
+  .abas{display:flex;gap:6px;margin-bottom:10px;border-bottom:1px solid var(--linha)}
+  .abas button{height:32px;padding:0 16px;background:none;border:0;border-bottom:2px solid transparent;color:#fff;font:inherit;cursor:pointer}
+  .abas button.at{border-bottom-color:var(--ouro);color:var(--ouro)}
+  .painel{display:none} .painel.at{display:block}
+  .nota{max-width:1240px;margin:0 auto;border-top:1px solid var(--linha);padding-top:14px}
+  .nota li{margin:4px 0}
+</style>
+</head>
+<body>
+
+<div style="max-width:1240px;margin:0 auto">
+  <h1>Marketing › Fotos de catálogo · 4 layouts</h1>
+  <p class="sub">Todos os números são EXEMPLO, exceto os totais e as categorias, que vêm da planilha "Fotos App Sorelly" (17.342 códigos). Tempos médios e produção do dia são inventados para mostrar o desenho. Base: padrão do Agendamento e do Financeiro (Layout D de tabelas: sem dourado na tabela, nada quebra, tudo centralizado).</p>
+  <div class="nav"><a href="#A">A · Planilha com resumos</a><a href="#B">B · Quadro de etapas</a><a href="#C">C · Fila por pessoa</a><a href="#D">D · Abas</a></div>
+</div>
+
+<!-- ========================= A ========================= -->
+<section class="lay" id="A">
+  <div class="tag"><b>A · Planilha com blocos de resumo em cima</b><span>Parece a planilha de hoje, com filtros e relatórios escritos em listas. Uma tela só.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Importar da planilha</button><button class="btn p">Lançar código</button></div></div>
+
+  <div class="resumos">
+    <div class="bloco"><h3>Hoje · 10/11/2026</h3>
+      <div class="li cab"><span>Etapa</span><span>Quantidade</span><span>Meta</span></div>
+      <div class="li"><span>Códigos cadastrados</span><b>64</b><span>—</span></div>
+      <div class="li"><span>Fotografados</span><b>38</b><span>64</span></div>
+      <div class="li"><span>Editados</span><b>21</b><span>64</span></div>
+      <div class="li"><span>Na DevMaster</span><b>14</b><span>64</span></div>
+      <div class="li tt"><span>Novos sem foto</span><b class="ruim">26</b><span>0</span></div>
+    </div>
+    <div class="bloco"><h3>Tempo médio por código</h3>
+      <div class="li cab"><span>Etapa</span><span>Hoje</span><span>Mês</span></div>
+      <div class="li"><span>Foto</span><b>4 min</b><span>5 min</span></div>
+      <div class="li"><span>Edição</span><b>7 min</b><span>6 min</span></div>
+      <div class="li"><span>Subir na DevMaster</span><b>2 min</b><span>2 min</span></div>
+      <div class="li tt"><span>Total por código</span><b>13 min</b><span>13 min</span></div>
+    </div>
+    <div class="bloco"><h3>Progresso por categoria (códigos antigos)</h3>
+      <div class="li cab"><span>Categoria</span><span>No sistema</span><span>Total</span></div>
+      <div class="li"><span>Brincos</span><b>2.427</b><span>4.715</span></div>
+      <div class="li"><span>Colares</span><b>1.344</b><span>2.511</span></div>
+      <div class="li"><span>Anéis</span><b>1.000</b><span>1.938</span></div>
+      <div class="li"><span>Pulseiras</span><b>1.173</b><span>1.875</span></div>
+      <div class="li tt"><span>Todas as categorias</span><b>9.539</b><span>17.342</span></div>
+    </div>
+  </div>
+
+  <div class="bloco filtros">
+    <label>Busca<input placeholder="Código ou modelo"></label>
+    <label>Categoria<select><option>Todas</option><option>Anéis</option><option>Brincos</option></select></label>
+    <label>Origem<select><option>Códigos novos</option><option>Códigos antigos</option><option>Todos</option></select></label>
+    <label>Situação<select><option>Todas</option><option>Sem foto</option><option>Fotografada</option><option>Editada</option><option>Na DevMaster</option></select></label>
+    <label>Responsável<select><option>Todos</option><option>Lucas Castilho</option><option>Funcionária nova</option></select></label>
+    <label>Período<select><option>Hoje</option><option>Semana</option><option>Mês</option></select></label>
+    <label>&nbsp;<button class="btn">Limpar</button></label>
+  </div>
+
+  <div class="bloco"><div class="rol"><table id="tabA"></table></div><div class="rodape">Mostrando 12 de 17.342 códigos · Códigos novos sem foto aparecem primeiro</div></div>
+</section>
+
+<!-- ========================= B ========================= -->
+<section class="lay" id="B">
+  <div class="tag"><b>B · Quadro de etapas (igual Kits novos)</b><span>Cada código é um cartão que anda: Sem foto → Fotografada → Editada → Na DevMaster.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px;align-items:center"><div class="seg"><button class="at">Quadro</button><button>Planilha</button></div><button class="btn p">Lançar código</button></div></div>
+
+  <div class="resumos">
+    <div class="bloco"><h3>Hoje · 10/11/2026</h3>
+      <div class="li cab"><span>Etapa</span><span>Quantidade</span><span>Tempo médio</span></div>
+      <div class="li"><span>Fotografados</span><b>38</b><span>4 min</span></div>
+      <div class="li"><span>Editados</span><b>21</b><span>7 min</span></div>
+      <div class="li"><span>Na DevMaster</span><b>14</b><span>2 min</span></div>
+      <div class="li tt"><span>Novos sem foto</span><b class="ruim">26</b><span>meta 0</span></div>
+    </div>
+    <div class="bloco"><h3>Fila por etapa</h3>
+      <div class="li cab"><span>Etapa</span><span>Novos</span><span>Antigos</span></div>
+      <div class="li"><span>Sem foto</span><b>26</b><span>7.680</span></div>
+      <div class="li"><span>Fotografada, falta editar</span><b>17</b><span>0</span></div>
+      <div class="li"><span>Editada, falta subir</span><b>7</b><span>0</span></div>
+    </div>
+  </div>
+
+  <div class="bloco filtros">
+    <label>Busca<input placeholder="Código ou modelo"></label>
+    <label>Categoria<select><option>Todas</option></select></label>
+    <label>Origem<select><option>Códigos novos</option></select></label>
+    <label>Responsável<select><option>Todos</option></select></label>
+  </div>
+
+  <div class="kan">
+    <div class="col" style="--cor:#EF4444"><div class="t"><b>Sem foto</b>26 novos · prazo no mesmo dia</div><div class="cards" id="kb1"></div></div>
+    <div class="col" style="--cor:#FBBF24"><div class="t"><b>Fotografada</b>17 códigos · 3 passaram de 4 horas</div><div class="cards" id="kb2"></div></div>
+    <div class="col" style="--cor:#60A5FA"><div class="t"><b>Editada</b>7 códigos</div><div class="cards" id="kb3"></div></div>
+    <div class="col" style="--cor:#4ADE80"><div class="t"><b>Na DevMaster</b>14 hoje</div><div class="cards" id="kb4"></div></div>
+  </div>
+</section>
+
+<!-- ========================= C ========================= -->
+<section class="lay" id="C">
+  <div class="tag"><b>C · Fila do dia por pessoa (cronograma)</b><span>Cada pessoa vê só os códigos dela, a meta e o horário. Serve para o cronograma diário.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Cronograma de hoje · 10/11/2026</h2><div style="display:flex;gap:8px"><button class="btn">Distribuir fila do dia</button><button class="btn p">Lançar código</button></div></div>
+
+  <div class="resumos">
+    <div class="bloco"><h3>Cronograma do dia</h3>
+      <div class="li c4 cab"><span>Horário</span><span>Atividade</span><span>Quem</span><span>Meta</span></div>
+      <div class="li c4"><span>08:00 às 11:30</span><span>Fotografar</span><span>Funcionária nova</span><b>35 códigos</b></div>
+      <div class="li c4"><span>08:00 às 11:30</span><span>Editar</span><span>Lucas Castilho</span><b>30 códigos</b></div>
+      <div class="li c4"><span>13:00 às 15:30</span><span>Editar e subir</span><span>Todos</span><b>65 códigos</b></div>
+      <div class="li c4"><span>10:00 e 16:00</span><span>Postar no feed</span><span>Social media</span><b>2 posts</b></div>
+    </div>
+    <div class="bloco"><h3>Hoje</h3>
+      <div class="li cab"><span>Etapa</span><span>Feito</span><span>Meta</span></div>
+      <div class="li"><span>Fotografados</span><b>38</b><span>65</span></div>
+      <div class="li"><span>Editados</span><b>21</b><span>65</span></div>
+      <div class="li"><span>Na DevMaster</span><b>14</b><span>65</span></div>
+      <div class="li tt"><span>Posts no feed</span><b class="alerta">1</b><span>2</span></div>
+    </div>
+  </div>
+
+  <div class="pess">
+    <div class="bloco pessoa"><div class="t"><b>Lucas Castilho</b><br>Edição · 21 de 30</div><div class="barra"><i style="width:70%"></i></div>
+      <div style="height:8px"></div>
+      <div class="fil cab" style="background:var(--bloco2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span>Código</span><span>Foto</span><span>Editada</span><span>DevMaster</span></div>
+      <div class="fil"><span>BB1612</span><span class="ok">●</span><span class="ok">●</span><span class="x">Subir</span></div>
+      <div class="fil"><span>BB1613</span><span class="ok">●</span><span class="ok">●</span><span class="x">Subir</span></div>
+      <div class="fil"><span>P2210</span><span class="ok">●</span><span class="x">Editar</span><span>—</span></div>
+      <div class="fil"><span>P2211</span><span class="ok">●</span><span class="x">Editar</span><span>—</span></div>
+      <div class="fil"><span>A2301</span><span class="ok">●</span><span class="x">Editar</span><span>—</span></div>
+    </div>
+    <div class="bloco pessoa"><div class="t"><b>Funcionária nova</b><br>Fotos · 38 de 35</div><div class="barra"><i style="width:100%"></i></div>
+      <div style="height:8px"></div>
+      <div class="fil cab" style="background:var(--bloco2);font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:600"><span>Código</span><span>Foto</span><span>Editada</span><span>DevMaster</span></div>
+      <div class="fil"><span>CL2551</span><span class="ok">●</span><span>—</span><span>—</span></div>
+      <div class="fil"><span>CL2552</span><span class="ok">●</span><span>—</span><span>—</span></div>
+      <div class="fil"><span>BB1620</span><span class="x">Fotografar</span><span>—</span><span>—</span></div>
+      <div class="fil"><span>BB1621</span><span class="x">Fotografar</span><span>—</span><span>—</span></div>
+      <div class="fil"><span>2B0160</span><span class="x">Fotografar</span><span>—</span><span>—</span></div>
+    </div>
+    <div class="bloco pessoa"><div class="t"><b>Beatriz</b><br class="x">Afastada (atestado) · sem meta</div><div class="barra"><i style="width:0"></i></div>
+      <div style="height:8px"></div>
+      <div class="li" style="min-height:96px"><span style="grid-column:1/4">Sem fila enquanto estiver afastada. Os códigos dela voltam para a fila geral.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================= D ========================= -->
+<section class="lay" id="D">
+  <div class="tag"><b>D · Abas: Fila, Produção diária e Tempos</b><span>Uma tela só com abas visíveis. Um bloco de resumo em cima, a planilha embaixo. Mais perto do que você descreveu.</span></div>
+  <div class="menu"><span>Marketing</span><span class="at">Fotos de catálogo</span><span>Feed</span><span>Tráfego pago</span></div>
+  <div class="head"><h2>Fotos de catálogo</h2><div style="display:flex;gap:8px"><button class="btn">Exportar planilha</button><button class="btn p">Lançar código</button></div></div>
+
+  <div class="resumos" style="grid-template-columns:1fr">
+    <div class="bloco"><h3>Resumo · 10/11/2026</h3>
+      <div class="li c4 cab" style="grid-template-columns:1.4fr repeat(5,1fr)"><span>Indicador</span><span>Cadastrados</span><span>Fotografados</span><span>Editados</span><span>Na DevMaster</span><span>Tempo médio total</span></div>
+      <div class="li c4" style="grid-template-columns:1.4fr repeat(5,1fr)"><span>Hoje</span><b>64</b><b>38</b><b>21</b><b>14</b><b>13 min</b></div>
+      <div class="li c4" style="grid-template-columns:1.4fr repeat(5,1fr)"><span>Média por dia no mês</span><b>58</b><b>41</b><b>29</b><b>24</b><b>13 min</b></div>
+      <div class="li c4 tt" style="grid-template-columns:1.4fr repeat(5,1fr)"><span>Falta (códigos novos)</span><b class="ruim">26</b><b class="ruim">26</b><b>43</b><b>50</b><span>meta 0</span></div>
+    </div>
+  </div>
+
+  <div class="abas"><button class="at" data-p="p1">Fila</button><button data-p="p2">Produção diária</button><button data-p="p3">Por categoria</button><button data-p="p4">Tempos por pessoa</button></div>
+
+  <div class="painel at" id="p1">
+    <div class="bloco filtros">
+      <label>Busca<input placeholder="Código ou modelo"></label>
+      <label>Categoria<select><option>Todas</option></select></label>
+      <label>Origem<select><option>Códigos novos</option><option>Códigos antigos</option></select></label>
+      <label>Situação<select><option>Todas</option></select></label>
+    </div>
+    <div class="bloco"><div class="rol"><table id="tabD"></table></div></div>
+  </div>
+
+  <div class="painel" id="p2">
+    <div class="bloco"><div class="rol"><table id="tabDia"></table></div></div>
+  </div>
+
+  <div class="painel" id="p3">
+    <div class="bloco"><div class="rol"><table id="tabCat"></table></div></div>
+  </div>
+
+  <div class="painel" id="p4">
+    <div class="bloco"><div class="rol"><table id="tabPes"></table></div></div>
+  </div>
+</section>
+
+<div class="nota">
+  <b>O que ficou de fora, de propósito</b>
+  <ul>
+    <li>Você pediu "bloco lá em cima com relatórios". A regra do sistema proíbe fileira de cartões com um número cada. Por isso o relatório é um bloco de lista escrita (rótulo, quantidade, meta). É a exceção aprovada em 02/11/2026.</li>
+    <li>Filtros são menus suspensos, nunca botões redondos. Tabela sem dourado, tudo centralizado, nada cortado.</li>
+    <li>Códigos antigos ficam numa visão à parte ("Origem: Códigos antigos") e não entram na meta do dia. Código novo sem foto é o único alerta vermelho.</li>
+    <li>Nomes e tempos são exemplos. A equipe real e os tempos médios saem dos registros de cada etapa (quem, data e hora).</li>
+  </ul>
+</div>
+
+<script>
+function tabela(id, cols, linhas, total){
+  var t=document.getElementById(id);
+  var h='<colgroup>'+cols.map(function(c){return '<col style="width:'+c[1]+'">'}).join('')+'</colgroup><thead><tr>'+cols.map(function(c){return '<th>'+c[0]+'</th>'}).join('')+'</tr></thead><tbody>';
+  linhas.forEach(function(l){h+='<tr>'+l.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>'});
+  if(total) h+='<tr class="total">'+total.map(function(c){return '<td>'+c+'</td>'}).join('')+'</tr>';
+  t.innerHTML=h+'</tbody>';
+}
+var OK='<span class="ok">● Ok</span>', NO='<span class="ruim">● Falta</span>', AG='<span class="alerta">● Aguardando</span>';
+var dados=[
+ ['BB1612','Brincos Select','Novo','10/11 08:42',OK,'Lucas Castilho','10/11 09:10',OK,'Lucas Castilho','10/11 09:30','7 min'],
+ ['BB1613','Brincos Select','Novo','10/11 08:50',OK,'Lucas Castilho','10/11 09:18',OK,'Lucas Castilho','10/11 09:35','6 min'],
+ ['P2210','Pulseiras','Novo','10/11 09:05',OK,'Lucas Castilho','—',AG,'—','—','—'],
+ ['P2211','Pulseiras','Novo','10/11 09:12',OK,'Lucas Castilho','—',AG,'—','—','—'],
+ ['CL2551','Colares','Novo','10/11 09:40',OK,'Funcionária nova','—',AG,'—','—','—'],
+ ['CL2552','Colares','Novo','10/11 09:46',OK,'Funcionária nova','—',AG,'—','—','—'],
+ ['BB1620','Brincos Select','Novo','—',NO,'—','—',NO,'—','—','—'],
+ ['BB1621','Brincos Select','Novo','—',NO,'—','—',NO,'—','—','—'],
+ ['2B0160','Brinco Duo','Novo','—',NO,'—','—',NO,'—','—','—'],
+ ['A0614','Anéis','Antigo','—',NO,'—','—',NO,'—','—','—'],
+ ['CL1930','Colares','Antigo','—',NO,'—','—',NO,'—','—','—'],
+ ['A2057','Anéis','Antigo','13/04 10:20',OK,'Rebeca','13/04 11:00',OK,'Rebeca','13/04 11:20','8 min']
+];
+var colsA=[['Código','8%'],['Categoria','11%'],['Origem','7%'],['Foto em','10%'],['Foto','8%'],['Quem fotografou','12%'],['Editada em','10%'],['Editada','9%'],['Quem editou','12%'],['Subida em','10%'],['Tempo de edição','9%']];
+var linhasA=dados.map(function(d){return d});
+var colsA2=[['Código','7%'],['Categoria','10%'],['Origem','6%'],['Foto em','9%'],['Foto','8%'],['Quem fotografou','12%'],['Editada em','9%'],['Editada','8%'],['Quem editou','11%'],['Na DevMaster em','11%'],['Tempo de edição','9%']];
+tabela('tabA',colsA2,linhasA);
+tabela('tabD',colsA2,linhasA);
+
+function card(c,fx,ln1,ln2,bt,ouro){return '<div class="card"><div class="fx"><span>'+fx[0]+'</span><span>'+fx[1]+'</span></div><div class="co"><b>'+c+'</b><span>'+ln1+'</span><span>'+ln2+'</span></div><div class="bt'+(ouro?' ouro':'')+'">'+bt+'</div></div>'}
+document.getElementById('kb1').innerHTML=card('BB1620',['Novo','há 20 min'],'Brincos Select','Sem responsável','Fotografar ›',true)+card('BB1621',['Novo','há 20 min'],'Brincos Select','Sem responsável','Fotografar ›',true)+card('2B0160',['Novo','há 1 h'],'Brinco Duo','Sem responsável','Fotografar ›',true)+'<div class="co" style="text-align:center">Mais 23 códigos novos</div>';
+document.getElementById('kb2').innerHTML=card('P2210',['Novo','há 1 h 10 min'],'Pulseiras','Lucas Castilho','Editar ›',true)+card('CL2551',['Novo','há 3 h'],'Colares','Funcionária nova','Editar ›',true)+'<div class="co" style="text-align:center">Mais 15 códigos</div>';
+document.getElementById('kb3').innerHTML=card('BB1612',['Novo','há 40 min'],'Brincos Select','Lucas Castilho','Subir na DevMaster ›',true)+card('BB1613',['Novo','há 35 min'],'Brincos Select','Lucas Castilho','Subir na DevMaster ›',true)+'<div class="co" style="text-align:center">Mais 5 códigos</div>';
+document.getElementById('kb4').innerHTML=card('BB1600',['Novo','09:02'],'Brincos Select','Lucas Castilho','Concluído',false)+card('P2205',['Novo','08:50'],'Pulseiras','Lucas Castilho','Concluído',false)+'<div class="co" style="text-align:center">Mais 12 códigos hoje</div>';
+
+tabela('tabDia',[['Data','12%'],['Cadastrados','12%'],['Fotografados','12%'],['Editados','12%'],['Na DevMaster','12%'],['Novos sem foto','12%'],['Tempo médio total','12%'],['Quem trabalhou','16%']],
+ [['10/11/2026 (hoje)','64','38','21','14','<span class="ruim">26</span>','13 min','Lucas Castilho, Funcionária nova'],
+  ['09/11/2026','58','47','31','28','<span class="ruim">11</span>','12 min','Lucas Castilho, Funcionária nova'],
+  ['06/11/2026','71','62','45','40','<span class="ruim">9</span>','14 min','Lucas Castilho'],
+  ['05/11/2026','52','52','48','48','<span class="ok">0</span>','11 min','Lucas Castilho, Beatriz'],
+  ['04/11/2026','66','60','52','50','<span class="ruim">6</span>','13 min','Lucas Castilho, Beatriz']],
+ ['Média do mês','62','52','39','36','<span class="ruim">10</span>','13 min','—']);
+
+tabela('tabCat',[['Categoria','16%'],['Total de códigos','14%'],['Com foto','14%'],['Na DevMaster','14%'],['% no sistema','14%'],['Sem foto','14%'],['Prioridade','14%']],
+ [['Brincos','4.715','2.376','2.427','51,5%','2.339','Antigos, baixa'],['Colares','2.511','1.316','1.344','53,5%','1.195','Antigos, baixa'],['Anéis','1.938','996','1.000','51,6%','942','Antigos, baixa'],['Pulseiras','1.875','1.134','1.173','62,6%','741','Antigos, baixa'],['Brincos Select','1.525','1.019','1.034','67,8%','491','Antigos, baixa'],['Anel Prata 925','28','2','0','0,0%','28','<span class="alerta">● Conferir se vende</span>']],
+ ['Todas as categorias','17.342','9.213','9.539','55,0%','7.680','Novos: sempre primeiro']);
+
+tabela('tabPes',[['Pessoa','20%'],['Fotografados no mês','16%'],['Editados no mês','16%'],['Subidos no mês','16%'],['Tempo médio de foto','16%'],['Tempo médio de edição','16%']],
+ [['Lucas Castilho','180','410','395','5 min','6 min'],['Funcionária nova','210','0','0','4 min','—'],['Beatriz','95','88','85','5 min','7 min']],
+ ['Equipe','485','498','480','5 min','6 min']);
+
+document.querySelectorAll('.abas button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('.abas button').forEach(function(x){x.classList.remove('at')});
+  document.querySelectorAll('.painel').forEach(function(x){x.classList.remove('at')});
+  b.classList.add('at'); document.getElementById(b.dataset.p).classList.add('at');
+}});
+</script>
+</body>
+</html>

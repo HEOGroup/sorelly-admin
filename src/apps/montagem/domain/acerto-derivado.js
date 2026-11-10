@@ -12,7 +12,7 @@ var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas
 // form: no formato de FORM_ACERTO_VAZIO · condicionais: [{numero, pecas}] em aberto da revendedora
 function derivarAcerto(p){
   var form = p.form, ehPrata = p.modalidade==="prata";
-  var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade) : null;
+  var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade, p.especial) : null;   // p.especial: comissão especial da revendedora (Atendimento interno)
   var gerais = versao ? versao.gerais : {};
   var totalPagoAtual = totalPago(form.pagamentos);
   // Dívida de acertos anteriores (p.dividaAnterior): o que ela paga agora quita primeiro a dívida mais antiga, o resto vai para este acerto
@@ -77,7 +77,10 @@ function derivarAcerto(p){
   // Tags riscadas, danificadas ou extraviadas: valor por tag vem das regras (gerais.taxaTagExtraviada); soma no que ela PAGA, não na venda
   var valorTag = gerais.taxaTagExtraviada!=null ? gerais.taxaTagExtraviada : 5, tagsValor = Math.round((form.tagsDanificadas||0)*valorTag*100)/100;
   // regras de 27/10/2026: a multa do valor pendente soma no total a pagar (decisão do Marcus, 26/10/2026)
-  var multasSoma = novas && previaAcerto ? (previaAcerto.multas||0) : 0;
+  // 06/11/2026 (Marcus): o acerto em si NÃO gera multa. A multa de 10% sobre o pendente só nasce se ela NÃO pagar no momento do acerto: com o acerto finalizado (p.finalizado), com acordo ou com recusa de negociar.
+  // Enquanto o atendimento está em andamento (nada lançado ou pagamento parcial a caminho) o valor a pagar é só o do acerto (ex.: venda R$ 788,00 − 30% = R$ 551,60).
+  var multaAplica = !!(novas && previaAcerto && (p.finalizado || acordoExistente || form.recusouNegociar));
+  var multasSoma = multaAplica ? (previaAcerto.multas||0) : 0;
   var totalAPagar = previaAcerto ? Math.round((previaAcerto.valorDevido+excedenteBrinde+tagsValor+multasSoma)*100)/100 : 0;
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
   // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
@@ -90,7 +93,7 @@ function derivarAcerto(p){
     acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,
-    totalAPagar:totalAPagar, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
+    totalAPagar:totalAPagar, multaAplica:multaAplica, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
 }
 
 export { FORM_ACERTO_VAZIO, derivarAcerto };

@@ -242,3 +242,26 @@ Saldos das 29 contas de 20/10 gravados (Caixa 46 R$ 417,31 ... Sicredi Shopping 
 - Totais do mês no admin (`faturamento_contas_mes`, 29/10 10:37): outubro pagas R$ 1.377.632,43 e a pagar R$ 130.791,07; novembro a pagar R$ 1.475.599,66; dezembro a pagar R$ 1.512.989,37. Diferença entre o pago do mês e a soma dos dias: R$ 88.930,58 (origem ainda a conferir).
 - Posição das contas (28/10, último dia no admin): soma das contas bancárias (sem Retido e sem Dinheiro) −R$ 227.119,68; Dinheiro R$ 52.904,38; Retidos R$ 7.771,57.
 - `aplicaPagosAdmin` (`state/store.js`) copia todos os dias do arquivo local, sem filtro de mês: já cobre novembro. Nada mudado no código.
+
+## Novembro/2026: faturamento de 01 a 08/11 (Marcus, 09/11/2026, relatório de notas fiscais)
+Valores ACUMULADOS do mês (o dia de cada data é a diferença para o dia anterior). 07 e 08/11 repetem o dia 06 (fim de semana, sem acerto novo).
+| Dia | Acertos acumulados | Faturado acumulado | Média |
+|---|---|---|---|
+| 01/11 (domingo) | 0 | R$ 0,00 | — |
+| 02/11 (Finados) | 0 | R$ 0,00 | — |
+| 03/11 | 22 | R$ 15.065,70 | R$ 684,80 (o relatório trazia R$ 15.068,70 por engano; a DevMaster e a média 684,80 dão 15.065,70) |
+| 04/11 | 58 | R$ 37.595,31 | R$ 648,20 |
+| 05/11 | 99 | R$ 65.156,26 | R$ 658,14 |
+| 06/11 | 208 | R$ 149.878,21 | R$ 720,57 |
+| 07/11 | 208 | R$ 149.878,21 | R$ 720,57 |
+| 08/11 | 208 | R$ 149.878,21 | R$ 720,57 |
+| 09/11 (atualizado às 19h50) | 326 | R$ 244.095,26 | R$ 748,76 (dia: 118 acertos, R$ 94.217,05) |
+- **Revendedoras ativas em 09/11 = 2.099** (às 19h50; antes 2.100) (Marcus; módulo `revdia` e `fd` no servidor).
+- **Carregar 09/11 = 13 vendas.** Faltam **1.634** acertos contando as 13 do Carregar (1.621 a realizar + 13). Interpretação da frase do Marcus: "1638 vendedoras para fazer acertos somando com essas 13".
+- Código: `aplicaFatNov` em `state/store.js` (flag `fatNov1V` = 2). Carregar dos dias 01 a 08/11 gravado 0.
+
+## REGRA QUE REPRODUZ O RELATÓRIO DE NOTAS FISCAIS (09/11/2026, conferida ao centavo)
+- Títulos a receber da DevMaster (`dmabg`) com EMISSÃO no mês, de qualquer forma de pagamento, SEM clientes do grupo FUNCIONÁRIOS (`dmaam.aam_grupo` 0002). Faturado acumulado = soma de `abg_valor`. Acertos acumulados = clientes DISTINTOS no mês.
+- Conferido com os dias 04, 05, 06 e 09/11 (R$ 37.595,31 · 65.156,26 · 149.878,21 · 244.095,26 e 58 · 99 · 208 · 326 acertos): igual ao centavo. Outubro: 1.844 clientes e R$ 1.438.317 contra 1.843 e R$ 1.438.133,61 do relatório (um cliente de diferença).
+- Código: `src/server/faturamento-nf.js`. A regra antiga (notas de saída `dmabl`) foi abandonada.
+- **Atualização automática às 10h** (`src/server/automatico-dia.js`, rota `/api/automatico/dia`): grava o acumulado do mês até ONTEM (e completa dias sem lançamento) e o total de revendedoras do dia. Agendador da Vercel em `vercel.json` (13h UTC = 10h de Brasília; precisa da variável CRON_SECRET na Vercel); reserva: o sistema chama ao abrir depois das 10h; relógio interno no servidor local (`instrumentation.js`). Dia com `travado` não é mexido. O Carregar e o a realizar continuam digitados pelo Marcus.

@@ -234,13 +234,34 @@ function normalizarVersao(v){
 }
 // Versão "efetiva" para a modalidade: monta, no mesmo formato que o cálculo já usa, a régua/brindes/taxa/remarcação da modalidade.
 // Kit padrão devolve a versão como está.
-function versaoEfetiva(v, modalidade){
+// especial (opcional): COMISSÃO ESPECIAL da revendedora (Edna, 09/11/2026), {"300":40, "1000":50}: porcentagem de comissão por faixa (chave = valor inicial da faixa). Só a comissão muda; os brindes, a taxa e as multas seguem a tabela normal.
+function aplicarComissaoEspecial(ef, especial){
+  if(!ef || !especial) return ef;
+  var chaves = Object.keys(especial).filter(function(k){ var n = Number(especial[k]); return k!=="mais" && especial[k]!=="" && especial[k]!=null && isFinite(n) && n>=0 && n<=100 && isFinite(Number(k)); });
+  // "mais": pontos a mais de comissão em todas as faixas que não têm valor próprio (ex.: mais 5 = 15% vira 20%); vale no Kit Normal e no Prata
+  var mais = Number(especial.mais); mais = isFinite(mais) && mais>0 && mais<=50 ? mais : 0;
+  if(!chaves.length && !mais) return ef;
+  var base = ef.faixas.slice().sort(function(a,b){ return a.min-b.min; }), todas = base.slice();
+  // ponto de corte que não é o início de uma faixa da tabela (ex.: acima de R$ 1.500,00): vira uma faixa nova, com os MESMOS brindes da faixa em que cai
+  chaves.forEach(function(k){ var m = Number(k); if(base.some(function(f){ return f.min===m; })) return; var dentro = base.filter(function(f){ return f.min<=m; }).pop(); if(dentro) todas.push(Object.assign({}, dentro, {min:m, extraEspecial:true})); });
+  todas.sort(function(a,b){ return a.min-b.min; });
+  return Object.assign({}, ef, {comissaoEspecial:true, faixas:todas.map(function(f){
+    var k = String(f.min); return chaves.indexOf(k)>=0 ? Object.assign({}, f, {pct:Number(especial[k]), pctNormal:f.pct}) : (mais && f.pct>0 ? Object.assign({}, f, {pct:Math.min(100, f.pct+mais), pctNormal:f.pct}) : f); })});
+}
+function versaoEfetiva(v, modalidade, especial){
   if(!v) return v;
   if(modalidade==="prata" && v.prata){
-    return Object.assign({}, v, {faixas:v.prata.faixas, remarcacao:v.prata.remarcacao, pagamentoBrinde:v.prata.pagamentoBrinde, taxaBaixa:v.prata.taxaBaixa,
-      gerais:Object.assign({}, v.gerais, v.prata.gerais), modalidade:"prata"});
+    return aplicarComissaoEspecial(Object.assign({}, v, {faixas:v.prata.faixas, remarcacao:v.prata.remarcacao, pagamentoBrinde:v.prata.pagamentoBrinde, taxaBaixa:v.prata.taxaBaixa,
+      gerais:Object.assign({}, v.gerais, v.prata.gerais), modalidade:"prata"}), especial);
   }
-  return Object.assign({}, v, {modalidade:"padrao"});
+  return aplicarComissaoEspecial(Object.assign({}, v, {modalidade:"padrao"}), especial);
+}
+// comissão especial guardada na ficha da revendedora do Atendimento interno (s.revInternas[].comissaoEspecial); sem ela, null
+function comissaoEspecialDe(s, nome){
+  var nm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); }, n = nm(nome);
+  if(!n) return null;
+  var r = (s && s.revInternas || []).find(function(x){ return nm(x.nome)===n; });
+  return r && r.comissaoEspecial ? r.comissaoEspecial : null;
 }
 
 // Vigente = a versão de vigenciaDesde mais recente que já começou (empate: a criada por último). Sem data válida, vale a marcada em atualId.
@@ -398,7 +419,7 @@ function textoRegrasNovas(v, modalidade){
     {t:"Venda mínima", x:"A média das suas últimas "+MEDIA_N+" vendas precisa ser de pelo menos "+reais(N.minimoRepresentante)+" no acerto com a representante e "+reais(N.minimoInterno)+" no acerto na Sorelly. Com média abaixo, o kit novo não é liberado e o cadastro fica bloqueado. Venda do acerto abaixo de "+reais(N.minimoRepresentante)+" pede uma justificativa da representante."},
     {t:"Acerto na data", x:"O acerto e a devolução são na data marcada. Acerto fora da data perde parte da comissão e do brinde — "+escTxt+". Com "+N.juridicoDias+" dias de atraso perde toda a comissão e todo o brinde, e o valor integral do kit pode ser cobrado pela nota promissória."},
     {t:"Remarcação", x:"Remarcar o acerto tira comissão e brinde — "+rem+". Remarcação com emergência comprovada não conta."},
-    {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente, e o prazo para quitar é de "+N.prazoQuitarDias+" dias. Depois do prazo soma "+N.atrasoQuitacaoPctDia+"% ao dia, até "+N.atrasoQuitacaoTetoPct+"%. Enquanto houver valor pendente, o próximo kit fica bloqueado."},
+    {t:"Pagamento", x:"O acerto precisa ser pago por inteiro. Qualquer valor pendente tem multa de "+N.multaPendentePct+"% sobre o valor pendente, e o prazo para quitar é de "+N.prazoQuitarDias+" dias. Depois do prazo soma "+N.atrasoQuitacaoPctDia+"% ao dia, até "+N.atrasoQuitacaoTetoPct+"%. Quem está devendo um acerto anterior só recebe novo kit depois de quitar tudo, e o que pagar no acerto seguinte quita primeiro a dívida mais antiga."},
     {t:"Brinde", x:"Existem o brinde Normal e o Select (BB). BB não é só brinco: toda peça cujo código começa com BB (brinco, anel, colar, pulseira…) é Select. O brinde só é entregue depois do pagamento e precisa ser retirado NA HORA DO ACERTO: peça que não estiver nesse momento é considerada vendida. Com valor pendente o brinde diminui — "+(pag||"sem desconto")+" · faltou mais de "+teto+"%: sem brinde. O que passar do valor liberado soma no total a pagar."},
     {t:"Kit novo", x:"Com "+g.kitNovoMinPct+"% ou mais do acerto pago e média de vendas acima do mínimo, o kit novo é liberado. Abaixo disso precisa de autorização do financeiro."},
     {t:"Peças", x:(g.pecaSemEtiquetaVendida ? "Peça sem etiqueta é considerada vendida. " : "")+"Cada tag riscada ou extraviada custa "+reais(g.taxaTagExtraviada)+". O que não foi vendido volta para a empresa."}
@@ -438,4 +459,4 @@ function diffVersoes(atual, anterior){
 
 export { MEDIA_N, MOTIVOS_ISENCAO, NOVAS_PADRAO, hojeIso, atrasoAcerto, mediaVendas, avaliarMinimo, kitNovoLiberado, versaoLegada, versaoDaRevendedora, versaoDaEntrega, AVISO_BB, FAIXAS_OFICIAIS, PRATA_FAIXAS, REMARCACAO, FATOR_BRINDE_PAGAMENTO, TAXA_BAIXA_VENDA, REGRAS_GERAIS_OFICIAIS, CONTAS_PAGAMENTO, FORMA_LABEL, PARCELAS_CARTAO, novaVersaoRegras, normalizarVersao, versaoVigente, versaoDoKit,
   faixaPor, descontoRemarcacao, vezCobravel, fatorBrindePagamento, taxaBaixaVenda, calcularAcerto, normalizarCodigo, limitarCodigo, codigoPecaValido, codigoBrindeValido, conferirBrindes, diffVersoes, contasLista, totalPago,
-  formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };
+  formasPagamentoPadrao, reais, textoRegras, textoRegrasPrata, pecasProximoMes, PECAS_PROX_PADRAO, versaoEfetiva, aplicarComissaoEspecial, comissaoEspecialDe, modalidadeDe, MODALIDADE_LB, PRATA_PADRAO };

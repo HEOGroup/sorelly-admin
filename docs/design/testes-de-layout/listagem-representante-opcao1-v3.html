@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listagem da representante: opção 1 (toca no dia e abre outra tela)</title>
+<style>
+:root{--ouro:#C9A13B;--ouro2:#F0D58A;--cre:#F7E8BF;--ouro-esc:#B8862B;--fundo:#F5F5F6;--borda:#E5E7EB;--txt:#111827;--txt2:#4B5563;--ok:#16A34A;--vm:#DC2626}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0d0f;color:#f3f3f3;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45}
+.pg{max-width:1100px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;margin:0 0 4px}
+.sub{color:#e5e5e5;margin:0 0 12px;max-width:860px}
+.par{display:flex;gap:26px;flex-wrap:wrap;justify-content:center;margin-top:16px}
+.cap{text-align:center;font-weight:800;color:var(--ouro2);margin-bottom:6px;font-size:13px}
+.leg{font-size:12px;color:#e5e5e5;margin-top:10px;max-width:760px;margin-left:auto;margin-right:auto;text-align:center}
+.caixa{background:#1a1a1d;border:1px solid #2f2f35;border-radius:12px;padding:14px 16px;margin:14px 0}
+table.reg{width:100%;border-collapse:collapse;font-size:13px}
+table.reg td{border-top:1px solid #2f2f35;padding:6px 8px;vertical-align:top}
+table.reg td:first-child{color:var(--ouro2);width:30%;font-weight:600}
+
+.tel{width:330px;background:var(--fundo);color:var(--txt);border-radius:36px;border:8px solid #000;box-shadow:0 0 0 2px #3a3a3f;overflow:hidden;display:flex;flex-direction:column;padding-bottom:14px;min-height:660px}
+.topo{background:#000;color:var(--ouro2);border-radius:0 0 26px 26px;padding:16px 16px 18px;display:flex;align-items:center;justify-content:space-between;font-weight:800;letter-spacing:.16em;font-size:12px;text-transform:uppercase}
+.topo i{font-style:normal;font-size:18px;width:22px;text-align:center;cursor:pointer}
+.corpo{padding:10px;display:flex;flex-direction:column;gap:9px}
+.faixa{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 2px}
+.faixa b{font-size:13px;white-space:nowrap}
+.ac{display:flex;gap:6px}
+.ib{white-space:nowrap;height:32px;border-radius:11px;border:1px solid var(--borda);background:#fff;display:flex;align-items:center;gap:5px;padding:0 10px;font:800 12px Inter,system-ui,Arial,sans-serif;color:var(--txt);cursor:pointer}
+.ib.on{background:var(--ouro);border-color:var(--ouro);color:#fff}
+.bl{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.bh{display:flex;align-items:center;gap:10px;padding:10px 12px;cursor:pointer}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--cre);color:var(--ouro-esc);display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+.tt{flex:1;min-width:0;font-weight:800;font-size:13.5px}
+.tt small{display:block;font-weight:600;font-size:11px;color:var(--txt2)}
+.ck{width:24px;height:24px;border-radius:50%;background:var(--cre);color:var(--ouro-esc);display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 auto}
+.ck.vm{background:#FEE2E2;color:var(--vm)}
+.ck.cz{background:#E5E7EB;color:#9CA3AF}
+.cv{color:#6B7280;font-size:13px}
+.bc{border-top:1px solid #F1F1F3;padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px}
+.tab{border:1px solid var(--ouro2);border-radius:12px;overflow:hidden}
+.tab .r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #F3E8C8;font-size:13px}
+.tab .r:first-child{border-top:0}
+.tab .r span{color:var(--txt2)}
+.tab .r strong{font-family:ui-monospace,Consolas,monospace;font-size:13px;text-align:right}
+.rv{display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #F3E8C8;font-size:13px}
+.rv:first-child{border-top:0}
+.rv .n{flex:1;min-width:0;font-weight:700}
+.rv .n small{display:block;font-weight:500;color:var(--txt2);font-size:11px}
+.st{font-size:11px;font-weight:700;white-space:nowrap}
+.st:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#9CA3AF}
+.st.mont{color:#B45309}.st.mont:before{background:#F59E0B}
+.st.feito{color:#1D4ED8}.st.feito:before{background:#3B82F6}
+.st.pronto{color:#15803D}.st.pronto:before{background:#22C55E}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ouro-esc)}
+select{height:36px;width:100%;border:1px solid var(--borda);border-radius:12px;background:#fff;color:var(--txt);font:600 13px Inter,system-ui,Arial,sans-serif;padding:0 10px}
+.bt{height:36px;border-radius:12px;border:0;font:800 13px Inter,system-ui,Arial,sans-serif;display:flex;align-items:center;justify-content:center;width:100%;cursor:pointer}
+.bt.p{background:linear-gradient(135deg,#D8B450,var(--ouro));color:#fff}
+.bt.s{background:#fff;color:var(--txt);border:1px solid var(--borda)}
+.bt.r{background:var(--vm);color:#fff}
+.av{border-radius:12px;padding:8px 10px;font-size:12px;font-weight:600}
+.av.am{background:#FEF3C7;color:#92400E}
+.res{background:#202023;border-radius:16px;padding:10px 12px;color:#fff}
+.res b.nome{display:block;font-size:15px;margin-bottom:6px}
+.res .l{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#e5e7eb;padding:2px 0}
+.res .l strong{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#fff}
+.res .g{border-top:1px solid var(--ouro);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.res .g span{color:var(--ouro2);font-size:12px;font-weight:700}
+.res .g strong{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:var(--ouro2);text-align:right}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;padding:2px 2px 6px}
+.cal .h{font-size:8px;font-weight:800;text-transform:uppercase;color:var(--ouro-esc);text-align:center;padding:2px 0;letter-spacing:0}
+.cal .d{height:46px;border-radius:10px;background:#fff;border:1px solid var(--borda);padding:3px 2px;text-align:center;font-size:12px;font-weight:800;display:flex;flex-direction:column;align-items:center;justify-content:space-between;cursor:pointer}
+.cal .d small{font-size:9px;font-weight:700;color:var(--txt2);min-height:11px}
+.cal .d .b{height:4px;width:70%;border-radius:3px;background:#E5E7EB;overflow:hidden}
+.cal .d .b i{display:block;height:100%;background:var(--ouro)}
+.cal .d.vz{background:transparent;border-color:transparent;cursor:default}
+.cal .d.fe{background:#ECECEE;color:#9CA3AF}
+.cal .d.fe small{color:#9CA3AF}
+.cal .d.ch{border-color:#FCA5A5;background:#FFF5F5}
+.cal .d.ch .b i{background:var(--vm)}
+.leg2{display:flex;justify-content:space-between;font-size:11px;color:var(--txt2);padding:0 6px;font-weight:600}
+.leg2 span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.leg2 .a:before{background:var(--ouro)}.leg2 .c:before{background:var(--vm)}.leg2 .f:before{background:#9CA3AF}
+.vista{display:none;flex-direction:column;gap:9px}
+.vista.on{display:flex}
+</style>
+</head>
+<body>
+<div class="pg">
+<h1>Listagem da representante: opção 1 (versão 4)</h1>
+<p class="sub">Agora ao tocar em <b>Quinta-feira, 12/11</b> abre <b>outra tela</b>, com o nome do dia por extenso. O primeiro telefone é clicável (toque nos dias, no calendário, nas setas ‹ e no menu "Ações"). Os outros dois mostram as telas abertas.</p>
+
+<div class="par">
+ <div><div class="cap">1) Navegue aqui (clique)</div><div class="tel" id="tela1"></div></div>
+ <div><div class="cap">2) Tela aberta: Quinta-feira, 12/11</div><div class="tel" id="tela2"></div></div>
+ <div><div class="cap">3) Excluir uma revendedora</div><div class="tel" id="tela3"></div></div>
+</div>
+<p class="leg">Fluxo: Listagens (lista ou calendário) → toca no dia → <b>tela do dia</b> → menu "Ações da listagem" → Adicionar da carteira, Excluir uma revendedora, Mudar o horário ou Retirar kits. A seta ‹ do alto volta uma tela.</p>
+
+<div class="caixa">
+<b style="color:var(--ouro2)">Regras deste desenho</b>
+<table class="reg">
+<tr><td>Nome do dia</td><td>Sempre por extenso: Segunda-feira, Terça-feira, Quarta-feira, Quinta-feira, Sexta-feira. No calendário também (letra pequena para caber).</td></tr>
+<tr><td>Tocar no dia</td><td>Abre outra tela (a tela do dia), não expande na lista.</td></tr>
+<tr><td>Barra preta</td><td>Igual às outras telas do app: seta, LISTAGENS em dourado, ícone.</td></tr>
+<tr><td>Escolhas</td><td>Só menus suspensos.</td></tr>
+</table>
+</div>
+</div>
+
+<script>
+var DIAS={
+ 9:{nome:'Segunda-feira',data:'09/11',limite:'prazo fechado',fechado:true,vagas:'9/15',lista:[['Fernanda K.','Acerto + kit · 10:00','pronto','Pronto'],['Gisele P.','Reposição · 10:00','feito','Montado']],prazo:'sex 06/11 07:30'},
+ 10:{nome:'Terça-feira',data:'10/11',fechado:true,vagas:'15/15',lista:[],prazo:'seg 09/11 07:30'},
+ 11:{nome:'Quarta-feira',data:'11/11',cheia:true,vagas:'15/15',lista:[['Ana Lúcia B.','Acerto + kit · 09:00','mont','Montando']],prazo:'seg 09/11 07:30'},
+ 12:{nome:'Quinta-feira',data:'12/11',vagas:'7/15',lista:[['Ana Paula S.','Acerto + kit · 10:00','','Na fila'],['Beatriz L.','Acerto + kit · 10:00','mont','Montando'],['Carla M.','Reposição · 10:00','feito','Montado'],['Daniela R.','Acerto + kit · 15:00','pronto','Pronto']],prazo:'ter 10/11 07:30'},
+ 13:{nome:'Sexta-feira',data:'13/11',vagas:'1/15',lista:[['Helena T.','Kit novo · 10:00','','Na fila']],prazo:'qua 11/11 07:30'}
+};
+function topo(voltar){return '<div class="topo"><i onclick="'+voltar+'">‹</i>Listagens<i>⌂</i></div>';}
+function linhaDia(n){var d=DIAS[n];var ck=d.fechado?'<div class="ck cz">🔒</div>':d.cheia?'<div class="ck vm">!</div>':'<div class="ck">✓</div>';
+ var sub=d.fechado?'Prazo fechado · '+d.vagas:d.cheia?'Cheia · '+d.vagas:d.vagas+' · incluir até '+d.prazo;
+ return '<div class="bl"><div class="bh" onclick="abrir('+n+')"><div class="ic">📅</div><div class="tt">'+d.nome+', '+d.data+'<small>'+sub+'</small></div>'+ck+'<span class="cv">▸</span></div></div>';}
+function vistaLista(){return [9,10,11,12,13].map(linhaDia).join('');}
+function calendario(){
+ var h=['Segunda','Terça','Quarta','Quinta','Sexta','Sábado','Domingo'].map(function(x){return '<div class="h">'+x+'</div>';}).join('');
+ var c='';for(var i=0;i<6;i++)c+='<div class="d vz"></div>';
+ for(var n=1;n<=22;n++){var cl='d',pq='',b='<div class="b"></div>',onc=' onclick="abrir('+(DIAS[n]?n:0)+')"';
+  if(n===9||n===10){cl+=' fe';pq=DIAS[n].vagas;b='<div class="b"><i style="width:'+(n===9?60:100)+'%;background:#9CA3AF"></i></div>';}
+  else if(n===11){cl+=' ch';pq='cheia';b='<div class="b"><i style="width:100%"></i></div>';}
+  else if(n===12){pq='7/15';b='<div class="b"><i style="width:47%"></i></div>';}
+  else if(n===13){pq='1/15';b='<div class="b"><i style="width:7%"></i></div>';}
+  else if(n===6){pq='2/15';b='<div class="b"><i style="width:13%"></i></div>';}
+  c+='<div class="'+cl+'"'+onc+'>'+n+'<small>'+pq+'</small>'+b+'</div>';}
+ return '<label class="f" style="padding:0 2px">Mês<select><option>Novembro de 2026</option><option>Dezembro de 2026</option><option>Outubro de 2026</option></select></label><div class="bl" style="padding:8px 4px 6px"><div class="cal">'+h+c+'</div><div class="leg2"><span class="a">Aberta</span><span class="c">Cheia</span><span class="f">Prazo fechado</span></div></div>';}
+function telaListas(v){
+ return topo('')+'<div class="corpo"><div class="faixa"><b>Semana 09 a 13/11</b><div class="ac"><div class="ib '+(v==='lista'?'on':'')+'" onclick="vistaPrincipal(\'lista\')">☰ Lista</div><div class="ib '+(v==='cal'?'on':'')+'" onclick="vistaPrincipal(\'cal\')">📅 Calendário</div></div></div>'+(v==='lista'?vistaLista():calendario())+'</div>';}
+function telaDia(n,interativa){
+ var d=DIAS[n];var linhas=d.lista.map(function(r){return '<div class="rv"><div class="n">'+r[0]+'<small>'+r[1]+'</small></div><span class="st '+r[2]+'">'+r[3]+'</span></div>';}).join('')||'<div class="rv"><div class="n">Nenhuma revendedora ainda</div></div>';
+ var aviso=d.fechado?'<div class="av am">Prazo fechado: só a Deysiane inclui mais revendedoras.</div>':d.cheia?'<div class="av am">Listagem cheia (15 de 15). Crie outra listagem em outro dia.</div>':'';
+ var acoes=d.fechado||d.cheia?'':'<select '+(interativa?'onchange="acao(this.value,'+n+')"':'')+'><option value="">Ações da listagem…</option><option value="add">Adicionar da minha carteira</option><option value="excluir">Excluir uma revendedora…</option><option value="hora">Mudar o horário</option><option value="ret">Retirar 1 ou 2 kits prontos</option></select>';
+ return topo(interativa?'voltarLista()':'')+'<div class="corpo"><div class="res"><b class="nome">'+d.nome+', '+d.data+'</b><div class="l">Retirada<strong>10:00 e 15:00</strong></div><div class="l">Kits<strong>'+d.vagas.replace('/',' / ')+'</strong></div><div class="g"><span>Incluir até</span><strong>'+d.prazo+'</strong></div></div><div class="bl"><div class="bc" style="border-top:0"><div class="tab">'+linhas+'</div>'+aviso+acoes+'</div></div></div>';}
+function telaExcluir(interativa){
+ return topo(interativa?'abrir(12)':'')+'<div class="corpo"><div class="res"><b class="nome">Excluir: Beatriz L.</b><div class="l">Listagem<strong>quinta-feira 12/11 · 10:00</strong></div><div class="g"><span>Kit</span><strong>Montando</strong></div></div><div class="bl"><div class="bc" style="border-top:0"><label class="f">Quem desmarcou<select><option>A revendedora</option><option>Eu (representante)</option></select></label><label class="f">Motivo<select><option>Desistiu</option><option>Mudou o dia</option><option>Sem dinheiro para o acerto</option><option>Viagem ou compromisso</option><option>Outro</option></select></label><div class="tab"><div class="r"><span>Multa</span><strong>5% da comissão</strong></div><div class="r"><span>Aviso para</span><strong>Deysiane</strong></div><div class="r"><span>Aviso para</span><strong>Montadora (kit montando)</strong></div></div><div class="av am">O kit está sendo montado. A Deysiane decide o que fazer com as peças.</div><div class="bt r" '+(interativa?'onclick="abrir(12)"':'')+'>Excluir da listagem</div><div class="bt s" '+(interativa?'onclick="abrir(12)"':'')+'>Cancelar</div></div></div></div>';}
+var vistaAtual='lista';
+function t1(h){document.getElementById('tela1').innerHTML=h;}
+function vistaPrincipal(v){vistaAtual=v;t1(telaListas(v));}
+function voltarLista(){t1(telaListas(vistaAtual));}
+function abrir(n){if(!n)return;t1(telaDia(n,true));}
+function acao(v,n){if(v==='excluir')t1(telaExcluir(true));else if(v==='add')alert('Abriria a tela "Adicionar da minha carteira" (marcar várias revendedoras).');else if(v==='hora')alert('Abriria "Mudar o horário" com menus suspensos.');else if(v==='ret')alert('Abriria "Retirar kits" (1 ou 2 prontos).');}
+vistaPrincipal('lista');
+document.getElementById('tela2').innerHTML=telaDia(12,false);
+document.getElementById('tela3').innerHTML=telaExcluir(false);
+</script>
+</body>
+</html>

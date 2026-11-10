@@ -8,7 +8,8 @@ import { ResumoSocio } from "@/apps/montagem/pages/FinFamiliarResumo";
 import { Tab, Td, LINHA, ESTADO } from "@/apps/montagem/components/padrao";
 import { FORMAS_REPASSE, baixaDividas, br, hojeIso, janela, nomeMes, pixDoMes, r2, totaisPersona } from "@/apps/montagem/domain/financeiro-familiar";
 import { dataIso, lerOrcamento, lerTextoPdf, msgDivida } from "@/apps/montagem/domain/orcamento-texto";
-import { baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { baixarArquivo } from "@/apps/montagem/lib/arquivos";
+import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { BKC as BK } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -41,7 +42,7 @@ function AbaFfSocios(){
   var salario = r2(tps.reduce(function(t, x){ return t+x.pro.recebido; }, 0)), contasRest = r2(tps.reduce(function(t, x){ return t+x.contas.restante; }, 0));
   var contaPor = {}; ff.contasBanc.forEach(function(c){ contaPor[c.id] = c; });
   var minhas = {};
-  ff.pix.filter(function(x){ return x.personaId===pid && noPeriodo(x.data) && x.auditoria!=="REJEITADO"; }).forEach(function(x){ var c = contaPor[x.contaId]; if(c && c.prestadorId) return; var k = (c ? c.nome.replace(/^Conta\s+/i, "") : "Sem conta informada")+(c && c.banco ? " ("+c.banco+")" : ""); minhas[k] = r2((minhas[k]||0)+x.valor); });
+  ff.pix.filter(function(x){ return x.personaId===pid && noPeriodo(x.data) && x.auditoria!=="REJEITADO" && x.auditoria!=="NAOIDENT"; }).forEach(function(x){ var c = contaPor[x.contaId]; if(c && c.prestadorId) return; var k = (c ? c.nome.replace(/^Conta\s+/i, "") : "Sem conta informada")+(c && c.banco ? " ("+c.banco+")" : ""); minhas[k] = r2((minhas[k]||0)+x.valor); });
   var totMin = r2(Object.keys(minhas).reduce(function(t, k){ return t+minhas[k]; }, 0));
   // prestadores do sócio: responsável, ou que receberam dele (Pix de revendedora ou envio manual)
   var doSocio = function(r, x){ return r.origemPixPersonaId===pid || r.socioId===pid || (!r.origemPixPersonaId && !r.socioId && x.responsavelId===pid); };
@@ -119,8 +120,12 @@ function AbaFfSocios(){
     var barraAcoes = function(esq, ed, setEd){ return e("div",{className:"flex flex-wrap items-center justify-between gap-2"}, e("div",{className:"flex flex-wrap items-center gap-2"}, esq), e(Btn,{v:ed ? "primary" : "ghost", sm:true, onClick:function(){ setEd(!ed); }}, ed ? "✓ Concluir edição" : "✎ Editar")); };
     // lançar dívida: PDF ou mensagem do prestador, depois confere e lança
     var aplicarLeitura = function(o, arq){ var d1 = o.data || (o.pagamentos.length ? dataIso(o.pagamentos[0].data, new Date().getFullYear()) : d.data); setD(Object.assign({}, d, arq||{}, {codigo:o.codigo||d.codigo, titulo:o.titulo||d.titulo, descricao:o.descricao||d.descricao, valor:o.total>0 ? dinheiro(o.total) : d.valor, data:d1||d.data, pags:o.pagamentos.map(function(g){ return {valor:g.valor, origem:g.origem, data:dataIso(g.data, new Date().getFullYear())}; }), aviso:(o.codigo || o.total>0) ? "Li o orçamento"+(o.codigo ? " "+o.codigo : "")+(o.total>0 ? " de "+BK(o.total) : "")+(o.pagamentos.length ? " com "+o.pagamentos.length+" pagamento(s)." : ".")+" Confira e lance." : "Não consegui ler dados neste texto. Preencha à mão."})); };
-    var lerArquivo = function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return; var id = "ffdiv_"+Date.now().toString(36);
-      salvarArquivo(id, arq).then(function(){ return lerTextoPdf(arq); }).then(function(txt){ aplicarLeitura(lerOrcamento(txt), {arquivoId:id, arquivoNome:arq.name}); }).catch(function(){ setD(Object.assign({}, d, {arquivoId:id, arquivoNome:arq.name, aviso:"PDF guardado, mas não consegui ler. Preencha código e valor à mão."})); }); };
+    // o PDF vai para o servidor (/api/anexos, módulo ff): todo mundo abre (10/11/2026; antes ficava só no navegador de quem anexou)
+    var lerArquivo = function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return;
+      lerAnexo(arq).then(function(a){ return enviarAnexo("ff", a); }).then(function(s){ var arqD = {arquivoId:s.key, arquivoNome:arq.name};
+        return lerTextoPdf(arq).then(function(txt){ aplicarLeitura(lerOrcamento(txt), arqD); }, function(){ setD(Object.assign({}, d, arqD, {aviso:"PDF guardado, mas não consegui ler. Preencha código e valor à mão."})); }); })
+        .catch(function(x){ setD(Object.assign({}, d, {aviso:"Não consegui guardar o PDF: "+(x && x.message || "erro")})); }); };
+    var abrirPdf = function(y){ (/^an_/.test(y.arquivoId) ? abrirAnexo(y.arquivoId) : baixarArquivo(y.arquivoId, y.arquivoNome || "orcamento.pdf")).catch(function(){ cx.dispatch({type:"AVISO", txt:"Não consegui abrir o PDF."}); }); };
     var lancar = function(){ var base = {prestId:x.id, data:d.data, valor:num(d.valor), codigo:d.codigo, titulo:d.titulo, descricao:d.descricao, arquivoId:d.arquivoId, arquivoNome:d.arquivoNome};
       if(d.pags && d.pags.length) acao("divida_import", Object.assign(base, {pagamentos:d.pags, socioId:pid})); else acao("divida_add", base);
       setD({data:hojeIso(), valor:"", prazo:"", codigo:"", titulo:"", descricao:"", arquivoId:"", arquivoNome:"", msg:"", pags:[], aviso:""}); setLancDiv(false); };
@@ -141,7 +146,7 @@ function AbaFfSocios(){
         td(edDiv ? inp("v"+y.id, dinheiro(y.valor), "w-24 text-right", function(v){ acao("divida_set", {id:y.id, patch:{valor:num(v)}}); }) : BK(y.valor), MONO+" whitespace-nowrap text-right font-bold"),
         td(BK(b.pago), MONO+" whitespace-nowrap text-right"), td(b.falta<-0.005 ? "+"+BK(-b.falta) : BK(Math.max(0, b.falta)), MONO+" whitespace-nowrap text-right", {color:quit ? (b.falta<-0.005 ? ESTADO.alerta : ESTADO.ok) : ESTADO.alerta}),
         td(quit ? chip((b.falta<-0.005 ? "Pago a mais · " : "Quitada · ")+(b.fechouEm ? br(b.fechouEm) : ""), b.falta<-0.005 ? ESTADO.alerta : ESTADO.ok) : chip("Em aberto", ESTADO.alerta), "whitespace-nowrap"),
-        td(e("div",{className:"flex items-center justify-end gap-1"}, mini("Copiar", function(){ copiar(y.id); }, "Copiar a mensagem desta dívida para o WhatsApp"), y.arquivoId && mini("PDF", function(){ baixarArquivo(y.arquivoId, y.arquivoNome || "orcamento.pdf").catch(function(){ cx.dispatch({type:"AVISO", txt:"PDF não está neste computador."}); }); }, "Baixar o PDF do orçamento"),
+        td(e("div",{className:"flex items-center justify-end gap-1"}, mini("Copiar", function(){ copiar(y.id); }, "Copiar a mensagem desta dívida para o WhatsApp"), y.arquivoId && mini("PDF", function(){ abrirPdf(y); }, "Abrir o PDF do orçamento"),
           edDiv && !quit && mini("Fechar", function(){ if(window.confirm("Fechar "+rotDiv(y)+" no valor atual? Faltam "+BK(b.falta)+" e isso passa a ser zero.")) acao("divida_fechar", {id:y.id}); }, "Fechar esta dívida no valor que falta"), edDiv && mini("Excluir", function(){ if(window.confirm("Excluir "+rotDiv(y)+"?")) acao("divida_del", {id:y.id}); }, "Excluir a dívida", "bg-[#ef4444]/25"))));
       linhasDv.push(linhaD);
       descAll.filter(function(z){ return z.divId===y.id; }).forEach(function(z){ linhasDv.push(e("tr",{key:z.id, className:"border-t border-white/5 text-white/80"}, td("↳ "+(z.descricao||"Desconto"), "pl-5", null), td("", ""), td(edDiv ? inp("dd"+z.id, z.data, "w-32", function(v){ if(v) acao("divida_set", {id:z.id, patch:{data:v}}); }, "date") : br(z.data), "whitespace-nowrap"), td("−"+BK(-z.valor), MONO+" whitespace-nowrap text-right", {color:ESTADO.ok}), td("", ""), td("", ""), td("", ""), td(edDiv ? e("div",{className:"flex justify-end"}, mini("Excluir", function(){ acao("divida_del", {id:z.id}); }, "Excluir o desconto", "bg-[#ef4444]/25")) : "", ""))); }); });

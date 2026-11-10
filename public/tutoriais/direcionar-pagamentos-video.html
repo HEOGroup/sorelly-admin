@@ -1,0 +1,359 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Vídeo · Como o pagamento chega ao Financeiro (Direcionar)</title>
+<style>
+/* REGRA DAS AULAS (02/11/2026, Marcus): o vídeo mostra SEMPRE a tela inteira do sistema (menu lateral, barra de cima e conteúdo).
+   Começa no Início, uma tela neutra, e o cursor vai clicando em cada passo até chegar ao local. Nunca mostrar só a aba.
+   Aula de 09/11/2026: pedido de conta (atendente / Financeiro / representante / desenvolvimento). DADOS DE EXEMPLO, nenhum valor real. */
+:root{--fundo:#0E0F12;--painel:#15171B;--painel2:#1B1E23;--fio:#262A31;--fio2:#343941;--texto:#F2F0EA;--ouro:#D6B25C;--tinta:#1F1B12;--ok:#4CC38A;--at:#F2B544;--verm:#F07167;--azul:#5AB8F5}
+*{box-sizing:border-box}html,body{margin:0;height:100%;background:var(--fundo);color:var(--texto);font:13px/1.45 Inter,system-ui,sans-serif;overflow:hidden}
+.sis{position:relative;display:grid;grid-template-columns:220px 1fr;grid-template-rows:44px 1fr;height:100vh;width:100vw}
+.lado{grid-row:1/3;border-right:1px solid var(--fio);background:var(--painel);display:flex;flex-direction:column;padding:10px 8px;gap:2px;overflow:hidden}
+.logo{font-weight:700;color:var(--ouro);font-size:15px;padding:4px 8px 10px;letter-spacing:.04em}
+.it{height:32px;display:flex;align-items:center;gap:8px;padding:0 8px;border-radius:6px;color:#E6E3DB;border:1px solid transparent}
+.it i{width:16px;height:16px;border-radius:4px;background:var(--fio2);flex:none}
+.it.on{background:rgba(214,178,92,.16);border-color:rgba(214,178,92,.5);color:var(--ouro)}.it.on i{background:var(--ouro)}
+.it.hov{background:rgba(255,255,255,.08)}
+.topo{border-bottom:1px solid var(--fio);display:flex;align-items:center;gap:10px;padding:0 16px;background:var(--painel)}
+.topo .grande{font-weight:600}.pessoa{margin-left:auto;border:1px solid var(--fio2);border-radius:10px;padding:0 10px;height:22px;line-height:20px;font-size:11px}
+.ex{border:1px dashed var(--fio2);border-radius:10px;padding:0 8px;height:22px;line-height:20px;font-size:11px;margin-right:50px}
+.area{position:relative;overflow:hidden;padding:12px 18px 70px;display:flex;flex-direction:column;gap:10px}
+.tela{display:none;flex-direction:column;gap:10px}.tela.v{display:flex}
+.menu{display:flex;gap:18px;height:34px;align-items:center;border-bottom:1px solid var(--fio);position:relative}
+.menu span{color:#D8D5CD;padding:6px 0;border-bottom:2px solid transparent}.menu .on{color:var(--ouro);border-bottom-color:var(--ouro)}.menu .hov{color:#fff}
+.bloco{border:1px solid var(--fio);border-radius:8px;background:var(--painel)}
+.bloco>.t{height:30px;display:flex;align-items:center;padding:0 12px;border-bottom:1px solid var(--fio);font-size:11px;text-transform:uppercase;letter-spacing:.07em;font-weight:600}
+.cp{display:flex;flex-direction:column;gap:4px}.cp small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.in{height:32px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel2);padding:0 10px;display:flex;align-items:center;transition:border-color .3s,box-shadow .3s}
+.in.foco{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35)}
+.btn{height:32px;padding:0 14px;border-radius:6px;border:1px solid var(--ouro);background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600;display:inline-flex;align-items:center;justify-content:center;white-space:nowrap}
+.btn.hov{outline:2px solid var(--ouro);outline-offset:2px}.btn.desab{opacity:.4}
+.hl{outline:2px solid var(--ouro);outline-offset:3px;border-radius:6px}
+.pend{color:var(--at);font-weight:600}.ok{color:var(--ok);font-weight:600}.info{color:var(--azul);font-weight:600}.verm{color:var(--verm);font-weight:700}.verd{color:var(--ok);font-weight:700}
+/* Início: fluxo em 4 etapas */
+.fluxo{display:flex;align-items:stretch;gap:10px;padding:14px}
+.fx{flex:1;border:1px solid var(--fio2);border-radius:8px;padding:12px;background:var(--painel2);display:flex;flex-direction:column;gap:4px;transition:all .4s}
+.fx b{font-size:20px;color:var(--ouro)}.fx span{font-weight:600;font-size:15px}.fx small{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#D8D5CD}
+.fx.on{border-color:var(--ouro);box-shadow:0 0 0 2px rgba(214,178,92,.35);background:rgba(214,178,92,.12)}
+.sep{align-self:center;color:var(--ouro);font-size:20px}
+.regra{padding:18px 20px;font-size:19px;line-height:1.55;border-left:3px solid var(--ouro);display:none}
+/* Atendimento Sorelly */
+.ai{display:grid;grid-template-columns:200px 1fr}
+.passos{border-right:1px solid var(--fio)}
+.pp{height:34px;display:flex;align-items:center;gap:8px;padding:0 12px;border-bottom:1px solid var(--fio);color:#E6E3DB}.pp .ck{color:var(--ok)}
+.pp.on{background:rgba(214,178,92,.16);color:var(--ouro)}.pp.hov{background:rgba(255,255,255,.08)}
+.formas{display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:1px solid var(--fio)}
+.fm{height:30px;display:flex;align-items:center;justify-content:center;border-right:1px solid var(--fio);border-bottom:1px solid var(--fio)}.fm.on{background:rgba(214,178,92,.2);color:var(--ouro);font-weight:600}.fm.hov{background:rgba(255,255,255,.08)}
+.valor{display:grid;grid-template-columns:140px 1fr 140px;gap:8px;align-items:center;padding:8px 12px}
+.tb{display:grid;grid-template-columns:1.4fr 1fr 1fr;gap:8px;align-items:center;padding:0 12px;min-height:30px;border-top:1px solid var(--fio);text-align:center}
+.tb.cab{background:rgba(255,255,255,.04);font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.tot{display:flex;justify-content:space-between;align-items:center;min-height:32px;padding:0 12px;border-top:1px solid var(--fio)}
+.fl{display:grid;grid-template-columns:190px 120px 1fr 170px;gap:8px;align-items:center;padding:0 12px;min-height:44px;border-top:1px solid var(--fio)}
+/* Direcionar */
+.cab2{display:flex;gap:12px;align-items:center;padding:0 12px;height:36px;border-bottom:1px solid var(--fio)}
+.selo{border:1px solid var(--azul);color:var(--azul);border-radius:4px;padding:0 6px;font-size:11px;font-weight:700;height:20px;line-height:18px}.selo.rep{border-color:#C084FC;color:#C084FC}
+.dir2{display:grid;grid-template-columns:300px 1fr}
+.resumo{border-right:1px solid var(--fio)}
+.rs{display:flex;justify-content:space-between;height:28px;align-items:center;padding:0 12px;border-bottom:1px solid var(--fio)}.rs.sub{padding-left:28px}.rs.fal{background:rgba(214,178,92,.12);color:var(--ouro);font-weight:600}
+.dirR{padding:12px;display:flex;flex-direction:column;gap:8px;position:relative}
+.lista{position:absolute;left:12px;top:96px;width:340px;z-index:4;border:1px solid var(--ouro);background:var(--painel);border-radius:8px;overflow:hidden;display:none}
+.lista .g{height:24px;display:flex;align-items:center;padding:0 10px;font-size:11px;text-transform:uppercase;background:rgba(255,255,255,.06)}.lista .o{height:30px;display:flex;align-items:center;padding:0 14px}.lista .o.hov{background:rgba(255,255,255,.12)}
+.rodape{display:flex;align-items:center;justify-content:space-between;padding:0 12px;height:46px;border-top:1px solid var(--fio)}
+.dois{display:grid;grid-template-columns:1.25fr 1fr;gap:10px}
+.fr{display:grid;grid-template-columns:1.3fr 1.1fr 1fr .7fr;gap:8px;align-items:center;padding:0 12px;min-height:32px;border-top:1px solid var(--fio);text-align:center}
+.fr.cab{background:rgba(255,255,255,.04);font-size:11px;text-transform:uppercase;letter-spacing:.05em;min-height:28px;border-top:0}
+.drop{position:absolute;left:150px;top:36px;z-index:5;width:250px;border:1px solid var(--ouro);background:var(--painel);border-radius:8px;overflow:hidden;display:none}
+.drop .o{height:30px;display:flex;align-items:center;padding:0 12px}.drop .o.hov{background:rgba(255,255,255,.12)}
+/* Celular da representante */
+.fones{display:grid;grid-template-columns:300px 360px;gap:36px;justify-content:center;align-items:start}
+.fone{width:300px;height:470px;border:2px solid var(--fio2);border-radius:28px;background:#0b0c0e;padding:10px;position:relative}
+.fh{height:42px;background:#000;border-radius:18px 18px 0 0;display:flex;align-items:center;justify-content:center;color:var(--ouro);font-weight:600}
+.fb{padding:12px;display:flex;flex-direction:column;gap:10px}
+.fpg{display:flex;justify-content:space-between;gap:6px;padding:8px 10px;border:1px solid var(--fio2);border-radius:10px;background:var(--painel2)}
+.toast{position:absolute;left:14px;right:14px;bottom:70px;border:1px solid var(--ok);background:rgba(76,195,138,.18);border-radius:12px;padding:10px 12px;font-weight:600;display:none}
+.est{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--fio);border-radius:8px;margin-bottom:8px;background:var(--painel);transition:all .4s}.est b{color:var(--ouro);font-size:18px}
+.est.on{border-color:var(--ouro);background:rgba(214,178,92,.12)}
+/* Diagrama para o desenvolvimento */
+.dg{display:flex;align-items:center;gap:10px;padding:16px}
+.cx{flex:1;border:1px solid var(--fio2);border-radius:8px;background:var(--painel2);padding:12px;display:flex;flex-direction:column;gap:6px;min-height:130px}
+.cx b{font-size:15px;color:var(--ouro)}.cx small{font-size:12px;color:#E6E3DB}.cx code{font:12px/1.4 Consolas,monospace;background:rgba(255,255,255,.07);padding:2px 6px;border-radius:4px}
+.sa{font-size:26px;color:var(--ouro)}
+.dg2{margin:0 16px 16px;padding:10px 14px;border:1px dashed var(--ouro);border-radius:8px;font-size:15px}
+.ap{opacity:.12;transition:opacity .5s}
+.no{border-color:var(--verm)}.no>.t{color:var(--verm)}
+.lis{padding:10px 14px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.legenda{position:absolute;left:0;right:0;bottom:0;z-index:5;min-height:66px;border-top:1px solid var(--ouro);background:rgba(15,16,19,.97);padding:10px 20px 10px 244px;display:flex;gap:12px;align-items:center;font-size:16px}
+.legenda .n{flex:none;width:28px;height:28px;border-radius:14px;background:var(--ouro);color:var(--tinta);display:grid;place-items:center;font-weight:700}
+.prog{position:absolute;left:0;right:0;bottom:0;height:4px;z-index:6;background:var(--painel2)}.prog i{display:block;height:100%;width:0;background:var(--ouro)}
+#mao{position:absolute;z-index:9;left:640px;top:360px;width:22px;height:22px;pointer-events:none;transition:left .9s ease-in-out,top .9s ease-in-out;filter:drop-shadow(0 2px 3px #000)}
+#mao svg{width:22px;height:22px}#mao.toque::after{content:"";position:absolute;left:-10px;top:-10px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ouro);animation:o .5s ease-out}
+@keyframes o{from{transform:scale(.4);opacity:1}to{transform:scale(1.4);opacity:0}}
+#reco{position:absolute;right:12px;top:10px;z-index:7;height:24px;border:1px solid var(--fio2);border-radius:6px;background:var(--painel);color:var(--texto);font:11px Inter,system-ui,sans-serif;padding:0 10px;cursor:pointer}
+body.gravar #reco{display:none}
+</style></head><body>
+<div class="sis" id="sis">
+  <aside class="lado">
+    <div class="logo">SORELLY</div>
+    <div class="it on" id="mIni"><i></i>Início</div>
+    <div class="it" id="mChat"><i></i>SorellyChat</div>
+    <div class="it" id="mApps"><i></i>Apps</div>
+    <div class="it" id="mFin"><i></i>Financeiro</div>
+    <div class="it" id="mAg"><i></i>Agendamento</div>
+    <div class="it" id="mCad"><i></i>Cadastro de revendedoras</div>
+    <div class="it" id="mAI"><i></i>Atendimento interno</div>
+    <div class="it" id="mRep"><i></i>Representantes e Kits</div>
+    <div class="it" id="mMat"><i></i>Materiais e estoque</div>
+    <div class="it" id="mRH"><i></i>Recursos Humanos</div>
+    <div class="it" id="mMel"><i></i>Melhorias</div>
+    <div class="it" id="mAulas"><i></i>Aulas do setor</div>
+  </aside>
+  <header class="topo"><b class="grande" id="tit">Início</b><span id="sub"></span><span class="pessoa" id="quem"></span><span class="ex">Dados de exemplo</span></header>
+  <main class="area">
+
+    <section class="tela v" id="tIni">
+      <div class="bloco"><div class="t">Como o pagamento chega ao Financeiro</div>
+        <div class="fluxo">
+          <div class="fx" id="fx1"><b>1</b><span>A atendente envia</span><small>forma + valor</small></div><div class="sep">›</div>
+          <div class="fx" id="fx2"><b>2</b><span>O Financeiro define a conta</span><small>tela Direcionar</small></div><div class="sep">›</div>
+          <div class="fx" id="fx3"><b>3</b><span>A conta volta</span><small>para quem atendeu</small></div><div class="sep">›</div>
+          <div class="fx" id="fx4"><b>4</b><span>Comprovante</span><small>anexado na tela</small></div>
+        </div></div>
+      <div class="bloco regra" id="regra">Quem atende <b>não escolhe a conta</b>.<br>O sistema <b>sugere</b> uma conta.<br>O Financeiro <b>define</b> a conta.</div>
+    </section>
+
+    <section class="tela" id="tAI">
+      <div class="menu"><span id="mA1">Revendedoras</span><span id="mA2">Listagens</span><span id="mAtend">Atendimento Sorelly</span><span id="mA4">Consolidado Sorelly</span></div>
+      <div id="aiCorpo" style="display:none;flex-direction:column;gap:10px">
+        <div class="bloco"><div class="t">Atendimento · Maria Silva · 14:30 · Atendida por Edna</div>
+          <div class="ai">
+            <div class="passos">
+              <div class="pp"><span class="ck">✓</span>Condicionais</div>
+              <div class="pp"><span class="ck">✓</span>Vendas · R$ 1.500,00</div>
+              <div class="pp" id="aiP3"><span>3</span>Pagamentos</div>
+              <div class="pp"><span class="ck">✓</span>Valor do kit</div>
+              <div class="pp"><span>5</span>Brindes</div>
+              <div class="pp"><span>6</span>Condicional nova</div>
+              <div class="pp"><span>7</span>Regras</div>
+            </div>
+            <div>
+              <div id="aiForm">
+                <div class="formas"><div class="fm" id="fPix">Pix</div><div class="fm" id="fLink">Link de pagamento</div><div class="fm" id="fCred">Cartão de crédito</div><div class="fm" id="fDeb">Cartão de débito</div><div class="fm" id="fDin">Dinheiro</div><div class="fm" id="fLoja">Acerto com loja</div></div>
+                <div class="valor"><small id="fNome">Forma</small><div class="in" id="aiVal">R$ 0,00</div><span class="btn" id="aiAdd">Adicionar</span></div>
+              </div>
+              <div class="tb cab"><span>Forma</span><span>Parcelas</span><span>Valor</span></div>
+              <div id="aiTab"></div>
+              <div class="tot"><span>Valor do acerto <b>R$ 975,00</b></span><span>Pagamentos <b id="aiPag">R$ 0,00</b></span><span>Falta pagar <b id="aiFalta" class="verm">R$ 975,00</b></span><span class="btn desab" id="aiEnv">OK, enviar ao financeiro</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="bloco" id="aiFin" style="display:none"><div class="t">Financeiro · enviado às 14:32</div>
+          <div class="fl"><b>Dinheiro</b><span>R$ 300,00</span><span class="ok">✓ DINHEIRO · conferido</span><span></span></div>
+          <div class="fl"><b>Cartão de crédito</b><span>R$ 175,00</span><span class="ok">✓ CRÉDITO · GETNET - P · conferido</span><span></span></div>
+          <div class="fl"><b>Pix</b><span>R$ 500,00</span><span class="pend" id="stPix">Aguardando o financeiro definir e enviar as contas</span><span class="btn" id="aiAnexo" style="display:none">Anexar comprovante</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tela" id="tFin">
+      <div class="menu"><span id="mF1">Resumo do grupo</span><span id="mPag">Pagamentos ▾</span><span id="mF3">Resultado do mês</span><span id="mF4">Atividades</span><span id="mF5">Previsão de caixa</span>
+        <div class="drop" id="pagDrop"><div class="o" id="dDirItem">Direcionar</div><div class="o">Contas das representantes</div><div class="o">Regras do Pix</div><div class="o">Controle de pagamentos</div></div></div>
+      <div id="finDir" style="display:none;flex-direction:column;gap:10px">
+        <div class="bloco" id="bDir"><div class="t">Direcionar pagamento</div>
+          <div class="cab2"><span class="selo">INTERNO</span><b>Maria Silva</b><span>Atendida por Edna · chegou às 14:32 · aguardando há 1 min</span></div>
+          <div class="dir2">
+            <div class="resumo" id="dRes">
+              <div class="rs"><span>Vendas</span><b>R$ 1.500,00</b></div>
+              <div class="rs"><span>A pagar</span><b>R$ 975,00</b></div>
+              <div class="rs"><span>Já pago</span><b class="verd">R$ 475,00</b></div>
+              <div class="rs sub"><span>Dinheiro</span><span>R$ 300,00</span></div>
+              <div class="rs sub"><span>Crédito</span><span>R$ 175,00</span></div>
+              <div class="rs fal"><span>Falta pagar</span><b>R$ 500,00</b></div>
+            </div>
+            <div class="dirR">
+              <div class="cp" id="dContaW"><small>Pix · R$ 500,00 · conta</small><div class="in" id="dConta">CNPJ 34 · Sorelly Atacadista</div></div>
+              <div id="dMotivo"><b>Sugestão do sistema:</b> a conta mais no negativo hoje é a Sicredi Rotativo 34.</div>
+              <div class="lista" id="dLista"><div class="g">Empresa</div><div class="o">CNPJ 34 · Sorelly Atacadista</div><div class="o">CNPJ 46 · Mayz Comércio de Moda</div><div class="o" id="dOpt59">CNPJ 59 · Serenity</div><div class="o">CNPJ 67 · Axis</div><div class="g">Família / sócio</div><div class="g">Fornecedor</div></div>
+            </div>
+          </div>
+          <div class="rodape"><span>Falta enviar <b id="dFalta">R$ 500,00</b> · 1 pagamento</span><span class="btn" id="dOk">OK · enviar</span></div>
+        </div>
+        <div class="dois">
+          <div class="bloco" id="bFila"><div class="t">Aguardando direcionar</div>
+            <div class="fr cab"><span>Revendedora</span><span>Origem</span><span>Direcionar</span><span>Espera</span></div>
+            <div class="fr" id="rowMaria"><span>Maria Silva</span><span class="selo" style="justify-self:center">Interno</span><b>R$ 500,00</b><span>1 min</span></div>
+            <div class="fr"><span>Dayanne</span><span class="selo rep" style="justify-self:center">Representante</span><b>R$ 800,00</b><span>3 min</span></div>
+          </div>
+          <div class="bloco" id="bNeg"><div class="t">Contas negativas</div>
+            <div class="fr cab" style="grid-template-columns:1.6fr 1fr .8fr"><span>Conta</span><span>Valor</span><span>Há</span></div>
+            <div class="fr" style="grid-template-columns:1.6fr 1fr .8fr"><span>CNPJ 34 · Sicredi Rotativo</span><b class="verm">−R$ 8.000,00</b><span>5 dias</span></div>
+            <div class="fr" style="grid-template-columns:1.6fr 1fr .8fr"><span>CNPJ 59 · Safra</span><b class="verm">−R$ 2.000,00</b><span>15 dias</span></div>
+          </div>
+        </div>
+        <div class="bloco" id="bFeitos" style="display:none"><div class="t">Direcionados</div>
+          <div class="fr cab" style="grid-template-columns:.5fr 1.2fr .8fr 1.6fr 1fr"><span>Hora</span><span>De</span><span>Valor</span><span>Destino</span><span>Quem confirmou</span></div>
+          <div class="fr" style="grid-template-columns:.5fr 1.2fr .8fr 1.6fr 1fr"><span>14:35</span><span>Maria Silva</span><b>R$ 500,00</b><span>CNPJ 59 · Serenity</span><b class="ok">Lucas</b></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tela" id="tApp">
+      <div class="fones">
+        <div class="fone"><div class="fh">Acerto · Maria Silva</div>
+          <div class="fb">
+            <small>Pagamento</small>
+            <div id="aPgs"></div>
+            <div class="in" id="aForma">Escolha a forma</div>
+            <div class="in" id="aVal">R$ 0,00</div>
+            <span class="btn" id="aAdd">Adicionar pagamento</span>
+          </div>
+          <div class="toast" id="aToast">Conta recebida: CNPJ 59 · Serenity</div>
+          <div style="position:absolute;left:12px;right:12px;bottom:12px"><div class="btn desab" id="aFin" style="width:100%">Aguardando pagamento</div></div>
+        </div>
+        <div>
+          <div class="est" id="e1"><b>1</b>Ela adiciona o pagamento: forma e valor</div>
+          <div class="est" id="e2"><b>2</b>O app mostra “Aguardando a conta do financeiro” e segue</div>
+          <div class="est" id="e3"><b>3</b>O Financeiro define a conta no Direcionar</div>
+          <div class="est" id="e4"><b>4</b>O app avisa: “Conta recebida”</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="tela" id="tLeo">
+      <div class="bloco"><div class="t">Fluxo técnico do pedido de conta</div>
+        <div class="dg">
+          <div class="cx ap" id="lA"><b>App da representante</b><b>Atendimento Sorelly</b><small>Envia: forma, valor, parcelas e comprovante.</small></div>
+          <div class="sa ap" id="sA1">›</div>
+          <div class="cx ap" id="lS"><b>Servidor · módulo pag</b><small>Uma chave por pedido:</small><code>dp_… fila do Direcionar</code><code>lf_… controle de pagamentos</code></div>
+          <div class="sa ap" id="sA2">›</div>
+          <div class="cx ap" id="lD"><b>Direcionar</b><small>Todo o Financeiro vê a mesma fila.</small><small>A tela lê o servidor a cada 20 segundos.</small></div>
+        </div>
+        <div class="dg2 ap" id="lV">‹ A conta volta: o nome da conta é gravado no pagamento do acerto. O app mostra “Conta recebida”.</div>
+      </div>
+      <div class="dois" style="grid-template-columns:1fr 1fr">
+        <div class="bloco no ap" id="lNao"><div class="t">Não fazer</div><div class="lis"><span>Lista de contas no app para a representante escolher.</span><span>Esperar a resposta do Financeiro para seguir.</span><span>Guardar o pedido só no aparelho de quem enviou.</span></div></div>
+        <div class="bloco ap" id="lCamp"><div class="t">Pedem conta</div><div class="lis"><span><b>Pix, link, crédito e débito</b>: enviam o pedido.</span><span><b>Dinheiro, acerto com loja e Pix representante</b>: não pedem.</span><span>Cartão do atendimento interno: maquininha única GETNET - P, já entra pago.</span></div></div>
+      </div>
+    </section>
+
+  </main>
+  <div class="legenda"><span class="n" id="n">1</span><span id="txt"></span></div>
+  <div class="prog"><i id="barra"></i></div>
+  <div id="mao"><svg viewBox="0 0 24 24"><path d="M3 2l7 19 3-8 8-3z" fill="#fff" stroke="#000" stroke-width="1.4" stroke-linejoin="round"/></svg></div>
+  <button id="reco">Recomeçar</button>
+</div>
+<script>
+var $ = function(id){ return document.getElementById(id); }, timers = [], t0 = 0, TOTAL = 1000, cur = 0, nC = 0, pagos = 0;
+if(/gravar=1/.test(location.search)) document.body.classList.add("gravar");
+var em = function(ms, fn){ timers.push(setTimeout(fn, ms)); };
+var cena = function(n, html){ $("n").textContent = n; $("txt").innerHTML = html; };
+var brl = function(v){ return "R$ " + v.toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}); };
+var limpa = function(){ timers.forEach(clearTimeout); timers = []; };
+var ITENS = ["mIni","mChat","mApps","mFin","mAg","mCad","mAI","mRep","mMat","mRH","mMel","mAulas"], TELAS = ["tIni","tAI","tFin","tApp","tLeo"];
+var tela = function(t, tit, sub, it){ TELAS.forEach(function(x){ $(x).className = "tela" + (x===t ? " v" : ""); }); $("tit").textContent = tit; $("sub").textContent = sub || ""; ITENS.forEach(function(i){ $(i).className = "it" + (i===it ? " on" : ""); }); };
+var quem = function(t){ $("quem").textContent = t; };
+var setMenu = function(ids, ativo){ ids.forEach(function(i){ $(i).className = i===ativo ? "on" : ""; }); };
+var foco = function(id, on){ $(id).classList.toggle("foco", on); };
+var hl = function(id, on){ $(id).classList.toggle("hl", on); };
+var digita = function(id, texto, ini, passo){ for(var i=1;i<=texto.length;i++){ (function(k){ em(ini+k*passo, function(){ $(id).textContent = texto.slice(0,k); }); })(i); } };
+// move o cursor até o elemento (0,9 s) e clica (efeito de toque); depois executa fn
+var vai = function(id, ini, fn){
+  em(ini, function(){ var r = $(id).getBoundingClientRect(), s = $("sis").getBoundingClientRect(); $("mao").style.left = (r.left - s.left + Math.min(40, r.width/2))+"px"; $("mao").style.top = (r.top - s.top + r.height/2)+"px"; $(id).classList.add("hov"); });
+  em(ini+1000, function(){ $("mao").classList.remove("toque"); void $("mao").offsetWidth; $("mao").classList.add("toque"); $(id).classList.remove("hov"); if(fn) fn(); });
+};
+var passo = function(seg, html, acoes){ var at = cur, n = ++nC; em(at, function(){ cena(n, html); }); if(acoes) acoes(at); cur += seg*1000; };
+var fx = function(id){ $(id).className = "fx on"; };
+var addPag = function(forma, parc, valor){ pagos += valor; $("aiTab").insertAdjacentHTML("beforeend", '<div class="tb"><b>'+forma+'</b><span>'+parc+'</span><b>'+brl(valor)+'</b></div>'); $("aiPag").textContent = brl(pagos); var f = Math.round((975-pagos)*100)/100; $("aiFalta").textContent = brl(f); $("aiFalta").className = f===0 ? "verd" : "verm"; if(f===0) $("aiEnv").classList.remove("desab"); $("aiVal").textContent = "R$ 0,00"; $("fNome").textContent = "Forma"; ["fPix","fCred","fDin"].forEach(function(i){ $(i).className = "fm"; }); };
+var escolhe = function(id, nome){ ["fPix","fCred","fDin"].forEach(function(i){ $(i).className = "fm"; }); $(id).className = "fm on"; $("fNome").textContent = nome; };
+
+function zera(){
+  tela("tIni","Início","","mIni"); quem("Visão geral do processo"); pagos = 0;
+  ["fx1","fx2","fx3","fx4"].forEach(function(i){ $(i).className = "fx"; }); $("regra").style.display = "none";
+  setMenu(["mA1","mAtend"], "mA1"); $("aiCorpo").style.display = "none"; $("aiForm").style.display = "block"; $("aiTab").innerHTML = ""; $("aiPag").textContent = "R$ 0,00"; $("aiFalta").textContent = "R$ 975,00"; $("aiFalta").className = "verm";
+  $("fNome").textContent = "Forma"; $("aiVal").textContent = "R$ 0,00"; $("aiFin").style.display = "none"; $("aiEnv").className = "btn desab"; ["fPix","fCred","fDin"].forEach(function(i){ $(i).className = "fm"; }); $("aiP3").className = "pp";
+  $("stPix").className = "pend"; $("stPix").textContent = "Aguardando o financeiro definir e enviar as contas"; $("aiAnexo").style.display = "none"; $("aiAnexo").textContent = "Anexar comprovante"; $("aiAnexo").className = "btn";
+  setMenu(["mF1","mPag"], "mF1"); $("pagDrop").style.display = "none"; $("finDir").style.display = "none"; $("bDir").style.display = "block"; $("dConta").textContent = "CNPJ 34 · Sorelly Atacadista";
+  $("dMotivo").innerHTML = "<b>Sugestão do sistema:</b> a conta mais no negativo hoje é a Sicredi Rotativo 34."; $("dLista").style.display = "none"; $("rowMaria").style.display = "grid"; $("bFeitos").style.display = "none";
+  ["dRes","dContaW","bNeg","bFeitos"].forEach(function(i){ hl(i, false); });
+  $("aPgs").innerHTML = ""; $("aForma").textContent = "Escolha a forma"; $("aVal").textContent = "R$ 0,00"; $("aToast").style.display = "none"; $("aFin").textContent = "Aguardando pagamento"; $("aFin").className = "btn desab";
+  ["e1","e2","e3","e4"].forEach(function(i){ $(i).className = "est"; }); foco("aForma", false); foco("aVal", false);
+  ["lA","sA1","lS","sA2","lD","lV","lNao","lCamp"].forEach(function(i){ $(i).className = $(i).className.replace(/ ?ap/g, "") + " ap"; });
+}
+var mostraLeo = function(){ for(var i=0;i<arguments.length;i++) $(arguments[i]).className = $(arguments[i]).className.replace(/ ?ap/g, ""); };
+
+var inicia = function(){
+  limpa(); zera(); cur = 0; nC = 0; t0 = Date.now(); window.terminou = false;
+  $("mao").style.transition = "none"; $("mao").style.left = "640px"; $("mao").style.top = "300px"; void $("mao").offsetWidth; $("mao").style.transition = "";
+
+  // ── Introdução
+  passo(7, 'Este vídeo mostra <b>como o pagamento chega ao Financeiro</b>. Duração: cerca de 6 minutos.');
+  passo(9, 'Regra principal: quem atende <b>nunca escolhe a conta</b>. Ela informa só a <b>forma</b> e o <b>valor</b>.', function(at){ em(at+400, function(){ $("regra").style.display = "block"; }); });
+  passo(9, 'Quem <b>define a conta</b> é o Financeiro, na tela <b>Direcionar</b>. O sistema só <b>sugere</b>.');
+  passo(8, 'São <b>4 etapas</b>: <b>1</b> a atendente envia · <b>2</b> o Financeiro define a conta · <b>3</b> a conta volta · <b>4</b> o comprovante é anexado.', function(at){ em(at+600, function(){ fx("fx1"); }); em(at+2200, function(){ fx("fx2"); }); em(at+3800, function(){ fx("fx3"); }); em(at+5400, function(){ fx("fx4"); }); });
+
+  // ── Parte 1 · atendente
+  passo(6, 'Parte 1 · <b>Atendente</b>. A Edna está no <b>Início</b>. O pedido de conta nasce no <b>Atendimento interno</b>.', function(at){ em(at+200, function(){ quem("Edna · Atendimento interno"); $("regra").style.display = "none"; }); });
+  passo(5, 'No menu da esquerda, clique em <b>Atendimento interno</b>.', function(at){ vai("mAI", at+400, function(){ tela("tAI","Atendimento interno","› Revendedoras","mAI"); }); });
+  passo(6, 'Na barra de cima, clique em <b>Atendimento Sorelly</b>.', function(at){ vai("mAtend", at+400, function(){ setMenu(["mA1","mAtend"], "mAtend"); $("sub").textContent = "› Atendimento Sorelly"; $("aiCorpo").style.display = "flex"; }); });
+  passo(8, 'A revendedora <b>Maria Silva</b> tem condicionais e venda de <b>R$ 1.500,00</b>. O valor do acerto é <b>R$ 975,00</b>. Clique na etapa <b>Pagamentos</b>.', function(at){ vai("aiP3", at+4800, function(){ $("aiP3").className = "pp on"; }); });
+  passo(8, 'A revendedora paga de 3 formas. A primeira é <b>Dinheiro</b>: R$ 300,00.', function(at){
+    vai("fDin", at+300, function(){ escolhe("fDin","Dinheiro"); }); vai("aiVal", at+2000, function(){ foco("aiVal", true); digita("aiVal","R$ 300,00",0,50); });
+    vai("aiAdd", at+4400, function(){ foco("aiVal", false); addPag("Dinheiro","À vista",300); }); });
+  passo(9, 'A segunda é <b>Cartão de crédito</b>: R$ 175,00. A atendente <b>não escolhe a maquininha</b>: só existe uma, a <b>GETNET - P</b>.', function(at){
+    vai("fCred", at+300, function(){ escolhe("fCred","Cartão de crédito"); }); vai("aiVal", at+2000, function(){ foco("aiVal", true); digita("aiVal","R$ 175,00",0,50); });
+    vai("aiAdd", at+4400, function(){ foco("aiVal", false); addPag("Cartão de crédito · Visa","À vista",175); }); });
+  passo(9, 'A terceira é <b>Pix</b>: R$ 500,00. Veja: <b>não existe lista de contas</b> nesta tela. Ela informa só a forma e o valor.', function(at){
+    vai("fPix", at+300, function(){ escolhe("fPix","Pix"); }); vai("aiVal", at+2000, function(){ foco("aiVal", true); digita("aiVal","R$ 500,00",0,50); });
+    vai("aiAdd", at+4400, function(){ foco("aiVal", false); addPag("Pix","À vista",500); }); });
+  passo(7, 'Falta pagar: <b>R$ 0,00</b>. Clique em <b>OK, enviar ao financeiro</b>.', function(at){
+    vai("aiEnv", at+1500, function(){ $("aiForm").style.display = "none"; $("aiFin").style.display = "block"; }); });
+  passo(12, 'O dinheiro e o cartão <b>já entram resolvidos</b>: o cartão foi para a <b>GETNET - P</b> sozinho. O <b>Pix</b> fica <b>aguardando o Financeiro</b>. A atendente espera.');
+
+  // ── Parte 2 · Financeiro
+  passo(8, 'Parte 2 · <b>Financeiro</b>. O pedido já chegou ao servidor, em segundos. <b>Todo o Financeiro</b> com acesso vê a mesma fila, não só o Lucas.', function(at){ em(at+200, function(){ quem("Lucas · Financeiro"); }); });
+  passo(5, 'No menu da esquerda, clique em <b>Financeiro</b>.', function(at){ vai("mFin", at+400, function(){ tela("tFin","Financeiro","","mFin"); }); });
+  passo(6, 'Clique em <b>Pagamentos</b> e depois em <b>Direcionar</b>.', function(at){
+    vai("mPag", at+200, function(){ setMenu(["mF1","mPag"], "mPag"); $("pagDrop").style.display = "block"; });
+    vai("dDirItem", at+2400, function(){ $("pagDrop").style.display = "none"; $("finDir").style.display = "flex"; $("sub").textContent = "› Direcionar"; }); });
+  passo(9, 'No alto aparece o pedido: quem atendeu, <b>vendas</b>, <b>a pagar</b>, <b>já pago</b> e <b>falta pagar: R$ 500,00</b>. Só o <b>Pix</b> falta.', function(at){ em(at+400, function(){ hl("dRes", true); }); em(at+8400, function(){ hl("dRes", false); }); });
+  passo(10, 'O sistema <b>sugere</b> uma conta e escreve o <b>motivo</b>. Aqui: <b>CNPJ 34</b>, porque é a conta mais no negativo hoje.', function(at){ em(at+400, function(){ hl("dContaW", true); }); em(at+9400, function(){ hl("dContaW", false); }); });
+  passo(12, 'Como o Financeiro decide: <b>1.</b> saldo de cada conta · <b>2.</b> contas a pagar de hoje, depois de amanhã · <b>3.</b> contas negativas: pesa mais o <b>valor negativo</b>.', function(at){ em(at+400, function(){ hl("bNeg", true); }); em(at+11400, function(){ hl("bNeg", false); }); });
+  passo(10, 'Regra de ouro: <b>uma venda, um CNPJ</b>. Se o Pix for para outro CNPJ, a <b>Bruna</b> precisa dividir a venda em duas. Evite, mas pode.');
+  passo(11, 'Pix acima de <b>R$ 1.500</b>: o Lucas, o Marcus ou a Anamaria <b>conferem</b> antes. Mais de <b>80% da venda em dinheiro</b>: o Pix vai para conta <b>fora da empresa</b>.');
+  passo(10, 'O Financeiro pode <b>aceitar</b> a sugestão ou <b>trocar</b> a conta. Aqui o Lucas troca para o <b>CNPJ 59</b>, que tem mais contas a vencer.', function(at){
+    vai("dConta", at+400, function(){ foco("dConta", true); $("dLista").style.display = "block"; });
+    vai("dOpt59", at+3400, function(){ foco("dConta", false); $("dLista").style.display = "none"; $("dConta").textContent = "CNPJ 59 · Serenity"; $("dMotivo").innerHTML = "<b>Conta escolhida pelo Financeiro</b> (Lucas)."; }); });
+  passo(8, 'Clique em <b>OK · enviar</b>. O pedido sai da fila.', function(at){
+    vai("dOk", at+1200, function(){ $("bDir").style.display = "none"; $("rowMaria").style.display = "none"; $("bFeitos").style.display = "block"; }); });
+  passo(9, 'O pedido aparece em <b>Direcionados</b>: R$ 500,00 · CNPJ 59 · <b>quem confirmou</b>. Outra pessoa do Financeiro já não vê o pedido na fila.', function(at){ em(at+400, function(){ hl("bFeitos", true); }); em(at+8400, function(){ hl("bFeitos", false); }); });
+
+  // ── Parte 3 · a conta volta
+  passo(7, 'Parte 3 · <b>A conta volta</b>. A Edna abre de novo o <b>Atendimento Sorelly</b>.', function(at){ em(at+200, function(){ quem("Edna · Atendimento interno"); }); vai("mAI", at+1200, function(){ tela("tAI","Atendimento interno","› Atendimento Sorelly","mAI"); }); });
+  passo(11, 'A <b>conta chegou</b>: CNPJ 59 · Serenity. A atendente informa a conta à revendedora, recebe o Pix e <b>anexa o comprovante</b>.', function(at){
+    em(at+500, function(){ $("stPix").className = "info"; $("stPix").textContent = "CNPJ 59 · Serenity · contas definidas"; $("aiAnexo").style.display = "inline-flex"; });
+    vai("aiAnexo", at+4500, function(){ $("aiAnexo").textContent = "comprovante-pix.jpg ✓"; $("aiAnexo").className = "btn ok"; $("stPix").className = "ok"; $("stPix").textContent = "CNPJ 59 · Serenity · comprovante anexado"; }); });
+  passo(8, 'Com todos os comprovantes anexados, o atendimento segue para <b>conferência</b> e depois para o <b>Consolidado Sorelly</b>.');
+
+  // ── Parte 4 · representante
+  passo(8, 'Parte 4 · <b>Representante</b>. No app é o mesmo fluxo: <b>sem lista de contas</b>. O app abre em <b>Apps</b>.', function(at){ em(at+200, function(){ quem("Dayanne · representante"); }); vai("mApps", at+4000, function(){ tela("tApp","Apps","› Representante","mApps"); }); });
+  passo(10, 'No acerto, ela escolhe a <b>forma</b> (Pix) e o <b>valor</b> (R$ 800,00) e adiciona o pagamento.', function(at){
+    vai("aForma", at+400, function(){ foco("aForma", true); $("aForma").textContent = "Pix"; }); vai("aVal", at+2400, function(){ foco("aForma", false); foco("aVal", true); digita("aVal","R$ 800,00",0,50); });
+    vai("aAdd", at+4800, function(){ foco("aVal", false); $("aPgs").innerHTML = '<div class="fpg"><b>Pix · R$ 800,00</b><span class="pend">Aguardando a conta</span></div>'; $("aForma").textContent = "Escolha a forma"; $("aVal").textContent = "R$ 0,00"; $("e1").className = "est on"; }); });
+  passo(10, 'O pedido de conta <b>sai sozinho</b>. O app <b>não espera</b>: ela segue para os brindes. Na fila do Financeiro, o pedido leva o selo <b>Representante</b>.', function(at){ em(at+300, function(){ $("e1").className = "est"; $("e2").className = "est on"; $("aFin").textContent = "Aguardando a conta do financeiro"; }); em(at+5000, function(){ $("e2").className = "est"; $("e3").className = "est on"; }); });
+  passo(9, 'Quando o Financeiro define a conta, o app avisa: <b>Conta recebida: CNPJ 59 · Serenity</b>. A representante passa a conta à revendedora.', function(at){ em(at+500, function(){ $("e3").className = "est"; $("e4").className = "est on"; $("aToast").style.display = "block"; $("aPgs").innerHTML = '<div class="fpg"><b>Pix · R$ 800,00</b><span class="ok">CNPJ 59 · Serenity</span></div>'; $("aFin").textContent = "Continuar"; $("aFin").className = "btn"; }); });
+  passo(8, 'Cartão e link da representante: o CNPJ é o da <b>maquininha ou do link dela</b>. Dinheiro, acerto com loja e Pix representante <b>não pedem conta</b>.');
+
+  // ── Parte 5 · desenvolvimento
+  passo(7, 'Parte 5 · <b>Para o Leonardo</b>. O que o app real precisa fazer.', function(at){ em(at+200, function(){ quem("Leonardo · Desenvolvimento"); tela("tLeo","Para o desenvolvimento","› Pedido de conta",""); mostraLeo("lA"); }); });
+  passo(11, '<b>Erro comum:</b> colocar no app uma lista para a representante escolher a conta. <b>Não pode.</b> O app envia só <b>forma, valor, parcelas e comprovante</b>.', function(at){ em(at+300, function(){ mostraLeo("lNao"); }); });
+  passo(12, 'O pedido sobe para o <b>servidor</b> (módulo <b>pag</b>), uma chave por pedido. Assim, duas pessoas mexendo ao mesmo tempo <b>não apagam</b> o trabalho uma da outra.', function(at){ em(at+300, function(){ mostraLeo("sA1","lS"); }); });
+  passo(10, 'A tela do Financeiro lê o servidor a cada <b>20 segundos</b>. Todo o Financeiro vê a <b>mesma fila</b>.', function(at){ em(at+300, function(){ mostraLeo("sA2","lD"); }); });
+  passo(11, 'Quando o Financeiro confirma, a <b>conta volta</b> e é gravada no pagamento do acerto. O app mostra <b>Conta recebida</b>.', function(at){ em(at+300, function(){ mostraLeo("lV"); }); });
+  passo(10, 'O app <b>nunca espera</b> a resposta. <b>Pix, link, crédito e débito</b> pedem conta. <b>Dinheiro, acerto com loja e Pix representante</b> não pedem.', function(at){ em(at+300, function(){ mostraLeo("lCamp"); }); });
+  passo(10, 'Resumo: <b>1</b> a atendente envia forma e valor · <b>2</b> o Financeiro define a conta · <b>3</b> a conta volta · <b>4</b> o comprovante é anexado.', function(at){ em(at+200, function(){ tela("tIni","Início","","mIni"); quem("Visão geral do processo"); }); em(at+700, function(){ fx("fx1"); fx("fx2"); fx("fx3"); fx("fx4"); }); });
+  em(cur, function(){ window.terminou = true; });
+  TOTAL = cur; window.FIM = cur;
+};
+$("reco").onclick = inicia;
+setInterval(function(){ $("barra").style.width = Math.min(100, (Date.now()-t0)/TOTAL*100)+"%"; }, 200);
+inicia();
+</script></body></html>

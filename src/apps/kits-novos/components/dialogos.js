@@ -111,7 +111,7 @@ function DlgDetalhe(p){
           e(Sugestoes,{rev:{cid:f.cid, bai:f.bai, jan:f.jan||{}}, max:3, onEscolher:function(nome){ up("rep", nome); }})),
         e(Sec,{t:"Kit e retirada", ic:"box"},
           e("div",{className:"grid grid-cols-2 gap-2"},
-            e(Cp,{l:"Modelo do kit"}, selecao("mod", ["Misto","Prata"])),
+            e(Cp,{l:"Modelo do kit"}, selecao("mod", ["Normal","Prata"])),
             e(Cp,{l:"Valor do kit"}, e(MoneyInput,{value:f.val, onChange:function(v){up("val", v);}, label:"Valor do kit", sm:true})),
             e(Cp,{l:"Retirada na empresa", className:"col-span-2"}, inp("retirada", {placeholder:"06/01 às 13:30"}))))),
       // Coluna da direita: ações, observações e histórico.
@@ -194,7 +194,7 @@ function DlgRecusa(p){
 }
 function DlgNova(p){
   var cx = use(), s = cx.state, d = cx.dispatch, listas = p.listas;
-  var st = useState({nome:"", cid:"Curitiba", bai:"", prof:"", rep:"", mod:"Misto", val:s.cfg.valorPadrao, tipo:"Vendedora", ent:"", trab:"", trabEnd:"", disp:"", obs2:"", c1n:"", c1t:"", c1r:""}), f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
+  var st = useState({nome:"", cid:"Curitiba", bai:"", prof:"", rep:"", mod:"Normal", val:s.cfg.valorPadrao, tipo:"Vendedora", ent:"", trab:"", trabEnd:"", disp:"", obs2:"", c1n:"", c1t:"", c1r:""}), f = st[0], set = st[1], up = function(k,v){ var n = Object.assign({}, f); n[k]=v; set(n); };
   var inp = function(k, ph){ return e("input",{className:INPUT, value:f[k], placeholder:ph||"", onChange:function(ev){up(k, ev.target.value);}}); };
   var sel = function(k, ops){ return e("select",{className:INPUT, value:f[k], onChange:function(ev){up(k, ev.target.value);}}, e("option",{value:""},"\u2014"), ops.map(function(o){return e("option",{key:o, value:o}, o);})); };
   return e(Modal,{open:true, titulo:"Nova revendedora", sub:"Entra como Cadastrada com a data de hoje", confirmar:"Cadastrar", icone:"plus", desabilitado:!f.nome.trim(), onClose:p.fechar, onConfirmar:function(){ d({type:"NOVA", dados:f}); }},
@@ -202,7 +202,7 @@ function DlgNova(p){
       e(Campo,{l:"Nome", className:"sm:col-span-2"}, e("input",{className:INPUT, value:f.nome, autoFocus:true, onChange:function(ev){up("nome", ev.target.value);}})),
       e(Campo,{l:"Cidade"}, sel("cid", listas.cids)), e(Campo,{l:"Bairro"}, inp("bai")),
       e(Campo,{l:"Representante (pode definir depois)"}, sel("rep", listas.reps)), e(Campo,{l:"Entrada"}, sel("ent", listas.ents)),
-      e(Campo,{l:"Modelo do kit"}, sel("mod", ["Misto","Prata"])), e(Campo,{l:"Valor do kit"}, e(MoneyInput,{value:f.val, onChange:function(v){up("val", v);}, label:"Valor do kit"})),
+      e(Campo,{l:"Modelo do kit"}, sel("mod", ["Normal","Prata"])), e(Campo,{l:"Valor do kit"}, e(MoneyInput,{value:f.val, onChange:function(v){up("val", v);}, label:"Valor do kit"})),
       e(Campo,{l:"Tipo"}, sel("tipo", ["Vendedora","Retornando"])), e(Campo,{l:"Profiss\u00e3o"}, inp("prof")),
       e(Campo,{l:"Trabalho (nome do local)"}, inp("trab")), e(Campo,{l:"Endere\u00e7o do trabalho"}, inp("trabEnd")),
       e(Campo,{l:"Disponibilidade", className:"sm:col-span-2"}, inp("disp", "Kit novo - Disponibilidade 24/09 a 02/10 ou VEM NA EMPRESA")),

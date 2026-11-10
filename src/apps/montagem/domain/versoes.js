@@ -3,6 +3,206 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.117", data:"2026-11-10", titulo:"Atendimento Sorelly: Kit novo e Kit retornando sem assinatura", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando não pede mais a assinatura na tela (a revendedora já assina a condicional): depois das regras explicadas, o botão é Finalizar atendimento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit novo agora abre o mesmo fluxo curto (Escolha do kit, Regras, Finalizar) em vez das etapas de acerto. O botão Acerto | Retornando | Kit novo no topo muda o tipo."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit novo: o valor do kit que a Michele lançou nos Kits novos aparece como Valor do kit liberado na etapa Escolha do kit (1 hora para escolher)."}]},
+ {v:"0.18.116", data:"2026-11-10", titulo:"Atendimento Sorelly: Kit retornando", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando (a revendedora volta a vender, como kit novo) não tem etapas de acerto: Escolha do kit (60 minutos) → Regras e assinatura → finalizar. Não cria acerto nem pagamento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Botão Acerto | Kit retornando no topo do atendimento para mudar o tipo. O tipo escolhido na agenda (Kit retornando) agora vale no atendimento."}]},
+ {v:"0.18.115", data:"2026-11-10", titulo:"Atendimento Sorelly: venda zero, cancelada na lista e acompanhar em tempo real", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Venda R$ 0,00: botão Não teve venda (R$ 0,00) na etapa Vendas. O acerto zerado segue e pode ser finalizado."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quem não veio ou desmarcou não sai mais da lista: fica como Cancelada, e não conta nos feitos."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Clicar no atendimento que outra pessoa começou abre só para acompanhar, em tempo real e somente leitura. Abrir não muda mais o quem bipou."}]},
+ {v:"0.18.114", data:"2026-11-10", titulo:"Atendimento Sorelly: fila mostra Atendendo e quem atende pelo pedido de pagamento", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a atendente manda o pedido de pagamento ao financeiro, a fila de todos mostra Atendendo e o nome dela, mesmo se o computador dela ainda estiver com a tela antiga."}]},
+ {v:"0.18.113", data:"2026-11-10", titulo:"Tempo real: atendimentos e pedidos em até 5 segundos + aviso de versão nova", itens:[
+  {tipo:"melhoria", area:"Atendimento interno e Financeiro", txt:"Os atendimentos em andamento e os pedidos de conta chegam aos outros computadores em até 5 segundos (antes 20)."},
+  {tipo:"novo", area:"Sistema", txt:"Quem está com a tela aberta desde antes de uma publicação vê o aviso \"Há uma versão nova do sistema\" com o botão Atualizar agora. Tela antiga não mandava os dados novos."}]},
+ {v:"0.18.112", data:"2026-11-10", titulo:"Marketing: Fotos de catálogo", itens:[
+  {tipo:"novo", area:"Marketing › Fotos de catálogo", txt:"Planilha de controle das fotos das peças novas (foto, editada, na DevMaster), com filtro em cada coluna e faixa fina por dia. Trouxe os 17.359 códigos da planilha Fotos App Sorelly; novos entram colando do Excel e cada etapa guarda quem e quando. O servidor guarda um registro por código. Tabela com botão Mostrar mais (300 por vez)."}]},
+ {v:"0.18.114", data:"2026-11-10", titulo:"PDF do orçamento das dívidas de prestadores fica no servidor", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar › Sócios › Prestadores", txt:"O PDF anexado a uma dívida de prestador vai para o servidor. Antes ficava só no navegador de quem anexou e os outros viam \"PDF não está neste computador\". PDFs antigos continuam abrindo no computador onde foram anexados."},
+  {tipo:"correção", area:"Financeiro familiar › Resumo do grupo", txt:"Lançada a dívida que faltava de uma prestadora particular, com o PDF do orçamento. Sem a dívida, os PIX ficavam como pagos a mais e a linha não aparecia no Resumo do grupo."}]},
+ {v:"0.18.113", data:"2026-11-09", titulo:"Contas pagas da família conferidas com a DevMaster", itens:[
+  {tipo:"correção", area:"Financeiro familiar › Contas pagas", txt:"A conta Pix revendedora de 6 meses de sócios guardava a primeira baixa da DevMaster, que depois foi estornada. Agora cada uma tem as baixas válidas da DevMaster, uma por uma, e bate com a tela PIX revendedoras."}]},
+ {v:"0.18.109", data:"2026-11-09", titulo:"Direcionar: pedidos de conta chegam a todo o Financeiro", itens:[
+  {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"Os pedidos de conta ficavam só no computador de quem enviava. Agora sobem para o servidor (módulo pag, uma chave por pedido) e todo o Financeiro vê a mesma fila."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"OK, enviar ao financeiro: o Pix ou link sem conta entra na fila do Direcionar. Quando o Financeiro confirma, a conta volta para a funcionária."},
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Direcionar", txt:"A fila começa zerada (saem os pedidos de teste). Cartão da representante sugere o CNPJ da maquininha dela; cartão do atendimento interno já entra pago na GETNET - P."}]},
+ {v:"0.18.69", data:"2026-11-09", titulo:"Funil de pedidos no formato do Pedidos + Separar peças", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições › Funil de pedidos", txt:"Tela refeita no formato do Pedidos de bruto e banho (layout 2): tudo num bloco com borda, botões à direita (Fechar todas as fases, Zoom, Quadro | Planilha | Revendedoras, Separar peças, Novo pedido), filtros numa linha, faixas por fase (Entrada, Preparo, Atendimento, Fim) com o botão ▾ / ▸ que abre e fecha cada fase, colunas numeradas. Saiu a faixa de números. O cartão não tem mais botão: clica no cartão e a ficha abre. Cada coluna mostra 30 cartões e Ver mais. Todas as fases começam abertas e o sistema lembra a escolha de cada pessoa. As 9 etapas não mudaram."},
+  {tipo:"novo", area:"Encomendas e reposições › Funil de pedidos", txt:"Separar peças: pedido normal que entra em Novo e anda Novo, Separando, Concluída. A ficha tem a foto grande com miniaturas (até 20 fotos, Ctrl+V ou escolher), observação, responsável, etapa e histórico, e tudo se faz nela (Avançar, Voltar etapa, Salvar, Excluir). As fotos ficam no servidor e valem para todo mundo. Aparece no quadro, na planilha e nos filtros (Canal e Assunto)."},
+ ]},
+ {v:"0.18.68", data:"2026-11-09", titulo:"Estoque Sorelly: layout D e leitura automática diária", itens:[
+  {tipo:"novo", area:"Financeiro → Saldos e análises → Estoque Sorelly", txt:"Resumo geral no layout D: planilha com indicadores nas linhas e meses nas colunas, mais a visão Dia a dia e os Gráficos. Uma leitura automática da DevMaster grava todo dia as revendedoras, as peças e o preço de venda com as revendedoras (condicionais abertos com devolução até 31/12, sem os vendedores 04 e 91). Roda às 10h e, se falhar, de novo às 14h. Custo com as revendedoras e estoque interno continuam manuais."}
+ ]},
+ {v:"0.18.67", data:"2026-11-09", titulo:"Estoque Sorelly ligado ao servidor, com os dados do admin antigo", itens:[
+  {tipo:"novo", area:"Financeiro → Saldos e análises → Estoque Sorelly", txt:"Estoque Sorelly ligado ao servidor (antes ficava só no navegador de quem lançava) e liberado para o Financeiro e a Diretoria. Trazidos do admin antigo: 7 fotos do estoque (15/04 a 01/10/2026) e 7 fechamentos (jan a jul/2026). A foto de nov/2026 e o fechamento de out/2026 ainda precisam ser lançados."}
+ ]},
+ {v:"0.18.66", data:"2026-11-09", titulo:"Pedidos: custo vendido + brinde e diferença no resumo por mês", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"O resumo por mês (últimos 3 meses e Todos os meses) ganhou duas colunas: Custo vendido + brinde (o custo das peças vendidas e dadas de brinde às revendedoras no mês, da DevMaster, sem funcionárias e sem leilão) e Diferença (comprado menos custo). Verde = o estoque aumentou (comprou mais do que saiu); vermelho = o estoque diminuiu. O resumo tem o filtro Mês atual, 3 meses ou 2026, sempre com as mesmas colunas. O topo da tabela tem uma cor por grupo: Bruto, Banho e Comprado em azul; Custo vendido + brinde em dourado; Diferença em turquesa."}
+ ]},
+ {v:"0.18.65", data:"2026-11-09", titulo:"Pedidos: valor total em cada etapa e em cada fase", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Cada etapa do quadro mostra a quantidade de pedidos em letra maior e o valor total (bruto + banho). Cada fase (Compra, Banho, Empresa) mostra a quantidade e o total na faixa de cima. Nas etapas da Empresa, e na faixa Empresa, aparecem também o total de bruto, o total de banho e o total geral."}
+ ]},
+ {v:"0.18.64", data:"2026-11-09", titulo:"Pedidos: resumo dos últimos 3 meses e do ano com o banho das faturas", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O resumo por mês abre com os últimos 3 meses e o total deles (bruto, banho e total). O botão Todos os meses mostra o ano como planilha: mês, bruto, banho e total, com a soma no fim. O banho vem das faturas da Pontual e da Ellos, pelo mês da fatura, e o bruto do valor a pagar dos pedidos, pelo mês da compra."},
+  {tipo:"correção", area:"Cadastro de peças → Controle do mês", txt:"O banho do mês passou a ser o das faturas (a mesma conta do resumo de Pedidos), no lugar do valor lançado em cada pedido, que só existe para os pedidos novos. A coluna Banho faturado saiu."}
+ ]},
+ {v:"0.18.105", data:"2026-11-09", titulo:"Atendimento Sorelly: textos para ler no tempo de escolha do kit", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Ao tocar em Começou (escolha do kit), abre no meio da tela um bloco para a funcionária ler em voz alta para a revendedora, com o tempo que ela tem (até R$ 7.000 = 30 min; até R$ 12.000 = 45 min; até R$ 17.000 = 1 hora; acima = 2 horas); o relógio só liga depois do botão Li para ela. Quando o tempo acaba, abre sozinho um segundo bloco, educado: outras revendedoras esperam e é hora de finalizar a escolha. O bloco só fecha no botão Li para ela."},
+ ]},
+ {v:"0.18.105", data:"2026-11-09", titulo:"Negociações: detalhe do pedido sem o bloco O que estamos pagando", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Negociações", txt:"O detalhe do pedido não mostra mais o bloco azul com O que estamos pagando, Pagar até e Valor mínimo de cada pix (chamado do Lucas, opção A). A data Pagar até podia não bater com as parcelas. O prazo agora vale pelo vencimento das próprias parcelas."}]},
+ {v:"0.18.104", data:"2026-11-09", titulo:"App da montadora: nova tela inicial em cartões", itens:[
+  {tipo:"melhoria", area:"Celular das funcionárias → Montagem de kits", txt:"A tela inicial da montadora saiu das 4 abas apertadas. Agora tem uma linha com Kits hoje, Sua nota e Kits no mês, e 4 cartões de atalho (Próximo kit, Listagens, Resultados e Pedir peça), tudo em preto sobre branco, com o ouro só no ícone. Cada cartão abre a sua tela, com botão de voltar."},
+  {tipo:"melhoria", area:"Celular das funcionárias → Montagem de kits", txt:"Próximo kit, Listagens e Resultados da montadora sem letra colorida (números e situações em preto, ouro só no destaque). O celular das funcionárias já abre com as 3 listagens de exemplo e a Pamela com kits prontos e 3 avaliações, para testar como se fosse real."},
+  {tipo:"novo", area:"Celular das funcionárias → Próximo kit", txt:"O cartão do kit ficou compacto (texto 13 px, relógio legível) e ganhou o bloco Como montar: quanto enviar de cada peça em faixa (de X a Y, pela tabela do kit ajustada pelas vendas dos últimos 90 dias; regra Kit perfeito EM TESTE, domain/kit-perfeito.js) em colunas Ouro e Prata. O cartão agora abre com Vendas e Valor do kit (pedido do Marcus: a montadora passa a ver esses dois valores), o botão Iniciar montagem logo abaixo e O que enviar em seguida. Saiu a coluna das vendas de 90 dias e a tabela. Cada peça a enviar e cada preferência da revendedora tem um OK que a montadora marca (com contador, ex.: 3 de 12); o botão Concluir montagem só libera com tudo conferido. Aguenta muitas preferências: título em cima e texto embaixo, quebrando à vontade. Os OKs ficam guardados só enquanto a página está aberta. Os kits de exemplo trazem vendas e preferências inventadas; um kit pedido para cada montadora de Encomendas (Agatha, Elen, Eduarda Gabriela), porque kit acima de R$ 3.000 só elas montam."}
+ ]},
+ {v:"0.18.63", data:"2026-11-09", titulo:"Controle do mês: compras de bruto e banho dos pedidos", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Controle do mês", txt:"O banho agora é o valor lançado nos pedidos (conta no mês em que chegou na empresa) e o total do mês é bruto + banho. A tabela Mês a mês ganhou as colunas Banho e Total; o banho das faturas ficou numa coluna à parte, só para conferir. Telas em layout D e sem a faixa de números no topo."}
+ ]},
+ {v:"0.18.103", data:"2026-11-09", titulo:"App das funcionárias: 3 listagens de exemplo para teste", itens:[
+  {tipo:"novo", area:"Celular das funcionárias", txt:"Botão Carregar 3 listagens de exemplo (Dayanne 10:00, Lysie 14:00 e a viagem de Thalita a Ponta Grossa 16:00), com 22 kits entre kit novo, reposição e acerto + kit, em todas as situações: sem valor, na fila, montando, supervisão, montado, bipando, bipado e retirado. Serve para ver a Listagem do admin e o app da montadora e da bipadora. Tirar as listagens de exemplo apaga só o exemplo."},
+ ]},
+ {v:"0.18.45", data:"2026-11-09", titulo:"Listagens da representante: título legível e listagem de exemplo cheia", itens:[
+  {tipo:"correção", area:"App da representante › Listagens", txt:"O nome do dia no cartão escuro de resumo ficava escuro sobre fundo escuro. Agora é branco, como na Calculadora de acertos (a Excluir também)."},
+  {tipo:"melhoria", area:"App da representante › Listagens", txt:"A Lista agora mostra os próximos 14 dias (sem domingo), em aberto, mesmo sem listagem: cada dia diz até quando dá para criar (2 dias úteis antes, 07:30) ou que o prazo encerrou. Tocar num dia sem listagem abre a tela do dia com o botão Criar listagem neste dia."},
+  {tipo:"melhoria", area:"App da representante › Listagens", txt:"Cada revendedora na tela do dia mostra o valor de venda dela (R$ com centavos, ou Sem venda) junto da situação do kit. O valor do kit a representante continua sem ver."},
+  {tipo:"novo", area:"Apps", txt:"Nova opção no seletor de representante: Listagem cheia (exemplo), com 14 revendedoras entre kit novo, reposição e acerto + kit, com situações variadas (Na fila, Montando, Montado, Bipando e Pronto), para ver a tela de Listagens com conteúdo."},
+ ]},
+ {v:"0.18.44", data:"2026-11-09", titulo:"Listagens da representante: versão 1 (dia, calendário, prazo e exclusão)", itens:[
+  {tipo:"novo", area:"App da representante › Listagens", txt:"Lista (um bloco por dia) e Calendário (mês inteiro, com botão para trocar). O nome do dia aparece por extenso (Quinta-feira, 12/11). Ao tocar no dia abre a tela do dia, com o resumo, as revendedoras e o menu Ações da listagem. A seta da barra preta volta uma tela por vez. A representante não vê valor do kit."},
+  {tipo:"novo", area:"App da representante › Listagens", txt:"Excluir uma revendedora da listagem, com menus: quem desmarcou (a revendedora ou a representante) e o motivo. A Deysiane é avisada sempre (Tecnologia › Avisos, tipo novo); a montadora só se o kit já estava sendo montado. O aviso diz o que fazer com o kit: cancelar, distribuir as peças ou devolver ao estoque."},
+  {tipo:"melhoria", area:"Listagens", txt:"Regras novas no sistema: uma listagem por representante por dia, com até 2 horários de retirada; uma revendedora só entra em uma listagem por dia; a representante não inclui depois do prazo (2 dias úteis antes da retirada, até 07:30; só a Deysiane libera). Nova listagem agora só com menus suspensos, e os dias sem prazo aparecem apagados."},
+ ]},
+ {v:"0.18.72", data:"2026-11-09", titulo:"Comissão especial vale em todo lugar e grupo do +5 pontos", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"A comissão especial ganhou 'pontos a mais em todas as faixas' (ex.: 5 faz 15% virar 20%), valendo nos kits Normal e Prata. Aplicado a 13 revendedoras do grupo '5% a mais'. Brindes seguem a tabela normal."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Revendedoras sem nenhum kit na DevMaster voltam à comissão normal (pedido do Marcus): Helcio (só expositor) e 6 do grupo +5 pontos ficaram sem regra e sem ficha. Jaqueline Ferreira de Melo, que tem 2 kits com a representante DH, segue com +5 pontos. Ao todo, 23 revendedoras com regra especial. Etiqueta do bloco Comissão especial trocada por texto simples (sem chips)."},
+  {tipo:"melhoria", area:"Representantes e apps", txt:"A comissão especial agora vale também no acerto da representante (cálculo e registro), no app da representante e no app da revendedora (estimativa e venda), sempre pelo nome da revendedora. Antes valia só na Atendimento Sorelly."},
+ ]},
+ {v:"0.18.75", data:"2026-11-09", titulo:"Progresso em calendário (layout B1) e sem chips", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"Tela refeita no layout B1: calendário do mês grande à direita, com cada dia mostrando horas, início e fim, cada pausa com o tempo e a academia (membros, corri, bola); à esquerda Filtros (Mês), Agora, Academia e Trechos do dia. Clicar num dia troca o dia da esquerda."},
+  {tipo:"melhoria", area:"Padrão visual", txt:"Chips e pílulas proibidos (trava dura, regra 2i). Escolha de uma opção = dropdown; várias opções = menu suspenso com caixas de marcar (peça nova MenuMulti em padrao-fin.js)."}
+ ]},
+ {v:"0.18.74", data:"2026-11-09", titulo:"Progresso: ajustes para seguir o padrão visual", itens:[
+  {tipo:"correção", area:"Marcus → Progresso", txt:"Tela tudo centralizada; Período e Dia agora ficam no bloco Filtros; saiu o bloco Resumo (o Total e a Média por dia ficam no fim da tabela de dias); saiu o botão Apagar histórico."},
+  {tipo:"correção", area:"Marcus → Progresso", txt:"Motivo da pausa, encerrar o dia, corrigir horas e excluir trecho abrem na Janela do sistema, não mais na caixa do navegador."}
+ ]},
+ {v:"0.18.73", data:"2026-11-09", titulo:"Progresso do Marcus guardado no servidor", itens:[
+  {tipo:"melhoria", area:"Marcus → Progresso", txt:"Cronômetro, pausas e academia agora ficam no servidor (módulo marcusprog, uma chave por dia). Abre igual em qualquer computador; busca a cada 20 segundos e envia 1 segundo depois de cada mudança. Dois computadores: vale o dia mexido por último. Sem servidor, continua só no navegador. Apagar histórico esvazia também o servidor."}
+ ]},
+ {v:"0.18.72", data:"2026-11-09", titulo:"Marcus: Progresso com cronômetro, pausas e academia", itens:[
+  {tipo:"novo", area:"Marcus → Progresso", txt:"Relógio na barra de cima (só no modo Marcus): Começar, Pausa (Fumar, Almoçar, Treinar, Parado, Outro), Voltar e Encerrar dia. A conta usa a hora de início de cada trecho, então continua certa se a aba fechar."},
+  {tipo:"novo", area:"Marcus → Progresso", txt:"Tela Progresso: resumo de hoje, da semana e do mês; marcação de academia por dia (se correu, se jogou bola e quais membros treinou); tabela de dias com total; ajuste de hora e exclusão de trechos. Dados ficam só neste navegador."}
+ ]},
+ {v:"0.18.62", data:"2026-11-09", titulo:"Pedidos: bloco com banho em forma de conta e planilha em layout D", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Bloco do pedido que já tem banho: primeira linha com a galvânica, o fornecedor, o romaneio e os dias; segunda linha, separada por um fio, em forma de conta: Bruto + Banho = total do pedido (o total em destaque, à direita)."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A Planilha passou para o layout D (colunas de largura fixa, nada quebra) e ganhou as colunas Banho R$ e Total, com a soma no rodapé."}
+ ]},
+ {v:"0.18.71", data:"2026-11-09", titulo:"Comissão especial das revendedoras antigas e ponto de corte livre", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"A comissão especial aceita qualquer ponto de corte, não só o início das faixas da tabela (ex.: acima de R$ 1.500,00). O ponto novo ganha os mesmos brindes da faixa em que cai. Na ficha há o campo Outro ponto de corte."},
+  {tipo:"novo", area:"Atendimento interno", txt:"Regra das revendedoras antigas aplicada a 8 revendedoras: até R$ 999,99 = 40%; de R$ 1.000,00 a R$ 1.500,00 = 45%; acima de R$ 1.500,00 = 50%. Brindes seguem a tabela normal. Faltam Helcio Brasil Pinto (não está na lista do sistema) e Lorena Barbosa (acordo próprio; aguardando decisão)."},
+  {tipo:"melhoria", area:"Materiais", txt:"Folder resumido da revendedora refeito (PDF) com a regra A: quem deve um acerto anterior só recebe novo kit depois de quitar tudo, e o pagamento quita primeiro a dívida mais antiga."},
+ ]},
+ {v:"0.18.56", data:"2026-11-09", titulo:"Agendamento: aba Expositores", itens:[
+  {tipo:"novo", area:"Agendamento", txt:"O setor Agendamento ganhou a aba Expositores no menu, para dar baixa quando o expositor volta (devolução). É a mesma tela do setor Encomendas, com os mesmos dados. A liberação vale no menu, em Acessos e no servidor."}
+ ]},
+ {v:"0.18.70", data:"2026-11-09", titulo:"Regra do kit novo e da dívida de acerto anterior (regra A)", itens:[
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Textos das regras acertados: com 80% ou mais do acerto pago o kit novo é liberado; o bloqueio por valor pendente vale só para dívida de OUTRO acerto, e o que ela pagar quita primeiro a dívida mais antiga. A etapa Pagamento das regras, o termo assinado e o folder resumido da revendedora seguem essa regra."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"A dívida de acerto anterior aparece assim que o atendimento abre (aviso na calculadora e etiqueta Dívida na fila do dia), antes de lançar a venda."},
+  {tipo:"correção", area:"Atendimento interno", txt:"Comissão especial da Lorena Barbosa: a faixa de R$ 1.000,00 estava em 40% e passou para 50% (40% até R$ 999,99 e 50% de R$ 1.000,00 em diante)."},
+ ]},
+ {v:"0.18.68", data:"2026-11-09", titulo:"Expositores com revendedoras (4 visões)", itens:[
+  {tipo:"novo", area:"Encomendas e reposições › Expositores", txt:"Aba nova Com revendedoras, a primeira da tela Expositores: todas as revendedoras que estão com expositor (542 em 09/11/2026), em quatro visões: Todos, Com kit ativo (kit aberto há até 70 dias), Sem kit e Kit há mais de 70 dias. Tabela do Agendamento e das Revendedoras (barra dourada, filtro e ordem no título da coluna, total em cima). Mostra representante, tempo com expositor, última venda, há quantos dias o kit está aberto, modelos, peças e valor. Kit que ficou sem previsão ou em Inadimplência (10 joias ou mais) não conta como expositor. Só leitura, da DevMaster."},
+  {tipo:"novo", area:"Encomendas e reposições › Expositores", txt:"Coluna Observação em cada revendedora (texto livre, grava ao sair do campo, igual para todos, com quem escreveu e quando). A coluna Sem kit há conta da última venda, que é quando o último kit fechou. A coluna Expositores virou um resumo por tipo (ex.: 1 Dois andares, 1 Colar). Expositor aberto há continua, com a data do expositor."},
+ ]},
+ {v:"0.18.61", data:"2026-11-09", titulo:"Pedidos: resumo por mês e bruto + banho no bloco", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"No alto da tela, o Resumo por mês: quanto foi comprado de bruto e de banho em cada um dos últimos 4 meses. O bruto conta no mês da compra e o banho no mês em que chegou na empresa, porque o bruto pode fechar num mês e o banho no seguinte."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O bloco do pedido que já tem banho ganha uma segunda linha: Bruto R$ X + Banho R$ Y. O valor da primeira linha é a soma."}
+ ]},
+ {v:"0.18.68", data:"2026-11-09", titulo:"Faturamento de 01 a 09/11 lançado", itens:[
+  {tipo:"melhoria", area:"Financeiro", txt:"Faturamento de novembro de 01 a 08/11 (relatório de notas fiscais, acumulado): 208 acertos e R$ 149.878,21 em 06/11, igual em 07 e 08/11. Dia 01 e 02/11 zerados. Dia 09/11: 326 acertos, R$ 244.095,26, 13 no Carregar. Previsão do mês a 98% (antes 99%), agora guardada no servidor e igual para todos. Revendedoras ativas em 09/11: 2.099."},
+  {tipo:"novo", area:"Servidor", txt:"Atualização automática às 10h todo dia: faturamento do relatório de notas fiscais (reproduzido ao centavo pela DevMaster: títulos com emissão no mês, sem funcionárias, acertos = clientes distintos) e total de revendedoras. Agendador da Vercel (vercel.json, precisa da chave CRON_SECRET) e reserva: o sistema chama ao abrir depois das 10h. O dia 03/11 foi corrigido para R$ 15.065,70."}
+ ]},
+ {v:"0.18.67", data:"2026-11-09", titulo:"Atendimento interno: incluir cliente que não está na lista", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Revendedoras internas ganhou o botão + Incluir cliente. Serve para quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) e para quem nem é revendedora. O nome vem de uma BUSCA nas clientes cadastradas na DevMaster (nova rota /api/clientes-busca, só leitura): a Tamara digita 3 letras do nome ou o código, vê nome, código, cidade e situação, e escolhe uma (quem já está na lista abre a ficha). Nome digitado à mão só existe no Brinde de indicação, para quem não é cadastrada (o sistema recusa nos outros tipos). Depois escolhe tipo, dia e hora, e a cliente entra na listagem do dia, sem condicional inventada. Valem as mesmas regras da agenda (3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados). Responde aos Chamados da Tamara de 29/10, 04/11 e 05/11."},
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Kits novos para agendar: com 0 kits, some a tabela vazia e fica só a barrinha 'Kits novos · 0 para agendar' (pedido do Marcus)."},
+ ]},
+ {v:"0.18.57", data:"2026-11-06", titulo:"Cadastro de peças: nova aba Compras (Adereço → Pontual → Rayssa)", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Compras", txt:"Aba nova, antes de Pedidos. 1 · Adereço: fotos, código e preço de cada foto, romaneio em PDF lido pelo sistema e foto ligada à linha pelo código. 2 · Banho: banho de cada peça (Prata, Ouro flash, Ouro 1 a 5 ou um novo; verniz só no ouro), em lote. 3 · Recebido: quantidade que a Pontual confirmou, com a diferença. Gera o romaneio da Pontual e o da Rayssa em PDF, com foto grande e sem nenhum preço."},
+  {tipo:"novo", area:"Cadastro de peças → Compras", txt:"Botão Fotos de teste: cria 4 fotos simuladas para testar a ligação (sai quando chegarem as fotos reais)."}
+ ]},
+ {v:"0.18.58", data:"2026-11-09", titulo:"Pedidos: valor do banho, fatura obrigatória e total do pedido", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Na ficha do pedido há agora o Valor do banho (a Rayssa digita) e a Fatura do banho (uma ou mais fotos). Para marcar Chegou na empresa os dois são obrigatórios: ao clicar em Concluir abre a janela Banho do pedido. O bloco do pedido e a ficha mostram o Total do pedido = bruto a pagar + banho."}
+ ,
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Ficha do pedido refeita (layout A): três blocos lado a lado — Bruto (compra e valor), Banho (chegadas, valor e fatura do banho) e Empresa (chegada, observação e total do pedido) — com as 12 etapas em 3 fases embaixo e as ações no rodapé."}
+ ]},
+ {v:"0.18.68", data:"2026-11-09", titulo:"Expositores sem kit ativo (listagem)", itens:[
+  {tipo:"novo", area:"Encomendas e reposições › Expositores", txt:"Aba nova Sem kit ativo, a primeira da tela Expositores: lista as revendedoras que só têm condicional de expositor e nenhum kit ativo (59 em 09/11/2026), da mais antiga para a mais nova. Mostra código, última representante (vendedor da condicional mais nova que não seja expositor nem encomenda), cidade, celular, tempo com o expositor, data de saída, modelos, peças e valor, com total. Mesma tabela do Agendamento e das Revendedoras: barra dourada, filtro e ordem no título de cada coluna, linha de total em cima. Kits com dezenas de joias que estavam sem previsão ou em Inadimplência (8 em 09/11/2026) NÃO entram: não são expositor. A coluna Peças de joia mostra as poucas joias que sobram. Só leitura, da DevMaster."},
+ ]},
+ {v:"0.18.66", data:"2026-11-06", titulo:"Limpeza dos dados de teste no banco", itens:[
+  {tipo:"melhoria", area:"Sistema", txt:"Saíram do banco os dados de teste: 50 cadastros e 3 campanhas de demonstração (Aprovação de cadastros e Desempenho do cadastro), 5 Chamados de teste e 2 pedidos de Compras cancelados como teste. Cópia de segurança na tabela bkp_20261106_limpeza_testes. Ficaram os testes do app (Beatriz Nogueira, Nagela e crédito 004439), a pedido do Marcus."},
+  {tipo:"melhoria", area:"Consolidado", txt:"Faxina única no Consolidado: ao abrir a tela, cada computador perde os acertos de teste que guardava (demonstração e acertos feitos no app de teste da representante). Ficam só os acertos reais do Atendimento interno."},
+ ]},
+ {v:"0.18.56", data:"2026-11-06", titulo:"Pontual: admin do Valdir (demonstração)", itens:[
+  {tipo:"novo", area:"Sistema → botão do topo do menu", txt:"Terceiro botão ao lado de Admin e Marcus: Pontual. Ele troca o logo da Sorelly pelo da Pontual e mostra só as telas da Pontual (sem SorellyChat, avisos e sino). Só o Marcus vê o botão por enquanto."},
+  {tipo:"novo", area:"Pontual", txt:"Setor novo para a Pontual, empresa de banho do Valdir (sistema ABAS com API). Telas: Clientes (com ficha), Tabelas de preço (inicial e por cliente), Inadimplência, Pós-venda (cliente sem banhar) e Regras. 250 clientes e preços inventados; só a supervisão abre."},
+  {tipo:"novo", area:"Pontual → Tabelas de preço", txt:"Tabela inicial (todo cliente novo começa nela) e tabela individual por cliente, com negociação particular escrita na ficha. Classes grande, médio e pequeno pela média dos últimos 6 meses (cortes de teste)."}
+ ]},
+ {v:"0.18.55", data:"2026-11-06", titulo:"Expositores e Encomendas: dados do admin antigo e das planilhas", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Expositores", txt:"Copiados do admin antigo: 19 itens de estoque, 8 da fila de espera, 181 clientes e 955 condicionais de expositor (896 com a cliente, 55 devolvidas e 4 bipadas), com as 294 peças, fotos e avarias. Quem entrou na fila só no sistema novo continua na fila."},
+  {tipo:"novo", area:"Encomendas e reposições", txt:"Histórico das planilhas do setor (834 pedidos concluídos), Top 50 de outubro e as 4 liberadas pelo Marcus agora ficam salvos no servidor."},
+  {tipo:"correção", area:"Sistema", txt:"Os dados de Expositores e de Encomendas que voltam do servidor passam de novo pela carga da cópia; antes o servidor apagava a cópia recém-carregada."}
+ ]},
+ {v:"0.18.54", data:"2026-11-06", titulo:"Pedidos: o que falta do romaneio, em uma palavra vermelha", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"No bloco da etapa 3, a frase falta anexar o romaneio virou uma palavra pequena em vermelho: romaneio (falta o número) ou arquivo (tem o número, falta o arquivo). O número do romaneio ficou em letra menor e a coluna ganhou um pouco de largura (360 px), para o bloco caber numa linha só."}
+ ]},
+ {v:"0.18.61", data:"2026-11-09", titulo:"Pagamentos a fornecedores: Cheque na janela Lançar pedido", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores → Negociações", txt:"Na janela Lançar pedido, as parcelas com nota fiscal só ofereciam Boleto, Pix empresa e Cartão. Agora oferecem também Cheque (a forma já existia no sistema; só faltava na lista). Os textos de ajuda da janela também citam cheque. Pedido do Nickolas (chamado de 06/11/2026)."}
+ ]},
+ {v:"0.18.60", data:"2026-11-09", titulo:"Compras e estoque de material: painel com o estoque em cima e as compras embaixo (layout D1)", itens:[
+  {tipo:"novo", area:"Materiais e Estoque → Compras e estoque de material", txt:"Nova primeira aba, Compras e estoque, que abre por padrão. Em cima, lado a lado: a planilha do estoque com a coluna Contar (digita a quantidade e dá OK na própria linha; a data é hoje e quem contou é quem está logado) e a lista Precisa de compra (crítico e atenção, com o botão Solicitar que abre o pedido de compra de material). Embaixo, o quadro de Compras (aprovar, liberar, comprar, receber, entregar), sem a faixa de números. Uma barra de filtros só (busca, setor, itens, urgência), Ocultar vazias e filtro de categoria. Cada tabela mostra 12 linhas e o botão Ver mais. As outras abas continuam como estavam."}
+ ]},
+ {v:"0.18.59", data:"2026-11-09", titulo:"Compras e estoque: estoque de materiais trazido do admin antigo", itens:[
+  {tipo:"melhoria", area:"Materiais e Estoque → Compras e estoque de material", txt:"O estoque de materiais nunca tinha vindo do admin antigo, por isso a aba Estoque de material estava vazia (chamado do Nickolas, 06/11/2026). Foram importados 36 categorias e 208 materiais, com estoque atual, mínimo, situação, fornecedor e data da última contagem (Materiais e Embalagens 120, Limpeza 54, Materiais de Produção 34). Ficaram de fora 6 categorias vazias com nome de teste (., :, :., ::, :::, ;;). O histórico das 1.090 contagens e as 2 compras de estoque NÃO vieram. Cópia de segurança em sorelly.bkp_20261109_estoque_import."}
+ ]},
+ {v:"0.18.58", data:"2026-11-06", titulo:"Pix dos sócios só para consulta (Bruna)", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix_ver (Ver os PIX das revendedoras dos sócios, só consulta): abre só a tela PIX dos sócios, sem o formulário Anotar PIX, sem apagar, sem mudar a conferência e sem editar a meta. Padrão: Bruna (chamado de 05/11/2026). O atalho PIX dos sócios do menu Financeiro aparece para quem tem ff_pix ou ff_pix_ver."}
+ ]},
+ {v:"0.18.57", data:"2026-11-06", titulo:"Resumo do mês: Limite em duas colunas (layout B)", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"No Limite de fornecedores, embaixo da tabela por tipo, os meses com folga ficam à esquerda e o semáforo do mês à direita, em lista vertical com a faixa atual colorida. Layout B escolhido pelo Marcus entre 4 opções. Gasta menos altura da tela."}
+ ]},
+ {v:"0.18.56", data:"2026-11-06", titulo:"Resumo do mês: Limite em layout D, sem blocos de números no topo", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"Saíram os 5 blocos de números do topo (A pagar, Pago, Falta pagar, Pago do total e Maquininha). O % pago ficou na linha Total de cada tabela e a maquininha numa linha de texto no fim. O Limite de fornecedores virou fileiras de campos (layout D): tabela por tipo, semáforo em uma linha, meses com folga e as regras num botão. Valores por extenso com R$, sem k."},
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"O bloco Aguardando aprovação agora tem os botões Aprovar e Excluir (antes ficavam dentro do Limite)."},
+  {tipo:"novo", area:"Padrão visual", txt:"Regra fixa gravada: toda tabela nova ou mexida usa TabelaCampos + FileiraCampos (layout D). A trava dura reprova TabelaP e tabela feita à mão na hora de editar."}
+ ]},
+ {v:"0.18.55", data:"2026-11-06", titulo:"Resumo de pagamentos: tabelas em fileiras de campos (layout D)", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"As tabelas Aguardando aprovação, Fornecedores e Prestadores de serviço viraram fileiras de campos com fio fino entre as colunas: sem dourado, sem linha quebrada, com colunas de largura fixa e status em cor só para estado. Peça nova TabelaCampos em padrao-fin.js. Layout D escolhido pelo Marcus entre 4 opções."}
+ ]},
+ {v:"0.18.54", data:"2026-11-06", titulo:"Resumo do mês: negociação pendente de aprovação aparece com aviso", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"A negociação que ficava pendente de aprovação (teto mensal) sumia do Resumo, e o Lucas achava que a do Castilho não tinha sido lançada. Agora o Resumo do mês mostra o bloco Aguardando aprovação, com fornecedor, data, valor e motivo, e avisa que esse valor ainda não entra nos totais. Pedido do Lucas (chamado de 05/11/2026)."}
+ ]},
+ {v:"0.18.53", data:"2026-11-06", titulo:"Pedidos: Chegou no banho não pula mais para Banho", itens:[
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Quando a Rayssa mudava um pedido para Chegou no banho, ele voltava sozinho para Banho. Era uma correção de 03/11, feita para rodar uma vez, que rodava de novo a cada atualização do servidor. Agora ela não roda mais a cada atualização, só mexe em pedido antigo (de antes de 03/11) e não troca o prazo da Pontual se alguém o ajustou."}
+ ]},
+ {v:"0.18.67", data:"2026-11-05", titulo:"Setor Regras: Guia resumido e Guia da revendedora", itens:[
+  {tipo:"novo", area:"Regras", txt:"Setor novo Regras, aberto para todos os funcionários: um bloco só com os dois guias em PDF (Guia resumido e Guia da revendedora), cada um com a capa, o botão Ver guia e o botão Copiar link."},
+  {tipo:"melhoria", area:"Cadastro de revendedoras", txt:"A tela Folders saiu do Cadastro de revendedoras (os guias agora ficam no setor Regras)."},
+  {tipo:"melhoria", area:"Representantes e Kits", txt:"A tela Folders e informativos foi apagada do menu Regras dos representantes."},
+ ]},
+ {v:"0.18.47", data:"2026-11-05", titulo:"Encomendas e reposições: acesso do setor e 3 mensagens", itens:[
+  {tipo:"novo", area:"Acessos e autorizações", txt:"Novo grupo de acesso Encomendas e reposições, com as 6 telas do setor (Funil de pedidos, Ida na empresa, Top 50, Representantes, Expositores e Regras e mensagens). Agatha, Elen e Eduarda Gabriela estavam em Acesso básico e não abriam essas telas."},
+  {tipo:"novo", area:"Encomendas e reposições", txt:"Três mensagens prontas do resumo das meninas: Sem atendimento no setor, Peças reservadas para o próximo kit e Peças luxo (média abaixo do mínimo), em Regras e mensagens."},
+ ]},
+ {v:"0.18.66", data:"2026-11-05", titulo:"Marketing: Tráfego pago (Google Ads e Meta Ads)", itens:[
+  {tipo:"novo", area:"Marketing", txt:"Tela nova Marketing › Tráfego pago, feita a partir da planilha do Diego: Investimento (Google, Meta sem e com imposto de 12,15% e total), Mês a mês, Dia a dia (lançar e editar o dia de cada plataforma) e Criativos (ranking dos anúncios que mais trouxeram cadastradas). O imposto do Meta fica em Configurador geral › Tráfego pago. Números conferidos com a planilha. Leads, aprovadas e cadastradas entram à mão; ligação com o Cadastro de revendedoras e com o Gerenciador de Anúncios ainda não existe."},
+ ]},
+ {v:"0.18.65", data:"2026-11-05", titulo:"Agendamento: calendário com botões que se explicam", itens:[
+  {tipo:"melhoria", area:"Agendamento", txt:"No calendário dos acertos, os botões Sistema e Agendado viraram Todos os previstos e Já agendados, com uma frase embaixo explicando o que cada um conta. O total do mês diz previstos ou agendados. Pedido do Marcus: a funcionária não entendia a diferença. Já agendados = atividade ACERTOS pendente na Agenda da DevMaster (monta as listagens) ou, sem ela, Data Acerto da condicional de hoje em diante (dia que a representante pediu o kit). Observação não conta."},
+ ]},
  {v:"0.18.64", data:"2026-11-05", titulo:"App da representante: tirado o bloco Previstas para hoje", itens:[
   {tipo:"melhoria", area:"App da representante", txt:"O bloco Previstas para hoje saiu da aba Listagens (pedido do Marcus). As listagens reais serão postas a partir das listagens que ele vai passar. A data do acerto das revendedoras reais continua vindo da agenda da DevMaster."},
  ]},
@@ -42,6 +242,70 @@ var VERSOES = [
   {tipo:"correção", area:"Conferência das peças", txt:"A falta na contagem do total vira erro de bipagem de quem BIPOU o kit (Erros de bipagem, desconto da bipadora e histórico da revendedora). Contar de novo substitui o erro anterior, sem somar duas vezes; o histórico guarda todas as contagens."},
   {tipo:"correção", area:"Avaliar kits", txt:"Avaliação vale uma vez só e só para kit retirado. Kit já conferido mostra a falta da conferência e não conta a falta de novo. Nota limitada de 1 a 5."},
   {tipo:"correção", area:"Alterar data do acerto", txt:"Não aceita pedido com a mesma data do acerto atual."},
+ ]},
+ {v:"0.18.57", data:"2026-11-04", titulo:"PIX revendedoras: só os 5 sócios, fechados, e linhas mais compactas", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Com Todos os sócios, a tela mostra só Marco Antonio, Ana Beatriz, Marcus, Lucas e Anamaria, cada um fechado numa barra dourada; clicar abre o formulário e a tabela (botão Recolher fecha). Ao filtrar um sócio, ele já aparece aberto. As linhas dos blocos de resumo ficaram mais baixas."},
+ ]},
+ {v:"0.18.56", data:"2026-11-04", titulo:"PIX revendedoras: favorecido por conta, lista com título travado e fonte menor", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Com Todos os sócios, o bloco Enviado por favorecido mostra uma linha por conta (favorecido, banco e conta), não só por sócio. As listas rolam dentro do bloco com o título e o cabeçalho das colunas travados em cima, e a fonte dos blocos ficou menor (11 px). BlocoResumo ganhou as opções alturaMax e compacto."},
+ ]},
+ {v:"0.18.55", data:"2026-11-04", titulo:"PIX revendedoras: blocos do topo somam todos os sócios", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Os 3 blocos (Total, Enviado por favorecido e Por dia) ficam uma vez só no topo da tela. Com Todos os sócios, somam todos; ao filtrar um sócio, mostram só ele. A meta aparece só no mês atual e só ao filtrar um sócio."},
+ ]},
+ {v:"0.18.54", data:"2026-11-04", titulo:"PIX revendedoras: 3 blocos de resumo no topo e sem meta em mês que já passou", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"No topo de cada sócio ficam 3 blocos: Total do mês (recebido, direto, prestadores), Enviado por favorecido e Por dia (por mês em Todos os meses). A meta só aparece no mês atual; mês que já passou não mostra meta nem falta. Listas longas rolam dentro do bloco."},
+ ]},
+ {v:"0.18.53", data:"2026-11-04", titulo:"PIX revendedoras: bloco de divergência no centro e divergência de data", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"O bloco da divergência abre no centro da tela, menor, e o menu da conferência ficou menor e centralizado. Nova opção Divergência de data, para quando o PIX entrou em outro dia: a data certa passa a valer e a informada antes aparece no bloco."},
+ ]},
+ {v:"0.18.52", data:"2026-11-04", titulo:"PIX revendedoras: mini bloco de divergência e colunas sem repetição", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A divergência abre um mini bloco ao lado do menu, sem abrir outra linha na tabela. O menu diz só Aguardando. As colunas Banco, Conta e Favorecido não repetem mais o banco: Nubank, Marcus, Marcus; C6 Bank, Pix João Paulo, Show Banca. Mais espaço entre a tabela de resumo, o formulário e a tabela de PIX."},
+ ]},
+ {v:"0.18.51", data:"2026-11-04", titulo:"PIX revendedoras: conferência em menu e resumo em tabela", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A conferência é um menu na própria linha: Confirmado, Não identificado, Divergência de valor ou Divergência de conta (as duas últimas abrem o bloco para informar o valor ou a conta certa; o botão Ver reabre). O resumo do sócio (Recebido, Meta, Falta, % da meta, Direto, Prestadores) virou uma tabela com topo dourado."},
+ ]},
+ {v:"0.18.50", data:"2026-11-04", titulo:"PIX revendedoras: banco, conta e prestador separados; conferência com divergência", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tabela tem colunas separadas: Banco, Conta e Prestador. A conferência não tem mais Rejeitado: agora é Confirmado, Não identificado (fora da soma) ou Divergência. Divergência abre um bloco para informar o valor que entrou de verdade ou a conta certa, com observação; o valor ou a conta corrigidos passam a valer nas somas e o informado antes aparece no bloco. PIX antigos rejeitados viram Não identificado."},
+ ]},
+ {v:"0.18.49", data:"2026-11-04", titulo:"PIX revendedoras: sem total por dia, só se ligar no filtro", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"Os PIX de cada sócio vêm em sequência, sem linha de total por dia (o dia não é o período do sócio). No alto há o filtro Sem total por dia / Com total por dia; ligado, cada dia ganha a sua linha de total."},
+ ]},
+ {v:"0.18.48", data:"2026-11-04", titulo:"PIX revendedoras: filtros na linha do título e total do dia sem repetir", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tela se chama PIX revendedoras. Mês e Sócio ficam pequenos, na mesma linha do título (sem o bloco Filtros). O total do dia só aparece quando o dia tem 2 PIX ou mais (ex.: Total do dia 21/10/2026 (2 PIX)); com 1 PIX só, o valor da linha já é o total e não se repete."},
+ ]},
+ {v:"0.18.47", data:"2026-11-04", titulo:"PIX das revendedoras refeita: compacta, em branco e com total do dia", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar", txt:"A tela PIX das revendedoras foi refeita só com peças do padrão: título, filtros no topo (mês e sócio), um bloco com barra dourada por sócio, resumo escrito numa linha, formulário numa linha e tabela com topo dourado. O total de cada dia aparece como linha de total dentro da tabela (sem as bolinhas coloridas), e tudo em branco. Abre no último mês com PIX, e há a opção Todos os meses. Pedido do Marcus e da Anamaria."},
+ ]},
+ {v:"0.18.46", data:"2026-11-04", titulo:"Ana Beatriz abre o PIX dos sócios", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização ff_pix (Ver e conferir os PIX das revendedoras dos sócios): abre só a tela PIX revendedoras do Financeiro familiar, sem as outras telas da família. Liberada para a Ana Beatriz (pedido dela nos Chamados, autorizado pelo Marcus). Aparece o atalho PIX dos sócios no menu Financeiro. A conta dela continua só de visualização: ela vê, mas não grava."},
+ ]},
+ {v:"0.18.52", data:"2026-11-04", titulo:"Pedidos: clicar no bloco abre a ficha direto", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Clicar num bloco do quadro agora abre a ficha do pedido direto, e o quadro continua na tela. O bloco não abre mais por dentro da coluna. O botão Concluir e os demais dados ficam na ficha."}
+ ]},
+ {v:"0.18.51", data:"2026-11-04", titulo:"Pedidos: cartão aberto mais compacto", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O cartão aberto agora mostra Rótulo: valor na mesma linha (Romaneio: 035300, Arquivo: Abrir, Na etapa: 3 dias, Comprado em: 04/11), dois por linha, e os botões Concluir e Abrir ficha lado a lado. O cartão ficou bem mais baixo."}
+ ]},
+ {v:"0.18.50", data:"2026-11-04", titulo:"Pedidos: romaneio com número e arquivo", itens:[
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"O romaneio agora tem o número e o ARQUIVO (foto ou PDF). Na ficha do pedido tem o campo Arquivo do romaneio, com Anexar, Abrir, Trocar e Tirar. O cartão aberto mostra Arquivo do romaneio com o botão Abrir. A foto é reduzida para JPEG pequeno e o PDF pode ter uns 2,8 MB. O arquivo fica guardado no servidor e vale para todo mundo que abre o Cadastro de peças."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A etapa 3 só deixa o pedido sair com o número E o arquivo do romaneio salvos. O cartão avisa o que falta: aguardando romaneio, falta o número ou falta anexar. A janela Informar romaneio pede os dois."}
+ ]},
+ {v:"0.18.49", data:"2026-11-04", titulo:"Pedidos: a etapa 3 espera o romaneio", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"O pedido entra na etapa 3, Fechado aguardando envio para banho, sem romaneio. Ali o cartão mostra aguardando romaneio e o botão vira Informar romaneio. O pedido não sai da etapa 3 (para Em trânsito ou além) sem o romaneio salvo dentro dele. Antes o romaneio era pedido já na passagem da separação para o fechado."}
+ ]},
+ {v:"0.18.48", data:"2026-11-04", titulo:"Pedidos: etapa Enviado passou a se chamar Em trânsito", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Lançados 3 pedidos na etapa Escolha das peças (Xangai, Mega Sul e Point), sem valor e sem romaneio. Os dois que tinham sido lançados em 03/11 (Point e Mega Sul) tinham sumido do servidor."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A etapa 4, Enviado, agora se chama Em trânsito (o bruto está a caminho da galvânica). Os pedidos que estavam em Enviado passaram sozinhos para Em trânsito. A etapa Enviado para Sorelly não mudou."}
+ ]},
+ {v:"0.18.47", data:"2026-11-03", titulo:"Pedidos: pedido sem valor na Escolha das peças e dois pedidos lançados", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Dá para lançar um pedido sem valor enquanto ele está na etapa Escolha das peças, porque o total ainda não existe. Para sair dessa etapa o sistema pede o valor. Em qualquer outra etapa o valor continua obrigatório."},
+  {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Lançados os pedidos que estão sendo montados agora na Point e na Mega Sul, na etapa Escolha das peças, ainda sem valor."}
+ ]},
+ {v:"0.18.45", data:"2026-11-03", titulo:"RH muda o setor direto e pedidos de bruto ligados à chegada no banho", itens:[
+  {tipo:"novo", area:"RH", txt:"Na ficha do colaborador, o RH escolhe o Setor direto, sem pedir. Pedido da Maria Claudia."},
+  {tipo:"melhoria", area:"Cadastro de peças", txt:"Pedidos de bruto: ao preencher a data Chegou na Pontual ou Chegou na Ellos, o pedido passa sozinho para Chegou no banho (Aguardando banho) com essa data. A contagem de dias da etapa Banho começa na data da chegada, não no dia em que o status foi atualizado. Pedido da Rayssa."},
+ ]},
+ {v:"0.18.43", data:"2026-11-03", titulo:"Atendimento interno: horários organizados", itens:[
+  {tipo:"melhoria", area:"Atendimento interno", txt:"Em Revendedoras, os botões Lista, Calendário e Buscar da DevMaster ficam no lado esquerdo, em cima do calendário. A coluna dos horários sobe até o alto da tela e mostra os 20 horários de meia em meia hora sem rolar. Pedido da Tamara e do Marcus."},
  ]},
  {v:"0.18.42", data:"2026-11-03", titulo:"Chamados: data de acerto no Link de pagamento, kit novo R$ 7.000, Pix por dia, valor liberado", itens:[
   {tipo:"correção", area:"Link de pagamento", txt:"Não dava para salvar a data do acerto em link já solicitado ou pago: a conferência da data estava errada e recusava qualquer data. Corrigido (Hellen). O mesmo erro no mês inicial do Top 50 das Encomendas também foi corrigido."},

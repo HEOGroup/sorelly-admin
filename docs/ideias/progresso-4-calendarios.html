@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progresso · 4 calendários</title>
+<style>
+  :root{ --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#3a3c43; --ouro:#E8B84B; --ouro2:#9A6F1E; --ouroclaro:#F5E7BE; --escuro:#1a1306; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  section{max-width:1180px;margin:0 auto 40px}
+  .tag{display:flex;gap:10px;margin-bottom:8px}.tag b{font-size:15px;color:var(--ouro)}
+  .tela{border:1px solid var(--linha2);border-radius:12px;background:var(--fundo)}
+  .topo{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;background:#131417;border-bottom:1px solid var(--linha);border-radius:12px 12px 0 0}
+  .topo .logo{color:var(--ouro);font-weight:700;letter-spacing:.18em;font-size:12px}.topo .pg{font-weight:600;margin-left:8px}.topo .esp{flex:1}
+  .relogio{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco)}
+  .relogio i{width:8px;height:8px;border-radius:50%;background:#22C55E}.relogio small{font-size:11px;letter-spacing:.05em}.relogio b{font-size:18px;font-variant-numeric:tabular-nums;color:var(--ouro)}
+  .bt{height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco);color:#fff;font:inherit;white-space:nowrap;cursor:pointer}
+  .bt.ouro{background:linear-gradient(90deg,var(--ouro2),var(--ouro) 55%,var(--ouroclaro));color:var(--escuro);font-weight:600;border-color:var(--ouro)}
+  .corpo{padding:10px;display:flex;flex-direction:column;gap:10px}
+  .bl{background:var(--bloco);border:1px solid var(--linha);border-radius:10px}
+  .bl>.ti{display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 12px;font-weight:600;border-bottom:1px solid var(--linha);border-radius:10px 10px 0 0;background:linear-gradient(90deg,rgba(232,184,75,.16),rgba(232,184,75,0) 70%)}
+  .bl>.in{padding:10px 12px}
+  .filtros{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;align-items:end}
+  .rot{font-size:11px;letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:3px}
+  select,.dd summary{height:32px;width:100%;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco2);color:#fff;font:inherit;padding:0 10px;text-align:center;text-align-last:center}
+  .dd{position:relative}.dd summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.dd summary::-webkit-details-marker{display:none}
+  .dd .menu{position:absolute;left:0;top:36px;z-index:10;width:100%;min-width:170px;background:var(--bloco2);border:1px solid var(--linha2);border-radius:8px;padding:4px}
+  .dd label{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px;cursor:pointer}.dd label:hover{background:rgba(255,255,255,.08)}
+  .ctr{text-align:center}
+  .g{color:var(--ouro);font-weight:600}
+  .grid2{display:grid;gap:10px;grid-template-columns:1fr 320px}
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal .dn{text-align:center;font-size:11px;letter-spacing:.05em;text-transform:uppercase;height:22px;line-height:22px}
+  .cel{min-height:72px;border:1px solid var(--linha);border-radius:8px;background:var(--bloco2);padding:6px 8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;text-align:center}
+  .cel.sel{border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro)}.cel.vz{opacity:.4;cursor:default}
+  .cel .n{font-size:11px;text-align:left}.cel .h{font-size:15px;font-weight:700;color:var(--ouro);font-variant-numeric:tabular-nums}
+  .cel .ac{font-size:11px;color:var(--ouro);border-top:1px solid var(--ouro2);padding-top:2px}
+  .mini .cel{min-height:44px;padding:4px 6px}.mini .cel .h{font-size:13px}
+  table{border-collapse:collapse;width:100%;table-layout:fixed}
+  th,td{text-align:center;white-space:nowrap;padding:0 8px;font-variant-numeric:tabular-nums;border-left:1px solid var(--linha)}
+  th:first-child,td:first-child{border-left:0}
+  thead th{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:#1c1d21;border-bottom:2px solid var(--ouro)}
+  td{height:32px;border-top:1px solid var(--linha)}
+  tr.tot td{background:#1c1d21;font-weight:700;border-top:2px solid var(--ouro2)}
+  .lista{display:grid;grid-template-columns:1fr auto;column-gap:16px}
+  .lista div{height:28px;display:flex;align-items:center;border-bottom:1px solid var(--linha)}.lista div:nth-child(even){justify-content:flex-end;font-variant-numeric:tabular-nums}
+  .semana{display:grid;grid-template-columns:repeat(7,1fr);gap:8px}
+  .col{border:1px solid var(--linha);border-radius:8px;background:var(--bloco2);min-height:250px;display:flex;flex-direction:column}
+  .col.sel{border-color:var(--ouro)}
+  .col .cab{padding:6px 8px;border-bottom:1px solid var(--linha);text-align:center}
+  .col .cab b{display:block;font-size:13px}.col .cab .g{font-size:15px}
+  .col .ac{font-size:11px;color:var(--ouro);text-align:center;padding:3px 0;border-bottom:1px solid var(--linha)}
+  .col .it{padding:5px 8px;border-bottom:1px solid var(--linha);text-align:center;font-size:12px}
+  .col .it span{display:block;font-variant-numeric:tabular-nums}
+  .calor{display:grid;grid-auto-flow:column;grid-template-rows:repeat(7,22px);gap:4px;justify-content:center}
+  .calor i{width:22px;height:22px;border-radius:5px;border:1px solid var(--linha);display:block;position:relative}
+  .calor i.ac::after{content:"";position:absolute;inset:6px;border:1.5px solid #fff;border-radius:50%}
+  .calor i.sel{outline:2px solid var(--ouro);outline-offset:1px}
+  .meses{display:grid;grid-auto-flow:column;gap:4px;justify-content:center;margin-bottom:4px}
+  .meses span{width:22px;font-size:11px;white-space:nowrap}
+  .nota{max-width:1180px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+</style>
+</head>
+<body>
+<section>
+  <h1>Progresso · 4 calendários</h1>
+  <p>Sem pílulas nem chips. Tudo que se escolhe é <b>dropdown</b> ou <b>menu suspenso</b> (os de verdade funcionam: clique). Só dourado como destaque; o resto é branco e cinza. Os dados são de exemplo.</p>
+  <div class="nav"><a href="#A">A · Mês e painel do dia</a><a href="#B">B · Faixa do mês e tabelas</a><a href="#C">C · Agenda da semana</a><a href="#D">D · Mapa do ano</a></div>
+</section>
+<section id="A"><div class="tag"><b>A</b><span>Calendário do mês grande, com o painel do dia selecionado ao lado. Clique num dia.</span></div><div class="tela" id="telaA"></div></section>
+<section id="B"><div class="tag"><b>B</b><span>Calendário do mês compacto em cima; embaixo, os trechos do dia e a tabela dos dias.</span></div><div class="tela" id="telaB"></div></section>
+<section id="C"><div class="tag"><b>C</b><span>Agenda da semana: uma coluna por dia, com cada trecho listado (como uma agenda de calendário).</span></div><div class="tela" id="telaC"></div></section>
+<section id="D"><div class="tag"><b>D</b><span>Mapa do ano: cada quadrado é um dia, e o dourado fica mais forte com mais horas trabalhadas. Círculo branco = dia de academia.</span></div><div class="tela" id="telaD"></div></section>
+<div class="nota"><b>Regras que estes desenhos seguem:</b> sem chips nem pílulas (trava dura 2i); uma opção = dropdown; várias opções = menu suspenso com caixas de marcar; filtros no topo; tudo centralizado; campo e botão de 32 px; tabela no layout D; sem faixa de cartões de número.</div>
+
+<script>
+var H=function(m){return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
+var D={2:{t:478,f:35,a:60,tr:0,p:20,g:null,i:"08:05",fm:"18:10"},3:{t:468,f:41,a:60,tr:30,p:11,g:{m:["Peito","Tríceps"],c:1,b:0},i:"08:05",fm:"18:10"},4:{t:415,f:52,a:65,tr:45,p:13,g:null,i:"08:00",fm:"17:30"},5:{t:482,f:36,a:70,tr:0,p:37,g:{m:["Costas","Bíceps"],c:0,b:1},i:"08:20",fm:"18:45"},6:{t:450,f:44,a:60,tr:40,p:15,g:{m:["Pernas","Glúteos"],c:1,b:0},i:"08:10",fm:"18:05"},7:{t:200,f:20,a:0,tr:0,p:0,g:{m:["Ombros"],c:0,b:1},i:"09:00",fm:"12:30"},8:null,9:{t:342,f:34,a:65,tr:40,p:12,g:{m:["Peito","Costas","Ombros"],c:1,b:0},i:"08:12",fm:"aberto"}};
+var NOMES=["Peito","Costas","Ombros","Bíceps","Tríceps","Antebraço","Abdômen","Pernas","Glúteos","Panturrilha"];
+var DIASEM=["Seg","Ter","Qua","Qui","Sex","Sáb","Dom"];
+var opt=function(a,v){return a.map(function(x){return '<option'+(x===v?' selected':'')+'>'+x+'</option>'}).join('')};
+var sel=function(rot,a,v){return '<div><span class="rot">'+rot+'</span><select>'+opt(a,v)+'</select></div>'};
+var dd=function(rot,marc){return '<div><span class="rot">'+rot+'</span><details class="dd"><summary>'+(marc.length?(marc.length<=2?marc.join(", "):marc.length+" membros"):"Nenhum")+' <span>▾</span></summary><div class="menu">'+NOMES.map(function(n){return '<label><input type="checkbox"'+(marc.indexOf(n)>=0?' checked':'')+'> '+n+'</label>'}).join('')+'</div></details></div>'};
+var topo=function(){return '<div class="topo"><span class="logo">SORELLY</span><span class="pg">Marcus › Progresso</span><span class="esp"></span><div class="relogio"><i></i><small>TRABALHANDO</small><b>05:42:10</b></div><span class="bt">Pausa ▾</span><span class="bt">Encerrar dia</span></div>'};
+var cab=function(a){return '<thead><tr>'+a.map(function(t){return '<th>'+t+'</th>'}).join('')+'</tr></thead>'};
+var soma=function(k){var s=0;for(var n in D)if(D[n])s+=D[n][k];return s};
+var nd=function(){var c=0;for(var n in D)if(D[n]&&D[n].t>0)c++;return c};
+/* semana de 02 a 08 de novembro vem de D; 26-31 de outubro e 10 em diante vazios. 1/11 é domingo => grade começa em 26/10 (segunda) */
+var celula=function(n,x,sel,vz,mini){return '<div class="cel'+(sel?' sel':'')+(vz?' vz':'')+'" data-d="'+n+'"><div class="n">'+n+'</div>'+(x&&x.t?'<div class="h">'+H(x.t)+'</div>'+(!mini&&x.g?'<div class="ac">Academia</div>':''):'<div style="opacity:.5">—</div>')+'</div>'};
+var grade=function(selDia,mini){var h='';DIASEM.forEach(function(d){h+='<div class="dn">'+d+'</div>'});[26,27,28,29,30,31].forEach(function(n){h+=celula(n,null,0,1,mini)});h+=celula(1,null,0,0,mini);for(var n=2;n<=9;n++)h+=celula(n,D[n],n===selDia,0,mini);for(n=10;n<=15;n++)h+=celula(n,null,0,0,mini);return '<div class="cal'+(mini?' mini':'')+'">'+h+'</div>'};
+var detalhe=function(n){var x=D[n];if(!x||!x.t)return '<div class="ctr" style="padding:20px 0">Sem registro neste dia.</div>';var g=x.g||{m:[],c:0,b:0};
+ return '<div class="lista"><div>Início</div><div>'+x.i+'</div><div>Fim</div><div>'+x.fm+'</div><div>Trabalhado</div><div class="g">'+H(x.t)+'</div><div>Fumar</div><div>'+H(x.f)+'</div><div>Almoçar</div><div>'+H(x.a)+'</div><div>Treinar</div><div>'+H(x.tr)+'</div><div>Parado</div><div>'+H(x.p)+'</div></div>'
+ +'<div class="filtros" style="grid-template-columns:1fr 1fr;margin-top:10px">'+sel("Academia",["Não","Sim"],g.m.length?"Sim":"Não")+dd("Membros",g.m)+sel("Corri",["Não","Sim"],g.c?"Sim":"Não")+sel("Joguei bola",["Não","Sim"],g.b?"Sim":"Não")+'</div>'};
+
+/* A */
+function renderA(n){
+ document.getElementById("telaA").innerHTML=topo()+'<div class="corpo"><div class="bl"><div class="ti"><span>Filtros</span></div><div class="in"><div class="filtros">'+sel("Mês",["Outubro de 2026","Novembro de 2026","Dezembro de 2026"],"Novembro de 2026")+sel("Período",["Hoje","Semana","Mês"],"Mês")+sel("Agora",["Trabalhando","Fumar","Almoçar","Treinar","Parado","Outro"],"Trabalhando")+'<div></div></div></div></div>'
+ +'<div class="grid2"><div class="bl"><div class="ti"><span>Novembro de 2026</span><span class="g">Total '+H(soma("t"))+' · '+nd()+' dias</span></div><div class="in">'+grade(n,false)+'</div></div>'
+ +'<div class="bl"><div class="ti"><span>Dia '+String(n).padStart(2,"0")+'/11</span><span class="g">'+(D[n]?H(D[n].t):"—")+'</span></div><div class="in">'+detalhe(n)+'</div></div></div></div>';
+ document.querySelectorAll('#telaA .cel:not(.vz)').forEach(function(c){c.onclick=function(){renderA(+c.getAttribute('data-d'))}});
+}
+renderA(9);
+
+/* B */
+var trechosDia=function(n){var x=D[n];if(!x)return [];var i=x.i,ini=+i.slice(0,2)*60+ +i.slice(3);var l=[["Trabalho",ini,ini+232],["Fumar",ini+232,ini+232+Math.round(x.f/3)],["Trabalho",ini+232+Math.round(x.f/3),ini+232+Math.round(x.f/3)+60],["Almoço",ini+292+Math.round(x.f/3),ini+292+Math.round(x.f/3)+x.a],["Trabalho",ini+292+Math.round(x.f/3)+x.a,ini+292+Math.round(x.f/3)+x.a+180]];if(x.tr)l.push(["Treino",ini+292+Math.round(x.f/3)+x.a+180,ini+292+Math.round(x.f/3)+x.a+180+x.tr]);return l};
+var hm=function(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
+var linhasTr=function(n){return trechosDia(n).map(function(t){return '<tr><td>'+t[0]+'</td><td>'+hm(t[1])+'</td><td>'+hm(t[2])+'</td><td>'+H(t[2]-t[1])+'</td></tr>'}).join('')};
+var linhasDias=function(){var h='';for(var n in D){var x=D[n];if(x&&x.t)h+='<tr><td>'+String(n).padStart(2,"0")+'/11</td><td>'+x.i+'</td><td>'+x.fm+'</td><td class="g">'+H(x.t)+'</td><td>'+H(x.f)+'</td><td>'+H(x.a)+'</td><td>'+H(x.tr)+'</td><td>'+(x.g?x.g.m.join(", "):"—")+'</td></tr>'}return h};
+document.getElementById("telaB").innerHTML=topo()+'<div class="corpo"><div class="bl"><div class="ti"><span>Filtros</span></div><div class="in"><div class="filtros">'+sel("Mês",["Outubro de 2026","Novembro de 2026"],"Novembro de 2026")+sel("Período",["Hoje","Semana","Mês"],"Semana")+sel("Dia",["09/11/2026","08/11/2026","07/11/2026"],"09/11/2026")+dd("Membros do dia",["Peito","Costas","Ombros"])+'</div></div></div>'
+ +'<div class="bl"><div class="ti"><span>Novembro de 2026</span><span class="g">Total '+H(soma("t"))+'</span></div><div class="in">'+grade(9,true)+'</div></div>'
+ +'<div class="grid2" style="grid-template-columns:1fr 1.7fr"><div class="bl"><div class="ti"><span>Trechos de 09/11</span></div><div class="in" style="padding:0"><table>'+cab(["Motivo","Início","Fim","Duração"])+'<tbody>'+linhasTr(9)+'</tbody></table></div></div>'
+ +'<div class="bl"><div class="ti"><span>Dias</span></div><div class="in" style="padding:0"><table>'+cab(["Dia","Início","Fim","Trabalhado","Fumar","Almoçar","Treinar","Membros"])+'<tbody>'+linhasDias()+'<tr class="tot"><td>Total</td><td>—</td><td>—</td><td class="g">'+H(soma("t"))+'</td><td>'+H(soma("f"))+'</td><td>'+H(soma("a"))+'</td><td>'+H(soma("tr"))+'</td><td>—</td></tr></tbody></table></div></div></div></div>';
+
+/* C */
+var colunas='';for(var n=3;n<=9;n++){var x=D[n]||null;var mem=x&&x.g?x.g.m.join(", "):"";colunas+='<div class="col'+(n===9?' sel':'')+'"><div class="cab"><b>'+DIASEM[(n+5)%7]+' '+String(n).padStart(2,"0")+'/11</b><span class="g">'+(x&&x.t?H(x.t):"—")+'</span></div>'+(x&&x.g?'<div class="ac">Academia · '+mem+'</div>':'')+trechosDia(n).map(function(t){return '<div class="it">'+t[0]+'<span>'+hm(t[1])+' – '+hm(t[2])+'</span></div>'}).join('')+'</div>'}
+document.getElementById("telaC").innerHTML=topo()+'<div class="corpo"><div class="bl"><div class="ti"><span>Filtros</span></div><div class="in"><div class="filtros">'+sel("Semana",["26/10 a 01/11","02/11 a 08/11","09/11 a 15/11"],"09/11 a 15/11")+sel("Mostrar",["Trabalho e pausas","Só pausas","Só academia"],"Trabalho e pausas")+dd("Membros",["Peito","Costas","Ombros"])+sel("Agora",["Trabalhando","Fumar","Almoçar","Treinar","Parado","Outro"],"Trabalhando")+'</div></div></div><div class="bl"><div class="ti"><span>Semana de 03/11 a 09/11</span><span class="g">Total '+H(soma("t"))+'</span></div><div class="in"><div class="semana">'+colunas+'</div></div></div></div>';
+
+/* D */
+var semente=12345,rnd=function(){semente=(semente*16807)%2147483647;return semente/2147483647};
+var quad='';var inicio=new Date(2026,7,3);var hojeD=new Date(2026,10,9);
+for(var d=new Date(inicio);d<=new Date(2026,11,6);d.setDate(d.getDate()+1)){var fut=d>hojeD,mes=d.getMonth(),dia=d.getDate();var dw=(d.getDay()+6)%7;var horas=fut||dw>=5&&rnd()<.6?0:(rnd()<.1?0:5+rnd()*4);var ac=!fut&&rnd()<.35;if(mes===10&&dia<=9&&D[dia]){horas=D[dia].t/60;ac=!!D[dia].g}var alfa=horas?Math.min(1,.15+horas/9*.85):0;quad+='<i class="'+(ac?'ac ':'')+(mes===10&&dia===9?'sel':'')+'" title="'+String(dia).padStart(2,"0")+'/'+String(mes+1).padStart(2,"0")+' · '+(horas?H(Math.round(horas*60)):"—")+'" style="background:'+(horas?'rgba(232,184,75,'+alfa.toFixed(2)+')':'var(--bloco2)')+(fut?';opacity:.35':'')+'"></i>'}
+document.getElementById("telaD").innerHTML=topo()+'<div class="corpo"><div class="bl"><div class="ti"><span>Filtros</span></div><div class="in"><div class="filtros">'+sel("Ano",["2026","2025"],"2026")+sel("Mostrar",["Horas trabalhadas","Pausas","Dias de academia"],"Horas trabalhadas")+sel("Dia",["09/11/2026","08/11/2026","07/11/2026"],"09/11/2026")+dd("Membros do dia",["Peito","Costas","Ombros"])+'</div></div></div>'
+ +'<div class="grid2"><div class="bl"><div class="ti"><span>Agosto a início de dezembro de 2026</span><span>Menos <span style="display:inline-block;width:60px;height:8px;vertical-align:middle;background:linear-gradient(90deg,rgba(232,184,75,.15),var(--ouro))"></span> Mais</span></div><div class="in"><div class="calor">'+quad+'</div></div></div>'
+ +'<div class="bl"><div class="ti"><span>Dia 09/11/2026</span><span class="g">5:42</span></div><div class="in">'+detalhe(9)+'</div></div></div></div>';
+</script>
+</body>
+</html>

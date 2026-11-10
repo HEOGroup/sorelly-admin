@@ -177,6 +177,27 @@ function advertenciasComSeq(rh){
   var lista = (rh.adv||[]).slice().sort(function(a, b){ return a.data.localeCompare(b.data) || a.em-b.em; }), cont = {};
   return lista.map(function(a){ var k = a.colabId+"|"+a.data.slice(0,4); cont[k] = (cont[k]||0)+1; return Object.assign({}, a, {seq:cont[k], flag:flagAdv(cont[k])}); }).reverse();
 }
+// RELATÓRIO MENSAL DAS ADVERTÊNCIAS para o WhatsApp (pedido da Maria Claudia, 05/11/2026): resumo por tipo, principais motivos e quem teve mais de uma no mês. ym = "2026-10".
+function relatorioAdvertencias(rh, ym, nomeDe){
+  var cfg = rh.config, lista = (rh.adv||[]).filter(function(a){ return String(a.data).slice(0,7)===ym; });
+  var nomeTipo = function(id){ var x = cfg.tiposAdv.find(function(y){ return y.id===id; }); return x || {nome:"—", suspensao:false}; };
+  var nomeMotivo = function(id){ var x = cfg.motivosAdv.find(function(y){ return y.id===id; }); return x ? x.nome : "Sem motivo"; };
+  var nomeColab = nomeDe || function(id){ return id; };
+  var PLURAL = {verbal:"verbais", escrita:"escritas", escrito:"escritos"};
+  var porTipo = {}; lista.forEach(function(a){ var t = nomeTipo(a.tipoId), o = porTipo[t.nome] || (porTipo[t.nome] = {n:0, dias:0, susp:t.suspensao}); o.n++; o.dias += Number(a.dias||0); });
+  var linhasTipo = Object.keys(porTipo).sort(function(a, b){ return porTipo[b].n-porTipo[a].n || a.localeCompare(b, "pt-BR"); }).map(function(k){ var o = porTipo[k];
+    if(o.susp) return "- "+o.n+(o.n===1 ? " suspensão" : " suspensões")+" de "+o.dias+(o.dias===1 ? " dia" : " dias")+(o.n>1 ? " no total" : "");
+    return "- "+o.n+(o.n===1 ? " advertência " : " advertências ")+(o.n===1 ? k.toLowerCase() : (PLURAL[k.toLowerCase()] || k.toLowerCase())); });
+  var porMotivo = {}; lista.forEach(function(a){ var k = nomeMotivo(a.motivoId); porMotivo[k] = (porMotivo[k]||0)+1; });
+  var linhasMotivo = Object.keys(porMotivo).sort(function(a, b){ return porMotivo[b]-porMotivo[a] || a.localeCompare(b, "pt-BR"); }).map(function(k){ return "- "+k+": "+porMotivo[k]+(porMotivo[k]===1 ? " ocorrência" : " ocorrências"); });
+  var porPessoa = {}; lista.forEach(function(a){ porPessoa[a.colabId] = (porPessoa[a.colabId]||0)+1; });
+  var reinc = Object.keys(porPessoa).filter(function(id){ return porPessoa[id]>1; }).map(nomeColab).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); });
+  var mes = MESES[Number(ym.slice(5,7))-1].toUpperCase()+"/"+ym.slice(0,4);
+  if(!lista.length) return "*RELATÓRIO RH – MEDIDAS DISCIPLINARES | "+mes+"*\n\nNenhuma medida disciplinar registrada neste mês.";
+  return ["*RELATÓRIO RH – MEDIDAS DISCIPLINARES | "+mes+"*", "", "*📊 RESUMO GERAL*", "", "- *"+lista.length+(lista.length===1 ? " medida disciplinar registrada*" : " medidas disciplinares registradas*")].concat(linhasTipo,
+    ["", "*📋 PRINCIPAIS MOTIVOS*", ""], linhasMotivo,
+    ["", "*🚨 COLABORADORES COM REINCIDÊNCIA (MAIS DE UMA)*", ""], reinc.length ? reinc.map(function(n){ return "- *"+n+"*"; }) : ["- Ninguém neste mês"]).join("\n");
+}
 function resumoAdvertencias(rh, ano){
   var por = {}; (rh.adv||[]).filter(function(a){ return a.data.slice(0,4)===String(ano); }).forEach(function(a){ por[a.colabId] = (por[a.colabId]||0)+1; });
   return por;
@@ -270,6 +291,9 @@ function rhReduz(s, a){
     case "adv_add": { if(!a.colabId || !a.data || !a.tipoId || !a.motivoId) return recusa("Escolha colaborador, data, tipo e motivo.");
       var tp = cfg.tiposAdv.find(function(x){ return x.id===a.tipoId; }); var dias = tp && tp.suspensao ? Number(a.dias||0) : 0; if(tp && tp.suspensao && !(dias>0)) return recusa("Informe os dias de suspensão.");
       rh.adv.push({id:novoId("ad-"), colabId:a.colabId, data:a.data, tipoId:a.tipoId, motivoId:a.motivoId, dias:dias, obs:String(a.obs||"").trim(), por:por, em:Date.now()}); return ok("Advertência registrada"); }
+    case "adv_edit": { var ax = rh.adv.find(function(x){ return x.id===a.id; }); if(!ax) return recusa("Advertência não encontrada."); if(!a.colabId || !a.data || !a.tipoId || !a.motivoId) return recusa("Escolha colaborador, data, tipo e motivo.");
+      var tpe = cfg.tiposAdv.find(function(x){ return x.id===a.tipoId; }); var diasE = tpe && tpe.suspensao ? Number(a.dias||0) : 0; if(tpe && tpe.suspensao && !(diasE>0)) return recusa("Informe os dias de suspensão.");
+      Object.assign(ax, {colabId:a.colabId, data:a.data, tipoId:a.tipoId, motivoId:a.motivoId, dias:diasE, obs:String(a.obs||"").trim(), editadoPor:por, editadoEm:Date.now()}); return ok("Advertência corrigida"); }
     case "efetivar": { var ce = colaboradoresRh(s).find(function(x){ return x.id===a.id; }); if(!ce) return recusa("Colaborador não encontrado."); if(ce.status==="DESLIGADO") return recusa("Colaboradora desligada."); if(ce.efetivadoEm) return recusa("Já efetivada.");
       rh.colab[a.id] = Object.assign({}, rh.colab[a.id], {efetivadoEm:hojeIso(), efetivadoPor:por}); return ok(ce.nome+" efetivada"); }
     // ---- ficha de experiência (100 pontos): ocorrências, notas do gestor, parecer
@@ -385,6 +409,6 @@ function presencaChat(s, nome, hoje){
   return {dias:dias, mes:mes};
 }
 
-export { bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
+export { relatorioAdvertencias, bancosDe, RH_STAMP, rhAplicarAdmin, negocPadrao, negocEfetiva, horariosParaChat, horariosDoRh, presencaChat, STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, CODIGOS, AUSENTES, STATUS, TIPOS_DESLIG, DIAS_SEMANA, MESES, hojeIso, isoDe, br, diasEntre, somaDias, diaSem, ultimoDia, dataIso, slug, formatHoras, parseHoras, valorHoraExtra, rhDemo,
   colaboradoresRh, rotuloCnpj, presencaDe, diaEscalado, feriadoNoDia, statsEscopo, porEmpresaStats, desligadosDoPeriodo, relatorioDiario, formatarRelatorio,
   advertenciasComSeq, resumoAdvertencias, flagAdv, experienciaLista, experienciaAlertas, ocorrenciasDaPresenca, rhReduz };

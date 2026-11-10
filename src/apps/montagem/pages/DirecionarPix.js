@@ -163,7 +163,10 @@ function AbaDirecionar(){
   // PLANO SUGERIDO (Marcus, 24/10/2026), agora POR PARTE: cada forma de pagamento recebe a sua sugestão de destino.
   var planoBase = function(forma, valor){
     var fz = fazDe(forma, valor), rest = valor, rows = [], hoje = hojeIsoCp();
-    if(forma && forma!=="pix"){ var n0 = negativas.filter(function(x){ return cp.destinos.some(function(z){ return z.cnpjId===x.bloco; }); })[0], dN = n0 ? cp.destinos.filter(function(z){ return z.cnpjId===n0.bloco; })[0] : cp.destinos.filter(function(z){ return z.cnpjId; })[0];
+    // cartão e link da REPRESENTANTE: o CNPJ é o da maquininha ou do link dela (Marcus, 09/11/2026; não existe "maquininha do CNPJ mais negativo")
+    if(forma && forma!=="pix" && sel.origem==="rep"){ var cnR = cnpjDaRep(s, sel.repOrigem), dR = cnR ? cp.destinos.filter(function(z){ return z.cnpjId===cnR; })[0] : null;
+      if(dR){ rows.push({destinoId:dR.id, valor:valor, motivo:(forma==="link" ? "Link" : "Maquininha")+" de "+sel.repOrigem+": CNPJ "+cnR, regra:12, conta:"", via:forma}); return rows; } }
+    if(forma && forma!=="pix"){ var n0 =negativas.filter(function(x){ return cp.destinos.some(function(z){ return z.cnpjId===x.bloco; }); })[0], dN = n0 ? cp.destinos.filter(function(z){ return z.cnpjId===n0.bloco; })[0] : cp.destinos.filter(function(z){ return z.cnpjId; })[0];
       if(dN) rows.push({destinoId:dN.id, valor:valor, motivo:(forma==="link" ? "Link" : "Maquininha")+" do CNPJ "+dN.cnpjId+(n0 ? ": a conta mais no negativo é "+n0.nome : ""), regra:0, conta:"", via:forma}); return rows; }
     var push = function(destinoId, valor, motivo, regra, conta){ var v = r2(Math.min(valor, rest)); if(!destinoId || !(v>0.004)) return; rows.push({destinoId:destinoId, valor:v, motivo:motivo, regra:regra||0, conta:conta||"", via:"pix"}); rest = r2(rest-v); };
     // REGRA (Marcus, 24/10/2026): o que FATURA (conta de CNPJ) não se mistura com o que NÃO fatura (fornecedor, representante, família...). O que é 34 fica no 34; venda no link de um CNPJ volta para esse CNPJ.

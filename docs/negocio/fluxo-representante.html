@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fluxo da representante</title>
+<style>
+  :root{--bg:#0b0b0d;--card:#16161a;--linha:#2a2a31;--txt:#f4f4f5;--ouro:#c9a13b;--app:#8b7cf6;--adm:#2dd4bf;--din:#f59e6b;--tom:rgba(255,255,255,.72)}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:13px/1.5 Inter,system-ui,sans-serif}
+  .pag{max-width:980px;margin:0 auto;padding:24px 16px 48px}
+  h1{font-size:20px;margin:0 0 4px;color:var(--ouro)}
+  .sub{color:var(--tom);margin:0 0 16px}
+  .leg{display:flex;flex-wrap:wrap;gap:16px;margin:0 0 20px}
+  .leg span{display:inline-flex;align-items:center;gap:6px}
+  .pt{width:10px;height:10px;border-radius:50%}
+  .raias{display:grid;grid-template-columns:1fr 36px 1fr;gap:0 8px;align-items:stretch}
+  .cab{padding:8px 12px;border-radius:8px;font-weight:600;text-align:center;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+  .cab.app{background:rgba(139,124,246,.14);color:var(--app)}
+  .cab.adm{background:rgba(45,212,191,.14);color:var(--adm)}
+  .meio{display:flex;justify-content:center}
+  .lin{display:contents}
+  .cel{padding:5px 0;display:flex;flex-direction:column;justify-content:center;min-height:78px}
+  .cx{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:10px 12px;position:relative}
+  .cx.app{border-left:3px solid var(--app)}
+  .cx.adm{border-left:3px solid var(--adm)}
+  .cx.din{border-left:3px solid var(--din)}
+  .cx b{display:block;font-size:13px}
+  .cx span{color:var(--tom);font-size:12px}
+  .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--ouro);color:#111;font-size:11px;font-weight:700;margin-right:6px}
+  .seta{display:grid;place-items:center;color:var(--ouro);font-size:16px}
+  .vazio{min-height:0}
+  .alerta{margin-top:20px;display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+  .nota{background:var(--card);border:1px solid var(--linha);border-radius:10px;padding:12px}
+  .nota b{display:block;margin-bottom:4px;color:var(--ouro)}
+  .nota span{color:var(--tom)}
+  .ramo{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+  .ramo i{font-style:normal;background:rgba(245,158,107,.14);color:var(--din);border-radius:6px;padding:2px 8px;font-size:12px}
+  @media(max-width:720px){
+    .raias{grid-template-columns:1fr;gap:0}
+    .meio{display:none}
+    .cab.adm{margin-top:12px}
+    .cel{min-height:0}
+  }
+</style>
+</head>
+<body>
+<div class="pag">
+  <h1>Fluxo da representante</h1>
+  <p class="sub">Do pedido da listagem até a inadimplência. O kit sai com a representante e o acerto acontece na casa da revendedora.</p>
+  <div class="leg">
+    <span><i class="pt" style="background:var(--app)"></i>App da representante</span>
+    <span><i class="pt" style="background:var(--adm)"></i>Admin (funcionárias)</span>
+    <span><i class="pt" style="background:var(--din)"></i>Dinheiro</span>
+  </div>
+
+  <div class="raias">
+    <div class="cab app">App da representante</div><div></div><div class="cab adm">Admin</div>
+
+    <div class="cel"><div class="cx app"><b><span class="n">1</span>Gera a listagem</b><span>Escolhe revendedoras, dia e horário</span></div></div>
+    <div class="seta">&rarr;</div>
+    <div class="cel"><div class="cx adm"><b><span class="n">2</span>Listagens</b><span>A funcionária acha as condicionais</span></div></div>
+
+    <div class="cel"></div><div class="seta"></div>
+    <div class="cel"><div class="cx adm"><b><span class="n">3</span>Montagem</b><span>Monta o kit e dá o OK · comissão das montadoras</span></div></div>
+
+    <div class="cel"></div><div class="seta"></div>
+    <div class="cel"><div class="cx adm"><b><span class="n">4</span>Bipagem</b><span>Bipa o kit e libera para retirada</span></div></div>
+
+    <div class="cel"><div class="cx app"><b><span class="n">5</span>Retira o kit</b><span>O kit fica com a representante</span></div></div>
+    <div class="seta">&larr;</div>
+    <div class="cel"></div>
+
+    <div class="cel"><div class="cx app"><b><span class="n">6</span>Atendimento na casa da revendedora</b><span>Acerto na calculadora · entrega do kit novo ou reposição</span></div></div>
+    <div class="seta">&rarr;</div>
+    <div class="cel"><div class="cx adm"><b><span class="n">7</span>Consolidado</b><span>O agendamento confere dinheiro, condicional e peças</span></div></div>
+
+    <div class="cel"></div><div class="seta"></div>
+    <div class="cel"><div class="cx din"><b><span class="n">8</span>Comissões</b><span>O financeiro libera e paga · as contas vão ao Direcionar Pix</span></div></div>
+
+    <div class="cel"></div><div class="seta"></div>
+    <div class="cel"><div class="cx din"><b><span class="n">9</span>Inadimplência</b><span>O que não foi pago fica aberto aqui</span>
+      <div class="ramo"><i>Negocia primeiro</i><i>Se falhar: Jurídico</i></div></div></div>
+  </div>
+
+  <div class="alerta">
+    <div class="nota"><b>Fora deste fluxo</b><span>Atendimento interno (a revendedora vem à Sorelly) é outro fluxo, com mapa próprio.</span></div>
+    <div class="nota"><b>A incluir depois</b><span>Retorno dos kits: a bipagem de retorno entra quando os kits voltam à empresa, depois do passo 6.</span></div>
+    <div class="nota"><b>A confirmar com o Leonardo</b><span>Se o app novo grava a listagem direto no Admin ou passa pelo backend do app Sorelly.</span></div>
+  </div>
+</div>
+</body>
+</html>

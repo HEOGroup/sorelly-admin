@@ -1,0 +1,222 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha do pedido · 4 layouts</title>
+<style>
+  :root{ --bg:#0f0f11; --card:#17181b; --fio:#2a2c31; --txt:#f4f4f5; --ouro:#E8B84B; --compra:#5B8DEF; --banho:#A78BFA; --empresa:#2DD4BF; --ok:#4ADE80; --campo:#0d0d0f; }
+  *{box-sizing:border-box;margin:0}
+  body{background:var(--bg);color:var(--txt);font:13px/1.35 Inter,system-ui,Segoe UI,Arial,sans-serif;padding:20px 16px 60px}
+  h1{font-size:18px;text-align:center;margin-bottom:4px} .sub{text-align:center;margin-bottom:22px}
+  .opcao{max-width:1180px;margin:0 auto 34px}
+  .rot{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .rot b{background:var(--ouro);color:#1a1306;border-radius:6px;padding:2px 10px;font-size:13px}
+  .rot span{font-size:13px}
+  .jan{background:var(--card);border:1px solid var(--fio);border-radius:14px;padding:14px}
+  .topo{display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--fio);padding-bottom:10px;margin-bottom:12px}
+  .topo h2{font-size:16px} .topo small{font-size:13px;display:block}
+  .x{width:32px;height:32px;border:1px solid var(--fio);border-radius:8px;display:grid;place-items:center}
+  .lab{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:500;display:block;margin-bottom:3px}
+  .campo{height:32px;border:1px solid var(--fio);background:var(--campo);border-radius:6px;display:flex;align-items:center;justify-content:center;padding:0 10px;white-space:nowrap}
+  .campo.vazio{opacity:.55}
+  .btn{height:32px;border:1px solid var(--fio);background:var(--campo);border-radius:6px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;white-space:nowrap}
+  .btn.p{border-color:var(--ouro);background:#3a2f12;color:var(--ouro);font-weight:600}
+  .grade{display:grid;gap:10px}
+  .g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
+  .bloco{border:1px solid var(--fio);border-radius:10px;padding:10px 12px}
+  .bloco>h3{font-size:11px;text-transform:uppercase;letter-spacing:.06em;font-weight:600;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+  .pt{width:10px;height:10px;border-radius:50%;display:inline-block}
+  .tot{font-size:18px;font-weight:700;font-variant-numeric:tabular-nums}
+  .linha{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:32px;border-bottom:1px solid var(--fio)}
+  .linha:last-child{border-bottom:0}
+  .linha .lab{margin:0}
+  .num{font-variant-numeric:tabular-nums;font-weight:600}
+  /* stepper */
+  .passos{display:flex;gap:0}
+  .fase{flex:1;border:1px solid var(--fio);border-radius:10px;padding:8px 10px;min-width:0}
+  .fase+.fase{margin-left:8px}
+  .fase h4{font-size:11px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:7px;display:flex;align-items:center;gap:6px}
+  .pp{display:flex;align-items:center;gap:7px;min-height:24px}
+  .bola{width:12px;height:12px;border-radius:50%;border:2px dashed #888;flex:none}
+  .bola.feito{background:var(--ok);border:2px solid var(--ok)}
+  .bola.atual{background:var(--compra);border:2px solid var(--compra)}
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--fio);margin-bottom:12px}
+  .tab{padding:7px 14px;border-radius:8px 8px 0 0;border:1px solid transparent;border-bottom:0}
+  .tab.on{border-color:var(--fio);background:var(--campo);color:var(--ouro);font-weight:600}
+  .rod{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--fio);margin-top:12px;padding-top:10px}
+  .trilho{display:flex;align-items:center;margin:2px 0 12px}
+  .no{flex:none;width:22px;height:22px;border-radius:50%;border:2px dashed #888;display:grid;place-items:center;font-size:11px}
+  .no.feito{background:var(--ok);border:2px solid var(--ok);color:#06240f}
+  .no.atual{background:var(--compra);border:2px solid var(--compra);color:#fff}
+  .fio{flex:1;height:2px;background:var(--fio)} .fio.feito{background:var(--ok)}
+  .cap{font-size:11px;text-align:center;margin-top:3px;white-space:nowrap}
+  .fase-card{border:1px solid var(--fio);border-top:3px solid var(--c);border-radius:10px;padding:10px 12px}
+  .fase-card.atual{outline:1px solid var(--c)}
+  .fase-card h3{font-size:13px;display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+  .selo{font-size:11px;border:1px solid var(--c);color:var(--txt);border-radius:999px;padding:1px 8px}
+  @media(max-width:900px){.g3,.g4{grid-template-columns:1fr 1fr}.passos{flex-direction:column;gap:8px}.fase+.fase{margin-left:0}}
+</style>
+</head>
+<body>
+<h1>Ficha do pedido · 4 layouts novos</h1>
+<p class="sub">Pedido de Xangai · Em separação · mesmos campos de hoje, agora em grupos. Escolha uma opção (A, B, C ou D).</p>
+
+<!-- ═════════ A ═════════ -->
+<section class="opcao">
+  <div class="rot"><b>A</b><span>Três grupos lado a lado + etapas em faixa embaixo</span></div>
+  <div class="jan">
+    <div class="topo"><div><h2>Pedido de Xangai</h2><small>Compra 04/11/2026 · Em separação</small></div><div class="x">×</div></div>
+    <div class="grade g3">
+      <div class="bloco"><h3><span class="pt" style="background:var(--compra)"></span>Compra</h3>
+        <div class="grade g2">
+          <div><span class="lab">Compra</span><div class="campo">04/11/2026</div></div>
+          <div><span class="lab">Fornecedor</span><div class="campo">Xangai</div></div>
+          <div><span class="lab">Nota</span><div class="campo vazio">—</div></div>
+          <div><span class="lab">Romaneio</span><div class="campo vazio">—</div></div>
+        </div>
+        <div class="linha" style="margin-top:8px"><span class="lab">Arquivo do romaneio</span><div class="btn">Anexar arquivo</div></div>
+      </div>
+      <div class="bloco"><h3><span class="pt" style="background:var(--ouro)"></span>Valores</h3>
+        <div class="grade g2">
+          <div><span class="lab">Valor R$</span><div class="campo">21.830</div></div>
+          <div><span class="lab">Desconto %</span><div class="campo">40</div></div>
+          <div><span class="lab">Valor do banho R$</span><div class="campo vazio">0</div></div>
+          <div><span class="lab">Fatura do banho</span><div class="btn">Anexar foto</div></div>
+        </div>
+        <div class="linha" style="margin-top:8px"><span class="lab">A pagar (bruto)</span><span class="num">R$ 13.098,00</span></div>
+        <div class="linha"><span class="lab">Total do pedido</span><span class="tot">R$ 13.098,00</span></div>
+      </div>
+      <div class="bloco"><h3><span class="pt" style="background:var(--banho)"></span>Banho e chegada</h3>
+        <div class="grade g2">
+          <div><span class="lab">Chegou na Pontual</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Chegou na Ellos</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Fotos enviadas</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Verniz novo</span><div class="campo">Não</div></div>
+          <div><span class="lab">Data que a Ellos conta</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Chegou na Sorelly</span><div class="campo vazio">dd/mm/aaaa</div></div>
+        </div>
+      </div>
+    </div>
+    <div class="passos" style="margin-top:12px">
+      <div class="fase"><h4><span class="pt" style="background:var(--compra)"></span>Compra</h4>
+        <div class="pp"><span class="bola feito"></span>Escolha das peças</div><div class="pp"><span class="bola atual"></span><b>Em separação</b></div><div class="pp"><span class="bola"></span>Fechado, aguardando envio</div><div class="pp"><span class="bola"></span>Em trânsito</div></div>
+      <div class="fase"><h4><span class="pt" style="background:var(--banho)"></span>Banho</h4>
+        <div class="pp"><span class="bola"></span>Chegou no banho</div><div class="pp"><span class="bola"></span>Enviaram fotos</div><div class="pp"><span class="bola"></span>Marcus confirmou preços</div><div class="pp"><span class="bola"></span>Banho</div></div>
+      <div class="fase"><h4><span class="pt" style="background:var(--empresa)"></span>Empresa</h4>
+        <div class="pp"><span class="bola"></span>Enviado para Sorelly</div><div class="pp"><span class="bola"></span>Chegou na empresa</div><div class="pp"><span class="bola"></span>Cadastrando</div><div class="pp"><span class="bola"></span>Finalizado</div></div>
+    </div>
+    <div class="rod"><div class="btn">Remover pedido</div><div style="display:flex;gap:8px"><div class="btn">Peças por categoria · 0</div><div class="btn p">Concluir ›</div></div></div>
+  </div>
+</section>
+
+<!-- ═════════ B ═════════ -->
+<section class="opcao">
+  <div class="rot"><b>B</b><span>Abas: Compra · Banho · Valores · Etapas (uma coisa por vez)</span></div>
+  <div class="jan">
+    <div class="topo"><div><h2>Pedido de Xangai</h2><small>Compra 04/11/2026 · Em separação · Total R$ 13.098,00</small></div><div style="display:flex;gap:8px"><div class="btn p">Concluir ›</div><div class="x">×</div></div></div>
+    <div class="tabs"><div class="tab on">Compra</div><div class="tab">Banho</div><div class="tab">Valores e faturas</div><div class="tab">Etapas</div></div>
+    <div class="grade g2" style="max-width:760px;margin:0 auto">
+      <div><span class="lab">Compra</span><div class="campo">04/11/2026</div></div>
+      <div><span class="lab">Fornecedor</span><div class="campo">Xangai</div></div>
+      <div><span class="lab">Nota</span><div class="campo vazio">—</div></div>
+      <div><span class="lab">Romaneio</span><div class="campo vazio">—</div></div>
+      <div style="grid-column:1/-1"><span class="lab">Arquivo do romaneio</span><div class="campo vazio" style="justify-content:space-between"><span>Nenhum arquivo</span><span class="btn" style="height:24px">Anexar arquivo</span></div></div>
+      <div style="grid-column:1/-1"><span class="lab">Observação</span><div class="campo vazio" style="justify-content:flex-start">—</div></div>
+    </div>
+    <div class="rod"><div class="btn">Remover pedido</div><div style="display:flex;gap:8px"><div class="btn">Peças por categoria · 0</div><div class="btn">Próxima aba: Banho ›</div></div></div>
+  </div>
+  <p class="sub" style="margin-top:8px">As outras abas: <b>Banho</b> (chegadas, fotos, verniz), <b>Valores e faturas</b> (valor, desconto, banho, fotos das faturas, total) e <b>Etapas</b> (as 12, em 3 fases).</p>
+</section>
+
+<!-- ═════════ C ═════════ -->
+<section class="opcao">
+  <div class="rot"><b>C</b><span>Resumo no topo + lista de campos com fio fino + etapas na lateral</span></div>
+  <div class="jan">
+    <div class="topo"><div><h2>Pedido de Xangai</h2><small>Compra 04/11/2026</small></div>
+      <div style="display:flex;gap:18px;align-items:center"><div style="text-align:center"><span class="lab">A pagar (bruto)</span><span class="num">R$ 13.098,00</span></div><div style="text-align:center"><span class="lab">Banho</span><span class="num">R$ 0,00</span></div><div style="text-align:center"><span class="lab">Total do pedido</span><span class="tot">R$ 13.098,00</span></div><div class="x">×</div></div></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 260px;gap:14px">
+      <div>
+        <div class="linha"><span class="lab">Fornecedor</span><div class="campo" style="width:170px">Xangai</div></div>
+        <div class="linha"><span class="lab">Compra</span><div class="campo" style="width:170px">04/11/2026</div></div>
+        <div class="linha"><span class="lab">Nota</span><div class="campo vazio" style="width:170px">—</div></div>
+        <div class="linha"><span class="lab">Romaneio</span><div class="campo vazio" style="width:170px">—</div></div>
+        <div class="linha"><span class="lab">Arquivo do romaneio</span><div class="btn" style="width:170px">Anexar arquivo</div></div>
+        <div class="linha"><span class="lab">Valor R$</span><div class="campo" style="width:170px">21.830</div></div>
+        <div class="linha"><span class="lab">Desconto %</span><div class="campo" style="width:170px">40</div></div>
+      </div>
+      <div>
+        <div class="linha"><span class="lab">Valor do banho R$</span><div class="campo vazio" style="width:170px">0</div></div>
+        <div class="linha"><span class="lab">Fatura do banho</span><div class="btn" style="width:170px">Anexar foto</div></div>
+        <div class="linha"><span class="lab">Chegou na Pontual</span><div class="campo vazio" style="width:170px">dd/mm/aaaa</div></div>
+        <div class="linha"><span class="lab">Chegou na Ellos</span><div class="campo vazio" style="width:170px">dd/mm/aaaa</div></div>
+        <div class="linha"><span class="lab">Fotos enviadas</span><div class="campo vazio" style="width:170px">dd/mm/aaaa</div></div>
+        <div class="linha"><span class="lab">Verniz novo</span><div class="campo" style="width:170px">Não</div></div>
+        <div class="linha"><span class="lab">Chegou na Sorelly</span><div class="campo vazio" style="width:170px">dd/mm/aaaa</div></div>
+      </div>
+      <div class="bloco" style="padding:8px 10px">
+        <h3>Etapas</h3>
+        <div class="pp"><span class="bola feito"></span>Escolha das peças</div><div class="pp"><span class="bola atual"></span><b>Em separação</b></div><div class="pp"><span class="bola"></span>Fechado, aguardando envio</div><div class="pp"><span class="bola"></span>Em trânsito</div>
+        <div class="pp"><span class="bola"></span>Chegou no banho</div><div class="pp"><span class="bola"></span>Enviaram fotos</div><div class="pp"><span class="bola"></span>Marcus confirmou preços</div><div class="pp"><span class="bola"></span>Banho</div>
+        <div class="pp"><span class="bola"></span>Enviado para Sorelly</div><div class="pp"><span class="bola"></span>Chegou na empresa</div><div class="pp"><span class="bola"></span>Cadastrando</div><div class="pp"><span class="bola"></span>Finalizado</div>
+      </div>
+    </div>
+    <div class="rod"><div class="btn">Remover pedido</div><div style="display:flex;gap:8px"><div class="btn">Peças por categoria · 0</div><div class="btn p">Concluir ›</div></div></div>
+  </div>
+</section>
+
+<!-- ═════════ D ═════════ -->
+<section class="opcao">
+  <div class="rot"><b>D</b><span>Linha do tempo no topo + um cartão por fase (a fase atual em destaque)</span></div>
+  <div class="jan">
+    <div class="topo"><div><h2>Pedido de Xangai</h2><small>Compra 04/11/2026 · Total R$ 13.098,00</small></div><div style="display:flex;gap:8px"><div class="btn p">Concluir ›</div><div class="x">×</div></div></div>
+    <div class="trilho">
+      <div><div class="no feito">✓</div><div class="cap">Escolha</div></div><div class="fio feito"></div>
+      <div><div class="no atual">2</div><div class="cap"><b>Separação</b></div></div><div class="fio"></div>
+      <div><div class="no">3</div><div class="cap">Fechado</div></div><div class="fio"></div>
+      <div><div class="no">4</div><div class="cap">Trânsito</div></div><div class="fio"></div>
+      <div><div class="no">5</div><div class="cap">No banho</div></div><div class="fio"></div>
+      <div><div class="no">6</div><div class="cap">Fotos</div></div><div class="fio"></div>
+      <div><div class="no">7</div><div class="cap">Preços</div></div><div class="fio"></div>
+      <div><div class="no">8</div><div class="cap">Banho</div></div><div class="fio"></div>
+      <div><div class="no">9</div><div class="cap">Enviado</div></div><div class="fio"></div>
+      <div><div class="no">10</div><div class="cap">Chegou</div></div><div class="fio"></div>
+      <div><div class="no">11</div><div class="cap">Cadastro</div></div><div class="fio"></div>
+      <div><div class="no">12</div><div class="cap">Final</div></div>
+    </div>
+    <div class="grade g3">
+      <div class="fase-card atual" style="--c:var(--compra)"><h3>Compra <span class="selo">Fase atual</span></h3>
+        <div class="grade g2">
+          <div><span class="lab">Compra</span><div class="campo">04/11/2026</div></div>
+          <div><span class="lab">Fornecedor</span><div class="campo">Xangai</div></div>
+          <div><span class="lab">Nota</span><div class="campo vazio">—</div></div>
+          <div><span class="lab">Romaneio</span><div class="campo vazio">—</div></div>
+          <div><span class="lab">Valor R$</span><div class="campo">21.830</div></div>
+          <div><span class="lab">Desconto %</span><div class="campo">40</div></div>
+        </div>
+        <div class="linha" style="margin-top:8px"><span class="lab">Arquivo do romaneio</span><div class="btn">Anexar arquivo</div></div>
+        <div class="linha"><span class="lab">A pagar (bruto)</span><span class="num">R$ 13.098,00</span></div>
+      </div>
+      <div class="fase-card" style="--c:var(--banho)"><h3>Banho</h3>
+        <div class="grade g2">
+          <div><span class="lab">Chegou na Pontual</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Chegou na Ellos</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Fotos enviadas</span><div class="campo vazio">dd/mm/aaaa</div></div>
+          <div><span class="lab">Verniz novo</span><div class="campo">Não</div></div>
+          <div style="grid-column:1/-1"><span class="lab">Data que a Ellos conta</span><div class="campo vazio">dd/mm/aaaa</div></div>
+        </div>
+      </div>
+      <div class="fase-card" style="--c:var(--empresa)"><h3>Empresa</h3>
+        <div class="grade g2">
+          <div><span class="lab">Valor do banho R$</span><div class="campo vazio">0</div></div>
+          <div><span class="lab">Fatura do banho</span><div class="btn">Anexar foto</div></div>
+          <div style="grid-column:1/-1"><span class="lab">Chegou na Sorelly</span><div class="campo vazio">dd/mm/aaaa</div></div>
+        </div>
+        <div class="linha" style="margin-top:8px"><span class="lab">Total do pedido</span><span class="tot">R$ 13.098,00</span></div>
+      </div>
+    </div>
+    <div class="rod"><div class="btn">Remover pedido</div><div class="btn">Peças por categoria · 0</div></div>
+  </div>
+</section>
+</body>
+</html>

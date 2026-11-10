@@ -7,7 +7,7 @@
 // Consolidado, Regras, Configurador) — cada uma monta o estado do Kits
 // novos (reducer + Ctx próprios, persistidos à parte) igual a como já
 // funcionava no app separado.
-import { AbaKits } from "@/apps/kits-novos/pages/Kits";
+import { AbaKits, AbaKitsRepresentantes, AbaKitsEntregues } from "@/apps/kits-novos/pages/Kits";
 import { AbaPendencias } from "@/apps/kits-novos/pages/Pendencias";
 import { AbaConsolidado } from "@/apps/kits-novos/pages/Consolidado";
 import { AbaRegras } from "@/apps/kits-novos/pages/Regras";
@@ -38,10 +38,12 @@ function embutir(Pagina){
 }
 
 var AbaKitsNovosEmbutido = embutir(AbaKits);
+var AbaKitsRepresentantesEmbutido = embutir(AbaKitsRepresentantes);
+var AbaKitsEntreguesEmbutido = embutir(AbaKitsEntregues);
 var AbaPendenciasEmbutido = embutir(AbaPendencias);
 var AbaConsolidadoKNEmbutido = embutir(AbaConsolidado);
 var AbaRegrasKNEmbutido = embutir(AbaRegras);
 var AbaConfigKNEmbutido = embutir(AbaConfig);
 var AbaRepCadastroEmbutido = embutir(AbaRepCadastro);
 
-export { AbaRepCadastroEmbutido, AbaKitsNovosEmbutido, AbaPendenciasEmbutido, AbaConsolidadoKNEmbutido, AbaRegrasKNEmbutido, AbaConfigKNEmbutido };
+export { AbaKitsRepresentantesEmbutido, AbaKitsEntreguesEmbutido, AbaRepCadastroEmbutido, AbaKitsNovosEmbutido, AbaPendenciasEmbutido, AbaConsolidadoKNEmbutido, AbaRegrasKNEmbutido, AbaConfigKNEmbutido };

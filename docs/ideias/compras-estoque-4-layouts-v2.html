@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Compras e estoque de material · 4 novos layouts</title>
+<style>
+  :root{ --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#34363c; --ok:#34d399; --alerta:#fbbf24; --ruim:#f87171; --azul:#3b82f6; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 70px}
+  h1{font-size:16px;margin:0 0 4px} .sub{margin:0 0 16px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  .nav a:hover{background:var(--bloco2)}
+  section{max-width:1400px;margin:0 auto 46px}
+  .tag{margin-bottom:10px} .tag b{font-size:15px;margin-right:10px}
+  .tela{border:1px dashed var(--linha2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:10px}
+  .topo{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap}
+  .topo h2{margin:0;font-size:18px} .topo p{margin:4px 0 0}
+  .ctl{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .btn{height:32px;min-width:96px;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;background:transparent;color:#fff;font:inherit;cursor:pointer;white-space:nowrap}
+  .btn.on{background:var(--azul);border-color:var(--azul);font-weight:600}
+  .btn.prim{background:var(--azul);border-color:var(--azul);font-weight:600}
+  .btn.peq{min-width:60px;padding:0 10px}
+  .seg{display:inline-flex;border:1px solid var(--linha2);border-radius:8px;overflow:hidden}
+  .seg .btn{border:0;border-radius:0;min-width:84px}
+  .zoom{display:inline-flex;align-items:center;gap:6px}
+  .zoom .btn{min-width:32px;padding:0}
+  .filtros{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;padding:8px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .filtros input{flex:1;min-width:220px} .filtros select{width:190px}
+  input,select{height:32px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco2);color:#fff;font:inherit;padding:0 10px;text-align:center}
+  .grupos{display:flex;gap:10px;overflow-x:auto;align-items:flex-start;padding-bottom:6px}
+  .grupo{border:1px solid var(--linha);border-radius:10px;background:var(--bloco);flex:0 0 auto}
+  .fase{height:32px;display:flex;align-items:center;justify-content:center;font-weight:700;border-bottom:1px solid var(--linha);background:var(--bloco2);border-radius:10px 10px 0 0;padding:0 12px;white-space:nowrap}
+  .cols{display:flex;gap:8px;padding:8px;align-items:flex-start}
+  .col{width:272px;border:1px solid var(--linha);border-radius:8px;background:var(--fundo);flex:0 0 auto}
+  .colh{padding:7px 10px;border-bottom:1px solid var(--linha);text-align:center}
+  .colh b{display:block;white-space:nowrap} .colh span{font-size:11px}
+  .cards{padding:8px;display:flex;flex-direction:column;gap:6px;min-height:40px}
+  .vazio{text-align:center;padding:10px 0;font-size:12px}
+  .card{background:var(--bloco);border:1px solid var(--linha);border-left:4px solid var(--linha2);border-radius:8px;padding:8px 10px;display:flex;flex-direction:column;gap:5px;cursor:pointer}
+  .card:hover{background:var(--bloco2)} .card.sel{outline:2px solid var(--azul)}
+  .card .t{font-weight:700;text-align:center}
+  .card .m{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;font-size:12px;font-variant-numeric:tabular-nums}
+  .m span{white-space:nowrap}
+  .card .acao{display:flex;gap:6px;justify-content:center}
+  .bar{height:6px;border-radius:99px;background:#ffffff22;overflow:hidden} .bar i{display:block;height:100%}
+  .ok{color:var(--ok)} .ruim{color:var(--ruim)} .alerta{color:var(--alerta)}
+  .u-ALTA{border-left-color:var(--ruim)} .u-MEDIA{border-left-color:var(--alerta)} .u-BAIXA{border-left-color:var(--linha2)}
+  .s-Crítico{border-left-color:var(--ruim)} .s-Atenção{border-left-color:var(--alerta)} .s-OK{border-left-color:var(--ok)}
+  .bloco{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;overflow:hidden}
+  .barra{display:flex;justify-content:space-between;align-items:center;height:34px;padding:0 14px;border-bottom:1px solid var(--linha);font-weight:700}
+  .corpo{padding:8px;display:flex;flex-direction:column;gap:8px}
+  .rolagem{overflow-x:auto}
+  .grade{border:1px solid var(--linha);border-radius:8px}
+  .gl{display:grid}
+  .gl > div{height:32px;display:flex;align-items:center;justify-content:center;white-space:nowrap;border-left:1px solid var(--linha);padding:0 10px;font-variant-numeric:tabular-nums}
+  .gl > div:first-child{border-left:0}
+  .gl.h > div{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:var(--bloco2)}
+  .gl + .gl{border-top:1px solid var(--linha)} .gl.clic{cursor:pointer} .gl.clic:hover{background:#ffffff0d} .gl.sel{background:#3b82f622}
+  .ponto{margin-right:6px}
+  .dividido{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+  .com-gaveta{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:10px;align-items:start}
+  @media(max-width:1100px){.com-gaveta{grid-template-columns:1fr}}
+  .gaveta{background:var(--bloco);border:1px solid var(--linha);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;position:sticky;top:8px}
+  .gaveta h3{margin:0;text-align:center;font-size:15px}
+  .par{display:grid;grid-template-columns:120px 1fr;border-top:1px solid var(--linha)}
+  .par div{min-height:32px;display:flex;align-items:center;justify-content:center;text-align:center;padding:4px 0}
+  .par div:first-child{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em}
+  .tl{display:flex;flex-direction:column;gap:6px} .tl div{border-left:2px solid var(--linha2);padding:2px 0 2px 10px;font-size:12px}
+  .linhaBt{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+  .nota{max-width:1400px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+  .contar{display:flex;gap:6px;align-items:center;justify-content:center} .contar input{width:76px}
+</style>
+</head>
+<body>
+<h1>Compras e estoque de material · 4 novos layouts</h1>
+<p class="sub">No estilo da tela de <b>Pedidos de bruto e banho</b>: fases agrupadas, colunas numeradas, cartões compactos, <b>Quadro | Planilha</b> juntos, "Ocultar colunas vazias" e zoom. Dados reais: 30 pedidos de compra e 24 materiais do estoque importado. Tudo clicável.</p>
+<div class="nav"><a href="#A">A · Fluxo único</a><a href="#B">B · Compras | Estoque</a><a href="#C">C · Quadro em cima, planilha embaixo</a><a href="#D">D · Quadro com painel de detalhe</a></div>
+<div id="raiz"></div>
+<div class="nota">
+  <p><b>Como escolher:</b> diga a letra (ou uma mistura). Eu monto a tela no sistema com o mesmo padrão das tabelas (layout D) e do quadro de Pedidos de bruto e banho.</p>
+  <p><b>Saem em todos:</b> os 4 blocos de números do topo e o botão "Próxima contagem" solto. O que importa vira contagem na barra de cada fase e filtros.</p>
+  <p><b>Estoque no fluxo:</b> material <b>crítico</b> ou em <b>atenção</b> aparece como cartão e tem o botão "Solicitar compra", que cria a solicitação na coluna Solicitada. Quando a compra chega, a entrada no estoque fecha o ciclo.</p>
+</div>
+
+<script>
+var DADOS = {"pedidos":[{"id":56,"t":"GAVETEIRO","st":"APROVADA","sol":"Rayssa Ingatain","set":"Cadastro de peças","cat":"Móveis","v":140,"urg":"MEDIA","em":"2026-09-03","forn":"","prev":"","ev":[{"em":"2026-09-03 19:33","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-09-09 20:47","por":"Admin antigo","tx":"Aprovada por nayale"},{"em":"2026-09-14 15:56","por":"Admin antigo","tx":"CNPJ definido por Lucas: 46.873.285/0001-76"},{"em":"2026-09-14 19:32","por":"Admin antigo","tx":"Forma de pagamento definida por nayale: CARTAO"}]},{"id":75,"t":"BOLSINHA COM HOT 1 ALÇA (PADRÃO | PRETA | PADRÃO)","st":"EM_TRANSITO","sol":"Nickolas Leal","set":"Produção","cat":"—","v":0,"urg":"MEDIA","em":"2026-09-14","forn":"","prev":"2026-09-24T00:00:00","ev":[{"em":"2026-09-14 19:27","por":"Admin antigo","tx":"CNPJ definido por Nickolas Leal: Sem Nota Fiscal"},{"em":"2026-09-14 19:28","por":"Admin antigo","tx":"Forma de pagamento definida por Nickolas Leal: DINHEIRO"},{"em":"2026-09-14 19:51","por":"Admin antigo","tx":"Compra registrada por NICKOLAS LEAL — R$ 0,01"},{"em":"2026-09-14 19:51","por":"Admin antigo","tx":"Marcada como em trânsito"}]},{"id":103,"t":"GAVETEIRO DE ARQUIVOS","st":"NAO_VERIFICADA","sol":"Maria Claudia Stresser de Faria","set":"RH","cat":"—","v":569.64,"urg":"ALTA","em":"2026-09-30","forn":"","prev":"","ev":[{"em":"2026-09-30 19:01","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"}]},{"id":105,"t":"MESA PARA ATENDIMENTO","st":"NAO_VERIFICADA","sol":"Natasha","set":"—","cat":"Sorelly geral","v":0,"urg":"MEDIA","em":"2026-10-01","forn":"","prev":"","ev":[{"em":"2026-10-01 18:20","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"}]},{"id":109,"t":"lixeira pequena","st":"EM_TRANSITO","sol":"sorellymilene","set":"Produção","cat":"Organização","v":24.9,"urg":"BAIXA","em":"2026-10-05","forn":"","prev":"2026-10-29","ev":[{"em":"2026-10-05 16:05","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:48","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"}]},{"id":110,"t":"Sacolas de papel sorelly","st":"APROVADA","sol":"sorellymilene","set":"Atendimento","cat":"Papelaria","v":0,"urg":"MEDIA","em":"2026-10-05","forn":"","prev":"","ev":[{"em":"2026-10-05 16:14","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-06 15:04","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":116,"t":"Kit Primeiros Socorros","st":"AGUARDANDO","sol":"Amanda","set":"Sorelly Geral","cat":"Sorelly geral","v":185.25,"urg":"MEDIA","em":"2026-10-07","forn":"","prev":"","ev":[{"em":"2026-10-07 21:29","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-16 13:51","por":"Admin antigo","tx":"Colocada em espera"}]},{"id":117,"t":"CARTOLINA","st":"APROVADA","sol":"Beatriz Mascencio","set":"—","cat":"Papelaria","v":0,"urg":"MEDIA","em":"2026-10-08","forn":"","prev":"","ev":[{"em":"2026-10-08 11:25","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-08 12:47","por":"Admin antigo","tx":"Aprovada por nayale"},{"em":"2026-10-14 12:13","por":"Admin antigo","tx":"CNPJ definido por Lucas: Dinheiro"},{"em":"2026-10-14 12:14","por":"Admin antigo","tx":"Forma de pagamento definida por Lucas: DINHEIRO"}]},{"id":118,"t":"ÁRVORE DE NATAL","st":"EM_TRANSITO","sol":"Beatriz Mascencio","set":"Marketing","cat":"Decoração","v":57.29,"urg":"BAIXA","em":"2026-10-08","forn":"","prev":"2026-10-25","ev":[{"em":"2026-10-08 13:56","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:13","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"}]},{"id":122,"t":"PAPEL FOTOGRÁFICO","st":"AGUARDANDO_CNPJ","sol":"Beatriz Mascencio","set":"Marketing","cat":"Papelaria","v":0,"urg":"ALTA","em":"2026-10-14","forn":"","prev":"","ev":[{"em":"2026-10-14 14:07","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-16 11:38","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":124,"t":"*TAG MAN MINI | MINI | AZUL | PADRÃO*","st":"EM_TRANSITO","sol":"Nickolas Leal","set":"Produção","cat":"Estoque Sorelly","v":0,"urg":"MEDIA","em":"2026-10-14","forn":"","prev":"2026-10-20T00:00:00","ev":[{"em":"2026-10-20 19:26","por":"Admin antigo","tx":"CNPJ definido por Nickolas Leal: Sem Nota Fiscal"},{"em":"2026-10-20 19:26","por":"Admin antigo","tx":"Forma de pagamento definida por Nickolas Leal: DINHEIRO"},{"em":"2026-10-20 19:28","por":"Admin antigo","tx":"Compra registrada por NICKOLAS LEAL — R$ 690"},{"em":"2026-10-20 19:28","por":"Admin antigo","tx":"Marcada como em trânsito"}]},{"id":131,"t":"CAFÉ 3 CORAÇÕES 500G","st":"APROVADA","sol":"Nickolas Leal","set":"Sorelly Geral","cat":"Sorelly geral","v":99.6,"urg":"MEDIA","em":"2026-10-20","forn":"","prev":"","ev":[{"em":"2026-10-20 19:08","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 17:22","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":132,"t":"CHÁ MATTE LEÃO 40G","st":"APROVADA","sol":"Nickolas Leal","set":"Sorelly Geral","cat":"Sorelly geral","v":0.25,"urg":"MEDIA","em":"2026-10-20","forn":"","prev":"","ev":[{"em":"2026-10-20 19:13","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 17:22","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":133,"t":"LEITE ZERO LACTOSE 1L","st":"APROVADA","sol":"Nickolas Leal","set":"Sorelly Geral","cat":"Sorelly geral","v":38.34,"urg":"MEDIA","em":"2026-10-20","forn":"","prev":"","ev":[{"em":"2026-10-20 19:13","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 17:22","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":134,"t":"AÇÚCAR 5KG","st":"APROVADA","sol":"Nickolas Leal","set":"Sorelly Geral","cat":"Sorelly geral","v":39.58,"urg":"MEDIA","em":"2026-10-20","forn":"","prev":"","ev":[{"em":"2026-10-20 19:14","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 17:22","por":"Admin antigo","tx":"Aprovada por nayale"}]},{"id":135,"t":"Embalagem Ziplock 12x19 - 400 unid","st":"EM_TRANSITO","sol":"Lucas","set":"RH","cat":"Embalagens","v":78.99,"urg":"MEDIA","em":"2026-10-21","forn":"","prev":"2026-10-30","ev":[{"em":"2026-10-21 14:19","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:25","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"}]},{"id":136,"t":"Saquinho Zip 17x26 - Pacote Com 1000 Unidades","st":"EM_TRANSITO","sol":"Lucas","set":"RH","cat":"Embalagens","v":323,"urg":"MEDIA","em":"2026-10-21","forn":"","prev":"2026-10-26","ev":[{"em":"2026-10-21 14:20","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:23","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"}]},{"id":137,"t":"Saquinho Zip 24x36 - Pacote Com 400 Unidades","st":"EM_TRANSITO","sol":"Lucas","set":"RH","cat":"Embalagens","v":287.4,"urg":"MEDIA","em":"2026-10-21","forn":"","prev":"2026-10-26","ev":[{"em":"2026-10-21 14:21","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:22","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"}]},{"id":149,"t":"ARVORE DE NATAL","st":"NAO_VERIFICADA","sol":"Maria Claudia Stresser de Faria","set":"RH","cat":"Decoração","v":210.9,"urg":"ALTA","em":"2026-10-22","forn":"","prev":"","ev":[{"em":"2026-10-22 14:51","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"}]},{"id":151,"t":"Chocolates (Outubro rosa)","st":"AGUARDANDO_CNPJ","sol":"Helen Garmier","set":"Sorelly Geral","cat":"Sorelly geral","v":56,"urg":"MEDIA","em":"2026-10-22","forn":"","prev":"","ev":[{"em":"2026-10-22 12:05","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 14:58","por":"Admin antigo","tx":"Aprovada, aguardando CNPJ por nayale"}]},{"id":153,"t":"Pacote bombom ouro branco","st":"AGUARDANDO_CNPJ","sol":"Helen Garmier","set":"Sorelly Geral","cat":"Sorelly geral","v":60,"urg":"MEDIA","em":"2026-10-22","forn":"","prev":"","ev":[{"em":"2026-10-22 12:03","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 14:58","por":"Admin antigo","tx":"Aprovada, aguardando CNPJ por nayale"}]},{"id":156,"t":"Memória RAM 16","st":"EM_TRANSITO","sol":"Lucas","set":"Direção","cat":"Eletrônicos","v":1800,"urg":"ALTA","em":"2026-10-21","forn":"","prev":"2026-10-27","ev":[{"em":"2026-10-21 16:28","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-22 16:29","por":"Admin antigo","tx":"Compra registrada e em trânsito por Anamaria Hess"}]},{"id":188,"t":"SACO LIXO 40 L  E 60L","st":"NAO_VERIFICADA","sol":"Nickolas","set":"Serviços gerais","cat":"Limpeza","v":89.08,"urg":"MEDIA","em":"2026-10-30","forn":"NATURALLE - LIMPEZA","prev":"2026-11-03","ev":[{"em":"2026-10-30 10:27","por":"Nickolas","tx":"Solicitação enviada ao financeiro"}]},{"id":190,"t":"TAMPA DE VASO - 7 ANDAR","st":"NAO_VERIFICADA","sol":"Nickolas","set":"Serviços gerais","cat":"Limpeza","v":250,"urg":"ALTA","em":"2026-10-30","forn":"BALAROTI","prev":"2026-10-30","ev":[{"em":"2026-10-30 10:39","por":"Nickolas","tx":"Solicitação enviada ao financeiro"}]},{"id":123,"t":"*TAG CONJUNTO | MÉDIA | PRATA | PADRÃO*","st":"ENTREGUE","sol":"Nickolas Leal","set":"Produção","cat":"Estoque Sorelly","v":0,"urg":"MEDIA","em":"2026-10-14","forn":"","prev":"2026-10-20T00:00:00","ev":[{"em":"2026-10-20 19:28","por":"Admin antigo","tx":"Compra registrada por NICKOLAS LEAL — R$ 1.150"},{"em":"2026-10-20 19:28","por":"Admin antigo","tx":"Marcada como em trânsito"},{"em":"2026-11-04 11:50","por":"Nickolas","tx":"Recebida (total) por Nickolas em 30/10/2026: 1 de *TAG CONJUNTO | MÉDIA | PRATA | PADRÃO*"},{"em":"2026-11-04 11:50","por":"Nickolas","tx":"Entrega confirmada por Nickolas — recebido por SETOR ESTOQUE em 03/11/2026"}]},{"id":147,"t":"Fitinhas prontas do Outubro Rosa","st":"ENTREGUE","sol":"Helen Garmier","set":"Sorelly Geral","cat":"Sorelly geral","v":67.98,"urg":"ALTA","em":"2026-10-21","forn":"","prev":"2026-10-22","ev":[{"em":"2026-10-21 20:39","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 20:40","por":"Admin antigo","tx":"Compra registrada e em trânsito por Helen Garmier"},{"em":"2026-11-03 10:51","por":"Hellen Garmier","tx":"Recebida (total) por Hellen Garmier em 23/10/2026: 2 de Fitinhas prontas do Outubro Rosa"},{"em":"2026-11-03 10:51","por":"Hellen Garmier","tx":"Entrega confirmada por Hellen Garmier — recebido por Helen Garmier em 03/11/2026"}]},{"id":174,"t":"MATERIAS ESTOQUE","st":"ENTREGUE","sol":"Hellen Garmier","set":"Sorelly Geral","cat":"Sorelly geral","v":460.4,"urg":"MEDIA","em":"2026-10-30","forn":"Contabilista","prev":"2026-11-03","ev":[{"em":"2026-10-30 10:13","por":"Nickolas","tx":"Compra efetuada por Nickolas — R$ 460,40"},{"em":"2026-10-30 10:13","por":"Nickolas","tx":"Recebida (total) por Nickolas em 30/10/2026: 5 de EXTRATOR DE GRAMPOS, 4 de RASCUNHO CUBO ANOTACOES, 50 de CANETA AZUL, 50 de CANETA PRETA, 15 de MARCA TEXTO, 3 de FITA DUPLA FACE 3M, 3 de ALCOOL EM GEL, 1 de ALCOOL LIQUIDO"},{"em":"2026-10-30 13:01","por":"Hellen Garmier","tx":"Marcada como \"Retirado do estoque\" por Hellen Garmier"},{"em":"2026-11-03 10:53","por":"Hellen Garmier","tx":"Entrega confirmada por Hellen Garmier — recebido por Helen em 03/11/2026"}]},{"id":140,"t":"Sacola de feira","st":"ENTREGUE","sol":"sorellymilene","set":"Produção","cat":"Papelaria","v":47,"urg":"MEDIA","em":"2026-10-21","forn":"","prev":"2026-10-30","ev":[{"em":"2026-10-21 16:12","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-21 20:29","por":"Admin antigo","tx":"Compra registrada e em trânsito por nayale"},{"em":"2026-11-03 10:52","por":"Hellen Garmier","tx":"Recebida (total) por Hellen Garmier em 28/10/2026: 1 de Sacola de feira"},{"em":"2026-11-03 10:52","por":"Hellen Garmier","tx":"Entrega confirmada por Hellen Garmier — recebido por Dayseiane em 28/10/2026"}]},{"id":120,"t":"Cestos Organizadores Multiuso 4.2 Litros Grande","st":"NEGADA","sol":"Amanda","set":"Encomendas","cat":"Organização","v":372.5,"urg":"ALTA","em":"2026-10-14","forn":"","prev":"","ev":[{"em":"2026-10-14 11:54","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-16 11:38","por":"Admin antigo","tx":"Aprovada por nayale"},{"em":"2026-10-16 17:32","por":"Admin antigo","tx":"Negada: Duplicidade (já solicitado anteriormente)"}]},{"id":129,"t":"fita de massa acrílica transparente","st":"NEGADA","sol":"Admin","set":"Encomendas","cat":"Organização","v":81,"urg":"ALTA","em":"2026-10-15","forn":"","prev":"","ev":[{"em":"2026-10-15 19:09","por":"Admin antigo","tx":"Solicitação enviada ao financeiro"},{"em":"2026-10-16 12:00","por":"Admin antigo","tx":"Aprovada por nayale"},{"em":"2026-10-20 09:33","por":"Admin antigo","tx":"Negada: Duplicidade (já solicitado anteriormente)"}]}]};
+var HOJE = new Date("2026-11-09T12:00:00");
+var ETAPAS = ["Solicitada","Aprovada","Liberada para compra","Efetuada","Em transporte","Chegou na empresa","Entregue","Reprovada"];
+var FASES = [["Estoque",["Crítico","Atenção"]],["Compra",["Solicitada","Aprovada","Liberada para compra","Efetuada"]],["Chegada",["Em transporte","Chegou na empresa"]],["Encerradas",["Entregue","Reprovada"]]];
+var MAPA = {NAO_VERIFICADA:"Solicitada",AGUARDANDO:"Solicitada",AGUARDANDO_CNPJ:"Solicitada",APROVADA:"Aprovada",EM_TRANSITO:"Em transporte",ENTREGUE:"Entregue",NEGADA:"Reprovada"};
+var R = function(n){ return "R$ "+Number(n||0).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}); };
+var N = function(n){ return n.toLocaleString("pt-BR"); };
+var dias = function(iso){ return Math.max(0, Math.round((HOJE - new Date(iso+"T12:00:00"))/86400000)); };
+var UR = {ALTA:"Alta",MEDIA:"Média",BAIXA:"Baixa"};
+var PED = DADOS.pedidos.map(function(p){ return {k:"p"+p.id, tipo:"compra", id:p.id, t:p.t, etapa:MAPA[p.st], sol:p.sol, set:p.set, cat:p.cat, v:p.v, urg:p.urg, em:p.em, d:dias(p.em), forn:p.forn, ev:p.ev}; });
+var MAT = [
+ ["Embalagens","EMBALAGENS","PLÁSTICO 5x7cm","UN","Distribuidora Santa Ana",30000,43000,"05/11/2026"],["Embalagens","EMBALAGENS","PLÁSTICO 12x18cm","UN","7 Embalagens",2000,3000,"19/10/2026"],
+ ["Embalagens","ESCRITÓRIO","SACOLA KRAFT","UN","Mercado Livre",10,0,"31/08/2026"],["Embalagens","ESCRITÓRIO","PAPEL A4","PCT","Mercado Livre",15,20,"30/10/2026"],
+ ["Embalagens","MALETAS","MALETA NORMAL","UN","CM3",150,125,"03/11/2026"],["Embalagens","MALETAS","MALETA GRANDE C/ DIVISÓRIA","UN","CM3",50,0,"03/11/2026"],
+ ["Embalagens","EXPOSITORES","EXPOSITOR DE PULSEIRAS","UN","DaVinci",100,47,"05/11/2026"],["Embalagens","TINTA IMPRESSORAS","TINTA EPSON L3150/L3250 PRETA","UN","Eloprint",3,6,"30/10/2026"],
+ ["Embalagens","TAG TRIO 1","TAG TRIO | PEQUENA | PRATA | COLLECTION","UN","OFFICE GRAFF",2000,700,"21/10/2026"],["Embalagens","TAG CONJUNTO","TAG CONJUNTO | MÉDIA | PRATA | COLLECTION","UN","OFFICE GRAFF",2000,900,"20/10/2026"],
+ ["Embalagens","TAG CORAÇÃO 1","TAG CORAÇÃO | MÉDIA | PRATA | PADRÃO","UN","OFFICE GRAFF",2000,500,"21/10/2026"],["Embalagens","ESCRITÓRIO","FITA ADESIVA","UN","Mercado Livre",10,58,"05/11/2026"],
+ ["Limpeza","LIMPEZA GERAL","Detergente neutro 5L","un","NATURALLE",2,2,"20/10/2026"],["Limpeza","LIMPEZA GERAL","Álcool 70%","un","—",5,3,"27/10/2026"],
+ ["Limpeza","LIMPEZA GERAL","Pinho sol 3,8L","un","—",1,0,"27/10/2026"],["Limpeza","DESCARTÁVEIS","Saco de lixo 40L","pct","D Clinica",2,2,"27/10/2026"],
+ ["Limpeza","DESCARTÁVEIS","Copo descartável 50ml","pct","D CLINICA",2,74,"27/10/2026"],["Limpeza","MERCADO","Açúcar 5kg","un","Mercado",2,2,"27/10/2026"],
+ ["Produção","FECHOS","Fecho lagosta ouro 1mm","g","MegaSul",100,134,"20/08/2026"],["Produção","CONTRA ARGOLAS","Argola lagosta fina prata (P)","g","MegaSul",500,106,"20/08/2026"],
+ ["Produção","TARRAXAS","Tarraxa baby prata","g","Pontual",50,45,"20/08/2026"],["Produção","VENEZIANAS","Veneziana ouro 50cm","un","MegaSul",1500,1300,"27/10/2026"],
+ ["Produção","VENEZIANAS","Bipartida ouro 50cm","un","MegaSul",1000,600,"16/10/2026"],["Produção","VENEZIANAS","Veneziana ouro 45cm","un","MegaSul",2500,2900,"27/10/2026"]
+].map(function(r,i){ var p = r[6]/r[5], s = r[6]<r[5] ? "Crítico" : (p<=1.3 ? "Atenção" : "OK"); return {k:"m"+i, tipo:"mat", aba:r[0], cat:r[1], t:r[2], un:r[3], forn:r[4], min:r[5], atual:r[6], ult:r[7], sit:s, etapa:s}; });
+var TIPOS = ["Embalagens","Limpeza","Produção"];
+var SETORES = []; PED.forEach(function(p){ if(SETORES.indexOf(p.set)<0) SETORES.push(p.set); }); SETORES.sort();
+
+var E = {};
+["A","B","C","D"].forEach(function(k){ E[k] = {modo:(k==="A"||k==="D")?"quadro":"quadro", oculta:true, q:"", set:"", sit:"", urg:"", sel:null, zoom:100, vista:"compras", tipo:0}; });
+E.B.modo = "quadro";
+
+function passa(x, e){ var q = e.q.toLowerCase();
+  if(q && (x.t+" "+(x.sol||"")+" "+(x.forn||"")+" "+(x.set||"")+" "+(x.cat||"")).toLowerCase().indexOf(q)<0) return false;
+  if(x.tipo==="compra"){ if(e.set && x.set!==e.set) return false; if(e.urg && x.urg!==e.urg) return false;
+    if(e.sit==="Em aberto" && ["Entregue","Reprovada"].indexOf(x.etapa)>=0) return false; if(e.sit==="Finalizados" && ["Entregue","Reprovada"].indexOf(x.etapa)<0) return false; if(e.sit==="Atrasados" && !(x.d>14 && ["Entregue","Reprovada"].indexOf(x.etapa)<0)) return false; }
+  else { if(e.set || e.urg) return false; if(e.sit==="Finalizados") return false; }
+  return true; }
+
+function cartaoCompra(x, e){ return '<div class="card u-'+x.urg+(e.sel===x.k?' sel':'')+'" data-sel="'+x.k+'"><div class="t">'+x.t+'</div><div class="m"><span>'+x.set+'</span><span>·</span><span>'+x.sol+'</span></div><div class="m"><span><b>'+R(x.v)+'</b></span><span>·</span><span class="'+(x.d>14&&["Entregue","Reprovada"].indexOf(x.etapa)<0?'ruim':'')+'">'+x.d+' dias</span><span>·</span><span>'+UR[x.urg]+'</span></div></div>'; }
+function cartaoMat(x, e){ var p = Math.min(100, Math.round(x.atual/x.min*100)), cor = x.sit==="Crítico"?"var(--ruim)":x.sit==="Atenção"?"var(--alerta)":"var(--ok)";
+  return '<div class="card s-'+x.sit+(e.sel===x.k?' sel':'')+'" data-sel="'+x.k+'"><div class="t">'+x.t+'</div><div class="m"><span>'+x.cat+'</span><span>·</span><span>'+x.forn+'</span></div><div class="m"><span><b>'+N(x.atual)+'</b> de '+N(x.min)+' '+x.un+'</span><span>·</span><span>contado '+x.ult.slice(0,5)+'</span></div><div class="bar"><i style="width:'+p+'%;background:'+cor+'"></i></div>'+(x.sit!=="OK"?'<div class="acao"><button class="btn peq" data-solic="'+x.k+'">Solicitar compra</button></div>':'')+'</div>'; }
+var cartao = function(x,e){ return x.tipo==="compra" ? cartaoCompra(x,e) : cartaoMat(x,e); };
+
+function itensDe(e, fontes){ return fontes.filter(function(x){ return passa(x,e); }); }
+function quadro(k, e, itens, fases){ var vazias = 0, grupos = "";
+  fases.forEach(function(f){ var colsHtml = "", total = 0;
+    f[1].forEach(function(et,i){ var l = itens.filter(function(x){ return x.etapa===et; }); total += l.length; if(!l.length) vazias++; if(e.oculta && !l.length) return;
+      colsHtml += '<div class="col"><div class="colh"><b>'+et+'</b><span>'+l.length+(l.length===1?' item':' itens')+'</span></div><div class="cards">'+(l.length?l.map(function(x){ return cartao(x,e); }).join(""):'<div class="vazio">Nada nesta etapa.</div>')+'</div></div>'; });
+    if(colsHtml) grupos += '<div class="grupo"><div class="fase">'+f[0]+' · '+total+(total===1?' item':' itens')+'</div><div class="cols">'+colsHtml+'</div></div>'; });
+  return {html:'<div class="grupos" style="zoom:'+(e.zoom/100)+'">'+(grupos||'<p>Nada com esse filtro.</p>')+'</div>', vazias:vazias}; }
+
+function tab(cols, linhas){ var g = 'grid-template-columns:'+cols.map(function(c){ return c[1]||"1fr"; }).join(" ");
+  return '<div class="rolagem"><div class="grade" style="min-width:'+cols.reduce(function(t,c){ return t+(parseInt(c[1])||150); },0)+'px"><div class="gl h" style="'+g+'">'+cols.map(function(c){ return '<div>'+c[0]+'</div>'; }).join("")+'</div>'+
+   linhas.map(function(l){ return '<div class="gl clic'+(l.sel?' sel':'')+'" style="'+g+'" '+(l.attr||'')+'>'+l.c.map(function(c){ return '<div>'+c+'</div>'; }).join("")+'</div>'; }).join("")+'</div></div>'; }
+var ponto = function(s){ var c = s==="Crítico"?"ruim":s==="Atenção"?"alerta":"ok"; return '<span class="'+c+'"><span class="ponto">●</span>'+s+'</span>'; };
+function planilhaCompras(e, itens, titulo){ var l = itens.filter(function(x){ return x.tipo==="compra"; });
+  return '<div class="bloco"><div class="barra"><span>'+titulo+'</span><span>'+l.length+' itens</span></div><div class="corpo">'+tab([["Etapa","170px"],["Nº","60px"],["Item","1.7fr"],["Setor","170px"],["Solicitante","190px"],["Valor","130px"],["Dias","80px"],["Urgência","100px"]],
+    l.map(function(x){ return {sel:e.sel===x.k, attr:'data-sel="'+x.k+'"', c:[x.etapa, x.id, '<b>'+x.t+'</b>', x.set, x.sol, R(x.v), x.d, UR[x.urg]]}; }))+'</div></div>'; }
+function planilhaMat(e, itens, titulo, comContar){ var l = itens.filter(function(x){ return x.tipo==="mat"; });
+  var cols = [["Categoria","170px"],["Material","1.7fr"],["Unid.","70px"],["Fornecedor","190px"],["Mínimo","90px"],["Atual","90px"],["Estoque","110px"],["Última contagem","130px"]]; if(comContar) cols.push(["Contar hoje","190px"]);
+  var so = titulo===null; var corpoT = tab(cols, l.map(function(x){ var c = [x.cat,'<b>'+x.t+'</b>',x.un,x.forn,N(x.min),'<b>'+N(x.atual)+'</b>',ponto(x.sit),x.ult]; if(comContar) c.push('<span class="contar"><input placeholder="'+N(x.atual)+'" inputmode="numeric"><button class="btn peq">OK</button></span>'); return {sel:e.sel===x.k, attr:'data-sel="'+x.k+'"', c:c}; })); return so ? corpoT : '<div class="bloco"><div class="barra"><span>'+titulo+'</span><span>'+l.length+' itens</span></div><div class="corpo">'+corpoT+'</div></div>'; }
+
+function topo(k, e, extra){ var itens = extra.itens;
+  return '<div class="topo"><div><h2>Compras e estoque de material</h2><p>Do estoque que acabou até a compra chegar e voltar para o estoque.</p></div><div class="ctl">'+
+    (extra.vazias!==undefined?'<button class="btn '+(e.oculta?'on':'')+'" data-k="'+k+'" data-oculta="1">Ocultar colunas vazias ('+extra.vazias+')</button><span class="zoom"><button class="btn" data-k="'+k+'" data-zoom="-10">−</button><span>'+e.zoom+'%</span><button class="btn" data-k="'+k+'" data-zoom="10">+</button></span>':'')+
+    (extra.seg===false?'':'<span class="seg"><button class="btn '+(e.modo==="quadro"?'on':'')+'" data-k="'+k+'" data-modo="quadro">Quadro</button><button class="btn '+(e.modo==="planilha"?'on':'')+'" data-k="'+k+'" data-modo="planilha">Planilha</button></span>')+
+    '<button class="btn prim">+ Nova solicitação</button></div></div>'+
+   '<div class="filtros"><input type="search" data-k="'+k+'" data-f="q" value="'+e.q+'" placeholder="Buscar item, solicitante ou fornecedor">'+
+    '<select data-k="'+k+'" data-f="set"><option value="">Todos os setores</option>'+SETORES.map(function(s){ return '<option '+(e.set===s?'selected':'')+'>'+s+'</option>'; }).join("")+'</select>'+
+    '<select data-k="'+k+'" data-f="sit"><option value="">Todos os itens</option>'+["Em aberto","Atrasados","Finalizados"].map(function(s){ return '<option '+(e.sit===s?'selected':'')+'>'+s+'</option>'; }).join("")+'</select>'+
+    '<select data-k="'+k+'" data-f="urg"><option value="">Toda urgência</option>'+["ALTA","MEDIA","BAIXA"].map(function(s){ return '<option value="'+s+'" '+(e.urg===s?'selected':'')+'>'+UR[s]+'</option>'; }).join("")+'</select>'+
+    '<button class="btn" data-k="'+k+'" data-limpar="1">Limpar</button></div>'; }
+
+function gaveta(e){ var x = PED.concat(MAT).filter(function(y){ return y.k===e.sel; })[0]; if(!x) return '<div class="gaveta"><h3>Escolha um cartão</h3><p style="text-align:center">O detalhe e as ações aparecem aqui.</p></div>';
+  var p = function(r,v){ return '<div class="par"><div>'+r+'</div><div>'+v+'</div></div>'; };
+  if(x.tipo==="compra"){ var prox = {Solicitada:"Aprovar",Aprovada:"Liberar para compra","Em transporte":"Registrar chegada"}[x.etapa];
+    return '<div class="gaveta"><h3>'+x.t+'</h3>'+p("Etapa",x.etapa)+p("Setor",x.set)+p("Solicitante",x.sol)+p("Categoria",x.cat)+p("Valor",R(x.v))+p("Solicitado em",x.em.split("-").reverse().join("/")+" · "+x.d+" dias")+p("Urgência",UR[x.urg])+
+      '<div class="tl"><b style="text-align:center">Histórico</b>'+(x.ev.length?x.ev.map(function(v){ return '<div><b>'+v.em+'</b> · '+v.por+'<br>'+v.tx+'</div>'; }).join(""):'<div>Sem eventos.</div>')+'</div>'+
+      '<div class="linhaBt">'+(prox?'<button class="btn prim">'+prox+'</button>':'')+'<button class="btn">Mensagem</button><button class="btn">Editar</button>'+(["Entregue","Reprovada"].indexOf(x.etapa)<0?'<button class="btn">Cancelar</button>':'')+'</div></div>'; }
+  return '<div class="gaveta"><h3>'+x.t+'</h3>'+p("Categoria",x.cat)+p("Aba",x.aba)+p("Fornecedor",x.forn)+p("Mínimo",N(x.min)+" "+x.un)+p("Atual","<b>"+N(x.atual)+"</b> "+x.un)+p("Situação",ponto(x.sit))+p("Última contagem",x.ult)+
+    '<div class="linhaBt"><button class="btn prim">Contar</button><button class="btn">Entrada</button><button class="btn">Saída</button>'+(x.sit!=="OK"?'<button class="btn">Solicitar compra</button>':'')+'<button class="btn">Editar</button></div></div>'; }
+
+function LA(){ var e = E.A, itens = itensDe(e, PED.concat(MAT.filter(function(m){ return m.sit!=="OK"; }))); var q = quadro("A", e, itens, FASES);
+  var corpo = e.modo==="quadro" ? q.html : planilhaMat(e, itens, "Estoque · crítico e em atenção", false)+planilhaCompras(e, itens, "Compras");
+  return topo("A", e, {vazias:q.vazias, itens:itens, seg:true})+corpo; }
+
+function LB(){ var e = E.B, abas = '<div class="ctl"><span class="seg"><button class="btn '+(e.vista==="compras"?'on':'')+'" data-k="B" data-vista="compras">Compras</button><button class="btn '+(e.vista==="estoque"?'on':'')+'" data-k="B" data-vista="estoque">Estoque</button></span>'+
+    (e.vista==="estoque"?'<span class="seg">'+TIPOS.map(function(t,i){ return '<button class="btn '+(e.tipo===i?'on':'')+'" data-k="B" data-tipo="'+i+'">'+t+'</button>'; }).join("")+'</span>':'')+'</div>';
+  if(e.vista==="compras"){ var itens = itensDe(e, PED), q = quadro("B", e, itens, FASES.slice(1));
+    return topo("B", e, {vazias:q.vazias, itens:itens})+abas+(e.modo==="quadro"?q.html:planilhaCompras(e, itens, "Todas as compras")); }
+  var mats = itensDe(e, MAT.filter(function(m){ return m.aba===TIPOS[e.tipo]; })), fasesE = [["Estoque · "+TIPOS[e.tipo],["Crítico","Atenção","OK"]]], qe = quadro("B", e, mats, fasesE);
+  return topo("B", e, {vazias:qe.vazias, itens:mats})+abas+(e.modo==="quadro"?qe.html:planilhaMat(e, mats, "Estoque · "+TIPOS[e.tipo], true)); }
+
+function LC(){ var e = E.C, itens = itensDe(e, PED), q = quadro("C", e, itens, FASES.slice(1)), mats = itensDe(e, MAT.filter(function(m){ return m.aba===TIPOS[e.tipo]; }));
+  var abas = '<span class="seg">'+TIPOS.map(function(t,i){ return '<button class="btn '+(e.tipo===i?'on':'')+'" data-k="C" data-tipo="'+i+'">'+t+'</button>'; }).join("")+'</span>';
+  return topo("C", e, {vazias:q.vazias, itens:itens, seg:false})+'<div class="bloco"><div class="barra"><span>Compras · quadro</span><span>'+itens.length+' itens</span></div><div class="corpo">'+q.html+'</div></div>'+
+   '<div class="bloco"><div class="barra"><span>Estoque de material · planilha</span><span>'+mats.length+' itens</span></div><div class="corpo"><div class="ctl">'+abas+'</div>'+planilhaMat(e, mats, null, true)+'</div></div>'; }
+
+function LD(){ var e = E.D, itens = itensDe(e, PED.concat(MAT.filter(function(m){ return m.sit!=="OK"; }))), q = quadro("D", e, itens, FASES);
+  var corpo = e.modo==="quadro" ? q.html : planilhaMat(e, itens, "Estoque · crítico e em atenção", false)+planilhaCompras(e, itens, "Compras");
+  return topo("D", e, {vazias:q.vazias, itens:itens, seg:true})+'<div class="com-gaveta"><div style="min-width:0">'+corpo+'</div>'+gaveta(e)+'</div>'; }
+
+var NOMES = {A:["Fluxo único","O estoque que acabou, a compra e a chegada em um quadro só, em fases (Estoque, Compra, Chegada, Encerradas). Quadro | Planilha, ocultar colunas vazias e zoom, como em Pedidos de bruto e banho."],
+             B:["Compras | Estoque","Duas visões na mesma tela. Compras = quadro das etapas. Estoque = quadro por situação (Crítico, Atenção, OK) por aba. Cada uma tem a sua planilha, e a do estoque tem Contar hoje."],
+             C:["Quadro em cima, planilha embaixo","Sem alternar: o quadro das compras e a planilha do estoque (com Contar hoje) aparecem juntos na mesma página, um embaixo do outro."],
+             D:["Quadro com painel de detalhe","O mesmo quadro do A, mais o painel à direita: o histórico real do pedido e os botões da etapa (Aprovar, Liberar, Registrar chegada), ou Contar, Entrada, Saída e Solicitar compra no material."]};
+var F = {A:LA,B:LB,C:LC,D:LD};
+function desenha(k){ var s = document.getElementById("sec"+k); if(s) s.innerHTML = F[k](); }
+var html = ""; ["A","B","C","D"].forEach(function(k){ html += '<section id="'+k+'"><div class="tag"><b>Layout '+k+' · '+NOMES[k][0]+'</b>'+NOMES[k][1]+'</div><div class="tela" id="sec'+k+'"></div></section>'; });
+document.getElementById("raiz").innerHTML = html; ["A","B","C","D"].forEach(desenha);
+document.addEventListener("click", function(ev){ var t = ev.target, sec = t.closest("[id^=sec]"); if(!sec) return; var k = sec.id.slice(3), e = E[k], b;
+  if((b = t.closest("[data-solic]"))){ ev.stopPropagation(); b.textContent = "Solicitada ✓"; return; }
+  if((b = t.closest("[data-modo]"))) e.modo = b.getAttribute("data-modo"); else if((b = t.closest("[data-oculta]"))) e.oculta = !e.oculta; else if((b = t.closest("[data-zoom]"))) e.zoom = Math.max(60, Math.min(140, e.zoom + (+b.getAttribute("data-zoom"))));
+  else if((b = t.closest("[data-limpar]"))){ e.q = ""; e.set = ""; e.sit = ""; e.urg = ""; } else if((b = t.closest("[data-vista]"))){ e.vista = b.getAttribute("data-vista"); e.modo = "quadro"; } else if((b = t.closest("[data-tipo]"))) e.tipo = +b.getAttribute("data-tipo");
+  else if((b = t.closest("[data-sel]"))){ e.sel = b.getAttribute("data-sel"); } else return; desenha(k); });
+document.addEventListener("change", function(ev){ var t = ev.target, k = t.getAttribute && t.getAttribute("data-k"); if(!k) return; E[k][t.getAttribute("data-f")] = t.value; desenha(k); });
+document.addEventListener("input", function(ev){ var t = ev.target; if(!t.getAttribute || t.getAttribute("data-f")!=="q") return; var k = t.getAttribute("data-k"), pos = t.selectionStart; E[k].q = t.value; desenha(k); var n = document.querySelector('#sec'+k+' input[data-f="q"]'); if(n){ n.focus(); try{ n.setSelectionRange(pos,pos); }catch(x){} } });
+</script>
+</body>
+</html>

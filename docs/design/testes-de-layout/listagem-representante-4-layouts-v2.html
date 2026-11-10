@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Listagem da representante: 4 layouts (versão 2)</title>
+<style>
+:root{--ouro:#C9A13B;--ouro2:#F0D58A;--cre:#F7E8BF;--ouro-esc:#B8862B;--preto:#000;--card:#202023;--fundo:#F5F5F6;--borda:#E5E7EB;--txt:#111827;--txt2:#4B5563;--ok:#16A34A;--am:#D97706;--vm:#DC2626}
+*{box-sizing:border-box}
+body{margin:0;background:#0d0d0f;color:#f3f3f3;font-family:Inter,system-ui,Segoe UI,Arial,sans-serif;font-size:14px;line-height:1.45}
+.pg{max-width:1180px;margin:0 auto;padding:24px 16px 60px}
+h1{font-size:24px;margin:0 0 4px}
+h2{font-size:18px;margin:36px 0 4px;color:var(--ouro2)}
+.sub{color:#e5e5e5;margin:0 0 12px;max-width:820px}
+.rot{display:inline-block;background:var(--ouro2);color:#1a1306;font-weight:800;border-radius:8px;padding:2px 10px;margin-right:8px}
+.caixa{background:#1a1a1d;border:1px solid #2f2f35;border-radius:12px;padding:14px 16px;margin:12px 0}
+table.reg{width:100%;border-collapse:collapse;font-size:13px}
+table.reg td{border-top:1px solid #2f2f35;padding:6px 8px;vertical-align:top}
+table.reg td:first-child{color:var(--ouro2);width:30%;font-weight:600}
+.par{display:flex;gap:22px;flex-wrap:wrap;justify-content:center;margin-top:12px}
+.leg{font-size:12px;color:#e5e5e5;margin-top:8px;max-width:680px;margin-left:auto;margin-right:auto;text-align:center}
+
+/* telefone no estilo da Calculadora de acertos */
+.tel{width:318px;background:var(--fundo);color:var(--txt);border-radius:36px;border:8px solid #000;box-shadow:0 0 0 2px #3a3a3f;overflow:hidden;position:relative;display:flex;flex-direction:column}
+.topo{background:var(--preto);padding:14px 14px 14px;color:var(--ouro2);border-radius:0 0 26px 26px}
+.topo .t{display:flex;align-items:center;justify-content:space-between;font-weight:800;letter-spacing:.16em;font-size:12px;text-transform:uppercase;padding:2px 4px 10px}
+.topo .t i{font-style:normal;font-size:16px}
+.res{background:var(--card);border-radius:14px;padding:10px 12px;color:#fff}
+.res b.nome{display:block;font-size:14px;margin-bottom:6px}
+.res .l{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:#e5e7eb;padding:2px 0}
+.res .l strong{font-family:ui-monospace,Consolas,monospace;font-size:14px;color:#fff;letter-spacing:.02em}
+.res .g{border-top:1px solid var(--ouro);margin-top:6px;padding-top:6px;display:flex;justify-content:space-between;align-items:baseline}
+.res .g span{color:var(--ouro2);font-size:12px;font-weight:700}
+.res .g strong{font-family:ui-monospace,Consolas,monospace;font-size:17px;color:var(--ouro2)}
+.res .g strong.vm{color:#FCA5A5}
+.corpo{padding:10px;display:flex;flex-direction:column;gap:9px}
+.bl{background:#fff;border-radius:18px;box-shadow:0 1px 3px rgba(0,0,0,.08);overflow:hidden}
+.bh{display:flex;align-items:center;gap:10px;padding:10px 12px}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--cre);color:var(--ouro-esc);display:grid;place-items:center;font-size:16px;flex:0 0 auto}
+.bh .tt{flex:1;min-width:0;font-weight:800;font-size:13.5px}
+.bh .tt small{display:block;font-weight:600;font-size:11px;color:var(--txt2)}
+.ck{width:24px;height:24px;border-radius:50%;background:var(--cre);color:var(--ouro-esc);display:grid;place-items:center;font-size:12px;font-weight:800;flex:0 0 auto}
+.ck.vm{background:#FEE2E2;color:var(--vm)}
+.ck.cz{background:#E5E7EB;color:#9CA3AF}
+.cv{color:#6B7280;font-size:12px}
+.bc{border-top:1px solid #F1F1F3;padding:8px 10px 10px;display:flex;flex-direction:column;gap:8px}
+.tab{border:1px solid var(--ouro2);border-radius:12px;overflow:hidden}
+.tab .r{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #F3E8C8;font-size:13px}
+.tab .r:first-child{border-top:0}
+.tab .r span{color:var(--txt2)}
+.tab .r strong{font-family:ui-monospace,Consolas,monospace;font-size:13px;text-align:right}
+.rv{display:flex;align-items:center;gap:8px;padding:7px 10px;border-top:1px solid #F3E8C8;font-size:13px}
+.rv:first-child{border-top:0}
+.rv .n{flex:1;min-width:0;font-weight:700}
+.rv .n small{display:block;font-weight:500;color:var(--txt2);font-size:11px}
+.st{font-size:11px;font-weight:700;white-space:nowrap}
+.st:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#9CA3AF}
+.st.mont{color:#B45309}.st.mont:before{background:#F59E0B}
+.st.feito{color:#1D4ED8}.st.feito:before{background:#3B82F6}
+.st.pronto{color:#15803D}.st.pronto:before{background:#22C55E}
+.st.ruim{color:#B91C1C}.st.ruim:before{background:#EF4444}
+label.f{display:flex;flex-direction:column;gap:4px;font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--ouro-esc)}
+select{height:36px;width:100%;border:1px solid var(--borda);border-radius:12px;background:#fff;color:var(--txt);font:600 13px Inter,system-ui,Arial,sans-serif;padding:0 10px}
+select.peq{height:30px;width:auto;max-width:132px;font-size:12px;border-radius:10px}
+.bt{height:36px;border-radius:12px;border:0;font:800 13px Inter,system-ui,Arial,sans-serif;display:flex;align-items:center;justify-content:center;width:100%}
+.bt.p{background:linear-gradient(135deg,#D8B450,var(--ouro));color:#fff}
+.bt.s{background:#fff;color:var(--txt);border:1px solid var(--borda)}
+.bt.r{background:var(--vm);color:#fff}
+.bt.cz{background:#E5E7EB;color:#9CA3AF}
+.av{border-radius:12px;padding:8px 10px;font-size:12px;font-weight:600}
+.av.am{background:#FEF3C7;color:#92400E}.av.vm{background:#FEE2E2;color:#991B1B}.av.az{background:#DBEAFE;color:#1E40AF}.av.vd{background:#DCFCE7;color:#166534}
+.cx{width:20px;height:20px;border-radius:50%;border:2px solid #9CA3AF;flex:0 0 auto;display:grid;place-items:center;font-size:11px;font-weight:800;color:#fff}
+.cx.on{background:var(--ouro);border-color:var(--ouro)}
+.cx.tr{background:#E5E7EB;border-color:#D1D5DB}
+.cza{color:#9CA3AF}
+.cab{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--txt2);padding:2px 4px}
+@media(max-width:700px){.par{gap:14px}}
+</style>
+</head>
+<body>
+<div class="pg">
+<h1>Listagem da representante: 4 layouts (versão 2)</h1>
+<p class="sub">Feitos a partir do layout 3 (semana), no desenho da <b>Calculadora de acertos</b>: topo preto com letras douradas, cartão escuro de resumo com números em fonte de máquina, blocos brancos que abrem e fecham, tabela com fio dourado. <b>Nada de botões de escolha em fileira:</b> toda escolha é menu suspenso (clique nos campos para abrir). Nomes e números são de exemplo. A representante nunca vê valor do kit.</p>
+
+<div class="caixa">
+<b style="color:var(--ouro2)">Regras que valem nos 4 layouts</b>
+<table class="reg">
+<tr><td>Uma listagem por dia</td><td>Até 2 horários de retirada. 15 kits no dia inteiro (viagem sem limite).</td></tr>
+<tr><td>Uma revendedora por dia</td><td>O sistema trava e mostra em qual listagem ela já está.</td></tr>
+<tr><td>Prazo</td><td>2 dias úteis antes da retirada, até 07:30. Passou: trava; só a Deysiane libera, com motivo.</td></tr>
+<tr><td>Excluir</td><td>Menu suspenso: quem desmarcou e motivo. Revendedora desmarcou: a multa sobe se for o caso. Aviso sempre para a Deysiane; para a montadora só se o kit estiver sendo montado.</td></tr>
+<tr><td>Dois caminhos</td><td>1) pela listagem: adicionar da carteira. 2) pela revendedora: escolher a listagem num menu suspenso.</td></tr>
+</table>
+</div>
+
+<!-- ============ OPÇÃO 1 ============ -->
+<h2><span class="rot">1</span>Semana em blocos (um bloco por dia)</h2>
+<p class="sub">Cada dia da semana é um bloco igual aos da Calculadora: ícone, vagas e cadeado quando o prazo fechou. Abre só o dia que ela quer. Dentro, cada revendedora tem um menu suspenso de ações.</p>
+<div class="par">
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Listagens<i>⌂</i></div>
+  <div class="res"><b class="nome">Semana de 09 a 13/11 · Curitiba</b>
+   <div class="l">Kits na quinta<strong>7 / 15</strong></div>
+   <div class="g"><span>Incluir até</span><strong>ter 10/11 07:30</strong></div></div></div>
+ <div class="corpo">
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Seg 09/11<small>Prazo fechado · 9/15</small></div><div class="ck cz">🔒</div><span class="cv">▸</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Ter 10/11<small>Prazo fechado · 15/15</small></div><div class="ck cz">🔒</div><span class="cv">▸</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Qua 11/11<small>Cheia · 15/15</small></div><div class="ck vm">!</div><span class="cv">▸</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Qui 12/11<small>Retirada 10:00 e 15:00 · 7/15</small></div><div class="ck">✓</div><span class="cv">▾</span></div>
+   <div class="bc">
+    <div class="tab">
+     <div class="rv"><div class="n">Ana Paula S.<small>Acerto + kit · 10:00</small></div><span class="st">Na fila</span></div>
+     <div class="rv"><div class="n">Beatriz L.<small>Acerto + kit · 10:00</small></div><span class="st mont">Montando</span></div>
+     <div class="rv"><div class="n">Carla M.<small>Reposição · 10:00</small></div><span class="st feito">Montado</span></div>
+     <div class="rv"><div class="n">Daniela R.<small>Acerto + kit · 15:00</small></div><span class="st pronto">Pronto</span></div>
+    </div>
+    <select><option>Ações da listagem…</option><option>Adicionar da minha carteira</option><option>Mudar o horário</option><option>Retirar 1 ou 2 kits prontos</option></select>
+   </div></div>
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Sex 13/11<small>1/15</small></div><div class="ck">✓</div><span class="cv">▸</span></div></div>
+ </div></div>
+
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Excluir da listagem<i>⌂</i></div>
+  <div class="res"><b class="nome">Beatriz L.</b>
+   <div class="l">Listagem<strong>qui 12/11 · 10:00</strong></div>
+   <div class="g"><span>Kit</span><strong>Montando</strong></div></div></div>
+ <div class="corpo">
+  <div class="bl"><div class="bc" style="border-top:0">
+   <label class="f">Quem desmarcou<select><option>A revendedora</option><option>Eu (representante)</option></select></label>
+   <label class="f">Motivo<select><option>Desistiu</option><option>Mudou o dia</option><option>Sem dinheiro para o acerto</option><option>Viagem ou compromisso</option><option>Outro</option></select></label>
+   <div class="tab">
+    <div class="r"><span>Multa</span><strong>5% da comissão</strong></div>
+    <div class="r"><span>Aviso para</span><strong>Deysiane</strong></div>
+    <div class="r"><span>Aviso para</span><strong>Montadora (kit montando)</strong></div>
+   </div>
+   <div class="av am">O kit está sendo montado. A Deysiane decide o que fazer com as peças.</div>
+   <div class="bt r">Excluir da listagem</div>
+   <div class="bt s">Cancelar</div>
+  </div></div>
+ </div></div>
+</div>
+<p class="leg">Esquerda: semana em blocos. Direita: excluir com menus suspensos. O aviso muda conforme o kit: na fila (só cancela), montando (avisa a montadora), montado (distribuir as peças), bipado (devolver ao estoque).</p>
+
+<!-- ============ OPÇÃO 2 ============ -->
+<h2><span class="rot">2</span>Um dia por vez, escolhido no menu suspenso</h2>
+<p class="sub">O dia da listagem é um menu suspenso no alto. Cada opção mostra as vagas e o prazo. Embaixo, blocos da Calculadora: revendedoras, adicionar da carteira e retirada.</p>
+<div class="par">
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Listagens<i>⌂</i></div>
+  <div class="res"><b class="nome">Quinta 12/11 · Curitiba</b>
+   <div class="l">Retirada<strong>10:00 e 15:00</strong></div>
+   <div class="l">Kits<strong>7 / 15</strong></div>
+   <div class="g"><span>Incluir até</span><strong>ter 10/11 07:30</strong></div></div></div>
+ <div class="corpo">
+  <label class="f" style="padding:0 4px">Dia da listagem
+   <select><option>Qui 12/11 · 7/15 · incluir até ter 07:30</option><option>Sex 13/11 · 1/15 · incluir até qua 07:30</option><option disabled>Qua 11/11 · cheia 15/15</option><option disabled>Ter 10/11 · prazo fechado</option></select></label>
+  <div class="bl"><div class="bh"><div class="ic">👥</div><div class="tt">Revendedoras<small>7 na listagem</small></div><div class="ck">✓</div><span class="cv">▾</span></div>
+   <div class="bc"><div class="tab">
+    <div class="rv"><div class="n">Ana Paula S.<small>Acerto + kit</small></div><select class="peq"><option>Na fila</option><option>Excluir…</option></select></div>
+    <div class="rv"><div class="n">Beatriz L.<small>Acerto + kit</small></div><select class="peq"><option>Montando</option><option>Excluir…</option></select></div>
+    <div class="rv"><div class="n">Carla M.<small>Reposição</small></div><select class="peq"><option>Montado</option><option>Excluir…</option></select></div>
+   </div></div></div>
+  <div class="bl"><div class="bh"><div class="ic">➕</div><div class="tt">Adicionar da carteira<small>Quem vence primeiro</small></div><div class="ck">✓</div><span class="cv">▸</span></div></div>
+  <div class="bl"><div class="bh"><div class="ic">🚚</div><div class="tt">Retirada<small>2 kits prontos</small></div><div class="ck">✓</div><span class="cv">▸</span></div></div>
+  <div class="bt s">Nova listagem</div>
+ </div></div>
+
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Nova listagem<i>⌂</i></div>
+  <div class="res"><b class="nome">Dayanne</b>
+   <div class="l">Listagens esta semana<strong>2</strong></div>
+   <div class="g"><span>Regra</span><strong>1 por dia</strong></div></div></div>
+ <div class="corpo">
+  <div class="bl"><div class="bc" style="border-top:0">
+   <label class="f">Dia<select><option>Seg 16/11 · incluir até qui 12/11</option><option>Ter 17/11 · incluir até sex 13/11</option><option disabled>Qui 12/11 · você já tem listagem</option><option disabled>Qua 11/11 · prazo fechado</option></select></label>
+   <label class="f">Horário da retirada<select><option>10:00</option><option>09:00</option><option>11:00</option><option>14:00</option><option>15:00</option><option>16:00</option></select></label>
+   <label class="f">Segundo horário (opcional)<select><option>Sem segundo horário</option><option>15:00</option><option>16:00</option></select></label>
+   <label class="f">Destino<select><option>Curitiba (até 15 kits)</option><option>São José dos Pinhais</option><option>Ponta Grossa (viagem)</option></select></label>
+   <div class="av az">Cada representante tem uma listagem por dia, com até 2 horários.</div>
+   <div class="bt p">Criar listagem</div>
+  </div></div>
+ </div></div>
+</div>
+<p class="leg">Esquerda: listagem do dia escolhido, com menu de ações em cada revendedora. Direita: criar listagem só com menus suspensos. Os dias sem vaga ou sem prazo aparecem apagados e não dá para escolher.</p>
+
+<!-- ============ OPÇÃO 3 ============ -->
+<h2><span class="rot">3</span>Tabela da semana + adicionar marcando várias</h2>
+<p class="sub">A semana vira uma tabela com fio dourado (dia, vagas, prazo), igual à tabela da Calculadora. A segunda tela é o caminho 1: marcar várias revendedoras da carteira de uma vez.</p>
+<div class="par">
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Listagens<i>⌂</i></div>
+  <div class="res"><b class="nome">Semana de 09 a 13/11</b>
+   <div class="l">Listagens abertas<strong>3</strong></div>
+   <div class="g"><span>Próximo prazo</span><strong>ter 07:30</strong></div></div></div>
+ <div class="corpo">
+  <div class="bl"><div class="bh"><div class="ic">📅</div><div class="tt">Dias da semana<small>Toque no dia para abrir</small></div><span class="cv">▾</span></div>
+   <div class="bc"><div class="tab">
+    <div class="r cza"><span class="cza">Seg 09/11</span><strong>9/15 · fechou</strong></div>
+    <div class="r cza"><span class="cza">Ter 10/11</span><strong>15/15 · fechou</strong></div>
+    <div class="r"><span>Qua 11/11</span><strong style="color:var(--vm)">15/15 · cheia</strong></div>
+    <div class="r" style="background:#FFF9E8"><span><b>Qui 12/11</b></span><strong>7/15 · até ter 07:30</strong></div>
+    <div class="r"><span>Sex 13/11</span><strong>1/15 · até qua 07:30</strong></div>
+   </div></div></div>
+  <div class="bl"><div class="bh"><div class="ic">👥</div><div class="tt">Quinta 12/11<small>10:00 e 15:00</small></div><div class="ck">✓</div><span class="cv">▾</span></div>
+   <div class="bc"><div class="tab">
+    <div class="rv"><div class="n">Ana Paula S.</div><span class="st">Na fila</span></div>
+    <div class="rv"><div class="n">Beatriz L.</div><span class="st mont">Montando</span></div>
+    <div class="rv"><div class="n">Carla M.</div><span class="st feito">Montado</span></div>
+    <div class="rv"><div class="n">Daniela R.</div><span class="st pronto">Pronto</span></div>
+   </div></div></div>
+  <div class="bt p">Adicionar da minha carteira</div>
+  <div class="bt s">Nova listagem</div>
+ </div></div>
+
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Adicionar à listagem<i>⌂</i></div>
+  <div class="res"><b class="nome">Quinta 12/11 · Curitiba</b>
+   <div class="l">Vagas<strong>7 → 10 / 15</strong></div>
+   <div class="g"><span>Incluir até</span><strong>ter 10/11 07:30</strong></div></div></div>
+ <div class="corpo">
+  <label class="f" style="padding:0 4px">Listagem<select><option>Qui 12/11 · 7/15</option><option>Sex 13/11 · 1/15</option></select></label>
+  <label class="f" style="padding:0 4px">Tipo do kit<select><option>Acerto + kit</option><option>Reposição</option><option>Kit novo</option></select></label>
+  <div class="bl"><div class="tab" style="border:0">
+   <div class="rv"><span class="cx on">✓</span><div class="n">Marcia B.<small>Acerto em 12/11</small></div></div>
+   <div class="rv"><span class="cx on">✓</span><div class="n">Patrícia G.<small>Acerto em 13/11</small></div></div>
+   <div class="rv"><span class="cx on">✓</span><div class="n">Rita C.<small>Acerto atrasado 3 dias</small></div></div>
+   <div class="rv"><span class="cx"></span><div class="n">Sandra V.<small>Acerto em 16/11</small></div></div>
+   <div class="rv"><span class="cx tr"></span><div class="n cza">Tatiane O.<small>Já está na listagem de qui 12/11 · 10:00</small></div></div>
+   <div class="rv"><span class="cx tr"></span><div class="n cza">Vera N.<small>Acerto em 20/11 · fora do prazo</small></div></div>
+  </div></div>
+  <div class="bt p">Adicionar 3 revendedoras</div>
+ </div></div>
+</div>
+<p class="leg">Esquerda: tabela da semana. Direita: adicionar marcando várias. As travadas explicam o motivo na própria linha (já está em outra listagem do dia, ou fora do prazo).</p>
+
+<!-- ============ OPÇÃO 4 ============ -->
+<h2><span class="rot">4</span>Pela carteira: cada revendedora com seu menu suspenso</h2>
+<p class="sub">Caminho 2. Lista das revendedoras da representante, ordenada por quem vence primeiro. Cada linha tem um menu suspenso: encaixar em uma listagem, mover ou excluir. Nada de tocar em botões pequenos.</p>
+<div class="par">
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Minhas revendedoras<i>⌂</i></div>
+  <div class="res"><b class="nome">Carteira da Dayanne</b>
+   <div class="l">Sem listagem<strong>6</strong></div>
+   <div class="g"><span>Mais urgente</span><strong class="vm">Rita C. · 3 dias</strong></div></div></div>
+ <div class="corpo">
+  <label class="f" style="padding:0 4px">Mostrar<select><option>Quem vence logo</option><option>Sem listagem</option><option>Já em listagem</option><option>Todas</option></select></label>
+  <div class="bl"><div class="tab" style="border:0">
+   <div class="rv"><div class="n">Rita C.<small class="cza" style="color:#B91C1C">Acerto atrasado 3 dias</small></div><select class="peq"><option>Encaixar…</option><option>Qui 12/11 · 7/15</option><option>Sex 13/11 · 1/15</option><option disabled>Qua 11/11 · cheia</option><option>Nova listagem</option></select></div>
+   <div class="rv"><div class="n">Marcia B.<small>Acerto em 12/11</small></div><select class="peq"><option>Encaixar…</option><option>Qui 12/11 · 7/15</option><option>Sex 13/11 · 1/15</option></select></div>
+   <div class="rv"><div class="n">Patrícia G.<small>Acerto em 13/11</small></div><select class="peq"><option>Encaixar…</option><option>Sex 13/11 · 1/15</option></select></div>
+   <div class="rv"><div class="n">Ana Paula S.<small>Qui 12/11 · 10:00 · <span style="color:#15803D">Pronto</span></small></div><select class="peq"><option>Na listagem</option><option>Mudar de listagem</option><option>Excluir…</option></select></div>
+   <div class="rv"><div class="n">Beatriz L.<small>Qui 12/11 · 10:00 · <span style="color:#B45309">Montando</span></small></div><select class="peq"><option>Na listagem</option><option>Mudar de listagem</option><option>Excluir…</option></select></div>
+  </div></div>
+ </div></div>
+
+<div class="tel">
+ <div class="topo"><div class="t"><i>‹</i>Encaixar<i>⌂</i></div>
+  <div class="res"><b class="nome">Rita C.</b>
+   <div class="l">Acerto<strong>atrasado 3 dias</strong></div>
+   <div class="g"><span>Listagem</span><strong>qui 12/11</strong></div></div></div>
+ <div class="corpo">
+  <div class="bl"><div class="bc" style="border-top:0">
+   <label class="f">Listagem<select><option>Qui 12/11 · 7/15</option><option>Sex 13/11 · 1/15</option><option>Nova listagem</option></select></label>
+   <label class="f">Horário da retirada<select><option>10:00</option><option>15:00</option></select></label>
+   <label class="f">Tipo do kit<select><option>Acerto + kit</option><option>Reposição</option><option>Kit novo</option></select></label>
+   <div class="tab">
+    <div class="r"><span>Vagas depois</span><strong>8 / 15</strong></div>
+    <div class="r"><span>Prazo para incluir</span><strong>ter 10/11 07:30</strong></div>
+    <div class="r"><span>Já está em outra?</span><strong style="color:var(--ok)">Não</strong></div>
+   </div>
+   <div class="av vm">Se ela já estivesse em uma listagem neste dia, o sistema trava e diz qual.</div>
+   <div class="bt p">Colocar na listagem</div>
+  </div></div>
+ </div></div>
+</div>
+<p class="leg">Esquerda: carteira com menu suspenso em cada revendedora. Direita: confirmar o encaixe (listagem, horário e tipo do kit em menus). Para excluir, a opção "Excluir…" abre a mesma tela de exclusão da opção 1.</p>
+
+<div class="caixa" style="margin-top:34px">
+<b style="color:var(--ouro2)">Como escolher</b>
+<table class="reg">
+<tr><td>Opção 1</td><td>Semana toda à vista, um bloco por dia. Bom para a representante que planeja a semana.</td></tr>
+<tr><td>Opção 2</td><td>Um dia por vez, escolhido no menu suspenso. Tela mais limpa.</td></tr>
+<tr><td>Opção 3</td><td>Tabela da semana e adicionar várias de uma vez marcando.</td></tr>
+<tr><td>Opção 4</td><td>Começa pela revendedora (caminho 2), tudo com menu suspenso.</td></tr>
+<tr><td>Dá para juntar</td><td>Por exemplo: opção 1 como tela principal, "Adicionar" da opção 3 e "Encaixar" da opção 4 dentro da ficha de cada revendedora.</td></tr>
+</table>
+</div>
+</div>
+</body>
+</html>

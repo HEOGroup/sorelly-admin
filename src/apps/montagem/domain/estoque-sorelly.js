@@ -69,7 +69,7 @@ function ordenar(lista){ return lista.slice().sort(function(a, b){ return a.ano-
 
 // ---------- estado ----------
 function esDemo(){
-  var base = {config:clone(CONFIG_PADRAO), posicoes:[], fechamentos:[]};
+  var base = {config:clone(CONFIG_PADRAO), posicoes:[], fechamentos:[], diarias:[], auto:{}};
   if(LOCAL){ try { base = esMigrar(clone(LOCAL)); } catch(e){} }
   return base;
 }
@@ -80,6 +80,8 @@ function esMigrar(es){
   cfg.ajuda = Object.assign({}, AJUDA_PADRAO, (es.config && es.config.ajuda) || {});
   var normaliza = function(r){ var o = Object.assign({simulados:[], travado:false, dia:1}, r); o.id = o.id || chaveMes(o.ano, o.mes); if(!Array.isArray(o.simulados)) o.simulados = []; return o; };
   es.config = cfg;
+  es.diarias = Array.isArray(es.diarias) ? es.diarias : [];   // foto de cada dia, gravada sozinha pelo servidor (src/server/estoque-dia.js)
+  es.auto = es.auto && typeof es.auto === "object" ? es.auto : {};   // es.auto.ultima = {em, dia, hora, ok, erro?}: como foi a última leitura automática
   es.posicoes = (es.posicoes||[]).map(normaliza);
   es.fechamentos = (es.fechamentos||[]).map(normaliza);
   return es;
@@ -202,6 +204,26 @@ function esSerieIndice(s){ return indiceBase100(ordenar(s.es.posicoes).filter(po
 function esSerieFaturamentoEstoque(s){
   return ordenar(s.es.fechamentos).map(function(f){ return {ano:f.ano, mes:f.mes, rotulo:rotuloMes(f.ano, f.mes), vendido:f.vendido||0, estoqueVenda:vendaNoMes(s.es.posicoes, f.ano, f.mes)}; });
 }
+// ---------- planilha do layout D (Marcus, 09/11/2026) ----------
+// Mês a mês: indicadores nas linhas, meses nas colunas (últimos `n`, mais antigo à esquerda). Cada coluna = {rotulo, anoMes, estimado, p (foto), f (fechamento), t (totais), d (derivados), giro}.
+function esPlanilhaMeses(s, n){
+  var pct = esPct(s), lista = ordenar(s.es.posicoes).slice(-(n||8));
+  return lista.map(function(p){
+    var f = achar(s.es.fechamentos, p.ano, p.mes), t = totaisPosicao(p), d = valoresDerivados(t, pct), saida = f && f.vendido!=null ? r2((f.vendido||0)+(f.brindeValor||0)) : null;
+    return {anoMes:chaveMes(p.ano, p.mes), rotulo:rotuloMes(p.ano, p.mes), estimado:temSimulado(p), p:p, f:f, t:t, d:d, saida:saida, giroPct: saida!=null && t.venda>0 ? saida/t.venda*100 : null,
+      kitMedio: p.qtdRevendedoras && p.revVenda!=null ? r2(p.revVenda/p.qtdRevendedoras) : null};
+  });
+}
+// Dia a dia: últimos `n` dias gravados (mais novo primeiro) com a variação da venda e das revendedoras contra o dia gravado antes.
+function esPlanilhaDias(s, n){
+  var l = (s.es.diarias||[]).slice().sort(function(a, b){ return a.id<b.id ? -1 : 1; });
+  var out = l.map(function(x, i){ var a = l[i-1]; return {id:x.id, dia:x.id, qtdRevendedoras:x.qtdRevendedoras, revPecas:x.revPecas, revVenda:x.revVenda, condicionais:x.condicionais, hora:x.hora, origem:x.origem,
+    dVenda: a ? r2(x.revVenda-a.revVenda) : null, dRev: a ? x.qtdRevendedoras-a.qtdRevendedoras : null, dPecas: a ? x.revPecas-a.revPecas : null}; });
+  return out.reverse().slice(0, n||30);
+}
+// Estado da leitura automática (servidor): {ok, quando, texto}
+function esAutoStatus(s){ var u = s.es.auto && s.es.auto.ultima; return u ? {ok:!!u.ok, dia:u.dia, hora:u.hora, erro:u.erro||null} : null; }
+
 // Lembretes: foto do mês atual e fechamento do mês anterior (o fechamento mora no mês anterior)
 function esPendencias(s, hoje){
   var m = mesAtual(hoje), ant = mesAnterior(m.ano, m.mes), out = [];
@@ -304,7 +326,7 @@ function esReduz(s, a){
   return recusa("Ação desconhecida.");
 }
 
-export { esDemo, esMigrar, esReduz, esResumoGeral, esMesSelecionado, esHistorico, esFormularioDoMes, esTotaisPorGrupo, esSerieEvolucao, esSerieIndice, esSerieFaturamentoEstoque, esPendencias,
+export { esPlanilhaMeses, esPlanilhaDias, esAutoStatus, esDemo, esMigrar, esReduz, esResumoGeral, esMesSelecionado, esHistorico, esFormularioDoMes, esTotaisPorGrupo, esSerieEvolucao, esSerieIndice, esSerieFaturamentoEstoque, esPendencias,
   esPodeEditarLinha, esPodeAdministrar, esRotuloMes, esChave, esPct,
   totaisPosicao, posicaoCompleta, temSimulado, vendaNoMes, calcularGiro, valoresDerivados, indiceBase100, mesAnterior, mesSeguinte, lerMes,
   CAMPOS_POSICAO, CAMPOS_FECHAMENTO, ROTULO_POSICAO, ROTULO_FECHAMENTO, METRICAS, ROTULO_METRICA, AJUDA_PADRAO, CONFIG_PADRAO };

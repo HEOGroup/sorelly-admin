@@ -12,7 +12,7 @@ const nextConfig = {
   // Pasta de saída. Padrão .next; a conferência antes do push (npm run conferir) usa outra, para não derrubar o servidor ligado na porta 3000.
   distDir: process.env.NEXT_DIST_DIR || ".next",
   // Na Vercel o login fica SEMPRE ligado (/api), mesmo que a variável não esteja cadastrada no painel. Fora dela, vale o .env.local (vazio = modo local).
-  env: { NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.VERCEL ? "/api" : "") },
+  env: { NEXT_PUBLIC_BUILD: process.env.VERCEL_GIT_COMMIT_SHA || "", NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL || (process.env.VERCEL ? "/api" : "") },
   reactStrictMode: false, // o sistema antigo não rodava em modo estrito; mantém igual
   poweredByHeader: false, // não anuncia "Next.js" no cabeçalho x-powered-by
   // O lint roda à parte (npm run lint e no CI): o build não para por aviso de estilo.

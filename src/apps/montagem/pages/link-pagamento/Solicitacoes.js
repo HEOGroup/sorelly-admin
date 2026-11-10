@@ -151,7 +151,7 @@ function NovaSolicitacao(p){
         e("ul",{className:"flex flex-col gap-1 rounded-lg bg-black/25 p-2"},
           regra("coins", "Mínimo de "+formatarReais(cfg.minimo)+" por link"), regra("stack", "Parcela mínima de "+formatarReais(cfg.parcelaMinima)),
           textoFaixas(cfg).map(function(f){ return regra("list-numbers", f[0]+": "+f[1]+" sem juros"); }),
-          regra("timer", "Validade de "+cfg.validadeHoras+" h"), regra("repeat", "Até "+cfg.tentativasDia+" tentativas por dia"), regra("calendar-check", "Vale para o acerto o link emitido e pago até o dia anterior")),
+          regra("timer", "Validade de "+cfg.validadeHoras+" h (a revendedora é avisada de "+(cfg.avisoHoras || 12)+" h)"), regra("repeat", "Até "+cfg.tentativasDia+" tentativas por dia"), regra("calendar-check", "Vale para o acerto o link emitido e pago até o dia anterior")),
         e("p",{className:"rounded-lg bg-black/25 px-2 py-1.5 text-[12px] text-white/85"}, e("b",null, "Link: "), m ? nomeMeio(m) : "Sem link vinculado"),
         t && e("p",{className:"rounded-lg bg-[#3B82F6]/15 px-2 py-1.5 text-[12px] text-white/85"}, "Taxa estimada "+formatarReais(t.taxaValor+t.antecipacaoValor)+" · líquido "+formatarReais(t.liquido)));
     }});

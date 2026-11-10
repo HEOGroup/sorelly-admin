@@ -183,4 +183,4 @@ function AbaEstoqueMaterial(pr){
     mAtual && jan.k==="hist" && e(JanelaHistorico,Object.assign({abrir:abrir, parar:parar}, comuns)));
 }
 
-export { AbaEstoqueMaterial };
+export { AbaEstoqueMaterial, JanelaPedir };   // JanelaPedir também é usada pelo Painel (PainelComprasEstoque.js)

@@ -3,7 +3,7 @@
 // Ordem das formas: À vista, Combinado (entrada hoje + o resto em datas), link Sorelly, Mercado Pago (por último). O desconto é livre (a revendedora escolhe) e SAI DA COMISSÃO DELA: o app mostra quanto ela ganha.
 // No fim: "Registrar venda" (grava em s.lp.vendasApp; no link Sorelly já pede o link ao setor) ou "Enviar proposta" (texto pronto para o WhatsApp). Pagamentos combinados em Pix ou dinheiro viram COBRANÇA: o app avisa no dia.
 import { createPortal } from "react-dom";
-import { calcularAcerto, modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { calcularAcerto, comissaoEspecialDe, modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { BANDEIRAS, agoraSP, formatarDia, hojeSP, parcelasPermitidas, somaDias, validarSolicitacao, vendidoNoApp } from "@/apps/montagem/domain/link-pagamento";
 import { tipoDoCodigo } from "@/apps/montagem/domain/catalogo-rev";
 import { listagemDe } from "@/apps/montagem/domain/regras";
@@ -47,7 +47,7 @@ function JanelaVenda(p){
   var descRS = r2(Math.min(bruto, desc.modo==="pct" ? bruto*(desc.outro ? Number(String(desc.outroPct).replace(",", ".")) || 0 : desc.pct)/100 : desc.rs || 0));
   var liquido = r2(bruto-descRS), descPct = bruto>0 ? r2(descRS/bruto*100) : 0;
   var parcelas = liquido>0 ? Math.min(parcelasSel, parcelasPermitidas(cfg, liquido)) : parcelasSel;   // o desconto muda o valor: a escolha anterior pode deixar de valer
-  var vig = versaoVigente(s), versao = vig ? versaoEfetiva(vig, modalidadeDe(s, k.rev)) : null, base = ((k.vendas||[])[0] || 0) + vendidoNoApp(s.lp, k.rev, hoje.slice(0, 7));
+  var vig = versaoVigente(s), versao = vig ? versaoEfetiva(vig, modalidadeDe(s, k.rev), comissaoEspecialDe(s, k.rev)) : null, base = ((k.vendas||[])[0] || 0) + vendidoNoApp(s.lp, k.rev, hoje.slice(0, 7));
   var calc = function(v){ return versao ? calcularAcerto({vendaBruta:v, devolvida:0, garantia:0, vez:0, valorPago:null, atrasoDias:0}, versao) : null; };
   var r0 = calc(base), rSem = calc(base+bruto), rCom = calc(base+liquido);
   var metaMin = versao ? Math.min.apply(null, versao.faixas.filter(function(f){ return f.pct>0; }).map(function(f){ return f.min; }).concat([Infinity])) : 0;   // vendas do mês para começar a ganhar comissão

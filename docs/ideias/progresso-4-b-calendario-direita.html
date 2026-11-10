@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progresso · versão B em 4 variações</title>
+<style>
+  :root{ --fundo:#0e0f11; --bloco:#16171a; --bloco2:#1c1d21; --linha:#2a2c31; --linha2:#3a3c43; --ouro:#E8B84B; --ouro2:#9A6F1E; --ouroclaro:#F5E7BE; --escuro:#1a1306; }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--fundo);color:#fff;font:13px/1.25 Inter,"Segoe UI",system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:16px;margin:0 0 4px}
+  .nav{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 22px}
+  .nav a{height:32px;display:inline-flex;align-items:center;padding:0 14px;border:1px solid var(--linha2);border-radius:8px;color:#fff;text-decoration:none}
+  section{max-width:1280px;margin:0 auto 40px}
+  .tag{display:flex;gap:10px;margin-bottom:8px}.tag b{font-size:15px;color:var(--ouro)}
+  .tela{border:1px solid var(--linha2);border-radius:12px;background:var(--fundo)}
+  .topo{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;background:#131417;border-bottom:1px solid var(--linha);border-radius:12px 12px 0 0}
+  .topo .logo{color:var(--ouro);font-weight:700;letter-spacing:.18em;font-size:12px}.topo .pg{font-weight:600;margin-left:8px}.topo .esp{flex:1}
+  .relogio{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco)}
+  .relogio i{width:8px;height:8px;border-radius:50%;background:#22C55E}.relogio small{font-size:11px;letter-spacing:.05em}.relogio b{font-size:18px;font-variant-numeric:tabular-nums;color:var(--ouro)}
+  .bt{height:32px;display:inline-flex;align-items:center;justify-content:center;padding:0 12px;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco);color:#fff;font:inherit;white-space:nowrap}
+  .corpo{padding:10px}
+  .principal{display:grid;gap:10px;grid-template-columns:400px 1fr;align-items:start}
+  .esq{display:flex;flex-direction:column;gap:10px;min-width:0}
+  .bl{background:var(--bloco);border:1px solid var(--linha);border-radius:10px}
+  .bl>.ti{display:flex;align-items:center;justify-content:space-between;height:32px;padding:0 12px;font-weight:600;border-bottom:1px solid var(--linha);border-radius:10px 10px 0 0;background:linear-gradient(90deg,rgba(232,184,75,.16),rgba(232,184,75,0) 70%)}
+  .bl>.in{padding:10px 12px}
+  .g2{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;align-items:end}
+  .rot{font-size:11px;letter-spacing:.05em;text-transform:uppercase;display:block;margin-bottom:3px}
+  select,.dd summary{height:32px;width:100%;border:1px solid var(--linha2);border-radius:8px;background:var(--bloco2);color:#fff;font:inherit;padding:0 10px;text-align:center;text-align-last:center}
+  .dd{position:relative}.dd summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}.dd summary::-webkit-details-marker{display:none}
+  .dd .menu{position:absolute;left:0;top:36px;z-index:10;width:100%;min-width:170px;background:var(--bloco2);border:1px solid var(--linha2);border-radius:8px;padding:4px}
+  .dd label{display:flex;align-items:center;gap:8px;height:30px;padding:0 8px;border-radius:6px}
+  .g{color:var(--ouro);font-weight:600}
+  .lista{display:grid;grid-template-columns:1fr auto;column-gap:16px}
+  .lista div{height:28px;display:flex;align-items:center;border-bottom:1px solid var(--linha)}.lista div:nth-child(even){justify-content:flex-end;font-variant-numeric:tabular-nums}
+  table{border-collapse:collapse;width:100%;table-layout:fixed}
+  th,td{text-align:center;white-space:nowrap;padding:0 6px;font-variant-numeric:tabular-nums;border-left:1px solid var(--linha)}
+  th:first-child,td:first-child{border-left:0}
+  thead th{height:30px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;background:#1c1d21;border-bottom:2px solid var(--ouro)}
+  td{height:32px;border-top:1px solid var(--linha)}
+  tr.tot td{background:#1c1d21;font-weight:700;border-top:2px solid var(--ouro2)}
+  /* calendário grande */
+  .cal{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+  .cal.sm{grid-template-columns:repeat(7,1fr) 150px}
+  .cal .dn{text-align:center;font-size:11px;letter-spacing:.05em;text-transform:uppercase;height:22px;line-height:22px}
+  .cel{min-height:150px;border:1px solid var(--linha);border-radius:8px;background:var(--bloco2);padding:6px 8px;display:flex;flex-direction:column;gap:3px;cursor:pointer;text-align:center}
+  .cel.sel{border-color:var(--ouro);box-shadow:0 0 0 1px var(--ouro)}.cel.vz{opacity:.4;cursor:default;min-height:60px}
+  .cel .n{font-size:11px;text-align:left;display:flex;justify-content:space-between}
+  .cel .h{font-size:18px;font-weight:700;color:var(--ouro);font-variant-numeric:tabular-nums;line-height:1.1}
+  .cel .s{font-size:11px;border-bottom:1px solid var(--linha);padding-bottom:3px;font-variant-numeric:tabular-nums}
+  .cel .p{font-size:12px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+  .cel .ac{font-size:11px;color:var(--ouro);border-top:1px solid var(--ouro2);padding-top:3px;margin-top:auto}
+  .cel .ac2{font-size:11px}
+  .cel .vazio{margin:auto;opacity:.5}
+  .barra{display:flex;height:8px;border-radius:4px;overflow:hidden;background:#0e0f11;border:1px solid var(--linha)}
+  .barra span{display:block;height:100%}
+  .eixo{position:relative;height:10px;background:#0e0f11;border:1px solid var(--linha);border-radius:4px;overflow:hidden}
+  .eixo span{position:absolute;top:0;height:100%}
+  .sem{background:var(--bloco);border:1px solid var(--ouro2);border-radius:8px;padding:8px;display:flex;flex-direction:column;gap:3px;text-align:center;min-height:150px}
+  .sem .h{font-size:18px;font-weight:700;color:var(--ouro)}
+  .sem .p{font-size:12px;display:flex;justify-content:space-between;font-variant-numeric:tabular-nums}
+  .nota{max-width:1280px;margin:30px auto 0;border-top:1px solid var(--linha);padding-top:14px}
+</style>
+</head>
+<body>
+<section>
+  <h1>Progresso · versão B em 4 variações</h1>
+  <p>Calendário grande à direita, com as informações de cada dia dentro do quadrado. Filtros e controles à esquerda. Sem chips, tudo em dropdown e menu suspenso, só dourado como destaque. <b>Clique num dia do calendário</b>: o lado esquerdo muda para esse dia. Dados de exemplo.</p>
+  <div class="nav"><a href="#B1">B1 · Dia em texto</a><a href="#B2">B2 · Dia com barra de proporção</a><a href="#B3">B3 · Dia com linha do tempo</a><a href="#B4">B4 · Com coluna da semana</a></div>
+</section>
+<section id="B1"><div class="tag"><b>B1</b><span>Cada dia mostra horas, início e fim, cada pausa com o seu tempo e a academia com os membros.</span></div><div class="tela" id="tB1"></div></section>
+<section id="B2"><div class="tag"><b>B2</b><span>Igual ao B1, mais uma barra que mostra a proporção do dia: dourado = trabalho, tons de branco = pausas. A tabela dos dias fica à esquerda.</span></div><div class="tela" id="tB2"></div></section>
+<section id="B3"><div class="tag"><b>B3</b><span>Cada dia traz uma linha do tempo de 08:00 a 19:00 com os trechos no lugar certo. À esquerda ficam os trechos do dia em tabela.</span></div><div class="tela" id="tB3"></div></section>
+<section id="B4"><div class="tag"><b>B4</b><span>Uma oitava coluna ao lado de cada semana com o total da semana (trabalhado, pausas e dias de academia). À esquerda, o resumo da semana escrito.</span></div><div class="tela" id="tB4"></div></section>
+<div class="nota"><b>Regras que estes desenhos seguem:</b> sem chips nem pílulas; uma opção = dropdown; várias = menu suspenso com caixas de marcar; filtros no topo da coluna esquerda; tudo centralizado; campo e botão de 32 px; tabela no layout D; nada abreviado nas palavras; sem faixa de cartões de número.</div>
+
+<script>
+var H=function(m){return Math.floor(m/60)+":"+String(m%60).padStart(2,"0")};
+var hm=function(m){return String(Math.floor(m/60)).padStart(2,"0")+":"+String(m%60).padStart(2,"0")};
+var D={2:{t:478,f:35,a:60,tr:0,p:20,g:null,i:"08:05",fm:"18:10"},3:{t:468,f:41,a:60,tr:30,p:11,g:{m:["Peito","Tríceps"],c:1,b:0},i:"08:05",fm:"18:10"},4:{t:415,f:52,a:65,tr:45,p:13,g:null,i:"08:00",fm:"17:30"},5:{t:482,f:36,a:70,tr:0,p:37,g:{m:["Costas","Bíceps"],c:0,b:1},i:"08:20",fm:"18:45"},6:{t:450,f:44,a:60,tr:40,p:15,g:{m:["Pernas","Glúteos"],c:1,b:0},i:"08:10",fm:"18:05"},7:{t:200,f:20,a:0,tr:0,p:0,g:{m:["Ombros"],c:0,b:1},i:"09:00",fm:"12:30"},8:null,9:{t:342,f:34,a:65,tr:40,p:12,g:{m:["Peito","Costas","Ombros"],c:1,b:0},i:"08:12",fm:"aberto"}};
+var NOMES=["Peito","Costas","Ombros","Bíceps","Tríceps","Antebraço","Abdômen","Pernas","Glúteos","Panturrilha"];
+var DIASEM=["Segunda","Terça","Quarta","Quinta","Sexta","Sábado","Domingo"];
+var opt=function(a,v){return a.map(function(x){return '<option'+(x===v?' selected':'')+'>'+x+'</option>'}).join('')};
+var sel=function(rot,a,v){return '<div><span class="rot">'+rot+'</span><select>'+opt(a,v)+'</select></div>'};
+var dd=function(rot,marc){return '<div><span class="rot">'+rot+'</span><details class="dd"><summary>'+(marc.length?(marc.length<=2?marc.join(", "):marc.length+" membros"):"Nenhum")+' <span>▾</span></summary><div class="menu">'+NOMES.map(function(n){return '<label><input type="checkbox"'+(marc.indexOf(n)>=0?' checked':'')+'> '+n+'</label>'}).join('')+'</div></details></div>'};
+var topo=function(){return '<div class="topo"><span class="logo">SORELLY</span><span class="pg">Marcus › Progresso</span><span class="esp"></span><div class="relogio"><i></i><small>TRABALHANDO</small><b>05:42:10</b></div><span class="bt">Pausa ▾</span><span class="bt">Encerrar dia</span></div>'};
+var cab=function(a){return '<thead><tr>'+a.map(function(t){return '<th>'+t+'</th>'}).join('')+'</tr></thead>'};
+var soma=function(k){var s=0;for(var n in D)if(D[n])s+=D[n][k];return s};
+var pausas=function(x){return x.f+x.a+x.tr+x.p};
+var trechosDia=function(n){var x=D[n];if(!x)return [];var ini=+x.i.slice(0,2)*60+ +x.i.slice(3),f3=Math.round(x.f/3);var l=[["Trabalho",ini,ini+232],["Fumar",ini+232,ini+232+f3],["Trabalho",ini+232+f3,ini+292+f3],["Almoço",ini+292+f3,ini+292+f3+x.a],["Trabalho",ini+292+f3+x.a,ini+472+f3+x.a]];if(x.tr)l.push(["Treino",ini+472+f3+x.a,ini+472+f3+x.a+x.tr]);return l};
+
+/* ---- peças da coluna esquerda ---- */
+var bloco=function(t,dir,conteudo,semPad){return '<div class="bl"><div class="ti"><span>'+t+'</span>'+(dir||'')+'</div><div class="in"'+(semPad?' style="padding:0"':'')+'>'+conteudo+'</div></div>'};
+var filtros=function(){return bloco("Filtros","",'<div class="g2">'+sel("Mês",["Outubro de 2026","Novembro de 2026","Dezembro de 2026"],"Novembro de 2026")+sel("Período",["Hoje","Semana","Mês"],"Mês")+'</div>')};
+var agora=function(){return bloco("Agora",'<span class="g">05:42:10</span>','<div class="g2">'+sel("Estado",["Trabalhando","Fumar","Almoçar","Treinar","Parado","Outro"],"Trabalhando")+'<div><span class="rot">Dia</span><span class="bt" style="width:100%">Encerrar dia</span></div></div>')};
+var academia=function(n){var x=D[n],g=x&&x.g?x.g:{m:[],c:0,b:0};return bloco("Academia · "+String(n).padStart(2,"0")+"/11","",'<div class="g2">'+sel("Academia",["Não","Sim"],g.m.length?"Sim":"Não")+dd("Membros",g.m)+sel("Corri",["Não","Sim"],g.c?"Sim":"Não")+sel("Joguei bola",["Não","Sim"],g.b?"Sim":"Não")+'</div>')};
+var trechosTab=function(n){var l=trechosDia(n);return bloco("Trechos de "+String(n).padStart(2,"0")+"/11",'<span class="g">'+(D[n]?H(D[n].t):"—")+'</span>',l.length?'<table>'+cab(["Motivo","Início","Fim","Duração"])+'<tbody>'+l.map(function(t){return '<tr><td>'+t[0]+'</td><td>'+hm(t[1])+'</td><td>'+hm(t[2])+'</td><td>'+H(t[2]-t[1])+'</td></tr>'}).join('')+'</tbody></table>':'<div style="text-align:center;padding:14px">Sem registro neste dia.</div>',l.length)};
+var diasTab=function(){var h='';for(var n in D){var x=D[n];if(x&&x.t)h+='<tr><td>'+String(n).padStart(2,"0")+'/11</td><td class="g">'+H(x.t)+'</td><td>'+H(pausas(x))+'</td><td>'+(x.g?"Sim":"—")+'</td></tr>'}return bloco("Dias",'<span class="g">Total '+H(soma("t"))+'</span>','<table>'+cab(["Dia","Trabalhado","Pausas","Academia"])+'<tbody>'+h+'<tr class="tot"><td>Total</td><td class="g">'+H(soma("t"))+'</td><td>'+H(soma("f")+soma("a")+soma("tr")+soma("p"))+'</td><td>4 dias</td></tr></tbody></table>',1)};
+var semanaTxt=function(){var dias=[3,4,5,6,7,9],t=0,p=0,ac=0;dias.forEach(function(n){t+=D[n].t;p+=pausas(D[n]);if(D[n].g)ac++});return bloco("Semana de 03/11 a 09/11","",'<div class="lista"><div>Trabalhado</div><div class="g">'+H(t)+'</div><div>Média por dia</div><div>'+H(Math.round(t/dias.length))+'</div><div>Pausas</div><div>'+H(p)+'</div><div>Fumar</div><div>'+H(dias.reduce(function(s,n){return s+D[n].f},0))+'</div><div>Almoçar</div><div>'+H(dias.reduce(function(s,n){return s+D[n].a},0))+'</div><div>Treinar</div><div>'+H(dias.reduce(function(s,n){return s+D[n].tr},0))+'</div><div>Dias de academia</div><div>'+ac+'</div></div>')};
+
+/* ---- calendário grande: modo "texto", "barra", "linha" ---- */
+var membrosTxt=function(m){return m.length<=2?m.join(", "):m.length+" membros"};
+var celula=function(n,x,selDia,vz,modo){
+  if(vz||!x||!x.t)return '<div class="cel'+(vz?' vz':'')+'" data-d="'+n+'"><div class="n"><span>'+n+'</span></div>'+(vz?'':'<div class="vazio">Sem registro</div>')+'</div>';
+  var linhas='<div class="n"><span>'+n+'</span></div><div class="h">'+H(x.t)+'</div><div class="s">'+x.i+' – '+x.fm+'</div>';
+  if(modo==="barra"){var tot=x.t+pausas(x);linhas+='<div class="barra"><span style="width:'+(x.t/tot*100)+'%;background:var(--ouro)"></span><span style="width:'+(x.f/tot*100)+'%;background:rgba(255,255,255,.7)"></span><span style="width:'+(x.a/tot*100)+'%;background:rgba(255,255,255,.45)"></span><span style="width:'+(x.tr/tot*100)+'%;background:rgba(255,255,255,.25)"></span><span style="width:'+(x.p/tot*100)+'%;background:rgba(255,255,255,.12)"></span></div>'}
+  if(modo==="linha"){var T0=480,T1=1140;linhas+='<div class="eixo">'+trechosDia(n).map(function(t){return '<span style="left:'+((t[1]-T0)/(T1-T0)*100)+'%;width:'+((t[2]-t[1])/(T1-T0)*100)+'%;background:'+(t[0]==="Trabalho"?'var(--ouro)':'rgba(255,255,255,.55)')+'"></span>'}).join('')+'</div><div class="s" style="border:0;display:flex;justify-content:space-between;padding:0"><span>08:00</span><span>19:00</span></div>'}
+  if(x.f)linhas+='<div class="p"><span>Fumar</span><span>'+H(x.f)+'</span></div>';
+  if(x.a)linhas+='<div class="p"><span>Almoçar</span><span>'+H(x.a)+'</span></div>';
+  if(x.tr)linhas+='<div class="p"><span>Treinar</span><span>'+H(x.tr)+'</span></div>';
+  if(x.p)linhas+='<div class="p"><span>Parado</span><span>'+H(x.p)+'</span></div>';
+  if(x.g)linhas+='<div class="ac">Academia · '+membrosTxt(x.g.m)+'</div><div class="ac2">'+[x.g.c?"Correu":"",x.g.b?"Bola":""].filter(Boolean).join(" · ")+'</div>';
+  return '<div class="cel'+(n===selDia?' sel':'')+'" data-d="'+n+'">'+linhas+'</div>'};
+var semanaCel=function(dias){var t=0,p=0,ac=0,c=0;dias.forEach(function(n){var x=D[n];if(x){t+=x.t;p+=pausas(x);if(x.g)ac++}});return '<div class="sem">'+(t?'<div class="n" style="text-align:center;font-size:11px">Semana</div><div class="h">'+H(t)+'</div><div class="p"><span>Pausas</span><span>'+H(p)+'</span></div><div class="p"><span>Dias trabalhados</span><span>'+dias.filter(function(n){return D[n]&&D[n].t}).length+'</span></div><div class="p"><span>Academia</span><span>'+ac+' dias</span></div>':'<div class="vazio" style="margin:auto;opacity:.5">Sem registro</div>')+'</div>'};
+var calendario=function(selDia,modo,comSemana){
+  var h=DIASEM.map(function(d){return '<div class="dn">'+d+'</div>'}).join('')+(comSemana?'<div class="dn">Semana</div>':'');
+  var linhas=[[26,27,28,29,30,31,1],[2,3,4,5,6,7,8],[9,10,11,12,13,14,15]];
+  linhas.forEach(function(l,li){l.forEach(function(n,i){var vz=(li===0&&i<6),x=(n>=2&&n<=9)?D[n]:null;h+=celula(n,x,selDia,vz,modo)});if(comSemana)h+=semanaCel(l)});
+  return '<div class="cal'+(comSemana?' sm':'')+'">'+h+'</div>'};
+var cabCal=function(){return '<span class="g">Total '+H(soma("t"))+' · 7 dias</span>'};
+
+/* ---- as 4 telas ---- */
+var MONTAR={
+ B1:function(n){return [filtros()+agora()+academia(n)+trechosTab(n), 'texto',false]},
+ B2:function(n){return [filtros()+academia(n)+diasTab(), 'barra',false]},
+ B3:function(n){return [agora()+trechosTab(n)+academia(n), 'linha',false]},
+ B4:function(n){return [filtros()+agora()+academia(n)+semanaTxt(), 'texto',true]}
+};
+function render(id,n){
+  var r=MONTAR[id](n);
+  document.getElementById("t"+id).innerHTML=topo()+'<div class="corpo"><div class="principal"><div class="esq">'+r[0]+'</div>'+bloco("Novembro de 2026",cabCal(),calendario(n,r[1],r[2]))+'</div></div>';
+  document.querySelectorAll('#t'+id+' .cel:not(.vz)').forEach(function(c){c.onclick=function(){render(id,+c.getAttribute('data-d'))}});
+}
+["B1","B2","B3","B4"].forEach(function(id){render(id,9)});
+</script>
+</body>
+</html>
