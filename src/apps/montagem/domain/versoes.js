@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.160", data:"2026-11-10", titulo:"Controle de pagamentos: Destinos com banco, favorecido e chave Pix", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Cada destino mostra o texto Escrever na folha, o banco, o favorecido e a chave Pix, lidos de Financeiro › Bancos › Chaves Pix (nada é digitado de novo), com botão Copiar. Destino sem chave mostra Sem chave Pix em amarelo. Tabela no layout D."},
+  {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Novo destino Itaú Marco PJ (conta PIX - ITAÚ PJ - MARCO). É criado uma vez ao abrir a aba, por quem edita, se ainda não existir."}]},
  {v:"0.18.159", data:"2026-11-10", titulo:"Kit retornando: média das 3 últimas vendas e valor do kit", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando mostra a média das 3 últimas vendas da revendedora (busca na DevMaster) e o Valor do kit liberado pela tabela. Só dado real; sem vendas, pede para definir o valor à mão. Rota nova /api/revendedoras/<código>/vendas."},
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"O botão Acerto | Retornando | Kit novo quebrava o texto em duas linhas; agora fica em uma linha."}]},

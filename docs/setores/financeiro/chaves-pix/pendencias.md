@@ -19,6 +19,6 @@ Bruna Ribeiro dos Santos (já tem Nubank e CNPJ, 04/11/2026); (Leticia Adrielle 
 | 2 | Conflito de chave em Dayanne, Maria Eduarda, Vanessa Alves e Veridiana. | Marcus (no particular) |
 | 3 | 25 nomes da planilha não estão no sistema. Entram como funcionárias? Alguns saíram (Julia, Rebeca, Sabrina). | Marcus |
 | 4 | Quem é o Marco Antonio de Sá Malucelli Junior (MEI na planilha)? Fornecedor, prestador ou outro? | Marcus |
-| 5 | Onde mostrar o texto "Escrever na folha"? Já está guardado nos dados. | Marcus |
+| 5 | ~~Onde mostrar o texto "Escrever na folha"?~~ Resolvido em 10/11/2026: coluna na aba Destinos do Controle de pagamentos. | Marcus |
 | 6 | Linda, Tucano e Charme: criar quando o Marcus mandar os dados. | Marcus |
 | 7 | Levar o arquivo local das chaves para o servidor (o sistema publicado está sem as chaves). | Leonardo |
