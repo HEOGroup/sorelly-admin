@@ -48,6 +48,21 @@ function semDoServidor(st){ var ks = chavesNoServidor(); if(!ks.length || !st) r
 // todas as chaves que podem faltar no estado salvo (a tela completa com o padrão ao abrir)
 var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ (ESPELHO[c] || [c]).forEach(function(k){ o.push(k); }); }); return o; })();
 
+// Versão nova no ar (10/11/2026, Marcus: "é pra sair em tempo real"): a tela aberta desde antes de uma publicação roda o código antigo e NÃO manda os dados novos (ex.: atendimentos).
+// A versão do sistema que está no ar vem de /api/saude; se for diferente da versão desta tela, aparece o aviso "Atualizar agora". NEXT_PUBLIC_BUILD é gravado na hora do build (vazio no computador de teste: sem aviso).
+function mostraAvisoVersao(){
+  if(document.getElementById("aviso-versao")) return;
+  var d = document.createElement("div"); d.id = "aviso-versao"; d.setAttribute("role", "alert");
+  d.style.cssText = "position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid #D6B25C;border-radius:8px;background:rgba(15,16,19,.97);color:#fff;font:13px Inter,system-ui,sans-serif";
+  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize para ver tudo em tempo real."; d.appendChild(t);
+  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif;cursor:pointer"; b.onclick = function(){ location.reload(); };
+  d.appendChild(b); document.body.appendChild(d);
+}
+function vigiaVersao(){
+  var minha = String(process.env.NEXT_PUBLIC_BUILD || ""); if(!minha) return undefined;
+  var vivo = true, checa = function(){ fetch("/api/saude", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){ if(vivo && j && j.versao && j.versao!==minha) mostraAvisoVersao(); }).catch(function(){}); };
+  checa(); var iv = setInterval(checa, 60000); return function(){ vivo = false; clearInterval(iv); };
+}
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
 function useSyncModulos(s, d){
   var tk = token();   // muda no login e na saída
@@ -90,6 +105,13 @@ function useSyncModulos(s, d){
     var vivo = true, tick = function(){ lista.forEach(function(c){ if(vivo) puxar(c); }); }; tick();
     var iv = setInterval(tick, 20000); return function(){ vivo = false; clearInterval(iv); };
   }, [ativo, lista.join(",")]);
+  // tempo real (10/11/2026): atendimentos e pedidos de conta chegam em até 5 s; os outros módulos seguem a cada 20 s
+  useEffect(function(){
+    if(!ativo) return undefined;
+    var vivo = true, rapidos = ["int", "pag"].filter(function(c){ return lista.indexOf(c)>=0; });
+    var iv = setInterval(function(){ rapidos.forEach(function(c){ if(vivo) puxar(c); }); }, 5000); return function(){ vivo = false; clearInterval(iv); };
+  }, [ativo, lista.join(",")]);
+  useEffect(function(){ if(!ativo) return undefined; return vigiaVersao(); }, [ativo]);
   // envia 1 s depois da última mudança
   var assinatura = lista.map(function(c){ return json(fatia(s, c)); }).join("|");
   useEffect(function(){

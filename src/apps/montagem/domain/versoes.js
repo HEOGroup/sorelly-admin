@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.117", data:"2026-11-10", titulo:"Tempo real: atendimentos e pedidos em até 5 segundos + aviso de versão nova", itens:[
+  {tipo:"melhoria", area:"Atendimento interno e Financeiro", txt:"Os atendimentos em andamento e os pedidos de conta chegam aos outros computadores em até 5 segundos (antes 20)."},
+  {tipo:"novo", area:"Sistema", txt:"Quem está com a tela aberta desde antes de uma publicação vê o aviso \"Há uma versão nova do sistema\" com o botão Atualizar agora. Tela antiga não mandava os dados novos."}]},
  {v:"0.18.116", data:"2026-11-10", titulo:"Kits novos: todo mundo vê os mesmos kits (Michele e Camilly)", itens:[
   {tipo:"correção", area:"Cadastro de revendedoras → Kits novos", txt:"Os Kits novos ficavam só no navegador de cada pessoa: a Michele via 51 kits em Liberado e a Camilly 111, e quem abria com a leitura falhando via a aba zerada. Agora cada kit é guardado no servidor e todo mundo enxerga os mesmos, com a etapa em que cada um está. A tela busca novidades a cada 20 segundos e quando você volta para a aba. Se um kit foi mexido em dois lugares, vale o que tem mais histórico. Se a leitura falhar, aparece um aviso, e a lista vazia não fica guardada para sempre."}
  ]},
