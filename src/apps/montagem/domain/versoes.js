@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.163", data:"2026-11-10", titulo:"Atendimento Sorelly: sem duplicadas, assumir atendimento e status Aberta", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Rian e Adryelle apareciam duas vezes: o cadastro avulso e o atendimento criado pela funcionária eram dois registros. A fila agora mostra uma só linha por revendedora (a mais adiantada) e o sistema não cria mais o segundo atendimento."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Atendimento começado por outra pessoa (por exemplo, pelo Marcus) travava a funcionária no só acompanhar. Agora o aviso tem o botão Assumir atendimento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Fila: mostra Aberta e o nome de quem abriu o atendimento mas ainda não clicou em Iniciar atendimento."}]},
  {v:"0.18.162", data:"2026-11-10", titulo:"Atendimento Sorelly: venda zero mais clara", itens:[
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a revendedora não vendeu nada, a tela travava sem dizer o que fazer. Agora digitar 0 em Quanto vendeu também vale, o botão Não teve venda ganha destaque, aparece o aviso Para continuar e, ao clicar, a tela vai direto para a Condicional nova."}]},
  {v:"0.18.161", data:"2026-11-10", titulo:"Faturamento de 10/11, previsão a 98% e total de revendedoras sem perder dias", itens:[

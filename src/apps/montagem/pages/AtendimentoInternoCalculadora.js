@@ -83,6 +83,13 @@ var onEnter = function(fn){ return function(ev){ if(ev.key==="Enter"){ ev.preven
 // 10/11/2026 (Marcus: "a tela está gigante, no admin normal é bem menor"): o zoom automático saiu; o tamanho é o padrão (13 px fixo) e quem quiser maior usa o botão de tamanho do sistema no topo.
 var zoomDaLargura = function(){ return 1; };
 // bloco com cabeçalho em degradê (mesmo padrão do BlocoBarra) que abre e fecha ao clicar; fechado, só sobra a barra
+// Mesma revendedora duas vezes na fila (10/11/2026: Rian e Adryelle): o cadastro avulso nasceu em um computador e a funcionária, em outro, criou o segundo atendimento. Fica o mais adiantado (começou > aberto > criado pela agenda); cancelado só some se houver outro.
+function dedupeRev(lista){
+  var grupos = {}; lista.forEach(function(x){ if(x.revIntId){ (grupos[x.revIntId] = grupos[x.revIntId] || []).push(x); } });
+  var pontos = function(x){ return (x.status==="acertado" ? 16 : 0)+(x.inicioTs ? 8 : 0)+(x.bipou ? 4 : 0)+(x.status==="cancelado" ? -32 : 0)+(String(x.id).indexOf("IRV")===0 ? 1 : 0); };
+  var fora = {}; Object.keys(grupos).forEach(function(k){ var g = grupos[k]; if(g.length<2) return; var melhor = g.slice().sort(function(a,b){ return pontos(b)-pontos(a); })[0]; g.forEach(function(x){ if(x!==melhor) fora[x.id] = 1; }); });
+  return lista.filter(function(x){ return !fora[x.id]; });
+}
 function BlocoRecolhivel(p){
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
     e("button",{type:"button", onClick:p.onToggle, "aria-expanded":p.aberto, "aria-label":(p.aberto ? "Fechar " : "Abrir ")+p.t,
@@ -141,7 +148,7 @@ function AtendimentoInterno(){
   var internos = s.internos || [];
   var tk = useState(0), tick = tk[1];                       // faz o relógio da escolha do kit andar a cada segundo
   var aiS = useState(false), avisoIni = aiS[0], setAvisoIni = aiS[1];   // janela "leia antes de começar a escolher" (09/11/2026)
-  var agenda = internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
+  var agenda = dedupeRev(internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); }));
   var sel = internos.find(function(x){ return x.id===s.intSel; }) || null;
   useEffect(function(){ if(!(sel && sel.escolhaIni && !sel.escolhaFim)) return; var i = setInterval(function(){ tick(function(n){ return n+1; }); }, 1000); return function(){ clearInterval(i); }; },
     [sel ? sel.id : null, sel ? sel.escolhaIni : null, sel ? sel.escolhaFim : null]);
@@ -289,7 +296,7 @@ function AtendimentoInterno(){
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
   // ── Tela nova (29/10/2026): fila do dia à esquerda, comissões / valor do kit / regras embaixo dela, atendimento à direita ──
-  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId || x.id==="IRV"+r.id; }); })
+  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId || x.id==="IRV"+r.id || x.revIntId===r.id; }); })
     .map(function(r){ return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, hora:r.agend.hora, status:"agendado"}; });
   var listaDia = agenda.concat(virtuaisHoje).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
@@ -297,7 +304,7 @@ function AtendimentoInterno(){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
     var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
     var canc = x.status==="cancelado";
-    var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
     return e("button",{key:x.id, type:"button", onClick:function(){ if(canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
       className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
@@ -1041,7 +1048,7 @@ function AtendimentoInterno(){
         e("button",{type:"button", disabled:!pronto, onClick:function(){ registrar(); setAssAberta(false); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Confirmar e finalizar kit retornando" : "Confirmar e registrar acerto")),
       !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !assinatura ? "Falta a assinatura da revendedora." : "Confira o que falta antes de registrar.")));
   return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined}, pagina(e("div",{className:"flex min-w-0 flex-col gap-3"},
-    visor && e("div",{role:"status", className:"rounded-lg border border-primary bg-primary/15 px-3 py-2 text-center text-[13px] font-semibold"}, "Só acompanhando · "+String(quemAtende).split(" ")[0]+" está atendendo. A tela atualiza sozinha."),
+    visor && e("div",{role:"status", className:"flex flex-wrap items-center justify-center gap-3 rounded-lg border border-primary bg-primary/15 px-3 py-2 text-center text-[13px] font-semibold"}, e("span",null,"Só acompanhando · "+String(quemAtende).split(" ")[0]+" está atendendo. A tela atualiza sozinha."), e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{iniciadoPor:nomeDe(s.usuario), bipou:nomeDe(s.usuario)}}); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground"}, "Assumir atendimento")),
     e("div",{className:"contents", style:visor ? {pointerEvents:"none"} : undefined}, cartao(corpo), retornando ? null : resumoBloco))), janelaAss);
 }
 

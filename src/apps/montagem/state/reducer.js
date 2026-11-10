@@ -1045,7 +1045,7 @@ function reducer(s, a){
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
     case "REVINT_ATENDER": {
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
-      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId; })) return s;
+      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId || (x.revIntId===ra.id && x.data===ra.agend.data && x.status!=="cancelado"); })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
         condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
         vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});
