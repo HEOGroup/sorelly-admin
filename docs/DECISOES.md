@@ -4,6 +4,11 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 10/11/2026 (Saldos das contas: perda de sexta e trava no servidor)
+- **O que houve:** em 06/11/2026, 14h30 (Brasília), uma tela sem os saldos do servidor gravou o modelo vazio de `saldosContas` (módulo `sc`, versão 66) e apagou tudo. Causa provável: a migração de `saldosV` em `state/store.js` recria o modelo de fábrica e a tela envia a chave inteira. O módulo `sc` guarda `saldosContas` como UMA chave, então a última gravação vence.
+- **Restauração (10/11/2026, autorizada pelo Marcus):** `saldosContas` voltou da cópia `estado_modulo_copia_20261029` (90 dias, 31 contas, fins de mês de dez/2024 a set/2026, dias até 28/10). Faltam 29/10 a 06/11; o Marcus só precisa do fim de cada mês, então falta lançar o saldo de 31/10 (Nayale, pelo extrato). O estado vazio ficou em `sorelly.bkp_20261110_sc_vazio`. O Neon (banco) tem restauração no tempo como reserva.
+- **Trava (10/11/2026):** `src/server/trava-saldos.js` (usada em `app/api/estado/[modulo]/route.js`): em toda gravação do módulo `sc`, qualquer dia, fechamento, aporte ou ajuste que já existe e que a gravação não traz é devolvido pelo servidor. O que a tela traz vale. Excluir um dia de propósito = gravar o dia vazio `{}` (`SALDO_DIA_DEL` em `state/reducer.js`). Teste: `node scripts/testar-trava-saldos.mjs`.
+
 ## 10/11/2026 (Kits novos no servidor)
 - **Kits novos compartilhados (Marcus, 10/11/2026: "já corrigiu essa merda aí?", chamado da Camilly):** o estado dos Kits novos (etapa de cada kit) ficava só no `localStorage` de cada pessoa; a Michele via 51 em Liberado, a Camilly 111, e a leitura da planilha que falhava deixava a aba zerada até recarregar. Agora cada kit é uma chave `r_<id>` do módulo `kndados` (`lib/sync-servidor.js`, ligado em `App.js` e `KitsNovosEmbutido.js`): lê a cada 20 s e ao voltar para a aba, envia só os kits que mudaram. Quem vale, kit por kit: a cópia com mais histórico (`hist`); empate = servidor. A leitura vazia ou com falha não é mais guardada (`data/dados.js`). Aviso na tela se não conseguir ler. Limite: último a gravar vence dentro do mesmo kit.
 

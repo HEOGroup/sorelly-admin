@@ -171,7 +171,7 @@ function reducer(s, a){
     // Aporte de sócio: dinheiro que o sócio manda para um CNPJ (entra no saldo, não é faturamento)
     case "SALDO_APORTE": { var sc9 = JSON.parse(JSON.stringify(s.saldosContas)); sc9.aportes = sc9.aportes || {}; var l9 = sc9.aportes[a.data] = sc9.aportes[a.data] || [];
       if(a.remover) sc9.aportes[a.data] = l9.filter(function(x){ return x.id!==a.remover; }); else l9.push(a.aporte); return com(s, {saldosContas:sc9}); }
-    case "SALDO_DIA_DEL": { var sc2 = JSON.parse(JSON.stringify(s.saldosContas)); delete sc2.saldos[a.data]; return com(s, {saldosContas:sc2}, "Dia "+a.data.split("-").reverse().join("/")+" excluído"); }
+    case "SALDO_DIA_DEL": { var sc2 = JSON.parse(JSON.stringify(s.saldosContas)); sc2.saldos[a.data] = {}; return com(s, {saldosContas:sc2}, "Dia "+a.data.split("-").reverse().join("/")+" excluído"); }
     case "SALDO_IR": return com(s, {aba:"saldodiario", saldoData:a.data});
     case "SALDO_CONTA": { var sc3 = JSON.parse(JSON.stringify(s.saldosContas)), i3 = sc3.contas.findIndex(function(c){ return c.id===a.conta.id; });
       if(i3>=0) sc3.contas[i3] = a.conta; else sc3.contas.push(a.conta); return com(s, {saldosContas:sc3}, "Conta salva"); }

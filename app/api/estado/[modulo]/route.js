@@ -9,6 +9,7 @@ import { json, erro, rota, corpo, invalido } from "@/server/http";
 import { consulta } from "@/server/db";
 import { podeModulo } from "@/server/permissoes";
 import { donoDaChave, ehModuloItens, gravarItens, lerItens, versaoItens } from "@/server/estado-itens";
+import { protegerSaldos } from "@/server/trava-saldos";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 const nega = () => erro("Você não tem acesso a este módulo.", 403);
@@ -68,6 +69,15 @@ export const PUT = rota(async (req, { eu, params }) => {
       const o = velhos[p.id];
       return o && o.status === "Chegou no banho" && p.status === "Banho" && p.statusEm && p.statusEm === (p.chegPontual || p.chegEllos) ? { ...p, status: o.status, statusEm: o.statusEm } : p;
     });
+  }
+  // TRAVA DOS SALDOS (10/11/2026): na sexta 06/11 uma tela que ainda não tinha baixado o servidor gravou o modelo vazio de saldosContas e apagou todos os saldos lançados.
+  // Aqui o servidor NUNCA deixa um dia (ou fechamento, aporte, ajuste) que já existe sumir por uma gravação que não o traz: o que faltar no que chegou é devolvido do que já está guardado.
+  // O que a tela manda para um dia que ela traz vale (editar um dia, tirar uma conta). Para excluir um dia de propósito a tela grava o dia vazio ({}); telas antigas que apagam a chave não conseguem mais.
+  if (modulo === "sc" && b.chaves.saldosContas && typeof b.chaves.saldosContas === "object" && !Array.isArray(b.chaves.saldosContas)) {
+    const at = await consulta("select conteudo->'saldosContas' as s from sorelly.estado_modulo where modulo = 'sc'");
+    const velho = at.rows[0] && at.rows[0].s;
+    const devolvidos = protegerSaldos(velho, b.chaves.saldosContas);
+    if (devolvidos) console.warn("[trava sc] gravação de " + eu.id + " não trazia " + devolvidos + " item(ns) de saldo já guardados; devolvidos");
   }
   const r = await consulta(
     `insert into sorelly.estado_modulo (modulo, conteudo, versao, atualizado_por) values ($1, $2::jsonb, 1, $3)
