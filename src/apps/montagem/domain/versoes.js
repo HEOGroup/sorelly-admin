@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.119", data:"2026-11-10", titulo:"Atendimento Sorelly: venda zero, cancelada na lista e acompanhar em tempo real", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Venda R$ 0,00: botão Não teve venda (R$ 0,00) na etapa Vendas. O acerto zerado segue e pode ser finalizado."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quem não veio ou desmarcou não sai mais da lista: fica como Cancelada, e não conta nos feitos."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Clicar no atendimento que outra pessoa começou abre só para acompanhar, em tempo real e somente leitura. Abrir não muda mais o quem bipou."}]},
  {v:"0.18.118", data:"2026-11-10", titulo:"Atendimento Sorelly: fila mostra Atendendo e quem atende pelo pedido de pagamento", itens:[
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a atendente manda o pedido de pagamento ao financeiro, a fila de todos mostra Atendendo e o nome dela, mesmo se o computador dela ainda estiver com a tela antiga."}]},
  {v:"0.18.117", data:"2026-11-10", titulo:"Tempo real: atendimentos e pedidos em até 5 segundos + aviso de versão nova", itens:[

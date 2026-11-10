@@ -953,7 +953,13 @@ function reducer(s, a){
       var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && !!a.isenta, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
       var patchRg = {registro:[ent].concat(rg.registro||[])}, intsRg = s.internos||[], exRg = intsRg.find(function(x){ return x.id===rg.internoId && x.status!=="acertado"; });
       if(comDia){ patchRg.agend = {data:ent.dia, hora:ent.hora}; patchRg.situacao = "agendada"; if(exRg) intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {data:ent.dia, hora:ent.hora}); }); }
-      if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){ patchRg.agend = null; patchRg.situacao = "contato"; if(exRg && exRg.status==="agendado"){ intsRg = intsRg.filter(function(x){ return x.id!==exRg.id; }); patchRg.internoId = null; } }
+      if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){
+        // 10/11/2026 (Marcus): quem cancelou NÃO sai da lista do Atendimento Sorelly; fica como "Cancelada" (e a lista de todos mostra, pelo servidor)
+        var motCanc = a.tipo==="nao_veio" ? "Não veio" : "Desmarcou";
+        if(exRg && exRg.status==="agendado" && !exRg.inicioTs){ intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {status:"cancelado", canceladoTs:agoraRg, canceladoMotivo:motCanc}); }); }
+        else if(!exRg && rg.agend && rg.agend.data){ var vigRg = versaoVigente(s); intsRg = [internoDeAgendada(rg, vigRg ? vigRg.id : null, agoraRg, {id:"IRV"+rg.id, status:"cancelado", canceladoTs:agoraRg, canceladoMotivo:motCanc, obs:"Agendada pela Tamara (DevMaster)", condicionais:[], tipo:rg.kitNovo ? "kit_novo" : "acerto"})].concat(intsRg); }
+        patchRg.agend = null; patchRg.situacao = "contato"; patchRg.internoId = null;
+      }
       if(tpMulta && exRg && exRg.status==="agendado" && a.tipo==="remarcado") intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).concat([{isenta:ent.isenta, motivo:ent.isenta ? (ent.motivo||ent.autorizado||"autorizada") : "", em:agoraRg}])}); });
       if(a.tipo==="ciclo" && ent.ciclo){ patchRg.ciclo = ent.ciclo; patchRg.proximoManual = null; }
       if(a.tipo==="contato" || a.tipo==="t1" || a.tipo==="t2" || a.tipo==="t3" || a.tipo==="quer_vir") if(rg.situacao==="contatar") patchRg.situacao = "contato";
@@ -1024,7 +1030,7 @@ function reducer(s, a){
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
     case "REVINT_ATENDER": {
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
-      if((s.internos||[]).some(function(x){ return x.id===ra.internoId; })) return s;
+      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId; })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
         condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
         vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.kitNovo ? "kit_novo" : "acerto"});
