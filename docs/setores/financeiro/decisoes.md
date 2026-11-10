@@ -4,6 +4,7 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **09/11/2026** (diário, Fiscal no servidor): o Fiscal passou a ser o módulo `fx` no servidor, com os dados do admin antigo (6 empresas, 284 notas, 112 saídas, 54 contas); só Financeiro e Diretoria abrem; os ajustes provisórios de 23/10 saíram. Ver `docs/DECISOES.md` de 09/11/2026.
 - **06/11/2026** (diário, Resumo de pagamentos, layout D): o Marcus não quis linha quebrada nem dourado, viu 4 layouts em HTML (`docs/ideias/resumo-pagamentos-4-layouts.html`) e escolheu o **D** (fileira de campos, fio fino, cabeçalho e total em faixa escura). Peça `TabelaCampos`/`FileiraCampos` em `padrao-fin.js`, usada só nas tabelas do Resumo de Pagamentos a fornecedores. Pendente: o Marcus dizer se vale para todas as tabelas.
 - **03/11/2026** (diário, Financeiro: Atividades, Resultado do mês e regras de caixa): **Financeiro › Atividades** (`/financeiro/atividades`, módulo `finativ`): lista do que fica para fazer depois; a pessoa escreve atividade, detalhes, quando e responsável; conclui com resposta opcional.
 - **03/11/2026** (diário, mesma seção): **Resultado do mês, aba Resumo** (versão 3 de 2 blocos): o mês escolhido à esquerda (nota fiscal x dinheiro) e os meses ao redor e os que vêm à direita.

@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Fiscal no servidor)
+- **Fiscal puxado do admin antigo (Marcus, 09/11/2026: "tem que puxar o fiscal"):** o Fiscal passou a ser o módulo `fx` do servidor (antes só no navegador, cópia de 16/10 em `domain/fiscal.local.js`). Carga única feita por script, com conferência contra o admin antigo: 6 empresas, 284 notas de entrada, 112 saídas e 54 contas. Meses de janeiro a setembro já eram iguais; entraram as notas de outubro e novembro, as saídas reais de outubro, a H&O Apps e a correção de janeiro da Varejo. Os ajustes provisórios de 23/10 (`ajuste23`) não valem mais. Acesso: só Financeiro e Diretoria (`fx` em `src/server/permissoes.js`). Quem lançar nota nova agora grava para todos. Sem rotina automática: atualizar o Fiscal do admin antigo é carga manual, enquanto o admin antigo existir.
+
 ## 09/11/2026 (Negociações: os 3 chamados do Lucas)
 - **Teto mensal vira aviso (chamado do Lucas, 09/11/2026):** o teto de R$ 300.000,00 (e os limites por tipo) NÃO retém mais negociação. Toda negociação entra direto nos totais; quando o mês passa do teto aparece um aviso amarelo no Resumo e no detalhe do pedido (`avisoLimite`). A etapa "Aguardando aprovação" saiu; as 4 negociações retidas (Art Ello, Ellos Galvânica, Ello Print, Pontual) foram liberadas na migração (`pfMigrar`). Código: `domain/pf.js` (`pedido_add`, `pfMigrar`), `pages/pf/Resumo.js`.
 - **Saldo do mês anterior no mês seguinte, também para fornecedores:** o que ficou em aberto em meses antigos entra no Resumo do mês atual com o vencimento original e em atraso, somado em A pagar e Falta (antes só prestadores). `linhasPrest` em `pages/pf/Resumo.js`.

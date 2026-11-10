@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.111", data:"2026-11-09", titulo:"Fiscal: dados do admin antigo no servidor", itens:[
+  {tipo:"melhoria", area:"Financeiro → Fiscal", txt:"O Fiscal (notas de entrada, saídas e contas por CNPJ) passou a ficar no servidor, igual aos outros módulos, e todo o Financeiro e a Diretoria enxergam os mesmos dados. Antes ele vivia só no navegador, com uma cópia de 16/10. Foram trazidos do admin antigo: 17 notas novas de outubro e novembro, as saídas reais de outubro dos 5 CNPJs, a H&O Apps e a correção de janeiro da Varejo. Total: 284 notas, 112 saídas e 54 contas, conferidos com o admin antigo. Os ajustes provisórios de 23/10 saíram, porque os valores reais já entraram."}
+ ]},
  {v:"0.18.110", data:"2026-11-09", titulo:"Negociações: teto vira aviso, saldo do mês anterior e botão Editar", itens:[
   {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"O teto mensal de R$ 300.000,00 não retém mais nenhuma negociação (chamado do Lucas). O pedido entra direto nos totais e aparece só um aviso amarelo quando o mês passa do teto. As negociações que estavam em Aguardando aprovação foram liberadas."},
   {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"O saldo em aberto do mês anterior dos FORNECEDORES (ex.: Pontual) passa para o mês seguinte, com o vencimento original e em atraso, e soma em A pagar e Falta. Antes só valia para prestadores de serviço."},
