@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.110", data:"2026-11-09", titulo:"Negociações: teto vira aviso, saldo do mês anterior e botão Editar", itens:[
+  {tipo:"melhoria", area:"Pagamentos a fornecedores → Resumo", txt:"O teto mensal de R$ 300.000,00 não retém mais nenhuma negociação (chamado do Lucas). O pedido entra direto nos totais e aparece só um aviso amarelo quando o mês passa do teto. As negociações que estavam em Aguardando aprovação foram liberadas."},
+  {tipo:"correção", area:"Pagamentos a fornecedores → Resumo", txt:"O saldo em aberto do mês anterior dos FORNECEDORES (ex.: Pontual) passa para o mês seguinte, com o vencimento original e em atraso, e soma em A pagar e Falta. Antes só valia para prestadores de serviço."},
+  {tipo:"novo", area:"Pagamentos a fornecedores → Negociações", txt:"Botão Editar no detalhe do pedido: muda fornecedor, data, valor, divisão com/sem NF e as parcelas. Parcela já paga fica travada (estornar a baixa antes). Cada alteração fica no histórico do pedido."}]},
  {v:"0.18.109", data:"2026-11-09", titulo:"Direcionar: pedidos de conta chegam a todo o Financeiro", itens:[
   {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"Os pedidos de conta ficavam só no computador de quem enviava. Agora sobem para o servidor (módulo pag, uma chave por pedido) e todo o Financeiro vê a mesma fila."},
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"OK, enviar ao financeiro: o Pix ou link sem conta entra na fila do Direcionar. Quando o Financeiro confirma, a conta volta para a funcionária."},

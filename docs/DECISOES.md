@@ -4,6 +4,11 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 09/11/2026 (Negociações: os 3 chamados do Lucas)
+- **Teto mensal vira aviso (chamado do Lucas, 09/11/2026):** o teto de R$ 300.000,00 (e os limites por tipo) NÃO retém mais negociação. Toda negociação entra direto nos totais; quando o mês passa do teto aparece um aviso amarelo no Resumo e no detalhe do pedido (`avisoLimite`). A etapa "Aguardando aprovação" saiu; as 4 negociações retidas (Art Ello, Ellos Galvânica, Ello Print, Pontual) foram liberadas na migração (`pfMigrar`). Código: `domain/pf.js` (`pedido_add`, `pfMigrar`), `pages/pf/Resumo.js`.
+- **Saldo do mês anterior no mês seguinte, também para fornecedores:** o que ficou em aberto em meses antigos entra no Resumo do mês atual com o vencimento original e em atraso, somado em A pagar e Falta (antes só prestadores). `linhasPrest` em `pages/pf/Resumo.js`.
+- **Editar pedido depois de lançado:** botão Editar no detalhe do pedido reabre o formulário preenchido (`op pedido_editar` em `domain/pf.js`). Parcela paga fica travada (estornar a baixa antes), parcela nova não nasce paga (usar Dar baixa), fornecedor só troca sem parcela paga, soma das parcelas é revalidada e cada mudança entra em `historico` do pedido.
+
 ## 09/11/2026 (Resultado do mês: Resumo com "até hoje")
 - **Resumo do mês em andamento (Marcus, 09/11/2026: "cadê o que foi pago até agora e o que recebeu até agora?"):** a tabela do Resumo mostra Recebido até hoje, Falta receber, Entra; Pago até hoje, Falta pagar, Sai; Resultado até hoje e Resultado previsto, nas colunas pela nota fiscal e pelo dinheiro. Mês fechado fica só com Entra, Sai e Resultado. O faturamento do dia entra pelo campo Hoje de Faturamento (acompanhamento); o oficial é o fechamento do dia seguinte. As baixas da DevMaster são lidas a cada 30 minutos, ou na hora pelo botão ↻.
 

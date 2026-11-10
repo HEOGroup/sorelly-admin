@@ -248,6 +248,14 @@ function pfMigrar(pf){
   // prestador de serviço não passa por aprovação de limite: o que já estava pendente vira lançado (Marcus, 09/11/2026)
   var libPrest = false; pf.pedidos.forEach(function(pd){ if(pd.aprov==="pendente" && ehPrestador(forn(pf, pd.fornId))){ delete pd.aprov; delete pd.aprovMotivo; libPrest = true; } });
   if(libPrest) invalidar(pf);
+  // chamado do Lucas (09/11/2026): o teto mensal não retém mais nenhum pedido. O que estava "pendente" entra como lançado e guarda só o aviso; parcela paga que não foi registrada entra no registro de pagamentos (sem duplicar).
+  var libTeto = false;
+  pf.pedidos.forEach(function(pd){ if(pd.aprov!=="pendente") return;
+    if(pd.aprovMotivo) pd.avisoLimite = pd.aprovMotivo; delete pd.aprov; delete pd.aprovMotivo; libTeto = true;
+    pd.parcelas.forEach(function(p){ if(p.status!=="Pago" || !FORMAS[p.forma]) return;
+      var F9 = FORMAS[p.forma], jaTem9 = pf.pagamentos.some(function(g){ return g.fornId===pd.fornId && g.data===p.venc && Math.abs(g.valor-p.valor)<0.005 && g.desc.indexOf("Pedido "+pd.numero)===0; });
+      if(!jaTem9){ logPagamento(pf, pd, p, F9, p.conta); if(F9.nf==="sem") lancarBaixaAuto(pf, pd, p); } }); });
+  if(libTeto) invalidar(pf);
   return pf;
 }
 // negociações em aberto dos prestadores de serviço (para o bloco "O que estamos pagando" e o botão "Ver negociação")
@@ -1005,12 +1013,62 @@ function pfReduz(s, a){
       var novoPd = {id:pf.seq.P++, fornId:fid2, numero:num1, data:a.data, total:tot, nfTipo:tipo, comNF:c, semNF:s2, cnpj: c<=0.005 ? "Sem NF" : (a.cnpj||""), nfNum: c<=0.005 ? "" : String(a.nfNum||"").trim(), parcelas:parcelas};
       if(a.descricao) novoPd.descricao = String(a.descricao).trim();
       if(ePrest2){ novoPd.limite = a.limite; novoPd.pixMin = pixMin; }
-      var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);   // limite mensal de fornecedores: estourou o teto do mês ou da categoria = pendente até aprovar
-      if(impLim.length){ novoPd.aprov = "pendente"; novoPd.aprovMotivo = motivoImpacto(impLim); }
+      // Teto mensal (chamado do Lucas, 09/11/2026): passar do teto NÃO retém mais o pedido. Ele entra direto nos totais e só aparece um AVISO (avisoLimite).
+      var impLim = a.semLimite ? [] : impactoPedido(pf, novoPd);
+      if(impLim.length) novoPd.avisoLimite = motivoImpacto(impLim);
       pf.pedidos.push(novoPd); invalidar(pf);
-      if(!impLim.length) parcelas.forEach(function(p){ if(p.status==="Pago"){ logPagamento(pf, novoPd, p, FORMAS[p.forma], p.conta); if(FORMAS[p.forma].nf==="sem") lancarBaixaAuto(pf, novoPd, p); } });
-      if(impLim.length) return ok("PENDENTE de aprovação: "+novoPd.aprovMotivo+". Não conta como lançado até o Marcus aprovar.");
-      return ok("Pedido lançado — "+brl(tot)+" e "+parcelas.length+" parcela(s) em "+F(fid2).nome);
+      parcelas.forEach(function(p){ if(p.status==="Pago"){ logPagamento(pf, novoPd, p, FORMAS[p.forma], p.conta); if(FORMAS[p.forma].nf==="sem") lancarBaixaAuto(pf, novoPd, p); } });
+      return ok("Pedido lançado — "+brl(tot)+" e "+parcelas.length+" parcela(s) em "+F(fid2).nome+(impLim.length ? ". Aviso: "+novoPd.avisoLimite : ""));
+    }
+    case "pedido_editar": {   // chamado do Lucas, 09/11/2026: editar o pedido depois de lançado. Parcela paga fica travada (estornar a baixa antes); fica o histórico do que mudou.
+      var pe = ped(a.id); if(!pe) return recusa("Pedido não encontrado.");
+      var tipoE = a.nfTipo||"misto", totE = num(a.total), cE = num(a.comNF), sE = num(a.semNF);
+      if(tipoE==="com"){ cE = totE; sE = 0; } else if(tipoE==="sem"){ cE = 0; sE = totE; }
+      if(totE<=0) return recusa("Informe o valor total do pedido.");
+      if(Math.abs(totE-(cE+sE))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
+      var fidE = parseInt(a.fornId); if(!F(fidE)) return recusa("Escolha o fornecedor.");
+      if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
+      var pagasE = pe.parcelas.filter(function(p){ return p.status==="Pago"; });
+      if(fidE!==pe.fornId && pagasE.length) return recusa("Este pedido já tem parcela paga: não dá para trocar o fornecedor. Estorne as baixas antes.");
+      var ePrestE = ehPrestador(F(fidE));
+      if(ePrestE && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
+      if(ePrestE && num(a.pixMin)<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
+      var todasE = expandirParcelas(a.linhas);
+      if(todasE.some(function(p){ return !FORMAS[p.forma] || !DATA_OK.test(p.venc); })) return recusa("Há parcela com forma de pagamento ou data inválida.");
+      var sobraE = todasE.slice(), mantidas = [];
+      for(var ip=0; ip<pagasE.length; ip++){
+        var pg = pagasE[ip], ix = sobraE.findIndex(function(x){ return x.status==="Pago" && x.forma===pg.forma && x.venc===pg.venc && Math.abs(x.valor-pg.valor)<0.005 && (x.conta||"—")===(pg.conta||"—"); });
+        if(ix<0) return recusa("A parcela paga de "+pg.venc.slice(8, 10)+"/"+pg.venc.slice(5, 7)+" ("+brl(pg.valor)+") não pode ser alterada nem removida. Estorne a baixa dela antes de editar.");
+        sobraE.splice(ix, 1); mantidas.push(pg);
+      }
+      if(sobraE.some(function(x){ return x.status==="Pago"; })) return recusa('Para marcar uma parcela como paga use "Dar baixa" no detalhe do pedido.');
+      var novasE = sobraE.map(function(x){ return Object.assign({}, x, {status:"Pendente"}); });
+      var todasParc = mantidas.concat(novasE).sort(function(x, y){ return x.venc.localeCompare(y.venc); });
+      var pComE = cE>0.005 ? todasParc.filter(function(p){ return FORMAS[p.forma].nf==="com"; }) : [], pSemE = sE>0.005 ? todasParc.filter(function(p){ return FORMAS[p.forma].nf==="sem"; }) : [];
+      var aComE = soma(pComE, function(p){ return p.valor; }), aSemE = soma(pSemE, function(p){ return p.valor; }), avisosE = [];
+      if(cE>0.005 && Math.abs(cE-aComE)>0.005) avisosE.push("Com NF: alocado "+brl(aComE)+" de "+brl(cE));
+      if(sE>0.005 && Math.abs(sE-aSemE)>0.005) avisosE.push("Sem NF: alocado "+brl(aSemE)+" de "+brl(sE));
+      if(avisosE.length && !a.forcar) return recusa("As parcelas não fecham com a divisão do pedido: "+avisosE.join(" · ")+". Salvar mesmo assim?", true);
+      var mud = [];
+      if(fidE!==pe.fornId) mud.push("fornecedor: "+((F(pe.fornId)||{}).nome||"—")+" → "+F(fidE).nome);
+      if((a.numero||"s/nº")!==pe.numero) mud.push("número: "+pe.numero+" → "+(a.numero||"s/nº"));
+      if(a.data!==pe.data) mud.push("data: "+pe.data.split("-").reverse().join("/")+" → "+a.data.split("-").reverse().join("/"));
+      if(Math.abs(totE-pe.total)>0.005) mud.push("valor: "+brl(pe.total)+" → "+brl(totE));
+      if(Math.abs(cE-pe.comNF)>0.005 || Math.abs(sE-pe.semNF)>0.005) mud.push("divisão com/sem NF: "+brl(pe.comNF)+" / "+brl(pe.semNF)+" → "+brl(cE)+" / "+brl(sE));
+      if(String(a.descricao||"").trim()!==String(pe.descricao||"")) mud.push("descrição");
+      if(String(a.nfNum||"")!==String(pe.nfNum||"")) mud.push("nota fiscal");
+      var antesP = JSON.stringify(pe.parcelas.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; })), depoisP = JSON.stringify(todasParc.map(function(p){ return [p.forma, p.venc, p.valor, p.conta||"", p.status]; }));
+      if(antesP!==depoisP) mud.push("parcelas: "+pe.parcelas.length+" → "+todasParc.length);
+      if(!mud.length) return ok("Nada mudou no pedido.");
+      pe.fornId = fidE; pe.numero = a.numero||"s/nº"; pe.data = a.data; pe.total = totE; pe.nfTipo = tipoE; pe.comNF = cE; pe.semNF = sE;
+      pe.cnpj = cE<=0.005 ? "Sem NF" : (a.cnpj||pe.cnpj||""); pe.nfNum = cE<=0.005 ? "" : String(a.nfNum||"").trim();
+      if(a.descricao) pe.descricao = String(a.descricao).trim(); else delete pe.descricao;
+      if(ePrestE){ pe.limite = a.limite; pe.pixMin = num(a.pixMin); } else { delete pe.limite; delete pe.pixMin; }
+      pe.parcelas = todasParc;
+      var impE = a.semLimite ? [] : impactoPedido(pf, pe); if(impE.length) pe.avisoLimite = motivoImpacto(impE); else delete pe.avisoLimite;
+      pe.historico = (pe.historico||[]).concat([{em:new Date().toISOString().slice(0, 16).replace("T", " "), por:a.por||"", mudou:mud.join(" · ")}]);
+      invalidar(pf);
+      return ok("Pedido atualizado — "+mud.join(" · "));
     }
     case "pedido_set": {
       var pd1 = ped(a.id); if(!pd1) return recusa("Pedido não encontrado.");
