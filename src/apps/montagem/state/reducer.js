@@ -270,6 +270,11 @@ function reducer(s, a){
       }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
+      if(a.chave==="int"){   // atendimentos do Atendimento interno vindos do servidor (10/11/2026): i_<id> = atendimento; null = tirado da lista
+        var inP = (s.internos||[]).slice();
+        Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("i_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = inP.findIndex(function(x){ return x.id===id; });
+          if(v===null){ if(ix>=0) inP.splice(ix, 1); } else if(ix>=0) inP[ix] = v; else inP.unshift(v); });
+        return Object.assign({}, s, {internos:inP}); }
       if(a.chave==="pag"){   // pedidos de conta vindos do servidor (09/11/2026): lf_ = s.lancFin, dp_ = fila do Direcionar; null = pedido apagado
         var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice();
         var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };

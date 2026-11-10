@@ -271,13 +271,13 @@ function AtendimentoInterno(){
       kitAberto && e("div",{className:"flex flex-col gap-2 p-2"}, tabelaComissao(kitVisto), blocoValorKit)));
 
   // ── Tela nova (29/10/2026): fila do dia à esquerda, comissões / valor do kit / regras embaixo dela, atendimento à direita ──
-  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId; }); })
+  var virtuaisHoje = (s.revInternas||[]).filter(function(r){ return r.agend && r.agend.data===hoje && !agenda.some(function(x){ return x.id===r.internoId || x.id==="IRV"+r.id; }); })
     .map(function(r){ return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, hora:r.agend.hora, status:"agendado"}; });
   var listaDia = agenda.concat(virtuaisHoje).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
   var itemFila = function(x){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
-    var st = feito ? ["Feita","bg-success/20 text-success"] : on ? ["Atendendo","bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    var st = feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs) ? ["Atendendo","bg-primary/25 text-primary"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
     return e("button",{key:x.id, type:"button", onClick:function(){ if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
       className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
