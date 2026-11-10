@@ -961,7 +961,8 @@ function AtendimentoInterno(){
       e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 ? BRILHO : "")}, "Próxima ›")));
   var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : [estCond, estVendas, est1, estKit, est2, est3, est4][estAt];
   var SHELL = "grid min-h-[402px] grid-cols-[14rem_minmax(0,1fr)]";
-  var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"flex min-w-0 flex-col"}, estFn));
+  // 10/11/2026 (Marcus: "a tela tem que ser responsiva"): o @container fica NA ÁREA DE CONTEÚDO (sem a coluna das etapas), assim "duas colunas" só vale quando cabem de verdade; antes media o cartão inteiro e apertava as tabelas em notebook
+  var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"@container flex min-w-0 flex-col"}, estFn));
 
   // ── resumo do acerto: condicionais, brinde normal, brinde select e conta; sai em PDF ──
   var GRES = " grid-cols-[minmax(0,1fr)_3rem_6rem]";

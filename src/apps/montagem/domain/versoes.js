@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.120", data:"2026-11-10", titulo:"Atendimento Sorelly: tela responsiva em notebook", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Em notebook (1280 px) as tabelas Vendas e Acerto ficavam lado a lado e apertadas, com textos por cima um do outro. Agora empilham quando não cabem e voltam lado a lado em tela larga. Testado em 1024, 1280 e 1920 px, sem rolagem lateral."}]},
  {v:"0.18.119", data:"2026-11-10", titulo:"Atendimento Sorelly: venda zero, cancelada na lista e acompanhar em tempo real", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Venda R$ 0,00: botão Não teve venda (R$ 0,00) na etapa Vendas. O acerto zerado segue e pode ser finalizado."},
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quem não veio ou desmarcou não sai mais da lista: fica como Cancelada, e não conta nos feitos."},
