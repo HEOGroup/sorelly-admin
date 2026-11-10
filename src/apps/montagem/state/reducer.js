@@ -1033,7 +1033,7 @@ function reducer(s, a){
       if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId; })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
         condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
-        vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.kitNovo ? "kit_novo" : "acerto"});
+        vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});
       return com(s, {internos:[itA].concat(s.internos||[]), revInternas:s.revInternas.map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {internoId:itA.id}); })});
     }
     case "REVINT_CANCELAR": {
@@ -1131,6 +1131,15 @@ function reducer(s, a){
       return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).concat([{isenta:!!a.isenta, motivo:a.isenta ? (a.motivo||"") : "", em:agora}])}); })});
     case "INT_REMARCAR_REMOVER":
       return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {remarcacoesLista:(x.remarcacoesLista||[]).filter(function(r,i){ return i!==a.indice; })}); })});
+    // Kit retornando (10/11/2026): vai a venda de novo, como kit novo. Sem acerto, sem pagamento: escolhe o kit (60 min), a atendente explica as regras, a revendedora assina. Não cria acerto no Consolidado.
+    case "INT_RETORNANDO_FIM": {
+      var itR = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!itR) return s;
+      var vR = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itR.regrasVersaoId; }) || versaoVigente(s); if(!vR) return s;
+      var modR = modalidadeDe(s, itR.nome), vEfR = versaoEfetiva(vR, modR, comissaoEspecialDe(s, itR.nome));
+      var zeroR = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, vEfR);
+      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
+      return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:"retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, "Kit retornando de "+itR.nome+" finalizado");
+    }
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;

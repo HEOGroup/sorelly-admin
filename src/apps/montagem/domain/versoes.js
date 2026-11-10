@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.122", data:"2026-11-10", titulo:"Atendimento Sorelly: Kit retornando", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando (a revendedora volta a vender, como kit novo) não tem etapas de acerto: Escolha do kit (60 minutos) → Regras e assinatura → finalizar. Não cria acerto nem pagamento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Botão Acerto | Kit retornando no topo do atendimento para mudar o tipo. O tipo escolhido na agenda (Kit retornando) agora vale no atendimento."}]},
  {v:"0.18.121", data:"2026-11-10", titulo:"Trava dos saldos das contas no servidor", itens:[
   {tipo:"correção", area:"Financeiro › Saldos das contas", txt:"Na sexta, 06/11, uma tela que ainda não tinha baixado o servidor gravou o modelo vazio e apagou todos os saldos lançados. Os saldos foram restaurados da cópia de 29/10 (dez/2024 a set/2026 e dias até 28/10). Agora o servidor não deixa mais sumir nenhum dia, fechamento, aporte ou ajuste por uma gravação que não o traz. Excluir um dia de propósito grava o dia vazio."}]},
  {v:"0.18.120", data:"2026-11-10", titulo:"Atendimento Sorelly: tela responsiva em notebook", itens:[
