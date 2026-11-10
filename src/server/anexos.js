@@ -4,7 +4,7 @@
 import { consulta } from "./db.js";
 
 export const LIMITE_ANEXO = 3.9 * 1024 * 1024;   // caracteres do data URL (≈ 2,9 MB de arquivo); o limite de uma chamada na Vercel é 4,5 MB
-export const MODULOS_COM_ANEXO = ["cpc"];
+export const MODULOS_COM_ANEXO = ["cpc", "ff"];   // ff = Financeiro familiar: PDF do orçamento das dívidas de prestadores (10/11/2026)
 export const chaveAnexoValida = (k) => typeof k === "string" && /^an_[a-z0-9]{6,40}$/.test(k);
 export const urlAnexoValida = (u) => typeof u === "string" && /^data:(image\/(jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(u);
 

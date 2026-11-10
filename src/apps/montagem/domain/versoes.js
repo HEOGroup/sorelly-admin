@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.114", data:"2026-11-10", titulo:"PDF do orçamento das dívidas de prestadores fica no servidor", itens:[
+  {tipo:"melhoria", area:"Financeiro familiar › Sócios › Prestadores", txt:"O PDF anexado a uma dívida de prestador vai para o servidor. Antes ficava só no navegador de quem anexou e os outros viam \"PDF não está neste computador\". PDFs antigos continuam abrindo no computador onde foram anexados."},
+  {tipo:"correção", area:"Financeiro familiar › Resumo do grupo", txt:"Lançada a dívida que faltava de uma prestadora particular, com o PDF do orçamento. Sem a dívida, os PIX ficavam como pagos a mais e a linha não aparecia no Resumo do grupo."}]},
+ {v:"0.18.113", data:"2026-11-09", titulo:"Contas pagas da família conferidas com a DevMaster", itens:[
+  {tipo:"correção", area:"Financeiro familiar › Contas pagas", txt:"A conta Pix revendedora de 6 meses de sócios guardava a primeira baixa da DevMaster, que depois foi estornada. Agora cada uma tem as baixas válidas da DevMaster, uma por uma, e bate com a tela PIX revendedoras."}]},
  {v:"0.18.112", data:"2026-11-10", titulo:"Atendimento interno: o atendimento em andamento aparece para todos", itens:[
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"O atendimento aberto ficava só no computador da atendente e a fila dos outros mostrava Agendada. Agora cada atendimento sobe para o servidor (módulo int, uma chave por atendimento) e a fila mostra Atendendo para todos assim que a atendente clica em Iniciar atendimento."},
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Quem atende e quem acompanha veem o mesmo atendimento. Tirar um atendimento da lista apaga para todos. Só entram os dos últimos 3 dias, sem os de demonstração."}]},
