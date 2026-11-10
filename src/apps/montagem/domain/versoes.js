@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.116", data:"2026-11-10", titulo:"Kits novos: todo mundo vê os mesmos kits (Michele e Camilly)", itens:[
+  {tipo:"correção", area:"Cadastro de revendedoras → Kits novos", txt:"Os Kits novos ficavam só no navegador de cada pessoa: a Michele via 51 kits em Liberado e a Camilly 111, e quem abria com a leitura falhando via a aba zerada. Agora cada kit é guardado no servidor e todo mundo enxerga os mesmos, com a etapa em que cada um está. A tela busca novidades a cada 20 segundos e quando você volta para a aba. Se um kit foi mexido em dois lugares, vale o que tem mais histórico. Se a leitura falhar, aparece um aviso, e a lista vazia não fica guardada para sempre."}
+ ]},
  {v:"0.18.115", data:"2026-11-10", titulo:"Atendimento Sorelly: sem zoom automático", itens:[
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"A tela crescia sozinha até 1,5x em monitor largo e ficava gigante perto do resto do sistema. O zoom automático saiu: agora vale o tamanho padrão (13 px). Para aumentar, use o botão de tamanho do sistema no topo."}]},
  {v:"0.18.114", data:"2026-11-10", titulo:"PDF do orçamento das dívidas de prestadores fica no servidor", itens:[

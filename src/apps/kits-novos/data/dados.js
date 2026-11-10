@@ -28,7 +28,8 @@ export function carregarDados() {
           if (lista.length) { DADOS = lista; FONTE = "planilha-" + String((c.meta && c.meta.versao) || ""); return lista; }
         }
       } catch (x) { /* sem acesso: segue com a lista vazia */ }
-      DADOS = []; FONTE = ""; return DADOS;
+      DADOS = []; FONTE = ""; promessa = null;   // leitura vazia ou que falhou (ainda sem login, servidor lento): NÃO guarda o vazio; a próxima abertura tenta de novo
+      return DADOS;
     })();
   }
   return promessa;

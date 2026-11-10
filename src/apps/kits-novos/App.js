@@ -19,11 +19,13 @@ import { CHAVE, inicial } from "@/apps/kits-novos/state/store";
 import { limpar } from "@/apps/kits-novos/lib/entrada-cadastro";
 import { Ctx } from "@/apps/kits-novos/state/context";
 import { reducer } from "@/apps/kits-novos/state/reducer";
+import { useSyncKitsNovos } from "@/apps/kits-novos/lib/sync-servidor";
 import { Icon } from "@/apps/kits-novos/ui/icon";
 import { INPUT, MONO } from "@/apps/kits-novos/ui/input";
 
 function App(){
   var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
+  useSyncKitsNovos(s, d);   // mesmos kits para todo mundo (servidor, módulo kndados)
   var navigate = useNavigate();
   var loc = useLocation();
   var aba = abaDoCaminho(loc.pathname).aba;

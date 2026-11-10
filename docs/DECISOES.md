@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 10/11/2026 (Kits novos no servidor)
+- **Kits novos compartilhados (Marcus, 10/11/2026: "já corrigiu essa merda aí?", chamado da Camilly):** o estado dos Kits novos (etapa de cada kit) ficava só no `localStorage` de cada pessoa; a Michele via 51 em Liberado, a Camilly 111, e a leitura da planilha que falhava deixava a aba zerada até recarregar. Agora cada kit é uma chave `r_<id>` do módulo `kndados` (`lib/sync-servidor.js`, ligado em `App.js` e `KitsNovosEmbutido.js`): lê a cada 20 s e ao voltar para a aba, envia só os kits que mudaram. Quem vale, kit por kit: a cópia com mais histórico (`hist`); empate = servidor. A leitura vazia ou com falha não é mais guardada (`data/dados.js`). Aviso na tela se não conseguir ler. Limite: último a gravar vence dentro do mesmo kit.
+
 ## 09/11/2026 (Fiscal no servidor)
 - **Fiscal puxado do admin antigo (Marcus, 09/11/2026: "tem que puxar o fiscal"):** o Fiscal passou a ser o módulo `fx` do servidor (antes só no navegador, cópia de 16/10 em `domain/fiscal.local.js`). Carga única feita por script, com conferência contra o admin antigo: 6 empresas, 284 notas de entrada, 112 saídas e 54 contas. Meses de janeiro a setembro já eram iguais; entraram as notas de outubro e novembro, as saídas reais de outubro, a H&O Apps e a correção de janeiro da Varejo. Os ajustes provisórios de 23/10 (`ajuste23`) não valem mais. Acesso: só Financeiro e Diretoria (`fx` em `src/server/permissoes.js`). Quem lançar nota nova agora grava para todos. Sem rotina automática: atualizar o Fiscal do admin antigo é carga manual, enquanto o admin antigo existir.
 
