@@ -6,7 +6,7 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "rpo", "rpf", "fx"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
 var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 // pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
@@ -32,34 +32,11 @@ function modulosLigados(){
   var l = t.split(",").map(function(x){ return x.trim(); }).filter(Boolean);
   return l.length ? l : PADRAO;
 }
-// Primeira vez de uma pessoa da Diretoria neste navegador: NADA é trocado até ela escolher quem manda (o que está neste navegador ou o que está no servidor).
-// Isso protege o que foi digitado aqui antes do login. Os demais perfis já começam recebendo o servidor.
-var CHAVE_MODO = "sorelly_sync_modo";
-function modoGuardado(){ try { return localStorage.getItem(CHAVE_MODO) || ""; } catch(x){ return ""; } }
-function guardaModo(m){ try { localStorage.setItem(CHAVE_MODO, m); } catch(x){} window.dispatchEvent(new Event("sorelly-sync-modo")); }
-// Escolher "O servidor manda": ANTES de trocar, guarda uma cópia do que está neste navegador (a tela salva tudo que aparece, então sem cópia o que foi digitado aqui seria sobrescrito).
-var CHAVE_ESTADO = "sorelly_montagem_v9", CHAVE_COPIA = "sorelly_copia_antes_servidor";
-function usarServidor(){
-  try { if(!localStorage.getItem(CHAVE_COPIA)){ var atual = localStorage.getItem(CHAVE_ESTADO); if(atual){ localStorage.setItem(CHAVE_COPIA, atual); localStorage.setItem(CHAVE_COPIA+"_em", new Date().toISOString()); } } } catch(x){}
-  guardaModo("servidor");
-}
-// volta a mostrar a pergunta "qual cópia dos dados vale?" (a sincronização pausa até a escolha)
-function reabrirEscolha(){ try { localStorage.removeItem(CHAVE_MODO); } catch(x){} window.dispatchEvent(new Event("sorelly-sync-modo")); }
-function temCopiaAntesServidor(){ try { return !!localStorage.getItem(CHAVE_COPIA); } catch(x){ return false; } }
-// devolve para a tela o que estava neste navegador antes de usar o servidor (recarrega a página); depois a Diretoria escolhe de novo qual cópia vale
-function restaurarCopiaAntesServidor(){
-  try { var c = localStorage.getItem(CHAVE_COPIA); if(!c) return false; localStorage.setItem(CHAVE_ESTADO, c); localStorage.removeItem(CHAVE_MODO); location.reload(); return true; } catch(x){ return false; }
-}
-// "Este navegador manda": envia TODAS as chaves de cada módulo e substitui as do servidor (a cópia sorelly.estado_modulo_copia_20261026 guarda a versão anterior).
-async function enviarTudoDoNavegador(s){
-  var feitos = 0, falhas = [];
-  for(var i=0;i<PADRAO.length;i++){ var c = PADRAO[i], v = fatia(s, c);
-    if(!v || typeof v!=="object" || !Object.keys(v).length) continue;
-    try { await chamar("PUT", "/estado/"+c, {chaves:v}); feitos++; } catch(x){ falhas.push(c+": "+x.message); } }
-  if(!falhas.length) guardaModo("servidor");
-  return {feitos:feitos, falhas:falhas};
-}
-var json = function(v){ try { return JSON.stringify(v===undefined ? null : v); } catch(x){ return ""; } };
+// O SERVIDOR SEMPRE MANDA (Leonardo, 06/11/2026): todo perfil, inclusive a Diretoria, sincroniza assim que entra.
+// Acabou a escolha "Este navegador manda / Do servidor" da Diretoria, que pausava tudo até alguém escolher (e escondia os registros do app da representante).
+// A marca antiga dessa escolha sai do navegador ao carregar.
+try { localStorage.removeItem("sorelly_sync_modo"); } catch(x){}
+var json =function(v){ try { return JSON.stringify(v===undefined ? null : v); } catch(x){ return ""; } };
 
 // O QUE JÁ ESTÁ NO SERVIDOR NÃO É GUARDADO NO NAVEGADOR (Marcus, 02/11/2026): o sistema salva para todo mundo no servidor. O navegador guardava o estado inteiro (4 MB) e acabava o espaço ("Sem espaço para salvar neste navegador").
 // Um módulo só sai do navegador depois que o servidor confirmou que tem uma versão dele (versao>0); módulo sem acesso, vazio ou ainda sem carga inicial continua guardado aqui. A lista dura enquanto a mesma pessoa está logada.
@@ -71,7 +48,7 @@ function lembraModulo(c){ if(noServidor[c]) return; noServidor[c] = 1; try { loc
 function esqueceModulos(){ noServidor = {}; try { localStorage.removeItem(CHAVE_NO_SERVIDOR); } catch(x){} }
 // chaves do estado que o servidor já guarda (módulos confirmados, com o espelho de ri, sc e fd)
 function chavesNoServidor(){
-  if(!apiAtiva() || !token() || modoGuardado()!=="servidor") return [];
+  if(!apiAtiva() || !token()) return [];
   var lista = Object.assign({}, noServidor);
   try { var p = (localStorage.getItem(CHAVE_NO_SERVIDOR) || "").split("|"); if(p[0]===chaveSessao() && p[1]) p[1].split(",").forEach(function(k){ lista[k] = 1; }); } catch(x){}
   var out = []; Object.keys(lista).forEach(function(c){ if(FICAM_NO_NAVEGADOR.indexOf(c)>=0) return; (ESPELHO[c] || [c]).forEach(function(k){ out.push(k); }); }); return out;
@@ -97,15 +74,10 @@ function vigiaVersao(){
 }
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
 function useSyncModulos(s, d){
-  var sm = useState(null), modo = sm[0], setModo = sm[1];   // null = descobrindo, "servidor" = sincroniza, "pendente" = Diretoria ainda vai escolher
-  var tk = token();   // muda no login e na saída: refaz a descoberta
-  useEffect(function(){
-    if(!apiAtiva() || !tk) { setModo(null); esqueceModulos(); return undefined; }
-    var ler = function(){ if(modoGuardado()){ setModo("servidor"); return; }
-      chamar("GET", "/auth/eu").then(function(j){ setModo(j.usuario && j.usuario.perfil==="ADMIN" ? "pendente" : "servidor"); }).catch(function(){ setModo("pendente"); }); };
-    ler(); window.addEventListener("sorelly-sync-modo", ler); return function(){ window.removeEventListener("sorelly-sync-modo", ler); };
-  }, [tk]);
-  var ativo = apiAtiva() && !!token() && s.logado!==false && modo==="servidor";
+  var tk = token();   // muda no login e na saída
+  useEffect(function(){ if(!apiAtiva() || !tk) esqueceModulos(); }, [tk]);
+  var modo = apiAtiva() && tk ? "servidor" : null;   // com servidor e login, sincroniza sempre
+  var ativo = !!modo && s.logado!==false;
   var ref = useRef({mods:{}, s:s});   // por módulo: {versao, snaps:{chave: json}, pronto}
   ref.current.s = s;
   var lista = modulosLigados();
@@ -115,7 +87,8 @@ function useSyncModulos(s, d){
     return chamar("GET", "/estado/"+chave+(m.pronto && m.versao>0 ? "?desde="+m.versao : "")).then(function(r){
       if(r.igual) return undefined;   // nada novo no servidor
       var trouxe = false;
-      if(r.versao>m.versao || !m.pronto){
+      // r.parcial = módulo por item (rpo/rpf): veio só o que mudou, inclusive gravação atrasada com versão menor; sempre processa (compara pelo conteúdo)
+      if(r.versao>m.versao || !m.pronto || r.parcial){
         var novas = {}, local = fatia(ref.current.s, chave) || {};
         Object.keys(r.conteudo||{}).forEach(function(k){ var j = json(r.conteudo[k]); m.snaps[k] = j; if(json(local[k])!==j) novas[k] = r.conteudo[k]; });
         if(Object.keys(novas).length){ d({type:"SYNC_MODULO", chave:chave, conteudo:novas}); trouxe = true; }
@@ -159,4 +132,4 @@ function useSyncModulos(s, d){
   }, [ativo, assinatura]);
   return modo;
 }
-export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados, enviarTudoDoNavegador, guardaModo, usarServidor, reabrirEscolha, temCopiaAntesServidor, restaurarCopiaAntesServidor };
+export { semDoServidor, CHAVES_SINCRONIZADAS, useSyncModulos, modulosLigados };

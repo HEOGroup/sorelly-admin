@@ -39,3 +39,8 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 
 - **28/10/2026** (diário, linha 1382; · Nickolas com acesso total; Atendimento interno da Tamara): **Nickolas = acesso total, igual ao Marcus (Marcus, 28/10/2026).** Acesso total: Marcus, Nickolas e Leonardo.
 - **28/10/2026** (diário, linha 1382; · Nickolas com acesso total; Atendimento interno da Tamara): **Tamara começa sozinha no Agendamento** com menu individual e o Atendimento interno. As revendedoras internas passam a ficar no servidor (módulo `ri`), e o Agendamento lê a lista da DevMaster (`?rep=02`). Detalhes em `docs/negocio/ACESSOS-E-CONTAS-28-10-2026.md`.
+
+## 10/11/2026 — Atendimento em andamento aparece para todos (Marcus)
+- Marcus: a menina estava atendendo a revendedora e na tela dele a fila mostrava só "Agendada". Causa: o atendimento (`s.internos`) ficava só no navegador de quem atendia; a fila só mostrava "Atendendo" para quem tinha o atendimento aberto.
+- Feito: módulo de servidor `int`, uma chave por atendimento (`i_<id>`), só dos últimos 3 dias e sem demonstração; a fila mostra "Atendendo" para todos quando o atendimento foi iniciado (`inicioTs`). Remover da lista apaga para todos. Testado com um script no papel do outro computador: apareceu em até 20 segundos e sumiu quando removido.
+- Ainda NÃO está no servidor: os acertos já feitos (`acertosConsignado`) e o Consolidado Sorelly; eles continuam por computador. Precisa de um módulo próprio.

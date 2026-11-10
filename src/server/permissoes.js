@@ -17,6 +17,7 @@ export const SETORES_DO_MODULO = {
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   es: ["financeiro"],   // Estoque Sorelly (Financeiro, 09/11/2026): posição mensal do estoque de peças, números altos; só Financeiro e Diretoria
+  fx: ["financeiro"],   // Fiscal (Financeiro, 09/11/2026): notas de entrada, saídas e contas por CNPJ, carregados do admin antigo; só Financeiro e Diretoria
   pfmes: ["financeiro"],   // resumo do mês dos fornecedores (planilha Pag Fornecedores, RESUMO MÊS): gravado por scripts/planilha-fornecedores.mjs, lido pelo Direcionar Pix (28/10/2026)
   agrev: ["agendamento"],   // alterações da Agenda de revendedoras (troca de representante, data do acerto, observação) feitas pela Ana Maria enquanto a DevMaster ainda manda (29/10/2026)
   ri: ["agendamento"],   // revendedoras do atendimento interno (lista, contatos e agenda da Tamara): Agendamento e Diretoria (28/10/2026)
@@ -33,6 +34,9 @@ export const SETORES_DO_MODULO = {
   finativ: ["financeiro"],   // Financeiro › Atividades (03/11/2026): lista do que fica para fazer depois, escrita pela equipe do Financeiro
   fd: ["financeiro"],   // faturamento e contas pagas por dia lançados pela equipe (corte do admin antigo, 29/10/2026): Financeiro e Diretoria
   fatdia: ["financeiro"],   // faturamento do dia anterior (automático, DevMaster): só financeiro (e Diretoria, que já abre tudo)
+  // App real da representante (05/11/2026, src/server/estado-itens.js): uma linha por item, o app grava pelo servidor e a equipe pelo navegador.
+  rpo: ["montagem", "kitsnovos", "cadastro", "agendamento", "encomendas", "financeiro", "producao"],   // operação: listagens e kits das representantes (sem valores de acerto)
+  rpf: ["financeiro", "agendamento"],   // financeiro: acertos, entregas de kit novo e reposições registrados no app (Consolidado, Comissões, Inadimplência)
 };
 
 export function podeModulo(usuario, modulo) {

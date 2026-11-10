@@ -16,7 +16,6 @@ import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos"
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
-import { AvisoCargaInicial } from "@/apps/montagem/components/aviso-carga-inicial";
 import { TelaEntrar } from "@/apps/montagem/components/tela-entrar";
 import { ZoomTela } from "@/apps/montagem/components/zoom-tela";
 import { chaveMes, precisaVirar } from "@/apps/montagem/domain/agendamento";
@@ -51,7 +50,7 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial, paraSalvar } from "@/apps/montagem/state/store";
@@ -121,7 +120,7 @@ function App(){
       Promise.all([srv.chamar("GET", "/rotina/itens"), srv.chamar("GET", "/rotina/registros?data="+dia)]).then(function(r){ d({type:"ROT", op:"sync", itens:r[0].itens, dia:dia, reg:r[1].reg}); }).catch(function(){}); }; t(); var iv = setInterval(t, 60000); return function(){ clearInterval(iv); }; }, [sn[0], s.usuario]);
   definirPfMes(s.pfmes && s.pfmes.dados);   // resumo do mês dos fornecedores vindo do servidor
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
-  var modoSync = useSyncModulos(s, d);   // módulos que ficam no servidor (RH por padrão); "pendente" = a Diretoria escolhe quem manda na primeira vez
+  useSyncModulos(s, d);   // módulos que ficam no servidor: sincroniza sempre que há servidor e login (o servidor manda)
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
   // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
   useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
@@ -205,7 +204,7 @@ function App(){
   // Rotina do dia saiu do menu (28/10/2026): não entra mais sozinha na lista de todo mundo.
   // A página Apps e os apps de celular simulados (ícones do topo) são SÓ do Marcus (27/10/2026): os demais nunca os veem, nem a Diretoria que não seja ele. Sem servidor, tudo como era.
   var soMarcus = !srv.apiAtiva() || srv.pessoaDaConta()==="16" || srv.pessoaDaConta()==="44";   // 44 = Leonardo: 100% igual ao Marcus (29/10/2026)
-  var veApps = soMarcus || ["17","28","44"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas, Lucas e Leonardo (27/10/2026; Leonardo em 29/10/2026)
+  var veApps = soMarcus || ["17","28","29","44"].indexOf(srv.pessoaDaConta())>=0;   // Apps e "atuar como": Marcus, Nickolas, Lucas e Leonardo (27/10/2026; Leonardo em 29/10/2026)
   if(!veApps) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // 29/10/2026 (Marcus): Apps só da Diretoria; o app da revendedora também ficava de fora da lista
   else if(permitidas && permitidas.indexOf("apps")<0) permitidas = permitidas.concat(["apps"]);
   if(papel==="basico") permitidas = (permitidas || []).filter(function(k){ return ["apps","celfunc","celrep","celrev"].indexOf(k)<0; });   // Acesso básico: nunca os apps (Marcus, 29/10/2026)
@@ -219,6 +218,7 @@ function App(){
   if(abasConta) abasConta = [].concat.apply([], abasConta.map(function(k){ return k.indexOf("set_")===0 ? abasDoSetor(k.slice(4)) : [k]; }));
   if(abasConta && permitidas) permitidas = permitidas.filter(function(k){ return abasConta.indexOf(k)>=0 || ["inicio","whats","melhorias","aulas","regrasguias"].indexOf(k)>=0; });
   if(papel==="basico" && abasConta && permitidas) permitidas = permitidas.concat(abasConta.filter(function(k){ return permitidas.indexOf(k)<0 && ["apps","celfunc","celrep","celrev"].indexOf(k)<0; }));   // Acesso básico + telas que a Diretoria liberou na conta (ex.: Encomendas para Elen, Agatha e Eduarda; 29/10/2026)
+  if(papel==="basico" && permitidas) permitidas = permitidas.concat(telasDaPessoa(s.usuario).filter(function(k){ return permitidas.indexOf(k)<0; }));   // telas da pessoa (Diego: Tráfego pago), valem mesmo sem a lista de telas na conta
   var abas = ABAS.filter(function(a){ return !permitidas || permitidas.indexOf(a[0])>=0; });
   var aba = abaURL==="breve" && !permitidas ? "breve" : abas.some(function(a){return a[0]===abaURL;}) ? abaURL : abas[0][0];
   useRotaAba({aba:aba, abaURL:abaURL, breve:breveURL, estado:s, dispatch:d, caminhoDaAba:caminhoDaAba});
@@ -283,7 +283,7 @@ function App(){
     e("div",{className:"min-h-screen bg-background"},
       !permitidas && e("button",{onClick:function(){ navigate(caminhoDaAba("visaogeral")); }, className:"fixed left-3 top-3 z-50 rounded-full bg-white/10 px-3 py-1.5 text-[12px] font-semibold hover:bg-white/20"},"← Voltar ao admin"),
       e("main",{className:"flex flex-col gap-5 p-4 pt-12 md:p-6 md:pt-12"}, e(Outlet))),
-    e(Aviso), e(AvisoCargaInicial,{modo:modoSync, s:s}), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
+    e(Aviso), e(AvisoSemEspaco,{on:semEspaco, liberar:liberarEspaco}), e(AvisoOutraJanela,{on:outraJanela, fechar:function(){ setOutraJanela(false); }}));
   // sem entrar, só a tela de usuário e senha (a senha é ignorada no protótipo)
   // (a tela de usuário e senha saiu a pedido do Marcus, 16/10/2026: o sistema já abre aberto; a troca de pessoa é no seletor de acesso do topo)
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},

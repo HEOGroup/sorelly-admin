@@ -75,6 +75,7 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
   M("Revendedoras","agrevs"),
   M("Representantes","agreps"),
   M("Atividades","agatividades"),
+  M("Pedidos do app","agpedidosapp"),   // 05/11/2026: pedidos de mudança da data do acerto feitos no app da representante
   M("Análises","aganalises"),
   M("Expositores","expositores")   // 09/11/2026: o agendamento dá baixa quando o expositor volta (a tela é a mesma do setor Encomendas)
 ];
@@ -122,7 +123,7 @@ var MENU_JURIDICO = [
   M("Marcas e patentes", undefined, {breve:true})
 ];
 var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
-var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego")];
+var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego"), M("Criativos","criativos")];
 
 var SETORES = [
   // Grupo "Geral" (28/10/2026, reorganização do menu lateral): Início, SorellyChat e Dashboard juntos no topo.
@@ -167,7 +168,7 @@ var SETORES = [
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
     {nome:"Painel", telas:[T("agpainel","Painel")]}, {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
-    {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
+    {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Pedidos do app", telas:[T("agpedidosapp","Pedidos do app")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
   // Fiscal voltou para dentro do Financeiro (23/10/2026, pedido do Marcus)
   // Cadastro de revendedoras: 4 categorias e 20 telas (estrutura passada pelo Marcus em 14/10/2026) + Kits novos, que já existe pronto
   {id:"cadastro", nome:"Cadastro de revendedoras", ic:"cadastro", cor:"#F97316", menu:MENU_CADASTRO, areas:[
@@ -263,7 +264,7 @@ var SETORES = [
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
-    {nome:"Marketing", telas:[T("marketing","Marketing"), T("fotoscat","Fotos de catálogo"), B("Campanhas"), T("trafego","Tráfego pago")]}]},
+    {nome:"Marketing", telas:[T("marketing","Marketing"), T("fotoscat","Fotos de catálogo"), B("Campanhas"), T("trafego","Tráfego pago"), T("criativos","Criativos")]}]},
   // Regras (05/11/2026, Marcus): setor próprio, todos os funcionários veem; só o Guia resumido e o Guia da revendedora em PDF (saiu de Cadastro de revendedoras → Folders)
   {id:"regrasguias", nome:"Regras", ic:"book", cor:"#E8B84B", direto:T("regrasguias","Regras")},
   // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)

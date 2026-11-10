@@ -13,7 +13,7 @@ function guardaToken(t){ try { if(t) localStorage.setItem(CHAVE_TOKEN, t); else 
 
 // metodo: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; devolve o JSON ou joga Error com a mensagem do servidor
 async function chamar(metodo, caminho, corpo){
-  var h = {"content-type":"application/json"}; if(token()) h.authorization = "Bearer "+token();
+  var h = {"content-type":"application/json", "x-sorelly-build":"2026-11-09"}; if(token()) h.authorization = "Bearer "+token();   // x-sorelly-build: o servidor reconhece a tela nova e protege dados de telas antigas ainda abertas (ver app/api/estado/[modulo]/route.js)
   var r;
   try { r = await fetch(base()+caminho, {method:metodo, headers:h, body:corpo!==undefined ? JSON.stringify(corpo) : undefined}); }
   catch(x){ throw new Error("Sem conexão com o servidor."); }
@@ -43,4 +43,4 @@ function limpaSessao(){ try { Object.keys(sessionStorage).forEach(function(k){ i
 async function entrar(email, senha){ limpaSessao(); var j = await chamar("POST", "/auth/login", {email:email, senha:senha}); guardaToken(j.token); var u = j.usuario || {}; guardaPerfil(u.perfil, u.pessoaId, {abas:u.abas, ocultar:u.ocultar, grupo:u.grupo || grupoPorSetores(u.setores), cid:u.cid, nome:u.nome}); return j.usuario; }
 function sair(){ limpaSessao(); guardaToken(""); guardaPerfil(""); window.dispatchEvent(new Event("sorelly-saiu")); }
 
-export { apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, nomeDaConta };
+export { base as apiBase, apiAtiva, token, chamar, entrar, sair, guardaPerfil, contaTexto, pessoaDaConta, ehAdmin, abasDaConta, ocultosDaConta, grupoDaConta, grupoPorSetores, cidDaConta, nomeDaConta };

@@ -15,7 +15,7 @@ Elo entre o cadastro de revendedoras e a montagem de kits. Setor responsável: K
 - Indicação: Kommo → confere dados e localização → análise → documentos → Cadastro → acompanha → após a entrega, atualiza planilhas e libera os coins da indicadora. Brindes: agenda retirada com a indicadora e dá baixa.
 
 ## Telas e dados
-- 5 abas (Kits, Pendências, Consolidado, Regras, Configurador). Dados: `public/dados/kits-novos-curitiba.json` (~2.005 registros), carregado só quando o app abre. NÃO abra esse arquivo.
+- 5 abas (Kits, Pendências, Consolidado, Regras, Configurador). Dados: planilha da Michele (2.415 registros, importada em 03/11/2026) no módulo `kndados` do servidor, lida por `data/dados.js` ao abrir; NUNCA no Git (dados pessoais, repositório público). Etapas: Liberado, Solicitado, Bipado, Entregue (mais Devolvido e Cancelado).
 - Regiões Litoral, Ponta Grossa, Maringá, Joinville e Santa Catarina: "em breve".
 - App da representante mostra 3 contatos de referência (quem é + botão de WhatsApp) e endereço de casa e trabalho. Tela de Revendedoras tem filtro para kits novos.
 

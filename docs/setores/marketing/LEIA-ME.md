@@ -49,3 +49,6 @@ Código das telas: `pages/Marketing.js` e `pages/Trafego.js` (`pages/trafego/*`,
 
 ## 6. Regra de trabalho
 Mudou uma regra? Atualize (1) o sistema, (2) `decisoes.md` desta pasta e o diário geral, no mesmo dia, (3) o painel: `node scripts/gerar-painel-documentos.mjs`.
+
+## Arquivos dos criativos (06/11/2026)
+O Diego guarda o vídeo, a imagem ou as telas do carrossel dentro de cada criativo (Marketing › Criativos › Novo criativo ou Editar). Até 12 arquivos de 600 MB. O arquivo vai direto do navegador para o Vercel Blob (rota `app/api/criativos/upload/route.js`, peça `lib/enviar-arquivo.js`); o criativo guarda só o endereço (`arquivos` em `s.tp`). Precisa de uma loja Blob PÚBLICA ligada ao projeto na Vercel (variável `BLOB_READ_WRITE_TOKEN`). Apagar o criativo não apaga o arquivo do Blob (fica órfão).

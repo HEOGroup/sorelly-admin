@@ -3,8 +3,9 @@
 import { ETAPAS, aberto, atrasado, dataEtapa, dataFim, diasNaEtapa, etapaDe, seguro } from "@/apps/kits-novos/domain/etapas";
 import { diasDesde, tsDe } from "@/apps/kits-novos/lib/datas";
 import { use } from "@/apps/kits-novos/state/context";
+import { respostasDoApp } from "@/apps/kits-novos/lib/bridge-montagem";
 import { Kanban } from "@/shared/kanban";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 var COR = {aguardando:"#F59E0B", cadastrada:"#9ca3af", liberado:"#a78bfa", solicitado:"#d4a64a", aceito:"#f0c36b", contato:"#38bdf8", agendado:"#c084fc", montando:"#facc15", bipado:"#60a5fa", retirado:"#fb923c", entregue:"#4ade80", devolvido:"#22d3ee", cancelado:"#f87171"};
 
@@ -28,11 +29,22 @@ function CartaoKit(p){
       e("span",{className:"flex shrink-0 items-center gap-0.5"},
         aberto(c) && e("span",{className:"text-[11px] font-semibold tabular-nums "+(atr ? "text-destructive" : esp ? "text-warning" : "text-success"), title:atr ? "Atrasada" : esp ? "Aguardando peça" : "No prazo"}, dias+" d"),
         e(MenuMover,{c:c, destinos:p.destinos, mover:p.mover}))),
-    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Representante, bairro, cidade e profissão"}, linha2));
+    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Representante, bairro, cidade e profissão"}, linha2),
+    p.resp && e(SeloApp,{r:p.resp}));
+}
+// Resposta da representante no APP REAL (05/11/2026): agendou (dia e período), já entrou na listagem dela ou recusou (volta sem representante)
+var PERIODO = {manha:"manhã", tarde:"tarde", noite:"noite"};
+var diaBR = function(i){ return i ? String(i).slice(8, 10)+"/"+String(i).slice(5, 7) : ""; };
+function SeloApp(p){
+  var r = p.r, txt = r.tipo==="recusado" ? "Recusou no app"+(r.rep ? " · "+r.rep : "") : (r.tipo==="na listagem" ? "Na listagem do app" : "Agendado no app")+(r.data ? " · "+diaBR(r.data) : "")+(r.periodo ? " · "+(PERIODO[r.periodo]||r.periodo) : "");
+  return e("span",{title:r.tipo==="recusado" && r.motivo ? "Motivo: "+r.motivo : txt, className:"rounded-md px-1.5 text-[11px] font-semibold "+(r.tipo==="recusado" ? "bg-destructive/20 text-destructive" : "bg-success/20 text-success")}, txt);
 }
 
 function Quadro(p){
   var cx = use(), s = cx.state, d = cx.dispatch, cs = p.dados;
+  var tk = useState(0), setTick = tk[1];   // resposta do app chega pelo servidor: redesenha a cada 20 s
+  useEffect(function(){ var t = setInterval(function(){ setTick(function(n){ return n+1; }); }, 20000); return function(){ clearInterval(t); }; }, []);
+  var resps = respostasDoApp();
   var grupos = ETAPAS.slice(0, 1).concat([{k:"aguardando", nome:"Aguardando peça"}], ETAPAS.slice(1), [{k:"cancelado", nome:"Cancelado"}]).filter(function(g){ return !s.filtro.st || s.filtro.st===g.k; });   // Aguardando peça: coluna ao lado de Liberado (Michele, 06/11/2026)
   var colunas = grupos.map(function(g){
     var itens = cs.filter(function(c){ return (g.k==="aguardando" ? seguro(c) : c.st===g.k && !seguro(c)) && (aberto(c) || diasDesde(dataFim(c)) <= s.cfg.ocultarApos); })
@@ -57,7 +69,7 @@ function Quadro(p){
   };
   var corBarra = function(c, col){ return aberto(c) ? (atrasado(c, s.cfg) ? "#EF4444" : seguro(c) ? "#F59E0B" : "#4CC38A") : col.cor; };
   return e(Kanban,{colunas:colunas, onMover:mover, vazio:"Nenhuma revendedora nesta etapa.", compacto:true, semMover:true, corBarra:corBarra,
-    card:function(c, col){ return e(CartaoKit,{c:c, mover:mover, destinos:grupos.filter(function(g){ return col.k==="aguardando" ? (g.k===c.st || g.k==="cancelado") : g.k!==col.k; }), abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
+    card:function(c, col){ return e(CartaoKit,{c:c, resp:resps[c.id] || null, mover:mover, destinos:grupos.filter(function(g){ return col.k==="aguardando" ? (g.k===c.st || g.k==="cancelado") : g.k!==col.k; }), abrir:function(){ d({type:"DIALOGO", d:{tipo:"detalhe", id:c.id}}); }}); }});
 }
 
 export { Quadro };

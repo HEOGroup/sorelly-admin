@@ -17,6 +17,7 @@ import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
+import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
@@ -171,7 +172,7 @@ function reducer(s, a){
     // Aporte de sócio: dinheiro que o sócio manda para um CNPJ (entra no saldo, não é faturamento)
     case "SALDO_APORTE": { var sc9 = JSON.parse(JSON.stringify(s.saldosContas)); sc9.aportes = sc9.aportes || {}; var l9 = sc9.aportes[a.data] = sc9.aportes[a.data] || [];
       if(a.remover) sc9.aportes[a.data] = l9.filter(function(x){ return x.id!==a.remover; }); else l9.push(a.aporte); return com(s, {saldosContas:sc9}); }
-    case "SALDO_DIA_DEL": { var sc2 = JSON.parse(JSON.stringify(s.saldosContas)); delete sc2.saldos[a.data]; return com(s, {saldosContas:sc2}, "Dia "+a.data.split("-").reverse().join("/")+" excluído"); }
+    case "SALDO_DIA_DEL": { var sc2 = JSON.parse(JSON.stringify(s.saldosContas)); sc2.saldos[a.data] = {}; return com(s, {saldosContas:sc2}, "Dia "+a.data.split("-").reverse().join("/")+" excluído"); }
     case "SALDO_IR": return com(s, {aba:"saldodiario", saldoData:a.data});
     case "SALDO_CONTA": { var sc3 = JSON.parse(JSON.stringify(s.saldosContas)), i3 = sc3.contas.findIndex(function(c){ return c.id===a.conta.id; });
       if(i3>=0) sc3.contas[i3] = a.conta; else sc3.contas.push(a.conta); return com(s, {saldosContas:sc3}, "Conta salva"); }
@@ -253,10 +254,20 @@ function reducer(s, a){
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
+      if(a.chave==="rpo" || a.chave==="rpf"){   // app real da representante (domain/app-rep.js): guarda as chaves cruas e remonta listagens, kits e acertos das telas
+        var sRp = Object.assign({}, s); sRp[a.chave] = Object.assign({}, s[a.chave], a.conteudo); sRp[a.chave==="rpo" ? "_rpoPronto" : "_rpfPronto"] = true;
+        return Object.assign(sRp, aplicarAppNoEstado(sRp));
+      }
       if(a.chave==="kn"){   // kits novos vindos do servidor: entram (ou atualizam) na lista de novas da representante
         var nvK = (s.novas||[]).slice();
-        Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
-        return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK});
+        Object.keys(a.conteudo||{}).forEach(function(k){ var it = a.conteudo[k]; if(!it || !it.id || k.indexOf("k_")!==0) return; var iK = nvK.findIndex(function(x){ return x.id===it.id; }); if(iK<0) nvK.unshift(it); else nvK[iK] = it; });
+        // recusas feitas no APP REAL (src/server/app-rep/sincronizar.js grava em recusasApp): entram em s.recusas e contam para o bloqueio (cfg.recusasBloqueio)
+        var recK = (s.recusas||[]).slice(), blK = Object.assign({}, s.bloqueioNovas), novaRec = false;
+        nvK.forEach(function(it){ (it.recusasApp||[]).forEach(function(x){
+          if(recK.some(function(y){ return y.rep===x.rep && y.rev===x.rev && y.iso===x.iso; })) return;
+          recK.unshift(x); novaRec = true;
+          if(recK.filter(function(y){ return y.rep===x.rep; }).length >= ((s.cfg||{}).recusasBloqueio||2)) blK[x.rep] = true; }); });
+        return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK}, novaRec ? {recusas:recK, bloqueioNovas:blK} : {});
       }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
@@ -316,6 +327,7 @@ function reducer(s, a){
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
+    case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
     case "FX": { var rFx = fxReduz(s, a); return com(s, rFx.patch, rFx.msg); }   // Fiscal (ILF, sublimite, entradas, saídas, contas por CNPJ)
     case "EQ": { var rEq = eqReduz(s, a); return com(s, rEq.patch, rEq.msg); }   // Equipes: organograma de departamentos

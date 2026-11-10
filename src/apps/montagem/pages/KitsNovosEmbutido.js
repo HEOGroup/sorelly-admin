@@ -22,11 +22,13 @@ import { CHAVE, inicial } from "@/apps/kits-novos/state/store";
 import { limpar } from "@/apps/kits-novos/lib/entrada-cadastro";
 import { Ctx } from "@/apps/kits-novos/state/context";
 import { reducer } from "@/apps/kits-novos/state/reducer";
+import { useSyncKitsNovos } from "@/apps/kits-novos/lib/sync-servidor";
 import { e, useEffect, useMemo, useReducer } from "@/shared/react";
 
 function embutir(Pagina){
   return function(){
     var r = useReducer(reducer, null, inicial), s = r[0], d = r[1];
+    useSyncKitsNovos(s, d);   // mesmos kits para todo mundo (servidor, módulo kndados)
     useEffect(function(){ try{ localStorage.setItem(CHAVE, JSON.stringify(Object.assign({}, s, {aviso:null, dialogo:null}))); limpar(s.dados); }catch(x){} }, [s.dados, s.cfg, s.usuario, s.modo, s.abertos, s.perfis, s.subRep]);
     var listas = useMemo(function(){ return {reps:listaDe(s.dados,"rep"), cids:listaDe(s.dados,"cid"), ents:listaDe(s.dados,"ent"),
       meses:MESES.filter(function(m){ return s.dados.some(function(c){ return mesDe(c)===m; }); })}; }, [s.dados]);

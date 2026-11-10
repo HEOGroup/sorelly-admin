@@ -3,7 +3,7 @@
 import { EntBadge, Etiquetas, StBadge } from "@/apps/kits-novos/components/badges";
 import { ETAPA, ETAPAS, aberto, diasNaEtapa, etapaDe } from "@/apps/kits-novos/domain/etapas";
 import { dataBR, hojeISO } from "@/apps/kits-novos/lib/datas";
-import { direcionarParaRepresentante, direcionarParaSorelly, REP_SORELLY, registrarRecusa } from "@/apps/kits-novos/lib/bridge-montagem";
+import { direcionarParaRepresentante, direcionarParaSorelly, REP_SORELLY, registrarRecusa, situacaoNoApp } from "@/apps/kits-novos/lib/bridge-montagem";
 import { DlgPerfilRep } from "@/apps/kits-novos/components/rep-editar";
 import { GradeJanelas } from "@/apps/kits-novos/components/grade-janelas";
 import { Sugestoes } from "@/apps/kits-novos/components/rep-indicar";
@@ -124,7 +124,7 @@ function DlgDetalhe(p){
           c.rep && (c.st==="liberado"||c.st==="solicitado") && e(Btn,{v:"destructive", ic:"userx", className:abtn, onClick:function(){d({type:"DIALOGO", d:{tipo:"recusou", id:c.id}});}},"Recusou"),
           aberto(c) && e(Btn,{v:"destructive", ic:"ban", className:abtn, onClick:function(){d({type:"DIALOGO", d:{tipo:"cancelar", id:c.id}});}},"Cancelar revendedora"),
           c.st==="cancelado" && e(Btn,{v:"success", ic:"refresh", className:abtn, onClick:function(){d({type:"REATIVAR", id:c.id});}},"Reativar"),
-          s.usuario==="nickolas" && e(Btn,{v:"destructive", ic:"trash", className:abtn, onClick:function(){d({type:"EXCLUIR", id:c.id});}},"Excluir")),
+          s.usuario==="nickolas" && e(Btn,{v:"destructive", ic:"trash", className:abtn, onClick:function(){ situacaoNoApp(c.id, "excluida"); d({type:"EXCLUIR", id:c.id});}},"Excluir")),
         e(Sec,{t:"Observações", ic:"message"},
           e(Cp,{l:"Disponibilidade"}, area("disp")), e(Cp,{l:"Observação"}, area("obs")), e(Cp,{l:"Indicação / origem"}, area("obs2"))),
         (c.hist||[]).length>0 && e(Sec,{t:"Histórico no sistema", ic:"history", aberta:false},
@@ -141,7 +141,8 @@ function DlgAvancar(p){
   return e(Modal,{open:true, titulo:"Avan\u00e7ar para "+prox.nome, sub:c.nome+", hoje em "+et.nome, confirmar:"Confirmar", icone:"arrowright", desabilitado:!f.data||precisaRep||precisaOk||(prox.k==="agendado" && !f.agDia),
       onClose:p.fechar, onConfirmar:function(){ var extra = {}; if(prox.k==="solicitado") extra.rep = f.rep; if(prox.k==="retirado") extra.retirada = f.retirada; if(prox.k==="agendado"){ extra.agDia = f.agDia; extra.agPer = f.agPer; }
         d({type:"AVANCAR", id:c.id, data:f.data, extra:extra});
-        if(prox.k==="solicitado" && f.rep){ if(f.rep===REP_SORELLY) direcionarParaSorelly(c); else direcionarParaRepresentante(c, f.rep); } }},
+        if(prox.k==="solicitado" && f.rep){ if(f.rep===REP_SORELLY) direcionarParaSorelly(c); else direcionarParaRepresentante(c, f.rep); }
+        if(prox.k==="entregue") situacaoNoApp(c.id, "entregue"); }},   // app real da representante: entregue = sai da lista dela
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
       e(Campo,{l:"Data de "+prox.nome.toLowerCase()}, e("input",{type:"date", className:INPUT+" "+MONO, value:f.data, onChange:function(ev){up("data", ev.target.value);}})),
       prox.k==="solicitado" && e(Campo,{l:"Representante"}, e("select",{className:INPUT, value:f.rep, onChange:function(ev){up("rep", ev.target.value);}}, e("option",{value:""},"Escolha"), opcoesRep(p.listas.reps, cx2.state, f.rep).map(function(r){return e("option",{key:r, value:r}, r);}))),
@@ -170,7 +171,10 @@ function DlgMotivo(p){
   var cx = use(), s = cx.state, d = cx.dispatch, c = p.c, canc = p.tipo==="cancelar";
   var mt = useState(canc && (c.desm||0)>=s.cfg.maxDesmarcacoes ? "Fica desmarcando com a representante" : ""), mot = mt[0], setMot = mt[1];
   return e(Modal,{open:true, titulo:canc?"Cancelar revendedora":"Voltar etapa", sub:c.nome, confirmar:canc?"Cancelar revendedora":"Voltar", icone:canc?"ban":"undo", perigo:true, desabilitado:!mot.trim(),
-      onClose:p.fechar, onConfirmar:function(){ d({type:canc?"CANCELAR":"VOLTAR", id:c.id, motivo:mot.trim()}); }},
+      onClose:p.fechar, onConfirmar:function(){
+        // app real da representante: cancelada, ou voltou de Solicitado para Liberado = sai da lista dela
+        if(canc) situacaoNoApp(c.id, "cancelada"); else if(etapaDe(c) && etapaDe(c).k==="solicitado") situacaoNoApp(c.id, "voltou");
+        d({type:canc?"CANCELAR":"VOLTAR", id:c.id, motivo:mot.trim()}); }},
     canc ? e(Campo,{l:"Motivo"}, e("select",{className:INPUT, value:mot, onChange:function(ev){setMot(ev.target.value);}}, e("option",{value:""},"Escolha"), s.cfg.motivosCancel.map(function(m){return e("option",{key:m, value:m}, m);})))
          : e(Campo,{l:"Motivo"}, e("input",{className:INPUT, value:mot, autoFocus:true, onChange:function(ev){setMot(ev.target.value);}})));
 }

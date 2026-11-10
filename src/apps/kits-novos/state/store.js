@@ -8,7 +8,7 @@ import { diasDesde } from "@/apps/kits-novos/lib/datas";
 
 var CHAVE = "sorelly_kits_novos_curitiba_v2";
 function novo(){ return {v:2, fonte:FONTE, cfg:JSON.parse(JSON.stringify(CFG0)), dados:DADOS.map(function(x){ return Object.assign({}, x, {hist:[]}); }),
-  usuario:"michele", aba:"kits", modo:"quadro", abertos:{liberado:true, solicitado:true, bipado:true, entregue:false, cancelado:false}, filtro:{busca:"", st:"", rep:"", cid:"", mes:"", ent:"", so:""}, dialogo:null, aviso:null}; }
+  usuario:"michele", aba:"kits", modo:"quadro", abertos:{liberado:true, solicitado:true, bipado:true, entregue:false, cancelado:false}, filtro:{busca:"", st:"", reg:"", rep:"", cid:"", mes:"", ent:"", so:""}, dialogo:null, aviso:null}; }
 function migraDev(s){
   if(s.devV===1) return s;
   return Object.assign({}, s, {devV:1, dados:s.dados.map(function(c){ return c.st==="entregue" && c.ret && diasDesde(c.ret)>15 ? Object.assign({}, c, {st:"devolvido", dev:c.ret}) : c; })});

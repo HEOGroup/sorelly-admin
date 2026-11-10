@@ -60,9 +60,9 @@ function resumoGrupo(pf, ff, ym, hoje){
   return {ym:ym, hoje:hoje, fornecedores:emp.fornecedores, prestadores:emp.prestadores, socios:socios, particulares:part, totais:{semSocios:tot(semSocios), geral:tot(geral)}};
 }
 
-// visão de um sócio: a linha dele + os prestadores da empresa em aberto + os particulares dele
+// visão de um sócio: SÓ a linha dele + os particulares dele. Os prestadores da empresa (Priscila, Lucas Castilho, Madeira Cor...) são pagos pela Sorelly e aparecem só no resumo geral (Marcus, 09/11/2026).
 function visaoSocio(R, socioId){
-  return {socio:R.socios.filter(function(x){ return x.id===socioId; }), prestadores:R.prestadores.filter(function(x){ return x.falta>0.005; }), particulares:R.particulares[socioId]||[]};
+  return {socio:R.socios.filter(function(x){ return x.id===socioId; }), particulares:R.particulares[socioId]||[]};
 }
 
 // mensagem do WhatsApp (negrito com asteriscos). socioId vazio = resumo geral
@@ -84,7 +84,6 @@ function mensagem(R, socioId){
     L.push("*RESUMO · "+nome.toUpperCase()+" · "+mes+"*"); L.push("Posição: "+dm(R.hoje)+"/"+R.hoje.slice(0, 4));
     ttl(nome.toUpperCase()+" ("+nomeMes(R.ym).toLowerCase()+")");
     V.socio.forEach(function(x){ L.push("• A pagar: "+brl(x.aPagar)+" · pago "+brl(x.pago)); L.push("• "+marca(x)+"*Falta "+brl(x.falta)+"* (prazo "+x.prazo+")"); });
-    if(V.prestadores.length){ ttl("PRESTADORES DA EMPRESA EM ABERTO"); V.prestadores.forEach(function(x){ L.push(linhaMsg(x)); }); L.push("• Total: falta "+brl(soma(V.prestadores, "falta"))); }
     if(V.particulares.length){ ttl("PRESTADORES PARTICULARES EM ABERTO"); V.particulares.forEach(function(x){ L.push("• "+x.nome+": "+marca(x)+"falta "+brl(x.falta)); }); L.push("• Total: falta "+brl(soma(V.particulares, "falta"))); }
   }
   return L.join("\n");

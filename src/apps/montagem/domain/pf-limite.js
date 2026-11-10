@@ -17,6 +17,7 @@ function limiteDe(pf){ var l = (pf && pf.limite) || {}; return {teto:l.teto>0 ? 
 
 // classificação padrão pelo nome (o Marcus ajusta fornecedor a fornecedor no próprio bloco)
 function classePadrao(f){
+  if(f && (f.tipo==="prestador" || /^Prestador/.test(f.cat||""))) return "fora";   // prestador de serviço não conta no teto nem no limite por categoria (Marcus, 09/11/2026)
   var n = String((f && f.nome) || "").toLowerCase();
   if((f && f.vinculo==="socio") || /s[óo]cio|casa|facebook|google|m[ií]dia|meta ads/.test(n)) return "fora";
   if(/point|mega ?sul|art ?ello|xangai|linda|tucano|charme|bruto/.test(n)) return "bruto";
@@ -83,6 +84,8 @@ function impactoPedido(pf, pd){
     if(uso.cat[cl]+novo>L.cat[cl]+0.005) out.push({mes:m, tipo:"cat", cat:cl, uso:uso.cat[cl], novo:novo, limite:L.cat[cl]}); });
   return out;
 }
+// Pedido PENDENTE de verdade: tem a marca "pendente" E o fornecedor conta no teto. Prestador de serviço, sócio, Casa e Mídia ficam FORA do teto (Marcus, 09/11/2026): a marca antiga deles é ignorada, nunca prende o pedido.
+function pendenteReal(pf, pd){ if(!pd || pd.aprov!=="pendente") return false; var f = (pf.fornecedores||[]).find(function(x){ return x.id===pd.fornId; }); return classeForn(pf, f)!=="fora"; }
 var brl = function(v){ return (v||0).toLocaleString("pt-BR", {style:"currency", currency:"BRL"}); };
 var MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 var mesTxt = function(m){ var a = m.split("-"); return MESES[parseInt(a[1], 10)-1]+"/"+a[0]; };
@@ -93,4 +96,4 @@ function quintoDiaUtil(mes){ var a = mes.split("-").map(Number), n = 0; for(var 
 function diaDeContaFixa(iso){ var m = iso.slice(0, 7), d = parseInt(iso.slice(8, 10), 10); return DIAS_EVITAR.indexOf(d)>=0 || d===quintoDiaUtil(m); }
 function diasEvitarDoMes(mes){ var l = DIAS_EVITAR.slice(), q = quintoDiaUtil(mes); if(q && l.indexOf(q)<0) l.push(q); return l.sort(function(a, b){ return a-b; }); }
 
-export { vencimentosDoMes, vencimentosPorDia, CATS, CLASSES, PADRAO, DIAS_EVITAR, limiteDe, classePadrao, classeForn, usoMes, semaforo, impactoPedido, motivoImpacto, diaDeContaFixa, diasEvitarDoMes, quintoDiaUtil, mesTxt };
+export { pendenteReal, vencimentosDoMes, vencimentosPorDia, CATS, CLASSES, PADRAO, DIAS_EVITAR, limiteDe, classePadrao, classeForn, usoMes, semaforo, impactoPedido, motivoImpacto, diaDeContaFixa, diasEvitarDoMes, quintoDiaUtil, mesTxt };

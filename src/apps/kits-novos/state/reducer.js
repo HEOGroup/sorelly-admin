@@ -1,6 +1,6 @@
 // Sorelly Admin · kits novos Curitiba — state/reducer.js
 // Extraído de sorelly_admin_kits_novos_curitiba.html sem alterar o corpo das funções.
-import { ETAPAS, aberto, etapaDe } from "@/apps/kits-novos/domain/etapas";
+import { ETAPAS, aberto, estadoAtual, etapaDe } from "@/apps/kits-novos/domain/etapas";
 import { MESES, hojeISO } from "@/apps/kits-novos/lib/datas";
 import { CHAVE, com, mapC, novo, quem, reg } from "@/apps/kits-novos/state/store";
 
@@ -22,6 +22,8 @@ function reducer(s, a){
     case "PERFIL_SALVAR": { var pf = Object.assign({}, s.perfis); pf[a.nome] = a.perfil; return com(s, {perfis:pf, dialogo:null}, "Mapa de "+a.nome+" salvo"); }
     case "AVISO": return com(s, {}, a.txt, "atencao");
     case "LIMPAR_AVISO": return com(s, {aviso:null});
+    // kits que chegaram do servidor (lib/sync-servidor.js): entram ou trocam o kit de mesmo id, sem aviso
+    case "SYNC_SERVIDOR": { var ixS = {}, ndS = s.dados.slice(); ndS.forEach(function(x, i){ ixS[x.id] = i; }); (a.registros||[]).forEach(function(r0){ var x = Object.assign({}, r0, {st:estadoAtual(r0.st), mod:r0.mod==="Misto" ? "Normal" : r0.mod}); if(ixS[x.id]===undefined){ ixS[x.id] = ndS.length; ndS.push(x); } else ndS[ixS[x.id]] = x; }); return Object.assign({}, s, {dados:ndS}); }
     case "SEGURAR": {
       c = s.dados.find(function(x){return x.id===a.id;}); if(!c || !aberto(c) || c.st==="entregue") return s;
       return com(s, {dados:mapC(s, a.id, function(x){ var p = a.on ? {ap:true, apEm:hojeISO()} : {ap:false, apEm:null}; return Object.assign(p, reg(x, s, a.on ? "Aguardando peça" : "Saiu de Aguardando peça")); })}, c.nome+(a.on ? " ficou em Aguardando peça" : " voltou para "+etapaDe(c).nome.toLowerCase()), a.on ? "atencao" : undefined);

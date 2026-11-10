@@ -34,6 +34,7 @@ export const SLUG_DA_ABA = {
   agabertura: "agendamento-abertura",
   agconfig: "agendamento-configurador",
   agatividades: "agendamento-atividades",
+  agpedidosapp: "agendamento-pedidos-do-app",   // pedidos de data do app real da representante (05/11/2026)
   aganalises: "agendamento-analises",
   aghistorico: "agendamento-historico",
   agbonus: "comissoes-bonus-agendamento",
@@ -130,6 +131,7 @@ export const SLUG_DA_ABA = {
   marketing: "marketing",
   fotoscat: "fotos-de-catalogo",
   trafego: "trafego-pago",
+  criativos: "criativos",
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",
   enctop50: "top-50",

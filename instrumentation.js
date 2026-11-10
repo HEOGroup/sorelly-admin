@@ -11,4 +11,8 @@ export async function register() {
   // 10/11/2026: Marketing › Fotos de catálogo lê os produtos novos da DevMaster a cada 5 minutos, sem precisar de tela aberta
   const { agendarFotosDm } = await import("./src/server/fotos-dm.js");
   agendarFotosDm();
+  // App real da representante (05/11/2026): kits novos para o app, respostas de volta e aviso "kit pronto", a cada 60 s.
+  // Só liga com APP_REP_SINCRONIZAR=1 (o .env de desenvolvimento aponta para a API de produção do app).
+  const { agendarSincronizacao } = await import("./src/server/app-rep/sincronizar.js");
+  agendarSincronizacao();
 }

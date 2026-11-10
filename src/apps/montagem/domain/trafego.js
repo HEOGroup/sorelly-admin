@@ -47,9 +47,12 @@ var novoDia = function(d){
   return {id:d.id, data:d.data, plataforma:d.plataforma, investimento:dinheiro(d.investimento), impressoes:inteiro(d.impressoes), cliques:inteiro(d.cliques), leads:inteiro(d.leads),
     aprovadas:inteiro(d.aprovadas), cadastradas:inteiro(d.cadastradas), obs:trim(d.obs), por:d.por||"", em:d.em||""};
 };
+// arquivos do criativo (vídeo, imagem, telas do carrossel): só o endereço no Vercel Blob e dados pequenos; o arquivo fica no Blob (06/11/2026)
+var ehUrlArquivo = function(u){ return /^https:\/\/[a-z0-9-]+\.public\.blob\.vercel-storage\.com\/criativos\/[A-Za-z0-9._\-]+$/.test(String(u||"")); };
+var arquivosOk = function(l){ return (Array.isArray(l) ? l : []).filter(function(x){ return x && ehUrlArquivo(x.url); }).slice(0, 12).map(function(x){ return {url:x.url, nome:trim(x.nome).slice(0, 200), tipo:x.tipo==="video" ? "video" : "imagem", tamanho:inteiro(x.tamanho)}; }); };
 var novoCriativo = function(c){
   return {id:c.id, nome:trim(c.nome), mes:c.mes, plataforma:c.plataforma, formato:c.formato || "OUTRO", link:trim(c.link), investimento:dinheiro(c.investimento), leads:inteiro(c.leads),
-    aprovadas:inteiro(c.aprovadas), cadastradas:inteiro(c.cadastradas), obs:trim(c.obs), por:c.por||"", em:c.em||""};
+    aprovadas:inteiro(c.aprovadas), cadastradas:inteiro(c.cadastradas), obs:trim(c.obs), arquivos:arquivosOk(c.arquivos), por:c.por||"", em:c.em||""};
 };
 var validaDia = function(d){ return ehDia(d.data) && PLATAFORMAS.some(function(p){ return p.valor===d.plataforma; }); };
 function tpDemo(){
@@ -204,6 +207,8 @@ function tpReduz(s, a){
       if(trim(a.link).length>lim.link) return recusa("O link passou de "+lim.link+" letras.");
       if(trim(a.obs).length>lim.obs) return recusa("A observação passou de "+lim.obs+" letras.");
       var e3 = numeros(a); if(e3) return recusa(e3);
+      if(Array.isArray(a.arquivos) && a.arquivos.length>12) return recusa("Cada criativo guarda até 12 arquivos.");
+      if(Array.isArray(a.arquivos) && a.arquivos.some(function(x){ return !x || !ehUrlArquivo(x.url); })) return recusa("Arquivo inválido: envie de novo.");
       var c = novoCriativo(Object.assign({}, a, {por:por, em:agora}));
       var m = a.id ? tp.criativos.findIndex(function(x){ return x.id===a.id; }) : -1;
       if(a.id && m===-1) return recusa("Criativo não encontrado.");

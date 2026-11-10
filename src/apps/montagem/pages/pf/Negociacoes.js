@@ -48,6 +48,14 @@ function grava(c, nome, extra){
   c.d(a); return true;
 }
 var linhaNova = function(parte, venc, valor){ return {forma:parte==="com" ? "boleto" : "pix_revendedora", venc:venc, valor:valor===undefined ? "" : valor, qtd:"1", conta:"", status:"Pendente"}; };
+// pedido já lançado → o mesmo formulário do "Lançar pedido", preenchido (chamado do Lucas, 09/11/2026). Parcela paga entra com status Pago e fica travada no domínio.
+var pedidoParaEdicao = function(pd){
+  var lin = function(p){ return {forma:p.forma, venc:p.venc, valor:(+p.valor||0).toFixed(2), qtd:"1", conta:p.conta==="—" ? "" : (p.conta||""), status:p.status||"Pendente"}; };
+  var comNF = (+pd.comNF||0)>0.005, semNF = (+pd.semNF||0)>0.005, nf = comNF && semNF ? "misto" : comNF ? "com" : "sem";
+  return {editId:pd.id, fornId:pd.fornId, numero:pd.numero==="s/nº" ? "" : (pd.numero||""), data:pd.data, total:String(pd.total), nf:nf, editado:"", com:String(pd.comNF||0), sem:String(pd.semNF||0), cnpj:pd.cnpj && pd.cnpj!=="Sem NF" ? pd.cnpj : CNPJS[0], nfNum:pd.nfNum||"",
+    lcom:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="com"; }).map(lin), lsem:(pd.parcelas||[]).filter(function(p){ return FORMAS[p.forma] && FORMAS[p.forma].nf==="sem"; }).map(lin),
+    qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:pd.descricao||"", limite:pd.limite||"", pixMin:pd.pixMin ? String(pd.pixMin) : ""};
+};
 var pedidoNovo = function(pf){ return {fornId:pf.fornecedores.length ? pf.fornecedores[0].id : 0, numero:"", data:hojeIso(), total:"", nf:"misto", editado:"", com:"", sem:"", cnpj:CNPJS[0], nfNum:"", lcom:[], lsem:[], qCom:"3", qSem:"2", nova:false, nomeNovo:"", catNovo:FORN_CATS[0], descricao:"", limite:"", pixMin:""}; };
 
 function AbaPfNeg(){
@@ -91,7 +99,7 @@ function AbaPfNeg(){
   var modais = [
     ped && e(JanelaPedido,{key:"mp", c:c, pf:pf, ped:ped, setPed:setPed}),
     parc && e(JanelaParcela,{key:"mc", c:c, pf:pf, parc:parc, setParc:setParc, voltarDet:function(id){ setDetId(id); }}),
-    detId && e(JanelaDetalhe,{key:"md", c:c, pf:pf, id:detId, fechar:function(){ setDetId(null); }, lancar:function(id){ setDetId(null); abrirParcela(id, true); }, baixa:baixa}),
+    detId && e(JanelaDetalhe,{key:"md", c:c, pf:pf, id:detId, fechar:function(){ setDetId(null); }, lancar:function(id){ setDetId(null); abrirParcela(id, true); }, editar:function(pd){ setDetId(null); setPed(pedidoParaEdicao(pd)); }, baixa:baixa}),
     ac && e(JanelaAcerto,{key:"ma", c:c, pf:pf, ac:ac, setAc:setAc})
   ];
 
@@ -358,7 +366,7 @@ function JanelaPedido(p){
     var linhas = (X.com>0.005 ? ped.lcom : []).concat(X.sem>0.005 ? ped.lsem : []);
     var ruim = linhas.find(function(l){ return !dataValida(l.venc); });
     if(ruim){ aviso(c, "Vencimento inválido ou vazio"+(ruim.venc ? ": "+ruim.venc : "")+". Confira as datas das parcelas (o mês pode não ter esse dia).", "alerta"); return; }
-    var ok = grava(c, "pedido_add", {fornId:ped.fornId, numero:ped.numero, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
+    var ok = grava(c, ped.editId ? "pedido_editar" : "pedido_add", {id:ped.editId, fornId:ped.fornId, numero:ped.numero, data:ped.data, total:X.total, nfTipo:ped.nf, comNF:X.com, semNF:X.sem, cnpj:ped.cnpj, nfNum:ped.nfNum, linhas:linhas, descricao:ped.descricao, limite:ped.limite, pixMin:ped.pixMin});
     if(ok) fechar();
   };
   var addRapido = function(){
@@ -369,7 +377,7 @@ function JanelaPedido(p){
     c.d(a); p.setPed(Object.assign({}, ped, {nova:false, nomeNovo:"", fornId:novo ? novo.id : ped.fornId}));
   };
   var selForn = function(v){ if(v==="__novo") p.setPed(Object.assign({}, ped, {nova:true, nomeNovo:""})); else p.setPed(Object.assign({}, ped, {nova:false, fornId:parseInt(v)})); };
-  return e(Modal,{largo:true, t:"Lançar pedido", sub:"Pedido, divisão de NF e parcelas de cada parte — tudo em um lançamento só.", fechar:fechar},
+  return e(Modal,{largo:true, t:ped.editId ? "Editar pedido" : "Lançar pedido", sub:ped.editId ? "Parcela já paga fica travada: para mudar, estorne a baixa antes. Cada alteração fica no histórico do pedido." : "Pedido, divisão de NF e parcelas de cada parte — tudo em um lançamento só.", fechar:fechar},
     e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-4"},
       e(Campo,{rot:"Fornecedor"}, e(Sel2,{value:ped.nova ? "__novo" : String(ped.fornId), onChange:selForn, forns:pf.fornecedores})),
       e(Campo,{rot:"Nº do pedido"}, e(Txt,{value:ped.numero, ph:"Ex.: 31568", label:"Nº do pedido", onChange:function(v){ upd({numero:v}); }})),
@@ -398,7 +406,7 @@ function JanelaPedido(p){
       AL("Com NF — pagável por boleto, pix empresa, cartão ou cheque", brl(X.com), null, "a"), AL("Sem NF — pagável por pix revendedora", brl(X.sem), null, "b"),
       e("div",{className:"mt-1 border-t border-border pt-2"}, AL("Diferença em relação ao valor do pedido", X.fecha ? "fecha certo ✓" : brl(X.dif), tom(X.fecha ? "green" : "red"), "c"))),
     parte("com"), parte("sem"),
-    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Btn,{g:true, neutro:true, onClick:fechar}, "Cancelar"), e(Btn,{g:true, onClick:salvar}, "Salvar pedido e parcelas")));
+    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Btn,{g:true, neutro:true, onClick:fechar}, "Cancelar"), e(Btn,{g:true, onClick:salvar}, ped.editId ? "Salvar alterações" : "Salvar pedido e parcelas")));
 }
 // seletor de fornecedor com a última opção "+ Novo fornecedor…"
 function Sel2(p){ return e("select",{value:p.value, "aria-label":"Fornecedor", className:INPUT+" h-10! w-full cursor-pointer", onChange:function(ev){ p.onChange(ev.target.value); }},
@@ -459,8 +467,12 @@ function JanelaDetalhe(p){
           e("td",{className:NUM}, brl(x.p.valor)), e("td",{className:TD}, x.registro ? e(Chip,{cor:"gray"}, "Registro") : e(Chip,{cor:x.p.status==="Pago" ? "green" : "orange"}, x.p.status)),
           e("td",{className:TD}, x.registro ? e("span",{className:"text-[13px] "+MUTED}, "sem baixa") : e(Btn,{perigo:x.p.status==="Pago", disabled:!c.edita, onClick:function(){ p.baixa(pd.id, x.i); }}, x.p.status==="Pago" ? "Estornar" : "Dar baixa"))); })
         : e("tr",null, e("td",{colSpan:8, className:"px-3 py-4 text-center text-[13.5px] "+MUTED}, "Nenhuma parcela lançada neste pedido.")))]),
+    pd.avisoLimite && e("p",{className:"text-[13px] font-bold", style:tom("yellow")}, "Aviso do teto mensal: "+pd.avisoLimite),
+    (pd.historico||[]).length>0 && e("div",{className:"flex flex-col gap-1 rounded-xl bg-black/20 px-4 py-3"}, Rot("Histórico de alterações"),
+      pd.historico.slice().reverse().map(function(h, i){ return e("div",{key:i, className:"text-[13px] text-white"}, e("b",null, h.em+" · "+(h.por||"—")+": "), h.mudou); })),
     e("div",{className:"flex flex-wrap items-center gap-2 pt-1"},
       e(Btn,{g:true, perigo:true, ic:"trash", disabled:!c.edita, onClick:excluir, className:"mr-auto"}, "Excluir pedido"),
+      e(Btn,{g:true, ic:"pencil", disabled:!c.edita, onClick:function(){ p.editar(pd); }}, "Editar"),
       e(Btn,{g:true, ic:"plus", disabled:!c.edita, onClick:function(){ p.lancar(pd.id); }}, "Lançar parcela"), e(Btn,{g:true, neutro:true, onClick:p.fechar}, "Fechar")));
 }
 
