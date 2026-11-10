@@ -11,7 +11,7 @@
 // semContagem: true tira o "N de N" de cima da tabela (Metas, 02/11/2026).
 // cols[].acao = {rotulo, titulo, onClick}: botãozinho no canto do título da coluna (ex.: "+" para abrir mais colunas; Metas › Revendedoras, 02/11/2026).
 // Grupos que abrem e fecham (03/11/2026, Atendimento interno › Listagens): grupoAberto(valor) = true/false, aoGrupo(valor) = clicou na linha do grupo, grupoEsquerda: true = texto da linha do grupo no começo (não centralizado).
-// limite (10/11/2026, Marketing › Fotos de catálogo, 17 mil linhas): mostra só as N primeiras linhas e um botão "Mostrar mais N" embaixo; filtro e ordem valem para a lista inteira. faixaFina: true deixa a linha de grupo baixa (24 px, 11 px).
+// limite (10/11/2026, Marketing › Fotos de catálogo, 17 mil linhas): mostra só as N primeiras linhas (com agrupar, N por grupo aberto) e um botão "Mostrar mais N" embaixo; filtro e ordem valem para a lista inteira. faixaFina: true deixa a linha de grupo baixa (24 px, 11 px).
 // cols[].corTopo = cor da faixa de 3 px no topo do título da coluna (separa grupos de colunas por cor; Fotos de catálogo, 10/11/2026).
 // escura: true = cabeçalho escuro, sem dourado (layout D; Fotos de catálogo, 10/11/2026).
 // grade: true = linhas finas também entre as colunas (grade completa, como planilha; Fotos de catálogo, 10/11/2026).
@@ -69,30 +69,16 @@ function TabelaPlanilha(p){
     return l;
   }, [p.linhas, p.cols, filtros, ordem, p.agrupar]);
   useEffect(function(){ setPag(1); }, [filtros, ordem]);
-  var lim = p.limite ? p.limite*pag : 0, vis = lim && linhas.length>lim ? linhas.slice(0, lim) : linhas;
+  var lim = p.limite ? p.limite*pag : 0, agrupado = !!(lim && p.agrupar && p.grupoAberto), vis = linhas, temMais = false;
+  if(agrupado){   // com grupos, o limite vale POR GRUPO aberto (senão o primeiro grupo comia todas as linhas); grupo fechado entra com UMA linha, só para desenhar o título
+    var cont = {}, visto = {}; vis = [];
+    linhas.forEach(function(l){ var g = l[p.agrupar]; if(!p.grupoAberto(g)){ if(!visto[g]){ visto[g] = 1; vis.push(l); } return; } cont[g] = (cont[g] || 0)+1; if(cont[g]<=lim) vis.push(l); else temMais = true; });
+  } else if(lim && linhas.length>lim){ vis = linhas.slice(0, lim); temMais = true; }
   useEffect(function(){ if(p.onFiltradas) p.onFiltradas(linhas); }, [linhas]);   // eslint-disable-line react-hooks/exhaustive-deps
   var centro = true, cel = " text-center";   // 02/11/2026 (Marcus): toda tabela centralizada, sem linhas verticais
   var nFiltros = Object.keys(filtros).filter(function(k){ return filtros[k]; }).length;
-  var ncols = p.cols.length, corpo = [], ultimo;
-  vis.forEach(function(l, i){
-    if(p.agrupar && l[p.agrupar]!==ultimo){ ultimo = l[p.agrupar]; var q = 0; for(var j=i;j<vis.length && vis[j][p.agrupar]===ultimo;j++) q++;
-      var gl = p.linhaGrupo ? p.linhaGrupo(ultimo, vis.slice(i, i+q)) : null, gv = ultimo;
-      corpo.push(gl ? e("tr",{key:"g"+i, onClick:p.aoGrupo ? function(){ p.aoGrupo(gv); } : undefined, className:p.aoGrupo ? "cursor-pointer hover:brightness-125" : undefined}, e("td",{colSpan:gl.span, className:(p.faixaFina ? "h-6 text-[11px] uppercase tracking-[.05em]" : "h-8 text-[13px]")+" whitespace-nowrap border-b border-border "+(p.escura ? "bg-white/10" : "bg-[#B8862B]/25")+" px-2.5 font-semibold"+(p.grupoEsquerda ? " text-left" : cel)}, gl.rotulo), (gl.resto||[]).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); })) // padrao-ok: linha do grupo com o texto no começo (pedido do Marcus, 03/11/2026, Atendimento interno › Listagens)
-        : e("tr",{key:"g"+i}, e("td",{colSpan:ncols, className:"h-8 whitespace-nowrap border-b border-border bg-white/10 px-2.5 text-[13px] font-semibold"+cel}, p.rotuloGrupo ? p.rotuloGrupo(ultimo, q) : texto(ultimo)+" · "+q))); }
-    if(p.agrupar && p.grupoAberto && !p.grupoAberto(l[p.agrupar])) return;   // grupo fechado: só a linha do grupo aparece
-    var chv = p.chave ? l[p.chave] : i, aberta = !!(p.detalhe && detAbertos[chv]);
-    var alterna = function(){ var n = Object.assign({}, detAbertos); if(n[chv]) delete n[chv]; else n[chv] = true; setDetAbertos(n); };
-    corpo.push(e("tr",{key:chv, onClick:p.detalhe ? alterna : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, "aria-expanded":p.detalhe ? aberta : undefined, className:(p.detalhe || p.aoClicar) ? (centro ? "cursor-grab" : "cursor-pointer")+" hover:bg-white/10"+(aberta ? " bg-[#B8862B]/20" : "") : ""},
-      p.cols.map(function(c, ci){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); if(p.detalhe && ci===0) tx = (aberta ? "▾ " : "▸ ")+tx; return e("td",{key:c.k, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px]"+(p.grade ? " border-x !border-white/25" : "")+cel+(c.sep ? " border-l-2 border-l-[#E8B84B]" : "")+(c.cor ? " "+c.cor(l) : "")}, c.render ? c.render(l[c.k], l) : tx); })));
-    if(aberta) corpo.push(e("tr",{key:"d"+chv}, e("td",{colSpan:ncols, className:"border-b border-border bg-black/25 p-2"}, p.detalhe(l))));
-  });
-  return e("div",{ref:raiz, className:"flex flex-col gap-2"+(p.cheia ? " h-full" : "")},
-    (!p.semContagem || nFiltros>0 || ordem) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
-      !p.semContagem && e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
-      (nFiltros>0 || ordem) && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
-    e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : undefined, className:"overflow-x-auto rounded-lg border border-border"+(p.compacta ? " w-fit max-w-full" : "")+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
-      e("table",{className:(p.compacta ? "" : "w-full ")+"border-collapse text-[13px]", style:{height:p.cheia ? "100%" : undefined, background:p.escura ? "#1c1d21" : "linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left "+(p.totalLinha ? 33 : 0)+"px/100% "+(30*(1+(p.cabAcima ? p.cabAcima.length : 0)))+"px no-repeat"}},   // topo dourado: UM degradê do começo ao fim da tabela (02/11/2026)
-        e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b border-[#1a1306]/25 px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"+(g.sep ? " border-l-2 border-l-[#1a1306]" : "")}, g.t); })); }), e("tr",null, p.cols.map(function(c){
+  var ncols = p.cols.length, corpo = [], ultimo, topo = [], base = [], sep = !!(p.cabSoAberto && agrupado);   // sep: TODAS as faixas de categoria em cima; a linha de títulos e os códigos das abertas embaixo
+  var linhaCab = function(chave){ return e("tr",{key:chave}, p.cols.map(function(c){
           var f = !!filtros[c.k], o = ordem && ordem.k===c.k ? ordem.dir : 0;
           return e("th",{key:c.k, style:c.corTopo ? {borderTop:"3px solid "+c.corTopo} : undefined, className:"relative h-[30px] cursor-grab border-b border-border bg-transparent p-0 text-center"+(p.grade ? " border-x border-x-[#1a1306]/25" : "")+(c.sep ? " border-l-2 border-l-[#1a1306]" : "")},
             p.semFiltro ? e("div",{className:"flex h-[30px] w-full items-center justify-center whitespace-nowrap px-2.5 text-[11px] font-semibold uppercase tracking-[.05em] "+(p.escura ? "text-foreground" : "text-[#1a1306]")}, c.t) : e("button",{type:"button", onClick:function(){ setAberto(aberto===c.k ? null : c.k); }, title:"Filtrar e ordenar "+c.t, className:"flex h-[30px] w-full items-center justify-center gap-1.5 whitespace-nowrap px-2.5 text-[11px] font-semibold uppercase tracking-[.05em] cursor-grab hover:bg-black/10 "+(f ? (p.escura ? "bg-white/15 text-foreground" : "bg-[#1a1306] text-[#F5E7BE]") : (p.escura ? "text-foreground" : "text-[#1a1306]"))},
@@ -101,10 +87,31 @@ function TabelaPlanilha(p){
             aberto===c.k && e(MenuColuna,{col:c, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
               aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },
               aoOrdenar:function(d){ setOrdem(d ? {k:c.k, dir:d} : null); setAberto(null); }}));
-        }))),
+        })); };
+  vis.forEach(function(l, i){
+    if(p.agrupar && l[p.agrupar]!==ultimo){ ultimo = l[p.agrupar]; var q = 0; for(var j=i;j<vis.length && vis[j][p.agrupar]===ultimo;j++) q++;
+      var gl = p.linhaGrupo ? p.linhaGrupo(ultimo, vis.slice(i, i+q)) : null, gv = ultimo;
+      (sep ? topo : corpo).push(gl ? e("tr",{key:"g"+i, onClick:p.aoGrupo ? function(){ p.aoGrupo(gv); } : undefined, className:p.aoGrupo ? "cursor-pointer hover:brightness-125" : undefined}, e("td",{colSpan:gl.span, className:(p.faixaFina ? "h-6 text-[11px] uppercase tracking-[.05em]" : "h-8 text-[13px]")+" whitespace-nowrap border-b border-border "+(p.escura ? "bg-white/10" : "bg-[#B8862B]/25")+" px-2.5 font-semibold"+(p.grupoEsquerda ? " text-left" : cel)}, gl.rotulo), (gl.resto||[]).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b border-border bg-[#B8862B]/25 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); })) // padrao-ok: linha do grupo com o texto no começo (pedido do Marcus, 03/11/2026, Atendimento interno › Listagens)
+        : e("tr",{key:"g"+i}, e("td",{colSpan:ncols, className:"h-8 whitespace-nowrap border-b border-border bg-white/10 px-2.5 text-[13px] font-semibold"+cel}, p.rotuloGrupo ? p.rotuloGrupo(ultimo, q) : texto(ultimo)+" · "+q))); }
+    if(p.agrupar && p.grupoAberto && !p.grupoAberto(l[p.agrupar])) return;   // grupo fechado: só a linha do grupo aparece
+    var chv = p.chave ? l[p.chave] : i, aberta = !!(p.detalhe && detAbertos[chv]);
+    var alterna = function(){ var n = Object.assign({}, detAbertos); if(n[chv]) delete n[chv]; else n[chv] = true; setDetAbertos(n); };
+    (sep ? base : corpo).push(e("tr",{key:chv, onClick:p.detalhe ? alterna : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, "aria-expanded":p.detalhe ? aberta : undefined, className:(p.detalhe || p.aoClicar) ? (centro ? "cursor-grab" : "cursor-pointer")+" hover:bg-white/10"+(aberta ? " bg-[#B8862B]/20" : "") : ""},
+      p.cols.map(function(c, ci){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); if(p.detalhe && ci===0) tx = (aberta ? "▾ " : "▸ ")+tx; return e("td",{key:c.k, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px]"+(p.grade ? " border-x !border-white/25" : "")+cel+(c.sep ? " border-l-2 border-l-[#E8B84B]" : "")+(c.cor ? " "+c.cor(l) : "")}, c.render ? c.render(l[c.k], l) : tx); })));
+    if(aberta) corpo.push(e("tr",{key:"d"+chv}, e("td",{colSpan:ncols, className:"border-b border-border bg-black/25 p-2"}, p.detalhe(l))));
+  });
+  if(sep) corpo = topo.concat(base.length ? [linhaCab("cab")] : [], base);
+  return e("div",{ref:raiz, className:"flex flex-col gap-2"+(p.cheia ? " h-full" : "")},
+    (!p.semContagem || nFiltros>0 || ordem) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
+      !p.semContagem && e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
+      (nFiltros>0 || ordem) && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
+    e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : undefined, className:"overflow-x-auto rounded-lg border border-border"+(p.compacta ? " w-fit max-w-full" : "")+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
+      e("table",{className:(p.compacta ? "" : "w-full ")+"border-collapse text-[13px]", style:{height:p.cheia ? "100%" : undefined, background:p.escura ? "#1c1d21" : "linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left "+(p.totalLinha ? 33 : 0)+"px/100% "+(30*(1+(p.cabAcima ? p.cabAcima.length : 0)))+"px no-repeat"}},   // topo dourado: UM degradê do começo ao fim da tabela (02/11/2026)
+        (p.cabSoAberto && p.agrupar && p.grupoAberto) ? null   // cabSoAberto: cabeçalho fora do topo: só aparece no corpo, depois dos grupos fechados e antes dos abertos (Marcus, 10/11/2026)
+        : e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b border-[#1a1306]/25 px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"+(g.sep ? " border-l-2 border-l-[#1a1306]" : "")}, g.t); })); }), linhaCab("cab")),
         e("tbody",null, corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-center text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))))),
-    (lim>0 && linhas.length>lim) && e("div",{className:"flex flex-wrap items-center justify-center gap-3 text-[13px]"},
-      e("span",null, "Mostrando "+vis.length.toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR")),
+    (lim>0 && temMais) && e("div",{className:"flex flex-wrap items-center justify-center gap-3 text-[13px]"},
+      e("span",null, agrupado ? "Mostrando "+lim.toLocaleString("pt-BR")+" linhas em cada grupo aberto" : "Mostrando "+vis.length.toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR")),
       e("button",{type:"button", onClick:function(){ setPag(pag+1); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Mostrar mais "+p.limite.toLocaleString("pt-BR"))));
 }
 export { TabelaPlanilha };

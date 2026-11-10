@@ -14,13 +14,16 @@ import { PageHead } from "@/apps/montagem/ui/page";
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { e, useEffect, useMemo, useState } from "@/shared/react";
 
+var ORDEM = new Intl.Collator("pt-BR", {numeric:true, sensitivity:"base"});   // A2039 antes de A2040, 2B0001 antes de 2B0072
+
 var ETAPAS_LOTE = [["foto", "Fotografada"], ["ed", "Editada"], ["sub", "Na DevMaster"]];
 var N = function(v){ return v==null ? "—" : Number(v).toLocaleString("pt-BR"); };
 var PCT = function(n, tot){ return tot ? (n/tot*100).toLocaleString("pt-BR", {minimumFractionDigits:1, maximumFractionDigits:1})+"%" : "—"; };
 var COR = {foto:"#5B8DEF", ed:"#A78BFA", sub:"#2DD4BF"};   // as três etapas (mesmas cores das fases de Cadastro de peças › Pedidos)
 var ABAS = [["lista", "Listagem"], ["cat", "Progresso por categoria"], ["dia", "Produção diária"]];
-var BTN_ICONE = "h-[30px] w-8 rounded-md border border-border bg-card text-[13px] hover:bg-white/10";
-var BTN_MARCAR = "h-[30px] rounded-md border border-primary bg-primary/20 px-3 text-[13px] font-semibold text-primary hover:bg-primary/30";
+// botões pequenos dentro da linha (Marcus, 10/11/2026: "esse botão marcar está uma merda, diminui ele"): 22 px de altura, texto 11 px
+var BTN_ICONE = "h-[22px] w-6 rounded border border-border bg-card text-[11px] leading-none hover:bg-white/10"; // padrao-ok
+var BTN_MARCAR = "h-[22px] rounded border border-primary/60 px-2 text-[11px] font-semibold leading-none text-primary hover:bg-primary/20"; // padrao-ok
 
 // painel de lançamento: colar códigos novos ou marcar uma etapa em vários códigos de uma vez
 function Lancar(){
@@ -105,18 +108,25 @@ function colunas(acao){
   return [
     {k:"cod", t:"Código", fmt:t},
     {k:"cat", t:"Categoria", fmt:t},
-    colEtapa({k:"fotoTxt", t:"Foto", etapa:"foto", ok:"fOk", data:"fotoData", botao:"Marcar ›", titulo:"Marcar a foto de", ultima:function(l){ return !l.eOk; }}, acao),
+    colEtapa({k:"fotoTxt", t:"Foto", etapa:"foto", ok:"fOk", data:"fotoData", botao:"Marcar", titulo:"Marcar a foto de", ultima:function(l){ return !l.eOk; }}, acao),
     {k:"fotoQuem", t:"Quem fotografou", corTopo:COR.foto, fmt:t},
-    colEtapa({k:"edTxt", t:"Editada", etapa:"ed", ok:"eOk", data:"edData", antes:"fOk", botao:"Marcar ›", titulo:"Marcar a edição de", ultima:function(l){ return !l.sOk; }}, acao),
+    colEtapa({k:"edTxt", t:"Editada", etapa:"ed", ok:"eOk", data:"edData", antes:"fOk", botao:"Marcar", titulo:"Marcar a edição de", ultima:function(l){ return !l.sOk; }}, acao),
     {k:"edQuem", t:"Quem editou", corTopo:COR.ed, fmt:t},
-    colEtapa({k:"subTxt", t:"Sistema", etapa:"sub", ok:"sOk", data:"subData", antes:"eOk", botao:"Subir ›", titulo:"Subir na DevMaster o código", ultima:function(){ return true; }}, acao),
+    colEtapa({k:"subTxt", t:"Sistema", etapa:"sub", ok:"sOk", data:"subData", antes:"eOk", botao:"Subir", titulo:"Subir na DevMaster o código", ultima:function(){ return true; }}, acao),
     {k:"subQuem", t:"Quem subiu", corTopo:COR.sub, fmt:t},
     {k:"obs", t:"Observações", fmt:t}];
 }
 
 function AbaFotosCatalogo(){
-  var cx = use(), s = cx.state, d = cx.dispatch, fc = s.fc, sl = useState(false), lancar = sl[0], sa = useState("lista"), aba = sa[0];
-  var linhas = useMemo(function(){ return fc ? linhasFotos(fc).map(function(l){ return Object.assign({}, l, {fotoTxt:l.fOk ? "Ok" : (l.esp || "Falta"), edTxt:l.eOk ? "Ok" : "Falta", subTxt:l.sOk ? "Ok" : "Falta"}); }) : []; }, [fc]);
+  var cx = use(), s = cx.state, d = cx.dispatch, fc = s.fc, sl = useState(false), lancar = sl[0], sa = useState("lista"), aba = sa[0], sg = useState({}), abertos = sg[0];
+  // listagem em ORDEM: por categoria e, dentro dela, pelo código (Marcus, 10/11/2026); cada categoria é um grupo que começa FECHADO
+  var linhas = useMemo(function(){ return fc ? linhasFotos(fc).map(function(l){ return Object.assign({}, l, {fotoTxt:l.fOk ? "Ok" : (l.esp || "Falta"), edTxt:l.eOk ? "Ok" : "Falta", subTxt:l.sOk ? "Ok" : "Falta"}); }).sort(function(a, b){ return ORDEM.compare(a.cat, b.cat) || ORDEM.compare(a.cod, b.cod); }) : []; }, [fc]);
+  var porCat = useMemo(function(){ var m = {}; if(fc) porCategoria(fc).forEach(function(c){ m[c.cat] = c; }); return m; }, [fc]);
+  var cats = Object.keys(porCat);
+  var abreTodos = function(v){ var o = {}; if(v) cats.forEach(function(c){ o[c] = true; }); sg[1](o); };
+  var alterna = function(c){ var o = Object.assign({}, abertos); if(o[c]) delete o[c]; else o[c] = true; sg[1](o); };
+  // faixa da categoria em COLUNAS que ficam alinhadas com a tabela (Marcus, 10/11/2026: "código embaixo de código, % embaixo de %"): nome | total | foto e % | editada e % | sistema e % | em branco
+  var grupo = function(c){ var x = porCat[c] || {total:0, foto:0, ed:0, sub:0}; return {span:1, rotulo:(abertos[c] ? "▾ " : "▸ ")+c, resto:[N(x.total)+" códigos", N(x.foto), PCT(x.foto, x.total), N(x.ed), PCT(x.ed, x.total), N(x.sub), PCT(x.sub, x.total), ""]}; };
   var cols = useMemo(function(){ return colunas(function(op, cod, etapa){ d({type:"FC", op:op, cod:cod, etapa:etapa, por:porDe(s)}); }); }, [s.usuario, d]);   // eslint-disable-line react-hooks/exhaustive-deps
   // código novo cadastrado na DevMaster (Rayssa) entra sozinho aqui: consulta a cada 2 minutos enquanto a tela está aberta; foto já subida na DevMaster marca o Sistema
   useEffect(function(){
@@ -129,8 +139,11 @@ function AbaFotosCatalogo(){
   return e(Pagina,null, cab,
     lancar && e(Lancar),
     e(Painel,{fc:fc}),
-    e(AbasTela,{abas:ABAS, atual:aba, onMudar:sa[1]}),
-    aba==="lista" ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:"Nenhum código lançado. Use \"Lançar ou marcar\" para colar os códigos novos."})
+    e("div",{className:"flex flex-wrap items-end gap-0 border-b border-border"}, e(AbasTela,{abas:ABAS, atual:aba, onMudar:sa[1]}),
+      aba==="lista" && e("div",{role:"group", className:"mb-1 ml-2 inline-flex overflow-hidden rounded-md border border-border"},   // bloco grudado ao lado das abas
+        e("button",{type:"button", onClick:function(){ abreTodos(true); }, className:"h-8 whitespace-nowrap px-3 text-[13px] hover:bg-white/10"}, "Abrir todos"),
+        e("button",{type:"button", onClick:function(){ abreTodos(false); }, className:"h-8 whitespace-nowrap border-l border-border px-3 text-[13px] hover:bg-white/10"}, "Fechar todos"))),
+    aba==="lista" ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, agrupar:"cat", grupoEsquerda:true, cabSoAberto:true, grupoAberto:function(c){ return !!abertos[c]; }, aoGrupo:alterna, linhaGrupo:function(c){ return grupo(c); }, vazio:"Nenhum código lançado. Use \"Lançar ou marcar\" para colar os códigos novos."})
       : aba==="cat" ? e(Categorias,{fc:fc}) : e(Producao,{fc:fc}));
 }
 
