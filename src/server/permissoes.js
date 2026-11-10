@@ -24,6 +24,7 @@ export const SETORES_DO_MODULO = {
   chathor: ["*"],   // horário de trabalho de cada colaborador para a faixa do alto da conversa do SorellyChat (só nome, entrada, saída e dias; sem salário nem CPF)
   kndados: ["kitsnovos", "cadastro"],   // planilha de kits novos da Michele (03/11/2026): dados reais só no servidor, nunca no Git
   lst: ["*"],   // listagens de retirada e os kits delas (05/11/2026, Marcus): a Montagem, a Bipagem, as Condicionais e as representantes veem a MESMA listagem em qualquer aparelho. Dados reais só no servidor, nunca no Git.
+  aci: ["*"],   // registros de acerto do atendimento interno (10/11/2026): o Consolidado Sorelly precisa do mesmo registro em todos os computadores; uma chave por acerto
   int: ["*"],   // atendimentos do Atendimento interno (10/11/2026, Marcus): quem atende e quem acompanha veem o mesmo atendimento em andamento; uma chave por atendimento
   pag: ["*"],   // pedidos de conta (09/11/2026, Marcus): o atendimento interno e as representantes ENVIAM, e TODO o Financeiro recebe na fila do Direcionar; uma chave por pedido
   kn: ["*"],   // kits novos direcionados pela Michele às representantes (29/10/2026): todo mundo logado lê, para o kit chegar no app da representante em qualquer aparelho

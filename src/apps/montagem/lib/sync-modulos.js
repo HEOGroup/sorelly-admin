@@ -6,7 +6,7 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "rpo", "rpf", "fx"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
 var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 // pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
@@ -15,6 +15,8 @@ var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas"], sc:["saldosContas"
 function fatiaPag(s){ var o = {}; (s.lancFin||[]).forEach(function(x){ if(x && x.id && !x.demo) o["lf_"+x.id] = x; }); ((s.dp && s.dp.pix)||[]).forEach(function(x){ if(x && x.id && !x.demo && (x.internoId || x.pid)) o["dp_"+x.id] = x; }); return o; }   // pedido de verdade tem internoId (atendimento interno) ou pid (pagamento da representante); os de teste não têm
 // int = atendimentos do Atendimento interno (10/11/2026, Marcus: "a menina está atendendo e no meu não aparece"): uma chave por atendimento (i_<id>), só dos últimos 3 dias e sem os de demonstração.
 // Quem tira o atendimento da lista (INT_REMOVER) apaga para todos; atendimento que só ficou velho demais NÃO é apagado do servidor (confere pelo id em s.internos).
+// aci = registros de acerto do atendimento interno (10/11/2026, Marcus: "porque não gerou o consolidado também?"): o Consolidado Sorelly lê internos (int), pagamentos (pag) e o registro do acerto (vendas, comissão, brinde, peças, assinatura). Uma chave por acerto (a_<id>), só os reais de 09/11 em diante.
+function fatiaAci(s){ var o = {}; (s.acertosConsignado||[]).forEach(function(x){ if(x && x.id && x.origem==="interno" && x.internoId && !x.demo && x.data && x.data>="2026-11-09") o["a_"+x.id] = x; }); return o; }
 function fatiaInt(s){ var o = {}, corte = new Date(Date.now()-2*86400000).toISOString().slice(0, 10); (s.internos||[]).forEach(function(x){ if(x && x.id && !x.demo && !x.demoHoje && x.data && x.data>=corte) o["i_"+x.id] = x; }); return o; }
 // fc = Fotos de catálogo (10/11/2026, 17 mil códigos): uma chave por código (c_<código>) e m = histórico/categorias/semeado. Assim duas pessoas marcando códigos diferentes não se apagam, e cada clique envia só o código mexido.
 // A lista de 17 mil é montada uma vez por versão do s.fc (cache pela identidade do objeto), senão cada tecla digitada em qualquer tela refaria tudo.
@@ -25,7 +27,7 @@ function fatiaFc(s){
   CACHE_FC.set(s.fc, o); return o;
 }
 function sigFc(s){ if(!s.fc) return ""; var i = SIG_FC.get(s.fc); if(i===undefined){ i = ++N_FC; SIG_FC.set(s.fc, i); } return "fc#"+i; }
-var fatia = function(s, c){ if(c==="fc") return fatiaFc(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
+var fatia = function(s, c){ if(c==="fc") return fatiaFc(s); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");

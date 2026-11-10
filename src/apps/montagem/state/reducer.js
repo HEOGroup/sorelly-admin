@@ -283,6 +283,11 @@ function reducer(s, a){
           if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
         if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
         fcS.codigos = fcCods; return Object.assign({}, s, {fc:fcS}); }
+      if(a.chave==="aci"){   // registros de acerto do atendimento interno vindos do servidor (10/11/2026): a_<id>; null = tirado
+        var acP = (s.acertosConsignado||[]).slice();
+        Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("a_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = acP.findIndex(function(x){ return x.id===id; });
+          if(v===null){ if(ix>=0) acP.splice(ix, 1); } else if(ix>=0) acP[ix] = v; else acP.unshift(v); });
+        return Object.assign({}, s, {acertosConsignado:acP}); }
       if(a.chave==="int"){   // atendimentos do Atendimento interno vindos do servidor (10/11/2026): i_<id> = atendimento; null = tirado da lista
         var inP = (s.internos||[]).slice();
         Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("i_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = inP.findIndex(function(x){ return x.id===id; });

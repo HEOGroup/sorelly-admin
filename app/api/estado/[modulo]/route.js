@@ -55,7 +55,7 @@ export const PUT = rota(async (req, { eu, params }) => {
   if (!b.chaves || typeof b.chaves !== "object" || Array.isArray(b.chaves) || !Object.keys(b.chaves).length) throw invalido("chaves");
   if (!podeModulo(eu, modulo)) return nega();
   if (ehModuloItens(modulo)) return putItens(modulo, b.chaves, eu);
-  if (eu.perfil !== "ADMIN" && modulo !== "mel" && modulo !== "kn" && modulo !== "pag" && modulo !== "int" && modulo !== "agrev" && modulo !== "rhsol" && modulo !== "finativ") {   // mel e kn: qualquer funcionário pode criar o módulo ao enviar o 1º pedido / 1º kit novo
+  if (eu.perfil !== "ADMIN" && modulo !== "mel" && modulo !== "kn" && modulo !== "pag" && modulo !== "int" && modulo !== "aci" && modulo !== "agrev" && modulo !== "rhsol" && modulo !== "finativ") {   // mel e kn: qualquer funcionário pode criar o módulo ao enviar o 1º pedido / 1º kit novo
     const ja = await consulta("select 1 from sorelly.estado_modulo where modulo = $1", [modulo]);
     if (!ja.rowCount) return erro("Este módulo ainda não recebeu a carga inicial. Peça à Diretoria.", 403);
   }
