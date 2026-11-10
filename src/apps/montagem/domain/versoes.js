@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.161", data:"2026-11-10", titulo:"Faturamento de 10/11, previsão a 98% e total de revendedoras sem perder dias", itens:[
+  {tipo:"correção", area:"Servidor", txt:"O total de revendedoras do dia gravado sozinho às 10h apagava os dias anteriores no servidor. Agora cada dia entra sem tirar os outros."},
+  {tipo:"correção", area:"Financeiro", txt:"Previsão do mês: o padrão quando nada foi escolhido passou de 99% para 98%, e o valor escolhido vale para todos."},
+  {tipo:"melhoria", area:"Financeiro", txt:"Faturamento de 10/11: 469 acertos e R$ 371.460,40 (média R$ 792,03), 4 no Carregar, 1.496 a realizar. Conferido com a DevMaster ao centavo."}
+ ]},
  {v:"0.18.160", data:"2026-11-10", titulo:"Controle de pagamentos: Destinos com banco, favorecido e chave Pix", itens:[
   {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Cada destino mostra o texto Escrever na folha, o banco, o favorecido e a chave Pix, lidos de Financeiro › Bancos › Chaves Pix (nada é digitado de novo), com botão Copiar. Destino sem chave mostra Sem chave Pix em amarelo. Tabela no layout D."},
   {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Novo destino Itaú Marco PJ (conta PIX - ITAÚ PJ - MARCO). É criado uma vez ao abrir a aba, por quem edita, se ainda não existir."}]},
