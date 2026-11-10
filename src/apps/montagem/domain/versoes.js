@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.109", data:"2026-11-09", titulo:"Direcionar: pedidos de conta chegam a todo o Financeiro", itens:[
+  {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"Os pedidos de conta ficavam só no computador de quem enviava. Agora sobem para o servidor (módulo pag, uma chave por pedido) e todo o Financeiro vê a mesma fila."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"OK, enviar ao financeiro: o Pix ou link sem conta entra na fila do Direcionar. Quando o Financeiro confirma, a conta volta para a funcionária."},
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Direcionar", txt:"A fila começa zerada (saem os pedidos de teste). Cartão da representante sugere o CNPJ da maquininha dela; cartão do atendimento interno já entra pago na GETNET - P."}]},
  {v:"0.18.108", data:"2026-11-09", titulo:"Resultado do mês: Resumo mostra o que já entrou e já saiu", itens:[
   {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"No Resumo do mês em andamento, a tabela ganhou as linhas Recebido até hoje, Falta receber, Pago até hoje, Falta pagar e Resultado até hoje, além de Entra, Sai e Resultado previsto. Antes só aparecia o total do mês inteiro (já com a previsão), e não dava para ver o que realmente aconteceu até agora. Mês fechado continua igual."}
  ]},

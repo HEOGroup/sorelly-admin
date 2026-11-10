@@ -26,7 +26,7 @@ import { p45Reduz } from "@/apps/montagem/domain/plano45-60";
 import { rhReduz } from "@/apps/montagem/domain/rh";
 import { metasReduz } from "@/apps/montagem/domain/metas-setor";
 import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
-import { dpReduz } from "@/apps/montagem/domain/direcionar-pix";
+import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
 import { pfReduz } from "@/apps/montagem/domain/pf";
@@ -270,6 +270,12 @@ function reducer(s, a){
       }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
+      if(a.chave==="pag"){   // pedidos de conta vindos do servidor (09/11/2026): lf_ = s.lancFin, dp_ = fila do Direcionar; null = pedido apagado
+        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice();
+        var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
+        Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
+          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); });
+        dpP.pix = pixP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
@@ -320,7 +326,13 @@ function reducer(s, a){
           var descD = (pDp.divisoes||[]).map(function(d){ return nomeD(d.destinoId)+(d.conta ? " · "+d.conta : ""); }).join(" + ") || "Conta definida";
           var lfD = (sDp.lancFin||[]).map(function(x){ if(x.id!==idPedidoRep(pDp.kitId)) return x;
             return Object.assign({}, x, {linhas:x.linhas.map(function(l){ if(l.pid!==pDp.pid) return l; var q0 = (l.partes||[])[0] || {}; return Object.assign({}, l, {enviada:true, partes:[{descricao:descD, valor:l.valor, comprovante:q0.comprovante||null, ok:false}]}); })}); });
-          sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); } }
+          sDp = sincContasRep(Object.assign({}, sDp, {lancFin:lfD})); }
+        // pedido do atendimento interno (09/11/2026): cada parte (forma#n) é uma linha do lançamento; a conta escolhida volta para a Atendimento Sorelly
+        if(pDp && pDp.internoId && pDp.status==="direcionado"){ var nomeI = function(id){ var d = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===id; }); return d ? d.nome : ""; };
+          var porLinha = {}; (pDp.partes||[]).forEach(function(pt, n){ var li = (pDp.linhas||[])[n]; if(li==null) return; var ds = (pDp.divisoes||[]).filter(function(d){ return d.parte===(pt.forma||"pix")+"#"+n; });
+            if(ds.length) porLinha[li] = ds.map(function(d){ return {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; }); });
+          sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
+            return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
@@ -1068,7 +1080,14 @@ function reducer(s, a){
       var mesmosPag = !!antF && chavePagF(linhasF)===chavePagF(antF.linhas);          // se os pagamentos não mudaram, a etapa dos comprovantes continua valendo
       var novoF = {id:"LF"+a.internoId, internoId:a.internoId, nome:a.nome, enviadoTs:agora, por:a.por||"", resumo:a.resumo || (antF && antF.resumo) || null, linhas:linhasF, etapaComprovantes:mesmosPag && !!antF.etapaComprovantes, finalizado:false, conferido:false};
       novoF = pxAplicar(s.px, novoF, s.lancFin);   // dinheiro, maquininha única e Pix com conta decidida pelas regras já entram resolvidos
-      return com(s, {lancFin:antF ? (s.lancFin||[]).map(function(x){ return x.internoId===a.internoId ? novoF : x; }) : [novoF].concat(s.lancFin||[])}, "Enviado ao financeiro: "+a.nome);
+      var sF = com(s, {lancFin:antF ? (s.lancFin||[]).map(function(x){ return x.internoId===a.internoId ? novoF : x; }) : [novoF].concat(s.lancFin||[])}, "Enviado ao financeiro: "+a.nome);
+      // o que ainda não tem conta (Pix, link) vai para a fila do Direcionar de todo o Financeiro (09/11/2026)
+      var formaDp = function(f){ return f==="link" ? "link" : (f==="credito" || f==="debito") ? "maquininha" : "pix"; };
+      var abertasF = [], pagosF = [];
+      novoF.linhas.forEach(function(l, i){ if(l.tipo!=="pagamento" || l.isento) return;
+        if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
+        else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
+      return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
     }
     case "FIN_ETAPA": {
       return com(s, {lancFin:(s.lancFin||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, a.patch); })});

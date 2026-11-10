@@ -288,7 +288,7 @@ function novo(){
   st.pp = ppDemo();   // Pedidos de peças da produção ao cadastro (vazio)
   st.pr = prDemo();   // Produção de peças (vazio; dados reais só no arquivo local)
   st.px = pxDemo();   // Chaves Pix e regras (contas automáticas do atendimento interno)
-  st.dp = dpDemo(); st.cp = cpAjustar(cpDemo()); st.cpV3 = 4;   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.dp = dpDemo(); st.dp.pix = []; st.dpZerado = 2; st.cp = cpAjustar(cpDemo()); st.cpV3 = 4;   // Controle de pagamentos (Financeiro): destinos e orientações
   st.cpe = {classe:{}, lanc:bonusNickolas()};   // Contas a pagar: o que o Marcus marcou como Sorelly ou Família em cada conta do DevMaster
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
@@ -436,7 +436,8 @@ function inicial(){
     if(s.ff && !s.ffImp3){ s.ffImp3 = true; var ffY = ffLocal(); if(ffY){ (ffY.dividas||[]).filter(function(x){ return /^x_/.test(x.id) && !(s.ff.dividas||[]).some(function(k){ return k.id===x.id; }); }).forEach(function(x){ s.ff.dividas.push(x); var pr = (s.ff.prest||[]).find(function(q){ return q.id===x.prestId; }); if(pr) pr.ativo = true; }); } }   // dívidas que o Marcus passou à mão (ex.: Amanda, total R$ 350)
     if(s.ff && !s.ffImp2){ s.ffImp2 = true; var ffX = ffLocal(); if(ffX){ ffX.contas.filter(function(c){ return /^x_/.test(c.id) && !s.ff.contas.some(function(k){ return k.id===c.id; }); }).forEach(function(c){ s.ff.contas.push(c); s.ff.parcelas[c.id] = ffX.parcelas[c.id]; }); } }   // contas que o Marcus passou e não existem no admin antigo (ex.: aluguel Uphills)
     if(!s.cp) s.cp = cpDemo();
-    if(!s.dp || s.dpV!==8){ s.dp = dpDemo(); s.dpV = 8; }   // v2 (24/10/2026): pedidos com forma Pix, Maquininha ou Link   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
+    if(!s.dp || s.dpV!==8){ s.dp = dpDemo(); s.dp.pix = []; s.dpV = 8; }
+    if(s.dpZerado!==2){ s.dp = Object.assign({}, s.dp, {pix:(s.dp.pix||[]).filter(function(x){ return x.internoId || x.pid; })}); s.dpZerado = 2; }   // 09/11/2026 (Marcus): a fila do Direcionar começa ZERADA (saem os pedidos de teste); a partir daqui os pedidos vêm do servidor (módulo "pag")   // v2 (24/10/2026): pedidos com forma Pix, Maquininha ou Link   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
     if(s.cp && s.cpV3!==4){ s.cp = cpAjustar(s.cp); s.cpV3 = 4; }
     if(!s.px) s.px = pxDemo();
     s.px = pxMigrar(s.px, s);   // traz as contas Pix reais (sem chave) do arquivo local, uma vez

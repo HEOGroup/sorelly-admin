@@ -449,7 +449,7 @@ function AtendimentoInterno(){
   var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : e("div",{className:"flex flex-col gap-2 rounded-xl bg-black/20 p-3"},
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
       e("b",{className:"text-[13px] uppercase tracking-wide"}, "Financeiro"+(lancFin ? (lancFin.conferido ? " · tudo conferido" : " · enviado às "+hhmmDeTs(lancFin.enviadoTs)) : "")),
-      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario)}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
+      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:form.vendaBruta||0, aPagar:dv.totalAPagar||0}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
     (!lancFin || alterado) && linhasEnvio.length>0 && !fechouPagamentos && e("p",{className:"text-[13px] font-semibold text-muted-foreground"},"Para enviar: feche todas as formas de pagamento (sem valor pendente) ou resolva a negociação."),
     alterado && e("p",{className:"text-[13px] font-semibold text-warning"},"Os pagamentos mudaram depois do envio: reenvie para o financeiro conferir de novo."),
     // etapa 1: comprovantes dos pagamentos anexados → OK libera os brindes · etapa 2: depois dos brindes (e da diferença, se houver) → finaliza e o financeiro confere

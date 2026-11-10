@@ -6,10 +6,14 @@ import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "rpo", "rpf"];
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "rpo", "rpf", "pag"];
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
 var ESPELHO = {ri:["revInternas"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
-var fatia = function(s, c){ if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
+// pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
+// lf_<id> = lançamento do Controle de pagamentos (s.lancFin: atendimento interno, representante, cobrança); dp_<id> = pedido da fila do Direcionar (s.dp.pix). Pedidos de teste (demo) nunca sobem.
+// Pedido apagado vai como null (empurrar), e quem recebe null tira o pedido (reducer SYNC_MODULO "pag").
+function fatiaPag(s){ var o = {}; (s.lancFin||[]).forEach(function(x){ if(x && x.id && !x.demo) o["lf_"+x.id] = x; }); ((s.dp && s.dp.pix)||[]).forEach(function(x){ if(x && x.id && !x.demo && (x.internoId || x.pid)) o["dp_"+x.id] = x; }); return o; }   // pedido de verdade tem internoId (atendimento interno) ou pid (pagamento da representante); os de teste não têm
+var fatia = function(s, c){ if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
@@ -72,6 +76,7 @@ function useSyncModulos(s, d){
     var m = ref.current.mods[chave]; if(!m || !m.pronto || m.bloqueado || m.semAcesso) return Promise.resolve();
     var atual = fatia(ref.current.s, chave) || {}, mudou = {}, n = 0;
     Object.keys(atual).forEach(function(k){ var j = json(atual[k]); if(j!==m.snaps[k]){ mudou[k] = atual[k]; n++; } });
+    if(chave==="pag") Object.keys(m.snaps).forEach(function(k){ if(!(k in atual) && m.snaps[k]!=="null"){ mudou[k] = null; n++; } });   // pedido apagado aqui: apaga para todos
     if(!n) return Promise.resolve();
     return chamar("PUT", "/estado/"+chave, {chaves:mudou}).then(function(r){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); m.versao = r.versao; }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; });   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
   };
