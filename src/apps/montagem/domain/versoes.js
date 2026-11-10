@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.115", data:"2026-11-10", titulo:"Atendimento Sorelly: sem zoom automático", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"A tela crescia sozinha até 1,5x em monitor largo e ficava gigante perto do resto do sistema. O zoom automático saiu: agora vale o tamanho padrão (13 px). Para aumentar, use o botão de tamanho do sistema no topo."}]},
  {v:"0.18.114", data:"2026-11-10", titulo:"PDF do orçamento das dívidas de prestadores fica no servidor", itens:[
   {tipo:"melhoria", area:"Financeiro familiar › Sócios › Prestadores", txt:"O PDF anexado a uma dívida de prestador vai para o servidor. Antes ficava só no navegador de quem anexou e os outros viam \"PDF não está neste computador\". PDFs antigos continuam abrindo no computador onde foram anexados."},
   {tipo:"correção", area:"Financeiro familiar › Resumo do grupo", txt:"Lançada a dívida que faltava de uma prestadora particular, com o PDF do orçamento. Sem a dívida, os PIX ficavam como pagos a mais e a linha não aparecia no Resumo do grupo."}]},

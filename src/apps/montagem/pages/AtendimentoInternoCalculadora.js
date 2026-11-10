@@ -79,7 +79,8 @@ var lerComprovante = function(arq, fim){
 var onEnter = function(fn){ return function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); fn(); } }; };
 
 // o conteúdo cresce junto com a largura disponível (muda quando o menu lateral abre ou fecha): a partir de 1500 px, até 1,5x
-var zoomDaLargura = function(w){ return w>1500 ? Math.min(1.5, Math.round(w/1500*100)/100) : 1; };
+// 10/11/2026 (Marcus: "a tela está gigante, no admin normal é bem menor"): o zoom automático saiu; o tamanho é o padrão (13 px fixo) e quem quiser maior usa o botão de tamanho do sistema no topo.
+var zoomDaLargura = function(){ return 1; };
 // bloco com cabeçalho em degradê (mesmo padrão do BlocoBarra) que abre e fecha ao clicar; fechado, só sobra a barra
 function BlocoRecolhivel(p){
   return e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
