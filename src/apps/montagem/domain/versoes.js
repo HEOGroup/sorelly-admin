@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.108", data:"2026-11-09", titulo:"Resultado do mês: Resumo mostra o que já entrou e já saiu", itens:[
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"No Resumo do mês em andamento, a tabela ganhou as linhas Recebido até hoje, Falta receber, Pago até hoje, Falta pagar e Resultado até hoje, além de Entra, Sai e Resultado previsto. Antes só aparecia o total do mês inteiro (já com a previsão), e não dava para ver o que realmente aconteceu até agora. Mês fechado continua igual."}
+ ]},
  {v:"0.18.107", data:"2026-11-09", titulo:"Atendimento Sorelly: textos para ler no tempo de escolha do kit", itens:[
   {tipo:"novo", area:"Atendimento interno", txt:"Ao tocar em Começou (escolha do kit), abre no meio da tela um bloco para a funcionária ler em voz alta para a revendedora, com o tempo que ela tem (até R$ 7.000 = 30 min; até R$ 12.000 = 45 min; até R$ 17.000 = 1 hora; acima = 2 horas); o relógio só liga depois do botão Li para ela. Quando o tempo acaba, abre sozinho um segundo bloco, educado: outras revendedoras esperam e é hora de finalizar a escolha. O bloco só fecha no botão Li para ela."}
  ]},
