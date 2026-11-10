@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.123", data:"2026-11-10", titulo:"Atendimento Sorelly: Kit novo e Kit retornando sem assinatura", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando não pede mais a assinatura na tela (a revendedora já assina a condicional): depois das regras explicadas, o botão é Finalizar atendimento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit novo agora abre o mesmo fluxo curto (Escolha do kit, Regras, Finalizar) em vez das etapas de acerto. O botão Acerto | Retornando | Kit novo no topo muda o tipo."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit novo: o valor do kit que a Michele lançou nos Kits novos aparece como Valor do kit liberado na etapa Escolha do kit (1 hora para escolher)."}]},
  {v:"0.18.122", data:"2026-11-10", titulo:"Atendimento Sorelly: Kit retornando", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando (a revendedora volta a vender, como kit novo) não tem etapas de acerto: Escolha do kit (60 minutos) → Regras e assinatura → finalizar. Não cria acerto nem pagamento."},
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Botão Acerto | Kit retornando no topo do atendimento para mudar o tipo. O tipo escolhido na agenda (Kit retornando) agora vale no atendimento."}]},

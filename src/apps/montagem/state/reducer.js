@@ -1138,7 +1138,7 @@ function reducer(s, a){
       var modR = modalidadeDe(s, itR.nome), vEfR = versaoEfetiva(vR, modR, comissaoEspecialDe(s, itR.nome));
       var zeroR = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, vEfR);
       var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
-      return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:"retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, "Kit retornando de "+itR.nome+" finalizado");
+      return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
     }
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;

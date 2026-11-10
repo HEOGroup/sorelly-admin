@@ -187,8 +187,12 @@ function AtendimentoInterno(){
   var jaFeito = !!sel && sel.status==="acertado";
   // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
   // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras e assinatura → finalizar
-  var retornando = !!sel && sel.tipo==="retornando";
+  var retornando = !!sel && (sel.tipo==="retornando" || sel.tipo==="kit_novo");   // fluxo curto: Kit retornando e Kit novo (Marcus, 10/11/2026: kit novo precisa de outra tela; a revendedora já assina a condicional, então não assina aqui)
   var temVenda = retornando || form.vendaBruta>0 || form.semVenda===true;
+  // Kit novo: o valor do kit é o que a Michele lançou nos Kits novos (módulo kn, pelo nome da revendedora); aparece como valor liberado (Marcus, 10/11/2026)
+  var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };
+  var knDela = sel && sel.tipo==="kit_novo" ? (Object.keys(s.kn||{}).map(function(k){ return s.kn[k]; }).filter(function(x){ return x && x.nome && normNome(x.nome)===normNome(sel.nome); }).sort(function(a,b){ return String(b.cadastro||"").localeCompare(String(a.cadastro||"")); })[0] || null) : null;
+  var valorKitNovo = knDela && knDela.valor>0 ? knDela.valor : 0;
   // Só acompanhar (10/11/2026, Marcus: "se eu clicar na aba posso ver o atendimento em tempo real"): atendimento que OUTRA pessoa começou abre somente leitura e acompanha o que ela preenche
   var quemAtende = sel ? (sel.iniciadoPor || (((s.lancFin||[]).find(function(l){ return l.internoId===sel.id; })||{}).por) || "") : "";
   var visor = !!sel && !jaFeito && !!quemAtende && String(quemAtende).split(" ")[0]!==String(nomeDe(s.usuario)).split(" ")[0];
@@ -605,7 +609,7 @@ function AtendimentoInterno(){
   var cienteOk = regras.length>0 && regras.every(function(r,i){ return !!regrasOk[i]; });
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
-  var pronto = !jaFeito && temVenda && cienteOk && !!assinatura && !!continuaEf && (!retornando || !!sel.escolhaFim);
+  var pronto = !jaFeito && temVenda && cienteOk && (retornando ? !!sel.escolhaFim : (!!assinatura && !!continuaEf));
   var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assinatura, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
@@ -651,7 +655,7 @@ function AtendimentoInterno(){
                 r.x.length>curto(r.x).length && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); var o = Object.assign({}, regraMais); o[i] = !aberta; setRegraMais(o); }, className:"self-start text-[13px] font-bold text-primary hover:underline"}, aberta ? "menos" : "ver mais"))); })),
           e("p",{className:"text-center text-[13px] font-semibold "+(cienteOk ? "text-success" : "text-muted-foreground")}, cienteOk ? "✓ Todas as regras passadas" : nRegras+" de "+regras.length+" regras passadas"),
           cienteOk && e("div",{className:"flex flex-col items-center gap-1"}, e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+sel.nome+" (com o mouse)"})),
-          e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, retornando ? "Confirmar e finalizar kit retornando" : "Confirmar e registrar acerto"),
+          e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, retornando ? "Finalizar atendimento" : "Confirmar e registrar acerto"),
           !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !temVenda ? "Falta o valor vendido (ou marque Não teve venda)." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : !cienteOk ? "Marque todas as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
 
   var conteudos = [null, null, null, null, null, null];
@@ -737,7 +741,7 @@ function AtendimentoInterno(){
           // topo em tabela fina (versão 4): rótulos em cima, valores embaixo
           var kitSel = e("span",{role:"group", "aria-label":"Kit da revendedora", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["padrao","Ouro"],["prata","Prata"]].map(function(o){ var on = modTab===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ escolherMod(o[0]); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "bg-card hover:bg-white/10")}, o[1]); }));
-          var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
+          var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"],["kit_novo","Kit novo"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
           var avisosTopo = [];
           if(sel.obs) avisosTopo.push(["Observação", sel.obs+(sel.encomenda ? " · Encomenda "+sel.encomenda : "")]);
@@ -754,7 +758,7 @@ function AtendimentoInterno(){
             ["Situação", cSit, "auto"],
             ["Kit", kitSel, "auto"]
           ];
-          if(!jaFeito && (!sel.tipo || sel.tipo==="acerto" || sel.tipo==="retornando")) cols.push(["Tipo", tipoSel, "auto"]);
+          if(!jaFeito && (!sel.tipo || sel.tipo==="acerto" || sel.tipo==="retornando" || sel.tipo==="kit_novo")) cols.push(["Tipo", tipoSel, "auto"]);
           cols.push(["Atendimento", cInicio, "auto"]);
           if(sel.inicioTs || jaFeito) cols.push(["Escolha do kit", cEscolha, "auto"]);
           if(jaFeito) cols.push(["Quem atende na montagem", cAtende, "auto"]);   // só depois de finalizar o acerto
@@ -934,7 +938,7 @@ function AtendimentoInterno(){
     nums.map(function(x,i){ return e("div",{key:i, className:LIN+" grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"+(i%2 ? " bg-white/[0.03]" : "")}, e("span",{className:"whitespace-nowrap"},x[0]), e("b",{className:"text-[13px] font-semibold"}, x[1])); }),
     e("div",{className:"flex-1"}),
     e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"}, e("button",{type:"button", onClick:marcarLida, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(regrasOk[rSel] ? "border-foreground/25 bg-card" : "border-primary bg-primary text-primary-foreground")}, regrasOk[rSel] ? "✓ Regra lida · desfazer" : "Li e expliquei esta regra"),
-      cienteOk && e("button",{type:"button", disabled:!temVenda || !continuaEf, onClick:function(){ setAssAberta(true); }, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Abre a assinatura da revendedora", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "✍ Assinar e finalizar" : "✍ Assinar e registrar")));
+      cienteOk && e("button",{type:"button", disabled:!temVenda || !continuaEf, onClick:function(){ if(retornando) registrar(); else setAssAberta(true); }, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Abre a assinatura da revendedora", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Finalizar atendimento" : "✍ Assinar e registrar")));
   var est4 = (jaFeito || msgs) ? e("div",{className:"flex flex-1 flex-col gap-3 p-3"}, pRegras)
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},
         termoAnt && e("div",{className:"flex justify-center gap-1.5 border-b border-foreground/25 p-2"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
@@ -951,8 +955,9 @@ function AtendimentoInterno(){
       sel.condOk || jaFeito ? e("span",{className:CX+"w-auto! border-success text-success"}, "✓ Condicionais confirmadas") : e("button",{type:"button", disabled:!condPronta, onClick:confCond, title:condPronta ? "" : "Falta o número, o valor e as peças de cada condicional.", className:"h-8 min-w-48 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(condPronta ? BRILHO : "")}, "Confirmar condicionais"),
       sel.condOk && !jaFeito && e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{condOk:false}}); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Corrigir")));
   var estVendas = e("div",{className:"flex min-w-0 flex-1 flex-col"}, metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Vendas", [tabVendas, notasVendas], "", "gap-0! p-0"), lado("Acerto", tabAcerto, "", "gap-0! p-0")));
-  var estEscolha = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Escolha do kit · Kit retornando", e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
+  var estEscolha = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Escolha do kit · "+(sel.tipo==="kit_novo" ? "Kit novo" : "Kit retornando"), e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
     e("p",{className:"font-semibold"}, "A revendedora escolhe as peças do kit. Tempo máximo: 60 minutos."),
+    sel.tipo==="kit_novo" && (valorKitNovo>0 ? e("p",{className:"rounded-md border border-primary/50 bg-primary/10 px-3 py-2 font-semibold"}, "Valor do kit liberado: "+din(valorKitNovo)+" · definido pela Michele") : e("p",{className:"font-semibold text-destructive"}, "A Michele ainda não lançou o valor deste kit novo.")),
     !sel.escolhaIni ? e("p",null, "Clique em ⏱ Começou, no topo, quando ela começar a escolher.") : sel.escolhaFim ? e("p",{className:"font-semibold text-success"}, "✓ Escolha terminada em "+relogio(decorridoSeg)+". Clique em Próxima e explique as regras.") : e("p",{className:"font-semibold"}, "Escolhendo há "+relogio(decorridoSeg)+" de 60:00. Clique em ■, no topo, quando ela terminar.")), "flex-1", "p-0"));
   var ESTS = retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
   var feitoE = ESTS.map(function(x){ return x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
