@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.166", data:"2026-11-10", titulo:"Resultado do mês: resumo em grupos e dezembro corrigido", itens:[
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Resumo do mês em tabela de campos (layout D): grupos ENTRA, SAI e RESULTADO, total de cada grupo em faixa escura e legenda de nota fiscal, dinheiro e diferença. Meses ao redor na mesma tabela, com Fechado, Em andamento e Previsto. Colunas Notas Fiscais e Contas a Receber, e grupo ACERTOS no topo (acertos feitos, média, acertos previstos e média prevista). Aba Faturamento e receber em tabela por grupos, um bloco embaixo do outro, com revendedoras no início do mês, acertos previstos no início e já adiadas, e a coluna De onde vem em uma linha só."},
+  {tipo:"correção", area:"Financeiro → Resultado do mês", txt:"Contas a pagar de dezembro e dos meses seguintes mostravam R$ 2,67 mi (a lista da DevMaster junta cheques e títulos atrasados no mês). Agora vale o valor do admin antigo, o mesmo da aba Previsão (dezembro R$ 1.500.381,39); a lista só entra quando não há valor do admin, com ≥."}
+ ]},
  {v:"0.18.165", data:"2026-11-10", titulo:"Consolidado Sorelly: mostra os atendimentos de hoje mesmo sem o registro completo", itens:[
   {tipo:"correção", area:"Atendimento interno › Consolidado Sorelly", txt:"Enquanto o computador da funcionária ainda não mandou o registro completo do acerto, o Consolidado usa o acerto guardado no próprio atendimento e os pagamentos enviados ao financeiro. Assim todos os atendimentos finalizados de hoje aparecem, com venda, comissão, valor do acerto e pagamentos."}]},
  {v:"0.18.164", data:"2026-11-10", titulo:"Consolidado Sorelly: acertos do atendimento interno pelo servidor", itens:[
