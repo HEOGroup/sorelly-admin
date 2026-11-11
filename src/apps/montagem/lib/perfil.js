@@ -2,6 +2,7 @@
 // Foto e situação (disponível, em reunião, ausente) de cada pessoa, guardadas no servidor (tabela sorelly.conta). Todo mundo logado vê os colegas; cada um muda só a própria.
 // Nome e e-mail NÃO mudam por aqui (decisão do Marcus, 27/10/2026): só a Diretoria, na aba Contas.
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 import { useEffect, useState } from "@/shared/react";
 
 var SITUACOES = {disponivel:["Disponível", "#3ecf8e"], reuniao:["Em reunião", "#f5a524"], ausente:["Ausente", "#8b8b8b"]};
@@ -53,7 +54,7 @@ function usePerfil(){
     var f = function(){ tick(function(x){ return x+1; }); };
     memoria.ouvintes.push(f);
     carregar();
-    var iv = setInterval(carregar, 30000);
+    var iv = setInterval(function(){ if(abaVisivel()) carregar(); }, 30000);
     return function(){ memoria.ouvintes = memoria.ouvintes.filter(function(x){ return x!==f; }); clearInterval(iv); };
   }, []);
   return {pessoas:memoria.pessoas, meuId:memoria.meuId};

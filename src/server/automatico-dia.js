@@ -9,6 +9,7 @@ import { faturamentoNFDoMes } from "./faturamento-nf.js";
 import { atualizarRevendedorasDoDia } from "./revendedoras-dia.js";
 import { atualizarEstoqueDoDia } from "./estoque-dia.js";
 import { sincronizarFotosDm } from "./fotos-dm.js";
+import { copiaDiaria } from "./estado-modulo.js";
 
 export const HORA_AUTOMATICA = 10;
 
@@ -45,10 +46,21 @@ async function gravarFaturamento(dias) {
   return { mudou: 0, motivo: "outra pessoa gravou ao mesmo tempo; tenta de novo na próxima" };
 }
 
-export async function rodarAutomaticoDoDia({ forcar = false } = {}) {
+// marca de "dia feito" (11/11/2026): cada tela aberta chama esta rotina a cada 30 min e ela relia DevMaster e notas fiscais toda vez (custo da Vercel).
+// Feito o dia sem erro, a tela recebe {jaFeito:true} na hora. O agendador da Vercel (cron) e o ?forcar=1 rodam sempre.
+async function diaFeito(dia) {
+  try { const r = await consulta("select conteudo->>'dia' as dia from sorelly.estado_modulo where modulo = 'autodia'"); return !!r.rows[0] && r.rows[0].dia === dia; } catch (e) { return false; }
+}
+async function marcarDia(dia) {
+  await consulta("insert into sorelly.estado_modulo (modulo, conteudo, versao, atualizado_por) values ('autodia', $1::jsonb, 1, 'automatico') on conflict (modulo) do update set conteudo = excluded.conteudo, versao = sorelly.estado_modulo.versao + 1, atualizado_em = now()", [JSON.stringify({ dia })]);
+}
+
+export async function rodarAutomaticoDoDia({ forcar = false, cron = false } = {}) {
   const agora = agoraBR();
   if (!forcar && agora.hora < HORA_AUTOMATICA) return { esperando: true, hora: agora.hora, ate: HORA_AUTOMATICA };
+  if (!forcar && !cron && await diaFeito(agora.iso)) return { dia: agora.iso, jaFeito: true };
   const out = { dia: agora.iso };
+  try { out.copia = await copiaDiaria(agora.iso); } catch (e) { out.copia = { erro: e && e.message }; }   // cópia de segurança de todos os módulos (uma por dia, 30 dias)
   try { out.revendedoras = await atualizarRevendedorasDoDia({ forcar: false }); } catch (e) { out.revendedoras = { erro: e && e.message }; }
   try { out.estoque = await atualizarEstoqueDoDia({ forcar: false }); } catch (e) { out.estoque = { erro: e && e.message }; }
   try { out.fotos = await sincronizarFotosDm(); } catch (e) { out.fotos = { erro: e && e.message }; }   // Fotos de catálogo (10/11/2026): produtos novos da DevMaster
@@ -59,6 +71,8 @@ export async function rodarAutomaticoDoDia({ forcar = false } = {}) {
     out.faturamento.ate = ontem;
     if (dias.length) out.faturamento.ultimo = dias[dias.length - 1];
   } catch (e) { out.faturamento = { erro: e && e.message }; }
+  const comErro = ["revendedoras", "estoque", "faturamento", "copia"].some((k) => out[k] && out[k].erro);
+  if (!comErro) await marcarDia(agora.iso).catch(() => {});
   return out;
 }
 

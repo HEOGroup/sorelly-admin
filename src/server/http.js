@@ -23,7 +23,11 @@ export async function usuarioDe(req) {
     const { payload } = await jwtVerify(t, segredo(), { algorithms: ["HS256"] });
     if (payload.conta) {
       // conta do sistema novo: vale o que está no banco agora (liberar, bloquear ou mudar setores tem efeito na hora)
-      const r = (await consulta("select * from sorelly.conta where id::text = $1", [String(payload.id)])).rows[0];
+      // guarda de 30 s por servidor (11/11/2026, custo da Vercel): antes lia o banco em TODA chamada. Bloquear ou mudar a conta vale em até 30 s.
+      const cache = (globalThis.__sorellyContas = globalThis.__sorellyContas || new Map()), ck = String(payload.id), hit = cache.get(ck);
+      let r;
+      if (hit && Date.now() - hit.em < 30000) r = hit.r;
+      else { r = (await consulta("select * from sorelly.conta where id::text = $1", [ck])).rows[0]; if (cache.size > 500) cache.clear(); cache.set(ck, { r, em: Date.now() }); }
       if (!r || r.status !== "ativo") return null;
       return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null };
     }

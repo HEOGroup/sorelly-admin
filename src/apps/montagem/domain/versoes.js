@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.6", data:"2026-11-11", titulo:"Servidor: nada mais some ao gravar, tudo fica registrado e o sistema fica mais leve", itens:[
+  {tipo:"correção", area:"Servidor", txt:"Os PIX de novembro do Financeiro familiar e os materiais do Estoque de material sumiram porque uma tela desatualizada gravava a lista inteira por cima da lista nova. Agora a tela manda só o que mudou e o servidor junta com o que está guardado: uma tela atrasada não apaga mais o lançamento de outra pessoa."},
+  {tipo:"correção", area:"Servidor", txt:"Mudança ainda não enviada não some quando chega dado novo do servidor: a tela junta as duas coisas e envia em seguida."},
+  {tipo:"novo", area:"Servidor", txt:"Toda gravação fica registrada (quem, quando e o que mudou) por 45 dias, e todos os módulos ganham uma cópia de segurança por dia, guardada por 30 dias."},
+  {tipo:"melhoria", area:"Servidor", txt:"Sistema mais leve: a tela busca todos os módulos numa chamada só (antes eram cerca de 40 a cada 20 segundos), não busca nada com a aba escondida e a rotina diária não refaz o trabalho depois que o dia já foi feito. O chat com a aba escondida confere a cada 32 segundos."}]},
  {v:"0.20.5", data:"2026-11-11", titulo:"Kit novo com média abaixo do mínimo: pedido ao Financeiro pelo Direcionar", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a média das vendas fica abaixo de R$ 700,00, aparece o botão Pedir autorização do kit novo ao Financeiro. A resposta chega na própria tela: autorizado (libera o valor do kit) ou não autorizado, com o motivo."},
   {tipo:"novo", area:"Financeiro › Direcionar", txt:"No alto da tela aparecem os pedidos de kit novo que estão esperando, com as três últimas vendas, a média, o mínimo, se ela deve acerto anterior e se tem dívida no setor de Inadimplência. O Financeiro escolhe Aceitar ou Não aceitar (com o motivo)."}]},

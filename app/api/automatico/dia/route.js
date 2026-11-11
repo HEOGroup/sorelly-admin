@@ -13,7 +13,7 @@ const executar = rota(async (req, { url }) => {
   const eu = ehCron ? null : await usuarioDe(req);
   if (!ehCron && !eu) return erro("Entre no sistema para continuar.", 401);
   const forcar = url.searchParams.get("forcar") === "1" && (ehCron || (eu && eu.perfil === "ADMIN"));
-  return json(await rodarAutomaticoDoDia({ forcar }));
+  return json(await rodarAutomaticoDoDia({ forcar, cron: ehCron }));
 }, { publica: true });
 
 export const GET = executar;

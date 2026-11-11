@@ -4,6 +4,7 @@
 // então fechar a aba ou o computador dormir não perde tempo.
 import { useSyncExternalStore, useEffect } from "react";
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 
 var CHAVE = "sorelly_progresso_v1";
 var MOTIVOS = [["fumar","Fumar"],["almocar","Almoçar"],["treinar","Treinar"],["parado","Parado"],["outro","Outro"]];
@@ -85,7 +86,7 @@ async function sincronizar(){
 // use uma vez (no relógio do topo): busca ao entrar e a cada 20 s, e envia 1 s depois de cada mudança
 function useSincronizarProgresso(){
   var s = useProgresso();
-  useEffect(function(){ sincronizar(); var iv = setInterval(sincronizar, 20000); return function(){ clearInterval(iv); }; }, []);
+  useEffect(function(){ sincronizar(); var iv = setInterval(function(){ if(abaVisivel()) sincronizar(); }, 20000); return function(){ clearInterval(iv); }; }, []);
   useEffect(function(){ var t = setTimeout(sincronizar, 1000); return function(){ clearTimeout(t); }; }, [s]);
 }
 

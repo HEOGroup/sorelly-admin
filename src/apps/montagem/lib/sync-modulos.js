@@ -5,6 +5,8 @@
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
 import { inadFatia } from "@/apps/montagem/domain/inadimplencia";
 import { useEffect, useRef, useState } from "@/shared/react";
+import { diff, aplicar } from "@/apps/montagem/lib/estado-patch";
+import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
 var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
@@ -42,6 +44,10 @@ function modulosLigados(){
 // Acabou a escolha "Este navegador manda / Do servidor" da Diretoria, que pausava tudo até alguém escolher (e escondia os registros do app da representante).
 // A marca antiga dessa escolha sai do navegador ao carregar.
 try { localStorage.removeItem("sorelly_sync_modo"); } catch(x){}
+// GRAVAÇÃO POR DIFERENÇA (11/11/2026, lib/estado-patch.js): a tela manda só o que mudou e o servidor aplica no que está guardado.
+// Fica de fora quem já grava um registro por chave (fc, inad, pag, int, aci) e os módulos por item do app (rpo, rpf): esses seguem mandando as chaves.
+var POR_CHAVE = ["fc", "inad", "pag", "int", "aci", "rpo", "rpf"];
+var ehPorDiferenca = function(c){ return POR_CHAVE.indexOf(c)<0; };
 var json =function(v){ try { return JSON.stringify(v===undefined ? null : v); } catch(x){ return ""; } };
 
 // O QUE JÁ ESTÁ NO SERVIDOR NÃO É GUARDADO NO NAVEGADOR (Marcus, 02/11/2026): o sistema salva para todo mundo no servidor. O navegador guardava o estado inteiro (4 MB) e acabava o espaço ("Sem espaço para salvar neste navegador").
@@ -75,7 +81,7 @@ function mostraAvisoVersao(){
 }
 function vigiaVersao(){
   var minha = String(process.env.NEXT_PUBLIC_BUILD || ""); if(!minha) return undefined;
-  var vivo = true, checa = function(){ fetch("/api/saude", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){ if(vivo && j && j.versao && j.versao!==minha) mostraAvisoVersao(); }).catch(function(){}); };
+  var vivo = true, checa = function(){ if(!abaVisivel()) return; fetch("/api/saude", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){ if(vivo && j && j.versao && j.versao!==minha) mostraAvisoVersao(); }).catch(function(){}); };
   checa(); var iv = setInterval(checa, 60000); return function(){ vivo = false; clearInterval(iv); };
 }
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
@@ -87,54 +93,92 @@ function useSyncModulos(s, d){
   var ref = useRef({mods:{}, s:s});   // por módulo: {versao, snaps:{chave: json}, pronto}
   ref.current.s = s;
   var lista = modulosLigados();
-  var puxar = function(chave){
-    var m = ref.current.mods[chave] || (ref.current.mods[chave] = {versao:0, snaps:{}, pronto:false});
-    if(m.semAcesso) return Promise.resolve();   // o servidor já disse que este setor não abre este módulo
-    return chamar("GET", "/estado/"+chave+(m.pronto && m.versao>0 ? "?desde="+m.versao : "")).then(function(r){
-      if(r.igual) return undefined;   // nada novo no servidor
-      var trouxe = false;
-      // r.parcial = módulo por item (rpo/rpf): veio só o que mudou, inclusive gravação atrasada com versão menor; sempre processa (compara pelo conteúdo)
-      if(r.versao>m.versao || !m.pronto || r.parcial){
-        var novas = {}, local = fatia(ref.current.s, chave) || {};
-        Object.keys(r.conteudo||{}).forEach(function(k){ var j = json(r.conteudo[k]); m.snaps[k] = j; if(json(local[k])!==j) novas[k] = r.conteudo[k]; });
-        if(Object.keys(novas).length){ d({type:"SYNC_MODULO", chave:chave, conteudo:novas}); trouxe = true; }
-        m.versao = r.versao; if(r.versao>0) m.bloqueado = false;
-      }
-      m.pronto = true; if(m.versao>0 && !m.semAcesso) lembraModulo(chave);
-      // se trouxe dados novos, o envio fica para depois que a tela atualizar (senão o valor antigo do navegador voltaria por cima); servidor vazio: sobe o que está aqui
-      return trouxe ? undefined : empurrar(chave);
-    }).catch(function(x){ if(/não tem acesso/.test(x.message||"")) m.semAcesso = true; });
+  var mod = function(c){ return ref.current.mods[c] || (ref.current.mods[c] = {versao:0, snaps:{}, pronto:false}); };
+  // trata a resposta de UM módulo (vinda da leitura em lote)
+  var receber = function(chave, r){
+    var m = mod(chave);
+    if(r.igual){ m.pronto = true; return; }   // nada novo no servidor
+    var trouxe = false;
+    // r.parcial = módulo por item (rpo/rpf): veio só o que mudou, inclusive gravação atrasada com versão menor; sempre processa (compara pelo conteúdo)
+    if(r.versao>m.versao || !m.pronto || r.parcial){
+      var novas = {}, local = fatia(ref.current.s, chave) || {}, porDif = ehPorDiferenca(chave);
+      Object.keys(r.conteudo||{}).forEach(function(k){
+        var v = r.conteudo[k], j = json(v), base = m.snaps[k], lj = json(local[k]);
+        m.snaps[k] = j;
+        if(lj===j) return;
+        // MUDANÇA AINDA NÃO ENVIADA (11/11/2026): a tela mexeu nesta chave e ainda não mandou. Antes o que vinha do servidor trocava tudo e o lançamento sumia.
+        // Agora a mudança local é reaplicada em cima do que veio (a diferença entre a base e o que a tela tem) e segue para o servidor no próximo envio.
+        if(porDif && m.pronto && base!==undefined && lj!==base){
+          try { v = aplicar(v, diff(JSON.parse(base), JSON.parse(lj))); } catch(x){}
+          if(json(v)===lj) return;
+        }
+        novas[k] = v;
+      });
+      if(Object.keys(novas).length){ d({type:"SYNC_MODULO", chave:chave, conteudo:novas}); m.aguarda = ref.current.s; trouxe = true; }
+      m.versao = r.versao; if(r.versao>0) m.bloqueado = false;
+    }
+    m.pronto = true; if(m.versao>0 && !m.semAcesso) lembraModulo(chave);
+    // se trouxe dados novos, o envio fica para depois que a tela atualizar (senão o valor antigo do navegador voltaria por cima); servidor vazio: sobe o que está aqui
+    if(!trouxe) empurrar(chave);
+  };
+  // LEITURA EM LOTE (11/11/2026): uma chamada para todos os módulos (antes, uma por módulo: ~40 chamadas a cada 20 s por aba aberta, cobradas pela Vercel)
+  var puxar = function(chaves){
+    var pedir = chaves.filter(function(c){ var m = mod(c); return !m.semAcesso && !m.lendo; });
+    if(!pedir.length) return Promise.resolve();
+    pedir.forEach(function(c){ mod(c).lendo = true; });
+    var q = pedir.map(function(c){ var m = mod(c); return c+"."+(m.pronto && m.versao>0 ? m.versao : 0); }).join(",");
+    return chamar("GET", "/estado?m="+q).then(function(r){
+      (r.semAcesso||[]).forEach(function(c){ mod(c).semAcesso = true; });
+      pedir.forEach(function(c){ mod(c).lendo = false; var x = (r.modulos||{})[c]; if(x) receber(c, x); });
+    }).catch(function(){ pedir.forEach(function(c){ mod(c).lendo = false; }); });
   };
   var empurrar = function(chave){
     var m = ref.current.mods[chave]; if(!m || !m.pronto || m.bloqueado || m.semAcesso) return Promise.resolve();
+    if(m.aguarda){ if(m.aguarda===ref.current.s) return Promise.resolve(); m.aguarda = null; }   // o que veio do servidor ainda não entrou na tela: espera (senão o valor antigo voltaria)
+    if(m.enviando){ m.deNovo = true; return Promise.resolve(); }   // um envio por vez por módulo
     if(chave==="fc" && m.ultFc===ref.current.s.fc) return Promise.resolve();   // nada mudou no s.fc desde a última conferência (evita refazer 17 mil comparações)
     if(chave==="inad" && m.ultInad===ref.current.s.inad) return Promise.resolve();   // nada mudou no s.inad desde a última conferência
-    var fcAgora = ref.current.s.fc, inAgora = ref.current.s.inad;
-    var atual = fatia(ref.current.s, chave) || {}, mudou = {}, n = 0;
-    Object.keys(atual).forEach(function(k){ var j = json(atual[k]); if(j!==m.snaps[k]){ mudou[k] = atual[k]; n++; } });
+    var fcAgora = ref.current.s.fc, inAgora = ref.current.s.inad, porDif = ehPorDiferenca(chave);
+    var atual = fatia(ref.current.s, chave) || {}, mudou = {}, patches = {}, n = 0;
+    Object.keys(atual).forEach(function(k){
+      var j = json(atual[k]); if(j===m.snaps[k]) return;
+      mudou[k] = atual[k]; n++;
+      if(porDif){ var op = null; try { op = m.snaps[k]===undefined ? {$set:JSON.parse(j)} : diff(JSON.parse(m.snaps[k]), JSON.parse(j)); } catch(x){ op = {$set:atual[k]}; } if(op) patches[k] = op; }
+    });
     if(chave==="fc") Object.keys(m.snaps).forEach(function(k){ if(k.indexOf("c_")===0 && !(k in atual) && m.snaps[k]!=="null"){ mudou[k] = null; n++; } });   // código excluído aqui: apaga para todos
     if(chave==="pag") Object.keys(m.snaps).forEach(function(k){ if(!(k in atual) && m.snaps[k]!=="null"){ mudou[k] = null; n++; } });
     if(chave==="int"){ var idsI = {}; (ref.current.s.internos||[]).forEach(function(x){ idsI[x.id] = 1; }); Object.keys(m.snaps).forEach(function(k){ if(!(k in atual) && m.snaps[k]!=="null" && !idsI[k.slice(2)]){ mudou[k] = null; n++; } }); }   // pedido apagado aqui: apaga para todos
+    if(porDif && n && !Object.keys(patches).length){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); n = 0; }   // só mudou a ordem de uma lista: nada a gravar
     if(!n){ if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora; return Promise.resolve(); }
-    return chamar("PUT", "/estado/"+chave, {chaves:mudou}).then(function(r){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); m.versao = r.versao; if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora; }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; });   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
+    m.enviando = true;
+    var vAntes = m.versao;
+    return chamar("PUT", "/estado/"+chave, porDif ? {patches:patches} : {chaves:mudou}).then(function(r){
+      Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); });
+      // só avança a versão se ninguém mais gravou no meio; senão a próxima leitura traz o módulo de novo (com o que a outra pessoa gravou)
+      if(r.versao===vAntes+1 || !porDif) m.versao = r.versao;
+      if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora;
+    }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; })   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
+      .then(function(){ m.enviando = false; if(m.deNovo){ m.deNovo = false; empurrar(chave); } });
   };
-  // busca ao entrar e a cada 20 s
+  // busca ao entrar e a cada 20 s; aba escondida (outra aba, janela minimizada) NÃO busca e, ao voltar, busca na hora (11/11/2026: custo da Vercel)
   useEffect(function(){
-    if(!ativo) return;
-    var vivo = true, tick = function(){ lista.forEach(function(c){ if(vivo) puxar(c); }); }; tick();
-    var iv = setInterval(tick, 20000); return function(){ vivo = false; clearInterval(iv); };
+    if(!ativo) return undefined;
+    var vivo = true, tick = function(){ if(vivo && abaVisivel()) puxar(lista); }; tick();
+    var iv = setInterval(tick, 20000), volta = function(){ if(abaVisivel()) tick(); };
+    document.addEventListener("visibilitychange", volta);
+    return function(){ vivo = false; clearInterval(iv); document.removeEventListener("visibilitychange", volta); };
   }, [ativo, lista.join(",")]);
   // tempo real (10/11/2026): atendimentos e pedidos de conta chegam em até 5 s; os outros módulos seguem a cada 20 s
   useEffect(function(){
     if(!ativo) return undefined;
     var vivo = true, rapidos = ["int", "pag"].filter(function(c){ return lista.indexOf(c)>=0; });
-    var iv = setInterval(function(){ rapidos.forEach(function(c){ if(vivo) puxar(c); }); }, 5000); return function(){ vivo = false; clearInterval(iv); };
+    var iv = setInterval(function(){ if(vivo && abaVisivel()) puxar(rapidos); }, 5000); return function(){ vivo = false; clearInterval(iv); };
   }, [ativo, lista.join(",")]);
   useEffect(function(){ if(!ativo) return undefined; return vigiaVersao(); }, [ativo]);
   // envia 1 s depois da última mudança
   var assinatura = lista.map(function(c){ return c==="fc" ? sigFc(s) : c==="inad" ? sigInad(s) : json(fatia(s, c)); }).join("|");
   useEffect(function(){
-    if(!ativo) return;
+    if(!ativo) return undefined;
     var t = setTimeout(function(){ lista.forEach(empurrar); }, 1000); return function(){ clearTimeout(t); };
   }, [ativo, assinatura]);
   return modo;
