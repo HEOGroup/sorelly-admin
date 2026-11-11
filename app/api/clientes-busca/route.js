@@ -12,7 +12,7 @@ const CAMPOS = ["aam_codigo", "aam_nome", "aam_municipio", "aam_estado", "aam_ce
 const semAcento = (t) => String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "");
 
 export const GET = rota(async (req, { eu, url }) => {
-  if (eu.perfil !== "ADMIN" && !(eu.setores || []).includes("agendamento")) return erro("Só a Diretoria e o Agendamento podem fazer isso.", 403);
+  if (eu.perfil !== "ADMIN" && !(eu.setores || []).some((x) => x === "agendamento" || x === "montagem")) return erro("Só a Diretoria, o Agendamento e a Montagem podem fazer isso.", 403);   // a Montagem inclui as meninas do atendimento (11/11/2026)
   const q = String(url.searchParams.get("q") || "").trim().slice(0, 80);
   if (!q) return json({ itens: [] });
   const soNumeros = /^\d+$/.test(q);

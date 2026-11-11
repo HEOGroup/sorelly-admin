@@ -198,6 +198,7 @@ function AtendimentoInterno(){
   var simples = !!sel && (sel.tipo==="indicacao" || sel.tipo==="reposicao" || sel.tipo==="troca");   // Brinde de indicação, Reposição e Troca de peça (Marcus, 11/11/2026): atendimento simples, sem acerto, sem escolha de kit
   var retornando = !!sel && (sel.tipo==="retornando" || sel.tipo==="kit_novo");   // fluxo curto: Kit retornando e Kit novo (Marcus, 10/11/2026: kit novo precisa de outra tela; a revendedora já assina a condicional, então não assina aqui)
   var temVenda = retornando || simples || form.vendaBruta>0 || form.semVenda===true;
+  var semVendaOk = !!sel && !retornando && !simples && form.semVenda===true;   // venda R$ 0,00 (Marcus, 11/11/2026): não renova kit; a revendedora não passa as regras nem assina; só finalizar
   // Kit novo: o valor do kit é o que a Michele lançou nos Kits novos (módulo kn, pelo nome da revendedora); aparece como valor liberado (Marcus, 10/11/2026)
   var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };
   var knDela = sel && sel.tipo==="kit_novo" ? (Object.keys(s.kn||{}).map(function(k){ return s.kn[k]; }).filter(function(x){ return x && x.nome && normNome(x.nome)===normNome(sel.nome); }).sort(function(a,b){ return String(b.cadastro||"").localeCompare(String(a.cadastro||"")); })[0] || null) : null;
@@ -628,14 +629,14 @@ function AtendimentoInterno(){
   var cienteOk = regras.length>0 && regras.every(function(r,i){ return !!regrasOk[i]; });
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
-  var pronto = !jaFeito && temVenda && cienteOk && (retornando ? !!sel.escolhaFim : (!!assinatura && !!continuaEf));
+  var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : (!!assinatura && !!continuaEf))));
   var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assinatura, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
       condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
-      assinatura:assinatura, regrasLidas:true, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
+      assinatura:semVendaOk ? null : assinatura, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
   };
@@ -659,6 +660,7 @@ function AtendimentoInterno(){
             m[0]==="cliente" && sel.fone && e("a",{href:"https://wa.me/55"+sel.fone.replace(/\D/g,"")+"?text="+encodeURIComponent(m[2]), target:"_blank", rel:"noreferrer",
               className:"inline-flex h-10 items-center rounded-lg bg-success/15 px-3 text-[15px] font-medium text-success hover:bg-success/25"}, "Abrir no WhatsApp"))); })))
     : jaFeito ? e(React.Fragment,null, e("p",{className:"text-center text-[13.5px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)), painelTermo)
+    : semVendaOk ? e("div",{className:"flex flex-col items-center gap-3 p-4 text-center text-[13px]"}, e("p",{className:"font-semibold"}, "Sem venda: o kit não renova. A revendedora não precisa passar as regras nem assinar."), e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, "Finalizar atendimento"))
     : e(React.Fragment,null,
         termoAnt && e("div",{className:"flex justify-center gap-1.5"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
           return e("button",{key:x[0], onClick:function(){ setAbaRegras(x[0]); }, "aria-pressed":on, className:"h-9 rounded-lg px-4 text-[13px] font-bold ring-1 "+(on ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/40 ring-border hover:bg-muted")}, x[1]); })),
@@ -820,7 +822,7 @@ function AtendimentoInterno(){
   var tabVendas = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Quanto vendeu", e(CampoDinheiro,{value:form.vendaBruta, mostraZero:true, label:"Valor total vendido", className:CPT, onChange:function(v){ up({vendaBruta:v, semVenda:v===0}); }})),   // digitar 0 também vale como "sem venda" (10/11/2026, Estela)
-    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(5); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:(form.semVenda ? "" : BRILHO)+"m-2 h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"),
+    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(6); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:(form.semVenda ? "" : BRILHO)+"m-2 h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"),
     !jaFeito && !temVenda && e("p",{key:"svh", className:"px-3 pb-2 text-center text-[13px] font-semibold"}, "Para continuar: digite o valor vendido ou clique em Não teve venda."),
     linhaKV("Peças vendidas", e("input",{value:totalVendidas>0 ? totalVendidas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Quantidade de peças vendidas", className:CPT, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendidasTotal:Number(soDigitos(ev.target.value,4))||0}}); }}), {z:true}),
     form.vendaBruta>0 && !sel.creditoVisto && !jaFeito && e("div",{key:"cc", className:"m-2 flex flex-col items-center gap-1.5 rounded-md border-2 border-primary bg-primary/15 p-2 text-center text-[13px] "+BRILHO},

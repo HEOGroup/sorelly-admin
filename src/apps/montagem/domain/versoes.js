@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.170", data:"2026-11-11", titulo:"Atendimento: venda zero sem assinatura e Incluir cliente na Listagem", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Venda R$ 0,00 (Não teve venda): a tela agora vai direto para Regras e mostra só o botão Finalizar atendimento. A revendedora não passa as regras nem assina, porque sem venda o kit não renova. O termo assinado em atendimentos anteriores deixou de ser apagado quando o atendimento não tem assinatura."},
+  {tipo:"novo", area:"Atendimento interno › Listagens", txt:"Botão + Incluir cliente na Listagem, para as meninas do atendimento incluírem sozinhas quem chegou e não está na listagem (inclusive funcionária que fez o acerto no tempo livre), sem passar pela Tamara. Entra no dia de hoje com a hora de agora, sem limite de vagas por horário. Se a cliente já está na lista de revendedoras, só é marcada para hoje. A busca de clientes da DevMaster agora também abre para o setor Montagem."}
+ ]},
  {v:"0.18.169", data:"2026-11-11", titulo:"Atendimento Sorelly: tipo em menu suspenso, novos tipos e relógio do atendimento", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"O Tipo do atendimento virou menu suspenso (Acerto, Kit retornando, Kit novo, Brinde de indicação, Reposição e Troca de peça), e o cabeçalho ficou mais estreito. Brinde de indicação, Reposição e Troca de peça são atendimentos simples: só Iniciar, uma anotação opcional e Finalizar, sem acerto nem escolha de kit. Embaixo do cabeçalho há uma linha de horários: Chegou na empresa, Atendimento iniciou, Escolha do kit iniciou, Escolha do kit terminou e Finalizou e saiu."}
  ]},

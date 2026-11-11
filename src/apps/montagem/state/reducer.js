@@ -1012,7 +1012,7 @@ function reducer(s, a){
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
     case "REVINT_AGENDAR": {
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
-      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
+      if(!a.imediato && motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda (imediato = chegou agora, pela Listagem): 3 por horário, 15 por dia, sábado até 11h, domingo fechado
       var vLib = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";   // valor liberado da reposição ou do kit novo (Tamara, 03/11/2026)
       var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
@@ -1037,13 +1037,13 @@ function reducer(s, a){
       var codAv = String(a.cod||"").replace(/\D/g, "").replace(/^0+/, "");
       if(!codAv && a.tipo!=="indicacao") return s;   // só o brinde de indicação aceita nome sem cadastro (Marcus, 09/11/2026): todo o resto vem das clientes cadastradas na DevMaster
       if((s.revInternas||[]).some(function(r){ return nmAv(r.nome)===nmAv(nomeAv) || (codAv && String(r.devmaster||"").replace(/^0+/, "")===codAv); })) return s;   // já está na lista: usar a ficha dela
-      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
+      if(!a.imediato && motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda (quem chegou agora, pela Listagem, não passa por elas): 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
       var hvAv = {data:null, venda:null, acerto:null}, vigAv = versaoVigente(s);
       var vLibAv = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";
       var rAv = {id:"RA"+agora, nome:nomeAv, ciclo:30, proximoManual:null, proximoDm:null, situacao:"agendada", agend:{data:a.data, hora:a.hora}, internoId:null, hist:[hvAv, hvAv, hvAv],
         contatos:a.fone ? [{nome:"WhatsApp da cliente", fone:a.fone}] : [], prata:false, devmaster:String(a.cod||"").trim(), cidade:a.cidade || "", obs:"", registro:[], conds:[], avulsa:true, semCadastro:!codAv,
         tipoAtend:a.tipo || "acerto", quer:a.quer || "", valorLiberado:a.valor || null};
-      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Incluída à mão em Revendedoras internas")+vLibAv, condicionais:[], vendasAnt:[]});
+      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : (a.imediato ? "Incluída na hora pelo atendimento (chegou sem estar na listagem)" : "Incluída à mão em Revendedoras internas"))+vLibAv, condicionais:[], vendasAnt:[]});
       rAv.internoId = itAv.id;
       return com(s, {internos:[itAv].concat(s.internos||[]), revInternas:[rAv].concat(s.revInternas||[])}, nomeAv.split(" ")[0]+" incluída para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
@@ -1182,7 +1182,7 @@ function reducer(s, a){
         brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
-      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}}, a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
+      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.assinatura ? {termoConsignado:{ts:agora, assinatura:a.assinatura, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
       return com(s, {perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
         acertosConsignado:[regI].concat(aplicarAbatimento(s.acertosConsignado||[], abI, (a.pagamentos||[])[0], regI.id, agora))},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");

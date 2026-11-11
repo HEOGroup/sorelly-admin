@@ -5,7 +5,8 @@
 // Colunas: Horário, Nome, Tipo, Quem bipou, Quem atende na montagem. Valor, pagamento e tempo ficam no Consolidado Sorelly.
 // Quem monta a agenda e define o tipo é a Tamara (Revendedoras); remarcação e multa ficam registradas lá.
 // Na tela "Atendimento Sorelly" aparece só a agenda do dia.
-import { sincronizarDm } from "@/apps/montagem/pages/RevendedorasInternas";
+import { JanelaIncluirCliente, sincronizarDm } from "@/apps/montagem/pages/RevendedorasInternas";
+import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -26,6 +27,7 @@ function Selo(p){ return e("span",{className:"rounded-full bg-slate-600 px-2 py-
 function AbaIntListagens(){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var hoje = isoDia(new Date());
+  var iv = useState(false), incluindo = iv[0], setIncluindo = iv[1];   // + Incluir cliente: quem chegou e não está na listagem (Marcus, 11/11/2026)
   // as agendadas pela Tamara vêm da DevMaster: atualiza ao abrir e a cada 10 minutos (mesma busca da aba Revendedoras)
   useEffect(function(){ var rodar = function(){ if(apiAtiva()) sincronizarDm(d, true).catch(function(){ /* sem servidor: segue com o que já está salvo */ }); }; rodar(); var t = setInterval(rodar, 600000); return function(){ clearInterval(t); }; }, []);
   var ab = useState({}), abertos = ab[0], setAbertos = ab[1];   // meses e dias abertos (tudo começa fechado)
@@ -76,7 +78,9 @@ function AbaIntListagens(){
   });
 
   return e(React.Fragment,null,
-    e(PageHead,{t:"Atendimento interno · Listagens", sub:"Só reflete as listagens que a Tamara monta no setor Revendedoras. Quem define o dia, a hora e o tipo é ela, não esta tela."}),
+    e(PageHead,{t:"Atendimento interno · Listagens", sub:"As listagens da Tamara aparecem aqui. Quem chegou e não está na listagem (inclusive funcionária) é incluído no botão + Incluir cliente, na hora, sem passar pela Tamara."}),
+    e("div",{className:"flex"}, e(Botao,{principal:true, onClick:function(){ setIncluindo(true); }}, "+ Incluir cliente")),
+    incluindo && e(JanelaIncluirCliente,{imediato:true, lista:s.revInternas||[], hojeIso:hoje, dispatch:d, abrir:function(){}, irParaDia:function(){}, fechar:function(){ setIncluindo(false); }}),
     corpo.length ? e("div",{className:"overflow-x-auto rounded-lg border border-border"},
       e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:COLUNAS.reduce(function(t, c){ return t+c[1]; }, 0)}}, // padrao-ok: o cabeçalho das colunas fica dentro de cada dia aberto (opção B, pedido do Marcus em 03/11/2026); a peça TabelaPlanilha só tem cabeçalho no topo
         e("colgroup",null, COLUNAS.map(function(c){ return e("col",{key:c[0], style:{width:c[1]}}); })),

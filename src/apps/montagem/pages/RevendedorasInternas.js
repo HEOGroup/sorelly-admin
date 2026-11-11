@@ -539,11 +539,12 @@ function KitsNovosParaAgendar(p){
 // INCLUIR CLIENTE (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não aparece na lista.
 // O NOME vem sempre de uma busca nas clientes cadastradas (DevMaster, rota /api/clientes-busca): aparece nome, código, cidade e situação, e a Tamara escolhe uma. Nada de nome digitado à mão (Marcus, 09/11/2026).
 // Única exceção: Brinde de indicação, que pode ser de pessoa sem cadastro; ali aparece a opção "Usar o nome digitado". Escolhida a cliente, tipo, dia e hora, ela entra já agendada na listagem do dia, sem condicional inventada.
-var TIPOS_AVULSA = [["kit_novo", "Kit novo"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"], ["reposicao", "Reposição"], ["acerto", "Acerto"]];
+var TIPOS_AVULSA = [["kit_novo", "Kit novo"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"], ["reposicao", "Reposição"], ["troca", "Troca de peça"], ["acerto", "Acerto"]];
+var horaDeAgora = function(){ var n = new Date(); return String(n.getHours()).padStart(2, "0")+":"+String(n.getMinutes()).padStart(2, "0"); };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var semZeros = function(c){ return String(c||"").replace(/\D/g, "").replace(/^0+/, ""); };
 function JanelaIncluirCliente(p){
-  var fs = useState({tipo:"kit_novo", data:p.hojeIso, hora:"", quer:"", valor:0, fone:""}), form = fs[0], setForm = fs[1];
+  var fs = useState({tipo:p.imediato ? "acerto" : "kit_novo", data:p.hojeIso, hora:p.imediato ? horaDeAgora() : "", quer:"", valor:0, fone:""}), form = fs[0], setForm = fs[1];
   var bs = useState(""), busca = bs[0], setBusca = bs[1], ss = useState(null), sel = ss[0], setSel = ss[1];
   var rs = useState({itens:[], buscando:false, aviso:""}), res = rs[0], setRes = rs[1], cont = React.useRef(0);
   var set = function(k, v){ var n = Object.assign({}, form); n[k] = v; if(k==="data") n.hora = ""; if(k==="tipo" && v!=="indicacao" && sel && sel.semCadastro){ setSel(null); } setForm(n); };
@@ -567,13 +568,13 @@ function JanelaIncluirCliente(p){
   var jaNaLista = sel ? naListaDe(sel) : null;
   var horas = form.data ? horasDoDia(form.data) : [];
   var motivo = form.data && form.hora ? motivoNaoMarcar(p.lista, form.data, form.hora, null) : (form.data && horas.length===0 ? motivoNaoMarcar(p.lista, form.data, "08:00", null) : "");
-  var pronto = !!sel && !jaNaLista && !!form.data && !!form.hora && !motivo;
+  var pronto = p.imediato ? !!sel : (!!sel && !jaNaLista && !!form.data && !!form.hora && !motivo);   // imediato = quem chegou agora (Listagem): sem dia, hora nem limite de vagas
   var campo = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-1"}, e("span",{className:ROTULO}, rot), el); };
   var q0 = busca.trim(), mostraLista = !sel && (/^\d+$/.test(q0) || q0.length>=3);
   return e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }},
     e("div",{className:"relative my-auto flex w-full max-w-[640px] flex-col gap-3 rounded-xl border bg-[#131315] p-4 "+BORDA},
-      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, "Incluir cliente na listagem"), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 rounded-lg px-2.5 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Fechar ✕")),
-      e("p",{className:"text-[13px]"}, "Para quem vem à Sorelly e não está na lista: kit retornando, kit novo ou brinde de indicação. Escolha a cliente entre as cadastradas."),
+      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, p.imediato ? "Incluir cliente que chegou agora" : "Incluir cliente na listagem"), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 rounded-lg px-2.5 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Fechar ✕")),
+      e("p",{className:"text-[13px]"}, p.imediato ? "Para quem chegou e não está na listagem de hoje (inclusive funcionária). Entra agora, com a hora de agora. Escolha a cliente entre as cadastradas." : "Para quem vem à Sorelly e não está na lista: kit retornando, kit novo ou brinde de indicação. Escolha a cliente entre as cadastradas."),
       sel
         ? campo("Cliente", e("div",{className:"flex min-h-8 flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1 "+BORDA},
             e("span",{className:"text-[13px]"}, e("b",null, sel.nome), sel.cod ? e("span",{className:MONO+" ml-2 font-bold text-[#E8B84B]"}, "Cód. "+sel.cod) : e("span",{className:"ml-2 font-bold text-[#E8B84B]"}, "Sem cadastro"), sel.cidade ? e("span",{className:"ml-2"}, sel.cidade+(sel.uf ? "/"+sel.uf : "")) : null),
@@ -584,19 +585,23 @@ function JanelaIncluirCliente(p){
         !res.buscando && res.aviso && e("p",{className:"px-2.5 py-2 text-[13px] text-[#fca5a5]"}, res.aviso),
         !res.buscando && res.itens.length===0 && !res.aviso && e("p",{className:"px-2.5 py-2 text-[13px]"}, "Nenhuma cliente cadastrada com esse nome ou código."),
         res.itens.map(function(c){ var nl = naListaDe(c);
-          return e("button",{key:c.cod||c.nome, type:"button", onClick:function(){ if(nl){ p.abrir(nl.id); p.fechar(); } else escolher(c); }, className:"grid min-h-8 grid-cols-[minmax(0,1fr)_70px_150px_90px] items-center gap-2 border-b px-2.5 text-left text-[13px] last:border-b-0 hover:bg-white/10 "+BORDA},
+          return e("button",{key:c.cod||c.nome, type:"button", onClick:function(){ if(nl && !p.imediato){ p.abrir(nl.id); p.fechar(); } else escolher(c); }, className:"grid min-h-8 grid-cols-[minmax(0,1fr)_70px_150px_90px] items-center gap-2 border-b px-2.5 text-left text-[13px] last:border-b-0 hover:bg-white/10 "+BORDA},
             e("span",{className:"font-semibold"}, c.nome), e("span",{className:MONO+" text-[#E8B84B]"}, c.cod), e("span",null, c.cidade||"—"), e("span",{className:"text-[11px] font-bold "+(c.situacao==="Ativa" ? "text-[#bbf7d0]" : c.situacao==="Na lista" ? "" : "text-[#fca5a5]")}, nl ? "Já na lista" : c.situacao)); }),
         form.tipo==="indicacao" && q0.length>=3 && !/^\d+$/.test(q0) && e("button",{type:"button", onClick:function(){ escolher({cod:"", nome:q0.toUpperCase(), cidade:"", celular:"", semCadastro:true}); }, className:"flex min-h-8 items-center gap-2 px-2.5 text-left text-[13px] font-bold text-[#E8B84B] hover:bg-white/10"}, "Não está cadastrada? Usar “"+q0.toUpperCase()+"” só para retirar o brinde")),
-      jaNaLista && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] text-[#fca5a5] "+BORDA}, e("span",null, "Essa cliente já está na lista. Agende pela ficha dela."), e("button",{type:"button", onClick:function(){ p.abrir(jaNaLista.id); p.fechar(); }, className:"h-8 rounded-md px-2.5 font-bold text-[#E8B84B] hover:bg-white/10"}, "Abrir a ficha")),
+      jaNaLista && !p.imediato && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] text-[#fca5a5] "+BORDA}, e("span",null, "Essa cliente já está na lista. Agende pela ficha dela."), e("button",{type:"button", onClick:function(){ p.abrir(jaNaLista.id); p.fechar(); }, className:"h-8 rounded-md px-2.5 font-bold text-[#E8B84B] hover:bg-white/10"}, "Abrir a ficha")),
       e("div",{className:"grid gap-2 md:grid-cols-2"},
         campo("Tipo", e("select",{value:form.tipo, className:CAMPO, onChange:function(ev){ set("tipo", ev.target.value); }}, TIPOS_AVULSA.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
         campo("Telefone (opcional)", e("input",{value:form.fone, maxLength:20, placeholder:"(41) 90000-0000", className:CAMPO, onChange:function(ev){ set("fone", ev.target.value); }})),
         campo("O que a cliente quer", e("input",{value:form.quer, maxLength:200, placeholder:"Ex.: retirar o brinde", className:CAMPO, onChange:function(ev){ set("quer", ev.target.value); }})),
         campo("Valor liberado (reposição ou kit novo)", e(CampoDinheiro,{value:form.valor, label:"Valor liberado (reposição ou kit novo)", className:CAMPO, onChange:function(v){ set("valor", v); }})),
-        campo("Dia", e("input",{type:"date", value:form.data, className:CAMPO, onChange:function(ev){ set("data", ev.target.value); }})),
-        campo("Hora", e("select",{value:form.hora, className:CAMPO, onChange:function(ev){ set("hora", ev.target.value); }}, e("option",{value:""}, "Escolha"), horas.map(function(h){ return e("option",{key:h, value:h}, h); })))),
-      motivo && e("p",{className:"text-[13px] text-[#fca5a5]"}, motivo),
-      e("button",{type:"button", disabled:!pronto, onClick:function(){ p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:form.data, hora:form.hora, quer:form.quer, valor:form.valor}); p.irParaDia(form.data); p.fechar(); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, "Incluir na listagem")));
+        !p.imediato && campo("Dia", e("input",{type:"date", value:form.data, className:CAMPO, onChange:function(ev){ set("data", ev.target.value); }})),
+        !p.imediato && campo("Hora", e("select",{value:form.hora, className:CAMPO, onChange:function(ev){ set("hora", ev.target.value); }}, e("option",{value:""}, "Escolha"), horas.map(function(h){ return e("option",{key:h, value:h}, h); })))),
+      motivo && !p.imediato && e("p",{className:"text-[13px] text-[#fca5a5]"}, motivo),
+      e("button",{type:"button", disabled:!pronto, onClick:function(){ if(p.imediato){ var hAgora = horaDeAgora();
+          if(jaNaLista) p.dispatch({type:"REVINT_AGENDAR", id:jaNaLista.id, data:p.hojeIso, hora:hAgora, tipo:form.tipo, quer:form.quer, valor:form.valor, imediato:true});   // já é cliente da lista: entra no dia de hoje, agora
+          else p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:p.hojeIso, hora:hAgora, quer:form.quer, valor:form.valor, imediato:true});
+          p.fechar(); return; }
+        p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:form.data, hora:form.hora, quer:form.quer, valor:form.valor}); p.irParaDia(form.data); p.fechar(); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, "Incluir na listagem")));
 }
 
 function AbaRevendedorasInternas(){
@@ -646,4 +651,4 @@ function AbaRevendedorasInternas(){
         e(Detalhes,{key:rSel.id, r:rSel, cx:cx, hojeIso:hojeIso}))));
 }
 
-export { AbaRevendedorasInternas, sincronizarDm, BotaoZap, foneBonito, foneDe };
+export { AbaRevendedorasInternas, JanelaIncluirCliente, sincronizarDm, BotaoZap, foneBonito, foneDe };

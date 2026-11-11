@@ -4,6 +4,10 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 11/11/2026 (Atendimento: venda zero e Incluir cliente na Listagem)
+- **Venda zero não assina (Marcus, 11/11/2026: "a revendedora não tem que assinar nada"):** no Atendimento Sorelly, "Não teve venda" leva direto às Regras, mas sem lista de regras nem assinatura: só o botão Finalizar atendimento (`semVendaOk`). Venda zero não renova kit (na maioria dos casos é proibido). O registro não grava termo quando não há assinatura, para não apagar o termo assinado antes.
+- **Incluir cliente na Listagem (Marcus, 11/11/2026):** as meninas do atendimento incluem sozinhas, no botão + Incluir cliente da Listagem, quem chegou e não está lá (ex.: funcionária que fez o acerto no tempo livre), sem alinhar com a Tamara. É a mesma janela da Tamara em modo `imediato`: sem dia, hora nem limite de vagas; entra hoje com a hora de agora (`REVINT_AVULSA`/`REVINT_AGENDAR` com `imediato`). Nome sempre da busca na DevMaster (a rota agora abre também para o setor Montagem).
+
 ## 11/11/2026 (Atendimento Sorelly: tipos e relógio)
 - **Tipo em menu suspenso, novos tipos e relógio (Marcus, 11/11/2026):** o Tipo do atendimento deixou de ser três botões e virou menu suspenso, com Acerto, Kit retornando, Kit novo, Brinde de indicação, Reposição e Troca de peça (`troca` é valor novo; os outros já existiam na agenda). Brinde de indicação, Reposição e Troca de peça são atendimento SIMPLES: uma etapa só (Atendimento), anotação opcional e Finalizar (`INT_SIMPLES_FIM` no reducer; grava hora, quem atendeu e `acerto` zerado, como o Kit retornando). Linha de horários no topo: Chegou na empresa, Atendimento iniciou, Escolha do kit iniciou, Escolha do kit terminou, Finalizou e saiu. Pendente: valor liberado na reposição (chamado da Tamara) e o que cada tipo simples deve registrar além da anotação.
 
