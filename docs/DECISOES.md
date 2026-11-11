@@ -2145,3 +2145,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - **Brinde com dívida:** fica como está (mais de 10% em aberto = sem brinde).
 - **Multas somam.** Linguagem sempre em %, nunca "pontos".
 - A confirmar: "dentro do mês" (calendário ou 30 dias), dívida abaixo de R$ 200,00, um benefício sem multa por kit, agenda sem vaga, 2ª dívida seguida sem os 80%, nova chance no interno, data de vigência.
+
+## 11/11/2026 (2ª parte) — Regras das revendedoras: dívida em dois caminhos, autorização do kit no Direcionar, vigência
+- A regra nova **já vale**. Dívida: caminho 1 (leva kit: 80% pago, negocia na hora, até 2 parcelas de R$ 200,00 no mínimo, abaixo de R$ 400,00 parcela única, até 30 dias corridos e antes do próximo acerto) e caminho 2 (sem kit ou saiu: setor de Inadimplência, 48 horas para negociar, regras do setor a receber do Marcus). 2ª dívida seguida: sem kit.
+- **Autorização de kit novo com média abaixo no interno:** a funcionária que bipa pede ao Financeiro pelo **Direcionar**; o cartão mostra as 3 últimas vendas, inadimplência, média e aceitar/não aceitar. Média interna R$ 700,00.
+- Trocar os folders e PDFs de regras e comissões. Detalhe em `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`, seção 9.

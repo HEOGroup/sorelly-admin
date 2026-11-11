@@ -108,3 +108,11 @@ Kit de R$ 8.113,00, venda estimada R$ 1.056,00 (faixa de 35%, brinde normal R$ 1
 4. Motivo obrigatório, prova anexada, botão "Prorrogar prazo" (quem autorizou).
 5. Negociação na hora: 2 parcelas, mínimo R$ 200,00, datas, +1% ao dia por parcela atrasada; trava do kit novo sem negociação.
 6. Texto novo das regras (versão nova, com data de vigência a definir), depois PDF completo e PDF resumido.
+
+## 9. Atualização de 11/11/2026 (2ª parte): vale no lugar do que estiver diferente acima
+- **Vigência:** a regra nova **já vale** (Marcus, 11/11/2026), sem data futura. Falta avisar as revendedoras e trocar os materiais.
+- **Dívida, dois caminhos.** Caminho 1 (vai levar kit novo): pagou 80% ou mais e negocia na hora; até 2 parcelas de no mínimo R$ 200,00; dívida abaixo de R$ 400,00 = parcela única; tudo em até 30 dias corridos e antes do próximo acerto ("dentro do mês" saiu). Caminho 2 (não vai levar kit novo, dívida alta ou ela saiu): o caso vai para o **setor de Inadimplência**, que negocia caso a caso; **48 horas** para negociar; as regras do setor o Marcus passa depois.
+- **2ª dívida seguida:** sem kit novo.
+- **Kit novo com média abaixo, no atendimento interno:** quem pede é **a funcionária que está bipando** (não a Tamara). O pedido vai para o **Financeiro, na tela Direcionar**, junto com o pedido da conta do pagamento. O cartão mostra: as **3 últimas vendas**, se teve **inadimplência**, a **média** e os botões **aceitar / não aceitar**. Média de referência do interno: **R$ 700,00**.
+- **Materiais a trocar:** folders e PDFs de regras e comissões (`materiais-do-app/`, tela Regras e guias, folder nos apps, informativo).
+- Aceito sem objeção do Marcus: sem dia marcado o relógio conta da data do kit; agenda sem vaga = primeira vaga livre sem acréscimo; um benefício sem multa por kit.
