@@ -93,7 +93,7 @@ function unidades(fc){
   cs.forEach(function(c){ var m = modeloDe(c.cod), u = mapa[m]; if(!u){ u = mapa[m] = {cod:m, vars:0, base:null, lista:[]}; ordem.push(m); } if(c.cod===m) u.base = c; else u.vars++; u.lista.push(c); });
   var out = ordem.map(function(m){
     var u = mapa[m]; if(!u.vars) return u.base;
-    var r = Object.assign({}, u.base || {}, {cod:m, vars:u.vars}), dias = u.lista.map(function(c){ return c.dia; }).filter(Boolean).sort();
+    var r = Object.assign({}, u.base || {}, {cod:m, vars:u.vars, grades:u.lista.map(function(c){ return c.cod; }).filter(function(x){ return x!==m; })}), dias = u.lista.map(function(c){ return c.dia; }).filter(Boolean).sort();
     if(dias.length && (!r.dia || dias[0]<r.dia)) r.dia = dias[0];
     [["fotoEm", "fotoQuem"], ["edEm", "edQuem"], ["subEm", "subQuem"]].forEach(function(p){ var x = melhorEtapa(u.lista, p[0]); r[p[0]] = x ? x[p[0]] : ""; r[p[1]] = x ? (x[p[1]] || "") : ""; });
     var dm = u.lista.map(function(c){ return c.dmFoto; }).filter(Boolean).sort(); if(dm.length) r.dmFoto = dm[0];
@@ -108,7 +108,7 @@ function unidades(fc){
 // linhas da planilha (uma por MODELO), mais novos primeiro
 function linhasFotos(fc){
   return unidades(fc).map(function(c){
-    return {cod:c.cod, tem:c.tem||"", desc:c.desc||"", cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia || c.fotoEm==="ant" || c.edEm==="ant" || c.subEm==="ant", fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
+    return {cod:c.cod, grades:c.grades||[], tem:c.tem||"", desc:c.desc||"", cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia || c.fotoEm==="ant" || c.edEm==="ant" || c.subEm==="ant", fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
   }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : 0; });
 }
 // uma coluna da tabela: dia ("2026-11-10") para a linha de grupo

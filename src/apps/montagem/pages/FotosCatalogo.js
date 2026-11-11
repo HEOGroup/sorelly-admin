@@ -6,7 +6,7 @@
 // Regras e contas em domain/fotos-catalogo.js (estado s.fc, ação FC).
 import { BKC } from "@/apps/montagem/lib/format";
 import { ESTADO, Pagina } from "@/apps/montagem/components/padrao";
-import { AbasTela, Bloco, Botao, FileiraCampos, Segmentado, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
+import { AbasTela, Bloco, Botao, CAMPO, FileiraCampos, Segmentado, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { diasEntre, formatarDia, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
 import { porDe } from "@/apps/montagem/pages/trafego/comum";
@@ -73,13 +73,13 @@ function colTem(acao){
     return e("span",{className:"inline-flex items-center gap-1.5"}, b("sim", "Tem"), b("nao", "Não tem")); }};
 }
 function MesesAnteriores(p){
-  var hoje = hojeSP(), sv = useState("todas"), vis = sv[0], sc = useState(false), copiou = sc[0];
+  var hoje = hojeSP(), sv = useState("todas"), vis = sv[0], sc = useState(false), copiou = sc[0], sb = useState(""), busca = sb[0];
   var base = useMemo(function(){ return p.linhas.filter(function(l){ return l.dia && l.dia<INICIO_PECAS && !l.sOk && !/CANCELAD/i.test(l.desc); }).map(function(l){ return Object.assign({}, l, {espera:diasEntre(l.dia, hoje), atrasada:true}); }); }, [p.linhas, hoje]);
   var meses = useMemo(function(){ var m = {}; base.forEach(function(l){ if(l.tem!=="nao"){ var k = l.dia.slice(0, 7); m[k] = (m[k] || 0)+1; } }); return Object.keys(m).sort().reverse().map(function(k){ return {mes:k, n:m[k]}; }); }, [base]);
   var atual = meses[0] || null, prox = meses[1] || null;
   var doMes = atual ? base.filter(function(l){ return l.dia.slice(0, 7)===atual.mes; }).sort(function(a, b){ return a.dia<b.dia ? -1 : a.dia>b.dia ? 1 : ORDEM.compare(a.cod, b.cod); }) : [];
   var pend = doMes.filter(function(l){ return l.tem!=="nao"; }), sem = pend.filter(function(l){ return !l.tem; }), tem = pend.filter(function(l){ return l.tem==="sim"; }), nao = doMes.filter(function(l){ return l.tem==="nao"; });
-  var linhas = vis==="sem" ? sem : vis==="tem" ? tem : vis==="nao" ? nao : pend;
+  var linhas = busca ? base.filter(function(l){ return casaCodigo(l, busca); }) : vis==="sem" ? sem : vis==="tem" ? tem : vis==="nao" ? nao : pend;
   var dias = useMemo(function(){ var m = {}; pend.forEach(function(l){ var x = m[l.dia] = m[l.dia] || {dia:l.dia, n:0, tem:0, sem:0}; x.n++; if(l.tem==="sim") x.tem++; else x.sem++; }); return Object.keys(m).sort().map(function(k){ return m[k]; }); }, [pend]);
   var copiar = function(){ var txt = sem.map(function(l){ return l.cod+" - "+(l.desc || ""); }).join("\n"); try{ navigator.clipboard.writeText(txt); sc[1](true); setTimeout(function(){ sc[1](false); }, 2500); }catch(x){} };
   if(!atual) return e("section",{className:"rounded-lg border-2 px-4 py-3 text-[13px]", style:{borderColor:ESTADO.ok}}, "Nenhuma peça de meses anteriores sem foto. Tudo em dia!");
@@ -96,10 +96,11 @@ function MesesAnteriores(p){
       e("p",{className:"text-[13px] text-foreground"}, "1. O cadastro de peças separa as peças da lista (botão \"Copiar lista para o cadastro\"). 2. O Marketing marca Tem ou Não tem a peça. 3. O Castilho fotografa as que têm. A peça sai da lista quando a foto chega na DevMaster.")),
     e(Bloco,{t:"Por dia de cadastro · "+nomeMes(atual.mes)},
       e(TabelaCampos,{minW:"520px", cols:[{t:"Dia de cadastro", w:"1.4fr"}, {t:"Peças sem foto", w:"1fr"}, {t:"Tem a peça", w:"1fr"}, {t:"Sem marcar", w:"1fr"}]}, fileiras)),
-    e(Bloco,{t:"Peças de "+nomeMes(atual.mes)+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças"), dir:e("span",{className:"flex flex-wrap items-center gap-2"},
-        e(Botao,{onClick:copiar, desabilitado:!sem.length}, copiou ? "Copiado!" : "Copiar lista para o cadastro · "+N(sem.length)),
-        e(Segmentado,{opcoes:[["todas", "Todas · "+N(pend.length)], ["sem", "Sem marcar · "+N(sem.length)], ["tem", "Tem · "+N(tem.length)], ["nao", "Não tem · "+N(nao.length)]], atual:vis, onMudar:sv[1]}))},
-      e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:"Nenhuma peça nesta lista."})));
+    e(Bloco,{t:(busca ? "Busca por "+busca+" em todos os meses anteriores" : "Peças de "+nomeMes(atual.mes))+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças")},
+      e("div",{className:"mb-2 flex flex-wrap items-center justify-between gap-2"},
+        e("span",{className:"flex flex-wrap items-center gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Botao,{onClick:copiar, desabilitado:!sem.length}, copiou ? "Copiado!" : "Copiar lista para o cadastro · "+N(sem.length))),
+        e(Segmentado,{opcoes:[["todas", "Todas · "+N(pend.length)], ["sem", "Sem marcar · "+N(sem.length)], ["tem", "Tem · "+N(tem.length)], ["nao", "Não tem · "+N(nao.length)]], atual:busca ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
+      e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:busca ? "Nenhuma peça sem foto com esse código nos meses anteriores." : "Nenhuma peça nesta lista."})));
 }
 
 function Producao(p){
@@ -156,6 +157,11 @@ function colunasDia(acao){
 // Quem: Castilho tira as fotos; a Ana edita e coloca na DevMaster; o sistema só enxerga a foto quando ela chega na DevMaster e a peça sai da fila sozinha.
 // Fila = peças cadastradas na DevMaster que ainda não têm foto lá, a mais antiga primeiro. Vermelho = 3 dias ou mais esperando.
 var PRAZO_DIAS = 3;
+// BUSCA POR CÓDIGO (Marcus, 11/11/2026): acha a peça em qualquer dia, em maiúscula ou minúscula (tudo vira maiúscula); digitar a grade (A2357014) acha o modelo (A2357)
+var casaCodigo = function(l, q){ return l.cod.indexOf(q)>=0 || (l.grades || []).some(function(g){ return g.indexOf(q)>=0; }); };
+function BuscaCodigo(p){
+  return e("div",{className:"w-[260px] max-w-full"}, e("input",{type:"search", value:p.valor, placeholder:"Buscar código, ex.: A2357", "aria-label":"Buscar a peça pelo código", autoComplete:"off", onChange:function(ev){ p.onChange(ev.target.value.toUpperCase().replace(/\s+/g, "")); }, className:CAMPO+" uppercase"}));
+}
 var INICIO_FILA = INICIO_PECAS;   // a fila vale para as peças cadastradas desde 01/11/2026 (as de antes ficam para trás) e não leva peça cancelada
 function proximaEntrega(){
   var sp = new Date(new Date().toLocaleString("en-US", {timeZone:"America/Sao_Paulo"})), h = sp.getHours(), d = sp.getDay(), util = d>=1 && d<=5;
@@ -164,7 +170,7 @@ function proximaEntrega(){
   return d===5 || d===6 || d===0 ? "segunda às 11h" : "amanhã às 11h";
 }
 function Hoje(p){
-  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0];
+  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0], sb = useState(""), busca = sb[0];
   var todas = useMemo(function(){ return p.linhas.filter(function(l){ return l.dia && l.dia>=INICIO_FILA && !/CANCELAD/i.test(l.desc); }).map(function(l){ var esp = l.sOk ? null : diasEntre(l.dia, hoje); return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }); }, [p.linhas, hoje]);
   var fila = useMemo(function(){ return todas.filter(function(l){ return !l.sOk; }).sort(function(a, b){ return a.dia<b.dia ? -1 : a.dia>b.dia ? 1 : ORDEM.compare(a.cod, b.cod); }); }, [todas]);
   var mes = useMemo(function(){ return todas.filter(function(l){ return l.dia>=ini; }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : ORDEM.compare(a.cod, b.cod); }); }, [todas, ini]);
@@ -173,7 +179,8 @@ function Hoje(p){
   var atras = fila.filter(function(l){ return l.atrasada; }).length;
   var comeco = dias[0] || null, diaAtual = sel || (comeco ? comeco.dia : "");
   var doDia = fila.filter(function(l){ return l.dia===diaAtual; });
-  var linhas = vis==="fila" ? fila : vis==="mes" ? mes : doDia;
+  var achados = useMemo(function(){ return busca ? p.linhas.filter(function(l){ return casaCodigo(l, busca); }).map(function(l){ var esp = l.dia && !l.sOk ? diasEntre(l.dia, hoje) : null; return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }) : null; }, [busca, p.linhas, hoje]);
+  var linhas = achados || (vis==="fila" ? fila : vis==="mes" ? mes : doDia);
   var vermelho = comeco && comeco.esp>=PRAZO_DIAS;
   var barra = comeco
     ? e("section",{className:"fc-pulso flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-lg border-2 px-4 py-3", style:{borderColor:vermelho ? ESTADO.ruim : ESTADO.alerta}},
@@ -195,8 +202,9 @@ function Hoje(p){
     barra,
     dias.length ? e(Bloco,{t:"Fila por dia · clique no dia para ver as peças"},
       e(TabelaCampos,{minW:"900px", cols:[{t:"Dia de cadastro", w:"1.7fr"}, {t:"Cadastradas", w:"1fr"}, {t:"Sem foto", w:"1fr"}, {t:"Foto", w:"1fr", cor:COR.foto}, {t:"Editada", w:"1fr", cor:COR.ed}, {t:"Sistema", w:"1fr", cor:COR.sub}, {t:"Esperando", w:"1fr"}, {t:"Situação", w:"1fr"}]}, fileiras)) : null,
-    e(Bloco,{t:titulo+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças"), dir:e("span",{className:"flex items-center"}, e(Segmentado,{opcoes:[["dia", "Dia "+(diaAtual ? formatarDia(diaAtual).slice(0, 5) : "—")+" · "+N(doDia.length)], ["fila", "Fila toda · "+N(fila.length)], ["mes", "Mês · "+N(mes.length)]], atual:vis, onMudar:sv[1]}))},
-      e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:"Nenhuma peça nesta lista."})));
+    e(Bloco,{t:(achados ? "Busca por "+busca : titulo)+" · "+N(linhas.length)+(linhas.length===1 ? " peça" : " peças")},
+      e("div",{className:"mb-2 flex flex-wrap items-center justify-between gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Segmentado,{opcoes:[["dia", "Dia "+(diaAtual ? formatarDia(diaAtual).slice(0, 5) : "—")+" · "+N(doDia.length)], ["fila", "Fila toda · "+N(fila.length)], ["mes", "Mês · "+N(mes.length)]], atual:achados ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
+      e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:achados ? "Nenhuma peça com esse código." : "Nenhuma peça nesta lista."})));
 }
 
 // progresso de cada dia (cadastradas, fotografadas, editadas, no sistema, sem foto): fica em Produção diária (Marcus, 11/11/2026: "não precisa estar direto ali")

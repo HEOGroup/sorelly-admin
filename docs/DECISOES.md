@@ -2233,3 +2233,6 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Regras de cobrança pesada (Serasa, rotina do setor) NÃO entram no folder (decisão do Marcus).
 - Como gerar de novo: abrir o HTML com o Playwright, medir se cada página cabe, gerar o PDF (tamanho da página do CSS) e a imagem de cada `section` em escala 2.
 - **Falta:** Manual da representante (12 páginas, `folder-representantes.html`), informativo para quem já tem kit e o folder dentro do app real (Leonardo).
+
+- **Fotos de catálogo, busca por código (11/11/2026, Marcus):** campo "Buscar código" na aba Hoje (e em Meses anteriores), ao lado dos botões da lista: acha a peça em qualquer dia; o que for digitado vira MAIÚSCULA; digitar a grade (A2357014) acha o modelo (A2357). Em Meses anteriores a busca olha todos os meses anteriores.
+- **Fotos de catálogo, lugar da busca (11/11/2026, Marcus):** a busca por código e os botões Dia | Fila toda | Mês saíram do título do bloco (que tem altura fixa e deixava o campo solto) e viraram uma linha própria entre o título e a tabela: busca à esquerda (260 px), botões à direita; em Meses anteriores o botão de copiar a lista fica junto da busca.
