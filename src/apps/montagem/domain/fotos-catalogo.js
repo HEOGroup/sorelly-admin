@@ -81,7 +81,7 @@ var formatarDia = function(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(
 // linhas da planilha (uma por código), mais novos primeiro
 function linhasFotos(fc){
   return (fc.codigos||[]).map(function(c){
-    return {cod:c.cod, cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia, fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
+    return {cod:c.cod, desc:c.desc||"", cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia || c.fotoEm==="ant" || c.edEm==="ant" || c.subEm==="ant", fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
   }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : 0; });
 }
 // uma coluna da tabela: dia ("2026-11-10") para a linha de grupo
@@ -152,6 +152,22 @@ function quadroCodigos(fc){
 }
 function minutosDesde(iso, agora){ return minutos(iso, agora); }
 
+// ---------- META DE FOTOS (Marcus, 10/11/2026) ----------
+// Primeira meta: 500 fotos até sexta-feira (13/11) = bônus de R$ 250,00 para o setor. A próxima meta entra aqui quando o Marcus definir.
+// Foto contada = marcada na tela (Foto, com data) OU foto que passou a existir na DevMaster depois do início do sistema (dmFoto, gravado na hora em que a leitura da DevMaster vê a foto).
+var METAS = [{id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250}];
+var somaDia = function(d, n){ var x = new Date(d+"T12:00:00Z"); x.setUTCDate(x.getUTCDate()+n); return x.toISOString().slice(0, 10); };
+var diaDaFoto = function(c){ var d = parteDia(c.fotoEm); if(ehDia(d)) return d; d = parteDia(c.dmFoto); return ehDia(d) ? d : ""; };
+function metaProgresso(fc, m, hoje){
+  var por = {}, feitas = 0, dias = [], d;
+  (fc.codigos||[]).forEach(function(c){ var x = diaDaFoto(c); if(x && x>=m.ini && x<=m.fim){ por[x] = (por[x]||0)+1; feitas++; } });
+  for(d = m.ini; d<=m.fim; d = somaDia(d, 1)) dias.push(d);
+  var acum = 0, linhas = dias.map(function(x){ acum += por[x]||0; return {dia:x, fotos:por[x]||0, acum:acum}; });
+  var falta = Math.max(0, m.alvo-feitas), restam = dias.filter(function(x){ return x>=hoje; }).length;
+  var situacao = feitas>=m.alvo ? "Batida" : hoje>m.fim ? "Não batida" : "Em andamento";
+  return {meta:m, feitas:feitas, falta:falta, pct:Math.min(100, feitas/m.alvo*100), linhas:linhas, restam:restam, porDia:restam ? Math.ceil(falta/restam) : 0, situacao:situacao};
+}
+
 // ---------- entrada de códigos (colar do Excel: um por linha ou separados por espaço, vírgula ou ponto e vírgula) ----------
 function lerCodigos(texto){
   var out = [], vistos = {}, invalidos = [];
@@ -209,7 +225,9 @@ function fcReduz(s, a){
         var cod = trim(it.cod).toUpperCase(); if(!/^[A-Z0-9]{2,12}$/.test(cod) || !/[0-9]/.test(cod) || !ehDia(it.dia) || it.dia>hoje) return;
         var c = mapa[cod];
         if(!c){ c = {cod:cod, dia:it.dia, por:"DevMaster"}; fc.codigos.push(c); mapa[cod] = c; novos++; }
-        if(it.foto && !c.subEm){ if(!c.fotoEm) c.fotoEm = "dm"; if(!c.edEm) c.edEm = "dm"; c.subEm = "dm"; if(c.esp) delete c.esp; subiram++; }
+        if(!c.dia) c.dia = it.dia;   // código que já estava na planilha antiga mas foi cadastrado na DevMaster nos últimos dias: vale a data da DevMaster (entra em "Cadastradas hoje")
+        if(it.desc && !c.desc) c.desc = trim(it.desc).slice(0, 140);   // descrição do produto na DevMaster (aparece na tabela "Cadastradas hoje")
+        if(it.foto && !c.fotoEm){ c.fotoEm = "dm"; c.dmFoto = agora; if(c.esp) delete c.esp; subiram++; }   // o Castilho marca o campo de foto na DevMaster = etapa Foto feita; Editada e Sistema ficam para quem edita (Marcus, 10/11/2026)
       });
       fc.dmEm = agora;
       if(!novos && !subiram) return {patch:{fc:fc}, msg:""};
@@ -224,4 +242,4 @@ function fcReduz(s, a){
   }
 }
 
-export { resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
+export { METAS, metaProgresso, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };

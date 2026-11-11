@@ -14,6 +14,7 @@ function inicioDaJanela(dias) {
   const d = new Date(Date.now() - dias * 86400000);
   return d.toISOString().slice(0, 10) + "T00:00:00";
 }
+const agoraBR = () => new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo", dateStyle: "short", timeStyle: "medium" }).format(new Date()).replace(" ", "T");
 const hojeBR = () => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 // produtos cadastrados nos últimos N dias: [{id, cod, desc, dia:"2026-11-09", foto:true|false}]
@@ -29,7 +30,7 @@ export async function produtosRecentes({ dias = 60, forcar = false } = {}) {
   return dados;
 }
 
-// Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; foto já na DevMaster marca Foto, Editada e Sistema como "dm".
+// Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; campo de foto preenchido na DevMaster marca só a etapa Foto como "dm" (Editada e Sistema são marcadas por quem edita).
 // Só grava as chaves que mudaram, com trava de versão (não pisa em quem está marcando uma etapa na tela ao mesmo tempo).
 export async function sincronizarFotosDm({ dias = 60 } = {}) {
   const dm = await produtosRecentes({ dias, forcar: true }), hoje = hojeBR();
@@ -45,7 +46,9 @@ export async function sincronizarFotosDm({ dias = 60 } = {}) {
       const c = tem ? JSON.parse(JSON.stringify(existente)) : { cod: it.cod, dia: it.dia, por: "DevMaster" };
       let alterou = !tem;
       if (!tem) novos++;
-      if (it.foto && !c.subEm) { if (!c.fotoEm) c.fotoEm = "dm"; if (!c.edEm) c.edEm = "dm"; c.subEm = "dm"; if (c.esp) delete c.esp; alterou = true; subiram++; }
+      if (!c.dia) { c.dia = it.dia; alterou = true; }
+      if (it.desc && !c.desc) { c.desc = String(it.desc).slice(0, 140); alterou = true; }
+      if (it.foto && !c.fotoEm) { c.fotoEm = "dm"; c.dmFoto = agoraBR(); if (c.esp) delete c.esp; alterou = true; subiram++; }   // campo de foto marcado na DevMaster = etapa Foto feita; Editada e Sistema são de quem edita
       if (alterou) mudou[chave] = c;
     }
     if (!Object.keys(mudou).length) return { novos: 0, subiram: 0, lidos: dm.itens.length };
