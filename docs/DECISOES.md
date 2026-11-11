@@ -2150,3 +2150,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - A regra nova **já vale**. Dívida: caminho 1 (leva kit: 80% pago, negocia na hora, até 2 parcelas de R$ 200,00 no mínimo, abaixo de R$ 400,00 parcela única, até 30 dias corridos e antes do próximo acerto) e caminho 2 (sem kit ou saiu: setor de Inadimplência, 48 horas para negociar, regras do setor a receber do Marcus). 2ª dívida seguida: sem kit.
 - **Autorização de kit novo com média abaixo no interno:** a funcionária que bipa pede ao Financeiro pelo **Direcionar**; o cartão mostra as 3 últimas vendas, inadimplência, média e aceitar/não aceitar. Média interna R$ 700,00.
 - Trocar os folders e PDFs de regras e comissões. Detalhe em `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`, seção 9.
+
+## 11/11/2026 (3ª parte) — Regras do setor de Inadimplência
+- O Marcus passou o "Módulo 2 · regras de negócio" do setor. Gravado em `docs/negocio/INADIMPLENCIA-REGRAS-DO-SETOR.md` (7 dias da representante, até 3 vezes sem cartão e 6 no cartão por link, status OK/Verificar/Não responde/Próximo mês, rotina de 3 contatos com 48 horas no final, quitação automática, Serasa a partir de 30 dias só com análise, encargos só com autorização).
+- **Inadimplência pesada NÃO vai em folder** nem em PDF da revendedora: é regra interna.
+- Seis conflitos com as regras do acerto estão listados na seção 11 do documento, aguardando o Marcus.
