@@ -1,5 +1,5 @@
 {
-  "ignoreCommand": "git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- . ':(exclude)docs' ':(exclude,glob)**/*.md' ':(exclude)tests' ':(exclude).claude' ':(exclude).github' ':(exclude)admin-antigo' ':(exclude)materiais-do-app' && git diff --quiet ${VERCEL_GIT_PREVIOUS_SHA:-HEAD^} HEAD -- docs/prompts/PROMPT-MESTRE.md docs/design/PADRAO-VISUAL.md",
+  "ignoreCommand": "sh scripts/vercel-pular-build.sh",
   "crons": [
     {
       "path": "/api/automatico/dia",
