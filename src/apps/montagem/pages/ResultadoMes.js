@@ -39,12 +39,12 @@ function PrevisaoMeses(p){
   if(!ap) return e(Painel,{t:"Previsão dos próximos meses", v:"Lendo os acertos previstos…"}, e("p",{role:"status", className:"px-3 py-2 text-center text-[13px] text-foreground"}, "Lendo a data prevista de acerto na DevMaster."));
   if(ap.erro || !ap.porMes) return e(Painel,{t:"Previsão dos próximos meses", v:"Sem acertos previstos"}, e("p",{role:"alert", className:"px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, "Não consegui ler a data prevista de acerto na DevMaster."));
   var media = fat/nn, pago = fat>0 ? rec/fat : 0, funMed = fun/qm, antMed = ant/qm, pct = metaPct/100;
-  var pv = projetarVariosAnos(se, ano, 16, 2, metaPct).porMes, ymDe = function(k){ return (ano+Math.floor(k/12))+"-"+String(k%12+1).padStart(2, "0"); };
+  var pv = projetarVariosAnos(se, ano, 24, 2, metaPct).porMes, ymDe = function(k){ return (ano+Math.floor(k/12))+"-"+String(k%12+1).padStart(2, "0"); };
   // mês atual: o que ainda falta entrar e pagar
   var kA = d.K.n[mA+1] || {}, mediaA = kA.n ? kA.fat/kA.n : media, pagoA = kA.fat>0 ? kA.rec/kA.fat : pago;
   var restAc = Math.round((ap.restoMes || 0)*pct), diasMes = new Date(ano, mA+1, 0).getDate(), restDias = Math.max(0, diasMes-hojeD.getDate());
   var entA = restAc*mediaA*pagoA+(antMed+funMed)*restDias/diasMes;
-  var pmA = ((s.contasPagar || {})[String(ano)] || {})[mA] || {}, tA = totais(filtrar(ano+"-"+String(mA+1).padStart(2, "0"), "", "", "", "sorelly", "")), srvA = !!servidorEm() && tA.n>0, pagoA2 = srvA ? tA.pago : ((pmA.pago || 0)>0 ? pmA.pago : (contasDoMes(s, String(ano), mA).pago || 0)), totalA = Math.max((pmA.pago || 0)+(pmA.apagar || 0), tA.pago+tA.apagar), faltaA = Math.max(0, totalA-pagoA2);   // contas do mês ainda em lançamento: vale o maior entre o admin antigo e a DevMaster (mesma regra dos meses seguintes)
+  var pmA = ((s.contasPagar || {})[String(ano)] || {})[mA] || {}, tA = totais(filtrar(ano+"-"+String(mA+1).padStart(2, "0"), "", "", "", "", "")), srvA = !!servidorEm() && tA.n>0, pagoA2 = srvA ? tA.pago : ((pmA.pago || 0)>0 ? pmA.pago : (contasDoMes(s, String(ano), mA).pago || 0)), totalA = srvA ? tA.pago+tA.apagar : Math.max((pmA.pago || 0)+(pmA.apagar || 0), tA.pago+tA.apagar), faltaA = Math.max(0, totalA-pagoA2);   // contas do mês ainda em lançamento: vale o maior entre o admin antigo e a DevMaster (mesma regra dos meses seguintes)
   var prA = provaDoMes(sc, ano, mA, 0, 0, isoDia(hojeD)), saldo0 = prA.fim ? prA.fim.real : null;
   var saldoA = saldo0===null ? null : saldo0+entA-faltaA;
   // próximos 3 meses
@@ -52,14 +52,14 @@ function PrevisaoMeses(p){
   var iniMes = (resumoMensalRevendedoras(s, ano)[mA] || {}).ini || 0, fmA = (s.fechaMes || {})[ano+"-"+String(mA+1).padStart(2, "0")] || {}, ksA = Object.keys(fd).filter(function(x){ return x.slice(0, 7)===ano+"-"+String(mA+1).padStart(2, "0"); }).sort();
   var prevA = (ksA.length ? (fd[ksA[ksA.length-1]].acertos || 0) : 0)+(Number(fmA.carregar) || 0)+(Number(fmA.aRealizar) || 0), razao = iniMes>0 ? prevA*pct/iniMes : 0;
   var cols = [], acum = saldoA, cresD = (Number(cresDez) || 0)/100;
-  for(var j = 1; j<=5; j++){
+  for(var j = 1; j<=(p.modo==="linhas" ? (11-mA)+12 : 5); j++){   // aba Resumo: de hoje até dezembro de 2027; aba Previsão: 5 meses
     var k = mA+j, anoJ = ano+Math.floor(k/12), mJ = k%12, conhecido = (ap.porMes || {})[ymDe(k)] || 0;
     var revJ = ((pv[k] || {}).revendedoras || 0);
     if(k>11) revJ = revJ-(1-cresD)*(((pv[12] || {}).revendedoras || 0)-((pv[11] || {}).revendedoras || 0))-QUEDA_JANEIRO;   // dezembro cresce menos (só até o dia 15) e janeiro perde revendedoras; vale daí em diante
     var ac = Math.round(revJ*razao);
     var m = mediaA*(1+((Number(j===1 ? altaA : j===2 ? altaB : altaJ) || 0)/100));   // fevereiro e março seguem a alta de janeiro
-    var venda = ac*m*pagoA, ent = venda+antMed+funMed, apJ = ((s.contasPagar || {})[String(anoJ)] || {})[mJ], adm = apJ && (apJ.apagar || apJ.pago) ? (apJ.apagar || 0) : 0, lanc = totais(filtrar(ymDe(k), "", "", "", "sorelly", "")).total;
-    var ap2 = adm>0 ? adm : lanc, est = !(adm>0) && lanc>0;   // 10/11/2026 (Marcus: dezembro estava errado, R$ 2,67 mi): mês que vem vale o valor do admin antigo (o mesmo da aba Previsão); a lista da DevMaster junta cheques e títulos atrasados no mês e inflava a conta. Sem admin, vale o lançado (com ≥)
+    var venda = ac*m*pagoA, ent = venda+antMed+funMed, apJ = ((s.contasPagar || {})[String(anoJ)] || {})[mJ], adm = apJ && (apJ.apagar || apJ.pago) ? (apJ.apagar || 0) : 0, lanc = totais(filtrar(ymDe(k), "", "", "", "", "")).total;
+    var ap2 = lanc>0 ? lanc : adm, est = lanc>0;   // 10/11/2026 (Marcus: tudo vem da DevMaster pelo admin novo): vale o lançado na DevMaster; o admin antigo só entra se a DevMaster não tem nada no mês   // 10/11/2026 (Marcus: dezembro estava errado, R$ 2,67 mi): mês que vem vale o valor do admin antigo (o mesmo da aba Previsão); a lista da DevMaster junta cheques e títulos atrasados no mês e inflava a conta. Sem admin, vale o lançado (com ≥)
     var res = ap2===null ? null : ent-ap2; if(acum!==null && res!==null) acum += res; else acum = null;
     cols.push({lanc:lanc, nome:MES_LONGO[mJ]+"/"+anoJ, ac:ac, rev:Math.round(revJ), conhecido:conhecido, m:m, venda:venda, ent:ent, ap:ap2, est:est, res:res, saldo:acum});
   }
@@ -69,7 +69,9 @@ function PrevisaoMeses(p){
   // Modo "linhas" (aba Resumo, 03/11/2026): só as linhas dos meses que vêm (Entra, Sai, Resultado), dentro do bloco "Meses ao redor".
   if(p.modo==="linhas"){
     var semBase = !(razao>0);
-    return e(React.Fragment,null, cols.map(function(c){ return e(FileiraCampos,{key:"fv"+c.nome, cells:[c.nome, "Previsto", semBase ? "—" : brl(c.ent), (c.est ? "≥ " : "")+brl(c.ap), semBase ? "—" : sinal(c.res)]}); }),
+    return e(React.Fragment,null, cols.map(function(c, ci){ var linha = e(FileiraCampos,{key:"fv"+c.nome, tom:"#A78BFA", cells:[c.nome, {v:"Previsto", cor:"#A78BFA"}, semBase ? "—" : brl(c.ent), (c.est ? "≥ " : "")+brl(c.ap), semBase ? "—" : sinal(c.res)]});
+      var novoAno = c.nome.slice(-4)!==String(ano) && (ci===0|| c.nome.slice(-4)!==cols[ci-1].nome.slice(-4)) && c.nome.slice(-4)!==String(ano);   // faixa com o ano quando a lista passa para 2027
+      return novoAno ? e(React.Fragment,{key:"fa"+c.nome}, e(FileiraCampos,{total:true, tom:"#A78BFA", cells:[{v:c.nome.slice(-4), cor:"#A78BFA"}, "", "", "", ""]}), linha) : linha; }),
       semBase && e("p",{className:"border-t border-[#2a2c31] px-3 py-1.5 text-center text-[11px] text-foreground"}, "Falta lançar o faturamento do mês em Faturamento para calcular a entrada dos próximos meses. A saída mostrada é só o que já está lançado."));
   }
   var painelMeses = e(Painel,{t:"Próximos meses · quanto ainda entra e sai", v:ult===null ? "Sem saldo" : "Saldo em "+cols[4].nome+": "+brl(ult), vermelho:ult!==null && ult<0},
@@ -89,7 +91,7 @@ function PrevisaoMeses(p){
     Lw(G, ["Menos: falta pagar", ambar(brl(faltaA))].concat(cols.map(function(c){ return ambar((c.est ? "≥ " : "")+brl(c.ap)); })), false, "pg"),
     Lw(G, ["Resultado do mês", sinal(entA-faltaA)].concat(cols.map(function(c){ return sinal(c.res); })), false, "pr", null, forte),
     Lw(G, ["Saldo das contas no fim do mês", saldoA===null ? "—" : sinal(saldoA)].concat(cols.map(function(c){ return sinal(c.saldo); })), false, "ps", null, forte),
-    e("p",{className:"px-3 py-1.5 text-center text-[11px] text-foreground"}, "Acertos: data de devolução prevista dos kits abertos na DevMaster, lida às "+new Date(ap.geradoEm).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})+". Meses seguintes: revendedoras no dia 1 × a razão de acertos do mês atual; dezembro cresce "+cresDez+"% do normal (só até o dia 15) e janeiro perde "+QUEDA_JANEIRO+" revendedoras. Média, % pago na hora, inadimplência antiga e funcionárias: média dos últimos "+qm+" meses fechados. Saldo parte de "+(saldo0===null ? "—" : brl(saldo0))+" agora. Contas a pagar de cada mês: o valor do admin antigo (o mesmo da aba Previsão); sem ele, o que já está lançado na DevMaster, com ≥ (só o lançado até hoje; ainda entram contas novas)."));
+    e("p",{className:"px-3 py-1.5 text-center text-[11px] text-foreground"}, "Acertos: data de devolução prevista dos kits abertos na DevMaster, lida às "+new Date(ap.geradoEm).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})+". Meses seguintes: revendedoras no dia 1 × a razão de acertos do mês atual; dezembro cresce "+cresDez+"% do normal (só até o dia 15) e janeiro perde "+QUEDA_JANEIRO+" revendedoras. Média, % pago na hora, inadimplência antiga e funcionárias: média dos últimos "+qm+" meses fechados. Saldo parte de "+(saldo0===null ? "—" : brl(saldo0))+" agora. Contas a pagar de cada mês: tudo lido da DevMaster pelo admin novo (já pago e em aberto). Com ≥ é só o que já está lançado até hoje; os meses mais longe ainda recebem contas novas."));
   // MÊS ATUAL (Marcus, 28/10/2026): só o que falta; no fim, o que entrou, o que falta e o resultado do pago e a pagar
   var C3p = "2.4fr 1.2fr 2.6fr", pagoMes = pagoA2, entrouMes = (prA.variacao===null || prA.variacao===undefined) ? null : prA.variacao+pagoMes;
   var acFeitos = ksA.length ? (fd[ksA[ksA.length-1]].acertos || 0) : 0, recFat = ksA.length ? (fd[ksA[ksA.length-1]].recebido || 0) : 0, carA = Number(fmA.carregar) || 0, arA = Number(fmA.aRealizar) || 0, alvoA = Math.round(prevA*pct), nA = function(v){ return Math.round(v || 0).toLocaleString("pt-BR"); };
@@ -145,11 +147,11 @@ function AbaResultadoMes(){
   var inadMes = Kt.ace || 0, inadAberto = Kt.s || 0, faturado = Kt.fat || 0;
   // PAGAR (admin antigo)
   // PAGAR: MESMA regra do alto da tela Contas a pagar (02/11/2026): com a DevMaster lida pelo servidor, valem as baixas e os títulos dela (mais os pagamentos dados no sistema); sem ela, o admin antigo; sem os dois, a soma dos dias.
-  var ymP = ano+"-"+String(mi).padStart(2, "0"), tP = totais(filtrar(ymP, "", "", "", "sorelly", "")), srvP = !!servidorEm() && tP.n>0;
+  var ymP = ano+"-"+String(mi).padStart(2, "0"), tP = totais(filtrar(ymP, "", "", "", "", "")), srvP = !!servidorEm() && tP.n>0;
   var pm = ((s.contasPagar || {})[String(ano)] || {})[m0] || {}, somaDias = contasDoMes(s, String(ano), m0).pago || 0, doAdmin = !srvP && (pm.pago || 0)>0, pago = srvP ? tP.pago : doAdmin ? pm.pago : somaDias, listaAp = tP.apagar || 0;
   var falta = srvP ? tP.apagar : listaAp>0 ? listaAp : doAdmin ? (pm.apagar || 0) : (contasDoMes(s, String(ano), m0).apagar || 0);
   // mês em andamento (Marcus, 02/11/2026: novembro): as contas do mês ainda estão sendo lançadas na DevMaster; vale o MAIOR entre ela e o admin antigo, igual aos meses seguintes da Previsão. Mês fechado: o que foi pago e o que falta.
-  var totPag = m0 < hojeD.getMonth() ? pago+falta : Math.max((pm.pago || 0)+(pm.apagar || 0), pago+falta), faltaMostra = Math.max(0, totPag-pago);
+  var totPag = (m0 < hojeD.getMonth() || srvP) ? pago+falta : Math.max((pm.pago || 0)+(pm.apagar || 0), pago+falta), faltaMostra = Math.max(0, totPag-pago);
   // ENTROU DE VERDADE
   var pr = provaDoMes(sc, ano, m0, 0, 0, hoje), temSaldo = pr.variacao!==null && pr.variacao!==undefined, entrou = temSaldo ? pr.variacao+pago : null, dif = entrou===null ? null : entrou-esperado;
   // FATURAMENTO (o que o Marcus lança em Faturamento): acertos feitos, Carregar, a realizar e a previsão do mês
@@ -173,9 +175,9 @@ function AbaResultadoMes(){
   // Nota fiscal = "Faturamento lançado" (Faturamento). Dinheiro = o que a DevMaster mostra recebido nas contas. A mesma conta dos quadros das outras abas.
   var curM = hojeD.getMonth()+1;
   var saiMes = function(mm){
-    var ymX = ano+"-"+String(mm).padStart(2, "0"), tX = totais(filtrar(ymX, "", "", "", "sorelly", "")), srvX = !!servidorEm() && tX.n>0, pmX = ((s.contasPagar || {})[String(ano)] || {})[mm-1] || {}, cdX = contasDoMes(s, String(ano), mm-1);
+    var ymX = ano+"-"+String(mm).padStart(2, "0"), tX = totais(filtrar(ymX, "", "", "", "", "")), srvX = !!servidorEm() && tX.n>0, pmX = ((s.contasPagar || {})[String(ano)] || {})[mm-1] || {}, cdX = contasDoMes(s, String(ano), mm-1);
     var doX = !srvX && (pmX.pago || 0)>0, pagoX = srvX ? tX.pago : doX ? pmX.pago : (cdX.pago || 0), lapX = tX.apagar || 0, faltaX = srvX ? tX.apagar : lapX>0 ? lapX : doX ? (pmX.apagar || 0) : (cdX.apagar || 0);
-    return mm-1 < hojeD.getMonth() ? pagoX+faltaX : Math.max((pmX.pago || 0)+(pmX.apagar || 0), pagoX+faltaX);
+    return (mm-1 < hojeD.getMonth() || srvX) ? pagoX+faltaX : Math.max((pmX.pago || 0)+(pmX.apagar || 0), pagoX+faltaX);
   };
   var faltaEntMes = function(mmi){   // mesma conta da aba Previsão, para o mês em andamento
     if(!apN || apN.restoMes===undefined) return 0;
@@ -191,7 +193,7 @@ function AbaResultadoMes(){
   var resNota = notaEnt===null ? null : notaEnt-totPag, resDin = dinhEnt-totPag, difRes = resNota===null ? null : resDin-resNota;
   // RESUMO em layout D (Marcus, 10/11/2026: "está difícil de identificar as coisas"): três grupos (ENTRA, SAI, RESULTADO), o total de cada grupo em faixa escura e uma coluna de grupo à esquerda.
   var COLR = [{t:"Grupo", w:"16%"}, {t:"Linha", w:"24%"}, {t:"Notas Fiscais", w:"20%"}, {t:"Contas a Receber", w:"20%"}, {t:"Diferença", w:"1fr"}];
-  var temNota = notaEnt!==null, travessao = "—", fR = function(k, grupo, linha, nota, dinh, dif, total){ return e(FileiraCampos,{key:k, total:total, cells:[grupo, linha, nota, dinh, dif]}); };
+  var temNota = notaEnt!==null, travessao = "—", TOMR = {a:"#60A5FA", e:"#34D399", s:"#FB923C", r:"#E8B84B"}, fR = function(k, grupo, linha, nota, dinh, dif, total){ var tom = TOMR[k.charAt(0)]; return e(FileiraCampos,{key:k, total:total, tom:tom, cells:[grupo ? {v:grupo, cor:tom} : "", linha, nota, dinh, dif]}); };   // cor por grupo (Marcus, 10/11/2026): acertos azul, entra verde, sai laranja, resultado dourado
   var linhasRes = [];
   // ACERTOS (Marcus, 10/11/2026: "em cima do que entra coloca a quantidade de acertos e a média"): notas fiscais = Faturamento lançado; contas a receber = clientes com título no mês na DevMaster (sem funcionárias) e o que pagaram na hora
   var nAcCR = Kn.n || 0, medNF = acF>0 ? recF/acF : null, medCR = nAcCR>0 ? (Kn.rec || 0)/nAcCR : null, pctAc = pctF/100;
@@ -216,13 +218,13 @@ function AbaResultadoMes(){
   linhasRes.push(fR("s3", fechado ? "SAI" : "", fechado ? "Saiu no mês" : "Total que sai", temNota ? brl(totPag) : travessao, brl(totPag), temNota ? brl(0) : travessao, true));
   if(!fechado) linhasRes.push(fR("r1", "RESULTADO", "Resultado até hoje", ksF.length ? sinalR(recF-(totPag-faltaMostra)) : travessao, sinalR(esperado-(totPag-faltaMostra)), ksF.length ? sinalR(esperado-recF) : travessao));
   linhasRes.push(fR("r2", fechado ? "RESULTADO" : "", fechado ? "Resultado do mês" : "Resultado previsto", sinalR(resNota), sinalR(resDin), sinalR(difRes), true));
-  var COLM = [{t:"Mês", w:"22%"}, {t:"Situação", w:"18%"}, {t:"Entra", w:"20%"}, {t:"Sai", w:"20%"}, {t:"Resultado", w:"1fr"}];
+  var COLM = [{t:"Mês", w:"19%"}, {t:"Situação", w:"15%"}, {t:"Entra", w:"21%"}, {t:"Sai", w:"23%"}, {t:"Resultado", w:"1fr"}];
   var linhasMeses = [];
-  for(var mm = Math.max(1, curM-5); mm<=curM; mm++){
+  for(var mm = 1; mm<=curM; mm++){   // desde janeiro do ano (Marcus, 10/11/2026)
     var entM = (d.K.t[mm] || {}).rec+((d.A.t.cx || [])[mm-1] || 0)+(mm===curM ? faltaEntMes(mm) : 0), saiM = saiMes(mm);
-    linhasMeses.push(e(FileiraCampos,{key:"o"+mm, total:mm===mi, title:"Abrir "+MES_LONGO[mm-1], onClick:(function(x){ return function(){ setMes(String(x)); }; })(mm), cells:[MES_LONGO[mm-1]+"/"+ano, mm===curM ? {v:"Em andamento", cor:"#FBBF24"} : "Fechado", brl(entM || 0), brl(saiM), sinalR((entM || 0)-saiM)]}));
+    linhasMeses.push(e(FileiraCampos,{key:"o"+mm, total:mm===mi, tom:mm===curM ? "#FBBF24" : undefined, title:"Abrir "+MES_LONGO[mm-1], onClick:(function(x){ return function(){ setMes(String(x)); }; })(mm), cells:[MES_LONGO[mm-1]+"/"+ano, mm===curM ? {v:"Em andamento", cor:"#FBBF24"} : "Fechado", brl(entM || 0), brl(saiM), sinalR((entM || 0)-saiM)]}));
   }
-  var resumo = e("div",{className:"grid grid-cols-[repeat(auto-fit,minmax(34rem,1fr))] items-start gap-2.5"},
+  var resumo = e("div",{className:"grid grid-cols-1 items-start gap-2.5"},
     e(Painel,{t:MES_LONGO[m0]+"/"+ano, v:(fechado ? "Resultado " : "Resultado previsto ")+brl(resDin), vermelho:resDin<0},
       e("div",{className:"p-2"},
         e(TabelaCampos,{cols:COLR, minW:"34rem"}, linhasRes),
@@ -230,12 +232,13 @@ function AbaResultadoMes(){
         notaEnt===null && e("p",{className:"px-1 pt-1 text-center text-[11px] text-foreground"}, "Este mês ainda não tem nota fiscal lançada em Faturamento. Só existe o dinheiro."))),
     e(Painel,{t:"Meses ao redor", v:"Clique em um mês para abrir"},
       e("div",{className:"p-2"},
-        e(TabelaCampos,{cols:COLM, minW:"34rem"}, linhasMeses, e(PrevisaoMeses,{modo:"linhas", d:d, s:s, sc:sc, hojeD:hojeD, ano:ano})),
+        e(TabelaCampos,{cols:COLM, minW:"40rem"}, linhasMeses, e(PrevisaoMeses,{modo:"linhas", d:d, s:s, sc:sc, hojeD:hojeD, ano:ano})),
         e("p",{className:"px-1 pt-2 text-center text-[11px] text-foreground"}, "Fechado: o que já aconteceu. Em andamento: o mês de hoje, com a previsão do que falta. Previsto: meses que vêm. O sinal ≥ no Sai mostra que só entrou o que já está lançado; ainda entram contas novas."))));
 
   // FATURAMENTO E RECEBER em layout D (Marcus, 10/11/2026): um bloco embaixo do outro, texto de "De onde vem" curto e em uma linha só; início do mês e adiadas no topo.
   var COLO = [{t:"Grupo", w:"15%"}, {t:"Linha", w:"27%"}, {t:"Valor", w:"15%"}, {t:"De onde vem", w:"1fr"}];
-  var fO = function(k, grupo, linha, valor, onde, total){ return e(FileiraCampos,{key:k, total:total, cells:[grupo, linha, valor, onde]}); };
+  var TOMO = {i:"#A78BFA", a:"#60A5FA", f:"#34D399", c:"#FB923C", r:"#E8B84B", v1:"#34D399", v2:"#34D399", v3:"#FBBF24", v4:"#FBBF24", v5:"#FBBF24", m:"#60A5FA", p:"#A78BFA", z:"#E8B84B"};
+  var fO = function(k, grupo, linha, valor, onde, total){ var tom = TOMO[k] || TOMO[k.charAt(0)]; return e(FileiraCampos,{key:k, total:total, tom:tom, cells:[grupo ? {v:grupo, cor:tom} : "", linha, valor, onde]}); };
   var mmF = ((s.metaMensal || {})[String(ano)] || {})[m0] || {}, iniF = Number(mmF.base) || 0, prevIniF = Number(mmF.inicio) || 0;
   var adiadasF = (prevIniF>0 && totF>0) ? Math.max(0, prevIniF-totF) : null, ultDiaF = ksF.length ? dm(ksF[ksF.length-1]).slice(0, 5) : "";
   var lf = [];

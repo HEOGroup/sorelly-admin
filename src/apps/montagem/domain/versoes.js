@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.168", data:"2026-11-10", titulo:"Contas a pagar: dezembro e meses seguintes vêm da DevMaster", itens:[
+  {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"Uma baixa com data de débito em dezembro puxava o mês de referência para dezembro, e todas as contas atrasadas (até de 2025) caíam em dezembro: R$ 2,67 mi. O mês de referência nunca passa do mês de hoje. Dezembro agora mostra R$ 1.536.688,47 e novembro R$ 1.490.122,83, tudo da DevMaster."},
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Contas a pagar de novembro, dezembro e dos meses seguintes vêm só da DevMaster pelo admin novo (com ≥ nos meses que vêm, por ainda receberem contas). O admin antigo só entra se a DevMaster não carregar."},
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Meses ao redor desde janeiro, com os meses que vêm até dezembro de 2027 e a faixa 2027 separada. Cada grupo ganhou a sua cor (acertos azul, entra verde, sai laranja, resultado dourado, previsto roxo), com barra na lateral e fundo suave; o total do grupo fica mais forte. Resumo e Meses ao redor um embaixo do outro."}
+ ]},
  {v:"0.18.167", data:"2026-11-10", titulo:"Contas bancárias: topo em uma barra, resumo em uma linha e cabeçalho dourado", itens:[
   {tipo:"melhoria", area:"Financeiro › Saldos › Contas bancárias", txt:"Os blocos do topo viraram uma barra só com 5 números (Saldo real, Cheque especial, Disponível, Bloqueado / a receber e Divergência), cada um com um tom de cor. A conta de Como chegamos nesse saldo (início + recebido − pago = esperado, contra o real e a divergência) virou uma linha só e os cartões repetidos saíram. Os botões ficaram pequenos, a tabela ganhou cabeçalho dourado e as fontes seguem o padrão (13 px, rótulos 11 px, números até 20 px, campos de 32 px)."}]},
  {v:"0.18.166", data:"2026-11-10", titulo:"Resultado do mês: resumo em grupos e dezembro corrigido", itens:[

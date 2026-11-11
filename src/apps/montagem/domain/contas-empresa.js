@@ -103,6 +103,9 @@ function baseItens(){
     return {id:"p"+i, status:"pago", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]), baixa:x[8], venc:x[9], valor:x[10], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ym(x[8]), outroMes:ym(x[9])!==ym(x[8])};
   });
   var mesRef = pagas.reduce(function(m, i){ return i.mes>m ? i.mes : m; }, "");
+  // 10/11/2026 (Marcus: "dezembro está errado"): baixa com data de débito no futuro (ex.: dezembro) puxava o mês de referência para frente e TODAS as contas atrasadas (até de 2025) caíam em dezembro. O mês de referência nunca passa do mês de hoje.
+  var hojeMes = (function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0"); })();
+  if(mesRef>hojeMes) mesRef = hojeMes;
   var apagar = ((SERV && SERV.apagar) || ((LOCAL && LOCAL.apagar) || []).concat((FUTURAS && FUTURAS.apagar) || [])).map(function(x, i){
     var vm = ym(x[9]), ant = !!mesRef && vm<mesRef;
     return {id:"a"+i, status:"apagar", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]), emissao:x[8], venc:x[9], valorTitulo:x[10], valor:x[11], atraso:x[12], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ant ? mesRef : vm, outroMes:ant};

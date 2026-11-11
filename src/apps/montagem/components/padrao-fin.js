@@ -116,7 +116,8 @@ function TabelaCampos(p){
 }
 // cells: texto, elemento ou {v, cor}. total:true = faixa escura em negrito. onClick: fileira clicável. alto: altura em px da fileira (só para linha com foto; padrão 32 px).
 function FileiraCampos(p){
-  return e("div",{onClick:p.onClick, title:p.title, className:"grid border-t "+FIO+(p.total ? " bg-[#1c1d21] font-bold" : "")+(p.onClick ? " cursor-pointer hover:bg-white/5" : ""), style:{gridTemplateColumns:"var(--grade)"}},
+  // tom (opcional, hex): faixa de cor do grupo (Marcus, 10/11/2026: "me surpreenda nas cores"): fundo suave, barra grossa na esquerda e mais forte na linha de total
+  return e("div",{onClick:p.onClick, title:p.title, className:"grid border-t "+FIO+(p.total ? " bg-[#1c1d21] font-bold" : "")+(p.onClick ? " cursor-pointer hover:bg-white/5" : ""), style:p.tom ? {gridTemplateColumns:"var(--grade)", background:p.tom+(p.total ? "30" : "14"), boxShadow:"inset 4px 0 0 "+p.tom} : {gridTemplateColumns:"var(--grade)"}},
     p.cells.map(function(c, i){ var obj = c!==null && typeof c==="object" && !React.isValidElement(c) && c.v!==undefined;
       return e("div",{key:i, className:"flex items-center justify-center whitespace-nowrap border-l px-3 text-[13px] tabular-nums first:border-l-0 "+(p.alto ? "" : "h-8 ")+FIO, style:obj && c.cor ? (p.alto ? {color:c.cor, height:p.alto} : {color:c.cor}) : (p.alto ? {height:p.alto} : undefined)}, obj ? c.v : c); }));
 }
