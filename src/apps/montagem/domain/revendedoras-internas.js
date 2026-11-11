@@ -200,12 +200,12 @@ function avisoRemarcacao(r, c, hojeIso){
     var vez = res.cobraveis, mm = res.atual, pp = res.proxima, fato = c.tipo==="nao_veio" ? "Você não veio no horário combinado do seu acerto." : "Seu acerto foi desmarcado.";
     var ini = "Olá, "+nome+"! "+fato+" Na Sorelly Joias os horários são muito apertados, e cada horário é reservado só para você. ";
     if(c.isenta) return ini+"Este caso foi autorizado"+(c.autorizado ? " por "+c.autorizado : "")+" e não tem multa. Para marcar um novo horário, é só me chamar!";
-    return ini+"Pelas regras do consignado, esta é a "+vez+"ª ocorrência (remarcação, falta ou cancelamento) e tem multa de "+mm.comissaoPct+" pontos na comissão e "+mm.brindePct+"% no brinde. A próxima terá multa de "+pp.comissaoPct+" pontos na comissão e "+pp.brindePct+"% no brinde. Motivo de saúde ou emergência com comprovante não tem multa: é só enviar o comprovante. Para marcar um novo horário, é só me chamar!";
+    return ini+"Pelas regras do consignado, esta é a "+vez+"ª ocorrência (remarcação, falta ou cancelamento) e tem multa de "+mm.comissaoPct+"% na comissão e "+mm.brindePct+"% no brinde. A próxima terá multa de "+pp.comissaoPct+"% na comissão e "+pp.brindePct+"% no brinde. Motivo de saúde ou emergência com comprovante não tem multa: é só enviar o comprovante. Para marcar um novo horário, é só me chamar!";
   }
   var base = "Olá, "+nome+"! Seu acerto foi remarcado para "+quando+", aqui na Sorelly Joias. ";
   if(c && c.isenta) return base+"Esta remarcação foi autorizada"+(c.autorizado ? " por "+c.autorizado : "")+" e não tem multa. Combinado? Te esperamos!";
   var m = res.atual, p = res.proxima;
-  return base+"Pelas regras do consignado, esta é a "+res.cobraveis+"ª remarcação e tem multa de "+m.comissaoPct+" pontos na comissão e "+m.brindePct+"% no brinde. Se não vier nesta data, a próxima remarcação terá multa de "+p.comissaoPct+" pontos na comissão e "+p.brindePct+"% no brinde. Posso confirmar o seu horário?";
+  return base+"Pelas regras do consignado, esta é a "+res.cobraveis+"ª remarcação e tem multa de "+m.comissaoPct+"% na comissão e "+m.brindePct+"% no brinde. Se não vier nesta data, a próxima remarcação terá multa de "+p.comissaoPct+"% na comissão e "+p.brindePct+"% no brinde. Posso confirmar o seu horário?";
 }
 function mensagemRegras(r, origem){
   return "Olá, "+primeiroNome(r.nome)+"! Estamos com novas regras e comissões do consignado, que valem para o seu próximo acerto. Leia o guia com atenção: "+(origem||"")+"/regras/GUIA-DA-REVENDEDORA.pdf . Qualquer dúvida, é só me chamar!";
@@ -228,6 +228,37 @@ function capacidadeDia(iso){ var w = diaDaSemana(iso); return w===0 || feriadoDe
 function marcadasDoDia(lista, iso){ return (lista||[]).filter(function(r){ return r.agend && r.agend.data===iso; }).map(function(r){ return {r:r, hora:r.agend.hora}; }); }
 function vagasDoDia(lista, iso){ return capacidadeDia(iso) - marcadasDoDia(lista, iso).length; }
 // pode marcar naquele dia e horário? Devolve "" se pode, ou o motivo de não poder. "ignorarId" = a própria revendedora (remarcar o mesmo horário não conta duas vezes)
+// ── PRAZO DO ACERTO EM DIAS ÚTEIS (regra de 11/11/2026; docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md) ──
+// Dia útil = segunda a sexta, sem feriado (os feriados vêm do RH, definirFeriadosAgenda). O relógio conta do PRIMEIRO dia marcado do ciclo; sem dia marcado, da data do kit (acerto previsto).
+var PRAZO_UTEIS = 5, JURIDICO_UTEIS = 30, ANTECEDENCIA_LIVRE = 10;
+function ehDiaUtil(iso){ var w = diaDaSemana(iso); return w!==0 && w!==6 && !feriadoDe(iso); }
+function diasUteisDepois(deIso, ateIso){ if(!deIso || !ateIso || ateIso<=deIso) return 0; var n = 0, d = deIso, guarda = 0; while(d<ateIso && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n++; } return n; }   // conta os dias úteis DEPOIS de "de", até "ate" (inclusive)
+function somaDiasUteis(iso, n){ var d = iso, guarda = 0; while(n>0 && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n--; } return d; }
+function cicloDe(r){ return (r.hist && r.hist[0] && r.hist[0].data) || ""; }   // o ciclo começa no último acerto
+// primeiro dia marcado deste ciclo: o guardado (r.primeira), senão o registro mais antigo com data marcada, senão o que está agendado agora
+function primeiroMarcado(r){
+  var desde = cicloDe(r); if(r.primeira && r.primeira.dia && (r.primeira.desde||"")===desde) return r.primeira.dia;
+  var l = (r.registro||[]).filter(function(c){ return (c.tipo==="marcado" || c.tipo==="remarcado") && c.dia && (c.data||"")>=desde; }).sort(function(a, b){ return (a.data||"").localeCompare(b.data||"") || (a.ts||0)-(b.ts||0); });
+  return l.length ? l[0].dia : (r.agend && r.agend.data) || "";
+}
+function referenciaPrazo(r){ return primeiroMarcado(r) || proximoAcerto(r); }
+// dias úteis de atraso de um acerto feito em dataAcerto (0 = dentro da data)
+function atrasoUteisDe(r, dataAcerto){ var ref = referenciaPrazo(r); return ref ? diasUteisDepois(ref, dataAcerto) : 0; }
+// para a lista: até quando o acerto sai sem acréscimo e como está hoje. k: futuro | prazo (1º e 2º dia) | alerta (3º ao 5º) | estourou | juridico
+function prazoAcerto(r, hojeIso){
+  var ref = referenciaPrazo(r); if(!ref) return null; var ate = somaDiasUteis(ref, PRAZO_UTEIS), u = diasUteisDepois(ref, hojeIso);
+  if(hojeIso<=ref) return {ref:ref, ate:ate, uteis:0, k:"futuro", txt:fmtDataBR(ate).slice(0, 5)};
+  if(u>JURIDICO_UTEIS) return {ref:ref, ate:ate, uteis:u, k:"juridico", txt:"Jurídico · "+u+"º dia útil"};
+  if(u>PRAZO_UTEIS) return {ref:ref, ate:ate, uteis:u, k:"estourou", txt:fmtDataBR(ate).slice(0, 5)+" · passou "+(u-PRAZO_UTEIS)+" (−"+(u-PRAZO_UTEIS)+"%)"};
+  return {ref:ref, ate:ate, uteis:u, k:u>=3 ? "alerta" : "prazo", txt:fmtDataBR(ate).slice(0, 5)+" · "+(PRAZO_UTEIS-u===0 ? "último dia" : "faltam "+(PRAZO_UTEIS-u))};
+}
+// remarcar ou desmarcar com 10 dias ou mais de antecedência não tem multa, UMA vez por ciclo
+function remarcacaoLivre(r, tipo, hojeIso){
+  if((tipo!=="remarcado" && tipo!=="desmarcado") || !r.agend || !r.agend.data) return false;
+  if(diasEntre(hojeIso, r.agend.data)<ANTECEDENCIA_LIVRE) return false; var desde = cicloDe(r);
+  return !(r.registro||[]).some(function(c){ return c.livre && (c.data||"")>=desde; });
+}
+
 function motivoNaoMarcar(lista, iso, hora, ignorarId){
   var w = diaDaSemana(iso); if(feriadoDe(iso)) return "Feriado ("+feriadoDe(iso)+"): sem atendimento."; if(w===0) return "Domingo: sem atendimento.";
   if(horasDoDia(iso).indexOf(hora)<0) return w===6 ? "Sábado só marca até as 11h." : "Horário fora do atendimento.";
@@ -258,4 +289,4 @@ function agendaHojeDemo(lista, hojeIso, versaoId, agora){
   return itens;
 }
 
-export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo };
+export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo, PRAZO_UTEIS, JURIDICO_UTEIS, ANTECEDENCIA_LIVRE, ehDiaUtil, diasUteisDepois, somaDiasUteis, primeiroMarcado, referenciaPrazo, atrasoUteisDe, prazoAcerto, remarcacaoLivre, cicloDe };

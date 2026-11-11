@@ -15,7 +15,7 @@ import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
-import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
+import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
@@ -973,8 +973,13 @@ function reducer(s, a){
     case "REVINT_REG": {
       var rg = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rg || !a.tipo) return s;
       var hojeRg = isoDeRI(new Date()), agoraRg = Date.now(), tpMulta = a.tipo==="remarcado" || a.tipo==="nao_veio" || a.tipo==="desmarcado", comDia = (a.tipo==="marcado" || a.tipo==="remarcado") && a.dia;
-      var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && !!a.isenta, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
+      // regra de 11/11/2026: motivo obrigatório; isenção só com quem autorizou E a prova; remarcar ou desmarcar com 10 dias de antecedência não tem multa (uma vez por ciclo)
+      if(tpMulta && !String(a.motivo||"").trim()) return com(s, {}, "Escolha o motivo antes de registrar.", "alerta");
+      if(tpMulta && a.isenta && !String(a.prova||"").trim()) return com(s, {}, "Isenção só com a prova do motivo (atestado, boletim, comprovante).", "alerta");
+      var livreRg = tpMulta && !a.isenta && remarcacaoLivre(rg, a.tipo, hojeRg);
+      var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && (!!a.isenta || livreRg), livre:livreRg || undefined, prova:tpMulta && a.isenta ? String(a.prova||"").trim() : undefined, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
       var patchRg = {registro:[ent].concat(rg.registro||[])}, intsRg = s.internos||[], exRg = intsRg.find(function(x){ return x.id===rg.internoId && x.status!=="acertado"; });
+      if(comDia && !primeiroMarcado(rg)) patchRg.primeira = {dia:ent.dia, desde:cicloDe(rg)};   // primeiro dia marcado do ciclo: é dele que o prazo de 5 dias úteis conta
       if(comDia){ patchRg.agend = {data:ent.dia, hora:ent.hora}; patchRg.situacao = "agendada"; if(exRg) intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {data:ent.dia, hora:ent.hora}); }); }
       if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){
         // 10/11/2026 (Marcus): quem cancelou NÃO sai da lista do Atendimento Sorelly; fica como "Cancelada" (e a lista de todos mostra, pelo servidor)
@@ -1017,7 +1022,7 @@ function reducer(s, a){
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
       if(!a.imediato && motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda (imediato = chegou agora, pela Listagem): 3 por horário, 15 por dia, sábado até 11h, domingo fechado
       var vLib = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";   // valor liberado da reposição ou do kit novo (Tamara, 03/11/2026)
-      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
+      var rrN = Object.assign({}, rr, primeiroMarcado(rr) ? {} : {primeira:{dia:a.data, desde:cicloDe(rr)}}, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
       if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, (a.quer || vLib) ? {obs:(a.quer ? "Quer: "+a.quer : "Atendimento")+vLib} : {}); }); }
       else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }

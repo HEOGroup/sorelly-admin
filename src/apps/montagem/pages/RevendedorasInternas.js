@@ -4,7 +4,7 @@
 // A agendadora trabalha por aqui: contata, agenda, confirma na véspera e manda o lembrete (textos prontos).
 import { modalidadeDe, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
-import { feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, motivoNaoMarcar, parteData, CICLOS, SITUACOES, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, resumoMulta, multaDaVez, avisoRemarcacao, mensagemRegras, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta } from "@/apps/montagem/domain/revendedoras-internas";
+import { feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, motivoNaoMarcar, parteData, CICLOS, SITUACOES, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, resumoMulta, multaDaVez, avisoRemarcacao, mensagemRegras, avaliarKit, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, diasEntre, fmtDataBR, isoDe, mensagens, proximoAcerto, emAlerta, prazoAcerto, remarcacaoLivre } from "@/apps/montagem/domain/revendedoras-internas";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -204,11 +204,12 @@ function Detalhes(p){
   // bloco de registrar: passo atual = primeiro passo ainda sem resposta
   var passos = (novo.tipo && PASSOS[novo.tipo]) || [], feito = function(ps){ return ps==="motivo" ? !!novo.motivo : ps==="quando" ? !!novo.quando : ps==="autorizado" ? novo.autorizado!=="" : ps==="ciclo" ? !!novo.ciclo : true; };
   var passoAtual = passos.find(function(ps){ return !feito(ps); }), pronto = !!novo.tipo && !passoAtual;
-  var isenta = !!novo.autorizado && novo.autorizado!=="ninguem", vaiCobrar = !!(tp && tp.multa) && !isenta, multaNova = vaiCobrar ? multaDaVez(res.cobraveis+1) : null;
+  var isenta = !!novo.autorizado && novo.autorizado!=="ninguem", livre10 = !!(tp && tp.multa) && remarcacaoLivre(r, novo.tipo, hojeIso), vaiCobrar = !!(tp && tp.multa) && !isenta && !livre10, multaNova = vaiCobrar ? multaDaVez(res.cobraveis+1) : null;
   var voltaPasso = function(ps){ var i = passos.indexOf(ps), z = {}; passos.slice(i).forEach(function(x){ if(x==="motivo") z.motivo = ""; if(x==="quando") z.quando = null; if(x==="autorizado") z.autorizado = ""; if(x==="ciclo") z.ciclo = ""; }); setNovo(Object.assign({}, novo, z)); };
   var registrar = function(){
     if(!pronto || (tp.k==="outro" && !novo.texto.trim())) return;
-    d({type:"REVINT_REG", id:r.id, tipo:novo.tipo, motivo:novo.motivo, quem:novo.quem==="eu" ? eu : novo.quem, por:eu, autorizado:isenta ? novo.autorizado : "", isenta:isenta, dia:novo.quando ? novo.quando.dia : "", hora:novo.quando ? novo.quando.hora : "", ciclo:novo.ciclo, texto:novo.texto});
+    var prova = ""; if(tp.multa && isenta){ prova = window.prompt("Isenção só com prova. Escreva qual é a prova (atestado, boletim de ocorrência, comprovante) ou cole o link:") || ""; if(!prova.trim()) return; }
+    d({type:"REVINT_REG", id:r.id, prova:prova, tipo:novo.tipo, motivo:novo.motivo, quem:novo.quem==="eu" ? eu : novo.quem, por:eu, autorizado:isenta ? novo.autorizado : "", isenta:isenta, dia:novo.quando ? novo.quando.dia : "", hora:novo.quando ? novo.quando.hora : "", ciclo:novo.ciclo, texto:novo.texto});
     setNovo(Object.assign({}, NOVO0, {quem:novo.quem}));
   };
   var enviarRegras = function(){
@@ -439,6 +440,7 @@ var ultimoDe = function(r){ var c = (r.registro||[])[0]; if(!c) return ""; var t
 var COLUNAS = [
   {k:"qtd", t:"Qtd.", tipo:"seq", v:qtdCond}, {k:"nome", t:"Nome", tipo:"txt", v:function(r){ return r.nome; }}, {k:"zap", t:"WhatsApp", tipo:"txt", v:function(r){ return foneBonito(r); }}, {k:"cod", t:"Cód.", tipo:"txt", v:function(r){ var c = String(r.devmaster||"").replace(/\D/g,""); return c ? c.padStart(6,"0") : ""; }},
   {k:"kit", t:"Data do kit", tipo:"data", v:kitDe}, {k:"prev", t:"Acerto previsto", tipo:"data", v:proximoAcerto}, {k:"falt", t:"Faltam", tipo:"falt", v:function(r, h){ return diasEntre(h, proximoAcerto(r)); }},
+  {k:"ate", t:"Acerto até", tipo:"txt", v:function(r){ var pz = prazoAcerto(r, isoDe(new Date())); return pz ? pz.txt : ""; }},
   {k:"ag", t:"Data agendada", tipo:"data", v:function(r){ return r.agend ? r.agend.data : ""; }}, {k:"hora", t:"Hora", tipo:"txt", v:function(r){ return r.agend ? r.agend.hora : ""; }},
   {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }}];
 var dBR = function(iso){ return iso ? fmtDataBR(iso).slice(0,5) : "—"; };
@@ -489,6 +491,7 @@ function TabelaAgenda(p){
                 e("td",{className:cel, style:at ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" font-semibold"}, r.nome, r.kitNovo && e("span",{className:"ml-2 rounded-full bg-[rgba(232,184,75,.2)] px-2 text-[10.5px] font-bold text-[#E8B84B] ring-1 ring-[rgba(232,184,75,.5)]", title:"Kit novo direcionado pela Michele em "+fmtDataBR(r.kitNovo.desde)+": entrar em contato e agendar"}, "Kit novo")), e("td",{className:cel}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, foneBonito(r) || "—", BotaoZap(r))), e("td",{className:cel}, COLUNAS[3].v(r)||"—"),
                 e("td",{className:cel}, dBR(kitDe(r))), e("td",{className:cel}, dBR(prox)),
                 e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"),
+                (function(){ var pz = prazoAcerto(r, hoje); return e("td",{className:cel+" "+(!pz || pz.k==="futuro" ? "" : pz.k==="prazo" ? "text-[#34d399]" : pz.k==="alerta" ? "text-[#fbbf24]" : "text-[#f87171] font-semibold"), title:pz ? "Prazo de 5 dias úteis contado de "+fmtDataBR(pz.ref) : ""}, pz ? pz.txt : "—"); })(),
                 e("td",{className:cel+" "+(r.agend ? "text-[#E8B84B]" : "text-[#fbbf24]")}, r.agend ? dBR(r.agend.data) : "Aguardando"), e("td",{className:cel}, r.agend ? r.agend.hora : "—"),
                 e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d")); })))),
     pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},

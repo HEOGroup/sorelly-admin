@@ -17,7 +17,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
+import { atrasoUteisDe, avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
@@ -213,6 +213,9 @@ function AtendimentoInterno(){
   var vendasAnt = (sel && sel.vendasAnt) || [null, null];
   // histórico de vendas da revendedora (aba Revendedoras): média dos últimos 5 meses, mínimo R$ 500, duas seguidas abaixo de R$ 500 bloqueiam
   var rInt = sel ? (s.revInternas||[]).find(function(r){ return r.id===sel.revIntId || r.nome===sel.nome; }) : null;
+  // dias úteis de atraso (regra de 11/11/2026): o sistema conta do primeiro dia marcado até o dia deste atendimento; ninguém digita mais
+  var atrasoAuto = rInt && sel ? atrasoUteisDe(rInt, sel.data || hoje) : null;
+  useEffect(function(){ if(sel && atrasoAuto!=null && (form.atrasoDias||0)!==atrasoAuto) up({atrasoDias:atrasoAuto}); }, [sel ? sel.id : null, atrasoAuto]);   // eslint-disable-line react-hooks/exhaustive-deps
   var temHist = !!rInt && rInt.hist.some(function(h){ return h.data && h.venda>0; });
   var histFallback = vendasAnt.map(function(v, i){ var dt = new Date(hoje+"T12:00:00"); dt.setMonth(dt.getMonth()-(i+1)); return {data:dt.toISOString().slice(0,10), venda:v}; });
   var temAnt = vendasAnt.some(function(v){ return v>0; });
@@ -436,7 +439,7 @@ function AtendimentoInterno(){
       tile("Valor do acerto", pa ? e("span",{className:"flex flex-wrap items-center gap-x-4 gap-y-0.5"}, e("b",{className:MONO+" text-[20px] font-medium leading-tight"}, din(dv.totalAPagar)),
           dv.restanteTotal>0.009 ? e("span",{className:MONO+" text-[19px] font-medium text-destructive"},"pendente "+din(dv.restanteTotal)) : e("span",{className:"text-[15px] font-bold text-success"},"✓ quitado")) : numTile("—"), "#E8B84B")),
     (ehPrata || dv.novas) && e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, dv.novas ? "Dias úteis de atraso do acerto" : "Dias de atraso (Kit 100% Prata)",
-      e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPD+" h-8! w-16! cursor-not-allowed px-1! text-center! opacity-60"})),
+      e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Contado pelo sistema: dias úteis desde o primeiro dia marcado", "aria-label":"Dias úteis de atraso (contado pelo sistema)", className:CPD+" h-8! w-16! cursor-not-allowed px-1! text-center! opacity-60"})),
     avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
       pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
@@ -829,7 +832,7 @@ function AtendimentoInterno(){
       e("b",null,"Desconto de crédito"), e("span",null,"Esse crédito vem do setor de Trocas. Preencha só se o setor informar."),
       e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{creditoVisto:true}}); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground"}, "Entendi")),
     form.vendaBruta>0 && linhaKV("Desconto de crédito", e(CampoDinheiro,{value:form.garantia, label:"Desconto de crédito (garantia)", className:CPT, onChange:function(v){ up({garantia:v||0}); }}), {z:true, pill:"Trocas"}),
-    (ehPrata || dv.novas) && linhaKV(dv.novas ? "Dias úteis de atraso do acerto" : "Dias de atraso (Prata)", e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Quem preenche é a Tamara (agendamento)", "aria-label":"Dias de atraso (a Tamara preenche)", className:CPT+" cursor-not-allowed opacity-60"}), {pill:"Tamara"}));
+    (ehPrata || dv.novas) && linhaKV(dv.novas ? "Dias úteis de atraso do acerto" : "Dias de atraso (Prata)", e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Contado pelo sistema: dias úteis desde o primeiro dia marcado", "aria-label":"Dias úteis de atraso (contado pelo sistema)", className:CPT+" cursor-not-allowed opacity-60"}), {pill:"Sistema"}));
   var tabAcerto = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—"), {z:true}),

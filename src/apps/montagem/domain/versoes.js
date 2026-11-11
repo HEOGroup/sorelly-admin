@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.1", data:"2026-11-11", titulo:"Atendimento interno: prazo do acerto contado pelo sistema", itens:[
+  {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"Coluna nova Acerto até: mostra o último dia sem acréscimo (5 dias úteis depois do primeiro dia marcado). Verde nos dois primeiros dias, amarelo do 3º ao 5º, vermelho quando passa, com quantos por cento já perdeu. Depois do 30º dia útil aparece Jurídico."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Os dias úteis de atraso são contados pelo sistema. Ninguém digita mais."},
+  {tipo:"regra", area:"Atendimento interno › Revendedoras", txt:"Remarcar ou desmarcar com 10 dias ou mais de antecedência não tem multa, uma vez por kit. O motivo é obrigatório. A isenção só grava com quem autorizou e com a prova do motivo."}]},
  {v:"0.20.0", data:"2026-11-11", titulo:"Regras do acerto: atraso em dias úteis", itens:[
   {tipo:"regra", area:"Regras dos acertos", txt:"O atraso do acerto passa a contar em dias úteis (segunda a sexta, sem feriado). Até o 5º dia útil não há acréscimo. Do 6º ao 30º, perde 1% de comissão e 1% de brinde por dia, somando à multa da remarcação. Depois do 30º dia útil perde tudo e vai ao Jurídico. A tabela antiga de 7 a 59 dias saiu. Vale para os kits entregues desde 27/10/2026."},
   {tipo:"regra", area:"Atendimento Sorelly e app da representante", txt:"O campo de atraso agora se chama Dias úteis de atraso."}]},
