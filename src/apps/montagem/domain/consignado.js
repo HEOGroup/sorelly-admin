@@ -1,3 +1,4 @@
+import { tabelaFuncDoDia } from "@/apps/montagem/domain/comissao-funcionarias";
 // Sorelly Admin · montagem e bipagem — domain/consignado.js
 // Regras de comissão, brinde e remarcação do consignado (revendedoras) e cálculo do acerto.
 // Cada kit "carimba" a versão de regras vigente no momento em que é criado (ver reducer ADD_KIT);
@@ -243,8 +244,16 @@ function normalizarVersao(v){
 // Versão "efetiva" para a modalidade: monta, no mesmo formato que o cálculo já usa, a régua/brindes/taxa/remarcação da modalidade.
 // Kit padrão devolve a versão como está.
 // especial (opcional): COMISSÃO ESPECIAL da revendedora (Edna, 09/11/2026), {"300":40, "1000":50}: porcentagem de comissão por faixa (chave = valor inicial da faixa). Só a comissão muda; os brindes, a taxa e as multas seguem a tabela normal.
+// Tabela de funcionária (11/11/2026): {tabela:[{de, pct}]}. Cada faixa da régua normal recebe a comissão da faixa da tabela com o maior "de" que cabe nela; ponto de corte que não é início de faixa vira faixa nova (mesmos brindes da faixa em que cai); abaixo da primeira faixa vale a comissão normal.
+function aplicarTabelaFuncionaria(ef, especial){
+  var tb = especial.tabela.slice().sort(function(a, b){ return a.de-b.de; }), base = ef.faixas.slice().sort(function(a, b){ return a.min-b.min; }), todas = base.slice();
+  tb.forEach(function(x){ if(base.some(function(f){ return f.min===x.de; })) return; var dentro = base.filter(function(f){ return f.min<=x.de; }).pop(); if(dentro) todas.push(Object.assign({}, dentro, {min:x.de, extraEspecial:true})); });
+  todas.sort(function(a, b){ return a.min-b.min; });
+  return Object.assign({}, ef, {comissaoEspecial:true, funcionaria:true, faixas:todas.map(function(f){ var x = tb.filter(function(y){ return y.de<=f.min; }).pop(); return x ? Object.assign({}, f, {pct:x.pct, pctNormal:f.pct}) : f; })});
+}
 function aplicarComissaoEspecial(ef, especial){
   if(!ef || !especial) return ef;
+  if(Array.isArray(especial.tabela) && especial.tabela.length) return aplicarTabelaFuncionaria(ef, especial);
   var chaves = Object.keys(especial).filter(function(k){ var n = Number(especial[k]); return k!=="mais" && especial[k]!=="" && especial[k]!=null && isFinite(n) && n>=0 && n<=100 && isFinite(Number(k)); });
   // "mais": pontos a mais de comissão em todas as faixas que não têm valor próprio (ex.: mais 5 = 15% vira 20%); vale no Kit Normal e no Prata
   var mais = Number(especial.mais); mais = isFinite(mais) && mais>0 && mais<=50 ? mais : 0;
@@ -265,11 +274,15 @@ function versaoEfetiva(v, modalidade, especial){
   return aplicarComissaoEspecial(Object.assign({}, v, {modalidade:"padrao"}), especial);
 }
 // comissão especial guardada na ficha da revendedora do Atendimento interno (s.revInternas[].comissaoEspecial); sem ela, null
-function comissaoEspecialDe(s, nome){
-  var nm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); }, n = nm(nome);
+// Funcionária ativa no RH (s.funcionarias vem de /api/funcionarias: RH ativa x CPF na DevMaster) ganha a tabela de funcionária da DATA do acerto (hoje, se não vier data); a comissão especial da ficha (Edna) vale mais. Saiu do RH, volta sozinha para a normal.
+function comissaoEspecialDe(s, nome, hoje){
+  var nm = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); }, n = nm(nome);
   if(!n) return null;
   var r = (s && s.revInternas || []).find(function(x){ return nm(x.nome)===n; });
-  return r && r.comissaoEspecial ? r.comissaoEspecial : null;
+  if(r && r.comissaoEspecial) return r.comissaoEspecial;
+  var fu = s && s.funcionarias, cod = String((r && r.devmaster) || "").replace(/\D/g, "").replace(/^0+/, "");
+  if(fu && ((cod && fu.codigos && fu.codigos[cod]) || (fu.nomes && fu.nomes[n]))){ var tb = tabelaFuncDoDia(s, hoje); return {tabela:tb.faixas, _origem:"funcionaria", _nome:tb.nome}; }
+  return null;
 }
 
 // Vigente = a versão de vigenciaDesde mais recente que já começou (empate: a criada por último). Sem data válida, vale a marcada em atualId.

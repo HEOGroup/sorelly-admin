@@ -18,7 +18,7 @@ import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/mon
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { atrasoUteisDe, avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
-import { chamar } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -170,6 +170,11 @@ function AtendimentoInterno(){
   var pq = useState(false), popAt = pq[0], setPopAt = pq[1];
   var po = useState(false), popObs = po[0], setPopObs = po[1];     // ícone de avisos ao lado do nome
   var cnv = useState(false), condNovaAberta = cnv[0], setCondNovaAberta = cnv[1];     // linha de condicional à mão (abre no botão +)
+  useEffect(function(){   // funcionárias ativas no RH (código e nome na DevMaster): a comissão delas é outra (Marcus, 11/11/2026)
+    if(!apiAtiva()) return undefined; var vivo = true;
+    var rodar = function(){ chamar("GET", "/funcionarias").then(function(r){ if(vivo && r && r.codigos) d({type:"FUNC_SET", dados:{codigos:r.codigos, nomes:r.nomes || {}, em:Date.now()}}); }).catch(function(){ /* sem servidor ou sem acesso: segue com a última lista */ }); };
+    rodar(); var t = setInterval(rodar, 600000); return function(){ vivo = false; clearInterval(t); };
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var sPN = useState(null), formPN = sPN[0], setFormPN = sPN[1];   // pedido de link novo à Hellen
   var sPF = useState(null), formPF = sPF[0], setFormPF = sPF[1];   // formulário do link já pago por fora (estação Pagamentos)
   var ps =useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
@@ -846,6 +851,7 @@ function AtendimentoInterno(){
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))));
   var notasVendas = e("div",{className:"flex flex-col gap-1"},
+    especialRev && especialRev._origem==="funcionaria" && e("p",{className:"text-center text-[13px] font-semibold text-primary"}, "Funcionária: comissão da tabela "+especialRev._nome+"."),
     avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));

@@ -146,6 +146,8 @@ function reducer(s, a){
       var rd = Object.assign({}, s.revendedorasDiario); rd[a.data] = a.quantidade||0;
       return com(s, {revendedorasDiario:rd, revAtualizadoEm:a.unico ? Object.assign({}, s.revAtualizadoEm||{}, {[a.data]:agora}) : s.revAtualizadoEm}, "Revendedoras de "+a.data.split("-").reverse().join("/")+" salvo");
     }
+    case "FUNC_SET": return Object.assign({}, s, {funcionarias:a.dados});   // funcionárias ativas do RH (código e nome na DevMaster), lidas do servidor
+    case "COMISSAO_FUNC_SET": return com(s, {comissaoFunc:{tabelas:a.tabelas, em:Date.now(), por:a.por || ""}}, "Tabelas de comissão das funcionárias salvas");
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
     case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 98});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
@@ -301,7 +303,7 @@ function reducer(s, a){
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
           if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); });
         dpP.pix = pixP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
-      if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
+      if(a.chave==="ri"){ var pRi = {}; if(a.conteudo && a.conteudo.revInternas) pRi.revInternas = a.conteudo.revInternas; if(a.conteudo && a.conteudo.comissaoFunc) pRi.comissaoFunc = a.conteudo.comissaoFunc; return Object.keys(pRi).length ? Object.assign({}, s, pRi) : s; }   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
