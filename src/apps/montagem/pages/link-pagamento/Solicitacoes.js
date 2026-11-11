@@ -34,6 +34,7 @@ function Cartao(p){
       e("span",{className:"rounded px-1.5 text-[10.5px] font-bold leading-5", style:{background:(x.canal==="whatsapp" ? "#4ADE80" : "#60A5FA")+"26", color:x.canal==="whatsapp" ? "#4ADE80" : "#60A5FA"}}, x.canal==="whatsapp" ? "WhatsApp" : "App"),
       x.status==="gerado" && min!=null && e("span",{title:"Validade do link", className:MONO+" rounded px-1.5 text-[10.5px] font-bold leading-5", style:{background:corRestante(min)+"26", color:corRestante(min)}}, textoRestante(min)),
       x.dataAcerto && e("span",{title:"Data do acerto", className:"rounded bg-[#F3D98B]/15 px-1.5 text-[10.5px] font-bold leading-5 text-[#F3D98B]"}, "Acerto "+formatarDia(x.dataAcerto).slice(0,5)),
+      x.porFora && e("span",{title:"Link gerado fora do sistema e já pago (registrado pelo atendimento)", className:"rounded bg-[#F3D98B]/25 px-1.5 text-[11px] font-bold leading-5 text-[#F3D98B]"}, "Pago por fora"),
       x.tentativa>1 && e("span",{className:"rounded bg-white/10 px-1.5 text-[10.5px] leading-5 text-white/65"}, x.tentativa+"ª tentativa")),
     x.motivo && e("span",{className:"break-words text-[10.5px] text-white/55"}, x.motivo));
 }
@@ -46,10 +47,11 @@ function Detalhe(p){
   var dados = e("div",{className:"flex flex-col"},
     e("div",{className:"mb-2 flex flex-wrap items-center justify-center gap-2"}, e(Selo,{cor:COR_STATUS[x.status]}, ROTULO_STATUS[x.status]), e("b",{className:MONO+" text-[18px]", style:{color:COR_STATUS[x.status]}}, formatarReais(x.valor))),
     linha("Revendedora", x.revendedora), x.cliente && linha("Cliente (controle da revendedora)", x.cliente), linha("Parcelas", n+"x de "+formatarReais(Math.round(x.valor/n*100)/100)), linha("Canal", x.canal==="whatsapp" ? "WhatsApp" : "Aplicativo"),
-    linha("Quem emite", x.emissor==="representante" ? "Representante" : "Atendimento"), linha("Criada em", formatarDataHora(x.criadoEm)), linha("Link gerado", formatarDataHora(x.geradoEm)),
+    linha("Quem emite", x.emissor==="representante" ? "Representante" : "Atendimento"), x.porFora && linha("Origem", "Pago por fora (gerado fora do sistema)"), x.porFora && x.contaInformada && linha("Conta que recebeu", x.contaInformada), linha("Criada em", formatarDataHora(x.criadoEm)), linha("Link gerado", formatarDataHora(x.geradoEm)),
     linha("Validade até", formatarDataHora(x.expiraEm)), linha("Pago em", formatarDataHora(x.pagoEm)), linha("Comprovante", formatarDataHora(x.comprovanteEm)),
     t && linha("Taxa estimada", formatarReais(t.taxaValor+t.antecipacaoValor)), t && linha("Líquido", formatarReais(t.liquido)),
     x.autorizacao && linha("Autorização", x.autorizacao), x.acertoId && linha("Descontado no acerto", formatarDataHora(x.usadoEm)+(x.excedente>0 ? " · sobrou "+formatarReais(x.excedente) : "")), x.motivo && linha("Motivo", x.motivo),
+    x.comprovanteImg && e("img",{src:x.comprovanteImg, alt:"Comprovante do pagamento", className:"mt-2 max-h-72 w-full rounded-md bg-white object-contain"}),
     e("div",{className:"mt-2 flex flex-col gap-1"}, (x.historico||[]).slice(-5).map(function(h, i){ return e("span",{key:i, className:"text-center text-[11px] text-white/60"}, formatarDataHora(h.em)+" · "+(h.por||"")+" · "+(ROTULO_STATUS[h.para]||h.para)+(h.nota ? " ("+h.nota+")" : "")); })));
   var campos = [
     {k:"representante", rot:"Representante", tipo:"select", vazio:"Sem representante", ops:lp.vinculos.map(function(v){ return [v.representante, v.representante]; }).concat(x.representante && !lp.vinculos.some(function(v){ return v.representante===x.representante; }) ? [[x.representante, x.representante]] : [])},

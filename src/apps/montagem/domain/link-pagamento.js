@@ -593,7 +593,7 @@ function lpReduz(s, a){
       lp.solicitacoes.push({id:idF, canal:"whatsapp", revendedora:nomeF, representante:repDaRevendedora(lp, nomeF) || "", valor:valF, parcelas:parF, meioId:meioF ? meioF.id : "", bandeira:a.bandeira || "", status:"pago", emissor:"atendimento",
         geradoPor:por, geradoEm:a.geradoEm || pagoF, expiraEm:"", pagoEm:pagoF, comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto || "", tentativa:1,
         observacao:trim(a.observacao) || ("Pago por fora (link gerado fora do sistema), registrado por "+por+(trim(a.conta) ? " · conta: "+trim(a.conta) : "")), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
-        criadoEm:agora, criadoPor:por, porFora:true, contaInformada:trim(a.conta), historico:[{em:agora, por:por, de:"", para:"pago", nota:"Pago por fora, registrado no atendimento"}]});
+        criadoEm:agora, criadoPor:por, porFora:true, contaInformada:trim(a.conta), comprovanteImg:(typeof a.comprovanteImg==='string' && a.comprovanteImg.indexOf('data:image')===0 && a.comprovanteImg.length<500000) ? a.comprovanteImg : '', historico:[{em:agora, por:por, de:"", para:"pago", nota:"Pago por fora, registrado no atendimento"}]});
       return ok("Link pago por fora registrado: "+formatarReais(valF)+" de "+nomeF);
     }
     case "sol_criar": {

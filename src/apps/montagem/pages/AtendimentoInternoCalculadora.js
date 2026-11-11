@@ -864,10 +864,12 @@ function AtendimentoInterno(){
     var f = formPF; if(!f || !(f.valor>0) || !f.conta || !f.bandeira || !f.data || jaFeito) return;
     var dup = ((s.lp && s.lp.solicitacoes) || []).find(function(y){ return y.porFora && normNome(y.revendedora)===normNome(sel.nome) && Math.round(y.valor*100)===Math.round(f.valor*100) && String(y.pagoEm||"").slice(0, 10)===f.data; });
     var idF = dup ? dup.id : "SF"+Date.now();
-    if(!dup) d({type:"LP", op:"sol_por_fora", id:idF, revendedora:sel.nome, valor:f.valor, parcelas:f.parcelas, bandeira:f.bandeira, pagoEm:f.data===hoje ? agoraSP() : f.data+"T12:00:00", meioId:meioPorConta(f.conta), conta:f.conta, por:nomeDe(s.usuario)});
+    if(!dup) d({type:"LP", op:"sol_por_fora", id:idF, revendedora:sel.nome, valor:f.valor, parcelas:f.parcelas, bandeira:f.bandeira, pagoEm:f.data===hoje ? agoraSP() : f.data+"T12:00:00", meioId:meioPorConta(f.conta), conta:f.conta, comprovanteImg:f.img || "", por:nomeDe(s.usuario)});
     var falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valorLinha = Math.min(f.valor, falta);
     if(valorLinha>0) up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valorLinha, parcelas:f.parcelas, bandeira:f.bandeira, linkSolId:idF, jaPagoLink:true, descricao:f.conta}])});
     setFormPF(null); };
+  // foto vira JPEG pequeno (mesmo cuidado do comprovante dos pagamentos): fica no pedido do setor Link de pagamento
+  var lerFotoComp = function(arq, fim){ if(!arq) return; var rd = new FileReader(); rd.onload = function(){ var img = new Image(); img.onload = function(){ var k = Math.min(1, 800/Math.max(img.width, img.height)), cv = document.createElement("canvas"); cv.width = Math.round(img.width*k); cv.height = Math.round(img.height*k); cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); fim(cv.toDataURL("image/jpeg", 0.55)); }; img.src = rd.result; }; rd.readAsDataURL(arq); };
   var contasLink = formaDe("link").descricoes || [];
   var campoPF = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-0.5"}, e("span",{className:CAP}, rot), el); };
   var SELPF = "h-8 w-full rounded-md border border-foreground/25 bg-card px-2 text-[13px]";
@@ -877,7 +879,7 @@ function AtendimentoInterno(){
       e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
       x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
     linksAguardando.map(function(sol){ return e("p",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"}, "Link aguardando pagamento · "+din(sol.valor)+": só conta depois de pago."); }),
-    !formPF ? e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPF({valor:null, parcelas:1, bandeira:"", conta:contasLink[0] || "", data:hoje}); }, title:"Link gerado fora do sistema (WhatsApp ou direto na plataforma) e já pago: entra no setor Link de pagamento e vale como pagamento", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Link já pago (por fora)"))
+    !formPF ? e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPF({valor:null, parcelas:1, bandeira:"", conta:contasLink[0] || "", data:hoje, img:""}); }, title:"Link gerado fora do sistema (WhatsApp ou direto na plataforma) e já pago: entra no setor Link de pagamento e vale como pagamento", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Link já pago (por fora)"))
     : e("div",{className:"flex flex-col gap-2 p-2"},
         e("p",{className:"text-center text-[13px] font-semibold"}, "Link pago por fora: entra no setor Link de pagamento como Pago"),
         e("div",{className:"grid grid-cols-2 gap-2"},
@@ -887,6 +889,7 @@ function AtendimentoInterno(){
           campoPF("Data do pagamento", e("input",{type:"date", value:formPF.data, max:hoje, "aria-label":"Data do pagamento", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {data:ev.target.value})); }}))),
         campoPF("Conta que recebeu", contasLink.length ? e("select",{value:formPF.conta, "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }}, contasLink.map(function(c){ return e("option",{key:c, value:c}, c); }))
           : e("input",{value:formPF.conta, maxLength:80, placeholder:"Ex.: LINK - SICREDI - SERENITY - 59", "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }})),
+        campoPF("Foto do comprovante (opcional)", e("div",{className:"flex items-center gap-2"}, e("input",{type:"file", accept:"image/*", "aria-label":"Foto do comprovante do pagamento", onChange:function(ev){ lerFotoComp(ev.target.files && ev.target.files[0], function(url){ setFormPF(function(o){ return Object.assign({}, o, {img:url}); }); }); }, className:"block min-w-0 flex-1 text-[13px] file:mr-2 file:h-8 file:rounded-md file:border file:border-foreground/25 file:bg-card file:px-3 file:text-[13px]"}), formPF.img && e("img",{src:formPF.img, alt:"Comprovante anexado", className:"h-8 rounded bg-white"}))),
         e("div",{className:"flex justify-center gap-2"},
           e("button",{type:"button", onClick:function(){ setFormPF(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
           e("button",{type:"button", disabled:!(formPF.valor>0) || !formPF.bandeira || !formPF.conta || !formPF.data, onClick:registrarPorFora, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Registrar e usar como pagamento"))));
