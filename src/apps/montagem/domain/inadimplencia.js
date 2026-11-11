@@ -5,6 +5,8 @@
 // Regras do setor: docs/negocio/INADIMPLENCIA-REGRAS-DO-SETOR.md. O que é automático: saldo após pagamento confirmado, Verificar com parcela vencida, Quitada com saldo zero.
 // O que NUNCA é automático: multa, juros, Serasa, Jurídico, cancelar acordo.
 
+import { devidoDe, faltaDe } from "@/apps/montagem/domain/comissoes";
+
 var r2 = function(v){ return Math.round((Number(v)||0)*100)/100; };
 var trim = function(v){ return String(v==null ? "" : v).trim(); };
 var ehDia = function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||"")); };
@@ -57,12 +59,13 @@ function inadDoServidor(inad, conteudo){
     var m = mexeu[lista], id = k.slice(2), i = m.ix.get(id);
     if(v===null){ if(i!==undefined) m.arr[i] = null; } else if(i!==undefined) m.arr[i] = v; else { m.ix.set(id, m.arr.length); m.arr.push(v); } });
   Object.keys(mexeu).forEach(function(l){ o[l] = mexeu[l].arr.filter(Boolean); });
-  return o;
+  o.doServidor = true; return o;
 }
 
 // ---------- contas ----------
 // pagamentos lançados NO SISTEMA e confirmados abatem o saldo; os da planilha já estão dentro do "falta" importado (faltaBase)
-function indicePagos(inad){ var m = {}; (inad.pagamentos||[]).forEach(function(p){ if(p.novo && p.confirmado && p.dividaId) m[p.dividaId] = r2((m[p.dividaId]||0)+(p.valor||0)); }); return m; }
+// noAcerto = pagamento de dívida nascida do acerto: ele entra no ACERTO (ação INAD_PAGAR) e o pendente do acerto já baixa a dívida; aqui não abate de novo
+function indicePagos(inad){ var m = {}; (inad.pagamentos||[]).forEach(function(p){ if(p.novo && p.confirmado && p.dividaId && !p.noAcerto) m[p.dividaId] = r2((m[p.dividaId]||0)+(p.valor||0)); }); return m; }
 function totalDe(d){ return r2((d.valor||0)+(d.acrescimos||[]).reduce(function(t, a){ return t+(a.valor||0); }, 0)); }
 function saldoDe(d, pagos){ var base = d.faltaBase!=null ? d.faltaBase : totalDe(d); return Math.max(0, r2(base+(d.acrescimos||[]).reduce(function(t, a){ return t+(a.valor||0); }, 0)-((pagos||{})[d.id]||0))); }
 function parcelaVencida(d, hoje){ var ps = (d.acordo && d.acordo.parcelas) || []; return ps.find(function(p){ return !p.pagoEm && p.venc && p.venc<hoje; }) || null; }
@@ -124,6 +127,26 @@ function relatorioPorRep(inad, ano){
 }
 function anosDe(inad){ var o = {}; (inad.dividas||[]).forEach(function(d){ var a = mesDaDivida(d).slice(0, 4); if(a) o[a] = 1; }); (inad.pagamentos||[]).forEach(function(p){ var a = mesDoPagamento(p).slice(0, 4); if(a) o[a] = 1; }); var l = Object.keys(o).sort().reverse(); return l.length ? l : [hojeIso().slice(0, 4)]; }
 
+// ---------- ligação com o acerto (11/11/2026): a dívida nasce sozinha ----------
+// Vale para acerto REAL (Atendimento Sorelly ou app da representante) a partir de NASCE_DESDE; os anteriores já estão na planilha trazida.
+// O acerto manda no valor pendente: se ele cair por pagamento lançado no acerto, a dívida cai junto. Pagamento lançado na ficha da dívida abate só aqui.
+var NASCE_DESDE = "2026-11-11";
+function pendenciasDoAcerto(inad, acertos){
+  var out = {criar:[], atualizar:[]}; if(!inad || !inad.doServidor) return out;
+  var porAcerto = {}, porNome = {}; (inad.dividas||[]).forEach(function(d){ if(d.acertoId) porAcerto[d.acertoId] = d; else porNome[d.nome+"|"+d.data] = 1; });
+  (acertos||[]).forEach(function(r){
+    if(!r || r.tipo!=="acerto" || r.demo || !r.rev || !r.data || r.data<NASCE_DESDE) return;
+    var interno = r.origem==="interno" && !!r.internoId; if(!interno && r.origem!=="app") return;
+    var falta = faltaDe(r), d = porAcerto[r.id];
+    if(d){ if(Math.abs((d.acertoFalta||0)-falta)>0.009) out.atualizar.push({id:d.id, falta:falta}); return; }
+    var nome = String(r.rev).trim().toUpperCase(); if(falta<=0.009 || porNome[nome+"|"+r.data]) return;
+    out.criar.push({id:"ac_"+r.id, acertoId:r.id, novo:true, data:r.data, mes:r.data.slice(0, 7), ano:+r.data.slice(0, 4), nome:nome, rep:interno ? "Sorelly" : trim(r.rep), cobra:interno ? "Setor" : "Representante",
+      valor:falta, faltaBase:falta, acertoFalta:falta, pagoBase:0, sit:"Verificar", etapa:"1º contato", nota:"Verificar", contatos:[],
+      origem:"Nasceu do acerto de "+formatarDia(r.data)+" ("+(interno ? "Atendimento Sorelly" : "representante "+trim(r.rep))+")", devidoAcerto:devidoDe(r)});
+  });
+  return out;
+}
+
 // ---------- ações ----------
 function inadReduz(s, a){
   var inad = inadMigrar(s.inad), por = a.por || "—", agora = agoraTxt();
@@ -178,7 +201,7 @@ function inadReduz(s, a){
     case "pag_novo": {   // pagamento sempre ligado a uma dívida; só abate o saldo quando confirmado
       var dG = inad.dividas.find(function(x){ return x.id===a.dividaId; }); if(!dG) return recusa("Escolha a dívida."); var vP = r2(a.valor); if(!(vP>0)) return recusa("Informe o valor pago."); if(!ehDia(a.data)) return recusa("Informe a data do pagamento."); if(!trim(a.quem)) return recusa("Informe quem recuperou o pagamento."); if(!trim(a.conta)) return recusa("Informe a conta de recebimento.");
       var p = {id:novoId("p"), novo:true, dividaId:dG.id, nome:dG.nome, dataDivida:dG.data, data:a.data, mes:a.data.slice(0, 7), valor:vP, quem:trim(a.quem), conta:trim(a.conta), comissao:a.comissao || (/rep/i.test(a.quem) ? "Sim" : "Não"),
-        comprovante:trim(a.comprovante), obs:trim(a.obs), confirmado:!!a.confirmado, baixado:false, lancadoPor:por, lancadoEm:agora};
+        comprovante:trim(a.comprovante), obs:trim(a.obs), confirmado:!!a.confirmado, noAcerto:!!dG.acertoId, baixado:false, lancadoPor:por, lancadoEm:agora};
       inad.pagamentos = [p].concat(inad.pagamentos);
       troca("dividas", dG.id, function(d){ if(p.confirmado){ var ac = d.acordo; if(ac){ var l = ac.parcelas.slice(), i = l.findIndex(function(x){ return !x.pagoEm; }); if(i>=0){ l[i] = Object.assign({}, l[i], {pagoEm:a.data}); d.acordo = Object.assign({}, ac, {parcelas:l}); } } }
         return nota(d, "Pagamento de R$ "+vP.toFixed(2).replace(".", ",")+" em "+formatarDia(a.data)+" ("+p.conta+"), recuperado por "+p.quem+(p.confirmado ? ", confirmado." : ", aguardando confirmação.")); });
@@ -206,6 +229,16 @@ function inadReduz(s, a){
       return ok("Kit em atraso lançado.");
     }
     case "kit_campos": { if(!troca("kits", a.id, function(k){ return Object.assign(k, a.campos||{}, {alteradoPor:por, alteradoEm:agora}); })) return recusa("Registro não encontrado."); return ok("Salvo."); }
+    case "do_acerto": {   // automático (App.js): cria as dívidas dos acertos com valor pendente e acompanha o pendente do acerto
+      var din = function(v){ return "R$ "+r2(v).toFixed(2).replace(".", ","); }, fez = 0;
+      (a.criar||[]).forEach(function(n){ if(inad.dividas.some(function(x){ return x.id===n.id || x.acertoId===n.acertoId; })) return; var c = Object.assign({}, n); delete c.devidoAcerto;
+        c.hist = [{em:agora, por:"Automático", txt:"Dívida criada pelo acerto: faltou pagar "+din(n.valor)+" de "+din(n.devidoAcerto)+"."}]; inad.dividas = [c].concat(inad.dividas); fez++; });
+      (a.atualizar||[]).forEach(function(u){ if(troca("dividas", u.id, function(d){ var delta = r2((d.acertoFalta||0)-u.falta); d.faltaBase = Math.max(0, r2((d.faltaBase||0)-delta)); d.acertoFalta = u.falta;
+        d.hist = (d.hist||[]).concat([{em:agora, por:"Automático", txt:delta>0 ? "Pagamento de "+din(delta)+" lançado no acerto." : "O valor pendente do acerto subiu "+din(-delta)+"."}]);
+        if(d.faltaBase<=0.005 && saldoDe(d, indicePagos(inad))<=0.005){ d.sit = d.sit==="Negativada" ? "Pedir a baixa" : "Quitada"; d.etapa = d.sit==="Quitada" ? "Concluído" : "Baixa"; d.quitadaEm = hojeIso(); }
+        return d; })) fez++; });
+      return fez ? {patch:{inad:inad}} : {patch:{}};
+    }
     case "cfg": { inad.cfg = Object.assign({}, inad.cfg, a.cfg||{}); return ok("Regras salvas."); }
   }
   return {patch:{}};
@@ -238,4 +271,4 @@ function regrasDoSetor(cfg){
 }
 
 export { SITUACOES, ETAPAS, QUEM_COBRA, NOTAS, POS_VENDA, FORMAS, CONTATOS, COR_SIT, CFG_PADRAO, MESES, hojeIso, diasEntre, maisMeses, formatarDia, rotuloMes, inadVazio, inadMigrar, inadFatia, inadDoServidor,
-  indicePagos, totalDe, saldoDe, situacaoDe, aberta, proximaAcao, maxParcelasPix, excecoesDoAcordo, gerarParcelas, mesDaDivida, mesDoPagamento, relatorioMensal, relatorioPorRep, anosDe, inadReduz, regrasDoSetor };
+  indicePagos, totalDe, saldoDe, situacaoDe, aberta, proximaAcao, maxParcelasPix, excecoesDoAcordo, gerarParcelas, mesDaDivida, mesDoPagamento, relatorioMensal, relatorioPorRep, anosDe, inadReduz, regrasDoSetor, pendenciasDoAcerto, NASCE_DESDE };

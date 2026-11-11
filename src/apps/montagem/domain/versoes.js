@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.19.1", data:"2026-11-11", titulo:"Inadimplência: a dívida nasce sozinha do acerto", itens:[
+  {tipo:"novo", area:"Inadimplência › Dívidas", txt:"Acerto feito a partir de 11/11/2026 (Atendimento Sorelly ou app da representante) que fica com valor pendente vira uma dívida sozinho, já com a revendedora, a representante, a data e o valor. Se o pendente do acerto diminuir, a dívida diminui junto; chegando a zero, vira Quitada."}]},
  {v:"0.19.0", data:"2026-11-11", titulo:"Setor novo: Inadimplência (no lugar da planilha de negociações)", itens:[
   {tipo:"novo", area:"Inadimplência", txt:"Setor novo no menu, com sete telas: Dívidas, Cobrança do dia, Pagamentos, Serasa, Kits em atraso, Relatórios e Regras. A planilha de negociações foi trazida inteira (2024 a 2026)."},
   {tipo:"novo", area:"Inadimplência › Dívidas", txt:"Uma linha por dívida, com filtro e ordem no nome da coluna. A linha abre a ficha da devedora: dados, acordo com parcelas, pagamentos e histórico que nunca é apagado. O saldo muda sozinho quando o pagamento é confirmado e a dívida vira Quitada com saldo zero."},

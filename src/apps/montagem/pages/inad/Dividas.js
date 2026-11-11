@@ -82,7 +82,7 @@ function FichaDivida(p){
 
   var pagamentos = e(Bloco,{key:"p", t:"Pagamentos"},
     pagsDela.length ? pagsDela.map(function(x){ return e("div",{key:x.id, className:"flex flex-wrap items-center justify-between gap-2 border-b border-border py-1 text-[13px]"}, e("span",null, formatarDia(x.data) || rotuloMes(x.mes)), e("span",{className:"tabular-nums text-emerald-400"}, R$(x.valor)), e("span",null, x.quem||""), e("span",null, x.conta||""),
-        x.novo && !x.confirmado ? e("button",{type:"button", onClick:function(){ d({type:"INAD", op:"pag_campos", id:x.id, campos:{confirmado:true}, por:por}); }, className:"h-8 rounded-md border border-primary px-2 text-[13px] text-primary hover:bg-primary/20"}, "Confirmar recebimento") : e("span",{className:"text-emerald-400"}, "Confirmado")); })
+        x.novo && !x.confirmado ? e("button",{type:"button", onClick:function(){ d({type:"INAD", op:"pag_campos", id:x.id, campos:{confirmado:true}, por:por}); if(x.noAcerto && dv.acertoId) d({type:"INAD_PAGAR", id:dv.acertoId, forma:"pix", descricao:x.conta, valor:x.valor, quem:x.quem}); }, className:"h-8 rounded-md border border-primary px-2 text-[13px] text-primary hover:bg-primary/20"}, "Confirmar recebimento") : e("span",{className:"text-emerald-400"}, "Confirmado")); })
       : e("p",{className:"py-1 text-[13px]"}, "Nenhum pagamento ligado a esta dívida."),
     saldo>0.005 && e("div",{className:"mt-2 border-t border-border pt-2"},
       e("p",{className:"pb-1 text-[11px] font-semibold uppercase tracking-[.05em]"}, "Registrar pagamento"),
@@ -93,7 +93,10 @@ function FichaDivida(p){
         e(CampoSel,{t:"Quem recuperou", id:"pQ", value:pg.quem, onChange:function(v){ setPg(Object.assign({}, pg, {quem:v})); }, opcoes:op(quemOp)}),
         e(CampoTexto,{t:"Comprovante", id:"pA", cls:"col-span-2", value:pg.comprovante, placeholder:"Nome do arquivo ou link", onChange:function(v){ setPg(Object.assign({}, pg, {comprovante:v})); }})),
       e("label",{className:"mt-2 flex h-8 items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:pg.confirmado, onChange:function(ev){ setPg(Object.assign({}, pg, {confirmado:ev.target.checked})); }, className:"size-4 accent-[#E8B84B]"}), "Recebimento já confirmado na conta"),
-      e("div",{className:"flex justify-end"}, e(Botao,{principal:true, onClick:function(){ d({type:"INAD", op:"pag_novo", dividaId:dv.id, data:pg.data, valor:pg.valor, conta:pg.conta, quem:pg.quem, comprovante:pg.comprovante, confirmado:pg.confirmado, por:por}); setPg(Object.assign({}, pg, {valor:null, comprovante:""})); }}, "Registrar pagamento"))));
+      dv.acertoId && e("p",{className:"py-1 text-[13px]"}, "Dívida nascida do acerto: o pagamento confirmado entra também no acerto, para liberar a comissão e o kit."),
+      e("div",{className:"flex justify-end"}, e(Botao,{principal:true, onClick:function(){ d({type:"INAD", op:"pag_novo", dividaId:dv.id, data:pg.data, valor:pg.valor, conta:pg.conta, quem:pg.quem, comprovante:pg.comprovante, confirmado:pg.confirmado, por:por});
+        if(dv.acertoId && pg.confirmado && pg.valor>0 && pg.data && String(pg.conta).trim() && String(pg.quem).trim()) d({type:"INAD_PAGAR", id:dv.acertoId, forma:"pix", descricao:pg.conta, valor:pg.valor, quem:pg.quem});
+        setPg(Object.assign({}, pg, {valor:null, comprovante:""})); }}, "Registrar pagamento"))));
 
   var hist = (dv.hist||[]).slice().reverse();
   var historico = e(Bloco,{key:"h", t:"Histórico"},
