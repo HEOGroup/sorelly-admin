@@ -82,19 +82,31 @@ t("duração em horas, dias e vazio", F.duracao(135)==="2 h 15 min" && F.duracao
 const prod = F.producaoDias({historico:[{dia:"2026-11-09", fotos:47, editadas:30, sistema:28}], codigos:[]}, 5);
 t("produção usa o histórico da planilha", prod.length===1 && prod[0].fotos===47);
 
-// DevMaster: código novo entra sozinho; foto já subida marca o Sistema
+// DevMaster: código novo entra sozinho; campo de foto marcado lá = etapa Foto (Editada e Sistema ficam para quem edita)
 let z = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1700", dia:hoje}], semeado:true}});
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:1, cod:"BB1700", dia:hoje, foto:true}, {id:2, cod:"CL2763", dia:hoje, foto:false}, {id:3, cod:"B5221", dia:hoje, foto:true}, {id:4, cod:"x", dia:hoje, foto:true}]});
 t("DevMaster: 2 códigos novos entram (o inválido não)", z.fc.codigos.length===3, JSON.stringify(z.fc.codigos.map(c=>c.cod)));
-t("DevMaster: foto subida marca Sistema (código que já existia)", F.statusDe(z.fc.codigos.find(c=>c.cod==="BB1700"))==="Na DevMaster");
+t("DevMaster: campo de foto marcado vira Foto (código que já existia)", F.statusDe(z.fc.codigos.find(c=>c.cod==="BB1700"))==="Fotografada");
 t("DevMaster: código novo sem foto fica Sem foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Sem foto");
-t("DevMaster: código novo já com foto vai direto para o Sistema", F.statusDe(z.fc.codigos.find(c=>c.cod==="B5221"))==="Na DevMaster");
+t("DevMaster: código novo já com foto entra como Foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="B5221"))==="Fotografada");
 const antesZ = JSON.stringify(z.fc.codigos);
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:1, cod:"BB1700", dia:hoje, foto:true}, {id:2, cod:"CL2763", dia:hoje, foto:false}]});
 t("DevMaster: ler de novo não duplica nem muda nada", JSON.stringify(z.fc.codigos)===antesZ);
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:2, cod:"CL2763", dia:hoje, foto:true}]});
-t("DevMaster: foto que subiu depois marca o Sistema", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Na DevMaster");
+t("DevMaster: foto marcada depois vira Foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Fotografada");
 t("DevMaster: o que vem de lá aparece sem data (célula em branco)", F.linhasFotos(z.fc).find(l=>l.cod==="CL2763").subEm==="");
+
+// meta de fotos: foto marcada na tela ou que apareceu na DevMaster depois do início conta no dia dela
+const M = {id:"t", nome:"Teste", ini:"2026-11-10", fim:"2026-11-13", alvo:4, bonus:250};
+const fm = {codigos:[{cod:"A1", dia:"2026-11-09", fotoEm:"2026-11-10T09:00:00"}, {cod:"A2", dia:"2026-11-09", fotoEm:"dm", dmFoto:"2026-11-11T10:00:00"}, {cod:"A3", dia:"2026-11-09", fotoEm:"ant"}, {cod:"A4", dia:"2026-11-09", fotoEm:"2026-11-09T09:00:00"}, {cod:"A5", dia:"2026-11-09", fotoEm:"2026-11-11T09:00:00", dmFoto:"2026-11-12T09:00:00"}]};
+const mp = F.metaProgresso(fm, M, "2026-11-11");
+t("meta: conta marcada e DevMaster com data dentro do período (A1, A2, A5)", mp.feitas===3 && mp.falta===1, JSON.stringify(mp));
+t("meta: foto antiga e fora do período não contam", mp.linhas.find(l=>l.dia==="2026-11-10").fotos===1 && mp.linhas.find(l=>l.dia==="2026-11-11").fotos===2);
+t("meta: ritmo por dia e situação", mp.restam===3 && mp.porDia===1 && mp.situacao==="Em andamento" && F.metaProgresso(fm, Object.assign({}, M, {alvo:3}), "2026-11-11").situacao==="Batida" && F.metaProgresso(fm, M, "2026-11-14").situacao==="Não batida");
+let w = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1900", dia:hoje}], semeado:true}});
+w = reducer(w, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:9, cod:"BB1900", desc:"BRINCO TESTE", dia:hoje, foto:true}]});
+const cw = w.fc.codigos.find(c=>c.cod==="BB1900");
+t("DevMaster: foto nova grava o dia (dmFoto) e a descrição", /^\d{4}-\d{2}-\d{2}T/.test(cw.dmFoto) && cw.desc==="BRINCO TESTE", JSON.stringify(cw));
 
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);
