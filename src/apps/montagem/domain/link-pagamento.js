@@ -474,7 +474,7 @@ function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje)}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
@@ -581,6 +581,18 @@ function lpReduz(s, a){
     }
     // Link pago POR FORA (Marcus, 11/11/2026: "o setor de link precisa ter lá todos os links mesmo pago por fora"): link gerado fora do sistema (WhatsApp, direto na plataforma) e já pago.
     // Entra direto como "pago", sem passar por solicitado/gerado e sem as regras de pedido (mínimo, parcelas, link da representante). Aparece no quadro e nos Comprovantes como qualquer outro pago.
+    // Pedido de link NOVO feito pelo Atendimento Sorelly (Hellen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
+    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Hellen ao gerar.
+    case "sol_pedir_atendimento": {
+      var dP = {revendedora:a.revendedora, canal:"whatsapp", valor:a.valor, parcelas:a.parcelas, meioId:"", representante:"", dataAcerto:"", emissor:"atendimento", semMeio:true, bandeira:a.bandeira};
+      var eP = validarSolicitacao(sx, dP, agora); if(eP) return recusa(eP);
+      var idP = a.id && !lp.solicitacoes.some(function(y){ return y.id===a.id; }) ? a.id : "S"+(++lp.seq);
+      lp.solicitacoes.push({id:idP, canal:"whatsapp", revendedora:trim(a.revendedora), representante:repDaRevendedora(lp, a.revendedora) || "", valor:r2(num(a.valor)), parcelas:Math.round(num(a.parcelas)), meioId:"", bandeira:a.bandeira || "", status:"solicitado", emissor:"atendimento",
+        geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1,
+        observacao:trim(a.observacao) || "Pedido do Atendimento Sorelly: a revendedora está na empresa, o acerto é hoje.", motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
+        criadoEm:agora, criadoPor:por, paraAtendimento:true, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:"Pedido do atendimento"}]});
+      return ok("Link pedido à Hellen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
+    }
     case "sol_por_fora": {
       var nomeF = trim(a.revendedora), valF = r2(num(a.valor)), parF = Math.round(num(a.parcelas)) || 1, pagoF = a.pagoEm || agora;
       if(!nomeF) return recusa("Informe a revendedora.");

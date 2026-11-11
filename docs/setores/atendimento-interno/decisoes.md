@@ -4,6 +4,7 @@ Cópia fiel das decisões do diário geral (`docs/DECISOES.md`) que falam deste 
 O texto é o original. Para a decisão completa, abra o diário na linha indicada. Decisão nova entra no diário geral E aqui, no mesmo dia.
 Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro setor misturada (revisar com o Marcus).
 
+- **11/11/2026** (diário, pedir link novo à Hellen): o atendimento pede o link no setor Link de pagamento; a Hellen gera; pago hoje já vale hoje; mínimo e parcelas continuam; link por fora exige o print. Ver `docs/DECISOES.md` de 11/11/2026.
 - **11/11/2026** (diário, link por fora: marca e comprovante): cartão com a marca Pago por fora e foto opcional do comprovante no formulário. Gerar link novo do atendimento aguarda as respostas da Hellen. Ver `docs/DECISOES.md` de 11/11/2026.
 - **11/11/2026** (diário, link pago por fora): botão + Link já pago (por fora) na estação Pagamentos registra o link no setor Link de pagamento como Pago e usa como pagamento. Ver `docs/DECISOES.md` de 11/11/2026.
 - **11/11/2026** (diário, link já pago no atendimento): o link pago antes (setor Link de pagamento) entra como pagamento já resolvido na estação Pagamentos, sem passar pelo financeiro; só o Pix presencial vai. Ver `docs/DECISOES.md` de 11/11/2026.

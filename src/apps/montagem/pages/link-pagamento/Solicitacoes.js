@@ -34,6 +34,7 @@ function Cartao(p){
       e("span",{className:"rounded px-1.5 text-[10.5px] font-bold leading-5", style:{background:(x.canal==="whatsapp" ? "#4ADE80" : "#60A5FA")+"26", color:x.canal==="whatsapp" ? "#4ADE80" : "#60A5FA"}}, x.canal==="whatsapp" ? "WhatsApp" : "App"),
       x.status==="gerado" && min!=null && e("span",{title:"Validade do link", className:MONO+" rounded px-1.5 text-[10.5px] font-bold leading-5", style:{background:corRestante(min)+"26", color:corRestante(min)}}, textoRestante(min)),
       x.dataAcerto && e("span",{title:"Data do acerto", className:"rounded bg-[#F3D98B]/15 px-1.5 text-[10.5px] font-bold leading-5 text-[#F3D98B]"}, "Acerto "+formatarDia(x.dataAcerto).slice(0,5)),
+      x.paraAtendimento && e("span",{title:"Pedido feito no Atendimento Sorelly: a revendedora está na empresa e o link vale hoje", className:"rounded bg-[#60A5FA]/25 px-1.5 text-[11px] font-bold leading-5 text-[#60A5FA]"}, "Pedido do atendimento"),
       x.porFora && e("span",{title:"Link gerado fora do sistema e já pago (registrado pelo atendimento)", className:"rounded bg-[#F3D98B]/25 px-1.5 text-[11px] font-bold leading-5 text-[#F3D98B]"}, "Pago por fora"),
       x.tentativa>1 && e("span",{className:"rounded bg-white/10 px-1.5 text-[10.5px] leading-5 text-white/65"}, x.tentativa+"ª tentativa")),
     x.motivo && e("span",{className:"break-words text-[10.5px] text-white/55"}, x.motivo));
