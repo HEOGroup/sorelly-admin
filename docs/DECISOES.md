@@ -2218,3 +2218,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - **Revendedoras (lista):** coluna "Acerto até", com cor (verde 1º e 2º dia, amarelo do 3º ao 5º = aviso, vermelho depois, "Jurídico" depois do 30º).
 - **Remarcação:** motivo obrigatório (o reducer recusa sem motivo); isenção só com quem autorizou e a prova (campo `prova` no registro); remarcar ou desmarcar com 10 dias ou mais de antecedência entra sem multa sozinho, uma vez por ciclo (`livre:true`). "Não veio" nunca é livre. Mensagens prontas agora falam em %, não em "pontos".
 - **Falta na etapa 2:** negociação na hora (2 parcelas, R$ 200,00) e pedido de kit novo no Direcionar; o mesmo prazo para as revendedoras das representantes (depende do app do Leonardo).
+
+## 11/11/2026 (9ª parte) — Regras das revendedoras, ETAPA 2 parte B1 (negociação na hora)
+- `domain/acerto-derivado.js`: `regraDoAcordo` (até 2 parcelas, mínimo R$ 200,00, abaixo de R$ 400,00 parcela única, até 30 dias), `acordoFora` e `acordoFechado`. Com a regra nova, faltou pagar e não há negociação fechada dentro da regra = **kit novo não sai** (`kitNovoRegra.motivo = "negociar"`). Atendimento Sorelly: botão "+ Parcela" some na 2ª parcela ou abaixo de R$ 400,00; aviso do que está fora da regra; "24 h" virou "48 horas".
+- **Achado para decidir:** hoje um acordo válido **libera o brinde como se o acerto estivesse pago** (Kit Normal; no Prata não). Na conversa o Marcus escolheu "brinde fica como está" pensando em "mais de 10% em aberto = sem brinde". As duas coisas não batem: confirmar com ele qual vale.
+- **Falta (parte B2):** pedido de kit novo no Direcionar, com as 3 últimas vendas, média, inadimplência e Aceitar / Não aceitar.

@@ -10,6 +10,19 @@ var FORM_ACERTO_VAZIO = {vendaBruta:null, devolvida:0, garantia:0, pecasVendidas
 
 // versaoBase: versão de regras carimbada no kit/atendimento · modalidade: "padrao" | "prata" · vez: remarcações com multa
 // form: no formato de FORM_ACERTO_VAZIO · condicionais: [{numero, pecas}] em aberto da revendedora
+// Regra da negociação NA HORA para quem vai levar kit novo (Marcus, 11/11/2026): no máximo 2 parcelas de R$ 200,00 ou mais; dívida abaixo de R$ 400,00 = parcela única; tudo em até 30 dias.
+// Devolve "" quando o acordo está dentro da regra, ou a frase do que está fora. Dívida maior ou quem não leva kit vai para o setor de Inadimplência (outras regras).
+var ACORDO_MAX = 2, ACORDO_MIN = 200, ACORDO_DIAS = 30;
+function regraDoAcordo(parcelas, falta, hojeIso){
+  var ps = (parcelas||[]).filter(function(x){ return x.data && x.valor>0; }); if(!ps.length) return "";
+  var d = new Date((hojeIso || new Date().toISOString().slice(0, 10))+"T12:00:00"); d.setDate(d.getDate()+ACORDO_DIAS); var lim = d.toISOString().slice(0, 10);
+  if(falta<ACORDO_MIN*2 && ps.length>1) return "Dívida abaixo de R$ 400,00: parcela única.";
+  if(ps.length>ACORDO_MAX) return "No máximo 2 parcelas.";
+  if(falta>=ACORDO_MIN*2 && ps.some(function(x){ return x.valor<ACORDO_MIN; })) return "Parcela mínima de R$ 200,00.";
+  if(ps.some(function(x){ return x.data>lim; })) return "As parcelas vencem em até 30 dias.";
+  return "";
+}
+
 function derivarAcerto(p){
   var form = p.form, ehPrata = p.modalidade==="prata";
   var versao = p.versaoBase ? versaoEfetiva(p.versaoBase, p.modalidade, p.especial) : null;   // p.especial: comissão especial da revendedora (Atendimento interno)
@@ -30,7 +43,9 @@ function derivarAcerto(p){
   var quitado = !!previaBase && faltaAtual<=0.009;
   var acordoExistente = form.acordoSalvo && form.acordoParcelas.some(function(x){return x.data && x.valor>0;});
   // Kit 100% Prata: brinde só com pagamento integral confirmado, então acordo/parcelas não liberam brinde.
-  var acordoValido = acordoExistente && faltaAtual>0.009 && Math.abs(acordoSoma-faltaAtual)<=0.01 && !(versao && versao.gerais.acordoLiberaBrinde===false);
+  var regraNova = !!(versao && versao.novas && versao.novas.prazoAcertoDiasUteis!=null), acordoFora = regraNova && acordoExistente ? regraDoAcordo(form.acordoParcelas, faltaAtual) : "";
+  var acordoFechado = acordoExistente && faltaAtual>0.009 && Math.abs(acordoSoma-faltaAtual)<=0.01 && !acordoFora;   // negociação completa e dentro da regra (vale para liberar o kit novo, inclusive no Kit Prata)
+  var acordoValido = acordoFechado && !(versao && versao.gerais.acordoLiberaBrinde===false);
   var previaPaga = previaBase && acordoValido ? calcularAcerto(entrada(previaBase.valorDevido), versao) : previaBase;
   var previaAcerto = previaPaga && form.recusouNegociar ? Object.assign({}, previaPaga, {brindeNormal:0, brindeSelect:0, fatorPagamento:0}) : previaPaga;
 
@@ -85,15 +100,17 @@ function derivarAcerto(p){
   var restanteTotal = previaAcerto ? Math.max(0, Math.round((totalAPagar+dividaAnt-totalPagoAtual)*100)/100) : 0;
   // Não pode ficar devendo duas vezes seguidas: com dívida anterior, só sai kit novo se quitar tudo (dívida antiga e este acerto)
   var blocoDivida = dividaAnt>0.009 && !!previaAcerto && restanteTotal>0.009 ? "Dívida anterior de "+BK(dividaAnt)+": ela não pode ficar devendo duas vezes seguidas. Kit novo só com tudo quitado." : "";
+  // regra de 11/11/2026: faltou pagar e não negociou na hora = kit novo não sai
+  if(regraNova && previaBase && faltaAtual>0.009 && !acordoFechado && kitNovoLiberado){ kitNovoLiberado = false; kitNovoRegra = {liberado:false, motivo:"negociar", texto:acordoFora ? "Negociação fora da regra: "+acordoFora.replace(/\.$/, "") : "Falta negociar o valor pendente na hora: sem negociação o kit novo não sai"}; }
   if(blocoDivida){ kitNovoLiberado = false; kitNovoRegra = {liberado:false, motivo:"divida", texto:blocoDivida.replace(/\.$/, "")}; }
 
   // Peças liberadas para o próximo mês (quantidade pelo valor da venda, reduzida pelo % em aberto)
   var pecasProx = previaBase ? pecasProximoMes(previaBase.vendaLiquida, previaBase.valorDevido, faltaAtual, versao.pecasProx) : null;
   return {tagsValor:tagsValor, valorTag:valorTag, trocasAjuste:trocasAjuste, vendaEfetiva:vendaEfetiva, nTrocasMes:nTrocasMes, nTrocasAnt:nTrocasAnt, pecasProx:pecasProx, versao:versao, gerais:gerais, ehPrata:ehPrata, totalPagoAtual:totalPagoAtual, acordoSoma:acordoSoma, previaBase:previaBase, faltaAtual:faltaAtual, quitado:quitado,
-    acordoExistente:acordoExistente, acordoValido:acordoValido, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
+    acordoExistente:acordoExistente, acordoValido:acordoValido, acordoFora:acordoFora, acordoFechado:acordoFechado, previaAcerto:previaAcerto, pecasCondSelecionadas:pecasCondSelecionadas, pecasADevolver:pecasADevolver,
     kitNovoMin:kitNovoMin, pctPagoAcerto:pctPagoAcerto, kitNovoLiberado:kitNovoLiberado, pagamentoParcial:pagamentoParcial, tetoFalta:tetoFalta, faixaMinBrinde:faixaMinBrinde,
     brindeBloqueio:brindeBloqueio, brindeLiberado:brindeLiberado, libN:libN, libS:libS, confBrinde:confBrinde, excedenteBrinde:excedenteBrinde,
     totalAPagar:totalAPagar, multaAplica:multaAplica, restanteTotal:restanteTotal, dividaAnterior:dividaAnt, abateDivida:abateDivida, blocoDivida:blocoDivida, novas:novas, minimo:minimo, kitNovoRegra:kitNovoRegra};
 }
 
-export { FORM_ACERTO_VAZIO, derivarAcerto };
+export { FORM_ACERTO_VAZIO, derivarAcerto, regraDoAcordo };
