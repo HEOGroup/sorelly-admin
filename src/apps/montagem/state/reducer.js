@@ -63,7 +63,7 @@ import { uneItau } from "@/apps/montagem/domain/itau-unico";
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
 // Regras de 27/10/2026 que o acerto precisa lembrar depois (prazo de quitação, multa de atraso): copiadas para o registro, para a Inadimplência não depender da versão atual.
-function copiaNovas(N){ return {prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
+function copiaNovas(N){ return {prazoAcertoDiasUteis:N.prazoAcertoDiasUteis, atrasoPctDiaUtil:N.atrasoPctDiaUtil, juridicoDiasUteis:N.juridicoDiasUteis, prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
 // Dívida de acertos anteriores (Marcus, 26/10/2026): o que a revendedora paga num acerto novo quita PRIMEIRO a dívida mais antiga; só o resto vale para o acerto novo.
 // Devolve {total, abat:{idDoAcertoAntigo: valor}}. "Acerto com loja" não é pagamento.
 function abaterDividas(s, rev, pagamentos, exceto){

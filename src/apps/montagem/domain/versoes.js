@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.0", data:"2026-11-11", titulo:"Regras do acerto: atraso em dias úteis", itens:[
+  {tipo:"regra", area:"Regras dos acertos", txt:"O atraso do acerto passa a contar em dias úteis (segunda a sexta, sem feriado). Até o 5º dia útil não há acréscimo. Do 6º ao 30º, perde 1% de comissão e 1% de brinde por dia, somando à multa da remarcação. Depois do 30º dia útil perde tudo e vai ao Jurídico. A tabela antiga de 7 a 59 dias saiu. Vale para os kits entregues desde 27/10/2026."},
+  {tipo:"regra", area:"Atendimento Sorelly e app da representante", txt:"O campo de atraso agora se chama Dias úteis de atraso."}]},
  {v:"0.19.1", data:"2026-11-11", titulo:"Inadimplência: a dívida nasce sozinha do acerto", itens:[
   {tipo:"novo", area:"Inadimplência › Dívidas", txt:"Acerto feito a partir de 11/11/2026 (Atendimento Sorelly ou app da representante) que fica com valor pendente vira uma dívida sozinho, já com a revendedora, a representante, a data e o valor. Se o pendente do acerto diminuir, a dívida diminui junto; chegando a zero, vira Quitada."}]},
  {v:"0.19.0", data:"2026-11-11", titulo:"Setor novo: Inadimplência (no lugar da planilha de negociações)", itens:[

@@ -68,7 +68,7 @@ function PreAcertoRep(p){
     N && e("div",{className:"rounded-xl border border-[#E4E0D6] bg-white px-3 pb-2"},
       e("p",{className:"flex min-h-8 items-center text-[11px] font-bold uppercase tracking-wide"}, "Atraso do acerto"),
       e("div",{className:LINHA},
-        e("span",{className:"whitespace-nowrap text-[11px] font-semibold"}, "Dias de atraso"),
+        e("span",{className:"whitespace-nowrap text-[11px] font-semibold"}, "Dias úteis de atraso"),
         e("span",{className:"flex items-center gap-1.5"},
           e("button",{onClick:function(){ setDias(Math.max(0, dias-1)); }, "aria-label":"Menos um dia", className:"size-8 rounded-lg bg-white text-[13px] font-bold text-[#1F1A10] ring-1 ring-[#CFC7B2]"}, "−"),
           e("b",{className:MONO+" w-14 text-center text-[13px]"}, dias+(dias===1 ? " dia" : " dias")),

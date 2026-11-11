@@ -1,6 +1,6 @@
 # Regras das revendedoras: prazo do acerto, remarcação e dívida (consolidado em 11/11/2026)
 
-**Situação: DEFINIDO PELO MARCUS, AINDA NÃO CONSTRUÍDO NO SISTEMA.** Documento único. Substitui a versão de 10/11/2026. Decisões no diário `docs/DECISOES.md` (10 e 11/11/2026). O que falta: `PENDENCIAS-REGRAS-E-COMISSOES.md`.
+**Situação (11/11/2026): ETAPA 1 CONSTRUÍDA** (a conta do atraso em dias úteis, o brinde somando e o texto "Acerto na data"; ver `docs/DECISOES.md`, 7ª parte). **Ainda não construído:** contagem automática dos dias, remarcação sem multa, negociação na hora, Configurador, informativo, PDFs e folders. O app real da representante faz a conta no próprio app (Leonardo). Documento único. Substitui a versão de 10/11/2026. Decisões no diário `docs/DECISOES.md` (10 e 11/11/2026). O que falta: `PENDENCIAS-REGRAS-E-COMISSOES.md`.
 
 Linguagem (decisão de 26/10/2026): sempre em **%** ("−5%"), nunca "pontos". O desconto é subtraído da taxa de comissão, sobre o total da venda.
 
@@ -116,3 +116,10 @@ Kit de R$ 8.113,00, venda estimada R$ 1.056,00 (faixa de 35%, brinde normal R$ 1
 - **Kit novo com média abaixo, no atendimento interno:** quem pede é **a funcionária que está bipando** (não a Tamara). O pedido vai para o **Financeiro, na tela Direcionar**, junto com o pedido da conta do pagamento. O cartão mostra: as **3 últimas vendas**, se teve **inadimplência**, a **média** e os botões **aceitar / não aceitar**. Média de referência do interno: **R$ 700,00**.
 - **Materiais a trocar:** folders e PDFs de regras e comissões (`materiais-do-app/`, tela Regras e guias, folder nos apps, informativo).
 - Aceito sem objeção do Marcus: sem dia marcado o relógio conta da data do kit; agenda sem vaga = primeira vaga livre sem acréscimo; um benefício sem multa por kit.
+
+## 10. Últimas respostas (11/11/2026, 7ª parte)
+- Parcela mínima: R$ 200,00 para quem leva kit; R$ 150,00 no setor de Inadimplência (quem leva kit tem regra mais dura).
+- A regra vale para todos os kits abertos entregues desde 27/10/2026; o aviso é simples.
+- Prazo sem negociar: **48 horas** depois do aviso final (o "24 h" saiu).
+- Folder da representante: entram os 7 dias para cobrar e a perda da comissão sem acompanhamento.
+- Lista de motivos sérios com prova: aprovada.

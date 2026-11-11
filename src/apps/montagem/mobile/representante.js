@@ -562,7 +562,7 @@ function AppRepresentante(p){
               e("span",{className:"text-[13px] "+(r.isenta ? "" : "font-bold")}, r.isenta ? "Isenta"+(r.motivo ? " · "+r.motivo : "") : "Com multa")); }))
             : e("p",{key:"r0", className:"text-[13px]"}, "Nenhuma remarcação."),
           (ehPrata || dv.novas) && e("div",{key:"atraso", className:linha},
-            e("span",{className:"text-[13px] font-semibold"}, "Dias de atraso"),
+            e("span",{className:"text-[13px] font-semibold"}, "Dias úteis de atraso"),
             e("b",{className:MONO+" text-[13px]"}, dias+(dias===1 ? " dia" : " dias"))),
           e("div",{key:"tab", className:"mt-1 flex flex-col"},
             e("div",{className:linhaT+" min-h-8 text-[11px] font-bold uppercase"}, e("span",null), e("span",null,"Remarcação"), e("span",null,"Atraso"), e("span",null,"Total")),
