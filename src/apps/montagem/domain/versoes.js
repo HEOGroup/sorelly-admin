@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.165", data:"2026-11-10", titulo:"Consolidado Sorelly: mostra os atendimentos de hoje mesmo sem o registro completo", itens:[
+  {tipo:"correção", area:"Atendimento interno › Consolidado Sorelly", txt:"Enquanto o computador da funcionária ainda não mandou o registro completo do acerto, o Consolidado usa o acerto guardado no próprio atendimento e os pagamentos enviados ao financeiro. Assim todos os atendimentos finalizados de hoje aparecem, com venda, comissão, valor do acerto e pagamentos."}]},
  {v:"0.18.164", data:"2026-11-10", titulo:"Consolidado Sorelly: acertos do atendimento interno pelo servidor", itens:[
   {tipo:"correção", area:"Atendimento interno › Consolidado Sorelly", txt:"O registro do acerto (vendas, comissão, pagamentos, brindes, peças e assinatura) ficava só no computador de quem finalizou, e o Consolidado dos outros ficava sem os dados. Agora cada acerto sobe para o servidor (módulo aci, uma chave por acerto) e o Consolidado Sorelly mostra tudo em todos os computadores."}]},
  {v:"0.18.163", data:"2026-11-10", titulo:"Atendimento Sorelly: sem duplicadas, assumir atendimento e status Aberta", itens:[
