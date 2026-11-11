@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.5", data:"2026-11-11", titulo:"Kit novo com média abaixo do mínimo: pedido ao Financeiro pelo Direcionar", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a média das vendas fica abaixo de R$ 700,00, aparece o botão Pedir autorização do kit novo ao Financeiro. A resposta chega na própria tela: autorizado (libera o valor do kit) ou não autorizado, com o motivo."},
+  {tipo:"novo", area:"Financeiro › Direcionar", txt:"No alto da tela aparecem os pedidos de kit novo que estão esperando, com as três últimas vendas, a média, o mínimo, se ela deve acerto anterior e se tem dívida no setor de Inadimplência. O Financeiro escolhe Aceitar ou Não aceitar (com o motivo)."}]},
  {v:"0.20.4", data:"2026-11-11", titulo:"Atendimento Sorelly: brinde segue só a tabela do valor em aberto", itens:[
   {tipo:"regra", area:"Atendimento interno › Atendimento Sorelly", txt:"O acordo de parcelas libera o kit novo, mas não libera mais o brinde. O brinde segue a tabela: pago tudo 100%, até 5% em aberto 80%, até 10% em aberto 50%, acima disso sem brinde. A multa de 10% do valor pendente vale também quando há acordo."}]},
  {v:"0.20.3", data:"2026-11-11", titulo:"Atendimento Sorelly: negociação na hora com a regra nova", itens:[

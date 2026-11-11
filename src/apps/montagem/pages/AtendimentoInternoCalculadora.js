@@ -228,7 +228,14 @@ function AtendimentoInterno(){
   var avKit = avaliarKit(temHist ? rInt.hist : temAnt ? histFallback : (sel ? histDemoDe(sel.nome) : histFallback), form.vendaBruta, cfg, hoje.slice(0,7));   // toda revendedora tem vendas anteriores para a média
   var vendasMedia = avKit.lista;
   var mediaVendas = avKit.media;
-  var faixaKit = avKit.liberado ? tabKit.find(function(x){ return mediaVendas>=x.min; }) : null;
+  // média abaixo do mínimo (11/11/2026): a atendente pede a autorização do kit novo ao Financeiro (Direcionar). Aceito = libera pela faixa da média (ou a menor da tabela).
+  var pedKit = sel ? ((s.dp && s.dp.kits)||[]).find(function(x){ return x.id==="KP"+sel.id; }) : null, abaixoMedia = !!avKit.motivo && mediaVendas!==null && mediaVendas<avKit.minimo, autKit = !!pedKit && pedKit.status==="aceito";
+  var faixaKit = avKit.liberado || (autKit && abaixoMedia) ? (tabKit.find(function(x){ return mediaVendas>=x.min; }) || tabKit[tabKit.length-1] || null) : null;
+  var blocoPedidoKit = abaixoMedia && sel && sel.status!=="acertado" ? e("div",{className:"flex flex-wrap items-center justify-center gap-2 px-3 py-1.5 text-center text-[13px]"},
+    !pedKit || pedKit.status==="negado" ? e(React.Fragment,null, pedKit && e("b",{className:"text-destructive"}, "O Financeiro não autorizou"+(pedKit.motivo ? ": "+pedKit.motivo : "")+"."),
+        !pedKit && e(Btn,{v:"secondary", sm:true, onClick:function(){ d({type:"DP", op:"kit_pedir", internoId:sel.id, nome:sel.nome, vendas:vendasMedia.map(function(x){ return {mes:x.mes, venda:x.venda}; }), media:mediaVendas, minimo:avKit.minimo, divida:totalDividaAnterior(s.acertosConsignado, sel.nome), por:nomeDe(s.usuario)}); }}, "Pedir autorização do kit novo ao Financeiro"))
+      : pedKit.status==="pedido" ? e("b",{className:"text-warning"}, "Pedido enviado ao Financeiro. Aguarde a resposta do Direcionar.")
+      : e("b",{className:"text-success"}, "Kit novo autorizado por "+pedKit.decididoPor+".")) : null;
   var kitLiberado = faixaKit ? faixaKit.kit : null;
   // Kit retornando (Marcus, 10/11/2026): média das 3 últimas vendas da revendedora = valor do kit. Só dado REAL: DevMaster (rota /vendas) ou histórico da agenda; nunca o histórico de demonstração
   var codDm = rInt && rInt.devmaster ? String(rInt.devmaster) : (sel && sel.devmaster ? String(sel.devmaster) : "");
@@ -411,7 +418,8 @@ function AtendimentoInterno(){
       !temHist && e("span",{className:"text-[13px] text-muted-foreground"},"Cadastre as vendas anteriores em Revendedoras para a média ficar automática")),
     e("div",{className:"flex items-center justify-between gap-2 rounded-lg bg-primary/15 px-3 py-2 ring-1 ring-primary/40"},
       e("span",{className:"text-[13px] font-semibold"}, "Kit a liberar"), e("b",{className:MONO+" text-[20px] text-primary"}, kitLiberado ? din(kitLiberado) : avKit.motivo ? "Não libera" : "•••")),
-    avKit.motivo && mediaVendas!==null && e("p",{className:"rounded-lg bg-destructive/15 px-3 py-1.5 text-center text-[13px] font-bold text-destructive"}, avKit.motivo),
+    avKit.motivo && mediaVendas!==null && !autKit && e("p",{className:"rounded-lg bg-destructive/15 px-3 py-1.5 text-center text-[13px] font-bold text-destructive"}, avKit.motivo),
+    blocoPedidoKit,
     avisoMedia && e("p",{className:"rounded-lg bg-destructive/15 px-3 py-1.5 text-center text-[13px] font-bold text-destructive"}, avisoMedia));
 
   // ── 2 · Vendas e pagamentos ──
@@ -974,7 +982,8 @@ function AtendimentoInterno(){
     e("div",{className:"flex-1"}),
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-10 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Kit a liberar"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, kitLiberado ? din(kitLiberado) : avKit.motivo ? "Não libera" : "—")),
     !temHist && e("p",{className:"border-t border-primary/20 px-3 py-2 text-center text-[13px]"}, "Sem histórico cadastrado: digite as 2 vendas anteriores."),
-    avKit.motivo && mediaVendas!==null && e("p",{className:"border-t border-destructive px-3 py-2 text-center text-[13px] font-bold text-destructive"}, avKit.motivo),
+    avKit.motivo && mediaVendas!==null && !autKit && e("p",{className:"border-t border-destructive px-3 py-2 text-center text-[13px] font-bold text-destructive"}, avKit.motivo),
+    blocoPedidoKit,
     avisoMedia && e("p",{className:"border-t border-destructive px-3 py-2 text-center text-[13px] font-bold text-destructive"}, avisoMedia));
   var tabFaixas = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-2"}, e("span",null,"Média das vendas"), e("span",null,"Kit liberado")),

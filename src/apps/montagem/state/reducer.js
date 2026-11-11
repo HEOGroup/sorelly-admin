@@ -298,11 +298,11 @@ function reducer(s, a){
           if(v===null){ if(ix>=0) inP.splice(ix, 1); } else if(ix>=0) inP[ix] = v; else inP.unshift(v); });
         return Object.assign({}, s, {internos:inP}); }
       if(a.chave==="pag"){   // pedidos de conta vindos do servidor (09/11/2026): lf_ = s.lancFin, dp_ = fila do Direcionar; null = pedido apagado
-        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice();
+        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice(), kitsP = (dpP.kits||[]).slice();
         var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
-          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); });
-        dpP.pix = pixP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
+          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); else if(k.indexOf("kp_")===0) poe(kitsP, v, k.slice(3), false); });   // kp_ = pedido de kit novo (11/11/2026)
+        dpP.pix = pixP; dpP.kits = kitsP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
       if(a.chave==="ri"){ var pRi = {}; if(a.conteudo && a.conteudo.revInternas) pRi.revInternas = a.conteudo.revInternas; if(a.conteudo && a.conteudo.comissaoFunc) pRi.comissaoFunc = a.conteudo.comissaoFunc; return Object.keys(pRi).length ? Object.assign({}, s, pRi) : s; }   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
