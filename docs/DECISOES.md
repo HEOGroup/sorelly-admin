@@ -2125,3 +2125,5 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - **Comissões:** reposição com **um campo só de R$ 15,00**; limite de **15 kits novos** por representante; comissão do **acerto adiado** paga quando o acerto acontecer; **kit só com nota promissória assinada**. Compras de joias: a Amanda lança no admin depois da compra; o Marcus pergunta a ela e à Nayale quem recebe o alerta. Grupos A e B: o Marcus muda depois.
 
 - **Acesso do Castilho ao Marketing (11/11/2026, Marcus):** a conta dele (login castilho, setor Marketing) não abria as telas porque o acesso básico só mostra Início, Rotina e Chat. Ganhou, por pessoa (`TELAS_DA_PESSOA` em `domain/equipe.js`, como o Diego), as telas Marketing, Fotos de catálogo e Criativos; Tráfego pago ficou de fora por ter os valores dos anúncios.
+
+- **Acesso da Ana Paula (RH) ao Marketing (11/11/2026, Marcus):** a conta `anapaula` (pessoa 49) ganhou, além do RH, o setor Marketing e as telas Marketing, Fotos de catálogo e Criativos (para acompanhar a meta de fotos). Feito no banco por `scripts/usados-uma-vez/liberar-ana-paula-marketing.mjs` (setores e abas da conta).
