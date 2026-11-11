@@ -14,3 +14,5 @@ Lista tirada do diário por palavras como "pendente" e "falta". **Ainda não rev
 | 7 | Pendente: calendário com horários e listagem do dia no topo da tela (4 layouts em docs/rascunhos/revendedoras/revendedoras-internas-4-layouts.html); guardar revInternas no servidor (hoje só no… | Leonardo | De 28/10/2026, diário linha 177. A conferir. |
 | 8 | Acerto previsto = previsão de devolução do kit principal na DevMaster. Pendente: card com todas as vendas de 2026 (valor de venda e de acerto, sem brinde) no mesmo lugar. | Marcus | De 28/10/2026, diário linha 184. A conferir. |
 | 9 | Revendedoras do vendedor Sorelly (02) entram sozinhas no controle da agendadora | Marcus | De 27/10/2026, diário linha 192. A conferir. |
+| 10 | Regra de cancelamento e remarcação com prazo de 5 dias úteis (multa sobe 1 por dia, Jurídico no 30º dia útil): construir depois das respostas A3, A4b e A6 | Marcus e Eu (código) | De 10/11/2026. Documento: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md` |
+| 11 | Texto novo das regras do consignado (as 10 regras), PDF completo e PDF resumido da revendedora | Marcus aprova, Tamara envia | Só depois de fechar a regra do item 10 |

@@ -47,3 +47,6 @@ Tudo o que explica o negócio, o padrão visual e as decisões do sistema. O có
 | `DESIGN-SYSTEM-ESTUDO.md` / `DESIGN-SYSTEM-ESTUDO-COMPLETO.md` | Estudo de design system (regras propostas). |
 | `testes-de-layout/` | Desenhos HTML para escolher layout (versões A, B, C...). |
 | `diagramas-guia/` | Diagramas SVG usados no guia do app da representante. |
+
+- `negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`: regra de cancelamento e remarcação com prazo de 5 dias úteis (10/11/2026, ainda não construída).
+- `negocio/PENDENCIAS-REGRAS-E-COMISSOES.md`: lista única do que falta definir em regras e comissões.
