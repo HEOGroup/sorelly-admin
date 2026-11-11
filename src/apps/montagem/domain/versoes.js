@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.2", data:"2026-11-11", titulo:"Trava do padrão: tabela com filtro na coluna e uma regra só", itens:[
+  {tipo:"correção", area:"Tecnologia › Padrão visual", txt:"A trava agora EXIGE a TabelaPlanilha (cabeçalho escuro, filtro e ordem em cada coluna) em tela nova ou mexida. Reprova TabelaCampos, FileiraCampos, TabelaP, Tab/Td, tabela feita à mão, dourada:true, BlocoFiltros, BarraFiltros, bloco Filtros, CampoBusca e botão Filtrar no topo. O lembrete que o Claude recebe a cada mensagem e o CLAUDE.md dizem a mesma coisa: filtro só nas colunas. Teste: node scripts/testar-trava-padrao.mjs."},
+  {tipo:"melhoria", area:"Todas as tabelas com TabelaPlanilha", txt:"A TabelaPlanilha passou a ser escura por padrão (layout D, sem dourado). O topo dourado só com dourada:true, para tela velha. A tela Padrão visual mostra a tabela nova no lugar da barra de filtros e da tabela cinza."}]},
  {v:"0.20.1", data:"2026-11-11", titulo:"Atendimento interno: prazo do acerto contado pelo sistema", itens:[
   {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"Coluna nova Acerto até: mostra o último dia sem acréscimo (5 dias úteis depois do primeiro dia marcado). Verde nos dois primeiros dias, amarelo do 3º ao 5º, vermelho quando passa, com quantos por cento já perdeu. Depois do 30º dia útil aparece Jurídico."},
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Os dias úteis de atraso são contados pelo sistema. Ninguém digita mais."},

@@ -2,7 +2,8 @@
 // Tecnologia → Padrão visual. Duas visões (abas): "Prompt para novos sistemas" (UM botão copia o texto completo) e "Padrão visual" (as peças ao vivo: cores, degradês, indicadores, tabela, kanban, janela).
 // O texto do prompt vem dos arquivos de docs/: docs/prompts/PROMPT-MESTRE.md (prompt geral de criação de sistemas) + docs/design/PADRAO-VISUAL.md (anexo com as regras e as peças).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
-import { Abas, BarraFiltros, ESTADO, Faixa, Indicador, Janela, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
+import { Abas, ESTADO, Indicador, Janela, Mosaico, Pagina } from "@/apps/montagem/components/padrao";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 import { Kanban } from "@/shared/kanban";
@@ -39,13 +40,11 @@ var NOMES_CORES = {ouro:"Ouro", azul:"Azul", roxo:"Roxo", prata:"Prata", vermelh
 function VisaoPadrao(){
   var sj = useState(false), janela = sj[0];
   return e(Pagina,null,
-    e(Secao,{t:"Indicadores", sub:"Números que sobem até o valor, com degradê claro"}, e(Faixa,{n:4}, e(Indicador,{t:"A pagar", v:"R$ 12.500,00", cor:"total"}), e(Indicador,{t:"Pago", v:"R$ 8.000,00", cor:"ok"}), e(Indicador,{t:"Falta", v:"R$ 4.500,00", cor:"ruim", sub:"Vence em 5 dias"}), e(Indicador,{t:"Atenção", v:"12", cor:"alerta"}))),
-    e(Secao,{t:"Abas e barra de filtros", sub:"Visões na mesma tela e filtros alinhados"}, e("div",{className:"flex flex-col gap-2"},
-      e(Abas,{abas:[["a","Primeira visão"],["b","Segunda visão"],["c","Terceira visão"]], atual:"a", onMudar:function(){}, cor:"#3B82F6"}),
-      e(BarraFiltros,{ativo:true, onLimpar:function(){}}, e("input",{placeholder:"Buscar…", className:"h-9 w-48 rounded-lg bg-black/30 px-3 text-[13px] ring-1 ring-white/15"}), e("select",{className:"h-9 rounded-lg bg-black/30 px-2 text-[13px] ring-1 ring-white/15"}, e("option",null,"Todas as etapas")), e("select",{className:"h-9 rounded-lg bg-black/30 px-2 text-[13px] ring-1 ring-white/15"}, e("option",null,"Este mês"))))),
-    e(Secao,{t:"Tabela padrão", sub:"Tudo centralizado"}, e(Tab,{cols:["Nome","Situação","Valor"]},
-      e("tr",{className:LINHA}, e(Td,{forte:true}, "Exemplo"), e(Td,{cor:"ok"}, "Pago"), e(Td,{dinheiro:true}, "R$ 1.000,00")),
-      e("tr",{className:LINHA}, e(Td,{forte:true}, "Outro"), e(Td,{cor:"ruim"}, "Atrasado"), e(Td,{dinheiro:true}, "R$ 250,00")))),
+    e(Secao,{t:"Indicadores", sub:"Números que sobem até o valor, com degradê claro"}, e("div",{className:"grid grid-cols-2 gap-2 md:grid-cols-4"}, e(Indicador,{t:"A pagar", v:"R$ 12.500,00", cor:"total"}), e(Indicador,{t:"Pago", v:"R$ 8.000,00", cor:"ok"}), e(Indicador,{t:"Falta", v:"R$ 4.500,00", cor:"ruim", sub:"Vence em 5 dias"}), e(Indicador,{t:"Atenção", v:"12", cor:"alerta"}))),
+    e(Secao,{t:"Abas", sub:"Visões na mesma tela"}, e(Abas,{abas:[["a","Primeira visão"],["b","Segunda visão"],["c","Terceira visão"]], atual:"a", onMudar:function(){}, cor:"#3B82F6"})),
+    e(Secao,{t:"Tabela padrão", sub:"Cabeçalho escuro; clique no nome da coluna para ordenar, buscar e marcar valores (TabelaPlanilha)"}, e(TabelaPlanilha,{chave:"nome", grade:true, semContagem:true,
+      cols:[{k:"nome", t:"Nome"}, {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Pago" ? "text-emerald-400" : "text-red-400"; }}, {k:"valor", t:"Valor"}],
+      linhas:[{nome:"Exemplo", sit:"Pago", valor:"R$ 1.000,00"}, {nome:"Outro", sit:"Atrasado", valor:"R$ 250,00"}, {nome:"Terceiro", sit:"Pago", valor:"R$ 4.800,00"}]})),
     e(Secao,{t:"Kanban", sub:"Cartões que se arrastam entre as etapas"}, e(Kanban,{colunas:[
         {k:"a", titulo:"Solicitada", cor:"#FBBF24", itens:[{id:1, nome:"Cadeiras de escritório"}, {id:2, nome:"Etiquetas"}]},
         {k:"b", titulo:"Aprovada", cor:"#60A5FA", itens:[{id:3, nome:"Embalagens"}]},
