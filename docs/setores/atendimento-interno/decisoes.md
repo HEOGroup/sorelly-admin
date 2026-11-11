@@ -65,3 +65,6 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - **Cancelamento e remarcação:** sem multa com **10 dias ou mais** de antecedência; **Jurídico em 30 dias úteis para todos** (multa sobe 1 por dia do 6º ao 30º); **relógio não reinicia** no 2º cancelamento (conta desde o primeiro); **motivo obrigatório**; isenção por motivo sério **só com prova** (lista proposta em `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`, seção 8, falta aprovar).
 - **Prorrogar prazo:** só Marcus, Nickolas, Lucas e Anamaria registram. A representante pode dar mais prazo **com autorização do Marcus**; por enquanto ela avisa no WhatsApp. A confirmar: Anamaria (mãe) ou Ana Maria (Agendamento).
 - **Comissões:** reposição com **um campo só de R$ 15,00**; limite de **15 kits novos** por representante; comissão do **acerto adiado** paga quando o acerto acontecer; **kit só com nota promissória assinada**. Compras de joias: a Amanda lança no admin depois da compra; o Marcus pergunta a ela e à Nayale quem recebe o alerta. Grupos A e B: o Marcus muda depois.
+
+## 11/11/2026 — Regras das revendedoras consolidadas
+- Prazo, remarcação, pedido antecipado, dívida e negociação (2 parcelas, mínimo R$ 200,00, 24 h úteis): ver `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md` e `docs/DECISOES.md` de 11/11/2026.

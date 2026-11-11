@@ -2130,3 +2130,14 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - **Acesso do Castilho ao Marketing (11/11/2026, Marcus):** a conta dele (login castilho, setor Marketing) não abria as telas porque o acesso básico só mostra Início, Rotina e Chat. Ganhou, por pessoa (`TELAS_DA_PESSOA` em `domain/equipe.js`, como o Diego), as telas Marketing, Fotos de catálogo e Criativos; Tráfego pago ficou de fora por ter os valores dos anúncios.
 
 - **Acesso da Ana Paula (RH) ao Marketing (11/11/2026, Marcus):** a conta `anapaula` (pessoa 49) ganhou, além do RH, o setor Marketing e as telas Marketing, Fotos de catálogo e Criativos (para acompanhar a meta de fotos). Feito no banco por `scripts/usados-uma-vez/liberar-ana-paula-marketing.mjs` (setores e abas da conta).
+
+## 11/11/2026 — Regras das revendedoras: prazo, remarcação e dívida (consolidado)
+Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. Decisões do Marcus:
+- **Duas camadas:** perda de comissão e brinde sobre a venda (regra da Sorelly) é uma coisa; nota promissória executada (multa 10%, juros 1% ao mês, IPCA) é outra. O +1% ao dia é da primeira.
+- **Anamaria** que autoriza prorrogação é a mãe do Marcus.
+- **Atraso conta do primeiro dia marcado.** Uma regra só de atraso (5 dias úteis, depois −1% por dia, Jurídico no 30º dia útil); a tabela antiga de 7 a 59 dias sai.
+- **Pedido antecipado** (sem dia marcado, 10 dias antes): acerto até **5 dias úteis depois da data do kit**. **Remarcar depois de marcado:** até **5 dias úteis**.
+- **Dívida:** kit novo só com 80% pago **e negociação na hora**; sem negociação, sem kit e **24 h úteis** (não 48) para negociar, depois executa a nota. **Negociação: no máximo 2 parcelas, mínimo R$ 200,00, dentro do mês**; vale a data de cada parcela (o prazo fixo de 15 dias sai); parcela atrasada +1% ao dia, teto 10%. Limite final: o próximo acerto. Quem deve e saiu é outra regra, a definir.
+- **Brinde com dívida:** fica como está (mais de 10% em aberto = sem brinde).
+- **Multas somam.** Linguagem sempre em %, nunca "pontos".
+- A confirmar: "dentro do mês" (calendário ou 30 dias), dívida abaixo de R$ 200,00, um benefício sem multa por kit, agenda sem vaga, 2ª dívida seguida sem os 80%, nova chance no interno, data de vigência.
