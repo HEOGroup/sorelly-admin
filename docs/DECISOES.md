@@ -2239,3 +2239,9 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 
 - **Fotos de catálogo, busca por código (11/11/2026, Marcus):** campo "Buscar código" na aba Hoje (e em Meses anteriores), ao lado dos botões da lista: acha a peça em qualquer dia; o que for digitado vira MAIÚSCULA; digitar a grade (A2357014) acha o modelo (A2357). Em Meses anteriores a busca olha todos os meses anteriores.
 - **Fotos de catálogo, lugar da busca (11/11/2026, Marcus):** a busca por código e os botões Dia | Fila toda | Mês saíram do título do bloco (que tem altura fixa e deixava o campo solto) e viraram uma linha própria entre o título e a tabela: busca à esquerda (260 px), botões à direita; em Meses anteriores o botão de copiar a lista fica junto da busca.
+
+## 11/11/2026 (11ª parte) — Brinde: só a tabela vale
+- Decisão do Marcus: **"Só a tabela vale, tem que ser o A"**. O acordo de parcelas NÃO libera o brinde. Brinde pelo valor em aberto: tudo pago 100%, até 5% 80%, até 10% 50%, acima sem brinde. O acordo serve para levar o kit novo.
+- Código: `domain/acerto-derivado.js`, `previaPaga` não trata mais o acordo como acerto pago quando a versão tem a regra nova. Efeito junto: a **multa de 10% do pendente passa a valer também com acordo** (antes o acordo zerava a multa na prévia). Kits anteriores a 27/10/2026 seguem como eram.
+- O folder da revendedora já dizia isso (seção 4): nada a mudar no folder.
+- Observação: as parcelas do acordo somam o valor pendente SEM a multa; a multa de 10% entra no total devido do acerto.

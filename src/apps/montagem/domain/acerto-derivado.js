@@ -46,7 +46,8 @@ function derivarAcerto(p){
   var regraNova = !!(versao && versao.novas && versao.novas.prazoAcertoDiasUteis!=null), acordoFora = regraNova && acordoExistente ? regraDoAcordo(form.acordoParcelas, faltaAtual) : "";
   var acordoFechado = acordoExistente && faltaAtual>0.009 && Math.abs(acordoSoma-faltaAtual)<=0.01 && !acordoFora;   // negociação completa e dentro da regra (vale para liberar o kit novo, inclusive no Kit Prata)
   var acordoValido = acordoFechado && !(versao && versao.gerais.acordoLiberaBrinde===false);
-  var previaPaga = previaBase && acordoValido ? calcularAcerto(entrada(previaBase.valorDevido), versao) : previaBase;
+  // regra de 11/11/2026 (Marcus: "só a tabela vale"): o acordo NÃO libera o brinde nem tira a multa. O brinde segue a tabela do valor em aberto (até 5% = 80%, até 10% = 50%, acima = sem brinde) e a multa de 10% do pendente vale. Antes, o acordo contava como acerto pago.
+  var previaPaga = previaBase && acordoValido && !regraNova ? calcularAcerto(entrada(previaBase.valorDevido), versao) : previaBase;
   var previaAcerto = previaPaga && form.recusouNegociar ? Object.assign({}, previaPaga, {brindeNormal:0, brindeSelect:0, fatorPagamento:0}) : previaPaga;
 
   var conds = p.condicionais || [];
@@ -77,11 +78,11 @@ function derivarAcerto(p){
   var faixaMinBrinde = versao ? Math.min.apply(null, versao.faixas.filter(function(f){return f.bn+f.bb>0;}).map(function(f){return f.min;}).concat([Infinity])) : 500;
   var brindeBloqueio = !previaAcerto ? null
     : previaAcerto.vendaLiquida < faixaMinBrinde ? {curto:"Venda abaixo de "+BK(faixaMinBrinde), frase:"Venda líquida abaixo de "+BK(faixaMinBrinde)+" não tem brinde."}
-    : form.recusouNegociar ? {curto:"Bloqueado — sem negociação", frase:"Revendedora não quis negociar o valor em aberto. Sem brinde. O jurídico entra em contato; sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente."}
+    : form.recusouNegociar ? {curto:"Bloqueado — sem negociação", frase:"Revendedora não quis negociar o valor em aberto. Sem brinde. Sem kit novo. O caso vai para o setor de Inadimplência; sem negociação em 48 horas depois do aviso final, a nota promissória vai para execução no valor pendente."}
     : !form.pagamentos.length && !acordoValido ? {curto:"Aguardando pagamento", frase:"O brinde só é liberado depois do pagamento do acerto. Lance os pagamentos ou feche a negociação."}
     : previaAcerto.fatorPagamento===0 ? {curto: ehPrata ? "Bloqueado — só com pagamento integral" : "Bloqueado — falta mais de "+tetoFalta+"%", frase: ehPrata
         ? "No Kit 100% Prata o brinde só sai depois do pagamento integral. Falta pagar para liberar."
-        : "Falta mais de "+tetoFalta+"% do acerto. Pague o que falta ou negocie com parcelas que fechem o valor exato."}
+        : regraNova ? "Falta mais de "+tetoFalta+"% do acerto: sem brinde. A negociação libera o kit novo, não o brinde." : "Falta mais de "+tetoFalta+"% do acerto. Pague o que falta ou negocie com parcelas que fechem o valor exato."}
     : (previaAcerto.brindeNormal+previaAcerto.brindeSelect)<=0 ? {curto:"Brinde zerado pelas remarcações", frase:"As remarcações zeraram o brinde deste acerto."}
     : null;
   var brindeLiberado = !!previaAcerto && !brindeBloqueio;

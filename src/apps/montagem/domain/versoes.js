@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.4", data:"2026-11-11", titulo:"Atendimento Sorelly: brinde segue só a tabela do valor em aberto", itens:[
+  {tipo:"regra", area:"Atendimento interno › Atendimento Sorelly", txt:"O acordo de parcelas libera o kit novo, mas não libera mais o brinde. O brinde segue a tabela: pago tudo 100%, até 5% em aberto 80%, até 10% em aberto 50%, acima disso sem brinde. A multa de 10% do valor pendente vale também quando há acordo."}]},
  {v:"0.20.3", data:"2026-11-11", titulo:"Atendimento Sorelly: negociação na hora com a regra nova", itens:[
   {tipo:"regra", area:"Atendimento interno › Atendimento Sorelly", txt:"Quem ficou devendo só leva kit novo se negociar na hora: no máximo 2 parcelas de R$ 200,00 ou mais, em até 30 dias. Dívida abaixo de R$ 400,00 é parcela única. Fora disso o caso vai para o setor de Inadimplência. O aviso de quem não quis negociar agora fala em 48 horas."}]},
  {v:"0.20.2", data:"2026-11-11", titulo:"Trava do padrão: tabela com filtro na coluna e uma regra só", itens:[
