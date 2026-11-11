@@ -38,7 +38,7 @@ Cancelou / desmarcou / não veio ──► multa da vez já vale no mesmo dia
 | Vale para o Kit Prata? | **Sim, tudo igual** à Normal |
 | Vale para atendimento interno e para representantes? | **Sim, as regras são iguais** |
 | "Não veio" é igual a cancelar? | **Sim**, multa na hora |
-| Limite do Jurídico | **30 dias úteis** (Marcus: "colocar 30 dias úteis, dá mais de um mês"). Antes: 20 dias úteis e, na faixa antiga, 60 dias corridos. **A confirmar:** vale também para quem só atrasa sem cancelar? |
+| Limite do Jurídico | **30 dias úteis para todos**, inclusive quem só atrasa (aceito pelo Marcus em 10/11/2026). Antes: 20 dias úteis e, na faixa antiga, 60 dias corridos. A subida de 1 por dia vai do 6º ao 30º dia útil |
 
 ## 4. Exemplo real: Carolina
 
@@ -62,14 +62,33 @@ Venda estimada R$ 1.056 (a última dela). Sem multa: 35% = R$ 369,60 de comissã
 - **Antecedência escrita nas regras** (igual na Normal e na Prata): agendar o acerto com no mínimo **5 dias** de antecedência; reagendar pelo menos **10 dias antes** da data original, sujeito a disponibilidade. **O sistema ainda cobra multa em TODA remarcação sem isenção**, não aplica "remarcar com 10 dias de antecedência = sem multa". Falta o Marcus confirmar se os 10 dias valem como limite sem multa.
 - Nas regras da Prata havia "cancelar no dia perde 5%" e "atraso perde 1% por dia": a regra nova vale para todas e substitui isso.
 
-## 6. A confirmar com o Marcus
+## 6. Decidido em 10/11/2026 (2ª rodada)
 
-1. Isenção por motivo justificado vale para a multa **e** para o prazo?
-2. Quem pode **prorrogar** o prazo: só ele, ou também Nickolas, Lucas e Ana Maria?
-3. O relógio dos dias úteis **não reinicia** no 2º cancelamento (conta desde o 1º). Concorda?
-4. **Motivo obrigatório** ao registrar cancelamento (hoje 14 de 20 registros estão sem motivo)?
-5. Quantos dias antes dá para cancelar ou remarcar **sem multa** (hoje o texto diz 10)?
-6. O Jurídico em 30 dias úteis vale também para quem só atrasa, e a subida de 1 por dia vai do 6º ao 30º dia?
+| Pergunta | Decisão do Marcus |
+|---|---|
+| Cancelar ou remarcar **sem multa** | Com **10 dias ou mais** de antecedência |
+| Jurídico | **30 dias úteis para todos**; a multa sobe 1 por dia do 6º ao 30º dia útil |
+| Relógio no 2º cancelamento | **Não reinicia**: conta desde o primeiro cancelamento |
+| Motivo ao registrar | **Obrigatório** |
+| Isenção por motivo sério | Só com **prova** anexada (lista na seção 8) e vale para a multa e para o prazo |
+| Quem pode **prorrogar** o prazo | Só **Marcus, Nickolas, Lucas e Anamaria** registram no sistema. A representante pode pedir/dar mais prazo **com autorização do Marcus**; por enquanto ela avisa no WhatsApp e uma das 4 pessoas lança. **A confirmar:** "Anamaria" é a mãe (29) ou a Ana Maria do Agendamento (24)? |
+
+## 8. Motivos sérios que isentam (PROPOSTA, falta o Marcus aprovar a lista)
+Só vale com **prova anexada** no registro. Quem autoriza vê a prova antes de aprovar.
+
+| Motivo | Prova pedida |
+|---|---|
+| Falecimento na família | Certidão de óbito ou foto do convite/atestado |
+| Doença da revendedora ou do filho | Atestado médico |
+| Internação | Comprovante do hospital |
+| Acidente | Boletim de ocorrência, ou relatório/foto do atendimento |
+| Parto ou gestação de risco | Atestado ou certidão |
+| Roubo ou furto | Boletim de ocorrência |
+| Chuva forte, alagamento, greve de transporte | Alerta oficial ou notícia (link ou print) |
+| Atraso ou erro da própria Sorelly | Registro nosso (print da conversa ou do sistema) |
+| Feriado | Automático (já fora dos dias úteis) |
+
+**Não isentam:** viagem, trabalho, esqueceu, sem dinheiro, mudança, clima comum, "Outro".
 
 ## 7. Para construir (depois das respostas)
 

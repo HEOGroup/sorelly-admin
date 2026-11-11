@@ -73,3 +73,6 @@ O texto é o original. Para a decisão completa, abra o diário na linha indicad
 
 ## 10/11/2026 (noite) — Comissões: respostas do Marcus
 - Comissão retida: só o valor pendente. Nota promissória bloqueia a comissão (7 revendedoras sumiram com o kit sem nota assinada). Pix direto à representante: acerto pago normalmente, comissão contada, o Pix entra como pagamento já feito a ela (código a conferir). Representante que sai: recebe as comissões do período em que saiu; inadimplência paga depois não gera comissão. Cancelamento e remarcação valem igual para as revendedoras das representantes (`docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`).
+
+## 10/11/2026 (noite, 2ª rodada)
+- Limite de 15 kits novos por representante; comissão do acerto adiado paga quando o acerto acontecer; kit só com nota promissória assinada; compras de joias lançadas pela Amanda no admin (alerta a definir com Amanda e Nayale); grupos A e B mudam depois. Representante pode dar prazo extra só com autorização do Marcus.

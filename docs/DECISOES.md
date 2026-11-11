@@ -2118,3 +2118,8 @@ Pedido do Marcus: acesso total a tudo (grupo "supervisao"). A conta no banco já
 - **Representante que sai:** não recebe depois que sai; recebe as comissões do **período** em que saiu. Pagamento de inadimplência depois disso não gera comissão. (Fecha o item 17 das pendências dos Representantes.)
 - **Reposição e encomenda:** reposição = peças levadas no **meio do mês** para a revendedora; encomenda = peças **separadas para levar no próximo kit**. É **um setor só**; o Marcus permitiu o nome **"Reposições & Encomendas"** (hoje o menu diz "Encomendas e reposições"; renomear fica para decidir).
 - Lista única de pendências de regras e comissões: `docs/negocio/PENDENCIAS-REGRAS-E-COMISSOES.md`.
+
+## 10/11/2026 (noite, 2ª rodada) — Respostas do Marcus
+- **Cancelamento e remarcação:** sem multa com **10 dias ou mais** de antecedência; **Jurídico em 30 dias úteis para todos** (multa sobe 1 por dia do 6º ao 30º); **relógio não reinicia** no 2º cancelamento (conta desde o primeiro); **motivo obrigatório**; isenção por motivo sério **só com prova** (lista proposta em `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`, seção 8, falta aprovar).
+- **Prorrogar prazo:** só Marcus, Nickolas, Lucas e Anamaria registram. A representante pode dar mais prazo **com autorização do Marcus**; por enquanto ela avisa no WhatsApp. A confirmar: Anamaria (mãe) ou Ana Maria (Agendamento).
+- **Comissões:** reposição com **um campo só de R$ 15,00**; limite de **15 kits novos** por representante; comissão do **acerto adiado** paga quando o acerto acontecer; **kit só com nota promissória assinada**. Compras de joias: a Amanda lança no admin depois da compra; o Marcus pergunta a ela e à Nayale quem recebe o alerta. Grupos A e B: o Marcus muda depois.

@@ -18,3 +18,5 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 
 ## 10/11/2026 (noite) — Palavras e setor
 - **Reposição** = peças levadas no meio do mês para a revendedora. **Encomenda** = peças separadas para levar no próximo kit. É um setor só; o Marcus permitiu o nome **"Reposições & Encomendas"** (renomear o menu fica para decidir). Pergunta aberta: unir os dois campos de R$ 15,00 em um e quem define o valor da reposição "especial".
+
+- **10/11/2026 (2ª rodada):** os dois campos de R$ 15,00 viram **um só**. Aberto: quem define a reposição "especial".
