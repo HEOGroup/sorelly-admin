@@ -129,3 +129,11 @@ O Marcus viu 4 layouts (`docs/ideias/resumo-pagamentos-4-layouts.html`) e escolh
 3. Isto **substitui** a regra 7 do padrão do Financeiro ("abas visíveis em vez de dropdown") para escolhas de formulário: o Marcus quer menus suspensos.
 4. **Cor:** menos cor. Dourado é o destaque; verde/amarelo/vermelho só para estado. Nada de uma cor por categoria (ex.: uma cor por tipo de pausa) sem o Marcus pedir.
 5. Trava dura **regra 2i** em `scripts/padrao-regras.mjs`: reprova função/variável `chip...` e botão com `rounded-full` + `px-`. (Selo de status não clicável, como o `Chip` de `pf/ui.js`, não é botão de escolha e passa.) Rodar `npm run padrao`.
+
+## REGRA FIXA · FILTRO SÓ NAS COLUNAS, IGUAL AO GOOGLE PLANILHAS (Marcus, 11/11/2026: "eu já falei, não quero filtros assim, trave isso") — vale para TODA tela, para sempre; SUBSTITUI "filtros no topo" de 22/10/2026
+1. **Proibido** o bloco "Filtros" acima da tabela (campos de busca e seleção em grade). Também proibida a barra de filtros (`BarraFiltros`, `BlocoFiltros`).
+2. **Filtro e ordenação ficam no cabeçalho de cada coluna.** Clicar no nome da coluna abre o menu: Ordenar de A a Z, Ordenar de Z a A, Buscar nesta coluna, lista de valores com caixa de marcar, Selecionar tudo e Limpar o filtro. Coluna com filtro ou ordenação fica dourada. Peça: `TabelaPlanilha` (`components/tabela-planilha.js`).
+3. Em cima da tabela ficam só o título, o botão principal e "Limpar filtros" (aparece quando há filtro).
+4. O visual da tabela continua o Layout D (faixa escura, fio fino, tudo centralizado, nada quebra, total na última fileira).
+5. Trava dura **regra 2j** em `scripts/padrao-regras.mjs`: reprova linha nova com `e(BlocoFiltros` ou `e(BarraFiltros`. Telas antigas mudam quando forem mexidas.
+6. Desenho de referência: `docs/ideias/inadimplencia-tela-dividas.html`.

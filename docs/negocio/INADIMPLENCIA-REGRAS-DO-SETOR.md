@@ -51,3 +51,17 @@ Ligação com o acerto: `REGRA-CANCELAMENTO-E-REMARCACAO.md` (caminho 1 = negoci
 4. Comissão da representante sobre dívida recuperada: hoje entra sozinha na remessa seguinte; aqui depende de quem recuperou e da análise.
 5. Atendimento interno não tem representante: sugestão, vai direto ao setor.
 6. Tela atual (No prazo, Atrasado, Jurídico, Retirar kit, Executar nota) x status novos (OK, Verificar, Não responde, Próximo mês).
+
+## 12. Regras de negociação e cobrança (texto do Marcus, 11/11/2026): vale no lugar da seção 2 e do que estiver diferente acima
+- **Formas:** Pix à vista; Pix parcelado; cartão de crédito em até 6 vezes sem juros por link. Boleto não. Acordo por Pix descumprido: não há novo parcelamento por Pix (só com exceção autorizada); oferece cartão ou quitação do saldo.
+- **Pix parcelado:** até R$ 300,00 = até 2 vezes · R$ 300,01 a R$ 600,00 = até 3 · R$ 600,01 a R$ 1.200,00 = até 4 · acima de R$ 1.200,00 = analisar ou cartão em até 6. **Parcela mínima: R$ 150,00.** Valem os dois limites juntos.
+- **Primeira parcela:** paga no mês da negociação, de preferência na hora do acordo. "Pago quando conseguir" não é negociação: toda negociação tem valor e data.
+- **Vencimentos:** definidos no acordo; mudar depende do setor.
+- **Prazo:** representante tem 7 dias para negociar e informar; sem negociação concreta, o setor assume. Com 30 dias de atraso e sem acordo sendo cumprido, pode ir para análise de negativação. Dívida mais antiga = condição mais restrita.
+- **Descumprimento:** parcela não paga na data = status VERIFICAR sozinho; o setor contata; sem justificativa ou retorno = acordo DESCUMPRIDO; novo acordo não é automático.
+- **Prorrogação:** só 1 por parcela, pedida antes do vencimento, com justificativa e aprovada pelo setor.
+- **Última oportunidade:** em acordo descumprido, falta de retorno, adiamentos ou promessas não cumpridas: informar valor pendente, forma aceita, data final, que não há nova prorrogação e as consequências. Não cumpriu: segue para as próximas etapas.
+- **Negativação:** 30 dias de atraso sem acordo vigente. Prioridade: sem resposta, acordo descumprido, promessas não cumpridas, recusa em negociar, kit não devolvido, contato interrompido.
+- **Representante:** em 7 dias informa valor negociado, entrada, parcelas, datas, forma e último posicionamento ("está cobrando" não basta). Cobrou certo e a devedora não colabora: o Jurídico ajuda e o setor analisa a comissão. **Sem cobrança, acompanhamento ou atualização: o Jurídico assume e a representante perde a comissão automaticamente** (isto muda a seção 1, que dizia que nunca era automático).
+- **Exceções (só com autorização, registrando quem autorizou):** parcela abaixo de R$ 150,00, prazo acima do padrão, segunda renegociação, novo Pix parcelado após descumprimento, desconto, condições especiais.
+- **Regra principal:** nenhuma dívida fica "em negociação" sem valor, forma e data. Todo acordo tem valor total, forma, quantidade e valor das parcelas, data de cada vencimento e status. Descumprido = VERIFICAR · pagamento integral confirmado = QUITADA · fora das regras = EXCEÇÃO.

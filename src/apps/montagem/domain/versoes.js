@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.172", data:"2026-11-11", titulo:"Padrão visual: filtro só nas colunas da tabela", itens:[
+  {tipo:"regra", area:"Tecnologia › Padrão visual", txt:"Regra fixa do Marcus: o filtro fica no cabeçalho de cada coluna, igual ao Google Planilhas. O bloco Filtros acima da tabela está proibido em tela nova ou mexida, e a trava do padrão reprova."}]},
  {v:"0.18.171", data:"2026-11-11", titulo:"Atendimento Sorelly: a revendedora não assina nada", itens:[
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Saiu a assinatura da revendedora de TODO o Atendimento Sorelly (acerto, kit retornando e kit novo): não há mais quadro de assinatura, nem janela, nem exigência para finalizar. A funcionária ainda passa as regras uma a uma e finaliza. O botão da lateral das regras virou Registrar acerto. O termo (regras passadas) continua gravado, sem assinatura."}
  ]},

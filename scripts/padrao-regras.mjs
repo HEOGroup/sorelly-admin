@@ -7,7 +7,7 @@
 // Exceção aprovada pelo Marcus: a linha recebe o comentário `padrao-ok` e passa (ex.: `// padrao-ok: título da capa`).
 
 export var DOC = "docs/design/PADRAO-VISUAL.md";
-export var REGRAS = "Padrão visual (" + DOC + "): fonte Inter, texto de 13 px FIXO (nunca clamp/vw), rótulo e cabeçalho 11 px, número até 20 px, campo/botão/linha 32 px (h-8), cabeçalho de tabela 30 px, letras brancas (nunca cinza), todo valor em reais com R$, filtros no topo, abas visíveis, SEM faixa de totais (blocos de números) no topo da tela, tabela com topo dourado em degradê, nada abreviado (sem reticências) e tudo centralizado, peças de components/padrao.js e padrao-fin.js, menu do setor no padrão `menu`.";
+export var REGRAS = "Padrão visual (" + DOC + "): fonte Inter, texto de 13 px FIXO (nunca clamp/vw), rótulo e cabeçalho 11 px, número até 20 px, campo/botão/linha 32 px (h-8), cabeçalho de tabela 30 px, letras brancas (nunca cinza), todo valor em reais com R$, FILTRO SÓ NAS COLUNAS DA TABELA igual ao Google Planilhas (peça TabelaPlanilha; NUNCA bloco Filtros no topo), abas visíveis, SEM faixa de totais (blocos de números) no topo da tela, tabela com topo dourado em degradê, nada abreviado (sem reticências) e tudo centralizado, peças de components/padrao.js e padrao-fin.js, menu do setor no padrão `menu`.";
 
 var norm = function(f){ return String(f || "").replace(/\\/g, "/"); };
 
@@ -107,6 +107,10 @@ export function conferirLinhas(arquivo, linhas, op){
     // 2i. SEM CHIPS NEM PÍLULAS (Marcus, 09/11/2026: "eu não quero nunca mais isso"): botão arredondado em forma de pílula para marcar várias opções (ex.: Peito, Costas, Ombros...) é proibido. Escolha de uma opção = select (CampoSel); várias opções = menu suspenso com marcação (MenuMulti de padrao-fin.js); 2 a 5 opções da mesma visão = Segmentado.
     if(/\b(var|let|const|function)\s+chip\w*\b/.test(codigo) || (/["']button["']|<button\b/.test(codigo) && /\brounded-full\b/.test(codigo) && /\bpx-\d/.test(codigo)))
       add("chip/pílula (proibido em 09/11/2026: uma opção = select; várias = menu suspenso MenuMulti; 2 a 5 da mesma visão = Segmentado)", l);
+
+    // 2j. FILTRO SÓ NAS COLUNAS (Marcus, 11/11/2026: "os filtros ficam nas colunas igual do Google Planilhas, trave isso"): bloco de filtros acima da tabela é proibido em tela nova ou mexida. Filtro e ordenação ficam no cabeçalho de cada coluna (TabelaPlanilha de components/tabela-planilha.js).
+    if(/\be\(\s*(BlocoFiltros|BarraFiltros)\b/.test(codigo))
+      add("bloco de filtros no topo (proibido em 11/11/2026: filtro e ordenação ficam no cabeçalho de cada coluna, igual ao Google Planilhas; use TabelaPlanilha)", l);
 
     // 3. altura de campo, botão e linha: 32 px (h-8); cabeçalho de tabela 30 px
     if(PISTA_CAMPO.test(codigo)){
