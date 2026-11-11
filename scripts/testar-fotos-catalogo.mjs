@@ -82,18 +82,18 @@ t("duração em horas, dias e vazio", F.duracao(135)==="2 h 15 min" && F.duracao
 const prod = F.producaoDias({historico:[{dia:"2026-11-09", fotos:47, editadas:30, sistema:28}], codigos:[]}, 5);
 t("produção usa o histórico da planilha", prod.length===1 && prod[0].fotos===47);
 
-// DevMaster: código novo entra sozinho; campo de foto marcado lá = etapa Foto (Editada e Sistema ficam para quem edita)
+// DevMaster: código novo entra sozinho; foto colocada lá (pela Ana, depois de editar) marca o Sistema
 let z = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1700", dia:hoje}], semeado:true}});
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:1, cod:"BB1700", dia:hoje, foto:true}, {id:2, cod:"CL2763", dia:hoje, foto:false}, {id:3, cod:"B5221", dia:hoje, foto:true}, {id:4, cod:"x", dia:hoje, foto:true}]});
 t("DevMaster: 2 códigos novos entram (o inválido não)", z.fc.codigos.length===3, JSON.stringify(z.fc.codigos.map(c=>c.cod)));
-t("DevMaster: campo de foto marcado vira Foto (código que já existia)", F.statusDe(z.fc.codigos.find(c=>c.cod==="BB1700"))==="Fotografada");
+t("DevMaster: foto colocada lá marca o Sistema (código que já existia)", F.statusDe(z.fc.codigos.find(c=>c.cod==="BB1700"))==="Na DevMaster");
 t("DevMaster: código novo sem foto fica Sem foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Sem foto");
-t("DevMaster: código novo já com foto entra como Foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="B5221"))==="Fotografada");
+t("DevMaster: código novo já com foto vai direto para o Sistema", F.statusDe(z.fc.codigos.find(c=>c.cod==="B5221"))==="Na DevMaster");
 const antesZ = JSON.stringify(z.fc.codigos);
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:1, cod:"BB1700", dia:hoje, foto:true}, {id:2, cod:"CL2763", dia:hoje, foto:false}]});
 t("DevMaster: ler de novo não duplica nem muda nada", JSON.stringify(z.fc.codigos)===antesZ);
 z = reducer(z, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:2, cod:"CL2763", dia:hoje, foto:true}]});
-t("DevMaster: foto marcada depois vira Foto", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Fotografada");
+t("DevMaster: foto que chegou depois marca o Sistema", F.statusDe(z.fc.codigos.find(c=>c.cod==="CL2763"))==="Na DevMaster");
 t("DevMaster: o que vem de lá aparece sem data (célula em branco)", F.linhasFotos(z.fc).find(l=>l.cod==="CL2763").subEm==="");
 
 // meta de fotos: foto marcada na tela ou que apareceu na DevMaster depois do início conta no dia dela
@@ -103,10 +103,32 @@ const mp = F.metaProgresso(fm, M, "2026-11-11");
 t("meta: conta marcada e DevMaster com data dentro do período (A1, A2, A5)", mp.feitas===3 && mp.falta===1, JSON.stringify(mp));
 t("meta: foto antiga e fora do período não contam", mp.linhas.find(l=>l.dia==="2026-11-10").fotos===1 && mp.linhas.find(l=>l.dia==="2026-11-11").fotos===2);
 t("meta: ritmo por dia e situação", mp.restam===3 && mp.porDia===1 && mp.situacao==="Em andamento" && F.metaProgresso(fm, Object.assign({}, M, {alvo:3}), "2026-11-11").situacao==="Batida" && F.metaProgresso(fm, M, "2026-11-14").situacao==="Não batida");
+const fv = {codigos:[{cod:"V1", dia:"2026-10-20", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}, {cod:"V2", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}, {cod:"V3", dia:"2026-11-05", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}]};
+t("meta: foto antiga achada na DevMaster (peça de antes de 01/11 ou da planilha) não conta", F.metaProgresso(fv, M, "2026-11-11").feitas===1);
+t("meta: foto vista na DevMaster antes da hora de corte não conta", F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T07:00:00"}), "2026-11-11").feitas===1 && F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T08:00:01"}), "2026-11-11").feitas===0);
 let w = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1900", dia:hoje}], semeado:true}});
 w = reducer(w, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:9, cod:"BB1900", desc:"BRINCO TESTE", dia:hoje, foto:true}]});
 const cw = w.fc.codigos.find(c=>c.cod==="BB1900");
 t("DevMaster: foto nova grava o dia (dmFoto) e a descrição", /^\d{4}-\d{2}-\d{2}T/.test(cw.dmFoto) && cw.desc==="BRINCO TESTE", JSON.stringify(cw));
 
+let q = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1950", dia:"2026-10-05"}], semeado:true}});
+q = FC(q, {op:"tem", cod:"BB1950", valor:"sim"});
+t("tem a peça: grava quem e quando", q.fc.codigos[0].tem==="sim" && q.fc.codigos[0].temPor==="Teste" && /^\d{4}-/.test(q.fc.codigos[0].temEm));
+q = FC(q, {op:"tem", cod:"BB1950", valor:"nao"});
+t("não tem a peça", q.fc.codigos[0].tem==="nao" && F.linhasFotos(q.fc)[0].tem==="nao");
+q = FC(q, {op:"tem", cod:"BB1950", valor:""});
+t("tirar a marcação", q.fc.codigos[0].tem===undefined && q.fc.codigos[0].temEm===undefined);
+// modelo e grade: A2357014 é o código inteiro; A2357 é o modelo e a foto é uma só para todos
+let g = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], semeado:true, codigos:[{cod:"A2357", dia:"2026-11-03", desc:"ANEL SOLITARIO"}, {cod:"A2357013", dia:"2026-11-03", desc:"ANEL SOLITARIO 13"}, {cod:"A2357014", dia:"2026-11-03", desc:"ANEL SOLITARIO 14"}, {cod:"A9999018", dia:"2026-11-04", desc:"ANEL SEM MODELO 18"}, {cod:"A9999019", dia:"2026-11-04", desc:"ANEL SEM MODELO 19"}, {cod:"CL2763", dia:"2026-11-04"}]}});
+t("modelo e grade: A2357014 vira o modelo A2357", F.modeloDe("A2357014")==="A2357" && F.modeloDe("BBA0001015")==="BBA0001" && F.modeloDe("A2357")==="A2357" && F.modeloDe("CL2763")==="CL2763" && F.modeloDe("2B0075")==="2B0075");
+const lg = F.linhasFotos(g.fc);
+t("modelo e grade: 3 linhas (A2357, A9999 sem registro do modelo, CL2763)", lg.length===3 && lg.some(l=>l.cod==="A2357") && lg.some(l=>l.cod==="A9999") && F.resumoGeral(g.fc).total===3, JSON.stringify(lg.map(l=>l.cod)));
+t("modelo sem registro ganha a descrição da grade sem o número", lg.find(l=>l.cod==="A9999").desc==="ANEL SEM MODELO");
+g = FC(g, {op:"etapa", cod:"A2357", etapa:"foto"});
+t("marcar a foto do modelo vale para todas as grades", g.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.fotoEm) && F.linhasFotos(g.fc).find(l=>l.cod==="A2357").fOk===true);
+g = FC(g, {op:"desfazer", cod:"A2357"});
+t("desfazer volta o modelo e as grades", g.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>!c.fotoEm));
+g = Object.assign({}, g, {fc:Object.assign({}, g.fc, {codigos:g.fc.codigos.map(c=>c.cod==="A2357014" ? Object.assign({}, c, {fotoEm:"dm", edEm:"dm", subEm:"dm"}) : c)})});
+t("foto em qualquer grade vale para o modelo (uma foto só)", F.linhasFotos(g.fc).find(l=>l.cod==="A2357").sOk===true);
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

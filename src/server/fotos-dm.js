@@ -30,9 +30,9 @@ export async function produtosRecentes({ dias = 60, forcar = false } = {}) {
   return dados;
 }
 
-// Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; campo de foto preenchido na DevMaster marca só a etapa Foto como "dm" (Editada e Sistema são marcadas por quem edita).
+// Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; foto já na DevMaster marca Foto, Editada e Sistema como "dm" (a Ana coloca a foto lá depois de editar).
 // Só grava as chaves que mudaram, com trava de versão (não pisa em quem está marcando uma etapa na tela ao mesmo tempo).
-export async function sincronizarFotosDm({ dias = 60 } = {}) {
+export async function sincronizarFotosDm({ dias = 120 } = {}) {
   const dm = await produtosRecentes({ dias, forcar: true }), hoje = hojeBR();
   for (let tentativa = 0; tentativa < 4; tentativa++) {
     const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'fc'");
@@ -48,7 +48,7 @@ export async function sincronizarFotosDm({ dias = 60 } = {}) {
       if (!tem) novos++;
       if (!c.dia) { c.dia = it.dia; alterou = true; }
       if (it.desc && !c.desc) { c.desc = String(it.desc).slice(0, 140); alterou = true; }
-      if (it.foto && !c.fotoEm) { c.fotoEm = "dm"; c.dmFoto = agoraBR(); if (c.esp) delete c.esp; alterou = true; subiram++; }   // campo de foto marcado na DevMaster = etapa Foto feita; Editada e Sistema são de quem edita
+      if (it.foto && !c.subEm) { if (!c.dmFoto) c.dmFoto = agoraBR(); if (!c.fotoEm) c.fotoEm = "dm"; if (!c.edEm) c.edEm = "dm"; c.subEm = "dm"; if (c.esp) delete c.esp; alterou = true; subiram++; }   // o Castilho tira a foto, a Ana edita e coloca na DevMaster: só então o sistema enxerga a foto
       if (alterou) mudou[chave] = c;
     }
     if (!Object.keys(mudou).length) return { novos: 0, subiram: 0, lidos: dm.itens.length };

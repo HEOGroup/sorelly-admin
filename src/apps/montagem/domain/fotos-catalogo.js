@@ -78,20 +78,47 @@ function duracao(min){ if(min==null) return "—"; var m = Math.round(min); if(m
 var formatarHora = function(iso){ if(iso==="ant" || iso==="dm") return ""; var m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(String(iso||"")); return m ? m[3]+"/"+m[2]+" "+m[4]+":"+m[5] : ""; };
 var formatarDia = function(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso||"")); return m ? m[3]+"/"+m[2]+"/"+m[1] : ""; };
 
-// linhas da planilha (uma por código), mais novos primeiro
+// MODELO E GRADE (Marcus, 11/11/2026: "A2357014 é o código inteiro; A2357 é o código, uma foto só para todos"): código com 7 números = modelo (letras + 4 números) + grade (3 números, o tamanho).
+// A foto é UMA SÓ por modelo. Por isso a tela trabalha com o MODELO: as grades entram juntas nele, e cada etapa vale a mais adiantada entre o modelo e as grades.
+var modeloDe = function(cod){ var m = /^([A-Z]+[0-9]{4})[0-9]{3}$/.exec(cod); return m ? m[1] : cod; };
+var melhorEtapa = function(lista, k){   // etapa mais adiantada: a data real mais antiga; senão a marca "dm" ou "ant"
+  var com = lista.filter(function(c){ return c[k]; }); if(!com.length) return null;
+  var reais = com.filter(function(c){ return ehDia(parteDia(c[k])); }).sort(function(a, b){ return a[k]<b[k] ? -1 : a[k]>b[k] ? 1 : 0; });
+  return reais[0] || com[0];
+};
+var cacheUnidades = typeof WeakMap!=="undefined" ? new WeakMap() : null;
+function unidades(fc){
+  var cs = fc.codigos || []; if(cacheUnidades){ var h = cacheUnidades.get(cs); if(h) return h; }
+  var mapa = {}, ordem = [];
+  cs.forEach(function(c){ var m = modeloDe(c.cod), u = mapa[m]; if(!u){ u = mapa[m] = {cod:m, vars:0, base:null, lista:[]}; ordem.push(m); } if(c.cod===m) u.base = c; else u.vars++; u.lista.push(c); });
+  var out = ordem.map(function(m){
+    var u = mapa[m]; if(!u.vars) return u.base;
+    var r = Object.assign({}, u.base || {}, {cod:m, vars:u.vars}), dias = u.lista.map(function(c){ return c.dia; }).filter(Boolean).sort();
+    if(dias.length && (!r.dia || dias[0]<r.dia)) r.dia = dias[0];
+    [["fotoEm", "fotoQuem"], ["edEm", "edQuem"], ["subEm", "subQuem"]].forEach(function(p){ var x = melhorEtapa(u.lista, p[0]); r[p[0]] = x ? x[p[0]] : ""; r[p[1]] = x ? (x[p[1]] || "") : ""; });
+    var dm = u.lista.map(function(c){ return c.dmFoto; }).filter(Boolean).sort(); if(dm.length) r.dmFoto = dm[0];
+    if(!r.desc){ var com = u.lista.filter(function(c){ return c.desc; })[0]; if(com) r.desc = com.desc.replace(/\s+[0-9]+$/, ""); }
+    var tem = u.lista.filter(function(c){ return c.tem==="sim"; })[0] || u.lista.filter(function(c){ return c.tem; })[0]; if(tem) r.tem = tem.tem; else delete r.tem;
+    return r;
+  });
+  if(cacheUnidades) cacheUnidades.set(cs, out);
+  return out;
+}
+
+// linhas da planilha (uma por MODELO), mais novos primeiro
 function linhasFotos(fc){
-  return (fc.codigos||[]).map(function(c){
-    return {cod:c.cod, desc:c.desc||"", cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia || c.fotoEm==="ant" || c.edEm==="ant" || c.subEm==="ant", fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
+  return unidades(fc).map(function(c){
+    return {cod:c.cod, tem:c.tem||"", desc:c.desc||"", cat:c.cat || categoriaDe(c.cod), dia:c.dia||"", diaTxt:c.dia ? formatarDia(c.dia) : "Planilha antiga", fotoEm:formatarHora(c.fotoEm), fotoQuem:c.fotoQuem||"", antigo:!c.dia || c.fotoEm==="ant" || c.edEm==="ant" || c.subEm==="ant", fOk:!!c.fotoEm, eOk:!!c.edEm, sOk:!!c.subEm, esp:c.esp||"", fotoData:formatarHora(c.fotoEm), edData:formatarHora(c.edEm), subData:formatarHora(c.subEm), status:statusDe(c), edEm:formatarHora(c.edEm), edQuem:c.edQuem||"", subEm:formatarHora(c.subEm), subQuem:c.subQuem||"", obs:c.obs||""};
   }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : 0; });
 }
 // uma coluna da tabela: dia ("2026-11-10") para a linha de grupo
 function resumoDoDia(fc, dia){
-  var l = (fc.codigos||[]).filter(function(c){ return (c.dia||"")===dia; });
+  var l = unidades(fc).filter(function(c){ return (c.dia||"")===dia; });
   return {cadastrados:l.length, fotografados:l.filter(function(c){ return c.fotoEm; }).length, editados:l.filter(function(c){ return c.edEm; }).length, naDevmaster:l.filter(function(c){ return c.subEm; }).length};
 }
 // bloco "Hoje": o que aconteceu no dia (pela data da etapa) e o que ainda falta nos códigos novos
 function resumoHoje(fc, hoje){
-  var cs = fc.codigos||[], dia = function(x){ return parteDia(x)===hoje; };
+  var cs = unidades(fc), dia = function(x){ return parteDia(x)===hoje; };
   cs = cs.filter(function(c){ return c.dia; });   // só os códigos NOVOS (os da planilha antiga não têm data)
   var sem = cs.filter(function(c){ return !c.fotoEm; }), semEd = cs.filter(function(c){ return c.fotoEm && !c.edEm; }), semSub = cs.filter(function(c){ return c.edEm && !c.subEm; });
   return {cadastrados:cs.filter(function(c){ return c.dia===hoje; }).length, fotografados:cs.filter(function(c){ return dia(c.fotoEm); }).length, editados:cs.filter(function(c){ return dia(c.edEm); }).length,
@@ -99,7 +126,7 @@ function resumoHoje(fc, hoje){
 }
 // tempos médios entre as etapas; janela = função(iso da etapa) → true/false
 function temposMedios(fc, dentro){
-  var cs = (fc.codigos||[]).filter(function(c){ return c.dia; });
+  var cs = unidades(fc).filter(function(c){ return c.dia; });
   var f = function(fn){ return duracao(media(cs.map(fn))); };
   var ok = function(c, campo){ return !dentro || dentro(c[campo]); };
   return {
@@ -114,7 +141,7 @@ function producaoDias(fc, qtd){
   var mapa = {};
   (fc.historico||[]).forEach(function(h){ mapa[h.dia] = {dia:h.dia, fotos:h.fotos, editadas:h.editadas, sistema:h.sistema, origem:"planilha"}; });
   var por = {};
-  (fc.codigos||[]).forEach(function(c){
+  unidades(fc).forEach(function(c){
     [["fotoEm","fotos"],["edEm","editadas"],["subEm","sistema"]].forEach(function(p){ var d = parteDia(c[p[0]]); if(!ehDia(d)) return; por[d] = por[d] || {dia:d, fotos:0, editadas:0, sistema:0, origem:"sistema"}; por[d][p[1]]++; });
   });
   Object.keys(por).forEach(function(d){ mapa[d] = por[d]; });
@@ -129,19 +156,19 @@ function resumoLegado(fc){
 
 // ---------- relatórios da planilha (Controle Oficial): total, progresso, categorias ----------
 function resumoGeral(fc){
-  var cs = fc.codigos||[], r = {total:cs.length, foto:0, ed:0, sub:0, semFoto:0, diversas:0, aguardando:0, repetido:0, novos:0};
+  var cs = unidades(fc), r = {total:cs.length, foto:0, ed:0, sub:0, semFoto:0, diversas:0, aguardando:0, repetido:0, novos:0};
   cs.forEach(function(c){ if(c.fotoEm) r.foto++; if(c.edEm) r.ed++; if(c.subEm) r.sub++; if(c.dia) r.novos++;
     var st = statusDe(c); if(st==="Sem foto") r.semFoto++; else if(st==="Diversas") r.diversas++; else if(st==="Aguardando") r.aguardando++; else if(st==="Repetido") r.repetido++; });
   return r;
 }
 function porCategoria(fc){
-  var m = {}; (fc.codigos||[]).forEach(function(c){ var k = c.cat || categoriaDe(c.cod); var x = m[k] = m[k] || {cat:k, total:0, foto:0, ed:0, sub:0}; x.total++; if(c.fotoEm) x.foto++; if(c.edEm) x.ed++; if(c.subEm) x.sub++; });
+  var m = {}; unidades(fc).forEach(function(c){ var k = c.cat || categoriaDe(c.cod); var x = m[k] = m[k] || {cat:k, total:0, foto:0, ed:0, sub:0}; x.total++; if(c.fotoEm) x.foto++; if(c.edEm) x.ed++; if(c.subEm) x.sub++; });
   return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return b.total-a.total; });
 }
 // quadro de etapas: TODOS os códigos (os novos, com data, primeiro; depois os da planilha antiga). Pendentes: mais antigo primeiro. Na DevMaster: mais recente primeiro.
 function quadroCodigos(fc){
   var col = {sem:[], foto:[], ed:[], sub:[]};
-  (fc.codigos||[]).forEach(function(c){
+  unidades(fc).forEach(function(c){
     var desde = c.subEm || c.edEm || c.fotoEm || (c.dia ? c.dia+"T00:00:00" : "");
     var x = {c:c, desde:desde, st:statusDe(c), novo:!!c.dia};
     col[c.subEm ? "sub" : c.edEm ? "ed" : c.fotoEm ? "foto" : "sem"].push(x);
@@ -155,12 +182,16 @@ function minutosDesde(iso, agora){ return minutos(iso, agora); }
 // ---------- META DE FOTOS (Marcus, 10/11/2026) ----------
 // Primeira meta: 500 fotos até sexta-feira (13/11) = bônus de R$ 250,00 para o setor. A próxima meta entra aqui quando o Marcus definir.
 // Foto contada = marcada na tela (Foto, com data) OU foto que passou a existir na DevMaster depois do início do sistema (dmFoto, gravado na hora em que a leitura da DevMaster vê a foto).
-var METAS = [{id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250}];
+// dmDesde: foto que a leitura da DevMaster viu ANTES dessa hora não conta (às 09:45 de 11/11 a leitura carimbou 65 fotos de uma vez e não dá para provar que são novas).
+var METAS = [{id:"2026-11-13", nome:"Primeira meta", ini:"2026-11-10", fim:"2026-11-13", alvo:500, bonus:250, dmDesde:"2026-11-11T10:30:00"}];
+var diasEntre = function(a, b){ return Math.round((Date.parse(b+"T12:00:00Z")-Date.parse(a+"T12:00:00Z"))/86400000); };
 var somaDia = function(d, n){ var x = new Date(d+"T12:00:00Z"); x.setUTCDate(x.getUTCDate()+n); return x.toISOString().slice(0, 10); };
-var diaDaFoto = function(c){ var d = parteDia(c.fotoEm); if(ehDia(d)) return d; d = parteDia(c.dmFoto); return ehDia(d) ? d : ""; };
+// Peças cadastradas desde 01/11/2026 são as do processo novo. A leitura da DevMaster também acha fotos ANTIGAS que ninguém tinha marcado; essas não contam na meta (só contam as peças cadastradas desde essa data).
+var INICIO_PECAS = "2026-11-01";
+var diaDaFoto = function(c, dmDesde){ var d = parteDia(c.fotoEm); if(ehDia(d)) return d; if(!c.dia || c.dia<INICIO_PECAS || (dmDesde && String(c.dmFoto||"")<dmDesde)) return ""; d = parteDia(c.dmFoto); return ehDia(d) ? d : ""; };
 function metaProgresso(fc, m, hoje){
   var por = {}, feitas = 0, dias = [], d;
-  (fc.codigos||[]).forEach(function(c){ var x = diaDaFoto(c); if(x && x>=m.ini && x<=m.fim){ por[x] = (por[x]||0)+1; feitas++; } });
+  unidades(fc).forEach(function(c){ var x = diaDaFoto(c, m.dmDesde); if(x && x>=m.ini && x<=m.fim){ por[x] = (por[x]||0)+1; feitas++; } });
   for(d = m.ini; d<=m.fim; d = somaDia(d, 1)) dias.push(d);
   var acum = 0, linhas = dias.map(function(x){ acum += por[x]||0; return {dia:x, fotos:por[x]||0, acum:acum}; });
   var falta = Math.max(0, m.alvo-feitas), restam = dias.filter(function(x){ return x>=hoje; }).length;
@@ -185,6 +216,7 @@ function fcReduz(s, a){
   var fc = clone(fcMigrar(s.fc)), por = a.por || "—", agora = a.agora || agoraSP(), hoje = hojeSP();
   var recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{fc:fc}, msg:msg}; };
   var achar = function(cod){ return fc.codigos.find(function(c){ return c.cod===cod; }); };
+  var alvos = function(cod){ return fc.codigos.filter(function(c){ return c.cod===cod || modeloDe(c.cod)===cod; }); };   // o modelo e todas as grades dele
   switch(a.op){
     case "cod_add": {
       var r = lerCodigos(a.texto);
@@ -197,12 +229,12 @@ function fcReduz(s, a){
       return ok(novos+(novos===1 ? " código lançado" : " códigos lançados")+(ja ? " ("+ja+" já existiam)" : "")+(r.invalidos.length ? " ("+r.invalidos.length+" ignorados)" : ""));
     }
     case "etapa": {
-      var c = achar(a.cod); if(!c) return recusa("Código não encontrado.");
+      var al = alvos(a.cod); if(!al.length) return recusa("Código não encontrado.");
       var e = ETAPAS[a.etapa]; if(!e) return recusa("Etapa inválida.");
-      if(c[e[0]]) return recusa("Essa etapa já foi marcada.");
-      if(a.etapa==="ed" && !c.fotoEm) return recusa("Marque a foto antes de editar.");
-      if(a.etapa==="sub" && !c.edEm) return recusa("Marque a edição antes de subir na DevMaster.");
-      c[e[0]] = agora; c[e[1]] = por; return ok(c.cod+": "+e[2]);
+      var mudou = 0, motivo = "Essa etapa já foi marcada.";
+      al.forEach(function(c){ if(c[e[0]]) return; if(a.etapa==="ed" && !c.fotoEm){ motivo = "Marque a foto antes de editar."; return; } if(a.etapa==="sub" && !c.edEm){ motivo = "Marque a edição antes de subir na DevMaster."; return; } c[e[0]] = agora; c[e[1]] = por; mudou++; });
+      if(!mudou) return recusa(motivo);
+      return ok(a.cod+": "+e[2]);
     }
     case "etapa_lote": {
       var lote = lerCodigos(a.texto), e2 = ETAPAS[a.etapa]; if(!e2) return recusa("Etapa inválida.");
@@ -212,11 +244,16 @@ function fcReduz(s, a){
       if(!feitos) return recusa(naoAchou ? "Nenhum código foi encontrado. Lance os códigos primeiro." : "Nenhum código estava pronto para essa etapa (já marcado ou falta a etapa anterior).");
       return ok(feitos+(feitos===1 ? " código marcado" : " códigos marcados")+" como "+e2[2].toLowerCase()+(naoAchou ? " ("+naoAchou+" não encontrados)" : "")+(fora ? " ("+fora+" fora da ordem)" : ""));
     }
+    case "tem": {   // peça de meses anteriores: o Marketing marca se TEM a peça (o cadastro separou) ou NÃO TEM (sem estoque); valor vazio tira a marcação (Marcus, 11/11/2026)
+      var at = alvos(a.cod); if(!at.length) return recusa("Código não encontrado.");
+      at.forEach(function(dt){ if(a.valor==="sim" || a.valor==="nao"){ dt.tem = a.valor; dt.temPor = por; dt.temEm = agora; } else { delete dt.tem; delete dt.temPor; delete dt.temEm; } });
+      return ok(a.cod+": "+(a.valor==="sim" ? "tem a peça" : a.valor==="nao" ? "não tem a peça" : "marcação tirada"));
+    }
     case "desfazer": {
-      var d = achar(a.cod); if(!d) return recusa("Código não encontrado.");
-      var ult = d.subEm ? ETAPAS.sub : d.edEm ? ETAPAS.ed : d.fotoEm ? ETAPAS.foto : null;
-      if(!ult) return recusa("Esse código não tem etapa para desfazer.");
-      d[ult[0]] = ""; d[ult[1]] = ""; return ok(d.cod+": voltou para "+statusDe(d).toLowerCase());
+      var ad = alvos(a.cod); if(!ad.length) return recusa("Código não encontrado.");
+      var desfez = 0; ad.forEach(function(d){ var ult = d.subEm ? ETAPAS.sub : d.edEm ? ETAPAS.ed : d.fotoEm ? ETAPAS.foto : null; if(!ult) return; d[ult[0]] = ""; d[ult[1]] = ""; desfez++; });
+      if(!desfez) return recusa("Esse código não tem etapa para desfazer.");
+      return ok(a.cod+": etapa desfeita");
     }
     case "dm_sync": {   // produtos da DevMaster (tabela dmaaa): código novo entra na lista; foto já subida na DevMaster = Sistema feito ("dm")
       var itens = Array.isArray(a.itens) ? a.itens : [], novos = 0, subiram = 0, mapa = {};
@@ -227,7 +264,7 @@ function fcReduz(s, a){
         if(!c){ c = {cod:cod, dia:it.dia, por:"DevMaster"}; fc.codigos.push(c); mapa[cod] = c; novos++; }
         if(!c.dia) c.dia = it.dia;   // código que já estava na planilha antiga mas foi cadastrado na DevMaster nos últimos dias: vale a data da DevMaster (entra em "Cadastradas hoje")
         if(it.desc && !c.desc) c.desc = trim(it.desc).slice(0, 140);   // descrição do produto na DevMaster (aparece na tabela "Cadastradas hoje")
-        if(it.foto && !c.fotoEm){ c.fotoEm = "dm"; c.dmFoto = agora; if(c.esp) delete c.esp; subiram++; }   // o Castilho marca o campo de foto na DevMaster = etapa Foto feita; Editada e Sistema ficam para quem edita (Marcus, 10/11/2026)
+        if(it.foto && !c.subEm){ if(!c.dmFoto) c.dmFoto = agora; if(!c.fotoEm) c.fotoEm = "dm"; if(!c.edEm) c.edEm = "dm"; c.subEm = "dm"; if(c.esp) delete c.esp; subiram++; }   // o Castilho tira a foto, a Ana edita e coloca na DevMaster: o sistema só enxerga quando a foto chega lá (Marcus, 11/11/2026)
       });
       fc.dmEm = agora;
       if(!novos && !subiram) return {patch:{fc:fc}, msg:""};
@@ -242,4 +279,4 @@ function fcReduz(s, a){
   }
 }
 
-export { METAS, metaProgresso, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
+export { modeloDe, unidades, INICIO_PECAS, METAS, metaProgresso, diasEntre, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
