@@ -131,6 +131,13 @@ export const SLUG_DA_ABA = {
   marketing: "marketing",
   fotoscat: "fotos-de-catalogo",
   trafego: "trafego-pago",
+  inaddiv: "inadimplencia-dividas",
+  inadcob: "inadimplencia-cobranca-do-dia",
+  inadpag: "inadimplencia-pagamentos",
+  inadser: "inadimplencia-serasa",
+  inadkit: "inadimplencia-kits-em-atraso",
+  inadrel: "inadimplencia-relatorios",
+  inadreg: "inadimplencia-regras",   // setor de Inadimplência (11/11/2026)
   criativos: "criativos",
   encomendas: "encomendas-e-reposicoes",
   encida: "ida-na-empresa",

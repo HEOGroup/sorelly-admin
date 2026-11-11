@@ -32,6 +32,7 @@ import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
 import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { tpMigrar } from "@/apps/montagem/domain/trafego";
+import { inadMigrar, inadVazio } from "@/apps/montagem/domain/inadimplencia";
 import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
@@ -296,6 +297,7 @@ function novo(){
   st.mel = {};   // Solicitações de melhorias (uma chave por pedido; vem do servidor)
   st.ga = gaDemo();   // Garantia (só o link do site externo)
   st.mk = mkDemo();   // Marketing (vazio; dados reais só no arquivo local)
+  st.inad = inadVazio();   // Inadimplência (vazio; dados reais só no servidor)
   st.fc = fcDemo();   // Marketing › Fotos de catálogo (vazio; histórico da planilha só no arquivo local)
   st.ce = ceDemo();   // Compras e Estoque interno de materiais (vazio; dados reais só no arquivo local)
   st.fx = fxDemo();   // Fiscal (vazio; dados reais só no arquivo local)
@@ -478,6 +480,7 @@ function inicial(){
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
+    s.inad = inadMigrar(s.inad);   // Inadimplência: cria vazio ou completa campos novos
     s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos

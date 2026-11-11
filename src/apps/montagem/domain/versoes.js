@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.19.0", data:"2026-11-11", titulo:"Setor novo: Inadimplência (no lugar da planilha de negociações)", itens:[
+  {tipo:"novo", area:"Inadimplência", txt:"Setor novo no menu, com sete telas: Dívidas, Cobrança do dia, Pagamentos, Serasa, Kits em atraso, Relatórios e Regras. A planilha de negociações foi trazida inteira (2024 a 2026)."},
+  {tipo:"novo", area:"Inadimplência › Dívidas", txt:"Uma linha por dívida, com filtro e ordem no nome da coluna. A linha abre a ficha da devedora: dados, acordo com parcelas, pagamentos e histórico que nunca é apagado. O saldo muda sozinho quando o pagamento é confirmado e a dívida vira Quitada com saldo zero."},
+  {tipo:"novo", area:"Inadimplência › Regras", txt:"As regras de negociação entram no sistema: Pix em 2, 3 ou 4 vezes conforme o valor, parcela mínima de R$ 150,00, cartão em até 6 vezes, uma prorrogação por parcela. Acordo fora das regras só grava com o nome de quem autorizou."}]},
  {v:"0.18.173", data:"2026-11-11", titulo:"Atendimento Sorelly: link já pago do setor Link de pagamento entra como pagamento", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Pagamentos", txt:"Quando a revendedora já pagou por link antes (pedido no setor Link de pagamento), a estação Pagamentos mostra \"Links de pagamento desta revendedora\" com o botão Usar como pagamento. O link entra como pagamento já resolvido, com a conta do link, e não vai para a fila do financeiro (antes ficava \"Aguardando o financeiro definir e enviar as contas\", como se fosse gerar um link novo). Só o Pix presencial segue para o financeiro. Ao registrar o acerto, o link fica marcado como usado no setor Link de pagamento, e não desconta duas vezes. A busca aceita nome parecido (Sabryna dos Santos × Sabryna dos Santos Romero), mas só com 2 ou mais palavras em comum."}
  ]},

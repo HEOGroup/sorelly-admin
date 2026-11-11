@@ -39,6 +39,7 @@ import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
+import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
@@ -283,6 +284,7 @@ function reducer(s, a){
           if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
         if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
         fcS.codigos = fcCods; return Object.assign({}, s, {fc:fcS}); }
+      if(a.chave==="inad") return Object.assign({}, s, {inad:inadDoServidor(s.inad, a.conteudo)});   // Inadimplência vinda do servidor (11/11/2026): uma chave por registro
       if(a.chave==="aci"){   // registros de acerto do atendimento interno vindos do servidor (10/11/2026): a_<id>; null = tirado
         var acP = (s.acertosConsignado||[]).slice();
         Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("a_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = acP.findIndex(function(x){ return x.id===id; });
@@ -329,6 +331,7 @@ function reducer(s, a){
     case "ER": { var rEr = erReduz(s, a); return com(s, rEr.patch, rEr.msg); }   // Encomendas e reposições (pedidos, direito, bloqueio)
     case "MEL": { var rMel = melReduz(s, a); return com(s, rMel.patch, rMel.msg); }   // Solicitações de melhorias (enviar, situação, resposta)
     case "GA": { var rGa = gaReduz(s, a); return com(s, rGa.patch, rGa.msg); }   // Garantia (só o atalho para o site externo)
+    case "INAD": { var rIn = inadReduz(s, a); return com(s, rIn.patch, rIn.msg); }   // setor de Inadimplência (dívidas, acordos, pagamentos, Serasa, kits em atraso)
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)

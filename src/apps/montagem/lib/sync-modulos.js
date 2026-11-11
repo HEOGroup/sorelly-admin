@@ -3,10 +3,11 @@
 // Só funciona com servidor ligado e pessoa logada (lib/api.js). Módulo ainda vazio no servidor: o que está no navegador de quem abrir primeiro sobe como ponto de partida.
 // Quais módulos: variável VITE_MODULOS_SERVIDOR (ex.: "rh,cf") ou, para testar, localStorage "sorelly_modulos". Por padrão todos (cada pessoa só recebe os que o servidor libera para o setor dela).
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { inadFatia } from "@/apps/montagem/domain/inadimplencia";
 import { useEffect, useRef, useState } from "@/shared/react";
 
 // todos os módulos que têm estado próprio; o servidor devolve 403 para os que a pessoa não pode abrir (ignorado em silêncio)
-var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
+var PADRAO = ["rh", "eq", "cf", "ff", "ce", "pf", "cp", "px", "lp", "agend", "av", "cl", "ind", "pk", "pr", "ex", "er", "cpc", "mk", "tp", "fc", "gr", "revdia", "fatdia", "fd", "inicio", "chathor", "ri", "pfmes", "sc", "mel", "kn", "rhsol", "lst", "es", "pag", "int", "aci", "rpo", "rpf", "fx", "inad"];   // es = Estoque Sorelly (Financeiro; 09/11/2026: passou a ficar no servidor, antes só no navegador)  // fx = Fiscal (notas de entrada, saídas, contas por CNPJ): passou a ficar no servidor em 09/11/2026
 // módulos que não têm objeto próprio no estado: a fatia é montada com chaves de primeiro nível (ri = revendedoras do atendimento interno, s.revInternas)
 var ESPELHO = {lst:["listagens", "kits"], ri:["revInternas"], sc:["saldosContas"], fd:["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"]};   // fd = faturamento e contas pagas por dia (lançados pela equipe do Financeiro; corte do admin antigo, 29/10/2026)
 // pag = pedidos de conta (09/11/2026, Marcus: "não é só o Lucas, é todo o Financeiro"): uma chave por pedido, assim duas pessoas mexendo ao mesmo tempo não apagam uma a outra.
@@ -26,8 +27,11 @@ function fatiaFc(s){
   var o = {m:{historico:s.fc.historico||[], categorias:s.fc.categorias||[], semeado:!!s.fc.semeado}}; (s.fc.codigos||[]).forEach(function(x){ if(x && x.cod) o["c_"+x.cod] = x; });
   CACHE_FC.set(s.fc, o); return o;
 }
+// inad = setor de Inadimplência (11/11/2026, cerca de 3 mil registros): d_ dívida, p_ pagamento, n_ Serasa, k_ kit em atraso, m = configuração. A fatia vem pronta (com cache) de domain/inadimplencia.js.
+var SIG_IN = new WeakMap(), N_IN = 0;
+function sigInad(s){ if(!s.inad) return ""; var i = SIG_IN.get(s.inad); if(i===undefined){ i = ++N_IN; SIG_IN.set(s.inad, i); } return "inad#"+i; }
 function sigFc(s){ if(!s.fc) return ""; var i = SIG_FC.get(s.fc); if(i===undefined){ i = ++N_FC; SIG_FC.set(s.fc, i); } return "fc#"+i; }
-var fatia = function(s, c){ if(c==="fc") return fatiaFc(s); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
+var fatia = function(s, c){ if(c==="fc") return fatiaFc(s); if(c==="inad") return inadFatia(s.inad); if(c==="aci") return fatiaAci(s); if(c==="int") return fatiaInt(s); if(c==="pag") return fatiaPag(s); if(!ESPELHO[c]) return s[c]; var o = {}; ESPELHO[c].forEach(function(k){ if(s[k]!==undefined) o[k] = s[k]; }); return o; };
 function modulosLigados(){
   var t = ""; try { t = localStorage.getItem("sorelly_modulos") || ""; } catch(x){}
   if(!t) t = String((process.env.NEXT_PUBLIC_MODULOS_SERVIDOR) || "");
@@ -104,14 +108,15 @@ function useSyncModulos(s, d){
   var empurrar = function(chave){
     var m = ref.current.mods[chave]; if(!m || !m.pronto || m.bloqueado || m.semAcesso) return Promise.resolve();
     if(chave==="fc" && m.ultFc===ref.current.s.fc) return Promise.resolve();   // nada mudou no s.fc desde a última conferência (evita refazer 17 mil comparações)
-    var fcAgora = ref.current.s.fc;
+    if(chave==="inad" && m.ultInad===ref.current.s.inad) return Promise.resolve();   // nada mudou no s.inad desde a última conferência
+    var fcAgora = ref.current.s.fc, inAgora = ref.current.s.inad;
     var atual = fatia(ref.current.s, chave) || {}, mudou = {}, n = 0;
     Object.keys(atual).forEach(function(k){ var j = json(atual[k]); if(j!==m.snaps[k]){ mudou[k] = atual[k]; n++; } });
     if(chave==="fc") Object.keys(m.snaps).forEach(function(k){ if(k.indexOf("c_")===0 && !(k in atual) && m.snaps[k]!=="null"){ mudou[k] = null; n++; } });   // código excluído aqui: apaga para todos
     if(chave==="pag") Object.keys(m.snaps).forEach(function(k){ if(!(k in atual) && m.snaps[k]!=="null"){ mudou[k] = null; n++; } });
     if(chave==="int"){ var idsI = {}; (ref.current.s.internos||[]).forEach(function(x){ idsI[x.id] = 1; }); Object.keys(m.snaps).forEach(function(k){ if(!(k in atual) && m.snaps[k]!=="null" && !idsI[k.slice(2)]){ mudou[k] = null; n++; } }); }   // pedido apagado aqui: apaga para todos
-    if(!n){ if(chave==="fc") m.ultFc = fcAgora; return Promise.resolve(); }
-    return chamar("PUT", "/estado/"+chave, {chaves:mudou}).then(function(r){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); m.versao = r.versao; if(chave==="fc") m.ultFc = fcAgora; }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; });   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
+    if(!n){ if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora; return Promise.resolve(); }
+    return chamar("PUT", "/estado/"+chave, {chaves:mudou}).then(function(r){ Object.keys(mudou).forEach(function(k){ m.snaps[k] = json(mudou[k]); }); m.versao = r.versao; if(chave==="fc") m.ultFc = fcAgora; if(chave==="inad") m.ultInad = inAgora; }).catch(function(x){ if(/carga inicial/.test(x.message||"")) m.bloqueado = true; });   // módulo ainda sem carga inicial: só a Diretoria sobe; para de tentar até chegar dados do servidor
   };
   // busca ao entrar e a cada 20 s
   useEffect(function(){
@@ -127,7 +132,7 @@ function useSyncModulos(s, d){
   }, [ativo, lista.join(",")]);
   useEffect(function(){ if(!ativo) return undefined; return vigiaVersao(); }, [ativo]);
   // envia 1 s depois da última mudança
-  var assinatura = lista.map(function(c){ return c==="fc" ? sigFc(s) : json(fatia(s, c)); }).join("|");
+  var assinatura = lista.map(function(c){ return c==="fc" ? sigFc(s) : c==="inad" ? sigInad(s) : json(fatia(s, c)); }).join("|");
   useEffect(function(){
     if(!ativo) return;
     var t = setTimeout(function(){ lista.forEach(empurrar); }, 1000); return function(){ clearTimeout(t); };

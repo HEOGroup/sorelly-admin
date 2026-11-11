@@ -6,6 +6,7 @@ export const SETORES_DO_MODULO = {
   rhsol: ["*"],   // solicitações de mudança de cadastro: quem pede (supervisão do setor) e quem confirma (RH) precisam ler e gravar
   rh: ["rh"], eq: ["rh"],
   cf: ["cobranca"], ff: ["socios"],
+  inad: ["cobranca"],   // setor de Inadimplência (11/11/2026): dívidas, pagamentos, Serasa e kits em atraso; uma chave por registro. Só a Amanda de Miranda (setor cobranca) e a Diretoria
   ce: ["*"],
   pf: ["financeiro"], cp: ["financeiro"], px: ["financeiro"], lp: ["financeiro", "linkpag"], contasEmpresa: ["financeiro"],
   agend: ["agendamento", "financeiro"],

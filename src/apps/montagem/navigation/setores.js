@@ -122,6 +122,8 @@ var MENU_JURIDICO = [
   M("Contratos de salas comerciais", undefined, {breve:true}),
   M("Marcas e patentes", undefined, {breve:true})
 ];
+// Inadimplência (11/11/2026, Marcus): setor da Amanda de Miranda, no lugar da planilha de negociações. Palavras na ordem do fluxo.
+var MENU_INAD = [M("Dívidas","inaddiv"), M("Cobrança do dia","inadcob"), M("Pagamentos","inadpag"), M("Serasa","inadser"), M("Kits em atraso","inadkit"), M("Relatórios","inadrel"), M("Regras","inadreg")];
 var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
 var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego"), M("Criativos","criativos")];
 
@@ -256,6 +258,8 @@ var SETORES = [
   {id:"marcusdados", nome:"Dados", ic:"users", cor:"#D9A63A", direto:T("marcusdados","Dados")},
   {id:"marcusprog", nome:"Progresso", ic:"calendario", cor:"#D9A63A", direto:T("marcusprog","Progresso")},
   // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em docs/negocio/JURIDICO-COBRANCA.md
+  {id:"inadimplencia", nome:"Inadimplência", ic:"registro", cor:"#F97316", menu:MENU_INAD, semAbas:true, areas:[
+    {nome:"Inadimplência", telas:[T("inaddiv","Dívidas"), T("inadcob","Cobrança do dia"), T("inadpag","Pagamentos"), T("inadser","Serasa"), T("inadkit","Kits em atraso"), T("inadrel","Relatórios"), T("inadreg","Regras")]}]},
   {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", menu:MENU_JURIDICO, semAbas:true, areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
     {nome:"Salas comerciais", telas:[B("Contratos de salas comerciais")]},
