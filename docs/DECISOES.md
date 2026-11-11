@@ -2245,3 +2245,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Código: `domain/acerto-derivado.js`, `previaPaga` não trata mais o acordo como acerto pago quando a versão tem a regra nova. Efeito junto: a **multa de 10% do pendente passa a valer também com acordo** (antes o acordo zerava a multa na prévia). Kits anteriores a 27/10/2026 seguem como eram.
 - O folder da revendedora já dizia isso (seção 4): nada a mudar no folder.
 - Observação: as parcelas do acordo somam o valor pendente SEM a multa; a multa de 10% entra no total devido do acerto.
+
+## 11/11/2026 (12ª parte) — Manual da representante com a regra nova
+- `materiais-do-app/folder-representantes.html` (12 páginas) refeito; PDFs `MANUAL-DA-REPRESENTANTE.pdf` e "Regras & Comissões Representante 11-11.pdf"; imagens `public/regras/rep-1..12.png` (folder dentro do app).
+- Mudou: seção 4 (negociação na hora, sem negociação não entrega kit novo, 7 dias para cobrar e perda da comissão sem acompanhamento; o exemplo em tabela saiu por falta de espaço e virou uma frase); seção 5 (dias úteis); seções 6 e 7 (remarcação, cancelamento e falta; motivo sério com prova); seção 8 (média das 4 últimas vendas, nota promissória assinada antes de entregar o kit); exemplos 2, 3, 4 e 5 recalculados (multa só de 10% do pendente, atraso em dias úteis, média de 4 vendas: o acerto 5 agora tem média de R$ 707,50 e kit liberado); resumo da página 12.
+- **Ficou como estava (a confirmar com o Marcus):** a linha "Nova chance: decisão da representante" da seção 8. O guia da revendedora diz "sem nova chance" desde 03/11.
