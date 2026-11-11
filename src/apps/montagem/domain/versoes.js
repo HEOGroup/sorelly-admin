@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.173", data:"2026-11-11", titulo:"Atendimento Sorelly: link já pago do setor Link de pagamento entra como pagamento", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Pagamentos", txt:"Quando a revendedora já pagou por link antes (pedido no setor Link de pagamento), a estação Pagamentos mostra \"Links de pagamento desta revendedora\" com o botão Usar como pagamento. O link entra como pagamento já resolvido, com a conta do link, e não vai para a fila do financeiro (antes ficava \"Aguardando o financeiro definir e enviar as contas\", como se fosse gerar um link novo). Só o Pix presencial segue para o financeiro. Ao registrar o acerto, o link fica marcado como usado no setor Link de pagamento, e não desconta duas vezes. A busca aceita nome parecido (Sabryna dos Santos × Sabryna dos Santos Romero), mas só com 2 ou mais palavras em comum."}
+ ]},
  {v:"0.18.172", data:"2026-11-11", titulo:"Padrão visual: filtro só nas colunas da tabela", itens:[
   {tipo:"regra", area:"Tecnologia › Padrão visual", txt:"Regra fixa do Marcus: o filtro fica no cabeçalho de cada coluna, igual ao Google Planilhas. O bloco Filtros acima da tabela está proibido em tela nova ou mexida, e a trava do padrão reprova."}]},
  {v:"0.18.171", data:"2026-11-11", titulo:"Atendimento Sorelly: a revendedora não assina nada", itens:[

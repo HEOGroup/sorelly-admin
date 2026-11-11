@@ -14,6 +14,7 @@ import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobi
 import { Selo } from "@/apps/montagem/pages/AtendimentoInternoListagens";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
+import { formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
@@ -464,7 +465,8 @@ function AtendimentoInterno(){
   // ── Envio ao financeiro: só depois de fechar TODAS as formas de pagamento (e a negociação). O financeiro divide em contas, a funcionária anexa os comprovantes ──
   var lancFin = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }) || null;
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
-  var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ return {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)}; });
+  var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
+    return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
   var linhasEnvio = linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
   var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
@@ -846,6 +848,21 @@ function AtendimentoInterno(){
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
   var pedeBand = /cr[eé]dito|d[eé]bito|link/i.test(fl.label||"");
   var addPagB = function(){ if(pedeBand && !lancForm.bandeira) return; addPag(); };
+  // Links de pagamento JÁ PAGOS desta revendedora (setor Link de pagamento): entram como pagamento já resolvido, sem esperar o financeiro definir conta (Marcus, 11/11/2026)
+  var infoLinks = s.lp && sel ? linksParaAcertoPorNome(s, sel.nome) : null;
+  var linksEmUso = {}; form.pagamentos.forEach(function(q){ if(q.linkSolId) linksEmUso[q.linkSolId] = 1; });
+  var linksPagos = infoLinks ? infoLinks.pagos.filter(function(x){ return !linksEmUso[x.sol.id]; }) : [];
+  var linksAguardando = infoLinks ? infoLinks.aguardando : [];
+  var contaDoLink = function(sol){ var m = meioDe(s, sol.meioId), lista = formaDe("link").descricoes || [], dsc = m && m.cnpjId ? lista.find(function(c){ return String(c).replace(/\s+/g, " ").endsWith(" - "+m.cnpjId); }) : null; return dsc || (lista.length===1 ? lista[0] : (m ? m.nome : "LINK")); };
+  var usarLinkPago = function(x){
+    var sol = x.sol, falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valor = Math.min(sol.valor, falta); if(!(valor>0) || jaFeito) return;
+    up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
+  var blocoLinks = !jaFeito && (linksPagos.length>0 || linksAguardando.length>0) && e("div",{className:"flex flex-col border-t border-foreground/25"},
+    e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora"),
+    linksPagos.map(function(x){ var sol = x.sol; return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 text-[13px]"},
+      e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
+      x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
+    linksAguardando.map(function(sol){ return e("p",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"}, "Link aguardando pagamento · "+din(sol.valor)+": só conta depois de pago."); }));
   var listaFormas = e("div",{className:"flex flex-col"}, formas.map(function(f,i){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));
@@ -858,13 +875,13 @@ function AtendimentoInterno(){
   var GPAG = " grid-cols-[minmax(0,1.5fr)_3.5rem_6.5rem_2rem]";
   var tabPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+GPAG}, e("span",null,"Forma"), e("span",null,"Parc."), e("span",null,"Valor"), e("span")),
     form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
-      e("span",{className:"flex flex-col items-center"}, formaDe(q.forma).label, q.bandeira && e("span",{className:CAP}, q.bandeira)), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
+      e("span",{className:"flex flex-col items-center"}, formaDe(q.forma).label, q.bandeira && e("span",{className:CAP}, q.bandeira), q.jaPagoLink && e("span",{className:CAP}, "já pago no link")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
       jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
     linhaKV("Valor do acerto", n15(pa ? din(dv.totalAPagar) : "—")), linhaKV("Pagamentos", n15(din(dv.totalPagoAtual), "text-success"), {z:true}),
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))));
-  var est1 = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Selecione a forma de pagamento", e("div",{className:CTB}, e("div",{className:"flex-1"}, listaFormas), linhaBand, linhaEntrada)), lado("Formas de pagamento selecionadas", [tabPag, tabTotPag, pPag]));
+  var est1 = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Selecione a forma de pagamento", e("div",{className:CTB}, e("div",{className:"flex-1"}, listaFormas), blocoLinks, linhaBand, linhaEntrada)), lado("Formas de pagamento selecionadas", [tabPag, tabTotPag, pPag]));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){

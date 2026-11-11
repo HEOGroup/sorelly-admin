@@ -480,6 +480,18 @@ function linksParaAcerto(s, revendedora, hoje){
   });
   return o;
 }
+// Atendimento Sorelly (Marcus, 11/11/2026): o nome da agenda nem sempre é igual ao do pedido do link ("Sabryna dos Santos" × "Sabryna dos Santos Romero").
+// Parecido = mesmas palavras, ou todas as palavras do nome mais curto (2 ou mais) estão no mais longo. Devolve o mesmo formato de linksParaAcerto.
+function nomeParecido(a, b){
+  var wa = norm(a).split(" ").filter(Boolean), wb = norm(b).split(" ").filter(Boolean); if(!wa.length || !wb.length) return false;
+  if(norm(a)===norm(b)) return true;
+  var menor = wa.length<=wb.length ? wa : wb, maior = menor===wa ? wb : wa;
+  return menor.length>=2 && menor.every(function(w){ return maior.indexOf(w)>=0; });
+}
+function linksParaAcertoPorNome(s, nome, hoje){
+  var lista = ((s.lp && s.lp.solicitacoes) || []).filter(function(x){ return nomeParecido(x.revendedora, nome); }).map(function(x){ return Object.assign({}, x, {revendedora:nome}); });
+  return linksParaAcerto({lp:Object.assign({}, s.lp, {solicitacoes:lista})}, nome, hoje);
+}
 // Marca como USADOS no acerto os links que entraram como pagamento (cada linha de pagamento traz linkSolId). Devolve o novo lp, ou null se nada mudou.
 function usarLinksNoAcerto(lp0, pagamentos, acertoId, agora, por){
   var ids = (pagamentos || []).filter(function(p){ return p && p.linkSolId; }); if(!ids.length) return null;
@@ -623,4 +635,4 @@ export { vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,
-  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago };
+  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago };
