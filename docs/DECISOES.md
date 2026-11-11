@@ -2256,3 +2256,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Código: `domain/direcionar-pix.js` (ações `DP` `kit_pedir` e `kit_decidir`, lista `s.dp.kits`), chave `kp_<id>` no módulo `pag` (chega em até 5 s), `pages/dp/PedidosKit.js` no alto do Direcionar, e o botão e a resposta em `pages/AtendimentoInternoCalculadora.js` (`blocoPedidoKit`). Aceito = o valor do kit sai pela faixa da média; se a média não entra em nenhuma faixa, vale a menor da tabela.
 - "Inadimplência" no cartão = duas colunas: se deve acerto anterior (mesma conta do bloqueio de dívida) e quantas dívidas ela tem no histórico do setor de Inadimplência (só aparece para quem abre o módulo `inad`).
 - Quem decide: quem confere pagamentos ou é do Financeiro (`podeConferirPag` / `podeFinanceiro`).
+
+## 11/11/2026 (14ª parte) — Informativo para quem já tem kit
+- `domain/informativos.js`: informativo novo "O que mudou nas regras" (`informativoMudancas`, chave `mudancas-2026-11`), para revendedoras e representantes; entra uma vez também para quem já tinha os folders salvos (`infMigrar`). Folder "Regras do acerto" com os textos novos (vale para quem ainda não tinha o folder salvo).
+- `mensagemRegras` (botão "Enviar regras novas" do Atendimento interno): diz em três pontos o que mudou e leva o link do guia.
+- Limite: os informativos (`s.inf`) ficam só no navegador e nos apps simulados; no app real da revendedora e da representante depende do Leonardo. O aviso de verdade hoje é a mensagem de WhatsApp com o PDF.

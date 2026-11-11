@@ -208,7 +208,7 @@ function avisoRemarcacao(r, c, hojeIso){
   return base+"Pelas regras do consignado, esta é a "+res.cobraveis+"ª remarcação e tem multa de "+m.comissaoPct+"% na comissão e "+m.brindePct+"% no brinde. Se não vier nesta data, a próxima remarcação terá multa de "+p.comissaoPct+"% na comissão e "+p.brindePct+"% no brinde. Posso confirmar o seu horário?";
 }
 function mensagemRegras(r, origem){
-  return "Olá, "+primeiroNome(r.nome)+"! Estamos com novas regras e comissões do consignado, que valem para o seu próximo acerto. Leia o guia com atenção: "+(origem||"")+"/regras/GUIA-DA-REVENDEDORA.pdf . Qualquer dúvida, é só me chamar!";
+  return "Olá, "+primeiroNome(r.nome)+"! As regras do consignado foram atualizadas e já valem para o seu acerto. O que mudou:\n\n• *Prazo do acerto:* depois da data marcada você tem 5 dias úteis. A partir do 6º, perde 1% de comissão e 1% de brinde por dia.\n• *Remarcar ou cancelar:* avisando com 10 dias ou mais de antecedência não tem multa (uma vez por kit).\n• *Valor pendente:* multa de 10%. Para levar kit novo, pague 80% ou mais e negocie o resto na hora (até 2 parcelas).\n\nO guia completo está aqui: "+(origem||"")+"/regras/GUIA-DA-REVENDEDORA.pdf\nQualquer dúvida, é só me chamar!";
 }
 
 // ── Regras da agenda (Marcus, 28/10/2026) ──

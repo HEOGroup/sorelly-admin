@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.7", data:"2026-11-11", titulo:"Informativo: o que mudou nas regras", itens:[
+  {tipo:"novo", area:"Folders e informativos", txt:"Informativo novo O que mudou nas regras, para revendedoras e representantes: prazo de 5 dias úteis, remarcação com 10 dias sem multa, valor pendente e nota promissória. O folder Regras do acerto também ganhou os textos novos."},
+  {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"A mensagem do botão Enviar regras novas agora diz, em três pontos, o que mudou, e leva o link do guia atualizado."}]},
  {v:"0.20.6", data:"2026-11-11", titulo:"Servidor: nada mais some ao gravar, tudo fica registrado e o sistema fica mais leve", itens:[
   {tipo:"correção", area:"Servidor", txt:"Os PIX de novembro do Financeiro familiar e os materiais do Estoque de material sumiram porque uma tela desatualizada gravava a lista inteira por cima da lista nova. Agora a tela manda só o que mudou e o servidor junta com o que está guardado: uma tela atrasada não apaga mais o lançamento de outra pessoa."},
   {tipo:"correção", area:"Servidor", txt:"Mudança ainda não enviada não some quando chega dado novo do servidor: a tela junta as duas coisas e envia em seguida."},
