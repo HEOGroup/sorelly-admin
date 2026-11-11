@@ -14,7 +14,7 @@ import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobi
 import { Selo } from "@/apps/montagem/pages/AtendimentoInternoListagens";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
-import { formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
+import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
@@ -170,6 +170,7 @@ function AtendimentoInterno(){
   var pq = useState(false), popAt = pq[0], setPopAt = pq[1];
   var po = useState(false), popObs = po[0], setPopObs = po[1];     // ícone de avisos ao lado do nome
   var cnv = useState(false), condNovaAberta = cnv[0], setCondNovaAberta = cnv[1];     // linha de condicional à mão (abre no botão +)
+  var sPF = useState(null), formPF = sPF[0], setFormPF = sPF[1];   // formulário do link já pago por fora (estação Pagamentos)
   var ps =useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
   var ta = useState("comissao"), apoioAba = ta[0], setApoioAba = ta[1];           // aba do bloco de apoio: Comissões, Valor do kit ou Regras
   useEffect(function(){ setPassoAt(sel && sel.inicioTs && sel.condOk ? 1 : 0); }, [sel ? sel.id : null]);   // abre na etapa em que parou
@@ -857,12 +858,38 @@ function AtendimentoInterno(){
   var usarLinkPago = function(x){
     var sol = x.sol, falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valor = Math.min(sol.valor, falta); if(!(valor>0) || jaFeito) return;
     up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
-  var blocoLinks = !jaFeito && (linksPagos.length>0 || linksAguardando.length>0) && e("div",{className:"flex flex-col border-t border-foreground/25"},
+  // Link já pago POR FORA (gerado fora do sistema): registra no setor Link de pagamento como pago e já entra como pagamento (Marcus, 11/11/2026)
+  var meioPorConta = function(conta){ var ms = (s.lp && s.lp.meios) || [], m = ms.find(function(x){ return x.tipo==="LINK" && x.cnpjId && String(conta||"").replace(/\s+/g, " ").endsWith(" - "+x.cnpjId); }); return m ? m.id : ""; };
+  var registrarPorFora = function(){
+    var f = formPF; if(!f || !(f.valor>0) || !f.conta || !f.bandeira || !f.data || jaFeito) return;
+    var dup = ((s.lp && s.lp.solicitacoes) || []).find(function(y){ return y.porFora && normNome(y.revendedora)===normNome(sel.nome) && Math.round(y.valor*100)===Math.round(f.valor*100) && String(y.pagoEm||"").slice(0, 10)===f.data; });
+    var idF = dup ? dup.id : "SF"+Date.now();
+    if(!dup) d({type:"LP", op:"sol_por_fora", id:idF, revendedora:sel.nome, valor:f.valor, parcelas:f.parcelas, bandeira:f.bandeira, pagoEm:f.data===hoje ? agoraSP() : f.data+"T12:00:00", meioId:meioPorConta(f.conta), conta:f.conta, por:nomeDe(s.usuario)});
+    var falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valorLinha = Math.min(f.valor, falta);
+    if(valorLinha>0) up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valorLinha, parcelas:f.parcelas, bandeira:f.bandeira, linkSolId:idF, jaPagoLink:true, descricao:f.conta}])});
+    setFormPF(null); };
+  var contasLink = formaDe("link").descricoes || [];
+  var campoPF = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-0.5"}, e("span",{className:CAP}, rot), el); };
+  var SELPF = "h-8 w-full rounded-md border border-foreground/25 bg-card px-2 text-[13px]";
+  var blocoLinks = !jaFeito && !!s.lp && e("div",{className:"flex flex-col border-t border-foreground/25"},
     e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora"),
     linksPagos.map(function(x){ var sol = x.sol; return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 text-[13px]"},
       e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
       x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
-    linksAguardando.map(function(sol){ return e("p",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"}, "Link aguardando pagamento · "+din(sol.valor)+": só conta depois de pago."); }));
+    linksAguardando.map(function(sol){ return e("p",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"}, "Link aguardando pagamento · "+din(sol.valor)+": só conta depois de pago."); }),
+    !formPF ? e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPF({valor:null, parcelas:1, bandeira:"", conta:contasLink[0] || "", data:hoje}); }, title:"Link gerado fora do sistema (WhatsApp ou direto na plataforma) e já pago: entra no setor Link de pagamento e vale como pagamento", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Link já pago (por fora)"))
+    : e("div",{className:"flex flex-col gap-2 p-2"},
+        e("p",{className:"text-center text-[13px] font-semibold"}, "Link pago por fora: entra no setor Link de pagamento como Pago"),
+        e("div",{className:"grid grid-cols-2 gap-2"},
+          campoPF("Valor do link", e(CampoDinheiro,{value:formPF.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPF(Object.assign({}, formPF, {valor:v})); }})),
+          campoPF("Parcelas", e("select",{value:formPF.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); }))),
+          campoPF("Bandeira", e("select",{value:formPF.bandeira, "aria-label":"Bandeira", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {bandeira:ev.target.value})); }}, [e("option",{key:"x", value:""}, "Escolha")].concat(BANDEIRAS.map(function(b){ return e("option",{key:b, value:b}, b); })))),
+          campoPF("Data do pagamento", e("input",{type:"date", value:formPF.data, max:hoje, "aria-label":"Data do pagamento", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {data:ev.target.value})); }}))),
+        campoPF("Conta que recebeu", contasLink.length ? e("select",{value:formPF.conta, "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }}, contasLink.map(function(c){ return e("option",{key:c, value:c}, c); }))
+          : e("input",{value:formPF.conta, maxLength:80, placeholder:"Ex.: LINK - SICREDI - SERENITY - 59", "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }})),
+        e("div",{className:"flex justify-center gap-2"},
+          e("button",{type:"button", onClick:function(){ setFormPF(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
+          e("button",{type:"button", disabled:!(formPF.valor>0) || !formPF.bandeira || !formPF.conta || !formPF.data, onClick:registrarPorFora, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Registrar e usar como pagamento"))));
   var listaFormas = e("div",{className:"flex flex-col"}, formas.map(function(f,i){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));

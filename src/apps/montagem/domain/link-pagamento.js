@@ -579,6 +579,23 @@ function lpReduz(s, a){
       var vr = (lp.vendasApp || []).find(function(x){ return x.id===a.id; }); if(!vr || !vr.plano || !vr.plano[a.i]) return recusa("Pagamento não encontrado.");
       vr.plano[a.i].pago = true; vr.plano[a.i].pagoEm = agora; return ok("Pagamento recebido");
     }
+    // Link pago POR FORA (Marcus, 11/11/2026: "o setor de link precisa ter lá todos os links mesmo pago por fora"): link gerado fora do sistema (WhatsApp, direto na plataforma) e já pago.
+    // Entra direto como "pago", sem passar por solicitado/gerado e sem as regras de pedido (mínimo, parcelas, link da representante). Aparece no quadro e nos Comprovantes como qualquer outro pago.
+    case "sol_por_fora": {
+      var nomeF = trim(a.revendedora), valF = r2(num(a.valor)), parF = Math.round(num(a.parcelas)) || 1, pagoF = a.pagoEm || agora;
+      if(!nomeF) return recusa("Informe a revendedora.");
+      if(!(valF>0)) return recusa("Informe o valor do link.");
+      if(parF<1 || parF>MAX_PARCELAS) return recusa("Parcelas de 1 a "+MAX_PARCELAS+".");
+      if(minutosDe(pagoF)===null) return recusa("Informe a data do pagamento.");
+      if(minutosDe(pagoF)>minutosDe(agora)+1) return recusa("A data do pagamento não pode ser no futuro.");
+      if(lp.solicitacoes.some(function(y){ return y.porFora && norm(y.revendedora)===norm(nomeF) && r2(y.valor)===valF && diaDe(y.pagoEm)===diaDe(pagoF); })) return recusa("Esse link já foi lançado como pago por fora.");
+      var meioF = a.meioId ? meioDe(sx, a.meioId) : null, idF = a.id && !lp.solicitacoes.some(function(y){ return y.id===a.id; }) ? a.id : "S"+(++lp.seq);
+      lp.solicitacoes.push({id:idF, canal:"whatsapp", revendedora:nomeF, representante:repDaRevendedora(lp, nomeF) || "", valor:valF, parcelas:parF, meioId:meioF ? meioF.id : "", bandeira:a.bandeira || "", status:"pago", emissor:"atendimento",
+        geradoPor:por, geradoEm:a.geradoEm || pagoF, expiraEm:"", pagoEm:pagoF, comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto || "", tentativa:1,
+        observacao:trim(a.observacao) || ("Pago por fora (link gerado fora do sistema), registrado por "+por+(trim(a.conta) ? " · conta: "+trim(a.conta) : "")), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
+        criadoEm:agora, criadoPor:por, porFora:true, contaInformada:trim(a.conta), historico:[{em:agora, por:por, de:"", para:"pago", nota:"Pago por fora, registrado no atendimento"}]});
+      return ok("Link pago por fora registrado: "+formatarReais(valF)+" de "+nomeF);
+    }
     case "sol_criar": {
       var semMeio = a.canal==="app" && !!a.semMeio, dd = {revendedora:a.revendedora, canal:a.canal, valor:a.valor, parcelas:a.parcelas, meioId:a.meioId, representante:a.representante, dataAcerto:a.dataAcerto, emissor:a.emissor, semMeio:semMeio, bandeira:a.bandeira};
       var e1 = validarSolicitacao(sx, dd, agora); if(e1) return recusa(e1);
