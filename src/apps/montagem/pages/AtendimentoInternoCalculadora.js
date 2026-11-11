@@ -195,8 +195,9 @@ function AtendimentoInterno(){
   var jaFeito = !!sel && sel.status==="acertado";
   // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
   // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras e assinatura → finalizar
+  var simples = !!sel && (sel.tipo==="indicacao" || sel.tipo==="reposicao" || sel.tipo==="troca");   // Brinde de indicação, Reposição e Troca de peça (Marcus, 11/11/2026): atendimento simples, sem acerto, sem escolha de kit
   var retornando = !!sel && (sel.tipo==="retornando" || sel.tipo==="kit_novo");   // fluxo curto: Kit retornando e Kit novo (Marcus, 10/11/2026: kit novo precisa de outra tela; a revendedora já assina a condicional, então não assina aqui)
-  var temVenda = retornando || form.vendaBruta>0 || form.semVenda===true;
+  var temVenda = retornando || simples || form.vendaBruta>0 || form.semVenda===true;
   // Kit novo: o valor do kit é o que a Michele lançou nos Kits novos (módulo kn, pelo nome da revendedora); aparece como valor liberado (Marcus, 10/11/2026)
   var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };
   var knDela = sel && sel.tipo==="kit_novo" ? (Object.keys(s.kn||{}).map(function(k){ return s.kn[k]; }).filter(function(x){ return x && x.nome && normNome(x.nome)===normNome(sel.nome); }).sort(function(a,b){ return String(b.cadastro||"").localeCompare(String(a.cadastro||"")); })[0] || null) : null;
@@ -759,8 +760,9 @@ function AtendimentoInterno(){
           // topo em tabela fina (versão 4): rótulos em cima, valores embaixo
           var kitSel = e("span",{role:"group", "aria-label":"Kit da revendedora", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["padrao","Ouro"],["prata","Prata"]].map(function(o){ var on = modTab===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ escolherMod(o[0]); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "bg-card hover:bg-white/10")}, o[1]); }));
-          var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"],["kit_novo","Kit novo"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
-            return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 whitespace-nowrap px-2 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
+          // Tipo em menu suspenso (Marcus, 11/11/2026): cabe mais tipos sem alargar o cabeçalho
+          var TIPOS_AT = [["acerto","Acerto"],["retornando","Kit retornando"],["kit_novo","Kit novo"],["indicacao","Brinde de indicação"],["reposicao","Reposição"],["troca","Troca de peça"]];
+          var tipoSel = e("select",{"aria-label":"Tipo de atendimento", value:sel.tipo||"acerto", disabled:jaFeito, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:ev.target.value}}); }, className:CXN+"cursor-pointer disabled:opacity-60"}, TIPOS_AT.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }));
           var avisosTopo = [];
           if(sel.obs) avisosTopo.push(["Observação", sel.obs+(sel.encomenda ? " · Encomenda "+sel.encomenda : "")]);
           if(remarcs.length) avisosTopo.push(["Remarcação", remarcs.length+"× "+(nMulta ? "com multa" : "isenta")+remarcs.map(function(rm){ return " · "+(rm.isenta ? "isenta ("+(rm.motivo||"")+")" : "com multa")+(rm.autorizadoPor ? ", autorizada por "+rm.autorizadoPor : ""); }).join("")]);
@@ -776,13 +778,18 @@ function AtendimentoInterno(){
             ["Situação", cSit, "auto"],
             ["Kit", kitSel, "auto"]
           ];
-          if(!jaFeito && (!sel.tipo || sel.tipo==="acerto" || sel.tipo==="retornando" || sel.tipo==="kit_novo")) cols.push(["Tipo", tipoSel, "auto"]);
+          if(!jaFeito) cols.push(["Tipo", tipoSel, "auto"]);
           cols.push(["Atendimento", cInicio, "auto"]);
           if(sel.inicioTs || jaFeito) cols.push(["Escolha do kit", cEscolha, "auto"]);
           if(jaFeito) cols.push(["Quem atende na montagem", cAtende, "auto"]);   // só depois de finalizar o acerto
-          return e("div",{className:"grid border-b-2 border-primary/50", style:{gridTemplateColumns:cols.map(function(c){ return c[2]; }).join(" ")}},
+          var gradeTopo = e("div",{className:"grid border-b-2 border-primary/50", style:{gridTemplateColumns:cols.map(function(c){ return c[2]; }).join(" ")}},
             cols.map(function(c,i){ return e("div",{key:"h"+i, className:"flex h-[30px] items-center justify-center overflow-hidden whitespace-nowrap border-b border-primary/40 bg-primary/15 px-1 "+(i ? "border-l border-l-primary/30 " : "")+CAP}, c[0]); }),
             cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30 " : "")+(i<3 ? "bg-primary/15" : "")}, c[1]); }));   // nome, horário e situação: só leitura, com fundo colorido
+          // relógio do atendimento (Marcus, 11/11/2026): chegada, início, escolha do kit (começo e fim) e saída
+          var hh = function(ts){ return ts ? hhmmDeTs(ts) : "—"; };
+          var relogioItens = [["Chegou na empresa", sel.chegada || "—"], ["Atendimento iniciou", hh(sel.inicioTs)], ["Escolha do kit iniciou", hh(sel.escolhaIni)], ["Escolha do kit terminou", hh(sel.escolhaFim)], ["Finalizou e saiu", sel.fim || (sel.fimTs ? hh(sel.fimTs) : "—")]];
+          var relogioTopo = e("div",{className:"grid grid-cols-5 border-b-2 border-primary/50"}, relogioItens.map(function(x,i){ return e("div",{key:i, className:"flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1 "+(i ? "border-l border-primary/30" : "")}, e("span",{className:CAP+" whitespace-nowrap"}, x[0]), e("span",{className:"flex h-8 items-center text-[13px] font-semibold tabular-nums"}, x[1])); }));
+          return e(React.Fragment,null, gradeTopo, relogioTopo);
         })(),
         estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
         avisoIni && e(AvisoLeitura,{key:"avIni", titulo:"Leia para a revendedora antes de começar", texto:textoAntesEscolha(maxEscolhaMin), botao:"Li para ela · começar o tempo", onOk:confirmaInicioEscolha, onCancelar:function(){ setAvisoIni(false); }}),
@@ -983,11 +990,12 @@ function AtendimentoInterno(){
         e("div",{key:"k", className:"flex justify-between border-t border-primary/40 pt-1 text-primary"}, e("span",null,"Valor do kit liberado"), e("b",null, kitRet ? din(kitRet) : "Não libera"+(avRet.motivo ? " · "+avRet.motivo : "")))]),
     sel.tipo==="kit_novo" && (valorKitNovo>0 ? e("p",{className:"rounded-md border border-primary/50 bg-primary/10 px-3 py-2 font-semibold"}, "Valor do kit liberado: "+din(valorKitNovo)+" · definido pela Michele") : e("p",{className:"font-semibold text-destructive"}, "A Michele ainda não lançou o valor deste kit novo.")),
     !sel.escolhaIni ? e("p",null, "Clique em ⏱ Começou, no topo, quando ela começar a escolher.") : sel.escolhaFim ? e("p",{className:"font-semibold text-success"}, "✓ Escolha terminada em "+relogio(decorridoSeg)+". Clique em Próxima e explique as regras.") : e("p",{className:"font-semibold"}, "Escolhendo há "+relogio(decorridoSeg)+" de 60:00. Clique em ■, no topo, quando ela terminar.")), "flex-1", "p-0"));
-  var ESTS = retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
-  var feitoE = ESTS.map(function(x){ return x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
-  var libE = ESTS.map(function(x,i){ return jaFeito || (retornando ? (i===0 ? !!sel.inicioTs : !!sel.escolhaFim) : (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : temVenda)); });
+  var ESTS = simples ? [["Atendimento",[]]] : retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
+  var feitoE = ESTS.map(function(x){ return x[0]==="Atendimento" ? jaFeito : x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
+  var libE = ESTS.map(function(x,i){ return jaFeito || (simples ? !!sel.inicioTs : retornando ? (i===0 ? !!sel.inicioTs : !!sel.escolhaFim) : (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : temVenda)); });
   var valE = ["", temVenda ? din(form.vendaBruta||0) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
   if(retornando) valE = [sel.escolhaFim ? relogio(decorridoSeg) : "", valE[6]];
+  if(simples) valE = [sel.inicioTs ? hhmmDeTs(sel.inicioTs) : ""];
   var estAt = Math.min(passoAt, ESTS.length-1);
   var lateral = e("div",{className:"flex flex-col border-2 border-primary/50"},
     ESTS.map(function(x,i){ var on = i===estAt, liv = libE[i], ok = feitoE[i] && liv && (i<4 || feitoE[2]);
@@ -997,7 +1005,13 @@ function AtendimentoInterno(){
     e("div",{className:"flex justify-center gap-2 border-t-2 border-primary/50 p-2"},
       e("button",{type:"button", disabled:estAt===0, onClick:function(){ setPassoAt(estAt-1); }, className:"h-8 w-[5.5rem] rounded-md border-2 border-primary/50 bg-card text-[13px] font-medium hover:bg-white/10 disabled:opacity-40"}, "‹ Voltar"),
       e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 ? BRILHO : "")}, "Próxima ›")));
-  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : (retornando ? [estEscolha, est4] : [estCond, estVendas, est1, estKit, est2, est3, est4])[estAt];
+  var ROT_SIMPLES = {indicacao:"Brinde de indicação", reposicao:"Reposição", troca:"Troca de peça"}[sel.tipo] || "";
+  var estSimples = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Atendimento · "+ROT_SIMPLES, e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
+    e("p",{className:"font-semibold"}, sel.tipo==="indicacao" ? "Entregue o brinde da indicação à cliente." : sel.tipo==="reposicao" ? "Entregue a reposição à cliente." : "Faça a troca da peça da cliente."),
+    !jaFeito && e("textarea",{value:sel.anotacao||"", rows:3, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional): o que foi entregue ou trocado", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full max-w-md resize-none py-2! text-[13px]!"}),
+    jaFeito ? e("p",{className:"font-semibold text-success"}, "✓ Atendimento finalizado"+(sel.fim ? " às "+sel.fim : "")+(sel.anotacao ? " · "+sel.anotacao : ""))
+      : e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!sel.inicioTs, onClick:function(){ d({type:"INT_SIMPLES_FIM", id:sel.id, por:nomeDe(s.usuario)}); }}, "Finalizar atendimento")), "flex-1", "p-0"));
+  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : (simples ? [estSimples] : retornando ? [estEscolha, est4] : [estCond, estVendas, est1, estKit, est2, est3, est4])[estAt];
   var SHELL = "grid min-h-[402px] grid-cols-[14rem_minmax(0,1fr)]";
   // 10/11/2026 (Marcus: "a tela tem que ser responsiva"): o @container fica NA ÁREA DE CONTEÚDO (sem a coluna das etapas), assim "duas colunas" só vale quando cabem de verdade; antes media o cartão inteiro e apertava as tabelas em notebook
   var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"@container flex min-w-0 flex-col"}, estFn));

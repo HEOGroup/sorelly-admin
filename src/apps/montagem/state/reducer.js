@@ -1160,6 +1160,12 @@ function reducer(s, a){
       var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
       return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
     }
+    case "INT_SIMPLES_FIM": {   // atendimento sem acerto (Brinde de indicação, Reposição, Troca de peça; 11/11/2026): registra a hora, quem atendeu e a anotação
+      var itSm = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!itSm || itSm.status==="acertado") return s;
+      var vSm = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itSm.regrasVersaoId; }) || versaoVigente(s); if(!vSm) return s;
+      var zeroSm = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, versaoEfetiva(vSm, modalidadeDe(s, itSm.nome), comissaoEspecialDe(s, itSm.nome)));
+      return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:zeroSm, acertoAssinado:false, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||""}); })}, "Atendimento finalizado");
+    }
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;

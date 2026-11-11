@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 11/11/2026 (Atendimento Sorelly: tipos e relógio)
+- **Tipo em menu suspenso, novos tipos e relógio (Marcus, 11/11/2026):** o Tipo do atendimento deixou de ser três botões e virou menu suspenso, com Acerto, Kit retornando, Kit novo, Brinde de indicação, Reposição e Troca de peça (`troca` é valor novo; os outros já existiam na agenda). Brinde de indicação, Reposição e Troca de peça são atendimento SIMPLES: uma etapa só (Atendimento), anotação opcional e Finalizar (`INT_SIMPLES_FIM` no reducer; grava hora, quem atendeu e `acerto` zerado, como o Kit retornando). Linha de horários no topo: Chegou na empresa, Atendimento iniciou, Escolha do kit iniciou, Escolha do kit terminou, Finalizou e saiu. Pendente: valor liberado na reposição (chamado da Tamara) e o que cada tipo simples deve registrar além da anotação.
+
 ## 10/11/2026 (Marketing: Fotos de catálogo)
 - Pedido do Marcus: controlar no sistema a foto de catálogo das peças NOVAS (fotografar, editar e subir na DevMaster). Substitui a planilha "Fotos App Sorelly". Marketing hoje: Lucas Castilho e uma funcionária nova (Julia e Rebeca saíram; Beatriz está de atestado).
 - **Peça nova tem foto sem falta. Código antigo sem foto fica para trás** (a maioria não tem estoque). Entram 50 a 70 modelos novos por dia. Meta de feed: 1 a 2 posts por dia (ainda sem tela). Foco do setor: conteúdo que faz a revendedora vender mais (hoje ela vende 11% do kit); não captar revendedora (já existe fila de espera).

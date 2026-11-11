@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.169", data:"2026-11-11", titulo:"Atendimento Sorelly: tipo em menu suspenso, novos tipos e relógio do atendimento", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"O Tipo do atendimento virou menu suspenso (Acerto, Kit retornando, Kit novo, Brinde de indicação, Reposição e Troca de peça), e o cabeçalho ficou mais estreito. Brinde de indicação, Reposição e Troca de peça são atendimentos simples: só Iniciar, uma anotação opcional e Finalizar, sem acerto nem escolha de kit. Embaixo do cabeçalho há uma linha de horários: Chegou na empresa, Atendimento iniciou, Escolha do kit iniciou, Escolha do kit terminou e Finalizou e saiu."}
+ ]},
  {v:"0.18.168", data:"2026-11-10", titulo:"Contas a pagar: dezembro e meses seguintes vêm da DevMaster", itens:[
   {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"Uma baixa com data de débito em dezembro puxava o mês de referência para dezembro, e todas as contas atrasadas (até de 2025) caíam em dezembro: R$ 2,67 mi. O mês de referência nunca passa do mês de hoje. Dezembro agora mostra R$ 1.536.688,47 e novembro R$ 1.490.122,83, tudo da DevMaster."},
   {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Contas a pagar de novembro, dezembro e dos meses seguintes vêm só da DevMaster pelo admin novo (com ≥ nos meses que vêm, por ainda receberem contas). O admin antigo só entra se a DevMaster não carregar."},
