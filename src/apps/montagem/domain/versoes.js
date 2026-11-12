@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.74", data:"2026-11-12", titulo:"Pedidos de bruto: Chegou no banho não pula mais para Banho", itens:[
+  {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Pedido que a Rayssa deixava em Chegou no banho, com data de chegada até 03/11 (caso Mega Sul, chegada em 28/10), voltava sozinho para Banho em computador que não tinha a marca da correção antiga. Essa troca automática foi removida: ela já tinha rodado no servidor. Preencher Chegou na Pontual ou Chegou na Ellos continua levando o pedido para Chegou no banho, com a data da chegada."},
+ ]},
  {v:"0.18.77", data:"2026-11-12", titulo:"Anexo de arquivo grande (romaneio em PDF)", itens:[
   {tipo:"corrigido", area:"Cadastro de peças → Pedidos", txt:"O PDF do romaneio passava de 2,8 MB e a Rayssa não conseguia anexar. Agora o envio e a abertura vão em pedaços e aceitam arquivo de até uns 8 MB. O PDF do pedido da Mega Sul (romaneio 151844) foi anexado direto no servidor."}
  ]},
