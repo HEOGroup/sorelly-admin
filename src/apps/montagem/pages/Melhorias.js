@@ -5,7 +5,7 @@ import { Botao, CAMPO, Segmentado } from "@/apps/montagem/components/padrao-fin"
 import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { TIPOS, melMarcarVisto, melSetorPessoa, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir } from "@/apps/montagem/domain/melhorias";
+import { TIPOS, melMarcarVisto, melSetorPessoa, melTipoNome, SITUACOES, melAberta, melCaminho, melEspera, melFotos, melLista, melMsgs, melPodeGerir, melPodeVerTodos } from "@/apps/montagem/domain/melhorias";
 import { DIRETORIA, grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
 import { Avatar, Ph, W, hora } from "@/apps/montagem/components/chat/chat-ui";
 import { contatoDoLogin } from "@/apps/montagem/domain/chat-contatos";
@@ -251,7 +251,7 @@ function Detalhe(p){
           e(Balao,{m:{porId:x.porId, por:x.por, em:x.em, txt:x.desc, imgs:melFotos(x)}, eu:s.usuario, dono:x.porId, zoom:zoomar, nomeFoto:nomeFoto}),   // o chat começa com o que a pessoa escreveu no pedido
           msgs.map(function(m, i){ return e(Balao,{key:i, m:m, eu:s.usuario, dono:x.porId, zoom:zoomar, nomeFoto:nomeFoto}); }),
           e("div",{ref:fim})),
-        e("div",{className:"flex flex-col gap-1.5 px-2 py-2", style:{background:W.cab}},
+        (gere || x.porId===s.usuario) && e("div",{className:"flex flex-col gap-1.5 px-2 py-2", style:{background:W.cab}},   // quem só vê todos (Nickolas) lê a conversa dos outros, mas não escreve
           img && e("div",{className:"flex items-end gap-2"}, e("img",{src:img, alt:"Print a enviar", className:"h-14 rounded border border-border"}), e(Botao,{onClick:function(){ setImg(""); }}, "Remover")),
           erro && e("span",{className:"truncate text-[12px]", style:{color:W.vermelho}, title:erro}, erro),
           e("div",{className:"flex items-end gap-2"},
@@ -299,15 +299,15 @@ var ranking = function(lista, campo){
 };
 
 function AbaMelhorias(){
-  var cx = use(), s = cx.state, d = cx.dispatch, gere = melPodeGerir(s.usuario);
+  var cx = use(), s = cx.state, d = cx.dispatch, gere = melPodeGerir(s.usuario), ver = melPodeVerTodos(s.usuario);
   // quem responde (Marcus e Leonardo) abre em Todas; os demais só veem os próprios pedidos
-  var v = useState(gere ? "todas" : "minhas"), vis = v[0], setVis = v[1], nv = useState(false), novo = nv[0], setNovo = nv[1], sl = useState(function(){ var a = window.__melAbrir || null; window.__melAbrir = null; return a; }), sel = sl[0], setSel = sl[1];
+  var v = useState(ver ? "todas" : "minhas"), vis = v[0], setVis = v[1], nv = useState(false), novo = nv[0], setNovo = nv[1], sl = useState(function(){ var a = window.__melAbrir || null; window.__melAbrir = null; return a; }), sel = sl[0], setSel = sl[1];
   var fb = useState(""), busca = fb[0], setBusca = fb[1], ft = useState(""), fSet = ft[0], setFSet = ft[1], fq = useState(""), fQ = fq[0], setFQ = fq[1];   // filtros dos cartões de cima; o resto é filtro na coluna (GradeFiltro, como no Agendamento)
   var todas = melLista(s), minhas = todas.filter(function(x){ return x.porId===s.usuario; });
-  var base = gere && vis==="todas" ? todas : minhas, q = busca.trim().toLowerCase();
+  var base = ver && vis==="todas" ? todas : minhas, q = busca.trim().toLowerCase();
   var lista = base.filter(function(x){ return (!fSet || x.setor===fSet) && (!fQ || x.por===fQ) && (!q || (x.titulo+" "+x.desc+" "+x.por+" "+x.url+" "+x.setor).toLowerCase().indexOf(q)>=0); });
   lista = lista.slice().sort(function(a, b){ return a.em<b.em ? 1 : a.em>b.em ? -1 : 0; });   // mais novo primeiro; a coluna classifica a partir daí
-  var aberto = sel && todas.find(function(x){ return x.id===sel && (gere || x.porId===s.usuario); });
+  var aberto = sel && todas.find(function(x){ return x.id===sel && (ver || x.porId===s.usuario); });
   var limpa = busca || fSet || fQ;
   useEffect(function(){ if(aberto && aberto.porId===s.usuario) melMarcarVisto(s.usuario, aberto.id); }, [aberto && aberto.id, melMsgs(s, aberto ? aberto.id : "").length]);   // abriu o pedido dela: a resposta conta como vista
   var zm = useState(null), zoom = zm[0], setZoom = zm[1];
@@ -341,7 +341,7 @@ function AbaMelhorias(){
       e("div",{className:"absolute right-4 top-4 flex items-center gap-1.5"}, e(BotoesFoto,{src:zoom.src, nome:zoom.nome||"foto.jpg"}), e("button",{type:"button", onClick:function(){ setZoom(null); }, className:"h-8 rounded-md bg-card px-3 text-[13px] font-semibold ring-1 ring-border"}, "Fechar ✕"))),
     janela,
     e(PageHead,{t:"Chamados", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
-      gere && e(Segmentado,{opcoes:[["todas","Todas"], ["minhas","Minhas"]], atual:vis, onMudar:setVis}),
+      ver && e(Segmentado,{opcoes:[["todas","Todas"], ["minhas","Minhas"]], atual:vis, onMudar:setVis}),
       e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Novo chamado")),
     gere && vis==="todas" && e("div",{className:"grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-4"},
       e(Ranking,{t:"Setores que mais pedem", itens:ranking(base, "setor"), onEscolher:setFSet}),

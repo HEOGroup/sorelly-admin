@@ -2321,3 +2321,6 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - `pages/Comissoes.js` (`BlocoRep`): a tabela tem UMA linha por revendedora (acerto). Um pagamento só: confere na própria linha. Dois ou mais: a linha mostra "N pagamentos", o total, a comissão somada e "X de N conferidos"; clicar abre os pagamentos embaixo (cada um com conta, valor, comissão, check e divergência). Se falta conferir, a linha já nasce aberta. Com a linha fechada e o próximo check dentro dela, o brilho fica no resumo da linha.
 - Cores (poucas): etapas com a cor de cada uma (amarelo conferir, vermelho pagar, verde pagas); barra na cor da situação na fileira da representante e o nome em dourado; comissão em dourado; linha que falta conferir em amarelo claro e linha conferida em verde claro.
 - Peça `TabelaPlanilha`: `detAberto(linha)` (detalhe que já nasce aberto), `detalhe(linha)` pode devolver null (a linha não abre) e `cols[].render` recebe também se a linha está aberta.
+## 12/11/2026 — Chamados: quem vê todos
+- O Nickolas (id 17) vê os chamados de todas as pessoas (Todas / Minhas), como o Marcus e o Leonardo. Pedido do próprio Nickolas.
+- Ver não é responder: mudar a situação e escrever na conversa dos chamados dos outros continua só com o Marcus (16) e o Leonardo (44). Código: `VEEM_TODOS` e `melPodeVerTodos` em `domain/melhorias.js`.
