@@ -39,6 +39,11 @@ export function conferirPecaTabela(arquivo, conteudo){
     if(!/Ordenar de A a Z/.test(conteudo) || !/Ordenar de Z a A/.test(conteudo) || !/Limpar o filtro desta coluna/.test(conteudo)) erros.push("TabelaPlanilha: o menu de filtro e ordem em cada coluna (Ordenar de A a Z, de Z a A, buscar, lista de valores, Limpar o filtro) perdeu itens");
     return erros;
   }
+  if(item[1] === "TabelaP"){   // 12/11/2026 (Marcus: "tire o dourado"): a TabelaP antiga também tem topo ESCURO, sem dourado
+    if(!/1c1d21/i.test(corpo)) erros.push("TabelaP: o topo escuro (#1c1d21) sumiu; nada dourado desde 06/11/2026");
+    if(/9A6F1E|E8B84B/i.test(corpo)) erros.push("TabelaP: o topo voltou a ser dourado; nada dourado desde 06/11/2026");
+    return erros;
+  }
   var dourado = /9A6F1E/i.test(corpo) || (/\bBARRA_OURO\b/.test(corpo) && /BARRA_OURO\s*=\s*\{[^}]*9A6F1E/i.test(conteudo));   // o degradê pode estar numa constante do arquivo
   if(!dourado) erros.push(item[1] + ": o topo da tabela perdeu o degradê dourado (linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)); toda tabela tem topo dourado em degradê");
   if(/<th|"th"/.test(corpo) && /bg-white\/5|bg-muted|bg-sidebar/.test(corpo)) erros.push(item[1] + ": cabeçalho com fundo cinza (bg-white/5, bg-muted ou bg-sidebar): o topo é dourado em degradê, UM só na tabela inteira");

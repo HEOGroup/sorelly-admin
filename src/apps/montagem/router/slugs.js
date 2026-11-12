@@ -7,7 +7,7 @@
 // Para criar uma página nova: acrescente a aba em navigation/abas.js, o slug
 // aqui e a rota em router/rotas.js. Nada mais precisa ser tocado.
 
-import { SETORES, ondeEsta } from "@/apps/montagem/navigation/setores";
+import { SETORES, ondeEsta, primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 
 function noMenu(lista, aba) {
   return (lista || []).some(function (n) { return n.aba === aba || noMenu(n.itens, aba); });
@@ -39,7 +39,6 @@ export const SLUG_DA_ABA = {
   aghistorico: "agendamento-historico",
   agbonus: "comissoes-bonus-agendamento",
   agmetas: "comissoes-metas-agendamento",
-  cpagamentos: "controle-de-pagamentos",
   ctapagar: "contas-a-pagar-empresa-e-familia",
   ctalista: "contas-a-pagar",
   pagaspordia: "pagas-por-dia",
@@ -171,7 +170,6 @@ export const SLUG_DA_ABA = {
   contaspagar: "contas-a-pagar-mensal",
   previsaocaixa: "previsao-de-caixa",
   resultado: "resultado-do-mes",
-  finativ: "financeiro-atividades",
   previsaofat: "previsao-de-faturamento",
   revendedoras: "revendedoras",
   revbase: "revendedoras-ativas",
@@ -278,6 +276,12 @@ export const ABA_DO_ENDERECO = Object.keys(ENDERECO_DA_ABA).reduce(function (acc
   acc[ENDERECO_DA_ABA[aba]] = aba;
   return acc;
 }, {});
+// Só o nome do setor no endereço (ex.: /financeiro) abre a primeira tela do menu dele (Marcus, 12/11/2026: o Financeiro sempre abre no Direcionar).
+SETORES.forEach(function (st) {
+  if (st.direto) return;
+  var chave = slugTexto(st.nome), tela = primeiraTelaDoSetor(st);
+  if (chave && !RESERVADOS[chave] && !ABA_DO_ENDERECO[chave] && tela && tela.aba) ABA_DO_ENDERECO[chave] = tela.aba;
+});
 
 /** Caminho completo de uma aba. `breve` é o nome da tela ainda não construída. */
 export function caminhoDaAba(aba, breve) {

@@ -13,31 +13,27 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}),   // 1ª palavra do menu do Financeiro, antes de Pagamentos (Marcus, 09/11/2026)
-  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Regras e contas","dirregras"), M("Controle de pagamentos","cpagamentos")]},   // 1º do menu; Direcionar abre o Financeiro (Marcus, 26/10/2026: as 3 visões saíram de dentro da tela e o Controle de pagamentos veio de Contas)
-  M("Resultado do mês","resultado"),   // visão-mãe (Marcus, 27/10/2026): receber × pagar, entrou de verdade; ver docs/negocio/RESULTADO-DO-MES.md
-  M("Atividades","finativ"),   // lista do que fica para fazer depois (Marcus, 03/11/2026): palavra direta logo no começo, para não ficar escondida no fim do menu
-  M("Previsão de caixa","previsaocaixa"),   // palavra direta no topo (Marcus, 26/10/2026: estava escondida demais dentro de Saldos e análises › Saldo das contas)
-  {nome:"Saldos e análises", itens:[
-    {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},
-    M("Análise de custos","ctapagar"),   // uma tela só: Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela
-    M("Estoque Sorelly","estoquesorelly")]},
+  M("Direcionar","direcionar"),   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): saiu de dentro de Pagamentos
+  M("Regras e contas","dirregras"),   // Controle de pagamentos foi excluído (Marcus, 12/11/2026: era igual ao Direcionar)
+  {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("Contas a pagar","ctalista"),
-    M("Chaves Pix","chavespixbanco"),   // TODAS as chaves Pix num lugar só: CNPJs, fornecedores, funcionários, representantes, sócios e prestadores (Marcus, 04/11/2026: fica em Contas)
-    M("Pagas por dia","pagaspordia"),   // escolhe o dia e vê quanto foi pago, por CNPJ (Marcus, 29/10/2026: pedido do financeiro)
+    M("Chaves Pix","chavespixbanco"),   // TODAS as chaves Pix num lugar só (Marcus, 04/11/2026)
+    M("Pagas por dia","pagaspordia"),   // escolhe o dia e vê quanto foi pago, por CNPJ (Marcus, 29/10/2026)
     {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
-    M("Contas a receber","revreceber"),   // quanto entrou em cada conta com os acertos e quem não pagou (Marcus, 27/10/2026: fica no Financeiro, não no Cadastro de revendedoras)
+    M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
     {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência dos representantes","inadimp"), M("Compras de joias","comprasrep")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
     {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
     M("Link de pagamento","linkrel")]},
-  {nome:"Fiscal", itens:[M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")]},   // Fiscal dentro do Financeiro (23/10/2026, pedido do Marcus; CNPJs entrou aqui em 28/10/2026 — saiu de setor próprio)
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
-  Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"})   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
+  Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
+  {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
 ];
+// Fiscal (Marcus, 12/11/2026): saiu do Financeiro e virou setor próprio, logo abaixo dele.
+var MENU_FISCAL = [M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")];
 
 // Menu do Cadastro de revendedoras (23/10/2026): mesmo estilo do Financeiro (palavras no topo, listas em cascata, abas abertas e busca), na ORDEM DO FLUXO: Cadastro (aprovar) → Kits novos (liberar, solicitar, entregar) → Desempenho.
 var MENU_CADASTRO = [
@@ -138,15 +134,12 @@ var SETORES = [
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
     {nome:"Resultado", telas:[T("resultado","Resultado do mês")]},
-    {nome:"Atividades", telas:[T("finativ","Atividades")]},
-    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Regras e contas"), T("cpagamentos","Controle de pagamentos")]},
+    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Regras e contas")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Contas Pix")]],
       ["Dinheiro", [T("dinheiro","Dinheiro")]],
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
-    G("Fiscal", [
-      ["Fiscal", [I("limitefat","Limite de faturamento",["Projeção até 31/12 por CNPJ contra o limite de R$ 3,6 milhões, com alerta"]), I("fiscal","Painel e notas",["Fiscal → Painel, Entradas, Saídas, Contas a pagar, Dashboard anual e Configuração"]), T("cnpjs","CNPJs")]]]),
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
       ["Contas a pagar", [T("ctalista","Contas a pagar"), T("pagaspordia","Pagas por dia"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
@@ -167,6 +160,8 @@ var SETORES = [
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
+  {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#3B82F6", menu:MENU_FISCAL, semAbas:true, areas:[
+    {nome:"Fiscal", telas:[T("fiscal","Painel e notas"), T("limitefat","Limite de faturamento"), T("cnpjs","CNPJs")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
     {nome:"Painel", telas:[T("agpainel","Painel")]}, {nome:"Revendedoras", telas:[T("agrevs","Revendedoras")]}, {nome:"Representantes", telas:[T("agreps","Representantes")]},
     {nome:"Atividades", telas:[T("agatividades","Atividades")]}, {nome:"Pedidos do app", telas:[T("agpedidosapp","Pedidos do app")]}, {nome:"Análises", telas:[T("aganalises","Análises")]}]},
@@ -281,4 +276,12 @@ var SETORES_BAIXO = [];   // Equipes passou para o RH (16/10/2026)
 function ondeEsta(aba){ var r = null; SETORES.forEach(function(st){ (st.areas||[]).forEach(function(ar, i){ ar.telas.forEach(function(t){ if(!r && t.aba===aba) r = {setor:st, area:ar, i:i}; }); }); }); return r; }
 function telaPorNome(nome){ var r = null; SETORES.forEach(function(st){ (st.areas||[]).forEach(function(ar){ ar.telas.forEach(function(t){ if(!r && t.nome===nome) r = t; }); }); }); return r; }
 
-export { T, B, E, G, I, SETORES, APPS_TOPO, SETORES_BAIXO, ondeEsta, telaPorNome };
+// Tela que abre ao clicar no setor (Marcus, 12/11/2026: "100% das vezes abrir no Direcionar"): a PRIMEIRA tela do menu do setor (campo `menu`), na ordem em que o menu mostra; sem menu, a primeira das áreas. Tela "em breve" fica por último.
+function primeiraTelaDoSetor(st){
+  if(st.direto) return st.direto;
+  var todas = [].concat.apply([], (st.areas||[]).map(function(ar){ return ar.telas; }));
+  var achaTela = function(aba){ return todas.find(function(t){ return t.aba===aba; }); };
+  var daLista = function(lista){ for(var i=0; i<(lista||[]).length; i++){ var n = lista[i], t = null; if(n.aba && !n.breve) t = achaTela(n.aba); if(!t && n.itens) t = daLista(n.itens); if(t) return t; } return null; };
+  return daLista(st.menu) || todas.find(function(t){ return !t.breve; }) || todas[0];
+}
+export { primeiraTelaDoSetor, T, B, E, G, I, SETORES, APPS_TOPO, SETORES_BAIXO, ondeEsta, telaPorNome };

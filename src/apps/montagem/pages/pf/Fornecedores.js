@@ -89,7 +89,7 @@ function ListaCad(p){
   var tt = prest ? "Prestadores de serviço" : "Fornecedores";
   return e("div",{className:"flex flex-col gap-4"},
     e("div",{className:CARD+" flex flex-wrap items-center gap-3"},
-      e("div",null, e("h1",{className:"font-heading text-[20px] font-extrabold"}, tt), e("p",{className:"text-[12.5px] text-muted-foreground"}, prest ? "Quem presta serviço e recebe por fora (funcionários, sócios e externos) — separado dos fornecedores" : "Cadastro base — categoria, ciclo de acerto e conta em aberto")),
+      e("div",null, e("h1",{className:"font-heading text-[13px] font-bold tracking-wide"}, tt)),
       e("div",{className:"flex-1"}),
       c.edita && e("button",{type:"button", onClick:function(){ st[1]({f:null}); }, className:BTN}, e(Ph,{n:"plus", s:15}), prest ? "Novo prestador" : "Novo fornecedor")),
     e(BlocoBarra,{cor:"azul", t:tt, dir:lista.length},

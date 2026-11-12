@@ -51,7 +51,7 @@ import { ABAS, COR_ABA, GRUPOS_MENU } from "@/apps/montagem/navigation/abas";
 import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
-import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
+import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta, primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 import { abasVetadas, telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
@@ -257,7 +257,7 @@ function App(){
     return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
     e(Icon,{n:st.ic, s:15, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
-  var primeiraTela = function(st){ var todas = [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return todas.find(function(t){ return !t.breve; }) || todas[0]; };
+  var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
   var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
     return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
       className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-1.5 py-0.5 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},

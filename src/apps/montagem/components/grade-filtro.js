@@ -9,7 +9,7 @@
 import { MenuFiltro, ordenar, passaFiltro } from "@/apps/montagem/components/filtro-planilha";
 import { e, useMemo, useState } from "@/shared/react";
 
-var OURO = {background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)", color:"#1a1306"};
+var OURO = {background:"#1c1d21", color:"#fff"};   // topo escuro, sem dourado (Marcus, 12/11/2026)
 var OURO_FIXO = {background:"#C9962F", color:"#1a1306"};
 var texto = function(c, r){ if(c.exib) return c.exib(r); var v = c.v ? c.v(r) : ""; return v===undefined || v===null || v==="" ? "—" : String(v); };
 

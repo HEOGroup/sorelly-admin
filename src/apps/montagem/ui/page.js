@@ -10,11 +10,14 @@ function AlertaBadge(p){
   return badge("Em dia","success","check");
 }
 // Favoritar (02/11/2026, pedido do Marcus): o botão "Favoritar aba" saiu da tela. Agora é com 3 CLIQUES na própria aba, na faixa do topo (components/barra-menu.js); 3 cliques de novo soltam.
+// Financeiro e Fiscal (Marcus, 12/11/2026): só o NOME da tela, num tamanho único (13 px), sem o texto explicativo embaixo. Vale para toda tela desses dois setores.
+function emFinanceiro(){ try { return /^[/](financeiro|fiscal)([/]|$)/.test(window.location.pathname); } catch(x){ return false; } }
 function PageHead(p){
+  var fin = emFinanceiro();
   return e("div",{className:"flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"},
     e("div",{className:"flex min-w-0 flex-col gap-1"},
-      e("h1",{className:"font-heading text-2xl font-semibold tracking-wide", style:p.estilo}, p.t),   // estilo (opcional): letra própria do título
-      p.sub ? e("p",{className:"text-[15px] text-muted-foreground"}, p.sub) : null),
+      e("h1",{className:fin ? "font-heading text-[13px] font-bold tracking-wide" : "font-heading text-2xl font-semibold tracking-wide", style:fin ? undefined : p.estilo}, p.t),   // estilo (opcional): letra própria do título
+      (p.sub && !fin) ? e("p",{className:"text-[15px] text-muted-foreground"}, p.sub) : null),
     e("div",{className:"flex flex-wrap items-center gap-3"},
       p.children && e("div",{className:"flex flex-wrap gap-2"}, p.children)));
 }

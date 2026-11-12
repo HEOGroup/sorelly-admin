@@ -10,6 +10,7 @@ import { setoresInicio, visitados } from "@/apps/montagem/lib/inicio-setores";
 import { lerFavoritas } from "@/apps/montagem/lib/favoritas";
 import { ORDEM_SIT, SITUACOES, reduzirFoto, salvarEu, usePerfil } from "@/apps/montagem/lib/perfil";
 import { ABAS } from "@/apps/montagem/navigation/abas";
+import { primeiraTelaDoSetor } from "@/apps/montagem/navigation/setores";
 import { caminhoDaAba } from "@/apps/montagem/router/slugs";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
@@ -23,10 +24,7 @@ var nomeAba = function(aba){ var a = ABAS.find(function(x){ return x[0]===aba; }
 var haQuanto = function(em){ var m = Math.round((Date.now()-em)/60000); if(m<1) return "agora"; if(m<60) return "há "+m+" min"; var h = Math.round(m/60); if(h<24) return "há "+h+" h"; var d = Math.round(h/24); return d===1 ? "ontem" : "há "+d+" dias"; };
 
 // primeiro setor com tela de verdade (as "em breve" ficam por último), como o menu lateral faz
-function primeiraTela(st){
-  var todas = st.direto ? [st.direto] : [].concat.apply([], (st.areas||[]).map(function(ar){ return ar.telas; }));
-  return todas.find(function(t){ return !t.breve; }) || todas[0];
-}
+function primeiraTela(st){ return primeiraTelaDoSetor(st); }
 
 var CSS = [
   ".ini{margin:-16px;color:#fff;background:radial-gradient(ellipse at 50% 0%,#201808 0%,#0a0806 55%,#050403 100%)}@media(min-width:768px){.ini{margin:-24px}}",

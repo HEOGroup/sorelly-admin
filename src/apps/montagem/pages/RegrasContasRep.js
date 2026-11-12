@@ -1,26 +1,23 @@
 // Sorelly Admin · montagem — pages/RegrasContasRep.js
-// Financeiro → Pagamentos → "Regras e contas" (Marcus, 02/11/2026): tela para o Lucas deixar tudo definido ANTES (à noite, no fim de semana), com 2 abas:
-//   · Regras: editar as regras do Pix (s.px.regras: na ordem, a primeira que serve decide; "perguntar à empresa" ou "mandar para uma conta") e testar uma situação;
-//   · Contas das representantes: a conta de cada uma (AbaContasRep, de DirecionarPix.js).
-// A fila do Direcionar continua separada: lá chegam os pedidos das representantes e o que as regras mandam perguntar à empresa.
-import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
-import { Abas, Pagina } from "@/apps/montagem/components/padrao";
-import { hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
+// Financeiro → "Regras e contas" (Marcus, 02/11/2026; refeita em 12/11/2026 no padrão do Direcionar): UMA tela só, sem abas, para o Lucas deixar tudo definido ANTES (à noite, no fim de semana):
+//   · Contas das representantes: a conta fixa de cada uma (AbaContasRep, de DirecionarPix.js);
+//   · Regras do Pix: dentro da mesma tela, logo abaixo (s.px.regras: na ordem, a primeira que serve decide; "perguntar à empresa" ou "mandar para uma conta").
+// Blocos e tabelas pelas peças do padrão (components/bloco-painel.js e tabela-planilha.js). A fila do Direcionar continua separada.
+import { BTN_GRUPO, BlocoPainel, GrupoBtn, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { Pagina } from "@/apps/montagem/components/padrao";
+import { Botao, CAMPO, Rotulo } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
-import { orientacaoCaixa } from "@/apps/montagem/domain/orientacao-pix";
 import { AbaContasRep } from "@/apps/montagem/pages/DirecionarPix";
 import { use } from "@/apps/montagem/state/context";
-import { Btn } from "@/apps/montagem/ui/button";
-import { INPUT } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useEffect, useState } from "@/shared/react";
 
-var IN = INPUT+" h-8! text-[13px]!";
 var VAZIO = {nome:"", comLink:"", dinheiroPctMin:"", pixMin:"", pixMax:"", totalMin:"", acao:"perguntar", destino:""};
 var CAMPOS_NUM = ["dinheiroPctMin","pixMin","pixMax","totalMin"];
 function useX(){ var cx = use(), s = cx.state; return {s:s, px:s.px, edita:podeConferirPag(s.usuario) || podeFinanceiro(s.usuario), go:function(op, extra){ cx.dispatch(Object.assign({type:"PX", op:op, por:nomeDe(s.usuario)}, extra)); }}; }
-var quando = function(r){ var q = r.quando||{}, t = []; if(q.comLink) t.push("a venda teve link ou cartão"); if(q.dinheiroPctMin!==undefined && q.dinheiroPctMin!=="") t.push("dinheiro ≥ "+q.dinheiroPctMin+"% do pago"); if(q.pixMin!==undefined && q.pixMin!=="") t.push("Pix ≥ R$ "+Number(q.pixMin).toLocaleString("pt-BR")); if(q.pixMax!==undefined && q.pixMax!=="") t.push("Pix < R$ "+Number(q.pixMax).toLocaleString("pt-BR")); if(q.totalMin!==undefined && q.totalMin!=="") t.push("total pago ≥ R$ "+Number(q.totalMin).toLocaleString("pt-BR")); return "Se "+(t.join(" e ") || "sem condição"); };
-function Campo(p){ return e("label",{className:"flex min-w-0 flex-col gap-1 text-center text-[11px] font-semibold"}, p.rot, p.children); }
+var brl = function(v){ return "R$ "+Number(v).toLocaleString("pt-BR"); };
+var quando = function(r){ var q = r.quando||{}, t = []; if(q.comLink) t.push("a venda teve link ou cartão"); if(q.dinheiroPctMin!==undefined && q.dinheiroPctMin!=="") t.push("dinheiro ≥ "+q.dinheiroPctMin+"% do pago"); if(q.pixMin!==undefined && q.pixMin!=="") t.push("Pix ≥ "+brl(q.pixMin)); if(q.pixMax!==undefined && q.pixMax!=="") t.push("Pix < "+brl(q.pixMax)); if(q.totalMin!==undefined && q.totalMin!=="") t.push("total pago ≥ "+brl(q.totalMin)); return t.length ? t.join(" e ") : "sempre"; };
 
 function Regras(p){
   var X = p.X, px = X.px, st = useState(VAZIO), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
@@ -29,39 +26,37 @@ function Regras(p){
   var salvar = function(){ var q = {}; CAMPOS_NUM.forEach(function(k){ if(f[k]!=="") q[k] = Number(String(f[k]).replace(",", ".")); }); if(f.comLink) q.comLink = true;
     X.go("regra_add", {nome:f.nome, quando:q, destino:f.acao==="perguntar" ? "" : f.destino, acao:f.acao==="perguntar" ? "perguntar" : ""}); st[1](VAZIO); };
   var n = px.regras.length;
+  var linhas = px.regras.map(function(r, i){ return {id:r.id, ordem:(i+1)+"º", nome:r.nome, quando:quando(r), faz:r.acao==="perguntar" ? "Perguntar à empresa" : "Mandar para "+(r.destino || "—"), lig:r.ativa===false ? "Não" : "Sim", r:r, i:i}; });
+  var num = function(id, rot, k){ return e("div",{className:"min-w-0"}, e(Rotulo,{t:rot, id:id}), e("input",{id:id, value:f[k], inputMode:"decimal", "aria-label":rot, className:CAMPO+" w-full text-center", onChange:function(ev){ var o = {}; o[k] = ev.target.value; set(o); }})); };
   return e("div",{className:"flex flex-col gap-3"},
-    e("p",{className:"text-center text-[13px]"}, "A conta da representante é sempre a FIXA dela (aba Contas das representantes) ou a empresa define. O sistema olha estas regras de cima para baixo, antes da conta fixa: a primeira que serve decide. O que mandar \"perguntar à empresa\" cai na fila do Direcionar. O Lucas confirma sempre."),
-    e(GradeFiltro,{chave:"regraspix", vazio:"Nenhuma regra ainda. Crie abaixo ou traga as regras de exemplo.", rows:px.regras, cols:[
-      {k:"ordem", t:"Ordem", forte:true, tipo:"num", v:function(r){ return px.regras.indexOf(r)+1; }, exib:function(r){ return (px.regras.indexOf(r)+1)+"º"; }},
-      {k:"nome", t:"Regra", v:function(r){ return r.nome; }},
-      {k:"quando", t:"Quando", v:function(r){ return quando(r); }},
-      {k:"faz", t:"O que faz", forte:true, v:function(r){ return r.acao==="perguntar" ? "Perguntar à empresa" : "Mandar para "+(r.destino || "—"); }, cor:function(r){ return r.acao==="perguntar" ? "text-yellow-400" : "text-green-400"; }},
-      {k:"lig", t:"Ligada", min:110, semFiltro:true, v:function(r){ return r.ativa===false ? "Não" : "Sim"; }, cel:function(r){ return e(Btn,{v:"ghost", sm:true, disabled:!X.edita, onClick:function(){ X.go("regra_set", {id:r.id, patch:{ativa:r.ativa===false}}); }}, r.ativa===false ? "Não" : "Sim"); }},
-      {k:"mud", t:"Mudar", min:250, semFiltro:true, v:function(){ return ""; }, cel:function(r){ var i = px.regras.indexOf(r);
-        return X.edita ? e("span",{className:"flex items-center justify-center gap-1"},
-          e(Btn,{v:"ghost", sm:true, disabled:i===0, onClick:function(){ X.go("regra_mover", {id:r.id, dir:-1}); }}, "↑"), e(Btn,{v:"ghost", sm:true, disabled:i===n-1, onClick:function(){ X.go("regra_mover", {id:r.id, dir:1}); }}, "↓"),
-          e(Btn,{v:"ghost", sm:true, onClick:function(){ if(window.confirm("Excluir a regra "+r.nome+"?")) X.go("regra_del", {id:r.id}); }}, "Excluir")) : null; }}]}),
-    X.edita && e("div",{className:"flex justify-center"}, e(Btn,{v:"ghost", sm:true, onClick:function(){ X.go("regras_exemplo", {forcar:true}); }}, "Trazer as regras de exemplo")),
-    X.edita && e("div",{className:"grid gap-2 rounded-xl border border-border p-2.5", style:{gridTemplateColumns:"repeat(auto-fit, minmax(9.5rem, 1fr))"}},
-      e(Campo,{rot:"Nome da regra"}, e("input",{value:f.nome, "aria-label":"Nome da regra", className:IN+" w-full text-center", onChange:function(ev){ set({nome:ev.target.value}); }})),
-      e(Campo,{rot:"Teve link ou cartão"}, e("select",{value:f.comLink, "aria-label":"Teve link ou cartão", className:IN+" w-full cursor-pointer", onChange:function(ev){ set({comLink:ev.target.value}); }}, e("option",{value:""}, "Tanto faz"), e("option",{value:"1"}, "Sim"))),
-      e(Campo,{rot:"Dinheiro a partir de (%)"}, e("input",{value:f.dinheiroPctMin, inputMode:"decimal", "aria-label":"Dinheiro a partir de", className:IN+" w-full text-center", onChange:function(ev){ set({dinheiroPctMin:ev.target.value}); }})),
-      e(Campo,{rot:"Pix a partir de (R$)"}, e("input",{value:f.pixMin, inputMode:"decimal", "aria-label":"Pix a partir de", className:IN+" w-full text-center", onChange:function(ev){ set({pixMin:ev.target.value}); }})),
-      e(Campo,{rot:"Pix abaixo de (R$)"}, e("input",{value:f.pixMax, inputMode:"decimal", "aria-label":"Pix abaixo de", className:IN+" w-full text-center", onChange:function(ev){ set({pixMax:ev.target.value}); }})),
-      e(Campo,{rot:"Total pago a partir de (R$)"}, e("input",{value:f.totalMin, inputMode:"decimal", "aria-label":"Total pago a partir de", className:IN+" w-full text-center", onChange:function(ev){ set({totalMin:ev.target.value}); }})),
-      e(Campo,{rot:"O que fazer"}, e("select",{value:f.acao, "aria-label":"O que fazer", className:IN+" w-full cursor-pointer", onChange:function(ev){ set({acao:ev.target.value}); }}, e("option",{value:"perguntar"}, "Perguntar à empresa"), e("option",{value:"conta"}, "Mandar para uma conta"))),
-      f.acao==="conta" && e(Campo,{rot:"Conta"}, e("select",{value:f.destino, "aria-label":"Conta", className:IN+" w-full cursor-pointer", onChange:function(ev){ set({destino:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), ativas.map(function(c){ return e("option",{key:c.id, value:c.id}, c.label); }))),
-      e("div",{className:"flex items-end justify-center"}, e(Btn,{v:"primary", ic:"plus", disabled:!pode, onClick:salvar}, "Criar regra"))),
-    null);
+    e(BlocoPainel,{titulo:"Regras do Pix · de cima para baixo, a primeira que serve decide"}, e(TabelaPlanilha,{semContagem:true, vazio:"Nenhuma regra ainda. Crie abaixo ou traga as regras de exemplo.", linhas:px.regras.length ? linhas : [], cols:[
+      {k:"ordem", t:"Ordem"},
+      {k:"nome", t:"Regra"},
+      {k:"quando", t:"Quando"},
+      {k:"faz", t:"O que faz", cor:function(l){ return l.r.acao==="perguntar" ? "text-warning" : "text-success"; }},
+      {k:"lig", t:"Ligada", render:function(v, l){ var r = l.r, on = r.ativa!==false; return e("button",{type:"button", disabled:!X.edita, onClick:function(){ X.go("regra_set", {id:r.id, patch:{ativa:!on}}); }, className:"h-8 w-20 rounded-md border border-border bg-card text-[13px] font-semibold hover:bg-white/10 disabled:opacity-40 "+(on ? "text-success" : "text-warning")}, on ? "Sim" : "Não"); }},
+      {k:"mud", t:"Mudar", render:function(v, l){ var r = l.r, i = l.i; return X.edita ? e(GrupoBtn,null,
+        e("button",{key:"u", type:"button", disabled:i===0, "aria-label":"Subir a regra", onClick:function(){ X.go("regra_mover", {id:r.id, dir:-1}); }, className:BTN_GRUPO}, "↑"),
+        e("button",{key:"d", type:"button", disabled:i===n-1, "aria-label":"Descer a regra", onClick:function(){ X.go("regra_mover", {id:r.id, dir:1}); }, className:BTN_GRUPO}, "↓"),
+        e("button",{key:"x", type:"button", onClick:function(){ if(window.confirm("Excluir a regra "+r.nome+"?")) X.go("regra_del", {id:r.id}); }, className:BTN_GRUPO}, "Excluir")) : null; }}]})),
+    X.edita && e(BlocoPainel,{titulo:"Nova regra"}, e("div",{className:"flex flex-col gap-3 p-3"},
+      e("div",{className:"grid gap-3", style:{gridTemplateColumns:"repeat(auto-fit, minmax(10rem, 1fr))"}},
+        e("div",{className:"min-w-0"}, e(Rotulo,{t:"Nome da regra", id:"rg-nome"}), e("input",{id:"rg-nome", value:f.nome, "aria-label":"Nome da regra", className:CAMPO+" w-full text-center", onChange:function(ev){ set({nome:ev.target.value}); }})),
+        e("div",{className:"min-w-0"}, e(Rotulo,{t:"Link ou cartão", id:"rg-link"}), e("select",{id:"rg-link", value:f.comLink, "aria-label":"Teve link ou cartão", className:CAMPO+" w-full cursor-pointer text-center", onChange:function(ev){ set({comLink:ev.target.value}); }}, e("option",{value:""}, "Tanto faz"), e("option",{value:"1"}, "Sim"))),
+        num("rg-din", "Dinheiro de (%)", "dinheiroPctMin"), num("rg-pixmin", "Pix de (R$)", "pixMin"), num("rg-pixmax", "Pix menor que (R$)", "pixMax"), num("rg-total", "Total pago de (R$)", "totalMin"),
+        e("div",{className:"min-w-0"}, e(Rotulo,{t:"O que fazer", id:"rg-acao"}), e("select",{id:"rg-acao", value:f.acao, "aria-label":"O que fazer", className:CAMPO+" w-full cursor-pointer text-center", onChange:function(ev){ set({acao:ev.target.value}); }}, e("option",{value:"perguntar"}, "Perguntar à empresa"), e("option",{value:"conta"}, "Mandar para uma conta"))),
+        f.acao==="conta" && e("div",{className:"min-w-0"}, e(Rotulo,{t:"Conta", id:"rg-conta"}), e("select",{id:"rg-conta", value:f.destino, "aria-label":"Conta", className:CAMPO+" w-full cursor-pointer text-center", onChange:function(ev){ set({destino:ev.target.value}); }}, e("option",{value:""}, "Escolha a conta"), ativas.map(function(c){ return e("option",{key:c.id, value:c.id}, c.label); })))),
+      e("div",{className:"flex justify-center"}, e(Botao,{principal:true, disabled:!pode, onClick:salvar}, "Criar regra")))));
 }
 
 function AbaRegrasContas(){
-  var X = useX(), cx = use(), at = useState("regras"), aba = at[0], setAba = at[1];
+  var X = useX(), cx = use();
   useEffect(function(){ if(X.edita && cx.state.dp && cx.state.dp.maqV!==1) cx.dispatch({type:"DP", op:"aplicar_maq", por:nomeDe(cx.state.usuario)}); }, [cx.state.dp && cx.state.dp.maqV, X.edita]);   // aplica uma vez a conta fixa das maquininhas e links (o Lucas confere) // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ if(X.px.regrasExV!==1 && X.edita) X.go("regras_exemplo"); }, [X.px.regrasExV, X.edita]);   // eslint-disable-line react-hooks/exhaustive-deps
   return e(Pagina,null,
-    e(PageHead,{t:"Regras e contas", sub:"Deixe tudo definido antes: as regras do Pix e a conta de cada representante. Os pedidos chegam na fila do Direcionar."}),
-    e(Abas,{abas:[["regras","Regras"],["contas","Contas das representantes"]], atual:aba, onMudar:setAba}),
-    aba==="regras" ? e(Regras,{X:X, o:X.s.saldosContas ? orientacaoCaixa(X.s.saldosContas, hojeIsoCp(), 10) : null}) : e(AbaContasRep,null));
+    e("div",{className:PADRAO_BLOCOS+" flex flex-col gap-3"},
+      e(PageHead,{t:"Regras e contas"}),
+      e(AbaContasRep,null),
+      e(Regras,{X:X})));
 }
 export { AbaRegrasContas };

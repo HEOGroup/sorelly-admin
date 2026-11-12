@@ -17,7 +17,7 @@ var SEMENTE = [
   {id:"r_saldos", nome:"Saldos das contas", setor:"Financeiro", quem:[27], hora:"10:30", dias:SEG_SEX, rota:"caixa"},
   {id:"r_valor_kits", nome:"Definir o valor dos kits do dia", setor:"Montagem", quem:[11], hora:"08:30", dias:SEG_SEX, rota:"calc"},
   {id:"r_presenca", nome:"Presença do RH", setor:"RH", quem:[38], hora:"09:00", dias:SEG_SEX, rota:"rhpresenca"},
-  {id:"r_pag_conf", nome:"Conferir pagamentos e definir as contas", setor:"Financeiro", quem:[27, 28], hora:"15:00", dias:SEG_SEX, rota:"cpagamentos"},
+  {id:"r_pag_conf", nome:"Conferir pagamentos e definir as contas", setor:"Financeiro", quem:[27, 28], hora:"15:00", dias:SEG_SEX, rota:"direcionar"},
   {id:"r_compras", nome:"Decidir pedidos de compra", setor:"Financeiro", quem:[27], hora:"14:00", dias:SEG_SEX, rota:"compras"},
   {id:"r_passadas", nome:"Passadas para o próximo mês (Agendamento)", setor:"Agendamento", quem:[24], hora:"17:00", dias:SEG_SAB, rota:"visaogeral"},
   {id:"r_contas", nome:"Contas pagas do dia por CNPJ", setor:"Financeiro", quem:[27], hora:"17:30", dias:SEG_SEX, rota:"contaspagar"},

@@ -98,9 +98,9 @@ function MenuMulti(p){
 // tabela de layout fixo. cols = [{t, w, n}] (w = largura em px; sem w = o espaço que sobrar; n = coluna de número, alinhada à direita)
 function TabelaP(p){
   return e("div",{className:"overflow-x-auto rounded-lg border border-border"},
-    e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined, background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left top/100% 30px no-repeat"}},   // topo dourado: UM degradê na tabela inteira, nunca por célula (regra de tabelas, 02/11/2026)
+    e("table",{className:"w-full table-fixed border-collapse text-[13px]", style:{minWidth:p.minW||undefined, background:"linear-gradient(var(--topo-tabela,#1c1d21),var(--topo-tabela,#1c1d21)) left top/100% 30px no-repeat"}},   // topo dourado: UM degradê na tabela inteira, nunca por célula (regra de tabelas, 02/11/2026)
       e("colgroup",null, p.cols.map(function(c, i){ return e("col",{key:i, style:c.w ? {width:c.w} : undefined}); })),
-      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] border-b border-border px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-[#1a1306]"}, c.t); }))),
+      e("thead",null, e("tr",null, p.cols.map(function(c, i){ return e("th",{key:i, title:c.d || c.t, className:"h-[30px] border-b border-border px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-foreground"}, c.t); }))),
       e("tbody",null, p.children)));
 }
 // TABELA DE CAMPOS (layout D, escolhido pelo Marcus em 06/11/2026): cada item é uma fileira de campos separados por fio fino, sem dourado.

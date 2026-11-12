@@ -92,3 +92,10 @@
 .sombra-baixo { box-shadow: inset 0 -1px 0 rgba(232,184,75,.22), 0 10px 20px -12px rgba(0,0,0,.75); }
 :root[data-theme="light"] .sombra-lado, :root:not(.dark):not([data-theme="dark"]) .sombra-lado { box-shadow: inset -1px 0 0 rgba(0,0,0,.12), 8px 0 20px -12px rgba(0,0,0,.25); }
 :root[data-theme="light"] .sombra-baixo, :root:not(.dark):not([data-theme="dark"]) .sombra-baixo { box-shadow: inset 0 -1px 0 rgba(0,0,0,.12), 0 8px 18px -12px rgba(0,0,0,.25); }
+
+/* CORES DO SISTEMA PARA BLOCOS E TABELAS (Marcus, 12/11/2026: "uma cor que vamos definir para o sistema inteiro"). Duas cores da MESMA família, a de baixo um pouco mais fraca:
+   --bloco-titulo  = barra de título do bloco (ex.: Aguardando na Fila, Contas negativas);
+   --bloco-colunas = faixa dos nomes das colunas (ex.: Revendedora, Origem, Conta). Para mudar a cor do sistema inteiro, troque só estas duas linhas. Texto sempre branco. */
+:root { --bloco-titulo: #2d5190; --bloco-colunas: #1f3358; }
+/* VERDE E VERMELHO DO ESTADO (Marcus, 12/11/2026: "um vermelho padrão para a tela inteira"): positivo/pago = --positivo, negativo/atrasado = --negativo. Trocar aqui muda a tela inteira (hoje só o Direcionar usa). */
+:root { --positivo: #4ade80; --negativo: #f87171; }
