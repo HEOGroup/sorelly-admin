@@ -107,3 +107,12 @@ export async function lerPrefixosCli(cli, modulo, prefixos) {
   const r = await cli.query("select chave, valor from sorelly.estado_item where modulo = $1 and split_part(chave, '_', 1) || '_' = any($2::text[])", [modulo, prefixos]);
   const o = {}; r.rows.forEach((l) => { o[l.chave] = l.valor; }); return o;
 }
+
+// resposta do GET de um módulo por item (rota /api/estado/<módulo> e leitura em lote /api/estado?m=...)
+export async function respostaItens(modulo, desde) {
+  const v = await versaoItens(modulo);
+  const parcial = desde !== undefined && desde > 0 && desde <= v;
+  const r = await lerItens(modulo, parcial ? desde : undefined);
+  if (parcial && r.vazio) return { modulo, versao: Math.max(v, desde), igual: true };
+  return { modulo, versao: Math.max(r.versao, v), conteudo: r.conteudo, parcial };
+}

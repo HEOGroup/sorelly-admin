@@ -265,3 +265,7 @@ Valores ACUMULADOS do mês (o dia de cada data é a diferença para o dia anteri
 - Conferido com os dias 04, 05, 06 e 09/11 (R$ 37.595,31 · 65.156,26 · 149.878,21 · 244.095,26 e 58 · 99 · 208 · 326 acertos): igual ao centavo. Outubro: 1.844 clientes e R$ 1.438.317 contra 1.843 e R$ 1.438.133,61 do relatório (um cliente de diferença).
 - Código: `src/server/faturamento-nf.js`. A regra antiga (notas de saída `dmabl`) foi abandonada.
 - **Atualização automática às 10h** (`src/server/automatico-dia.js`, rota `/api/automatico/dia`): grava o acumulado do mês até ONTEM (e completa dias sem lançamento) e o total de revendedoras do dia. Agendador da Vercel em `vercel.json` (13h UTC = 10h de Brasília; precisa da variável CRON_SECRET na Vercel); reserva: o sistema chama ao abrir depois das 10h; relógio interno no servidor local (`instrumentation.js`). Dia com `travado` não é mexido. O Carregar e o a realizar continuam digitados pelo Marcus.
+
+### 10/11/2026 (Marcus, conferido com a DevMaster ao centavo)
+- Acumulado: 469 acertos e R$ 371.460,40 (média R$ 792,03). Só o dia: 143 acertos e R$ 127.365,14. Carregar 4. A realizar 1.496 (campos "a realizar" e "carregar" da tela, previsto do mês = 469 + 4 + 1.496 = 1.969).
+- Onde fica: Financeiro › Faturamento (abas Dia a dia, Lançar e Previsão), guardado no servidor no módulo `fd` (faturamentoDiario, contasPagasDiario, fechaMes). Todo dia às 10h o automático confere e completa até ontem.

@@ -407,7 +407,7 @@ function AbaCaixa(){
     e("td",{className:VARC}, dA ? sinal(valor(dB)-valor(dA)) : "—")); };
   var abaBtn = function(id, nome){ return e("button",{key:id, onClick:function(){ setTela(id); }, className:"rounded-lg px-4 py-2 text-[13px] font-bold ring-1 "+(tela===id ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/40")}, nome); };
   var cabecalho = e("div",{className:"flex flex-wrap items-center gap-2"},
-    e("h1",{className:"mr-2 font-heading text-[20px] font-semibold tracking-wide"}, "Caixa"),
+    e("h1",{className:"mr-2 font-heading text-[13px] font-bold tracking-wide"}, "Caixa"),
     abaBtn("visao","📊 Visão geral"), abaBtn("lancar","✏️ Lançar saldos"),
     tela==="visao" && e("div",{className:"ml-2 flex items-center gap-1 rounded-lg bg-card px-1 ring-1 ring-border"}, e(Btn,{onClick:function(){ mover(-1); }}, "‹"),
       e("span",{className:"w-36 text-center text-[13px] font-semibold"}, MESES_LONGO[mes]+" de "+ano), e(Btn,{onClick:function(){ mover(1); }}, "›")),

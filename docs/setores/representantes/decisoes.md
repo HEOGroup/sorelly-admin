@@ -70,3 +70,9 @@ O texto é o original. Para a decisão completa, abra o diário na linha indicad
 - **09/11/2026** (listagem, ajuste do layout): barra preta padrão com só 'Listagens'; a listagem expande no mesmo lugar (sem tela cheia). Desenho: listagem-representante-opcao1-v2.html.
 - **09/11/2026** (listagem, correção): tocar no dia abre OUTRA TELA (não expande); nome do dia por extenso (Quinta-feira). Desenho: listagem-representante-opcao1-v3.html.
 - **09/11/2026** (listagem, v1 construída): Lista/Calendário, tela do dia, criar só com menus, 1 listagem e 1 revendedora por dia, prazo 2 dias úteis 07:30 trava, excluir com quem desmarcou e motivo, aviso à Deysiane e à montadora. Faltam: mudar horário, retirar 1-2 kits, multa, liberação da Deysiane, tela de kits excluídos, Configurador, servidor. Ver FLUXO-LISTAGEM-A-RETIRADA.md seção G.
+
+## 10/11/2026 (noite) — Comissões: respostas do Marcus
+- Comissão retida: só o valor pendente. Nota promissória bloqueia a comissão (7 revendedoras sumiram com o kit sem nota assinada). Pix direto à representante: acerto pago normalmente, comissão contada, o Pix entra como pagamento já feito a ela (código a conferir). Representante que sai: recebe as comissões do período em que saiu; inadimplência paga depois não gera comissão. Cancelamento e remarcação valem igual para as revendedoras das representantes (`docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`).
+
+## 10/11/2026 (noite, 2ª rodada)
+- Limite de 15 kits novos por representante; comissão do acerto adiado paga quando o acerto acontecer; kit só com nota promissória assinada; compras de joias lançadas pela Amanda no admin (alerta a definir com Amanda e Nayale); grupos A e B mudam depois. Representante pode dar prazo extra só com autorização do Marcus.

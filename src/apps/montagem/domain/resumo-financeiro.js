@@ -5,7 +5,7 @@ import { MESES_LONGO, contasDoMes, metaDoMes, fatEfetivo, projetarAno, projetarV
 
 var JANELA_PADRAO = 2;
 // % dos acertos previstos (Agendamento) que o sistema usa para prever o mês: 94, 95 ou 96 (escolhido na Visão geral / Previsão de faturamento; padrão 95)
-function metaPctDe(s){ var p = Number(s && s.metaPct); return p>=97 && p<=99 ? p : 99; }   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)   // janela = índice de CRESCIMENTO_REVENDEDORAS (2 = 30 dias)
+function metaPctDe(s){ var p = Number(s && s.metaPct); return p>=97 && p<=99 ? p : 98; }   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)   // janela = índice de CRESCIMENTO_REVENDEDORAS (2 = 30 dias)
 
 function resumoFinanceiro(s, janela){
   var JANELA = janela===undefined ? JANELA_PADRAO : janela;

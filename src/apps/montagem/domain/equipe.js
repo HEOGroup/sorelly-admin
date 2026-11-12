@@ -91,7 +91,7 @@ function podeBipRetorno(id){ return podeAgendar(id) || BIPADORAS.some(function(b
 // Castilho (47, 11/11/2026, Marcus): Marketing, Fotos de catálogo e Criativos (sem Tráfego pago, que tem os valores dos anúncios); a conta dele tem só o setor, sem lista de telas. Em 12/11/2026 o Marcus liberou também Modelos, as telas de Metas e a tela Apps.
 var TELAS_DA_PESSOA = {46:["trafego","criativos"], 47:["marketing","fotoscat","criativos","modelos","metrev","metacomp","methist","metnotif","metregras","apps"]};
 function telasDaPessoa(id){ return TELAS_DA_PESSOA[id] || []; }
-var SO_CHAT = [46, 36, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
+var SO_CHAT = [46, 1, 2, 3, 4, 5, 6, 7, 19, 20, 21, 39, 40, 41];
 function grupoDe(id){
   if(SO_CHAT.indexOf(id)>=0) return "basico";
   if(GRUPO_CONTA[id]) return GRUPO_CONTA[id];
@@ -116,7 +116,7 @@ function podeAgendar(id){ return veBloco(id,"conferir"); }
 var CONFERE_PAGAMENTOS = [16,28,29];   // quem define as contas dos pagamentos do atendimento interno: Marcus, Lucas e Anamaria
 function podeConferirPag(id){ return temAutorizacao("financeiro_confere", id); }   // lista ajustável em RH → Acessos e autorizações (padrão em domain/autorizacoes.js)
 // Configuração das comissões (botão em Comissões): só Marcus, Ana Maria e Nayale
-var CONFIG_COMISSAO = [16,29,27];
+var CONFIG_COMISSAO = [16,29,27,36];
 function podeConfigComissao(id){ return temAutorizacao("comissao_config", id); }   // só o Marcus altera as regras e os valores das comissões
 function veTotais(id){ return veBloco(id,"valores"); }
 function podeFinanceiro(id){ return veBloco(id,"conciliar"); }

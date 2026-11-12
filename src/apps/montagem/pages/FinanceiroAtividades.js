@@ -7,6 +7,7 @@ import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { BTN_OURO, CARD_ESTILO, ROTULO, TOPO_ESTILO } from "@/apps/montagem/pages/AgendamentoRevendedoras";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 import { isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -33,7 +34,7 @@ function AbaFinAtividades(){
     }).catch(function(x){ setD(function(p){ return Object.assign({}, p, {pronto:true, msg:x.message}); }); });
   };
   var ref = useRef(null); ref.current = carregar;
-  useEffect(function(){ ref.current(); var t = setInterval(function(){ ref.current(); }, 60000); return function(){ clearInterval(t); }; }, []);
+  useEffect(function(){ ref.current(); var t = setInterval(function(){ if(abaVisivel()) ref.current(); }, 60000); return function(){ clearInterval(t); }; }, []);
 
   var gravar = function(rec){
     return chamar("PUT", "/estado/finativ", {chaves:{[rec.id]:rec}}).then(function(){ setD(function(x){ var n = Object.assign({}, x.itens); n[rec.id] = rec; return Object.assign({}, x, {itens:n}); }); return true; }).catch(function(x){ setErro(x.message); return false; });

@@ -29,7 +29,7 @@ export async function atualizarRevendedorasDoDia({ forcar = false } = {}) {
   const patch = { diario: { [dia]: quantidade }, atualizadoEm: { [dia]: new Date().toISOString() } };
   await consulta(
     `insert into sorelly.estado_modulo (modulo, conteudo, versao, atualizado_por) values ('revdia', $1::jsonb, 1, 'automatico')
-     on conflict (modulo) do update set conteudo = sorelly.estado_modulo.conteudo || excluded.conteudo, versao = sorelly.estado_modulo.versao + 1, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
+     on conflict (modulo) do update set conteudo = sorelly.estado_modulo.conteudo || jsonb_build_object('diario', coalesce(sorelly.estado_modulo.conteudo->'diario', '{}'::jsonb) || (excluded.conteudo->'diario'), 'atualizadoEm', coalesce(sorelly.estado_modulo.conteudo->'atualizadoEm', '{}'::jsonb) || (excluded.conteudo->'atualizadoEm')), versao = sorelly.estado_modulo.versao + 1, atualizado_por = excluded.atualizado_por, atualizado_em = now()`,
     [JSON.stringify(patch)]
   );
   return { ja: false, dia, quantidade };

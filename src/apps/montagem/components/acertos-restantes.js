@@ -16,7 +16,7 @@ function AcertosRestantes(p){
   useEffect(function(){ if(atual && apiAtiva()) chamar("GET", "/acertos-previstos").then(setDev).catch(function(){ setDev({erro:true}); }); }, [atual]);   // eslint-disable-line react-hooks/exhaustive-deps
   var fm = (s.fechaMes || {})[ym] || {}, fd = fatEfetivo(s), ks = Object.keys(fd).filter(function(k){ return k.slice(0, 7)===ym; }).sort();
   var feitos = ks.length ? (fd[ks[ks.length-1]].acertos || 0) : 0, carregar = Number(fm.carregar) || 0, aRealizar = Number(fm.aRealizar) || 0, prev = feitos+carregar+aRealizar;
-  var mp = Number(s.metaPct), pct = mp>=97 && mp<=99 ? mp : 99, alvo = Math.round(prev*pct/100), falta = Math.max(0, alvo-feitos-carregar);
+  var mp = Number(s.metaPct), pct = mp>=97 && mp<=99 ? mp : 98, alvo = Math.round(prev*pct/100), falta = Math.max(0, alvo-feitos-carregar);
   var hist = Object.keys(s.restanteDia || {}).filter(function(k){ return k.slice(0, 7)===ym; }).sort().reverse();
   var ok = dev && dev.porMes ? dev.restoMes : null;
   return e("div",{className:"flex flex-col gap-3"},

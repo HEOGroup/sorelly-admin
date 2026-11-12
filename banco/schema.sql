@@ -2557,6 +2557,25 @@ CREATE TABLE IF NOT EXISTS sorelly.estado_modulo (
   atualizado_em timestamptz NOT NULL DEFAULT now()
 );
 
+-- registro de toda gravação de estado_modulo e cópia diária (11/11/2026; src/server/estado-modulo.js cria sozinho na primeira gravação)
+CREATE TABLE IF NOT EXISTS sorelly.estado_modulo_log (
+  id bigserial PRIMARY KEY,
+  modulo text NOT NULL,
+  versao integer,
+  tipo text NOT NULL,          -- patch (só a diferença) | chaves (tela antiga, chave inteira)
+  dados jsonb NOT NULL,
+  por text,
+  em timestamptz NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS estado_modulo_log_modulo_em ON sorelly.estado_modulo_log (modulo, em);
+CREATE TABLE IF NOT EXISTS sorelly.estado_modulo_copia (
+  dia date NOT NULL,
+  modulo text NOT NULL,
+  versao integer,
+  conteudo jsonb NOT NULL,
+  PRIMARY KEY (dia, modulo)
+);
+
 -- módulos "por item" do app real da representante (05/11/2026; src/server/estado-itens.js e src/apps/montagem/domain/app-rep.js):
 -- uma linha por chave; dono = "app" (gravado só pelas rotas de serviço) ou "admin" (gravado pelo navegador via /api/estado). seq = versão para leitura incremental.
 CREATE SEQUENCE IF NOT EXISTS sorelly.estado_item_seq;

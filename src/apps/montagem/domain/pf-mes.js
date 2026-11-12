@@ -3,6 +3,7 @@
 // Dados reais ficam em domain/pf-mes.local.js (fora do GitHub). Usado pela faixa "Fornecedores em aberto" do Direcionar Pix (24/10/2026).
 // Regras do Marcus (REGRAS-DE-PIX.md, 11 a 13): Pix do dia quita a parcela aberta mais antiga da Pontual; o que passa no cartão quita o 1 a 10 do mês seguinte, com desconto estimado pela média dos últimos meses.
 import { globLocal } from "@/lib/glob-local";
+import { ehPrestador, hojeIso, janelasDoForn, mesAtual, mesMais, pagoJanela } from "@/apps/montagem/domain/pf";
 
 var SERV = null;   // resumo vindo do servidor (módulo pfmes): vale no lugar do arquivo local, que só existe no computador do Marcus
 function definirPfMes(d){ SERV = d && d.itens ? d : null; }
@@ -27,6 +28,24 @@ function fornecedoresDoMes(cp, todos){   // todos = true: também os já pagos d
     return {id:"fm"+k, nome:rotulo(i.nome), aPagar:i.aPagar||0, pago:i.pago||0, saldo:i.saldo, ate:i.ate||"", obs:i.obs||"", destinoId:d ? d.id : "", pontual:/pontual/i.test(i.nome)};
   }).sort(function(a, b){ return (a.ate||"9999").localeCompare(b.ate||"9999") || b.saldo-a.saldo; });
 }
+// AO VIVO (12/11/2026, chamado do Marcus: o Direcionar mostrava outubro vencido e nenhum fornecedor de novembro): a lista de Contas a pagar sai dos pedidos e pagamentos do próprio sistema (pf), a mesma conta da tela Pagamentos a fornecedores. O resumo da planilha (acima) fica só como reserva quando o pf ainda não chegou.
+// Mostra as janelas do mês atual e as dos 3 meses anteriores que ainda têm saldo (atrasadas). todos = true: também as já pagas do mês atual.
+function fornecedoresDoMesPf(pf, cp, todos){
+  if(!pf || !pf.fornecedores || !pf.pedidos) return fornecedoresDoMes(cp, todos);
+  var atual = mesAtual(), desde = mesMais(atual, -3), out = [];
+  pf.fornecedores.forEach(function(f){
+    if(f.tipo!=="fornecedor" || ehPrestador(f)) return;
+    var al = ALIAS.filter(function(a){ return a[0].test(f.nome); })[0], base = al ? al[1] : f.nome, dest = cp && cp.destinos ? cp.destinos.filter(function(z){ return z.ativo && z.nome.toLowerCase().indexOf(base.toLowerCase())===0; })[0] : null;
+    var js = janelasDoForn(pf, f.id).filter(function(j){ return j.mes<=atual && j.mes>=desde; }).sort(function(a, b){ return a.limite.localeCompare(b.limite); });
+    js.forEach(function(j){
+      var pago = Math.min(pagoJanela(pf, j.chave), j.total), falta = Math.max(0, j.total-pago), doMes = j.mes===atual;
+      if(!(falta>0.005) && !(todos && doMes)) return;
+      var doMesJs = js.filter(function(x){ return x.mes===j.mes; }), k = doMesJs.indexOf(j), ini = k===0 ? "01" : String(parseInt(doMesJs[k-1].fim.slice(8, 10), 10)+1).padStart(2, "0");
+      out.push({id:"fp"+f.id+"-"+j.limite, nome:doMesJs.length>1 ? base+" · "+ini+" a "+j.fim.slice(8, 10) : base, aPagar:j.total, pago:pago, saldo:falta, ate:j.limite, obs:"", destinoId:dest ? dest.id : "", pontual:/pontual/i.test(f.nome)});
+    });
+  });
+  return out.sort(function(a, b){ return (a.ate||"9999").localeCompare(b.ate||"9999") || b.saldo-a.saldo; });
+}
 // Devedores (24/10/2026): quem mais recebe da Sorelly no mês e ainda falta pagar — prestadores pequenos e sócios. Mesma planilha, linhas que não são fornecedor de peça.
 function devedoresDoMes(cp){
   trazer(); if(!LOCAL) return [];
@@ -40,4 +59,4 @@ var mesDosDados = function(){ trazer(); return LOCAL ? LOCAL.mes : ""; };
 var geradoEm = function(){ trazer(); return LOCAL ? LOCAL.geradoEm : ""; };
 // desconto estimado do cartão da Pontual (média dos 3 últimos meses da aba de negociações)
 var descontoCartao = function(){ trazer(); return LOCAL && LOCAL.cartao ? LOCAL.cartao.mediaUltimos3 : 10; };
-export { definirPfMes, devedoresDoMes, fornecedoresDoMes, descontoCartao, mesDosDados, geradoEm };
+export { definirPfMes, devedoresDoMes, fornecedoresDoMes, fornecedoresDoMesPf, descontoCartao, mesDosDados, geradoEm };

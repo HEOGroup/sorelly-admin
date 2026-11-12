@@ -474,11 +474,23 @@ function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje)}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
   return o;
+}
+// Atendimento Sorelly (Marcus, 11/11/2026): o nome da agenda nem sempre é igual ao do pedido do link ("Sabryna dos Santos" × "Sabryna dos Santos Romero").
+// Parecido = mesmas palavras, ou todas as palavras do nome mais curto (2 ou mais) estão no mais longo. Devolve o mesmo formato de linksParaAcerto.
+function nomeParecido(a, b){
+  var wa = norm(a).split(" ").filter(Boolean), wb = norm(b).split(" ").filter(Boolean); if(!wa.length || !wb.length) return false;
+  if(norm(a)===norm(b)) return true;
+  var menor = wa.length<=wb.length ? wa : wb, maior = menor===wa ? wb : wa;
+  return menor.length>=2 && menor.every(function(w){ return maior.indexOf(w)>=0; });
+}
+function linksParaAcertoPorNome(s, nome, hoje){
+  var lista = ((s.lp && s.lp.solicitacoes) || []).filter(function(x){ return nomeParecido(x.revendedora, nome); }).map(function(x){ return Object.assign({}, x, {revendedora:nome}); });
+  return linksParaAcerto({lp:Object.assign({}, s.lp, {solicitacoes:lista})}, nome, hoje);
 }
 // Marca como USADOS no acerto os links que entraram como pagamento (cada linha de pagamento traz linkSolId). Devolve o novo lp, ou null se nada mudou.
 function usarLinksNoAcerto(lp0, pagamentos, acertoId, agora, por){
@@ -567,6 +579,35 @@ function lpReduz(s, a){
       var vr = (lp.vendasApp || []).find(function(x){ return x.id===a.id; }); if(!vr || !vr.plano || !vr.plano[a.i]) return recusa("Pagamento não encontrado.");
       vr.plano[a.i].pago = true; vr.plano[a.i].pagoEm = agora; return ok("Pagamento recebido");
     }
+    // Link pago POR FORA (Marcus, 11/11/2026: "o setor de link precisa ter lá todos os links mesmo pago por fora"): link gerado fora do sistema (WhatsApp, direto na plataforma) e já pago.
+    // Entra direto como "pago", sem passar por solicitado/gerado e sem as regras de pedido (mínimo, parcelas, link da representante). Aparece no quadro e nos Comprovantes como qualquer outro pago.
+    // Pedido de link NOVO feito pelo Atendimento Sorelly (Hellen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
+    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Hellen ao gerar.
+    case "sol_pedir_atendimento": {
+      var dP = {revendedora:a.revendedora, canal:"whatsapp", valor:a.valor, parcelas:a.parcelas, meioId:"", representante:"", dataAcerto:"", emissor:"atendimento", semMeio:true, bandeira:a.bandeira};
+      var eP = validarSolicitacao(sx, dP, agora); if(eP) return recusa(eP);
+      var idP = a.id && !lp.solicitacoes.some(function(y){ return y.id===a.id; }) ? a.id : "S"+(++lp.seq);
+      lp.solicitacoes.push({id:idP, canal:"whatsapp", revendedora:trim(a.revendedora), representante:repDaRevendedora(lp, a.revendedora) || "", valor:r2(num(a.valor)), parcelas:Math.round(num(a.parcelas)), meioId:"", bandeira:a.bandeira || "", status:"solicitado", emissor:"atendimento",
+        geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1,
+        observacao:trim(a.observacao) || "Pedido do Atendimento Sorelly: a revendedora está na empresa, o acerto é hoje.", motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
+        criadoEm:agora, criadoPor:por, paraAtendimento:true, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:"Pedido do atendimento"}]});
+      return ok("Link pedido à Hellen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
+    }
+    case "sol_por_fora": {
+      var nomeF = trim(a.revendedora), valF = r2(num(a.valor)), parF = Math.round(num(a.parcelas)) || 1, pagoF = a.pagoEm || agora;
+      if(!nomeF) return recusa("Informe a revendedora.");
+      if(!(valF>0)) return recusa("Informe o valor do link.");
+      if(parF<1 || parF>MAX_PARCELAS) return recusa("Parcelas de 1 a "+MAX_PARCELAS+".");
+      if(minutosDe(pagoF)===null) return recusa("Informe a data do pagamento.");
+      if(minutosDe(pagoF)>minutosDe(agora)+1) return recusa("A data do pagamento não pode ser no futuro.");
+      if(lp.solicitacoes.some(function(y){ return y.porFora && norm(y.revendedora)===norm(nomeF) && r2(y.valor)===valF && diaDe(y.pagoEm)===diaDe(pagoF); })) return recusa("Esse link já foi lançado como pago por fora.");
+      var meioF = a.meioId ? meioDe(sx, a.meioId) : null, idF = a.id && !lp.solicitacoes.some(function(y){ return y.id===a.id; }) ? a.id : "S"+(++lp.seq);
+      lp.solicitacoes.push({id:idF, canal:"whatsapp", revendedora:nomeF, representante:repDaRevendedora(lp, nomeF) || "", valor:valF, parcelas:parF, meioId:meioF ? meioF.id : "", bandeira:a.bandeira || "", status:"pago", emissor:"atendimento",
+        geradoPor:por, geradoEm:a.geradoEm || pagoF, expiraEm:"", pagoEm:pagoF, comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto || "", tentativa:1,
+        observacao:trim(a.observacao) || ("Pago por fora (link gerado fora do sistema), registrado por "+por+(trim(a.conta) ? " · conta: "+trim(a.conta) : "")), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
+        criadoEm:agora, criadoPor:por, porFora:true, contaInformada:trim(a.conta), comprovanteImg:(typeof a.comprovanteImg==='string' && a.comprovanteImg.indexOf('data:image')===0 && a.comprovanteImg.length<500000) ? a.comprovanteImg : '', historico:[{em:agora, por:por, de:"", para:"pago", nota:"Pago por fora, registrado no atendimento"}]});
+      return ok("Link pago por fora registrado: "+formatarReais(valF)+" de "+nomeF);
+    }
     case "sol_criar": {
       var semMeio = a.canal==="app" && !!a.semMeio, dd = {revendedora:a.revendedora, canal:a.canal, valor:a.valor, parcelas:a.parcelas, meioId:a.meioId, representante:a.representante, dataAcerto:a.dataAcerto, emissor:a.emissor, semMeio:semMeio, bandeira:a.bandeira};
       var e1 = validarSolicitacao(sx, dd, agora); if(e1) return recusa(e1);
@@ -623,4 +664,4 @@ export { vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,
-  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago };
+  creditoDoAcerto, situacaoParaRevendedora, linksDaRevendedora, linksParaAcerto, linksParaAcertoPorNome, usarLinksNoAcerto, comprovantesPendentes, aguardandoDiaSeguinte, textoComprovante, sugestaoContaPix, listaSolicitacoes, taxaDaSolicitacao, indicadoresLp, analiseLp, bonusDoValor, validarBonus, mesDe, foiGerado, foiPago };

@@ -8,7 +8,8 @@ export const SETORES_DO_MODULO = {
   cf: ["cobranca"], ff: ["socios"],
   inad: ["cobranca"],   // setor de Inadimplência (11/11/2026): dívidas, pagamentos, Serasa e kits em atraso; uma chave por registro. Só a Amanda de Miranda (setor cobranca) e a Diretoria
   ce: ["*"],
-  pf: ["financeiro"], cp: ["financeiro"], px: ["financeiro"], lp: ["financeiro", "linkpag"], contasEmpresa: ["financeiro"],
+  pf: ["financeiro"], cp: ["financeiro"], px: ["financeiro"], lp: ["financeiro", "linkpag", "agendamento"],   // Link de pagamento: o Agendamento (atendimento interno) lê os links já pagos da revendedora e registra o link pago por fora (11/11/2026)
+  contasEmpresa: ["financeiro"],
   agend: ["agendamento", "financeiro"],
   av: ["rh", "cadastro"], cl: ["cadastro"], ind: ["cadastro", "kitsnovos"],
   er: ["encomendas"],   // Encomendas e reposições (30/10/2026): pedidos, Top 50 e horários, compartilhados pelo setor Encomendas (Diretoria abre tudo)

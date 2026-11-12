@@ -151,8 +151,10 @@ function reducer(s, a){
       var rd = Object.assign({}, s.revendedorasDiario); rd[a.data] = a.quantidade||0;
       return com(s, {revendedorasDiario:rd, revAtualizadoEm:a.unico ? Object.assign({}, s.revAtualizadoEm||{}, {[a.data]:agora}) : s.revAtualizadoEm}, "Revendedoras de "+a.data.split("-").reverse().join("/")+" salvo");
     }
+    case "FUNC_SET": return Object.assign({}, s, {funcionarias:a.dados});   // funcionárias ativas do RH (código e nome na DevMaster), lidas do servidor
+    case "COMISSAO_FUNC_SET": return com(s, {comissaoFunc:{tabelas:a.tabelas, em:Date.now(), por:a.por || ""}}, "Tabelas de comissão das funcionárias salvas");
     case "ALTA_MEDIA_SET": { var am = Object.assign({}, s.altaMedia||{}); am[a.mes] = a.pct===null || a.pct===undefined || a.pct==="" ? null : Number(a.pct)/100; return com(s, {altaMedia:am}, "Regra da média de "+MESES_LONGO_R[a.mes]+" salva"); }
-    case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 99});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
+    case "META_PCT_SET": return com(s, {metaPct:[97,98,99].indexOf(Number(a.pct))>=0 ? Number(a.pct) : 98});   // 27/10/2026: 97/98/99, padrão 98 (Marcus; antes era 96/97/98 padrão 97)
     // acertos que ainda faltam realizar no mês (digitado à mão) e vendas do Carregar ainda sem valor; juntos com os feitos formam o total do mês
     case "FECHA_MES_SET": { var fmk = Object.assign({}, s.fechaMes||{}); fmk[a.ym] = {aRealizar:Number(a.aRealizar)||0, carregar:Number(a.carregar)||0}; var cdk = Object.assign({}, s.carregarDia||{}); var hojeK = new Date(); cdk[hojeK.getFullYear()+"-"+String(hojeK.getMonth()+1).padStart(2,"0")+"-"+String(hojeK.getDate()).padStart(2,"0")] = Number(a.carregar)||0; var ymK = a.ym, fdK = s.faturamentoDiario||{}, ksK = Object.keys(fdK).filter(function(k){ return k.slice(0,7)===ymK; }).sort(), feitosK = ksK.length ? (fdK[ksK[ksK.length-1]].acertos||0) : 0;
       if(s.fatHoje && String(s.fatHoje.data).slice(0,7)===ymK) feitosK = Math.max(feitosK, s.fatHoje.acertos||0);
@@ -309,7 +311,7 @@ function reducer(s, a){
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
           if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); else if(k.indexOf("kp_")===0) poe(kitsP, v, k.slice(3), false); });   // kp_ = pedido de kit novo (11/11/2026)
         dpP.pix = pixP; dpP.kits = kitsP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
-      if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
+      if(a.chave==="ri"){ var pRi = {}; if(a.conteudo && a.conteudo.revInternas) pRi.revInternas = a.conteudo.revInternas; if(a.conteudo && a.conteudo.comissaoFunc) pRi.comissaoFunc = a.conteudo.comissaoFunc; return Object.keys(pRi).length ? Object.assign({}, s, pRi) : s; }   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
@@ -1030,7 +1032,7 @@ function reducer(s, a){
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly
     case "REVINT_AGENDAR": {
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
-      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
+      if(!a.imediato && motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda (imediato = chegou agora, pela Listagem): 3 por horário, 15 por dia, sábado até 11h, domingo fechado
       var vLib = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";   // valor liberado da reposição ou do kit novo (Tamara, 03/11/2026)
       var rrN = Object.assign({}, rr, primeiroMarcado(rr) ? {} : {primeira:{dia:a.data, desde:cicloDe(rr)}}, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
@@ -1055,13 +1057,13 @@ function reducer(s, a){
       var codAv = String(a.cod||"").replace(/\D/g, "").replace(/^0+/, "");
       if(!codAv && a.tipo!=="indicacao") return s;   // só o brinde de indicação aceita nome sem cadastro (Marcus, 09/11/2026): todo o resto vem das clientes cadastradas na DevMaster
       if((s.revInternas||[]).some(function(r){ return nmAv(r.nome)===nmAv(nomeAv) || (codAv && String(r.devmaster||"").replace(/^0+/, "")===codAv); })) return s;   // já está na lista: usar a ficha dela
-      if(motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
+      if(!a.imediato && motivoNaoMarcar(s.revInternas, a.data, a.hora, null)) return s;   // mesmas regras da agenda (quem chegou agora, pela Listagem, não passa por elas): 3 por horário, 15 por dia, sábado até 11h, domingo e feriado fechados
       var hvAv = {data:null, venda:null, acerto:null}, vigAv = versaoVigente(s);
       var vLibAv = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";
       var rAv = {id:"RA"+agora, nome:nomeAv, ciclo:30, proximoManual:null, proximoDm:null, situacao:"agendada", agend:{data:a.data, hora:a.hora}, internoId:null, hist:[hvAv, hvAv, hvAv],
         contatos:a.fone ? [{nome:"WhatsApp da cliente", fone:a.fone}] : [], prata:false, devmaster:String(a.cod||"").trim(), cidade:a.cidade || "", obs:"", registro:[], conds:[], avulsa:true, semCadastro:!codAv,
         tipoAtend:a.tipo || "acerto", quer:a.quer || "", valorLiberado:a.valor || null};
-      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Incluída à mão em Revendedoras internas")+vLibAv, condicionais:[], vendasAnt:[]});
+      var itAv = internoDeAgendada(rAv, vigAv ? vigAv.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : (a.imediato ? "Incluída na hora pelo atendimento (chegou sem estar na listagem)" : "Incluída à mão em Revendedoras internas"))+vLibAv, condicionais:[], vendasAnt:[]});
       rAv.internoId = itAv.id;
       return com(s, {internos:[itAv].concat(s.internos||[]), revInternas:[rAv].concat(s.revInternas||[])}, nomeAv.split(" ")[0]+" incluída para "+a.data.split("-").reverse().join("/")+" às "+a.hora);
     }
@@ -1097,6 +1099,8 @@ function reducer(s, a){
       // acerto feito: a data do atendimento vira o "último acerto" e a próxima data é recalculada pelo ciclo; valores chegam do atendimento
       var dia = (r.agend && r.agend.data) || isoDia(new Date(agora));
       return Object.assign({}, r, {hist:[{data:dia, venda:null, acerto:null}].concat(r.hist), proximoManual:null, agend:null, situacao:"contatar"}); })}, "Acerto registrado: próxima data recalculada");
+    // Acerto feito (Tamara, 12/11/2026): a linha da lista fica cinza e vai para o fim até a DevMaster mostrar um kit novo (data do kit depois da marcação)
+    case "REVINT_ACERTO_FEITO": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {acertoFeito:a.desfazer ? null : {em:isoDia(new Date(agora)), por:a.por||""}}); })}, a.desfazer ? "Marcação de acerto feito removida" : "Acerto marcado como feito");
     case "INT_ABRIR": return com(s, {aba:"intcalc", intSel:a.id});
     // até 2 atendimentos abertos ao mesmo tempo (abas): abrir um terceiro troca a aba que está ativa
     case "INT_SEL": {
@@ -1178,6 +1182,12 @@ function reducer(s, a){
       var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
       return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
     }
+    case "INT_SIMPLES_FIM": {   // atendimento sem acerto (Brinde de indicação, Reposição, Troca de peça; 11/11/2026): registra a hora, quem atendeu e a anotação
+      var itSm = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!itSm || itSm.status==="acertado") return s;
+      var vSm = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itSm.regrasVersaoId; }) || versaoVigente(s); if(!vSm) return s;
+      var zeroSm = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, versaoEfetiva(vSm, modalidadeDe(s, itSm.nome), comissaoEspecialDe(s, itSm.nome)));
+      return com(s, {internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:zeroSm, acertoAssinado:false, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||""}); })}, "Atendimento finalizado");
+    }
     case "INT_ACERTO_REGISTRAR": {
       var it = (s.internos||[]).find(function(x){ return x.id===a.id; }); if(!it) return s;
       var vBase = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===it.regrasVersaoId; }) || versaoVigente(s); if(!vBase) return s;
@@ -1194,8 +1204,8 @@ function reducer(s, a){
         brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
-      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}}, a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
-      return com(s, {perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
+      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
+      return com(s, {lp:(s.lp ? usarLinksNoAcerto(s.lp, a.pagamentos, "AC"+agora, agoraSPLp(), a.por) : null) || s.lp, perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
         acertosConsignado:[regI].concat(aplicarAbatimento(s.acertosConsignado||[], abI, (a.pagamentos||[])[0], regI.id, agora))},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");
     }

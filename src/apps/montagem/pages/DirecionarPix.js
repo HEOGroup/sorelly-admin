@@ -11,7 +11,7 @@ import { setBaixas, setClasse, setLancamentos, setPf, filtrar } from "@/apps/mon
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
 import { sugerir } from "@/apps/montagem/domain/direcionar-pix";
 import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
-import { descontoCartao, fornecedoresDoMes, geradoEm } from "@/apps/montagem/domain/pf-mes";
+import { descontoCartao, fornecedoresDoMesPf, geradoEm } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
 import { ACESSO_FF, baixaDividas, diasEntre } from "@/apps/montagem/domain/financeiro-familiar";
@@ -125,7 +125,7 @@ function AbaDirecionar(){
   var destinoDe = function(id){ return cp.destinos.filter(function(d){ return d.id===id; })[0] || {nome:"(removido)", tipo:"CNPJ"}; };
   var optDest = [["", "Escolha para quem enviar"]]; Object.keys(TIPOS_DESTINO).forEach(function(t){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }).forEach(function(d){ optDest.push([d.id, tipoNome(t)+" · "+d.nome]); }); });
   // fornecedores: o que FALTA para fechar o mês atual e a data limite (planilha, aba RESUMO MÊS; Marcus 24/10/2026). Clicar adiciona o fornecedor como destino.
-  var fornAbertos = fornecedoresDoMes(cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
+  var fornAbertos = fornecedoresDoMesPf(s.pf, cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
   var totalFalta = r2(fornAbertos.reduce(function(tt, f){ return tt+f.total; }, 0));
   var partes = sel ? partesDe(sel) : [], temPix = partes.some(function(z){ return z.forma==="pix"; });
   var ctxSug = {pontual:fornAbertos.filter(function(f){ return /^Pontual/.test(f.nome); }), cp:cp, regras:dp.regras, cnpjs:ctxCnpj, contasRep:dp.contasRep||{}, contasRepExtra:dp.contasRepExtra||{}, regrasPx:(s.px && s.px.regras)||[], limiteAlto:dp.limiteAlto||7000, cnpjDaRep:function(rep){ return cnpjDaRep(s, rep); }};
@@ -154,7 +154,7 @@ function AbaDirecionar(){
   ctxCnpj.forEach(function(x){ var d = cp.destinos.filter(function(z){ return z.cnpjId===x.id; })[0]; if(d && (x.hoje+x.amanha)>0) faltam.push({id:d.id, nome:d.nome, tipo:"CNPJ", falta:r2(x.hoje+x.amanha), info:"vencem hoje e amanhã"}); });
   var sfm = useState("falta"), modoForn = sfm[0], setModoForn = sfm[1];
   var veFam = ACESSO_FF.indexOf(s.usuario)>=0 && !!(s.ff && s.ff.dividas), dividasFam = veFam ? dividasDaFamilia(s.ff, cp, hojeIsoCp()) : [], totalFam = r2(dividasFam.reduce(function(tt, x){ return tt+x.falta; }, 0)), famVenc = dividasFam.filter(function(x){ return x.dias<0; }).length;
-  var fornLista = fornecedoresDoMes(cp, modoForn==="mes"), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
+  var fornLista = fornecedoresDoMesPf(s.pf, cp, modoForn==="mes"), negativas = contasNegativas(s), todasC = contasTodas(s), totalNeg = r2(negativas.reduce(function(tt, x){ return tt+x.saldo; }, 0));
   var sdv = useState(""), dividindo = sdv[0], setDividindo = sdv[1], sek = useState(""), edKey = sek[0], setEdKey = sek[1], spv = useState({}), pendV = spv[0], setPendV = spv[1], sva = useState(false), verTodas = sva[0], setVerTodas = sva[1], sab = useState({}), abertosC = sab[0], setAbertosC = sab[1];   // dividindo = forma que está dividindo; edKey = linha aberta para editar o valor
   var optsDe = function(f){ var l = [["", f==="pix" ? "Escolha a conta" : "Escolha o CNPJ", ""]];
     if(f==="pix") Object.keys(TIPOS_DESTINO).forEach(function(tp){ cp.destinos.filter(function(d){ return d.ativo && d.tipo===tp; }).forEach(function(d){ l.push([d.id, d.nome, tipoNome(tp)]); }); });

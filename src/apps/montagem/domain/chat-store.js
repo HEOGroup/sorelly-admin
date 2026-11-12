@@ -12,6 +12,7 @@ import { ler as notifLer } from "@/apps/montagem/lib/notificacoes";
 import { canal, membrosDoCanal, RESPOSTAS_CANAL } from "@/apps/montagem/domain/chat-canais";
 import { MARKUP_ALVO, markup, precoSugerido, BRL } from "@/apps/montagem/domain/preco-pecas";
 import { apiAtiva, chamar, token } from "@/apps/montagem/lib/api";
+import { abaVisivel } from "@/apps/montagem/lib/aba-visivel";
 
 var CHAVE = "whatssorelly_v1", CHAVE_MIDIA = "whatssorelly_midia_v1";
 // Com o servidor ligado (27/10/2026) o chat é DE VERDADE: começa vazio (sem as conversas de demonstração), guarda em outra chave e troca mensagens pelo servidor.
@@ -966,7 +967,7 @@ function iniciarServidor(){
   seqServidor = estado.seqSrv || 0;
   if(MARCUS_CID && eu!==MARCUS_CID) abrirDm(eu, MARCUS_CID);   // todo mundo já tem a conversa com o Marcus
   if(timerSync) return function(){};
-  timerSync = setInterval(sincronizar, 4000); sincronizar();
+  var voltas = 0; timerSync = setInterval(function(){ voltas++; if(abaVisivel() || voltas%8===0) sincronizar(); }, 4000); sincronizar();   // aba escondida: a cada 32 s em vez de 4 s (o aviso de mensagem nova continua chegando; 11/11/2026, custo da Vercel)
   return function(){ clearInterval(timerSync); timerSync = null; };
 }
 

@@ -10,14 +10,15 @@ import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, comissaoEspecialDe, form
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
-import { AssinaturaDigital, CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
+import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
 import { Selo } from "@/apps/montagem/pages/AtendimentoInternoListagens";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
+import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { atrasoUteisDe, avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
-import { chamar } from "@/apps/montagem/lib/api";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
 import { e as eBase, useEffect, useRef, useState } from "@/shared/react";
@@ -129,7 +130,6 @@ function AtendimentoInterno(){
   var lv = useState(LANC_VAZIO), lancForm = lv[0], setLancForm = lv[1];
   var ng = useState(false), negociarAberto = ng[0], setNegociarAberto = ng[1];
   var rg = useState({isenta:false, motivo:""}), regForm = rg[0], setRegForm = rg[1];
-  var as = useState(null), assinatura = as[0], setAssinatura = as[1];
   var ci = useState(false), ciente = ci[0], setCiente = ci[1];
   var cm = useState(COND_VAZIO), condManual = cm[0], setCondManual = cm[1];
   var cpx = useState(""), codProx = cpx[0], setCodProx = cpx[1];
@@ -154,7 +154,7 @@ function AtendimentoInterno(){
     [sel ? sel.id : null, sel ? sel.escolhaIni : null, sel ? sel.escolhaFim : null]);
   useEffect(function(){
     setForm(FORM_ACERTO_VAZIO); setBrindeIn(BRINDE_VAZIO); setLancForm(LANC_VAZIO); setNegociarAberto(false); setRegForm({isenta:false, motivo:""});
-    setAssinatura(null); setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({});
+    setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({});
     if(sel && sel.status==="acertado" && sel.formSnapshot) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.formSnapshot));
     else if(sel && sel.rascunho) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho));   // volta de onde parou (ex.: esperando o financeiro confirmar)
     else if(sel && sel.vendaApp>0) setForm(Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:sel.vendaApp}));   // o valor vendido vem direto do app da revendedora
@@ -170,7 +170,13 @@ function AtendimentoInterno(){
   var pq = useState(false), popAt = pq[0], setPopAt = pq[1];
   var po = useState(false), popObs = po[0], setPopObs = po[1];     // ícone de avisos ao lado do nome
   var cnv = useState(false), condNovaAberta = cnv[0], setCondNovaAberta = cnv[1];     // linha de condicional à mão (abre no botão +)
-  var sa = useState(false), assAberta = sa[0], setAssAberta = sa[1];                // janela de assinatura e registro do acerto                     // lista de quem atende na montagem do kit
+  useEffect(function(){   // funcionárias ativas no RH (código e nome na DevMaster): a comissão delas é outra (Marcus, 11/11/2026)
+    if(!apiAtiva()) return undefined; var vivo = true;
+    var rodar = function(){ chamar("GET", "/funcionarias").then(function(r){ if(vivo && r && r.codigos) d({type:"FUNC_SET", dados:{codigos:r.codigos, nomes:r.nomes || {}, em:Date.now()}}); }).catch(function(){ /* sem servidor ou sem acesso: segue com a última lista */ }); };
+    rodar(); var t = setInterval(rodar, 600000); return function(){ vivo = false; clearInterval(t); };
+  }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  var sPN = useState(null), formPN = sPN[0], setFormPN = sPN[1];   // pedido de link novo à Hellen
+  var sPF = useState(null), formPF = sPF[0], setFormPF = sPF[1];   // formulário do link já pago por fora (estação Pagamentos)
   var ps =useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
   var ta = useState("comissao"), apoioAba = ta[0], setApoioAba = ta[1];           // aba do bloco de apoio: Comissões, Valor do kit ou Regras
   useEffect(function(){ setPassoAt(sel && sel.inicioTs && sel.condOk ? 1 : 0); }, [sel ? sel.id : null]);   // abre na etapa em que parou
@@ -194,9 +200,11 @@ function AtendimentoInterno(){
   var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
   var jaFeito = !!sel && sel.status==="acertado";
   // venda R$ 0,00 é permitida (botão "Não teve venda"): 0 sozinho não basta, precisa do aviso explícito (form.semVenda)
-  // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras e assinatura → finalizar
+  // Kit retornando (Marcus, 10/11/2026): é como kit novo; não tem etapas de acerto. Fluxo curto: Escolha do kit (60 min) → Regras → finalizar (ninguém assina nada no sistema, 11/11/2026)
+  var simples = !!sel && (sel.tipo==="indicacao" || sel.tipo==="reposicao" || sel.tipo==="troca");   // Brinde de indicação, Reposição e Troca de peça (Marcus, 11/11/2026): atendimento simples, sem acerto, sem escolha de kit
   var retornando = !!sel && (sel.tipo==="retornando" || sel.tipo==="kit_novo");   // fluxo curto: Kit retornando e Kit novo (Marcus, 10/11/2026: kit novo precisa de outra tela; a revendedora já assina a condicional, então não assina aqui)
-  var temVenda = retornando || form.vendaBruta>0 || form.semVenda===true;
+  var temVenda = retornando || simples || form.vendaBruta>0 || form.semVenda===true;
+  var semVendaOk = !!sel && !retornando && !simples && form.semVenda===true;   // venda R$ 0,00 (Marcus, 11/11/2026): não renova kit; a revendedora não passa as regras nem assina; só finalizar
   // Kit novo: o valor do kit é o que a Michele lançou nos Kits novos (módulo kn, pelo nome da revendedora); aparece como valor liberado (Marcus, 10/11/2026)
   var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim(); };
   var knDela = sel && sel.tipo==="kit_novo" ? (Object.keys(s.kn||{}).map(function(k){ return s.kn[k]; }).filter(function(x){ return x && x.nome && normNome(x.nome)===normNome(sel.nome); }).sort(function(a,b){ return String(b.cadastro||"").localeCompare(String(a.cadastro||"")); })[0] || null) : null;
@@ -475,7 +483,8 @@ function AtendimentoInterno(){
   // ── Envio ao financeiro: só depois de fechar TODAS as formas de pagamento (e a negociação). O financeiro divide em contas, a funcionária anexa os comprovantes ──
   var lancFin = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }) || null;
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
-  var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ return {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)}; });
+  var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
+    return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
   var linhasEnvio = linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
   var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
@@ -628,7 +637,7 @@ function AtendimentoInterno(){
             e("input",{value:form.novaCond||"", disabled:jaFeito, inputMode:"numeric", placeholder:"000000", "aria-label":"Número da condicional nova", className:CG+" w-56! text-center "+MONO, onChange:function(ev){ up({novaCond:ev.target.value.replace(/\D/g,"").slice(0,8)}); }})),
           condFicam.length>0 && e("p",{className:"text-center text-[13px] text-muted-foreground"},"Continua com: ", condFicam.map(function(c){ return e("b",{key:c.numero, className:MONO+" mx-1 text-foreground"}, c.numero); }))));
 
-  // ── 5 · Regras do consignado: tópico por tópico (curto), a funcionária passa uma a uma, a revendedora assina com o mouse ──
+  // ── 5 · Regras do consignado: tópico por tópico (curto), a funcionária passa uma a uma; a revendedora NÃO assina ──
   var dvRegra = dv;
   var regras = versaoBase ? textoRegras(versaoBase, modalidade).filter(function(r){ return !/deslocamento|pe[cç]as/i.test(r.t); }) : [];   // interno: sem taxa de deslocamento nem peças do próximo mês
   if(versaoBase) regras = regras.concat([
@@ -639,14 +648,14 @@ function AtendimentoInterno(){
   var cienteOk = regras.length>0 && regras.every(function(r,i){ return !!regrasOk[i]; });
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
-  var pronto = !jaFeito && temVenda && cienteOk && (retornando ? !!sel.escolhaFim : (!!assinatura && !!continuaEf));
-  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assinatura, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
+  var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : !!continuaEf)));
+  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:null, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
       condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
-      assinatura:assinatura, regrasLidas:true, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
+      assinatura:null, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
   };
@@ -670,6 +679,7 @@ function AtendimentoInterno(){
             m[0]==="cliente" && sel.fone && e("a",{href:"https://wa.me/55"+sel.fone.replace(/\D/g,"")+"?text="+encodeURIComponent(m[2]), target:"_blank", rel:"noreferrer",
               className:"inline-flex h-10 items-center rounded-lg bg-success/15 px-3 text-[15px] font-medium text-success hover:bg-success/25"}, "Abrir no WhatsApp"))); })))
     : jaFeito ? e(React.Fragment,null, e("p",{className:"text-center text-[13.5px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)), painelTermo)
+    : semVendaOk ? e("div",{className:"flex flex-col items-center gap-3 p-4 text-center text-[13px]"}, e("p",{className:"font-semibold"}, "Sem venda: o kit não renova. Não precisa passar as regras."), e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, "Finalizar atendimento"))
     : e(React.Fragment,null,
         termoAnt && e("div",{className:"flex justify-center gap-1.5"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
           return e("button",{key:x[0], onClick:function(){ setAbaRegras(x[0]); }, "aria-pressed":on, className:"h-9 rounded-lg px-4 text-[13px] font-bold ring-1 "+(on ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/40 ring-border hover:bg-muted")}, x[1]); })),
@@ -684,9 +694,8 @@ function AtendimentoInterno(){
                 e("span",{className:"text-[13px] leading-snug text-foreground/80"}, aberta ? r.x : curto(r.x)),
                 r.x.length>curto(r.x).length && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); var o = Object.assign({}, regraMais); o[i] = !aberta; setRegraMais(o); }, className:"self-start text-[13px] font-bold text-primary hover:underline"}, aberta ? "menos" : "ver mais"))); })),
           e("p",{className:"text-center text-[13px] font-semibold "+(cienteOk ? "text-success" : "text-muted-foreground")}, cienteOk ? "✓ Todas as regras passadas" : nRegras+" de "+regras.length+" regras passadas"),
-          cienteOk && e("div",{className:"flex flex-col items-center gap-1"}, e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+sel.nome+" (com o mouse)"})),
           e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, retornando ? "Finalizar atendimento" : "Confirmar e registrar acerto"),
-          !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !temVenda ? "Falta o valor vendido (ou marque Não teve venda)." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : !cienteOk ? "Marque todas as regras para liberar a assinatura." : "Falta a assinatura da revendedora.")));
+          !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !temVenda ? "Falta o valor vendido (ou marque Não teve venda)." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : !cienteOk ? "Marque todas as regras para finalizar." : "Confira o que falta antes de finalizar.")));
 
   var conteudos = [null, null, null, null, null, null];
   // situação de cada seção: ✓ concluída
@@ -771,8 +780,9 @@ function AtendimentoInterno(){
           // topo em tabela fina (versão 4): rótulos em cima, valores embaixo
           var kitSel = e("span",{role:"group", "aria-label":"Kit da revendedora", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["padrao","Ouro"],["prata","Prata"]].map(function(o){ var on = modTab===o[0];
             return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ escolherMod(o[0]); }, className:"flex-1 px-3 text-[13px] font-medium disabled:opacity-60 "+(on ? (o[0]==="prata" ? "bg-slate-500 text-white" : "bg-primary text-primary-foreground") : "bg-card hover:bg-white/10")}, o[1]); }));
-          var tipoSel = e("span",{role:"group", "aria-label":"Tipo de atendimento", className:"flex h-8 w-full overflow-hidden rounded-md border border-primary/40"}, [["acerto","Acerto"],["retornando","Retornando"],["kit_novo","Kit novo"]].map(function(o){ var on = (sel.tipo||"acerto")===o[0];
-            return e("button",{key:o[0], type:"button", "aria-pressed":on, disabled:jaFeito, onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:o[0]}}); }, className:"flex-1 whitespace-nowrap px-2 text-[13px] font-medium disabled:opacity-60 "+(on ? "bg-primary text-primary-foreground" : "hover:bg-white/10")}, o[1]); }));
+          // Tipo em menu suspenso (Marcus, 11/11/2026): cabe mais tipos sem alargar o cabeçalho
+          var TIPOS_AT = [["acerto","Acerto"],["retornando","Kit retornando"],["kit_novo","Kit novo"],["indicacao","Brinde de indicação"],["reposicao","Reposição"],["troca","Troca de peça"]];
+          var tipoSel = e("select",{"aria-label":"Tipo de atendimento", value:sel.tipo||"acerto", disabled:jaFeito, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{tipo:ev.target.value}}); }, className:CXN+"cursor-pointer disabled:opacity-60"}, TIPOS_AT.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }));
           var avisosTopo = [];
           if(sel.obs) avisosTopo.push(["Observação", sel.obs+(sel.encomenda ? " · Encomenda "+sel.encomenda : "")]);
           if(remarcs.length) avisosTopo.push(["Remarcação", remarcs.length+"× "+(nMulta ? "com multa" : "isenta")+remarcs.map(function(rm){ return " · "+(rm.isenta ? "isenta ("+(rm.motivo||"")+")" : "com multa")+(rm.autorizadoPor ? ", autorizada por "+rm.autorizadoPor : ""); }).join("")]);
@@ -788,13 +798,18 @@ function AtendimentoInterno(){
             ["Situação", cSit, "auto"],
             ["Kit", kitSel, "auto"]
           ];
-          if(!jaFeito && (!sel.tipo || sel.tipo==="acerto" || sel.tipo==="retornando" || sel.tipo==="kit_novo")) cols.push(["Tipo", tipoSel, "auto"]);
+          if(!jaFeito) cols.push(["Tipo", tipoSel, "auto"]);
           cols.push(["Atendimento", cInicio, "auto"]);
           if(sel.inicioTs || jaFeito) cols.push(["Escolha do kit", cEscolha, "auto"]);
           if(jaFeito) cols.push(["Quem atende na montagem", cAtende, "auto"]);   // só depois de finalizar o acerto
-          return e("div",{className:"grid border-b-2 border-primary/50", style:{gridTemplateColumns:cols.map(function(c){ return c[2]; }).join(" ")}},
+          var gradeTopo = e("div",{className:"grid border-b-2 border-primary/50", style:{gridTemplateColumns:cols.map(function(c){ return c[2]; }).join(" ")}},
             cols.map(function(c,i){ return e("div",{key:"h"+i, className:"flex h-[30px] items-center justify-center overflow-hidden whitespace-nowrap border-b border-primary/40 bg-primary/15 px-1 "+(i ? "border-l border-l-primary/30 " : "")+CAP}, c[0]); }),
             cols.map(function(c,i){ return e("div",{key:"v"+i, className:"flex items-center justify-center px-1 py-1.5 "+(i ? "border-l border-primary/30 " : "")+(i<3 ? "bg-primary/15" : "")}, c[1]); }));   // nome, horário e situação: só leitura, com fundo colorido
+          // relógio do atendimento (Marcus, 11/11/2026): chegada, início, escolha do kit (começo e fim) e saída
+          var hh = function(ts){ return ts ? hhmmDeTs(ts) : "—"; };
+          var relogioItens = [["Chegou na empresa", sel.chegada || "—"], ["Atendimento iniciou", hh(sel.inicioTs)], ["Escolha do kit iniciou", hh(sel.escolhaIni)], ["Escolha do kit terminou", hh(sel.escolhaFim)], ["Finalizou e saiu", sel.fim || (sel.fimTs ? hh(sel.fimTs) : "—")]];
+          var relogioTopo = e("div",{className:"grid grid-cols-5 border-b-2 border-primary/50"}, relogioItens.map(function(x,i){ return e("div",{key:i, className:"flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1 "+(i ? "border-l border-primary/30" : "")}, e("span",{className:CAP+" whitespace-nowrap"}, x[0]), e("span",{className:"flex h-8 items-center text-[13px] font-semibold tabular-nums"}, x[1])); }));
+          return e(React.Fragment,null, gradeTopo, relogioTopo);
         })(),
         estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
         avisoIni && e(AvisoLeitura,{key:"avIni", titulo:"Leia para a revendedora antes de começar", texto:textoAntesEscolha(maxEscolhaMin), botao:"Li para ela · começar o tempo", onOk:confirmaInicioEscolha, onCancelar:function(){ setAvisoIni(false); }}),
@@ -825,7 +840,7 @@ function AtendimentoInterno(){
   var tabVendas = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Quanto vendeu", e(CampoDinheiro,{value:form.vendaBruta, mostraZero:true, label:"Valor total vendido", className:CPT, onChange:function(v){ up({vendaBruta:v, semVenda:v===0}); }})),   // digitar 0 também vale como "sem venda" (10/11/2026, Estela)
-    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(5); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:(form.semVenda ? "" : BRILHO)+"m-2 h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"),
+    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(6); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:(form.semVenda ? "" : BRILHO)+"m-2 h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"),
     !jaFeito && !temVenda && e("p",{key:"svh", className:"px-3 pb-2 text-center text-[13px] font-semibold"}, "Para continuar: digite o valor vendido ou clique em Não teve venda."),
     linhaKV("Peças vendidas", e("input",{value:totalVendidas>0 ? totalVendidas : "", disabled:jaFeito, inputMode:"numeric", placeholder:"0", "aria-label":"Quantidade de peças vendidas", className:CPT, onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{vendidasTotal:Number(soDigitos(ev.target.value,4))||0}}); }}), {z:true}),
     form.vendaBruta>0 && !sel.creditoVisto && !jaFeito && e("div",{key:"cc", className:"m-2 flex flex-col items-center gap-1.5 rounded-md border-2 border-primary bg-primary/15 p-2 text-center text-[13px] "+BRILHO},
@@ -844,6 +859,7 @@ function AtendimentoInterno(){
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     dv.restanteTotal>0.009 && pa && linhaKV("Falta pagar", e("b",{className:"text-[15px] font-semibold tabular-nums text-destructive"}, din(dv.restanteTotal))));
   var notasVendas = e("div",{className:"flex flex-col gap-1"},
+    especialRev && especialRev._origem==="funcionaria" && e("p",{className:"text-center text-[13px] font-semibold text-primary"}, "Funcionária: comissão da tabela "+especialRev._nome+"."),
     avisoDivida && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, avisoDivida),
     dv.novas && pa && (form.atrasoDias||0)>0 && e("p",{className:"text-center text-[13px] font-semibold text-destructive"}, pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico." : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     pa && pa.semFaixa && e(Aviso,null,"Abaixo de "+din(versao.gerais.minRenovar)+" de venda: sem comissão."+(ehPrata ? " Kit 100% Prata não renova." : "")));
@@ -852,6 +868,62 @@ function AtendimentoInterno(){
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
   var pedeBand = /cr[eé]dito|d[eé]bito|link/i.test(fl.label||"");
   var addPagB = function(){ if(pedeBand && !lancForm.bandeira) return; addPag(); };
+  // Links de pagamento JÁ PAGOS desta revendedora (setor Link de pagamento): entram como pagamento já resolvido, sem esperar o financeiro definir conta (Marcus, 11/11/2026)
+  var infoLinks = s.lp && sel ? linksParaAcertoPorNome(s, sel.nome) : null;
+  var linksEmUso = {}; form.pagamentos.forEach(function(q){ if(q.linkSolId) linksEmUso[q.linkSolId] = 1; });
+  var linksPagos = infoLinks ? infoLinks.pagos.filter(function(x){ return !linksEmUso[x.sol.id]; }) : [];
+  var linksAguardando = infoLinks ? infoLinks.aguardando : [];
+  var contaDoLink = function(sol){ var m = meioDe(s, sol.meioId), lista = formaDe("link").descricoes || [], dsc = m && m.cnpjId ? lista.find(function(c){ return String(c).replace(/\s+/g, " ").endsWith(" - "+m.cnpjId); }) : null; return dsc || (lista.length===1 ? lista[0] : (m ? m.nome : "LINK")); };
+  var usarLinkPago = function(x){
+    var sol = x.sol, falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valor = Math.min(sol.valor, falta); if(!(valor>0) || jaFeito) return;
+    up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
+  // Link já pago POR FORA (gerado fora do sistema): registra no setor Link de pagamento como pago e já entra como pagamento (Marcus, 11/11/2026)
+  var meioPorConta = function(conta){ var ms = (s.lp && s.lp.meios) || [], m = ms.find(function(x){ return x.tipo==="LINK" && x.cnpjId && String(conta||"").replace(/\s+/g, " ").endsWith(" - "+x.cnpjId); }); return m ? m.id : ""; };
+  var registrarPorFora = function(){
+    var f = formPF; if(!f || !(f.valor>0) || !f.conta || !f.bandeira || !f.data || jaFeito) return;
+    var dup = ((s.lp && s.lp.solicitacoes) || []).find(function(y){ return y.porFora && normNome(y.revendedora)===normNome(sel.nome) && Math.round(y.valor*100)===Math.round(f.valor*100) && String(y.pagoEm||"").slice(0, 10)===f.data; });
+    var idF = dup ? dup.id : "SF"+Date.now();
+    if(!dup) d({type:"LP", op:"sol_por_fora", id:idF, revendedora:sel.nome, valor:f.valor, parcelas:f.parcelas, bandeira:f.bandeira, pagoEm:f.data===hoje ? agoraSP() : f.data+"T12:00:00", meioId:meioPorConta(f.conta), conta:f.conta, comprovanteImg:f.img || "", por:nomeDe(s.usuario)});
+    var falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valorLinha = Math.min(f.valor, falta);
+    if(valorLinha>0) up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valorLinha, parcelas:f.parcelas, bandeira:f.bandeira, linkSolId:idF, jaPagoLink:true, descricao:f.conta}])});
+    setFormPF(null); };
+  // foto vira JPEG pequeno (mesmo cuidado do comprovante dos pagamentos): fica no pedido do setor Link de pagamento
+  var lerFotoComp = function(arq, fim){ if(!arq) return; var rd = new FileReader(); rd.onload = function(){ var img = new Image(); img.onload = function(){ var k = Math.min(1, 800/Math.max(img.width, img.height)), cv = document.createElement("canvas"); cv.width = Math.round(img.width*k); cv.height = Math.round(img.height*k); cv.getContext("2d").drawImage(img, 0, 0, cv.width, cv.height); fim(cv.toDataURL("image/jpeg", 0.55)); }; img.src = rd.result; }; rd.readAsDataURL(arq); };
+  var contasLink = formaDe("link").descricoes || [];
+  var campoPF = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-0.5"}, e("span",{className:CAP}, rot), el); };
+  var SELPF = "h-8 w-full rounded-md border border-foreground/25 bg-card px-2 text-[13px]";
+  var blocoLinks = !jaFeito && !!s.lp && e("div",{className:"flex flex-col border-t border-foreground/25"},
+    e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora"),
+    linksPagos.map(function(x){ var sol = x.sol; return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 text-[13px]"},
+      e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
+      x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
+    linksAguardando.map(function(sol){ var gerado = sol.status==="gerado";
+      return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-center gap-2 px-2 py-1 text-center text-[13px]"},
+        e("span",null, (sol.paraAtendimento ? (gerado ? "Link gerado pela Hellen" : "Pedido enviado à Hellen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))),
+        gerado && sol.linkUrl && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(sol.linkUrl); }catch(x){} }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Copiar link")); }),
+    !formPF && !formPN && e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPN({valor:null, parcelas:1}); }, title:"A Hellen gera o link na plataforma. Quando a revendedora pagar, ele entra aqui como pagamento.", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Pedir link novo (a Hellen gera)")),
+    formPN && e("div",{className:"flex flex-col gap-2 p-2"},
+      e("p",{className:"text-center text-[13px] font-semibold"}, "Pedido de link novo: a Hellen gera na plataforma e avisa"),
+      e("div",{className:"grid grid-cols-2 gap-2"},
+        campoPF("Valor do link", e(CampoDinheiro,{value:formPN.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPN(Object.assign({}, formPN, {valor:v})); }})),
+        campoPF("Parcelas", e("select",{value:formPN.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPN(Object.assign({}, formPN, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); })))),
+      e("div",{className:"flex justify-center gap-2"},
+        e("button",{type:"button", onClick:function(){ setFormPN(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
+        e("button",{type:"button", disabled:!(formPN.valor>0), onClick:function(){ d({type:"LP", op:"sol_pedir_atendimento", id:"SP"+Date.now(), revendedora:sel.nome, valor:formPN.valor, parcelas:formPN.parcelas, por:nomeDe(s.usuario)}); setFormPN(null); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Pedir o link"))),
+    !formPF && formPN ? null : !formPF ? e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPF({valor:null, parcelas:1, bandeira:"", conta:contasLink[0] || "", data:hoje, img:""}); }, title:"Link gerado fora do sistema (WhatsApp ou direto na plataforma) e já pago: entra no setor Link de pagamento e vale como pagamento", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Link já pago (por fora)"))
+    : e("div",{className:"flex flex-col gap-2 p-2"},
+        e("p",{className:"text-center text-[13px] font-semibold"}, "Link pago por fora: entra no setor Link de pagamento como Pago"),
+        e("div",{className:"grid grid-cols-2 gap-2"},
+          campoPF("Valor do link", e(CampoDinheiro,{value:formPF.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPF(Object.assign({}, formPF, {valor:v})); }})),
+          campoPF("Parcelas", e("select",{value:formPF.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); }))),
+          campoPF("Bandeira", e("select",{value:formPF.bandeira, "aria-label":"Bandeira", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {bandeira:ev.target.value})); }}, [e("option",{key:"x", value:""}, "Escolha")].concat(BANDEIRAS.map(function(b){ return e("option",{key:b, value:b}, b); })))),
+          campoPF("Data do pagamento", e("input",{type:"date", value:formPF.data, max:hoje, "aria-label":"Data do pagamento", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {data:ev.target.value})); }}))),
+        campoPF("Conta que recebeu", contasLink.length ? e("select",{value:formPF.conta, "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }}, contasLink.map(function(c){ return e("option",{key:c, value:c}, c); }))
+          : e("input",{value:formPF.conta, maxLength:80, placeholder:"Ex.: LINK - SICREDI - SERENITY - 59", "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }})),
+        campoPF("Foto do comprovante: print da confirmação de pagamento da plataforma (obrigatória)", e("div",{className:"flex items-center gap-2"}, e("input",{type:"file", accept:"image/*", "aria-label":"Foto do comprovante do pagamento", onChange:function(ev){ lerFotoComp(ev.target.files && ev.target.files[0], function(url){ setFormPF(function(o){ return Object.assign({}, o, {img:url}); }); }); }, className:"block min-w-0 flex-1 text-[13px] file:mr-2 file:h-8 file:rounded-md file:border file:border-foreground/25 file:bg-card file:px-3 file:text-[13px]"}), formPF.img && e("img",{src:formPF.img, alt:"Comprovante anexado", className:"h-8 rounded bg-white"}))),
+        e("div",{className:"flex justify-center gap-2"},
+          e("button",{type:"button", onClick:function(){ setFormPF(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
+          e("button",{type:"button", disabled:!(formPF.valor>0) || !formPF.bandeira || !formPF.conta || !formPF.data || !formPF.img, onClick:registrarPorFora, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Registrar e usar como pagamento"))));
   var listaFormas = e("div",{className:"flex flex-col"}, formas.map(function(f,i){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));
@@ -864,13 +936,13 @@ function AtendimentoInterno(){
   var GPAG = " grid-cols-[minmax(0,1.5fr)_3.5rem_6.5rem_2rem]";
   var tabPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+GPAG}, e("span",null,"Forma"), e("span",null,"Parc."), e("span",null,"Valor"), e("span")),
     form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
-      e("span",{className:"flex flex-col items-center"}, formaDe(q.forma).label, q.bandeira && e("span",{className:CAP}, q.bandeira)), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
+      e("span",{className:"flex flex-col items-center"}, formaDe(q.forma).label, q.bandeira && e("span",{className:CAP}, q.bandeira), q.jaPagoLink && e("span",{className:CAP}, "já pago no link")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
       jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
     linhaKV("Valor do acerto", n15(pa ? din(dv.totalAPagar) : "—")), linhaKV("Pagamentos", n15(din(dv.totalPagoAtual), "text-success"), {z:true}),
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))));
-  var est1 = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Selecione a forma de pagamento", e("div",{className:CTB}, e("div",{className:"flex-1"}, listaFormas), linhaBand, linhaEntrada)), lado("Formas de pagamento selecionadas", [tabPag, tabTotPag, pPag]));
+  var est1 = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Selecione a forma de pagamento", e("div",{className:CTB}, e("div",{className:"flex-1"}, listaFormas), blocoLinks, linhaBand, linhaEntrada)), lado("Formas de pagamento selecionadas", [tabPag, tabTotPag, pPag]));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){
@@ -970,7 +1042,7 @@ function AtendimentoInterno(){
     nums.map(function(x,i){ return e("div",{key:i, className:LIN+" grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"+(i%2 ? " bg-white/[0.03]" : "")}, e("span",{className:"whitespace-nowrap"},x[0]), e("b",{className:"text-[13px] font-semibold"}, x[1])); }),
     e("div",{className:"flex-1"}),
     e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"}, e("button",{type:"button", onClick:marcarLida, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(regrasOk[rSel] ? "border-foreground/25 bg-card" : "border-primary bg-primary text-primary-foreground")}, regrasOk[rSel] ? "✓ Regra lida · desfazer" : "Li e expliquei esta regra"),
-      cienteOk && e("button",{type:"button", disabled:!temVenda || !continuaEf, onClick:function(){ if(retornando) registrar(); else setAssAberta(true); }, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Abre a assinatura da revendedora", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Finalizar atendimento" : "✍ Assinar e registrar")));
+      cienteOk && e("button",{type:"button", disabled:!pronto, onClick:registrar, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Registra o atendimento", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Finalizar atendimento" : "Registrar acerto")));
   var est4 = (jaFeito || msgs) ? e("div",{className:"flex flex-1 flex-col gap-3 p-3"}, pRegras)
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},
         termoAnt && e("div",{className:"flex justify-center gap-1.5 border-b border-foreground/25 p-2"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
@@ -996,11 +1068,12 @@ function AtendimentoInterno(){
         e("div",{key:"k", className:"flex justify-between border-t border-primary/40 pt-1 text-primary"}, e("span",null,"Valor do kit liberado"), e("b",null, kitRet ? din(kitRet) : "Não libera"+(avRet.motivo ? " · "+avRet.motivo : "")))]),
     sel.tipo==="kit_novo" && (valorKitNovo>0 ? e("p",{className:"rounded-md border border-primary/50 bg-primary/10 px-3 py-2 font-semibold"}, "Valor do kit liberado: "+din(valorKitNovo)+" · definido pela Michele") : e("p",{className:"font-semibold text-destructive"}, "A Michele ainda não lançou o valor deste kit novo.")),
     !sel.escolhaIni ? e("p",null, "Clique em ⏱ Começou, no topo, quando ela começar a escolher.") : sel.escolhaFim ? e("p",{className:"font-semibold text-success"}, "✓ Escolha terminada em "+relogio(decorridoSeg)+". Clique em Próxima e explique as regras.") : e("p",{className:"font-semibold"}, "Escolhendo há "+relogio(decorridoSeg)+" de 60:00. Clique em ■, no topo, quando ela terminar.")), "flex-1", "p-0"));
-  var ESTS = retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
-  var feitoE = ESTS.map(function(x){ return x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
-  var libE = ESTS.map(function(x,i){ return jaFeito || (retornando ? (i===0 ? !!sel.inicioTs : !!sel.escolhaFim) : (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : temVenda)); });
-  var valE = ["", temVenda ? din(form.vendaBruta||0) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(assinatura || jaFeito ? " · assinado" : "") : ""];
+  var ESTS = simples ? [["Atendimento",[]]] : retornando ? [["Escolha do kit",[]], ["Regras",[5]]] : [["Condicionais",[0]], ["Vendas",[1]], ["Pagamentos",[2]], ["Valor do kit",[]], ["Brindes",[3]], ["Condicional nova",[4]], ["Regras",[5]]];
+  var feitoE = ESTS.map(function(x){ return x[0]==="Atendimento" ? jaFeito : x[0]==="Escolha do kit" ? (!!sel.escolhaFim || jaFeito) : x[0]==="Condicionais" ? (!!sel.condOk || jaFeito) : x[0]==="Valor do kit" ? (mediaVendas!==null && !!kitLiberado) : x[1].every(function(j){ return feitoPasso[j]; }); });
+  var libE = ESTS.map(function(x,i){ return jaFeito || (simples ? !!sel.inicioTs : retornando ? (i===0 ? !!sel.inicioTs : !!sel.escolhaFim) : (i===0 ? !!sel.inicioTs : i===1 ? !!sel.condOk : temVenda)); });
+  var valE = ["", temVenda ? din(form.vendaBruta||0) : "", form.pagamentos.length ? din(dv.totalPagoAtual) : "", kitLiberado ? din(kitLiberado) : "", form.brindes.length ? din(cb.lancadoNormal+cb.lancadoSelect) : "", "", nRegras>0 ? nRegras+"/"+regras.length+(cienteOk || jaFeito ? " · passadas" : "") : ""];
   if(retornando) valE = [sel.escolhaFim ? relogio(decorridoSeg) : "", valE[6]];
+  if(simples) valE = [sel.inicioTs ? hhmmDeTs(sel.inicioTs) : ""];
   var estAt = Math.min(passoAt, ESTS.length-1);
   var lateral = e("div",{className:"flex flex-col border-2 border-primary/50"},
     ESTS.map(function(x,i){ var on = i===estAt, liv = libE[i], ok = feitoE[i] && liv && (i<4 || feitoE[2]);
@@ -1010,7 +1083,13 @@ function AtendimentoInterno(){
     e("div",{className:"flex justify-center gap-2 border-t-2 border-primary/50 p-2"},
       e("button",{type:"button", disabled:estAt===0, onClick:function(){ setPassoAt(estAt-1); }, className:"h-8 w-[5.5rem] rounded-md border-2 border-primary/50 bg-card text-[13px] font-medium hover:bg-white/10 disabled:opacity-40"}, "‹ Voltar"),
       e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 ? BRILHO : "")}, "Próxima ›")));
-  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : (retornando ? [estEscolha, est4] : [estCond, estVendas, est1, estKit, est2, est3, est4])[estAt];
+  var ROT_SIMPLES = {indicacao:"Brinde de indicação", reposicao:"Reposição", troca:"Troca de peça"}[sel.tipo] || "";
+  var estSimples = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Atendimento · "+ROT_SIMPLES, e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
+    e("p",{className:"font-semibold"}, sel.tipo==="indicacao" ? "Entregue o brinde da indicação à cliente." : sel.tipo==="reposicao" ? "Entregue a reposição à cliente." : "Faça a troca da peça da cliente."),
+    !jaFeito && e("textarea",{value:sel.anotacao||"", rows:3, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional): o que foi entregue ou trocado", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full max-w-md resize-none py-2! text-[13px]!"}),
+    jaFeito ? e("p",{className:"font-semibold text-success"}, "✓ Atendimento finalizado"+(sel.fim ? " às "+sel.fim : "")+(sel.anotacao ? " · "+sel.anotacao : ""))
+      : e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!sel.inicioTs, onClick:function(){ d({type:"INT_SIMPLES_FIM", id:sel.id, por:nomeDe(s.usuario)}); }}, "Finalizar atendimento")), "flex-1", "p-0"));
+  var estFn = !sel.inicioTs && !jaFeito ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-center text-[13px] font-semibold"}, "Clique em ▶ Iniciar atendimento, no topo, para começar.") : (simples ? [estSimples] : retornando ? [estEscolha, est4] : [estCond, estVendas, est1, estKit, est2, est3, est4])[estAt];
   var SHELL = "grid min-h-[402px] grid-cols-[14rem_minmax(0,1fr)]";
   // 10/11/2026 (Marcus: "a tela tem que ser responsiva"): o @container fica NA ÁREA DE CONTEÚDO (sem a coluna das etapas), assim "duas colunas" só vale quando cabem de verdade; antes media o cartão inteiro e apertava as tabelas em notebook
   var corpo = e("div",{className:SHELL, onKeyDown:enterProximo}, lateral, e("div",{className:"@container flex min-w-0 flex-col"}, estFn));
@@ -1053,13 +1132,7 @@ function AtendimentoInterno(){
   var resumoBloco = e("section",{className:"@container overflow-hidden rounded-lg border border-foreground/25 bg-card/60"},
     e("div",{className:"grid h-8 grid-cols-[1fr_auto_1fr] items-center bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold"}, e("span",{className:CAP}, nFeitos+" de "+PASSOS.length+" etapas"), e("span",null,"Resumo do acerto · "+sel.nome), e("span",{className:CAP+" justify-self-end"}, new Date().toLocaleDateString("pt-BR"))),
     e("div",{className:"grid grid-cols-1 @[34rem]:grid-cols-2 @[52rem]:grid-cols-[minmax(0,1.25fr)_minmax(0,.8fr)_minmax(0,.8fr)_minmax(0,1.05fr)]"}, degradeEm([resCond, resBr("normal","Brinde normal", dv.libN||0, cb.lancadoNormal||0), resBr("bb","Brinde select", dv.libS||0, cb.lancadoSelect||0), resConta])));
-  var janelaAss = assAberta && !jaFeito && e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-4"},
-    e("div",{className:"flex w-full max-w-md flex-col gap-3 rounded-xl border border-foreground/25 bg-card p-4"},
-      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, "Assinatura de "+sel.nome), e("button",{type:"button", "aria-label":"Fechar", onClick:function(){ setAssAberta(false); }, className:"h-8 w-8 rounded-md border border-foreground/25 bg-card text-[13px] hover:bg-white/10"}, "×")),
-      e(AssinaturaDigital,{onChange:setAssinatura, legenda:"Assinatura de "+sel.nome+" (com o mouse)"}),
-      e("div",{className:"flex justify-end gap-2"}, e("button",{type:"button", onClick:function(){ setAssAberta(false); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-4 text-[13px] hover:bg-white/10"}, "Cancelar"),
-        e("button",{type:"button", disabled:!pronto, onClick:function(){ registrar(); setAssAberta(false); }, className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Confirmar e finalizar kit retornando" : "Confirmar e registrar acerto")),
-      !pronto && e("p",{className:"text-center text-[13px] text-muted-foreground"}, !assinatura ? "Falta a assinatura da revendedora." : "Confira o que falta antes de registrar.")));
+  var janelaAss = null;   // a revendedora NÃO assina nada no sistema (Marcus, 11/11/2026)
   return e("div",{className:"contents", style:PRATA ? VARS_PRATA : undefined}, pagina(e("div",{className:"flex min-w-0 flex-col gap-3"},
     visor && e("div",{role:"status", className:"flex flex-wrap items-center justify-center gap-3 rounded-lg border border-primary bg-primary/15 px-3 py-2 text-center text-[13px] font-semibold"}, e("span",null,"Só acompanhando · "+String(quemAtende).split(" ")[0]+" está atendendo. A tela atualiza sozinha."), e("button",{type:"button", onClick:function(){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{iniciadoPor:nomeDe(s.usuario), bipou:nomeDe(s.usuario)}}); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground"}, "Assumir atendimento")),
     e("div",{className:"contents", style:visor ? {pointerEvents:"none"} : undefined}, cartao(corpo), retornando ? null : resumoBloco))), janelaAss);

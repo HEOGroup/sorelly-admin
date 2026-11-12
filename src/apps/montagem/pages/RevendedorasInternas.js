@@ -435,6 +435,8 @@ function CalendarioGrande(p){
 
 // Tabela: tudo centralizado, barra de degradê com linhas de corte, coluna Qtd., filtro ao clicar no título da coluna
 var kitDe = function(r){ var c = (r.conds||[]).filter(function(x){ return x.t!=="Expositor"; }).sort(function(a,b){ return (a.e||"").localeCompare(b.e||""); }); var kp = c.find(function(x){ return x.t==="Kit principal"; }) || c[0]; return kp && kp.e ? kp.e : ""; };
+// Acerto feito: vale enquanto a data do kit na DevMaster não for MAIS NOVA que a marcação (kit novo emitido depois = marcação some sozinha)
+var feitoVale = function(r){ return !!(r.acertoFeito && r.acertoFeito.em && r.acertoFeito.em>=(kitDe(r)||"")); };
 var qtdCond = function(r){ return (r.conds||[]).filter(function(x){ return x.t!=="Expositor"; }).length; };
 var ultimoDe = function(r){ var c = (r.registro||[])[0]; if(!c) return ""; var t = tipoReg(c.tipo||"outro").t.replace(" para acerto","").replace(" (sem data)","").replace(" (funcionária, Veneziana…)","").replace("Representante pediu o kit","Rep. pediu o kit"); return (c.data ? fmtDataBR(c.data).slice(0,5)+" · " : "")+(c.quem||c.autor||"—")+" · "+t; };
 var COLUNAS = [
@@ -442,7 +444,8 @@ var COLUNAS = [
   {k:"kit", t:"Data do kit", tipo:"data", v:kitDe}, {k:"prev", t:"Acerto previsto", tipo:"data", v:proximoAcerto}, {k:"falt", t:"Faltam", tipo:"falt", v:function(r, h){ return diasEntre(h, proximoAcerto(r)); }},
   {k:"ate", t:"Acerto até", tipo:"txt", v:function(r){ var pz = prazoAcerto(r, isoDe(new Date())); return pz ? pz.txt : ""; }},
   {k:"ag", t:"Data agendada", tipo:"data", v:function(r){ return r.agend ? r.agend.data : ""; }}, {k:"hora", t:"Hora", tipo:"txt", v:function(r){ return r.agend ? r.agend.hora : ""; }},
-  {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }}];
+  {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }},
+  {k:"feito", t:"Acerto feito", tipo:"txt", v:function(r){ return feitoVale(r) ? "Feito "+dBR(r.acertoFeito.em) : ""; }}];
 var dBR = function(iso){ return iso ? fmtDataBR(iso).slice(0,5) : "—"; };
 
 function TabelaAgenda(p){
@@ -458,7 +461,8 @@ function TabelaAgenda(p){
     return ok; };
   var ativo = function(c){ var f = fil[c.k]; return !!f && !!(f.q || f.a || f.b); };
   var algum = COLUNAS.some(ativo);
-  var linhas = lista.filter(passa).sort(function(a,b){ return proximoAcerto(a).localeCompare(proximoAcerto(b)); });
+  var cx = use(), eu = nomeDe(s.usuario);
+  var linhas = lista.filter(passa).sort(function(a,b){ return (feitoVale(a) ? 1 : 0)-(feitoVale(b) ? 1 : 0) || proximoAcerto(a).localeCompare(proximoAcerto(b)); });   // quem já fez o acerto vai para o fim
   var troca = function(col, parte, valor){ var n = Object.assign({}, fil), f = Object.assign({}, n[col]); f[parte] = valor; n[col] = f; setFil(n); };
   useEffect(function(){
     if(!pop) return undefined;
@@ -486,14 +490,16 @@ function TabelaAgenda(p){
         e("thead",null, e("tr",{style:BARRA_OURO}, COLUNAS.map(function(c){ return e("th",{key:c.k, "data-col":c.k, title:c.tipo==="seq" ? "Número da linha" : "Clique para filtrar", onClick:c.tipo==="seq" ? null : function(ev){ abrirPop(c, ev); }, className:(c.tipo==="seq" ? "" : "cursor-pointer ")+"h-8 select-none whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2 text-center text-[11px] font-extrabold uppercase tracking-[.06em] last:border-r-0 hover:bg-white/15 "+(ativo(c) ? "underline decoration-2 underline-offset-4" : "")}, c.t); }))),
         e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"p-4 text-center"}, lista.length===0 ? "Nenhuma revendedora ainda. Clique em Buscar da DevMaster." : "Nenhuma revendedora com esses filtros."))
           : linhas.map(function(r, i){
-              var prox = proximoAcerto(r), dd = diasEntre(hoje, prox), sit = SITUACOES.find(function(x){ return x.k===r.situacao; }) || SITUACOES[0], at = dd<0 && !r.agend;
-              return e("tr",{key:r.id, onClick:function(){ p.abrir(r.id); }, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(i%2 ? "bg-white/[.025]" : "")},
+              var prox = proximoAcerto(r), dd = diasEntre(hoje, prox), sit = SITUACOES.find(function(x){ return x.k===r.situacao; }) || SITUACOES[0], fe = feitoVale(r), at = dd<0 && !r.agend && !fe;
+              return e("tr",{key:r.id, onClick:function(){ p.abrir(r.id); }, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(fe ? "bg-white/[.10] opacity-60" : i%2 ? "bg-white/[.025]" : "")},
                 e("td",{className:cel, style:at ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" font-semibold"}, r.nome, r.kitNovo && e("span",{className:"ml-2 rounded-full bg-[rgba(232,184,75,.2)] px-2 text-[10.5px] font-bold text-[#E8B84B] ring-1 ring-[rgba(232,184,75,.5)]", title:"Kit novo direcionado pela Michele em "+fmtDataBR(r.kitNovo.desde)+": entrar em contato e agendar"}, "Kit novo")), e("td",{className:cel}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, foneBonito(r) || "—", BotaoZap(r))), e("td",{className:cel}, COLUNAS[3].v(r)||"—"),
                 e("td",{className:cel}, dBR(kitDe(r))), e("td",{className:cel}, dBR(prox)),
                 e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"),
                 (function(){ var pz = prazoAcerto(r, hoje); return e("td",{className:cel+" "+(!pz || pz.k==="futuro" ? "" : pz.k==="prazo" ? "text-[#34d399]" : pz.k==="alerta" ? "text-[#fbbf24]" : "text-[#f87171] font-semibold"), title:pz ? "Prazo de 5 dias úteis contado de "+fmtDataBR(pz.ref) : ""}, pz ? pz.txt : "—"); })(),
                 e("td",{className:cel+" "+(r.agend ? "text-[#E8B84B]" : "text-[#fbbf24]")}, r.agend ? dBR(r.agend.data) : "Aguardando"), e("td",{className:cel}, r.agend ? r.agend.hora : "—"),
-                e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d")); })))),
+                e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d"),
+                e("td",{className:cel}, fe ? e("button",{type:"button", title:"Feito por "+(r.acertoFeito.por||"—")+" em "+fmtDataBR(r.acertoFeito.em)+". Clique para desfazer.", onClick:function(ev){ ev.stopPropagation(); cx.dispatch({type:"REVINT_ACERTO_FEITO", id:r.id, desfazer:true}); }, className:"h-8 rounded-md px-2 text-[13px] font-bold text-white ring-1 ring-white/40"}, "✓ "+dBR(r.acertoFeito.em)+" · Desfazer")
+                  : e("button",{type:"button", title:"Marcar que esta revendedora já veio fazer o acerto", onClick:function(ev){ ev.stopPropagation(); cx.dispatch({type:"REVINT_ACERTO_FEITO", id:r.id, por:eu}); }, className:"h-8 rounded-md px-2 text-[13px] font-bold text-[#17110a]", style:{background:"linear-gradient(135deg,#F1D58A,#C9962F)"}}, "Acerto feito"))); })))),
     pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},
       popCorpo, e("button",{type:"button", onClick:function(){ var n = Object.assign({}, fil); delete n[cPop.k]; setFil(n); setPop(null); }, className:"self-start text-[12px] text-[#E8B84B]"}, "Limpar este filtro")));
 }
@@ -542,11 +548,12 @@ function KitsNovosParaAgendar(p){
 // INCLUIR CLIENTE (Tamara, 03 e 09/11/2026): quem vem à Sorelly sem condicional aberta na DevMaster (kit retornando, kit novo, brinde de indicação) não aparece na lista.
 // O NOME vem sempre de uma busca nas clientes cadastradas (DevMaster, rota /api/clientes-busca): aparece nome, código, cidade e situação, e a Tamara escolhe uma. Nada de nome digitado à mão (Marcus, 09/11/2026).
 // Única exceção: Brinde de indicação, que pode ser de pessoa sem cadastro; ali aparece a opção "Usar o nome digitado". Escolhida a cliente, tipo, dia e hora, ela entra já agendada na listagem do dia, sem condicional inventada.
-var TIPOS_AVULSA = [["kit_novo", "Kit novo"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"], ["reposicao", "Reposição"], ["acerto", "Acerto"]];
+var TIPOS_AVULSA = [["kit_novo", "Kit novo"], ["indicacao", "Brinde de indicação"], ["retornando", "Kit retornando"], ["reposicao", "Reposição"], ["troca", "Troca de peça"], ["acerto", "Acerto"]];
+var horaDeAgora = function(){ var n = new Date(); return String(n.getHours()).padStart(2, "0")+":"+String(n.getMinutes()).padStart(2, "0"); };
 var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var semZeros = function(c){ return String(c||"").replace(/\D/g, "").replace(/^0+/, ""); };
 function JanelaIncluirCliente(p){
-  var fs = useState({tipo:"kit_novo", data:p.hojeIso, hora:"", quer:"", valor:0, fone:""}), form = fs[0], setForm = fs[1];
+  var fs = useState({tipo:p.imediato ? "acerto" : "kit_novo", data:p.hojeIso, hora:p.imediato ? horaDeAgora() : "", quer:"", valor:0, fone:""}), form = fs[0], setForm = fs[1];
   var bs = useState(""), busca = bs[0], setBusca = bs[1], ss = useState(null), sel = ss[0], setSel = ss[1];
   var rs = useState({itens:[], buscando:false, aviso:""}), res = rs[0], setRes = rs[1], cont = React.useRef(0);
   var set = function(k, v){ var n = Object.assign({}, form); n[k] = v; if(k==="data") n.hora = ""; if(k==="tipo" && v!=="indicacao" && sel && sel.semCadastro){ setSel(null); } setForm(n); };
@@ -570,13 +577,13 @@ function JanelaIncluirCliente(p){
   var jaNaLista = sel ? naListaDe(sel) : null;
   var horas = form.data ? horasDoDia(form.data) : [];
   var motivo = form.data && form.hora ? motivoNaoMarcar(p.lista, form.data, form.hora, null) : (form.data && horas.length===0 ? motivoNaoMarcar(p.lista, form.data, "08:00", null) : "");
-  var pronto = !!sel && !jaNaLista && !!form.data && !!form.hora && !motivo;
+  var pronto = p.imediato ? !!sel : (!!sel && !jaNaLista && !!form.data && !!form.hora && !motivo);   // imediato = quem chegou agora (Listagem): sem dia, hora nem limite de vagas
   var campo = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-1"}, e("span",{className:ROTULO}, rot), el); };
   var q0 = busca.trim(), mostraLista = !sel && (/^\d+$/.test(q0) || q0.length>=3);
   return e("div",{className:"fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/65 p-3 md:p-6", role:"dialog", "aria-modal":"true", onMouseDown:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }},
     e("div",{className:"relative my-auto flex w-full max-w-[640px] flex-col gap-3 rounded-xl border bg-[#131315] p-4 "+BORDA},
-      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, "Incluir cliente na listagem"), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 rounded-lg px-2.5 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Fechar ✕")),
-      e("p",{className:"text-[13px]"}, "Para quem vem à Sorelly e não está na lista: kit retornando, kit novo ou brinde de indicação. Escolha a cliente entre as cadastradas."),
+      e("div",{className:"flex items-center justify-between"}, e("b",{className:"text-[13px]"}, p.imediato ? "Incluir cliente que chegou agora" : "Incluir cliente na listagem"), e("button",{type:"button", "aria-label":"Fechar", onClick:p.fechar, className:"h-8 rounded-lg px-2.5 text-[13px] font-semibold ring-1 ring-[rgba(241,213,138,.3)] hover:bg-white/10"}, "Fechar ✕")),
+      e("p",{className:"text-[13px]"}, p.imediato ? "Para quem chegou e não está na listagem de hoje (inclusive funcionária). Entra agora, com a hora de agora. Escolha a cliente entre as cadastradas." : "Para quem vem à Sorelly e não está na lista: kit retornando, kit novo ou brinde de indicação. Escolha a cliente entre as cadastradas."),
       sel
         ? campo("Cliente", e("div",{className:"flex min-h-8 flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1 "+BORDA},
             e("span",{className:"text-[13px]"}, e("b",null, sel.nome), sel.cod ? e("span",{className:MONO+" ml-2 font-bold text-[#E8B84B]"}, "Cód. "+sel.cod) : e("span",{className:"ml-2 font-bold text-[#E8B84B]"}, "Sem cadastro"), sel.cidade ? e("span",{className:"ml-2"}, sel.cidade+(sel.uf ? "/"+sel.uf : "")) : null),
@@ -587,19 +594,23 @@ function JanelaIncluirCliente(p){
         !res.buscando && res.aviso && e("p",{className:"px-2.5 py-2 text-[13px] text-[#fca5a5]"}, res.aviso),
         !res.buscando && res.itens.length===0 && !res.aviso && e("p",{className:"px-2.5 py-2 text-[13px]"}, "Nenhuma cliente cadastrada com esse nome ou código."),
         res.itens.map(function(c){ var nl = naListaDe(c);
-          return e("button",{key:c.cod||c.nome, type:"button", onClick:function(){ if(nl){ p.abrir(nl.id); p.fechar(); } else escolher(c); }, className:"grid min-h-8 grid-cols-[minmax(0,1fr)_70px_150px_90px] items-center gap-2 border-b px-2.5 text-left text-[13px] last:border-b-0 hover:bg-white/10 "+BORDA},
+          return e("button",{key:c.cod||c.nome, type:"button", onClick:function(){ if(nl && !p.imediato){ p.abrir(nl.id); p.fechar(); } else escolher(c); }, className:"grid min-h-8 grid-cols-[minmax(0,1fr)_70px_150px_90px] items-center gap-2 border-b px-2.5 text-left text-[13px] last:border-b-0 hover:bg-white/10 "+BORDA},
             e("span",{className:"font-semibold"}, c.nome), e("span",{className:MONO+" text-[#E8B84B]"}, c.cod), e("span",null, c.cidade||"—"), e("span",{className:"text-[11px] font-bold "+(c.situacao==="Ativa" ? "text-[#bbf7d0]" : c.situacao==="Na lista" ? "" : "text-[#fca5a5]")}, nl ? "Já na lista" : c.situacao)); }),
         form.tipo==="indicacao" && q0.length>=3 && !/^\d+$/.test(q0) && e("button",{type:"button", onClick:function(){ escolher({cod:"", nome:q0.toUpperCase(), cidade:"", celular:"", semCadastro:true}); }, className:"flex min-h-8 items-center gap-2 px-2.5 text-left text-[13px] font-bold text-[#E8B84B] hover:bg-white/10"}, "Não está cadastrada? Usar “"+q0.toUpperCase()+"” só para retirar o brinde")),
-      jaNaLista && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] text-[#fca5a5] "+BORDA}, e("span",null, "Essa cliente já está na lista. Agende pela ficha dela."), e("button",{type:"button", onClick:function(){ p.abrir(jaNaLista.id); p.fechar(); }, className:"h-8 rounded-md px-2.5 font-bold text-[#E8B84B] hover:bg-white/10"}, "Abrir a ficha")),
+      jaNaLista && !p.imediato && e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg border px-2.5 py-1.5 text-[13px] text-[#fca5a5] "+BORDA}, e("span",null, "Essa cliente já está na lista. Agende pela ficha dela."), e("button",{type:"button", onClick:function(){ p.abrir(jaNaLista.id); p.fechar(); }, className:"h-8 rounded-md px-2.5 font-bold text-[#E8B84B] hover:bg-white/10"}, "Abrir a ficha")),
       e("div",{className:"grid gap-2 md:grid-cols-2"},
         campo("Tipo", e("select",{value:form.tipo, className:CAMPO, onChange:function(ev){ set("tipo", ev.target.value); }}, TIPOS_AVULSA.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
         campo("Telefone (opcional)", e("input",{value:form.fone, maxLength:20, placeholder:"(41) 90000-0000", className:CAMPO, onChange:function(ev){ set("fone", ev.target.value); }})),
         campo("O que a cliente quer", e("input",{value:form.quer, maxLength:200, placeholder:"Ex.: retirar o brinde", className:CAMPO, onChange:function(ev){ set("quer", ev.target.value); }})),
         campo("Valor liberado (reposição ou kit novo)", e(CampoDinheiro,{value:form.valor, label:"Valor liberado (reposição ou kit novo)", className:CAMPO, onChange:function(v){ set("valor", v); }})),
-        campo("Dia", e("input",{type:"date", value:form.data, className:CAMPO, onChange:function(ev){ set("data", ev.target.value); }})),
-        campo("Hora", e("select",{value:form.hora, className:CAMPO, onChange:function(ev){ set("hora", ev.target.value); }}, e("option",{value:""}, "Escolha"), horas.map(function(h){ return e("option",{key:h, value:h}, h); })))),
-      motivo && e("p",{className:"text-[13px] text-[#fca5a5]"}, motivo),
-      e("button",{type:"button", disabled:!pronto, onClick:function(){ p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:form.data, hora:form.hora, quer:form.quer, valor:form.valor}); p.irParaDia(form.data); p.fechar(); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, "Incluir na listagem")));
+        !p.imediato && campo("Dia", e("input",{type:"date", value:form.data, className:CAMPO, onChange:function(ev){ set("data", ev.target.value); }})),
+        !p.imediato && campo("Hora", e("select",{value:form.hora, className:CAMPO, onChange:function(ev){ set("hora", ev.target.value); }}, e("option",{value:""}, "Escolha"), horas.map(function(h){ return e("option",{key:h, value:h}, h); })))),
+      motivo && !p.imediato && e("p",{className:"text-[13px] text-[#fca5a5]"}, motivo),
+      e("button",{type:"button", disabled:!pronto, onClick:function(){ if(p.imediato){ var hAgora = horaDeAgora();
+          if(jaNaLista) p.dispatch({type:"REVINT_AGENDAR", id:jaNaLista.id, data:p.hojeIso, hora:hAgora, tipo:form.tipo, quer:form.quer, valor:form.valor, imediato:true});   // já é cliente da lista: entra no dia de hoje, agora
+          else p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:p.hojeIso, hora:hAgora, quer:form.quer, valor:form.valor, imediato:true});
+          p.fechar(); return; }
+        p.dispatch({type:"REVINT_AVULSA", nome:sel.nome, fone:form.fone, cod:sel.cod, cidade:sel.cidade, tipo:form.tipo, data:form.data, hora:form.hora, quer:form.quer, valor:form.valor}); p.irParaDia(form.data); p.fechar(); }, className:"h-8 rounded-lg px-3 text-[13px] font-bold text-[#17110a] disabled:opacity-50", style:BTN_OURO}, "Incluir na listagem")));
 }
 
 function AbaRevendedorasInternas(){
@@ -649,4 +660,4 @@ function AbaRevendedorasInternas(){
         e(Detalhes,{key:rSel.id, r:rSel, cx:cx, hojeIso:hojeIso}))));
 }
 
-export { AbaRevendedorasInternas, sincronizarDm, BotaoZap, foneBonito, foneDe };
+export { AbaRevendedorasInternas, JanelaIncluirCliente, sincronizarDm, BotaoZap, foneBonito, foneDe };
