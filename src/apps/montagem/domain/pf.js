@@ -897,6 +897,10 @@ function mqPreviewDist(pf, mes, linhas){   // previewDist
 
 // ---------- POINT · conta corrente (HTML 5366-5529) ----------
 function ptMeses(pf){ return pf.pedidos.filter(function(p){ return p.fornId===PT_FORN; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
+// MÊS ÚNICO (Nickolas, 12/11/2026): a Point tem só UM registro por mês e ano. Dois registros no mesmo mês duplicavam a linha nas duas partes e contavam o boleto do mês duas vezes.
+// "fora" = o próprio registro que está sendo editado (não conta como repetido).
+function ptMesTem(pf, mes, fora){ return pf.pedidos.some(function(p){ return p.fornId===PT_FORN && p!==fora && String(p.data||"").slice(0,7)===mes; }); }
+var ptMsgRepetido = function(data){ return "A Point já tem o mês de "+mesLabel(data.slice(0,7)+"-01")+". Só pode existir um mês de cada. Lance o pedido dentro dele: escolha a Point no filtro Fornecedor, abra o mês pela seta e use “+ pedido”."; };
 function ptPed(pf, id){ return pf.pedidos.find(function(p){ return p.id===id; }); }
 function ptDados(pf){   // cálculo do renderPoint: bloco de pedidos (saldo) e bloco do pix mensal
   var lista = ptMeses(pf), acum = pf.ptSaldoIni, tPed = 0, nPed = 0;
@@ -942,6 +946,8 @@ function pfReduz(s, a){
   var ok = function(msg){ invalidar(pf); sincronizarTudo(pf); return {patch:{pf:pf}, msg:msg||"Salvo"}; };
   var F = function(id){ return forn(pf, id); };
   var ped = function(id){ return pf.pedidos.find(function(p){ return p.id===id; }); };
+  // número do próximo pedido sempre acima do maior já usado (12/11/2026): o "Novo mês" da Point usava ++seq e deixava o próximo pedido nascer com o mesmo número de um mês
+  if(pf.seq && Array.isArray(pf.pedidos)){ var maxP = pf.pedidos.reduce(function(m, p){ return Math.max(m, Number(p.id)||0); }, 0); if(!(pf.seq.P > maxP)) pf.seq.P = maxP+1; }
   invalidar(pf);
   switch(a.op){
     case "mut": { var r = a.fn(pf); invalidar(pf); return ok(typeof r==="string" ? r : "Salvo"); }
@@ -1001,6 +1007,7 @@ function pfReduz(s, a){
       if(Math.abs(tot-(c+s2))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       var fid2 = parseInt(a.fornId); if(!F(fid2)) return recusa("Escolha o fornecedor.");
       if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
+      if(fid2===PT_FORN && ptMesTem(pf, a.data.slice(0,7))) return recusa(ptMsgRepetido(a.data));
       var ePrest2 = ehPrestador(F(fid2)), pixMin = num(a.pixMin);
       if(ePrest2 && !(a.limite && DATA_OK.test(a.limite))) return recusa("Prestador de serviço precisa de uma data limite para pagar.");
       if(ePrest2 && pixMin<=0) return recusa("Prestador de serviço precisa do valor mínimo de pix.");
@@ -1030,6 +1037,7 @@ function pfReduz(s, a){
       if(Math.abs(totE-(cE+sE))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       var fidE = parseInt(a.fornId); if(!F(fidE)) return recusa("Escolha o fornecedor.");
       if(!a.data || !DATA_OK.test(a.data)) return recusa("Informe a data do pedido.");
+      if(fidE===PT_FORN && ptMesTem(pf, a.data.slice(0,7), pe)) return recusa(ptMsgRepetido(a.data));
       var pagasE = pe.parcelas.filter(function(p){ return p.status==="Pago"; });
       if(fidE!==pe.fornId && pagasE.length) return recusa("Este pedido já tem parcela paga: não dá para trocar o fornecedor. Estorne as baixas antes.");
       var ePrestE = ehPrestador(F(fidE));
@@ -1079,6 +1087,7 @@ function pfReduz(s, a){
       if(t2<=0) return recusa("Informe o valor total do pedido.");
       if(Math.abs(t2-(c2+s3))>0.005) return recusa('A soma de "com NF" + "sem NF" precisa fechar com o valor total do pedido.');
       if(q.data!==undefined && !DATA_OK.test(q.data)) return recusa("Informe a data do pedido.");
+      if(q.data!==undefined && pd1.fornId===PT_FORN && ptMesTem(pf, q.data.slice(0,7), pd1)) return recusa(ptMsgRepetido(q.data));
       ["numero","data","cnpj","nfNum","nfTipo","obs","descricao","limite","pixMin"].forEach(function(k){ if(q[k]!==undefined) pd1[k] = q[k]; });
       pd1.total = t2; pd1.comNF = c2; pd1.semNF = s3; return ok("Pedido atualizado");
     }
@@ -1226,10 +1235,21 @@ function pfReduz(s, a){
       var ms = ptMeses(pf), prox;
       if(ms.length){ var u = ms[ms.length-1].data.slice(0,7).split("-").map(Number); prox = isoLocal(new Date(u[0], u[1], 1)).slice(0,7); } else prox = mesAtual();
       if(ms.some(function(p){ return p.data.slice(0,7)===prox; })) return recusa("O mês "+mesLabel(prox+"-01")+" já existe");
-      var nv = {id:++pf.seq.P, fornId:PT_FORN, numero:"Point "+mesLabel(prox+"-01"), data:prox+"-01", total:0, nfTipo:"sem", comNF:0, semNF:0, cnpj:(F(PT_FORN)||{}).cnpj||"", nfNum:"", obs:"", itens:[],
+      var nv = {id:pf.seq.P++, fornId:PT_FORN, numero:"Point "+mesLabel(prox+"-01"), data:prox+"-01", total:0, nfTipo:"sem", comNF:0, semNF:0, cnpj:(F(PT_FORN)||{}).cnpj||"", nfNum:"", obs:"", itens:[],
         parcelas:[{forma:"pix_revendedora", venc:prox+"-28", valor:0, conta:"Pix revendedora", status:"Pendente"}]};
       pf.pedidos.push(nv); ptSync(nv); pf.ptAberto[nv.id] = true;
       return ok("Mês "+mesLabel(prox+"-01")+" criado");
+    }
+    case "pt_mes_del": {   // APAGAR O MÊS (Nickolas, 12/11/2026): pedidos sem NF e acerto mensal são o mesmo registro, então o mês sai das duas partes de uma vez
+      var ixD = pf.pedidos.findIndex(function(p){ return p.id===a.id && p.fornId===PT_FORN && (!a.data || p.data===a.data); });   // id + data: acha o registro certo mesmo com id repetido de antes
+      if(ixD<0) return recusa("Mês da Point não encontrado.");
+      var pdM = pf.pedidos[ixD], mesD = String(pdM.data||"").slice(0,7), nItD = (pdM.itens||[]).length;
+      if((pdM.parcelas||[]).some(function(q){ return q.status==="Pago" && Math.abs(Number(q.valor)||0)>0.005; })) return recusa("O pix de "+mesLabel(pdM.data)+" está Pago. Volte o pix para Pendente antes de apagar o mês.");
+      if(!a.forcar) return recusa("O mês de "+mesLabel(pdM.data)+" vai sair das duas partes: "+(nItD ? nItD+" pedido(s) sem NF e " : "")+"o acerto mensal.", true);
+      pf.pedidos.splice(ixD, 1);
+      if(!ptMesTem(pf, mesD)) delete pf.ptBoleto[mesD];   // o boleto é do mês: só sai se não sobrou outro registro do mesmo mês
+      delete pf.ptAberto[pdM.id];
+      return ok("Mês de "+mesLabel(pdM.data)+" apagado");
     }
   }
   return recusa("Ação desconhecida: "+a.op);

@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.18", data:"2026-11-12", titulo:"Point: apagar o mês e só um mês de cada", itens:[
+  {tipo:"novo", area:"Pagamentos a fornecedores › Negociações › Point", txt:"Cada mês da parte Pedidos sem NF ganhou a lixeira Apagar o mês. O mês sai das duas partes (pedidos sem NF e acerto mensal) depois de uma confirmação. Pix do mês pago com valor não deixa apagar: volte o pix para Pendente antes."},
+  {tipo:"correção", area:"Pagamentos a fornecedores › Negociações › Point", txt:"Regra nova: a Point tem só um mês de cada mês e ano. Lançar ou mudar um pedido da Point para um mês que já existe é recusado, com o aviso de lançar o pedido dentro do mês. O Novo mês também não repete mais o número interno de outro pedido."}]},
  {v:"0.20.17", data:"2026-11-12", titulo:"Atendimento interno e Direcionar: brinde antes do pagamento, regras em PDF e fila certa", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Os campos de brinde (Normal e Select BB) abrem desde o começo, sem esperar o financeiro confirmar os pagamentos. A entrega do brinde continua só depois de pagar. Pedido da Edna."},
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Regras", txt:"Botão Gerar PDF das regras (todas as regras com os números em vigor) e botão Não quis esperar a explicação · assinar ciência: a revendedora assina que está ciente (as regras estão no app dela); a assinatura fica no termo da ficha, marcada como sem explicação."},

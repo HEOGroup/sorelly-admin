@@ -2349,3 +2349,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 ## 12/11/2026 — Chamados: quem vê todos
 - O Nickolas (id 17) vê os chamados de todas as pessoas (Todas / Minhas), como o Marcus e o Leonardo. Pedido do próprio Nickolas.
 - Ver não é responder: mudar a situação e escrever na conversa dos chamados dos outros continua só com o Marcus (16) e o Leonardo (44). Código: `VEEM_TODOS` e `melPodeVerTodos` em `domain/melhorias.js`.
+
+## 12/11/2026 — Point: apagar o mês e um mês só de cada
+- Pedido do Nickolas. Na Point (Negociações com o filtro Fornecedor = Point), cada mês da parte 1 (Pedidos sem NF) tem a lixeira "Apagar o mês". Pedidos sem NF e acerto mensal são o MESMO registro, então o mês sai das duas partes de uma vez, com confirmação. Pix do mês marcado Pago com valor acima de R$ 0,00 bloqueia (voltar para Pendente antes). O boleto do mês só sai se não sobrar outro registro do mesmo mês.
+- Regra: só UM mês de cada mês/ano na Point. `pedido_add`, `pedido_editar` e `pedido_set` recusam pedido da Point em mês que já existe (`ptMesTem` em `domain/pf.js`); o "Novo mês" já recusava.
+- Causa encontrada: havia dois Novembro/2026 (um com pix de R$ 45.000,00 Pendente e um com R$ 0,00 "Pago"), e o boleto de R$ 8.176,45 contava duas vezes. Além disso, o "Novo mês" usava `++seq.P` e deixava o pedido seguinte nascer com o mesmo número interno. Corrigido (`seq.P++` e o número sempre acima do maior já usado). O mês repetido ainda está nos dados: apagar pela lixeira.
