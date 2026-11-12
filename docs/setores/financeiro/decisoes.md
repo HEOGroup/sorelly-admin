@@ -490,3 +490,5 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 
 - **PIX revendedoras × DevMaster (09/11/2026, Marcus):** tela PIX, DevMaster e Contas pagas da família têm que bater; a baixa do pró-labore "(PIX REVENDEDORAS)" na DevMaster vale para as Contas pagas. 6 parcelas corrigidas pelas baixas válidas (cópia em `ff_bkp_20261109_pixdm`). Extrato negativo na conta PF = nota relançada em outro mês ou como Acerto com loja. Relatório em `conferencia-pix-socios-ago-out-2026.local.md` (fora do Git). Detalhes em `docs/DECISOES.md` do mesmo dia.
 - **Prestador particular (10/11/2026, Marcus):** cada pessoa tem o próprio cadastro do prestador; sem dívida lançada a linha some do Resumo do grupo. O PDF do orçamento da dívida agora fica no servidor (`/api/anexos`, módulo `ff`). Detalhes em `docs/DECISOES.md` do mesmo dia.
+
+- **10/11/2026** (diário geral): Controle de pagamentos › Destinos mostra Escrever na folha, Banco, Favorecido e Chave Pix (lidos de Chaves Pix, com Copiar). Novo destino Itaú Marco PJ. Pendência 5 de Chaves Pix resolvida; a 7 (chaves no servidor) segue com o Leonardo.

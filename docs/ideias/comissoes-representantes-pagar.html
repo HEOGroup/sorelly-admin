@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comissões dos representantes (desenho)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --fundo:#111111; --bloco:#161616; --faixa:#1c1d21; --fio:#2a2c31; --campo:#1b1b1b; --texto:#f1f1f1; --ouro:#e2c044;
+         --verde:#34d399; --amarelo:#fbbf24; --vermelho:#f87171; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--fundo); color:var(--texto); font-family:Inter,system-ui,sans-serif; font-size:13px; }
+  button,input,select{ font:inherit; color:inherit; }
+  .aviso{ background:#2a2410; color:var(--ouro); text-align:center; padding:6px 12px; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .pagina{ padding:14px 16px 28px; max-width:1500px; margin:0 auto; }
+  .cabeca{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  h1{ margin:0; font-size:20px; font-weight:600; }
+  .lado{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .campo{ height:32px; padding:0 10px; border:1px solid var(--fio); border-radius:6px; background:var(--campo); white-space:nowrap; }
+  .botao{ height:32px; padding:0 14px; border-radius:6px; border:1px solid var(--fio); background:transparent; cursor:pointer; white-space:nowrap; }
+  .botao.principal{ border-color:var(--ouro); background:rgba(226,192,68,.2); color:var(--ouro); font-weight:600; }
+  .botao.linha{ height:24px; padding:0 12px; }
+  .seg{ display:inline-flex; height:32px; border:1px solid var(--fio); border-radius:6px; overflow:hidden; }
+  .seg button{ border:0; background:transparent; padding:0 14px; cursor:pointer; white-space:nowrap; border-right:1px solid var(--fio); }
+  .seg button:last-child{ border-right:0; }
+  .seg button.ativo{ background:rgba(226,192,68,.16); color:var(--ouro); font-weight:600; }
+  .bloco{ border:1px solid var(--fio); border-radius:8px; background:var(--bloco); overflow:hidden; }
+  .rola{ overflow-x:auto; }
+  .tabela{ min-width:1300px; }
+  .fileira{ display:grid; grid-template-columns:minmax(200px,1fr) 70px 110px 120px 120px 120px 120px 120px 190px 110px; border-bottom:1px solid var(--fio); }
+  .fileira > div{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 8px; white-space:nowrap; border-right:1px solid var(--fio); font-variant-numeric:tabular-nums; }
+  .fileira > div:last-child{ border-right:0; }
+  .fileira.topo, .fileira.total{ background:var(--faixa); }
+  .fileira.topo > div{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; cursor:pointer; }
+  .fileira.topo .seta{ font-size:9px; margin-left:6px; }
+  .fileira.total{ font-weight:600; border-bottom:0; }
+  .fileira.item{ cursor:pointer; }
+  .fileira.item:hover, .fileira.item.aberta{ background:rgba(255,255,255,.04); }
+  .verde{ color:var(--verde); } .amarelo{ color:var(--amarelo); } .vermelho{ color:var(--vermelho); }
+  .ponto{ margin-right:6px; font-size:10px; }
+  /* ficha da representante: abre embaixo da linha */
+  .ficha{ border-bottom:1px solid var(--fio); background:#121212; padding:10px 12px 12px; }
+  .ficha h2{ margin:0 0 6px; font-size:13px; font-weight:600; }
+  .sub{ display:grid; grid-template-columns:minmax(200px,1fr) 100px 150px 210px 120px 120px 170px 130px; border-bottom:1px solid var(--fio); }
+  .sub > div{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 8px; white-space:nowrap; border-right:1px solid var(--fio); font-variant-numeric:tabular-nums; }
+  .sub > div:last-child{ border-right:0; }
+  .sub.topo{ background:var(--faixa); }
+  .sub.topo > div{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .caixa{ border:1px solid var(--fio); border-radius:8px; overflow:hidden; }
+  .pagar{ display:flex; align-items:center; gap:8px; flex-wrap:nowrap; margin-top:10px; overflow-x:auto; }
+  .pagar b{ white-space:nowrap; }
+  .pagar .campo{ min-width:120px; }
+  .conta{ white-space:nowrap; margin-right:auto; }
+  input[type=checkbox]{ width:16px; height:16px; accent-color:var(--ouro); }
+</style>
+</head>
+<body>
+<div class="aviso">Desenho para aprovação · nomes e valores inventados · nada gravado</div>
+<div class="pagina">
+  <div class="cabeca">
+    <h1>Comissões</h1>
+    <div class="lado">
+      <span class="seg" id="segVisao"><button class="ativo">Pagar</button><button>Resumo do mês</button></span>
+      <span class="seg" id="segPag"><button data-i="0">Pagamento 01/11</button><button data-i="1" class="ativo">Pagamento 11/11</button><button data-i="2">Pagamento 21/11</button></span>
+      <select class="campo"><option>Novembro</option></select>
+      <select class="campo"><option>2026</option></select>
+      <button class="botao">Gasolina R$ 6,49</button>
+      <button class="botao">Configurar</button>
+    </div>
+  </div>
+  <div class="bloco"><div class="rola"><div class="tabela" id="tabela"></div></div></div>
+</div>
+<script>
+// Dados INVENTADOS, só para mostrar o desenho.
+var R = function(v){ return "R$ " + v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
+var D = [
+ [ {n:"Bruna", pct:8, at:4, com:612.40, gas:96.00, pago:708.40}, {n:"Marciane", pct:8, at:6, com:298.17, gas:142.30, pago:440.47}, {n:"Thainá", pct:8, at:5, com:308.84, gas:120.10, pago:428.94} ],
+ [ {n:"Marciane", pct:8, at:7, com:842.60, gas:151.20, pago:0, conc:7}, {n:"Leticia Alves", pct:8, at:5, com:658.98, gas:88.40, pago:400.00, conc:5}, {n:"Thainá", pct:8, at:6, com:508.84, gas:130.00, pago:0, conc:4},
+   {n:"Nayale", pct:8, at:3, com:284.38, gas:0, pago:0, conc:3, semKm:true}, {n:"Vanessa", pct:8, at:2, com:151.55, gas:44.00, pago:195.55, conc:2}, {n:"Bruna", pct:8, at:1, com:28.15, gas:0, pago:0, conc:0, semKm:true} ],
+ [ {n:"Thalita Torazzi", pct:8, at:2, com:150.02, gas:0, pago:0, conc:0, antes:true}, {n:"Marciane", pct:8, at:1, com:96.00, gas:0, pago:0, conc:0, antes:true} ] ];
+var ACERTOS = [ ["Camila Duarte Reis","03/11","Pix","PIX - SICREDI - SORELLY - 34",1840.00,147.20,true], ["Fernanda Lopes Maia","04/11","Pix","PIX - BANHO",2210.00,176.80,true],
+  ["Juliana Prado Costa","06/11","Link","LINK - SICREDI - SERENITY - 59",1395.00,111.60,true], ["Renata Alves Pinto","07/11","Dinheiro","DINHEIRO",980.00,78.40,false],
+  ["Simone Castro Lima","09/11","Pix","PIX - SICREDI - SORELLY - 34",1560.00,124.80,false] ];
+var pag = 1, aberta = "";
+function sit(r){ var ap = r.com + r.gas, rest = ap - r.pago;
+  if(r.antes) return ["Antes do corte", "", false];
+  if(rest < 0.01) return ["Paga", "verde", false];
+  if(r.conc < r.at) return ["Conciliar " + r.conc + " de " + r.at, "amarelo", false];
+  return ["A pagar", "vermelho", true]; }
+function desenha(){
+  var l = D[pag], h = "";
+  h += '<div class="fileira topo">' + ["Representante","%","Atendimentos","Comissão","Combustível","A pagar","Pago","Restante","Situação",""].map(function(c){ return "<div>" + c + (c ? '<span class="seta">▾</span>' : "") + "</div>"; }).join("") + "</div>";
+  var T = {at:0, com:0, gas:0, pago:0};
+  l.forEach(function(r){
+    var ap = r.com + r.gas, rest = ap - r.pago, st = sit(r); T.at += r.at; T.com += r.com; T.gas += r.gas; T.pago += r.pago;
+    h += '<div class="fileira item' + (aberta === r.n ? " aberta" : "") + '" data-n="' + r.n + '"><div>' + r.n + "</div><div>" + r.pct + "%</div><div>" + r.at + "</div><div>" + R(r.com) + "</div><div>" + (r.semKm ? "Sem km" : R(r.gas)) +
+      "</div><div>" + R(ap) + '</div><div class="' + (r.pago > 0 ? "verde" : "") + '">' + R(r.pago) + '</div><div class="' + (rest > 0.01 ? "vermelho" : "") + '">' + R(Math.max(0, rest)) +
+      '</div><div class="' + st[1] + '">' + (st[1] ? '<span class="ponto">●</span>' : "") + st[0] + "</div><div>" + (st[2] ? '<button class="botao principal linha">Pagar</button>' : '<button class="botao linha">Abrir</button>') + "</div></div>";
+    if(aberta === r.n) h += ficha(r);
+  });
+  var tap = T.com + T.gas;
+  h += '<div class="fileira total"><div>' + l.length + " representantes</div><div></div><div>" + T.at + "</div><div>" + R(T.com) + "</div><div>" + R(T.gas) + "</div><div>" + R(tap) + '</div><div class="verde">' + R(T.pago) + '</div><div class="vermelho">' + R(tap - T.pago) + "</div><div></div><div></div></div>";
+  document.getElementById("tabela").innerHTML = h;
+}
+function ficha(r){
+  var st = sit(r), n = Math.min(r.at, ACERTOS.length), h = '<div class="ficha"><h2>' + r.n + " · atendimentos de 01/11 a 10/11</h2><div class=\"caixa\">";
+  h += '<div class="sub topo">' + ["Revendedora","Data","Forma","Conta","Valor","Comissão","Conciliado","Divergência"].map(function(c){ return "<div>" + c + "</div>"; }).join("") + "</div>";
+  for(var i = 0; i < n; i++){ var a = ACERTOS[i], ok = i < (r.conc == null ? n : r.conc);
+    h += '<div class="sub"><div>' + a[0] + "</div><div>" + a[1] + "</div><div>" + a[2] + "</div><div>" + a[3] + "</div><div>" + R(a[4]) + "</div><div>" + R(a[5]) + "</div><div>" +
+      (ok ? '<input type="checkbox" checked> <span class="verde" style="margin-left:6px">Nayale · 10/11</span>' : '<input type="checkbox">') + '</div><div><button class="botao linha">Divergência</button></div></div>'; }
+  h += "</div>";
+  h += '<div class="pagar"><span class="conta">Comissão <b>' + R(r.com) + "</b> + Combustível <b>" + (r.semKm ? "sem km" : R(r.gas)) + "</b> = A pagar <b>" + R(r.com + r.gas) + '</b> · Pago <b class="verde">' + R(r.pago) + '</b> · Restante <b class="vermelho">' + R(Math.max(0, r.com + r.gas - r.pago)) + "</b></span>" +
+    (st[2] ? '<select class="campo"><option>Pix</option></select><select class="campo"><option>Conta de saída</option></select><input class="campo" value="11/11/2026" style="width:120px;text-align:center"><input class="campo" value="' + R(r.com + r.gas - r.pago) + '" style="width:130px;text-align:center"><button class="botao principal">Registrar pagamento</button>'
+      : "<span>" + (st[0] === "Paga" ? "Pix · PIX - SICREDI - SORELLY - 34 · 11/11/2026 · Nayale" : st[0].indexOf("Conciliar") === 0 ? "Marque todos os atendimentos para liberar o pagamento." : "O pagamento libera depois do corte.") + "</span>") + "</div></div>";
+  return h;
+}
+document.getElementById("tabela").addEventListener("click", function(ev){ var f = ev.target.closest(".fileira.item"); if(!f) return; aberta = aberta === f.dataset.n ? "" : f.dataset.n; desenha(); });
+document.getElementById("segPag").addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; pag = +b.dataset.i; aberta = "";
+  [].forEach.call(this.children, function(x){ x.classList.toggle("ativo", x === b); }); desenha(); });
+aberta = "Marciane"; desenha();
+</script>
+</body>
+</html>

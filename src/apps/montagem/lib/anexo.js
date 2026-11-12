@@ -5,7 +5,8 @@
 //   abrirAnexo(key)            → baixa o arquivo e abre numa aba nova
 import { chamar } from "@/apps/montagem/lib/api";
 
-var LIMITE = 3.8 * 1024 * 1024;   // caracteres do data URL; o servidor aceita até 3,9 milhões
+var LIMITE = 11.5 * 1024 * 1024;   // caracteres do data URL (≈ 8,5 MB de arquivo); o servidor aceita até 12 milhões. Acima de 3 milhões o envio vai em pedaços
+var PEDACO = 3 * 1024 * 1024;
 function msg(t){ return new Error(t); }
 
 function paraJpeg(url){
@@ -36,7 +37,7 @@ export function lerArquivo(arq){
     r.onerror = function(){ rej(msg("Não consegui ler o arquivo.")); };
     r.onload = function(){
       var url = String(r.result);
-      if(ehPdf){ if(!/^data:application\/pdf;base64,/.test(url)) url = "data:application/pdf;base64,"+url.split(",")[1]; if(url.length > LIMITE) return rej(msg("O PDF é grande demais (máximo uns 2,8 MB). Reduza o arquivo ou envie uma foto.")); return res({nome:arq.name || "romaneio.pdf", mime:"application/pdf", url:url}); }
+      if(ehPdf){ if(!/^data:application\/pdf;base64,/.test(url)) url = "data:application/pdf;base64,"+url.split(",")[1]; if(url.length > LIMITE) return rej(msg("O PDF é grande demais (máximo uns 8 MB). Reduza o arquivo ou envie uma foto.")); return res({nome:arq.name || "romaneio.pdf", mime:"application/pdf", url:url}); }
       paraJpeg(url).then(function(u){ res({nome:(arq.name || "romaneio").replace(/\.[a-z0-9]+$/i, "")+".jpg", mime:"image/jpeg", url:u}); }, rej);
     };
     r.readAsDataURL(arq);
@@ -47,11 +48,20 @@ function chaveNova(){ return "an_"+Math.random().toString(36).slice(2, 12)+Date.
 
 export function enviarAnexo(modulo, a){
   var key = chaveNova();
-  return chamar("POST", "/anexos", {modulo:modulo, key:key, nome:a.nome, mime:a.mime, url:a.url}).then(function(){ return {key:key, nome:a.nome, mime:a.mime, tam:Math.round(a.url.length*0.75)}; });
+  var pronto = function(){ return {key:key, nome:a.nome, mime:a.mime, tam:Math.round(a.url.length*0.75)}; };
+  if(a.url.length <= PEDACO) return chamar("POST", "/anexos", {modulo:modulo, key:key, nome:a.nome, mime:a.mime, url:a.url}).then(pronto);
+  var total = Math.ceil(a.url.length/PEDACO), p = Promise.resolve();   // um pedaço de cada vez, na ordem
+  for(var i = 0; i<total; i++){ (function(n){ p = p.then(function(){ return chamar("POST", "/anexos", {modulo:modulo, key:key, nome:a.nome, parte:n, total:total, pedaco:a.url.slice(n*PEDACO, (n+1)*PEDACO)}); }); })(i); }
+  return p.then(pronto);
 }
 
 export function abrirAnexo(key){
   return chamar("GET", "/anexos/"+encodeURIComponent(key)).then(function(r){
+    if(!r.partes) return r;
+    var texto = "", p = Promise.resolve();   // arquivo grande: busca em pedaços e junta
+    for(var i = 0; i<r.partes; i++){ (function(n){ p = p.then(function(){ return chamar("GET", "/anexos/"+encodeURIComponent(key)+"?parte="+n).then(function(x){ texto += x.pedaco; }); }); })(i); }
+    return p.then(function(){ return {nome:r.nome, mime:r.mime, url:texto}; });
+  }).then(function(r){
     return fetch(r.url).then(function(b){ return b.blob(); }).then(function(blob){
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.target = "_blank"; a.rel = "noopener"; a.download = ""; a.removeAttribute("download");
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 60000);

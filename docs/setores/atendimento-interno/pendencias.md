@@ -14,3 +14,5 @@ Lista tirada do diário por palavras como "pendente" e "falta". **Ainda não rev
 | 7 | Pendente: calendário com horários e listagem do dia no topo da tela (4 layouts em docs/rascunhos/revendedoras/revendedoras-internas-4-layouts.html); guardar revInternas no servidor (hoje só no… | Leonardo | De 28/10/2026, diário linha 177. A conferir. |
 | 8 | Acerto previsto = previsão de devolução do kit principal na DevMaster. Pendente: card com todas as vendas de 2026 (valor de venda e de acerto, sem brinde) no mesmo lugar. | Marcus | De 28/10/2026, diário linha 184. A conferir. |
 | 9 | Revendedoras do vendedor Sorelly (02) entram sozinhas no controle da agendadora | Marcus | De 27/10/2026, diário linha 192. A conferir. |
+
+| 10 | Multas de desmarcar/falta/remarcar: fechar os valores (Multa 1 por aviso, Multa 2 por atraso da nova data, as duas somam), prazo máximo da nova data, nova data obrigatória ao desmarcar; tipo e Cancelada na fila da Atendimento Sorelly; publicar o botão "Copiar aviso de multa" | Marcus | De 12/11/2026, ver DECISOES.md. Código parcial na pasta de trabalho, não publicado. |

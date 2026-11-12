@@ -39,9 +39,21 @@ function folderRegras(s){
         blocoNovo(s, {tipo:"linhas", titulo:"Venda mínima", linhas:[{a:"Acerto com a representante", b:BKC(500)}, {a:"Acerto na Sorelly", b:BKC(700)}]}),
         blocoNovo(s, {titulo:"Taxa de deslocamento", valor:taxa, texto:"Vendeu menos de R$ 300? Paga a taxa, somada no acerto."}),
         blocoNovo(s, {titulo:"Cancelar o kit", valor:taxa, texto:"Quer cancelar o kit e vendeu menos de R$ 300? Não importa: paga a taxa do mesmo jeito."}),
-        blocoNovo(s, {tipo:"linhas", titulo:"Remarcação do acerto", linhas:rem, texto:"Motivo justificado não conta. A contagem recomeça a cada kit novo."}),
+        blocoNovo(s, {titulo:"Acerto na data", valor:"5 dias úteis", texto:"Depois da data marcada você tem 5 dias úteis. A partir do 6º, perde 1% de comissão e 1% de brinde por dia. Depois do 30º dia útil perde tudo."}),
+        blocoNovo(s, {tipo:"linhas", titulo:"Remarcação, cancelamento e falta", linhas:rem, texto:"Avisou com 10 dias ou mais de antecedência: sem multa (uma vez por kit). Motivo sério só com prova. A contagem recomeça a cada kit novo."}),
         blocoNovo(s, {tipo:"linhas", titulo:"Falta de pagamento", linhas:pag}),
-        blocoNovo(s, {titulo:"Kit novo", texto:"Liberado com pelo menos 80% do acerto pago."})])]};
+        blocoNovo(s, {titulo:"Kit novo", texto:"Liberado com pelo menos 80% do acerto pago e o resto negociado na hora (até 2 parcelas de R$ 200,00 ou mais). Sem a nota promissória assinada, não há kit."})])]};
+}
+
+// ---------- informativo "O que mudou" (11/11/2026): aviso curto para quem já tem kit; aparece ao abrir o app ----------
+var CHAVE_MUDANCAS = "mudancas-2026-11";
+function informativoMudancas(s){
+  return {id:proximoId(s, "i"), chave:CHAVE_MUDANCAS, titulo:"O que mudou nas regras", publico:["revendedora","representante"], ativo:true, inicio:"2026-11-11", fim:"", limite:clone(LIMITE_PADRAO),
+    abas:[abaNova(s, "O que mudou", [
+      blocoNovo(s, {titulo:"Prazo do acerto", valor:"5 dias úteis", texto:"Depois da data marcada você tem 5 dias úteis (segunda a sexta, sem feriado). A partir do 6º, perde 1% de comissão e 1% de brinde por dia. Depois do 30º dia útil perde tudo e não recebe novo kit.", aberto:true}),
+      blocoNovo(s, {tipo:"linhas", titulo:"Remarcar ou cancelar", linhas:[{a:"Avisou 10 dias antes ou mais", b:"sem multa (1 vez por kit)"}, {a:"Em cima da hora ou não veio", b:"multa da remarcação"}, {a:"Motivo sério", b:"só com prova"}]}),
+      blocoNovo(s, {tipo:"linhas", titulo:"Ficou valor pendente", linhas:[{a:"Multa", b:"10% do valor pendente"}, {a:"Para levar kit novo", b:"80% pago e negociar na hora"}, {a:"Negociação", b:"até 2 parcelas de R$ 200,00 ou mais"}, {a:"Brinde", b:"pela tabela do valor em aberto"}]}),
+      blocoNovo(s, {titulo:"Nota promissória", texto:"Sem a nota promissória assinada, não há entrega de kit."})])]};
 }
 
 // informativo em branco para o editor do admin (ids únicos por data/sorteio; só entra na lista quando salvar)
@@ -52,6 +64,7 @@ function informativoNovo(){
 function infDemo(){
   var s = {v:1, seq:0, lista:[], vistas:[]};
   s.lista.push(folderRegras(s));
+  s.lista.push(informativoMudancas(s)); s.mudancas = CHAVE_MUDANCAS;
   return s;
 }
 function infMigrar(inf){
@@ -59,6 +72,8 @@ function infMigrar(inf){
   if(!Array.isArray(inf.vistas)) inf.vistas = [];
   if(!inf.seq) inf.seq = 0;
   inf.lista.forEach(function(i){ if(!i.limite) i.limite = clone(LIMITE_PADRAO); if(!i.publico) i.publico = ["revendedora","representante"]; if(!i.abas) i.abas = []; });
+  // 11/11/2026: quem já tinha os folders salvos ganha o informativo "O que mudou" uma vez (se apagar, não volta)
+  if(inf.mudancas!==CHAVE_MUDANCAS){ if(!inf.lista.some(function(i){ return i.chave===CHAVE_MUDANCAS; })) inf.lista.push(informativoMudancas(inf)); inf.mudancas = CHAVE_MUDANCAS; }
   inf.v = 1; return inf;
 }
 

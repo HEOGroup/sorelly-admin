@@ -168,6 +168,12 @@ function dpReduz(s, a){
       var novoI = {id:idI, origem:"interno", internoId:a.internoId, atendente:a.atendente||"", quem:a.nome||"", vendas:a.vendas||0, aPagar:a.aPagar||valI, pagos:a.pagos||[], valor:valI,
         partes:a.abertas.map(function(l){ return {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
       dp.pix = pI ? dp.pix.map(function(x){ return x.id===idI ? novoI : x; }) : dp.pix.concat([novoI]); return ok(); }
+    // Pedido de kit novo (11/11/2026): média das vendas abaixo do mínimo no atendimento interno. A atendente pede; o Financeiro aceita ou não no Direcionar.
+    // Fica em dp.kits (chave kp_<id> no módulo pag): a atendente grava o pedido e o Financeiro grava a decisão, cada um a sua vez, sem um apagar o outro.
+    case "kit_pedir": { if(!a.internoId || !a.nome) return recusa("Pedido de kit sem atendimento."); dp.kits = dp.kits || []; var idK = "KP"+a.internoId; if(dp.kits.some(function(x){ return x.id===idK && x.status!=="negado"; })) return ok();
+      dp.kits = dp.kits.filter(function(x){ return x.id!==idK; }).concat([{id:idK, internoId:a.internoId, nome:a.nome, vendas:(a.vendas||[]).slice(0, 3), media:r2(a.media), minimo:a.minimo||700, divida:r2(a.divida||0), status:"pedido", pedidoPor:por, pedidoEm:Date.now()}]); return ok("Pedido de kit novo enviado ao Financeiro"); }
+    case "kit_decidir": { var kD = (dp.kits||[]).find(function(x){ return x.id===a.id; }); if(!kD) return recusa("Pedido de kit não encontrado."); if(!a.aceito && !String(a.motivo||"").trim()) return recusa("Escreva o motivo para não autorizar.");
+      kD.status = a.aceito ? "aceito" : "negado"; kD.decididoPor = por; kD.decididoEm = Date.now(); kD.motivo = a.aceito ? "" : String(a.motivo).trim(); return ok(a.aceito ? "Kit novo autorizado" : "Kit novo não autorizado"); }
     case "zerar_testes": { dp.pix = (dp.pix||[]).filter(function(x){ return !x.demo; }); return ok(); }
   }
   return recusa("Ação desconhecida.");

@@ -75,19 +75,19 @@ function EditorRegrasConsignado(){
     e("div",{className:"flex w-fit gap-1 rounded-xl bg-muted p-1"}, [["padrao","Kit Padrão"],["prata","Kit 100% Prata"]].map(function(o){
       return e("button",{key:o[0], onClick:function(){ setMod(o[0]); }, "aria-pressed":mod===o[0],
         className:"rounded-lg px-4 py-1.5 text-[13px] font-semibold transition-colors "+(mod===o[0] ? "bg-card text-foreground shadow ring-1 ring-[#E8B84B]/40" : "text-muted-foreground hover:text-foreground")}, o[1]); })),
-    rasc.novas && e(BlocoBarra,{t:"Regras de 27/10/2026", sub:"valem para kits entregues a partir de 27/10/2026 · iguais no Kit Padrão e no Kit 100% Prata · acerto com representante e atendimento Sorelly"},
+    rasc.novas && e(BlocoBarra,{t:"Regras de 27/10/2026", sub:"valem para kits entregues a partir de 27/10/2026 · iguais no Kit Padrão e no Kit 100% Prata · acerto com representante e atendimento Sorelly · prazo do acerto em dias úteis desde 11/11/2026"},
       e("div",{className:"flex flex-col gap-3 p-3"},
         e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"},
           [["minimoRepresentante","Média mínima (representante)","din",""],["minimoInterno","Média mínima (atendimento Sorelly)","din",""],["mediaVendas","Média das últimas","num","vendas"],
             ["multaPendentePct","Multa sobre o valor pendente","pct",""],["prazoQuitarDias","Prazo para quitar","num","dias"],["atrasoQuitacaoPctDia","Depois do prazo, por dia","pct",""],
-            ["atrasoQuitacaoTetoPct","Teto da multa de atraso","pct",""],["juridicoDias","Perde tudo e vai ao jurídico com","num","dias de atraso"]].map(function(c){
+            ["atrasoQuitacaoTetoPct","Teto da multa de atraso","pct",""],["prazoAcertoDiasUteis","Prazo do acerto sem acréscimo","num","dias úteis"],["atrasoPctDiaUtil","Depois do prazo do acerto, por dia útil","pct",""],["juridicoDiasUteis","Perde tudo e vai ao jurídico depois de","num","dias úteis"]].filter(function(c){ return rasc.novas[c[0]]!=null; }).map(function(c){
             var val = rasc.novas[c[0]], tipo = c[2];
             return e(Campo,{key:c[0], rotulo:c[1]}, e("div",{className:"w-32"},
               tipo==="din" ? e(Din,{value:val, label:c[1], onChange:function(v){ setN(c[0],v); }})
                 : tipo==="pct" ? e(Pct,{value:val, step:"0.5", label:c[1], onChange:function(v){ setN(c[0],v); }})
                 : e("input",{type:"number", value:val, "aria-label":c[1], className:INPUT+" "+CELULA, onChange:function(ev){ setN(c[0], parseInt(ev.target.value,10)||0); }})),
               c[3] && e("span",{className:"text-muted-foreground"}, c[3])); })),
-        e(Tabela,{cols:[{t:"Acerto atrasado", esq:true, w:"40%"}, {t:"Até (dias)", w:"20%"}, {t:"Comissão −", w:"20%"}, {t:"Brinde −", w:"20%"}]},
+        rasc.novas.prazoAcertoDiasUteis==null && e(Tabela,{cols:[{t:"Acerto atrasado", esq:true, w:"40%"}, {t:"Até (dias)", w:"20%"}, {t:"Comissão −", w:"20%"}, {t:"Brinde −", w:"20%"}]},   // tabela antiga de atraso (7 a 59 dias): só aparece em versão sem a regra de dias úteis de 11/11/2026
           rasc.novas.atrasoAcerto.map(function(x,i){ return e("tr",{key:i, className:"border-b border-border/50 last:border-0"},
             e(Td,{esq:true}, e("span",{className:MONO+" text-[12.5px] text-muted-foreground"}, (i>0 ? rasc.novas.atrasoAcerto[i-1].ate+1 : 1)+" a "+x.ate+" dias")),
             e(Td,null, e("input",{type:"number", value:x.ate, "aria-label":"Até quantos dias", className:INPUT+" "+CELULA, onChange:function(ev){ setNL(i,"ate",parseInt(ev.target.value,10)||0); }})),

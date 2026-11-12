@@ -4,6 +4,7 @@
 // Para onde vai o Pix das revendedoras: o Financeiro cria orientações ("direcionar R$ X para tal conta até tal data"), o sistema mostra quanto falta e sugere o destino de cada Pix que chega;
 // o Lucas confirma ou troca. Também é aqui que se define a conta dos pagamentos do atendimento interno (aba Atendimento). Contexto: docs/negocio/FLUXO-DE-PAGAMENTOS.md. Versão antiga guardada fora do projeto.
 import { AbasTela, BlocoFiltros, Botao, CAMPO, CampoSel, FaixaTotais, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { AbaDestinos } from "@/apps/montagem/pages/cp/Destinos";
 import { PagamentosAConferir } from "@/apps/montagem/components/pagamentos-conferir";
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp, sugestoes } from "@/apps/montagem/domain/controle-pagamentos";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
@@ -90,25 +91,6 @@ function AbaOrient(p){
             e("button",{type:"button", "aria-label":"Excluir orientação", title:"Excluir", onClick:function(){ if(window.confirm("Excluir esta orientação e os Pix registrados nela?")) acao(c, "orient_del", {id:o.id}); }, className:"h-7 rounded-md border border-border px-2 text-[12px] text-foreground hover:bg-white/10"}, "Excluir")))); })));
 }
 
-// ── Aba Destinos: quem recebe os Pix das revendedoras
-function AbaDestinos(p){
-  var c = p.c, cp = c.cp, sq = useState(""), q = sq[0], setQ = sq[1], st = useState(""), tipo = st[0], setTipo = st[1], sn = useState({nome:"", tipo:"FORNECEDOR"}), nd = sn[0], setNd = function(x){ sn[1](Object.assign({}, nd, x)); };
-  var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
-  var lista = cp.destinos.filter(function(d){ return d.tipo!=="PRESTADOR" && (!tipo || d.tipo===tipo) && (!q || norm(d.nome).indexOf(norm(q))>=0); });
-  var ed = function(d, patch){ acao(c, "destino_set", {id:d.id, patch:patch}); };
-  return e("div",{className:"flex flex-col gap-3"},
-    e(BlocoFiltros,{titulo:"Destinos", onLimpar:(q || tipo) ? function(){ setQ(""); setTipo(""); } : null},
-      e(CampoSel,{t:"Tipo", id:"cd-t", value:tipo, onChange:setTipo, opcoes:[["", "Todos"]].concat(Object.keys(TIPOS_DESTINO).filter(function(t){ return t!=="PRESTADOR"; }).map(function(t){ return [t, tipoNome(t)]; }))}),
-      e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Buscar", id:"cd-q"}), e("input",{id:"cd-q", type:"search", value:q, onChange:function(ev){ setQ(ev.target.value); }, placeholder:"Nome do destino", className:CAMPO}))),
-    c.edita && e(BlocoFiltros,{titulo:"Novo destino"},
-      e("div",{className:"col-span-2 min-w-0"}, e(Rotulo,{t:"Nome", id:"cd-n"}), e("input",{id:"cd-n", type:"text", value:nd.nome, onChange:function(ev){ setNd({nome:ev.target.value}); }, className:CAMPO})),
-      e(CampoSel,{t:"Tipo", id:"cd-nt", value:nd.tipo, onChange:function(v){ setNd({tipo:v}); }, opcoes:Object.keys(TIPOS_DESTINO).map(function(t){ return [t, tipoNome(t)]; })}),
-      e("div",{className:"flex items-end"}, e(Botao,{principal:true, desabilitado:!nd.nome.trim(), onClick:function(){ acao(c, "destino_add", {nome:nd.nome.trim(), tipo:nd.tipo, banco:"", chavePix:""}); setNd({nome:""}); }}, "Adicionar"))),
-    lista.length ? e(TabelaP,{minW:480, cols:[{t:"Destino"},{t:"Tipo", w:200},{t:"Ativo", w:90}]},
-      lista.map(function(d){ return e(Tr,{key:d.id, apagado:!d.ativo}, e(Td,{forte:true}, d.nome), e(Td,null, tipoNome(d.tipo)),
-        e("td",{className:"h-8 border-b border-border px-2.5"}, e("input",{type:"checkbox", checked:!!d.ativo, disabled:!c.edita, "aria-label":"Ativo: "+d.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]", onChange:function(ev){ ed(d, {ativo:ev.target.checked}); }}))); }))
-    : e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhum destino neste filtro."));
-}
 
 var ABAS = [["orient","Orientações"],["atend","Atendimento"],["dest","Destinos"]];
 function AbaControlePagamentos(){

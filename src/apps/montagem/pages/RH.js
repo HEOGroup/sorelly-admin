@@ -3,7 +3,7 @@
 // As regras e as contas ficam em domain/rh.js; aqui só as telas. Salário e custo de hora extra só aparecem para a supervisão (sócios e RH).
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
+import { grupoDe, nomeDe, veSalarios } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
 import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
   parseHoras, porEmpresaStats, presencaDe, relatorioAdvertencias, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
@@ -30,7 +30,7 @@ var TD = "px-3 py-2 text-[13.5px]";
 
 function useRh(){
   var cx = use(), s = cx.state;
-  return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), veSalario:grupoDe(s.usuario)==="supervisao"};
+  return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), veSalario:veSalarios(s.usuario)};
 }
 function acao(c, op, extra){ c.d(Object.assign({type:"RH", op:op, por:c.por}, extra)); }
 function Campo(p){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(p.className||"")}, p.rot, p.children); }

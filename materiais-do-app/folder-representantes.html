@@ -59,8 +59,8 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
   <tr><td>3</td><td>Taxa de deslocamento</td><td>3</td></tr>
   <tr><td>4</td><td>Pagamento do acerto</td><td>4</td></tr>
   <tr><td>5</td><td>Acerto não feito na data</td><td>5</td></tr>
-  <tr><td>6</td><td>Remarcação do acerto</td><td>6</td></tr>
-  <tr><td>7</td><td>Remarcação isenta de multa (emergência)</td><td>6</td></tr>
+  <tr><td>6</td><td>Remarcação, cancelamento e falta</td><td>6</td></tr>
+  <tr><td>7</td><td>Motivo sério com prova (sem multa)</td><td>6</td></tr>
   <tr><td>8</td><td>Venda mínima e kit novo</td><td>7</td></tr>
   <tr><td>9</td><td>Exemplos passo a passo (5 acertos)</td><td>8</td></tr>
   <tr><td>10</td><td>Seu pagamento (comissão da representante)</td><td>11</td></tr>
@@ -130,60 +130,58 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
  <h2>Multa e prazo</h2>
  <table class="r"><tr><th>Item</th><th>Regra</th></tr>
   <tr><td>Valor pendente no acerto</td><td><b>Multa de 10%</b> do valor pendente</td></tr>
-  <tr><td>Prazo para quitar</td><td><b>15 dias</b></td></tr>
-  <tr><td>Atraso na quitação</td><td><b>+1% ao dia</b> (teto de 10%)</td></tr>
-  <tr><td>Próximo kit</td><td><b>Bloqueado</b> até a quitação total</td></tr></table>
- <h2>Exemplo: acerto de R$ 4.400,00, pendente R$ 600,00</h2>
- <table><tr><th>Quitou</th><th>Multa 10%</th><th>Atraso</th><th>Total</th></tr>
-  <tr><td>Em até 15 dias</td><td>R$ 60,00</td><td>R$ 0,00</td><td class="v">R$ 60,00</td></tr>
-  <tr><td>No dia 20 (5 dias de atraso)</td><td>R$ 60,00</td><td>R$ 30,00</td><td class="v">R$ 90,00</td></tr>
-  <tr><td>No dia 25 ou depois</td><td>R$ 60,00</td><td>R$ 60,00</td><td class="v">R$ 120,00</td></tr></table>
- <p class="nota">Pendente acima de 10% do acerto (13,6% neste exemplo): sem brinde.</p>
- <div class="ori"><span class="t">Orientação à representante</span>Ao fechar o acerto com valor pendente: <b>1)</b> registre o valor pendente; <b>2)</b> informe à revendedora a multa e o prazo de 15 dias; <b>3)</b> acompanhe a quitação. O próximo kit só sai depois da quitação total.</div>
+  <tr><td>Para levar kit novo</td><td>Pagar <b>80% ou mais</b> e <b>negociar o resto</b></td></tr>
+  <tr><td>Negociação na hora</td><td><b>2 parcelas</b> de <b>R$ 200,00</b> ou mais, 30 dias</td></tr>
+  <tr><td>Dívida abaixo de R$ 400,00</td><td><b>Parcela única</b></td></tr>
+  <tr><td>Parcela atrasada</td><td><b>+1% ao dia</b> (teto de 10%)</td></tr>
+  <tr><td>Dívida no acerto seguinte</td><td><b>Sem kit novo</b> até quitar tudo</td></tr></table>
+ <p class="nota">Pendente acima de 10% do acerto: sem brinde. O acordo libera o kit novo, não o brinde. Exemplo: pendente de R$ 600,00 = multa de R$ 60,00; parcela paga 5 dias depois da data = mais R$ 30,00.</p>
+ <div class="ori"><span class="t">Orientação à representante</span>Ficou valor pendente: <b>1)</b> registre o valor; <b>2)</b> negocie na hora, com valor e data de cada parcela; <b>3)</b> sem negociação, <b>não entregue kit novo</b>; <b>4)</b> você tem <b>7 dias</b> para cobrar e informar ao setor de Inadimplência. Sem acompanhamento, o setor assume e você <b>perde a comissão</b> desse valor.</div>
  <div class="rod"><span>Sorelly Joias</span><span>4 / 12</span></div>
 </section>
 
 <section class="pg">
  <div class="topo"><img src="../public/logo-sorelly.png" alt="Sorelly"><span>Manual da representante</span></div>
  <h1><em>5.</em> Acerto não feito na data</h1>
- <table style="margin-top:3mm"><tr><th>Dias de atraso</th><th>Comissão perde</th><th>Brinde perde</th></tr>
-  <tr><td>1 a 7 dias</td><td class="v">−5%</td><td class="v">−5%</td></tr>
-  <tr><td>8 a 15 dias</td><td class="v">−10%</td><td class="v">−10%</td></tr>
-  <tr><td>16 a 30 dias</td><td class="v">−15%</td><td class="v">−15%</td></tr>
-  <tr><td>31 a 45 dias</td><td class="v">−20%</td><td class="v">−20%</td></tr>
-  <tr><td>46 a 59 dias</td><td class="v">−25%</td><td class="v">−25%</td></tr>
-  <tr><td>60 dias</td><td class="v">Perde tudo</td><td class="v">Perde tudo</td></tr></table>
- <p class="nota"><b>Como ler:</b> o desconto é uma porcentagem <b>sobre o total da venda</b> e sai da comissão. Aos 60 dias: <b>jurídico</b>, com a nota promissória assinada pela revendedora, executada pelo valor integral do kit. O kit novo fica bloqueado até o acerto.</p>
+ <table style="margin-top:3mm"><tr><th>Dias úteis depois da data marcada</th><th>Comissão perde</th><th>Brinde perde</th></tr>
+  <tr><td>Até o 5º dia útil</td><td class="v">Nada</td><td class="v">Nada</td></tr>
+  <tr><td>Do 6º ao 30º dia útil</td><td class="v">−1% por dia</td><td class="v">−1% por dia</td></tr>
+  <tr><td>Depois do 30º dia útil</td><td class="v">Perde tudo</td><td class="v">Perde tudo</td></tr></table>
+ <p class="nota"><b>Dia útil:</b> segunda a sexta, sem feriado. A contagem começa no <b>primeiro dia marcado</b> e não recomeça com a remarcação. <b>Como ler:</b> o desconto é uma porcentagem <b>sobre o total da venda</b> e sai da comissão. Depois do 30º dia útil: <b>jurídico</b>, com a nota promissória assinada pela revendedora, executada pelo valor integral do kit, e ela não recebe novo kit.</p>
  <h2 style="margin-top:3.5mm">Exemplo: venda de R$ 1.000,00 e comissão de 35%</h2>
- <table><tr><th>Atraso</th><th>Desconto sobre o total</th><th>Comissão que recebe</th></tr>
-  <tr><td>No prazo</td><td>—</td><td class="v">R$ 350,00 (35%)</td></tr>
-  <tr><td>1 a 7 dias</td><td>−5% de R$ 1.000 = −R$ 50,00</td><td class="v">R$ 300,00 (30%)</td></tr>
-  <tr><td>8 a 15 dias</td><td>−10% de R$ 1.000 = −R$ 100,00</td><td class="v">R$ 250,00 (25%)</td></tr>
-  <tr><td>16 a 30 dias</td><td>−15% de R$ 1.000 = −R$ 150,00</td><td class="v">R$ 200,00 (20%)</td></tr>
-  <tr><td>31 a 45 dias</td><td>−20% de R$ 1.000 = −R$ 200,00</td><td class="v">R$ 150,00 (15%)</td></tr>
-  <tr><td>46 a 59 dias</td><td>−25% de R$ 1.000 = −R$ 250,00</td><td class="v">R$ 100,00 (10%)</td></tr>
-  <tr><td>60 dias</td><td>Perde tudo</td><td class="v">R$ 0,00</td></tr></table>
- <div class="ori"><span class="t">Orientação à representante</span>Combine a rota com a revendedora e confirme a data antes. Se o acerto atrasar, registre os dias de atraso e avise a revendedora. A execução da nota promissória e o processo no jurídico terão folha própria (em preparação).</div>
+ <table><tr><th>Fez o acerto no</th><th>Desconto sobre o total</th><th>Comissão que recebe</th></tr>
+  <tr><td>Até o 5º dia útil</td><td>—</td><td class="v">R$ 350,00 (35%)</td></tr>
+  <tr><td>7º dia útil</td><td>−2% de R$ 1.000 = −R$ 20,00</td><td class="v">R$ 330,00 (33%)</td></tr>
+  <tr><td>10º dia útil</td><td>−5% de R$ 1.000 = −R$ 50,00</td><td class="v">R$ 300,00 (30%)</td></tr>
+  <tr><td>15º dia útil</td><td>−10% de R$ 1.000 = −R$ 100,00</td><td class="v">R$ 250,00 (25%)</td></tr>
+  <tr><td>20º dia útil</td><td>−15% de R$ 1.000 = −R$ 150,00</td><td class="v">R$ 200,00 (20%)</td></tr>
+  <tr><td>30º dia útil</td><td>−25% de R$ 1.000 = −R$ 250,00</td><td class="v">R$ 100,00 (10%)</td></tr>
+  <tr><td>Depois do 30º</td><td>Perde tudo</td><td class="v">R$ 0,00</td></tr></table>
+ <div class="ori"><span class="t">Orientação à representante</span>Combine a rota com a revendedora e confirme a data antes. Se o acerto atrasar, registre os <b>dias úteis</b> de atraso, contados do primeiro dia marcado, e avise a revendedora. Depois do 30º dia útil o caso vai ao jurídico.</div>
  <div class="rod"><span>Sorelly Joias</span><span>5 / 12</span></div>
 </section>
 
 <section class="pg">
  <div class="topo"><img src="../public/logo-sorelly.png" alt="Sorelly"><span>Manual da representante</span></div>
- <h1><em>6.</em> Remarcação do acerto</h1>
+ <h1><em>6.</em> Remarcação, cancelamento e falta</h1>
  <table style="margin-top:3mm"><tr><th>Ocorrência</th><th>Comissão</th><th>Brinde</th></tr>
-  <tr><td>1ª remarcação</td><td class="v">−5%</td><td class="v">−15%</td></tr>
-  <tr><td>2ª remarcação</td><td class="v">−8%</td><td class="v">−50%</td></tr>
+  <tr><td>1ª vez</td><td class="v">−5%</td><td class="v">−15%</td></tr>
+  <tr><td>2ª vez</td><td class="v">−8%</td><td class="v">−50%</td></tr>
   <tr><td>3ª ou mais</td><td class="v">−15%</td><td class="v">Sem brinde</td></tr></table>
- <p class="nota">A contagem reinicia a cada kit novo. <b>Como ler:</b> na comissão, o desconto também é sobre o total da venda (ex.: venda de R$ 1.000, 1ª remarcação −5% = −R$ 50,00 de comissão). No brinde, o desconto é sobre o valor do brinde.</p>
- <h1 style="margin-top:7mm"><em>7.</em> Remarcação isenta (emergência)</h1>
- <table class="r" style="margin-top:3mm"><tr><th>Motivo</th><th>Comprovante</th></tr>
-  <tr><td>Falecimento de familiar direto</td><td>Certidão ou aviso</td></tr>
-  <tr><td>Internação (ela ou familiar direto)</td><td>Declaração do hospital</td></tr>
-  <tr><td>Acidente ou urgência médica</td><td>Atestado ou receita</td></tr>
-  <tr><td>Calamidade (enchente, incêndio)</td><td>Foto ou aviso</td></tr>
-  <tr><td>Erro ou atraso da Sorelly</td><td>Registro da representante</td></tr></table>
- <p class="nota"><b>Não é emergência:</b> viagem, compromisso, falta de dinheiro ou esquecimento. <b>Familiar direto:</b> pais, filhos, cônjuge e irmãos.</p>
- <div class="ori"><span class="t">Orientação à representante</span>Para isentar: marque a remarcação como <b>isenta</b> no app, escreva o motivo e anexe o comprovante. <b>Sem motivo escrito, a multa vale.</b> O comprovante é conferido pelo Agendamento.</div>
+ <table class="r" style="margin-top:2mm"><tr><th>Situação</th><th>Regra</th></tr>
+  <tr><td>Avisou 10 dias antes ou mais</td><td><b>Sem multa</b> (uma vez por kit)</td></tr>
+  <tr><td>Em cima da hora ou não veio</td><td>Multa da tabela acima</td></tr>
+  <tr><td>Nova data</td><td>Até <b>5 dias úteis</b> do 1º dia marcado</td></tr></table>
+ <p class="nota">A contagem reinicia a cada kit novo. A multa <b>soma</b> com o atraso da seção 5.</p>
+ <h1 style="margin-top:5mm"><em>7.</em> Motivo sério com prova</h1>
+ <table class="r" style="margin-top:3mm"><tr><th>Motivo</th><th>Prova</th></tr>
+  <tr><td>Falecimento na família</td><td>Certidão de óbito</td></tr>
+  <tr><td>Doença ou internação</td><td>Atestado ou comprovante do hospital</td></tr>
+  <tr><td>Acidente, roubo ou furto</td><td>Boletim de ocorrência</td></tr>
+  <tr><td>Parto ou gestação de risco</td><td>Atestado</td></tr>
+  <tr><td>Chuva forte ou greve</td><td>Notícia ou alerta oficial</td></tr>
+  <tr><td>Erro ou atraso da Sorelly</td><td>Registro da Sorelly</td></tr></table>
+ <div class="ori"><span class="t">Orientação à representante</span>Para isentar: marque <b>isenta</b> no app, escreva o motivo e anexe a prova. <b>Sem a prova, a multa vale.</b> Viagem, trabalho, esquecimento e falta de dinheiro não isentam.</div>
  <div class="rod"><span>Sorelly Joias</span><span>6 / 12</span></div>
 </section>
 
@@ -191,16 +189,17 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
  <div class="topo"><img src="../public/logo-sorelly.png" alt="Sorelly"><span>Manual da representante</span></div>
  <h1><em>8.</em> Venda mínima e kit novo</h1>
  <table class="r" style="margin-top:3mm"><tr><th>Item</th><th>Regra</th></tr>
-  <tr><td>Cálculo</td><td>Média das 3 últimas vendas</td></tr>
-  <tr><td>Vendas consideradas</td><td>2 anteriores + venda do dia do acerto</td></tr>
+  <tr><td>Cálculo</td><td>Média das 4 últimas vendas</td></tr>
+  <tr><td>Vendas consideradas</td><td>3 anteriores + venda do dia do acerto</td></tr>
   <tr><td>Referência (representante)</td><td><b>R$ 500,00</b></td></tr>
   <tr><td>Referência (interno)</td><td><b>R$ 700,00</b></td></tr>
   <tr><td>Média abaixo da referência</td><td><b>Não recebe novo kit</b> (cadastro bloqueado)</td></tr>
   <tr><td>Nova chance</td><td>Decisão da representante, na data do acerto</td></tr>
-  <tr><td>Kit novo</td><td>Liberado com 80% ou mais do acerto pago</td></tr></table>
+  <tr><td>Kit novo</td><td>80% pago e o resto negociado na hora</td></tr>
+  <tr><td>Nota promissória</td><td>Sem a nota assinada, <b>não entregue o kit</b></td></tr></table>
  <p class="nota">Venda de R$ 300,00 a R$ 499,99 ganha comissão de 15%, mas fica abaixo da referência de venda mínima. Ela entra no cálculo da média.</p>
  <div class="ori"><span class="t">Orientação à representante</span><b>Nova chance:</b> na data do acerto, você pode decidir sozinha dar uma nova chance à revendedora com média abaixo da referência. Essa possibilidade <b>não consta no regulamento da revendedora</b>: não divulgue como direito dela.</div>
- <p class="por"><b>Por que existe um mínimo:</b> o kit e o atendimento em casa não têm custo para a revendedora. Isso se mantém quando o kit gira em vendas. A média das 3 últimas vendas mostra a tendência, e não um mês isolado.</p>
+ <p class="por"><b>Por que existe um mínimo:</b> o kit e o atendimento em casa não têm custo para a revendedora. Isso se mantém quando o kit gira em vendas. A média das 4 últimas vendas mostra a tendência, e não um mês isolado.</p>
  <div class="rod"><span>Sorelly Joias</span><span>7 / 12</span></div>
 </section>
 
@@ -215,7 +214,7 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
   <tr><td class="t">Valor do acerto</td><td class="t">850 − 255</td><td class="t">R$ 595,00</td></tr>
   <tr><td>Pagou / pendente</td><td>pagou tudo</td><td>R$ 595 / R$ 0</td></tr>
   <tr><td>Brinde</td><td>Normal R$ 88 + Select R$ 96</td><td>R$ 184,00</td></tr>
-  <tr><td>Média das 3 últimas</td><td>só 1 venda: R$ 850</td><td>acima de R$ 500</td></tr>
+  <tr><td>Média das 4 últimas</td><td>só 1 venda: R$ 850</td><td>acima de R$ 500</td></tr>
   <tr><td>Kit novo</td><td></td><td>Liberado</td></tr></table>
  <h2>Acerto 2: venda de R$ 2.000, 1ª remarcação, faltou pagar</h2>
  <table class="ex r"><tr><th>Passo</th><th>Cálculo</th><th>Valor</th></tr>
@@ -224,12 +223,12 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
   <tr><td>Remarcação (1ª vez)</td><td>−5% de R$ 2.000 = −R$ 100</td><td>R$ 700 (35%)</td></tr>
   <tr><td class="t">Valor do acerto</td><td class="t">2.000 − 700</td><td class="t">R$ 1.300,00</td></tr>
   <tr><td>Pagou / pendente</td><td>pendente 23,1% do acerto</td><td>R$ 1.000 / R$ 300</td></tr>
-  <tr><td>Multas</td><td>R$ 30 (10%) + R$ 15 (5 dias)</td><td>R$ 45,00</td></tr>
-  <tr><td>Comissão final</td><td>700 − 45</td><td>R$ 655,00</td></tr>
-  <tr><td class="t">Valor final do acerto</td><td class="t">2.000 − 655</td><td class="t">R$ 1.345,00</td></tr>
-  <tr><td>Ainda deve na data</td><td>1.345 − 1.000</td><td>R$ 345,00</td></tr>
+  <tr><td>Multa do pendente</td><td>10% de R$ 300</td><td>R$ 30,00</td></tr>
+  <tr><td>Comissão final</td><td>700 − 30</td><td>R$ 670,00</td></tr>
+  <tr><td class="t">Valor final do acerto</td><td class="t">2.000 − 670</td><td class="t">R$ 1.330,00</td></tr>
+  <tr><td>Ainda deve</td><td>1.330 − 1.000</td><td>R$ 330,00</td></tr>
   <tr><td>Brinde</td><td>pendente acima de 10%</td><td>R$ 0,00</td></tr>
-  <tr><td>Média das 3 últimas</td><td>(850 + 2.000) ÷ 2</td><td>R$ 1.425,00</td></tr>
+  <tr><td>Média das 4 últimas</td><td>(850 + 2.000) ÷ 2</td><td>R$ 1.425,00</td></tr>
   <tr><td>Kit novo</td><td>pagou 76,9% (< 80%)</td><td>Com autorização</td></tr></table>
  <div class="rod"><span>Sorelly Joias</span><span>8 / 12</span></div>
 </section>
@@ -237,15 +236,15 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
 <section class="pg">
  <div class="topo"><img src="../public/logo-sorelly.png" alt="Sorelly"><span>Manual da representante</span></div>
  <h1><em>9.</em> Exemplos (continuação)</h1>
- <h2>Acerto 3: venda de R$ 400, acerto 12 dias atrasado</h2>
+ <h2>Acerto 3: venda de R$ 400, acerto no 12º dia útil</h2>
  <table class="ex r"><tr><th>Passo</th><th>Cálculo</th><th>Valor</th></tr>
   <tr><td>Venda</td><td></td><td>R$ 400,00</td></tr>
   <tr><td>Comissão da faixa</td><td>15% de R$ 400</td><td>R$ 60,00</td></tr>
-  <tr><td>Atraso do acerto (12 dias)</td><td>−10% de R$ 400 = −R$ 40</td><td>R$ 20 (5%)</td></tr>
-  <tr><td class="t">Valor do acerto</td><td class="t">400 − 20</td><td class="t">R$ 380,00</td></tr>
-  <tr><td>Pagou / pendente</td><td>pagou tudo</td><td>R$ 380 / R$ 0</td></tr>
+  <tr><td>Atraso (12º dia útil)</td><td>−7% de R$ 400 = −R$ 28</td><td>R$ 32 (8%)</td></tr>
+  <tr><td class="t">Valor do acerto</td><td class="t">400 − 32</td><td class="t">R$ 368,00</td></tr>
+  <tr><td>Pagou / pendente</td><td>pagou tudo</td><td>R$ 368 / R$ 0</td></tr>
   <tr><td>Brinde</td><td>sem brinde nessa faixa</td><td>R$ 0,00</td></tr>
-  <tr><td>Média das 3 últimas</td><td>(850 + 2.000 + 400) ÷ 3</td><td>R$ 1.083,33</td></tr>
+  <tr><td>Média das 4 últimas</td><td>(850 + 2.000 + 400) ÷ 3</td><td>R$ 1.083,33</td></tr>
   <tr><td>Kit novo</td><td></td><td>Liberado</td></tr></table>
  <h2>Acerto 4: venda de R$ 280, no prazo</h2>
  <table class="ex r"><tr><th>Passo</th><th>Cálculo</th><th>Valor</th></tr>
@@ -255,7 +254,7 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
   <tr><td class="t">Valor do acerto</td><td class="t">280 − 0 + 35</td><td class="t">R$ 315,00</td></tr>
   <tr><td>Pagou / pendente</td><td>pagou tudo</td><td>R$ 315 / R$ 0</td></tr>
   <tr><td>Brinde</td><td>sem brinde</td><td>R$ 0,00</td></tr>
-  <tr><td>Média das 3 últimas</td><td>(2.000 + 400 + 280) ÷ 3</td><td>R$ 893,33</td></tr>
+  <tr><td>Média das 4 últimas</td><td>(850 + 2.000 + 400 + 280) ÷ 4</td><td>R$ 882,50</td></tr>
   <tr><td>Kit novo</td><td></td><td>Liberado</td></tr></table>
  <div class="rod"><span>Sorelly Joias</span><span>9 / 12</span></div>
 </section>
@@ -263,24 +262,25 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
 <section class="pg">
  <div class="topo"><img src="../public/logo-sorelly.png" alt="Sorelly"><span>Manual da representante</span></div>
  <h1><em>9.</em> Exemplos (final)</h1>
- <h2>Acerto 5: venda de R$ 150, acerto 20 dias atrasado</h2>
+ <h2>Acerto 5: venda de R$ 150, acerto no 20º dia útil</h2>
  <table class="ex r"><tr><th>Passo</th><th>Cálculo</th><th>Valor</th></tr>
   <tr><td>Venda</td><td></td><td>R$ 150,00</td></tr>
   <tr><td>Comissão</td><td>abaixo de R$ 300: sem faixa</td><td>R$ 0,00</td></tr>
-  <tr><td>Atraso do acerto (20 dias)</td><td>−15%, sem efeito</td><td>R$ 0,00</td></tr>
+  <tr><td>Atraso (20º dia útil)</td><td>−15%, sem efeito</td><td>R$ 0,00</td></tr>
   <tr><td>Taxa de deslocamento</td><td></td><td>R$ 35,00</td></tr>
   <tr><td class="t">Valor do acerto</td><td class="t">150 − 0 + 35</td><td class="t">R$ 185,00</td></tr>
   <tr><td>Pagou / pendente</td><td>pagou tudo</td><td>R$ 185 / R$ 0</td></tr>
   <tr><td>Brinde</td><td>sem brinde</td><td>R$ 0,00</td></tr>
-  <tr><td>Média das 3 últimas</td><td>(400 + 280 + 150) ÷ 3</td><td>R$ 276,67</td></tr>
-  <tr><td>Kit novo</td><td>média abaixo de R$ 500</td><td>Bloqueado</td></tr></table>
+  <tr><td>Média das 4 últimas</td><td>(2.000 + 400 + 280 + 150) ÷ 4</td><td>R$ 707,50</td></tr>
+  <tr><td>Kit novo</td><td>média acima de R$ 500</td><td>Liberado</td></tr></table>
  <h2>O que os 5 acertos mostram</h2>
  <table class="r lic"><tr><th>Acerto</th><th>Lição</th></tr>
   <tr><td>2</td><td>Multas saem da comissão e aumentam o valor final</td></tr>
   <tr><td>2</td><td>Pagou menos de 80%: kit novo só com autorização</td></tr>
   <tr><td>3</td><td>Venda baixa, mas média boa: kit liberado</td></tr>
   <tr><td>4 e 5</td><td>Abaixo de R$ 300: sem comissão e com taxa de R$ 35</td></tr>
-  <tr><td>5</td><td>Média abaixo de R$ 500: kit bloqueado, cadastro bloqueia</td></tr></table>
+  <tr><td>3 e 5</td><td>O atraso conta em dias úteis: até o 5º, não perde nada</td></tr>
+  <tr><td>5</td><td>A média olha 4 vendas: uma venda ruim não bloqueia sozinha</td></tr></table>
  <div class="rod"><span>Sorelly Joias</span><span>10 / 12</span></div>
 </section>
 <section class="pg">
@@ -306,21 +306,21 @@ table.pag{table-layout:fixed}table.pag th:first-child,table.pag td:first-child{w
  <table class="r"><tr><th>Item</th><th>Regra</th></tr>
   <tr><td>Taxa (venda ou cancelamento)</td><td><b>R$ 35,00</b> se abaixo de R$ 300,00</td></tr>
   <tr><td>Valor pendente no acerto</td><td><b>Multa de 10%</b> do valor pendente</td></tr>
-  <tr><td>Prazo para quitar</td><td><b>15 dias</b></td></tr>
-  <tr><td>Atraso na quitação</td><td><b>+1% ao dia</b> (teto de 10%)</td></tr>
-  <tr><td>Próximo kit</td><td><b>Bloqueado</b> até a quitação total</td></tr>
-  <tr><td>Venda mínima (média)</td><td style="white-space:normal"><b>R$ 500,00</b> (representante)<br><b>R$ 700,00</b> (interno)</td></tr>
-  <tr><td>Kit novo</td><td>80% ou mais do acerto pago</td></tr></table>
+  <tr><td>Negociação na hora</td><td><b>2 parcelas</b> de R$ 200,00 ou mais, 30 dias</td></tr>
+  <tr><td>Parcela atrasada</td><td><b>+1% ao dia</b> (teto de 10%)</td></tr>
+  <tr><td>Kit novo</td><td>80% pago e o resto negociado na hora</td></tr>
+  <tr><td>Venda mínima (média)</td><td><b>R$ 500,00</b> · na Sorelly <b>R$ 700,00</b></td></tr>
+  <tr><td>Cobrança da dívida</td><td><b>7 dias</b> com você; depois, o setor</td></tr></table>
  <h2>Acerto não feito na data: quanto perde</h2>
- <table class="hz"><tr><th>Dias de atraso</th><th>1 a 7</th><th>8 a 15</th><th>16 a 30</th><th>31 a 45</th><th>46 a 59</th><th>60</th></tr>
-  <tr><td>Comissão</td><td class="v">−5%</td><td class="v">−10%</td><td class="v">−15%</td><td class="v">−20%</td><td class="v">−25%</td><td class="v">Tudo</td></tr>
-  <tr><td>Brinde</td><td class="v">−5%</td><td class="v">−10%</td><td class="v">−15%</td><td class="v">−20%</td><td class="v">−25%</td><td class="v">Tudo</td></tr></table>
- <p class="nota">No dia 60: perde toda a comissão e todo o brinde, e o caso vai ao jurídico. O desconto é sobre o total da venda.</p>
- <h2>Remarcação do acerto</h2>
+ <table class="hz"><tr><th>Dias úteis</th><th>Até o 5º</th><th>Do 6º ao 30º</th><th>Depois do 30º</th></tr>
+  <tr><td>Comissão</td><td class="v">Nada</td><td class="v">−1% por dia</td><td class="v">Tudo</td></tr>
+  <tr><td>Brinde</td><td class="v">Nada</td><td class="v">−1% por dia</td><td class="v">Tudo</td></tr></table>
+ <p class="nota">Dia útil: segunda a sexta, sem feriado, a partir do primeiro dia marcado. Depois do 30º: perde tudo, o caso vai ao jurídico e não há novo kit.</p>
+ <h2>Remarcação, cancelamento e falta</h2>
  <table class="hz"><tr><th>Ocorrência</th><th>1ª</th><th>2ª</th><th>3ª ou mais</th></tr>
   <tr><td>Comissão</td><td class="v">−5%</td><td class="v">−8%</td><td class="v">−15%</td></tr>
   <tr><td>Brinde</td><td class="v">−15%</td><td class="v">−50%</td><td class="v">Sem brinde</td></tr></table>
- <p class="nota">Emergência comprovada não conta. A contagem reinicia a cada kit novo.</p>
+ <p class="nota">Aviso com 10 dias ou mais de antecedência não tem multa (uma vez por kit). Motivo sério com prova não conta. A contagem reinicia a cada kit novo.</p>
  <div class="rod"><span>Sorelly Joias</span><span>12 / 12</span></div>
 </section>
 </body></html>

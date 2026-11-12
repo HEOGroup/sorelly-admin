@@ -2,6 +2,7 @@
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 import { TabelaEquipe } from "@/apps/montagem/components/equipe-blocos";
 import { TabelaPecasVer } from "@/apps/montagem/components/tabela-pecas-ver";
+import { CFG_PADRAO } from "@/apps/montagem/domain/bonus-montagem";
 import { tabelaAtual } from "@/apps/montagem/domain/config";
 import { BK, N1 } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
@@ -13,9 +14,8 @@ import { e } from "@/shared/react";
 import React from "react";
 
 function AbaRegras(){
-  var c = use().state.cfg;
+  var st = use().state, c = st.cfg, b = Object.assign({}, CFG_PADRAO, (st.bm && st.bm.cfg) || {});   // b = regra do bônus da montagem (12/11/2026, domain/bonus-montagem.js)
   var tab = tabelaAtual(c).slice().sort(function(a,b){return a.min-b.min;});
-  var faixas = c.faixas.slice().sort(function(a,b){return b.min-a.min;});
   var v = function(x){ return e("b",{className:"text-primary"}, x); };
   var cartao = function(titulo, ic, sub, itens){ return e("div",{className:"flex flex-col rounded-xl bg-linear-to-br from-[#E8B84B]/10 via-card to-card p-5 ring-1 ring-[#E8B84B]/20"},
     e("div",{className:"mb-1 flex items-center gap-2"}, e("span",{className:"grid size-8 place-items-center rounded-lg bg-primary/15 text-primary"}, e(Icon,{n:ic, s:16})),
@@ -41,9 +41,10 @@ function AbaRegras(){
         e(React.Fragment,null,"Fila única por horário de retirada; ", v("prioritários primeiro"),", em rodízio entre as representantes do mesmo horário. Cada uma monta ", v("um kit por vez"),"."),
         e(React.Fragment,null,"Kits acima de ", v(BK(c.limiteMelhores))," só para as ", v(c.topN+" montadoras com melhor nota")," (depois de ", v(c.minKitsRestricao+" kits")," da equipe no mês; mínimo de ", v(c.minAvalRanking+" avaliações"),")."),
         e(React.Fragment,null,"Kits acima de ", v(BK(c.limiteAtencao))," passam por ", v("conferência da supervisão")," antes da bipagem."),
-        e(React.Fragment,null,"Recebe ", v(brl(c.valorNormal))," por kit e ", v(brl(c.valorEspecial))," por kit acima de ", v(BK(c.limiteEspecial)),"."),
-        e(React.Fragment,null,"A nota do mês define quanto recebe: ", faixas.map(function(f,i){ return e("span",{key:i}, (i?" · ":"")+"a partir de "+N1(f.min)+" → ", v(f.pct+"%")); }),"."),
-        e(React.Fragment,null,"Divergência acima de ", v(N1(c.divPct)+"%")," na bipagem conta contra a montadora: a cada ", v(c.divBloco+" divergências")," perde ", v(c.divPerda+"%"),"."),
+        e(React.Fragment,null,"Bônus por dia: ", v(b.metaNormal+" kits")," de até ", v(BK(b.limiteEspecial))," no dia = ", v(brl(b.baseNormal)),", mais ", v(brl(b.extraNormal))," por kit acima de ", b.metaNormal,". Abaixo da meta do dia não recebe."),
+        e(React.Fragment,null,"Kit acima de ", v(BK(b.limiteEspecial)),": ", v(b.metaEspecial+" kits")," no dia = ", v(brl(b.baseEspecial)),", mais ", v(brl(b.extraEspecial))," por kit acima de ", b.metaEspecial,"."),
+        e(React.Fragment,null,"A nota do kit vem da ", v("revendedora"),", no aplicativo, quando ela recebe o kit. Abaixo de ", v(N1(b.notaZero))," não recebe o bônus; de ", N1(b.notaZero)," até ", N1(b.notaMetade)," recebe ", v("metade"),"; de ", v(N1(b.notaMetade))," em diante recebe tudo."),
+        e(React.Fragment,null,"Divergência acima de ", v(N1(c.divPct)+"%")," na bipagem fica ", v("registrada")," para a montadora."),
         e(React.Fragment,null,"Nota abaixo de ", v(N1(c.alertaAmarelo))," = atenção; abaixo de ", v(N1(c.alertaVermelho))," = risco de saída."),
         e(React.Fragment,null,"Ao final da montagem, ", v("pega as condicionais")," do acerto e confirma no celular antes de concluir."),
         e(React.Fragment,null,"O kit vai para ", v("quem ficar livre primeiro"),": ninguém reserva kit antes de apertar Iniciar, e a ordem nunca se perde.")]),

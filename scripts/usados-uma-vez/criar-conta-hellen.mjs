@@ -4,7 +4,7 @@ import { randomInt } from "node:crypto";
 import { consulta, pool } from "../../src/server/db.js";
 import { criarHash } from "../../src/server/senha.js";
 
-const NOME = "Hellen Garmier", LOGIN = "hellengarmier", PESSOA = 46;
+const NOME = "Hellen Garmier", LOGIN = "hellengarmier", PESSOA = 55;   // era 46, igual ao Diego (corrigido em 10/11/2026)
 await consulta("ALTER TABLE sorelly.conta ADD COLUMN IF NOT EXISTS senha_provisoria text");
 const ja = (await consulta("select status, senha_provisoria from sorelly.conta where login = $1", [LOGIN])).rows[0];
 if (ja) console.log("já existe |", LOGIN, "|", ja.senha_provisoria || "(já trocou a senha)", "|", ja.status);

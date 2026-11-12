@@ -53,7 +53,9 @@ function AbaConsolidadoInterno(){
   var fa = useState(null), fAte = fa[0], setFAte = fa[1];
   var dash = e("span",{className:"text-muted-foreground"},"—");
   var feitos = (s.internos||[]).filter(function(x){ return x.status==="acertado"; }).map(function(x){
-    var r = (s.acertosConsignado||[]).find(function(a){ return a.internoId===x.id; }) || {};
+    // 10/11/2026 (Marcus: "tem que aparecer os atendimentos de hoje todos"): sem o registro completo (computador ainda com tela antiga), usa o acerto guardado no próprio atendimento e os pagamentos enviados ao financeiro
+    var reg = (s.acertosConsignado||[]).find(function(a){ return a.internoId===x.id; }), lfC = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });
+    var r = reg || Object.assign({}, x.acerto || {}, {pagamentos:(lfC ? lfC.linhas.filter(function(l){ return l.tipo==="pagamento" && !l.isento; }).map(function(l){ return {forma:l.forma, valor:l.valor, descricao:(l.partes||[]).map(function(q){ return q.descricao; }).join(" + ")}; }) : [])});
     var pag = (r.pagamentos||[]).reduce(function(t,p){ return t+(p.valor||0); }, 0);
     return {x:x, r:r, pag:pag, dur:x.inicioTs && x.fimTs ? Math.max(1, Math.round((x.fimTs-x.inicioTs)/60000)) : null}; });
   var meses = feitos.map(function(f){ return (f.x.data||"").slice(0,7); }).concat([mes]).filter(function(m,i,a){ return m && a.indexOf(m)===i; }).sort().reverse();

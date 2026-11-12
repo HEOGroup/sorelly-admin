@@ -3,10 +3,20 @@
 // Quem pode enviar e abrir é quem pode abrir o módulo dono do arquivo (permissoes.js). Só imagem (JPEG, PNG, WebP) e PDF.
 import { consulta } from "./db.js";
 
-export const LIMITE_ANEXO = 3.9 * 1024 * 1024;   // caracteres do data URL (≈ 2,9 MB de arquivo); o limite de uma chamada na Vercel é 4,5 MB
+export const LIMITE_ANEXO = 12 * 1024 * 1024;   // caracteres do data URL (≈ 9 MB de arquivo). Arquivo grande vai em PEDAÇOS (12/11/2026): o limite de uma chamada na Vercel é 4,5 MB, então cada pedaço tem até 3,2 milhões de caracteres
+export const PEDACO_ANEXO = 3.2 * 1024 * 1024;
+export const MAX_PARTES = 5;
+export const pedacoValido = (p) => typeof p === "string" && p.length > 0 && p.length <= PEDACO_ANEXO && /^[A-Za-z0-9+/=:;,-]+$/.test(p);
 export const MODULOS_COM_ANEXO = ["cpc", "er", "ff"];   // ff = Financeiro familiar: PDF do orçamento das dívidas de prestadores (10/11/2026)
 export const chaveAnexoValida = (k) => typeof k === "string" && /^an_[a-z0-9]{6,40}$/.test(k);
 export const urlAnexoValida = (u) => typeof u === "string" && /^data:(image\/(jpeg|png|webp)|application\/pdf);base64,[A-Za-z0-9+/=]+$/.test(u);
+
+let prontaPartes = null;
+export function garantirTabelaPartes() {
+  if (!prontaPartes) prontaPartes = consulta(`create table if not exists sorelly.anexo_parte (
+    chave text not null, parte integer not null, pedaco text not null, criado_em timestamptz not null default now(), primary key (chave, parte))`).catch((e) => { prontaPartes = null; throw e; });
+  return prontaPartes;
+}
 
 let pronta = null;
 export function garantirTabelaAnexo() {

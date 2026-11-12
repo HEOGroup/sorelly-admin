@@ -3,6 +3,76 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.3", data:"2026-11-12", titulo:"Avaliações: tela só em tabela", itens:[
+  {tipo:"melhoria", area:"Cadastro de revendedoras › Avaliações", txt:"Saíram os blocos de números do topo, a barra de busca, os botões redondos de período e de setor e os cartões coloridos. As abas Visão geral, Representantes (pelas revendedoras), Representantes (pelo sistema), Kits, Montagem e Funcionários ficaram só em tabela escura, com filtro e ordem no cabeçalho de cada coluna. As abas da tela usam a peça padrão."},
+ ]},
+ {v:"0.20.2", data:"2026-11-12", titulo:"Avaliações › Kits: nota do kit por montadora", itens:[
+  {tipo:"novo", area:"Cadastro de revendedoras › Avaliações › Kits", txt:"A aba Kits mostra a planilha por montadora (opção A, escolhida pelo Marcus): kits montados, avaliações, as 3 perguntas do kit, nota, kits com nota abaixo de 3,5 e de 2,5 e, para quem vê valores, bônus, corte pela nota e bônus a pagar. Embaixo, a lista dos kits mal avaliados, com revendedora, representante e montadora. Conta uma avaliação por kit."},
+  {tipo:"melhoria", area:"Financeiro › Comissões › Montagem de kits", txt:"O bônus da montagem passa a ler a nota do kit da mesma fonte da aba Avaliações › Kits. Acabou a cópia separada das notas."},
+ ]},
+ {v:"0.20.1", data:"2026-11-12", titulo:"Bônus da montagem de kits com a nota da revendedora", itens:[
+  {tipo:"novo", area:"Financeiro › Comissões › Montagem de kits", txt:"Tela nova Bônus da montagem, com as abas Resumo do mês, Dia a dia, Lançar dia e Regras. A regra é a da planilha: 8 kits normais no dia = R$ 15,00 e R$ 2,00 por kit a mais; 6 kits especiais (acima de R$ 12.000,00) = R$ 15,00 e R$ 3,00 por kit a mais. A nota do kit dada pela revendedora corta o bônus: abaixo de 2,5 não paga, abaixo de 3,5 paga metade. A supervisão dos kits normais vai para a Maria Vitória. Outubro de 2026 entrou igual à planilha: R$ 2.781,00 de bônus e R$ 637,00 de supervisão."},
+  {tipo:"regra", area:"Representantes & Kits › Regras da montagem", txt:"O cartão Montadoras mostra a regra nova do bônus (meta por dia e nota da revendedora). Saíram o valor por kit (R$ 1,80 e R$ 2,80) e a perda por divergência."},
+  {tipo:"melhoria", area:"Financeiro › Comissões › Visão geral dos funcionários", txt:"O cartão e o bloco Montagem de kits passam a somar o bônus pela regra nova."},
+ ]},
+ {v:"0.18.69", data:"2026-11-12", titulo:"Anexo de arquivo grande (romaneio em PDF)", itens:[
+  {tipo:"corrigido", area:"Cadastro de peças → Pedidos", txt:"O PDF do romaneio passava de 2,8 MB e a Rayssa não conseguia anexar. Agora o envio e a abertura vão em pedaços e aceitam arquivo de até uns 8 MB. O PDF do pedido da Mega Sul (romaneio 151844) foi anexado direto no servidor."}
+ ]},
+ {v:"0.18.73", data:"2026-11-12", titulo:"Produção: consulta da meta e acessos da Hellen", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização producao_ver (Ver Premiação e Configurações da Produção, só consulta). Abre as duas abas para ver a meta mensal, as faixas e o bônus, sem editar, adicionar ou apagar. Padrão: Maria Claudia (chamado de 09/11/2026)."},
+  {tipo:"correção", area:"Materiais e estoque › Compras", txt:"Hellen (link, cadastro e compras) ganhou o papel Logística em Compras (vê o quadro inteiro e registra recebimento e entrega) e as capacidades Contagem e Compra no Estoque de material. Não aprova compra: isso continua com a autorização compra_aprova."},
+ ]},
+ {v:"0.18.72", data:"2026-11-11", titulo:"Expositores: equipamento separado por tipo", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições › Expositores", txt:"O equipamento que fica com a representante agora tem colunas próprias: Leitor, Notebook, Telefone e Outro equipamento (kit de apoio, medidor de dedo, bolsa mostruário, maleta). A coluna Expositores mostra só os expositores."},
+ ]},
+ {v:"0.18.72", data:"2026-11-11", titulo:"Encomendas: tela Modelos (particular do Marcus)", itens:[
+  {tipo:"novo", area:"Encomendas e reposições › Modelos", txt:"Planilha das modelos que recebem joias: foto grande (clique para ampliar), Instagram, telefone, endereço, valor liberado por mês, último envio e situação. Clicar na linha edita; botão Nova modelo cadastra. Só quem tem a autorização modelos_ver (padrão Marcus). Letycia Fagundes (R$ 1.000,00) e Julhia Prado (R$ 500,00) já entram."},
+  {tipo:"melhoria", area:"Encomendas e reposições › Modelos", txt:"Tipo da modelo: Só modelo (recebe joias) ou Conteúdo (tem negociação e data para ir na empresa). Situação muda conforme o tipo. Colunas Tipo e Na empresa. Título e botão novos e ficha em gaveta pela direita. Amanda (Conteúdo, na empresa em 27/11/2026, negociação a confirmar) já entra."},
+  {tipo:"melhoria", area:"Encomendas e reposições › Modelos", txt:"Barra no topo com os grupos Sorelly, Marcus e Influencers (cada um com a sua contagem e as suas colunas). O tipo virou grupo. Tudo subiu um pouco e o botão + ficou na mesma linha do título."},
+ ]},
+ {v:"0.18.71", data:"2026-11-11", titulo:"Expositores: observação Sim/Não e equipamento separado", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições › Expositores", txt:"A coluna Observação mostra só Sim ou Não e foi para a frente da tabela. Clicar abre a janela para ler e escrever o texto inteiro."},
+  {tipo:"novo", area:"Encomendas e reposições › Expositores", txt:"Colunas Contém e Equipamento. Leitor, notebook, celular, medidor de dedo e kit de apoio da representante não são expositor: aparecem como equipamento e não entram nas peças e no valor do expositor."},
+ ]},
+ {v:"0.18.70", data:"2026-11-11", titulo:"Expositores: observação não se perde mais", itens:[
+  {tipo:"correção", area:"Encomendas e reposições › Expositores", txt:"As observações da aba Com revendedoras estavam num mapa único e o navegador de outra pessoa podia apagar todas (aconteceu em 10/11). Agora cada observação é uma chave própria por revendedora: uma pessoa só muda a dela. As observações perdidas foram regravadas."},
+ ]},
+ {v:"0.20.0", data:"2026-11-11", titulo:"Regras do acerto: atraso em dias úteis", itens:[
+  {tipo:"regra", area:"Regras dos acertos", txt:"O atraso do acerto passa a contar em dias úteis (segunda a sexta, sem feriado). Até o 5º dia útil não há acréscimo. Do 6º ao 30º, perde 1% de comissão e 1% de brinde por dia, somando à multa da remarcação. Depois do 30º dia útil perde tudo e vai ao Jurídico. A tabela antiga de 7 a 59 dias saiu. Vale para os kits entregues desde 27/10/2026."},
+  {tipo:"regra", area:"Atendimento Sorelly e app da representante", txt:"O campo de atraso agora se chama Dias úteis de atraso."}]},
+ {v:"0.19.0", data:"2026-11-11", titulo:"Setor novo: Inadimplência (no lugar da planilha de negociações)", itens:[
+  {tipo:"novo", area:"Inadimplência", txt:"Setor novo no menu, com sete telas: Dívidas, Cobrança do dia, Pagamentos, Serasa, Kits em atraso, Relatórios e Regras. A planilha de negociações foi trazida inteira (2024 a 2026)."},
+  {tipo:"novo", area:"Inadimplência › Dívidas", txt:"Uma linha por dívida, com filtro e ordem no nome da coluna. A linha abre a ficha da devedora: dados, acordo com parcelas, pagamentos e histórico que nunca é apagado. O saldo muda sozinho quando o pagamento é confirmado e a dívida vira Quitada com saldo zero."},
+  {tipo:"novo", area:"Inadimplência › Regras", txt:"As regras de negociação entram no sistema: Pix em 2, 3 ou 4 vezes conforme o valor, parcela mínima de R$ 150,00, cartão em até 6 vezes, uma prorrogação por parcela. Acordo fora das regras só grava com o nome de quem autorizou."}]},
+ {v:"0.18.168", data:"2026-11-10", titulo:"Contas bancárias: topo em uma barra e tabela com cabeçalho dourado", itens:[
+  {tipo:"melhoria", area:"Financeiro › Saldos › Contas bancárias", txt:"Os blocos do topo viraram uma barra só com 5 números (Saldo real, Cheque especial, Disponível, Bloqueado / a receber e Divergência), cada um com um tom de cor. Saldo real e Disponível não aparecem mais duas vezes. A tabela ganhou cabeçalho dourado em degradê e as fontes seguem o padrão (13 px, rótulos 11 px, números até 20 px, campos de 32 px). O botão que abre o resumo ficou pequeno. A conta de baixo (início + recebido − pago = esperado, contra o real e a divergência) virou UMA linha, cada termo com a sua cor, e os 4 cartões repetidos do resumo saíram."}]},
+ {v:"0.18.167", data:"2026-11-10", titulo:"Contas a pagar: dezembro e meses seguintes vêm da DevMaster", itens:[
+  {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"Uma baixa com data de débito em dezembro puxava o mês de referência para dezembro, e todas as contas atrasadas (até de 2025) caíam em dezembro: R$ 2,67 mi. O mês de referência nunca passa do mês de hoje. Dezembro agora mostra R$ 1.536.688,47 e novembro R$ 1.490.122,83, tudo da DevMaster."},
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Contas a pagar de novembro, dezembro e dos meses seguintes vêm só da DevMaster pelo admin novo (com ≥ nos meses que vêm, por ainda receberem contas). O admin antigo só entra se a DevMaster não carregar."},
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Meses ao redor desde janeiro, com os meses que vêm até dezembro de 2027 e a faixa 2027 separada. Cada grupo ganhou a sua cor (acertos azul, entra verde, sai laranja, resultado dourado, previsto roxo), com barra na lateral e fundo suave; o total do grupo fica mais forte. Resumo e Meses ao redor um embaixo do outro."}
+ ]},
+ {v:"0.18.166", data:"2026-11-10", titulo:"Consolidado Sorelly: mostra os atendimentos de hoje mesmo sem o registro completo", itens:[
+  {tipo:"correção", area:"Atendimento interno › Consolidado Sorelly", txt:"Enquanto o computador da funcionária ainda não mandou o registro completo do acerto, o Consolidado usa o acerto guardado no próprio atendimento e os pagamentos enviados ao financeiro. Assim todos os atendimentos finalizados de hoje aparecem, com venda, comissão, valor do acerto e pagamentos."}]},
+ {v:"0.18.165", data:"2026-11-10", titulo:"Consolidado Sorelly: acertos do atendimento interno pelo servidor", itens:[
+  {tipo:"correção", area:"Atendimento interno › Consolidado Sorelly", txt:"O registro do acerto (vendas, comissão, pagamentos, brindes, peças e assinatura) ficava só no computador de quem finalizou, e o Consolidado dos outros ficava sem os dados. Agora cada acerto sobe para o servidor (módulo aci, uma chave por acerto) e o Consolidado Sorelly mostra tudo em todos os computadores."}]},
+ {v:"0.18.164", data:"2026-11-10", titulo:"Resultado do mês: resumo em grupos e dezembro corrigido", itens:[
+  {tipo:"melhoria", area:"Financeiro → Resultado do mês", txt:"Resumo do mês em tabela de campos (layout D): grupos ENTRA, SAI e RESULTADO, total de cada grupo em faixa escura e legenda de nota fiscal, dinheiro e diferença. Meses ao redor na mesma tabela, com Fechado, Em andamento e Previsto. Colunas Notas Fiscais e Contas a Receber, e grupo ACERTOS no topo (acertos feitos, média, acertos previstos e média prevista). Aba Faturamento e receber em tabela por grupos, um bloco embaixo do outro, com revendedoras no início do mês, acertos previstos no início e já adiadas, e a coluna De onde vem em uma linha só."},
+  {tipo:"correção", area:"Financeiro → Resultado do mês", txt:"Contas a pagar de dezembro e dos meses seguintes mostravam R$ 2,67 mi (a lista da DevMaster junta cheques e títulos atrasados no mês). Agora vale o valor do admin antigo, o mesmo da aba Previsão (dezembro R$ 1.500.381,39); a lista só entra quando não há valor do admin, com ≥."}
+ ]},
+ {v:"0.18.163", data:"2026-11-10", titulo:"Atendimento Sorelly: sem duplicadas, assumir atendimento e status Aberta", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Rian e Adryelle apareciam duas vezes: o cadastro avulso e o atendimento criado pela funcionária eram dois registros. A fila agora mostra uma só linha por revendedora (a mais adiantada) e o sistema não cria mais o segundo atendimento."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Atendimento começado por outra pessoa (por exemplo, pelo Marcus) travava a funcionária no só acompanhar. Agora o aviso tem o botão Assumir atendimento."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Fila: mostra Aberta e o nome de quem abriu o atendimento mas ainda não clicou em Iniciar atendimento."}]},
+ {v:"0.18.162", data:"2026-11-10", titulo:"Atendimento Sorelly: venda zero mais clara", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Quando a revendedora não vendeu nada, a tela travava sem dizer o que fazer. Agora digitar 0 em Quanto vendeu também vale, o botão Não teve venda ganha destaque, aparece o aviso Para continuar e, ao clicar, a tela vai direto para a Condicional nova."}]},
+ {v:"0.18.161", data:"2026-11-10", titulo:"Controle de pagamentos: Destinos com banco, favorecido e chave Pix", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Cada destino mostra o texto Escrever na folha, o banco, o favorecido e a chave Pix, lidos de Financeiro › Bancos › Chaves Pix (nada é digitado de novo), com botão Copiar. Destino sem chave mostra Sem chave Pix em amarelo. Tabela no layout D."},
+  {tipo:"novo", area:"Financeiro › Pagamentos › Destinos", txt:"Novo destino Itaú Marco PJ (conta PIX - ITAÚ PJ - MARCO). É criado uma vez ao abrir a aba, por quem edita, se ainda não existir."}]},
+ {v:"0.18.160", data:"2026-11-10", titulo:"Kit retornando: média das 3 últimas vendas e valor do kit", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Kit retornando mostra a média das 3 últimas vendas da revendedora (busca na DevMaster) e o Valor do kit liberado pela tabela. Só dado real; sem vendas, pede para definir o valor à mão. Rota nova /api/revendedoras/<código>/vendas."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"O botão Acerto | Retornando | Kit novo quebrava o texto em duas linhas; agora fica em uma linha."}]},
+ {v:"0.18.159", data:"2026-11-10", titulo:"Hellen entrava na conta do Diego", itens:[
+  {tipo:"correção", area:"Acessos", txt:"As contas da Hellen e do Diego tinham a mesma pessoa (46), então a Hellen caía no acesso do Diego. A Hellen passa para a pessoa 55. Script: scripts/usados-uma-vez/corrigir-hellen-pessoa.mjs."}]},
  {v:"0.18.158", data:"2026-11-10", titulo:"Marketing: Fotos de catálogo", itens:[
   {tipo:"novo", area:"Marketing › Fotos de catálogo", txt:"Planilha de controle das fotos das peças novas (foto, editada, na DevMaster), com filtro em cada coluna e faixa fina por dia. Trouxe os 17.359 códigos da planilha Fotos App Sorelly; novos entram colando do Excel e cada etapa guarda quem e quando. O servidor guarda um registro por código. Tabela com botão Mostrar mais (300 por vez)."}]},
  {v:"0.18.157", data:"2026-11-09", titulo:"Funil de pedidos no formato do Pedidos + Separar peças", itens:[

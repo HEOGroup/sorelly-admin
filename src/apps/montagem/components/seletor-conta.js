@@ -35,9 +35,28 @@ function SeletorConta(p){
           : e("span",{className:"min-w-0 flex-1 break-words"}, no.nome), no.itens && e("span",{"aria-hidden":true, className:"shrink-0 text-[11px]"}, no.itens.length+" ▸")); })
       : e("p",{className:"px-3 py-2 text-[13px]"}, "Nada encontrado.")),
     muitos && e("div",{className:"border-t border-border bg-white/[0.04] px-3 py-1 text-[11px]"}, "Mostrando "+filtrada.length+" de "+lista.length));
+  // tudo: true (Direcionar, 11/11/2026, pedido do Marcus e do Lucas): a lista abre COMPLETA, todos os grupos e todas as contas ao mesmo tempo, em colunas com linhas, sem entrar de nível em nível. Busca em cima.
+  var casaTudo = function(no){ return !q || norm(no.nome).indexOf(q)>=0 || (no.cols || []).some(function(t){ return norm(t).indexOf(q)>=0; }); };
+  var folhaTudo = function(no, k){ return e("button",{key:k, type:"button", onClick:function(){ setAberto(null); p.onEscolher(no.id, no.conta || ""); }, className:"flex min-h-8 w-full items-center justify-center gap-2 border-b border-border px-3 py-0.5 text-center text-[13px] leading-snug last:border-b-0 hover:bg-[#B8862B]"},
+    no.cols ? no.cols.map(function(t, j){ return e("span",{key:j, className:"min-w-0 flex-1"+(j===0 ? " font-semibold" : ""), title:t}, t); }) : e("span",{className:"min-w-0 flex-1 font-semibold"}, no.nome)); };
+  var corpoTudo = function(nos, nivel){ var out = []; (nos || []).forEach(function(n, i){
+    if(n.itens){ var sub = corpoTudo(n.itens, nivel+1); if(sub.length){ out.push(e("div",{key:"t"+nivel+"-"+i, className:"flex h-8 items-center justify-center border-b border-border bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[.05em]"}, n.nome)); out = out.concat(sub); } }
+    else if(casaTudo(n)) out.push(folhaTudo(n, nivel+"-"+i)); }); return out; };
+  var primeiraFolha = function(no){ if(!no.itens) return no; for(var i = 0; i<no.itens.length; i++){ var f = primeiraFolha(no.itens[i]); if(f) return f; } return null; };
+  var painelTudo = aberto && p.tudo && e("div",{className:"fixed z-50 flex max-h-[72vh] flex-col overflow-hidden rounded-lg border-2 border-[#d9a63a]/85 bg-card text-white shadow-lg", style:{left:Math.max(4, Math.min(aberto.r.l, window.innerWidth-Math.min(1100, window.innerWidth*0.96)-4)), top:Math.min(aberto.r.b+2, window.innerHeight*0.26), width:"min(1100px, 96vw)"}, onClick:function(ev){ ev.stopPropagation(); }},
+    e("div",{className:"grid shrink-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-px border-b border-border bg-border"},
+      e("div",{className:"flex items-center justify-center bg-card p-1"}, e("input",{type:"search", autoFocus:true, value:aberto.q, placeholder:"Buscar conta, banco ou nome", "aria-label":"Buscar conta", onChange:function(ev){ setAberto(Object.assign({}, aberto, {q:ev.target.value})); }, className:"h-8 w-full rounded-md border border-border bg-card px-2 text-center text-[13px] text-white outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
+      e("div",{className:"flex items-center justify-center bg-card px-3 text-[11px] font-semibold uppercase tracking-[.05em]"}, "Clique na conta")),
+    e("div",{className:"grid min-h-0 gap-px overflow-y-auto bg-border", style:{gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))"}}, (p.nos || []).map(function(g, gi){
+      var corpo = g.itens ? corpoTudo(g.itens, 1) : (casaTudo(g) ? [folhaTudo(g, "g"+gi)] : []); if(!corpo.length) return null;
+      var f1 = primeiraFolha(g);
+      return e("div",{key:"g"+gi, className:"min-w-0 self-start bg-card"},
+        e("div",{className:"flex h-[30px] items-center justify-center border-b border-border bg-[#1c1d21] px-3 text-[11px] font-semibold uppercase tracking-[.05em]"}, g.nome),
+        f1 && f1.heads && e("div",{className:"flex h-8 items-center justify-center gap-2 border-b border-border bg-white/5 px-3 text-[11px] font-medium uppercase tracking-[.05em]"}, f1.heads.map(function(h, k){ return e("span",{key:k, className:"min-w-0 flex-1 text-center"}, h); })),
+        corpo); })));
   return e(Fragment,null,
     e("button",{type:"button", "aria-label":p.rotulo, title:p.texto, onClick:abre, className:CAMPO+" !h-auto min-h-8 w-full min-w-0 max-w-full items-center justify-between gap-2 py-0.5 text-left flex"}, e("span",{className:"min-w-0 flex-1 break-words leading-snug"+(p.vazio ? " text-foreground/70" : "")}, p.texto), e("span",{"aria-hidden":true, className:"shrink-0"}, "▾")),
-    aberto && createPortal(e(Fragment,null, e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(null); }}), painel), document.body));
+    aberto && createPortal(e(Fragment,null, e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(null); }}), p.tudo ? painelTudo : painel), document.body));
 }
 
 export { SeletorConta };

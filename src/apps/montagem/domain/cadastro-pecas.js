@@ -149,10 +149,8 @@ function cpcMigrar(c){
   if(LOCAL && LOCAL.comparativo && !Object.keys(bc.ellos).length && !Object.keys(bc.pontual).length){ var lc = LOCAL.comparativo; bc.cotacaoEllos = numPonto(lc.cotacaoEllos); bc.atualizado = trim(lc.atualizado); bc.ellos = clone(lc.ellos||{}); bc.pontual = clone(lc.pontual||{}); }
   // correção única (Marcus, 03/11/2026): os pedidos que estavam em "Chegou no banho" já estão em produção, na etapa Banho (8). A marca fix.banho1103 impede de repetir; a data da etapa fica na chegada na galvânica para os dias continuarem certos.
   if(!c.fix) c.fix = {};
-  if(!c.fix.banho1103){
-    c.pedidos.forEach(function(p){ if(p.status==="Chegou no banho" && (!p.statusEm || p.statusEm<="2026-11-03")){ p.status = "Banho"; p.statusEm = p.chegPontual || p.chegEllos || p.statusEm || hojeISO(); } });
-    c.fix.banho1103 = 1;
-  }
+  // 12/11/2026: a troca de status foi REMOVIDA. Ela já rodou no servidor (fix.banho1103 = 1) e, em qualquer computador sem a marca, jogava para Banho o pedido que a Rayssa deixou em Chegou no banho com chegada até 03/11 (caso Mega Sul). Agora só grava a marca.
+  if(!c.fix.banho1103) c.fix.banho1103 = 1;
   // a Pontual confirmou em 03/11/2026: 12 dias contados da chegada (+2 com verniz novo). Marca fix.pontual12 impede de repetir.
   if(!c.fix.pontual12){ if(numPonto((c.config.prazoBanho||{}).pontual)===10) c.config.prazoBanho = Object.assign({}, c.config.prazoBanho, {pontual:12}); c.fix.pontual12 = 1; }
   c.pedidos.forEach(function(p){ if(STATUS_PED.indexOf(p.status)<0) p.status = statusMigra(p); if(p.contaBanho===undefined) p.contaBanho = ""; if(p.vernizNovo===undefined) p.vernizNovo = false; if(p.fotosEm===undefined) p.fotosEm = ""; if(p.romaneioArq===undefined) p.romaneioArq = null; if(p.valorBanho===undefined) p.valorBanho = 0; if(!Array.isArray(p.faturasBanho)) p.faturasBanho = []; });   // 03/11/2026: status antigos viram as 12 etapas

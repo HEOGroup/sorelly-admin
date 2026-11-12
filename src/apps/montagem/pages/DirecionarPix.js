@@ -10,6 +10,7 @@ import { Botao, CAMPO, FaixaTotais, Rotulo, Segmentado, TabelaP, Td, Tr } from "
 import { setBaixas, setClasse, setLancamentos, setPf, filtrar } from "@/apps/montagem/domain/contas-empresa";
 import { TIPOS_DESTINO, direcionado, faltaDe, hojeIsoCp } from "@/apps/montagem/domain/controle-pagamentos";
 import { sugerir } from "@/apps/montagem/domain/direcionar-pix";
+import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
 import { descontoCartao, fornecedoresDoMes, geradoEm } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
@@ -19,7 +20,7 @@ import { BKC } from "@/apps/montagem/lib/format";
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
 import { CampoDinheiro } from "@/apps/montagem/mobile/campos";
 import { use } from "@/apps/montagem/state/context";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, Fragment, useEffect, useState } from "@/shared/react";
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var hm = function(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2, "0")+":"+String(d.getMinutes()).padStart(2, "0"); };
@@ -243,7 +244,6 @@ function AbaDirecionar(){
   // ── PEDIDO ABERTO · modelo 3B (Marcus, 26/10/2026): Valores em linhas | Para onde enviar (sugestão do sistema ou lista fechada com Editar e ✕) | Confirmar
   // ── PEDIDO ABERTO · versão 2 (Marcus, 26/10/2026): resumo dos valores à esquerda e, à direita, uma linha baixa por pagamento (destino numa seleção, motivo embaixo, estado à direita). Dividir e Editar só aparecem quando precisam.
   // ── PEDIDO ABERTO · versão B final (Marcus, 26/10/2026): resumo numa coluna só, compacto e mais largo (cada pagamento já feito em uma linha) | tabela de pagamentos: Pagamento · Conta · Valor · Motivo · ações. Cada pagamento: Inteiro (uma conta) ou Dividir (várias contas); a sugestão é a etiqueta dentro do motivo.
-  var Ln = function(rot, val, cor, fundo, recuo){ return e("div",{className:"flex h-7 items-center justify-between gap-3 border-b border-border pr-3 "+(recuo ? "pl-7" : "pl-3"), style:fundo ? {background:"rgba(217,166,58,.12)"} : undefined}, e("span",{className:"whitespace-nowrap text-[13px] text-foreground"}, rot), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums", style:cor ? {color:cor} : undefined}, val)); };
   var NOME = "text-[13px] font-semibold leading-snug break-words";
   var mistura = div.some(function(x){ return destinoDe(x.destinoId).tipo==="CNPJ"; }) && div.some(function(x){ return destinoDe(x.destinoId).tipo!=="CNPJ"; });
   var fechado = div.length>0 && partes.every(function(p){ return Math.abs(restDe(p.id))<=0.009; });
@@ -251,9 +251,11 @@ function AbaDirecionar(){
   var temSugestao = partes.some(function(p){ return !divDe(p.id).length && (planos[p.id]||[]).length>0; });
   var usarTodas = function(){ var novo = div.slice(); partes.forEach(function(p){ if(divDe(p.id).length) return; (planos[p.id]||[]).forEach(function(x){ novo.push({destinoId:x.destinoId, valor:x.valor, regra:x.regra, conta:x.conta, via:p.forma, parte:p.id, motivo:x.motivo}); }); }); setDiv(novo); setDividindo(""); };
   var btn = "h-7 rounded-md border border-border px-2.5 text-[13px] hover:bg-white/10";
-  var COLP = "min-[1100px]:grid-cols-[104px_116px_minmax(0,1fr)]", COLS = "min-[1100px]:grid-cols-[240px_104px_minmax(0,1fr)_72px]";
-  var LINHA = "grid grid-cols-1 items-center gap-x-2 gap-y-1 border-b border-border/60 py-1 min-h-10 last:border-b-0 "+COLS;
-  var linha = function(k, a, b, c2, d2, e2){ return e("div",{key:k, className:LINHA}, b || e("div"), c2 || e("div"), d2 || e("div"), e2 || e("div")); };
+  // BLOCO EM GRADE COM LINHAS (Marcus, 11/11/2026: "nada escrito no meio do nada, tem que ter linhas"): cada informação fica numa célula com título; as linhas vêm do gap-px sobre o fundo da cor da linha.
+  var GR = "104px 128px 250px 136px minmax(0,1fr) 72px";
+  var CEL = "flex min-h-8 min-w-0 items-center justify-center bg-card px-2.5 py-1 text-center text-[13px]";
+  var CABC = "flex h-[30px] items-center justify-center bg-[#1c1d21] px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-white";
+  var linha = function(k, a, b, c2, d2, e2){ return {k:k, b:b, c2:c2, d2:d2, e2:e2}; };
   // contas bancárias de cada sócio vêm do Financeiro familiar (só quem abre o Financeiro familiar vê); a lista abre em cascata: grupo > nome > conta
   var contasDe = function(d){ if(!veFam || d.tipo!=="FAMILIA" || !d.personaId) return []; return ((s.ff||{}).contasBanc||[]).filter(function(cb){ return cb.personaId===d.personaId && cb.ativo!==false; }).map(function(cb){ return cb.nome; }); };
   // contas bancárias de cada CNPJ (Saldo das contas); clicar no CNPJ abre as contas dele
@@ -323,7 +325,7 @@ function AbaDirecionar(){
       setDividindo(id); };
     var chave = c.edita ? e(SeletorConta,{nos:[{nome:"Inteiro", id:"inteiro", conta:""}, {nome:"Dividir", id:"dividir", conta:""}], texto:dividir ? "Dividir" : "Inteiro", rotulo:"Inteiro ou dividir "+rotuloParte(p), titulo:"Pagamento", larg:150, onEscolher:function(v){ muda(v); }}) : e("span",{className:NOME}, dividir ? "Dividir" : "Inteiro");
     var celPag = e("div",{className:"flex flex-col items-center gap-0.5 text-center"}, e("b",{className:"text-[13px] font-semibold leading-snug"}, rotuloParte(p)), estadoP ? e("span",{className:"text-[13px] font-semibold", style:{color:corP}}, estadoP) : null);
-    var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? d.nome+(contaAtual ? " · "+contaAtual : "") : primeiro; return c.edita ? e(SeletorConta,{nos:arvoreDe(f), larg:580, texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
+    var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? d.nome+(contaAtual ? " · "+contaAtual : "") : primeiro; return c.edita ? e(SeletorConta,{nos:arvoreDe(f), tudo:true, larg:580, texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
     var txtValor = function(v){ return e("div",{className:"flex justify-center"}, e("span",{className:"inline-flex h-7 items-center rounded-md border border-border bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"}, BKC(v))); };
     var fmtSug = function(x, k){ var tx = String(x.motivo||""), ix = tx.indexOf(" · "), l1 = ix>=0 ? tx.slice(0, ix+2) : tx, l2 = ix>=0 ? tx.slice(ix+3) : ""; return e("span",{key:k, className:"block"}, destinoDe(x.destinoId).nome+" — "+l1, l2 ? e("br") : null, l2); };
     var sugTxt = pl.length ? e("div",{className:"flex flex-col gap-1"}, pl.map(function(x, k){ return fmtSug(x, k); })) : "Nenhuma sugestão serviu. Escolha a conta.";
@@ -353,26 +355,42 @@ function AbaDirecionar(){
           ultima ? e("button",{type:"button", title:"Adicionar mais uma conta", "aria-label":"Adicionar mais uma conta", onClick:mais, className:"h-7 w-7 rounded-md border border-primary bg-primary/20 text-[13px] font-bold text-primary hover:bg-primary/30"}, "+") : null);
         linhas.push(linha(sel.id+"|"+id+"|"+k, null, contaCel, valCel, txtSug(k===0 ? sugTxt : ""), acoes)); });
     }
-    return e("div",{key:id, className:"grid flex-1 grid-cols-1 content-center items-start gap-x-2 border-b-2 border-border px-3 py-0.5 "+COLP}, e("div",{className:"flex min-h-10 items-center justify-center py-1"}, celPag), e("div",{className:"flex min-h-10 items-center py-1"}, e("div",{className:"w-full"}, chave)), e("div",{className:"flex min-w-0 flex-col justify-center"}, linhas));
+    var span = {gridRow:"span "+linhas.length};   // Pagamento e Modo ocupam todas as linhas da parte quando ela é dividida
+    return e(Fragment,{key:id}, e("div",{className:CEL, style:span}, celPag), e("div",{className:CEL, style:span}, chave),
+      linhas.map(function(L){ return [e("div",{key:L.k+"c", className:CEL}, L.b), e("div",{key:L.k+"v", className:CEL}, L.c2), e("div",{key:L.k+"s", className:CEL}, L.d2), e("div",{key:L.k+"a", className:CEL}, L.e2)]; }));
   };
-  var pedido = !sel ? null : Painel("Direcionar pagamento", "", "", "", e("div",{className:"flex flex-col"},
-    e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-0.5 border-b border-border px-3 py-1.5"}, Selo(sel.origem), sel.valor>=limAlto && SeloAlto(), e("span",{className:"min-w-0 flex-1 truncate text-[16px] font-bold leading-tight text-foreground", title:sel.quem}, sel.origem==="rep" ? doisNomes(sel.repOrigem || String(sel.quem).replace(/^Representante\s+/, ""))+(sel.revendedora ? " · "+sel.revendedora : "") : sel.quem),
-      e("span",{className:"text-[13px] text-foreground"}, (sel.origem==="interno" ? "Atendida por "+sel.atendente : (sel.maq||""))+" · chegou às "+hmH(sel.recebidoEm)+" · pagamento aguardando há ", e("b",{style:{color:COR_ESPERA[nivelEspera(sel.recebidoEm)]}}, curto(sel.recebidoEm)))),
-    sel.obs && e("p",{className:"border-b border-border px-3 py-1.5 text-[13px] text-foreground"}, "Obs.: "+sel.obs),
-    e("div",{className:"grid grid-cols-1 min-[1100px]:grid-cols-[310px_minmax(0,1fr)]"},
-      e("div",{className:"min-w-0 bg-white/[0.03] min-[1100px]:border-r min-[1100px]:border-border"}, Ln("Vendas", sel.vendas>0 ? BKC(sel.vendas) : "—"), Ln("A pagar", sel.vendas>0 ? BKC(sel.aPagar) : "—"), Ln("Já pago", BKC(soma(sel.pagos)), "#4ade80"),
-        (sel.pagos||[]).length ? sel.pagos.map(function(p, n){ return e("div",{key:"pg"+n}, Ln(textoPago(p), BKC(p.valor), null, false, true)); }) : Ln("Nada pago ainda", "", null, false, true),
-        Ln("Falta pagar", BKC(sel.valor), "#f5c14b", true)),
-      e("div",{className:"flex min-w-0 flex-col"},
-        e("div",{className:"hidden gap-x-2 border-b border-border bg-white/5 px-3 py-1.5 text-[11px] font-medium uppercase tracking-[.05em] text-foreground min-[1100px]:grid "+COLP}, e("span",{className:"text-center"},"Pagamento"), e("span",{className:"text-center"},"Modo"), e("div",{className:"grid gap-x-2 "+COLS}, e("span",{className:"text-center"},"Conta"), e("span",{className:"text-center"},"Valor"), e("span",{className:"text-center"},"Sugestão"), e("span"))),
-        partes.map(renderParte))),
-    e("div",{className:"flex flex-wrap items-center justify-end gap-2 border-t border-border bg-white/[0.04] px-3 py-1.5"},
-      e("span",{className:"mr-auto flex flex-wrap items-baseline gap-x-2 text-[13px] text-foreground"}, e("b",{className:"font-semibold"}, "Falta enviar"), e("b",{className:"font-semibold tabular-nums", style:{color:!div.length ? "#f5c14b" : fechado ? "#4ade80" : "#f5c14b"}}, restante<-0.009 ? "Passou "+BKC(-restante) : BKC(Math.max(restante, 0))), e("span",null, "· "+partes.length+(partes.length===1 ? " pagamento" : " pagamentos")+" · Enviado "+BKC(soma(div)))),
-      c.edita && temSugestao && e("button",{type:"button", onClick:usarTodas, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Usar todas as sugestões"),
-      mistura && e("span",{className:"text-[13px] text-warning"}, "Atenção: mistura conta que fatura (CNPJ) com conta que não fatura."),
-      erro && e("span",{className:"text-[13px] text-destructive"}, erro),
-      c.edita && e("button",{type:"button", onClick:confirmar, disabled:!div.length, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(div.length ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-border bg-card text-foreground opacity-60")}, "OK · enviar"))));
+  var RL = function(rot, val, cor, fundo){ return e(Fragment,{key:"rl"+rot}, e("div",{className:CEL, style:fundo ? {background:"rgba(217,166,58,.14)"} : undefined}, rot), e("div",{className:CEL+" font-semibold tabular-nums", style:Object.assign({}, fundo ? {background:"rgba(217,166,58,.14)"} : {}, cor ? {color:cor} : {})}, val)); };
+  var corFalta = !div.length ? "#f5c14b" : fechado ? "#4ade80" : "#f5c14b";
+  var avisoTxt = erro ? {t:erro, cor:"#f87171"} : mistura ? {t:"Atenção: mistura conta que fatura (CNPJ) com conta que não fatura.", cor:"#f5c14b"} : {t:"—", cor:""};
+  // PEDIDO ABERTO em grade com linhas (Marcus, 11/11/2026, layout A): tudo em células com título; nenhum texto solto. Quem e quando | Resumo e Pagamentos | Rodapé de envio.
+  var BOTAO_OK = "h-8 whitespace-nowrap rounded-md border px-4 text-[13px] font-semibold ";
+  var pedido = !sel ? null : Painel("Direcionar pagamento", "", "", "", e("div",{className:"flex flex-col gap-px bg-border"},
+    e("div",{className:"overflow-x-auto"}, e("div",{className:"grid gap-px bg-border", style:{gridTemplateColumns:"150px minmax(0,1.5fr) minmax(0,1fr) 100px 130px minmax(0,1.4fr)", minWidth:900}},
+      ["Origem", "Nome", "Atendimento", "Chegou", "Aguardando", "Observação"].map(function(t, i){ return e("div",{key:"h"+i, className:CABC}, t); }),
+      e("div",{className:CEL}, e("span",{className:"flex items-center gap-1.5"}, Selo(sel.origem), sel.valor>=limAlto && SeloAlto())),
+      e("div",{className:CEL+" font-semibold", title:sel.quem}, sel.origem==="rep" ? doisNomes(sel.repOrigem || String(sel.quem).replace(/^Representante\s+/, ""))+(sel.revendedora ? " · "+sel.revendedora : "") : sel.quem),
+      e("div",{className:CEL}, sel.origem==="interno" ? "Atendida por "+sel.atendente : (sel.maq || "—")),
+      e("div",{className:CEL+" tabular-nums"}, hmH(sel.recebidoEm)),
+      e("div",{className:CEL+" font-bold tabular-nums", style:{color:COR_ESPERA[nivelEspera(sel.recebidoEm)]}}, curto(sel.recebidoEm)),
+      e("div",{className:CEL}, sel.obs || "—"))),
+    e("div",{className:"grid grid-cols-1 gap-px bg-border min-[1100px]:grid-cols-[310px_minmax(0,1fr)]"},
+      e("div",{className:"grid min-w-0 grid-cols-[minmax(0,1fr)_auto] content-start gap-px bg-border"},
+        e("div",{className:CABC}, "Resumo"), e("div",{className:CABC}, "Valor"),
+        RL("Vendas", sel.vendas>0 ? BKC(sel.vendas) : "—"), RL("A pagar", sel.vendas>0 ? BKC(sel.aPagar) : "—"), RL("Já pago", BKC(soma(sel.pagos)), "#4ade80"),
+        (sel.pagos||[]).length ? sel.pagos.map(function(p, n){ return RL(textoPago(p), BKC(p.valor)); }) : RL("Nada pago ainda", "—"),
+        RL("Falta pagar", BKC(sel.valor), "#f5c14b", true)),
+      e("div",{className:"min-w-0 overflow-x-auto bg-card"}, e("div",{className:"grid h-full gap-px bg-border", style:{gridTemplateColumns:GR, gridTemplateRows:"30px", minWidth:900}},
+        ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Ação"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC}, t); }),
+        partes.map(renderParte)))),
+    e("div",{className:"overflow-x-auto"}, e("div",{className:"grid gap-px bg-border", style:{gridTemplateColumns:"120px 130px 120px 64px 90px 130px 70px minmax(0,1fr) 220px 140px", minWidth:1090}},
+      e("div",{className:CABC}, "Falta enviar"), e("div",{className:CEL+" font-bold tabular-nums", style:{color:corFalta}}, restante<-0.009 ? "Passou "+BKC(-restante) : BKC(Math.max(restante, 0))),
+      e("div",{className:CABC}, "Pagamentos"), e("div",{className:CEL+" tabular-nums"}, String(partes.length)),
+      e("div",{className:CABC}, "Enviado"), e("div",{className:CEL+" tabular-nums"}, BKC(soma(div))),
+      e("div",{className:CABC}, "Aviso"), e("div",{className:CEL, style:avisoTxt.cor ? {color:avisoTxt.cor} : undefined}, avisoTxt.t),
+      e("div",{className:CEL}, c.edita && temSugestao ? e("button",{type:"button", onClick:usarTodas, className:"h-8 whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Usar todas as sugestões") : "—"),
+      e("div",{className:CEL}, c.edita ? e("button",{type:"button", onClick:confirmar, disabled:!div.length, className:BOTAO_OK+(div.length ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-border bg-card text-foreground opacity-60")}, "OK · enviar") : "—")))));
   return e("div",{className:"-mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
+    e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),

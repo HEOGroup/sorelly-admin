@@ -671,7 +671,9 @@ function viewMatriz(pf, ags){   // fornecedor × mês (dívida)
 function resumoNegociacao(pf, filtroId){
   var alvos = filtroId ? pf.fornecedores.filter(function(f){ return f.id===filtroId; }) : pf.fornecedores;
   var comPedido = alvos.filter(function(f){ return pf.pedidos.some(function(p){ return p.fornId===f.id; }); });
-  var pagoDe = function(ps){ return soma(ps, function(p){ return soma(p.parcelas.filter(function(x){ return x.status==="Pago"; }), function(x){ return x.valor; }); }); };
+  // Regra da planilha (a mesma da Geral da Pontual): parcela COM NF (boleto, sem baixa no sistema) que venceu antes do mês atual conta como paga. Chamado do Nickolas, 12/11/2026 (Art Ello).
+  var paga = function(x){ return x.status==="Pago" || (FORMAS[x.forma].nf==="com" && x.venc.slice(0,7)<mesAtual()); };
+  var pagoDe = function(ps){ return soma(ps, function(p){ return soma(p.parcelas.filter(paga), function(x){ return x.valor; }); }); };
   var alocDe = function(ps){ return soma(ps, function(p){ return soma(p.parcelas, function(x){ return x.valor; }); }); };
   if(!filtroId){
     var linhas = comPedido.map(function(f){
@@ -692,7 +694,7 @@ function resumoNegociacao(pf, filtroId){
         var mes = pc.venc.slice(0,7);
         mensal[mes] = mensal[mes]||{com:0, sem:0, pago:0, aberto:0};
         mensal[mes][FORMAS[pc.forma].nf==="com" ? "com" : "sem"] += pc.valor;
-        if(pc.status==="Pago"){ mensal[mes].pago += pc.valor; pagoT += pc.valor; } else { mensal[mes].aberto += pc.valor; abertoT += pc.valor; }
+        if(paga(pc)){ mensal[mes].pago += pc.valor; pagoT += pc.valor; } else { mensal[mes].aberto += pc.valor; abertoT += pc.valor; }
       });
       semParc += (p.total-aloc);
     });

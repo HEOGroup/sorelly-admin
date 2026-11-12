@@ -15,7 +15,7 @@ import { SEM_KIT } from "@/apps/montagem/domain/status";
 import { sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
-import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI } from "@/apps/montagem/domain/revendedoras-internas";
+import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
@@ -39,6 +39,12 @@ import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
+import { modReduz } from "@/apps/montagem/domain/modelas";
+import { bmReduz, bmSemear } from "@/apps/montagem/domain/bonus-montagem";
+import { LOCAL_BM } from "@/apps/montagem/domain/bonus-montagem-local";
+import { avkSemear } from "@/apps/montagem/domain/avaliacoes-kits";
+import { LOCAL_AVK } from "@/apps/montagem/domain/avaliacoes-kits-local";
+import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
 import { agoraSP as agoraSPLp, lpReduz, usarLinksNoAcerto } from "@/apps/montagem/domain/link-pagamento";
@@ -62,7 +68,7 @@ import { uneItau } from "@/apps/montagem/domain/itau-unico";
 // Carimbo da versão das regras na ENTREGA do kit à revendedora (Marcus, 26/10/2026): o acerto desse kit usa as regras da data da entrega.
 // Quem ainda não recebeu kit depois de 27/10/2026 continua com as regras antigas (ver versaoDaRevendedora em domain/consignado.js).
 // Regras de 27/10/2026 que o acerto precisa lembrar depois (prazo de quitação, multa de atraso): copiadas para o registro, para a Inadimplência não depender da versão atual.
-function copiaNovas(N){ return {prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
+function copiaNovas(N){ return {prazoAcertoDiasUteis:N.prazoAcertoDiasUteis, atrasoPctDiaUtil:N.atrasoPctDiaUtil, juridicoDiasUteis:N.juridicoDiasUteis, prazoQuitarDias:N.prazoQuitarDias, atrasoQuitacaoPctDia:N.atrasoQuitacaoPctDia, atrasoQuitacaoTetoPct:N.atrasoQuitacaoTetoPct, multaPendentePct:N.multaPendentePct, juridicoDias:N.juridicoDias}; }
 // Dívida de acertos anteriores (Marcus, 26/10/2026): o que a revendedora paga num acerto novo quita PRIMEIRO a dívida mais antiga; só o resto vale para o acerto novo.
 // Devolve {total, abat:{idDoAcertoAntigo: valor}}. "Acerto com loja" não é pagamento.
 function abaterDividas(s, rev, pagamentos, exceto){
@@ -248,6 +254,9 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
+      if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
+      if(a.chave==="avk") return Object.assign({}, s, {avk:avkSemear(Object.assign({}, s.avk, a.conteudo), LOCAL_AVK)});   // Nota do kit por montadora vinda do servidor: junta SEM reorganizar; a leitura local só entra se for mais nova (lidoEm)
+      if(a.chave==="bm") return Object.assign({}, s, {bm:bmSemear(Object.assign({}, s.bm, a.conteudo), LOCAL_BM)});   // Bônus da montagem vindo do servidor: chegam SÓ as chaves que mudaram; junta com o que já está aqui SEM reorganizar (senão regrava sem parar) e põe o mês real local que faltar
       if(a.chave==="revdia"){
         var pRD = {};
         if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);
@@ -283,17 +292,23 @@ function reducer(s, a){
           if(v===null){ if(ix!==undefined) fcTira[cod] = 1; } else if(ix!==undefined) fcCods[ix] = v; else { fcMapa.set(cod, fcCods.length); fcCods.push(v); } });
         if(Object.keys(fcTira).length) fcCods = fcCods.filter(function(c){ return !fcTira[c.cod]; });
         fcS.codigos = fcCods; return Object.assign({}, s, {fc:fcS}); }
+      if(a.chave==="inad") return Object.assign({}, s, {inad:inadDoServidor(s.inad, a.conteudo)});   // Inadimplência vinda do servidor (11/11/2026): uma chave por registro
+      if(a.chave==="aci"){   // registros de acerto do atendimento interno vindos do servidor (10/11/2026): a_<id>; null = tirado
+        var acP = (s.acertosConsignado||[]).slice();
+        Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("a_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = acP.findIndex(function(x){ return x.id===id; });
+          if(v===null){ if(ix>=0) acP.splice(ix, 1); } else if(ix>=0) acP[ix] = v; else acP.unshift(v); });
+        return Object.assign({}, s, {acertosConsignado:acP}); }
       if(a.chave==="int"){   // atendimentos do Atendimento interno vindos do servidor (10/11/2026): i_<id> = atendimento; null = tirado da lista
         var inP = (s.internos||[]).slice();
         Object.keys(a.conteudo||{}).forEach(function(k){ if(k.indexOf("i_")!==0) return; var v = a.conteudo[k], id = k.slice(2), ix = inP.findIndex(function(x){ return x.id===id; });
           if(v===null){ if(ix>=0) inP.splice(ix, 1); } else if(ix>=0) inP[ix] = v; else inP.unshift(v); });
         return Object.assign({}, s, {internos:inP}); }
       if(a.chave==="pag"){   // pedidos de conta vindos do servidor (09/11/2026): lf_ = s.lancFin, dp_ = fila do Direcionar; null = pedido apagado
-        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice();
+        var lfP = (s.lancFin||[]).slice(), dpP = Object.assign({}, s.dp || Object.assign(dpDemo(), {pix:[]})), pixP = (dpP.pix||[]).slice(), kitsP = (dpP.kits||[]).slice();
         var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
-          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); });
-        dpP.pix = pixP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
+          if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); else if(k.indexOf("kp_")===0) poe(kitsP, v, k.slice(3), false); });   // kp_ = pedido de kit novo (11/11/2026)
+        dpP.pix = pixP; dpP.kits = kitsP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
       if(a.chave==="ri") return a.conteudo && a.conteudo.revInternas ? Object.assign({}, s, {revInternas:a.conteudo.revInternas}) : s;   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
@@ -324,8 +339,11 @@ function reducer(s, a){
     case "ER": { var rEr = erReduz(s, a); return com(s, rEr.patch, rEr.msg); }   // Encomendas e reposições (pedidos, direito, bloqueio)
     case "MEL": { var rMel = melReduz(s, a); return com(s, rMel.patch, rMel.msg); }   // Solicitações de melhorias (enviar, situação, resposta)
     case "GA": { var rGa = gaReduz(s, a); return com(s, rGa.patch, rGa.msg); }   // Garantia (só o atalho para o site externo)
+    case "INAD": { var rIn = inadReduz(s, a); return com(s, rIn.patch, rIn.msg); }   // setor de Inadimplência (dívidas, acordos, pagamentos, Serasa, kits em atraso)
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
+    case "MOD": { var rMod = modReduz(s, a); return com(s, rMod.patch, rMod.msg); }   // Encomendas › Modelos (cadastro particular do Marcus)
+    case "BM": { var rBm = bmReduz(s, a); return com(s, rBm.patch, rBm.msg); }   // Bônus da montagem de kits (kits do dia por colaboradora)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)
@@ -965,8 +983,13 @@ function reducer(s, a){
     case "REVINT_REG": {
       var rg = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rg || !a.tipo) return s;
       var hojeRg = isoDeRI(new Date()), agoraRg = Date.now(), tpMulta = a.tipo==="remarcado" || a.tipo==="nao_veio" || a.tipo==="desmarcado", comDia = (a.tipo==="marcado" || a.tipo==="remarcado") && a.dia;
-      var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && !!a.isenta, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
+      // regra de 11/11/2026: motivo obrigatório; isenção só com quem autorizou E a prova; remarcar ou desmarcar com 10 dias de antecedência não tem multa (uma vez por ciclo)
+      if(tpMulta && !String(a.motivo||"").trim()) return com(s, {}, "Escolha o motivo antes de registrar.", "alerta");
+      if(tpMulta && a.isenta && !String(a.prova||"").trim()) return com(s, {}, "Isenção só com a prova do motivo (atestado, boletim, comprovante).", "alerta");
+      var livreRg = tpMulta && !a.isenta && remarcacaoLivre(rg, a.tipo, hojeRg);
+      var ent = {data:hojeRg, tipo:a.tipo, motivo:a.motivo||"", quem:a.quem||a.por||"", por:a.por||"", autor:a.quem||a.por||"", autorizado:a.autorizado||"", isenta:tpMulta && (!!a.isenta || livreRg), livre:livreRg || undefined, prova:tpMulta && a.isenta ? String(a.prova||"").trim() : undefined, dia:comDia ? a.dia : "", hora:comDia ? (a.hora||"08:00") : "", ciclo:a.tipo==="ciclo" ? Number(a.ciclo)||0 : 0, texto:String(a.texto||"").trim(), origem:"sistema", ts:agoraRg};
       var patchRg = {registro:[ent].concat(rg.registro||[])}, intsRg = s.internos||[], exRg = intsRg.find(function(x){ return x.id===rg.internoId && x.status!=="acertado"; });
+      if(comDia && !primeiroMarcado(rg)) patchRg.primeira = {dia:ent.dia, desde:cicloDe(rg)};   // primeiro dia marcado do ciclo: é dele que o prazo de 5 dias úteis conta
       if(comDia){ patchRg.agend = {data:ent.dia, hora:ent.hora}; patchRg.situacao = "agendada"; if(exRg) intsRg = intsRg.map(function(x){ return x.id!==exRg.id ? x : Object.assign({}, x, {data:ent.dia, hora:ent.hora}); }); }
       if(a.tipo==="nao_veio" || a.tipo==="desmarcado"){
         // 10/11/2026 (Marcus): quem cancelou NÃO sai da lista do Atendimento Sorelly; fica como "Cancelada" (e a lista de todos mostra, pelo servidor)
@@ -1009,7 +1032,7 @@ function reducer(s, a){
       var rr = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!rr || !a.data || !a.hora) return s;
       if(motivoNaoMarcar(s.revInternas, a.data, a.hora, rr.id)) return s;   // regras da agenda: 3 por horário, 15 por dia, sábado até 11h, domingo fechado
       var vLib = a.valor>0 ? " · Valor liberado: R$ "+Number(a.valor).toLocaleString("pt-BR", {minimumFractionDigits:2, maximumFractionDigits:2}) : "";   // valor liberado da reposição ou do kit novo (Tamara, 03/11/2026)
-      var rrN = Object.assign({}, rr, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
+      var rrN = Object.assign({}, rr, primeiroMarcado(rr) ? {} : {primeira:{dia:a.data, desde:cicloDe(rr)}}, {agend:{data:a.data, hora:a.hora}, situacao:"agendada", tipoAtend:a.tipo || rr.tipoAtend || "acerto", quer:a.quer!==undefined ? a.quer : (rr.quer || ""), valorLiberado:a.valor!==undefined ? a.valor : (rr.valorLiberado || null)});   // tipo do atendimento e o que a cliente quer (Tamara, 03/11/2026)
       var exI = (s.internos||[]).find(function(x){ return x.id===rr.internoId && x.status!=="acertado"; }), vigR = versaoVigente(s), intsR;
       if(exI){ intsR = s.internos.map(function(x){ return x.id!==exI.id ? x : Object.assign({}, x, {data:a.data, hora:a.hora}, a.tipo ? {tipo:a.tipo} : {}, (a.quer || vLib) ? {obs:(a.quer ? "Quer: "+a.quer : "Atendimento")+vLib} : {}); }); }
       else { var itR = internoDeAgendada(rrN, vigR ? vigR.id : null, agora, {tipo:a.tipo || "acerto", obs:(a.quer ? "Quer: "+a.quer : "Agendada em Revendedoras internas")+vLib, remarcacoesLista:remarcacoesDoCiclo(rr.registro, (rr.hist && rr.hist[0] && rr.hist[0].data) || null, isoDeRI(new Date())).map(function(c){ return {isenta:!!c.isenta, motivo:c.isenta ? (c.motivo||c.autorizado||"autorizada") : "", em:Date.parse((c.data||isoDeRI(new Date()))+"T12:00:00")}; })}); rrN.internoId = itR.id; intsR = [itR].concat(s.internos||[]); }
@@ -1045,7 +1068,7 @@ function reducer(s, a){
     // Atender uma agendada que ainda só existe na lista da Tamara (veio da DevMaster): cria o atendimento com as condicionais REAIS dela e a média pelas últimas vendas
     case "REVINT_ATENDER": {
       var ra = (s.revInternas||[]).find(function(r){ return r.id===a.id; }); if(!ra || !ra.agend) return s;
-      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId; })) return s;
+      if((s.internos||[]).some(function(x){ return x.id===ra.internoId || x.id===a.internoId || (x.revIntId===ra.id && x.data===ra.agend.data && x.status!=="cancelado"); })) return s;
       var vigA = versaoVigente(s), itA = internoDeAgendada(ra, vigA ? vigA.id : null, Date.now(), {id:a.internoId, obs:"Agendada pela Tamara (DevMaster)",
         condicionais:(ra.conds||[]).filter(function(c){ return c.t!=="Expositor"; }).map(function(c){ return {numero:String(c.n||""), valor:c.v||0, pecas:c.p||0}; }),
         vendasAnt:[ra.hist && ra.hist[0] && ra.hist[0].venda, ra.hist && ra.hist[1] && ra.hist[1].venda].filter(function(v){ return v>0; }), tipo:ra.tipoAtend || (ra.kitNovo ? "kit_novo" : "acerto")});

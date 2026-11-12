@@ -10,6 +10,7 @@ import { FILTRO_PADRAO, FORMAS, FORN_CATS, F_PER, F_SIT, F_TIPO, NF_LABEL, PT_FO
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
+import { FileiraCampos, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
 import { e, useState } from "@/shared/react";
 import { PointPainel } from "./Point";
 import { PainelPontual } from "./Resumo";
@@ -70,6 +71,7 @@ function AbaPfNeg(){
   var spc = useState(null), parc = spc[0], setParc = spc[1];  // janela "Lançar parcela"
   var sd = useState(null), detId = sd[0], setDetId = sd[1];   // janela "detalhe do pedido"
   var sac = useState(null), ac = sac[0], setAc = sac[1];      // janela "Datas limite"
+  var slc = useState(false), todosLanc = slc[0], setTodosLanc = slc[1];   // lista "Pedidos lançados": 30 mais novos ou todos
   var sab = useState({}), abPt = sab[0], setAbPt = sab[1], alPt = function(k, atual){ var o = Object.assign({}, abPt); o[k] = !atual; setAbPt(o); };   // linhas abertas da tela da Pontual
   if(!pf || !pf.fornecedores) return e("p",{className:"p-6"}, "Carregando…");
 
@@ -103,8 +105,20 @@ function AbaPfNeg(){
     ac && e(JanelaAcerto,{key:"ma", c:c, pf:pf, ac:ac, setAc:setAc})
   ];
 
+  // ---------- pedidos lançados (chamado do Nickolas, 12/11/2026): lista do último para o primeiro, para conferir o que foi lançado; clicar abre o pedido (ver, editar, dar baixa) ----------
+  var mesHoje = hojeIso().slice(0,7);
+  var listaL = (fId ? pf.pedidos.filter(function(p){ return p.fornId===fId; }) : pf.pedidos).slice().sort(function(a, b){ return b.id-a.id; });
+  var linhaL = function(pd){
+    var f = forn(pf, pd.fornId), pg = pd.parcelas.reduce(function(t, x){ return t+(x.status==="Pago" || (FORMAS[x.forma].nf==="com" && x.venc.slice(0,7)<mesHoje) ? x.valor : 0); }, 0), falta = pd.total-pg;
+    return e(FileiraCampos,{key:pd.id, onClick:function(){ setDetId(pd.id); }, title:"Abrir o pedido", cells:["#"+pd.id, dbr(pd.data), f ? f.nome : "—", pd.numero || "—", brl(pd.total), brl(pd.comNF), brl(pd.semNF), {v:brl(pg), cor:pg>0 ? "#4ADE80" : undefined}, {v:falta>0.005 ? brl(falta) : "quitado", cor:falta>0.005 ? "#FBBF24" : "#4ADE80"}, pd.parcelas.length ? String(pd.parcelas.length) : {v:"sem parcela", cor:"#FBBF24"}]});
+  };
+  var lancados = !listaL.length ? null : e(BlocoBarra,{cor:"azul", t:"Pedidos lançados", sub:"Do último para o primeiro. Clique no pedido para ver, editar ou dar baixa.", dir:String(listaL.length)},
+    e("div",{className:"flex flex-col gap-2 p-2"},
+      e(TabelaCampos,{cols:[{t:"Nº", w:"6%"}, {t:"Data", w:"9%"}, {t:"Fornecedor", w:"17%"}, {t:"Pedido", w:"16%"}, {t:"Total", w:"11%"}, {t:"Com NF", w:"10%"}, {t:"Sem NF", w:"10%"}, {t:"Pago", w:"10%"}, {t:"Falta", w:"10%"}, {t:"Parcelas"}], minW:"70rem"}, (todosLanc ? listaL : listaL.slice(0, 30)).map(linhaL)),
+      listaL.length>30 && e("div",{className:"flex justify-center"}, e(Btn,{neutro:true, onClick:function(){ setTodosLanc(!todosLanc); }}, todosLanc ? "Mostrar só os 30 últimos" : "Mostrar todos os "+listaL.length+" pedidos"))));
+
   if(ehPoint) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PointPainel,{c:c}), modais);
-  if(fId===pf.mqFornId) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt}), modais);
+  if(fId===pf.mqFornId) return e("div",{className:"flex flex-col gap-4"}, topo, barra, lancados, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt}), modais);
 
   // ---------- dados da tela ----------
   var ags = agregar(pf, coletar(pf, filtro, fId)), tot = painelTotais(ags);
@@ -315,7 +329,7 @@ function AbaPfNeg(){
     pedidos = e("div",{className:"flex flex-col gap-4"}, parts);
   }
 
-  return e("div",{className:"flex flex-col gap-4"}, topo, barra, alertas, prestPend, painel, resumo, pedidos, modais);
+  return e("div",{className:"flex flex-col gap-4"}, topo, barra, lancados, alertas, prestPend, painel, resumo, pedidos, modais);
 }
 
 // ───────────────── Janela: Lançar pedido ─────────────────

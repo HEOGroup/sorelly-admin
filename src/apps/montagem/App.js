@@ -13,6 +13,7 @@ import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inici
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { pendenciasDoAcerto } from "@/apps/montagem/domain/inadimplencia";
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
 import { useContasDm } from "@/apps/montagem/lib/contas-dm";
 import { definirPfMes } from "@/apps/montagem/domain/pf-mes";
@@ -50,7 +51,7 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { abasVetadas, telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial, paraSalvar } from "@/apps/montagem/state/store";
@@ -121,6 +122,8 @@ function App(){
   definirPfMes(s.pfmes && s.pfmes.dados);   // resumo do mês dos fornecedores vindo do servidor
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
   useSyncModulos(s, d);   // módulos que ficam no servidor: sincroniza sempre que há servidor e login (o servidor manda)
+  // Inadimplência ligada ao acerto (11/11/2026): acerto real com valor pendente vira dívida sozinho, e o pendente do acerto atualiza a dívida
+  useEffect(function(){ if(!s.logado || !s.inad || !s.inad.doServidor) return; var pIn = pendenciasDoAcerto(s.inad, s.acertosConsignado); if(pIn.criar.length || pIn.atualizar.length) d({type:"INAD", op:"do_acerto", criar:pIn.criar, atualizar:pIn.atualizar}); }, [s.logado, s.inad, s.acertosConsignado]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
   // pagamentos do atendimento interno para conferir viram um cartão no grupo "Atendimento Interno"; confirmar lá confirma aqui (e vice-versa)
   useEffect(function(){ (s.lancFin||[]).forEach(function(lf){ api.syncPayment(lf); }); }, [s.lancFin]);
@@ -193,6 +196,8 @@ function App(){
   definirHorariosRh(horRh && horRh.length ? horRh : (horSrv || horRh));
   useEffect(function(){ if(srv.apiAtiva() && srv.ehAdmin() && horRh && horRh.length && JSON.stringify(horRh)!==JSON.stringify(horSrv)) d({type:"SYNC_MODULO", chave:"chathor", conteudo:{lista:horRh}}); }, [horRh]);
   var papel = grupoDe(s.usuario), permitidas = abasDoPapel(papel, s.acessos);
+  // exceção por pessoa dentro do acesso total (11/11/2026): telas que a pessoa não abre, mesmo vendo todo o resto (domain/equipe.js, ABAS_VETADAS)
+  var vetA = abasVetadas(s.usuario); if(vetA.length) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(a){ return vetA.indexOf(a)<0; });
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);

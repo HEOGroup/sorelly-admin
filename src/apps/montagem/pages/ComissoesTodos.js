@@ -13,7 +13,9 @@ import { itensComissao, comisEfetiva } from "@/apps/montagem/domain/comissoes";
 import { resumoInterno, resumoAtendimento, regraAtend } from "@/apps/montagem/domain/comissao-interno";
 import { resumoMeta } from "@/apps/montagem/domain/metas-setor";
 import { bonusDoValor, indicadoresLp } from "@/apps/montagem/domain/link-pagamento";
-import { resumoBipadora, resumoMontadora } from "@/apps/montagem/domain/regras";
+import { resumoBipadora } from "@/apps/montagem/domain/regras";
+import { resumoMes } from "@/apps/montagem/domain/bonus-montagem";
+import { notasDoMes } from "@/apps/montagem/domain/avaliacoes-kits";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
@@ -117,7 +119,7 @@ function AbaComissoesTodos(props){
   var totRep = r2(reps.reduce(function(t, o){ return t+o.total; }, 0));
   // bipagem de envio e montagem (cálculo do setor)
   var bip = BIPADORAS.map(function(b){ return resumoBipadora(b, s); }).filter(function(r){ return r.total>0; }), totBip = r2(bip.reduce(function(t, r){ return t+r.liquido; }, 0));
-  var mont = (s.montadoras || []).map(function(m){ return resumoMontadora(m, s); }).filter(function(r){ return r.total>0; }), totMont = r2(mont.reduce(function(t, r){ return t+r.liquido; }, 0));
+  var bmMes = s.bm ? resumoMes(s.bm, mes, notasDoMes(s.avk, mes)) : {linhas:[], tot:{total:0}}, mont = bmMes.linhas, totMont = bmMes.tot.total;   // 12/11/2026: bônus da montagem pela regra nova (meta por dia + nota da revendedora), domain/bonus-montagem.js
   var inte = resumoInterno(s, mes), totBipInt = r2(inte.reduce(function(t, o){ return t+o.total; }, 0)), aten = resumoAtendimento(s, mes), totAt = r2(aten.reduce(function(t, o){ return t+o.total; }, 0)), ra = regraAtend(s.cfg), totInt = r2(totBipInt+totAt);
   var geral = r2(totRep+totBip+totMont+totInt);
   return e("div",{className:"flex flex-col gap-4"},
@@ -135,8 +137,8 @@ function AbaComissoesTodos(props){
     (foco==="todos" || foco==="int") && e(Bloco,{cor:"azul", t:"Atendimento (acompanha a revendedora)", sub:"R$ "+ra.valor+" fixo por atendimento; venda acima de R$ "+ra.limiteAlto.toLocaleString("pt-BR")+" paga R$ "+ra.valorAlto+". Qualquer funcionária que atender recebe; hoje atendem Leci e Maria Aparecida.", total:totAt, vazio:"Nenhum atendimento acertado neste mês ainda.",
       colunas:["Funcionária","Atendimentos","Acima de R$ "+ra.limiteAlto.toLocaleString("pt-BR"),"Total"],
       linhas:aten.map(function(o){ return {chave:"a"+o.nome, nome:o.nome, cels:[o.n, o.nAlta, BK(o.total)], detalhe:o.itens.map(function(x){ return fmt(x.it.data)+" · "+x.it.nome+" · venda "+BK(x.v.venda)+" · "+BK(x.v.valor); })}; })}),
-    (foco==="todos" || foco==="mont") && e(Bloco,{cor:"azul", t:"Montagem de kits", sub:"kits montados × valor, ajustado pela avaliação e pelas divergências", total:totMont, colunas:["Montadora","Kits","Bruto","Ajuste","Líquido"],
-      linhas:mont.map(function(r){ return {chave:"m"+r.m.id, nome:r.m.nome, cels:[r.total, BK(r.bruto), "− "+BK(r.bruto-r.liquido), BK(r.liquido)], detalhe:["Média da avaliação: "+r.media.toFixed(1).replace(".", ",")+" · divergências: "+r.div]}; })}),
+    (foco==="todos" || foco==="mont") && e(Bloco,{cor:"azul", t:"Montagem de kits", sub:"bônus por meta do dia, cortado pela nota do kit dada pela revendedora, mais a supervisão", total:totMont, vazio:"Nenhum kit lançado neste mês ainda.", colunas:["Montadora","Kits","Bônus","Supervisão","Total"],
+      linhas:mont.map(function(r){ return {chave:"m"+r.c, nome:r.c, cels:[r.n+r.e, BK(r.pagar), BK(r.sup), BK(r.total)], detalhe:["Kits normais: "+r.n+" · kits especiais: "+r.e+" · dias com bônus: "+r.diasBonus+" · nota do kit: "+(r.nota===null ? "sem nota" : r.nota.toFixed(2).replace(".", ","))]}; })}),
     foco==="todos" && e("p",{className:"rounded-xl bg-muted/30 px-4 py-3 text-[12.5px] text-muted-foreground"}, "A trazer: metas com bônus da Inadimplência, do Cadastro de revendedoras e do Link de pagamento."));
 }
 // Cada comissão tem, no fim da tela, o botão "Regras e configurações" (só o Marcus): abre OUTRA tela com as regras e, embaixo, os campos para mexer.

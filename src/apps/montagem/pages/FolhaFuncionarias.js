@@ -5,7 +5,7 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Abas, Faixa, Indicador, Pagina, Tab, Td, LINHA, ESTADO } from "@/apps/montagem/components/padrao";
 import { G, NEGOCIACOES, filtrar, itensEmpresa, meses, setClasse, setBaixas, setLancamentos, setPf, totais } from "@/apps/montagem/domain/contas-empresa";
-import { grupoDe } from "@/apps/montagem/domain/equipe";
+import { veSalarios } from "@/apps/montagem/domain/equipe";
 import { hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { REMUNERACAO } from "@/apps/montagem/domain/remuneracao";
 import { colaboradoresRh, formatHoras, valorHoraExtra } from "@/apps/montagem/domain/rh";
@@ -179,7 +179,7 @@ function Representantes(p){
 
 // tela da aba: mês, busca e duas partes
 function PessoasRep(){
-  var cx = use(), s = cx.state, veSalario = grupoDe(s.usuario)==="supervisao";
+  var cx = use(), s = cx.state, veSalario = veSalarios(s.usuario);
   setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
   var ms = meses(), ini = ms.indexOf(hojeYm())>=0 ? hojeYm() : (ms[ms.length-1] || "");
   var sm = useState(ini), mes = sm[0], setMes = sm[1], sb = useState(""), busca = sb[0], setBusca = sb[1], sp = useState("func"), parte = sp[0], setParte = sp[1];

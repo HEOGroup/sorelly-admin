@@ -32,6 +32,12 @@ import { gaDemo, gaMigrar } from "@/apps/montagem/domain/garantia";
 import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { tpMigrar } from "@/apps/montagem/domain/trafego";
+import { modMigrar } from "@/apps/montagem/domain/modelas";
+import { bmMigrar } from "@/apps/montagem/domain/bonus-montagem";
+import { LOCAL_BM } from "@/apps/montagem/domain/bonus-montagem-local";
+import { avkSemear } from "@/apps/montagem/domain/avaliacoes-kits";
+import { LOCAL_AVK } from "@/apps/montagem/domain/avaliacoes-kits-local";
+import { inadMigrar, inadVazio } from "@/apps/montagem/domain/inadimplencia";
 import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
 import { lpDemo, lpMigrar } from "@/apps/montagem/domain/link-pagamento";
@@ -296,6 +302,7 @@ function novo(){
   st.mel = {};   // Solicitações de melhorias (uma chave por pedido; vem do servidor)
   st.ga = gaDemo();   // Garantia (só o link do site externo)
   st.mk = mkDemo();   // Marketing (vazio; dados reais só no arquivo local)
+  st.inad = inadVazio();   // Inadimplência (vazio; dados reais só no servidor)
   st.fc = fcDemo();   // Marketing › Fotos de catálogo (vazio; histórico da planilha só no arquivo local)
   st.ce = ceDemo();   // Compras e Estoque interno de materiais (vazio; dados reais só no arquivo local)
   st.fx = fxDemo();   // Fiscal (vazio; dados reais só no arquivo local)
@@ -309,7 +316,7 @@ function novo(){
   st.pp = ppDemo();   // Pedidos de peças da produção ao cadastro (vazio)
   st.pr = prDemo();   // Produção de peças (vazio; dados reais só no arquivo local)
   st.px = pxDemo();   // Chaves Pix e regras (contas automáticas do atendimento interno)
-  st.dp = dpDemo(); st.dp.pix = []; st.dpZerado = 2; st.cp = cpAjustar(cpDemo()); st.cpV3 = 4;   // Controle de pagamentos (Financeiro): destinos e orientações
+  st.dp = dpDemo(); st.dp.pix = []; st.dpZerado = 2; st.cp = cpAjustar(cpDemo()); st.cpV3 = 5;   // Controle de pagamentos (Financeiro): destinos e orientações
   st.cpe = {classe:{}, lanc:bonusNickolas()};   // Contas a pagar: o que o Marcus marcou como Sorelly ou Família em cada conta do DevMaster
   st.ff = ffDemo();   // Financeiro Familiar: vazio (só os sócios lançam)
   st.rh = rhDemo();   // Recursos Humanos: configurador padrão, sem presença lançada
@@ -460,7 +467,7 @@ function inicial(){
     if(!s.cp) s.cp = cpDemo();
     if(!s.dp || s.dpV!==8){ s.dp = dpDemo(); s.dp.pix = []; s.dpV = 8; }
     if(s.dpZerado!==2){ s.dp = Object.assign({}, s.dp, {pix:(s.dp.pix||[]).filter(function(x){ return x.internoId || x.pid; })}); s.dpZerado = 2; }   // 09/11/2026 (Marcus): a fila do Direcionar começa ZERADA (saem os pedidos de teste); a partir daqui os pedidos vêm do servidor (módulo "pag")   // v2 (24/10/2026): pedidos com forma Pix, Maquininha ou Link   // Direcionar Pix (23/10/2026): pedidos de teste vindos das mensagens das atendentes
-    if(s.cp && s.cpV3!==4){ s.cp = cpAjustar(s.cp); s.cpV3 = 4; }
+    if(s.cp && s.cpV3!==5){ s.cp = cpAjustar(s.cp); s.cpV3 = 5; }
     if(!s.px) s.px = pxDemo();
     s.px = pxMigrar(s.px, s);   // traz as contas Pix reais (sem chave) do arquivo local, uma vez
     s.rot = rotMigrar(s.rot);   // Rotina do dia
@@ -478,7 +485,11 @@ function inicial(){
     s.ga = gaMigrar(s.ga);   // Garantia: cria com o link padrão ou completa campos novos
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
+    s.inad = inadMigrar(s.inad);   // Inadimplência: cria vazio ou completa campos novos
+    s.mod = modMigrar(s.mod);   // Encomendas › Modelos: cria vazio (ou com os dados reais locais)
     s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
+    s.bm = bmMigrar(s.bm, LOCAL_BM);   // Bônus da montagem de kits (12/11/2026): cria vazio (ou com o mês real local) ou completa campos novos
+    s.avk = avkSemear(s.avk, LOCAL_AVK);   // Nota do kit por montadora (12/11/2026): cria vazio ou põe a leitura real local se for mais nova
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos
     s.fx = fxMigrar(s.fx);   // Fiscal: cria vazio ou completa campos novos
     s.inf = infMigrar(s.inf);   // Folders e informativos: cria com as regras do acerto ou completa campos novos

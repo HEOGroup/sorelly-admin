@@ -14,7 +14,7 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   supervisora:TODAS.filter(function(k){ return k!=="fluxo" && k.indexOf("marcus")!==0 && k.indexOf("pont")!==0; }),                       // Deysiane: como era (tudo)
   cadastropecas:["cpcompras","cadpecas","cpsol","cpctrl","cpfp","cpfe","cpouro","cpbanho","cplotes","cpcalc","cpforn","cpdev","cpcfg"],          // Rayssa e Graziella
   linkcadastro:["linkpag","linkrel","comlink","compras","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Hellen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
-  inadimplencia:["inadimp","comprasrep"],          // Amanda de Miranda
+  inadimplencia:["inadimp","comprasrep","inaddiv","inadcob","inadpag","inadser","inadkit","inadrel","inadreg"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"],
   encomendas:["encomendas","encida","enctop50","encrep","expositores","encregras"],   // Encomendas e reposições (05/11/2026): as três meninas do setor (Agatha, Elen e Eduarda Gabriela) estavam em Acesso básico e não abriam as telas do setor
   garantia:["garantia","garantiacred"],   // Garantia (03/11/2026): as meninas do setor lançam os créditos de garantia que sobem para o acerto no app da representante
