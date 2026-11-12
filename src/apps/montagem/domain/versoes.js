@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.74", data:"2026-11-12", titulo:"Configurador das regras: prazo do acerto em dias úteis", itens:[
+  {tipo:"ajuste", area:"Representantes › Configurações das regras", txt:"O bloco das regras mostra os campos da regra nova: prazo do acerto sem acréscimo (dias úteis), perda por dia útil e depois de quantos dias úteis vai ao jurídico. A tabela antiga de atraso (7 a 59 dias) saiu da tela."}]},
  {v:"0.18.73", data:"2026-11-12", titulo:"Produção: consulta da meta e acessos da Hellen", itens:[
   {tipo:"novo", area:"Acessos", txt:"Nova autorização producao_ver (Ver Premiação e Configurações da Produção, só consulta). Abre as duas abas para ver a meta mensal, as faixas e o bônus, sem editar, adicionar ou apagar. Padrão: Maria Claudia (chamado de 09/11/2026)."},
   {tipo:"correção", area:"Materiais e estoque › Compras", txt:"Hellen (link, cadastro e compras) ganhou o papel Logística em Compras (vê o quadro inteiro e registra recebimento e entrega) e as capacidades Contagem e Compra no Estoque de material. Não aprova compra: isso continua com a autorização compra_aprova."},
