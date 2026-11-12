@@ -16,7 +16,7 @@ var faixaTxt = function(f){ return formatarInteiro(f.min)+(f.max==null ? "+" : "
 function AbaProdPremiacao(){
   var x = usePr();
   var sMes = useState(hojeSP().slice(0, 7)), sEd = useState(null), sVal = useState(0);
-  if(!x.admin) return e(Pagina,null, e(Aviso,null, "Somente a diretoria acessa."));
+  if(!x.admin && !x.leitura) return e(Pagina,null, e(Aviso,null, "Somente a diretoria acessa."));
   var ym = sMes[0].split("-").map(Number), pm = premiacaoDoMes(x.pr, ym[0], ym[1]);
   var vazio = pm.totalPecas===0 && !pm.linhas.some(function(l){ return l.ajuste; });
   var comBonus = pm.linhas.filter(function(l){ return l.valor>0; }).length;
@@ -44,7 +44,7 @@ function AbaProdPremiacao(){
           e(Td,null, l.faixa ? e(Selo,{cor:cor}, faixaTxt(l.faixa)) : "—"),
           e(Td,{className:"text-[12px]"}, l.proxima ? "Faltam "+formatarInteiro(l.proxima.faltam)+" pç para "+formatarReais(l.proxima.faixa.valor) : l.faixa ? "Faixa mais alta" : "—"),
           e(Td,{dinheiro:true, forte:true}, formatarReais(l.valor), l.ajuste && e("span",{className:"ml-1.5 align-middle"}, e(Selo,{cor:"alerta", titulo:"Ajustado por "+l.ajuste.por+(l.ajuste.em ? " em "+l.ajuste.em : "")+". Calculado: "+formatarReais(l.calculado)}, "Ajustado"))),
-          e(Td,null, e("span",{className:"inline-flex gap-1"}, e(Ic,{ic:"pencil-simple", titulo:"Editar o valor do bônus", onClick:function(){ abrir(l); }}), l.ajuste && e(Ic,{ic:"arrow-counter-clockwise", titulo:"Limpar ajuste (volta ao valor calculado)", onClick:function(){ limpar(l); }}))));
+          e(Td,null, x.leitura ? "—" : e("span",{className:"inline-flex gap-1"}, e(Ic,{ic:"pencil-simple", titulo:"Editar o valor do bônus", onClick:function(){ abrir(l); }}), l.ajuste && e(Ic,{ic:"arrow-counter-clockwise", titulo:"Limpar ajuste (volta ao valor calculado)", onClick:function(){ limpar(l); }}))));
       })))),
     ed && e(Janela,{t:"Valor do bônus", sub:ed.nome+" · "+pm.rotulo, fechar:function(){ sEd[1](null); }, colunas:[
       e(Painel,{key:"d", t:"Apuração", ic:"chart-bar"}, e("div",{className:"flex flex-col gap-1 text-[13px]"}, e("span",null, "Peças no mês: ", e("b",{className:MONO}, formatarInteiro(ed.pecas))), e("span",null, "Valor calculado: ", e("b",{className:MONO}, formatarReais(ed.calculado))), ed.faixa && e("span",null, "Faixa: ", e("b",null, faixaTxt(ed.faixa))))),

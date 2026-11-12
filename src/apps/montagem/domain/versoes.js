@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.73", data:"2026-11-12", titulo:"Produção: consulta da meta e acessos da Hellen", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Nova autorização producao_ver (Ver Premiação e Configurações da Produção, só consulta). Abre as duas abas para ver a meta mensal, as faixas e o bônus, sem editar, adicionar ou apagar. Padrão: Maria Claudia (chamado de 09/11/2026)."},
+  {tipo:"correção", area:"Materiais e estoque › Compras", txt:"Hellen (link, cadastro e compras) ganhou o papel Logística em Compras (vê o quadro inteiro e registra recebimento e entrega) e as capacidades Contagem e Compra no Estoque de material. Não aprova compra: isso continua com a autorização compra_aprova."},
+ ]},
  {v:"0.20.12", data:"2026-11-12", titulo:"Modelos no Marketing, acesso do Castilho e contagem das influencers pelo app", itens:[
   {tipo:"melhoria", area:"Marketing › Modelos", txt:"A tela Modelos saiu das Encomendas e foi para o Marketing (último botão do menu). Abrem Marcus e Castilho (autorização modelos_ver)."},
   {tipo:"novo", area:"Marketing › Modelos › Influencers", txt:"ID no app: com ele o link da influencer sai pronto (formulário de indicação) e o sistema lê no app quantas revendedoras ela trouxe (cadastro aprovado + kit entregue). Sem ID, vale o número lançado à mão."},

@@ -15,7 +15,7 @@ var Linha = function(p){ return e("div",{className:"flex flex-wrap items-center 
 function AbaProdConfig(){
   var x = usePr(), pr = x.pr;
   var sFn = useState(""), sCod = useState({codigo:"", rotulo:""}), sJ = useState(null), sConf = useState("");
-  if(!x.admin) return e(Pagina,null, e(Aviso,null, "Somente a diretoria acessa."));
+  if(!x.admin && !x.leitura) return e(Pagina,null, e(Aviso,null, "Somente a diretoria acessa."));
   var j = sJ[0], setJ = function(c){ sJ[1](Object.assign({}, j, c)); }, fechar = function(){ sJ[1](null); };
   var pede = function(chave, fazer){ if(sConf[0]!==chave){ sConf[1](chave); return; } sConf[1](""); fazer(); };
   var funcs = pr.funcionarias.slice().sort(function(a, b){ return a.posicao-b.posicao; });
@@ -56,7 +56,8 @@ function AbaProdConfig(){
   }
 
   return e(Pagina,null,
-    e(Mosaico,{min:"24rem"},
+    x.leitura && e("p",{className:"text-center text-[13px] font-bold"}, "Somente consulta: você vê as faixas e as metas, mas não altera."),
+    e("div",{className:x.leitura ? "pointer-events-none select-none" : ""}, e(Mosaico,{min:"24rem"},
       e(BlocoBarra,{cor:"turquesa", compacto:true, t:"Funcionárias", dir:funcs.length},
         e("div",{className:"flex flex-wrap items-center justify-center gap-2 p-2"},
           e("input",{value:sFn[0], placeholder:"Nome da funcionária", "aria-label":"Nome da funcionária", onChange:function(ev){ sFn[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") addFunc(); }, className:INPUT+" h-9! w-56 text-center text-[13px]!"}),
@@ -88,7 +89,7 @@ function AbaProdConfig(){
           return e(Linha,{key:f.id}, e("span",{className:"min-w-0 flex-1 text-[13px] font-bold"}, faixaTxt(f)), e("b",{className:MONO+" text-[13px]"}, formatarReais(f.valor)),
             e(Ic,{ic:"pencil-simple", titulo:"Editar faixa", onClick:function(){ sJ[1]({tipo:"faixa", id:f.id, min:f.min, max:f.max, valor:f.valor}); }}),
             sConf[0]===ch ? e(Bt,{tipo:"perigo", mini:true, ic:"trash", onClick:function(){ pede(ch, function(){ x.exec("faixa_del", {id:f.id}); }); }}, "Confirmar") : e(Ic,{ic:"trash", perigo:true, titulo:"Excluir faixa", onClick:function(){ pede(ch, function(){}); }})); })
-        : FAIXAS_PADRAO.map(function(f, i){ return e(Linha,{key:i}, e("span",{className:"min-w-0 flex-1 text-[13px] font-bold text-white/75"}, faixaTxt(f)), e("b",{className:MONO+" text-[13px] text-white/75"}, formatarReais(f.valor))); }))),
+        : FAIXAS_PADRAO.map(function(f, i){ return e(Linha,{key:i}, e("span",{className:"min-w-0 flex-1 text-[13px] font-bold text-white/75"}, faixaTxt(f)), e("b",{className:MONO+" text-[13px] text-white/75"}, formatarReais(f.valor))); })))),
     janela);
 }
 export { AbaProdConfig };
