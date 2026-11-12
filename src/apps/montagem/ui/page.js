@@ -13,8 +13,8 @@ function AlertaBadge(p){
 function PageHead(p){
   return e("div",{className:"flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between"},
     e("div",{className:"flex min-w-0 flex-col gap-1"},
-      e("h1",{className:"font-heading text-2xl font-semibold tracking-wide"}, p.t),
-      e("p",{className:"text-[15px] text-muted-foreground"}, p.sub)),
+      e("h1",{className:"font-heading text-2xl font-semibold tracking-wide", style:p.estilo}, p.t),   // estilo (opcional): letra própria do título
+      p.sub ? e("p",{className:"text-[15px] text-muted-foreground"}, p.sub) : null),
     e("div",{className:"flex flex-wrap items-center gap-3"},
       p.children && e("div",{className:"flex flex-wrap gap-2"}, p.children)));
 }

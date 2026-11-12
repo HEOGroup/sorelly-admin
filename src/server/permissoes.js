@@ -16,6 +16,7 @@ export const SETORES_DO_MODULO = {
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],
   fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
+  mod: [],   // Encomendas › Modelos (11/11/2026): cadastro particular do Marcus; só Diretoria no servidor, e a tela abre só para quem tem a autorização modelos_ver
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   es: ["financeiro"],   // Estoque Sorelly (Financeiro, 09/11/2026): posição mensal do estoque de peças, números altos; só Financeiro e Diretoria

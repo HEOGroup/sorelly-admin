@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.11", data:"2026-11-11", titulo:"Encomendas: tela Modelos (particular do Marcus)", itens:[
+  {tipo:"novo", area:"Encomendas e reposições › Modelos", txt:"Planilha particular das mulheres que recebem joias e kits, em três grupos na barra do bloco: Sorelly (conteúdo, negociação e ida na empresa), Marcus (amigas) e Influencers (só kits). Foto grande com clique para ampliar, Instagram e telefone clicáveis, valor liberado por mês, último envio e situação. A ficha abre numa gaveta pela direita. Só quem tem a autorização modelos_ver (padrão Marcus)."},
+ ]},
  {v:"0.20.10", data:"2026-11-11", titulo:"Comissão das funcionárias: representantes incluídas", itens:[
   {tipo:"regra", area:"Atendimento interno › Atendimento Sorelly", txt:"As representantes também recebem a comissão de funcionária quando acertam na Sorelly. O sistema acha cada uma pelo nome completo no cadastro de cliente."}]},
  {v:"0.20.9", data:"2026-11-11", titulo:"Correção: prazo do acerto contava data antiga de quem já acertou", itens:[

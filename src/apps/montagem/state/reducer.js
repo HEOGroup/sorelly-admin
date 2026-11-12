@@ -39,6 +39,7 @@ import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
+import { modMigrar, modReduz } from "@/apps/montagem/domain/modelas";
 import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
@@ -251,6 +252,7 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
+      if(a.chave==="mod") return Object.assign({}, s, {mod:modMigrar(a.conteudo)});   // Modelos: passa pela migração (entra a semente dos dados reais locais, uma vez)
       if(a.chave==="revdia"){
         var pRD = {};
         if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);
@@ -336,6 +338,7 @@ function reducer(s, a){
     case "INAD": { var rIn = inadReduz(s, a); return com(s, rIn.patch, rIn.msg); }   // setor de Inadimplência (dívidas, acordos, pagamentos, Serasa, kits em atraso)
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
+    case "MOD": { var rMod = modReduz(s, a); return com(s, rMod.patch, rMod.msg); }   // Encomendas › Modelos (cadastro particular do Marcus)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "CE": { var rCe = ceReduz(s, a); return com(s, rCe.patch, rCe.msg); }   // Compras de materiais e Estoque interno (materiais)

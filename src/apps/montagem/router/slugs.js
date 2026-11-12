@@ -131,6 +131,7 @@ export const SLUG_DA_ABA = {
   marketing: "marketing",
   fotoscat: "fotos-de-catalogo",
   trafego: "trafego-pago",
+  modelos: "modelos",
   inaddiv: "inadimplencia-dividas",
   inadcob: "inadimplencia-cobranca-do-dia",
   inadpag: "inadimplencia-pagamentos",

@@ -66,7 +66,8 @@ var MENU_ENCOMENDAS = [
   M("Top 50","enctop50"),
   M("Representantes","encrep"),
   M("Expositores","expositores"),
-  M("Regras e mensagens","encregras")
+  M("Regras e mensagens","encregras"),
+  Object.assign(M("Modelos","modelos"), {perm:"modelos_ver"})   // 11/11/2026: cadastro particular do Marcus
 ];
 
 // Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
@@ -228,7 +229,8 @@ var SETORES = [
     {nome:"Top 50", telas:[T("enctop50","Top 50")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
-    {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
+    {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]},
+    {nome:"Modelos", telas:[T("modelos","Modelos")]}]},
   {id:"garantia", nome:"Garantia", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
     {nome:"Garantias", telas:[T("garantia","Garantia")]},
     {nome:"Créditos", telas:[T("garantiacred","Créditos")]}]},
