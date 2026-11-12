@@ -2295,3 +2295,6 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 ## 12/11/2026 — Configurador das regras com a regra de dias úteis
 - `pages/RegrasConsignado.js`: o bloco "Regras de 27/10/2026" ganhou os campos `prazoAcertoDiasUteis`, `atrasoPctDiaUtil` e `juridicoDiasUteis`; o campo `juridicoDias` (60 dias) e a tabela antiga de atraso saíram da tela (a tabela só aparece em versão sem a regra nova). Salvar continua criando versão nova.
 - Seguem na tela e na conta: prazo de 15 dias para quitar e +1% ao dia depois dele (`prazoQuitarDias`, `atrasoQuitacaoPctDia`). A decisão de 11/11 foi valer a data de cada parcela; isso ainda não foi levado para a conta do acerto.
+
+## 12/11/2026 — Texto do Kit 100% Prata
+- `textoRegrasPrata` (`domain/consignado.js`): com a regra de dias úteis, as frases "Agendamento" e "Cancelamento e atraso" viraram "Agendamento e remarcação" e "Prazo do acerto", dizendo que valem as mesmas regras do Kit Normal. As frases antigas continuam só para versão sem a regra nova. Aparece em Regras dos acertos e no app da representante (simulado).

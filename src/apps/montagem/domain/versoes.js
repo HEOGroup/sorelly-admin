@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.75", data:"2026-11-12", titulo:"Regras do Kit 100% Prata: prazo e remarcação iguais ao Kit Normal", itens:[
+  {tipo:"ajuste", area:"Regras dos acertos e app da representante", txt:"O texto do Kit 100% Prata não fala mais em cancelar no dia e atraso de 1% por dia do jeito antigo. Agora diz que o prazo do acerto e a remarcação são iguais aos do Kit Normal."}]},
  {v:"0.18.74", data:"2026-11-12", titulo:"Configurador das regras: prazo do acerto em dias úteis", itens:[
   {tipo:"ajuste", area:"Representantes › Configurações das regras", txt:"O bloco das regras mostra os campos da regra nova: prazo do acerto sem acréscimo (dias úteis), perda por dia útil e depois de quantos dias úteis vai ao jurídico. A tabela antiga de atraso (7 a 59 dias) saiu da tela."}]},
  {v:"0.18.73", data:"2026-11-12", titulo:"Produção: consulta da meta e acessos da Hellen", itens:[

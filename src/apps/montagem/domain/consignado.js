@@ -462,8 +462,11 @@ function textoRegrasPrata(v){
     {t:"Taxa de deslocamento", x:"Vendas abaixo de "+reais(g.taxaAbaixoDe)+" pagam taxa fixa de "+reais(((p.taxaBaixa||[])[0]||{}).taxa)+"."},
     {t:"Brindes e prêmios", x:"Brindes só depois da confirmação do pagamento integral. Prêmios só para revendedoras sem pendências e em dia."},
     {t:"Formas de acerto", x:"Dinheiro, transferência, Pix, cartão de débito ou crédito em até 6x sem juros, com parcela mínima de "+reais(g.parcelaMinimaCredito)+"."},
-    {t:"Agendamento", x:"O acerto deve ser agendado com no mínimo "+g.agendarAntecedenciaDias+" dias de antecedência. Reagendar: pelo menos "+g.reagendarAntecedenciaDias+" dias antes da data original, sujeito a disponibilidade."},
-    {t:"Cancelamento e atraso", x:"Cancelar no dia do acerto: −"+rem+"% da comissão. Atraso: −"+g.atrasoPctDia+"% de comissão por dia."},
+    // com a regra de 11/11/2026 (v.novas com dias úteis), prazo, remarcação, cancelamento e valor pendente do Kit Prata são IGUAIS aos do Kit Normal; as frases antigas só valem para kit de versão antiga
+    v.novas && v.novas.prazoAcertoDiasUteis!=null ? {t:"Agendamento e remarcação", x:"Remarcar ou cancelar com "+g.reagendarAntecedenciaDias+" dias ou mais de antecedência não tem multa (uma vez por kit). Em cima da hora, ou se não vier, vale a multa da remarcação, igual ao Kit Normal."}
+      : {t:"Agendamento", x:"O acerto deve ser agendado com no mínimo "+g.agendarAntecedenciaDias+" dias de antecedência. Reagendar: pelo menos "+g.reagendarAntecedenciaDias+" dias antes da data original, sujeito a disponibilidade."},
+    v.novas && v.novas.prazoAcertoDiasUteis!=null ? {t:"Prazo do acerto", x:"Igual ao Kit Normal: depois da data marcada há "+v.novas.prazoAcertoDiasUteis+" dias úteis sem acréscimo; do "+(v.novas.prazoAcertoDiasUteis+1)+"º ao "+v.novas.juridicoDiasUteis+"º dia útil perde "+v.novas.atrasoPctDiaUtil+"% de comissão e de brinde por dia; depois disso perde tudo."}
+      : {t:"Cancelamento e atraso", x:"Cancelar no dia do acerto: −"+rem+"% da comissão. Atraso: −"+g.atrasoPctDia+"% de comissão por dia."},
     {t:"Troca de modalidade", x:"Para trocar de modalidade, avise com pelo menos "+g.trocaModalidadeDias+" dias de antecedência."}
   ];
 }
