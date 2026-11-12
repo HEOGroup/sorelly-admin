@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Direcionar: a conferência do comprovante é ali mesmo)
+- Marcus: a conferência não fica em outra tela (SorellyChat). O Direcionar tem a coluna **Comprovante** (Abrir comprovante, com vários = todos na mesma janela) e a coluna **Conferir** (botão; depois de conferido vira **Desfazer**). Conferir também marca "OK, comprovantes anexados" e "Finalizar pagamentos" da atendente. As linhas ficam no mesmo lugar. Vale para o atendimento interno; o pedido da representante segue pelo app dela.
+
 ## 12/11/2026 (Atendimento interno e Direcionar: brinde, ciência das regras, fila)
 - **Brinde antes do pagamento (Marcus, a pedido da Edna):** os campos de brinde abrem desde o começo; a entrega continua só depois do pagamento. Vale no lugar da trava de 05/10/2026.
 - **Revendedora que não quer esperar a explicação das regras:** assina a ciência (as regras estão no app dela e saem em PDF). Quem recebe a explicação continua sem assinar. Fica em `termoConsignado.assinatura` com `semExplicacao:true`.

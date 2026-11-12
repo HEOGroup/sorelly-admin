@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.27", data:"2026-11-12", titulo:"Direcionar: conferir o comprovante ali mesmo", itens:[
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"A tabela Direcionados ganhou a coluna Comprovante (botão Abrir comprovante; com vários, Abrir comprovantes (N), e a janela lista cada um com a conta e o valor) e a coluna Conferir (botão Conferir quando todos os pagamentos têm comprovante, e Desfazer depois de conferido). Quem direciona confere ali mesmo. Conferir também fecha os dois passos da atendente (OK dos comprovantes e Finalizar pagamentos). As linhas não mudam de lugar ao conferir."},
+ ]},
  {v:"0.20.18", data:"2026-11-12", titulo:"Point: apagar o mês e só um mês de cada", itens:[
   {tipo:"novo", area:"Pagamentos a fornecedores › Negociações › Point", txt:"Cada mês da parte Pedidos sem NF ganhou a lixeira Apagar o mês. O mês sai das duas partes (pedidos sem NF e acerto mensal) depois de uma confirmação. Pix do mês pago com valor não deixa apagar: volte o pix para Pendente antes."},
   {tipo:"correção", area:"Pagamentos a fornecedores › Negociações › Point", txt:"Regra nova: a Point tem só um mês de cada mês e ano. Lançar ou mudar um pedido da Point para um mês que já existe é recusado, com o aviso de lançar o pedido dentro do mês. O Novo mês também não repete mais o número interno de outro pedido."}]},

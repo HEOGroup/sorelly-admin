@@ -113,6 +113,7 @@ function AbaDirecionar(){
   var c = useDP(), s = c.s, cp = c.cp, dp = c.dp, ctxCnpj = contextoCnpj(s);
   var so = useState("todos"), orig = so[0], setOrig = so[1], ss = useState(null), selId = ss[0], setSelId = ss[1], sd = useState({}), drafts = sd[0], setDrafts = sd[1], se = useState("");
   var erro = se[0], setErro = se[1];
+  var vcs = useState(null), verComp = vcs[0], setVerComp = vcs[1];   // comprovante aberto para conferir (Marcus, 12/11/2026: a conferência fica no Direcionar)
   // H&O também recebe Pix (Marcus, 26/10/2026): cria o destino uma vez, se ainda não existir (o estado vem do servidor e não passa pela migração)
   var semHO = c.edita && !cp.destinos.some(function(d){ return d.cnpjId==="HO"; });
   useEffect(function(){ if(semHO) c.d({type:"CP", op:"destino_add", nome:"CNPJ H&O · H&O Apps", tipo:"CNPJ", cnpjId:"HO"}); }, [semHO]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -409,12 +410,34 @@ function AbaDirecionar(){
       var COR_SIT = {"Comprovante":"#F87171", "Aguarda OK":"#FACC15", "Finalizar":"#38BDF8", "Conferir":"#E879F9", "Conferido":"#4ADE80"};   // cinco cores bem diferentes só na letra (vermelho, amarelo, azul, magenta, verde); Marcus, 12/11/2026: nada de bloco por fora
       var dtx = function(ts){ var q = new Date(ts); return String(q.getDate()).padStart(2, "0")+"/"+String(q.getMonth()+1).padStart(2, "0")+"/"+q.getFullYear(); };
       // uma linha por pedido (o destino pode ser vários, então não entra aqui): data, hora, revendedora, valor, quem direcionou, situação e com quem está
-      var linhas = feitos.map(function(x){ var st = situ(x); return {id:x.id, sit:st[0], com:st[1], data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
-      linhas = linhas.filter(function(l){ return l.sit!=="Conferido"; }).concat(linhas.filter(function(l){ return l.sit==="Conferido"; }));   // pendentes primeiro, conferidos depois (a ordem por hora se mantém dentro de cada grupo)
-      return e(BlocoPainel,{titulo:"Direcionados", compacto:true}, e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", vazio:"Nada direcionado", linhas:linhas, cols:[{k:"data", t:"Data"}, {k:"hora", t:"Hora"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor"}, {k:"quem", t:"Quem direcionou"},
+      var lfDe = function(x){ return lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0] || null; };
+      var pagLinhas = function(l){ return l.linhas.filter(function(q){ return q.tipo==="pagamento" && !q.isento; }); };
+      var compsDe = function(x){ var l = lfDe(x), out = []; if(!l) return out; pagLinhas(l).forEach(function(q){ (q.partes||[]).forEach(function(p){ if(p.comprovante) out.push(Object.assign({}, p.comprovante, {conta:p.descricao||"", valor:p.valor||0})); }); }); return out; };   // um por conta: o Pix pode ter vários comprovantes (um para cada conta)
+      var tudoComComp = function(x){ var l = lfDe(x); if(!l) return false; var ps = pagLinhas(l); return ps.length>0 && ps.every(function(q){ return (q.partes||[]).length>0 && (q.partes||[]).every(function(p){ return !!p.comprovante; }); }); };
+      // CONFERIR AQUI (Marcus, 12/11/2026: "a conferência deveria ir ali mesmo, com uma coluna do comprovante"): quem direciona vê o comprovante e confere; isso também fecha os dois passos da atendente
+      var conferirAqui = function(x){ var l = lfDe(x); if(!l) return;
+        c.d({type:"FIN_ETAPA", id:l.id, patch:{etapaComprovantes:true, finalizado:true, finalizadoTs:Date.now()}});
+        l.linhas.forEach(function(q, i){ if(q.tipo!=="pagamento" || q.isento) return; c.d({type:"FIN_LINHA", id:l.id, i:i, patch:{partes:(q.partes||[]).map(function(p){ return Object.assign({}, p, {ok:true}); })}, por:c.por}); }); };
+      var linhas = feitos.map(function(x){ var st = situ(x), n = compsDe(x).length; return {id:x.id, sit:st[0], com:st[1], comp:n>0 ? "Ver" : "—", conf:(c.edita && st[0]!=="Conferido" && tudoComComp(x)) ? "Conferir" : (c.edita && st[0]==="Conferido" && lfDe(x) ? "Desfazer" : "—"), data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
+      // as linhas ficam sempre no mesmo lugar (mais novo em cima): conferir não muda a linha de posição (Marcus, 12/11/2026: "clicou e sumiu")
+      var desfazerAqui = function(x){ var l = lfDe(x); if(!l) return;   // volta a conferência para pendente (o comprovante e as etapas da atendente ficam)
+        l.linhas.forEach(function(q, i){ if(q.tipo!=="pagamento" || q.isento) return; c.d({type:"FIN_LINHA", id:l.id, i:i, patch:{partes:(q.partes||[]).map(function(p){ return Object.assign({}, p, {ok:false}); })}, por:c.por}); }); };
+      var BTN_CLARO = "h-8 min-w-24 max-w-full whitespace-nowrap rounded-md border border-white/50 bg-white/20 px-3.5 text-[13px] font-semibold text-white hover:bg-white/30";   // botão claro (Marcus, 12/11/2026: "não pode ter essa cor tão escura")
+      var BTN_PEQ = "h-[18px] whitespace-nowrap rounded-md border px-2 text-[11px] hover:bg-white/10 ";
+      var modalComp = verComp && e("div",{className:"fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4", role:"dialog", "aria-modal":"true", onClick:function(){ setVerComp(null); }},
+        e("div",{className:"flex max-h-full w-full max-w-3xl flex-col gap-2 overflow-auto rounded-lg border border-border bg-card p-3", onClick:function(ev){ ev.stopPropagation(); }},
+          e("div",{className:"flex items-center justify-between gap-2 text-[13px] font-semibold"}, e("span",null, "Comprovante de "+verComp.nome), e("button",{type:"button", onClick:function(){ setVerComp(null); }, className:BTN_PEQ+"border-border"}, "Fechar")),
+          verComp.lista.map(function(cp, k){ return e("div",{key:k, className:"flex flex-col gap-1 border-t border-border pt-2"},
+            e("span",{className:"text-center text-[13px] font-semibold"}, "Comprovante "+(k+1)+" de "+verComp.lista.length+(cp.conta ? " · "+cp.conta : "")+(cp.valor>0 ? " · "+BKC(cp.valor) : "")),
+            /^data:image|^https?:/.test(cp.url||"") && !/pdf/i.test(cp.nome||"")
+              ? e("img",{src:cp.url, alt:"Comprovante "+(k+1), className:"max-h-[75vh] w-full rounded-md object-contain"})
+              : e("a",{href:cp.url, download:cp.nome||"comprovante", className:"text-center text-[13px] font-semibold text-primary underline"}, "Baixar "+(cp.nome||"comprovante"))); })));
+      return e(Fragment,null, modalComp, e(BlocoPainel,{titulo:"Direcionados", compacto:true}, e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", vazio:"Nada direcionado", linhas:linhas, cols:[{k:"data", t:"Data"}, {k:"hora", t:"Hora"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor"}, {k:"quem", t:"Quem direcionou"},
         {k:"sit", t:"Situação", render:function(v){ return e("span",{className:"font-semibold", style:{color:COR_SIT[v]}}, v); }},
         {k:"com", t:"Com"},
-        {k:"reabre", t:"Reabrir", render:function(v){ return v ? e("button",{type:"button", onClick:function(){ c.d({type:"DP", op:"reabre", id:v}); }, className:"h-[18px] whitespace-nowrap rounded-md border border-border px-2 text-[11px] hover:bg-white/10"}, "Reabrir") : "—"; }}]}));
+        {k:"comp", t:"Comprovante", render:function(v, r){ return v==="Ver" ? e("button",{type:"button", onClick:function(){ setVerComp({nome:r.rev, lista:compsDe(r.x)}); }, className:BTN_CLARO}, compsDe(r.x).length>1 ? "Abrir comprovantes ("+compsDe(r.x).length+")" : "Abrir comprovante") : "—"; }},
+        {k:"conf", t:"Conferir", render:function(v, r){ return v==="Conferir" ? e(Botao,{principal:true, onClick:function(){ conferirAqui(r.x); }}, "Conferir") : v==="Desfazer" ? e("button",{type:"button", onClick:function(){ desfazerAqui(r.x); }, title:"Volta este pagamento para a conferência", className:BTN_CLARO}, "Desfazer") : "—"; }},
+        {k:"reabre", t:"Reabrir", render:function(v){ return v ? e("button",{type:"button", onClick:function(){ c.d({type:"DP", op:"reabre", id:v}); }, className:BTN_PEQ+"border-border"}, "Reabrir") : "—"; }}]})));
     })());
 }
 
