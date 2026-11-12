@@ -12,6 +12,10 @@
     {
       "path": "/api/automatico/fotos-dm",
       "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/app-rep/sincronizar",
+      "schedule": "* * * * *"
     }
   ]
 }

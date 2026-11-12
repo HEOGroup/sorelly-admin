@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.78", data:"2026-11-12", titulo:"App da representante: sincronização a cada minuto no site publicado", itens:[
+  {tipo:"correção", area:"Representantes & Kits › Listagens", txt:"O aviso Kit pronto para retirar, os kits novos direcionados e as respostas das representantes só iam para o app quando o servidor ligava (umas 1 vez por dia). Agora o agendador chama a sincronização a cada minuto."},
+  {tipo:"correção", area:"Representantes & Kits › Listagens", txt:"As listagens criadas no app da representante passam a entrar aqui (antes iam para o admin antigo)."},
+ ]},
  {v:"0.18.77", data:"2026-11-12", titulo:"Modelos: regra das influencers, ficha com abas e sincronia estável", itens:[
   {tipo:"regra", area:"Marketing › Modelos › Influencers", txt:"R$ 250,00 em joias (a preço de venda) por indicação com cadastro aprovado, e mais R$ 1.000,00 a cada 10 aprovadas. A tabela mostra Aprovadas, Ganhou em joias e Falta enviar. Os campos de meta e prêmio saíram."},
   {tipo:"novo", area:"Marketing › Modelos › Influencers", txt:"A ficha da influencer cadastrada ganhou abas: Dados, Indicadas (nome e WhatsApp completos lidos do app, com aviso de número repetido) e Envios de joias (registro de cada envio; a soma vira o enviado)."},
