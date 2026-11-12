@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.76", data:"2026-11-12", titulo:"Direcionar Pix: Contas a pagar ao vivo, de novembro", itens:[
+  {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"O bloco Contas a pagar lia um resumo da planilha de 30/10, por isso mostrava só outubro vencido (Pontual 11 a 20 e 21 a 30, Office Graf) e nenhum fornecedor de novembro. Agora a lista sai dos pedidos e pagamentos do próprio sistema, a mesma conta de Pagamentos a fornecedores: janelas do mês atual e as dos 3 meses anteriores que ainda têm saldo. Já aparecem Pontual 11 a 20 (R$ 45.378,31) e 21 a 30 (R$ 66.273,81), Point, Ellos, Xangai, Mega Sul, Art Ello e Office Graf."},
+ ]},
  {v:"0.20.15", data:"2026-11-12", titulo:"Chamados: Lucas vê e responde todos", itens:[
   {tipo:"melhoria", area:"Chamados", txt:"O Lucas passa a ver os chamados de todas as pessoas (Todas ou Minhas) e a responder e mudar a situação, como o Marcus e o Leonardo."}]},
  {v:"0.20.14", data:"2026-11-12", titulo:"Financeiro familiar: Bruna e Nayale abrem as telas da Família", itens:[
