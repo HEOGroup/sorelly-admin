@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.9", data:"2026-11-11", titulo:"Correção: prazo do acerto contava data antiga de quem já acertou", itens:[
+  {tipo:"correção", area:"Atendimento interno › Revendedoras e Atendimento Sorelly", txt:"Quem já tinha feito o acerto e pego kit novo aparecia em vermelho na coluna Acerto até, e podia receber dias de atraso que não existiam. O prazo agora só conta data marcada depois da data do kit atual."}]},
  {v:"0.20.8", data:"2026-11-11", titulo:"Acessos: Amanda de Miranda sem salários e sem Contas a pagar", itens:[
   {tipo:"regra", area:"RH › Acessos", txt:"A Amanda de Miranda continua com acesso total, menos o salário dos funcionários (RH, folha e contratos) e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia e Empréstimos)."}]},
  {v:"0.20.7", data:"2026-11-11", titulo:"Informativo: o que mudou nas regras", itens:[

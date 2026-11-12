@@ -234,12 +234,15 @@ var PRAZO_UTEIS = 5, JURIDICO_UTEIS = 30, ANTECEDENCIA_LIVRE = 10;
 function ehDiaUtil(iso){ var w = diaDaSemana(iso); return w!==0 && w!==6 && !feriadoDe(iso); }
 function diasUteisDepois(deIso, ateIso){ if(!deIso || !ateIso || ateIso<=deIso) return 0; var n = 0, d = deIso, guarda = 0; while(d<ateIso && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n++; } return n; }   // conta os dias úteis DEPOIS de "de", até "ate" (inclusive)
 function somaDiasUteis(iso, n){ var d = iso, guarda = 0; while(n>0 && guarda++<800){ d = somaDias(d, 1); if(ehDiaUtil(d)) n--; } return d; }
-function cicloDe(r){ return (r.hist && r.hist[0] && r.hist[0].data) || ""; }   // o ciclo começa no último acerto
+// o ciclo começa na data do KIT ATUAL (condicional aberto) ou no último acerto, o que for mais novo. Correção de 11/11/2026: quem já fez o acerto e pegou kit novo continua com a data marcada antiga guardada;
+// sem olhar a data do kit, o sistema contava atraso de um acerto que já tinha acontecido.
+function kitDesde(r){ var c = (r.conds||[]).filter(function(x){ return x.t!=="Expositor" && x.e; }).sort(function(a, b){ return (a.e||"").localeCompare(b.e||""); }), kp = c.find(function(x){ return x.t==="Kit principal"; }) || c[0]; return kp ? kp.e : ""; }
+function cicloDe(r){ var h = (r.hist && r.hist[0] && r.hist[0].data) || "", k = kitDesde(r); return k>h ? k : h; }
 // primeiro dia marcado deste ciclo: o guardado (r.primeira), senão o registro mais antigo com data marcada, senão o que está agendado agora
 function primeiroMarcado(r){
-  var desde = cicloDe(r); if(r.primeira && r.primeira.dia && (r.primeira.desde||"")===desde) return r.primeira.dia;
-  var l = (r.registro||[]).filter(function(c){ return (c.tipo==="marcado" || c.tipo==="remarcado") && c.dia && (c.data||"")>=desde; }).sort(function(a, b){ return (a.data||"").localeCompare(b.data||"") || (a.ts||0)-(b.ts||0); });
-  return l.length ? l[0].dia : (r.agend && r.agend.data) || "";
+  var desde = cicloDe(r); if(r.primeira && r.primeira.dia && (r.primeira.desde||"")===desde && r.primeira.dia>desde) return r.primeira.dia;   // só vale data marcada DEPOIS do começo do ciclo
+  var l = (r.registro||[]).filter(function(c){ return (c.tipo==="marcado" || c.tipo==="remarcado") && c.dia && c.dia>desde && (c.data||"")>=desde; }).sort(function(a, b){ return (a.data||"").localeCompare(b.data||"") || (a.ts||0)-(b.ts||0); });
+  return l.length ? l[0].dia : (r.agend && r.agend.data && r.agend.data>desde ? r.agend.data : "");
 }
 function referenciaPrazo(r){ return primeiroMarcado(r) || proximoAcerto(r); }
 // dias úteis de atraso de um acerto feito em dataAcerto (0 = dentro da data)
@@ -289,4 +292,4 @@ function agendaHojeDemo(lista, hojeIso, versaoId, agora){
   return itens;
 }
 
-export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo, PRAZO_UTEIS, JURIDICO_UTEIS, ANTECEDENCIA_LIVRE, ehDiaUtil, diasUteisDepois, somaDiasUteis, primeiroMarcado, referenciaPrazo, atrasoUteisDe, prazoAcerto, remarcacaoLivre, cicloDe };
+export { definirFeriadosAgenda, feriadoDe, CAP_HORA, HORAS_AGENDA, diaDaSemana, horasDoDia, capacidadeDia, marcadasDoDia, vagasDoDia, motivoNaoMarcar, TIPOS_REG, MOTIVOS_REG, AUTORIZADORES, tipoReg, classificarLinha, remarcacoesDoCiclo, multaDaVez, resumoMulta, avisoRemarcacao, mensagemRegras, parseObs, agendadoDe, situacaoDoRegistro, MEDIA_MINIMA_SORELLY, mediaTres, kitDaMedia, histDemoDe, avaliarKit, internoDeAgendada, agendaHojeDemo, CICLOS, SITUACOES, DIAS_ALERTA, parteData, isoDe, somaDias, diasEntre, fmtDataBR, proximoAcerto, emAlerta, primeiroNome, mensagens, revInternasDemo, PRAZO_UTEIS, JURIDICO_UTEIS, ANTECEDENCIA_LIVRE, ehDiaUtil, diasUteisDepois, somaDiasUteis, primeiroMarcado, referenciaPrazo, atrasoUteisDe, prazoAcerto, remarcacaoLivre, cicloDe, kitDesde };
