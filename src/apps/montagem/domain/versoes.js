@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.17", data:"2026-11-12", titulo:"Atendimento interno e Direcionar: brinde antes do pagamento, regras em PDF e fila certa", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Os campos de brinde (Normal e Select BB) abrem desde o começo, sem esperar o financeiro confirmar os pagamentos. A entrega do brinde continua só depois de pagar. Pedido da Edna."},
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly › Regras", txt:"Botão Gerar PDF das regras (todas as regras com os números em vigor) e botão Não quis esperar a explicação · assinar ciência: a revendedora assina que está ciente (as regras estão no app dela); a assinatura fica no termo da ficha, marcada como sem explicação."},
+  {tipo:"correção", area:"Financeiro › Direcionar", txt:"A diferença do brinde agora sobe para a fila do Direcionar (antes só os pagamentos subiam e o pedido sumia). O atendimento que já estava sem a diferença na fila volta sozinho para a fila."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"Tabela Direcionados: uma linha por pedido, com Quem direcionou, Situação (Comprovante, Aguarda OK, Finalizar, Conferir, Conferido, cada uma com sua cor de letra) e Com (Atendente, Representante ou Financeiro). O pedido só sai de pendente quando o financeiro confere. A coluna Confirmar do pedido aberto fica fixa à direita e não some em tela estreita."},
+  {tipo:"melhoria", area:"Atendimento interno › Revendedoras internas", txt:"Topo simples numa barra com borda (título e só a quantidade, botões à direita), calendário e horários lado a lado com a mesma altura, e o bloco Kits novos sem nada fica com a linha de baixo reta."},
+ ]},
  {v:"0.20.16", data:"2026-11-12", titulo:"Financeiro: menu reorganizado, Fiscal virou setor, títulos sem texto", itens:[
   {tipo:"melhoria", area:"Financeiro › Menu", txt:"Direcionar passou a ser a primeira palavra do menu. Pagamentos ficou só com Regras e contas e Controle de pagamentos. Resultado do mês, Resumo do grupo, Previsão de caixa, Estoque Sorelly e Análise de custos foram para uma palavra nova (e Saldos e análises virou só Saldo das contas), Relatórios, no final."},
   {tipo:"melhoria", area:"Fiscal", txt:"Fiscal saiu do Financeiro e virou setor próprio, logo abaixo dele, com Painel e notas, Limite de faturamento e CNPJs."},

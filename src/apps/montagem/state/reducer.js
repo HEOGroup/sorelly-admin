@@ -1130,10 +1130,22 @@ function reducer(s, a){
       // o que ainda não tem conta (Pix, link) vai para a fila do Direcionar de todo o Financeiro (09/11/2026)
       var formaDp = function(f){ return f==="link" ? "link" : (f==="credito" || f==="debito") ? "maquininha" : "pix"; };
       var abertasF = [], pagosF = [];
-      novoF.linhas.forEach(function(l, i){ if(l.tipo!=="pagamento" || l.isento) return;
+      // 12/11/2026 (Marcus): a diferença do brinde também sobe para o Direcionar (antes só os pagamentos subiam, e o pedido sumia da fila)
+      novoF.linhas.forEach(function(l, i){ if((l.tipo!=="pagamento" && l.tipo!=="brinde") || l.isento) return;
+        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:"pix", valor:l.valor, linha:i}); return; }
         if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
         else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
       return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
+    }
+    // Conserto de 12/11/2026: a diferença do brinde sem conta que ficou FORA da fila do Direcionar (pedidos enviados antes desta versão) entra na fila como um pedido à parte ("PB"+id).
+    case "FIN_FILA": {
+      var lfQ = (s.lancFin||[]).find(function(x){ return x.internoId===a.internoId; });
+      if(!lfQ || lfQ.conferido || lfQ.cancelado) return s;
+      var cobertas = []; ((s.dp && s.dp.pix) || []).forEach(function(x){ if(x.internoId===a.internoId && x.status==="fila") cobertas = cobertas.concat(x.linhas||[]); });   // linhas do lançamento que já estão numa fila
+      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:"pix", valor:l.valor, linha:i}); });
+      if(!abQ.length) return s;
+      var rsQ = lfQ.resumo || {};
+      return Object.assign({}, s, dpReduz(s, {op:"int_pedir", idPedido:"PB"+a.internoId, internoId:a.internoId, nome:lfQ.nome, atendente:lfQ.por||"", vendas:rsQ.vendido||0, aPagar:rsQ.aPagar||0, abertas:abQ, pagos:[]}).patch);
     }
     case "FIN_ETAPA": {
       return com(s, {lancFin:(s.lancFin||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, a.patch); })});
@@ -1172,7 +1184,7 @@ function reducer(s, a){
       var vR = (s.regrasConsignado.versoes||[]).find(function(v){ return v.id===itR.regrasVersaoId; }) || versaoVigente(s); if(!vR) return s;
       var modR = modalidadeDe(s, itR.nome), vEfR = versaoEfetiva(vR, modR, comissaoEspecialDe(s, itR.nome));
       var zeroR = calcularAcerto({vendaBruta:0, devolvida:0, garantia:0, vez:0, valorPago:0, atrasoDias:0, diasQuitacao:0, semTaxa:true}, vEfR);
-      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno"}});
+      var prR = Object.assign({}, s.perfisRev||{}); prR[itR.nome] = Object.assign({}, prR[itR.nome], {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vR.id, por:a.por||"", origem:"interno", semExplicacao:!!a.semExplicacao}});
       return com(s, {perfisRev:prR, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", tipo:x.tipo==="kit_novo" ? "kit_novo" : "retornando", acerto:zeroR, acertoAssinado:!!a.assinatura, fimTs:agora, fim:new Date(agora).toTimeString().slice(0,5), atendeu:x.atendeu||a.por||"", escolhaFim:x.escolhaFim||agora}); })}, (itR.tipo==="kit_novo" ? "Kit novo" : "Kit retornando")+" de "+itR.nome+" finalizado");
     }
     case "INT_SIMPLES_FIM": {   // atendimento sem acerto (Brinde de indicação, Reposição, Troca de peça; 11/11/2026): registra a hora, quem atendeu e a anotação
@@ -1197,7 +1209,7 @@ function reducer(s, a){
         brindesLancados:a.brindesLancados||[], excedenteBrinde:a.excedenteBrinde||0, pecasProxCodigos:a.pecasProxCodigos||[], pecasProxLiberadas:a.pecasProxLiberadas||0,
         kitNovoOk:!!a.kitNovoOk, expositoresMarcados:a.expositoresMarcados||[], assinatura:a.assinatura||null, regrasLidas:!!a.regrasLidas, por:a.por||"", inicioTs:it.inicioTs||null, fimTs:it.fimTs||null}, resI);
       // termo assinado: fica na ficha da revendedora (quando ela voltar no mês seguinte, aparece que leu, confirmou e assinou)
-      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno"}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
+      var prT = Object.assign({}, s.perfisRev||{}); prT[it.nome] = Object.assign({}, prT[it.nome], (a.regrasLidas ? {termoConsignado:{ts:agora, assinatura:a.assinatura||null, regras:a.regrasPassadas||[], versaoId:vBase.id, por:a.por||"", origem:"interno", semExplicacao:!!a.semExplicacao}} : {}), a.kitNovoOk && versaoDaEntrega(s) ? {regrasEntregaId:versaoDaEntrega(s).id, regrasEntregaEm:hojeIso()} : {});
       return com(s, {lp:(s.lp ? usarLinksNoAcerto(s.lp, a.pagamentos, "AC"+agora, agoraSPLp(), a.por) : null) || s.lp, perfisRev:prT, internos:(s.internos||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {status:"acertado", acerto:resI, acertoAssinado:!!a.assinatura, formSnapshot:a.formSnapshot||null, bipou:a.bipou||x.bipou||"", atendeu:x.atendeu||a.por||"", kitNovo:!!a.kitNovoOk, continua:a.continuidade||"", novaCond:a.novaCond||"", vendaApp:a.vendaBruta||0}); }),
         acertosConsignado:[regI].concat(aplicarAbatimento(s.acertosConsignado||[], abI, (a.pagamentos||[])[0], regI.id, agora))},
         "Acerto de "+it.nome+" registrado: "+BK(resI.valorAcerto)+" (comissão "+BK(resI.comissao)+")");

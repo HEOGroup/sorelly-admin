@@ -43,6 +43,20 @@ function e(tipo, props){
   return eBase.apply(null, args);
 }
 
+// Quadro de assinatura da ciência das regras (12/11/2026, Edna): a revendedora que não quis esperar a explicação assina que está ciente.
+function QuadroCiencia(p){
+  var ref = useRef(null), des = useRef(false);
+  var ponto = function(ev){ var c = ref.current, r = c.getBoundingClientRect(); return [(ev.clientX-r.left)*c.width/r.width, (ev.clientY-r.top)*c.height/r.height]; };
+  var limpar = function(){ var c = ref.current; c.getContext("2d").clearRect(0,0,c.width,c.height); p.onChange(null); };
+  return e("div",{className:"flex w-full max-w-md flex-col gap-1.5"},
+    e("canvas",{ref:ref, width:560, height:150, "aria-label":"Quadro de assinatura da revendedora", className:"h-[110px] w-full touch-none rounded-md border border-dashed border-primary/60 bg-white",
+      onPointerDown:function(ev){ des.current = true; ev.currentTarget.setPointerCapture(ev.pointerId); var g = ref.current.getContext("2d"), pt = ponto(ev);
+        g.lineWidth = 2.5; g.lineCap = "round"; g.strokeStyle = "#1B1409"; g.beginPath(); g.moveTo(pt[0], pt[1]); },
+      onPointerMove:function(ev){ if(!des.current) return; var g = ref.current.getContext("2d"), pt = ponto(ev); g.lineTo(pt[0], pt[1]); g.stroke(); },
+      onPointerUp:function(){ if(!des.current) return; des.current = false; p.onChange(ref.current.toDataURL("image/png")); }}),
+    e("button",{type:"button", onClick:limpar, className:"h-8 self-center rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar assinatura"));
+}
+
 var QUEM_MONTA = [ATENDENTE_PECAS].concat(MONTADORAS);   // quem acompanha a revendedora na montagem do kit: Leci e as meninas da produção
 var LANC_VAZIO = {forma:"", descricao:"", parcelas:1, data:isoDia(new Date()), valor:null, anexo:null};
 var BRINDE_VAZIO = {cat:"normal", codigo:"", valor:null, origem:"nova"};
@@ -142,6 +156,8 @@ function AtendimentoInterno(){
   var bn = useState({codigo:"", valor:null}), bnIn = bn[0], setBnIn = bn[1];       // lançar brinde Normal
   var bb = useState({codigo:"", valor:null}), bbIn = bb[0], setBbIn = bb[1];       // lançar brinde Select (BB)
   var ar = useState("agora"), abaRegras = ar[0], setAbaRegras = ar[1];             // regras: passar agora ou ver o termo do mês anterior
+  var ac = useState(null), assCiente = ac[0], setAssCiente = ac[1];               // assinatura de ciência (revendedora não quis esperar a explicação)
+  var ao = useState(false), cienteAberta = ao[0], setCienteAberta = ao[1];
   var rm = useState({}), regraMais = rm[0], setRegraMais = rm[1];                  // "ver mais" de cada regra
   var up = function(patch){ setForm(function(f){ return Object.assign({}, f, patch); }); };
 
@@ -150,11 +166,13 @@ function AtendimentoInterno(){
   var aiS = useState(false), avisoIni = aiS[0], setAvisoIni = aiS[1];   // janela "leia antes de começar a escolher" (09/11/2026)
   var agenda = dedupeRev(internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); }));
   var sel = internos.find(function(x){ return x.id===s.intSel; }) || null;
+  // 12/11/2026: diferença do brinde que ficou fora da fila do Direcionar volta para a fila (o reducer só age se faltar mesmo)
+  useEffect(function(){ if(sel && (s.lancFin||[]).some(function(x){ return x.internoId===sel.id && !x.conferido; })) d({type:"FIN_FILA", internoId:sel.id}); }, [sel && sel.id, s.lancFin]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ if(!(sel && sel.escolhaIni && !sel.escolhaFim)) return; var i = setInterval(function(){ tick(function(n){ return n+1; }); }, 1000); return function(){ clearInterval(i); }; },
     [sel ? sel.id : null, sel ? sel.escolhaIni : null, sel ? sel.escolhaFim : null]);
   useEffect(function(){
     setForm(FORM_ACERTO_VAZIO); setBrindeIn(BRINDE_VAZIO); setLancForm(LANC_VAZIO); setNegociarAberto(false); setRegForm({isenta:false, motivo:""});
-    setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({});
+    setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({}); setAssCiente(null); setCienteAberta(false);
     if(sel && sel.status==="acertado" && sel.formSnapshot) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.formSnapshot));
     else if(sel && sel.rascunho) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho));   // volta de onde parou (ex.: esperando o financeiro confirmar)
     else if(sel && sel.vendaApp>0) setForm(Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:sel.vendaApp}));   // o valor vendido vem direto do app da revendedora
@@ -491,8 +509,6 @@ function AtendimentoInterno(){
   var fechouPagamentos = dv.quitado || dv.acordoValido || form.recusouNegociar;
   var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito;
   var linhasPagFin = lancFin ? lancFin.linhas.filter(function(l){ return l.tipo==="pagamento"; }) : [];
-  // os campos de brinde só abrem quando o financeiro confirmou TODOS os pagamentos enviados (e nada mudou depois)
-  var pagLiberados = !!lancFin && !!lancFin.etapaComprovantes && linhasPagFin.length>0 && chaveLinhas(linhasPagEnvio)===chaveLinhas(linhasPagFin);
   var semPendencia = function(ls){ return ls.length>0 && ls.every(function(l){ return l.isento || (statusLinhaFin(l)!=="aguardando" && (l.partes||[]).every(function(q){ return !!q.comprovante; })); }); };
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
   var tudoComComprovante = !!lancFin && !alterado && semPendencia(lancFin.linhas);     // inclui a diferença do brinde, se houver
@@ -561,7 +577,7 @@ function AtendimentoInterno(){
   var cb = dv.confBrinde;
   var addBrinde = function(cat, st, setSt){ if(jaFeito) return; var ok = codigoBrindeValido(cat, st.codigo) && st.valor>0; if(!ok) return;
     up({brindes:form.brindes.concat([{cat:cat, codigo:normalizarCodigo(st.codigo), valor:st.valor, origem:"nova"}])}); setSt({codigo:"", valor:null, cod:false}); };
-  var travaBrinde = !jaFeito && !pagLiberados;                     // campos de brinde só depois dos pagamentos confirmados
+  var travaBrinde = false;                                         // 12/11/2026: brinde se lança ANTES do pagamento (o financeiro demora); a entrega continua só depois de pagar
   // por que o brinde diminuiu (remarcação, chegada atrasada, pagamento incompleto)
   var motivosBr = [];
   if(pa && pa.descontoRemarcacao && pa.descontoRemarcacao.brindePct>0) motivosBr.push("Remarcação −"+pa.descontoRemarcacao.brindePct+"%");
@@ -595,7 +611,6 @@ function AtendimentoInterno(){
   var pBrindes = !pa ? e("p",{className:"rounded-lg border border-dashed border-border p-3 text-center text-[13px] text-muted-foreground"},"Lance as vendas e os pagamentos primeiro.")
     : dv.brindeBloqueio ? e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : ""))
     : e(React.Fragment,null,
-        travaBrinde && e("p",{className:"rounded-lg bg-[#E8B84B]/10 px-3 py-1.5 text-center text-[13px] font-semibold text-primary"},"Os campos de brinde abrem quando o financeiro confirmar todos os pagamentos."),
         e("p",{className:"rounded-lg border border-[#E8B84B]/60 bg-[#E8B84B]/15 px-3 py-1.5 text-center text-[13px] font-bold text-white"},"⚠ "+AVISO_BB+" Pode ser brinco, anel, colar ou qualquer outra peça."),
         e("div",{className:"grid grid-cols-1 gap-2.5 md:grid-cols-2 "+(travaBrinde ? "pointer-events-none opacity-50" : "")},
           colBrinde("normal","Brinde Normal", dv.libN, cb.lancadoNormal, cb.restanteNormal, bnIn, setBnIn, "#E8B84B"),
@@ -645,17 +660,17 @@ function AtendimentoInterno(){
     {t:"Peças fora do kit", x:"Tudo que não estiver no kit, com etiqueta, no momento do acerto é considerado vendido. Não existe a opção de ter tirado a peça como brinde."},
     {t:"Horário do acerto", x:"O acerto é no horário marcado, com tolerância de "+TOLERANCIA_CHEGADA_MIN+" minutos. Chegando depois disso, perde "+Math.round(DESCONTO_BRINDE_ATRASO*100)+"% do brinde."}]);
   var curto = function(x){ var p = String(x||"").split(/(?<=[.!?])\s/)[0]; return p.length>110 ? p.slice(0,107)+"…" : p; };
-  var cienteOk = regras.length>0 && regras.every(function(r,i){ return !!regrasOk[i]; });
+  var cienteOk = regras.length>0 && (!!assCiente || regras.every(function(r,i){ return !!regrasOk[i]; }));   // ou todas explicadas, ou a revendedora assinou a ciência
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
   var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : !!continuaEf)));
-  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:null, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
+  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
       condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
-      assinatura:null, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
+      assinatura:assCiente, semExplicacao:!!assCiente, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
   };
@@ -665,7 +680,7 @@ function AtendimentoInterno(){
   var dataBR = function(ts){ return new Date(ts).toLocaleDateString("pt-BR"); };
   // termo assinado antes (mês anterior): leu, confirmou e assinou todas as informações
   var painelTermo = termoAnt ? e("div",{className:"flex flex-col items-center gap-2 rounded-xl bg-success/10 p-3 ring-1 ring-success/30"},
-      e("b",{className:"text-[14px] text-success"},"✓ Leu, confirmou e assinou em "+dataBR(termoAnt.ts)),
+      e("b",{className:"text-[13px] text-success"},(termoAnt.semExplicacao ? "✓ Assinou a ciência das regras (sem a explicação) em " : "✓ Leu, confirmou e assinou em ")+dataBR(termoAnt.ts)),
       e("div",{className:"flex flex-wrap justify-center gap-1.5"}, (termoAnt.regras||[]).map(function(t,i){ return e("span",{key:i, className:"rounded-md bg-success/15 px-2 py-0.5 text-[13px] font-semibold text-success"}, "✓ "+t); })),
       termoAnt.assinatura && e("img",{src:termoAnt.assinatura, alt:"Assinatura de "+sel.nome, className:"h-24 rounded-lg bg-white p-1"}),
       e("p",{className:"text-[13px] text-muted-foreground"}, "Assinatura registrada"+(termoAnt.por ? " · atendida por "+termoAnt.por : ""))) : null;
@@ -967,7 +982,6 @@ function AtendimentoInterno(){
   var est2 = !pa ? e("div",{className:"flex flex-1 items-center justify-center p-6 text-[13px] text-muted-foreground"}, "Lance as vendas e os pagamentos primeiro.")
     : dv.brindeBloqueio ? e("div",{className:"p-3"}, e(Aviso,{tom:"vermelho"},"Brinde bloqueado — "+dv.brindeBloqueio.frase+(dv.faltaAtual>0.009 ? " (falta "+din(dv.faltaAtual)+")" : "")))
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},
-        travaBrinde && e("p",{className:"border-b border-foreground/25 bg-primary/10 px-3 py-1.5 text-center text-[13px] font-semibold text-primary"},"Os campos de brinde abrem quando o financeiro confirmar todos os pagamentos."),
         metades("@[52rem]:grid-cols-2 grid-cols-1", blocoBr("normal","Brinde normal", dv.libN, cb.lancadoNormal, bnIn, setBnIn), blocoBr("bb","Brinde select (BB)", dv.libS, cb.lancadoSelect, bbIn, setBbIn)),
         dv.excedenteBrinde>0 && e("p",{className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"}, "Diferença do brinde: "+din(dv.excedenteBrinde)+" soma no valor a pagar (financeiro define a conta)."));
 
@@ -1036,12 +1050,29 @@ function AtendimentoInterno(){
       e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full border text-[11px] font-semibold "+(lida ? "border-success bg-success text-white" : "border-foreground/25")}, lida ? "✓" : i+1),
       e("span",{className:"min-w-0 flex-1 truncate"}, r.t), versaoBase && versaoBase.novas && NOVAS_T[r.t] && pilula("Nova","border-primary text-primary")); }));
   var nums = numerosRegra(regA.t);
+  // 12/11/2026 (Edna): PDF com TODAS as regras e os números, para a revendedora que não quer esperar a explicação
+  var pdfRegras = function(){
+    var w = window.open("","_blank"); if(!w) return;
+    var esc = function(t){ return String(t==null ? "" : t).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); };
+    var corpoR = regras.map(function(r,i){ var n = numerosRegra(r.t);
+      return "<section><h2>"+(i+1)+" · "+esc(r.t)+"</h2><p>"+esc(r.x)+"</p>"
+        + (n.length ? "<div class='g c'><span>Em números</span><span>Valor</span></div>"+n.map(function(l){ return "<div class='g'><span>"+esc(l[0])+"</span><b>"+esc(l[1])+"</b></div>"; }).join("") : "")+"</section>"; }).join("");
+    w.document.write("<html><head><meta charset='utf-8'><title>Regras do consignado</title><style>body{font:13px Inter,Arial,sans-serif;margin:32px;color:#111}h1{font-size:18px;margin:0 0 4px}h2{font-size:14px;margin:0 0 4px}section{margin:14px 0;page-break-inside:avoid}p{margin:0 0 6px;line-height:1.5}.g{display:grid;grid-template-columns:1.5fr 1fr;border:1px solid #bbb;border-top:0;text-align:center}.g>*{padding:6px 8px}.g>*+*{border-left:1px solid #bbb}.c{background:#eee;font-size:11px;text-transform:uppercase;font-weight:700;border-top:1px solid #bbb}</style></head><body><h1>Regras do consignado · Sorelly Joias</h1><div>Revendedora: <b>"+esc(sel.nome)+"</b> · Data: "+new Date().toLocaleDateString("pt-BR")+(modalidade==="prata" ? " · Kit 100% Prata" : "")+"</div>"+corpoR+"</body></html>");
+    w.document.close(); setTimeout(function(){ w.print(); }, 300);
+  };
   var tabRegra = e("div",{className:CTB},
     e("div",{className:"flex-none p-3 text-left text-[13px] leading-relaxed"}, versaoBase && versaoBase.novas && NOVAS_T[regA.t] && e("span",{className:"mb-1.5 inline-flex"}, pilula("Regra nova (27/10/2026)","border-primary text-primary")), e("p",null, regA.x)),
     nums.length>0 && e("div",{className:CABT+" grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"}, e("span",null,"Em números"), e("span",null,"Valor")),
     nums.map(function(x,i){ return e("div",{key:i, className:LIN+" grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]"+(i%2 ? " bg-white/[0.03]" : "")}, e("span",{className:"whitespace-nowrap"},x[0]), e("b",{className:"text-[13px] font-semibold"}, x[1])); }),
     e("div",{className:"flex-1"}),
-    e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"}, e("button",{type:"button", onClick:marcarLida, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(regrasOk[rSel] ? "border-foreground/25 bg-card" : "border-primary bg-primary text-primary-foreground")}, regrasOk[rSel] ? "✓ Regra lida · desfazer" : "Li e expliquei esta regra"),
+    !jaFeito && e("div",{className:"flex flex-col items-center gap-2 border-t border-foreground/25 px-3 py-2 text-center text-[13px]"},
+      assCiente ? e("p",{className:"font-semibold text-success"}, "✓ Ciência assinada: a revendedora declarou estar ciente de todas as regras.")
+      : !cienteAberta ? e("button",{type:"button", onClick:function(){ setCienteAberta(true); }, className:"h-8 rounded-md border border-primary px-4 text-[13px] font-semibold text-primary hover:bg-primary/10"}, "Não quis esperar a explicação · assinar ciência")
+      : e(React.Fragment,null,
+          e("p",{className:"font-semibold"}, "As regras estão no app da revendedora. Ela precisa assinar que está ciente de todas as regras do consignado."),
+          e(QuadroCiencia,{onChange:setAssCiente})),
+      (assCiente || cienteAberta) && e("button",{type:"button", onClick:function(){ setAssCiente(null); setCienteAberta(false); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar e explicar as regras")),
+    e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"}, e("button",{type:"button", onClick:pdfRegras, className:"h-8 rounded-md border border-foreground/25 bg-card px-4 text-[13px] font-medium hover:bg-white/10"}, "Gerar PDF das regras"), e("button",{type:"button", onClick:marcarLida, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(regrasOk[rSel] ? "border-foreground/25 bg-card" : "border-primary bg-primary text-primary-foreground")}, regrasOk[rSel] ? "✓ Regra lida · desfazer" : "Li e expliquei esta regra"),
       cienteOk && e("button",{type:"button", disabled:!pronto, onClick:registrar, title:!temVenda ? "Falta o valor vendido." : !continuaEf ? "Falta escolher se ela continua (condicional nova)." : "Registra o atendimento", className:"h-8 rounded-md bg-primary px-4 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, retornando ? "Finalizar atendimento" : "Registrar acerto")));
   var est4 = (jaFeito || msgs) ? e("div",{className:"flex flex-1 flex-col gap-3 p-3"}, pRegras)
     : e("div",{className:"flex min-w-0 flex-1 flex-col"},

@@ -162,7 +162,7 @@ function dpReduz(s, a){
     // pedido do ATENDIMENTO INTERNO (Marcus, 09/11/2026): a funcionária deu "OK, enviar ao financeiro" e algum pagamento ainda não tem conta (Pix, link).
     // Entra na fila do Direcionar para TODO o Financeiro (servidor, módulo "pag"); ao confirmar, a conta volta para a Atendimento Sorelly (reducer DP).
     // a.abertas = [{forma, valor, linha}] (linha = posição no lançamento s.lancFin), a.pagos = o que já está resolvido (dinheiro, cartão na maquininha única...)
-    case "int_pedir": { var idI = "PI"+a.internoId, pI = pix(idI);
+    case "int_pedir": { var idI = a.idPedido || "PI"+a.internoId, pI = pix(idI);
       if(!(a.abertas||[]).length){ if(pI && pI.status==="fila") dp.pix = dp.pix.filter(function(x){ return x.id!==idI; }); return ok(); }
       var valI = r2(a.abertas.reduce(function(t, l){ return t+l.valor; }, 0));
       var novoI = {id:idI, origem:"interno", internoId:a.internoId, atendente:a.atendente||"", quem:a.nome||"", vendas:a.vendas||0, aPagar:a.aPagar||valI, pagos:a.pagos||[], valor:valI,

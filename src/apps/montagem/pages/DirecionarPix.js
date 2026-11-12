@@ -25,6 +25,7 @@ import { e, Fragment, useEffect, useState } from "@/shared/react";
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var hm = function(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2, "0")+":"+String(d.getMinutes()).padStart(2, "0"); };
 var hmH = function(ts){ var d = new Date(ts); return String(d.getHours()).padStart(2, "0")+"h"+String(d.getMinutes()).padStart(2, "0"); };
+var ateNomes = function(n, k){ var w = String(n||"").trim().split(/\s+/), q = 0, out = [], part = /^(de|da|do|dos|das|e)$/i; for(var i = 0; i<w.length; i++){ var nome = !part.test(w[i]); if(nome && q===k) break; if(nome) q++; out.push(w[i]); } while(out.length && part.test(out[out.length-1])) out.pop(); return out.join(" "); };   // só os primeiros nomes (Direcionados)
 var curto = function(ts){ var m = Math.max(0, Math.floor((Date.now()-ts)/60000)); return m<1 ? "agora" : m<60 ? m+" min" : Math.floor(m/60)+" h "+String(m%60).padStart(2, "0"); };
 var haQuanto = function(ts){ var m = Math.max(0, Math.floor((Date.now()-ts)/60000)); return m<1 ? "agora" : m<60 ? "há "+m+" min" : "há "+Math.floor(m/60)+" h "+(m%60)+" min"; };
 // urgência pela espera do Pix: até 30 min verde, até 1 h amarelo, depois vermelho (pedido do Marcus 24/10/2026: bater o olho e saber o que é urgente)
@@ -356,7 +357,7 @@ function AbaDirecionar(){
     }
     var span = {gridRow:"span "+linhas.length};   // Pagamento e Modo ocupam todas as linhas da parte quando ela é dividida
     return e(Fragment,{key:id}, e("div",{className:CEL, style:span}, celPag), e("div",{className:CEL, style:span}, chave),
-      linhas.map(function(L){ return [e("div",{key:L.k+"c", className:CEL}, L.b), e("div",{key:L.k+"v", className:CEL}, L.c2), e("div",{key:L.k+"s", className:CEL}, L.d2), e("div",{key:L.k+"a", className:CEL}, L.e2)]; }));
+      linhas.map(function(L){ return [e("div",{key:L.k+"c", className:CEL}, L.b), e("div",{key:L.k+"v", className:CEL}, L.c2), e("div",{key:L.k+"s", className:CEL}, L.d2), e("div",{key:L.k+"a", className:CEL+" sticky right-0 z-10 border-l border-border"}, L.e2)]; }));   // coluna Confirmar fixa à direita: em tela estreita o botão nunca some (Marcus, 12/11/2026)
   };
   var RL = function(rot, val, cor){ return e(Fragment,{key:"rl"+rot}, e("div",{className:CEL+" border-b border-border"}, rot), e("div",{className:CEL+" border-b border-l border-border font-semibold tabular-nums", style:cor ? {color:cor} : undefined}, val)); };   // Resumo: linhas todas da mesma espessura e Falta pagar na cor normal (Marcus, 12/11/2026)
   var corFalta = !div.length ? "#f5c14b" : fechado ? "var(--positivo)" : "#f5c14b";
@@ -383,7 +384,7 @@ function AbaDirecionar(){
           c.edita ? e("button",{type:"button", onClick:confirmar, disabled:!div.length, className:BOTAO_OK+"w-full "+(div.length ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-border bg-card text-foreground opacity-60")}, "OK · enviar") : null,
           avisoTxt.t!=="—" ? e("span",{className:"text-center text-[13px] font-semibold", style:avisoTxt.cor ? {color:avisoTxt.cor} : undefined}, avisoTxt.t) : null)),
       e("div",{className:"min-w-0 overflow-x-auto bg-card"}, e("div",{className:"grid h-full gap-px bg-border", style:{gridTemplateColumns:GR, gridTemplateRows:"30px", minWidth:1234}},
-        ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Confirmar"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC}, t); }),
+        ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Confirmar"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC+(i===5 ? " sticky right-0 z-10" : "")}, t); }),
         partes.map(renderParte)))),
     ));
   return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
@@ -392,9 +393,29 @@ function AbaDirecionar(){
     pedido,
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
     // ── feitos
-    feitos.length>0 && Painel("Direcionados", "Pedidos", String(feitos.length), "#4ade80", e(TabelaP,{minW:720, cols:[{t:"Hora", w:70},{t:"De"},{t:"Valor", n:true, w:130},{t:"Destinos"},{t:"Quem confirmou", w:140},{t:"", w:90}]}, feitos.map(function(x){
-      return e(Tr,{key:x.id}, e(Td,null, x.confirmadoEm ? hm(x.confirmadoEm) : "—"), e(Td,{forte:true}, x.quem), e(Td,{n:true}, BKC(x.valor)), e(Td,{title:x.divisoes.map(function(d){ return destinoDe(d.destinoId).nome+" "+BKC(d.valor); }).join(" · ")}, x.divisoes.map(function(d){ return destinoDe(d.destinoId).nome+" "+BKC(d.valor); }).join(" · ")), e(Td,null, x.confirmadoPor || "—"),
-        e("td",{className:"h-8 border-b border-border px-2 text-right"}, c.edita ? e("button",{type:"button", onClick:function(){ c.d({type:"DP", op:"reabre", id:x.id}); }, className:"h-7 rounded-md border border-border px-2 text-[13px] hover:bg-white/10"}, "Reabrir") : null)); }))));
+    feitos.length>0 && (function(){
+      // DIRECIONADOS no padrão (Marcus, 12/11/2026): só o título, uma linha por destino, revendedora (4 primeiros nomes), conta escrita pela regra única e Reabrir pequeno, só até o pagamento ser conferido
+      var lancs = s.lancFin || [], conferido = function(x){ var l = lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0]; return !!(l && l.conferido); };
+      // SITUAÇÃO (Marcus, 12/11/2026: "ali não é só direcionar, é direcionar, confirmar e receber o comprovante"): o pedido só sai de pendente quando o financeiro confere o pagamento
+      // SITUAÇÃO (Marcus, 12/11/2026): palavra curta, uma cor para cada etapa, e a coluna Com diz quem tem de agir. Só sai de pendente quando o financeiro confere.
+      var situ = function(x){ var l = lancs.filter(function(q){ return x.internoId ? q.internoId===x.internoId : (x.origem==="rep" && (q.id==="LFR_"+x.kitId || q.repAcertoId===x.kitId)); })[0];
+        if(l && l.conferido) return ["Conferido", "—"];
+        if(x.internoId){ if(!l) return ["Comprovante", "Atendente"];
+          var temComp = (l.linhas||[]).filter(function(q){ return q.tipo==="pagamento" && !q.isento; }).every(function(q){ return (q.partes||[]).every(function(p){ return !!p.comprovante; }); });
+          if(!l.etapaComprovantes) return temComp ? ["Aguarda OK", "Atendente"] : ["Comprovante", "Atendente"];
+          if(!l.finalizado) return ["Finalizar", "Atendente"];
+          return ["Conferir", "Financeiro"]; }
+        return (x.comprovante || (l && l.finalizado)) ? ["Conferir", "Financeiro"] : ["Comprovante", "Representante"]; };
+      var COR_SIT = {"Comprovante":"#F87171", "Aguarda OK":"#FACC15", "Finalizar":"#38BDF8", "Conferir":"#E879F9", "Conferido":"#4ADE80"};   // cinco cores bem diferentes só na letra (vermelho, amarelo, azul, magenta, verde); Marcus, 12/11/2026: nada de bloco por fora
+      var dtx = function(ts){ var q = new Date(ts); return String(q.getDate()).padStart(2, "0")+"/"+String(q.getMonth()+1).padStart(2, "0")+"/"+q.getFullYear(); };
+      // uma linha por pedido (o destino pode ser vários, então não entra aqui): data, hora, revendedora, valor, quem direcionou, situação e com quem está
+      var linhas = feitos.map(function(x){ var st = situ(x); return {id:x.id, sit:st[0], com:st[1], data:x.confirmadoEm ? dtx(x.confirmadoEm) : "—", hora:x.confirmadoEm ? hm(x.confirmadoEm) : "—", rev:ateNomes(x.origem==="rep" ? (x.revendedora || x.quem) : x.quem, 4), valor:BKC(x.valor), quem:x.confirmadoPor || "—", reabre:(c.edita && st[0]!=="Conferido") ? x.id : "", x:x}; });
+      linhas = linhas.filter(function(l){ return l.sit!=="Conferido"; }).concat(linhas.filter(function(l){ return l.sit==="Conferido"; }));   // pendentes primeiro, conferidos depois (a ordem por hora se mantém dentro de cada grupo)
+      return e(BlocoPainel,{titulo:"Direcionados", compacto:true}, e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", vazio:"Nada direcionado", linhas:linhas, cols:[{k:"data", t:"Data"}, {k:"hora", t:"Hora"}, {k:"rev", t:"Revendedora"}, {k:"valor", t:"Valor"}, {k:"quem", t:"Quem direcionou"},
+        {k:"sit", t:"Situação", render:function(v){ return e("span",{className:"font-semibold", style:{color:COR_SIT[v]}}, v); }},
+        {k:"com", t:"Com"},
+        {k:"reabre", t:"Reabrir", render:function(v){ return v ? e("button",{type:"button", onClick:function(){ c.d({type:"DP", op:"reabre", id:v}); }, className:"h-[18px] whitespace-nowrap rounded-md border border-border px-2 text-[11px] hover:bg-white/10"}, "Reabrir") : "—"; }}]}));
+    })());
 }
 
 // ── Regras do Pix: lista em ordem de prioridade, com liga/desliga

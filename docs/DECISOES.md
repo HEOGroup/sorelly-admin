@@ -4,6 +4,13 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Atendimento interno e Direcionar: brinde, ciência das regras, fila)
+- **Brinde antes do pagamento (Marcus, a pedido da Edna):** os campos de brinde abrem desde o começo; a entrega continua só depois do pagamento. Vale no lugar da trava de 05/10/2026.
+- **Revendedora que não quer esperar a explicação das regras:** assina a ciência (as regras estão no app dela e saem em PDF). Quem recebe a explicação continua sem assinar. Fica em `termoConsignado.assinatura` com `semExplicacao:true`.
+- **Direcionar é direcionar, confirmar e receber o comprovante (Marcus):** o pedido só sai de pendente quando o financeiro confere. Coluna Situação com palavra curta e cor só na letra (Comprovante vermelho, Aguarda OK amarelo, Finalizar azul, Conferir magenta, Conferido verde) e coluna Com (quem age). Direcionados tem uma linha por pedido, sem Destino, e mostra Quem direcionou.
+- **A diferença do brinde também sobe para o Direcionar** (`FIN_ENVIAR` e `FIN_FILA` em `reducer.js`; pedido à parte "PB"+id).
+- **Coluna Confirmar do pedido aberto não some em tela estreita** (fica fixa à direita).
+
 ## 12/11/2026 (Financeiro: menu novo, Fiscal em setor próprio, títulos sem texto)
 - **Marcus: "vamos começar pela organização das telas".** (1) **Direcionar** é principal e fica em PRIMEIRO no menu do Financeiro; **Pagamentos** fica com Regras e contas e Controle de pagamentos. (2) **Resultado do mês** (pedido no mesmo dia), **Resumo do grupo**, **Previsão de caixa** e **Estoque Sorelly** e **Análise de custos** (saíram de Saldos e análises, que virou só **Saldo das contas**) vão para uma palavra nova, **Relatórios**, no final do menu. (3) **Fiscal** saiu do Financeiro e virou setor, abaixo dele (Painel e notas, Limite de faturamento, CNPJs). (4) **Atividades** foi excluída (tela e rota; os dados do módulo `finativ` continuam no banco). (5) **Toda tela do Financeiro e do Fiscal mostra só o nome, em 13 px; o texto de baixo do título saiu** (`PageHead` de `ui/page.js` faz isso pelo endereço /financeiro e /fiscal).
 - **O Financeiro sempre abre no Direcionar (Marcus, 12/11/2026: "100% das vezes").** Regra única `primeiraTelaDoSetor` (`navigation/setores.js`): abre a primeira tela do MENU do setor. Vale no menu lateral, na página Início e no endereço só com o nome do setor (/financeiro). Vale para todos os setores.
