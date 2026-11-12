@@ -10,6 +10,7 @@ import { FILTRO_PADRAO, FORMAS, FORN_CATS, F_PER, F_SIT, F_TIPO, NF_LABEL, PT_FO
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { e, useState } from "@/shared/react";
 import { PointPainel } from "./Point";
 import { PainelPontual } from "./Resumo";
@@ -103,8 +104,19 @@ function AbaPfNeg(){
     ac && e(JanelaAcerto,{key:"ma", c:c, pf:pf, ac:ac, setAc:setAc})
   ];
 
+  // ---------- pedidos lançados (chamado do Nickolas, 12/11/2026): lista do último para o primeiro, para conferir o que foi lançado; clicar abre o pedido (ver, editar, dar baixa) ----------
+  var mesHoje = hojeIso().slice(0,7);
+  var listaL = (fId ? pf.pedidos.filter(function(p){ return p.fornId===fId; }) : pf.pedidos).slice().sort(function(a, b){ return b.id-a.id; });
+  var COLS_L = [{k:"id", t:"Nº", fmt:function(v){ return "#"+v; }}, {k:"data", t:"Data", fmt:dbr}, {k:"forn", t:"Fornecedor"}, {k:"numero", t:"Pedido"}, {k:"total", t:"Total", fmt:brl}, {k:"comNF", t:"Com NF", fmt:brl}, {k:"semNF", t:"Sem NF", fmt:brl}, {k:"pago", t:"Pago", fmt:brl}, {k:"falta", t:"Falta", fmt:brl}, {k:"parcelas", t:"Parcelas"}];
+  var linhasL = listaL.map(function(pd){
+    var f = forn(pf, pd.fornId), pg = pd.parcelas.reduce(function(t, x){ return t+(x.status==="Pago" || (FORMAS[x.forma].nf==="com" && x.venc.slice(0,7)<mesHoje) ? x.valor : 0); }, 0);
+    return {id:pd.id, data:pd.data, forn:f ? f.nome : "—", numero:pd.numero || "—", total:pd.total, comNF:pd.comNF, semNF:pd.semNF, pago:pg, falta:Math.max(0, pd.total-pg), parcelas:pd.parcelas.length || "sem parcela"};
+  });
+  var lancados = !listaL.length ? null : e(BlocoBarra,{cor:"azul", t:"Pedidos lançados", sub:"Do último para o primeiro. Clique no pedido para ver, editar ou dar baixa.", dir:String(listaL.length)},
+    e("div",{className:"p-2"}, e(TabelaPlanilha,{cols:COLS_L, linhas:linhasL, chave:"id", escura:true, grade:true, limite:30, aoClicar:function(l){ setDetId(l.id); }, vazio:"Nenhum pedido lançado."})));
+
   if(ehPoint) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PointPainel,{c:c}), modais);
-  if(fId===pf.mqFornId) return e("div",{className:"flex flex-col gap-4"}, topo, barra, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt}), modais);
+  if(fId===pf.mqFornId) return e("div",{className:"flex flex-col gap-4"}, topo, barra, lancados, e(PainelPontual,{pf:pf, f:fo, hoje:hojeIso(), abrirDetalhe:setDetId, abertos:abPt, alterna:alPt}), modais);
 
   // ---------- dados da tela ----------
   var ags = agregar(pf, coletar(pf, filtro, fId)), tot = painelTotais(ags);
@@ -315,7 +327,7 @@ function AbaPfNeg(){
     pedidos = e("div",{className:"flex flex-col gap-4"}, parts);
   }
 
-  return e("div",{className:"flex flex-col gap-4"}, topo, barra, alertas, prestPend, painel, resumo, pedidos, modais);
+  return e("div",{className:"flex flex-col gap-4"}, topo, barra, lancados, alertas, prestPend, painel, resumo, pedidos, modais);
 }
 
 // ───────────────── Janela: Lançar pedido ─────────────────

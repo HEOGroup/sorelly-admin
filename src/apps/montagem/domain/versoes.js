@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.75", data:"2026-11-12", titulo:"Pagamentos a fornecedores: boleto de mês passado, lista de pedidos e descrição da dívida", itens:[
+  {tipo:"correção", area:"Pagamentos a fornecedores › Negociações", txt:"Resumo da negociação (ex.: Art Ello): parcela com nota (boleto) que venceu antes do mês atual agora conta como paga, a mesma regra da planilha e da Geral da Pontual. Antes ela ficava em aberto para sempre, porque boleto não tem baixa no sistema. A dívida da Art Ello caiu de R$ 82.258,41 para R$ 76.727,41."},
+  {tipo:"novo", area:"Pagamentos a fornecedores › Negociações", txt:"Novo bloco Pedidos lançados no alto da tela: lista do último para o primeiro, com data, fornecedor, pedido, total, com nota, sem nota, pago, falta e número de parcelas. Clicar no pedido abre o detalhe (ver, editar, dar baixa). Mostra os 30 últimos e tem botão para ver todos."},
+  {tipo:"novo", area:"Financeiro familiar › Prestadores", txt:"A dívida do prestador agora tem o campo Descrição da dívida, que aparece também na lista de dívidas do prestador."},
+ ]},
  {v:"0.18.74", data:"2026-11-12", titulo:"Pedidos de bruto: Chegou no banho não pula mais para Banho", itens:[
   {tipo:"correção", area:"Cadastro de peças → Pedidos", txt:"Pedido que a Rayssa deixava em Chegou no banho, com data de chegada até 03/11 (caso Mega Sul, chegada em 28/10), voltava sozinho para Banho em computador que não tinha a marca da correção antiga. Essa troca automática foi removida: ela já tinha rodado no servidor. Preencher Chegou na Pontual ou Chegou na Ellos continua levando o pedido para Chegou no banho, com a data da chegada."},
  ]},
