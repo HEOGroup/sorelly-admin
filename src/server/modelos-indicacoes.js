@@ -49,19 +49,35 @@ async function ler(rota, tentativa = 0) {
 }
 
 const STATUS = ["criado", "em_andamento", "cadastro_aprovado", "finalizado", "cancelado"];
-const cache = new Map();   // id -> {em, dados}
+const cache = new Map();   // id -> {em, todas}
 const VALE = 5 * 60 * 1000;
 
-// conta as indicações de UMA revendedora do app (todas as páginas, 200 por vez)
-async function contarUma(id) {
-  const c = Object.fromEntries(STATUS.map((s) => [s, 0])); c.total = 0;
+// todas as indicações de UMA revendedora do app (todas as páginas, 200 por vez), com cache de 5 minutos
+async function todasDe(id, forcar) {
+  const g = cache.get(id);
+  if (!forcar && g && Date.now() - g.em < VALE) return g.todas;
+  const todas = [];
   for (let offset = 0, mais = true; mais && offset < 5000; offset += 200) {
     const j = await ler("/admin/indicacoes?revendedoraId=" + id + "&limit=200&offset=" + offset);
-    for (const x of j.indicacoes || []) { if (c[x.status] !== undefined) c[x.status]++; c.total++; }
+    todas.push(...(j.indicacoes || []));
     mais = !!(j.paginacao && j.paginacao.hasMore);
   }
+  cache.set(id, { em: Date.now(), todas });
+  return todas;
+}
+function contar(todas) {
+  const c = Object.fromEntries(STATUS.map((s) => [s, 0])); c.total = 0;
+  for (const x of todas) { if (c[x.status] !== undefined) c[x.status]++; c.total++; }
   c.trouxe = c.cadastro_aprovado + c.finalizado;
   return c;
+}
+
+// quem foi indicada por essa influencer: nome e WhatsApp completos (pedido do Marcus, 12/11/2026), com a situação de cada uma
+export async function listarIndicadas(id, { forcar = false } = {}) {
+  const n = Number(id);
+  if (!Number.isInteger(n) || n <= 0) throw Object.assign(new Error("ID no app inválido."), { statusCode: 400 });
+  const todas = await todasDe(n, forcar);
+  return todas.map((x) => ({ id: x.id, nome: (x.indicada && x.indicada.nome) || "", whatsapp: (x.indicada && x.indicada.whatsapp) || "", status: x.status, statusLabel: x.statusLabel || x.status, criadoEm: x.criadoEm, statusAlteradoEm: x.statusAlteradoEm }));
 }
 
 // ids = lista de números (ID no app de cada influencer). Devolve {id: contagem}; quem falhar vem com {erro}.
@@ -69,9 +85,7 @@ export async function contarIndicacoes(ids, { forcar = false } = {}) {
   const lista = [...new Set((ids || []).map(Number).filter((n) => Number.isInteger(n) && n > 0))].slice(0, 60);
   const saida = {};
   for (const id of lista) {
-    const g = cache.get(id);
-    if (!forcar && g && Date.now() - g.em < VALE) { saida[id] = g.dados; continue; }
-    try { const dados = await contarUma(id); cache.set(id, { em: Date.now(), dados }); saida[id] = dados; }
+    try { saida[id] = contar(await todasDe(id, forcar)); }
     catch (x) { saida[id] = { erro: (x && x.message) || "falhou" }; }
   }
   return saida;

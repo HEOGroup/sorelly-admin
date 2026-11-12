@@ -39,7 +39,7 @@ import { gaReduz } from "@/apps/montagem/domain/garantia";
 import { melReduz } from "@/apps/montagem/domain/melhorias";
 import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
-import { modMigrar, modReduz } from "@/apps/montagem/domain/modelas";
+import { modReduz } from "@/apps/montagem/domain/modelas";
 import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxReduz } from "@/apps/montagem/domain/fiscal";
@@ -252,7 +252,7 @@ function reducer(s, a){
       return mudouDm ? Object.assign({}, s, {contasPagasDiario:cdm}) : s;
     }
     case "SYNC_MODULO": {
-      if(a.chave==="mod") return Object.assign({}, s, {mod:modMigrar(a.conteudo)});   // Modelos: passa pela migração (entra a semente dos dados reais locais, uma vez)
+      if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
       if(a.chave==="revdia"){
         var pRD = {};
         if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);

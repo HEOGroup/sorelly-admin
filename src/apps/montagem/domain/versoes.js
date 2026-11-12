@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.77", data:"2026-11-12", titulo:"Modelos: regra das influencers, ficha com abas e sincronia estável", itens:[
+  {tipo:"regra", area:"Marketing › Modelos › Influencers", txt:"R$ 250,00 em joias (a preço de venda) por indicação com cadastro aprovado, e mais R$ 1.000,00 a cada 10 aprovadas. A tabela mostra Aprovadas, Ganhou em joias e Falta enviar. Os campos de meta e prêmio saíram."},
+  {tipo:"novo", area:"Marketing › Modelos › Influencers", txt:"A ficha da influencer cadastrada ganhou abas: Dados, Indicadas (nome e WhatsApp completos lidos do app, com aviso de número repetido) e Envios de joias (registro de cada envio; a soma vira o enviado)."},
+  {tipo:"correção", area:"Marketing › Modelos", txt:"O servidor regravava as Modelos sem parar e uma influencer de teste sumiu duas vezes: duas versões desfaziam o trabalho uma da outra, e o que chegava do servidor passava por uma migração. Agora o que chega só é juntado e a versão ficou parada."},
+ ]},
  {v:"0.18.76", data:"2026-11-12", titulo:"Direcionar Pix: Contas a pagar ao vivo, de novembro", itens:[
   {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"O bloco Contas a pagar lia um resumo da planilha de 30/10, por isso mostrava só outubro vencido (Pontual 11 a 20 e 21 a 30, Office Graf) e nenhum fornecedor de novembro. Agora a lista sai dos pedidos e pagamentos do próprio sistema, a mesma conta de Pagamentos a fornecedores: janelas do mês atual e as dos 3 meses anteriores que ainda têm saldo. Já aparecem Pontual 11 a 20 (R$ 45.378,31) e 21 a 30 (R$ 66.273,81), Point, Ellos, Xangai, Mega Sul, Art Ello e Office Graf."},
  ]},

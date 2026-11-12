@@ -4,6 +4,13 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Influencers: regra dos ganhos e ficha com abas)
+- Marcus: cada influencer ganha **R$ 250,00 em joias, a preço de venda, por indicação com cadastro aprovado**, e **mais R$ 1.000,00 a cada 10 aprovadas**. Aprovada = cadastro aprovado + kit entregue (lido do app pelo ID da influencer). Os valores ficam em `REGRA_INFLUENCER` (`domain/modelas.js`).
+- A ficha da influencer cadastrada tem 3 abas: Dados, Indicadas (nome e WhatsApp completos, lidos do app, só leitura) e Envios de joias (cada envio com data, valor e o que foi; a soma é o "enviado" e o "falta enviar" sai da conta). Opção A escolhida pelo Marcus (uma tela só, sem página nova).
+- Atenção: o app já tem o Indique & Ganhe (1.000 moedas por indicada com kit entregue, trocáveis por joias). A influencer com conta no app pode ganhar as moedas além da regra acima; o Marcus ainda decide se aceita ou pede ao Leonardo para excluir as influencers.
+- Cuidado técnico: nas Modelos o que chega do servidor só é juntado (`Object.assign`), nunca passa por migração. Ver `docs/DECISOES.md` e a memória sobre sync de módulo novo.
+
+
 ## 12/11/2026 (Anexo de arquivo grande)
 - **Limite do anexo:** a Vercel aceita até 4,5 MB por chamada (envio e resposta). O romaneio em PDF da Mega Sul (4,2 MB) não passava. Arquivos acima de 3 milhões de caracteres agora vão em PEDAÇOS: o navegador manda até 5 pedaços (`POST /api/anexos` com `parte`, `total`, `pedaco`; tabela `sorelly.anexo_parte`), o servidor junta no último e confere; para abrir, `GET /api/anexos/{chave}` devolve a lista de partes e o navegador busca uma a uma (`?parte=n`). Limite novo: uns 8 MB de arquivo. O pedido o538 (Mega Sul, romaneio 151844, R$ 21.605,29) já estava lançado sem o PDF; o PDF foi anexado direto no servidor em 12/11/2026, com cópia do estado antes.
 
