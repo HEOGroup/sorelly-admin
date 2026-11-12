@@ -13,7 +13,7 @@ var SIT_FIM = ["Concluída", "Recusada"];
 var melAberta = function(z){ return SIT_ANDAMENTO.indexOf(z)>=0; };   // pedido novo já nasce Em análise (Marcus, 29/10/2026); o resto se conversa no chat. Excluir é outra ação (apaga da lista).
 var SIT_ANTIGA = {"Nova":"Em análise", "Feita":"Mudança feita, testar", "Cancelada":"Recusada", "Precisa de mais informação":"Em análise", "Aprovada":"Em análise", "Em andamento":"Em análise", "Para depois":"Recusada"};   // nomes antigos já gravados
 var sitNova = function(z){ return SIT_ANTIGA[z] || z; };   // Recusada = não vai ser feita; Cancelada = o Marcus ou o Leonardo cancelou (29/10/2026)
-var GERENTES = [16, 44];
+var GERENTES = [16, 44, 28];   // Lucas (28) também vê todos e responde (12/11/2026, pedido do Lucas: vai resolver os chamados)
 // QUEM VÊ TODOS os chamados (Nickolas, 12/11/2026): quem responde + Nickolas 17. Ver não é responder: situação e resposta seguem só com GERENTES.
 var VEEM_TODOS = GERENTES.concat([17]);
 function melPodeVerTodos(id){ return VEEM_TODOS.indexOf(id)>=0; }

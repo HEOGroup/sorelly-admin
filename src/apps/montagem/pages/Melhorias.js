@@ -340,7 +340,7 @@ function AbaMelhorias(){
       e("img",{src:zoom.src, alt:"Print ampliado", className:"max-h-full max-w-full rounded-lg border border-border object-contain"}),
       e("div",{className:"absolute right-4 top-4 flex items-center gap-1.5"}, e(BotoesFoto,{src:zoom.src, nome:zoom.nome||"foto.jpg"}), e("button",{type:"button", onClick:function(){ setZoom(null); }, className:"h-8 rounded-md bg-card px-3 text-[13px] font-semibold ring-1 ring-border"}, "Fechar ✕"))),
     janela,
-    e(PageHead,{t:"Chamados", sub:gere ? "Só você e o Leonardo respondem." : "Quem responde: Marcus e Leonardo."},
+    e(PageHead,{t:"Chamados", sub:"Quem responde: Marcus, Leonardo e Lucas."},
       ver && e(Segmentado,{opcoes:[["todas","Todas"], ["minhas","Minhas"]], atual:vis, onMudar:setVis}),
       e(Botao,{principal:true, onClick:function(){ setSel(null); setNovo(true); }}, "Novo chamado")),
     gere && vis==="todas" && e("div",{className:"grid min-w-0 gap-2 md:grid-cols-2 xl:grid-cols-4"},
