@@ -52,7 +52,7 @@ import { MARCAS, MarcaTela, marcaDe } from "@/apps/montagem/navigation/marcas";
 import { LogoChat } from "@/apps/montagem/components/chat/chat-ui";
 import { abasDoPapel, PAPEL_LB } from "@/apps/montagem/navigation/perfis";
 import { APPS_TOPO, SETORES, SETORES_BAIXO, ondeEsta } from "@/apps/montagem/navigation/setores";
-import { telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
+import { abasVetadas, telasDaPessoa, BIPA_RETORNO_PADRAO, definirBlocos, definirContaEquipe, grupoDe, nomeDe, papelDe, pessoaConhecida, podeGerirAgend } from "@/apps/montagem/domain/equipe";
 import { definirCidConta } from "@/apps/montagem/domain/chat-contatos";
 import { quemBipa } from "@/apps/montagem/domain/retornos";
 import { CHAVE, inicial, paraSalvar } from "@/apps/montagem/state/store";
@@ -197,6 +197,8 @@ function App(){
   definirHorariosRh(horRh && horRh.length ? horRh : (horSrv || horRh));
   useEffect(function(){ if(srv.apiAtiva() && srv.ehAdmin() && horRh && horRh.length && JSON.stringify(horRh)!==JSON.stringify(horSrv)) d({type:"SYNC_MODULO", chave:"chathor", conteudo:{lista:horRh}}); }, [horRh]);
   var papel = grupoDe(s.usuario), permitidas = abasDoPapel(papel, s.acessos);
+  // exceção por pessoa dentro do acesso total (11/11/2026): telas que a pessoa não abre, mesmo vendo todo o resto (domain/equipe.js, ABAS_VETADAS)
+  var vetA = abasVetadas(s.usuario); if(vetA.length) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(a){ return vetA.indexOf(a)<0; });
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);

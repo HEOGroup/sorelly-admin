@@ -4,7 +4,7 @@
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { cnpjsDe } from "@/apps/montagem/domain/cnpjs";
-import { grupoDe, nomeDe } from "@/apps/montagem/domain/equipe";
+import { nomeDe, veSalarios } from "@/apps/montagem/domain/equipe";
 import { REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
 import { STATUS_BY_TIPO, STATUS_LB, TIPOS_CONTRATO, bancosDe, br, colaboradoresRh, hojeIso, diasEntre } from "@/apps/montagem/domain/rh";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
@@ -26,7 +26,7 @@ var CARD = "rounded-xl bg-linear-to-br from-[#8B5CF6]/20 via-card to-card px-4 p
 var STATUS_COR = {antigo:"#EF4444", feito:"#F59E0B", assinado:"#22C55E", encerrado:"#94A3B8", nao_revisado:"#EF4444", em_revisao:"#F59E0B", atualizado:"#22C55E", ativo:"#22C55E", quitado:"#22C55E", contemplado:"#3B82F6"};
 var slugKey = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/[^a-z0-9]+/g,"_").replace(/^_+|_+$/g,""); };
 
-function useRh(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), sensivel:grupoDe(s.usuario)==="supervisao"}; }
+function useRh(){ var cx = use(), s = cx.state; return {s:s, d:cx.dispatch, rh:s.rh, por:nomeDe(s.usuario), sensivel:veSalarios(s.usuario)}; }
 function acao(c, op, extra){ c.d(Object.assign({type:"RH", op:op, por:c.por}, extra)); }
 function Campo(p){ return e("label",{className:"flex flex-col gap-1 text-[12px] font-semibold "+(p.className||"")}, p.rot, p.children); }
 function Sel(p){ return e("select",{value:p.value, "aria-label":p.label, className:INPUT+" h-10! cursor-pointer "+(p.className||"w-48"), onChange:function(ev){ p.onChange(ev.target.value); }}, p.children); }

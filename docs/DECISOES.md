@@ -2261,3 +2261,9 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - `domain/informativos.js`: informativo novo "O que mudou nas regras" (`informativoMudancas`, chave `mudancas-2026-11`), para revendedoras e representantes; entra uma vez também para quem já tinha os folders salvos (`infMigrar`). Folder "Regras do acerto" com os textos novos (vale para quem ainda não tinha o folder salvo).
 - `mensagemRegras` (botão "Enviar regras novas" do Atendimento interno): diz em três pontos o que mudou e leva o link do guia.
 - Limite: os informativos (`s.inf`) ficam só no navegador e nos apps simulados; no app real da revendedora e da representante depende do Leonardo. O aviso de verdade hoje é a mensagem de WhatsApp com o PDF.
+
+## 11/11/2026 (15ª parte) — Nova chance e acesso da Amanda
+- **"Nova chance" fica no manual da representante** (Marcus). A representante pode dar nova chance na data do acerto; isso não consta no guia da revendedora. Nada a mudar nos folders.
+- **Amanda de Miranda: acesso total, menos salário dos funcionários e Contas a pagar** (Marcus). Código: `domain/equipe.js` (`SEM_SALARIO`, `ABAS_VETADAS`, `veSalarios`, `abasVetadas`); `App.js` tira as telas vetadas; `RH.js`, `FolhaFuncionarias.js` e `RHContratos.js` usam `veSalarios`. Telas tiradas: Análise de custos, Contas a pagar, Pagas por dia, Empréstimos e a aba antiga de Contas a pagar. Ela segue no grupo "supervisao" para o resto.
+- **Limite (a tela esconde, o servidor não):** a conta dela continua com perfil ADMIN no servidor. As telas somem e os salários não aparecem, mas os dados ainda chegam ao navegador dela. Proteção de verdade pede separar os salários e as contas a pagar em módulos de setor restrito e tirar o perfil ADMIN da conta.
+- **A confirmar:** Resultado do mês, Previsão de caixa, Faturamento e Visão geral mostram totais de contas a pagar; continuam abertos para ela.

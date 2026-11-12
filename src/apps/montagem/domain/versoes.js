@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.8", data:"2026-11-11", titulo:"Acessos: Amanda de Miranda sem salários e sem Contas a pagar", itens:[
+  {tipo:"regra", area:"RH › Acessos", txt:"A Amanda de Miranda continua com acesso total, menos o salário dos funcionários (RH, folha e contratos) e as telas de Contas a pagar (Análise de custos, Contas a pagar, Pagas por dia e Empréstimos)."}]},
  {v:"0.20.7", data:"2026-11-11", titulo:"Informativo: o que mudou nas regras", itens:[
   {tipo:"novo", area:"Folders e informativos", txt:"Informativo novo O que mudou nas regras, para revendedoras e representantes: prazo de 5 dias úteis, remarcação com 10 dias sem multa, valor pendente e nota promissória. O folder Regras do acerto também ganhou os textos novos."},
   {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"A mensagem do botão Enviar regras novas agora diz, em três pontos, o que mudou, e leva o link do guia atualizado."}]},
