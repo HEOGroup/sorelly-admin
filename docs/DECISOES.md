@@ -2298,3 +2298,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 
 ## 12/11/2026 — Texto do Kit 100% Prata
 - `textoRegrasPrata` (`domain/consignado.js`): com a regra de dias úteis, as frases "Agendamento" e "Cancelamento e atraso" viraram "Agendamento e remarcação" e "Prazo do acerto", dizendo que valem as mesmas regras do Kit Normal. As frases antigas continuam só para versão sem a regra nova. Aparece em Regras dos acertos e no app da representante (simulado).
+
+## 12/11/2026 — Menu: Configurações sai; financeiro das representantes vai para o Financeiro
+- Marcus: ninguém precisa da tela Configurações de Representantes & Kits (as comissões saem sozinhas, as regras têm de bater com o PDF e as formas de pagamento são definidas no Financeiro). **A tela saiu do menu** (`configrep`); a rota continua existindo, sem entrada.
+- **O financeiro das representantes mora no setor Financeiro** (grupo Representantes): Consolidado, Comissões, Pix representantes, Inadimplência e Compras de joias. O grupo Financeiro saiu de Representantes & Kits ("por isso eu não estava achando").
+- **Pendente (risco achado em 12/11):** as regras do acerto (`s.regrasConsignado`) ficam só no navegador; quem já editou algo na tela antiga pode estar calculando diferente. Falta travar a regra oficial para todos os computadores.

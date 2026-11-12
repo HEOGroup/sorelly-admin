@@ -31,7 +31,7 @@ var MENU_FINANCEIRO = [
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),   // quanto entrou em cada conta com os acertos e quem não pagou (Marcus, 27/10/2026: fica no Financeiro, não no Cadastro de revendedoras)
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
-    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Inadimplência dos representantes","inadimp")]},
+    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência dos representantes","inadimp"), M("Compras de joias","comprasrep")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
     {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
     M("Link de pagamento","linkrel")]},
   {nome:"Fiscal", itens:[M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")]},   // Fiscal dentro do Financeiro (23/10/2026, pedido do Marcus; CNPJs entrou aqui em 28/10/2026 — saiu de setor próprio)
@@ -87,8 +87,7 @@ var MENU_REPRESENTANTES = [
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp")]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
   {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
-  {nome:"Financeiro", itens:[M("Comissões","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência","inadimp"), M("Compras de joias","comprasrep")]},
-  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto"), M("Configurações","configrep")]}
+  {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto")]}   // 12/11/2026 (Marcus): a tela Configurações saiu do menu (as regras seguem o PDF e não se editam aqui)
 ];
 
 // Menu do RH (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o dia → pessoas → contratos → acessos → configurar. Nenhuma tela saiu: só mudou de lugar. Contratos ganhou Crédito bancário, Aluguéis e Consórcios.
@@ -163,7 +162,7 @@ var SETORES = [
       ["Contas a receber", [T("revreceber","Contas a receber")]],
       ["Inadimplência", [T("inadfin","Inadimplência")]],
       ["Interno e estoque", [T("intcons","Consolidado interno"), T("estoquesorelly","Estoque Sorelly")]]]),
-    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), T("inadimp","Inadimplência dos representantes")]},
+    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]},
     {nome:"Comissões", telas:[Ti("comisstodos","Visão geral","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
     {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
@@ -201,8 +200,7 @@ var SETORES = [
     {nome:"Pontual", telas:[T("pontclientes","Clientes"), T("pontprecos","Tabelas de preço"), T("pontinad","Inadimplência"), T("pontposvenda","Pós-venda"), T("pontregras","Regras")]}]},   // admin do Valdir (empresa de banho), dados de demonstração; só a supervisão abre (06/11/2026)
   {id:"representantes", nome:"Representantes & Kits", ic:"representante", cor:"#8B5CF6", menu:MENU_REPRESENTANTES, areas:[
     {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
-    {nome:"Financeiro", telas:[Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência"), T("comprasrep","Compras de joias")]},
-    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos"), T("configrep","Configurações")]},
+    {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
     {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),

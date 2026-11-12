@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.76", data:"2026-11-12", titulo:"Menu: financeiro das representantes no Financeiro; tela Configurações saiu", itens:[
+  {tipo:"ajuste", area:"Financeiro › Representantes", txt:"O financeiro das representantes agora fica no setor Financeiro: Consolidado, Comissões, Pix representantes, Inadimplência e Compras de joias."},
+  {tipo:"ajuste", area:"Representantes & Kits", txt:"Saíram do menu o grupo Financeiro e a tela Configurações. As regras do acerto seguem o PDF e não se editam mais ali; as formas de pagamento são do Financeiro."}]},
  {v:"0.18.75", data:"2026-11-12", titulo:"Regras do Kit 100% Prata: prazo e remarcação iguais ao Kit Normal", itens:[
   {tipo:"ajuste", area:"Regras dos acertos e app da representante", txt:"O texto do Kit 100% Prata não fala mais em cancelar no dia e atraso de 1% por dia do jeito antigo. Agora diz que o prazo do acerto e a remarcação são iguais aos do Kit Normal."}]},
  {v:"0.18.74", data:"2026-11-12", titulo:"Configurador das regras: prazo do acerto em dias úteis", itens:[
