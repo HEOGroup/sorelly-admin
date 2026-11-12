@@ -1,6 +1,8 @@
 // Sorelly Admin — pages/Comissoes.js
 // Kits → Representantes → Comissões. Aqui ficam os VALORES (contas, Point, link…): o setor de agendamento não vê esta tela.
-//   Pix representante → Representante → Mês → 3 datas de pagamento (como as listagens: abre a representante, abre o mês, abre a data).
+//   TELA NOVA (Opção A, Marcus, 12/11/2026): escolhe a DATA de pagamento no topo; cada representante é um bloco com as revendedoras dela (uma linha por pagamento) e a linha de pagar embaixo.
+//   Três etapas: 1 Conferir o que entrou → 2 Pagar a comissão → 3 Pagas. O próximo passo BRILHA (o check a marcar; com tudo marcado, o botão Registrar pagamento).
+//   Resumo do mês (totais, recebido por conta, taxas, erros, regras) e Pix representante ficam em visões à parte, no Segmentado do topo.
 // Cada valor tem um check do financeiro com o nome de quem confirmou; o que o agendamento ainda não conferiu no Consolidado aparece como pendente.
 // Em cada data: combustível (km × gasolina do dia, que a Nayale preenche no Configurador), ajuste do fechamento anterior e o pagamento, tudo ali do lado.
 import { relatorioTaxas, chaveFech, comisEfetiva, datasDoMes, dataHora, faltaDe, janelaDe, fmtDataBR, grupoDaRep, itensComissao, pagoDe, pctDaRep, quemNome, repsEfetivas, resumoSituacao } from "@/apps/montagem/domain/comissoes";
@@ -9,6 +11,7 @@ import { podeConfigComissao, podeFinanceiro } from "@/apps/montagem/domain/equip
 import { AbaConfigComissoes } from "@/apps/montagem/pages/ConfigComissoes";
 import { ComissoesKitNovo } from "@/apps/montagem/pages/ComissoesKitNovo";
 import { Botao, CAMPO, Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { AbaRegrasRepresentantes } from "@/apps/montagem/pages/RegrasRepresentantes";
 import { BKC as BK, isoDia } from "@/apps/montagem/lib/format";
@@ -65,152 +68,134 @@ function AvisoGasolina(p){
 function Kpi(p){ return e("div",{className:"flex flex-col items-center gap-0.5 rounded-xl bg-linear-to-b from-[#3A2912]/40 to-card px-3 py-3 text-center ring-1 ring-[#E8B84B]/20"},
   e("span",{className:"text-[11.5px] font-bold uppercase tracking-wide"}, p.t), e("b",{className:MONO+" text-[22px] "+(p.cor||"")}, p.v), p.sub && e("span",{className:"text-[11.5px] text-muted-foreground"}, p.sub)); }
 
-// Cinco números que repetem em todo nível (mesmos nomes no app da representante):
-//   Comissão = total do período · Pendente = falta o check do financeiro · A pagar = com check (+ combustível) · Pago = já pago (inclui Pix direto) · Restante = a pagar − pago (negativo = pago a mais)
-var COR_NUM = {comis:"text-[#F1E4C6]", pend:"text-[#F3B63F]", apagar:"text-[#F3D98B]", pago:"text-[#4ADE80]"};
-function Numeros(p){
-  var col = function(t, v, cor){ return e("div",{className:"flex min-w-[5rem] flex-col items-end"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide opacity-80"}, t), e("b",{className:MONO+" text-[14px] "+cor}, BK(v))); };
-  return e("div",{className:"flex items-center gap-3.5"}, col("Comissão", p.comis, COR_NUM.comis), col("Pendente", p.pend, COR_NUM.pend), col("A pagar", p.apagar, COR_NUM.apagar), col("Pago", p.pago, COR_NUM.pago),
-    col("Restante", p.rest, p.rest<-0.009 ? "text-[#60A5FA]" : p.rest>0.009 ? "text-[#F87171]" : ""));
-}
-// Legenda: o que cada número quer dizer (fica no alto da lista)
-function Legenda(){
-  var x = function(cor, nome, txt){ return e("span",{className:"inline-flex items-baseline gap-1"}, e("b",{className:"text-[11.5px] uppercase tracking-wide "+cor}, nome), e("span",{className:"text-[12px] text-muted-foreground"}, txt)); };
-  return e("div",{className:"flex flex-wrap items-center gap-x-5 gap-y-1 rounded-lg bg-black px-3 py-2 ring-1 ring-[#E8B84B]/20"},
-    x(COR_NUM.comis,"Comissão","total do período"), x(COR_NUM.pend,"Pendente","falta o check do financeiro"), x(COR_NUM.apagar,"A pagar","com check, mais o combustível"),
-    x(COR_NUM.pago,"Pago","já pago (inclui Pix direto)"), x("text-[#60A5FA]","Restante","a pagar menos pago"));
-}
-function Faixa(p){   // faixa clicável (abre/fecha) no estilo bronze das listagens
-  return e("button",{onClick:p.alt, "aria-expanded":p.aberto, className:"flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left text-[#F1E4C6] shadow-[inset_0_1px_0_rgba(255,255,255,.12)] "+(p.cls||"bg-linear-to-r from-[#3A2912] via-[#5C4322] to-[#86653A]")},
-    e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg bg-[#E8B84B] text-[#1B1409]"}, e(Icon,{n:p.aberto ? "chevrondown" : "chevron", s:15})),
-    e("span",{className:"min-w-0 flex-1"}, e("span",{className:"block truncate font-heading text-[15px] font-bold"}, p.t), e("span",{className:"block truncate text-[12px] opacity-80"}, p.sub)),
-    p.chip, p.dir);
+// ── OPÇÃO A (12/11/2026) ──
+// O brilho mostra por onde começar: fica em UM lugar só da tela (o próximo check; com tudo marcado, o botão de pagar).
+var ESTILO_BRILHO = "@keyframes comisBrilho{0%,100%{box-shadow:0 0 0 1px #E8B84B,0 0 0 0 rgba(232,184,75,0)}50%{box-shadow:0 0 0 1px #E8B84B,0 0 14px 4px rgba(232,184,75,.75)}}.comis-brilha{animation:comisBrilho 1.3s ease-in-out infinite;border-radius:6px}";
+var COR_OK = "#34D399", COR_FALTA = "#FBBF24", COR_RUIM = "#F87171", FIO = "border-[#2a2c31]";
+function marcavel(it){ return !it.confirmado && !it.motivo && !it.loja && !it.pixRep; }   // linha que o financeiro ainda pode conferir
+// Etapa da representante numa data: 1 conferir · 2 pagar · 3 paga · 0 nada a fazer agora (antes do corte ou aguardando outro setor)
+function etapaDe(rs){
+  var normais = rs.itens.filter(function(i){ return !i.loja && !i.pixRep; }), falta = rs.itens.filter(marcavel).length;
+  if(falta>0) return {n:1, txt:"Conferir "+normais.filter(function(i){ return i.confirmado; }).length+" de "+normais.length, cor:COR_FALTA, falta:falta};
+  if(rs.paga) return {n:3, txt:rs.falta<-0.009 ? "Paga a mais" : "Paga", cor:COR_OK, falta:0};
+  if(rs.falta>0.009) return rs.aposCorte ? {n:2, txt:"A pagar", cor:COR_RUIM, falta:0} : {n:0, txt:"Antes do corte", cor:"", falta:0};
+  return {n:0, txt:rs.itens.some(function(i){ return i.motivo && !i.confirmado; }) ? "Aguardando" : "Sem valor a pagar", cor:"", falta:0};
 }
 
-// ── Linha final do bloco da data: Comissão total + Combustível = A pagar, e os pagamentos feitos. O km é só da representante (app). ──
-function Fechamento(p){
-  var s = p.s, d = p.d, c = p.c, rs = p.rs, fin = p.fin, key = chaveFech(p.data, p.rep);
-  var formas = s.formasPagamento||[];
+// Divergência de uma linha: a célula mostra o que foi registrado ou o botão; o editor abre numa linha logo abaixo (EditorDiv)
+function Divergencia(p){
+  var it = p.it, dv = it.div;
+  if(dv) return e("span",{className:"inline-flex items-center gap-2", style:{color:dv.tipo==="valor" || dv.tipo==="conta" ? COR_FALTA : COR_RUIM},
+      title:dv.tipo==="valor" ? "Lançou "+BK(dv.valorErrado)+", entrou "+BK(dv.valorCerto) : dv.tipo==="conta" ? dv.contaErrada+" → "+dv.contaCerta : "Pagamento não identificado · representante avisada"},
+    dv.tipo==="valor" ? "Valor corrigido" : dv.tipo==="conta" ? "Conta corrigida" : "Não identificado",
+    p.fin && e("button",{type:"button", onClick:function(){ p.d({type:"COMIS_DIV", id:it.r.id, idx:it.chave, tipo:"limpar"}); }, "aria-label":"Desfazer divergência", title:"Desfazer", className:"text-[13px] text-foreground hover:text-primary"}, "×"));
+  if(!p.fin || it.motivo || it.loja || it.tipo!=="pag" || it.pixRep) return "—";
+  return e("button",{type:"button", onClick:p.abrir, "aria-expanded":p.aberto, className:"h-8 px-2 text-[13px] underline underline-offset-2 hover:text-primary"}, p.aberto ? "Fechar" : "Divergência");
+}
+function EditorDiv(p){
+  var it = p.it, d = p.d, s = p.s, ms = useState("menu"), modo = ms[0], setModo = ms[1], vs = useState(it.valorPago), val = vs[0], setVal = vs[1], cs = useState(""), conta = cs[0], setConta = cs[1];
+  var grava = function(a){ d(Object.assign({type:"COMIS_DIV", id:it.r.id, idx:it.chave, por:s.usuario}, a)); p.fechar(); };
+  return e("div",{className:"flex h-10 items-center justify-center gap-2 whitespace-nowrap bg-[#1c1d21] px-3 text-[13px]"},
+    e("b",null, "Divergência · "+it.rev),
+    modo==="menu" && e(Botao,{onClick:function(){ setModo("valor"); }}, "Valor diferente"),
+    modo==="menu" && e(Botao,{onClick:function(){ setModo("conta"); }}, "Conta errada"),
+    modo==="menu" && e(Botao,{onClick:function(){ grava({tipo:"nao_ident"}); }}, "Não identificado"),
+    modo==="valor" && e(MoneyInput,{value:val, sm:true, label:"Valor correto que entrou", className:"w-32", onChange:setVal}),
+    modo==="valor" && e(Botao,{principal:true, desabilitado:!(val>0), onClick:function(){ grava({tipo:"valor", valor:val}); }}, "Confirmar"),
+    modo==="conta" && e("select",{value:conta, "aria-label":"Conta certa", className:CAMPO+" w-64! cursor-pointer", onChange:function(ev){ setConta(ev.target.value); }}, e("option",{value:""},"Conta certa"), p.contas.map(function(x){ return e("option",{key:x, value:x}, x); })),
+    modo==="conta" && e(Botao,{principal:true, desabilitado:!conta, onClick:function(){ grava({tipo:"conta", conta:conta}); }}, "Confirmar"),
+    e(Botao,{onClick:p.fechar}, "Cancelar"));
+}
+
+// Linha de pagar, embaixo das revendedoras: o que já foi pago e, quando há valor liberado, forma · conta · data · valor · Registrar pagamento
+function LinhaPagar(p){
+  var s = p.s, d = p.d, rs = p.rs, fin = p.fin, et = p.et, key = chaveFech(p.data, p.rep), formas = s.formasPagamento||[];
   var st = useState({forma:"pix", conta:"", data:isoDia(new Date()), valor:0}), f = st[0], setF = st[1];
   var forma = formas.find(function(x){ return x.k===f.forma; }) || {descricoes:[]};
   var valor = f.valor>0 ? f.valor : Math.max(0, rs.falta);
   var podeAdd = fin && rs.aposCorte && valor>0 && f.conta && rs.falta>0.009 && valor <= rs.falta+0.009;
-  var campo = function(t2, filho){ return e("label",{className:"flex flex-col gap-1"}, e("span",{className:"text-[11px] font-semibold uppercase tracking-wide text-muted-foreground"}, t2), filho); };
-  var item = function(t2, v, cor, sub){ return e("div",{className:"flex flex-col"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-muted-foreground"}, t2), e("b",{className:MONO+" text-[15px] "+(cor||"")}, v), sub && e("span",{className:"text-[11.5px] text-muted-foreground"}, sub)); };
-  var kmTxt = rs.itens.length===0 ? "sem atendimentos no período"
-    : rs.kmTarde ? "km enviado fora do prazo · paga na próxima data"
+  var jan = p.jan, kmTxt = rs.itens.length===0 ? "sem atendimentos no período"
+    : rs.kmTarde ? "km enviado fora do prazo: paga na próxima data"
     : rs.kmAtras>0 && !(rs.km>0) ? "inclui o km do período anterior, enviado fora do prazo"
-    : rs.km>0 ? arred(rs.km)+" km "+(rs.kmModo==="dias" ? "dia a dia" : "total")+" · "+(rs.preco>0 ? arred(rs.litros)+" L × "+BK(rs.preco) : "falta o preço da gasolina")
+    : rs.km>0 ? arred(rs.km)+" km · "+(rs.preco>0 ? arred(rs.litros)+" litros × "+BK(rs.preco) : "falta o preço da gasolina")
     : "a representante ainda não enviou o km";
-  return e("div",{className:"flex flex-col gap-2.5 border-t-2 border-[#C9AA6A]/50 bg-linear-to-r from-[#2A2013] to-[#3A2D18] px-4 py-3"},
-    e("div",{className:"flex flex-wrap items-start gap-x-7 gap-y-2"},
-      item("Comissão total", BK(rs.comissaoTotal), "text-[#F1E4C6]"), e("span",{className:"pt-4 text-muted-foreground"},"+"),
-      item("Combustível", BK(rs.comb), "text-[#60A5FA]", kmTxt), e("span",{className:"pt-4 text-muted-foreground"},"="),
-      item("A pagar", BK(rs.aPagar), "text-[#F3D98B]"), item("Pago", BK(rs.pagos), "text-[#4ADE80]"),
-      item("Restante", BK(rs.falta), rs.falta<-0.009 ? "text-[#60A5FA]" : rs.falta>0.009 ? "text-[#F87171]" : "", rs.falta<-0.009 ? "pago a mais" : rs.paga ? "quitado" : null)),
-    ((rs.lista||[]).length>0 || rs.diretos.length>0) && e("div",{className:"flex flex-wrap gap-1.5"},
-      rs.diretos.map(function(it){ return e("span",{key:it.id, className:"inline-flex items-center gap-1.5 rounded-md bg-success/15 px-2 py-1 text-[12px] font-semibold text-success"}, "Pix representante · "+it.rev+" · "+BK(it.valorPago)+" · pago direto"); }),
-      rs.lista.map(function(g,i){ return e("span",{key:i, className:"inline-flex items-center gap-1.5 rounded-md bg-success/15 px-2 py-1 text-[12px] font-semibold text-success"},
-        ((formas.find(function(x){ return x.k===g.forma; })||{}).label||g.forma)+" · "+g.conta+" · "+fmtDataBR(g.data)+" · "+BK(g.valor)+" · "+quemNome(g.por),
-        fin && e("button",{onClick:function(){ d({type:"COMIS_FECH_PAG", key:key, del:i}); }, "aria-label":"Desfazer pagamento", className:"text-[13px] opacity-70 hover:opacity-100"}, "×")); })),
-    rs.aPagar>0.009 && !rs.paga && e("div",{className:"flex flex-wrap items-end gap-2"},
-      campo("Forma", e("select",{value:f.forma, disabled:!fin, "aria-label":"Forma do pagamento", className:INPUT+" h-9! text-sm!", onChange:function(ev){ setF(Object.assign({}, f, {forma:ev.target.value, conta:""})); }},
-        formas.filter(function(x){ return x.k!=="pix_representante" && x.k!=="acerto_loja"; }).map(function(x){ return e("option",{key:x.k, value:x.k}, x.label); }))),
-      campo("Conta de saída", e("select",{value:f.conta, disabled:!fin, "aria-label":"Conta de saída", className:INPUT+" h-9! w-56 text-sm!", onChange:function(ev){ setF(Object.assign({}, f, {conta:ev.target.value})); }},
-        e("option",{value:""},"Escolha…"), forma.descricoes.map(function(x){ return e("option",{key:x, value:x}, x); }))),
-      campo("Data", e("input",{type:"date", value:f.data, disabled:!fin, className:INPUT+" h-9! text-sm! [color-scheme:dark]", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }})),
-      campo("Valor", e(MoneyInput,{value:valor, sm:true, disabled:!fin, label:"Valor pago", className:"w-32", onChange:function(v){ setF(Object.assign({}, f, {valor:v})); }})),
-      e(Btn,{v:"primary", sm:true, ic:"check", disabled:!podeAdd, onClick:function(){ d({type:"COMIS_FECH_PAG", key:key, por:s.usuario, pag:{forma:f.forma, conta:f.conta, data:f.data, valor:valor}}); setF(Object.assign({}, f, {valor:0})); }}, "Registrar pagamento")),
-    rs.aPagar>0.009 && !rs.paga && !rs.aposCorte && e("p",{className:"text-[12px] text-warning"},"O corte desta data é "+new Date(rs.corte).toLocaleString("pt-BR",{day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"})+": o pagamento libera depois dele."));
+  var corteTxt = new Date(rs.corte).toLocaleString("pt-BR",{day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"});
+  var mostraForm = rs.aPagar>0.009 && !rs.paga && rs.aposCorte;
+  return e("div",{className:"flex min-h-12 flex-wrap items-center justify-between gap-x-4 gap-y-2 px-3 py-2 text-[13px]"},
+    e("div",{className:"flex flex-wrap items-center gap-x-4 gap-y-1"},
+      e("span",{className:"whitespace-nowrap"}, "Atendimentos de "+fmtDataBR(jan.ini).slice(0,5)+" a "+fmtDataBR(jan.fim).slice(0,5)+" · Combustível: "+kmTxt),
+      rs.diretos.map(function(it){ return e("span",{key:it.id, className:"whitespace-nowrap", style:{color:COR_OK}}, "Pix direto de "+it.rev+" · "+BK(it.valorPago)); }),
+      rs.lista.map(function(g,i){ return e("span",{key:i, className:"inline-flex items-center gap-2 whitespace-nowrap", style:{color:COR_OK}},
+        "Pago: "+((formas.find(function(x){ return x.k===g.forma; })||{}).label||g.forma)+" · "+g.conta+" · "+fmtDataBR(g.data)+" · "+BK(g.valor)+" · "+quemNome(g.por),
+        fin && e("button",{type:"button", onClick:function(){ d({type:"COMIS_FECH_PAG", key:key, del:i}); }, "aria-label":"Desfazer pagamento", title:"Desfazer pagamento", className:"text-[13px] text-foreground hover:text-primary"}, "×")); })),
+    e("div",{className:"flex flex-wrap items-center justify-end gap-2"},
+      et.n===1 && e("span",{className:"whitespace-nowrap", style:{color:COR_FALTA}}, (et.falta===1 ? "Falta 1 conferência" : "Faltam "+et.falta+" conferências")+" para liberar tudo"),
+      rs.aPagar>0.009 && !rs.paga && !rs.aposCorte && e("span",{className:"whitespace-nowrap", style:{color:COR_FALTA}}, "O pagamento libera depois do corte: "+corteTxt),
+      rs.paga && e("span",{className:"whitespace-nowrap font-semibold", style:{color:COR_OK}}, "● Paga"),
+      mostraForm && e("select",{value:f.forma, disabled:!fin, "aria-label":"Forma do pagamento", className:CAMPO+" w-32! cursor-pointer", onChange:function(ev){ setF(Object.assign({}, f, {forma:ev.target.value, conta:""})); }},
+        formas.filter(function(x){ return x.k!=="pix_representante" && x.k!=="acerto_loja"; }).map(function(x){ return e("option",{key:x.k, value:x.k}, x.label); })),
+      mostraForm && e("select",{value:f.conta, disabled:!fin, "aria-label":"Conta de saída", className:CAMPO+" w-64! cursor-pointer", onChange:function(ev){ setF(Object.assign({}, f, {conta:ev.target.value})); }},
+        e("option",{value:""},"Conta de saída"), forma.descricoes.map(function(x){ return e("option",{key:x, value:x}, x); })),
+      mostraForm && e("input",{type:"date", value:f.data, disabled:!fin, "aria-label":"Data do pagamento", className:CAMPO+" w-36! [color-scheme:dark]", onChange:function(ev){ setF(Object.assign({}, f, {data:ev.target.value})); }}),
+      mostraForm && e(MoneyInput,{value:valor, sm:true, disabled:!fin, label:"Valor pago", className:"w-32", onChange:function(v){ setF(Object.assign({}, f, {valor:v})); }}),
+      mostraForm && e("span",{className:"inline-flex "+(p.brilha && f.conta ? "comis-brilha" : "")},
+        e(Botao,{principal:true, desabilitado:!podeAdd, title:!f.conta ? "Escolha a conta de saída" : "Registrar pagamento",
+          onClick:function(){ d({type:"COMIS_FECH_PAG", key:key, por:s.usuario, pag:{forma:f.forma, conta:f.conta, data:f.data, valor:valor}}); setF(Object.assign({}, f, {valor:0})); }}, "Registrar pagamento"))));
 }
 
-// Divergência de uma linha de pagamento: valor diferente, conta errada ou pagamento não identificado (sem comprovante)
-function Divergencia(p){
-  var it = p.it, d = p.d, s = p.s, fin = p.fin, dv = it.div;
-  var st = useState(null), modo = st[0], setModo = st[1], vs = useState(0), val = vs[0], setVal = vs[1], cs = useState(""), conta = cs[0], setConta = cs[1];
-  var chip = function(txt, cor){ return e("span",{className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[12px] font-semibold "+cor}, txt,
-    fin && e("button",{onClick:function(){ d({type:"COMIS_DIV", id:it.r.id, idx:it.chave, tipo:"limpar"}); }, "aria-label":"Desfazer divergência", title:"Desfazer", className:"opacity-70 hover:opacity-100"}, "×")); };
-  if(dv) return dv.tipo==="valor" ? chip("Valor corrigido: "+BK(dv.valorErrado)+" → "+BK(dv.valorCerto), "bg-info/15 text-info")
-    : dv.tipo==="conta" ? chip("Conta corrigida: "+dv.contaErrada+" → "+dv.contaCerta, "bg-info/15 text-info")
-    : chip("Não identificado · representante avisada", "bg-destructive/15 text-destructive");
-  if(!fin || it.motivo || it.loja) return null;
-  var btn = function(txt, onClick, cls){ return e("button",{onClick:onClick, className:"rounded-md px-2 py-1 text-[12px] font-semibold "+(cls||"bg-muted hover:bg-muted/70")}, txt); };
-  if(modo==="valor") return e("span",{className:"inline-flex items-center gap-1.5"}, e(MoneyInput,{value:val, sm:true, label:"Valor correto que entrou", className:"w-28", onChange:setVal}),
-    btn("OK", function(){ if(val>0){ d({type:"COMIS_DIV", id:it.r.id, idx:it.chave, tipo:"valor", valor:val, por:s.usuario}); setModo(null); } }, "bg-primary text-primary-foreground"), btn("Cancelar", function(){ setModo(null); }));
-  if(modo==="conta") return e("span",{className:"inline-flex items-center gap-1.5"},
-    e("select",{value:conta, "aria-label":"Conta certa", className:INPUT+" h-8! w-48 text-[12.5px]!", onChange:function(ev){ setConta(ev.target.value); }}, e("option",{value:""},"Conta certa…"), p.contas.map(function(x){ return e("option",{key:x, value:x}, x); })),
-    btn("OK", function(){ if(conta){ d({type:"COMIS_DIV", id:it.r.id, idx:it.chave, tipo:"conta", conta:conta, por:s.usuario}); setModo(null); } }, "bg-primary text-primary-foreground"), btn("Cancelar", function(){ setModo(null); }));
-  if(modo==="menu") return e("span",{className:"inline-flex flex-wrap items-center gap-1.5"},
-    btn("Valor diferente", function(){ setVal(it.valorPago); setModo("valor"); }), btn("Conta errada", function(){ setModo("conta"); }),
-    btn("Não identificado", function(){ d({type:"COMIS_DIV", id:it.r.id, idx:it.chave, tipo:"nao_ident", por:s.usuario}); setModo(null); }, "bg-destructive/15 text-destructive hover:bg-destructive/25"), btn("×", function(){ setModo(null); }));
-  return btn("⚠ Divergência", function(){ setModo("menu"); });
-}
-
-// ── Uma data de pagamento ("Pagamento 1/2/3" do mês): um acerto por linha, com o valor total; abrindo, as formas de pagamento para conciliar ──
-function Situacao(p){
-  var s = p.s, d = p.d, c = p.c, rs = p.rs, fin = p.fin, contas = p.contas, key = chaveFech(p.data, p.rep);
-  var chaveAb = "s:"+p.rep+"|"+p.data, aberto = p.ab[chaveAb]===true;   // começa fechado: a funcionária abre para conferir
-  var travada = (rs.lista||[]).length>0, jan = janelaDe(c, grupoDaRep(c, p.rep), p.data);
-  var status = rs.paga ? e("span",{className:"rounded-md bg-success/20 px-2 py-0.5 text-[12px] font-bold text-[#4ADE80]"},"Paga")
-    : rs.aPagar>0.009 ? e("span",{className:"rounded-md px-2 py-0.5 text-[12px] font-bold "+(rs.aposCorte ? "bg-warning/25 text-[#F3B63F]" : "bg-info/20 text-[#93C5FD]")}, rs.aposCorte ? "A pagar" : "Antes do corte")
-    : rs.itens.length>0 ? e("span",{className:"rounded-md bg-warning/20 px-2 py-0.5 text-[12px] font-semibold text-[#F3B63F]"},"Aguardando conciliação")
-    : e("span",{className:"rounded-md bg-black/20 px-2 py-0.5 text-[12px] font-semibold opacity-80"},"Sem atendimentos");
-  var contasDe = function(k, atual){ var f = (s.formasPagamento||[]).find(function(x){ return x.k===k; }), l = f ? f.descricoes.slice() : contas.slice(); if(atual && l.indexOf(atual)<0) l.unshift(atual); return l; };
+// Bloco de uma representante numa data de pagamento: fileira com os números dela, as revendedoras (uma linha por pagamento) e a linha de pagar
+function BlocoRep(p){
+  var s = p.s, d = p.d, c = p.c, rs = p.rs, fin = p.fin, et = p.et, dv = useState(null), divAb = dv[0], setDivAb = dv[1];
+  var formas = s.formasPagamento||[], travada = (rs.lista||[]).length>0, pct = pctDaRep(c, p.rep);
+  var contasDe = function(k, atual){ var f = formas.find(function(x){ return x.k===k; }), l = f ? f.descricoes.slice() : p.contas.slice(); if(atual && l.indexOf(atual)<0) l.unshift(atual); return l; };
   var confirma = function(it, conta){ if(!fin) return d({type:"AVISO", txt:"Só o financeiro e a supervisão fazem a conciliação"}); d({type:"COMIS_FIN", id:it.r.id, idx:it.chave, conta:conta, por:s.usuario}); };
-  var grupos = {}; rs.itens.forEach(function(it){ (grupos[it.r.id] = grupos[it.r.id] || []).push(it); });
-  var acertos = Object.keys(grupos).map(function(k){ return grupos[k]; }).sort(function(x,y){ return x[0].r.data.localeCompare(y[0].r.data) || x[0].r.id.localeCompare(y[0].r.id); });
-  var C = "px-3 py-2 text-sm";
-  var linha = function(it){
-    var formaLb = (((s.formasPagamento||[]).find(function(x){ return x.k===it.forma; })||{}).label)||"";
-    var podeMarcar = fin && !it.confirmado && !it.motivo && !it.loja;
-    return e("tr",{key:it.id, className:"border-t border-border/50 "+(it.confirmado ? "" : "bg-warning/5")},
-      e("td",{className:C}, it.tipo==="pag" ? (it.pixRep ? "Pix representante → "+(it.dest||"?") : e("span",null, formaLb, e("span",{className:"ml-1 text-muted-foreground"},"· "+(it.fin ? it.fin.conta : it.conta)))) : e("span",{className:"font-semibold"}, it.status+" (comissão fixa)"),
-        it.extra && e("span",{className:"ml-2 rounded bg-info/15 px-1.5 text-[11px] font-semibold text-info"},"pago depois")),
-      e("td",{className:C+" text-right "+MONO}, it.tipo==="pag" ? (it.valorOrig!==it.valorPago ? e("span",null, e("s",{className:"mr-1 text-muted-foreground"}, BK(it.valorOrig)), BK(it.valorPago)) : BK(it.valorPago)) : dash),
-      e("td",{className:C+" text-right font-semibold text-success "+MONO}, it.loja || it.pixRep ? dash : BK(it.comissao)),
-      e("td",{className:C}, it.pixRep ? e("span",{className:"rounded-md bg-success/15 px-2 py-0.5 text-[12px] font-semibold text-success"},"Pix direto para a representante · entra em Pago")
-        : it.loja ? e("span",{className:"rounded-md bg-destructive/15 px-2 py-0.5 text-[12px] font-semibold text-destructive"},"Sem pagamento · vai para Inadimplência")
-        : it.confirmado
-        ? e("label",{className:"flex items-center gap-2"},
-            e("input",{type:"checkbox", checked:true, disabled:!fin || travada, className:"size-5", "aria-label":"Desfazer conciliação", onChange:function(){ d({type:"COMIS_FIN", id:it.r.id, idx:it.chave, ok:false}); }}),
-            e("span",{className:"rounded-md bg-success/15 px-2 py-0.5 text-[12px] font-semibold text-success"}, quemNome(it.fin.por)+" · "+dataHora(it.fin.ts)))
-        : it.motivo ? e("span",{className:"text-[12.5px] text-muted-foreground"}, it.motivo)
-        : e("div",{className:"flex items-center gap-2"},
-            e("input",{type:"checkbox", checked:false, disabled:!podeMarcar, className:"size-5", "aria-label":"Conciliação do financeiro: "+it.rev, onChange:function(){
-              var el = document.getElementById("conta-"+it.id); confirma(it, el ? el.value : it.conta); }}),
-            it.tipo==="pag" && e("select",{id:"conta-"+it.id, defaultValue:it.conta, disabled:!fin, "aria-label":"Conta em que entrou", className:INPUT+" h-8! w-52 text-[12.5px]!"},
-              contasDe(it.forma, it.conta).map(function(x){ return e("option",{key:x, value:x}, x); })))),
-      e("td",{className:C}, it.tipo==="pag" && !it.pixRep ? e(Divergencia,{it:it, d:d, s:s, fin:fin, contas:contasDe(it.forma, it.conta)}) : null));
-  };
-  return e("div",{className:"overflow-hidden rounded-lg ring-1 ring-[#C9AA6A]/60"},
-    e(Faixa,{t:"Pagamento "+p.n, sub:"Atendimentos "+fmtDataBR(jan.ini).slice(0,5)+" até "+fmtDataBR(jan.fim).slice(0,5)+" · pagamento dia "+fmtDataBR(p.data).slice(0,5),
-      aberto:aberto, alt:function(){ p.alt(chaveAb, !aberto); }, cls:"bg-linear-to-r from-[#7C6538] via-[#977D49] to-[#B09660]", chip:status,
-      dir:e(Numeros,{comis:rs.comissaoTotal, pend:rs.pendente, apagar:rs.aPagar, pago:rs.pagos, rest:rs.falta})}),
-    aberto && e("div",{className:"bg-card/40"},
-      acertos.length===0 ? e("p",{className:"px-4 py-3 text-[13px] text-muted-foreground"},"Nenhum atendimento nesta data ainda.") :
-      e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"},
-        e("thead",null, e("tr",{className:"bg-sidebar"}, th(""), th("Revendedora"), th("Data"), th("Status"), th("Valor do acerto",true), th("Comissão",true), th("Conciliação"))),
-        e("tbody",null, acertos.map(function(g){
-          var r0 = g[0].r, kA = "a:"+r0.id, abA = p.ab[kA]===true, conf = g[0].conferido;
-          var linhas = g.filter(function(x){ return !x.loja && !x.pixRep; }), ok = linhas.filter(function(x){ return x.confirmado; }).length, temLoja = g.some(function(x){ return x.loja; });
-          var comTot = g.reduce(function(t2,x){ return t2+(x.loja || x.pixRep ? 0 : x.comissao); }, 0);
-          var cinza = conf ? "" : "bg-muted/40 text-muted-foreground opacity-70";
-          return e(React.Fragment,{key:r0.id},
-            e("tr",{className:"cursor-pointer border-t border-border/60 hover:bg-muted/30 "+cinza, onClick:function(){ p.alt(kA, !abA); }},
-              e("td",{className:"w-8 px-2 py-2"}, e(Icon,{n:abA ? "chevrondown" : "chevron", s:14})),
-              e("td",{className:C+" font-semibold"}, r0.rev), e("td",{className:C}, fmtDataBR(r0.data)),
-              e("td",{className:C}, e("span",{className:"rounded-md bg-muted px-2 py-0.5 text-[12px] font-semibold"}, g[0].status)),
-              e("td",{className:C+" text-right font-semibold "+MONO}, r0.tipo==="acerto" ? BK(r0.valorAcerto||0) : dash), e("td",{className:C+" text-right font-semibold text-success "+MONO}, BK(comTot)),
-              e("td",{className:C}, !conf ? e("span",{className:"text-[12.5px]"},"Aguardando o agendamento confirmar o recebimento")
-                : e("span",{className:"inline-flex flex-wrap items-center gap-1.5"},
-                    linhas.length>0 && e("span",{className:"rounded-md px-2 py-0.5 text-[12px] font-bold "+(ok===linhas.length ? "bg-success/15 text-success" : "bg-warning/15 text-[#F3B63F]")}, ok+"/"+linhas.length+" conciliados"),
-                    temLoja && e("span",{className:"rounded-md bg-destructive/15 px-2 py-0.5 text-[12px] font-bold text-destructive"},"Acerto com loja → Inadimplência")))),
-            abA && e("tr",{className:"bg-black/10 "+cinza}, e("td",null), e("td",{colSpan:6, className:"px-2 pb-3 pt-1"},
-              e("table",{className:"w-full border-collapse rounded-lg ring-1 ring-border/60"},
-                e("thead",null, e("tr",{className:"bg-sidebar/70"}, th("Forma · conta"), th("Valor",true), th("Comissão",true), th("Conciliação (check do financeiro)"), th("Divergência"))),
-                e("tbody",null, g.map(linha))))));
-        })))),
-      e(Fechamento,{s:s, d:d, c:c, rs:rs, fin:fin, rep:p.rep, data:p.data})));
+  var itens = rs.itens.slice().sort(function(x, y){ return x.r.data.localeCompare(y.r.data) || x.r.id.localeCompare(y.r.id); });
+  var nRev = itens.map(function(i){ return i.r.id; }).filter(function(x, i, a){ return a.indexOf(x)===i; }).length;
+  var cel = "flex h-8 items-center justify-center whitespace-nowrap border-l px-3 text-[13px] tabular-nums first:border-l-0 "+FIO;
+  var par = function(r, v, cor, title){ return e("div",{className:cel, title:title}, r, e("b",{className:"ml-1.5", style:cor ? {color:cor} : undefined}, v)); };
+  var cab = e("div",{role:"button", tabIndex:0, "aria-expanded":p.aberto, onClick:p.alt, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); p.alt(); } },
+      className:"grid cursor-pointer bg-[#1c1d21] hover:bg-white/5", style:{gridTemplateColumns:"minmax(11rem,1fr) 8rem 10rem 10.5rem 9.5rem 8.5rem 10.5rem 9.5rem"}},
+    e("div",{className:cel+" font-semibold"}, (p.aberto ? "▾ " : "▸ ")+p.rep),
+    e("div",{className:cel}, nRev+(nRev===1 ? " revendedora" : " revendedoras")),
+    par("Comissão", BK(rs.comissaoTotal)),
+    par("Combustível", rs.comb>0.009 ? BK(rs.comb) : "sem km"),
+    par("A pagar", BK(rs.aPagar), null, "Comissão já conferida mais o combustível"),
+    par("Pago", BK(rs.pagos), rs.pagos>0.009 ? COR_OK : null),
+    rs.falta<-0.009 ? par("Pago a mais", BK(-rs.falta)) : par("Restante", BK(Math.max(0, rs.falta)), rs.falta>0.009 ? COR_RUIM : null),
+    e("div",{className:cel+" font-semibold", style:et.cor ? {color:et.cor} : undefined}, et.cor ? "● " : "", et.txt));
+  // Tabela das revendedoras: TabelaPlanilha (filtro e ordem em cada coluna). Cada célula tem largura mínima fixa, para as colunas ficarem alinhadas de um bloco para o outro.
+  var cx = function(larg, filho){ return e("span",{className:"inline-flex items-center justify-center gap-2 "+larg}, filho); };
+  var linhas = itens.map(function(it){ var ehPag = it.tipo==="pag";
+    return {id:it.id, it:it, rev:it.rev, data:fmtDataBR(it.r.data).slice(0,5),
+      conta:!ehPag ? it.status+" · comissão fixa" : it.pixRep ? "Pix para "+(it.dest||"a representante") : (it.fin ? it.fin.conta : it.conta)+(it.extra ? " · pago depois" : ""),
+      valor:ehPag ? it.valorPago : "", comissao:it.loja || it.pixRep ? "" : it.comissao,
+      conf:it.pixRep ? "Pix direto · entra em Pago" : it.loja ? "Sem pagamento · Inadimplência" : it.confirmado ? "Conferido" : it.motivo ? it.motivo.replace("Aguardando o agendamento conferir", "Aguardando o agendamento") : "Falta conferir",
+      div:it.div ? (it.div.tipo==="valor" ? "Valor corrigido" : it.div.tipo==="conta" ? "Conta corrigida" : "Não identificado") : ""}; });
+  var cols = [
+    {k:"rev", t:"Revendedora", render:function(v){ return cx("min-w-[19.5rem]", v); }},
+    {k:"data", t:"Data", render:function(v){ return cx("min-w-[3.5rem]", v); }},
+    {k:"conta", t:"Conta em que entrou", render:function(v, l){ var it = l.it, pode = fin && marcavel(it) && it.tipo==="pag";   // a forma não tem coluna: o nome da conta já diz (PIX, LINK, DINHEIRO)
+      return cx("min-w-[14.5rem]", pode ? e("select",{id:"conta-"+it.id, defaultValue:it.conta, "aria-label":"Conta em que entrou", className:CAMPO+" cursor-pointer border-0 bg-transparent text-center"}, contasDe(it.forma, it.conta).map(function(x){ return e("option",{key:x, value:x}, x); })) : v); }},
+    {k:"valor", t:"Valor", render:function(v){ return cx("min-w-[6.5rem] tabular-nums", v==="" ? "—" : BK(v)); }},
+    {k:"comissao", t:"Comissão "+pct+"%", render:function(v){ return cx("min-w-[6.5rem] tabular-nums", v==="" ? "—" : BK(v)); }},
+    {k:"conf", t:"Conferido", render:function(v, l){ var it = l.it;
+      if(it.pixRep) return cx("min-w-[14rem] text-[#34D399]", v);
+      if(it.loja) return cx("min-w-[14rem] text-[#F87171]", v);
+      if(it.confirmado) return cx("min-w-[14rem] text-[#34D399]", e(React.Fragment,null,
+        e("input",{type:"checkbox", checked:true, disabled:!fin || travada, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Desfazer conferência de "+it.rev, title:travada ? "Já tem pagamento registrado nesta data" : "Desfazer",
+          onChange:function(){ d({type:"COMIS_FIN", id:it.r.id, idx:it.chave, ok:false}); }}), quemNome(it.fin.por)+" · "+dataHora(it.fin.ts)));
+      if(it.motivo) return cx("min-w-[14rem] text-[#FBBF24]", v);
+      return cx("min-w-[14rem] text-[#FBBF24]", e(React.Fragment,null,
+        e("span",{className:"inline-flex "+(p.brilhaId===it.id ? "comis-brilha" : "")}, e("input",{type:"checkbox", checked:false, disabled:!fin, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Conferir o pagamento de "+it.rev,
+          onChange:function(){ var el = document.getElementById("conta-"+it.id); confirma(it, el ? el.value : it.conta); }})), "Falta conferir")); }},
+    {k:"div", t:"Divergência", render:function(v, l){ var it = l.it; return cx("min-w-[8rem]", e(Divergencia,{it:it, d:d, fin:fin, aberto:divAb===it.id, abrir:function(){ setDivAb(divAb===it.id ? null : it.id); }})); }}];
+  var itDiv = divAb ? itens.filter(function(i){ return i.id===divAb; })[0] : null;
+  return e("div",{className:"flex flex-col gap-1 rounded-lg "+(p.foco ? "ring-1 ring-primary ring-offset-2 ring-offset-background" : "")},
+    e("div",{className:"overflow-x-auto rounded-lg border "+FIO}, e("div",{style:{minWidth:"78rem"}}, cab)),
+    p.aberto && e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, centro:true, semContagem:true, vazio:"Nenhum atendimento nesta data.",
+      linhaCls:function(l){ return marcavel(l.it) ? "bg-[#FBBF24]/10" : ""; }}),
+    p.aberto && itDiv && e("div",{className:"overflow-hidden rounded-lg border "+FIO}, e(EditorDiv,{it:itDiv, d:d, s:s, contas:contasDe(itDiv.forma, itDiv.conta), fechar:function(){ setDivAb(null); }})),
+    p.aberto && e("div",{className:"rounded-lg border "+FIO}, e(LinhaPagar,{s:s, d:d, rs:rs, fin:fin, et:et, rep:p.rep, data:p.data, jan:p.jan, brilha:p.brilhaPagar})));
 }
 
 // Pix que a revendedora mandou direto para a representante (forma "Pix representante" no app). O financeiro escolhe QUEM recebeu e confirma no OK:
@@ -304,7 +289,8 @@ function AbaComissoesBase(p){
   var mm = useState(mesAtual.slice(5)), mesN = mm[0], setMesN = mm[1];   // "" = o ano todo
   var noPeriodo = function(ym){ return (ym||"").slice(0,4)===anoSel && (mesN==="" || (ym||"").slice(5,7)===mesN); };
   var rotuloPeriodo = mesN==="" ? "Ano "+anoSel : MESES[+mesN-1]+"/"+anoSel;
-  var mu = useState(false), modoUma = mu[0], setModoUma = mu[1], iu = useState(0), idxUma = iu[0], setIdxUma = iu[1], es2 = useState("mes"), escopo = es2[0], setEscopo = es2[1];
+  var vz = useState("pagar"), visao = vz[0], setVisao = vz[1], dz = useState(""), dataSel = dz[0], setDataSel = dz[1], gz = useState(false), gasAberto = gz[0], setGasAberto = gz[1];
+  var mudaVisao = function(v){ if(v==="pagar" && mesN==="") setMesN(mesAtual.slice(5)); setVisao(v); };
   var ab = useState({}), abertos = ab[0], setAbertos = ab[1];
   var alt = function(k, v){ var o = Object.assign({}, abertos); o[k] = v; setAbertos(o); };
   var contas = []; (s.formasPagamento||[]).forEach(function(f){ f.descricoes.forEach(function(x){ if(contas.indexOf(x)<0) contas.push(x); }); });
@@ -334,91 +320,80 @@ function AbaComissoesBase(p){
     var t2 = function(k){ return lista.reduce(function(a,m){ return a+m[k]; }, 0); };
     return {nome:n, meses:lista, km:t2("km"), at:t2("at"), comis:t2("comis"), pend:t2("pend"), apagar:t2("apagar"), pago:t2("pago"), rest:t2("rest"), n:t2("n")};
   });
-  var qtd = dadosTodos.length, idx = Math.min(idxUma, Math.max(0, qtd-1)), dadosRep = modoUma && qtd ? [dadosTodos[idx]] : dadosTodos;
   var kmGeral = dadosTodos.reduce(function(a,r){ return a+r.km; }, 0), atGeral = dadosTodos.reduce(function(a,r){ return a+r.at; }, 0), mediaGeral = atGeral>0 ? kmGeral/atGeral : null;
   var mediaDe = function(x){ return x.at>0 ? x.km/x.at : null; };
-  var dias = function(g){ return (c.ciclos[g]||[]).join("/"); };
-  var abertaRep = function(n){ var a = abertos["r:"+n]; return a!==undefined ? a : repF!=="todas"; };
-  var todasAbertas = dadosRep.length>0 && dadosRep.every(function(r){ return abertaRep(r.nome); });
-  var alternaTodas = function(){ var o = Object.assign({}, abertos); dadosRep.forEach(function(r){ o["r:"+r.nome] = !todasAbertas; }); setAbertos(o); };
-  var hojeIsoB = isoDia(hoje), somaB = {comis:0, pago:0, falta:0};
-  dadosRep.forEach(function(r){
-    if(escopo==="mes"){ somaB.comis += r.comis; somaB.pago += r.pago; somaB.falta += r.rest; return; }
-    var mAtual = r.meses.find(function(x){ return x.mes===mesAtual; }); if(!mAtual) return;
-    var dt = mAtual.datas.find(function(x){ return x.data>=hojeIsoB; }) || mAtual.datas[mAtual.datas.length-1]; if(!dt) return;
-    somaB.comis += dt.rs.comissaoTotal; somaB.pago += dt.rs.pagos; somaB.falta += dt.rs.falta;
-  });
-  var pctB = somaB.comis>0 ? Math.min(100, Math.max(0, somaB.pago/somaB.comis*100)) : 0;
+  // ── visão Pagar (Opção A): as datas de pagamento do mês e, na data escolhida, um bloco por representante que tem algo nessa data ──
+  var ymSel = anoSel+"-"+(mesN || mesAtual.slice(5)), hojeIso = isoDia(hoje), gruposDaData = {};
+  todasReps.forEach(function(n){ var g = grupoDaRep(c, n); datasDoMes(c, g, ymSel).forEach(function(dt){ var l = gruposDaData[dt] = gruposDaData[dt] || []; if(l.indexOf(g)<0) l.push(g); }); });
+  var datasMes = Object.keys(gruposDaData).sort(), variosGrupos = datasMes.some(function(dt){ return gruposDaData[dt].join()!==gruposDaData[datasMes[0]].join(); });
+  var linhasDe = function(dt){ return todasReps.filter(function(n){ return datasDoMes(c, grupoDaRep(c, n), ymSel).indexOf(dt)>=0; })
+    .map(function(n){ var rs = resumoSituacao(c, itens, n, dt, agora); return {nome:n, rs:rs, et:etapaDe(rs)}; })
+    .filter(function(x){ return x.rs.itens.length>0 || x.rs.aPagar>0.009 || x.rs.pagos>0.009; }); };
+  var porData = {}; if(visao==="pagar") datasMes.forEach(function(dt){ porData[dt] = linhasDe(dt); });
+  var comTrabalho = datasMes.filter(function(dt){ return (porData[dt]||[]).some(function(x){ return x.et.n===1 || x.et.n===2; }); });
+  var passadas = datasMes.filter(function(dt){ return dt<=hojeIso; });
+  var dataAtual = datasMes.indexOf(dataSel)>=0 ? dataSel : comTrabalho[0] || passadas[passadas.length-1] || datasMes[0] || "";
+  var ordemEt = function(x){ return x.et.n===1 || x.et.n===2 ? 0 : x.et.n===0 ? 1 : 2; };
+  var linhasPag = (porData[dataAtual]||[]).slice().sort(function(a, b){ return ordemEt(a)-ordemEt(b); });
+  var guia = fin ? linhasPag.filter(function(x){ return ordemEt(x)===0; })[0] : null, guiaItem = guia ? guia.rs.itens.slice().sort(function(x, y){ return x.r.data.localeCompare(y.r.data) || x.r.id.localeCompare(y.r.id); }).filter(marcavel)[0] : null;
+  var conta = function(k){ return linhasPag.filter(function(x){ return x.et.n===k; }).length; }, plural = function(k){ return k+(k===1 ? " representante" : " representantes"); };
+  var etapaAgora = guia ? guia.et.n : 0, gas = c.gasolinaPR || {}, gasAtual = gas.em && isoDia(new Date(gas.em))===hojeIso;
+  var opDatas = datasMes.map(function(dt){ return [dt, "Dia "+fmtDataBR(dt).slice(0,5)+(variosGrupos ? " · Grupo "+gruposDaData[dt].join(" e ") : "")]; });
+  var abertoRep = function(x){ var a = abertos["p:"+dataAtual+"|"+x.nome]; return a!==undefined ? a : x.et.n!==3; };
   // 05/11/2026 (Marcus: "compacte e suba tudo"): filtros no topo, gasolina em uma linha, totais num BlocoResumo (lista escrita, sem faixa de cartões)
-  var kmRep = repF==="todas" ? mediaGeral : mediaDe(dadosRep[0]||{km:0,at:0});
+  var kmRep = repF==="todas" ? mediaGeral : mediaDe(dadosTodos[0]||{km:0,at:0});
   var corKm = repF==="todas" ? null : corMedia(kmRep, mediaGeral);
   var linhasResumo = [
     {r:"Vendido", v:BK(tVendido)}, {r:"Acerto", v:BK(tAcerto), cor:"ok"}, {r:"Pago", v:BK(tPago), cor:"ouro"},
     {r:"Inadimplência", v:BK(tInad), cor:tInad>0.009 ? "ruim" : undefined},
     {r:"Km por atendimento", v:kmRep!=null ? arred(kmRep) : "—", p:repF!=="todas" && mediaGeral!=null ? "geral "+arred(mediaGeral) : "", cor:corKm==="text-[#4ADE80]" ? "ok" : corKm==="text-[#F87171]" ? "ruim" : undefined},
     {r:"Representantes", v:String(todasReps.length)}];
+  var passo = function(i, txt){ var on = etapaAgora===i;
+    return e("div",{key:i, className:"flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-[13px] "+(on ? "border-primary font-semibold text-primary" : FIO)},
+      e("span",{className:"grid size-[18px] place-items-center rounded-full border text-[11px] font-semibold "+(on ? "border-primary bg-primary text-primary-foreground" : "border-foreground")}, i), txt); };
   return e(React.Fragment,null,
-    // 05/11/2026 (Marcus: "não quero esses filtros gigantes"): filtros numa linha curta, ao lado do título
+    e("style",null, ESTILO_BRILHO),
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
       e(PageHead,{t:"Comissões"}),
       e("div",{className:"flex flex-wrap items-center gap-2"},
-        e("select",{value:repF, "aria-label":"Representante", className:CAMPO+" w-44! cursor-pointer", onChange:function(ev){ setRepF(ev.target.value); }},
+        e(Segmentado,{opcoes:[["pagar", "Pagar"], ["resumo", "Resumo do mês"], ["pix", "Pix representante"]], atual:visao, onMudar:mudaVisao}),
+        visao==="pagar" && opDatas.length>0 && (opDatas.length<=5 ? e(Segmentado,{opcoes:opDatas, atual:dataAtual, onMudar:setDataSel})
+          : e("select",{value:dataAtual, "aria-label":"Data de pagamento", className:CAMPO+" w-48! cursor-pointer", onChange:function(ev){ setDataSel(ev.target.value); }}, opDatas.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
+        visao==="resumo" && e("select",{value:repF, "aria-label":"Representante", className:CAMPO+" w-44! cursor-pointer", onChange:function(ev){ setRepF(ev.target.value); }},
           e("option",{value:"todas"},"Todas"), todasReps.map(function(n){ return e("option",{key:n, value:n}, n); })),
-        e("select",{value:mesN, "aria-label":"Mês", className:CAMPO+" w-32! cursor-pointer", onChange:function(ev){ setMesN(ev.target.value); }},
-          e("option",{value:""},"Ano todo"), MESES.map(function(m,i){ return e("option",{key:m, value:String(i+1).padStart(2,"0")}, m); })),
-        e("select",{value:anoSel, "aria-label":"Ano", className:CAMPO+" w-24! cursor-pointer", onChange:function(ev){ setAnoSel(ev.target.value); }}, anos.map(function(a){ return e("option",{key:a, value:a}, a); })),
-        podeConfigComissao(s.usuario) && e(Botao,{onClick:p.aoConfig}, "Configurar comissões"))),
+        visao!=="pix" && e("select",{value:mesN, "aria-label":"Mês", className:CAMPO+" w-32! cursor-pointer", onChange:function(ev){ setMesN(ev.target.value); setDataSel(""); }},
+          visao==="resumo" && e("option",{value:""},"Ano todo"), MESES.map(function(m,i){ return e("option",{key:m, value:String(i+1).padStart(2,"0")}, m); })),
+        visao!=="pix" && e("select",{value:anoSel, "aria-label":"Ano", className:CAMPO+" w-24! cursor-pointer", onChange:function(ev){ setAnoSel(ev.target.value); setDataSel(""); }}, anos.map(function(a){ return e("option",{key:a, value:a}, a); })),
+        visao==="pagar" && e(Botao,{onClick:function(){ setGasAberto(!gasAberto); }, title:gasAtual ? "Preço da gasolina de hoje" : "Preço desatualizado: confira a ANP antes de pagar"}, gasAtual ? "Gasolina "+BK(gas.valor) : "Atualizar gasolina"),
+        podeConfigComissao(s.usuario) && e(Botao,{onClick:p.aoConfig}, "Configurar"))),
     !fin && e("p",{className:"rounded-lg bg-warning/10 px-3 py-1.5 text-[13px] font-semibold text-warning"},"Você só consulta: os checks e pagamentos são do financeiro."),
-    e(AvisoGasolina,{s:s, d:d, c:c, fin:fin}),
-    e("div",{className:"grid grid-cols-1 items-start gap-2.5 lg:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] xl:grid-cols-[minmax(0,17rem)_minmax(0,24rem)_minmax(0,1fr)]"},
+    visao==="pagar" && gasAberto && e(AvisoGasolina,{s:s, d:d, c:c, fin:fin}),
+    visao==="pagar" && e("div",{className:"grid grid-cols-3 gap-2"}, passo(1, "Conferir o que entrou · "+plural(conta(1))), passo(2, "Pagar a comissão · "+plural(conta(2))), passo(3, "Pagas · "+plural(conta(3)))),
+    visao==="pagar" && fin && linhasPag.length>0 && e("div",{className:"flex h-8 items-center justify-center whitespace-nowrap rounded-md border px-3 text-[13px] font-semibold "+(guia ? "border-primary bg-primary/10" : FIO)},
+      !guia ? (linhasPag.some(function(x){ return x.et.txt==="Aguardando"; }) ? "Nada a conferir agora: falta o agendamento confirmar o recebimento no Consolidado." : linhasPag.some(function(x){ return x.et.txt==="Antes do corte"; }) ? "Nada a pagar agora: o pagamento libera depois do corte." : "Tudo pago nesta data.")
+      : guiaItem ? "▶ Comece aqui: "+guia.nome+" · marque o check de "+guiaItem.rev+" se o dinheiro entrou na conta"
+      : "▶ Agora pague: "+guia.nome+" · "+BK(Math.max(0, guia.rs.falta))+" · escolha a conta de saída e clique em Registrar pagamento"),
+    visao==="pagar" && (linhasPag.length===0 ? e("p",{className:"rounded-lg border px-3 py-3 text-center text-[13px] "+FIO}, "Nenhuma comissão nesta data.")
+      : e("div",{className:"flex flex-col gap-2.5"}, linhasPag.map(function(x){ var ab2 = abertoRep(x), chave = "p:"+dataAtual+"|"+x.nome;
+          return e(BlocoRep,{key:chave, s:s, d:d, c:c, rs:x.rs, et:x.et, fin:fin, contas:contas, rep:x.nome, data:dataAtual, jan:janelaDe(c, grupoDaRep(c, x.nome), dataAtual), aberto:ab2, alt:function(){ alt(chave, !ab2); },
+            foco:guia===x, brilhaId:guia===x && guiaItem ? guiaItem.id : null, brilhaPagar:guia===x && !guiaItem}); }))),
+    visao==="resumo" && e("div",{className:"grid grid-cols-1 items-start gap-2.5 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)]"},
       e(BlocoResumo,{t:"Resumo · "+rotuloPeriodo, linhas:linhasResumo}),
-      e(PixRepresentante,{s:s, d:d, fin:fin, itens:itens, nomes:todasReps}),
-        // valor que entrou em cada conta (antes ficava no Consolidado)
-        e("section",{className:"overflow-hidden rounded-xl bg-black ring-1 ring-[#E8B84B]/25 lg:col-span-2 xl:col-span-1"},
-          e("div",{className:"flex items-center justify-between border-b border-border px-3 py-1.5"}, e("h2",{className:"font-heading text-[13px] font-bold"},"Recebido por conta"),
-            e("span",{className:"text-[12px] text-muted-foreground"}, rotuloPeriodo+" · pago "+BK(tPago))),
-          e("div",{className:"flex max-h-[16rem] flex-col gap-1 overflow-y-auto p-3"},
-            barras.length===1 && tPago<=0 ? e("p",{className:"text-[13px] text-muted-foreground"},"Nenhum pagamento lançado no mês.") : null,
-            barras.map(function(x){
-              return e("div",{key:x.nome, className:"grid grid-cols-[minmax(8rem,15rem)_minmax(0,1fr)_7.5rem] items-center gap-3"},
-                e("span",{className:"truncate text-[12.5px] font-semibold "+(x.inad ? "text-destructive" : ""), title:x.nome}, x.nome),
-                e("div",{className:"h-3.5 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded "+(x.inad ? "bg-destructive" : "bg-linear-to-r from-[#B8862B] to-[#E8B84B]"), style:{width:Math.max(x.v>0 ? 1.5 : 0, x.v/maxBarra*100)+"%"}})),
-                e("b",{className:MONO+" text-right text-[12.5px] "+(x.inad ? "text-destructive" : "")}, BK(x.v))); })))),
-    e(RelatorioTaxas,{s:s, noPeriodo:noPeriodo, repF:repF, rotulo:rotuloPeriodo}),
-    e("section",{className:"flex flex-col gap-2 rounded-xl bg-black p-3 ring-1 ring-[#E8B84B]/25"},
-      e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
-        e("h2",{className:"font-heading text-[13px] font-bold"}, "Comissões pagas e o que falta"),
-        e("div",{className:"flex items-center gap-1.5"},
-          e(Botao,{onClick:alternaTodas}, todasAbertas ? "Fechar todas" : "Abrir todas"),
-          e("span",{className:"mx-1 h-5 w-px bg-border"}),
-          [["periodo","Período atual"],["mes","Mês"]].map(function(x){ return e("button",{key:x[0], onClick:function(){ setEscopo(x[0]); }, className:"rounded-lg px-3 py-1 text-[12px] font-semibold ring-1 "+(escopo===x[0] ? "bg-primary/15 ring-2 ring-primary" : "bg-card ring-border hover:bg-muted/40")}, x[1]); }),
-          e("span",{className:"mx-1 h-5 w-px bg-border"}),
-          [[false,"Todas"],[true,"Uma por uma"]].map(function(x){ return e("button",{key:String(x[0]), onClick:function(){ setModoUma(x[0]); }, className:"rounded-lg px-3 py-1 text-[12px] font-semibold ring-1 "+(modoUma===x[0] ? "bg-primary/15 ring-2 ring-primary" : "bg-card ring-border hover:bg-muted/40")}, x[1]); }),
-          modoUma && qtd>1 && e("span",{className:"flex items-center gap-1"},
-            e("button",{onClick:function(){ setIdxUma((idx-1+qtd)%qtd); }, "aria-label":"Anterior", className:"grid size-7 place-items-center rounded-lg bg-card ring-1 ring-border hover:bg-muted/40"}, "‹"),
-            e("b",{className:"min-w-24 text-center text-[12.5px]"}, (dadosRep[0] ? dadosRep[0].nome : "")+" ("+(idx+1)+"/"+qtd+")"),
-            e("button",{onClick:function(){ setIdxUma((idx+1)%qtd); }, "aria-label":"Próxima", className:"grid size-7 place-items-center rounded-lg bg-card ring-1 ring-border hover:bg-muted/40"}, "›")))),
-      e("div",{className:"h-3.5 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded bg-linear-to-r from-[#B8862B] to-[#E8B84B]", style:{width:pctB+"%"}})),
-      e("div",{className:"flex flex-wrap items-center justify-between gap-x-4 text-[12.5px]"},
-        e("span",null, "Já pago ", e("b",{className:MONO+" text-success"}, BK(somaB.pago))),
-        e("span",null, "Falta pagar ", e("b",{className:MONO+" "+(somaB.falta>0.009 ? "text-destructive" : "text-success")}, BK(somaB.falta))),
-        e("span",{className:"text-muted-foreground"}, "Comissão total "+BK(somaB.comis)+" · "+(escopo==="mes" ? rotuloPeriodo : "próximo pagamento de cada representante")+(modoUma ? "" : " · "+dadosRep.length+" representantes"))),
-      e(Legenda,null)),
-    e("div",{className:"flex flex-col gap-3"}, dadosRep.map(function(r){
-      var kRep = "r:"+r.nome, abRep = abertaRep(r.nome);
-      return e("div",{key:r.nome, className:"overflow-hidden rounded-xl ring-2 ring-[#8C6A3F]/70"},
-        e(Faixa,{chip:e(ChipMedia,{m:mediaDe(r), geral:mediaGeral}), t:r.nome, sub:pctDaRep(c, r.nome)+"% · Grupo "+grupoDaRep(c, r.nome)+" (paga "+dias(grupoDaRep(c, r.nome))+")",
-          aberto:abRep, alt:function(){ alt(kRep, !abRep); }, dir:e(Numeros,{comis:r.comis, pend:r.pend, apagar:r.apagar, pago:r.pago, rest:r.rest})}),
-        abRep && e("div",{className:"flex flex-col gap-2 bg-card/40 p-3"}, e(ErrosRep,{s:s, rep:r.nome}), r.meses.map(function(m){
-          var kM = "m:"+r.nome+"|"+m.mes, abM = abertos[kM]!==undefined ? abertos[kM] : m.mes===mesAtual;
-          return e("div",{key:m.mes, className:"overflow-hidden rounded-lg ring-1 ring-[#B8923F]/60"},
-            e(Faixa,{chip:e(ChipMedia,{m:mediaDe(m), geral:mediaGeral}), t:nomeMes(m.mes), sub:"3 pagamentos no mês", aberto:abM, alt:function(){ alt(kM, !abM); }, cls:"bg-linear-to-r from-[#5E4724] via-[#7D6133] to-[#9A7C45]",
-              dir:e(Numeros,{comis:m.comis, pend:m.pend, apagar:m.apagar, pago:m.pago, rest:m.rest})}),
-            abM && e("div",{className:"flex flex-col gap-2 p-2"}, m.datas.map(function(x, ix){
-              return e(Situacao,{key:x.data, n:ix+1, s:s, d:d, c:c, rs:x.rs, fin:fin, contas:contas, rep:r.nome, data:x.data, ab:abertos, alt:alt}); })));
-        })));
-    })),
-    e(PainelRegras,{usuario:s.usuario, aoConfig:p.aoConfig}));
+      // valor que entrou em cada conta (antes ficava no Consolidado)
+      e("section",{className:"overflow-hidden rounded-xl bg-black ring-1 ring-[#E8B84B]/25"},
+        e("div",{className:"flex items-center justify-between border-b border-border px-3 py-1.5"}, e("h2",{className:"font-heading text-[13px] font-bold"},"Recebido por conta"),
+          e("span",{className:"text-[13px]"}, rotuloPeriodo+" · pago "+BK(tPago))),
+        e("div",{className:"flex max-h-[16rem] flex-col gap-1 overflow-y-auto p-3"},
+          barras.length===1 && tPago<=0 ? e("p",{className:"text-[13px]"},"Nenhum pagamento lançado no mês.") : null,
+          barras.map(function(x){
+            return e("div",{key:x.nome, className:"grid grid-cols-[minmax(8rem,17rem)_minmax(0,1fr)_7.5rem] items-center gap-3"},
+              e("span",{className:"whitespace-nowrap text-[13px] font-semibold "+(x.inad ? "text-destructive" : "")}, x.nome),
+              e("div",{className:"h-3.5 overflow-hidden rounded bg-muted/50"}, e("div",{className:"h-full rounded "+(x.inad ? "bg-destructive" : "bg-primary"), style:{width:Math.max(x.v>0 ? 1.5 : 0, x.v/maxBarra*100)+"%"}})),
+              e("b",{className:"text-right text-[13px] tabular-nums "+(x.inad ? "text-destructive" : "")}, BK(x.v))); })))),
+    visao==="resumo" && e(RelatorioTaxas,{s:s, noPeriodo:noPeriodo, repF:repF, rotulo:rotuloPeriodo}),
+    visao==="resumo" && reps.map(function(n){ return e(ErrosRep,{key:n, s:s, rep:n}); }),
+    visao==="resumo" && e(PainelRegras,{usuario:s.usuario, aoConfig:p.aoConfig}),
+    visao==="pix" && e(PixRepresentante,{s:s, d:d, fin:fin, itens:itens, nomes:todasReps}));
 }
 
 // Regras das comissões: abrem aqui embaixo, na própria tela. O Configurador (só o Marcus) abre em OUTRA tela, com as regras em cima e as configurações embaixo.

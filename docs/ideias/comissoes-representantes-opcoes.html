@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Comissões dos representantes · 3 opções (desenho)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{ --fundo:#111111; --bloco:#161616; --faixa:#1c1d21; --fio:#2a2c31; --campo:#1b1b1b; --texto:#f1f1f1; --ouro:#e2c044;
+         --verde:#34d399; --amarelo:#fbbf24; --vermelho:#f87171; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:var(--fundo); color:var(--texto); font-family:Inter,system-ui,sans-serif; font-size:13px; }
+  button,input,select{ font:inherit; color:inherit; }
+  .aviso{ background:#2a2410; color:var(--ouro); text-align:center; padding:6px 12px; font-size:11px; letter-spacing:.04em; text-transform:uppercase; }
+  .escolha{ display:flex; align-items:center; justify-content:center; gap:10px; padding:10px 16px; border-bottom:1px solid var(--fio); flex-wrap:wrap; }
+  .pagina{ padding:14px 16px 40px; max-width:1560px; margin:0 auto; }
+  .cabeca{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  h1{ margin:0; font-size:20px; font-weight:600; }
+  .lado{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .campo{ height:32px; padding:0 10px; border:1px solid var(--fio); border-radius:6px; background:var(--campo); white-space:nowrap; text-align:center; }
+  .botao{ height:32px; padding:0 14px; border-radius:6px; border:1px solid var(--fio); background:transparent; cursor:pointer; white-space:nowrap; }
+  .botao.principal{ border-color:var(--ouro); background:rgba(226,192,68,.2); color:var(--ouro); font-weight:600; }
+  .seg{ display:inline-flex; height:32px; border:1px solid var(--fio); border-radius:6px; overflow:hidden; }
+  .seg button{ border:0; background:transparent; padding:0 14px; cursor:pointer; white-space:nowrap; border-right:1px solid var(--fio); }
+  .seg button:last-child{ border-right:0; }
+  .seg button.ativo{ background:rgba(226,192,68,.16); color:var(--ouro); font-weight:600; }
+  /* passos: onde a pessoa está */
+  .passos{ display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:8px; }
+  .passo{ height:32px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--fio); border-radius:6px; background:var(--bloco); white-space:nowrap; }
+  .passo .num{ width:18px; height:18px; border-radius:50%; border:1px solid var(--texto); display:grid; place-items:center; font-size:11px; font-weight:600; }
+  .passo.agora{ border-color:var(--ouro); color:var(--ouro); font-weight:600; }
+  .passo.agora .num{ border-color:var(--ouro); background:var(--ouro); color:#1a1306; }
+  .guia{ height:32px; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--ouro); border-radius:6px; background:rgba(226,192,68,.1); margin-bottom:10px; white-space:nowrap; font-weight:600; }
+  /* o brilho: mostra por onde começar */
+  @keyframes brilho{ 0%,100%{ box-shadow:0 0 0 0 rgba(226,192,68,0), 0 0 0 1px var(--ouro); } 50%{ box-shadow:0 0 14px 4px rgba(226,192,68,.75), 0 0 0 1px var(--ouro); } }
+  .brilha{ animation:brilho 1.3s ease-in-out infinite; border-radius:6px; position:relative; z-index:2; }
+  input[type=checkbox]{ width:18px; height:18px; accent-color:var(--ouro); cursor:pointer; }
+  input[type=checkbox].brilha{ border-radius:4px; }
+  .bloco{ border:1px solid var(--fio); border-radius:8px; background:var(--bloco); overflow:hidden; margin-bottom:10px; }
+  .bloco.foco{ border-color:var(--ouro); }
+  .rola{ overflow-x:auto; }
+  .g{ display:grid; border-bottom:1px solid var(--fio); min-width:1180px; }
+  .g > div{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 8px; white-space:nowrap; border-right:1px solid var(--fio); font-variant-numeric:tabular-nums; }
+  .g > div:last-child{ border-right:0; }
+  .g.topo{ background:var(--faixa); }
+  .g.topo > div{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .g.rep{ grid-template-columns:minmax(190px,1fr) 60px 120px 120px 120px 120px 120px 120px 170px 40px; background:var(--faixa); cursor:pointer; font-weight:600; }
+  .g.rev{ grid-template-columns:minmax(220px,1fr) 90px 110px 240px 130px 120px 190px; }
+  .g.rev.falta{ background:rgba(251,191,36,.06); }
+  .g:last-child{ border-bottom:0; }
+  .verde{ color:var(--verde); } .amarelo{ color:var(--amarelo); } .vermelho{ color:var(--vermelho); } .ouro{ color:var(--ouro); }
+  .ponto{ margin-right:6px; font-size:10px; }
+  .pagar{ display:flex; align-items:center; justify-content:center; gap:8px; padding:8px 10px; border-top:1px solid var(--fio); overflow-x:auto; white-space:nowrap; }
+  .pagar .conta{ margin-right:auto; }
+  /* opção B */
+  .duas{ display:grid; grid-template-columns:390px minmax(0,1fr); gap:10px; align-items:start; }
+  .gl{ display:grid; grid-template-columns:minmax(120px,1fr) 110px 130px; border-bottom:1px solid var(--fio); cursor:pointer; }
+  .gl > div{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 8px; white-space:nowrap; border-right:1px solid var(--fio); font-variant-numeric:tabular-nums; }
+  .gl > div:last-child{ border-right:0; }
+  .gl.topo{ background:var(--faixa); cursor:default; } .gl.topo > div{ height:30px; font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; }
+  .gl.sel{ background:rgba(226,192,68,.12); } .gl:last-child{ border-bottom:0; }
+  /* opção C */
+  .tres{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; align-items:start; margin-bottom:10px; }
+  .colT{ height:30px; display:flex; align-items:center; justify-content:center; background:var(--faixa); font-size:11px; text-transform:uppercase; letter-spacing:.04em; font-weight:600; border-bottom:1px solid var(--fio); }
+  .cartao{ display:grid; grid-template-columns:minmax(0,1fr) 120px 110px; border-bottom:1px solid var(--fio); cursor:pointer; }
+  .cartao > div{ height:32px; display:flex; align-items:center; justify-content:center; padding:0 8px; white-space:nowrap; border-right:1px solid var(--fio); font-variant-numeric:tabular-nums; }
+  .cartao > div:last-child{ border-right:0; } .cartao:last-child{ border-bottom:0; } .cartao.sel{ background:rgba(226,192,68,.12); }
+  .vazio{ height:32px; display:flex; align-items:center; justify-content:center; }
+</style>
+</head>
+<body>
+<div class="aviso">Desenho para aprovação · nomes e valores inventados · nada gravado · clique nos checks e nos botões para testar</div>
+<div class="escolha"><b>Escolha o formato:</b>
+  <span class="seg" id="segOp"><button data-o="A" class="ativo">Opção A · Blocos abertos</button><button data-o="B">Opção B · Lista e ficha</button><button data-o="C">Opção C · Fila em 3 etapas</button></span>
+</div>
+<div class="pagina">
+  <div class="cabeca">
+    <h1>Comissões</h1>
+    <div class="lado">
+      <span class="seg"><button>Pagamento 01/11</button><button class="ativo">Pagamento 11/11</button><button>Pagamento 21/11</button></span>
+      <select class="campo"><option>Novembro</option></select><select class="campo"><option>2026</option></select>
+      <button class="botao">Gasolina R$ 6,49</button><button class="botao">Resumo do mês</button><button class="botao">Pix representante</button><button class="botao">Configurar</button>
+    </div>
+  </div>
+  <div class="passos" id="passos"></div>
+  <div class="guia" id="guia"></div>
+  <div id="corpo"></div>
+</div>
+<script>
+// Dados INVENTADOS, só para mostrar o desenho.
+var R = function(v){ return "R$ " + v.toFixed(2).replace(".", ",").replace(/\B(?=(\d{3})+(?!\d))/g, "."); };
+var CS = "PIX - SICREDI - SORELLY - 34", CB = "PIX - BANHO", CL = "LINK - SICREDI - SERENITY - 59", CD = "DINHEIRO";
+function rv(nome, data, forma, conta, valor, ok){ return {nome:nome, data:data, forma:forma, conta:conta, valor:valor, ok:ok}; }
+var REPS = [
+ {n:"Marciane", pct:8, gas:151.20, pago:0, revs:[rv("Camila Duarte Reis","03/11","Pix",CS,1840,true), rv("Fernanda Lopes Maia","04/11","Pix",CB,2210,true), rv("Juliana Prado Costa","06/11","Link",CL,1395,false), rv("Renata Alves Pinto","07/11","Dinheiro",CD,980,false), rv("Simone Castro Lima","09/11","Pix",CS,1560,false)]},
+ {n:"Thainá", pct:8, gas:130.00, pago:0, revs:[rv("Aline Moraes Teixeira","02/11","Pix",CS,2480,true), rv("Bianca Freitas Rocha","05/11","Pix",CB,1320,true), rv("Daniela Souza Brito","08/11","Link",CL,2560,false)]},
+ {n:"Leticia Alves", pct:8, gas:88.40, pago:0, revs:[rv("Elaine Cristina Nunes","03/11","Pix",CS,3100,true), rv("Gabriela Pires Ramos","06/11","Pix",CS,2640,true), rv("Helena Barros Dias","10/11","Dinheiro",CD,2497,true)]},
+ {n:"Nayale", pct:8, gas:0, semKm:true, pago:0, revs:[rv("Isabela Monteiro Paz","04/11","Pix",CB,1890,true), rv("Karina Lopes Viana","09/11","Pix",CS,1665,true)]},
+ {n:"Vanessa", pct:8, gas:44.00, pago:195.60, revs:[rv("Larissa Mendes Cruz","05/11","Pix",CS,1895,true)]},
+ {n:"Bruna", pct:8, gas:60.00, pago:372.00, revs:[rv("Marina Tavares Leal","02/11","Pix",CS,2150,true), rv("Natália Reis Campos","07/11","Link",CL,1750,true)]} ];
+var op = "A", sel = "", fechados = {};
+function pl(n, um, mais){ return n + " " + (n === 1 ? um : mais); }
+function com(r){ return r.revs.reduce(function(t, x){ return t + x.valor * r.pct / 100; }, 0); }
+function aPagar(r){ return com(r) + r.gas; }
+function rest(r){ return Math.max(0, aPagar(r) - r.pago); }
+function faltam(r){ return r.revs.filter(function(x){ return !x.ok; }).length; }
+function etapa(r){ return faltam(r) > 0 ? 1 : rest(r) > 0.01 ? 2 : 3; }
+function guia(){ var r = REPS.filter(function(x){ return etapa(x) < 3; })[0]; if(!r) return null; var i = -1; r.revs.some(function(x, k){ if(!x.ok){ i = k; return true; } }); return {r:r, i:i}; }
+function sit(r){ var e = etapa(r); return e === 1 ? ["Conferir " + (r.revs.length - faltam(r)) + " de " + r.revs.length, "amarelo"] : e === 2 ? ["A pagar", "vermelho"] : ["Paga", "verde"]; }
+function topoPassos(){
+  var g = guia(), agora = g ? etapa(g.r) : 3, c = [0, 0, 0, 0]; REPS.forEach(function(r){ c[etapa(r)]++; });
+  var t = [["Conferir o que entrou", pl(c[1], "representante", "representantes")], ["Pagar a comissão", pl(c[2], "representante", "representantes")], ["Pagas", pl(c[3], "representante", "representantes")]];
+  document.getElementById("passos").innerHTML = t.map(function(x, i){ return '<div class="passo' + (agora === i + 1 ? " agora" : "") + '"><span class="num">' + (i + 1) + "</span>" + x[0] + " · " + x[1] + "</div>"; }).join("");
+  document.getElementById("guia").innerHTML = !g ? '<span class="verde">Tudo pago nesta data. Não falta nada.</span>'
+    : g.i >= 0 ? "▶ Comece aqui: " + g.r.n + " · marque o check de " + g.r.revs[g.i].nome + " se o dinheiro entrou na conta"
+    : "▶ Agora pague: " + g.r.n + " · " + R(rest(g.r)) + " · clique em Registrar pagamento";
+}
+function tabelaRevs(r){
+  var g = guia(), h = '<div class="g rev topo"><div>Revendedora</div><div>Data</div><div>Forma</div><div>Conta em que entrou</div><div>Valor do acerto</div><div>Comissão ' + r.pct + '%</div><div>Conferido</div></div>';
+  r.revs.forEach(function(x, i){ var br = g && g.r === r && g.i === i;
+    h += '<div class="g rev' + (x.ok ? "" : " falta") + '"><div>' + x.nome + "</div><div>" + x.data + "</div><div>" + x.forma + "</div><div>" + x.conta + "</div><div>" + R(x.valor) + "</div><div>" + R(x.valor * r.pct / 100) + "</div><div>" +
+      '<input type="checkbox" data-rep="' + r.n + '" data-i="' + i + '"' + (x.ok ? " checked" : "") + (br ? ' class="brilha"' : "") + (r.pago > 0 ? " disabled" : "") + ">" + (x.ok ? '<span class="verde" style="margin-left:8px">Nayale · 11/11</span>' : '<span class="amarelo" style="margin-left:8px">Falta conferir</span>') + "</div></div>"; });
+  return h;
+}
+function linhaPagar(r){
+  var g = guia(), e = etapa(r), br = g && g.r === r && g.i < 0;
+  var conta = '<span class="conta">Comissão <b>' + R(com(r)) + "</b> + Combustível <b>" + (r.semKm ? "sem km" : R(r.gas)) + "</b> = A pagar <b>" + R(aPagar(r)) + "</b></span>";
+  if(e === 1) return '<div class="pagar">' + conta + '<span class="amarelo">' + (faltam(r) === 1 ? "Falta 1 conferência" : "Faltam " + faltam(r) + " conferências") + " para liberar o pagamento</span></div>";
+  if(e === 3) return '<div class="pagar">' + conta + '<span class="verde">● Paga · Pix · ' + CS + " · 11/11/2026 · Nayale</span></div>";
+  return '<div class="pagar">' + conta + '<select class="campo"><option>Pix</option></select><select class="campo"><option>' + CS + '</option></select><input class="campo" value="11/11/2026" style="width:110px"><input class="campo" value="' + R(rest(r)) + '" style="width:120px">' +
+    '<button class="botao principal' + (br ? " brilha" : "") + '" data-pagar="' + r.n + '">Registrar pagamento</button></div>';
+}
+function cabRep(r, aberto){ var s = sit(r);
+  return '<div class="g rep" data-abre="' + r.n + '"><div>' + r.n + "</div><div>" + r.pct + "%</div><div>" + pl(r.revs.length, "revendedora", "revendedoras") + "</div><div>" + R(com(r)) + "</div><div>" + (r.semKm ? "Sem km" : R(r.gas)) + "</div><div>" + R(aPagar(r)) +
+    '</div><div class="' + (r.pago > 0 ? "verde" : "") + '">' + R(r.pago) + '</div><div class="' + (rest(r) > 0.01 ? "vermelho" : "") + '">' + R(rest(r)) + '</div><div class="' + s[1] + '"><span class="ponto">●</span>' + s[0] + "</div><div>" + (aberto ? "▾" : "▸") + "</div></div>"; }
+var TOPO_REP = '<div class="g rep topo" style="cursor:default"><div>Representante</div><div>%</div><div>Revendedoras</div><div>Comissão</div><div>Combustível</div><div>A pagar</div><div>Pago</div><div>Restante</div><div>Situação</div><div></div></div>';
+function ficha(r){ var g = guia(); return '<div class="bloco' + (g && g.r === r ? " foco" : "") + '"><div class="rola">' + TOPO_REP + cabRep(r, true) + tabelaRevs(r) + "</div>" + linhaPagar(r) + "</div>"; }
+function opA(){ var g = guia();
+  return REPS.map(function(r){ var aberto = fechados[r.n] === undefined ? etapa(r) < 3 : !fechados[r.n];
+    return '<div class="bloco' + (g && g.r === r ? " foco" : "") + '"><div class="rola">' + cabRep(r, aberto) + (aberto ? tabelaRevs(r) : "") + "</div>" + (aberto ? linhaPagar(r) : "") + "</div>"; }).join(""); }
+function opB(){ var g = guia(), r = REPS.filter(function(x){ return x.n === sel; })[0] || (g ? g.r : REPS[0]);
+  var l = '<div class="bloco"><div class="gl topo"><div>Representante</div><div>Restante</div><div>Situação</div></div>' + REPS.map(function(x){ var s = sit(x);
+    return '<div class="gl' + (x === r ? " sel" : "") + (g && g.r === x && x !== r ? " brilha" : "") + '" data-sel="' + x.n + '"><div>' + x.n + '</div><div class="' + (rest(x) > 0.01 ? "vermelho" : "") + '">' + R(rest(x)) + '</div><div class="' + s[1] + '"><span class="ponto">●</span>' + s[0] + "</div></div>"; }).join("") + "</div>";
+  return '<div class="duas">' + l + "<div>" + ficha(r) + "</div></div>"; }
+function opC(){ var g = guia(), r = REPS.filter(function(x){ return x.n === sel; })[0] || (g ? g.r : REPS[0]);
+  var nomes = ["1 · Conferir o que entrou", "2 · Pagar a comissão", "3 · Pagas"];
+  var cols = [1, 2, 3].map(function(e){ var l = REPS.filter(function(x){ return etapa(x) === e; });
+    return '<div class="bloco" style="margin:0"><div class="colT">' + nomes[e - 1] + "</div>" + (l.length ? l.map(function(x){ var s = sit(x);
+      return '<div class="cartao' + (x === r ? " sel" : "") + (g && g.r === x && x !== r ? " brilha" : "") + '" data-sel="' + x.n + '"><div>' + x.n + "</div><div>" + R(e === 3 ? x.pago : aPagar(x)) + '</div><div class="' + s[1] + '">' + (e === 1 ? (x.revs.length - faltam(x)) + " de " + x.revs.length : s[0]) + "</div></div>"; }).join("") : '<div class="vazio">Nenhuma</div>') + "</div>"; }).join("");
+  return '<div class="tres">' + cols + "</div>" + ficha(r); }
+function desenha(){ topoPassos(); document.getElementById("corpo").innerHTML = op === "A" ? opA() : op === "B" ? opB() : opC(); }
+document.getElementById("segOp").addEventListener("click", function(ev){ var b = ev.target.closest("button"); if(!b) return; op = b.dataset.o; sel = ""; [].forEach.call(this.children, function(x){ x.classList.toggle("ativo", x === b); }); desenha(); });
+document.getElementById("corpo").addEventListener("click", function(ev){
+  var t = ev.target, r;
+  if(t.matches("input[type=checkbox]")){ r = REPS.filter(function(x){ return x.n === t.dataset.rep; })[0]; r.revs[+t.dataset.i].ok = t.checked; return desenha(); }
+  var p = t.closest("[data-pagar]"); if(p){ r = REPS.filter(function(x){ return x.n === p.dataset.pagar; })[0]; r.pago = aPagar(r); if(op !== "A") sel = ""; return desenha(); }
+  var s = t.closest("[data-sel]"); if(s){ sel = s.dataset.sel; return desenha(); }
+  var a = t.closest("[data-abre]"); if(a && op === "A"){ r = REPS.filter(function(x){ return x.n === a.dataset.abre; })[0]; var ab = fechados[r.n] === undefined ? etapa(r) < 3 : !fechados[r.n]; fechados[r.n] = ab; return desenha(); }
+});
+desenha();
+</script>
+</body>
+</html>

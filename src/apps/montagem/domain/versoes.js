@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.77", data:"2026-11-12", titulo:"Comissões dos representantes: tela nova para pagar", itens:[
+  {tipo:"novo", area:"Financeiro › Representantes › Comissões", txt:"Tela refeita para pagar comissão. Você escolhe a data de pagamento no topo. Cada representante é um bloco com as revendedoras dela, uma linha por pagamento, e a linha de pagar embaixo. Três etapas: conferir o que entrou, pagar a comissão, pagas. O próximo passo brilha em dourado."},
+  {tipo:"ajuste", area:"Financeiro › Representantes › Comissões", txt:"Resumo do mês, recebido por conta, taxas de deslocamento, erros e regras ficam no botão Resumo do mês. O Pix representante fica no botão Pix representante. A gasolina virou um botão no topo."}]},
  {v:"0.18.76", data:"2026-11-12", titulo:"Atendimento interno › Revendedoras: botão Acerto feito", itens:[
   {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"Nova coluna Acerto feito (pedido da Tamara): o botão marca a revendedora que já veio fazer o acerto. A linha fica cinza e vai para o fim da lista, com a data e o botão Desfazer. A marca some sozinha quando a DevMaster mostra um kit novo (data do kit depois da marcação). O filtro de data de devolução é o da coluna Acerto previsto (clicar no título)."},
  ]},
