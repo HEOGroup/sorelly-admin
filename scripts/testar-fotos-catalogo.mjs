@@ -104,8 +104,8 @@ t("meta: conta marcada e DevMaster com data dentro do período (A1, A2, A5)", mp
 t("meta: foto antiga e fora do período não contam", mp.linhas.find(l=>l.dia==="2026-11-10").fotos===1 && mp.linhas.find(l=>l.dia==="2026-11-11").fotos===2);
 t("meta: ritmo por dia e situação", mp.restam===3 && mp.porDia===1 && mp.situacao==="Em andamento" && F.metaProgresso(fm, Object.assign({}, M, {alvo:3}), "2026-11-11").situacao==="Batida" && F.metaProgresso(fm, M, "2026-11-14").situacao==="Não batida");
 const fv = {codigos:[{cod:"V1", dia:"2026-10-20", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}, {cod:"V2", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}, {cod:"V3", dia:"2026-11-05", fotoEm:"dm", dmFoto:"2026-11-11T08:00:00"}]};
-t("meta: foto antiga achada na DevMaster (peça de antes de 01/11 ou da planilha) não conta", F.metaProgresso(fv, M, "2026-11-11").feitas===1);
-t("meta: foto vista na DevMaster antes da hora de corte não conta", F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T07:00:00"}), "2026-11-11").feitas===1 && F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T08:00:01"}), "2026-11-11").feitas===0);
+t("meta: foto nova na DevMaster conta de qualquer mês (peça de outubro, sem data ou de novembro)", F.metaProgresso(fv, M, "2026-11-11").feitas===3);
+t("meta: foto vista na DevMaster antes da hora de corte não conta", F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T07:00:00"}), "2026-11-11").feitas===3 && F.metaProgresso(fv, Object.assign({}, M, {dmDesde:"2026-11-11T08:00:01"}), "2026-11-11").feitas===0);
 let w = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], codigos:[{cod:"BB1900", dia:hoje}], semeado:true}});
 w = reducer(w, {type:"FC", op:"dm_sync", por:"DevMaster", itens:[{id:9, cod:"BB1900", desc:"BRINCO TESTE", dia:hoje, foto:true}]});
 const cw = w.fc.codigos.find(c=>c.cod==="BB1900");
@@ -130,5 +130,13 @@ g = FC(g, {op:"desfazer", cod:"A2357"});
 t("desfazer volta o modelo e as grades", g.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>!c.fotoEm));
 g = Object.assign({}, g, {fc:Object.assign({}, g.fc, {codigos:g.fc.codigos.map(c=>c.cod==="A2357014" ? Object.assign({}, c, {fotoEm:"dm", edEm:"dm", subEm:"dm"}) : c)})});
 t("foto em qualquer grade vale para o modelo (uma foto só)", F.linhasFotos(g.fc).find(l=>l.cod==="A2357").sOk===true);
+// marcação em lote (o Castilho marca o que fotografou; grade e modelo valem o mesmo)
+let lt = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], semeado:true, codigos:[{cod:"A2357", dia:"2026-11-03"}, {cod:"A2357013", dia:"2026-11-03"}, {cod:"CL2771", dia:"2026-11-04"}, {cod:"M0802", dia:"2026-11-04"}]}});
+lt = FC(lt, {op:"etapa_lote", etapa:"foto", texto:"a2357014 cl2771\nzz9999"});
+t("lote: grade marca o modelo e as outras grades; código que não existe é ignorado", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.fotoEm) && !!lt.fc.codigos.find(c=>c.cod==="CL2771").fotoEm && !lt.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
+const lr = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"M0802"});
+t("lote: editar exige a foto antes", !lr.fc.codigos.find(c=>c.cod==="M0802").edEm);
+lt = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"A2357"});
+t("lote: editada marca o modelo e as grades que já têm foto", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.edEm));
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);
