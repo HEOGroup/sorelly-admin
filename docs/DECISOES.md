@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Anexo de arquivo grande)
+- **Limite do anexo:** a Vercel aceita até 4,5 MB por chamada (envio e resposta). O romaneio em PDF da Mega Sul (4,2 MB) não passava. Arquivos acima de 3 milhões de caracteres agora vão em PEDAÇOS: o navegador manda até 5 pedaços (`POST /api/anexos` com `parte`, `total`, `pedaco`; tabela `sorelly.anexo_parte`), o servidor junta no último e confere; para abrir, `GET /api/anexos/{chave}` devolve a lista de partes e o navegador busca uma a uma (`?parte=n`). Limite novo: uns 8 MB de arquivo. O pedido o538 (Mega Sul, romaneio 151844, R$ 21.605,29) já estava lançado sem o PDF; o PDF foi anexado direto no servidor em 12/11/2026, com cópia do estado antes.
+
 ## 12/11/2026 (Modelos no Marketing, Castilho, etapa 2 das influencers)
 - Marcus: a tela **Modelos** passa das Encomendas para o **Marketing** e o **Castilho** (pessoa 47) ganha acesso a ela. Também liberou para o Castilho as telas de **Metas** e a tela **Apps**. No servidor, `PESSOAS_DO_MODULO` (`src/server/permissoes.js`) abre os módulos `mod` e `metas` para ele, além da Diretoria.
 - Etapa 2 da ideia do Nickolas: cada influencer tem o **ID no app** (a conta dela no app da Sorelly). O link sai pronto (`forms.sorellyjoias.com.br/?id=<ID>`, o mesmo das indicações) e o sistema lê no app (`GET /admin/indicacoes?revendedoraId=`, só leitura) quantas revendedoras ela trouxe. **Trouxe = cadastro aprovado + kit entregue** (a confirmar com o Marcus). A influencer precisa ter cadastro no app (Nickolas: ela pode usar o app só na parte da indicação).

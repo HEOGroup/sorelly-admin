@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.77", data:"2026-11-12", titulo:"Anexo de arquivo grande (romaneio em PDF)", itens:[
+  {tipo:"corrigido", area:"Cadastro de peças → Pedidos", txt:"O PDF do romaneio passava de 2,8 MB e a Rayssa não conseguia anexar. Agora o envio e a abertura vão em pedaços e aceitam arquivo de até uns 8 MB. O PDF do pedido da Mega Sul (romaneio 151844) foi anexado direto no servidor."}
+ ]},
  {v:"0.18.76", data:"2026-11-12", titulo:"Menu: financeiro das representantes no Financeiro; tela Configurações saiu", itens:[
   {tipo:"ajuste", area:"Financeiro › Representantes", txt:"O financeiro das representantes agora fica no setor Financeiro: Consolidado, Comissões, Pix representantes, Inadimplência e Compras de joias."},
   {tipo:"ajuste", area:"Representantes & Kits", txt:"Saíram do menu o grupo Financeiro e a tela Configurações. As regras do acerto seguem o PDF e não se editam mais ali; as formas de pagamento são do Financeiro."}]},
