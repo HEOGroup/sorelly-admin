@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.78", data:"2026-11-12", titulo:"Comissões: uma linha por revendedora e cores", itens:[
+  {tipo:"ajuste", area:"Financeiro › Representantes › Comissões", txt:"Cada revendedora aparece em uma linha só. Quem pagou de 2, 3 ou 4 formas mostra o total, e os pagamentos abrem ao clicar na linha. Se falta conferir, a linha já vem aberta."},
+  {tipo:"ajuste", area:"Financeiro › Representantes › Comissões", txt:"Um pouco de cor: cada etapa tem a sua (amarelo conferir, vermelho pagar, verde pagas), a representante tem uma barra na cor da situação, a comissão fica em dourado e a linha já conferida fica em verde claro."}]},
  {v:"0.18.77", data:"2026-11-12", titulo:"Comissões dos representantes: tela nova para pagar", itens:[
   {tipo:"novo", area:"Financeiro › Representantes › Comissões", txt:"Tela refeita para pagar comissão. Você escolhe a data de pagamento no topo. Cada representante é um bloco com as revendedoras dela, uma linha por pagamento, e a linha de pagar embaixo. Três etapas: conferir o que entrou, pagar a comissão, pagas. O próximo passo brilha em dourado."},
   {tipo:"ajuste", area:"Financeiro › Representantes › Comissões", txt:"Resumo do mês, recebido por conta, taxas de deslocamento, erros e regras ficam no botão Resumo do mês. O Pix representante fica no botão Pix representante. A gasolina virou um botão no topo."}]},

@@ -1,6 +1,7 @@
 // Sorelly Admin — pages/Comissoes.js
 // Kits → Representantes → Comissões. Aqui ficam os VALORES (contas, Point, link…): o setor de agendamento não vê esta tela.
-//   TELA NOVA (Opção A, Marcus, 12/11/2026): escolhe a DATA de pagamento no topo; cada representante é um bloco com as revendedoras dela (uma linha por pagamento) e a linha de pagar embaixo.
+//   TELA NOVA (Opção A, Marcus, 12/11/2026): escolhe a DATA de pagamento no topo; cada representante é um bloco com as revendedoras dela e a linha de pagar embaixo.
+//   UMA LINHA POR REVENDEDORA: quem pagou de uma forma só confere na própria linha; quem tem 2, 3, 4 pagamentos mostra o total e abre os pagamentos ao clicar (já nasce aberta se falta conferir).
 //   Três etapas: 1 Conferir o que entrou → 2 Pagar a comissão → 3 Pagas. O próximo passo BRILHA (o check a marcar; com tudo marcado, o botão Registrar pagamento).
 //   Resumo do mês (totais, recebido por conta, taxas, erros, regras) e Pix representante ficam em visões à parte, no Segmentado do topo.
 // Cada valor tem um check do financeiro com o nome de quem confirmou; o que o agendamento ainda não conferiu no Consolidado aparece como pendente.
@@ -71,7 +72,7 @@ function Kpi(p){ return e("div",{className:"flex flex-col items-center gap-0.5 r
 // ── OPÇÃO A (12/11/2026) ──
 // O brilho mostra por onde começar: fica em UM lugar só da tela (o próximo check; com tudo marcado, o botão de pagar).
 var ESTILO_BRILHO = "@keyframes comisBrilho{0%,100%{box-shadow:0 0 0 1px #E8B84B,0 0 0 0 rgba(232,184,75,0)}50%{box-shadow:0 0 0 1px #E8B84B,0 0 14px 4px rgba(232,184,75,.75)}}.comis-brilha{animation:comisBrilho 1.3s ease-in-out infinite;border-radius:6px}";
-var COR_OK = "#34D399", COR_FALTA = "#FBBF24", COR_RUIM = "#F87171", FIO = "border-[#2a2c31]";
+var COR_OK = "#34D399", COR_FALTA = "#FBBF24", COR_RUIM = "#F87171", COR_OURO = "#F3D98B", FIO = "border-[#2a2c31]";
 function marcavel(it){ return !it.confirmado && !it.motivo && !it.loja && !it.pixRep; }   // linha que o financeiro ainda pode conferir
 // Etapa da representante numa data: 1 conferir · 2 pagar · 3 paga · 0 nada a fazer agora (antes do corte ou aguardando outro setor)
 function etapaDe(rs){
@@ -155,45 +156,60 @@ function BlocoRep(p){
   var par = function(r, v, cor, title){ return e("div",{className:cel, title:title}, r, e("b",{className:"ml-1.5", style:cor ? {color:cor} : undefined}, v)); };
   var cab = e("div",{role:"button", tabIndex:0, "aria-expanded":p.aberto, onClick:p.alt, onKeyDown:function(ev){ if(ev.key==="Enter" || ev.key===" "){ ev.preventDefault(); p.alt(); } },
       className:"grid cursor-pointer bg-[#1c1d21] hover:bg-white/5", style:{gridTemplateColumns:"minmax(11rem,1fr) 8rem 10rem 10.5rem 9.5rem 8.5rem 10.5rem 9.5rem"}},
-    e("div",{className:cel+" font-semibold"}, (p.aberto ? "▾ " : "▸ ")+p.rep),
+    e("div",{className:cel+" font-semibold text-primary", style:{boxShadow:"inset 4px 0 0 "+(et.cor || "#4b4e57")}}, (p.aberto ? "▾ " : "▸ ")+p.rep),   // barra na cor da situação
     e("div",{className:cel}, nRev+(nRev===1 ? " revendedora" : " revendedoras")),
-    par("Comissão", BK(rs.comissaoTotal)),
+    par("Comissão", BK(rs.comissaoTotal), COR_OURO),
     par("Combustível", rs.comb>0.009 ? BK(rs.comb) : "sem km"),
     par("A pagar", BK(rs.aPagar), null, "Comissão já conferida mais o combustível"),
     par("Pago", BK(rs.pagos), rs.pagos>0.009 ? COR_OK : null),
     rs.falta<-0.009 ? par("Pago a mais", BK(-rs.falta)) : par("Restante", BK(Math.max(0, rs.falta)), rs.falta>0.009 ? COR_RUIM : null),
     e("div",{className:cel+" font-semibold", style:et.cor ? {color:et.cor} : undefined}, et.cor ? "● " : "", et.txt));
   // Tabela das revendedoras: TabelaPlanilha (filtro e ordem em cada coluna). Cada célula tem largura mínima fixa, para as colunas ficarem alinhadas de um bloco para o outro.
-  var cx = function(larg, filho){ return e("span",{className:"inline-flex items-center justify-center gap-2 "+larg}, filho); };
-  var linhas = itens.map(function(it){ var ehPag = it.tipo==="pag";
-    return {id:it.id, it:it, rev:it.rev, data:fmtDataBR(it.r.data).slice(0,5),
-      conta:!ehPag ? it.status+" · comissão fixa" : it.pixRep ? "Pix para "+(it.dest||"a representante") : (it.fin ? it.fin.conta : it.conta)+(it.extra ? " · pago depois" : ""),
-      valor:ehPag ? it.valorPago : "", comissao:it.loja || it.pixRep ? "" : it.comissao,
-      conf:it.pixRep ? "Pix direto · entra em Pago" : it.loja ? "Sem pagamento · Inadimplência" : it.confirmado ? "Conferido" : it.motivo ? it.motivo.replace("Aguardando o agendamento conferir", "Aguardando o agendamento") : "Falta conferir",
-      div:it.div ? (it.div.tipo==="valor" ? "Valor corrigido" : it.div.tipo==="conta" ? "Conta corrigida" : "Não identificado") : ""}; });
+  // UMA LINHA POR REVENDEDORA (acerto). Um pagamento só: confere na própria linha. Dois ou mais: a linha mostra o total e os pagamentos abrem ao clicar.
+  var para = function(ev){ ev.stopPropagation(); };   // clicar num campo não abre nem fecha a linha
+  var cx = function(larg, filho, brilha){ return e("span",{className:"inline-flex items-center justify-center gap-2 "+larg+(brilha ? " comis-brilha" : "")}, filho); };
+  var contaTxt = function(it){ return it.tipo!=="pag" ? it.status+" · comissão fixa" : it.pixRep ? "Pix para "+(it.dest||"a representante") : (it.fin ? it.fin.conta : it.conta)+(it.extra ? " · pago depois" : ""); };
+  var confTxt = function(it){ return it.pixRep ? "Pix direto · entra em Pago" : it.loja ? "Sem pagamento · Inadimplência" : it.confirmado ? "Conferido" : it.motivo ? it.motivo.replace("Aguardando o agendamento conferir", "Aguardando o agendamento") : "Falta conferir"; };
+  var contaCel = function(it){ var pode = fin && marcavel(it) && it.tipo==="pag";   // a forma não tem coluna: o nome da conta já diz (PIX, LINK, DINHEIRO)
+    return pode ? e("select",{id:"conta-"+it.id, defaultValue:it.conta, onClick:para, "aria-label":"Conta em que entrou", className:CAMPO+" cursor-pointer border-0 bg-transparent text-center"}, contasDe(it.forma, it.conta).map(function(x){ return e("option",{key:x, value:x}, x); })) : contaTxt(it); };
+  var confCel = function(it){
+    if(it.pixRep || it.loja || (it.motivo && !it.confirmado)) return e("span",{style:{color:it.pixRep ? COR_OK : it.loja ? COR_RUIM : COR_FALTA}}, confTxt(it));
+    if(it.confirmado) return e("label",{onClick:para, className:"inline-flex items-center gap-2", style:{color:COR_OK}},
+      e("input",{type:"checkbox", checked:true, disabled:!fin || travada, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Desfazer conferência de "+it.rev, title:travada ? "Já tem pagamento registrado nesta data" : "Desfazer",
+        onChange:function(){ d({type:"COMIS_FIN", id:it.r.id, idx:it.chave, ok:false}); }}), quemNome(it.fin.por)+" · "+dataHora(it.fin.ts));
+    return e("label",{onClick:para, className:"inline-flex items-center gap-2", style:{color:COR_FALTA}},
+      e("span",{className:"inline-flex "+(p.brilhaId===it.id ? "comis-brilha" : "")}, e("input",{type:"checkbox", checked:false, disabled:!fin, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Conferir o pagamento de "+it.rev,
+        onChange:function(){ var el = document.getElementById("conta-"+it.id); confirma(it, el ? el.value : it.conta); }})), "Falta conferir"); };
+  var divCel = function(it){ return e("span",{onClick:para, className:"inline-flex"}, e(Divergencia,{it:it, d:d, fin:fin, aberto:divAb===it.id, abrir:function(){ setDivAb(divAb===it.id ? null : it.id); }})); };
+  var grupos = {}, ordemAc = []; itens.forEach(function(it){ if(!grupos[it.r.id]){ grupos[it.r.id] = []; ordemAc.push(it.r.id); } grupos[it.r.id].push(it); });
+  var linhas = ordemAc.map(function(id){ var its = grupos[id], um = its.length===1 ? its[0] : null, normais = its.filter(function(i){ return !i.loja && !i.pixRep; }), ok = normais.filter(function(i){ return i.confirmado; }).length;
+    var pags = its.filter(function(i){ return i.tipo==="pag"; }), nDiv = its.filter(function(i){ return i.div; }).length, bloq = its.filter(function(i){ return i.motivo && !i.confirmado; })[0];
+    return {id:id, its:its, um:um, rev:its[0].rev, data:fmtDataBR(its[0].r.data).slice(0,5), conta:um ? contaTxt(um) : its.length+" pagamentos",
+      valor:pags.length ? pags.reduce(function(t, i){ return t+i.valorPago; }, 0) : "", comissao:normais.length ? normais.reduce(function(t, i){ return t+i.comissao; }, 0) : "",
+      conf:um ? confTxt(um) : its.some(marcavel) || !bloq ? ok+" de "+normais.length+" conferidos" : confTxt(bloq), okTudo:normais.length>0 && ok===normais.length, falta:its.some(marcavel),
+      div:um ? (um.div ? (um.div.tipo==="valor" ? "Valor corrigido" : um.div.tipo==="conta" ? "Conta corrigida" : "Não identificado") : "") : nDiv ? nDiv+(nDiv===1 ? " divergência" : " divergências") : ""}; });
   var cols = [
-    {k:"rev", t:"Revendedora", render:function(v){ return cx("min-w-[19.5rem]", v); }},
+    {k:"rev", t:"Revendedora", render:function(v, l, ab2){ return cx("min-w-[19.5rem]", (l.um ? "" : ab2 ? "▾ " : "▸ ")+v); }},
     {k:"data", t:"Data", render:function(v){ return cx("min-w-[3.5rem]", v); }},
-    {k:"conta", t:"Conta em que entrou", render:function(v, l){ var it = l.it, pode = fin && marcavel(it) && it.tipo==="pag";   // a forma não tem coluna: o nome da conta já diz (PIX, LINK, DINHEIRO)
-      return cx("min-w-[14.5rem]", pode ? e("select",{id:"conta-"+it.id, defaultValue:it.conta, "aria-label":"Conta em que entrou", className:CAMPO+" cursor-pointer border-0 bg-transparent text-center"}, contasDe(it.forma, it.conta).map(function(x){ return e("option",{key:x, value:x}, x); })) : v); }},
+    {k:"conta", t:"Conta em que entrou", render:function(v, l){ return cx("min-w-[14.5rem]", l.um ? contaCel(l.um) : e("b",null, v)); }},
     {k:"valor", t:"Valor", render:function(v){ return cx("min-w-[6.5rem] tabular-nums", v==="" ? "—" : BK(v)); }},
-    {k:"comissao", t:"Comissão "+pct+"%", render:function(v){ return cx("min-w-[6.5rem] tabular-nums", v==="" ? "—" : BK(v)); }},
-    {k:"conf", t:"Conferido", render:function(v, l){ var it = l.it;
-      if(it.pixRep) return cx("min-w-[14rem] text-[#34D399]", v);
-      if(it.loja) return cx("min-w-[14rem] text-[#F87171]", v);
-      if(it.confirmado) return cx("min-w-[14rem] text-[#34D399]", e(React.Fragment,null,
-        e("input",{type:"checkbox", checked:true, disabled:!fin || travada, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Desfazer conferência de "+it.rev, title:travada ? "Já tem pagamento registrado nesta data" : "Desfazer",
-          onChange:function(){ d({type:"COMIS_FIN", id:it.r.id, idx:it.chave, ok:false}); }}), quemNome(it.fin.por)+" · "+dataHora(it.fin.ts)));
-      if(it.motivo) return cx("min-w-[14rem] text-[#FBBF24]", v);
-      return cx("min-w-[14rem] text-[#FBBF24]", e(React.Fragment,null,
-        e("span",{className:"inline-flex "+(p.brilhaId===it.id ? "comis-brilha" : "")}, e("input",{type:"checkbox", checked:false, disabled:!fin, className:"size-[18px] cursor-pointer accent-primary", "aria-label":"Conferir o pagamento de "+it.rev,
-          onChange:function(){ var el = document.getElementById("conta-"+it.id); confirma(it, el ? el.value : it.conta); }})), "Falta conferir")); }},
-    {k:"div", t:"Divergência", render:function(v, l){ var it = l.it; return cx("min-w-[8rem]", e(Divergencia,{it:it, d:d, fin:fin, aberto:divAb===it.id, abrir:function(){ setDivAb(divAb===it.id ? null : it.id); }})); }}];
+    {k:"comissao", t:"Comissão "+pct+"%", render:function(v){ return cx("min-w-[6.5rem] tabular-nums text-[#F3D98B]", v==="" ? "—" : BK(v)); }},
+    {k:"conf", t:"Conferido", render:function(v, l, ab2){ return cx("min-w-[14rem]", l.um ? confCel(l.um) : e("span",{style:{color:l.okTudo ? COR_OK : COR_FALTA}}, v),
+      !l.um && !ab2 && l.its.some(function(i){ return i.id===p.brilhaId; })); }},   // linha fechada com o próximo check dentro: o brilho fica no resumo dela
+    {k:"div", t:"Divergência", render:function(v, l){ return cx("min-w-[8rem]", l.um ? divCel(l.um) : (v ? e("span",{style:{color:COR_FALTA}}, v) : "—")); }}];
+  // os pagamentos de quem tem mais de um: abre embaixo da linha da revendedora
+  var celD = "flex h-8 items-center justify-center whitespace-nowrap px-2.5 text-[13px] tabular-nums";
+  var detalhe = function(l){ if(l.um) return null;
+    return e("div",{className:"overflow-x-auto rounded-md border "+FIO}, l.its.map(function(it, i){
+      return e("div",{key:it.id, className:"grid "+(i ? "border-t "+FIO : "")+(marcavel(it) ? " bg-[#FBBF24]/10" : ""), style:{gridTemplateColumns:"minmax(10rem,1fr) 16rem 8rem 8rem 16rem 10rem", minWidth:"68rem"}},
+        e("div",{className:celD}, "Pagamento "+(i+1)+" de "+l.its.length), e("div",{className:celD}, contaCel(it)), e("div",{className:celD}, it.tipo==="pag" ? BK(it.valorPago) : "—"),
+        e("div",{className:celD+" text-[#F3D98B]"}, it.loja || it.pixRep ? "—" : BK(it.comissao)), e("div",{className:celD}, confCel(it)), e("div",{className:celD}, divCel(it))); })); };
   var itDiv = divAb ? itens.filter(function(i){ return i.id===divAb; })[0] : null;
   return e("div",{className:"flex flex-col gap-1 rounded-lg "+(p.foco ? "ring-1 ring-primary ring-offset-2 ring-offset-background" : "")},
     e("div",{className:"overflow-x-auto rounded-lg border "+FIO}, e("div",{style:{minWidth:"78rem"}}, cab)),
     p.aberto && e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, centro:true, semContagem:true, vazio:"Nenhum atendimento nesta data.",
-      linhaCls:function(l){ return marcavel(l.it) ? "bg-[#FBBF24]/10" : ""; }}),
+      detalhe:detalhe, detAberto:function(l){ return !l.um && l.falta; },
+      linhaCls:function(l){ return l.falta ? "bg-[#FBBF24]/10" : l.okTudo ? "bg-[#34D399]/[.07]" : ""; }}),
     p.aberto && itDiv && e("div",{className:"overflow-hidden rounded-lg border "+FIO}, e(EditorDiv,{it:itDiv, d:d, s:s, contas:contasDe(itDiv.forma, itDiv.conta), fechar:function(){ setDivAb(null); }})),
     p.aberto && e("div",{className:"rounded-lg border "+FIO}, e(LinhaPagar,{s:s, d:d, rs:rs, fin:fin, et:et, rep:p.rep, data:p.data, jan:p.jan, brilha:p.brilhaPagar})));
 }
@@ -348,9 +364,9 @@ function AbaComissoesBase(p){
     {r:"Inadimplência", v:BK(tInad), cor:tInad>0.009 ? "ruim" : undefined},
     {r:"Km por atendimento", v:kmRep!=null ? arred(kmRep) : "—", p:repF!=="todas" && mediaGeral!=null ? "geral "+arred(mediaGeral) : "", cor:corKm==="text-[#4ADE80]" ? "ok" : corKm==="text-[#F87171]" ? "ruim" : undefined},
     {r:"Representantes", v:String(todasReps.length)}];
-  var passo = function(i, txt){ var on = etapaAgora===i;
-    return e("div",{key:i, className:"flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-[13px] "+(on ? "border-primary font-semibold text-primary" : FIO)},
-      e("span",{className:"grid size-[18px] place-items-center rounded-full border text-[11px] font-semibold "+(on ? "border-primary bg-primary text-primary-foreground" : "border-foreground")}, i), txt); };
+  var passo = function(i, txt){ var on = etapaAgora===i, cor = [COR_FALTA, COR_RUIM, COR_OK][i-1];   // cada etapa tem a sua cor: amarelo conferir, vermelho pagar, verde pagas
+    return e("div",{key:i, className:"flex h-8 items-center justify-center gap-2 whitespace-nowrap rounded-md border text-[13px] "+(on ? "border-primary bg-primary/10 font-semibold" : FIO), style:{boxShadow:"inset 0 -2px 0 "+cor}},
+      e("span",{className:"grid size-[18px] place-items-center rounded-full text-[11px] font-bold text-[#111111]", style:{background:cor}}, i), txt); };
   return e(React.Fragment,null,
     e("style",null, ESTILO_BRILHO),
     e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
