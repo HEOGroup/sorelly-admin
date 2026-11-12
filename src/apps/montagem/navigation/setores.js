@@ -66,8 +66,7 @@ var MENU_ENCOMENDAS = [
   M("Top 50","enctop50"),
   M("Representantes","encrep"),
   M("Expositores","expositores"),
-  M("Regras e mensagens","encregras"),
-  Object.assign(M("Modelos","modelos"), {perm:"modelos_ver"})   // 11/11/2026: cadastro particular do Marcus
+  M("Regras e mensagens","encregras")
 ];
 
 // Menu do Agendamento (23/10/2026): mesmo estilo do Financeiro. Ordem do fluxo: acompanhar o mês → plano 45/60 (indicar, aprovar, medir) → remarcações → representantes → análises e histórico → gestão do mês.
@@ -126,7 +125,7 @@ var MENU_JURIDICO = [
 // Inadimplência (11/11/2026, Marcus): setor da Amanda de Miranda, no lugar da planilha de negociações. Palavras na ordem do fluxo.
 var MENU_INAD = [M("Dívidas","inaddiv"), M("Cobrança do dia","inadcob"), M("Pagamentos","inadpag"), M("Serasa","inadser"), M("Kits em atraso","inadkit"), M("Relatórios","inadrel"), M("Regras","inadreg")];
 var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
-var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego"), M("Criativos","criativos")];
+var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego"), M("Criativos","criativos"), Object.assign(M("Modelos","modelos"), {perm:"modelos_ver"})];   // Modelos veio das Encomendas para o Marketing em 12/11/2026 (pedido do Marcus); só quem tem a autorização modelos_ver
 
 var SETORES = [
   // Grupo "Geral" (28/10/2026, reorganização do menu lateral): Início, SorellyChat e Dashboard juntos no topo.
@@ -229,8 +228,7 @@ var SETORES = [
     {nome:"Top 50", telas:[T("enctop50","Top 50")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},
-    {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]},
-    {nome:"Modelos", telas:[T("modelos","Modelos")]}]},
+    {nome:"Regras e mensagens", telas:[T("encregras","Regras e mensagens")]}]},
   {id:"garantia", nome:"Garantia", ic:"escudo", cor:"#A855F7", menu:MENU_GARANTIA, semAbas:true, areas:[
     {nome:"Garantias", telas:[T("garantia","Garantia")]},
     {nome:"Créditos", telas:[T("garantiacred","Créditos")]}]},
@@ -270,7 +268,7 @@ var SETORES = [
     {nome:"Segurança", telas:[B("Segurança")]},
     {nome:"Limpeza", telas:[B("Limpeza e zeladoria")]}]},
   {id:"marketing", nome:"Marketing", ic:"megafone", cor:"#EC4899", menu:MENU_MARKETING, semAbas:true, areas:[
-    {nome:"Marketing", telas:[T("marketing","Marketing"), T("fotoscat","Fotos de catálogo"), B("Campanhas"), T("trafego","Tráfego pago"), T("criativos","Criativos")]}]},
+    {nome:"Marketing", telas:[T("marketing","Marketing"), T("fotoscat","Fotos de catálogo"), B("Campanhas"), T("trafego","Tráfego pago"), T("criativos","Criativos"), T("modelos","Modelos")]}]},
   // Regras (05/11/2026, Marcus): setor próprio, todos os funcionários veem; só o Guia resumido e o Guia da revendedora em PDF (saiu de Cadastro de revendedoras → Folders)
   {id:"regrasguias", nome:"Regras", ic:"book", cor:"#E8B84B", direto:T("regrasguias","Regras")},
   // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)

@@ -1,17 +1,18 @@
 // Sorelly Admin · montagem — pages/Modelas.js
-// Encomendas e reposições › Modelos (11/11/2026, pedido do Marcus): planilha particular das mulheres que recebem joias e kits.
+// Marketing › Modelos (criada em 11/11/2026 nas Encomendas; passou para o Marketing em 12/11/2026, pedido do Marcus): planilha particular das mulheres que recebem joias e kits.
 // Três grupos na barra do topo: Sorelly (modelos da Sorelly: conteúdo, negociação e ida na empresa), Marcus (amigas do Marcus) e Influencers (só enviamos kits).
-// Linhas finas, foto grande (clique para ver em tela cheia). Só quem tem a autorização `modelos_ver` (padrão Marcus).
+// Linhas finas, foto grande (clique para ver em tela cheia). Só quem tem a autorização `modelos_ver` (padrão Marcus e Castilho).
 // Regras em domain/modelas.js; estado s.mod, ação MOD. Tabela no layout D (TabelaCampos).
 import { Botao, CampoSel, brl } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { GRUPOS, limpaInsta, situacoesDe } from "@/apps/montagem/domain/modelas";
+import { GRUPOS, limpaInsta, linkDe, situacoesDe } from "@/apps/montagem/domain/modelas";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { CampoDin, CampoTexto, porDe } from "@/apps/montagem/pages/trafego/comum";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 var ALTO = 170;   // altura da fileira com foto
 var COR_TOPO = "#14B8A6";   // cor do setor Encomendas: cabeçalho da tabela tingido, com barra grossa em cima
@@ -20,7 +21,7 @@ var TITULO_JEITO1 = e("span",{className:"inline-flex flex-col gap-1.5"}, e("span
 // colunas que se ajustam à largura da tela (nada de rolar para o lado em tela normal); mínimo de cada uma em px. Cada grupo mostra só as colunas que servem a ele.
 var TODAS = {foto:{t:"Foto", w:"150px"}, nome:{t:"Nome", w:"minmax(170px,1fr)"}, insta:{t:"Instagram", w:"minmax(130px,1fr)"}, tel:{t:"Telefone", w:"140px"}, end:{t:"Endereço", w:"minmax(170px,2fr)"}, link:{t:"Link", w:"100px"}, trouxe:{t:"Trouxe", w:"140px"}, premio:{t:"Prêmio", w:"minmax(130px,1fr)"}, valor:{t:"Liberado por mês", w:"150px"}, emp:{t:"Na empresa", w:"115px"}, envio:{t:"Último envio", w:"120px"}, sit:{t:"Situação", w:"minmax(210px,1fr)"}};
 var CHAVES = {Sorelly:["foto", "nome", "insta", "tel", "end", "valor", "emp", "envio", "sit"], Marcus:["foto", "nome", "insta", "tel", "end", "valor", "envio", "sit"], Influencers:["foto", "nome", "insta", "tel", "end", "link", "trouxe", "premio", "envio", "sit"]};
-var VAZIO = {id:null, nome:"", insta:"", tel:"", endereco:"", valor:null, ultimoEnvio:"", grupo:GRUPOS[0], naEmpresa:"", link:"", meta:null, trouxe:null, premio:"", situacao:"", foto:""};
+var VAZIO = {id:null, nome:"", insta:"", tel:"", endereco:"", valor:null, ultimoEnvio:"", grupo:GRUPOS[0], naEmpresa:"", idApp:null, link:"", meta:null, trouxe:null, premio:"", situacao:"", foto:""};
 var COR_SIT = {Cadastrada:"#FFFFFF", Ativa:"#22C55E", Enviada:"#22C55E", "Em pausa":"#EF4444", "Negociação a confirmar":"#FFFFFF", "Negociação confirmada":"#22C55E", "Agendada na empresa":"#22C55E", "Visitou a empresa":"#22C55E", "Kit enviado":"#22C55E", Postou:"#22C55E"};
 // divisórias da tabela na cor do bloco e mais grossas (pedido do Marcus, 11/11/2026): fio vertical entre as colunas e fio horizontal entre as linhas
 var CSS_FIOS = ".modtab td,.modtab th{border-color:"+COR_TOPO+" !important} .modtab td,.modtab th{border-left-width:2px !important;border-right-width:0 !important;border-bottom-width:2px !important} .modtab td:first-child,.modtab th:first-child{border-left-width:0 !important} .modtab table{background:"+COR_TOPO+"14 !important} .modtab th{background:"+COR_TOPO+"33 !important}";
@@ -66,7 +67,8 @@ function Formulario(p){
           e(CampoTexto,{t:"Último envio", id:"mod-envio", tipo:"date", value:f.ultimoEnvio, onChange:function(v){ set({ultimoEnvio:v}); }}),
           f.grupo!=="Influencers" && e(CampoDin,{t:"Liberado por mês", id:"mod-valor", value:f.valor, onChange:function(v){ set({valor:v}); }}),
           f.grupo==="Sorelly" && e(CampoTexto,{t:"Na empresa (data agendada)", id:"mod-emp", tipo:"date", value:f.naEmpresa, onChange:function(v){ set({naEmpresa:v}); }}),
-          f.grupo==="Influencers" && campo(e(CampoTexto,{t:"Link da influencer", id:"mod-link", value:f.link, placeholder:"https://...", onChange:function(v){ set({link:v}); }}), true),
+          f.grupo==="Influencers" && e(CampoTexto,{t:"ID no app", id:"mod-idapp", tipo:"number", min:0, value:f.idApp==null ? "" : f.idApp, placeholder:"conta no app", onChange:function(v){ set({idApp:v}); }}),
+      f.grupo==="Influencers" && e(CampoTexto,{t:"Link (sai pronto com o ID)", id:"mod-link", value:Number(f.idApp)>0 ? linkDe(f) : f.link, placeholder:"https://...", onChange:function(v){ if(!(Number(f.idApp)>0)) set({link:v}); }}),
           f.grupo==="Influencers" && e(CampoTexto,{t:"Meta (revendedoras)", id:"mod-meta", tipo:"number", min:0, value:f.meta==null ? "" : f.meta, onChange:function(v){ set({meta:v}); }}),
           f.grupo==="Influencers" && e(CampoTexto,{t:"Trouxe", id:"mod-trouxe", tipo:"number", min:0, value:f.trouxe==null ? "" : f.trouxe, onChange:function(v){ set({trouxe:v}); }}),
           f.grupo==="Influencers" && campo(e(CampoTexto,{t:"Prêmio ao bater a meta", id:"mod-premio", value:f.premio, placeholder:"porta-joia, dinheiro...", onChange:function(v){ set({premio:v}); }}), true))),
@@ -76,6 +78,9 @@ function Formulario(p){
 function AbaModelas(){
   var cx = use(), s = cx.state, d = cx.dispatch, ed = useState(null), editando = ed[0], zm = useState(""), zoom = zm[0], gr = useState("Sorelly"), grupo = gr[0];
   var todas = (s.mod && s.mod.itens) || [], pode = temAutorizacao("modelos_ver", s.usuario);
+  // quantas revendedoras cada influencer trouxe, lido do app pelo ID dela (etapa 2 da ideia do Nickolas); sem servidor ou sem ID, vale o número lançado à mão
+  var sc = useState({}), cont = sc[0], setCont = sc[1], ids = todas.filter(function(m){ return m.grupo==="Influencers" && m.idApp>0; }).map(function(m){ return m.idApp; }).sort().join(",");
+  useEffect(function(){ if(!pode || !ids || !apiAtiva()) return; var vivo = true; chamar("GET", "/modelos/indicacoes?ids="+ids).then(function(j){ if(vivo) setCont(j.contagens || {}); }).catch(function(){}); return function(){ vivo = false; }; }, [ids, pode, setCont]);
   var contar = function(g){ return todas.filter(function(m){ return (m.grupo || "Marcus")===g; }).length; };
   // topo numa linha só: título e botão "+"; a barra dos grupos fica DENTRO do bloco, numa linha acima do cabeçalho da tabela
   var cab = e(PageHead,{t:TITULO_JEITO1, estilo:{fontWeight:600, color:"#fff"}},
@@ -85,6 +90,9 @@ function AbaModelas(){
 
   var op = function(o){ d(Object.assign({type:"MOD", por:porDe(s)}, o)); };
   var salvar = function(f){ op({op:"salvar", item:Object.assign({}, f, {insta:limpaInsta(f.insta)})}); ed[1](null); };
+  var doApp = function(m){ var c = m.idApp>0 ? cont[m.idApp] : null; return c && !c.erro ? c : null; };
+  var trouxeDe = function(m){ var c = doApp(m); return c ? c.trouxe : (m.trouxe || 0); };
+  var trouxeDica = function(m){ var c = doApp(m); return c ? "Do app: "+c.cadastro_aprovado+" cadastro aprovado, "+c.finalizado+" kit entregue, "+c.em_andamento+" em andamento, "+c.criado+" novas, "+c.cancelado+" canceladas" : (m.idApp>0 ? "Lendo o app..." : "Lançado à mão"); };
   // células da tabela (a TabelaPlanilha filtra e ordena pelo TEXTO de cada coluna; o desenho vem do render)
   var celulas = function(m){
     var zap = function(tel){ var dg = String(tel||"").replace(/\D/g, ""); return dg.length>=10 ? "https://wa.me/"+(dg.slice(0, 2)==="55" && dg.length>=12 ? dg : "55"+dg) : null; };
@@ -95,8 +103,8 @@ function AbaModelas(){
       insta: m.insta ? e("a",{href:"https://www.instagram.com/"+m.insta+"/", target:"_blank", rel:"noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:TXT+" font-semibold "+SUBLINHADO+" hover:brightness-125", style:Object.assign({color:"#2DD4BF", textDecorationColor:COR_TOPO}, FONTE)}, "@"+m.insta) : "—",
       tel: zap(m.tel) ? e("a",{href:zap(m.tel), target:"_blank", rel:"noreferrer", title:"Abrir no WhatsApp", onClick:function(ev){ ev.stopPropagation(); }, className:TXT+" hover:underline", style:FONTE}, m.tel) : "—",
       end: m.endereco ? e("span",{className:TXT+" whitespace-normal text-center leading-snug", style:FONTE}, m.endereco) : "—",
-      link: m.link ? e("a",{href:m.link, target:"_blank", rel:"noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:TXT+" font-semibold "+SUBLINHADO+" hover:brightness-125", style:Object.assign({color:"#2DD4BF", textDecorationColor:COR_TOPO}, FONTE)}, "Abrir link") : "—",
-      trouxe: e("span",{className:TXT+" tabular-nums", style:Object.assign({color:m.meta>0 && m.trouxe>=m.meta ? "#22C55E" : "#FFFFFF"}, FONTE)}, m.meta>0 ? (m.trouxe>=m.meta ? "Meta batida · " : "")+(m.trouxe||0)+" de "+m.meta : String(m.trouxe||0)),
+      link: linkDe(m) ? e("a",{href:linkDe(m), target:"_blank", rel:"noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:TXT+" font-semibold "+SUBLINHADO+" hover:brightness-125", style:Object.assign({color:"#2DD4BF", textDecorationColor:COR_TOPO}, FONTE)}, "Abrir link") : "—",
+      trouxe: e("span",{className:TXT+" tabular-nums", title:trouxeDica(m), style:Object.assign({color:m.meta>0 && trouxeDe(m)>=m.meta ? "#22C55E" : "#FFFFFF"}, FONTE)}, m.meta>0 ? (trouxeDe(m)>=m.meta ? "Meta batida · " : "")+trouxeDe(m)+" de "+m.meta : String(trouxeDe(m))),
       premio: m.premio ? e("span",{className:TXT+" whitespace-normal text-center leading-snug", style:FONTE}, m.premio) : "—",
       valor: m.valor>0 ? e("span",{className:TXT+" tabular-nums", style:FONTE}, brl(m.valor)) : "—",
       emp: m.naEmpresa ? e("span",{className:TXT, style:FONTE}, dataBr(m.naEmpresa)) : "—",
@@ -105,7 +113,7 @@ function AbaModelas(){
       sit: e("span",{className:TXT+" inline-flex items-center gap-2 whitespace-nowrap", style:Object.assign({color:cor}, FONTE)}, e("span",{className:"size-2.5 shrink-0 rounded-full", style:pendente ? {boxShadow:"inset 0 0 0 2px #fff"} : {background:cor}}), m.situacao)};
     return cel;
   };
-  var linhas = itens.map(function(m){ return {id:m.id, _m:m, foto:m.foto ? "Com foto" : "Sem foto", nome:m.nome, insta:m.insta ? "@"+m.insta : "", tel:m.tel, end:m.endereco, link:m.link ? "Com link" : "", trouxe:m.meta>0 ? m.trouxe+" de "+m.meta : String(m.trouxe || 0), premio:m.premio, valor:m.valor>0 ? brl(m.valor) : "", emp:dataBr(m.naEmpresa), envio:dataBr(m.ultimoEnvio), sit:m.situacao}; });
+  var linhas = itens.map(function(m){ return {id:m.id, _m:m, foto:m.foto ? "Com foto" : "Sem foto", nome:m.nome, insta:m.insta ? "@"+m.insta : "", tel:m.tel, end:m.endereco, link:linkDe(m) ? "Com link" : "", trouxe:m.meta>0 ? trouxeDe(m)+" de "+m.meta : String(trouxeDe(m)), premio:m.premio, valor:m.valor>0 ? brl(m.valor) : "", emp:dataBr(m.naEmpresa), envio:dataBr(m.ultimoEnvio), sit:m.situacao}; });
   var colunas = CHAVES[grupo].map(function(k){ return {k:k, t:TODAS[k].t, corTopo:COR_TOPO, render:function(v, l){ return celulas(l._m)[k]; }}; });
   var barra = e("div",{role:"group", className:"flex", style:{background:COR_TOPO+"1F", borderBottom:"1px solid "+COR_TOPO}}, GRUPOS.map(function(g, i){ var on = g===grupo;
     return e("button",{key:g, type:"button", "aria-pressed":on, onClick:function(){ gr[1](g); }, className:"h-8 whitespace-nowrap px-5 text-[13px] font-bold hover:bg-white/5", style:{borderLeft:i ? "2px solid "+COR_TOPO : "none", background:on ? COR_TOPO+"55" : undefined}}, g+" · "+contar(g)); }), pode && e("button",{type:"button", title:"Nova modelo no grupo "+grupo, "aria-label":"Nova modelo", onClick:function(){ ed[1](Object.assign({}, VAZIO, {grupo:grupo, situacao:situacoesDe(grupo)[0]})); }, className:"ml-auto h-8 whitespace-nowrap px-5 text-[13px] font-bold hover:bg-white/10", style:{borderLeft:"2px solid "+COR_TOPO}}, "+ Nova modelo"));

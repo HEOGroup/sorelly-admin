@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.12", data:"2026-11-12", titulo:"Modelos no Marketing, acesso do Castilho e contagem das influencers pelo app", itens:[
+  {tipo:"melhoria", area:"Marketing › Modelos", txt:"A tela Modelos saiu das Encomendas e foi para o Marketing (último botão do menu). Abrem Marcus e Castilho (autorização modelos_ver)."},
+  {tipo:"novo", area:"Marketing › Modelos › Influencers", txt:"ID no app: com ele o link da influencer sai pronto (formulário de indicação) e o sistema lê no app quantas revendedoras ela trouxe (cadastro aprovado + kit entregue). Sem ID, vale o número lançado à mão."},
+  {tipo:"melhoria", area:"Acessos › Castilho", txt:"Castilho passou a abrir também as telas de Metas e a tela Apps (além de Modelos). A rota das Metas e o módulo das Modelos aceitam a pessoa dele no servidor."},
+  {tipo:"correção", area:"Marketing › Modelos", txt:"Letycia e Julhia tinham sumido do servidor (outra janela gravou uma lista antiga). Agora quem está no arquivo local e sumiu volta, a não ser que seja excluída de propósito."},
+ ]},
  {v:"0.20.11", data:"2026-11-11", titulo:"Encomendas: tela Modelos (particular do Marcus)", itens:[
   {tipo:"novo", area:"Encomendas e reposições › Modelos", txt:"Planilha particular das mulheres que recebem joias e kits, em três grupos na barra do bloco: Sorelly (conteúdo, negociação e ida na empresa), Marcus (amigas) e Influencers (só kits). Foto grande com clique para ampliar, Instagram e telefone clicáveis, valor liberado por mês, último envio e situação. A ficha abre numa gaveta pela direita. Só quem tem a autorização modelos_ver (padrão Marcus)."},
  ]},

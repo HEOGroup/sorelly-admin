@@ -4,6 +4,11 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Modelos no Marketing, Castilho, etapa 2 das influencers)
+- Marcus: a tela **Modelos** passa das Encomendas para o **Marketing** e o **Castilho** (pessoa 47) ganha acesso a ela. Também liberou para o Castilho as telas de **Metas** e a tela **Apps**. No servidor, `PESSOAS_DO_MODULO` (`src/server/permissoes.js`) abre os módulos `mod` e `metas` para ele, além da Diretoria.
+- Etapa 2 da ideia do Nickolas: cada influencer tem o **ID no app** (a conta dela no app da Sorelly). O link sai pronto (`forms.sorellyjoias.com.br/?id=<ID>`, o mesmo das indicações) e o sistema lê no app (`GET /admin/indicacoes?revendedoraId=`, só leitura) quantas revendedoras ela trouxe. **Trouxe = cadastro aprovado + kit entregue** (a confirmar com o Marcus). A influencer precisa ter cadastro no app (Nickolas: ela pode usar o app só na parte da indicação).
+
+
 ## 11/11/2026 (Encomendas › Modelos)
 - Pedido do Marcus: página particular, só dele, no setor Encomendas, para guardar as mulheres que recebem joias e kits. Três grupos numa barra dentro do bloco: **Sorelly** (modelos da Sorelly: conteúdo, negociação e data para ir na empresa), **Marcus** (amigas do Marcus) e **Influencers** (só enviamos kits). Cada uma tem foto, Instagram, telefone, endereço, valor liberado por mês, último envio e situação. Tela `pages/Modelas.js`, regras em `domain/modelas.js`, estado `s.mod`, autorização `modelos_ver` (padrão só o Marcus; no servidor o módulo é só da Diretoria). Dados reais só em `domain/modelas.local.js` (fora do Git). Letycia e Julhia em Marcus, Amanda em Sorelly (a confirmar). Ideia do Nickolas, só anotada: link para as influencers trazerem revendedoras e campanha com prêmio.
 
