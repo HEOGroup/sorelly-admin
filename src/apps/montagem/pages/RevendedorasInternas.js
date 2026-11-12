@@ -435,6 +435,8 @@ function CalendarioGrande(p){
 
 // Tabela: tudo centralizado, barra de degradê com linhas de corte, coluna Qtd., filtro ao clicar no título da coluna
 var kitDe = function(r){ var c = (r.conds||[]).filter(function(x){ return x.t!=="Expositor"; }).sort(function(a,b){ return (a.e||"").localeCompare(b.e||""); }); var kp = c.find(function(x){ return x.t==="Kit principal"; }) || c[0]; return kp && kp.e ? kp.e : ""; };
+// Acerto feito: vale enquanto a data do kit na DevMaster não for MAIS NOVA que a marcação (kit novo emitido depois = marcação some sozinha)
+var feitoVale = function(r){ return !!(r.acertoFeito && r.acertoFeito.em && r.acertoFeito.em>=(kitDe(r)||"")); };
 var qtdCond = function(r){ return (r.conds||[]).filter(function(x){ return x.t!=="Expositor"; }).length; };
 var ultimoDe = function(r){ var c = (r.registro||[])[0]; if(!c) return ""; var t = tipoReg(c.tipo||"outro").t.replace(" para acerto","").replace(" (sem data)","").replace(" (funcionária, Veneziana…)","").replace("Representante pediu o kit","Rep. pediu o kit"); return (c.data ? fmtDataBR(c.data).slice(0,5)+" · " : "")+(c.quem||c.autor||"—")+" · "+t; };
 var COLUNAS = [
@@ -442,7 +444,8 @@ var COLUNAS = [
   {k:"kit", t:"Data do kit", tipo:"data", v:kitDe}, {k:"prev", t:"Acerto previsto", tipo:"data", v:proximoAcerto}, {k:"falt", t:"Faltam", tipo:"falt", v:function(r, h){ return diasEntre(h, proximoAcerto(r)); }},
   {k:"ate", t:"Acerto até", tipo:"txt", v:function(r){ var pz = prazoAcerto(r, isoDe(new Date())); return pz ? pz.txt : ""; }},
   {k:"ag", t:"Data agendada", tipo:"data", v:function(r){ return r.agend ? r.agend.data : ""; }}, {k:"hora", t:"Hora", tipo:"txt", v:function(r){ return r.agend ? r.agend.hora : ""; }},
-  {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }}];
+  {k:"sit", t:"Situação", tipo:"sit", v:function(r){ return r.situacao; }}, {k:"ult", t:"Último contato", tipo:"txt", v:ultimoDe}, {k:"ciclo", t:"Ciclo", tipo:"ciclo", v:function(r){ return r.ciclo; }},
+  {k:"feito", t:"Acerto feito", tipo:"txt", v:function(r){ return feitoVale(r) ? "Feito "+dBR(r.acertoFeito.em) : ""; }}];
 var dBR = function(iso){ return iso ? fmtDataBR(iso).slice(0,5) : "—"; };
 
 function TabelaAgenda(p){
@@ -458,7 +461,8 @@ function TabelaAgenda(p){
     return ok; };
   var ativo = function(c){ var f = fil[c.k]; return !!f && !!(f.q || f.a || f.b); };
   var algum = COLUNAS.some(ativo);
-  var linhas = lista.filter(passa).sort(function(a,b){ return proximoAcerto(a).localeCompare(proximoAcerto(b)); });
+  var cx = use(), eu = nomeDe(s.usuario);
+  var linhas = lista.filter(passa).sort(function(a,b){ return (feitoVale(a) ? 1 : 0)-(feitoVale(b) ? 1 : 0) || proximoAcerto(a).localeCompare(proximoAcerto(b)); });   // quem já fez o acerto vai para o fim
   var troca = function(col, parte, valor){ var n = Object.assign({}, fil), f = Object.assign({}, n[col]); f[parte] = valor; n[col] = f; setFil(n); };
   useEffect(function(){
     if(!pop) return undefined;
@@ -486,14 +490,16 @@ function TabelaAgenda(p){
         e("thead",null, e("tr",{style:BARRA_OURO}, COLUNAS.map(function(c){ return e("th",{key:c.k, "data-col":c.k, title:c.tipo==="seq" ? "Número da linha" : "Clique para filtrar", onClick:c.tipo==="seq" ? null : function(ev){ abrirPop(c, ev); }, className:(c.tipo==="seq" ? "" : "cursor-pointer ")+"h-8 select-none whitespace-nowrap border-r border-[rgba(0,0,0,.42)] px-2 text-center text-[11px] font-extrabold uppercase tracking-[.06em] last:border-r-0 hover:bg-white/15 "+(ativo(c) ? "underline decoration-2 underline-offset-4" : "")}, c.t); }))),
         e("tbody",null, linhas.length===0 ? e("tr",null, e("td",{colSpan:COLUNAS.length, className:"p-4 text-center"}, lista.length===0 ? "Nenhuma revendedora ainda. Clique em Buscar da DevMaster." : "Nenhuma revendedora com esses filtros."))
           : linhas.map(function(r, i){
-              var prox = proximoAcerto(r), dd = diasEntre(hoje, prox), sit = SITUACOES.find(function(x){ return x.k===r.situacao; }) || SITUACOES[0], at = dd<0 && !r.agend;
-              return e("tr",{key:r.id, onClick:function(){ p.abrir(r.id); }, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(i%2 ? "bg-white/[.025]" : "")},
+              var prox = proximoAcerto(r), dd = diasEntre(hoje, prox), sit = SITUACOES.find(function(x){ return x.k===r.situacao; }) || SITUACOES[0], fe = feitoVale(r), at = dd<0 && !r.agend && !fe;
+              return e("tr",{key:r.id, onClick:function(){ p.abrir(r.id); }, className:"h-8 cursor-pointer hover:bg-[rgba(232,184,75,.12)] "+(fe ? "bg-white/[.10] opacity-60" : i%2 ? "bg-white/[.025]" : "")},
                 e("td",{className:cel, style:at ? {boxShadow:"inset 3px 0 #f87171"} : null}, i+1), e("td",{className:cel+" font-semibold"}, r.nome, r.kitNovo && e("span",{className:"ml-2 rounded-full bg-[rgba(232,184,75,.2)] px-2 text-[10.5px] font-bold text-[#E8B84B] ring-1 ring-[rgba(232,184,75,.5)]", title:"Kit novo direcionado pela Michele em "+fmtDataBR(r.kitNovo.desde)+": entrar em contato e agendar"}, "Kit novo")), e("td",{className:cel}, e("span",{className:"inline-flex items-center justify-center gap-1.5"}, foneBonito(r) || "—", BotaoZap(r))), e("td",{className:cel}, COLUNAS[3].v(r)||"—"),
                 e("td",{className:cel}, dBR(kitDe(r))), e("td",{className:cel}, dBR(prox)),
                 e("td",{className:cel+" "+(dd<0 ? "text-[#f87171]" : "")}, dd<0 ? Math.abs(dd)+" d atrasada" : dd===0 ? "hoje" : dd+" d"),
                 (function(){ var pz = prazoAcerto(r, hoje); return e("td",{className:cel+" "+(!pz || pz.k==="futuro" ? "" : pz.k==="prazo" ? "text-[#34d399]" : pz.k==="alerta" ? "text-[#fbbf24]" : "text-[#f87171] font-semibold"), title:pz ? "Prazo de 5 dias úteis contado de "+fmtDataBR(pz.ref) : ""}, pz ? pz.txt : "—"); })(),
                 e("td",{className:cel+" "+(r.agend ? "text-[#E8B84B]" : "text-[#fbbf24]")}, r.agend ? dBR(r.agend.data) : "Aguardando"), e("td",{className:cel}, r.agend ? r.agend.hora : "—"),
-                e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d")); })))),
+                e("td",{className:cel}, chip(sit.t, sit.cor)), e("td",{className:cel}, ultimoDe(r) || "—"), e("td",{className:cel}, r.ciclo+" d"),
+                e("td",{className:cel}, fe ? e("button",{type:"button", title:"Feito por "+(r.acertoFeito.por||"—")+" em "+fmtDataBR(r.acertoFeito.em)+". Clique para desfazer.", onClick:function(ev){ ev.stopPropagation(); cx.dispatch({type:"REVINT_ACERTO_FEITO", id:r.id, desfazer:true}); }, className:"h-8 rounded-md px-2 text-[13px] font-bold text-white ring-1 ring-white/40"}, "✓ "+dBR(r.acertoFeito.em)+" · Desfazer")
+                  : e("button",{type:"button", title:"Marcar que esta revendedora já veio fazer o acerto", onClick:function(ev){ ev.stopPropagation(); cx.dispatch({type:"REVINT_ACERTO_FEITO", id:r.id, por:eu}); }, className:"h-8 rounded-md px-2 text-[13px] font-bold text-[#17110a]", style:{background:"linear-gradient(135deg,#F1D58A,#C9962F)"}}, "Acerto feito"))); })))),
     pop && cPop && e("div",{ref:pr, className:"absolute z-20 flex min-w-[220px] flex-col gap-1.5 rounded-xl border bg-[#1b1b1f] p-2.5 shadow-2xl "+BORDA, style:{top:pop.top, left:pop.left}},
       popCorpo, e("button",{type:"button", onClick:function(){ var n = Object.assign({}, fil); delete n[cPop.k]; setFil(n); setPop(null); }, className:"self-start text-[12px] text-[#E8B84B]"}, "Limpar este filtro")));
 }

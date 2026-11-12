@@ -1092,6 +1092,8 @@ function reducer(s, a){
       // acerto feito: a data do atendimento vira o "último acerto" e a próxima data é recalculada pelo ciclo; valores chegam do atendimento
       var dia = (r.agend && r.agend.data) || isoDia(new Date(agora));
       return Object.assign({}, r, {hist:[{data:dia, venda:null, acerto:null}].concat(r.hist), proximoManual:null, agend:null, situacao:"contatar"}); })}, "Acerto registrado: próxima data recalculada");
+    // Acerto feito (Tamara, 12/11/2026): a linha da lista fica cinza e vai para o fim até a DevMaster mostrar um kit novo (data do kit depois da marcação)
+    case "REVINT_ACERTO_FEITO": return com(s, {revInternas:(s.revInternas||[]).map(function(r){ return r.id!==a.id ? r : Object.assign({}, r, {acertoFeito:a.desfazer ? null : {em:isoDia(new Date(agora)), por:a.por||""}}); })}, a.desfazer ? "Marcação de acerto feito removida" : "Acerto marcado como feito");
     case "INT_ABRIR": return com(s, {aba:"intcalc", intSel:a.id});
     // até 2 atendimentos abertos ao mesmo tempo (abas): abrir um terceiro troca a aba que está ativa
     case "INT_SEL": {

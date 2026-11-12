@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.18.76", data:"2026-11-12", titulo:"Atendimento interno › Revendedoras: botão Acerto feito", itens:[
+  {tipo:"novo", area:"Atendimento interno › Revendedoras", txt:"Nova coluna Acerto feito (pedido da Tamara): o botão marca a revendedora que já veio fazer o acerto. A linha fica cinza e vai para o fim da lista, com a data e o botão Desfazer. A marca some sozinha quando a DevMaster mostra um kit novo (data do kit depois da marcação). O filtro de data de devolução é o da coluna Acerto previsto (clicar no título)."},
+ ]},
  {v:"0.18.75", data:"2026-11-12", titulo:"Pagamentos a fornecedores: boleto de mês passado, lista de pedidos e descrição da dívida", itens:[
   {tipo:"correção", area:"Pagamentos a fornecedores › Negociações", txt:"Resumo da negociação (ex.: Art Ello): parcela com nota (boleto) que venceu antes do mês atual agora conta como paga, a mesma regra da planilha e da Geral da Pontual. Antes ela ficava em aberto para sempre, porque boleto não tem baixa no sistema. A dívida da Art Ello caiu de R$ 82.258,41 para R$ 76.727,41."},
   {tipo:"novo", area:"Pagamentos a fornecedores › Negociações", txt:"Novo bloco Pedidos lançados no alto da tela: lista do último para o primeiro, com data, fornecedor, pedido, total, com nota, sem nota, pago, falta e número de parcelas. Clicar no pedido abre o detalhe (ver, editar, dar baixa). Mostra os 30 últimos e tem botão para ver todos."},
