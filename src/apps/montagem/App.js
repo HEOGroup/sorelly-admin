@@ -201,6 +201,8 @@ function App(){
   var vetA = abasVetadas(s.usuario); if(vetA.length) permitidas = (permitidas || ABAS.map(function(a){ return a[0]; })).filter(function(a){ return vetA.indexOf(a)<0; });
   // quem bipa os retornos (Configurador geral) também abre o Consolidado e o Controle de kits, mesmo sendo de outro setor
   if(permitidas && quemBipa(s, BIPA_RETORNO_PADRAO()).indexOf(s.usuario)>=0) permitidas = permitidas.concat(["consrep","controlekits"].filter(function(t){ return permitidas.indexOf(t)<0; }));
+  // quem tem a autorização "Ver o Financeiro da família" também abre as telas da Família (12/11/2026, Bruna e Nayale): a lista do grupo Financeiro não traz essas telas e o ajuste do RH fica só no navegador de quem mexeu
+  if(permitidas && temAutorizacao("financeiro_familia", s.usuario)) permitidas = permitidas.concat(ABAS.map(function(a){ return a[0]; }).filter(function(t){ return t.indexOf("ff")===0 && permitidas.indexOf(t)<0; }));
   if(permitidas && permitidas.indexOf("whats")<0) permitidas = permitidas.concat(["whats"]);
   if(permitidas && permitidas.indexOf("inicio")<0) permitidas = permitidas.concat(["inicio"]);   // a página inicial é de todo mundo
   if(permitidas && permitidas.indexOf("melhorias")<0) permitidas = permitidas.concat(["melhorias"]);

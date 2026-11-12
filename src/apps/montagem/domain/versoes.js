@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.14", data:"2026-11-12", titulo:"Financeiro familiar: Bruna e Nayale abrem as telas da Família", itens:[
+  {tipo:"correção", area:"Acessos", txt:"Quem tem a autorização Ver o Financeiro da família passa a abrir as telas da Família (Home, Contas a pagar, Contas pagas, PIX revendedoras e as demais). A lista de telas do grupo Financeiro não trazia essas telas, e o ajuste feito em RH → Acessos fica só no navegador de quem mexeu. Pedido do Marcus para a Bruna, com o mesmo acesso da Nayale."}]},
  {v:"0.20.13", data:"2026-11-12", titulo:"Chamados: Nickolas vê os chamados de todos", itens:[
   {tipo:"melhoria", area:"Chamados", txt:"O Nickolas passa a ver os chamados de todas as pessoas, com a escolha Todas ou Minhas, como o Marcus e o Leonardo. Ele lê a conversa dos chamados dos outros, mas não responde nem muda a situação: isso continua só com o Marcus e o Leonardo."}]},
  {v:"0.18.78", data:"2026-11-12", titulo:"Comissões: uma linha por revendedora e cores", itens:[
