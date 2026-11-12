@@ -212,13 +212,14 @@ function novoPedido(s, d, agora, por, doArquivo){
 
 // ---------- papéis e autorização ----------
 // papel de quem está logado em Compras: diretoria = "ADMIN"; senão o que foi dado em Acessos (s.ce.acessos.compras[quem]); sem vínculo = null (só pede e acompanha os próprios)
-function papelCompras(s, quem, diretoria){ if(diretoria) return "ADMIN"; var p = s.ce.acessos.compras[quem]; return p && p!=="SOLICITANTE" ? p : null; }
+// Anamaria (29) e Leonardo (44): papel total em Compras, pedido do Marcus em 12/11/2026
+function papelCompras(s, quem, diretoria){ if(diretoria || String(quem)==="29" || String(quem)==="44") return "ADMIN"; var p = s.ce.acessos.compras[quem]; return p && p!=="SOLICITANTE" ? p : null; }
 // cap: "membro" (qualquer um), operar, autorizar, faturar, logistica, contas, admin
 function podeCompras(papel, cap){ if(cap==="membro") return true; return !!papel && (CAPS_COMPRAS[cap]||[]).indexOf(papel)>=0; }
 // vê o funil inteiro? quem opera, define CNPJ ou faz logística; os demais só os próprios pedidos
 function veFunilCompleto(papel){ return podeCompras(papel, "operar") || podeCompras(papel, "faturar") || podeCompras(papel, "logistica"); }
 // quem APROVA/REPROVA e marca compra efetuada: lista de config.aprovadores, ou (vazia) a autorização "compra_aprova" do projeto (domain/autorizacoes.js)
-function podeAprovarCompra(s, id){ if(id==null || id==="") return false; var l = s.ce.config.aprovadores||[]; return l.length ? l.map(String).indexOf(String(id))>=0 : temAutorizacao("compra_aprova", id); }
+function podeAprovarCompra(s, id){ if(id==null || id==="") return false; if(String(id)==="29" || String(id)==="44") return true; var l = s.ce.config.aprovadores||[]; return l.length ? l.map(String).indexOf(String(id))>=0 : temAutorizacao("compra_aprova", id); }
 // quem EFETUA a compra liberada: a autorização "compra_efetua" (Nayale, Lucas, Marcus) ou quem aprova (podeAprovarCompra)
 function podeEfetuarCompra(s, id){ if(id==null || id==="") return false; return temAutorizacao("compra_efetua", id) || podeAprovarCompra(s, id); }
 // quem pode mexer no plano de pagamento: depois de LIBERADA, se o financeiro definiu o plano (modo "plano") só quem aprova; se liberou só com OK, também quem efetua. Nas outras etapas vale o papel "operar" (a tela confere)
