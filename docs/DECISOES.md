@@ -2272,3 +2272,8 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - **Erro:** `primeiroMarcado` usava `r.agend.data` mesmo quando essa data era do ciclo ANTERIOR (a revendedora já tinha acertado e pego kit novo; a data marcada antiga fica guardada). Efeito: 30 das 38 revendedoras em vermelho na coluna "Acerto até" eram falso alerta, e um atendimento novo podia receber dias úteis de atraso que não existiam.
 - **Correção:** `cicloDe` passa a ser a data do kit atual (`kitDesde`, condicional aberto) ou o último acerto, o que for mais novo; só vale data marcada DEPOIS do começo do ciclo. Sem data válida, a referência é o acerto previsto (data do kit + ciclo).
 - Conferir: acertos internos de 11/11/2026 gravados com `atrasoDias` maior que zero (ver resposta ao Marcus do dia).
+
+## 11/11/2026 (17ª parte) — Comissão das funcionárias inclui as representantes
+- Decisão do Marcus: **"funcionárias inclui as representantes também"**. `src/server/funcionarias.js` passa a juntar, além das ativas do RH (pelo CPF), as representantes da lista `REPRESENTANTES` de `domain/pessoas.js`, achadas pelo NOME COMPLETO no cadastro de cliente da DevMaster (dois cadastros com o mesmo nome: vale o ativo). A resposta traz `representantes` (quantas entraram) e `representantesSemCadastro` (nomes não achados).
+- Em 11/11/2026: 20 das 22 foram achadas. Não achadas pelo nome exato: Ana Claudia Adriano e Nagela Eliney Hess (o nome no cadastro deve estar escrito diferente; corrigir o nome em `pessoas.js` quando o Marcus confirmar).
+- Vale como para as funcionárias: só no acerto feito na Sorelly; brinde, taxa e multas seguem a tabela normal. A confirmar: se vale também quando a representante acerta com outra representante.
