@@ -13,7 +13,7 @@ var ABAS_PERFIL = {supervisao:null, bipadora:["visaobip","meudesemp","painel","c
   familia:TODAS.filter(function(k){ return CONFIGURADORES.indexOf(k)<0 && k.indexOf("marcus")!==0 && k.indexOf("pont")!==0; }),   // "pont" = Pontual (empresa do Valdir): só a supervisão abre
   supervisora:TODAS.filter(function(k){ return k.indexOf("marcus")!==0 && k.indexOf("pont")!==0; }),                       // Deysiane: como era (tudo)
   cadastropecas:["cpcompras","cadpecas","cpsol","cpctrl","cpfp","cpfe","cpouro","cpbanho","cplotes","cpcalc","cpforn","cpdev","cpcfg"],          // Rayssa e Graziella
-  linkcadastro:["linkpag","linkrel","comlink","compras","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Hellen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
+  linkcadastro:["linkpag","linkrel","comlink","compras","revendedoras","revbase","aprovacaocad","desempenhocad","indicacoes"],   // Helen (28/10/2026): Link de pagamento, Compras e estoque e Cadastro de revendedoras; sem Kit novo
   inadimplencia:["inadimp","comprasrep","inaddiv","inadcob","inadpag","inadser","inadkit","inadrel","inadreg"],          // Amanda de Miranda
   representante:["celrep","painel","consrep","comissoes"],
   encomendas:["encomendas","encida","enctop50","encrep","expositores","encregras"],   // Encomendas e reposições (05/11/2026): as três meninas do setor (Agatha, Elen e Eduarda Gabriela) estavam em Acesso básico e não abriam as telas do setor

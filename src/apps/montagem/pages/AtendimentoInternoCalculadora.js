@@ -193,7 +193,7 @@ function AtendimentoInterno(){
     var rodar = function(){ chamar("GET", "/funcionarias").then(function(r){ if(vivo && r && r.codigos) d({type:"FUNC_SET", dados:{codigos:r.codigos, nomes:r.nomes || {}, em:Date.now()}}); }).catch(function(){ /* sem servidor ou sem acesso: segue com a última lista */ }); };
     rodar(); var t = setInterval(rodar, 600000); return function(){ vivo = false; clearInterval(t); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
-  var sPN = useState(null), formPN = sPN[0], setFormPN = sPN[1];   // pedido de link novo à Hellen
+  var sPN = useState(null), formPN = sPN[0], setFormPN = sPN[1];   // pedido de link novo à Helen
   var sPF = useState(null), formPF = sPF[0], setFormPF = sPF[1];   // formulário do link já pago por fora (estação Pagamentos)
   var ps =useState(0), passoAt = ps[0], setPassoAt = ps[1];                       // etapa aberta (uma de cada vez)
   var ta = useState("comissao"), apoioAba = ta[0], setApoioAba = ta[1];           // aba do bloco de apoio: Comissões, Valor do kit ou Regras
@@ -914,11 +914,11 @@ function AtendimentoInterno(){
       x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
     linksAguardando.map(function(sol){ var gerado = sol.status==="gerado";
       return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-center gap-2 px-2 py-1 text-center text-[13px]"},
-        e("span",null, (sol.paraAtendimento ? (gerado ? "Link gerado pela Hellen" : "Pedido enviado à Hellen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))),
+        e("span",null, (sol.paraAtendimento ? (gerado ? "Link gerado pela Helen" : "Pedido enviado à Helen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))),
         gerado && sol.linkUrl && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(sol.linkUrl); }catch(x){} }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Copiar link")); }),
-    !formPF && !formPN && e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPN({valor:null, parcelas:1}); }, title:"A Hellen gera o link na plataforma. Quando a revendedora pagar, ele entra aqui como pagamento.", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Pedir link novo (a Hellen gera)")),
+    !formPF && !formPN && e("div",{className:"flex justify-center p-2"}, e("button",{type:"button", onClick:function(){ setFormPN({valor:null, parcelas:1}); }, title:"A Helen gera o link na plataforma. Quando a revendedora pagar, ele entra aqui como pagamento.", className:"h-8 rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Pedir link novo (a Helen gera)")),
     formPN && e("div",{className:"flex flex-col gap-2 p-2"},
-      e("p",{className:"text-center text-[13px] font-semibold"}, "Pedido de link novo: a Hellen gera na plataforma e avisa"),
+      e("p",{className:"text-center text-[13px] font-semibold"}, "Pedido de link novo: a Helen gera na plataforma e avisa"),
       e("div",{className:"grid grid-cols-2 gap-2"},
         campoPF("Valor do link", e(CampoDinheiro,{value:formPN.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPN(Object.assign({}, formPN, {valor:v})); }})),
         campoPF("Parcelas", e("select",{value:formPN.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPN(Object.assign({}, formPN, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); })))),

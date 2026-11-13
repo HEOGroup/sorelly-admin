@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.31", data:"2026-11-13", titulo:"Compras: Helen efetua compras liberadas", itens:[
+  {tipo:"melhoria", area:"Materiais e estoque › Compras", txt:"A Helen ganha a autorização Efetuar compras liberadas: ela marca a compra como efetuada depois que o financeiro libera. O nome dela passa a ser escrito Helen, com um L, nas telas e na conta. Pedido do Lucas."}]},
  {v:"0.20.30", data:"2026-11-12", titulo:"Faturamento no padrão do Financeiro: previsto por dia e novembro conferido", itens:[
   {tipo:"melhoria", area:"Financeiro › Receber › Faturamento", txt:"Tela refeita no padrão de Contas a pagar: um bloco só com a barra azul, abas e visões na faixa de cima, mês e ano ao lado e a tabela com filtro no nome de cada coluna. Saíram o bloco de filtros e a faixa de totais. O Dia a dia ganhou as colunas Previsto, % do previsto e Faturamento previsto (média × acertos previstos a X%), e as visões Faturamento, Contas pagas e Saldo."},
   {tipo:"correção", area:"Faturamento de novembro", txt:"Dias 03 a 12/11 gravados com o relatório de notas fiscais do Marcus (12/11: 646 acertos e R$ 527.695,39; 06 a 08/11: 207; 09/11: 325; 10/11: 467; 11/11: 523; 03/11 vale R$ 15.065,70). Previsto de novembro 1.961 (646 feitos + 3 no Carregar + 1.312 a realizar); o dia 10 fica em 1.969. Dias travados: o robô das 10h não troca mais esses números e o Hoje provisório de 12/11 (560 acertos) saiu."}]},

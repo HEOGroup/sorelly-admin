@@ -389,7 +389,7 @@ function Detalhe(p){
       ped.entregueEm && e("div",{className:"grid grid-cols-2 gap-1.5"}, e(Dado,{t:"Entregue em", v:formatarDia(ped.entregueEm)}), e(Dado,{t:"Recebido por", v:ped.entregueParaNome}), e(Dado,{t:"Assinatura", v:ped.assinaturaConfirmada ? "Confirmada" : "Não confirmada"})),
       !final && ped.status!=="NAO_VERIFICADA" && e(NotaFiscal,{key:ped.id+"-"+ped.notaFiscal, c:c, ped:ped}),
       final && ped.notaFiscal && e(Dado,{t:"Nota fiscal", v:ped.notaFiscal}),
-      // campo Etiqueta de logística tirado a pedido da Hellen (Chamados, 03/11/2026); os dados antigos ficam guardados
+      // campo Etiqueta de logística tirado a pedido da Helen (Chamados, 03/11/2026); os dados antigos ficam guardados
       null),
     e(Painel,{t:"Pagamentos", ic:"currency-circle-dollar"},
       !pagavel ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Disponível depois da compra efetuada.") : ped.enviada

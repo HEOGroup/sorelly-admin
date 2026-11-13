@@ -1,5 +1,5 @@
 // Sorelly Admin · montagem — pages/link-pagamento/Descontados.js
-// Aba Descontados no acerto (Hellen, 03/11/2026): os links pagos que já abateram um acerto, para conferir como na planilha dela. Cada coluna filtra pelo título (como no Agendamento).
+// Aba Descontados no acerto (Helen, 03/11/2026): os links pagos que já abateram um acerto, para conferir como na planilha dela. Cada coluna filtra pelo título (como no Agendamento).
 import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { formatarDia, formatarReais, meioDe, nomeMeio } from "@/apps/montagem/domain/link-pagamento";

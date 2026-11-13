@@ -12,7 +12,7 @@ import { e, useState } from "@/shared/react";
 var LIMITE = 100;   // linhas desenhadas por vez (a planilha importada deixa centenas de pagos sem comprovante marcado)
 function AbaLpComprovantes(){
   var L = useLp(), s = L.s, hoje = hojeSP(), cp = useState(""), copiado = cp[0], dd = useState({de:"", ate:""}), dt = dd[0];
-  // filtro por data do pagamento (data inicial e final; Hellen, 03/11/2026)
+  // filtro por data do pagamento (data inicial e final; Helen, 03/11/2026)
   var noPeriodo = function(x){ var d = String(x.pagoEm || "").slice(0, 10); return (!dt.de || d>=dt.de) && (!dt.ate || d<=dt.ate); };
   var pend = comprovantesPendentes(s, hoje).filter(function(p){ return noPeriodo(p.sol); }), atrasados = pend.filter(function(x){ return x.diasAtraso>0; }), amanha = aguardandoDiaSeguinte(s, hoje).filter(noPeriodo);
   var copia = function(x){ if(copiar(textoComprovante(x, s))){ cp[1](x.id); setTimeout(function(){ cp[1](""); }, 2500); } };

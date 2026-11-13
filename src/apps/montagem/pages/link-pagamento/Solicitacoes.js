@@ -14,7 +14,7 @@ import { e, useEffect, useMemo, useState } from "@/shared/react";
 
 var FINAIS = {comprovante:1, expirado:1, cancelado:1, recusado:1, negada:1, bloqueada:1, antifraude:1, abandonada:1};
 var SEM_ACEITE = {recusado:1, negada:1, bloqueada:1, antifraude:1, abandonada:1};   // coluna "Recusado ou negado" (como no Kommo)
-// motivos de cancelamento iguais aos da planilha (Hellen, 03/11/2026)
+// motivos de cancelamento iguais aos da planilha (Helen, 03/11/2026)
 var MOTIVOS = [["expirado", "Expirada"], ["bloqueada", "Bloqueada"], ["cancelado", "Cancelada"], ["antifraude", "Antifraude"], ["abandonada", "Abandonada"], ["negada", "Negada"]];
 var PEDE_MOTIVO = {cancelado:1, recusado:1, expirado:1, bloqueada:1, antifraude:1, abandonada:1, negada:1};
 var DIAS_NO_QUADRO = 3;   // finais recentes ainda aparecem no quadro por alguns dias

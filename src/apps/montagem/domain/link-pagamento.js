@@ -236,7 +236,7 @@ function resolverMeio(s, revendedora, meioId, representante){
 var meioSugerido = function(s, revendedora, representante){ var r = resolverMeio(s, revendedora, "", representante); return r.meio || null; };
 
 // ---------- solicitações: regras ----------
-// Tentativa = mesma revendedora, mesmo dia e MESMO VALOR (pedido da Hellen, 03/11/2026): ela pode pedir vários links no dia com valores diferentes; só repetir o mesmo valor conta como outra tentativa.
+// Tentativa = mesma revendedora, mesmo dia e MESMO VALOR (pedido da Helen, 03/11/2026): ela pode pedir vários links no dia com valores diferentes; só repetir o mesmo valor conta como outra tentativa.
 var nTentativasDia = function(lp, revendedora, dia, valor){ var n = norm(revendedora), v = valor===undefined ? null : r2(num(valor)); return lp.solicitacoes.filter(function(x){ return norm(x.revendedora)===n && diaDe(x.criadoEm)===dia && (v===null || r2(num(x.valor))===v) && x.status!=="recusado" && x.status!=="cancelado"; }).length; };
 // Máximo de parcelas sem juros para um valor (regra por faixa, 19/10/2026): até {ate} reais cabem {max}x; acima da última faixa vale maxParcelasSemJuros (10x)
 function parcelasMaximas(cfg, valor){
@@ -318,7 +318,7 @@ function vendidoNoApp(lp, rev, mes){ var t = 0; ((lp && lp.vendasApp) || []).for
 function minutosRestantes(sol, agora){ if(!sol || sol.status!=="gerado" || !sol.expiraEm) return null; var a = minutosDe(agora || agoraSP()), b = minutosDe(sol.expiraEm); return a==null || b==null ? null : Math.floor(b-a); }
 var textoRestante = function(min){ if(min==null) return ""; if(min<=0) return "Expirado"; var h = Math.floor(min/60), m = min%60; return h>0 ? h+"h "+p2(m)+"min" : m+"min"; };
 var expirados = function(lp, agora){ var a = minutosDe(agora || agoraSP()); return lp.solicitacoes.filter(function(x){ var e = minutosDe(x.expiraEm); return x.status==="gerado" && e!=null && e<=a; }).map(function(x){ return x.id; }); };
-// qualquer etapa (Hellen, 03/11/2026): o link pode ir para qualquer outra situação, para corrigir um movimento errado
+// qualquer etapa (Helen, 03/11/2026): o link pode ir para qualquer outra situação, para corrigir um movimento errado
 var proximosStatus = function(sol){ return STATUS.filter(function(k){ return k!==sol.status; }); };
 var proximaEtapa = function(sol){ var i = FLUXO.indexOf(sol.status); return i>=0 && i<FLUXO.length-1 ? FLUXO[i+1] : null; };
 
@@ -581,8 +581,8 @@ function lpReduz(s, a){
     }
     // Link pago POR FORA (Marcus, 11/11/2026: "o setor de link precisa ter lá todos os links mesmo pago por fora"): link gerado fora do sistema (WhatsApp, direto na plataforma) e já pago.
     // Entra direto como "pago", sem passar por solicitado/gerado e sem as regras de pedido (mínimo, parcelas, link da representante). Aparece no quadro e nos Comprovantes como qualquer outro pago.
-    // Pedido de link NOVO feito pelo Atendimento Sorelly (Hellen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
-    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Hellen ao gerar.
+    // Pedido de link NOVO feito pelo Atendimento Sorelly (Helen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
+    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Helen ao gerar.
     case "sol_pedir_atendimento": {
       var dP = {revendedora:a.revendedora, canal:"whatsapp", valor:a.valor, parcelas:a.parcelas, meioId:"", representante:"", dataAcerto:"", emissor:"atendimento", semMeio:true, bandeira:a.bandeira};
       var eP = validarSolicitacao(sx, dP, agora); if(eP) return recusa(eP);
@@ -591,7 +591,7 @@ function lpReduz(s, a){
         geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1,
         observacao:trim(a.observacao) || "Pedido do Atendimento Sorelly: a revendedora está na empresa, o acerto é hoje.", motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
         criadoEm:agora, criadoPor:por, paraAtendimento:true, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:"Pedido do atendimento"}]});
-      return ok("Link pedido à Hellen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
+      return ok("Link pedido à Helen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
     }
     case "sol_por_fora": {
       var nomeF = trim(a.revendedora), valF = r2(num(a.valor)), parF = Math.round(num(a.parcelas)) || 1, pagoF = a.pagoEm || agora;

@@ -19,7 +19,7 @@ var ABAS = [["solicitacoes", "Solicitações"], ["historico", "Histórico"], ["a
 var COR = "#0EA5E9";   // cor do setor Link de pagamento
 
 function AbaLinkPagamento(){
-  var st = useState("solicitacoes"), aba = st[0], cx = use(), diretoria = DIRETORIA.some(function(x){ return x.id===cx.state.usuario; });   // Taxas e recebimentos é só da Diretoria (Hellen, 03/11/2026)
+  var st = useState("solicitacoes"), aba = st[0], cx = use(), diretoria = DIRETORIA.some(function(x){ return x.id===cx.state.usuario; });   // Taxas e recebimentos é só da Diretoria (Helen, 03/11/2026)
   var abas = ABAS.filter(function(a){ return a[0]!=="taxas" || diretoria; });
   if(aba==="taxas" && !diretoria) aba = "solicitacoes";
   var corpo = aba==="solicitacoes" ? e(AbaLpSolicitacoes,{onIr:st[1]})
