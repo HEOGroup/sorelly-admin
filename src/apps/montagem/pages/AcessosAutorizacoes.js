@@ -56,9 +56,9 @@ var ABAS_BASE = [["ver","Quem vê o quê"], ["fazer","Quem pode fazer o quê"], 
 function AbaAcessosAutorizacoes(){
   var st = useState("ver"), aba = st[0], ABAS = apiAtiva() ? ABAS_BASE.concat([["contas","Contas"]]) : ABAS_BASE;   // "Contas" só existe com o servidor ligado (login)
   return e("div",{className:"flex flex-col gap-2.5"},
-    e("div",{className:"flex flex-wrap justify-center gap-1.5"}, ABAS.map(function(a){ var on = a[0]===aba;
-      return e("button",{key:a[0], type:"button", onClick:function(){ st[1](a[0]); }, className:"rounded-lg px-4 py-1.5 text-[13px] font-bold ring-1 transition "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"),
-        style:on ? {background:"#8B5CF655", boxShadow:"inset 0 0 0 1px #8B5CF6cc"} : undefined}, a[1]); })),
+    // abas no azul do sistema (Marcus, 12/11/2026: tudo azul, igual ao Financeiro)
+    e("div",{className:"flex justify-center"}, e("div",{role:"group", className:"inline-flex overflow-hidden rounded-md border-2 border-[var(--bloco-titulo)]"}, ABAS.map(function(a, i){ var on = a[0]===aba;
+      return e("button",{key:a[0], type:"button", "aria-pressed":on, onClick:function(){ st[1](a[0]); }, className:"h-8 whitespace-nowrap px-4 text-[13px] "+(i ? "border-l border-white/30 " : "")+(on ? "bg-[var(--bloco-titulo)] font-semibold text-white" : "text-white hover:bg-white/10")}, a[1]); }))),
     aba==="ver" ? e(AbaAcessos,null) : aba==="avisos" ? e(AbaConfigAvisos,null) : aba==="contas" ? e(React_Frag,null, e(PageHead,{t:"Contas de acesso", sub:"Quem criou conta no sistema: libere, escolha a pessoa e os setores."}), e(AbaContas,null)) : e(React_Frag,null, e(PageHead,{t:"Acessos e autorizações", sub:"Quem pode executar cada ação do sistema."}), e(AbaAutorizacoes,null)));
 }
 var React_Frag = function(p){ return e("div",{className:"flex flex-col gap-2.5"}, p.children); };

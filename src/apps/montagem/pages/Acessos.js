@@ -1,17 +1,17 @@
 // Sorelly Admin · montagem — pages/Acessos.js
 // RH → Acessos por setor: marca quais telas cada setor abre e, dentro de algumas telas (Consolidado, Comissões), quais partes cada um vê.
 // Vale na hora (state.acessos e state.acessosBlocos sobre o padrão de navigation/perfis.js e domain/equipe.js). Só os sócios e o Nickolas mexem.
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+// Visual de 12/11/2026 (Marcus: "igual às abas do Financeiro, meio planilha, tudo azul"): blocos azuis (BlocoPainel) com TabelaPlanilha; filtro e ordem no título de cada coluna.
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { ContasLogin } from "@/apps/montagem/components/contas-login";
+import { Botao } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ACESSO_TOTAL, AGENDAMENTO, AMANDA_M, ATENDENTE_PECAS, BIPADORAS, BLOCOS, CADASTRO_PECAS, DIRECAO_FAMILIA, DIRETORIA, FAMILIA, FINANCEIRO, KITNOVO, LISTAGENS_RESP, MONTADORAS, SUPERVISORA } from "@/apps/montagem/domain/equipe";
 import { ABAS } from "@/apps/montagem/navigation/abas";
-import { GRUPOS_EDITAVEIS, PAPEL_LB, VISUAL, abasDoPapel } from "@/apps/montagem/navigation/perfis";
+import { GRUPOS_EDITAVEIS, PAPEL_LB, abasDoPapel } from "@/apps/montagem/navigation/perfis";
 import { SETORES, ondeEsta } from "@/apps/montagem/navigation/setores";
 import { use } from "@/apps/montagem/state/context";
-import { Icon } from "@/apps/montagem/ui/icon";
-import { PageHead } from "@/apps/montagem/ui/page";
-import { ContasLogin } from "@/apps/montagem/components/contas-login";
-import { e } from "@/shared/react";
-import React from "react";
+import { e, useState } from "@/shared/react";
 
 var EDITORES = [16,17,28,29,32,44];   // Marcus, Nickolas, Lucas, Anamaria, Amanda de Miranda (01/11/2026)
 var nomes = function(l){ return l.map(function(x){ return x.nome; }); };
@@ -23,6 +23,9 @@ var QUEM = {
 
 function AbaAcessos(){
   var cx = use(), s = cx.state, d = cx.dispatch, edita = EDITORES.indexOf(s.usuario)>=0;
+  // cada bloco minimiza clicando na barra azul; Quem está em cada setor e Contas de acesso começam fechados (Marcus, 12/11/2026: "dá uma minimizada")
+  var fe = useState({pessoas:true, contas:true}), fechados = fe[0], setFechados = fe[1];
+  var alterna = function(k){ return function(){ setFechados(Object.assign({}, fechados, {[k]:!fechados[k]})); }; };
   var colunas = ["supervisao"].concat(GRUPOS_EDITAVEIS);
   // linhas agrupadas pelo setor do menu
   var setorDe = function(k){ var o = ondeEsta(k); return o ? o.setor.nome : "Apps de celular e outros"; };
@@ -33,41 +36,36 @@ function AbaAcessos(){
     d({type:"ACESSO_SET", papel:papel, abas:ligar ? atual.concat([k]) : atual.filter(function(x){ return x!==k; })}); };
   var lista = function(chave){ return (s.acessosBlocos && s.acessosBlocos[chave]) || BLOCOS[chave].padrao; };
   var marcarBloco = function(chave, g, ligar){ var l = lista(chave).slice(); d({type:"ACESSO_BLOCO", chave:chave, grupos:ligar ? l.concat([g]) : l.filter(function(x){ return x!==g; })}); };
-  var caixa = function(on, bloqueado, rotulo, aoMudar){ return e("input",{type:"checkbox", checked:on, disabled:bloqueado || !edita, "aria-label":rotulo,
-    className:"size-4 cursor-pointer accent-[#E8B84B] disabled:cursor-not-allowed", onChange:function(ev){ aoMudar(ev.target.checked); }}); };
   var blocoMudou = function(g){ return Object.keys(BLOCOS).some(function(c){ return lista(c).indexOf(g)>=0 !== (BLOCOS[c].padrao.indexOf(g)>=0); }); };
   var restaurar = function(g){ d({type:"ACESSO_SET", papel:g, abas:null});
     Object.keys(BLOCOS).forEach(function(c){ if(lista(c).indexOf(g)>=0 === (BLOCOS[c].padrao.indexOf(g)>=0)) return; marcarBloco(c, g, BLOCOS[c].padrao.indexOf(g)>=0); }); };
-  var td = "border-b border-border/40 px-2 py-1.5 text-center";
-  var linhaTela = function(a){ var k = a[0], blocos = Object.keys(BLOCOS).filter(function(c){ return BLOCOS[c].tela===k; });
-    return [e("tr",{key:k, className:"hover:bg-white/5"},
-        e("td",{className:"sticky left-0 z-10 border-b border-border/40 bg-card px-3 py-1.5 text-left text-[13px] font-medium"}, a[1]),
-        colunas.map(function(g){ return e("td",{key:g, className:td}, caixa(g==="supervisao" ? true : (abasDoPapel(g, s.acessos)||[]).indexOf(k)>=0, g==="supervisao", a[1]+" para "+PAPEL_LB[g], function(v){ marcar(g, k, v); })); }))]
-      .concat(blocos.map(function(c){
-        return e("tr",{key:k+c, className:"bg-black/15"},
-          e("td",{className:"sticky left-0 z-10 border-b border-border/40 bg-[#1b1710] py-1.5 pl-8 pr-3 text-left text-[12px] text-white/85"}, "↳ dentro: "+BLOCOS[c].nome),
-          colunas.map(function(g){ return e("td",{key:g, className:td}, caixa(g==="supervisao" ? true : lista(c).indexOf(g)>=0, g==="supervisao", BLOCOS[c].nome+" para "+PAPEL_LB[g], function(v){ marcarBloco(c, g, v); })); })); })); };
-  var cabeca = function(g){ var v = VISUAL[g], mudou = g!=="supervisao" && ((s.acessos && s.acessos[g]) || blocoMudou(g));
-    return e("th",{key:g, className:"sticky top-0 z-10 min-w-36 border-b border-border bg-sidebar p-1.5 align-top"},
-      e("div",{className:"flex flex-col items-center gap-1 rounded-xl p-2 text-white", style:{background:v[0]}},
-        e("span",{className:"grid size-8 place-items-center rounded-lg bg-black/25"}, e(Icon,{n:v[1], s:17})),
-        e("span",{className:"text-[12.5px] font-bold leading-tight"}, PAPEL_LB[g]),
-        e("span",{className:"text-[11px] font-medium leading-tight opacity-90"}, (QUEM[g] || []).join(", ")),
-        mudou && edita && e("button",{onClick:function(){ restaurar(g); }, className:"mt-0.5 rounded bg-black/30 px-1.5 py-0.5 text-[10.5px] font-semibold hover:bg-black/45"},"Voltar ao padrão"))); };
-  return e(React.Fragment,null,
-    e(PageHead,{t:"Acessos por setor", sub:"Marque as telas que cada setor abre e, dentro da tela, o que cada um enxerga. Vale na hora."}),
-    e("div",{className:"mx-auto flex w-full max-w-[110rem] flex-col gap-3"},
-      !edita && e("p",{className:"rounded-lg bg-warning/15 px-3 py-2 text-center text-[13px] font-semibold text-warning"},"Só os sócios e o Nickolas alteram os acessos. Você está só vendo."),
-      e(BlocoBarra,{t:"Quem abre o quê", sub:"cada coluna é um setor · os sócios (primeira coluna) sempre veem tudo"},
-        e("div",{className:"max-h-[75vh] overflow-auto p-2"},
-          e("table",{className:"w-full border-separate border-spacing-0"},
-            e("thead",null, e("tr",null,
-              e("th",{className:"sticky left-0 top-0 z-20 min-w-56 border-b border-border bg-sidebar px-3 py-2 text-left text-[12px] font-semibold"},"Tela"), colunas.map(cabeca))),
-            e("tbody",null, grupos.map(function(gr){ return e(React.Fragment,{key:gr.nome},
-              e("tr",null, e("td",{colSpan:colunas.length+1, className:"bg-primary/15 px-3 py-1 text-left text-[11.5px] font-bold uppercase tracking-wide text-primary"}, gr.nome)),
-              gr.abas.map(linhaTela)); }))))),
-      e(ContasLogin),
-      e("p",{className:"text-center text-[12px] text-white/70"},"Representantes: cada uma só verá os dados dela quando tiverem login. As telas em 'em breve' só os sócios veem.")));
+  var mudou = function(g){ return g!=="supervisao" && !!((s.acessos && s.acessos[g]) || blocoMudou(g)); };
+  var caixa = function(on, bloqueado, rotulo, aoMudar){ return e("input",{type:"checkbox", checked:on, disabled:bloqueado || !edita, "aria-label":rotulo,
+    className:"size-4 cursor-pointer accent-[var(--bloco-titulo)] disabled:cursor-not-allowed", onChange:function(ev){ aoMudar(ev.target.checked); }}); };
+
+  // uma linha por tela e, logo abaixo dela, uma linha por parte interna (Consolidado, Comissões...); o valor "Sim"/"Não" é o que o filtro da coluna enxerga
+  var linhas = [];
+  grupos.forEach(function(gr){ gr.abas.forEach(function(a){ var k = a[0], lin = {id:"t_"+k, setor:gr.nome, tela:a[1], tipo:"tela", k:k};
+    colunas.forEach(function(g){ lin[g] = (g==="supervisao" || (abasDoPapel(g, s.acessos)||[]).indexOf(k)>=0) ? "Sim" : "Não"; });
+    linhas.push(lin);
+    Object.keys(BLOCOS).filter(function(c){ return BLOCOS[c].tela===k; }).forEach(function(c){ var lb = {id:"b_"+k+"_"+c, setor:gr.nome, tela:"↳ dentro: "+BLOCOS[c].nome, tipo:"bloco", c:c};
+      colunas.forEach(function(g){ lb[g] = (g==="supervisao" || lista(c).indexOf(g)>=0) ? "Sim" : "Não"; });
+      linhas.push(lb); }); }); });
+  var cols = [{k:"setor", t:"Setor", fixa:true, w:"11rem"}, {k:"tela", t:"Tela", fixa:"11rem", w:"18rem"}].concat(colunas.map(function(g){
+    return {k:g, t:PAPEL_LB[g], w:Math.max(8, PAPEL_LB[g].length*0.62+4).toFixed(1)+"rem", render:function(v, r){ return caixa(v==="Sim", g==="supervisao", r.tela+" para "+PAPEL_LB[g], function(x){ if(r.tipo==="tela") marcar(g, r.k, x); else marcarBloco(r.c, g, x); }); }}; }));
+
+  // quem está em cada setor (e o botão de voltar ao padrão do setor que foi alterado)
+  var pessoas = colunas.map(function(g){ return {id:"p_"+g, setor:PAPEL_LB[g], quem:(QUEM[g] || []).join(", "), padrao:(edita && mudou(g)) ? g : "", g:g}; });
+  var colsPessoas = [{k:"setor", t:"Setor"}, {k:"quem", t:"Quem"},
+    {k:"padrao", t:"Padrão", render:function(v){ return v ? e(Botao,{onClick:function(){ restaurar(v); }, title:"Volta as telas deste setor para o padrão do sistema"}, "Voltar ao padrão") : "—"; }}];
+
+  return e("div",{className:PADRAO_BLOCOS+" flex flex-col gap-1.5"},
+    !edita && e("p",{className:"text-center text-[13px] font-semibold text-warning"}, "Só os sócios e o Nickolas alteram os acessos. Você está só vendo."),
+    e(BlocoPainel,{titulo:"Quem abre o quê", compacto:true, fechado:fechados.matriz, aoTitulo:alterna("matriz")},
+      e(TabelaPlanilha,{semContagem:true, grade:true, compacta:true, chave:"id", linhas:linhas, cols:cols, alturaMax:"calc(100vh - 12rem)", vazio:"Nenhuma tela"})),
+    e(BlocoPainel,{titulo:"Quem está em cada setor", compacto:true, fechado:fechados.pessoas, aoTitulo:alterna("pessoas")},
+      e(TabelaPlanilha,{semContagem:true, grade:true, chave:"id", linhas:pessoas, cols:colsPessoas, vazio:"Nenhum setor"})),
+    e(ContasLogin,{fechado:fechados.contas, aoTitulo:alterna("contas")}));
 }
 
 export { AbaAcessos };

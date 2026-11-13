@@ -4,6 +4,9 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 12/11/2026 (Acessos por setor refeito como planilha azul)
+- Marcus: a tela **RH → Acessos e autorizações → Quem vê o quê** ficou igual às abas do Financeiro: blocos azuis (`BlocoPainel`) com `TabelaPlanilha`, filtro e ordem no título de cada coluna, caixas de marcar azuis, colunas Setor e Tela fixas à esquerda. Blocos: Quem abre o quê, Quem está em cada setor (com Voltar ao padrão) e Contas de acesso. Cada bloco minimiza clicando na barra azul; os dois últimos já abrem fechados. As abas da tela também ficaram azuis. As abas Quem pode fazer o quê, Avisos e Contas (login) ainda estão no visual antigo.
+
 ## 12/11/2026 (Regras só no código, Prata no servidor, Diretoria enxuta, Avisos no RH)
 - Marcus: a tela de editar as regras do consignado foi **excluída**; tudo que se edita ali agora se muda **no código** (`domain/consignado.js`), é conferido e sobe na master. A cada abertura o sistema refaz a versão a partir do código (`store.js`), então todos os computadores usam a mesma tabela. A régua antiga da Calculadora (brinde de R$ 48 e R$ 68 na faixa de R$ 500) também vale só a do código: R$ 44 e R$ 32.
 - **Kit 100% Prata** passou a ser guardado no servidor (módulo `rc`, chave `prataRev`); a marca antiga da ficha só vale quando não há marca nova.
