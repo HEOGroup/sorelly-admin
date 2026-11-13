@@ -22,14 +22,14 @@ var MENU_FINANCEIRO = [
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
-    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Pix representantes","pixdireto"), M("Inadimplência dos representantes","inadimp"), M("Compras de joias","comprasrep")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
-    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]},
-    M("Link de pagamento","linkrel")]},
+    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp"), M("Compras de joias","comprasrep")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
+    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]}]},
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
   {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
 ];
 // Fiscal (Marcus, 12/11/2026): saiu do Financeiro e virou setor próprio, logo abaixo dele.
+var MENU_LINKPAG = [M("Link de pagamento","linkpag"), M("Relatório de links","linkrel")];
 var MENU_FISCAL = [M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")];
 
 // Menu do Cadastro de revendedoras (23/10/2026): mesmo estilo do Financeiro (palavras no topo, listas em cascata, abas abertas e busca), na ORDEM DO FLUXO: Cadastro (aprovar) → Kits novos (liberar, solicitar, entregar) → Desempenho.
@@ -151,10 +151,9 @@ var SETORES = [
       ["Contas a receber", [T("revreceber","Contas a receber")]],
       ["Inadimplência", [T("inadfin","Inadimplência")]],
       ["Interno e estoque", [T("intcons","Consolidado interno"), T("estoquesorelly","Estoque Sorelly")]]]),
-    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), Ti("pixdireto","Pix representantes","coins","#8B5CF6"), T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]},
+    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]},
     {nome:"Comissões", telas:[Ti("comisstodos","Visão geral","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
     Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
-    {nome:"Link de\npagamento", telas:[T("linkrel","Relatório de links de pagamento")]},
     {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#3B82F6", menu:MENU_FISCAL, semAbas:true, areas:[
     {nome:"Fiscal", telas:[T("fiscal","Painel e notas"), T("limitefat","Limite de faturamento"), T("cnpjs","CNPJs")]}]},
@@ -199,7 +198,9 @@ var SETORES = [
       T("equipe"), T("registros"), T("relatorios")]},
     {nome:"Produção", telas:[T("producao","Produção")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
-  {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", direto:T("linkpag","Link de pagamento")},
+  // 12/11/2026 (Marcus): o relatório de links de pagamento mora AQUI, no setor Link de pagamento (saiu do Financeiro).
+  {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, semAbas:true, areas:[
+    {nome:"Link de pagamento", telas:[T("linkpag","Link de pagamento"), T("linkrel","Relatório de links de pagamento")]}]},
   {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", menu:MENU_ATENDIMENTO, semAbas:true, areas:[
     {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", menu:MENU_ESTOQUE, semAbas:true, areas:[

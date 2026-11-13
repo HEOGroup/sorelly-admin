@@ -6,6 +6,7 @@
 // cabAcima: [[{t, span, sep}, ...], ...] = barras de grupo em cima do cabeçalho das colunas, uma linha por barra (ex.: título e Padrão | Prata; Metas › Regras). O degradê dourado cobre todas.
 // cheia: true faz a tabela ocupar a altura toda do lugar onde está (as linhas se esticam por igual); serve para alinhar com o bloco ao lado (Metas › Regras).
 // soNoTexto: true (com aoClicar) = só o CURSOR muda: em cima da letra é o de clicar e fora da letra é a mãozinha de arrastar a planilha. O clique vale na linha INTEIRA (arrastar sem soltar não abre; só o clique parado abre). Contas a pagar, 12/11/2026.
+// semLimpar: true esconde o botão "Limpar filtros e ordem" (a coluna filtrada já fica de outra cor; o menu da coluna tem "Limpar o filtro desta coluna"). maozinha: true = cursor de mão de arrastar na planilha toda (Contas a pagar, 12/11/2026). No filtro da coluna, Enter na busca deixa só o que a busca achou e fecha o menu.
 // semFiltro: true tira o funil (filtro e ordem) do título das colunas (Metas › Regras, 02/11/2026).
 // cols[].w = largura FIXA da coluna (ex.: "9rem"): a tabela passa a usar layout fixo e várias tabelas com as mesmas larguras ficam alinhadas umas embaixo das outras (Chaves Pix, 12/11/2026).
 // cols[].fixa = true (ou "8rem" = distância da esquerda, para duas colunas fixas): a coluna fica fixa à esquerda; a cor de fundo vem de --bgl da linha (linhaCls) ou do padrão quando a planilha rola para o lado (use na primeira coluna; Contas bancárias, 12/11/2026).
@@ -53,7 +54,7 @@ function MenuColuna(p){
     e("button",{type:"button", className:item+(p.ordem && p.ordem.dir===-1 ? " text-primary" : ""), onClick:function(){ p.aoOrdenar(-1); }}, "Ordenar de Z a A"),
     p.ordem && e("button",{type:"button", className:item, onClick:function(){ p.aoOrdenar(0); }}, "Tirar a ordenação"),
     e("div",{className:"my-1 border-t border-border"}),
-    e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, className:"h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
+    e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); if(busca) p.aoFiltrar(vis.length===todos.length ? null : new Set(vis)); if(p.aoFechar) p.aoFechar(); } }, className:"h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
     e("label",{className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:tudoMarcado && vis.length>0, onChange:todosVis, className:"size-4 accent-[#E8B84B]"}), busca ? "Selecionar o que aparece" : "Selecionar tudo"),
     e("div",{className:"max-h-64 overflow-y-auto"},
       vis.slice(0, LIMITE_LISTA).map(function(v){ return e("label",{key:String(v), className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:!marc || marc.has(v), onChange:function(){ alterna(v); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, texto(v, c))); }),
@@ -118,7 +119,7 @@ function TabelaPlanilha(p){
               c.t, o!==0 && e("span",{"aria-hidden":true}, o===1 ? "▲" : "▼"), e("span",{"aria-hidden":true, className:f ? "" : "opacity-60"}, f ? "◆" : "▾")),
             c.acao && e("button",{type:"button", title:c.acao.titulo, "aria-label":c.acao.titulo, onClick:function(ev){ ev.stopPropagation(); c.acao.onClick(); }, className:"absolute right-1 top-1 grid size-6 place-items-center rounded text-[13px] font-bold "+(escura ? "text-foreground hover:bg-white/15" : "text-[#1a1306] hover:bg-black/15")}, c.acao.rotulo),
             aberto===c.k && e(MenuColuna,{col:c, valores:valores[c.k], filtro:filtros[c.k] || null, ordem:ordem && ordem.k===c.k ? ordem : null,
-              aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },
+              aoFechar:function(){ setAberto(null); }, aoFiltrar:function(s){ var n = Object.assign({}, filtros); if(s) n[c.k] = s; else delete n[c.k]; setFiltros(n); },
               aoOrdenar:function(d){ setOrdem(d ? {k:c.k, dir:d} : null); setAberto(null); }}), bordasFixas(c, true));
         })); };
   vis.forEach(function(l, i){
@@ -135,10 +136,10 @@ function TabelaPlanilha(p){
   });
   if(sep) corpo = topo.concat(base.length ? [linhaCab("cab")] : [], base);
   return e("div",{ref:raiz, className:"flex flex-col gap-2"+(p.cheia ? " h-full" : "")},
-    (!p.semContagem || nFiltros>0 || ordem) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
+    (!p.semContagem || ((nFiltros>0 || ordem) && !p.semLimpar)) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
       !p.semContagem && e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
-      (nFiltros>0 || ordem) && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
-    e("div",{className:"relative"}, e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : (p.alturaMax ? {maxHeight:p.alturaMax, overflowY:"auto"} : undefined), className:"overflow-x-auto rounded-lg border border-border"+(p.barraGrossa ? " barra-grossa" : "")+(p.compacta ? " w-fit max-w-full" : "")+(centro ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
+      (nFiltros>0 || ordem) && !p.semLimpar && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
+    e("div",{className:"relative"}, e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : (p.alturaMax ? {maxHeight:p.alturaMax, overflowY:"auto"} : undefined), className:"overflow-x-auto rounded-lg border border-border"+(p.barraGrossa ? " barra-grossa" : "")+(p.compacta ? " w-fit max-w-full" : "")+((centro || p.maozinha) ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
       e("table",{className:(p.compacta ? "" : "w-full ")+"border-collapse text-[13px]"+(p.cols.some(function(c){ return c.w; }) ? " table-fixed" : ""), style:{height:p.cheia ? "100%" : undefined, background:escura ? "#1c1d21" : "linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left "+(p.totalLinha ? 33 : 0)+"px/100% "+(30*(1+(p.cabAcima ? p.cabAcima.length : 0)))+"px no-repeat"}},   // topo dourado: UM degradê do começo ao fim da tabela (02/11/2026)
         (p.cabSoAberto && p.agrupar && p.grupoAberto) ? null   // cabSoAberto: cabeçalho fora do topo: só aparece no corpo, depois dos grupos fechados e antes dos abertos (Marcus, 10/11/2026)
         : e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] "+(escura ? "border-white/15 text-foreground" : "border-[#1a1306]/25 text-[#1a1306]")+(g.sep ? (escura ? " border-l-2 border-l-[#E8B84B]" : " border-l-2 border-l-[#1a1306]") : "")}, g.t); })); }), linhaCab("cab")),

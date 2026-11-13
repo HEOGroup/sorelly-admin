@@ -118,7 +118,6 @@ const montagem = {
     pagina("controle-de-kits", () => import("@/apps/montagem/pages/ControleKits"), "AbaControleKits"),
     pagina("inadimplencia-financeira", () => import("@/apps/montagem/pages/InadimplenciaFin"), "AbaInadimplenciaFin"),
     pagina("comissoes", () => import("@/apps/montagem/pages/Comissoes"), "AbaComissoes"),
-    pagina("pix-representantes", () => import("@/apps/montagem/pages/PixDireto"), "AbaPixDireto"),
     pagina("inadimplencia", () => import("@/apps/montagem/pages/Inadimplencia"), "AbaInadimplencia"),
     pagina("configurador-comissoes", () => import("@/apps/montagem/pages/ConfigComissoes"), "AbaConfigComissoes"),
     pagina("atendimento-interno-listagens", () => import("@/apps/montagem/pages/AtendimentoInternoListagens"), "AbaIntListagens"),
@@ -188,7 +187,8 @@ const montagem = {
     pagina("aprovacao-de-cadastros", () => import("@/apps/montagem/pages/AprovacaoCadastros"), "AbaAprovacaoCadastros"),
     pagina("desempenho-do-cadastro", () => import("@/apps/montagem/pages/DesempenhoCadastro"), "AbaDesempenhoCadastro"),
     pagina("app-funcionarias", () => import("@/apps/montagem/pages/CelularFuncionarios"), "AbaCelularFunc"),
-    { path: "app-representante", element: e(Navigate, { to: "/apps", replace: true }) },   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps
+    { path: "app-representante", element: e(Navigate, { to: "/apps", replace: true }) },
+    { path: "financeiro/pix-representantes", element: e(Navigate, { to: "/" + ENDERECO_DA_ABA.direcionar, replace: true }) },   // 12/11/2026 (Marcus): a tela Pix representantes foi excluída; o endereço antigo abre o Direcionar   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps
     pagina("vendas-vendas", () => import("@/apps/montagem/pages/Vendas"), "AbaVendasVendas"),
     pagina("caixa", () => import("@/apps/montagem/pages/Caixa"), "AbaCaixa"),
     pagina("emprestimos", () => import("@/apps/montagem/pages/Emprestimos"), "AbaEmprestimos"),
