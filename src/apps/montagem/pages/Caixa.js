@@ -102,6 +102,7 @@ function AbaCaixa(){
   var cx = use(), s = cx.state, sc = s.saldosContas, hojeD = new Date(), hoje = isoDia(hojeD);
   var st = useState({a:hojeD.getFullYear(), m:hojeD.getMonth()}), per = st[0], setPer = st[1], ano = per.a, mes = per.m;
   var fs = useState("todos"), filtro = fs[0], setFiltro = fs[1];
+  var sat = useState("saldos"), abaTopo = sat[0], setAbaTopo = sat[1];   // aba do bloco do topo: saldos | cnpj | devmaster
   var cf = useState(false), cfg = cf[0], setCfg = cf[1];
   var lr = useState(false), ler = lr[0], setLer = lr[1];
   var oc = useState({}), ocultos = oc[0], setOcultos = oc[1];
@@ -262,7 +263,7 @@ function AbaCaixa(){
   var iniR = totalTodos(baseData), fimR = totalTodos(dEnd||baseData), resDm = recR===null ? null : recR-pagoR, resFin = fimR-iniR, divR = resDm===null ? null : resFin-resDm;
   var sitR = divR===null ? "—" : Math.abs(divR)<1000 ? "Bateu" : divR>0 ? "Sobrando" : "Faltando";
   var linhasRes = [["Contas a receber (DevMaster) · até agora", recR===null ? msgR : recR], ["Contas pagas (DevMaster) · até agora", pagoR], ["Resultado pela DevMaster (receber − pagas)", resDm===null ? "—" : resDm], ["Saldo das contas em "+dc(baseData), iniR], ["Saldo das contas em "+dc(dEnd||baseData)+" (hoje)", fimR], ["Resultado financeiro das contas (hoje − "+dc(baseData)+")", resFin], ["Divergência (resultado financeiro − resultado DevMaster)", divR===null ? "—" : divR], ["Situação da divergência", sitR]].map(function(x, i){ return {id:"r"+i, nome:x[0], v:x[1], forte:/^Resultado/.test(x[0]) || /^Divergência/.test(x[0])}; });
-  var blocoResumo = e(BlocoPainel,{titulo:"Resumo de "+MESES_LONGO[mes]+" de "+ano+" · DevMaster × saldo", compacto:true}, e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasRes, linhaCls:linhaCls, cols:[{k:"nome", t:"Item", w:"26rem"}, {k:"v", t:"Valor", w:"11rem", render:function(v, l){ if(v===null || v===undefined) return "—"; if(typeof v==="string") return v; return e("span",{className:"tabular-nums "+cor(v)}, BK(v)); }}]}));
+  var tabResumo = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasRes, linhaCls:linhaCls, cols:[{k:"nome", t:"Item", w:"26rem"}, {k:"v", t:"Valor", w:"11rem", render:function(v, l){ if(v===null || v===undefined) return "—"; if(typeof v==="string") return v; return e("span",{className:"tabular-nums "+cor(v)}, BK(v)); }}]});
   // um bloco azul para cada grupo da aba escolhida  // um bloco azul para cada grupo da aba escolhida, todos com as mesmas colunas (alinhadas), como nas Chaves Pix
   // ABA SALDOS (Marcus, 12/11/2026): em cima, dois blocos lado a lado: Totais do dia (dia 31 × atual) e Saldo por CNPJ; embaixo, UMA planilha com todas as contas em sequência, uma cor clara de fundo por CNPJ, sem barra de título
   var cnomes = function(b){ if(b.id==="BLOQ") return "Bloqueado"; return ["34", "46", "59", "67", "HO", "ITM"].indexOf(b.id)>=0 ? rotuloEmpresa(b.id, b.nome) : nomePropio(b.nome); };
@@ -274,8 +275,13 @@ function AbaCaixa(){
   var tA = linhasCnpj.filter(function(l){ return !l.bloq; }).reduce(function(t2, l){ return t2+l.a; }, 0), tB = linhasCnpj.filter(function(l){ return !l.bloq; }).reduce(function(t2, l){ return t2+l.b; }, 0);
   linhasCnpj.push({id:"ctot", nome:"TOTAL (sem bloqueadas)", a:tA, b:tB, v:tB-tA, cnpj:true, total:true});
   var colsCnpj = colsAB("CNPJ", "15rem").concat([{k:"h", t:"Hoje · confirmar", w:"9rem", render:function(v, l){ if(!l.bloco || cols.indexOf(hoje)<0) return ""; var fe = !!(fm[hoje] && fm[hoje][l.bloco]); return e("button",{type:"button", title:fe ? "CNPJ fechado hoje (clique para reabrir e editar)" : "Fechar este CNPJ hoje: confirma os saldos de hoje", onClick:function(){ fechar(hoje, [l.bloco], !fe); }, className:"text-[13px] font-semibold hover:underline "+(fe ? "text-success" : "text-white")}, fe ? "Fechado" : "Aberto"); }}]);
-  var blocoTotais = e("div",{className:"[&>section]:border-[3px] [&>section]:border-[#5b84d1] [&>section>div:first-child]:!bg-[#3b66b3]"}, e(BlocoPainel,{titulo:"Resumo dos saldos"+(nomeFiltro ? " · "+nomeFiltro : ""), compacto:true}, e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasTot, cols:colsAB("Conta", "19rem"), linhaCls:linhaCls})));
-  var blocoCnpj = e(BlocoPainel,{titulo:"Saldo por CNPJ", compacto:true}, e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasCnpj, cols:colsCnpj, linhaCls:linhaCls}));
+  var tabTotais = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasTot, cols:colsAB("Conta", "19rem"), linhaCls:linhaCls});
+  var tabCnpj = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasCnpj, cols:colsCnpj, linhaCls:linhaCls});
+  // TOPO EM UM BLOCO SÓ (Marcus, 12/11/2026): Resumo dos saldos | Saldo por CNPJ | DevMaster × saldo viram abas na barra azul; só uma aparece por vez e a planilha dos dias sobe.
+  var ABAS_TOPO = [["saldos", "Resumo dos saldos"+(nomeFiltro ? " · "+nomeFiltro : "")], ["cnpj", "Saldo por CNPJ"], ["devmaster", MESES_LONGO[mes]+" · DevMaster × saldo"]];
+  var ABA_TOPO_CLS = "h-7 whitespace-nowrap rounded-md px-3 text-[13px] font-semibold uppercase ";   // padrao-ok: abas menores na barra azul, a pedido do Marcus (12/11/2026)
+  var abasTopo = e("div",{className:"flex gap-1"}, ABAS_TOPO.map(function(a){ var on = abaTopo===a[0]; return e("button",{key:a[0], type:"button", "aria-pressed":on, onClick:function(){ setAbaTopo(a[0]); }, className:ABA_TOPO_CLS+(on ? "bg-white/25 font-bold text-white" : "text-white/90 hover:bg-white/15")}, a[1]); }));
+  var blocoTopo = e(BlocoPainel,{titulo:"", acao:abasTopo, compacto:true}, abaTopo==="cnpj" ? tabCnpj : abaTopo==="devmaster" ? tabResumo : tabTotais);
   var pColsS = [{k:"cn", t:"CNPJ", w:"4.5rem", fixa:"0", bordaFora:"esq", render:function(v){ return e("span",null, v); }}, {k:"nome", t:"Conta", w:"13rem", fixa:"4.5rem", bordaGrossa:true, render:function(v){ return e("span",{title:v}, v); }}].concat(pCols.slice(1));
   var planilhaSaldos = e(BlocoPainel,{titulo:"Contas · saldo do fim de cada dia", acao:acoesBarra, compacto:true}, e("div",{className:"bg-[var(--bloco-titulo)] p-1.5 [&_table_td]:!h-[20px] [&_table_th]:!font-medium"}, e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", vazio:"Nenhuma conta.", alturaMax:"calc(100vh - 8rem)", linhas:linhas.filter(function(l){ return l.tipo==="conta"; }), cols:ajusta(pColsS), linhaCls:linhaCls})));
   var blocosAba = Object.keys(meta).sort().filter(function(key){ return aba!=="saldos" && abaDe(key)===aba; }).map(function(key, ix){ var m = meta[key], rows = linhas.filter(function(l){ return l.g===key; }), fechado = !!gFech[key];
@@ -284,7 +290,7 @@ function AbaCaixa(){
   // as planilhas rolam para o lado juntas (ficam alinhadas)
   var sincroniza = function(ev){ var el = ev.target; if(!el || !el.classList || !el.classList.contains("overflow-x-auto") || !raiz.current) return; [].slice.call(raiz.current.querySelectorAll(".overflow-x-auto")).forEach(function(o){ if(o!==el && o.scrollLeft!==el.scrollLeft) o.scrollLeft = el.scrollLeft; }); };
   return e("div",{ref:raiz, onScrollCapture:aba==="saldos" ? undefined : sincroniza, className:PADRAO_BLOCOS+" [&_button]:cursor-pointer [&_select]:cursor-pointer -mx-2 -mb-2 -mt-5 flex flex-col gap-1.5 pl-3 md:-mx-3 md:-mb-3 md:pl-4"},
-    e("div",{className:"grid grid-cols-1 items-start gap-1.5 xl:grid-cols-2"}, e("div",{className:"flex flex-col gap-1.5"}, blocoTotais, blocoResumo), blocoCnpj),
+    e("div",{className:"[&_section_td]:!h-[22px] [&_section_th]:!h-[22px]"}, blocoTopo),   // linhas do topo com 22 px (Marcus, 12/11/2026: mais compacto para caber a planilha)
     popPeriodo,
     ler && e(ComoLer,{fontes:fontes, ontem:ontemIso, fl:fl, dA:baseData, dB:dEnd}),
     cfg && e(BlocoPainel,{titulo:"Contas", compacto:true}, e("div",{className:"p-3"}, e(ConfigContas,{}))),

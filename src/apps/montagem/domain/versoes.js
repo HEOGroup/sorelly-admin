@@ -4,6 +4,7 @@
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
  {v:"0.20.29", data:"2026-11-12", titulo:"Contas a pagar e Contas pagas: duas telas, uma tabela gigante cada", itens:[
+  {tipo:"melhoria", area:"Financeiro › Contas bancárias", txt:"Topo mais compacto: os três blocos (Resumo dos saldos, Saldo por CNPJ e DevMaster × saldo) viraram UM bloco com três abas na barra azul. Só uma aparece por vez e as linhas ficaram com 22 px. O topo caiu de uns 480 px para 184, 250 ou 228 px, e a planilha dos dias sobe."},
   {tipo:"melhoria", area:"Financeiro › Contas › A pagar / Pagas", txt:"Primeira coluna Abrir, parada à esquerda: só ela abre a conta (no meio da tabela a mãozinha só rola para o lado). Coluna Dias de atraso e botão Limpar filtros saíram (a coluna filtrada já muda de cor; o menu da coluna limpa só ela). No filtro da coluna, Enter na busca deixa só o que a busca achou e fecha o menu."},
   {tipo:"melhoria", area:"Financeiro › Receber", txt:"A tela Pix representantes foi excluída (o endereço antigo abre o Direcionar). O Relatório de links de pagamento saiu do Financeiro e mora no setor Link de pagamento (menu: Link de pagamento e Relatório de links)."},
   {tipo:"correção", area:"Financeiro › Contas › Janela de pagamento da conta", txt:"Fontes e linhas padronizadas: todo o texto da janela em 13 px (os dados e os valores estavam em 16 px), rótulos e títulos em 11 px caixa alta, valores com o mesmo peso, e todas as linhas internas com 1 px na mesma cor. Janela no centro da tela e com cor sólida por dentro."},

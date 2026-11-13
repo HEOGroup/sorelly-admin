@@ -11,6 +11,9 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 - **Diretoria excluída do menu:** Fluxo da empresa, App Sorelly, Padrão visual (Marcus refaz depois), Versões (o histórico está nas pastas) e Projetos (dev). As páginas, rotas e a foto de referência do Padrão visual saíram do código. Sobrou só o Mapa do sistema.
 - **Avisos** saiu da Diretoria e virou a aba **Avisos** em **RH → Acessos e autorizações**.
 
+## 12/11/2026 (Contas bancárias: topo em um bloco com abas)
+- **Marcus: "o saldo tem que ficar mais compacto para caber a planilha"; escolheu o formato 3 do HTML `docs/design/opcoes/caixa-topo-saldos-4-opcoes.html`:** os três blocos do topo (Resumo dos saldos, Saldo por CNPJ, DevMaster × saldo) são UM bloco com três abas na barra azul (`abaTopo` em `pages/Caixa.js`), linhas de 22 px. Altura do topo: 184, 250 ou 228 px (antes uns 480 px). Abas com altura menor que o padrão: exceção `padrao-ok` a pedido do Marcus.
+
 ## 12/11/2026 (Pix representantes excluída; relatório de links no setor Link de pagamento)
 - **Marcus: "essa tela Pix representantes pode excluir" e "o relatório de link de pagamento deixe lá no setor de link de pagamento".** `pages/PixDireto.js` e a aba `pixdireto` saíram (menu, rota, endereço, perfis e o botão "Metas do Pix direto" da tela Comissões); `/financeiro/pix-representantes` abre o Direcionar. O setor Link de pagamento (`linkpag`) passou a ter menu (`MENU_LINKPAG`): Link de pagamento e Relatório de links (`linkrel`, `/link-de-pagamento/relatorio-de-links`); o item saiu de Financeiro › Receber.
 - **Contas a pagar, tabela:** coluna **Abrir** fixa à esquerda abre a conta; o meio só rola com a mãozinha (opções `maozinha` e `semLimpar` da `TabelaPlanilha`); sem coluna Dias de atraso; Enter na busca do filtro da coluna aplica e fecha.
