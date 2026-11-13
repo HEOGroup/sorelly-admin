@@ -190,7 +190,8 @@ var PRATA_PADRAO = {
 };
 var MODALIDADE_LB = {padrao:"Kit padrão", prata:"Kit 100% Prata"};
 // modalidade da revendedora (fica no cadastro dela, não precisa marcar a cada acerto)
-function modalidadeDe(s, rev){ return ((s.perfisRev||{})[rev]||{}).modalidade === "prata" ? "prata" : "padrao"; }
+// 12/11/2026: quem é Kit 100% Prata fica em s.prataRev (módulo "rc", igual em todos os computadores); a marca antiga da ficha (perfisRev) só vale quando não há marca nova.
+function modalidadeDe(s, rev){ var m = (s.prataRev||{})[rev]; if(m==="prata" || m==="padrao") return m; return ((s.perfisRev||{})[rev]||{}).modalidade === "prata" ? "prata" : "padrao"; }
 
 // Peças liberadas para o próximo mês: quantidade-base pelo VALOR DA VENDA, reduzida pelo % do acerto que ficou em aberto.
 // O valor das peças escolhidas não entra na conta, só a quantidade.

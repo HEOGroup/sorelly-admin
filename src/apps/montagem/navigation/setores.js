@@ -107,8 +107,7 @@ var MENU_GARANTIA = [M("Garantia","garantia"), M("Créditos","garantiacred")];
 var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
 var MENU_DIRETORIA = [
-  {nome:"Central de controle", itens:[M("App Sorelly", undefined, {breve:true}), M("Avisos","avisos"), M("Padrão visual","padrao"), M("Versões","versoes"), M("Mapa do sistema","mapa"), M("Projetos (dev)", undefined, {breve:true})]},
-  M("Fluxo da empresa","fluxo")];
+  M("Mapa do sistema","mapa")];
 var MENU_JURIDICO = [
   {nome:"Notas promissórias", itens:[M("Execução de notas promissórias", undefined, {breve:true}), M("Inadimplência jurídica", undefined, {breve:true})]},
   M("Contratos de salas comerciais", undefined, {breve:true}),
@@ -234,8 +233,7 @@ var SETORES = [
   // Diretoria subiu para o grupo "Geral" (28/10/2026, pedido do Marcus) e ganhou a área "Central de controle" (era o setor Tecnologia), que vem PRIMEIRO.
   // "Comissões e desempenho" saiu (28/10/2026): não é usada, já existe em Financeiro → Comissões.
   {id:"diretoria", grupo:"geral", nome:"Diretoria", ic:"coroa", cor:"#D9A63A", menu:MENU_DIRETORIA, semAbas:true, areas:[
-    {nome:"Central de controle", telas:[B("App Sorelly"), T("avisos","Avisos"), T("padrao","Padrão visual"), T("versoes","Versões"), T("mapa","Mapa do sistema"), B("Projetos (dev)")]},
-    {nome:"Empresa", telas:[T("fluxo","Fluxo da empresa")]}]},
+    {nome:"Central de controle", telas:[T("mapa","Mapa do sistema")]}]},
   // Sistema particular do Marcus (20/10/2026): só aparece no modo "Marcus" do botão do alto do menu, e só para ele
   // Sistema particular do Marcus (20/10/2026): cada tela é um item do menu lateral, só aparece no modo "Marcus" (ids começam com "marcus")
   {id:"marcus", nome:"Resumo", ic:"grid4", cor:"#D9A63A", direto:T("marcus","Resumo")},

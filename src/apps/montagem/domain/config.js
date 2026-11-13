@@ -51,7 +51,7 @@ var CFG0 = {
   limiteAnaliseVendas:2500,
   // Comissão da revendedora e brindes pelo valor vendido (tabela oficial do consignado — ver domain/consignado.js para a versão vigente/versionada)
   comissoesRev:[{min:7000,pct:45,bn:442,bb:282},{min:5000,pct:45,bn:368,bb:232},{min:2500,pct:40,bn:312,bb:188},{min:1600,pct:40,bn:196,bb:144},
-    {min:1000,pct:35,bn:118,bb:122},{min:700,pct:30,bn:88,bb:96},{min:500,pct:25,bn:48,bb:68},{min:300,pct:15,bn:0,bb:0}]
+    {min:1000,pct:35,bn:118,bb:122},{min:700,pct:30,bn:88,bb:96},{min:500,pct:25,bn:44,bb:32},{min:300,pct:15,bn:0,bb:0}]
 };
 // 20/10/2026 (Marcus): Anéis (categoria 11) não tem número fechado: a tabela dá uma FAIXA ("10 a 12"). q = mínimo, qmax = máximo.
 var FAIXA_CAT = [11];

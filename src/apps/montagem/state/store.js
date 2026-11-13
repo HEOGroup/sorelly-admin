@@ -11,7 +11,7 @@ import { pkSemearDemo } from "@/apps/montagem/domain/preferencias-rev";
 import { VERSAO_INTERNOS, feitos19, internosDemo, termosDemo } from "@/apps/montagem/domain/internos-demo";
 import { COMIS0 } from "@/apps/montagem/domain/comissoes";
 import { CFG0, aplicaFaixas } from "@/apps/montagem/domain/config";
-import { formasPagamentoPadrao, normalizarVersao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { formasPagamentoPadrao, novaVersaoRegras, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { MONTADORAS, SUPERVISORA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { espelharAdmin } from "@/apps/montagem/domain/app-rep";
 import { NOVAS0, RECUSAS0, VIRADA0, avalRepDemo } from "@/apps/montagem/domain/representantes";
@@ -336,6 +336,7 @@ function inicial(){
     if(s.demoListagens!==VERSAO_LISTAGENS){ var dn = novoDia(); s.listagens = dn.listagens; s.kits = dn.kits; s.retPend = []; s.entregasKN = {}; s.abertas = {L1:true, L2:true}; s.kitAberto = null; s.demoListagens = VERSAO_LISTAGENS; s.perfisRev = Object.assign({}, s.perfisRev, {"Beatriz Nogueira":{profissao:"Nail Designer", enderecoCasa:"Rua Fictícia S, 210 - Centro, Curitiba - PR", enderecoTrabalho:"Studio Bella Nails · Rua Francisco Derosso, 2145 - Xaxim, Curitiba - PR", fone1:"(41) 00000-0088", fone2:"(41) 99900-0088", refs:[{nome:"Maria Aparecida", rel:"Mãe", fone:"(41) 99812-3344"}, {nome:"João Carlos", rel:"Esposo", fone:"(41) 98745-6120"}, {nome:"Rosângela Silva", rel:"Irmã", fone:"(41) 99133-8870"}]}}); }
     // campos novos da configuração entram com o padrão em dados já salvos
     ["tabelaAtiva","tabelaKitBaixo","minVendaApp","limiteMelhores","categorias","pecasKit","pecasSugCat","reposicaoMax","limiteMarcus","limiteAnaliseVendas","comissoesRev","limiteEncomendas","limiteMesaMaior"].forEach(function(f){ if(s.cfg[f]===undefined) s.cfg[f] = JSON.parse(JSON.stringify(CFG0[f])); });
+    s.cfg.comissoesRev = JSON.parse(JSON.stringify(CFG0.comissoesRev));   // 12/11/2026: a régua de comissão e brinde vale só a do código (nenhuma cópia velha de R$ 48/68 salva no navegador)
     // 20/10/2026: setor Encomendas acabou; as 3 montam de R$ 3.000 para cima e a mesa maior (Agatha) fica com vendas acima de R$ 4.000 (uma vez só, depois o Configurador manda)
     if(!s.cfg.encMesa20){ s.cfg.limiteEncomendas = CFG0.limiteEncomendas; s.cfg.limiteMesaMaior = CFG0.limiteMesaMaior; s.cfg.encMesa20 = true; }
     aplicaFaixas(s.cfg);   // 20/10/2026: anéis em faixa (mínimo a máximo)
@@ -508,13 +509,12 @@ function inicial(){
     if(s.lysieNovasV!==1){ s.lysieNovasV = 1; var nv0 = (s.novas||[]).slice(); NOVAS0.filter(function(n){ return n.rep==="Lysie" && !nv0.some(function(x){ return x.id===n.id; }); }).forEach(function(n){ nv0.push(JSON.parse(JSON.stringify(n))); }); s.novas = nv0; }
     if(s.lysieDemoV!==1){ s.lysieDemoV = 1; var dSim = new Date(); dSim.setDate(dSim.getDate()+2); s.perfisRev = Object.assign({}, s.perfisRev, {"Simone Prestes":Object.assign({}, (s.perfisRev||{})["Simone Prestes"], {agendado:{data:isoDia(dSim), hora:"10:00"}, profissao:"Manicure", fone1:"(41) 00000-0041"})}); }
     if(!s.negPix) s.negPix = {Thalita:{modo:"pct", valor:100, vigencia:"fixo", mes:"", extra:0, extraTxt:""}};   // negociação do Pix direto: Thalita recebe 100% da comissão por Pix direto
-    if(!s.regrasConsignado){ var rv0b = novaVersaoRegras(); s.regrasConsignado = {versoes:[rv0b], atualId:rv0b.id}; }
-    else {
-      // a versão de 27/10/2026 (campo novas) entra ao lado das antigas; antes dessa data a vigente continua a antiga (versaoVigente usa vigenciaDesde)
-      var vsRc = (s.regrasConsignado.versoes||[]).map(normalizarVersao);
-      if(!vsRc.some(function(v){ return v.novas; })) vsRc = vsRc.concat([novaVersaoRegras({id:"rv20261027", vigenciaDesde:"2026-10-27"}, vsRc.length ? vsRc[vsRc.length-1].id : null)]);
-      s.regrasConsignado = Object.assign({}, s.regrasConsignado, {versoes:vsRc});
-    }
+    // REGRAS DO CONSIGNADO SÓ NO CÓDIGO (Marcus, 12/11/2026: "exclui essa tela, tudo para editar vai ser com código"): a cada abertura o sistema refaz a versão a partir de domain/consignado.js,
+    // então todos os computadores usam a mesma tabela e nenhuma cópia velha salva no navegador manda mais. Versão carimbada em kit antigo que não existe mais cai na vigente (versaoDoKit).
+    s.regrasConsignado = {versoes:[novaVersaoRegras({id:"rv20261027", vigenciaDesde:"2026-10-27"})], atualId:"rv20261027"};
+    // quem é Kit 100% Prata vai para o servidor (módulo "rc"); marcas antigas da ficha deste computador sobem junto, sem apagar nada (12/11/2026)
+    s.prataRev = Object.assign({}, s.prataRev);
+    Object.keys(s.perfisRev || {}).forEach(function(n){ if(s.prataRev[n]===undefined && (s.perfisRev[n]||{}).modalidade==="prata") s.prataRev[n] = "prata"; });
     // exemplo de condicionais em aberto (demonstração) para a Andrielle, caso o estado salvo seja anterior a ele
     if(s.perfisRev && s.perfisRev["Andrielle Taborda"] && !s.perfisRev["Andrielle Taborda"].condicionaisAbertas)
       s.perfisRev["Andrielle Taborda"].condicionaisAbertas = [{numero:"091719", pecas:131},{numero:"092240", pecas:6},{numero:"099999", pecas:100}];

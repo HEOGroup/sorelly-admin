@@ -187,9 +187,6 @@ const montagem = {
     pagina("regras-guias", () => import("@/apps/montagem/pages/RegrasGuias"), "AbaRegrasGuias"),
     pagina("aprovacao-de-cadastros", () => import("@/apps/montagem/pages/AprovacaoCadastros"), "AbaAprovacaoCadastros"),
     pagina("desempenho-do-cadastro", () => import("@/apps/montagem/pages/DesempenhoCadastro"), "AbaDesempenhoCadastro"),
-    pagina("versoes", () => import("@/apps/montagem/pages/Versoes"), "AbaVersoes"),
-    pagina("padrao-visual", () => import("@/apps/montagem/pages/PadraoVisual"), "AbaPadraoVisual"),
-    pagina("avisos", () => import("@/apps/montagem/pages/ConfigAvisos"), "AbaConfigAvisos"),
     pagina("app-funcionarias", () => import("@/apps/montagem/pages/CelularFuncionarios"), "AbaCelularFunc"),
     { path: "app-representante", element: e(Navigate, { to: "/apps", replace: true }) },   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps
     pagina("vendas-vendas", () => import("@/apps/montagem/pages/Vendas"), "AbaVendasVendas"),
@@ -240,7 +237,6 @@ const montagem = {
     pagina("marcus-acessos", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusAcessos"),
     pagina("marcus-dados", () => import("@/apps/montagem/pages/MarcusPessoal"), "AbaMarcusDados"),
     pagina("marcus-progresso", () => import("@/apps/montagem/pages/MarcusProgresso"), "AbaMarcusProg"),
-    pagina("fluxo-da-empresa", () => import("@/apps/montagem/pages/FluxoEmpresa"), "AbaFluxoEmpresa"),
     pagina("mapa-do-sistema", () => import("@/apps/montagem/pages/MapaSistema"), "AbaMapa"),
     pagina("whatssorelly", () => import("@/apps/montagem/pages/WhatsSorelly"), "AbaWhats"),
     pagina("acessos-por-setor", () => import("@/apps/montagem/pages/AcessosAutorizacoes"), "AbaAcessosAutorizacoes"),

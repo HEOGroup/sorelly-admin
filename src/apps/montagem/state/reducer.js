@@ -311,6 +311,7 @@ function reducer(s, a){
         Object.keys(a.conteudo.diario).forEach(function(dt){ fdm[dt] = Object.assign({acertos:0, revendedoras:0}, fdm[dt], {recebido:a.conteudo.diario[dt]}); });
         return Object.assign({}, s, {faturamentoDiario:fdm});
       }
+      if(a.chave==="rc") return Object.assign({}, s, {prataRev:Object.assign({}, s.prataRev, a.conteudo && a.conteudo.prataRev)});   // quem é Kit 100% Prata, vindo do servidor (12/11/2026)
       if(a.chave==="cpc") return Object.assign({}, s, {cpc:cpcDoServidor(s.cpc, a.conteudo)});   // Cadastro de peças vindo do servidor: refaz a migração (etapas dos pedidos)
       if(a.chave==="agend"){ var agIn = Object.assign({}, s.agend, a.conteudo); if(!(a.conteudo && a.conteudo.patches)) delete agIn.patches; return aplicaAgendPatches(Object.assign({}, s, {agend:agIn})); }   // cópia antiga do servidor: reaplica os ajustes fixos (state/agend-patches.js) e eles voltam para o servidor
       // Expositores e Encomendas vindos do servidor: refazem a migração (cópia do admin antigo e planilhas, 06/11/2026). A marca de versão vale a DO SERVIDOR (se ele não tem, a cópia entra de novo); o que veio do navegador não conta.
@@ -599,7 +600,7 @@ function reducer(s, a){
       if(antM === a.modalidade) return s;
       perfM[a.chave] = Object.assign({}, atualM, {modalidade:a.modalidade,
         modalidadeHist:[{de:antM, para:a.modalidade, em:new Date(agora).toISOString(), por:a.por||"", origem:a.origem||"representante"}].concat(atualM.modalidadeHist||[])});
-      return com(s, {perfisRev:perfM}, a.chave+" agora é "+(a.modalidade==="prata" ? "Kit 100% Prata" : "Kit padrão"));
+      return com(s, {perfisRev:perfM, prataRev:Object.assign({}, s.prataRev, {[a.chave]:a.modalidade==="prata" ? "prata" : "padrao"})}, a.chave+" agora é "+(a.modalidade==="prata" ? "Kit 100% Prata" : "Kit padrão"));
     }
     case "CRIAR_LISTAGEM": {
       var novaL = {id:"L"+agora, rep:a.rep, destino:a.destino||"Curitiba", viagem:!!a.viagem, horario:a.horario||"10:00",
@@ -921,7 +922,7 @@ function reducer(s, a){
       var perfI = s.perfisRev, patchI = {};
       if(a.modalidade){ patchI.perfisRev = Object.assign({}, perfI); var pI = Object.assign({}, perfI[novoI.nome]);
         if((pI.modalidade==="prata" ? "prata" : "padrao") !== a.modalidade) pI.modalidadeHist = [{de:pI.modalidade==="prata"?"prata":"padrao", para:a.modalidade, em:new Date(agora).toISOString(), por:a.por||"", origem:"interno"}].concat(pI.modalidadeHist||[]);
-        pI.modalidade = a.modalidade; patchI.perfisRev[novoI.nome] = pI; }
+        pI.modalidade = a.modalidade; patchI.perfisRev[novoI.nome] = pI; patchI.prataRev = Object.assign({}, s.prataRev, {[novoI.nome]:a.modalidade==="prata" ? "prata" : "padrao"}); }
       return com(s, Object.assign({internos:[novoI].concat(s.internos||[])}, patchI), novoI.nome+" entrou na agenda do atendimento interno");
     }
     // ── Revendedoras internas (controle de ciclo e agendamento da agendadora) ──
