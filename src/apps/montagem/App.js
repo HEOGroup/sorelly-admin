@@ -328,10 +328,7 @@ function App(){
           // ao lado do ícone fica o NOME DO SETOR (ex.: "Financeiro"), sempre o mesmo não importa a tela aberta; a tela atual aparece como aba, não aqui (Marcus, 26/10/2026)
           e("span",{className:"truncate"+(navPerg ? " font-semibold" : ""), style:navPerg ? {color:setorAtual.st.id==="whats" ? "#E8B84B" : setorAtual.st.cor} : undefined}, navPerg ? setorAtual.st.nome.replace("\n", " ") : titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
-        e("div",{className:"flex shrink-0 items-center gap-1.5"}, APPS_TOPO.filter(function(x){ return !!permitidas && permitidas.indexOf(x[0])>=0; }).map(function(x){ var on = aba===x[0];
-          return e("button",{key:x[0], title:x[1], onClick:function(){ navigate(caminhoDaAba(x[0])); setColArea(null); },
-            className:"flex h-9 items-center gap-1.5 whitespace-nowrap rounded-lg px-2.5 text-[12.5px] font-bold transition-transform hover:-translate-y-px", style: on ? {background:x[3], color:"#fff", boxShadow:"0 2px 10px "+x[3]+"66"} : {background:x[3]+"26", color:x[3], boxShadow:"inset 0 0 0 1px "+x[3]+"55"}},
-            e(Icon,{n:x[2], s:15, peso:"fill"}), x[1]); })),
+        // 13/11/2026 (Marcus): os botões "App representante" e "App das funcionárias" saíram da barra de cima, para todo mundo (a tela Apps continua só para quem já a via no menu)
 
         e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
         (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus

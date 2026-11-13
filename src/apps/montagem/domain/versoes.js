@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.33", data:"2026-11-13", titulo:"Visão geral sem o ✎ do faturamento e sem os botões de app no topo", itens:[
+  {tipo:"melhoria", area:"Visão geral", txt:"Saiu o ✎ e o formulário de atualizar o faturamento de hoje. O faturamento, os acertos e o Carregar agora são digitados só em Financeiro › Receber › Faturamento › Lançar."},
+  {tipo:"melhoria", area:"Barra de cima", txt:"Saíram os botões App representante e App das funcionárias da barra de cima, para todo mundo (Marcus, 13/11/2026). A tela Apps do menu da esquerda não mudou."}]},
  {v:"0.20.32", data:"2026-11-13", titulo:"Comissão interna, Inadimplência como setor de cobrança e lista de contas de saída", itens:[
   {tipo:"melhoria", area:"Financeiro › Contas › Comissões › Comissão interna", txt:"A Visão geral dos funcionários virou Comissão interna: sem título em cima, sem o bloco Por pessoa e com um bloco só, mais elaborado: por setor mostra pessoas, valor do mês, % do total, média por pessoa, quem recebe mais, situação, dias para o próximo pagamento e de onde vem o número, com linha de total. Bipagem, Montagem e Atendimento interno também usam a tabela de planilha."},
   {tipo:"melhoria", area:"Representantes & Kits › Bipagem", txt:"Comissões da bipagem saiu do Financeiro e foi para o setor da bipagem. Só a diretoria e a Deysiane abrem (autorização nova: Ver e abrir as comissões da bipagem). O Financeiro vê só o consolidado, na Comissão interna."},
