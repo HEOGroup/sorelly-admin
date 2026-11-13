@@ -22,7 +22,7 @@ var TAM_TEXTO = [11, 13];                       // corpo 13, rótulo e cabeçalh
 var TAM_NUMERO_MAX = 20;                        // número até 20 px (Indicador)
 var PISTA_NUMERO = /tabular-nums|brl\(|din\(|inteiro\(|Dinheiro|Indicador|\bMONO\b|n0\(|fmt\(|moeda\(|R\$/;
 var PISTA_CAMPO = /"(input|select|button|textarea|tr)"|Botao|CAMPO|INPUT|MoneyInput|NumInput|CampoSel|CampoBusca|BarraFiltros|Segmentado/;
-var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu|tabela-planilha)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
+var PECAS = /@\/apps\/[^/]+\/components\/(padrao|padrao-fin|equipe-blocos|barra-menu|tabela-planilha|bloco-painel)|@\/shared\/kanban|@\/apps\/[^/]+\/ui\/page/;
 
 // 2g. A PEÇA DE TABELA TEM QUE SER DOURADA DE VERDADE (Marcus, 03/11/2026: "tem que colocar na trava dura"). As regras 2e e 2e-bis mandam usar TabelaP/TabelaPlanilha/TabelaOuro "porque elas já trazem o topo dourado".
 // Esta conferência garante que é verdade: lê a própria peça (sempre, não só quando ela muda) e reprova se o degradê dourado sumir ou se o topo voltar a ser cinza (bg-white/5, bg-muted).

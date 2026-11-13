@@ -79,3 +79,50 @@ export async function contasDaDevmaster({ forcar = false } = {}) {
   if (!c.lendo) c.lendo = montar().then((dados) => { c.dados = dados; c.em = Date.now(); return dados; }).finally(() => { c.lendo = null; });
   return c.lendo;
 }
+
+// ── HISTÓRICO POR ANO (Marcus, 12/11/2026): contas PAGAS de 2022 a 2025, lidas SÓ quando a tela pede aquele ano (cada ano leva de 1 a 5 s; fica guardado 30 min). Só leitura.
+// A DevMaster só tem pagamentos a partir de meados de 2022; 2020 e 2021 vêm vazios (só entradas de dinheiro). Mesmo formato das "pagas" de contasDaDevmaster.
+const TTL_ANO = 30 * 60 * 1000, TTL_CAD = 60 * 60 * 1000;
+export const ANO_MIN = 2022;
+
+async function cadastros() {
+  const c = (G.__sorellyCadDm = G.__sorellyCadDm || {});
+  if (c.v && Date.now() - c.em < TTL_CAD) return c.v;
+  if (!c.lendo) c.lendo = (async () => {
+    const [forn, nat, contas] = await Promise.all([
+      tudo("dmaat", { campos: ["aat_codigo", "aat_nome"] }),
+      tudo("dmaan", { campos: ["aan_codigo", "aan_descricao"] }),
+      tudo("dmaap", { campos: ["aap_codigo", "aap_agencia", "aap_conta", "aap_nome"] }),
+    ]);
+    c.v = {
+      nomeForn: new Map(forn.map((x) => [x.aat_codigo, String(x.aat_nome || "").trim()])),
+      nomeNat: new Map(nat.map((n) => [n.aan_codigo, String(n.aan_descricao || "").trim()])),
+      nomeConta: new Map(contas.map((x) => [[x.aap_codigo, x.aap_agencia, x.aap_conta].join("|"), x.aap_nome])),
+    };
+    c.em = Date.now();
+    return c.v;
+  })().finally(() => { c.lendo = null; });
+  return c.lendo;
+}
+
+export async function pagasDoAno(ano, { forcar = false } = {}) {
+  const n = Number(ano);
+  if (!Number.isInteger(n) || n < ANO_MIN || n >= new Date().getFullYear()) throw Object.assign(new Error("Ano fora do histórico (de " + ANO_MIN + " até o ano passado)."), { statusCode: 400 });
+  const mapa = (G.__sorellyPagasAno = G.__sorellyPagasAno || {}), c = (mapa[n] = mapa[n] || {});
+  if (!forcar && c.dados && Date.now() - c.em < TTL_ANO) return c.dados;
+  if (!c.lendo) c.lendo = (async () => {
+    const t0 = Date.now(), { nomeForn, nomeNat, nomeConta } = await cadastros();
+    const baixas = await tudo("dmabf", { filtro: { abf_tipo: "S", abf_tpcontaorigem: "P", abf_datadebito: { gte: n + "-01-01", lte: n + "-12-31" } }, campos: ["abf_banco", "abf_agencia", "abf_conta", "abf_datapgto", "abf_datadebito", "abf_valorreais", "abf_estornado", "abf_natureza", "abf_tpclifor", "abf_clifor", "abf_prefixo", "abf_numero", "abf_parcela"] });
+    const pagas = [];
+    for (const b of baixas) {
+      if (b.abf_estornado === "S") continue;
+      const d = dia(b.abf_datadebito || b.abf_datapgto), fil = cnpjDaConta(b.abf_banco, nomeConta.get([b.abf_banco, b.abf_agencia, b.abf_conta].join("|"))), valor = r2(b.abf_valorreais);
+      const forn = b.abf_tpclifor === "F" ? b.abf_clifor : "";
+      pagas.push([fil, b.abf_natureza, nomeNat.get(b.abf_natureza) || "", b.abf_prefixo, b.abf_numero, b.abf_parcela, forn, nomeForn.get(forn) || "", d, d, valor]);
+    }
+    c.dados = { ano: n, geradoEm: new Date().toISOString(), segundos: Math.round((Date.now() - t0) / 100) / 10, pagas };
+    c.em = Date.now();
+    return c.dados;
+  })().finally(() => { c.lendo = null; });
+  return c.lendo;
+}

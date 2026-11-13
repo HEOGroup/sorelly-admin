@@ -2,6 +2,7 @@
 // Financeiro Familiar trazido do SorellyAdmin: Home, Alertas, Contas a pagar, Contas pagas, PIX revendedoras, Prestadores, Pró-labores, Relatório, Histórico e Configurações.
 // As regras e as contas ficam em domain/financeiro-familiar.js; aqui só as telas. Só os sócios (ACESSO_FF) abrem. Dados só neste navegador.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { nomePropio, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { FAMILIA4, daPessoa, membrosFamilia, ACESSO_FF, FORMAS, FORMAS_REPASSE, MESES, TIPOS_REGRA, br, hojeIso, hojeYm, janela, liquidoDe, nomeMes, parcelasDe, casaDe, pixCasa, pixDivisao, pixDoMes, relatorioMes, saldoPrestador, somaMes, totaisPersona, vigenciaEm, ultimoDia, r2 } from "@/apps/montagem/domain/financeiro-familiar";
@@ -335,7 +336,7 @@ function CartaoPrest(p){
   var nr = useState({data:hojeIso(), valor:"", origem:"", forma:"PIX", contaTxt:"", pixRev:false}), r = nr[0], setR = nr[1];
   var dv = ff.dividas.filter(function(y){ return y.prestId===x.id && (mesF==="todos" || y.data.slice(0,7)===mesF); }).sort(function(a, b){ return b.data.localeCompare(a.data); }), rp = ff.repasses.filter(function(y){ return y.prestId===x.id && (mesF==="todos" || y.data.slice(0,7)===mesF); }).sort(function(a, b){ return b.data.localeCompare(a.data); });
   var sd = saldoPrestador(ff, x.id), somaDv = r2(dv.reduce(function(t, y){ return t+y.valor; }, 0)), somaRp = r2(rp.reduce(function(t, y){ return t+y.valor; }, 0));
-  return e(BlocoBarra,{cor:"azul", t:x.nome+(x.servico ? " · "+x.servico : ""), sub:(x.ativo ? "em aberto" : "finalizado")+(x.responsavelId ? " · responsável: "+pessoaNome(ff, x.responsavelId) : ""), dir:"saldo "+BK(sd)}, e("div",{className:"flex flex-col gap-3 p-4"},
+  return e(BlocoBarra,{cor:"azul", t:(function(){ var cbp = (ff.contasBanc||[]).filter(function(z){ return z.prestadorId===x.id && z.ativo!==false; })[0]; return x.responsavelId ? rotuloPrestadorFamilia(pessoaNome(ff, x.responsavelId), x.nome, cbp ? (cbp.banco || cbp.nome) : "") : nomePropio(x.nome); })(), sub:(x.ativo ? "em aberto" : "finalizado")+(x.servico ? " · "+x.servico : ""), dir:"saldo "+BK(sd)}, e("div",{className:"flex flex-col gap-3 p-4"},
     e("div",{className:"flex flex-wrap items-end gap-3"},
       e(Campo,{rot:"Responsável (sócio)"}, e(Sel,{value:x.responsavelId, label:"Responsável", className:"w-48", onChange:function(v){ acao(c, "prest_set", {id:x.id, patch:{responsavelId:v}}); }}, e("option",{value:""}, "Nenhum"), ff.personas.filter(function(q){ return q.tipo==="SOCIO"; }).map(function(q){ return e("option",{key:q.id, value:q.id}, q.nome); }))),
       e(Campo,{rot:"Chave PIX", className:"min-w-[12rem] flex-1"}, e("input",{key:x.chavePix, defaultValue:x.chavePix, className:INPUT+" h-10!", onBlur:function(ev){ if(ev.target.value!==x.chavePix) acao(c, "prest_set", {id:x.id, patch:{chavePix:ev.target.value}}); }})),

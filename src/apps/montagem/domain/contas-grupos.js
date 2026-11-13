@@ -5,11 +5,11 @@
 // Cores dos CNPJs = as do cadastro de CNPJs (domain/cnpjs.js).
 
 var GRUPOS_CONTA = [
-  {id:"34",   nome:"CNPJ 34 · Sorelly Atacadista", cor:"#D9A93A"},
+  {id:"34",   nome:"CNPJ 34 · Sorelly",             cor:"#D9A93A"},
   {id:"46",   nome:"CNPJ 46 · Mayz",               cor:"#F472B6"},
   {id:"59",   nome:"CNPJ 59 · Serenity",           cor:"#2DD4BF"},
   {id:"67",   nome:"CNPJ 67 · Axis",               cor:"#60A5FA"},
-  {id:"ho",   nome:"H&O Apps",                     cor:"#A78BFA"},
+  {id:"ho",   nome:"CNPJ H&O · Apps",              cor:"#A78BFA"},
   {id:"sem",  nome:"Sem faturamento",              cor:"#FB923C"},
   {id:"fam",  nome:"Família",                      cor:"#A3E635"}];
 

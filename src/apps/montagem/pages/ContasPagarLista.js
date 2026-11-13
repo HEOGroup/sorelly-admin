@@ -1,208 +1,174 @@
 // Sorelly Admin · montagem — pages/ContasPagarLista.js
-// Financeiro → Contas a pagar. SEGUNDA tela no padrão do Financeiro (regra fixa do Marcus, 22/10/2026; copia pages/Faturamento.js): título + botão de ação · bloco Filtros no topo
-// (grade de 4 colunas, 32 px) · faixa de totais · abas visíveis (Quando vence | A pagar | Pagas | Todas) · tabela de layout fixo, R$ em todo valor, números à direita, texto que corta com "…".
-// Empresa + pró-labore e retiradas juntos (Total), como a tela Análise de custos (Marcus, 22/10/2026). Dados do DevMaster (domain/contas-empresa.js); aqui só a leitura em lista e os filtros.
-import { AbasTela, BlocoFiltros, Botao, COR, CampoBusca, CampoSel, FaixaTotais, TabelaP, Td, Tr, brl } from "@/apps/montagem/components/padrao-fin";
+// Financeiro › Contas › CONTAS A PAGAR e CONTAS PAGAS (Marcus, 12/11/2026): duas telas, cada uma UMA TABELA GIGANTE (sem resumo, sem abas, sem filtros no alto: o filtro fica no nome de cada coluna).
+// Um arquivo, duas telas (TelaContas, modo "pagar" ou "pagas"). Sem coluna Marcar e sem Lançar conta (Marcus, 12/11/2026); clicar na conta abre a ficha, onde se registra o pagamento. Contas pagas: Pago em e botão Desfazer.
+// Representantes: a comissão e o combustível de cada representante entram somados numa linha só; clicar na linha abre cada título. Parcela escrita assim: 02/06.
+// Empresa + pró-labore e retiradas juntos, como na Análise de custos. Dados do DevMaster (domain/contas-empresa.js).
+import { Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
-import { servidorEm, FILIAIS, filtrar, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
+import { chamar } from "@/apps/montagem/lib/api";
+import { FILIAIS, anosCarregados, definirHistorico, filtrar, historicoItens, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
+import { hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
-import { RegistrarPagamento } from "@/apps/montagem/components/registrar-pagamento";
-import { hojeIso, hojeYm, nomeMes } from "@/apps/montagem/domain/financeiro-familiar";
 import { BKC } from "@/apps/montagem/lib/format";
 import { CNPJS0 } from "@/apps/montagem/domain/cnpjs";
-import { MenuFiltro, ordenar, passaFiltro } from "@/apps/montagem/components/filtro-planilha";
-import { NovaConta } from "@/apps/montagem/pages/ContasPagarEmpresa";
 import { use } from "@/apps/montagem/state/context";
-import { e, useState } from "@/shared/react";
+import { createPortal } from "react-dom";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
-// hora da última leitura de faturamento_contas_mes no admin antigo: trocar junto com aplicaContasNN em state/store.js (atualização diária)
-var ADMIN_EM = "27/10 21:03";
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 0)); };
-var ABAS = [["quando","Quando vence"],["apagar","A pagar"],["pago","Pagas"],["todas","Todas"]];
-var PERIODOS = [["", "Todo o mês"], ["atraso", "Atrasadas"], ["hoje", "Hoje"], ["amanha", "Amanhã"], ["semana", "Esta semana"], ["prox", "Próxima semana"]];
-var ORDENS = [["venc","Vencimento"], ["valor","Maior valor"], ["forn","Fornecedor"], ["nat","Natureza"]];
-var NOTAS = [["", "Todas"], ["com", "Com nota"], ["sem", "Sem nota"]];
-
-// datas em texto ISO (aaaa-mm-dd); semana = segunda a domingo
-var somaDias = function(iso, n){ var d = new Date(iso+"T12:00:00"); d.setDate(d.getDate()+n); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); };
-var segunda = function(iso){ var d = new Date(iso+"T12:00:00"), w = (d.getDay()+6)%7; return somaDias(iso, -w); };
-var dataDe = function(i){ return i.status==="pago" ? (i.baixa||i.venc) : i.venc; };
-var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7) : "—"; };
-function noPeriodo(i, per, hoje){
-  if(!per) return true; var d = dataDe(i), ini = segunda(hoje), fim = somaDias(ini, 6), ini2 = somaDias(ini, 7), fim2 = somaDias(ini, 13);
-  if(per==="atraso") return i.status==="apagar" && i.venc<hoje;
-  if(per==="hoje") return d===hoje; if(per==="amanha") return d===somaDias(hoje, 1);
-  if(per==="semana") return d>=ini && d<=fim; if(per==="prox") return d>=ini2 && d<=fim2;
-  return true;
-}
-var CMP = { venc:function(a, b){ return (a.venc||"").localeCompare(b.venc||"") || a.nome.localeCompare(b.nome); }, valor:function(a, b){ return b.valor-a.valor; }, forn:function(a, b){ return a.nome.localeCompare(b.nome); }, nat:function(a, b){ return (a.nat+a.nome).localeCompare(b.nat+b.nome); } };
-var nomeFilial = function(id){ return id==="fora" ? "Por fora" : id; };
-
-// TABELA NO MODELO DO AGENDAMENTO (Marcus, 02/11/2026): cabeçalho dourado, funil de filtro em TODAS as colunas (condição, valores, A→Z) e nada abreviado.
-var BARRA_OURO = {background:"linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE)", color:"#1a1306"};
-var sitDe = function(i){ return i.status==="pago" ? "Pago "+dm(i.baixa) : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
+var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(2,4) : "—"; };
+var sitDe = function(i){ return i.status==="pago" ? "Pago" : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
 var numDe = function(i){ return ((i.pref||"")+" "+(i.num||"")).trim() || "—"; };
-// CNPJ completo com cor própria (cadastro em domain/cnpjs.js); H&O sem número cadastrado mostra o nome; Por fora em cinza
 var cnpjDe = function(id){ return CNPJS0.filter(function(c){ return c.id===id; })[0] || null; };
 var cnpjTxt = function(id){ var c = cnpjDe(id); return c && c.cnpj ? c.cnpj : (id==="fora" ? "Por fora" : c ? c.nome : id); };
-// só a LETRA muda de cor (Marcus, 02/11/2026): tons claros que leem bem no fundo escuro
-var CNPJ_LETRA = {"34":"#D8C48F", "46":"#DBAAC3", "59":"#92CBC2", "67":"#9FBBE3", "ho":"#BCB1E3", "fora":"#E2E8F0"};   // tons suaves (Marcus: "mais fraco")
-var pilulaCnpj = function(id){ return e("span",{style:{color:CNPJ_LETRA[id] || "#E2E8F0"}}, cnpjTxt(id)); };
-// ordem das colunas (Marcus, 02/11/2026): Fornecedor primeiro, na esquerda; o resto centralizado
-var COLS = [
-  {k:"nome", t:"Fornecedor", tipo:"sel", v:function(i){ return i.nome; }, x:function(i){ return i.nome; }},
-  {k:"venc", t:"Vence", tipo:"data", v:function(i){ return i.venc; }, x:function(i){ return dm(i.venc); }},
-  {k:"filial", t:"CNPJ", tipo:"sel", v:function(i){ return cnpjTxt(i.filial); }, x:function(i){ return cnpjTxt(i.filial); }},
-  {k:"num", t:"Número", tipo:"txt", v:numDe, x:numDe},
-  {k:"parc", t:"Parcela", tipo:"txt", v:function(i){ return i.parc || "—"; }, x:function(i){ return i.parc || "—"; }},
-  {k:"nat", t:"Natureza", tipo:"sel", v:function(i){ return i.natNome; }, x:function(i){ return i.natNome; }},
-  {k:"valor", t:"Valor", tipo:"din", v:function(i){ return i.valor; }, x:function(i){ return BKC(i.valor); }},
-  {k:"sit", t:"Situação", tipo:"sel", v:sitDe, x:sitDe}];
-// valores únicos de uma coluna, na ordem certa, com a quantidade de linhas de cada um (lista do filtro)
-function valoresDaColuna(lista, c){
-  var mapa = {}; lista.forEach(function(i){ var k = c.x(i), g = mapa[k] || (mapa[k] = {v:k, n:0, b:c.v(i)}); g.n++; });
-  return Object.keys(mapa).map(function(k){ return mapa[k]; }).sort(function(a, b){ if(typeof a.b==="number" && typeof b.b==="number") return a.b-b.b; return String(a.b).localeCompare(String(b.b), "pt-BR", {numeric:true}); });
+var CNPJ_LETRA = {"34":"#D8C48F", "46":"#DBAAC3", "59":"#92CBC2", "67":"#9FBBE3", "ho":"#BCB1E3", "fora":"#E2E8F0"};   // só a LETRA muda de cor (Marcus, 02/11/2026)
+var corCnpj = function(v, l){ return e("span",{style:{color:CNPJ_LETRA[l.fil] || "#E2E8F0"}}, v); };
+var nomeCnpj = function(f){ return f==="fora" ? "Por fora" : "CNPJ "+f; };
+var hojeYm0 = function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0"); };
+var somaMes = function(n){ var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()+n); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0"); };   // mês de hoje mais n (a lista do mês mostra de 12 meses atrás a 12 à frente; o resto fica em Todos os meses)
+var FORMAS = {PIX:"Pix", BOLETO:"Boleto", DEBITO_CONTA:"Débito em conta", TRANSF:"Transferência", DINHEIRO:"Dinheiro", CARTAO:"Cartão"};
+var soNumero = function(v){ return /^\d+$/.test(String(v||"")); };
+var chaveTitulo = function(i){ return i.filial+"|"+i.pref+"|"+i.num+"|"+i.forn; };
+// parcela no formato 02/06: o total é a maior parcela que existe do mesmo título (CNPJ, prefixo, número e fornecedor), entre pagas e em aberto
+var parcelaTxt = function(i, maximo){ if(!soNumero(i.parc)) return i.parc || "—"; var n = parseInt(i.parc, 10), m = Math.max(maximo[chaveTitulo(i)] || 0, n); return String(n).padStart(2, "0")+"/"+String(m).padStart(2, "0"); };
+var chaveGrupo = function(i, pagas){ return i.nome+"|"+i.filial+"|"+i.status+"|"+(pagas ? i.baixa : ""); };
+
+// grupo de botões juntos (sem folga entre eles), menores e brancos sobre a faixa azul
+var grupoBtn = function(ops, atual, aoMudar){ return e("div",{className:"inline-flex overflow-hidden rounded-md border border-white/50"}, ops.map(function(o, i){ var on = atual===o[0]; return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ aoMudar(o[0]); }, className:"h-7 px-2.5 text-[13px] font-semibold normal-case "+(i ? "border-l border-white/50 " : "")+(on ? "bg-white text-[#14233f]" : "text-white hover:bg-white/15")}, o[1]); })); };   // padrao-ok: botões menores a pedido do Marcus (12/11/2026)
+
+// SELETOR DE PERÍODO na faixa azul (Marcus, 12/11/2026): três jeitos de escolher um INTERVALO, todos iguais: Dias (de tal dia a tal dia), Meses (de tal mês/ano a tal mês/ano, ex.: Out/2025 a Out/2026) e Anos (de tal ano a tal ano).
+// Todos os botões e campos têm o MESMO tamanho. O bloco tem borda azul. Abre por cima de tudo. Anos antigos (2022 até o ano passado) são lidos da DevMaster sozinhos quando entram no intervalo.
+var BTN_PER = "h-7 rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-semibold normal-case text-white hover:bg-white/15";   // padrao-ok: controles menores a pedido do Marcus (12/11/2026)
+var BTN_PER2 = "h-7 w-full rounded border px-1 text-center text-[13px] hover:bg-white/10 disabled:opacity-60";   // padrao-ok: botões menores a pedido do Marcus (12/11/2026)
+var CAMPO_PER = "h-7 w-full min-w-0 rounded border border-border bg-card px-1.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";   // padrao-ok: campos menores a pedido do Marcus (12/11/2026)
+var MES3 = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"], MES_LONGO = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+var ultimoDia = function(ym){ var a0 = Number(ym.slice(0, 4)), m0 = Number(ym.slice(5, 7)); return ym+"-"+String(new Date(a0, m0, 0).getDate()).padStart(2, "0"); };
+// faixa de datas [de, ate] do período escolhido (ou null = sem limite); se o "de" ficar depois do "até", troca os dois
+function faixaDe(per){
+  if(!per.filtra) return null;
+  var f = per.modo==="dias" ? [per.dDe, per.dAte] : per.modo==="meses" ? [per.mDe+"-01", ultimoDia(per.mAte)] : [per.aDe+"-01-01", per.aAte+"-12-31"];
+  return f[0] && f[1] && f[0]>f[1] ? [f[1], f[0]] : f;
+}
+function rotuloPeriodo(per){
+  var nm = function(k){ return MES3[Number(k.slice(5, 7))-1]+"/"+k.slice(0, 4); }, dmx = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7)+"/"+iso.slice(2, 4) : "…"; };
+  var t = !per.filtra ? "Todos os períodos" : per.modo==="dias" ? (per.dDe===per.dAte ? dmx(per.dDe) : dmx(per.dDe)+" a "+dmx(per.dAte)) : per.modo==="meses" ? (per.mDe===per.mAte ? MES_LONGO[Number(per.mDe.slice(5, 7))-1]+"/"+per.mDe.slice(0, 4) : nm(per.mDe)+" a "+nm(per.mAte)) : (per.aDe===per.aAte ? String(per.aDe) : per.aDe+" a "+per.aAte);
+  return t+(per.atras ? " + atrasadas" : "");
+}
+function SeletorPeriodo(p){
+  var st = useState(null), pos = st[0], setPos = st[1], bt = useRef(null), per = p.per, set = p.setPer;
+  useEffect(function(){ if(!pos) return undefined; var fora = function(ev){ if(bt.current && bt.current.contains(ev.target)) return; if(ev.target.closest && ev.target.closest("[data-periodo]")) return; setPos(null); }; document.addEventListener("mousedown", fora); return function(){ document.removeEventListener("mousedown", fora); }; }, [pos]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var abre = function(){ if(pos){ setPos(null); return; } var r0 = bt.current.getBoundingClientRect(); setPos({top:r0.bottom+4, left:Math.max(8, Math.min(r0.left, window.innerWidth-300))}); };
+  var cel = function(on){ return BTN_PER2+" "+(on ? "border-primary bg-primary/20 font-semibold text-primary" : "border-border text-foreground"); };
+  var aba = function(k, t){ return e("button",{key:k, type:"button", "aria-pressed":per.modo===k && per.filtra, onClick:function(){ set({modo:k, filtra:true}); }, className:cel(per.modo===k && per.filtra)}, t); };
+  var rotulo = function(t){ return e("span",{className:"flex h-7 items-center text-[13px] font-semibold"}, t); };
+  var selAno = function(valor, onMuda, qual, maisUm){ var l = []; for(var y = 2022; y<=p.anoAtual+(maisUm || 0); y++) l.push(y); return e("select",{"aria-label":qual, value:valor, onChange:function(ev){ onMuda(Number(ev.target.value)); }, className:CAMPO_PER}, l.map(function(y){ return e("option",{key:y, value:y}, y); })); };
+  var selMes = function(valorYm, onMuda, qual){ var a0 = Number(valorYm.slice(0, 4)), m0 = Number(valorYm.slice(5, 7)); return e("div",{className:"grid grid-cols-2 gap-1"},
+    e("select",{"aria-label":qual+": mês", value:m0, onChange:function(ev){ onMuda(a0+"-"+String(ev.target.value).padStart(2, "0")); }, className:CAMPO_PER}, MES_LONGO.map(function(n, i){ return e("option",{key:i, value:i+1}, n); })),
+    selAno(a0, function(y){ onMuda(y+"-"+String(m0).padStart(2, "0")); }, qual+": ano", 2)); };
+  var linha2 = function(rot, campo){ return e("div",{className:"grid items-center gap-1", style:{gridTemplateColumns:"2.5rem minmax(0, 1fr)"}}, rotulo(rot), campo); };
+  var corpo = per.modo==="dias" ? e("div",{className:"flex flex-col gap-1"},
+      linha2("De", e("input",{type:"date", "aria-label":"De", value:per.dDe, onChange:function(ev){ set({dDe:ev.target.value, filtra:true}); }, className:CAMPO_PER})),
+      linha2("Até", e("input",{type:"date", "aria-label":"Até", value:per.dAte, onChange:function(ev){ set({dAte:ev.target.value, filtra:true}); }, className:CAMPO_PER})))
+    : per.modo==="meses" ? e("div",{className:"flex flex-col gap-1"}, linha2("De", selMes(per.mDe, function(v){ set({mDe:v, filtra:true}); }, "De")), linha2("Até", selMes(per.mAte, function(v){ set({mAte:v, filtra:true}); }, "Até")))
+    : e("div",{className:"flex flex-col gap-1"}, linha2("De", selAno(per.aDe, function(y){ set({aDe:y, filtra:true}); }, "De", 0)), linha2("Até", selAno(per.aAte, function(y){ set({aAte:y, filtra:true}); }, "Até", 0)));
+  var lendo = p.anos.filter(function(a){ return p.carr[a]==="lendo"; }), falhou = p.anos.filter(function(a){ return p.carr[a] && p.carr[a]!=="lendo" && p.carr[a]!=="ok"; });
+  var mesAtual = hojeYm0(), colsAt = p.comAtraso ? 3 : 2;
+  var menu = pos && createPortal(e("div",{"data-periodo":"1", style:{top:pos.top, left:pos.left}, className:"fixed z-50 flex w-72 flex-col gap-1.5 rounded-lg border-2 border-[var(--bloco-titulo)] bg-popover p-1.5 text-foreground shadow-xl"},
+    e("div",{className:"grid grid-cols-3 gap-1"}, aba("dias", "Dias"), aba("meses", "Meses"), aba("anos", "Anos")),
+    e("div",{className:"rounded border border-border p-1"}, corpo),
+    lendo.length ? e("p",{className:"px-1 text-[11px]"}, "Lendo "+lendo.join(", ")+" da DevMaster…") : null,
+    falhou.length ? e("p",{className:"px-1 text-[11px] text-warning"}, "Não consegui ler "+falhou.join(", ")+". Mude o período e volte para tentar de novo.") : null,
+    e("div",{className:"grid gap-1", style:{gridTemplateColumns:"repeat("+colsAt+", minmax(0, 1fr))"}},
+      e("button",{type:"button", onClick:function(){ set({filtra:false}); }, className:cel(!per.filtra)}, "Todos"),
+      e("button",{type:"button", onClick:function(){ set({modo:"meses", filtra:true, mDe:mesAtual, mAte:mesAtual}); }, className:cel(per.filtra && per.modo==="meses" && per.mDe===mesAtual && per.mAte===mesAtual)}, "Mês atual"),
+      p.comAtraso ? e("button",{type:"button", onClick:function(){ set({atras:!per.atras}); }, className:cel(per.atras)}, "+ Atrasadas") : null)), document.body);
+  return e("div",{className:"inline-flex"}, e("button",{ref:bt, type:"button", "aria-label":"Período", "aria-expanded":!!pos, onClick:abre, className:BTN_PER+" flex items-center gap-1.5 whitespace-nowrap"}, rotuloPeriodo(per), e("span",{"aria-hidden":true}, pos ? "▴" : "▾")), menu);
 }
 
-function AbaCtaLista(){
-  var cx = use(), s = cx.state, hoje = hojeIso();
+// ABERTURA (Marcus, 12/11/2026): A pagar abre em A pagar + mês de hoje + atrasadas (o que está em aberto, o que já venceu e o que vence até o fim do mês). Contas pagas abre em Pagas + mês de hoje.
+function TelaContas(props){
+  var cx = use(), s = cx.state;
   setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
-  var ms = meses(), ini = ms.indexOf(hojeYm())>=0 ? hojeYm() : (ms[ms.length-1] || "");
-  var a = useState("quando"), aba = a[0], setAba = a[1], b = useState(ini), mes = b[0], setMes = b[1];
-  var c = useState(""), per = c[0], setPer = c[1], f = useState(""), filial = f[0], setFilial = f[1], g = useState(""), nota = g[0], setNota = g[1], h = useState(""), busca = h[0], setBusca = h[1];
-  var i2 = useState(""), nat = i2[0], setNat = i2[1], o = useState("venc"), ord = o[0], setOrd = o[1], l = useState(100), lim = l[0], setLim = l[1], n = useState(false), nova = n[0], setNova = n[1];
-  var sa = useState(null), aberta = sa[0], setAberta = sa[1], sl = useState([]), sel = sl[0], setSel = sl[1], rg = useState(false), regPag = rg[0], setRegPag = rg[1], av = useState(""), aviso = av[0], setAviso = av[1];
-  var fa = useState(false), filtrosAb = fa[0], setFiltrosAb = fa[1], ca = useState(false), cnpjAb = ca[0], setCnpjAb = ca[1], gx = useState({}), grAb = gx[0], setGrAb = gx[1], fc = useState({}), fil = fc[0], setFil = fc[1], oc = useState(null), ordC = oc[0], setOrdC = oc[1], pp = useState(null), pop = pp[0], setPop = pp[1];
+  var sca = useState({}), carr = sca[0], setCarr = sca[1], stk = useState(0), setTick = stk[1], se = useState(props.modo==="pagas" ? "pagas" : "apagar"), escopo = se[0], setEscopo = se[1], sv = useState("lista"), vista = sv[0], setVista = sv[1], sp = useState({modo:"meses", filtra:true, atras:props.modo!=="pagas", dDe:hojeYm()+"-01", dAte:hojeIso(), mDe:hojeYm(), mAte:hojeYm(), aDe:new Date().getFullYear(), aAte:new Date().getFullYear()}), per = sp[0], setPerRaw = sp[1], sa = useState(null), aberta = sa[0], setAberta = sa[1], gx = useState({}), grAb = gx[0], setGrAb = gx[1];
+  // HISTÓRICO (Marcus, 12/11/2026): lê UM ano da DevMaster quando o botão do ano é clicado (2022 até o ano passado; só contas pagas; só leitura). Depois marca os 12 meses do ano e vai para Pagas.
+  var anoAtual = new Date().getFullYear(), anosHist = []; for(var ah = 2022; ah<anoAtual; ah++) anosHist.push(ah);
+  var setPer = function(mudanca){ setPerRaw(function(o){ return Object.assign({}, o, mudanca); }); };
+  var faixa = faixaDe(per);
+  var carregaAno = function(a){
+    var ok = function(){ setTick(function(n){ return n+1; }); };
+    if(anosCarregados().indexOf(String(a))>=0){ ok(); return; }
+    setCarr(function(c){ var o = Object.assign({}, c); o[a] = "lendo"; return o; });
+    chamar("GET", "/contas-dm?ano="+a).then(function(rr){ definirHistorico(a, rr.pagas || []); setCarr(function(c){ var o = Object.assign({}, c); o[a] = "ok"; return o; }); ok(); })
+      .catch(function(x){ setCarr(function(c){ var o = Object.assign({}, c); o[a] = "erro: "+(x && x.message ? x.message : "falhou"); return o; }); });
+  };
+  // anos antigos que entram no intervalo escolhido: lê da DevMaster sozinho (um por vez, só uma vez) e passa para Pagas se estava em A pagar (o histórico só tem contas pagas)
+  var anoDe = faixa ? Number(faixa[0].slice(0, 4)) : 0, anoAte = faixa ? Number(faixa[1].slice(0, 4)) : 0, chaveAnos = faixa ? anoDe+"-"+anoAte : "";
+  useEffect(function(){ if(!faixa) return; for(var y = Math.max(2022, anoDe); y<=Math.min(anoAte, anoAtual-1); y++){ if(anosCarregados().indexOf(String(y))<0 && !carr[y]) carregaAno(y); } if(anoDe<anoAtual && escopo==="apagar") setEscopo("pagas"); }, [chaveAnos]);   // eslint-disable-line react-hooks/exhaustive-deps
   var podePagar = temAutorizacao("pagamento_registra", s.usuario);
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
-  var quem = "";   // tudo junto: empresa + pró-labore e retiradas
-  var limpar = function(){ setPer(""); setFilial(""); setNota(""); setBusca(""); setNat(""); setLim(100); };
-  var filtrado = !!(per || filial || nota || busca || nat);
-  // faixa de totais: o que está nos filtros de mês, CNPJ, nota e busca (ignora a aba e o período)
-  var todos = filtrar(mes, filial, busca, "", quem, nota).filter(function(i){ return !nat || (i.nat+" · "+i.natNome)===nat; });
-  var pagos = todos.filter(function(i){ return i.status==="pago"; }), abertos = todos.filter(function(i){ return i.status==="apagar"; }), atrasadas = abertos.filter(function(i){ return i.venc<hoje; });
-  // Alto da tela (Marcus, 27/10/2026): JÁ PAGO e FALTA PAGAR do mês, do admin antigo (s.contasPagar, atualizado em s.contasPagarEm); sem esse dado, soma as contas da lista
-  var srvEm = servidorEm(), cm = mes ? (((s.contasPagar || {})[mes.slice(0, 4)] || {})[Number(mes.slice(5, 7))-1] || null) : null, doAdmin = !srvEm && !!(cm && ((cm.pago || 0)>0 || (cm.apagar || 0)>0));
-  var hPago = doAdmin ? cm.pago || 0 : soma(pagos), hFalta = doAdmin ? cm.apagar || 0 : soma(abertos), hTot = r2(hPago+hFalta), hPct = hTot>0 ? Math.round(hPago/hTot*100) : 0;
-  var quandoDm = srvEm && srvEm!=="ok" ? new Date(srvEm).toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"})+" "+new Date(srvEm).toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"}) : "", quandoAtu = s.contasPagarEm ? s.contasPagarEm.slice(8, 10)+"/"+s.contasPagarEm.slice(5, 7)+" "+s.contasPagarEm.slice(11, 16) : ADMIN_EM;
-  // aba "Quando vence": o que está em aberto por dia, semana e CNPJ (clicar no valor filtra a lista)
-  var emAberto = filtrar("", "", "", "apagar", quem, ""), ini7 = segunda(hoje);
-  var QUANDO = [["atraso","Atrasadas", emAberto.filter(function(i){ return i.venc<hoje; })], ["hoje","Hoje", emAberto.filter(function(i){ return i.venc===hoje; })], ["amanha","Amanhã", emAberto.filter(function(i){ return i.venc===somaDias(hoje, 1); })],
-    ["semana","Esta semana", emAberto.filter(function(i){ return i.venc>=ini7 && i.venc<=somaDias(ini7, 6); })], ["prox","Próxima semana", emAberto.filter(function(i){ return i.venc>=somaDias(ini7, 7) && i.venc<=somaDias(ini7, 13); })]];
-  var colFil = FILIAIS.filter(function(x){ return x[0]!=="ho"; });
-  var irLista = function(perK, fil){ setPer(perK); setFilial(fil||""); setLim(100); setAba("apagar"); };
-  var celQuando = function(lista, fil, perK){ var v = soma(fil ? lista.filter(function(i){ return i.filial===fil; }) : lista);
-    return e("td",{key:(fil||"t")+perK, onClick:v>0 ? function(){ irLista(perK, fil); } : undefined, title:v>0 ? "Ver a lista" : undefined, className:"h-8 whitespace-nowrap border-b border-border px-2.5 text-right tabular-nums "+(v>0 ? "cursor-pointer text-foreground hover:bg-white/10" : "text-foreground/50")}, v>0 ? BKC(v) : "—"); };
-  var quando = e(TabelaP,{minW:980, cols:[{t:"Quando", w:150},{t:"Contas", n:true, w:90},{t:"Total", n:true, w:150}].concat(colFil.map(function(x){ return {t:x[1], n:true, w:150}; }))},
-    QUANDO.map(function(x){ return e("tr",{key:x[0]}, e(Td,{forte:true, cor:x[0]==="atraso" && x[2].length ? "text-warning" : ""}, x[1]), e(Td,{n:true}, String(x[2].length)), celQuando(x[2], "", x[0]), colFil.map(function(fi){ return celQuando(x[2], fi[0], x[0]); })); }),
-    e(Tr,{key:"t", total:true}, e(Td,null, "Em aberto"), e(Td,{n:true}, String(emAberto.length)), e(Td,{n:true}, BKC(soma(emAberto))), colFil.map(function(fi){ return e(Td,{key:fi[0], n:true}, BKC(soma(emAberto.filter(function(i){ return i.filial===fi[0]; })))); })));
-  // abas de lista: A pagar | Pagas | Todas
-  var statusAba = aba==="apagar" ? "apagar" : aba==="pago" ? "pago" : "";
-  var base = filtrar(mes, filial, busca, statusAba, quem, nota).filter(function(i){ return noPeriodo(i, per, hoje) && (!nat || (i.nat+" · "+i.natNome)===nat); });
-  var nats = []; filtrar(mes, filial, busca, statusAba, quem, nota).forEach(function(i){ var k = i.nat+" · "+i.natNome; if(nats.indexOf(k)<0) nats.push(k); }); nats.sort();
-  var ls = base.slice().sort(CMP[ord]);
-  var lsc = ls.filter(function(i){ return COLS.every(function(c){ var fl = fil[c.k]; return !fl || passaFiltro(fl, c.tipo, c.v(i), c.x(i)); }); }), colOrd = ordC ? COLS.find(function(c){ return c.k===ordC.k; }) : null;
-  if(colOrd) lsc = ordenar(lsc, colOrd, ordC.dir, hoje);
-  var totLista = soma(lsc);
-  // REPRESENTANTES (Marcus, 02/11/2026): comissão e combustível de cada representante entram numa linha só (representante + CNPJ + situação), que abre ao clicar; a comissão é paga no total
-  var unid = [], idxG = {};
-  lsc.forEach(function(i){ if(i.grupo!=="Representantes"){ unid.push({item:i}); return; } var k = i.nome+"|"+i.filial+"|"+i.status; if(idxG[k]===undefined){ idxG[k] = unid.length; unid.push({grupo:k, itens:[]}); } unid[idxG[k]].itens.push(i); });
-  var vis = unid.slice(0, lim), vis2 = [];
-  vis.forEach(function(u){ if(u.item){ vis2.push({i:u.item}); return; } if(u.itens.length===1){ vis2.push({i:u.itens[0]}); return; } vis2.push({g:u}); if(grAb[u.grupo]) u.itens.forEach(function(x){ vis2.push({i:x, filho:true}); }); });
-  var situacao = function(i){ return i.status==="pago" ? "Pago "+dm(i.baixa) : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
-  var colCheck = podePagar && (aba==="apagar" || aba==="todas"), colAcao = podePagar && (aba==="pago" || aba==="todas");
-  var nomeCnpj = function(f){ return f==="fora" ? "Por fora" : "CNPJ "+f; };
-  var marca = function(i){
-    if(sel.indexOf(i.id)>=0){ setSel(sel.filter(function(x){ return x!==i.id; })); setAviso(""); return; }
-    var ref = ls.filter(function(x){ return sel.indexOf(x.id)>=0; })[0];
-    if(ref && ref.filial!==i.filial){ setAviso("Marque só contas do mesmo CNPJ. Já tem "+nomeCnpj(ref.filial)+" marcado: registre esse pagamento ou desmarque."); return; }
-    setAviso(""); setSel(sel.concat([i.id]));
-  };
-  var todasItens = ls.filter(function(i){ return sel.indexOf(i.id)>=0; });
-  var barraSel = podePagar && (todasItens.length>0 || aviso) ? e("div",{className:"flex flex-wrap items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 py-1.5 text-[13px] text-foreground"},
-    todasItens.length>0 && e("span",null, todasItens.length+(todasItens.length>1 ? " contas marcadas" : " conta marcada")+" · "+nomeCnpj(todasItens[0].filial)+" · ", e("b",null, BKC(soma(todasItens)))),
-    aviso && e("span",{className:"text-warning"}, aviso),
-    todasItens.length>0 && e("span",{className:"ml-auto flex gap-2"}, e(Botao,{onClick:function(){ setSel([]); setAviso(""); }}, "Limpar"), e(Botao,{principal:true, onClick:function(){ setRegPag(true); }}, "Registrar pagamento"))) : null;
-  var marcaGrupo = function(its, desmarcar){
-    var ids = its.map(function(x){ return x.id; });
-    if(desmarcar){ setSel(sel.filter(function(x){ return ids.indexOf(x)<0; })); setAviso(""); return; }
-    var ref = ls.filter(function(x){ return sel.indexOf(x.id)>=0 && ids.indexOf(x.id)<0; })[0];
-    if(ref && ref.filial!==its[0].filial){ setAviso("Marque só contas do mesmo CNPJ. Já tem "+nomeCnpj(ref.filial)+" marcado: registre esse pagamento ou desmarque."); return; }
-    setAviso(""); setSel(sel.filter(function(x){ return ids.indexOf(x)<0; }).concat(ids));
-  };
-  var TC = "h-8 whitespace-nowrap border-b border-r border-border px-2.5 text-center text-[13px] last:border-r-0 ";
-  var linhaGrupo = function(u){
-    var its = u.itens, k = u.grupo, op = !!grAb[k], ap = its[0].status==="apagar", marcados = its.filter(function(x){ return sel.indexOf(x.id)>=0; }).length, GT = TC;
-    var venc = its.map(function(x){ return dataDe(x); }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; })), ult = its.map(function(x){ return x.baixa || ""; }).sort().pop(), nats = [];
+  var todas = filtrar("", "", "", "", "", "").concat(historicoItens()), maximo = {};
+  todas.forEach(function(i){ if(!soNumero(i.parc)) return; var k = chaveTitulo(i), n0 = parseInt(i.parc, 10); if(n0>(maximo[k]||0)) maximo[k] = n0; });
+  var hoje0 = hojeIso(), ABERTO = escopo!=="pagas", PAGO = escopo!=="apagar", DESC = escopo==="pagas";   // escopo: A pagar, Pagas ou Todas, na MESMA tela (Marcus, 12/11/2026)
+  // FILTRO DO MÊS (Marcus, 12/11/2026: "sempre abrindo do mês"): a tela abre no mês de hoje. A pagar conta pelo vencimento (sem data, pela emissão); pagas, pela data do pagamento.
+  var dataBase = function(i){ return i.status==="pago" ? (i.baixa || "") : (i.venc || i.emissao || ""); };
+  // PERÍODO (Marcus, 12/11/2026): escolher VÁRIOS meses (cada um é uma linha na visão Por mês) ou de tal dia a tal dia. Sem nenhum mês marcado = todos. "atraso" marcado = também o que já venceu e está em aberto.
+  var noMes = function(i){ var d = dataBase(i); if(!faixa) return true; return (d>=faixa[0] && d<=faixa[1]) || (per.atras && i.status==="apagar" && !!i.venc && i.venc<hoje0); };
+  var ls = todas.filter(function(i){ return (escopo==="todas" || i.status===(DESC ? "pago" : "apagar")) && noMes(i); }).sort(function(x, y){ var p = dataBase(x), q = dataBase(y); return DESC ? q.localeCompare(p) || x.nome.localeCompare(y.nome) : (p||"9999").localeCompare(q||"9999") || x.nome.localeCompare(y.nome); });   // ordem: vence primeiro no alto (atrasadas em cima), SEM data no fim; em Pagas, o pago mais recente primeiro
+  var colAcao = podePagar && PAGO;
+  // REPRESENTANTES: comissão e combustível do mesmo representante, CNPJ e situação viram uma linha somada; abre ao clicar
+  var linha = function(i, filho){ return {id:i.id, it:i, fil:i.filial, nome:(filho ? "↳ " : "")+i.nome, venc:dm(i.venc), pago:dm(i.baixa), cnpj:cnpjTxt(i.filial), num:numDe(i), parc:parcelaTxt(i, maximo), nat:i.natNome, nota:i.nota==="sem" ? "Sem nota" : "Com nota", valor:i.valor, orig:i.valorTitulo==null ? i.valor : i.valorTitulo, emis:dm(i.emissao), atr:i.atraso>0 ? i.atraso : 0, setor:i.grupo || "—", cod:i.nat || "—", sit:sitDe(i), acao:i.bx ? "Desfazer" : "", forma:i.bx ? (FORMAS[i.bx.forma] || i.bx.forma || "—") : "—", saida:i.bx ? (i.bx.contaNome || "—") : "—", compro:i.status!=="pago" ? "—" : !i.bx ? "—" : i.bx.comprovante ? "Ver" : "Falta anexar", por:i.bx ? nomeDe(i.bx.por) : "—", filho:!!filho}; };
+  var grupos = {};
+  ls.forEach(function(i){ if(i.grupo!=="Representantes") return; var k = chaveGrupo(i, i.status==="pago"); if(!grupos[k]) grupos[k] = []; grupos[k].push(i); });
+  var linhas = [], feitos = {};
+  ls.forEach(function(i){
+    if(i.grupo!=="Representantes"){ linhas.push(linha(i)); return; }
+    var k = chaveGrupo(i, i.status==="pago"), its = grupos[k];
+    if(its.length===1){ linhas.push(linha(i)); return; }
+    if(feitos[k]) return;
+    feitos[k] = 1;
+    var ap = i.status==="apagar", op = !!grAb[k], nats = [], venc = its.map(function(x){ return x.venc || ""; }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; }));
     its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
-    return e("tr",{key:"g|"+k, onClick:function(){ var o = Object.assign({}, grAb); o[k] = !op; setGrAb(o); }, title:op ? "Fechar os títulos" : "Abrir os títulos", className:"cursor-pointer hover:bg-white/10"},
-      colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:GT}, ap ? e("input",{type:"checkbox", checked:marcados===its.length, onChange:function(){ marcaGrupo(its, marcados===its.length); }, "aria-label":"Marcar todas as contas de "+its[0].nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
-      e("td",{className:GT+"text-left font-semibold", style:{color:"#FDBA74"}}, (op ? "▾ " : "▸ ")+its[0].nome), e("td",{className:GT+"tabular-nums"}, dm(venc)), e("td",{className:GT}, pilulaCnpj(its[0].filial)), e("td",{className:GT}, its.length+" títulos"), e("td",{className:GT}, "—"), e("td",{className:GT}, nats.join(" · ")),
-      e("td",{className:GT+"tabular-nums"}, BKC(soma(its))), e("td",{className:GT+(ap && atr>0 ? "text-warning" : (ap ? "" : "text-success"))}, ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago "+dm(ult)), colAcao && e("td",{className:GT}));
-  };
-  var tabelaContas = function(){
-    var ativo = function(c){ return !!fil[c.k] || (!!ordC && ordC.k===c.k); }, algum = COLS.some(ativo), cPop = pop ? COLS.find(function(c){ return c.k===pop.col; }) : null;
-    var abrirPop = function(c, ev){ if(pop && pop.col===c.k){ setPop(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setPop({col:c.k, top:Math.max(8, Math.min(r.bottom+4, window.innerHeight-460)), left:Math.max(8, Math.min(r.left-120, window.innerWidth-320))}); };
-    var BORDA = "border-r border-[rgba(0,0,0,.42)] ";
-    var cab = e("tr",{style:BARRA_OURO}, (colCheck ? [e("th",{key:"ck", className:"h-8 w-10 "+BORDA})] : []).concat(COLS.map(function(c){ var on = ativo(c);
-      return e("th",{key:c.k, className:"h-8 whitespace-nowrap "+BORDA+"px-2.5 text-center text-[13px] font-semibold last:border-r-0"},
-        e("span",{className:"inline-flex items-center justify-center gap-1.5"}, c.t, ordC && ordC.k===c.k && e("span",{"aria-hidden":true}, ordC.dir==="asc" ? "↑" : "↓"),
-          e("button",{type:"button", "aria-label":"Filtro de "+c.t, title:"Classificar e filtrar "+c.t, onClick:function(ev){ abrirPop(c, ev); }, className:"inline-grid size-6 place-items-center rounded hover:bg-black/15 "+(on ? "bg-black/20" : "")},
-            e("svg",{width:14, height:14, viewBox:"0 0 24 24", fill:on ? "currentColor" : "none", stroke:"currentColor", strokeWidth:2.4, strokeLinecap:"round", strokeLinejoin:"round"}, e("path",{d:"M3 4h18l-7 8.5V20l-4-2v-5.5L3 4z"}))))); })), colAcao ? [e("th",{key:"ac", className:"h-8 w-24"})] : []);
-    var corpo = vis2.map(function(z){ if(z.g) return linhaGrupo(z.g); var i = z.i;
-      return e("tr",{key:i.id, onClick:function(){ setAberta(i); }, title:"Abrir a conta", className:"cursor-pointer hover:bg-white/10"},
-        colCheck && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:TC}, i.status==="apagar" ? e("input",{type:"checkbox", checked:sel.indexOf(i.id)>=0, onChange:function(){ marca(i); }, "aria-label":"Marcar "+i.nome, className:"h-4 w-4 cursor-pointer accent-[#d4af37]"}) : null),
-        e("td",{className:TC+"text-left"+(z.filho ? "" : " font-semibold")}, (z.filho ? "↳ " : "")+i.nome), e("td",{className:TC+"tabular-nums", title:"Emissão "+(i.emissao ? dm(i.emissao) : "—")}, dm(i.venc)), e("td",{className:TC}, pilulaCnpj(i.filial)), e("td",{className:TC}, numDe(i)), e("td",{className:TC}, i.parc || "—"),
-        e("td",{className:TC, title:i.nat+" "+i.natNome}, i.natNome), e("td",{className:TC+"tabular-nums"}, BKC(i.valor)),
-        e("td",{className:TC+(i.status==="apagar" && i.atraso>0 ? "text-warning" : (i.status==="pago" ? "text-success" : "")), title:i.bx ? ("Pago por "+nomeDe(i.bx.por)+" · "+i.bx.contaNome+(i.bx.obs ? " · "+i.bx.obs : "")) : (i.obs || undefined)}, sitDe(i)),
-        colAcao && e("td",{onClick:function(ev){ ev.stopPropagation(); }, className:TC}, i.bx ? e("button",{type:"button", onClick:function(){ if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:i.bx.id, por:s.usuario}); }, className:"h-8 rounded-md border border-border px-2 text-[13px] text-foreground hover:bg-white/10"}, "Desfazer") : null)); });
-    var total = vis.length ? e("tr",{key:"t", className:"bg-white/10 font-semibold"}, colCheck && e("td",{className:TC}), e("td",{className:TC+"text-left"}, "Total · "+lsc.length+" títulos"), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC}), e("td",{className:TC+"tabular-nums"}, BKC(totLista)), e("td",{className:TC}), colAcao && e("td",{className:TC})) : null;
-    return e("div",{className:"flex flex-col gap-2"},
-      algum && e("div",{className:"flex items-center gap-3 text-[13px]"}, e(Botao,{onClick:function(){ setFil({}); setOrdC(null); setPop(null); }}, "Limpar filtros das colunas")),
-      e("div",{className:"overflow-x-auto rounded-lg border border-border"}, e("table",{className:"w-full border-collapse text-[13px]"}, e("thead",null, cab), e("tbody",null, corpo, total))),
-      pop && cPop && e(MenuFiltro,{key:cPop.k, col:cPop, f:fil[cPop.k] || null, top:pop.top, left:pop.left, valores:valoresDaColuna(ls, cPop), sort:ordC && ordC.k===cPop.k ? ordC.dir : null, onClose:function(){ setPop(null); },
-        setF:function(n){ var m = Object.assign({}, fil); if(n) m[cPop.k] = n; else delete m[cPop.k]; setFil(m); setLim(100); },
-        setSort:function(dir){ setOrdC(dir ? {k:cPop.k, dir:dir} : null); }}));
-  };
-  var lista = e("div",{className:"flex flex-col gap-2"},
-    e("p",{className:"text-[13px] text-foreground"}, lsc.length+" títulos · total ", e("b",null, BKC(totLista))),
-    barraSel,
-    tabelaContas(),
-    !vis.length && e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Nenhuma conta neste filtro."),
-    unid.length>vis.length && e("div",{className:"flex justify-center"}, e(Botao,{onClick:function(){ setLim(lim+200); }}, "Mostrar mais ("+(unid.length-vis.length)+")")));
-  // bloco em cima o PAGO, embaixo o A PAGAR: total e cada CNPJ; clicar no CNPJ filtra
-  var cartao = function(rot, v, cor, on, fn, sub){ return e("button",{key:rot, type:"button", onClick:fn, disabled:!fn, className:"flex min-w-0 flex-col items-center rounded-lg border px-2 py-1.5 text-center "+(on ? "border-primary bg-primary/15 " : "border-border bg-card ")+(fn ? "hover:bg-[#B8862B] " : "")}, e("span",{className:"text-[11px] font-bold uppercase text-foreground"}, rot), e("b",{className:"tabular-nums text-[14px] "+(cor||"text-foreground")}, BKC(v)), sub ? e("span",{className:"text-[11px] text-foreground"}, sub) : null); };
-  var blocoCnpj = function(titulo, lista, cor, sub, atras){ return e("div",{key:titulo, className:"flex flex-col gap-1.5"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, titulo),
-    e("div",{className:"grid grid-cols-2 gap-1.5 sm:grid-cols-4 xl:grid-cols-8"}, cartao("Total", soma(lista), cor, false, null, sub), atras ? cartao("Atrasadas", soma(atras), atras.length ? "text-warning" : "", false, null, atras.length+" contas") : null,
-      FILIAIS.map(function(fi){ var l = lista.filter(function(i){ return i.filial===fi[0]; }); return cartao(fi[0]==="fora" ? "Por fora" : fi[1], soma(l), cor, filial===fi[0], function(){ setFilial(filial===fi[0] ? "" : fi[0]); setLim(100); }, l.length+" contas"); }))); };
-  var titulo = ABAS.filter(function(x){ return x[0]===aba; })[0][1];
-  return e("div",{className:"flex flex-col gap-3"},
-    nova && e(NovaConta,{fechar:function(){ setNova(false); }}),
+    linhas.push({id:"g|"+k, grupo:true, k:k, its:its, fil:i.filial, nome:(op ? "▾ " : "▸ ")+i.nome, venc:dm(venc), pago:dm(i.baixa), cnpj:cnpjTxt(i.filial), num:its.length+" títulos", parc:"—", nat:nats.join(" · "), nota:its.every(function(x){ return x.nota==="sem"; }) ? "Sem nota" : "Com nota", valor:soma(its), orig:r2(its.reduce(function(t0, x){ return t0+(x.valorTitulo==null ? x.valor : x.valorTitulo); }, 0)), emis:dm(its.map(function(x){ return x.emissao || ""; }).sort()[0]), setor:"Representantes", cod:its[0].nat || "—", sit:ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago", acao:"", ap:ap, atr:atr});
+    if(op) its.forEach(function(x){ linhas.push(linha(x, true)); });
+  });
+  var corSit = function(l){ var ap = l.grupo ? l.ap : l.it.status==="apagar", atr = l.grupo ? l.atr : l.it.atraso; return ap && atr>0 ? "text-warning" : !ap ? "text-success" : ""; };
+  var botaoDesfazer = function(v, l){ return l.it && l.it.bx ? e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); if(window.confirm("Desfazer este pagamento? A conta volta para A pagar.")) cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:l.it.bx.id, por:s.usuario}); }, className:"h-8 rounded-md border border-border px-2 text-[13px] text-foreground hover:bg-white/10"}, "Desfazer") : ""; };
+  // COMPROVANTE: o anexo feito na janela de pagamento. "Ver" abre o arquivo; "Falta anexar" = pago pelo Admin sem comprovante; "—" = pago na DevMaster (não vem anexo)
+  var verComp = function(v, l){ var b = l.it && l.it.bx; if(v==="Ver" && b && b.comprovante) return e("a",{href:b.comprovante.url, target:"_blank", rel:"noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:"cursor-pointer underline"}, "Ver"); return v==="Falta anexar" ? e("span",{className:"text-warning"}, v) : v; };
+  var cols = [{k:"sit", t:"Situação", cor:corSit}].concat(PAGO ? [{k:"pago", t:"Pago em"}] : [], [{k:"venc", t:"Vence"}, {k:"nome", t:"Fornecedor"}, {k:"valor", t:"Valor", fmt:BKC}], PAGO ? [{k:"forma", t:"Forma"}, {k:"saida", t:"Conta de saída"}, {k:"compro", t:"Comprovante", render:verComp}, {k:"por", t:"Pago por"}] : [],
+    [{k:"cnpj", t:"CNPJ", render:corCnpj}, {k:"num", t:"Número"}, {k:"parc", t:"Parcela"}, {k:"nat", t:"Natureza"}, {k:"nota", t:"Nota"}, {k:"setor", t:"Setor"}, {k:"cod", t:"Cód. natureza"}].concat(ABERTO ? [{k:"emis", t:"Emissão"}, {k:"orig", t:"Valor original", fmt:BKC}, {k:"atr", t:"Dias de atraso"}] : []), [],
+    colAcao && linhas.some(function(l){ return l.it && l.it.bx; }) ? [{k:"acao", t:"Desfazer", render:botaoDesfazer}] : []);   // a coluna só aparece quando há pagamento feito pelo Admin na tela (os da DevMaster não podem ser desfeitos aqui)
+  // POR DIA (Marcus, 12/11/2026): uma linha por dia (vencimento em Contas a pagar, pagamento em Contas pagas): quantas contas, total e quanto em cada CNPJ
+  // TOTAL POR DIA e POR MÊS (Marcus, 12/11/2026): uma linha por dia (ou por mês), com quantas contas, quanto em cada CNPJ, o total e o ACUMULADO (soma linha após linha; na última dá o total de tudo que está na tela)
+  var mesHoje = hoje0.slice(0, 7);
+  var totaisPor = function(chaveDe, rotuloDe, sitDe2){ var gr = {}; ls.forEach(function(i){ var k = chaveDe(i); (gr[k] = gr[k] || []).push(i); });
+    var ks = Object.keys(gr).filter(function(k){ return k; }).sort(); if(gr[""]) ks.push(""); var acum = 0;
+    return ks.map(function(k){ var its = gr[k], tot = soma(its), tudoPago = its.every(function(i){ return i.status==="pago"; }); acum = r2(acum+tot);
+      var o = {id:"d"+k, dia:k ? rotuloDe(k) : "Sem data", qtd:its.length, total:tot, acum:acum, sit:tudoPago ? "Pago" : !k ? "Sem data" : sitDe2(k)};
+      FILIAIS.forEach(function(f){ o["c"+f[0]] = soma(its.filter(function(i){ return i.filial===f[0]; })); }); return o; }); };
+  // O TOTAL ACOMPANHA A ABA DO PERÍODO (Marcus, 12/11/2026): Dias = uma linha por dia, Meses = uma por mês, Anos = uma por ano.
+  var anoHoje = hoje0.slice(0, 4);
+  var linhasDia = per.modo==="anos" ? totaisPor(function(i){ return dataBase(i).slice(0, 4); }, function(k){ return k; }, function(k){ return k<anoHoje ? "Atrasadas" : k===anoHoje ? "Ano atual" : "A vencer"; })
+    : per.modo==="meses" ? totaisPor(function(i){ return dataBase(i).slice(0, 7); }, function(k){ return nomeMes(k); }, function(k){ return k<mesHoje ? "Atrasadas" : k===mesHoje ? "Mês atual" : "A vencer"; })
+    : totaisPor(dataBase, dm, function(k){ return k<hoje0 ? "Atrasadas" : k===hoje0 ? "Hoje" : "A vencer"; });
+  var corDia = function(l){ return l.sit==="Atrasadas" ? "text-warning" : l.sit==="Pago" ? "text-success" : ""; };
+  var colsDia = [{k:"dia", t:per.modo==="anos" ? "Ano" : per.modo==="meses" ? "Mês" : escopo==="pagas" ? "Pago em" : escopo==="apagar" ? "Vence" : "Data", cor:corDia}, {k:"sit", t:"Situação", cor:corDia}, {k:"qtd", t:escopo==="pagas" ? "Pagamentos" : "Contas"}].concat(FILIAIS.map(function(f){ return {k:"c"+f[0], t:f[0]==="fora" ? "Por fora" : f[1], fmt:BKC}; }), [{k:"total", t:"Total", fmt:BKC}, {k:"acum", t:"Acumulado", fmt:BKC}]);   // os CNPJs vêm ANTES do Total e do Acumulado (Marcus, 12/11/2026)
+  var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } setAberta(l.it); };
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     aberta && e(PagamentoConta,{key:aberta.id, s:s, item:aberta, lista:ls, podePagar:podePagar, fechar:function(){ setAberta(null); }, ir:function(x){ if(x) setAberta(x); }, salvar:function(b){ cx.dispatch({type:"CPE_BAIXA", baixas:[b]}); setAberta(null); }, desfazer:function(id){ cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:id, por:s.usuario}); setAberta(null); }, excluir:function(id){ cx.dispatch({type:"CPE_LANC_DEL", id:id, por:s.usuario}); setAberta(null); }, trocarFilial:function(it, f){ cx.dispatch({type:"CPE_FILIAL", chave:it.chave, filial:f, por:s.usuario, desc:it.nome, valor:it.valor}); setAberta(null); }}),
-    regPag && todasItens.length>0 && e(RegistrarPagamento,{s:s, itens:todasItens, fechar:function(){ setRegPag(false); }, salvar:function(baixas){ cx.dispatch({type:"CPE_BAIXA", baixas:baixas}); setRegPag(false); setSel([]); setAviso(""); }}),
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-      e("h1",{className:"mr-auto truncate text-[16px] font-semibold text-foreground"}, "Contas a pagar"),
-      e("select",{"aria-label":"Mês", value:mes, onChange:function(ev){ setMes(ev.target.value); setLim(100); setNat(""); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}, ms.map(function(m){ return e("option",{key:m, value:m}, nomeMes(m)); }).concat(ms.length>1 ? [e("option",{key:"todos", value:""}, "Todos os meses")] : [])),
-      e(Botao,{onClick:function(){ setFiltrosAb(!filtrosAb); }}, filtrosAb ? "Esconder filtros" : (filtrado ? "Filtros ligados" : "Filtros")),
-      e(Botao,{onClick:function(){ setCnpjAb(!cnpjAb); }}, cnpjAb ? "Esconder CNPJs" : "Por CNPJ"),
-      e(Botao,{principal:true, onClick:function(){ setNova(true); }}, "Lançar conta")),
-    e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-3"},
-      e("div",{className:"rounded-lg border-2 border-success/60 bg-success/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Já pago"+(mes ? " em "+nomeMes(mes) : "")), e("div",{className:"text-[20px] font-semibold tabular-nums text-success"}, BKC(hPago)), e("div",{className:"text-[11px] text-foreground"}, hPct+"% do total")),
-      e("div",{className:"rounded-lg border-2 border-warning/60 bg-warning/10 px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Falta pagar"), e("div",{className:"text-[20px] font-semibold tabular-nums text-warning"}, BKC(hFalta)), e("div",{className:"text-[11px] text-foreground"}, (100-hPct)+"% do total"+(atrasadas.length ? " · "+atrasadas.length+" atrasadas na lista" : ""))),
-      e("div",{className:"rounded-lg border border-border bg-card px-3 py-1.5 text-center"}, e("div",{className:"text-[11px] font-medium uppercase tracking-[.05em] text-foreground"}, "Total do mês"), e("div",{className:"text-[20px] font-semibold tabular-nums text-foreground"}, BKC(hTot)), e("div",{className:"mt-1 h-2 overflow-hidden rounded bg-white/10"}, e("div",{className:"h-full bg-success", style:{width:hPct+"%"}})))),
-    e("p",{className:"text-center text-[11px] text-foreground"}, srvEm ? "Lido direto da DevMaster"+(quandoDm ? " em "+quandoDm : "")+", atualiza a cada 10 minutos. Já pago = baixas do mês pela data de débito. Falta pagar = títulos em aberto que vencem no mês." : doAdmin ? "Valores do admin antigo"+(quandoAtu ? " · atualizado "+quandoAtu : "")+". A lista embaixo vem do relatório do DevMaster e ainda não tem as baixas feitas depois." : "Soma das contas da lista."),
-    filtrosAb && e(BlocoFiltros,{onLimpar:filtrado ? limpar : null},
-      e(CampoSel,{t:"Período", id:"cp-per", value:per, onChange:function(v){ setPer(v); setLim(100); }, opcoes:PERIODOS}),
-      e(CampoSel,{t:"CNPJ", id:"cp-cnpj", value:filial, onChange:function(v){ setFilial(v); setLim(100); }, opcoes:[["", "Todos"]].concat(FILIAIS.map(function(x){ return [x[0], x[1]+(x[0]==="fora" ? "" : " · "+x[2])]; }))}),
-      e(CampoSel,{t:"Nota", id:"cp-nota", value:nota, onChange:function(v){ setNota(v); setLim(100); }, opcoes:NOTAS}),
-      e(CampoSel,{t:"Natureza", id:"cp-nat", value:nat, onChange:function(v){ setNat(v); setLim(100); }, opcoes:[["", "Todas"]].concat(nats.map(function(x){ return [x, x]; }))}),
-      e(CampoSel,{t:"Ordenar por", id:"cp-ord", value:ord, onChange:setOrd, opcoes:ORDENS}),
-      e(CampoBusca,{t:"Buscar", id:"cp-busca", value:busca, placeholder:"Fornecedor, natureza ou valor", onChange:function(v){ setBusca(v); setLim(100); }})),
-    cnpjAb && e("div",{className:"flex flex-col gap-2"}, blocoCnpj("Pago", pagos, "text-success", pagos.length+" pagamentos"), blocoCnpj("A pagar", abertos, "text-warning", abertos.length+" contas", atrasadas)),
-    e(AbasTela,{abas:ABAS, atual:aba, onMudar:function(k){ setAba(k); setLim(100); if(k==="quando"){ setPer(""); } }}),
-    aba==="quando" ? e("div",{className:"flex flex-col gap-2"}, e("h3",{className:"text-[13px] font-semibold text-foreground"}, "Em aberto por dia, semana e CNPJ · clique no valor para ver a lista"), quando) : lista);
+    e(BlocoPainel,{titulo:escopo==="apagar" ? "Contas a pagar" : escopo==="pagas" ? "Contas pagas" : "Contas a pagar e pagas", compacto:true},
+      // controles compactos numa faixa azul: visão (Separado | Total), situação (A pagar | Pagas | Todas) e mês (Marcus, 12/11/2026)
+      e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1"},
+        grupoBtn([["lista", "Separado"], ["dia", "Total"]], vista, setVista),   // o Total muda com a aba do período: Dias, Meses ou Anos
+        grupoBtn([["apagar", "A pagar"], ["pagas", "Pagas"], ["todas", "Todas"]], escopo, function(k){ setEscopo(k); if(k==="pagas") setPer({atras:false}); }),
+        e(SeletorPeriodo,{anoAtual:anoAtual, anos:anosHist.concat([anoAtual]), carr:carr, per:per, setPer:setPer, comAtraso:ABERTO})),
+      vista!=="lista" ? e(TabelaPlanilha,{key:escopo+vista, cols:colsDia, linhas:linhasDia, chave:"id", grade:true, semContagem:true, vazio:"Nenhuma conta."}) : e(TabelaPlanilha,{key:escopo, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, soNoTexto:true, limite:200, aoClicar:aoClicar, linhaCls:function(l){ return l.filho || (l.grupo && grAb[l.k]) ? "bg-white/[0.16]" : ""; }, vazio:"Nenhuma conta neste filtro."})));
 }
 
-export { AbaCtaLista };
+function AbaCtaLista(){ return e(TelaContas,{modo:"pagar"}); }
+function AbaCtaPagas(){ return e(TelaContas,{modo:"pagas"}); }
+export { AbaCtaLista, AbaCtaPagas };

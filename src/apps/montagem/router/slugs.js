@@ -41,7 +41,7 @@ export const SLUG_DA_ABA = {
   agmetas: "comissoes-metas-agendamento",
   ctapagar: "contas-a-pagar-empresa-e-familia",
   ctalista: "contas-a-pagar",
-  pagaspordia: "pagas-por-dia",
+  pagaspordia: "contas-pagas",
   emprestimos: "emprestimos",
   chavespix: "chaves-pix-e-regras",
   chavespixbanco: "chaves-pix-dos-bancos",
@@ -62,8 +62,7 @@ export const SLUG_DA_ABA = {
   pfprest: "pf-prestadores",
   pfcadastro: "pf-cadastro",
   direcionar: "direcionar-pix",
-  dircontas: "pagamentos-contas-das-representantes",
-  dirregras: "pagamentos-regras-do-pix",
+  dirregras: "pagamentos-contas-das-representantes",
   ffhome: "ff-home",
   ffcontas: "ff-contas-a-pagar",
   ffpagas: "ff-contas-pagas",
@@ -242,7 +241,7 @@ export const SLUG_DA_ABA = {
 export const ABA_DO_SLUG = Object.keys(SLUG_DA_ABA).reduce(function (acc, aba) {
   acc[SLUG_DA_ABA[aba]] = aba;
   return acc;
-}, { melhorias: "melhorias" });   // endereço antigo dos Chamados (até 02/11/2026)
+}, { melhorias: "melhorias", "pagamentos-regras-do-pix": "dirregras" });   // link antigo das Regras do Pix abre Contas das representantes (12/11/2026)   // endereço antigo dos Chamados (até 02/11/2026)
 
 export const ABA_INICIAL = "painel";
 

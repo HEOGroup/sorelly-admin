@@ -18,10 +18,10 @@ function cpDemo(){
 }
 // Pix para representantes e para os sócios (21/10/2026): representantes viram destinos; "Marcus PF" vira um destino por sócio (cada um ligado à persona do Financeiro familiar) e as orientações do dia entram do arquivo local
 var HOJE_LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/controle-hoje.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(x){ return null; } })();
-var SOCIOS_FAM = [["Marcus", "marcus"], ["Anamaria", "anamaria"], ["Ana Beatriz", "anabeatriz"], ["Marco Antonio", "marco"]];
+var SOCIOS_FAM = [["Marcus", "marcus"], ["Anamaria", "anamaria"], ["Ana Beatriz", "anabeatriz"], ["Marco Antonio", "marco"], ["Lucas", "lucas"]];   // Lucas entra (12/11/2026): sem personaId o destino dele não mostrava as contas
 function cpAjustar(cp){
   cp = JSON.parse(JSON.stringify(cp));
-  var tem = function(n){ return cp.destinos.find(function(x){ return x.nome===n; }); };
+  var tem = function(n){ return cp.destinos.find(function(x){ return x.nome===n; }) || (n==="Lucas" ? cp.destinos.find(function(x){ return x.tipo==="FAMILIA" && String(x.nome).toLowerCase()==="lucas"; }) : null); };   // o destino do Lucas veio como LUCAS em maiúsculas
   var novo = function(nome, tipo, extra){ cp.destinos.push(Object.assign({id:uid("d"), nome:nome, tipo:tipo, cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true}, extra||{})); };
   var pf = tem("Marcus PF"); if(pf){ pf.nome = "Marcus"; pf.personaId = "marcus"; }
   if(!tem("CNPJ H&O · H&O Apps")) novo("CNPJ H&O · H&O Apps", "CNPJ", {cnpjId:"HO"});   // H&O também recebe Pix (Marcus, 26/10/2026)

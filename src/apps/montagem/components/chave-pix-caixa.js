@@ -9,6 +9,6 @@ import { e } from "@/shared/react";
 export function ChavePixCaixa(p){
   var cx = use(), conta = contaDaCaixa(cx.state.px, p.caixa[0]), chave = (conta && conta.chave) || "";
   return e("input",{key:p.caixa[0]+"|"+chave, defaultValue:chave, placeholder:"chave Pix", "aria-label":"Chave Pix de "+p.caixa[1], disabled:p.edita===false,
-    className:INPUT+" h-8! "+(p.className||"w-52")+" text-center text-[12px]!", onClick:function(ev){ ev.stopPropagation(); },
+    className:INPUT+" h-8! "+(p.className||"w-52")+" text-center text-[11px]!", onClick:function(ev){ ev.stopPropagation(); },
     onBlur:function(ev){ var v = ev.target.value.trim(); if(v!==chave) cx.dispatch({type:"PX", op:"caixa_chave", caixaId:p.caixa[0], nome:p.caixa[1], cnpj:p.caixa[2], chave:v, em:Date.now(), por:nomeDe(cx.state.usuario)}); }});
 }

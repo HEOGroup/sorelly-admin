@@ -78,9 +78,9 @@ function sugerir(pix, ctx){
   var porTipo = function(t){ return cp.destinos.filter(function(d){ return d.ativo && d.tipo===t; }); };
   var link = (pix.pagos||[]).filter(function(p){ return (p.forma==="link") && p.cnpj; })[0], temGetnet = (pix.pagos||[]).some(function(p){ return p.forma==="getnet"; });
   var urg = (ctx.cnpjs || []).slice().sort(function(a, b){ return ((b.hoje+b.amanha)-b.disp) - ((a.hoje+a.amanha)-a.disp); });
-  var add = function(d, motivo, valor, n){ if(!d || opcoes.some(function(o){ return o.destinoId===d.id; })) return; opcoes.push({destinoId:d.id, nome:d.nome, motivo:motivo, valor:valor==null ? pix.valor : r2(valor), regra:n}); };
+  var add = function(d, motivo, valor, n, conta){ if(!d || opcoes.some(function(o){ return o.destinoId===d.id; })) return; opcoes.push({destinoId:d.id, nome:d.nome, motivo:motivo, valor:valor==null ? pix.valor : r2(valor), regra:n, conta:conta || ""}); };
   // conta fixa da representante (24/10/2026): a que o Lucas marcou; sem marca, o CNPJ da maquininha ou do link dela. Valor fora do normal NÃO usa conta fixa: sobe para o Lucas definir.
-  var limite = ctx.limiteAlto || 7000, alto = pix.valor>=limite;
+  var limite = ctx.limiteAlto || LIMITE_ALTO_PADRAO, alto = pix.valor>=limite;
   var normN = function(x){ return String(x||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, ""); };
   var ex = ctx.regrasPx||[], cen = cenarioPix(pix);
   for(var ix=0; ix<ex.length; ix++){
@@ -105,7 +105,7 @@ function sugerir(pix, ctx){
       var xt = (ctx.contasRepExtra||{})[chaveFixa] || {}, hoje0 = new Date().toISOString().slice(0, 10);
       if(d0 && xt.ate && xt.ate<hoje0){ d0 = null; resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem+" venceu em "+xt.ate.split("-").reverse().join("/"), estado:"info"}); }
       else if(d0 && xt.limite>0 && pix.valor>xt.limite){ d0 = null; resumo.push({n:11, texto:"Pix acima do limite da conta fixa de "+pix.repOrigem+" ("+brl(xt.limite)+")", estado:"info"}); }
-      if(d0){ add(d0, "Conta fixa de "+pix.repOrigem+", marcada pelo Lucas.", null, 11); resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem, estado:"usada"}); }
+      if(d0){ add(d0, "Conta fixa de "+pix.repOrigem+", marcada pelo Lucas.", null, 11, xt.conta); resumo.push({n:11, texto:"Conta fixa de "+pix.repOrigem, estado:"usada"}); }
       else { var cn = ctx.cnpjDaRep ? ctx.cnpjDaRep(pix.repOrigem) : ""; var dc0 = cn ? dest("CNPJ "+cn) : null;
         if(dc0){ add(dc0, "A maquininha ou o link de "+pix.repOrigem+" é do CNPJ "+cn+".", null, 12); resumo.push({n:12, texto:"Maquininha ou link de "+pix.repOrigem+": CNPJ "+cn, estado:"usada"}); } }
     }
@@ -154,10 +154,10 @@ function dpReduz(s, a){
     case "rep_remover": { dp.pix = dp.pix.filter(function(x){ return !(x.pid===a.pid && x.status==="fila"); }); return ok(); }
     case "reabre": { var p3 = pix(a.id); if(!p3) return recusa("Pix não encontrado."); p3.status = "fila"; delete p3.confirmadoPor; delete p3.confirmadoEm; return ok("Pix voltou para a fila"); }
     case "regra": { var r = dp.regras.find(function(x){ return x.id===a.id; }); if(!r) return recusa("Regra não encontrada."); Object.assign(r, a.patch); return ok(); }
-    case "fixa": { dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {}; if(a.destinoId) dp.contasRep[a.rep] = a.destinoId; else { delete dp.contasRep[a.rep]; delete dp.contasRepExtra[a.rep]; } return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
+    case "fixa": { dp.contasRep = dp.contasRep || {}; dp.contasRepExtra = dp.contasRepExtra || {}; if(a.destinoId){ dp.contasRep[a.rep] = a.destinoId; dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep] || {}, {conta:a.conta || ""}); } else { delete dp.contasRep[a.rep]; delete dp.contasRepExtra[a.rep]; } return ok(a.destinoId ? "Conta fixa de "+a.rep+" salva" : "Conta fixa de "+a.rep+" solta"); }
     case "aplicar_maq": { var rm = dpAplicarMaquininhas(s); dp.contasRep = rm.dp.contasRep; dp.contasRepExtra = rm.dp.contasRepExtra; dp.maqV = 1; return ok(rm.n ? rm.n+" representante(s) com a conta fixa da maquininha ou do link" : "Nenhuma representante nova para aplicar"); }
     case "fixa_extra": { dp.contasRepExtra = dp.contasRepExtra || {}; var xe = dp.contasRepExtra[a.rep] = Object.assign({}, dp.contasRepExtra[a.rep], a.patch||{}); if(!xe.ate && !(xe.limite>0) && !xe.auto && !xe.conferida) delete dp.contasRepExtra[a.rep]; return ok(); }
-    case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || 7000; return ok("Valor fora do normal salvo"); }
+    case "limite": { dp.limiteAlto = Math.max(0, Number(a.valor)||0) || LIMITE_ALTO_PADRAO; if(a.marca) dp.limite3000 = true; return ok("Valor fora do normal salvo"); }
     case "demo": { dp.pix = dpDemo().pix; return ok("Pedidos de teste recarregados"); }
     // pedido do ATENDIMENTO INTERNO (Marcus, 09/11/2026): a funcionária deu "OK, enviar ao financeiro" e algum pagamento ainda não tem conta (Pix, link).
     // Entra na fila do Direcionar para TODO o Financeiro (servidor, módulo "pag"); ao confirmar, a conta volta para a Atendimento Sorelly (reducer DP).
@@ -178,4 +178,6 @@ function dpReduz(s, a){
   }
   return recusa("Ação desconhecida.");
 }
-export { REGRAS0, dpDemo, dpReduz, sugerir, dpAplicarMaquininhas };
+// Pix a partir deste valor é "fora do normal": não usa a conta fixa e sobe para a fila do Direcionar (Marcus, 12/11/2026: R$ 3.000,00; antes R$ 7.000,00).
+var LIMITE_ALTO_PADRAO = 3000;
+export {LIMITE_ALTO_PADRAO,  REGRAS0, dpDemo, dpReduz, sugerir, dpAplicarMaquininhas };

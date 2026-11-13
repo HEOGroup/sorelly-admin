@@ -5,8 +5,8 @@ import { globLocal } from "@/lib/glob-local";
 // O saldo de fim de mês NÃO é digitado: é o total das contas no último dia lançado do mês. Saldo início = saldo fim do mês anterior.
 // Estrutura copiada do admin (blocos e contas, sem saldos nem limites: os limites de cheque especial são preenchidos em Configurador).
 var BLOCOS0 = [
-  {id:"34", nome:"Sorelly Atac · 34"}, {id:"46", nome:"Mayz Comércio · 46"}, {id:"59", nome:"Serenity · 59"}, {id:"67", nome:"Axis · 67"},
-  {id:"HO", nome:"H&O"}, {id:"PART", nome:"Particular"}, {id:"DIN", nome:"Dinheiro"}, {id:"BLOQ", nome:"Bloqueado / A receber"}];
+  {id:"34", nome:"CNPJ 34 · Sorelly"}, {id:"46", nome:"CNPJ 46 · Mayz"}, {id:"59", nome:"CNPJ 59 · Serenity"}, {id:"67", nome:"CNPJ 67 · Axis"},
+  {id:"HO", nome:"CNPJ H&O · Apps"}, {id:"PART", nome:"Particular"}, {id:"DIN", nome:"Dinheiro"}, {id:"BLOQ", nome:"Bloqueado / A receber"}];
 var TIPOS_CONTA = {PJ:"Empresa", PF:"Pessoa física", CAIXA:"Caixa / aplicação"};
 // [id, nome, bloco, tipo, bloqueada]
 var CONTAS_LISTA = [

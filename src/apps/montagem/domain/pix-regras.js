@@ -211,4 +211,6 @@ function chavePixRep(chaves, nomeRep){ var mine = nrNome(nomeRep); if(!mine) ret
 // conta Pix (com chave) ligada a uma conta bancária do Caixa
 function contaDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId; }) || null : null; }
 function pixDaCaixa(px, caixaId){ return px ? (px.contas||[]).find(function(c){ return c.caixaId===caixaId && c.chave; }) || null : null; }
-export {funcSeed, chaveAdminDaConta, extrasSeed, chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };
+// Pix acima deste valor: é OBRIGATÓRIO ligar para o Financeiro antes de enviar (Marcus, 12/11/2026). Aparece no alto das Regras do Pix.
+var LIMITE_LIGAR_FINANCEIRO = 3000;
+export {LIMITE_LIGAR_FINANCEIRO, funcSeed, chaveAdminDaConta, extrasSeed, chavePixRep, extraSeed, cpAplicarExtras, TEM_CHAVES_ADMIN, pxAplicarChavesAdmin, contaDaCaixa, pixDaCaixa, pxMigrar, repPixDe, contaFixaRep, CNPJS, TIPOS_CONTA, pxDemo, pxReduz, pxAplicar, pxDividir, sugerirPix, cnpjDaConta, contaPorLabel, pxRepEnviado, cnpjDoTexto };

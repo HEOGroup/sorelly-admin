@@ -99,3 +99,19 @@
 :root { --bloco-titulo: #2d5190; --bloco-colunas: #1f3358; }
 /* VERDE E VERMELHO DO ESTADO (Marcus, 12/11/2026: "um vermelho padrão para a tela inteira"): positivo/pago = --positivo, negativo/atrasado = --negativo. Trocar aqui muda a tela inteira (hoje só o Direcionar usa). */
 :root { --positivo: #4ade80; --negativo: #f87171; }
+
+/* SEM BARRA DE ROLAGEM EM LUGAR NENHUM (Marcus, 12/11/2026: "eu não quero essa barra em nada"): a rolagem continua com a roda do mouse, o toque e o arrastar das tabelas; só a barra cinza some. */
+* { scrollbar-width: none; -ms-overflow-style: none; }
+*::-webkit-scrollbar { display: none; width: 0; height: 0; }
+
+/* Barra de rolagem grossa e visível (Marcus, 12/11/2026): planilhas largas, como Contas bancárias. A regra geral acima esconde as outras. */
+.barra-grossa { scrollbar-width: auto !important; scrollbar-color: rgba(255,255,255,.55) rgba(255,255,255,.12); }
+.barra-grossa::-webkit-scrollbar { display: block !important; width: 18px !important; height: 18px !important; }
+.barra-grossa::-webkit-scrollbar-track { background: rgba(255,255,255,.12); }
+.barra-grossa::-webkit-scrollbar-thumb { background: rgba(255,255,255,.55); border-radius: 9px; border: 3px solid transparent; background-clip: padding-box; }
+.barra-grossa::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.75); background-clip: padding-box; }
+
+/* Contas bancárias (Marcus, 12/11/2026): na edição, a célula de HOJE pulsa bem de leve para mostrar onde digitar */
+@keyframes pulso-leve { 0%,100% { background-color: rgba(251,191,36,0); } 50% { background-color: rgba(251,191,36,.16); } }
+.pulso-leve { animation: pulso-leve 2.8s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pulso-leve { animation: none; background-color: rgba(251,191,36,.10); } }

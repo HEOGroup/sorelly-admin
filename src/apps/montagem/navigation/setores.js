@@ -13,15 +13,12 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  M("Direcionar","direcionar"),   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): saiu de dentro de Pagamentos
-  M("Regras e contas","dirregras"),   // Controle de pagamentos foi excluído (Marcus, 12/11/2026: era igual ao Direcionar)
-  {nome:"Saldo das contas", itens:[M("Contas bancárias","caixa"), M("Dinheiro","dinheiro"), M("Taxas e adquirentes","adquirentes")]},   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
+  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Contas das representantes","dirregras"), M("Chaves Pix","chavespixbanco")]},   // Chaves Pix = TERCEIRA tela de Pagamentos (Marcus, 12/11/2026); antes ficava em Contas   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): duas telas, Direcionar e Contas das representantes (esta com Valor fora do normal e as Regras do Pix); a tela Regras e contas deixou de existir
+  M("Contas bancárias","caixa"),   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
-    M("Contas a pagar","ctalista"),
-    M("Chaves Pix","chavespixbanco"),   // TODAS as chaves Pix num lugar só (Marcus, 04/11/2026)
-    M("Pagas por dia","pagaspordia"),   // escolhe o dia e vê quanto foi pago, por CNPJ (Marcus, 29/10/2026)
-    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
-    {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]}]},
+    M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
+    {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
+    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
@@ -30,7 +27,7 @@ var MENU_FINANCEIRO = [
     M("Link de pagamento","linkrel")]},
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
-  {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
+  {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
 ];
 // Fiscal (Marcus, 12/11/2026): saiu do Financeiro e virou setor próprio, logo abaixo dele.
 var MENU_FISCAL = [M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")];
@@ -134,7 +131,7 @@ var SETORES = [
   // Agendamento (acertos): trazido do SorellyAdmin: painel mensal, cotas por representante, abertura, configurador, análises e histórico
   {id:"financeiro", nome:"Financeiro", ic:"banco", cor:"#3B82F6", menu:MENU_FINANCEIRO, areas:[
     {nome:"Resultado", telas:[T("resultado","Resultado do mês")]},
-    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Regras e contas")]},
+    {nome:"Pagamentos", telas:[T("direcionar","Direcionar"), T("dirregras","Contas das representantes")]},
     G("Saldo das\ncontas", [
       ["Contas bancárias", [I("caixa","Contas bancárias",["Contas Bancárias → Visão geral, Lançamento diário, Histórico e Configurador","Faturamento vs Contas a Pagar → Saldos bancários (agora calculado sozinho)"])]],
       ["Chaves Pix", [T("chavespixbanco","Chaves Pix"), T("chavespix","Contas Pix")]],
@@ -142,7 +139,7 @@ var SETORES = [
       ["Adquirentes e taxas", [T("adquirentes","Taxas e adquirentes")]]]),
     // Contas a pagar: tela única (empresa por CNPJ + família) e, dentro da mesma área, o Financeiro familiar (decisão do Marcus de 19/10/2026: o familiar fica dentro do Contas a pagar)
     G("Contas a\npagar", [
-      ["Contas a pagar", [T("ctalista","Contas a pagar"), T("pagaspordia","Pagas por dia"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
+      ["Contas a pagar", [T("ctalista","A pagar / Pagas"), T("pagaspordia","Contas pagas"), T("ctapagar","Análise de custos"), T("emprestimos","Empréstimos")]],
       ["Financeiro familiar", [T("ffhome","Home da família"), T("ffcontas","Contas a pagar da família"), T("ffpagas","Contas pagas da família"), T("ffpix","PIX revendedoras"), T("ffgrupo","Resumo do grupo")]],
       ["Família: gestão e análise", [T("ffsocios","Sócios"), T("ffprest","Cadastro de prestadores"), T("ffprolab","Pró-labores"), T("ffrelatorio","Relatório"), T("ffhist","Histórico"), T("ffconfig","Configurações da família")]]]),
     G("Pagamentos a\nfornecedores", [

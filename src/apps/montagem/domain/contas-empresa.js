@@ -14,7 +14,7 @@ var FUTURAS = (function(){ try { var m = globLocal("apps/montagem/domain/contas-
 var ANO = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa-ano.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/contas-empresa.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
-var FILIAIS = [["34","CNPJ 34","Sorelly Atacadista"], ["46","CNPJ 46","Mayz Comércio"], ["59","CNPJ 59","Serenity"], ["67","CNPJ 67","Axis Joias"], ["ho","H&O Apps","Empresa de aplicativos"], ["fora","Por fora","Pessoal, Pix e fora dos CNPJs"]];
+var FILIAIS = [["34","CNPJ 34","Sorelly"], ["46","CNPJ 46","Mayz"], ["59","CNPJ 59","Serenity"], ["67","CNPJ 67","Axis"], ["ho","H&O Apps","Empresa de aplicativos"], ["fora","Por fora","Pessoal, Pix e fora dos CNPJs"]];
 var G = {folha:"Folha e pessoal", enc:"Encargos da folha", bruto:"Bruto", banho:"Banho", grafico:"Material gráfico e embalagem", outros:"Outros fornecedores", prest:"Prestadores de serviço", rep:"Representantes", comfunc:"Comissões de funcionários", seg:"Segurança", socios:"Sócios e despesas pessoais", mkt:"Sistemas e tecnologia", trafego:"Marketing e tráfego pago", fin:"Financeiro (empréstimos, juros)", imp:"Impostos", adm:"Administrativo", axis:"Axis e H&O"};
 var GRUPOS = [G.folha, G.enc, G.bruto, G.banho, G.grafico, G.outros, G.prest, G.rep, G.comfunc, G.seg, G.socios, G.trafego, G.mkt, G.fin, G.imp, G.adm, G.axis];
 // fornecedores conhecidos (20/10/2026): [teste no nome, nome único, grupo]. Um fornecedor = uma linha, mesmo pago por CNPJs e formas diferentes. Ellos (banho) NÃO é a Art Ello (bruto), só do mesmo grupo de empresas.
@@ -97,6 +97,22 @@ var _cache = null;
 var SERV = null;
 function definirContasServidor(d){ SERV = d && d.apagar ? d : null; _cache = null; }
 function servidorEm(){ return SERV ? SERV.geradoEm || "ok" : null; }   // hora da última leitura da DevMaster; null = ainda usa os arquivos locais
+// HISTÓRICO (Marcus, 12/11/2026): contas PAGAS de anos anteriores (2022 a 2025), lidas da DevMaster sob demanda, um ano por vez. NÃO entram em baseItens/filtrar (as outras telas não mudam):
+// só a tela A pagar / Pagas soma historicoItens() ao que já tem. Nada vem do admin antigo.
+var HIST = {}, HIST_CACHE = null;
+function definirHistorico(ano, pagas){ HIST[String(ano)] = pagas || []; HIST_CACHE = null; }
+function anosCarregados(){ return Object.keys(HIST).sort(); }
+function historicoItens(){
+  if(HIST_CACHE) return HIST_CACHE;
+  var out = [], vistos = {};
+  Object.keys(HIST).sort().forEach(function(ano){ HIST[ano].forEach(function(x, i){
+    var i2 = {id:"h"+ano+"-"+i, status:"pago", filial:x[0], nat:x[1], natNome:bonito(x[2]), pref:x[3], num:x[4], parc:x[5], forn:x[6], nome:bonito(x[7]) || "(sem fornecedor)", baixa:x[8], venc:x[9], valor:x[10], grupo:grupoDe(x[1], x[2], x[7]), pessoalPadrao:ehPessoal(x[1], x[2]), mes:ym(x[8]), outroMes:ym(x[9])!==ym(x[8])};
+    decora(i2);
+    var base = ["h", i2.filial, i2.nat, i2.pref, i2.num, i2.parc, i2.forn, i2.valor.toFixed(2), i2.baixa].join("|"); vistos[base] = (vistos[base]||0)+1; i2.chave = base+"#"+vistos[base];
+    out.push(i2);
+  }); });
+  HIST_CACHE = out; return out;
+}
 function baseItens(){
   if(_cache) return _cache;
   var pagas = ((SERV && SERV.pagas) || ((ANO && ANO.itens) || []).concat((LOCAL && LOCAL.itens) || [])).map(function(x, i){
@@ -271,4 +287,4 @@ function conciliar(ff, mes){
 }
 
 function naturezasConhecidas(){ var o = {}; baseItens().forEach(function(i){ o[i.nat] = i.natNome; }); return Object.keys(o).sort().map(function(c){ return [c, o[c]]; }); }
-export { servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };
+export { definirHistorico, anosCarregados, historicoItens, servidorEm, definirContasServidor, NEGOCIACOES, G, SETOR_PAI, setorDe, setPf, naturezasConhecidas, setLancamentos, bonusNickolas, setClasse, setBaixas, pagoDe, ehFam, famTotais, conciliar, FILIAIS, GRUPOS, itensEmpresa, temDados, meses, filtrar, soma, totais, porFilial, agrupar, grupoDe };

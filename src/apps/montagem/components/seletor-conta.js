@@ -4,13 +4,10 @@
 // nos = [{nome, itens:[...]}] ou folha {nome, id, conta}. onEscolher(id, conta).
 import { createPortal } from "react-dom";
 import { CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { nomePropio as bonito } from "@/apps/montagem/lib/nome-conta";   // escrita padrão dos nomes: uma fonte só (lib/nome-conta.js)
 import { e, Fragment, useEffect, useState } from "@/shared/react";
 
 var LARG = 300;
-// Escrita padrão dos nomes no seletor: palavra TODA EM MAIÚSCULA vira Nome Próprio (LUCAS → Lucas); siglas (CNPJ, PF, ITM...) e palavras com número ficam; de/da/do/e ficam minúsculas.
-var MINUSCULAS = {de:1, da:1, do:1, dos:1, das:1, e:1};
-var SIGLAS = /^(CNPJ|CPF|PF|PJ|ITM|ME|MEI|LTDA|EPP|HO|H&O|PIX|DM|SC|TI|RH|SA|NF|II|III|IV)$/;
-function bonito(txt){ return String(txt==null ? "" : txt).split(" ").map(function(w){ if(!w || /d|[$]/.test(w) || !/^[A-Za-zÀ-ÿ]/.test(w) || SIGLAS.test(w) || w!==w.toUpperCase() || w===w.toLowerCase()) return w; var l = w.toLowerCase(); return MINUSCULAS[l] ? l : l.charAt(0).toUpperCase()+l.slice(1); }).join(" "); }
 var norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); };
 
 function SeletorConta(p){
@@ -20,7 +17,7 @@ function SeletorConta(p){
     var esc = function(ev){ if(ev.key==="Escape") setAberto(null); };
     window.addEventListener("keydown", esc); return function(){ window.removeEventListener("keydown", esc); };
   }, [aberto]);
-  var abre = function(ev){ if(aberto){ setAberto(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAberto({r:{l:r.left, b:r.bottom, w:r.width}, caminho:[], q:""}); };
+  var abre = function(ev){ if(aberto){ setAberto(null); return; } var rb = ev.currentTarget.getBoundingClientRect(), cel = p.centro && ev.currentTarget.closest ? ev.currentTarget.closest("td") : null, r = cel ? cel.getBoundingClientRect() : rb; setAberto({r:{l:r.left, b:rb.bottom, w:r.width}, caminho:[], q:""}); };
   var atual = aberto ? (aberto.caminho.length ? aberto.caminho[aberto.caminho.length-1] : {nome:p.titulo || "Escolha a conta", itens:p.nos || []}) : null;
   var lista = atual ? atual.itens : [], muitos = lista.length>10;
   var q = aberto ? norm(aberto.q) : "", filtrada = muitos && q ? lista.filter(function(n){ return norm(n.nome).indexOf(q)>=0; }) : lista;
@@ -33,7 +30,7 @@ function SeletorConta(p){
       (p.centro ? null : e("span",{className:"shrink-0 text-[11px]"}, lista.length+(lista.length===1 ? " opção" : " opções")))),
     muitos && e("div",{className:"border-b border-border p-1.5"}, e("input",{type:"search", autoFocus:true, value:aberto.q, placeholder:"Buscar…", "aria-label":"Buscar conta", onChange:function(ev){ setAberto(Object.assign({}, aberto, {q:ev.target.value})); }, className:"h-7 w-full rounded-md border border-border bg-card px-2 text-[13px] text-white outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
     lista.length>0 && lista[0].heads && e("div",{className:"flex gap-2 border-b border-border bg-[var(--bloco-colunas)] px-3 py-1 text-[11px] font-medium uppercase tracking-[.05em] text-white"}, lista[0].heads.map(function(h, k){ return e("span",{key:k, className:(p.centro && k===0 ? "text-left" : "text-center")+(k>0 && lista[0].w && lista[0].w.length===2 ? " pl-4" : ""), style:{width:(lista[0].w ? lista[0].w[k] : 100/lista[0].heads.length)+"%"}}, h); })),
-    e("div",{className:(p.centro ? "h-56" : "max-h-56")+" overflow-y-auto"}, filtrada.length ? filtrada.map(function(no, i){
+    e("div",{className:(p.centro ? "h-44" : "max-h-56")+" overflow-y-auto overflow-x-hidden"}, filtrada.length ? filtrada.map(function(no, i){
       return e("button",{key:no.nome+i, type:"button", onClick:function(){ entra(no); }, className:"flex min-h-7 w-full items-center justify-between gap-2 border-b border-border px-3 py-0.5 text-left text-[13px] leading-snug last:border-b-0 hover:bg-[#B8862B]"},
         no.cols ? e(Fragment,null, no.cols.map(function(t, k){ return e("span",{key:k, className:"min-w-0 whitespace-nowrap "+(p.centro && k===0 ? "text-left" : "text-center")+(k===0 ? " font-semibold" : "")+(k>0 && no.w && no.w.length===2 ? " pl-4" : ""), style:Object.assign({width:(no.w ? no.w[k] : 100/no.cols.length)+"%"}, no.cores && no.cores[k] ? {color:no.cores[k]} : {}), title:bonito(t)}, bonito(t)); }))
           : e("span",{className:"min-w-0 flex-1 break-words"}, bonito(no.nome)), no.itens && e("span",{"aria-hidden":true, className:"shrink-0 text-[11px]"}, no.itens.length+" ▸")); })
@@ -59,7 +56,7 @@ function SeletorConta(p){
         f1 && f1.heads && e("div",{className:"flex h-8 items-center justify-center gap-2 border-b border-border bg-white/5 px-3 text-[11px] font-medium uppercase tracking-[.05em]"}, f1.heads.map(function(h, k){ return e("span",{key:k, className:"min-w-0 flex-1 text-center"}, h); })),
         corpo); })));
   return e(Fragment,null,
-    e("button",{type:"button", "aria-label":p.rotulo, title:p.texto, onClick:abre, className:CAMPO+" !h-auto min-h-8 w-full min-w-0 max-w-full items-center gap-2 py-0.5 flex "+(p.centro ? "justify-center text-center" : "justify-between text-left")}, e("span",{className:"min-w-0 flex-1 leading-snug "+(p.semQuebra ? "whitespace-nowrap" : "break-words")+(p.vazio ? " text-foreground/70" : "")}, bonito(p.texto)), e("span",{"aria-hidden":true, className:"shrink-0"}, "▾")),
+    e("button",{type:"button", "aria-label":p.rotulo, title:p.texto, onClick:abre, style:p.cor ? {background:"color-mix(in srgb, "+p.cor+" 34%, transparent)"} : undefined, className:(p.cor ? "!rounded-[14px] !border-0 font-semibold " : "")+CAMPO+" !h-auto min-h-8 w-full min-w-0 max-w-full items-center gap-2 py-0.5 flex "+(p.centro ? "relative justify-center pr-6 text-center" : "justify-between text-left")}, e("span",{className:"min-w-0 flex-1 leading-snug "+(p.semQuebra ? "whitespace-nowrap" : "break-words")+(p.vazio ? " text-foreground/70" : "")}, bonito(p.texto)), e("span",{"aria-hidden":true, className:p.centro ? "absolute right-2 top-1/2 -translate-y-1/2" : "shrink-0"}, "▾")),
     aberto && createPortal(e(Fragment,null, e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(null); }}), p.tudo ? painelTudo : painel), document.body));
 }
 
