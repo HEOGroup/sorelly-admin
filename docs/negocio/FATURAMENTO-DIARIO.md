@@ -269,3 +269,20 @@ Valores ACUMULADOS do mês (o dia de cada data é a diferença para o dia anteri
 ### 10/11/2026 (Marcus, conferido com a DevMaster ao centavo)
 - Acumulado: 469 acertos e R$ 371.460,40 (média R$ 792,03). Só o dia: 143 acertos e R$ 127.365,14. Carregar 4. A realizar 1.496 (campos "a realizar" e "carregar" da tela, previsto do mês = 469 + 4 + 1.496 = 1.969).
 - Onde fica: Financeiro › Faturamento (abas Dia a dia, Lançar e Previsão), guardado no servidor no módulo `fd` (faturamentoDiario, contasPagasDiario, fechaMes). Todo dia às 10h o automático confere e completa até ontem.
+
+## Novembro/2026 fechado até 12/11 (Marcus, 12/11/2026, relatório de notas fiscais) — TRAVADO
+Valores ACUMULADOS do mês. Previsto = acertos feitos + Carregar + a realizar. Faturamento previsto = média × acertos previstos a 98%.
+| Dia | Acertos | Recebido | Média | Previsto | 98% do previsto | Faturamento previsto |
+|---|---|---|---|---|---|---|
+| 03/11 | 22 | R$ 15.065,70 | R$ 684,80 | 1.961 | 1.922 | R$ 1.316.185,60 |
+| 04/11 | 58 | R$ 37.595,31 | R$ 648,20 | 1.961 | 1.922 | R$ 1.245.840,40 |
+| 05/11 | 99 | R$ 65.156,26 | R$ 658,14 | 1.961 | 1.922 | R$ 1.264.945,08 |
+| 06 a 08/11 | 207 | R$ 149.507,61 | R$ 722,26 | 1.961 | 1.922 | R$ 1.388.183,72 |
+| 09/11 | 325 | R$ 243.724,66 | R$ 749,92 | 1.961 | 1.922 | R$ 1.441.346,24 |
+| 10/11 | 467 | R$ 370.713,30 | R$ 793,82 | 1.969 | 1.930 | R$ 1.532.072,60 |
+| 11/11 | 523 | R$ 419.455,11 | R$ 802,02 | 1.961 | 1.922 | R$ 1.541.482,44 |
+| **12/11** | **646** | **R$ 527.695,39** | **R$ 816,87** | **1.961** | **1.922** | **R$ 1.570.024,14** |
+- 12/11: Carregar 3, a realizar 1.312 (646 + 3 + 1.312 = 1.961). Carregar informado: 09/11 = 13, 10/11 = 4, 12/11 = 3; 11/11 NÃO foi informado (ficou 0).
+- Corrigem valores gravados antes: 03/11 (R$ 15.065,70, não 15.068,70), 06 a 08/11 (207 e R$ 149.507,61, antes 208), 09/11 (325, antes 326) e 10/11 (467 e R$ 370.713,30, antes 469 e R$ 371.460,40). A DevMaster hoje dá os mesmos números do relatório.
+- Código: dias em `state/fd-patches.js` (por valor, com `travado:true`) e previsto/Carregar por dia em `aplicaFatNov2` (`state/store.js`, flag `fatNov2V` = 1). Média arredondada para cima na metade, como o relatório (R$ 648,195 vira R$ 648,20).
+- Tela: Financeiro › Receber › Faturamento › Faturamento (aba Dia a dia).

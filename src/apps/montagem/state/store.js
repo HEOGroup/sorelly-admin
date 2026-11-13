@@ -223,6 +223,15 @@ function aplicaFatNov(s){
   if(s.fatHoje && s.fatHoje.data<="2026-11-09") s.fatHoje = null;
   return s;
 }
+// 12/11/2026 (Marcus): PREVISTO e CARREGAR de cada dia de novembro. Previsto = acertos feitos + Carregar + a realizar. Dia 12: 646 feitos + 3 no Carregar + 1.312 a realizar = 1.961. Os outros dias repetem 1.961, menos o dia 10 (1.969, valor que o Marcus passou). Carregar informado: 09/11 = 13, 10/11 = 4, 12/11 = 3; nos demais dias não foi informado e fica 0 (11/11 ainda falta o Marcus informar). Os acertos e o recebido de cada dia entram por valor em state/fd-patches.js. Registro em docs/negocio/FATURAMENTO-DIARIO.md
+function aplicaFatNov2(s){
+  var DIAS = [["2026-11-03", 22, 0, 1961], ["2026-11-04", 58, 0, 1961], ["2026-11-05", 99, 0, 1961], ["2026-11-06", 207, 0, 1961], ["2026-11-07", 207, 0, 1961], ["2026-11-08", 207, 0, 1961], ["2026-11-09", 325, 13, 1961], ["2026-11-10", 467, 4, 1969], ["2026-11-11", 523, 0, 1961], ["2026-11-12", 646, 3, 1961]];
+  s.carregarDia = Object.assign({}, s.carregarDia); s.restanteDia = Object.assign({}, s.restanteDia);
+  DIAS.forEach(function(d){ s.carregarDia[d[0]] = d[2]; s.restanteDia[d[0]] = {feitos:d[1], carregar:d[2], aRealizar:d[3]-d[1]-d[2]}; });
+  s.fechaMes = Object.assign({}, s.fechaMes, {"2026-11":{aRealizar:1312, carregar:3}});
+  if(s.fatHoje && s.fatHoje.data<="2026-11-12") s.fatHoje = null;
+  return s;
+}
 // 28/10/2026: Agendamento de outubro com as 28 representantes REAIS do admin antigo (cota e saldo dia a dia, preenchidos pela equipe até 26/10). Troca a lista de demonstração só no mês aberto; meses fechados ficam como estão.
 function aplicaAgendReal(s){
   if(!AG_REAL || !s.agend || !s.agend.config) return s;
@@ -414,6 +423,7 @@ function inicial(){
     if(s.fecha10V!==3){ s.fecha10V = 3; aplicaFechaOut(s); }   // 01/11/2026: outubro fechado, sem funcionários (1.843 acertos, R$ 1.438.133,61)
     if(s.nov26V!==2){ s.nov26V = 2; aplicaAbreNov(s); }
     if(s.fatNov1V!==2){ s.fatNov1V = 2; aplicaFatNov(s); }   // 09/11/2026: faturamento de 01 a 09/11 (321 acertos e R$ 240.392,16 acumulados, 13 no Carregar)   // 01/11/2026: novembro abre com 2.047 revendedoras, 1.975 previstos e Carregar 0
+    if(s.fatNov2V!==1){ s.fatNov2V = 1; aplicaFatNov2(s); }   // 12/11/2026: previsto e Carregar de cada dia de novembro (03 a 12/11)
     aplicaAgendPatches(s);   // 01/11/2026: abertura de novembro, metas 96/97/98% e viagens do Agendamento (ajustes guardados dentro do próprio agend: state/agend-patches.js)
     aplicaFdFixos(s);   // 01/11/2026: setembro e outubro fechados e abertura de novembro, por valor (state/fd-patches.js)
     if(s.metaPct99V!==1){ s.metaPct99V = 1; s.metaPct = 99; }   // 28/10/2026 (Marcus): os acertos estão sendo adiados, quase todos os que faltam vão acontecer: padrão 99%
