@@ -39,9 +39,9 @@ const antes = s.fc.codigos.length; s = FC(s, {op:"cod_add", texto:"BB1620"});
 t("código repetido é recusado", s.fc.codigos.length===antes);
 
 let r = FC(s, {op:"etapa", cod:"BB1620", etapa:"ed"});
-t("não edita sem foto", r.fc.codigos.find(c=>c.cod==="BB1620").edEm==="");
+t("OK em Editada sem foto marca a foto junto", r.fc.codigos.find(c=>c.cod==="BB1620").edEm!=="" && r.fc.codigos.find(c=>c.cod==="BB1620").fotoEm!=="");
 r = FC(s, {op:"etapa", cod:"BB1620", etapa:"sub"});
-t("não sobe sem editar", r.fc.codigos.find(c=>c.cod==="BB1620").subEm==="");
+t("OK na DevMaster sem editar marca foto e edição juntas", F.statusDe(r.fc.codigos.find(c=>c.cod==="BB1620"))==="Na DevMaster" && !!r.fc.codigos.find(c=>c.cod==="BB1620").edEm && !!r.fc.codigos.find(c=>c.cod==="BB1620").fotoEm);
 
 s = FC(s, {op:"etapa", cod:"BB1620", etapa:"foto"});
 let c = s.fc.codigos.find(x=>x.cod==="BB1620");
@@ -63,7 +63,7 @@ s = FC(s, {op:"cod_add", texto:"BB1700 BB1701 BB1702"});
 s = FC(s, {op:"etapa_lote", etapa:"foto", texto:"BB1700 BB1701 NAOEXISTE9 BB1620"});
 t("lote marca só quem estava pronto", F.statusDe(s.fc.codigos.find(x=>x.cod==="BB1700"))==="Fotografada" && F.statusDe(s.fc.codigos.find(x=>x.cod==="BB1702"))==="Sem foto");
 r = FC(s, {op:"etapa_lote", etapa:"sub", texto:"BB1702"});
-t("lote respeita a ordem das etapas", F.statusDe(r.fc.codigos.find(x=>x.cod==="BB1702"))==="Sem foto");
+t("lote: OK na DevMaster marca as etapas de antes", F.statusDe(r.fc.codigos.find(x=>x.cod==="BB1702"))==="Na DevMaster");
 
 const h = F.resumoHoje(s.fc, hoje);
 t("resumo de hoje", h.cadastrados===5 && h.fotografados===3 && h.semFoto===2 && h.faltaEditar===2 && h.faltaSubir===1, JSON.stringify(h));
@@ -135,7 +135,7 @@ let lt = Object.assign({}, base, {fc:{v:1, categorias:[], historico:[], semeado:
 lt = FC(lt, {op:"etapa_lote", etapa:"foto", texto:"a2357014 cl2771\nzz9999"});
 t("lote: grade marca o modelo e as outras grades; código que não existe é ignorado", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.fotoEm) && !!lt.fc.codigos.find(c=>c.cod==="CL2771").fotoEm && !lt.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
 const lr = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"M0802"});
-t("lote: editar exige a foto antes", !lr.fc.codigos.find(c=>c.cod==="M0802").edEm);
+t("lote: Editadas sem foto marca a foto junto", !!lr.fc.codigos.find(c=>c.cod==="M0802").edEm && !!lr.fc.codigos.find(c=>c.cod==="M0802").fotoEm);
 lt = FC(lt, {op:"etapa_lote", etapa:"ed", texto:"A2357"});
 t("lote: editada marca o modelo e as grades que já têm foto", lt.fc.codigos.filter(c=>c.cod.startsWith("A2357")).every(c=>c.edEm));
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");

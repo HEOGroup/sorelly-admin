@@ -212,6 +212,11 @@ function lerCodigos(texto){
 
 // ---------- ação FC (reducer) ----------
 var ETAPAS = {foto:["fotoEm","fotoQuem","Fotografada"], ed:["edEm","edQuem","Editada"], sub:["subEm","subQuem","Na DevMaster"]};
+// OK em uma etapa mais adiante vale para as de antes (quem dá OK na DevMaster não precisa ter marcado a foto e a edição)
+function preencheAntes(c, etapa, agora, por){
+  if((etapa==="ed" || etapa==="sub") && !c.fotoEm){ c.fotoEm = agora; c.fotoQuem = por; }
+  if(etapa==="sub" && !c.edEm){ c.edEm = agora; c.edQuem = por; }
+}
 function fcReduz(s, a){
   var fc = clone(fcMigrar(s.fc)), por = a.por || "—", agora = a.agora || agoraSP(), hoje = hojeSP();
   var recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{fc:fc}, msg:msg}; };
@@ -231,24 +236,24 @@ function fcReduz(s, a){
     case "etapa": {
       var al = alvos(a.cod); if(!al.length) return recusa("Código não encontrado.");
       var e = ETAPAS[a.etapa]; if(!e) return recusa("Etapa inválida.");
-      var mudou = 0, motivo = "Essa etapa já foi marcada.";
-      al.forEach(function(c){ if(c[e[0]]) return; if(a.etapa==="ed" && !c.fotoEm){ motivo = "Marque a foto antes de editar."; return; } if(a.etapa==="sub" && !c.edEm){ motivo = "Marque a edição antes de subir na DevMaster."; return; } c[e[0]] = agora; c[e[1]] = por; mudou++; });
-      if(!mudou) return recusa(motivo);
+      var mudou = 0;
+      al.forEach(function(c){ if(c[e[0]]) return; preencheAntes(c, a.etapa, agora, por); c[e[0]] = agora; c[e[1]] = por; mudou++; });
+      if(!mudou) return recusa("Essa etapa já foi marcada.");
       return ok(a.cod+": "+e[2]);
     }
     case "etapa_lote": {   // marcar uma etapa em vários códigos de uma vez (o Castilho tira 200 fotos e a Ana edita 50: cada um marca o seu lote); grade e modelo valem o mesmo
       var lote = lerCodigos(a.texto), e2 = ETAPAS[a.etapa]; if(!e2) return recusa("Etapa inválida.");
       if(!lote.validos.length) return recusa("Informe os códigos.");
-      var feitos = 0, naoAchou = 0, fora = 0, vistosM = {};
+      var feitos = 0, naoAchou = 0, ja = 0, vistosM = {};
       lote.validos.forEach(function(cod){
         var mo = modeloDe(cod); if(vistosM[mo]) return; vistosM[mo] = true;
         var al2 = alvos(mo); if(!al2.length){ naoAchou++; return; }
         var mudou2 = 0;
-        al2.forEach(function(c2){ if(c2[e2[0]] || (a.etapa==="ed" && !c2.fotoEm) || (a.etapa==="sub" && !c2.edEm)) return; c2[e2[0]] = agora; c2[e2[1]] = por; mudou2++; });
-        if(mudou2) feitos++; else fora++;
+        al2.forEach(function(c2){ if(c2[e2[0]]) return; preencheAntes(c2, a.etapa, agora, por); c2[e2[0]] = agora; c2[e2[1]] = por; mudou2++; });
+        if(mudou2) feitos++; else ja++;
       });
-      if(!feitos) return recusa(naoAchou && !fora ? "Nenhum código foi encontrado." : "Nenhuma peça estava pronta para essa etapa (já marcada ou falta a etapa anterior).");
-      return ok(feitos+(feitos===1 ? " peça marcada" : " peças marcadas")+" como "+e2[2].toLowerCase()+(naoAchou ? " ("+naoAchou+" não encontradas)" : "")+(fora ? " ("+fora+" já marcadas ou fora da ordem)" : ""));
+      if(!feitos) return recusa(naoAchou && !ja ? "Nenhum código foi encontrado." : "Essas peças já estavam com OK nessa etapa.");
+      return ok(feitos+(feitos===1 ? " peça marcada" : " peças marcadas")+" como "+e2[2].toLowerCase()+(naoAchou ? " ("+naoAchou+" não encontradas)" : "")+(ja ? " ("+ja+" já estavam marcadas)" : ""));
     }
     case "tem": {   // peça de meses anteriores: o Marketing marca se TEM a peça (o cadastro separou) ou NÃO TEM (sem estoque); valor vazio tira a marcação (Marcus, 11/11/2026)
       var at = alvos(a.cod); if(!at.length) return recusa("Código não encontrado.");
