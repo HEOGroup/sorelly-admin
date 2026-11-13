@@ -17,13 +17,13 @@ var MENU_FINANCEIRO = [
   M("Contas bancárias","caixa"),   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
-    {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Visão geral dos funcionários","comisstodos"), M("Agendamento","agbonus"), M("Bipagem","comisbip"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
+    {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Comissão interna","comisstodos"), M("Agendamento","agbonus"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
     {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},
-    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes"), M("Inadimplência dos representantes","inadimp"), M("Compras de joias","comprasrep")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
-    {nome:"Cobrança", itens:[M("Inadimplência","inadfin"), {nome:"Cobrança de funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}]}]},
+    {nome:"Representantes", itens:[M("Consolidado dos representantes","consrep"), M("Comissões dos representantes","comissoes")]},   // 12/11/2026 (Marcus): o financeiro das representantes mora no Financeiro
+    ]},
   {nome:"Família", perm:"financeiro_familia", itens:[M("Home da família","ffhome"), M("Contas a pagar da família","ffcontas"), M("Contas pagas da família","ffpagas"), M("PIX revendedoras","ffpix"), M("Sócios","ffsocios"), M("Cadastro de prestadores","ffprest"), M("Pró-labores","ffprolab"), M("Relatório","ffrelatorio"), M("Histórico","ffhist"), M("Configurações","ffconfig")]},
   Object.assign(M("PIX dos sócios","ffpix"), {perm:"ff_pix,ff_pix_ver"}),   // só quem tem a autorização ff_pix (Ana Beatriz) vê este atalho para a tela PIX, sem o resto da Família
   {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
@@ -77,7 +77,7 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 var MENU_REPRESENTANTES = [
   // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
   {nome:"Montagem", itens:[M("Produção","producao"), M("Listagens","painel"), M("Condicionais","condicionais"), M("Calculadora de kits","calc"), M("Análise de vendas","vendas"), M("Preferências do kit","prefkit"), M("Pedir peças","pedirpecas")]},
-  {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp")]},
+  {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
   {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
   {nome:"Regras", itens:[M("Regras dos representantes","regrasrep"), M("Regras dos acertos","regrasacerto")]}   // 12/11/2026 (Marcus): a tela Configurações saiu do menu (as regras seguem o PDF e não se editam aqui)
@@ -114,7 +114,8 @@ var MENU_JURIDICO = [
   M("Marcas e patentes", undefined, {breve:true})
 ];
 // Inadimplência (11/11/2026, Marcus): setor da Amanda de Miranda, no lugar da planilha de negociações. Palavras na ordem do fluxo.
-var MENU_INAD = [M("Dívidas","inaddiv"), M("Cobrança do dia","inadcob"), M("Pagamentos","inadpag"), M("Serasa","inadser"), M("Kits em atraso","inadkit"), M("Relatórios","inadrel"), M("Regras","inadreg")];
+// 13/11/2026 (Marcus): toda cobrança num setor só, com um botão no topo por público: Revendedoras, Funcionários (compra de peças) e Representantes.
+var MENU_INAD = [{nome:"Revendedoras", itens:[M("Dívidas","inaddiv"), M("Cobrança do dia","inadcob"), M("Pagamentos","inadpag"), M("Serasa","inadser"), M("Kits em atraso","inadkit"), M("Relatórios","inadrel"), M("Regras","inadreg")]}, {nome:"Funcionários", itens:[M("Visão geral","cfvisao"), M("Devendo","cfdevendo"), M("Quitadas","cfquitados"), M("Relatórios mensais","cfrelatorio"), M("Funcionárias","cffunc"), M("Regras","cfregras"), M("Configuração","cfconfig")]}, {nome:"Representantes", itens:[M("Inadimplência","inadimp"), M("Compras de joias","comprasrep")]}];
 var MENU_SERVICOS = [M("Segurança", undefined, {breve:true}), M("Limpeza e zeladoria", undefined, {breve:true})];
 var MENU_MARKETING = [M("Marketing","marketing"), M("Fotos de catálogo","fotoscat"), M("Campanhas", undefined, {breve:true}), M("Tráfego pago","trafego"), M("Criativos","criativos"), Object.assign(M("Modelos","modelos"), {perm:"modelos_ver"})];   // Modelos veio das Encomendas para o Marketing em 12/11/2026 (pedido do Marcus); só quem tem a autorização modelos_ver
 
@@ -149,12 +150,11 @@ var SETORES = [
       ["Contas a pagar", [I("contaspagar","Contas a pagar",["Faturamento vs Contas a Pagar → Contas a pagar (refeita: lançamento manual de Pago e A pagar por mês, visão Total e por CNPJ)"]),
         E("Histórico de contas",["Faturamento vs Contas a Pagar → Histórico de contas"])]],
       ["Contas a receber", [T("revreceber","Contas a receber")]],
-      ["Inadimplência", [T("inadfin","Inadimplência")]],
       ["Interno e estoque", [T("intcons","Consolidado interno"), T("estoquesorelly","Estoque Sorelly")]]]),
-    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6"), T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]},
-    {nome:"Comissões", telas:[Ti("comisstodos","Visão geral","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
-    Ti("comisbip","Bipagem","bipagem","#0EA5E9"), Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
-    {nome:"Cobrança", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]}]},
+    {nome:"Representantes", telas:[T("consrep","Consolidado dos representantes"), Ti("comissoes","Comissões dos representantes","representante","#8B5CF6")]},
+    {nome:"Comissões", telas:[Ti("comisstodos","Comissão interna","grid4","#D9A63A"), Ti("agbonus","Agendamento","agenda","#A855F7"), Ti("comcad","Cadastro de revendedoras","cadastro","#F97316"), Ti("cominad","Inadimplência","alert","#EF4444"),
+    Ti("comismont","Montagem de kits","montadora","#F59E0B"), Ti("comisint","Atendimento interno","calendario","#E8B84B"), Ti("comlink","Link de pagamento","coins","#14B8A6"), Ti("comdatas","Datas de pagamento","calendario","#3B82F6")]},
+  ]},
   {id:"fiscal", nome:"Fiscal", ic:"arquivo", cor:"#3B82F6", menu:MENU_FISCAL, semAbas:true, areas:[
     {nome:"Fiscal", telas:[T("fiscal","Painel e notas"), T("limitefat","Limite de faturamento"), T("cnpjs","CNPJs")]}]},
   {id:"agendamento", nome:"Agendamento", ic:"agenda", cor:"#A855F7", menu:MENU_AGENDAMENTO, semAbas:true, areas:[
@@ -192,7 +192,7 @@ var SETORES = [
     {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
-    {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
+    {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
       T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
       T("prefkit","Preferências do kit"), T("pedirpecas","Pedir peças"),
       T("equipe"), T("registros"), T("relatorios")]},
@@ -248,7 +248,9 @@ var SETORES = [
   {id:"marcusprog", nome:"Progresso", ic:"calendario", cor:"#D9A63A", direto:T("marcusprog","Progresso")},
   // Jurídico (16/10/2026): só as abas por enquanto; o Marcus quer ver tudo no menu e executar depois. Contexto em docs/negocio/JURIDICO-COBRANCA.md
   {id:"inadimplencia", nome:"Inadimplência", ic:"registro", cor:"#F97316", menu:MENU_INAD, semAbas:true, areas:[
-    {nome:"Inadimplência", telas:[T("inaddiv","Dívidas"), T("inadcob","Cobrança do dia"), T("inadpag","Pagamentos"), T("inadser","Serasa"), T("inadkit","Kits em atraso"), T("inadrel","Relatórios"), T("inadreg","Regras")]}]},
+    {nome:"Inadimplência", telas:[T("inaddiv","Dívidas"), T("inadcob","Cobrança do dia"), T("inadpag","Pagamentos"), T("inadser","Serasa"), T("inadkit","Kits em atraso"), T("inadrel","Relatórios"), T("inadreg","Regras")]},
+    {nome:"Funcionários", telas:[T("cfvisao","Visão geral da cobrança"), T("cfdevendo","Devendo"), T("cfquitados","Quitadas"), T("cfrelatorio","Relatórios mensais"), T("cffunc","Funcionárias da cobrança"), T("cfregras","Regras da cobrança"), T("cfconfig","Configuração da cobrança")]},
+    {nome:"Representantes", telas:[T("inadimp","Inadimplência dos representantes"), T("comprasrep","Compras de joias")]}]},
   {id:"juridico", nome:"Jurídico", ic:"escudo", cor:"#DC2626", menu:MENU_JURIDICO, semAbas:true, areas:[
     {nome:"Notas promissórias", telas:[B("Execução de notas promissórias"), B("Inadimplência jurídica")]},
     {nome:"Salas comerciais", telas:[B("Contratos de salas comerciais")]},

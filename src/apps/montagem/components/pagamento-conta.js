@@ -7,7 +7,9 @@
 import { Botao, CAMPO, Rotulo } from "@/apps/montagem/components/padrao-fin";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { contasDe, nomeFilial } from "@/apps/montagem/components/registrar-pagamento";
+import { nomeFilial } from "@/apps/montagem/components/registrar-pagamento";
+import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
+import { nosContasSaida } from "@/apps/montagem/lib/contas-saida";
 import { FILIAIS } from "@/apps/montagem/domain/contas-empresa";
 import { hojeIso } from "@/apps/montagem/domain/financeiro-familiar";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
@@ -17,7 +19,7 @@ import { e, useState } from "@/shared/react";
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var dmy = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(0,4) : "—"; };
-var FORMAS = [["PIX","Pix"],["BOLETO","Boleto"],["DEBITO_CONTA","Débito em conta"],["TRANSF","Transferência"],["DINHEIRO","Dinheiro"],["CARTAO","Cartão"]];
+var FORMAS = [["PIX","Pix"],["BOLETO","Boleto"],["DEBITO_CONTA","Débito em conta"],["TRANSF","Transferência"],["DINHEIRO","Dinheiro"],["CARTAO","Cartão"],["CHEQUE","Cheque"]];
 var formaNome = function(k){ return (FORMAS.filter(function(x){ return x[0]===k; })[0] || [0, k || "—"])[1]; };
 var din = function(valor, rot, onChange, ro){ return e(CampoDinheiro,{value:valor || null, label:rot, disabled:ro, className:CAMPO+" text-right tabular-nums", onChange:function(v){ onChange(v || 0); }}); };
 // foto vira JPEG pequeno; PDF segue como está (mesmo cuidado do comprovante dos pagamentos do atendimento)
@@ -26,18 +28,21 @@ function lerComp(arq, fim){ if(!arq) return; var r = new FileReader(); r.onload 
 
 function PagamentoConta(p){
   var s = p.s, i = p.item, pago = i.status==="pago", baixas = ((s.cpe||{}).baixas || []).filter(function(b){ return b.chave===i.chave; });
-  var ra = useState(hojeIso()), data = ra[0], setData = ra[1], rb = useState("PIX"), forma = rb[0], setForma = rb[1], rc = useState(""), conta = rc[0], setConta = rc[1];
+  // CHEQUE (Marcus, 12/11/2026): conta que é cheque (prefixo CHE ou nome começando por Cheque) abre já com a forma Cheque e um cartão próprio: data da compensação, número do cheque, sem juros e sem desconto, foto do cheque.
+  var ehCheque = i.pref==="CHE" || /^cheque/i.test(String(i.nome||"")), rq = useState(String(i.num||"")), numCheque = rq[0], setNumCheque = rq[1];
+  var ra = useState(hojeIso()), data = ra[0], setData = ra[1], rb = useState(ehCheque ? "CHEQUE" : "PIX"), forma = rb[0], setForma = rb[1], rc = useState(""), conta = rc[0], setConta = rc[1], rn = useState(""), contaNome = rn[0], setContaNome = rn[1];
   var rd = useState(0), acr = rd[0], setAcr = rd[1], re = useState(0), desc = re[0], setDesc = re[1], rf = useState(null), pagoEd = rf[0], setPagoEd = rf[1];
   var cn = useState(""), cnpjNovo = cn[0], setCnpjNovo = cn[1], rg = useState(""), obs = rg[0], setObs = rg[1], rh = useState(null), comp = rh[0], setComp = rh[1], ri = useState(""), erro = ri[0], setErro = ri[1];
-  var contas = contasDe(s, i.filial), valor = i.valor;
+  var valor = i.valor;
   var devido = r2(valor+acr-desc), pagoV = pagoEd===null ? devido : pagoEd, principal = r2(Math.min(valor, Math.max(0, pagoV-acr+desc))), falta = r2(valor-principal), parcial = !pago && principal>0 && falta>0.004;
   var num = ((i.pref||"")+" "+(i.num||"")).trim();
   var salvar = function(){
     if(!data){ setErro("Informe a data do pagamento."); return; } if(data>hojeIso()){ setErro("A data não pode ser depois de hoje."); return; }
+    if(forma==="CHEQUE" && !String(numCheque||"").trim()){ setErro("Informe o número do cheque."); return; }
     if(!conta){ setErro("Escolha a conta de saída."); return; } if(!(pagoV>0) || principal<=0){ setErro("Informe o valor pago."); return; }
     if(pagoV>devido+0.004){ setErro("O valor pago é maior que o devido ("+BKC(devido)+")."); return; }
-    var nomeConta = (contas.filter(function(x){ return x.id===conta; })[0] || {}).nome || "", agora = Date.now();
-    p.salvar({id:"bx"+agora+"-0", chave:i.chave, data:data, forma:forma, conta:conta, contaNome:nomeConta, principal:principal, juros:acr, multa:0, desc:desc, obs:obs.trim(), comprovante:comp, por:s.usuario, em:agora, desc_txt:i.nome+" · "+(num || "—")+" · "+nomeFilial(i.filial)});
+    var nomeConta = contaNome, agora = Date.now();
+    p.salvar({id:"bx"+agora+"-0", chave:i.chave, data:data, forma:forma, conta:conta, contaNome:nomeConta, principal:principal, juros:acr, multa:0, desc:desc, obs:obs.trim(), cheque:forma==="CHEQUE" ? {num:String(numCheque||"").trim()} : null, comprovante:comp, por:s.usuario, em:agora, desc_txt:i.nome+" · "+(num || "—")+" · "+nomeFilial(i.filial)});
   };
   var idx = p.lista.indexOf(i), ant = idx>0 ? p.lista[idx-1] : null, prox = idx>=0 && idx<p.lista.length-1 ? p.lista[idx+1] : null;
   var situ = pago ? "Pago em "+dmy(i.baixa) : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar";
@@ -66,13 +71,15 @@ function PagamentoConta(p){
   var form = pago ? e("p",{className:"rounded-md border border-border px-3 py-6 text-center text-[13px]"}, "Esta conta já está paga. O pagamento aparece ao lado, com o botão Desfazer.")
     : !p.podePagar ? e("p",{className:"rounded-md border border-border px-3 py-6 text-center text-[13px]"}, "Só quem tem a autorização \"Registrar pagamento\" dá baixa. Você pode ver os dados.")
     : e("div",{className:"grid grid-cols-2 gap-x-2 gap-y-1.5"},
-      campo("Data", "pc-data", e("input",{id:"pc-data", type:"date", value:data, max:hojeIso(), onChange:function(ev){ setData(ev.target.value); setErro(""); }, className:CAMPO})),
-      campo("Forma", "pc-forma", e("select",{id:"pc-forma", value:forma, onChange:function(ev){ setForma(ev.target.value); }, className:CAMPO}, FORMAS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); }))),
-      campo("Conta de saída · "+nomeFilial(i.filial), "pc-conta", e("select",{id:"pc-conta", value:conta, onChange:function(ev){ setConta(ev.target.value); setErro(""); }, className:CAMPO}, [e("option",{key:"", value:""}, "Escolha a conta")].concat(contas.map(function(x){ return e("option",{key:x.id, value:x.id}, x.nome); }))), "col-span-2"),
-      campo("Juros e multa", "pc-acr", din(acr, "Juros e multa", function(v){ setAcr(v); setPagoEd(null); setErro(""); })),
-      campo("Desconto", "pc-desc", din(desc, "Desconto", function(v){ setDesc(v); setPagoEd(null); setErro(""); })),
+      campo(forma==="CHEQUE" ? "Data da compensação" : "Data", "pc-data", e("input",{id:"pc-data", type:"date", value:data, max:hojeIso(), onChange:function(ev){ setData(ev.target.value); setErro(""); }, className:CAMPO})),
+      campo("Forma", "pc-forma", e("select",{id:"pc-forma", value:forma, onChange:function(ev){ var v = ev.target.value; setForma(v); if(v==="CHEQUE"){ setAcr(0); setDesc(0); setPagoEd(null); } }, className:CAMPO}, FORMAS.map(function(x){ return e("option",{key:x[0], value:x[0]}, x[1]); }))),
+      // CONTA DE SAÍDA (Marcus, 12/11/2026): a mesma árvore do Direcionar com TODAS as contas (Empresa por CNPJ com saldo, Dinheiro, Família e sócios), não só as do CNPJ da conta
+      campo("Conta de saída", "pc-conta", e(SeletorConta,{nos:nosContasSaida(s, i.filial), texto:contaNome || "Escolha a conta", rotulo:"Conta de saída", titulo:"Conta de saída · "+nomeFilial(i.filial), esquerda:true, vazio:!conta, onEscolher:function(id, nome){ setConta(id); setContaNome(nome); setErro(""); }}), "col-span-2"),
+      forma!=="CHEQUE" && campo("Juros e multa", "pc-acr", din(acr, "Juros e multa", function(v){ setAcr(v); setPagoEd(null); setErro(""); })),
+      forma!=="CHEQUE" && campo("Desconto", "pc-desc", din(desc, "Desconto", function(v){ setDesc(v); setPagoEd(null); setErro(""); })),
+      forma==="CHEQUE" && campo("Número do cheque", "pc-chq", e("input",{id:"pc-chq", type:"text", value:numCheque, onChange:function(ev){ setNumCheque(ev.target.value); setErro(""); }, className:CAMPO})),
       campo("Valor pago", "pc-pago", din(pagoV, "Valor pago", function(v){ setPagoEd(v); setErro(""); })),
-      campo("Comprovante (opcional)", "pc-comp", e("label",{className:CAMPO+" flex cursor-pointer items-center"}, comp ? "✓ "+comp.nome : "Anexar arquivo", e("input",{id:"pc-comp", type:"file", accept:"image/*,application/pdf", className:"sr-only", onChange:function(ev){ lerComp(ev.target.files[0], setComp); ev.target.value = ""; }}))),
+      campo(forma==="CHEQUE" ? "Foto do cheque (opcional)" : "Comprovante (opcional)", "pc-comp", e("label",{className:CAMPO+" flex cursor-pointer items-center"}, comp ? "✓ "+comp.nome : "Anexar arquivo", e("input",{id:"pc-comp", type:"file", accept:"image/*,application/pdf", className:"sr-only", onChange:function(ev){ lerComp(ev.target.files[0], setComp); ev.target.value = ""; }}))),
       campo("Observação", "pc-obs", e("input",{id:"pc-obs", type:"text", value:obs, placeholder:"Opcional", onChange:function(ev){ setObs(ev.target.value); }, className:CAMPO}), "col-span-2"),
       parcial && e("p",{className:"col-span-2 text-[13px] text-warning"}, "Pagamento parcial: o que falta ("+BKC(falta)+") continua a pagar."),
       erro && e("p",{className:"col-span-2 text-[13px] text-destructive"}, erro));

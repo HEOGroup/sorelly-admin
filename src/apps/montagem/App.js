@@ -239,7 +239,7 @@ function App(){
   // telas que este perfil pode abrir (as "em breve" só a supervisão vê)
   var visao = (s.visaoMenu==="pontual" || /^pont/.test(aba)) && s.usuario===16 ? "pontual" : s.visaoMenu==="marcus" && s.usuario===16 ? "marcus" : "admin";   // três modos: Admin (a Sorelly), Marcus (sistema particular, só ele) e Pontual (admin da empresa de banho do Valdir, 06/11/2026: logo e menu próprios, nada da Sorelly)
   var gerAg = podeGerirAgend(s.usuario, s.agend);
-  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
+  var pode = function(t){ if(t.aba && t.aba.indexOf("marcus")===0 && s.usuario!==16) return false; if(t.aba==="comisbip" && !temAutorizacao("comissao_bipagem", s.usuario)) return false; if((t.aba==="agabertura" || t.aba==="agconfig") && !gerAg) return false; if(t.aba && ["cfvisao","cfdevendo","cfquitados","cfrelatorio","cffunc","cfconfig"].indexOf(t.aba)>=0 && ACESSO_COB.indexOf(s.usuario)<0) return false; if(t.aba && t.aba.indexOf("ff")===0 && ["ffhome","ffcontas","ffpagas","ffpix","ffgrupo","ffprest","ffprolab","ffrelatorio","ffhist","ffconfig"].indexOf(t.aba)>=0 && !temAutorizacao("financeiro_familia", s.usuario)) return false;   // Financeiro Familiar: só os sócios if(visao==="admin" && t.breve && !t.enviar) return false; if(visao==="sistema" && t.breve) return false;
     return t.breve ? !permitidas : (!permitidas || permitidas.indexOf(t.aba)>=0); };
   var setoresV = SETORES.filter(function(st){ return !ocultosConta || ocultosConta.indexOf(st.id)<0 || st.id==="inicio"; }).map(function(st){ if(st.direto) return pode(st.direto) ? st : null;
     var ars = st.areas.map(function(ar){ var ts = ar.telas.filter(pode); if(!ts.length) return null;
@@ -254,14 +254,14 @@ function App(){
   var podeMenu = function(n){ return n.perm ? String(n.perm).split(",").some(function(k){ return temAutorizacao(k, s.usuario); }) : pode({aba:n.aba, nome:n.nome, breve:n.breve}); };
   var ativoMenu = function(n){ if(n.breve) return aba==="breve" && s.breveNome===n.nome; if(n.tambem && n.tambem.indexOf(aba)>=0) return true; if(n.aba!==aba && !(n.aba && caminhoDaAba(n.aba)===window.location.pathname)) return false; if(!n.modo) return true; var m = "sorelly"; try{ m = sessionStorage.getItem("cta_modo_atual") || "sorelly"; }catch(x){} return m===n.modo; };
   var ativaTela = function(t){ return t.breve ? (aba==="breve" && s.breveNome===t.nome) : t.aba===aba; };
-  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:20}));
-    return e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
-    e(Icon,{n:st.ic, s:15, peso: on ? "fill" : "duotone"})); };
+  var tileSetor = function(st, on){ if(st.id==="whats") return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style:{background:"#24180a", boxShadow:on ? "0 0 0 1.5px #E8B84B" : "inset 0 0 0 1px #E8B84B88"}}, e(LogoChat,{s:17}));
+    return e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:st.cor, color:"#fff", boxShadow:"0 2px 8px "+st.cor+"55"} : {background:st.cor+"33", color:st.cor, boxShadow:"inset 0 0 0 1px "+st.cor+"55"}},
+    e(Icon,{n:st.ic, s:13, peso: on ? "fill" : "duotone"})); };
   // abre a primeira tela de verdade do setor (as "em breve" ficam por último); as outras telas ficam na barra do topo
   var primeiraTela = primeiraTelaDoSetor;   // a primeira do menu do setor (Direcionar no Financeiro)
   var linhaSetor = function(st){ var ativo = st.direto ? ativaTela(st.direto) : st.areas.some(function(ar){ return ar.telas.some(ativaTela); });
     return e("button",{key:st.id, onClick:function(){ var t = st.direto || primeiraTela(st); setSetorAb(st.id); if(t) abrirTela(t); setAreaTopo(null); },
-      className:"flex min-h-9 w-full items-center gap-2.5 rounded-lg px-1.5 py-0.5 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
+      className:"flex min-h-8 w-full items-center gap-2 rounded-lg px-1.5 py-0 text-left text-[13px] leading-tight "+(soBreve(st) ? "opacity-50 grayscale " : "")+(ativo ? "bg-sidebar-accent font-medium" : "text-foreground/85 hover:bg-white/5")},
       tileSetor(st, ativo), e("span",{className:"min-w-0 flex-1 whitespace-pre-line"}, st.nome)); };
   var APPS_SETOR = {};   // apps de celular que ficam dentro de cada setor
   var soBreve = function(st){ var ts = st.direto ? [st.direto] : [].concat.apply([], st.areas.map(function(ar){ return ar.telas; })); return ts.length>0 && ts.every(function(t){ return t.breve; }); };
@@ -284,7 +284,7 @@ function App(){
   var navItem = function(key, lb, ic, on, onClick){ var cor = COR_ABA[key] || "#D9A63A";
     return e("button",{key:key, onClick:onClick,
     className:"flex h-9 w-full items-center gap-2.5 rounded-lg px-1.5 text-left text-sm "+(on?"bg-sidebar-accent font-medium text-sidebar-accent-foreground":"text-foreground/85 hover:bg-white/5 hover:text-foreground")},
-    e("span",{className:"grid size-7 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
+    e("span",{className:"grid size-6 shrink-0 place-items-center rounded-lg", style: on ? {background:cor, color:"#fff", boxShadow:"0 2px 8px "+cor+"55"} : {background:cor+"33", color:cor, boxShadow:"inset 0 0 0 1px "+cor+"55"}},
       e(Icon,{n:ic, s:15, peso: on ? "fill" : "duotone"})), e("span",{className:"min-w-0 truncate whitespace-nowrap"}, lb)); };
   // App das funcionárias no celular: só o telefone, sem menu lateral nem cabeçalho (como o app de verdade). A diretoria tem um botão pequeno para voltar ao admin.
   if(srv.apiAtiva() && !srv.token()) return e(TelaEntrar,{onEntrou:function(u){ d({type:"LOGIN", id:u.pessoaId}); var pp = papelDe(u.pessoaId); if(pp==="montadora" || pp==="bipadora") navigate(caminhoDaAba("whats"), {replace:true}); recarregar(); }});   // montadora e bipadora começam no chat
@@ -298,18 +298,18 @@ function App(){
   return e(Ctx.Provider,{value:{state:s, dispatch:d}},
     e("aside",{className:"fixed inset-y-0 left-0 z-40 flex-col sombra-lado bg-sidebar "+(menu?"flex":recolhido?"hidden":"hidden md:flex"), style:{width:menuW}},
       // logo da Sorelly (símbolo + nome, sem o "joias"), grande e centralizada no canto de cima à esquerda
-      e("div",{className:"relative flex h-28 items-center justify-center sombra-baixo px-4"},
-        visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-20 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-24 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
+      e("div",{className:"relative flex h-16 items-center justify-center sombra-baixo px-4"},
+        visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-12 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-12 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
       !permitidas && s.usuario===16 && e("div",{className:"flex items-center gap-1.5 border-b border-sidebar-border px-3 py-2.5 text-[12px] font-semibold"},
         [["admin","Admin","O sistema da Sorelly"],["marcus","Marcus","Meu sistema particular"],["pontual","Pontual","O sistema da Pontual (empresa de banho)"]].map(function(x){
           return e("button",{key:x[0], title:x[2], onClick:function(){ d({type:"VISAO_MENU", v:x[0]}); navigate(caminhoDaAba(x[0]==="marcus" ? "marcus" : x[0]==="pontual" ? "pontclientes" : "visaogeral")); setMenu(false); }, className:"flex-1 rounded-lg px-2 py-1.5 whitespace-nowrap ring-1 "+(visao===x[0] ? "bg-primary text-primary-foreground ring-primary" : "bg-muted/60 ring-border hover:bg-muted")}, x[1]); })),
-      e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto px-3 pb-2 pt-3"},
+      e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-2 pb-2 pt-1.5"},
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
           lst = lst.filter(function(st){ return !soBreve(st); }).concat(lst.filter(soBreve));
           // menu sempre aberto, sem botão de abrir/fechar (Marcus, 02/11/2026): o título do grupo é só um rótulo
           return e("div",{key:g[0], className:"flex flex-col gap-0.5"},
-            e("div",{className:"mt-2.5 px-1.5 pb-0.5 first:mt-0"},
+            e("div",{className:"mt-1.5 px-1.5 pb-0 first:mt-0"},
               e("span",{className:"text-[10.5px] font-bold uppercase tracking-wider text-muted-foreground"}, g[1])),
             lst.map(linhaSetor)); }),
         !permitidas && visao!=="pontual" && e("div",{className:"my-2 border-t border-sidebar-border"}),

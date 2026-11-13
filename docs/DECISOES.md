@@ -4,6 +4,30 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 13/11/2026 (Comissão interna e Comissões da bipagem no setor da bipagem)
+- **Marcus: "o nome não pode ser Visão geral dos funcionários, tem que ser Comissão interna; tira o título de cima; Por pessoa não quero; quero o bloco de cima mais elaborado para ver o resultado".** Tela `comisstodos` = Comissão interna: um bloco de planilha por setor (pessoas, valor, % do total, média, quem recebe mais, situação, próximo pagamento, fonte) e linha de total.
+- **Marcus: "a comissão da bipagem fica no setor delas; acesso só da diretoria e da Deysiane; no Financeiro vai só o consolidado".** `comisbip` saiu de Financeiro › Comissões e entrou em Representantes & Kits › Bipagem. Autorização nova `comissao_bipagem` (padrão Marcus, Lucas, Nickolas e Deysiane; ajusta em RH › Acessos e autorizações). O botão Abrir da linha Bipagem de envio, na Comissão interna, só aparece para quem tem a autorização.
+
+## 13/11/2026 (Comissões dos funcionários no padrão, setor por setor)
+- **Marcus: "começar com a tela de comissão dos funcionários, nos moldes do Financeiro; depois verificar setor por setor de onde vêm os números".** `pages/ComissoesTodos.js`: a Visão geral virou dois blocos de planilha (Por setor, Por pessoa); representantes ficam de fora (têm tela própria). A coluna "De onde vem o número" mostra a fonte de cada setor. **Etapa seguinte combinada:** conferir setor por setor de onde vêm os números. Primeiros achados: Agendamento mostra próximo pagamento 15/10 (já passou) e "faltam 1250 acertos"; Cadastro e Inadimplência estão sem meta neste mês.
+
+## 13/11/2026 (Cobrança toda no setor Inadimplência)
+- **Atualização (Marcus: "compras de joias de representantes também tem que ir lá"):** `comprasrep` saiu de Financeiro › Receber › Representantes e entrou em Inadimplência › Representantes (que agora abre Inadimplência e Compras de joias).
+- **Marcus: "a compra de peças de funcionários tem que entrar lá no Inadimplência; junto funcionários e representantes, com uma aba no topo".** `MENU_INAD` agora tem três botões: Revendedoras (Dívidas, Cobrança do dia, Pagamentos, Serasa, Kits em atraso, Relatórios, Regras), Funcionários (as 7 telas `cf*` da Cobrança de funcionários) e Representantes (`inadimp`). A pasta Cobrança saiu de Financeiro › Receber. Acesso das telas `cf*` segue `ACESSO_COB` (sócios e Amanda de Miranda); o perfil Inadimplência ganhou as abas `cf*`.
+
+## 13/11/2026 (Inadimplência fora do Financeiro)
+- **Marcus: "essas telas de inadimplência não têm nada a ver, pode excluir".** Saíram do menu do Financeiro `inadfin` e `inadimp`. A cobrança mora no setor **Inadimplência** (Amanda; 7 telas, `MENU_INAD`). Arquivos e rotas antigas continuam no código, só saíram do menu. Pendente: decidir se Cobrança de funcionários e Inadimplência dos representantes vão para o setor.
+
+## 12/11/2026 (REGRA: de qual conta sai o pagamento)
+- **Marcus: "não existe o CNPJ da conta ser 34 e pagar com 59; nem pode aparecer a opção".** Conta de CNPJ 34, 46, 59, 67 ou H&O só se paga com contas DO MESMO CNPJ (mais o Dinheiro). Conta "Por fora" (consórcio, pessoal, família) só se paga com Família e sócios, Marco PJ e Dinheiro; nunca com conta de CNPJ. Código: `nosContasSaida(s, filial)` em `lib/contas-saida.js`. "CNPJ da conta" é de quem é a despesa (relatórios); "Conta de saída" é de onde o dinheiro sai: as duas sempre ficam no mesmo CNPJ.
+
+## 12/11/2026 (Cheque na janela de pagamento; lista de contas por cima)
+- **Marcus: "clico em selecionar conta e nenhuma vai"; "os cheques não deveriam ter o card diferente?".** Causa 1: a lista do `SeletorConta` (z 50) abria por baixo da janela de pagamento (z 80): corrigido (z 90 e 95). Causa 2: não existia a forma Cheque. Agora a conta que é cheque (`pref` CHE ou nome começando por Cheque) abre com Forma = Cheque e o cartão próprio: Data da compensação, Número do cheque (de `i.num`), Valor pago, Foto do cheque; sem Juros e sem Desconto. A baixa guarda `cheque:{num}`. Pendente: acompanhar cheque emitido que ainda não compensou (hoje o pagamento já conta como pago na data da compensação informada).
+
+## 12/11/2026 (Conta de saída do pagamento: todas as contas, na árvore do Direcionar)
+- **Marcus: "a saída ali no contas a pagar não deveria ter todas as contas? se é do CNPJ aparecem as contas; se é consórcio Ademicon pode pagar da conta da Anamaria, do Itaú, das minhas"; "tem que aparecer na mesma estrutura que criamos hoje".** O campo Conta de saída da janela de pagamento usa o `SeletorConta` com `nosContasSaida` (`lib/contas-saida.js`): Empresa → CNPJ → contas com saldo (o CNPJ da conta vem primeiro), Dinheiro, Família e sócios (`s.ff.contasBanc`; id gravado como `ff:<id>`). Nomes pela regra única de `lib/nome-conta.js`. A baixa guarda `conta` (id) e `contaNome`.
+- **Pagamento parcial:** digitar em Valor pago menos que o total a pagar; a conta fica parcial e o que falta continua em A pagar (a janela mostra Falta depois e o aviso).
+
 ## 13/11/2026 (Contas a pagar: números presos e aviso nas linhas atrasadas)
 - Marcus mandou print da tela Contas a pagar e pagas (visão Total) com Novembro em R$ 25 mil e o Acumulado caindo. Causa: a animação dos números (`lib/contagem-tela.js`) trocava o texto da célula com `textContent`, e o React passava a atualizar um texto solto da tela, deixando a célula presa num valor velho. Agora a animação troca só o valor do texto que já existe (`poe`). Vale para TODAS as telas com números que correm.
 - Linha de mês fora do período escolhido (entra só o atrasado e em aberto) agora diz **Atrasadas · só em aberto** na Situação, para ninguém achar que é o mês inteiro.

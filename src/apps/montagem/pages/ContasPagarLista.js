@@ -30,7 +30,7 @@ var corCnpj = function(v, l){ return e("span",{style:{color:CNPJ_LETRA[l.fil] ||
 var nomeCnpj = function(f){ return f==="fora" ? "Por fora" : "CNPJ "+f; };
 var hojeYm0 = function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0"); };
 var somaMes = function(n){ var d = new Date(); d.setDate(1); d.setMonth(d.getMonth()+n); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0"); };   // mês de hoje mais n (a lista do mês mostra de 12 meses atrás a 12 à frente; o resto fica em Todos os meses)
-var FORMAS = {PIX:"Pix", BOLETO:"Boleto", DEBITO_CONTA:"Débito em conta", TRANSF:"Transferência", DINHEIRO:"Dinheiro", CARTAO:"Cartão"};
+var FORMAS = {PIX:"Pix", BOLETO:"Boleto", DEBITO_CONTA:"Débito em conta", TRANSF:"Transferência", DINHEIRO:"Dinheiro", CARTAO:"Cartão", CHEQUE:"Cheque"};
 var soNumero = function(v){ return /^\d+$/.test(String(v||"")); };
 var chaveTitulo = function(i){ return i.filial+"|"+i.pref+"|"+i.num+"|"+i.forn; };
 // parcela no formato 02/06: o total é a maior parcela que existe do mesmo título (CNPJ, prefixo, número e fornecedor), entre pagas e em aberto

@@ -3,6 +3,15 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.32", data:"2026-11-13", titulo:"Comissão interna, Inadimplência como setor de cobrança e lista de contas de saída", itens:[
+  {tipo:"melhoria", area:"Financeiro › Contas › Comissões › Comissão interna", txt:"A Visão geral dos funcionários virou Comissão interna: sem título em cima, sem o bloco Por pessoa e com um bloco só, mais elaborado: por setor mostra pessoas, valor do mês, % do total, média por pessoa, quem recebe mais, situação, dias para o próximo pagamento e de onde vem o número, com linha de total. Bipagem, Montagem e Atendimento interno também usam a tabela de planilha."},
+  {tipo:"melhoria", area:"Representantes & Kits › Bipagem", txt:"Comissões da bipagem saiu do Financeiro e foi para o setor da bipagem. Só a diretoria e a Deysiane abrem (autorização nova: Ver e abrir as comissões da bipagem). O Financeiro vê só o consolidado, na Comissão interna."},
+  {tipo:"melhoria", area:"Inadimplência", txt:"Toda a cobrança fica no setor Inadimplência, com três botões no topo: Revendedoras (as 7 telas de antes), Funcionários (Cobrança de funcionários) e Representantes (inadimplência e compras de joias). A pasta Cobrança e as duas telas antigas de Inadimplência saíram do Financeiro › Receber."},
+  {tipo:"melhoria", area:"Sistema › Menu lateral", txt:"Menu lateral mais compacto: logo de 112 para 64 px e setores de 36 para 32 px."},
+  {tipo:"melhoria", area:"Financeiro › Contas › Janela de pagamento da conta", txt:"REGRA da Conta de saída: conta de um CNPJ só se paga com contas desse mesmo CNPJ (e Dinheiro); conta Por fora só se paga com Família e sócios, Marco PJ e Dinheiro. A lista mostra de qual CNPJ é e as contas vêm em ordem (maior saldo primeiro; Aplicação e Rotativo no fim)."},
+  {tipo:"correção", area:"Financeiro › Contas › Janela de pagamento da conta", txt:"A lista de contas de saída abria POR BAIXO da janela de pagamento e nenhuma conta dava para escolher. Agora abre por cima."},
+  {tipo:"novo", area:"Financeiro › Contas › Janela de pagamento da conta", txt:"Cartão do cheque: conta que é cheque abre com a forma Cheque e campos próprios: Data da compensação, Número do cheque, Valor pago e Foto do cheque, sem juros e sem desconto."}
+ ]},
  {v:"0.20.31", data:"2026-11-13", titulo:"Compras: Helen efetua compras liberadas", itens:[
   {tipo:"melhoria", area:"Materiais e estoque › Compras", txt:"A Helen ganha a autorização Efetuar compras liberadas: ela marca a compra como efetuada depois que o financeiro libera. O nome dela passa a ser escrito Helen, com um L, nas telas e na conta. Pedido do Lucas."}]},
  {v:"0.20.30", data:"2026-11-12", titulo:"Faturamento no padrão do Financeiro: previsto por dia e novembro conferido", itens:[
