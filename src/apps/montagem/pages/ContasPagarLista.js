@@ -150,14 +150,16 @@ function TelaContas(props){
   var totaisPor = function(chaveDe, rotuloDe, sitDe2){ var gr = {}; ls.forEach(function(i){ var k = chaveDe(i); (gr[k] = gr[k] || []).push(i); });
     var ks = Object.keys(gr).filter(function(k){ return k; }).sort(); if(gr[""]) ks.push(""); var acum = 0;
     return ks.map(function(k){ var its = gr[k], tot = soma(its), tudoPago = its.every(function(i){ return i.status==="pago"; }); acum = r2(acum+tot);
-      var o = {id:"d"+k, dia:k ? rotuloDe(k) : "Sem data", qtd:its.length, total:tot, acum:acum, sit:tudoPago ? "Pago" : !k ? "Sem data" : sitDe2(k)};
+      // linha fora do período escolhido: só entrou o que está atrasado e em aberto (as pagas daquele mês não entram); a situação avisa isso (Marcus, 13/11/2026)
+      var soAtraso = !!faixa && its.every(function(i){ var db = dataBase(i); return !(db>=faixa[0] && db<=faixa[1]); });
+      var o = {id:"d"+k, dia:k ? rotuloDe(k) : "Sem data", qtd:its.length, total:tot, acum:acum, sit:tudoPago ? "Pago" : !k ? "Sem data" : soAtraso ? "Atrasadas · só em aberto" : sitDe2(k)};
       FILIAIS.forEach(function(f){ o["c"+f[0]] = soma(its.filter(function(i){ return i.filial===f[0]; })); }); return o; }); };
   // O TOTAL ACOMPANHA A ABA DO PERÍODO (Marcus, 12/11/2026): Dias = uma linha por dia, Meses = uma por mês, Anos = uma por ano.
   var anoHoje = hoje0.slice(0, 4);
   var linhasDia = per.modo==="anos" ? totaisPor(function(i){ return dataBase(i).slice(0, 4); }, function(k){ return k; }, function(k){ return k<anoHoje ? "Atrasadas" : k===anoHoje ? "Ano atual" : "A vencer"; })
     : per.modo==="meses" ? totaisPor(function(i){ return dataBase(i).slice(0, 7); }, function(k){ return nomeMes(k); }, function(k){ return k<mesHoje ? "Atrasadas" : k===mesHoje ? "Mês atual" : "A vencer"; })
     : totaisPor(dataBase, dm, function(k){ return k<hoje0 ? "Atrasadas" : k===hoje0 ? "Hoje" : "A vencer"; });
-  var corDia = function(l){ return l.sit==="Atrasadas" ? "text-warning" : l.sit==="Pago" ? "text-success" : ""; };
+  var corDia = function(l){ return l.sit.indexOf("Atrasadas")===0 ? "text-warning" : l.sit==="Pago" ? "text-success" : ""; };
   var colsDia = [{k:"dia", t:per.modo==="anos" ? "Ano" : per.modo==="meses" ? "Mês" : escopo==="pagas" ? "Pago em" : escopo==="apagar" ? "Vence" : "Data", cor:corDia}, {k:"sit", t:"Situação", cor:corDia}, {k:"qtd", t:escopo==="pagas" ? "Pagamentos" : "Contas"}].concat(FILIAIS.map(function(f){ return {k:"c"+f[0], t:f[0]==="fora" ? "Por fora" : f[1], fmt:BKC}; }), [{k:"total", t:"Total", fmt:BKC}, {k:"acum", t:"Acumulado", fmt:BKC}]);   // os CNPJs vêm ANTES do Total e do Acumulado (Marcus, 12/11/2026)
   var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } setAberta(l.it); };
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
