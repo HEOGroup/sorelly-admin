@@ -6,6 +6,7 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { GRUPOS_CONTA } from "@/apps/montagem/domain/contas-grupos";
 import { extrasSeed } from "@/apps/montagem/domain/pix-regras";
+import { testarNovaVenda } from "@/apps/montagem/components/nova-venda";
 import { bancoDeConta, nomeCurto, nomePropio, rotuloDestino, rotuloPrestadorFamilia } from "@/apps/montagem/lib/nome-conta";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { orientacaoCaixa } from "@/apps/montagem/domain/orientacao-pix";
@@ -375,7 +376,8 @@ function AbaDirecionar(){
   var avisoTxt = erro ? {t:erro, cor:"var(--negativo)"} : mistura ? {t:"Atenção: mistura conta que fatura (CNPJ) com conta que não fatura.", cor:"#f5c14b"} : {t:"—", cor:""};
   // PEDIDO ABERTO em grade com linhas (Marcus, 11/11/2026, layout A): tudo em células com título; nenhum texto solto. Quem e quando | Resumo e Pagamentos | Rodapé de envio.
   var BOTAO_OK = "h-8 whitespace-nowrap rounded-md border px-4 text-[13px] font-semibold ";
-  var botaoAtend = e("button",{type:"button", onClick:function(){ c.d({type:"ABA", aba:"intcalc"}); }, title:"Abre a tela Atendimento Sorelly", className:"h-[22px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2.5 text-[11px] font-semibold text-white hover:bg-white/20"}, "Atendimentos");
+  var btnAtend = e("button",{type:"button", onClick:function(){ c.d({type:"ABA", aba:"intcalc"}); }, title:"Abre a tela Atendimento Sorelly", className:"h-[22px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2.5 text-[11px] font-semibold text-white hover:bg-white/20"}, "Atendimentos");
+  var botaoAtend = e(Fragment,null, btnAtend, c.edita ? e("button",{type:"button", onClick:testarNovaVenda, title:"Toca a sirene e a voz com um pedido de mentira, para testar o volume", className:"ml-1.5 h-[22px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2.5 text-[11px] font-semibold text-white hover:bg-white/20"}, "Testar alerta") : null);
   var pedido = !sel ? Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"flex min-h-8 items-center justify-center bg-card px-2.5 py-1 text-center text-[13px]"}, "Nenhum pedido aguardando")) : Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"flex flex-col gap-px bg-border"},
     e("div",{className:"overflow-x-auto"}, e("div",{className:"grid grid-cols-[150px_minmax(0,1.5fr)_minmax(0,1fr)_100px_130px_minmax(0,1.4fr)] gap-px bg-border min-[1100px]:grid-cols-[310px_318px_420px_132px_150px_minmax(0,1fr)]", style:{minWidth:900}},   // Origem com 310 px: a borda direita dela cai na linha direita da coluna Valor, logo abaixo (Marcus, 12/11/2026)
       ["Origem", "Nome", "Atendimento", "Chegou", "Aguardando", "Observação"].map(function(t, i){ return e("div",{key:"h"+i, className:CABC}, t); }),
