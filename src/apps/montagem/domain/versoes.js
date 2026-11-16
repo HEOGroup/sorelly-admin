@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.40", data:"2026-11-16", titulo:"Pedidos: planilha nova, faixa em uma linha e janelas no padrão azul", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A visão Planilha usa a tabela única do sistema: filtro e ordem em cada coluna, coluna Parcial (chegaram X de Y), dias em vermelho quando atrasado, botão Concluir e Total no fim. Clicar na linha abre a ficha."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Topo compacto: faixa de controles em UMA linha (menus e botões de 28 px, letra de 11 px), com Fatura em comum e Novo pedido no começo. O Resumo por mês fica sempre aberto, fixo em 2026. Os blocos do quadro têm 370 px e a linha Bruto + Banho = Total cabe inteira, sem cortar."},
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"As janelas Fatura em comum e Novo pedido abrem no padrão do Financeiro: barra azul de título com o × à direita e borda azul. O botão + no título da coluna Custo das saídas mostra o custo por TES (S004 = entrada de brinde, S501 = venda antiga)."}
+ ]},
  {v:"0.20.39", data:"2026-11-16", titulo:"Pedidos de bruto: Parcial, fatura em comum, topo compacto e custo das saídas", itens:[
   {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Pedido parcial. Na ficha, bloco Empresa, a Rayssa lança Peças que chegaram. Se chegou menos do que foi pedido, o cartão e a ficha mostram Parcial, quanto chegou e quanto falta. O pedido só vai para Finalizado quando chegar tudo. Campo vazio = chegou tudo (pedidos antigos não mudam). A etapa continua a mesma (ex.: Cadastrando)."}
   {tipo:"novo", area:"Cadastro de peças → Pedidos", txt:"Botão Fatura em comum (no alto da tela e na ficha do pedido, bloco Banho). A galvânica manda uma fatura só para vários pedidos: a Rayssa escolhe Pontual ou Ellos, digita o total, marca os pedidos e escolhe como dividir (partes iguais, pelas peças ou pelo valor do bruto). A soma das partes sempre fecha com o total da fatura (os centavos sobram no último pedido). A mesma foto da fatura vai para todos os pedidos e a ficha mostra Fatura em comum de R$ X dividida em N pedidos."}
