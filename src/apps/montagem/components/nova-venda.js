@@ -8,6 +8,7 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { podeConferirPag } from "@/apps/montagem/domain/equipe";
 import { BK } from "@/apps/montagem/lib/format";
+import * as sons from "@/apps/montagem/lib/sons";
 import { use } from "@/apps/montagem/state/context";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useRef, useState } from "@/shared/react";
@@ -44,7 +45,8 @@ function falar(){
     try{ var a = new Audio("/audio/nova-venda.mp3"); a.volume = 1; a.addEventListener("error", voltar, {once:true}); var pr = a.play(); if(pr && pr.catch) pr.catch(voltar); }catch(x){ voltar(); }
   }, 1300);
 }
-var chamar = function(){ sirene(); falar(); };
+// Botão "Som" do menu da conta (Marcus, 16/11/2026): com o som desligado, só o quadro aparece; sirene e voz calam (mesma chave "mudo" dos sons do sistema, lib/sons.js).
+var chamar = function(){ if(sons.config().mudo){ try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} return; } sirene(); falar(); };
 
 function NovaVendaAlerta(p){
   var cx = use(), s = cx.state;

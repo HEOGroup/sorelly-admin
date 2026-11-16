@@ -9,7 +9,8 @@ import { RecortarFoto } from "@/apps/montagem/components/recortar-foto";
 import { PAPEL_LB, VISUAL } from "@/apps/montagem/navigation/perfis";
 import { use } from "@/apps/montagem/state/context";
 import { Icon } from "@/apps/montagem/ui/icon";
-import { e, useRef, useState } from "@/shared/react";
+import * as sons from "@/apps/montagem/lib/sons";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 import { useNavigate } from "react-router-dom";
 import { caminhoDaAba } from "@/apps/montagem/router/slugs";
 
@@ -64,6 +65,8 @@ function ContaMenu(p){
   var cx = use(), s = cx.state, d = cx.dispatch, g = grupoDe(s.usuario), v = VISUAL[g] || ["#D9A63A","user"], navigate = useNavigate();
   var ab = useState(false), aberto = ab[0], setAberto = ab[1], arq = useRef(null), rc = useState(null), recorte = rc[0], setRecorte = rc[1];
   var comLogin = comLoginAgora(), podeTrocar = !comLogin || ["16","17","28","44"].indexOf(srv.pessoaDaConta())>=0;   // "atuar como": Marcus, Nickolas e Lucas; os demais usam somente a própria conta
+  var sSom = useState(sons.config()), som = sSom[0], setSom = sSom[1];
+  useEffect(function(){ return sons.assinar(function(){ setSom(sons.config()); }); }, []);
   var pf = usePerfil(), quem = pf.pessoas[s.usuario] || {}, meu = pf.meuId!=null ? (pf.pessoas[pf.meuId] || {}) : null;
   var escolher = function(id){ d({type:"LOGIN", id:id, atuando:true}); setAberto(false); navigate(caminhoDaAba("inicio")); };   // ao trocar de pessoa, vai para o Início dela (as abas do Marcus não vão junto; voltando para si, as dele voltam)
   var sair = function(){ setAberto(false); if(comLogin) srv.sair(); else d({type:"SAIR"}); };
@@ -90,6 +93,7 @@ function ContaMenu(p){
         e("button",{type:"button", onClick:function(){ arq.current.click(); }, className:BOTAO_MENU}, e(Icon,{n:"pencil", s:14}), "Trocar foto"),
         meu.foto && e("button",{type:"button", onClick:removerFoto, title:"Remover foto", "aria-label":"Remover foto", className:"grid h-8 w-8 shrink-0 cursor-pointer place-items-center rounded-lg hover:bg-white/10"}, e(Icon,{n:"trash", s:14}))),
       comLogin && e(TrocarSenha),
+      e("button",{type:"button", onClick:function(){ sons.mudar({mudo:!som.mudo}); try{ window.speechSynthesis && window.speechSynthesis.cancel(); }catch(x){} }, title:som.mudo ? "Liga de novo todos os sons do sistema" : "Desliga todos os sons do sistema (cliques, avisos, sirene e voz de Nova venda); os avisos continuam aparecendo na tela", className:BOTAO_MENU}, e(Icon,{n:som.mudo ? "volumex" : "volume2", s:14}), som.mudo ? "Som desligado" : "Som ligado"),
       e("button",{type:"button", onClick:p.onTema, className:BOTAO_MENU}, e(Icon,{n:"sunmoon", s:14}), "Claro / escuro"),
       e("div",{className:"flex h-8 items-center justify-between gap-2 px-2"}, e("span",{className:"text-[13px] font-semibold"}, "Tamanho"), p.zoom),
       podeTrocar && e("select",{value:s.usuario, title:"Atuar como outra pessoa", "aria-label":"Atuar como outra pessoa", onChange:function(ev){ escolher(Number(ev.target.value)); },

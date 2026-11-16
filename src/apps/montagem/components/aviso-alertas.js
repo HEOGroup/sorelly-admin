@@ -3,10 +3,12 @@
 // Aparecem no canto de cima à direita, com som, e ficam até a pessoa clicar (abre o atendimento) ou dar "Entendi".
 import { useNotif } from "@/apps/montagem/lib/notificacoes";
 import { use } from "@/apps/montagem/state/context";
+import * as sons from "@/apps/montagem/lib/sons";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 function tocarAlerta(){
+  if(sons.config().mudo) return;   // botão "Som" do menu da conta
   try{ var C = window.AudioContext || window.webkitAudioContext; if(!C) return; var ac = new C(), t0 = ac.currentTime;
     [[988,0,0.28],[1319,0.3,0.28],[1760,0.6,0.5]].forEach(function(n){ var o = ac.createOscillator(), g = ac.createGain(); o.type = "square"; o.frequency.value = n[0]; o.connect(g); g.connect(ac.destination);
       var ini = t0+n[1]; g.gain.setValueAtTime(0.0001, ini); g.gain.exponentialRampToValueAtTime(0.35, ini+0.02); g.gain.exponentialRampToValueAtTime(0.0001, ini+n[2]); o.start(ini); o.stop(ini+n[2]+0.05); });

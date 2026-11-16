@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.60", data:"2026-11-16", titulo:"Botão Som no menu da conta", itens:[
+  {tipo:"melhoria", area:"Menu da conta (barra de cima)", txt:"Novo botão Som ligado / Som desligado no menu da conta. Desligado, calam todos os sons do sistema neste computador: cliques, avisos, a sirene e a voz de Nova venda, e os avisos de pagamento. Os avisos continuam aparecendo na tela, só sem barulho. Vale só no computador em que se clica e fica guardado no navegador (é a mesma chave Mudo do SorellyChat). Antes, a sirene e a voz ignoravam essa chave."}
+ ]},
  {v:"0.20.59", data:"2026-11-16", titulo:"Janela de montagem: fotos das preferências", itens:[
   {tipo:"melhoria", area:"Representantes & Kits › Montagem", txt:"A janela Montar mostra as fotos que a revendedora mandou nas preferências (até 3 por bloco). Clicar abre a foto grande."}
  ]},
