@@ -111,6 +111,12 @@
 .barra-grossa::-webkit-scrollbar-thumb { background: rgba(255,255,255,.55); border-radius: 9px; border: 3px solid transparent; background-clip: padding-box; }
 .barra-grossa::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,.75); background-clip: padding-box; }
 
+/* Barra de rolagem FINA e visível (Marcus, 16/11/2026): listas pequenas dentro de um bloco, como as peças de brinde no Resumo do acerto. */
+.barra-fina { scrollbar-width: thin !important; scrollbar-color: rgba(255,255,255,.6) rgba(255,255,255,.1); }
+.barra-fina::-webkit-scrollbar { display: block !important; width: 6px !important; height: 6px !important; }
+.barra-fina::-webkit-scrollbar-track { background: rgba(255,255,255,.1); }
+.barra-fina::-webkit-scrollbar-thumb { background: rgba(255,255,255,.6); border-radius: 9999px; }
+
 /* Contas bancárias (Marcus, 12/11/2026): na edição, a célula de HOJE pulsa bem de leve para mostrar onde digitar */
 @keyframes pulso-leve { 0%,100% { background-color: rgba(251,191,36,0); } 50% { background-color: rgba(251,191,36,.16); } }
 .pulso-leve { animation: pulso-leve 2.8s ease-in-out infinite; }

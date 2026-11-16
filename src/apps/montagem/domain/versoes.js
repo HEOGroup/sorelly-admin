@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.63", data:"2026-11-16", titulo:"Atendimento Sorelly: pagamentos, brindes e resumo", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Depois de registrar o acerto, a etapa Regras mostra só o resultado e os botões Copiar (revendedora e grupo): sem o termo assinado e sem o texto das mensagens."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Brindes com muitas peças: a lista vira 2 colunas e a letra passa para 11 px sem quebrar. No Resumo do acerto a lista preenche o bloco, tem linhas compactas e barra de rolagem fina (classe barra-fina)."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"O Resumo mostra a conta real de cada pagamento (ex.: Sicredi Sorelly 34). O bloco Financeiro virou uma tabela compacta (Forma, Conta inteira, Valor, Situação). A bandeira do cartão só é pedida no link."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Pagamentos que o financeiro já confirmou voltam sozinhos mesmo com o formulário vazio (caso Emilli). Renova outro dia envia a revendedora para a lista da agendadora como A contatar."}
+ ]},
  {v:"0.20.62", data:"2026-11-16", titulo:"Atendimento Sorelly: revendedora saiu sem assinar", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Na tela de assinatura da ciência das regras, o botão \"Revendedora saiu sem assinar\" libera o Registrar acerto quando ela vai embora antes de assinar. A ficha guarda \"Ciência pendente\" e só avisa a funcionária no próximo acerto (não trava)."},
   {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"A coluna Dívida da agenda do dia não conta mais o acerto do próprio atendimento (ex.: R$ 2,00 de diferença do brinde) como dívida anterior."}

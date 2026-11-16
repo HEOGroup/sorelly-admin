@@ -186,7 +186,8 @@ function AtendimentoInterno(){
   useEffect(function(){ if(!sel || visor || form===FORM_ACERTO_VAZIO || sel.status==="acertado") return; d({type:"INT_ATUALIZAR", id:sel.id, patch:{rascunho:form}}); }, [form]);
   // RESTAURA os pagamentos perdidos (Edna, 16/11/2026, Emilli): se o rascunho voltou SEM pagamentos (outra janela gravou por cima) mas o financeiro já confirmou os pagamentos deste atendimento, a tela refaz as linhas a partir do que o financeiro tem. Sem isso o botão "OK, comprovantes anexados" ficava travado ("os pagamentos mudaram depois do envio").
   useEffect(function(){
-    if(!sel || visor || sel.status==="acertado" || form===FORM_ACERTO_VAZIO || (form.pagamentos||[]).length>0) return;
+    // 16/11/2026: vale também com o formulário ainda vazio (Edna, Emilli: a tela mostrava "Nenhuma forma selecionada" mesmo com o financeiro já tendo confirmado o Pix)
+    if(!sel || visor || sel.status==="acertado" || (form.pagamentos||[]).length>0) return;
     var lf = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }); if(!lf) return;
     var linhas = (lf.linhas||[]).filter(function(l){ return l.tipo==="pagamento" && l.forma && l.valor>0; }); if(!linhas.length) return;
     up({pagamentos:linhas.map(function(l){ var o = {data:hoje, anexo:null, forma:l.forma, valor:l.valor, bandeira:l.bandeira || "", parcelas:l.parcelas || 1, descricao:(l.partes && l.partes[0] && l.partes[0].descricao) || ""}; if(l.linkSolId){ o.linkSolId = l.linkSolId; o.jaPagoLink = true; } return o; })});
@@ -537,6 +538,7 @@ function AtendimentoInterno(){
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
   var tudoComComprovante = !!lancFin && !alterado && semPendencia(lancFin.linhas);     // inclui a diferença do brinde, se houver
   var etapa = function(patch){ d({type:"FIN_ETAPA", id:lancFin.id, patch:patch}); };
+  var GRID_FIN = "grid min-h-8 grid-cols-[minmax(0,.9fr)_minmax(0,2.2fr)_6rem_minmax(0,1.5fr)] items-center gap-2 px-2 py-1 text-center text-[13px]";
   var STATUS_FIN = {aguardando:["Aguardando o financeiro definir e enviar as contas","#F59E0B"], conta:["Contas definidas: anexe os comprovantes","#38BDF8"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
   var trocaParte = function(i, j, patch){ var l = lancFin.linhas[i]; d({type:"FIN_LINHA", id:lancFin.id, i:i, patch:{partes:l.partes.map(function(p,k){ return k===j ? Object.assign({}, p, patch) : p; })}}); };
   var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 p-2"},
@@ -553,19 +555,21 @@ function AtendimentoInterno(){
       e(Btn,{v:"primary", ic:"check", sm:true, disabled:!tudoComComprovante, onClick:function(){ etapa({finalizado:true, finalizadoTs:Date.now()}); }}, "Finalizar pagamentos e enviar para conferência"),
       e("span",{className:"text-[13px] text-muted-foreground"}, alterado ? "Há diferença de brinde nova: reenvie ao financeiro, espere a conta e anexe o comprovante." : tudoComComprovante ? "Tudo anexado: o financeiro já pode conferir." : "Falta anexar algum comprovante.")),
     lancFin && lancFin.finalizado && !lancFin.conferido && e("p",{className:"text-[13px] font-semibold text-primary"},"Comprovantes enviados: aguardando o financeiro conferir."),
-    lancFin && lancFin.linhas.map(function(l,i){ var sk = statusLinhaFin(l), st = STATUS_FIN[sk];
-      return e("div",{key:i, className:"flex flex-col gap-1 rounded-lg bg-black/20 px-2.5 py-1.5 text-[13px]"},
-        e("div",{className:GRID_PAG},
-          e("span"), e("b",{className:"text-center"}, l.tipo==="brinde" ? "Diferença do brinde" : formaDe(l.forma).label), e("b",{className:MONO+" text-center text-primary"}, din(l.valor)),
-          e("span",{className:"justify-self-start whitespace-nowrap rounded-md px-2 py-0.5 text-[13px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0])),
-        sk!=="isento" && sk!=="aguardando" && (l.partes||[]).map(function(p,j){
-          return e("div",{key:j, className:GRID_PAG+" text-[13px]"},
-            e("span"), e("span",{className:"truncate text-center text-muted-foreground", title:p.descricao}, p.descricao), e("b",{className:MONO+" text-center"}, din(p.valor)),
-            e("span",{className:"flex flex-wrap items-center gap-2"},
-              p.ok ? e("span",{className:"font-bold text-success"},"✓ conferido") : lancFin.finalizado ? null : e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 py-0.5 text-[13px] font-semibold hover:bg-white/15"},
-                p.comprovante ? "✓ Comprovante: trocar" : "Anexar comprovante",
-                e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }})),
-              p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},"ver"))); })); }));
+    // 16/11/2026 (Marcus: "fora do padrão, compactar"): uma linha por conta, tudo em tabela única (Forma, Conta inteira, Valor, Situação), sem cartão dentro de cartão, sem corte "..." e sem valor dourado
+    lancFin && e("div",{className:"flex flex-col overflow-hidden rounded-md border border-foreground/25"},
+      e("div",{className:GRID_FIN+" bg-black/30 text-[11px] font-bold uppercase tracking-[.05em]"}, e("span",null,"Forma"), e("span",null,"Conta"), e("span",null,"Valor"), e("span",null,"Situação")),
+      lancFin.linhas.reduce(function(acc,l,i){ var sk = statusLinhaFin(l), st = STATUS_FIN[sk], nomeF = l.tipo==="brinde" ? "Diferença do brinde" : formaDe(l.forma).label;
+        var partes = (sk!=="isento" && sk!=="aguardando") ? (l.partes||[]) : [];
+        var linha = function(chave, conta, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 "+(acc.length%2 ? "bg-white/[0.03]" : "")}, e("b",null,nomeF), e("span",{className:"break-words"}, conta), e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
+        var marca = e("span",{className:"justify-self-center rounded-md px-2 py-0.5 text-[11px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0]);
+        if(!partes.length){ acc.push(linha(i+"-s", "—", l.valor, marca)); return acc; }
+        partes.forEach(function(p,j){
+          acc.push(linha(i+"-"+j, p.descricao||"—", p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
+            p.ok ? e("span",{className:"font-bold text-success"},"✓ conferido") : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
+              p.comprovante ? "✓ Trocar comprovante" : "Anexar comprovante",
+              e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }})),
+            p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},"ver")))); });
+        return acc; }, [])));
   var pVendas = heroVendas;
   var pPag = e(React.Fragment,null,
     !dv.previaBase ? e(React.Fragment,null, e("p",{className:"rounded-lg border border-dashed border-border p-3 text-center text-[13px] text-muted-foreground"},"Digite o valor vendido para lançar os pagamentos."), caixaFinanceiro)
@@ -713,15 +717,14 @@ function AtendimentoInterno(){
       termoAnt.assinatura && e("img",{src:termoAnt.assinatura, alt:"Assinatura de "+sel.nome, className:"h-24 rounded-lg bg-white p-1"}),
       e("p",{className:"text-[13px] text-muted-foreground"}, "Assinatura registrada"+(termoAnt.por ? " · atendida por "+termoAnt.por : ""))) : null;
   var pRegras = msgs ? e(React.Fragment,null,
-      e("p",{className:"text-center text-[13.5px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)),
-      painelTermo,
+      e("p",{className:"text-center text-[13px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)),
+      // 16/11/2026 (Marcus: "tira essa merda, só o copiar e enviar no grupo"): depois de registrar não aparece o termo assinado nem o texto das mensagens, só os botões Copiar
       e("div",{className:"grid grid-cols-1 gap-3 md:grid-cols-2"}, [["cliente","Para a revendedora", msgs.cliente],["grupo","Para o grupo da empresa", msgs.grupo]].map(function(m){
-        return e("div",{key:m[0], className:"flex flex-col gap-2"}, e("b",{className:"text-center text-[13.5px]"}, m[1]),
-          e("textarea",{readOnly:true, value:m[2], rows:Math.min(14, m[2].split("\n").length+1), className:INPUT+" h-auto! w-full resize-none py-2! text-[13px]! leading-snug"}),
+        return e("div",{key:m[0], className:"flex flex-col gap-2"}, e("b",{className:"text-center text-[13px]"}, m[1]),
           e("div",{className:"flex justify-center gap-2"}, e(Btn,{v:"primary", ic:"copiar", onClick:function(){ copiarMsg(m[0], m[2]); }}, msgCopiada===m[0] ? "✓ Copiado" : "Copiar"),
             m[0]==="cliente" && sel.fone && e("a",{href:"https://wa.me/55"+sel.fone.replace(/\D/g,"")+"?text="+encodeURIComponent(m[2]), target:"_blank", rel:"noreferrer",
               className:"inline-flex h-10 items-center rounded-lg bg-success/15 px-3 text-[15px] font-medium text-success hover:bg-success/25"}, "Abrir no WhatsApp"))); })))
-    : jaFeito ? e(React.Fragment,null, e("p",{className:"text-center text-[13.5px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)), painelTermo)
+    : jaFeito ? e(React.Fragment,null, e("p",{className:"text-center text-[13px] font-semibold text-success"},"✓ Acerto registrado · acerto "+din(sel.acerto.valorAcerto)+" · comissão "+din(sel.acerto.comissao)))
     : semVendaOk ? e("div",{className:"flex flex-col items-center gap-3 p-4 text-center text-[13px]"}, e("p",{className:"font-semibold"}, "Sem venda: o kit não renova. Não precisa passar as regras."), e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!pronto, onClick:registrar}, "Finalizar atendimento"))
     : e(React.Fragment,null,
         termoAnt && e("div",{className:"flex justify-center gap-1.5"}, [["agora","Passar as regras agora"],["anterior","Termo do mês anterior"]].map(function(x){ var on = abaRegras===x[0];
@@ -915,7 +918,8 @@ function AtendimentoInterno(){
 
   // ── estação 2: pagamentos (forma e valor; o financeiro define as contas) ──
   var BANDEIRAS = ["Visa","Mastercard","Elo","Amex","Hipercard"];
-  var pedeBand = /cr[eé]dito|d[eé]bito|link/i.test(fl.label||"");
+  // 16/11/2026 (Marcus): a bandeira só é pedida no LINK; cartão de crédito e débito na maquininha não pedem
+  var pedeBand = /link/i.test(fl.label||"");
   var addPagB = function(){ if(pedeBand && !lancForm.bandeira) return; addPag(); };
   // Links de pagamento JÁ PAGOS desta revendedora (setor Link de pagamento): entram como pagamento já resolvido, sem esperar o financeiro definir conta (Marcus, 11/11/2026)
   var infoLinks = s.lp && sel ? linksParaAcertoPorNome(s, sel.nome) : null;
@@ -986,11 +990,12 @@ function AtendimentoInterno(){
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){
     var lista = form.brindes.map(function(b,i){ return {b:b, i:i}; }).filter(function(x){ return x.b.cat===cat; });
-    var codOk = codigoBrindeValido(cat, st.codigo), travado = travaBrinde || jaFeito;
+    var codOk = codigoBrindeValido(cat, st.codigo), travado = travaBrinde || jaFeito, nLista = lista.length;
     var GB = " grid-cols-[minmax(0,1fr)_6.5rem_2rem]";
     return lado(titulo, e("div",{className:CTB},
-      lista.length ? lista.map(function(x,k){ return e("div",{key:x.i, className:LIN+" grid-cols-[minmax(0,1fr)_2rem]"+(k%2 ? " bg-white/[0.03]" : "")}, e("b",{className:MONO+" whitespace-nowrap"}, x.b.codigo+" - "+din(x.b.valor)),
-        jaFeito ? e("span") : e(Remover,{label:"Remover peça "+x.b.codigo, onClick:function(){ up({brindes:form.brindes.filter(function(y,j){ return j!==x.i; })}); }})); })
+      // 16/11/2026 (Marcus: "10 a 14 linhas de brinde... fonte menor conforme a quantidade, sem quebrar"): com mais de 4 peças a lista vira 2 colunas e acima de 8 a letra passa de 13 para 11 px
+      lista.length ? e("div",{className:"grid "+(nLista>4 ? "grid-cols-2" : "grid-cols-1")}, lista.map(function(x,k){ return e("div",{key:x.i, className:LIN+" grid-cols-[minmax(0,1fr)_2rem]"+(nLista>8 ? " text-[11px]" : "")+(k%2 ? " bg-white/[0.03]" : "")}, e("b",{className:MONO+" whitespace-nowrap"}, x.b.codigo+" - "+din(x.b.valor)),
+        jaFeito ? e("span") : e(Remover,{label:"Remover peça "+x.b.codigo, onClick:function(){ up({brindes:form.brindes.filter(function(y,j){ return j!==x.i; })}); }})); }))
       : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma peça lançada")),
       !travado && e("div",{className:LIN+GB+" bg-primary/15!"},
         e("input",{value:st.codigo, placeholder:cat==="bb" ? "BB0001" : "Código", "aria-label":"Código da peça "+titulo, autoCapitalize:"characters", className:CPT+" uppercase",
@@ -1178,8 +1183,10 @@ function AtendimentoInterno(){
   var resBr = function(cat, titulo, lib, lanc){ var L = form.brindes.filter(function(b){ return b.cat===cat; });
     return e("div",{key:cat, className:CTP+(cat==="normal" ? " border-r border-foreground/25" : "")}, [
       e("div",{key:"h", className:CABT+" grid-cols-1"}, titulo),
-      L.length ? L.map(function(b,i){ return e("div",{key:i, className:LIN+" grid-cols-1"+(i%2 ? " bg-white/[0.03]" : "")}, e("b",{className:MONO+" whitespace-nowrap"}, b.codigo+" - "+din(b.valor))); }) : e("div",{key:"n", className:LIN},e("span",{className:CAP},"Nenhuma peça")),
-      e("div",{key:"sp", className:"flex-1"}), rodaKV("Libera", n15(din(lib))), e("div",{key:"l", className:LIN+G2+" min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Lançado"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, din(lanc)))]); };
+      // 16/11/2026 (Marcus: "o resumo tem que ter um limite, barra de rolagem, não expande pra baixo"): a lista de peças tem altura máxima e rola por dentro; com mais de 8 peças a letra passa para 11 px
+      // linhas compactas (11 px, sem altura mínima) e barra de rolagem fina visível; cada linha "encaixa" no topo ao rolar
+      L.length ? e("div",{key:"lista", className:"barra-fina min-h-24 flex-1 basis-0 snap-y snap-mandatory overflow-y-auto"}, L.map(function(b,i){ return e("div",{key:i, className:"grid snap-start grid-cols-1 items-center border-t border-primary/20 px-2.5 py-1 text-center text-[11px] leading-none tabular-nums"+(i%2 ? " bg-white/[0.03]" : "")}, e("b",{className:MONO+" whitespace-nowrap"}, b.codigo+" - "+din(b.valor))); })) : e("div",{key:"n", className:LIN},e("span",{className:CAP},"Nenhuma peça")),
+      !L.length && e("div",{key:"sp", className:"flex-1"}), rodaKV("Libera", n15(din(lib))), e("div",{key:"l", className:LIN+G2+" min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Lançado"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, din(lanc)))]); };
   var resBrindes = lado("Brindes", e("div",{className:"grid min-w-0 flex-1 grid-cols-2"}, resBr("normal","Normal", dv.libN||0, cb.lancadoNormal||0), resBr("bb","Select", dv.libS||0, cb.lancadoSelect||0)), "", "p-0");
   var pdfResumo = function(){
     var w = window.open("","_blank"); if(!w) return;
@@ -1206,7 +1213,12 @@ function AtendimentoInterno(){
   var pagsRes = form.pagamentos.filter(function(q){ return q.forma && q.valor>0; });
   // Marcus, 16/11/2026: Pagamentos em UMA coluna, uma forma por linha; Total pago, Inadimplência e Diferença do brinde descem logo abaixo
   var resPag = blocoRes("Pagamentos", [e("div",{key:"h", className:CABT+G2}, e("span",null,"Forma"), e("span",null,"Valor")),
-    pagsRes.length ? pagsRes.map(function(q,i){ return e("div",{key:i, className:LIN+G2+(i%2 ? " bg-white/[0.03]" : "")}, e("span",null, formaDe(q.forma).label+(q.bandeira ? " "+q.bandeira : "")+(q.parcelas>1 ? " "+q.parcelas+"x" : "")), n15(din(q.valor))); }) : e("div",{key:"n", className:LIN},e("span",{className:CAP},"Nenhum pagamento")),
+    // 16/11/2026 (Marcus: "ali a forma de pagamento não é pix, tem que ter exatamente a conta que foi pago"): com o pagamento direcionado pelo financeiro, a linha mostra a CONTA (ex.: Sicredi Sorelly 34); sem conta definida ainda, mostra a forma
+    pagsRes.length ? pagsRes.map(function(q,i){
+      var lfPg = lancFin ? lancFin.linhas.filter(function(l){ return l.tipo==="pagamento"; })[i] : null;
+      var contasPg = lfPg && lfPg.partes ? lfPg.partes.map(function(p){ return String(p.descricao||"").split(" · ").pop(); }).filter(Boolean) : [];
+      var rotPg = contasPg.length ? contasPg.join(" + ") : formaDe(q.forma).label+(q.bandeira ? " "+q.bandeira : "")+(q.parcelas>1 ? " "+q.parcelas+"x" : "");
+      return e("div",{key:i, className:LIN+G2+(i%2 ? " bg-white/[0.03]" : "")}, e("span",{title:contasPg.length ? lfPg.partes.map(function(p){ return p.descricao; }).join(" + ") : ""}, rotPg), n15(din(q.valor))); }) : e("div",{key:"n", className:LIN},e("span",{className:CAP},"Nenhum pagamento")),
     e("div",{key:"sp", className:"flex-1"}),
     e("div",{key:"tp", className:LIN+G2+" min-h-9 border-y border-success/60 bg-success/10! font-semibold"}, e("span",null,"Total pago"), e("b",{className:"text-[15px] font-semibold tabular-nums text-success"}, din(dv.totalPagoAtual))),
     // Inadimplência = o que ficou do ACERTO em aberto (a diferença do brinde é outra linha); mostra se houve acordo ou se não quis negociar
