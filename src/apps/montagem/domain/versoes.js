@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.62", data:"2026-11-16", titulo:"Atendimento Sorelly: revendedora saiu sem assinar", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Na tela de assinatura da ciência das regras, o botão \"Revendedora saiu sem assinar\" libera o Registrar acerto quando ela vai embora antes de assinar. A ficha guarda \"Ciência pendente\" e só avisa a funcionária no próximo acerto (não trava)."},
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"A coluna Dívida da agenda do dia não conta mais o acerto do próprio atendimento (ex.: R$ 2,00 de diferença do brinde) como dívida anterior."}
+ ]},
  {v:"0.20.60", data:"2026-11-16", titulo:"Botão Som no menu da conta", itens:[
   {tipo:"melhoria", area:"Menu da conta (barra de cima)", txt:"Novo botão Som ligado / Som desligado no menu da conta. Desligado, calam todos os sons do sistema neste computador: cliques, avisos, a sirene e a voz de Nova venda, e os avisos de pagamento. Os avisos continuam aparecendo na tela, só sem barulho. Vale só no computador em que se clica e fica guardado no navegador (é a mesma chave Mudo do SorellyChat). Antes, a sirene e a voz ignoravam essa chave."}
  ]},

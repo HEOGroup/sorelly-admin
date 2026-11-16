@@ -162,6 +162,7 @@ function AtendimentoInterno(){
   var ac = useState(null), assCiente = ac[0], setAssCiente = ac[1];               // assinatura de ciência (revendedora não quis esperar a explicação)
   var inc = useState(false), incluindo = inc[0], setIncluindo = inc[1];             // "Chegou sem agendar": inclui na agenda de hoje quem chegou sem a Tamara marcar (Edna, 16/11/2026)
   var ao = useState(false), cienteAberta = ao[0], setCienteAberta = ao[1];
+  var sa = useState(false), saiu = sa[0], setSaiu = sa[1];                          // 16/11/2026: revendedora saiu sem assinar a ciência (só avisa, não trava)
   var rm = useState({}), regraMais = rm[0], setRegraMais = rm[1];                  // "ver mais" de cada regra
   var up = function(patch){ setForm(function(f){ return Object.assign({}, f, patch); }); };
 
@@ -176,7 +177,7 @@ function AtendimentoInterno(){
     [sel ? sel.id : null, sel ? sel.escolhaIni : null, sel ? sel.escolhaFim : null]);
   useEffect(function(){
     setForm(FORM_ACERTO_VAZIO); setBrindeIn(BRINDE_VAZIO); setLancForm(LANC_VAZIO); setNegociarAberto(false); setRegForm({isenta:false, motivo:""});
-    setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({}); setAssCiente(null); setCienteAberta(false);
+    setCiente(false); setRegrasOk({}); setBnIn({codigo:"", valor:null}); setBbIn({codigo:"", valor:null}); setAbaRegras("agora"); setRegraMais({}); setAssCiente(null); setCienteAberta(false); setSaiu(false);
     if(sel && sel.status==="acertado" && sel.formSnapshot) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.formSnapshot));
     else if(sel && sel.rascunho) setForm(Object.assign({}, FORM_ACERTO_VAZIO, sel.rascunho));   // volta de onde parou (ex.: esperando o financeiro confirmar)
     else if(sel && sel.vendaApp>0) setForm(Object.assign({}, FORM_ACERTO_VAZIO, {vendaBruta:sel.vendaApp}));   // o valor vendido vem direto do app da revendedora
@@ -361,7 +362,8 @@ function AtendimentoInterno(){
     var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
     var canc = x.status==="cancelado";
     var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
-    var div = !feito ? totalDividaAnterior(s.acertosConsignado, x.nome) : 0;
+    // 16/11/2026 (Marcus: "não é pra ter nada aí"): o acerto DESTE atendimento (ex.: R$ 2,00 de diferença do brinde, ainda sem finalizar) não é dívida anterior
+    var div = !feito ? totalDividaAnterior((s.acertosConsignado||[]).filter(function(r){ return r.internoId!==x.id; }), x.nome) : 0;
     return {id:x.id, hora:x.hora || "—", nome:doisNomes(x.nome), tipo:TIPO_DIA[x.tipo || "acerto"] || "Acerto", sit:st[0], _cls:st[1], divida:div>0.009 ? div : null, _x:x, _on:on, _canc:canc};
   };
   var linhasDia = listaDia.map(linhaDia);
@@ -685,17 +687,17 @@ function AtendimentoInterno(){
     {t:"Peças fora do kit", x:"Tudo que não estiver no kit, com etiqueta, no momento do acerto é considerado vendido. Não existe a opção de ter tirado a peça como brinde."},
     {t:"Horário do acerto", x:"O acerto é no horário marcado, com tolerância de "+TOLERANCIA_CHEGADA_MIN+" minutos. Chegando depois disso, perde "+Math.round(DESCONTO_BRINDE_ATRASO*100)+"% do brinde."}]);
   var curto = function(x){ var p = String(x||"").split(/(?<=[.!?])\s/)[0]; return p.length>110 ? p.slice(0,107)+"…" : p; };
-  var cienteOk = regras.length>0 && (!!assCiente || regras.every(function(r,i){ return !!regrasOk[i]; }));   // ou todas explicadas, ou a revendedora assinou a ciência
+  var cienteOk = regras.length>0 && (!!assCiente || saiu || regras.every(function(r,i){ return !!regrasOk[i]; }));   // ou todas explicadas, ou a revendedora assinou a ciência
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
   var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : (!!continuaEf && (continuaEf!=="outro_dia" || !!form.renovaDia)))));
-  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
+  var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente || saiu, saiuSemAssinar:saiu, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, regraAntiga:!!form.regraAntiga && !ehPrata, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
       condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
-      assinatura:assCiente, semExplicacao:!!assCiente, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
+      assinatura:assCiente, semExplicacao:!!assCiente || saiu, saiuSemAssinar:saiu, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
       pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, renovaDia:continuaEf==="outro_dia" ? (form.renovaDia||"") : "", novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
     if(form.creditoPuxadoValor>0 && form.garantia>0) d({type:"GR", op:"credito_usar", revendedora:sel.nome, kitId:sel.id, por:nomeDe(s.usuario)});   // o crédito da Garantia foi usado neste acerto
@@ -706,7 +708,7 @@ function AtendimentoInterno(){
   var dataBR = function(ts){ return new Date(ts).toLocaleDateString("pt-BR"); };
   // termo assinado antes (mês anterior): leu, confirmou e assinou todas as informações
   var painelTermo = termoAnt ? e("div",{className:"flex flex-col items-center gap-2 rounded-xl bg-success/10 p-3 ring-1 ring-success/30"},
-      e("b",{className:"text-[13px] text-success"},(termoAnt.semExplicacao ? "✓ Assinou a ciência das regras (sem a explicação) em " : "✓ Leu, confirmou e assinou em ")+dataBR(termoAnt.ts)),
+      e("b",{className:"text-[13px] text-success"},(termoAnt.saiuSemAssinar ? "Ciência pendente: ela saiu sem assinar em " : termoAnt.semExplicacao ? "✓ Assinou a ciência das regras (sem a explicação) em " : "✓ Leu, confirmou e assinou em ")+dataBR(termoAnt.ts)),
       e("div",{className:"flex flex-wrap justify-center gap-1.5"}, (termoAnt.regras||[]).map(function(t,i){ return e("span",{key:i, className:"rounded-md bg-success/15 px-2 py-0.5 text-[13px] font-semibold text-success"}, "✓ "+t); })),
       termoAnt.assinatura && e("img",{src:termoAnt.assinatura, alt:"Assinatura de "+sel.nome, className:"h-24 rounded-lg bg-white p-1"}),
       e("p",{className:"text-[13px] text-muted-foreground"}, "Assinatura registrada"+(termoAnt.por ? " · atendida por "+termoAnt.por : ""))) : null;
@@ -1106,7 +1108,9 @@ function AtendimentoInterno(){
       e("div",{className:"flex flex-1 flex-col items-center justify-center gap-3 p-4 text-center text-[13px]"},
         e("p",{className:"font-semibold"}, "As regras estão no app da revendedora. Ela precisa assinar que está ciente de todas as regras do consignado."),
         e(QuadroCiencia,{onChange:setAssCiente}),
-        assCiente && e("p",{className:"font-semibold text-success"}, "✓ Ciência assinada: a revendedora declarou estar ciente de todas as regras.")),
+        assCiente && e("p",{className:"font-semibold text-success"}, "✓ Ciência assinada: a revendedora declarou estar ciente de todas as regras."),
+        saiu && e("p",{className:"font-semibold text-[#FBBF24]"}, "Registrado: a revendedora saiu sem assinar. A ciência fica pendente na ficha dela."),
+        !assCiente && e("button",{type:"button", onClick:function(){ setSaiu(!saiu); }, className:"h-8 rounded-md border px-4 text-[13px] font-semibold "+(saiu ? "border-foreground/25 bg-card" : "border-primary text-primary hover:bg-primary/10")}, saiu ? "Desfazer: revendedora saiu sem assinar" : "Revendedora saiu sem assinar")),
       e("div",{className:"flex flex-wrap justify-center gap-2 border-t-2 border-primary/50 p-2"},
         e("button",{type:"button", onClick:function(){ setAssCiente(null); setCienteAberta(false); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar e explicar as regras"),
         e("button",{type:"button", onClick:pdfRegras, className:"h-8 rounded-md border border-foreground/25 bg-card px-4 text-[13px] font-medium hover:bg-white/10"}, "Gerar PDF das regras"),
