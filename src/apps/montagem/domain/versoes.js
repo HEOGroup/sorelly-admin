@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.35", data:"2026-11-16", titulo:"Atendimento Sorelly: Resumo em 2 por 2 com Pagamentos e Inadimplência, e etapa Pagamentos em uma coluna compacta", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Resumo do acerto em 4 blocos (2 em cima, 2 embaixo, com borda): Condicionais, Brindes (normal e select juntos), Pagamentos (uma forma por linha, total pago, inadimplência com a situação do acordo e diferença do brinde) e Conta do acerto."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Etapa Pagamentos em uma coluna só e compacta: totais numa linha, barra de formas, botões de link lado a lado e cada pagamento em uma linha, sem quebra."}]},
  {v:"0.20.34", data:"2026-11-16", titulo:"Atendimento Sorelly: Resumo do acerto como 8ª etapa, ciência das regras em tela própria, várias condicionais novas e crédito da Garantia automático; Direcionar adaptável", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Nova 8ª etapa, Resumo do acerto: abre a qualquer momento depois de iniciar o atendimento, para a funcionária conferir quando as etapas não saem na ordem (o financeiro demora). O resumo saiu de baixo da tela."},
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Regras: o botão 'Não quis esperar a explicação · assinar ciência' troca a tela das regras por uma tela só com a assinatura, o PDF e o botão de registrar."},
