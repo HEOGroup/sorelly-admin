@@ -121,11 +121,6 @@ function AbaCondicionais(){
   var pend = doDia.filter(function(k){ return k.status==="precond"; });
   var abertas = s.listagens.filter(function(l){ return !l.fechada; }).slice().sort(function(a, b){ return (String(a.data||"")+String(a.horario||"")).localeCompare(String(b.data||"")+String(b.horario||"")); });
 
-  // a próxima a pegar: a primeira revendedora com condicional ainda não conferida; se não houver, a primeira aguardando
-  var proxima = null;
-  abertas.forEach(function(l){ doDia.filter(function(k){ return k.lid===l.id; }).sort(function(a, b){ return (a.ordem||0)-(b.ordem||0); }).forEach(function(k){ if(!proxima && k.status==="precond" && condVisiveisPre(k).some(function(n){ var st = condEstado(k, n); return !st.p && !st.falta; })) proxima = k; }); });
-  if(!proxima) pend.forEach(function(k){ if(!proxima) proxima = k; });
-
   // UMA ABA POR DIA (Marjory, 16/11/2026: "uma aba com o dia e todas as listagens desse dia dentro, e o horário delas"): dentro da aba, cada listagem é um grupo
   // (representante e horário) com uma linha por revendedora. A aba que abre é a de hoje (ou a próxima com kit esperando).
   var dataDe = function(l){ return String(l.data||"").slice(0, 10) || "sem-data"; };
@@ -140,7 +135,7 @@ function AbaCondicionais(){
     doDia.filter(function(k){ return k.lid===l.id; }).sort(function(a, b){ return (a.ordem||0)-(b.ordem||0); }).forEach(function(k){
       var nums = condVisiveisPre(k), lib = k.status!=="precond", ok = condOkPre(k), feitas = nums.filter(function(n){ return condEstado(k, n).p; }).length, faltas = nums.filter(function(n){ return condEstado(k, n).falta; }).length;
       var sit = lib ? "Liberada" : faltas ? faltas+" falta"+(faltas>1 ? "m" : "") : ok ? "Conferida" : "A conferir";
-      linhas.push({id:k.id, kit:k, l:l, grupo:grupo, hora:k.horaAtend || l.horario, rev:(k.prio ? "★ " : "")+(proxima && proxima.id===k.id ? "▶ " : "")+k.rev, tipo:(TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit)[1],
+      linhas.push({id:k.id, kit:k, l:l, grupo:grupo, hora:k.horaAtend || l.horario, rev:(k.prio ? "★ " : "")+k.rev, tipo:(TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit)[1],
         conds:nums.length ? nums.map(function(n){ var st = condEstado(k, n); return (st.p ? "✓ " : st.falta ? "! " : "")+n; }).join("   ") : "Sem condicional",
         feitas:feitas+" de "+nums.length, sit:sit, lib:lib, ok:ok, n:nums.length});
     });
@@ -167,7 +162,7 @@ function AbaCondicionais(){
   var linhaAberta = aberta && linhas.find(function(x){ return x.id===aberta; });
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     linhaAberta && e(Ficha,{key:linhaAberta.id, k:linhaAberta.kit, l:linhaAberta.l, lista:linhas, d:d, usuario:s.usuario, fechar:function(){ setAberta(null); }, ir:setAberta}),
-    fila.length>0 && e(BlocoPainel,{titulo:"Aguardando impressão", compacto:true, dir:fila.length+" pedida"+(fila.length>1 ? "s" : "")},
+    fila.length>0 && e(BlocoPainel,{titulo:"Aguardando impressão", compacto:true},
       e(TabelaPlanilha,{key:"fila", cols:colsFila, linhas:fila, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhum pedido de impressão."})),
     e(BlocoPainel,{titulo:"Condicionais", compacto:true, alta:true,
         // o dia fica à ESQUERDA, na mesma linha do título (uma linha só no topo; Marcus, 16/11/2026)
