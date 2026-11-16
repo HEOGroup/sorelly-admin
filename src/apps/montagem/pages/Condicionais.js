@@ -112,12 +112,16 @@ function MenuDias(p){
     e("button",{ref:bt, id:"cd-dia", type:"button", "aria-expanded":!!pos, onClick:abre, className:"flex h-8 items-center gap-2 whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-normal normal-case text-white outline-none"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, pos ? "▴" : "▾")),
     pos && createPortal(e("div",{ref:lista, role:"listbox", "aria-multiselectable":true, style:{top:pos.top, left:pos.left}, className:"fixed z-[90] max-h-[60vh] min-w-72 overflow-y-auto rounded-md border border-white/50 bg-[#14233f] p-1 shadow-lg"},
       p.dias.length>1 && e("label",{className:linha+" border-b border-white/30"}, e("input",{type:"checkbox", checked:todos, onChange:function(){ p.onChange(todos ? [sel[0]] : p.dias.slice()); }}), "Todos os dias"),
-      p.dias.map(function(d0){ return e("label",{key:d0, className:linha}, e("input",{type:"checkbox", checked:sel.indexOf(d0)>=0, onChange:function(){ alterna(d0); }}), tituloAba(d0)); })), document.body));
+      p.dias.map(function(d0){ return e("label",{key:d0, className:linha}, e("input",{type:"checkbox", checked:sel.indexOf(d0)>=0, onChange:function(){ alterna(d0); }}), tituloAba(d0)); }),
+      e("label",{className:linha+" border-t border-white/30"}, e("input",{type:"checkbox", checked:!!p.antigas, onChange:function(){ p.onAntigas(!p.antigas); }}), "Mostrar também as liberadas antigas")), document.body));
 }
 
 function AbaCondicionais(){
-  var cx = use(), s = cx.state, d = cx.dispatch, fechados = useState({}), fech = fechados[0], setFech = fechados[1], ab = useState(null), aberta = ab[0], setAberta = ab[1], ds = useState(null), diaSel = ds[0], setDiaSel = ds[1];
-  var doDia = s.kits.filter(function(k){ return k.status==="precond" || (k.cond && k.cond.liberadoEm); });
+  var cx = use(), s = cx.state, d = cx.dispatch, fechados = useState({}), fech = fechados[0], setFech = fechados[1], ab = useState(null), aberta = ab[0], setAberta = ab[1], ds = useState(null), diaSel = ds[0], setDiaSel = ds[1], va = useState(false), verAntigas = va[0], setVerAntigas = va[1];
+  // Liberadas ANTIGAS saem da lista (Marcus, 16/11/2026): só ficam as que ainda aguardam e as liberadas HOJE (para a funcionária ver o que acabou de fazer).
+  var hojeBR = new Date(Date.now()-3*3600000).toISOString().slice(0, 10);
+  var liberadaHoje = function(k){ var m = k.cond && k.cond.liberadoEm; return !!m && new Date(Number(m)-3*3600000).toISOString().slice(0, 10)===hojeBR; };
+  var doDia = s.kits.filter(function(k){ return k.status==="precond" || liberadaHoje(k) || (verAntigas && !!(k.cond && k.cond.liberadoEm)); });   // as liberadas antigas voltam só se a funcionária marcar no menu do dia
   var pend = doDia.filter(function(k){ return k.status==="precond"; });
   var abertas = s.listagens.filter(function(l){ return !l.fechada; }).slice().sort(function(a, b){ return (String(a.data||"")+String(a.horario||"")).localeCompare(String(b.data||"")+String(b.horario||"")); });
 
@@ -166,7 +170,7 @@ function AbaCondicionais(){
       e(TabelaPlanilha,{key:"fila", cols:colsFila, linhas:fila, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhum pedido de impressão."})),
     e(BlocoPainel,{titulo:"Condicionais", compacto:true, alta:true,
         // o dia fica à ESQUERDA, na mesma linha do título (uma linha só no topo; Marcus, 16/11/2026)
-        acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel}) : null},
+        acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel, antigas:verAntigas, onAntigas:setVerAntigas}) : null},
       e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"}, e(TabelaPlanilha,{key:"cond", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true,
         agrupar:"grupo", rotuloGrupo:function(g, q){ var p0 = String(g).split("|"); return tituloAba(p0[0])+" · "+p0[2]+" · "+p0[1]+" · "+q+" revendedora"+(q>1 ? "s" : ""); },
         grupoAberto:function(g){ return !fech[g]; }, aoGrupo:function(g){ var o = Object.assign({}, fech); o[g] = !fech[g]; setFech(o); },
