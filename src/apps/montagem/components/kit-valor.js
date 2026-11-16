@@ -30,12 +30,14 @@ function KitValor(p){
 function LinhaTempo(p){
   var s = use().state, k = p.k, ev = [], sug = sugerido(k.vendas, s.cfg);
   // vendas[0] = m\u00eas atual (app da representante); vendas[1..2] = meses anteriores (DevMaster)
-  var ORIGEM = ["m\u00eas atual (app)","m\u00eas anterior (DevMaster)","2 meses atr\u00e1s (DevMaster)"];
+  // Valor automático (16/11/2026): as 3 vendas vêm TODAS da DevMaster (a mais recente primeiro); só o kit antigo, digitado na representante, tem a venda do mês do app.
+  var daDev = !!(k.cond && k.cond.valorBuscaEm);
+  var ORIGEM = daDev ? ["venda mais recente (DevMaster)","venda anterior (DevMaster)","venda mais antiga (DevMaster)"] : ["m\u00eas atual (app)","m\u00eas anterior (DevMaster)","2 meses atr\u00e1s (DevMaster)"];
   ev.push(["Vendas", k.vendas.length ? k.vendas.map(function(v,i){return ORIGEM[i]+" "+BK(v);}).join(", ")+". M\u00e9dia "+BK(media3(k.vendas))+", tabela de estoque "+(s.cfg.tabelaAtiva==="baixo"?"baixo":"alto")+", sugerido "+BK(sug)+"."
-    +(k.vendas[0] < s.cfg.minVendaApp ? " Venda do m\u00eas abaixo de "+BK(s.cfg.minVendaApp)+": a representante pode informar o valor manualmente." : "") : "Revendedora nova, sem vendas"]);
+    +(!daDev && k.vendas[0] < s.cfg.minVendaApp ? " Venda do m\u00eas abaixo de "+BK(s.cfg.minVendaApp)+": a representante pode informar o valor manualmente." : "") : "Revendedora nova, sem vendas"]);
   var pc = pecasPara(k.valor, s.cfg);
   if(k.valor) ev.push(["O que enviar", pc ? pc.itens.map(function(x){return x.txt+" "+x.nome.toLowerCase();}).join(", ")+" (tabela do kit de "+BK(pc.kit)+")" : "Tabela de peças ainda não preenchida para este valor"]);
-  if(k.valor) ev.push(["Valor definido", BK(k.valor)+" por "+nomeDe(k.defPor)+" \u00e0s "+hora(k.defEm)+(k.manual?", diferente da sugest\u00e3o":"")]);
+  if(k.valor) ev.push([k.defAuto ? "Valor autom\u00e1tico" : "Valor definido", k.defAuto ? BK(k.valor)+", m\u00e9dia das vendas pela tabela de kit, \u00e0s "+hora(k.defEm) : BK(k.valor)+" por "+nomeDe(k.defPor)+" \u00e0s "+hora(k.defEm)+(k.manual?", diferente da sugest\u00e3o":"")]);
   if(k.designada) ev.push(["Designado","Para "+nomeDe(k.designada)]);
   if(k.iniM) ev.push(["Montagem", nomeDe(k.montId)+", in\u00edcio "+hora(k.iniM)+(k.fimM?", fim "+hora(k.fimM)+", "+durCurta(k.tempoM)+(k.pausaMs>60000?" (pausa de "+durCurta(k.pausaMs)+")":""):", em andamento")]);
   if(k.motivo) ev.push(["Ajuste pedido", k.motivo]);

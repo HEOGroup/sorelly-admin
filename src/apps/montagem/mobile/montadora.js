@@ -8,8 +8,6 @@ import { kit } from "@/apps/montagem/domain/seed";
 import { STATUS_LB, STATUS_TP, TIPO_KIT } from "@/apps/montagem/domain/status";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
 import { TelaLogin } from "@/apps/montagem/components/tela-login";
-import { avisosDe } from "@/apps/montagem/domain/pedidos-pecas";
-import { CelPedir } from "@/apps/montagem/mobile/montadora-pedido";
 import { IPhone15 } from "@/apps/montagem/mobile/iphone";
 import { useEu } from "@/apps/montagem/components/chat/chat-app";
 import { CelChat } from "@/apps/montagem/mobile/cel-chat";
@@ -129,7 +127,6 @@ function CelInicio(){
   var idsAbertas = abertas.map(function(l){ return l.id; });
   var nKits = s.kits.filter(function(k){ return idsAbertas.indexOf(k.lid)>=0; }).length;
   var nAval = (s.registros||[]).filter(function(x){ return x.tipo==="aval" && x.montId===id; }).length;
-  var nPeca = avisosDe(s.pp, id).length;
   var subProx = r.atual ? "Montando agora: "+r.atual.rev : prox.kit ? prox.kit.rev+(prox.tipo==="fila" ? " · "+prox.posicao+"º da fila" : "") : "Nenhum kit na fila";
   var num = function(v, l){ return e("div",{className:"flex flex-col items-center gap-0.5 border-l border-[#E5E7EB] px-1 py-2.5 first:border-l-0"}, e("b",{className:MONO+" text-[20px] leading-none text-[#111827]"}, v), e("span",{className:"text-[11px] font-bold leading-tight text-[#374151]"}, l)); };
   var ir = function(t){ return function(){ d({type:"TELACEL", t:t}); }; };
@@ -137,14 +134,12 @@ function CelInicio(){
     e("div",{className:"grid grid-cols-3 rounded-2xl bg-white shadow-sm "+BORDA_CEL}, num(r.hoje, "Kits hoje"), num(r.m.mes.aval ? N1(r.media) : "—", "Sua nota"), num(r.total, "Kits no mês")),
     e(CartaoInicio,{ic:"play", t:"Próximo kit", sub:subProx, onClick:ir("proximo")}),
     e(CartaoInicio,{ic:"lista", t:"Listagens", sub:abertas.length+(abertas.length===1 ? " listagem" : " listagens")+" · "+nKits+(nKits===1 ? " kit" : " kits"), onClick:ir("listagens")}),
-    e(CartaoInicio,{ic:"star", t:"Resultados", sub:nAval ? nAval+(nAval===1 ? " avaliação" : " avaliações")+" no mês" : "Nenhuma avaliação no mês", onClick:ir("resultados")}),
-    e(CartaoInicio,{ic:"cubos", t:"Pedir peça", sub:nPeca ? nPeca+(nPeca===1 ? " resposta nova" : " respostas novas") : "Nenhuma resposta nova", onClick:ir("pedir")}));
+    e(CartaoInicio,{ic:"star", t:"Resultados", sub:nAval ? nAval+(nAval===1 ? " avaliação" : " avaliações")+" no mês" : "Nenhuma avaliação no mês", onClick:ir("resultados")}));
 }
-var TITULO_CEL = {proximo:"Próximo kit", listagens:"Listagens", resultados:"Resultados", pedir:"Pedir peça"};
+var TITULO_CEL = {proximo:"Próximo kit", listagens:"Listagens", resultados:"Resultados"};
 function Celular(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var lg = useState(false), logado = p && p.logado!==undefined ? p.logado : lg[0], setLogado = p && p.setLogado ? p.setLogado : lg[1];   // a página pode controlar (lista "Conectar como")
-  var avisosPeca = avisosDe(s.pp, s.celular).length;   // respostas do cadastro ainda não vistas
   var idx = s.montadoras.findIndex(function(x){return x.id===s.celular;}), m = s.montadoras[idx];
   var eu = useEu(logado ? s.celular : null);   // SorellyChat (27/10/2026, pedido do Marcus): a montadora já tem o chat no próprio app, sem precisar de outro telefone
   if(!logado) return e(IPhone15,null, e(CelLogin,{onEntrar:function(pes){ setLogado(true); if(pes && s.montadoras.some(function(x){ return x.id===pes.id; })) d({type:"CEL", id:pes.id}); d({type:"TELACEL", t:"inicio"}); }}));
@@ -159,8 +154,8 @@ function Celular(p){
           e("button",{onClick:function(){setLogado(false);}, title:"Sair", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"user", s:18, className:"text-[#8E8E93]"})))
       : e("div",{className:"mb-3 flex items-center gap-3"},
           e("button",{onClick:function(){ d({type:"TELACEL", t:"inicio"}); }, title:"Voltar", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"chevron", s:16, className:"rotate-180 text-[#111827]"})),
-          e("p",{className:"min-w-0 flex-1 truncate text-xl font-bold text-[#111827]"}, TITULO_CEL[s.telaCel]+(s.telaCel==="pedir" && avisosPeca ? " ("+avisosPeca+")" : ""))),
-    inicio ? e(CelInicio) : s.telaCel==="proximo" ? e(CelProximo) : s.telaCel==="listagens" ? e(CelListagens) : s.telaCel==="pedir" ? e(CelPedir) : e(CelResultados));
+          e("p",{className:"min-w-0 flex-1 truncate text-xl font-bold text-[#111827]"}, TITULO_CEL[s.telaCel])),
+    inicio ? e(CelInicio) : s.telaCel==="proximo" ? e(CelProximo) : s.telaCel==="listagens" ? e(CelListagens) : e(CelResultados));
 }
 
 export { CelProximo, CelListagens, CelResultados, CelLogin, Celular };
