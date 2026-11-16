@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.61", data:"2026-11-16", titulo:"Link de pagamento: descontados do sistema antigo", itens:[
+  {tipo:"melhoria", area:"Link de pagamento → Descontados no acerto", txt:"A tela passou a mostrar também os 2.006 links descontados do sistema antigo, marcados como Planilha antiga, com Origem, Autorização e Venda com link. Páginas de 50 e filtro de data por ano, mês e dia. Os links descontados pelo Atendimento interno entram na mesma lista, como Atendimento interno."}
+ ]},
  {v:"0.20.60", data:"2026-11-16", titulo:"Atendimento Sorelly: renova outro dia", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"A etapa Condicional nova ganhou a opção \"Renova outro dia\", com a data obrigatória, para a cliente que não quis renovar o kit hoje. A data aparece no Consolidado Sorelly (pedido da Sthefany). Só registra: não agenda sozinho."}]},
  {v:"0.20.59", data:"2026-11-16", titulo:"Faturas: peso em quilos", itens:[

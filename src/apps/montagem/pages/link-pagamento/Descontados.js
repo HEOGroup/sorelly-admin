@@ -12,16 +12,18 @@ var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().jo
 function AbaLpDescontados(){
   var L = useLp(), s = L.s, lp = L.lp;
   var linhas = useMemo(function(){
-    return lp.solicitacoes.filter(function(x){ return x.acertoId; }).sort(function(a, b){ return String(b.usadoEm || "") < String(a.usadoEm || "") ? -1 : 1; }).map(function(x){
-      return {id:x.id, usado:String(x.usadoEm || "").slice(0, 10), revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(meioDe(s, x.meioId)), valor:Number(x.valor) || 0,
+    // Marcus, 16/11/2026: mostra também os links da planilha antiga que já abateram acerto (x.descontado, com a data do acerto), além dos descontados pelo Atendimento interno (x.acertoId).
+    var dia0 = function(x){ return String(x.usadoEm || x.dataAcerto || "").slice(0, 10); };
+    return lp.solicitacoes.filter(function(x){ return x.acertoId || x.descontado; }).sort(function(a, b){ return dia0(b) < dia0(a) ? -1 : dia0(b) > dia0(a) ? 1 : 0; }).map(function(x){
+      return {id:x.id, usado:dia0(x), origem:x.acertoId ? "Atendimento interno" : "Planilha antiga", autorizacao:x.autorizacao || "—", vendaComLink:Number(x.vendaComLink) || 0, revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(meioDe(s, x.meioId)), valor:Number(x.valor) || 0,
         parcelas:(x.parcelas || 1)+"x", pagoEm:String(x.pagoEm || "").slice(0, 10), sobrou:Number(x.excedente) || 0, acerto:String(x.dataAcerto || "").slice(0, 10)}; });
   }, [lp.solicitacoes]);   // eslint-disable-line react-hooks/exhaustive-deps
   var din = function(v){ return formatarReais(v || 0); };
-  var cols = [{k:"usado", t:"Descontado em", fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
+  var cols = [{k:"usado", t:"Descontado em", data:true, fmt:dia, render:dia}, {k:"origem", t:"Origem"}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
     {k:"valor", t:"Valor do link", fmt:din, render:function(v){ return e("b",{className:"tabular-nums"}, din(v)); }}, {k:"parcelas", t:"Parcelas"},
-    {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"sobrou", t:"Sobrou", fmt:din, render:function(v){ return v>0 ? e("b",{className:"tabular-nums text-[#FBBF24]"}, din(v)) : din(v); }}, {k:"acerto", t:"Data do acerto", fmt:dia, render:dia}];
+    {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"sobrou", t:"Sobrou", fmt:din, render:function(v){ return v>0 ? e("b",{className:"tabular-nums text-[#FBBF24]"}, din(v)) : din(v); }}, {k:"acerto", t:"Data do acerto", fmt:dia, render:dia}, {k:"autorizacao", t:"Autorização"}, {k:"vendaComLink", t:"Venda com link", fmt:din, render:din}];
   return e(BlocoPainel,{titulo:"Links descontados no acerto", compacto:true, dir:linhas.length.toLocaleString("pt-BR")},
-    linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:true, semContagem:true})
+    linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, limite:50, paginas:true})
       : e("p",{className:"py-6 text-center text-[13px]"}, "Nenhum link foi descontado em acerto ainda."));
 }
 export { AbaLpDescontados };
