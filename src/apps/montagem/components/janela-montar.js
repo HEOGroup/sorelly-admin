@@ -46,6 +46,15 @@ function Bt(p){
 }
 var CAMPO_SEL = "h-8 min-w-0 rounded-md border border-white/60 bg-[#14233f] px-2.5 text-[13px] text-white outline-none";
 
+// Fotos que a revendedora mandou (até 3 por bloco): miniaturas; clicar abre a foto grande (clicar de novo fecha)
+function Fotos(p){
+  var st = useState(null), grande = st[0], setGrande = st[1];
+  if(!p.lista || !p.lista.length) return null;
+  return e("span",{className:"inline-flex flex-wrap items-center gap-1.5"},
+    p.lista.map(function(u, i){ return e("button",{key:i, type:"button", title:"Abrir foto", "aria-label":"Abrir foto "+(i+1), onClick:function(){ setGrande(u); }, className:"overflow-hidden rounded border border-border", style:{width:44, height:44}}, e("img",{src:u, alt:"Foto "+(i+1)+" enviada pela revendedora", loading:"lazy", style:{width:"100%", height:"100%", objectFit:"cover"}})); }),
+    grande && e("div",{className:"fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4", onClick:function(){ setGrande(null); }}, e("img",{src:grande, alt:"Foto ampliada", style:{maxWidth:"92vw", maxHeight:"88vh", objectFit:"contain"}})));
+}
+
 function JanelaMontar(p){
   var cx = use(), s = cx.state, d = cx.dispatch, k = s.kits.find(function(x){ return x.id===p.kitId; });
   var sup = papelDe(s.usuario)==="supervisao", euMont = papelDe(s.usuario)==="montadora";
@@ -104,7 +113,7 @@ function JanelaMontar(p){
         semMontador(k) && linha("Atenção", "Este kit não tem montador informado: a bipagem e a comissão da bipadora só valem com montador.", "sm"),
         prefs && prefs.preferencias.resumoGeral && linha("Ouro e prata", "Ouro "+Math.round(prefs.preferencias.resumoGeral.ouro)+"% · Prata "+Math.round(prefs.preferencias.resumoGeral.prata)+"%", "mix"),
         prefs && prefs.preferencias.fonte && prefs.preferencias.fonte!=="app" && linha("Atenção", AVISO_CONFIANCA, "conf"),
-        gerais.map(function(x, i){ return linha(x.titulo, x.texto, "g"+i); }),
+        gerais.map(function(x, i){ return linha(x.titulo, e("span",{className:"inline-flex flex-wrap items-center gap-2"}, x.texto, e(Fotos,{lista:x.fotos})), "g"+i); }),
         !prefs && linha("Preferências", "A revendedora ainda não informou as preferências do kit.", "semp"),
 
         faixa("O que enviar e preferências dela", pecas ? e("span",null, feitos+" de "+linhasPeca.length+" · "+pecas.totalTxt+" peças") : null),
@@ -117,7 +126,7 @@ function JanelaMontar(p){
               celCol(e("b",{className:"font-semibold"}, base), "text-center"),
               x.solo!=null ? e("div",{className:"col-span-2 flex items-center justify-center border-r border-border px-2 py-1"}, e("b",{className:MONO+" tabular-nums"}, x.solo))
                 : [celCol(e("b",{className:MONO+" tabular-nums"}, x.ouro || "—"), 1), celCol(e("b",{className:MONO+" tabular-nums"}, x.prata || "—"), 2)],
-              celCol(x.prefs.length ? e("div",{className:"flex w-full flex-col gap-0.5 py-0.5 text-left"}, x.prefs.map(function(pr, i){ return e("span",{key:i}, x.prefs.length>1 ? e("b",{className:"font-semibold"}, pr.titulo+": ") : null, pr.texto); })) : e("span",null, "—"), "text-left")); }))
+              celCol(x.prefs.length ? e("div",{className:"flex w-full flex-col gap-0.5 py-0.5 text-left"}, x.prefs.map(function(pr, i){ return e("span",{key:i, className:"flex flex-wrap items-center gap-1.5"}, x.prefs.length>1 ? e("b",{className:"font-semibold"}, pr.titulo+": ") : null, pr.texto, e(Fotos,{lista:pr.fotos})); })) : e("span",null, "—"), "text-left")); }))
           : e("p",{className:"border-b border-border px-3 py-3 text-center"}, "A tabela de peças ainda não tem este valor de kit. Defina o valor do kit em Listagens."),
 
         conds.length>0 && faixa("Condicionais", montando && minha ? null : "Só dá para marcar depois de iniciar a montagem"),

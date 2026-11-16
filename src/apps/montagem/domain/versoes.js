@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.59", data:"2026-11-16", titulo:"Janela de montagem: fotos das preferências", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits › Montagem", txt:"A janela Montar mostra as fotos que a revendedora mandou nas preferências (até 3 por bloco). Clicar abre a foto grande."}
+ ]},
  {v:"0.20.61", data:"2026-11-16", titulo:"Link de pagamento: descontados do sistema antigo", itens:[
   {tipo:"melhoria", area:"Link de pagamento → Descontados no acerto", txt:"A tela passou a mostrar também os 2.006 links descontados do sistema antigo, marcados como Planilha antiga, com Origem, Autorização e Venda com link. Páginas de 50 e filtro de data por ano, mês e dia. Os links descontados pelo Atendimento interno entram na mesma lista, como Atendimento interno."}
  ]},

@@ -49,6 +49,8 @@ function pkRelatorioCSV(s, linhas){
       l.atualizadoEm ? formatarDataHora(l.atualizadoEm) : "", l.fonte||""].concat(blocos.map(function(b){ return resumoResposta(b, rs[b.key]); }), [l.rev && l.rev.preferencias ? l.rev.preferencias.observacoes||"" : ""]); });
   return "﻿"+[cab].concat(rows).map(function(r){ return r.map(csv).join(";"); }).join("\r\n");
 }
+// 16/11/2026: fotos que a revendedora mandou no bloco (até 3, só em bloco que aceita imagem); a janela de montagem mostra
+function fotosDoBloco(b, r){ var im = b && b.allowImages && r && r.images; return Array.isArray(im) ? im.filter(function(u){ return typeof u==="string" && u.trim(); }).slice(0, 3) : []; }
 // preferências já respondidas de uma revendedora, em texto corrido e sem abreviar, para quem monta o kit: [{titulo, texto}]
 function pkResumoParaMontagem(s, nome){
   var pk = s.pk, rv = pk && (pk.revendedoras||[]).find(function(r){ return norm(r.nome)===norm(nome); });
@@ -56,7 +58,7 @@ function pkResumoParaMontagem(s, nome){
   var rs = (rv.preferencias && rv.preferencias.respostas) || {}, out = [];
   pkBlocos(s, {apenasAtivos:true}).forEach(function(b){
     if(b.type==="observacoes"){ var o = String(rv.preferencias.observacoes||"").trim(); if(o) out.push({titulo:"Observações", texto:o}); return; }
-    var t = resumoResposta(b, rs[b.key]); if(t) out.push({titulo:b.title, texto:t.split(" | ").join(". ")});
+    var t = resumoResposta(b, rs[b.key]), fotos = fotosDoBloco(b, rs[b.key]); if(t || fotos.length) out.push({titulo:b.title, texto:t ? t.split(" | ").join(". ") : "", fotos:fotos});
   });
   return out;
 }
