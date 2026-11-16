@@ -45,9 +45,9 @@ var STATUS_SEM_SUCESSO = ["negada", "abandonada", "bloqueada", "antifraude", "de
 var STATUS = ["solicitado", "gerado", "pago", "comprovante", "expirado", "cancelado", "recusado"].concat(STATUS_SEM_SUCESSO);
 var ROTULO_STATUS = {solicitado:"Solicitado", gerado:"Link gerado", pago:"Pago", comprovante:"Comprovante enviado", expirado:"Expirado", cancelado:"Cancelado", recusado:"Recusado", negada:"Negada", abandonada:"Abandonada", bloqueada:"Bloqueada", antifraude:"Antifraude", desfeito:"Pagamento desfeito", desistiu:"Desistiu"};
 var COR_STATUS = {solicitado:"#FBBF24", gerado:"#60A5FA", pago:"#4ADE80", comprovante:"#22D3EE", expirado:"#EF4444", cancelado:"#94A3B8", recusado:"#94A3B8", negada:"#EF4444", antifraude:"#EF4444", bloqueada:"#EF4444", desfeito:"#EF4444", abandonada:"#94A3B8", desistiu:"#94A3B8"};
-var FLUXO = ["solicitado", "gerado", "pago", "comprovante"];
-var TRANSICOES = {solicitado:["gerado", "cancelado", "recusado"], gerado:["pago", "expirado", "cancelado"], pago:["comprovante"], comprovante:[], expirado:[], cancelado:[], recusado:[], negada:[], abandonada:[], bloqueada:[], antifraude:[], desfeito:[], desistiu:[]};
-var EM_ANDAMENTO = {solicitado:1, gerado:1, pago:1};   // o que fica no quadro; o resto vai para o Histórico
+var FLUXO = ["solicitado", "gerado", "pago"];   // 16/11/2026 (Marcus/Hellen): acabou a etapa "Comprovante enviado"; o pagamento confirmado vai direto para o Atendimento Sorelly. O status "comprovante" fica só nos registros antigos
+var TRANSICOES = {solicitado:["gerado", "cancelado", "recusado"], gerado:["pago", "expirado", "cancelado"], pago:[], comprovante:[], expirado:[], cancelado:[], recusado:[], negada:[], abandonada:[], bloqueada:[], antifraude:[], desfeito:[], desistiu:[]};
+var EM_ANDAMENTO = {solicitado:1, gerado:1};   // o que fica no quadro; o resto vai para o Histórico
 var MOTIVOS_NAO_CONCLUSAO = STATUS_SEM_SUCESSO.concat(["expirado", "cancelado", "recusado"]);
 var EXIGE_MOTIVO = {cancelado:1, recusado:1};
 var MAX_PARCELAS = 12;   // limite técnico da tabela de taxas (o limite sem juros do link vem da configuração)
@@ -236,7 +236,7 @@ function resolverMeio(s, revendedora, meioId, representante){
 var meioSugerido = function(s, revendedora, representante){ var r = resolverMeio(s, revendedora, "", representante); return r.meio || null; };
 
 // ---------- solicitações: regras ----------
-// Tentativa = mesma revendedora, mesmo dia e MESMO VALOR (pedido da Helen, 03/11/2026): ela pode pedir vários links no dia com valores diferentes; só repetir o mesmo valor conta como outra tentativa.
+// Tentativa = mesma revendedora, mesmo dia e MESMO VALOR (pedido da Hellen, 03/11/2026): ela pode pedir vários links no dia com valores diferentes; só repetir o mesmo valor conta como outra tentativa.
 var nTentativasDia = function(lp, revendedora, dia, valor){ var n = norm(revendedora), v = valor===undefined ? null : r2(num(valor)); return lp.solicitacoes.filter(function(x){ return norm(x.revendedora)===n && diaDe(x.criadoEm)===dia && (v===null || r2(num(x.valor))===v) && x.status!=="recusado" && x.status!=="cancelado"; }).length; };
 // Máximo de parcelas sem juros para um valor (regra por faixa, 19/10/2026): até {ate} reais cabem {max}x; acima da última faixa vale maxParcelasSemJuros (10x)
 function parcelasMaximas(cfg, valor){
@@ -318,7 +318,7 @@ function vendidoNoApp(lp, rev, mes){ var t = 0; ((lp && lp.vendasApp) || []).for
 function minutosRestantes(sol, agora){ if(!sol || sol.status!=="gerado" || !sol.expiraEm) return null; var a = minutosDe(agora || agoraSP()), b = minutosDe(sol.expiraEm); return a==null || b==null ? null : Math.floor(b-a); }
 var textoRestante = function(min){ if(min==null) return ""; if(min<=0) return "Expirado"; var h = Math.floor(min/60), m = min%60; return h>0 ? h+"h "+p2(m)+"min" : m+"min"; };
 var expirados = function(lp, agora){ var a = minutosDe(agora || agoraSP()); return lp.solicitacoes.filter(function(x){ var e = minutosDe(x.expiraEm); return x.status==="gerado" && e!=null && e<=a; }).map(function(x){ return x.id; }); };
-// qualquer etapa (Helen, 03/11/2026): o link pode ir para qualquer outra situação, para corrigir um movimento errado
+// qualquer etapa (Hellen, 03/11/2026): o link pode ir para qualquer outra situação, para corrigir um movimento errado
 var proximosStatus = function(sol){ return STATUS.filter(function(k){ return k!==sol.status; }); };
 var proximaEtapa = function(sol){ var i = FLUXO.indexOf(sol.status); return i>=0 && i<FLUXO.length-1 ? FLUXO[i+1] : null; };
 
@@ -474,7 +474,7 @@ function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje)}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!x.esitefRevisar && (!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje))}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
@@ -491,6 +491,25 @@ function nomeParecido(a, b){
 function linksParaAcertoPorNome(s, nome, hoje){
   var lista = ((s.lp && s.lp.solicitacoes) || []).filter(function(x){ return nomeParecido(x.revendedora, nome); }).map(function(x){ return Object.assign({}, x, {revendedora:nome}); });
   return linksParaAcerto({lp:Object.assign({}, s.lp, {solicitacoes:lista})}, nome, hoje);
+}
+// IMPORTADOR DO E-SITEF (Marcus, 16/11/2026): o relatório de transações do e-SiTef (CSV) é a verdade sobre quem pagou. Cada linha vira (ou atualiza) uma solicitação, sem duplicar: a chave é o NSU.
+// linha = {nsu, pedido (nome), valor (R$), status (código do e-SiTef), criadoEm, pagoEm, parcelas, autorizacao, bandeira}
+var STATUS_ESITEF = {CON:"pago", ABA:"abandonada", EXP:"expirado", NEG:"negada", PPN:"antifraude"};
+var ROT_ESITEF = {CON:"Confirmada", ABA:"Abandonada", EXP:"Expirada", NEG:"Negada", PPN:"Pendente (antifraude)"};
+function esitefPlanejar(lp, linhas, hoje){
+  hoje = hoje || hojeSP(); var vistos = {}, usados = {};
+  return (linhas || []).map(function(l){
+    var para = STATUS_ESITEF[l.status], nsu = String(l.nsu || "").trim();
+    if(!nsu || !para) return {linha:l, acao:"ignorar", motivo:!nsu ? "Linha sem NSU." : "Situação "+l.status+" não reconhecida."};
+    if(vistos[nsu]) return {linha:l, acao:"ignorar", motivo:"NSU repetido no arquivo."}; vistos[nsu] = 1;
+    var sol = lp.solicitacoes.find(function(x){ return x.esitefNsu===nsu; });
+    if(!sol) sol = lp.solicitacoes.find(function(x){ return !x.esitefNsu && !usados[x.id] && r2(x.valor)===r2(l.valor) && diaDe(x.criadoEm)===diaDe(l.criadoEm) && nomeParecido(x.revendedora, l.pedido); });
+    if(sol){ usados[sol.id] = 1;
+      var aberto = sol.status==="solicitado" || sol.status==="gerado";
+      if(aberto || (para==="pago" && !foiPago(sol))) return {linha:l, acao:"atualizar", solId:sol.id, para:para};
+      return {linha:l, acao:sol.esitefNsu ? "igual" : "vincular", solId:sol.id, para:sol.status}; }
+    return {linha:l, acao:"nova", para:para, revisar:para==="pago" && diaDe(l.pagoEm || l.criadoEm)<hoje};
+  });
 }
 // Marca como USADOS no acerto os links que entraram como pagamento (cada linha de pagamento traz linkSolId). Devolve o novo lp, ou null se nada mudou.
 function usarLinksNoAcerto(lp0, pagamentos, acertoId, agora, por){
@@ -581,8 +600,8 @@ function lpReduz(s, a){
     }
     // Link pago POR FORA (Marcus, 11/11/2026: "o setor de link precisa ter lá todos os links mesmo pago por fora"): link gerado fora do sistema (WhatsApp, direto na plataforma) e já pago.
     // Entra direto como "pago", sem passar por solicitado/gerado e sem as regras de pedido (mínimo, parcelas, link da representante). Aparece no quadro e nos Comprovantes como qualquer outro pago.
-    // Pedido de link NOVO feito pelo Atendimento Sorelly (Helen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
-    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Helen ao gerar.
+    // Pedido de link NOVO feito pelo Atendimento Sorelly (Hellen, 11/11/2026): quem gera o link é ela (e as representantes); o atendimento só pede e acompanha.
+    // A regra "no dia do acerto só a representante emite" NÃO vale para o atendimento interno; mínimo e parcelas (regras antigas) continuam. O link (meio) é escolhido pela Hellen ao gerar.
     case "sol_pedir_atendimento": {
       var dP = {revendedora:a.revendedora, canal:"whatsapp", valor:a.valor, parcelas:a.parcelas, meioId:"", representante:"", dataAcerto:"", emissor:"atendimento", semMeio:true, bandeira:a.bandeira};
       var eP = validarSolicitacao(sx, dP, agora); if(eP) return recusa(eP);
@@ -591,7 +610,7 @@ function lpReduz(s, a){
         geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1,
         observacao:trim(a.observacao) || "Pedido do Atendimento Sorelly: a revendedora está na empresa, o acerto é hoje.", motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0,
         criadoEm:agora, criadoPor:por, paraAtendimento:true, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:"Pedido do atendimento"}]});
-      return ok("Link pedido à Helen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
+      return ok("Link pedido à Hellen: "+formatarReais(num(a.valor))+" em "+Math.round(num(a.parcelas))+"x");
     }
     case "sol_por_fora": {
       var nomeF = trim(a.revendedora), valF = r2(num(a.valor)), parF = Math.round(num(a.parcelas)) || 1, pagoF = a.pagoEm || agora;
@@ -617,6 +636,24 @@ function lpReduz(s, a){
         geradoPor:"", geradoEm:"", expiraEm:"", pagoEm:"", comprovanteEm:"", comprovantePor:"", dataAcerto:a.dataAcerto||"", tentativa:nTentativasDia(lp, a.revendedora, hoje, a.valor)+1, observacao:trim(a.observacao), motivo:"", linkUrl:"", acertoId:"", usadoEm:"", usadoValor:0, excedente:0, criadoEm:agora, criadoPor:por, historico:[{em:agora, por:por, de:"", para:"solicitado", nota:""}]};
       sol.cliente = trim(a.cliente);   // nome simplificado da cliente, só para controle da revendedora (opcional)
       lp.solicitacoes.push(sol); return ok("Solicitação registrada");
+    }
+    case "esitef_importar": {
+      var plano = esitefPlanejar(lp, a.linhas, hoje), meioL = lp.meios.find(function(m){ return m.tipo==="LINK" && m.cnpjId==="59"; }) || lp.meios.find(function(m){ return m.tipo==="LINK"; }), cN = 0, cA = 0, cI = 0;
+      plano.forEach(function(it){ var l = it.linha;
+        if(it.acao==="nova"){
+          var nm = trim(l.pedido), ns = {id:"E"+l.nsu, canal:"whatsapp", revendedora:nm, representante:repDaRevendedora(lp, nm), valor:r2(num(l.valor)), parcelas:Math.round(num(l.parcelas)) || 1, meioId:meioL ? meioL.id : "", bandeira:l.bandeira || "", status:it.para, emissor:"atendimento",
+            criadoEm:l.criadoEm || agora, geradoEm:l.criadoEm || agora, geradoPor:"e-SiTef", expiraEm:"", pagoEm:it.para==="pago" ? (l.pagoEm || l.criadoEm) : "", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:1, observacao:"", cliente:"",
+            esitefNsu:String(l.nsu), autorizacao:l.autorizacao || "", importadoEsitef:true, esitefRevisar:!!it.revisar,
+            historico:[{em:agora, por:por, de:"", para:it.para, nota:"Importado do relatório do e-SiTef (NSU "+l.nsu+(l.autorizacao ? ", autorização "+l.autorizacao : "")+")"+(it.revisar ? " · de dia passado: não entra sozinho no acerto" : "")}]};
+          lp.solicitacoes.push(ns); cN++;
+        } else if(it.acao==="atualizar" || it.acao==="vincular"){
+          var x = sol1(it.solId); if(!x) return; var de = x.status;
+          x.esitefNsu = String(l.nsu); x.autorizacao = l.autorizacao || x.autorizacao || ""; if(l.bandeira) x.bandeira = l.bandeira;
+          if(it.acao==="atualizar"){ x.status = it.para; if(it.para==="pago"){ x.pagoEm = l.pagoEm || agora; if(!x.geradoEm) x.geradoEm = l.criadoEm || agora; if(l.parcelas) x.parcelas = Math.round(num(l.parcelas)); x.expiraEm = ""; } }
+          (x.historico = x.historico || []).push({em:agora, por:por, de:de, para:x.status, nota:"Confirmado pelo relatório do e-SiTef (NSU "+l.nsu+")"}); cA++;
+        } else cI++;
+      });
+      return ok("e-SiTef: "+cN+" nova"+(cN===1 ? "" : "s")+", "+cA+" atualizada"+(cA===1 ? "" : "s")+", "+cI+" sem mudança");
     }
     case "sol_mover": {
       var x = sol1(); if(!x) return recusa("Solicitação não encontrada.");
@@ -660,7 +697,7 @@ function lpReduz(s, a){
   }
 }
 
-export { vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
+export { esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,

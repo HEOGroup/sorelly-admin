@@ -29,7 +29,10 @@ var MENU_FINANCEIRO = [
   {nome:"Relatórios", itens:[M("Resultado do mês","resultado"), M("Dinheiro","dinheiro"), Object.assign(M("Resumo do grupo","ffgrupo"), {perm:"financeiro_familia"}), M("Previsão de caixa","previsaocaixa"), M("Estoque Sorelly","estoquesorelly"), M("Análise de custos","ctapagar"), M("Taxas e adquirentes","adquirentes")]}   // Análise de custos: uma tela só (Sorelly, Família, Sorelly + Família e Funcionários são escolhidos DENTRO da tela)   // no FINAL (Marcus, 12/11/2026): Resumo do grupo e Previsão de caixa
 ];
 // Fiscal (Marcus, 12/11/2026): saiu do Financeiro e virou setor próprio, logo abaixo dele.
-var MENU_LINKPAG = [M("Link de pagamento","linkpag"), M("Relatório de links","linkrel")];
+// Link de pagamento (Marcus, 16/11/2026: "reorganiza igual ao Financeiro"): cada antiga aba virou tela do menu, na ordem do fluxo: pedido → comprovante → acerto → histórico; depois relatórios e cadastro.
+var MENU_LINKPAG = [M("Solicitações","linkpag"), M("Descontados no acerto","linkdesc"), M("Histórico","linkhist"),
+  {nome:"Relatórios", itens:[M("Relatório de links","linkrel"), M("Análises","linkanal"), M("Taxas e recebimentos","linktaxas")]},
+  {nome:"Cadastro", itens:[M("Meios e acessos","linkmeios"), M("Representantes","linkreps")]}];
 var MENU_FISCAL = [M("Painel e notas","fiscal"), M("Limite de faturamento","limitefat"), M("CNPJs","cnpjs")];
 
 // Menu do Cadastro de revendedoras (23/10/2026): mesmo estilo do Financeiro (palavras no topo, listas em cascata, abas abertas e busca), na ORDEM DO FLUXO: Cadastro (aprovar) → Kits novos (liberar, solicitar, entregar) → Desempenho.
@@ -199,8 +202,8 @@ var SETORES = [
     {nome:"Produção", telas:[T("producao","Produção")]}]},
   // Link de pagamento: setor próprio (quem opera é a Helen); o Financeiro só tem o relatório (decisão de 16/10/2026)
   // 12/11/2026 (Marcus): o relatório de links de pagamento mora AQUI, no setor Link de pagamento (saiu do Financeiro).
-  {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, semAbas:true, areas:[
-    {nome:"Link de pagamento", telas:[T("linkpag","Link de pagamento"), T("linkrel","Relatório de links de pagamento")]}]},
+  {id:"linkpag", nome:"Link de pagamento", ic:"banco", cor:"#0EA5E9", menu:MENU_LINKPAG, areas:[
+    {nome:"Link de pagamento", telas:[T("linkpag","Solicitações"), T("linkdesc","Descontados no acerto"), T("linkhist","Histórico"), T("linkrel","Relatório de links de pagamento"), T("linkanal","Análises"), T("linktaxas","Taxas e recebimentos"), T("linkmeios","Meios e acessos"), T("linkreps","Representantes")]}]},
   {id:"atendimento", nome:"Atendimento interno", ic:"calendario", cor:"#E8B84B", menu:MENU_ATENDIMENTO, semAbas:true, areas:[
     {nome:"Revendedoras na empresa", telas:[T("intrevs","Revendedoras"), T("intlist","Listagens"), T("intcalc","Atendimento Sorelly"), T("intcons","Consolidado Sorelly")]}]},
   {id:"estoque", nome:"Materiais & Estoque", ic:"cubos", cor:"#6366F1", menu:MENU_ESTOQUE, semAbas:true, areas:[

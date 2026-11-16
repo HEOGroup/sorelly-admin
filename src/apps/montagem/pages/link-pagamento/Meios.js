@@ -1,11 +1,12 @@
 // Sorelly Admin · montagem — pages/link-pagamento/Meios.js
-// Aba Meios e acessos: cartões em mosaico, um por meio de recebimento (link ou maquininha), com as regras do link no alto.
+// Tela Meios e acessos: UMA planilha, um meio de recebimento por linha (link ou maquininha), com as regras do link na faixa azul; acessos e passo a passo abrem ao clicar na linha.
+// REFEITA em 16/11/2026 (Marcus: "arruma as outras telas conforme as nossas regras"): blocos azuis e planilha com filtro nas colunas no lugar dos cartões e dos blocos de números. Nada saiu; a janela de edição do meio continua igual.
 // Edição numa janela de 3 colunas: dados | taxas e antecipação | acessos e passo a passo. NUNCA digitar senha: só URL, identificação e uma nota de onde a senha está guardada.
-import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { Faixa, Janela, LINHA, Mosaico, Tab, Td } from "@/apps/montagem/components/padrao";
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
+import { Janela } from "@/apps/montagem/components/padrao";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ADQUIRENTES, BANDEIRAS, MAX_PARCELAS, TIPOS_MEIO, adquirenteVira, avisoFornecedor, formatarReais, isencaoDoMes, opcoesCnpj, resumoAluguel, rotuloCnpj, taxaDe, textoFaixas, validarMeio } from "@/apps/montagem/domain/link-pagamento";
-import { Bt, Campo, Editor, Ic, Ind, Painel, Selo, Vazio } from "@/apps/montagem/pages/compras/visualCompras";
+import { Bt, Campo, Editor, Painel } from "@/apps/montagem/pages/compras/visualCompras";
 import { pct, useLp } from "@/apps/montagem/pages/link-pagamento/visual";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
@@ -70,57 +71,58 @@ function MeioJanela(p){
 }
 
 var temTaxa = function(m){ var tx = m.taxas || {}; return Object.keys(tx).some(function(b){ return Object.keys(tx[b]||{}).length; }); };
-function CartaoMeio(p){
-  var m = p.m, L = p.L, a = m.acessos, t1 = taxaDe(m, "", 1), tN = taxaDe(m, "", L.cfg.maxParcelasSemJuros);
-  var cor = m.tipo==="LINK" ? "#60A5FA" : "#F3D98B";
-  return e("div",{className:"flex flex-col items-center gap-1.5 rounded-xl p-3 text-center "+(m.ativo ? "" : "opacity-60"), style:{background:"linear-gradient(135deg,"+cor+"22,"+cor+"06 78%)", boxShadow:"inset 0 0 0 1px "+cor+"44"}},
-    e("div",{className:"flex items-center gap-1.5"}, e(Ph,{n:m.tipo==="LINK" ? "link" : "credit-card", s:18, style:{color:cor}}), e("b",{className:"break-words text-[14.5px]"}, m.nome)),
-    e("div",{className:"flex flex-wrap justify-center gap-1"},
-      e(Selo,{cor:cor}, m.tipo==="LINK" ? "Link" : "Maquininha"), e(Selo,{cor:"#94A3B8"}, rotuloCnpj(m.cnpjId)), e(Selo,{cor:"#94A3B8"}, m.adquirente),
-      !m.ativo && e(Selo,{cor:"#EF4444", ic:"pause"}, "Inativo"),
-      m.antecipacao.ativa && e(Selo,{cor:"#4ADE80", ic:"lightning"}, "Antecipa"),
-      m.viraPagamentoFornecedor && e(Selo,{cor:"#60A5FA", ic:"truck", titulo:avisoFornecedor(m)}, "Vira pagamento de fornecedor")),
-    m.tipo==="MAQUININHA" && e("div",{className:"flex flex-wrap justify-center gap-1"},
-      e(Selo,{cor:m.aluguel==null ? "#FBBF24" : "#F3D98B"}, m.aluguel==null ? "Aluguel não informado" : (m.aluguel>0 ? "Aluguel "+formatarReais(m.aluguel)+"/mês" : "Sem aluguel")),
-      m.dono && e(Selo,{cor:"#60A5FA", ic:"truck"}, "Máquina do "+m.dono), m.uso && e(Selo,{cor:"#94A3B8"}, "Uso: "+m.uso)),
-    m.taxaPix && e(Selo,{cor:"#4ADE80"}, m.taxaPix.rotulo+" "+pct(m.taxaPix.pct)),
-    m.debito && e(Selo,{cor:"#94A3B8"}, "Débito "+pct(m.debito.vm)+(m.debito.dem!==m.debito.vm ? " | "+pct(m.debito.dem) : "")),
-    temTaxa(m) ? e("div",{className:"grid w-full grid-cols-2 gap-1.5"},
-      e("div",{className:"rounded-lg bg-black/25 px-1 py-1"}, e("b",{className:MONO+" text-[15px]"}, pct(t1)), e("div",{className:"text-[10px] font-bold uppercase text-white/65"}, "À vista")),
-      e("div",{className:"rounded-lg bg-black/25 px-1 py-1"}, e("b",{className:MONO+" text-[15px]"}, pct(tN)), e("div",{className:"text-[10px] font-bold uppercase text-white/65"}, L.cfg.maxParcelasSemJuros+"x")))
-      : e("p",{className:"w-full rounded-lg bg-black/25 px-2 py-1.5 text-[12px] font-bold text-white/70"}, m.viraPagamentoFornecedor ? "Taxa definida pelo fornecedor (desconto no fim do mês)" : "Taxas não informadas"),
-    (a.url || a.identificacao || a.notaSenha) && e("div",{className:"flex w-full flex-col gap-0.5 rounded-lg bg-black/25 px-2 py-1.5 text-[12px] text-white/80"},
-      a.url && e("a",{href:a.url, target:"_blank", rel:"noopener noreferrer", className:"break-all font-bold text-[#BFDBFE] underline"}, a.url),
-      a.identificacao && e("span",null, "Usuário: "+a.identificacao), a.notaSenha && e("span",{className:"text-white/65"}, "Senha: "+a.notaSenha)),
-    m.passoAPasso && e("details",{className:"w-full rounded-lg bg-black/25 px-2 py-1.5 text-[12px]"}, e("summary",{className:"cursor-pointer font-bold text-white/85"}, "Passo a passo"), e("p",{className:"mt-1 whitespace-pre-line break-words text-left text-white/80"}, m.passoAPasso)),
-    e("div",{className:"flex gap-1.5"},
-      e(Ic,{ic:"pencil-simple", titulo:"Editar meio", onClick:function(){ p.onEditar(m); }}),
-      e(Ic,{ic:m.ativo ? "pause" : "play", titulo:m.ativo ? "Desativar meio" : "Ativar meio", onClick:function(){ L.exec("meio_ativo", {id:m.id, ativo:!m.ativo}); }})));
-}
+var dinR = function(x){ return formatarReais(x || 0); };
 
 function AbaLpMeios(){
   var L = useLp(), lp = L.lp, cfg = L.cfg, md = useState(null), modal = md[0], rg = useState(false);
   var ini = function(m){ return m ? JSON.parse(JSON.stringify(m)) : JSON.parse(JSON.stringify(NOVO)); };
   var ra = resumoAluguel(lp), isens = (lp.isencoes||[]).map(function(i){ return isencaoDoMes(lp, i.grupo); }).filter(Boolean);
-  return e("div",{className:"flex flex-col gap-2.5"},
-    e(Faixa,{n:5},
-      e(Ind,{t:"Valor mínimo do link", v:formatarReais(cfg.minimo), cor:"info"}), e(Ind,{t:"Parcela mínima", v:formatarReais(cfg.parcelaMinima), cor:"info"}),
-      e(Ind,{t:"Sem juros até", v:cfg.maxParcelasSemJuros+"x", cor:"info"}), e(Ind,{t:"Validade do link", v:cfg.validadeHoras+" h", cor:"info"}), e(Ind,{t:"Tentativas por dia", v:cfg.tentativasDia, cor:"info"})),
-    e(Faixa,{n:4}, textoFaixas(cfg).map(function(f){ return e(Ind,{key:f[0], t:f[0], v:f[1].replace("até ", ""), cor:"info"}); })),
-    e(Faixa,{n:4},
-      e(Ind,{t:"Maquininhas ativas", v:ra.maquinas, cor:"total"}), e(Ind,{t:"Aluguel por mês", v:formatarReais(ra.total), cor:"info", titulo:"Só o aluguel informado; não é o custo total das transações"}),
-      e(Ind,{t:"Se a isenção for atingida", v:formatarReais(ra.seIsento), cor:"ok"}), e(Ind,{t:"Aluguel sem informação", v:ra.semInfo, cor:ra.semInfo ? "alerta" : "ok", titulo:"Maquininhas ativas sem aluguel informado"})),
-    ra.porBanco.length>0 && e(BlocoBarra,{cor:"azul", t:"Aluguel por banco", compacto:true, dir:formatarReais(ra.total)},
-      e("div",{className:"p-2"}, e(Tab,{cols:["Banco", "Maquininhas", "Aluguel por mês"]}, ra.porBanco.map(function(b){ return e("tr",{key:b.rotulo, className:LINHA}, e(Td,{forte:true}, b.rotulo), e(Td,null, b.qtd), e(Td,{dinheiro:true}, formatarReais(b.valor))); })))),
-    isens.map(function(i){ return e(BlocoBarra,{key:i.grupo, cor:i.atingida ? "verde" : "azul", t:"Isenção do aluguel · "+i.rotulo, compacto:true, dir:i.atingida ? "Atingida" : "Falta "+formatarReais(i.falta)},
-      e("div",{className:"flex flex-wrap items-center justify-center gap-3 p-2"},
-        e(Ind,{t:"Vendido no mês (todas as máquinas)", v:formatarReais(i.vendido), cor:"info"}), e(Ind,{t:"Meta para isentar", v:formatarReais(i.meta), cor:"info"}),
-        e(Bt,{ic:"pencil-simple", onClick:function(){ md[1]({iso:i}); }}, "Atualizar vendas do mês"))); }),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
-      e(Bt,{tipo:"forte", ic:"plus", onClick:function(){ md[1]({m:null}); }}, "Novo meio"),
-      e(Bt,{ic:"sliders-horizontal", onClick:function(){ rg[1](true); }}, "Editar regras do link")),
-    lp.meios.length ? e(Mosaico,{min:"19rem"}, lp.meios.map(function(m){ return e(CartaoMeio,{key:m.id, m:m, L:L, onEditar:function(x){ md[1]({m:x}); }}); }))
-      : e(Vazio,{ic:"credit-card"}, "Nenhum meio de recebimento cadastrado."),
+  var num = function(rot, v, cor){ return e("span",{key:rot, className:"whitespace-nowrap px-1 text-[13px]"}, rot+" ", e("b",{className:"tabular-nums "+(cor || "")}, v)); };
+  var BTN = "h-8 whitespace-nowrap rounded-md border px-3 text-[13px] font-semibold ";
+  // ── faixa azul: regras do link, aluguel e ações ──
+  var faixa = e("div",{className:"flex flex-col border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
+    e("div",{className:"flex flex-wrap items-center gap-x-1"}, e("b",{className:"px-1 text-[11px] uppercase"}, "Regras do link"),
+      num("Valor mínimo", formatarReais(cfg.minimo)), num("Parcela mínima", formatarReais(cfg.parcelaMinima)), num("Sem juros até", cfg.maxParcelasSemJuros+"x"), num("Validade", cfg.validadeHoras+" h"), num("Tentativas por dia", cfg.tentativasDia),
+      textoFaixas(cfg).map(function(f){ return num(f[0], f[1].replace("até ", "")); }),
+      e("span",{className:"flex-1"}),
+      e("button",{type:"button", className:BTN+"border-primary bg-primary/20 text-primary hover:bg-primary/30", onClick:function(){ md[1]({m:null}); }}, "Novo meio"),
+      e("button",{type:"button", className:BTN+"ml-2 border-white/50 hover:bg-white/15", onClick:function(){ rg[1](true); }}, "Editar regras do link")),
+    e("div",{className:"flex flex-wrap items-center gap-x-1"}, e("b",{className:"px-1 text-[11px] uppercase"}, "Maquininhas"),
+      num("Ativas", ra.maquinas), num("Aluguel por mês", formatarReais(ra.total)), num("Se a isenção for atingida", formatarReais(ra.seIsento), "text-success"), num("Aluguel sem informação", ra.semInfo, ra.semInfo ? "text-[#FBBF24]" : "")));
+  // ── planilha dos meios: um por linha; acessos e passo a passo abrem ao clicar na linha ──
+  var linhas = lp.meios.map(function(m){ var a = m.acessos || {}, t1 = taxaDe(m, "", 1), tN = taxaDe(m, "", cfg.maxParcelasSemJuros);
+    return {id:m.id, meio:m.nome, tipo:m.tipo==="LINK" ? "Link" : "Maquininha", cnpj:rotuloCnpj(m.cnpjId), adquirente:m.adquirente, situacao:m.ativo ? "Ativo" : "Inativo", antecipa:m.antecipacao.ativa ? "Sim" : "Não",
+      fornecedor:m.viraPagamentoFornecedor ? "Sim" : "Não",
+      aluguel:m.tipo==="MAQUININHA" ? (m.aluguel==null ? "Não informado" : (m.aluguel>0 ? formatarReais(m.aluguel)+"/mês" : "Sem aluguel")) : "—",
+      maquina:m.tipo==="MAQUININHA" ? [m.dono ? "Máquina do "+m.dono : "", m.uso ? "Uso: "+m.uso : ""].filter(Boolean).join(" · ") || "—" : "—",
+      pix:m.taxaPix ? m.taxaPix.rotulo+" "+pct(m.taxaPix.pct) : "—", debito:m.debito ? pct(m.debito.vm)+(m.debito.dem!==m.debito.vm ? " | "+pct(m.debito.dem) : "") : "—",
+      avista:temTaxa(m) ? pct(t1) : "—", ate:temTaxa(m) ? pct(tN) : (m.viraPagamentoFornecedor ? "Taxa do fornecedor" : "—"), acesso:a.url || "—", _m:m, _a:a}; });
+  var cols = [{k:"meio", t:"Meio"}, {k:"tipo", t:"Tipo"}, {k:"cnpj", t:"CNPJ"}, {k:"adquirente", t:"Adquirente"},
+    {k:"situacao", t:"Situação", render:function(v){ return e("span",{className:"font-bold "+(v==="Ativo" ? "text-success" : "text-destructive")}, v); }},
+    {k:"antecipa", t:"Antecipa"}, {k:"fornecedor", t:"Vira pagamento de fornecedor"}, {k:"aluguel", t:"Aluguel"}, {k:"maquina", t:"Máquina"}, {k:"pix", t:"Pix"}, {k:"debito", t:"Débito"},
+    {k:"avista", t:"À vista"}, {k:"ate", t:cfg.maxParcelasSemJuros+"x"},
+    {k:"acesso", t:"Endereço", render:function(v){ return v==="—" ? v : e("a",{href:v, target:"_blank", rel:"noopener noreferrer", onClick:function(ev){ ev.stopPropagation(); }, className:"font-bold text-[#BFDBFE] underline"}, "Abrir"); }},
+    {k:"acoes", t:"Ações", render:function(v, l){ return e("span",{className:"inline-flex gap-1"},
+      e("button",{type:"button", title:"Editar meio", onClick:function(ev){ ev.stopPropagation(); md[1]({m:l._m}); }, className:"h-8 rounded-md border border-white/30 px-2 text-[13px] font-semibold hover:bg-white/10"}, "Editar"),
+      e("button",{type:"button", title:l._m.ativo ? "Desativar meio" : "Ativar meio", onClick:function(ev){ ev.stopPropagation(); L.exec("meio_ativo", {id:l._m.id, ativo:!l._m.ativo}); }, className:"h-8 rounded-md border border-white/30 px-2 text-[13px] font-semibold hover:bg-white/10"}, l._m.ativo ? "Desativar" : "Ativar")); }}];
+  var detalhe = function(l){ var m = l._m, a = l._a;
+    if(!(a.url || a.identificacao || a.notaSenha || m.passoAPasso || (m.viraPagamentoFornecedor && avisoFornecedor(m)))) return null;
+    return e("div",{className:"flex flex-col gap-1 px-3 py-2 text-left text-[13px]"},
+      m.viraPagamentoFornecedor && avisoFornecedor(m) && e("span",{className:"font-semibold text-[#BFDBFE]"}, avisoFornecedor(m)),
+      a.url && e("span",null, e("b",null, "Endereço: "), e("a",{href:a.url, target:"_blank", rel:"noopener noreferrer", className:"break-all font-bold text-[#BFDBFE] underline"}, a.url)),
+      a.identificacao && e("span",null, e("b",null, "Usuário: "), a.identificacao), a.notaSenha && e("span",null, e("b",null, "Senha: "), a.notaSenha),
+      m.passoAPasso && e("span",{className:"whitespace-pre-line break-words"}, e("b",null, "Passo a passo: "), m.passoAPasso)); };
+  return e("div",{className:"flex flex-col gap-2"},
+    e(BlocoPainel,{titulo:"Meios e acessos dos links", compacto:true, dir:String(lp.meios.length)},
+      faixa,
+      lp.meios.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:true, semContagem:true, detalhe:detalhe, linhaCls:function(l){ return l._m.ativo ? "" : "opacity-60"; }})
+        : e("p",{className:"py-6 text-center text-[13px]"}, "Nenhum meio de recebimento cadastrado.")),
+    ra.porBanco.length>0 && e(BlocoPainel,{titulo:"Aluguel por banco", compacto:true, dir:formatarReais(ra.total)},
+      e(TabelaPlanilha,{cols:[{k:"banco", t:"Banco"}, {k:"qtd", t:"Maquininhas"}, {k:"valor", t:"Aluguel por mês", fmt:dinR, render:dinR}], linhas:ra.porBanco.map(function(b){ return {id:b.rotulo, banco:b.rotulo, qtd:b.qtd, valor:b.valor}; }), chave:"id", centro:true, grade:true, semFiltro:true, semLimpar:true, semContagem:true})),
+    isens.map(function(i){ return e(BlocoPainel,{key:i.grupo, titulo:"Isenção do aluguel · "+i.rotulo, compacto:true, dir:i.atingida ? "Atingida" : "Falta "+formatarReais(i.falta)},
+      e("div",{className:"flex flex-wrap items-center justify-center gap-x-3 gap-y-1 px-2 py-1.5"},
+        num("Vendido no mês (todas as máquinas)", formatarReais(i.vendido)), num("Meta para isentar", formatarReais(i.meta)),
+        e("button",{type:"button", className:BTN+"border-white/50 hover:bg-white/15", onClick:function(){ md[1]({iso:i}); }}, "Atualizar vendas do mês"))); }),
     modal && modal.iso && e(Editor,{t:"Vendas do mês · "+modal.iso.rotulo, sub:"Soma de todas as maquininhas do banco. Zera sozinho na virada do mês.", nc:1, fechar:function(){ md[1](null); }, ini:{vendido:modal.iso.vendido}, campos:[{k:"vendido", rot:"Vendido no mês (R$)", tipo:"dinheiro"}],
       onSalvar:function(v){ return L.exec("isencao_vendido", {grupo:modal.iso.grupo, vendido:v.vendido}); }}),
     modal && !modal.iso && e(MeioJanela,{key:modal.m ? modal.m.id : "novo", L:L, ini:ini(modal.m), fechar:function(){ md[1](null); }}),

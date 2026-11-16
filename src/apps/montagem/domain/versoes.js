@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.41", data:"2026-11-16", titulo:"Link de pagamento reorganizado, importador do e-SiTef, comissão antiga por botão e regras corrigidas", itens:[
+  {tipo:"novo", area:"Link de pagamento → Solicitações", txt:"Botão Importar e-SiTef: lê o relatório de transações do dia (CSV), mostra o que vai mudar e só grava ao confirmar. A chave é o NSU, então repetir o arquivo não duplica. Link pago de dia passado criado pela importação não entra sozinho no acerto."},
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Setor reorganizado como o Financeiro: Solicitações, Descontados no acerto, Histórico, Relatórios (Relatório de links, Análises, Taxas e recebimentos) e Cadastro (Meios e acessos, Representantes). Todas as telas em bloco azul compacto, com planilha e filtro em cada coluna. A etapa Comprovante enviado acabou: pagamento confirmado vai direto para o Admin."},
+  {tipo:"melhoria", area:"Atendimento Sorelly", txt:"Botão para cobrar o acerto pela comissão antiga quando a revendedora questiona: vale só para aquele acerto e fica registrado na ficha. Links pagos entram sozinhos nos pagamentos. Lista do dia em tabela com a coluna Tipo."},
+  {tipo:"correção", area:"Regras do consignado", txt:"Atraso em dias úteis (5 dias úteis, 1% por dia, perde tudo no 30º dia útil) e pagamento do pendente em até 30 dias, até 2 parcelas de R$ 200, parcela única abaixo de R$ 400. Textos do app da representante e do pré-acerto seguem as mesmas regras."}
+ ]},
  {v:"0.20.40", data:"2026-11-16", titulo:"Pedidos: planilha nova, faixa em uma linha e janelas no padrão azul", itens:[
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A visão Planilha usa a tabela única do sistema: filtro e ordem em cada coluna, coluna Parcial (chegaram X de Y), dias em vermelho quando atrasado, botão Concluir e Total no fim. Clicar na linha abre a ficha."},
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"Topo compacto: faixa de controles em UMA linha (menus e botões de 28 px, letra de 11 px), com Fatura em comum e Novo pedido no começo. O Resumo por mês fica sempre aberto, fixo em 2026. Os blocos do quadro têm 370 px e a linha Bruto + Banho = Total cabe inteira, sem cortar."},

@@ -118,6 +118,13 @@ export const SLUG_DA_ABA = {
   compras: "compras-e-estoque",
   linkpag: "link-de-pagamento",
   linkrel: "relatorio-de-links",
+  linkcomp: "link-comprovantes",
+  linkdesc: "link-descontados-no-acerto",
+  linkhist: "link-historico",
+  linkanal: "link-analises",
+  linktaxas: "link-taxas-e-recebimentos",
+  linkmeios: "link-meios-e-acessos",
+  linkreps: "link-representantes",
   melhorias: "chamados",   // a tela virou Chamados (Marcus, 02/11/2026); o link antigo /melhorias continua abrindo (ABA_DO_SLUG abaixo)
   garantia: "garantia",
   garantiacred: "creditos",

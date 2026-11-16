@@ -1,25 +1,27 @@
 // Sorelly Admin · montagem — pages/link-pagamento/Descontados.js
-// Aba Descontados no acerto (Helen, 03/11/2026): os links pagos que já abateram um acerto, para conferir como na planilha dela. Cada coluna filtra pelo título (como no Agendamento).
-import { GradeFiltro } from "@/apps/montagem/components/grade-filtro";
-import { Pagina } from "@/apps/montagem/components/padrao";
-import { formatarDia, formatarReais, meioDe, nomeMeio } from "@/apps/montagem/domain/link-pagamento";
+// Tela Descontados no acerto (Hellen, 03/11/2026): os links pagos que já abateram um acerto, para conferir como na planilha dela.
+// REFEITA em 16/11/2026 (Marcus: "arruma as outras telas conforme as nossas regras"): bloco azul como o Contas a pagar e planilha com filtro em cada coluna (TabelaPlanilha); nenhuma coluna saiu.
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { formatarReais, meioDe, nomeMeio } from "@/apps/montagem/domain/link-pagamento";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
-import { e } from "@/shared/react";
+import { e, useMemo } from "@/shared/react";
+
+var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().join("/") : "—"; };   // as colunas de data guardam AAAA-MM-DD (ordenam certo) e mostram DD/MM/AAAA
 
 function AbaLpDescontados(){
-  var L = useLp(), s = L.s, linhas = L.lp.solicitacoes.filter(function(x){ return x.acertoId; }).sort(function(a, b){ return String(b.usadoEm || "") < String(a.usadoEm || "") ? -1 : 1; });
-  var dia = function(v){ return String(v || "").slice(0, 10); };
-  var cols = [
-    {k:"usado", t:"Descontado em", tipo:"data", v:function(x){ return dia(x.usadoEm); }, exib:function(x){ return formatarDia(x.usadoEm) || "—"; }},
-    {k:"rev", t:"Revendedora", forte:true, v:function(x){ return x.revendedora; }},
-    {k:"rep", t:"Representante", v:function(x){ return x.representante || "Sem representante"; }},
-    {k:"link", t:"Link", v:function(x){ return nomeMeio(meioDe(s, x.meioId)); }},
-    {k:"valor", t:"Valor do link", tipo:"num", v:function(x){ return Number(x.valor) || 0; }, exib:function(x){ return formatarReais(x.valor); }},
-    {k:"parc", t:"Parcelas", tipo:"num", v:function(x){ return x.parcelas || 1; }, exib:function(x){ return (x.parcelas || 1) + "x"; }},
-    {k:"pago", t:"Pago em", tipo:"data", v:function(x){ return dia(x.pagoEm); }, exib:function(x){ return formatarDia(x.pagoEm) || "—"; }},
-    {k:"sobrou", t:"Sobrou", tipo:"num", v:function(x){ return Number(x.excedente) || 0; }, exib:function(x){ return formatarReais(x.excedente || 0); }},
-    {k:"acerto", t:"Data do acerto", tipo:"data", v:function(x){ return dia(x.dataAcerto); }, exib:function(x){ return formatarDia(x.dataAcerto) || "—"; }}
-  ];
-  return e(Pagina,null, e(GradeFiltro,{chave:"descontados", rows:linhas, cols:cols, vazio:"Nenhum link foi descontado em acerto ainda."}));
+  var L = useLp(), s = L.s, lp = L.lp;
+  var linhas = useMemo(function(){
+    return lp.solicitacoes.filter(function(x){ return x.acertoId; }).sort(function(a, b){ return String(b.usadoEm || "") < String(a.usadoEm || "") ? -1 : 1; }).map(function(x){
+      return {id:x.id, usado:String(x.usadoEm || "").slice(0, 10), revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(meioDe(s, x.meioId)), valor:Number(x.valor) || 0,
+        parcelas:(x.parcelas || 1)+"x", pagoEm:String(x.pagoEm || "").slice(0, 10), sobrou:Number(x.excedente) || 0, acerto:String(x.dataAcerto || "").slice(0, 10)}; });
+  }, [lp.solicitacoes]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var din = function(v){ return formatarReais(v || 0); };
+  var cols = [{k:"usado", t:"Descontado em", fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
+    {k:"valor", t:"Valor do link", fmt:din, render:function(v){ return e("b",{className:"tabular-nums"}, din(v)); }}, {k:"parcelas", t:"Parcelas"},
+    {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"sobrou", t:"Sobrou", fmt:din, render:function(v){ return v>0 ? e("b",{className:"tabular-nums text-[#FBBF24]"}, din(v)) : din(v); }}, {k:"acerto", t:"Data do acerto", fmt:dia, render:dia}];
+  return e(BlocoPainel,{titulo:"Links descontados no acerto", compacto:true, dir:linhas.length.toLocaleString("pt-BR")},
+    linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:true, semContagem:true})
+      : e("p",{className:"py-6 text-center text-[13px]"}, "Nenhum link foi descontado em acerto ainda."));
 }
 export { AbaLpDescontados };

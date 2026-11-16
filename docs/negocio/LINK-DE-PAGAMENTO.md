@@ -59,3 +59,10 @@ Cada maquininha física é um meio (banco, CNPJ, aluguel/mês, representante). S
 - **Taxa do Link 59:** ainda usa a tabela antiga da Sicredi 59 (sem 4,05% das bandeiras que não são Visa/Master). Decidir se atualiza.
 - **Funcionalidades que faltam:** botão de link dentro da venda do app; crédito do excedente para o próximo acerto; ligar o link ao acerto da Atendimento Sorelly.
 - **Onde estão os dados:** taxas, aluguéis e representantes por máquina ficam SÓ em `src/apps/montagem/domain/maquininhas.local.js` (fora do Git, por conter nomes e valores por pessoa). Fazer cópia de segurança desse arquivo.
+
+## Onde os links são gerados e como ligar o sistema (16/11/2026, respostas da Hellen e prints do Marcus)
+- Os links são gerados no **e-SiTef** (Software Express / Fiserv). Quando o site cai (raramente), a Hellen usa o da **Sicredi**.
+- O e-SiTef mostra cada transação: número da transação (ex.: 261113340088210), loja (ex.: SERENETY), nome, valor, data, situação (**Confirmada**), **autorizadora** (Visa), **autorização** (ex.: 651824), **NSU SITEF**, NSU HOST, parcelas, **URL do link de pagamento** (única por link) e o cupom (1ª e 2ª via, com valor da 1ª parcela e das demais).
+- Dá para ver os comprovantes e **baixar uma planilha do dia**. O site **não avisa** quando alguém paga (a Hellen confere olhando).
+- Caminho de ligação, do simples ao completo: (1) **importar a planilha do dia** do e-SiTef no Admin e marcar "Pago" sozinho (casando a URL do link, ou valor + parcelas + nome + dia, e guardando a autorização); (2) consulta direta pela API do e-SiTef (precisa pedir à Software Express/Fiserv a documentação e as credenciais; só a diretoria ou o Leonardo pedem).
+- Falta: um exemplo real da planilha do dia (formato do arquivo) e qual "loja" do e-SiTef é cada CNPJ (SERENETY = ?).

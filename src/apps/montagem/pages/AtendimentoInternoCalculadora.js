@@ -3,10 +3,11 @@
 // em tela COMPLETA para o balcão: agenda de hoje à esquerda e todas as etapas do acerto à direita, na ordem, para ir preenchendo (Enter adiciona a linha);
 // resumo fixo no topo. O valor vendido vem direto do app da revendedora (campo vendaApp do atendimento).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
-import { AVISO_BB, PARCELAS_CARTAO, codigoBrindeValido, comissaoEspecialDe, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
+import { AVISO_BB, PARCELAS_CARTAO, linhasAtraso, codigoBrindeValido, comissaoEspecialDe, formasPagamentoPadrao, modalidadeDe, normalizarCodigo, textoRegras, vezCobravel, versaoEfetiva, versaoVigente } from "@/apps/montagem/domain/consignado";
 import { ATENDENTE_PECAS, BIPADORAS, MONTADORAS, nomeDe } from "@/apps/montagem/domain/equipe";
 import { creditoDisponivel } from "@/apps/montagem/domain/garantias-rev";
 import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
@@ -184,6 +185,9 @@ function AtendimentoInterno(){
   useEffect(function(){ if(!sel || visor || sel.status==="acertado" || form===FORM_ACERTO_VAZIO || form.creditoPuxado || !(form.vendaBruta>0)) return;
     var cd = creditoDisponivel(s, sel.nome); if(!(cd>0)) return;
     up(form.garantia>0 ? {creditoPuxado:true} : {garantia:cd, creditoPuxado:true, creditoPuxadoValor:cd}); }, [sel ? sel.id : null, form.vendaBruta>0, s.gr]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // LINKS JÁ PAGOS entram SOZINHOS como pagamento (Marcus, 16/11/2026): o setor Link de pagamento manda, a funcionária não precisa clicar. A função vem de mais abaixo (precisa do valor do acerto); um link por vez, e o que a funcionária tirar não volta (form.linksAuto)
+  var autoLinks = useRef(null);
+  useEffect(function(){ var fn = autoLinks.current; autoLinks.current = null; if(fn) fn(); });
   useEffect(function(){ setVerKit(null); }, [sel ? sel.id : null, sel ? sel.nome : null]);
   // agenda e tabela do kit ficam à direita em dropdown; ao iniciar um atendimento os dois fecham (dá para abrir de novo)
   var ga = useState(true), agendaAberta = ga[0], setAgendaAberta = ga[1];
@@ -217,7 +221,7 @@ function AtendimentoInterno(){
   var formD = Object.assign({}, form, {vendasAnteriores:[vendasAntD[1], vendasAntD[0]], condicionaisSelecionadas: condicionais.map(function(c){ return c.numero; }), pecasVendidas: (sel && sel.vendidasTotal!=null ? sel.vendidasTotal : condicionais.reduce(function(t,c){ return t+(c.vendidas||0); }, 0)) || null});
   var atrasoChegada = sel ? minutosAtraso(sel.hora, sel.chegada) : 0, chegouMuitoAtrasada = atrasoChegada>TOLERANCIA_CHEGADA_MIN;
   var fatorBrindeAtraso = chegouMuitoAtrasada ? 1-DESCONTO_BRINDE_ATRASO : 1;
-  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
+  var dv = derivarAcerto({finalizado:!!(sel && sel.status==="acertado"), regraAntiga:!!form.regraAntiga, brindeFator:fatorBrindeAtraso, versaoBase:versaoBase, modalidade:modalidade, especial:especialRev, vez:vezCobravel(remarcs), form:formD, condicionais:condicionais, semTaxa:true, dividaAnterior:sel ? totalDividaAnterior(s.acertosConsignado, sel.nome) : 0});   // atendimento interno: sem taxa de deslocamento
   var pa = dv.previaAcerto, versao = dv.versao, pxm = dv.pecasProx;
   // dívida de acerto ANTERIOR (Marcus, 09/11/2026, regra A): aparece assim que o atendimento abre, antes de lançar a venda; o que ela pagar quita primeiro a dívida mais antiga
   var avisoDivida = dv.dividaAnterior>0 ? "Dívida anterior de "+din(dv.dividaAnterior)+": o que ela pagar quita primeiro a dívida antiga"+(dv.abateDivida>0 ? " ("+din(dv.abateDivida)+" já abatidos)." : ".") : "";
@@ -341,25 +345,25 @@ function AtendimentoInterno(){
     .map(function(r){ return {id:"IRV"+r.id, revId:r.id, virtual:true, nome:r.nome, hora:r.agend.hora, status:"agendado"}; });
   var listaDia = agenda.concat(virtuaisHoje).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); });
   var feitosHoje = listaDia.filter(function(x){ return x.status==="acertado"; }).length;
-  var itemFila = function(x){
+  // LISTA DO DIA EM TABELA (Marcus, 16/11/2026): colunas alinhadas (hora, revendedora, tipo, situação), filtro no título de cada coluna, como as outras planilhas do sistema. "Retorno" é o novo kit (kit que volta).
+  var TIPO_DIA = {acerto:"Acerto", kit_novo:"Kit novo", reposicao:"Reposição", premio:"Brinde", indicacao:"Brinde", retornando:"Novo kit", troca:"Troca"};
+  var linhaDia = function(x){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
     var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
     var canc = x.status==="cancelado";
     var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
-    return e("button",{key:x.id, type:"button", onClick:function(){ if(canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
-      className:"flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
-      e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
-      e("span",{className:"min-w-0 flex-1 truncate font-semibold", title:x.nome}, doisNomes(x.nome)),
-      // coluna do TIPO do atendimento (Marcus, 16/11/2026): acerto, kit novo, reposição ou brinde, para ver o dia de relance
-      e("span",{className:"w-[4.5rem] shrink-0 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-[.03em]", title:"Tipo do atendimento"}, ({acerto:"Acerto", kit_novo:"Kit novo", reposicao:"Reposição", premio:"Brinde", indicacao:"Brinde", retornando:"Retorno", troca:"Troca"})[x.tipo || "acerto"] || "Acerto"),
-      !feito && totalDividaAnterior(s.acertosConsignado, x.nome)>0.009 && e("span",{className:"shrink-0 rounded-md bg-destructive/20 px-2 py-1 text-[11px] font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, "Dívida "+din(totalDividaAnterior(s.acertosConsignado, x.nome))),
-      e("span",{className:"shrink-0 rounded-md px-2 py-1 text-[11px] font-bold "+st[1]}, st[0]));
+    var div = !feito ? totalDividaAnterior(s.acertosConsignado, x.nome) : 0;
+    return {id:x.id, hora:x.hora || "—", nome:doisNomes(x.nome), tipo:TIPO_DIA[x.tipo || "acerto"] || "Acerto", sit:st[0], _cls:st[1], divida:div>0.009 ? div : null, _x:x, _on:on, _canc:canc};
   };
+  var linhasDia = listaDia.map(linhaDia);
+  var temDividaDia = linhasDia.some(function(l){ return l.divida; });
+  var colsDia = [{k:"hora", t:"Hora"}, {k:"nome", t:"Revendedora"}, {k:"tipo", t:"Tipo"}, {k:"sit", t:"Situação", render:function(v, l){ var pt = String(v).split(" · "); return e("span",{className:"inline-block whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-bold "+l._cls, title:v}, pt[0], pt[1] ? e("span",{className:"hidden 2xl:inline"}, " · "+pt[1]) : null); }}]
+    .concat(temDividaDia ? [{k:"divida", t:"Dívida", render:function(v){ return v ? e("span",{className:"whitespace-nowrap font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, din(v)) : ""; }}] : []);
   var CABEC = "flex h-8 items-center justify-between gap-2 bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold";
   var filaDia = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
     e("div",{className:CABEC}, e("h2",{className:"text-[13px] font-semibold"}, "Hoje · "+hoje.split("-").reverse().slice(0,2).join("/")), e("span",{className:"text-[13px] font-bold"}, feitosHoje+" de "+listaDia.filter(function(x){ return x.status!=="cancelado"; }).length+" feitos")),
-    e("div",{className:"flex flex-col gap-1 p-2"},
-      listaDia.length ? listaDia.map(itemFila) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje.")));
+    e("div",{className:"p-1"},
+      listaDia.length ? e(TabelaPlanilha,{cols:colsDia, linhas:linhasDia, chave:"id", centro:true, grade:true, semContagem:true, semLimpar:true, maozinha:true, linhaCls:function(l){ return l._on ? "bg-primary/15" : ""; }, aoClicar:function(l){ var x = l._x; if(l._canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); }}) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje.")));
   var vApoio = versaoBase || versaoVigente(s);
   var regrasApoio = vApoio ? textoRegras(vApoio, modalidade).filter(function(r){ return !/deslocamento|pe[cç]as/i.test(r.t); }) : [];
   var listaRegras = e("ul",{className:"flex flex-col gap-1.5 p-2.5 text-[13px] leading-snug"}, regrasApoio.map(function(r,i){ return e("li",{key:i, className:"flex gap-2"}, e("span",{className:"shrink-0 font-bold text-primary"}, (i+1)+"."), e("span",null, r.t)); }));
@@ -368,7 +372,7 @@ function AtendimentoInterno(){
       return e("button",{key:o[0], type:"button", role:"tab", "aria-selected":on, onClick:function(){ setApoioAba(o[0]); }, className:"h-8 rounded-lg text-[13px] font-extrabold "+(on ? "bg-[#1B1409] text-[#F1E4C6]" : "text-[#1B1409]/80 hover:text-[#1B1409]")}, o[1]); })),
     apoioAba==="comissao" ? e("div",{className:"p-2"}, tabelaComissao(kitVisto)) : apoioAba==="kit" ? e("div",{className:"p-2"}, blocoValorKit) : listaRegras);
   var pagina = function(centro){
-    return e("div",{className:"-mx-3 -mt-3 grid grid-cols-1 items-start gap-3 xl:grid-cols-[27rem_minmax(0,1fr)]"},
+    return e("div",{className:"-mx-3 -mt-3 grid grid-cols-1 items-start gap-3 xl:grid-cols-[25rem_minmax(0,1fr)] 2xl:grid-cols-[32rem_minmax(0,1fr)]"},
       e("div",{className:"flex min-w-0 flex-col gap-3"}, filaDia, apoioTabs), centro);
   };
 
@@ -484,7 +488,7 @@ function AtendimentoInterno(){
       pa.juridico ? "60 dias ou mais: perde toda a comissão e todo o brinde. Vai para o jurídico."
         : "Atraso: perde "+pa.atrasoPct+"% da comissão e "+(pa.atrasoBrindePct||0)+"% do brinde."),
     dv.novas && pa && dv.faltaAtual>0.009 && dv.multaAplica && e("div",{className:"flex flex-col items-end gap-1"},
-      e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, "Dias com valor pendente (prazo "+((versao.novas||{}).prazoQuitarDias||15)+")",
+      e("label",{className:"flex items-center justify-end gap-2 text-[13px] font-semibold text-muted-foreground"}, "Dias com valor pendente (prazo "+((versao.novas||{}).prazoQuitarDias||30)+")",
         e("input",{type:"number", min:0, value:form.diasQuitacao||0, "aria-label":"Dias com valor pendente", className:CPD+" h-8! w-16! px-1! text-center!", onChange:function(ev){ up({diasQuitacao:Math.max(0, parseInt(ev.target.value,10)||0)}); }})),
       e("p",{className:"text-[13px] font-semibold text-destructive"}, "Multa de "+din(pa.multaPendente)+(pa.multaAtrasoQuitacao>0 ? " + "+din(pa.multaAtrasoQuitacao)+" de atraso" : "")+" sobre "+din(pa.pendente)+" pendente. Próximo kit só depois de quitar.")),
     pa && (pa.descontoRemarcacao.comissaoPct>0 || pa.descontoRemarcacao.brindePct>0 || pa.atrasoPct>0) && e("p",{className:"text-center text-[13px] font-semibold text-destructive"},
@@ -675,7 +679,7 @@ function AtendimentoInterno(){
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
   var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : !!continuaEf)));
   var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
-    d({type:"INT_ACERTO_REGISTRAR", id:sel.id, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
+    d({type:"INT_ACERTO_REGISTRAR", id:sel.id, regraAntiga:!!form.regraAntiga && !ehPrata, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
       recusouNegociar:form.recusouNegociar, brindesLancados:form.brindes, excedenteBrinde:dv.excedenteBrinde,
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
@@ -875,7 +879,11 @@ function AtendimentoInterno(){
     (ehPrata || dv.novas) && linhaKV(dv.novas ? "Dias úteis de atraso do acerto" : "Dias de atraso (Prata)", e("input",{type:"number", value:form.atrasoDias||0, disabled:true, readOnly:true, title:"Contado pelo sistema: dias úteis desde o primeiro dia marcado", "aria-label":"Dias úteis de atraso (contado pelo sistema)", className:CPT+" cursor-not-allowed opacity-60"}), {pill:"Sistema"}),
     e("div",{key:"svsp", className:"flex-1"}),
     // Não teve venda: discreto e lá embaixo, sem brilho (Marcus, 16/11/2026: "é 1 a cada 50, não é o foco")
-    !jaFeito && e("button",{key:"sv", type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(6); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, className:"m-2 h-8 self-center rounded-md border border-foreground/25 bg-card px-3 text-[13px] font-medium hover:bg-white/10"}, form.semVenda ? "✓ Sem venda (R$ 0,00) · desfazer" : "Não teve venda (R$ 0,00)"));
+    // COMISSÃO ANTIGA (Marcus, 16/11/2026): se a revendedora questionar, um botão cobra ESTE acerto pela tabela antiga; o próximo acerto volta à regra nova e o uso fica registrado na ficha
+    // dois botões lado a lado, pequenos e sem texto extra (Marcus, 16/11/2026): comissão antiga (ela questionou) e não teve venda. A comissão antiga vale só neste acerto; o próximo volta à regra nova e o uso fica na ficha.
+    (!jaFeito || form.regraAntiga) && e("div",{key:"ra", className:"flex flex-nowrap items-center justify-center gap-2 p-2 text-[13px]"},
+      !ehPrata && e("button",{type:"button", disabled:jaFeito, onClick:function(){ up({regraAntiga:!form.regraAntiga}); }, title:"Use quando a revendedora questionar. Cobra só ESTE acerto pela tabela antiga (brinde de R$ 500,00 a R$ 699,99: Normal R$ 48 e Select R$ 68). O próximo acerto vale a regra nova e o uso fica registrado na ficha da revendedora.", className:"h-8 shrink-0 whitespace-nowrap rounded-md border px-2.5 font-medium disabled:opacity-60 "+(form.regraAntiga ? "border-primary bg-primary/20 text-primary" : "border-foreground/25 bg-card hover:bg-white/10")}, form.regraAntiga ? "✓ Comissão antiga" : "Comissão antiga"),
+      !jaFeito && e("button",{type:"button", onClick:function(){ if(!form.semVenda) setPassoAt(6); up(form.semVenda ? {vendaBruta:null, semVenda:false} : {vendaBruta:0, semVenda:true}); }, title:"Venda de R$ 0,00 (clique de novo para desfazer)", className:"h-8 shrink-0 whitespace-nowrap rounded-md border border-foreground/25 bg-card px-2.5 font-medium hover:bg-white/10"}, form.semVenda ? "✓ Sem venda" : "Não teve venda")));
   var tabAcerto = e("div",{className:CTP},
     e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Item"), e("span",null,"Valor")),
     linhaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—"), {z:true}),
@@ -902,9 +910,12 @@ function AtendimentoInterno(){
   var linksPagos = infoLinks ? infoLinks.pagos.filter(function(x){ return !linksEmUso[x.sol.id]; }) : [];
   var linksAguardando = infoLinks ? infoLinks.aguardando : [];
   var contaDoLink = function(sol){ var m = meioDe(s, sol.meioId), lista = formaDe("link").descricoes || [], dsc = m && m.cnpjId ? lista.find(function(c){ return String(c).replace(/\s+/g, " ").endsWith(" - "+m.cnpjId); }) : null; return dsc || (lista.length===1 ? lista[0] : (m ? m.nome : "LINK")); };
-  var usarLinkPago = function(x){
-    var sol = x.sol, falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100), valor = Math.min(sol.valor, falta); if(!(valor>0) || jaFeito) return;
-    up({pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
+  autoLinks.current = function(){
+    if(!sel || visor || jaFeito || sel.status==="acertado" || !dv.previaBase || form===FORM_ACERTO_VAZIO) return;
+    var ja = form.linksAuto || [], falta = Math.max(0, Math.round((dv.restanteTotal||0)*100)/100); if(!(falta>0.009)) return;
+    var x = linksPagos.find(function(y){ return y.usavel && ja.indexOf(y.sol.id)<0; }); if(!x) return;
+    var sol = x.sol, valor = Math.min(sol.valor, falta); if(!(valor>0)) return;
+    up({linksAuto:ja.concat([sol.id]), pagamentos:form.pagamentos.concat([{forma:"link", valor:valor, parcelas:sol.parcelas || 1, bandeira:sol.bandeira || "", linkSolId:sol.id, jaPagoLink:true, descricao:contaDoLink(sol)}])}); };
   // Link já pago POR FORA (gerado fora do sistema): registra no setor Link de pagamento como pago e já entra como pagamento (Marcus, 11/11/2026)
   var meioPorConta = function(conta){ var ms = (s.lp && s.lp.meios) || [], m = ms.find(function(x){ return x.tipo==="LINK" && x.cnpjId && String(conta||"").replace(/\s+/g, " ").endsWith(" - "+x.cnpjId); }); return m ? m.id : ""; };
   var registrarPorFora = function(){
@@ -920,40 +931,15 @@ function AtendimentoInterno(){
   var contasLink = formaDe("link").descricoes || [];
   var campoPF = function(rot, el){ return e("label",{className:"flex min-w-0 flex-col gap-0.5"}, e("span",{className:CAP}, rot), el); };
   var SELPF = "h-8 w-full rounded-md border border-foreground/25 bg-card px-2 text-[13px]";
-  var blocoLinks = !jaFeito && !!s.lp && e("div",{className:"flex flex-col border-t border-foreground/25"},
-    e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora"),
+  // Links de pagamento (Marcus, 16/11/2026): TUDO vem do setor Link de pagamento, direto. Aqui não há botão para pedir link nem para registrar link por fora; o que já foi pago entra sozinho (acima) e o que está esperando aparece só como aviso.
+  var blocoLinks = !jaFeito && !!s.lp && (linksPagos.length>0 || linksAguardando.length>0) ? e("div",{className:"flex flex-col border-t border-foreground/25"},
+    e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora (vêm do setor Link de pagamento)"),
     linksPagos.map(function(x){ var sol = x.sol; return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 text-[13px]"},
       e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
-      x.usavel && e("button",{type:"button", disabled:!(dv.restanteTotal>0.009), onClick:function(){ usarLinkPago(x); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Usar como pagamento")); }),
+      x.usavel && e("span",{className:"whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.03em] text-primary"}, dv.previaBase ? ((form.linksAuto||[]).indexOf(sol.id)>=0 ? "Tirado do acerto" : "Entra sozinho") : "Entra quando lançar a venda")); }),
     linksAguardando.map(function(sol){ var gerado = sol.status==="gerado";
-      return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-center gap-2 px-2 py-1 text-center text-[13px]"},
-        e("span",null, (sol.paraAtendimento ? (gerado ? "Link gerado pela Hellen" : "Pedido enviado à Hellen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))),
-        gerado && sol.linkUrl && e("button",{type:"button", onClick:function(){ try{ navigator.clipboard.writeText(sol.linkUrl); }catch(x){} }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Copiar link")); }),
-    // os dois botões na mesma linha (Marcus, 16/11/2026: "menos linhas, compacta melhor")
-    !formPF && !formPN && e("div",{className:"flex flex-wrap justify-center gap-2 p-1.5"}, e("button",{type:"button", onClick:function(){ setFormPN({valor:null, parcelas:1}); }, title:"A Hellen gera o link na plataforma. Quando a revendedora pagar, ele entra aqui como pagamento.", className:"h-8 whitespace-nowrap rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Pedir link novo (a Hellen gera)"),
-      e("button",{type:"button", onClick:function(){ setFormPF({valor:null, parcelas:1, bandeira:"", conta:contasLink[0] || "", data:hoje, img:""}); }, title:"Link gerado fora do sistema (WhatsApp ou direto na plataforma) e já pago: entra no setor Link de pagamento e vale como pagamento", className:"h-8 whitespace-nowrap rounded-md border border-primary/60 bg-primary/10 px-3 text-[13px] font-semibold text-primary hover:bg-primary/20"}, "+ Link já pago (por fora)")),
-    formPN && e("div",{className:"flex flex-col gap-2 p-2"},
-      e("p",{className:"text-center text-[13px] font-semibold"}, "Pedido de link novo: a Hellen gera na plataforma e avisa"),
-      e("div",{className:"grid grid-cols-2 gap-2"},
-        campoPF("Valor do link", e(CampoDinheiro,{value:formPN.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPN(Object.assign({}, formPN, {valor:v})); }})),
-        campoPF("Parcelas", e("select",{value:formPN.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPN(Object.assign({}, formPN, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); })))),
-      e("div",{className:"flex justify-center gap-2"},
-        e("button",{type:"button", onClick:function(){ setFormPN(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
-        e("button",{type:"button", disabled:!(formPN.valor>0), onClick:function(){ d({type:"LP", op:"sol_pedir_atendimento", id:"SP"+Date.now(), revendedora:sel.nome, valor:formPN.valor, parcelas:formPN.parcelas, por:nomeDe(s.usuario)}); setFormPN(null); }, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Pedir o link"))),
-    !formPF ? null
-    : e("div",{className:"flex flex-col gap-2 p-2"},
-        e("p",{className:"text-center text-[13px] font-semibold"}, "Link pago por fora: entra no setor Link de pagamento como Pago"),
-        e("div",{className:"grid grid-cols-2 gap-2"},
-          campoPF("Valor do link", e(CampoDinheiro,{value:formPF.valor, label:"Valor do link", className:CPT, placeholder:"R$ 0,00", onChange:function(v){ setFormPF(Object.assign({}, formPF, {valor:v})); }})),
-          campoPF("Parcelas", e("select",{value:formPF.parcelas, "aria-label":"Parcelas do link", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {parcelas:Number(ev.target.value)})); }}, [1,2,3,4,5,6,7,8,9,10].map(function(n){ return e("option",{key:n, value:n}, n===1 ? "À vista" : n+"x"); }))),
-          campoPF("Bandeira", e("select",{value:formPF.bandeira, "aria-label":"Bandeira", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {bandeira:ev.target.value})); }}, [e("option",{key:"x", value:""}, "Escolha")].concat(BANDEIRAS.map(function(b){ return e("option",{key:b, value:b}, b); })))),
-          campoPF("Data do pagamento", e("input",{type:"date", value:formPF.data, max:hoje, "aria-label":"Data do pagamento", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {data:ev.target.value})); }}))),
-        campoPF("Conta que recebeu", contasLink.length ? e("select",{value:formPF.conta, "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }}, contasLink.map(function(c){ return e("option",{key:c, value:c}, c); }))
-          : e("input",{value:formPF.conta, maxLength:80, placeholder:"Ex.: LINK - SICREDI - SERENITY - 59", "aria-label":"Conta que recebeu", className:SELPF, onChange:function(ev){ setFormPF(Object.assign({}, formPF, {conta:ev.target.value})); }})),
-        campoPF("Foto do comprovante: print da confirmação de pagamento da plataforma (obrigatória)", e("div",{className:"flex items-center gap-2"}, e("input",{type:"file", accept:"image/*", "aria-label":"Foto do comprovante do pagamento", onChange:function(ev){ lerFotoComp(ev.target.files && ev.target.files[0], function(url){ setFormPF(function(o){ return Object.assign({}, o, {img:url}); }); }); }, className:"block min-w-0 flex-1 text-[13px] file:mr-2 file:h-8 file:rounded-md file:border file:border-foreground/25 file:bg-card file:px-3 file:text-[13px]"}), formPF.img && e("img",{src:formPF.img, alt:"Comprovante anexado", className:"h-8 rounded bg-white"}))),
-        e("div",{className:"flex justify-center gap-2"},
-          e("button",{type:"button", onClick:function(){ setFormPF(null); }, className:"h-8 rounded-md border border-foreground/25 bg-card px-3 text-[13px] hover:bg-white/10"}, "Cancelar"),
-          e("button",{type:"button", disabled:!(formPF.valor>0) || !formPF.bandeira || !formPF.conta || !formPF.data || !formPF.img, onClick:registrarPorFora, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Registrar e usar como pagamento"))));
+      return e("div",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"},
+        (sol.paraAtendimento ? (gerado ? "Link gerado pela Hellen" : "Pedido enviado à Hellen") : "Link aguardando pagamento")+" · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+(gerado ? ": aguardando o pagamento da revendedora." : (sol.paraAtendimento ? ": aguardando ela gerar o link." : ": só conta depois de pago."))); })) : null;
   var listaFormas = e("div",{className:"flex flex-col"}, formas.map(function(f,i){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));
@@ -981,7 +967,7 @@ function AtendimentoInterno(){
     return e("div",{key:c[0], className:"flex min-h-9 flex-wrap items-center justify-center gap-x-2 bg-card px-2"}, e("span",{className:CAP+" whitespace-nowrap"}, c[0]), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums "+c[2]}, c[1])); })), "", "p-0");
   var est1 = e("div",{className:"flex min-w-0 flex-1 flex-col gap-2 p-2"},
     cartaoPg("t", totaisPg),
-    cartaoPg("f", lado("Selecione a forma de pagamento", e("div",{className:CTB}, formasBarra, blocoLinks, linhaBand, linhaEntrada), "", "p-0")),
+    cartaoPg("f", lado("Selecione a forma de pagamento", e("div",{className:CTB}, formasBarra, linhaBand, linhaEntrada, blocoLinks), "", "p-0")),
     cartaoPg("p", lado("Formas de pagamento selecionadas", [tabPag, pPag])));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
@@ -1063,9 +1049,9 @@ function AtendimentoInterno(){
     if(t==="Comissão"){ var fxs = efReg.faixas.slice().sort(function(a,b){ return a.min-b.min; }); fxs.forEach(function(f,i){ var prox = fxs[i+1]; lst.push([prox ? din(f.min)+" a "+din(Math.round((prox.min-0.01)*100)/100) : din(f.min)+" em diante", f.pct+"%"]); }); }   // faixas escritas como o Marcus fala: 300 a 499,99 (13/11/2026), não "a partir de"
     else if(t==="Taxa de deslocamento") lst.push(["Venda abaixo de "+din(g.taxaAbaixoDe), din(((efReg.taxaBaixa||[])[0]||{}).taxa||0)], ["Atendimento na Sorelly","Sem taxa"]);
     else if(t==="Venda mínima" && NV) lst.push(["Média mínima (representante)", din(NV.minimoRepresentante)], ["Média mínima (Sorelly)", din(NV.minimoInterno)], ["Vendas na média", String(NV.mediaVendas)]);
-    else if(t==="Acerto na data" && NV){ var ant = 0; NV.atrasoAcerto.slice().sort(function(a,b){ return a.ate-b.ate; }).forEach(function(x){ lst.push([(ant+1)+" a "+x.ate+" dias", "−"+x.comissaoPct+"% comissão e −"+x.brindePct+"% brinde"]); ant = x.ate; }); lst.push([NV.juridicoDias+" dias","Perde tudo"]); }
+    else if(t==="Acerto na data" && NV) linhasAtraso(NV).forEach(function(l){ lst.push(l); });   // dias úteis (regra de 11/11/2026), sem a escada antiga
     else if(t==="Remarcação") efReg.remarcacao.forEach(function(x,i,arr){ lst.push([(i+1)+"ª vez"+(i===arr.length-1 ? " em diante" : ""), "−"+x.comissaoPct+"% comissão · "+(x.brindePct>=100 ? "sem brinde" : "−"+x.brindePct+"% brinde")]); });
-    else if(t==="Pagamento" && NV) lst.push(["Multa sobre o pendente", NV.multaPendentePct+"%"], ["Prazo para quitar", NV.prazoQuitarDias+" dias"], ["Depois do prazo","+"+NV.atrasoQuitacaoPctDia+"% ao dia, até "+NV.atrasoQuitacaoTetoPct+"%"]);
+    else if(t==="Pagamento" && NV) lst.push(["Multa sobre o pendente", NV.multaPendentePct+"%"], ["Negociação", "até "+(NV.parcelasMax||2)+" parcelas de no mínimo R$ "+(NV.parcelaMinima||200)+",00"], ["Dívida abaixo de R$ "+(NV.parcelaUnicaAbaixo||400)+",00", "parcela única"], ["Prazo para quitar", NV.prazoQuitarDias+" dias corridos"], ["Parcela atrasada","+"+NV.atrasoQuitacaoPctDia+"% ao dia, até "+NV.atrasoQuitacaoTetoPct+"%"]);
     else if(t==="Brinde"){ (efReg.pagamentoBrinde||[]).filter(function(x){ return x.max>0; }).forEach(function(x,i,arr){ lst.push(["Faltou "+(i>0 ? "de "+arr[i-1].max+"% até " : "até ")+x.max+"%", Math.round(x.fator*100)+"% do brinde"]); }); var ult = (efReg.pagamentoBrinde||[]); if(ult.length) lst.push(["Faltou mais de "+ult[ult.length-1].max+"%","Sem brinde"]); }
     else if(t==="Kit novo") lst.push(["Acerto pago", g.kitNovoMinPct+"% ou mais"]);
     else if(t==="Peças") lst.push(["Tag riscada ou extraviada", din(g.taxaTagExtraviada)]);
@@ -1191,7 +1177,7 @@ function AtendimentoInterno(){
     w.document.close(); setTimeout(function(){ w.print(); }, 300);
   };
   var resConta = blocoRes("Conta do acerto", [e("div",{key:"h", className:CABT+G2}, e("span",null,"Item"), e("span",null,"Valor")),
-    rodaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—")), rodaKV("Comissão", n15(pa ? din(pa.comissao) : "—"), "bg-white/[0.03]"),
+    rodaKV("Venda líquida", n15(pa ? din(pa.vendaLiquida) : "—")), rodaKV(form.regraAntiga ? "Comissão antiga" : "Comissão", n15(pa ? din(pa.comissao) : "—"), "bg-white/[0.03]"),
     e("div",{key:"ap", className:LIN+G2+" min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Valor do acerto"), e("b",{className:"text-[15px] font-semibold tabular-nums text-primary"}, pa ? din(dv.totalAPagar) : "—")),
     rodaKV("Pago", n15(din(dv.totalPagoAtual), "text-success")),
     e("div",{key:"sd", className:LIN+G2+" min-h-9 border-t border-foreground/40 font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))),

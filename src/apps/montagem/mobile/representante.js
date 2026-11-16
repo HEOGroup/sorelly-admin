@@ -10,7 +10,7 @@ import { KitsNovosRep } from "@/apps/montagem/components/kits-novos-rep";import 
 import { comisEfetiva, itensComissao, totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
 import { mensagemFechamento, mensagemEntrega, abrirPdfAcerto } from "@/apps/montagem/domain/mensagem-fechamento";
 import { condicionaisDoKit, totaisDe, totaisKit } from "@/apps/montagem/domain/conferencia-pecas";
-import { atrasoAcerto, vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
+import { atrasoAcerto, linhasAtraso, textoNegociacao, vezCobravel, versaoDoKit, versaoVigente, PARCELAS_CARTAO,
   AVISO_BB, NOVAS_PADRAO, MEDIA_N, codigoBrindeValido, normalizarCodigo, limitarCodigo, codigoPecaValido, formasPagamentoPadrao, textoRegras, textoRegrasPrata, versaoEfetiva, comissaoEspecialDe, modalidadeDe, MODALIDADE_LB } from "@/apps/montagem/domain/consignado";
 import { ComissoesRep } from "@/apps/montagem/mobile/comissoes-rep";
 import { PedidoDataRep } from "@/apps/montagem/mobile/pedido-data-rep";
@@ -724,7 +724,7 @@ function AppRepresentante(p){
                     e("button",{onClick:function(){ setRegrasInadAberto(!regrasInadAberto); }, "aria-label":"Regras da inadimplência", "aria-expanded":regrasInadAberto, className:"h-8 shrink-0 rounded-lg bg-white/10 px-3 text-[13px] font-bold"}, "Regras")),
                   regrasInadAberto && e("div",{className:"flex flex-col gap-1 rounded-lg bg-black/40 p-2 text-[12px]"},
                     e("p",{className:"font-bold"},"Regras da inadimplência"),
-                    e("p",null,"1. Qualquer valor pendente tem multa de "+((versaoSel && versaoSel.novas) || {}).multaPendentePct+"% sobre o pendente. Prazo para quitar: "+((versaoSel && versaoSel.novas) || {}).prazoQuitarDias+" dias. Depois do prazo soma "+((versaoSel && versaoSel.novas) || {}).atrasoQuitacaoPctDia+"% ao dia, até "+((versaoSel && versaoSel.novas) || {}).atrasoQuitacaoTetoPct+"%."),
+                    e("p",null,"1. Qualquer valor pendente tem multa de "+((versaoSel && versaoSel.novas) || {}).multaPendentePct+"% sobre o pendente. "+(versaoSel && versaoSel.novas ? textoNegociacao(versaoSel.novas)+" Parcela atrasada soma "+versaoSel.novas.atrasoQuitacaoPctDia+"% ao dia, até "+versaoSel.novas.atrasoQuitacaoTetoPct+"%." : "")),
                     e("p",null,"2. Sem negociar o valor que falta, os brindes não são liberados."),
                     e("p",null,"3. As parcelas negociadas precisam fechar exatamente o valor em aberto."),
                     e("p",null,"4. Se a revendedora não quiser negociar, o jurídico entra em contato. Sem negociação em 24 h depois do contato com o setor, a nota promissória vai para execução no valor pendente.")),
@@ -1287,11 +1287,11 @@ function AppRepresentante(p){
           return linhaRegra("p"+i, t.max===0 ? "Pagou tudo" : "Faltou "+(ant ? "de "+ant+"% até " : "até ")+t.max+"%", Math.round(t.fator*100)+"% dos brindes", t.fator<1 ? "#B45309" : "#15803D"); })
         .concat([linhaRegra("pz", "Faltou mais de "+((vr.pagamentoBrinde||[]).slice(-1)[0]||{max:10}).max+"%", "sem brindes", "#B91C1C"),
           e("p",{key:"pn1"},"O pagamento tem que ser integral e o brinde só é entregue depois do pagamento. Negociar o que falta com parcelas que fechem o valor exato também libera o brinde."),
-          vr.novas ? e("p",{key:"pn2"},"Qualquer valor pendente tem multa de "+vr.novas.multaPendentePct+"% sobre o pendente. Prazo para quitar: "+vr.novas.prazoQuitarDias+" dias; depois soma "+vr.novas.atrasoQuitacaoPctDia+"% ao dia, até "+vr.novas.atrasoQuitacaoTetoPct+"%. O próximo kit só sai depois de quitar.")
+          vr.novas ? e("p",{key:"pn2"},"Qualquer valor pendente tem multa de "+vr.novas.multaPendentePct+"% sobre o pendente. "+textoNegociacao(vr.novas)+" Parcela atrasada soma "+vr.novas.atrasoQuitacaoPctDia+"% ao dia, até "+vr.novas.atrasoQuitacaoTetoPct+"%. O próximo kit só sai depois de quitar.")
             : e("p",{key:"pn2"},"Se a revendedora não quiser negociar o que falta: sem brinde. O jurídico entra em contato; sem negociação em 24 h, a nota promissória vai para execução no valor pendente.")])),
     vr.novas && cartaoRegra("atraso","Acerto atrasado","#DC2626","calendario",
-      vr.novas.atrasoAcerto.slice().sort(function(a,b){return a.ate-b.ate;}).map(function(x,i,arr){ return linhaRegra("ar"+i, (i>0 ? arr[i-1].ate+1 : 1)+" a "+x.ate+" dias", "comissão −"+x.comissaoPct+"% · brinde −"+x.brindePct+"%", "#B91C1C"); })
-        .concat([linhaRegra("ar60", vr.novas.juridicoDias+" dias ou mais", "perde tudo · jurídico", "#B91C1C"), e("p",{key:"arn"},"O desconto vale sobre o total da venda. Acerto no dia não perde nada.")])),
+      linhasAtraso(vr.novas).map(function(l,i){ return linhaRegra("ar"+i, l[0], l[1], i===0 ? "#15803D" : "#B91C1C"); })
+        .concat([e("p",{key:"arn"},"O desconto vale sobre o total da venda. Acerto no dia não perde nada.")])),
     vr.novas && cartaoRegra("media","Venda mínima","#0891B2","grafico",[
       e("p",{key:"m1"},"Média das últimas "+MEDIA_N+" vendas (3 anteriores e a de hoje): mínimo de "+BK0(vr.novas.minimoRepresentante)+" no acerto com a representante e "+BK0(vr.novas.minimoInterno)+" no acerto na Sorelly."),
       e("p",{key:"m2"},"Média abaixo: o kit novo não é liberado e o cadastro fica bloqueado. A representante pode dar uma nova chance na data do acerto.")]),

@@ -1,30 +1,30 @@
 // Sorelly Admin · montagem — pages/LinkRelatorio.js
-// Financeiro → Link de pagamento (relatório): o dinheiro dos links entra direto para a Sorelly. Números do mês (gerados, pagos, conversão, valor pago, bônus do setor e taxas) e o resumo
-// por DIA e por MÊS (gerados, pagos, expirados, com erro). Quem opera os links é o setor Link de pagamento (a Helen): a operação fica em pages/LinkPagamento.js.
-import { Faixa, Indicador, Pagina } from "@/apps/montagem/components/padrao";
+// Link de pagamento → Relatório de links: o dinheiro dos links entra direto para a Sorelly. Números do mês (gerados, pagos, conversão, valor pago, bônus do setor e taxas) e o resumo
+// por DIA e por MÊS (gerados, pagos, expirados, com erro). Quem opera os links é o setor Link de pagamento (a Hellen): a operação fica em pages/LinkPagamento.js.
+// REFEITA em 16/11/2026 (Marcus: "arruma as outras telas conforme as nossas regras"): bloco azul como o Contas a pagar, mês e números numa faixa só; o resumo por mês e por dia já é planilha.
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { Pagina } from "@/apps/montagem/components/padrao";
 import { bonusDoValor, formatarReais, indicadoresLp } from "@/apps/montagem/domain/link-pagamento";
 import { ResumoLinks } from "@/apps/montagem/pages/link-pagamento/Resumo";
 import { use } from "@/apps/montagem/state/context";
-import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
 function AbaLinkRelatorio(){
   var cx = use(), s = cx.state, hoje = new Date(), padrao = hoje.getFullYear()+"-"+String(hoje.getMonth()+1).padStart(2,"0");
   var st = useState(padrao), mes = st[0];
   var ind = s.lp ? indicadoresLp(s, mes) : null;
-  return e(Pagina,null,
-    e(PageHead,{t:"Relatório de links de pagamento", sub:"O que entra direto para a Sorelly: links gerados, pagos, expirados e com erro, por dia e por mês. A operação dos links fica no setor Link de pagamento."},
-      e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) st[1](ev.target.value); }, className:"h-9 rounded-lg bg-black/30 px-3 text-[13px] ring-1 ring-white/15"})),
-    !ind ? e("p",{className:"py-6 text-center text-[13px] text-white/60"}, "Ainda não há solicitações de link registradas.") :
-    [e(Faixa,{key:"f", n:8},
-      e(Indicador,{t:"Solicitações no mês", v:String(ind.total), cor:"info", ir:"linkpag", sub:"App: "+ind.porCanal.app+" · WhatsApp: "+ind.porCanal.whatsapp}),
-      e(Indicador,{t:"Links gerados", v:String(ind.geradosMes), cor:"info"}),
-      e(Indicador,{t:"Links pagos", v:String(ind.pagosCoorte), cor:"ok"}),
-      e(Indicador,{t:"Conversão", v:(String(ind.conversao).replace(".", ","))+"%", cor:ind.conversao>=65 ? "ok" : ind.conversao>=55 ? "alerta" : "ruim", sub:"Pagos ÷ gerados"}),
-      e(Indicador,{t:"Valor pago", v:formatarReais(ind.valorCoorte), cor:"ok", sub:"Recebido no mês: "+formatarReais(ind.pagoMes)}),
-      e(Indicador,{t:"Bônus do setor", v:formatarReais(bonusDoValor(s.lp.config, ind.valorCoorte).valor), cor:"total", ir:"linkpag"}),
-      e(Indicador,{t:"Taxas", v:formatarReais(ind.taxaTotal+ind.antecipacaoTotal), cor:"alerta", sub:"Líquido: "+formatarReais(ind.liquido)}),
-      e(Indicador,{t:"Comprovantes pendentes", v:String(ind.comprovantesPendentes), cor:ind.comprovantesPendentes ? "alerta" : "ok", ir:"linkpag"})),
-      e(ResumoLinks,{key:"r", lp:s.lp, mes:mes})]);
+  var num = function(rot, v, cor){ return e("span",{key:rot, className:"whitespace-nowrap px-1 text-[13px]"}, rot+" ", e("b",{className:"tabular-nums "+(cor || "")}, v)); };
+  var faixa = e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
+    e("label",{className:"flex items-center gap-1.5 text-[13px] font-semibold"}, "Mês", e("input",{type:"month", value:mes, "aria-label":"Mês", onChange:function(ev){ if(ev.target.value) st[1](ev.target.value); }, className:"h-8 rounded-md border border-white/50 bg-[#14233f] px-2 text-[13px] font-semibold text-white [color-scheme:dark]"})),
+    ind && e("div",{className:"flex flex-wrap items-center gap-x-1"},
+      num("Solicitações no mês", ind.total+" (App "+ind.porCanal.app+" · WhatsApp "+ind.porCanal.whatsapp+")"), num("Links gerados", ind.geradosMes), num("Links pagos", ind.pagosCoorte),
+      num("Conversão", String(ind.conversao).replace(".", ",")+"%", ind.conversao>=65 ? "text-success" : ind.conversao>=55 ? "text-[#FBBF24]" : "text-[#fca5a5]"),
+      num("Valor pago", formatarReais(ind.valorCoorte)+" (recebido no mês: "+formatarReais(ind.pagoMes)+")"), num("Bônus do setor", formatarReais(bonusDoValor(s.lp.config, ind.valorCoorte).valor)),
+      num("Taxas", formatarReais(ind.taxaTotal+ind.antecipacaoTotal)+" (líquido: "+formatarReais(ind.liquido)+")", "text-[#FBBF24]")));
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+    e("div",{className:"flex flex-col gap-2"},
+      e(BlocoPainel,{titulo:"Relatório de links de pagamento", compacto:true}, faixa,
+        !ind && e("p",{className:"py-6 text-center text-[13px]"}, "Ainda não há solicitações de link registradas.")),
+      ind && e(ResumoLinks,{lp:s.lp, mes:mes})));
 }
 export { AbaLinkRelatorio };
