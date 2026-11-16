@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.51", data:"2026-11-16", titulo:"Pedidos: Romaneio e Banho no padrão azul", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"As janelas de Romaneio e de Banho (que abrem ao concluir uma etapa) ficaram no padrão azul: barra azul de título com o × à direita e borda azul, igual à ficha do pedido."}
+ ]},
  {v:"0.20.50", data:"2026-11-16", titulo:"Link de pagamento: uma compra, várias tentativas", itens:[
   {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"As solicitações agrupam por compra: a mesma revendedora, o mesmo valor e o mesmo dia contam uma compra só, até uma tentativa pagar (depois do pago, a próxima é outra compra). Nova coluna Tentativas; ao clicar, o card lista as tentativas desta compra."}
  ]},

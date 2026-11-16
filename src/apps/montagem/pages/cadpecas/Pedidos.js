@@ -4,7 +4,7 @@
 // Etapas e status: o status do pedido é o nome da etapa (regras em domain/cadastro-pecas.js: ETAPAS_PED, FASES_PED, etapaPed, statusDaEtapa). O pedido fecha no romaneio.
 // Quem lança: Rayssa e Graziella (config.quem.pedidos_bruto); a diretoria sempre pode. "Enviado para Sorelly" entra sozinho quando uma fatura de banho é ligada ao pedido.
 // Editar chegadas, valores e peças por categoria: botão "Abrir ficha" dentro do cartão (ou clique na linha da planilha).
-import { Janela, Pagina } from "@/apps/montagem/components/padrao";
+import { Pagina } from "@/apps/montagem/components/padrao";
 import { Botao, Segmentado, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
 import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, ultimosMeses, resumoCompras, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa, parcialPed } from "@/apps/montagem/domain/cadastro-pecas";
@@ -228,7 +228,6 @@ function Cartao(p){
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }
-function Coluna(p){ return e("section",{className:"flex min-w-0 flex-col gap-2 rounded-xl bg-black/20 p-3 ring-1 ring-white/10"}, e("h3",{className:"border-b border-white/10 pb-1 text-center text-[11px] font-medium uppercase tracking-[.07em]"}, p.t), p.children); }
 
 // ficha do pedido (layout A escolhido pelo Marcus em 09/11/2026): três blocos lado a lado — Bruto (compra), Banho e Empresa — com as etapas em faixa embaixo e as ações no rodapé.
 // Cada bloco tem a cor da fase no fio de cima; o resumo em dinheiro fica no fim do bloco (bruto a pagar, banho e total do pedido = bruto + banho).
@@ -339,12 +338,13 @@ function FaturaBanho(p){
   if(!pd) return null;
   var valor = parseFloat(String(v[0]).replace(/\./g, "").replace(",", ".")) || 0, pronto = valor>0 && ls[0].length>0;
   var ok = function(){ if(pronto && p.x.exec("ped_edit", {id:pd.id, valorBanho:v[0], faturasBanho:ls[0], status:statusDaEtapa(pd, p.para)})) p.fechar(); };
-  return e(Janela,{t:"Banho do pedido", sub:pd.forn+(pd.romaneio ? " · Romaneio "+pd.romaneio : ""), fechar:p.fechar, colunas:[e(Coluna,{key:"b", t:"Chegou na empresa"},
+  return e(JanelaAzul,{t:"Banho do pedido", sub:pd.forn+(pd.romaneio ? " · Romaneio "+pd.romaneio : ""), fechar:p.fechar},
+    e("p",{className:"text-center text-[11px] font-semibold uppercase tracking-[.05em]"}, "Chegou na empresa"),
     e("p",{className:"text-center text-[13px]"}, "Informe o valor do banho e anexe a foto da fatura que a galvânica enviou."),
     e("input",{value:v[0], autoFocus:true, inputMode:"decimal", onChange:function(ev){ v[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Valor do banho R$", "aria-label":"Valor do banho", className:INP}),
     e(AnexosCampo,{lista:ls[0], onMudou:function(l){ ls[1](l); }}),
     e("p",{className:"text-center text-[13px]"}, "Total do pedido: ", e("b",{className:"tabular-nums"}, brl(totalPed(Object.assign({}, pd, {valorBanho:valor}))))),
-    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e concluir")))]});
+    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e concluir")));
 }
 
 // o pedido espera o romaneio na etapa 3 e só segue com o número E o arquivo salvos (Marcus, 04/11/2026)
@@ -353,11 +353,12 @@ function Romaneio(p){
   if(!pd) return null;
   var pronto = !!v[0].trim() && !!(ar[0] && ar[0].key);
   var ok = function(){ if(pronto && p.x.exec("ped_edit", {id:pd.id, romaneio:v[0], romaneioArq:ar[0], status:statusDaEtapa(pd, p.para)})) p.fechar(); };
-  return e(Janela,{t:"Romaneio do pedido", sub:pd.forn, fechar:p.fechar, colunas:[e(Coluna,{key:"r", t:"Aguardando romaneio"},
+  return e(JanelaAzul,{t:"Romaneio do pedido", sub:pd.forn, fechar:p.fechar},
+    e("p",{className:"text-center text-[11px] font-semibold uppercase tracking-[.05em]"}, "Aguardando romaneio"),
     e("p",{className:"text-center text-[13px]"}, "O pedido só segue para Em trânsito com o número e o arquivo do romaneio salvos."),
     e("input",{value:v[0], autoFocus:true, onChange:function(ev){ v[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ok(); }, placeholder:"Número do romaneio", "aria-label":"Romaneio", className:INP}),
     e(AnexoCampo,{atual:ar[0], onMudou:function(m){ ar[1](m); }}),
-    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e enviar")))]});
+    e("div",{className:"flex justify-center gap-2"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, desabilitado:!pronto, onClick:ok}, "Salvar e enviar")));
 }
 
 // Fatura em comum (Marcus, 16/11/2026): a galvânica manda UMA fatura para vários pedidos. A Rayssa digita o total, marca os pedidos e escolhe como dividir.
