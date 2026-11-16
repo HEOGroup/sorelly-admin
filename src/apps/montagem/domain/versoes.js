@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.47", data:"2026-11-16", titulo:"Link de pagamento: card da solicitação no padrão azul e botões corrigidos", itens:[
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Card da solicitação refeito na janela azul do setor (Andamento, Editar e Ações); linhas da planilha sem a mãozinha de arrastar."},
+  {tipo:"correção", area:"Link de pagamento", txt:"Botões Confirmar pagamento, Copiar texto e Marcar enviado voltaram a funcionar (erro de stopPropagation)."}
+ ]},
  {v:"0.20.45", data:"2026-11-16", titulo:"Link de pagamento: botões das tabelas clicam e link confirmado entra no acerto", itens:[
   {tipo:"correção", area:"Link de pagamento", txt:"Botões dentro das tabelas (como Confirmar pagamento) voltaram a clicar: o arrasto da tabela engolia o clique."},
   {tipo:"melhoria", area:"Atendimento Sorelly", txt:"Link pago e confirmado (pela planilha do e-SiTef ou pela Hellen à mão) entra no acerto; o app da revendedora mostra Pago só depois da confirmação."}

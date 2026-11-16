@@ -32,8 +32,8 @@ function AbaLpComprovantes(){
     {k:"parcelas", t:"Parcelas"}, {k:"acerto", t:"Acerto", fmt:dia, render:dia},
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"acoes", t:"Ações", render:function(v, l){ return e("span",{className:"inline-flex gap-1"},
-      e(BtMini,{forte:copiado===l.id, onClick:function(ev){ ev.stopPropagation(); copia(l._x); }}, copiado===l.id ? "✓ Copiado" : "Copiar texto"),
-      l._enviar && e(BtMini,{onClick:function(ev){ ev.stopPropagation(); L.exec("sol_mover", {id:l.id, para:"comprovante"}); }}, "Marcar enviado")); }}];
+      e(BtMini,{forte:copiado===l.id, onClick:function(){ copia(l._x); }}, copiado===l.id ? "✓ Copiado" : "Copiar texto"),
+      l._enviar && e(BtMini,{onClick:function(){ L.exec("sol_mover", {id:l.id, para:"comprovante"}); }}, "Marcar enviado")); }}];
   var num = function(rot, v, forte){ return e("span",{key:rot, className:"whitespace-nowrap px-1 text-[13px]"}, rot+" ", e("b",{className:"tabular-nums "+(forte ? "text-[#fca5a5]" : "")}, v)); };
   var faixa = e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
     e("div",{className:"flex flex-wrap items-center gap-x-1"}, num("Pendentes de envio", pend.length, pend.length>0), num("Em atraso", atrasados.length, atrasados.length>0), num("Pagos hoje (envio amanhã)", amanha.length)),

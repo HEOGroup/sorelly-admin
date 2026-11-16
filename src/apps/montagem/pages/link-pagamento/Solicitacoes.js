@@ -46,33 +46,43 @@ function Cartao(p){
 }
 
 // Detalhe da solicitação (clicar no cartão): dados e andamento já preenchidos à esquerda, campos editáveis no meio, ações à direita (passar para a próxima etapa, cancelar)
+// CARD da solicitação (Marcus, 16/11/2026: "muda as cores tudo do card pra ficar mais padronizado"): mesma janela azul do resto do setor, texto 13 px branco, três blocos (Andamento, Editar, Ações).
 function Detalhe(p){
-  var L = p.L, s = L.s, lp = L.lp, x = lp.solicitacoes.find(function(y){ return y.id===p.id; }); if(!x) return null;
-  var m = meioDe(s, x.meioId), prox = proximaEtapa(x), n = x.parcelas || 1, t = m ? calcularTaxa(m, x.valor, n, m.antecipacao.ativa, hojeSP()) : null, final = !ANDAMENTO[x.status];
-  var linha = function(rot, val){ return e("div",{key:rot, className:"flex items-baseline justify-between gap-3 border-b border-white/10 py-1 text-[12.5px]"}, e("span",{className:"text-white/60"}, rot), e("b",{className:"text-right"}, val || "—")); };
-  var dados = e("div",{className:"flex flex-col"},
-    e("div",{className:"mb-2 flex flex-wrap items-center justify-center gap-2"}, e(Selo,{cor:COR_STATUS[x.status]}, ROTULO_STATUS[x.status]), e("b",{className:MONO+" text-[18px]", style:{color:COR_STATUS[x.status]}}, formatarReais(x.valor))),
-    linha("Revendedora", x.revendedora), x.cliente && linha("Cliente (controle da revendedora)", x.cliente), linha("Parcelas", n+"x de "+formatarReais(Math.round(x.valor/n*100)/100)), linha("Canal", x.canal==="whatsapp" ? "WhatsApp" : "Aplicativo"),
-    linha("Quem emite", x.emissor==="representante" ? "Representante" : "Atendimento"), x.porFora && linha("Origem", "Pago por fora (gerado fora do sistema)"), x.porFora && x.contaInformada && linha("Conta que recebeu", x.contaInformada), linha("Criada em", formatarDataHora(x.criadoEm)), linha("Link gerado", formatarDataHora(x.geradoEm)),
-    linha("Validade até", formatarDataHora(x.expiraEm)), linha("Pago em", formatarDataHora(x.pagoEm)), linha("Comprovante", formatarDataHora(x.comprovanteEm)),
+  var L = p.L, s = L.s, lp = L.lp, x = lp.solicitacoes.find(function(y){ return y.id===p.id; }); var forma = useState(function(){ return x ? {representante:x.representante||"", meioId:x.meioId||"", dataAcerto:x.dataAcerto||"", linkUrl:x.linkUrl||"", bandeira:x.bandeira||"", observacao:x.observacao||""} : {}; }), v = forma[0]; if(!x) return null;
+  var m = meioDe(s, x.meioId), prox = proximaEtapa(x), n = x.parcelas || 1, t = m ? calcularTaxa(m, x.valor, n, m.antecipacao.ativa, hojeSP()) : null;
+  var set = function(k, val){ forma[1](function(o){ var r = Object.assign({}, o); r[k] = val; return r; }); };
+  var BLOCO = "flex flex-col border border-white/20 bg-[#14233f]", CAB = "border-b border-white/20 bg-[var(--bloco-titulo)] px-2 py-1 text-center text-[11px] font-bold uppercase text-white", IN = "h-8 w-full rounded-md border border-white/40 bg-[#0f1a2e] px-2 text-center text-[13px] font-semibold text-white [color-scheme:dark]";
+  var linha = function(rot, val){ return e("div",{key:rot, className:"flex items-center justify-between gap-3 border-b border-white/10 px-2 py-1 text-[13px]"}, e("span",null, rot), e("b",{className:"text-right"}, val || "—")); };
+  var campo = function(rot, ctl){ return e("label",{key:rot, className:"flex flex-col gap-0.5 px-2 py-1 text-[11px] font-bold uppercase"}, rot, ctl); };
+  var selc = function(k, vazio, ops){ return e("select",{value:v[k], onChange:function(ev){ set(k, ev.target.value); }, className:IN}, [e("option",{key:"_", value:""}, vazio)].concat(ops.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))); };
+  var repOps = lp.vinculos.map(function(q){ return [q.representante, q.representante]; }).concat(x.representante && !lp.vinculos.some(function(q){ return q.representante===x.representante; }) ? [[x.representante, x.representante]] : []);
+  var salvar = function(){ if(L.exec("sol_editar", Object.assign({id:x.id}, v))) p.fechar(); };
+  var andamento = [linha("Revendedora", x.revendedora), x.cliente && linha("Cliente (controle da revendedora)", x.cliente), linha("Parcelas", n+"x de "+formatarReais(Math.round(x.valor/n*100)/100)), linha("Canal", x.canal==="whatsapp" ? "WhatsApp" : "Aplicativo"),
+    linha("Quem emite", x.emissor==="representante" ? "Representante" : "Atendimento"), x.porFora && linha("Origem", "Pago por fora (gerado fora do sistema)"), x.porFora && x.contaInformada && linha("Conta que recebeu", x.contaInformada),
+    linha("Criada em", formatarDataHora(x.criadoEm)), linha("Link gerado", formatarDataHora(x.geradoEm)), linha("Validade até", formatarDataHora(x.expiraEm)), linha("Pago em", formatarDataHora(x.pagoEm)),
     t && linha("Taxa estimada", formatarReais(t.taxaValor+t.antecipacaoValor)), t && linha("Líquido", formatarReais(t.liquido)),
-    x.autorizacao && linha("Autorização", x.autorizacao), x.acertoId && linha("Descontado no acerto", formatarDataHora(x.usadoEm)+(x.excedente>0 ? " · sobrou "+formatarReais(x.excedente) : "")), x.motivo && linha("Motivo", x.motivo),
-    x.comprovanteImg && e("img",{src:x.comprovanteImg, alt:"Comprovante do pagamento", className:"mt-2 max-h-72 w-full rounded-md bg-white object-contain"}),
-    e("div",{className:"mt-2 flex flex-col gap-1"}, (x.historico||[]).slice(-5).map(function(h, i){ return e("span",{key:i, className:"text-center text-[11px] text-white/60"}, formatarDataHora(h.em)+" · "+(h.por||"")+" · "+(ROTULO_STATUS[h.para]||h.para)+(h.nota ? " ("+h.nota+")" : "")); })));
-  var campos = [
-    {k:"representante", rot:"Representante", tipo:"select", vazio:"Sem representante", ops:lp.vinculos.map(function(v){ return [v.representante, v.representante]; }).concat(x.representante && !lp.vinculos.some(function(v){ return v.representante===x.representante; }) ? [[x.representante, x.representante]] : [])},
-    {k:"meioId", rot:"Link", tipo:"select", vazio:"Selecione", ops:lp.meios.map(function(mm){ return [mm.id, nomeMeio(mm)]; })},
-    {k:"dataAcerto", rot:"Data do acerto", tipo:"data"},
-    {k:"linkUrl", rot:"Endereço do link (aparece no app da revendedora)", tipo:"texto", ph:"Cole aqui o link gerado"},
-    {k:"bandeira", rot:"Bandeira", tipo:"select", vazio:"Não informada", ops:BANDEIRAS.map(function(b){ return [b, b]; })},
-    {k:"observacao", rot:"Observação", tipo:"area"}];
-  var extras = [
-    prox && e(Bt,{key:"prox", tipo:"forte", ic:"arrow-right", onClick:function(){ p.onMover(x, x.status, prox); p.fechar(); }}, "Passar para "+ROTULO_STATUS[prox]),
-    e(Sel,{key:"mv", v:"", set:function(v){ if(v){ p.onMover(x, x.status, v); p.fechar(); } }, rot:"Mover para", todos:"Mover para outra etapa", opcoes:FLUXO.filter(function(k){ return k!==x.status; }).map(function(k){ return [k, ROTULO_STATUS[k]]; })}),
-    e(Bt,{key:"canc", tipo:"perigo", ic:"prohibit", onClick:function(){ p.fechar(); p.onCancelar(x); }}, "Cancelar ou recusar")];
-  return e(Editor,{t:x.revendedora, sub:"Solicitação de link · "+ROTULO_STATUS[x.status], dados:dados, tDados:"Andamento", campos:campos, nc:1, titulos:["Editar"], icSalvar:"floppy-disk", salvarRot:"Salvar alterações", fechar:p.fechar, extras:extras,
-    ini:{representante:x.representante||"", meioId:x.meioId||"", dataAcerto:x.dataAcerto||"", linkUrl:x.linkUrl||"", bandeira:x.bandeira||"", observacao:x.observacao||""},
-    onSalvar:function(v){ return L.exec("sol_editar", Object.assign({id:x.id}, v)); }});
+    x.autorizacao && linha("Autorização", x.autorizacao), x.esitefNsu && linha("NSU do e-SiTef", x.esitefNsu), x.acertoId && linha("Descontado no acerto", formatarDataHora(x.usadoEm)+(x.excedente>0 ? " · sobrou "+formatarReais(x.excedente) : "")), x.motivo && linha("Motivo", x.motivo)];
+  return e("div",{className:"fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-3", onClick:p.fechar},
+    e("div",{className:"flex max-h-[90vh] w-full max-w-[1000px] flex-col overflow-hidden rounded-lg border border-white/30 bg-[#0f1a2e] text-white", onClick:function(ev){ ev.stopPropagation(); }},
+      e("div",{className:"flex flex-wrap items-center justify-center gap-3 border-b border-white/20 bg-[var(--bloco-titulo)] px-3 py-2"},
+        e("b",{className:"text-[13px] uppercase"}, x.revendedora), e("b",{className:"text-[13px]", style:{color:COR_STATUS[x.status]}}, ROTULO_STATUS[x.status]), e("b",{className:MONO+" text-[18px]"}, formatarReais(x.valor)), e("span",{className:"flex-1"}),
+        e(Botao,{onClick:p.fechar}, "Fechar")),
+      e("div",{className:"grid gap-2 overflow-auto p-2 md:grid-cols-3"},
+        e("div",{className:BLOCO}, e("div",{className:CAB}, "Andamento"), andamento,
+          x.comprovanteImg && e("img",{src:x.comprovanteImg, alt:"Comprovante do pagamento", className:"m-2 max-h-72 rounded-md bg-white object-contain"}),
+          (x.historico||[]).slice(-5).map(function(h, i){ return e("span",{key:i, className:"px-2 py-0.5 text-center text-[11px]"}, formatarDataHora(h.em)+" · "+(h.por||"")+" · "+(ROTULO_STATUS[h.para]||h.para)+(h.nota ? " ("+h.nota+")" : "")); })),
+        e("div",{className:BLOCO}, e("div",{className:CAB}, "Editar"),
+          campo("Representante", selc("representante", "Sem representante", repOps)), campo("Link", selc("meioId", "Selecione", lp.meios.map(function(mm){ return [mm.id, nomeMeio(mm)]; }))),
+          campo("Data do acerto", e("input",{type:"date", value:v.dataAcerto, onChange:function(ev){ set("dataAcerto", ev.target.value); }, className:IN})),
+          campo("Endereço do link (aparece no app da revendedora)", e("input",{type:"text", value:v.linkUrl, placeholder:"Cole aqui o link gerado", onChange:function(ev){ set("linkUrl", ev.target.value); }, className:IN})),
+          campo("Bandeira", selc("bandeira", "Não informada", BANDEIRAS.map(function(b){ return [b, b]; }))),
+          campo("Observação", e("textarea",{value:v.observacao, rows:2, onChange:function(ev){ set("observacao", ev.target.value); }, className:IN+" h-auto resize-none py-1"}))),
+        e("div",{className:BLOCO}, e("div",{className:CAB}, "Ações"),
+          e("div",{className:"flex flex-col gap-2 p-2"},
+            e(Botao,{principal:true, onClick:salvar}, "Salvar alterações"),
+            prox && e(Botao,{onClick:function(){ p.onMover(x, x.status, prox); p.fechar(); }}, prox==="pago" ? "Confirmar pagamento" : "Passar para "+ROTULO_STATUS[prox]),
+            e("select",{value:"", "aria-label":"Mover para", onChange:function(ev){ var k = ev.target.value; if(k){ p.onMover(x, x.status, k); p.fechar(); } }, className:IN}, [e("option",{key:"_", value:""}, "Mover para outra etapa")].concat(FLUXO.filter(function(k){ return k!==x.status; }).map(function(k){ return e("option",{key:k, value:k}, ROTULO_STATUS[k]); }))),
+            e(Botao,{onClick:function(){ p.fechar(); p.onCancelar(x); }}, "Cancelar ou recusar"))))));
 }
 
 function AbaLpSolicitacoes(p){
@@ -139,8 +149,8 @@ function Planilha(p){
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"validade", t:"Validade", render:function(v, l){ return l._min!=null && l._x.status==="gerado" ? e("span",{className:"font-bold tabular-nums", style:{color:corRestante(l._min)}}, v) : v; }},
     {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
-    {k:"acao", t:"Ação", render:function(v, l){ return v ? e(BtMini,{forte:true, onClick:function(ev){ ev.stopPropagation(); p.onMover(l._x, l._x.status, l._prox); }}, l._prox==="pago" ? "Confirmar pagamento ›" : "Concluir etapa ›") : ""; }}];
-  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:true, semContagem:true, aoClicar:function(l){ p.onAbrir(l._x); }});
+    {k:"acao", t:"Ação", render:function(v, l){ return v ? e(BtMini,{forte:true, onClick:function(){ p.onMover(l._x, l._x.status, l._prox); }}, l._prox==="pago" ? "Confirmar pagamento ›" : "Concluir etapa ›") : ""; }}];
+  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, linhaCls:function(){ return "cursor-default!"; }, aoClicar:function(l){ p.onAbrir(l._x); }});
 }
 
 // Janela "Nova solicitação": canal, revendedora, valor, parcelas e meio (sugerido pelo vínculo da representante). A recusa vem do domínio, em texto formal.
