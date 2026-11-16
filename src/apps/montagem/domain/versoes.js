@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.59", data:"2026-11-16", titulo:"Faturas: peso em quilos", itens:[
+  {tipo:"correção", area:"Cadastro de peças → Faturas", txt:"O peso de prata e de ouro das faturas está guardado em gramas. A tela passou a mostrar em quilos (divide por mil) na tabela, nos blocos do topo e no total; na janela de editar, digita-se em quilos e o sistema grava em gramas. O dado guardado não mudou."}
+ ]},
  {v:"0.20.58", data:"2026-11-16", titulo:"Listagens no padrão azul e nova janela de montagem", itens:[
   {tipo:"melhoria", area:"Representantes & Kits › Listagens", txt:"Tela refeita no padrão azul: menu de Dia com marcação, uma tabela por representante, clicar na revendedora abre a ficha. Só Encomendas e Mesa maior desligados."},
   {tipo:"melhoria", area:"Representantes & Kits › Montagem", txt:"Janela Montar no computador: o que enviar (ouro e prata) junto das preferências da revendedora, encomenda sim ou não, condicionais com Peguei e montagem. Montadora não vê R$."}

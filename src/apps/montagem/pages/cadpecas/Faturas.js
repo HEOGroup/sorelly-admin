@@ -19,6 +19,7 @@ var CAMPO = "h-8 rounded-md border border-border bg-card px-2.5 text-center text
 function dia(iso){ var p = String(iso||"").split("-"); return p.length===3 ? p[2]+"/"+p[1]+"/"+p[0] : "—"; }
 function cap(t){ return t ? t.charAt(0).toUpperCase()+t.slice(1) : t; }
 var rotulo = "text-[11px] font-medium uppercase tracking-[.05em]";
+var gKg = function(g){ return g ? (Math.round(g)/1000).toLocaleString("pt-BR", {maximumFractionDigits:3}) : "—"; };   // peso da fatura: guardado em gramas, mostrado em kg
 var kg = function(v){ return v ? (Math.round(v*100)/100).toLocaleString("pt-BR") : "—"; };
 var somar = function(ls, k){ return ls.reduce(function(s, l){ return s+(Number(l[k]) || 0); }, 0); };
 
@@ -29,6 +30,7 @@ function AbaFaturas(p){
   var vis = lista.filter(function(f){ return !fm[0] || f.data.slice(0, 7)===fm[0]; }).sort(function(a, b){ return a.data<b.data ? 1 : a.data>b.data ? -1 : 0; });
   var f = ed[0] ? lista.find(function(o){ return o.id===ed[0]; }) : null;
   var set = function(campo){ return function(val){ x.exec("fat_edit", {galv:galv, id:f.id, campo:campo, valor:val}); }; };
+  var emGramas = function(campo){ return function(val){ var n = parseFloat(String(val).replace(",", ".")); set(campo)(String(val).trim()==="" || isNaN(n) ? "" : String(Math.round(n*1000))); }; };   // digita em kg, grava em gramas
   var abrir = function(l){ var o = lista.find(function(q){ return q.id===l.id; }); sel[1]((o.pedidos||[]).slice()); ed[1](l.id); };
   var candidatos = function(fa){ var k = fa.forn.toLowerCase(); return c.pedidos.filter(function(q){ return q.forn.toLowerCase()===k || (fa.pedidos||[]).indexOf(q.id)>=0; }).sort(function(a, b){ return a.data<b.data ? 1 : -1; }).slice(0, 14); };
 
@@ -38,9 +40,9 @@ function AbaFaturas(p){
   var grupoDe = function(k){ return k==="prata" ? "Prata" : /^ouro/.test(k) ? "Ouro" : "Serviços"; };
   var COR_GRUPO = {"Fatura":"rgba(91,141,239,.50)", "Serviços":"rgba(167,139,250,.45)", "Prata":"rgba(203,213,225,.45)", "Ouro":"rgba(232,184,75,.50)", "Totais":"rgba(45,212,191,.45)"};
   var colunas = [["Fatura", {k:"data", t:"Data", fmt:dia}], ["Fatura", {k:"fatura", t:"Fatura"}], ["Fatura", {k:"forn", t:"Fornecedor"}], ["Fatura", {k:"cnpj", t:"CNPJ"}], ["Fatura", {k:"desc", t:"Desc.", fmt:brl}]]
-    .concat(serv.map(function(s){ return [grupoDe(s[0]), {k:"s_"+s[0], t:s[1], fmt:brl}]; }), [["Totais", {k:"total", t:"Total", fmt:brl}], ["Totais", {k:"kgPrata", t:"Kg prata", fmt:kg}], ["Totais", {k:"kgOuro", t:"Kg ouro", fmt:kg}], ["Totais", {k:"npedidos", t:"Pedidos", fmt:function(n){ return n ? String(n) : "—"; }}]]);
+    .concat(serv.map(function(s){ return [grupoDe(s[0]), {k:"s_"+s[0], t:s[1], fmt:brl}]; }), [["Totais", {k:"total", t:"Total", fmt:brl}], ["Totais", {k:"kgPrata", t:"Kg prata", fmt:gKg}], ["Totais", {k:"kgOuro", t:"Kg ouro", fmt:gKg}], ["Totais", {k:"npedidos", t:"Pedidos", fmt:function(n){ return n ? String(n) : "—"; }}]]);
   var cols = colunas.map(function(g, i){ return Object.assign({}, g[1], {corFundo:COR_GRUPO[g[0]]}); });
-  var totalTopo = function(ls){ return ["Total", ls.length+(ls.length===1 ? " fatura" : " faturas"), "", "", brl(somar(ls, "desc"))].concat(serv.map(function(s){ return brl(somar(ls, "s_"+s[0])); }), [brl(somar(ls, "total")), kg(somar(ls, "kgPrata")), kg(somar(ls, "kgOuro")), ""]); };
+  var totalTopo = function(ls){ return ["Total", ls.length+(ls.length===1 ? " fatura" : " faturas"), "", "", brl(somar(ls, "desc"))].concat(serv.map(function(s){ return brl(somar(ls, "s_"+s[0])); }), [brl(somar(ls, "total")), gKg(somar(ls, "kgPrata")), gKg(somar(ls, "kgOuro")), ""]); };
 
   // DOIS BLOCOS no topo, com as informações gerais do período escolhido (mês ou todos), que mudam junto com o menu do mês e com a galvânica (Marcus, 16/11/2026)
   var soma = function(fn){ return vis.reduce(function(t, fa){ return t+fn(fa); }, 0); };
@@ -53,7 +55,7 @@ function AbaFaturas(p){
     e(BlocoPainel,{titulo:"Resumo · "+GALVANICAS[galv]+" · "+nomePeriodo, compacto:true},
       [linhaInfo("Faturas", String(vis.length)), linhaInfo("Total de banho", brl(sTotal)), linhaInfo("Desconto de peças", brl(sDesc), "", sDesc<0 ? "#F87171" : undefined), linhaInfo("Média por fatura", vis.length ? brl(sTotal/vis.length) : "—"), linhaInfo("Maior fatura", vis.length ? brl(Math.max.apply(null, vis.map(function(fa){ return valorFatura(fa); }))) : "—")]),
     e(BlocoPainel,{titulo:"Por metal e serviço · "+nomePeriodo, compacto:true},
-      [linhaInfo("Prata", brl(sPrata), pct(sPrata), "#CBD5E1"), linhaInfo("Ouro", brl(sOuro), pct(sOuro), "#E8B84B"), linhaInfo("Outros serviços", brl(sServ), pct(sServ)), linhaInfo("Kg de prata", kg(soma(function(fa){ return fa.kgPrata || 0; }))), linhaInfo("Kg de ouro", kg(soma(function(fa){ return fa.kgOuro || 0; })))]));
+      [linhaInfo("Prata", brl(sPrata), pct(sPrata), "#CBD5E1"), linhaInfo("Ouro", brl(sOuro), pct(sOuro), "#E8B84B"), linhaInfo("Outros serviços", brl(sServ), pct(sServ)), linhaInfo("Kg de prata", gKg(soma(function(fa){ return fa.kgPrata || 0; }))), linhaInfo("Kg de ouro", gKg(soma(function(fa){ return fa.kgOuro || 0; })))]));
   var faixa = e("div",{className:CLS_FAIXA},
     pode && e(Botao,{principal:true, onClick:function(){ novo[1](true); }}, "Nova fatura"),
     e("select",{id:"fat-galv", "aria-label":"Galvânica", value:galv, onChange:function(ev){ gs[1](ev.target.value); fm[1](""); ed[1](null); }, className:CAMPO+" w-28 cursor-pointer"},
@@ -74,7 +76,7 @@ function AbaFaturas(p){
       e(BlocoF,{key:"s", t:"Serviços", cor:"#A78BFA", nota:serv.length+" serviços", resumo:[e(Resumo,{key:"t", t:"Total da fatura", v:brl(valorFatura(f)), grande:true})]},
         e("div",{className:"grid grid-cols-2 gap-2"}, serv.map(function(s){ return e(CampoF,{key:s[0], t:s[1], v:f.serv[s[0]] || "", dica:"0", off:!pode, onSet:set("serv."+s[0])}); }))),
       e(BlocoF,{key:"k", t:"Peso banhado", cor:"#2DD4BF", nota:"kg"},
-        e("div",{className:"grid grid-cols-2 gap-2"}, e(CampoF,{t:"Kg de prata", v:f.kgPrata || "", dica:"0", off:!pode, onSet:set("kgPrata")}), e(CampoF,{t:"Kg de ouro", v:f.kgOuro || "", dica:"0", off:!pode, onSet:set("kgOuro")}))),
+        e("div",{className:"grid grid-cols-2 gap-2"}, e(CampoF,{t:"Kg de prata", v:f.kgPrata ? f.kgPrata/1000 : "", dica:"0", off:!pode, onSet:emGramas("kgPrata")}), e(CampoF,{t:"Kg de ouro", v:f.kgOuro ? f.kgOuro/1000 : "", dica:"0", off:!pode, onSet:emGramas("kgOuro")}))),
       e(BlocoF,{key:"p", t:"Pedidos de bruto desta fatura", cor:"#5B8DEF", nota:"de "+(f.forn || "qualquer fornecedor")},
         cands.length ? e("div",{className:"flex flex-col gap-1"}, cands.map(function(q){ var on = sel[0].indexOf(q.id)>=0;
           return e("label",{key:q.id, className:"flex min-h-8 cursor-pointer items-center gap-2 rounded-md border px-2 text-[13px] "+(on ? "border-primary bg-primary/10" : "border-border")},
