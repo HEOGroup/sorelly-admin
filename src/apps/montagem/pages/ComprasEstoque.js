@@ -4,11 +4,12 @@
 import { AbaCompraPlanilha, AbaCompraQuadro, AbaCompraVisao } from "@/apps/montagem/pages/compras/Compras";
 import { AbaCompraCadastros, AbaCompraConfig, AbaEstoqueMaterial, AbaEstoqueMovimentos, AbaEstoqueSolicitacoes } from "@/apps/montagem/pages/compras/EstoqueCadastros";
 import { PainelComprasEstoque } from "@/apps/montagem/pages/compras/PainelComprasEstoque";
+import { AbaTabelaPrecos } from "@/apps/montagem/pages/compras/TabelaPrecos";
 import { Abas } from "@/apps/montagem/components/padrao";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { e, useState } from "@/shared/react";
 
-var ABAS = [["painel","Compras e estoque"], ["quadro","Quadro de compras"], ["planilha","Planilha de compras"], ["visao","Visão geral"], ["estoque","Estoque de material"], ["movimentos","Movimentos"], ["solicitacoes","Pedidos de material"], ["cadastros","Cadastros"], ["config","Configurações"]];
+var ABAS = [["painel","Compras e estoque"], ["quadro","Quadro de compras"], ["planilha","Planilha de compras"], ["visao","Visão geral"], ["estoque","Estoque de material"], ["movimentos","Movimentos"], ["solicitacoes","Pedidos de material"], ["precos","Tabela de preços"], ["cadastros","Cadastros"], ["config","Configurações"]];   // Tabela de preços: 16/11/2026
 var COR = "#3B82F6";   // cor do setor (azul, igual ao Financeiro)
 
 function AbaComprasEstoque(){
@@ -21,6 +22,7 @@ function AbaComprasEstoque(){
     : v.aba==="estoque" ? e(AbaEstoqueMaterial,null)
     : v.aba==="movimentos" ? e(AbaEstoqueMovimentos,null)
     : v.aba==="solicitacoes" ? e(AbaEstoqueSolicitacoes,null)
+    : v.aba==="precos" ? e(AbaTabelaPrecos,null)
     : v.aba==="cadastros" ? e(AbaCompraCadastros,null)
     : e(AbaCompraConfig,null);
   return e("div",{className:"flex flex-col gap-2.5"},

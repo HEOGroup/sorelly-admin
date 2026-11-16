@@ -19,6 +19,7 @@ import { globLocal } from "@/lib/glob-local";
 import { hojeSP, agoraSP, somaDias, diasEntre, ultimoDiaDoMes } from "./cadastro-leads";
 import { temAutorizacao } from "./autorizacoes";
 import { CNPJS0 } from "./cnpjs";
+import { validarProduto, normalizarOpcao, diferencas, usoDoProduto, usoDaOpcao, numero as numeroBr, reais as reaisBr, rotuloDe as rotuloLista, UNIDADES_PRECO } from "./tabela-precos";
 
 var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/compras-estoque.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
 
@@ -133,7 +134,7 @@ var CONFIG_PADRAO = {
   tipos:[{id:"materiais_embalagens", nome:"Materiais e Embalagens", aprovador:"Financeiro"}, {id:"limpeza", nome:"Limpeza", aprovador:"Financeiro"}, {id:"materiais_producao", nome:"Materiais de Produção", aprovador:"Diretoria"}]};   // no original: Anamaria nas duas primeiras, Marcus em Produção (só exibição)
 function ceDemo(){
   var s = {v:3, seq:0, config:clone(CONFIG_PADRAO), acessos:{compras:{}, estoque:{}}, regras:"", fornecedores:[], setores:[], categorias:[], catalogo:[], contas:[], motivosNegativa:[],
-    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[]};
+    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[], precos:[], logPrecos:[]};   // precos/logPrecos: Tabela de preços (16/11/2026, domain/tabela-precos.js)
   if(LOCAL){
     if(LOCAL.config) Object.assign(s.config, LOCAL.config);
     s.regras = LOCAL.regras||""; s.motivosNegativa = (LOCAL.motivosNegativa||[]).slice();
@@ -617,6 +618,7 @@ function ceReduz(s, a){
     }
     case "forn_del": {
       var fd = porId(ce.fornecedores, a.id); if(!fd) return recusa("Fornecedor não encontrado.");
+      if((ce.precos||[]).some(function(x){ return mesmoId(x.fornecedorId, fd.id); })) return emUso("Fornecedor com produtos na Tabela de preços: marque como inativo em vez de excluir.");
       if(ce.pedidos.some(function(p){ return mesmoId(p.fornecedorId, fd.id); }) || ce.solicitacoes.some(function(x){ return mesmoId(x.fornecedorId, fd.id); }) || ce.materiais.some(function(m){ return mesmoId(m.fornecedorId, fd.id); })) return emUso("Fornecedor em uso: marque como inativo em vez de excluir.");
       ce.fornecedores = ce.fornecedores.filter(function(x){ return x!==fd; }); return ok("Fornecedor removido.");
     }
@@ -864,6 +866,53 @@ function ceReduz(s, a){
     }
 
     // ---------------- estoque: solicitação de compra por item ----------------
+    // ---------------- TABELA DE PREÇOS (etapa 1, 16/11/2026; regras e contas em domain/tabela-precos.js) ----------------
+    // Só quem opera Compras grava (a tela manda a.opera, como o podeAutorizar). Toda mudança vai para ce.logPrecos com campo, valor anterior e novo.
+    case "preco_salvar": case "preco_situacao": case "preco_del": case "forn_condicoes": {
+      if(!a.opera) return recusa("Só quem opera as Compras (Diretoria, Financeiro e Autorizador) cadastra e altera preços.");
+      ce.precos = ce.precos || []; ce.logPrecos = ce.logPrecos || [];
+      var nomeF = function(id){ return nomeDe(ce.fornecedores, id, "—"); }, nomeC = function(id){ return nomeDe(ce.categorias, id, "—"); };
+      var registra = function(prodId, fornId, linhas){ linhas.forEach(function(l){ ce.logPrecos.push({id:proximoId(ce), produtoId:prodId, fornecedorId:fornId, opcaoId:l.opcaoId||null, campo:l.campo, antes:l.antes, depois:l.depois, por:por, em:agora}); }); };
+      if(a.op==="forn_condicoes"){   // valor mínimo do pedido: condição ÚNICA do fornecedor
+        var fc = porId(ce.fornecedores, a.id); if(!fc) return recusa("Fornecedor não encontrado.");
+        var pm = numeroBr(a.pedidoMinimo); if(pm!==null && !(pm>0)) return recusa("O valor mínimo do pedido precisa ser maior que zero (ou fique vazio).");
+        var obsC = trim(a.obsComercial), antesPm = fc.pedidoMinimo==null ? null : fc.pedidoMinimo, linhasC = [];
+        if(antesPm!==pm) linhasC.push({campo:"Valor mínimo do pedido", antes:antesPm==null ? "—" : reaisBr(antesPm), depois:pm==null ? "—" : reaisBr(pm)});
+        if(trim(fc.obsComercial)!==obsC) linhasC.push({campo:"Condições comerciais", antes:trim(fc.obsComercial)||"—", depois:obsC||"—"});
+        if(!linhasC.length) return ok("Nada mudou.");
+        fc.pedidoMinimo = pm; fc.obsComercial = obsC; registra(null, fc.id, linhasC); return ok("Condições de "+fc.nome+" salvas.");
+      }
+      if(a.op==="preco_situacao"){
+        var ps = porId(ce.precos, a.id); if(!ps) return recusa("Produto não encontrado."); var at = a.ativo!==false; if(!!ps.ativo===at) return ok("Nada mudou.");
+        registra(ps.id, ps.fornecedorId, [{campo:"Situação", antes:ps.ativo ? "Ativo" : "Arquivado", depois:at ? "Ativo" : "Arquivado"}]); ps.ativo = at;   // situação não muda a "última atualização comercial"
+        return ok(at ? ps.nome+" reativado." : ps.nome+" arquivado.");
+      }
+      if(a.op==="preco_del"){
+        var pdl = porId(ce.precos, a.id); if(!pdl) return recusa("Produto não encontrado.");
+        if(usoDoProduto(ce, pdl.id)) return recusa("Esse produto já foi usado em compra: arquive em vez de excluir (o histórico fica guardado).");
+        registra(pdl.id, pdl.fornecedorId, [{campo:"Produto excluído", antes:pdl.nome, depois:"—"}]); ce.precos = ce.precos.filter(function(x){ return x!==pdl; });
+        return ok(pdl.nome+" excluído.");
+      }
+      // preco_salvar: a.id vazio = produto novo. a.opcoes traz TODAS as opções (as que têm id são as já gravadas; as sem id são novas)
+      var velho = a.id!=null && a.id!=="" ? porId(ce.precos, a.id) : null; if(a.id!=null && a.id!=="" && !velho) return recusa("Produto não encontrado.");
+      var modelo = a.modelo, faixa = modelo==="faixa";
+      var ops = (a.opcoes||[]).map(function(o){ var n = normalizarOpcao(o, faixa); if(n.id==null || !velho || !(velho.opcoes||[]).some(function(x){ return mesmoId(x.id, n.id); })) n.id = proximoId(ce); return n; });
+      if(velho) for(var vo = 0; vo<(velho.opcoes||[]).length; vo++){ var ov = velho.opcoes[vo]; if(!ops.some(function(o){ return mesmoId(o.id, ov.id); }) && usoDaOpcao(ce, ov.id)) return recusa("Uma opção de preço já foi usada em compra e não pode ser removida."); }
+      var novoP = {id:velho ? velho.id : proximoId(ce), fornecedorId:a.fornecedorId, nome:trim(a.nome), codigo:trim(a.codigo), categoriaId:vazio(a.categoriaId) ? null : a.categoriaId, unidade:a.unidade,
+        unidadesPorEmb:numeroBr(a.unidadesPorEmb), qtdMinima:numeroBr(a.qtdMinima), obs:trim(a.obs), ativo:velho ? (a.ativo===undefined ? velho.ativo : a.ativo!==false) : a.ativo!==false, modelo:modelo, opcoes:ops,
+        materialId:velho ? (velho.materialId||null) : null, foto:velho ? (velho.foto||null) : null,   // etapa 2: preparados, sem tela
+        criadoEm:velho ? velho.criadoEm : agora, criadoPor:velho ? velho.criadoPor : por, atualizadoEm:velho ? velho.atualizadoEm : agora, atualizadoPor:velho ? velho.atualizadoPor : por};
+      if(novoP.categoriaId!=null && !porId(ce.categorias, novoP.categoriaId)) return recusa("Categoria não encontrada.");
+      var erroV = validarProduto(novoP, ce.fornecedores); if(erroV) return recusa(erroV);
+      if(ce.precos.some(function(x){ return x!==velho && mesmoId(x.fornecedorId, novoP.fornecedorId) && norm(x.nome)===norm(novoP.nome) && norm(x.codigo)===norm(novoP.codigo); })) return recusa("Esse produto já está cadastrado nesse fornecedor.");
+      var dif = diferencas(velho, novoP, {forn:nomeF, cat:nomeC});
+      if(velho && !dif.length) return ok("Nada mudou.");
+      var soSituacao = dif.length && dif.every(function(l){ return l.campo==="Situação"; });
+      if(!velho || !soSituacao){ novoP.atualizadoEm = agora; novoP.atualizadoPor = por; }   // última atualização COMERCIAL: muda só quando dado ou preço muda
+      if(velho){ ce.precos[ce.precos.indexOf(velho)] = novoP; registra(novoP.id, novoP.fornecedorId, dif); }
+      else { ce.precos.push(novoP); registra(novoP.id, novoP.fornecedorId, [{campo:"Produto cadastrado", antes:"—", depois:novoP.nome+" · "+rotuloLista(UNIDADES_PRECO, novoP.unidade)+" · "+ops.length+(ops.length===1 ? " opção de preço" : " opções de preço")}]); }
+      return ok(velho ? "Produto e preços atualizados." : novoP.nome+" cadastrado na tabela de preços.");
+    }
     case "estoque_pedir": {   // CARRINHO DO CARTÃO (16/11/2026): vira um PEDIDO da área de Compras ligado ao material (item.materialId), com o retrato do estoque congelado em p.origem
       var mp = mat(a.materialId); if(!mp) return recusa("Material não encontrado.");
       if(!ehInt(a.quantidade) || num(a.quantidade)<1) return recusa("A quantidade precisa ser um inteiro de 1 em diante.");
