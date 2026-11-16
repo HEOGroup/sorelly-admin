@@ -10,6 +10,14 @@
       "schedule": "0 17 * * *"
     },
     {
+      "path": "/api/automatico/custo",
+      "schedule": "0 14 * * *"
+    },
+    {
+      "path": "/api/automatico/custo",
+      "schedule": "0 15 * * *"
+    },
+    {
       "path": "/api/automatico/fotos-dm",
       "schedule": "*/10 * * * *"
     },
