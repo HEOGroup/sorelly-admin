@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.45", data:"2026-11-16", titulo:"Link de pagamento: botões das tabelas clicam e link confirmado entra no acerto", itens:[
+  {tipo:"correção", area:"Link de pagamento", txt:"Botões dentro das tabelas (como Confirmar pagamento) voltaram a clicar: o arrasto da tabela engolia o clique."},
+  {tipo:"melhoria", area:"Atendimento Sorelly", txt:"Link pago e confirmado (pela planilha do e-SiTef ou pela Hellen à mão) entra no acerto; o app da revendedora mostra Pago só depois da confirmação."}
+ ]},
  {v:"0.20.44", data:"2026-11-16", titulo:"Listagem: condicionais da DevMaster, valor automático do kit e tela Condicionais nova", itens:[
   {tipo:"novo", area:"Listagens → Condicionais, Montagem e Bipagem", txt:"As condicionais abertas da DevMaster entram sozinhas nos kits de acerto que ainda não começaram a ser montados. O sistema lê a DevMaster pelo código da revendedora e grava o número e a previsão de cada condicional. Entram só as condicionais ANTIGAS (as que voltam no acerto); a condicional NOVA do kit que a revendedora vai receber fica fora (corte: previsão até 15 dias depois do dia da listagem). Rota nova: /api/condicionais-kits (só leitura). Acerto + kit com condicional a conferir vai para a fila da funcionária de condicionais antes da montagem; cfg.condConferenciaPrevia = false desliga a trava."},
   {tipo:"novo", area:"Listagens → Valor do kit", txt:"Valor do kit automático: média das até 3 últimas vendas (regra de 27/10/2026, base da DevMaster) pela mesma tabela de kit do Atendimento Sorelly. Média acima de R$ 2.500 e revendedora sem vendas continuam com a supervisão. Kit novo e reposição não entram. Interruptor: cfg.valorAutomatico = false."},

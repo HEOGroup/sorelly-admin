@@ -470,12 +470,12 @@ function linksDaRevendedora(s, revendedora){
 // Para a calculadora do acerto. Só entram pedidos criados pelo sistema (não os importados da planilha, que já foram descontados na época).
 //   pagos: pagos e ainda não usados em acerto (usavel = emitido e pago até o dia anterior; senão conta só no próximo acerto)
 //   avisos: cancelados, recusados, expirados ou com erro nos últimos 30 dias · aguardando: solicitados ou gerados ainda sem pagamento
-// Marcus, 16/11/2026: SÓ link confirmado pelo e-SiTef (planilha importada, com NSU) entra sozinho no acerto.
+// Marcus, 16/11/2026: o status "pago" só existe depois da CONFIRMAÇÃO (planilha do e-SiTef importada, ou a Hellen confirmando à mão). Link ainda não confirmado não entra no acerto nem aparece como pago no app.
 function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.esitefNsu}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje)}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
@@ -644,7 +644,7 @@ function lpReduz(s, a){
         if(it.acao==="nova"){
           var nm = trim(l.pedido), ns = {id:"E"+l.nsu, canal:"whatsapp", revendedora:nm, representante:repDaRevendedora(lp, nm), valor:r2(num(l.valor)), parcelas:Math.round(num(l.parcelas)) || 1, meioId:meioL ? meioL.id : "", bandeira:l.bandeira || "", status:it.para, emissor:"atendimento",
             criadoEm:l.criadoEm || agora, geradoEm:l.criadoEm || agora, geradoPor:"e-SiTef", expiraEm:"", pagoEm:it.para==="pago" ? (l.pagoEm || l.criadoEm) : "", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:1, observacao:"", cliente:"",
-            esitefNsu:String(l.nsu), autorizacao:l.autorizacao || "", importadoEsitef:true, esitefRevisar:!!it.revisar,
+            esitefNsu:String(l.nsu), autorizacao:l.autorizacao || "", importadoEsitef:true,
             historico:[{em:agora, por:por, de:"", para:it.para, nota:"Importado do relatório do e-SiTef (NSU "+l.nsu+(l.autorizacao ? ", autorização "+l.autorizacao : "")+")"+(it.revisar ? " · de dia passado: não entra sozinho no acerto" : "")}]};
           lp.solicitacoes.push(ns); cN++;
         } else if(it.acao==="atualizar" || it.acao==="vincular"){

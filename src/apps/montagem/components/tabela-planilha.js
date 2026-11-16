@@ -83,7 +83,7 @@ function TabelaPlanilha(p){
   var spg = useState(1), pag = spg[0], setPag = spg[1];
   var sa = useState(null), aberto = sa[0], setAberto = sa[1], sdt = useState({}), detAbertos = sdt[0], setDetAbertos = sdt[1];
   var raiz = useRef(null), wrapRef = useRef(null), arr = useRef({on:false, moveu:false, x:0, l:0});
-  var desce = function(ev){ if(ev.button!==0) return; if(ev.target.closest && ev.target.closest("input, select, textarea, label, [role=dialog]")) return; var w = wrapRef.current; if(!w || w.scrollWidth<=w.clientWidth+4) return; arr.current = {on:true, moveu:false, x:ev.clientX, l:w.scrollLeft}; w.setAttribute("data-arrastando", "1"); document.body.style.userSelect = "none"; ev.stopPropagation(); };
+  var desce = function(ev){ if(ev.button!==0) return; if(ev.target.closest && ev.target.closest("input, select, textarea, label, button, a, [role=dialog]")) return; var w = wrapRef.current; if(!w || w.scrollWidth<=w.clientWidth+4) return; arr.current = {on:true, moveu:false, x:ev.clientX, l:w.scrollLeft}; w.setAttribute("data-arrastando", "1"); document.body.style.userSelect = "none"; ev.stopPropagation(); };
   var clicou = function(ev){ if(arr.current.moveu){ ev.preventDefault(); ev.stopPropagation(); arr.current.moveu = false; } };
   useEffect(function(){
     var mv = function(ev){ var a = arr.current; if(!a.on || !wrapRef.current) return; var dx = ev.clientX-a.x; if(!a.moveu && Math.abs(dx)<4) return; if(!a.moveu){ a.moveu = true; wrapRef.current.style.cursor = "grabbing"; document.body.style.userSelect = "none"; } wrapRef.current.scrollLeft = a.l-dx; };

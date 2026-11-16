@@ -935,7 +935,7 @@ function AtendimentoInterno(){
   var blocoLinks = !jaFeito && !!s.lp && (linksPagos.length>0 || linksAguardando.length>0) ? e("div",{className:"flex flex-col border-t border-foreground/25"},
     e("span",{className:CAP+" px-2 pt-2 text-center"}, "Links de pagamento desta revendedora (vêm do setor Link de pagamento)"),
     linksPagos.map(function(x){ var sol = x.sol; return e("div",{key:sol.id, className:"flex flex-wrap items-center justify-between gap-2 px-2 py-1.5 text-[13px]"},
-      e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · aguardando confirmação do e-SiTef (planilha)")),
+      e("span",{className:"font-semibold"}, "Já pago · "+din(sol.valor)+(sol.parcelas>1 ? " em "+sol.parcelas+"x" : "")+" · "+formatarDia(sol.pagoEm)+(x.usavel ? "" : " · pago hoje: conta só no próximo acerto")),
       x.usavel && e("span",{className:"whitespace-nowrap text-[11px] font-semibold uppercase tracking-[.03em] text-primary"}, dv.previaBase ? ((form.linksAuto||[]).indexOf(sol.id)>=0 ? "Tirado do acerto" : "Entra sozinho") : "Entra quando lançar a venda")); }),
     linksAguardando.map(function(sol){ var gerado = sol.status==="gerado";
       return e("div",{key:sol.id, className:"px-2 py-1 text-center text-[13px]"},
