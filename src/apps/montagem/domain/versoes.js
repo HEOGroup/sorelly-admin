@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.43", data:"2026-11-16", titulo:"Cadastro de peças: Controle de compras no padrão", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Controle de compras", txt:"A tela Controle do mês passou a se chamar Controle de compras (ela mostra vários meses). Foi refeita no padrão do Pedidos: blocos com barra azul, faixa azul com o menu do mês, tabelas com filtro em cada coluna, total no fim de cada tabela, letra pequena e sem texto explicativo. Blocos: resumo do mês (com a variação contra o mês anterior), por fornecedor, peças por categoria (com a porcentagem) e mês a mês (clicar numa linha troca o mês). O endereço mudou para /cadastro-de-pecas/controle-de-compras."}
+ ]},
  {v:"0.20.42", data:"2026-11-16", titulo:"Só link confirmado pelo e-SiTef entra no acerto", itens:[
   {tipo:"melhoria", area:"Atendimento Sorelly", txt:"Link pago só entra sozinho nos pagamentos do acerto depois de confirmado pelo relatório do e-SiTef (planilha importada, com NSU). Sem confirmação aparece como aguardando confirmação do e-SiTef."},
   {tipo:"melhoria", area:"Link de pagamento → Histórico", txt:"Saiu a faixa de totais do topo (Registros, Pagos, Valor pago, Sem pagamento)."}

@@ -153,7 +153,7 @@ export const SLUG_DA_ABA = {
   cpcompras: "cadastro-de-pecas-compras",
   cadpecas: "cadastro-de-pecas-pedidos",
   cpsol: "cadastro-de-pecas-solicitacoes",
-  cpctrl: "cadastro-de-pecas-controle-do-mes",
+  cpctrl: "cadastro-de-pecas-controle-de-compras",
   cpfp: "cadastro-de-pecas-faturas-pontual",
   cpfe: "cadastro-de-pecas-faturas-ellos",
   cpouro: "cadastro-de-pecas-retirar-ouro",
