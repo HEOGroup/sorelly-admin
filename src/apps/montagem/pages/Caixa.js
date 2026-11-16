@@ -53,7 +53,7 @@ function Celula(p){
   var txt = function(v){ return p.inteiro ? String(Math.round(Math.abs(v))) : num(Math.abs(v)); };
   if(ed===null) return e("button",{type:"button", disabled:p.travado && !p.reabrir, onClick:function(){ if(p.travado && p.reabrir) p.reabrir(); setEd(p.v||0); },
     title:p.travado ? (p.reabrir ? "CNPJ fechado hoje: clique para reabrir e editar" : "CNPJ fechado neste dia: reabra o CNPJ para editar") : p.rep ? "Repetido do dia anterior: ninguém confirmou este saldo. Clique, digite e aperte Enter (OK)." : "Clique, digite o saldo e aperte Enter (OK). Se for zero, aperte Enter também.",
-    className:"w-full px-2 py-0 text-center text-[11px] "+"tabular-nums "+(p.travado ? "" : " hover:underline")+(p.pulsa ? " pulso-leve" : "")}, e("span",{className:cor(p.v)}, p.v===null ? "—" : (p.inteiro ? String(Math.round(p.v)) : BK(p.v))));   // a cor vai no span: a regra do bloco compacto força branco no botão
+    className:"w-full px-2 py-0 text-center text-[11px] "+"tabular-nums "+(p.travado ? "" : " hover:underline")+(p.pulsa ? " pulso-leve" : "")}, e("span",{className:p.pendente ? "font-bold pisca-amarelo" : cor(p.v)}, p.v===null ? "—" : (p.inteiro ? String(Math.round(p.v)) : BK(p.v))));   // a cor vai no span: a regra do bloco compacto força branco no botão
   return e("input",{ref:function(el){ if(el && document.activeElement!==el){ el.focus(); el.select(); } }, inputMode:"numeric", value:(ed<0?"-":"")+txt(ed),
     className:"w-full min-w-24 border-b border-white bg-transparent px-2 py-0 text-center text-[11px] outline-none "+"tabular-nums "+cor(ed),
     onChange:function(ev){ var raw = ev.target.value, n = (raw.match(/-/g)||[]).length%2===1, dg = raw.replace(/\D/g,"").slice(0,12); setEd((n?-1:1)*Number(dg||0)/div); },
@@ -93,6 +93,7 @@ function ComoLer(p){
         e("li",{}, "Acerto com loja está nas baixas, mas não entra na conta. Inadimplência paga de outros meses entra nas baixas (ainda não dá para separar)."),
         e("li",{}, "Repasses diretos (Point, Pontual, Office Graf, Linda Acessórios, Prestadores, PIX Representantes): a revendedora paga direto ao fornecedor. Entram no recebido e já contam como pago (estão em “contas por fora”), por isso saem das contas."),
         e("li",{}, "Aporte de sócio: dinheiro que o sócio manda para um CNPJ. Não é faturamento; entra como aporte no dia."),
+        e("li",{}, "Crédito bancário: empréstimo que entrou numa conta (Período ▾ › Lançar crédito bancário). Lance o valor que efetivamente entrou na conta (sem IOF e tarifa). Não é faturamento nem resultado: o Resumo dos saldos mostra a variação com crédito e sem crédito, e o crédito sai da divergência do resumo DevMaster × saldo."),
         e("li",{}, "Não há transferência entre CNPJs. O Itaú Marco PJ é conta da empresa, num bloco próprio."),
         e("li",{}, "A divergência por CNPJ usa a natureza do relatório (ex.: PIX SICREDI ATACADISTA = CNPJ 34): é uma aproximação."),
         e("li",{}, "Em breve: puxar as formas de pagamento direto da Calculadora de acertos e o PIX para representantes do Consolidado.")))));
@@ -108,6 +109,7 @@ function AbaCaixa(){
   var oc = useState({}), ocultos = oc[0], setOcultos = oc[1];
   var gs = useState({}), gFech = gs[0], setGFech = gs[1];   // barras FECHADAS (o que não está aqui está aberto)
   var dd = useState(false), diasAberto = dd[0], setDiasAberto = dd[1];
+  var cr = useState(false), credAberto = cr[0], setCredAberto = cr[1], cf = useState({data:"", bloco:"46", digitos:"", obs:""}), cform = cf[0], setCform = cf[1];   // janela "Crédito bancário"
   var aba = "saldos", raiz = useRef(null), edS = useState(false), edita = edS[0], setEdita = edS[1], pe = useState({modo:"hoje", de:"", ate:""}), periodo = pe[0], setPeriodo = pe[1], po = useState(null), popPos = po[0], setPopPos = po[1], lgS = useState(1600), lg = lgS[0], setLg = lgS[1];
   useEffect(function(){ var el = raiz.current; if(!el) return undefined; var calc = function(){ setLg(el.clientWidth); }; calc(); var ro = typeof ResizeObserver!=="undefined" ? new ResizeObserver(calc) : null; if(ro) ro.observe(el); window.addEventListener("resize", calc); return function(){ if(ro) ro.disconnect(); window.removeEventListener("resize", calc); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   // DEVMASTER (Marcus, 12/11/2026): o Resumo do mês bate Contas a receber e Contas pagas com o saldo. Mesmas fontes da tela Resultado do mês.
@@ -124,7 +126,9 @@ function AbaCaixa(){
   var diasSel = dias;   // PERÍODO (Marcus, 12/11/2026): Base + hoje (padrão), mês inteiro, últimos 7 ou 15 dias, ou de um dia até outro; a base (último dia do mês anterior) vai sempre junto
   if(periodo.modo==="hoje"){ var ultAtu = ds.filter(function(k){ return dias.indexOf(k)>=0; }).pop(); diasSel = ultAtu ? [ultAtu] : dias.slice(-1); } else if(periodo.modo==="7") diasSel = dias.slice(-7); else if(periodo.modo==="15") diasSel = dias.slice(-15);
   else if(periodo.modo==="faixa"){ var deF = periodo.de || dias[0], ateF = periodo.ate || dias[dias.length-1]; diasSel = dias.filter(function(k){ return k>=deF && k<=ateF; }); }
-  var cols = [baseData].concat(diasSel), vcols = cols.filter(function(k){ return !ocultos[k]; });
+  var cols = [baseData].concat(diasSel);
+  if(edita && dias.indexOf(hoje)>=0 && cols.indexOf(hoje)<0) cols = cols.concat([hoje]);   // lançamento do dia: a coluna de hoje entra, as outras ficam
+  var vcols = cols.filter(function(k){ return !ocultos[k] || (edita && k===hoje); });
   var dA = vcols[0], dB = vcols[vcols.length-1], dEnd = cols[cols.length-1];
   var mover = function(n){ var d2 = new Date(ano, mes+n, 1); setPer({a:d2.getFullYear(), m:d2.getMonth()}); setOcultos({}); setPeriodo({modo:periodo.modo==="faixa" ? "mes" : periodo.modo, de:"", ate:""}); };
   var blocos = sc.blocos.filter(function(b){ return sc.contas.some(function(c){ return c.bloco===b.id; }); });
@@ -134,9 +138,9 @@ function AbaCaixa(){
   var lancou = function(k, id){ return !!(sc.saldos[k] && sc.saldos[k][id]!==undefined); };
   var agoraD = new Date(), eh = function(k){ var lim = new Date(k+"T10:00:00"); lim.setDate(lim.getDate()+1); return agoraD >= lim; };   // eh(k): já passou das 10h do dia seguinte a k? só então um saldo não preenchido repete o do dia anterior
   var vd = function(id, k){ if(lancou(k, id)) return sc.saldos[k][id]; return eh(k) ? efetivo(sc, ds, id, k) : 0; };   // preenchido = o valor; não preenchido e ainda no prazo = 0,00; passou das 10h do dia seguinte = repete o anterior
-  var sd = function(id, k){ var v = vd(id, k); return v===null ? 0 : v; };
+  var sd = function(id, k){ var v = vd(id, k); if(k===hoje && !lancou(k, id) && !eh(k)){ var e0 = efetivo(sc, ds, id, k); return e0===null ? 0 : e0; } return v===null ? 0 : v; };   // totais do topo: conta de hoje ainda sem OK repete o saldo anterior (a célula continua mostrando 0,00 até lançar)
   // VARIAÇÃO E "ATUAL" (Marcus, 16/11/2026): o dia de hoje ainda sem saldo lançado vale 0,00 na célula, mas NÃO pode servir de ponto final da conta (dava variação de só R$ 5 mil no Sicredi 46, que tinha R$ 128 mil). O ponto final é o último dia com saldo lançado (ou já fechado pelas 10h do dia seguinte).
-  var fechada = function(k){ return k===baseData || eh(k) || sc.contas.some(function(c){ return lancou(k, c.id); }); };
+  var fechada = function(k){ return k===baseData || eh(k) || (edita && k===hoje) || sc.contas.some(function(c){ return lancou(k, c.id); }); };
   var vFech = vcols.filter(fechada), cFech = cols.filter(fechada);
   if(vFech.length) dB = vFech[vFech.length-1];
   if(cFech.length) dEnd = cFech[cFech.length-1];
@@ -151,6 +155,11 @@ function AbaCaixa(){
   var recDia = function(k, grupo){ var d = (RECEBER_LOCAL||{})[k]; if(!d) return 0; return Object.keys(d).reduce(function(x,n){ return x+((RECEBER_MAPA_LOCAL[n]||["DEF"])[0]===grupo ? d[n] : 0); },0); };
   var aporteDia = function(k, b){ return (((sc.aportes||{})[k])||[]).reduce(function(x,a){ return x+((!b || a.bloco===b) ? a.valor : 0); },0); };   // aporte de sócio: dinheiro que o sócio manda para o CNPJ
   var diasDe = function(a, b){ var out = [], d = new Date(a+"T12:00:00"), f = new Date(b+"T12:00:00"); d.setDate(d.getDate()+1); while(d<=f){ out.push(isoDia(d)); d.setDate(d.getDate()+1); } return out; };
+  // CRÉDITO BANCÁRIO (Marcus, 16/11/2026): empréstimo que entrou na conta (ex.: R$ 212.529,50 no Sicredi 46 em 13/11). Fica em sc.aportes com tipo "credito": entra no cálculo como dinheiro que NÃO é faturamento e é protegido como o aporte. Só o valor que entrou, sem IOF e tarifa.
+  var creditoDia = function(k, b){ return (((sc.aportes||{})[k])||[]).reduce(function(x,a){ return x+(a.tipo==="credito" && (!b || a.bloco===b) ? a.valor : 0); },0); };
+  var creditoPeriodo = diasDe(baseData, dEnd||baseData).reduce(function(x,k){ return x+creditoDia(k, filtro==="todos" ? null : filtro); },0);
+  var creditoBloco = function(b){ return diasDe(baseData, dEnd||baseData).reduce(function(x,k){ return x+creditoDia(k, b); },0); };   // crédito de um CNPJ (ou de todos, com null), sem olhar o filtro da tela
+  var creditoGeral = creditoBloco(null);
   var temDiario = function(mm){ return Object.keys(s.contasPagasDiario||{}).filter(function(k){ return k.slice(0,7)===mm && pagoTotalDia(k)>0; }).length>=5; };   // mês com pagamentos lançados dia a dia
   var pagoPeriodo = function(a, b){ var porMes = {}; diasDe(a, b).forEach(function(k){ var mm = k.slice(0,7); (porMes[mm] = porMes[mm] || []).push(k); });
     return Object.keys(porMes).reduce(function(tot, mm){ var dd2 = porMes[mm], an = Number(mm.slice(0,4)), mi = Number(mm.slice(5,7))-1;
@@ -204,14 +213,15 @@ function AbaCaixa(){
   // ── colunas ──
   var celula = function(k){ return function(v, l){
     if(l.tipo==="conta"){ var lanc = lancou(k, l.cid), trav = !!(fm[k] && fm[k][l.bloco]);
-      return e(Celula,{key:k+l.cid+(v===null ? "n" : v), v:v, lancado:lanc, rep:!lanc && eh(k) && v!==null, travado:trav, leitura:!edita || k!==hoje, reabrir:k===hoje ? function(){ fechar(k, [l.bloco], false); } : null, salvar:function(x){ cx.dispatch({type:"SALDO_CEL", data:k, conta:l.cid, valor:x}); }}); }
+      return e(Celula,{key:k+l.cid+(v===null ? "n" : v), v:v, lancado:lanc, rep:!lanc && eh(k) && v!==null, pendente:edita && k===hoje && !lanc, travado:trav, leitura:!edita || k!==hoje, reabrir:k===hoje ? function(){ fechar(k, [l.bloco], false); } : null, salvar:function(x){ cx.dispatch({type:"SALDO_CEL", data:k, conta:l.cid, valor:x}); }}); }
     if(l.tipo==="sit") return v===null ? "—" : e("span",{className:"font-semibold "+(v==="Bateu" ? "text-success" : v==="Sobrando" ? "text-amber-300" : "text-destructive")}, v);
     if(v===null || v===undefined) return "—";
     var n = Number(v), c3 = cor(n);
     return e("span",{className:"tabular-nums "+c3}, l.tipo==="roi" ? String(Math.round(n)) : (n===0 && l.tipo!=="tot" && l.tipo!=="dif" ? "—" : BK(n)));
   }; };
-  var colDia = function(k){ var semLanc = eh(k) && !sc.contas.some(function(c){ return lancou(k, c.id); });
-    return {k:k, t:SEM[diaSem(k)].slice(0, 3)+" "+dc(k)+(k===hoje ? " · hoje" : "")+(k===baseData ? " · base" : ""), w:"7.5rem", corTopo:semLanc ? "#FBBF24" : (fimSem(k) ? "#8B5CF6" : undefined), pulso:edita && k===hoje, render:celula(k)}; };
+  var pendHoje = sc.contas.filter(function(c){ return !lancou(hoje, c.id); }).length;   // contas de hoje ainda sem OK
+  var colDia = function(k){ var semLanc = eh(k) && !sc.contas.some(function(c){ return lancou(k, c.id); }), emLanc = edita && k===hoje;
+    return {k:k, t:SEM[diaSem(k)].slice(0, 3)+" "+dc(k)+(k===hoje ? " · hoje" : "")+(k===baseData ? " · base" : ""), w:"7.5rem", corTopo:emLanc ? (pendHoje>0 ? "#FBBF24" : "#FFFFFF") : semLanc ? "#FBBF24" : (fimSem(k) ? "#8B5CF6" : undefined), pulso:false, render:celula(k)}; };
   var pCols = [{k:"nome", t:"Conta", w:"20rem", fixa:true, bordaGrossa:true, bordaFora:"esq", render:function(v, l){ return e("span",{title:v}, v); }}]
     .concat(vcols.map(function(k, i){ var cd = colDia(k); if(i===vcols.length-1){ cd.fixaDir = "26.5rem - 6px"; cd.bordaGrossa = true; } return cd; }), [
       {k:"var", t:"Variação "+(dA && dB && dA!==dB ? dc(dA)+" → "+dc(dB) : ""), w:"10rem", fixaDir:"16.5rem - 4px", render:function(v, l){ return v===null || v===undefined ? "—" : e("span",{className:"tabular-nums "+(l.varTipo==="soma" ? "" : cor(v))}, l.varTipo==="soma" ? BK(v) : sinal(v)); }},
@@ -224,7 +234,8 @@ function AbaCaixa(){
   var rotPeriodo = periodo.modo==="hoje" ? "Base + último dia atualizado" : periodo.modo==="mes" ? "Mês inteiro" : periodo.modo==="7" ? "Últimos 7 dias" : periodo.modo==="15" ? "Últimos 15 dias" : "De "+dc(deX)+" até "+dc(ateX);
   var botaoPeriodo = e("button",{type:"button", title:"Escolher quais dias aparecem na planilha", onClick:function(ev){ var r = ev.currentTarget.getBoundingClientRect(); setPopPos(popPos ? null : {x:r.left, y:r.bottom+4}); }, className:"h-[18px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2 text-[11px] font-semibold normal-case text-white hover:bg-white/20"}, "Período: "+rotPeriodo+" ▾");
   // janelinha do período no padrão do sistema (igual ao menu de filtro das colunas): tudo centralizado, linhas finas, itens de 32 px, letra de 13 e 11 px
-  var botaoEditar = e("button",{type:"button", title:edita ? "Terminar a edição (a planilha volta a só mostrar e rolar)" : "Abre as células: clique na conta, digite o saldo e aperte Enter (OK). Saldo zero também precisa do OK", onClick:function(){ setEdita(!edita); }, className:"h-[18px] whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold text-white "+(edita ? "border-white bg-white/30" : "border-white/40 bg-white/10 hover:bg-white/20")}, edita ? "Concluir edição" : "Editar");
+  // LANÇAMENTO DO DIA (Marcus, 16/11/2026): só abre a coluna de hoje (com a base) para preencher, na própria planilha. Nada de painel.
+  var botaoEditar = e("button",{type:"button", title:edita ? "Terminar o lançamento (a planilha volta a só mostrar)" : "Abre a coluna de hoje para preencher os saldos: clique na conta, digite e aperte Enter", onClick:function(){ if(edita){ setEdita(false); } else { setPer({a:hojeD.getFullYear(), m:hojeD.getMonth()}); setEdita(true); } }, className:"h-[22px] whitespace-nowrap rounded-md px-3 text-[13px] font-bold outline-none "+(edita ? "bg-white/30 text-white" : "bg-primary text-primary-foreground hover:opacity-90")}, edita ? "Concluir lançamento" : "Lançamento do dia");
   var acoesBarra = e("span",{className:"flex items-center gap-1"}, botaoPeriodo, botaoEditar);
   // RESPONSIVO (Marcus, 12/11/2026): o travamento depende da largura. Larga = trava os dois lados; média = só a esquerda (CNPJ e Conta); estreita = nada travado. Assim, rolando até um lado ou outro, as colunas sempre aparecem inteiras.
   var travaE = lg>=760, travaD = lg>=1250;
@@ -254,6 +265,7 @@ function AbaCaixa(){
       e("div",{className:CABP}, "Mais"),
       cols.indexOf(hoje)>=0 && e("button",{type:"button", className:ITEMP, title:"Fecha todos os CNPJs de hoje (confirma os saldos de hoje)", onClick:function(){ setPopPos(null); fechar(hoje, todosIds, true); }}, "Fechar CNPJs de hoje"),
       cols.indexOf(hoje)>=0 && e("button",{type:"button", className:ITEMP, title:"Reabre todos os CNPJs de hoje para editar", onClick:function(){ setPopPos(null); fechar(hoje, todosIds, false); }}, "Reabrir CNPJs de hoje"),
+      e("button",{type:"button", className:ITEMP, title:"Empréstimo que entrou na conta: não é faturamento", onClick:function(){ setPopPos(null); setCform(Object.assign({}, cform, {data:cform.data || hoje})); setCredAberto(!credAberto); }}, credAberto ? "Fechar crédito bancário" : "Lançar crédito bancário"),
       e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); abrirGrupos(true); }}, "Abrir todos os blocos"), e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); abrirGrupos(false); }}, "Fechar todos os blocos"),
       e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); setLer(!ler); }}, ler ? "Esconder como ler" : "Como ler esta tela"), e("button",{type:"button", className:ITEMP, onClick:function(){ setPopPos(null); setCfg(!cfg); }}, cfg ? "Fechar contas" : "Contas (cadastro)"),
       e("p",{className:"border-t border-border px-3 py-1.5 text-center text-[11px] text-white"}, "A coluna base (último dia do mês anterior) aparece sempre.")));
@@ -265,20 +277,21 @@ function AbaCaixa(){
   var pagoR = srvPg ? tPg.pago : (contasDoMes(s, String(ano), m0R).pago || 0);   // com a DevMaster lida pelo servidor, a conta é a do alto da tela Contas a pagar
   var pronto = !!(dr && dr.pronto && dr.K && dr.A), ktR = pronto ? (dr.K.t[mI] || {}) : {}, recR = pronto ? (ktR.rec || 0) : null;   // Contas a receber SEM o acerto com loja (só o que foi pago na hora: Pix, link, cartão, dinheiro)
   var msgR = !apiAtiva() ? "sem servidor" : dr && dr.erro && !dr.pronto ? "erro ao ler" : "lendo a DevMaster…"+(dr && dr.etapa ? " "+dr.etapa+" "+(dr.pct || 0)+"%" : "");
-  var iniR = totalTodos(baseData), fimR = totalTodos(dEnd||baseData), resDm = recR===null ? null : recR-pagoR, resFin = fimR-iniR, divR = resDm===null ? null : resFin-resDm;
+  var iniR = totalTodos(baseData), fimR = totalTodos(dEnd||baseData), resDm = recR===null ? null : recR-pagoR, resFin = fimR-iniR, divR = resDm===null ? null : (resFin-creditoPeriodo)-resDm;   // o crédito bancário (empréstimo) sobe o saldo mas não é resultado: sai da divergência
   var sitR = divR===null ? "—" : Math.abs(divR)<1000 ? "Bateu" : divR>0 ? "Sobrando" : "Faltando";
-  var linhasRes = [["Contas a receber (DevMaster) · até agora", recR===null ? msgR : recR], ["Contas pagas (DevMaster) · até agora", pagoR], ["Resultado pela DevMaster (receber − pagas)", resDm===null ? "—" : resDm], ["Saldo das contas em "+dc(baseData), iniR], ["Saldo das contas em "+dc(dEnd||baseData)+" (hoje)", fimR], ["Resultado financeiro das contas (hoje − "+dc(baseData)+")", resFin], ["Divergência (resultado financeiro − resultado DevMaster)", divR===null ? "—" : divR], ["Situação da divergência", sitR]].map(function(x, i){ return {id:"r"+i, nome:x[0], v:x[1], forte:/^Resultado/.test(x[0]) || /^Divergência/.test(x[0])}; });
+  var linhasRes = [["Contas a receber (DevMaster) · até agora", recR===null ? msgR : recR], ["Contas pagas (DevMaster) · até agora", pagoR], ["Resultado pela DevMaster (receber − pagas)", resDm===null ? "—" : resDm], ["Saldo das contas em "+dc(baseData), iniR], ["Saldo das contas em "+dc(dEnd||baseData)+" (hoje)", fimR], ["Resultado financeiro das contas (hoje − "+dc(baseData)+")", resFin]].concat(creditoPeriodo>0 ? [["Crédito bancário (empréstimo) · fora do resultado", -creditoPeriodo]] : []).concat([["Divergência (resultado financeiro − crédito − resultado DevMaster)", divR===null ? "—" : divR], ["Situação da divergência", sitR]]).map(function(x, i){ return {id:"r"+i, nome:x[0], v:x[1], forte:/^Resultado/.test(x[0]) || /^Divergência/.test(x[0])}; });
   var tabResumo = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasRes, linhaCls:linhaCls, cols:[{k:"nome", t:"Item", w:"26rem"}, {k:"v", t:"Valor", w:"11rem", render:function(v, l){ if(v===null || v===undefined) return "—"; if(typeof v==="string") return v; return e("span",{className:"tabular-nums "+cor(v)}, BK(v)); }}]});
   // um bloco azul para cada grupo da aba escolhida  // um bloco azul para cada grupo da aba escolhida, todos com as mesmas colunas (alinhadas), como nas Chaves Pix
   // ABA SALDOS (Marcus, 12/11/2026): em cima, dois blocos lado a lado: Totais do dia (dia 31 × atual) e Saldo por CNPJ; embaixo, UMA planilha com todas as contas em sequência, uma cor clara de fundo por CNPJ, sem barra de título
   var cnomes = function(b){ if(b.id==="BLOQ") return "Bloqueado"; return ["34", "46", "59", "67", "HO", "ITM"].indexOf(b.id)>=0 ? rotuloEmpresa(b.id, b.nome) : nomePropio(b.nome); };
   var tl = [["TOTAL · saldo real (sem bloqueadas)", realDia, true], ["DISPONÍVEL · saldo + cheque especial", function(k){ return realDia(k)+limSel; }, true], ["Cheque especial · limite", function(){ return limSel; }, false], ["Cheque especial · usado", usadoDia, false], ["Cheque especial · folga", function(k){ return Math.max(0, limSel-usadoDia(k)); }, false], ["Bloqueado", bloqDia, true]];
-  var linhasTot = tl.map(function(x, i){ var a2 = x[1](baseData), b2 = x[1](dEnd); return {id:"t"+i, nome:x[0], a:a2, b:b2, v:b2-a2, forte:x[2]}; });
-  var rn = function(campo){ return function(v, l){ if(v===null || v===undefined) return ""; var comCor = l.forte || l.cnpj; if(campo==="v") return comCor ? e("span",{className:"tabular-nums "+cor(v)}, sinal(v)) : "—"; return e("span",{className:"tabular-nums "+(comCor ? cor(v) : "")}, BK(v)); }; };
-  var colsAB = function(t0, nomeW){ return [{k:"nome", t:t0, w:nomeW, render:function(v, l){ return e("span",{className:"font-semibold"}, v+(l.n ? " · "+l.n+(l.n===1 ? " conta" : " contas") : "")); }}, {k:"a", t:"Dia "+dc(baseData)+" · base", w:"9.5rem", render:rn("a")}, {k:"b", t:"Atual · "+dc(dEnd), w:"9.5rem", render:rn("b")}, {k:"v", t:"Variação", w:"9.5rem", render:rn("v")}]; };
-  var linhasCnpj = vis.map(function(b, i){ var cs = sc.contas.filter(function(c){ return c.bloco===b.id; }), a2 = cs.reduce(function(t2, c){ return t2+sd(c.id, baseData); }, 0), b2 = cs.reduce(function(t2, c){ return t2+sd(c.id, dEnd); }, 0); return {id:"c"+b.id, nome:cnomes(b), a:a2, b:b2, v:b2-a2, cnpj:true, bloco:b.id, ci:i, n:cs.length, bloq:b.id==="BLOQ"}; });
+  var linhasTot = tl.map(function(x, i){ var a2 = x[1](baseData), b2 = x[1](dEnd); return {id:"t"+i, nome:x[0], a:a2, b:b2, v:b2-a2, forte:x[2], sc:(i<2 && creditoPeriodo>0) ? b2-a2-creditoPeriodo : undefined}; });   // sc = variação SEM o crédito bancário (só no total e no disponível)
+  if(creditoPeriodo>0) linhasTot.push({id:"tcred", nome:"Crédito bancário · entrou no período", a:null, b:creditoPeriodo, v:creditoPeriodo, forte:true});   // só aparece quando houve crédito
+  var rn = function(campo){ return function(v, l){ if(v===null || v===undefined) return ""; var comCor = l.forte || l.cnpj; if(campo==="v" || campo==="sc") return comCor ? e("span",{className:"tabular-nums "+cor(v)}, sinal(v)) : "—"; return e("span",{className:"tabular-nums "+(comCor ? cor(v) : "")}, BK(v)); }; };
+  var colsAB = function(t0, nomeW){ return [{k:"nome", t:t0, w:nomeW, render:function(v, l){ return e("span",{className:"font-semibold"}, v+(l.n ? " · "+l.n+(l.n===1 ? " conta" : " contas") : "")); }}, {k:"a", t:"Dia "+dc(baseData)+" · base", w:"9.5rem", render:rn("a")}, {k:"b", t:"Atual · "+dc(dEnd), w:"9.5rem", render:rn("b")}, {k:"v", t:creditoGeral>0 ? "Variação com crédito" : "Variação", w:creditoGeral>0 ? "11rem" : "9.5rem", render:rn("v")}].concat(creditoGeral>0 ? [{k:"sc", t:"Variação sem crédito", w:"11rem", render:rn("sc")}] : []); };
+  var linhasCnpj = vis.map(function(b, i){ var cs = sc.contas.filter(function(c){ return c.bloco===b.id; }), a2 = cs.reduce(function(t2, c){ return t2+sd(c.id, baseData); }, 0), b2 = cs.reduce(function(t2, c){ return t2+sd(c.id, dEnd); }, 0); return {id:"c"+b.id, nome:cnomes(b), a:a2, b:b2, v:b2-a2, sc:b2-a2-creditoBloco(b.id), cnpj:true, bloco:b.id, ci:i, n:cs.length, bloq:b.id==="BLOQ"}; });
   var tA = linhasCnpj.filter(function(l){ return !l.bloq; }).reduce(function(t2, l){ return t2+l.a; }, 0), tB = linhasCnpj.filter(function(l){ return !l.bloq; }).reduce(function(t2, l){ return t2+l.b; }, 0);
-  linhasCnpj.push({id:"ctot", nome:"TOTAL (sem bloqueadas)", a:tA, b:tB, v:tB-tA, cnpj:true, total:true});
+  linhasCnpj.push({id:"ctot", nome:"TOTAL (sem bloqueadas)", a:tA, b:tB, v:tB-tA, sc:tB-tA-creditoGeral, cnpj:true, total:true});
   var colsCnpj = colsAB("CNPJ", "15rem").concat([{k:"h", t:"Hoje · confirmar", w:"9rem", render:function(v, l){ if(!l.bloco || cols.indexOf(hoje)<0) return ""; var fe = !!(fm[hoje] && fm[hoje][l.bloco]); return e("button",{type:"button", title:fe ? "CNPJ fechado hoje (clique para reabrir e editar)" : "Fechar este CNPJ hoje: confirma os saldos de hoje", onClick:function(){ fechar(hoje, [l.bloco], !fe); }, className:"text-[13px] font-semibold hover:underline "+(fe ? "text-success" : "text-white")}, fe ? "Fechado" : "Aberto"); }}]);
   var tabTotais = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasTot, cols:colsAB("Conta", "19rem"), linhaCls:linhaCls});
   var tabCnpj = e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:linhasCnpj, cols:colsCnpj, linhaCls:linhaCls});
@@ -297,6 +310,21 @@ function AbaCaixa(){
   return e("div",{ref:raiz, onScrollCapture:aba==="saldos" ? undefined : sincroniza, className:PADRAO_BLOCOS+" [&_button]:cursor-pointer [&_select]:cursor-pointer -mx-2 -mb-2 -mt-5 flex flex-col gap-1.5 pl-3 md:-mx-3 md:-mb-3 md:pl-4"},
     e("div",{className:"[&_section_td]:!h-[22px] [&_section_th]:!h-[22px]"}, blocoTopo),   // linhas do topo com 22 px (Marcus, 12/11/2026: mais compacto para caber a planilha)
     popPeriodo,
+    credAberto && (function(){
+      var CAMPO8 = INPUT+" h-8! px-2! text-[13px]! w-full";
+      var n = Number(cform.digitos || 0)/100, fmt = function(v){ return "R$ "+v.toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); };
+      var lancar = function(){ if(!(n>0) || !cform.data || !cform.bloco) return; cx.dispatch({type:"SALDO_APORTE", data:cform.data, aporte:{id:"cr"+Date.now(), bloco:cform.bloco, valor:n, tipo:"credito", obs:cform.obs.trim()}}); setCform(Object.assign({}, cform, {digitos:"", obs:""})); };
+      var lista = []; Object.keys(sc.aportes||{}).sort().reverse().forEach(function(k){ sc.aportes[k].forEach(function(a){ if(a.tipo==="credito") lista.push({id:a.id, k:k, dia:dp(k), cnpj:(NOME_BARRA[a.bloco] || a.bloco)+" · "+a.bloco, valor:a.valor, obs:a.obs || "—"}); }); });
+      return e(BlocoPainel,{titulo:"Crédito bancário", compacto:true},
+        e("div",{className:"flex flex-col gap-2 p-3"},
+          e("div",{className:"grid grid-cols-2 gap-2 md:grid-cols-5"},
+            e("label",{className:"flex flex-col gap-1 text-[11px] font-semibold uppercase"}, "Dia", e("input",{type:"date", value:cform.data, "aria-label":"Dia em que o crédito entrou", className:CAMPO8, onChange:function(ev){ setCform(Object.assign({}, cform, {data:ev.target.value})); }})),
+            e("label",{className:"flex flex-col gap-1 text-[11px] font-semibold uppercase"}, "CNPJ", e("select",{value:cform.bloco, "aria-label":"CNPJ que recebeu", className:CAMPO8+" cursor-pointer", onChange:function(ev){ setCform(Object.assign({}, cform, {bloco:ev.target.value})); }}, blocos.filter(function(b){ return b.id!=="BLOQ"; }).map(function(b){ return e("option",{key:b.id, value:b.id, className:"bg-card text-white"}, (NOME_BARRA[b.id] || b.nome)+" · "+b.id); }))),
+            e("label",{className:"flex flex-col gap-1 text-[11px] font-semibold uppercase"}, "Valor que entrou", e("input",{inputMode:"numeric", value:cform.digitos ? fmt(n) : "", placeholder:"R$ 0,00", "aria-label":"Valor que entrou na conta", className:CAMPO8+" "+MONO, onChange:function(ev){ setCform(Object.assign({}, cform, {digitos:ev.target.value.replace(/\D/g, "").slice(0, 12)})); }, onKeyDown:function(ev){ if(ev.key==="Enter") lancar(); }})),
+            e("label",{className:"flex flex-col gap-1 text-[11px] font-semibold uppercase md:col-span-2"}, "Observação (opcional)", e("input",{value:cform.obs, placeholder:"Ex.: capital de giro Sicredi", "aria-label":"Observação", className:CAMPO8, onChange:function(ev){ setCform(Object.assign({}, cform, {obs:ev.target.value})); }, onKeyDown:function(ev){ if(ev.key==="Enter") lancar(); }}))),
+          e("div",{className:"flex items-center justify-center gap-2"}, e(Btn,{onClick:lancar}, "Lançar crédito"), e("span",{className:"text-[13px]"}, "Lance o valor que efetivamente entrou na conta (já sem IOF e tarifa). Não conta como faturamento.")),
+          lista.length>0 && e(TabelaPlanilha,{semContagem:true, semFiltro:true, grade:true, chave:"id", linhas:lista, cols:[{k:"dia", t:"Dia", w:"7rem"}, {k:"cnpj", t:"CNPJ", w:"12rem"}, {k:"valor", t:"Valor", w:"11rem", render:function(v){ return e("span",{className:"tabular-nums text-success"}, BK(v)); }}, {k:"obs", t:"Observação", w:"16rem"}, {k:"id", t:"", w:"7rem", render:function(v, l){ return e(Btn,{onClick:function(){ if(window.confirm("Excluir este crédito bancário de "+l.dia+"?")) cx.dispatch({type:"SALDO_APORTE", data:l.k, remover:v}); }}, "Excluir"); }}]})));
+    })(),
     ler && e(ComoLer,{fontes:fontes, ontem:ontemIso, fl:fl, dA:baseData, dB:dEnd}),
     cfg && e(BlocoPainel,{titulo:"Contas", compacto:true}, e("div",{className:"p-3"}, e(ConfigContas,{}))),
     aba==="saldos" && planilhaSaldos,

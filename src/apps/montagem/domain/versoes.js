@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.38", data:"2026-11-16", titulo:"Contas bancárias: crédito bancário e Lançamento do dia", itens:[
+  {tipo:"melhoria", area:"Financeiro › Contas bancárias", txt:"Botão Lançamento do dia (no lugar do Editar): liga a coluna de hoje na própria planilha para preencher os saldos, sem tirar nenhuma coluna e sem mexer no topo: o Resumo dos saldos e as variações se atualizam conforme cada conta é preenchida (conta ainda sem OK repete o saldo anterior). Clique na conta, digite e aperte Enter. O número de cada conta ainda sem OK pisca em amarelo; ao dar o OK ele volta à cor normal. A faixa do título de hoje fica amarela enquanto faltam contas e branca quando todas têm OK. Concluir lançamento volta ao normal."},
+  {tipo:"novo", area:"Financeiro › Contas bancárias", txt:"Crédito bancário: Período ▾ › Lançar crédito bancário (dia, CNPJ, valor que entrou e observação). Lança-se o valor que efetivamente entrou na conta. O Resumo dos saldos e o Saldo por CNPJ mostram a Variação com crédito e a Variação sem crédito, e o crédito sai da divergência do resumo DevMaster × saldo, porque empréstimo não é faturamento nem resultado. Primeiro lançamento: R$ 204.240,08 no CNPJ 46 em 13/11."},
+ ]},
  {v:"0.20.37", data:"2026-11-16", titulo:"Servidor local, topo, foto e Contas bancárias", itens:[
   {tipo:"correção", area:"Tecnologia › Servidor local", txt:"O servidor da porta 3000 caía toda hora: no modo de desenvolvimento cada tela carregava o sistema inteiro (3,1 GB a cada compilação). Agora o código comum fica num pacote só (91 MB) e a primeira abertura caiu de 34 para 17 segundos. O site publicado não muda. Para ligar: iniciar-servidor-unico.cmd."},
   {tipo:"melhoria", area:"Financeiro › Contas bancárias", txt:"A planilha abre em Base + último dia atualizado (o dia de hoje fica em 0,00 até lançar). Valores positivos aparecem em verde, negativos em vermelho."},

@@ -115,3 +115,7 @@
 @keyframes pulso-leve { 0%,100% { background-color: rgba(251,191,36,0); } 50% { background-color: rgba(251,191,36,.16); } }
 .pulso-leve { animation: pulso-leve 2.8s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .pulso-leve { animation: none; background-color: rgba(251,191,36,.10); } }
+/* Lançamento do dia (Marcus, 16/11/2026): só o NÚMERO da conta ainda sem OK pisca em amarelo (sem quadrado); depois do OK volta à cor normal */
+@keyframes pisca-amarelo { 0%,100% { opacity: 1; text-shadow: 0 0 8px rgba(251,191,36,.9); } 50% { opacity: .3; text-shadow: none; } }
+.pisca-amarelo { color: #FBBF24; animation: pisca-amarelo 1.1s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) { .pisca-amarelo { animation: none; } }

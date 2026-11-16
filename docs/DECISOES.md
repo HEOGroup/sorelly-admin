@@ -4,6 +4,12 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 16/11/2026 (Contas bancárias: limites, traço no limite e crédito bancário)
+- **Limites lançados no banco (Marcus, via financeiro):** Stone 46 = R$ 80.000,00 e Sicredi Axis 67 = R$ 3.000,00. Itaú 34, Bradesco 59, Caixa 59, Itaú Axis 67 e Sicredi H&O: sem limite.
+- **Coluna Limite:** "-----" só onde o limite não se aplica (Aplicação, Dinheiro e conta bloqueada); conta corrente sem limite mostra R$ 0,00.
+- **Crédito bancário:** em 13/11 entrou um empréstimo de R$ 212.529,50 no Sicredi 46 (tarifa de R$ 2.125,30 e IOF de R$ 6.164,12 saíram na mesma conta). O dinheiro foi repartido entre as contas do CNPJ 46. Decisão do Marcus: lançar o valor que EFETIVAMENTE entrou na conta (R$ 212.529,50 − R$ 8.289,42 = R$ 204.240,08, lançado em 13/11 no CNPJ 46) e mostrar a variação COM crédito e SEM crédito (Resumo dos saldos e Saldo por CNPJ); as parcelas serão lançadas depois. Fica em `sc.aportes` com `tipo:"credito"` (mesmo caminho e mesma proteção do aporte de sócio, `trava-saldos.js`). Não é faturamento nem resultado: aparece no Resumo dos saldos e sai da divergência do resumo DevMaster × saldo.
+- **Pendente:** Bradesco 46 e Caixa 46 precisam receber ao menos R$ 3.000,00 do Sicredi 46 (o financeiro faz); **Itaú 59 Conta Garantida: os R$ 15.000 lançados em 12 e 13/11 eram o LIMITE (confirmado pela família); saldo corrigido para R$ 0 nos dois dias, com cópia `bkp_sc_itau59_16_11`**; o financeiro confirma Sicredi Rotativo 34 (-R$ 64.928,50, sem mudar desde 31/10); lançar o crédito de 13/11 e depois as parcelas.
+
 ## 16/11/2026 (Servidor da porta 3000 caía toda hora — causa e correção)
 - **Sintoma:** em 16/11 o servidor local caiu 5 vezes em 40 minutos. Travava (porta aberta sem responder) ou sumia. Processo do Node chegou a 13 GB de memória; a pasta `.next` tinha 6,7 GB.
 - **Causa:** no `npm run dev` o Next desliga a divisão de pacotes no navegador (`splitChunks: false`). Como `src/router/rotas.js` carrega cada tela com `import()` (mais de 200), cada tela virava um pacote com o sistema inteiro dentro: 142 pacotes, os maiores com 50 MB, 3,1 GB a cada compilação. Cada arquivo salvo por qualquer conversa refazia tudo.
