@@ -4,6 +4,7 @@
 // resumo fixo no topo. O valor vendido vem direto do app da revendedora (campo vendaApp do atendimento).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { JanelaIncluirCliente } from "@/apps/montagem/pages/RevendedorasInternas";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
@@ -159,6 +160,7 @@ function AtendimentoInterno(){
   var bb = useState({codigo:"", valor:null}), bbIn = bb[0], setBbIn = bb[1];       // lançar brinde Select (BB)
   var ar = useState("agora"), abaRegras = ar[0], setAbaRegras = ar[1];             // regras: passar agora ou ver o termo do mês anterior
   var ac = useState(null), assCiente = ac[0], setAssCiente = ac[1];               // assinatura de ciência (revendedora não quis esperar a explicação)
+  var inc = useState(false), incluindo = inc[0], setIncluindo = inc[1];             // "Chegou sem agendar": inclui na agenda de hoje quem chegou sem a Tamara marcar (Edna, 16/11/2026)
   var ao = useState(false), cienteAberta = ao[0], setCienteAberta = ao[1];
   var rm = useState({}), regraMais = rm[0], setRegraMais = rm[1];                  // "ver mais" de cada regra
   var up = function(patch){ setForm(function(f){ return Object.assign({}, f, patch); }); };
@@ -369,8 +371,10 @@ function AtendimentoInterno(){
   var CABEC = "flex h-8 items-center justify-between gap-2 bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold";
   var filaDia = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
     e("div",{className:CABEC}, e("h2",{className:"text-[13px] font-semibold"}, "Hoje · "+hoje.split("-").reverse().slice(0,2).join("/")), e("span",{className:"text-[13px] font-bold"}, feitosHoje+" de "+listaDia.filter(function(x){ return x.status!=="cancelado"; }).length+" feitos")),
+    incluindo && e(JanelaIncluirCliente,{imediato:true, lista:s.revInternas||[], hojeIso:hoje, dispatch:d, abrir:function(){}, irParaDia:function(){}, fechar:function(){ setIncluindo(false); }}),
     e("div",{className:"p-1"},
-      listaDia.length ? e(TabelaPlanilha,{cols:colsDia, linhas:linhasDia, chave:"id", centro:true, grade:true, semContagem:true, semLimpar:true, maozinha:true, linhaCls:function(l){ return l._on ? "bg-primary/15" : ""; }, aoClicar:function(l){ var x = l._x; if(l._canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); }}) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje.")));
+      listaDia.length ? e(TabelaPlanilha,{cols:colsDia, linhas:linhasDia, chave:"id", centro:true, grade:true, semContagem:true, semLimpar:true, maozinha:true, linhaCls:function(l){ return l._on ? "bg-primary/15" : ""; }, aoClicar:function(l){ var x = l._x; if(l._canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); }}) : e("p",{className:"py-3 text-center text-[13px] text-muted-foreground"}, "Ninguém na agenda de hoje."),
+      e("button",{type:"button", onClick:function(){ setIncluindo(true); }, className:"mt-1 flex h-8 w-full items-center justify-center gap-2 rounded-md bg-primary text-[13px] font-bold text-[#1B1409] transition hover:brightness-110"}, "+ Chegou sem agendar? Incluir agora")));
   var vApoio = versaoBase || versaoVigente(s);
   var regrasApoio = vApoio ? textoRegras(vApoio, modalidade).filter(function(r){ return !/deslocamento|pe[cç]as/i.test(r.t); }) : [];
   var listaRegras = e("ul",{className:"flex flex-col gap-1.5 p-2.5 text-[13px] leading-snug"}, regrasApoio.map(function(r,i){ return e("li",{key:i, className:"flex gap-2"}, e("span",{className:"shrink-0 font-bold text-primary"}, (i+1)+"."), e("span",null, r.t)); }));
@@ -1021,7 +1025,7 @@ function AtendimentoInterno(){
     e("div",{className:CABT+" grid-cols-2"}, e("span",null,"Média das vendas"), e("span",null,"Kit liberado")),
     tabKit.map(function(x,i){ var on = faixaKit && faixaKit.min===x.min;
       return e("div",{key:i, className:LIN+" grid-cols-2 "+(on ? "border-primary bg-primary/15! font-semibold text-primary" : "")}, e("span",null,faixaKitTxt(i,x)), e("b",{className:"font-semibold"}, BK(x.kit))); }));
-  var estKit = metades("@[52rem]:grid-cols-2 grid-cols-1", lado("Média das vendas", tabMedia, "", "p-0"), lado("Valor do kit · estoque "+estoqueAtivo, tabFaixas, "", "p-0"));
+  var estKit = metades("@[28rem]:grid-cols-2 grid-cols-1", lado("Média das vendas", tabMedia, "", "p-0"), lado("Valor do kit · estoque "+estoqueAtivo, tabFaixas, "", "p-0"));
 
   // ── estação 4: condicional nova (liberação do kit novo e escolha) ──
   var okKit = dv.kitNovoLiberado;

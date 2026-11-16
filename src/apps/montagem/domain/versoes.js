@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.57", data:"2026-11-16", titulo:"Atendimento Sorelly: botão para incluir quem chega sem agendar e blocos do valor do kit lado a lado", itens:[
+  {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Barra dourada \"Chegou sem agendar? Incluir agora\" embaixo da lista de hoje: abre a janela de incluir cliente que chegou agora (a Edna não achava a Listagem). A cliente entra na agenda com a hora de agora."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Na etapa Valor do kit, os blocos Média das vendas e Valor do kit ficam lado a lado também em telas mais estreitas."}]},
  {v:"0.20.56", data:"2026-11-16", titulo:"Estoque de material: andamento da compra, carrinho ligado às Compras e foto do material", itens:[
   {tipo:"novo", area:"Materiais & Estoque › Estoque de material", txt:"Cada cartão mostra a situação do estoque (Crítico, Atenção ou OK) e, ao lado, o andamento da compra: Solicitado, Em cotação, Aguardando aprovação, Aprovado · a comprar, Aguardando entrega (com o que falta) ou Recebido. Sem compra aberta aparece Sem compra em andamento. O andamento vem da própria compra: não é digitado à mão. Clicar no selo abre a compra, com as mesmas ações e permissões da área de Compras."},
   {tipo:"novo", area:"Materiais & Estoque › Estoque de material", txt:"O carrinho do cartão cria o pedido na área de Compras, já ligado ao material, com nome, unidade e fornecedor. Se já existe compra aberta, a janela avisa e mostra o acesso a ela; pedir outra só marcando Sim, é outra compra."},
