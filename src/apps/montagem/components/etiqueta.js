@@ -124,4 +124,4 @@ function Etiqueta(p){
         k.pref.evitar && e("div",{className:"flex items-baseline justify-between gap-3 text-[13px]", style:PRETO}, e("span",null, "Pedido dela"), e("b",{className:"text-right"}, k.pref.evitar)))));
 }
 
-export { Etiqueta };
+export { Etiqueta, agrupar };

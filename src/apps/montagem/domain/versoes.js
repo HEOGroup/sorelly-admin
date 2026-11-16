@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.58", data:"2026-11-16", titulo:"Listagens no padrão azul e nova janela de montagem", itens:[
+  {tipo:"melhoria", area:"Representantes & Kits › Listagens", txt:"Tela refeita no padrão azul: menu de Dia com marcação, uma tabela por representante, clicar na revendedora abre a ficha. Só Encomendas e Mesa maior desligados."},
+  {tipo:"melhoria", area:"Representantes & Kits › Montagem", txt:"Janela Montar no computador: o que enviar (ouro e prata) junto das preferências da revendedora, encomenda sim ou não, condicionais com Peguei e montagem. Montadora não vê R$."}
+ ]},
  {v:"0.20.57", data:"2026-11-16", titulo:"Atendimento Sorelly: botão para incluir quem chega sem agendar e blocos do valor do kit lado a lado", itens:[
   {tipo:"novo", area:"Atendimento interno › Atendimento Sorelly", txt:"Barra dourada \"Chegou sem agendar? Incluir agora\" embaixo da lista de hoje: abre a janela de incluir cliente que chegou agora (a Edna não achava a Listagem). A cliente entra na agenda com a hora de agora."},
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Na etapa Valor do kit, os blocos Média das vendas e Valor do kit ficam lado a lado também em telas mais estreitas."}]},

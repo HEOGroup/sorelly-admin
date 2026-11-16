@@ -4,7 +4,7 @@ import { kit } from "@/apps/montagem/domain/seed";
 
 var CFG0 = {
   valorNormal:1.80, valorEspecial:2.80,
-  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000, limiteEncomendas:3000, limiteMesaMaior:4000,
+  limiteEspecial:12000, limiteAtencao:15000, limiteMelhores:12000, limiteEncomendas:0, limiteMesaMaior:0,   /* 16/11/2026 (Marcus: "só encomendas e mesa maior, nada a ver"): regras DESLIGADAS (0 = sem limite). A comparação usava o VALOR do kit (R$ 5.000 a R$ 12.000) contra R$ 3.000, então com o valor automático todo kit virava Só Encomendas e as montadoras comuns eram barradas. Para religar, ponha o limite em Configurações. */
   // Bipadoras: valor por kit bipado, kit maior e desconto por peça faltando apontada pela representante
   valorBipNormal:1.50, valorBipEspecial:2.50, limiteBipEspecial:15000, perdaFalta:10,
   // Peças por kit (caminho 1, tabelado): quantidade de cada categoria conforme o valor do kit. null = ainda não levantado.

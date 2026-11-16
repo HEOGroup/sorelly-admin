@@ -372,6 +372,8 @@ function inicial(){
       s.retPend = (s.retPend||[]).filter(function(r){ return !TESTE_L[r.lid]; });
       s.entregasKN = Object.keys(s.entregasKN||{}).reduce(function(o, id){ if(!kitsFora[id]) o[id] = s.entregasKN[id]; return o; }, {});
       s.avalRep = []; s.recusas = []; s.virada = {}; s.bloqueioNovas = {}; s.filaSimulada = 0; s.abertas = {}; s.kitAberto = null; }
+    // 16/11/2026: Só Encomendas e Mesa maior desligados também em quem já tem estado salvo no navegador (limite 0 = sem limite)
+    if(s.encomendasOffV!==1){ s.encomendasOffV = 1; s.cfg.limiteEncomendas = 0; s.cfg.limiteMesaMaior = 0; }
     if(!s.avalRep){ s.avalRep = avalRepDemo(); s.recusas = RECUSAS0.slice(); s.virada = JSON.parse(JSON.stringify(VIRADA0)); s.bloqueioNovas = {Jessica:true}; }
     if(!s.contasPagar){ s.contasPagar = JSON.parse(JSON.stringify(CONTAS_PAGAR_DEMO)); s.verFinanceiro = "total"; }
     if(!s.faturamentoDiario) s.faturamentoDiario = JSON.parse(JSON.stringify(FATURAMENTO_DIARIO_DEMO));

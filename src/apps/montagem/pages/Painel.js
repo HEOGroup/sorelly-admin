@@ -1,75 +1,46 @@
-// Sorelly Admin · montagem e bipagem — pages/Painel.js
-// Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
+// Sorelly Admin · montagem e bipagem — pages/Painel.js  (Representantes & Kits → Montagem → Listagens)
+// Refeita em 16/11/2026 no padrão azul do Financeiro (Marcus: "a tela de listagens do dia no padrão azul, conforme as novas regras"): bloco com barra azul (BlocoPainel),
+// menu de Dia com caixa de marcar (um dia, vários ou todos; abre em hoje), UMA tabela (components/fila-planilha.js) agrupada por listagem, filtro e ordem no cabeçalho das colunas.
+// Saíram: título grande, faixa "Hoje na empresa" (contagens; continua na Visão da bipagem), busca e seleções no topo, chips de situação e o botão Por representante | Tabela.
+// A fila antiga (components/fila.js) continua no projeto só porque o app da representante usa o ETAPA dela.
 import { BarraBipadora } from "@/apps/montagem/components/barra-bipadora";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { DlgNovoKit, DlgRetirada } from "@/apps/montagem/components/dialogos";
-import { Fila } from "@/apps/montagem/components/fila";
-import { Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { BlocoErrosBipagem } from "@/apps/montagem/components/erros-bipagem";
+import { FilaPlanilha, chaveGrupo } from "@/apps/montagem/components/fila-planilha";
+import { MenuDias } from "@/apps/montagem/components/menu-dias";
+import { Pagina } from "@/apps/montagem/components/padrao";
 import { papelDe } from "@/apps/montagem/domain/equipe";
-import { listagemDe } from "@/apps/montagem/domain/regras";
-import { SITUACOES } from "@/apps/montagem/domain/status";
 import { BK, isoDia } from "@/apps/montagem/lib/format";
 import { use } from "@/apps/montagem/state/context";
-import { BADGE } from "@/apps/montagem/ui/badge";
-import { Btn } from "@/apps/montagem/ui/button";
-import { Icon } from "@/apps/montagem/ui/icon";
-import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { BlocoErrosBipagem } from "@/apps/montagem/components/erros-bipagem";
-import { PageHead } from "@/apps/montagem/ui/page";
-import { PainelDia } from "@/apps/montagem/components/painel-dia";
 import { e, useState } from "@/shared/react";
-import React from "react";
+
+// botão pequeno de contorno branco para a barra azul (como o seletor do Contas a pagar)
+var BTN_BARRA = "inline-flex h-7 items-center justify-center whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2.5 text-[13px] font-semibold normal-case text-white hover:bg-white/15";   // padrao-ok: controle de 28 px na barra azul, como o Contas a pagar (Marcus aprovou 28 px em 16/11/2026)
 
 function AbaPainel(){
   var cx = use(), s = cx.state;
-  var fl = useState({rep:"todas", busca:"", sit:"todas", ordem:"fila"}), f = fl[0], setFs = fl[1];
-  var vz = useState("representante"), visao = vz[0], setVisao = vz[1];   // Por representante (blocos) ou Tabela (uma tabela só, com filtro)
-  var setF = function(n){ setFs(Object.assign({}, f, n)); };
-  // Kits das listagens abertas de hoje (respeitando o filtro de representante), para as contagens por situação
   var hojeISO = isoDia(new Date());
-  var abertos = s.kits.filter(function(k){ var l = listagemDe(s,k); return l && !l.fechada && (!l.data || l.data>=hojeISO) && k.status!=="precond" && (f.rep==="todas" || k.lid===f.rep); });
-  var chipSit = function(id, lb, qtd, tom){ var on = f.sit===id;
-    return e("button",{key:id, onClick:function(){setF({sit: on && id!=="todas" ? "todas" : id});}, "aria-pressed":on,
-      className:"inline-flex h-9 items-center gap-2 rounded-lg border px-3 text-sm font-semibold transition-colors "+
-        (on ? BADGE[tom] : "border-border bg-card text-muted-foreground hover:text-foreground")},
-      lb, e("span",{className:MONO+" rounded-md px-1.5 text-[12px] "+(on?"bg-black/20":"bg-muted")}, qtd)); };
+  var abertas = s.listagens.filter(function(l){ return !l.fechada && (!l.data || l.data>=hojeISO); });
+  var diaDe = function(l){ return String(l.data||"sem-data").slice(0, 10); };
+  var dias = []; abertas.forEach(function(l){ if(dias.indexOf(diaDe(l))<0) dias.push(diaDe(l)); }); dias.sort();
+  var ds = useState(null), diaSel = ds[0], setDiaSel = ds[1], fs = useState({}), fechadas = fs[0], setFechadas = fs[1];
   var dg = useState({tipo:null, lid:null}), dlg = dg[0], setDlg = dg[1];
   var abrir = function(t, lid){ setDlg({tipo:t, lid:lid}); }, fechar = function(){ setDlg({tipo:null, lid:null}); };
-  var n = abertos.length;
-  var conferir = s.kits.filter(function(k){return k.status==="supervisao";}).length;
-  return e(React.Fragment,null,
-    e(PageHead,{t:"Listagens do dia", sub: papelDe(s.usuario)==="bipadora"
-      ? "Inicie a bipagem pelo bot\u00e3o abaixo (pr\u00f3ximo da fila) ou pelo Bipar na linha do kit. O cron\u00f4metro come\u00e7a na hora."
-      : "Fila \u00fanica por hor\u00e1rio de retirada, com os priorit\u00e1rios na frente desde o in\u00edcio do dia."}),
-    e(PainelDia,{s:s}),
+  var diaPadrao = dias.indexOf(hojeISO)>=0 ? hojeISO : (dias.filter(function(x){ return x>=hojeISO; })[0] || dias[0]);   // abre em hoje (ou no próximo dia com listagem)
+  var diasAtivos = (diaSel||[]).filter(function(x){ return dias.indexOf(x)>=0; }); if(!diasAtivos.length && diaPadrao) diasAtivos = [diaPadrao];
+  var doDia = abertas.filter(function(l){ return diasAtivos.indexOf(diaDe(l))>=0; })
+    .sort(function(a, b){ return chaveGrupo(a).localeCompare(chaveGrupo(b)); });
+  var conferir = s.kits.filter(function(k){ return k.status==="supervisao"; }).length;
+  var abreTodas = function(v){ var o = {}; if(!v) doDia.forEach(function(l){ o[chaveGrupo(l)] = true; }); setFechadas(o); };   // v=true: abre todas; v=false: fecha todas
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     e(BlocoErrosBipagem),
     papelDe(s.usuario)==="bipadora" && e(BarraBipadora),
-    e("div",{className:"flex flex-col gap-3"},
-          e("div",{className:"flex flex-wrap items-center gap-2"},
-            e("div",{className:"relative"}, e(Icon,{n:"search", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"}),
-              e("input",{className:INPUT+" w-60 pl-9 text-sm!", placeholder:"Buscar revendedora", value:f.busca, onChange:function(ev){setF({busca:ev.target.value});}})),
-            // Mesmo padrão para todos os controles da barra: 40px de altura, cantos iguais, texto 14px
-            e("div",{className:"relative"},
-              e(Icon,{n:"user", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"}),
-              e("select",{value:f.rep, "aria-label":"Representante", onChange:function(ev){setF({rep:ev.target.value});},
-                  className:"h-10 cursor-pointer rounded-lg border border-primary/50 bg-primary/10 pl-9 pr-3 text-sm font-semibold outline-none hover:bg-primary/15 focus:ring-3 focus:ring-ring/50"},
-                e("option",{value:"todas"},"Todas as representantes"), s.listagens.filter(function(l){return !l.fechada && (!l.data || l.data>=hojeISO);}).map(function(l){return e("option",{key:l.id, value:l.id}, l.rep+(l.data ? " · "+l.data.slice(8, 10)+"/"+l.data.slice(5, 7) : ""));}))),
-            e("div",{className:"relative"},
-              e(Icon,{n:"clock", s:16, className:"pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary"}),
-              e("select",{value:f.ordem, "aria-label":"Ordenar por", onChange:function(ev){setF({ordem:ev.target.value});},
-                  className:"h-10 cursor-pointer rounded-lg border border-primary/50 bg-primary/10 pl-9 pr-3 text-sm font-semibold outline-none hover:bg-primary/15 focus:ring-3 focus:ring-ring/50"},
-                e("option",{value:"fila"},"Ordem da fila"), e("option",{value:"horario"},"Por horário de atendimento"), e("option",{value:"situacao"},"Por situação (montado…)"))),
-            conferir>0 && e("span",{className:"inline-flex h-10 items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 text-sm font-semibold text-warning"},
-              e(Icon,{n:"alert", s:16}), conferir+(conferir>1?" kits acima de ":" kit acima de ")+BK(s.cfg.limiteAtencao)+" esperando a conferência da Deysiane"),
-            e("span",{className:"ml-auto text-sm text-muted-foreground"}, n+" kits"),
-            e(Segmentado,{opcoes:[["representante", "Por representante"], ["tabela", "Tabela"]], atual:visao, onMudar:setVisao}),
-            visao==="representante" && e("div",{className:"flex h-10 items-center gap-1 rounded-lg border border-border px-1"},
-              e(Btn,{v:"ghost", sm:true, ic:"chevrondown", onClick:function(){cx.dispatch({type:"TODAS", v:true});}},"Abrir todas"),
-              e(Btn,{v:"ghost", sm:true, ic:"chevron", onClick:function(){cx.dispatch({type:"TODAS", v:false});}},"Fechar todas"))),
-          // Situação: 5 opções, com a contagem ao vivo de cada uma
-          e("div",{className:"flex flex-wrap items-center gap-2"},
-            chipSit("todas","Todas", abertos.length, "primary"),
-            SITUACOES.map(function(x){ return chipSit(x.id, x.lb, abertos.filter(function(k){return x.st.indexOf(k.status)>=0;}).length, x.tom); })),
-          e(Fila,{filtroRep:f.rep, busca:f.busca, sit:f.sit, ordem:f.ordem, abrir:abrir, plano:visao==="tabela"})),
+    e(BlocoPainel,{titulo:"Listagens", compacto:true, alta:true,
+        acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel}) : null,
+        dir:e("div",{className:"flex items-center gap-1.5"}, e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(true); }}, "Abrir todas"), e("button",{type:"button", className:BTN_BARRA, onClick:function(){ abreTodas(false); }}, "Fechar todas"))},
+      conferir>0 && e("p",{className:"border-b border-border px-3 py-1 text-center text-[13px] font-semibold text-warning"}, conferir+(conferir>1 ? " kits acima de " : " kit acima de ")+BK(s.cfg.limiteAtencao)+" esperando a conferência da Deysiane"),
+      e(FilaPlanilha,{listagens:doDia, fechadas:fechadas, setFechadas:setFechadas, abrir:abrir})),
     e(DlgNovoKit,{lid: dlg.tipo==="kit" ? dlg.lid : null, fechar:fechar}),
     e(DlgRetirada,{lid: dlg.tipo==="ret" ? dlg.lid : null, fechar:fechar}));
 }
