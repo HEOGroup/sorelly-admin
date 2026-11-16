@@ -368,10 +368,43 @@ function saldoMaterial(m){ return m.estoqueAtual-m.estoqueMinimo; }
 // Crítico: abaixo do mínimo · Atenção: até atencaoPct% do mínimo · OK: acima
 function statusMaterial(m, cfg){ var pct = (cfg && cfg.atencaoPct) || 130; if(m.estoqueAtual<m.estoqueMinimo) return "CRITICO"; if(m.estoqueAtual<=m.estoqueMinimo*pct/100) return "ATENCAO"; return "OK"; }
 var solicitacoesDoMaterial = function(s, id){ return s.ce.solicitacoes.filter(function(x){ return mesmoId(x.materialId, id); }); };
+
+// ---------- ANDAMENTO DA COMPRA (Nickolas, 16/11/2026) ----------
+// O cartão do estoque mostra a situação do ESTOQUE (Crítico/Atenção/OK, pelo saldo e mínimo) e, ao lado, o ANDAMENTO da compra.
+// O andamento NÃO é guardado no material: é lido sempre da compra ligada (pedido de Compras com item materialId, ou a solicitação antiga do estoque, s.ce.solicitacoes). Assim não tem como divergir.
+// As etapas só agrupam os status que já existem em Compras (STATUS_PEDIDO); a tela de Compras continua mostrando o status completo.
+var ANDAMENTOS = ["SOLICITADO", "COTACAO", "APROVACAO", "A_COMPRAR", "ENTREGA", "RECEBIDO"];
+var ROTULO_ANDAMENTO = {SOLICITADO:"Solicitado", COTACAO:"Em cotação", APROVACAO:"Aguardando aprovação", A_COMPRAR:"Aprovado · a comprar", ENTREGA:"Aguardando entrega", RECEBIDO:"Recebido"};
+var ANDAMENTO_DO_PEDIDO = {NAO_VERIFICADA:"SOLICITADO", AGUARDANDO:"SOLICITADO", AGUARDANDO_ORCAMENTO:"COTACAO", AGUARDANDO_AUTORIZACAO:"APROVACAO", AGUARDANDO_CNPJ:"APROVACAO", AGUARDANDO_FORMA_PAGAMENTO:"APROVACAO",
+  APROVADA:"A_COMPRAR", LIBERADA:"A_COMPRAR", COMPRADA:"ENTREGA", EM_TRANSITO:"ENTREGA", RECEBIDA_PARCIAL:"ENTREGA", RECEBIDA:"RECEBIDO"};   // ENTREGUE, NEGADA e CANCELADA = compra encerrada
+var ANDAMENTO_DA_SOL = {SOLICITADO:"SOLICITADO", SEGURAR:"APROVACAO", APROVADO:"ENTREGA"};   // solicitações antigas do estoque (RECEBIDO e RECUSADO = encerrada)
+var ANDAMENTO_DECISAO = ["SOLICITADO", "COTACAO", "APROVACAO"];   // "Aguardando aprovação" do topo da aba
+var SITUACOES_NOTA = ["VERIFICAR", "VERIFICAR_UNIDADE"];   // anotações manuais antigas que não são etapa de compra: continuam como nota pequena no cartão
+// todas as compras do material (abertas e encerradas), da mais nova para a mais antiga
+// unidade do material ("un", "caixa", "pct"...) → unidade das Compras (UNIDADES); o que não casa vira UNID
+function unidadeDoMaterial(u){ var t = norm(u).replace(/[^a-z]/g, ""); if(/^(cx|caixa|caixas)$/.test(t)) return "CX"; if(/^(pct|pc|pacote|pacotes)$/.test(t)) return "PACOTE"; if(/^(rolo|rolos|rl)$/.test(t)) return "ROLO"; if(/^(par|pares)$/.test(t)) return "PAR"; if(/^(kit|kits)$/.test(t)) return "KIT"; return "UNID"; }
+function comprasDoMaterial(s, id){
+  var out = [];
+  s.ce.pedidos.forEach(function(p){
+    var its = p.itens.filter(function(i){ return mesmoId(i.materialId, id); }); if(!its.length) return;
+    var qtd = its.reduce(function(t, i){ return t+i.quantidade; }, 0), falta = its.reduce(function(t, i){ return t+Math.max(0, i.quantidade-i.qtdRecebida); }, 0), et = ANDAMENTO_DO_PEDIDO[p.status]||null;
+    out.push({tipo:"pedido", id:p.id, etapa:et, aberta:!!et, status:p.status, rotuloStatus:ROTULO_STATUS[p.status], rotuloEtapa:et ? ROTULO_ANDAMENTO[et] : ROTULO_STATUS[p.status], quantidade:qtd, falta:p.status==="RECEBIDA_PARCIAL" ? falta : 0, em:p.solicitadoEm, doEstoque:!!(p.origem && p.origem.tipo==="estoque")});
+  });
+  s.ce.solicitacoes.forEach(function(x){ if(!mesmoId(x.materialId, id)) return; var et = ANDAMENTO_DA_SOL[x.status]||null;
+    out.push({tipo:"sol", id:x.id, etapa:et, aberta:!!et, status:x.status, rotuloStatus:ROTULO_SOL[x.status], rotuloEtapa:et ? ROTULO_ANDAMENTO[et] : ROTULO_SOL[x.status], quantidade:x.quantidade, falta:0, em:x.solicitadoEm, doEstoque:true}); });
+  return out.sort(function(a, b){ return String(b.em).localeCompare(String(a.em)); });
+}
+// andamento para o selo: a compra aberta mais atrasada no fluxo é a principal; as outras viram "+N" (nenhuma fica escondida: a lista completa está no histórico)
+function andamentoMaterial(s, id){
+  var todas = comprasDoMaterial(s, id), abertas = todas.filter(function(c){ return c.aberta; }).sort(function(a, b){ return (ANDAMENTOS.indexOf(a.etapa)-ANDAMENTOS.indexOf(b.etapa)) || String(a.em).localeCompare(String(b.em)); });
+  var p = abertas[0]||null;
+  return {todas:todas, abertas:abertas, principal:p, etapa:p ? p.etapa : null, rotulo:p ? ROTULO_ANDAMENTO[p.etapa]+(p.falta ? " · falta "+p.falta : "") : "Sem compra em andamento", extra:Math.max(0, abertas.length-1)};
+}
 function materialVisto(s, m){
-  var sol = solicitacoesDoMaterial(s, m.id), cat = porId(s.ce.matCategorias, m.categoriaId);
+  var sol = solicitacoesDoMaterial(s, m.id), cat = porId(s.ce.matCategorias, m.categoriaId), and = andamentoMaterial(s, m.id);
   return Object.assign({}, m, {status:statusMaterial(m, s.ce.config), rotuloStatus:ROTULO_STATUS_MAT[statusMaterial(m, s.ce.config)], saldo:saldoMaterial(m), rotuloSituacao:ROTULO_SITUACAO[m.situacao], categoriaNome:cat ? cat.nome : "", tipoId:cat ? cat.tipoId : null, solicitacoes:sol,
-    aguardandoDecisao:sol.some(function(x){ return x.status==="SOLICITADO"; }), comprasChegando:sol.filter(function(x){ return x.status==="APROVADO"; }).length});
+    andamento:and, nota:SITUACOES_NOTA.indexOf(m.situacao)>=0 ? ROTULO_SITUACAO[m.situacao] : "",
+    aguardandoDecisao:and.abertas.some(function(c){ return ANDAMENTO_DECISAO.indexOf(c.etapa)>=0; }), comprasChegando:and.abertas.filter(function(c){ return c.etapa==="ENTREGA"; }).length});
 }
 var materiaisDoTipo = function(s, tipoId){ var ids = s.ce.matCategorias.filter(function(c){ return c.tipoId===tipoId; }).map(function(c){ return String(c.id); }); return s.ce.materiais.filter(function(m){ return ids.indexOf(String(m.categoriaId))>=0; }); };
 // cartões de alerta do topo de uma aba. Parados ficam fora. "Aguardando aprovação" = itens com solicitação ainda sem decisão (o original contava a situação manual, o que deixava a solicitação nova de fora: corrigido)
@@ -382,10 +415,17 @@ function alertasDoTipo(s, tipoId){
     if(v.aguardandoDecisao) r.aguardandoAprovacao++; r.comprasChegando += v.comprasChegando; });
   return r;
 }
+// filtro "Andamento da compra" (16/11/2026): "SEM" = sem compra aberta · "DECISAO" = alguma compra esperando decisão · etapa (SOLICITADO, COTACAO...) = alguma compra aberta nessa etapa · VERIFICAR/VERIFICAR_UNIDADE = a nota manual antiga
+function casaAndamento(v, k){
+  var ab = v.andamento.abertas;
+  if(k==="SEM") return !ab.length; if(k==="DECISAO") return ab.some(function(c){ return ANDAMENTO_DECISAO.indexOf(c.etapa)>=0; });
+  if(ANDAMENTOS.indexOf(k)>=0) return ab.some(function(c){ return c.etapa===k; });
+  return v.situacao===k;
+}
 // tabela da aba: por categoria (na ordem), itens ativos e "Materiais Parados" separados. o = {q, status:"CRITICO"|"ATENCAO"|"OK", situacao}
 function agruparPorStatus(s, tipoId, o){
   o = o||{}; var alvo = norm(o.q);
-  var filtra = function(v){ if(o.status && v.status!==o.status) return false; if(o.situacao && v.situacao!==o.situacao) return false; return !alvo || norm([v.material, v.fornecedor, v.observacoes, v.unidade].join(" ")).indexOf(alvo)>=0; };
+  var filtra = function(v){ if(o.status && v.status!==o.status) return false; if(o.situacao && !casaAndamento(v, o.situacao)) return false; return !alvo || norm([v.material, v.fornecedor, v.observacoes, v.unidade].join(" ")).indexOf(alvo)>=0; };
   return s.ce.matCategorias.filter(function(c){ return c.tipoId===tipoId; }).sort(function(a, b){ return (a.ordem-b.ordem) || (Number(a.id)-Number(b.id)); }).map(function(c){
     var itens = s.ce.materiais.filter(function(m){ return mesmoId(m.categoriaId, c.id); }).sort(function(a, b){ return a.numero-b.numero; }).map(function(m){ return materialVisto(s, m); }).filter(filtra);
     return {categoria:c, ativos:itens.filter(function(i){ return !i.parado; }), parados:itens.filter(function(i){ return i.parado; })};
@@ -432,7 +472,7 @@ function listarSolicitacoes(s, o){
 function proximaContagem(cfg, hoje){ var h = hoje||hojeSP(), dias = cfg.diasContagem||[]; if(!dias.length) return null; for(var i=0; i<8; i++){ var d = somaDias(h, i), w = new Date(Date.UTC(+d.slice(0, 4), +d.slice(5, 7)-1, +d.slice(8, 10))).getUTCDay(); if(dias.indexOf(w)>=0) return d; } return null; }
 // itens para o relatório "o que comprar": críticos/zerados e atenção, sem os parados e sem os já solicitados/aguardando entrega
 function listaParaComprar(s, tipoId){
-  return (tipoId ? materiaisDoTipo(s, tipoId) : s.ce.materiais).filter(function(m){ return !m.parado; }).map(function(m){ return materialVisto(s, m); }).filter(function(v){ return (v.status==="CRITICO" || v.status==="ATENCAO") && !v.aguardandoDecisao && v.comprasChegando===0; })
+  return (tipoId ? materiaisDoTipo(s, tipoId) : s.ce.materiais).filter(function(m){ return !m.parado; }).map(function(m){ return materialVisto(s, m); }).filter(function(v){ return (v.status==="CRITICO" || v.status==="ATENCAO") && !v.andamento.abertas.length; })   // sem nenhuma compra aberta (pedido de Compras ou solicitação antiga)
     .sort(function(a, b){ return (a.status===b.status ? 0 : a.status==="CRITICO" ? -1 : 1) || (a.saldo-b.saldo); });
 }
 
@@ -458,8 +498,30 @@ var EFETUA_MSG = "Só quem tem a autorização \"Efetuar compras liberadas\" pod
 
 function ceReduz(s, a){
   var ce = clone(s.ce), cfg = ce.config, por = a.por||"—", agora = a.agora||agoraSP(), hoje = diaDe(agora);
-  var recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{ce:ce}, msg:msg}; };
+  var recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ logaAndamento(); return {patch:{ce:ce}, msg:msg}; };
   var ped = function(){ return porId(ce.pedidos, a.id); }, mat = function(id){ return porId(ce.materiais, id!=null ? id : a.id); }, sol = function(){ return porId(ce.solicitacoes, a.id); };
+  // HISTÓRICO DO MATERIAL (16/11/2026): toda mudança de status de uma compra ligada a um material (por qualquer tela) e todo recebimento entram na linha do tempo do material.
+  // Compara com o estado de antes desta ação; não muda nada na compra nem no saldo (a entrada no estoque continua só no "Registrar recebimento").
+  var antes = {}, solAntes = {};
+  (s.ce.pedidos||[]).forEach(function(p){ antes[p.id] = {st:p.status, rec:(p.recebimentos||[]).length}; });
+  (s.ce.solicitacoes||[]).forEach(function(x){ solAntes[x.id] = x.status; });
+  var logaAndamento = function(){
+    ce.pedidos.forEach(function(p){
+      var b = antes[p.id]; if(!b) return;   // compra nova: quem cria registra
+      var recebeu = (p.recebimentos||[]).length>b.rec; if(b.st===p.status && !recebeu) return;
+      var ids = []; p.itens.forEach(function(i){ if(i.materialId!=null && !ids.some(function(z){ return mesmoId(z, i.materialId); })) ids.push(i.materialId); });
+      ids.forEach(function(id){
+        var m = porId(ce.materiais, id); if(!m) return;
+        var its = p.itens.filter(function(i){ return mesmoId(i.materialId, id); }), falta = its.reduce(function(t, i){ return t+Math.max(0, i.quantidade-i.qtdRecebida); }, 0), et = ANDAMENTO_DO_PEDIDO[p.status];
+        if(recebeu){
+          var ult = p.recebimentos[p.recebimentos.length-1], q = (ult.itens||[]).filter(function(x){ return its.some(function(i){ return mesmoId(i.id, x.itemId); }); }).reduce(function(t, x){ return t+x.qtd; }, 0);
+          logMat(ce, m, "RECEBIMENTO", "Compra #"+p.id+": recebido "+q+(falta ? " · ainda falta "+falta : " · recebimento completo"), por, agora);
+        } else logMat(ce, m, "ANDAMENTO", "Compra #"+p.id+": "+ROTULO_STATUS[b.st]+" → "+ROTULO_STATUS[p.status]+(et ? " ("+ROTULO_ANDAMENTO[et]+")" : " (compra encerrada)"), por, agora);
+      });
+    });
+    ce.solicitacoes.forEach(function(x){ var b = solAntes[x.id]; if(b===undefined || b===x.status) return; var m = porId(ce.materiais, x.materialId); if(!m) return;
+      logMat(ce, m, x.status==="RECEBIDO" ? "RECEBIMENTO" : "ANDAMENTO", "Pedido de material #"+x.id+": "+ROTULO_SOL[b]+" → "+ROTULO_SOL[x.status], por, agora); });
+  };
   var emUso = function(txt){ return recusa(txt); };
   // data opcional (YYYY-MM-DD): vazio → padrão; inválida → undefined
   var dataOu = function(v, padrao){ if(vazio(v)) return padrao; return ehDia(trim(v)) ? trim(v) : undefined; };
@@ -758,7 +820,9 @@ function ceReduz(s, a){
       if(!ehInt(a.estoqueMinimo===undefined ? 0 : a.estoqueMinimo) || num(a.estoqueMinimo===undefined ? 0 : a.estoqueMinimo)<0) return recusa("O estoque mínimo precisa ser um inteiro de 0 em diante."); if(a.fornecedorId && !porId(ce.fornecedores, a.fornecedorId)) return recusa("Fornecedor não encontrado.");
       var numero = ce.materiais.filter(function(m){ return mesmoId(m.categoriaId, cat.id); }).reduce(function(t, m){ return Math.max(t, m.numero); }, 0)+1;
       var nm2 = {id:proximoId(ce, a), categoriaId:cat.id, numero:numero, material:nmm, unidade:unm, fornecedorId:a.fornecedorId||null, fornecedor:fornNome(a.fornecedorId, a.fornecedor), estoqueMinimo:Math.round(num(a.estoqueMinimo)), estoqueAtual:0, atualizadoEm:null, ultimaContagem:null, ultimoCusto:null, parado:false, situacao:"NAO_PRECISA_COMPRAR", observacoes:trim(a.observacoes)};
-      ce.materiais.push(nm2); logMat(ce, nm2, "CRIADO", "", por, agora); return ok(nmm+" cadastrado (nº "+numero+"). O estoque começa em 0 até a primeira contagem.");
+      ce.materiais.push(nm2); logMat(ce, nm2, "CRIADO", "", por, agora);
+      if(a.foto && a.foto.key && /^an_[a-z0-9]{6,40}$/.test(String(a.foto.key))){ nm2.foto = {key:String(a.foto.key), nome:trim(a.foto.nome)||"foto.jpg", em:agora, por:por}; logMat(ce, nm2, "FOTO_INCLUIDA", nm2.foto.nome, por, agora); }   // foto já no cadastro (16/11/2026)
+      return ok(nmm+" cadastrado (nº "+numero+"). O estoque começa em 0 até a primeira contagem.");
     }
     case "mat_set": {
       var m2 = mat(); if(!m2) return recusa("Material não encontrado."); var dif = [], rot = {material:"Material", unidade:"Unidade", fornecedor:"Fornecedor", estoqueMinimo:"Estoque mínimo", observacoes:"Observações", categoria:"Categoria"};
@@ -775,7 +839,7 @@ function ceReduz(s, a){
     case "mat_obs": { var m5 = mat(); if(!m5) return recusa("Material não encontrado."); var ob = trim(a.texto); if(!ob) return recusa("Escreva a observação."); logMat(ce, m5, "OBSERVACAO", ob+(a.autor ? " ("+trim(a.autor)+")" : ""), por, agora); return ok("Observação anotada."); }
     case "mat_del": {
       var m6 = mat(); if(!m6) return recusa("Material não encontrado."); if(ce.solicitacoes.some(function(x){ return mesmoId(x.materialId, m6.id); })) return emUso("Esse material tem compra registrada: marque como parado em vez de excluir.");
-      if(ce.pedidos.some(function(p){ return mesmoId(p.materialId, m6.id); })) return emUso("Há pedidos de compra ligados a esse material: marque como parado em vez de excluir.");
+      if(ce.pedidos.some(function(p){ return p.itens.some(function(i){ return mesmoId(i.materialId, m6.id); }); })) return emUso("Há pedidos de compra ligados a esse material: marque como parado em vez de excluir.");
       logMat(ce, m6, "EXCLUIDO", "", por, agora); ce.movimentos = ce.movimentos.filter(function(x){ return !mesmoId(x.materialId, m6.id); }); ce.materiais = ce.materiais.filter(function(x){ return x!==m6; }); return ok("Material excluído.");
     }
 
@@ -800,6 +864,31 @@ function ceReduz(s, a){
     }
 
     // ---------------- estoque: solicitação de compra por item ----------------
+    case "estoque_pedir": {   // CARRINHO DO CARTÃO (16/11/2026): vira um PEDIDO da área de Compras ligado ao material (item.materialId), com o retrato do estoque congelado em p.origem
+      var mp = mat(a.materialId); if(!mp) return recusa("Material não encontrado.");
+      if(!ehInt(a.quantidade) || num(a.quantidade)<1) return recusa("A quantidade precisa ser um inteiro de 1 em diante.");
+      if(a.fornecedorId && !porId(ce.fornecedores, a.fornecedorId)) return recusa("Fornecedor não encontrado.");
+      var abM = andamentoMaterial({ce:ce}, mp.id).abertas;
+      if(abM.length && !a.forcar) return recusa("Esse material já tem "+abM.length+(abM.length===1 ? " compra em andamento" : " compras em andamento")+". Confira antes de pedir outra.");
+      var catM = porId(ce.matCategorias, mp.categoriaId), qtdM = Math.round(num(a.quantidade)), fidM = a.fornecedorId || mp.fornecedorId || null;
+      var npM = novoPedido(ce, {titulo:mp.material, itens:[{titulo:mp.material, quantidade:qtdM, unidade:unidadeDoMaterial(mp.unidade), materialId:mp.id, classificacao:"material"}], observacao:trim(a.observacao),
+        fornecedorId:fidM, fornecedorNome:fornNome(fidM, mp.fornecedor), urgencia:a.urgencia, status:"NAO_VERIFICADA", solicitadoEm:agora}, agora, por, false);
+      // valores do momento do pedido: NUNCA mudam depois (o saldo e o mínimo de hoje aparecem à parte na tela). O mínimo não vira quantidade a comprar.
+      npM.origem = {tipo:"estoque", materialId:mp.id, material:mp.material, unidade:mp.unidade||"", categoria:catM ? catM.nome : "", aba:catM ? nomeDe(cfg.tipos, catM.tipoId, "") : "", saldo:mp.estoqueAtual, minimo:mp.estoqueMinimo, quantidade:qtdM, em:agora, por:por, foto:mp.foto ? {key:mp.foto.key, nome:mp.foto.nome} : null};
+      evento(npM, por, "Pedida pelo Estoque de material (saldo "+mp.estoqueAtual+", mínimo "+mp.estoqueMinimo+")", agora);
+      ce.pedidos.push(npM);
+      logMat(ce, mp, "COMPRA_PEDIDA", "Compra #"+npM.id+": "+qtdM+(mp.unidade ? " "+mp.unidade : "")+" (saldo "+mp.estoqueAtual+", mínimo "+mp.estoqueMinimo+")"+(abM.length ? " · já havia "+abM.length+" em andamento" : "")+(trim(a.observacao) ? " · "+trim(a.observacao) : ""), por, agora);
+      return ok("Compra #"+npM.id+" pedida: já aparece em Compras como Solicitada.");
+    }
+    case "mat_foto": {   // FOTO DO MATERIAL (16/11/2026): a.foto = {key, nome} (incluir ou trocar) ou null (remover). O arquivo fica no servidor (/api/anexos, módulo ce); aqui só a chave
+      var mf = mat(); if(!mf) return recusa("Material não encontrado.");
+      var fNova = a.foto && a.foto.key ? {key:String(a.foto.key), nome:trim(a.foto.nome)||"foto.jpg", em:agora, por:por} : null;
+      if(fNova && !/^an_[a-z0-9]{6,40}$/.test(fNova.key)) return recusa("Foto inválida.");
+      if(!fNova && !mf.foto) return recusa("Esse material não tem foto.");
+      var acF = !fNova ? "FOTO_REMOVIDA" : mf.foto ? "FOTO_TROCADA" : "FOTO_INCLUIDA";
+      mf.foto = fNova; logMat(ce, mf, acF, fNova ? fNova.nome : "", por, agora);
+      return ok(!fNova ? "Foto removida." : acF==="FOTO_TROCADA" ? "Foto trocada." : "Foto incluída.");
+    }
     case "sol_add": {
       var m9 = mat(a.materialId); if(!m9) return recusa("Material não encontrado."); if(!ehInt(a.quantidade) || num(a.quantidade)<1) return recusa("A quantidade precisa ser um inteiro de 1 em diante."); if(a.fornecedorId && !porId(ce.fornecedores, a.fornecedorId)) return recusa("Fornecedor não encontrado.");
       var ns2 = {id:proximoId(ce, a), materialId:m9.id, quantidade:Math.round(num(a.quantidade)), status:"SOLICITADO", solicitadoPor:por, solicitadoEm:agora, decididoPor:null, decididoEm:null, observacao:trim(a.observacao), dataCompra:null, dataPrevisaoChegada:null, dataRecebimento:null,
@@ -834,7 +923,7 @@ function ceReduz(s, a){
 export { ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
   CONFIG_PADRAO, STATUS_PEDIDO, ROTULO_STATUS, TOM_STATUS, FUNIL_STATUS, HISTORICO_STATUS, PAGAVEL_STATUS, ETIQUETA_ELEGIVEL, ETIQUETAS, ROTULO_ETIQUETA, UNIDADES, ROTULO_UNIDADE, URGENCIAS, ROTULO_URGENCIA, TIPOS_ENTREGA, ROTULO_ENTREGA,
   FORMAS_PAGAMENTO, ROTULO_FORMA, FORMAS_PLANO, ROTULO_FORMA_PLANO, MOTIVOS_ORCAMENTO, ROTULO_MOTIVO_ORC, PAPEIS_COMPRAS, ROTULO_PAPEL, CAPS_COMPRAS, TRANSICOES,
-  SITUACOES, ROTULO_SITUACAO, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
+  SITUACOES, ROTULO_SITUACAO, ANDAMENTOS, ROTULO_ANDAMENTO, ANDAMENTO_DO_PEDIDO, andamentoMaterial, comprasDoMaterial, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
   formatarReais, formatarDia, formatarDataHora, formatarHoras,
   papelCompras, podeCompras, veFunilCompleto, podeAprovarCompra, podeEfetuarCompra, podeEditarPlano, capacidadesEstoque, podeEstoque,
   rotuloConta, rotuloCnpj, opcoesCnpj, contasDoCnpj, orcamentosExigidos, textoOrcamentos, entraNoEstoque, planoSituacao, totalDaCompra, compraParaPedidoPagamentos, compraParaOrientacoes,

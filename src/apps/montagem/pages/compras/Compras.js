@@ -94,8 +94,8 @@ function CartaoCompra(p){
   var pode = !!tr && podeAcaoPedido(pd, op) && c.pode(tr, pd), selo = SELO_STATUS[pd.status] || (pd.status==="LIBERADA" && pd.liberacao ? (pd.liberacao.modo==="plano" ? ["Plano definido", "ok"] : ["Comprador define", "neutro"]) : null), urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[pd.urgencia];
   var naoFecha = !final && pd.plano.length>0 && !pd.planoInfo.fecha;
   return e("div",{className:"flex flex-col items-center gap-1.5"},
-    e("div",{className:"flex w-full items-start justify-center gap-1.5"}, e("b",{className:MONO+" text-[12px] text-[#BFDBFE]"}, "#"+pd.id), e("span",{className:"line-clamp-2 min-w-0 break-words text-[13px] font-bold leading-tight"}, pd.titulo)),
-    e("span",{className:"w-full truncate text-[12px] text-white/70", title:pd.fornecedor}, pd.fornecedor || "Sem fornecedor"),
+    e("div",{className:"flex w-full items-start justify-center gap-1.5"}, e("b",{className:MONO+" text-[11px] text-[#BFDBFE]"}, "#"+pd.id), e("span",{className:"min-w-0 break-words text-[13px] font-bold leading-tight"}, pd.titulo)),   // título e fornecedor inteiros (16/11/2026)
+    e("span",{className:"w-full break-words text-[11px] text-white/80"}, pd.fornecedor || "Sem fornecedor"),
     e("span",{className:MONO+" text-[14px] font-bold"}, formatarReais(pd.valorFinal)),
     e("div",{className:"flex items-center justify-center gap-1.5"}, e(Avatar,{nome:pd.solicitante, s:22}), pd.cnpjId && e("span",{title:pd.cnpj, className:"rounded bg-white/10 px-1.5 py-0.5 text-[10.5px] font-bold"}, cnpjCurto(pd)),
       pd.link && e(Ph,{n:"link", s:14, className:"text-[#BFDBFE]"}), pd.mensagens.length>0 && e("span",{title:pd.mensagens.length+" mensagens", className:"inline-flex items-center gap-0.5 text-[11px] text-white/70"}, e(Ph,{n:"chat-circle-text", s:14}), pd.mensagens.length)),
@@ -207,8 +207,8 @@ function AbaCompraPlanilha(){
       : e("div",{className:"rounded-xl bg-black/20 p-2 ring-1 ring-white/10"},
         e(Tab,{cols:["Nº", "Data", "Compra", "Fornecedor", "Solicitante", "Classificação", "CNPJ", "Valor", "Situação", "Vencimento"]}, vis.map(function(p){
           return e("tr",{key:p.id, onClick:function(){ ac.abrir(p.id); }, className:LINHA+" cursor-pointer hover:bg-white/5"},
-            e(Td,{dinheiro:true, forte:true}, "#"+p.id), e(Td,null, formatarDia(String(p.solicitadoEm).slice(0, 10))), e(Td,{className:"max-w-[14rem] truncate", forte:true}, e("span",{title:p.titulo}, p.titulo)), e(Td,{className:"max-w-[10rem] truncate"}, e("span",{title:p.fornecedor}, p.fornecedor || "—")),
-            e(Td,null, p.solicitante), e(Td,{className:"max-w-[9rem] truncate"}, p.classificacoesTxt || "—"), e(Td,null, cnpjCurto(p) || "—"), e(Td,{dinheiro:true}, formatarReais(p.valorFinal)),
+            e(Td,{dinheiro:true, forte:true}, "#"+p.id), e(Td,null, formatarDia(String(p.solicitadoEm).slice(0, 10))), e(Td,{className:"min-w-[14rem] whitespace-normal break-words", forte:true}, p.titulo), e(Td,{className:"min-w-[10rem] whitespace-normal break-words"}, p.fornecedor || "—"),   // nada cortado (16/11/2026)
+            e(Td,null, p.solicitante), e(Td,{className:"min-w-[9rem] whitespace-normal break-words"}, p.classificacoesTxt || "—"), e(Td,null, cnpjCurto(p) || "—"), e(Td,{dinheiro:true}, p.valorCompra==null && !(p.valorFinal>0) ? "A definir" : formatarReais(p.valorFinal)),
             e(Td,null, e(Selo,{cor:corSit(p)}, p.rotuloStatus)), e(Td,{cor:p.vencido ? "ruim" : undefined}, formatarDia(p.proximoVencimento) || "—"));
         })),
         paginas>1 && e("div",{className:"flex flex-wrap items-center justify-center gap-2 pt-2"},

@@ -96,7 +96,7 @@ function PainelComprasEstoque(){
         card:function(it){ return e(CartaoCompra,{p:it, c:c, ac:ac, hoje:hoje}); },
         onMover:function(it, de, para){ mover(c, ac, it, de, para); },
         onAbrir:function(it){ ac.abrir(it.id); }}))),
-    mJan && e(JanelaPedir,{m:mJan, x:x, pode:{compra:podeComprar}, fechar:function(){ sJ[1](null); }}),
+    mJan && e(JanelaPedir,{m:mJan, x:x, pode:{compra:podeComprar}, fechar:function(){ sJ[1](null); }, verCompra:function(cp){ if(cp && cp.tipo==="pedido") ac.abrir(cp.id); }}),
     ac.janelas());
 }
 

@@ -55,13 +55,22 @@ export function enviarAnexo(modulo, a){
   return p.then(pronto);
 }
 
-export function abrirAnexo(key){
-  return chamar("GET", "/anexos/"+encodeURIComponent(key)).then(function(r){
+// lerAnexo(key) → Promise de {nome, mime, url} (data URL), para mostrar na tela (ex.: foto do material). Guarda em memória: a mesma foto não é baixada duas vezes.
+var CACHE = {};
+export function lerAnexo(key){
+  if(CACHE[key]) return CACHE[key];
+  CACHE[key] = chamar("GET", "/anexos/"+encodeURIComponent(key)).then(function(r){
     if(!r.partes) return r;
     var texto = "", p = Promise.resolve();   // arquivo grande: busca em pedaços e junta
     for(var i = 0; i<r.partes; i++){ (function(n){ p = p.then(function(){ return chamar("GET", "/anexos/"+encodeURIComponent(key)+"?parte="+n).then(function(x){ texto += x.pedaco; }); }); })(i); }
     return p.then(function(){ return {nome:r.nome, mime:r.mime, url:texto}; });
-  }).then(function(r){
+  });
+  CACHE[key].catch(function(){ delete CACHE[key]; });
+  return CACHE[key];
+}
+
+export function abrirAnexo(key){
+  return lerAnexo(key).then(function(r){
     return fetch(r.url).then(function(b){ return b.blob(); }).then(function(blob){
       var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.target = "_blank"; a.rel = "noopener"; a.download = ""; a.removeAttribute("download");
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(a.href); }, 60000);

@@ -8,8 +8,9 @@ import { ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_PLANO, MOTIVOS_ORCAMENTO, PAGAVEL_
 import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
+import { FotoMaterial } from "@/apps/montagem/components/foto-material";
 
-var CAMPO = INPUT+" h-9! w-full text-center text-[13px]!";
+var CAMPO = INPUT+" h-8! w-full text-center text-[13px]!";
 var r2 = function(n){ return Math.round((n || 0)*100)/100; };
 var DIRETAS = {aprovar:1, autorizar:1, transito:1, cnpj_desfazer:1};   // ações que não pedem dado nenhum: executam no clique
 var idDe = function(lista, v){ var x = (lista || []).find(function(y){ return String(y.id)===String(v); }); return x ? x.id : undefined; };
@@ -85,7 +86,7 @@ function DlgReceber(p){
     e(Campo,{rot:"Data do recebimento"}, e("input",{type:"date", value:v.dia, max:hojeSP(), onChange:function(ev){ st[1](Object.assign({}, v, {dia:ev.target.value})); }, className:CAMPO})),
     e("div",{className:"flex flex-col gap-1.5"}, pend.map(function(i){
       return e("div",{key:i.id, className:"flex items-center gap-2 rounded-lg bg-black/25 px-2 py-1.5 text-left"},
-        e("div",{className:"min-w-0 flex-1"}, e("div",{className:"truncate text-[13px] font-bold"}, i.titulo), e("div",{className:"text-[11px] text-white/60"}, "Faltam "+i.pendente+" de "+i.quantidade+" "+(i.rotuloUnidade || "").toLowerCase()+(i.entraEstoque ? (i.semMaterial ? " · sem material ligado" : " · entra no estoque") : ""))),
+        e("div",{className:"min-w-0 flex-1"}, e("div",{className:"break-words text-[13px] font-bold"}, i.titulo), e("div",{className:"text-[11px] text-white/70"}, "Faltam "+i.pendente+" de "+i.quantidade+" "+(i.rotuloUnidade || "").toLowerCase()+(i.entraEstoque ? (i.semMaterial ? " · sem material ligado" : " · entra no estoque") : ""))),
         e("input",{type:"number", min:0, max:i.pendente, value:v.q[i.id], "aria-label":"Quantidade recebida de "+i.titulo, onChange:function(ev){ setQ(i.id, ev.target.value); }, className:INPUT+" h-9! w-20 text-center "+MONO}));
     })));
 }
@@ -363,14 +364,23 @@ function Detalhe(p){
       e("div",{className:"grid grid-cols-2 gap-1.5"},
         e(Dado,{t:"Fornecedor", v:ped.fornecedor || "—"}), e(Dado,{t:"Solicitante", v:ped.solicitante}), e(Dado,{t:"Setor", v:ped.setorNome}), e(Dado,{t:"Categoria", v:ped.categoriaNome}),
         e(Dado,{t:"Classificação", v:ped.classificacoesTxt || "—"}), e(Dado,{t:"CNPJ pagador", v:ped.cnpj || "—"}),
-        e(Dado,{t:ped.valorCompra!=null ? "Valor da compra" : "Valor estimado", v:formatarReais(ped.valorFinal), mono:true}), e(Dado,{t:"Prazo de entrega", v:formatarDia(ped.previsaoEntrega) || "—"}),
+        e(Dado,{t:ped.valorCompra!=null ? "Valor da compra" : "Valor estimado", v:ped.valorCompra==null && !(ped.valorFinal>0) ? "A definir" : formatarReais(ped.valorFinal), mono:true}), e(Dado,{t:"Prazo de entrega", v:formatarDia(ped.previsaoEntrega) || "—"}),
         e(Dado,{t:"Vencimento", v:formatarDia(ped.proximoVencimento)}), e(Dado,{t:"Nº do pedido", v:ped.numeroFornecedor}), e(Dado,{t:"Condições", v:ped.condicoesTxt})),
       ped.link && e("a",{href:/^https?:\/\//i.test(ped.link) ? ped.link : "https://"+ped.link, target:"_blank", rel:"noopener noreferrer", className:"inline-flex items-center justify-center gap-1.5 break-all rounded-lg bg-black/25 px-2 py-1.5 text-[12.5px] font-bold text-[#BFDBFE] hover:bg-black/40"}, e(Ph,{n:"link", s:14}), ped.link),
       ped.observacao && e("p",{className:"break-words rounded-lg bg-black/25 px-2 py-1.5 text-[12.5px] text-white/80"}, ped.observacao)),
+    ped.origem && ped.origem.tipo==="estoque" && e(RetratoEstoque,{c:c, o:ped.origem}),
     e(Painel,{t:"Itens", ic:"package"},
-      e(Tab,{cols:["Item", "Qtd", "Unitário", "Total", "Recebido"]}, ped.itens.map(function(i){
-        return e("tr",{key:i.id, className:"border-t border-white/10"}, e(Td,{className:"max-w-[9rem] truncate", forte:true}, e("span",{title:i.titulo}, i.titulo)), e(Td,{dinheiro:true}, i.quantidade+" "+(i.rotuloUnidade || "").toLowerCase()), e(Td,{dinheiro:true}, i.valorUnitario!=null ? formatarReais(i.valorUnitario) : "—"), e(Td,{dinheiro:true}, formatarReais(i.valorTotal)), e(Td,{dinheiro:true, cor:i.qtdRecebida>=i.quantidade ? "ok" : i.qtdRecebida>0 ? "alerta" : undefined}, i.qtdRecebida+"/"+i.quantidade));
-      })),
+      // uma FICHA por item (Nickolas, 16/11/2026): nome e valores sempre inteiros para quem aprova (a tabela espremida cortava com "…"). Sem preço ainda = "A definir", nunca R$ 0,00
+      ped.itens.map(function(i){
+        var semPreco = i.valorUnitario==null && !(i.valorTotal>0), corRec = i.qtdRecebida>=i.quantidade ? ESTADO.ok : i.qtdRecebida>0 ? ESTADO.alerta : "#FFFFFF";
+        return e("div",{key:i.id, className:"flex flex-col gap-1.5 rounded-lg bg-black/25 p-2 ring-1 ring-white/10"},
+          e("b",{className:"break-words text-[13px] leading-snug text-white"}, i.titulo),
+          e("div",{className:"grid grid-cols-3 gap-1.5"},
+            e(Dado,{t:"Quantidade", v:i.quantidade+" "+(i.rotuloUnidade || "").toLowerCase(), mono:true}),
+            e(Dado,{t:"Unitário", v:i.valorUnitario!=null ? formatarReais(i.valorUnitario) : "A definir", mono:i.valorUnitario!=null}),
+            e(Dado,{t:"Total", v:semPreco ? "A definir" : formatarReais(i.valorTotal), mono:!semPreco})),
+          e("span",{className:"text-[11px] font-bold uppercase", style:{color:corRec}}, "Recebido: "+i.qtdRecebida+" de "+i.quantidade));
+      }),
       ped.itens.some(function(i){ return i.semMaterial; }) && e("p",{className:"text-[11.5px] text-[#FBBF24]"}, "Há item que entra no estoque sem material ligado: no recebimento ele não dará entrada."),
       podeEditar && e(Bt,{ic:"pencil-simple", className:"self-center", onClick:function(){ ac.editar(ped.id); }}, "Editar compra")));
   var col2 = e("div",{key:"b", className:"flex flex-col gap-2.5"}, e(Etapas,{ped:ped}), e(PlanoPag,{c:c, ped:ped}), e(Conversa,{c:c, ped:ped}));
@@ -396,6 +406,21 @@ function Detalhe(p){
         ? e("div",{className:"flex flex-col items-center gap-1.5"}, e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada em "+formatarDataHora(ped.enviadaPagamentos.em)), e("span",{className:"text-[12px] text-white/70"}, "Por "+ped.enviadaPagamentos.por), e(Bt,{ic:"receipt", onClick:function(){ ac.enviar(ped.id); }}, "Ver o que foi enviado"))
         : e(Bt,{tipo:"forte", ic:"paper-plane-tilt", disabled:!(c.pode(TRANSICOES.enviar_pagamentos, ped)), semAut:true, onClick:function(){ ac.enviar(ped.id); }}, "Enviar para pagamentos")));
   return e(Janela,{t:"Compra #"+ped.id, sub:ped.titulo+" · "+ped.rotuloStatus, fechar:p.fechar, colunas:[col1, col2, col3]});
+}
+
+// ───────────── retrato do estoque no pedido feito pelo carrinho do Estoque de material (16/11/2026) ─────────────
+// Os números de cima foram guardados quando a compra foi pedida e NÃO mudam. O saldo e o mínimo de hoje vêm à parte, com o nome "atual".
+function RetratoEstoque(p){
+  var o = p.o, mAt = (p.c.ce.materiais || []).find(function(x){ return String(x.id)===String(o.materialId); }) || null, un = o.unidade ? " "+o.unidade : "";
+  return e(Painel,{t:"Estoque no momento da solicitação", ic:"warehouse"},
+    e(FotoMaterial,{foto:(mAt && mAt.foto) || o.foto, rot:o.material, tam:"g"}),
+    e("b",{className:"text-[13px]"}, o.material),
+    e("div",{className:"grid grid-cols-2 gap-1.5"},
+      e(Dado,{t:"Saldo no momento", v:o.saldo+un, mono:true}), e(Dado,{t:"Mínimo no momento", v:o.minimo+un, mono:true}),
+      e(Dado,{t:"Quantidade solicitada", v:o.quantidade+un, mono:true}), e(Dado,{t:"Origem", v:"Estoque de material"}),
+      e(Dado,{t:"Solicitado em", v:formatarDataHora(o.em)}), e(Dado,{t:"Responsável", v:o.por})),
+    mAt ? e("div",{className:"grid grid-cols-2 gap-1.5 border-t border-white/10 pt-1.5"}, e(Dado,{t:"Saldo atual (hoje)", v:mAt.estoqueAtual+un, mono:true}), e(Dado,{t:"Mínimo atual (hoje)", v:mAt.estoqueMinimo+un, mono:true}))
+      : e("span",{className:"text-[11px] text-white"}, "O material não está mais cadastrado no estoque."));
 }
 
 // ───────────── tudo junto: abrir, nova, iniciar, janelas ─────────────
