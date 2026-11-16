@@ -100,7 +100,6 @@ const montagem = {
     pagina("comissoes-metas-agendamento", () => import("@/apps/montagem/pages/Agendamento"), "AbaAgMetas"),
     pagina("visao-bipagem", () => import("@/apps/montagem/pages/VisaoBipagem"), "AbaVisaoBipagem"),
     pagina("meu-desempenho", () => import("@/apps/montagem/pages/MeuDesempenho"), "AbaMeuDesempenho"),
-    pagina("calculadora", () => import("@/apps/montagem/pages/Calculadora"), "AbaCalculadora"),
     pagina("consolidado", () => import("@/apps/montagem/pages/Consolidado"), "AbaConsolidado"),
     pagina("relatorios", () => import("@/apps/montagem/pages/Relatorios"), "AbaRelatorios"),
     pagina("equipe", () => import("@/apps/montagem/pages/Equipe"), "AbaEquipe"),
@@ -195,7 +194,6 @@ const montagem = {
     pagina("app-funcionarias", () => import("@/apps/montagem/pages/CelularFuncionarios"), "AbaCelularFunc"),
     { path: "app-representante", element: e(Navigate, { to: "/apps", replace: true }) },
     { path: "financeiro/pix-representantes", element: e(Navigate, { to: "/" + ENDERECO_DA_ABA.direcionar, replace: true }) },   // 12/11/2026 (Marcus): a tela Pix representantes foi excluída; o endereço antigo abre o Direcionar   // 01/11/2026 (Marcus): tela de app só existe uma, a aba Apps
-    pagina("vendas-vendas", () => import("@/apps/montagem/pages/Vendas"), "AbaVendasVendas"),
     pagina("caixa", () => import("@/apps/montagem/pages/Caixa"), "AbaCaixa"),
     pagina("emprestimos", () => import("@/apps/montagem/pages/Emprestimos"), "AbaEmprestimos"),
     pagina("chaves-pix-dos-bancos", () => import("@/apps/montagem/pages/ChavesPixBancos"), "AbaChavesPixBancos"),

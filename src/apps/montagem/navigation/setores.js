@@ -79,7 +79,7 @@ var MENU_AGENDAMENTO = [   // 01/11/2026 (Marcus): Painel (versão D, calendári
 // Menu de Representantes & Kits (23/10/2026): mesmo estilo do Financeiro e do Cadastro, na ORDEM DO FLUXO: Kits (montar, bipar, acompanhar) → Representantes (acerto na rua) → Financeiro (comissões, Pix, inadimplência) → Regras. Nenhuma tela saiu: só mudou de lugar.
 var MENU_REPRESENTANTES = [
   // no máximo 2 níveis (palavra → lista): os três grupos de Kits subiram para a barra, na ordem do fluxo
-  {nome:"Montagem", itens:[M("Produção","producao"), M("Listagens","painel"), M("Condicionais","condicionais"), M("Calculadora de kits","calc"), M("Análise de vendas","vendas"), M("Preferências do kit","prefkit")]},
+  {nome:"Montagem", itens:[M("Produção","producao"), M("Listagens","painel"), M("Condicionais","condicionais"), M("Preferências do kit","prefkit")]},
   {nome:"Bipagem", itens:[M("Visão geral da bipagem","visaobip"), M("Meu desempenho","meudesemp"), M("Comissões da bipagem","comisbip",{perm:"comissao_bipagem"})]},
   {nome:"Acompanhamento", itens:[M("Consolidado","consolidado"), M("Equipe e comissões","equipe"), M("Registros","registros"), M("Relatórios","relatorios"), M("Regras da montagem","regras")]},
   {nome:"Representantes", itens:[M("Painel","reppainel"), M("Consolidado","consrep"), M("Controle de kits","controlekits"), M("Placar","placar")]},
@@ -195,8 +195,8 @@ var SETORES = [
     {nome:"Representantes", telas:[T("reppainel","Painel das representantes"), T("consrep","Consolidado Representante"), T("controlekits","Controle de kits")]},
     {nome:"Regras", telas:[T("regrasrep","Regras dos representantes"), T("regrasacerto","Regras dos acertos")]},
     {nome:"Desempenho", telas:[T("placar","Placar das representantes")]},
-    {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"), I("calc","Calculadora de kits",["Calculadora de Kits do admin"]),
-      T("vendas","Análise de vendas"), T("consolidado"), T("regras"),
+    {nome:"Kits (interno)", telas:[T("visaobip"), T("meudesemp"), T("comisbip","Comissões da bipagem"), T("painel"), T("condicionais"),
+      T("consolidado"), T("regras"),
       T("prefkit","Preferências do kit"),
       T("equipe"), T("registros"), T("relatorios")]},
     {nome:"Produção", telas:[T("producao","Produção")]}]},

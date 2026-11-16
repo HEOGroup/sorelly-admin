@@ -108,7 +108,6 @@ function reducer(s, a){
     case "ACESSO_SET": { var ac = Object.assign({}, s.acessos); if(a.abas) ac[a.papel] = a.abas; else delete ac[a.papel]; return com(s, {acessos:ac}, a.abas ? "Acessos salvos" : "Acessos voltaram ao padrão"); }
     case "ACESSO_BLOCO": { var ab = Object.assign({}, s.acessosBlocos); if(a.grupos) ab[a.chave] = a.grupos; else delete ab[a.chave]; return com(s, {acessosBlocos:ab}); }
     case "ABA": return com(s, {aba:a.aba, breveNome: a.breve || s.breveNome});
-    case "ABRIR_CALC": return com(s, {aba:"calc", calcKit:a.id});
     case "VISAO_MENU": return com(s, {visaoMenu:a.v});
     case "VER_FIN": return com(s, {verFinanceiro:a.v});
     // Lançamento diário do faturamento: sempre referente ao dia anterior. "revendedoras" é o total absoluto naquele dia —

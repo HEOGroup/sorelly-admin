@@ -67,7 +67,6 @@ function MenuAcoes(p){
     listaMont("m", s.montadoras, function(m, exc){ return {type:"DESIGNAR", id:k.id, montId:m.id, excecao:exc}; }, function(m){ return k.designada===m.id; }).forEach(function(x){ itens.push(x); });
   }
   if(k.status==="semvalor") itens.push(item("sug","Usar sugerido, "+BK(sugerido(k.vendas, s.cfg)), fazer({type:"DEFINIR_VALOR", id:k.id, valor:sugerido(k.vendas, s.cfg)})));
-  if((k.status==="semvalor" || k.status==="pendente") && !SEM_KIT[k.tipoKit]) itens.push(item("calc","Calcular na calculadora de kits", fazer({type:"ABRIR_CALC", id:k.id}), "text-primary"));
   if(k.status==="supervisao"){
     itens.push(item("lib","Conferido, liberar para bipagem", fazer({type:"APROVAR", id:k.id}), "font-medium text-success"));
     itens.push(titulo("t2","Voltar para ajuste"));
