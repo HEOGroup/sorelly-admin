@@ -150,7 +150,6 @@ const montagem = {
     pagina("cadastro-de-pecas-fornecedores", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasFornecedores"),
     pagina("cadastro-de-pecas-devmaster", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasDevMaster"),
     pagina("cadastro-de-pecas-configuracoes", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasConfig"),
-    pagina("pedir-pecas", () => import("@/apps/montagem/pages/PedirPecas"), "AbaPedirPecas"),
     pagina("preferencias-do-kit", () => import("@/apps/montagem/pages/PreferenciasKit"), "AbaPreferenciasKit"),
     pagina("avaliacoes", () => import("@/apps/montagem/pages/Avaliacoes"), "AbaAvaliacoes"),
     pagina("encomendas-e-reposicoes", () => import("@/apps/montagem/pages/Encomendas"), "AbaEncomendas"),

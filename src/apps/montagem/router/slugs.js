@@ -164,7 +164,6 @@ export const SLUG_DA_ABA = {
   cpdev: "cadastro-de-pecas-devmaster",
   cpcfg: "cadastro-de-pecas-configuracoes",
   prefkit: "preferencias-do-kit",
-  pedirpecas: "pedir-pecas",
   desempenhocad: "desempenho-do-cadastro",
   celfunc: "app-funcionarias",
   celrep: "app-representante",

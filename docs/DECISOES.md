@@ -2490,3 +2490,5 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - **16/11/2026 (Marcus):** "esconde as liberadas antigas". Na tela Condicionais só aparecem as que ainda aguardam e as liberadas HOJE; as liberadas de dias anteriores saem. Para rever, o menu do Dia tem a opção "Mostrar também as liberadas antigas" (marca e desmarca). Dia passado com só liberadas some da lista de dias. O histórico das listagens retiradas continua no Consolidado.
 
 - 16/11/2026 (Link de pagamento): card da Solicitação refeito no padrão azul (Andamento, Editar, Ações); cursor normal nas linhas da planilha; botões Confirmar pagamento, Copiar texto e Marcar enviado corrigidos (erro stopPropagation).
+
+- **16/11/2026 (Marcus, print):** a tela PEDIR PEÇAS do admin (Representantes & Kits → Montagem → Pedir peças) foi EXCLUÍDA: página, rota, endereço, menu e acesso da montadora. Ficam o estado `s.pp`, o domínio `domain/pedidos-pecas.js` e o app da montadora (`mobile/montadora-pedido.js`), que não foram pedidos para sair; sem a tela, quem pede pelo app da montadora não tem onde ver o pedido no admin (perguntar ao Marcus se o app também sai).
