@@ -110,7 +110,7 @@ function AbaConsolidadoInterno(){
                     : e("span",{className:"text-warning"},"Em conferência"); })()),
                 td(x.bipou ? x.bipou.split(" ")[0] : dash), td(x.atendeu ? x.atendeu.split(" ")[0] : dash),
                 td(x.kitNovo ? e("span",{className:"font-semibold text-success"},"Sim") : "Não"),
-                td(x.continua==="sim" ? e("span",{className:"font-semibold text-success"},"Sim"+(x.novaCond ? " · nova "+x.novaCond : "")) : x.continua==="nao_regras" ? e("span",{className:"text-destructive"},"Não · regras") : x.continua==="nao_quer" ? e("span",{className:"text-warning"},"Não · não quis") : dash),
+                td(x.continua==="sim" ? e("span",{className:"font-semibold text-success"},"Sim"+(x.novaCond ? " · nova "+x.novaCond : "")) : x.continua==="nao_regras" ? e("span",{className:"text-destructive"},"Não · regras") : x.continua==="nao_quer" ? e("span",{className:"text-warning"},"Não · não quis") : x.continua==="outro_dia" ? e("span",{className:"font-semibold text-primary"},"Outro dia"+(x.renovaDia ? " · "+x.renovaDia.split("-").reverse().join("/") : "")) : dash),
                 td(x.inicioTs ? hm(x.inicioTs) : (x.chegada || dash), MONO), td(x.fimTs ? hm(x.fimTs) : dash, MONO),
                 td(f.dur!=null ? e("span",{className:"rounded bg-info/15 px-1.5 py-0 text-[11px] font-semibold text-info"}, f.dur+" min") : dash)); })))));
 }

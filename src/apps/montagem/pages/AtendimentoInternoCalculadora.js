@@ -652,7 +652,7 @@ function AtendimentoInterno(){
   // Marcus, 16/11/2026: pode haver mais de uma condicional nova; a lista fica em form.novasCond e o texto junto (vírgula) em form.novaCond, que o resto do sistema já lê
   var novasLista = Array.isArray(form.novasCond) && form.novasCond.length ? form.novasCond : [form.novaCond||""];
   var setNovas = function(a){ up({novasCond:a, novaCond:a.map(function(x){ return String(x).trim(); }).filter(Boolean).join(", ")}); };
-  var escolhas = [["sim","✓ Continua vendendo","#16A34A", !dv.kitNovoLiberado],["nao_regras","✗ Não pode (regras)","#DC2626", false],["nao_quer","✗ Não quer continuar","#D97706", false]];
+  var escolhas = [["sim","✓ Continua vendendo","#16A34A", !dv.kitNovoLiberado],["nao_regras","✗ Não pode (regras)","#DC2626", false],["nao_quer","✗ Não quer continuar","#D97706", false],["outro_dia","↻ Renova outro dia","#2563EB", false]];   // Sthefany/Edna, 16/11/2026: a cliente não quis renovar hoje, vai agendar para outro dia
   var pNova = semPag ? e("p",{className:"rounded-lg border border-dashed border-border p-3 text-center text-[13px] text-muted-foreground"},"Lance vendas e pagamentos primeiro.")
     : e(React.Fragment,null,
         // regra do kit novo (a mesma do app da representante): precisa ter pago o mínimo % do acerto
@@ -669,7 +669,7 @@ function AtendimentoInterno(){
             dv.blocoDivida ? dv.blocoDivida
             : dv.novas && dv.kitNovoRegra && !dv.kitNovoRegra.liberado ? dv.kitNovoRegra.texto+"."
             : !dv.previaBase.podeRenovar ? "Vendas abaixo de "+din(versao.gerais.minRenovar)+": não renova o kit." : "Falta pagar para liberar. Abaixo de "+dv.kitNovoMin+"% só com autorização do financeiro.")),
-        e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-3"}, escolhas.map(function(x){ var on = continuaEf===x[0];
+        e("div",{className:"grid grid-cols-1 gap-2 md:grid-cols-4"}, escolhas.map(function(x){ var on = continuaEf===x[0];
           return e("button",{key:x[0], disabled:x[3] || jaFeito, onClick:function(){ up({continua:x[0]}); }, "aria-pressed":on,
             className:"h-11 rounded-lg text-[13px] font-bold ring-1 disabled:opacity-40 "+(on ? "text-white ring-transparent" : "bg-white/5 ring-white/15 hover:bg-white/10"), style:on ? {background:x[2]} : undefined}, x[1]); })),
         continuaEf==="sim" && e("div",{className:"flex flex-col gap-2 rounded-xl bg-success/10 p-3 ring-1 ring-success/30"},
@@ -688,7 +688,7 @@ function AtendimentoInterno(){
   var cienteOk = regras.length>0 && (!!assCiente || regras.every(function(r,i){ return !!regrasOk[i]; }));   // ou todas explicadas, ou a revendedora assinou a ciência
   var nRegras = regras.filter(function(r,i){ return !!regrasOk[i]; }).length;
   var termoAnt = (s.perfisRev||{})[sel.nome] && (s.perfisRev||{})[sel.nome].termoConsignado;
-  var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : !!continuaEf)));
+  var pronto = !jaFeito && temVenda && (semVendaOk || (cienteOk && (retornando ? !!sel.escolhaFim : (!!continuaEf && (continuaEf!=="outro_dia" || !!form.renovaDia)))));
   var registrar = function(){ if(retornando){ d({type:"INT_RETORNANDO_FIM", id:sel.id, assinatura:assCiente, semExplicacao:!!assCiente, regrasPassadas:regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario)}); return; }
     d({type:"INT_ACERTO_REGISTRAR", id:sel.id, regraAntiga:!!form.regraAntiga && !ehPrata, vendaBruta:form.vendaBruta, devolvida:0, garantia:form.garantia||0,
       valorPago: dv.acordoValido ? dv.previaBase.valorDevido : dv.totalPagoAtual, pagamentos:form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }), acordo:dv.acordoExistente ? form.acordoParcelas : null,
@@ -696,7 +696,7 @@ function AtendimentoInterno(){
       pecasVendidas:formD.pecasVendidas, pecasBrinde:form.pecasBrinde, pecasTrocas:form.pecasTrocas, pecasADevolver:dv.pecasADevolver,
       condicionaisSelecionadas:formD.condicionaisSelecionadas, modalidade:modalidade, atrasoDias:(ehPrata || dv.novas) ? (form.atrasoDias||0) : 0, diasQuitacao:form.diasQuitacao||0,
       assinatura:assCiente, semExplicacao:!!assCiente, regrasLidas:!semVendaOk, regrasPassadas:semVendaOk ? [] : regras.map(function(r){ return r.t; }), por:nomeDe(s.usuario), bipou:sel.bipou||"",
-      pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, novaCond:form.novaCond||"",
+      pecasProxCodigos:[], pecasProxLiberadas:0, kitNovoOk:continuaEf==="sim", continuidade:continuaEf, renovaDia:continuaEf==="outro_dia" ? (form.renovaDia||"") : "", novaCond:form.novaCond||"",
       pecasCond:dv.pecasCondSelecionadas, formSnapshot:form});
     if(form.creditoPuxadoValor>0 && form.garantia>0) d({type:"GR", op:"credito_usar", revendedora:sel.nome, kitId:sel.id, por:nomeDe(s.usuario)});   // o crédito da Garantia foi usado neste acerto
   };
@@ -1045,6 +1045,7 @@ function AtendimentoInterno(){
     continuaEf==="sim" && novasLista.map(function(v, i){ return e("div",{key:"nc"+i, className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] bg-primary/10"},
       e("span",{className:"flex items-center justify-center gap-2"}, "Nº da condicional nova"+(novasLista.length>1 ? " "+(i+1) : ""), !jaFeito && novasLista.length>1 && e("button",{type:"button", "aria-label":"Tirar esta condicional nova", onClick:function(){ setNovas(novasLista.filter(function(_, k){ return k!==i; })); }, className:"h-8 rounded-md px-2 text-[13px] hover:bg-white/10"}, "×")),
       e("input",{value:v, disabled:jaFeito, inputMode:"numeric", placeholder:"000000", "aria-label":"Número da condicional nova "+(i+1), className:CPT, onChange:function(ev){ setNovas(novasLista.map(function(x, k){ return k===i ? ev.target.value.replace(/\D/g,"").slice(0,8) : x; })); }})); }),
+    continuaEf==="outro_dia" && e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] bg-primary/10"}, e("span",{className:"flex items-center justify-center"}, "Quando vai renovar?"), e("input",{type:"date", value:form.renovaDia||"", min:hoje, disabled:jaFeito, "aria-label":"Data para renovar o kit", className:CPT, onChange:function(ev){ up({renovaDia:ev.target.value}); }})),
     continuaEf==="sim" && !jaFeito && e("button",{type:"button", onClick:function(){ setNovas(novasLista.concat([""])); }, className:"h-8 w-full border-t border-primary/20 text-[13px] font-medium hover:bg-white/5 hover:text-primary"}, "+ Outra condicional nova"),
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Condicionais que continuam"), e("span",{className:CAP}, condFicam.length ? condFicam.map(function(c){ return c.numero; }).join(", ") : "Nenhuma")),
     e("div",{className:"flex-1"}),

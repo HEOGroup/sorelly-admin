@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.60", data:"2026-11-16", titulo:"Atendimento Sorelly: renova outro dia", itens:[
+  {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"A etapa Condicional nova ganhou a opção \"Renova outro dia\", com a data obrigatória, para a cliente que não quis renovar o kit hoje. A data aparece no Consolidado Sorelly (pedido da Sthefany). Só registra: não agenda sozinho."}]},
  {v:"0.20.59", data:"2026-11-16", titulo:"Faturas: peso em quilos", itens:[
   {tipo:"correção", area:"Cadastro de peças → Faturas", txt:"O peso de prata e de ouro das faturas está guardado em gramas. A tela passou a mostrar em quilos (divide por mil) na tabela, nos blocos do topo e no total; na janela de editar, digita-se em quilos e o sistema grava em gramas. O dado guardado não mudou."}
  ]},
