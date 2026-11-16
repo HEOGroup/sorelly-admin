@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.36", data:"2026-11-16", titulo:"Atendimento Sorelly: coluna do tipo de atendimento na lista do dia", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"A lista de hoje ganhou a coluna Tipo (Acerto, Kit novo, Reposição, Brinde, Retorno ou Troca), para ver o dia de relance. A lista ficou mais larga para os nomes caberem inteiros."}]},
  {v:"0.20.35", data:"2026-11-16", titulo:"Atendimento Sorelly: Resumo em 2 por 2 com Pagamentos e Inadimplência, e etapa Pagamentos em uma coluna compacta", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Resumo do acerto em 4 blocos (2 em cima, 2 embaixo, com borda): Condicionais, Brindes (normal e select juntos), Pagamentos (uma forma por linha, total pago, inadimplência com a situação do acordo e diferença do brinde) e Conta do acerto."},
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Etapa Pagamentos em uma coluna só e compacta: totais numa linha, barra de formas, botões de link lado a lado e cada pagamento em uma linha, sem quebra."}]},

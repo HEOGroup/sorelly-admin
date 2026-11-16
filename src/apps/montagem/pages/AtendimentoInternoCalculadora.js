@@ -347,9 +347,11 @@ function AtendimentoInterno(){
     var canc = x.status==="cancelado";
     var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
     return e("button",{key:x.id, type:"button", onClick:function(){ if(canc) return; if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); d({type:"INT_ABRIR", id:x.id}); },
-      className:"flex h-8 w-full items-center gap-2.5 rounded-lg px-3 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
+      className:"flex h-8 w-full items-center gap-2 rounded-lg px-2 text-left text-[13px] ring-1 "+(on ? "bg-primary/15 ring-primary" : "bg-muted/30 ring-border hover:bg-muted/50")},
       e("b",{className:"w-12 shrink-0 text-primary "+MONO}, x.hora || "—"),
       e("span",{className:"min-w-0 flex-1 truncate font-semibold", title:x.nome}, doisNomes(x.nome)),
+      // coluna do TIPO do atendimento (Marcus, 16/11/2026): acerto, kit novo, reposição ou brinde, para ver o dia de relance
+      e("span",{className:"w-[4.5rem] shrink-0 whitespace-nowrap text-center text-[11px] font-semibold uppercase tracking-[.03em]", title:"Tipo do atendimento"}, ({acerto:"Acerto", kit_novo:"Kit novo", reposicao:"Reposição", premio:"Brinde", indicacao:"Brinde", retornando:"Retorno", troca:"Troca"})[x.tipo || "acerto"] || "Acerto"),
       !feito && totalDividaAnterior(s.acertosConsignado, x.nome)>0.009 && e("span",{className:"shrink-0 rounded-md bg-destructive/20 px-2 py-1 text-[11px] font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, "Dívida "+din(totalDividaAnterior(s.acertosConsignado, x.nome))),
       e("span",{className:"shrink-0 rounded-md px-2 py-1 text-[11px] font-bold "+st[1]}, st[0]));
   };
@@ -366,7 +368,7 @@ function AtendimentoInterno(){
       return e("button",{key:o[0], type:"button", role:"tab", "aria-selected":on, onClick:function(){ setApoioAba(o[0]); }, className:"h-8 rounded-lg text-[13px] font-extrabold "+(on ? "bg-[#1B1409] text-[#F1E4C6]" : "text-[#1B1409]/80 hover:text-[#1B1409]")}, o[1]); })),
     apoioAba==="comissao" ? e("div",{className:"p-2"}, tabelaComissao(kitVisto)) : apoioAba==="kit" ? e("div",{className:"p-2"}, blocoValorKit) : listaRegras);
   var pagina = function(centro){
-    return e("div",{className:"-mx-3 -mt-3 grid grid-cols-1 items-start gap-3 xl:grid-cols-[23rem_minmax(0,1fr)]"},
+    return e("div",{className:"-mx-3 -mt-3 grid grid-cols-1 items-start gap-3 xl:grid-cols-[27rem_minmax(0,1fr)]"},
       e("div",{className:"flex min-w-0 flex-col gap-3"}, filaDia, apoioTabs), centro);
   };
 
