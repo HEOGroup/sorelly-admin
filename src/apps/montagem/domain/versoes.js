@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.52", data:"2026-11-16", titulo:"Link de pagamento: planilha única, páginas e filtro de data", itens:[
+  {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Acabou a aba Histórico: a planilha das Solicitações mostra TUDO (uma linha por compra), do mais novo ao mais antigo, com as colunas Bandeira, Pago em e Autorização. O endereço antigo do Histórico abre essa planilha."},
+  {tipo:"melhoria", area:"Tabelas (peça TabelaPlanilha)", txt:"Páginas no lugar de Mostrar mais (prop paginas:true): Primeira, Anterior, Página X de Y, Próxima e Última. Filtro de data em árvore (prop data:true na coluna): atalhos (Hoje, 7 dias, 30 dias, Este mês, Mês passado, Este ano), De/Até e lista por Ano, Mês e Dia. Só liga onde a tela pedir."},
+  {tipo:"correção", area:"Link de pagamento → e-SiTef", txt:"O importador arruma o nome da revendedora (só a inicial maiúscula; da, de, do, das, dos e e ficam minúsculos) e a busca da coluna Nova tentativa ficou rápida (índice por nome)."}
+ ]},
  {v:"0.20.51", data:"2026-11-16", titulo:"Pedidos: Romaneio e Banho no padrão azul", itens:[
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"As janelas de Romaneio e de Banho (que abrem ao concluir uma etapa) ficaram no padrão azul: barra azul de título com o × à direita e borda azul, igual à ficha do pedido."}
  ]},

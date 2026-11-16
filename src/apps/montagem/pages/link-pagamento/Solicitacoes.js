@@ -7,7 +7,7 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { CANAIS, COR_STATUS, EMISSORES, FLUXO, ROTULO_STATUS, agoraSP, calcularTaxa, expirados, formatarDia, formatarDataHora, BANDEIRAS, formatarReais, hojeSP, indicadoresLp, listaSolicitacoes, somaDias, meioDe, meioSugerido, minutosRestantes, nomeMeio,
-  proximaEtapa, proximosStatus, retentativa, agruparTentativas, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
+  proximaEtapa, proximosStatus, retentativa, agruparTentativas, indicePorNome, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { Bt, BtMini, Editor, Sel, Selo } from "@/apps/montagem/pages/compras/visualCompras";
 import { ImportarEsitef } from "@/apps/montagem/pages/link-pagamento/ImportarEsitef";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
@@ -23,6 +23,7 @@ var PEDE_MOTIVO = {cancelado:1, recusado:1, expirado:1, bloqueada:1, antifraude:
 var DIAS_NO_QUADRO = 3;   // finais recentes ainda aparecem no quadro por alguns dias
 var ANDAMENTO = {solicitado:1, gerado:1};
 // pago e comprovante (registro antigo) ficam no quadro só pelo dia do PAGAMENTO; os outros finais, pela última data que tiverem
+// Só o QUADRO usa este corte (andamento + finais dos últimos dias). A PLANILHA mostra tudo: é a planilha infinita (Marcus, 16/11/2026), sem aba de Histórico.
 var noQuadro = function(x, desde){ var pg = x.status==="pago" || x.status==="comprovante"; return ANDAMENTO[x.status] || (FINAIS[x.status] && String((pg ? (x.pagoEm || x.criadoEm) : (x.comprovanteEm || x.pagoEm || x.geradoEm || x.criadoEm)) || "").slice(0,10)>=desde); };
 // cor do selo de tempo: mais de 2 h verde, mais de 30 min âmbar, menos vermelho
 var corRestante = function(min){ return min>120 ? "#4ADE80" : min>30 ? "#FBBF24" : "#EF4444"; };
@@ -93,7 +94,7 @@ function AbaLpSolicitacoes(p){
   var set = function(k, v){ st[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
   // expira os links vencidos e atualiza os selos de tempo a cada minuto
   useEffect(function(){ var f1 = function(){ if(expirados(L.lp).length) L.exec("expirar"); tick(function(n){ return n+1; }); }; f1(); var t = setInterval(f1, 60000); return function(){ clearInterval(t); }; }, [lp.solicitacoes.length]);
-  var agora = agoraSP(), ind = indicadoresLp(s), desde = somaDias(hojeSP(), -DIAS_NO_QUADRO);
+  var agora = agoraSP(), desde = somaDias(hojeSP(), -DIAS_NO_QUADRO);
   var lista = useMemo(function(){ return listaSolicitacoes({lp:{solicitacoes:lp.solicitacoes.filter(function(x){ return noQuadro(x, desde); })}}, f); }, [lp.solicitacoes, f, desde]);
   var mover = function(x, de, para){
     if(PEDE_MOTIVO[para]){ md[1]({tipo:"motivo", id:x.id, para:(para==="recusado" && x.status!=="solicitado") ? "negada" : para}); return; }
@@ -110,20 +111,14 @@ function AbaLpSolicitacoes(p){
   var SELQ = "h-8 rounded-md border border-white/50 bg-[#14233f] px-2 text-[13px] font-semibold text-white [color-scheme:dark]";
   var grupoVisao = e("div",{className:"inline-flex overflow-hidden rounded-md border border-white/50"}, [["planilha","Planilha"],["quadro","Quadro"]].map(function(o, i){ var on = modo===o[0];
     return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ mo[1](o[0]); }, className:"h-8 px-3 text-[13px] font-semibold "+(i ? "border-l border-white/50 " : "")+(on ? "bg-white text-[#14233f]" : "text-white hover:bg-white/15")}, o[1]); }));
-  var num = function(rot, v, onClick, forte){ var cont = e("span",{className:"whitespace-nowrap text-[13px]"}, rot+" ", e("b",{className:"tabular-nums "+(forte ? "text-[#fca5a5]" : "")}, v));
-    return onClick ? e("button",{key:rot, type:"button", onClick:onClick, title:"Abrir", className:"rounded px-1 hover:bg-white/15"}, cont) : e("span",{key:rot, className:"px-1"}, cont); };
   var faixa = e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
     p.topo,
-    e("div",{className:"flex flex-wrap items-center gap-x-1"},
-      num("Mês", ind.total), num("App", ind.porCanal.app), num("WhatsApp", ind.porCanal.whatsapp), num("Em aberto", ind.abertas),
-      num("Pago no mês", formatarReais(ind.pagoMes)+" · "+ind.qtdPagosMes+" links")),
     e("span",{className:"flex-1"}),
     modo==="quadro" && e("select",{"aria-label":"Canal", value:f.canal, onChange:function(ev){ set("canal", ev.target.value); }, className:SELQ}, [e("option",{key:"x", value:""}, "Todos os canais")].concat(CANAIS.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }))),
     modo==="quadro" && e("select",{"aria-label":"Link", value:f.meioId, onChange:function(ev){ set("meioId", ev.target.value); }, className:SELQ}, [e("option",{key:"x", value:""}, "Todos os links")].concat(meiosLink.map(function(m){ return e("option",{key:m.id, value:m.id}, nomeMeio(m)); }))),
     modo==="quadro" && ativo && e(Botao,{onClick:function(){ st[1]({busca:"", canal:"", meioId:""}); }}, "Limpar"),
     grupoVisao,
     e(Botao,{onClick:function(){ md[1]({tipo:"esitef"}); }}, "Importar e-SiTef"),
-    e(Botao,{onClick:function(){ p.onIr("historico"); }}, "Histórico"),
     e(Botao,{principal:true, onClick:function(){ md[1]({tipo:"nova"}); }}, "Nova solicitação"));
   return e("div",{className:"flex flex-col"},
     e(BlocoPainel,{titulo:"Solicitações de link", compacto:true},
@@ -140,23 +135,23 @@ var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().jo
 // Modo planilha (padrão): as mesmas solicitações do quadro, uma por linha, com filtro e ordem no título de cada coluna e a ação de concluir a etapa. Nada some: o que era selo no cartão virou coluna "Origem".
 function Planilha(p){
   var agora = agoraSP(), grupos = useMemo(function(){ var mapa = {}; agruparTentativas(p.s.lp.solicitacoes).forEach(function(g){ g.itens.forEach(function(y){ mapa[y.id] = g; }); }); return mapa; }, [p.s.lp.solicitacoes]);
-  if(!p.lista.length) return e("p",{className:"py-6 text-center text-[13px]"}, "Nenhuma solicitação.");
-  var vistos = {}, compras = [];
-  p.lista.forEach(function(y){ var g = grupos[y.id]; if(!g){ compras.push({x:y, n:1}); return; } if(vistos[g.rep.id]) return; vistos[g.rep.id] = 1; compras.push({x:g.rep, n:g.tentativas}); });
+  var compras = useMemo(function(){ return agruparTentativas(p.s.lp.solicitacoes).map(function(g){ return {x:g.rep, n:g.tentativas}; }).sort(function(a, b){ return String(b.x.criadoEm || "")<String(a.x.criadoEm || "") ? -1 : String(b.x.criadoEm || "")>String(a.x.criadoEm || "") ? 1 : 0; }); }, [p.s.lp.solicitacoes]);
+  var recente = somaDias(hojeSP(), -30), idxNome = useMemo(function(){ return indicePorNome(p.s.lp.solicitacoes); }, [p.s.lp.solicitacoes]);
+  if(!compras.length) return e("p",{className:"py-6 text-center text-[13px]"}, "Nenhuma solicitação.");
   var linhas = compras.map(function(cp){ var x = cp.x;
     var m = meioDe(p.s, x.meioId), prox = proximaEtapa(x), min = minutosRestantes(x, agora), origem = [];
     if(x.paraAtendimento) origem.push("Pedido do atendimento"); if(x.porFora) origem.push("Pago por fora"); if(x.tentativa>1) origem.push(x.tentativa+"ª tentativa"); if(x.motivo) origem.push(x.motivo);
     return {id:x.id, data:String(x.criadoEm || "").slice(0, 10), revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(m), valor:x.valor, parcelas:(x.parcelas || 1)+"x",
       canal:x.canal==="whatsapp" ? "WhatsApp" : "App", situacao:ROTULO_STATUS[x.status], _cor:COR_STATUS[x.status], validade:x.status==="gerado" && min!=null ? textoRestante(min) : "—", _min:min,
-      tentativas:cp.n, retentativa:retentativa(p.s.lp, x) || "—", acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
-  var cols = [{k:"data", t:"Data", fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
+      tentativas:cp.n, retentativa:String(x.criadoEm || "").slice(0, 10)>=recente ? (retentativa(p.s.lp, x, idxNome) || "—") : "—", bandeira:x.bandeira || "—", pagoEm:String(x.pagoEm || "").slice(0, 10), autorizacao:x.autorizacao || "—", acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
+  var cols = [{k:"data", t:"Data", data:true, fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
     {k:"valor", t:"Valor", fmt:function(v){ return formatarReais(v); }, render:function(v){ return e("b",{className:"tabular-nums"}, formatarReais(v)); }},
-    {k:"parcelas", t:"Parcelas"}, {k:"canal", t:"Canal"},
+    {k:"parcelas", t:"Parcelas"}, {k:"bandeira", t:"Bandeira"}, {k:"canal", t:"Canal"},
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"validade", t:"Validade", render:function(v, l){ return l._min!=null && l._x.status==="gerado" ? e("span",{className:"font-bold tabular-nums", style:{color:corRestante(l._min)}}, v) : v; }},
-    {k:"tentativas", t:"Tentativas"}, {k:"retentativa", t:"Nova tentativa", render:function(v){ return e("span",{className:"font-bold "+(v==="Pago depois" ? "text-success" : v==="Sem novo link" ? "text-[#FBBF24]" : "")}, v); }}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
+    {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"autorizacao", t:"Autorização"}, {k:"tentativas", t:"Tentativas"}, {k:"retentativa", t:"Nova tentativa", render:function(v){ return e("span",{className:"font-bold "+(v==="Pago depois" ? "text-success" : v==="Sem novo link" ? "text-[#FBBF24]" : "")}, v); }}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
     {k:"acao", t:"Ação", render:function(v, l){ return v ? e(BtMini,{forte:true, onClick:function(){ p.onMover(l._x, l._x.status, l._prox); }}, l._prox==="pago" ? "Confirmar pagamento ›" : "Concluir etapa ›") : ""; }}];
-  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, linhaCls:function(l){ return "cursor-default! "+tomDoDia(l.data); }, aoClicar:function(l){ p.onAbrir(l._x); }});
+  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, limite:50, paginas:true, linhaCls:function(l){ return "cursor-default! "+tomDoDia(l.data); }, aoClicar:function(l){ p.onAbrir(l._x); }});
 }
 
 // Janela "Nova solicitação": canal, revendedora, valor, parcelas e meio (sugerido pelo vínculo da representante). A recusa vem do domínio, em texto formal.

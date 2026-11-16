@@ -38,6 +38,43 @@ var vazio = function(v){ return v===undefined || v===null || v===""; };
 var texto = function(v, c){ return vazio(v) ? "(vazio)" : (c && c.fmt ? String(c.fmt(v)) : String(v)); };
 var LIMITE_LISTA = 300;   // valores mostrados na lista do filtro; a busca refina o resto
 
+// FILTRO DE DATA (Marcus, 16/11/2026: "quando clica em data tem que abrir opção de filtro melhor, por mês, ano e tudo"): coluna com data:true (valor AAAA-MM-DD) ganha atalhos (Hoje, 7 dias, 30 dias, Este mês, Mês passado, Este ano), De/Até e a lista em árvore Ano > Mês > Dia.
+var MES_ABREV = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+var isoLocal = function(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); };
+function ArvoreData(p){
+  var todos = p.valores, marc = p.filtro, c = p.col, sa = useState({}), abertos = sa[0], setAbertos = sa[1], sd = useState({de:"", ate:""}), faixa = sd[0], setFaixa = sd[1];
+  var datas = todos.filter(function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v)); }), semData = todos.filter(function(v){ return !/^\d{4}-\d{2}-\d{2}$/.test(String(v)); });
+  var arv = {}; datas.forEach(function(v){ var a = v.slice(0, 4), m = v.slice(5, 7); ((arv[a] = arv[a] || {})[m] = arv[a][m] || []).push(v); });
+  var anos = Object.keys(arv).sort().reverse();
+  var marcado = function(v){ return !marc || marc.has(v); };
+  var aplica = function(lista){ var s = new Set(lista); p.aoFiltrar(s.size===todos.length ? null : s); };
+  var porIntervalo = function(de, ate){ aplica(datas.filter(function(v){ return (!de || v>=de) && (!ate || v<=ate); })); };
+  var hoje = new Date(), iso = isoLocal(hoje), dias = function(n){ var d = new Date(hoje); d.setDate(d.getDate()-n); return isoLocal(d); };
+  var ini = function(a, m){ return a+"-"+String(m).padStart(2, "0")+"-01"; }, mesAnt = new Date(hoje.getFullYear(), hoje.getMonth()-1, 1), fimMesAnt = new Date(hoje.getFullYear(), hoje.getMonth(), 0);
+  var atalhos = [["Hoje", function(){ porIntervalo(iso, iso); }], ["7 dias", function(){ porIntervalo(dias(6), iso); }], ["30 dias", function(){ porIntervalo(dias(29), iso); }], ["Este mês", function(){ porIntervalo(ini(hoje.getFullYear(), hoje.getMonth()+1), iso); }],
+    ["Mês passado", function(){ porIntervalo(isoLocal(mesAnt), isoLocal(fimMesAnt)); }], ["Este ano", function(){ porIntervalo(hoje.getFullYear()+"-01-01", iso); }]];
+  var estado = function(lista){ var n = lista.filter(marcado).length; return n===0 ? 0 : n===lista.length ? 2 : 1; };
+  var alterna = function(lista){ var s = new Set(marc || todos); if(estado(lista)===2) lista.forEach(function(v){ s.delete(v); }); else lista.forEach(function(v){ s.add(v); }); p.aoFiltrar(s.size===todos.length ? null : s); };
+  var caixa = function(lista, rot, nivel, chave, filhos){ var st = estado(lista), aberto = !!abertos[chave];
+    return e("div",{key:chave},
+      e("div",{className:"flex h-8 items-center gap-1 text-[13px] hover:bg-white/10", style:{paddingLeft:(8+nivel*16)+"px"}},
+        filhos ? e("button",{type:"button", "aria-label":aberto ? "Recolher" : "Abrir", onClick:function(){ setAbertos(function(o){ var n = Object.assign({}, o); n[chave] = !o[chave]; return n; }); }, className:"grid size-6 place-items-center"}, aberto ? "▾" : "▸") : e("span",{className:"size-6"}),
+        e("label",{className:"flex flex-1 cursor-pointer items-center gap-2"}, e("input",{type:"checkbox", checked:st===2, ref:function(el){ if(el) el.indeterminate = st===1; }, onChange:function(){ alterna(lista); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, rot))),
+      aberto && filhos);
+  };
+  var inp = "h-8 w-full rounded-md border border-border bg-card px-2 text-[13px] [color-scheme:dark]";
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:"flex flex-wrap gap-1 px-3 py-1"}, atalhos.map(function(a){ return e("button",{key:a[0], type:"button", onClick:a[1], className:"h-8 rounded-md border border-border bg-card px-2 text-[13px] hover:bg-white/10"}, a[0]); })),
+    e("div",{className:"grid grid-cols-2 gap-2 px-3 py-1"},
+      e("label",{className:"flex flex-col text-[11px] font-bold uppercase"}, "De", e("input",{type:"date", value:faixa.de, onChange:function(ev){ var f = {de:ev.target.value, ate:faixa.ate}; setFaixa(f); porIntervalo(f.de, f.ate); }, className:inp})),
+      e("label",{className:"flex flex-col text-[11px] font-bold uppercase"}, "Até", e("input",{type:"date", value:faixa.ate, onChange:function(ev){ var f = {de:faixa.de, ate:ev.target.value}; setFaixa(f); porIntervalo(f.de, f.ate); }, className:inp}))),
+    e("div",{className:"max-h-64 overflow-y-auto border-t border-border"},
+      anos.map(function(a){ var lista = [].concat.apply([], Object.keys(arv[a]).map(function(m){ return arv[a][m]; }));
+        return caixa(lista, a, 0, "a"+a, Object.keys(arv[a]).sort().reverse().map(function(m){ var dm = arv[a][m].slice().sort().reverse();
+          return caixa(dm, MES_ABREV[+m-1]+"/"+a.slice(2), 1, "m"+a+m, dm.map(function(v){ return caixa([v], texto(v, c), 2, "d"+v, null); })); })); }),
+      semData.map(function(v){ return caixa([v], texto(v, c), 0, "v"+String(v), null); })));
+}
+
 function MenuColuna(p){
   var c = p.col, sb = useState(""), busca = sb[0], setBusca = sb[1], ref = useRef(null), anc = useRef(null), sp = useState(null), pos = sp[0], setPos = sp[1];
   // o menu sai da tabela e abre no <body> (portal): nenhuma borda da planilha corta nem achata o menu (Contas a pagar, 12/11/2026). Abre embaixo do título da coluna e, se passar da borda da tela, encosta nela.
@@ -55,9 +92,9 @@ function MenuColuna(p){
     e("button",{type:"button", className:item+(p.ordem && p.ordem.dir===-1 ? " text-primary" : ""), onClick:function(){ p.aoOrdenar(-1); }}, "Ordenar de Z a A"),
     p.ordem && e("button",{type:"button", className:item, onClick:function(){ p.aoOrdenar(0); }}, "Tirar a ordenação"),
     e("div",{className:"my-1 border-t border-border"}),
-    e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); if(busca) p.aoFiltrar(vis.length===todos.length ? null : new Set(vis)); if(p.aoFechar) p.aoFechar(); } }, className:"h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
-    e("label",{className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:tudoMarcado && vis.length>0, onChange:todosVis, className:"size-4 accent-[#E8B84B]"}), busca ? "Selecionar o que aparece" : "Selecionar tudo"),
-    e("div",{className:"max-h-64 overflow-y-auto"},
+    c.data ? e(ArvoreData,{col:c, valores:todos, filtro:marc, aoFiltrar:p.aoFiltrar}) : e("div",{className:"px-3 py-1"}, e("input",{type:"search", autoFocus:true, value:busca, placeholder:"Buscar", onChange:function(ev){ setBusca(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter"){ ev.preventDefault(); if(busca) p.aoFiltrar(vis.length===todos.length ? null : new Set(vis)); if(p.aoFechar) p.aoFechar(); } }, className:"h-8 w-full rounded-md border border-border bg-card px-2.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
+    !c.data && e("label",{className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:tudoMarcado && vis.length>0, onChange:todosVis, className:"size-4 accent-[#E8B84B]"}), busca ? "Selecionar o que aparece" : "Selecionar tudo"),
+    !c.data && e("div",{className:"max-h-64 overflow-y-auto"},
       vis.slice(0, LIMITE_LISTA).map(function(v){ return e("label",{key:String(v), className:item+" cursor-pointer"}, e("input",{type:"checkbox", checked:!marc || marc.has(v), onChange:function(){ alterna(v); }, className:"size-4 shrink-0 accent-[#E8B84B]"}), e("span",{className:"whitespace-nowrap"}, texto(v, c))); }),
       vis.length>LIMITE_LISTA && e("div",{className:"px-3 py-1 text-[12px] text-muted-foreground"}, "Mostrando "+LIMITE_LISTA+" de "+vis.length+". Use a busca para achar o resto."),
       !vis.length && e("div",{className:"px-3 py-1 text-[12px] text-muted-foreground"}, "Nada encontrado.")),
@@ -100,11 +137,13 @@ function TabelaPlanilha(p){
     return l;
   }, [p.linhas, p.cols, filtros, ordem, p.agrupar]);
   useEffect(function(){ setPag(1); }, [filtros, ordem]);
-  var lim = p.limite ? p.limite*pag : 0, agrupado = !!(lim && p.agrupar && p.grupoAberto), vis = linhas, temMais = false;
+  var pagOn = !!(p.paginas && p.limite), nPag = pagOn ? Math.max(1, Math.ceil(linhas.length/p.limite)) : 1, pagAtual = Math.min(pag, nPag);
+  var lim = (p.limite && !pagOn) ? p.limite*pag : 0, agrupado = !!(lim && p.agrupar && p.grupoAberto), vis = linhas, temMais = false;
   if(agrupado){   // com grupos, o limite vale POR GRUPO aberto (senão o primeiro grupo comia todas as linhas); grupo fechado entra com UMA linha, só para desenhar o título
     var cont = {}, visto = {}; vis = [];
     linhas.forEach(function(l){ var g = l[p.agrupar]; if(!p.grupoAberto(g)){ if(!visto[g]){ visto[g] = 1; vis.push(l); } return; } cont[g] = (cont[g] || 0)+1; if(cont[g]<=lim) vis.push(l); else temMais = true; });
   } else if(lim && linhas.length>lim){ vis = linhas.slice(0, lim); temMais = true; }
+  if(pagOn && !agrupado) vis = linhas.slice((pagAtual-1)*p.limite, pagAtual*p.limite);
   useEffect(function(){ if(p.onFiltradas) p.onFiltradas(linhas); }, [linhas]);   // eslint-disable-line react-hooks/exhaustive-deps
   // linha branca de BAIXO dos blocos travados (fecha o contorno): largura = soma das larguras (rem) das colunas travadas de cada lado
   var remDe = function(w){ var m = /^([\d.]+)rem$/.exec(String(w||"")); return m ? Number(m[1]) : 0; };
@@ -146,6 +185,13 @@ function TabelaPlanilha(p){
         : e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:"h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab"+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] "+(escura ? "border-white/15 text-foreground" : "border-[#1a1306]/25 text-[#1a1306]")+(g.sep ? (escura ? " border-l-2 border-l-[#E8B84B]" : " border-l-2 border-l-[#1a1306]") : "")}, g.t); })); }), linhaCab("cab")),
         e("tbody",null, corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-center text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))),
         p.totalRodape && e("tfoot",null, e("tr",null, p.totalRodape(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-t-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); }))))), barrasBase),
+    (pagOn && nPag>1) && e("div",{className:"flex flex-wrap items-center justify-center gap-2 py-1 text-[13px]"},
+      e("button",{type:"button", disabled:pagAtual<=1, onClick:function(){ setPag(1); }, className:"h-8 rounded-md border border-border bg-card px-3 hover:bg-white/10 disabled:opacity-40"}, "Primeira"),
+      e("button",{type:"button", disabled:pagAtual<=1, onClick:function(){ setPag(pagAtual-1); }, className:"h-8 rounded-md border border-border bg-card px-3 hover:bg-white/10 disabled:opacity-40"}, "Anterior"),
+      e("span",{className:"flex items-center gap-1"}, "Página", e("input",{type:"number", min:1, max:nPag, value:pagAtual, "aria-label":"Página", onChange:function(ev){ var n = Math.round(Number(ev.target.value)); if(n>=1 && n<=nPag) setPag(n); }, className:"h-8 w-16 rounded-md border border-border bg-card px-2 text-center text-[13px]"}), "de "+nPag.toLocaleString("pt-BR")),
+      e("button",{type:"button", disabled:pagAtual>=nPag, onClick:function(){ setPag(pagAtual+1); }, className:"h-8 rounded-md border border-border bg-card px-3 hover:bg-white/10 disabled:opacity-40"}, "Próxima"),
+      e("button",{type:"button", disabled:pagAtual>=nPag, onClick:function(){ setPag(nPag); }, className:"h-8 rounded-md border border-border bg-card px-3 hover:bg-white/10 disabled:opacity-40"}, "Última"),
+      e("span",null, ((pagAtual-1)*p.limite+1).toLocaleString("pt-BR")+" a "+Math.min(pagAtual*p.limite, linhas.length).toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR"))),
     (lim>0 && temMais) && e("div",{className:"flex flex-wrap items-center justify-center gap-3 text-[13px]"},
       e("span",null, agrupado ? "Mostrando "+lim.toLocaleString("pt-BR")+" linhas em cada grupo aberto" : "Mostrando "+vis.length.toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR")),
       e("button",{type:"button", onClick:function(){ setPag(pag+1); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Mostrar mais "+p.limite.toLocaleString("pt-BR"))));

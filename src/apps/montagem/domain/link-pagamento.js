@@ -493,6 +493,8 @@ function linksParaAcertoPorNome(s, nome, hoje){
   var lista = ((s.lp && s.lp.solicitacoes) || []).filter(function(x){ return nomeParecido(x.revendedora, nome); }).map(function(x){ return Object.assign({}, x, {revendedora:nome}); });
   return linksParaAcerto({lp:Object.assign({}, s.lp, {solicitacoes:lista})}, nome, hoje);
 }
+// Nome de pessoa com maiúscula só na inicial (o e-SiTef manda ZELINDA APARECIDA RIBAS e espaço sobrando): da, de, do, das, dos e e ficam minúsculos.
+function nomeProprio(n){ var peq = {da:1, de:1, do:1, das:1, dos:1, e:1}; return String(n || "").replace(/s+/g, " ").trim().toLowerCase().split(" ").map(function(w, i){ return i>0 && peq[w] ? w : w.charAt(0).toUpperCase()+w.slice(1); }).join(" "); }
 // IMPORTADOR DO E-SITEF (Marcus, 16/11/2026): o relatório de transações do e-SiTef (CSV) é a verdade sobre quem pagou. Cada linha vira (ou atualiza) uma solicitação, sem duplicar: a chave é o NSU.
 // linha = {nsu, pedido (nome), valor (R$), status (código do e-SiTef), criadoEm, pagoEm, parcelas, autorizacao, bandeira}
 var STATUS_ESITEF = {CON:"pago", ABA:"abandonada", EXP:"expirado", NEG:"negada", PPN:"antifraude"};
@@ -515,9 +517,11 @@ function esitefPlanejar(lp, linhas, hoje){
 // RETENTATIVA (Marcus, 16/11/2026): a mesma cliente às vezes precisa de 2 ou 3 links até pagar. Para um link que NÃO deu certo (negada, abandonada, expirado, antifraude, bloqueada), diz o que aconteceu depois com a mesma revendedora:
 // "Pago depois" (já resolvido), "Novo link aberto" (esperando pagar) ou "Sem novo link" (a funcionária deve solicitar de novo). Link que deu certo ou ainda está aberto devolve "".
 var FALHAS_RETENTATIVA = {negada:1, abandonada:1, expirado:1, antifraude:1, bloqueada:1};
-function retentativa(lp, x){
+// idx (opcional) = indicePorNome(...): com milhares de links a busca por nome parecido ficaria lenta; com o índice a busca é pelo nome exato (sem diferença de maiúscula e acento).
+function indicePorNome(sols){ var o = {}; (sols || []).forEach(function(y){ var k = norm(y.revendedora); (o[k] = o[k] || []).push(y); }); return o; }
+function retentativa(lp, x, idx){
   if(!FALHAS_RETENTATIVA[x.status]) return "";
-  var depois = lp.solicitacoes.filter(function(y){ return y.id!==x.id && String(y.criadoEm || "")>=String(x.criadoEm || "") && nomeParecido(y.revendedora, x.revendedora); });
+  var depois = (idx ? (idx[norm(x.revendedora)] || []) : lp.solicitacoes).filter(function(y){ return y.id!==x.id && String(y.criadoEm || "")>=String(x.criadoEm || "") && (idx || nomeParecido(y.revendedora, x.revendedora)); });
   if(depois.some(foiPago)) return "Pago depois";
   if(depois.some(function(y){ return y.status==="solicitado" || y.status==="gerado"; })) return "Novo link aberto";
   return "Sem novo link";
@@ -664,7 +668,7 @@ function lpReduz(s, a){
       var plano = esitefPlanejar(lp, a.linhas, hoje), meioL = lp.meios.find(function(m){ return m.tipo==="LINK" && m.cnpjId==="59"; }) || lp.meios.find(function(m){ return m.tipo==="LINK"; }), cN = 0, cA = 0, cI = 0;
       plano.forEach(function(it){ var l = it.linha;
         if(it.acao==="nova"){
-          var nm = trim(l.pedido), ns = {id:"E"+l.nsu, canal:"whatsapp", revendedora:nm, representante:repDaRevendedora(lp, nm), valor:r2(num(l.valor)), parcelas:Math.round(num(l.parcelas)) || 1, meioId:meioL ? meioL.id : "", bandeira:l.bandeira || "", status:it.para, emissor:"atendimento",
+          var nm = nomeProprio(l.pedido), ns = {id:"E"+l.nsu, canal:"whatsapp", revendedora:nm, representante:repDaRevendedora(lp, nm), valor:r2(num(l.valor)), parcelas:Math.round(num(l.parcelas)) || 1, meioId:meioL ? meioL.id : "", bandeira:l.bandeira || "", status:it.para, emissor:"atendimento",
             criadoEm:l.criadoEm || agora, geradoEm:l.criadoEm || agora, geradoPor:"e-SiTef", expiraEm:"", pagoEm:it.para==="pago" ? (l.pagoEm || l.criadoEm) : "", comprovanteEm:"", comprovantePor:"", dataAcerto:"", tentativa:1, observacao:"", cliente:"",
             esitefNsu:String(l.nsu), autorizacao:l.autorizacao || "", importadoEsitef:true,
             historico:[{em:agora, por:por, de:"", para:it.para, nota:"Importado do relatório do e-SiTef (NSU "+l.nsu+(l.autorizacao ? ", autorização "+l.autorizacao : "")+")"+(it.revisar ? " · de dia passado: não entra sozinho no acerto" : "")}]};
@@ -720,7 +724,7 @@ function lpReduz(s, a){
   }
 }
 
-export { agruparTentativas, retentativa, esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
+export { indicePorNome, nomeProprio, agruparTentativas, retentativa, esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,

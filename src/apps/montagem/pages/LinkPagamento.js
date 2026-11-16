@@ -6,7 +6,6 @@
 import { AbaLpAnalises } from "@/apps/montagem/pages/link-pagamento/Analises";
 import { AbaLpDescontados } from "@/apps/montagem/pages/link-pagamento/Descontados";
 import { AbaLpComprovantes } from "@/apps/montagem/pages/link-pagamento/Comprovantes";
-import { AbaLpHistorico } from "@/apps/montagem/pages/link-pagamento/Historico";
 import { AbaLpMeios } from "@/apps/montagem/pages/link-pagamento/Meios";
 import { AbaLpRepresentantes } from "@/apps/montagem/pages/link-pagamento/Representantes";
 import { AbaLpSolicitacoes } from "@/apps/montagem/pages/link-pagamento/Solicitacoes";
@@ -37,7 +36,8 @@ function AbaLinkPagamento(){
 }
 function AbaLinkComprovantes(){ return e(Raiz,null, e(AbaLpComprovantes,null)); }
 function AbaLinkDescontados(){ return e(Raiz,null, e(AbaLpDescontados,null)); }
-function AbaLinkHistorico(){ return e(Raiz,null, e(AbaLpHistorico,null)); }
+// O endereço antigo do Histórico abre a planilha das Solicitações (Marcus, 16/11/2026: não existe aba de Histórico; a planilha é infinita).
+function AbaLinkHistorico(){ return e(AbaLinkPagamento,null); }
 function AbaLinkAnalises(){ return e(Raiz,null, e(AbaLpAnalises,null)); }
 function AbaLinkTaxas(){
   var cx = use(), diretoria = DIRETORIA.some(function(x){ return x.id===cx.state.usuario; });   // Taxas e recebimentos é só da Diretoria (Hellen, 03/11/2026)
