@@ -7,7 +7,7 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { CANAIS, COR_STATUS, EMISSORES, FLUXO, ROTULO_STATUS, agoraSP, calcularTaxa, expirados, formatarDia, formatarDataHora, BANDEIRAS, formatarReais, hojeSP, indicadoresLp, listaSolicitacoes, somaDias, meioDe, meioSugerido, minutosRestantes, nomeMeio,
-  proximaEtapa, proximosStatus, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
+  proximaEtapa, proximosStatus, retentativa, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { Bt, BtMini, Editor, Sel, Selo } from "@/apps/montagem/pages/compras/visualCompras";
 import { ImportarEsitef } from "@/apps/montagem/pages/link-pagamento/ImportarEsitef";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
@@ -132,6 +132,7 @@ function AbaLpSolicitacoes(p){
     modal && modal.tipo==="motivo" && e(Motivo,{L:L, id:modal.id, para:modal.para, fechar:function(){ md[1](null); }}));
 }
 
+var tomDoDia = function(iso){ var q = String(iso || "").slice(0, 10).split("-").map(Number); return q.length===3 && Math.floor(Date.UTC(q[0], q[1]-1, q[2])/86400000)%2 ? "bg-white/[0.07]" : ""; };   // cor sim, cor não: um tom leve alterna a cada DIA
 var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().join("/") : "—"; };   // colunas de data guardam AAAA-MM-DD (ordenam certo) e mostram DD/MM/AAAA
 // Modo planilha (padrão): as mesmas solicitações do quadro, uma por linha, com filtro e ordem no título de cada coluna e a ação de concluir a etapa. Nada some: o que era selo no cartão virou coluna "Origem".
 function Planilha(p){
@@ -142,15 +143,15 @@ function Planilha(p){
     if(x.paraAtendimento) origem.push("Pedido do atendimento"); if(x.porFora) origem.push("Pago por fora"); if(x.tentativa>1) origem.push(x.tentativa+"ª tentativa"); if(x.motivo) origem.push(x.motivo);
     return {id:x.id, data:String(x.criadoEm || "").slice(0, 10), revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(m), valor:x.valor, parcelas:(x.parcelas || 1)+"x",
       canal:x.canal==="whatsapp" ? "WhatsApp" : "App", situacao:ROTULO_STATUS[x.status], _cor:COR_STATUS[x.status], validade:x.status==="gerado" && min!=null ? textoRestante(min) : "—", _min:min,
-      acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
+      retentativa:retentativa(p.s.lp, x) || "—", acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
   var cols = [{k:"data", t:"Data", fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
     {k:"valor", t:"Valor", fmt:function(v){ return formatarReais(v); }, render:function(v){ return e("b",{className:"tabular-nums"}, formatarReais(v)); }},
     {k:"parcelas", t:"Parcelas"}, {k:"canal", t:"Canal"},
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"validade", t:"Validade", render:function(v, l){ return l._min!=null && l._x.status==="gerado" ? e("span",{className:"font-bold tabular-nums", style:{color:corRestante(l._min)}}, v) : v; }},
-    {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
+    {k:"retentativa", t:"Nova tentativa", render:function(v){ return e("span",{className:"font-bold "+(v==="Pago depois" ? "text-success" : v==="Sem novo link" ? "text-[#FBBF24]" : "")}, v); }}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
     {k:"acao", t:"Ação", render:function(v, l){ return v ? e(BtMini,{forte:true, onClick:function(){ p.onMover(l._x, l._x.status, l._prox); }}, l._prox==="pago" ? "Confirmar pagamento ›" : "Concluir etapa ›") : ""; }}];
-  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, linhaCls:function(){ return "cursor-default!"; }, aoClicar:function(l){ p.onAbrir(l._x); }});
+  return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, linhaCls:function(l){ return "cursor-default! "+tomDoDia(l.data); }, aoClicar:function(l){ p.onAbrir(l._x); }});
 }
 
 // Janela "Nova solicitação": canal, revendedora, valor, parcelas e meio (sugerido pelo vínculo da representante). A recusa vem do domínio, em texto formal.

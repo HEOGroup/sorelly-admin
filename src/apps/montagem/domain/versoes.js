@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.49", data:"2026-11-16", titulo:"Link de pagamento: coluna Nova tentativa, cor por dia e meses abreviados", itens:[
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Coluna Nova tentativa nas Solicitações: nos links que falharam mostra Pago depois, Novo link aberto ou Sem novo link (a funcionária deve solicitar de novo)."},
+  {tipo:"melhoria", area:"Link de pagamento", txt:"Cor leve alternada por dia nas Solicitações e no Histórico; meses abreviados (Nov/26)."}
+ ]},
  {v:"0.20.48", data:"2026-11-16", titulo:"Pedidos: ficha do pedido no padrão azul", itens:[
   {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A ficha do pedido (ao clicar no cartão ou na linha da planilha) abre no padrão do Financeiro: barra azul de título com o × à direita, os blocos Bruto, Banho e Empresa com barra azul e borda azul, e o quadro das etapas (Compra, Banho, Empresa) também em blocos azuis. Os botões Remover pedido, status e Concluir ficam no rodapé."}
  ]},

@@ -10,7 +10,8 @@ import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
 import { e, useMemo, useState } from "@/shared/react";
 
 var POR_VEZ = 50;
-var NOME_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+var NOME_MES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+var tomDoDia = function(iso){ var q = String(iso || "").slice(0, 10).split("-").map(Number); return q.length===3 && Math.floor(Date.UTC(q[0], q[1]-1, q[2])/86400000)%2 ? "bg-white/[0.07]" : ""; };   // cor sim, cor não: um tom leve alterna a cada DIA
 var rotuloMes = function(m){ var p = String(m).split("-"); return p.length>1 ? NOME_MES[+p[1]-1]+"/"+p[0] : "—"; };
 var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().join("/") : "—"; };   // a coluna guarda a data como AAAA-MM-DD (ordena certo) e mostra DD/MM/AAAA
 
@@ -33,7 +34,7 @@ function AbaLpHistorico(){
     {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"autorizacao", t:"Autorização"},
     {k:"aviso", t:"Aviso", render:function(v, l){ return v ? e("span",{className:"font-bold text-[#FBBF24]", title:l._aviso}, "⚠ "+v) : ""; }}];
   return e(BlocoPainel,{titulo:"Histórico dos links", compacto:true},
-    linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:false, semContagem:true, limite:POR_VEZ, onFiltradas:fl[1]})
+    linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, linhaCls:function(l){ return tomDoDia(l.data); }, semLimpar:false, semContagem:true, limite:POR_VEZ, onFiltradas:fl[1]})
       : e("p",{className:"py-6 text-center text-[13px]"}, "Nenhum registro."));
 }
 export { AbaLpHistorico };

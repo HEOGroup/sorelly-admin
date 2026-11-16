@@ -8,7 +8,7 @@ import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { formatarReais, resumoLinks, resumoVendasApp } from "@/apps/montagem/domain/link-pagamento";
 import { e, useMemo } from "@/shared/react";
 
-var NOME_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
+var NOME_MES = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 var rotuloMes = function(m){ var p = String(m).split("-"); return NOME_MES[+p[1]-1]+"/"+p[0]; };
 var DIAS = ["dom", "seg", "ter", "qua", "qui", "sex", "sáb"];
 var diaSemana = function(iso){ var p = iso.split("-"); return DIAS[new Date(+p[0], +p[1]-1, +p[2]).getDay()]; };

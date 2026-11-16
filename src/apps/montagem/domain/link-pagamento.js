@@ -512,6 +512,16 @@ function esitefPlanejar(lp, linhas, hoje){
     return {linha:l, acao:"nova", para:para, revisar:para==="pago" && diaDe(l.pagoEm || l.criadoEm)<hoje};
   });
 }
+// RETENTATIVA (Marcus, 16/11/2026): a mesma cliente às vezes precisa de 2 ou 3 links até pagar. Para um link que NÃO deu certo (negada, abandonada, expirado, antifraude, bloqueada), diz o que aconteceu depois com a mesma revendedora:
+// "Pago depois" (já resolvido), "Novo link aberto" (esperando pagar) ou "Sem novo link" (a funcionária deve solicitar de novo). Link que deu certo ou ainda está aberto devolve "".
+var FALHAS_RETENTATIVA = {negada:1, abandonada:1, expirado:1, antifraude:1, bloqueada:1};
+function retentativa(lp, x){
+  if(!FALHAS_RETENTATIVA[x.status]) return "";
+  var depois = lp.solicitacoes.filter(function(y){ return y.id!==x.id && String(y.criadoEm || "")>=String(x.criadoEm || "") && nomeParecido(y.revendedora, x.revendedora); });
+  if(depois.some(foiPago)) return "Pago depois";
+  if(depois.some(function(y){ return y.status==="solicitado" || y.status==="gerado"; })) return "Novo link aberto";
+  return "Sem novo link";
+}
 // Marca como USADOS no acerto os links que entraram como pagamento (cada linha de pagamento traz linkSolId). Devolve o novo lp, ou null se nada mudou.
 function usarLinksNoAcerto(lp0, pagamentos, acertoId, agora, por){
   var ids = (pagamentos || []).filter(function(p){ return p && p.linkSolId; }); if(!ids.length) return null;
@@ -698,7 +708,7 @@ function lpReduz(s, a){
   }
 }
 
-export { esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
+export { retentativa, esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,
