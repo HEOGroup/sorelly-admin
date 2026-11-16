@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.53", data:"2026-11-16", titulo:"Link de pagamento: faixa de números tirada do topo das Solicitações", itens:[
+  {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Saiu a faixa Mês, App, WhatsApp, Em aberto e Pago no mês do topo da tela (regra de 02/11/2026: sem blocos de totais no topo)."}]},
  {v:"0.20.52", data:"2026-11-16", titulo:"Link de pagamento: planilha única, páginas e filtro de data", itens:[
   {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Acabou a aba Histórico: a planilha das Solicitações mostra TUDO (uma linha por compra), do mais novo ao mais antigo, com as colunas Bandeira, Pago em e Autorização. O endereço antigo do Histórico abre essa planilha."},
   {tipo:"melhoria", area:"Tabelas (peça TabelaPlanilha)", txt:"Páginas no lugar de Mostrar mais (prop paginas:true): Primeira, Anterior, Página X de Y, Próxima e Última. Filtro de data em árvore (prop data:true na coluna): atalhos (Hoje, 7 dias, 30 dias, Este mês, Mês passado, Este ano), De/Até e lista por Ano, Mês e Dia. Só liga onde a tela pedir."},

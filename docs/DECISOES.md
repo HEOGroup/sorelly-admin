@@ -2500,3 +2500,5 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - **16/11/2026 (Marcus):** Link de pagamento: uma compra = várias tentativas. Regra: mesma revendedora + mesmo valor + mesmo dia = uma compra só, até uma tentativa pagar (o pago fecha a compra; a próxima tentativa é outra compra). Valor diferente = outra compra. Solicitações mostra uma linha por compra, com a coluna Tentativas, e o card lista as tentativas.
 
 - **16/11/2026 (Marcus):** Link de pagamento: o Histórico acabou. A planilha das Solicitações é única e "infinita" (todas as compras, uma linha por compra, do mais novo ao mais antigo), com PÁGINAS no lugar de "Mostrar mais". A peça `TabelaPlanilha` ganhou duas opções que só ligam onde a tela pedir: `paginas:true` (com `limite`) e, na coluna, `data:true` (filtro de data em árvore Ano > Mês > Dia, com atalhos e De/Até). O importador do e-SiTef arruma o nome da revendedora (inicial maiúscula).
+
+- **16/11/2026 (Marcus):** a faixa de números (Mês, App, WhatsApp, Em aberto, Pago no mês) saiu do topo das Solicitações do Link de pagamento, pela regra de 02/11/2026 de não ter totais no topo.
