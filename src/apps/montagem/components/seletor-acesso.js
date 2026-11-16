@@ -42,7 +42,7 @@ var BOTAO_MENU = "flex h-9 w-full cursor-pointer items-center gap-2.5 rounded-lg
 var comLoginAgora = function(){ return srv.apiAtiva() && !!srv.token(); };
 
 // Situação: um clique abre as três opções. Só existe com o servidor ligado.
-function PilulaSituacao(){
+function PilulaSituacao(p){ p = p || {};
   var sit = useState(false), aberta = sit[0], setAberta = sit[1], pf = usePerfil();
   if(!comLoginAgora() || pf.meuId==null || ["16","17","28","44"].indexOf(srv.pessoaDaConta())<0) return null;   // situação (reunião/ausente): só Marcus, Nickolas, Lucas e Leonardo
   var meu = pf.pessoas[pf.meuId] || {}, atual = SITUACOES[meu.situacao] || SITUACOES.disponivel;
@@ -52,7 +52,7 @@ function PilulaSituacao(){
         className:"flex h-9 cursor-pointer items-center gap-2 rounded-lg border border-primary/40 bg-primary/10 px-3 text-[13px] font-semibold outline-none hover:bg-primary/15"},
       e("span",{className:"size-2.5 rounded-full", style:{background:atual[1]}}), atual[0], e(Icon,{n:"chevrondown", s:11})),
     aberta && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberta(false); }}),
-    aberta && e("div",{className:"absolute right-0 top-11 z-50 flex w-44 flex-col gap-0.5 rounded-xl bg-card p-1.5 shadow-2xl ring-1 ring-[#E8B84B]/40"},
+    aberta && e("div",{className:"absolute "+(p.esq ? "left-0" : "right-0")+" top-11 z-50 flex w-44 flex-col gap-0.5 rounded-xl bg-card p-1.5 shadow-2xl ring-1 ring-[#E8B84B]/40"},
       ORDEM_SIT.map(function(k){ return e("button",{key:k, type:"button", onClick:function(){ mudar(k); }, className:BOTAO_MENU+(meu.situacao===k ? " bg-white/10" : "")},
         e("span",{className:"size-2.5 rounded-full", style:{background:SITUACOES[k][1]}}), SITUACOES[k][0]); })));
 }
@@ -83,7 +83,7 @@ function ContaMenu(p){
       foto(26, 7), e("span",{className:"flex flex-col items-start leading-none"}, e("span",null, nomeDe(s.usuario)), e("span",{className:"mt-0.5 text-[9.5px] font-medium opacity-70"}, PAPEL_LB[g])),
       e(Icon,{n: aberto ? "chevrondown" : "chevron", s:12})),
     aberto && e("div",{className:"fixed inset-0 z-40", onClick:function(){ setAberto(false); }}),
-    e("div",{className:(aberto ? "" : "hidden ")+"absolute right-0 top-11 z-50 flex max-h-[80vh] flex-col gap-2 overflow-y-auto rounded-xl bg-card p-3 shadow-2xl ring-1 ring-[#E8B84B]/40 "+(podeTrocar ? "w-[min(30rem,92vw)]" : "w-64")},
+    e("div",{className:(aberto ? "" : "hidden ")+"absolute "+(p.esq ? "left-0" : "right-0")+" top-11 z-50 flex max-h-[80vh] flex-col gap-2 overflow-y-auto rounded-xl bg-card p-3 shadow-2xl ring-1 ring-[#E8B84B]/40 "+(podeTrocar ? "w-[min(30rem,92vw)]" : "w-64")},
       e("div",{className:"flex items-center gap-3 border-b border-border pb-3"}, foto(52, 12), e("div",{className:"min-w-0"}, e("div",{className:"truncate text-[14px] font-bold"}, nomeDe(s.usuario)), e("div",{className:"text-[12px] text-white/70"}, PAPEL_LB[g]))),
       e("button",{type:"button", onClick:sair, className:"flex h-9 items-center justify-center gap-2 rounded-lg bg-white/10 text-[13px] font-semibold hover:bg-white/15"}, e(Icon,{n:"logout", s:15}), comLogin ? "Sair e entrar com outra conta" : "Sair (voltar para a tela de entrada)"),
       comLogin && meu && e("div",null,

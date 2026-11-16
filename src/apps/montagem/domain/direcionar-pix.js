@@ -166,7 +166,7 @@ function dpReduz(s, a){
       if(!(a.abertas||[]).length){ if(pI && pI.status==="fila") dp.pix = dp.pix.filter(function(x){ return x.id!==idI; }); return ok(); }
       var valI = r2(a.abertas.reduce(function(t, l){ return t+l.valor; }, 0));
       var novoI = {id:idI, origem:"interno", internoId:a.internoId, atendente:a.atendente||"", quem:a.nome||"", vendas:a.vendas||0, aPagar:a.aPagar||valI, pagos:a.pagos||[], valor:valI,
-        partes:a.abertas.map(function(l){ return {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
+        partes:a.abertas.map(function(l){ return l.brinde ? {forma:l.forma, valor:l.valor, brinde:true} : {forma:l.forma, valor:l.valor}; }), linhas:a.abertas.map(function(l){ return l.linha; }), obs:"", recebidoEm:pI ? pI.recebidoEm : Date.now(), status:"fila", divisoes:[], forma:a.abertas[0].forma};
       dp.pix = pI ? dp.pix.map(function(x){ return x.id===idI ? novoI : x; }) : dp.pix.concat([novoI]); return ok(); }
     // Pedido de kit novo (11/11/2026): média das vendas abaixo do mínimo no atendimento interno. A atendente pede; o Financeiro aceita ou não no Direcionar.
     // Fica em dp.kits (chave kp_<id> no módulo pag): a atendente grava o pedido e o Financeiro grava a decisão, cada um a sua vez, sem um apagar o outro.

@@ -56,7 +56,7 @@ function IrPara(p){
   var largura = 340;
   return [e("input",{key:"i", ref:ref, value:v, placeholder:"Buscar tela ou colar endereço", title:"Escreva o nome de uma tela (a partir de 4 letras) ou cole o endereço que o Claude mandou e aperte Enter", "aria-label":"Buscar tela ou ir para o endereço",
     autoComplete:"off", onFocus:function(){ setFoco(true); }, onBlur:function(){ setTimeout(function(){ setFoco(false); }, 150); },
-    className:"hidden h-9 w-44 shrink-0 rounded-lg bg-white/10 px-3 text-[12.5px] text-white placeholder:text-white/60 outline-none focus:bg-white/15 focus:ring-1 focus:ring-primary md:block lg:w-56",
+    className:"hidden h-7 w-44 shrink-0 rounded-lg bg-white/10 px-3 text-[11px] text-white placeholder:text-white/60 outline-none focus:bg-white/15 focus:ring-1 focus:ring-primary md:block lg:w-56",
     onChange:function(ev){ setV(ev.target.value); setIdx(0); },
     onKeyDown:function(ev){
       if(ev.key==="ArrowDown" && achadas.length){ ev.preventDefault(); setIdx(Math.min(idx+1, achadas.length-1)); }

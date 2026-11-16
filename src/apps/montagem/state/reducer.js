@@ -1,7 +1,7 @@
 // Sorelly Admin · montagem e bipagem — state/reducer.js
 // Extraído de sorelly_admin_montagem_bipagem.html sem alterar o corpo das funções.
 var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julho","agosto","setembro","outubro","novembro","dezembro"];
-import { aplicaFdFixos } from "@/apps/montagem/state/fd-patches";
+import { aplicaFdFixos, REV_FIXAS } from "@/apps/montagem/state/fd-patches";
 import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
 import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
@@ -255,7 +255,7 @@ function reducer(s, a){
       if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
       if(a.chave==="revdia"){
         var pRD = {};
-        if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario);
+        if(a.conteudo && a.conteudo.diario) pRD.revendedorasDiario = Object.assign({}, s.revendedorasDiario, a.conteudo.diario, REV_FIXAS);   // REV_FIXAS: total que o Marcus informou vale sobre o automático (state/fd-patches.js)
         if(a.conteudo && a.conteudo.atualizadoEm) pRD.revAtualizadoEm = Object.assign({}, s.revAtualizadoEm, a.conteudo.atualizadoEm);
         return Object.assign({}, s, pRD);
       }
@@ -1133,7 +1133,7 @@ function reducer(s, a){
       var abertasF = [], pagosF = [];
       // 12/11/2026 (Marcus): a diferença do brinde também sobe para o Direcionar (antes só os pagamentos subiam, e o pedido sumia da fila)
       novoF.linhas.forEach(function(l, i){ if((l.tipo!=="pagamento" && l.tipo!=="brinde") || l.isento) return;
-        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:"pix", valor:l.valor, linha:i}); return; }
+        if(l.tipo==="brinde"){ if(!contasDefinidas(l)) abertasF.push({forma:"pix", valor:l.valor, linha:i, brinde:true}); return; }
         if(contasDefinidas(l)) pagosF.push({forma:l.forma, valor:l.valor, cnpj:"", parc:l.parcelas||0, obs:l.partes.map(function(q){ return q.descricao; }).join(" + ")});
         else abertasF.push({forma:formaDp(l.forma), valor:l.valor, linha:i}); });
       return Object.assign({}, sF, dpReduz(sF, {op:"int_pedir", internoId:a.internoId, nome:a.nome, atendente:a.por||"", vendas:a.vendas||0, aPagar:a.aPagar||0, abertas:abertasF, pagos:pagosF}).patch);
@@ -1143,7 +1143,7 @@ function reducer(s, a){
       var lfQ = (s.lancFin||[]).find(function(x){ return x.internoId===a.internoId; });
       if(!lfQ || lfQ.conferido || lfQ.cancelado) return s;
       var cobertas = []; ((s.dp && s.dp.pix) || []).forEach(function(x){ if(x.internoId===a.internoId && x.status==="fila") cobertas = cobertas.concat(x.linhas||[]); });   // linhas do lançamento que já estão numa fila
-      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:"pix", valor:l.valor, linha:i}); });
+      var abQ = []; lfQ.linhas.forEach(function(l, i){ if(l.tipo==="brinde" && !l.isento && !contasDefinidas(l) && cobertas.indexOf(i)<0) abQ.push({forma:"pix", valor:l.valor, linha:i, brinde:true}); });
       if(!abQ.length) return s;
       var rsQ = lfQ.resumo || {};
       return Object.assign({}, s, dpReduz(s, {op:"int_pedir", idPedido:"PB"+a.internoId, internoId:a.internoId, nome:lfQ.nome, atendente:lfQ.por||"", vendas:rsQ.vendido||0, aPagar:rsQ.aPagar||0, abertas:abQ, pagos:[]}).patch);

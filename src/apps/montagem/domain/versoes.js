@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.34", data:"2026-11-16", titulo:"Atendimento Sorelly: Resumo do acerto como 8ª etapa, ciência das regras em tela própria, várias condicionais novas e crédito da Garantia automático; Direcionar adaptável", itens:[
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Nova 8ª etapa, Resumo do acerto: abre a qualquer momento depois de iniciar o atendimento, para a funcionária conferir quando as etapas não saem na ordem (o financeiro demora). O resumo saiu de baixo da tela."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Regras: o botão 'Não quis esperar a explicação · assinar ciência' troca a tela das regras por uma tela só com a assinatura, o PDF e o botão de registrar."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Continua vendendo: dá para registrar mais de uma condicional nova (botão '+ Outra condicional nova'); os números vão juntos para o Consolidado Sorelly."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"O crédito lançado em Garantia › Créditos entra sozinho em 'Desconto de crédito' quando há valor vendido (uma vez por atendimento) e fica como usado ao registrar o acerto."},
+  {tipo:"melhoria", area:"Financeiro › Direcionar", txt:"A diferença do brinde aparece separada do valor do acerto, a tela se adapta a telas pequenas (cabeçalho em campos que descem), a sugestão mostra CNPJ em cima e nome embaixo e os blocos ganharam fundo azulado."},
+  {tipo:"melhoria", area:"Menu e barra de cima", txt:"Bloco da conta (nome, Sair e Disponível) no menu da esquerda, Marcus como setor abaixo de Diretoria, abas do setor mais finas e de largura igual."}]},
  {v:"0.20.33", data:"2026-11-13", titulo:"Visão geral sem o ✎ do faturamento e sem os botões de app no topo", itens:[
   {tipo:"melhoria", area:"Visão geral", txt:"Saiu o ✎ e o formulário de atualizar o faturamento de hoje. O faturamento, os acertos e o Carregar agora são digitados só em Financeiro › Receber › Faturamento › Lançar."},
   {tipo:"melhoria", area:"Barra de cima", txt:"Saíram os botões App representante e App das funcionárias da barra de cima, para todo mundo (Marcus, 13/11/2026). A tela Apps do menu da esquerda não mudou."}]},

@@ -44,7 +44,7 @@ var mesmaRep = function(a, b){ a = nmRep(a); b = nmRep(b); return a===b || a.ind
 var cnpjDaRep = function(s, rep){ var lp = s.lp; if(!lp) return ""; var v = vinculoDeRep(lp, rep) || (lp.vinculos||[]).filter(function(x){ return mesmaRep(x.representante, rep); })[0]; if(!v) return ""; var m = (lp.meios||[]).find(function(x){ return x.id===v.maquininhaId || x.id===v.linkId; }); var q = m ? String(m.cnpjId||"").match(/(34|46|59|67)/) : null; return q ? q[1] : ""; };
 var formaNome = function(f){ return f==="maquininha" ? "Maquininha" : f==="link" ? "Link" : "Pix"; };
 // PARTES (Marcus, 26/10/2026): a revendedora decide COMO paga (ex.: R$ 1.500 no cartão, R$ 1.000 no Pix e R$ 500 em dinheiro). Dinheiro já está pago (pagos). Cada parte que falta (cartão, Pix, link) precisa do seu próprio destino. Sem partes no pedido, vale uma parte só: a forma dele.
-var partesDe = function(p){ var l = (p.partes && p.partes.length) ? p.partes : [{forma:p.forma||"pix", valor:p.valor}]; return l.map(function(x, i){ var f = x.forma||"pix"; return {id:f+"#"+i, forma:f, valor:r2(x.valor)}; }); };
+var partesDe = function(p){ var l = (p.partes && p.partes.length) ? p.partes : [{forma:p.forma||"pix", valor:p.valor}]; return l.map(function(x, i){ var f = x.forma||"pix"; return {id:f+"#"+i, forma:f, valor:r2(x.valor), brinde:!!x.brinde}; }); };
 var formaLonga = function(f){ return f==="maquininha" ? "Cartão (maquininha)" : f==="link" ? "Link de pagamento" : "Pix"; };
 var formaPalavra = function(f){ return f==="maquininha" ? "Cartão" : f==="link" ? "Link" : "Pix"; };
 // célula de nome: nunca abrevia, quebra em outra linha
@@ -138,7 +138,8 @@ function AbaDirecionar(){
   // fornecedores: o que FALTA para fechar o mês atual e a data limite (planilha, aba RESUMO MÊS; Marcus 24/10/2026). Clicar adiciona o fornecedor como destino.
   var fornAbertos = fornecedoresDoMesPf(s.pf, cp).map(function(f){ return {id:f.id, nome:f.nome, total:f.saldo, dMin:f.ate, obs:f.obs, destinoId:f.destinoId}; });
   var totalFalta = r2(fornAbertos.reduce(function(tt, f){ return tt+f.total; }, 0));
-  var partes = sel ? partesDe(sel) : [], temPix = partes.some(function(z){ return z.forma==="pix"; });
+  var lfSel = sel && sel.internoId ? (s.lancFin||[]).filter(function(x){ return x.internoId===sel.internoId; })[0] : null;   // pedido antigo, sem a marca: a diferença do brinde se reconhece pela linha do lançamento (Marcus, 16/11/2026)
+  var partes = (sel ? partesDe(sel) : []).map(function(z, i){ var ln = lfSel && sel.linhas && lfSel.linhas[sel.linhas[i]]; return z.brinde || (ln && ln.tipo==="brinde") ? Object.assign({}, z, {brinde:true}) : z; }), temPix = partes.some(function(z){ return z.forma==="pix"; });
   var ctxSug = {pontual:fornAbertos.filter(function(f){ return /^Pontual/.test(f.nome); }), cp:cp, regras:dp.regras, cnpjs:ctxCnpj, contasRep:dp.contasRep||{}, contasRepExtra:dp.contasRepExtra||{}, regrasPx:(s.px && s.px.regras)||[], limiteAlto:dp.limiteAlto||LIMITE_ALTO_PADRAO, cnpjDaRep:function(rep){ return cnpjDaRep(s, rep); }};
   var fazDe = function(forma, valor){ return sugerir(Object.assign({}, sel, {valor:valor, forma:forma}), ctxSug); };
   var div = sel ? (drafts[sel.id] || []) : [], restante = sel ? r2(sel.valor-soma(div)) : 0;
@@ -149,7 +150,7 @@ function AbaDirecionar(){
   var parteDe = function(forma){ var l = partes.filter(function(z){ return z.forma===forma; }); return l.filter(function(z){ return restDe(z.id)>0.004; })[0] || l[0] || null; };
   var parteAlvo = function(pref){ if(pref){ var q = partes.filter(function(z){ return z.id===pref; })[0] || parteDe(pref); if(q) return q; } return partes.filter(function(z){ return restDe(z.id)>0.004; })[0] || partes[0] || null; };
   var restPix = function(){ var q = parteDe("pix"); return q ? restDe(q.id) : 0; };
-  var rotuloParte = function(p){ var mesmas = partes.filter(function(z){ return z.forma===p.forma; }); return formaLonga(p.forma)+(mesmas.length>1 ? " "+(mesmas.indexOf(p)+1) : ""); };
+  var rotuloParte = function(p){ if(p.brinde) return "Diferença do brinde"; var mesmas = partes.filter(function(z){ return z.forma===p.forma && !z.brinde; }); return formaLonga(p.forma)+(mesmas.length>1 ? " "+(mesmas.indexOf(p)+1) : ""); };
   var addDest = function(destinoId, valor, regra, conta, motivo, pref){ if(!sel) return; var pt = parteAlvo(pref); if(!pt) return; var l = divDe(pt.id), rest = restDe(pt.id), i = l.findIndex(function(x){ return x.destinoId===destinoId && (x.conta||"")===(conta||""); }), v = r2(Math.min(valor==null ? rest : valor, Math.max(rest, 0)));
     if(!(v>0)) return; if(i>=0) l[i] = Object.assign({}, l[i], {valor:r2(l[i].valor+v)}); else l.push({destinoId:destinoId, valor:v, regra:regra||0, conta:conta||"", via:pt.forma, parte:pt.id, motivo:motivo||""}); setDivDe(pt.id, l); };
   var confirmar = function(){
@@ -259,7 +260,7 @@ function AbaDirecionar(){
   var usarTodas = function(){ var novo = div.slice(); partes.forEach(function(p){ if(divDe(p.id).length) return; (planos[p.id]||[]).forEach(function(x){ novo.push({destinoId:x.destinoId, valor:x.valor, regra:x.regra, conta:x.conta, via:p.forma, parte:p.id, motivo:x.motivo}); }); }); setDiv(novo); setDividindo(""); };
   var btn = "h-7 rounded-md border border-border px-2.5 text-[13px] hover:bg-white/10";
   // BLOCO EM GRADE COM LINHAS (Marcus, 11/11/2026: "nada escrito no meio do nada, tem que ter linhas"): cada informação fica numa célula com título; as linhas vêm do gap-px sobre o fundo da cor da linha.
-  var GR = "200px 118px 420px 132px minmax(260px,1fr) 104px";   // Conta larga: nenhuma conta quebra; Sugestão e Ação mais à direita (Marcus, 12/11/2026)
+  var GR = "minmax(10rem,1fr) minmax(6.5rem,.7fr) minmax(0,1.8fr) minmax(8rem,.8fr) minmax(12rem,1fr) minmax(7rem,.6fr)";   // Conta larga: nenhuma conta quebra; Sugestão e Ação mais à direita (Marcus, 12/11/2026)
   var CEL = "flex min-h-8 min-w-0 items-center justify-center bg-card px-2.5 py-1 text-center text-[13px]";
   var CABC = "flex min-h-[30px] items-center justify-center bg-[var(--bloco-colunas)] px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] text-white";
   var linha = function(k, a, b, c2, d2, e2){ return {k:k, b:b, c2:c2, d2:d2, e2:e2}; };
@@ -334,13 +335,13 @@ function AbaDirecionar(){
       else { var m1 = r2(p.valor/2); setPv([m1, r2(p.valor-m1)]); }
       setDividindo(id); };
     var chave = c.edita && !trava ? e(SeletorConta,{nos:[{nome:"Inteiro", id:"inteiro", conta:""}, {nome:"Dividir", id:"dividir", conta:""}], texto:dividir ? "Dividir" : "Inteiro", rotulo:"Inteiro ou dividir "+rotuloParte(p), titulo:"Pagamento", centro:true, larg:150, onEscolher:function(v){ muda(v); }}) : e("span",{className:NOME}, dividir ? "Dividir" : "Inteiro");
-    var celPag = e("div",{className:"inline-flex min-h-8 flex-col items-center justify-center rounded-md border border-border bg-card px-3 py-1 text-center"}, e("b",{className:"whitespace-nowrap text-[13px] font-semibold leading-snug"}, rotuloParte(p)), estadoP ? e("span",{className:"whitespace-nowrap text-[13px] font-semibold", style:{color:corP}}, estadoP) : null);
+    var celPag = e("div",{className:"inline-flex min-h-8 flex-col items-center justify-center rounded-md border px-3 py-1 text-center "+(p.brinde ? "border-[#E8B84B]/70 bg-[#E8B84B]/15" : "border-[#4f8cf0]/70 bg-[#4f8cf0]/15")}, e("b",{className:"whitespace-nowrap text-[13px] font-semibold leading-snug"}, rotuloParte(p)), estadoP ? e("span",{className:"whitespace-nowrap text-[13px] font-semibold", style:{color:corP}}, estadoP) : null);
     var rotuloEscolha = function(d, conta){ var ffx = s.ff || {}; if(d.tipo==="FAMILIA" && conta){ var cbx = (ffx.contasBanc||[]).filter(function(z){ return z.nome===conta && z.prestadorId; })[0], prx = cbx ? (ffx.prest||[]).filter(function(z){ return z.id===cbx.prestadorId; })[0] : (ffx.prest||[]).filter(function(z){ return z.nome===conta && z.responsavelId===d.personaId; })[0]; if(prx) return rotuloPrestadorFamilia(d.nome, prx.nome, cbx ? cbx.nome : ""); } return rotuloDestino(d, conta); };
     var seletor = function(valorAtual, contaAtual, onEscolher, primeiro, rotulo){ var d = valorAtual ? destinoDe(valorAtual) : null, txt = d ? rotuloEscolha(d, contaAtual) : primeiro; return c.edita && !trava ? e(SeletorConta,{nos:arvoreDe(f), semQuebra:true, centro:true, larg:580, texto:txt, rotulo:rotulo, onEscolher:onEscolher, vazio:!d}) : e("span",{className:NOME}, d ? txt : "—"); };
-    var txtValor = function(v){ return e("div",{className:"flex justify-center"}, e("span",{className:"inline-flex h-8 items-center rounded-md border border-border bg-card px-3 text-[13px] font-semibold tabular-nums"}, BKC(v))); };
+    var txtValor = function(v){ return e("div",{className:"flex justify-center"}, e("span",{className:"inline-flex h-8 items-center whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] font-semibold tabular-nums"}, BKC(v))); };
     // Sugestão (Marcus, 12/11/2026: "ruim de ler, organize"): uma caixa com borda por sugestão: o NOME da conta em negrito e o motivo embaixo, em linhas separadas
-    var fmtSug = function(x, k){ var tx = String(x.motivo||""), ix = tx.indexOf(" · "), l1 = ix>=0 ? tx.slice(0, ix) : tx, l2 = ix>=0 ? tx.slice(ix+3) : ""; return e("div",{key:k, className:"flex w-full flex-col items-center gap-0.5 rounded-md border border-border bg-card px-3 py-1.5 text-center leading-snug"}, e("b",{className:"text-[13px] font-semibold"}, destinoDe(x.destinoId).nome), l1 ? e("span",{className:"text-[13px]"}, l1) : null, l2 ? e("span",{className:"text-[13px]"}, l2) : null); };
-    var sugTxt = pl.length ? e("div",{className:"flex w-full flex-col gap-1.5"}, pl.map(function(x, k){ return fmtSug(x, k); })) : e("div",{className:"w-full rounded-md border border-border bg-card px-3 py-1.5 text-center text-[13px] leading-snug"}, "Nenhuma sugestão serviu. Escolha a conta.");
+    var fmtSug = function(x, k){ var nm = String(destinoDe(x.destinoId).nome||""), ix = nm.indexOf(" · "), l1 = ix>=0 ? nm.slice(0, ix) : nm, l2 = ix>=0 ? nm.slice(ix+3) : ""; return e("div",{key:k, title:String(x.motivo||""), className:"flex w-full flex-col items-center justify-center rounded-md border border-border bg-card px-2 py-1 text-center text-[13px] leading-snug"}, e("b",{className:"font-semibold"}, l1), l2 ? e("span",{className:"font-semibold"}, l2) : null); };   // sempre o CNPJ em cima e o nome embaixo (Marcus, 16/11/2026); o motivo inteiro fica na dica
+    var sugTxt = pl.length ? e("div",{className:"flex w-full flex-col gap-1.5"}, pl.map(function(x, k){ return fmtSug(x, k); })) : e("div",{title:"Nenhuma sugestão serviu. Escolha a conta.", className:"w-full rounded-md border border-border bg-card px-2 py-1 text-center text-[13px] leading-snug"}, "Sem sugestão");
     var txtSug = function(s){ return s ? e("div",{className:"w-full text-center text-[13px] leading-snug"}, s) : null; };
     var primeiroRot = f==="pix" ? "Escolha a conta" : "Escolha o CNPJ";
     var linhas = [];
@@ -367,9 +368,10 @@ function AbaDirecionar(){
           ultima ? e("button",{key:"m", type:"button", title:"Adicionar mais uma conta", "aria-label":"Adicionar mais uma conta", onClick:mais, className:"grid h-8 w-8 place-items-center text-[13px] font-bold text-primary hover:bg-primary/20"}, "+") : null, ultima && x ? aceitaBtn() : null);
         linhas.push(linha(sel.id+"|"+id+"|"+k, null, contaCel, valCel, txtSug(k===0 ? sugTxt : ""), acoes)); });
     }
-    var span = {gridRow:"span "+linhas.length};   // Pagamento e Modo ocupam todas as linhas da parte quando ela é dividida
-    return e(Fragment,{key:id}, e("div",{className:CEL, style:span}, celPag), e("div",{className:CEL, style:span}, chave),
-      linhas.map(function(L){ return [e("div",{key:L.k+"c", className:CEL}, L.b), e("div",{key:L.k+"v", className:CEL}, L.c2), e("div",{key:L.k+"s", className:CEL}, L.d2), e("div",{key:L.k+"a", className:CEL+" sticky right-0 z-10 border-l border-border"}, L.e2)]; }));   // coluna Confirmar fixa à direita: em tela estreita o botão nunca some (Marcus, 12/11/2026)
+    var span = {gridRow:"span "+linhas.length};
+    var CELP = CEL.replace("bg-card", p.brinde ? "bg-[#2b2414]" : "bg-[#15213a]");   // Pagamento e Modo ocupam todas as linhas da parte quando ela é dividida
+    return e(Fragment,{key:id}, e("div",{className:CELP, style:span}, celPag), e("div",{className:CELP, style:span}, chave),
+      linhas.map(function(L){ return [e("div",{key:L.k+"c", className:CELP}, L.b), e("div",{key:L.k+"v", className:CELP}, L.c2), e("div",{key:L.k+"s", className:CELP}, L.d2), e("div",{key:L.k+"a", className:CELP+" sticky right-0 z-10 border-l border-border"}, L.e2)]; }));   // coluna Confirmar fixa à direita: em tela estreita o botão nunca some (Marcus, 12/11/2026)
   };
   var RL = function(rot, val, cor){ return e(Fragment,{key:"rl"+rot}, e("div",{className:CEL+" border-b border-border"}, rot), e("div",{className:CEL+" border-b border-l border-border font-semibold tabular-nums", style:cor ? {color:cor} : undefined}, val)); };   // Resumo: linhas todas da mesma espessura e Falta pagar na cor normal (Marcus, 12/11/2026)
   var corFalta = !div.length ? "#f5c14b" : fechado ? "var(--positivo)" : "#f5c14b";
@@ -377,31 +379,33 @@ function AbaDirecionar(){
   // PEDIDO ABERTO em grade com linhas (Marcus, 11/11/2026, layout A): tudo em células com título; nenhum texto solto. Quem e quando | Resumo e Pagamentos | Rodapé de envio.
   var BOTAO_OK = "h-8 whitespace-nowrap rounded-md border px-4 text-[13px] font-semibold ";
   var btnAtend = e("button",{type:"button", onClick:function(){ c.d({type:"ABA", aba:"intcalc"}); }, title:"Abre a tela Atendimento Sorelly", className:"h-[22px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2.5 text-[11px] font-semibold text-white hover:bg-white/20"}, "Atendimentos");
+  // botão de teste do alerta de Nova venda (components/nova-venda.js): só quem direciona vê; não grava nada
   var botaoAtend = e(Fragment,null, btnAtend, c.edita ? e("button",{type:"button", onClick:testarNovaVenda, title:"Toca a sirene e a voz com um pedido de mentira, para testar o volume", className:"ml-1.5 h-[22px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2.5 text-[11px] font-semibold text-white hover:bg-white/20"}, "Testar alerta") : null);
-  var pedido = !sel ? Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"flex min-h-8 items-center justify-center bg-card px-2.5 py-1 text-center text-[13px]"}, "Nenhum pedido aguardando")) : Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"flex flex-col gap-px bg-border"},
-    e("div",{className:"overflow-x-auto"}, e("div",{className:"grid grid-cols-[150px_minmax(0,1.5fr)_minmax(0,1fr)_100px_130px_minmax(0,1.4fr)] gap-px bg-border min-[1100px]:grid-cols-[310px_318px_420px_132px_150px_minmax(0,1fr)]", style:{minWidth:900}},   // Origem com 310 px: a borda direita dela cai na linha direita da coluna Valor, logo abaixo (Marcus, 12/11/2026)
-      ["Origem", "Nome", "Atendimento", "Chegou", "Aguardando", "Observação"].map(function(t, i){ return e("div",{key:"h"+i, className:CABC}, t); }),
-      e("div",{className:CEL}, e("span",{className:"flex items-center gap-1.5"}, e("span",{className:"font-semibold"}, sel.origem==="rep" ? doisNomes(sel.repOrigem || String(sel.quem).replace(/^Representantes+/, "")) : "Interno"), sel.valor>=limAlto && SeloAlto())),
-      e("div",{className:CEL+" font-semibold", title:sel.quem}, ateNomes(sel.origem==="rep" ? (sel.revendedora || sel.quem) : sel.quem, 4)),
-      e("div",{className:CEL}, sel.origem==="interno" ? "Atendida por "+sel.atendente : (sel.maq || "—")),
-      e("div",{className:CEL+" tabular-nums"}, hmH(sel.recebidoEm)),
-      e("div",{className:CEL+" font-bold tabular-nums", style:{color:COR_ESPERA[nivelEspera(sel.recebidoEm)]}}, curto(sel.recebidoEm)),
-      e("div",{className:CEL}, sel.obs || "—"))),
-    e("div",{className:"grid grid-cols-1 gap-px bg-border min-[1100px]:grid-cols-[310px_minmax(0,1fr)]"},
+  var pedido = !sel ? Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"flex min-h-8 items-center justify-center bg-card px-2.5 py-1 text-center text-[13px]"}, "Nenhum pedido aguardando")) : Painel({t:"Direcionar pagamento", acao:botaoAtend}, "", "", "", e("div",{className:"@container flex flex-col gap-px bg-border"},
+    // cabeçalho em CAMPOS que se ajeitam sozinhos à largura da tela (Marcus, 16/11/2026: "meus funcionários têm tela pequena, o sistema deveria se adaptar"): cada campo tem título em cima e valor embaixo; se faltar espaço, desce para outra linha
+    e("div",{className:"flex flex-wrap gap-px bg-border"},
+      [["Origem", e("span",{className:"flex items-center gap-1.5"}, e("span",{className:"font-semibold"}, sel.origem==="rep" ? doisNomes(sel.repOrigem || String(sel.quem).replace(/^Representantes+/, "")) : "Interno"), sel.valor>=limAlto && SeloAlto())],
+       ["Nome", e("span",{className:"font-semibold", title:sel.quem}, ateNomes(sel.origem==="rep" ? (sel.revendedora || sel.quem) : sel.quem, 4))],
+       ["Atendimento", sel.origem==="interno" ? "Atendida por "+sel.atendente : (sel.maq || "—")],
+       ["Chegou", e("span",{className:"tabular-nums"}, hmH(sel.recebidoEm))],
+       ["Aguardando", e("span",{className:"font-bold tabular-nums", style:{color:COR_ESPERA[nivelEspera(sel.recebidoEm)]}}, curto(sel.recebidoEm))],
+       ["Observação", sel.obs || "—"]].map(function(fl, i){ return e("div",{key:"h"+i, className:"flex min-w-0 grow basis-[10.5rem] flex-col bg-card"}, e("div",{className:CABC}, fl[0]), e("div",{className:CEL+" flex-1"}, fl[1])); })),
+    e("div",{className:"grid grid-cols-1 gap-px bg-border @[60rem]:grid-cols-[18rem_minmax(0,1fr)]"},
       e("div",{className:"grid min-w-0 grid-cols-[minmax(0,1fr)_132px] content-start bg-card"},
         e("div",{className:CABC+" border-b border-border"}, "Resumo"), e("div",{className:CABC+" border-b border-l border-border"}, "Valor"),
         RL("Vendas", sel.vendas>0 ? BKC(sel.vendas) : "—"), RL("A pagar", sel.vendas>0 ? BKC(sel.aPagar) : "—"), RL("Já pago", BKC(soma(sel.pagos)), "var(--positivo)"),
         (sel.pagos||[]).length ? sel.pagos.map(function(p, n){ return RL(textoPago(p), BKC(p.valor)); }) : RL("Nada pago ainda", "—"),
-        RL("Falta pagar", BKC(sel.valor), "#f5c14b"),
+        (function(){ var vb = r2(partes.filter(function(z){ return z.brinde; }).reduce(function(t, z){ return t+z.valor; }, 0)); return vb>0 ? [RL("Falta pagar do acerto", BKC(r2(sel.valor-vb)), "#f5c14b"), RL("Diferença do brinde", BKC(vb), "#f5c14b"), RL("Total a direcionar", BKC(sel.valor))] : RL("Falta pagar", BKC(sel.valor), "#f5c14b"); })(),
         e("div",{className:CEL+" col-span-2 flex-col gap-2 py-2.5"},
           c.edita && temSugestao ? e("button",{type:"button", onClick:usarTodas, className:"h-8 w-full whitespace-nowrap rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Usar todas as sugestões") : null,
           c.edita ? e("button",{type:"button", onClick:confirmar, disabled:!div.length, className:BOTAO_OK+"w-full "+(div.length ? "border-primary bg-primary/20 text-primary hover:bg-primary/30" : "border-border bg-card text-foreground opacity-60")}, "OK · enviar") : null,
           avisoTxt.t!=="—" ? e("span",{className:"text-center text-[13px] font-semibold", style:avisoTxt.cor ? {color:avisoTxt.cor} : undefined}, avisoTxt.t) : null)),
-      e("div",{className:"min-w-0 overflow-x-auto bg-card"}, e("div",{className:"grid h-full gap-px bg-border", style:{gridTemplateColumns:GR, gridTemplateRows:"30px", minWidth:1234}},
+      e("div",{className:"min-w-0 overflow-x-auto bg-[#0f1829]"}, e("div",{className:"grid content-start gap-px bg-border pb-px", style:{gridTemplateColumns:GR, gridTemplateRows:"30px", minWidth:"46rem"}},   // content-start (Marcus, 16/11/2026): 1 ou 2 pagamentos ficam em cima, do tamanho deles; 3, 4, 5... vão descendo
+
         ["Pagamento", "Modo", "Conta", "Valor", "Sugestão", "Confirmar"].map(function(t, i){ return e("div",{key:"p"+i, className:CABC+(i===5 ? " sticky right-0 z-10" : "")}, t); }),
         partes.map(renderParte)))),
     ));
-  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
+  return e("div",{className:"[--topo-tabela:var(--bloco-colunas)] [--border:rgba(255,255,255,0.3)] [--color-border:rgba(255,255,255,0.3)] [--color-success:var(--positivo)] [--color-destructive:var(--negativo)] [--color-card:#15213a] -mx-2 -mb-2 -mt-3 flex flex-col gap-1.5 md:-mx-3 md:-mb-3 [&_td]:!text-center [&_th]:!text-center [&_input]:!text-center [&_select]:!text-center"},
     e(PedidosKit),
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
