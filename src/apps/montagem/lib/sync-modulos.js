@@ -74,15 +74,18 @@ var CHAVES_SINCRONIZADAS = (function(){ var o = []; PADRAO.forEach(function(c){ 
 function mostraAvisoVersao(){
   if(document.getElementById("aviso-versao")) return;
   var d = document.createElement("div"); d.id = "aviso-versao"; d.setAttribute("role", "alert");
-  d.style.cssText = "position:fixed;left:50%;bottom:56px;transform:translateX(-50%);z-index:70;display:flex;align-items:center;gap:12px;padding:8px 12px;border:1px solid #D6B25C;border-radius:8px;background:rgba(15,16,19,.97);color:#fff;font:13px Inter,system-ui,sans-serif";
-  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize para ver tudo em tempo real."; d.appendChild(t);
-  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif;cursor:pointer"; b.onclick = function(){ location.reload(); };
+  // 16/11/2026 (Edna, Emilli: o navegador ficou com a versão antiga e ela não viu o botão novo): o aviso agora é uma faixa dourada no TOPO, impossível de perder
+  d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:2147483000;display:flex;align-items:center;justify-content:center;gap:12px;padding:6px 12px;background:#D6B25C;color:#1F1B12;font:600 13px Inter,system-ui,sans-serif";
+  var t = document.createElement("span"); t.textContent = "Há uma versão nova do sistema. Atualize agora para ver os botões e telas novas e não perder lançamentos."; d.appendChild(t);
+  var b = document.createElement("button"); b.textContent = "Atualizar agora"; b.style.cssText = "height:32px;padding:0 12px;border-radius:8px;border:0;background:#1F1B12;color:#fff;font:600 13px Inter,system-ui,sans-serif;cursor:pointer";
+  // atualiza de verdade: limpa o cache guardado pelo navegador e abre de novo com um carimbo novo no endereço
+  b.onclick = function(){ var fim = function(){ try{ var u = new URL(location.href); u.searchParams.set("v", String(Date.now())); location.replace(u.toString()); }catch(x){ location.reload(); } }; try{ var ps = []; if(window.caches && caches.keys) ps.push(caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })); if(navigator.serviceWorker && navigator.serviceWorker.getRegistrations) ps.push(navigator.serviceWorker.getRegistrations().then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })); Promise.all(ps).then(fim, fim); }catch(x){ fim(); } };
   d.appendChild(b); document.body.appendChild(d);
 }
 function vigiaVersao(){
   var minha = String(process.env.NEXT_PUBLIC_BUILD || ""); if(!minha) return undefined;
   var vivo = true, checa = function(){ if(!abaVisivel()) return; fetch("/api/saude", {cache:"no-store"}).then(function(r){ return r.json(); }).then(function(j){ if(vivo && j && j.versao && j.versao!==minha) mostraAvisoVersao(); }).catch(function(){}); };
-  checa(); var iv = setInterval(checa, 60000); return function(){ vivo = false; clearInterval(iv); };
+  checa(); var iv = setInterval(checa, 30000); var vis = function(){ if(abaVisivel()) checa(); }; document.addEventListener("visibilitychange", vis); return function(){ vivo = false; clearInterval(iv); document.removeEventListener("visibilitychange", vis); };
 }
 // s = estado; d = dispatch (a ação SYNC_MODULO troca as chaves vindas do servidor)
 function useSyncModulos(s, d){

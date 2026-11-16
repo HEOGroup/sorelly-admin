@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.66", data:"2026-11-16", titulo:"Aviso de versão nova mais visível", itens:[
+  {tipo:"melhoria", area:"Sistema", txt:"Aviso de versão nova mais visível: faixa dourada no topo, confere a cada 30 s e ao voltar para a aba, e o botão Atualizar agora limpa o cache."},
+ ]},
  {v:"0.20.65", data:"2026-11-16", titulo:"Compras: nova aba Tabela de preços (etapa 1)", itens:[
   {tipo:"novo", area:"Materiais & Estoque › Tabela de preços", txt:"Aba nova com os produtos de cada fornecedor, agrupados por fornecedor (abre e fecha). Busca e filtros no título de cada coluna; no topo, Ativos, Arquivados ou Todos e o botão Cadastrar produto/preço. Clicar no produto mostra as opções de preço em ordem de quantidade."},
   {tipo:"novo", area:"Materiais & Estoque › Tabela de preços", txt:"Cada produto tem várias opções de preço, em lote fechado ou em faixa de quantidade. Informe o preço unitário ou o total: o sistema calcula o outro. Faixa com total pede a quantidade de referência. Faixas não podem se sobrepor e a última pode ficar sem fim. Mostra também o custo por unidade de estoque (pacote, caixa, milheiro)."},
