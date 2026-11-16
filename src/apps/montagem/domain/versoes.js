@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.48", data:"2026-11-16", titulo:"Pedidos: ficha do pedido no padrão azul", itens:[
+  {tipo:"melhoria", area:"Cadastro de peças → Pedidos", txt:"A ficha do pedido (ao clicar no cartão ou na linha da planilha) abre no padrão do Financeiro: barra azul de título com o × à direita, os blocos Bruto, Banho e Empresa com barra azul e borda azul, e o quadro das etapas (Compra, Banho, Empresa) também em blocos azuis. Os botões Remover pedido, status e Concluir ficam no rodapé."}
+ ]},
  {v:"0.20.47", data:"2026-11-16", titulo:"Link de pagamento: card da solicitação no padrão azul e botões corrigidos", itens:[
   {tipo:"melhoria", area:"Link de pagamento", txt:"Card da solicitação refeito na janela azul do setor (Andamento, Editar e Ações); linhas da planilha sem a mãozinha de arrastar."},
   {tipo:"correção", area:"Link de pagamento", txt:"Botões Confirmar pagamento, Copiar texto e Marcar enviado voltaram a funcionar (erro de stopPropagation)."}

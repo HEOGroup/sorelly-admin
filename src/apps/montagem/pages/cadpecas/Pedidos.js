@@ -240,10 +240,10 @@ function CampoF(p){   // rótulo em cima, campo de 32 px embaixo; grava ao sair 
         onBlur:function(ev){ if(!p.off && ev.target.value!==ini) p.onSet(ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); }, className:INP+(p.off ? " opacity-70" : "")}));
 }
 function BlocoF(p){
-  return e("section",{className:"flex min-w-0 flex-col gap-2.5 rounded-xl border border-white/10 bg-black/20 p-3", style:{borderTop:"3px solid "+p.cor}},
-    e("h3",{className:"flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.07em]"}, e("span",{className:"size-2.5 rounded-full", style:{background:p.cor}}), p.t, p.nota && e("span",{className:"ml-auto text-[11px] font-medium normal-case tracking-normal"}, p.nota)),
-    p.children,
-    p.resumo && e("div",{className:"mt-auto flex flex-col gap-1 rounded-lg bg-[#1c1d21] px-3 py-2"}, p.resumo));
+  return e("section",{className:"flex min-w-0 flex-col overflow-hidden rounded-md border-2 border-[var(--bloco-titulo)]"},   // barra azul de título, igual ao Contas a pagar (Marcus, 16/11/2026)
+    e("div",{className:"flex items-center justify-between gap-2 bg-[var(--bloco-titulo)] px-3 py-0.5 text-[13px] font-bold uppercase"}, e("span",null, p.t), p.nota && e("span",{className:"text-[11px] font-medium normal-case"}, p.nota)),
+    e("div",{className:"flex flex-1 flex-col gap-2.5 p-3"}, p.children,
+      p.resumo && e("div",{className:"mt-auto flex flex-col gap-1 rounded-lg bg-[#1c1d21] px-3 py-2"}, p.resumo)));
 }
 function Resumo(p){ return e("div",{className:"flex items-center justify-between gap-3 text-[13px]"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), e("b",{className:"tabular-nums "+(p.grande ? "text-[18px]" : "")}, p.v)); }
 
@@ -280,11 +280,11 @@ function Ficha(p){
     e("button",{type:"button", onClick:function(){ ob[1](!ob[0]); }, className:"h-8 rounded-md border border-border text-[13px] hover:bg-white/10"}, "Peças por categoria · "+(pecasPedido(pd) || "0")),
     ob[0] && e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1"}, CATS.map(function(k){ return e("label",{key:k[0], className:"flex items-center justify-between gap-1 text-[13px]"}, k[1], e(Cel,{v:pd.cats[k[0]] || "", dica:"0", off:!pode, rot:k[1], w:"w-14", onSet:function(q){ x.exec("ped_edit", {id:pd.id, cat:k[0], qtd:q}); }})); })));
   var etapas = e("div",{key:"e", className:"grid gap-2", style:{gridColumn:"1 / -1", gridTemplateColumns:"repeat(auto-fit, minmax(15rem, 1fr))"}}, FASES_PED.map(function(fa){
-    return e("div",{key:fa[0], className:"min-w-0 rounded-xl border border-white/10 px-3 py-2"},
-      e("h4",{className:"mb-1 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[.07em]"}, e("span",{className:"size-2.5 rounded-full", style:{background:COR_FASE[fa[0]]}}), fa[1]),
+    return e("div",{key:fa[0], className:"min-w-0 overflow-hidden rounded-md border-2 border-[var(--bloco-titulo)] pb-2"},
+      e("h4",{className:"mb-1 flex items-center gap-2 bg-[var(--bloco-titulo)] px-3 py-0.5 text-[13px] font-bold uppercase"}, e("span",{className:"size-2.5 rounded-full", style:{background:COR_FASE[fa[0]]}}), fa[1]),
       ETAPAS_PED.map(function(k, i){ if(k[2]!==fa[0]) return null;
         var feito = i<i0, atual = i===i0, atr = atual && atrasadoPed(pd, p.hoje, p.cfg), cor = COR_FASE[k[2]];
-        return e("div",{key:k[0], className:"py-0.5"},
+        return e("div",{key:k[0], className:"px-3 py-0.5"},
           e("div",{className:"flex items-center gap-2 text-[13px] "+(atual ? "font-semibold" : "")},
             e("span",{className:"size-3 shrink-0 rounded-full border-2", style:feito ? {borderColor:"#4ADE80", background:"#4ADE80"} : atual ? {borderColor:cor, background:cor} : {borderColor:cor, borderStyle:"dashed"}}), k[1]),
           atual && e("span",{className:"ml-5 block text-[11px] "+(atr ? "font-semibold text-destructive" : "")}, et==="finalizado" ? "Pedido finalizado" : (naGalvanica(pd) && diasNaGalvanica(pd, p.hoje)!=null ? txtDias(diasNaGalvanica(pd, p.hoje))+" na galvânica" : txtDias(diasNaEtapa(pd, p.hoje))+" nesta etapa")+(prazoTxt(p.cfg, k[0]) ? " · prazo "+prazoTxt(p.cfg, k[0]) : "")+(atr ? " · atrasado" : ""))); }));
@@ -293,7 +293,7 @@ function Ficha(p){
     pode && e(Botao,{key:"r", onClick:function(){ if(window.confirm("Remover o pedido de "+pd.forn+"?")){ x.exec("ped_del", {id:pd.id}); p.fechar(); } }}, "Remover pedido"),
     e("select",{key:"s", value:pd.status, disabled:!pode, "aria-label":"Status do pedido", title:"Status do pedido", onChange:function(ev){ set("status")(ev.target.value); }, className:CAMPO+" w-64 cursor-pointer"}, STATUS_PED.map(function(t){ return e("option",{key:t, value:t}, t); })),
     pode && prox && e(Botao,{key:"c", principal:true, onClick:function(){ p.avancar(pd); }}, "Concluir ›")];
-  return e(Janela,{t:"Pedido de "+pd.forn, sub:(pd.romaneio ? "Romaneio "+pd.romaneio+" · " : "")+nomeEtapa(et), fechar:p.fechar, colunas:[bruto, banho, empresa, etapas], rodape:rodape});
+  return e(JanelaAzul,{t:"Pedido de "+pd.forn, sub:(pd.romaneio ? "Romaneio "+pd.romaneio+" · " : "")+nomeEtapa(et), fechar:p.fechar, larga:true, colunas:[bruto, banho, empresa, etapas], rodape:rodape});
 }
 
 
@@ -365,9 +365,11 @@ function Romaneio(p){
 // JANELA NO PADRÃO AZUL (Marcus, 16/11/2026): barra azul de título com o × à direita, borda azul e fundo escuro, igual ao bloco do Contas a pagar (BlocoPainel).
 function JanelaAzul(p){
   return e("div",{className:"fixed inset-0 z-[80] flex justify-center overflow-y-auto bg-black/70 p-3 md:p-6", onClick:function(ev){ if(ev.target===ev.currentTarget) p.fechar(); }},
-    e("div",{className:PADRAO_BLOCOS+" m-auto w-full max-w-3xl rounded-lg bg-[#14171c] text-[13px] [&>section]:!bg-[#14171c]"},
+    e("div",{className:PADRAO_BLOCOS+" m-auto w-full "+(p.larga ? "max-w-6xl" : "max-w-3xl")+" rounded-lg bg-[#14171c] text-[13px] [&>section]:!bg-[#14171c]"},
       e(BlocoPainel,{titulo:p.t, dir:e("button",{type:"button", "aria-label":"Fechar", title:"Fechar", onClick:p.fechar, className:"px-2 text-[13px] font-bold hover:text-white/70"}, "×")},
-        e("div",{className:"flex flex-col gap-2 p-3"}, p.sub && e("p",{className:"text-center text-[13px]"}, p.sub), p.children))));
+        e("div",{className:"flex flex-col gap-2 p-3"}, p.sub && e("p",{className:"text-center text-[13px]"}, p.sub),
+          p.colunas ? e("div",{className:"grid items-start gap-2", style:{gridTemplateColumns:"repeat(auto-fit, minmax(min(100%, 19.5rem), 1fr))"}}, p.colunas) : p.children,
+          p.rodape && e("div",{className:"flex flex-wrap items-center justify-center gap-2 border-t border-border pt-2"}, p.rodape)))));
 }
 var DIVISOES = [["iguais", "Partes iguais"], ["pecas", "Pelas peças"], ["valor", "Pelo valor do bruto"]];
 function pesoDiv(p, modo){ return modo==="pecas" ? pecasPedido(p) : modo==="valor" ? (p.pagar || 0) : 1; }
