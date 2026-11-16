@@ -32,10 +32,7 @@ function AbaLpHistorico(){
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"pagoEm", t:"Pago em", fmt:dia, render:dia}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"autorizacao", t:"Autorização"},
     {k:"aviso", t:"Aviso", render:function(v, l){ return v ? e("span",{className:"font-bold text-[#FBBF24]", title:l._aviso}, "⚠ "+v) : ""; }}];
-  var num = function(rot, v){ return e("span",{key:rot, className:"whitespace-nowrap px-1 text-[13px]"}, rot+" ", e("b",{className:"tabular-nums"}, v)); };
   return e(BlocoPainel,{titulo:"Histórico dos links", compacto:true},
-    e("div",{className:"flex flex-wrap items-center gap-x-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
-      num("Registros", (visiveis || linhas).length.toLocaleString("pt-BR")), num("Pagos", tot.pagos.toLocaleString("pt-BR")), num("Valor pago", formatarReais(tot.valor)), num("Sem pagamento", tot.semSucesso.toLocaleString("pt-BR"))),
     linhas.length ? e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, maozinha:true, semLimpar:false, semContagem:true, limite:POR_VEZ, onFiltradas:fl[1]})
       : e("p",{className:"py-6 text-center text-[13px]"}, "Nenhum registro."));
 }

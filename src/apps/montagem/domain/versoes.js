@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.42", data:"2026-11-16", titulo:"Só link confirmado pelo e-SiTef entra no acerto", itens:[
+  {tipo:"melhoria", area:"Atendimento Sorelly", txt:"Link pago só entra sozinho nos pagamentos do acerto depois de confirmado pelo relatório do e-SiTef (planilha importada, com NSU). Sem confirmação aparece como aguardando confirmação do e-SiTef."},
+  {tipo:"melhoria", area:"Link de pagamento → Histórico", txt:"Saiu a faixa de totais do topo (Registros, Pagos, Valor pago, Sem pagamento)."}
+ ]},
  {v:"0.20.41", data:"2026-11-16", titulo:"Link de pagamento reorganizado, importador do e-SiTef, comissão antiga por botão e regras corrigidas", itens:[
   {tipo:"novo", area:"Link de pagamento → Solicitações", txt:"Botão Importar e-SiTef: lê o relatório de transações do dia (CSV), mostra o que vai mudar e só grava ao confirmar. A chave é o NSU, então repetir o arquivo não duplica. Link pago de dia passado criado pela importação não entra sozinho no acerto."},
   {tipo:"melhoria", area:"Link de pagamento", txt:"Setor reorganizado como o Financeiro: Solicitações, Descontados no acerto, Histórico, Relatórios (Relatório de links, Análises, Taxas e recebimentos) e Cadastro (Meios e acessos, Representantes). Todas as telas em bloco azul compacto, com planilha e filtro em cada coluna. A etapa Comprovante enviado acabou: pagamento confirmado vai direto para o Admin."},

@@ -2474,3 +2474,4 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Chave = NSU (repetir o arquivo não duplica). Link já existente (mesmo nome, valor e dia) é ligado ao NSU. Situações: CON pago, ABA abandonada, EXP expirado, NEG negada, PPN antifraude.
 - Link pago criado pelo importador em dia passado fica com `esitefRevisar`: NÃO entra sozinho no acerto (evita descontar duas vezes). Ainda a definir quem libera.
 - 16/11/2026: importadas 25 transações de 13 e 14/11 (CNPJ 59, loja SERENETY).
+- 16/11/2026 (regra do Marcus): SÓ link confirmado pelo e-SiTef (tem NSU, vindo da planilha importada) entra sozinho no Atendimento interno. Link pago sem confirmação aparece como "aguardando confirmação do e-SiTef (planilha)"; vale também para dia passado. A Hellen continua lançando à mão; a planilha é o confirmador (`linksParaAcerto`, `usavel:!!x.esitefNsu`). Histórico dos links sem a faixa de totais.

@@ -470,11 +470,12 @@ function linksDaRevendedora(s, revendedora){
 // Para a calculadora do acerto. Só entram pedidos criados pelo sistema (não os importados da planilha, que já foram descontados na época).
 //   pagos: pagos e ainda não usados em acerto (usavel = emitido e pago até o dia anterior; senão conta só no próximo acerto)
 //   avisos: cancelados, recusados, expirados ou com erro nos últimos 30 dias · aguardando: solicitados ou gerados ainda sem pagamento
+// Marcus, 16/11/2026: SÓ link confirmado pelo e-SiTef (planilha importada, com NSU) entra sozinho no acerto.
 function linksParaAcerto(s, revendedora, hoje){
   hoje = hoje || hojeSP(); var desde = somaDias(hoje, -30), o = {pagos:[], avisos:[], aguardando:[]};
   linksDaRevendedora(s, revendedora).forEach(function(x){
     if(x.importado || x.descontado) return;
-    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!x.esitefRevisar && (!!x.paraAtendimento || (diaDe(x.pagoEm)<hoje && diaDe(x.geradoEm)<hoje))}); }
+    if(foiPago(x)){ if(!x.acertoId && diaDe(x.pagoEm)>=somaDias(hoje, -60)) o.pagos.push({sol:x, usavel:!!x.esitefNsu}); }
     else if(x.status==="solicitado" || x.status==="gerado"){ var mn = minutosRestantes(x); if(mn!=null && mn<=0) { if(diaDe(x.criadoEm)>=desde) o.avisos.push(x); } else o.aguardando.push(x); }
     else if(diaDe(x.criadoEm)>=desde) o.avisos.push(x);
   });
