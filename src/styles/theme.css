@@ -125,3 +125,7 @@
 @keyframes pisca-amarelo { 0%,100% { opacity: 1; text-shadow: 0 0 8px rgba(251,191,36,.9); } 50% { opacity: .3; text-shadow: none; } }
 .pisca-amarelo { color: #FBBF24; animation: pisca-amarelo 1.1s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .pisca-amarelo { animation: none; } }
+/* Mover coluna segurando o título (Contas a pagar, 16/11/2026): a coluna que está sendo levada fica CHEIA (cor sólida, sem transparência) e o lugar onde ela vai cair ganha uma barra branca grossa. */
+th[data-arrasto="1"] { box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 200px #2563eb !important; }
+th[data-arrasto="1"] * { color: #fff !important; }
+th[data-alvo="1"] { box-shadow: inset 6px 0 0 #fff, inset 0 0 0 200px #3b4a6b !important; }

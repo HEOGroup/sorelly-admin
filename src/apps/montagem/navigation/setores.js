@@ -13,12 +13,12 @@ function I(aba, nome, origem){ return Object.assign(T(aba, nome), {integrado:tru
 // Menu do Financeiro (estilo DevMaster, opção 3 aprovada em 22/10/2026): palavras no topo, listas em cascata alinhadas (components/barra-menu.js), abas das telas abertas e busca de tela. aba = tela; modo = Contas a pagar (Sorelly, Família ou junto); perm = autorização exigida.
 var M = function(nome, aba, extra){ return Object.assign({nome:nome, aba:aba}, extra||{}); };
 var MENU_FINANCEIRO = [
-  {nome:"Pagamentos", itens:[M("Direcionar","direcionar"), M("Contas das representantes","dirregras"), M("Chaves Pix","chavespixbanco")]},   // Chaves Pix = TERCEIRA tela de Pagamentos (Marcus, 12/11/2026); antes ficava em Contas   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): duas telas, Direcionar e Contas das representantes (esta com Valor fora do normal e as Regras do Pix); a tela Regras e contas deixou de existir
+  {nome:"Pagamentos", itens:[M("Resumo geral","pfresumo"), M("Direcionar","direcionar"), M("Contas das representantes","dirregras"), M("Chaves Pix","chavespixbanco")]},   // Chaves Pix = TERCEIRA tela de Pagamentos (Marcus, 12/11/2026); antes ficava em Contas   // principal e PRIMEIRO de todos (Marcus, 12/11/2026): duas telas, Direcionar e Contas das representantes (esta com Valor fora do normal e as Regras do Pix); a tela Regras e contas deixou de existir
   M("Contas bancárias","caixa"),   // sem o nível "Saldos e análises": Análise de custos e Estoque Sorelly foram para Relatórios (Marcus, 12/11/2026)
   {nome:"Contas", itens:[   // tudo que SAI de dinheiro (estrutura de 22/10/2026, alinhada com o Marcus)
     M("A pagar / Pagas","ctalista"),   // UMA tela só (A pagar | Pagas | Todas; Separado | Por dia | Por mês) e mais as duas listas de baixo (Marcus, 12/11/2026); Contas pagas abre a mesma tela
     {nome:"Comissões", itens:[M("Representantes","comissoes"), M("Comissão interna","comisstodos"), M("Agendamento","agbonus"), M("Montagem de kits","comismont"), M("Atendimento interno","comisint"), M("Link de pagamento","comlink"), M("Datas de pagamento","comdatas")]},
-    {nome:"Fornecedores", itens:[M("Geral","pfresumo"), M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
+    {nome:"Fornecedores", itens:[M("Lançamento de pagamentos","pflanc"), M("Negociações","pfneg"), M("Maquininha Banho","pfmaq"), M("Cadastro","pfcadastro")]}]},   // Cadastro = fornecedores e prestadores juntos, com filtro de tipo
   {nome:"Receber", itens:[   // tudo que ENTRA de dinheiro
     M("Contas a receber","revreceber"),
     {nome:"Faturamento", itens:[M("Faturamento","previsaofat"), M("Consolidado interno","intcons")]},

@@ -4,6 +4,14 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 16/11/2026 (Contas a pagar: Junto, conta nos dois lugares, paga na DevMaster, colunas e busca)
+- **Conta nos dois lugares = uma linha só** (Junto/Família): a conta da Família lançada no Admin e a mesma conta da DevMaster viram uma linha ("Admin + DevMaster", "Falta dar baixa"). Par = mesma situação, mesmo valor e mesmo mês; se houver mais de uma candidata, só junta com o mesmo dia + palavra do nome em comum. 28 contas.
+- **Paga na DevMaster = paga** (pedido do Marcus): conta do Admin em aberto com par pago na DevMaster (mesmo valor, baixa a até 20 dias do vencimento, nome parecido) aparece como Paga, "Paga em dd/mm · falta baixa no Admin". 27 contas. SÓ NA TELA: nada é gravado; o Financeiro familiar (`ff`) NÃO foi mexido e segue com tudo até a mãe aprovar.
+- Coluna "Rateio" virou **Pessoa** (fica depois do Valor). O Nubank de R$ 5.000 é valor estimado (obs. do Admin antigo), não a fatura real.
+- **Colunas do jeito de cada um:** menu "Colunas" (abrir/fechar) e arrastar o título (`aoMoverColuna` em `TabelaPlanilha`; cor sólida ao arrastar em `theme.css`); fica no navegador, por usuário. Botão "Colunas padrão" volta ao normal.
+- **EXCEÇÃO à regra "sem busca no topo"** (pedido direto do Marcus: "quero puxar Marcus e ver tudo que é meu"): campo de busca na faixa azul de Contas a pagar, procura em todos os campos; marcado com `padrao-ok`. Só nesta tela.
+- **Resumo geral (Pagamentos, 16/11/2026):** tabela única no modelo de Contas a pagar; cada fornecedor junto, com TOTAL; sócios no fim (A pagar = meta de Pix do Financeiro familiar, Pago = Pix recebido no mês, só leitura); saldo de mês antigo entra na primeira linha com um "i" (balão ao passar o mouse); coluna Observações guardada por mês em `pf.obsResumo`. Limite de fornecedores e calendário saíram dele e ficam em Negociações › aba final "Limite e calendário".
+
 ## 16/11/2026 (Contas bancárias: limites, traço no limite e crédito bancário)
 - **Limites lançados no banco (Marcus, via financeiro):** Sicredi Axis 67 = R$ 3.000,00. **Stone 46: SEM limite** (Anamaria, 16/11: os R$ 80.000 eram o limite do cartão, visto pelo Lucas; corrigido no banco, cópia `bkp_sc_stone_16_11`). Itaú 59 Conta Garantida: R$ 15.000 é o limite (saldo R$ 0). Sicredi Rotativo 34: -R$ 64.928,50 confirmado, não mudou. Itaú Empresas 34: sem limite, conta usada só para pagar o Pronampe. Itaú 34, Bradesco 59, Caixa 59, Itaú Axis 67 e Sicredi H&O: sem limite.
 - **Coluna Limite:** "-----" só onde o limite não se aplica (Aplicação, Dinheiro e conta bloqueada); conta corrente sem limite mostra R$ 0,00.

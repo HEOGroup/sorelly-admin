@@ -92,7 +92,8 @@ function MenuMulti(p){
     p.t && e(Rotulo,{t:p.t, id:p.id}),
     e("button",{id:p.id, type:"button", "aria-expanded":aberto, onClick:function(){ setAberto(!aberto); }, className:CAMPO+" flex items-center justify-center gap-2 whitespace-nowrap"}, e("span",null, rot), e("span",{"aria-hidden":"true"}, aberto ? "▴" : "▾")),
     aberto && e("div",{className:"absolute left-0 top-full z-40 mt-1 w-full min-w-44 rounded-md border border-border bg-card p-1 shadow-lg"},
-      p.opcoes.map(function(o){ return e("label",{key:o[0], className:"flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[13px] hover:bg-white/10"}, e("input",{type:"checkbox", checked:p.valor.indexOf(o[0])>=0, onChange:function(){ alterna(o[0]); }}), o[1]); })));
+      p.opcoes.map(function(o){ return e("label",{key:o[0], className:"flex h-8 cursor-pointer items-center gap-2 rounded px-2 text-[13px] hover:bg-white/10"}, e("input",{type:"checkbox", checked:p.valor.indexOf(o[0])>=0, onChange:function(){ alterna(o[0]); }}), o[1]); }),
+      p.rodape && e("button",{type:"button", onClick:function(){ p.rodape.onClick(); setAberto(false); }, className:"mt-1 h-8 w-full rounded border-t border-border text-[13px] font-semibold hover:bg-white/10"}, p.rodape.rotulo)));   // rodape opcional: botão no fim da lista (ex.: "Voltar ao padrão")
 }
 
 // tabela de layout fixo. cols = [{t, w, n}] (w = largura em px; sem w = o espaço que sobrar; n = coluna de número, alinhada à direita)

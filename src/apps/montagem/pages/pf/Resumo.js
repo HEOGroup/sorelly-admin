@@ -6,16 +6,18 @@
 // passou -5%, dividido em 3 parcelas, "a confirmar"; os números EST_DESC e EST_PARC abaixo são provisórios).
 // As contas ficam em domain/pf.js (contaForn, janelasDoForn, pagoPix, mqAplicado, mq*); aqui só o desenho. Sócios ficam no Financeiro familiar.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
+import { addDias, pagoJanela } from "@/apps/montagem/domain/pf";
 import { cicloDe, contaForn, ehPrestador, hojeIso, janelasDoForn, lancDaJanela, mesAtual, mesLabel, mqAplicado, mqBruto, mqDescontoNoMes, mqOrigensDoMes, mqPassadasDoMes, mqParcela, pagoPix, statusConta } from "@/apps/montagem/domain/pf";
 import { limiteDe, usoMes } from "@/apps/montagem/domain/pf-limite";
 import { LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
-import { FileiraCampos, TabelaCampos } from "@/apps/montagem/components/padrao-fin";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { COR, Chip, Etiqueta, Sel, corForn, TD, Tile, brl, dbr, th, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { JanelaPedido, pedidoNovo } from "@/apps/montagem/pages/pf/Negociacoes";
 import { ModalForn } from "@/apps/montagem/pages/pf/Fornecedores";
-import { LimiteAno, LimiteMes } from "@/apps/montagem/pages/pf/Limite";
-import { e, useState } from "@/shared/react";
+import { LimiteAno } from "@/apps/montagem/pages/pf/Limite";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var tdn = TD+" text-right font-mono whitespace-nowrap";
 var ANO = 2026;
@@ -347,14 +349,23 @@ function GeralInterno(P){
   var mqMes = pf.mqFornId ? {bruto:mqBruto(pf, mes), desc:mqDescontoNoMes(pf, mes)} : null;
   // Teto mensal (chamado do Lucas, 09/11/2026): não retém mais nenhuma negociação. Passou do teto = só um AVISO acima das tabelas; tudo entra nos totais.
   var usoTeto = usoMes(pf, mes), tetoMes = limiteDe(pf).teto, passouTeto = usoTeto.total>tetoMes+0.005;
-  var COLS_F = [{t:"Fornecedor", w:"22%"}, {t:"A pagar", w:"16%"}, {t:"Pago", w:"16%"}, {t:"Saldo", w:"16%"}, {t:"Próximo prazo", w:"15%"}, {t:"Status"}];
-  var bloco = function(titulo, linhas){ var tt = somaC(linhas, "total"), tp = somaC(linhas, "pago"); return e(BlocoBarra,{t:titulo, cor:"azul", compacto:true, dir:brl(tt)}, e("div",{className:"p-3"}, e(TabelaCampos,{cols:COLS_F, minW:"60rem"},
-    !linhas.length ? e(FileiraCampos,{cells:["Nada neste mês.", "", "", "", "", ""]}) : linhas.map(function(x){ var cc = x.c, st = statusConta(cc);
-      return e(FileiraCampos,{key:x.f.id, onClick:function(){ abrirForn(x.f.id); }, cells:[{v:x.f.nome}, brl(cc.total), {v:brl(cc.pago), cor:cc.pago>0.005 ? COR.green : undefined}, {v:brl(cc.aberto), cor:cc.aberto>0.005 ? COR.red : COR.green}, cc.dMin ? dbr(cc.dMin) : "—", {v:"● "+st.texto, cor:COR[st.cor] || COR.gray}]}); }),
-    linhas.length>0 && e(FileiraCampos,{total:true, cells:["Total", brl(tt), {v:brl(tp), cor:COR.green}, {v:brl(somaC(linhas, "aberto")), cor:COR.red}, "", (tt>0 ? Math.round(tp/tt*100) : 0)+"% pago"]})))); };
+  // TABELA DO MÊS (Marcus, 16/11/2026): igual à planilha do RESUMO MÊS: Fornecedor, A pagar, Pago, Saldo, Próximo prazo, Status e OBSERVAÇÃO (escrita à mão, guardada por mês em pf.obsResumo). Filtro e ordem no título de cada coluna.
+  var vermVerde = function(l){ return l.aberto>0.005 ? "text-red-400" : "text-emerald-400"; };
+  var salvaObs = function(chave, txt){ c.d({type:"PF", op:"mut", fn:function(p0){ p0.obsResumo = p0.obsResumo || {}; var t = String(txt || "").trim(); if(t) p0.obsResumo[chave] = t; else delete p0.obsResumo[chave]; return "Observação salva"; }}); };
+  var campoObs = function(v, l){ return c.edita ? e("input",{key:l.chaveObs+"|"+(v || ""), type:"text", defaultValue:v || "", "aria-label":"Observação de "+l.nome, placeholder:"—", onClick:function(ev){ ev.stopPropagation(); }, onBlur:function(ev){ if(ev.target.value!==(v || "")) salvaObs(l.chaveObs, ev.target.value); }, className:"h-8 w-full min-w-[16rem] rounded border border-border bg-card px-2 text-center text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}) : (v || "—"); };
+  var COLS_F = [{k:"nome", t:"Fornecedor"}, {k:"total", t:"A pagar", fmt:brl}, {k:"pago", t:"Pago", fmt:brl, cor:function(l){ return l.pago>0.005 ? "text-emerald-400" : ""; }}, {k:"aberto", t:"Saldo", fmt:brl, cor:vermVerde}, {k:"prazo", t:"Próximo prazo"}, {k:"status", t:"Status", cor:function(l){ return l.corSt; }}, {k:"obs", t:"Observação", render:campoObs}];
+  var ultDia = new Date(parseInt(mes.slice(0, 4), 10), parseInt(mes.slice(5, 7), 10), 0).getDate();
+  var rodape = function(rows){ var tt = rows.reduce(function(t, x){ return t+x.total; }, 0), tp = rows.reduce(function(t, x){ return t+x.pago; }, 0), ta = rows.reduce(function(t, x){ return t+x.aberto; }, 0); return ["Total", brl(tt), brl(tp), brl(ta), "", (tt>0 ? Math.round(tp/tt*100) : 0)+"% pago", ""]; };
+  var tabelaMes = function(titulo, rows, colsX){ var tt = rows.reduce(function(t, x){ return t+x.total; }, 0); return e(BlocoBarra,{t:titulo, cor:"azul", compacto:true, dir:brl(tt)}, e("div",{className:"p-3"}, e(TabelaPlanilha,{key:titulo+mes, cols:colsX || COLS_F, linhas:rows, chave:"id", grade:true, semContagem:true, semLimpar:true, aoClicar:function(l){ if(l.f) abrirForn(l.f.id); }, totalRodape:rows.length ? rodape : undefined, vazio:"Nada neste mês."}))); };
+  var linhasForn = function(linhas){ return linhas.map(function(x){ var cc = x.c, st = statusConta(cc), ch = x.f.id+"|"+mes; return {id:x.f.id, f:x.f, nome:x.f.nome, total:cc.total, pago:cc.pago, aberto:cc.aberto, prazo:cc.dMin ? dbr(cc.dMin) : "—", status:"● "+st.texto, corSt:st.cor==="green" ? "text-emerald-400" : st.cor==="red" ? "text-red-400" : st.cor==="orange" || st.cor==="yellow" ? "text-amber-400" : "", obs:(pf.obsResumo || {})[ch] || "", chaveObs:ch}; }); };
+  var bloco = function(titulo, linhas){ return tabelaMes(titulo, linhasForn(linhas)); };
+  // SÓCIOS E CASA (Marcus, 16/11/2026): vem do Financeiro familiar, SÓ LEITURA: A pagar = meta de Pix revendedoras do mês (ff.pixMeta); Pago = Pix já recebido no mês (ff.pix). A observação é daqui.
+  var ffS = c.s.ff || {}, metaPix = ffS.pixMeta || {}, pixFam = ffS.pix || [];
+  var SOC = [["marcus", "Marcus"], ["anamaria", "Anamaria"], ["marco", "Marco Antonio"], ["anabeatriz", "Ana Beatriz"], ["lucas", "Lucas"], ["familia", "Casa"]];
+  var linhasSoc = SOC.map(function(s0){ var meta = Number(metaPix[s0[0]+"|"+mes] || 0), pg = Math.round(pixFam.filter(function(x){ return x.personaId===s0[0] && String(x.data || "").slice(0, 7)===mes; }).reduce(function(t, x){ return t+(Number(x.valor) || 0); }, 0)*100)/100, ab = Math.max(0, Math.round((meta-pg)*100)/100), ch = "socio:"+s0[0]+"|"+mes;
+    return {id:"s|"+s0[0], nome:s0[1], total:meta, pago:pg, aberto:ab, prazo:dbr(mes+"-"+String(ultDia).padStart(2, "0")), status:meta>0 ? (ab<0.005 ? "● Quitado" : "● Em aberto") : "● Sem meta", corSt:meta>0 && ab<0.005 ? "text-emerald-400" : "", obs:(pf.obsResumo || {})[ch] || "", chaveObs:ch}; });
   return e("div",{className:"flex flex-col gap-3"},
-    e(PageHead,{t:"Geral · "+mesLabel(mes+"-01"), sub:"O resumo do mês de cada fornecedor e prestador de serviço, ao vivo. Clique numa linha para abrir as 3 dezenas do mês e as 3 do mês seguinte."}), seletor,
-    e(LimiteMes,{pf:pf, mes:mes}),
+    e(PageHead,{t:"Meses e dezenas · "+mesLabel(mes+"-01"), sub:"O mês de cada fornecedor e prestador de serviço, por dezena. Clique numa linha para abrir as 3 dezenas do mês e as 3 do mês seguinte."}), seletor,
     passouTeto && e("div",{className:"flex h-8 items-center justify-center rounded-lg px-3 text-[13px] font-bold text-white", style:{background:COR.yellow+"26", boxShadow:"inset 0 0 0 1px "+COR.yellow}}, "Aviso: "+mesLabel(mes+"-01")+" passou do teto de "+brl(tetoMes)+" (lançado: "+brl(usoTeto.total)+"). Tudo continua nos totais."),
     bloco("Fornecedores", lf), bloco("Prestadores de serviço", lp),
     mqMes && e("div",{className:"text-[13px] text-white"}, "Maquininha no mês: "+brl(mqMes.bruto)+" · desconto caindo: "+brl(mqMes.desc)));
@@ -369,5 +380,92 @@ function Geral(){
     novo && e(ModalForn,{key:"novo-"+novo, c:c, f:null, prest:novo==="prest", fechar:function(){ setNovo(null); }}));
 }
 
-function AbaPfResumo(){ return e(Geral, null); }
-export { AbaPfResumo, PainelPontual };
+// RESUMO GERAL (Marcus e Anamaria, 16/11/2026): igual à PLANILHA do Marcus (RESUMO MÊS) e no modelo de Contas a pagar (bloco azul com menus, tabela compacta, cabeçalho parado). Tudo de um fornecedor fica JUNTO, uma janela embaixo da outra (Pontual 01/11 à 10/11, 11/11 à 20/11, 21/11 à 30/11) e, se tem mais de uma, uma linha de TOTAL do fornecedor; os sócios vêm no fim com o TOTAL SÓCIOS.
+// O saldo em atraso de meses anteriores NÃO é mais uma linha: entra na primeira janela do mês (A pagar e Saldo) e a linha ganha um botão "i" que mostra de que mês veio. Sem coluna Observação e sem menu de colunas (Marcus, 16/11/2026).
+// Colunas fixas: Fornecedor, A pagar, Pago, Saldo, Data. Limite e calendário ficam em Negociações › aba final; o resumo antigo é a aba "Meses e dezenas".
+var ULTDIA = function(m){ return m+"-"+String(new Date(parseInt(m.slice(0, 4), 10), parseInt(m.slice(5, 7), 10), 0).getDate()).padStart(2, "0"); };
+var SEL_RG = "h-7 min-w-0 rounded-md border border-border bg-card px-1.5 text-[11px] font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";   // padrao-ok: faixa compacta, a pedido do Marcus (16/11/2026)
+var norm = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
+var bonito = function(n){ var t = String(n || "").trim(); if(t!==t.toUpperCase() || !/[A-ZÀ-Ú]/.test(t)) return t; return t.toLowerCase().replace(/(^|[\s(\-\/])([a-zà-ú])/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/ (De|Da|Do|Das|Dos|E) /g, function(m){ return m.toLowerCase(); }); };
+var ddmm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : ""; };
+// ordem da planilha: quem vem primeiro (o resto entra por valor, do maior ao menor)
+var ORD_FORN = [/pontual/i, /office|edson/i, /^point/i, /dev ?master/i, /mega ?sul/i, /ellos?/i, /art ello/i], ORD_PREST = [/lucas castilho/i, /priscil/i, /madeira/i, /higor/i];
+function ResumoGeral(){
+  var c = usePf(), pf = c.pf, hoje = hojeIso(), sm = useState(mesAtual()), mes = sm[0], setMes = sm[1], st = useState(""), tipoSel = st[0], setTipoSel = st[1], sb = useState(""), buscaTxt = sb[0], setBuscaTxt = sb[1], sed = useState(""), editando = sed[0], setEditando = sed[1], refRg = useRef(null), sal = useState(0), altMax = sal[0], setAltMax = sal[1];
+  // ALTURA DA TABELA (Marcus, 16/11/2026: "coloca mais pra baixo"): a tabela vai até o fim da janela de quem está olhando; mede onde o bloco começa e usa o resto da altura (refaz ao mudar o tamanho da janela)
+  useEffect(function(){ var f = function(){ var el = refRg.current; if(!el) return; var t = el.getBoundingClientRect().top; setAltMax(Math.max(240, Math.round(window.innerHeight-t-44-10))); }; f(); var tm = setTimeout(f, 400); window.addEventListener("resize", f); return function(){ clearTimeout(tm); window.removeEventListener("resize", f); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  if(!pf || !pf.fornecedores) return e("p",{className:"p-6"}, "Carregando…");
+  // 1) janelas de cada fornecedor: as do mês viram linhas; o que ficou em aberto de meses antigos entra na primeira janela do mês (ou, se o mês não tem janela, vira uma linha só)
+  var grupos = [];
+  pf.fornecedores.forEach(function(f){
+    var tipo = ehPrestador(f) ? "Prestador" : "Fornecedor", atuais = [], antigas = [];
+    janelasDoForn(pf, f.id).forEach(function(j){
+      if(j.mes>mes) return;
+      var pg = Math.min(pagoJanela(pf, j.chave), j.total), ab = Math.max(0, j.total-pg);
+      if(j.total<=0.005) return;
+      if(j.mes<mes){ if(ab>0.005) antigas.push({j:j, pg:pg, ab:ab}); } else atuais.push({j:j, pg:pg, ab:ab});
+    });
+    if(!atuais.length && !antigas.length) return;
+    var linhas = [], porMes = {};
+    atuais.forEach(function(x){ (porMes[x.j.mes] = porMes[x.j.mes] || []).push(x); });
+    atuais.sort(function(a, b){ return a.j.fim.localeCompare(b.j.fim); });
+    var oldAb = antigas.reduce(function(t, x){ return t+x.ab; }, 0), meses = []; antigas.forEach(function(x){ if(meses.indexOf(x.j.mes)<0) meses.push(x.j.mes); });
+    var infoAntigo = oldAb>0.005 ? "Inclui "+brl(oldAb)+" em atraso de "+meses.sort().map(function(m){ return mesLabel(m+"-01"); }).join(" e ")+"." : "";
+    if(atuais.length){
+      atuais.forEach(function(x, i){
+        var ini = i===0 ? mes+"-01" : addDias(atuais[i-1].j.fim, 1), extra = i===0 ? oldAb : 0, ch = "j|"+x.j.chave;
+        linhas.push({id:ch, data:x.j.limite, nome:bonito(f.nome)+(atuais.length>1 ? " "+ddmm(ini)+" à "+ddmm(x.j.fim) : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
+      });
+    } else {
+      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, data:x.j.limite, nome:bonito(f.nome)+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
+    }
+    grupos.push({nome:bonito(f.nome), tipo:tipo, linhas:linhas, total:linhas.reduce(function(t, l){ return t+l.total; }, 0)});
+  });
+  var pos = function(g){ var lista = g.tipo==="Prestador" ? ORD_PREST : ORD_FORN, i = lista.findIndex(function(r){ return r.test(g.nome); }); return i<0 ? 100 : i; };
+  grupos.sort(function(a, b){ return (a.tipo===b.tipo ? 0 : a.tipo==="Fornecedor" ? -1 : 1) || pos(a)-pos(b) || b.total-a.total; });
+  // 2) sócios (meta de Pix do Financeiro familiar, só leitura)
+  var ffS = c.s.ff || {}, metaPix = ffS.pixMeta || {}, pixFam = ffS.pix || [], soc = [];
+  [["marcus", "Marcus"], ["anamaria", "Anamaria"], ["marco", "Marco Antonio"], ["anabeatriz", "Ana Beatriz"], ["lucas", "Lucas"], ["familia", "Casa"]].forEach(function(s0){
+    var meta = Number(metaPix[s0[0]+"|"+mes] || 0), pg = Math.round(pixFam.filter(function(x){ return x.personaId===s0[0] && String(x.data || "").slice(0, 7)===mes; }).reduce(function(t, x){ return t+(Number(x.valor) || 0); }, 0)*100)/100;
+    if(meta<=0.005 && pg<=0.005) return;
+    soc.push({id:"socio:"+s0[0]+"|"+mes, data:ULTDIA(mes), nome:s0[1], tipo:"Sócio", total:meta, pago:pg, aberto:Math.max(0, Math.round((meta-pg)*100)/100), info:""});
+  });
+  if(soc.length) grupos.push({nome:"Sócios", tipo:"Sócio", linhas:soc, total:0, socios:true});
+  // 3) lista final: um fornecedor embaixo do outro; linha de TOTAL quando há mais de uma linha
+  var soma = function(rows, k){ return rows.reduce(function(t, x){ return t+x[k]; }, 0); };
+  var todas = [];
+  grupos.forEach(function(g){
+    g.linhas.forEach(function(l){ todas.push(l); });
+    if(g.linhas.length>1) todas.push({id:"sub|"+g.nome, sub:true, nome:g.socios ? "TOTAL SÓCIOS" : g.nome+" TOTAL", tipo:g.tipo, data:"", total:soma(g.linhas, "total"), pago:soma(g.linhas, "pago"), aberto:soma(g.linhas, "aberto"), info:""});
+  });
+  var termos = norm(buscaTxt).split(/\s+/).filter(Boolean);
+  var vis = todas.filter(function(l){ return (!tipoSel || l.tipo===tipoSel) && (!termos.length || (function(){ var tx = norm([l.nome, l.tipo, ddmm(l.data), brl(l.total), brl(l.pago), brl(l.aberto)].join(" ")); return termos.every(function(t0){ return tx.indexOf(t0)>=0; }); })()); });
+  var salvaAna = function(chave, txt){ c.d({type:"PF", op:"mut", fn:function(p0){ p0.obsResumo = p0.obsResumo || {}; var t = String(txt || "").trim(); if(t) p0.obsResumo[chave] = t; else delete p0.obsResumo[chave]; return "Observação salva"; }}); };
+  // OBSERVAÇÕES (Marcus, 16/11/2026): sem traço. Linha vazia mostra só UM botãozinho apagado no meio (lápis); clicar abre o campo; com texto, mostra o texto (clicar edita). Sai do campo = salva.
+  var campoAna = function(v, l){
+    if(l.sub) return "";
+    var ch = "ana|"+mes+"|"+l.id, atual = (pf.obsResumo || {})[ch] || "";
+    if(!c.edita) return atual;
+    if(editando===ch) return e("input",{key:ch, type:"text", autoFocus:true, defaultValue:atual, "aria-label":"Observação: "+l.nome, onClick:function(ev){ ev.stopPropagation(); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.target.blur(); if(ev.key==="Escape"){ ev.target.value = atual; ev.target.blur(); } }, onBlur:function(ev){ if(ev.target.value!==atual) salvaAna(ch, ev.target.value); setEditando(""); }, className:"h-7 w-full min-w-[20rem] rounded border border-border bg-card px-2 text-left text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"});   // padrao-ok: campo menor para caber na linha compacta
+    if(atual) return e("span",{role:"button", tabIndex:0, title:"Editar", onClick:function(ev){ ev.stopPropagation(); setEditando(ch); }, onKeyDown:function(ev){ if(ev.key==="Enter") setEditando(ch); }, className:"block w-full cursor-text px-2 text-left text-[13px]"}, atual);
+    return e("button",{type:"button", title:"Escrever observação", "aria-label":"Escrever observação: "+l.nome, onClick:function(ev){ ev.stopPropagation(); setEditando(ch); }, className:"mx-auto grid size-6 place-items-center rounded text-foreground opacity-30 hover:bg-white/10 hover:opacity-100 focus-visible:opacity-100"},
+      e("svg",{viewBox:"0 0 24 24", width:14, height:14, fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true"}, e("path",{d:"M12 20h9"}), e("path",{d:"M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z"})));
+  };
+  // nome com o botão "i" (só nas linhas que juntaram saldo de mês antigo); clicar mostra/esconde o texto
+  // ÍCONE DE INFORMAÇÃO (Marcus, 16/11/2026): só aparece o aviso ao PASSAR O MOUSE (ou ao focar com o teclado); não prende, não clica, não cresce a linha.
+  var celulaNome = function(v, l){ if(!l.info) return v; return e("span",{className:"inline-flex items-center justify-center gap-1.5 whitespace-nowrap"}, v,
+    e("span",{tabIndex:0, role:"img", "aria-label":l.info, className:"group relative inline-flex size-4 shrink-0 cursor-help items-center justify-center text-warning outline-none focus-visible:ring-2 focus-visible:ring-primary"},
+      e("svg",{viewBox:"0 0 24 24", width:16, height:16, fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true"}, e("circle",{cx:12, cy:12, r:9.5}), e("path",{d:"M12 11v5.5"}), e("circle",{cx:12, cy:7.6, r:0.9, fill:"currentColor", stroke:"none"})),
+      e("span",{role:"tooltip", className:"pointer-events-none absolute left-full top-1/2 z-30 ml-2 hidden w-max max-w-[20rem] -translate-y-1/2 whitespace-normal rounded-md border border-border bg-card px-3 py-2 text-left text-[13px] font-normal text-foreground shadow-lg group-hover:block group-focus-visible:block"}, l.info))); };
+  var cols = [{k:"tipo", t:"Tipo", w:"6.5rem"}, {k:"nome", t:"Nome", w:"15rem", render:celulaNome}, {k:"total", t:"A pagar", w:"8rem", fmt:brl}, {k:"pago", t:"Pago", w:"8rem", fmt:brl, cor:function(l){ return l.pago>0.005 ? "text-emerald-400" : ""; }}, {k:"aberto", t:"Saldo", w:"8rem", fmt:brl, cor:function(l){ return l.aberto>0.005 ? "text-red-400" : "text-emerald-400"; }}, {k:"data", t:"Data", w:"4.5rem", fmt:ddmm, cor:function(l){ return l.data && l.data<hoje && l.aberto>0.005 ? "text-warning" : ""; }}, {k:"ana", t:"Observações", render:campoAna}];
+  var dados = vis.filter(function(l){ return !l.sub; });
+  var rodape = function(){ return ["", "TOTAL GERAL", brl(soma(dados, "total")), brl(soma(dados, "pago")), brl(soma(dados, "aberto")), "", ""]; };
+  var meses = []; for(var mm = 1; mm<=12; mm++) meses.push(ANO+"-"+String(mm).padStart(2, "0"));
+  return e("div",{ref:refRg, className:"-mx-5 -mt-5 [&_tbody_td]:!bg-[color-mix(in_srgb,var(--bloco-colunas)_38%,transparent)] [&_tr.rg-sub_td]:!bg-[var(--bloco-colunas)] [&_tfoot_td]:!bg-[var(--bloco-titulo)]"}, e(BlocoPainel,{titulo:"Resumo geral · "+mesLabel(mes+"-01"), compacto:true, alta:true,
+    acao:e("div",{className:"flex items-center gap-2"}, e("select",{value:mes, "aria-label":"Mês", onChange:function(ev){ setMes(ev.target.value); }, className:SEL_RG+" w-32"}, meses.map(function(m){ return e("option",{key:m, value:m}, mesLabel(m+"-01")); })),
+      e("select",{value:tipoSel, "aria-label":"Tipo", onChange:function(ev){ setTipoSel(ev.target.value); }, className:SEL_RG+" w-32"}, [["", "Todos os tipos"], ["Fornecedor", "Fornecedores"], ["Prestador", "Prestadores"], ["Sócio", "Sócios"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
+      e("input",{type:"search", value:buscaTxt, onChange:function(ev){ setBuscaTxt(ev.target.value); }, placeholder:"Buscar: nome, data, valor...", "aria-label":"Buscar no resumo", className:"h-7 w-44 min-w-0 rounded-md border border-border bg-card px-2 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}))},   // UMA LINHA SÓ no alto, mais grossa: os filtros ficam DENTRO da barra azul do título (Marcus, 16/11/2026). padrao-ok: busca e campos menores, como em Contas a pagar
+    e(TabelaPlanilha,{key:mes, cols:cols, alturaMax:altMax ? altMax+"px" : "calc(100vh - 11rem)", linhas:vis, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, linhaCls:function(l){ return l.sub ? "rg-sub font-bold" : ""; }, totalRodape:rodape, vazio:"Nada a pagar neste filtro."})));
+}
+function AbaPfResumo(){ return e(ResumoGeral, null); }
+export { AbaPfResumo, Geral, PainelPontual };

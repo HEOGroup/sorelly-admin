@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.67", data:"2026-11-16", titulo:"Contas a pagar: família junto, colunas e busca · Resumo geral", itens:[
+  {tipo:"novo", area:"Financeiro › Pagamentos › Resumo geral", txt:"Resumo geral: tabela única no modelo de Contas a pagar (barra azul com mês, tipo e busca), cada fornecedor junto (Pontual por dezena, Office Graf por quinzena) com linha de TOTAL, sócios no fim com TOTAL SÓCIOS, saldo de mês antigo somado na primeira linha com ícone de informação ao passar o mouse, coluna Observações e total geral."},
+  {tipo:"melhoria", area:"Financeiro › Pagamentos › Negociações", txt:"Negociações ganhou abas: Negociações, Meses e dezenas (o resumo antigo por fornecedor) e Limite e calendário (aba final)."},
+  {tipo:"novo", area:"Financeiro › Contas a pagar", txt:"Visões Empresa, Família e Junto na mesma lista (só quem tem a autorização da família): conta lançada no Admin e na DevMaster vira uma linha; conta paga na DevMaster aparece como paga; coluna Pessoa e Dono por pessoa; menu de pessoa."},
+  {tipo:"melhoria", area:"Financeiro › Contas a pagar", txt:"Menus suspensos no lugar dos botões, busca em todos os campos, colunas que abrem, fecham e mudam de lugar ao arrastar o título, cabeçalho parado ao rolar, tabela até o fim da janela e rodapé de páginas pequeno com linhas por página."},
+  {tipo:"correção", area:"Financeiro › Contas a pagar", txt:"Pago em das contas da família mostrava o vencimento; passou a mostrar a data do pagamento."},
+ ]},
  {v:"0.20.66", data:"2026-11-16", titulo:"Aviso de versão nova mais visível", itens:[
   {tipo:"melhoria", area:"Sistema", txt:"Aviso de versão nova mais visível: faixa dourada no topo, confere a cada 30 s e ao voltar para a aba, e o botão Atualizar agora limpa o cache."},
  ]},
