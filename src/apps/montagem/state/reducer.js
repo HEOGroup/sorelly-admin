@@ -4,7 +4,7 @@ var MESES_LONGO_R = ["janeiro","fevereiro","março","abril","maio","junho","julh
 import { aplicaFdFixos, REV_FIXAS } from "@/apps/montagem/state/fd-patches";
 import { aplicaAgendPatches } from "@/apps/montagem/state/agend-patches";
 import { acumularFaturamento } from "@/apps/montagem/domain/saldos-contas";
-import { condNums, condOk } from "@/apps/montagem/domain/condicionais";
+import { condNums, condOk, condVisiveisPre } from "@/apps/montagem/domain/condicionais";
 import { dividasAnteriores } from "@/apps/montagem/domain/comissoes";
 import { calcularAcerto, novaVersaoRegras, vezCobravel, versaoDoKit, versaoVigente, versaoEfetiva, versaoComissaoAntiga, comissaoEspecialDe, modalidadeDe, versaoDaRevendedora, versaoDaEntrega, hojeIso } from "@/apps/montagem/domain/consignado";
 import { lancamentoConferido, contasDefinidas } from "@/apps/montagem/domain/atendimento-interno";
@@ -12,7 +12,7 @@ import { BIPADORAS, DIRETORIA, KITNOVO, SUPERVISORA, montadorValido, nomeDe, pap
 import { capacidadeListagem, dataPagamento, ehAtencao, kitsNaListagem, listagemCheia, motivoNaoMonta, nomeMes, resumoBipadora, resumoMontadora, soEncomendas } from "@/apps/montagem/domain/regras";
 import { kit } from "@/apps/montagem/domain/seed";
 import { SEM_KIT } from "@/apps/montagem/domain/status";
-import { sugerido } from "@/apps/montagem/domain/vendas";
+import { media3, sugerido } from "@/apps/montagem/domain/vendas";
 import { destinosDe } from "@/apps/montagem/domain/avisos";
 import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaListagem, tituloDoDia } from "@/apps/montagem/domain/listagem-regras";
 import { internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
@@ -678,6 +678,62 @@ function reducer(s, a){
         var c = Object.assign({}, x.cond), p = Object.assign({}, c.chkP), prev = Object.assign({}, c.prev);
         p[num] = true; prev[num] = new Date().toISOString();
         return {cond:Object.assign(c, {nums:(c.nums||[]).concat([num]), chkP:p, prev:prev})}; })}, "Condicional "+num+" adicionada");
+    }
+    // 16/11/2026 (Marcus: "liga as condicionais da DevMaster" e "o valor do kit vai automático, igual ao interno"): chegam (a) os números das condicionais
+    // ABERTAS da revendedora e (b) as até 3 últimas vendas da média (rota /api/condicionais-kits, lib/condicionais-kits.js). Só kit ainda não montado.
+    // (a) cond.nums (sem apagar o que a funcionária já digitou) e cond.prev. Acerto + kit com condicional a conferir e cfg.condConferenciaPrevia diferente de false:
+    //     vai para "precond"; a funcionária de condicionais confere e libera (LIBERAR_COND).
+    // (b) kit.vendas = as vendas da média; valor = média das vendas pela tabela de kit (sugerido(), a mesma do Atendimento Sorelly), sem marcar como manual.
+    //     Média acima de cfg.limiteAnaliseVendas NÃO define o valor sozinho (a análise de vendas é obrigatória): fica para a supervisão. Sem venda, fica para a supervisão.
+    //     Desliga com cfg.valorAutomatico = false. Kit novo e reposição não entram (valor do setor Kit novo / teto da reposição).
+    case "KIT_COND_NUMS": {
+      var kCn = kitDe(s, a.kitId); if(!kCn) return s;
+      var cdC = kCn.cond || {};
+      if(kCn.status!=="semvalor" && kCn.status!=="pendente" && kCn.status!=="precond") return s;   // já começou a montar: não mexe
+      // Regra 2 (Marcus, 16/11/2026, papel da DevMaster da Maria Eduarda): entram só as condicionais ANTIGAS, as que voltam no acerto. A condicional NOVA
+      // (a do kit que a revendedora vai receber, emitida depois da listagem, com previsão uns 30 dias à frente) NÃO entra em cond.nums: fica em cond.novaDm.
+      // Corte: previsão de devolução até (dia da listagem + cfg.condPrevDias, padrão 15). Lara: 094059 (prev 14/11) entra; 097106 (prev 15/12) fica fora.
+      var lgC = s.listagens.find(function(x){ return x.id===kCn.lid; }), limC = null;
+      if(lgC && lgC.data){ var dtC = new Date(String(lgC.data).slice(0, 10)+"T12:00:00Z"); dtC.setUTCDate(dtC.getUTCDate() + (((s.cfg||{}).condPrevDias)||15)); limC = dtC.toISOString().slice(0, 10); }
+      var todasC = (a.conds||[]).filter(function(c){ return c && c.numero; });
+      var tardeC = limC ? todasC.filter(function(c){ return c.previsao && String(c.previsao).slice(0, 10) > limC; }) : [], cedoC = todasC.filter(function(c){ return tardeC.indexOf(c)<0; });
+      var tardeNums = tardeC.map(function(c){ return c.numero; });
+      var fazCond = !cdC.condBuscaEm && kCn.status!=="precond", fazRegra = !!cdC.condBuscaEm && cdC.condRegra!==2 && a.conds!==undefined;
+      var fazValor = !cdC.valorBuscaEm && a.vendas!==undefined && a.vendas!==null;
+      if(!fazCond && !fazRegra && !fazValor) return s;
+      var kitC = Object.assign({}, kCn), condC = Object.assign({}, cdC);
+      // 16/11/2026: o valor automático do kit (média das 3 últimas vendas pela tabela de kit, igual ao Atendimento Sorelly; ver docs/DECISOES.md)
+      if(fazValor){
+        condC.valorBuscaEm = agora;
+        var vsC = (a.vendas||[]).map(Number).filter(function(x){ return x>0; }).slice(0, 3);
+        if(vsC.length){
+          kitC.vendas = vsC;
+          if((kCn.tipoKit==="acerto_kit" || kCn.tipoKit==="acerto_kit_exp") && (kCn.valor===null || kCn.valor===undefined) && (s.cfg||{}).valorAutomatico!==false){
+            var mC = media3(vsC); condC.mediaAuto = Math.round(mC*100)/100;
+            if(!(mC > s.cfg.limiteAnaliseVendas)){
+              kitC.valor = sugerido(vsC, s.cfg); kitC.manual = false; kitC.defPor = SUPERVISORA.id; kitC.defEm = agora; kitC.defAuto = true;
+              if(kitC.status==="semvalor") kitC.status = "pendente";
+            }
+          }
+        }
+      }
+      if(fazCond){
+        var jaC = condNums(kCn), prevC = Object.assign({}, cdC.prev), numsC = jaC.slice();
+        cedoC.forEach(function(c){ if(numsC.indexOf(c.numero)<0) numsC.push(c.numero); if(!prevC[c.numero] && c.previsao) prevC[c.numero] = c.previsao; });
+        condC.nums = numsC; condC.prev = prevC; condC.condBuscaEm = agora; condC.condDm = cedoC.length; condC.condRegra = 2; condC.novaDm = tardeNums;
+        kitC.cond = condC;
+        var travaC = ((s.cfg||{}).condConferenciaPrevia!==false) && numsC.length>jaC.length && condVisiveisPre(kitC).length>0 && (kCn.tipoKit==="acerto_kit" || kCn.tipoKit==="acerto_kit_exp");
+        if(travaC) kitC.status = "precond";
+      } else if(fazRegra){
+        // kit já buscado pela regra 1: tira só os números que a DevMaster diz serem da condicional NOVA (o que a funcionária digitou à mão fica)
+        var fora = {}; tardeNums.forEach(function(n){ fora[n] = 1; });
+        var numsR = condNums(kCn).filter(function(n){ return !fora[n]; });
+        ["prev", "chkP", "chkM", "chkB", "faltas", "impressas"].forEach(function(cp){ if(condC[cp]){ var o = Object.assign({}, condC[cp]); tardeNums.forEach(function(n){ delete o[n]; }); condC[cp] = o; } });
+        condC.nums = numsR; condC.novaDm = tardeNums; condC.condRegra = 2; condC.condDm = cedoC.length;
+        kitC.cond = condC;
+        if(kitC.status==="precond" && condVisiveisPre(kitC).length===0) kitC.status = (kitC.valor===null || kitC.valor===undefined) ? "semvalor" : "pendente";   // nada mais a conferir: não fica parado
+      } else kitC.cond = condC;
+      return com(s, {kits:s.kits.map(function(x){ return x.id===a.kitId ? kitC : x; })}, null);
     }
     // Libera pra fila de montagem: só chega até aqui quando as condicionais da revendedora já foram todas conferidas.
     case "LIBERAR_COND": {
