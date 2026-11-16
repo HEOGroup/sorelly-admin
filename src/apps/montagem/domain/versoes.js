@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.64", data:"2026-11-16", titulo:"Atendimento Sorelly: média sem vendas inventadas e pagamentos compactos", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Média das vendas: sem histórico cadastrado a tela inventava 5 meses de vendas pelo nome da revendedora e jogava na média (R$ 7.000,00 virava média de R$ 3.620,00). Agora, com 1 venda, a média é só dessa venda; nada é inventado. O valor do kit segue a média certa."},
+  {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Etapa Pagamentos compacta: totais, formas (agora botões com borda; \"Link\" em vez de \"Link de pagamento\"), entrada, pagamentos lançados e Financeiro num bloco só, com linhas de 32 px. A barra do Financeiro é o título da tabela de contas, e a conta aparece em duas linhas (CNPJ e empresa em cima, conta embaixo)."}
+ ]},
  {v:"0.20.63", data:"2026-11-16", titulo:"Atendimento Sorelly: pagamentos, brindes e resumo", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Depois de registrar o acerto, a etapa Regras mostra só o resultado e os botões Copiar (revendedora e grupo): sem o termo assinado e sem o texto das mensagens."},
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"Brindes com muitas peças: a lista vira 2 colunas e a letra passa para 11 px sem quebrar. No Resumo do acerto a lista preenche o bloco, tem linhas compactas e barra de rolagem fina (classe barra-fina)."},

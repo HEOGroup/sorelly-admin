@@ -20,7 +20,7 @@ import { Btn } from "@/apps/montagem/ui/button";
 import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
 import { Icon } from "@/apps/montagem/ui/icon";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
-import { atrasoUteisDe, avaliarKit, histDemoDe } from "@/apps/montagem/domain/revendedoras-internas";
+import { atrasoUteisDe, avaliarKit } from "@/apps/montagem/domain/revendedoras-internas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 import { statusLinhaFin } from "@/apps/montagem/domain/atendimento-interno";
 import { DESCONTO_BRINDE_ATRASO, TOLERANCIA_CHEGADA_MIN, tempoMaxEscolhaMin, textoAntesEscolha, textoFimEscolha } from "@/apps/montagem/domain/atendimento-interno";
@@ -220,6 +220,8 @@ function AtendimentoInterno(){
   useEffect(function(){ setPassoAt(sel && sel.inicioTs && sel.condOk ? 1 : 0); }, [sel ? sel.id : null]);   // abre na etapa em que parou
   useEffect(function(){ if(sel && sel.atrasoDias!=null) up({atrasoDias:Number(sel.atrasoDias)||0}); }, [sel ? sel.id : null, sel ? sel.atrasoDias : null]);   // dias de atraso: quem preenche é a Tamara (agendamento)
 
+  // 16/11/2026 (Marcus: "deixa o link de pagamento somente como Link"): nesta tela a forma "link" aparece só como Link
+  var rotForma = function(k, rot){ return k==="link" ? "Link" : rot; };
   var formas = (s.formasPagamento || formasPagamentoPadrao()).filter(function(f){ return f.k!=="pix_representante"; });   // sem representante no atendimento interno
   var formaDe = function(k){ return formas.find(function(f){return f.k===k;}) || {k:k, label:k, parcelas:false, descricoes:[]}; };
   var modalidade = sel ? modalidadeDe(s, sel.nome) : "padrao", ehPrata = modalidade==="prata";
@@ -262,8 +264,8 @@ function AtendimentoInterno(){
   useEffect(function(){ if(sel && atrasoAuto!=null && (form.atrasoDias||0)!==atrasoAuto) up({atrasoDias:atrasoAuto}); }, [sel ? sel.id : null, atrasoAuto]);   // eslint-disable-line react-hooks/exhaustive-deps
   var temHist = !!rInt && rInt.hist.some(function(h){ return h.data && h.venda>0; });
   var histFallback = vendasAnt.map(function(v, i){ var dt = new Date(hoje+"T12:00:00"); dt.setMonth(dt.getMonth()-(i+1)); return {data:dt.toISOString().slice(0,10), venda:v}; });
-  var temAnt = vendasAnt.some(function(v){ return v>0; });
-  var avKit = avaliarKit(temHist ? rInt.hist : temAnt ? histFallback : (sel ? histDemoDe(sel.nome) : histFallback), form.vendaBruta, cfg, hoje.slice(0,7));   // toda revendedora tem vendas anteriores para a média
+  // 16/11/2026 (Marcus: "se tem 1 venda só a média é só dessa venda"): NADA inventado. Sem histórico, valem só a venda de agora e as vendas anteriores digitadas (o histórico de demonstração por nome saiu; tinha entrado R$ 3.620,00 de média numa venda de R$ 7.000,00)
+  var avKit = avaliarKit(temHist ? rInt.hist : histFallback, form.vendaBruta, cfg, hoje.slice(0,7));
   var vendasMedia = avKit.lista;
   var mediaVendas = avKit.media;
   // média abaixo do mínimo (11/11/2026): a atendente pede a autorização do kit novo ao Financeiro (Direcionar). Aceito = libera pela faixa da média (ou a menor da tabela).
@@ -538,29 +540,35 @@ function AtendimentoInterno(){
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
   var tudoComComprovante = !!lancFin && !alterado && semPendencia(lancFin.linhas);     // inclui a diferença do brinde, se houver
   var etapa = function(patch){ d({type:"FIN_ETAPA", id:lancFin.id, patch:patch}); };
+  // 16/11/2026 (Marcus): na conta, em cima o CNPJ e a empresa (ex.: CNPJ 34 · Sorelly Atacadista) e embaixo a conta (ex.: Safra 34)
+  var contaEmDuasLinhas = function(txt){ var pt = String(txt||"").split(" · "); if(pt.length<3) return e("span",{className:"break-words"}, txt || "—");
+    return e("span",{className:"flex flex-col leading-tight", title:txt}, e("span",null, pt.slice(0, pt.length-1).join(" · ")), e("b",{className:"text-[11px]"}, pt[pt.length-1])); };
   var GRID_FIN = "grid min-h-8 grid-cols-[minmax(0,.9fr)_minmax(0,2.2fr)_6rem_minmax(0,1.5fr)] items-center gap-2 px-2 py-1 text-center text-[13px]";
   var STATUS_FIN = {aguardando:["Aguardando o financeiro definir e enviar as contas","#F59E0B"], conta:["Contas definidas: anexe os comprovantes","#38BDF8"], ok:["✓ Conferido","#22C55E"], isento:["Isento","#9CA3AF"]};
   var trocaParte = function(i, j, patch){ var l = lancFin.linhas[i]; d({type:"FIN_LINHA", id:lancFin.id, i:i, patch:{partes:l.partes.map(function(p,k){ return k===j ? Object.assign({}, p, patch) : p; })}}); };
-  var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : e("div",{className:"flex flex-col gap-1.5 rounded-xl bg-black/20 p-2"},
-    e("div",{className:"flex flex-wrap items-center justify-between gap-2"},
+  // 16/11/2026 (Marcus: "compacta melhor"): título, botões e avisos na MESMA linha (os filhos entram direto na linha, "contents"); só a tabela de contas ocupa a largura toda
+  var caixaFinanceiro = linhasEnvio.length===0 && !lancFin ? null : // 16/11/2026 (Marcus: "é um bloco só"): a barra do Financeiro é o título da tabela de contas, tudo no mesmo bloco
+    e("div",{className:"flex flex-col border-t border-foreground/25"},
+    e("div",{className:"flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1 bg-black/30 px-2 py-1"},
+    e("div",{className:"contents"},
       e("b",{className:"text-[13px] uppercase tracking-wide"}, "Financeiro"+(lancFin ? (lancFin.conferido ? " · tudo conferido" : " · enviado às "+hhmmDeTs(lancFin.enviadoTs)) : "")),
       (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, className:(dv.excedenteBrinde>0 && podeEnviar ? "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)]" : ""), onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:form.vendaBruta||0, aPagar:dv.totalAPagar||0}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
     (!lancFin || alterado) && linhasEnvio.length>0 && !fechouPagamentos && e("p",{className:"text-[13px] font-semibold text-muted-foreground"},"Para enviar: feche todas as formas de pagamento (sem valor pendente) ou resolva a negociação."),
     alterado && e("p",{className:"text-[13px] font-semibold text-warning"},"Os pagamentos mudaram depois do envio: reenvie para o financeiro conferir de novo."),
     // etapa 1: comprovantes dos pagamentos anexados → OK libera os brindes · etapa 2: depois dos brindes (e da diferença, se houver) → finaliza e o financeiro confere
-    lancFin && !lancFin.etapaComprovantes && e("div",{className:"flex flex-wrap items-center gap-3"},
+    lancFin && !lancFin.etapaComprovantes && e("div",{className:"contents"},
       e(Btn,{v:"primary", ic:"check", sm:true, disabled:!comprovantesPagOk || alterado, onClick:function(){ etapa({etapaComprovantes:true}); }}, "OK, comprovantes anexados"),
-      e("span",{className:"text-[13px] text-muted-foreground"}, comprovantesPagOk ? "Ao dar OK, os brindes são liberados." : "Anexe o comprovante de cada conta definida pelo financeiro.")),
-    lancFin && lancFin.etapaComprovantes && !lancFin.finalizado && e("div",{className:"flex flex-wrap items-center gap-3"},
+      e("span",{className:"text-[13px] text-muted-foreground"}, comprovantesPagOk ? "OK libera os brindes." : "Anexe os comprovantes.")),
+    lancFin && lancFin.etapaComprovantes && !lancFin.finalizado && e("div",{className:"contents"},
       e(Btn,{v:"primary", ic:"check", sm:true, disabled:!tudoComComprovante, onClick:function(){ etapa({finalizado:true, finalizadoTs:Date.now()}); }}, "Finalizar pagamentos e enviar para conferência"),
       e("span",{className:"text-[13px] text-muted-foreground"}, alterado ? "Há diferença de brinde nova: reenvie ao financeiro, espere a conta e anexe o comprovante." : tudoComComprovante ? "Tudo anexado: o financeiro já pode conferir." : "Falta anexar algum comprovante.")),
-    lancFin && lancFin.finalizado && !lancFin.conferido && e("p",{className:"text-[13px] font-semibold text-primary"},"Comprovantes enviados: aguardando o financeiro conferir."),
+    lancFin && lancFin.finalizado && !lancFin.conferido && e("p",{className:"text-[13px] font-semibold text-primary"},"Comprovantes enviados: aguardando o financeiro conferir.")),
     // 16/11/2026 (Marcus: "fora do padrão, compactar"): uma linha por conta, tudo em tabela única (Forma, Conta inteira, Valor, Situação), sem cartão dentro de cartão, sem corte "..." e sem valor dourado
-    lancFin && e("div",{className:"flex flex-col overflow-hidden rounded-md border border-foreground/25"},
+    lancFin && e("div",{className:"flex w-full flex-col"},
       e("div",{className:GRID_FIN+" bg-black/30 text-[11px] font-bold uppercase tracking-[.05em]"}, e("span",null,"Forma"), e("span",null,"Conta"), e("span",null,"Valor"), e("span",null,"Situação")),
       lancFin.linhas.reduce(function(acc,l,i){ var sk = statusLinhaFin(l), st = STATUS_FIN[sk], nomeF = l.tipo==="brinde" ? "Diferença do brinde" : formaDe(l.forma).label;
         var partes = (sk!=="isento" && sk!=="aguardando") ? (l.partes||[]) : [];
-        var linha = function(chave, conta, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 "+(acc.length%2 ? "bg-white/[0.03]" : "")}, e("b",null,nomeF), e("span",{className:"break-words"}, conta), e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
+        var linha = function(chave, conta, valor, acao){ return e("div",{key:chave, className:GRID_FIN+" border-t border-primary/20 "+(acc.length%2 ? "bg-white/[0.03]" : "")}, e("b",null,nomeF), contaEmDuasLinhas(conta), e("b",{className:MONO+" whitespace-nowrap"}, din(valor)), acao); };
         var marca = e("span",{className:"justify-self-center rounded-md px-2 py-0.5 text-[11px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0]);
         if(!partes.length){ acc.push(linha(i+"-s", "—", l.valor, marca)); return acc; }
         partes.forEach(function(p,j){
@@ -962,14 +970,14 @@ function AtendimentoInterno(){
       className:"flex min-h-8 items-center justify-center text-[13px] hover:bg-white/5 "+(on ? "bg-primary/10 font-semibold text-primary shadow-[inset_3px_0_0_var(--primary)]" : (i%2 ? "bg-white/[0.03]" : ""))}, f.label); }));
   var linhaBand = pedeBand && !jaFeito && e("div",{className:"flex flex-wrap items-center justify-center gap-1.5 border-t border-foreground/25 px-2 pt-2"}, e("span",{className:CAP}, "Bandeira"),
     BANDEIRAS.map(function(b){ var on = lancForm.bandeira===b; return e("button",{key:b, type:"button", onClick:function(){ setLancForm(Object.assign({}, lancForm, {bandeira:b})); }, className:"h-8 rounded-md border px-2.5 text-[13px] font-medium "+(on ? "border-primary bg-primary text-primary-foreground" : "border-foreground/25 bg-card hover:bg-white/10")}, b); }));
-  var linhaEntrada = !jaFeito && e("div",{className:"flex flex-wrap items-center justify-center gap-2 border-t border-foreground/25 p-2"}, e("span",{className:CAP}, fl.label||"Forma"),
+  var linhaEntrada = !jaFeito && e("div",{className:"flex flex-wrap items-center justify-center gap-2 border-t border-foreground/25 p-2"}, e("span",{className:CAP}, rotForma(fl.k, fl.label)||"Forma"),
     e(CampoDinheiro,{value:lancForm.valor, label:"Valor do pagamento", className:CPT+" w-28!", placeholder:"R$ 0,00", onChange:function(v){ setLancForm(Object.assign({}, lancForm, {valor:v})); }}),
     fl.parcelas && e("span",{className:"inline-flex items-center gap-1"}, e("button",{type:"button", onClick:function(){ setLancForm(Object.assign({}, lancForm, {parcelas:Math.max(1,(lancForm.parcelas||1)-1)})); }, className:"h-8 w-8 rounded-md border border-foreground/25 bg-card"}, "−"), e("b",{className:"min-w-8 text-center text-[13px] tabular-nums"}, (lancForm.parcelas||1)+"x"), e("button",{type:"button", onClick:function(){ setLancForm(Object.assign({}, lancForm, {parcelas:Math.min(6,(lancForm.parcelas||1)+1)})); }, className:"h-8 w-8 rounded-md border border-foreground/25 bg-card"}, "+")),
     e("button",{type:"button", disabled:!lancOk || (pedeBand && !lancForm.bandeira), onClick:addPagB, className:"h-8 rounded-md bg-primary px-3 text-[13px] font-semibold text-primary-foreground disabled:opacity-40"}, "Adicionar"));
   var GPAG = " grid-cols-[minmax(0,1.5fr)_3.5rem_6.5rem_2rem]";
   var tabPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+GPAG}, e("span",null,"Forma"), e("span",null,"Parc."), e("span",null,"Valor"), e("span")),
-    form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
-      e("span",{className:"whitespace-nowrap"}, formaDe(q.forma).label+(q.bandeira ? " · "+q.bandeira : "")+(q.jaPagoLink ? " · já pago no link" : "")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
+    form.pagamentos.length ? form.pagamentos.map(function(q,i){ return e("div",{key:i, className:LIN.replace("min-h-9","min-h-8")+GPAG+(i%2 ? " bg-white/[0.03]" : "")},
+      e("span",{className:"whitespace-nowrap"}, rotForma(q.forma, formaDe(q.forma).label)+(q.bandeira ? " · "+q.bandeira : "")+(q.jaPagoLink ? " · já pago no link" : "")), e("span",null, q.parcelas>1 ? q.parcelas+"x" : "À vista"), n15(din(q.valor)),
       jaFeito ? e("span") : e(Remover,{label:"Remover pagamento", onClick:function(){ cancelarPag(i); }})); })
     : e("div",{className:LIN},e("span",{className:CAP},"Nenhuma forma selecionada")));
   var tabTotPag = e("div",{className:CTB+" flex-none"}, e("div",{className:CABT+" grid-cols-[minmax(0,1fr)_7.5rem]"}, e("span",null,"Totais"), e("span")),
@@ -977,15 +985,15 @@ function AtendimentoInterno(){
     e("div",{className:LIN+" grid-cols-[minmax(0,1fr)_7.5rem] min-h-9 border-y border-primary bg-primary/15! font-semibold"}, e("span",null,"Falta pagar"), e("b",{className:"text-[15px] font-semibold tabular-nums "+(dv.restanteTotal>0.009 ? "text-destructive" : "text-success")}, din(dv.restanteTotal))));
   // Marcus, 16/11/2026: a etapa Pagamentos é UMA coluna: blocos de totais no topo, a escolha da forma em uma barra e depois tudo em linhas indo para baixo (pode haver muitos pagamentos)
   var cartaoPg = function(k, el){ return e("div",{key:k, className:"flex min-w-0 overflow-hidden rounded-lg border-2 border-primary/50 [&>*]:flex-1"}, el); };
-  var formasBarra = e("div",{className:"grid grid-cols-3 gap-px bg-foreground/25 @[40rem]:grid-cols-6"}, formas.map(function(f){ var on = lancForm.forma===f.k;
+  // 16/11/2026 (Marcus: "tem que aparecer que é botão"): cada forma é um botão com borda; o escolhido fica dourado cheio
+  var formasBarra = e("div",{className:"grid grid-cols-3 gap-1.5 border-t border-primary/20 p-1.5 @[40rem]:grid-cols-6"}, formas.map(function(f){ var on = lancForm.forma===f.k;
     return e("button",{key:f.k, type:"button", disabled:jaFeito, onClick:function(){ setLancForm(Object.assign({}, lancForm, {forma:f.k, parcelas:1, bandeira:""})); },
-      className:"flex min-h-8 items-center justify-center px-2 text-[13px] hover:bg-white/10 "+(on ? "bg-primary/25 font-semibold text-primary" : "bg-card")}, f.label); }));
-  var totaisPg = lado("Totais", e("div",{className:"grid grid-cols-3 gap-px bg-foreground/25"}, [["Valor do acerto", pa ? din(dv.totalAPagar) : "—", ""], ["Pagamentos", din(dv.totalPagoAtual), "text-success"], ["Falta pagar", din(dv.restanteTotal), dv.restanteTotal>0.009 ? "text-destructive" : "text-success"]].map(function(c){
-    return e("div",{key:c[0], className:"flex min-h-9 flex-wrap items-center justify-center gap-x-2 bg-card px-2"}, e("span",{className:CAP+" whitespace-nowrap"}, c[0]), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums "+c[2]}, c[1])); })), "", "p-0");
+      className:"flex h-8 items-center justify-center whitespace-nowrap rounded-md border px-2 text-[13px] font-medium disabled:opacity-60 "+(on ? "border-primary bg-primary font-semibold text-primary-foreground" : "border-foreground/30 bg-card hover:bg-white/10")}, rotForma(f.k, f.label)); }));
+  var totaisPg = (e("div",{className:"grid grid-cols-3 gap-px bg-foreground/25"}, [["Valor do acerto", pa ? din(dv.totalAPagar) : "—", ""], ["Pagamentos", din(dv.totalPagoAtual), "text-success"], ["Falta pagar", din(dv.restanteTotal), dv.restanteTotal>0.009 ? "text-destructive" : "text-success"]].map(function(c){
+    return e("div",{key:c[0], className:"flex min-h-8 flex-wrap items-center justify-center gap-x-2 bg-card px-2"}, e("span",{className:CAP+" whitespace-nowrap"}, c[0]), e("b",{className:"whitespace-nowrap text-[13px] font-semibold tabular-nums "+c[2]}, c[1])); })));
   var est1 = e("div",{className:"flex min-w-0 flex-1 flex-col gap-2 p-2"},
-    cartaoPg("t", totaisPg),
-    cartaoPg("f", lado("Selecione a forma de pagamento", e("div",{className:CTB}, formasBarra, linhaBand, linhaEntrada, blocoLinks), "", "p-0")),
-    cartaoPg("p", lado("Formas de pagamento selecionadas", [tabPag, pPag])));
+    // 16/11/2026 (Marcus: "compactar, tem que ter linhas de tabela"): totais, forma, entrada, pagamentos lançados e Financeiro num bloco só, linhas de 32 px
+    cartaoPg("u", lado("Pagamentos", e("div",{className:CTB}, totaisPg, formasBarra, linhaBand, linhaEntrada, blocoLinks, tabPag, pPag), "", "p-0")));
 
   // ── estação 3: brindes normal e select (código da peça + valor) ──
   var blocoBr = function(cat, titulo, lib, lanc, st, setSt){
