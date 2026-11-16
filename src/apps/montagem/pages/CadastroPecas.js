@@ -27,9 +27,9 @@ function AbaPecasCompras(){ return e(AbaCompras,null); }
 function AbaCadastroPecas(){ return e(AbaPedidos,null); }
 function AbaPecasSolicitacoes(){ var n = contagem(use().state.pp).aberto; return Tela("Solicitações", n ? n+" pedido"+(n===1 ? "" : "s")+" de peças da produção em aberto." : "Pedidos de peças da produção para o cadastro.", e(AbaSolicitacoes,null)); }
 function AbaPecasControle(){ return e(AbaControle,null); }   // Controle de compras: tem o próprio título em bloco azul (16/11/2026)
-function AbaPecasFaturasPontual(){ return Tela("Faturas Pontual", "Faturas de banho da Pontual ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"pontual"})); }
-function AbaPecasFaturasEllos(){ return Tela("Faturas Ellos", "Faturas de banho da Ellos ligadas aos pedidos de bruto.", e(AbaFaturas,{galv:"ellos"})); }
-function AbaPecasOuro(){ return Tela("Retirar ouro", "Ouro e prata enviados ao banho e o que já foi descontado em fatura.", e(AbaRetirarOuro,null)); }
+function AbaPecasFaturasPontual(){ return e(AbaFaturas,{galv:"pontual"}); }   // Faturas e Retirar ouro: título no bloco azul, sem PageHead (16/11/2026)
+function AbaPecasFaturasEllos(){ return e(AbaFaturas,{galv:"ellos"}); }
+function AbaPecasOuro(){ return e(AbaRetirarOuro,null); }
 function AbaPecasBanho(){ return Tela("Tabela do banho", "Preços do banho: Ellos e Pontual lado a lado.", e(AbaBanho,null)); }
 function AbaPecasLotes(){ var cx = use(); return Tela("Planilhas de cadastro", "Uma planilha por volta do banho: custo, preço e markup. Clique para abrir na Calculadora.", e(AbaLotes,{onAbrir:function(id){ LOTE.id = id; cx.dispatch({type:"ABA", aba:"cpcalc"}); }})); }
 function AbaPecasCalculadora(){ var st = useState(LOTE.id); return Tela("Calculadora", "Custo, preço sugerido e markup de cada peça da planilha.", e(AbaCalculadora,{loteId:st[0], onLote:function(id){ LOTE.id = id; st[1](id); }})); }

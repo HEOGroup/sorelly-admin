@@ -49,7 +49,7 @@ var MENU_CADPECAS = [
   M("Compras","cpcompras"),
   M("Pedidos","cadpecas"),
   M("Controle de compras","cpctrl"),
-  {nome:"Banho", itens:[M("Tabela do banho","cpbanho"), M("Faturas Pontual","cpfp"), M("Faturas Ellos","cpfe"), M("Retirar ouro","cpouro")]},
+  {nome:"Banho", itens:[M("Tabela do banho","cpbanho"), M("Faturas","cpfp"), M("Retirar ouro","cpouro")]},
   {nome:"Peças", itens:[M("Solicitações","cpsol"), M("Planilhas de cadastro","cplotes"), M("Calculadora","cpcalc"), M("DevMaster","cpdev")]},
   M("Fornecedores","cpforn"),
   M("Configurações","cpcfg")
@@ -211,7 +211,7 @@ var SETORES = [
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
   {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", menu:MENU_CADPECAS, areas:[
     {nome:"Pedidos", telas:[T("cpcompras","Compras"), T("cadpecas","Pedidos"), T("cpctrl","Controle de compras")]},
-    {nome:"Banho", telas:[T("cpbanho","Tabela do banho"), T("cpfp","Faturas Pontual"), T("cpfe","Faturas Ellos"), T("cpouro","Retirar ouro")]},
+    {nome:"Banho", telas:[T("cpbanho","Tabela do banho"), T("cpfp","Faturas"), T("cpouro","Retirar ouro")]},
     {nome:"Peças", telas:[T("cpsol","Solicitações"), T("cplotes","Planilhas de cadastro"), T("cpcalc","Calculadora"), T("cpdev","DevMaster")]},
     {nome:"Fornecedores", telas:[T("cpforn","Fornecedores")]},
     {nome:"Configurações", telas:[T("cpcfg","Configurações")]}]},

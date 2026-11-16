@@ -426,4 +426,4 @@ function NovoPedido(p){
       campo("data", "Data da compra", {type:"date"}), campo("nota", "Nota"), campo("romaneio", "Romaneio"), campo("valor", "Valor R$", {inputMode:"decimal"}), campo("desc", "Desconto %", {inputMode:"decimal"})),
     e("div",{className:"flex justify-center gap-2 pt-1"}, e(Botao,{onClick:p.fechar}, "Cancelar"), e(Botao,{principal:true, onClick:lancar}, "Lançar pedido")));
 }
-export { AbaPedidos, rotuloMes, dia, Zoom, NIVEIS_ZOOM };
+export { AbaPedidos, rotuloMes, dia, Zoom, NIVEIS_ZOOM, JanelaAzul, BlocoF, CampoF, Resumo };   // peças da janela azul, usadas também por Faturas e Retirar ouro (16/11/2026)
