@@ -69,6 +69,16 @@ export function lerAnexo(key){
   return CACHE[key];
 }
 
+// devolve {nome, mime, url (data URL)}: usado para mostrar o comprovante ao lado da lista (Resumo geral, 16/11/2026)
+export function buscarAnexo(key){
+  return chamar("GET", "/anexos/"+encodeURIComponent(key)).then(function(r){
+    if(!r.partes) return r;
+    var texto = "", p = Promise.resolve();
+    for(var i = 0; i<r.partes; i++){ (function(n){ p = p.then(function(){ return chamar("GET", "/anexos/"+encodeURIComponent(key)+"?parte="+n).then(function(x){ texto += x.pedaco; }); }); })(i); }
+    return p.then(function(){ return {nome:r.nome, mime:r.mime, url:texto}; });
+  });
+}
+
 export function abrirAnexo(key){
   return lerAnexo(key).then(function(r){
     return fetch(r.url).then(function(b){ return b.blob(); }).then(function(blob){

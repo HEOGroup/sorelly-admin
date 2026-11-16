@@ -7,7 +7,9 @@
 // As contas ficam em domain/pf.js (contaForn, janelasDoForn, pagoPix, mqAplicado, mq*); aqui só o desenho. Sócios ficam no Financeiro familiar.
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
-import { addDias, pagoJanela } from "@/apps/montagem/domain/pf";
+import { FORMAS, addDias, janelaPorChave, pagoJanela } from "@/apps/montagem/domain/pf";
+import { obterArquivo } from "@/apps/montagem/lib/arquivos";
+import { buscarAnexo } from "@/apps/montagem/lib/anexo";
 import { cicloDe, contaForn, ehPrestador, hojeIso, janelasDoForn, lancDaJanela, mesAtual, mesLabel, mqAplicado, mqBruto, mqDescontoNoMes, mqOrigensDoMes, mqPassadasDoMes, mqParcela, pagoPix, statusConta } from "@/apps/montagem/domain/pf";
 import { limiteDe, usoMes } from "@/apps/montagem/domain/pf-limite";
 import { LINHA, Tab, Td } from "@/apps/montagem/components/padrao";
@@ -387,11 +389,14 @@ var ULTDIA = function(m){ return m+"-"+String(new Date(parseInt(m.slice(0, 4), 1
 var SEL_RG = "h-7 min-w-0 rounded-md border border-border bg-card px-1.5 text-[11px] font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary";   // padrao-ok: faixa compacta, a pedido do Marcus (16/11/2026)
 var norm = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(); };
 var bonito = function(n){ var t = String(n || "").trim(); if(t!==t.toUpperCase() || !/[A-ZÀ-Ú]/.test(t)) return t; return t.toLowerCase().replace(/(^|[\s(\-\/])([a-zà-ú])/g, function(m, a, b){ return a+b.toUpperCase(); }).replace(/ (De|Da|Do|Das|Dos|E) /g, function(m){ return m.toLowerCase(); }); };
+var contaPadrao = function(c){ var t = String(c || "").replace(/\s+/g, " ").trim(); if(!t || t==="—") return "—"; t = t.replace(/^pix\s*-\s*/i, "Pix "); if(t===t.toUpperCase() && /[A-ZÀ-Ú]/.test(t)) t = bonito(t); return t.replace(/\bLTDA\b/gi, "Ltda").replace(/\bS\/A\b/gi, "S.A."); };
+var TIPO_CHAVE = {TELEFONE:"Celular", CELULAR:"Celular", CPF:"CPF", CNPJ:"CNPJ", EMAIL:"E-mail", RANDOM:"Aleatória", ALEATORIA:"Aleatória"};
+var tipoChave = function(ch, cad){ var t = String(ch || "").trim(); if(!t) return "—"; if(cad && cad.chave===t && cad.chaveTipo) return TIPO_CHAVE[String(cad.chaveTipo).toUpperCase()] || String(cad.chaveTipo); var d = t.replace(/\D/g, ""); if(t.indexOf("@")>=0) return "E-mail"; if(/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(t)) return "Aleatória"; if(d.length===14) return "CNPJ"; if(d.length===11) return d.charAt(2)==="9" ? "Celular" : "CPF"; if(d.length===10 || d.length===12 || d.length===13) return "Celular"; return "—"; };
 var ddmm = function(iso){ return iso ? iso.slice(8, 10)+"/"+iso.slice(5, 7) : ""; };
 // ordem da planilha: quem vem primeiro (o resto entra por valor, do maior ao menor)
 var ORD_FORN = [/pontual/i, /office|edson/i, /^point/i, /dev ?master/i, /mega ?sul/i, /ellos?/i, /art ello/i], ORD_PREST = [/lucas castilho/i, /priscil/i, /madeira/i, /higor/i];
 function ResumoGeral(){
-  var c = usePf(), pf = c.pf, hoje = hojeIso(), sm = useState(mesAtual()), mes = sm[0], setMes = sm[1], st = useState(""), tipoSel = st[0], setTipoSel = st[1], sb = useState(""), buscaTxt = sb[0], setBuscaTxt = sb[1], sed = useState(""), editando = sed[0], setEditando = sed[1], refRg = useRef(null), sal = useState(0), altMax = sal[0], setAltMax = sal[1];
+  var c = usePf(), pf = c.pf, hoje = hojeIso(), sm = useState(mesAtual()), mes = sm[0], setMes = sm[1], st = useState(""), tipoSel = st[0], setTipoSel = st[1], sb = useState(""), buscaTxt = sb[0], setBuscaTxt = sb[1], sed = useState(""), editando = sed[0], setEditando = sed[1], refRg = useRef(null), sal = useState(0), altMax = sal[0], setAltMax = sal[1], svc = useState(null), verComp = svc[0], setVerComp = svc[1];
   // ALTURA DA TABELA (Marcus, 16/11/2026: "coloca mais pra baixo"): a tabela vai até o fim da janela de quem está olhando; mede onde o bloco começa e usa o resto da altura (refaz ao mudar o tamanho da janela)
   useEffect(function(){ var f = function(){ var el = refRg.current; if(!el) return; var t = el.getBoundingClientRect().top; setAltMax(Math.max(240, Math.round(window.innerHeight-t-44-10))); }; f(); var tm = setTimeout(f, 400); window.addEventListener("resize", f); return function(){ clearTimeout(tm); window.removeEventListener("resize", f); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   if(!pf || !pf.fornecedores) return e("p",{className:"p-6"}, "Carregando…");
@@ -414,10 +419,10 @@ function ResumoGeral(){
     if(atuais.length){
       atuais.forEach(function(x, i){
         var ini = i===0 ? mes+"-01" : addDias(atuais[i-1].j.fim, 1), extra = i===0 ? oldAb : 0, ch = "j|"+x.j.chave;
-        linhas.push({id:ch, data:x.j.limite, nome:bonito(f.nome)+(atuais.length>1 ? " "+ddmm(ini)+" à "+ddmm(x.j.fim) : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
+        linhas.push({id:ch, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+(atuais.length>1 ? " "+ddmm(ini)+" à "+ddmm(x.j.fim) : ""), tipo:tipo, total:x.j.total+extra, pago:x.pg, aberto:x.ab+extra, info:i===0 ? infoAntigo : ""});
       });
     } else {
-      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, data:x.j.limite, nome:bonito(f.nome)+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
+      antigas.forEach(function(x){ linhas.push({id:"j|"+x.j.chave, chv:x.j.chave, fid:x.j.fornId, data:x.j.limite, nome:bonito(f.nome)+" · em atraso de "+mesLabel(x.j.mes+"-01"), tipo:tipo, total:x.ab, pago:0, aberto:x.ab, info:""}); });
     }
     grupos.push({nome:bonito(f.nome), tipo:tipo, linhas:linhas, total:linhas.reduce(function(t, l){ return t+l.total; }, 0)});
   });
@@ -428,7 +433,7 @@ function ResumoGeral(){
   [["marcus", "Marcus"], ["anamaria", "Anamaria"], ["marco", "Marco Antonio"], ["anabeatriz", "Ana Beatriz"], ["lucas", "Lucas"], ["familia", "Casa"]].forEach(function(s0){
     var meta = Number(metaPix[s0[0]+"|"+mes] || 0), pg = Math.round(pixFam.filter(function(x){ return x.personaId===s0[0] && String(x.data || "").slice(0, 7)===mes; }).reduce(function(t, x){ return t+(Number(x.valor) || 0); }, 0)*100)/100;
     if(meta<=0.005 && pg<=0.005) return;
-    soc.push({id:"socio:"+s0[0]+"|"+mes, data:ULTDIA(mes), nome:s0[1], tipo:"Sócio", total:meta, pago:pg, aberto:Math.max(0, Math.round((meta-pg)*100)/100), info:""});
+    soc.push({id:"socio:"+s0[0]+"|"+mes, pessoa:s0[0], data:ULTDIA(mes), nome:s0[1], tipo:"Sócio", total:meta, pago:pg, aberto:Math.max(0, Math.round((meta-pg)*100)/100), info:""});
   });
   if(soc.length) grupos.push({nome:"Sócios", tipo:"Sócio", linhas:soc, total:0, socios:true});
   // 3) lista final: um fornecedor embaixo do outro; linha de TOTAL quando há mais de uma linha
@@ -458,6 +463,46 @@ function ResumoGeral(){
       e("svg",{viewBox:"0 0 24 24", width:16, height:16, fill:"none", stroke:"currentColor", strokeWidth:2, strokeLinecap:"round", strokeLinejoin:"round", "aria-hidden":"true"}, e("circle",{cx:12, cy:12, r:9.5}), e("path",{d:"M12 11v5.5"}), e("circle",{cx:12, cy:7.6, r:0.9, fill:"currentColor", stroke:"none"})),
       e("span",{role:"tooltip", className:"pointer-events-none absolute left-full top-1/2 z-30 ml-2 hidden w-max max-w-[20rem] -translate-y-1/2 whitespace-normal rounded-md border border-border bg-card px-3 py-2 text-left text-[13px] font-normal text-foreground shadow-lg group-hover:block group-focus-visible:block"}, l.info))); };
   var cols = [{k:"tipo", t:"Tipo", w:"6.5rem"}, {k:"nome", t:"Nome", w:"15rem", render:celulaNome}, {k:"total", t:"A pagar", w:"8rem", fmt:brl}, {k:"pago", t:"Pago", w:"8rem", fmt:brl, cor:function(l){ return l.pago>0.005 ? "text-emerald-400" : ""; }}, {k:"aberto", t:"Saldo", w:"8rem", fmt:brl, cor:function(l){ return l.aberto>0.005 ? "text-red-400" : "text-emerald-400"; }}, {k:"data", t:"Data", w:"4.5rem", fmt:ddmm, cor:function(l){ return l.data && l.data<hoje && l.aberto>0.005 ? "text-warning" : ""; }}, {k:"ana", t:"Observações", render:campoAna}];
+  // contas do mesmo fornecedor: o nome cortado ("Maiara Paola Confferi") vira o completo ("Maiara Paola Confferi Dal Sant")
+  var contaFinal = function(c0){ var base = contaPadrao(c0), nb = norm(base), melhor = base; if(base==="—") return base; (pf.lancamentos || []).forEach(function(x){ var o = contaPadrao(x.conta), no = norm(o); if(o.length>melhor.length && no.indexOf(nb+" ")===0) melhor = o; }); return melhor; };
+  var detalhe = function(l){
+    if(l.sub) return null;
+    var lista = [];
+    var fo0 = l.fid ? pf.fornecedores.find(function(f){ return f.id===l.fid; }) : null, chvs0 = (c.s.cp || {}).chaves || {}, cad = fo0 ? (chvs0["forn|"+fo0.nome] || chvs0["prest|"+fo0.nome] || null) : null;
+    if(l.chv){
+      lancDaJanela(pf, l.chv).forEach(function(x){ lista.push({id:"l"+x.id, data:x.data, quem:x.revendedora || "—", valor:x.valor, conta:contaFinal(x.conta), sit:x.conferido ? "Conferido" : (x.arqKey || x.arqId || x.arqNome) ? "Com comprovante" : "Sem comprovante", chavePix:c.edita ? (x.chavePix || (cad && cad.chave) || "—") : "—", tipoChave:c.edita ? tipoChave(x.chavePix || (cad && cad.chave), cad) : "—", arqKey:x.arqKey, arqId:x.arqId, arqNome:x.arqNome, comp:(x.arqKey || x.arqId) ? "Ver" : x.arqNome ? "Anexado em outro computador" : "—"}); });   // com comprovante anexado o pagamento já vale (Marcus, 16/11/2026); sem comprovante, falta anexar
+      var mq = mqAplicado(pf, l.chv); if(mq>0.005) lista.push({id:"mq", data:"", quem:"Desconto da maquininha", valor:mq, conta:"—", sit:"Aplicado"});
+    } else if(l.pessoa){
+      pixFam.filter(function(x){ return x.personaId===l.pessoa && String(x.data || "").slice(0, 7)===mes; }).forEach(function(x, i){ lista.push({id:"p"+(x.id || i), data:x.data, quem:x.origem || "—", valor:Number(x.valor) || 0, conta:"—", sit:x.auditoria || "—"}); });
+    }
+    lista.sort(function(a, b){ return String(b.data).localeCompare(String(a.data)); });
+    var parcelas = [], jn = l.chv ? janelaPorChave(pf, l.chv) : null;
+    ((jn && jn.itens) || []).forEach(function(it, i){ var pd = it.pd || {}; parcelas.push({id:"pc"+i, ped:pd.numero || "—", parc:(it.idx+1)+" de "+((pd.parcelas || []).length || 1), venc:it.p.venc, forma:(FORMAS[it.p.forma] || {}).label || it.p.forma || "—", valor:it.p.valor, sit:it.p.status || "—"}); });
+    parcelas.sort(function(a, b){ return String(a.venc).localeCompare(String(b.venc)) || String(a.ped).localeCompare(String(b.ped)); });
+    var totP = parcelas.reduce(function(t, x){ return t+x.valor; }, 0);
+    var tot = lista.reduce(function(t, x){ return t+x.valor; }, 0);
+    var abre = function(x){
+      if(verComp && verComp.url && !verComp.servidor) URL.revokeObjectURL(verComp.url);
+      var nome = x.arqNome || "comprovante", falha = function(){ setVerComp({dono:l.id, nome:nome, erro:"Não achei o arquivo neste computador. Ele fica no computador de quem anexou."}); };
+      setVerComp({dono:l.id, nome:nome, carregando:true});
+      if(x.arqKey) buscarAnexo(x.arqKey).then(function(r){ setVerComp({dono:l.id, nome:r.nome || nome, url:r.url, tipo:r.mime || "", servidor:true}); }, function(){ setVerComp({dono:l.id, nome:nome, erro:"Não consegui abrir o comprovante."}); });
+      else obterArquivo(x.arqId).then(function(b){ if(!b){ falha(); return; } setVerComp({dono:l.id, nome:nome, url:URL.createObjectURL(b), tipo:b.type || ""}); }).catch(falha);
+    };
+    var cols2 = [{k:"data", t:"Data", fmt:dbr}, {k:"quem", t:l.pessoa ? "Origem do Pix" : "Quem pagou"}, {k:"valor", t:"Valor", fmt:brl}, {k:"conta", t:"Conta"}, {k:"sit", t:"Situação"}, {k:"comp", t:"Comprovante", render:function(v, r){ return (r.arqKey || r.arqId) ? e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); abre(r); }, className:"text-[13px] font-semibold underline hover:text-primary"}, "Ver") : v; }}, {k:"tipoChave", t:"Tipo da chave"}, {k:"chavePix", t:"Chave Pix", render:function(v){ return v || "—"; }}];
+    var pre = verComp && verComp.dono===l.id ? verComp : null;
+    return e("div",{className:"flex items-start gap-3 px-3 py-2"},
+      e("div",{className:"min-w-0 flex-1 [&_td]:!h-[22px] [&_td]:!py-0 [&_td]:!text-[11px] [&_th]:!h-6 [&_th]:!text-[11px]"},
+        parcelas.length>0 && e("p",{className:"mb-1 text-[11px] font-semibold uppercase"}, "Parcelas dos pedidos que compõem este valor"),
+        parcelas.length>0 && e("div",{className:"mb-3"}, e(TabelaPlanilha,{key:"p"+l.id, cols:[{k:"ped", t:"Pedido"}, {k:"parc", t:"Parcela"}, {k:"venc", t:"Vencimento", fmt:dbr}, {k:"forma", t:"Forma"}, {k:"valor", t:"Valor", fmt:brl}, {k:"sit", t:"Situação"}], linhas:parcelas, chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, totalRodape:function(){ return ["Total", "", "", "", brl(totP), ""]; }})),
+        e("p",{className:"mb-1 text-[11px] font-semibold uppercase"}, l.pessoa ? "Pix recebidos no mês" : "Pagamentos recebidos (Pix de revendedora)"),
+        e(TabelaPlanilha,{key:"d"+l.id, cols:cols2, linhas:lista, chave:"id", grade:true, semContagem:true, semLimpar:true, semFiltro:true, semMao:true, vazio:"Nenhum pagamento lançado.", totalRodape:lista.length ? function(){ return ["Total", "", brl(tot), "", "", "", "", ""]; } : undefined})),
+      pre && e("aside",{className:"w-[26rem] shrink-0 rounded-md border border-border bg-card"},
+        e("div",{className:"flex items-center justify-between gap-2 border-b border-border px-2 py-1 text-[13px]"}, e("span",{className:"min-w-0 flex-1 break-all font-semibold", title:pre.nome}, pre.nome), e("button",{type:"button", onClick:function(){ if(pre.url && !pre.servidor) URL.revokeObjectURL(pre.url); setVerComp(null); }, className:"text-[13px] font-semibold underline hover:text-primary"}, "Fechar")),
+        pre.carregando ? e("p",{className:"p-3 text-center text-[13px]"}, "Abrindo…")
+        : pre.erro ? e("p",{className:"p-3 text-center text-[13px] text-warning"}, pre.erro)
+        : /^image\//.test(pre.tipo) ? e("img",{src:pre.url, alt:pre.nome, className:"max-h-[26rem] w-full object-contain"})
+        : e("iframe",{src:pre.url, title:pre.nome, className:"h-[26rem] w-full bg-white"})));
+  };
   var dados = vis.filter(function(l){ return !l.sub; });
   var rodape = function(){ return ["", "TOTAL GERAL", brl(soma(dados, "total")), brl(soma(dados, "pago")), brl(soma(dados, "aberto")), "", ""]; };
   var meses = []; for(var mm = 1; mm<=12; mm++) meses.push(ANO+"-"+String(mm).padStart(2, "0"));
@@ -465,7 +510,7 @@ function ResumoGeral(){
     acao:e("div",{className:"flex items-center gap-2"}, e("select",{value:mes, "aria-label":"Mês", onChange:function(ev){ setMes(ev.target.value); }, className:SEL_RG+" w-32"}, meses.map(function(m){ return e("option",{key:m, value:m}, mesLabel(m+"-01")); })),
       e("select",{value:tipoSel, "aria-label":"Tipo", onChange:function(ev){ setTipoSel(ev.target.value); }, className:SEL_RG+" w-32"}, [["", "Todos os tipos"], ["Fornecedor", "Fornecedores"], ["Prestador", "Prestadores"], ["Sócio", "Sócios"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
       e("input",{type:"search", value:buscaTxt, onChange:function(ev){ setBuscaTxt(ev.target.value); }, placeholder:"Buscar: nome, data, valor...", "aria-label":"Buscar no resumo", className:"h-7 w-44 min-w-0 rounded-md border border-border bg-card px-2 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"}))},   // UMA LINHA SÓ no alto, mais grossa: os filtros ficam DENTRO da barra azul do título (Marcus, 16/11/2026). padrao-ok: busca e campos menores, como em Contas a pagar
-    e(TabelaPlanilha,{key:mes, cols:cols, alturaMax:altMax ? altMax+"px" : "calc(100vh - 11rem)", linhas:vis, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, linhaCls:function(l){ return l.sub ? "rg-sub font-bold" : ""; }, totalRodape:rodape, vazio:"Nada a pagar neste filtro."})));
+    e(TabelaPlanilha,{key:mes, cols:cols, alturaMax:altMax ? altMax+"px" : "calc(100vh - 11rem)", linhas:vis, chave:"id", grade:true, semContagem:true, semLimpar:true, semMao:true, detalhe:detalhe, linhaCls:function(l){ return l.sub ? "rg-sub font-bold" : "!cursor-pointer"; }, totalRodape:rodape, vazio:"Nada a pagar neste filtro."})));
 }
 function AbaPfResumo(){ return e(ResumoGeral, null); }
 export { AbaPfResumo, Geral, PainelPontual };

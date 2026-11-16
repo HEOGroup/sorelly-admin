@@ -962,7 +962,7 @@ function pfReduz(s, a){
       var ex = lancExcedente(pf, a.chave, v);
       if(ex.passa && !a.forcar) return recusa("O valor ultrapassa o que falta nesta data (saldo de "+brl(ex.aberto)+"). Lançar mesmo assim?", true);
       pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jn ? jn.mes : a.data.slice(0,7), limite:limite, data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
-        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", conferido:false, conferidoEm:""});
+        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:""});
       return ok("Pagamento lançado — "+brl(v)+" para "+rev+(a.arqNome ? " · comprovante anexado" : ""));
     }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");

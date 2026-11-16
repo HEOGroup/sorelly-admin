@@ -6,6 +6,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, janelaPorChave, lancExcedente, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
 import { Dinheiro, Faixa, Indicador, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { COR, Campo, Chip, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
@@ -40,7 +41,9 @@ function FiltroLanc(p){
 
 function ItemLanc(p){
   var l = p.l, c = p.c;
-  var comp = l.arqId
+  var comp = l.arqKey
+    ? e("button",{type:"button", title:l.arqNome, onClick:function(){ abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-bold hover:underline"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
+    : l.arqId
     ? e("button",{type:"button", title:l.arqNome, onClick:function(){ baixarArquivo(l.arqId, l.arqNome||"comprovante").catch(function(){ aviso(c, "Não achei o arquivo neste computador.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE] hover:bg-[#06B6D4]/30"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
     : String(l.arqData||"").indexOf("data:")===0
       ? e("a",{href:l.arqData, target:"_blank", rel:"noreferrer", download:l.arqNome, title:l.arqNome, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE]"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
@@ -114,7 +117,7 @@ function BlocoForn(p){
 function ModalLancar(p){
   var c = p.c, chave = p.chave, j = janelaPorChave(c.pf, chave), f = c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); });
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
-  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", arq:null}), v = st[0], setV = st[1];
+  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
   var salvar = function(){
     var valor = parseFloat(v.valor);
@@ -123,7 +126,7 @@ function ModalLancar(p){
     var rev = v.rev.trim(); if(!rev) return aviso(c, "Informe o nome da revendedora.", "alerta");
     var ex = lancExcedente(c.pf, chave, valor);
     if(ex.passa && !window.confirm("O valor ultrapassa o que falta nesta data (saldo de "+brl(ex.aberto)+"). Lançar mesmo assim?")) return;
-    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), forcar:true};
+    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true};
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
       // guarda o id do arquivo no lançamento recém-criado
@@ -131,8 +134,8 @@ function ModalLancar(p){
       p.fechar(chave);
     };
     if(!arq) return gravar("");
-    var id = "pfc-"+Date.now()+"-"+Math.random().toString(36).slice(2,7);
-    salvarArquivo(id, arq).then(function(){ gravar(id); }, function(){ aviso(c, "Não foi possível guardar o comprovante. O pagamento será lançado sem anexo.", "alerta"); arq = null; gravar(""); });
+    // o comprovante vai para o SERVIDOR (todo mundo abre, em qualquer computador); só foto ou PDF (Marcus, 16/11/2026)
+    lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ base.arqKey = sv.key; gravar(""); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"O pagamento será lançado sem anexo.", "alerta"); arq = null; gravar(""); });
   };
   return e(Modal,{t:"Lançar pagamento", fechar:function(){ p.fechar(null); },
     sub:e("span",null, (f ? f.nome : "")+" · pagamento de ", e("b",null, dbr(chave.split("|")[1])), " · falta ", e("b",{style:{color:COR.red}}, brl(aberto)), " de "+brl(j ? j.total : 0))},
@@ -140,7 +143,8 @@ function ModalLancar(p){
       e(Campo,{rot:"Data"}, e(Txt,{type:"date", value:v.data, label:"Data", onChange:function(x){ set("data", x); }})),
       e(Campo,{rot:"Nome da revendedora"}, e(Txt,{value:v.rev, label:"Nome da revendedora", ph:"Ex.: Ana Paula de Lima", onChange:function(x){ set("rev", x); }})),
       e(Campo,{rot:"Valor (R$)"}, e(Dinheiro,{out:"ponto", value:v.valor, label:"Valor", onChange:function(x){ set("valor", x); }})),
-      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }}))),
+      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }})),
+      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", ph:"Chave que recebeu o Pix", onChange:function(x){ set("chavePix", x); }}))),
     e(Campo,{rot:"Comprovante de pagamento"},
       e("div",{className:"flex flex-wrap items-center gap-3 rounded-lg bg-black/25 px-3 py-2"},
         e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[12.5px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), "Selecionar arquivo",

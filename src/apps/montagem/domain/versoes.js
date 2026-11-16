@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.68", data:"2026-11-16", titulo:"Resumo geral: parcelas dos pedidos, Pix recebidos e comprovante no servidor", itens:[
+  "Clicar na linha do Resumo geral abre as parcelas dos pedidos que compõem o valor e os Pix de revendedora recebidos, com conta, tipo da chave, chave Pix e o comprovante ao lado.",
+  "Comprovante de pagamento a fornecedor fica no SERVIDOR (qualquer computador abre). Lançar pagamento ganhou o campo Chave Pix enviada.",
+  "Nomes de conta padronizados e linhas do detalhe mais compactas."]},
  {v:"0.20.67", data:"2026-11-16", titulo:"Contas a pagar: família junto, colunas e busca · Resumo geral", itens:[
   {tipo:"novo", area:"Financeiro › Pagamentos › Resumo geral", txt:"Resumo geral: tabela única no modelo de Contas a pagar (barra azul com mês, tipo e busca), cada fornecedor junto (Pontual por dezena, Office Graf por quinzena) com linha de TOTAL, sócios no fim com TOTAL SÓCIOS, saldo de mês antigo somado na primeira linha com ícone de informação ao passar o mouse, coluna Observações e total geral."},
   {tipo:"melhoria", area:"Financeiro › Pagamentos › Negociações", txt:"Negociações ganhou abas: Negociações, Meses e dezenas (o resumo antigo por fornecedor) e Limite e calendário (aba final)."},
