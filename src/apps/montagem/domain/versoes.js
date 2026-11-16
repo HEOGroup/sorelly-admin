@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.54", data:"2026-11-16", titulo:"Atendimento interno: pagamentos perdidos no rascunho voltam sozinhos", itens:[
+  {tipo:"correção", area:"Atendimento interno → Atendimento Sorelly", txt:"Se o rascunho do atendimento voltar sem as linhas de pagamento (outra janela gravou por cima) mas o financeiro já tem os pagamentos, a tela refaz as linhas sozinha. Antes o botão OK, comprovantes anexados ficava travado (caso da Edna com a Emilli)."}]},
  {v:"0.20.53", data:"2026-11-16", titulo:"Link de pagamento: faixa de números tirada do topo das Solicitações", itens:[
   {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"Saiu a faixa Mês, App, WhatsApp, Em aberto e Pago no mês do topo da tela (regra de 02/11/2026: sem blocos de totais no topo)."}]},
  {v:"0.20.52", data:"2026-11-16", titulo:"Link de pagamento: planilha única, páginas e filtro de data", itens:[

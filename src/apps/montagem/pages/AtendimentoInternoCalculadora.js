@@ -181,6 +181,13 @@ function AtendimentoInterno(){
   }, [sel ? sel.id : null]);
   // guarda o que a funcionária já preencheu deste atendimento (se sair da tela ou atender outra pessoa, ao voltar está tudo lá)
   useEffect(function(){ if(!sel || visor || form===FORM_ACERTO_VAZIO || sel.status==="acertado") return; d({type:"INT_ATUALIZAR", id:sel.id, patch:{rascunho:form}}); }, [form]);
+  // RESTAURA os pagamentos perdidos (Edna, 16/11/2026, Emilli): se o rascunho voltou SEM pagamentos (outra janela gravou por cima) mas o financeiro já confirmou os pagamentos deste atendimento, a tela refaz as linhas a partir do que o financeiro tem. Sem isso o botão "OK, comprovantes anexados" ficava travado ("os pagamentos mudaram depois do envio").
+  useEffect(function(){
+    if(!sel || visor || sel.status==="acertado" || form===FORM_ACERTO_VAZIO || (form.pagamentos||[]).length>0) return;
+    var lf = (s.lancFin||[]).find(function(x){ return x.internoId===sel.id; }); if(!lf) return;
+    var linhas = (lf.linhas||[]).filter(function(l){ return l.tipo==="pagamento" && l.forma && l.valor>0; }); if(!linhas.length) return;
+    up({pagamentos:linhas.map(function(l){ var o = {data:hoje, anexo:null, forma:l.forma, valor:l.valor, bandeira:l.bandeira || "", parcelas:l.parcelas || 1, descricao:(l.partes && l.partes[0] && l.partes[0].descricao) || ""}; if(l.linkSolId){ o.linkSolId = l.linkSolId; o.jaPagoLink = true; } return o; })});
+  }, [sel ? sel.id : "", (form.pagamentos||[]).length, (s.lancFin||[]).length]);   // eslint-disable-line react-hooks/exhaustive-deps
   // 16/11/2026 (Marcus/Edna): crédito lançado pela Garantia (Garantia → Créditos) entra sozinho em "Desconto de crédito" assim que existe valor vendido; só uma vez por atendimento (se a funcionária apagar, não volta)
   useEffect(function(){ if(!sel || visor || sel.status==="acertado" || form===FORM_ACERTO_VAZIO || form.creditoPuxado || !(form.vendaBruta>0)) return;
     var cd = creditoDisponivel(s, sel.nome); if(!(cd>0)) return;
