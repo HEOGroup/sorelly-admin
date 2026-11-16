@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.50", data:"2026-11-16", titulo:"Link de pagamento: uma compra, várias tentativas", itens:[
+  {tipo:"melhoria", area:"Link de pagamento → Solicitações", txt:"As solicitações agrupam por compra: a mesma revendedora, o mesmo valor e o mesmo dia contam uma compra só, até uma tentativa pagar (depois do pago, a próxima é outra compra). Nova coluna Tentativas; ao clicar, o card lista as tentativas desta compra."}
+ ]},
  {v:"0.20.49", data:"2026-11-16", titulo:"Link de pagamento: coluna Nova tentativa, cor por dia e meses abreviados", itens:[
   {tipo:"melhoria", area:"Link de pagamento", txt:"Coluna Nova tentativa nas Solicitações: nos links que falharam mostra Pago depois, Novo link aberto ou Sem novo link (a funcionária deve solicitar de novo)."},
   {tipo:"melhoria", area:"Link de pagamento", txt:"Cor leve alternada por dia nas Solicitações e no Histórico; meses abreviados (Nov/26)."}

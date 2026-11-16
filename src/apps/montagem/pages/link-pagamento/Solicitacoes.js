@@ -7,7 +7,7 @@ import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { CANAIS, COR_STATUS, EMISSORES, FLUXO, ROTULO_STATUS, agoraSP, calcularTaxa, expirados, formatarDia, formatarDataHora, BANDEIRAS, formatarReais, hojeSP, indicadoresLp, listaSolicitacoes, somaDias, meioDe, meioSugerido, minutosRestantes, nomeMeio,
-  proximaEtapa, proximosStatus, retentativa, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
+  proximaEtapa, proximosStatus, retentativa, agruparTentativas, parcelasPermitidas, repDaRevendedora, textoFaixas, textoRestante, validarSolicitacao } from "@/apps/montagem/domain/link-pagamento";
 import { Bt, BtMini, Editor, Sel, Selo } from "@/apps/montagem/pages/compras/visualCompras";
 import { ImportarEsitef } from "@/apps/montagem/pages/link-pagamento/ImportarEsitef";
 import { useLp } from "@/apps/montagem/pages/link-pagamento/visual";
@@ -49,6 +49,7 @@ function Cartao(p){
 // CARD da solicitação (Marcus, 16/11/2026: "muda as cores tudo do card pra ficar mais padronizado"): mesma janela azul do resto do setor, texto 13 px branco, três blocos (Andamento, Editar, Ações).
 function Detalhe(p){
   var L = p.L, s = L.s, lp = L.lp, x = lp.solicitacoes.find(function(y){ return y.id===p.id; }); var forma = useState(function(){ return x ? {representante:x.representante||"", meioId:x.meioId||"", dataAcerto:x.dataAcerto||"", linkUrl:x.linkUrl||"", bandeira:x.bandeira||"", observacao:x.observacao||""} : {}; }), v = forma[0]; if(!x) return null;
+  var tentativasDaCompra = x ? ((agruparTentativas(lp.solicitacoes).find(function(g){ return g.itens.some(function(y){ return y.id===x.id; }); }) || {}).itens || []) : [];
   var m = meioDe(s, x.meioId), prox = proximaEtapa(x), n = x.parcelas || 1, t = m ? calcularTaxa(m, x.valor, n, m.antecipacao.ativa, hojeSP()) : null;
   var set = function(k, val){ forma[1](function(o){ var r = Object.assign({}, o); r[k] = val; return r; }); };
   var BLOCO = "flex flex-col border border-white/20 bg-[#14233f]", CAB = "border-b border-white/20 bg-[var(--bloco-titulo)] px-2 py-1 text-center text-[11px] font-bold uppercase text-white", IN = "h-8 w-full rounded-md border border-white/40 bg-[#0f1a2e] px-2 text-center text-[13px] font-semibold text-white [color-scheme:dark]";
@@ -70,6 +71,8 @@ function Detalhe(p){
       e("div",{className:"grid gap-2 overflow-auto p-2 md:grid-cols-3"},
         e("div",{className:BLOCO}, e("div",{className:CAB}, "Andamento"), andamento,
           x.comprovanteImg && e("img",{src:x.comprovanteImg, alt:"Comprovante do pagamento", className:"m-2 max-h-72 rounded-md bg-white object-contain"}),
+          tentativasDaCompra.length>1 && e("span",{key:"tt", className:"border-t border-white/20 px-2 pt-1 text-center text-[11px] font-bold uppercase"}, "Tentativas desta compra"),
+          tentativasDaCompra.length>1 && tentativasDaCompra.map(function(y){ return e("span",{key:y.id, className:"px-2 py-0.5 text-center text-[13px]"}, formatarDataHora(y.criadoEm)+" · "+formatarReais(y.valor)+" · ", e("b",{style:{color:COR_STATUS[y.status]}}, ROTULO_STATUS[y.status]+(y.id===x.id ? " (esta)" : ""))); }),
           (x.historico||[]).slice(-5).map(function(h, i){ return e("span",{key:i, className:"px-2 py-0.5 text-center text-[11px]"}, formatarDataHora(h.em)+" · "+(h.por||"")+" · "+(ROTULO_STATUS[h.para]||h.para)+(h.nota ? " ("+h.nota+")" : "")); })),
         e("div",{className:BLOCO}, e("div",{className:CAB}, "Editar"),
           campo("Representante", selc("representante", "Sem representante", repOps)), campo("Link", selc("meioId", "Selecione", lp.meios.map(function(mm){ return [mm.id, nomeMeio(mm)]; }))),
@@ -136,20 +139,22 @@ var tomDoDia = function(iso){ var q = String(iso || "").slice(0, 10).split("-").
 var dia = function(v){ return v ? String(v).slice(0, 10).split("-").reverse().join("/") : "—"; };   // colunas de data guardam AAAA-MM-DD (ordenam certo) e mostram DD/MM/AAAA
 // Modo planilha (padrão): as mesmas solicitações do quadro, uma por linha, com filtro e ordem no título de cada coluna e a ação de concluir a etapa. Nada some: o que era selo no cartão virou coluna "Origem".
 function Planilha(p){
-  var agora = agoraSP();
+  var agora = agoraSP(), grupos = useMemo(function(){ var mapa = {}; agruparTentativas(p.s.lp.solicitacoes).forEach(function(g){ g.itens.forEach(function(y){ mapa[y.id] = g; }); }); return mapa; }, [p.s.lp.solicitacoes]);
   if(!p.lista.length) return e("p",{className:"py-6 text-center text-[13px]"}, "Nenhuma solicitação.");
-  var linhas = p.lista.map(function(x){
+  var vistos = {}, compras = [];
+  p.lista.forEach(function(y){ var g = grupos[y.id]; if(!g){ compras.push({x:y, n:1}); return; } if(vistos[g.rep.id]) return; vistos[g.rep.id] = 1; compras.push({x:g.rep, n:g.tentativas}); });
+  var linhas = compras.map(function(cp){ var x = cp.x;
     var m = meioDe(p.s, x.meioId), prox = proximaEtapa(x), min = minutosRestantes(x, agora), origem = [];
     if(x.paraAtendimento) origem.push("Pedido do atendimento"); if(x.porFora) origem.push("Pago por fora"); if(x.tentativa>1) origem.push(x.tentativa+"ª tentativa"); if(x.motivo) origem.push(x.motivo);
     return {id:x.id, data:String(x.criadoEm || "").slice(0, 10), revendedora:x.revendedora, representante:x.representante || "Sem representante", link:nomeMeio(m), valor:x.valor, parcelas:(x.parcelas || 1)+"x",
       canal:x.canal==="whatsapp" ? "WhatsApp" : "App", situacao:ROTULO_STATUS[x.status], _cor:COR_STATUS[x.status], validade:x.status==="gerado" && min!=null ? textoRestante(min) : "—", _min:min,
-      retentativa:retentativa(p.s.lp, x) || "—", acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
+      tentativas:cp.n, retentativa:retentativa(p.s.lp, x) || "—", acerto:String(x.dataAcerto || "").slice(0, 10), origem:origem.join(" · ") || "—", acao:prox ? (prox==="pago" ? "Confirmar pagamento" : "Concluir etapa") : "", _x:x, _prox:prox}; });
   var cols = [{k:"data", t:"Data", fmt:dia, render:dia}, {k:"revendedora", t:"Revendedora"}, {k:"representante", t:"Representante"}, {k:"link", t:"Link"},
     {k:"valor", t:"Valor", fmt:function(v){ return formatarReais(v); }, render:function(v){ return e("b",{className:"tabular-nums"}, formatarReais(v)); }},
     {k:"parcelas", t:"Parcelas"}, {k:"canal", t:"Canal"},
     {k:"situacao", t:"Situação", render:function(v, l){ return e("span",{className:"font-bold", style:{color:l._cor}}, v); }},
     {k:"validade", t:"Validade", render:function(v, l){ return l._min!=null && l._x.status==="gerado" ? e("span",{className:"font-bold tabular-nums", style:{color:corRestante(l._min)}}, v) : v; }},
-    {k:"retentativa", t:"Nova tentativa", render:function(v){ return e("span",{className:"font-bold "+(v==="Pago depois" ? "text-success" : v==="Sem novo link" ? "text-[#FBBF24]" : "")}, v); }}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
+    {k:"tentativas", t:"Tentativas"}, {k:"retentativa", t:"Nova tentativa", render:function(v){ return e("span",{className:"font-bold "+(v==="Pago depois" ? "text-success" : v==="Sem novo link" ? "text-[#FBBF24]" : "")}, v); }}, {k:"acerto", t:"Acerto", fmt:dia, render:dia}, {k:"origem", t:"Origem"},
     {k:"acao", t:"Ação", render:function(v, l){ return v ? e(BtMini,{forte:true, onClick:function(){ p.onMover(l._x, l._x.status, l._prox); }}, l._prox==="pago" ? "Confirmar pagamento ›" : "Concluir etapa ›") : ""; }}];
   return e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", centro:true, grade:true, semLimpar:true, semContagem:true, linhaCls:function(l){ return "cursor-default! "+tomDoDia(l.data); }, aoClicar:function(l){ p.onAbrir(l._x); }});
 }

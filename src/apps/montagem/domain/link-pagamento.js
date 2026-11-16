@@ -522,6 +522,18 @@ function retentativa(lp, x){
   if(depois.some(function(y){ return y.status==="solicitado" || y.status==="gerado"; })) return "Novo link aberto";
   return "Sem novo link";
 }
+// UMA COMPRA = várias TENTATIVAS (Marcus, 16/11/2026): a mesma revendedora, o mesmo valor e o mesmo dia contam como uma compra só, até uma tentativa dar certo (paga). Depois do pago, a próxima tentativa começa outra compra. Valor diferente = outra compra.
+// Devolve grupos {itens (em ordem), rep (a que pagou, ou a última), tentativas}.
+function agruparTentativas(sols){
+  var grupos = [], abertos = {};
+  (sols || []).slice().sort(function(a, b){ return String(a.criadoEm || "")<String(b.criadoEm || "") ? -1 : String(a.criadoEm || "")>String(b.criadoEm || "") ? 1 : 0; }).forEach(function(x){
+    var k = norm(x.revendedora)+"|"+r2(x.valor)+"|"+diaDe(x.criadoEm), g = abertos[k];
+    if(!g){ g = {itens:[]}; grupos.push(g); abertos[k] = g; }
+    g.itens.push(x); if(foiPago(x)) delete abertos[k];
+  });
+  grupos.forEach(function(g){ g.rep = g.itens.find(foiPago) || g.itens[g.itens.length-1]; g.tentativas = g.itens.length; });
+  return grupos;
+}
 // Marca como USADOS no acerto os links que entraram como pagamento (cada linha de pagamento traz linkSolId). Devolve o novo lp, ou null se nada mudou.
 function usarLinksNoAcerto(lp0, pagamentos, acertoId, agora, por){
   var ids = (pagamentos || []).filter(function(p){ return p && p.linkSolId; }); if(!ids.length) return null;
@@ -708,7 +720,7 @@ function lpReduz(s, a){
   }
 }
 
-export { retentativa, esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
+export { agruparTentativas, retentativa, esitefPlanejar, ROT_ESITEF, vendidoNoApp, vendasDaRevendedora, cobrancasDaRevendedora, resumoLinks, resumoVendasApp, lpDemo, lpMigrar, lpReduz, hojeSP, agoraSP, somaDias, diasEntre, formatarReais, formatarDia, formatarDataHora,
   TIPOS_MEIO, ADQUIRENTES, BANDEIRAS, CANAIS, EMISSORES, INFORMACOES, ROTULO_INFO, STATUS, STATUS_SEM_SUCESSO, EM_ANDAMENTO, MOTIVOS_NAO_CONCLUSAO, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, EXIGE_MOTIVO, MAX_PARCELAS, CONFIG_PADRAO, PRAZO_PADRAO, ROTULO_STATUS_FN,
   opcoesCnpj, rotuloCnpj, resumoAluguel, isencaoDoMes, meioDe, nomeMeio, adquirenteVira, normalizarTaxas, taxaDe, validarMeio, calcularTaxa, passadaParaFornecedor, avisoFornecedor,
   vinculoDeRep, repDaRevendedora, resolverMeio, meioSugerido, validarSolicitacao, parcelasMaximas, parcelasPermitidas, textoFaixas, nTentativasDia, minutosRestantes, textoRestante, expirados, proximosStatus, proximaEtapa,
