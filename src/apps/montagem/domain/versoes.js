@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.37", data:"2026-11-16", titulo:"Servidor local, topo, foto e Contas bancárias", itens:[
+  {tipo:"correção", area:"Tecnologia › Servidor local", txt:"O servidor da porta 3000 caía toda hora: no modo de desenvolvimento cada tela carregava o sistema inteiro (3,1 GB a cada compilação). Agora o código comum fica num pacote só (91 MB) e a primeira abertura caiu de 34 para 17 segundos. O site publicado não muda. Para ligar: iniciar-servidor-unico.cmd."},
+  {tipo:"melhoria", area:"Financeiro › Contas bancárias", txt:"A planilha abre em Base + último dia atualizado (o dia de hoje fica em 0,00 até lançar). Valores positivos aparecem em verde, negativos em vermelho."},
+  {tipo:"melhoria", area:"Foto do perfil", txt:"Ao trocar a foto abre uma janelinha para enquadrar: arrastar para focar no rosto e barra de zoom. A foto é salva em 360 px (antes 160 px), bem mais nítida. O limite do servidor subiu de 60 KB para 110 KB."},
+  {tipo:"melhoria", area:"Topo e menu lateral", txt:"Setores com menu ficam só com 2 linhas no topo (telas abertas e menu): saíram o Voltar e o nome do setor. A busca de telas foi para o menu lateral, logo abaixo do logo da Sorelly. O bloco ficou compacto: 2 linhas de 32 px (busca; conta com Sair em ícone e situação em bolinha). O painel da conta ficou mínimo: 14 rem, sem cabeçalho, 5 linhas (foto, senha, claro/escuro, tamanho, atuar como em lista suspensa)."},
+  {tipo:"correção", area:"Financeiro › Contas bancárias", txt:"Variação e Atual agora terminam no último dia com saldo lançado. Antes o dia de hoje, ainda em 0,00, servia de ponto final e a variação saía errada (Sicredi 46: R$ 5 mil em vez de R$ 133 mil). Na coluna Limite, \"-----\" só aparece onde o limite não se aplica (Aplicação, Dinheiro e conta bloqueada); conta corrente sem limite mostra R$ 0,00."},
+ ]},
  {v:"0.20.36", data:"2026-11-16", titulo:"Atendimento Sorelly: coluna do tipo de atendimento na lista do dia", itens:[
   {tipo:"melhoria", area:"Atendimento interno › Atendimento Sorelly", txt:"A lista de hoje ganhou a coluna Tipo (Acerto, Kit novo, Reposição, Brinde, Retorno ou Troca), para ver o dia de relance. A lista ficou mais larga para os nomes caberem inteiros."}]},
  {v:"0.20.35", data:"2026-11-16", titulo:"Atendimento Sorelly: Resumo em 2 por 2 com Pagamentos e Inadimplência, e etapa Pagamentos em uma coluna compacta", itens:[

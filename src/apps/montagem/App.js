@@ -301,9 +301,14 @@ function App(){
       e("div",{className:"relative flex h-16 items-center justify-center sombra-baixo px-4"},
         visao==="pontual" ? e("img",{src:"/pontual-logo.svg", alt:"Pontual", draggable:false, className:"h-12 w-auto max-w-full select-none"}) : e("img",{src:("/"||"/")+"logo-sorelly.png", alt:"Sorelly", draggable:false, className:"h-12 w-auto select-none"}),   // no modo Pontual o logo da Pontual ocupa o lugar do da Sorelly
         e("button",{title:"Recolher o menu", "aria-label":"Recolher o menu", onClick:function(){ alternarMenu(true); setMenu(false); }, className:"absolute right-2 top-2 hidden size-8 place-items-center rounded-md hover:bg-white/10 md:grid"}, e(Icon,{n:"fechar", s:15}))),
+      // 16/11/2026 (Marcus): a busca saiu da barra de cima e fica aqui, logo abaixo do logo da Sorelly
+      // 16/11/2026 (Marcus: "compacte"): busca, conta, Sair e situação num bloco só, em 2 linhas de 32 px (Sair e situação viraram só ícone)
+      e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"},
+        e(IrPara,{larga:true, navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
+        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
+        e("div",{className:"flex items-center gap-1.5"}, e(ContaMenu,{esq:true, compacto:true, zoom:e(ZoomTela), onTema:toggleTema}), e(PilulaSituacao,{esq:true, compacto:true}))),
       // 13/11/2026 (Marcus): o seletor Admin / Marcus / Pontual saiu do alto do menu. O Pontual foi tirado e o Marcus virou um setor logo abaixo de Diretoria.
       // 13/11/2026 (Marcus): o nome com o nível de acesso, o Sair e a situação (Disponível) saíram da barra de cima e ficam num bloquinho aqui, entre a logo e o GERAL
-      e("div",{className:"flex flex-col gap-1.5 border-b border-sidebar-border px-2 py-2"}, e(ContaMenu,{esq:true, zoom:e(ZoomTela), onTema:toggleTema}), e(PilulaSituacao,{esq:true})),
       e("nav",{className:"flex min-h-0 flex-1 flex-col gap-0 overflow-y-auto px-2 pb-2 pt-1.5"},
         visao==="marcus" && s.usuario===16 && e("button",{key:"voltar-admin", title:"Voltar para o sistema da Sorelly", onClick:function(){ d({type:"VISAO_MENU", v:"admin"}); navigate(caminhoDaAba("visaogeral")); setMenu(false); }, className:"mb-1 flex min-h-8 w-full items-center gap-2 rounded-lg bg-white/10 px-2.5 text-left text-[13px] font-semibold leading-tight hover:bg-white/15"}, "← Sorelly Admin"),
         GRUPOS_SIDEBAR.map(function(g){ var lst = setoresV.filter(function(st){ return (st.grupo||"setor")===g[0]; }); if(!lst.length) return null;
@@ -323,20 +328,20 @@ function App(){
       className:"group fixed inset-y-0 z-50 hidden w-2 cursor-col-resize md:block", style:{left:menuW-4}},
       e("div",{className:"mx-auto h-full w-0.5 transition-colors "+(arrastando ? "bg-primary" : "group-hover:bg-primary/70")})),
     e("div",{className:(arrastando ? "" : "transition-[margin] duration-200 ")+(recolhido ? "md:ml-0" : "md:ml-[var(--mw)]"), style:{"--mw":menuW+"px"}},
-      e("header",{className:"sticky top-0 z-30 flex h-9 items-center gap-2 bg-background/80 px-3 backdrop-blur md:px-4"},
+      // 16/11/2026 (Marcus): setor com menu (as 2 linhas: telas abertas + menu) NÃO tem mais a linha de cima (Voltar, nome do setor, busca). No computador, com o menu lateral aberto, ela some; só sobra o botão do menu no celular ou com o menu recolhido.
+      e("header",{className:"sticky top-0 z-30 flex h-9 items-center gap-2 bg-background/80 px-3 backdrop-blur md:px-4"+(navPerg && !recolhido ? " md:hidden" : "")},
         e("button",{className:"grid size-7 place-items-center rounded-lg hover:bg-muted/50 "+(recolhido ? "" : "md:hidden"), "aria-label":"Menu", title:recolhido ? "Abrir o menu" : "Menu", onClick:function(){ if(recolhido) alternarMenu(false); else setMenu(!menu); }}, e(Icon,{n:"menu"})),
-        window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-7 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[11px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:12, className:"rotate-180"}), "Voltar"),
-        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"}, navPerg && tileSetor(setorAtual.st, true),
+        !navPerg && window.history.state && window.history.state.idx>0 && e("button",{type:"button", title:"Voltar para a tela anterior", "aria-label":"Voltar para a tela anterior", onClick:function(){ navigate(-1); }, className:"flex h-7 shrink-0 items-center gap-1 rounded-lg bg-white/10 px-2.5 text-[11px] font-bold hover:bg-white/20"}, e(Icon,{n:"chevron", s:12, className:"rotate-180"}), "Voltar"),
+        setorAtual && !navPerg ? e("div",{className:"min-w-0 flex-1"}, e(BarraCascata,{menu:setorAtual.st.menu || menuAuto(setorAtual.st), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu})) : e("span",{className:"flex min-w-0 flex-1 items-center gap-2.5 text-sm whitespace-nowrap"},
           // ao lado do ícone fica o NOME DO SETOR (ex.: "Financeiro"), sempre o mesmo não importa a tela aberta; a tela atual aparece como aba, não aqui (Marcus, 26/10/2026)
-          e("span",{className:"truncate"+(navPerg ? " font-semibold" : ""), style:navPerg ? {color:setorAtual.st.id==="whats" ? "#E8B84B" : setorAtual.st.cor} : undefined}, navPerg ? setorAtual.st.nome.replace("\n", " ") : titulo)),
+          e("span",{className:"truncate"}, navPerg ? "" : titulo)),
         e("span",{className:"hidden whitespace-nowrap text-sm text-muted-foreground "+(colAr ? "min-[2200px]:inline" : "min-[1800px]:inline")}, new Date().toLocaleDateString("pt-BR",{weekday:"long", day:"numeric", month:"long"})),
         // 13/11/2026 (Marcus): os botões "App representante" e "App das funcionárias" saíram da barra de cima, para todo mundo (a tela Apps continua só para quem já a via no menu)
 
-        e(IrPara,{navigate:navigate, abrir:abrirMenu, pode:visao==="pontual" ? function(n){ return /^pont/.test(n.aba || "") && podeMenu(n); } : podeMenu}),   // no modo Pontual a busca só acha telas da Pontual
-        (visao==="marcus" || /^marcus/.test(aba)) && s.usuario===16 && e(RelogioProgresso),   // cronômetro do Progresso (09/11/2026): só no modo Marcus
+        // 16/11/2026 (Marcus): a busca e o cronômetro do Progresso foram para o menu lateral, abaixo do logo
         // 13/11/2026 (Marcus): saíram da barra de cima o botão do SorellyChat e o sino de avisos (limpar o topo)
         ),
-      navPerg && e(MenuSetor,{menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
+      navPerg && e(MenuSetor,{topo:recolhido ? "top-9" : "top-9 md:top-0", menu:setorAtual.st.menu, semAbas:false, visao:visao, setor:setorAtual.st.nome.replace("\n"," "), cor:setorAtual.st.cor, pode:podeMenu, ativo:ativoMenu, abrir:abrirMenu}),
       setorAtual && !navPerg && (APPS_SETOR[setorAtual.st.id]||[]).length>0 && e("div",{className:"z-20 flex gap-x-3 gap-y-1.5 sombra-baixo bg-background/95 px-3 backdrop-blur md:px-5 "+"sticky top-9 items-center py-1.5"},
         false && botoesAgrupados(setorAtual.st.areas, function(ar, i){ var ativa = ar===setorAtual.ar || ar.nome===setorAtual.ar.nome, unica = ar.telas.length===1 ? ar.telas[0] : null, cc = ar.cor || COR_AREA[ar.nome] || setorAtual.st.cor;
           return e("button",{key:i, onClick:function(ev){ if(unica){ abrirTela(unica); setAreaTopo(null); return; } var r = ev.currentTarget.getBoundingClientRect(); setAreaTopo(areaTopo && areaTopo.i===i ? null : {i:i, x:r.left, y:r.bottom+4}); },

@@ -207,7 +207,7 @@ function MenuSetor(p){
     var de = retangulo(ev && ev.currentTarget);
     var r = p.abrir(n, ev); voar(n.nome, de); return r;
   };
-  return e("div",{className:"sticky top-9 z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:53}},
+  return e("div",{className:"sticky "+(p.topo || "top-9")+" z-20 sombra-baixo bg-background/95 backdrop-blur", style:p.semAbas ? undefined : {minHeight:53}},
     !p.semAbas && e(AbasAbertas,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:p.abrir, setor:p.setor, cor:p.cor, visao:p.visao}),
     e("div",{className:"flex items-stretch border-b border-l border-border", style:{height:LIN}},
       e(BarraMenu,{menu:p.menu, pode:p.pode, ativo:p.ativo, abrir:abrirComVoo})),

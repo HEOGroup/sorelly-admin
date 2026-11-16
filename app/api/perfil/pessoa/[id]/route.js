@@ -4,7 +4,7 @@ export const runtime = "nodejs";
 import { corpo, erro, invalido, json, rota } from "@/server/http";
 import { consulta } from "@/server/db";
 
-const LIMITE_FOTO = 60000;   // a tela reduz a foto para 160 px (uns 10 KB)
+const LIMITE_FOTO = 110000;   // a tela salva a foto em 360 px (uns 40 KB)
 
 export const PATCH = rota(async (req, { eu, params }) => {
   const marketing = Array.isArray(eu.setores) && eu.setores.includes("marketing");

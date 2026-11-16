@@ -20,7 +20,7 @@ var dp = function(k){ return k.split("-").reverse().join("/"); };
 var dc = function(k){ return k.split("-").reverse().slice(0,2).join("/"); };
 var sinal = function(v){ return (v>=0 ? "+ " : "− ")+BK(Math.abs(v)); };
 var num = function(v){ return Number(v||0).toLocaleString("pt-BR",{minimumFractionDigits:2, maximumFractionDigits:2}); };
-var cor = function(v){ return v<0 ? "text-destructive" : ""; };   // número positivo ou zero = branco; negativo = vermelho (Marcus, 12/11/2026)
+var cor = function(v){ return v<0 ? "text-destructive" : v>0 ? "text-success" : ""; };   // positivo = verde; negativo = vermelho; zero = branco (Marcus, 16/11/2026)
 var SEM = ["Domingo","Segunda","Terça","Quarta","Quinta","Sexta","Sábado"];
 var diaSem = function(k){ return new Date(k+"T12:00:00").getDay(); };
 var fimSem = function(k){ var d = diaSem(k); return d===0 || d===6 || !!FERIADOS[k]; };   // fim de semana e feriado: mesma cor
@@ -108,7 +108,7 @@ function AbaCaixa(){
   var oc = useState({}), ocultos = oc[0], setOcultos = oc[1];
   var gs = useState({}), gFech = gs[0], setGFech = gs[1];   // barras FECHADAS (o que não está aqui está aberto)
   var dd = useState(false), diasAberto = dd[0], setDiasAberto = dd[1];
-  var aba = "saldos", raiz = useRef(null), edS = useState(false), edita = edS[0], setEdita = edS[1], pe = useState({modo:"mes", de:"", ate:""}), periodo = pe[0], setPeriodo = pe[1], po = useState(null), popPos = po[0], setPopPos = po[1], lgS = useState(1600), lg = lgS[0], setLg = lgS[1];
+  var aba = "saldos", raiz = useRef(null), edS = useState(false), edita = edS[0], setEdita = edS[1], pe = useState({modo:"hoje", de:"", ate:""}), periodo = pe[0], setPeriodo = pe[1], po = useState(null), popPos = po[0], setPopPos = po[1], lgS = useState(1600), lg = lgS[0], setLg = lgS[1];
   useEffect(function(){ var el = raiz.current; if(!el) return undefined; var calc = function(){ setLg(el.clientWidth); }; calc(); var ro = typeof ResizeObserver!=="undefined" ? new ResizeObserver(calc) : null; if(ro) ro.observe(el); window.addEventListener("resize", calc); return function(){ if(ro) ro.disconnect(); window.removeEventListener("resize", calc); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   // DEVMASTER (Marcus, 12/11/2026): o Resumo do mês bate Contas a receber e Contas pagas com o saldo. Mesmas fontes da tela Resultado do mês.
   setClasse((s.cpe||{}).classe); setLancamentos((s.cpe||{}).lanc); setBaixas((s.cpe||{}).baixas); setPf(s.pf);
@@ -122,7 +122,7 @@ function AbaCaixa(){
   var ultimo = ehAtual ? hoje : isoDia(new Date(ano, mes+1, 0)), dias = [];
   if(isoDia(new Date(ano, mes, 1))<=hoje){ for(var di = 1; di<=31; di++){ var iso = isoDia(new Date(ano, mes, di)); if(iso.slice(0,7)!==pref || iso>ultimo) break; dias.push(iso); } }
   var diasSel = dias;   // PERÍODO (Marcus, 12/11/2026): Base + hoje (padrão), mês inteiro, últimos 7 ou 15 dias, ou de um dia até outro; a base (último dia do mês anterior) vai sempre junto
-  if(periodo.modo==="hoje") diasSel = dias.slice(-1); else if(periodo.modo==="7") diasSel = dias.slice(-7); else if(periodo.modo==="15") diasSel = dias.slice(-15);
+  if(periodo.modo==="hoje"){ var ultAtu = ds.filter(function(k){ return dias.indexOf(k)>=0; }).pop(); diasSel = ultAtu ? [ultAtu] : dias.slice(-1); } else if(periodo.modo==="7") diasSel = dias.slice(-7); else if(periodo.modo==="15") diasSel = dias.slice(-15);
   else if(periodo.modo==="faixa"){ var deF = periodo.de || dias[0], ateF = periodo.ate || dias[dias.length-1]; diasSel = dias.filter(function(k){ return k>=deF && k<=ateF; }); }
   var cols = [baseData].concat(diasSel), vcols = cols.filter(function(k){ return !ocultos[k]; });
   var dA = vcols[0], dB = vcols[vcols.length-1], dEnd = cols[cols.length-1];
@@ -135,6 +135,11 @@ function AbaCaixa(){
   var agoraD = new Date(), eh = function(k){ var lim = new Date(k+"T10:00:00"); lim.setDate(lim.getDate()+1); return agoraD >= lim; };   // eh(k): já passou das 10h do dia seguinte a k? só então um saldo não preenchido repete o do dia anterior
   var vd = function(id, k){ if(lancou(k, id)) return sc.saldos[k][id]; return eh(k) ? efetivo(sc, ds, id, k) : 0; };   // preenchido = o valor; não preenchido e ainda no prazo = 0,00; passou das 10h do dia seguinte = repete o anterior
   var sd = function(id, k){ var v = vd(id, k); return v===null ? 0 : v; };
+  // VARIAÇÃO E "ATUAL" (Marcus, 16/11/2026): o dia de hoje ainda sem saldo lançado vale 0,00 na célula, mas NÃO pode servir de ponto final da conta (dava variação de só R$ 5 mil no Sicredi 46, que tinha R$ 128 mil). O ponto final é o último dia com saldo lançado (ou já fechado pelas 10h do dia seguinte).
+  var fechada = function(k){ return k===baseData || eh(k) || sc.contas.some(function(c){ return lancou(k, c.id); }); };
+  var vFech = vcols.filter(fechada), cFech = cols.filter(fechada);
+  if(vFech.length) dB = vFech[vFech.length-1];
+  if(cFech.length) dEnd = cFech[cFech.length-1];
   var realDia = function(k){ return livres.reduce(function(t, c){ return t+sd(c.id, k); }, 0); };
   var bloqDia = function(k){ return contasSel.filter(function(c){ return c.bloqueada; }).reduce(function(t, c){ return t+sd(c.id, k); }, 0); };
   var limSel = livres.reduce(function(t, c){ return t+(c.limite||0); }, 0);
@@ -202,7 +207,7 @@ function AbaCaixa(){
       return e(Celula,{key:k+l.cid+(v===null ? "n" : v), v:v, lancado:lanc, rep:!lanc && eh(k) && v!==null, travado:trav, leitura:!edita || k!==hoje, reabrir:k===hoje ? function(){ fechar(k, [l.bloco], false); } : null, salvar:function(x){ cx.dispatch({type:"SALDO_CEL", data:k, conta:l.cid, valor:x}); }}); }
     if(l.tipo==="sit") return v===null ? "—" : e("span",{className:"font-semibold "+(v==="Bateu" ? "text-success" : v==="Sobrando" ? "text-amber-300" : "text-destructive")}, v);
     if(v===null || v===undefined) return "—";
-    var n = Number(v), c3 = n<0 ? "text-destructive" : "";
+    var n = Number(v), c3 = cor(n);
     return e("span",{className:"tabular-nums "+c3}, l.tipo==="roi" ? String(Math.round(n)) : (n===0 && l.tipo!=="tot" && l.tipo!=="dif" ? "—" : BK(n)));
   }; };
   var colDia = function(k){ var semLanc = eh(k) && !sc.contas.some(function(c){ return lancou(k, c.id); });
@@ -210,13 +215,13 @@ function AbaCaixa(){
   var pCols = [{k:"nome", t:"Conta", w:"20rem", fixa:true, bordaGrossa:true, bordaFora:"esq", render:function(v, l){ return e("span",{title:v}, v); }}]
     .concat(vcols.map(function(k, i){ var cd = colDia(k); if(i===vcols.length-1){ cd.fixaDir = "26.5rem - 6px"; cd.bordaGrossa = true; } return cd; }), [
       {k:"var", t:"Variação "+(dA && dB && dA!==dB ? dc(dA)+" → "+dc(dB) : ""), w:"10rem", fixaDir:"16.5rem - 4px", render:function(v, l){ return v===null || v===undefined ? "—" : e("span",{className:"tabular-nums "+(l.varTipo==="soma" ? "" : cor(v))}, l.varTipo==="soma" ? BK(v) : sinal(v)); }},
-      {k:"lim", t:"Limite", w:"7.5rem", fixaDir:"9rem - 2px", render:function(v, l){ return (l.tipo==="conta" || l.tipo==="cnpjtot") && v ? e("span",{className:"tabular-nums"}, BK(v)) : ""; }},
+      {k:"lim", t:"Limite", w:"7.5rem", fixaDir:"9rem - 2px", render:function(v, l){ if(l.tipo!=="conta" && l.tipo!=="cnpjtot") return ""; var naoSeAplica = l.conta && (l.conta.tipo==="CAIXA" || l.conta.bloqueada); return naoSeAplica ? "-----" : e("span",{className:"tabular-nums"}, BK(v||0)); }},   // "-----" = limite não se aplica (Aplicação, Dinheiro, conta bloqueada); conta corrente sem limite mostra R$ 0,00 (Marcus, 16/11/2026)
       {k:"disp", t:"Disponível agora", w:"9rem", fixaDir:"0", bordaFora:"dir", render:function(v, l){ return (l.tipo==="conta" || l.tipo==="cnpjtot") ? e("span",{className:"tabular-nums "+cor(v)}, BK(v)) : ""; }}]);
   var abrirGrupos = function(v){ var o = {}; Object.keys(meta).forEach(function(k){ o[k] = !v; }); setGFech(o); };
 
 
   var deX = periodo.de || dias[0] || baseData, ateX = periodo.ate || dias[dias.length-1] || baseData;
-  var rotPeriodo = periodo.modo==="hoje" ? "Base + hoje" : periodo.modo==="mes" ? "Mês inteiro" : periodo.modo==="7" ? "Últimos 7 dias" : periodo.modo==="15" ? "Últimos 15 dias" : "De "+dc(deX)+" até "+dc(ateX);
+  var rotPeriodo = periodo.modo==="hoje" ? "Base + último dia atualizado" : periodo.modo==="mes" ? "Mês inteiro" : periodo.modo==="7" ? "Últimos 7 dias" : periodo.modo==="15" ? "Últimos 15 dias" : "De "+dc(deX)+" até "+dc(ateX);
   var botaoPeriodo = e("button",{type:"button", title:"Escolher quais dias aparecem na planilha", onClick:function(ev){ var r = ev.currentTarget.getBoundingClientRect(); setPopPos(popPos ? null : {x:r.left, y:r.bottom+4}); }, className:"h-[18px] whitespace-nowrap rounded-md border border-white/40 bg-white/10 px-2 text-[11px] font-semibold normal-case text-white hover:bg-white/20"}, "Período: "+rotPeriodo+" ▾");
   // janelinha do período no padrão do sistema (igual ao menu de filtro das colunas): tudo centralizado, linhas finas, itens de 32 px, letra de 13 e 11 px
   var botaoEditar = e("button",{type:"button", title:edita ? "Terminar a edição (a planilha volta a só mostrar e rolar)" : "Abre as células: clique na conta, digite o saldo e aperte Enter (OK). Saldo zero também precisa do OK", onClick:function(){ setEdita(!edita); }, className:"h-[18px] whitespace-nowrap rounded-md border px-2 text-[11px] font-semibold text-white "+(edita ? "border-white bg-white/30" : "border-white/40 bg-white/10 hover:bg-white/20")}, edita ? "Concluir edição" : "Editar");
@@ -231,7 +236,7 @@ function AbaCaixa(){
   var popPeriodo = popPos && e("div",{key:"popperiodo"}, e("div",{className:"fixed inset-0 z-40", onClick:function(){ setPopPos(null); }}),
     e("div",{className:"fixed z-50 max-h-[88vh] w-72 overflow-y-auto rounded-lg border border-border bg-popover text-foreground shadow-xl", style:{left:Math.min(popPos.x, Math.max(8, window.innerWidth-300)), top:Math.min(popPos.y, Math.max(8, window.innerHeight*0.1))}},
       e("div",{className:CABP}, "Atalhos"),
-      [["hoje","Base + hoje"], ["mes","Mês inteiro (todos os dias)"], ["7","Últimos 7 dias"], ["15","Últimos 15 dias"]].map(function(x){ return e("button",{key:x[0], type:"button", onClick:function(){ setPeriodo({modo:x[0], de:"", ate:""}); setPopPos(null); }, className:ITEMP+(periodo.modo===x[0] ? "bg-white/15 font-bold" : "")}, x[1]); }),
+      [["hoje","Base + último dia atualizado"], ["mes","Mês inteiro (todos os dias)"], ["7","Últimos 7 dias"], ["15","Últimos 15 dias"]].map(function(x){ return e("button",{key:x[0], type:"button", onClick:function(){ setPeriodo({modo:x[0], de:"", ate:""}); setPopPos(null); }, className:ITEMP+(periodo.modo===x[0] ? "bg-white/15 font-bold" : "")}, x[1]); }),
       e("div",{className:CABP}, "Mês"),
       e("div",{className:"grid grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] border-t border-border"}, e("button",{type:"button", "aria-label":"Mês anterior", onClick:function(){ mover(-1); }, className:"h-8 text-[13px] hover:bg-white/10"}, "‹"), e("div",{className:"flex h-8 items-center justify-center border-x border-border text-[13px] font-semibold"}, MESES_LONGO[mes]+" de "+ano), e("button",{type:"button", "aria-label":"Próximo mês", onClick:function(){ mover(1); }, className:"h-8 text-[13px] hover:bg-white/10"}, "›")),
       e("div",{className:CABP}, "De um dia até outro dia"),

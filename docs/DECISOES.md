@@ -4,6 +4,14 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+## 16/11/2026 (Servidor da porta 3000 caía toda hora — causa e correção)
+- **Sintoma:** em 16/11 o servidor local caiu 5 vezes em 40 minutos. Travava (porta aberta sem responder) ou sumia. Processo do Node chegou a 13 GB de memória; a pasta `.next` tinha 6,7 GB.
+- **Causa:** no `npm run dev` o Next desliga a divisão de pacotes no navegador (`splitChunks: false`). Como `src/router/rotas.js` carrega cada tela com `import()` (mais de 200), cada tela virava um pacote com o sistema inteiro dentro: 142 pacotes, os maiores com 50 MB, 3,1 GB a cada compilação. Cada arquivo salvo por qualquer conversa refazia tudo.
+- **Correção (`next.config.mjs`):** no modo de desenvolvimento, o código usado por 2 ou mais telas vai para um pacote só (`comum-dev`). Medido no servidor real: pacotes de 3,1 GB para 91 MB; primeira compilação de 34 s para 17 s. Só vale para o `npm run dev`; o site publicado não muda. Desliga com a variável `SORELLY_SEM_DIVISAO=1`.
+- **Quem liga o servidor:** só o Marcus, com `iniciar-servidor-unico.cmd` (na raiz; mais memória, log em `logs/servidor.log`, religa sozinho). Servidor ligado por uma conversa do Claude é encerrado junto com ela (aconteceu 2 vezes, sem erro no log).
+- **Não era a causa:** as rotinas que puxam a DevMaster sozinhas (poucas chamadas e leves no log).
+- **Achado à parte, ainda aberto:** a tela regrava os módulos `inad`, `er`, `fc`, `ex` e `fd` no banco sem parar (72 gravações em 6 minutos; `ex` na versão 12.713). Não derruba o servidor, mas precisa ser visto.
+
 ## 13/11/2026 (Comissão interna e Comissões da bipagem no setor da bipagem)
 - **Marcus: "o nome não pode ser Visão geral dos funcionários, tem que ser Comissão interna; tira o título de cima; Por pessoa não quero; quero o bloco de cima mais elaborado para ver o resultado".** Tela `comisstodos` = Comissão interna: um bloco de planilha por setor (pessoas, valor, % do total, média, quem recebe mais, situação, próximo pagamento, fonte) e linha de total.
 - **Marcus: "a comissão da bipagem fica no setor delas; acesso só da diretoria e da Deysiane; no Financeiro vai só o consolidado".** `comisbip` saiu de Financeiro › Comissões e entrou em Representantes & Kits › Bipagem. Autorização nova `comissao_bipagem` (padrão Marcus, Lucas, Nickolas e Deysiane; ajusta em RH › Acessos e autorizações). O botão Abrir da linha Bipagem de envio, na Comissão interna, só aparece para quem tem a autorização.
