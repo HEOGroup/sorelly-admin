@@ -59,7 +59,6 @@ var MENU_CADPECAS = [
 // Menu das Encomendas e reposições (23/10/2026): mesmo estilo do Financeiro e do Cadastro. Poucas telas = palavras diretas no topo (sem lista), na ORDEM DO FLUXO: pedido → ida na empresa → Top 50 → representantes → expositores → regras.
 var MENU_ENCOMENDAS = [
   M("Funil de pedidos","encomendas"),
-  M("Ida na empresa","encida"),
   M("Top 50","enctop50"),
   M("Representantes","encrep"),
   M("Expositores","expositores"),
@@ -233,7 +232,6 @@ var SETORES = [
     {nome:"Configurações", telas:[T("cpcfg","Configurações")]}]},
   {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[
     {nome:"Funil de pedidos", telas:[T("encomendas","Funil de pedidos")]},
-    {nome:"Ida na empresa", telas:[T("encida","Ida na empresa")]},
     {nome:"Top 50", telas:[T("enctop50","Top 50")]},
     {nome:"Representantes", telas:[T("encrep","Representantes")]},
     {nome:"Expositores", telas:[T("expositores","Expositores")]},

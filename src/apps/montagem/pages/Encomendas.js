@@ -39,9 +39,9 @@ function grupoBtn(ops, atual, aoMudar){
   return e("div",{className:"inline-flex overflow-hidden rounded-md border border-white/50"}, ops.map(function(o, i){ var on = atual===o[0];
     return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ aoMudar(o[0]); }, className:BTN_VISAO+(i ? "border-l border-white/50 " : "")+(on ? "bg-white text-[#14233f]" : "text-white hover:bg-white/15")}, o[1]); }));
 }
-var SEL_F = SEL.replace("text-[13px]", "text-[11px]"), BTN_F = BTN.replace("text-[13px]", "text-[11px]");   // faixa azul com letra de 11 px (Marcus, 17/11/2026)
+var SEL_F = SEL.replace("text-[13px]", "text-[11px]").replace("h-7", "h-5").replace("bg-[#14233f]", "bg-[#4a73b8]")+" w-24 text-center", BTN_F = BTN.replace("text-[13px]", "text-[11px]").replace("h-7", "h-5").replace("bg-[#14233f]", "bg-[#4a73b8]")+" text-center";   // padrao-ok: controles menores e mais claros na faixa do Funil (Marcus, 17/11/2026)   // faixa azul com letra de 11 px (Marcus, 17/11/2026)
 function seletorF(rotulo, valor, aoMudar, opcoes){
-  return e("select",{"aria-label":rotulo, value:valor, onChange:function(ev){ aoMudar(ev.target.value); }, className:SEL_F}, e("option",{value:""}, rotulo), opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }));
+  return e("select",{"aria-label":rotulo, value:valor, onChange:function(ev){ aoMudar(ev.target.value); }, className:SEL_F, style:{textAlignLast:"center"}}, e("option",{value:""}, rotulo), opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }));
 }
 function seletor(rotulo, valor, aoMudar, opcoes){
   return e("select",{"aria-label":rotulo, value:valor, onChange:function(ev){ aoMudar(ev.target.value); }, className:SEL}, e("option",{value:""}, rotulo+": todos"), opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); }));
@@ -59,7 +59,7 @@ function nomeCurto(n){
 function CartaoE(p){
   var x = p.x, rev = p.rev, sep = x.tipo==="separar";
   var min = sep ? (x.mudou ? Math.max(0, Math.round(minutosDe(p.agora)-minutosDe(x.mudou))) : null) : minutosNaEtapa(x, p.agora), prazo = Number(p.prazo)*60;
-  var atras = !FINAIS[x.status] && prazo>0 && min!=null && min>prazo, ate = x.atendInicio && !x.atendFim ? Math.max(0, Math.round(minutosDe(p.agora)-minutosDe(x.atendInicio))) : null, sem = !sep && x.status!=="novo" && faltaComprovante(x);
+  var atras = !FINAIS[x.status] && !x.aguardando && prazo>0 && min!=null && min>prazo, ate = x.atendInicio && !x.atendFim ? Math.max(0, Math.round(minutosDe(p.agora)-minutosDe(x.atendInicio))) : null, sem = !sep && x.status!=="novo" && faltaComprovante(x);
   var dica = [faixaRotulo(x)+(rev && rev.top50 ? " · Top 50" : ""), x.responsavel || "sem responsável"];
   if(!sep){
     if(x.tipo==="encomenda") dica.push(x.descricao || "Sem descrição"); else dica.push("Média "+(x.media3m!=null ? formatarReais(x.media3m) : "—")+" · Máx "+(x.valorMax>0 ? formatarReais(x.valorMax) : "—"));
@@ -67,24 +67,25 @@ function CartaoE(p){
     if(x.dataAgendada) dica.push("Agendado "+formatarDia(x.dataAgendada)+(x.hora ? " · "+x.hora : ""));
     if(ate!=null) dica.push((x.atendente || "Atendente")+" "+ate+"/"+p.limiteAt+" min");
   }
-  var taxaTxt = x.tipo==="reposicao" && x.canal==="entrega" ? (x.taxa>0 ? "Taxa "+formatarReais(x.taxa) : "Sem taxa") : "";   // o cartão mostra se é para cobrar a taxa de reposição ou não
+  var taxaTxt = x.tipo==="reposicao" && x.canal==="entrega" ? (x.taxa>0 ? "Taxa "+formatarReais(x.taxa) : "Sem taxa") : x.tipo==="encomenda" ? "Sem taxa" : "";   // o cartão mostra se é para cobrar a taxa de reposição ou não
   var quem = x.responsavel ? (FINAIS[x.status] ? "Atendeu: " : "Atendendo: ")+x.responsavel : "Sem responsável";
   // o texto nunca passa da borda do cartão (Marcus, 17/11/2026): a linha 1 é só o nome (até 4 nomes); a linha 2 tem quem atende à esquerda e, à direita, a taxa e o tempo na etapa; o que sobrar é cortado pela borda, nunca sai dela
-  var tempo = !FINAIS[x.status] && min!=null ? textoTempo(min) : "";
+  var tempo = x.aguardando && !FINAIS[x.status] ? "Aguardando peças" : !FINAIS[x.status] && min!=null ? textoTempo(min) : "";
   // card em linhas (Marcus, 17/11/2026): foto da cliente à esquerda, ocupando a altura; nome, quem solicitou, quem atende, e a taxa com o tempo na etapa. Cada linha é uma só e nunca passa da borda.
   var solicitou = x.criadoPor || x.por || "";
   var linha = "block w-full whitespace-nowrap text-[11px] leading-tight";
   return e("button",{type:"button", title:x.revendedora+" · "+dica.join(" · "), onClick:p.abrir, className:"flex w-full cursor-pointer items-stretch gap-2 overflow-hidden rounded-lg border-2 bg-gradient-to-br from-[#2a4a80] to-[#16233d] p-1.5 text-left shadow-md "+(atras || sem ? "border-destructive" : "border-[#6f9be0]/70 hover:border-[#9bbcf0]")},
-    p.perfil && e(Foto,{k:p.perfil.key, cls:"w-16 shrink-0 self-stretch rounded-md object-cover", alt:"Foto de "+x.revendedora}),
+    // todos os cartões iguais (Marcus, 17/11/2026): sempre a foto (ou a inicial, quando não tem foto) e sempre as 4 linhas
+    p.perfil ? e(Foto,{k:p.perfil.key, cls:"w-16 shrink-0 self-stretch rounded-md object-cover", alt:"Foto de "+x.revendedora}) : e("span",{className:"grid w-16 shrink-0 self-stretch place-items-center rounded-md bg-black/30 text-[20px] font-semibold tabular-nums", "aria-hidden":true}, String(x.revendedora || "?").trim().charAt(0).toUpperCase()),
     e("span",{className:"flex min-w-0 flex-1 flex-col justify-center gap-1"},
       e("b",{className:"block w-full whitespace-nowrap text-[13px] font-semibold leading-tight"}, nomeCurto(x.revendedora)),
-      solicitou && e("span",{className:linha}, "Solicitação: "+solicitou),
+      e("span",{className:linha}, "Solicitação: "+(solicitou || "não informada")),
       e("span",{className:linha}, quem),
-      (taxaTxt || tempo) && e("span",{className:linha+" tabular-nums"}, taxaTxt ? e("span",{className:"font-semibold "+(sem ? "text-destructive" : x.taxaIsenta || !(x.taxa>0) ? "text-success" : "")}, taxaTxt) : null, taxaTxt && tempo ? " · " : "", tempo ? e("span",{className:atras ? "font-semibold text-destructive" : ""}, tempo) : null)));
+      e("span",{className:linha+" tabular-nums"}, !taxaTxt && !tempo ? " " : null, taxaTxt ? e("span",{className:"font-semibold "+(sem ? "text-destructive" : x.taxaIsenta || !(x.taxa>0) ? "text-success" : "")}, taxaTxt) : null, taxaTxt && tempo ? " · " : "", tempo ? e("span",{className:atras ? "font-semibold text-destructive" : x.aguardando ? "font-semibold text-[#fbbf24]" : ""}, tempo) : null)));
 }
 
 function AbaEncomendas(){
-  var E = useEr(), s = E.s, er = E.er, cfg = E.cfg, md = useState(null), modal = md[0], mo = useState("quadro"), modo = mo[0], ft = useState(VAZIO_F), f = ft[0], tk = useState(0), svm = useState({}), vermais = svm[0];
+  var E = useEr(), s = E.s, er = E.er, cfg = E.cfg, md = useState(null), modal = md[0], mo = useState("quadro"), modo = mo[0], ft = useState(VAZIO_F), f = ft[0], tk = useState(0), svm = useState({}), vermais = svm[0], oc = useState(function(){ try { return window.localStorage.getItem("sorelly_er_ocultar_vazias")==="1"; } catch(x){ return false; } }), ocultar = oc[0];
   useEffect(function(){ var t = setInterval(function(){ tk[1](function(n){ return n+1; }); }, 30000); return function(){ clearInterval(t); }; }, []);
   var set = function(k, v){ ft[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
   var agora = agoraSP(), ind = indicadoresEr(s), ativo = !!(f.canal || f.resp || f.grupo || f.tipo);
@@ -138,15 +139,17 @@ function AbaEncomendas(){
     return function(){ vivo = false; clearInterval(t); };
   }, []);
   var ir = function(m){ md[1](m); };
-  var abre = function(x){ if(x.tipo==="separar") ir({tipo:"separar", id:x.id}); else if(x.tipo==="reposicao" && x.canal==="entrega") ir({tipo:"ficha", id:x.id}); else ir({tipo:"detalhe", id:x.id}); };
+  var abre = function(x){ if(x.tipo==="separar") ir({tipo:"separar", id:x.id}); else ir({tipo:"ficha", id:x.id}); };   // todos os pedidos abrem a mesma ficha (Marcus, 17/11/2026)
   var minDe = function(x){ return x.tipo==="separar" ? (x.mudou ? Math.max(0, Math.round(minutosDe(agora)-minutosDe(x.mudou))) : null) : minutosNaEtapa(x, agora); };
-  var atrasado = function(x){ var m = minDe(x); return !FINAIS[x.status] && cfg.prazoHoras>0 && m!=null && m>cfg.prazoHoras*60; };
+  var atrasado = function(x){ var m = minDe(x); return !FINAIS[x.status] && !x.aguardando && cfg.prazoHoras>0 && m!=null && m>cfg.prazoHoras*60; };
   var abertos = todos.filter(function(x){ return !FINAIS[x.status]; }).length, atrasados = todos.filter(atrasado).length;
   // quadro: uma coluna por etapa (todas, mesmo vazias), todas no mesmo azul; "cancelado" junta recusado e cancelado
   var estaEtapa = function(x, k){ return k==="cancelado" ? (x.status==="cancelado" || x.status==="recusado") : x.status===k; };
   var PRINCIPAL = ["novo", "aceite", "separando", "comprovante", "bipagem", "liberado", "rota", "condicional", "concluido", "cancelado"];
   var ordem = FLUXO.concat(["cancelado"]), vis = ordem.filter(function(k){ return PRINCIPAL.indexOf(k)>=0 || todos.some(function(x){ return estaEtapa(x, k); }); });
-  var colunas = vis.map(function(k){
+  var trocaOcultar = function(){ var n = !ocultar; oc[1](n); try { window.localStorage.setItem("sorelly_er_ocultar_vazias", n ? "1" : "0"); } catch(x){ /* sem armazenamento: vale só nesta tela */ } };
+  var mostra = ocultar ? vis.filter(function(k){ return todos.some(function(x){ return estaEtapa(x, k); }); }) : vis;
+  var colunas = mostra.map(function(k){
     var it = todos.filter(function(x){ return estaEtapa(x, k); }), atrC = it.filter(atrasado).length, lim = k==="concluido" || k==="cancelado" ? LIMITE_FIM : LIMITE_COLUNA;
     return e("section",{key:k, className:"flex w-[350px] shrink-0 flex-col gap-1 pb-1"},   // sem borda na coluna: a borda é só dos cartões (Marcus, 17/11/2026)
       e("div",{className:"flex h-7 items-center justify-between gap-2 rounded-md bg-[var(--bloco-colunas)] px-2 text-[11px] font-bold uppercase"},
@@ -178,15 +181,18 @@ function AbaEncomendas(){
   // faixa azul única, numa linha só e com letra de 11 px: visão e filtros à esquerda, o título da tela no meio, números do dia e botões à direita
   var tituloTela = {quadro:"Funil de pedidos", rota:"Rota do João", planilha:"Planilha de pedidos", revendedoras:"Revendedoras"}[modo];
   // FAIXA AZUL (Marcus, 17/11/2026: "tudo gigante, uma bagunça: diminui, centraliza"): título no meio, e embaixo uma linha só, centralizada, com as escolhas, os números e os botões
-  var faixa = e("div",{className:"flex flex-col items-center gap-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1.5 text-[11px] text-white"},
-    e("h2",{className:"whitespace-nowrap text-[13px] font-bold uppercase leading-tight"}, tituloTela),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
-      e("select",{"aria-label":"Visão", value:modo, onChange:function(ev){ mo[1](ev.target.value); }, className:SEL_F+" w-24"}, [["quadro", "Quadro"], ["rota", "Rota do João"], ["planilha", "Planilha"], ["revendedoras", "Revendedoras"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
+  var faixa = e("div",{className:"flex flex-col items-center gap-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-[11px] text-white lg:grid lg:grid-cols-[1fr_auto_1fr]"},
+    // uma linha só: escolhas à esquerda, título no meio, números e botões à direita
+    e("div",{className:"flex flex-wrap items-center justify-start gap-1 lg:justify-self-start"},
+      e("select",{"aria-label":"Visão", value:modo, onChange:function(ev){ mo[1](ev.target.value); }, className:SEL_F, style:{textAlignLast:"center"}}, [["quadro", "Quadro"], ["rota", "Rota do João"], ["planilha", "Planilha"], ["revendedoras", "Revendedoras"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
       modo==="quadro" && seletorF("Canal", f.canal, function(v){ set("canal", v); }, CANAIS),
       modo==="quadro" && seletorF("Responsável", f.resp, function(v){ set("resp", v); }, resps.map(function(n){ return [n, n]; })),
       modo==="quadro" && seletorF("Grupo", f.grupo, function(v){ set("grupo", v); }, [["top50", "Top 50"], ["demais", "Demais"]]),
       modo==="quadro" && seletorF("Assunto", f.tipo, function(v){ set("tipo", v); }, [["reposicao", "Reposição"], ["encomenda", "Encomenda"]]),
-      modo==="quadro" && ativo && e("button",{type:"button", onClick:function(){ ft[1](VAZIO_F); }, className:BTN_F}, "Limpar"),
+      modo==="quadro" && e("button",{type:"button", "aria-pressed":ocultar, onClick:trocaOcultar, className:BTN_F+(ocultar ? " !bg-white !text-[#14233f]" : "")}, ocultar ? "Mostrar vazias" : "Ocultar vazias"),
+      modo==="quadro" && ativo && e("button",{type:"button", onClick:function(){ ft[1](VAZIO_F); }, className:BTN_F}, "Limpar")),
+    e("h2",{className:"whitespace-nowrap text-center text-[13px] font-bold uppercase leading-tight"}, tituloTela),
+    e("div",{className:"flex flex-wrap items-center justify-end gap-1 lg:justify-self-end"},
       e("span",{className:"mx-1 whitespace-nowrap text-[11px] tabular-nums"}, "Em aberto ", e("b",null, String(abertos)), " · Atrasados ", e("b",{className:atrasados>0 ? "text-[var(--negativo)]" : ""}, String(atrasados)), " · Sem comprovante ", e("b",{className:ind.semComprovante>0 ? "text-[var(--negativo)]" : ""}, String(ind.semComprovante))),
       e("button",{type:"button", onClick:function(){ ir({tipo:"link"}); }, className:BTN_F}, "Link do pedido"),
       e("button",{type:"button", onClick:function(){ ir({tipo:"nova"}); }, className:BTN_F+" !bg-white !text-[#14233f]"}, "Nova solicitação")));

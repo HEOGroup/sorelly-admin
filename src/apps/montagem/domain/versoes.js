@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.95", data:"2026-11-17", titulo:"Encomendas e reposições: Aguardando peças, ficha única e faixa do Funil", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → ficha do pedido", txt:"Botão Aguardando peças: o pedido continua aberto, mas deixa de contar como atrasado (card mostra Aguardando peças). Voltar a contar prazo recomeça o tempo da etapa."},
+  {tipo:"melhoria", area:"Encomendas e reposições → Funil", txt:"Todos os cards abrem a mesma ficha, com título pelo tipo do pedido. Cards sempre com a mesma altura. Faixa do topo em uma linha, controles menores e mais claros, botão Ocultar vazias. Separar peças e Ida na empresa saíram do menu do setor."}
+ ]},
  {v:"0.20.94", data:"2026-11-17", titulo:"Pix para fornecedor: do Direcionar direto ao Contas a pagar", itens:[
   {tipo:"novo", area:"Financeiro → Direcionar", txt:"Quando o Lucas confirma um Pix com um fornecedor como destino, o Pix vira pagamento do fornecedor sozinho, na data de pagamento mais antiga em aberto. Ninguém digita de novo. Confirmar duas vezes não duplica; reabrir o Pix retira o pagamento que ainda não tem comprovante."},
   {tipo:"novo", area:"Pagamentos a fornecedores → Lançamento de pagamentos", txt:"O Pix do Direcionar só conta como pago e só aparece em Contas a pagar depois de anexar o comprovante (botão Anexar comprovante). Até lá fica como Falta o comprovante. Pix do atendimento interno pega sozinho o comprovante anexado no Atendimento Sorelly (o mesmo do Consolidado Sorelly). Os lançamentos antigos não mudam. A tela segue para conferir, estornar e enviar o extrato."},

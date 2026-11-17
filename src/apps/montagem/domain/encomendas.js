@@ -302,7 +302,7 @@ function listaPedidos(s, f){
 function indicadoresEr(s, hoje){
   var er = s.er, h = hoje || hojeSP(), mes = h.slice(0, 7), agora = agoraSP(), pz = num(er.config.prazoHoras)*60;
   var abertos = er.pedidos.filter(function(p){ return !FINAIS[p.status]; });
-  var atras = abertos.filter(function(p){ var m = minutosNaEtapa(p, agora); return pz>0 && m!=null && m>pz; }).length;
+  var atras = abertos.filter(function(p){ var m = minutosNaEtapa(p, agora); return !p.aguardando && pz>0 && m!=null && m>pz; }).length;   // "Aguardando peças" não conta como atrasado
   return {abertos:abertos.length, atrasados:atras,
     entradasMes:er.pedidos.filter(function(p){ return String(p.criadoEm).slice(0, 7)===mes; }).length,
     semComprovante:abertos.filter(faltaComprovante).length, top50:er.revendedoras.filter(function(r){ return r.top50; }).length,
@@ -641,6 +641,21 @@ function erReduz(s, a){
       hist(q, de, a.para, a.nota); return ok(ROTULO_STATUS[a.para]);
     }
     // Entrega pelo João (17/11/2026): taxa cobrada ou isenta (só a diretoria isenta) e peças bipadas antes de liberar
+    // "Aguardando peças" (17/11/2026, Marcus; caso da Jady: a equipe não achou as peças): o pedido continua aberto, mas sai da conta de atrasados. Ao tirar a marcação, o prazo da etapa recomeça.
+    case "ped_aguardando": {
+      var pg = ped1(); if(!pg) return recusa("Pedido não encontrado.");
+      if(FINAIS[pg.status]) return recusa("Este pedido já foi encerrado.");
+      if(a.ligar){
+        if(pg.aguardando) return ok("Já estava aguardando peças");
+        pg.aguardando = {por:por, em:agora, motivo:trim(a.motivo).slice(0, 200)};
+        hist(pg, pg.status, pg.status, "Aguardando peças (marcado por "+por+")"+(pg.aguardando.motivo ? ": "+pg.aguardando.motivo : ""));
+        return ok("Aguardando peças");
+      }
+      if(!pg.aguardando) return ok("Já estava contando prazo");
+      delete pg.aguardando; pg.etapaEm = agora;
+      hist(pg, pg.status, pg.status, "Voltou a contar prazo (por "+por+")");
+      return ok("Voltou a contar prazo");
+    }
     case "ped_taxa": {
       var pt = ped1(); if(!pt) return recusa("Pedido não encontrado.");
       if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria isenta ou cobra a taxa.");

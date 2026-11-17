@@ -355,6 +355,7 @@ function FichaPedido(p){
           v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
           e("button",{type:"button", disabled:!!v.pdf, onClick:baixarPdf, className:btn+"border-border bg-card hover:bg-white/10 disabled:opacity-50"}, v.pdf ? "Montando PDF" : "Baixar PDF"),
           !fim && entrega && E.pode && e("button",{type:"button", onClick:function(){ E.exec("ped_taxa", {id:x.id, isenta:!x.taxaIsenta}); }, className:btn+"border-border bg-card hover:bg-white/10"}, x.taxaIsenta ? "Cobrar taxa" : "Isentar taxa"),
+          !fim && e("button",{type:"button", onClick:function(){ E.exec("ped_aguardando", {id:x.id, ligar:!x.aguardando}); }, title:x.aguardando ? "Aguardando peças desde "+formatarDataHora(x.aguardando.em)+" (por "+x.aguardando.por+"). Clique para voltar a contar o prazo." : "O pedido continua aberto, mas deixa de contar como atrasado", className:btn+(x.aguardando ? "border-[#fbbf24] bg-[#fbbf24]/20 text-[#fde68a] hover:bg-[#fbbf24]/30" : "border-border bg-card hover:bg-white/10")}, x.aguardando ? "Voltar a contar prazo" : "Aguardando peças"),
           !fim && e("button",{type:"button", onClick:function(){ p.ir({tipo:"motivo", id:x.id}); }, className:btn+"border-[#f87171]/60 bg-[#f87171]/15 text-[#fecaca] hover:bg-[#f87171]/25"}, "Recusar"))),
       entrega && x.status==="aceite" && x.taxa>0 && e("div",{className:"mt-2 flex flex-col gap-1.5"},
         e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "taxa_aceite").split("{nome}").join(primeiro)); }, className:"h-8 w-full animate-pulse rounded-md border border-[#E8B84B] bg-[#E8B84B]/20 text-[11px] font-bold text-[#F5E7BE]"}, "Copiar msg de taxa"),
@@ -380,6 +381,6 @@ function FichaPedido(p){
         e("div",{className:"flex justify-end"}, e(Botao,{desabilitado:!v.nota.trim(), onClick:function(){ if(E.exec("ped_nota", {id:x.id, nota:v.nota})) set("nota", ""); }}, "Registrar anotação"))))
     : e("p",{className:"text-[13px]"}, x.historico.length+(x.historico.length===1 ? " registro" : " registros")+" · último: "+(x.historico.length ? formatarDataHora(x.historico[x.historico.length-1].em) : "—"))));
 
-  return e(Moldura,{t:x.revendedora+" · Reposição pelo João", fechar:p.fechar, editando:edita, alterna:function(){ set("edita", !edita); }, fixoDir:fixoDir, colunas:[e("div",{key:"e", className:"flex min-w-0 flex-col gap-2.5"}, topo, colAndamento), colMeio], rodape:rodape});
+  return e(Moldura,{t:x.revendedora+" · "+(x.tipo==="encomenda" ? "Encomenda para o próximo kit" : x.canal==="empresa" ? "Reposição com ida na empresa" : x.canal==="representante" ? "Reposição pela representante" : "Reposição pelo João"), fechar:p.fechar, editando:edita, alterna:function(){ set("edita", !edita); }, fixoDir:fixoDir, colunas:[e("div",{key:"e", className:"flex min-w-0 flex-col gap-2.5"}, topo, colAndamento), colMeio], rodape:rodape});
 }
 export { FichaPedido };
