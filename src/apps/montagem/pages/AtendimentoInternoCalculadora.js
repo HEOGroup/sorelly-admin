@@ -4,7 +4,7 @@
 // resumo fixo no topo. O valor vendido vem direto do app da revendedora (campo vendaApp do atendimento).
 import { BARRAS } from "@/apps/montagem/components/equipe-blocos";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { JanelaIncluirCliente } from "@/apps/montagem/pages/RevendedorasInternas";
+import { JanelaIncluirCliente, sincronizarDm } from "@/apps/montagem/pages/RevendedorasInternas";
 import { Aviso, BotaoRemover as Remover, LinhaCampo, Secao, TabelaSimples as Tab, TdSimples as Td, Tile } from "@/apps/montagem/components/padrao-fin";
 import { FORM_ACERTO_VAZIO, derivarAcerto } from "@/apps/montagem/domain/acerto-derivado";
 import { totalDividaAnterior } from "@/apps/montagem/domain/comissoes";
@@ -168,6 +168,8 @@ function AtendimentoInterno(){
   var up = function(patch){ setForm(function(f){ return Object.assign({}, f, patch); }); };
 
   var internos = s.internos || [];
+  // 17/11/2026 (Natasha e Edna: "a Gabrielle estava na Listagem e não estava aqui"): as agendadas pela Tamara vêm da DevMaster. Só a Listagens buscava; agora esta tela busca ao abrir e a cada 5 minutos, igual
+  useEffect(function(){ var rodar = function(){ if(apiAtiva()) sincronizarDm(d, true).catch(function(){ /* sem servidor: segue com o que já está salvo */ }); }; rodar(); var t = setInterval(rodar, 300000); return function(){ clearInterval(t); }; }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var tk = useState(0), tick = tk[1];                       // faz o relógio da escolha do kit andar a cada segundo
   var aiS = useState(false), avisoIni = aiS[0], setAvisoIni = aiS[1];   // janela "leia antes de começar a escolher" (09/11/2026)
   var agenda = dedupeRev(internos.filter(function(x){ return x.data===dia; }).sort(function(a,b){ return (a.hora||"99").localeCompare(b.hora||"99"); }));
@@ -365,14 +367,15 @@ function AtendimentoInterno(){
     var on = !!sel && sel.id===x.id, feito = x.status==="acertado";
     var lfDe = (s.lancFin||[]).find(function(l){ return l.internoId===x.id; });   // 10/11/2026: o pedido de pagamento que a atendente já mandou prova que o atendimento está em andamento (vale também para tela antiga, que não manda o atendimento)
     var canc = x.status==="cancelado";
-    var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Chegou","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
+    var st = canc ? ["Cancelada","bg-destructive/20 text-destructive"] : feito ? ["Feita","bg-success/20 text-success"] : (on || !!x.inicioTs || !!lfDe) ? ["Atendendo"+(lfDe && lfDe.por ? " · "+String(lfDe.por).split(" ")[0] : ""),"bg-primary/25 text-primary"] : (x.bipou && !x.chegada) ? ["Aberta · "+String(x.bipou).split(" ")[0],"bg-warning/20 text-warning"] : x.chegada ? ["Aguardando","bg-warning/20 text-warning"] : ["Agendada","bg-info/15 text-info"];
     // 16/11/2026 (Marcus: "não é pra ter nada aí"): o acerto DESTE atendimento (ex.: R$ 2,00 de diferença do brinde, ainda sem finalizar) não é dívida anterior
     var div = !feito ? totalDividaAnterior((s.acertosConsignado||[]).filter(function(r){ return r.internoId!==x.id; }), x.nome) : 0;
-    return {id:x.id, hora:x.hora || "—", nome:doisNomes(x.nome), tipo:TIPO_DIA[x.tipo || "acerto"] || "Acerto", sit:st[0], _cls:st[1], divida:div>0.009 ? div : null, _x:x, _on:on, _canc:canc};
+    return {id:x.id, hora:x.hora || "—", nome:doisNomes(x.nome), tipo:TIPO_DIA[x.tipo || "acerto"] || "Acerto", sit:st[0], _cls:st[1], cheg:(feito||canc) ? "" : (x.chegada || null), divida:div>0.009 ? div : null, _x:x, _on:on, _canc:canc};
   };
   var linhasDia = listaDia.map(linhaDia);
   var temDividaDia = linhasDia.some(function(l){ return l.divida; });
   var colsDia = [{k:"hora", t:"Hora"}, {k:"nome", t:"Revendedora"}, {k:"tipo", t:"Tipo"}, {k:"sit", t:"Situação", render:function(v, l){ var pt = String(v).split(" · "); return e("span",{className:"inline-block whitespace-nowrap rounded-md px-1.5 py-0.5 text-[11px] font-bold "+l._cls, title:v}, pt[0], pt[1] ? e("span",{className:"hidden 2xl:inline"}, " · "+pt[1]) : null); }}]
+    .concat([{k:"cheg", t:"Chegada", render:function(v, l){ var x = l._x; if(l._canc || x.status==="acertado") return ""; return v ? e("span",{className:"whitespace-nowrap font-bold", title:"Cliente aguardando atendimento desde "+v+": a chegada já está marcada, sem multa por atraso"}, v) : e("button",{type:"button", className:"h-8 whitespace-nowrap rounded-md bg-warning/20 px-2 text-[11px] font-bold text-warning hover:bg-warning/30", title:"Cliente aguardando atendimento: marca a chegada agora, para ela não perder brinde por atraso", onClick:function(ev){ ev.stopPropagation(); if(x.virtual) d({type:"REVINT_ATENDER", id:x.revId, internoId:x.id}); var n = new Date(); d({type:"INT_ATUALIZAR", id:x.id, patch:{chegada:horaAgora(), chegadaTs:n.getTime()}}); }}, "Cliente aguardando"); }}])
     .concat(temDividaDia ? [{k:"divida", t:"Dívida", render:function(v){ return v ? e("span",{className:"whitespace-nowrap font-bold text-destructive", title:"Dívida de acerto anterior: o pagamento quita primeiro essa dívida"}, din(v)) : ""; }}] : []);
   var CABEC = "flex h-8 items-center justify-between gap-2 bg-linear-to-r from-primary/75 via-primary/30 to-primary/60 px-3 text-[13px] font-semibold";
   var filaDia = e("section",{className:"overflow-hidden rounded-xl bg-card ring-1 ring-[#E8B84B]/25"},
@@ -881,7 +884,7 @@ function AtendimentoInterno(){
           // relógio do atendimento (Marcus, 11/11/2026): chegada, início, escolha do kit (começo e fim) e saída
           var hh = function(ts){ return ts ? hhmmDeTs(ts) : "—"; };
           var relogioItens = [["Chegou na empresa", sel.chegada || "—"], ["Atendimento iniciou", hh(sel.inicioTs)], ["Escolha do kit iniciou", hh(sel.escolhaIni)], ["Escolha do kit terminou", hh(sel.escolhaFim)], ["Finalizou e saiu", sel.fim || (sel.fimTs ? hh(sel.fimTs) : "—")]];
-          var relogioTopo = e("div",{className:"grid grid-cols-5 border-b-2 border-primary/50"}, relogioItens.map(function(x,i){ return e("div",{key:i, className:"flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1 "+(i ? "border-l border-primary/30" : "")}, e("span",{className:CAP+" whitespace-nowrap"}, x[0]), e("span",{className:"flex h-8 items-center text-[13px] font-semibold tabular-nums"}, x[1])); }));
+          var relogioTopo = e("div",{className:"grid grid-cols-5 border-b-2 border-primary/50 bg-primary/[0.09]"}, relogioItens.map(function(x,i){ return e("div",{key:i, className:"flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1 "+(i ? "border-l border-primary/30" : "")}, e("span",{className:CAP+" whitespace-nowrap"}, x[0]), e("span",{className:"flex h-8 items-center text-[13px] font-semibold tabular-nums"}, x[1])); }));
           return e(React.Fragment,null, gradeTopo, relogioTopo);
         })(),
         estourou && e("p",{role:"alert", className:"border-b border-destructive/50 bg-destructive/20 px-4 py-2 text-center text-[13px] font-bold text-destructive"},"⏰ O tempo para escolher o kit acabou ("+maxEscolhaMin+" min). Chame a revendedora: há outro atendimento aguardando."),
@@ -1208,13 +1211,9 @@ function AtendimentoInterno(){
     d({type:"INT_SIMPLES_FIM", id:sel.id, por:nomeDe(s.usuario)}); };
   var GRID_IND = " grid-cols-[7.5rem_minmax(0,1fr)_8rem_2.5rem]";
   var G_KV = " grid-cols-[minmax(0,1fr)_9rem]";
-  var botaoAnexo = function(rot, patchK, atual, aria){ return e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
-    !jaFeito && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 text-[13px] font-semibold hover:bg-white/15"}, atual ? "✓ Trocar "+rot : "Anexar "+rot,
-      e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":aria, onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ var pt = {}; pt[patchK] = cmp; d({type:"INT_ATUALIZAR", id:sel.id, patch:pt}); }); ev.target.value = ""; }})),
-    atual && e("a",{href:atual.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"}, "Ver")); };
-  var corpoInd = e("div",{className:"flex w-full flex-col"},
+  var corpoInd = e("div",{className:"flex w-full flex-col bg-primary/[0.07]"},
     !jaFeito && e("div",{className:"grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-2"},
-      e("input",{value:pecaIn.codigo, disabled:pecaIn.carregando, placeholder:"Código da peça", "aria-label":"Código da peça do brinde", autoCapitalize:"characters", className:INPUT+" h-8! w-full text-center uppercase "+MONO,
+      e("input",{value:pecaIn.codigo, disabled:pecaIn.carregando, placeholder:"Código da peça", "aria-label":"Código da peça do brinde", autoCapitalize:"characters", className:INPUT+" h-8! w-full bg-primary/[0.12]! text-center uppercase "+MONO,
         onKeyDown:onEnter(addPecaInd), onChange:function(ev){ setPecaIn({codigo:normalizarCodigo(ev.target.value).slice(0,14), carregando:false, aviso:""}); }}),
       e(Btn,{v:"primary", sm:true, disabled:!pecaIn.codigo || pecaIn.carregando, onClick:addPecaInd}, pecaIn.carregando ? "Buscando" : "Adicionar")),
     pecaIn.aviso && e("p",{className:"px-3 pb-2 text-center text-[13px] font-semibold text-warning"}, pecaIn.aviso),
@@ -1224,19 +1223,20 @@ function AtendimentoInterno(){
       pecasInd.length===0 && e("div",{className:LIN+" grid-cols-1 min-h-9"}, e("span",null,"Nenhuma peça lançada")),
       pecasInd.map(function(x,i){ return e("div",{key:x.codigo, className:LIN+GRID_IND},
         e("b",{className:MONO}, x.codigo), e("span",{className:"break-words"}, x.descricao || "—"),
-        (x.valor>0 || jaFeito) ? n15(din(x.valor)) : e(CampoReais,{value:x.valor||null, label:"Valor da peça "+x.codigo, className:INPUT+" h-8! w-full text-right "+MONO, onChange:function(v){ salvaInd(pecasInd.map(function(y,j){ return j===i ? Object.assign({}, y, {valor:v||0}) : y; })); }}),
+        (x.valor>0 || jaFeito) ? n15(din(x.valor)) : e(CampoReais,{value:x.valor||null, label:"Valor da peça "+x.codigo, className:INPUT+" h-8! w-full bg-primary/[0.12]! text-right "+MONO, onChange:function(v){ salvaInd(pecasInd.map(function(y,j){ return j===i ? Object.assign({}, y, {valor:v||0}) : y; })); }}),
         !jaFeito ? e(Remover,{label:"Remover peça "+x.codigo, onClick:function(){ salvaInd(pecasInd.filter(function(y,j){ return j!==i; })); }}) : e("span")); }),
-      e("div",{className:LIN+G_KV+" border-t border-foreground/40"}, e("span",{className:CAP},"Lançado"), n15(din(totalInd))),
-      e("div",{className:LIN+G_KV}, e("span",{className:CAP}, resgateInd ? "Valor liberado · "+resgateInd.premioTitulo+" (pedido "+resgateInd.id+" de Indicações)" : "Valor liberado"),
-        (jaFeito || resgateInd) ? n15(din(liberadoInd)) : e(CampoReais,{value:liberadoInd||null, label:"Valor liberado do brinde", className:INPUT+" h-8! w-full text-right "+MONO, onChange:function(v){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{valorLiberado:v||0}}); }})),
-      e("div",{className:LIN+G_KV+" min-h-10 border-y font-semibold "+(excInd>0 ? "border-destructive bg-destructive/15!" : "border-success bg-success/15!")},
-        e("span",null, excInd>0 ? "Diferença a pagar" : "Dentro do valor liberado"), n15(din(excInd), excInd>0 ? "text-destructive" : "text-success"))),
+      // 17/11/2026 (Marcus: "mais centralizado, está tudo errado"): três células iguais lado a lado, rótulo em cima e valor embaixo, tudo centralizado
+      e("div",{className:"grid grid-cols-1 border-t border-foreground/40 sm:grid-cols-3"},
+        e("div",{className:"flex min-h-14 flex-col items-center justify-center gap-1 px-2 py-1.5"}, e("span",{className:CAP},"Lançado"), n15(din(totalInd))),
+        e("div",{className:"flex min-h-14 flex-col items-center justify-center gap-1 border-t border-foreground/25 px-2 py-1.5 sm:border-l sm:border-t-0", title:resgateInd ? resgateInd.premioTitulo+" (pedido "+resgateInd.id+" de Indicações)" : ""}, e("span",{className:CAP}, "Valor liberado"+(resgateInd ? " · pedido "+resgateInd.id : "")),
+          (jaFeito || resgateInd) ? n15(din(liberadoInd)) : e(CampoReais,{value:liberadoInd||null, label:"Valor liberado do brinde", className:INPUT+" h-8! w-36 bg-primary/[0.12]! text-center "+MONO, onChange:function(v){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{valorLiberado:v||0}}); }})),
+        e("div",{className:"flex min-h-14 flex-col items-center justify-center gap-1 border-t px-2 py-1.5 font-semibold sm:border-l sm:border-t-0 "+(excInd>0 ? "border-destructive bg-destructive/15" : "border-success bg-success/15")},
+          e("span",{className:CAP}, excInd>0 ? "Diferença a pagar" : "Dentro do valor liberado"), n15(din(excInd), excInd>0 ? "text-destructive" : "text-success")))),
     excInd>0 && caixaFinanceiro,
     excInd>0 && !jaFeito && e("p",{className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"},
       !lancFin ? "Envie a diferença ao financeiro para ele definir a conta." : alterado ? "A diferença mudou: reenvie ao financeiro." : tudoComComprovante ? "Comprovante anexado: pode finalizar." : "Anexe o comprovante da diferença."),
     e("div",{className:"flex flex-col items-center gap-2 border-t border-foreground/25 p-2"},
-      botaoAnexo("print das peças", "anexoInd", sel.anexoInd, "Anexar print das peças"),
-      !jaFeito && e("textarea",{value:sel.anotacao||"", rows:2, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional)", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full resize-none py-2! text-[13px]!"}),
+      !jaFeito && e("textarea",{value:sel.anotacao||"", rows:2, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional)", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full resize-none bg-primary/[0.12]! py-2! text-[13px]!"}),
       jaFeito ? e("p",{className:"font-semibold text-success"}, "✓ Atendimento finalizado"+(sel.fim ? " às "+sel.fim : "")+" · "+pecasInd.length+" peça"+(pecasInd.length>1 ? "s" : "")+" · "+din(totalInd)+(sel.anotacao ? " · "+sel.anotacao : ""))
         : e(Btn,{v:"primary", ic:"check", disabled:!podeFinalizarSimples, onClick:finalizaSimples}, "Finalizar atendimento")));
   var estSimples = e("div",{className:"flex min-w-0 flex-1 flex-col"}, ehInd ? lado("Atendimento · "+ROT_SIMPLES, corpoInd, "flex-1", "p-0")

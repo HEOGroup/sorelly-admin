@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.93", data:"2026-11-17", titulo:"Atendimento Sorelly: cliente aguardando, brinde centralizado e agenda atualizada sozinha", itens:[
+  {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"Agenda de hoje com coluna Chegada e botão Cliente aguardando: marca a chegada na hora, a situação vira Aguardando e o atraso não corre enquanto ela espera na recepção. Pedido da Edna."},
+  {tipo:"correção", area:"Atendimento interno → Atendimento Sorelly", txt:"A agenda busca as agendadas da DevMaster ao abrir e a cada 5 minutos (antes só a aba Listagens buscava, e cliente agendada podia não aparecer aqui)."},
+  {tipo:"melhoria", area:"Atendimento interno → Brinde de indicação", txt:"Lançado, Valor liberado e Dentro do valor liberado em três células centralizadas, fundo com tom dourado claro e sem o botão Anexar print das peças."}
+ ]},
  {v:"0.20.92", data:"2026-11-17", titulo:"RH › Colaboradores: fichas, Negociações e Joias juntas e escala como sugestão", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Ficha da colaboradora com fundo azul em degradê, campos azul clarinho e centralizados, e cada bloco (Trabalho, Pessoal, Escala 42h) fechado, com o próprio botão Editar e Salvar/Cancelar. Nova caixa Joias na ficha (combinado, resumo e pagamentos com as etapas)."},
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações e Joias ficam no mesmo lugar: Negociações tem Hora extra e Joias (Por pessoa, Pagamentos, Resumo por mês e setor) e o card único com o combinado editável. A visão Joias separada saiu do menu."},
