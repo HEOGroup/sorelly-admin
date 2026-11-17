@@ -5,6 +5,11 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 
 
+## 17/11/2026 (RH › Colaboradores, rodada 2)
+- Fichas fechadas por padrão: cada bloco tem o próprio Editar e Salvar/Cancelar (pedido do Marcus: "clica em editar e abre tudo" não serve). Campos das fichas azul clarinho e centralizados.
+- **Escala 42h é só ideia e sugestão, não está definida:** o Marcus quer alinhar antes. Telas e mensagem dizem "sugestão". Botão Copiar mensagem na ficha avisa a colaboradora da escala de hoje, da sugestão e do que muda.
+- **Negociações e Joias ficam no mesmo lugar** (Negociações › Joias); o card único tem o combinado editável e os pagamentos. A ficha da colaboradora tem a caixa Joias.
+
 ## 17/11/2026 (Indicações, Brinde de indicação e Atendimento Sorelly)
 - **Edna, Gislaine (crédito em 4x):** o financeiro conferiu o crédito antes de a funcionária anexar o comprovante e a tela escondeu o botão de anexar, travando o OK. Agora a conta já conferida não trava o OK e o botão de anexar continua visível.
 - **Brinde de indicação (Marcus, sugestão da Kawany):** as peças entram pelo código, nome e preço vêm da DevMaster (rota `/api/precos-pecas`, só o preço, nunca o custo), o print das peças fica anexado. O valor liberado é o do pedido APROVADO da revendedora em Indicações (busca pelo nome); sem pedido, a funcionária digita. O que passar do liberado é pago pela diferença do brinde (financeiro define a conta, funcionária anexa o comprovante) e só então finaliza. Ao finalizar, a retirada é confirmada em Indicações com peças, valor e diferença.

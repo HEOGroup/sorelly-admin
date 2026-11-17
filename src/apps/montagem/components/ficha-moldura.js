@@ -5,7 +5,7 @@ import { e } from "@/shared/react";
 
 function FichaMoldura(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-3", onClick:p.fechar},
-    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"flex max-h-[94vh] w-full "+(p.largo ? "max-w-[1560px]" : "max-w-[1180px]")+" flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 58%)"}},
+    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"ficha-azul flex max-h-[94vh] w-full "+(p.largo ? "max-w-[1560px]" : "max-w-[1180px]")+" flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #2f5299 0%, #1f3a75 42%, #132650 100%)"}},
       e("div",{className:"relative flex shrink-0 items-center justify-center bg-[var(--bloco-titulo)] px-24 py-1 text-white"},
         e("h2",{className:"text-[11px] font-bold uppercase leading-tight"}, p.t),
         e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-2 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-[13px] font-bold leading-none hover:bg-white/15"}, "×")),

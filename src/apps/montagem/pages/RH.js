@@ -12,7 +12,7 @@ import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
 import { Bloco, Bloco as BlocoPadrao, Botao, CAMPO, CampoSel, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
 import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
 import { DIAS, EQUIPES, coberturaDe, divide, equipesDe, horario42, textoEscala42 } from "@/apps/montagem/domain/escala42";
-import { JoiasJanelas, NegJoiasJanelas, joiasPagamentos, joiasPessoas, joiasResumo, negJoiasDados } from "@/apps/montagem/pages/rh/JoiasVisao";
+import { JoiasJanelas, JoiasNaFicha, NegJoiasJanelas, joiasPagamentos, joiasPessoas, joiasResumo } from "@/apps/montagem/pages/rh/JoiasVisao";
 import { FichaCaixa, FichaMoldura, FichaPar } from "@/apps/montagem/components/ficha-moldura";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { CampoDin, CampoTexto } from "@/apps/montagem/pages/trafego/comum";
@@ -146,15 +146,51 @@ function AbaRhRelatorio(){
 var NOME_DIA = {0:"dom", 1:"seg", 2:"ter", 3:"qua", 4:"qui", 5:"sex", 6:"sáb"};
 function horario42Texto(k, entrada){ var q = EQUIPES[k] || EQUIPES.P, h = horario42(entrada), longos = q.dias.filter(function(d){ return d!==q.curto; });
   return NOME_DIA[longos[0]]+" a "+NOME_DIA[longos[longos.length-1]]+" "+h.ini+" às "+h.fim+" · "+NOME_DIA[q.curto]+" "+h.ini+" às "+h.fimCurto; }
+// mensagem de WhatsApp (negrito com *…* e emojis) para a colaboradora: escala de hoje, sugestão de nova escala e o que muda. É sugestão: ainda não está definida.
+var DIA_COMPLETO = {0:"domingo", 1:"segunda", 2:"terça", 3:"quarta", 4:"quinta", 5:"sexta", 6:"sábado"};
+function diasTexto(dias){
+  var ordem = [1,2,3,4,5,6,0], tem = ordem.filter(function(d){ return dias.indexOf(d)>=0; }), runs = [], cur = null;
+  tem.forEach(function(d){ var i = ordem.indexOf(d); if(cur && ordem.indexOf(cur[cur.length-1])===i-1) cur.push(d); else { cur = [d]; runs.push(cur); } });
+  var partes = runs.map(function(r){ return r.length>=3 ? DIA_COMPLETO[r[0]]+" a "+DIA_COMPLETO[r[r.length-1]] : r.map(function(d){ return DIA_COMPLETO[d]; }).join(" e "); });
+  return partes.join(" e ") || "—";
+}
+function mensagemEscala(nome, diasHoje, entrada, saida, nomeEscala, k, entradaNova){
+  var q = EQUIPES[k] || EQUIPES.P, h = horario42(entradaNova || entrada), longos = q.dias.filter(function(d){ return d!==q.curto; }), folgas = [0,1,2,3,4,5,6].filter(function(d){ return q.dias.indexOf(d)<0; });
+  var ent = entrada || "—", horaHoje = ent+(saida ? " às "+saida : "");
+  var passaFolgar = diasHoje.filter(function(d){ return q.dias.indexOf(d)<0; }), passaTrabalhar = q.dias.filter(function(d){ return diasHoje.indexOf(d)<0; });
+  var muda = [];
+  if(passaFolgar.length) muda.push("😌 *Passa a folgar:* "+diasTexto(passaFolgar));
+  if(passaTrabalhar.length) muda.push("💼 *Passa a trabalhar:* "+diasTexto(passaTrabalhar));
+  if(!passaFolgar.length && !passaTrabalhar.length) muda.push("📆 *Dias de trabalho:* continuam os mesmos");
+  muda.push("🕒 *Horário:* hoje "+horaHoje+"; na sugestão "+h.ini+" às "+h.fim+" ("+diasTexto(longos)+") e "+h.ini+" às "+h.fimCurto+" ("+diasTexto([q.curto])+")");
+  muda.push("📊 *Total:* 42 horas por semana e 2 folgas");
+  return ["Olá, *"+String(nome||"").split(" ")[0]+"*! 👋", "",
+    "Estamos pensando em uma *nova escala de trabalho*, de *42 horas por semana*. Ainda é uma *sugestão*, nada está definido. 💡", "",
+    "📅 *Sua escala hoje:*", diasTexto(diasHoje)+" · "+horaHoje, "",
+    "✨ *Sugestão de nova escala ("+q.nome+"):*", diasTexto(longos)+" das "+h.ini+" às "+h.fim, DIA_COMPLETO[q.curto]+" das "+h.ini+" às "+h.fimCurto, "Folga: "+diasTexto(folgas), "",
+    "🔄 *O que muda:*", muda.join("\n"), "",
+    "Se tiver alguma dúvida, ou preferir outra equipe, me avise. 🙂"].join("\n");
+}
+
+function colabIni(x){
+  return {setor:x.setor||"", admissao:x.admissao||"", escalaId:x.escalaId, entrada:x.entrada||"", saida:x.saida||"", salario:x.salario ? String(x.salario).replace(".",",") : "", planoId:x.planoId||"", status:x.status, funcao:x.funcao||"", telefone:x.telefone||"", cidade:x.cidade||"", nascimento:x.nascimento||"", folha:x.folha||"", vt:x.vt||"", termoPeca:x.termoPeca ? "sim" : "nao", cpf:x.cpf||"", aviso:!!x.aviso,
+    fIni:(x.ferias||{}).ini||"", fFim:(x.ferias||{}).fim||"", afast:x.afastamento||"", dData:(x.deslig||{}).data||"", dTipo:(x.deslig||{}).tipo||"", dMotivo:(x.deslig||{}).motivo||"", dObs:(x.deslig||{}).obs||""};
+}
 function FormColab(p){
-  var c = p.c, x = p.x, cfg = c.rh.config, st = useState({setor:x.setor||"", admissao:x.admissao||"", escalaId:x.escalaId, entrada:x.entrada||"", saida:x.saida||"", salario:x.salario ? String(x.salario).replace(".",",") : "", planoId:x.planoId||"", status:x.status, funcao:x.funcao||"", telefone:x.telefone||"", cidade:x.cidade||"", nascimento:x.nascimento||"", folha:x.folha||"", vt:x.vt||"", termoPeca:x.termoPeca ? "sim" : "nao", cpf:x.cpf||"", aviso:!!x.aviso,
-    fIni:(x.ferias||{}).ini||"", fFim:(x.ferias||{}).fim||"", afast:x.afastamento||"", dData:(x.deslig||{}).data||"", dTipo:(x.deslig||{}).tipo||"", dMotivo:(x.deslig||{}).motivo||"", dObs:(x.deslig||{}).obs||""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
-  var salvar = function(){ var sal = Number(String(f.salario||"0").replace(/\./g,"").replace(",","."))||0;
-    acao(c, "colab_set", {id:x.id, patch:Object.assign({setor:f.setor, admissao:f.admissao, escalaId:f.escalaId, entrada:f.entrada, saida:f.saida, salario:sal, planoId:f.planoId, status:f.status, funcao:f.funcao, telefone:f.telefone, cidade:f.cidade, nascimento:f.nascimento, folha:f.folha, vt:f.vt, termoPeca:f.termoPeca==="sim", aviso:f.aviso}, c.veSalario ? {cpf:f.cpf.replace(/\D/g,"")} : {}, { ferias:f.status==="FERIAS" ? {ini:f.fIni, fim:f.fFim} : null, afastamento:f.afast, deslig:f.status==="DESLIGADO" ? {data:f.dData, tipo:f.dTipo, motivo:f.dMotivo, obs:f.dObs} : null})}); p.fechar(); };
+  var c = p.c, x = p.x, cfg = c.rh.config, st = useState(colabIni(x)), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
+  var patchTudo = function(){ var sal = Number(String(f.salario||"0").replace(/\./g,"").replace(",","."))||0; return Object.assign({setor:f.setor, admissao:f.admissao, escalaId:f.escalaId, entrada:f.entrada, saida:f.saida, salario:sal, planoId:f.planoId, status:f.status, funcao:f.funcao, telefone:f.telefone, cidade:f.cidade, nascimento:f.nascimento, folha:f.folha, vt:f.vt, termoPeca:f.termoPeca==="sim", aviso:f.aviso}, c.veSalario ? {cpf:f.cpf.replace(/\D/g,"")} : {}, { ferias:f.status==="FERIAS" ? {ini:f.fIni, fim:f.fFim} : null, afastamento:f.afast, deslig:f.status==="DESLIGADO" ? {data:f.dData, tipo:f.dTipo, motivo:f.dMotivo, obs:f.dObs} : null}); };
+  var KT = ["setor","admissao","escalaId","entrada","saida","planoId","status","funcao","aviso","ferias","afastamento","deslig"], KP = ["salario","telefone","cidade","nascimento","folha","vt","termoPeca","cpf"];
+  var salvarBloco = function(chaves, fechaBloco){ var tudo = patchTudo(), patch = {}; chaves.forEach(function(k){ if(tudo[k]!==undefined) patch[k] = tudo[k]; }); acao(c, "colab_set", {id:x.id, patch:patch}); fechaBloco(false); };
+  var cancelarBloco = function(camposF, fechaBloco){ var ini = colabIni(x), o = {}; camposF.forEach(function(k){ o[k] = ini[k]; }); set(o); fechaBloco(false); };
+  var FT = ["setor","admissao","escalaId","entrada","saida","planoId","status","funcao","aviso","fIni","fFim","afast","dData","dTipo","dMotivo","dObs"], FP = ["salario","telefone","cidade","nascimento","folha","vt","termoPeca","cpf"];
+  var e1 = useState(!!x.novo), edT = e1[0], setEdT = e1[1], e2 = useState(!!x.novo), edP = e2[0], setEdP = e2[1], e3 = useState(false), edE = e3[0], setEdE = e3[1];
+  var par = function(t2, v, cor){ return e(FichaPar,{key:t2, t:t2, v:(v===undefined || v===null || v==="") ? "—" : v, cor:cor}); };
+  var botaoEd = function(flag, setFlag){ return !flag && e("button",{type:"button", onClick:function(){ setFlag(true); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Editar"); };
+  var rodBloco = function(chaves, camposF, setFlag){ return e("div",{key:"rod", className:"mt-1 flex justify-end gap-2 border-t border-white/20 pt-2"}, e(Botao,{onClick:function(){ cancelarBloco(camposF, setFlag); }}, "Cancelar"), e(Botao,{principal:true, onClick:function(){ salvarBloco(chaves, setFlag); }}, "Salvar")); };
   var inp = function(k, tipo, cls){ return e("input",{type:tipo||"text", value:f[k], "aria-label":k, className:CAMPO+" "+(cls||""), onChange:function(ev){ var o = {}; o[k] = ev.target.value; set(o); }}); };
   var cp = function(rot, k, tipo){ return e("div",{key:k, className:"min-w-0"}, e(Rotulo,{t:rot}), inp(k, tipo)); };
   var sl = function(rot, k, opcoes){ return e(CampoSel,{key:k, t:rot, value:f[k], onChange:function(v){ var o = {}; o[k] = v; set(o); }, opcoes:opcoes}); };
-  var sec = function(t2, filhos, key){ return e(FichaCaixa,{key:key, t:t2}, filhos); };
+  var sec = function(t2, filhos, key, dir, rodapeBloco){ return e(FichaCaixa,{key:key, t:t2, dir:dir}, filhos, rodapeBloco); };
   var setores = (FUNCIONARIOS_POR_SETOR.some(function(s2){ return s2[0]===f.setor; }) ? [] : [[f.setor]]).concat(FUNCIONARIOS_POR_SETOR).map(function(s2){ return [s2[0], s2[0]]; });
   var negoc = c.veSalario && (function(){ var n = negocEfetiva(c.rh, x.id), m = function(v){ return v===null||v===undefined ? "—" : BK(v); }; return n ? n.grupo+" · 1h "+m(n.h1)+" · 2h "+m(n.h2)+" · 3h "+m(n.h3)+" · sábado "+m(n.sab) : "Sem negociação (editar em RH › Negociações)"; })();
   var stNome = ((STATUS.find(function(k){ return k[0]===f.status; })||[])[1]||f.status)+(f.aviso ? " · aviso prévio" : "");
@@ -164,36 +200,53 @@ function FormColab(p){
       e(FichaPar,{t:"Admissão", v:x.admissao ? br(x.admissao) : "Faltando", cor:x.admissao ? "" : "text-amber-400"}), e(FichaPar,{t:"Situação", v:stNome, cor:f.status==="ATIVO" ? "text-emerald-400" : f.status==="DESLIGADO" ? "text-red-400" : "text-amber-400"}))));
   var ativos42 = colaboradoresRh(c.s).filter(function(y){ return y.status!=="DESLIGADO"; }), eq42 = equipesDe(c.rh, ativos42), marc42 = (c.rh.escala42||{})[x.id]||"", k42 = eq42[x.id] || "P", q42 = EQUIPES[k42];
   var hIni = horario42(f.entrada||x.entrada), diasHoje = ((c.rh.config.escalas.find(function(y){ return y.id===f.escalaId; })||{}).dias)||[], nomeEsc = (c.rh.config.escalas.find(function(y){ return y.id===f.escalaId; })||{}).nome||"—";
-  var semana = function(rot, linha, cor, fim){ return e("div",{className:"flex flex-col gap-1"}, e("div",{className:"flex items-baseline justify-between gap-2"}, e("span",{className:"text-[11px] font-semibold uppercase tracking-wide"}, rot), fim && e("span",{className:"text-[11px]"}, fim)),
-    e("div",{className:"grid grid-cols-7 gap-1"}, [[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"],[0,"Dom"]].map(function(dd){ var tx = linha[dd[0]];
-      return e("div",{key:dd[0], className:"flex flex-col items-center rounded-md border px-1 py-1 text-center "+(tx ? "" : "border-white/10 bg-black/20"), style:tx ? {borderColor:cor, background:cor+"26"} : undefined},
-        e("span",{className:"text-[11px] font-semibold uppercase"}, dd[1]), e("span",{className:"text-[11px] leading-[15px] "+(tx ? "" : "text-white/60")}, tx ? tx[0] : "Folga"), e("span",{className:"text-[11px] leading-[15px] "+(tx ? "" : "text-white/60")}, tx ? tx[1] : "")); }))); };
+  var DIAS_SEM = [[1,"Seg"],[2,"Ter"],[3,"Qua"],[4,"Qui"],[5,"Sex"],[6,"Sáb"],[0,"Dom"]];
+  var cpm = useState(false), copiouMsg = cpm[0], setCopiouMsg = cpm[1];
+  var copiarEscala = function(){ var tx = mensagemEscala(x.nome, diasHoje, f.entrada||x.entrada, f.saida, nomeEsc, k42, f.entrada||x.entrada); (navigator.clipboard ? navigator.clipboard.writeText(tx) : Promise.reject()).then(function(){ setCopiouMsg(true); setTimeout(function(){ setCopiouMsg(false); }, 2000); }, function(){ window.prompt("Copie a mensagem:", tx); }); };
   var linhaNova = {}; q42.dias.forEach(function(d){ linhaNova[d] = [hIni.ini, d===q42.curto ? hIni.fimCurto : hIni.fim]; });
   var linhaHoje = {}; diasHoje.forEach(function(d){ linhaHoje[d] = [f.entrada||x.entrada||"—", f.saida||""]; });
-  var escala42 = e(FichaCaixa,{key:"e42", t:"Escala 42h · a partir de 16/12/2026", dir:e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "42h por semana e 2 folgas")}, e("div",{className:"flex flex-col gap-2"},
-    e("div",{className:"grid grid-cols-1 items-end gap-2 md:grid-cols-[16rem_1fr]"}, e(CampoSel,{t:"Equipe", id:"e42-eq", value:marc42, onChange:function(v){ acao(c, "esc42_set", {id:x.id, eq:v}); }, opcoes:[["", "Sugerido ("+q42.nome+")"]].concat(["A","B","C","P"].map(function(k){ return [k, EQUIPES[k].nome]; }))}),
-      e("div",{className:"flex h-8 items-center gap-2 text-[13px]"}, e("span",{className:"inline-block size-2.5 rounded-full", style:{background:q42.cor}}), e("span",null, q42.nome+" · folga "+q42.folga.toLowerCase()))),
-    semana("Escala nova", linhaNova, q42.cor, hIni.fim+" nos dias longos · "+hIni.fimCurto+" no dia curto"),
-    semana("Escala de hoje", linhaHoje, "#94A3B8", nomeEsc)));
+  var semana = function(linhas){ var filhos = [e("span",{key:"h0"})].concat(DIAS_SEM.map(function(dd){ return e("span",{key:"h"+dd[0], className:"font-semibold uppercase"}, dd[1]); }));
+    linhas.forEach(function(l){ filhos.push(e("span",{key:"r"+l[0], className:"self-center text-left font-semibold uppercase"}, l[0])); DIAS_SEM.forEach(function(dd){ var tx = l[1][dd[0]];
+      filhos.push(e("span",{key:l[0]+dd[0], className:"rounded border px-0.5 py-0.5 leading-[15px] "+(tx ? "" : "border-white/10 bg-black/20 text-white/60"), style:tx ? {borderColor:l[2], background:l[2]+"26"} : undefined}, tx ? tx[0]+(tx[1] ? "–"+tx[1] : "") : "Folga")); }); });
+    return e("div",{className:"grid gap-x-1 gap-y-1 text-center text-[11px]", style:{gridTemplateColumns:"9rem repeat(7, minmax(0, 1fr))"}}, filhos); };
+  var escala42 = e(FichaCaixa,{key:"e42", t:"Escala 42h · ideia para alinhar", dir:e("span",{className:"inline-flex items-center gap-2"}, e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "sugestão, ainda não definida"), e("button",{type:"button", onClick:copiarEscala, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, copiouMsg ? "Copiado!" : "Copiar mensagem"), botaoEd(edE, setEdE), edE && e("button",{type:"button", onClick:function(){ setEdE(false); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Cancelar"))}, e("div",{className:"flex flex-col gap-1.5"},
+    edE ? e("div",{className:"grid grid-cols-1 items-end gap-2 md:grid-cols-[16rem_1fr]"}, e(CampoSel,{t:"Equipe sugerida", id:"e42-eq", value:marc42, onChange:function(v){ acao(c, "esc42_set", {id:x.id, eq:v}); setEdE(false); }, opcoes:[["", "Sugerido ("+q42.nome+")"]].concat(["A","B","C","P"].map(function(k){ return [k, EQUIPES[k].nome]; }))}), e("div",{className:"flex h-8 items-center gap-2 text-[13px]"}, e("span",{className:"inline-block size-2.5 rounded-full", style:{background:q42.cor}}), e("span",null, q42.nome+" · folga "+q42.folga.toLowerCase())))
+      : e("div",{className:"flex items-center gap-2 text-[13px]"}, e("span",{className:"text-[11px] font-semibold uppercase"}, "Equipe sugerida"), e("span",{className:"inline-block size-2.5 rounded-full", style:{background:q42.cor}}), e("span",null, (marc42 ? EQUIPES[marc42].nome : "Sugerido ("+q42.nome+")")+" · folga "+q42.folga.toLowerCase())),
+    semana([["Hoje", linhaHoje, "#94A3B8"], ["Nova escala (sugestão)", linhaNova, q42.cor]]),
+    e("span",{className:"text-[11px]"}, "Hoje: "+nomeEsc+" · Nova escala (sugestão): saída "+hIni.fim+" nos dias longos e "+hIni.fimCurto+" no dia curto")));
   var horaExtra = negoc ? e(FichaCaixa,{key:"he", t:"Hora extra negociada"}, e("span",{className:"text-[13px]"}, negoc)) : null;
-  var trabalho = sec("Trabalho", e("div",{className:"grid grid-cols-2 gap-2"},
+  var trabalhoEd = sec("Trabalho", e("div",{className:"grid grid-cols-2 gap-2"},
       sl("Setor", "setor", setores), cp("Função", "funcao"), cp("Admissão", "admissao", "date"),
       sl("Situação", "status", STATUS.map(function(k){ return [k[0], k[1]]; })), cp("Entrada", "entrada", "time"), cp("Saída", "saida", "time"),
       sl("Escala", "escalaId", cfg.escalas.map(function(k){ return [k.id, k.nome]; })), sl("Plano de experiência", "planoId", [["", "Sem plano"]].concat(cfg.planos.map(function(k){ return [k.id, k.nome+" ("+k.marco1+" + "+k.marco2+")"]; }))),
-      e("label",{key:"av", className:"col-span-2 flex h-8 cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.aviso, className:"size-4", onChange:function(ev){ set({aviso:ev.target.checked}); }}), "Cumprindo aviso prévio")), "t");
-  var pessoal = sec("Pessoal", e("div",{className:"grid grid-cols-2 gap-2"},
+      e("label",{key:"av", className:"col-span-2 flex h-8 cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.aviso, className:"size-4", onChange:function(ev){ set({aviso:ev.target.checked}); }}), "Cumprindo aviso prévio")), "t", null, rodBloco(KT, FT, setEdT));
+  var planoNome = (f.planoId ? ((cfg.planos.find(function(k){ return k.id===f.planoId; })||{}).nome||"—") : "Sem plano");
+  var trabalhoVer = sec("Trabalho", e("div",{className:"flex flex-col"}, par("Setor", f.setor), par("Função", f.funcao), par("Admissão", f.admissao ? br(f.admissao) : "Faltando", f.admissao ? "" : "text-amber-400"), par("Situação", stNome), par("Entrada", f.entrada), par("Saída", f.saida), par("Escala", nomeEsc), par("Plano de experiência", planoNome), par("Aviso prévio", f.aviso ? "Cumprindo" : "Não")), "t", botaoEd(edT, setEdT));
+  var trabalho = edT ? trabalhoEd : trabalhoVer;
+  var pessoalEd = sec("Pessoal", e("div",{className:"grid grid-cols-2 gap-2"},
       cp("Telefone", "telefone"), cp("Cidade", "cidade"), cp("Nascimento", "nascimento", "date"), cp("Nº da folha", "folha"), cp("Vale-transporte", "vt"),
       sl("Termo de peças", "termoPeca", [["sim", "Sim"], ["nao", "Não"]]),
-      c.veSalario && cp("Salário (R$)", "salario"), c.veSalario && cp("CPF", "cpf")), "p");
-  var extra = f.status==="FERIAS" ? sec("Férias", e("div",{className:"grid grid-cols-2 gap-2"}, cp("Início", "fIni", "date"), cp("Fim", "fFim", "date")), "x")
+      c.veSalario && cp("Salário (R$)", "salario"), c.veSalario && cp("CPF", "cpf")), "p", null, rodBloco(KP, FP, setEdP));
+  var salNum = Number(String(f.salario||"0").replace(/\./g,"").replace(",","."))||0;
+  var pessoalVer = sec("Pessoal", e("div",{className:"flex flex-col"}, par("Telefone", f.telefone), par("Cidade", f.cidade), par("Nascimento", f.nascimento ? br(f.nascimento) : ""), par("Nº da folha", f.folha), par("Vale-transporte", f.vt), par("Termo de peças", f.termoPeca==="sim" ? "Sim" : "Não"), c.veSalario && par("Salário", salNum ? BK(salNum) : ""), c.veSalario && par("CPF", f.cpf)), "p", botaoEd(edP, setEdP));
+  var pessoal = edP ? pessoalEd : pessoalVer;
+  var extraEd = f.status==="FERIAS" ? sec("Férias", e("div",{className:"grid grid-cols-2 gap-2"}, cp("Início", "fIni", "date"), cp("Fim", "fFim", "date")), "x")
     : f.status==="AFASTADO" ? sec("Afastamento", cp("Motivo do afastamento", "afast"), "x")
     : f.status==="DESLIGADO" ? sec("Desligamento", e("div",{className:"grid grid-cols-2 gap-2"}, cp("Data", "dData", "date"), sl("Tipo", "dTipo", [["", "Escolha"]].concat(TIPOS_DESLIG.map(function(k){ return [k, k]; }))), e("div",{key:"m", className:"col-span-2"}, e(Rotulo,{t:"Motivo"}), inp("dMotivo")), e("div",{key:"o", className:"col-span-2"}, e(Rotulo,{t:"Observação"}), inp("dObs"))), "x") : null;
-  var rodape = [x.novo ? e(Botao,{key:"e", onClick:function(){ if(window.confirm("Excluir "+x.nome+"? Apaga também presenças, advertências e horas extras dela.")){ acao(c, "colab_del", {id:x.id}); p.fechar(); } }}, "Excluir cadastro") : null, e(Botao,{key:"c", onClick:p.fechar}, "Cancelar"), e(Botao,{key:"s", principal:true, onClick:salvar}, "Salvar")];
-  return e(FichaMoldura,{t:"Ficha da colaboradora", fechar:p.fechar, esquerda:cabeca, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), escala42, horaExtra, extra], rodape:rodape});
+
+  var extraVer = f.status==="FERIAS" ? sec("Férias", e("div",{className:"flex flex-col"}, par("Início", f.fIni ? br(f.fIni) : ""), par("Fim", f.fFim ? br(f.fFim) : "")), "x")
+    : f.status==="AFASTADO" ? sec("Afastamento", e("div",{className:"flex flex-col"}, par("Motivo do afastamento", f.afast)), "x")
+    : f.status==="DESLIGADO" ? sec("Desligamento", e("div",{className:"flex flex-col"}, par("Data", f.dData ? br(f.dData) : ""), par("Tipo", f.dTipo), par("Motivo", f.dMotivo), par("Observação", f.dObs)), "x") : null;
+  var extra = edT ? extraEd : extraVer;
+  var rodape = [x.novo ? e(Botao,{key:"e", onClick:function(){ if(window.confirm("Excluir "+x.nome+"? Apaga também presenças, advertências e horas extras dela.")){ acao(c, "colab_del", {id:x.id}); p.fechar(); } }}, "Excluir cadastro") : null, e(Botao,{key:"f", principal:true, onClick:p.fechar}, "Fechar")];
+  return e(FichaMoldura,{t:"Ficha da colaboradora", fechar:p.fechar, esquerda:cabeca, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), escala42, e(JoiasNaFicha,{key:"jo", c:c, x:x}), horaExtra, extra], rodape:rodape});
 }
 // ───────────────── Horas extras como visão de Colaboradores ─────────────────
 // Uma pessoa por linha, uma coluna por dia (HH:MM extra do dia; no modo Anual, uma por mês), totais, custo e a negociação de cada pessoa. Clicar na linha abre o card com todos os lançamentos.
 var SEL_AZUL = "h-7 cursor-pointer rounded-md border border-white/30 bg-white/20 px-1.5 text-center text-[13px] text-white outline-none [text-align-last:center] hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white";
+var BTN_AZUL = "h-7 whitespace-nowrap rounded-md border border-white/30 px-3 text-[13px] outline-none focus-visible:ring-2 focus-visible:ring-white ";
+function BtnAzul(p){ return e("button",{type:"button", onClick:p.onClick, disabled:p.desabilitado, className:BTN_AZUL+(p.principal ? "bg-white text-[#1f3a75] hover:bg-white/85" : "bg-white/20 text-white hover:bg-white/30")+(p.desabilitado ? " opacity-50" : "")}, p.children); }
+function SegAzul(p){ return e("div",{role:"group", className:"inline-flex overflow-hidden rounded-md border border-white/30"}, p.opcoes.map(function(o, i){ var on = o[0]===p.atual; return e("button",{key:o[0], type:"button", "aria-pressed":on, onClick:function(){ p.onMudar(o[0]); }, className:"h-7 whitespace-nowrap px-3 text-[13px] "+(i ? "border-l border-white/30 " : "")+(on ? "bg-white text-[#1f3a75]" : "bg-white/15 text-white hover:bg-white/25")}, o[1]); })); }   // padrao-ok: o Marcus pediu os botões menores (28 px) na faixa azul, 17/11/2026
 function heIntervalo(esc){ return esc.anual ? [esc.ano+"-01-01", esc.ano+"-12-31"] : [dataIso(esc.ano, esc.mes, 1), dataIso(esc.ano, esc.mes, ultimoDia(esc.ano, esc.mes))]; }
 function heLancamentos(c, esc){
   var rh = c.rh, colabs = colaboradoresRh(c.s), iv = heIntervalo(esc);
@@ -350,8 +403,8 @@ function E42Cobertura(pp){
 }
 
 function AbaRhColab(){
-  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fx = useState(function(){ return (typeof window!=="undefined" && window.__fichaAbrir) || ""; }), fichaId = fx[0], setFichaId = fx[1], vs = useState(function(){ if(typeof window==="undefined") return "cad"; return window.__fichaAbrir ? "exp" : (window.__visaoRh || "cad"); }), visao = vs[0], setVisao = vs[1], ad = useState(""), abrirAdv = ad[0], setAbrirAdv = ad[1], ap = useState(""), advDe = ap[0], setAdvDe = ap[1], he0 = new Date(), hs = useState({cnpj:"", ano:he0.getFullYear(), mes:he0.getMonth()+1, anual:false}), heEsc = hs[0], setHeEsc = function(o){ hs[1](Object.assign({}, heEsc, o)); }, hp = useState(""), heDe = hp[0], setHeDe = hp[1], ha = useState(""), heAbrir = ha[0], setHeAbrir = ha[1], nd = useState(""), negDe = nd[0], setNegDe = nd[1], na = useState(""), negAbrir = na[0], setNegAbrir = na[1], ea = useState(""), e42Abrir = ea[0], setE42Abrir = ea[1], cpz = useState(false), copiou = cpz[0], setCopiou = cpz[1], nt = useState("he"), negTipo = nt[0], setNegTipo = nt[1], js = useState("pessoa"), joiasSub = js[0], setJoiasSub = js[1], jd = useState(""), joiasDe = jd[0], setJoiasDe = jd[1], ja = useState(""), joiasAbrir = ja[0], setJoiasAbrir = ja[1], njd = useState(""), negJoiasDe = njd[0], setNegJoiasDe = njd[1], nja = useState(""), negJoiasAbrir = nja[0], setNegJoiasAbrir = nja[1], cjp = useState(""), copiadoJ = cjp[0], setCopiadoJ = cjp[1];
-  React.useEffect(function(){ if(typeof window!=="undefined"){ window.__fichaAbrir = null; window.__visaoRh = null; } }, []);
+  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fx = useState(function(){ return (typeof window!=="undefined" && window.__fichaAbrir) || ""; }), fichaId = fx[0], setFichaId = fx[1], vs = useState(function(){ if(typeof window==="undefined") return "cad"; return window.__fichaAbrir ? "exp" : (window.__visaoRh || "cad"); }), visao = vs[0], setVisao = vs[1], ad = useState(""), abrirAdv = ad[0], setAbrirAdv = ad[1], ap = useState(""), advDe = ap[0], setAdvDe = ap[1], he0 = new Date(), hs = useState({cnpj:"", ano:he0.getFullYear(), mes:he0.getMonth()+1, anual:false}), heEsc = hs[0], setHeEsc = function(o){ hs[1](Object.assign({}, heEsc, o)); }, hp = useState(""), heDe = hp[0], setHeDe = hp[1], ha = useState(""), heAbrir = ha[0], setHeAbrir = ha[1], nd = useState(""), negDe = nd[0], setNegDe = nd[1], na = useState(""), negAbrir = na[0], setNegAbrir = na[1], ea = useState(""), e42Abrir = ea[0], setE42Abrir = ea[1], cpz = useState(false), copiou = cpz[0], setCopiou = cpz[1], nt = useState(function(){ return (typeof window!=="undefined" && window.__negTipo) || "he"; }), negTipo = nt[0], setNegTipo = nt[1], js = useState("pessoa"), joiasSub = js[0], setJoiasSub = js[1], jd = useState(""), joiasDe = jd[0], setJoiasDe = jd[1], ja = useState(""), joiasAbrir = ja[0], setJoiasAbrir = ja[1], njd = useState(""), negJoiasDe = njd[0], setNegJoiasDe = njd[1], nja = useState(""), negJoiasAbrir = nja[0], setNegJoiasAbrir = nja[1], cjp = useState(""), copiadoJ = cjp[0], setCopiadoJ = cjp[1];
+  React.useEffect(function(){ if(typeof window!=="undefined"){ window.__fichaAbrir = null; window.__visaoRh = null; window.__negTipo = null; } }, []);
   // a tabela vai até o fim da tela: altura = tela - posição da tabela (mede de novo ao mudar de visão e ao redimensionar)
   var medidor = React.useRef(null), al = useState(""), altura = al[0], setAltura = al[1];
   React.useEffect(function(){ var med = function(){ var el = medidor.current; if(!el) return; setAltura("calc(100vh - "+Math.round(el.getBoundingClientRect().top + window.scrollY + 14)+"px)"); }; med(); var t1 = setTimeout(med, 300); window.addEventListener("resize", med); return function(){ clearTimeout(t1); window.removeEventListener("resize", med); }; }, [visao, aba]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -376,7 +429,8 @@ function AbaRhColab(){
   var linhasExp = listaExp.map(function(x){ var ch = x.chip; return {id:x.c.id, nome:x.c.nome, setor:x.c.setor, funcao:x.c.funcao, adm:x.c.admissao, a1:x.a1, a2:x.a2, ef:x.ef, prazo:ch.t, vencido:!!ch.vencido, aviso:!!ch.aviso, pontos:pontosFicha(c, x.c.id), acoes:"Ficha"}; });
   var e42D = visao==="e42" ? e42Dados(c) : null, copiar42 = function(){ var d2 = e42Dados(c), tx = textoEscala42(d2.todos, d2.eq); (navigator.clipboard ? navigator.clipboard.writeText(tx) : Promise.reject()).then(function(){ setCopiou(true); setTimeout(function(){ setCopiou(false); }, 2000); }, function(){ window.prompt("Copie a mensagem:", tx); }); };
   var ctxJ = {autoriza:temAutorizacao("joias_autoriza", c.s.usuario), op:function(o){ c.d(Object.assign({type:"JP", por:c.por}, o)); }, copiado:copiadoJ, setCopiado:setCopiadoJ};
-  var jD = visao==="joias" ? (joiasSub==="pag" ? joiasPagamentos(c, ctxJ) : joiasSub==="resumo" ? joiasResumo(c) : joiasPessoas(c)) : null, njD = visao==="neg" && negTipo==="joias" && c.veSalario ? negJoiasDados(c) : null;
+  var emJoias = visao==="neg" && negTipo==="joias" && c.veSalario;
+  var jD = emJoias ? (joiasSub==="pag" ? joiasPagamentos(c, ctxJ) : joiasSub==="resumo" ? joiasResumo(c) : joiasPessoas(c)) : null;
   var negD = visao==="neg" && negTipo==="he" && c.veSalario ? negDados(c) : null, heD = visao==="he" ? heDados(c, heEsc) : null, ano0 = he0.getFullYear();
   var colsExp = [{k:"nome", t:"Colaboradora", render:function(v, l){ return e("div",{className:"flex justify-start", title:l.setor}, e(Pessoa,{nome:l.nome, setor:l.setor, funcao:l.funcao, s:24})); }},
     {k:"adm", t:"Admissão", fmt:function(v){ return br(v); }}, {k:"a1", t:"1ª avaliação", fmt:function(v){ return br(v); }}, {k:"a2", t:"2ª avaliação", fmt:function(v){ return br(v); }}, {k:"ef", t:"Efetivação", fmt:function(v){ return br(v); }},
@@ -387,7 +441,7 @@ function AbaRhColab(){
   var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"funcao", t:"Função"}, {k:"empresa", t:"Empresa"},
     {k:"sit", t:"Situação", cor:function(l){ return l.ok ? "text-emerald-400" : l.desl ? "text-red-400" : "text-amber-400"; }},
     {k:"admissao", t:"Admissão", fmt:function(v){ return v ? br(v) : "Faltando"; }, cor:function(l){ return l.admissao ? "" : "text-amber-400"; }},
-    {k:"escala", t:"Escala"}, {k:"entrada", t:"Horário atual"}, {k:"eq42", t:"Equipe 42h"}, {k:"h42", t:"Horário na escala 42h"}].concat(c.veSalario ? [{k:"salario", t:"Salário", fmt:function(v){ return v ? BK(v) : "—"; }}] : []);
+    {k:"escala", t:"Escala"}, {k:"entrada", t:"Horário atual"}, {k:"eq42", t:"Equipe 42h (sugestão)"}, {k:"h42", t:"Horário 42h (sugestão)"}].concat(c.veSalario ? [{k:"salario", t:"Salário", fmt:function(v){ return v ? BK(v) : "—"; }}] : []);
   var editando = editId && todos.find(function(x){ return x.id===editId; });
   var opSet = function(k, v){ setNovo(Object.assign({}, novo, (function(){var o={};o[k]=v;return o;})())); };
   return e("div",{className:"-mx-4 -mt-5 flex flex-col gap-2.5 md:-mx-5"},
@@ -399,33 +453,33 @@ function AbaRhColab(){
       e("div",{className:"flex gap-2"}, e(Botao,{principal:true, onClick:function(){ if(novo.nome.trim()){ acao(c, "colab_add", novo); setNovo(null); } }}, "Cadastrar"), e(Botao,{onClick:function(){ setNovo(null); }}, "Cancelar")))),
     e(BlocoPainel,{titulo:"Cadastro de colaboradores", compacto:true},
       e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1"},
-        e("select",{value:visao, "aria-label":"Visão", onChange:function(ev){ setVisao(ev.target.value); }, className:SEL_AZUL+" w-32"}, e("option",{value:"cad", className:"bg-card"}, "Cadastro"), e("option",{value:"adv", className:"bg-card"}, "Advertências"), e("option",{value:"exp", className:"bg-card"}, "Experiência"), e("option",{value:"he", className:"bg-card"}, "Horas extras"), c.veSalario && e("option",{value:"neg", className:"bg-card"}, "Negociações"), e("option",{value:"e42", className:"bg-card"}, "Escala 42h"), e("option",{value:"joias", className:"bg-card"}, "Joias")),
-        visao==="cad" && e(Segmentado,{opcoes:[["ativos","Ativos"],["inativos","Desligados"],["todos","Todos"]], atual:aba, onMudar:setAba}), e("span",{className:"flex-1"}),
+        e("select",{value:visao, "aria-label":"Visão", onChange:function(ev){ setVisao(ev.target.value); }, className:SEL_AZUL+" w-32"}, e("option",{value:"cad", className:"bg-card"}, "Cadastro"), e("option",{value:"adv", className:"bg-card"}, "Advertências"), e("option",{value:"exp", className:"bg-card"}, "Experiência"), e("option",{value:"he", className:"bg-card"}, "Horas extras"), c.veSalario && e("option",{value:"neg", className:"bg-card"}, "Negociações"), e("option",{value:"e42", className:"bg-card"}, "Escala 42h (sugestão)")),
+        visao==="cad" && e(SegAzul,{opcoes:[["ativos","Ativos"],["inativos","Desligados"],["todos","Todos"]], atual:aba, onMudar:setAba}),
         visao==="he" && e("select",{value:heEsc.cnpj, "aria-label":"Empresa", onChange:function(ev){ setHeEsc({cnpj:ev.target.value}); }, className:SEL_AZUL}, e("option",{value:"", className:"bg-card"}, "Grupo geral"), empresasDe(c).map(function(k){ return e("option",{key:k, value:k, className:"bg-card"}, rotuloCnpj(k)); })),
         visao==="he" && !heEsc.anual && e("select",{value:heEsc.mes, "aria-label":"Mês", onChange:function(ev){ setHeEsc({mes:Number(ev.target.value)}); }, className:SEL_AZUL}, MESES.map(function(m, i){ return e("option",{key:m, value:i+1, className:"bg-card"}, m); })),
         visao==="he" && e("select",{value:heEsc.ano, "aria-label":"Ano", onChange:function(ev){ setHeEsc({ano:Number(ev.target.value)}); }, className:SEL_AZUL}, [ano0-2, ano0-1, ano0, ano0+1].map(function(a){ return e("option",{key:a, value:a, className:"bg-card"}, a); })),
-        visao==="he" && e(Segmentado,{opcoes:[["mensal","Mensal"],["anual","Anual"]], atual:heEsc.anual ? "anual" : "mensal", onMudar:function(v){ setHeEsc({anual:v==="anual"}); }}),
-        visao==="adv" && e(Botao,{onClick:function(){ setAbrirAdv("rel"); }}, "Relatório mensal"),
-        visao==="he" && e(Botao,{principal:true, onClick:function(){ setHeAbrir("novo"); }}, "Lançar hora extra"),
-        visao==="e42" && e(Botao,{onClick:copiar42}, copiou ? "Copiado!" : "Copiar mensagem"),
-        visao==="e42" && e(Botao,{principal:true, onClick:function(){ setE42Abrir("cob"); }}, "Cobertura por setor"),
-        visao==="neg" && c.veSalario && e(Segmentado,{opcoes:[["he","Hora extra"],["joias","Joias"]], atual:negTipo, onMudar:setNegTipo}),
-        visao==="neg" && negTipo==="he" && e(Botao,{onClick:function(){ setNegAbrir("grupos"); }}, "Grupos"),
-        visao==="neg" && negTipo==="he" && e(Botao,{principal:true, onClick:function(){ setNegAbrir("incluir"); }}, "Incluir pessoa"),
-        visao==="neg" && negTipo==="joias" && e(Botao,{principal:true, onClick:function(){ setNegJoiasAbrir("incluir"); }}, "Incluir pessoa"),
-        visao==="joias" && e(Segmentado,{opcoes:[["pessoa","Por pessoa"],["pag","Pagamentos"],["resumo","Resumo por mês e setor"]], atual:joiasSub, onMudar:setJoiasSub}),
-        visao==="joias" && e(Botao,{principal:true, onClick:function(){ setJoiasAbrir("novo"); }}, "Novo pagamento"),
-        visao==="adv" && e(Botao,{principal:true, onClick:function(){ setAbrirAdv("nova"); }}, "Nova advertência"),
-        visao==="cad" && e(Botao,{principal:true, onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "Nova colaboradora")),
+        visao==="he" && e(SegAzul,{opcoes:[["mensal","Mensal"],["anual","Anual"]], atual:heEsc.anual ? "anual" : "mensal", onMudar:function(v){ setHeEsc({anual:v==="anual"}); }}),
+        visao==="adv" && e(BtnAzul,{onClick:function(){ setAbrirAdv("rel"); }}, "Relatório mensal"),
+        visao==="he" && e(BtnAzul,{principal:true, onClick:function(){ setHeAbrir("novo"); }}, "Lançar hora extra"),
+        visao==="e42" && e(BtnAzul,{onClick:copiar42}, copiou ? "Copiado!" : "Copiar mensagem"),
+        visao==="e42" && e(BtnAzul,{principal:true, onClick:function(){ setE42Abrir("cob"); }}, "Cobertura por setor"),
+        visao==="neg" && c.veSalario && e(SegAzul,{opcoes:[["he","Hora extra"],["joias","Joias"]], atual:negTipo, onMudar:setNegTipo}),
+        visao==="neg" && negTipo==="he" && e(BtnAzul,{onClick:function(){ setNegAbrir("grupos"); }}, "Grupos"),
+        visao==="neg" && negTipo==="he" && e(BtnAzul,{principal:true, onClick:function(){ setNegAbrir("incluir"); }}, "Incluir pessoa"),
+        emJoias && e(SegAzul,{opcoes:[["pessoa","Por pessoa"],["pag","Pagamentos"],["resumo","Resumo por mês e setor"]], atual:joiasSub, onMudar:setJoiasSub}),
+        emJoias && e(BtnAzul,{onClick:function(){ setNegJoiasAbrir("incluir"); }}, "Incluir pessoa"),
+        emJoias && e(BtnAzul,{principal:true, onClick:function(){ setJoiasAbrir("novo"); }}, "Novo pagamento"),
+        visao==="adv" && e(BtnAzul,{principal:true, onClick:function(){ setAbrirAdv("nova"); }}, "Nova advertência"),
+        visao==="cad" && e(BtnAzul,{principal:true, onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "Nova colaboradora")),
       visao==="exp" && semPlano>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, semPlano+" colaboradoras ainda sem plano de experiência ou sem data de admissão no Cadastro; elas não aparecem aqui.")),
       visao==="e42" && e42Abrir==="cob" && e(E42Cobertura,{c:c, fechar:function(){ setE42Abrir(""); }}),
-      visao==="joias" && e(JoiasJanelas,{c:c, pessoa:joiasDe, fecharPessoa:function(){ setJoiasDe(""); setJoiasAbrir(""); }, abrir:joiasAbrir, setAbrir:setJoiasAbrir}),
-      visao==="neg" && negTipo==="joias" && c.veSalario && e(NegJoiasJanelas,{c:c, pessoa:negJoiasDe, fecharPessoa:function(){ setNegJoiasDe(""); setNegJoiasAbrir(""); }, abrir:negJoiasAbrir, setAbrir:setNegJoiasAbrir}),
+      emJoias && e(JoiasJanelas,{c:c, pessoa:joiasDe, fecharPessoa:function(){ setJoiasDe(""); setJoiasAbrir(""); }, abrir:joiasAbrir, setAbrir:setJoiasAbrir}),
+      emJoias && e(NegJoiasJanelas,{c:c, pessoa:"", fecharPessoa:function(){ setNegJoiasAbrir(""); }, abrir:negJoiasAbrir, setAbrir:setNegJoiasAbrir}),
       visao==="neg" && negTipo==="he" && c.veSalario && e(NegJanelas,{c:c, pessoa:negDe, fecharPessoa:function(){ setNegDe(""); }, abrir:negAbrir, setAbrir:setNegAbrir}),
       visao==="he" && e(HeJanelas,{c:c, esc:heEsc, pessoa:heDe, fecharPessoa:function(){ setHeDe(""); setHeAbrir(""); }, abrir:heAbrir, setAbrir:setHeAbrir}),
       visao==="adv" && e(AbaRhAdv,{dentro:true, abrir:abrirAdv, setAbrir:setAbrirAdv, pessoa:advDe, fecharPessoa:function(){ setAdvDe(""); setAbrirAdv(""); }}),
       
-    e("div",{ref:medidor}, e(TabelaPlanilha,{alturaMax:altura || "calc(100vh - 11.5rem)", semMao:true, key:aba+visao+negTipo+joiasSub+(visao==="he" ? heEsc.mes+"-"+heEsc.ano+heEsc.anual : ""), cols:visao==="joias" ? jD.cols : njD ? njD.cols : visao==="e42" ? e42D.cols : visao==="neg" && negD ? negD.cols : visao==="he" ? heD.cols : visao==="adv" ? colsAd : visao==="exp" ? colsExp : cols, linhas:visao==="joias" ? jD.linhas : njD ? njD.linhas : visao==="e42" ? e42D.linhas : visao==="neg" && negD ? negD.linhas : visao==="he" ? heD.linhas : visao==="adv" ? linhasAd : visao==="exp" ? linhasExp : linhas, totalLinha:visao==="joias" ? jD.totalLinha : visao==="e42" ? e42D.totalLinha : visao==="he" ? heD.totalLinha : undefined, totalSimples:true, chave:"id", escura:true, grade:true, semContagem:true, limite:100, aoClicar:function(l){ if(visao==="adv") setAdvDe(l.id); else if(visao==="exp") setFichaId(l.id); else if(visao==="he") setHeDe(l.id); else if(visao==="neg") { if(negTipo==="joias") setNegJoiasDe(l.id); else setNegDe(l.id); } else if(visao==="joias") { if(joiasSub==="pessoa") setJoiasDe(l.id); } else setEditId(l.id); }, vazio:visao==="joias" ? "Nenhum pagamento em joias registrado." : visao==="neg" ? "Nenhuma negociação cadastrada." : visao==="he" ? "Nenhuma hora extra no período." : visao==="exp" ? "Ninguém em período de experiência no momento." : "Nenhuma colaboradora nesta visão."}))),
+    e("div",{ref:medidor}, e(TabelaPlanilha,{alturaMax:altura || "calc(100vh - 11.5rem)", semMao:true, key:aba+visao+negTipo+joiasSub+(visao==="he" ? heEsc.mes+"-"+heEsc.ano+heEsc.anual : ""), cols:emJoias ? jD.cols : visao==="e42" ? e42D.cols : visao==="neg" && negD ? negD.cols : visao==="he" ? heD.cols : visao==="adv" ? colsAd : visao==="exp" ? colsExp : cols, linhas:emJoias ? jD.linhas : visao==="e42" ? e42D.linhas : visao==="neg" && negD ? negD.linhas : visao==="he" ? heD.linhas : visao==="adv" ? linhasAd : visao==="exp" ? linhasExp : linhas, totalLinha:emJoias ? jD.totalLinha : visao==="e42" ? e42D.totalLinha : visao==="he" ? heD.totalLinha : undefined, totalSimples:true, chave:"id", escura:true, grade:true, semContagem:true, limite:100, aoClicar:function(l){ if(visao==="adv") setAdvDe(l.id); else if(visao==="exp") setFichaId(l.id); else if(visao==="he") setHeDe(l.id); else if(visao==="neg") { if(negTipo==="joias") { if(joiasSub==="pessoa") setJoiasDe(l.id); } else setNegDe(l.id); } else setEditId(l.id); }, vazio:emJoias ? "Nenhum pagamento em joias registrado." : visao==="neg" ? "Nenhuma negociação cadastrada." : visao==="he" ? "Nenhuma hora extra no período." : visao==="exp" ? "Ninguém em período de experiência no momento." : "Nenhuma colaboradora nesta visão."}))),
     editando && e(FormColab,{key:editando.id, c:c, x:editando, fechar:function(){ setEditId(null); }}));
 }
 
@@ -536,8 +590,8 @@ function AbaRhEscala42(){
   return e(AbaRhColab);
 }
 function AbaRhJoias(){
-  // o endereço antigo de Pagamento em joias leva para a visão Joias de Colaboradores
-  if(typeof window!=="undefined") window.__visaoRh = "joias";
+  // o endereço antigo de Pagamento em joias leva para Negociações › Joias de Colaboradores
+  if(typeof window!=="undefined"){ window.__visaoRh = "neg"; window.__negTipo = "joias"; }
   return e(AbaRhColab);
 }
 export { AbaRhJoias, AbaRhEscala42, AbaRhVisao, AbaRhPresenca, AbaRhRelatorio, AbaRhColab, AbaRhAdv, AbaRhExp, AbaRhHoras, AbaRhNegoc, AbaRhConfig };

@@ -129,3 +129,8 @@
 th[data-arrasto="1"] { box-shadow: inset 0 0 0 3px #fff, inset 0 0 0 200px #2563eb !important; }
 th[data-arrasto="1"] * { color: #fff !important; }
 th[data-alvo="1"] { box-shadow: inset 6px 0 0 #fff, inset 0 0 0 200px #3b4a6b !important; }
+
+/* Fichas (FichaMoldura, 17/11/2026, pedido do Marcus): todos os campos centralizados e com fundo azul clarinho. Vale só dentro da ficha. */
+.ficha-azul input:not([type=checkbox]):not([type=radio]), .ficha-azul select, .ficha-azul textarea { background-color: rgba(147,197,253,.24) !important; border-color: rgba(191,219,254,.5) !important; text-align: center; text-align-last: center; }
+.ficha-azul input::placeholder { color: rgba(255,255,255,.6); }
+.ficha-azul select option { background-color: #1f3a75; color: #fff; }

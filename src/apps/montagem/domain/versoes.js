@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.92", data:"2026-11-17", titulo:"RH › Colaboradores: fichas, Negociações e Joias juntas e escala como sugestão", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Ficha da colaboradora com fundo azul em degradê, campos azul clarinho e centralizados, e cada bloco (Trabalho, Pessoal, Escala 42h) fechado, com o próprio botão Editar e Salvar/Cancelar. Nova caixa Joias na ficha (combinado, resumo e pagamentos com as etapas)."},
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações e Joias ficam no mesmo lugar: Negociações tem Hora extra e Joias (Por pessoa, Pagamentos, Resumo por mês e setor) e o card único com o combinado editável. A visão Joias separada saiu do menu."},
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Escala 42h marcada como ideia e sugestão (não definida): bloco compacto com Hoje em cima e Nova escala (sugestão) embaixo, e botão Copiar mensagem (WhatsApp, com negrito e emojis) com a escala atual, a sugestão e o que muda. Faixa azul padronizada à esquerda, nas mesmas cores e tamanho."}]},
  {v:"0.20.84", data:"2026-11-17", titulo:"Lançamento de pagamentos: saldo que falta fica em aberto ou passa para o mês seguinte", itens:[
   {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Ao lançar um Pix menor do que falta na data, a janela pergunta: Manter em aberto (como antes) ou Passar para a 1ª data de pagamento do mês seguinte. Ao passar, a parcela Pix é dividida (ou movida) para o mês seguinte, sem mudar o total do pedido; a data atual fica quitada. A Point (conta corrente) fica de fora."}]},
  {v:"0.20.91", data:"2026-11-17", titulo:"Montagem: celular da montadora refeito e preferências lidas do app", itens:[

@@ -87,15 +87,28 @@ function JoiasForm(pp){
     rodape:[e(Botao,{key:"c", onClick:pp.fechar}, "Cancelar"), e(Botao,{key:"s", principal:true, desabilitado:!f.pessoa.trim() || !(Number(f.valor)>0), onClick:function(){ jpOp(c, {op:"add", item:Object.assign({}, f, {id:"jp"+Date.now().toString(36)})}); pp.fechar(); }}, "Registrar")]});
 }
 
-// ---------- card da pessoa (visão Joias) ----------
+// caixa do combinado em joias: campos editáveis; sem combinado, botão para cadastrar
+function CombinadoCaixa(pp){
+  var c = pp.c, o = pp.o, n = o.neg, id = o.colabId || slug(o.nome);
+  var setN = function(patch){ rhOp(c, "neg_joia_set", {id:n ? n.id : id, nome:o.nome, patch:patch}); };
+  if(!n) return e(FichaCaixa,{key:"n", t:"Combinado em joias"}, e("div",{className:"flex flex-col gap-2"}, e("span",{className:"text-[13px]"}, "Esta pessoa ainda não tem combinado em joias."), e(Botao,{principal:true, onClick:function(){ rhOp(c, "neg_joia_set", {id:id, nome:o.nome, patch:Object.assign({motivo:MOTIVOS[0], custoPct:CUSTO_PADRAO, periodo:""}, o.colabId ? {colabId:o.colabId} : {})}); }}, "Cadastrar combinado")));
+  return e(FichaCaixa,{key:"n", t:"Combinado em joias"}, e("div",{className:"flex flex-col gap-2"},
+    e(CampoSel,{t:"Motivo", id:"cj-motivo", value:MOTIVOS.indexOf(n.motivo)>=0 ? n.motivo : MOTIVOS[0], onChange:function(v){ setN({motivo:v}); }, opcoes:MOTIVOS.map(function(x){ return [x, x]; })}),
+    e(CampoDin,{t:"Valor (preço de venda)", id:"cj-valor", value:n.valor ? Number(n.valor) : null, onChange:function(v){ setN({valor:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
+    e("div",{className:"min-w-0"}, e(Rotulo,{t:"Custo (% do valor)", id:"cj-custo"}), e("input",{id:"cj-custo", type:"number", min:0, max:100, value:n.custoPct==null || n.custoPct==="" ? "" : n.custoPct, className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setN({custoPct:ev.target.value==="" ? null : Number(ev.target.value)}); }})),
+    e(CampoSel,{t:"Periodicidade", id:"cj-periodo", value:n.periodo || "", onChange:function(v){ setN({periodo:v}); }, opcoes:PERIODOS}),
+    e(CampoTexto,{t:"Observação", id:"cj-obs", value:n.obs || "", onChange:function(v){ setN({obs:v}); }}),
+    e(Botao,{onClick:function(){ if(window.confirm("Remover o combinado em joias de "+o.nome+"?")) rhOp(c, "neg_joia_del", {id:n.id}); }}, "Remover combinado")));
+}
+
+// ---------- card da pessoa (Negociações › Joias) ----------
 function JoiasCard(pp){
   var c = pp.c, o = joiasGrupos(c).find(function(x){ return x.k===pp.k; }), autoriza = temAutorizacao("joias_autoriza", c.s.usuario), cp = useState(""), ctx = {autoriza:autoriza, op:function(x){ jpOp(c, x); }, copiado:cp[0], setCopiado:cp[1]};
   if(!o) return null;
   var at = o.itens.filter(function(x){ return x.situacao!=="Cancelado"; }), valor = soma(o.itens, "valor"), ret = at.filter(function(x){ return x.situacao==="Retirado"; }).reduce(function(t, x){ return t+(Number(x.valor)||0); }, 0), n = o.neg;
   var esquerda = [e(FichaCaixa,{key:"p", t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"}, e("div",{className:"grid place-items-center"}, e(Avatar,{id:idFoto(o), nome:o.nome, s:160})),
       e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:o.nome}), e(FichaPar,{t:"Setor", v:o.setor || "—"}), e(FichaPar,{t:"Pagamentos", v:String(at.length)}), e(FichaPar,{t:"Valor (preço de venda)", v:brl(valor)}), e(FichaPar,{t:"Já retirado", v:brl(ret)}), e(FichaPar,{t:"A retirar", v:brl(Math.max(0, valor-ret))})))),
-    e(FichaCaixa,{key:"n", t:"Combinado em joias"}, n ? e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Motivo", v:n.motivo || "—"}), e(FichaPar,{t:"Valor (preço de venda)", v:brl(n.valor||0)}), e(FichaPar,{t:"Custo", v:pctCusto(n.custoPct)+"%"}), e(FichaPar,{t:"Periodicidade", v:n.periodo || "A definir"}), n.obs && e(FichaPar,{t:"Observação", v:n.obs}))
-      : e("span",{className:"text-[13px]"}, "Sem combinado (incluir na visão Negociações › Joias)."))];
+    e(CombinadoCaixa,{key:"cb", c:c, o:o})];
   var direita = e(FichaCaixa,{t:"Pagamentos em joias", dir:e("button",{type:"button", onClick:function(){ pp.setAbrir("novo"); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Novo pagamento")},
     e(TabelaPlanilha,{cols:colunasPagamento(c, ctx, true), linhas:linhasPagamento(o.itens), chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, semMao:true, limite:100, vazio:"Nenhum pagamento em joias."}));
   return e("div",null, e(FichaMoldura,{t:"Joias · "+o.nome, largo:true, fechar:pp.fechar, esquerda:esquerda, direita:direita}),
@@ -106,33 +119,21 @@ function JoiasJanelas(pp){
     !pp.pessoa && pp.abrir==="novo" && e(JoiasForm,{c:pp.c, fechar:function(){ pp.setAbrir(""); }}));
 }
 
+// ---------- caixa Joias dentro da ficha da colaboradora ----------
+function JoiasNaFicha(pp){
+  var c = pp.c, x = pp.x, o = joiasGrupos(c).find(function(g){ return g.colabId===x.id || g.k===norm(x.nome); }), cp = useState(""), nv = useState(false), novo = nv[0], setNovo = nv[1];
+  var ctx = {autoriza:temAutorizacao("joias_autoriza", c.s.usuario), op:function(a){ jpOp(c, a); }, copiado:cp[0], setCopiado:cp[1]};
+  var botao = e("button",{type:"button", onClick:function(){ setNovo(true); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Novo pagamento");
+  var janela = novo && e(JoiasForm,{c:c, pessoa:x.nome, setor:x.setor, neg:o ? o.neg : null, fechar:function(){ setNovo(false); }});
+  if(!o) return e(FichaCaixa,{t:"Joias", dir:botao}, e("span",{className:"text-[13px]"}, "Nenhum combinado nem pagamento em joias. O combinado se cadastra em Negociações › Joias."), janela);
+  var at = o.itens.filter(function(i){ return i.situacao!=="Cancelado"; }), valor = soma(o.itens, "valor"), ret = at.filter(function(i){ return i.situacao==="Retirado"; }).reduce(function(s, i){ return s+(Number(i.valor)||0); }, 0), n = o.neg;
+  return e(FichaCaixa,{t:"Joias", dir:botao}, e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"grid grid-cols-1 gap-x-6 md:grid-cols-2"}, e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Combinado", v:n ? (n.motivo || "Joias") : "Sem combinado"}), n && e(FichaPar,{t:"Valor (preço de venda)", v:brl(n.valor||0)}), n && e(FichaPar,{t:"Custo", v:pctCusto(n.custoPct)+"%"}), n && e(FichaPar,{t:"Periodicidade", v:n.periodo || "A definir"})),
+      e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Pagamentos", v:String(at.length)}), e(FichaPar,{t:"Valor (preço de venda)", v:brl(valor)}), e(FichaPar,{t:"Já retirado", v:brl(ret)}), e(FichaPar,{t:"A retirar", v:brl(Math.max(0, valor-ret))}))),
+    e(TabelaPlanilha,{cols:colunasPagamento(c, ctx, true), linhas:linhasPagamento(o.itens), chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, semMao:true, limite:100, vazio:"Nenhum pagamento em joias."})), janela);
+}
+
 // ---------- Negociações › Joias ----------
-function negJoiasDados(c){
-  var neg = (c.rh.negoc && c.rh.negoc.joias) || [], colabs = colaboradoresRh(c.s);
-  var linhas = neg.map(function(n){ var cb = n.colabId && colabs.find(function(y){ return y.id===n.colabId; }), pct = pctCusto(n.custoPct);
-    return {id:n.id, nome:n.nome, setor:cb ? cb.setor : "—", motivo:n.motivo || "—", valor:Number(n.valor)||0, custoPct:pct, custo:Math.round((Number(n.valor)||0)*pct)/100, periodo:n.periodo || "A definir", obs:n.obs || ""}; }).sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
-  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"motivo", t:"Motivo"}, {k:"valor", t:"Valor (preço de venda)", fmt:brl}, {k:"custoPct", t:"Custo %", fmt:function(v){ return v+"%"; }}, {k:"custo", t:"Custo", fmt:brl}, {k:"periodo", t:"Periodicidade"}, {k:"obs", t:"Observação"}];
-  return {cols:cols, linhas:linhas};
-}
-function NegJoiasCard(pp){
-  var c = pp.c, n = ((c.rh.negoc && c.rh.negoc.joias) || []).find(function(x){ return x.id===pp.id; }), autoriza = temAutorizacao("joias_autoriza", c.s.usuario), cp = useState(""), ctx = {autoriza:autoriza, op:function(x){ jpOp(c, x); }, copiado:cp[0], setCopiado:cp[1]}, nf = useState(false), novo = nf[0], setNovo = nf[1];
-  if(!n) return null;
-  var colabs = colaboradoresRh(c.s), cb = n.colabId && colabs.find(function(y){ return y.id===n.colabId; }), o = joiasGrupos(c).find(function(x){ return x.k===norm(n.nome); }) || {itens:[]};
-  var setN = function(patch){ rhOp(c, "neg_joia_set", {id:n.id, nome:n.nome, patch:patch}); };
-  var esquerda = e(FichaCaixa,{key:"p", t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"}, e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_"+String(n.colabId || slug(n.nome)).replace(/-/g, ""), nome:n.nome, s:160})),
-    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:n.nome}), e(FichaPar,{t:"Setor", v:cb ? cb.setor : "—"}), e(FichaPar,{t:"Função", v:cb && cb.funcao ? cb.funcao : "—"}))));
-  var direita = [e(FichaCaixa,{key:"n", t:"Combinado em joias", dir:e("span",{className:"text-[11px] font-normal normal-case tracking-normal"}, "valor a preço de venda; o custo é de 20%, salvo outro combinado")}, e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-2 md:grid-cols-4"},
-      e(CampoSel,{t:"Motivo", id:"nj-motivo", value:MOTIVOS.indexOf(n.motivo)>=0 ? n.motivo : MOTIVOS[0], onChange:function(v){ setN({motivo:v}); }, opcoes:MOTIVOS.map(function(x){ return [x, x]; })}),
-      e(CampoDin,{t:"Valor (preço de venda)", id:"nj-valor", value:n.valor ? Number(n.valor) : null, onChange:function(v){ setN({valor:v==="" || v===null || Number(v)===0 ? null : Number(v)}); }}),
-      e("div",{className:"min-w-0"}, e(Rotulo,{t:"Custo (% do valor)", id:"nj-custo"}), e("input",{id:"nj-custo", type:"number", min:0, max:100, value:n.custoPct==null || n.custoPct==="" ? "" : n.custoPct, className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setN({custoPct:ev.target.value===""  ? null : Number(ev.target.value)}); }})),
-      e(CampoSel,{t:"Periodicidade", id:"nj-periodo", value:n.periodo || "", onChange:function(v){ setN({periodo:v}); }, opcoes:PERIODOS}),
-      e(CampoTexto,{t:"Observação", id:"nj-obs", cls:"col-span-2 md:col-span-4", value:n.obs || "", onChange:function(v){ setN({obs:v}); }}))),
-    e(FichaCaixa,{key:"pg", t:"Pagamentos já feitos", dir:e("button",{type:"button", onClick:function(){ setNovo(true); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Novo pagamento")},
-      e(TabelaPlanilha,{cols:colunasPagamento(c, ctx, true), linhas:linhasPagamento(o.itens), chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, semMao:true, limite:100, vazio:"Nenhum pagamento em joias."}))];
-  return e("div",null, e(FichaMoldura,{t:"Negociação em joias · "+n.nome, largo:true, fechar:pp.fechar, esquerda:esquerda, direita:direita,
-      rodape:[e(Botao,{key:"d", onClick:function(){ if(window.confirm("Remover o combinado em joias de "+n.nome+"?")){ rhOp(c, "neg_joia_del", {id:n.id}); pp.fechar(); } }}, "Remover negociação"), e(Botao,{key:"f", principal:true, onClick:pp.fechar}, "Fechar")]}),
-    novo && e(JoiasForm,{c:c, pessoa:n.nome, setor:cb ? cb.setor : "", neg:n, fechar:function(){ setNovo(false); }}));
-}
 function NegJoiasIncluir(pp){
   var c = pp.c, neg = (c.rh.negoc && c.rh.negoc.joias) || [], st = useState({id:"", nome:""}), f = st[0], setF = st[1], jaTem = {}; neg.forEach(function(n){ jaTem[n.id] = 1; });
   var colabs = colaboradoresRh(c.s).filter(function(x){ return x.status!=="DESLIGADO" && !jaTem[x.id]; }).sort(function(a, b){ return a.nome.localeCompare(b.nome, "pt-BR"); });
@@ -145,7 +146,7 @@ function NegJoiasIncluir(pp){
       rhOp(c, "neg_joia_set", {id:outra ? slug(nome) : f.id, nome:nome, patch:Object.assign({motivo:MOTIVOS[0], custoPct:CUSTO_PADRAO, periodo:""}, outra ? {} : {colabId:f.id})}); pp.fechar(); }}, "Incluir")]});
 }
 function NegJoiasJanelas(pp){
-  return e("div",null, pp.pessoa && e(NegJoiasCard,{c:pp.c, id:pp.pessoa, fechar:pp.fecharPessoa}), pp.abrir==="incluir" && e(NegJoiasIncluir,{c:pp.c, fechar:function(){ pp.setAbrir(""); }}));
+  return e("div",null, pp.abrir==="incluir" && e(NegJoiasIncluir,{c:pp.c, fechar:function(){ pp.setAbrir(""); }}));
 }
 
-export { joiasPessoas, joiasPagamentos, joiasResumo, JoiasJanelas, negJoiasDados, NegJoiasJanelas };
+export { JoiasNaFicha, joiasPessoas, joiasPagamentos, joiasResumo, JoiasJanelas, NegJoiasJanelas };
