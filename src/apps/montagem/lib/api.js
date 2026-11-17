@@ -11,6 +11,9 @@ function apiAtiva(){ return !!base(); }
 function token(){ try { return localStorage.getItem(CHAVE_TOKEN) || ""; } catch(x){ return ""; } }
 function guardaToken(t){ try { if(t) localStorage.setItem(CHAVE_TOKEN, t); else localStorage.removeItem(CHAVE_TOKEN); } catch(x){} }
 
+// 17/11/2026 (Marcus: "toda hora sai"): um 401 solto não desloga mais; a tela confere a sessão em /auth/eu e só sai se ela também disser que não vale (a conferência vale por 5 s para todas as chamadas juntas)
+var conferindo = null;
+function sessaoValida(){ if(!conferindo){ conferindo = fetch(base()+"/auth/eu", {headers:{authorization:"Bearer "+token()}}).then(function(r){ return r.status!==401; }).catch(function(){ return true; }); setTimeout(function(){ conferindo = null; }, 5000); } return conferindo; }
 // metodo: "GET" | "POST" | "PUT" | "PATCH" | "DELETE"; devolve o JSON ou joga Error com a mensagem do servidor
 async function chamar(metodo, caminho, corpo){
   var h = {"content-type":"application/json", "x-sorelly-build":"2026-11-09"}; if(token()) h.authorization = "Bearer "+token();   // x-sorelly-build: o servidor reconhece a tela nova e protege dados de telas antigas ainda abertas (ver app/api/estado/[modulo]/route.js)
@@ -18,7 +21,7 @@ async function chamar(metodo, caminho, corpo){
   try { r = await fetch(base()+caminho, {method:metodo, headers:h, body:corpo!==undefined ? JSON.stringify(corpo) : undefined}); }
   catch(x){ throw new Error("Sem conexão com o servidor."); }
   var j = await r.json().catch(function(){ return {}; });
-  if(r.status===401 && caminho!=="/auth/login"){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); }
+  if(r.status===401 && caminho!=="/auth/login"){ var vale = caminho==="/auth/eu" ? false : await sessaoValida(); if(!vale){ guardaToken(""); window.dispatchEvent(new Event("sorelly-saiu")); } }
   if(!r.ok) throw new Error(j.erro || ("Erro "+r.status));
   return j;
 }

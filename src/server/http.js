@@ -19,8 +19,10 @@ export async function usuarioDe(req) {
   const h = req.headers.get("authorization") || "";
   const t = h.startsWith("Bearer ") ? h.slice(7) : "";
   if (!t) return null;
-  try {
-    const { payload } = await jwtVerify(t, segredo(), { algorithms: ["HS256"] });
+  // 17/11/2026 (Marcus: "toda hora sai"): só o TOKEN inválido ou vencido vira "não logado" (401). Erro passageiro do banco antes caía no catch e devolvia 401, e a tela apagava o login.
+  let payload;
+  try { ({ payload } = await jwtVerify(t, segredo(), { algorithms: ["HS256"] })); } catch (e) { if (e && e.statusCode === 503) throw e; return null; }
+  {
     if (payload.conta) {
       // conta do sistema novo: vale o que está no banco agora (liberar, bloquear ou mudar setores tem efeito na hora)
       // guarda de 30 s por servidor (11/11/2026, custo da Vercel): antes lia o banco em TODA chamada. Bloquear ou mudar a conta vale em até 30 s.
@@ -32,9 +34,6 @@ export async function usuarioDe(req) {
       return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null };
     }
     return { id: payload.id, nome: payload.nome, email: payload.email, perfil: payload.perfil, setores: payload.setores || [], pessoaId: payload.pessoaId ?? null };
-  } catch (e) {
-    if (e && e.statusCode === 503) throw e;
-    return null;
   }
 }
 

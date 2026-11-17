@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.71", data:"2026-11-17", titulo:"Login: não desloga mais por engano", itens:[
+  {tipo:"correção", area:"Sistema", txt:"Login: o sistema não desloga mais por um erro passageiro do banco ou um 401 solto; o passe continua valendo 30 dias; campos de entrada com nome para o navegador oferecer Salvar senha."},
+ ]},
  {v:"0.20.70", data:"2026-11-17", titulo:"Condicionais: horário da listagem à esquerda", itens:[
   {tipo:"melhoria", area:"Condicionais", txt:"A primeira coluna agora mostra o horário da LISTAGEM (o mesmo da representante) e a linha de cada listagem começa pelo horário. O horário de atendimento de cada revendedora ficou na coluna Atendimento, menos em destaque. Pedido do Marcus."}]},
  {v:"0.20.69", data:"2026-11-17", titulo:"Faturamento: campos do Lançar acompanham o servidor", itens:[
