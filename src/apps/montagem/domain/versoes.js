@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.72", data:"2026-11-17", titulo:"Consolidado Sorelly refeito", itens:[
+  {tipo:"novo", area:"Atendimento interno", txt:"Consolidado Sorelly refeito no padrão do Financeiro: bloco azul, filtro em cada coluna, coluna Tipo (Acerto, Kit novo, Reposição, Retirada de brinde, Novo kit, Troca) e Financeiro (Conferido, Em conferência, Sem lançamento, Não se aplica) coloridos só na letra, e uma coluna para cada forma de pagamento"}
+ ]},
  {v:"0.20.71", data:"2026-11-17", titulo:"Login: não desloga mais por engano", itens:[
   {tipo:"correção", area:"Sistema", txt:"Login: o sistema não desloga mais por um erro passageiro do banco ou um 401 solto; o passe continua valendo 30 dias; campos de entrada com nome para o navegador oferecer Salvar senha."},
  ]},
