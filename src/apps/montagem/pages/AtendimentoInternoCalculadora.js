@@ -150,6 +150,7 @@ function AtendimentoInterno(){
   var ci = useState(false), ciente = ci[0], setCiente = ci[1];
   var cm = useState(COND_VAZIO), condManual = cm[0], setCondManual = cm[1];
   var cpx = useState(""), codProx = cpx[0], setCodProx = cpx[1];
+  var pin = useState({codigo:"", carregando:false, aviso:""}), pecaIn = pin[0], setPecaIn = pin[1];   // Brinde de indicação: código da peça que está sendo lançada
   var mc = useState(null), msgCopiada = mc[0], setMsgCopiada = mc[1];
   var ma = useState(false), mAberto = ma[0], setMAberto = ma[1];                 // incluir atendimento à mão
   var mf = useState({nome:"", hora:"", cond:""}), mForm = mf[0], setMForm = mf[1];
@@ -530,13 +531,24 @@ function AtendimentoInterno(){
   var parteVazia = function(v){ return [{descricao:"", valor:v, comprovante:null, ok:false}]; };
   var linhasPagEnvio = form.pagamentos.filter(function(p){ return p.forma && p.valor>0; }).map(function(p){ var base = {tipo:"pagamento", forma:p.forma, valor:p.valor, partes:parteVazia(p.valor)};
     return p.linkSolId ? Object.assign(base, {parcelas:p.parcelas || 1, linkSolId:p.linkSolId, partes:[{descricao:p.descricao || "LINK", valor:p.valor, comprovante:null, ok:true}], enviada:true, auto:"Link já pago (setor Link de pagamento)"}) : base; });
-  var linhasEnvio = linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
+  // Brinde de indicação (Marcus, 17/11/2026): o que passar do valor liberado é pago na hora, pela mesma diferença do brinde (financeiro define a conta, a funcionária anexa o comprovante)
+  // 17/11/2026 (Marcus: "valor liberado deve vir do setor de indicação"): o valor liberado é o do prêmio do pedido APROVADO (aguardando retirada) da revendedora em Cadastro de revendedoras › Indicações; ao finalizar, a retirada é confirmada lá
+  var normNome = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim(); };
+  var ehInd = sel.tipo==="indicacao", pecasInd = sel.pecasInd || [], totalInd = pecasInd.reduce(function(t,x){ return t + (Number(x.valor)||0); }, 0);
+  var indDados = s.ind || {resgates:[], revendedoras:[]};
+  var idsRevInd = (indDados.revendedoras||[]).filter(function(r){ return normNome(r.nome)===normNome(sel.nome); }).map(function(r){ return String(r.id); });
+  var resgatesDela = ehInd ? (indDados.resgates||[]).filter(function(r){ return idsRevInd.indexOf(String(r.revendedoraId))>=0 && (r.etapa==="aprovado" || r.etapa==="solicitado"); }) : [];
+  var resgateInd = resgatesDela.find(function(r){ return r.etapa==="aprovado"; }) || null;
+  var liberadoInd = resgateInd ? (Number(resgateInd.premioValor)||0) : (Number(sel.valorLiberado)||0);
+  var excInd = ehInd ? Math.max(0, Math.round((totalInd-liberadoInd)*100)/100) : 0;
+  var linhasEnvio = ehInd ? (excInd>0 ? [{tipo:"brinde", forma:"", valor:excInd, partes:parteVazia(excInd)}] : [])
+    : linhasPagEnvio.concat(dv.excedenteBrinde>0 ? [{tipo:"brinde", forma:"", valor:dv.excedenteBrinde, partes:parteVazia(dv.excedenteBrinde)}] : []);
   var chaveLinhas = function(ls){ return JSON.stringify(ls.map(function(l){ return [l.tipo, l.forma, l.valor]; })); };
   var alterado = !!lancFin && chaveLinhas(linhasEnvio)!==chaveLinhas(lancFin.linhas);
-  var fechouPagamentos = dv.quitado || dv.acordoValido || form.recusouNegociar;
+  var fechouPagamentos = ehInd || dv.quitado || dv.acordoValido || form.recusouNegociar;
   var podeEnviar = linhasEnvio.length>0 && fechouPagamentos && (!lancFin || alterado) && !jaFeito;
   var linhasPagFin = lancFin ? lancFin.linhas.filter(function(l){ return l.tipo==="pagamento"; }) : [];
-  var semPendencia = function(ls){ return ls.length>0 && ls.every(function(l){ return l.isento || (statusLinhaFin(l)!=="aguardando" && (l.partes||[]).every(function(q){ return !!q.comprovante; })); }); };
+  var semPendencia = function(ls){ return ls.length>0 && ls.every(function(l){ return l.isento || (statusLinhaFin(l)!=="aguardando" && (l.partes||[]).every(function(q){ return !!q.comprovante || !!q.ok; })); }); };   // 17/11/2026 (Edna, Gislaine): conta já conferida pelo financeiro não trava o OK, mesmo sem comprovante anexado
   var comprovantesPagOk = semPendencia(linhasPagFin);                                  // todas as contas dos pagamentos com comprovante
   var tudoComComprovante = !!lancFin && !alterado && semPendencia(lancFin.linhas);     // inclui a diferença do brinde, se houver
   var etapa = function(patch){ d({type:"FIN_ETAPA", id:lancFin.id, patch:patch}); };
@@ -552,7 +564,7 @@ function AtendimentoInterno(){
     e("div",{className:"flex min-h-8 flex-wrap items-center gap-x-3 gap-y-1 bg-black/30 px-2 py-1"},
     e("div",{className:"contents"},
       e("b",{className:"text-[13px] uppercase tracking-wide"}, "Financeiro"+(lancFin ? (lancFin.conferido ? " · tudo conferido" : " · enviado às "+hhmmDeTs(lancFin.enviadoTs)) : "")),
-      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, className:(dv.excedenteBrinde>0 && podeEnviar ? "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)]" : ""), onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:form.vendaBruta||0, aPagar:dv.totalAPagar||0}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
+      (!lancFin || alterado) && linhasEnvio.length>0 && e(Btn,{v:"primary", ic:"check", sm:true, disabled:!podeEnviar, className:(dv.excedenteBrinde>0 && podeEnviar ? "animate-pulse shadow-[0_0_0_3px_#E8B84B,0_0_14px_3px_rgba(232,184,75,.7)]" : ""), onClick:function(){ d({type:"FIN_ENVIAR", internoId:sel.id, nome:sel.nome, linhas:linhasEnvio, por:nomeDe(s.usuario), vendas:ehInd ? 0 : (form.vendaBruta||0), aPagar:ehInd ? excInd : (dv.totalAPagar||0)}); }}, alterado ? "Reenviar com as alterações" : "OK, enviar ao financeiro")),
     (!lancFin || alterado) && linhasEnvio.length>0 && !fechouPagamentos && e("p",{className:"text-[13px] font-semibold text-muted-foreground"},"Para enviar: feche todas as formas de pagamento (sem valor pendente) ou resolva a negociação."),
     alterado && e("p",{className:"text-[13px] font-semibold text-warning"},"Os pagamentos mudaram depois do envio: reenvie para o financeiro conferir de novo."),
     // etapa 1: comprovantes dos pagamentos anexados → OK libera os brindes · etapa 2: depois dos brindes (e da diferença, se houver) → finaliza e o financeiro confere
@@ -573,7 +585,9 @@ function AtendimentoInterno(){
         if(!partes.length){ acc.push(linha(i+"-s", "—", l.valor, marca)); return acc; }
         partes.forEach(function(p,j){
           acc.push(linha(i+"-"+j, p.descricao||"—", p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
-            p.ok ? e("span",{className:"font-bold text-success"},"✓ conferido") : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
+            p.ok ? e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"font-bold text-success"},"✓ conferido"),
+              !p.comprovante && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Anexar comprovante",
+                e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
               p.comprovante ? "✓ Trocar comprovante" : "Anexar comprovante",
               e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }})),
             p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},"ver")))); });
@@ -1170,11 +1184,62 @@ function AtendimentoInterno(){
       e("button",{type:"button", disabled:estAt===0, onClick:function(){ setPassoAt(estAt-1); }, className:"h-8 w-[5.5rem] rounded-md border-2 border-primary/50 bg-card text-[13px] font-medium hover:bg-white/10 disabled:opacity-40"}, "‹ Voltar"),
       e("button",{type:"button", disabled:estAt===ESTS.length-1 || !libE[estAt+1], onClick:function(){ setPassoAt(estAt+1); }, className:"h-8 w-[5.5rem] rounded-md bg-primary text-[13px] font-semibold text-primary-foreground disabled:opacity-40 "+(feitoE[estAt] && libE[estAt+1] && estAt<ESTS.length-1 && !(dv.excedenteBrinde>0 && podeEnviar) ? BRILHO : "")}, "Próxima ›")));
   var ROT_SIMPLES = {indicacao:"Brinde de indicação", reposicao:"Reposição", troca:"Troca de peça"}[sel.tipo] || "";
-  var estSimples = e("div",{className:"flex min-w-0 flex-1 flex-col"}, lado("Atendimento · "+ROT_SIMPLES, e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
-    e("p",{className:"font-semibold"}, sel.tipo==="indicacao" ? "Entregue o brinde da indicação à cliente." : sel.tipo==="reposicao" ? "Entregue a reposição à cliente." : "Faça a troca da peça da cliente."),
+  // 17/11/2026 (Marcus, sugestão da Kawany): Brinde de indicação lança as peças pelo CÓDIGO, o preço vem da DevMaster sozinho, o print das peças fica anexado e o que passar do valor liberado é pago na hora (diferença do brinde, igual ao acerto)
+  var salvaInd = function(lista){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{pecasInd:lista}}); };
+  var addPecaInd = function(){
+    var cod = normalizarCodigo(pecaIn.codigo); if(!cod || jaFeito || pecaIn.carregando) return;
+    if(pecasInd.some(function(x){ return x.codigo===cod; })){ setPecaIn({codigo:"", carregando:false, aviso:"Esse código já está na lista."}); return; }
+    var entra = function(desc, preco, aviso){ salvaInd(pecasInd.concat([{codigo:cod, descricao:desc||"", valor:preco||0}])); setPecaIn({codigo:"", carregando:false, aviso:aviso||""}); };
+    if(!apiAtiva()){ entra("", 0, "Sem ligação com o servidor: digite o valor."); return; }
+    setPecaIn(Object.assign({}, pecaIn, {carregando:true, aviso:""}));
+    chamar("GET", "/precos-pecas?codigos="+encodeURIComponent(cod)).then(function(r){ var p = r && r.itens && r.itens[cod];
+      if(p && p.preco>0) entra(p.descricao, p.preco); else entra(p ? p.descricao : "", 0, p ? "Peça sem preço na DevMaster: digite o valor." : "Código não achado na DevMaster: digite o valor.");
+    }).catch(function(){ entra("", 0, "Não consegui buscar o preço: digite o valor."); });
+  };
+  var pagouInd = excInd<=0 || (!!lancFin && !alterado && tudoComComprovante);
+  var podeFinalizarSimples = !!sel.inicioTs && (!ehInd || (pecasInd.length>0 && pagouInd));
+  var finalizaSimples = function(){ if(ehInd && lancFin) etapa({etapaComprovantes:true, finalizado:true});
+    if(ehInd && resgateInd) d({type:"IND", op:"resgate_entregar", id:resgateInd.id, codigosPecas:pecasInd.map(function(x){ return x.codigo; }).join(" "), valorVenda:totalInd, valorDiferencaBrinde:excInd>0 ? excInd : null, responsavelNome:nomeDe(s.usuario), revendedoraConfirmou:true, por:nomeDe(s.usuario)});
+    d({type:"INT_SIMPLES_FIM", id:sel.id, por:nomeDe(s.usuario)}); };
+  var GRID_IND = " grid-cols-[7.5rem_minmax(0,1fr)_8rem_2.5rem]";
+  var G_KV = " grid-cols-[minmax(0,1fr)_9rem]";
+  var botaoAnexo = function(rot, patchK, atual, aria){ return e("div",{className:"flex flex-wrap items-center justify-center gap-2"},
+    !jaFeito && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-3 text-[13px] font-semibold hover:bg-white/15"}, atual ? "✓ Trocar "+rot : "Anexar "+rot,
+      e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":aria, onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ var pt = {}; pt[patchK] = cmp; d({type:"INT_ATUALIZAR", id:sel.id, patch:pt}); }); ev.target.value = ""; }})),
+    atual && e("a",{href:atual.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"}, "Ver")); };
+  var corpoInd = e("div",{className:"flex w-full flex-col"},
+    !jaFeito && e("div",{className:"grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2 p-2"},
+      e("input",{value:pecaIn.codigo, disabled:pecaIn.carregando, placeholder:"Código da peça", "aria-label":"Código da peça do brinde", autoCapitalize:"characters", className:INPUT+" h-8! w-full text-center uppercase "+MONO,
+        onKeyDown:onEnter(addPecaInd), onChange:function(ev){ setPecaIn({codigo:normalizarCodigo(ev.target.value).slice(0,14), carregando:false, aviso:""}); }}),
+      e(Btn,{v:"primary", sm:true, disabled:!pecaIn.codigo || pecaIn.carregando, onClick:addPecaInd}, pecaIn.carregando ? "Buscando" : "Adicionar")),
+    pecaIn.aviso && e("p",{className:"px-3 pb-2 text-center text-[13px] font-semibold text-warning"}, pecaIn.aviso),
+    !jaFeito && !resgateInd && e("p",{className:"px-3 pb-2 text-center text-[13px] font-semibold text-warning"}, resgatesDela.length ? "O pedido desta revendedora em Indicações ainda não foi agendado (aprovado): agende lá. Por enquanto, digite o valor liberado." : "Não achei pedido aprovado desta revendedora em Indicações. Digite o valor liberado."),
+    e("div",{className:CTP},
+      e("div",{className:CABT+GRID_IND}, e("span",null,"Código"), e("span",null,"Peça"), e("span",null,"Valor"), e("span")),
+      pecasInd.length===0 && e("div",{className:LIN+" grid-cols-1 min-h-9"}, e("span",null,"Nenhuma peça lançada")),
+      pecasInd.map(function(x,i){ return e("div",{key:x.codigo, className:LIN+GRID_IND},
+        e("b",{className:MONO}, x.codigo), e("span",{className:"break-words"}, x.descricao || "—"),
+        (x.valor>0 || jaFeito) ? n15(din(x.valor)) : e(CampoReais,{value:x.valor||null, label:"Valor da peça "+x.codigo, className:INPUT+" h-8! w-full text-right "+MONO, onChange:function(v){ salvaInd(pecasInd.map(function(y,j){ return j===i ? Object.assign({}, y, {valor:v||0}) : y; })); }}),
+        !jaFeito ? e(Remover,{label:"Remover peça "+x.codigo, onClick:function(){ salvaInd(pecasInd.filter(function(y,j){ return j!==i; })); }}) : e("span")); }),
+      e("div",{className:LIN+G_KV+" border-t border-foreground/40"}, e("span",{className:CAP},"Lançado"), n15(din(totalInd))),
+      e("div",{className:LIN+G_KV}, e("span",{className:CAP}, resgateInd ? "Valor liberado · "+resgateInd.premioTitulo+" (pedido "+resgateInd.id+" de Indicações)" : "Valor liberado"),
+        (jaFeito || resgateInd) ? n15(din(liberadoInd)) : e(CampoReais,{value:liberadoInd||null, label:"Valor liberado do brinde", className:INPUT+" h-8! w-full text-right "+MONO, onChange:function(v){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{valorLiberado:v||0}}); }})),
+      e("div",{className:LIN+G_KV+" min-h-10 border-y font-semibold "+(excInd>0 ? "border-destructive bg-destructive/15!" : "border-success bg-success/15!")},
+        e("span",null, excInd>0 ? "Diferença a pagar" : "Dentro do valor liberado"), n15(din(excInd), excInd>0 ? "text-destructive" : "text-success"))),
+    excInd>0 && caixaFinanceiro,
+    excInd>0 && !jaFeito && e("p",{className:"border-t border-foreground/25 px-3 py-2 text-center text-[13px] font-semibold text-destructive"},
+      !lancFin ? "Envie a diferença ao financeiro para ele definir a conta." : alterado ? "A diferença mudou: reenvie ao financeiro." : tudoComComprovante ? "Comprovante anexado: pode finalizar." : "Anexe o comprovante da diferença."),
+    e("div",{className:"flex flex-col items-center gap-2 border-t border-foreground/25 p-2"},
+      botaoAnexo("print das peças", "anexoInd", sel.anexoInd, "Anexar print das peças"),
+      !jaFeito && e("textarea",{value:sel.anotacao||"", rows:2, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional)", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full resize-none py-2! text-[13px]!"}),
+      jaFeito ? e("p",{className:"font-semibold text-success"}, "✓ Atendimento finalizado"+(sel.fim ? " às "+sel.fim : "")+" · "+pecasInd.length+" peça"+(pecasInd.length>1 ? "s" : "")+" · "+din(totalInd)+(sel.anotacao ? " · "+sel.anotacao : ""))
+        : e(Btn,{v:"primary", ic:"check", disabled:!podeFinalizarSimples, onClick:finalizaSimples}, "Finalizar atendimento")));
+  var estSimples = e("div",{className:"flex min-w-0 flex-1 flex-col"}, ehInd ? lado("Atendimento · "+ROT_SIMPLES, corpoInd, "flex-1", "p-0")
+    : lado("Atendimento · "+ROT_SIMPLES, e("div",{className:"flex flex-col items-center justify-center gap-3 p-6 text-center text-[13px]"},
+    e("p",{className:"font-semibold"}, sel.tipo==="reposicao" ? "Entregue a reposição à cliente." : "Faça a troca da peça da cliente."),
     !jaFeito && e("textarea",{value:sel.anotacao||"", rows:3, "aria-label":"Anotação do atendimento", placeholder:"Anotação (opcional): o que foi entregue ou trocado", onChange:function(ev){ d({type:"INT_ATUALIZAR", id:sel.id, patch:{anotacao:ev.target.value}}); }, className:INPUT+" h-auto! w-full max-w-md resize-none py-2! text-[13px]!"}),
     jaFeito ? e("p",{className:"font-semibold text-success"}, "✓ Atendimento finalizado"+(sel.fim ? " às "+sel.fim : "")+(sel.anotacao ? " · "+sel.anotacao : ""))
-      : e(Btn,{v:"primary", ic:"check", className:"h-12!", disabled:!sel.inicioTs, onClick:function(){ d({type:"INT_SIMPLES_FIM", id:sel.id, por:nomeDe(s.usuario)}); }}, "Finalizar atendimento")), "flex-1", "p-0"));
+      : e(Btn,{v:"primary", ic:"check", disabled:!podeFinalizarSimples, onClick:finalizaSimples}, "Finalizar atendimento")), "flex-1", "p-0"));
 
   // ── resumo do acerto: condicionais, brinde normal, brinde select e conta; sai em PDF ──
   var GRES = " grid-cols-[minmax(0,1fr)_3rem_6rem]";

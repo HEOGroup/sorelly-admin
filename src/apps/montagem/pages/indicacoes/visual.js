@@ -7,6 +7,7 @@
 //   Janela, Colunas, Painel, Passos   janela larga em colunas (dados | etapas | ações); o que já foi feito passa para o lado como concluído
 // Regras de negócio NÃO ficam aqui (estão em domain/indicacoes.js).
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect } from "@/shared/react";
 
@@ -56,13 +57,16 @@ function Chip(p){ return e("button",{type:"button", onClick:p.onClick, className
 function Alternar(p){ return e("label",{className:"inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-3 text-[12.5px] font-bold transition "+(p.on ? "bg-[#F97316]/25 ring-1 ring-[#F97316]/60" : "bg-white/10 hover:bg-white/15")}, e("input",{type:"checkbox", checked:p.on, onChange:function(ev){ p.set(ev.target.checked); }}), p.ic && e(Ph,{n:p.ic, s:14}), p.children); }
 
 // ───────────── bloco do conteúdo principal (sempre aberto) ─────────────
+// 17/11/2026 (Marcus: "pegue os blocos azuis padronizados do Financeiro"): Secao agora é o BlocoPainel do Financeiro (barra azul, borda azul, linhas brancas).
+// faixa = faixa azul de ações logo abaixo do título (busca e botões); semPad = o conteúdo (tabela) encosta nas bordas do bloco.
 function Secao(p){
-  return e("section",{className:"flex flex-col overflow-hidden rounded-xl ring-1 ring-[#F97316]/40", style:{background:"rgba(0,0,0,.18)"}},
-    e("div",{className:"relative flex items-center justify-center gap-2 px-3 py-1.5 text-center text-white", style:{background:"linear-gradient(90deg, #F9731666, #F9731633 50%, #F9731666)"}},
-      p.ic && e(Ph,{n:p.ic, s:16}), e("h3",{className:"font-heading text-[14px] font-bold"}, p.t), p.sub && e("span",{className:"hidden text-[11.5px] text-white/75 md:inline"}, "· "+p.sub),
-      p.dir && e("span",{className:MONO+" absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/35 px-2 py-0.5 text-[11.5px] font-bold"}, p.dir)),
-    e("div",{className:"flex flex-col gap-2 p-2"}, p.children));
+  return e("div",{className:PADRAO_BLOCOS}, e(BlocoPainel,{titulo:p.t, dir:p.dir, compacto:true},
+    p.faixa || null,
+    p.semPad ? p.children : e("div",{className:"flex flex-col gap-2 p-2"}, p.children)));
 }
+function FaixaBloco(p){ return e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"}, p.children); }
+function BuscaFaixa(p){ return e("input",{type:"search", value:p.v, placeholder:p.ph, "aria-label":p.ph, onChange:function(ev){ p.set(ev.target.value); }, className:"h-8 w-72 max-w-full rounded-md border border-white/50 bg-[#14233f] px-2 text-[13px] text-white outline-none placeholder:text-white/70 [color-scheme:dark]"}); }
+function AlternarFaixa(p){ return e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md border border-white/50 px-3 text-[13px] font-semibold "+(p.on ? "bg-white text-[#14233f]" : "text-white hover:bg-white/15")}, e("input",{type:"checkbox", checked:p.on, onChange:function(ev){ p.set(ev.target.checked); }, className:"sr-only"}), p.children); }
 
 // ───────────── janela larga em colunas ─────────────
 var LARGURA = {sm:"max-w-lg", md:"max-w-2xl", lg:"max-w-5xl", xl:"max-w-6xl"};
@@ -97,4 +101,4 @@ function Passos(p){
   }));
 }
 
-export { Bt, BtMini, Selo, Avatar, Resumo, BarraFiltros, Busca, FiltroData, Chip, Alternar, Secao, Janela, Colunas, Painel, Passos, degrade, corDe, cap1 };
+export { Bt, BtMini, Selo, Avatar, Resumo, BarraFiltros, Busca, FiltroData, Chip, Alternar, Secao, FaixaBloco, BuscaFaixa, AlternarFaixa, Janela, Colunas, Painel, Passos, degrade, corDe, cap1 };

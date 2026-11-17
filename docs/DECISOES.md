@@ -5,6 +5,13 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 
 
+## 17/11/2026 (Indicações, Brinde de indicação e Atendimento Sorelly)
+- **Edna, Gislaine (crédito em 4x):** o financeiro conferiu o crédito antes de a funcionária anexar o comprovante e a tela escondeu o botão de anexar, travando o OK. Agora a conta já conferida não trava o OK e o botão de anexar continua visível.
+- **Brinde de indicação (Marcus, sugestão da Kawany):** as peças entram pelo código, nome e preço vêm da DevMaster (rota `/api/precos-pecas`, só o preço, nunca o custo), o print das peças fica anexado. O valor liberado é o do pedido APROVADO da revendedora em Indicações (busca pelo nome); sem pedido, a funcionária digita. O que passar do liberado é pago pela diferença do brinde (financeiro define a conta, funcionária anexa o comprovante) e só então finaliza. Ao finalizar, a retirada é confirmada em Indicações com peças, valor e diferença.
+- **Importação das indicações (Marcus: "pegue o admin antigo e transfira tudo"):** cópia única de 17/11, feita direto no banco do módulo `ind` (sem código no Git): 438 indicações, 120 pedidos de prêmio (12 aguardando retirada), 315 revendedoras, saldo de moedas de 98 e as 1.239 linhas da planilha antiga. Não veio o extrato de moedas linha a linha. NÃO é ao vivo: faltam as ligações com o app e o Kommo (o admin antigo tinha as duas).
+- **Indicações no menu (Marcus):** Indicações virou palavra do menu do Cadastro de revendedoras com 5 telas (Funil, Resgates de prêmios, Retiradas, Revendedoras e moedas, Histórico), no lugar das abas dentro de uma tela. Funil igual ao quadro de Kits novos, blocos azuis e tabelas do Financeiro, sem faixa de números. Nome todo em maiúsculas aparece com a primeira letra maiúscula (só na tela; o dado não muda).
+
+
 ## 17/11/2026 (RH › Colaboradores)
 - Pedido do Marcus: arrumar as telas de Colaboradores iguais ao Contas a pagar, **uma de cada vez e sem perder nenhum detalhe**. Feitas: Cadastro, Advertências e Experiência, todas dentro da tela Colaboradores (bloco azul, menu suspenso de visão, uma pessoa por linha, clicar abre o card). Ficha da colaboradora com foto no estilo da ficha do pedido (`components/ficha-moldura.js`). Advertências e Controle de experiência saíram do menu. Faltam Horas extras e Escala (cabem como visões); Solicitações e Negociações ficam fora.
 

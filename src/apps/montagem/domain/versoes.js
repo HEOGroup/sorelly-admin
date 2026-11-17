@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.81", data:"2026-11-17", titulo:"Indicações: menu próprio, funil novo, dados do app e Brinde de indicação com peças", itens:[
+  {tipo:"correção", area:"Atendimento interno › Atendimento Sorelly", txt:"Edna/Gislaine: crédito conferido pelo financeiro antes do comprovante travava o botão OK. Agora o botão Anexar comprovante aparece também ao lado do conferido e o OK libera mesmo sem comprovante."},
+  {tipo:"novo", area:"Atendimento interno › Brinde de indicação", txt:"Lança as peças pelo código; nome e preço vêm da DevMaster. O valor liberado vem do pedido aprovado da revendedora em Indicações; o que passar é pago pela diferença do brinde (financeiro define a conta, a funcionária anexa o comprovante). Anexo do print das peças. Ao finalizar, a retirada é confirmada em Indicações."},
+  {tipo:"novo", area:"Cadastro de revendedoras › Indicações", txt:"Indicações virou palavra do menu com 5 telas: Funil, Resgates de prêmios, Retiradas, Revendedoras e moedas e Histórico. Funil no padrão do quadro de Kits novos (arrastar e menu ⋯ funcionam). Blocos azuis e tabelas do Financeiro, sem faixa de números. Nomes todo em maiúsculas aparecem com a primeira letra maiúscula."},
+  {tipo:"novo", area:"Cadastro de revendedoras › Indicações", txt:"Dados do app e do admin antigo trazidos para o sistema novo (cópia única de 17/11): 438 indicações, 120 pedidos de prêmio, 315 revendedoras, saldo de moedas e a planilha antiga. Ainda sem ligação ao vivo com o app e o Kommo."}
+ ]},
  {v:"0.20.80", data:"2026-11-17", titulo:"Encomendas e reposições: ficha do pedido do João, peças separadas e PDF", itens:[
   {tipo:"novo", area:"Encomendas e reposições → ficha do pedido", txt:"Pedido do Marcus: ficha do pedido da reposição pelo João. Esquerda fixa (revendedora, andamento e ações) e direita que rola; no topo, o que ela pediu em texto e as fotos dela com botões − e + para o tamanho."},
   {tipo:"novo", area:"Encomendas e reposições → peças separadas", txt:"Digita o código (Enter) ou cola vários: nome, foto e preço vêm da DevMaster. As peças se agrupam sozinhas por tipo (pulseiras, colares, brincos, anéis, conjuntos), cada tipo com uma cor. Foto da DevMaster sempre inteira; peça sem foto fica numa lista fina com o botão Anexar foto (foto do celular). Cada peça se liga à foto dela pelo botão Ligar ou arrastando."},

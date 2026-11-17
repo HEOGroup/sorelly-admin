@@ -16,6 +16,8 @@ var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var p2 = function(n){ return String(n).padStart(2,"0"); };
 var num = function(v){ var n = Number(v); return isFinite(n) ? n : 0; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
+// Nome em letras de nome (17/11/2026, Marcus: "Carlos Luan, não CARLOS LUAN"): só mexe em nome TODO em maiúsculas; o resto fica como veio. Vale na tela; o dado guardado não muda.
+function nomeBonito(t){ t = String(t==null ? "" : t).trim(); if(!t || t!==t.toLocaleUpperCase("pt-BR") || t===t.toLocaleLowerCase("pt-BR")) return t; return t.toLocaleLowerCase("pt-BR").replace(/(^|[\s(-])([a-zà-ú])/g, function(m, a, b){ return a+b.toLocaleUpperCase("pt-BR"); }); }
 var trim = function(v){ return String(v==null ? "" : v).trim(); };
 var diaDe = function(iso){ return iso ? String(iso).slice(0,10) : ""; };
 var apenasDigitos = function(v){ return String(v==null ? "" : v).replace(/\D/g, ""); };
@@ -193,12 +195,12 @@ function avisoDeAtraso(s, agora){ var n = contarAtrasados(s.resgates, agora||ago
 
 // ---------- busca ----------
 function buscaRevendedoraPorId(s, id){ return s.revendedoras.find(function(r){ return String(r.id)===String(id); })||null; }
-var nomeRev = function(s, id){ var r = buscaRevendedoraPorId(s, id); return r && r.nome ? r.nome : (id==null ? "Revendedora" : "Revendedora #"+id); };
+var nomeRev = function(s, id){ var r = buscaRevendedoraPorId(s, id); return r && r.nome ? nomeBonito(r.nome) : (id==null ? "Revendedora" : "Revendedora #"+id); };
 var primeiroNome = function(s, id){ var r = buscaRevendedoraPorId(s, id); return r && r.nome ? r.nome.split(/\s+/)[0] : (id==null ? "a revendedora" : "a revendedora #"+id); };
 // resgate com os dados da revendedora e o atraso, pronto para o card
 function resgateVista(s, r, agora){
   var a = agora||agoraSP(), rv = buscaRevendedoraPorId(s, r.revendedoraId), nv = nivelDeAtraso(r, a, s.config), hs = horasEsperando(r.criadoEm, a);
-  return Object.assign({}, r, {revendedora:rv ? {id:rv.id, nome:rv.nome, telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, r.revendedoraId), nivel:nv, horas:hs, esperando:tempoDecorrido(r.criadoEm, a), horarioAgendado:formatarHorarioAgendado(r.operacao.dataAgendada, diaDe(a)), acoes:acoesDaEtapa(r.etapa)});
+  return Object.assign({}, r, {revendedora:rv ? {id:rv.id, nome:nomeBonito(rv.nome), telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, r.revendedoraId), nivel:nv, horas:hs, esperando:tempoDecorrido(r.criadoEm, a), horarioAgendado:formatarHorarioAgendado(r.operacao.dataAgendada, diaDe(a)), acoes:acoesDaEtapa(r.etapa)});
 }
 // nome, telefone sem máscara, prêmio, nº do pedido e id da revendedora; ignora acento e caixa
 function combinaBuscaResgate(s, r, termo){
@@ -260,7 +262,7 @@ function contagemDaRev(s, revId){ var inds = s.indicacoes.filter(function(i){ re
 // ranking: mais indicações, depois mais moedas (saldo), depois nome. o = {q, pagina (0 = primeira), limite, hoje}
 function ranking(s, o){
   o = o||{}; var base = trim(o.q) ? buscarRevendedoras(s, o.q) : s.revendedoras, lim = Math.max(1, o.limite||s.config.paginaRanking), pg = Math.max(0, o.pagina||0);
-  var todos = base.map(function(r){ var c = contagemDaRev(s, r.id), sd = saldoDe(s, r.id, o.hoje); return {id:r.id, nome:r.nome, telefone:r.telefone, indicacoes:c.indicacoes, emAndamento:c.emAndamento, kits:c.kits, moedas:sd.saldo, vencidas:sd.vencidas, proximoVencimento:sd.proximoVencimento, resgates:s.resgates.filter(function(x){ return String(x.revendedoraId)===String(r.id); }).length}; })
+  var todos = base.map(function(r){ var c = contagemDaRev(s, r.id), sd = saldoDe(s, r.id, o.hoje); return {id:r.id, nome:nomeBonito(r.nome), telefone:r.telefone, indicacoes:c.indicacoes, emAndamento:c.emAndamento, kits:c.kits, moedas:sd.saldo, vencidas:sd.vencidas, proximoVencimento:sd.proximoVencimento, resgates:s.resgates.filter(function(x){ return String(x.revendedoraId)===String(r.id); }).length}; })
     .sort(function(a, b){ return b.indicacoes-a.indicacoes || b.moedas-a.moedas || a.nome.localeCompare(b.nome, "pt-BR"); });
   todos.forEach(function(x, i){ x.posicao = i+1; });
   return {itens:todos.slice(pg*lim, (pg+1)*lim), paginacao:{total:todos.length, limit:lim, offset:pg*lim, hasMore:(pg+1)*lim<todos.length}};
@@ -272,7 +274,7 @@ function premiosDaRevendedora(s, revId, hoje){ var sd = saldoDe(s, revId, hoje).
 function totaisVaziosFunil(){ return {criado:0, em_andamento:0, cadastro_aprovado:0, finalizado:0, cancelado:0}; }
 function totaisDoFunil(s, revId){ var t = totaisVaziosFunil(); s.indicacoes.forEach(function(i){ if(revId!=null && revId!=="" && String(i.revendedoraId)!==String(revId)) return; t[i.etapa]++; }); return t; }
 function abasDoFunil(totais){ return ETAPAS_FUNIL_ABAS.map(function(e){ return {etapa:e, rotulo:ROTULO_FUNIL[e], quantidade:totais[e]||0}; }); }
-var nomeDaIndicada = function(i){ return trim(i.indicadaNome) || "Indicação #"+i.id; };
+var nomeDaIndicada = function(i){ return nomeBonito(trim(i.indicadaNome)) || "Indicação #"+i.id; };
 // conversão = Kit entregue ÷ (Kit entregue + Canceladas); sem nada fechado, taxa = null (a tela mostra "—", nunca 0%)
 function resumoDeConversao(t){
   var kit = t.finalizado, canc = t.cancelado, apr = t.cadastro_aprovado, and = t.criado+t.em_andamento, fech = kit+canc;
@@ -288,13 +290,13 @@ function funilPagina(s, o){
     var texto = norm([i.indicadaNome, i.indicadaWhatsapp, nomeRev(s, i.revendedoraId), "#"+i.id, i.cidade].join(" ")); if(texto.indexOf(alvo)>=0) return true;
     return dg.length>0 && (digitosCasam(i.indicadaWhatsapp, dg) || String(i.id)===dg);
   }).sort(function(a, b){ return (b.etapaAlteradaEm||"").localeCompare(a.etapaAlteradaEm||"") || (Number(b.id)-Number(a.id)); });
-  var itens = lista.slice(pg*lim, (pg+1)*lim).map(function(i){ var rv = buscaRevendedoraPorId(s, i.revendedoraId); return Object.assign({}, i, {nome:nomeDaIndicada(i), rotuloEtapa:ROTULO_FUNIL[i.etapa], revendedora:rv ? {id:rv.id, nome:rv.nome, telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, i.revendedoraId)}); });
+  var itens = lista.slice(pg*lim, (pg+1)*lim).map(function(i){ var rv = buscaRevendedoraPorId(s, i.revendedoraId); return Object.assign({}, i, {nome:nomeDaIndicada(i), rotuloEtapa:ROTULO_FUNIL[i.etapa], revendedora:rv ? {id:rv.id, nome:nomeBonito(rv.nome), telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, i.revendedoraId)}); });
   return {itens:itens, paginacao:{total:lista.length, limit:lim, offset:pg*lim, hasMore:(pg+1)*lim<lista.length}, totais:totaisDoFunil(s, hasRev ? o.revendedoraId : null)};
 }
 // "51–100 de 128"
 function estadoDaPaginacao(p, qtd){ var lim = Math.max(1, p.limit); return {paginaAtual:Math.floor(p.offset/lim)+1, totalDePaginas:Math.max(1, Math.ceil(p.total/lim)), primeiroDaPagina:qtd===0 ? 0 : p.offset+1, ultimoDaPagina:p.offset+qtd, total:p.total, podeVoltar:p.offset>0, podeAvancar:p.hasMore}; }
 var textoDaPaginacao = function(e){ return e.total===0 ? "nenhum resultado" : e.primeiroDaPagina+"–"+e.ultimoDaPagina+" de "+e.total; };
-function indicacaoDe(s, id){ var i = s.indicacoes.find(function(x){ return String(x.id)===String(id); }); if(!i) return null; var rv = buscaRevendedoraPorId(s, i.revendedoraId); return Object.assign({}, i, {nome:nomeDaIndicada(i), rotuloEtapa:ROTULO_FUNIL[i.etapa], revendedora:rv ? {id:rv.id, nome:rv.nome, telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, i.revendedoraId), proxima:proximaEtapa(i.etapa), anterior:etapaAnterior(i)}); }
+function indicacaoDe(s, id){ var i = s.indicacoes.find(function(x){ return String(x.id)===String(id); }); if(!i) return null; var rv = buscaRevendedoraPorId(s, i.revendedoraId); return Object.assign({}, i, {nome:nomeDaIndicada(i), rotuloEtapa:ROTULO_FUNIL[i.etapa], revendedora:rv ? {id:rv.id, nome:nomeBonito(rv.nome), telefone:rv.telefone} : null, nomeRevendedora:nomeRev(s, i.revendedoraId), proxima:proximaEtapa(i.etapa), anterior:etapaAnterior(i)}); }
 function proximaEtapa(e){ var k = ORDEM_FUNIL.indexOf(e); return k>=0 && k<ORDEM_FUNIL.length-1 ? ORDEM_FUNIL[k+1] : null; }
 function etapaAnterior(i){ if(i.etapa==="cancelado") return i.etapaAntesCancelar || "em_andamento"; var k = ORDEM_FUNIL.indexOf(i.etapa); return k>0 ? ORDEM_FUNIL[k-1] : null; }
 
@@ -303,8 +305,8 @@ function etapaAnterior(i){ if(i.etapa==="cancelado") return i.etapaAntesCancelar
 var rotuloDoStatus = function(st){ var l = trim(st); if(!l) return "Sem status"; var m = l.toLocaleLowerCase("pt-BR"); return m.charAt(0).toLocaleUpperCase("pt-BR")+m.slice(1); };
 function itemDaPlanilha(l, moedasKit){
   var sit = rotuloDoStatus(l.status), det = [l.motivo, l.observacao].filter(function(p){ return p && String(p).trim(); }).join(" · ");
-  return {id:"planilha:"+l.linhaPlanilha, origem:"planilha", quando:(l.contaMoedas ? (l.dataKitEntregue||l.dataIndicacao) : l.dataIndicacao)||null, nomeRevendedora:trim(l.nomeRevendedora)||"Revendedora sem nome", telefoneRevendedora:l.telefoneRevendedora||null, categoria:l.categoria||null,
-    nomeIndicada:l.nomeIndicada||null, telefoneIndicada:l.telefoneIndicada||null, situacao:sit, contaMoedas:!!l.contaMoedas, aVerificar:!!l.aVerificar, moedas:l.contaMoedas ? moedasKit : 0, detalhe:det && norm(det)!==norm(sit) ? det : null};
+  return {id:"planilha:"+l.linhaPlanilha, origem:"planilha", quando:(l.contaMoedas ? (l.dataKitEntregue||l.dataIndicacao) : l.dataIndicacao)||null, nomeRevendedora:nomeBonito(trim(l.nomeRevendedora))||"Revendedora sem nome", telefoneRevendedora:l.telefoneRevendedora||null, categoria:l.categoria||null,
+    nomeIndicada:l.nomeIndicada ? nomeBonito(l.nomeIndicada) : null, telefoneIndicada:l.telefoneIndicada||null, situacao:sit, contaMoedas:!!l.contaMoedas, aVerificar:!!l.aVerificar, moedas:l.contaMoedas ? moedasKit : 0, detalhe:det && norm(det)!==norm(sit) ? det : null};
 }
 function itemDoSistema(s, i){ var rv = buscaRevendedoraPorId(s, i.revendedoraId); return {id:"sistema:"+i.id, origem:"sistema", quando:i.creditadoEm||i.etapaAlteradaEm||i.criadoEm, nomeRevendedora:nomeRev(s, i.revendedoraId), telefoneRevendedora:rv ? rv.telefone : null, categoria:null, nomeIndicada:i.indicadaNome||null, telefoneIndicada:i.indicadaWhatsapp||null, situacao:"Kit entregue", contaMoedas:i.moedasCreditadas>0, aVerificar:false, moedas:i.moedasCreditadas, detalhe:null}; }
 // o = {origem:"todas"|"planilha"|"sistema", soMoedas, q, from, to (dias), pagina (0 = primeira), limite}. Indicada com o mesmo telefone nos dois lados aparece uma vez só em "Tudo"
