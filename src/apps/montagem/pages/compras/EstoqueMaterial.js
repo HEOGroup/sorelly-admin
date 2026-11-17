@@ -210,7 +210,7 @@ function AbaEstoqueMaterial(pr){
   var comuns = {m:mAtual, x:x, pode:pode, fechar:fechar, tipo:tipo, verCompra:verCompra};
 
   // filtros compactos (Marcus, 17/11/2026: "compacta mais esses filtros, fonte menor"): letra de 11 px e largura só do necessário
-  var SEL_P = "h-7 w-auto max-w-[11rem] shrink-0 rounded-md border border-white/50 bg-[#14233f] px-1.5 text-[11px] font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-white";   // padrao-ok: filtros menores na faixa azul (Marcus, 17/11/2026)
+  var SEL_P = "h-7 w-auto max-w-[16rem] shrink-0 rounded-md border border-white/50 bg-[#14233f] px-1.5 text-[11px] font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-white";   // padrao-ok: filtros menores na faixa azul (Marcus, 17/11/2026)
   var BTN_P = "h-7 shrink-0 whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2 text-[11px] font-semibold text-white hover:bg-white/15";   // padrao-ok: botões menores na faixa azul (Marcus, 17/11/2026)
   var sel = function(rotulo, valor, aoMudar, opcoes, semTodos){ return e("select",{"aria-label":rotulo, value:valor, onChange:function(ev){ aoMudar(ev.target.value); }, className:SEL_P}, !semTodos && e("option",{value:""}, rotulo), opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })); };
   var opAnd = [["SEM", "Sem compra em andamento"], ["DECISAO", "Esperando decisão · "+alertas.aguardandoAprovacao]].concat(ANDAMENTOS.map(function(k){ return [k, ROTULO_ANDAMENTO[k]+(k==="ENTREGA" ? " · "+alertas.comprasChegando : "")]; }), [["VERIFICAR", ROTULO_SITUACAO.VERIFICAR], ["VERIFICAR_UNIDADE", ROTULO_SITUACAO.VERIFICAR_UNIDADE]]);

@@ -160,7 +160,7 @@ function AbaGfPainel(){
 // ───────────── TABELA DE PREÇOS e ESTOQUE: as mesmas telas de Materiais e estoque ─────────────
 function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}, e(PageHead,{t:t, sub:sub}), corpo); }
 function AbaGfPrecos(){ return e(AbaTabelaPrecos,null); }
-function AbaGfEstoque(){ return Tela("Estoque do material gráfico", "Só as categorias gráficas: tags, adesivos, etiquetas, embalagens, maletas.", e(AbaEstoqueMaterial,{soGrafico:true})); }
+function AbaGfEstoque(){ return e(AbaEstoqueMaterial,{soGrafico:true}); }   // o bloco azul já tem o título; sem PageHead por cima (Marcus, 17/11/2026)
 function EmBreve(t, txt){ return Tela(t, txt, e("div",{className:"rounded-lg border-2 border-[var(--bloco-titulo)] bg-card/60 p-6 text-center text-[13px]"}, "Em breve.")); }
 function AbaGfKits(){ return EmBreve("Kits", "Fase 2: kits padrão (com custo) e kits à venda (com preço e margem)."); }
 function AbaGfVendas(){ return EmBreve("Vendas", "Fase 3: venda de material gráfico."); }
