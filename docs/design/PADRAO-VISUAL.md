@@ -144,3 +144,13 @@ O Marcus viu 4 layouts (`docs/ideias/resumo-pagamentos-4-layouts.html`) e escolh
 4. O visual da tabela é o Layout D (faixa escura, fio fino, tudo centralizado, nada quebra, total na última fileira), e a `TabelaPlanilha` já entrega isso por padrão.
 5. Trava dura em `scripts/padrao-regras.mjs` (teste: `node scripts/testar-trava-padrao.mjs`): **2j** reprova `BlocoFiltros`/`BarraFiltros` (uso e import), bloco com título "Filtros", `CampoBusca` e botão "Filtrar" no topo; **2k** exige a `TabelaPlanilha` (reprova `TabelaCampos`, `FileiraCampos`, `TabelaP`); **2l** reprova `dourada:true`; **2g** confere a própria peça (escura por padrão e com o menu de filtro). Telas antigas mudam quando forem mexidas.
 6. Desenho de referência: `docs/ideias/inadimplencia-tela-dividas.html`.
+
+## TELA TRAVADA · Visão geral das compras e Configurações de compras (Marcus, 17/11/2026: "trava as regras dessa visão geral sobre padronização"; a Configurações entrou no mesmo dia: "aba de configurações sem nenhum padrão")
+Materiais e estoque › Visão geral (`pages/compras/VisaoCompras.js`) e Configurações (`pages/compras/CompraConfig.js`) são uma **GRADE DE FAIXAS** (na Configurações a regra 2 de tabela cheia não vale; os blocos usam o botão Salvar no rodapé, sempre na borda de baixo). Marcus: "não pode ter bloco quebrado entre um e outro; mesmo que a tabela de um não faça até o final, os blocos têm que ser padronizados uns com os outros".
+1. **Blocos da mesma faixa têm a mesma altura e as bordas de cima e de baixo alinhadas** (constante `FAIXA` = `[&>section]:flex-1`).
+2. **A tabela do bloco fecha na borda de baixo**: `cheia:true` por padrão, as linhas esticam; nunca sobra espaço preto embaixo (a peça `TabelaPlanilha` com `cheia` ocupa a altura toda).
+3. **Todo bloco nasce do componente `Bloco`** (um só `e(BlocoPainel)` no arquivo): mesmo tamanho, letra de 11 px e tabela.
+4. **A faixa é um bloco de largura inteira ou duas metades iguais** (`lg:grid-cols-2`); nunca divisão desigual (`grid-cols-[2fr_1fr]`), e as faixas não mudam de divisão entre si.
+5. **Nunca `items-start/center/end` na grade de blocos** (deixa alturas diferentes).
+6. Só `TabelaPlanilha` desenha tabela; nada de faixa de números no topo.
+Guarda em código: `conferirTelaTravada` (scripts/padrao-regras.mjs, regra 2m), lida do arquivo inteiro no hook, em `npm run padrao` e no CI; e a peça `TabelaPlanilha` é conferida (regra 2g) por manter o ajuste da `cheia`. Teste: `node scripts/testar-trava-padrao.mjs`. Outra tela de compras que seguir o mesmo desenho entra em `TELAS_TRAVADAS`.

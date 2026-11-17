@@ -8,7 +8,8 @@
 //   baixarCsv                     CSV com ; e vírgula decimal, BOM para o Excel
 // Regras de negócio NÃO ficam aqui (estão em domain/compras-estoque.js).
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { Dinheiro, ESTADO, Janela, degrade } from "@/apps/montagem/components/padrao";
+import { Dinheiro, ESTADO, degrade } from "@/apps/montagem/components/padrao";
+import { Janela, Painel as PainelAzul } from "@/apps/montagem/pages/compras/pecas";
 import { capacidadesEstoque, ceReduz, podeAprovarCompra } from "@/apps/montagem/domain/compras-estoque";
 import { DIRETORIA, nomeDe } from "@/apps/montagem/domain/equipe";
 import { use } from "@/apps/montagem/state/context";
@@ -69,13 +70,7 @@ function Campo(p){ return e("label",{className:"flex min-w-0 flex-col gap-1 text
 // ───────────── blocos de apoio ─────────────
 function Vazio(p){ return e("div",{className:"flex flex-col items-center justify-center gap-1.5 rounded-xl bg-black/20 px-4 py-6 text-center text-[13px] text-white/70 ring-1 ring-white/10"}, e(Ph,{n:p.ic || "tray", s:26, className:"text-white/45"}), p.children); }
 // coluna de janela: estado "feito" = concluído (passou para o lado, verde); "atual" = em destaque (azul)
-function Painel(p){
-  var feito = p.estado==="feito", atual = p.estado==="atual";
-  return e("section",{className:"flex min-w-0 flex-col gap-2 rounded-xl p-2.5 text-center "+(p.className||""),
-      style:atual ? {background:"linear-gradient(160deg, #3B82F633, rgba(0,0,0,.25))", boxShadow:"inset 0 0 0 2px #3B82F6AA"} : feito ? {background:"linear-gradient(160deg, #22C55E1F, rgba(0,0,0,.22))", boxShadow:"inset 0 0 0 1px #22C55E55"} : {background:"rgba(0,0,0,.22)", boxShadow:"inset 0 0 0 1px rgba(255,255,255,.1)"}},
-    p.t && e("div",{className:"flex items-center justify-center gap-1.5 text-[12px] font-bold uppercase tracking-wide "+(feito ? "text-[#4ADE80]" : atual ? "text-[#BFDBFE]" : "text-white/75")}, e(Ph,{n:feito ? "check-circle" : (p.ic || "circle"), s:15, fill:feito}), p.t),
-    p.children);
-}
+function Painel(p){ return e(PainelAzul,{t:p.t, ic:p.ic, className:p.className}, p.children); }   // mesmo bloco azul do Financeiro (pecas.js)
 // barra de nível do saldo: a marca branca é o estoque mínimo (no meio da barra)
 function Nivel(p){
   var alvo = Math.max(p.minimo*2, 1), pct = Math.max(0, Math.min(100, Math.round(p.atual/alvo*100)));
@@ -83,7 +78,7 @@ function Nivel(p){
     e("div",{className:"h-full rounded-full", style:{width:pct+"%", background:p.cor}}), p.minimo>0 && e("span",{className:"absolute inset-y-0 left-1/2 w-px bg-white/80"}));
 }
 // célula de número (saldo, mínimo...): número dentro de caixa, nome pequeno embaixo
-function Num(p){ return e("div",{className:"flex min-w-0 flex-col items-center rounded-lg bg-black/25 px-1 py-1"}, e("b",{className:MONO+" text-[19px] leading-none", style:p.cor ? {color:ESTADO[p.cor] || p.cor} : undefined}, p.v), e("span",{className:"mt-0.5 text-[10px] font-bold uppercase tracking-wide text-white/70"}, p.t)); }
+function Num(p){ return e("div",{className:"flex min-w-0 flex-col items-center rounded-md border border-white/20 px-1 py-0.5"}, e("b",{className:"text-[13px] leading-tight tabular-nums", style:p.cor ? {color:ESTADO[p.cor] || p.cor} : undefined}, p.v), e("span",{className:"text-[11px] font-semibold uppercase leading-tight"}, p.t)); }
 
 // ───────────── Editor: janela em colunas (dados | campos | ações) ─────────────
 // campos = [{k, rot, tipo:"texto"|"num"|"dinheiro"|"data"|"select"|"cor"|"area"|"bool"|"botoes", ops:[[valor, rótulo]], obrig, se(v), dica, min, max, ph}]

@@ -33,4 +33,4 @@ function GrupoBtn(p){
   return e("div",{className:"inline-flex h-8 items-stretch divide-x divide-border overflow-hidden rounded-md border border-border bg-card"}, p.children);
 }
 
-export { PADRAO_BLOCOS, BTN_GRUPO, BlocoPainel, GrupoBtn };
+export { PADRAO_BLOCOS, COMPACTO, BTN_GRUPO, BlocoPainel, GrupoBtn };

@@ -58,8 +58,39 @@ var PAGAVEL_STATUS = ["COMPRADA", "EM_TRANSITO", "RECEBIDA_PARCIAL", "RECEBIDA",
 var ETIQUETA_ELEGIVEL = ["APROVADA", "LIBERADA", "COMPRADA", "EM_TRANSITO", "RECEBIDA_PARCIAL", "RECEBIDA", "ENTREGUE"];
 var ETIQUETAS = ["RETIRADO_ESTOQUE", "CONFIRMAR_ENTREGA", "ENTREGUE"];
 var ROTULO_ETIQUETA = {RETIRADO_ESTOQUE:"Retirado do estoque", CONFIRMAR_ENTREGA:"Confirmar entrega", ENTREGUE:"Entregue"};
-var UNIDADES = ["UNID", "CX", "KIT", "PAR", "ROLO", "PACOTE"];
-var ROTULO_UNIDADE = {UNID:"Unid", CX:"Cx", KIT:"Kit", PAR:"Par", ROLO:"Rolo", PACOTE:"Pacote"};
+// UNIDADES DE MEDIDA, UMA LISTA SÓ (Marcus, 17/11/2026: "padronizar as unidades: tem un e UN, G, unidades e unidade; deixar um negócio só"). Vale para as compras (itens e catálogo) e para o estoque de material.
+// O nome é escrito inteiro, no singular e com a primeira letra maiúscula (nada abreviado). O material guarda o nome (ex.: "Unidade"); a compra guarda o código (ex.: UNID) e mostra o mesmo nome.
+var UNIDADES = ["UNID", "CX", "PACOTE", "ROLO", "PAR", "KIT", "GRAMA"];
+var ROTULO_UNIDADE = {UNID:"Unidade", CX:"Caixa", PACOTE:"Pacote", ROLO:"Rolo", PAR:"Par", KIT:"Kit", GRAMA:"Grama"};
+// FORNECEDOR, UM NOME SÓ (Marcus, 17/11/2026: "Office graf, Office graff... junta tudo nos nomes padrão"). O mesmo fornecedor aparecia escrito de vários jeitos (Office graff, OfficeGraf, Offci graf, Edson - Office Graff...).
+// padronizarFornecedor junta as variações no nome padrão; nome desconhecido fica como foi digitado (espaços acertados, e se estava todo em CAIXA ALTA vira Primeira Letra Maiúscula). Vale na leitura, na gravação e na ação fornecedores_padronizar.
+function padronizarFornecedor(txt){
+  var cru = String(txt==null ? "" : txt).replace(/\s+/g, " ").trim(); if(!cru) return "";
+  var k = cru.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+  if(!k || k==="semfornecedor") return "";
+  if(k.indexOf("officegra")>=0 || k.indexOf("offcigra")>=0 || k.indexOf("officegar")>=0 || k.indexOf("officgra")>=0) return "Office Graff";
+  if(k==="mercado" || k==="mercados" || k.indexOf("mercadolivre")===0) return "Mercado Livre";
+  if(k.indexOf("dclinica")===0) return "D Clínica";
+  if(k.indexOf("eloprint")===0) return "Elo Print";
+  if(k.indexOf("jhonathan")===0 || k.indexOf("jonathan")===0) return "Jonathan";
+  if(k.indexOf("naturalle")===0) return "Naturalle";
+  if(k.indexOf("millifabrica")===0) return "Milli Fábrica";
+  if(k==="distribuidorasantaana") return "Distribuidora Santa Ana";
+  return /[a-zà-ÿ]/.test(cru) ? cru : cru.toLowerCase().replace(/(^|\s)([a-zà-ÿ])/g, function(m, a, b){ return a+b.toUpperCase(); });
+}
+// qualquer jeito de escrever vira o nome padrão: un, UN, Un, und, unid, unidade, UNIDADES → Unidade; cx, CAIXA → Caixa; pct → Pacote; g, gr → Grama; UNIDADE-ROLO → Rolo. Texto desconhecido fica como foi digitado (só com a primeira letra maiúscula).
+function padronizarUnidade(txt){
+  var cru = String(txt==null ? "" : txt).trim(); if(!cru) return "";
+  var t = cru.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[.\s]+/g, " ").trim();
+  if(/\brolos?\b/.test(t) || /^bobinas?$/.test(t)) return ROTULO_UNIDADE.ROLO;
+  if(/^(un|und|unid|unids|unidade|unidades)$/.test(t)) return ROTULO_UNIDADE.UNID;
+  if(/^(cx|caixa|caixas)$/.test(t)) return ROTULO_UNIDADE.CX;
+  if(/^(pct|pcte|pacote|pacotes)$/.test(t)) return ROTULO_UNIDADE.PACOTE;
+  if(/^(par|pares)$/.test(t)) return ROTULO_UNIDADE.PAR;
+  if(/^(kit|kits)$/.test(t)) return ROTULO_UNIDADE.KIT;
+  if(/^(g|gr|grs|grama|gramas)$/.test(t)) return ROTULO_UNIDADE.GRAMA;
+  return cru.charAt(0).toUpperCase()+cru.slice(1);
+}
 var URGENCIAS = ["BAIXA", "MEDIA", "ALTA"];
 var ROTULO_URGENCIA = {BAIXA:"Baixa", MEDIA:"Média", ALTA:"Alta"};
 var TIPOS_ENTREGA = ["PADRAO", "FINANCEIRO", "RETIRADA"];
@@ -297,7 +328,7 @@ function pedidoVista(s, p, agora){
   return Object.assign({}, p, {itens:its, rotuloStatus:ROTULO_STATUS[p.status], tom:TOM_STATUS[p.status], noFunil:FUNIL_STATUS.indexOf(p.status)>=0, atrasado:pedidoAtrasado(p, a, c.config), horasParado:p.status==="NAO_VERIFICADA" ? Math.round(horasEntre(p.solicitadoEm, a)||0) : 0,
     setorNome:nomeDe(c.setores, p.setorId, "Sem setor"), setorCor:(porId(c.setores, p.setorId)||{}).cor||null, categoriaNome:nomeDe(c.categorias, p.categoriaId, "Sem categoria"), rotuloUrgencia:ROTULO_URGENCIA[p.urgencia],
     classificacoesTxt:its.map(function(i){ return i.classificacaoNome; }).filter(function(x, k, l){ return l.indexOf(x)===k; }).join(" · "), entraEstoque:its.some(function(i){ return i.entraEstoque; }),
-    rotuloEtiqueta:p.etiqueta ? ROTULO_ETIQUETA[p.etiqueta] : null, rotuloConta:rotuloConta(porId(c.contas, p.contaId)), fornecedor:p.fornecedorId ? nomeDe(c.fornecedores, p.fornecedorId, p.fornecedorNome) : p.fornecedorNome,
+    rotuloEtiqueta:p.etiqueta ? ROTULO_ETIQUETA[p.etiqueta] : null, rotuloConta:rotuloConta(porId(c.contas, p.contaId)), fornecedor:padronizarFornecedor(p.fornecedorId ? nomeDe(c.fornecedores, p.fornecedorId, p.fornecedorNome) : p.fornecedorNome),
     plano:p.plano.map(function(x){ return Object.assign({}, x, {rotuloForma:ROTULO_FORMA_PLANO[x.forma]||x.forma, vencido:!x.pago && !!x.vencimento && x.vencimento<diaDe(a)}); }), planoInfo:planoSituacao(p, c.config), proximoVencimento:vencimentoDe(p),
     recebimento:{pedida:pedida, recebida:recebida, pendente:Math.max(0, pedida-recebida), completo:pedida>0 && recebida>=pedida}, acoes:acoesDoPedido(p), valorFinal:totalDaCompra(p), vencido:!!vencimentoDe(p) && !p.pago && vencimentoDe(p)<diaDe(a), enviada:!!p.enviadaPagamentos});
 }
@@ -403,7 +434,7 @@ function andamentoMaterial(s, id){
 }
 function materialVisto(s, m){
   var sol = solicitacoesDoMaterial(s, m.id), cat = porId(s.ce.matCategorias, m.categoriaId), and = andamentoMaterial(s, m.id);
-  return Object.assign({}, m, {status:statusMaterial(m, s.ce.config), rotuloStatus:ROTULO_STATUS_MAT[statusMaterial(m, s.ce.config)], saldo:saldoMaterial(m), rotuloSituacao:ROTULO_SITUACAO[m.situacao], categoriaNome:cat ? cat.nome : "", tipoId:cat ? cat.tipoId : null, solicitacoes:sol,
+  return Object.assign({}, m, {unidade:padronizarUnidade(m.unidade) || m.unidade, fornecedor:padronizarFornecedor(m.fornecedor), status:statusMaterial(m, s.ce.config), rotuloStatus:ROTULO_STATUS_MAT[statusMaterial(m, s.ce.config)], saldo:saldoMaterial(m), rotuloSituacao:ROTULO_SITUACAO[m.situacao], categoriaNome:cat ? cat.nome : "", tipoId:cat ? cat.tipoId : null, solicitacoes:sol,
     andamento:and, nota:SITUACOES_NOTA.indexOf(m.situacao)>=0 ? ROTULO_SITUACAO[m.situacao] : "",
     aguardandoDecisao:and.abertas.some(function(c){ return ANDAMENTO_DECISAO.indexOf(c.etapa)>=0; }), comprasChegando:and.abertas.filter(function(c){ return c.etapa==="ENTREGA"; }).length});
 }
@@ -486,6 +517,17 @@ function movimenta(ce, m, tipo, qtd, o){
   var mv = {id:proximoId(ce), materialId:m.id, tipo:tipo, qtd:qtd, delta:delta, saldoAntes:antes, saldoApos:depois, data:o.data, em:o.agora, por:o.por, quem:trim(o.quem)||o.por, motivo:trim(o.motivo), ref:o.ref||null, estornado:false};
   ce.movimentos.push(mv); return {mov:mv};
 }
+// ESTOQUE NO MOMENTO DA SOLICITAÇÃO (Nickolas, 17/11/2026): o que o estoque era quando a compra foi pedida, ao lado do que é hoje. Calculado do histórico, sem campo novo (vale também para as solicitações antigas):
+// saldo no momento = saldo ANTES da primeira movimentação depois da solicitação (cada movimentação guarda saldoAntes); sem movimentação depois, é o saldo de hoje.
+// mínimo no momento = o valor ANTIGO da primeira edição do estoque mínimo depois da solicitação (a linha do tempo do material guarda "Estoque mínimo: antes → depois"); sem edição depois, é o de hoje.
+function estoqueDaSolicitacao(s, sol){
+  var m = porId(s.ce.materiais, sol.materialId); if(!m) return null; var T = String(sol.solicitadoEm || "");
+  var mv = s.ce.movimentos.filter(function(x){ return mesmoId(x.materialId, m.id) && !x.estornado && String(x.em)>T; }).sort(function(a, b){ return String(a.em).localeCompare(String(b.em)) || (Number(a.id)-Number(b.id)); })[0];
+  var ed = s.ce.logMateriais.filter(function(l){ return mesmoId(l.materialId, m.id) && l.acao==="EDITADO" && String(l.em)>T && /Estoque mínimo: "/.test(l.detalhe || ""); }).sort(function(a, b){ return String(a.em).localeCompare(String(b.em)) || (Number(a.id)-Number(b.id)); })[0];
+  var minAntes = ed ? /Estoque mínimo: "([^"]*)"/.exec(ed.detalhe) : null;
+  return {material:m.material, unidade:padronizarUnidade(m.unidade), saldoMomento:mv ? mv.saldoAntes : m.estoqueAtual, minimoMomento:minAntes && minAntes[1]!=="—" && !isNaN(Number(minAntes[1])) ? Number(minAntes[1]) : m.estoqueMinimo,
+    quantidade:sol.quantidade, origem:"Estoque de material", em:sol.solicitadoEm, por:sol.solicitadoPor, saldoAtual:m.estoqueAtual, minimoAtual:m.estoqueMinimo};
+}
 function logMat(ce, m, acao, detalhe, por, agora){ ce.logMateriais.push({id:proximoId(ce), materialId:m.id, numero:m.numero, material:m.material, acao:acao, detalhe:detalhe||"", por:por, em:agora}); }
 // entrada automática ao receber (pedido ou solicitação). Devolve {erro} ou {mov}
 function entradaDeRecebimento(ce, m, qtd, dia, por, agora, ref, custoUnit){
@@ -526,7 +568,7 @@ function ceReduz(s, a){
   var emUso = function(txt){ return recusa(txt); };
   // data opcional (YYYY-MM-DD): vazio → padrão; inválida → undefined
   var dataOu = function(v, padrao){ if(vazio(v)) return padrao; return ehDia(trim(v)) ? trim(v) : undefined; };
-  var fornNome = function(id, txt){ return id!=null && id!=="" ? nomeDe(ce.fornecedores, id, trim(txt)) : trim(txt); };
+  var fornNome = function(id, txt){ return id!=null && id!=="" ? nomeDe(ce.fornecedores, id, padronizarFornecedor(txt)) : padronizarFornecedor(txt); };
   var nomeRepetido = function(lista, nome, exceto){ return lista.some(function(x){ return !mesmoId(x.id, exceto) && norm(x.nome)===norm(nome); }); };
   var setaTexto = function(o, k){ if(a[k]!==undefined){ o[k] = trim(a[k]); } };
   // próximo status depois que o financeiro aprova/autoriza: sem CNPJ pagador pede o CNPJ; com CNPJ vai direto para APROVADA (ou pede a conta, se config.pularFormaPagamento for falso)
@@ -611,7 +653,7 @@ function ceReduz(s, a){
     }
     case "forn_add": case "forn_set": {
       var novo = a.op==="forn_add", f = novo ? null : porId(ce.fornecedores, a.id); if(!novo && !f) return recusa("Fornecedor não encontrado.");
-      var nm = trim(novo || a.nome!==undefined ? a.nome : f.nome); if(!nm) return recusa("Informe o nome do fornecedor."); if(nomeRepetido(ce.fornecedores, nm, novo ? null : f.id)) return recusa("Já existe um fornecedor com esse nome.");
+      var nm = padronizarFornecedor(novo || a.nome!==undefined ? a.nome : f.nome); if(!nm) return recusa("Informe o nome do fornecedor."); if(nomeRepetido(ce.fornecedores, nm, novo ? null : f.id)) return recusa("Já existe um fornecedor com esse nome.");
       if(novo){ f = {id:proximoId(ce, a), nome:nm, documento:"", telefone:"", email:"", contato:"", observacao:"", ativo:true}; ce.fornecedores.push(f); } f.nome = nm;
       ["documento", "telefone", "email", "contato", "observacao"].forEach(function(k){ setaTexto(f, k); }); if(a.ativo!==undefined) f.ativo = !!a.ativo;
       return ok(novo ? nm+" cadastrado." : "Fornecedor atualizado.");
@@ -818,7 +860,7 @@ function ceReduz(s, a){
     }
     case "mcat_del": { var mcd = porId(ce.matCategorias, a.id); if(!mcd) return recusa("Categoria não encontrada."); if(ce.materiais.some(function(m){ return mesmoId(m.categoriaId, mcd.id); })) return emUso("A categoria tem itens: mova ou exclua os itens antes."); ce.matCategorias = ce.matCategorias.filter(function(x){ return x!==mcd; }); return ok("Categoria removida."); }
     case "mat_add": {
-      var cat = porId(ce.matCategorias, a.categoriaId); if(!cat) return recusa("Escolha a categoria."); var nmm = trim(a.material); if(!nmm) return recusa("Informe o material."); var unm = trim(a.unidade); if(!unm) return recusa("Informe a unidade (ex.: unid, caixa, pacote).");
+      var cat = porId(ce.matCategorias, a.categoriaId); if(!cat) return recusa("Escolha a categoria."); var nmm = trim(a.material); if(!nmm) return recusa("Informe o material."); var unm = padronizarUnidade(a.unidade); if(!unm) return recusa("Informe a unidade (ex.: unid, caixa, pacote).");
       if(!ehInt(a.estoqueMinimo===undefined ? 0 : a.estoqueMinimo) || num(a.estoqueMinimo===undefined ? 0 : a.estoqueMinimo)<0) return recusa("O estoque mínimo precisa ser um inteiro de 0 em diante."); if(a.fornecedorId && !porId(ce.fornecedores, a.fornecedorId)) return recusa("Fornecedor não encontrado.");
       var numero = ce.materiais.filter(function(m){ return mesmoId(m.categoriaId, cat.id); }).reduce(function(t, m){ return Math.max(t, m.numero); }, 0)+1;
       var nm2 = {id:proximoId(ce, a), categoriaId:cat.id, numero:numero, material:nmm, unidade:unm, fornecedorId:a.fornecedorId||null, fornecedor:fornNome(a.fornecedorId, a.fornecedor), estoqueMinimo:Math.round(num(a.estoqueMinimo)), estoqueAtual:0, atualizadoEm:null, ultimaContagem:null, ultimoCusto:null, parado:false, situacao:"NAO_PRECISA_COMPRAR", observacoes:trim(a.observacoes)};
@@ -831,10 +873,23 @@ function ceReduz(s, a){
       if(a.material!==undefined && !trim(a.material)) return recusa("Informe o material."); if(a.unidade!==undefined && !trim(a.unidade)) return recusa("Informe a unidade."); if(a.estoqueMinimo!==undefined && (!ehInt(a.estoqueMinimo) || num(a.estoqueMinimo)<0)) return recusa("O estoque mínimo precisa ser um inteiro de 0 em diante.");
       if(a.fornecedorId && !porId(ce.fornecedores, a.fornecedorId)) return recusa("Fornecedor não encontrado."); var nova = a.categoriaId!==undefined && !mesmoId(a.categoriaId, m2.categoriaId) ? porId(ce.matCategorias, a.categoriaId) : null; if(a.categoriaId!==undefined && !mesmoId(a.categoriaId, m2.categoriaId) && !nova) return recusa("Categoria não encontrada.");
       var troca = function(k, nv){ if(nv!==m2[k]){ dif.push(rot[k]+": \""+(m2[k]===""||m2[k]==null ? "—" : m2[k])+"\" → \""+(nv===""||nv==null ? "—" : nv)+"\""); m2[k] = nv; } };
-      if(a.material!==undefined) troca("material", trim(a.material)); if(a.unidade!==undefined) troca("unidade", trim(a.unidade)); if(a.estoqueMinimo!==undefined) troca("estoqueMinimo", Math.round(num(a.estoqueMinimo))); if(a.observacoes!==undefined) troca("observacoes", trim(a.observacoes));
+      if(a.material!==undefined) troca("material", trim(a.material)); if(a.unidade!==undefined) troca("unidade", padronizarUnidade(a.unidade)); if(a.estoqueMinimo!==undefined) troca("estoqueMinimo", Math.round(num(a.estoqueMinimo))); if(a.observacoes!==undefined) troca("observacoes", trim(a.observacoes));
       if(a.fornecedorId!==undefined || a.fornecedor!==undefined){ m2.fornecedorId = a.fornecedorId||null; troca("fornecedor", fornNome(a.fornecedorId, a.fornecedor!==undefined ? a.fornecedor : m2.fornecedor)); }
       if(nova){ var antigaNome = nomeDe(ce.matCategorias, m2.categoriaId, ""); m2.categoriaId = nova.id; m2.numero = ce.materiais.filter(function(m){ return m!==m2 && mesmoId(m.categoriaId, nova.id); }).reduce(function(t, m){ return Math.max(t, m.numero); }, 0)+1; dif.push("Categoria: \""+antigaNome+"\" → \""+nova.nome+"\" (novo nº "+m2.numero+")"); }   // o original mantinha o nº antigo e podia repetir: aqui renumera
       if(!dif.length) return ok("Nada mudou."); logMat(ce, m2, "EDITADO", dif.join("; "), por, agora); return ok("Material atualizado.");
+    }
+    case "fornecedores_padronizar": {   // 17/11/2026: idempotente. Renomeia o cadastro para o nome padrão, cadastra quem falta (materiais e compras) e liga cada material e cada compra ao cadastro. O nome antigo do material fica na linha do tempo.
+      var alt = 0, novosF = 0;
+      var achaF = function(n){ var k = norm(n); return ce.fornecedores.filter(function(z){ return norm(z.nome)===k; })[0] || null; };
+      ce.fornecedores.forEach(function(f0){ var n0 = padronizarFornecedor(f0.nome); if(n0 && n0!==f0.nome){ var outro = achaF(n0); if(!outro || outro===f0){ f0.nome = n0; alt++; } } });
+      var garanteF = function(txt){ var n1 = padronizarFornecedor(txt); if(!n1) return null; var f1 = achaF(n1); if(!f1){ f1 = {id:proximoId(ce), nome:n1, documento:"", telefone:"", email:"", contato:"", observacao:"", ativo:true}; ce.fornecedores.push(f1); novosF++; } return f1; };
+      ce.materiais.forEach(function(mm){ var f2 = garanteF(mm.fornecedor); if(f2 && (mm.fornecedor!==f2.nome || !mesmoId(mm.fornecedorId, f2.id))){ if(mm.fornecedor!==f2.nome) logMat(ce, mm, "EDITADO", "Fornecedor padronizado: \""+(mm.fornecedor||"—")+"\" → \""+f2.nome+"\"", por, agora); mm.fornecedor = f2.nome; mm.fornecedorId = f2.id; alt++; } });
+      ce.pedidos.forEach(function(pp){ var f3 = pp.fornecedorId ? porId(ce.fornecedores, pp.fornecedorId) : garanteF(pp.fornecedorNome); if(f3 && (pp.fornecedorNome!==f3.nome || !mesmoId(pp.fornecedorId, f3.id))){ pp.fornecedorNome = f3.nome; pp.fornecedorId = f3.id; alt++; } else if(!f3 && !pp.fornecedorId && trim(pp.fornecedorNome) && !padronizarFornecedor(pp.fornecedorNome)){ pp.fornecedorNome = ""; alt++; } });   // "SEM FORNECEDOR" escrito à mão vira vazio
+      if(!alt && !novosF) return recusa("Os fornecedores já estão padronizados."); return ok(alt+(alt===1 ? " registro ajustado" : " registros ajustados")+(novosF ? " e "+novosF+(novosF===1 ? " fornecedor cadastrado." : " fornecedores cadastrados.") : "."));
+    }
+    case "mat_unidades_padronizar": {   // 17/11/2026: regrava a unidade de TODOS os materiais no padrão. Idempotente: o que já está certo não muda. O texto antigo fica na linha do tempo de cada material.
+      var mudou = 0; ce.materiais.forEach(function(mm){ var nova2 = padronizarUnidade(mm.unidade); if(nova2 && nova2!==mm.unidade){ logMat(ce, mm, "EDITADO", "Unidade padronizada: \""+mm.unidade+"\" → \""+nova2+"\"", por, agora); mm.unidade = nova2; mudou++; } });
+      if(!mudou) return recusa("Todas as unidades já estão no padrão."); return ok(mudou+(mudou===1 ? " material teve" : " materiais tiveram")+" a unidade padronizada.");
     }
     case "mat_parado": { var m3 = mat(); if(!m3) return recusa("Material não encontrado."); m3.parado = a.parado!==false; logMat(ce, m3, "EDITADO", m3.parado ? "Marcado como parado" : "Voltou a ser ativo", por, agora); return ok(m3.parado ? "Material parado: sai dos alertas." : "Material voltou a ser ativo."); }
     case "mat_situacao": { var m4 = mat(); if(!m4) return recusa("Material não encontrado."); if(SITUACOES.indexOf(a.situacao)<0) return recusa("Situação desconhecida."); m4.situacao = a.situacao; return ok("Situação: "+ROTULO_SITUACAO[a.situacao]+"."); }
@@ -973,7 +1028,7 @@ export { ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
   CONFIG_PADRAO, STATUS_PEDIDO, ROTULO_STATUS, TOM_STATUS, FUNIL_STATUS, HISTORICO_STATUS, PAGAVEL_STATUS, ETIQUETA_ELEGIVEL, ETIQUETAS, ROTULO_ETIQUETA, UNIDADES, ROTULO_UNIDADE, URGENCIAS, ROTULO_URGENCIA, TIPOS_ENTREGA, ROTULO_ENTREGA,
   FORMAS_PAGAMENTO, ROTULO_FORMA, FORMAS_PLANO, ROTULO_FORMA_PLANO, MOTIVOS_ORCAMENTO, ROTULO_MOTIVO_ORC, PAPEIS_COMPRAS, ROTULO_PAPEL, CAPS_COMPRAS, TRANSICOES,
   SITUACOES, ROTULO_SITUACAO, ANDAMENTOS, ROTULO_ANDAMENTO, ANDAMENTO_DO_PEDIDO, andamentoMaterial, comprasDoMaterial, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
-  formatarReais, formatarDia, formatarDataHora, formatarHoras,
+  formatarReais, formatarDia, formatarDataHora, formatarHoras, padronizarUnidade, padronizarFornecedor, estoqueDaSolicitacao,
   papelCompras, podeCompras, veFunilCompleto, podeAprovarCompra, podeEfetuarCompra, podeEditarPlano, capacidadesEstoque, podeEstoque,
   rotuloConta, rotuloCnpj, opcoesCnpj, contasDoCnpj, orcamentosExigidos, textoOrcamentos, entraNoEstoque, planoSituacao, totalDaCompra, compraParaPedidoPagamentos, compraParaOrientacoes,
   pedidoAtrasado, acoesDoPedido, podeAcaoPedido, pedidoVista, listarPedidos, pedidoDe, indicadoresPedidos, dashboardCompras, pagamentosAPagar,

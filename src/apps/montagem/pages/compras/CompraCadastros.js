@@ -1,26 +1,19 @@
 // Sorelly Admin · montagem — pages/compras/CompraCadastros.js
 // Materiais & Estoque → aba "Cadastros": fornecedores, contas por CNPJ, catálogo de itens, setores, categorias de compra e categorias do estoque.
-// Blocos azuis lado a lado num mosaico; cada cadastro abre em janela com colunas (Editor). Regras no domínio (forn_*, conta_*, catalogo_*, setor_*, cat_*, mcat_*).
-import { Mosaico, Pagina, ESTADO, degrade } from "@/apps/montagem/components/padrao";
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+// PADRÃO AZUL (Marcus, 17/11/2026: "refaz cadastros e configurações no mesmo padrão"): um bloco azul com UMA faixa (menu suspenso com o cadastro e o botão Novo) e UMA tabela com filtro e ordem em cada coluna; cada linha abre a janela com colunas (Editor). Regras no domínio (forn_*, conta_*, catalogo_*, setor_*, cat_*, mcat_*).
+import { Pagina } from "@/apps/montagem/components/padrao";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { SEL } from "@/apps/montagem/components/faixa-azul";
+import { normal } from "@/apps/montagem/pages/compras/pecas";
 import { FORMAS_PAGAMENTO, PAGAVEL_STATUS, ROTULO_FORMA, ROTULO_UNIDADE, UNIDADES, formatarDia, formatarReais, opcoesCnpj, rotuloConta, rotuloCnpj, totalDaCompra } from "@/apps/montagem/domain/compras-estoque";
-import { Bt, BtMini, Busca, Editor, Num, Selo, Vazio, useCe } from "@/apps/montagem/pages/compras/visualCompras";
-import { MONO } from "@/apps/montagem/ui/input";
+import { Editor, Num, useCe } from "@/apps/montagem/pages/compras/visualCompras";
 import { e, useState } from "@/shared/react";
 
 var norm = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var idv = function(s){ return s==="" || s==null ? null : isNaN(Number(s)) ? s : Number(s); };
 var digitos = function(v){ return String(v||"").replace(/\D/g, ""); };
 var IC_FORMA = {CARTAO:"credit-card", PIX:"qr-code", DINHEIRO:"coins", BOLETO:"barcode"};
-
-// cartão clicável de um cadastro: título, linhas pequenas, selos
-function CartaoCad(p){
-  return e("button",{type:"button", onClick:p.onClick, title:"Abrir o cadastro", className:"flex min-w-0 cursor-pointer flex-col items-center gap-1 rounded-xl p-2.5 text-center transition hover:brightness-125 "+(p.inativo ? "opacity-55" : ""), style:degrade(p.cor || "info")},
-    p.cabeca, e("b",{className:"max-w-full break-words text-[13.5px] leading-tight"}, p.t), (p.linhas||[]).filter(Boolean).map(function(l, i){ return e("span",{key:i, className:"max-w-full break-words text-[11.5px] leading-tight text-white/70"}, l); }), p.rodape);
-}
-var GRADE = {display:"grid", gridTemplateColumns:"repeat(auto-fill, minmax(11rem, 1fr))"};
-function Barra(p){ return e("div",{className:"flex flex-wrap items-center justify-center gap-2 p-2 pb-0"}, p.children); }
 
 // estatística do fornecedor: compras efetuadas, total no ano e última compra (pedidos do módulo de compras)
 function statsForn(ce, f){
@@ -30,58 +23,44 @@ function statsForn(ce, f){
 }
 
 function AbaCompraCadastros(pr){
-  var x = useCe(), ce = x.ce, cfg = x.cfg, sJ = useState((pr && pr.janIni) || null), sQf = useState(""), sQc = useState(""), sMais = useState(24);
+  var x = useCe(), ce = x.ce, cfg = x.cfg, sJ = useState((pr && pr.janIni) || null), sCad = useState("forn");
   var jan = sJ[0], ok = x.cadastros, fechar = function(){ sJ[1](null); }, abrir = function(k, id, extra){ sJ[1](Object.assign({k:k, id:id==null ? null : id}, extra)); };
   var acha = function(lista, id){ return lista.filter(function(z){ return String(z.id)===String(id); })[0] || null; };
-  var novoBt = function(rot, k, extra){ return e(Bt,{tipo:"forte", ic:"plus", className:"h-9 py-0!", disabled:!ok, semAut:true, onClick:function(){ abrir(k, null, extra); }}, rot); };
   var classOps = cfg.classificacoes.map(function(c){ return [c.id, c.nome]; });
 
-  // ----- fornecedores
-  var alvoF = norm(sQf[0]), forns = ce.fornecedores.filter(function(f){ return !alvoF || norm([f.nome, f.documento, f.contato, f.telefone].join(" ")).indexOf(alvoF)>=0; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
-  var blocoForn = e(BlocoBarra,{key:"f", cor:"azul", compacto:true, t:"Fornecedores", dir:ce.fornecedores.length},
-    e(Barra,null, e(Busca,{v:sQf[0], set:sQf[1], ph:"Buscar fornecedor, documento ou contato"}), novoBt("Novo fornecedor", "forn")),
-    e("div",{className:"p-2"}, forns.length ? e("div",{className:"gap-2", style:GRADE}, forns.map(function(f){ var st = statsForn(ce, f);
-      return e(CartaoCad,{key:f.id, t:f.nome, inativo:f.ativo===false, onClick:function(){ abrir("forn", f.id); }, linhas:[f.documento, f.telefone || f.email, f.contato, st.n ? st.n+(st.n===1 ? " compra" : " compras")+" no ano · "+formatarReais(st.total) : "Sem compras no ano", st.ultima ? "Última compra em "+formatarDia(st.ultima) : ""],
-        rodape:f.ativo===false && e(Selo,{cor:"neutro"}, "Inativo")}); }))
-      : e(Vazio,{ic:"storefront"}, ce.fornecedores.length ? "Nenhum fornecedor encontrado." : "Nenhum fornecedor cadastrado.")));
-
-  // ----- contas por CNPJ
-  var contas = ce.contas.slice().sort(function(a, b){ return String(a.cnpjId||"~").localeCompare(String(b.cnpjId||"~")); });
-  var blocoContas = e(BlocoBarra,{key:"k", cor:"azul", compacto:true, t:"Contas por CNPJ", dir:ce.contas.length},
-    e(Barra,null, novoBt("Nova conta", "conta")),
-    e("div",{className:"p-2"}, contas.length ? e("div",{className:"gap-2", style:GRADE}, contas.map(function(c){
-      return e(CartaoCad,{key:c.id, t:c.rotulo || rotuloConta(c), inativo:c.ativa===false, onClick:function(){ abrir("conta", c.id); }, cabeca:e(Ph,{n:IC_FORMA[c.tipo]||"bank", s:20, className:"text-white/80"}),
-        linhas:[c.rotulo ? rotuloConta(c) : "", "Titular: "+c.titular, c.cnpjId ? rotuloCnpj(c.cnpjId, "", cfg) : "Sem CNPJ definido"], rodape:c.ativa===false && e(Selo,{cor:"neutro"}, "Inativa")}); }))
-      : e(Vazio,{ic:"bank"}, "Nenhuma conta cadastrada.")));
-
-  // ----- catálogo
-  var alvoC = norm(sQc[0]), cat = ce.catalogo.filter(function(c){ return !alvoC || norm([c.nome].concat(c.apelidos||[]).join(" ")).indexOf(alvoC)>=0; }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
-  var blocoCat = e(BlocoBarra,{key:"c", cor:"azul", compacto:true, t:"Catálogo de itens", dir:ce.catalogo.length},
-    e(Barra,null, e(Busca,{v:sQc[0], set:sQc[1], ph:"Buscar item do catálogo"}), novoBt("Novo item", "catalogo")),
-    e("div",{className:"p-2"}, cat.length ? e("div",{className:"flex flex-col items-center gap-2"}, e("div",{className:"w-full gap-2", style:GRADE}, cat.slice(0, sMais[0]).map(function(c){ var cl = cfg.classificacoes.filter(function(z){ return z.id===c.classificacao; })[0];
-      return e(CartaoCad,{key:c.id, t:c.nome, onClick:function(){ abrir("catalogo", c.id); }, linhas:[(ROTULO_UNIDADE[c.unidade]||c.unidade)+(c.precoRef!=null ? " · Ref. "+formatarReais(c.precoRef) : ""), acha(ce.categorias, c.categoriaId) ? acha(ce.categorias, c.categoriaId).nome : ""],
-        rodape:e("div",{className:"flex flex-wrap justify-center gap-1"}, e(Selo,{cor:cl && cl.entraEstoque ? "ok" : "neutro"}, cl ? cl.nome : c.classificacao), c.materialId!=null && e(Selo,{cor:"info", ic:"package", titulo:"Ligado a um material do estoque"}, "Estoque"))}); })),
-      cat.length>sMais[0] && e(Bt,{onClick:function(){ sMais[1](sMais[0]+24); }}, "Ver mais "+Math.min(24, cat.length-sMais[0])))
-      : e(Vazio,{ic:"books"}, ce.catalogo.length ? "Nenhum item encontrado." : "Nenhum item no catálogo.")));
-
-  // ----- setores e categorias de compra
-  var lista = function(chave, titulo, k, itens, icone, comCor){
-    return e(BlocoBarra,{key:chave, cor:"azul", compacto:true, t:titulo, dir:itens.length},
-      e(Barra,null, novoBt(chave==="s" ? "Novo setor" : "Nova categoria", k)),
-      e("div",{className:"p-2"}, itens.length ? e("div",{className:"flex flex-wrap justify-center gap-2"}, itens.slice().sort(function(a, b){ return (a.ordem-b.ordem) || a.nome.localeCompare(b.nome); }).map(function(it){
-        return e("button",{key:it.id, type:"button", onClick:function(){ abrir(k, it.id); }, title:"Abrir o cadastro", className:"inline-flex cursor-pointer items-center gap-2 rounded-xl bg-white/10 px-3 py-1.5 text-[13px] font-bold ring-1 ring-white/15 hover:bg-white/20"},
-          comCor ? e("span",{"aria-hidden":true, className:"size-3 rounded-full", style:{background:it.cor || "#3B82F6"}}) : e(Ph,{n:icone, s:14, className:"text-white/70"}), it.nome, e("span",{className:MONO+" text-[11px] text-white/55"}, it.ordem)); }))
-        : e(Vazio,{ic:icone}, chave==="s" ? "Nenhum setor cadastrado." : "Nenhuma categoria cadastrada.")));
-  };
-  var blocoSetores = lista("s", "Setores solicitantes", "setor", ce.setores, "buildings", true);
-  var blocoCatCompra = lista("g", "Categorias de compra", "cat", ce.categorias, "tag", false);
-
-  // ----- categorias do estoque, por aba
-  var blocoMcat = e(BlocoBarra,{key:"m", cor:"azul", compacto:true, t:"Categorias do estoque", dir:ce.matCategorias.length},
-    e("div",{className:"flex flex-col gap-2 p-2"}, cfg.tipos.map(function(t){ var cs = ce.matCategorias.filter(function(c){ return c.tipoId===t.id; }).sort(function(a, b){ return (a.ordem-b.ordem) || a.nome.localeCompare(b.nome); });
-      return e("div",{key:t.id, className:"flex flex-col items-center gap-1.5 rounded-xl bg-black/20 p-2 ring-1 ring-white/10"}, e("span",{className:"text-[11.5px] font-bold uppercase tracking-wide text-white/75"}, t.nome),
-        e("div",{className:"flex flex-wrap justify-center gap-1.5"}, cs.map(function(c){ return e("button",{key:c.id, type:"button", onClick:function(){ abrir("mcat", c.id); }, title:"Abrir o cadastro", className:"cursor-pointer rounded-lg bg-white/10 px-2.5 py-1 text-[12.5px] font-bold ring-1 ring-white/15 hover:bg-white/20"}, c.nome); }),
-          cs.length===0 && e("span",{className:"text-[12px] text-white/55"}, "Nenhuma categoria nesta aba."), e(BtMini,{ic:"plus", forte:true, disabled:!ok, titulo:ok ? "Nova categoria nesta aba" : "Sem autorização", onClick:function(){ abrir("mcat", null, {tipoId:t.id}); }}, "Nova"))); })));
+  // ----- um cadastro por vez, cada um numa tabela (colunas = o que antes aparecia nos cartões)
+  var CADASTROS = [["forn", "Fornecedores", ce.fornecedores.length, "Novo fornecedor"], ["conta", "Contas por CNPJ", ce.contas.length, "Nova conta"], ["catalogo", "Catálogo de itens", ce.catalogo.length, "Novo item"],
+    ["setor", "Setores solicitantes", ce.setores.length, "Novo setor"], ["cat", "Categorias de compra", ce.categorias.length, "Nova categoria"], ["mcat", "Categorias do estoque", ce.matCategorias.length, "Nova categoria"]];
+  var tela = CADASTROS.some(function(c){ return c[0]===sCad[0]; }) ? sCad[0] : "forn", atual = CADASTROS.filter(function(c){ return c[0]===tela; })[0];
+  var porNome = function(a, b){ return String(a.nome).localeCompare(String(b.nome), "pt-BR"); };
+  var porOrdem = function(a, b){ return (a.ordem-b.ordem) || porNome(a, b); };
+  var colSit = {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Ativo" || l.sit==="Ativa" ? "text-success" : ""; }};
+  var cols, linhas;
+  if(tela==="forn"){
+    cols = [{k:"nome", t:"Fornecedor"}, {k:"doc", t:"Documento"}, {k:"tel", t:"Telefone ou e-mail"}, {k:"contato", t:"Contato"}, {k:"n", t:"Compras no ano"}, {k:"total", t:"Total no ano"}, {k:"ultima", t:"Última compra", fmt:formatarDia}, colSit];
+    linhas = ce.fornecedores.slice().sort(porNome).map(function(f){ var st = statsForn(ce, f);
+      return {id:f.id, nome:normal(f.nome), doc:f.documento || "—", tel:f.telefone || f.email || "—", contato:f.contato || "—", n:String(st.n), total:formatarReais(st.total), ultima:st.ultima || "", sit:f.ativo===false ? "Inativo" : "Ativo"}; });
+  } else if(tela==="conta"){
+    cols = [{k:"nome", t:"Conta"}, {k:"tipo", t:"Tipo"}, {k:"titular", t:"Titular"}, {k:"cnpj", t:"CNPJ pagador"}, colSit];
+    linhas = ce.contas.slice().sort(function(a, b){ return String(a.cnpjId||"~").localeCompare(String(b.cnpjId||"~")); }).map(function(c){
+      return {id:c.id, nome:c.rotulo || rotuloConta(c), tipo:ROTULO_FORMA[c.tipo] || c.tipo || "—", titular:c.titular || "—", cnpj:c.cnpjId ? rotuloCnpj(c.cnpjId, "", cfg) : "Sem CNPJ definido", sit:c.ativa===false ? "Inativa" : "Ativa"}; });
+  } else if(tela==="catalogo"){
+    cols = [{k:"nome", t:"Item"}, {k:"un", t:"Unidade"}, {k:"ref", t:"Preço de referência"}, {k:"cat", t:"Categoria de compra"}, {k:"cls", t:"Classificação"}, {k:"est", t:"Ligado ao estoque"}, {k:"apelidos", t:"Outros nomes"}];
+    linhas = ce.catalogo.slice().sort(porNome).map(function(c){ var cl = cfg.classificacoes.filter(function(z){ return z.id===c.classificacao; })[0], ct = acha(ce.categorias, c.categoriaId);
+      return {id:c.id, nome:normal(c.nome), un:ROTULO_UNIDADE[c.unidade] || c.unidade || "—", ref:c.precoRef!=null ? formatarReais(c.precoRef) : "—", cat:ct ? ct.nome : "—", cls:cl ? cl.nome : c.classificacao || "—", est:c.materialId!=null ? "Sim" : "Não", apelidos:(c.apelidos||[]).join(", ") || "—"}; });
+  } else if(tela==="setor" || tela==="cat"){
+    var ehS = tela==="setor";
+    cols = [{k:"nome", t:ehS ? "Setor" : "Categoria"}].concat(ehS ? [{k:"cor", t:"Cor", render:function(v, l){ return e("span",{className:"inline-flex items-center justify-center gap-1.5"}, e("span",{"aria-hidden":true, className:"size-3 rounded-sm border border-white/40", style:{background:l.corHex}}), v); }}] : [], [{k:"ordem", t:"Ordem"}]);
+    linhas = (ehS ? ce.setores : ce.categorias).slice().sort(porOrdem).map(function(it){ return {id:it.id, nome:normal(it.nome), cor:it.cor || "#3B82F6", corHex:it.cor || "#3B82F6", ordem:String(it.ordem)}; });
+  } else {
+    cols = [{k:"nome", t:"Categoria"}, {k:"aba", t:"Aba do estoque"}, {k:"qtd", t:"Materiais"}, {k:"ordem", t:"Ordem"}];
+    linhas = ce.matCategorias.slice().sort(function(a, b){ return String(a.tipoId).localeCompare(String(b.tipoId)) || porOrdem(a, b); }).map(function(c){ var t = cfg.tipos.filter(function(z){ return z.id===c.tipoId; })[0];
+      return {id:c.id, nome:normal(c.nome), aba:t ? t.nome : "—", qtd:String(ce.materiais.filter(function(m){ return String(m.categoriaId)===String(c.id); }).length), ordem:String(c.ordem)}; });
+  }
+  var tabela = e(TabelaPlanilha,{key:"cad"+tela, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, limite:300, aoClicar:function(l){ abrir(tela, l.id); }, vazio:"Nenhum cadastro nesta lista."});
+  var faixa = e("div",{className:"flex flex-nowrap items-center gap-2 overflow-x-auto border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
+    e("select",{"aria-label":"Cadastro", value:tela, onChange:function(ev){ sCad[1](ev.target.value); }, className:SEL+" w-auto shrink-0"}, CADASTROS.map(function(c){ return e("option",{key:c[0], value:c[0]}, c[1]+" · "+c[2]); })),
+    e("button",{type:"button", disabled:!ok, onClick:function(){ abrir(tela, null); }, title:ok ? "Cadastrar" : "Sem autorização", className:"ml-auto h-7 shrink-0 whitespace-nowrap rounded-md border border-white/50 bg-white px-2.5 text-[13px] font-semibold text-[#14233f] disabled:opacity-40"}, atual[3]));   // padrao-ok: botão menor na faixa azul, como no Funil de compras
 
   // ----- janelas
   var janela = null;
@@ -124,9 +103,8 @@ function AbaCompraCadastros(pr){
         onExcluir:novo ? null : function(){ return x.exec("mcat_del", {id:mc.id}); }}); }
   }
 
-  return e(Pagina,null,
-    !ok && e("p",{className:"rounded-xl bg-[#FBBF24]/15 px-3 py-2 text-center text-[12.5px] font-bold text-[#FBBF24]"}, "Os cadastros estão disponíveis para consulta. A alteração exige autorização de Compras ou do estoque."),
-    e(Mosaico,{min:"30rem"}, blocoForn, blocoContas, blocoCat, blocoSetores, blocoCatCompra, blocoMcat),
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+    e(BlocoPainel,{titulo:atual[1], compacto:true, dir:!ok ? "Somente consulta" : undefined}, faixa, tabela),
     janela);
 }
 
