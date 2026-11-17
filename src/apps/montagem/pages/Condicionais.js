@@ -139,16 +139,17 @@ function AbaCondicionais(){
     doDia.filter(function(k){ return k.lid===l.id; }).sort(function(a, b){ return (a.ordem||0)-(b.ordem||0); }).forEach(function(k){
       var nums = condVisiveisPre(k), lib = k.status!=="precond", ok = condOkPre(k), feitas = nums.filter(function(n){ return condEstado(k, n).p; }).length, faltas = nums.filter(function(n){ return condEstado(k, n).falta; }).length;
       var sit = lib ? "Liberada" : faltas ? faltas+" falta"+(faltas>1 ? "m" : "") : ok ? "Conferida" : "A conferir";
-      linhas.push({id:k.id, kit:k, l:l, grupo:grupo, hora:k.horaAtend || l.horario, rev:(k.prio ? "★ " : "")+k.rev, tipo:(TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit)[1],
+      linhas.push({id:k.id, kit:k, l:l, grupo:grupo, hora:l.horario, atend:k.horaAtend || "—", rev:(k.prio ? "★ " : "")+k.rev, tipo:(TIPO_KIT[k.tipoKit] || TIPO_KIT.acerto_kit)[1],
         conds:nums.length ? nums.map(function(n){ var st = condEstado(k, n); return (st.p ? "✓ " : st.falta ? "! " : "")+n; }).join("   ") : "Sem condicional",
         feitas:feitas+" de "+nums.length, sit:sit, lib:lib, ok:ok, n:nums.length});
     });
   });
 
   var cols = [
-    {k:"hora", t:"Horário"},
+    {k:"hora", t:"Listagem"},   // 17/11/2026 (Marcus): a coluna mostra o horário da LISTAGEM (o mesmo da representante); o horário de cada revendedora fica na coluna Atendimento, menos importante
     {k:"rev", t:"Revendedora"},
     {k:"tipo", t:"Tipo"},
+    {k:"atend", t:"Atendimento"},
     {k:"conds", t:"Condicionais", render:function(v, l){ var ns = condVisiveisPre(l.kit); return ns.length ? e("span",{className:MONO+" font-bold tabular-nums whitespace-nowrap"}, ns.map(function(n, i){ var st = condEstado(l.kit, n); return e("span",{key:n, className:(st.p ? "text-success" : st.falta ? "text-destructive" : "")+(i ? " ml-3" : "")}, (st.p ? "✓ " : st.falta ? "! " : "")+n); })) : v; }},
     {k:"feitas", t:"Conferidas"},
     {k:"sit", t:"Situação", cor:function(l){ return (COR_ST[l.sit] || "text-destructive")+" font-semibold"; }},
@@ -172,7 +173,7 @@ function AbaCondicionais(){
         // o dia fica à ESQUERDA, na mesma linha do título (uma linha só no topo; Marcus, 16/11/2026)
         acao:dias.length>0 ? e(MenuDias,{dias:dias, sel:diasAtivos, onChange:setDiaSel, antigas:verAntigas, onAntigas:setVerAntigas}) : null},
       e("div",{className:"[&_td[colspan]]:!bg-[var(--bloco-colunas)] [&_td[colspan]]:!text-white [&_tr]:!cursor-default [&_td]:!cursor-default"}, e(TabelaPlanilha,{key:"cond", cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true,
-        agrupar:"grupo", rotuloGrupo:function(g, q){ var p0 = String(g).split("|"); return tituloAba(p0[0])+" · "+p0[2]+" · "+p0[1]+" · "+q+" revendedora"+(q>1 ? "s" : ""); },
+        agrupar:"grupo", rotuloGrupo:function(g, q){ var p0 = String(g).split("|"); return p0[1]+" · "+p0[2]+" · "+tituloAba(p0[0])+" · "+q+" revendedora"+(q>1 ? "s" : ""); },   // 17/11/2026 (Marcus): tamanho padrão, com o horário da listagem à ESQUERDA
         grupoAberto:function(g){ return !fech[g]; }, aoGrupo:function(g){ var o = Object.assign({}, fech); o[g] = !fech[g]; setFech(o); },
         aoClicar:function(l){ setAberta(l.id); },
         vazio:"Nenhuma condicional aguardando conferência."}))));

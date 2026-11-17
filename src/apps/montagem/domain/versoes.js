@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.70", data:"2026-11-17", titulo:"Condicionais: horário da listagem à esquerda", itens:[
+  {tipo:"melhoria", area:"Condicionais", txt:"A primeira coluna agora mostra o horário da LISTAGEM (o mesmo da representante) e a linha de cada listagem começa pelo horário. O horário de atendimento de cada revendedora ficou na coluna Atendimento, menos em destaque. Pedido do Marcus."}]},
  {v:"0.20.69", data:"2026-11-17", titulo:"Faturamento: campos do Lançar acompanham o servidor", itens:[
   {tipo:"correção", area:"Financeiro → Faturamento", txt:"Os campos da aba Lançar mostravam os números de quando a tela abriu (dia anterior, Carregar e a realizar antigos) e podiam voltar a gravar valores velhos. Agora refazem quando o dado muda no servidor."}
  ]},
