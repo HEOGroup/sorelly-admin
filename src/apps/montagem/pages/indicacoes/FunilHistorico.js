@@ -13,6 +13,7 @@ import { use } from "@/apps/montagem/state/context";
 import { INPUT } from "@/apps/montagem/ui/input";
 import { Alternar, Avatar, Bt, BtMini, Busca, BuscaFaixa, Chip, Colunas, FaixaBloco, FiltroData, Janela, Painel, Passos, Resumo, Secao, Selo, cap1 } from "@/apps/montagem/pages/indicacoes/visual";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
+import { COMPACTO } from "@/apps/montagem/components/bloco-painel";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { Kanban } from "@/shared/kanban";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
@@ -221,21 +222,74 @@ function AbaIndFunil(){
 }
 
 // ───────────── Histórico ─────────────
-// 17/11/2026 (Marcus: "melhore e compacte"): tabela única no padrão (TabelaPlanilha), filtro e ordem no cabeçalho de cada coluna. Planilha antiga e kits entregues no sistema juntos; "Origem" separa.
+// 17/11/2026 (Marcus: "melhore, 3 blocos no topo: quem mais indica, representantes que mais indicam e algo útil; melhore as páginas"): bloco azul com tabela única (TabelaPlanilha), filtro e ordem no cabeçalho de cada coluna e páginas de 50 em 50.
+// Planilha antiga e kits entregues no sistema juntos; "Origem" separa. Os 3 blocos do topo são LISTAS (não faixa de números): Top 10 revendedoras, Top 10 representantes e Aguardando documentos (indicadas paradas, da mais antiga para a mais nova).
+var limpaNome = function(n){ return String(n || "").replace(/^\s*(rev|rep|revendedora|representante)\s+/i, "").trim(); };
+var chaveNome = function(n){ return limpaNome(n).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/\s+/g, " "); };
+var corSituacao = function(l){ var s = String(l.situacao || "").toLowerCase(); return s==="kit entregue" ? "text-emerald-400 font-semibold" : /documentos/.test(s) ? "text-amber-300 font-semibold" : /reprovad|sem interesse|cancelad/.test(s) ? "text-red-400" : ""; };
 var COLS_HIST = [
   {k:"quando", t:"Quando", fmt:function(v){ return formatarDataHora(v) || "—"; }}, {k:"nomeRevendedora", t:"Revendedora"}, {k:"categoria", t:"Categoria"}, {k:"nomeIndicada", t:"Indicada"}, {k:"telefone", t:"Telefone da indicada"},
-  {k:"situacao", t:"Situação", cor:function(l){ return l.situacao==="Kit entregue" ? "text-emerald-400 font-semibold" : ""; }}, {k:"origem", t:"Origem"}, {k:"moedas", t:"Moedas"}, {k:"aVerificar", t:"A verificar"}, {k:"detalhe", t:"Detalhe"}];
+  {k:"situacao", t:"Situação", cor:corSituacao}, {k:"origem", t:"Origem"}, {k:"moedas", t:"Moedas", cor:function(l){ return l.moedas!=="—" ? "text-primary font-semibold" : ""; }}, {k:"aVerificar", t:"A verificar"}, {k:"detalhe", t:"Detalhe"}];
+// lista de ranking: posição, nome e dois números (indicações e kits entregues)
+// 17/11/2026 (Marcus: "fonte bem menor, sobe os blocos e joga para a esquerda"): letra de 11 px, linha baixa, blocos estreitos encostados à esquerda.
+var COL_TOP = "grid grid-cols-[1.25rem_minmax(0,1fr)_4.5rem_2.75rem] items-center gap-1.5 px-2 text-[11px]";
+function ListaTop(p){
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:COL_TOP+" bg-[var(--bloco-colunas)] py-0.5 font-bold uppercase tracking-[.05em] text-white"}, e("span",{className:"text-center"},"#"), e("span",null,"Nome"), e("span",{className:"text-center"},p.c1), e("span",{className:"text-center"},p.c2)),
+    p.itens.length===0 && e("p",{className:"px-2 py-2 text-[11px]"}, "Nada para mostrar ainda."),
+    p.itens.map(function(x, i){ return e("div",{key:x.k, className:COL_TOP+" border-t border-white/30 py-0.5 "+(i%2 ? "bg-white/[0.04]" : "")},
+      e("span",{className:"text-center tabular-nums"}, i+1), e("span",{className:"min-w-0 break-words"}, x.nome), e("b",{className:"text-center tabular-nums"}, x.a), e("span",{className:"text-center tabular-nums "+(x.b>0 ? "font-semibold text-emerald-400" : "")}, x.b)); }));
+}
+// uma linha por situação (Aguardando documentos, Cadastradas, Aprovadas no funil...) com a quantidade
+function ListaSituacao(p){
+  var G = "grid grid-cols-[minmax(0,1fr)_3.5rem] items-center gap-1.5 px-2 text-[11px]";
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:G+" bg-[var(--bloco-colunas)] py-0.5 font-bold uppercase tracking-[.05em] text-white"}, e("span",null,"Situação"), e("span",{className:"text-center"},"Indicadas")),
+    p.itens.map(function(x, i){ return e("div",{key:x.t, className:G+" border-t border-white/30 py-0.5 "+(i%2 ? "bg-white/[0.04]" : "")}, e("span",{className:x.cor||""}, x.t), e("b",{className:"text-center tabular-nums "+(x.cor||"")}, x.n.toLocaleString("pt-BR"))); }));
+}
 function AbaIndHistorico(){
-  var cx = use(), ind = cx.state.ind;
-  var linhas = useMemo(function(){
+  var cx = use(), ind = cx.state.ind, hoje = hojeSP();
+  var base = useMemo(function(){
     var out = [], pg = 0;
     for(;;){ var h = historico(ind, {origem:"todas", pagina:pg, limite:100}); out = out.concat(h.itens); if(!h.paginacao.hasMore || pg>300) break; pg++; }
-    return out.map(function(x){ return {id:x.id, quando:x.quando||"", nomeRevendedora:x.nomeRevendedora, categoria:x.categoria||"—", nomeIndicada:x.nomeIndicada||"—", telefone:x.telefoneIndicada ? formatarTelefone(x.telefoneIndicada) : "—", situacao:x.situacao,
-      origem:x.origem==="sistema" ? "Sistema" : "Planilha antiga", moedas:x.contaMoedas ? formatarMoedas(x.moedas) : "—", aVerificar:x.aVerificar ? "Sim" : "Não", detalhe:x.detalhe || "—"}; });
+    return out;
   }, [ind]);
+  var linhas = useMemo(function(){
+    return base.map(function(x){ return {id:x.id, quando:x.quando||"", nomeRevendedora:limpaNome(x.nomeRevendedora), categoria:x.categoria||"—", nomeIndicada:x.nomeIndicada||"—", telefone:x.telefoneIndicada ? formatarTelefone(x.telefoneIndicada) : "—", situacao:x.situacao,
+      origem:x.origem==="sistema" ? "Sistema" : "Planilha antiga", moedas:x.contaMoedas ? formatarMoedas(x.moedas) : "—", aVerificar:x.aVerificar ? "Sim" : "Não", detalhe:x.detalhe || "—"}; });
+  }, [base]);
+  var tops = useMemo(function(){
+    var agrupa = function(filtro){ var m = {}; base.filter(filtro).forEach(function(x){ var k = chaveNome(x.nomeRevendedora); if(!k || k==="revendedora sem nome") return; var g = m[k] || (m[k] = {k:k, nome:limpaNome(x.nomeRevendedora), a:0, b:0}); g.a++; if(x.contaMoedas || x.situacao==="Kit entregue") g.b++; });
+      return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return b.a-a.a || b.b-a.b || a.nome.localeCompare(b.nome, "pt-BR"); }).slice(0, 12); };
+    var ehRep = function(x){ return String(x.categoria||"").toLowerCase()==="rep"; }, ehFunc = function(x){ return /funcion/i.test(x.categoria||""); };
+    // 17/11/2026 (Marcus: "menos coisas, agrupado, no máximo 10"): 8 linhas. Planilha antiga e funil de hoje juntos, agrupados pelo que importa para a Michele.
+    var cont = {}; base.forEach(function(x){ var s = String(x.situacao||"").toLowerCase(); cont[s] = (cont[s]||0)+1; });
+    var g = function(ks){ return ks.reduce(function(n, k){ return n+(cont[k]||0); }, 0); };
+    var tf = indicadoresFunil(ind).totais;
+    // 12 linhas (igual aos Top 12): o que estava junto em "Em andamento" (244) era quase tudo "Contato feito" da planilha antiga, parado há mais de 60 dias; agora fica em linha própria.
+    var aprov = ind.indicacoes.filter(function(x){ return x.etapa==="cadastro_aprovado"; }), aprovLongo = aprov.filter(function(x){ return diasEntre(diaDe(x.etapaAlteradaEm), hoje)>30; }).length;
+    var sit = [
+      {t:"Novas", n:g(["entrar em contato", "solicitado"])+(tf.criado||0)},
+      {t:"Em andamento (funil de hoje)", n:(tf.em_andamento||0)+g(["contatos de referência"])},
+      {t:"Contato feito (planilha antiga)", n:g(["contato feito"])},
+      {t:"Aguardando documentos", n:g(["aguardando documentos"]), cor:"text-amber-300"},
+      {t:"Aprovadas sem kit · até 30 dias", n:aprov.length-aprovLongo, cor:"text-primary"},
+      {t:"Aprovadas sem kit · mais de 30 dias", n:aprovLongo, cor:"text-amber-300"},
+      {t:"Cadastradas", n:g(["cadastrada"])},
+      {t:"Bipadas e liberadas", n:g(["bipado", "liberado", "retornando"])},
+      {t:"Kit entregue", n:g(["kit entregue"]), cor:"text-emerald-400"},
+      {t:"Reprovadas", n:g(["reprovada"]), cor:"text-red-400"},
+      {t:"Sem interesse", n:g(["sem interesse"]), cor:"text-red-400"},
+      {t:"Canceladas", n:g(["cancelado"])+(tf.cancelado||0), cor:"text-red-400"}];
+    return {revs:agrupa(function(x){ return !ehRep(x) && !ehFunc(x); }), reps:agrupa(ehRep), sit:sit};
+  }, [base]);
   return e(Pagina,null,
-    e(Secao,{t:"Histórico de indicações", dir:linhas.length.toLocaleString("pt-BR")+" registros", semPad:true},
-      e(TabelaPlanilha,{cols:COLS_HIST, linhas:linhas, chave:"id", escura:true, grade:true, limite:100, vazio:"Nenhum registro no histórico ainda. Os kits entregues pelo funil aparecem aqui automaticamente."})));
+    e("div",{className:"-mt-3 grid grid-cols-1 items-start gap-1.5 lg:grid-cols-3"},
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Top 12 · revendedoras que mais indicam", semPad:true}, e(ListaTop,{itens:tops.revs, c1:"Indicações", c2:"Kits"}))),
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Top 12 · representantes que mais indicam", semPad:true}, e(ListaTop,{itens:tops.reps, c1:"Indicações", c2:"Kits"}))),
+      e("div",{className:"min-w-0"}, e(Secao,{t:"Situação das indicadas", semPad:true}, e(ListaSituacao,{itens:tops.sit})))),
+    e("div",{className:"-mt-1.5 "+COMPACTO}, e(Secao,{t:"Histórico de indicações", dir:linhas.length.toLocaleString("pt-BR")+" registros", semPad:true},
+      e(TabelaPlanilha,{cols:COLS_HIST, linhas:linhas, chave:"id", escura:true, grade:true, limite:50, paginas:true, semContagem:true, semLimpar:true, vazio:"Nenhum registro no histórico ainda. Os kits entregues pelo funil aparecem aqui automaticamente."}))));
 }
 
 export { AbaIndFunil, AbaIndHistorico };

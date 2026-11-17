@@ -80,8 +80,9 @@ function ArvoreData(p){
 function MenuColuna(p){
   var c = p.col, sb = useState(""), busca = sb[0], setBusca = sb[1], ref = useRef(null), anc = useRef(null), sp = useState(null), pos = sp[0], setPos = sp[1];
   // o menu sai da tabela e abre no <body> (portal): nenhuma borda da planilha corta nem achata o menu (Contas a pagar, 12/11/2026). Abre embaixo do título da coluna e, se passar da borda da tela, encosta nela.
-  useEffect(function(){ var th = anc.current && anc.current.closest("th"); if(th){ var r0 = th.getBoundingClientRect(); setPos({top:r0.bottom+2, left:r0.left}); } }, []);
-  useEffect(function(){ var el = ref.current; if(!el || !pos) return; var r1 = el.getBoundingClientRect(), dx = r1.right-(window.innerWidth-8), dy = r1.bottom-(window.innerHeight-8); if(dx>0) el.style.left = (pos.left-dx)+"px"; if(dy>0) el.style.top = Math.max(8, pos.top-dy)+"px"; }, [pos]);
+  useEffect(function(){ var th = anc.current && anc.current.closest("th"); if(th){ var r0 = th.getBoundingClientRect(); setPos({top:Math.max(8, Math.min(r0.bottom+2, window.innerHeight-488)), left:Math.max(8, Math.min(r0.left, window.innerWidth-296))}); } }, []);
+  // 17/11/2026 (Marcus: "ele se mexe tudo"): o menu abre JÁ na posição final e não se mexe mais. Altura máxima reservada = 480 px (itens + lista de 256 px + "Limpar o filtro desta coluna"); se a tela for mais baixa, o menu encosta no topo e rola por dentro.
+
   var todos = p.valores, marc = p.filtro;   // marc = Set dos valores marcados, ou null = todos
   var vis = todos.filter(function(v){ return !busca || texto(v, c).toLowerCase().indexOf(busca.toLowerCase())>=0; });
   var tudoMarcado = !marc || vis.every(function(v){ return marc.has(v); });

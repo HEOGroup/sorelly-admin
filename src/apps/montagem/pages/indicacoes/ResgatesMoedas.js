@@ -165,29 +165,33 @@ function DialogoResgate(p){
 }
 
 // ───────────── cartão do Kanban ─────────────
+// 17/11/2026 (Marcus: "padronizar os cards"): mesmo cartão do Funil das indicações (e do quadro de Kits novos): duas linhas, barra colorida na lateral (verde em dia, âmbar atrasado, vermelha crítico) e menu ⋯ com as ações.
+function MenuAcoesResgate(p){
+  var st = useState(false), aberto = st[0];
+  return e("span",{className:"relative inline-flex", onClick:function(ev){ ev.stopPropagation(); }},
+    e("button",{type:"button", "aria-label":"Ações do pedido", title:"Ações do pedido", onClick:function(){ st[1](!aberto); }, className:"-my-1.5 h-8 w-7 rounded-md text-[13px] leading-none hover:bg-white/10"}, "⋯"),
+    aberto && e("span",{className:"fixed inset-0 z-30", onClick:function(){ st[1](false); }}),
+    aberto && e("span",{className:"absolute right-0 top-7 z-40 flex min-w-48 flex-col rounded-lg border border-border bg-card p-1 shadow-xl"},
+      p.itens.slice().sort(function(a, b){ return (a.perigo ? 1 : 0)-(b.perigo ? 1 : 0); }).map(function(x, k){ return e("button",{key:k, type:"button", onClick:function(){ st[1](false); x.f(); }, className:"h-8 rounded-md px-2 text-left text-[13px] hover:bg-white/10 "+(x.perigo ? "text-[var(--negativo)]" : "")}, x.t); })));
+}
 function CartaoResgate(p){
-  var r = p.it, op = r.operacao, aberto = etapaEmAberto(r.etapa), cor = COR_NIVEL[r.nivel], cc = COR_ETAPA[r.etapa] || "#94A3B8", tel = r.revendedora ? r.revendedora.telefone : "", zap = linkWhatsapp(tel), maleta = textoBrindeMaleta(op);
+  var r = p.it, op = r.operacao, aberto = etapaEmAberto(r.etapa), tel = r.revendedora ? r.revendedora.telefone : "", zap = linkWhatsapp(tel), maleta = textoBrindeMaleta(op);
   var alterna = function(campo){ var d = {type:"IND", op:"resgate_set", id:r.id, por:p.por}; d[campo] = !op[campo]; p.dispatch(d); };
-  // fundo em degradê leve na cor da coluna (sem aumentar a altura do cartão)
-  return e("div",{className:"flex flex-col items-center gap-1", style:{margin:"-10px -10px 0 -7px", padding:"10px 10px 4px 7px", borderRadius:"8px 8px 0 0", background:"linear-gradient(160deg, "+cc+"2E 0%, "+cc+"0A 70%, transparent 100%)"}},
-    e("div",{className:"flex max-w-full items-center justify-center gap-1.5"}, e(Avatar,{nome:r.nomeRevendedora, cor:cc, s:26}), e("b",{className:"min-w-0 text-left text-[13.5px] leading-tight"}, r.nomeRevendedora)),
-    e("span",{className:"flex items-center gap-1 text-[12.5px] font-semibold"}, e(Ph,{n:"gift", s:13}), r.premioTitulo||"Prêmio"),
-    e("div",{className:"flex flex-wrap items-center justify-center gap-1"},
-      e(Selo,{cor:"#F3D98B", ic:"coins"}, formatarMoedas(r.custoMoedas)), r.premioValor>0 && e(Selo,{cor:"#94A3B8"}, formatarReais(r.premioValor)),
-      aberto && e(Selo,{cor:cor, ic:"clock", titulo:ROTULO_NIVEL[r.nivel]+" · pedido #"+r.id}, r.esperando+(r.nivel==="em-dia" ? "" : " · "+ROTULO_NIVEL[r.nivel])),
-      r.horarioAgendado && e(Selo,{cor:"#60A5FA", ic:"calendar-blank"}, r.horarioAgendado)),
-    r.etapa==="entregue" && e("span",{className:"text-[11.5px] text-white/75"}, "Retirado em "+formatarDataHora(r.entregueEm)+(op.valorVenda!=null ? " · "+formatarReais(op.valorVenda) : "")),
-    r.etapa==="cancelado" && e("span",{className:"text-[11.5px] text-white/75"}, "Cancelado"+(r.canceladoMotivo ? ": "+r.canceladoMotivo : "")),
-    maleta && e("span",{className:"text-[11px] leading-tight text-white/70"}, maleta),
-    aberto && e("div",{className:"flex flex-wrap justify-center gap-1"},
-      e(Bt,{tipo:op.emContato ? "ok" : "normal", ic:"whatsapp-logo", titulo:"Marcar como em contato (mantém o pedido em dia)", onClick:function(){ alterna("emContato"); }, className:BTP}, "Em contato"),
-      e(Bt,{tipo:op.vendidoSistema ? "ok" : "normal", ic:"check", titulo:"Peças já vendidas no sistema", onClick:function(){ alterna("vendidoSistema"); }, className:BTP}, "Vendido no sistema")),
-    e("div",{className:"flex flex-wrap justify-center gap-1"},
-      acoesDaEtapa(r.etapa).map(function(a){ var t = a.acao==="cancelar" ? "cancelar" : a.acao==="aprovar" ? "agendar" : "entregar";
-        return e(Bt,{key:a.acao, tipo:a.tom==="perigo" ? "perigo" : "forte", ic:a.acao==="cancelar" ? "x-circle" : a.acao==="aprovar" ? "calendar-blank" : "check-circle", onClick:function(){ p.abrir(t, r); }, className:BTP}, a.rotulo); }),
-      r.etapa==="aprovado" && e(Bt,{ic:"calendar-blank", onClick:function(){ p.abrir("agendar", r); }, className:BTP}, "Reagendar"),
-      aberto && e(Bt,{ic:"pencil-simple", onClick:function(){ p.abrir("balcao", r); }, className:BTP}, "Balcão"),
-      zap && e("a",{href:zap, target:"_blank", rel:"noreferrer", title:"Abrir conversa no WhatsApp", className:"inline-flex items-center justify-center rounded-lg bg-muted/50 px-2 py-1 hover:bg-white/15"}, e(Ph,{n:"whatsapp-logo", s:15}))));
+  var itens = [];
+  acoesDaEtapa(r.etapa).forEach(function(a){ var tp = a.acao==="cancelar" ? "cancelar" : a.acao==="aprovar" ? "agendar" : "entregar"; itens.push({t:a.rotulo, perigo:a.tom==="perigo", f:function(){ p.abrir(tp, r); }}); });
+  if(r.etapa==="aprovado") itens.push({t:"Reagendar", f:function(){ p.abrir("agendar", r); }});
+  if(aberto){ itens.push({t:"Balcão (peças e valores)", f:function(){ p.abrir("balcao", r); }}); itens.push({t:op.emContato ? "Tirar a marca Em contato" : "Marcar Em contato", f:function(){ alterna("emContato"); }}); itens.push({t:op.vendidoSistema ? "Tirar a marca Vendido no sistema" : "Marcar Vendido no sistema", f:function(){ alterna("vendidoSistema"); }}); }
+  if(zap) itens.push({t:"Abrir o WhatsApp", f:function(){ window.open(zap, "_blank", "noopener"); }});
+  var linha2 = [r.premioTitulo||"Prêmio", formatarMoedas(r.custoMoedas), r.premioValor>0 ? formatarReais(r.premioValor) : ""].filter(Boolean).join(" · ");
+  var marcas = [r.horarioAgendado, op.emContato ? "Em contato" : "", op.vendidoSistema ? "Vendido no sistema" : "", maleta].filter(Boolean).join(" · ");
+  return e("div",{className:"flex flex-col"},
+    e("div",{className:"flex items-start justify-between gap-2"},
+      e("b",{className:"min-w-0 break-words text-[13px] leading-tight"}, r.nomeRevendedora),
+      e("span",{className:"flex shrink-0 items-center gap-0.5"}, aberto && e("span",{className:"text-[11px] font-semibold tabular-nums", style:{color:COR_NIVEL[r.nivel]}, title:ROTULO_NIVEL[r.nivel]+" · pedido #"+r.id}, r.esperando), e(MenuAcoesResgate,{itens:itens}))),
+    e("span",{className:"text-[11px] leading-tight text-white/70", title:"Prêmio, moedas e valor"}, linha2),
+    r.etapa==="entregue" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Retirado em "+formatarDataHora(r.entregueEm)+(op.valorVenda!=null ? " · "+formatarReais(op.valorVenda) : "")),
+    r.etapa==="cancelado" && e("span",{className:"text-[11px] leading-tight text-white/70"}, "Cancelado"+(r.canceladoMotivo ? ": "+r.canceladoMotivo : "")),
+    marcas && e("span",{className:"text-[11px] leading-tight text-white/70"}, marcas));
 }
 
 // ───────────── Fila de resgates (Kanban) ─────────────
@@ -214,7 +218,7 @@ function CorpoResgates(){
     e(Secao,{t:"Fila de resgates", semPad:true, dir:ind0.naFila+" na fila · "+ind0.aguardando+" aguardando retirada · "+ind0.retirados+" retirados"+(ind0.atrasados ? " · "+ind0.atrasados+" atrasados" : ""),
       faixa:e(FaixaBloco,null, e(BuscaFaixa,{v:q, ph:"Buscar por nome, telefone, prêmio ou nº", set:st1[1]}), e(AlternarFaixa,{on:maleta, set:st5[1]}, "Retirada com a maleta"), e("span",{className:"flex-1"}), e(Botao,{principal:true, onClick:function(){ st3[1](true); }}, "Novo pedido"))},
       aviso && e("div",{onClick:function(){ st4[1](null); }, className:"cursor-pointer p-2"}, e(Alerta,{cor:ESTADO.ruim, ic:"x-circle"}, aviso)),
-      e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:function(it){ return e(CartaoResgate,{it:it, por:por, dispatch:cx.dispatch, abrir:abrir}); }, onMover:mover, cabecaFina:true, unidade:["pedido","pedidos"], vazio:"Nenhum pedido nesta etapa."}))),
+      e("div",{className:"p-2"}, e(Kanban,{colunas:colunas, card:function(it){ return e(CartaoResgate,{it:it, por:por, dispatch:cx.dispatch, abrir:abrir}); }, onMover:mover, compacto:true, cabecaFina:true, semMover:true, corBarra:function(it, col){ return etapaEmAberto(it.etapa) ? COR_NIVEL[it.nivel] : col.cor; }, onAbrir:function(it){ if(it.etapa==="solicitado") abrir("agendar", it); else if(it.etapa==="aprovado") abrir("entregar", it); }, unidade:["pedido","pedidos"], vazio:"Nenhum pedido nesta etapa."}))),
     dlg && e(DialogoResgate,{key:dlg.tipo+dlg.id, tipo:dlg.tipo, id:dlg.id, fechar:function(){ st2[1](null); }}),
     novo && e(FormNovoPedido,{ind:ind, por:por, dispatch:cx.dispatch, fechar:function(){ st3[1](false); }}));
 }
@@ -337,9 +341,17 @@ function CorpoRevendedoras(){
   var premDlg = dlg && dlg.tipo==="premio" ? ind.premios.find(function(x){ return x.codigo===dlg.id; }) : null;
   return e(Pagina,null,
     e(Secao,{t:"Ranking de revendedoras", semPad:true, dir:todasRk.length.toLocaleString("pt-BR")+" revendedoras"},
-      todasRk.length ? e(TabelaPlanilha,{cols:[{k:"posicao", t:"#"}, {k:"nome", t:"Revendedora"}, {k:"telefone", t:"Telefone"}, {k:"indicacoes", t:"Indicações"}, {k:"emAndamento", t:"Em andamento"}, {k:"kits", t:"Kits"}, {k:"moedas", t:"Moedas"}, {k:"resgates", t:"Pedidos"},
-          {k:"acoes", t:"Ações", render:function(v, l){ return e("div",{className:"flex justify-center gap-1"}, e(Bt,{ic:"coins", titulo:"Extrato de moedas", onClick:function(){ st3[1]({tipo:"extrato", id:l.id}); }, className:BTP}, "Extrato"), e(Bt,{ic:"hand-coins", titulo:"Creditar moedas", onClick:function(){ st3[1]({tipo:"creditar", id:l.id}); }, className:BTP}, "Creditar"), e(Bt,{ic:"pencil-simple", titulo:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:l.id}); }, className:BTP})); }}],
-          linhas:todasRk, chave:"id", escura:true, grade:true, limite:100})
+      todasRk.length ? e(TabelaPlanilha,{cols:[
+          {k:"posicao", t:"#"}, {k:"nome", t:"Revendedora"}, {k:"telefone", t:"Telefone"},
+          {k:"indicacoes", t:"Indicações"}, {k:"emAndamento", t:"Em andamento"},
+          {k:"kits", t:"Kits entregues", cor:function(l){ return l.kits>0 ? "text-emerald-400 font-semibold" : ""; }},
+          {k:"moedas", t:"Moedas", fmt:function(v){ return Number(v).toLocaleString("pt-BR"); }, cor:function(l){ return l.moedas>0 ? "text-primary font-semibold" : ""; }},
+          {k:"resgates", t:"Pedidos"},
+          {k:"acoes", t:"Ações", render:function(v, l){ return e("div",{className:"flex justify-center gap-1.5"},
+            e("button",{type:"button", title:"Extrato de moedas", onClick:function(){ st3[1]({tipo:"extrato", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Extrato"),
+            e("button",{type:"button", title:"Creditar moedas", onClick:function(){ st3[1]({tipo:"creditar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Creditar"),
+            e("button",{type:"button", title:"Editar cadastro", onClick:function(){ st3[1]({tipo:"editar", id:l.id}); }, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[13px] font-medium hover:bg-white/10"}, "Editar")); }}],
+          linhas:todasRk, chave:"id", escura:true, grade:true, limite:100, semContagem:true, semLimpar:true})
         : e("p",{className:"py-3 text-center text-[13px]"}, "Nenhuma revendedora cadastrada.")),
     // cadastro, crédito e catálogo lado a lado (mosaico), sem blocos que abrem e fecham
     e(Mosaico,{min:"24rem"},

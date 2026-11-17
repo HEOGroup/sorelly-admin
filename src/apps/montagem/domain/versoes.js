@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.85", data:"2026-11-17", titulo:"Indicações: Histórico com blocos, Resgates padronizados e filtro firme", itens:[
+  {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações", txt:"Histórico com três blocos no topo (Top 12 revendedoras, Top 12 representantes e situação das indicadas, com aprovadas sem kit separadas por mais de 30 dias). Resgates com cartões compactos, ranking e prêmios em tabela padrão, nomes no formato Carlos Luan."},
+  {tipo:"correção", area:"Tabelas › filtro de coluna", txt:"O menu de filtro abre já na posição final e não pula mais."}]},
  {v:"0.20.84", data:"2026-11-17", titulo:"Material gráfico: Estoque sem título duplicado", itens:[
   {tipo:"correção", area:"Material gráfico › Estoque", txt:"O bloco azul não cobre mais o título da tela, e o filtro de andamento da compra mostra o texto inteiro."}]},
  {v:"0.20.83", data:"2026-11-17", titulo:"Lançamento de pagamentos: valor pago a mais vai para a próxima parcela", itens:[
