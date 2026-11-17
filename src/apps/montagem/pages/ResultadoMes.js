@@ -198,7 +198,7 @@ function AbaResultadoMes(){
   // ACERTOS (Marcus, 10/11/2026: "em cima do que entra coloca a quantidade de acertos e a média"): notas fiscais = Faturamento lançado; contas a receber = clientes com título no mês na DevMaster (sem funcionárias) e o que pagaram na hora
   var nAcCR = Kn.n || 0, medNF = acF>0 ? recF/acF : null, medCR = nAcCR>0 ? (Kn.rec || 0)/nAcCR : null, pctAc = pctF/100;
   var nAcPrevNF = totF>0 ? alvoF : null, nAcPrevCR = nAcPrevNF;   // Marcus, 10/11/2026: "o previsto do mês tem que ser igual" nas duas colunas; vale o previsto do Faturamento (feitos + Carregar + a realizar, vezes a meta). Antes a coluna Contas a Receber usava a data prevista da DevMaster e dava 3 acertos a mais
-  var medPrevNF = nAcPrevNF ? notaEnt/nAcPrevNF : null, medPrevCR = nAcPrevCR ? dinhEnt/nAcPrevCR : null;
+  var medPrevNF = nAcPrevNF ? medNF : null, medPrevCR = nAcPrevCR ? medCR : null;   // 12/11/2026 (Marcus: "803,83 e 798,21, como fica?"): a previsão usa a média atual de cada coluna; antes eu dividia o total que entra (com inadimplência antiga e funcionárias) pelos acertos e dava outro número
   var contaDif = function(a, b){ return a===null || b===null ? travessao : (b-a)>0 ? "+"+(b-a) : String(b-a); }, moedaDif = function(a, b){ return a===null || b===null ? travessao : sinalR(b-a); }, moeda = function(v){ return v===null ? travessao : brl(v); };
   linhasRes.push(fR("a1", "ACERTOS", fechado ? "Acertos no mês" : "Acertos feitos", ksF.length ? nF(acF) : travessao, nF(nAcCR), ksF.length ? contaDif(acF, nAcCR) : travessao));
   linhasRes.push(fR("a2", "", "Média por acerto", moeda(medNF), moeda(medCR), moedaDif(medNF, medCR)));
@@ -228,7 +228,7 @@ function AbaResultadoMes(){
     e(Painel,{t:MES_LONGO[m0]+"/"+ano, v:(fechado ? "Resultado " : "Resultado previsto ")+brl(resDin), vermelho:resDin<0},
       e("div",{className:"p-2"},
         e(TabelaCampos,{cols:COLR, minW:"34rem"}, linhasRes),
-        e("p",{className:"px-1 pt-2 text-center text-[11px] text-foreground"}, "Notas Fiscais: faturamento lançado em Faturamento. Contas a Receber: o que a DevMaster mostra recebido nas contas. Diferença: Contas a Receber menos Notas Fiscais. Média prevista: total que entra dividido pelos acertos previstos."),
+        e("p",{className:"px-1 pt-2 text-center text-[11px] text-foreground"}, "Notas Fiscais: faturamento lançado em Faturamento. Contas a Receber: o que a DevMaster mostra recebido nas contas. Diferença: Contas a Receber menos Notas Fiscais. Média prevista: a previsão do mês usa a média atual de cada coluna."),
         notaEnt===null && e("p",{className:"px-1 pt-1 text-center text-[11px] text-foreground"}, "Este mês ainda não tem nota fiscal lançada em Faturamento. Só existe o dinheiro."))),
     e(Painel,{t:"Meses ao redor", v:"Clique em um mês para abrir"},
       e("div",{className:"p-2"},
