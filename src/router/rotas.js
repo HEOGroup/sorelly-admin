@@ -266,6 +266,7 @@ const montagem = {
     pagina("comissoes-cadastro-revendedoras", () => import("@/apps/montagem/pages/MetasSetor"), "AbaComCadastro"),
     pagina("comissoes-inadimplencia", () => import("@/apps/montagem/pages/MetasSetor"), "AbaComInad"),
     pagina("rh-escala-42h", () => import("@/apps/montagem/pages/RHEscala42"), "AbaRhEscala42"),
+    pagina("rh-pagamento-em-joias", () => import("@/apps/montagem/pages/PagamentoJoias"), "AbaPagamentoJoias"),
     pagina("rh-configurador", () => import("@/apps/montagem/pages/RH"), "AbaRhConfig"),
     pagina("rh-contratos-representantes", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrRep"),
     pagina("rh-contratos-funcionarios", () => import("@/apps/montagem/pages/RHContratos"), "AbaRhContrFunc"),

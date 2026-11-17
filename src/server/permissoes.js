@@ -16,6 +16,7 @@ export const SETORES_DO_MODULO = {
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],
   fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
+  jp: ["rh", "pecas"],   // RH › Pagamento em joias (17/11/2026): RH e cadastro de peças (separa as joias); a Diretoria abre tudo; quem autoriza é a autorização joias_autoriza
   mod: [],   // Marketing › Modelos (veio das Encomendas em 12/11/2026): Diretoria e as pessoas de PESSOAS_DO_MODULO (Castilho); a tela também confere a autorização modelos_ver
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   rc: ["*"],   // quem é Kit 100% Prata (12/11/2026): todo mundo logado lê (atendimento, agendamento, representantes) e a marcação vale igual em todos os computadores

@@ -33,6 +33,7 @@ import { melMigrar } from "@/apps/montagem/domain/melhorias";
 import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { tpMigrar } from "@/apps/montagem/domain/trafego";
 import { modMigrar } from "@/apps/montagem/domain/modelas";
+import { jpMigrar } from "@/apps/montagem/domain/joias-pagamento";
 import { inadMigrar, inadVazio } from "@/apps/montagem/domain/inadimplencia";
 import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
 import { fxDemo, fxMigrar } from "@/apps/montagem/domain/fiscal";
@@ -495,6 +496,7 @@ function inicial(){
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
     s.inad = inadMigrar(s.inad);   // Inadimplência: cria vazio ou completa campos novos
+    s.jp = jpMigrar(s.jp);   // RH › Pagamento em joias (17/11/2026): cria vazio
     s.mod = modMigrar(s.mod);   // Encomendas › Modelos: cria vazio (ou com os dados reais locais)
     s.tp = tpMigrar(s.tp);   // Tráfego pago: cria vazio (ou com os dados reais locais) ou completa campos novos
     s.ce = ceMigrar(s.ce);   // Compras e Estoque de materiais: cria vazio ou completa campos novos

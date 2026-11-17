@@ -222,6 +222,7 @@ export const SLUG_DA_ABA = {
   comcad: "comissoes-cadastro-revendedoras",
   cominad: "comissoes-inadimplencia",
   rhescala42: "rh-escala-42h",
+  joiaspag: "rh-pagamento-em-joias",
   rhconfig: "rh-configurador",
   rhcrep: "rh-contratos-representantes",
   rhcfunc: "rh-contratos-funcionarios",
