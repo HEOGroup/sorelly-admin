@@ -509,6 +509,23 @@ function lancExcedente(pf, chave, valor){   // quanto o valor passa do que falta
   var aberto = j ? Math.max(0, j.total-pagoJanela(pf, chave)) : 0;
   return {aberto:aberto, excesso:Math.max(0, valor-aberto), passa:valor-aberto>0.005};
 }
+// valor pago a mais vai para as próximas datas em aberto do mesmo fornecedor, por ordem de data (Lucas, 17/11/2026)
+// devolve {partes:[{chave, limite, valor}], sobra}: sobra = o que passou e não tem mais data em aberto (fica na data escolhida)
+function lancDistribuir(pf, chave, valor){
+  var fid = parseInt(chave.split("|")[0]), limite = chave.split("|")[1], js = janelasDoForn(pf, fid);
+  var abertoDe = function(j){ return Math.max(0, Math.round((j.total-pagoJanela(pf, j.chave))*100)/100); };
+  var j0 = js.find(function(x){ return x.chave===chave; }), resto = Math.round(valor*100)/100, partes = [];
+  var usa = j0 ? Math.min(resto, abertoDe(j0)) : resto;
+  if(usa>0.005){ partes.push({chave:chave, limite:limite, valor:usa}); resto = Math.round((resto-usa)*100)/100; }
+  js.forEach(function(j){
+    if(resto<=0.005 || j.chave===chave || j.limite<=limite) return;
+    var ab = abertoDe(j); if(ab<=0.005) return;
+    var v = Math.min(resto, ab); partes.push({chave:j.chave, limite:j.limite, valor:v}); resto = Math.round((resto-v)*100)/100;
+  });
+  var sobra = resto>0.005 ? resto : 0;
+  if(sobra){ var p0 = partes.find(function(x){ return x.chave===chave; }); if(p0) p0.valor = Math.round((p0.valor+sobra)*100)/100; else partes.unshift({chave:chave, limite:limite, valor:sobra}); }
+  return {partes:partes, sobra:sobra};
+}
 function tokenAcerto(pf, chave){   // muda o pf: token do link do extrato do fornecedor
   if(!pf.tokensAcerto[chave]) pf.tokensAcerto[chave] = Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);
   return pf.tokensAcerto[chave];
@@ -958,12 +975,18 @@ function pfReduz(s, a){
       if(!a.data) return recusa("Informe a data do pagamento.");
       var rev = String(a.revendedora||"").trim(); if(!rev) return recusa("Informe o nome da revendedora.");
       if(!a.chave || a.chave.indexOf("|")<0) return recusa("Escolha a data de pagamento (janela).");
-      var fid = parseInt(a.chave.split("|")[0]), limite = a.chave.split("|")[1], jn = janelasDoForn(pf, fid).find(function(x){ return x.chave===a.chave; });
-      var ex = lancExcedente(pf, a.chave, v);
-      if(ex.passa && !a.forcar) return recusa("O valor ultrapassa o que falta nesta data (saldo de "+brl(ex.aberto)+"). Lançar mesmo assim?", true);
-      pf.lancamentos.push({id:pf.seq.L++, chave:a.chave, fornId:fid, mes: jn ? jn.mes : a.data.slice(0,7), limite:limite, data:a.data, revendedora:rev, valor:v, conta:String(a.conta||"").trim()||"—",
-        arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:""});
-      return ok("Pagamento lançado — "+brl(v)+" para "+rev+(a.arqNome ? " · comprovante anexado" : ""));
+      var fid = parseInt(a.chave.split("|")[0]);
+      var dv = lancDistribuir(pf, a.chave, v);
+      if(dv.sobra && !a.forcar) return recusa("O valor passou do total em "+brl(dv.sobra)+" e não há mais parcelas em aberto. Lançar mesmo assim?", true);
+      // a parte que passa do que falta nesta data vai para as próximas datas em aberto (uma linha por data, mesmo Pix)
+      var feitos = dv.partes.map(function(pt){
+        var jx = janelasDoForn(pf, fid).find(function(x){ return x.chave===pt.chave; });
+        pf.lancamentos.push({id:pf.seq.L++, chave:pt.chave, fornId:fid, mes: jx ? jx.mes : a.data.slice(0,7), limite:pt.limite, data:a.data, revendedora:rev, valor:pt.valor, conta:String(a.conta||"").trim()||"—",
+          arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:"", pixTotal:dv.partes.length>1 ? v : undefined});
+        return pt;
+      });
+      var outras = feitos.filter(function(pt){ return pt.chave!==a.chave; });
+      return ok("Pagamento lançado — "+brl(v)+" para "+rev+(outras.length ? " · "+outras.map(function(pt){ return brl(pt.valor)+" foi para "+pt.limite.slice(8,10)+"/"+pt.limite.slice(5,7); }).join(" · ") : "")+(dv.sobra ? " · passou do total em "+brl(dv.sobra) : "")+(a.arqNome ? " · comprovante anexado" : ""));
     }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
@@ -1261,7 +1284,7 @@ export {
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,
-  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancExcedente, tokenAcerto,
+  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, lancExcedente, tokenAcerto,
   coletar, agregar, alertasDe, resumoAlertas, painelTotais, viewTempo, tabelaJanelas, viewMatriz, resumoNegociacao, parcelaSituacao, pedidosSemParcela, relacaoPorMes, pedidoDetalhe,
   dividirNF, gerarParcelas, expandirParcelas, saldoParcela, formasDoPedido, acertoPreset, acertoPresetAtivo, acertoResumo, cortesDoPreset, previewCiclo, limpaCortes,
   mqPassadasDoMes, mqSomaPassadas, mqBruto, mqParcela, mqMesesDesconto, mqDescontoNoMes, mqOrigensDoMes, mqBaixasDoMes, mqBaixado, mqLinhas, mqColunas, mqMesesSel, semearBaixasMq,

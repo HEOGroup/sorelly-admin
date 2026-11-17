@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.83", data:"2026-11-17", titulo:"Lançamento de pagamentos: valor pago a mais vai para a próxima parcela", itens:[
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Ao lançar um Pix maior do que falta na data, a diferença entra sozinha na próxima data em aberto do mesmo fornecedor (e nas seguintes, se ainda sobrar), uma linha por data. A janela mostra antes de lançar para onde vai o valor. Sem parcela em aberto, aparece o aviso de que passou do total."}]},
  {v:"0.20.82", data:"2026-11-17", titulo:"RH › Colaboradores: horas extras por dia e negociações", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Nova visão Horas extras no menu suspenso de Colaboradores: uma pessoa por linha, uma coluna por dia (HH:MM extra do dia; no modo Anual, uma por mês), pagas, banco de horas, custo e a negociação de cada pessoa (1, 2 e 3 horas, sábado, máximo por dia, vezes por semana, sábados por mês), com linha de total. Filtro por empresa, mês e ano. Clicar na pessoa abre o card com todos os lançamentos, a negociação e os botões Lançar hora extra e Excluir."},
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações virou visão de Colaboradores no padrão novo: uma pessoa por linha (valor dela ou o padrão do grupo), coluna Situação (Completa, Sem valor, A confirmar), card de edição com foto e regras, janela Grupos e botão Incluir pessoa. Horas extras, Negociações e Solicitações saíram do menu (a tela de Solicitações continua no sistema, só não está no menu)."}]},

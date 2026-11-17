@@ -2620,3 +2620,10 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Em 17/11/2026 a aba DevMaster mostrou 42 parcelas (R$ 110.732,04) para o financeiro lançar: o Pix dos 6 pedidos de novembro (13611, 13667, 13677, 13704, 13745, 13747) e o boleto do 13704. Os boletos do 13745 e do 13747 já estavam lançados.
 - Todo pedido novo guarda `criadoPor` e `criadoEm`.
 - Falta (anotado): Lançamento de pagamentos por fornecedor (hoje só na aba Pagamentos da Geral); separar os pedidos de set/out, que estão dentro do "Acerto mensal" de cada mês, depende dos dados do Nickolas; confirmar com o Marcus se "Art Ello" é o "Art Ello Bruto" e se Mega Sul e Office Graf ganham menu próprio.
+
+## 17/11/2026 · Lançamento de pagamentos: pago a mais vai para a próxima parcela (Lucas)
+- Pedido do Lucas: em Financeiro › Lançamento de pagamentos (`/financeiro/pf-lancamento`), se o Pix lançado passa do que falta na data, a diferença cai na próxima data em aberto do mesmo fornecedor (por ordem de data; se ainda sobrar, na seguinte).
+- Grava uma linha por data, com os mesmos dados do Pix (revendedora, conta, comprovante). Estornar é por linha.
+- Sem data em aberto depois: aviso "passou do total" e pede confirmação; o que sobrou fica na data escolhida.
+- Datas anteriores em aberto não recebem a sobra (só as próximas).
+- Código: `lancDistribuir` e `lanc_add` em `domain/pf.js`; aviso na janela em `pages/pf/Lancamentos.js`.
