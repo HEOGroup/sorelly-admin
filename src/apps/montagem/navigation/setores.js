@@ -91,7 +91,7 @@ var MENU_REPRESENTANTES = [
 var MENU_RH = [
   M("Visão geral","rhvisao"),
   {nome:"Presença", itens:[M("Presença diária","rhpresenca"), M("Relatório diário","rhrelatorio")]},
-  {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab"), M("Horas extras","rhhoras"), M("Solicitações","rhsolic"), M("Negociações","rhnegoc"), M("Escala 42h","rhescala42"), M("Pagamento em joias","joiaspag")]},
+  {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab"), M("Escala 42h","rhescala42"), M("Pagamento em joias","joiaspag")]},
   {nome:"Contratos", itens:[
     {nome:"Pessoas", itens:[M("Representantes","rhcrep"), M("Funcionários (CLT)","rhcfunc"), M("Terceiros","rhcterc")]},
     {nome:"Empresa", itens:[M("Crédito bancário","rhccred"), M("Aluguéis","rhcalug"), M("Consórcios","rhcconsor")]},
@@ -246,7 +246,7 @@ var SETORES = [
   {id:"rh", nome:"Recursos Humanos", ic:"maleta", cor:"#8B5CF6", menu:MENU_RH, areas:[
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
-    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhhoras","Horas extras"), T("rhsolic","Solicitações"), T("rhnegoc","Negociações"), T("rhescala42","Escala 42h"), T("joiaspag","Pagamento em joias")]},
+    {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores"), T("rhescala42","Escala 42h"), T("joiaspag","Pagamento em joias")]},
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
