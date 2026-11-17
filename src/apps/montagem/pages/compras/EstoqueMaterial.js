@@ -5,6 +5,7 @@ import { Janela, Pagina, ESTADO, degrade } from "@/apps/montagem/components/padr
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+import { ehCategoriaGrafica } from "@/apps/montagem/domain/material-grafico";
 import { ANDAMENTOS, ROTULO_ANDAMENTO, ROTULO_SITUACAO, ROTULO_UNIDADE, UNIDADES, agruparPorStatus, alertasDoTipo, formatarDataHora, formatarDia, formatarReais, hojeSP, historicoMaterial, materialVisto, proximaContagem, resumoAba } from "@/apps/montagem/domain/compras-estoque";
 import { Bt, BtMini, Editor, Ic, Nivel, Num, Painel, Selo, Vazio, useCe } from "@/apps/montagem/pages/compras/visualCompras";
 import { BotaoFoto, EscolherFoto, FotoMaterial } from "@/apps/montagem/components/foto-material";
@@ -181,14 +182,15 @@ function AbaEstoqueMaterial(pr){
   var pode = {contagem:x.pode("CONTAGEM"), compra:x.pode("COMPRA"), aprovacao:x.pode("APROVACAO")};
   var res = {totalItens:0, ok:0}, alertas = {criticosOuZerados:0, atencao:0, comprasChegando:0, aguardandoAprovacao:0};
   tipos.forEach(function(t){ var r = resumoAba(s, t.id), a = alertasDoTipo(s, t.id); res.totalItens += r.totalItens; res.ok += r.ok; Object.keys(alertas).forEach(function(k){ alertas[k] += a[k]; }); });
-  var grupos = [].concat.apply([], tipos.map(function(t){ return agruparPorStatus(s, t.id, {q:"", status:st, situacao:si}); }));
+  var soGraf = !!(pr && pr.soGrafico), filtraGraf = function(g){ return !soGraf || ehCategoriaGrafica(g.categoria.nome); };   // Material gráfico: só as categorias gráficas (17/11/2026)
+  var grupos = [].concat.apply([], tipos.map(function(t){ return agruparPorStatus(s, t.id, {q:"", status:st, situacao:si}); })).filter(filtraGraf);
   var doGrupo = function(g){ return modo==="parados" ? g.parados : g.ativos; };
   var catOps = grupos.filter(function(g){ return doGrupo(g).length; }).map(function(g){ return [String(g.categoria.id), normal(g.categoria.nome)+" · "+doGrupo(g).length]; }).sort(function(a, b){ return a[1].localeCompare(b[1], "pt-BR"); }), cat = catOps.some(function(o){ return o[0]===sC[0]; }) ? sC[0] : "";
   var todos = [].concat.apply([], grupos.filter(function(g){ return !cat || String(g.categoria.id)===cat; }).map(function(g){ return doGrupo(g).map(function(m){ return {m:m, cat:g.categoria.nome, forn:normal(m.fornecedor) || "Sem fornecedor"}; }); }));
   var contaForn = todos.reduce(function(o, z){ o[z.forn] = (o[z.forn] || 0)+1; return o; }, {});
   var fornOps = Object.keys(contaForn).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); }).map(function(n){ return [n, n+" · "+contaForn[n]]; }), forn = fornOps.some(function(o){ return o[0]===sF[0]; }) ? sF[0] : "";
   var mats = todos.filter(function(z){ return !forn || z.forn===forn; }).sort(function(a, b){ return a.forn.localeCompare(b.forn, "pt-BR") || normal(a.m.material).localeCompare(normal(b.m.material), "pt-BR"); });   // separado por fornecedor: ordem de fornecedor e, dentro dele, de material
-  var nParados = tipos.reduce(function(t, tp){ return t+agruparPorStatus(s, tp.id, {q:"", status:st, situacao:si}).reduce(function(n, g){ return n+g.parados.length; }, 0); }, 0);
+  var nParados = tipos.reduce(function(t, tp){ return t+agruparPorStatus(s, tp.id, {q:"", status:st, situacao:si}).filter(filtraGraf).reduce(function(n, g){ return n+g.parados.length; }, 0); }, 0);
   var proxima = proximaContagem(cfg), filtro = !!(cat || forn || st || si);
   var abrir = function(k, id){ sJ[1]({k:k, id:id}); }, fechar = function(){ sJ[1](null); };
   var parar = function(m, v){ x.exec("mat_parado", {id:m.id, parado:v}); };

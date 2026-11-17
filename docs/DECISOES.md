@@ -4,6 +4,10 @@ Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembra
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
 
+
+## 17/11/2026 (Setor Material gráfico, fase 1)
+- **Setor Material gráfico criado (pedido do Marcus):** menu de 6 palavras, sem lista dentro de lista: Painel · Compras · Tabela de preços · Estoque · Kits · Vendas. Prontos: Painel, Compras (funil Orçamento → Negociando → Fechado → Pedido feito, com modelos por tipo de material que geram a mensagem para o chat e rodadas de negociação), Tabela de preços e Estoque (os de Materiais & Estoque, o Estoque só com categorias gráficas). Kits (padrão com custo e à venda) = fase 2; Vendas = fase 3. As compras seguem em Materiais & Estoque. Detalhes em `setores/material-grafico/`.
+
 ## 16/11/2026 (Contas a pagar: Junto, conta nos dois lugares, paga na DevMaster, colunas e busca)
 - **Conta nos dois lugares = uma linha só** (Junto/Família): a conta da Família lançada no Admin e a mesma conta da DevMaster viram uma linha ("Admin + DevMaster", "Falta dar baixa"). Par = mesma situação, mesmo valor e mesmo mês; se houver mais de uma candidata, só junta com o mesmo dia + palavra do nome em comum. 28 contas.
 - **Paga na DevMaster = paga** (pedido do Marcus): conta do Admin em aberto com par pago na DevMaster (mesmo valor, baixa a até 20 dias do vencimento, nome parecido) aparece como Paga, "Paga em dd/mm · falta baixa no Admin". 27 contas. SÓ NA TELA: nada é gravado; o Financeiro familiar (`ff`) NÃO foi mexido e segue com tudo até a mãe aprovar.

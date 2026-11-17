@@ -115,6 +115,8 @@ var MENU_ESTOQUE = [
   M("Cadastros","cecad"),
   M("Configurações","cecfg")
 ];
+// Material gráfico (17/11/2026, Marcus: "menos abas"): seis palavras diretas, sem lista dentro de lista. Kits e Vendas entram nas fases 2 e 3.
+var MENU_GRAFICO = [M("Painel","gfpainel"), M("Compras","gfcompras"), M("Tabela de preços","gfprecos"), M("Estoque","gfestoque"), M("Kits","gfkits"), M("Vendas","gfvendas")];
 var MENU_GARANTIA = [M("Garantia","garantia"), M("Créditos","garantiacred")];
 var MENU_POSVENDAS = [M("Contatos","posvendas")];
 // Central de controle vem PRIMEIRO (28/10/2026, pedido do Marcus); "Comissões e desempenho" saiu (não é usada, já existe em Financeiro → Comissões).
@@ -219,6 +221,8 @@ var SETORES = [
     {nome:"Compras", telas:[T("compras","Painel"), T("cevisao","Visão geral"), T("cequadro","Quadro de compras"), T("ceplanilha","Planilha de compras")]},   // Quadro e Planilha ficam só no endereço (fora do menu): os links antigos continuam abrindo o Funil
     {nome:"Estoque", telas:[T("ceestoque","Estoque de material"), T("cemov","Movimentos"), T("cesol","Pedidos de material"), T("ceprecos","Tabela de preços")]},
     {nome:"Cadastros", telas:[T("cecad","Cadastros"), T("cecfg","Configurações")]}]},
+  {id:"grafico", nome:"Material gráfico", ic:"cubos", cor:"#EC4899", menu:MENU_GRAFICO, areas:[
+    {nome:"Material gráfico", telas:[T("gfpainel","Painel"), T("gfcompras","Compras"), T("gfprecos","Tabela de preços"), T("gfestoque","Estoque"), T("gfkits","Kits"), T("gfvendas","Vendas")]}]},
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
   {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", menu:MENU_CADPECAS, areas:[
     {nome:"Pedidos", telas:[T("cpcompras","Compras"), T("cadpecas","Pedidos"), T("cpctrl","Controle de compras")]},

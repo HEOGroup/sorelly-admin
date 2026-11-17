@@ -19,6 +19,7 @@ import { globLocal } from "@/lib/glob-local";
 import { hojeSP, agoraSP, somaDias, diasEntre, ultimoDiaDoMes } from "./cadastro-leads";
 import { temAutorizacao } from "./autorizacoes";
 import { CNPJS0 } from "./cnpjs";
+import { gfOp, ehCategoriaGrafica, descricao as descricaoOrc } from "./material-grafico";
 import { validarProduto, normalizarOpcao, diferencas, usoDoProduto, usoDaOpcao, numero as numeroBr, reais as reaisBr, rotuloDe as rotuloLista, UNIDADES_PRECO } from "./tabela-precos";
 
 var LOCAL = (function(){ try { var m = globLocal("apps/montagem/domain/compras-estoque.local.js"); var k = Object.keys(m)[0]; return k ? m[k].default : null; } catch(e){ return null; } })();
@@ -165,7 +166,7 @@ var CONFIG_PADRAO = {
   tipos:[{id:"materiais_embalagens", nome:"Materiais e Embalagens", aprovador:"Financeiro"}, {id:"limpeza", nome:"Limpeza", aprovador:"Financeiro"}, {id:"materiais_producao", nome:"Materiais de Produção", aprovador:"Diretoria"}]};   // no original: Anamaria nas duas primeiras, Marcus em Produção (só exibição)
 function ceDemo(){
   var s = {v:3, seq:0, config:clone(CONFIG_PADRAO), acessos:{compras:{}, estoque:{}}, regras:"", fornecedores:[], setores:[], categorias:[], catalogo:[], contas:[], motivosNegativa:[],
-    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[], precos:[], logPrecos:[]};   // precos/logPrecos: Tabela de preços (16/11/2026, domain/tabela-precos.js)
+    pedidos:[], matCategorias:[], materiais:[], movimentos:[], solicitacoes:[], logMateriais:[], precos:[], logPrecos:[], orcamentos:[]};   // orcamentos: funil do Material gráfico (17/11/2026, domain/material-grafico.js); precos/logPrecos: Tabela de preços (16/11/2026, domain/tabela-precos.js)
   if(LOCAL){
     if(LOCAL.config) Object.assign(s.config, LOCAL.config);
     s.regras = LOCAL.regras||""; s.motivosNegativa = (LOCAL.motivosNegativa||[]).slice();
@@ -697,6 +698,19 @@ function ceReduz(s, a){
     case "motivo_del": { var mi = ce.motivosNegativa.findIndex(function(x){ return norm(x)===norm(a.nome); }); if(mi<0) return recusa("Motivo não encontrado."); ce.motivosNegativa.splice(mi, 1); return ok("Motivo removido."); }
 
     // ---------------- compras (solicitações de compra) ----------------
+    // ---------------- MATERIAL GRÁFICO (17/11/2026): orçamentos, rodadas de negociação e o pedido que sai deles ----------------
+    case "orc_add": case "orc_rodada": case "orc_fechar": case "orc_cancelar": case "orc_reabrir": {
+      var rg = gfOp(ce, a, {por:por, agora:agora, proximoId:proximoId}); if(rg.erro) return recusa(rg.erro); return ok(rg.msg);
+    }
+    case "orc_pedido": {   // orçamento fechado vira compra (pedido_add) e fica ligado a ela
+      var oq = porId(ce.orcamentos, a.id); if(!oq) return recusa("Orçamento não encontrado."); if(oq.etapa!=="FECHADO" || !oq.final) return recusa("Feche o orçamento antes de criar o pedido.");
+      var fo = oq.fornecedorId ? porId(ce.fornecedores, oq.fornecedorId) : null;
+      var rp = ceReduz(Object.assign({}, s, {ce:ce}), {type:"CE", op:"pedido_add", por:por, agora:agora, porId:a.porId, fornecedorId:oq.fornecedorId||null, classificacao:"material", observacao:"Orçamento #"+oq.id+" (Material gráfico)",
+        previsaoEntrega:oq.final.prazoDias!=null ? somaDias(hoje, Math.round(oq.final.prazoDias)) : undefined, itens:[{titulo:descricaoOrc(oq), quantidade:oq.quantidade, unidade:"UNID", valorUnitario:oq.final.valorUnit, classificacao:"material"}]});
+      if(!rp.patch || !rp.patch.ce) return recusa(rp.msg || "Não foi possível criar o pedido.");
+      var ce2 = rp.patch.ce, oq2 = porId(ce2.orcamentos, a.id), pn = ce2.pedidos[ce2.pedidos.length-1]; oq2.pedidoId = pn.id; oq2.etapa = "PEDIDO";
+      return {patch:{ce:ce2}, msg:"Pedido #"+pn.id+" criado em Materiais e estoque."};
+    }
     case "pedido_add": {   // quem negocia cria a solicitação. itens:[{titulo, quantidade, unidade, valorUnitario|valorTotal, catalogoId, classificacao, materialId, fatorEntrada, marca}] (ou, para um item só, titulo/quantidade/... soltos)
       var itensIn = Array.isArray(a.itens) && a.itens.length ? a.itens : [{titulo:a.titulo, quantidade:a.quantidade, unidade:a.unidade, valorUnitario:a.valorUnitario, valorTotal:a.valorItem, catalogoId:a.catalogoId, materialId:a.materialId, classificacao:a.classificacao, marca:a.marca, fatorEntrada:a.fatorEntrada}];
       var li = leItens(itensIn, a.classificacao); if(li.erro) return recusa(li.erro);
@@ -1024,7 +1038,7 @@ function ceReduz(s, a){
   }
 }
 
-export { ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
+export { ehCategoriaGrafica, ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
   CONFIG_PADRAO, STATUS_PEDIDO, ROTULO_STATUS, TOM_STATUS, FUNIL_STATUS, HISTORICO_STATUS, PAGAVEL_STATUS, ETIQUETA_ELEGIVEL, ETIQUETAS, ROTULO_ETIQUETA, UNIDADES, ROTULO_UNIDADE, URGENCIAS, ROTULO_URGENCIA, TIPOS_ENTREGA, ROTULO_ENTREGA,
   FORMAS_PAGAMENTO, ROTULO_FORMA, FORMAS_PLANO, ROTULO_FORMA_PLANO, MOTIVOS_ORCAMENTO, ROTULO_MOTIVO_ORC, PAPEIS_COMPRAS, ROTULO_PAPEL, CAPS_COMPRAS, TRANSICOES,
   SITUACOES, ROTULO_SITUACAO, ANDAMENTOS, ROTULO_ANDAMENTO, ANDAMENTO_DO_PEDIDO, andamentoMaterial, comprasDoMaterial, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
