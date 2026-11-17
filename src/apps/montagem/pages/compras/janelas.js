@@ -2,10 +2,11 @@
 // Janelas das Compras: detalhe da compra (3 colunas), nova solicitação / edição, janelas pequenas de cada etapa (motivo, compra efetuada, recebimento, entrega, CNPJ...) e a conferência do envio para pagamentos.
 // useAcoes(c) junta tudo: devolve abrir(id), nova(), iniciar(pedido, op) e janelas() (os elementos a desenhar no fim da tela). As regras estão em domain/compras-estoque.js; aqui só desenho e chamo as ações (CE).
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { Dinheiro, ESTADO, Faixa, Indicador, Janela, Tab, Td } from "@/apps/montagem/components/padrao";
+import { Dinheiro, ESTADO } from "@/apps/montagem/components/padrao";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_PLANO, MOTIVOS_ORCAMENTO, PAGAVEL_STATUS, ROTULO_ETIQUETA, ROTULO_FORMA_PLANO, ROTULO_MOTIVO_ORC, ROTULO_UNIDADE, ROTULO_URGENCIA, TRANSICOES, UNIDADES, URGENCIAS,
-  compraParaOrientacoes, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, planoSituacao, podeAcaoPedido, podeEditarPlano, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
-import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
+  compraParaOrientacoes, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, planoSituacao, podeAcaoPedido, podeEditarPlano, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
+import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, EstoqueMomento, Janela, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 import { FotoMaterial } from "@/apps/montagem/components/foto-material";
@@ -168,7 +169,7 @@ function PlanoEditor(p){
   var dividir = function(){ var resto = r2(sit.total-sit.soma); if(resto<=0.004) return p.aviso("Não há valor restante para dividir."); nova(resto); };
   var corDif = sit.vazio ? "neutro" : sit.fecha ? "ok" : "ruim";
   return e("div",{className:"flex flex-col gap-2"},
-    e(Faixa,{n:3}, e(Indicador,{t:"Soma", v:formatarReais(sit.soma), cor:"info"}), e(Indicador,{t:"Total", v:formatarReais(sit.total), cor:"total"}), e(Indicador,{t:"Diferença", v:(dif<0 ? "−" : "")+formatarReais(Math.abs(dif)), cor:corDif})),
+    e(Resumo,{itens:[["Soma", formatarReais(sit.soma)], ["Total", formatarReais(sit.total)], ["Diferença", (dif<0 ? "−" : "")+formatarReais(Math.abs(dif)), corDif==="ok" ? "text-success" : corDif==="ruim" ? "text-destructive" : ""]]}),
     rows.length===0 && e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Nenhuma parte de pagamento."),
     rows.map(function(r, i){
       return e("div",{key:i, className:"flex flex-col gap-1.5 rounded-lg bg-black/25 p-2 ring-1 ring-white/10"},
@@ -186,6 +187,9 @@ function PlanoEditor(p){
       e(Bt,{ic:"arrow-right", onClick:dividir}, "Dividir o restante"),
       p.botoes));
 }
+// resumo em células (rótulo em cima, valor embaixo) e tabela pequena da ficha: peça única TabelaPlanilha, sem filtro (poucas linhas), nada abreviado
+function Resumo(p){ return e("div",{className:"grid gap-1.5", style:{gridTemplateColumns:"repeat("+p.itens.length+", minmax(0, 1fr))"}}, p.itens.map(function(i, k){ return e(Dado,{key:k, t:i[0], v:i[1], mono:true, cor:i[2]}); })); }
+function Grade(p){ return e(TabelaPlanilha,{cols:p.cols, linhas:p.linhas, chave:"id", grade:true, semFiltro:true, semContagem:true, semLimpar:true, vazio:"Nenhum item."}); }
 function PlanoPag(p){
   var c = p.c, ped = p.ped, cfg = c.ce.config, pagavel = PAGAVEL_STATUS.indexOf(ped.status)>=0;
   var base = ped.plano.map(function(x){ return {id:x.id, forma:x.forma, valor:x.valor, vencimento:x.vencimento || "", parcelas:x.parcelas || null, pago:!!x.pago}; });
@@ -217,7 +221,7 @@ function Conferencia(p){
   var enviar = function(){ if(c.exec({op:"pedido_enviar_pagamentos", id:ped.id, destino:v.destino, forcar:v.forcar})) p.fechar(); };
   var col1 = e(Painel,{key:"a", t:"Pedido em pagamentos a fornecedores", ic:"receipt"},
     e("div",{className:"grid grid-cols-2 gap-1.5"}, e(Dado,{t:"Fornecedor", v:pp.fornecedorNome || "—"}), e(Dado,{t:"Número", v:pp.numero}), e(Dado,{t:"Data", v:formatarDia(pp.data)}), e(Dado,{t:"Total", v:formatarReais(pp.total), mono:true}), e(Dado,{t:"CNPJ pagador", v:pp.cnpj || "—"}), e(Dado,{t:"Nota fiscal", v:{com:"Com nota", sem:"Sem nota", misto:"Mista"}[pp.nfTipo]})),
-    pp.linhas.length>0 ? e(Tab,{cols:["Forma", "Vencimento", "Valor", "Parcelas"]}, pp.linhas.map(function(l, i){ return e("tr",{key:i, className:"border-t border-white/10"}, e(Td,null, ROTULO_FORMA_PLANO[l.forma] || l.forma), e(Td,null, formatarDia(l.venc)), e(Td,{dinheiro:true}, formatarReais(l.valor)), e(Td,{dinheiro:true}, l.qtd)); })) : e("p",{className:"text-[12.5px] text-white/60"}, "Nenhuma parte de pagamento."),
+    pp.linhas.length>0 ? e(Grade,{cols:[{k:"forma", t:"Forma"}, {k:"venc", t:"Vencimento"}, {k:"valor", t:"Valor"}, {k:"qtd", t:"Parcelas"}], linhas:pp.linhas.map(function(l, i){ return {id:i, forma:ROTULO_FORMA_PLANO[l.forma] || l.forma, venc:formatarDia(l.venc), valor:formatarReais(l.valor), qtd:l.qtd}; })}) : e("p",{className:"text-[11px]"}, "Nenhuma parte de pagamento."),
     pp.avisos.map(function(a, i){ return e("p",{key:i, className:"rounded-lg bg-[#FBBF24]/15 px-2 py-1 text-[12px] text-[#FBBF24]"}, a); }));
   var col2 = e(Painel,{key:"b", t:"Orientações de Pix", ic:"currency-circle-dollar"},
     orient.length===0 ? e("p",{className:"px-2 py-2 text-[12.5px] text-white/60"}, "Nenhuma parte em Pix revendedora.") : orient.map(function(o, i){
@@ -296,7 +300,7 @@ function FormCompra(p){
     podeItens && e(Bt,{ic:"plus", className:"self-center", onClick:function(){ set("itens", f.itens.concat([itemVazio(f.itens.length ? f.itens[f.itens.length-1].classificacao : "")])); }}, "Item"));
   var nOrc = orcamentosExigidos(cfg, total);
   var col3 = e(Painel,{key:"c", t:"Resumo", ic:"receipt"},
-    e(Faixa,{n:2}, e(Indicador,{t:"Itens", v:f.itens.length, cor:"info"}), e(Indicador,{t:"Total", v:formatarReais(total), cor:"total"})),
+    e(Resumo,{itens:[["Itens", String(f.itens.length)], ["Total", formatarReais(total)]]}),
     nOrc>0 && e("p",{className:"rounded-lg bg-[#60A5FA]/15 px-2 py-1.5 text-[12px] text-[#BFDBFE]"}, "Esta compra pede "+nOrc+" orçamentos. "+textoOrcamentos(cfg)+"."),
     e("p",{className:"px-1 text-[12px] text-white/60"}, "O plano de pagamento pode ser montado depois, dentro da compra."),
     ed && !podeItens && !podeDados && e("p",{className:"text-[12.5px] text-[#FBBF24]"}, "Sem autorização para editar esta compra."));
@@ -307,7 +311,11 @@ function FormCompra(p){
 // ───────────── detalhe da compra (3 colunas) ─────────────
 var IDX = {NAO_VERIFICADA:0, AGUARDANDO:0, AGUARDANDO_ORCAMENTO:0, AGUARDANDO_AUTORIZACAO:0, AGUARDANDO_CNPJ:1, AGUARDANDO_FORMA_PAGAMENTO:1, APROVADA:1, LIBERADA:2, COMPRADA:3, EM_TRANSITO:3, RECEBIDA_PARCIAL:3, RECEBIDA:4, ENTREGUE:5};
 var FORA_DOS_BOTOES = {plano_set:1, itens_set:1, enviar_pagamentos:1, etiqueta:1};
-function Etapas(p){
+// cor do tempo parado: 1 a 2 dias verde, 3 a 4 amarelo, 5 ou mais vermelho (igual ao cartão do funil)
+var corDias = function(d){ return d>=5 ? "text-destructive" : d>=3 ? "text-warning" : "text-success"; };
+var CLASSE_TOM = {success:"text-success", danger:"text-destructive", warning:"text-warning"};
+// LINHA DO PROCESSO (Marcus, 17/11/2026: "bater o olho e saber o status"): as 6 etapas lado a lado; feita = verde com quem e quando, atual = destaque azul com o tempo parado em semáforo, futura = apagada.
+function Processo(p){
   var ped = p.ped, idx = IDX[ped.status];
   var ultRec = ped.recebimentos.length ? ped.recebimentos[ped.recebimentos.length-1] : null;
   var passos = [
@@ -323,20 +331,44 @@ function Etapas(p){
     return Object.assign({estado:estado}, x);
   });
   if(final) lista = lista.filter(function(x){ return x.estado==="feito"; }).concat([{t:ped.status==="NEGADA" ? "Reprovada" : "Cancelada", estado:"cancelado", quem:ped.status==="NEGADA" ? "" : ped.canceladoPor, em:ped.canceladoEm || ped.respondidoEm, nota:ped.status==="NEGADA" ? ped.motivoNegativa : ped.motivoCancelamento}]);
-  var cores = {feito:"#4ADE80", atual:"#60A5FA", futuro:"#94A3B8", cancelado:"#EF4444"}, ics = {feito:"check-circle", atual:"circle-notch", futuro:"circle", cancelado:"x-circle"};
-  var st = useState(false), todos = st[0], evs = ped.eventos.slice().reverse(), vis = todos ? evs : evs.slice(0, 5);
-  return e(Painel,{t:"Etapas", ic:"clock"},
-    lista.map(function(x, i){
-      var c = cores[x.estado];
-      return e("div",{key:i, className:"flex items-start gap-2 rounded-lg px-2.5 py-1.5 text-left", style:{background:x.estado==="atual" ? "#3B82F626" : "rgba(255,255,255,.05)", boxShadow:x.estado==="futuro" ? undefined : "inset 0 0 0 "+(x.estado==="atual" ? 2 : 1)+"px "+(x.estado==="atual" ? "#3B82F6AA" : c+"33"), border:x.estado==="futuro" ? "1px dashed rgba(148,163,184,.45)" : undefined, opacity:x.estado==="futuro" ? 0.75 : 1}},
-        e(Ph,{n:ics[x.estado], s:16, fill:x.estado==="feito", style:{color:c}, className:"mt-0.5"}),
-        e("span",{className:"flex min-w-0 flex-1 flex-col leading-tight"}, e("b",{className:"text-[12.5px]", style:{color:x.estado==="futuro" ? undefined : c}}, x.t+(x.estado==="atual" ? " · "+textoDias(diasNaEtapa(ped)) : "")),
-          (x.quem || x.em) && e("span",{className:"text-[11.5px] text-white/70"}, [x.quem, x.em ? formatarDataHora(x.em) : ""].filter(Boolean).join(" · ")),
-          x.nota && e("span",{className:"break-words text-[11.5px] text-white/65"}, x.nota)));
-    }),
-    vis.length>0 && e("div",{className:"flex flex-col gap-1 border-t border-white/10 pt-1.5"}, e("span",{className:"text-[10.5px] font-bold uppercase tracking-wide text-white/55"}, "Histórico"),
-      vis.map(function(ev, i){ return e("div",{key:i, className:"rounded-md bg-black/20 px-2 py-1 text-left text-[11.5px] leading-tight"}, e("span",{className:MONO+" text-white/55"}, formatarDataHora(ev.em)+" · "+ev.por), e("div",{className:"break-words text-white/85"}, ev.texto)); }),
-      evs.length>5 && e("button",{type:"button", onClick:function(){ st[1](!todos); }, className:"rounded-md bg-white/10 py-1 text-[11.5px] font-bold hover:bg-white/15"}, todos ? "Ver menos" : "Ver todo o histórico ("+evs.length+")")));
+  var cores = {feito:"text-success", atual:"text-white", futuro:"", cancelado:"text-destructive"}, ics = {feito:"check-circle", atual:"circle-notch", futuro:"circle", cancelado:"x-circle"};
+  var dias = diasNaEtapa(ped);
+  return e("div",{className:"flex gap-1"}, lista.map(function(x, i){
+    return e("div",{key:i, className:"flex min-w-0 flex-1 flex-col items-center gap-0.5 rounded-md border px-2 py-0.5 text-center "+(x.estado==="atual" ? "border-2 border-white/70 bg-[var(--bloco-titulo)]" : x.estado==="feito" ? "border-[var(--positivo)]/50" : x.estado==="cancelado" ? "border-[var(--negativo)]" : "border-dashed border-white/20 opacity-60")},
+      e("span",{className:"flex items-center gap-1 text-[11px] font-bold "+cores[x.estado]}, e(Ph,{n:ics[x.estado], s:12, fill:x.estado==="feito"}), x.t),
+      x.estado==="atual" && e("span",{className:"text-[11px] font-bold tabular-nums "+corDias(dias)}, textoDias(dias)+" nesta etapa"),
+      (x.quem || x.em) && e("span",{className:"text-[11px] leading-tight"}, [x.quem, x.em ? formatarDataHora(x.em) : ""].filter(Boolean).join(" · ")),
+      x.nota && e("span",{className:"break-words text-[11px] leading-tight "+(x.estado==="atual" ? "font-semibold" : "")}, x.nota));
+  }));
+}
+// linha de rótulo e valor dos blocos
+function Linha(p){ return p.v==null || p.v==="" ? null : e("div",{className:"flex items-center justify-between gap-3 border-b border-white/10 py-0.5 last:border-b-0"}, e("span",{className:"text-[11px] font-semibold uppercase"}, p.t), e("span",{className:"text-right text-[11px] font-bold tabular-nums "+(p.cor || "")}, p.v)); }
+// quantos dias faltam (ou passaram) para uma data: "em 3 dias", "hoje", "atrasada há 2 dias"
+function prazoTexto(dia, final){
+  if(!dia) return {v:"—", cor:""};
+  var d = diasEntre(hojeSP(), String(dia).slice(0, 10)), data = formatarDia(dia);
+  if(final) return {v:data, cor:""};
+  return d<0 ? {v:data+" · atrasada há "+textoDias(-d), cor:"text-destructive"} : d===0 ? {v:data+" · hoje", cor:"text-warning"} : {v:data+" · em "+textoDias(d), cor:d<=2 ? "text-warning" : "text-success"};
+}
+// SITUAÇÃO E PRAZOS: tudo que diz "como está esta compra" em linhas curtas, com cor só de estado
+function Prazos(p){
+  var ped = p.ped, final = ["NEGADA", "CANCELADA", "ENTREGUE"].indexOf(ped.status)>=0, dias = diasNaEtapa(ped), solic = Math.max(0, diasEntre(String(ped.solicitadoOriginalEm || ped.solicitadoEm).slice(0, 10), hojeSP()));
+  var ent = prazoTexto(ped.previsaoEntrega, final), ven = prazoTexto(ped.proximoVencimento, final || ped.pago);
+  return e(Painel,{t:"Situação e prazos", ic:"clock"}, e("div",{className:"flex flex-col text-left"},
+    e(Linha,{t:"Situação", v:ped.rotuloStatus, cor:CLASSE_TOM[ped.tom] || ""}),
+    ped.atrasado && !final && e(Linha,{t:"Resposta", v:"Atrasada", cor:"text-destructive"}),
+    e(Linha,{t:"Urgência", v:ped.rotuloUrgencia, cor:ped.urgencia==="ALTA" ? "text-destructive" : ped.urgencia==="MEDIA" ? "text-warning" : ""}),
+    !final && e(Linha,{t:"Nesta etapa há", v:textoDias(dias), cor:corDias(dias)}),
+    e(Linha,{t:"Solicitada há", v:textoDias(solic)}),
+    e(Linha,{t:"Prazo de entrega", v:ent.v, cor:ent.cor}),
+    e(Linha,{t:"Vencimento", v:ven.v, cor:ven.cor}),
+    e(Linha,{t:ped.valorCompra!=null ? "Valor da compra" : "Valor estimado", v:ped.valorCompra==null && !(ped.valorFinal>0) ? "A definir" : formatarReais(ped.valorFinal)})));
+}
+function HistoricoCompra(p){
+  var ped = p.ped, st = useState(false), todos = st[0], evs = ped.eventos.slice().reverse(), vis = todos ? evs : evs.slice(0, 5);
+  return e(Painel,{t:"Histórico", ic:"clock-counter-clockwise"},
+    vis.length===0 ? e("p",{className:"text-[13px]"}, "Nenhum movimento.") : vis.map(function(ev, i){ return e("div",{key:i, className:"rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px] leading-tight"}, e("span",{className:"font-semibold tabular-nums"}, formatarDataHora(ev.em)+" · "+ev.por), e("div",{className:"break-words"}, ev.texto)); }),
+    evs.length>5 && e("button",{type:"button", onClick:function(){ st[1](!todos); }, className:"h-8 rounded-md border border-white/30 text-[11px] font-semibold hover:bg-white/10"}, todos ? "Ver menos" : "Ver todo o histórico ("+evs.length+")"));
 }
 function Conversa(p){
   var c = p.c, ped = p.ped, st = useState(""), t = st[0], msgs = ped.mensagens.slice(-6);
@@ -358,17 +390,20 @@ function Detalhe(p){
   var acoes = ped.acoes.filter(function(a){ return !FORA_DOS_BOTOES[a.op]; });
   var podeEditar = (podeAcaoPedido(ped, "itens_set") && c.pode(TRANSICOES.itens_set, ped)) || (c.opera && ["NEGADA", "CANCELADA", "ENTREGUE"].indexOf(ped.status)<0);
   var urg = {ALTA:"ruim", MEDIA:"alerta", BAIXA:"neutro"}[ped.urgencia];
-  var col1 = e("div",{key:"a", className:"flex flex-col gap-2.5"},
+  // Estoque no momento da solicitação (Nickolas, 17/11/2026): um bloco por item ligado a material do estoque; origem = Estoque de material
+  var snapsEstoque = ped.itens.filter(function(i){ return i.materialId!=null; }).map(function(i){ var sn = estoqueDaSolicitacao(c.s, {materialId:i.materialId, quantidade:i.quantidade, solicitadoEm:ped.solicitadoOriginalEm || ped.solicitadoEm, solicitadoPor:ped.solicitante}); return sn && Object.assign(sn, {quantidadeTxt:Number(i.quantidade).toLocaleString("pt-BR")+" "+(i.rotuloUnidade || "")+(Number(i.fatorEntrada)>1 ? " ("+(Number(i.quantidade)*Number(i.fatorEntrada)).toLocaleString("pt-BR")+" "+sn.unidade+")" : "")}); });   // compra em caixa: mostra também o total em unidades do estoque
+  var blocoEstoque = e(EstoqueMomento,{snaps:snapsEstoque});
+  var col1 = e("div",{key:"a", className:"flex flex-col gap-1.5"},
+    e(Prazos,{ped:ped}),
     e(Painel,{t:"Dados da compra", ic:"receipt"},
-      e("div",{className:"flex flex-wrap justify-center gap-1.5"}, e(Selo,{cor:{primary:"info", muted:"neutro", warning:"alerta", info:"info", success:"ok", danger:"ruim"}[ped.tom] || "info"}, ped.rotuloStatus), ped.atrasado && e(Selo,{cor:"ruim", ic:"warning"}, "Atrasada"), e(Selo,{cor:urg, ic:"flag"}, "Urgência "+ped.rotuloUrgencia.toLowerCase()), ped.enviada && e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada aos pagamentos")),
-      e("div",{className:"grid grid-cols-2 gap-1.5"},
-        e(Dado,{t:"Fornecedor", v:ped.fornecedor || "—"}), e(Dado,{t:"Solicitante", v:ped.solicitante}), e(Dado,{t:"Setor", v:ped.setorNome}), e(Dado,{t:"Categoria", v:ped.categoriaNome}),
-        e(Dado,{t:"Classificação", v:ped.classificacoesTxt || "—"}), e(Dado,{t:"CNPJ pagador", v:ped.cnpj || "—"}),
-        e(Dado,{t:ped.valorCompra!=null ? "Valor da compra" : "Valor estimado", v:ped.valorCompra==null && !(ped.valorFinal>0) ? "A definir" : formatarReais(ped.valorFinal), mono:true}), e(Dado,{t:"Prazo de entrega", v:formatarDia(ped.previsaoEntrega) || "—"}),
-        e(Dado,{t:"Vencimento", v:formatarDia(ped.proximoVencimento)}), e(Dado,{t:"Nº do pedido", v:ped.numeroFornecedor}), e(Dado,{t:"Condições", v:ped.condicoesTxt})),
-      ped.link && e("a",{href:/^https?:\/\//i.test(ped.link) ? ped.link : "https://"+ped.link, target:"_blank", rel:"noopener noreferrer", className:"inline-flex items-center justify-center gap-1.5 break-all rounded-lg bg-black/25 px-2 py-1.5 text-[12.5px] font-bold text-[#BFDBFE] hover:bg-black/40"}, e(Ph,{n:"link", s:14}), ped.link),
-      ped.observacao && e("p",{className:"break-words rounded-lg bg-black/25 px-2 py-1.5 text-[12.5px] text-white/80"}, ped.observacao)),
-    ped.origem && ped.origem.tipo==="estoque" && e(RetratoEstoque,{c:c, o:ped.origem}),
+      ped.enviada && e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada aos pagamentos"),
+      e("div",{className:"flex flex-col text-left"},
+        e(Linha,{t:"Fornecedor", v:ped.fornecedor}), e(Linha,{t:"Solicitante", v:ped.solicitante}), e(Linha,{t:"Setor", v:ped.setorNome}), e(Linha,{t:"Categoria", v:ped.categoriaNome}),
+        e(Linha,{t:"Classificação", v:ped.classificacoesTxt}), e(Linha,{t:"CNPJ pagador", v:ped.cnpj}), e(Linha,{t:"Nº do pedido", v:ped.numeroFornecedor}), e(Linha,{t:"Condições", v:ped.condicoesTxt})),
+      ped.link && e("a",{href:/^https?:\/\//i.test(ped.link) ? ped.link : "https://"+ped.link, target:"_blank", rel:"noopener noreferrer", className:"inline-flex items-center justify-center gap-1.5 break-all rounded-md border border-white/20 px-2 py-0.5 text-[11px] font-bold hover:bg-white/10"}, e(Ph,{n:"link", s:12}), ped.link),
+      ped.observacao && e("p",{className:"break-words rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px]"}, ped.observacao)),
+    ped.origem && ped.origem.tipo==="estoque" ? e(RetratoEstoque,{c:c, o:ped.origem}) : blocoEstoque);   // retrato gravado no pedido (Nickolas, 16/11/2026) ou, em compra antiga, o calculado do histórico
+  var blocoItens =
     e(Painel,{t:"Itens", ic:"package"},
       // uma FICHA por item (Nickolas, 16/11/2026): nome e valores sempre inteiros para quem aprova (a tabela espremida cortava com "…"). Sem preço ainda = "A definir", nunca R$ 0,00
       ped.itens.map(function(i){
@@ -382,9 +417,9 @@ function Detalhe(p){
           e("span",{className:"text-[11px] font-bold uppercase", style:{color:corRec}}, "Recebido: "+i.qtdRecebida+" de "+i.quantidade));
       }),
       ped.itens.some(function(i){ return i.semMaterial; }) && e("p",{className:"text-[11.5px] text-[#FBBF24]"}, "Há item que entra no estoque sem material ligado: no recebimento ele não dará entrada."),
-      podeEditar && e(Bt,{ic:"pencil-simple", className:"self-center", onClick:function(){ ac.editar(ped.id); }}, "Editar compra")));
-  var col2 = e("div",{key:"b", className:"flex flex-col gap-2.5"}, e(Etapas,{ped:ped}), e(PlanoPag,{c:c, ped:ped}), e(Conversa,{c:c, ped:ped}));
-  var col3 = e("div",{key:"c", className:"flex flex-col gap-2.5"},
+      podeEditar && e(Bt,{ic:"pencil-simple", className:"self-center", onClick:function(){ ac.editar(ped.id); }}, "Editar compra"));
+  var col2 = e("div",{key:"b", className:"flex flex-col gap-1.5"}, blocoItens, e(PlanoPag,{c:c, ped:ped}), e(HistoricoCompra,{ped:ped}), e(Conversa,{c:c, ped:ped}));
+  var col3 = e("div",{key:"c", className:"flex flex-col gap-1.5"},
     e(Painel,{t:"Ações", ic:"seal-check"},
       acoes.length===0 ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Sem ações disponíveis nesta etapa.") : e("div",{className:"flex flex-col gap-1.5"}, acoes.map(function(a){
         var ok = c.pode(a, ped);
@@ -405,7 +440,7 @@ function Detalhe(p){
       !pagavel ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Disponível depois da compra efetuada.") : ped.enviada
         ? e("div",{className:"flex flex-col items-center gap-1.5"}, e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada em "+formatarDataHora(ped.enviadaPagamentos.em)), e("span",{className:"text-[12px] text-white/70"}, "Por "+ped.enviadaPagamentos.por), e(Bt,{ic:"receipt", onClick:function(){ ac.enviar(ped.id); }}, "Ver o que foi enviado"))
         : e(Bt,{tipo:"forte", ic:"paper-plane-tilt", disabled:!(c.pode(TRANSICOES.enviar_pagamentos, ped)), semAut:true, onClick:function(){ ac.enviar(ped.id); }}, "Enviar para pagamentos")));
-  return e(Janela,{t:"Compra #"+ped.id, sub:ped.titulo+" · "+ped.rotuloStatus, fechar:p.fechar, colunas:[col1, col2, col3]});
+  return e(Janela,{t:"Compra #"+ped.id, sub:ped.titulo+" · "+ped.rotuloStatus, fechar:p.fechar, topo:e(Processo,{ped:ped}), colunas:[col1, col2, col3]});
 }
 
 // ───────────── retrato do estoque no pedido feito pelo carrinho do Estoque de material (16/11/2026) ─────────────

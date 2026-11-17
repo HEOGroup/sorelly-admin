@@ -1,13 +1,14 @@
 // Sorelly Admin · montagem — pages/compras/EstoqueMaterial.js
-// Materiais & Estoque → aba "Estoque de material": materiais por aba (tipo) e categoria, em cartões num mosaico, com contagem, entrada/saída/ajuste, pedido de compra, histórico e edição.
+// Materiais & Estoque → "Estoque de material": uma tabela por fornecedor (padrão azul de 17/11/2026) com contagem, entrada/saída/ajuste, carrinho de compra, andamento da compra, foto, histórico e edição.
 // Regras no domínio (domain/compras-estoque.js, estado s.ce, ações CE). Aqui só se desenha e se chamam as ações. Cor do setor: azul.
-import { Abas, BarraFiltros, Faixa, Janela, Mosaico, Pagina, Tab, Td, ESTADO, degrade } from "@/apps/montagem/components/padrao";
-import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
+import { Janela, Pagina, ESTADO, degrade } from "@/apps/montagem/components/padrao";
+import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
-import { ANDAMENTOS, ROTULO_ANDAMENTO, ROTULO_SITUACAO, agruparPorStatus, alertasDoTipo, formatarDataHora, formatarDia, formatarReais, hojeSP, historicoMaterial, materialVisto, proximaContagem, resumoAba } from "@/apps/montagem/domain/compras-estoque";
-import { Bt, BtMini, Busca, Editor, Ic, Ind, Nivel, Num, Painel, Selo, Sel, Vazio, useCe, AZUL } from "@/apps/montagem/pages/compras/visualCompras";
+import { ANDAMENTOS, ROTULO_ANDAMENTO, ROTULO_SITUACAO, ROTULO_UNIDADE, UNIDADES, agruparPorStatus, alertasDoTipo, formatarDataHora, formatarDia, formatarReais, hojeSP, historicoMaterial, materialVisto, proximaContagem, resumoAba } from "@/apps/montagem/domain/compras-estoque";
+import { Bt, BtMini, Editor, Ic, Nivel, Num, Painel, Selo, Vazio, useCe } from "@/apps/montagem/pages/compras/visualCompras";
 import { BotaoFoto, EscolherFoto, FotoMaterial } from "@/apps/montagem/components/foto-material";
-import { useCompras } from "@/apps/montagem/pages/compras/pecas";
+import { normal, useCompras } from "@/apps/montagem/pages/compras/pecas";
 import { useAcoes } from "@/apps/montagem/pages/compras/janelas";
 import { MONO } from "@/apps/montagem/ui/input";
 import { e, useState } from "@/shared/react";
@@ -130,7 +131,7 @@ function JanelaMaterial(p){
   var idv = function(s){ return s==="" ? undefined : isNaN(Number(s)) ? s : Number(s); };
   return e(Editor,{t:novo ? "Novo material" : "Editar material", sub:novo ? "Cadastro por categoria do estoque" : m.material, fechar:p.fechar, dados:novo ? null : e(DadosMaterial,{m:m}), tDados:"Situação atual", salvarRot:novo ? "Cadastrar material" : "Salvar alterações", semAut:!p.pode.compra,
     ini:{material:novo ? "" : m.material, unidade:novo ? "" : m.unidade, estoqueMinimo:novo ? "0" : String(m.estoqueMinimo), categoriaId:novo ? (cats[0] ? String(cats[0].id) : "") : String(m.categoriaId), fornecedorId:novo || m.fornecedorId==null ? "" : String(m.fornecedorId), observacoes:novo ? "" : (m.observacoes||"")},
-    campos:[{k:"material", rot:"Material", tipo:"texto", obrig:true}, {k:"unidade", rot:"Unidade", tipo:"texto", obrig:true, ph:"Ex.: unid, caixa, pacote"}, {k:"estoqueMinimo", rot:"Estoque mínimo", tipo:"num", min:0, obrig:true},
+    campos:[{k:"material", rot:"Material", tipo:"texto", obrig:true}, {k:"unidade", rot:"Unidade", tipo:"select", obrig:true, ops:UNIDADES.map(function(u){ return [ROTULO_UNIDADE[u], ROTULO_UNIDADE[u]]; }), vazio:"Selecione"}, {k:"estoqueMinimo", rot:"Estoque mínimo", tipo:"num", min:0, obrig:true},
       {k:"categoriaId", rot:"Categoria", tipo:"select", ops:catOps, obrig:true, vazio:catOps.length ? "Selecione" : "Cadastre uma categoria abaixo"}, {k:"fornecedorId", rot:"Fornecedor", tipo:"select", ops:fornOps, vazio:"Sem fornecedor definido"}, {k:"observacoes", rot:"Observações", tipo:"area"}],
     lateral:function(){ return !novo ? painelFoto : e("div",{className:"flex flex-col gap-2"}, painelFoto, e(Painel,{t:"Nova categoria", ic:"plus"}, e("input",{type:"text", value:nc[0], placeholder:"Nome da categoria", "aria-label":"Nome da nova categoria", onChange:function(ev){ nc[1](ev.target.value); }, className:"h-8 w-full rounded-lg border border-input bg-input/30 px-3 text-center text-[13px] outline-none"}),
       e(Bt,{ic:"plus", disabled:!nc[0].trim() || !p.pode.compra, semAut:true, onClick:function(){ if(x.exec("mcat_add", {tipoId:p.tipo, nome:nc[0]})) nc[1](""); }}, "Criar categoria"))); },
@@ -166,19 +167,32 @@ function JanelaHistorico(p){
 }
 
 // ───────────── tela ─────────────
+// ESTOQUE DE MATERIAL no padrão do Funil de compras (Marcus, 17/11/2026), JUNTO com o trabalho do Nickolas (16/11/2026: andamento da compra, foto e carrinho):
+// bloco azul, uma faixa de menus suspensos e UMA tabela com filtro e ordem em cada coluna. Os três tipos aparecem juntos (sem filtro de tipo) e a tabela fica separada por fornecedor.
+// Os números que ficavam em cartões (críticos, em atenção, esperando decisão, compras chegando) foram para dentro das opções dos filtros; a próxima contagem fica na barra azul.
+// Do Nickolas continuam: o Andamento da compra (coluna; clicar abre a compra em Compras), a foto (coluna Foto: ícone que amplia), o carrinho (Pedir compra) e as janelas de contar, mover, editar e histórico.
+var num = function(n){ return Number(n || 0).toLocaleString("pt-BR"); };
+var CLASSE_STATUS = {CRITICO:"text-destructive", ATENCAO:"text-warning", OK:"text-success"};
+var CLASSE_AND = {alerta:"text-warning", ok:"text-success", info:"", neutro:""};   // andamento da compra na tabela: texto simples, sem pílula (cor só para estado)
 function AbaEstoqueMaterial(pr){
   var x = useCe(), s = x.s, cfg = x.cfg, tipos = cfg.tipos;
-  var sT = useState(tipos[0].id), sQ = useState(""), sSt = useState(""), sSi = useState(""), sJ = useState((pr && pr.janIni) || null);
-  var tipo = tipos.some(function(t){ return t.id===sT[0]; }) ? sT[0] : tipos[0].id, q = sQ[0], st = sSt[0], si = sSi[0], jan = sJ[0];
+  var sC = useState(""), sF = useState(""), sSt = useState(""), sSi = useState(""), sMo = useState("ativos"), sJ = useState((pr && pr.janIni) || null);
+  var st = sSt[0], si = sSi[0], modo = sMo[0], jan = sJ[0];
   var pode = {contagem:x.pode("CONTAGEM"), compra:x.pode("COMPRA"), aprovacao:x.pode("APROVACAO")};
-  var res = resumoAba(s, tipo), alertas = alertasDoTipo(s, tipo);
-  var grupos = agruparPorStatus(s, tipo, {q:q, status:st, situacao:si});
-  var filtro = !!(q || st || si), visiveis = grupos.reduce(function(t, g){ return t+g.ativos.length; }, 0);
-  var parados = [].concat.apply([], grupos.map(function(g){ return g.parados; }));
-  var proxima = proximaContagem(cfg);
+  var res = {totalItens:0, ok:0}, alertas = {criticosOuZerados:0, atencao:0, comprasChegando:0, aguardandoAprovacao:0};
+  tipos.forEach(function(t){ var r = resumoAba(s, t.id), a = alertasDoTipo(s, t.id); res.totalItens += r.totalItens; res.ok += r.ok; Object.keys(alertas).forEach(function(k){ alertas[k] += a[k]; }); });
+  var grupos = [].concat.apply([], tipos.map(function(t){ return agruparPorStatus(s, t.id, {q:"", status:st, situacao:si}); }));
+  var doGrupo = function(g){ return modo==="parados" ? g.parados : g.ativos; };
+  var catOps = grupos.filter(function(g){ return doGrupo(g).length; }).map(function(g){ return [String(g.categoria.id), normal(g.categoria.nome)+" · "+doGrupo(g).length]; }).sort(function(a, b){ return a[1].localeCompare(b[1], "pt-BR"); }), cat = catOps.some(function(o){ return o[0]===sC[0]; }) ? sC[0] : "";
+  var todos = [].concat.apply([], grupos.filter(function(g){ return !cat || String(g.categoria.id)===cat; }).map(function(g){ return doGrupo(g).map(function(m){ return {m:m, cat:g.categoria.nome, forn:normal(m.fornecedor) || "Sem fornecedor"}; }); }));
+  var contaForn = todos.reduce(function(o, z){ o[z.forn] = (o[z.forn] || 0)+1; return o; }, {});
+  var fornOps = Object.keys(contaForn).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); }).map(function(n){ return [n, n+" · "+contaForn[n]]; }), forn = fornOps.some(function(o){ return o[0]===sF[0]; }) ? sF[0] : "";
+  var mats = todos.filter(function(z){ return !forn || z.forn===forn; }).sort(function(a, b){ return a.forn.localeCompare(b.forn, "pt-BR") || normal(a.m.material).localeCompare(normal(b.m.material), "pt-BR"); });   // separado por fornecedor: ordem de fornecedor e, dentro dele, de material
+  var nParados = tipos.reduce(function(t, tp){ return t+agruparPorStatus(s, tp.id, {q:"", status:st, situacao:si}).reduce(function(n, g){ return n+g.parados.length; }, 0); }, 0);
+  var proxima = proximaContagem(cfg), filtro = !!(cat || forn || st || si);
   var abrir = function(k, id){ sJ[1]({k:k, id:id}); }, fechar = function(){ sJ[1](null); };
   var parar = function(m, v){ x.exec("mat_parado", {id:m.id, parado:v}); };
-  // abrir a compra ligada (16/11/2026): a MESMA janela da área de Compras, com as mesmas ações e permissões (mudar o andamento aqui muda o mesmo registro)
+  // abrir a compra ligada (16/11/2026, Nickolas): a MESMA janela da área de Compras, com as mesmas ações e permissões (mudar o andamento aqui muda o mesmo registro)
   var cc = useCompras(), ac = useAcoes(cc);
   var verCompra = function(alvo){
     if(alvo && alvo.tipo==="pedido") return ac.abrir(alvo.id);
@@ -187,35 +201,45 @@ function AbaEstoqueMaterial(pr){
     if(and.abertas.length===1 && and.principal.tipo==="pedido") return ac.abrir(and.principal.id);
     abrir("hist", alvo.id);   // várias compras, só antigas ou nenhuma: a lista completa fica no histórico
   };
-  var limpar = function(){ sQ[1](""); sSt[1](""); sSi[1](""); };
+  var limpar = function(){ sC[1](""); sF[1](""); sSt[1](""); sSi[1](""); };
   var mAtual = jan && jan.id!=null ? (function(){ var bruto = s.ce.materiais.filter(function(mm){ return String(mm.id)===String(jan.id); })[0]; return bruto ? materialVisto(s, bruto) : null; })() : null;
+  var catAtual = cat ? s.ce.matCategorias.filter(function(c){ return String(c.id)===cat; })[0] : null;
+  var tipo = (mAtual && mAtual.tipoId) || (catAtual && catAtual.tipoId) || tipos[0].id;   // a janela de cadastro mostra as categorias do tipo do material (ou da categoria escolhida no filtro)
   var comuns = {m:mAtual, x:x, pode:pode, fechar:fechar, tipo:tipo, verCompra:verCompra};
 
-  var blocos = grupos.filter(function(g){ return g.ativos.length; }).map(function(g){
-    return e(BlocoBarra,{key:g.categoria.id, cor:"azul", compacto:true, t:g.categoria.nome, dir:g.ativos.length},
-      e("div",{className:"grid gap-2 p-2", style:{gridTemplateColumns:"repeat(auto-fill, minmax(12.5rem, 1fr))"}}, g.ativos.map(function(m){ return e(CartaoMaterial,{key:m.id, m:m, pode:pode, abrir:abrir, parar:parar, verCompra:verCompra}); })));
-  });
+  // filtros compactos (Marcus, 17/11/2026: "compacta mais esses filtros, fonte menor"): letra de 11 px e largura só do necessário
+  var SEL_P = "h-7 w-auto max-w-[11rem] shrink-0 rounded-md border border-white/50 bg-[#14233f] px-1.5 text-[11px] font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-white";   // padrao-ok: filtros menores na faixa azul (Marcus, 17/11/2026)
+  var BTN_P = "h-7 shrink-0 whitespace-nowrap rounded-md border border-white/50 bg-[#14233f] px-2 text-[11px] font-semibold text-white hover:bg-white/15";   // padrao-ok: botões menores na faixa azul (Marcus, 17/11/2026)
+  var sel = function(rotulo, valor, aoMudar, opcoes, semTodos){ return e("select",{"aria-label":rotulo, value:valor, onChange:function(ev){ aoMudar(ev.target.value); }, className:SEL_P}, !semTodos && e("option",{value:""}, rotulo), opcoes.map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })); };
+  var opAnd = [["SEM", "Sem compra em andamento"], ["DECISAO", "Esperando decisão · "+alertas.aguardandoAprovacao]].concat(ANDAMENTOS.map(function(k){ return [k, ROTULO_ANDAMENTO[k]+(k==="ENTREGA" ? " · "+alertas.comprasChegando : "")]; }), [["VERIFICAR", ROTULO_SITUACAO.VERIFICAR], ["VERIFICAR_UNIDADE", ROTULO_SITUACAO.VERIFICAR_UNIDADE]]);
+  var faixa = e("div",{className:"flex flex-nowrap items-center gap-1.5 overflow-x-auto border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
+    sel("Todos os fornecedores", forn, sF[1], fornOps),
+    sel("Todas as categorias", cat, sC[1], catOps),
+    sel("Todos os estoques", st, sSt[1], [["CRITICO", "Crítico · "+alertas.criticosOuZerados], ["ATENCAO", "Atenção · "+alertas.atencao], ["OK", "OK · "+res.ok]]),
+    sel("Todo andamento da compra", si, sSi[1], opAnd),
+    sel("Materiais", modo, sMo[1], [["ativos", "Ativos · "+res.totalItens], ["parados", "Parados · "+nParados]], true),
+    filtro && e("button",{type:"button", onClick:limpar, className:BTN_P}, "Limpar"),
+    e("button",{type:"button", disabled:!pode.compra, onClick:function(){ abrir("novo", null); }, title:pode.compra ? "Cadastrar um material" : "Sem autorização", className:"ml-auto h-7 shrink-0 whitespace-nowrap rounded-md border border-white/50 bg-white px-2 text-[11px] font-semibold text-[#14233f] disabled:opacity-40"}, "Novo material"));   // padrao-ok: botão menor na faixa azul (Marcus, 17/11/2026)
 
-  return e(Pagina,null,
-    e(Abas,{cor:AZUL, abas:tipos.map(function(t){ return [t.id, t.nome]; }), atual:tipo, onMudar:function(k){ sT[1](k); limpar(); }}),
-    e(Faixa,{n:5},
-      e(Ind,{t:"Críticos ou zerados", v:alertas.criticosOuZerados, cor:"ruim", on:st==="CRITICO", onClick:function(){ sSt[1](st==="CRITICO" ? "" : "CRITICO"); }}),
-      e(Ind,{t:"Em atenção", v:alertas.atencao, cor:"alerta", on:st==="ATENCAO", onClick:function(){ sSt[1](st==="ATENCAO" ? "" : "ATENCAO"); }}),
-      e(Ind,{t:"Aguardando aprovação", v:alertas.aguardandoAprovacao, cor:"cian", on:si==="DECISAO", onClick:function(){ sSi[1](si==="DECISAO" ? "" : "DECISAO"); }}),   // solicitado, em cotação ou aguardando aprovação
-      e(Ind,{t:"Compras chegando", v:alertas.comprasChegando, cor:"info", on:si==="ENTREGA", onClick:function(){ sSi[1](si==="ENTREGA" ? "" : "ENTREGA"); }}),
-      e(Ind,{t:"Itens na aba", v:res.totalItens, cor:"total", sub:res.ok+" em dia"})),
-    e(BarraFiltros,{ativo:filtro, onLimpar:limpar},
-      e(Busca,{v:q, set:sQ[1], ph:"Buscar material ou fornecedor"}),
-      e(Sel,{v:st, set:sSt[1], rot:"Situação do estoque", todos:"Todas as situações do estoque", opcoes:[["CRITICO", "Crítico"], ["ATENCAO", "Atenção"], ["OK", "OK"]]}),
-      e(Sel,{v:si, set:sSi[1], rot:"Andamento da compra", todos:"Todo andamento da compra", opcoes:[["SEM", "Sem compra em andamento"], ["DECISAO", "Esperando decisão"]].concat(ANDAMENTOS.map(function(k){ return [k, ROTULO_ANDAMENTO[k]]; }), [["VERIFICAR", ROTULO_SITUACAO.VERIFICAR], ["VERIFICAR_UNIDADE", ROTULO_SITUACAO.VERIFICAR_UNIDADE]])}),
-      e("span",{className:"inline-flex h-9 items-center gap-1 rounded-lg bg-white/5 px-3 text-[12.5px] font-bold ring-1 ring-white/10"}, e("b",{className:MONO}, visiveis), visiveis===1 ? "material" : "materiais"),
-      proxima && e("span",{className:"inline-flex h-9 items-center gap-1.5 rounded-lg bg-white/5 px-3 text-[12px] ring-1 ring-white/10", title:"Próxima contagem prevista"}, e(Ph,{n:"calendar-check", s:14}), "Próxima contagem: "+formatarDia(proxima)),
-      e(Bt,{tipo:"forte", ic:"plus", className:"h-9 py-0!", disabled:!pode.compra, semAut:true, onClick:function(){ abrir("novo", null); }}, "Novo material")),
-    blocos.length ? e(Mosaico,{min:"26rem"}, blocos) : e(Vazio,{ic:"package"}, filtro ? "Nenhum material encontrado com os filtros aplicados." : "Nenhum material cadastrado nesta aba."),
-    parados.length>0 && e(BlocoBarra,{cor:"prata", compacto:true, t:"Materiais parados", dir:parados.length},
-      e("div",{className:"p-2"}, e(Tab,{cols:["Material", "Categoria", "Saldo", "Ações"]}, parados.map(function(m){ return e("tr",{key:m.id, className:"border-t border-white/10"},
-        e(Td,{forte:true}, m.material), e(Td,null, m.categoriaNome), e(Td,{dinheiro:true}, m.estoqueAtual),
-        e(Td,null, e("div",{className:"flex justify-center gap-1"}, e(BtMini,{ic:"clock-counter-clockwise", onClick:function(){ abrir("hist", m.id); }, titulo:"Histórico"}, "Histórico"), e(BtMini,{ic:"arrow-counter-clockwise", disabled:!pode.aprovacao, forte:true, onClick:function(){ parar(m, false); }, titulo:pode.aprovacao ? "Reativar" : "Sem autorização"}, "Reativar")))); })))),
+  var linhas = mats.map(function(o){ var m = o.m, a = m.andamento || {rotulo:"—", extra:0};
+    return {id:m.id, _m:m, forn:o.forn, material:normal(m.material), cat:normal(o.cat), un:m.unidade || "—", saldo:num(m.estoqueAtual), min:num(m.estoqueMinimo), estoque:m.parado ? "Parado" : ({CRITICO:"Crítico", ATENCAO:"Atenção", OK:"OK"})[m.status], st:m.parado ? "" : m.status,
+      compra:a.rotulo+(a.extra ? " +"+a.extra : "")+(m.nota ? " · "+m.nota : ""), contagem:m.ultimaContagem || ""}; });
+  var cols = [{k:"forn", t:"Fornecedor"}, {k:"material", t:"Material"}, {k:"foto", t:"Foto", render:function(v, l){ return l._m.foto ? e(BotaoFoto,{foto:l._m.foto, rot:l._m.material}) : ""; }}, {k:"cat", t:"Categoria"}, {k:"un", t:"Unidade"},
+    {k:"saldo", t:"Saldo", cor:function(l){ return CLASSE_STATUS[l.st] || ""; }}, {k:"min", t:"Mínimo"}, {k:"estoque", t:"Estoque", cor:function(l){ return CLASSE_STATUS[l.st] || ""; }},
+    {k:"compra", t:"Compra", render:function(v, l){ var a = l._m.andamento; return a && a.etapa ? e("button",{type:"button", title:"Abrir a compra", onClick:function(ev){ ev.stopPropagation(); verCompra(l._m); }, className:"cursor-pointer font-semibold hover:underline "+(CLASSE_AND[COR_AND[a.etapa]] || "")}, v) : v; }},
+    {k:"contagem", t:"Última contagem", fmt:formatarDia},
+    {k:"acoes", t:"Ações", render:function(v, l){ var m = l._m;
+      // um menu suspenso com o nome de cada ação (antes eram 6 ícones sem nome); a opção sem autorização aparece desligada
+      var ops = m.parado
+        ? [["hist", "Ver histórico", true], ["reativar", "Reativar material", pode.aprovacao]]
+        : [["contar", "Contar", pode.contagem], ["mov", "Entrada, saída ou ajuste", pode.contagem], ["pedir", "Pedir compra", pode.compra], ["hist", "Ver histórico", true], ["edit", "Editar material", pode.compra], ["parar", "Marcar como parado", pode.aprovacao]];
+      var vai = function(k){ if(k==="reativar") parar(m, false); else if(k==="parar") parar(m, true); else if(k) abrir(k, m.id); };
+      return e("select",{value:"", "aria-label":"Ações de "+m.material, onClick:function(ev){ ev.stopPropagation(); }, onChange:function(ev){ vai(ev.target.value); ev.target.value = ""; }, className:"cursor-pointer text-center"},
+        e("option",{value:""}, "Ações"), ops.map(function(o){ return e("option",{key:o[0], value:o[0], disabled:!o[2]}, o[1]+(o[2] ? "" : " (sem autorização)")); })); }}];
+  var tabela = e(TabelaPlanilha,{key:"est"+cat+forn+st+si+modo, cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, limite:300, aoClicar:function(l){ abrir("hist", l._m.id); }, vazio:filtro ? "Nenhum material encontrado com os filtros aplicados." : modo==="parados" ? "Nenhum material parado." : "Nenhum material cadastrado nesta aba."});
+
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
+    e(BlocoPainel,{titulo:"Estoque de material", compacto:true, dir:proxima ? "Próxima contagem: "+formatarDia(proxima) : undefined}, faixa, tabela),
     jan && jan.k==="novo" && e(JanelaMaterial,{m:null, x:x, pode:pode, fechar:fechar, tipo:tipo}),
     mAtual && jan.k==="contar" && e(JanelaContar,comuns),
     mAtual && jan.k==="mov" && e(JanelaMov,comuns),
@@ -224,5 +248,6 @@ function AbaEstoqueMaterial(pr){
     mAtual && jan.k==="hist" && e(JanelaHistorico,Object.assign({abrir:abrir, parar:parar}, comuns)),
     ac.janelas());   // janela da compra (a mesma de Compras), por cima das do estoque
 }
+
 
 export { AbaEstoqueMaterial, JanelaPedir };   // JanelaPedir também é usada pelo Painel (PainelComprasEstoque.js)
