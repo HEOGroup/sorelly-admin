@@ -147,7 +147,7 @@ function AbaCondicionais(){
 
   var cols = [
     {k:"hora", t:"Listagem"},   // 17/11/2026 (Marcus): a coluna mostra o horário da LISTAGEM (o mesmo da representante); o horário de cada revendedora fica na coluna Atendimento, menos importante
-    {k:"rev", t:"Revendedora"},
+    {k:"rev", t:"Revendedora", titulo:true},
     {k:"tipo", t:"Tipo"},
     {k:"atend", t:"Atendimento"},
     {k:"conds", t:"Condicionais", render:function(v, l){ var ns = condVisiveisPre(l.kit); return ns.length ? e("span",{className:MONO+" font-bold tabular-nums whitespace-nowrap"}, ns.map(function(n, i){ var st = condEstado(l.kit, n); return e("span",{key:n, className:(st.p ? "text-success" : st.falta ? "text-destructive" : "")+(i ? " ml-3" : "")}, (st.p ? "✓ " : st.falta ? "! " : "")+n); })) : v; }},

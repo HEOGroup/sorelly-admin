@@ -124,6 +124,9 @@ function TabelaPlanilha(p){
   var spg = useState(1), pag = spg[0], setPag = spg[1];
   var sdr = useState(null), levando = sdr[0], setLevando = sdr[1], sal = useState(null), alvoDrop = sal[0], setAlvoDrop = sal[1];   // mover coluna: qual está sendo levada e sobre qual está passando
   var sa = useState(null), aberto = sa[0], setAberto = sa[1], sdt = useState({}), detAbertos = sdt[0], setDetAbertos = sdt[1];
+  // MODO CELULAR (17/11/2026, Marcus: "a tela não pode ficar jogando para o lado no celular"): abaixo de 640 px cada linha vira um CARTÃO (sem rolar para o lado). semCartoes: true = mantém a tabela.
+  var scel = useState(function(){ return typeof window!=="undefined" && !!window.matchMedia && window.matchMedia("(max-width: 639px)").matches; }), celular = scel[0] && !p.semCartoes, setCelular = scel[1];
+  useEffect(function(){ if(!window.matchMedia) return undefined; var mq = window.matchMedia("(max-width: 639px)"), f = function(){ setCelular(mq.matches); }; f(); if(mq.addEventListener) mq.addEventListener("change", f); else mq.addListener(f); return function(){ if(mq.removeEventListener) mq.removeEventListener("change", f); else mq.removeListener(f); }; }, [setCelular]);
   var raiz = useRef(null), wrapRef = useRef(null), arr = useRef({on:false, moveu:false, x:0, l:0});
   var desce = function(ev){ if(ev.button!==0) return; if(ev.target.closest && ev.target.closest("input, select, textarea, label, button, a, [role=dialog]")) return; var w = wrapRef.current; if(!w || w.scrollWidth<=w.clientWidth+4) return; arr.current = {on:true, moveu:false, x:ev.clientX, l:w.scrollLeft}; w.setAttribute("data-arrastando", "1"); document.body.style.userSelect = "none"; ev.stopPropagation(); };
   var clicou = function(ev){ if(arr.current.moveu){ ev.preventDefault(); ev.stopPropagation(); arr.current.moveu = false; } };
@@ -186,18 +189,44 @@ function TabelaPlanilha(p){
     if(aberta) corpo.push(e("tr",{key:"d"+chv}, e("td",{colSpan:ncols, className:"border-b border-border bg-black/25 p-2"}, det)));
   });
   if(sep) corpo = topo.concat(base.length ? [linhaCab("cab")] : [], base);
+  var cartoesEl = null;
+  if(celular){
+    var lista = [], ult2;
+    var conteudo = function(c, l, aberta){ var tx = vazio(l[c.k]) ? "" : (c.fmt ? c.fmt(l[c.k], l) : String(l[c.k])); var r = c.render ? c.render(l[c.k], l, aberta) : tx; return (r===null || r===undefined || r===false || r==="") ? null : r; };
+    vis.forEach(function(l, i){
+      if(p.agrupar && l[p.agrupar]!==ult2){ ult2 = l[p.agrupar]; var q2 = 0; for(var j2=i;j2<vis.length && vis[j2][p.agrupar]===ult2;j2++) q2++;
+        var gv2 = ult2, gl2 = p.linhaGrupo ? p.linhaGrupo(ult2, vis.slice(i, i+q2)) : null;
+        lista.push(e("div",{key:"g"+i, onClick:p.aoGrupo ? function(){ p.aoGrupo(gv2); } : undefined, className:"border-b border-border bg-white/10 px-2.5 py-1.5 text-center text-[13px] font-semibold"+(p.aoGrupo ? " cursor-pointer" : "")}, gl2 ? gl2.rotulo : (p.rotuloGrupo ? p.rotuloGrupo(ult2, q2) : texto(ult2)+" · "+q2))); }
+      if(p.agrupar && p.grupoAberto && !p.grupoAberto(l[p.agrupar])) return;
+      var chv2 = p.chave ? l[p.chave] : i, aberta2 = !!(p.detalhe && (detAbertos[chv2]!==undefined ? detAbertos[chv2] : (p.detAberto && p.detAberto(l)))), det2 = aberta2 ? p.detalhe(l) : null; if(!det2) aberta2 = false;
+      var alterna2 = function(){ var n2 = Object.assign({}, detAbertos); n2[chv2] = !aberta2; setDetAbertos(n2); };
+      var itens = p.cols.map(function(c){ return {c:c, v:conteudo(c, l, aberta2)}; }).filter(function(x){ return x.v!==null; });
+      var acoes = itens.filter(function(x){ return x.c.k==="acao"; }), dados = itens.filter(function(x){ return x.c.k!=="acao"; }), titulo = dados.find(function(x){ return x.c.titulo; }) || dados[0], resto = dados.filter(function(x){ return x!==titulo; });   // c.titulo: true = a coluna que vira o título do cartão
+      lista.push(e("div",{key:chv2, onClick:p.detalhe ? alterna2 : p.aoClicar ? function(){ p.aoClicar(l); } : undefined, className:"flex flex-col gap-1.5 border-b border-border px-2.5 py-2"+((p.detalhe || p.aoClicar) ? " cursor-pointer" : "")+(p.linhaCls ? " "+(p.linhaCls(l) || "") : "")},
+        titulo && e("div",{className:"break-words text-center text-[13px] font-bold"+(titulo.c.cor ? " "+titulo.c.cor(l) : "")}, (p.detalhe ? (aberta2 ? "▾ " : "▸ ") : ""), titulo.v),
+        resto.length>0 && e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1.5"}, resto.map(function(x){ return e("div",{key:x.c.k, className:"min-w-0 text-center"},
+          e("p",{className:"text-[11px] font-semibold uppercase tracking-[.05em] text-foreground"}, x.c.t),
+          e("div",{className:"break-words text-[13px]"+(x.c.cor ? " "+x.c.cor(l) : "")}, x.v)); })),
+        acoes.length>0 && e("div",{className:"flex flex-wrap items-center justify-center gap-2"}, acoes.map(function(x){ return e("div",{key:x.c.k}, x.v); }))));
+      if(aberta2) lista.push(e("div",{key:"d"+chv2, className:"border-b border-border bg-black/25 p-2"}, det2));
+    });
+    var rod = p.totalRodape ? p.totalRodape(linhas).map(function(x, j){ return {t:(p.cols[j] || {}).t, v:x}; }).filter(function(x){ return x.v!==null && x.v!==undefined && x.v!=="" && x.v!==false; }) : [];
+    cartoesEl = e("div",{className:"overflow-hidden rounded-lg border border-border", style:{background:"#1c1d21"}},
+      lista.length ? lista : e("p",{className:"px-2.5 py-2 text-center text-[13px]"}, p.vazio || "Nenhum registro."),
+      rod.length>0 && e("div",{className:"grid grid-cols-2 gap-x-3 gap-y-1.5 border-t-2 border-white/30 bg-white/5 px-2.5 py-2"}, rod.map(function(x, j){ return e("div",{key:j, className:"min-w-0 text-center"}, e("p",{className:"text-[11px] font-semibold uppercase tracking-[.05em] text-foreground"}, x.t), e("div",{className:"break-words text-[13px] font-semibold tabular-nums"}, x.v)); })));
+  }
   return e("div",{ref:raiz, className:"flex flex-col gap-2"+(p.cheia ? " h-full" : "")},
     (!p.semContagem || ((nFiltros>0 || ordem) && !p.semLimpar)) && e("div",{className:"flex flex-wrap items-center gap-3 text-[13px]"},
       !p.semContagem && e("span",{className:"font-semibold"}, linhas.length.toLocaleString("pt-BR")+" de "+p.linhas.length.toLocaleString("pt-BR")),
       (nFiltros>0 || ordem) && !p.semLimpar && e("button",{type:"button", onClick:function(){ setFiltros({}); setOrdem(null); }, className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10"}, "Limpar filtros e ordem")),
-    e("div",{className:"relative"+(p.cheia ? " min-h-0 flex-1" : "")}, e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : (p.alturaMax ? {maxHeight:p.alturaMax, overflowY:"auto"} : undefined), className:"overflow-x-auto rounded-lg border border-border"+(p.barraGrossa ? " barra-grossa" : "")+(p.compacta ? " w-fit max-w-full" : "")+((centro || p.maozinha) ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
+    celular ? cartoesEl : (    e("div",{className:"relative"+(p.cheia ? " min-h-0 flex-1" : "")}, e("div",{ref:wrapRef, onMouseDown:desce, onClickCapture:clicou, "data-sem-arrastar":"", style:p.cheia ? {height:"100%"} : (p.alturaMax ? {maxHeight:p.alturaMax, overflowY:"auto"} : undefined), className:"overflow-x-auto rounded-lg border border-border"+(p.barraGrossa ? " barra-grossa" : "")+(p.compacta ? " w-fit max-w-full" : "")+((centro || p.maozinha) ? " cursor-grab [&[data-arrastando]_*]:!cursor-grabbing" : "")},
       e("table",{className:(p.compacta ? "" : "w-full ")+"border-collapse text-[13px]"+(p.cols.some(function(c){ return c.w; }) ? " table-fixed" : ""), style:{height:p.cheia ? "100%" : undefined, background:escura ? "#1c1d21" : "linear-gradient(90deg,#9A6F1E,#E8B84B 48%,#F5E7BE) left "+(p.totalLinha ? 33 : 0)+"px/100% "+(30*(1+(p.cabAcima ? p.cabAcima.length : 0)))+"px no-repeat"}},   // topo dourado: UM degradê do começo ao fim da tabela (02/11/2026)
         (p.cabSoAberto && p.agrupar && p.grupoAberto) ? null   // cabSoAberto: cabeçalho fora do topo: só aparece no corpo, depois dos grupos fechados e antes dos abertos (Marcus, 10/11/2026)
         : e("thead",null, p.totalLinha && e("tr",null, p.totalLinha(linhas).map(function(x, j){ return e("th",{key:j, colSpan:x && x.span ? x.span : 1, className:(p.totalSimples ? "h-8 whitespace-nowrap border-b border-border px-2.5 text-[13px] tabular-nums cursor-grab"+(p.grade ? " border-x !border-white/25" : "") : "h-8 whitespace-nowrap border-b border-border bg-[#4ade80]/15 px-2.5 text-[13px] font-semibold tabular-nums cursor-grab")+cel}, x && x.span ? x.t : x); })), (p.cabAcima || []).map(function(lin, i){ return e("tr",{key:"ca"+i}, lin.map(function(g, j){ return e("th",{key:j, colSpan:g.span || 1, className:"h-[30px] whitespace-nowrap border-b px-2.5 text-center text-[11px] font-semibold uppercase tracking-[.05em] "+(escura ? "border-white/15 text-foreground" : "border-[#1a1306]/25 text-[#1a1306]")+(g.sep ? (escura ? " border-l-2 border-l-[#E8B84B]" : " border-l-2 border-l-[#1a1306]") : "")}, g.t); })); }), linhaCab("cab")),
         e("tbody",null,
           p.totalCab && corpo.length>0 && e("tr",{key:"total-cab"}, p.totalCab(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-b-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); })),
           corpo.length ? corpo : e("tr",null, e("td",{colSpan:ncols, className:"h-8 px-2.5 text-center text-[13px] text-muted-foreground"}, p.vazio || "Nenhum registro."))),
-        p.totalRodape && e("tfoot",null, e("tr",null, p.totalRodape(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-t-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); }))))), barrasBase),
+        p.totalRodape && e("tfoot",null, e("tr",null, p.totalRodape(linhas).map(function(x, j){ return e("td",{key:j, className:"h-8 whitespace-nowrap border-t-2 border-white/30 bg-white/5 px-2.5 text-[13px] font-semibold tabular-nums"+cel}, x); }))))), barrasBase)),
     (pagOn && (nPag>1 || p.aoMudarLimite)) && e("div",{className:"flex flex-nowrap items-center justify-between gap-3 whitespace-nowrap px-1 text-[11px]"},   // RODAPÉ SIMPLES, UMA LINHA, PEQUENO (Marcus, 16/11/2026): esquerda = faixa · centro = páginas (só se há mais de uma) · direita = linhas por página. padrao-ok: controles menores a pedido do Marcus
       e("span",{className:"min-w-0 flex-1"}, ((pagAtual-1)*p.limite+1).toLocaleString("pt-BR")+" a "+Math.min(pagAtual*p.limite, linhas.length).toLocaleString("pt-BR")+" de "+linhas.length.toLocaleString("pt-BR")),
       nPag>1 && e("div",{className:"flex items-center gap-1"},

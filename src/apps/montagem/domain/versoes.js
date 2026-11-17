@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.90", data:"2026-11-17", titulo:"Tabelas no celular: cartões em vez de rolar para o lado", itens:[
+  {tipo:"novo", area:"Tabelas (todas as telas)", txt:"Em tela menor que 640 px (celular) a peça TabelaPlanilha mostra cada linha como um CARTÃO, sem rolar para o lado. No computador nada muda. Filtro e ordem por coluna só aparecem no computador. Opção semCartoes mantém a tabela numa tela. Pedido do Marcus."}]},
  {v:"0.20.89", data:"2026-11-17", titulo:"Atendimento Sorelly: mais de um comprovante por conta", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Cada conta de pagamento aceita vários comprovantes: botão + Outro comprovante (ver 1, ver 2...) e Tirar o último. Pedido da Natasha e da Edna (revendedora que paga em duas vezes). Vale também na conferência do financeiro e no Consolidado Sorelly."}
  ]},
