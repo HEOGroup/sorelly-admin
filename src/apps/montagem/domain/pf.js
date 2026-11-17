@@ -522,9 +522,36 @@ function lancDistribuir(pf, chave, valor){
     var ab = abertoDe(j); if(ab<=0.005) return;
     var v = Math.min(resto, ab); partes.push({chave:j.chave, limite:j.limite, valor:v}); resto = Math.round((resto-v)*100)/100;
   });
-  var sobra = resto>0.005 ? resto : 0;
+  var sobra = resto>0.005 ? resto : 0, falta = j0 ? Math.round((valor-abertoDe(j0))*100)/100 : 0;
   if(sobra){ var p0 = partes.find(function(x){ return x.chave===chave; }); if(p0) p0.valor = Math.round((p0.valor+sobra)*100)/100; else partes.unshift({chave:chave, limite:limite, valor:sobra}); }
-  return {partes:partes, sobra:sobra};
+  return {partes:partes, sobra:sobra, falta:Math.min(0, falta)};
+}
+// saldo que falta numa data passa para a 1ª data do mês seguinte (Lucas, 17/11/2026): move/divide as parcelas Pix da data,
+// da mais nova para a mais antiga, sem mudar o total do pedido. Point fica fora (conta corrente com tela própria).
+function adiarDestino(pf, chave){   // {mes, venc, limite} da 1ª data do mês seguinte, ou null
+  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; });
+  if(!j || fid===PT_FORN) return null;
+  // o mês da parcela decide em que mês ela cai: a data tem de ser do mês seguinte e depois da data atual (datas feitas à mão podem fugir disso)
+  var mes = mesMais(j.limite.slice(0,7), 1), bs = blocosDoMes(pf, fid, mes).filter(function(x){ return x.fim.slice(0,7)===mes && x.fim>j.limite; }).sort(function(a,b){ return a.fim.localeCompare(b.fim); });
+  var venc = bs.length ? bs[0].fim : diaISO(mes, ultDia(mes));
+  // mesma regra do distribuir: cai no 1º bloco do mês com fim >= vencimento, senão no último; data de pagamento antes da atual = não oferece
+  var todos = blocosDoMes(pf, fid, mes), alvo = todos.find(function(x){ return venc<=x.fim; }) || todos[todos.length-1];
+  var limite = alvo ? alvo.limite : venc;
+  return limite>j.limite ? {mes:mes, venc:venc, limite:limite} : null;
+}
+function adiarSaldo(pf, chave, valor){   // muda o pf; devolve o destino ou null
+  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; }), dst = adiarDestino(pf, chave);
+  var resto = r2(valor); if(!j || !dst || resto<=0.005) return null;
+  j.itens.filter(eSem).sort(function(a,b){ return b.p.venc.localeCompare(a.p.venc); }).forEach(function(l){
+    if(resto<=0.005) return;
+    var p = l.p, de = p.venc;
+    if(p.valor<=resto+0.005){ resto = r2(resto-p.valor); p.venc = dst.venc; p.status = "Pendente"; p.adiadaDe = de; return; }
+    p.valor = r2(p.valor-resto);
+    l.pd.parcelas.push({forma:p.forma, venc:dst.venc, valor:resto, conta:p.conta, status:"Pendente", adiadaDe:de});
+    resto = 0;
+  });
+  invalidar(pf);
+  return dst;
 }
 function tokenAcerto(pf, chave){   // muda o pf: token do link do extrato do fornecedor
   if(!pf.tokensAcerto[chave]) pf.tokensAcerto[chave] = Math.random().toString(36).slice(2,8)+Math.random().toString(36).slice(2,8);
@@ -986,6 +1013,9 @@ function pfReduz(s, a){
         return pt;
       });
       var outras = feitos.filter(function(pt){ return pt.chave!==a.chave; });
+      // pagou menos que o que falta: escolha "passar a diferença para o mês seguinte"
+      var difA = r2(-dv.falta);
+      if(a.adiar && difA>0.005){ invalidar(pf); var dA = adiarSaldo(pf, a.chave, difA); if(!dA) return recusa("Não há data no mês seguinte para passar o saldo."); return ok("Pagamento lançado — "+brl(v)+" para "+rev+" · "+brl(difA)+" passou para "+dA.limite.slice(8,10)+"/"+dA.limite.slice(5,7)+(a.arqNome ? " · comprovante anexado" : "")); }
       return ok("Pagamento lançado — "+brl(v)+" para "+rev+(outras.length ? " · "+outras.map(function(pt){ return brl(pt.valor)+" foi para "+pt.limite.slice(8,10)+"/"+pt.limite.slice(5,7); }).join(" · ") : "")+(dv.sobra ? " · passou do total em "+brl(dv.sobra) : "")+(a.arqNome ? " · comprovante anexado" : ""));
     }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
@@ -1284,7 +1314,7 @@ export {
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,
-  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, lancExcedente, tokenAcerto,
+  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, adiarDestino, lancExcedente, tokenAcerto,
   coletar, agregar, alertasDe, resumoAlertas, painelTotais, viewTempo, tabelaJanelas, viewMatriz, resumoNegociacao, parcelaSituacao, pedidosSemParcela, relacaoPorMes, pedidoDetalhe,
   dividirNF, gerarParcelas, expandirParcelas, saldoParcela, formasDoPedido, acertoPreset, acertoPresetAtivo, acertoResumo, cortesDoPreset, previewCiclo, limpaCortes,
   mqPassadasDoMes, mqSomaPassadas, mqBruto, mqParcela, mqMesesDesconto, mqDescontoNoMes, mqOrigensDoMes, mqBaixasDoMes, mqBaixado, mqLinhas, mqColunas, mqMesesSel, semearBaixasMq,

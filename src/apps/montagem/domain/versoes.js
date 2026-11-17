@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.84", data:"2026-11-17", titulo:"Lançamento de pagamentos: saldo que falta fica em aberto ou passa para o mês seguinte", itens:[
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Ao lançar um Pix menor do que falta na data, a janela pergunta: Manter em aberto (como antes) ou Passar para a 1ª data de pagamento do mês seguinte. Ao passar, a parcela Pix é dividida (ou movida) para o mês seguinte, sem mudar o total do pedido; a data atual fica quitada. A Point (conta corrente) fica de fora."}]},
  {v:"0.20.91", data:"2026-11-17", titulo:"Montagem: celular da montadora refeito e preferências lidas do app", itens:[
   {tipo:"novo", area:"Montagem · celular", txt:"Cartão do kit refeito: uma barra preta só (com as abas Próximo, Listagens e Resultados), nome, botão e a lista Montar com a quantidade de ouro e prata em número grande e a preferência da revendedora embaixo de cada peça, em leitura visual (barra de ouro e prata, 'tudo em ouro', fotos). Sem retirada, venda, valor nem condicional: a montadora só monta. Observações dela em destaque."},
   {tipo:"novo", area:"Montagem · preferências", txt:"A janela Montar (computador) e o celular leem as preferências direto do app da revendedora (2.045 com resposta, 308 com foto), e não mais só as 31 do módulo local. Leitura única em memória (lib/prefs-app.js), só leitura."},

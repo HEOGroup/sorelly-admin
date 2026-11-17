@@ -4,7 +4,7 @@
 // Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, janelaPorChave, lancDistribuir, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, adiarDestino, janelaPorChave, lancDistribuir, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
@@ -12,6 +12,7 @@ import { Dinheiro, Faixa, Indicador, LINHA, Mosaico, Pagina, Tab, Td } from "@/a
 import { COR, Campo, Chip, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
+import { Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { e, useState } from "@/shared/react";
 
 // botão pequeno com texto (tipos: normal, forte, ok, conf, perigo)
@@ -117,7 +118,7 @@ function BlocoForn(p){
 function ModalLancar(p){
   var c = p.c, chave = p.chave, j = janelaPorChave(c.pf, chave), f = c.pf.fornecedores.find(function(x){ return x.id===parseInt(chave.split("|")[0]); });
   var aberto = j ? Math.max(0, j.total-pagoJanela(c.pf, chave)) : 0;
-  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null}), v = st[0], setV = st[1];
+  var st = useState({data:hojeIso(), rev:"", valor:aberto>0.005 ? aberto.toFixed(2) : "", conta:"", chavePix:"", arq:null, adiar:"manter"}), v = st[0], setV = st[1];
   var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
   var vNum = parseFloat(v.valor), prev = vNum>aberto+0.005 ? lancDistribuir(c.pf, chave, vNum) : null;
   var outras = prev ? prev.partes.filter(function(pt){ return pt.chave!==chave; }) : [];
@@ -125,6 +126,12 @@ function ModalLancar(p){
     : e("div",{className:"rounded-lg px-3 py-2 text-center text-[13px] "+(prev.sobra ? "bg-destructive/15 ring-1 ring-destructive/50" : "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50")},
         outras.length ? e("div",null, "Pago a mais: ", outras.map(function(pt, i){ return e("span",{key:pt.chave}, (i ? " · " : ""), e("b",null, brl(pt.valor)), " vai para "+dbr(pt.limite)); })) : null,
         prev.sobra ? e("div",null, "Passou do total em ", e("b",null, brl(prev.sobra)), ". Não há mais parcelas em aberto.") : null);
+  // pagou menos do que falta: manter o saldo em aberto nesta data ou passar a diferença para a 1ª data do mês seguinte
+  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos ? adiarDestino(c.pf, chave) : null;
+  var escolhaSaldo = !dst ? null
+    : e("div",{className:"flex flex-col items-center gap-1.5 rounded-lg bg-black/25 px-3 py-2 text-center text-[13px]"},
+        e("div",null, "Falta ", e("b",{style:{color:COR.red}}, brl(difMenos)), " nesta data"),
+        e(Segmentado,{opcoes:[["manter","Manter em aberto"], ["adiar","Passar para "+dbr(dst.limite)]], atual:v.adiar, onMudar:function(x){ set("adiar", x); }}));
   var salvar = function(){
     var valor = parseFloat(v.valor);
     if(!valor || valor<=0) return aviso(c, "Informe o valor pago.", "alerta");
@@ -133,7 +140,7 @@ function ModalLancar(p){
     // o que passa do que falta nesta data vai sozinho para as próximas datas em aberto; sem data em aberto, avisa
     var dv = lancDistribuir(c.pf, chave, valor);
     if(dv.sobra && !window.confirm("O valor passou do total em "+brl(dv.sobra)+" e não há mais parcelas em aberto. Lançar mesmo assim?")) return;
-    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true};
+    var arq = v.arq, base = {chave:chave, data:v.data, revendedora:rev, valor:valor, conta:v.conta.trim(), chavePix:v.chavePix.trim(), forcar:true, adiar:!!dst && v.adiar==="adiar"};
     var gravar = function(arqId){
       op(c, "lanc_add", Object.assign({}, base, arq ? {arqNome:arq.name, arqTipo:arq.type, arqData:hojeIso()} : {}));
       // guarda o id do arquivo no lançamento recém-criado
@@ -158,6 +165,7 @@ function ModalLancar(p){
           e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
         e("span",{className:"text-[12.5px] "+(v.arq ? "" : "text-muted-foreground")}, v.arq ? v.arq.name : "Nenhum arquivo selecionado"))),
     avisoValor,
+    escolhaSaldo,
     e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:function(){ p.fechar(null); }}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Lançar pagamento")));
 }
 

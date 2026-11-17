@@ -2640,3 +2640,10 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Sem data em aberto depois: aviso "passou do total" e pede confirmação; o que sobrou fica na data escolhida.
 - Datas anteriores em aberto não recebem a sobra (só as próximas).
 - Código: `lancDistribuir` e `lanc_add` em `domain/pf.js`; aviso na janela em `pages/pf/Lancamentos.js`.
+
+## 17/11/2026 · Lançamento de pagamentos: saldo que falta fica em aberto ou passa para o mês seguinte (Lucas)
+- Pagou menos do que falta na data: a janela "Lançar pagamento" dá duas opções: **Manter em aberto** (padrão, como antes) ou **Passar para dd/mm** (1ª data de pagamento do mês seguinte do fornecedor).
+- Passar = a parcela Pix (sem NF) da data é dividida: uma parte fica com o que foi pago, a diferença vira parcela nova no mês seguinte (`adiadaDe` guarda o vencimento antigo). Se a diferença cobre parcelas inteiras, elas só mudam de vencimento. O total do pedido não muda.
+- Fora: Point (conta corrente com tela própria) e fornecedor sem data no mês seguinte depois da atual (ex.: Ello Print, com data de novembro feita à mão em 30/10).
+- O pago a mais continua indo sozinho para a próxima data em aberto.
+- Código: `adiarDestino`/`adiarSaldo` e `lanc_add` (`adiar`) em `domain/pf.js`; escolha na janela em `pages/pf/Lancamentos.js`.
