@@ -341,6 +341,10 @@ function rhReduz(s, a){
     case "neg_pessoa_set": { rh.negoc = rh.negoc || negocPadrao(); var pn = rh.negoc.pessoas.find(function(x){ return x.id===a.id; }); if(!pn) return recusa("Pessoa não encontrada."); Object.assign(pn, a.patch); return ok(); }
     case "neg_pessoa_add": { rh.negoc = rh.negoc || negocPadrao(); var nm2 = String(a.nome||"").trim(); if(!nm2 || !a.grupoId) return recusa("Escolha a pessoa e o grupo."); var id2 = a.id || slug(nm2); if(rh.negoc.pessoas.some(function(x){ return x.id===id2; })) return recusa("Esta pessoa já tem negociação.");
       rh.negoc.pessoas.push({id:id2, nome:nm2, grupoId:a.grupoId, h1:null, h2:null, h3:null, sab:null, maxDia:null, vezesSem:null, sabMes:null, obs:""}); return ok(nm2+" incluída"); }
+    case "neg_joia_set": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.joias = rh.negoc.joias || []; var nj = rh.negoc.joias.find(function(x){ return x.id===a.id; });
+      if(!nj){ var nomeJ = String(a.nome||"").trim(); if(!a.id || !nomeJ) return recusa("Escolha a pessoa."); nj = {id:a.id, nome:nomeJ, colabId:"", motivo:"", valor:null, custoPct:20, periodo:"", obs:""}; rh.negoc.joias.push(nj); }
+      Object.assign(nj, a.patch||{}); return ok(); }   // Negociações › Joias: combinado de cada pessoa (motivo, valor a preço de venda, custo %, periodicidade)
+    case "neg_joia_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.joias = (rh.negoc.joias||[]).filter(function(x){ return x.id!==a.id; }); return ok("Combinado em joias removido"); }
     case "neg_pessoa_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.pessoas = rh.negoc.pessoas.filter(function(x){ return x.id!==a.id; }); return ok("Negociação removida"); }
     // configurador: listas simples (escalas, planos, tiposAdv, motivosAdv, tiposHE, feriados)
     case "cfg_add": { var li = cfg[a.lista]; if(!li) return recusa("Lista desconhecida."); li.push(Object.assign({id:novoId(a.lista.slice(0,2)+"-")}, a.item)); return ok("Adicionado"); }

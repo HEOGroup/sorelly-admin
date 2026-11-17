@@ -16,7 +16,7 @@ let h = "";
 try { h = renderToString(React.createElement(Ctx.Provider, {value:{state:{usuario:16, rh:rhDemo()}, dispatch(){}}}, React.createElement(AbaRhColab))); t("desenha a tela sem erro", h.length>1000); } catch(x){ t("desenha a tela sem erro", false, String(x && x.stack || x).slice(0, 400)); }
 t("título e botão no topo", /Cadastro de colaboradores/.test(h) && /Nova colaboradora/.test(h));
 t("visões Ativos, Desligados e Todos", ["Ativos", "Desligados", "Todos"].every(n => h.includes(">"+n+"<")));
-t("colunas da tabela", ["Nome", "Setor", "Função", "Empresa", "Situação", "Admissão", "Escala", "Entrada", "Salário"].every(n => h.includes(n)));
+t("colunas da tabela", ["Nome", "Setor", "Função", "Empresa", "Situação", "Admissão", "Escala", "Horário atual", "Equipe 42h", "Salário"].every(n => h.includes(n)));
 t("sem bloco Filtros nem busca no topo", !/Filtros/.test(h) && !/Buscar nome ou setor/.test(h));
 console.log("\n"+ok+" verificações OK, "+falha+" com falha.");
 process.exit(falha ? 1 : 0);

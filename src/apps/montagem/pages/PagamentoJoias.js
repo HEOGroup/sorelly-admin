@@ -20,6 +20,21 @@ var dia = function(iso){ return iso ? String(iso).slice(8, 10)+"/"+String(iso).s
 var NOMES_MES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"];
 var mesTxt = function(m){ return m && m.length>=7 ? NOMES_MES[Number(m.slice(5, 7))-1]+"/"+m.slice(0, 4) : "—"; };
 
+// botões de cada situação (Autorizar, Separado, Retirado, Copiar recibo, Cancelar, Apagar); usados aqui e na visão Joias de Colaboradores
+function botoesJoia(x, c){
+  var autoriza = c.autoriza, op = c.op, copiado = c.copiado;
+    var b = function(txt, titulo, fn){ return e("button",{key:txt, type:"button", title:titulo, onClick:function(ev){ ev.stopPropagation(); fn(); }, className:BTN}, txt); };
+    var out = [];
+    if(x.situacao==="Pedido" && autoriza) out.push(b("Autorizar", "Autorizar a retirada destas joias", function(){ op({op:"etapa", id:x.id, para:"Autorizado"}); }));
+    if(x.situacao==="Pedido" && !autoriza) out.push(e("span",{key:"esp", className:"text-[11px]"}, "Aguarda a diretoria"));
+    if(x.situacao==="Autorizado") out.push(b("Separado", "O cadastro de peças separou as joias", function(){ var t = window.prompt("Códigos das peças separadas (um por espaço; pode deixar como está):", x.pecas || ""); if(t!==null) op({op:"etapa", id:x.id, para:"Separado", pecas:t}); }));
+    if(x.situacao==="Separado") out.push(b("Retirado", "A pessoa levou as joias", function(){ var n = window.prompt("Quem retirou as joias?", x.pessoa); if(n!==null) op({op:"etapa", id:x.id, para:"Retirado", recebeu:n}); }));
+    if(x.situacao==="Retirado") out.push(b(copiado===x.id ? "Copiado!" : "Copiar recibo", "Copia o recibo de retirada para mandar ou imprimir", function(){ try { navigator.clipboard.writeText(jpRecibo(x)); c.setCopiado(x.id); setTimeout(function(){ c.setCopiado(""); }, 2500); } catch(err){} }));
+    if(x.situacao==="Pedido" || x.situacao==="Autorizado" || x.situacao==="Separado") out.push(b("Cancelar", "Cancelar este pagamento", function(){ if(window.confirm("Cancelar o pagamento em joias de "+x.pessoa+"?")) op({op:"cancelar", id:x.id}); }));
+    if(x.situacao==="Cancelado") out.push(b("Apagar", "Apagar este registro", function(){ if(window.confirm("Apagar de vez o registro de "+x.pessoa+"?")) op({op:"apagar", id:x.id}); }));
+    return e("span",{className:"inline-flex items-center gap-1.5"}, out);
+}
+
 function AbaPagamentoJoias(){
   var cx = use(), s = cx.state, d = cx.dispatch, sa = useState("pag"), aba = sa[0], sf = useState(null), form = sf[0], sc = useState(""), copiado = sc[0];
   var j = useMemo(function(){ return jpMigrar(s.jp); }, [s.jp]);
@@ -30,18 +45,7 @@ function AbaPagamentoJoias(){
 
   // uma linha por pagamento (a tabela filtra e ordena pelo valor; o desenho do botão vem do render)
   var linhas = useMemo(function(){ return j.itens.map(function(x){ return Object.assign({}, x, {custo:custoDe(x), custoPct:pctCusto(x.custoPct), acao:x.situacao}); }); }, [j]);
-  var botoes = function(x){
-    var b = function(txt, titulo, fn){ return e("button",{key:txt, type:"button", title:titulo, onClick:function(ev){ ev.stopPropagation(); fn(); }, className:BTN}, txt); };
-    var out = [];
-    if(x.situacao==="Pedido" && autoriza) out.push(b("Autorizar", "Autorizar a retirada destas joias", function(){ op({op:"etapa", id:x.id, para:"Autorizado"}); }));
-    if(x.situacao==="Pedido" && !autoriza) out.push(e("span",{key:"esp", className:"text-[11px]"}, "Aguarda a diretoria"));
-    if(x.situacao==="Autorizado") out.push(b("Separado", "O cadastro de peças separou as joias", function(){ var t = window.prompt("Códigos das peças separadas (um por espaço; pode deixar como está):", x.pecas || ""); if(t!==null) op({op:"etapa", id:x.id, para:"Separado", pecas:t}); }));
-    if(x.situacao==="Separado") out.push(b("Retirado", "A pessoa levou as joias", function(){ var n = window.prompt("Quem retirou as joias?", x.pessoa); if(n!==null) op({op:"etapa", id:x.id, para:"Retirado", recebeu:n}); }));
-    if(x.situacao==="Retirado") out.push(b(copiado===x.id ? "Copiado!" : "Copiar recibo", "Copia o recibo de retirada para mandar ou imprimir", function(){ try { navigator.clipboard.writeText(jpRecibo(x)); sc[1](x.id); setTimeout(function(){ sc[1](""); }, 2500); } catch(err){} }));
-    if(x.situacao==="Pedido" || x.situacao==="Autorizado" || x.situacao==="Separado") out.push(b("Cancelar", "Cancelar este pagamento", function(){ if(window.confirm("Cancelar o pagamento em joias de "+x.pessoa+"?")) op({op:"cancelar", id:x.id}); }));
-    if(x.situacao==="Cancelado") out.push(b("Apagar", "Apagar este registro", function(){ if(window.confirm("Apagar de vez o registro de "+x.pessoa+"?")) op({op:"apagar", id:x.id}); }));
-    return e("span",{className:"inline-flex items-center gap-1.5"}, out);
-  };
+  var botoes = function(x){ return botoesJoia(x, {autoriza:autoriza, op:op, copiado:copiado, setCopiado:sc[1]}); };
   var colunas = [
     {k:"criadoEm", t:"Data", fmt:function(v){ return dia(v); }},
     {k:"pessoa", t:"Pessoa"}, {k:"setor", t:"Setor"}, {k:"motivo", t:"Motivo"},
@@ -73,4 +77,4 @@ function AbaPagamentoJoias(){
           totalLinha:function(ls){ return ["Total", "", String(ls.reduce(function(t, x){ return t+x.qtd; }, 0)), brl(ls.reduce(function(t, x){ return t+x.valor; }, 0)), brl(ls.reduce(function(t, x){ return t+x.custo; }, 0)), brl(ls.reduce(function(t, x){ return t+x.retirado; }, 0))]; }}));
 }
 
-export { AbaPagamentoJoias };
+export { AbaPagamentoJoias, botoesJoia };
