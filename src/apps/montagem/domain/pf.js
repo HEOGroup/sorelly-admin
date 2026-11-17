@@ -351,7 +351,18 @@ function janelasDoForn(pf, fid){
   return c.jan[fid];
 }
 function lancDaJanela(pf, chave){ return pf.lancamentos.filter(function(l){ return l.chave===chave; }).sort(function(a,b){ return a.data.localeCompare(b.data); }); }
-function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
+// Pix do Direcionar (17/11/2026): só conta como pago com o comprovante anexado (aguardaComp). Os lançamentos antigos não têm essa marca e contam como sempre.
+function pagoPix(pf, chave){ return soma(lancDaJanela(pf, chave).filter(function(l){ return !l.aguardaComp; }), function(l){ return l.valor; }); }   // só o dinheiro que saiu por Pix
+function fornDoDestino(pf, nomeDestino){   // destino do Direcionar (tipo FORNECEDOR) -> fornecedor do pf, pelo nome
+  var n = normBusca(nomeDestino); if(!n) return null;
+  var lista = pf.fornecedores.filter(function(f){ return f.tipo!=="prestador"; });
+  return lista.find(function(f){ return normBusca(f.nome)===n; }) || lista.find(function(f){ var m = normBusca(f.nome); return m.indexOf(n+" ")===0 || n.indexOf(m+" ")===0; }) || null;
+}
+// janela (data de pagamento) MAIS ANTIGA com valor em aberto; sem nenhuma aberta, a última
+function janelaMaisAntigaAberta(pf, fid){
+  var js = janelasDoForn(pf, fid).slice().sort(function(a,b){ return a.limite.localeCompare(b.limite); });
+  return js.find(function(j){ return j.total-pagoJanela(pf, j.chave) > 0.005; }) || js[js.length-1] || null;
+}
 function pagoJanela(pf, chave){ return pagoPix(pf, chave)+mqAplicado(pf, chave); }                     // Pix + desconto da maquininha
 function janelaPorChave(pf, chave){
   var fid = parseInt((chave||"").split("|")[0]);
@@ -1018,6 +1029,24 @@ function pfReduz(s, a){
       if(a.adiar && difA>0.005){ invalidar(pf); var dA = adiarSaldo(pf, a.chave, difA); if(!dA) return recusa("Não há data no mês seguinte para passar o saldo."); return ok("Pagamento lançado — "+brl(v)+" para "+rev+" · "+brl(difA)+" passou para "+dA.limite.slice(8,10)+"/"+dA.limite.slice(5,7)+(a.arqNome ? " · comprovante anexado" : "")); }
       return ok("Pagamento lançado — "+brl(v)+" para "+rev+(outras.length ? " · "+outras.map(function(pt){ return brl(pt.valor)+" foi para "+pt.limite.slice(8,10)+"/"+pt.limite.slice(5,7); }).join(" · ") : "")+(dv.sobra ? " · passou do total em "+brl(dv.sobra) : "")+(a.arqNome ? " · comprovante anexado" : ""));
     }
+    // Pix confirmado no Direcionar vira pagamento do fornecedor (17/11/2026). a.itens = [{origemPix (id#n, evita duplicar), fornId, valor, data, revendedora, conta, por}]
+    case "pix_dir": { var nNovos = 0;
+      (a.itens||[]).forEach(function(it){
+        if(!it.origemPix || !(it.valor>0) || pf.lancamentos.some(function(x){ return x.origemPix===it.origemPix; })) return;
+        invalidar(pf); var jn2 = janelaMaisAntigaAberta(pf, it.fornId); if(!jn2) return;
+        pf.lancamentos.push({id:pf.seq.L++, chave:jn2.chave, fornId:it.fornId, mes:jn2.mes, limite:jn2.limite, data:it.data||hojeIso(), revendedora:String(it.revendedora||"").trim()||"Pix do Direcionar", valor:r2(it.valor), conta:String(it.conta||"").trim()||"—", lf:it.lf||null,
+          arqNome:"", arqTipo:"", arqData:"", chavePix:"", conferido:false, conferidoEm:"", origemPix:it.origemPix, aguardaComp:true, direcionadoPor:it.por||""});
+        nNovos++; invalidar(pf); });
+      if(!nNovos) return recusa("");
+      return ok(nNovos+" Pix virou(aram) pagamento de fornecedor · falta o comprovante"); }
+    // Pix reaberto no Direcionar: o pagamento que ainda não tem comprovante sai da lista
+    case "pix_dir_desfaz": { var antes = pf.lancamentos.length;
+      pf.lancamentos = pf.lancamentos.filter(function(x){ return !(x.origemPix && x.origemPix.indexOf(a.id+"#")===0 && x.aguardaComp); });
+      if(pf.lancamentos.length===antes) return recusa(""); return ok("Pagamento do Direcionar retirado"); }
+    // comprovante anexado: o pagamento passa a contar como pago
+    case "lanc_comp": { var l3 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l3) return recusa("Pagamento não encontrado.");
+      l3.arqNome = a.arqNome||""; l3.arqTipo = a.arqTipo||""; l3.arqKey = a.arqKey||""; l3.arqData = a.arqData || hojeIso(); if(l3.aguardaComp) l3.aguardaComp = false;
+      return ok("Comprovante anexado — pagamento de "+brl(l3.valor)+" agora conta como pago"); }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
     case "lanc_conferido": { var l2 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l2) return recusa("Pagamento não encontrado.");
@@ -1309,7 +1338,7 @@ function pfReduz(s, a){
 }
 
 export {
-  TEM_ATU_PF,
+  TEM_ATU_PF, fornDoDestino, janelaMaisAntigaAberta,
   FORMAS, NF_LABEL, MESES, PERIODICIDADES, F_TIPO, F_PER, F_SIT, FILTRO_PADRAO, LIMIAR_MES, LIMIAR_JANELA, DIAS_ALERTA_PROXIMO, MQ_MAQUINAS, PT_FORN, FORN_CATS, PREST_CATS, VINCULOS, ehPrestador, pfMigrar, pendentesPrestadores, CAMPOS_BUSCA,
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,

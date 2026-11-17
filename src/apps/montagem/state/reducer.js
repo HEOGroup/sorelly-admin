@@ -29,7 +29,7 @@ import { cpReduz } from "@/apps/montagem/domain/controle-pagamentos";
 import { dpReduz, dpDemo } from "@/apps/montagem/domain/direcionar-pix";
 import { pxAplicar, pxReduz } from "@/apps/montagem/domain/pix-regras";
 import { idPedidoRep, repPedirConta, repRemoverPedido, sincContasRep } from "@/apps/montagem/domain/pagamento-rep";
-import { pfReduz } from "@/apps/montagem/domain/pf";
+import { pfReduz, fornDoDestino } from "@/apps/montagem/domain/pf";
 import { rotReduz } from "@/apps/montagem/domain/rotina";
 import { cfReduz , lancFinDoPagamento } from "@/apps/montagem/domain/cobranca-func";
 import { clReduz } from "@/apps/montagem/domain/cadastro-leads";
@@ -95,6 +95,18 @@ function gravaConferencia(s, kC, res, confNovo, agora){
 }
 function carimboEntrega(s, rev){ var v = versaoDaEntrega(s); if(!v || !rev) return s.perfisRev; var pr = Object.assign({}, s.perfisRev||{}); pr[rev] = Object.assign({}, pr[rev], {regrasEntregaId:v.id, regrasEntregaEm:hojeIso()}); return pr; }
 
+// Pix de fornecedor vindo do atendimento interno (17/11/2026, Marcus): o comprovante já é anexado no Atendimento Sorelly (e aparece no Consolidado Sorelly).
+// Quando a parte do lançamento (lancFin) ganha o comprovante, o pagamento do fornecedor pega o mesmo comprovante e passa a contar como pago.
+function sincCompFornecedor(s){
+  if(!s.pf || !(s.pf.lancamentos||[]).some(function(l){ return l.aguardaComp && l.lf; })) return s;
+  var sx = s;
+  s.pf.lancamentos.filter(function(l){ return l.aguardaComp && l.lf; }).forEach(function(l){
+    var x = (s.lancFin||[]).find(function(z){ return z.internoId===l.lf.internoId; }), li = x && (x.linhas||[])[l.lf.li], pt = li && (li.partes||[])[l.lf.k], cmp = pt && pt.comprovante;
+    if(!cmp) return;
+    var r = pfReduz(sx, {op:"lanc_comp", id:l.id, arqNome:cmp.nome||"comprovante", arqTipo:"", arqKey:"", arqData:typeof cmp.url==="string" && cmp.url.indexOf("data:")===0 ? cmp.url : ""});
+    if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
+  return sx;
+}
 function reducer(s, a){
   var k, agora = Date.now();
   switch(a.type){
@@ -369,6 +381,15 @@ function reducer(s, a){
             if(ds.length) porLinha[li] = ds.map(function(d){ return {descricao:nomeI(d.destinoId)+(d.conta ? " · "+d.conta : ""), valor:d.valor, comprovante:null, ok:false}; }); });
           sDp = Object.assign({}, sDp, {lancFin:(sDp.lancFin||[]).map(function(x){ if(x.internoId!==pDp.internoId) return x;
             return Object.assign({}, x, {linhas:x.linhas.map(function(l, i){ return porLinha[i] ? Object.assign({}, l, {partes:porLinha[i], enviada:true, auto:"Direcionar · "+(pDp.confirmadoPor||"")}) : l; })}); })}); } }
+      // 17/11/2026 (Marcus): Pix confirmado com destino FORNECEDOR vira pagamento do fornecedor sozinho (parcela mais antiga em aberto; só conta como pago com o comprovante). Reabrir retira o que ainda não tem comprovante.
+      if(a.op==="confirma" && rDp.patch.dp){ var pFo = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pFo && pFo.status==="direcionado" && sDp.pf){
+          var itFo = []; (pFo.divisoes||[]).forEach(function(d, n){ var dest = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dest || dest.tipo!=="FORNECEDOR") return;
+            var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
+            var lfFo = null; if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
+            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:new Date(pFo.confirmadoEm||Date.now()).toISOString().slice(0, 10), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
+          if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
+      if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }
     case "DATAS_PAG": { var dp = JSON.parse(JSON.stringify(s.datasPag || {geral:15, setores:{}})); dp.setores = dp.setores || {};
@@ -1210,12 +1231,12 @@ function reducer(s, a){
       return com(s, {lancFin:(s.lancFin||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, a.patch); })});
     }
     case "FIN_LINHA": {
-      return sincContasRep(com(s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==a.id) return x;
+      return sincCompFornecedor(sincContasRep(com(s, {lancFin:(s.lancFin||[]).map(function(x){ if(x.id!==a.id) return x;
         var linhas = x.linhas.map(function(l,i){ return i===a.i ? Object.assign({}, l, a.patch, a.patch && a.patch.partes ? {manual:true} : null) : l; });
         x = pxAplicar(s.px, Object.assign({}, x, {linhas:linhas}), s.lancFin); linhas = x.linhas;   // definida a conta do link/cartão, o Pix da mesma venda se resolve sozinho
         if(x.origem==="rep" || x.origem==="func") linhas = linhas.map(function(l){ return l.tipo==="pagamento" && !l.isento && contasDefinidas(l) && !l.enviada ? Object.assign({}, l, {enviada:true}) : l; });   // pedido da representante: definiu a conta, ela já vê (sem o "OK, enviar")
         return Object.assign({}, x, {linhas:linhas, conferido:!!x.finalizado && lancamentoConferido(linhas), conferidoPor:a.por||x.conferidoPor});
-      })}));
+      })})));
     }
     // Representante pede a conta de um pagamento do acerto (só forma + valor): sobe na hora no Controle de pagamentos, o app dela não espera
     case "REP_PAG": {

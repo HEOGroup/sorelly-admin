@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.94", data:"2026-11-17", titulo:"Pix para fornecedor: do Direcionar direto ao Contas a pagar", itens:[
+  {tipo:"novo", area:"Financeiro → Direcionar", txt:"Quando o Lucas confirma um Pix com um fornecedor como destino, o Pix vira pagamento do fornecedor sozinho, na data de pagamento mais antiga em aberto. Ninguém digita de novo. Confirmar duas vezes não duplica; reabrir o Pix retira o pagamento que ainda não tem comprovante."},
+  {tipo:"novo", area:"Pagamentos a fornecedores → Lançamento de pagamentos", txt:"O Pix do Direcionar só conta como pago e só aparece em Contas a pagar depois de anexar o comprovante (botão Anexar comprovante). Até lá fica como Falta o comprovante. Pix do atendimento interno pega sozinho o comprovante anexado no Atendimento Sorelly (o mesmo do Consolidado Sorelly). Os lançamentos antigos não mudam. A tela segue para conferir, estornar e enviar o extrato."},
+  {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"Quando o Direcionar devolve a conta de um pagamento, a funcionária já vê a chave Pix e o botão Copiar na linha da conta (conta da empresa sai com banco, empresa e CNPJ; fornecedor e pessoa com nome e banco). Ela passa a chave para a revendedora sem pedir ao financeiro. Some depois do comprovante conferido."}
+ ]},
  {v:"0.20.93", data:"2026-11-17", titulo:"Atendimento Sorelly: cliente aguardando, brinde centralizado e agenda atualizada sozinha", itens:[
   {tipo:"novo", area:"Atendimento interno → Atendimento Sorelly", txt:"Agenda de hoje com coluna Chegada e botão Cliente aguardando: marca a chegada na hora, a situação vira Aguardando e o atraso não corre enquanto ela espera na recepção. Pedido da Edna."},
   {tipo:"correção", area:"Atendimento interno → Atendimento Sorelly", txt:"A agenda busca as agendadas da DevMaster ao abrir e a cada 5 minutos (antes só a aba Listagens buscava, e cliente agendada podia não aparecer aqui)."},

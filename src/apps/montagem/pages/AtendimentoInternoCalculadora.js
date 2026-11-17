@@ -15,6 +15,8 @@ import { mensagemFechamento } from "@/apps/montagem/domain/mensagem-fechamento";
 import { BK, N1, isoDia } from "@/apps/montagem/lib/format";
 import { CampoDinheiro, CampoReais, rotuloPagamento } from "@/apps/montagem/mobile/campos";
 import { Selo } from "@/apps/montagem/pages/AtendimentoInternoListagens";
+import { CopiarChave } from "@/apps/montagem/components/copiar-chave";
+import { chaveDaParte } from "@/apps/montagem/lib/chave-da-parte";
 import { use } from "@/apps/montagem/state/context";
 import { Btn } from "@/apps/montagem/ui/button";
 import { agoraSP, formatarDia, linksParaAcertoPorNome, meioDe } from "@/apps/montagem/domain/link-pagamento";
@@ -587,7 +589,9 @@ function AtendimentoInterno(){
         var marca = e("span",{className:"justify-self-center rounded-md px-2 py-0.5 text-[11px] font-bold", style:{background:st[1]+"26", color:st[1]}}, st[0]);
         if(!partes.length){ acc.push(linha(i+"-s", "—", l.valor, marca)); return acc; }
         partes.forEach(function(p,j){
+          var ckP = lancFin.finalizado || p.ok ? null : chaveDaParte(s, p.descricao);   // chave Pix da conta direcionada, para passar à revendedora (17/11/2026)
           acc.push(linha(i+"-"+j, p.descricao||"—", p.valor, e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"},
+            ckP && e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"break-all font-bold "+MONO, "aria-label":"Chave Pix da conta"}, ckP.chave), e(CopiarChave,{texto:ckP.chave, dados:ckP.dados})),
             p.ok ? e("span",{className:"flex flex-wrap items-center justify-center gap-1.5"}, e("span",{className:"font-bold text-success"},"✓ conferido"),
               !p.comprovante && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Anexar comprovante",
                 e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},

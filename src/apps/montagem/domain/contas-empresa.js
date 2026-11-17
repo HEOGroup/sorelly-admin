@@ -159,7 +159,7 @@ function setLancamentos(l){
 // O que o DevMaster já registrou (até a última baixa de Pix do fornecedor) vale o DevMaster; o Pix da equipe só conta depois disso, sem duplicar. Só fornecedores (prestadores não entram).
 var PF_ITENS = [], PF_OCULTOS = {}, _pfSig = "";
 function setPf(pf){
-  var lanc = (pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+((pf && pf.fornecedores) || []).length;
+  var lanc = (pf && pf.lancamentos) || [], sig = lanc.length+"|"+(lanc.length ? lanc[lanc.length-1].id : "")+"|"+lanc.filter(function(l){ return l.aguardaComp; }).length+"|"+((pf && pf.fornecedores) || []).length;
   if(sig===_pfSig) return; _pfSig = sig; PF_ITENS = []; PF_OCULTOS = {};
   if(!lanc.length) return;
   var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
@@ -169,7 +169,7 @@ function setPf(pf){
   // o que vale é o DevMaster (22/10/2026, pedido do Marcus): nada do que veio da planilha/Pagamentos a fornecedores entra até a data da última baixa do DevMaster
   var ultimaGeral = ""; baseItens().forEach(function(i){ if(i.status==="pago" && i.baixa && i.baixa>ultimaGeral) ultimaGeral = i.baixa; });
   lanc.forEach(function(l){
-    var f = fn[l.fornId]; if(!f || f.tipo==="prestador" || !l.revendedora || l.revendedora==="—" || !(l.valor>0) || !l.data) return;
+    var f = fn[l.fornId]; if(!f || f.tipo==="prestador" || l.aguardaComp || !l.revendedora || l.revendedora==="—" || !(l.valor>0) || !l.data) return;
     var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;
     if(l.data<=(ultima[canon]||"") || l.data<=ultimaGeral) return;
     PF_ITENS.push(decora({id:"pf"+l.id, status:"pago", filial:"fora", nat:"pf", natNome:"Pix revendedora (Pagamentos a fornecedores)", pref:"PIX", num:"", parc:"", forn:f.nome, nome:"Pix "+f.nome+" · "+l.revendedora, baixa:l.data, venc:l.data, valor:l.valor, valorTitulo:l.valor, grupo:fd ? fd[2] : G.outros, pessoalPadrao:false, mes:String(l.data).slice(0,7), outroMes:false, chave:"pf|"+l.id, origem:"pf"}));

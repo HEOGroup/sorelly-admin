@@ -2652,3 +2652,10 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Fora: Point (conta corrente com tela própria) e fornecedor sem data no mês seguinte depois da atual (ex.: Ello Print, com data de novembro feita à mão em 30/10).
 - O pago a mais continua indo sozinho para a próxima data em aberto.
 - Código: `adiarDestino`/`adiarSaldo` e `lanc_add` (`adiar`) em `domain/pf.js`; escolha na janela em `pages/pf/Lancamentos.js`.
+
+## 17/11/2026 — Pix para fornecedor: do Direcionar ao Contas a pagar (v0.20.94)
+- **Regra do Marcus:** Pix confirmado no Direcionar com um FORNECEDOR como destino vira pagamento do fornecedor sozinho, na janela (data de pagamento) mais antiga em aberto; só conta como pago com o comprovante anexado. Lançamento de pagamentos vira a tela de conferir, estornar e enviar o extrato. A regra vale só para os lançamentos novos (os ~1.500 antigos não têm a marca).
+- **Como foi feito:** `state/reducer.js` (caso `DP`, ao confirmar/reabrir) chama `pfReduz` ops `pix_dir` e `pix_dir_desfaz` (`domain/pf.js`). O lançamento nasce com `origemPix` (id#n, evita duplicar) e `aguardaComp:true`; com a marca ele NÃO conta como pago (`pagoPix`) e NÃO entra em Contas a pagar (`contas-empresa.js › setPf`). Em Lançamento de pagamentos, o botão Anexar comprovante (op `lanc_comp`) tira a marca. Destino ligado ao fornecedor pelo nome (`fornDoDestino`).
+- **Atendimento interno (pedido do Marcus):** o comprovante já é anexado no Atendimento Sorelly (e aparece no Consolidado Sorelly). O lançamento guarda onde ele fica (`lf`) e `sincCompFornecedor` (reducer, após `FIN_LINHA`) copia o comprovante e libera o pagamento sozinho.
+- **Chave Pix junto da conta (pedido do Marcus):** no Atendimento Sorelly, a conta devolvida pelo Direcionar mostra a chave Pix e o botão Copiar (`lib/chave-da-parte.js`). A chave é lida na hora do cadastro, nada é copiado para o pedido; some depois do comprovante conferido.
+- **Testes:** `node scripts/testar-pix-fornecedor.mjs` (reducer, 10 verificações) e `node scripts/testar-chave-da-parte.mjs` (4). Testado também no navegador na porta 3000 com pedido falso, depois limpo.

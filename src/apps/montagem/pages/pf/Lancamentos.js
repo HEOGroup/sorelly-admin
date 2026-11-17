@@ -50,7 +50,12 @@ function ItemLanc(p){
       ? e("a",{href:l.arqData, target:"_blank", rel:"noreferrer", download:l.arqNome, title:l.arqNome, className:"inline-flex items-center gap-1 rounded-full bg-[#06B6D4]/20 px-2.5 py-0.5 text-[11.5px] font-bold text-[#22D3EE]"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
       : l.arqNome ? e("span",{className:"inline-flex items-center gap-1 text-[11.5px]", title:l.arqNome}, e(Ph,{n:"paperclip", s:13}), "comprovante anexado")
       : e("span",{className:"text-[11.5px] text-muted-foreground"}, "sem comprovante");
-  var conf = l.conferido ? e(Chip,{cor:"green"}, "✓ Conferido "+dbr(l.conferidoEm)) : e(Chip,{cor:"orange"}, "⏳ Aguardando conferência");
+  // Pix vindo do Direcionar (17/11/2026): só conta como pago depois de anexar o comprovante
+  if(l.aguardaComp) comp = e("label",{title:"Pix confirmado por "+(l.direcionadoPor||"Financeiro")+" no Direcionar. Anexe o comprovante para contar como pago.", className:"inline-flex cursor-pointer items-center gap-1 rounded-md bg-[#3B82F6]/25 px-2.5 py-0.5 text-[11px] font-bold text-[#93C5FD] hover:bg-[#3B82F6]/35"}, e(Ph,{n:"paperclip", s:13}), "Anexar comprovante",
+    e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ var arq = ev.target.files && ev.target.files[0]; if(!arq) return;
+      lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ op(c, "lanc_comp", {id:l.id, arqNome:arq.name, arqTipo:arq.type, arqKey:sv.key}); }, function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); }); }}));
+  var conf = l.aguardaComp ? e(Chip,{cor:"orange"}, "⏳ Falta o comprovante") : l.conferido ? e(Chip,{cor:"green"}, "✓ Conferido "+dbr(l.conferidoEm)) : e(Chip,{cor:"orange"}, "⏳ Aguardando conferência");
+
   return e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 "+(l.conferido ? "bg-[#22C55E]/10" : "bg-black/25")},
     e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]"}, e("b",null, dbr(l.data)), e("span",{className:"text-muted-foreground"}, l.revendedora||"—"), e("span",{className:"text-muted-foreground"}, l.conta||"—"), comp, conf),
     e("div",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[14px]", style:{color:COR.green}}, brl(l.valor)),
