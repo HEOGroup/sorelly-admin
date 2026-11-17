@@ -8,7 +8,7 @@ import { BKC } from "@/apps/montagem/lib/format";
 import { ESTADO, Pagina } from "@/apps/montagem/components/padrao";
 import { AbasTela, Bloco, Botao, CAMPO, CampoSel, Rotulo, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { diasEntre, formatarDia, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
+import { diasEntre, formatarDia, formatarHora, fotosFeitas, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
 import { porDe } from "@/apps/montagem/pages/trafego/comum";
 import { use } from "@/apps/montagem/state/context";
 import { PageHead } from "@/apps/montagem/ui/page";
@@ -22,7 +22,7 @@ var PCT = function(n, tot){ return tot ? (n/tot*100).toLocaleString("pt-BR", {mi
 // tabela do Layout D com filtro e ordem em cada coluna (TabelaPlanilha); linhas = objetos; total() = linha de total em cima (opcional); regra de 11/11/2026: TabelaCampos e FileiraCampos saíram
 function Plan(p){ return e(TabelaPlanilha,{cols:p.cols, linhas:p.linhas, chave:p.chave || "id", grade:true, escura:true, semContagem:true, totalLinha:p.total, aoClicar:p.aoClicar, linhaCls:p.linhaCls, vazio:p.vazio || "Nenhum registro."}); }
 var COR = {foto:"#5B8DEF", ed:"#A78BFA", sub:"#2DD4BF"};   // as três etapas (mesmas cores das fases de Cadastro de peças › Pedidos)
-var ABAS = [["lista", "Hoje"], ["cat", "Progresso por categoria"], ["ant", "Meses anteriores"], ["dia", "Produção diária"], ["proc", "Processos"], ["meta", "Meta"]];
+var ABAS = [["lista", "Hoje"], ["feitas", "Feitas"], ["cat", "Progresso por categoria"], ["ant", "Meses anteriores"], ["dia", "Produção diária"], ["proc", "Processos"], ["meta", "Meta"]];
 // botões pequenos dentro da linha (Marcus, 10/11/2026: "esse botão marcar está uma merda, diminui ele"): 22 px de altura, texto 11 px
 var BTN_ICONE = "h-[22px] w-[22px] rounded-full text-[11px] leading-none text-foreground hover:bg-white/15"; // padrao-ok
 var BTN_MARCAR = "h-[22px] rounded-full border border-primary/60 px-3 text-[11px] font-medium leading-none text-primary transition-colors hover:bg-primary hover:text-black"; // padrao-ok
@@ -102,6 +102,17 @@ function MesesAnteriores(p){
         e("span",{className:"flex flex-wrap items-center gap-2"}, e(BuscaCodigo,{valor:busca, onChange:sb[1]}), e(Botao,{onClick:copiar, desabilitado:!sem.length}, copiou ? "Copiado!" : "Copiar lista para o cadastro · "+N(sem.length))),
         e(Segmentado,{opcoes:[["todas", "Todas · "+N(pend.length)], ["sem", "Sem marcar · "+N(sem.length)], ["tem", "Tem · "+N(tem.length)], ["nao", "Não tem · "+N(nao.length)]], atual:busca ? "" : vis, onMudar:function(k){ sb[1](""); sv[1](k); }})),
       e(TabelaPlanilha,{cols:p.cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, vazio:busca ? "Nenhuma peça sem foto com esse código nos meses anteriores." : "Nenhuma peça nesta lista."})));
+}
+
+// FEITAS (Marcus, 17/11/2026: "você precisa saber quais são as peças"): cada peça com foto desde o início da meta, com data, hora e quem marcou (ou DevMaster)
+function Feitas(p){
+  var fc = p.fc, lista = useMemo(function(){ return fotosFeitas(fc, "2026-11-10"); }, [fc]);
+  var resumo = useMemo(function(){ var m = {}; lista.forEach(function(x){ var k = x.dia+"|"+x.quem; m[k] = m[k] || {id:k, dia:x.dia, quem:x.quem, n:0}; m[k].n++; }); return Object.keys(m).map(function(k){ return m[k]; }).sort(function(a, b){ return a.dia<b.dia ? 1 : a.dia>b.dia ? -1 : b.n-a.n; }); }, [lista]);
+  return e("div",{className:"flex flex-col gap-2.5"},
+    e(Bloco,{t:"Por dia e por pessoa · "+N(lista.length)+" peças desde 10/11"},
+      e(Plan,{linhas:resumo, cols:[{k:"dia", t:"Dia", fmt:formatarDia}, {k:"quem", t:"Quem"}, {k:"n", t:"Peças", fmt:N}], vazio:"Nenhuma foto feita ainda."})),
+    e(Bloco,{t:"Todas as peças com foto feita"},
+      e(Plan,{linhas:lista, cols:[{k:"quando", t:"Quando", fmt:formatarHora}, {k:"cod", t:"Código"}, {k:"quem", t:"Quem"}, {k:"origem", t:"Como entrou"}, {k:"desc", t:"Descrição"}, {k:"cadastro", t:"Cadastro", fmt:formatarDia}, {k:"sistema", t:"No sistema"}], vazio:"Nenhuma foto feita ainda."})));
 }
 
 function Producao(p){
@@ -293,6 +304,7 @@ function AbaFotosCatalogo(){
         e("button",{type:"button", onClick:function(){ abreTodos(false); }, className:"h-8 whitespace-nowrap border-l border-border px-3 text-[13px] hover:bg-white/10"}, "Fechar todos"))),
     aba==="lista" ? e(Hoje,{fc:fc, linhas:linhas, cols:colsDia})
       : aba==="cat" ? e("div",{className:"flex flex-col gap-2.5"}, e(Painel,{fc:fc}), e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"cod", limite:300, grade:true, escura:true, agrupar:"cat", grupoEsquerda:true, cabSoAberto:true, grupoAberto:function(c){ return !!abertos[c]; }, aoGrupo:alterna, linhaGrupo:function(c){ return grupo(c); }, vazio:"Nenhum código lançado."}))
+      : aba==="feitas" ? e(Feitas,{fc:fc})
       : aba==="ant" ? e(MesesAnteriores,{linhas:linhas, cols:colsAnt})
       : aba==="dia" ? e(Producao,{fc:fc})
       : aba==="proc" ? e(Processos)

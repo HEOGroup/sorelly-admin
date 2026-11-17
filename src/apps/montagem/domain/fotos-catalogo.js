@@ -179,6 +179,20 @@ function quadroCodigos(fc){
 }
 function minutosDesde(iso, agora){ return minutos(iso, agora); }
 
+// ---------- FOTOS FEITAS (Marcus, 17/11/2026: "você precisa saber quais são as peças") ----------
+// Cada modelo com foto desde o início da meta: quando, quem marcou na tela (ou DevMaster, quando a foto chegou lá sozinha), a descrição e se já está no sistema.
+function fotosFeitas(fc, desde){
+  var corte = (METAS[0] && METAS[0].dmDesde) || "", out = [];
+  unidades(fc).forEach(function(u){
+    var q = "", quem = "", origem = "", x = String(u.fotoEm||"");
+    if(ehDia(parteDia(x))){ q = x; quem = u.fotoQuem || "Sem nome"; origem = "Marcada na tela"; }
+    else if(u.dmFoto && String(u.dmFoto)>=corte){ q = String(u.dmFoto); quem = "DevMaster"; origem = "Chegou na DevMaster"; }
+    if(!q || parteDia(q)<desde) return;
+    out.push({id:u.cod, cod:u.cod, quando:q, dia:parteDia(q), quem:quem, origem:origem, desc:u.desc||"", cadastro:u.dia||"", sistema:u.subEm ? "Sim" : "Não"});
+  });
+  return out.sort(function(a, b){ return a.quando<b.quando ? 1 : a.quando>b.quando ? -1 : 0; });
+}
+
 // ---------- META DE FOTOS (Marcus, 10/11/2026) ----------
 // Primeira meta: 500 fotos até sexta-feira (13/11) = bônus de R$ 250,00 para o setor. A próxima meta entra aqui quando o Marcus definir.
 // Foto contada = marcada na tela (Foto, com data) OU foto que passou a existir na DevMaster depois do início do sistema (dmFoto, gravado na hora em que a leitura da DevMaster vê a foto).
@@ -290,4 +304,4 @@ function fcReduz(s, a){
   }
 }
 
-export { modeloDe, unidades, INICIO_PECAS, METAS, metaProgresso, diasEntre, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
+export { fotosFeitas, modeloDe, unidades, INICIO_PECAS, METAS, metaProgresso, diasEntre, resumoGeral, porCategoria, quadroCodigos, minutosDesde, agoraSP, STATUS, ESPECIAIS, categoriaDe, statusDe, fcDemo, fcMigrar, fcReduz, linhasFotos, resumoDoDia, resumoHoje, temposMedios, producaoDias, resumoLegado, lerCodigos, duracao, formatarDia, formatarHora, hojeSP, parteDia };
