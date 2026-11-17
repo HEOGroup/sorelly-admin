@@ -15,7 +15,7 @@ import { fatEfetivo, MESES_LONGO } from "@/apps/montagem/domain/financeiro";
 import { AbaConsolidadoFaturamento } from "@/apps/montagem/pages/ConsolidadoFaturamento";
 import { use } from "@/apps/montagem/state/context";
 import { MoneyInput, NumInput } from "@/apps/montagem/ui/input";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 var iso = function(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
 var ABAS = [["dia","Dia a dia"],["acertos","Acertos"],["mes","Mês a mês"],["prev","Previsão"]];
@@ -32,6 +32,10 @@ function Lancar(p){
   var a = useState(ult.recebido||0), rec = a[0], setRec = a[1], b = useState(ult.acertos||0), ace = b[0], setAce = b[1];
   var c = useState(fm.carregar||0), car = c[0], setCar = c[1], f = useState(fm.aRealizar||0), arz = f[0], setArz = f[1], g = useState(revAtual), rev = g[0], setRev = g[1];
   var fixado = !!(s.faturamentoDiario||{})[hoje];
+  // 17/11/2026 (Marcus: "tá errado isso aparecendo lá em cima"): os campos nasciam com os valores de quando a tela abriu e não acompanhavam o que chega do servidor (dia lançado, Carregar, a realizar, revendedoras). Agora refazem quando o dado de origem muda.
+  useEffect(function(){ setRec(ult.recebido||0); setAce(ult.acertos||0); }, [ult.recebido, ult.acertos]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ setCar(fm.carregar||0); setArz(fm.aRealizar||0); }, [fm.carregar, fm.aRealizar]);   // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(function(){ setRev(revAtual); }, [revAtual]);   // eslint-disable-line react-hooks/exhaustive-deps
   var campo = function(t, id, el){ return e("div",{className:"min-w-0"}, e(Rotulo,{t:t, id:id}), el); };
   return e("div",{className:"flex flex-col gap-2 p-2"},
     e("h3",{className:"text-center text-[13px] font-semibold text-foreground"}, "Lançar · "+hoje.split("-").reverse().slice(0,2).join("/")+(fixado ? " · dia fixado" : "")),

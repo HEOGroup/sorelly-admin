@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.69", data:"2026-11-17", titulo:"Faturamento: campos do Lançar acompanham o servidor", itens:[
+  {tipo:"correção", area:"Financeiro → Faturamento", txt:"Os campos da aba Lançar mostravam os números de quando a tela abriu (dia anterior, Carregar e a realizar antigos) e podiam voltar a gravar valores velhos. Agora refazem quando o dado muda no servidor."}
+ ]},
  {v:"0.20.68", data:"2026-11-16", titulo:"Resumo geral: parcelas dos pedidos, Pix recebidos e comprovante no servidor", itens:[
   "Clicar na linha do Resumo geral abre as parcelas dos pedidos que compõem o valor e os Pix de revendedora recebidos, com conta, tipo da chave, chave Pix e o comprovante ao lado.",
   "Comprovante de pagamento a fornecedor fica no SERVIDOR (qualquer computador abre). Lançar pagamento ganhou o campo Chave Pix enviada.",
