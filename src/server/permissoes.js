@@ -66,6 +66,7 @@ export const ehSomenteLeitura = (usuario) => usuario?.perfil !== "ADMIN" && usua
 export function bloqueiaEscrita(usuario, caminho) {
   if (!ehSomenteLeitura(usuario)) return false;
   if (/^\/api\/(chat|perfil|auth)\//.test(caminho)) return false;
+  if (caminho === "/api/copia-navegador") return false;   // cópia de segurança do que só está no navegador (17/11/2026): vale para todos, até quem só visualiza
   const podem = SOMENTE_LEITURA[usuario.pessoaId];
   const m = /^\/api\/estado\/([^/]+)/.exec(caminho);
   if (m) {

@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.74", data:"2026-11-17", titulo:"Dados só no banco, fase 1: cópia de segurança do que está só no navegador", itens:[
+  {tipo:"melhoria", area:"Sistema (gravação)", txt:"Uma vez por dia, depois do login, cada navegador manda para o banco uma cópia das partes do sistema que ainda ficam só nele (tabela copia_navegador). Nada muda nas telas: é a base para levar tudo ao banco e o navegador parar de guardar dados (regra: nunca no navegador, sempre no banco)."}]},
  {v:"0.20.73", data:"2026-11-17", titulo:"Materiais e estoque: menu como o Financeiro, telas no padrão azul e dados padronizados", itens:[
   {tipo:"melhoria", area:"Materiais e estoque", txt:"As abas viraram itens do menu do topo, como no Financeiro: Painel, Visão geral, Estoque (Estoque de material, Movimentos, Pedidos de material), Tabela de preços, Cadastros e Configurações. Quadro de compras e Planilha de compras saíram do menu (o Painel faz os dois; os endereços antigos continuam abrindo)."},
   {tipo:"melhoria", area:"Materiais e estoque → Painel (Funil de compras)", txt:"Primeira tela refeita no padrão do Funil de pedidos: bloco azul, uma faixa com o menu suspenso Quadro, Planilha ou Estoque e os filtros, e cartão com a borda na cor do fornecedor e o tempo na etapa em verde, amarelo ou vermelho. Entrou tudo que só o Quadro e a Planilha antigos tinham: situações (aguardando aprovação, a liberar, liberadas, a receber, do mês), classificação, colunas Número, CNPJ e Pago, totais e Exportar CSV."},

@@ -14,6 +14,7 @@ import { definirSetoresInicio, registrarVisita } from "@/apps/montagem/lib/inici
 import { setoresLigados, urlAdminAntigo } from "@/apps/montagem/lib/fase";
 import { definirFeriadosAgenda } from "@/apps/montagem/domain/revendedoras-internas";
 import { semDoServidor, useSyncModulos } from "@/apps/montagem/lib/sync-modulos";
+import { useCopiaNavegador } from "@/apps/montagem/lib/copia-navegador";
 import { useCondicionaisKits } from "@/apps/montagem/lib/condicionais-kits";
 import { pendenciasDoAcerto } from "@/apps/montagem/domain/inadimplencia";
 import { textoDoEstado } from "@/apps/montagem/lib/estado-comprimido";
@@ -126,6 +127,7 @@ function App(){
   useContasDm(s.logado, d);   // contas a pagar e pagas direto da DevMaster (Financeiro)
   useCondicionaisKits(s, d);   // condicionais abertas da DevMaster entram nos kits ainda não montados (16/11/2026)
   useSyncModulos(s, d);   // módulos que ficam no servidor: sincroniza sempre que há servidor e login (o servidor manda)
+  useCopiaNavegador(s);   // Fase 1 de "tudo no banco" (17/11/2026): uma vez por dia, cópia no banco do que ainda está só neste navegador
   // Inadimplência ligada ao acerto (11/11/2026): acerto real com valor pendente vira dívida sozinho, e o pendente do acerto atualiza a dívida
   useEffect(function(){ if(!s.logado || !s.inad || !s.inad.doServidor) return; var pIn = pendenciasDoAcerto(s.inad, s.acertosConsignado); if(pIn.criar.length || pIn.atualizar.length) d({type:"INAD", op:"do_acerto", criar:pIn.criar, atualizar:pIn.atualizar}); }, [s.logado, s.inad, s.acertosConsignado]);   // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(function(){ sons.iniciar(); iniciarAtalhos(); }, []);   // sons, arrastar para o lado e Ctrl+F valem em todas as telas
