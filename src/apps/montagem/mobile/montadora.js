@@ -50,13 +50,10 @@ function CelProximo(){
     aguardando>0 && e(Aviso,null,aguardando+(aguardando>1 ? " kits seus aguardam" : " kit seu aguarda")+" conferência."),
     passou && e(Aviso,null,"O kit de "+passou.rev+" passou para "+passou.por+", que ficou livre antes. "+(passou.novo ? "Seu próximo agora é "+passou.novo+"." : "")),
     r.atual
-      ? e(React.Fragment,null, e("p",{className:"text-[17px] font-extrabold text-[#111827]"},"Você está montando"), e(Etiqueta,{k:r.atual, montId:id}))
+      ? e(Etiqueta,{k:r.atual, montId:id})   // 16/11/2026: sem título repetido; a tela já se chama "Próximo kit" e o cartão mostra "Montando há"
       : prox.kit
         ? e(React.Fragment,null,
-            e("div",{className:"flex items-baseline justify-between"},
-              e("p",{className:"text-[17px] font-extrabold text-[#111827]"}, prox.tipo==="ajuste" ? "Ajuste para fazer" : "Próximo kit"),
-              prox.tipo==="fila" && e("span",{className:"rounded-full bg-[#F6EBCB] px-3 py-1 text-[13px] font-bold text-[#6B5B2A]"}, prox.posicao+"º da fila")),
-            e(Etiqueta,{k:prox.kit, montId:id, tipo:prox.tipo}),
+            e(Etiqueta,{k:prox.kit, montId:id, tipo:prox.tipo, fila:prox.tipo==="ajuste" ? "Ajuste para fazer" : prox.tipo==="fila" ? prox.posicao+"º da fila" : ""}),   // a posição na fila vai para dentro do cartão (sem faixa solta no topo)
             prox.pulou && e("p",{className:"text-[13px] leading-snug text-[#6B7280]"},"Kits acima de "+BK(s.cfg.limiteEncomendas)+" ficam com o setor Encomendas; acima de "+BK(s.cfg.limiteMelhores)+", com as "+s.cfg.topN+" montadoras mais bem avaliadas."))
         : e(Vazio,{txt: semValor ? semValor+" kits aguardam a Deysiane definir o valor." : "Todos os kits do dia estão montados ou em andamento."}));
 }
@@ -144,7 +141,7 @@ function Celular(p){
   var eu = useEu(logado ? s.celular : null);   // SorellyChat (27/10/2026, pedido do Marcus): a montadora já tem o chat no próprio app, sem precisar de outro telefone
   if(!logado) return e(IPhone15,null, e(CelLogin,{onEntrar:function(pes){ setLogado(true); if(pes && s.montadoras.some(function(x){ return x.id===pes.id; })) d({type:"CEL", id:pes.id}); d({type:"TELACEL", t:"inicio"}); }}));
   if(s.telaCel==="chat") return e(p && p.semMoldura ? React.Fragment : IPhone15,null, e(CelChat,{eu:eu, voltar:function(){ d({type:"TELACEL", t:"inicio"}); }}));
-  var inicio = !TITULO_CEL[s.telaCel];   // "inicio" (e qualquer valor antigo salvo sem tela) abre a tela inicial
+  var inicio = !TITULO_CEL[s.telaCel] && !(p && p.semMoldura);   // "inicio" (e qualquer valor antigo salvo sem tela) abre a tela inicial
   return e(p && p.semMoldura ? React.Fragment : IPhone15,null,
     inicio
       ? e("div",{className:"mb-3 flex items-center gap-3"},
@@ -152,10 +149,11 @@ function Celular(p){
           e("div",{className:"min-w-0 flex-1"}, e("p",{className:"text-[12px] text-[#374151]"},"Conectada como"), e("p",{className:"truncate text-xl font-bold text-[#111827]"}, m.nome)),
           e("button",{onClick:function(){ d({type:"TELACEL", t:"chat"}); }, title:"SorellyChat", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"whats", s:18, className:"text-[#E8B84B]"})),
           e("button",{onClick:function(){setLogado(false);}, title:"Sair", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"user", s:18, className:"text-[#8E8E93]"})))
-      : e("div",{className:"mb-3 flex items-center gap-3"},
+      : p && p.semMoldura ? null   // as abas ficam na barra preta do app das funcionárias (app-funcionarias.js)
+        : e("div",{className:"mb-3 flex items-center gap-3"},
           e("button",{onClick:function(){ d({type:"TELACEL", t:"inicio"}); }, title:"Voltar", className:"grid size-9 place-items-center rounded-full bg-[#1C1C1E]"}, e(Icon,{n:"chevron", s:16, className:"rotate-180 text-[#111827]"})),
           e("p",{className:"min-w-0 flex-1 truncate text-xl font-bold text-[#111827]"}, TITULO_CEL[s.telaCel])),
-    inicio ? e(CelInicio) : s.telaCel==="proximo" ? e(CelProximo) : s.telaCel==="listagens" ? e(CelListagens) : e(CelResultados));
+    inicio ? e(CelInicio) : s.telaCel==="listagens" ? e(CelListagens) : s.telaCel==="resultados" ? e(CelResultados) : e(CelProximo));
 }
 
 export { CelProximo, CelListagens, CelResultados, CelLogin, Celular };

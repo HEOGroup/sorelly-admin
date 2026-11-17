@@ -6,11 +6,14 @@
 // Dinheiro (valor do kit e venda) só aparece para a supervisão e a diretoria; montadora nunca vê valor. Sem as etiquetas Só Encomendas e Mesa maior (regra desligada em config.js).
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
 import { agrupar } from "@/apps/montagem/components/etiqueta";
+import { Fotos } from "@/apps/montagem/components/fotos-pref";
+import { blocosDaPeca, semAcento } from "@/apps/montagem/domain/peca-blocos";
 import { tituloAba } from "@/apps/montagem/components/menu-dias";
 import { condEstado, condNovas, condNums, condOk } from "@/apps/montagem/domain/condicionais";
 import { modalidadeDe } from "@/apps/montagem/domain/consignado";
 import { nomeDe, papelDe, podeLiberarExcecao } from "@/apps/montagem/domain/equipe";
-import { AVISO_CONFIANCA, pkDetalhe } from "@/apps/montagem/domain/preferencias-kit";
+import { AVISO_CONFIANCA, pkResumoRevendedora, pkSituacao } from "@/apps/montagem/domain/preferencias-kit";
+import { prefDoApp, usePrefsApp } from "@/apps/montagem/lib/prefs-app";
 import { pkResumoParaMontagem } from "@/apps/montagem/domain/preferencias-relatorio";
 import { listagemDe, motivoNaoMonta, pecasPara, semMontador, soEncomendas } from "@/apps/montagem/domain/regras";
 import { STATUS_LB, TIPO_KIT } from "@/apps/montagem/domain/status";
@@ -20,25 +23,13 @@ import { MONO } from "@/apps/montagem/ui/input";
 import { Relogio } from "@/apps/montagem/ui/relogio";
 import { e, useState } from "@/shared/react";
 
-var semAcento = function(t){ return String(t||"").normalize("NFD").replace(/[̀-ͯ]/g,"").toLowerCase().replace(/\s+/g," ").trim(); };
 // preferências da revendedora do kit, procuradas pelo nome no módulo Preferências do Kit (nada é inventado: sem resposta = null)
+// 16/11/2026: lê primeiro do app (todas as revendedoras, lib/prefs-app.js); o módulo local s.pk (31) é só reserva
 function prefsDoKit(s, k){
-  var pk = s.pk; if(!pk || !pk.revendedoras) return null;
-  var r = pk.revendedoras.find(function(x){ return semAcento(x.nome)===semAcento(k.rev); }); if(!r) return null;
-  var det = pkDetalhe(s, r.id); return det && det.preferencias.temPreferencias ? det : null;
+  var pk = s.pk, r = prefDoApp(k.rev) || (pk && pk.revendedoras && pk.revendedoras.find(function(x){ return semAcento(x.nome)===semAcento(k.rev); }));
+  if(!r || !r.preferencias || pkSituacao(s, r)==="sem") return null;
+  return {preferencias:{resumoGeral:pkResumoRevendedora(s, r).resumoGeral, fonte:r.preferencias.fonte || "app"}};
 }
-// Que blocos de preferência pertencem a cada peça (pelo título do bloco, sem acento). Bloco que não é de nenhuma peça vai para "Antes de começar".
-var PECA_BLOCOS = [
-  {peca:"colar", blocos:["colares", "colar filhos", "colar de letras"]},
-  {peca:"pulseira", blocos:["pulseira", "bracelete"]},
-  {peca:"conjunto", blocos:["conjunto"]},
-  {peca:"anel", blocos:["aneis"]},
-  {peca:"infanti", blocos:["infantil"]},
-  {peca:"masculin", blocos:["masculino"]},
-  {peca:"tornozeleira", blocos:["tornozeleira"]},
-  {peca:"flanela", blocos:["flanela"]}];
-var blocosDaPeca = function(base){ var b = semAcento(base), m = PECA_BLOCOS.find(function(x){ return b.indexOf(x.peca)>=0; }); return m ? m.blocos : []; };
-
 // botão pequeno de contorno branco, sem fundo cinza; o principal leva o azul do bloco (o mesmo das telas Condicionais e Listagens)
 var BTN = "inline-flex h-7 min-w-20 items-center justify-center gap-1 whitespace-nowrap rounded-md border px-3 text-[13px] font-semibold text-white hover:bg-white/10 disabled:opacity-40 ";   // padrao-ok: botão de 28 px (o Marcus aprovou esse tamanho em 16/11/2026)
 function Bt(p){
@@ -46,17 +37,9 @@ function Bt(p){
 }
 var CAMPO_SEL = "h-8 min-w-0 rounded-md border border-white/60 bg-[#14233f] px-2.5 text-[13px] text-white outline-none";
 
-// Fotos que a revendedora mandou (até 3 por bloco): miniaturas; clicar abre a foto grande (clicar de novo fecha)
-function Fotos(p){
-  var st = useState(null), grande = st[0], setGrande = st[1];
-  if(!p.lista || !p.lista.length) return null;
-  return e("span",{className:"inline-flex flex-wrap items-center gap-1.5"},
-    p.lista.map(function(u, i){ return e("button",{key:i, type:"button", title:"Abrir foto", "aria-label":"Abrir foto "+(i+1), onClick:function(){ setGrande(u); }, className:"overflow-hidden rounded border border-border", style:{width:44, height:44}}, e("img",{src:u, alt:"Foto "+(i+1)+" enviada pela revendedora", loading:"lazy", style:{width:"100%", height:"100%", objectFit:"cover"}})); }),
-    grande && e("div",{className:"fixed inset-0 z-[90] flex items-center justify-center bg-black/85 p-4", onClick:function(){ setGrande(null); }}, e("img",{src:grande, alt:"Foto ampliada", style:{maxWidth:"92vw", maxHeight:"88vh", objectFit:"contain"}})));
-}
-
 function JanelaMontar(p){
   var cx = use(), s = cx.state, d = cx.dispatch, k = s.kits.find(function(x){ return x.id===p.kitId; });
+  usePrefsApp();   // lê as preferências do app (todas as revendedoras) e refaz a janela quando chegam
   var sup = papelDe(s.usuario)==="supervisao", euMont = papelDe(s.usuario)==="montadora";
   var podeExc = podeLiberarExcecao(s.usuario);
   var grande = k ? soEncomendas(k, s.cfg) : false;
