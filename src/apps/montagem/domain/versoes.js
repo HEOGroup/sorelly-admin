@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.77", data:"2026-11-17", titulo:"Pontual: pedidos e negociações por mês", itens:[
+  {tipo:"melhoria", area:"Financeiro › Negociações › Pontual", txt:"O bloco Pedidos e negociações mostra uma linha por mês, sem repetir o mês. Os pedidos, as NFs e as renegociações do mesmo mês somam juntos. Clicar no mês abre duas linhas, Com NF (boleto) e Sem NF (Pix), com total, pago e falta; clicar numa delas abre cada parcela em ordem de vencimento, com pedido, quem paga e situação. Clicar na parcela abre o resumo do pedido dela (os botões Abrir pedido saíram), e o resumo do pedido mostra as parcelas divididas em Com NF e Sem NF, cada parte em ordem de vencimento. Pedido do Lucas."}]},
  {v:"0.20.76", data:"2026-11-17", titulo:"Pagamento em joias", itens:[
   {tipo:"novo", area:"RH", txt:"Nova tela RH › Pagamento em joias: toda joia dada como pagamento a funcionário ou prestador, de qualquer setor, com pessoa, setor, motivo, valor a preço de venda e custo (20%). Caminho: Pedido, Autorizado (diretoria), Separado (cadastro de peças) e Retirado, com recibo para copiar e resumo por mês e setor."},
  {v:"0.20.75", data:"2026-11-17", titulo:"Estoque de material por fornecedor e ficha da compra compacta, junto com o trabalho do Nickolas", itens:[

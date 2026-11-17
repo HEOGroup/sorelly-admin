@@ -248,27 +248,52 @@ function PainelPontual(p){
   // 3) PEDIDOS: para onde vai cada negociação
   var anos = Array.from(new Set(pf.pedidos.filter(function(x){ return x.fornId===f.id; }).map(function(x){ return x.data.slice(0, 4); }))).sort();
   var peds = pf.pedidos.filter(function(x){ return x.fornId===f.id && x.data.slice(0, 4)===ano; }).sort(function(a, b){ return a.data.localeCompare(b.data) || a.id-b.id; });
-  var rows = [];
-  peds.forEach(function(x, i){
-    var bs = x.parcelas.filter(function(q){ return q.forma==="boleto"; }), px = x.parcelas.filter(function(q){ return q.forma!=="boleto"; });
-    var vb = bs.reduce(function(t, q){ return t+q.valor; }, 0), vp = px.reduce(function(t, q){ return t+q.valor; }, 0);
-    var pb = bs.filter(function(q){ return q.status==="Pago" || q.venc.slice(0, 7)<atual; }).reduce(function(t, q){ return t+q.valor; }, 0), pp = px.filter(function(q){ return q.status==="Pago"; }).reduce(function(t, q){ return t+q.valor; }, 0);
-    var fl = Math.max(0, vb+vp-pb-pp), mes = x.data.slice(0, 7), ab = !!abPed[x.id], nf = /^Pontual NF/.test(x.numero), vs = x.parcelas.map(function(q){ return q.venc; }).sort();
-    var atr = px.some(function(q){ return q.status!=="Pago" && q.venc<hoje; });
-    var st = fl<=0.005 ? {texto:"Quitado", cor:"green"} : (atr ? {texto:"Pix em atraso", cor:"red"} : {texto:"A pagar", cor:"gray"});
-    rows.push(e("tr",{key:x.id, onClick:function(){ var o = Object.assign({}, abPed); o[x.id] = !ab; setAbPed(o); }, className:LINHA+" cursor-pointer hover:bg-white/5", style:fundo(mes)},
-      e(Td,{forte:true, className:"text-left"}, nf ? e("span",null, x.numero.replace("Pontual ", ""), e("span",{className:"ml-2 rounded px-1.5 text-[10.5px]", style:{background:"rgba(255,255,255,.18)"}}, "NF")) : (/^Renegoc/.test(x.numero) ? "Renegociação" : mesLabel(mes+"-01"))),
-      e(Td,{className:"text-white/85"}, nf ? String(x.cnpj||"") : "—"),
-      e(Td,{dinheiro:true, forte:true}, brl(x.total)), e(Td,{dinheiro:true}, brl(vb)), e(Td,{dinheiro:true}, brl(vp)), e(Td,{dinheiro:true, cor:pb+pp>0 ? "ok" : undefined}, brl(pb+pp)), e(Td,{dinheiro:true, cor:fl>0.005 ? "alerta" : "ok"}, brl(fl)),
-      e(Td,null, vs.length ? dbr(vs[0]).slice(0, 5)+" a "+dbr(vs[vs.length-1]).slice(0, 5)+"/"+vs[vs.length-1].slice(2, 4) : "—"), e(Td,null, e(Chip,{s:st}))));
-    if(ab) rows.push(e("tr",{key:x.id+"|d"}, e("td",{colSpan:9, className:"bg-black/30 p-2"},
-      e("div",{className:"mb-2 flex flex-wrap items-center gap-x-6 gap-y-1 px-1 text-[13px] text-white"}, e("span",null, "Pedido: ", e("b",null, x.numero)), x.cnpj && e("span",null, "Quem paga: ", e("b",null, x.cnpj)), x.nfNum && e("span",null, "NF: ", e("b",null, x.nfNum)),
-        p.abrirDetalhe && e("button",{type:"button", onClick:function(ev){ ev.stopPropagation(); p.abrirDetalhe(x.id); }, className:"ml-auto h-8 rounded-lg bg-muted/60 px-3 text-[12.5px] font-bold text-white hover:bg-white/15"}, "Abrir pedido")),
-      e("div",{className:"grid grid-cols-1 gap-3 lg:grid-cols-2"}, e(ParcelasPed,{t:"Boletos (com nota)", cor:"#CBD5E1", ls:bs.slice().sort(function(a, b){ return a.venc.localeCompare(b.venc); }), boleto:true}), e(ParcelasPed,{t:"Pix (sem nota)", cor:COR.green, ls:px.slice().sort(function(a, b){ return a.venc.localeCompare(b.venc); })}))))); });
+  // UMA linha por MÊS do pedido (17/11/2026, pedido do Lucas): os pedidos, NFs e renegociações do mesmo mês somam juntos; clicar abre TODAS as parcelas (boleto e Pix) do mês em ordem de vencimento
+  var nomePed = function(x){ return /^Pontual NF/.test(x.numero) ? x.numero.replace("Pontual ", "") : (/^Renegoc/.test(x.numero) ? "Renegociação" : x.numero); };
+  var pagoQ = function(q){ return q.status==="Pago" || (q.forma==="boleto" && q.venc.slice(0, 7)<atual); };   // boleto vencido antes do mês atual conta como pago (regra da planilha)
+  var porMes = {};
+  peds.forEach(function(x){ var m = x.data.slice(0, 7); (porMes[m] = porMes[m] || []).push(x); });
+  var linhasMes = Object.keys(porMes).sort().map(function(m){
+    var ps = porMes[m], qs = [];
+    ps.forEach(function(x){ x.parcelas.forEach(function(q){ qs.push({venc:q.venc, valor:q.valor, boleto:q.forma==="boleto", pago:pagoQ(q), ped:x}); }); });
+    qs.sort(function(a, b){ return a.venc.localeCompare(b.venc) || (a.boleto ? 0 : 1)-(b.boleto ? 0 : 1); });
+    var soma = function(fn){ return qs.filter(fn).reduce(function(t, q){ return t+q.valor; }, 0); };
+    var vb = soma(function(q){ return q.boleto; }), vp = soma(function(q){ return !q.boleto; }), pg = soma(function(q){ return q.pago; }), tot = ps.reduce(function(t, x){ return t+x.total; }, 0);
+    var fl = Math.max(0, vb+vp-pg), atr = qs.some(function(q){ return !q.boleto && !q.pago && q.venc<hoje; });
+    return {id:m, mes:m, n:ps.length, total:tot, boleto:vb, pix:vp, pago:pg, falta:fl, vencs:qs.length ? dbr(qs[0].venc)+" a "+dbr(qs[qs.length-1].venc) : "—",
+      sit:fl<=0.005 ? "Quitado" : (atr ? "Pix em atraso" : "A pagar"), qs:qs, ps:ps};
+  });
+  var corSit = function(t){ return t==="Quitado" || t==="Pago" ? "font-semibold text-[#22C55E]" : (/atraso|Atrasado/.test(t) ? "font-semibold text-[#EF4444]" : "font-semibold text-[#F59E0B]"); };
+  // 3º nível: as parcelas de um tipo (Com NF = boleto, Sem NF = Pix), uma por linha, em ordem de vencimento
+  var parcelasTipo = function(t){
+    var ls = t.qs.map(function(q, i){ return {id:i, venc:q.venc, valor:q.valor, pedido:nomePed(q.ped), pedId:q.ped.id, paga:q.ped.cnpj || "—", sit:q.pago ? "Pago" : (!q.boleto && q.venc<hoje ? "Atrasado" : "A pagar")}; });
+    // clicar na parcela abre o resumo do pedido dela (no lugar dos botões "Abrir pedido", 17/11/2026)
+    return e(TabelaPlanilha,{key:t.id, chave:"id", centro:true, semContagem:true, linhas:ls, linhaCls:function(r){ return r.venc===hoje ? "bg-white/10" : ""; }, aoClicar:p.abrirDetalhe ? function(r){ p.abrirDetalhe(r.pedId); } : undefined,
+      cols:[{k:"venc", t:"Vencimento", fmt:function(v){ return dbr(v); }}, {k:"valor", t:"Valor", fmt:brl, cor:function(){ return "font-mono"; }}, {k:"pedido", t:"Pedido"}, {k:"paga", t:"Quem paga"}, {k:"sit", t:"Situação", cor:function(r){ return corSit(r.sit); }}],
+      totalRodape:function(rs){ var s = rs.reduce(function(a, r){ return a+r.valor; }, 0), pg = rs.filter(function(r){ return r.sit==="Pago"; }).reduce(function(a, r){ return a+r.valor; }, 0);
+        return ["Total · "+rs.length+" parcelas", brl(s), "", "Pago "+brl(pg), "Falta "+brl(Math.max(0, s-pg))]; }});
+  };
+  // 2º nível: o mês dividido em Com NF (boleto) e Sem NF (Pix); clicar abre as parcelas daquele tipo
+  var detalheMes = function(l){
+    var tipos = [{id:l.id+"|nf", rot:"Com NF · boleto", boleto:true}, {id:l.id+"|sem", rot:"Sem NF · Pix", boleto:false}].map(function(t){
+      var qs = l.qs.filter(function(q){ return q.boleto===t.boleto; }), soma = function(fn){ return qs.filter(fn).reduce(function(a, q){ return a+q.valor; }, 0); };
+      var tot = soma(function(){ return true; }), pg = soma(function(q){ return q.pago; }), fl = Math.max(0, tot-pg), atr = qs.some(function(q){ return !q.boleto && !q.pago && q.venc<hoje; });
+      return {id:t.id, rot:t.rot, n:qs.length, total:tot, pago:pg, falta:fl, vencs:qs.length ? dbr(qs[0].venc)+" a "+dbr(qs[qs.length-1].venc) : "—", sit:!qs.length ? "—" : (fl<=0.005 ? "Quitado" : (atr ? "Pix em atraso" : "A pagar")), qs:qs};
+    }).filter(function(t){ return t.n>0; });
+    return e("div",{className:"flex flex-col gap-2"},
+      e(TabelaPlanilha,{key:l.id, chave:"id", centro:true, semContagem:true, semFiltro:true, linhas:tipos, detalhe:parcelasTipo,
+        cols:[{k:"rot", t:"Tipo", cor:function(t){ return "font-semibold "+(/^Com NF/.test(t.rot) ? "text-[#93C5FD]" : "text-white"); }}, {k:"n", t:"Parcelas"}, {k:"total", t:"Total", fmt:brl, cor:function(){ return "font-mono font-semibold"; }},
+          {k:"pago", t:"Já pago", fmt:brl, cor:function(){ return "font-mono text-[#22C55E]"; }}, {k:"falta", t:"Falta", fmt:brl, cor:function(t){ return "font-mono "+(t.falta>0.005 ? "text-[#F59E0B]" : "text-[#22C55E]"); }},
+          {k:"vencs", t:"Vencimentos"}, {k:"sit", t:"Situação", cor:function(t){ return corSit(t.sit); }}]}));
+  };
   var anoBtn = function(a){ var on = a===ano; return e("button",{key:a, type:"button", onClick:function(){ setAno(a); }, className:"h-8 rounded-lg px-4 text-[13px] font-bold ring-1 "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"), style:on ? {background:"linear-gradient(135deg,#3B82F666,#3B82F622)", boxShadow:"inset 0 0 0 1px #3B82F6cc"} : undefined}, a); };
-  var pedidos = e(BlocoBarra,{t:"Pedidos e negociações · para onde vai cada pagamento", cor:"azul", compacto:true, dir:peds.length+" pedidos em "+ano},
-    e("div",{className:"p-2"}, e("div",{className:"mb-2 flex flex-wrap items-center gap-2 px-1"}, e("span",{className:"text-[12px] font-bold uppercase text-white/70"}, "Ano"), anos.map(anoBtn), e("span",{className:"ml-auto text-[12px] text-white/70"}, "Clique no pedido para ver os boletos e os Pix")),
-      e(Tab,{normal:true, cols:["Pedido", "Quem paga", "Total", "Boleto", "Pix", "Já pago", "Falta", "Vencimentos", "Situação"]}, rows)));
+  var pedidos = e(BlocoBarra,{t:"Pedidos e negociações · para onde vai cada pagamento", cor:"azul", compacto:true, dir:linhasMes.length+" meses · "+peds.length+" pedidos em "+ano},
+    e("div",{className:"p-2"}, e("div",{className:"mb-2 flex flex-wrap items-center gap-2 px-1"}, e("span",{className:"text-[11px] font-bold uppercase"}, "Ano"), anos.map(anoBtn), e("span",{className:"ml-auto text-[13px]"}, "Clique no mês para ver Com NF e Sem NF; clique no tipo para ver cada parcela")),
+      e(TabelaPlanilha,{key:ano, chave:"id", centro:true, semContagem:true, linhas:linhasMes, detalhe:detalheMes, linhaCls:function(l){ return l.mes===atual ? "bg-white/5" : ""; }, vazio:"Nenhum pedido neste ano.",
+        cols:[{k:"mes", t:"Mês", fmt:function(v){ return mesLabel(v+"-01"); }, cor:function(){ return "font-semibold"; }}, {k:"n", t:"Pedidos"}, {k:"total", t:"Total", fmt:brl, cor:function(){ return "font-mono font-semibold"; }},
+          {k:"boleto", t:"Boleto", fmt:brl, cor:function(){ return "font-mono"; }}, {k:"pix", t:"Pix", fmt:brl, cor:function(){ return "font-mono"; }}, {k:"pago", t:"Já pago", fmt:brl, cor:function(){ return "font-mono text-[#22C55E]"; }},
+          {k:"falta", t:"Falta", fmt:brl, cor:function(l){ return "font-mono "+(l.falta>0.005 ? "text-[#F59E0B]" : "text-[#22C55E]"); }}, {k:"vencs", t:"Vencimentos"}, {k:"sit", t:"Situação", cor:function(l){ return corSit(l.sit); }}],
+        totalRodape:function(ls){ var s = function(k){ return brl(ls.reduce(function(t, l){ return t+l[k]; }, 0)); }; return ["Total do ano", String(ls.reduce(function(t, l){ return t+l.n; }, 0)), s("total"), s("boleto"), s("pix"), s("pago"), s("falta"), "", ""]; }})));
   // 4) MESES E DEZENAS (Pix) e CRONOGRAMA DA MAQUININHA
   var meses = e(BlocoBarra,{t:"Meses e dezenas · Pix", cor:"azul", compacto:true}, e(TabelaAnalise,{pf:pf, f:f, meses:MESES_ANO, hoje:p.hoje||hoje, abertos:p.abertos, alterna:p.alterna}));
   var cron = !mqOn ? null : e(BlocoBarra,{t:"Cronograma de descontos da maquininha", cor:"azul", compacto:true}, e(TabelaDescontos,{pf:pf, abertos:p.abertos, alterna:p.alterna}));
