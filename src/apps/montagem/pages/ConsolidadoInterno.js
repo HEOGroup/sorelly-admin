@@ -41,7 +41,7 @@ function AbaConsolidadoInterno(){
     .sort(function(a,c){ return (c.x.data+(c.x.hora||"")).localeCompare(a.x.data+(a.x.hora||"")); });
   var somaForma = function(r, k){ var v = (r.pagamentos||[]).filter(function(p){ return p.forma===k; }).reduce(function(t,p){ return t+(p.valor||0); }, 0); return v>0 ? v : null; };
   var linhas = doMes.map(function(f){ var x = f.x, r = f.r, lf = f.lf;
-    var links = []; if(lf) lf.linhas.forEach(function(l){ (l.partes||[]).forEach(function(q){ if(q.comprovante) links.push({c:q.descricao||"Comprovante", u:q.comprovante.url}); }); });
+    var links = []; if(lf) lf.linhas.forEach(function(l){ (l.partes||[]).forEach(function(q){ if(q.comprovante) links.push({c:q.descricao||"Comprovante", u:q.comprovante.url}); (q.extras||[]).forEach(function(x,k){ links.push({c:(q.descricao||"Comprovante")+" "+(k+2), u:x.url}); }); }); });
     // só acerto com valor a pagar precisa de lançamento no financeiro; reposição, brinde e novo kit não têm pagamento ("Não se aplica") e não são erro
     var tp = x.tipo || "acerto", precisa = tp==="acerto" && (r.valorAcerto||0)>0.009;
     var fin = lf ? (lf.conferido ? "Conferido" : "Em conferência") : precisa ? "Sem lançamento" : "Não se aplica";

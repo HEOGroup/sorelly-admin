@@ -85,7 +85,8 @@ function PagamentosAConferir(p){
               !ro && q.descricao && q.valor>0 && !cabe && e("span",{className:"w-full text-[12px] font-semibold text-destructive"}, "O valor passa do que falta ("+BK(Math.max(0,resto))+")."))
             : e("div",{className:"flex min-w-0 flex-wrap items-center gap-2"},
               e("b",{className:"min-w-0 flex-1 text-[13px]"}, q.descricao), e("b",{className:MONO+" text-[14px] text-primary"}, BK(q.valor)),
-              q.comprovante && e("a",{href:q.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[12px] font-semibold text-primary underline"},"Ver comprovante"),
+              q.comprovante && e("a",{href:q.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},(q.extras||[]).length ? "Ver comprovante 1" : "Ver comprovante"),
+              (q.extras||[]).map(function(x, k){ return e("a",{key:"x"+k, href:x.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"}, "Ver comprovante "+(k+2)); }),
               fechado ? (q.ok ? e(React.Fragment,null, e("span",{className:"font-bold text-success"},"✓ Conferido"), !ro && e("button",{onClick:function(){ partePatch(j, {ok:false}); }, className:"rounded-md bg-white/10 px-2 py-0.5 text-[12px] font-semibold hover:bg-white/15"},"Desfazer")) : null)
               : e(React.Fragment,null,
                   e("button",{onClick:function(){ partePatch(j, {pend:true}); }, className:"rounded-md bg-white/10 px-2 py-0.5 text-[12px] font-semibold hover:bg-white/15"},"Editar"),

@@ -161,7 +161,7 @@ function AtendimentoInterno(){
   var bb = useState({codigo:"", valor:null}), bbIn = bb[0], setBbIn = bb[1];       // lançar brinde Select (BB)
   var ar = useState("agora"), abaRegras = ar[0], setAbaRegras = ar[1];             // regras: passar agora ou ver o termo do mês anterior
   var ac = useState(null), assCiente = ac[0], setAssCiente = ac[1];               // assinatura de ciência (revendedora não quis esperar a explicação)
-  var inc = useState(false), incluindo = inc[0], setIncluindo = inc[1];             // "Chegou sem agendar": inclui na agenda de hoje quem chegou sem a Tamara marcar (Edna, 16/11/2026)
+  var inc = useState(false), incluindo = inc[0], setIncluindo = inc[1];             // "Chegou agora": inclui na agenda de hoje quem chegou sem a Tamara marcar (Edna, 16/11/2026)
   var ao = useState(false), cienteAberta = ao[0], setCienteAberta = ao[1];
   var sa = useState(false), saiu = sa[0], setSaiu = sa[1];                          // 16/11/2026: revendedora saiu sem assinar a ciência (só avisa, não trava)
   var rm = useState({}), regraMais = rm[0], setRegraMais = rm[1];                  // "ver mais" de cada regra
@@ -590,7 +590,12 @@ function AtendimentoInterno(){
                 e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }}))) : lancFin.finalizado ? e("span",{className:"font-semibold text-primary"},"Aguardando conferência") : e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"},
               p.comprovante ? "✓ Trocar comprovante" : "Anexar comprovante",
               e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {comprovante:cmp}); }); ev.target.value = ""; }})),
-            p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},"ver")))); });
+            p.comprovante && e("a",{href:p.comprovante.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"},(p.extras||[]).length ? "ver 1" : "ver"),
+            // 17/11/2026 (Natasha e Edna: "mais de 1 comprovante"): a mesma conta pode ter vários comprovantes (a revendedora pagou em duas vezes)
+            (p.extras||[]).map(function(x, k){ return e("a",{key:"x"+k, href:x.url, target:"_blank", rel:"noreferrer", className:"text-[13px] font-semibold text-primary underline"}, "ver "+(k+2)); }),
+            p.comprovante && !p.ok && !lancFin.finalizado && e("label",{className:"inline-flex h-8 cursor-pointer items-center gap-1.5 rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "+ Outro comprovante",
+              e("input",{type:"file", accept:"image/*,application/pdf", className:"sr-only", "aria-label":"Anexar outro comprovante", onChange:function(ev){ lerComprovante(ev.target.files[0], function(cmp){ trocaParte(i, j, {extras:(p.extras||[]).concat([cmp])}); }); ev.target.value = ""; }})),
+            (p.extras||[]).length>0 && !p.ok && !lancFin.finalizado && e("button",{type:"button", onClick:function(){ trocaParte(i, j, {extras:(p.extras||[]).slice(0, -1)}); }, className:"inline-flex h-8 items-center rounded-md bg-white/10 px-2 text-[13px] font-semibold hover:bg-white/15"}, "Tirar o último")))); });
         return acc; }, [])));
   var pVendas = heroVendas;
   var pPag = e(React.Fragment,null,
