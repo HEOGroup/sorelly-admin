@@ -6,7 +6,7 @@
 // Regras e contas em domain/fotos-catalogo.js (estado s.fc, ação FC).
 import { BKC } from "@/apps/montagem/lib/format";
 import { ESTADO, Pagina } from "@/apps/montagem/components/padrao";
-import { AbasTela, Bloco, Botao, CAMPO, CampoSel, Rotulo, Segmentado } from "@/apps/montagem/components/padrao-fin";
+import { AbasTela, Bloco, Botao, CAMPO, Rotulo, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { diasEntre, formatarDia, formatarHora, fotosFeitas, hojeSP, INICIO_PECAS, linhasFotos, METAS, metaProgresso, parteDia, porCategoria, producaoDias, resumoDoDia, resumoGeral, temposMedios } from "@/apps/montagem/domain/fotos-catalogo";
 import { porDe } from "@/apps/montagem/pages/trafego/comum";
@@ -180,7 +180,7 @@ function proximaEntrega(){
 }
 function Hoje(p){
   var cx = use(), s = cx.state, dsp = cx.dispatch;
-  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0], sb = useState(""), busca = sb[0], sl = useState(""), texto = sl[0], se = useState("foto"), etapa = se[0];
+  var hoje = hojeSP(), ini = hoje.slice(0, 8)+"01", sv = useState("dia"), vis = sv[0], ss = useState(""), sel = ss[0], sb = useState(""), busca = sb[0], sl = useState(""), texto = sl[0];
   var todas = useMemo(function(){ return p.linhas.filter(function(l){ return l.dia && l.dia>=INICIO_FILA && !/CANCELAD/i.test(l.desc); }).map(function(l){ var esp = l.sOk ? null : diasEntre(l.dia, hoje); return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }); }, [p.linhas, hoje]);
   var porData = function(a, b){ return a.dia<b.dia ? -1 : a.dia>b.dia ? 1 : ORDEM.compare(a.cod, b.cod); };
   // três filas: a do Castilho (sem foto tirada), a da Ana (foto tirada, ainda não está na DevMaster) e a fila toda (não está na DevMaster)
@@ -198,7 +198,8 @@ function Hoje(p){
   var achados = useMemo(function(){ return busca ? p.linhas.filter(function(l){ return casaCodigo(l, busca); }).map(function(l){ var esp = l.dia && !l.sOk ? diasEntre(l.dia, hoje) : null; return Object.assign({}, l, {espera:esp, atrasada:esp!=null && esp>=PRAZO_DIAS}); }) : null; }, [busca, p.linhas, hoje]);
   var linhas = achados || (vis==="foto" ? semFoto : vis==="ed" ? edita : vis==="env" ? envia : vis==="mes" ? mes : doDia);
   var base = comeco || comecoAna, vermelho = base && base.esp>=PRAZO_DIAS;
-  var enviar = function(){ if(!texto.trim()) return; dsp({type:"FC", op:"etapa_lote", etapa:etapa, texto:texto, por:porDe(s)}); sl[1](""); };
+  // só o OK de Enviadas à DevMaster: já vale foto e edição (Castilho, 16/11/2026)
+  var enviar = function(){ if(!texto.trim()) return; dsp({type:"FC", op:"etapa_lote", etapa:"sub", texto:texto, por:porDe(s)}); sl[1](""); };
   var barra = comeco
     ? e("section",{className:"fc-pulso flex flex-wrap items-center justify-between gap-x-6 gap-y-1 rounded-lg border-2 px-4 py-3", style:{borderColor:vermelho ? ESTADO.ruim : ESTADO.alerta}},
         e("div",{className:"flex flex-wrap items-baseline gap-x-3 gap-y-1"},
@@ -219,12 +220,11 @@ function Hoje(p){
   return e("div",{className:"flex flex-col gap-2.5"},
     e("style",null, "@keyframes fcPulso{0%,100%{background-color:rgba(232,184,75,.04)}50%{background-color:rgba(232,184,75,.22)}} .fc-pulso{animation:fcPulso 2.6s ease-in-out infinite} @media (prefers-reduced-motion:reduce){.fc-pulso{animation:none;background-color:rgba(232,184,75,.12)}}"),
     barra,
-    e(Bloco,{t:"Dar OK nas peças · em lote"},
-      e("div",{className:"grid gap-2 md:grid-cols-[1fr_230px_auto] md:items-end"},
+    e(Bloco,{t:"Dar OK nas peças enviadas à DevMaster · em lote"},
+      e("div",{className:"grid gap-2 md:grid-cols-[1fr_auto] md:items-end"},
         e("div",{className:"min-w-0"}, e(Rotulo,{t:"Códigos (um por linha ou separados por espaço; grade ou modelo)", id:"fc-lote"}),
           e("textarea",{id:"fc-lote", rows:2, value:texto, placeholder:"Ex.: A2357 CL2771 M0802", onChange:function(ev){ sl[1](ev.target.value.toUpperCase()); }, className:"w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-[13px] uppercase text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary"})),
-        e(CampoSel,{t:"Etapa concluída", id:"fc-lote-etapa", value:etapa, onChange:se[1], opcoes:[["foto", "Fotografadas (Castilho)"], ["ed", "Editadas (Ana)"], ["sub", "Enviadas à DevMaster (OK)"]]}),
-        e(Botao,{principal:true, desabilitado:!texto.trim(), onClick:enviar}, "Marcar"))),
+        e(Botao,{principal:true, desabilitado:!texto.trim(), onClick:enviar}, "Dar OK"))),
     dias.length ? e(Bloco,{t:"Fila por dia · clique no dia para ver as peças"},
       e(Plan,{linhas:linhasFila, aoClicar:function(l){ ss[1](l.dia); sv[1]("dia"); }, linhaCls:function(l){ return l.comece ? "fc-pulso" : ""; },
         cols:[{k:"dia", t:"Dia de cadastro", fmt:function(v, l){ return (v===diaAtual && vis==="dia" ? "▸ " : "")+formatarDia(v)+(l.comece ? " · comece aqui" : ""); }}, {k:"cad", t:"Cadastradas", fmt:N}, {k:"sem", t:"Falta fotografar", fmt:N}, {k:"ed2", t:"Falta editar", fmt:N}, {k:"env", t:"Falta enviar", fmt:N},

@@ -44,7 +44,7 @@ export const SETORES_DO_MODULO = {
 };
 
 // Módulos que uma PESSOA específica abre além da Diretoria e dos setores da lista (Marcus, 12/11/2026): Castilho (47, Marketing) abre Modelos e Metas.
-export const PESSOAS_DO_MODULO = { mod: [47], metas: [47] };
+export const PESSOAS_DO_MODULO = { mod: [47, 61], metas: [47] };
 
 export function podeModulo(usuario, modulo) {
   if (usuario?.perfil === "ADMIN") return true;
