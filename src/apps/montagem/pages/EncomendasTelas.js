@@ -3,10 +3,10 @@
 // Todas no padrão dos Kits novos / Financeiro (PageHead, faixa de totais, bloco Filtros, tabela de layout fixo). Lógica em domain/encomendas.js (estado s.er).
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { Bloco, BlocoFiltros, Botao, CampoBusca, FaixaTotais, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
-import { FINAIS, ROTULO_STATUS, agoraSP, bloqueadaNaData, formatarDataHora, formatarDia, formatarReais, hojeSP, minutosDe, qtdMes, reposicoesDoMes, resumoRepresentantes } from "@/apps/montagem/domain/encomendas";
+import { FINAIS, ROTULO_STATUS, agoraSP, bloqueadaNaData, formatarDia, formatarReais, hojeSP, minutosDe, qtdMes, reposicoesDoMes, resumoRepresentantes } from "@/apps/montagem/domain/encomendas";
 import { Janelas } from "@/apps/montagem/pages/encomendas/janelas";
 import { ListagemDia } from "@/apps/montagem/pages/encomendas/ListagemDia";
-import { PlanilhaRev } from "@/apps/montagem/pages/encomendas/PlanilhaRev";
+import { AbaEncTop50 } from "@/apps/montagem/pages/encomendas/Top50";
 import { AbaErRegras } from "@/apps/montagem/pages/encomendas/Regras";
 import { useEr } from "@/apps/montagem/pages/encomendas/visual";
 import { Selo, Vazio } from "@/apps/montagem/pages/compras/visualCompras";
@@ -61,36 +61,7 @@ function AbaEncIda(){
 }
 
 // ---------- Top 50 ----------
-function AbaEncTop50(){
-  var E = useEr(), er = E.er, md = useState(null), ir = function(m){ md[1](m); };
-  var sols = er.top50Sol.slice().sort(function(x, y){ return (x.status==="pendente" ? 0 : 1)-(y.status==="pendente" ? 0 : 1) || (String(x.em)<String(y.em) ? 1 : -1); }).slice(0, 12);
-  var snap = er.top50Snap[er.top50Snap.length-1];
-  useEffect(function(){ if(window.location.hash==="#pedidos"){ var t = setTimeout(function(){ var el = document.getElementById("pedidos"); if(el) el.scrollIntoView({behavior:"smooth", block:"start"}); }, 400); return function(){ clearTimeout(t); }; } }, []);
-  return e(Pagina,null,
-    e(PageHead,{t:"Top 50", sub:"Revendedoras com direito a realizar reposições e encomendas diretamente pelo setor de encomendas."},
-      e(Botao,{desabilitado:!E.pode, title:E.pode ? "Cola a lista da planilha do Top 50" : "Só a diretoria importa a lista", onClick:function(){ ir({tipo:"importar"}); }}, "Importar lista"),
-      e(Botao,{principal:true, desabilitado:!E.pode, title:E.pode ? "Registra a lista de hoje como aprovada" : "Só a diretoria aprova a lista", onClick:function(){ E.exec("top50_registrar", {}); }}, "Aprovar lista do mês")),
-    e(PlanilhaRev,{E:E, grupo:"top50", ir:ir}),
-    e("div",{id:"pedidos"}, e(Bloco,{t:"Pedidos ao Marcus", dir:e("span",{className:"text-[12px] text-foreground/80"}, "entrar ou sair do Top 50")},
-      sols.length ? e(TabelaP,{minW:860, cols:[{t:"Data", w:88}, {t:"Pedido", w:80}, {t:"Revendedora", w:200}, {t:"Representante", w:140}, {t:"Motivo"}, {t:"Situação", w:110}, {t:"", w:230}]},
-        sols.map(function(x){ var pend = x.status==="pendente";
-          return e(Tr,{key:x.id}, e(Td,null, formatarDia(String(x.em).slice(0, 10))), e(Td,null, x.tipo==="entrar" ? "Entrada" : "Saída"), e(Td,{forte:true}, x.nome), e(Td,null, x.representante || "—"), e(Td,null, x.motivo),
-            e(Td,{cor:pend ? "text-warning" : x.status==="autorizado" ? "text-success" : "text-destructive"}, pend ? "Aguardando" : x.status==="autorizado" ? "Autorizado" : "Recusado"),
-            e(Td,null, e("span",{className:"inline-flex gap-1"}, e("button",{type:"button", onClick:function(){ ir({tipo:"msgsol", id:x.id}); }, className:BTN_MINI}, "Mensagem"),
-              pend && e("button",{type:"button", disabled:!E.pode, title:E.pode ? "Autoriza e aplica" : "Só a diretoria decide", onClick:function(){ E.exec("top50_decidir", {id:x.id, ok:true}); }, className:BTN_MINI}, "Autorizar"),
-              pend && e("button",{type:"button", disabled:!E.pode, onClick:function(){ E.exec("top50_decidir", {id:x.id, ok:false}); }, className:BTN_MINI}, "Recusar"))));
-        })) : e(Vazio,{ic:"paper-plane-tilt"}, "Nenhum pedido ao Marcus."))),
-    e("div",{className:"grid grid-cols-1 gap-2.5 md:grid-cols-2"},
-      e(Bloco,{t:"Entradas e saídas"},
-        er.top50Hist.length ? e("ul",{className:"flex flex-col gap-1 text-[13px]"}, er.top50Hist.slice(-12).reverse().map(function(h, i){
-          return e("li",{key:i, className:"flex items-start justify-between gap-2 border-b border-border py-1"}, e("span",{className:"min-w-0"}, e("b",null, h.nome), h.motivo && e("span",{className:"block truncate text-[12px] text-foreground/80", title:h.motivo}, h.motivo)),
-            e("span",{className:"shrink-0 "+(h.acao==="entrou" ? "text-success" : "text-destructive")}, (h.acao==="entrou" ? "Entrou" : "Saiu")+" · "+formatarDia(String(h.em).slice(0, 10)))); }))
-          : e("p",{className:"text-[13px] text-foreground/80"}, "Nenhuma mudança registrada.")),
-      e(Bloco,{t:"Atualização mensal"},
-        e("ol",{className:"flex list-decimal flex-col gap-1 pl-5 text-[13px]"}, ["Lance a venda do mês de cada revendedora na planilha (a coluna do mês novo abre no dia 1).", "A média dos últimos 3 meses é calculada sozinha.", "Média abaixo do mínimo gera alerta: avalie se ela sai.", "Para sair, clique em Retirar e escreva o motivo.", "Para entrar, use Pedir entrada: a mensagem vai para o Marcus autorizar.", "A diretoria aprova a lista do mês."].map(function(t, i){ return e("li",{key:i}, t); })),
-        snap && e("p",{className:"mt-2 text-[12px] text-foreground/80"}, "Última aprovação: "+formatarDataHora(snap.em)+" · "+snap.por))),
-    e(Janelas,{E:E, modal:md[0], ir:ir}));
-}
+// A tela Top 50 foi refeita em 17/11/2026 e mora em pages/encomendas/Top50.js (aqui só reexporta, para a rota continuar a mesma).
 
 // ---------- Representantes ----------
 function AbaEncRep(){

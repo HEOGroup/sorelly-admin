@@ -19,6 +19,8 @@ var p2 = function(n){ return String(n).padStart(2,"0"); };
 var num = function(v){ var n = Number(typeof v==="string" ? v.replace(",", ".") : v); return isFinite(n) ? n : 0; };
 var clone = function(o){ return JSON.parse(JSON.stringify(o)); };
 var trim = function(v){ return String(v==null ? "" : v).trim(); };
+// foto da cliente (perfil guardado pelo nome): devolve {key, nome, por, em} ou null
+var fotoDaRevendedora = function(er, nome){ var p = er && er.perfis ? er.perfis[String(nome==null ? "" : nome).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim()] : null; return p || null; };
 var norm = function(t){ return String(t==null ? "" : t).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
 var diaDe = function(iso){ return iso ? String(iso).slice(0,10) : ""; };
 var vazioN = function(v){ return v===undefined || v===null || v==="" || (typeof v==="number" && isNaN(v)); };
@@ -39,21 +41,31 @@ function somaMeses(dia, n){
 // ---------- vocabulário ----------
 var TIPOS = [["reposicao", "Reposição"], ["expositor", "Expositor"], ["encomenda", "Encomenda"]];
 var ROTULO_TIPO = {reposicao:"Reposição", expositor:"Expositor", encomenda:"Encomenda", leilao:"Leilão", troca:"Troca", ecommerce:"E-commerce", modelo:"Modelo", brinde:"Brinde"};   // os 5 últimos só aparecem no histórico importado das planilhas do setor (05/11/2026)
+// Situação do kit de cada revendedora do Top 50 (17/11/2026, chamado da Agatha: marcar quais kits já foram finalizados e quais estão pendentes). Valor guardado em r.sitMont; os textos antigos da planilha entram pelo mapa.
+var KIT_STATUS = ["Pendente", "Urgente", "Montagem na empresa", "Finalizado"];
+var KIT_ANTIGO = {"finalizado":"Finalizado", "urgente":"Urgente", "finalizar":"Pendente", "montagem na empresa":"Montagem na empresa", "pendente":"Pendente"};
+function kitDe(r){ var t = String((r && r.sitMont) || "").trim(); if(!t) return "Pendente"; return KIT_ANTIGO[t.toLowerCase()] || t; }
 var COR_TIPO = {reposicao:"#60A5FA", expositor:"#F3D98B", encomenda:"#F97316"};
 var ICONE_TIPO = {reposicao:"arrows-clockwise", expositor:"storefront", encomenda:"package"};
-var STATUS = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "concluido", "recusado", "cancelado"];
-var ROTULO_STATUS = {novo:"Novo", conferindo:"Conferindo", comprovante:"Aguardando comprovante", separando:"Separando", agendado:"Agendado", representante:"Com a representante", atendimento:"Em atendimento", bipagem:"Bipagem", concluido:"Concluído", recusado:"Recusado", cancelado:"Cancelado"};
-var COR_STATUS = {novo:"#9CA3AF", conferindo:"#38BDF8", comprovante:"#F87171", separando:"#D4A64A", agendado:"#A78BFA", representante:"#34D399", atendimento:"#F472B6", bipagem:"#A3E635", concluido:"#4ADE80", recusado:"#EF4444", cancelado:"#94A3B8"};
+var STATUS = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "liberado", "rota", "condicional", "concluido", "recusado", "cancelado"];
+var ROTULO_STATUS = {novo:"Novo", conferindo:"Conferindo", comprovante:"Aguardando taxa", separando:"Separando", agendado:"Agendado", representante:"Com a representante", atendimento:"Em atendimento", bipagem:"Bipagem", liberado:"Liberado", rota:"Em rota", condicional:"Condicional OK", concluido:"Concluído", recusado:"Recusado", cancelado:"Cancelado"};
+var COR_STATUS = {novo:"#9CA3AF", conferindo:"#38BDF8", comprovante:"#F87171", separando:"#D4A64A", agendado:"#A78BFA", representante:"#34D399", atendimento:"#F472B6", bipagem:"#A3E635", liberado:"#38BDF8", rota:"#FBBF24", condicional:"#2DD4BF", concluido:"#4ADE80", recusado:"#EF4444", cancelado:"#94A3B8"};
 // etapas de cada canal (22/10/2026): o cartão só anda dentro do caminho do seu canal
 var CAMINHOS = {
-  entrega:["novo", "conferindo", "comprovante", "separando", "agendado", "concluido"],
+  // 17/11/2026 (Marcus): entrega pelo João = solicitada pelo Marcus, taxa (só se cobrar), separar, bipar, liberar para o João, rota, condicional assinada e concluir (com a mensagem de avaliação)
+  entrega:["novo", "comprovante", "separando", "bipagem", "liberado", "rota", "condicional", "concluido"],
   representante:["novo", "conferindo", "representante", "bipagem", "concluido"],
   empresa:["novo", "conferindo", "agendado", "atendimento", "bipagem", "concluido"],
   encomenda:["novo", "conferindo", "separando", "concluido"],
   padrao:["novo", "conferindo", "separando", "agendado", "concluido"]};
-var FLUXO = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "concluido"];   // colunas do funil, na ordem
+var FLUXO = ["novo", "conferindo", "comprovante", "separando", "bipagem", "liberado", "rota", "condicional", "agendado", "representante", "atendimento", "concluido"];   // colunas do funil, na ordem
 var TRANSICOES = CAMINHOS;
-function caminhoDe(p){ return p.tipo==="encomenda" ? CAMINHOS.encomenda : p.tipo==="reposicao" ? (CAMINHOS[p.canal] || CAMINHOS.padrao) : CAMINHOS.padrao; }
+function caminhoDe(p){
+  var c = p.tipo==="encomenda" ? CAMINHOS.encomenda : p.tipo==="reposicao" ? (CAMINHOS[p.canal] || CAMINHOS.padrao) : CAMINHOS.padrao;
+  if(p.tipo==="reposicao" && p.canal==="entrega" && !(p.taxa>0) && p.status!=="comprovante") c = c.filter(function(k){ return k!=="comprovante"; });   // taxa isenta: não passa por Aguardando taxa
+  if(p.tipo==="reposicao" && p.canal==="entrega" && p.status==="conferindo") c = [c[0], "conferindo"].concat(c.slice(1));   // pedido que já estava em Conferindo (etapa antiga) segue para a próxima sem travar
+  return c;
+}
 var EXIGE_MOTIVO = {recusado:1, cancelado:1};
 var FINAIS = {concluido:1, recusado:1, cancelado:1};
 var FORMAS = [["entrega", "Entrega pelo entregador"], ["retirada_empresa", "Retirada na empresa"], ["retirada_acerto", "Retirada na data do acerto"]];
@@ -86,7 +98,7 @@ var CONFIG_PADRAO = {
 
 // ---------- criação e migração do estado ----------
 function erDemo(){
-  var s = {v:1, seq:0, config:clone(CONFIG_PADRAO), revendedoras:[], pedidos:[], log:[], top50Hist:[], top50Snap:[], top50Sol:[], agenda:[], agendaEnvios:{}, atencao:[]};   // atencao = revendedoras para separar peças (fotos + observação), coluna Atenção do Funil de pedidos (09/11/2026)
+  var s = {v:1, seq:0, config:clone(CONFIG_PADRAO), revendedoras:[], pedidos:[], log:[], top50Hist:[], top50Snap:[], top50Sol:[], agenda:[], agendaEnvios:{}, atencao:[], perfis:{}};   // atencao = revendedoras para separar peças (fotos + observação), coluna Atenção do Funil de pedidos (09/11/2026)
   if(LOCAL){
     if(LOCAL.config) Object.keys(LOCAL.config).forEach(function(k){ s.config[k] = clone(LOCAL.config[k]); });
     ["revendedoras", "pedidos"].forEach(function(k){ (LOCAL[k]||[]).forEach(function(x){ x = clone(x); if(!x.id) x.id = (k==="pedidos" ? "P" : "R")+(++s.seq); s[k].push(x); }); });
@@ -121,16 +133,7 @@ function erMigrar(er){
   er.revendedoras.forEach(function(r){ if(!r.vendas) r.vendas = {}; });
   // lista oficial do Top 50 (planilha do Marcus, 29/10/2026): quem estava no Top 50 e não está na lista sai; quem está entra, com última venda, acerto, montagem e observações
   if(LOCAL && LOCAL.listaVersao && er.top50Lista!==LOCAL.listaVersao){ aplicarLista(er, LOCAL.revendedoras || [], true, "sistema", agoraSP(), "Lista do Top 50 de "+LOCAL.listaVersao); er.top50Lista = LOCAL.listaVersao; }
-  // histórico das planilhas do setor (05/11/2026): pedidos já entregues (controle de reposição e encomendas, comprovantes do João e liberadas do Marcus). Importa de novo quando historicoVersao muda; só mexe nos pedidos marcados origem "planilha".
-  if(LOCAL && LOCAL.historicoVersao && er.historicoVersao!==LOCAL.historicoVersao){ importarHistorico(er, LOCAL); er.historicoVersao = LOCAL.historicoVersao; }
   er.v = 5; return er;
-}
-function importarHistorico(er, L){
-  er.pedidos = er.pedidos.filter(function(p){ return p.origem!=="planilha"; });
-  (L.liberadas||[]).forEach(function(x){ var r = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, x.nome); });
-    if(!r){ r = {id:"R"+(++er.seq), nome:x.nome, telefone:"", representante:x.representante||"", media3m:0, maiorVenda:0, vendas:{}, bloqueadaAte:"", atualizadoEm:agoraSP()}; er.revendedoras.push(r); }
-    r.marcus = true; if(x.representante && !r.representante) r.representante = x.representante; });
-  (L.historico||[]).forEach(function(h){ var p = clone(h); p.id = "P"+(++er.seq); var rv = er.revendedoras.find(function(y){ return mesmaPessoa(y.nome, p.revendedora); }); if(rv) p.revendedoraId = rv.id; er.pedidos.push(p); });
 }
 // Aplica uma lista de revendedoras como Top 50 (mesclando com o que já existe). linhas = [{nome, telefone?, representante?, ultimaVenda?, dataAcerto?, sitMont?, respMont?, obs?}]
 // substituir = quem está no Top 50 e não está na lista sai (fica no histórico). Telefone só preenche se estava vazio; os demais campos da planilha valem.
@@ -416,7 +419,7 @@ function mensagemSolicitacao(config, so, link){
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
   ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
-  ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"],
+  ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
   ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
   var v = (c.valores||[]).slice().sort(function(a, b){ return a.de-b.de; });
@@ -458,6 +461,7 @@ function mensagemPadrao(config, k){
   if(k==="pecas_reservadas") return ["Localizei essas peças e vou mantê-las reservadas para você. 😊 Assim que conseguir, por gentileza, me confirme quais deseja deixar reservadas para o próximo kit.", "",
     "Só peço que me confirme assim que possível, pois não conseguimos manter peças reservadas por muito tempo. Caso não vá ficar com alguma delas, precisaremos liberá-las para inclusão em outros kits. Agradeço pela compreensão! 💕"].join("\n");
   if(k==="pecas_luxo") return ["Infelizmente, as peças luxo são disponibilizadas somente para revendedoras que atingem uma média de vendas de "+R(r.mediaMinima)+" ou mais. Dessa forma, ao atingir essa média, você passa a ter acesso à disponibilidade dessas peças. ☺️"].join("\n");
+  if(k==="avaliacao") return ["Oi, {nome}! 💛", "", "Sua reposição foi entregue. Como foi? Responda com uma nota de 1 a 5 e conte rapidinho o que achou das peças e do atendimento.", "", "Sua opinião ajuda a gente a melhorar. Obrigada! ✨"].join("\n");   // provisória: o jeito de avaliar ainda será definido (Marcus, 17/11/2026)
   if(k==="ida_empresa") return ["📦 *REPOSIÇÃO NA EMPRESA: FLUXO*", "", "⏱️ *Tempo máximo: "+r.minutosEscolha+" minutos*", L, "",
     "1️⃣ A *bipagem* recebe a revendedora.", "2️⃣ A *bipagem* encaminha à *sala de Encomendas*.", "3️⃣ *Encomendas* confere a *média de vendas* e o *valor da reposição*.", "4️⃣ *Encomendas* chama a *atendente*.",
     "5️⃣ *Atendimento das peças:* mostrar as peças na frente, pedir ajuda a Encomendas, ver as gavetas da produção, procurar na mesa de produção.", "6️⃣ A atendente *conclui* e chama a *Deysiane*.", "7️⃣ A *Deysiane* define *quem bipa* a reposição.", "",
@@ -533,14 +537,15 @@ function erReduz(s, a){
     case "ped_criar": {
       var v = a.pedido || {}, rv = v.revendedoraId ? revDe(er, v.revendedoraId) : null;
       if(rv){ v = Object.assign({}, v, {revendedora:rv.nome, representante:v.representante || rv.representante}); }
-      var er1 = validarPedido({er:er}, v, agora), formalReg = er1 && er1.formal && a.registrarRecusa;
+      var autor = !!(v.autorizada && podeConfigurar(s.usuario)), er1 = autor ? (!trim(v.revendedora) ? {msg:"Informe a revendedora.", formal:false} : (v.tipo!=="reposicao" && v.tipo!=="encomenda" ? {msg:"Escolha o tipo do pedido.", formal:false} : null)) : validarPedido({er:er}, v, agora), formalReg = er1 && er1.formal && a.registrarRecusa;
       if(er1 && !formalReg) return recusa(er1.msg);
       var p = {id:"P"+(++er.seq), tipo:v.tipo, status:formalReg ? "recusado" : "novo", revendedoraId:rv ? rv.id : "", revendedora:trim(v.revendedora), representante:trim(v.representante),
         media3m:vazioN(v.media3m) ? null : r2(num(v.media3m)), maiorVenda:vazioN(v.maiorVenda) ? null : r2(num(v.maiorVenda)), valor:r2(num(v.valor)), descricao:trim(v.descricao), observacao:trim(v.observacao),
         fotoLocal:trim(v.fotoLocal), forma:v.forma || "", canal:v.canal || "", comprovante:null, taxaRep:0, responsavel:trim(v.responsavel) || por, conferido:null, valorMax:0, hora:"", atendente:"", atendInicio:"", atendFim:"", dataAgendada:v.dataAgendada || "", taxa:0, motivo:formalReg ? er1.msg : "", criadoEm:agora, criadoPor:por, etapaEm:agora, historico:[]};
       p.taxa = taxaDoPedido(cfg, p); p.taxaRep = taxaDaRepresentante(cfg, p);
+      if(autor){ p.autorizadaPor = por; p.cod = trim(v.cod); p.telefone = trim(v.telefone); p.cidade = trim(v.cidade); if(v.isenta){ p.taxaIsenta = true; p.taxa = 0; } }
       if(p.tipo==="reposicao"){ var rvx = rv || revPorNome(er, p.revendedora); p.valorMax = valorMaximo(cfg, p.media3m, !!(rvx && rvx.top50)); }
-      hist(p, "", p.status, formalReg ? "Recusa formal: "+er1.msg : "Pedido registrado");
+      hist(p, "", p.status, formalReg ? "Recusa formal: "+er1.msg : autor ? "Solicitada por "+por+(p.taxaIsenta ? " (taxa isenta)" : p.taxa>0 ? " (taxa de "+formatarReais(p.taxa)+")" : "") : "Pedido registrado");
       er.pedidos.push(p);
       return ok(formalReg ? "Recusa registrada" : "Pedido registrado");
     }
@@ -567,6 +572,15 @@ function erReduz(s, a){
       if(!itS.hist) itS.hist = []; itS.hist.push({em:agora, por:por, de:itS.status, para:a.para}); itS.status = a.para; itS.mudou = agora;
       return ok("Separar peças de "+itS.rev+": "+(a.para==="novo" ? "novo" : a.para==="separando" ? "separando" : "concluída")+".");
     }
+    // Peça casada com a foto do pedido (13/11/2026, Separar peças): a IA sugere, a pessoa confirma. casadas = {chaveDaFoto: {cod, por, em, via:"ia"|"mao"}}; cod vazio desfaz.
+    case "aten_casar": {
+      var itC = (er.atencao||[]).find(function(x){ return x.id===a.id; }); if(!itC) return recusa("Item não encontrado.");
+      if(!itC.fotos.some(function(f){ return f.key===a.key; })) return recusa("Foto não encontrada neste pedido.");
+      var codC = trim(a.cod).toUpperCase(); if(codC && !/^[A-Z0-9]{2,20}$/.test(codC)) return recusa("Código inválido.");
+      if(!itC.casadas) itC.casadas = {};
+      if(codC) itC.casadas[a.key] = {cod:codC, por:por, em:agora, via:a.via==="ia" ? "ia" : "mao"}; else delete itC.casadas[a.key];
+      return ok(codC ? "Peça "+codC+" separada para "+itC.rev+"." : "Peça desfeita para "+itC.rev+".");
+    }
     case "aten_del": {
       var itD = (er.atencao||[]).find(function(x){ return x.id===a.id; }); if(!itD) return recusa("Item não encontrado.");
       er.atencao = er.atencao.filter(function(x){ return x.id!==a.id; }); return ok("Separar peças de "+itD.rev+" excluído.");
@@ -577,7 +591,8 @@ function erReduz(s, a){
       if(proximosStatus(q).indexOf(a.para)<0) return recusa("Este pedido não pode ir de “"+ROTULO_STATUS[q.status]+"” para “"+(ROTULO_STATUS[a.para]||a.para)+"”.");
       if(EXIGE_MOTIVO[a.para] && !trim(a.nota)) return recusa("Informe o motivo.");
       var cam = caminhoDe(q), iDe = cam.indexOf(q.status), iPara = cam.indexOf(a.para), avanca = iPara>iDe && iDe>=0;
-      if(avanca && q.status==="conferindo" && !q.conferido) return recusa("Confira a média e o valor antes de avançar.");
+      if(avanca && q.status==="conferindo" && !q.conferido && !q.autorizadaPor) return recusa("Confira a média e o valor antes de avançar.");
+      if(avanca && q.status==="bipagem" && q.tipo==="reposicao" && q.canal==="entrega" && !q.bipado) return recusa("Bipe as peças antes de liberar para o João.");
       if(avanca && q.status==="comprovante" && faltaComprovante(q)) return recusa("Taxa de "+formatarReais(q.taxa)+" sem comprovante: a reposição não é liberada. Anexe o comprovante do Pix.");
       if(avanca && q.tipo==="expositor" && q.status==="conferindo" && cfg.expositor.exigeFoto && !trim(q.fotoLocal)) return recusa("Para avançar o expositor, registre antes a foto do local.");
       if(avanca && a.para==="agendado"){
@@ -592,6 +607,97 @@ function erReduz(s, a){
       if(a.para==="novo" && (q.status==="recusado" || q.status==="cancelado")) q.motivo = "";
       var de = q.status; q.status = a.para; q.etapaEm = agora; if(EXIGE_MOTIVO[a.para]) q.motivo = trim(a.nota);
       hist(q, de, a.para, a.nota); return ok(ROTULO_STATUS[a.para]);
+    }
+    // Entrega pelo João (17/11/2026): taxa cobrada ou isenta (só a diretoria isenta) e peças bipadas antes de liberar
+    case "ped_taxa": {
+      var pt = ped1(); if(!pt) return recusa("Pedido não encontrado.");
+      if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria isenta ou cobra a taxa.");
+      if(pt.tipo!=="reposicao" || pt.canal!=="entrega") return recusa("Só a reposição entregue pelo João tem taxa.");
+      if(FINAIS[pt.status]) return recusa("Este pedido já foi encerrado.");
+      pt.taxaIsenta = !!a.isenta; pt.taxa = pt.taxaIsenta ? 0 : taxaDoPedido(cfg, pt);
+      hist(pt, pt.status, pt.status, pt.taxaIsenta ? "Taxa isenta por "+por : "Taxa de "+formatarReais(pt.taxa)+" cobrada por "+por);
+      if(pt.taxaIsenta && pt.status==="comprovante"){ pt.status = "separando"; pt.etapaEm = agora; hist(pt, "comprovante", "separando", "Sem taxa: segue para Separando"); }
+      return ok(pt.taxaIsenta ? "Taxa isenta" : "Taxa cobrada");
+    }
+    case "ped_bipar": {
+      var pb = ped1(); if(!pb) return recusa("Pedido não encontrado."); if(pb.status!=="bipagem") return recusa("Só se bipa na etapa Bipagem.");
+      pb.bipado = {por:por, em:agora}; hist(pb, pb.status, pb.status, "Peças bipadas por "+por); return ok("Peças bipadas");
+    }
+    // O que procurar e fotos de referência do pedido (17/11/2026, Marcus: as revendedoras pedem de jeito aleatório; as fotos vêm às vezes da Sorelly, às vezes de cliente, às vezes da internet).
+    // itens = [{id, txt, ok, okPor, okEm}] (uma linha por item; ok = peça separada); fotos = [{key, nome, origem: "" | "sorelly" | "cliente" | "internet", nota}] (key = anexo do servidor, módulo er).
+    case "ped_item_add": {
+      var pi = ped1(); if(!pi) return recusa("Pedido não encontrado.");
+      var linhasI = String(a.txt || "").split("\n").map(function(x){ return trim(x).slice(0, 200); }).filter(Boolean); if(!linhasI.length) return recusa("Escreva o que procurar.");
+      if(!pi.itens) pi.itens = []; if(pi.itens.length+linhasI.length>60) return recusa("Máximo de 60 itens por pedido.");
+      linhasI.forEach(function(tx){ pi.itens.push({id:"I"+(++er.seq), txt:tx, ok:false}); });
+      hist(pi, pi.status, pi.status, linhasI.length===1 ? "Procurar: "+linhasI[0] : "Procurar: "+linhasI.length+" itens"); return ok(linhasI.length===1 ? "Item anotado" : linhasI.length+" itens anotados");
+    }
+    case "ped_item_ok": {
+      var po = ped1(); if(!po) return recusa("Pedido não encontrado."); var io = (po.itens || []).find(function(x){ return x.id===a.item; }); if(!io) return recusa("Item não encontrado.");
+      io.ok = !!a.ok; io.okPor = io.ok ? por : ""; io.okEm = io.ok ? agora : ""; return ok(io.ok ? "Peça separada" : "Peça voltou para procurar");
+    }
+    // quantas peças daquele item a funcionária achou e vai enviar (qtd) e uma nota curta ("3 modelos, falta o 20"); qtd > 0 já conta como item atendido
+    case "ped_item_qtd": {
+      var pq = ped1(); if(!pq) return recusa("Pedido não encontrado."); var iq = (pq.itens || []).find(function(x){ return x.id===a.item; }); if(!iq) return recusa("Item não encontrado.");
+      if(a.qtd!==undefined){ var nq = Math.floor(Number(a.qtd)); if(!(nq>=0) || nq>999) return recusa("Quantidade inválida."); iq.qtd = nq; iq.ok = nq>0; iq.okPor = iq.ok ? por : ""; iq.okEm = iq.ok ? agora : ""; }
+      if(a.nota!==undefined) iq.nota = trim(a.nota).slice(0, 120);
+      return ok("Item atualizado");
+    }
+    // Peças separadas para o pedido (17/11/2026, Marcus): a funcionária cola a lista de códigos; nome, foto e PREÇO vêm da DevMaster (nunca do que ela digitou).
+    // pecas = [{cod, desc, preco, item: id do item pedido ou "", achou: "igual" | "parecido" | ""}]
+    case "ped_pecas_add": {
+      var pp = ped1(); if(!pp) return recusa("Pedido não encontrado."); var lp = Array.isArray(a.pecas) ? a.pecas : []; if(!lp.length) return recusa("Nenhum código para anotar.");
+      if(!pp.pecas) pp.pecas = []; var novas = 0;
+      lp.forEach(function(x){ var c = String((x && x.cod) || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, ""); if(!c || c.length>20 || pp.pecas.some(function(y){ return y.cod===c; })) return;
+        pp.pecas.push({cod:c, desc:trim((x && x.desc) || "").slice(0, 160), preco:(x && Number(x.preco)>0) ? Math.round(Number(x.preco)*100)/100 : null, item:"", achou:""}); novas++; });
+      if(pp.pecas.length>120) return recusa("Máximo de 120 peças por pedido.");
+      if(!novas) return recusa("Essas peças já estão no pedido.");
+      hist(pp, pp.status, pp.status, "Peças separadas: +"+novas); return ok(novas+(novas===1 ? " peça anotada" : " peças anotadas"));
+    }
+    case "ped_peca_edit": {
+      var pe = ped1(); if(!pe) return recusa("Pedido não encontrado."); var xe = (pe.pecas || []).find(function(y){ return y.cod===a.cod; }); if(!xe) return recusa("Peça não encontrada.");
+      if(a.item!==undefined){ if(a.item && !(pe.itens || []).some(function(i){ return i.id===a.item; })) return recusa("Item não encontrado."); xe.item = a.item || ""; }
+      if(a.achou!==undefined){ if(["", "igual", "parecido"].indexOf(a.achou)<0) return recusa("Resultado inválido."); xe.achou = a.achou; }
+      if(a.foto!==undefined){ if(a.foto && !(pe.fotos || []).some(function(ft){ return ft.key===a.foto; })) return recusa("Foto não encontrada."); xe.foto = a.foto || ""; if(!a.foto) xe.achou = ""; }   // ligação da peça com a foto que a revendedora mandou
+      if(a.anexo!==undefined){ if(a.anexo && !/^an_[a-z0-9]{6,40}$/.test(String(a.anexo))) return recusa("Foto inválida."); xe.anexo = a.anexo || ""; }   // foto tirada no celular quando a DevMaster não tem a da peça
+      if(a.desc!==undefined) xe.desc = trim(a.desc).slice(0, 160);
+      if(a.preco!==undefined) xe.preco = Number(a.preco)>0 ? Math.round(Number(a.preco)*100)/100 : null;
+      return ok("Peça atualizada");
+    }
+    case "ped_peca_del": {
+      var pz = ped1(); if(!pz) return recusa("Pedido não encontrado."); var nz = (pz.pecas || []).length; pz.pecas = (pz.pecas || []).filter(function(y){ return a.cods ? a.cods.indexOf(y.cod)<0 : y.cod!==a.cod; });
+      return pz.pecas.length<nz ? ok("Peça tirada") : recusa("Peça não encontrada.");
+    }
+    case "ped_item_del": {
+      var pd = ped1(); if(!pd) return recusa("Pedido não encontrado."); var n0 = (pd.itens || []).length; pd.itens = (pd.itens || []).filter(function(x){ return x.id!==a.item; });
+      return pd.itens.length<n0 ? ok("Item tirado") : recusa("Item não encontrado.");
+    }
+    case "ped_foto_add": {
+      var pa = ped1(); if(!pa) return recusa("Pedido não encontrado."); if(!/^an_[a-z0-9]{6,40}$/.test(String(a.key || ""))) return recusa("Foto inválida.");
+      if(!pa.fotos) pa.fotos = []; if(pa.fotos.length>=20) return recusa("Máximo de 20 fotos por pedido.");
+      pa.fotos.push({key:a.key, nome:String(a.nome || "").slice(0, 80), origem:["sorelly", "cliente", "internet"].indexOf(a.origem)>=0 ? a.origem : "", nota:trim(a.nota).slice(0, 200)}); return ok("Foto anexada");
+    }
+    case "ped_foto_edit": {
+      var pe = ped1(); if(!pe) return recusa("Pedido não encontrado."); var fe = (pe.fotos || []).find(function(x){ return x.key===a.key; }); if(!fe) return recusa("Foto não encontrada.");
+      if(a.origem!==undefined) fe.origem = ["sorelly", "cliente", "internet"].indexOf(a.origem)>=0 ? a.origem : ""; if(a.nota!==undefined) fe.nota = trim(a.nota).slice(0, 200);
+      // peça achada para esta foto (17/11/2026): código (a foto vem da DevMaster), foto anexada e o resultado da busca (igual, parecido ou não achou)
+      if(a.cod!==undefined){ var cdF = trim(a.cod).toUpperCase(); if(cdF && !/^[A-Z0-9]{2,20}$/.test(cdF)) return recusa("Código inválido."); fe.cod = cdF; fe.desc = cdF ? trim(a.desc).slice(0, 120) : ""; }
+      if(a.achou!==undefined) fe.achou = ["igual", "parecido", "nao"].indexOf(a.achou)>=0 ? a.achou : "";
+      if(a.anexo!==undefined) fe.anexo = /^an_[a-z0-9]{6,40}$/.test(String(a.anexo || "")) ? a.anexo : "";
+      return ok("Foto atualizada");
+    }
+    case "ped_foto_del": {
+      var pg = ped1(); if(!pg) return recusa("Pedido não encontrado."); var nf = (pg.fotos || []).length; pg.fotos = (pg.fotos || []).filter(function(x){ return x.key!==a.key; });
+      return pg.fotos.length<nf ? ok("Foto tirada") : recusa("Foto não encontrada.");
+    }
+    // Foto da cliente (17/11/2026, Marcus: "coloca foto no cadastro das clientes, e ele fica no card por fora também"): uma foto por revendedora, guardada pelo nome (sem acento nem maiúscula),
+    // então vale para todos os pedidos dela. perfis = {nomeNormalizado: {key, nome, por, em}}; key = anexo do servidor (módulo er).
+    case "perfil_foto": {
+      var nomeF = trim(a.nome); if(!nomeF) return recusa("Informe a revendedora."); if(!/^an_[a-z0-9]{6,40}$/.test(String(a.key || ""))) return recusa("Foto inválida.");
+      if(!er.perfis) er.perfis = {}; er.perfis[norm(nomeF)] = {key:a.key, nome:nomeF, por:por, em:agora}; return ok("Foto de "+nomeF+" salva");
+    }
+    case "perfil_foto_del": {
+      var nomeD = norm(a.nome); if(!er.perfis || !er.perfis[nomeD]) return recusa("Esta revendedora não tem foto."); delete er.perfis[nomeD]; return ok("Foto tirada");
     }
     case "ped_conferir": {
       var pf = ped1(); if(!pf) return recusa("Pedido não encontrado.");
@@ -651,6 +757,13 @@ function erReduz(s, a){
     case "rev_marcus": {
       if(!podeConfigurar(s.usuario)) return recusa("Sem autorização: só a diretoria marca “selecionada pelo Marcus”.");
       var rm = revDe(er, a.id); if(!rm) return recusa("Revendedora não encontrada."); rm.marcus = !!a.valor; return ok(rm.marcus ? "Marcada como selecionada pelo Marcus" : "Marca removida");
+    }
+    case "rev_montagem": {   // situação do kit, quem monta e observação do Top 50 (qualquer pessoa do setor marca)
+      var rmo = revDe(er, a.id); if(!rmo) return recusa("Revendedora não encontrada.");
+      if(a.kit!==undefined){ var kt = trim(a.kit); if(kt && KIT_STATUS.indexOf(kt)<0) return recusa("Situação do kit inválida."); rmo.sitMont = kt; }
+      if(a.resp!==undefined) rmo.respMont = trim(a.resp);
+      if(a.obs!==undefined) rmo.obs = trim(a.obs);
+      rmo.montagemPor = por; rmo.montagemEm = agora; return ok("Kit atualizado");
     }
     case "top50_retirar": {
       var rt = revDe(er, a.id); if(!rt) return recusa("Revendedora não encontrada."); if(!rt.top50) return recusa("Esta revendedora não está no Top 50.");
@@ -716,7 +829,7 @@ function erReduz(s, a){
 
 // link direto para a tela onde o Marcus autoriza (Top 50, bloco Pedidos ao Marcus)
 function linkPedidos(){ return (typeof window!=="undefined" ? window.location.origin : "")+caminhoDaAba("enctop50")+"#pedidos"; }
-export { aplicarLista, lerListaColada, linkPedidos, listagemDoDia, textoListagem, TIPOS_IDA, rotuloIda, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
+export { KIT_STATUS, kitDe, fotoDaRevendedora, aplicarLista, lerListaColada, linkPedidos, listagemDoDia, textoListagem, TIPOS_IDA, rotuloIda, mensagemSolicitacao, mesesColunas, rotuloMes, mediaVendas, abaixoDaMedia, minutosDe, MENSAGENS, mensagemPadrao, mensagemTexto, valorMaximo, qtdMes, resumoRepresentantes, caminhoDe, CAMINHOS, inicioSemana, CANAIS, ROTULO_CANAL, acessoReposicao, taxaDaRepresentante, faltaComprovante, reposicoesDaRepresentanteNaSemana, erDemo, erMigrar, erReduz, podeConfigurar, TIPOS, ROTULO_TIPO, COR_TIPO, ICONE_TIPO, STATUS, ROTULO_STATUS, COR_STATUS, FLUXO, TRANSICOES, FINAIS, FORMAS, ROTULO_FORMA, CONFIG_PADRAO,
   formatarReais, formatarDia, formatarDataHora, somaMeses, faixaDaMedia, proximaFaixa, direitoReposicao, direitoExpositor, bloqueioReposicao, bloqueadaNaData, calcularDireito,
   revDe, revPorNome, reposicoesDoMes, proximosStatus, proximaEtapa, minutosNaEtapa, textoTempo, listaPedidos, indicadoresEr, representantesEr, validarPedido, taxaDoPedido,
   textoRegrasReposicao, textoRegrasExpositor, hojeSP, agoraSP, somaDias };

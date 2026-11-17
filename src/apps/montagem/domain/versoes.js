@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.80", data:"2026-11-17", titulo:"Encomendas e reposições: ficha do pedido do João, peças separadas e PDF", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → ficha do pedido", txt:"Pedido do Marcus: ficha do pedido da reposição pelo João. Esquerda fixa (revendedora, andamento e ações) e direita que rola; no topo, o que ela pediu em texto e as fotos dela com botões − e + para o tamanho."},
+  {tipo:"novo", area:"Encomendas e reposições → peças separadas", txt:"Digita o código (Enter) ou cola vários: nome, foto e preço vêm da DevMaster. As peças se agrupam sozinhas por tipo (pulseiras, colares, brincos, anéis, conjuntos), cada tipo com uma cor. Foto da DevMaster sempre inteira; peça sem foto fica numa lista fina com o botão Anexar foto (foto do celular). Cada peça se liga à foto dela pelo botão Ligar ou arrastando."},
+  {tipo:"novo", area:"Encomendas e reposições → PDF", txt:"Botão Baixar PDF: gera na hora o PDF para a revendedora, com o que ela pediu e as peças separadas por tipo, fotos inteiras três por linha; peça sem foto só em texto. Nomes das peças em letra normal e sem folheado nem banhado."},
+  {tipo:"melhoria", area:"Encomendas e reposições → funil", txt:"Card do funil com foto da cliente e quatro linhas (nome, Solicitação, quem atende, taxa e tempo); etapas Liberado e Condicional OK; Top 50 no padrão do Financeiro."}
+ ]},
  {v:"0.20.79", data:"2026-11-17", titulo:"RH › Colaboradores: cadastro, advertências e experiência numa tela só", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Tela Colaboradores refeita no padrão do Contas a pagar: bloco azul com menu suspenso de visão (Cadastro, Advertências, Experiência), tabela com filtro e ordem no nome de cada coluna, sem bloco Filtros nem busca. Advertências e Controle de experiência saíram do menu e entraram aqui; os avisos de avaliação abrem a ficha direto."},
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Ficha da colaboradora no estilo da ficha do pedido, com a foto do sistema, caixas Trabalho e Pessoal e seções de férias, afastamento e desligamento. Advertências: uma pessoa por linha com contagem, tipos e motivos; clicar abre o card com todas as advertências, Nova advertência e Relatório mensal."}]},

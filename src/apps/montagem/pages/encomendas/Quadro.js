@@ -6,6 +6,7 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BarraFiltros, Dinheiro, Faixa, Janela, Tab, Td, LINHA } from "@/apps/montagem/components/padrao";
 import { CANAIS, COR_STATUS, COR_TIPO, FINAIS, FORMAS, ICONE_TIPO, ROTULO_CANAL, ROTULO_FORMA, ROTULO_STATUS, ROTULO_TIPO, STATUS, TIPOS, acessoReposicao, agoraSP, bloqueadaNaData, faltaComprovante, formatarDataHora, formatarDia, formatarReais, hojeSP,
   indicadoresEr, listaPedidos, minutosNaEtapa, proximaEtapa, proximosStatus, reposicoesDoMes, representantesEr, revDe, textoTempo, validarPedido } from "@/apps/montagem/domain/encomendas";
+import { BlocoJoao } from "@/apps/montagem/pages/encomendas/Joao";
 import { Bt, BtMini, Escolha, Painel, TURQ, copiar, useEr } from "@/apps/montagem/pages/encomendas/visual";
 import { Busca, Campo, Ind, Sel, Selo, Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
@@ -100,7 +101,7 @@ function Atender(p){
 // avançar um pedido de etapa: abre a janela certa quando a etapa pede dados (agenda, atendente, conferência)
 function avancarPedido(E, x, ir){
   var prox = proximaEtapa(x); if(!prox) return;
-  if(x.status==="conferindo" && !x.conferido){ ir({tipo:"detalhe", id:x.id}); return; }
+  if(x.status==="conferindo" && !x.conferido && !x.autorizadaPor){ ir({tipo:"detalhe", id:x.id}); return; }
   if(prox==="agendado") ir({tipo:"agendar", id:x.id, mover:true});
   else if(prox==="atendimento") ir({tipo:"atender", id:x.id});
   else E.exec("ped_mover", {id:x.id, para:prox});
@@ -141,7 +142,8 @@ function Detalhe(p){
       !x.conferido && e(Campo,{rot:"Média de vendas"}, e(Dinheiro,{value:v.media || (x.media3m || 0), label:"Média", onChange:function(y){ set("media", y); }})),
       !x.conferido && e(BtMini,{ic:"check", onClick:function(){ E.exec("ped_conferir", {id:x.id, media:v.media || x.media3m}); }}, "Confirmar média e valor"),
       x.conferido && e(Selo,{cor:"#4ADE80", ic:"check-circle"}, "Conferido por "+x.conferido.por)),
-    !fim && proximaEtapa(x) && e(Bt,{tipo:"forte", ic:"arrow-right", disabled:(x.status==="conferindo" && !x.conferido) || (x.status==="comprovante" && x.taxa>0 && !x.comprovante), onClick:function(){ avancarPedido(E, x, p.ir); }}, "Concluir etapa ›"),
+    e(BlocoJoao,{key:"j", E:E, x:x}),
+    !fim && proximaEtapa(x) && e(Bt,{tipo:"forte", ic:"arrow-right", disabled:(x.status==="conferindo" && !x.conferido) || (x.status==="bipagem" && x.tipo==="reposicao" && x.canal==="entrega" && !x.bipado) || (x.status==="comprovante" && x.taxa>0 && !x.comprovante), onClick:function(){ avancarPedido(E, x, p.ir); }}, "Concluir etapa ›"),
     x.status==="atendimento" && e(Selo,{cor:"#F472B6", ic:"timer"}, "Atendimento em andamento: "+x.atendente),
     !fim && e(Bt,{tipo:"perigo", ic:"prohibit", onClick:function(){ p.ir({tipo:"motivo", id:x.id}); }}, "Recusar ou cancelar"),
     e(Campo,{rot:"Anotação"}, e("textarea",{value:v.nota, rows:2, onChange:function(ev){ set("nota", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center"}),

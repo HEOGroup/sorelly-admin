@@ -20,3 +20,14 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - **Reposição** = peças levadas no meio do mês para a revendedora. **Encomenda** = peças separadas para levar no próximo kit. É um setor só; o Marcus permitiu o nome **"Reposições & Encomendas"** (renomear o menu fica para decidir). Pergunta aberta: unir os dois campos de R$ 15,00 em um e quem define o valor da reposição "especial".
 
 - **10/11/2026 (2ª rodada):** os dois campos de R$ 15,00 viram **um só**. Aberto: quem define a reposição "especial".
+
+## 13/11/2026 (Encomendas › Separar peças com IA)
+- **Tela nova** Encomendas › Separar peças (`pages/SepararPecas.js`, rota `/encomendas/separar-pecas`). Fluxo do Marcus: a funcionária tira umas 20 peças do estoque e cola os CÓDIGOS; o sistema busca nome e foto de cada código na DevMaster (API 2, só leitura); peça sem foto: ela tira a foto na hora; a IA (Claude Sonnet 5.5) compara as peças com as FOTOS dos pedidos "Separar peças" em aberto e sugere qual peça vai para quem; a pessoa confere olhando as duas fotos lado a lado e confirma (op `aten_casar`, grava `casadas` no pedido).
+- **A IA só sugere.** Confiança baixa mostra opções; quem decide é a pessoa. Teste com as 13 fotos da Solange de Fátima: Claude Sonnet 5.5 e a análise manual concordaram em 6 de 7 fotos; sem gabarito oficial.
+- Servidor: `src/server/separar-pecas.js`, rotas `/api/encomendas/pecas`, `/api/encomendas/pecas/foto`, `/api/encomendas/casar`. **Falta a chave `ANTHROPIC_API_KEY` no `.env.local` do servidor (e na Vercel)**; o Marcus ou o Leonardo cria, nunca no chat. Custo estimado: cerca de R$ 22 por 1.000 fotos comparadas (estimativa).
+
+## 17/11/2026 · Funil de pedidos zerado (Marcus)
+- Funil zerado: apagados os 836 pedidos importados das planilhas; ficaram os 6 pedidos lançados pelo setor (Jaqueline Roberta de Souza Ferreira, Silmara da Silva, Katlyn de Melo da Luz, Victoria Daniela da Silva Cordeiro, Lidianne Correia Costa Stofella e Francelle Schmidt Alves Pinto dos Santos).
+- Cópia guardada por 30 dias (até **17/12/2026**): arquivo `src/apps/montagem/domain/encomendas.local.js.backup-funil-17-11` (só neste PC, fora do Git) e as cópias diárias do servidor. Depois dessa data, apagar o arquivo e os `.bak` antigos.
+- Top 50: vendas, última venda e média vêm da DevMaster e não se digitam; coluna Kit (Pendente, Urgente, Montagem na empresa, Finalizado), Responsável e Observação são do setor.
+- Organização proposta do setor (aguarda respostas do Marcus): Pedidos, Separar peças (IA), Revendedoras atendidas, Expositores, Regras e mensagens; Ida na empresa e Representantes saem do menu.
