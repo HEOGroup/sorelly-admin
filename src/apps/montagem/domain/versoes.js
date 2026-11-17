@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.79", data:"2026-11-17", titulo:"RH › Colaboradores: cadastro, advertências e experiência numa tela só", itens:[
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Tela Colaboradores refeita no padrão do Contas a pagar: bloco azul com menu suspenso de visão (Cadastro, Advertências, Experiência), tabela com filtro e ordem no nome de cada coluna, sem bloco Filtros nem busca. Advertências e Controle de experiência saíram do menu e entraram aqui; os avisos de avaliação abrem a ficha direto."},
+  {tipo:"melhoria", area:"RH → Colaboradores", txt:"Ficha da colaboradora no estilo da ficha do pedido, com a foto do sistema, caixas Trabalho e Pessoal e seções de férias, afastamento e desligamento. Advertências: uma pessoa por linha com contagem, tipos e motivos; clicar abre o card com todas as advertências, Nova advertência e Relatório mensal."}]},
  {v:"0.20.78", data:"2026-11-17", titulo:"Novo setor Material gráfico (fase 1)", itens:[
   {tipo:"novo", area:"Material gráfico", txt:"Setor novo com menu de 6 palavras: Painel, Compras, Tabela de preços, Estoque, Kits e Vendas. Kits e Vendas entram nas próximas fases."},
   {tipo:"novo", area:"Material gráfico › Compras", txt:"Funil de orçamentos (Orçamento, Negociando, Fechado, Pedido feito). Cada tipo de material tem um modelo que gera a mensagem para copiar no chat. A ficha guarda as rodadas de negociação e cria o pedido em Materiais e estoque."},

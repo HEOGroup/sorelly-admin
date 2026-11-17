@@ -5,6 +5,9 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 
 
+## 17/11/2026 (RH › Colaboradores)
+- Pedido do Marcus: arrumar as telas de Colaboradores iguais ao Contas a pagar, **uma de cada vez e sem perder nenhum detalhe**. Feitas: Cadastro, Advertências e Experiência, todas dentro da tela Colaboradores (bloco azul, menu suspenso de visão, uma pessoa por linha, clicar abre o card). Ficha da colaboradora com foto no estilo da ficha do pedido (`components/ficha-moldura.js`). Advertências e Controle de experiência saíram do menu. Faltam Horas extras e Escala (cabem como visões); Solicitações e Negociações ficam fora.
+
 ## 17/11/2026 (Setor Material gráfico, fase 1)
 - **Setor Material gráfico criado (pedido do Marcus):** menu de 6 palavras, sem lista dentro de lista: Painel · Compras · Tabela de preços · Estoque · Kits · Vendas. Prontos: Painel, Compras (funil Orçamento → Negociando → Fechado → Pedido feito, com modelos por tipo de material que geram a mensagem para o chat e rodadas de negociação), Tabela de preços e Estoque (os de Materiais & Estoque, o Estoque só com categorias gráficas). Kits (padrão com custo e à venda) = fase 2; Vendas = fase 3. As compras seguem em Materiais & Estoque. Detalhes em `setores/material-grafico/`.
 

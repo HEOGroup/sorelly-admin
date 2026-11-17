@@ -2,14 +2,18 @@
 // Recursos Humanos trazido do SorellyAdmin: Visão geral (ABS e TO), Presença diária, Relatório diário, Colaboradores, Advertências, Controle de experiência, Horas extras e Configurador.
 // As regras e as contas ficam em domain/rh.js; aqui só as telas. Salário e custo de hora extra só aparecem para a supervisão (sócios e RH).
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { Ph } from "@/apps/montagem/components/chat/chat-ui";
+import { Avatar, Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { grupoDe, nomeDe, veSalarios } from "@/apps/montagem/domain/equipe";
 import { FUNCIONARIOS_POR_SETOR } from "@/apps/montagem/domain/pessoas";
 import { CODIGOS, DIAS_SEMANA, MESES, STATUS, TIPOS_DESLIG, advertenciasComSeq, br, colaboradoresRh, dataIso, desligadosDoPeriodo, diaEscalado, diaSem, experienciaLista, flagAdv, formatHoras, formatarRelatorio, hojeIso,
   parseHoras, porEmpresaStats, presencaDe, relatorioAdvertencias, relatorioDiario, resumoAdvertencias, rotuloCnpj, statsEscopo, ultimoDia, valorHoraExtra, negocPadrao, negocEfetiva } from "@/apps/montagem/domain/rh";
-import { Dinheiro, Pagina } from "@/apps/montagem/components/padrao";
+import { Dinheiro, Janela, Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoResumo } from "@/apps/montagem/components/bloco-resumo";
-import { Bloco as BlocoPadrao, Botao, CAMPO, CampoSel, Rotulo, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { Bloco, Bloco as BlocoPadrao, Botao, CAMPO, CampoSel, Rotulo, Segmentado, TabelaP, Td, Tr } from "@/apps/montagem/components/padrao-fin";
+import { BlocoPainel } from "@/apps/montagem/components/bloco-painel";
+import { FichaCaixa, FichaMoldura, FichaPar } from "@/apps/montagem/components/ficha-moldura";
+import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
+import { CampoTexto } from "@/apps/montagem/pages/trafego/comum";
 import { FichaExperiencia, ConfigFicha, Pessoa } from "@/apps/montagem/pages/rh/FichaExperiencia";
 import { ehGestorDe, fichaCfg, fichaDe, resultadoFicha } from "@/apps/montagem/domain/rh-ficha";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
@@ -141,73 +145,90 @@ function FormColab(p){
     fIni:(x.ferias||{}).ini||"", fFim:(x.ferias||{}).fim||"", afast:x.afastamento||"", dData:(x.deslig||{}).data||"", dTipo:(x.deslig||{}).tipo||"", dMotivo:(x.deslig||{}).motivo||"", dObs:(x.deslig||{}).obs||""}), f = st[0], set = function(o){ st[1](Object.assign({}, f, o)); };
   var salvar = function(){ var sal = Number(String(f.salario||"0").replace(/\./g,"").replace(",","."))||0;
     acao(c, "colab_set", {id:x.id, patch:Object.assign({setor:f.setor, admissao:f.admissao, escalaId:f.escalaId, entrada:f.entrada, saida:f.saida, salario:sal, planoId:f.planoId, status:f.status, funcao:f.funcao, telefone:f.telefone, cidade:f.cidade, nascimento:f.nascimento, folha:f.folha, vt:f.vt, termoPeca:f.termoPeca==="sim", aviso:f.aviso}, c.veSalario ? {cpf:f.cpf.replace(/\D/g,"")} : {}, { ferias:f.status==="FERIAS" ? {ini:f.fIni, fim:f.fFim} : null, afastamento:f.afast, deslig:f.status==="DESLIGADO" ? {data:f.dData, tipo:f.dTipo, motivo:f.dMotivo, obs:f.dObs} : null})}); p.fechar(); };
-  var inp = function(k, tipo, cls){ return e("input",{type:tipo||"text", value:f[k], className:INPUT+" h-10! "+(cls||"w-full"), onChange:function(ev){ var o = {}; o[k] = ev.target.value; set(o); }}); };
-  return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-4", onClick:p.fechar},
-    e("div",{className:"flex max-h-[92vh] w-full max-w-2xl flex-col gap-3 overflow-y-auto rounded-2xl bg-card p-5 ring-1 ring-[#E8B84B]/40", onClick:function(ev){ ev.stopPropagation(); }},
-      e("div",{className:"flex items-start justify-between gap-3"}, e("div",null, e("h2",{className:"font-heading text-xl font-bold"}, x.nome), e("p",{className:"text-[12.5px] text-muted-foreground"}, x.setor+" · "+rotuloCnpj(x.cnpj))), e("button",{onClick:p.fechar, "aria-label":"Fechar", className:"grid size-9 place-items-center rounded-lg bg-muted/50"}, e(Ph,{n:"x", s:16}))),
-      e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-        e(Campo,{rot:"Setor"}, e(Sel,{value:f.setor, label:"Setor", className:"w-full", onChange:function(v){ set({setor:v}); }}, (FUNCIONARIOS_POR_SETOR.some(function(s2){ return s2[0]===f.setor; }) ? [] : [[f.setor]]).concat(FUNCIONARIOS_POR_SETOR).map(function(s2){ return e("option",{key:s2[0], value:s2[0]}, s2[0]); }))),   // o RH muda o setor direto (Maria Claudia, 03/11/2026)
-        e(Campo,{rot:"Data de admissão"}, inp("admissao","date")), e(Campo,{rot:"Horário de entrada"}, inp("entrada","time")), e(Campo,{rot:"Horário de saída"}, inp("saida","time")),
-        e(Campo,{rot:"Escala"}, e(Sel,{value:f.escalaId, label:"Escala", className:"w-full", onChange:function(v){ set({escalaId:v}); }}, cfg.escalas.map(function(k){ return e("option",{key:k.id, value:k.id}, k.nome); }))),
-        e(Campo,{rot:"Plano de experiência"}, e(Sel,{value:f.planoId, label:"Plano de experiência", className:"w-full", onChange:function(v){ set({planoId:v}); }}, e("option",{value:""}, "Sem plano"), cfg.planos.map(function(k){ return e("option",{key:k.id, value:k.id}, k.nome+" ("+k.marco1+" + "+k.marco2+")"); }))),
-        c.veSalario && e(Campo,{rot:"Salário (R$)"}, inp("salario","text")),
-        e(Campo,{rot:"Situação"}, e(Sel,{value:f.status, label:"Situação", className:"w-full", onChange:function(v){ set({status:v}); }}, STATUS.map(function(k){ return e("option",{key:k[0], value:k[0]}, k[1]); })))),
-      e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
-        e(Campo,{rot:"Função"}, inp("funcao","text")), e(Campo,{rot:"Telefone"}, inp("telefone","text")), e(Campo,{rot:"Cidade"}, inp("cidade","text")), e(Campo,{rot:"Data de nascimento"}, inp("nascimento","date")),
-        e(Campo,{rot:"Nº da folha"}, inp("folha","text")), e(Campo,{rot:"Vale-transporte"}, inp("vt","text")),
-        e(Campo,{rot:"Termo de peças assinado"}, e(Sel,{value:f.termoPeca, label:"Termo de peças", className:"w-full", onChange:function(v){ set({termoPeca:v}); }}, e("option",{value:"sim"}, "Sim"), e("option",{value:"nao"}, "Não"))),
-        c.veSalario && e(Campo,{rot:"CPF (só números)"}, inp("cpf","text")),
-        e("label",{className:"flex cursor-pointer items-center gap-2 pt-5 text-[13px] font-semibold"}, e("input",{type:"checkbox", checked:f.aviso, className:"size-4", onChange:function(ev){ set({aviso:ev.target.checked}); }}), "Cumprindo aviso prévio")),
-      c.veSalario && (function(){ var n = negocEfetiva(c.rh, x.id), m = function(v){ return v===null||v===undefined ? "—" : BK(v); };
-        return e("div",{className:"flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-muted/30 px-3 py-2 text-[12.5px]"}, e("b",null, "Negociação de hora extra"), n ? e("span",null, n.grupo+" · 1h "+m(n.h1)+" · 2h "+m(n.h2)+" · 3h "+m(n.h3)+" · sábado "+m(n.sab)) : e("span",{className:"text-muted-foreground"}, "Sem negociação"), e("span",{className:"text-muted-foreground"}, "Editar em RH > Negociações")); })(),
-      f.status==="FERIAS" && e("div",{className:"grid grid-cols-2 gap-3"}, e(Campo,{rot:"Férias: início"}, inp("fIni","date")), e(Campo,{rot:"Férias: fim"}, inp("fFim","date"))),
-      f.status==="AFASTADO" && e(Campo,{rot:"Motivo do afastamento"}, inp("afast","text")),
-      f.status==="DESLIGADO" && e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"}, e(Campo,{rot:"Data do desligamento"}, inp("dData","date")),
-        e(Campo,{rot:"Tipo"}, e(Sel,{value:f.dTipo, label:"Tipo", className:"w-full", onChange:function(v){ set({dTipo:v}); }}, e("option",{value:""}, "Escolha…"), TIPOS_DESLIG.map(function(k){ return e("option",{key:k, value:k}, k); }))),
-        e(Campo,{rot:"Motivo", className:"sm:col-span-2"}, inp("dMotivo","text")), e(Campo,{rot:"Observação", className:"sm:col-span-2"}, inp("dObs","text"))),
-      e("div",{className:"flex flex-wrap justify-between gap-2 pt-1"},
-        x.novo ? e(Btn,{v:"ghost", onClick:function(){ if(window.confirm("Excluir "+x.nome+"? Apaga também presenças, advertências e horas extras dela.")){ acao(c, "colab_del", {id:x.id}); p.fechar(); } }}, "Excluir cadastro") : e("span",null),
-        e("div",{className:"flex gap-2"}, e(Btn,{v:"ghost", onClick:p.fechar}, "Cancelar"), e(Btn,{v:"primary", onClick:salvar}, "Salvar")))));
+  var inp = function(k, tipo, cls){ return e("input",{type:tipo||"text", value:f[k], "aria-label":k, className:CAMPO+" "+(cls||""), onChange:function(ev){ var o = {}; o[k] = ev.target.value; set(o); }}); };
+  var cp = function(rot, k, tipo){ return e("div",{key:k, className:"min-w-0"}, e(Rotulo,{t:rot}), inp(k, tipo)); };
+  var sl = function(rot, k, opcoes){ return e(CampoSel,{key:k, t:rot, value:f[k], onChange:function(v){ var o = {}; o[k] = v; set(o); }, opcoes:opcoes}); };
+  var sec = function(t2, filhos, key){ return e(FichaCaixa,{key:key, t:t2}, filhos); };
+  var setores = (FUNCIONARIOS_POR_SETOR.some(function(s2){ return s2[0]===f.setor; }) ? [] : [[f.setor]]).concat(FUNCIONARIOS_POR_SETOR).map(function(s2){ return [s2[0], s2[0]]; });
+  var negoc = c.veSalario && (function(){ var n = negocEfetiva(c.rh, x.id), m = function(v){ return v===null||v===undefined ? "—" : BK(v); }; return n ? n.grupo+" · 1h "+m(n.h1)+" · 2h "+m(n.h2)+" · 3h "+m(n.h3)+" · sábado "+m(n.sab) : "Sem negociação (editar em RH › Negociações)"; })();
+  var stNome = ((STATUS.find(function(k){ return k[0]===f.status; })||[])[1]||f.status)+(f.aviso ? " · aviso prévio" : "");
+  var cabeca = e(FichaCaixa,{key:"cab", t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"},
+    e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_"+String(x.id).replace(/-/g, ""), nome:x.nome, s:220})),
+    e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:x.nome}), e(FichaPar,{t:"Setor", v:x.setor}), e(FichaPar,{t:"Função", v:x.funcao || "—"}), e(FichaPar,{t:"Empresa", v:rotuloCnpj(x.cnpj)}),
+      e(FichaPar,{t:"Admissão", v:x.admissao ? br(x.admissao) : "Faltando", cor:x.admissao ? "" : "text-amber-400"}), e(FichaPar,{t:"Situação", v:stNome, cor:f.status==="ATIVO" ? "text-emerald-400" : f.status==="DESLIGADO" ? "text-red-400" : "text-amber-400"}))));
+  var horaExtra = negoc ? e(FichaCaixa,{key:"he", t:"Hora extra negociada"}, e("span",{className:"text-[13px]"}, negoc)) : null;
+  var trabalho = sec("Trabalho", e("div",{className:"grid grid-cols-2 gap-2"},
+      sl("Setor", "setor", setores), cp("Função", "funcao"), cp("Admissão", "admissao", "date"),
+      sl("Situação", "status", STATUS.map(function(k){ return [k[0], k[1]]; })), cp("Entrada", "entrada", "time"), cp("Saída", "saida", "time"),
+      sl("Escala", "escalaId", cfg.escalas.map(function(k){ return [k.id, k.nome]; })), sl("Plano de experiência", "planoId", [["", "Sem plano"]].concat(cfg.planos.map(function(k){ return [k.id, k.nome+" ("+k.marco1+" + "+k.marco2+")"]; }))),
+      e("label",{key:"av", className:"col-span-2 flex h-8 cursor-pointer items-center gap-2 text-[13px]"}, e("input",{type:"checkbox", checked:f.aviso, className:"size-4", onChange:function(ev){ set({aviso:ev.target.checked}); }}), "Cumprindo aviso prévio")), "t");
+  var pessoal = sec("Pessoal", e("div",{className:"grid grid-cols-2 gap-2"},
+      cp("Telefone", "telefone"), cp("Cidade", "cidade"), cp("Nascimento", "nascimento", "date"), cp("Nº da folha", "folha"), cp("Vale-transporte", "vt"),
+      sl("Termo de peças", "termoPeca", [["sim", "Sim"], ["nao", "Não"]]),
+      c.veSalario && cp("Salário (R$)", "salario"), c.veSalario && cp("CPF", "cpf")), "p");
+  var extra = f.status==="FERIAS" ? sec("Férias", e("div",{className:"grid grid-cols-2 gap-2"}, cp("Início", "fIni", "date"), cp("Fim", "fFim", "date")), "x")
+    : f.status==="AFASTADO" ? sec("Afastamento", cp("Motivo do afastamento", "afast"), "x")
+    : f.status==="DESLIGADO" ? sec("Desligamento", e("div",{className:"grid grid-cols-2 gap-2"}, cp("Data", "dData", "date"), sl("Tipo", "dTipo", [["", "Escolha"]].concat(TIPOS_DESLIG.map(function(k){ return [k, k]; }))), e("div",{key:"m", className:"col-span-2"}, e(Rotulo,{t:"Motivo"}), inp("dMotivo")), e("div",{key:"o", className:"col-span-2"}, e(Rotulo,{t:"Observação"}), inp("dObs"))), "x") : null;
+  var rodape = [x.novo ? e(Botao,{key:"e", onClick:function(){ if(window.confirm("Excluir "+x.nome+"? Apaga também presenças, advertências e horas extras dela.")){ acao(c, "colab_del", {id:x.id}); p.fechar(); } }}, "Excluir cadastro") : null, e(Botao,{key:"c", onClick:p.fechar}, "Cancelar"), e(Botao,{key:"s", principal:true, onClick:salvar}, "Salvar")];
+  return e(FichaMoldura,{t:"Ficha da colaboradora", fechar:p.fechar, esquerda:cabeca, direita:[e("div",{key:"g", className:"grid items-start gap-2 md:grid-cols-2"}, trabalho, pessoal), horaExtra, extra], rodape:rodape});
 }
 function AbaRhColab(){
-  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], bq = useState(""), busca = bq[0], setBusca = bq[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fl = useState({}), filtros = fl[0], setFiltros = fl[1];
-  var todos = colaboradoresRh(c.s), norm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, ""); }, q = norm(busca);
-  var vt = function(x){ return x.vt || "—"; }, passa = function(x){ return (!filtros.setor || x.setor===filtros.setor) && (!filtros.funcao || (x.funcao||"—")===filtros.funcao) && (!filtros.cnpj || (x.cnpj||"")===filtros.cnpj) && (!filtros.status || x.status===filtros.status) && (!filtros.escala || x.escalaId===filtros.escala) && (!filtros.entrada || x.entrada===filtros.entrada) && (!filtros.vt || vt(x)===filtros.vt); };
-  var lista = todos.filter(function(x){ return passa(x) && (aba==="todos" || (aba==="ativos" ? x.status!=="DESLIGADO" : x.status==="DESLIGADO")) && (!q || norm(x.nome).indexOf(q)>=0 || norm(x.setor).indexOf(q)>=0); }).sort(function(a, b){ return a.nome.localeCompare(b.nome); });
-  var sem = todos.filter(function(x){ return x.status!=="DESLIGADO" && !x.admissao; }).length, esc = function(id){ var k = c.rh.config.escalas.find(function(y){ return y.id===id; }); return k ? k.nome : "—"; };
+  var c = useRh(), ab = useState("ativos"), aba = ab[0], setAba = ab[1], ed = useState(null), editId = ed[0], setEditId = ed[1], nv = useState(null), novo = nv[0], setNovo = nv[1], fx = useState(function(){ return (typeof window!=="undefined" && window.__fichaAbrir) || ""; }), fichaId = fx[0], setFichaId = fx[1], vs = useState(function(){ if(typeof window==="undefined") return "cad"; return window.__fichaAbrir ? "exp" : (window.__visaoRh || "cad"); }), visao = vs[0], setVisao = vs[1], ad = useState(""), abrirAdv = ad[0], setAbrirAdv = ad[1], ap = useState(""), advDe = ap[0], setAdvDe = ap[1];
+  React.useEffect(function(){ if(typeof window!=="undefined"){ window.__fichaAbrir = null; window.__visaoRh = null; } }, []);
+  var todos = colaboradoresRh(c.s), esc = function(id){ var k = c.rh.config.escalas.find(function(y){ return y.id===id; }); return k ? k.nome : "—"; };
   var stLb = function(k){ return (STATUS.find(function(y){ return y[0]===k; })||[])[1]||k; };
+  var linhas = todos.filter(function(x){ return aba==="todos" || (aba==="ativos" ? x.status!=="DESLIGADO" : x.status==="DESLIGADO"); }).sort(function(a, b){ return a.nome.localeCompare(b.nome); }).map(function(x){
+    return {id:x.id, nome:x.nome, setor:x.setor, funcao:x.funcao||"—", empresa:rotuloCnpj(x.cnpj), sit:stLb(x.status)+(x.aviso ? " · aviso prévio" : ""), ok:x.status==="ATIVO" && !x.aviso, desl:x.status==="DESLIGADO",
+      admissao:x.admissao||"", escala:esc(x.escalaId), entrada:(x.entrada||"")+(x.saida ? " às "+x.saida : ""), salario:x.salario||0}; });
+  var anoAdv = new Date().getFullYear(), listaAdv = advertenciasComSeq(c.rh), resAdv = resumoAdvertencias(c.rh, anoAdv), tiposAdv = c.rh.config.tiposAdv || [];
+  var ultima = {}; listaAdv.forEach(function(x){ if(!ultima[x.colabId] || x.data>ultima[x.colabId].data) ultima[x.colabId] = x; });
+  var linhasAd = todos.filter(function(x){ return x.status!=="DESLIGADO"; }).map(function(x){ var u = ultima[x.id], n = resAdv[x.id]||0, minhasAd = listaAdv.filter(function(y){ return y.colabId===x.id && String(y.data).slice(0,4)===String(anoAdv); });
+    var cont = function(lista, campo, nomeDe){ var o = {}, ordem = []; lista.forEach(function(y){ var nm = nomeDe(y[campo]); if(!o[nm]){ o[nm] = 0; ordem.push(nm); } o[nm]++; }); return ordem.map(function(nm){ return o[nm]>1 ? nm+" ("+o[nm]+")" : nm; }).join(", ") || "—"; };
+    var nTipo = function(id){ var k = tiposAdv.find(function(y){ return y.id===id; }); return k ? k.nome : "—"; }, nMot = function(id){ var k = (c.rh.config.motivosAdv||[]).find(function(y){ return y.id===id; }); return k ? k.nome : "—"; };
+    return {id:x.id, nome:x.nome, setor:x.setor, funcao:x.funcao||"—", noAno:n, total:minhasAd.length, ultima:u ? u.data : "", tipos:cont(minhasAd, "tipoId", nTipo), motivos:cont(minhasAd, "motivoId", nMot), sit:flagAdv(n)}; }).sort(function(a, b){ return b.noAno-a.noAno || a.nome.localeCompare(b.nome); });
+  var colsAd = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"noAno", t:"Advertências"}, {k:"ultima", t:"Última", fmt:function(v){ return v ? br(v) : "—"; }}, {k:"tipos", t:"Tipos"}, {k:"motivos", t:"Motivos"},
+    {k:"sit", t:"Situação", cor:function(l){ return l.sit==="Reincidente" ? "text-red-400" : l.sit==="Em observação" ? "text-amber-400" : "text-emerald-400"; }}];
+  // experiência: gestor de setor vê só as fichas do próprio setor; RH e Direção (autorizações da ficha) veem todas
+  var listaExp = experienciaLista(c.s), veTodas = temAutorizacao("rh_ficha_lanca", c.s.usuario) || temAutorizacao("rh_ficha_nota", c.s.usuario) || grupoDe(c.s.usuario)==="supervisao";
+  if(!veTodas) listaExp = listaExp.filter(function(x){ return ehGestorDe(fichaCfg(c.rh), nomeDe(c.s.usuario), x.c.setor); });
+  var semPlano = todos.filter(function(x){ return x.status!=="DESLIGADO" && !x.efetivadoEm && (!x.planoId || !x.admissao); }).length;
+  var linhasExp = listaExp.map(function(x){ var ch = x.chip; return {id:x.c.id, nome:x.c.nome, setor:x.c.setor, funcao:x.c.funcao, adm:x.c.admissao, a1:x.a1, a2:x.a2, ef:x.ef, prazo:ch.t, vencido:!!ch.vencido, aviso:!!ch.aviso, pontos:pontosFicha(c, x.c.id), acoes:"Ficha"}; });
+  var colsExp = [{k:"nome", t:"Colaboradora", render:function(v, l){ return e("div",{className:"flex justify-start", title:l.setor}, e(Pessoa,{nome:l.nome, setor:l.setor, funcao:l.funcao, s:24})); }},
+    {k:"adm", t:"Admissão", fmt:function(v){ return br(v); }}, {k:"a1", t:"1ª avaliação", fmt:function(v){ return br(v); }}, {k:"a2", t:"2ª avaliação", fmt:function(v){ return br(v); }}, {k:"ef", t:"Efetivação", fmt:function(v){ return br(v); }},
+    {k:"prazo", t:"Prazo", cor:function(l){ return l.vencido ? "text-red-400" : l.aviso ? "text-amber-400" : "text-emerald-400"; }}, {k:"pontos", t:"Pontos"},
+    {k:"acoes", t:"Ações", render:function(v, l){ return e("span",{className:"inline-flex gap-2", onClick:function(ev){ ev.stopPropagation(); }}, e(Botao,{onClick:function(){ setFichaId(l.id); }}, "Ficha"), e(Botao,{onClick:function(){ if(window.confirm("Efetivar "+l.nome+" hoje?")) acao(c, "efetivar", {id:l.id}); }}, "Efetivar")); }}];
+  var colabFicha = fichaId ? todos.find(function(x){ return x.id===fichaId; }) : null;
+  if(colabFicha) return e("div",{className:"flex flex-col gap-2"}, e(FichaExperiencia,{c:c, colab:colabFicha, voltar:function(){ setFichaId(""); }, agir:function(op, extra){ acao(c, op, extra); }}));
+  var cols = [{k:"nome", t:"Nome"}, {k:"setor", t:"Setor"}, {k:"funcao", t:"Função"}, {k:"empresa", t:"Empresa"},
+    {k:"sit", t:"Situação", cor:function(l){ return l.ok ? "text-emerald-400" : l.desl ? "text-red-400" : "text-amber-400"; }},
+    {k:"admissao", t:"Admissão", fmt:function(v){ return v ? br(v) : "Faltando"; }, cor:function(l){ return l.admissao ? "" : "text-amber-400"; }},
+    {k:"escala", t:"Escala"}, {k:"entrada", t:"Entrada"}].concat(c.veSalario ? [{k:"salario", t:"Salário", fmt:function(v){ return v ? BK(v) : "—"; }}] : []);
   var editando = editId && todos.find(function(x){ return x.id===editId; });
-  return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Cadastro de colaboradores", sub:"As funcionárias CLT já vêm da lista de Pessoas. Aqui o RH completa admissão, escala, horário, plano de experiência e situação. Quem sai fica como Desligada (não se apaga)."}),
-    sem>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, sem+" ainda sem data de admissão. Sem ela, o sistema considera que já estava na empresa; preencha para o ABS e a experiência ficarem certos.")),
-    e("div",{className:"flex flex-wrap items-center gap-2"},
-      ["ativos","inativos","todos"].map(function(k){ return e("button",{key:k, onClick:function(){ setAba(k); }, className:"h-10 rounded-xl px-4 text-[13px] font-bold capitalize ring-1 "+(aba===k ? "bg-primary text-primary-foreground ring-primary" : "bg-card ring-border hover:bg-muted/50")}, k); }),
-      e("input",{value:busca, placeholder:"Buscar nome ou setor", "aria-label":"Buscar", className:INPUT+" h-10! w-64", onChange:function(ev){ setBusca(ev.target.value); }}), e("span",{className:"text-[12.5px] text-muted-foreground"}, lista.length+" na lista"),
-      e("span",{className:"flex-1"}), e(Btn,{v:"secondary", onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "+ Nova colaboradora")),
-    e(BlocoBarra,{cor:"ouro", t:"Filtros", compacto:true}, e("div",{className:"grid grid-cols-2 gap-2 p-3 md:grid-cols-4"},
-      [["setor","Setor",function(x){ return x.setor; }],["funcao","Função",function(x){ return x.funcao||"—"; }],["cnpj","Empresa",function(x){ return x.cnpj||""; }],["entrada","Entrada",function(x){ return x.entrada; }],["vt","Vale-transporte",vt]].map(function(f){
-        var vals = []; todos.forEach(function(x){ var v = f[2](x); if(vals.indexOf(v)<0) vals.push(v); }); vals.sort();
-        return e(Sel,{key:f[0], value:filtros[f[0]]||"", label:f[1], className:"w-full", onChange:function(v){ var o = Object.assign({}, filtros); o[f[0]] = v; setFiltros(o); }}, e("option",{value:""}, f[1]+": todos"), vals.map(function(v){ return e("option",{key:v, value:v}, f[0]==="cnpj" ? rotuloCnpj(v) : v); })); }),
-      e(Sel,{value:filtros.status||"", label:"Situação", className:"w-full", onChange:function(v){ setFiltros(Object.assign({}, filtros, {status:v})); }}, e("option",{value:""}, "Situação: todas"), STATUS.map(function(y){ return e("option",{key:y[0], value:y[0]}, y[1]); })),
-      e(Sel,{value:filtros.escala||"", label:"Escala", className:"w-full", onChange:function(v){ setFiltros(Object.assign({}, filtros, {escala:v})); }}, e("option",{value:""}, "Escala: todas"), c.rh.config.escalas.map(function(y){ return e("option",{key:y.id, value:y.id}, y.nome); })),
-      e(Btn,{v:"ghost", onClick:function(){ setFiltros({}); }}, "Limpar filtros"))),
-    novo && e(BlocoBarra,{cor:"ouro", t:"Nova colaboradora"}, e("div",{className:"flex flex-wrap items-end gap-3 p-4"},
-      e(Campo,{rot:"Nome completo", className:"min-w-[16rem] flex-1"}, e("input",{value:novo.nome, className:INPUT+" h-10!", onChange:function(ev){ setNovo(Object.assign({}, novo, {nome:ev.target.value})); }})),
-      e(Campo,{rot:"Setor"}, e(Sel,{value:novo.setor, label:"Setor", className:"w-56", onChange:function(v){ setNovo(Object.assign({}, novo, {setor:v})); }}, FUNCIONARIOS_POR_SETOR.filter(function(s2){ return s2[0]!=="Sócios e família" && s2[0].indexOf("PJ")!==0; }).map(function(s2){ return e("option",{key:s2[0], value:s2[0]}, s2[0]); }))),
-      e(Campo,{rot:"Empresa (CNPJ)"}, e(Sel,{value:novo.cnpj, label:"Empresa", className:"w-40", onChange:function(v){ setNovo(Object.assign({}, novo, {cnpj:v})); }}, e("option",{value:""}, "A informar"), ["34","46","59","67"].map(function(k){ return e("option",{key:k, value:k}, rotuloCnpj(k)); }))),
-      e(Campo,{rot:"Admissão"}, e("input",{type:"date", value:novo.admissao, className:INPUT+" h-10! w-44", onChange:function(ev){ setNovo(Object.assign({}, novo, {admissao:ev.target.value})); }})),
-      e(Btn,{v:"primary", disabled:!novo.nome.trim(), onClick:function(){ acao(c, "colab_add", novo); setNovo(null); }}, "Cadastrar"), e(Btn,{v:"ghost", onClick:function(){ setNovo(null); }}, "Cancelar"))),
-    e(BlocoBarra,{cor:"ouro", t:"Colaboradores"}, e("div",{className:"overflow-x-auto"}, e("table",{className:"w-full border-collapse"},
-      e("thead",null, e("tr",{className:"bg-sidebar"}, [th("Nome"), th("Setor"), th("Função"), th("Empresa"), th("Situação"), th("Admissão"), th("Escala"), th("Entrada")].concat(c.veSalario ? [th("Salário")] : [], [th("")]))),
-      e("tbody",null, lista.map(function(x){ return e("tr",{key:x.id, className:"cursor-pointer border-b border-border/60 hover:bg-white/5", onClick:function(){ setEditId(x.id); }},
-        e("td",{className:TD+" font-semibold"}, x.nome), e("td",{className:TD}, x.setor), e("td",{className:TD+" text-[12.5px]"}, x.funcao||"—"), e("td",{className:TD}, rotuloCnpj(x.cnpj)), e("td",{className:TD}, e("span",{className:"rounded-full px-2.5 py-0.5 text-[11.5px] font-bold "+(x.status==="ATIVO" && !x.aviso ? "bg-success/20 text-success" : x.status==="DESLIGADO" ? "bg-destructive/20 text-destructive" : "bg-warning/20 text-warning")}, stLb(x.status)+(x.aviso ? " · aviso prévio" : ""))),
-        e("td",{className:TD}, x.admissao ? br(x.admissao) : e("span",{className:"text-warning"}, "faltando")), e("td",{className:TD}, esc(x.escalaId)), e("td",{className:TD+" "+MONO}, x.entrada+(x.saida ? "–"+x.saida : "")),
-        c.veSalario && e("td",{className:TD+" "+MONO}, x.salario ? BK(x.salario) : "—"), e("td",{className:TD}, e(Ph,{n:"pencil", s:15}))); }))))),
+  var opSet = function(k, v){ setNovo(Object.assign({}, novo, (function(){var o={};o[k]=v;return o;})())); };
+  return e("div",{className:"flex flex-col gap-2.5"},
+    visao==="cad" && novo && e(Bloco,{t:"Nova colaboradora"}, e("div",{className:"grid grid-cols-1 items-end gap-2 md:grid-cols-5"},
+      e(CampoTexto,{t:"Nome completo", id:"nNome", value:novo.nome, onChange:function(v){ opSet("nome", v); }}),
+      e(CampoSel,{t:"Setor", id:"nSetor", value:novo.setor, onChange:function(v){ opSet("setor", v); }, opcoes:FUNCIONARIOS_POR_SETOR.filter(function(s2){ return s2[0]!=="Sócios e família" && s2[0].indexOf("PJ")!==0; }).map(function(s2){ return [s2[0], s2[0]]; })}),
+      e(CampoSel,{t:"Empresa", id:"nCnpj", value:novo.cnpj, onChange:function(v){ opSet("cnpj", v); }, opcoes:[["", "A informar"]].concat(["34","46","59","67"].map(function(k){ return [k, rotuloCnpj(k)]; }))}),
+      e(CampoTexto,{t:"Admissão", id:"nAdm", tipo:"date", value:novo.admissao, onChange:function(v){ opSet("admissao", v); }}),
+      e("div",{className:"flex gap-2"}, e(Botao,{principal:true, onClick:function(){ if(novo.nome.trim()){ acao(c, "colab_add", novo); setNovo(null); } }}, "Cadastrar"), e(Botao,{onClick:function(){ setNovo(null); }}, "Cancelar")))),
+    e(BlocoPainel,{titulo:"Cadastro de colaboradores", compacto:true},
+      e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1"},
+        e("select",{value:visao, "aria-label":"Visão", onChange:function(ev){ setVisao(ev.target.value); }, className:"h-8 w-36 cursor-pointer rounded-md border border-white/30 bg-white/20 px-2 text-[13px] text-white outline-none hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white"}, e("option",{value:"cad", className:"bg-card"}, "Cadastro"), e("option",{value:"adv", className:"bg-card"}, "Advertências"), e("option",{value:"exp", className:"bg-card"}, "Experiência")),
+        visao==="cad" && e(Segmentado,{opcoes:[["ativos","Ativos"],["inativos","Desligados"],["todos","Todos"]], atual:aba, onMudar:setAba}), e("span",{className:"flex-1"}),
+        visao==="adv" && e(Botao,{onClick:function(){ setAbrirAdv("rel"); }}, "Relatório mensal"),
+        visao==="adv" && e(Botao,{principal:true, onClick:function(){ setAbrirAdv("nova"); }}, "Nova advertência"),
+        visao==="cad" && e(Botao,{principal:true, onClick:function(){ setNovo({nome:"", setor:FUNCIONARIOS_POR_SETOR[0][0], cnpj:"", admissao:""}); }}, "Nova colaboradora")),
+      visao==="exp" && semPlano>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, semPlano+" colaboradoras ainda sem plano de experiência ou sem data de admissão no Cadastro; elas não aparecem aqui.")),
+      visao==="adv" && e(AbaRhAdv,{dentro:true, abrir:abrirAdv, setAbrir:setAbrirAdv, pessoa:advDe, fecharPessoa:function(){ setAdvDe(""); setAbrirAdv(""); }}),
+      
+    e(TabelaPlanilha,{key:aba+visao, cols:visao==="adv" ? colsAd : visao==="exp" ? colsExp : cols, linhas:visao==="adv" ? linhasAd : visao==="exp" ? linhasExp : linhas, chave:"id", escura:true, grade:true, semContagem:true, limite:100, aoClicar:function(l){ if(visao==="adv") setAdvDe(l.id); else if(visao==="exp") setFichaId(l.id); else setEditId(l.id); }, vazio:visao==="exp" ? "Ninguém em período de experiência no momento." : "Nenhuma colaboradora nesta visão."})),
     editando && e(FormColab,{key:editando.id, c:c, x:editando, fechar:function(){ setEditId(null); }}));
 }
 
 // ───────────────── Advertências ─────────────────
-function AbaRhAdv(){
+function AbaRhAdv(pp){
+  pp = pp || {};
   // Tela refeita no padrão compacto (pedido do Marcus, 05/11/2026): sem faixa de números, formulário em uma linha, resumos em blocos de lista e tabela do padrão.
   var c = useRh(), rh = c.rh, cfg = rh.config, ano = new Date().getFullYear(), vazio = {colabId:"", data:hojeIso(), tipoId:"", motivoId:"", dias:"", obs:""};
   var nf = useState(vazio), f = nf[0], setF = nf[1], bq = useState(""), buscaAdv = bq[0], setBuscaAdv = bq[1], rm = useState(hojeIso().slice(0,7)), mesRel = rm[0], setMesRel = rm[1], rt = useState({mes:"", txt:""}), edRel = rt[0], setEdRel = rt[1], ea = useState(""), editAdv = ea[0], setEditAdv = ea[1];
@@ -222,57 +243,41 @@ function AbaRhAdv(){
   var set = function(k, v){ var o = Object.assign({}, f); o[k] = v; setF(o); };
   var salvar = function(){ if(editAdv){ acao(c, "adv_edit", Object.assign({id:editAdv}, f)); setEditAdv(""); setF(vazio); } else { acao(c, "adv_add", f); setF(Object.assign({}, f, {obs:"", dias:""})); } };
   var ativas = colabs.filter(function(x){ return x.status!=="DESLIGADO"; }).sort(function(a2, b2){ return String(a2.nome).localeCompare(String(b2.nome), "pt-BR"); });
-  var linResumo = [{r:"No ano", v:int(listaTodas.filter(function(x){ return x.data.slice(0,4)===String(ano); }).length), total:true}, {r:"Pessoas advertidas", v:int(porPessoa.length)},
-    {r:"Em observação", v:int(porPessoa.filter(function(x){ return x.flag==="Em observação"; }).length), cor:"alerta"}, {r:"Reincidentes", v:int(porPessoa.filter(function(x){ return x.flag==="Reincidente"; }).length), cor:"ruim"}];
-  var linPessoa = porPessoa.map(function(x){ return {r:nomeDe2(x.id), v:String(x.n), p:x.flag, cor:corLinha(x.flag)}; });
-  var CEL = "h-8 border-b border-border px-2.5 text-center text-[13px]";
-  return e(Pagina,null,
-    e(PageHead,{t:"Advertências", sub:"1ª do ano Regular, 2ª Em observação, 3ª em diante Reincidente. Não se apaga; corrija com Editar."}),
-    e(BlocoPadrao,{ouro:true, t:editAdv ? "Corrigir advertência" : "Nova advertência"},
-      e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 pt-3 md:grid-cols-6"},
-        e(CampoSel,{t:"Colaboradora", value:f.colabId, cls:"md:col-span-2", onChange:function(v){ set("colabId", v); }, opcoes:[["", "Escolha"]].concat(ativas.map(function(x){ return [x.id, x.nome]; }))}),
-        e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ set("data", ev.target.value); }})),
-        e(CampoSel,{t:"Tipo", value:f.tipoId, onChange:function(v){ set("tipoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.tiposAdv.map(function(x){ return [x.id, x.nome]; }))}),
-        e(CampoSel,{t:"Motivo", value:f.motivoId, cls:"md:col-span-2", onChange:function(v){ set("motivoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.motivosAdv.map(function(x){ return [x.id, x.nome]; }))}),
-        tipo && tipo.suspensao && e("div",null, e(Rotulo,{t:"Dias"}), e("input",{value:f.dias, inputMode:"numeric", "aria-label":"Dias de suspensão", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set("dias", ev.target.value.replace(/\D/g,"")); }})),
-        e("div",{className:"col-span-2 "+(tipo && tipo.suspensao ? "md:col-span-3" : "md:col-span-4")}, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set("obs", ev.target.value); }})),
-        e("div",{className:"col-span-2 flex items-end gap-2"}, e(Botao,{principal:true, desabilitado:!f.colabId || !f.tipoId || !f.motivoId, onClick:salvar}, editAdv ? "Salvar alteração" : "Registrar"), editAdv && e(Botao,{onClick:function(){ setEditAdv(""); setF(vazio); }}, "Cancelar")))),
-    e("div",{className:"grid grid-cols-1 items-start gap-2.5 md:grid-cols-3"},
-      e(BlocoResumo,{t:"Resumo de "+ano, compacto:true, cab:["Item", "Quantidade", ""], linhas:linResumo}),
-      e(BlocoResumo,{t:"Por colaboradora · "+ano, compacto:true, alturaMax:132, cab:["Colaboradora", "Advertências", "Situação"], linhas:linPessoa.length ? linPessoa : [{r:"Nenhuma advertência", v:"0", p:""}]}),
-      e(BlocoPadrao,{ouro:true, t:"Relatório mensal", dir:e("span",{className:"inline-flex items-center gap-2"}, e("input",{type:"month", value:mesRel, "aria-label":"Mês do relatório", className:CAMPO+" w-48! text-center", onChange:function(ev){ if(ev.target.value) setMesRel(ev.target.value); }}))},
-        e("div",{className:"flex flex-col gap-2 pt-2"},
-          e("textarea",{value:textoRel, "aria-label":"Texto do relatório mensal", rows:5, className:"w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary", onChange:function(ev){ setEdRel({mes:mesRel, txt:ev.target.value}); }}),
-          e("div",{className:"flex items-center justify-center gap-2"}, e(Botao,{principal:true, onClick:copiarRel}, "Copiar texto"), edRel.mes===mesRel && e(Botao,{onClick:function(){ setEdRel({mes:"", txt:""}); }}, "Desfazer edição"))))),
-    e(BlocoPadrao,{t:"Lançamentos", dir:e("span",{className:"tabular-nums"}, lista.length===listaTodas.length ? lista.length+" no total" : lista.length+" de "+listaTodas.length)},
-      e("div",{className:"flex items-end gap-2 pb-2 pt-2"}, e("div",{className:"w-72"}, e(Rotulo,{t:"Buscar colaboradora"}), e("input",{value:buscaAdv, "aria-label":"Buscar colaboradora", className:CAMPO, onChange:function(ev){ setBuscaAdv(ev.target.value); }})), buscaAdv && e(Botao,{onClick:function(){ setBuscaAdv(""); }}, "Limpar")),
-      lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, listaTodas.length ? "Nenhuma advertência com esse nome." : "Nenhuma advertência registrada.") :
-      e(TabelaP,{cols:[{t:"Data", w:112, c:true}, {t:"Colaboradora", w:270}, {t:"Tipo", w:140, c:true}, {t:"Motivo", w:220, c:true}, {t:"Nº no ano", w:100, c:true}, {t:"Situação", w:130, c:true}, {t:"Observação", w:230, c:true}, {t:"Ações", w:96, c:true}], minW:1300},
-        lista.map(function(x){ return e(Tr,{key:x.id}, e(Td,{c:true}, br(x.data)), e(Td,{forte:true}, nomeDe2(x.colabId)),
-          e(Td,{c:true}, nm("tiposAdv", x.tipoId)+(x.dias ? " · "+x.dias+(x.dias===1 ? " dia" : " dias") : "")), e(Td,{c:true}, nm("motivosAdv", x.motivoId)), e(Td,{c:true}, x.seq+"ª"),
-          e(Td,{c:true}, e("span",{className:"rounded-full px-2.5 py-0.5 text-[11px] font-bold", style:{background:corFlag(x.flag)+"26", color:corFlag(x.flag)}}, x.flag)),
-          e("td",{className:CEL+" py-0.5 text-[11px] leading-tight"}, x.obs || ""),
-          e(Td,{c:true}, e("button",{type:"button", className:"h-8 rounded-md border border-border bg-card px-3 text-[13px] hover:bg-white/10", onClick:function(){ setF({colabId:x.colabId, data:x.data, tipoId:x.tipoId, motivoId:x.motivoId, dias:x.dias ? String(x.dias) : "", obs:x.obs || ""}); setEditAdv(x.id); try{ window.scrollTo({top:0, behavior:"smooth"}); }catch(er){} }}, "Editar"))); }))));
+  var linhasAdv = lista.map(function(x){ return {id:x.id, colabId:x.colabId, data:x.data, colab:nomeDe2(x.colabId), tipo:nm("tiposAdv", x.tipoId)+(x.dias ? " · "+x.dias+(x.dias===1 ? " dia" : " dias") : ""), motivo:nm("motivosAdv", x.motivoId), seq:x.seq+"ª", flag:x.flag, obs:x.obs||"", bruto:x}; });
+  var colsAdv = [{k:"data", t:"Data", fmt:function(v){ return br(v); }}, {k:"colab", t:"Colaboradora"}, {k:"tipo", t:"Tipo"}, {k:"motivo", t:"Motivo"}, {k:"seq", t:"Nº no ano"}, {k:"flag", t:"Situação", cor:function(l){ return l.flag==="Reincidente" ? "text-red-400" : l.flag==="Em observação" ? "text-amber-400" : "text-emerald-400"; }}, {k:"obs", t:"Observação"}];
+  var editarAdv = function(x){ setF({colabId:x.colabId, data:x.data, tipoId:x.tipoId, motivoId:x.motivoId, dias:x.dias ? String(x.dias) : "", obs:x.obs || ""}); setEditAdv(x.id); };
+  var fechar = function(){ setEditAdv(""); setF(vazio); if(pp.setAbrir) pp.setAbrir(""); };
+  var salvar2 = function(){ salvar(); if(!editAdv && pp.setAbrir) pp.setAbrir(""); };
+  var aberto = pp.abrir || (editAdv ? "nova" : "");
+  var formulario = e("div",{key:"f", className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-4"},
+    e(CampoSel,{t:"Colaboradora", value:f.colabId, cls:"col-span-2", onChange:function(v){ set("colabId", v); }, opcoes:[["", "Escolha"]].concat(ativas.map(function(x){ return [x.id, x.nome]; }))}),
+    e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:f.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ set("data", ev.target.value); }})),
+    e(CampoSel,{t:"Tipo", value:f.tipoId, onChange:function(v){ set("tipoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.tiposAdv.map(function(x){ return [x.id, x.nome]; }))}),
+    e(CampoSel,{t:"Motivo", value:f.motivoId, cls:"col-span-2", onChange:function(v){ set("motivoId", v); }, opcoes:[["", "Escolha"]].concat(cfg.motivosAdv.map(function(x){ return [x.id, x.nome]; }))}),
+    tipo && tipo.suspensao && e("div",null, e(Rotulo,{t:"Dias de suspensão"}), e("input",{value:f.dias, inputMode:"numeric", "aria-label":"Dias de suspensão", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ set("dias", ev.target.value.replace(/D/g,"")); }})),
+    e("div",{className:"col-span-2 md:col-span-4"}, e(Rotulo,{t:"Observação"}), e("input",{value:f.obs, "aria-label":"Observação", className:CAMPO, onChange:function(ev){ set("obs", ev.target.value); }})));
+  var relatorio = e("div",{key:"r", className:"flex flex-col gap-2"},
+    e("div",{className:"w-48"}, e(Rotulo,{t:"Mês"}), e("input",{type:"month", value:mesRel, "aria-label":"Mês do relatório", className:CAMPO+" text-center", onChange:function(ev){ if(ev.target.value) setMesRel(ev.target.value); }})),
+    e("textarea",{value:textoRel, "aria-label":"Texto do relatório mensal", rows:14, className:"w-full rounded-md border border-border bg-card px-2.5 py-1.5 text-[13px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-primary", onChange:function(ev){ setEdRel({mes:mesRel, txt:ev.target.value}); }}));
+  var pid = pp.pessoa || "", col = pid && colabs.find(function(y){ return y.id===pid; }), minhas = linhasAdv.filter(function(l){ return l.colabId===pid; });
+  var fichaPessoa = col && e(FichaMoldura,{t:"Advertências · "+col.nome, fechar:pp.fecharPessoa,
+    esquerda:e(FichaCaixa,{t:"Colaboradora"}, e("div",{className:"flex flex-col gap-2"}, e("div",{className:"grid place-items-center"}, e(Avatar,{id:"f_"+String(col.id).replace(/-/g, ""), nome:col.nome, s:220})),
+      e("div",{className:"flex flex-col"}, e(FichaPar,{t:"Nome", v:col.nome}), e(FichaPar,{t:"Setor", v:col.setor}), e(FichaPar,{t:"Função", v:col.funcao || "—"}), e(FichaPar,{t:"No ano "+ano, v:String(res[pid]||0)}), e(FichaPar,{t:"Situação", v:flagAdv(res[pid]||0), cor:corTxt(flagAdv(res[pid]||0))})))),
+    direita:e(FichaCaixa,{t:"Advertências", dir:e("button",{type:"button", onClick:function(){ setF(Object.assign({}, vazio, {colabId:pid})); pp.setAbrir("nova"); }, className:"h-5 rounded border border-white/45 bg-white/10 px-2 text-[11px] font-normal normal-case leading-none tracking-normal hover:bg-white/25"}, "Nova advertência")},
+      e(TabelaPlanilha,{cols:colsAdv.filter(function(k){ return k.k!=="colab"; }), linhas:minhas, chave:"id", escura:true, grade:true, semContagem:true, semLimpar:true, limite:100, aoClicar:function(l){ editarAdv(l.bruto); }, vazio:"Nenhuma advertência."}))});
+  return e(pp.dentro ? "div" : Pagina, null,
+    fichaPessoa,
+    aberto==="nova" && e(Janela,{t:editAdv ? "Corrigir advertência" : "Nova advertência", sub:"1ª do ano Regular, 2ª Em observação, 3ª em diante Reincidente.", fechar:fechar, colunas:[formulario], rodape:[e(Botao,{key:"c", onClick:fechar}, "Cancelar"), e(Botao,{key:"s", principal:true, desabilitado:!f.colabId || !f.tipoId || !f.motivoId, onClick:salvar2}, editAdv ? "Salvar alteração" : "Registrar")]}),
+    aberto==="rel" && e(Janela,{t:"Relatório mensal", sub:"Texto pronto para colar no WhatsApp.", fechar:fechar, colunas:[relatorio], rodape:[edRel.mes===mesRel && e(Botao,{key:"d", onClick:function(){ setEdRel({mes:"", txt:""}); }}, "Desfazer edição"), e(Botao,{key:"c2", principal:true, onClick:copiarRel}, "Copiar texto")]}));
+  function corTxt(g){ return g==="Reincidente" ? "text-red-400" : g==="Em observação" ? "text-amber-400" : "text-emerald-400"; }
 }
 
 // ───────────────── Controle de experiência ─────────────────
 function pontosFicha(c, id){ var r = resultadoFicha(fichaCfg(c.rh), fichaDe(c.rh, id)); return r.total===null ? "Sem nota" : String(r.total).replace(".", ",")+" / 100"; }
 function AbaRhExp(){
-  var c = useRh(), fx = useState(function(){ var id = typeof window!=="undefined" ? window.__fichaAbrir : ""; if(typeof window!=="undefined") window.__fichaAbrir = null; return id || ""; }), fichaId = fx[0], setFichaId = fx[1], lista = experienciaLista(c.s), semPlano = colaboradoresRh(c.s).filter(function(x){ return x.status!=="DESLIGADO" && !x.efetivadoEm && (!x.planoId || !x.admissao); }).length;
-  // gestor de setor vê só as fichas do próprio setor; RH e Direção (autorizações da ficha) veem todas
-  var veTodas = temAutorizacao("rh_ficha_lanca", c.s.usuario) || temAutorizacao("rh_ficha_nota", c.s.usuario) || grupoDe(c.s.usuario)==="supervisao";
-  if(!veTodas) lista = lista.filter(function(x){ return ehGestorDe(fichaCfg(c.rh), nomeDe(c.s.usuario), x.c.setor); });
-  var colabFicha = fichaId ? colaboradoresRh(c.s).find(function(x){ return x.id===fichaId; }) : null;
-  if(colabFicha) return e("div",{className:"flex flex-col gap-2"},
-    e(FichaExperiencia,{c:c, colab:colabFicha, voltar:function(){ setFichaId(""); }, agir:function(op, extra){ acao(c, op, extra); }}));
-  return e("div",{className:"flex flex-col gap-4"},
-    e(PageHead,{t:"Controle de experiência", sub:"1ª avaliação = admissão + 1º marco; 2ª = admissão + 1º + 2º marco; efetivação = dia seguinte à 2ª. Quem não foi efetivada aparece até 45 dias depois da 2ª avaliação."}),
-    semPlano>0 && e("div",{className:AVISO}, e(Ph,{n:"warning", s:17, fill:true}), e("span",null, semPlano+" colaboradoras ainda sem plano de experiência ou sem data de admissão no Cadastro; elas não aparecem aqui.")),
-    e(BlocoPadrao,{t:"Em experiência", dir:e("span",{className:"text-[13px]"}, lista.length+" na lista")}, lista.length===0 ? e("p",{className:"py-3 text-center text-[13px]"}, "Ninguém em período de experiência no momento.") :
-      e(TabelaP,{cols:[{t:"Colaboradora", w:320}, {t:"Admissão", w:100, c:true}, {t:"1ª avaliação", w:110, c:true}, {t:"2ª avaliação", w:110, c:true}, {t:"Efetivação", w:100, c:true}, {t:"Prazo", w:200, c:true}, {t:"Pontos", w:110, c:true}, {t:"Ações", w:190, c:true}]},
-        lista.map(function(x){ var ch = x.chip, cor = ch.vencido ? "text-destructive" : ch.aviso ? "text-warning" : "text-success";
-          return e(Tr,{key:x.c.id}, /* padrao-ok: pedido do Marcus em 03/11/2026, foto e nome à esquerda na coluna Colaboradora */ e("td",{title:x.c.setor, className:"border-b border-border px-2.5 py-2 text-left"}, e(Pessoa,{nome:x.c.nome, setor:x.c.setor, funcao:x.c.funcao, forte:true, s:48})), e(Td,{c:true}, br(x.c.admissao)), e(Td,{c:true}, br(x.a1)), e(Td,{c:true}, br(x.a2)), e(Td,{c:true}, br(x.ef)), e(Td,{c:true, cor:cor, forte:true}, ch.t), e(Td,{c:true, forte:true}, pontosFicha(c, x.c.id)),
-            e("td",{className:"h-8 border-b border-border px-2.5 text-center"}, e("span",{className:"inline-flex gap-2"}, e(Botao,{onClick:function(){ setFichaId(x.c.id); }}, "Ficha"), e(Botao,{onClick:function(){ if(window.confirm("Efetivar "+x.c.nome+" hoje?")) acao(c, "efetivar", {id:x.c.id}); }}, "Efetivar")))); }))));
+  // o endereço antigo e os avisos (ficha aberta direto) levam para a visão Experiência de Colaboradores
+  if(typeof window!=="undefined" && !window.__fichaAbrir) window.__visaoRh = "exp";
+  return e(AbaRhColab);
 }
 
 // ───────────────── Horas extras ─────────────────

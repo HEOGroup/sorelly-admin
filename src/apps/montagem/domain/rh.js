@@ -236,7 +236,7 @@ function experienciaAlertas(s, hoje){
   var h = hoje||hojeIso(), out = [];
   experienciaLista(s, h).forEach(function(x){
     [["1ª", x.a1], ["2ª", x.a2]].forEach(function(m){ var dias = diasEntre(m[1], h);
-      if(dias>=0 && dias<=3) out.push({tipo:"exp_avaliacao", chave:"exp_av:"+x.c.id+":"+m[0], titulo:"Chegou a "+m[0]+" avaliação: "+x.c.nome, texto:"Abra a ficha, veja a pontuação e as notas e decida se efetiva. Setor: "+x.c.setor+".", aba:"rhexp", dados:{ficha:x.c.id}}); }); });
+      if(dias>=0 && dias<=3) out.push({tipo:"exp_avaliacao", chave:"exp_av:"+x.c.id+":"+m[0], titulo:"Chegou a "+m[0]+" avaliação: "+x.c.nome, texto:"Abra a ficha, veja a pontuação e as notas e decida se efetiva. Setor: "+x.c.setor+".", aba:"rhcolab", dados:{ficha:x.c.id}}); }); });
   return out;
 }
 
