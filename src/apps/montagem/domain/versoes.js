@@ -6,6 +6,9 @@ var VERSOES = [
  {v:"0.20.89", data:"2026-11-17", titulo:"Atendimento Sorelly: mais de um comprovante por conta", itens:[
   {tipo:"melhoria", area:"Atendimento interno → Atendimento Sorelly", txt:"Cada conta de pagamento aceita vários comprovantes: botão + Outro comprovante (ver 1, ver 2...) e Tirar o último. Pedido da Natasha e da Edna (revendedora que paga em duas vezes). Vale também na conferência do financeiro e no Consolidado Sorelly."}
  ]},
+ {v:"0.20.90", data:"2026-11-17", titulo:"Kommo: leitura do funil de Cadastro", itens:[
+  {tipo:"novo", area:"Tecnologia › Kommo", txt:"Servidor passa a ler o funil Cadastro do Kommo (etapas e quantidade de leads por etapa), só leitura e só para a Diretoria. Ainda sem tela; ligação com Indicações vem depois."}
+ ]},
  {v:"0.20.88", data:"2026-11-17", titulo:"RH › Colaboradores: Joias e Negociações em joias", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Nova visão Joias no menu suspenso: uma pessoa por linha (combinado, pagamentos, valor a preço de venda, custo, já retirado, a retirar e situação), com as sub-visões Pagamentos (Autorizar, Separado, Retirado, Recibo, Cancelar, Apagar) e Resumo por mês e setor. Clicar na pessoa abre o card com o combinado, o resumo e todos os pagamentos, e o botão Novo pagamento já preenchido com o combinado. A tela Pagamento em joias saiu do menu; o endereço antigo abre a visão."},
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações ganhou a opção Joias ao lado de Hora extra: o combinado de cada pessoa em joias (motivo, valor a preço de venda, custo %, periodicidade, observação), com os pagamentos já feitos no card. A negociação da Ana Paula (modelo de fotos, R$ 500,00, custo 20%) foi cadastrada."}]},
