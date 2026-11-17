@@ -16,10 +16,12 @@ import { Vazio } from "@/apps/montagem/pages/compras/visualCompras";
 import { PlanilhaRev } from "@/apps/montagem/pages/encomendas/PlanilhaRev";
 import { Janelas } from "@/apps/montagem/pages/encomendas/janelas";
 import { FichaPedido } from "@/apps/montagem/pages/encomendas/FichaPedido";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
+import { LinkPedido } from "@/apps/montagem/pages/encomendas/LinkPedido";
 import { NovaSolicitacao } from "@/apps/montagem/pages/encomendas/NovaSolicitacao";
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { ETAPAS_SEP, Foto, JanelaSeparar } from "@/apps/montagem/pages/encomendas/Atencao";
-import { e, useEffect, useState } from "@/shared/react";
+import { e, useEffect, useRef, useState } from "@/shared/react";
 
 // controles menores da faixa azul, iguais aos do Contas a pagar (Marcus, 12/11/2026)
 var SEL = "h-7 rounded-md border border-white/50 bg-[#14233f] px-2 text-[13px] font-semibold text-white outline-none focus-visible:ring-2 focus-visible:ring-white";   // padrao-ok: controles menores na faixa azul, como no Contas a pagar (Marcus, 12/11/2026)
@@ -101,6 +103,40 @@ function AbaEncomendas(){
   var todos = lista.concat(seps);
   var base = (er.atencao || []).reduce(function(o, a){ if(a.resp) o[a.resp] = 1; return o; }, {"Agatha":1, "Elen":1, "Eduarda Gabriela":1});
   var resps = Object.keys(er.pedidos.reduce(function(o, x){ if(x.responsavel) o[x.responsavel] = 1; return o; }, base)).sort();
+  var refE = useRef(E); refE.current = E;
+  // PEDIDO POR LINK (17/11/2026): o que a revendedora enviou pela página pública entra no Funil sozinho. "Reivindicar" garante que só uma tela cria o pedido; se o sistema recusar, devolve para a fila.
+  useEffect(function(){
+    if(!apiAtiva()) return undefined; var vivo = true, rodando = false;
+    var nomeCor = function(c){ return c ? c.charAt(0).toUpperCase()+c.slice(1) : ""; };
+    var trazer = function(){
+      if(rodando) return; rodando = true;
+      chamar("GET", "/encomendas/link/recebidos").then(function(j){
+        return (j.itens || []).reduce(function(p, it){
+          return p.then(function(){
+            if(!vivo) return null;
+            return chamar("POST", "/encomendas/link/reivindicar", {id:it.id}).then(function(r){
+              if(!r.ok) return null;
+              var d = it.dados || {};
+              var ok = refE.current.exec("ped_criar_link", {linkId:it.id, responsavel:"", pedido:{tipo:d.tipo || "reposicao", revendedora:it.revendedora, cod:it.cod, representante:it.representante, telefone:it.telefone, cidade:it.cidade, media3m:it.media, observacao:d.obs || "", aceite:!!d.aceite, entrega:d.entrega || null, retirada:d.retirada || null},
+                fotos:(d.fotos || []).map(function(x){ return {key:x.key, nota:[nomeCor(x.cor), x.obs].filter(Boolean).join(" · ")}; }), textos:d.textos || []});
+              if(!ok) return chamar("POST", "/encomendas/link/reivindicar", {id:it.id, desfazer:true});
+              // só dá o pedido como entregue ao Funil depois de ver que ele chegou ao servidor (se a tela fechar antes, o link volta para a fila em 3 minutos)
+              setTimeout(function(){
+                chamar("GET", "/estado/er").then(function(g){
+                  var ps = (g && g.conteudo && g.conteudo.pedidos) || [];
+                  if(ps.some(function(x){ return x.linkId===it.id; })) return chamar("POST", "/encomendas/link/reivindicar", {id:it.id, confirmar:true});
+                  return null;
+                }).catch(function(){ /* tenta de novo quando o link voltar para a fila */ });
+              }, 20000);
+              return null;
+            });
+          });
+        }, Promise.resolve());
+      }).catch(function(x){ if(typeof console!=="undefined") console.warn("[pedido por link] não consegui trazer:", x && x.message ? x.message : x); }).then(function(){ rodando = false; });
+    };
+    trazer(); var t = setInterval(trazer, 20000);
+    return function(){ vivo = false; clearInterval(t); };
+  }, []);
   var ir = function(m){ md[1](m); };
   var abre = function(x){ if(x.tipo==="separar") ir({tipo:"separar", id:x.id}); else if(x.tipo==="reposicao" && x.canal==="entrega") ir({tipo:"ficha", id:x.id}); else ir({tipo:"detalhe", id:x.id}); };
   var minDe = function(x){ return x.tipo==="separar" ? (x.mudou ? Math.max(0, Math.round(minutosDe(agora)-minutosDe(x.mudou))) : null) : minutosNaEtapa(x, agora); };
@@ -108,7 +144,7 @@ function AbaEncomendas(){
   var abertos = todos.filter(function(x){ return !FINAIS[x.status]; }).length, atrasados = todos.filter(atrasado).length;
   // quadro: uma coluna por etapa (todas, mesmo vazias), todas no mesmo azul; "cancelado" junta recusado e cancelado
   var estaEtapa = function(x, k){ return k==="cancelado" ? (x.status==="cancelado" || x.status==="recusado") : x.status===k; };
-  var PRINCIPAL = ["novo", "comprovante", "separando", "bipagem", "liberado", "rota", "condicional", "concluido", "cancelado"];
+  var PRINCIPAL = ["novo", "aceite", "separando", "comprovante", "bipagem", "liberado", "rota", "condicional", "concluido", "cancelado"];
   var ordem = FLUXO.concat(["cancelado"]), vis = ordem.filter(function(k){ return PRINCIPAL.indexOf(k)>=0 || todos.some(function(x){ return estaEtapa(x, k); }); });
   var colunas = vis.map(function(k){
     var it = todos.filter(function(x){ return estaEtapa(x, k); }), atrC = it.filter(atrasado).length, lim = k==="concluido" || k==="cancelado" ? LIMITE_FIM : LIMITE_COLUNA;
@@ -141,24 +177,25 @@ function AbaEncomendas(){
   // faixa azul única: visão, filtros do quadro (só no quadro), números do dia à direita e os botões
   // faixa azul única, numa linha só e com letra de 11 px: visão e filtros à esquerda, o título da tela no meio, números do dia e botões à direita
   var tituloTela = {quadro:"Funil de pedidos", rota:"Rota do João", planilha:"Planilha de pedidos", revendedoras:"Revendedoras"}[modo];
-  var faixa = e("div",{className:"flex items-center gap-2 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-[11px] text-white"},
-    e("div",{className:"flex min-w-0 flex-1 items-center gap-1.5"},
-      e("select",{"aria-label":"Visão", value:modo, onChange:function(ev){ mo[1](ev.target.value); }, className:SEL_F+" w-28"}, [["quadro", "Quadro"], ["rota", "Rota do João"], ["planilha", "Planilha"], ["revendedoras", "Revendedoras"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
-      modo==="quadro" && seletorF("Canal", f.canal, function(v){ set("canal", v); }, CANAIS.concat([["separar", "Separar peças"]])),
+  // FAIXA AZUL (Marcus, 17/11/2026: "tudo gigante, uma bagunça: diminui, centraliza"): título no meio, e embaixo uma linha só, centralizada, com as escolhas, os números e os botões
+  var faixa = e("div",{className:"flex flex-col items-center gap-1 border-b-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1.5 text-[11px] text-white"},
+    e("h2",{className:"whitespace-nowrap text-[13px] font-bold uppercase leading-tight"}, tituloTela),
+    e("div",{className:"flex flex-wrap items-center justify-center gap-1.5"},
+      e("select",{"aria-label":"Visão", value:modo, onChange:function(ev){ mo[1](ev.target.value); }, className:SEL_F+" w-24"}, [["quadro", "Quadro"], ["rota", "Rota do João"], ["planilha", "Planilha"], ["revendedoras", "Revendedoras"]].map(function(o){ return e("option",{key:o[0], value:o[0]}, o[1]); })),
+      modo==="quadro" && seletorF("Canal", f.canal, function(v){ set("canal", v); }, CANAIS),
       modo==="quadro" && seletorF("Responsável", f.resp, function(v){ set("resp", v); }, resps.map(function(n){ return [n, n]; })),
       modo==="quadro" && seletorF("Grupo", f.grupo, function(v){ set("grupo", v); }, [["top50", "Top 50"], ["demais", "Demais"]]),
-      modo==="quadro" && seletorF("Assunto", f.tipo, function(v){ set("tipo", v); }, [["reposicao", "Reposição"], ["encomenda", "Encomenda"], ["separar", "Separar peças"]]),
-      modo==="quadro" && ativo && e("button",{type:"button", onClick:function(){ ft[1](VAZIO_F); }, className:BTN_F}, "Limpar")),
-    e("h2",{className:"shrink-0 whitespace-nowrap text-[13px] font-bold uppercase leading-tight"}, tituloTela),
-    e("div",{className:"flex min-w-0 flex-1 flex-wrap items-center justify-end gap-1.5"},
-      e("span",{className:"whitespace-nowrap text-[11px] tabular-nums"}, "Em aberto ", e("b",null, String(abertos)), " · Atrasados ", e("b",{className:atrasados>0 ? "text-[var(--negativo)]" : ""}, String(atrasados)), " · Sem comprovante ", e("b",{className:ind.semComprovante>0 ? "text-[var(--negativo)]" : ""}, String(ind.semComprovante))),
-      e("button",{type:"button", onClick:function(){ ir({tipo:"separar", id:null}); }, className:BTN_F}, "Separar peças"),
+      modo==="quadro" && seletorF("Assunto", f.tipo, function(v){ set("tipo", v); }, [["reposicao", "Reposição"], ["encomenda", "Encomenda"]]),
+      modo==="quadro" && ativo && e("button",{type:"button", onClick:function(){ ft[1](VAZIO_F); }, className:BTN_F}, "Limpar"),
+      e("span",{className:"mx-1 whitespace-nowrap text-[11px] tabular-nums"}, "Em aberto ", e("b",null, String(abertos)), " · Atrasados ", e("b",{className:atrasados>0 ? "text-[var(--negativo)]" : ""}, String(atrasados)), " · Sem comprovante ", e("b",{className:ind.semComprovante>0 ? "text-[var(--negativo)]" : ""}, String(ind.semComprovante))),
+      e("button",{type:"button", onClick:function(){ ir({tipo:"link"}); }, className:BTN_F}, "Link do pedido"),
       e("button",{type:"button", onClick:function(){ ir({tipo:"nova"}); }, className:BTN_F+" !bg-white !text-[#14233f]"}, "Nova solicitação")));
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     e(BlocoPainel,{titulo:"Funil de pedidos", compacto:true, semBarra:true},
       faixa,
       modo==="revendedoras" ? e(PlanilhaRev,{E:E, ir:ir}) : modo==="planilha" ? planilha : modo==="rota" ? rota : quadro),
     modal && modal.tipo==="ficha" && e(FichaPedido,{E:E, id:modal.id, ir:ir, fechar:function(){ ir(null); }}),
+    modal && modal.tipo==="link" && e(LinkPedido,{E:E, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="nova" && e(NovaSolicitacao,{E:E, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="novo" && e(NovoPedido,{E:E, fechar:function(){ ir(null); }}),
     modal && modal.tipo==="separar" && (modal.id===null || itemSep) && e(JanelaSeparar,{key:modal.id || "novo", E:E, item:itemSep || null, resps:resps, fechar:function(){ ir(null); }}),

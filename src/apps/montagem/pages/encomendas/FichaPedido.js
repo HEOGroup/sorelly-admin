@@ -52,12 +52,12 @@ var BTN_V ="h-8 min-w-24 max-w-full rounded-md border border-[#f87171]/60 bg-[#f
 // moldura: cartão largo, barra azul no topo (com o botão Editar) e fundo em degradê simples
 function Moldura(p){
   return e("div",{className:"fixed inset-0 z-50 grid place-items-center bg-black/60 p-3", onClick:p.fechar},
-    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"flex h-[min(94vh,960px)] w-full max-w-[1480px] flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 58%)"}},
+    e("div",{onClick:function(ev){ ev.stopPropagation(); }, className:"flex h-[min(94vh,960px)] w-full max-w-[1580px] flex-col overflow-hidden rounded-xl border-2 border-[var(--bloco-titulo)] shadow-2xl", style:{background:"linear-gradient(180deg, #1d2c4d 0%, #12151c 58%)"}},
       e("div",{className:"relative flex shrink-0 items-center justify-center bg-[var(--bloco-titulo)] px-24 py-1 text-white"},
         e("h2",{className:"text-[11px] font-bold uppercase leading-tight"}, p.t),
         e("button",{type:"button", onClick:p.fechar, "aria-label":"Fechar", className:"absolute right-2 top-1/2 grid size-5 -translate-y-1/2 place-items-center rounded text-[13px] font-bold leading-none hover:bg-white/15"}, "×")),
       // esquerda FIXA (revendedora, andamento e ações) e direita que rola (pedido × peças, fotos, histórico)
-      e("div",{className:"grid min-h-0 flex-1 gap-2.5 p-2.5 lg:grid-cols-[300px_minmax(0,1fr)]"},
+      e("div",{className:"grid min-h-0 flex-1 gap-2.5 py-2.5 pl-1.5 pr-2.5 lg:grid-cols-[256px_minmax(0,1fr)]"},
         e("div",{className:"flex min-h-0 flex-col gap-2 overflow-y-auto [&>*]:shrink-0"}, p.colunas[0]),
         // direita: o pedido dela fica FIXO no topo (texto + fotos com zoom); embaixo, o trabalho rola
         e("div",{className:"flex min-h-0 min-w-0 flex-col gap-2"}, p.fixoDir,
@@ -67,14 +67,14 @@ function Moldura(p){
 function Caixa(p){
   return e("section",{className:"overflow-hidden rounded-lg border border-white/20 bg-black/20 shadow-[0_0_0_.5px_rgba(255,255,255,.55)]"},
     e("h3",{onClick:p.aoTitulo, className:"flex items-center justify-between gap-2 bg-[var(--bloco-colunas)] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[.05em]"+(p.aoTitulo ? " cursor-pointer select-none hover:brightness-125" : "")}, e("span",null, p.t), p.dir),
-    e("div",{className:"px-2.5 py-2"+(p.grade ? " grid items-start gap-x-6 gap-y-1.5 sm:grid-cols-2" : "")}, p.children));
+    p.semCorpo ? null : e("div",{className:"px-2.5 py-2"+(p.grade ? " grid items-start gap-x-6 gap-y-1.5 sm:grid-cols-2" : "")}, p.children));
 }
 function Par(p){ return e("div",{className:"flex justify-between gap-3.5 border-b border-white/20 py-[3px] last:border-b-0 "+(p.leve ? "text-[11px]" : "text-[13px]")}, e("span",{className:p.leve ? "" : "font-medium"}, p.t),e("span",{className:"text-right tabular-nums "+(p.cor || "")}, p.v)); }
 
 // nota da foto (só no modo Editar): grava ao sair do campo
 function NotaFoto(p){
   var st = useState(null), v = st[0], atual = p.v || "";
-  return e("input",{type:"text", value:v===null ? atual : v, placeholder:"O que é", "aria-label":"Nota da foto", onChange:function(ev){ st[1](ev.target.value); }, onBlur:function(){ if(v!==null && v!==atual) p.on(v); st[1](null); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.currentTarget.blur(); }, className:CAMPO});
+  return e("input",{type:"text", value:v===null ? atual : v, placeholder:"O que é", "aria-label":"Nota da foto", onChange:function(ev){ st[1](ev.target.value); }, onBlur:function(){ if(v!==null && v!==atual) p.on(v); st[1](null); if(p.fim) p.fim(); }, onKeyDown:function(ev){ if(ev.key==="Enter") ev.currentTarget.blur(); }, autoFocus:!!p.auto, className:CAMPO+" w-full px-2 text-[11px]!"});
 }
 
 function frase(t){ var x = String(t || "").toLowerCase().replace(/\b(folhead[oa]s?|banhad[oa]s?)\b/g, " ").replace(/\s+/g, " ").trim(); return x.charAt(0).toUpperCase()+x.slice(1); }   // REGRA (Marcus, 17/11/2026): nome da peça em letra normal e SEM "folheado" nem "banhado" (todas são, não precisa escrever)
@@ -127,10 +127,12 @@ function PecasSeparadas(p){
   // cartão da peça: foto, código, preço e o resultado (igual ou parecido)
   var cartao = function(y, cor){
     var nLig = (p.fotos || []).findIndex(function(ft){ return ft.key===y.foto; }), emLigacao = p.ligando===y.cod;
+    var sg = p.sug && p.sug[y.cod], nSug = sg ? (p.fotos || []).findIndex(function(ft){ return ft.key===sg.key; }) : -1;
     return e("div",{key:y.cod, draggable:true, onDragStart:function(ev){ ev.dataTransfer.setData("text/plain", "peca:"+y.cod); ev.dataTransfer.effectAllowed = "link"; }, title:(y.desc ? frase(y.desc) : "Sem nome")+" · arraste até a foto dela para ligar", className:"flex min-w-0 cursor-grab flex-col overflow-hidden rounded-md border bg-black/30 shadow-[0_0_0_.5px_rgba(255,255,255,.55)] "+(emLigacao ? "border-[#E8B84B]" : "border-white/20")},
       e("div",{className:"relative"}, y.anexo ? e(Foto,{k:y.anexo, cls:"block h-auto w-full", alt:"Foto da peça "+y.cod}) : e(FotoDm,{cod:y.cod, cls:"block h-auto min-h-[120px] w-full", alt:"Peça "+y.cod}),
         (p.fotos || []).length>0 && (nLig>=0
           ? e("button",{type:"button", title:"Desmarcar: tirar a ligação com a Foto "+(nLig+1), onClick:function(){ p.exec("ped_peca_edit", {id:x.id, cod:y.cod, foto:""}); }, style:{background:cor+"88", textShadow:"0 1px 2px rgba(0,0,0,.6)"}, className:"absolute bottom-1 right-1 h-5 rounded-[4px] px-1.5 text-[11px] font-bold leading-none text-white hover:brightness-125"}, "Foto "+(nLig+1)+" ✕")
+          : (nSug>=0 && !emLigacao) ? e("button",{type:"button", title:"Sugestão da IA ("+(sg.conf==="alta" ? "alta" : sg.conf==="media" ? "média" : "baixa")+" confiança): clique para ligar à Foto "+(nSug+1), onClick:function(){ p.aceitarSug(y.cod); }, style:{background:"#4ade80cc", color:"#14233f"}, className:"absolute bottom-1 right-1 h-5 rounded-[4px] px-1.5 text-[11px] font-bold leading-none hover:brightness-110"}, "Foto "+(nSug+1)+" ✓"+(sg.conf==="alta" ? "" : "?"))
           : e("button",{type:"button", title:"Marcar: ligar esta peça a uma foto dela", onClick:function(){ p.setLigando(emLigacao ? "" : y.cod); }, style:{background:emLigacao ? "#E8B84Bdd" : cor+"88", textShadow:emLigacao ? "none" : "0 1px 2px rgba(0,0,0,.6)", color:emLigacao ? "#14233f" : "#fff"}, className:"absolute bottom-1 right-1 h-5 rounded-[4px] px-1.5 text-[11px] font-bold leading-none hover:brightness-125"}, emLigacao ? "Cancelar" : "Ligar")),
         // código e preço dentro da foto, no canto de baixo
         e("span",{style:{background:cor+"88", textShadow:"0 1px 2px rgba(0,0,0,.6)"}, className:"absolute bottom-1 left-1 rounded-[4px] px-1.5 py-0.5 text-[11px] font-bold leading-tight text-white"}, y.cod+" · "+(y.preco ? formatarReais(y.preco) : "Sem preço"))),
@@ -148,12 +150,12 @@ function PecasSeparadas(p){
       edita && e("button",{type:"button", onClick:function(){ p.exec("ped_peca_del", {id:x.id, cod:y.cod}); }, className:"h-8 w-full rounded-md border border-border bg-card text-[11px] hover:bg-white/10"}, "Tirar"));
   };
   var grupos = agruparPecas(pecas);
-  return e(Caixa,{t:"Peças separadas", dir:e("span",{className:"text-[11px]"}, pecas.length+" peças · "+formatarReais(soma))},
-    e("div",{className:"flex flex-col gap-1 pb-2"},
-      e("div",{className:"flex items-center gap-2"},
-        e("input",{type:"text", value:v.txt, placeholder:"Código da peça separada, ex.: BB0512 (Enter busca; pode colar vários)", "aria-label":"Código da peça separada", autoComplete:"off", onChange:function(ev){ set("txt", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter" && v.txt.trim() && !v.busca){ ev.preventDefault(); buscar(); } }, className:CAMPO+" min-w-0 flex-1 uppercase placeholder:normal-case"}),
-        e(Botao,{desabilitado:!v.txt.trim() || v.busca, onClick:buscar}, v.busca ? "Buscando" : "Buscar")),
-      v.aviso && e("span",{className:"text-[11px] leading-tight"}, v.aviso)),
+  var campo = e("span",{className:"flex items-center gap-1.5 font-normal normal-case tracking-normal"},
+    v.aviso && e("span",{className:"max-w-[320px] text-right text-[11px] leading-tight"}, v.aviso),
+    e("input",{type:"text", value:v.txt, placeholder:"Código da peça (Enter)", title:"Digite o código e aperte Enter; pode colar vários de uma vez", "aria-label":"Código da peça separada", autoComplete:"off", onChange:function(ev){ set("txt", ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter" && v.txt.trim() && !v.busca){ ev.preventDefault(); buscar(); } }, className:CAMPO+" w-[190px] px-2 text-[11px]! uppercase placeholder:normal-case"}),
+    e("button",{type:"button", disabled:!v.txt.trim() || v.busca, onClick:buscar, className:"h-8 rounded-md border border-border bg-card px-2.5 text-[11px] font-bold hover:bg-white/10 disabled:opacity-50"}, v.busca ? "Buscando" : "Buscar"),
+    pecas.length>0 && e("span",{className:"ml-1 text-[11px] font-bold"}, pecas.length+" peças · "+formatarReais(soma)));
+  return e(Caixa,{t:"Peças separadas", dir:campo, semCorpo:grupos.length===0},
     grupos.length>0 ? e("div",{className:"flex flex-col gap-2"}, grupos.map(function(g){
       var valor = g.pecas.reduce(function(t, y){ return t+(y.preco || 0); }, 0);
       var semFoto = g.pecas.filter(function(y){ return !y.anexo && mapa[y.cod]===false; }), comFoto = g.pecas.filter(function(y){ return y.anexo || mapa[y.cod]!==false; });
@@ -166,7 +168,7 @@ function PecasSeparadas(p){
           semFoto.length>0 && e("div",{className:"flex min-w-0 flex-col rounded-md border px-2 py-1", style:{borderColor:cor+"99", boxShadow:"0 0 0 .5px "+cor+"cc", background:"linear-gradient(180deg, "+cor+"26 0%, "+cor+"0d 100%)"}},
             e("div",{className:"pb-1 text-[11px] font-bold", style:{color:cor}}, "Sem foto ("+semFoto.length+")"),
             semFoto.map(function(y){ return linhaSem(y, cor); }))));
-    })) : e("span",{className:"text-[11px]"}, "Nenhuma peça separada ainda. Cole os códigos acima."));
+    })) : null);
 }
 
 // anexo do servidor (foto que ela mandou) como data URL, para o PDF; arquivo grande vem em pedaços
@@ -242,7 +244,7 @@ function FichaPedido(p){
   // ESQUERDA FIXA (Marcus, 17/11/2026, estilo C): revendedora com foto pequena ao lado dos dados; embaixo Andamento e Ações
   var perfil = fotoDaRevendedora(E.er, x.revendedora), iniciais = String(x.revendedora || "").split(" ").filter(Boolean).slice(0, 2).map(function(w){ return w.charAt(0).toUpperCase(); }).join("");
   var avatar = e("div",{key:"av", className:"flex w-full shrink-0 flex-col gap-1"},
-    perfil ? e("button",{type:"button", title:"Abrir a foto", onClick:function(){ abrirAnexo(perfil.key); }, className:"block overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:perfil.key, cls:"block aspect-square w-full object-cover", alt:"Foto de "+x.revendedora}))
+    perfil ? e("button",{type:"button", title:"Abrir a foto", onClick:function(){ abrirAnexo(perfil.key); }, className:"block w-full overflow-hidden rounded-lg border border-white/30"}, e(Foto,{k:perfil.key, cls:"block aspect-square w-full object-cover", alt:"Foto de "+x.revendedora}))
       : e("div",{className:"grid aspect-square w-full place-items-center rounded-lg border border-dashed border-white/40 text-[13px] font-bold"}, iniciais),
     edita && e("label",{className:"inline-flex h-8 cursor-pointer items-center justify-center rounded-md border border-border bg-card px-1 text-[11px] hover:bg-white/10"}, perfil ? "Trocar foto" : "Colocar foto", e("input",{type:"file", accept:"image/*", className:"hidden", onChange:function(ev){ enviarPerfil(ev.target.files); ev.target.value = ""; }})),
     edita && perfil && e("button",{type:"button", onClick:function(){ E.exec("perfil_foto_del", {nome:x.revendedora}); }, className:"h-8 rounded-md border border-border bg-card px-1 text-[11px] hover:bg-white/10"}, "Tirar foto"));
@@ -255,40 +257,63 @@ function FichaPedido(p){
           e("select",{value:x.responsavel || "", "aria-label":"Quem atende", onChange:function(ev){ if(ev.target.value) E.exec("ped_responsavel", {id:x.id, responsavel:ev.target.value}); }, className:"h-8 min-w-0 rounded-md border border-border bg-card px-2 text-[11px]"}, [""].concat(resps).map(function(n){ return e("option",{key:n, value:n}, n || "Escolher"); })))
         : e(Par,{leve:true, t:"Quem atende", v:x.responsavel || "—"}),
       e(Par,{leve:true, t:"Aberto em", v:String(formatarDataHora(x.criadoEm)).split(" ")[0]+" · "+x.criadoPor}),
-      x.observacao && e(Par,{leve:true, t:"Pediu", v:x.observacao})));
+      x.observacao && e(Par,{leve:true, t:"Pediu", v:x.observacao}),
+      x.enderecoEntrega && e("div",{className:"border-b border-white/20 py-[3px] text-[11px] leading-snug"}, e("b",null, "Entrega: "), x.enderecoEntrega, x.horarioEntrega ? " · "+x.horarioEntrega : "")));
 
   // LIGAÇÕES (Marcus, 17/11/2026): cada foto que ela mandou mostra as peças que a funcionária ligou a ela (arrastando a peça até a foto, ou pelo botão Ligar da peça)
+  var sugerir = function(){
+    if(v.sugBusy) return;
+    var livres = (x.pecas || []).filter(function(y){ return !y.foto; }).slice(0, 40);
+    if(!fotos.length || !livres.length){ set("sugMsg", !fotos.length ? "Ela não mandou fotos." : "Todas as peças já estão ligadas."); return; }
+    set("sugBusy", true); set("sugMsg", "A IA está comparando as fotos…");
+    var extras = {}; livres.forEach(function(y){ if(y.anexo) extras[y.cod] = y.anexo; });
+    chamar("POST", "/encomendas/casar", {fotos:fotos.map(function(ft){ return {id:ft.key, rev:x.revendedora, key:ft.key}; }), pecas:livres.map(function(y){ return {cod:y.cod, desc:y.desc || ""}; }), extras:extras}).then(function(r){
+      var sg = {}, n = 0;
+      (r.resultados || []).forEach(function(z){
+        if(z.cod){ sg[z.cod] = {key:z.key, conf:z.confianca || "baixa"}; n++; }
+        (z.alternativas || []).forEach(function(c){ var cc = String(c || "").toUpperCase(); if(cc && !sg[cc] && livres.some(function(y){ return y.cod===cc; })){ sg[cc] = {key:z.key, conf:"baixa"}; n++; } });
+      });
+      st[1](function(o){ var m = Object.assign({}, o); m.sug = sg; m.sugBusy = false; m.sugMsg = n ? n+" sugestões: clique em Foto n ✓ na peça, ou em Aceitar todas." : "A IA não achou ligações."; return m; });
+    }, function(err){ st[1](function(o){ var m = Object.assign({}, o); m.sugBusy = false; m.sugMsg = err && err.message ? err.message : "A IA não respondeu."; return m; }); });
+  };
+  var nSugs = Object.keys(v.sug || {}).filter(function(k){ return v.sug[k]; }).length;
+  var aceitarTodas = function(){ var sg = v.sug || {}; Object.keys(sg).forEach(function(cod){ if(sg[cod] && sg[cod].conf!=="baixa") ref.current.exec("ped_peca_edit", {id:p.id, cod:cod, foto:sg[cod].key}); }); set("sug", {}); set("sugMsg", ""); };
   var ligar = function(cod, key){ ref.current.exec("ped_peca_edit", {id:p.id, cod:cod, foto:key}); set("ligando", ""); };
 
   var itens = x.itens || [];
 
-  var pecasBloco = e(PecasSeparadas,{x:x, edita:edita, fotos:fotos, ligando:v.ligando || "", setLigando:function(c){ set("ligando", c); }, enviarFoto:enviarPecaFoto, exec:function(op, a){ return ref.current.exec(op, a); }});
+  var pecasBloco = e(PecasSeparadas,{x:x, edita:edita, fotos:fotos, sug:v.sug || {}, aceitarSug:function(cod){ var g = (v.sug || {})[cod]; if(g) ligar(cod, g.key); set("sug", Object.assign({}, v.sug, (function(){ var o = {}; o[cod] = undefined; return o; })())); }, ligando:v.ligando || "", setLigando:function(c){ set("ligando", c); }, enviarFoto:enviarPecaFoto, exec:function(op, a){ return ref.current.exec(op, a); }});
   var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, pecasBloco);
 
   // NO TOPO (fixo): o que ela pediu em texto (uma linha por item) e as fotos que ela mandou, com botões para aumentar ou diminuir
   var TAMANHOS = [56, 80, 112, 160, 220], iz = v.zoom===undefined ? 3 : v.zoom, lado = TAMANHOS[iz];
   var zoom = function(d){ set("zoom", Math.max(0, Math.min(TAMANHOS.length-1, iz+d))); };
   var btnZ = "grid size-8 place-items-center rounded-md border border-border bg-card text-[13px] font-bold hover:bg-white/10 disabled:opacity-40";
-  var fixoDir = e(Caixa,{t:"O que ela pediu", dir:e("span",{className:"flex items-center gap-1.5 text-[11px] font-normal normal-case tracking-normal"}, v.ligando && e("span",{className:"mr-2 font-bold text-[#E8B84B]"}, "Ligando "+v.ligando+": clique na foto dela ou arraste a peça"), v.ligando && (x.pecas || []).some(function(y){ return y.cod===v.ligando && y.foto; }) && e("button",{type:"button", onClick:function(){ ligar(v.ligando, ""); }, className:"mr-2 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Desligar"), v.ligando && e("button",{type:"button", onClick:function(){ set("ligando", ""); }, className:"mr-3 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Cancelar"), "Tamanho das fotos",
+  var fixoDir = e(Caixa,{t:"O que ela pediu", dir:e("span",{className:"flex items-center gap-1.5 text-[11px] font-normal normal-case tracking-normal"}, v.ligando && e("span",{className:"mr-2 font-bold text-[#E8B84B]"}, "Ligando "+v.ligando+": clique na foto dela ou arraste a peça"), v.ligando && (x.pecas || []).some(function(y){ return y.cod===v.ligando && y.foto; }) && e("button",{type:"button", onClick:function(){ ligar(v.ligando, ""); }, className:"mr-2 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Desligar"), v.ligando && e("button",{type:"button", onClick:function(){ set("ligando", ""); }, className:"mr-3 h-8 rounded-md border border-border bg-card px-2 text-[11px]"}, "Cancelar"), v.sugMsg && e("span",{className:"mr-2 max-w-[360px] text-right"}, v.sugMsg), nSugs>0 && e("button",{type:"button", onClick:aceitarTodas, title:"Liga só as de confiança alta ou média; as com ? você confirma uma a uma", className:"mr-2 h-8 rounded-md border border-[#4ade80] bg-[#4ade80]/15 px-2 text-[11px] font-bold text-[#bbf7d0]"}, "Aceitar todas"), e("button",{type:"button", disabled:!!v.sugBusy, onClick:sugerir, title:"A IA compara as fotos dela com as peças e sugere a ligação; quem confirma é você", className:"mr-3 h-8 rounded-md border border-border bg-card px-2 text-[11px] font-bold hover:bg-white/10 disabled:opacity-50"}, v.sugBusy ? "Analisando…" : "Sugerir ligações (IA)"), "Tamanho das fotos",
       e("button",{type:"button", "aria-label":"Diminuir as fotos", disabled:iz===0, onClick:function(){ zoom(-1); }, className:btnZ}, "−"),
       e("button",{type:"button", "aria-label":"Aumentar as fotos", disabled:iz===TAMANHOS.length-1, onClick:function(){ zoom(1); }, className:btnZ}, "+"))},
-    e("div",{className:"grid max-h-[250px] gap-3 overflow-y-auto md:grid-cols-[230px_minmax(0,1fr)]"},
-      e("div",{className:"flex min-w-0 flex-col"}, itens.length ? itens.map(function(i, n){ return e("div",{key:i.id, className:"flex items-center justify-between gap-2 border-b border-white/20 py-[3px] text-[13px] last:border-b-0"}, e("span",{className:"min-w-0"}, (n+1)+". "+i.txt), edita && e("button",{type:"button", "aria-label":"Tirar item", onClick:function(){ E.exec("ped_item_del", {id:x.id, item:i.id}); }, className:"grid size-8 shrink-0 place-items-center rounded-md hover:bg-white/10"}, "×")); }) : e("span",{className:"text-[11px]"}, "Nenhum item anotado. Use Editar para anotar o que ela pediu."),
+    e("div",{className:"grid max-h-[250px] gap-3 overflow-y-auto md:grid-cols-[190px_minmax(0,1fr)]"},
+      e("div",{className:"flex min-w-0 flex-col"}, itens.length ? itens.map(function(i, n){ return e("div",{key:i.id, className:"flex items-center justify-between gap-2 border-b border-white/20 py-[2px] text-[11px] leading-tight last:border-b-0"}, e("span",{className:"min-w-0"}, (n+1)+". "+i.txt), edita && e("button",{type:"button", "aria-label":"Tirar item", onClick:function(){ E.exec("ped_item_del", {id:x.id, item:i.id}); }, className:"grid size-8 shrink-0 place-items-center rounded-md hover:bg-white/10"}, "×")); }) : e("span",{className:"text-[11px]"}, "Nenhum item anotado. Use Editar para anotar o que ela pediu."),
         x.observacao && e("div",{className:"mt-1 text-[11px]"}, "Pediu: "+x.observacao),
         edita && e("div",{className:"mt-2 flex flex-col gap-1.5"},
           e("textarea",{value:v.itens, rows:2, placeholder:"Novo item do pedido (um por linha)", "aria-label":"O que ela pediu", onChange:function(ev){ set("itens", ev.target.value); }, className:AREA}),
           e("div",{className:"flex justify-end"}, e(Botao,{desabilitado:!v.itens.trim(), onClick:function(){ if(E.exec("ped_item_add", {id:x.id, txt:v.itens})) set("itens", ""); }}, "Anotar itens")))),
-      e("div",{className:"grid min-w-0 content-start gap-1.5", style:{gridTemplateColumns:"repeat(4,minmax(0,"+lado+"px))"}}, fotos.length ? fotos.map(function(f, n){
+      e("div",{className:"grid min-w-0 content-start items-start gap-1.5", style:{gridTemplateColumns:"repeat(5,minmax(0,"+lado+"px))"}}, fotos.length ? fotos.map(function(f, n){
         var qtd = (x.pecas || []).filter(function(y){ return y.foto===f.key; }).length;
-        return e("div",{key:f.key, className:"relative min-w-0"}, e("button",{type:"button", title:v.ligando ? "Ligar "+v.ligando+" a esta foto" : (f.nota || "Abrir a foto"), onClick:function(){ if(v.ligando) ligar(v.ligando, f.key); else abrirAnexo(f.key); },
-            onDragOver:function(ev){ ev.preventDefault(); }, onDrop:function(ev){ ev.preventDefault(); var t = ev.dataTransfer.getData("text/plain"); if(t.indexOf("peca:")===0) ligar(t.slice(5), f.key); },
-            className:"relative block min-w-0 overflow-hidden rounded-md border-2 bg-black "+(v.ligando ? "border-[#E8B84B]" : "border-white/25")},
-          e("div",{className:"aspect-square w-full"}, e(Foto,{k:f.key, cls:"block size-full object-cover", alt:f.nota || "Foto que ela mandou"})),
-          e("span",{className:"absolute left-1 top-1 rounded-[4px] bg-black/75 px-1 text-[11px] font-bold leading-tight"}, "Foto "+(n+1)),
-          qtd>0 && e("span",{className:"absolute bottom-1 right-1 rounded-[4px] border border-[#4ade80] bg-black/75 px-1 text-[11px] font-bold leading-tight text-[#bbf7d0]"}, qtd+(qtd===1 ? " peça" : " peças"))),
-          edita && e("button",{type:"button", "aria-label":"Tirar esta foto", title:"Tirar esta foto", onClick:function(){ E.exec("ped_foto_del", {id:x.id, key:f.key}); }, className:"absolute right-1 top-1 grid size-6 place-items-center rounded-[4px] border border-white/50 bg-black/80 text-[13px] font-bold leading-none hover:bg-black"}, "×")); })
+        var editaNota = edita && v.notaEd===f.key;
+        return e("div",{key:f.key, className:"relative min-w-0 overflow-hidden rounded-md border border-white/25 bg-black/30"},
+          e("button",{type:"button", title:v.ligando ? "Ligar "+v.ligando+" a esta foto" : "Abrir a foto", onClick:function(){ if(v.ligando) ligar(v.ligando, f.key); else abrirAnexo(f.key); },
+              onDragOver:function(ev){ ev.preventDefault(); }, onDrop:function(ev){ ev.preventDefault(); var t = ev.dataTransfer.getData("text/plain"); if(t.indexOf("peca:")===0) ligar(t.slice(5), f.key); },
+              className:"relative block w-full bg-black "+(v.ligando ? "outline outline-2 outline-[#E8B84B]" : "")},
+            e("div",{className:"aspect-square w-full"}, e(Foto,{k:f.key, cls:"block size-full object-cover", alt:f.nota || "Foto que ela mandou"})),
+            e("span",{className:"absolute left-1 top-1 rounded-[4px] bg-black/75 px-1 text-[11px] font-bold leading-tight"}, "Foto "+(n+1)),
+            qtd>0 && e("span",{className:"absolute bottom-1 right-1 rounded-[4px] border border-[#4ade80] bg-black/75 px-1 text-[11px] font-bold leading-tight text-[#bbf7d0]"}, qtd+(qtd===1 ? " peça" : " peças"))),
+          edita && e("button",{type:"button", "aria-label":"Tirar esta foto", title:"Tirar esta foto", onClick:function(){ E.exec("ped_foto_del", {id:x.id, key:f.key}); }, className:"absolute right-1 top-1 grid size-6 place-items-center rounded-[4px] border border-white/50 bg-black/80 text-[13px] font-bold leading-none hover:bg-black"}, "×"),
+          // bloco do texto, do mesmo tamanho da foto; só aparece se tiver texto (ou no Editar, para escrever)
+          editaNota ? e("div",{className:"p-1"}, e(NotaFoto,{v:f.nota, auto:true, fim:function(){ set("notaEd", ""); }, on:function(y){ E.exec("ped_foto_edit", {id:x.id, key:f.key, nota:y}); }}))
+            : /* padrao-ok: Marcus pediu 1 px menor (17/11/2026) */ (f.nota || edita) ? e(edita ? "button" : "div", {type:edita ? "button" : undefined, onClick:edita ? function(){ set("notaEd", f.key); } : undefined, title:edita ? "Clique para escrever" : undefined, className:"block min-h-[38px] w-full bg-white/[.07] py-1.5 pl-3 pr-2 text-left text-[10px] leading-tight"+(edita ? " hover:bg-white/[.12]" : "")}, f.nota || "Escrever texto") : null); })
         : e("span",{className:"text-[11px]"}, "Sem fotos. Use Editar para adicionar."),
-        (edita || !fotos.length) && e("label",{title:"Escolha do computador ou cole com Ctrl+V", className:"col-span-4 inline-flex h-8 w-fit cursor-pointer items-center justify-center rounded-md border border-dashed border-white/40 px-3 text-[11px] hover:bg-white/10"}, "Adicionar fotos",
+        (edita || !fotos.length) && e("label",{title:"Escolha do computador ou cole com Ctrl+V", className:"col-span-5 inline-flex h-8 w-fit cursor-pointer items-center justify-center rounded-md border border-dashed border-white/40 px-3 text-[11px] hover:bg-white/10"}, "Adicionar fotos",
           e("input",{type:"file", accept:"image/*", multiple:true, className:"hidden", onChange:function(ev){ enviar(ev.target.files); ev.target.value = ""; }})))));
 
   // PDF para a revendedora: o que ela pediu, o que separamos (foto, código, nome, preço da DevMaster) e, foto a foto, o que achamos
@@ -317,14 +342,24 @@ function FichaPedido(p){
               e("span",{"aria-hidden":true, className:"size-2.5 shrink-0 rounded-full border-2 "+(feita ? "border-[#4ade80] bg-[#4ade80]" : atual ? "border-[#F5E7BE] bg-[#E8B84B]" : "border-white/50")}), ROTULO_STATUS[k]); })),
           null),
         e("div",{className:"flex min-w-0 flex-col gap-1.5"},
-          !fim && prox && e("button",{type:"button", disabled:(x.status==="comprovante" && x.taxa>0 && !x.comprovante) || (x.status==="bipagem" && entrega && !x.bipado), onClick:function(){ avancarPedido(E, x, p.ir); }, title:(x.status==="comprovante" && x.taxa>0 && !x.comprovante) ? "Falta o comprovante da taxa" : (x.status==="bipagem" && entrega && !x.bipado) ? "Falta bipar as peças" : "", className:btn+"border-primary bg-primary/25 text-primary hover:bg-primary/35 disabled:opacity-60"}, e("span",{className:"flex flex-col items-center leading-tight"}, e("span",{className:"font-semibold"}, "Concluir etapa"), e("span",null, "› "+ROTULO_STATUS[prox]))),
+          !fim && prox && e("button",{type:"button", disabled:(x.status==="comprovante" && x.taxa>0 && !x.comprovante) || (x.status==="aceite" && x.taxa>0 && !x.taxaAceita) || (x.status==="bipagem" && entrega && !x.bipado), onClick:function(){ avancarPedido(E, x, p.ir); }, title:(x.status==="aceite" && x.taxa>0 && !x.taxaAceita) ? "Falta a revendedora aceitar a taxa" : (x.status==="comprovante" && x.taxa>0 && !x.comprovante) ? "Falta o comprovante da taxa" : (x.status==="bipagem" && entrega && !x.bipado) ? "Falta bipar as peças" : "", className:btn+"border-primary bg-primary/25 text-primary hover:bg-primary/35 disabled:opacity-60"}, e("span",{className:"flex flex-col items-center leading-tight"}, e("span",{className:"font-semibold"}, "Concluir etapa"), e("span",null, "› "+ROTULO_STATUS[prox]))),
           entrega && x.status==="bipagem" && !x.bipado && e("button",{type:"button", onClick:function(){ E.exec("ped_bipar", {id:x.id}); }, className:btn+"border-border bg-card hover:bg-white/10"}, "Bipei as peças"),
           entrega && x.bipado && x.status==="bipagem" && e("span",{className:"text-center text-[11px]"}, "Bipado por "+x.bipado.por),
           entrega && (x.status==="condicional" || x.status==="concluido") && e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "avaliacao").split("{nome}").join(primeiro)); }, className:btn+"border-border bg-card hover:bg-white/10"}, "Copiar avaliação"),
+          entrega && (x.status==="novo" || x.status==="aceite") && e("button",{type:"button", disabled:!!v.lk, title:"Gera o link só dela (vale 48 horas) e copia a mensagem para mandar", onClick:function(){
+            set("lk", true); set("lkErro", "");
+            chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:cfg.reposicao.taxa}).then(function(j){
+              copiar(mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(window.location.origin+"/pedido/"+j.id)); set("lk", false);
+            }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
+          }, className:btn+"border-border bg-card hover:bg-white/10 disabled:opacity-50"}, v.lk ? "Gerando link" : "Copiar link do pedido"),
+          v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
           e("button",{type:"button", disabled:!!v.pdf, onClick:baixarPdf, className:btn+"border-border bg-card hover:bg-white/10 disabled:opacity-50"}, v.pdf ? "Montando PDF" : "Baixar PDF"),
           !fim && entrega && E.pode && e("button",{type:"button", onClick:function(){ E.exec("ped_taxa", {id:x.id, isenta:!x.taxaIsenta}); }, className:btn+"border-border bg-card hover:bg-white/10"}, x.taxaIsenta ? "Cobrar taxa" : "Isentar taxa"),
           !fim && e("button",{type:"button", onClick:function(){ p.ir({tipo:"motivo", id:x.id}); }, className:btn+"border-[#f87171]/60 bg-[#f87171]/15 text-[#fecaca] hover:bg-[#f87171]/25"}, "Recusar"))),
-      entrega && e("div",{className:"mt-2 flex items-center justify-between gap-2 border-t border-white/20 pt-1.5 text-[11px]"}, e("span",{className:"font-bold"}, "Taxa de reposição"), e("span",{className:"text-right font-semibold "+taxaCor}, taxaTxt))),
+      entrega && x.status==="aceite" && x.taxa>0 && e("div",{className:"mt-2 flex flex-col gap-1.5"},
+        e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "taxa_aceite").split("{nome}").join(primeiro)); }, className:"h-8 w-full animate-pulse rounded-md border border-[#E8B84B] bg-[#E8B84B]/20 text-[11px] font-bold text-[#F5E7BE]"}, "Copiar msg de taxa"),
+        e("button",{type:"button", onClick:function(){ E.exec("ped_taxa_aceita", {id:x.id}); }, className:"h-8 w-full animate-pulse rounded-md border border-[#4ade80] bg-[#4ade80]/20 text-[11px] font-bold text-[#bbf7d0]"}, "Revendedora aceitou pagar a taxa")),
+      entrega && e("div",{className:"mt-2 flex items-center justify-between gap-2 border-t border-white/20 pt-1.5 text-[11px]"}, e("span",{className:"font-bold"}, "Taxa"), e("span",{className:"text-right font-semibold "+taxaCor}, taxaTxt))),
     precisaPix && e(Caixa,{t:"Pix da taxa"},
       e("div",{className:"flex flex-col items-center gap-1.5 text-[13px]"},
         e("span",{className:"text-center"}, (cfg.pix.recebedor || "Recebedor")+": "+(cfg.pix.tipo ? cfg.pix.tipo+" " : "")+(cfg.pix.chave || "chave não cadastrada")),

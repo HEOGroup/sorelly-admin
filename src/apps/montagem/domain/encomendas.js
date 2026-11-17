@@ -47,22 +47,22 @@ var KIT_ANTIGO = {"finalizado":"Finalizado", "urgente":"Urgente", "finalizar":"P
 function kitDe(r){ var t = String((r && r.sitMont) || "").trim(); if(!t) return "Pendente"; return KIT_ANTIGO[t.toLowerCase()] || t; }
 var COR_TIPO = {reposicao:"#60A5FA", expositor:"#F3D98B", encomenda:"#F97316"};
 var ICONE_TIPO = {reposicao:"arrows-clockwise", expositor:"storefront", encomenda:"package"};
-var STATUS = ["novo", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "liberado", "rota", "condicional", "concluido", "recusado", "cancelado"];
-var ROTULO_STATUS = {novo:"Novo", conferindo:"Conferindo", comprovante:"Aguardando taxa", separando:"Separando", agendado:"Agendado", representante:"Com a representante", atendimento:"Em atendimento", bipagem:"Bipagem", liberado:"Liberado", rota:"Em rota", condicional:"Condicional OK", concluido:"Concluído", recusado:"Recusado", cancelado:"Cancelado"};
-var COR_STATUS = {novo:"#9CA3AF", conferindo:"#38BDF8", comprovante:"#F87171", separando:"#D4A64A", agendado:"#A78BFA", representante:"#34D399", atendimento:"#F472B6", bipagem:"#A3E635", liberado:"#38BDF8", rota:"#FBBF24", condicional:"#2DD4BF", concluido:"#4ADE80", recusado:"#EF4444", cancelado:"#94A3B8"};
+var STATUS = ["novo", "aceite", "conferindo", "comprovante", "separando", "agendado", "representante", "atendimento", "bipagem", "liberado", "rota", "condicional", "concluido", "recusado", "cancelado"];
+var ROTULO_STATUS = {novo:"Novo", aceite:"Confirmar taxa", conferindo:"Conferindo", comprovante:"Aguardando taxa", separando:"Separando", agendado:"Agendado", representante:"Com a representante", atendimento:"Em atendimento", bipagem:"Bipagem", liberado:"Liberado", rota:"Em rota", condicional:"Condicional OK", concluido:"Concluído", recusado:"Recusado", cancelado:"Cancelado"};
+var COR_STATUS = {novo:"#9CA3AF", aceite:"#F59E0B", conferindo:"#38BDF8", comprovante:"#F87171", separando:"#D4A64A", agendado:"#A78BFA", representante:"#34D399", atendimento:"#F472B6", bipagem:"#A3E635", liberado:"#38BDF8", rota:"#FBBF24", condicional:"#2DD4BF", concluido:"#4ADE80", recusado:"#EF4444", cancelado:"#94A3B8"};
 // etapas de cada canal (22/10/2026): o cartão só anda dentro do caminho do seu canal
 var CAMINHOS = {
   // 17/11/2026 (Marcus): entrega pelo João = solicitada pelo Marcus, taxa (só se cobrar), separar, bipar, liberar para o João, rota, condicional assinada e concluir (com a mensagem de avaliação)
-  entrega:["novo", "comprovante", "separando", "bipagem", "liberado", "rota", "condicional", "concluido"],
+  entrega:["novo", "aceite", "separando", "comprovante", "bipagem", "liberado", "rota", "condicional", "concluido"],   // 17/11/2026 (Marcus): na etapa 2 só se pergunta se ela aceita a taxa (trava até aceitar); a taxa é paga DEPOIS de separar
   representante:["novo", "conferindo", "representante", "bipagem", "concluido"],
   empresa:["novo", "conferindo", "agendado", "atendimento", "bipagem", "concluido"],
   encomenda:["novo", "conferindo", "separando", "concluido"],
   padrao:["novo", "conferindo", "separando", "agendado", "concluido"]};
-var FLUXO = ["novo", "conferindo", "comprovante", "separando", "bipagem", "liberado", "rota", "condicional", "agendado", "representante", "atendimento", "concluido"];   // colunas do funil, na ordem
+var FLUXO = ["novo", "aceite", "conferindo", "separando", "comprovante", "bipagem", "liberado", "rota", "condicional", "agendado", "representante", "atendimento", "concluido"];   // colunas do funil, na ordem
 var TRANSICOES = CAMINHOS;
 function caminhoDe(p){
   var c = p.tipo==="encomenda" ? CAMINHOS.encomenda : p.tipo==="reposicao" ? (CAMINHOS[p.canal] || CAMINHOS.padrao) : CAMINHOS.padrao;
-  if(p.tipo==="reposicao" && p.canal==="entrega" && !(p.taxa>0) && p.status!=="comprovante") c = c.filter(function(k){ return k!=="comprovante"; });   // taxa isenta: não passa por Aguardando taxa
+  if(p.tipo==="reposicao" && p.canal==="entrega" && !(p.taxa>0)) c = c.filter(function(k){ return (k!=="comprovante" || p.status==="comprovante") && (k!=="aceite" || p.status==="aceite"); });   // taxa isenta: não passa por Aguardando taxa
   if(p.tipo==="reposicao" && p.canal==="entrega" && p.status==="conferindo") c = [c[0], "conferindo"].concat(c.slice(1));   // pedido que já estava em Conferindo (etapa antiga) segue para a próxima sem travar
   return c;
 }
@@ -419,7 +419,7 @@ function mensagemSolicitacao(config, so, link){
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
   ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
-  ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
+  ["link_pedido", "Link do pedido da revendedora"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
   ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
   var v = (c.valores||[]).slice().sort(function(a, b){ return a.de-b.de; });
@@ -450,6 +450,11 @@ function mensagemPadrao(config, k){
   if(k==="fora_top50") return ["📢 *COMUNICADO*", "", "O setor de *encomendas e reposições* foi *encerrado*.", "", "Não atendemos mais pedidos de *reposição*.", "",
     "As *encomendas* devem ser preenchidas *no aplicativo*, *somente para o novo kit*.", "", "Atendemos somente por *mensagem escrita*. Não enviamos nem ouvimos áudios.", "", "Obrigado pela compreensão. 💛"].join("\n");
   if(k==="recusa") return ["Prezada revendedora, informamos que não foi possível atender à sua solicitação de reposição.", "", "Atendemos somente por *mensagem escrita*. Aguarde o retorno da nossa equipe para novas orientações."].join("\n");
+  if(k==="link_pedido") return ["Oi, {nome}! 💛", "", "Para pedir a sua reposição, preencha o formulário no link abaixo: é só colocar as fotos das peças e escolher dourado, prata ou os dois.", "", "{link}", "", "O link é só seu e vale por *48 horas*. Depois disso ele expira e a gente gera outro. 🙏"].join("\n");
+  if(k==="taxa_aceite") return ["Oi, {nome}! 💛", "", "Antes de separar as suas peças, preciso te avisar: a reposição entregue pelo nosso entregador tem uma taxa de *"+R(r.taxa)+"*.", "",
+    "A taxa só é cobrada *depois* que as peças forem separadas. Se separarmos e enviarmos para você, o valor é pago por Pix antes da entrega.", "",
+    "Este é um setor *exclusivo* e com muita procura: temos *3 funcionários só nele* e um *motorista só para o setor*. A taxa é o que faz o setor funcionar.", "",
+    "Você está de acordo com a taxa? Responda *SIM* para eu separar as suas peças. 🙏"].join("\n");
   if(k==="taxa_pix") return ["💰 *TAXA DA REPOSIÇÃO*", "", "A entrega tem taxa de *"+R(r.taxa)+"*, paga *antes* por Pix.", "",
     "*Chave Pix ("+(px.tipo||"tipo")+"):* "+(px.chave||"informe a chave nas regras"), "*Titular:* "+(px.titular||"—"), "",
     "Depois do pagamento, envie o *comprovante* por mensagem escrita. *Sem o comprovante a reposição não é liberada.*"].join("\n");
@@ -549,6 +554,32 @@ function erReduz(s, a){
       er.pedidos.push(p);
       return ok(formalReg ? "Recusa registrada" : "Pedido registrado");
     }
+    // Pedido por LINK (17/11/2026, Marcus): a revendedora abriu o link do setor (vale 48 h), mandou as fotos com cor e observação curta e aceitou (ou não) a taxa.
+    // Aceitou: já entra em Separando (pula Confirmar taxa). Não aceitou: entra em Confirmar taxa, para a equipe perguntar. linkId evita criar o mesmo pedido duas vezes.
+    case "ped_criar_link": {
+      var Lk = a.pedido || {}; if(!trim(Lk.revendedora)) return recusa("Informe a revendedora.");
+      if(a.linkId && er.pedidos.some(function(x){ return x.linkId===a.linkId; })) return ok("Pedido do link já estava no funil");
+      var fotosL = (a.fotos || []).filter(function(f){ return f && /^an_[a-z0-9]{6,40}$/.test(String(f.key || "")); }).slice(0, 20);
+      var textosL = (a.textos || []).filter(function(t){ return t && trim(t.obs); }).slice(0, 12);
+      if(!fotosL.length && !textosL.length) return recusa("O pedido do link veio sem fotos e sem descrição.");
+      var ehEncL = Lk.tipo==="encomenda", capL = function(c){ return c ? c.charAt(0).toUpperCase()+c.slice(1) : ""; };
+      var descL = ehEncL ? (textosL.length ? trim(textosL[0].obs) : (fotosL[0] && trim(fotosL[0].nota)) || "Encomenda pelo link") : "";
+      var rvL = revPorNome(er, trim(Lk.revendedora));
+      var pLk = {id:"P"+(++er.seq), tipo:ehEncL ? "encomenda" : "reposicao", status:"novo", revendedoraId:rvL ? rvL.id : "", revendedora:trim(Lk.revendedora), representante:trim(Lk.representante), media3m:vazioN(Lk.media3m) ? null : r2(num(Lk.media3m)), maiorVenda:null, valor:0, descricao:descL, observacao:trim(Lk.observacao).slice(0, 300),
+        fotoLocal:"", forma:"", canal:ehEncL ? "" : (Lk.retirada ? "empresa" : "entrega"), comprovante:null, taxaRep:0, responsavel:trim(a.responsavel), conferido:null, valorMax:0, hora:Lk.retirada && !ehEncL ? trim(Lk.retirada.hora) : "", atendente:"", atendInicio:"", atendFim:"", dataAgendada:Lk.retirada && !ehEncL ? trim(Lk.retirada.dia) : "", taxa:0, motivo:"", criadoEm:agora, criadoPor:"Revendedora (link)", etapaEm:agora, historico:[],
+        autorizadaPor:"Link da revendedora", cod:trim(Lk.cod), telefone:trim(Lk.telefone), cidade:trim(Lk.cidade), linkId:trim(a.linkId)};
+      pLk.taxa = taxaDoPedido(cfg, pLk);
+      pLk.fotos = fotosL.map(function(f){ return {key:f.key, nome:"", origem:"cliente", nota:trim(f.nota).slice(0, 200)}; });
+      if(textosL.length) pLk.itens = textosL.map(function(t){ return {id:"I"+(++er.seq), txt:[capL(t.cor), trim(t.obs)].filter(Boolean).join(" · ")+" (sem foto)", ok:false}; });
+      if(Lk.entrega){ var enL = Lk.entrega; pLk.enderecoEntrega = [enL.rua, enL.bairro, enL.cidade, enL.complemento].map(trim).filter(Boolean).join(" · "); pLk.horarioEntrega = [enL.horario, enL.horarioObs].map(trim).filter(Boolean).join(" · "); }
+      if(ehEncL) pLk.status = "novo";   // encomenda para o próximo kit: sem taxa e sem Confirmar taxa
+      else if(pLk.taxa>0 && Lk.aceite){ pLk.taxaAceita = {por:"Revendedora (link)", em:agora}; pLk.status = "separando"; }
+      else if(pLk.taxa>0) pLk.status = "aceite";
+      else pLk.status = "separando";
+      hist(pLk, "", pLk.status, (ehEncL ? "Encomenda" : "Reposição"+(Lk.retirada ? " com retirada na empresa em "+trim(Lk.retirada.dia)+" às "+trim(Lk.retirada.hora) : ""))+" recebida pelo link da revendedora ("+fotosL.length+(fotosL.length===1 ? " foto" : " fotos")+(textosL.length ? " e "+textosL.length+(textosL.length===1 ? " descrição" : " descrições")+" sem foto" : "")+")"+(pLk.taxaAceita ? ", taxa de "+formatarReais(pLk.taxa)+" aceita por ela" : pLk.taxa>0 ? ", falta ela aceitar a taxa" : ""));
+      er.pedidos.push(pLk);
+      return ok("Pedido do link entrou no funil");
+    }
     // ----- Separar peças (09/11/2026, Marcus; layout 2): revendedora que precisa de peças separadas, com FOTOS (chaves de anexo do servidor, módulo er) e OBSERVAÇÃO. É um pedido normal: ENTRA EM NOVO e anda Novo → Separando → Concluída (tudo dentro da ficha do cartão). -----
     case "aten_add": {
       var nomeA = trim(a.rev); if(!nomeA) return recusa("Informe a revendedora.");
@@ -593,6 +624,7 @@ function erReduz(s, a){
       var cam = caminhoDe(q), iDe = cam.indexOf(q.status), iPara = cam.indexOf(a.para), avanca = iPara>iDe && iDe>=0;
       if(avanca && q.status==="conferindo" && !q.conferido && !q.autorizadaPor) return recusa("Confira a média e o valor antes de avançar.");
       if(avanca && q.status==="bipagem" && q.tipo==="reposicao" && q.canal==="entrega" && !q.bipado) return recusa("Bipe as peças antes de liberar para o João.");
+      if(avanca && q.status==="aceite" && q.taxa>0 && !q.taxaAceita) return recusa("Falta a revendedora aceitar a taxa de "+formatarReais(q.taxa)+".");
       if(avanca && q.status==="comprovante" && faltaComprovante(q)) return recusa("Taxa de "+formatarReais(q.taxa)+" sem comprovante: a reposição não é liberada. Anexe o comprovante do Pix.");
       if(avanca && q.tipo==="expositor" && q.status==="conferindo" && cfg.expositor.exigeFoto && !trim(q.fotoLocal)) return recusa("Para avançar o expositor, registre antes a foto do local.");
       if(avanca && a.para==="agendado"){
@@ -616,8 +648,12 @@ function erReduz(s, a){
       if(FINAIS[pt.status]) return recusa("Este pedido já foi encerrado.");
       pt.taxaIsenta = !!a.isenta; pt.taxa = pt.taxaIsenta ? 0 : taxaDoPedido(cfg, pt);
       hist(pt, pt.status, pt.status, pt.taxaIsenta ? "Taxa isenta por "+por : "Taxa de "+formatarReais(pt.taxa)+" cobrada por "+por);
-      if(pt.taxaIsenta && pt.status==="comprovante"){ pt.status = "separando"; pt.etapaEm = agora; hist(pt, "comprovante", "separando", "Sem taxa: segue para Separando"); }
+      if(pt.taxaIsenta && (pt.status==="comprovante" || pt.status==="aceite")){ var deT = pt.status; pt.status = "separando"; pt.etapaEm = agora; hist(pt, deT, "separando", "Sem taxa: segue para Separando"); }
       return ok(pt.taxaIsenta ? "Taxa isenta" : "Taxa cobrada");
+    }
+    case "ped_taxa_aceita": {
+      var pa = ped1(); if(!pa) return recusa("Pedido não encontrado."); if(pa.status!=="aceite") return recusa("O aceite da taxa é na etapa Confirmar taxa.");
+      pa.taxaAceita = {por:por, em:agora}; pa.status = "separando"; pa.etapaEm = agora; hist(pa, "aceite", "separando", "Revendedora aceitou pagar a taxa de "+formatarReais(pa.taxa)+" (confirmado por "+por+")"); return ok("Taxa aceita: pode separar");
     }
     case "ped_bipar": {
       var pb = ped1(); if(!pb) return recusa("Pedido não encontrado."); if(pb.status!=="bipagem") return recusa("Só se bipa na etapa Bipagem.");

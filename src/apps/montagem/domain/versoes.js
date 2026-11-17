@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.86", data:"2026-11-17", titulo:"Encomendas e reposições: pedido por link, retirada na empresa e fim do Separar peças", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Entra no ar a página pública do pedido (link com o nome da revendedora, vale 48 horas, um envio só): condições com OK em cada item, aviso de que as peças não são garantidas, endereço e horário da entrega, foto e descrição por peça. O pedido cai sozinho no Funil. Rotas novas: pedido-link e encomendas/link."},
+  {tipo:"novo", area:"Encomendas e reposições → Link do pedido", txt:"Quem é do Top 50 ou tem média de R$ 2.000 ou mais ganha no link a opção Reposição com retirada na empresa (sem taxa): ela escolhe dia e hora e o pedido já entra no Funil como Ida na empresa. Quem não tem esse direito só vê entrega e encomenda."},
+  {tipo:"melhoria", area:"Encomendas e reposições → Funil", txt:"Saiu o botão e o filtro Separar peças da faixa do alto. Mini cards das fotos com fonte 10 px, texto mais para a direita e altura igual."}
+ ]},
  {v:"0.20.85", data:"2026-11-17", titulo:"Indicações: Histórico com blocos, Resgates padronizados e filtro firme", itens:[
   {tipo:"melhoria", area:"Cadastro de revendedoras → Indicações", txt:"Histórico com três blocos no topo (Top 12 revendedoras, Top 12 representantes e situação das indicadas, com aprovadas sem kit separadas por mais de 30 dias). Resgates com cartões compactos, ranking e prêmios em tabela padrão, nomes no formato Carlos Luan."},
   {tipo:"correção", area:"Tabelas › filtro de coluna", txt:"O menu de filtro abre já na posição final e não pula mais."}]},
