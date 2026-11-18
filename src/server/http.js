@@ -2,6 +2,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { consulta } from "./db.js";
 import { bloqueiaEscrita } from "./permissoes.js";
+import { rotaPermitidaRep } from "./rep-filtro.js";
 
 export const json = (corpo, status = 200) => Response.json(corpo, { status });
 export const erro = (msg, status) => json({ erro: msg }, status);
@@ -31,7 +32,7 @@ export async function usuarioDe(req) {
       if (hit && Date.now() - hit.em < 30000) r = hit.r;
       else { r = (await consulta("select * from sorelly.conta where id::text = $1", [ck])).rows[0]; if (cache.size > 500) cache.clear(); cache.set(ck, { r, em: Date.now() }); }
       if (!r || r.status !== "ativo") return null;
-      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null };
+      return { id: r.id, nome: r.nome, email: r.email, perfil: r.perfil, setores: r.setores || [], pessoaId: r.pessoa_id, conta: true, login: r.login || "", abas: r.abas || null, ocultar: r.ocultar || null, grupo: r.grupo || null, cid: r.cid || null, repCod: r.rep_cod || "" };
     }
     return { id: payload.id, nome: payload.nome, email: payload.email, perfil: payload.perfil, setores: payload.setores || [], pessoaId: payload.pessoaId ?? null };
   }
@@ -46,6 +47,8 @@ export function rota(fn, { diretoria = false, publica = false } = {}) {
         eu = await usuarioDe(req);
         if (!eu) return erro("Entre no sistema para continuar.", 401);
         if (diretoria && eu.perfil !== "ADMIN") return erro("Só a Diretoria pode fazer isso.", 403);
+        // CONTA DE REPRESENTANTE (rep_cod): só as rotas de ROTAS_REP (estado filtrado e o próprio perfil); o resto do sistema é recusado (17/11/2026)
+        if (eu.repCod && !rotaPermitidaRep(new URL(req.url).pathname)) return erro("Seu acesso não abre esta parte do sistema.", 403);
         if (req.method !== "GET" && bloqueiaEscrita(eu, new URL(req.url).pathname)) return erro("Seu acesso é só para visualizar.", 403);
       }
       const params = ctx && ctx.params ? await ctx.params : {};

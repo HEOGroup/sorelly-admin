@@ -11,6 +11,7 @@ import { podeModulo } from "@/server/permissoes";
 import { donoDaChave, ehModuloItens, gravarItens, versaoItens, respostaItens } from "@/server/estado-itens";
 import { gravarModulo } from "@/server/estado-modulo";
 import { protegerSaldos } from "@/server/trava-saldos";
+import { respostaItensRep } from "@/server/rep-filtro";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 const nega = () => erro("Você não tem acesso a este módulo.", 403);
@@ -36,6 +37,7 @@ export const GET = rota(async (req, { eu, params, url }) => {
   if (q !== null && !/^-?\d+$/.test(q)) throw invalido("desde");
   const desde = q === null ? undefined : Number(q);
   if (!podeModulo(eu, modulo)) return nega();
+  if (eu.repCod) return json(await respostaItensRep(modulo, desde, eu.repCod));   // conta de representante: só o que é dela
   if (ehModuloItens(modulo)) return getItens(modulo, desde);
   const v = await consulta("select versao from sorelly.estado_modulo where modulo = $1", [modulo]);
   const versao = v.rows[0] ? v.rows[0].versao : 0;
@@ -51,7 +53,7 @@ export const PUT = rota(async (req, { eu, params }) => {
   const b = await corpo(req, 20 * 1024 * 1024);
   const obj = (v) => v && typeof v === "object" && !Array.isArray(v) && Object.keys(v).length;
   if (b.patches !== undefined ? !obj(b.patches) : !obj(b.chaves)) throw invalido("chaves");
-  if (!podeModulo(eu, modulo)) return nega();
+  if (!podeModulo(eu, modulo) || eu.repCod) return nega();   // conta de representante não grava módulos
   if (ehModuloItens(modulo)) { if (!b.chaves) throw invalido("chaves"); return putItens(modulo, b.chaves, eu); }
   if (eu.perfil !== "ADMIN" && modulo !== "mel" && modulo !== "kn" && modulo !== "pag" && modulo !== "int" && modulo !== "aci" && modulo !== "agrev" && modulo !== "rhsol" && modulo !== "finativ") {   // mel e kn: qualquer funcionário pode criar o módulo ao enviar o 1º pedido / 1º kit novo
     const ja = await consulta("select 1 from sorelly.estado_modulo where modulo = $1", [modulo]);

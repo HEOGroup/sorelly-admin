@@ -7,6 +7,7 @@ import { json, rota, invalido } from "@/server/http";
 import { consulta } from "@/server/db";
 import { podeModulo } from "@/server/permissoes";
 import { ehModuloItens, respostaItens } from "@/server/estado-itens";
+import { respostaItensRep } from "@/server/rep-filtro";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 
@@ -37,6 +38,6 @@ export const GET = rota(async (req, { eu, url }) => {
       r.rows.forEach((l) => { modulos[l.modulo] = { versao: l.versao, conteudo: l.conteudo || {} }; });
     }
   }
-  for (const m of itens) modulos[m] = await respostaItens(m, desde[m] > 0 ? desde[m] : undefined);
+  for (const m of itens) modulos[m] = eu.repCod ? await respostaItensRep(m, desde[m] > 0 ? desde[m] : undefined, eu.repCod) : await respostaItens(m, desde[m] > 0 ? desde[m] : undefined);   // conta de representante: só o que é dela
   return json({ modulos, semAcesso });
 });

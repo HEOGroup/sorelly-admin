@@ -3,6 +3,8 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.105", data:"2026-11-18", titulo:"Conta de representante: só vê o que é dela", itens:[
+  {tipo:"novo", area:"Acessos", txt:"Conta de REPRESENTANTE (código do vendedor na conta): o servidor entrega listagens, kits e acertos só dela, abre só os módulos rpo, rpf, inicio e rc, recusa gravação em /api/estado e recusa qualquer outra rota. No navegador o menu fica só com Início e as telas dela. Criar conta: scripts/criar-conta-representante.mjs. Primeira conta: Vanessa (9S)."}]},
  {v:"0.21.6", data:"2026-11-18", titulo:"PIX revendedoras: editar o PIX antes da conferência", itens:[
   {tipo:"melhoria", area:"Financeiro → Família → PIX revendedoras", txt:"Lápis ao lado da conferência em cada PIX \"Aguardando\": abre embaixo do PIX o formulário com data, valor, revendedora e conta que recebeu (Salvar/Cancelar). PIX confirmado, não identificado ou com divergência fica travado. Fica o histórico do que era antes (quem e quando)."}
  ]},

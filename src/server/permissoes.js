@@ -1,3 +1,4 @@
+import { MODULOS_REP } from "./rep-filtro.js";
 // Quem pode abrir cada módulo (provisório: por SETOR da pessoa; ajustar aqui com o Marcus).
 // A Diretoria (perfil ADMIN) abre tudo. Os demais abrem o módulo se um dos setores da pessoa (usuario_login.setores) estiver na lista dele; "*" = todo mundo logado.
 // ATENÇÃO: neste atalho a permissão é por MÓDULO inteiro. "Ver só os próprios pedidos" dentro de um módulo continua sendo regra da tela, não do servidor; por isso dados sensíveis ficam em módulos de setor restrito.
@@ -50,6 +51,7 @@ export const SETORES_DO_MODULO = {
 export const PESSOAS_DO_MODULO = { mod: [47, 61], metas: [47] };
 
 export function podeModulo(usuario, modulo) {
+  if (usuario?.repCod) return MODULOS_REP.includes(modulo);   // conta de representante (rep_cod): só rpo e rpf (filtrados por ela no servidor), comunicados e a marca do Kit Prata
   if (usuario?.perfil === "ADMIN") return true;
   if ((PESSOAS_DO_MODULO[modulo] || []).includes(usuario?.pessoaId)) return true;
   const lista = SETORES_DO_MODULO[modulo];

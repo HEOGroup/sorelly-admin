@@ -18,6 +18,7 @@ import { acaoDoKitExcluido, kitDaRevNoDia, listagensDoDia, passouPrazo, prazoDaL
 import { condsDaDevmaster, internoDeAgendada, parseObs, agendadoDe, situacaoDoRegistro, remarcacoesDoCiclo, motivoNaoMarcar, isoDe as isoDeRI, primeiroMarcado, remarcacaoLivre, cicloDe } from "@/apps/montagem/domain/revendedoras-internas";
 import { passoAtual, TOTAL_PASSOS } from "@/apps/montagem/domain/kit-novo-entrega";
 import { aplicarAppNoEstado } from "@/apps/montagem/domain/app-rep";
+import { repCodDaConta } from "@/apps/montagem/lib/api";
 import { aplicaFila, codigoRetirada } from "@/apps/montagem/domain/retornos";
 import { bipar as biparConf, condicionaisDoKit, totaisDe, resultado as resultadoConf } from "@/apps/montagem/domain/conferencia-pecas";
 import { BK, N1, hora, isoDia } from "@/apps/montagem/lib/format";
@@ -281,7 +282,7 @@ function reducer(s, a){
       }
       if(a.chave==="rpo" || a.chave==="rpf"){   // app real da representante (domain/app-rep.js): guarda as chaves cruas e remonta listagens, kits e acertos das telas
         var sRp = Object.assign({}, s); sRp[a.chave] = Object.assign({}, s[a.chave], a.conteudo); sRp[a.chave==="rpo" ? "_rpoPronto" : "_rpfPronto"] = true;
-        return Object.assign(sRp, aplicarAppNoEstado(sRp));
+        return Object.assign(sRp, aplicarAppNoEstado(sRp, !!repCodDaConta()));   // conta de representante: só o que o servidor mandou (filtrado por ela)
       }
       if(a.chave==="kn"){   // kits novos vindos do servidor: entram (ou atualizam) na lista de novas da representante
         var nvK = (s.novas||[]).slice();
