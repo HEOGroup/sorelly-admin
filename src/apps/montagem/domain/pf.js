@@ -559,6 +559,7 @@ function transfSaiu(pf, chave){ return somaPorChave(pf.lancamentos.filter(functi
 // Fora: Point (conta corrente) e datas com desconto da maquininha (a sobra se divide na aba Maquininha Banho). Datas antes de novembro/2026: só o aviso.
 var PASSA_DESDE = "2026-11-01";   // o sistema começou a ser usado em novembro/2026 (Lucas, 18/11/2026)
 var AJUSTE_NOME = "Diferença enviada a mais";
+function dmy(d){ d = String(d||""); return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); }
 function ajusteDaChave(pf, chave){ return pf.pedidos.find(function(pd){ return pd.ajusteChave===chave; }) || null; }
 function ajusteValor(pd){ return pd ? r2(pd.parcelas.filter(function(p){ return p.valor>0; }).reduce(function(s, p){ return s+p.valor; }, 0)) : 0; }
 function ajustaExcesso(pf, chave){ var l = String(chave).split("|"); return +l[0]!==PT_FORN && l[1]>=PASSA_DESDE && !(mqAplicado(pf, chave)>0.005); }
@@ -1129,6 +1130,30 @@ function pfReduz(s, a){
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
       if(l1.par){ var nP = pf.lancamentos.filter(function(x){ return x.par===l1.par; }).length; pf.lancamentos = pf.lancamentos.filter(function(x){ return x.par!==l1.par; }); return ok(nP>1 ? "Estornado junto com as "+(nP-1)+" parte(s) ligada(s)" : "Pagamento estornado"); }
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
+    // editar o pagamento depois de lançado (Lucas, 18/11/2026): só enquanto NÃO estiver conferido
+    case "lanc_set": { var lE = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!lE) return recusa("Pagamento não encontrado.");
+      if(lE.conferido) return recusa("Pagamento conferido não pode ser alterado. Desfaça a conferência antes.");
+      if(lE.auto) return recusa("Este lançamento é automático e não pode ser alterado.");
+      var pE = a.patch||{}, vE = pE.valor!==undefined ? num(pE.valor) : lE.valor;
+      if(!(vE>0)) return recusa("Informe o valor pago.");
+      if(pE.data!==undefined && !DATA_OK.test(pE.data)) return recusa("Informe a data do pagamento.");
+      if(pE.revendedora!==undefined && !String(pE.revendedora).trim()) return recusa("Informe o nome da revendedora.");
+      var jE = null;
+      if(pE.chave!==undefined && pE.chave!==lE.chave){
+        jE = janelaPorChave(pf, pE.chave);
+        if(!jE || jE.fornId!==lE.fornId) return recusa("Escolha uma data de pagamento deste fornecedor.");
+      }
+      var antesE = brl(lE.valor)+" · "+lE.revendedora+" · "+dmy(lE.data);
+      if(pE.data!==undefined) lE.data = pE.data;
+      if(pE.revendedora!==undefined) lE.revendedora = String(pE.revendedora).trim();
+      if(pE.conta!==undefined) lE.conta = String(pE.conta).trim()||"—";
+      if(pE.chavePix!==undefined) lE.chavePix = String(pE.chavePix).trim();
+      lE.valor = r2(vE);
+      if(jE){ lE.chave = jE.chave; lE.mes = jE.mes; lE.limite = jE.limite; delete lE.deChave; }
+      if(pE.arqKey){ lE.arqKey = pE.arqKey; lE.arqNome = pE.arqNome||""; lE.arqTipo = pE.arqTipo||""; lE.arqData = hojeIso(); if(lE.aguardaComp) lE.aguardaComp = false; }
+      (lE.hist = lE.hist||[]).push({em:hojeIso(), por:a.por||"", antes:antesE});
+      return ok("Pagamento alterado — "+brl(lE.valor)+" para "+lE.revendedora);
+    }
     case "lanc_conferido": { var l2 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l2) return recusa("Pagamento não encontrado.");
       var novo = (a.conferido===undefined) ? !l2.conferido : !!a.conferido;
       l2.conferido = novo; l2.conferidoEm = novo ? (a.em||hojeIso()) : "";

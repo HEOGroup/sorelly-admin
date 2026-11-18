@@ -4,7 +4,7 @@
 // Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
@@ -40,8 +40,38 @@ function FiltroLanc(p){
     ativo && e("div",{className:"text-[12.5px]"}, ((f.d1||f.d2) ? (f.d1 ? dbr(f.d1) : "início")+" a "+(f.d2 ? dbr(f.d2) : "fim")+" · " : "")+p.res.n+" de "+p.res.total+" pagamento(s) · total ", e("b",null, brl(p.res.soma))));
 }
 
+// ───────────── janela: Editar pagamento (só enquanto não estiver conferido) ─────────────
+function ModalEditar(p){
+  var c = p.c, l = p.l, datas = janelasDoForn(c.pf, l.fornId);
+  var st = useState({data:l.data, rev:l.revendedora||"", valor:Number(l.valor).toFixed(2), conta:l.conta==="—" ? "" : (l.conta||""), chavePix:l.chavePix||"", chave:l.chave, arq:null}), v = st[0], setV = st[1];
+  var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; setV(n); };
+  var opcoes = datas.some(function(j){ return j.chave===l.chave; }) ? datas : [{chave:l.chave, limite:l.limite||l.chave.split("|")[1]}].concat(datas);
+  var salvar = function(){
+    var patch = {data:v.data, revendedora:v.rev, valor:parseFloat(v.valor), conta:v.conta, chavePix:v.chavePix, chave:v.chave};
+    var gravar = function(){ op(c, "lanc_set", {id:l.id, patch:patch}); p.fechar(); };
+    if(!v.arq) return gravar();
+    lerAnexo(v.arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ patch.arqKey = sv.key; patch.arqNome = v.arq.name; patch.arqTipo = v.arq.type; gravar(); },
+      function(err){ aviso(c, ((err && err.message) ? err.message+" " : "")+"Não consegui enviar o comprovante.", "alerta"); });
+  };
+  return e(Modal,{t:"Editar pagamento", fechar:p.fechar, sub:e("span",null, "Lançado: ", e("b",null, brl(l.valor)), " · "+(l.revendedora||"—")+" · "+dbr(l.data))},
+    e("div",{className:"grid grid-cols-1 gap-3 sm:grid-cols-2"},
+      e(Campo,{rot:"Data"}, e(Txt,{type:"date", value:v.data, label:"Data", onChange:function(x){ set("data", x); }})),
+      e(Campo,{rot:"Nome da revendedora"}, e(Txt,{value:v.rev, label:"Nome da revendedora", onChange:function(x){ set("rev", x); }})),
+      e(Campo,{rot:"Valor (R$)"}, e(Dinheiro,{out:"ponto", value:v.valor, label:"Valor", onChange:function(x){ set("valor", x); }})),
+      e(Campo,{rot:"Data de pagamento"}, e(Sel,{value:v.chave, label:"Data de pagamento", className:"w-full", onChange:function(x){ set("chave", x); }},
+        opcoes.map(function(j){ return e("option",{key:j.chave, value:j.chave}, dbr(j.limite)); }))),
+      e(Campo,{rot:"Conta"}, e(Txt,{value:v.conta, label:"Conta", ph:"Ex.: Pix - Bradesco Prime", onChange:function(x){ set("conta", x); }})),
+      e(Campo,{rot:"Chave Pix enviada"}, e(Txt,{value:v.chavePix, label:"Chave Pix enviada", onChange:function(x){ set("chavePix", x); }}))),
+    e(Campo,{rot:"Comprovante de pagamento"},
+      e("div",{className:"flex flex-wrap items-center gap-3 rounded-lg bg-black/25 px-3 py-2"},
+        e("label",{className:"inline-flex cursor-pointer items-center gap-1.5 rounded-lg bg-muted/50 px-3 py-1.5 text-[13px] font-bold hover:bg-white/15"}, e(Ph,{n:"paperclip", s:14}), l.arqKey || l.arqNome ? "Trocar arquivo" : "Selecionar arquivo",
+          e("input",{type:"file", accept:"image/*,application/pdf", className:"hidden", onChange:function(ev){ set("arq", ev.target.files && ev.target.files[0] ? ev.target.files[0] : null); }})),
+        e("span",{className:"text-[13px]"}, v.arq ? v.arq.name : (l.arqNome || "Nenhum arquivo")))),
+    e("div",{className:"flex justify-end gap-2 pt-1"}, e(Bt,{onClick:p.fechar}, "Cancelar"), e(Bt,{tipo:"forte", ic:"check", onClick:salvar}, "Salvar alteração")));
+}
+
 function ItemLanc(p){
-  var l = p.l, c = p.c;
+  var l = p.l, c = p.c, se = useState(false), editando = se[0], setEditando = se[1];
   var comp = l.arqKey
     ? e("button",{type:"button", title:l.arqNome, onClick:function(){ abrirAnexo(l.arqKey).catch(function(){ aviso(c, "Não consegui abrir o comprovante.", "alerta"); }); }, className:"inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[11px] font-bold hover:underline"}, e(Ph,{n:"paperclip", s:13}), "comprovante")
     : l.arqId
@@ -59,6 +89,9 @@ function ItemLanc(p){
   return e("div",{className:"flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 "+(l.conferido ? "bg-[#22C55E]/10" : "bg-black/25")},
     e("div",{className:"flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]"}, e("b",null, dbr(l.data)), e("span",{className:"text-muted-foreground"}, l.revendedora||"—"), e("span",{className:"text-muted-foreground"}, l.conta||"—"), comp, conf),
     e("div",{className:"flex items-center gap-2"}, e("b",{className:MONO+" text-[14px]", style:{color:COR.green}}, brl(l.valor)),
+      // editar só enquanto não estiver conferido (Lucas, 18/11/2026)
+      !l.auto && e(Bt,{ic:"pencil-simple", disabled:!c.edita || l.conferido, titulo:!c.edita ? "Só financeiro e diretoria" : l.conferido ? "Conferido: desfaça a conferência para alterar" : "Alterar este pagamento", onClick:function(){ setEditando(true); }}, "Editar"),
+      editando && e(ModalEditar,{c:c, l:l, fechar:function(){ setEditando(false); }}),
       e(Bt,{tipo:l.conferido ? "normal" : "conf", disabled:!c.edita, titulo:c.edita ? "" : "Só financeiro e diretoria", onClick:function(){
         if(l.conferido && !window.confirm("Desfazer a conferência deste pagamento de "+brl(l.valor)+"?")) return;
         op(c, "lanc_conferido", {id:l.id}); }}, l.conferido ? "Desfazer conferência" : "Conferir"),

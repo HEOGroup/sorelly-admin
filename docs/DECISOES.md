@@ -2758,3 +2758,12 @@ Marcus (tudo com o Edson, do Office Graff, setor Material gráfico). Resumo; o d
 - Nomes: padrão Item · Modelo · Tamanho · Cor · Linha. O coração só existe em Mini; BB Select é linha; a Floréa é uma tag só; Flower precisa de estoque separado por cor. Dados renomeados pela API com registro.
 - Bolsinhas de Natal (creme e vermelha) vão virar kit para venda. Orçamento da creme lançado no funil (Negociando). Falta margem e preço do kit.
 - Classificação nova: Embalagens de presente (bolsinhas, sacolas, envelopes e caixas de presente numa só).
+
+## 18/11/2026 · Lançamento de pagamentos: editar o pagamento depois de lançado (Lucas)
+- Pedido: "ter como alterar o lançamento após lançamento, só bloquear a alteração se estiver marcado como conferido".
+- Botão "Editar" na linha do pagamento (`ModalEditar` em pages/pf/Lancamentos.js; operação `lanc_set` em domain/pf.js). Campos: data, nome da revendedora, valor, data de pagamento (só do mesmo fornecedor), conta, chave Pix e trocar o comprovante.
+- Conferido = travado (botão apagado e o domínio recusa). Lançamento automático também não edita. Cada alteração guarda em `hist` o que era antes, quem e quando. Mudou o valor: a conta da data (e o ajuste "Diferença enviada a mais") se refaz sozinha.
+
+## 18/11/2026 · PIX revendedoras (Família): editar o PIX antes de conferir (Lucas)
+- Pedido: "aqui também tenha como editar os lançamentos antes de serem conferidos" (mesma regra do Lançamento de pagamentos).
+- Lápis "Editar PIX" ao lado da conferência, só com a conferência em "Aguardando" (`pix_editar` em domain/financeiro-familiar.js; tela em pages/FinFamiliar.js, `CartaoPix`). Abre embaixo do PIX: data, valor, revendedora e conta que recebeu. Confirmado, não identificado ou divergência = travado (o domínio recusa). Cada alteração guarda em `hist` o que era antes, quem e quando; o repasse do prestador se refaz (`syncRepasse`).

@@ -240,6 +240,9 @@ function CartaoPix(p){
   var contasLista = []; listaTodas.forEach(function(x){ if(x.contaId && contasLista.indexOf(x.contaId)<0) contasLista.push(x.contaId); });
   var filtrando = !!(fl.q || fl.conta || fl.conf);
   var recTodos = r2(listaTodas.filter(function(x){ return stDe(x)!=="NAOIDENT"; }).reduce(function(s, x){ return s+x.valor; }, 0));
+  // EDITAR o PIX na própria linha, só enquanto estiver "Aguardando" (Lucas, 18/11/2026)
+  var ned = useState(null), ed = ned[0], setEd = ned[1], setE = function(o){ setEd(Object.assign({}, ed, o)); };
+  var salvarEd = function(){ if(!(num(ed.valor)>0) || !ed.data) return; acao(c, "pix_editar", {id:ed.id, patch:{data:ed.data, valor:num(ed.valor), origem:ed.origem, contaId:ed.contaId}}); setEd(null); };
   var anotar = function(){ if(!(num(f.valor)>0) || !f.data) return; acao(c, "pix_add", {personaId:casa ? "familia" : pe.id, data:f.data, valor:num(f.valor), origem:f.origem, contaId:f.contaId, forma:f.forma}); setF(Object.assign({}, f, {valor:"", origem:""})); };
   var TC = "h-8 border-b border-border px-2.5 text-center text-[13px] tabular-nums";
   // linhas da tabela: cada dia com os seus PIX e, logo depois, a linha de TOTAL DO DIA (Anamaria, 03/11/2026)
@@ -255,8 +258,16 @@ function CartaoPix(p){
         e("select",{value:valSel(x), disabled:c.leitura, "aria-label":"Conferência", className:CAMPO+" w-40! text-center", style:{textAlignLast:"center"}, onChange:function(ev){ var v = ev.target.value; if(v==="DIVV") abrirDiv(x.id, "valor", ev.target); else if(v==="DIVC") abrirDiv(x.id, "conta", ev.target); else if(v==="DIVD") abrirDiv(x.id, "data", ev.target); else acao(c, "pix_aud", {id:x.id, auditoria:v}); }},
           stDe(x)==="PENDENTE" && e("option",{value:"PENDENTE"}, "Aguardando"),
           e("option",{value:"CONFIRMADO"}, "Confirmado"), e("option",{value:"NAOIDENT"}, "Não identificado"), e("option",{value:"DIVV"}, "Divergência de valor"), e("option",{value:"DIVC"}, "Divergência de conta"), e("option",{value:"DIVD"}, "Divergência de data")),
+        stDe(x)==="PENDENTE" && !c.leitura && iconBtn("pencil-simple", "Editar PIX", function(){ setEd({id:x.id, data:x.data, valor:fmtN(x.valor), origem:x.origem||"", contaId:x.contaId||""}); }),
         stDe(x)==="DIVERG" && !c.leitura && e("button",{type:"button", onClick:function(ev){ if(ab[0]===x.id) setAbre(""); else abrirDiv(x.id, (x.div && x.div.tipo) || "valor", ev.currentTarget); }, className:"rounded-md border border-border px-2 text-[11px] font-semibold hover:bg-white/10"}, "Ver"))),
       e("td",{className:TC}, c.leitura ? null : iconBtn("trash", "Excluir PIX", function(){ if(window.confirm("Excluir este PIX?")) acao(c, "pix_del", {id:x.id}); }, true))));
+    if(ed && ed.id===x.id) linhas.push(e("tr",{key:x.id+"ed", className:"bg-white/5"}, e("td",{colSpan:8, className:"border-b border-border px-2.5 py-2"},
+      e("div",{className:"grid grid-cols-2 items-end gap-x-3 gap-y-2 md:grid-cols-[150px_130px_minmax(0,1fr)_minmax(0,1fr)_auto]"},
+        e("div",null, e(Rotulo,{t:"Data"}), e("input",{type:"date", value:ed.data, "aria-label":"Data", className:CAMPO+" text-center", onChange:function(ev){ setE({data:ev.target.value}); }})),
+        e("div",null, e(Rotulo,{t:"Valor (R$)"}), e("input",{value:ed.valor, "aria-label":"Valor", className:CAMPO+" text-center tabular-nums", onChange:function(ev){ setE({valor:ev.target.value.replace(/[^d,.]/g,"")}); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvarEd(); }})),
+        e("div",null, e(Rotulo,{t:"Revendedora"}), e("input",{value:ed.origem, "aria-label":"Revendedora", className:CAMPO, onChange:function(ev){ setE({origem:ev.target.value}); }, onKeyDown:function(ev){ if(ev.key==="Enter") salvarEd(); }})),
+        e("div",null, e(Rotulo,{t:"Conta que recebeu"}), e("select",{value:ed.contaId, "aria-label":"Conta que recebeu", className:CAMPO, onChange:function(ev){ setE({contaId:ev.target.value}); }}, e("option",{value:""}, "Sem conta definida"), cbs.concat(ed.contaId && !cbs.some(function(b){ return b.id===ed.contaId; }) ? [contaDe(ed.contaId)] : []).map(function(b){ return e("option",{key:b.id, value:b.id}, contaLabel(ff, b.id)); }))),
+        e("span",{className:"inline-flex items-center gap-2"}, e(Botao,{principal:true, desabilitado:!(num(ed.valor)>0) || !ed.data, onClick:salvarEd}, "Salvar"), e(Botao,{onClick:function(){ setEd(null); }}, "Cancelar"))))));
   });
   fecha();
   var fechado = p.aberto===false;
