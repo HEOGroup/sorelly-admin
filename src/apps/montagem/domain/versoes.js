@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.103", data:"2026-11-18", titulo:"Avisos: alerta de denúncia não volta depois do Entendi", itens:[
+  {tipo:"correção", area:"Tecnologia → Avisos", txt:"O alerta (ex.: nova denúncia no Canal de ética) fica lembrado no navegador depois de Entendi ou Abrir tela e não volta a aparecer, mesmo se o estado do servidor perder o lido."}
+ ]},
  {v:"0.20.102", data:"2026-11-18", titulo:"RH › Negociações: visão Todas com a coluna Forma", itens:[
   {tipo:"melhoria", area:"RH → Colaboradores", txt:"Negociações abre na visão Todas: hora extra e joias numa tabela só, uma linha por pessoa, com a coluna Forma (Dinheiro, Joias ou Dinheiro + joias). Quem só tem negociação de joias (como a Ana Paula) agora aparece na lista; clicar abre a ficha da hora extra ou a das joias."}]},
  {v:"0.20.101", data:"2026-11-18", titulo:"RH › Salário e bônus: adiantamento pela natureza própria e CNPJ completo", itens:[

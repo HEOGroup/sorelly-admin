@@ -15,10 +15,14 @@ function tocarAlerta(){
   }catch(x){}
 }
 
+// 18/11/2026 (Marcus: "nao para de aparecer"): quem deu "Entendi" ou abriu a tela fica lembrado NESTE navegador por chave do alerta, mesmo se o estado do servidor perder o "lido".
+function lidosNoNavegador(){ try { return JSON.parse(localStorage.getItem("sorelly_alertas_lidos") || "[]"); } catch(x){ return []; } }
+function lembrarLido(chave){ if(!chave) return; try { var l = lidosNoNavegador(); if(l.indexOf(chave)<0){ l.push(chave); localStorage.setItem("sorelly_alertas_lidos", JSON.stringify(l.slice(-300))); } } catch(x){} }
+
 function AvisoAlertas(p){
   var cx = use(), s = cx.state, d = cx.dispatch;
   var nt = useNotif();   // notificações do admin desligadas: sem aviso na tela e sem som
-  var pend = (s.alertas||[]).filter(function(a){ return (a.para||[]).indexOf(s.usuario)>=0 && (a.lidoPor||[]).indexOf(s.usuario)<0; });
+  var pend = (s.alertas||[]).filter(function(a){ return (a.para||[]).indexOf(s.usuario)>=0 && (a.lidoPor||[]).indexOf(s.usuario)<0 && !(a.chave && lidosNoNavegador().indexOf(a.chave)>=0); });
   var ref = useRef({usuario:null, n:null}), oc = useState({}), ocultos = oc[0], setOcultos = oc[1];
   // some sozinho depois de um tempo (continua pendente: volta a aparecer ao recarregar até a pessoa dar "Entendi")
   useEffect(function(){ var ts = pend.filter(function(a){ return !ocultos[a.id]; }).map(function(a){ return setTimeout(function(){ setOcultos(function(o){ var n = Object.assign({}, o); n[a.id] = true; return n; }); }, 25000); }); return function(){ ts.forEach(clearTimeout); }; }, [pend.map(function(a){ return a.id; }).join(",")]);
@@ -32,7 +36,7 @@ function AvisoAlertas(p){
   var vis = pend.filter(function(a){ return !ocultos[a.id] && (nt.admin || a.critico); });
   if(!vis.length) return null;
   return e("div",{className:"fixed bottom-32 left-5 z-50 flex w-80 flex-col gap-2"}, vis.slice(0,3).map(function(a){
-    var lido = function(){ d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); };
+    var lido = function(){ lembrarLido(a.chave); d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); };
     return e("div",{key:a.id, role:"alert", className:"flex items-start gap-3 rounded-xl border border-destructive/60 bg-popover p-3.5 shadow-2xl ring-1 ring-black/40", style:a.cor ? {borderColor:a.cor, boxShadow:"0 0 0 2px "+a.cor+"66"} : undefined},
       e("span",{className:"grid size-9 shrink-0 place-items-center rounded-full bg-destructive text-white", style:a.cor ? {background:a.cor} : undefined}, e(Icon,{n:"warning", s:17})),
       e("span",{className:"min-w-0 flex-1"},
