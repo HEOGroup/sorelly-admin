@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.20.99", data:"2026-11-18", titulo:"Link do pedido: Li e estou de acordo", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Cada condição agora pede Li e estou de acordo, e o botão Estou de acordo com tudo e assino só libera com todas marcadas."}
+ ]},
  {v:"0.20.98", data:"2026-11-18", titulo:"Pix para fornecedor: comprovante da representante também libera o pagamento", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar", txt:"O comprovante que a representante anexa na calculadora de acerto agora também libera o pagamento do fornecedor, antes ou depois de o Lucas direcionar. Antes só valia o comprovante da funcionária no atendimento interno."}
  ]},

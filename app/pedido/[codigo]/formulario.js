@@ -62,7 +62,7 @@ const Regra = ({ icone, titulo, children, lido, aoMarcar }) => (
     </div>
     <label className="mt-2.5 flex cursor-pointer items-center gap-2.5 rounded-md bg-black/25 px-2.5 py-2 text-[13px] font-bold">
       <input type="checkbox" checked={!!lido} onChange={(ev) => aoMarcar(ev.target.checked)} className="size-5 shrink-0" />
-      <span>{lido ? "OK, li e entendi" : "Li e entendi"}</span>
+      <span>{lido ? "Li e estou de acordo ✓" : "Li e estou de acordo"}</span>
     </label>
   </div>
 );
@@ -181,8 +181,8 @@ export default function Formulario({ codigo }) {
       </div>
 
       <section className="flex flex-col gap-2 rounded-xl border border-[#E8B84B]/50 bg-[#E8B84B]/10 p-3">
-        <button type="button" disabled={!todosLidos} onClick={() => setPasso(2)} className={BTN}>Aceito as condições e continuo</button>
-        {!todosLidos && <p className="text-center text-[12px]">Dê o OK em cada item acima ({regras.filter((r) => lidos[r.id]).length} de {regras.length}) para continuar.</p>}
+        <button type="button" disabled={!todosLidos} onClick={() => setPasso(2)} className={BTN}>Estou de acordo com tudo e assino</button>
+        {!todosLidos && <p className="text-center text-[12px]">Só dá para assinar se você estiver de acordo com tudo. Marque &quot;Li e estou de acordo&quot; em cada item acima ({regras.filter((r) => lidos[r.id]).length} de {regras.length}).</p>}
         <p className="text-center text-[12px]">Este link é só seu e vale até <b>{quando(info.expiraEm)}</b>.</p>
       </section>
     </Tela>
