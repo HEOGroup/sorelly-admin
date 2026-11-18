@@ -140,6 +140,7 @@ const montagem = {
     pagina("cadastro-de-pecas-pedidos", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaCadastroPecas"),
     pagina("cadastro-de-pecas-solicitacoes", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasSolicitacoes"),
     pagina("cadastro-de-pecas-controle-de-compras", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasControle"),
+    pagina("cadastro-de-pecas-pecas", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasFalta"),
     pagina("cadastro-de-pecas-faturas-pontual", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasFaturasPontual"),
     pagina("cadastro-de-pecas-faturas-ellos", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasFaturasEllos"),
     pagina("cadastro-de-pecas-retirar-ouro", () => import("@/apps/montagem/pages/CadastroPecas"), "AbaPecasOuro"),

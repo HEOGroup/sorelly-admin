@@ -36,3 +36,5 @@ Lista separada por palavras-chave em 01/11/2026: pode ter decisão de outro seto
 - Custo das saídas do Resumo por mês vem da DevMaster, de TUDO que saiu do estoque, por mês e por TES (menu Custo: total | por TES). Detalhes em docs/DECISOES.md de 16/11/2026.
 - Pedido Parcial: a Rayssa lança "Peças que chegaram" na ficha; o pedido mostra Parcial e só finaliza com tudo.
 - Fatura em comum: um total de banho dividido entre vários pedidos (Rayssa: a fatura vem com valor total, divisão em partes iguais, fechos também são banhados).
+
+- 17/11/2026 (Marcus): menu Pedidos vira lista (Compras de Bruto, Pedidos Banho/Bruto, Peças) e a lista Peças passa a se chamar Cadastro; quadro novo Peças com o que falta comprar (DevMaster + pedidos). Detalhes em docs/DECISOES.md de 17/11/2026.

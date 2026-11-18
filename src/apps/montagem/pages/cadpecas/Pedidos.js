@@ -4,7 +4,8 @@
 // Etapas e status: o status do pedido é o nome da etapa (regras em domain/cadastro-pecas.js: ETAPAS_PED, FASES_PED, etapaPed, statusDaEtapa). O pedido fecha no romaneio.
 // Quem lança: Rayssa e Graziella (config.quem.pedidos_bruto); a diretoria sempre pode. "Enviado para Sorelly" entra sozinho quando uma fatura de banho é ligada ao pedido.
 // Editar chegadas, valores e peças por categoria: botão "Abrir ficha" dentro do cartão (ou clique na linha da planilha).
-import { Pagina } from "@/apps/montagem/components/padrao";
+import { Pagina, degrade } from "@/apps/montagem/components/padrao";
+import { PrazosForn } from "@/apps/montagem/pages/cadpecas/PrazosForn";
 import { Botao, Segmentado, brl } from "@/apps/montagem/components/padrao-fin";
 import { hojeSP } from "@/apps/montagem/domain/cadastro-leads";
 import { CATS, ETAPAS_PED, FASES_PED, STATUS_PED, atrasadoPed, banhoPed, diasNaEtapa, diasNaGalvanica, etapaPed, fasePed, mesesCpc, naGalvanica, romaneioCompleto, banhoCompleto, totalPed, ultimosMeses, resumoCompras, pecasPedido, podeFazer, prazoEtapa, statusDaEtapa, parcialPed } from "@/apps/montagem/domain/cadastro-pecas";
@@ -138,15 +139,15 @@ function AbaPedidos(){
   var colunas = ETAPAS_PED.map(function(k, i){
     if(!mostra[i]) return null;
     var cor = COR_FASE[k[2]], it = vis.filter(function(p){ return etapaPed(p)===k[0]; }), sm = somasPed(it);
-    return e("section",{key:k[0], className:"flex min-w-0 flex-col gap-1.5 rounded-xl bg-black/20 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:pos[i], borderTop:"3px solid "+cor}},
-      e("div",{className:"flex flex-col items-center gap-0.5 border-b border-white/10 pb-1.5 text-center"},
-        e("b",{className:"flex min-h-9 items-center justify-center gap-1.5 text-[13px] leading-tight"}, e("span",{className:"grid size-5 shrink-0 place-items-center rounded-full text-[11px]", style:{border:"1px solid "+cor, color:cor}}, i+1), k[1]),
-        e("span",{className:"text-[11px] font-semibold"}, plural(it.length, "pedido", "pedidos")),
-        e("span",{className:"text-[13px] font-bold tabular-nums"}, brl(sm.total)),
-        k[2]==="empresa" && e("span",{className:"text-[11px] tabular-nums"}, "Bruto "+brl(sm.bruto)+" + Banho "+brl(sm.banho))),
+    // COLUNA NO TAMANHO DO QUE TEM (Marcus, 17/11/2026: "responsivos, do tamanho necessário e mais compactos"): a largura é a do maior cartão; o título não alarga a coluna (largura 0 com mínimo de 100%) e quebra em duas linhas se for comprido
+    return e("section",{key:k[0], className:"flex flex-col gap-1.5 rounded-xl bg-black/25 p-1.5 ring-1 ring-white/10", style:{gridRow:2, gridColumn:pos[i], minWidth:190}},
+      e("div",{className:"flex flex-col items-center gap-0.5 rounded-lg px-2.5 py-1.5 text-center", style:{background:cor+"33", boxShadow:"inset 0 -3px 0 "+cor}},
+        e("b",{className:"flex items-center justify-center gap-1.5 whitespace-nowrap text-[11px] uppercase leading-tight tracking-[.03em]"}, e("span",{className:"grid size-4 shrink-0 place-items-center rounded-full text-[11px]", style:{border:"1px solid "+cor, color:cor}}, i+1), k[1]),
+        e("div",{className:"flex items-baseline justify-center text-[11px] tabular-nums"}, e("span",{className:"pr-2"}, plural(it.length, "pedido", "pedidos")), e("b",{className:"border-l border-white/30 pl-2 text-[14px] leading-none"}, brl(sm.total))),
+        k[2]==="empresa" && e("div",{className:"flex items-baseline justify-center text-[11px] tabular-nums"}, e("span",{className:"pr-2"}, "Bruto ", e("b",null, brl(sm.bruto))), e("span",{className:"border-l border-white/30 pl-2"}, "Banho ", e("b",null, brl(sm.banho))))),
       it.map(function(p){ return e(Cartao,{key:p.id, p:p, cfg:cfg, hoje:hoje, ficha:function(){ ir({tipo:"ficha", id:p.id}); }}); }));
   });
-  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", 370px)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
+  var quadro = e("div",{className:"overflow-x-auto pb-2"}, e("div",{className:"grid items-start gap-x-2 gap-y-1.5", style:{gridTemplateColumns:"repeat("+Math.max(nVis, 1)+", max-content)", gridTemplateRows:"auto 1fr", zoom:zoom/100, width:"max-content"}}, bandas, colunas));
 
   var tot = vis.reduce(function(t, p){ t.valor += p.valor; t.pagar += p.pagar; t.banho += p.valorBanho || 0; t.pecas += pecasPedido(p); return t; }, {valor:0, pagar:0, banho:0, pecas:0});
   // PLANILHA (Marcus, 16/11/2026): a tabela única do sistema (TabelaPlanilha), com filtro e ordem em cada coluna, coluna Parcial e Total no fim da tabela
@@ -162,8 +163,12 @@ function AbaPedidos(){
     return ["Total", plural(ls.length, "pedido", "pedidos"), "", "", "", t.pecas, "", brl(t.valor), t.valor>0 ? Math.round((1-t.pagar/t.valor)*1000)/10+"%" : "—", brl(t.pagar), brl(t.banho), brl(t.total), "", ""]; };
   var planilha = vis.length ? e(TabelaPlanilha,{cols:colsPlan, linhas:linhasPlan, chave:"id", grade:true, semContagem:true, semLimpar:true, limite:300, aoClicar:function(l){ ir({tipo:"ficha", id:l.id}); }, totalRodape:rodapePlan, vazio:"Nenhum pedido neste filtro."}) : e(Vazio,{ic:"package"}, "Nenhum pedido neste filtro.");
 
-  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
-    e(BlocoPainel,{titulo:"Resumo por mês · comprado", compacto:true}, e(ResumoMeses,{c:c, hoje:hoje})),
+  // ORDEM DA TELA (Marcus, 17/11/2026): o Resumo por aberto em cima, como sempre foi (ele mandou NÃO tirar); o bloco Prazos dos fornecedores vem primeiro, de uma linha só, e o quadro logo depois
+  return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},   // azul original do sistema (o azul mais claro foi testado em 17/11/2026 e o Marcus mandou voltar)
+    // à esquerda o bloco de prazos (uma aba por fornecedor, uma linha por etapa), à direita o Resumo por mês, que continua igual (modelo 3 do Marcus, 17/11/2026)
+    e("div",{className:"grid items-start gap-2 lg:grid-cols-[minmax(340px,420px)_minmax(0,1fr)]"},
+      e(PrazosForn,{c:c, hoje:hoje, pode:pode, exec:x.exec}),
+      e(BlocoPainel,{titulo:"Resumo por mês · comprado", compacto:true}, e(ResumoMeses,{c:c, hoje:hoje}))),
     e(BlocoPainel,{titulo:"Pedidos de bruto e banho"},
       controles(),
       !pode && e("p",{className:"py-1 text-center text-[13px] font-semibold"}, "Somente quem lança os pedidos edita."),
@@ -213,18 +218,19 @@ function prazoTxt(cfg, k){
 function Cartao(p){
   var pd = p.p, et = etapaPed(pd), atr = atrasadoPed(pd, p.hoje, p.cfg), b = banhoPed(pd), cor = COR_FASE[fasePed(et)];
   var dGal = naGalvanica(pd) ? diasNaGalvanica(pd, p.hoje) : null, diasCartao = dGal!=null ? dGal : diasNaEtapa(pd, p.hoje);
-  return e("div",{"data-sem-arrastar":true, className:"rounded-lg bg-card text-left ring-1 "+(atr ? "ring-destructive" : "ring-white/10 hover:ring-white/30"), style:{boxShadow:"inset 3px 0 0 "+cor}},
-    e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-col justify-center gap-0.5 px-2 py-1 pl-3 text-left text-[11px]"},
+  // visual igual ao do quadro Peças (Marcus, 17/11/2026): fundo em degradê na cor da fase com fio fino; atrasado fica com o fio vermelho
+  return e("div",{"data-sem-arrastar":true, className:"rounded-lg text-left transition hover:brightness-125", style:atr ? Object.assign({}, degrade(cor), {boxShadow:"inset 0 0 0 1px #EF4444"}) : degrade(cor)},
+    e("button",{type:"button", title:"Abrir a ficha do pedido", onClick:p.ficha, className:"flex min-h-8 w-full cursor-pointer flex-col justify-center gap-0.5 px-2.5 py-1.5 text-left text-[11px]"},
       e("div",{className:"flex flex-nowrap items-center justify-between gap-2 whitespace-nowrap"},
       e("span",{className:"whitespace-nowrap"}, e("span",{className:"font-semibold", style:b ? {color:COR_BANHO[b]} : undefined}, b || "A definir"), " · ", e("b",null, pd.forn), pd.romaneio && e("span",{className:"text-[11px]"}, " · "+pd.romaneio), et==="fechado" && faltaRomaneio(pd) && e("span",{className:"text-[11px] font-semibold text-destructive", title:"Falta: "+faltaRomaneio(pd)+" (a etapa só anda com o número e o arquivo do romaneio)"}, " · "+faltaRomaneio(pd))),
-      !(pd.valorBanho>0) && e("span",{className:"ml-auto whitespace-nowrap text-[11px] tabular-nums", title:"Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
-      e("b",{className:"whitespace-nowrap text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
+      !(pd.valorBanho>0) && e("b",{className:"ml-auto whitespace-nowrap border-l border-white/30 pl-2 text-[11px] tabular-nums", title:"Só o bruto (o banho entra quando chega na empresa)"}, brl(totalPed(pd))),
+      e("b",{className:"whitespace-nowrap border-l border-white/30 pl-2 text-[11px] "+(atr ? "text-destructive" : ""), title:atr ? "Atrasado: dias nesta etapa" : "Dias nesta etapa"}, et==="finalizado" ? "Concluído" : txtDias(diasCartao))),
       // Parcial (16/11/2026): chegou menos peças do que o pedido; fica visível até chegar o resto
       parcialPed(pd) && e("div",{className:"mt-0.5 flex flex-nowrap items-baseline justify-between gap-2 whitespace-nowrap border-t border-white/10 pt-1 text-[11px] font-semibold tabular-nums text-warning", title:"Pedido parcial: só finaliza quando chegar tudo"},
         e("span",null, "Parcial"), e("span",null, "Chegaram "+parcialPed(pd).chegaram+" de "+parcialPed(pd).pedidas), e("span",null, "Faltam "+parcialPed(pd).faltam)),
       // com banho: segunda linha em forma de conta, Bruto + Banho = total (o total em destaque à direita)
-      pd.valorBanho>0 && e("div",{className:"mt-0.5 flex flex-wrap items-baseline justify-between gap-x-2 border-t border-white/10 pt-1 text-[11px] tabular-nums [&>span]:whitespace-nowrap", title:"Bruto + banho = total do pedido"},
-        e("span",null, "Bruto ", e("b",null, brl(pd.pagar))), e("span",null, "+ Banho ", e("b",null, brl(pd.valorBanho))), e("span",{className:"text-[11px]"}, "= ", e("b",null, brl(totalPed(pd)))))));
+      pd.valorBanho>0 && e("div",{className:"mt-0.5 flex flex-wrap items-baseline justify-between border-t border-white/15 pt-1 text-[11px] tabular-nums [&>span]:whitespace-nowrap", title:"Bruto + banho = total do pedido"},
+        e("span",null, "Bruto ", e("b",null, brl(pd.pagar))), e("span",{className:"border-l border-white/30 pl-2"}, "Banho ", e("b",null, brl(pd.valorBanho))), e("span",{className:"border-l border-white/30 pl-2"}, "Total ", e("b",null, brl(totalPed(pd)))))));
 }
 
 function Linha(p){ return e("div",{className:"flex items-center justify-between gap-2"}, e("span",{className:"text-[11px] font-medium uppercase tracking-[.05em]"}, p.t), p.children); }

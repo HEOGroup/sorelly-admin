@@ -47,11 +47,10 @@ var MENU_CADASTRO = [
 
 // Menu do Cadastro de peças (29/10/2026, pedido do Marcus: igual ao Financeiro, com as telas no menu do topo e não em abas dentro da tela). ORDEM DO FLUXO: pedidos de bruto (tela mãe) → controle do mês → banho → peças (cadastro e preço) → fornecedores → configurações. Plano das próximas telas em docs/negocio/FLUXO-DE-COMPRA-DE-BRUTO.md (seção 11).
 var MENU_CADPECAS = [
-  M("Compras","cpcompras"),
-  M("Pedidos","cadpecas"),
-  M("Controle de compras","cpctrl"),
+  {nome:"Pedidos", itens:[M("Compras de Bruto","cadpecas"), M("Pedidos Banho/Bruto","cpctrl")]},   // 17/11/2026 (Marcus): Pedidos vira lista de DUAS telas; a primeira abre ao entrar no setor (o quadro); a tela "Compras" (cpcompras) saiu do menu por enquanto
+  M("Peças","cppecas"),
   {nome:"Banho", itens:[M("Tabela do banho","cpbanho"), M("Faturas","cpfp"), M("Retirar ouro","cpouro")]},
-  {nome:"Peças", itens:[M("Solicitações","cpsol"), M("Planilhas de cadastro","cplotes"), M("Calculadora","cpcalc"), M("DevMaster","cpdev")]},
+  {nome:"Cadastro", itens:[M("Solicitações","cpsol"), M("Planilhas de cadastro","cplotes"), M("Calculadora","cpcalc"), M("DevMaster","cpdev")]},
   M("Fornecedores","cpforn"),
   M("Configurações","cpcfg")
 ];
@@ -225,9 +224,10 @@ var SETORES = [
     {nome:"Material gráfico", telas:[T("gfpainel","Painel"), T("gfcompras","Compras"), T("gfprecos","Tabela de preços"), T("gfestoque","Estoque"), T("gfkits","Kits"), T("gfvendas","Vendas")]}]},
   // Cadastro de peças: setor próprio na barra lateral (pedido do Marcus, 21/10/2026; responsável Rayssa, Financeiro também acessa)
   {id:"cadpecas", nome:"Cadastro de peças", ic:"cubos", cor:"#3B82F6", menu:MENU_CADPECAS, areas:[
-    {nome:"Pedidos", telas:[T("cpcompras","Compras"), T("cadpecas","Pedidos"), T("cpctrl","Controle de compras")]},
+    {nome:"Pedidos", telas:[T("cadpecas","Compras de Bruto"), T("cpctrl","Pedidos Banho/Bruto")]},
+    {nome:"Peças", telas:[T("cppecas","Peças")]},
     {nome:"Banho", telas:[T("cpbanho","Tabela do banho"), T("cpfp","Faturas"), T("cpouro","Retirar ouro")]},
-    {nome:"Peças", telas:[T("cpsol","Solicitações"), T("cplotes","Planilhas de cadastro"), T("cpcalc","Calculadora"), T("cpdev","DevMaster")]},
+    {nome:"Cadastro", telas:[T("cpsol","Solicitações"), T("cplotes","Planilhas de cadastro"), T("cpcalc","Calculadora"), T("cpdev","DevMaster")]},
     {nome:"Fornecedores", telas:[T("cpforn","Fornecedores")]},
     {nome:"Configurações", telas:[T("cpcfg","Configurações")]}]},
   {id:"encomendas", nome:"Encomendas", ic:"caminhao", cor:"#14B8A6", menu:MENU_ENCOMENDAS, semAbas:true, areas:[

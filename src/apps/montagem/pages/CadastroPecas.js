@@ -10,6 +10,7 @@ import { AbaLotes } from "@/apps/montagem/pages/cadpecas/Lotes";
 import { AbaConfigCad, AbaDevMaster, AbaFornecedores } from "@/apps/montagem/pages/cadpecas/Outras";
 import { AbaCompras } from "@/apps/montagem/pages/cadpecas/Compras";
 import { AbaPedidos } from "@/apps/montagem/pages/cadpecas/Pedidos";
+import { AbaPecasQuadro } from "@/apps/montagem/pages/cadpecas/Pecas";
 import { AbaSolicitacoes } from "@/apps/montagem/pages/cadpecas/Solicitacoes";
 import { contagem } from "@/apps/montagem/domain/pedidos-pecas";
 import { use } from "@/apps/montagem/state/context";
@@ -26,6 +27,7 @@ function Tela(t, sub, corpo){ return e("div",{className:"flex flex-col gap-2.5"}
 function AbaPecasCompras(){ return e(AbaCompras,null); }
 function AbaCadastroPecas(){ return e(AbaPedidos,null); }
 function AbaPecasSolicitacoes(){ var n = contagem(use().state.pp).aberto; return Tela("Solicitações", n ? n+" pedido"+(n===1 ? "" : "s")+" de peças da produção em aberto." : "Pedidos de peças da produção para o cadastro.", e(AbaSolicitacoes,null)); }
+function AbaPecasFalta(){ return e(AbaPecasQuadro,null); }   // Pedidos › Peças: quadro de cartões grandes por categoria (17/11/2026)
 function AbaPecasControle(){ return e(AbaControle,null); }   // Controle de compras: tem o próprio título em bloco azul (16/11/2026)
 function AbaPecasFaturasPontual(){ return e(AbaFaturas,{galv:"pontual"}); }   // Faturas e Retirar ouro: título no bloco azul, sem PageHead (16/11/2026)
 function AbaPecasFaturasEllos(){ return e(AbaFaturas,{galv:"ellos"}); }
@@ -37,4 +39,4 @@ function AbaPecasFornecedores(){ return Tela("Fornecedores", "Quanto cada fornec
 function AbaPecasDevMaster(){ return Tela("DevMaster", "Pedidos de alteração para a DevMaster.", e(AbaDevMaster,null)); }
 function AbaPecasConfig(){ return Tela("Configurações", "Regras do cadastro de peças e quem lança cada atividade.", e(AbaConfigCad,null)); }
 
-export { AbaPecasCompras, AbaCadastroPecas, AbaPecasSolicitacoes, AbaPecasControle, AbaPecasFaturasPontual, AbaPecasFaturasEllos, AbaPecasOuro, AbaPecasBanho, AbaPecasLotes, AbaPecasCalculadora, AbaPecasFornecedores, AbaPecasDevMaster, AbaPecasConfig };
+export { AbaPecasCompras, AbaCadastroPecas, AbaPecasSolicitacoes, AbaPecasControle, AbaPecasFalta, AbaPecasFaturasPontual, AbaPecasFaturasEllos, AbaPecasOuro, AbaPecasBanho, AbaPecasLotes, AbaPecasCalculadora, AbaPecasFornecedores, AbaPecasDevMaster, AbaPecasConfig };

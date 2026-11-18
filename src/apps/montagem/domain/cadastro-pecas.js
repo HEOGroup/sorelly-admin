@@ -43,7 +43,7 @@ function statusMigra(p){ var k = trim(p.status).toLowerCase(); return k==="banha
 var ESTADOS_SOL = [["pedido","Pedido"], ["enviado","Enviado à DevMaster"], ["feito","Feito"]];
 var PENDENCIAS_BANHO = ["Pontual manda um preço só para a prata e um só para o verniz, sem dizer o nível da prata (30M ou 50M) nem o tipo do verniz: confirmar com eles para fechar o comparativo."];
 var CONFIG_PADRAO = {quem:QUEM_PADRAO, banhoComp:{cotacaoEllos:0, atualizado:"", ellos:{}, pontual:{}, pendencias:PENDENCIAS_BANHO}, recebido:0.5486, markupAlvo:2.75, arred8:true, vernizPontual:0.37,
-  prazoEtapa:{separacao:5, fechado:2}, prazoBanho:{pontual:12, ellos:10},   // dias; etapa sem número = sem prazo (não marca atraso)
+  prazoEtapa:{separacao:5, fechado:2}, prazoBanho:{pontual:12, ellos:10}, prazoForn:{},   // prazoForn = dias de cada fornecedor de bruto (da compra até chegar no banho); sem número vale separação + fechado (17/11/2026)   // dias; etapa sem número = sem prazo (não marca atraso)
   banhoPadrao:[["Anéis","Ouro 4"], ["Colares","Ouro 3"], ["Braceletes e pulseiras","Ouro 3"], ["Correntes","Ouro 3"], ["Peças de prata","Prata"]]};
 
 var num = function(v){ var n = typeof v==="number" ? v : parseFloat(String(v==null ? "" : v).replace(/\./g,"").replace(",",".")); return isFinite(n) ? n : 0; };
@@ -271,6 +271,13 @@ function cpcReduz(s, a){
     }
     case "prazo": {   // prazo em dias: de uma etapa (a.etapa) ou do banho de uma galvânica (a.galv); 0 = sem prazo
       var dz = Math.max(0, Math.round(num(a.dias)));
+      if(a.forn!==undefined){   // prazo de uma etapa para um fornecedor (bloco Prazos dos fornecedores, 17/11/2026): config.prazoForn[fornecedor][etapa] = dias; 0 = volta ao prazo geral
+        var nf = trim(a.forn); if(!nf) return recusa("Fornecedor inválido."); if(idxEtapa(a.etapa)<0) return recusa("Etapa inválida.");
+        if(!c.config.prazoForn || typeof c.config.prazoForn!=="object") c.config.prazoForn = {};
+        if(!c.config.prazoForn[nf] || typeof c.config.prazoForn[nf]!=="object") c.config.prazoForn[nf] = {};   // versão de teste antiga guardava só um número
+        if(dz>0) c.config.prazoForn[nf][a.etapa] = dz; else delete c.config.prazoForn[nf][a.etapa];
+        log("prazo", nf+" · "+a.etapa+" · "+dz+" dias"); return ok("Prazo salvo.");
+      }
       if(a.galv){ if(a.galv!=="pontual" && a.galv!=="ellos") return recusa("Galvânica inválida."); c.config.prazoBanho[a.galv] = dz; }
       else { if(idxEtapa(a.etapa)<0 || a.etapa==="banho") return recusa("Etapa inválida."); c.config.prazoEtapa[a.etapa] = dz; }
       log("prazo", (a.galv || a.etapa)+" · "+dz+" dias"); return ok("Prazo salvo.");
