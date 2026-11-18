@@ -12,6 +12,7 @@ import { donoDaChave, ehModuloItens, gravarItens, versaoItens, respostaItens } f
 import { gravarModulo } from "@/server/estado-modulo";
 import { protegerSaldos } from "@/server/trava-saldos";
 import { respostaItensRep } from "@/server/rep-filtro";
+import { entregarAvisos } from "@/server/compras-chat";
 
 const MODULO = /^[a-z][a-zA-Z0-9_]{0,29}$/;
 const nega = () => erro("Você não tem acesso a este módulo.", 403);
@@ -82,5 +83,10 @@ export const PUT = rota(async (req, { eu, params }) => {
   // GRAVAÇÃO SEGURA (11/11/2026, src/server/estado-modulo.js): tela nova manda só a diferença ({patches}); tela antiga ({chaves}) junta sem apagar itens que ela não traz.
   // As duas ficam registradas em sorelly.estado_modulo_log.
   const versao = b.patches ? await gravarModulo(modulo, b.patches, "patch", eu.id) : await gravarModulo(modulo, b.chaves, "chaves", eu.id);
+  // AVISOS DAS COMPRAS NO SORELLYCHAT (18/11/2026, src/server/compras-chat.js): DEPOIS de gravar, entrega os avisos novos dos pedidos. Nunca duplica (id fixo) e
+  // nunca desfaz a gravação: se o chat falhar, o pedido continua salvo e o aviso fica pendente (o pedido mostra "Tentar de novo").
+  if (modulo === "ce" && ((b.patches && b.patches.pedidos) || (b.chaves && b.chaves.pedidos))) {
+    try { await entregarAvisos(null); } catch (e) { console.warn("[compras-chat] " + (e && e.message)); }
+  }
   return json({ ok: true, versao });
 });

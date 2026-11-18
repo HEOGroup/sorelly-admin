@@ -5,11 +5,13 @@ import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { Dinheiro, ESTADO } from "@/apps/montagem/components/padrao";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
 import { ETAPA_ANALISE, ETIQUETAS, ETIQUETA_ELEGIVEL, FORMAS_DISP, FORMAS_PLANO, FORMAS_SEM_NF, REF_PRAZO, ROTULO_FORMA_DISP, MOTIVOS_ORCAMENTO, PAGAVEL_STATUS, ROTULO_ETIQUETA, ROTULO_FORMA_PLANO, ROTULO_MOTIVO_ORC, ROTULO_UNIDADE, ROTULO_URGENCIA, TRANSICOES, UNIDADES, URGENCIAS,
-  compraParaOrientacoes, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, pendenciasAnalise, planoSituacao, podeAcaoPedido, podeEditarPlano, textoFormaDisp, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
+  compraParaOrientacoes, diasEntre, estoqueDaSolicitacao, compraParaPedidoPagamentos, entraNoEstoque, formatarDataHora, formatarDia, formatarReais, hojeSP, opcoesCnpj, orcamentosExigidos, pedidoDe, pendenciasAnalise, planoSituacao, podeAcaoPedido, podeEditarPlano, avisosDoPedido, textoFormaDisp, textoOrcamentos } from "@/apps/montagem/domain/compras-estoque";
 import { Bt, Campo, Dado, DECIDE_MSG, EFETUA_MSG, Dialogo, EstoqueMomento, Janela, Painel, Selo, diasNaEtapa, norm, textoDias } from "@/apps/montagem/pages/compras/pecas";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { e, useEffect, useState } from "@/shared/react";
 import { FotoMaterial } from "@/apps/montagem/components/foto-material";
+import { EQUIPE } from "@/apps/montagem/domain/equipe";
+import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
 
 var CAMPO = INPUT+" h-8! w-full text-center text-[13px]!";
 var r2 = function(n){ return Math.round((n || 0)*100)/100; };
@@ -38,11 +40,36 @@ function DlgNovoOrc(p){
     e(Campo,{rot:"Motivo"}, e("select",{value:v.motivo, onChange:function(ev){ set("motivo", ev.target.value); }, className:CAMPO}, e("option",{value:""}, "Selecione…"), MOTIVOS_ORCAMENTO.map(function(m){ return opt(m, ROTULO_MOTIVO_ORC[m]); }))),
     e(Campo,{rot:"O que precisa ser ajustado"}, e("textarea",{value:v.detalhe, rows:3, onChange:function(ev){ set("detalhe", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})));
 }
+// EM ESPERA (18/11/2026): motivo e responsável pelo próximo passo obrigatórios; data de revisão opcional. Espera NÃO é "Novo orçamento / ajustes": aguarda uma condição, não uma correção do solicitante.
 function DlgEsperar(p){
-  var st = useState(""), c = p.c, ped = p.ped;
-  var enviar = function(){ if(c.exec({op:"pedido_esperar", id:ped.id, ate:st[0]})) p.fechar(); };
+  var c = p.c, ped = p.ped, st = useState({ate:"", motivo:"", resp:""}), v = st[0], max = c.ce.config.motivoMax;
+  var set = function(k, x){ var n = Object.assign({}, v); n[k] = x; st[1](n); };
+  var enviar = function(){ if(c.exec({op:"pedido_esperar", id:ped.id, ate:v.ate, motivo:v.motivo, responsavel:v.resp})) p.fechar(); };
   return e(Dialogo,{t:"Colocar em espera", sub:"#"+ped.id+" · "+ped.titulo, fechar:p.fechar, rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), e(Bt,{key:"o", tipo:"forte", ic:"hourglass", onClick:enviar}, "Colocar em espera")]},
-    e(Campo,{rot:"Esperar até (opcional)"}, e("input",{type:"date", value:st[0], min:hojeSP(), onChange:function(ev){ st[1](ev.target.value); }, className:CAMPO})));
+    e(Campo,{rot:"Motivo (obrigatório)"}, e("textarea",{value:v.motivo, maxLength:max, rows:2, autoFocus:true, onChange:function(ev){ set("motivo", ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})),
+    e("div",{className:"grid grid-cols-1 gap-2 sm:grid-cols-2"},
+      e(Campo,{rot:"Responsável pelo próximo passo"}, e("input",{value:v.resp, list:"dl-pessoas-espera", placeholder:"Nome", onChange:function(ev){ set("resp", ev.target.value); }, className:CAMPO}),
+        e("datalist",{id:"dl-pessoas-espera"}, EQUIPE.map(function(x){ return e("option",{key:x.id, value:x.nome}); }))),
+      e(Campo,{rot:"Data de revisão (opcional)"}, e("input",{type:"date", value:v.ate, min:hojeSP(), onChange:function(ev){ set("ate", ev.target.value); }, className:CAMPO}))));
+}
+// REENVIAR PARA APROVAÇÃO (18/11/2026): a correção é feita em "Editar compra" (salvar NÃO reenvia). Aqui só confirma: volta para "1 — Solicitada" com o mesmo número, a conversa e o histórico.
+function DlgReenviar(p){
+  var c = p.c, ped = p.ped, st = useState(""), dv = ped.devolucao, max = c.ce.config.motivoMax;
+  var enviar = function(){ if(c.exec({op:"pedido_reenviar", id:ped.id, nota:st[0]})) p.fechar(); };
+  return e(Dialogo,{t:"Reenviar para aprovação", sub:"#"+ped.id+" · "+ped.titulo+" · "+formatarReais(ped.valorFinal), fechar:p.fechar,
+    rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), e(Bt,{key:"o", tipo:"forte", ic:"paper-plane-tilt", onClick:enviar}, "Reenviar para aprovação")]},
+    e(BlocoDevolucao,{ped:ped}),
+    e("p",{className:"text-[13px]"}, "Confira se as correções pedidas já estão na compra (botão Editar compra). O pedido volta para \"1 — Solicitada\" com o mesmo número."),
+    e(Campo,{rot:"O que foi corrigido (opcional)"}, e("textarea",{value:st[0], maxLength:max, rows:2, onChange:function(ev){ st[1](ev.target.value); }, className:INPUT+" h-auto! w-full resize-none py-2 text-center text-[13px]!"})));
+}
+// faixa de destaque do pedido devolvido: motivo, ajustes pedidos, quem pediu e quando
+function BlocoDevolucao(p){
+  var ped = p.ped, dv = ped.devolucao || (ped.orcamentoDetalhe ? {motivo:ped.orcamentoMotivo, detalhe:ped.orcamentoDetalhe} : null); if(!dv) return null;
+  return e("div",{className:"flex flex-col gap-0.5 rounded-md border-2 border-[#FBBF24] bg-[#FBBF24]/10 px-2 py-1 text-left text-[13px]"},
+    e("b",{className:"flex items-center gap-1.5 text-[11px] uppercase text-warning"}, e(Ph,{n:"arrow-counter-clockwise", s:13}), "Pendência de ajuste"),
+    e("span",null, e("b",null, "Motivo: "), ROTULO_MOTIVO_ORC[dv.motivo] || dv.motivo || "Não informado"),
+    e("span",{className:"break-words"}, e("b",null, "Ajustes pedidos: "), dv.detalhe || "Não informado"),
+    dv.por && e("span",{className:"text-[11px]"}, "Pedido por "+dv.por+" em "+formatarDataHora(dv.em)+(dv.etapa ? " (estava em "+dv.etapa+")" : "")));
 }
 function DlgComprar(p){
   var c = p.c, ped = p.ped, lib = ped.liberacao, doFinanceiro = !!lib && lib.modo==="plano", edita = podeEditarPlano(c.s, ped, c.uid, c.papel);
@@ -172,7 +199,9 @@ function DlgOp(p){
   if(op==="entregar") return e(DlgEntregar,base);
   if(op==="cnpj") return e(DlgCnpj,base);
   if(op==="pagamento") return e(DlgConta,base);
-  if(op==="reenviar" || op==="ajustar_orcamento") return e(DlgValor,base);
+  if(op==="reenviar") return e(DlgReenviar,base);
+  if(op==="ajustar_orcamento") return e(DlgValor,base);
+  if(op==="vincular") return e(DlgVincular,base);
   return null;
 }
 
@@ -297,7 +326,7 @@ function EditorFormas(p){
 }
 function FormCompra(p){
   var c = p.c, ce = c.ce, cfg = ce.config, ed = p.ped || null;
-  var podeItens = ed ? (podeAcaoPedido(ed, "itens_set") && c.pode(TRANSICOES.itens_set, ed)) : true, podeDados = ed ? c.opera : true;
+  var podeItens = ed ? (podeAcaoPedido(ed, "itens_set") && c.pode(TRANSICOES.itens_set, ed)) : true, podeDados = ed ? (c.opera || (ed.status==="AGUARDANDO_ORCAMENTO" && c.pode(TRANSICOES.reenviar, ed))) : true;   // pedido devolvido: o solicitante corrige fornecedor, condições e formas (18/11/2026); salvar NÃO reenvia
   var ini = ed ? {forn:ed.fornecedor || "", titulo:ed.titulo, setorId:ed.setorId==null ? "" : String(ed.setorId), categoriaId:ed.categoriaId==null ? "" : String(ed.categoriaId), urgencia:ed.urgencia, fd:ed.formasDisp ? JSON.parse(JSON.stringify(ed.formasDisp)) : {semNF:false, opcoes:{}}, motivo:"", previsao:ed.previsaoEntrega || "", link:ed.link || "", obs:ed.observacao || "", cond:ed.condicoesTxt || "",
       itens:ed.itens.map(function(i){ return {k:++SEQ, titulo:i.titulo, quantidade:i.quantidade, unidade:i.unidade, valorUnitario:i.valorUnitario!=null ? i.valorUnitario : (i.valorTotal && i.quantidade ? r2(i.valorTotal/i.quantidade) : null), classificacao:i.classificacao || "", materialId:i.materialId==null ? "" : String(i.materialId)}; })}
     : {forn:"", titulo:"", setorId:"", categoriaId:"", urgencia:"MEDIA", fd:{semNF:false, opcoes:{}}, motivo:"", previsao:"", link:"", obs:"", cond:"", itens:[itemVazio((cfg.classificacoes[0] || {}).id)]};
@@ -366,7 +395,7 @@ function FormCompra(p){
 
 // ───────────── detalhe da compra (3 colunas) ─────────────
 var IDX = {NAO_VERIFICADA:0, AGUARDANDO:0, AGUARDANDO_ORCAMENTO:0, AGUARDANDO_AUTORIZACAO:0, AGUARDANDO_CNPJ:1, AGUARDANDO_FORMA_PAGAMENTO:1, APROVADA:1, LIBERADA:2, COMPRADA:3, EM_TRANSITO:3, RECEBIDA_PARCIAL:3, RECEBIDA:4, ENTREGUE:5};
-var FORA_DOS_BOTOES = {plano_set:1, itens_set:1, enviar_pagamentos:1, etiqueta:1, decisao:1, cnpj:1, pagamento:1};   // CNPJ e pagamento agora ficam na janela da análise financeira (Liberar para compra)
+var FORA_DOS_BOTOES = {plano_set:1, itens_set:1, enviar_pagamentos:1, etiqueta:1, decisao:1, cnpj:1, pagamento:1, vincular:1};   // CNPJ e pagamento agora ficam na janela da análise financeira (Liberar para compra)
 // cor do tempo parado: 1 a 2 dias verde, 3 a 4 amarelo, 5 ou mais vermelho (igual ao cartão do funil)
 var corDias = function(d){ return d>=5 ? "text-destructive" : d>=3 ? "text-warning" : "text-success"; };
 var CLASSE_TOM = {success:"text-success", danger:"text-destructive", warning:"text-warning"};
@@ -446,16 +475,67 @@ function DecisaoFin(p){
 function HistoricoCompra(p){
   var ped = p.ped, st = useState(false), todos = st[0], evs = ped.eventos.slice().reverse(), vis = todos ? evs : evs.slice(0, 5);
   return e(Painel,{t:"Histórico", ic:"clock-counter-clockwise"},
-    vis.length===0 ? e("p",{className:"text-[13px]"}, "Nenhum movimento.") : vis.map(function(ev, i){ return e("div",{key:i, className:"rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px] leading-tight"}, e("span",{className:"font-semibold tabular-nums"}, formatarDataHora(ev.em)+" · "+ev.por), e("div",{className:"break-words"}, ev.texto)); }),
+    // evento automático do sistema; o que virou aviso no SorellyChat ganha a marca "Aviso no chat" (as mensagens de pessoas ficam no bloco Conversa)
+    vis.length===0 ? e("p",{className:"text-[13px]"}, "Nenhum movimento.") : vis.map(function(ev, i){ return e("div",{key:i, className:"rounded-md border border-white/20 px-2 py-0.5 text-left text-[11px] leading-tight"}, e("span",{className:"flex flex-wrap items-center justify-between gap-1 font-semibold tabular-nums"}, formatarDataHora(ev.em)+" · "+ev.por, ev.aviso && e("span",{className:"inline-flex items-center gap-1 text-[#BFDBFE]"}, e(Ph,{n:"bell", s:11}), "Aviso no chat")), e("div",{className:"break-words"}, ev.texto)); }),
     evs.length>5 && e("button",{type:"button", onClick:function(){ st[1](!todos); }, className:"h-8 rounded-md border border-white/30 text-[11px] font-semibold hover:bg-white/10"}, todos ? "Ver menos" : "Ver todo o histórico ("+evs.length+")"));
 }
+// CONVERSA DO PEDIDO = o grupo do pedido no SorellyChat (18/11/2026, src/server/compras-chat.js): lê e escreve lá. O que o solicitante responde no chat aparece aqui (é a mesma conversa, sem cópia e sem ciclo).
+// As mensagens antigas (gravadas só no pedido, antes de 18/11/2026) continuam aparecendo em cima. Aviso automático e mensagem de pessoa têm visual diferente.
+var dataDoChat = function(t){ try { return new Date(t).toLocaleString("pt-BR", {timeZone:"America/Sao_Paulo", day:"2-digit", month:"2-digit", year:"numeric", hour:"2-digit", minute:"2-digit"}).replace(",", ""); } catch(x){ return ""; } };
+var uidMsg = function(){ return "m"+Date.now().toString(36)+Math.random().toString(36).slice(2, 7); };
 function Conversa(p){
-  var c = p.c, ped = p.ped, st = useState(""), t = st[0], msgs = ped.mensagens.slice(-6);
-  var enviar = function(){ if(!t.trim()) return c.aviso("Escreva a mensagem."); if(c.exec({op:"pedido_msg", id:ped.id, texto:t})) st[1](""); };
+  var c = p.c, ped = p.ped, st = useState(""), t = st[0], sv = useState({msgs:null, membros:[], erro:"", enviando:false}), v = sv[0], antigas = ped.mensagens || [];
+  var api = apiAtiva();
+  var ler = function(){ if(!api) return; chamar("GET", "/compras/conversa?pedido="+encodeURIComponent(ped.id)).then(function(r){ sv[1](function(o){ return Object.assign({}, o, {msgs:r.msgs || [], membros:r.membros || [], erro:""}); }); }).catch(function(x){ sv[1](function(o){ return Object.assign({}, o, {erro:x.message}); }); }); };
+  useEffect(function(){ ler(); var tm = setInterval(ler, 8000); return function(){ clearInterval(tm); }; }, [ped.id]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var enviar = function(){
+    var tx = t.trim(); if(!tx) return c.aviso("Escreva a mensagem.");
+    if(!api){ if(c.exec({op:"pedido_msg", id:ped.id, texto:tx})) st[1](""); return; }   // sem servidor (demonstração): fica só no pedido, como antes
+    if(v.enviando) return; sv[1](Object.assign({}, v, {enviando:true}));
+    chamar("POST", "/compras/conversa", {pedido:ped.id, id:uidMsg(), texto:tx}).then(function(r){ st[1](""); sv[1](function(o){ return Object.assign({}, o, {enviando:false}); }); if(!r.entregueAoSolicitante) c.aviso("Mensagem salva no pedido. O solicitante ainda não está vinculado a uma conta: ela não chegou ao chat dele."); ler(); })
+      .catch(function(x){ sv[1](function(o){ return Object.assign({}, o, {enviando:false}); }); c.aviso("Mensagem não enviada: "+x.message+" O texto continua no campo para tentar de novo."); });
+  };
+  var linha = function(m, i){
+    if(m.aviso) return e("div",{key:m.id || i, className:"rounded-md border border-[#60A5FA]/60 bg-[#3B82F6]/10 px-2 py-1 text-left text-[11px] leading-tight"}, e("span",{className:"flex items-center gap-1 font-semibold tabular-nums text-[#BFDBFE]"}, e(Ph,{n:"bell", s:11}), "Aviso automático · "+dataDoChat(m.t)), e("div",{className:"whitespace-pre-line break-words"}, m.texto));
+    return e("div",{key:m.id || i, className:"rounded-md bg-black/25 px-2 py-1 text-left text-[13px] leading-tight"}, e("span",{className:"flex items-center gap-1 text-[11px] font-semibold"}, e(Ph,{n:"user", s:11}), m.nome+" · "+dataDoChat(m.t)), e("div",{className:"break-words"}, m.texto));
+  };
+  var msgs = v.msgs || [];
   return e(Painel,{t:"Conversa", ic:"chat-circle-text"},
-    msgs.length===0 ? e("p",{className:"px-2 py-1 text-[12.5px] text-white/60"}, "Nenhuma mensagem.") : msgs.map(function(m, i){ return e("div",{key:i, className:"rounded-md bg-black/25 px-2 py-1 text-left text-[12px] leading-tight"}, e("span",{className:MONO+" text-[11px] text-white/55"}, m.por+" · "+formatarDataHora(m.em)), e("div",{className:"break-words"}, m.texto)); }),
+    api && e("p",{className:"px-1 text-[11px]"}, "Ligada ao SorellyChat: grupo \"Compra #"+ped.id+"\""+(v.membros.length ? " · "+v.membros.map(function(x){ return x.nome; }).join(", ") : "")),
+    antigas.length>0 && antigas.map(function(m, i){ return e("div",{key:"a"+i, className:"rounded-md bg-black/25 px-2 py-1 text-left text-[13px] leading-tight"}, e("span",{className:MONO+" text-[11px]"}, m.por+" · "+formatarDataHora(m.em)+" · só no pedido"), e("div",{className:"break-words"}, m.texto)); }),
+    api && v.msgs==null && !v.erro && e("p",{className:"px-2 py-1 text-[13px]"}, "Carregando a conversa"),
+    v.erro && e("p",{className:"rounded-lg bg-[#EF4444]/15 px-2 py-1 text-[11px] text-[#F87171]"}, "Não foi possível ler a conversa do chat: "+v.erro),
+    v.msgs && msgs.length===0 && antigas.length===0 && e("p",{className:"px-2 py-1 text-[13px]"}, "Nenhuma mensagem."),
+    msgs.slice(-12).map(linha),
     e("div",{className:"flex gap-1.5"}, e("input",{value:t, placeholder:"Mensagem", "aria-label":"Mensagem", onChange:function(ev){ st[1](ev.target.value); }, onKeyDown:function(ev){ if(ev.key==="Enter") enviar(); }, className:CAMPO}),
-      e("button",{type:"button", "aria-label":"Enviar mensagem", onClick:enviar, className:"grid size-9 shrink-0 place-items-center rounded-lg bg-[#3B82F6] hover:bg-[#60A5FA]"}, e(Ph,{n:"paper-plane-tilt", s:15}))));
+      e("button",{type:"button", "aria-label":"Enviar mensagem", disabled:v.enviando, onClick:enviar, className:"grid size-8 shrink-0 place-items-center rounded-lg bg-[#3B82F6] hover:bg-[#60A5FA] disabled:opacity-40"}, e(Ph,{n:"paper-plane-tilt", s:15}))));
+}
+// AVISOS NO SORELLYCHAT do pedido: entregue, pendente ou sem vínculo; "Tentar de novo" pede ao servidor para entregar o que falta (nunca duplica)
+function AvisosChat(p){
+  var c = p.c, ped = p.ped, lista = avisosDoPedido(ped), sv = useState(null), sit = sv[0], api = apiAtiva();
+  var conferir = function(){ if(!api || !lista.length) return; chamar("POST", "/compras/avisos", {pedidos:[ped.id]}).then(function(r){ sv[1](r.situacao && r.situacao[ped.id] || {entregues:[], pendentes:[], vinculo:ped.solicitanteId!=null}); }).catch(function(x){ sv[1]({erro:x.message, entregues:[], pendentes:[]}); }); };
+  useEffect(function(){ conferir(); }, [ped.id, lista.length]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var semVinculo = ped.solicitanteId==null && (lista.length>0 || ["ENTREGUE", "NEGADA", "CANCELADA"].indexOf(ped.status)<0);   // pedido já encerrado e sem aviso: não precisa do alerta
+  if(!lista.length && !semVinculo) return null;
+  var ent = sit ? sit.entregues.length : 0, pen = sit ? sit.pendentes.length : 0;
+  return e(Painel,{t:"Avisos no SorellyChat", ic:"bell"},
+    semVinculo && e("div",{className:"flex flex-col items-center gap-1"}, e(Selo,{cor:"alerta", ic:"warning"}, "Sem vínculo com o chat: o solicitante não recebe os avisos"),
+      c.opera && e(Bt,{ic:"link", onClick:function(){ p.ac.iniciar(ped, "vincular"); }}, "Vincular solicitante")),
+    lista.length>0 && e("div",{className:"flex flex-col text-left"},
+      lista.slice(-6).reverse().map(function(a){ var ok = sit && sit.entregues.indexOf(a.aid)>=0, pend = sit && sit.pendentes.indexOf(a.aid)>=0;
+        return e(Linha,{key:a.aid, t:a.titulo, v:!sit ? "Conferindo" : ok ? "Entregue" : pend ? (sit.vinculo ? "Pendente" : "Sem vínculo") : "Pendente", cor:ok ? "text-success" : "text-warning"}); })),
+    sit && sit.erro && e("p",{className:"text-[11px] text-[#F87171]"}, "Chat indisponível agora. A ação do pedido continua valendo; os avisos ficam pendentes."),
+    sit && (pen>0 || sit.erro) && !semVinculo && e(Bt,{ic:"arrow-counter-clockwise", className:"self-center", onClick:conferir}, "Tentar de novo"),
+    sit && ent>0 && pen===0 && !sit.erro && e("span",{className:"text-[11px]"}, "Todos os avisos chegaram ao chat."));
+}
+// VINCULAR SOLICITANTE (pedido antigo): escolhe a PESSOA do sistema; o aviso vai para a conta dela. Nunca por aproximação de nome.
+function DlgVincular(p){
+  var c = p.c, ped = p.ped, st = useState(""), pessoas = EQUIPE.slice().sort(function(a, b){ return a.nome.localeCompare(b.nome); });
+  var x = pessoas.find(function(y){ return String(y.id)===String(st[0]); });
+  var enviar = function(){ if(!x) return c.aviso("Escolha a pessoa."); if(c.exec({op:"pedido_vincular", id:ped.id, solicitanteId:x.id, solicitante:x.nome})) p.fechar(); };
+  return e(Dialogo,{t:"Vincular solicitante", sub:"#"+ped.id+" · "+ped.titulo, fechar:p.fechar, rodape:[e(Bt,{key:"v", onClick:p.fechar}, "Voltar"), e(Bt,{key:"o", tipo:"forte", ic:"link", onClick:enviar}, "Vincular")]},
+    e("p",{className:"text-[13px]"}, "Solicitante gravado no pedido: "+(ped.solicitante || "Não informado")+". Escolha a pessoa certa: os avisos vão para a conta dela no SorellyChat."),
+    e(Campo,{rot:"Pessoa"}, e("select",{value:st[0], onChange:function(ev){ st[1](ev.target.value); }, className:CAMPO}, e("option",{value:""}, "Selecione"), pessoas.map(function(y){ return opt(y.id, y.nome); }))));
 }
 function NotaFiscal(p){
   var c = p.c, ped = p.ped, st = useState(ped.notaFiscal || ""), t = st[0];
@@ -473,6 +553,7 @@ function Detalhe(p){
   var snapsEstoque = ped.itens.filter(function(i){ return i.materialId!=null; }).map(function(i){ var sn = estoqueDaSolicitacao(c.s, {materialId:i.materialId, quantidade:i.quantidade, solicitadoEm:ped.solicitadoOriginalEm || ped.solicitadoEm, solicitadoPor:ped.solicitante}); return sn && Object.assign(sn, {quantidadeTxt:Number(i.quantidade).toLocaleString("pt-BR")+" "+(i.rotuloUnidade || "")+(Number(i.fatorEntrada)>1 ? " ("+(Number(i.quantidade)*Number(i.fatorEntrada)).toLocaleString("pt-BR")+" "+sn.unidade+")" : "")}); });   // compra em caixa: mostra também o total em unidades do estoque
   var blocoEstoque = e(EstoqueMomento,{snaps:snapsEstoque});
   var col1 = e("div",{key:"a", className:"flex flex-col gap-1.5"},
+    ped.status==="AGUARDANDO_ORCAMENTO" && e(BlocoDevolucao,{ped:ped}),   // pendência de ajuste em destaque (18/11/2026)
     e(Prazos,{ped:ped}),
     e(Painel,{t:"Dados da compra", ic:"receipt"},
       ped.enviada && e(Selo,{cor:"ok", ic:"check-circle"}, "Enviada aos pagamentos"),
@@ -510,6 +591,7 @@ function Detalhe(p){
       e("div",{className:"h-2 overflow-hidden rounded-full bg-white/10"}, e("div",{className:"h-full rounded-full", style:{width:Math.min(100, Math.round(100*ped.recebimento.recebida/Math.max(1, ped.recebimento.pedida)))+"%", background:ped.recebimento.completo ? ESTADO.ok : ESTADO.alerta}})),
       e("span",{className:MONO+" text-[12.5px]"}, ped.recebimento.recebida+" de "+ped.recebimento.pedida+" itens"),
       ped.recebimentos.map(function(r, i){ return e("div",{key:i, className:"rounded-md bg-black/25 px-2 py-1 text-[11.5px]"}, formatarDia(r.dia)+" · "+r.por+" · "+r.itens.reduce(function(t, x){ return t+x.qtd; }, 0)+" un."); })),
+    e(AvisosChat,{c:c, ac:ac, ped:ped}),
     e(Painel,{t:"Entrega e nota fiscal", ic:"truck"},
       ped.entregueEm && e("div",{className:"grid grid-cols-2 gap-1.5"}, e(Dado,{t:"Entregue em", v:formatarDia(ped.entregueEm)}), e(Dado,{t:"Recebido por", v:ped.entregueParaNome}), e(Dado,{t:"Assinatura", v:ped.assinaturaConfirmada ? "Confirmada" : "Não confirmada"})),
       !final && ped.status!=="NAO_VERIFICADA" && e(NotaFiscal,{key:ped.id+"-"+ped.notaFiscal, c:c, ped:ped}),

@@ -133,8 +133,9 @@ var TRANSICOES = {
   negar:{rotulo:"Reprovar", de:["NAO_VERIFICADA", "AGUARDANDO", "AGUARDANDO_ORCAMENTO", "AGUARDANDO_AUTORIZACAO", "AGUARDANDO_CNPJ", "AGUARDANDO_FORMA_PAGAMENTO", "APROVADA", "LIBERADA"], cap:"operar", decide:true},   // depois de efetuada só cancelando
   cancelar:{rotulo:"Cancelar", de:["NAO_VERIFICADA", "AGUARDANDO", "AGUARDANDO_ORCAMENTO", "AGUARDANDO_AUTORIZACAO", "AGUARDANDO_CNPJ", "AGUARDANDO_FORMA_PAGAMENTO", "APROVADA", "LIBERADA", "COMPRADA", "EM_TRANSITO"], cap:"membro", decide:"depois_de_solicitada"},   // solicitante cancela a própria solicitação ainda não aprovada; depois precisa da autorização. Sem nada recebido.
   novo_orcamento:{rotulo:"Pedir novo orçamento", de:["NAO_VERIFICADA", "AGUARDANDO", "AGUARDANDO_AUTORIZACAO"], cap:"operar", decide:true},   // ASSUMIDO: o doc não lista os status de origem
-  reenviar:{rotulo:"Reenviar com novo valor", de:["AGUARDANDO_ORCAMENTO"], cap:"operar_ou_solicitante"},
-  esperar:{rotulo:"Colocar em espera", de:["NAO_VERIFICADA", "AGUARDANDO_AUTORIZACAO"], cap:"operar", decide:true},                      // ASSUMIDO
+  reenviar:{rotulo:"Reenviar para aprovação", de:["AGUARDANDO_ORCAMENTO"], cap:"operar_ou_solicitante"},   // 18/11/2026: o solicitante corrige (Editar compra) e reenvia o MESMO pedido para "1 — Solicitada"
+  esperar:{rotulo:"Colocar em espera", de:["NAO_VERIFICADA", "AGUARDANDO_AUTORIZACAO"], cap:"operar", decide:true},                      // ASSUMIDO; 18/11/2026: exige motivo e responsável pelo próximo passo
+  vincular:{rotulo:"Vincular solicitante", de:TODOS_ATIVOS.concat(["ENTREGUE", "NEGADA", "CANCELADA"]), cap:"operar"},   // pedido antigo sem a conta do solicitante: quem opera liga à pessoa certa (nunca pelo nome)
   itens_set:{rotulo:"Editar itens", de:["NAO_VERIFICADA", "AGUARDANDO", "AGUARDANDO_ORCAMENTO"], cap:"operar_ou_solicitante"},
   plano_set:{rotulo:"Plano de pagamento", de:TODOS_ATIVOS, cap:"operar"},
   enviar_pagamentos:{rotulo:"Enviar aos pagamentos", de:PAGAVEL_STATUS, cap:"operar"},
@@ -331,6 +332,43 @@ function textoFormaDisp(k, o){
   if(k==="boleto") return r+(o.parcelas ? " "+o.parcelas+"x" : "")+(o.prazos ? " · "+o.prazos+" dias "+rotuloRefPrazo(o.ref) : "");
   return r+(o.condicao ? " · "+o.condicao : "");
 }
+// ---------- AVISOS DO SORELLYCHAT (Mudança 2, 18/11/2026) ----------
+// Cada ação que muda a etapa marca UM evento do histórico com {aviso}: código fixo (aid), título, texto pronto, etapa anterior e nova, quem fez (porId), motivo e próxima ação.
+// O SERVIDOR (src/server/compras-chat.js) lê o pedido JÁ GRAVADO e entrega o aviso no grupo do pedido no SorellyChat. O aid vira o id da mensagem: clicar de novo, recarregar ou tentar de novo nunca duplica.
+// O aviso só informa: não aprova nem move nada. "Aprovar e liberar" marca só o evento da liberação (um aviso só).
+var AVISA = {aprovar:1, ajustar_orcamento:1, autorizar:1, liberar:1, negar:1, cancelar:1, novo_orcamento:1, esperar:1, reenviar:1, comprar:1, transito:1, receber:1, entregar:1};
+var TITULO_AVISO = {aprovar:"Aprovado", ajustar_orcamento:"Orçamento ajustado e aprovado", autorizar:"Autorizado", liberar:"Liberado para compra", negar:"Reprovado", cancelar:"Cancelado", novo_orcamento:"Novo orçamento solicitado",
+  esperar:"Colocado em espera", reenviar:"Reenviado para aprovação", comprar:"Compra efetuada", transito:"Em transporte", receber:"Recebido", entregar:"Entregue"};
+function proximaAcao(p, acao){
+  if(acao==="novo_orcamento") return "Revise o pedido, corrija o que foi pedido e clique em \"Reenviar para aprovação\".";
+  if(acao==="reenviar") return "Aguarde a nova análise do pedido.";
+  if(acao==="esperar") return p.espera ? "Próximo passo com "+p.espera.responsavel+(p.espera.ate ? ", revisão em "+formatarDia(p.espera.ate) : "")+"." : "";
+  if(p.status==="AGUARDANDO_AUTORIZACAO") return "Aguarde a autorização (compra acima do limite).";
+  if(ETAPA_ANALISE.indexOf(p.status)>=0) return "Aguarde a análise financeira (CNPJ pagador e forma de pagamento).";
+  if(p.status==="LIBERADA") return "Aguarde a compra ser efetuada.";
+  if(p.status==="COMPRADA" || p.status==="EM_TRANSITO" || p.status==="RECEBIDA_PARCIAL") return "Aguarde a chegada na empresa.";
+  if(p.status==="RECEBIDA") return "Aguarde a entrega para quem pediu.";
+  return "";
+}
+function marcaAviso(p, acao, stAntes, evAntes, a, agora){
+  if(!AVISA[acao] || p.eventos.length<=evAntes) return;
+  if(acao==="autorizar" && p.status===stAntes) return;   // autorização parcial (falta outra pessoa): sem aviso
+  var juntos = acao==="aprovar" && a.liberar, idx = juntos ? p.eventos.length-1 : evAntes, ev = p.eventos[idx]; if(!ev || ev.aviso) return;
+  var tit = juntos ? "Aprovado e liberado para compra" : acao==="aprovar" && p.status==="AGUARDANDO_AUTORIZACAO" ? "Enviado para autorização" : acao==="aprovar" ? "Aprovado e encaminhado para a análise financeira" : acao==="receber" && p.status==="RECEBIDA_PARCIAL" ? "Recebido em parte" : TITULO_AVISO[acao];
+  var motivo = acao==="negar" ? p.motivoNegativa : acao==="cancelar" ? p.motivoCancelamento : acao==="novo_orcamento" ? (ROTULO_MOTIVO_ORC[p.orcamentoMotivo]||"")+": "+p.orcamentoDetalhe : acao==="esperar" && p.espera ? p.espera.motivo : (acao==="liberar" || juntos) && p.decisao ? p.decisao.nota : acao==="reenviar" ? trim(a.nota) : "";
+  var prox = proximaAcao(p, acao), etapa = ROTULO_STATUS[p.status]||p.status;
+  var chave = juntos ? "aprovar_liberar" : acao==="aprovar" && p.status==="AGUARDANDO_AUTORIZACAO" ? "aprovar_aut" : acao==="receber" && p.status==="RECEBIDA_PARCIAL" ? "receber_parte" : acao;
+  var linhas = [tit+" — Pedido #"+p.id, ev.por+" "+FRASE_AVISO[chave]+" \""+p.titulo+"\".", "Situação: "+etapa+"."];
+  if(trim(motivo)) linhas.push((acao==="novo_orcamento" ? "Ajustes pedidos: " : acao==="liberar" || juntos || acao==="reenviar" ? "Observação: " : "Motivo: ")+trim(motivo));
+  if((acao==="liberar" || juntos) && p.decisao) linhas.push("Pagamento: "+(p.decisao.cnpj||"")+" · "+(p.decisao.formas||[]).map(function(x){ return ROTULO_FORMA_DISP[x]||x; }).join(" + ")+" · "+formatarReais(p.decisao.total));
+  if(prox) linhas.push("Próxima ação: "+prox);
+  ev.aviso = {aid:"cpa_"+p.id+"_"+idx+"_"+String(agora).replace(/\D/g, "").slice(-12), acao:juntos ? "aprovar_liberar" : acao, titulo:tit, de:ROTULO_STATUS[stAntes]||stAntes, para:etapa, porId:a.porId==null ? null : a.porId, motivo:trim(motivo)||"", proxima:prox, texto:linhas.join("\n")};
+}
+var FRASE_AVISO = {aprovar:"aprovou e encaminhou para a análise financeira o pedido", aprovar_aut:"aprovou e enviou para autorização o pedido", aprovar_liberar:"aprovou e liberou para compra o pedido", ajustar_orcamento:"ajustou o orçamento e aprovou o pedido",
+  autorizar:"autorizou o pedido", liberar:"liberou para compra o pedido", negar:"reprovou o pedido", cancelar:"cancelou o pedido", novo_orcamento:"solicitou um ajuste no pedido", esperar:"colocou em espera o pedido", reenviar:"corrigiu e reenviou para aprovação o pedido",
+  comprar:"efetuou a compra do pedido", transito:"marcou em transporte o pedido", receber:"registrou o recebimento do pedido", receber_parte:"registrou o recebimento de parte do pedido", entregar:"confirmou a entrega do pedido"};
+// avisos de um pedido (para a tela e o servidor): [{aid, ...aviso, em, por}]
+function avisosDoPedido(p){ return (p.eventos||[]).filter(function(x){ return x.aviso && x.aviso.aid; }).map(function(x){ return Object.assign({em:x.em, por:x.por}, x.aviso); }); }
 // pendências da etapa 2 (cartão do quadro): ["Falta definir CNPJ", "Falta definir pagamento"] ou ["Pronto para liberar"]
 function pendenciasAnalise(p, cfg){
   if(ETAPA_ANALISE.indexOf(p.status)<0) return [];
@@ -814,6 +852,7 @@ function ceReduz(s, a){
       var lp = lePlano(a.plano, []); if(lp.erro) return recusa(lp.erro);
       var np = novoPedido(ce, Object.assign({}, a, {id:undefined, itens:li.itens.map(function(x){ return Object.assign({}, x); }), status:"NAO_VERIFICADA", solicitadoEm:agora, eventos:undefined, plano:[], fornecedorNome:fornNome(a.fornecedorId, a.fornecedorNome)}), agora, por, false);
       if(a.formasDisp!==undefined){ var lfd = leFormasDisp(a.formasDisp, cfg.parcelasMax); if(lfd.erro) return recusa(lfd.erro); np.formasDisp = lfd.formas; }   // formas que o fornecedor aceita (18/11/2026)
+      np.solicitanteId = a.solicitanteId!==undefined ? (a.solicitanteId==null ? null : a.solicitanteId) : (a.porId==null ? null : a.porId);   // conta de quem pediu (18/11/2026): avisos do SorellyChat vão pelo id, nunca pelo nome
       np.itens = li.itens; np.plano = lp.plano; ce.pedidos.push(np); return ok("Pedido #"+np.id+" enviado ao financeiro."+avisoPlano(np));
     }
     case "pedido_set": {   // operador corrige dados (o original não gravava na linha do tempo; aqui grava). Itens: pedido_itens_set. Plano: pedido_plano_set
@@ -847,14 +886,15 @@ function ceReduz(s, a){
       parte.pago = a.pago!==false; parte.pagoEm = parte.pago ? dpp : null; pp.pago = pp.plano.every(function(x){ return x.pago; }); pp.pagoEm = pp.pago ? dpp : null;
       evento(pp, por, (parte.pago ? "Pago" : "Pagamento desmarcado")+": "+(ROTULO_FORMA_PLANO[parte.forma]||parte.forma)+" "+formatarReais(parte.valor)+" ("+formatarDia(parte.vencimento)+") por "+por, agora); return ok(parte.pago ? "Parte paga." : "Parte voltou a pagar.");
     }
-    case "pedido_aprovar": case "pedido_liberar": case "pedido_ajustar_orcamento": case "pedido_autorizar": case "pedido_cnpj": case "pedido_cnpj_desfazer": case "pedido_pagamento": case "pedido_comprar": case "pedido_negar": case "pedido_cancelar": case "pedido_novo_orcamento": case "pedido_reenviar": case "pedido_esperar":
+    case "pedido_aprovar": case "pedido_liberar": case "pedido_ajustar_orcamento": case "pedido_autorizar": case "pedido_cnpj": case "pedido_cnpj_desfazer": case "pedido_pagamento": case "pedido_comprar": case "pedido_negar": case "pedido_cancelar": case "pedido_novo_orcamento": case "pedido_reenviar": case "pedido_esperar": case "pedido_vincular":
     case "pedido_decisao": case "pedido_itens_set": case "pedido_plano_set": case "pedido_enviar_pagamentos": case "pedido_transito": case "pedido_receber": case "pedido_entregar": case "pedido_etiqueta": {
       var p = ped(); if(!p) return recusa("Pedido não encontrado."); var acao = a.op.slice(7), tr = TRANSICOES[acao];
       if(tr.de.indexOf(p.status)<0) return recusa("Não dá para \""+tr.rotulo.toLowerCase()+"\" com o pedido em \""+ROTULO_STATUS[p.status]+"\".");
       if((tr.decide===true || (tr.decide==="depois_de_solicitada" && p.status!=="NAO_VERIFICADA")) && !podeAprovarCompra(s, a.porId)) return recusa(DECIDE_MSG);
       if(tr.decide==="efetua" && !podeEfetuarCompra(s, a.porId)) return recusa(EFETUA_MSG);
+      var stAntes = p.status, evAntes = p.eventos.length;   // avisos do SorellyChat (18/11/2026): comparados depois da ação
       if(acao==="plano_set" && p.status==="LIBERADA" && !podeEditarPlano(s, p, a.porId, null)) return recusa(p.liberacao && p.liberacao.modo==="plano" ? "O plano de pagamento foi definido pelo financeiro: só quem tem a autorização \"Aprovar, reprovar e liberar para compra\" pode alterá-lo." : "Só quem tem a autorização \"Efetuar compras liberadas\" (ou a de aprovar) pode definir o plano de pagamento.");
-      switch(acao){
+      var resT = (function(){ switch(acao){
         case "aprovar": {   // a.liberar:true = atalho "Aprovar e liberar": aprova e, se ficou APROVADA (sem pendência de CNPJ/autorização), já libera. Os dois passos entram na linha do tempo
           var m0 = aprovaOuTrava(p, "Pedido");
           // "Aprovar e liberar" (18/11/2026): tudo ou nada. Se não der para liberar (autorização acima do limite ou decisão incompleta), NADA muda: nem a aprovação
@@ -918,13 +958,28 @@ function ceReduz(s, a){
         }
         case "novo_orcamento": {
           var det = trim(a.detalhe); if(MOTIVOS_ORCAMENTO.indexOf(a.motivo)<0 || !det) return recusa("Selecione o motivo e detalhe o que precisa ajustar no orçamento."); if(!p.respondidoEm) p.respondidoEm = agora;
-          p.status = "AGUARDANDO_ORCAMENTO"; p.orcamentoMotivo = a.motivo; p.orcamentoDetalhe = det; evento(p, por, "Devolvida para novo orçamento — "+ROTULO_MOTIVO_ORC[a.motivo]+": "+det, agora); return ok("Devolvida para novo orçamento.");
+          p.status = "AGUARDANDO_ORCAMENTO"; p.orcamentoMotivo = a.motivo; p.orcamentoDetalhe = det; p.devolucao = {por:por, porId:a.porId==null ? null : a.porId, em:agora, motivo:a.motivo, detalhe:det, etapa:ROTULO_STATUS[stAntes]||stAntes}; evento(p, por, "Devolvida para novo orçamento — "+ROTULO_MOTIVO_ORC[a.motivo]+": "+det, agora); return ok("Devolvida para novo orçamento.");
         }
         case "reenviar": {   // reabre o MESMO pedido (não duplica); volta a contar o prazo do financeiro a partir de agora
-          if(vazio(a.valorEstimado) || num(a.valorEstimado)<0) return recusa("Informe o novo valor estimado."); p.valorEstimado = r2(num(a.valorEstimado)); if(a.link!==undefined) p.link = trim(a.link); if(a.observacao!==undefined) p.observacao = trim(a.observacao);
-          p.status = "NAO_VERIFICADA"; p.solicitadoEm = agora; evento(p, por, "Reenviada por "+por+" com novo orçamento: "+formatarReais(p.valorEstimado), agora); return ok("Pedido reenviado ao financeiro.");
+          // 18/11/2026: o valor novo é opcional (a correção é feita em "Editar compra"); confere o obrigatório; mantém número, conversa, histórico e a data ORIGINAL da solicitação
+          if(!vazio(a.valorEstimado)){ if(num(a.valorEstimado)<0) return recusa("O valor não pode ser negativo."); p.valorEstimado = r2(num(a.valorEstimado)); } if(a.link!==undefined) p.link = trim(a.link); if(a.observacao!==undefined) p.observacao = trim(a.observacao);
+          if(!(p.fornecedorId || trim(p.fornecedorNome))) return recusa("Informe o fornecedor antes de reenviar."); if(!p.itens.length || p.itens.some(function(i){ return !(i.quantidade>0) || !trim(i.titulo); })) return recusa("Confira os itens (descrição e quantidade) antes de reenviar.");
+          if(!(totalDaCompra(p)>0)) return recusa("Informe o valor dos itens (ou o valor estimado) antes de reenviar.");
+          var nota = trim(a.nota); if(nota.length>cfg.motivoMax) return recusa("A observação passou de "+cfg.motivoMax+" caracteres.");
+          if(p.devolucao) p.devolucoes = (p.devolucoes||[]).concat([Object.assign({}, p.devolucao, {resolvidaEm:agora, resolvidaPor:por})]);
+          p.devolucao = null; p.status = "NAO_VERIFICADA"; p.solicitadoEm = agora; p.reenviadoEm = agora; p.reenvios = (p.reenvios||0)+1;
+          evento(p, por, "Reenviada para aprovação por "+por+" ("+p.reenvios+"º reenvio, "+formatarReais(totalDaCompra(p))+")"+(nota ? ". Observação: "+nota : ""), agora); return ok("Pedido #"+p.id+" reenviado para aprovação: voltou para \"1 — Solicitada\".");
         }
-        case "esperar": { var ate = dataOu(a.ate, null); if(ate===undefined) return recusa("Data inválida."); if(!p.respondidoEm) p.respondidoEm = agora; p.status = "AGUARDANDO"; p.esperaAte = ate||null; evento(p, por, ate ? "Em espera até "+formatarDia(ate) : "Colocada em espera", agora); return ok(ate ? "Em espera até "+formatarDia(ate)+"." : "Colocado em espera."); }
+        case "esperar": {   // 18/11/2026: motivo e responsável pelo próximo passo obrigatórios; data de revisão opcional. Não vai para "Novo orçamento / ajustes"
+          var ate = dataOu(a.ate, null); if(ate===undefined) return recusa("Data inválida."); var mesp = trim(a.motivo), resp = trim(a.responsavel);
+          if(!mesp) return recusa("Diga o motivo da espera."); if(mesp.length>cfg.motivoMax) return recusa("O motivo passou de "+cfg.motivoMax+" caracteres."); if(!resp) return recusa("Diga quem é o responsável pelo próximo passo.");
+          if(!p.respondidoEm) p.respondidoEm = agora; p.status = "AGUARDANDO"; p.esperaAte = ate||null; p.espera = {motivo:mesp, responsavel:resp, ate:ate||null, por:por, em:agora};
+          evento(p, por, "Colocada em espera por "+por+": "+mesp+". Próximo passo: "+resp+(ate ? ", revisão em "+formatarDia(ate) : ""), agora); return ok(ate ? "Em espera até "+formatarDia(ate)+"." : "Colocado em espera.");
+        }
+        case "vincular": {   // liga o pedido à pessoa do sistema (id); o nome do solicitante continua o que estava, a menos que venha outro
+          if(a.solicitanteId==null || a.solicitanteId==="") return recusa("Escolha a pessoa."); var ant = p.solicitanteId; p.solicitanteId = a.solicitanteId; if(trim(a.solicitante)) p.solicitante = trim(a.solicitante);
+          evento(p, por, "Solicitante vinculado por "+por+": "+p.solicitante+(ant!=null ? " (antes: pessoa "+ant+")" : ""), agora); return ok("Solicitante vinculado: os avisos do SorellyChat vão para "+p.solicitante+".");
+        }
         case "itens_set": {   // troca a lista de itens (antes de aprovar) e, por padrão, refaz o valor estimado pela soma
           var lt = leItens(a.itens, a.classificacao); if(lt.erro) return recusa(lt.erro); var tituloAuto = p.titulo===nomeDoPedido(p.itens, ""); p.itens = lt.itens; if(a.titulo!==undefined || tituloAuto || !trim(p.titulo)) p.titulo = nomeDoPedido(p.itens, a.titulo); var sm = somaItens(p.itens); if(a.recalcular!==false && sm>0) p.valorEstimado = sm;
           evento(p, por, "Itens alterados por "+por+" ("+p.itens.length+" itens, "+formatarReais(p.valorEstimado)+")", agora); return ok("Itens atualizados: "+formatarReais(p.valorEstimado)+".");
@@ -973,6 +1028,9 @@ function ceReduz(s, a){
         }
       }
       return recusa("Ação desconhecida.");
+      })();
+      if(resT.patch && resT.patch.ce) marcaAviso(p, acao, stAntes, evAntes, a, agora);   // só a ação que deu certo vira aviso
+      return resT;
     }
 
     // ---------------- estoque: categorias e materiais ----------------
@@ -1105,7 +1163,7 @@ function ceReduz(s, a){
       // valores do momento do pedido: NUNCA mudam depois (o saldo e o mínimo de hoje aparecem à parte na tela). O mínimo não vira quantidade a comprar.
       npM.origem = {tipo:"estoque", materialId:mp.id, material:mp.material, unidade:mp.unidade||"", categoria:catM ? catM.nome : "", aba:catM ? nomeDe(cfg.tipos, catM.tipoId, "") : "", saldo:mp.estoqueAtual, minimo:mp.estoqueMinimo, quantidade:qtdM, em:agora, por:por, foto:mp.foto ? {key:mp.foto.key, nome:mp.foto.nome} : null};
       evento(npM, por, "Pedida pelo Estoque de material (saldo "+mp.estoqueAtual+", mínimo "+mp.estoqueMinimo+")", agora);
-      ce.pedidos.push(npM);
+      npM.solicitanteId = a.porId==null ? null : a.porId; ce.pedidos.push(npM);
       logMat(ce, mp, "COMPRA_PEDIDA", "Compra #"+npM.id+": "+qtdM+(mp.unidade ? " "+mp.unidade : "")+" (saldo "+mp.estoqueAtual+", mínimo "+mp.estoqueMinimo+")"+(abM.length ? " · já havia "+abM.length+" em andamento" : "")+(trim(a.observacao) ? " · "+trim(a.observacao) : ""), por, agora);
       return ok("Compra #"+npM.id+" pedida: já aparece em Compras como Solicitada.");
     }
@@ -1152,7 +1210,7 @@ function ceReduz(s, a){
 export { ehCategoriaGrafica, ceDemo, ceMigrar, ceReduz, hojeSP, agoraSP, somaDias, diasEntre,
   CONFIG_PADRAO, STATUS_PEDIDO, ROTULO_STATUS, TOM_STATUS, FUNIL_STATUS, HISTORICO_STATUS, PAGAVEL_STATUS, ETIQUETA_ELEGIVEL, ETIQUETAS, ROTULO_ETIQUETA, UNIDADES, ROTULO_UNIDADE, URGENCIAS, ROTULO_URGENCIA, TIPOS_ENTREGA, ROTULO_ENTREGA,
   FORMAS_PAGAMENTO, ROTULO_FORMA, FORMAS_PLANO, ROTULO_FORMA_PLANO, MOTIVOS_ORCAMENTO, ROTULO_MOTIVO_ORC, PAPEIS_COMPRAS, ROTULO_PAPEL, CAPS_COMPRAS, TRANSICOES,
-  FORMAS_DISP, ROTULO_FORMA_DISP, FORMAS_SEM_NF, REF_PRAZO, ETAPA_ANALISE, textoFormaDisp, pendenciasAnalise, rotuloRefPrazo,
+  FORMAS_DISP, ROTULO_FORMA_DISP, FORMAS_SEM_NF, REF_PRAZO, ETAPA_ANALISE, textoFormaDisp, pendenciasAnalise, rotuloRefPrazo, avisosDoPedido,
   SITUACOES, ROTULO_SITUACAO, ANDAMENTOS, ROTULO_ANDAMENTO, ANDAMENTO_DO_PEDIDO, andamentoMaterial, comprasDoMaterial, STATUS_SOLICITACAO, ROTULO_SOL, STATUS_MATERIAL, ROTULO_STATUS_MAT, TIPOS_MOV, ROTULO_MOV, CAPS_ESTOQUE, ROTULO_CAP_ESTOQUE,
   formatarReais, formatarDia, formatarDataHora, formatarHoras, padronizarUnidade, padronizarFornecedor, estoqueDaSolicitacao,
   papelCompras, podeCompras, veFunilCompleto, podeAprovarCompra, podeEfetuarCompra, podeEditarPlano, capacidadesEstoque, podeEstoque,

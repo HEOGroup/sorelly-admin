@@ -16,13 +16,13 @@ import { JanelaPedir } from "@/apps/montagem/pages/compras/EstoqueMaterial";
 import { useAcoes } from "@/apps/montagem/pages/compras/janelas";
 import { cnpjCurto, diasNaEtapa, normal, textoDias, useCompras } from "@/apps/montagem/pages/compras/pecas";
 import { Vazio, useCe } from "@/apps/montagem/pages/compras/visualCompras";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 // tudo que o antigo Quadro de compras filtrava em cima (indicadores clicáveis) agora é a opção Situação do menu suspenso (Marcus, 17/11/2026: "não perder nada")
-var SITUACOES = [["aberto", "Em aberto"], ["aguard", "Aguardando aprovação"], ["aprovadas", "Na análise financeira"], ["liberadas", "Liberadas para comprar"], ["areceber", "A receber"], ["atrasadas", "Atrasadas"], ["mes", "Compras do mês"], ["finalizados", "Finalizadas"]];
+var SITUACOES = [["aberto", "Em aberto"], ["ajustes", "Novo orçamento / ajustes"], ["aguard", "Aguardando aprovação"], ["aprovadas", "Na análise financeira"], ["liberadas", "Liberadas para comprar"], ["areceber", "A receber"], ["atrasadas", "Atrasadas"], ["mes", "Compras do mês"], ["finalizados", "Finalizadas"]];
 function passaSituacao(p, sit, mes){
   var fim = FINAIS.indexOf(p.status)>=0;
-  return sit==="aberto" ? !fim : sit==="finalizados" ? fim : sit==="aguard" ? (p.status==="NAO_VERIFICADA" || p.status==="AGUARDANDO_AUTORIZACAO") : sit==="autoriz" ? p.status==="AGUARDANDO_AUTORIZACAO" : sit==="aprovadas" ? ETAPA_ANALISE.indexOf(p.status)>=0 : sit==="liberadas" ? p.status==="LIBERADA" : sit==="areceber" ? ["COMPRADA", "EM_TRANSITO", "RECEBIDA_PARCIAL"].indexOf(p.status)>=0 : sit==="atrasadas" ? !!p.atrasado : sit==="mes" ? (String(p.solicitadoEm).slice(0, 7)===mes && p.status!=="NEGADA" && p.status!=="CANCELADA") : true;
+  return sit==="ajustes" ? p.status==="AGUARDANDO_ORCAMENTO" : sit==="aberto" ? !fim : sit==="finalizados" ? fim : sit==="aguard" ? (p.status==="NAO_VERIFICADA" || p.status==="AGUARDANDO_AUTORIZACAO") : sit==="autoriz" ? p.status==="AGUARDANDO_AUTORIZACAO" : sit==="aprovadas" ? ETAPA_ANALISE.indexOf(p.status)>=0 : sit==="liberadas" ? p.status==="LIBERADA" : sit==="areceber" ? ["COMPRADA", "EM_TRANSITO", "RECEBIDA_PARCIAL"].indexOf(p.status)>=0 : sit==="atrasadas" ? !!p.atrasado : sit==="mes" ? (String(p.solicitadoEm).slice(0, 7)===mes && p.status!=="NEGADA" && p.status!=="CANCELADA") : true;
 }
 // o que a Visão geral manda ao abrir uma compra filtrada ({ind, setor, cls, sol, urg, atr}) vira o filtro daqui
 function filtroDe(o){ o = o || {}; return {setor:o.setor!=null ? String(o.setor) : "", sol:o.sol || "", urg:o.urg || "", cls:o.cls || "", sit:o.ind || (o.atr ? "atrasadas" : "")}; }
@@ -63,7 +63,8 @@ var corDoTempo = function(d){ return d>=5 ? "text-destructive" : d>=3 ? "text-wa
 function CartaoC(p){
   var pd = p.p, final = FINAIS.indexOf(pd.status)>=0, dias = diasNaEtapa(pd, p.hoje), atras = !final && pd.atrasado, cor = corFornecedor(pd.fornecedor);
   var naoFecha = !final && pd.plano.length>0 && !pd.planoInfo.fecha, urgente = !final && pd.urgencia==="ALTA";
-  var fina = ["AGUARDANDO", "AGUARDANDO_ORCAMENTO", "AGUARDANDO_AUTORIZACAO", "RECEBIDA_PARCIAL"].indexOf(pd.status)>=0;   // só mostra a situação quando a coluna não a diz (Aguardando autorização, Parcial...)
+  var fina = ["AGUARDANDO", "AGUARDANDO_AUTORIZACAO", "RECEBIDA_PARCIAL"].indexOf(pd.status)>=0;
+  var dev = pd.status==="AGUARDANDO_ORCAMENTO" ? (pd.devolucao || {por:"", detalhe:pd.orcamentoDetalhe || ""}) : null;   // pendência de ajuste (18/11/2026): quem devolveu e o resumo   // só mostra a situação quando a coluna não a diz (Aguardando autorização, Parcial...)
   var pend = pendenciasAnalise(pd), pronto = pend[0]==="Pronto para liberar";   // Análise financeira (18/11/2026): Falta definir CNPJ / Falta definir pagamento / Pronto para liberar
   // NADA QUEBRA LINHA (Marcus, 17/11/2026): cada linha do cartão fica em uma linha só e a coluna cresce para a direita até caber o maior cartão (mínimo 270 px)
   return e("button",{type:"button", title:"Abrir a compra", onClick:p.abrir, style:{borderColor:cor+"73"}, className:"flex w-full cursor-pointer flex-col gap-0 whitespace-nowrap rounded-md border bg-card px-2 py-1 text-left hover:bg-white/5"},
@@ -71,6 +72,8 @@ function CartaoC(p){
       e("span",{className:"font-semibold", style:{color:cor}}, normal(pd.fornecedor) || "Sem fornecedor"),
       e("span",{className:"flex gap-2 font-bold"}, urgente && e("span",{className:"text-destructive"}, "Urgente"), naoFecha && e("span",{className:"text-warning", title:pd.planoInfo.aviso}, "Plano não fecha"), fina && e("span",{className:"text-warning"}, pd.rotuloStatus), pend.length>0 && e("span",{className:pronto ? "text-success" : "text-warning"}, pend.join(" · ")))),
     e("b",{className:"my-0.5 text-[11px] leading-tight"}, normal(pd.titulo)),
+    dev && e("span",{className:"mb-0.5 flex flex-col gap-0 rounded border border-[var(--alerta,#FBBF24)]/60 px-1.5 py-0.5 text-[11px] leading-tight text-warning", style:{whiteSpace:"normal", maxWidth:320}},
+      e("b",null, "Ajuste pedido"+(dev.por ? " por "+dev.por : "")), dev.detalhe && e("span",null, dev.detalhe)),
     e("span",{className:"grid grid-cols-[auto_1fr_auto] items-baseline gap-3 border-t border-white/10 pt-0.5 text-[11px]"},
       e("span",{className:"font-bold tabular-nums"}, formatarReais(pd.valorFinal)),
       e("span",{className:"text-center"}, pd.solicitante || "Sem solicitante"),
@@ -79,6 +82,8 @@ function CartaoC(p){
 
 function PainelComprasEstoque(props){
   var x = useCe(), c = useCompras(), ac = useAcoes(c), s = x.s, cfg = x.cfg, tipos = cfg.tipos, hoje = hojeSP();
+  // link "Abrir solicitação" dos avisos do SorellyChat (18/11/2026): ?compra=<id> abre a ficha do pedido; a tela continua respeitando o acesso de quem abriu
+  useEffect(function(){ try { var q = new URLSearchParams(window.location.search).get("compra"); if(q) ac.abrir(q); } catch(x0){} }, []);   // eslint-disable-line react-hooks/exhaustive-deps
   var mo = useState(props.modo || "quadro"), modo = mo[0], ft = useState(props.filtroInicial ? filtroDe(props.filtroInicial) : VAZIO_F), f = ft[0], svm = useState({}), vermais = svm[0];
   var sT = useState(tipos[0].id), sC = useState(""), sJ = useState(null), jan = sJ[0];
   var set = function(k, v){ ft[1](function(o){ var n = Object.assign({}, o); n[k] = v; return n; }); };
@@ -96,7 +101,7 @@ function PainelComprasEstoque(props){
     var atrC = it.filter(function(p){ return p.atrasado && FINAIS.indexOf(p.status)<0; }).length;
     return e("section",{key:col.k, className:"flex w-max min-w-[270px] shrink-0 flex-col gap-1.5 overflow-hidden rounded-md bg-black/20 pb-1.5"},
       e("div",{className:"flex h-7 items-center justify-between gap-2 bg-[var(--bloco-colunas)] px-2 text-[11px] font-bold uppercase"},
-        e("span",{className:"whitespace-nowrap"}, (COLUNAS.indexOf(col)+1)+" · "+col.titulo),
+        e("span",{className:"whitespace-nowrap"}, (col.n ? col.n+" · " : "")+col.titulo),
         e("span",{className:"flex items-center gap-2 whitespace-nowrap tabular-nums"}, atrC>0 && e("span",{className:"text-destructive"}, plural(atrC, "atrasada", "atrasadas")), e("span",null, String(it.length)))),
       e("div",{className:"flex flex-col gap-1.5 px-1.5"},
         it.slice(0, lim+(vermais[col.k] || 0)).map(function(p){ return e(CartaoC,{key:p.id, p:p, hoje:hoje, abrir:function(){ ac.abrir(p.id); }}); }),

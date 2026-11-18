@@ -25,20 +25,22 @@ import { Kanban } from "@/shared/kanban";
 import { e, useEffect, useState } from "@/shared/react";
 
 // ───────────── colunas e situações ─────────────
+// n = número da etapa no Painel. "Novo orçamento / ajustes" (18/11/2026) fica ANTES da 1 e não tem número: é o pedido devolvido ao solicitante para corrigir (não é compra nova nem reprovação)
 var COLUNAS = [
-  {k:"solicitada", titulo:"Solicitada", cor:ESTADO.alerta},
-  {k:"aprovada", titulo:"Análise financeira", cor:AZUL},
-  {k:"liberada", titulo:"Liberada para compra", cor:"#93C5FD"},
-  {k:"efetuada", titulo:"Efetuada", cor:ESTADO.info},
-  {k:"transito", titulo:"Em transporte", cor:"#38BDF8"},
-  {k:"recebida", titulo:"Chegou na empresa", cor:"#34D399"},
-  {k:"entregue", titulo:"Entregue", cor:ESTADO.ok},
-  {k:"reprovada", titulo:"Reprovada", cor:ESTADO.ruim},
-  {k:"cancelada", titulo:"Cancelada", cor:ESTADO.neutro}];
-var NOME_COL = {solicitada:"Solicitada", aprovada:"Análise financeira", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
-var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"solicitada", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
+  {k:"ajustes", titulo:"Novo orçamento / ajustes", cor:ESTADO.alerta},
+  {k:"solicitada", n:1, titulo:"Solicitada", cor:ESTADO.alerta},
+  {k:"aprovada", n:2, titulo:"Análise financeira", cor:AZUL},
+  {k:"liberada", n:3, titulo:"Liberada para compra", cor:"#93C5FD"},
+  {k:"efetuada", n:4, titulo:"Efetuada", cor:ESTADO.info},
+  {k:"transito", n:5, titulo:"Em transporte", cor:"#38BDF8"},
+  {k:"recebida", n:6, titulo:"Chegou na empresa", cor:"#34D399"},
+  {k:"entregue", n:7, titulo:"Entregue", cor:ESTADO.ok},
+  {k:"reprovada", n:8, titulo:"Reprovada", cor:ESTADO.ruim},
+  {k:"cancelada", n:9, titulo:"Cancelada", cor:ESTADO.neutro}];
+var NOME_COL = {ajustes:"Novo orçamento / ajustes", solicitada:"Solicitada", aprovada:"Análise financeira", liberada:"Liberada para compra", efetuada:"Efetuada", transito:"Em transporte", recebida:"Chegou na empresa", entregue:"Entregue", reprovada:"Reprovada", cancelada:"Cancelada"};
+var COL_DE = {NAO_VERIFICADA:"solicitada", AGUARDANDO:"solicitada", AGUARDANDO_ORCAMENTO:"ajustes", AGUARDANDO_AUTORIZACAO:"solicitada", APROVADA:"aprovada", AGUARDANDO_CNPJ:"aprovada", AGUARDANDO_FORMA_PAGAMENTO:"aprovada", LIBERADA:"liberada",
   COMPRADA:"efetuada", EM_TRANSITO:"transito", RECEBIDA_PARCIAL:"transito", RECEBIDA:"recebida", ENTREGUE:"entregue", NEGADA:"reprovada", CANCELADA:"cancelada"};
-var ORDEM = {solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
+var ORDEM = {ajustes:-1, solicitada:0, aprovada:1, liberada:2, efetuada:3, transito:4, recebida:5, entregue:6};
 var FINAIS = ["ENTREGUE", "NEGADA", "CANCELADA"];
 var SELO_STATUS = {AGUARDANDO:["Em espera", "neutro"], AGUARDANDO_ORCAMENTO:["Novo orçamento", "alerta"], AGUARDANDO_AUTORIZACAO:["Aguard. autorização", "alerta"], EM_TRANSITO:["Em transporte", "info"], RECEBIDA_PARCIAL:["Parcial", "alerta"], ENTREGUE:["Entregue", "ok"]};
 // próxima operação natural de cada situação (botão "Concluir etapa ›")
@@ -52,6 +54,8 @@ function mover(c, ac, pd, de, para){
   var st = pd.status, o0 = ORDEM[de], o1 = ORDEM[para], aviso = function(t){ return c.aviso(t); };
   if(FINAIS.indexOf(st)>=0) return aviso("Esta compra já foi finalizada ("+pd.rotuloStatus.toLowerCase()+") e não muda de etapa.");
   if(para==="reprovada") return ac.iniciar(pd, "negar");
+  if(para==="ajustes") return st==="AGUARDANDO_ORCAMENTO" ? undefined : ac.iniciar(pd, "novo_orcamento");   // devolver ao solicitante (pede motivo e ajustes)
+  if(de==="ajustes" && para==="solicitada") return ac.iniciar(pd, "reenviar");
   if(para==="cancelada") return ac.iniciar(pd, "cancelar");
   if(o1<o0) return aviso("Não é possível voltar a compra para \""+NOME_COL[para]+"\". Cancele a compra ou peça ajuste ao financeiro.");
   if(para==="aprovada") return ac.iniciar(pd, st==="AGUARDANDO_AUTORIZACAO" ? "autorizar" : "aprovar");
