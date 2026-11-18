@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.14", data:"2026-11-18", titulo:"Preferências do kit: sem dados locais nem aviso antigo enquanto carrega", itens:[
+  {tipo:"correção", area:"Representantes & Kits › Preferências do kit", txt:"Enquanto as preferências do app carregavam, as abas Revendedoras e Análise mostravam os dados guardados no navegador (as revendedoras do atendimento interno, todas com Não preencheu) e o aviso de preferências aleatórias. Agora aparece só a frase de carregando; os dados locais e o aviso ficam só para o uso sem servidor."},
+  {tipo:"correção", area:"Representantes & Kits › Preferências do kit", txt:"A lista de kit ativo da DevMaster levava até 2 minutos num servidor novo e travava a tela. Agora o servidor espera no máximo 10 segundos: a tela abre com todas as revendedoras do app e passa a filtrar sozinha quando a lista termina de carregar."},
+ ]},
  {v:"0.21.13", data:"2026-11-18", titulo:"Calculadora de acertos: 5 contas Pix novas", itens:[
   {tipo:"melhoria", area:"Representantes & Kits › Calculadora de acertos", txt:"Entraram na lista do Pix as contas que estavam em Chaves Pix dos bancos e faltavam no acerto: PIX - ITAÚ - 34, PIX - CAIXA - 34, PIX - UNICRED - 34, PIX - BRADESCO - 46 e PIX - BRADESCO - SERENITY - 59. No Consolidado, cada uma cai no grupo do seu CNPJ."},
   {tipo:"melhoria", area:"Representantes & Kits › Calculadora de acertos", txt:"Cartão de crédito ganhou a conta CRÉDITO - SICREDI - AXIS - 67 (CNPJ 67 · Axis)."},

@@ -161,14 +161,32 @@ const sp = (d) => (d ? new Date(new Date(d).getTime() - 3 * 3600 * 1000).toISOSt
 const norm = (x) => String(x || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().replace(/[^a-z ]/g, " ").replace(/s+/g, " ").trim();
 const SEM_KIT = ["Expositor", "Encomenda"];   // revendedora "com kit" = tem condicional aberto que NÃO seja só expositor ou encomenda (kit principal, kit novo ou reposição): 2.047 em 02/11/2026, igual à conta do Marcus
 
+// A lista da DevMaster (kit ativo) leva até 2 minutos para montar num servidor novo (o cache dela é de 10 min, só na memória do servidor).
+// 18/11/2026: a tela não espera mais do que 10 s por ela. Sem a lista, vão todas as revendedoras do app (semFiltro, devmasterCarregando) e a tela pergunta de novo;
+// a carga continua no servidor (uma só por vez) e a próxima leitura já vem filtrada.
+const ESPERA_DEVMASTER = 10000, NO_PRAZO = Symbol("prazo");
+function listaComPrazo() {
+  if (!G.__sorellyPrefDm) {
+    const p = listaRevendedoras();
+    G.__sorellyPrefDm = p;
+    p.catch(() => {}).finally(() => { if (G.__sorellyPrefDm === p) G.__sorellyPrefDm = null; });
+  }
+  let t;
+  return Promise.race([G.__sorellyPrefDm, new Promise((z) => { t = setTimeout(() => z(NO_PRAZO), ESPERA_DEVMASTER); })]).finally(() => clearTimeout(t));
+}
+
 // Só entram na tela as revendedoras com kit ativo na DevMaster (Marcus, 02/11/2026: as outras ficam guardadas, mas não aparecem nem contam).
 // O app não manda o código da DevMaster nesta rota, então o cruzamento é pelo nome (sem acento, sem caixa).
 export async function dadosPreferencias() {
   await garantirTabela();
   const r = await consulta("select id, nome, cidade, estado, tem_prefs, atualizado_em, observacoes, respostas from sorelly.preferencia_app order by nome");
   const s = estado();
-  let kit = null;
-  try { const l = await listaRevendedoras(); kit = new Map(); l.itens.filter((i) => (i.conds || []).some((c) => !SEM_KIT.includes(c.t))).forEach((i) => { if (!kit.has(norm(i.nome))) kit.set(norm(i.nome), i); }); } catch (x) { kit = null; }   // DevMaster fora do ar: mostra todas, avisando
+  let kit = null, devmasterCarregando = false;
+  try {
+    const l = await listaComPrazo();
+    if (l === NO_PRAZO) devmasterCarregando = true;
+    else { kit = new Map(); l.itens.filter((i) => (i.conds || []).some((c) => !SEM_KIT.includes(c.t))).forEach((i) => { if (!kit.has(norm(i.nome))) kit.set(norm(i.nome), i); }); }
+  } catch (x) { kit = null; }   // DevMaster fora do ar: mostra todas, avisando
   const mapa = (x) => { const k = kit && kit.get(norm(x.nome)); return { x, k }; };
   const todas = r.rows.map(mapa), vistas = kit ? todas.filter((a) => a.k) : todas;
   // "Já montado" (18/11/2026): última montagem de cada revendedora (Fila de montagem e Listagens), no horário de São Paulo
@@ -178,7 +196,8 @@ export async function dadosPreferencias() {
     registros,
     status: { rodando: s.rodando, etapa: s.etapa, feitos: s.feitos, total: s.total, erro: s.erro, concluidaEm: s.concluidaEm || null },
     total: r.rows.length,                                   // todas as revendedoras do app
-    semFiltro: !kit,                                        // true = a DevMaster não respondeu, nada foi filtrado
+    semFiltro: !kit,                                        // true = a DevMaster não respondeu (ou ainda está carregando), nada foi filtrado
+    devmasterCarregando,                                    // true = a lista de kit ativo ainda está carregando no servidor: a tela pergunta de novo
     comKitNaDevmaster: kit ? kit.size : null,              // revendedoras com kit ativo na DevMaster
     foraDoKit: kit ? todas.length - vistas.length : 0,      // do app, guardadas, sem kit ativo: não aparecem nem contam
     foraDoKitComRespostas: kit ? todas.filter((a) => !a.k && a.x.tem_prefs).length : 0,
