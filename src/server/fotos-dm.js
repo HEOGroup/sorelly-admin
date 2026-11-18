@@ -92,6 +92,13 @@ export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = 
   return { novos: 0, subiram: 0, motivo: "Outra pessoa gravou ao mesmo tempo; tenta de novo na próxima." };
 }
 
+// Diário da leitura (18/11/2026): grava em m.dmTentativa a hora de cada tentativa do agendador e em m.dmErro o motivo, se falhou (vazio = deu certo). NÃO muda a versão do módulo (as telas não precisam receber isto); serve para saber, olhando o banco, se a rotina está rodando.
+export async function registrarTentativa(erro) {
+  try {
+    await consulta("update sorelly.estado_modulo set conteudo = jsonb_set(jsonb_set(conteudo, '{m,dmTentativa}', to_jsonb($1::text), true), '{m,dmErro}', to_jsonb($2::text), true) where modulo = 'fc'", [agoraBR(), String(erro || "").slice(0, 300)]);
+  } catch (e) { /* o diário nunca derruba a leitura */ }
+}
+
 // relógio do servidor: lê a DevMaster a cada 5 minutos (idempotente)
 export function agendarFotosDm() {
   if (G.__sorellyFotosDmAgendado) return;
