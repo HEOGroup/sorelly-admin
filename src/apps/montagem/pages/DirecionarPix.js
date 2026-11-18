@@ -134,6 +134,9 @@ function AbaDirecionar(){
   // H&O também recebe Pix (Marcus, 26/10/2026): cria o destino uma vez, se ainda não existir (o estado vem do servidor e não passa pela migração)
   var semHO = c.edita && !cp.destinos.some(function(d){ return d.cnpjId==="HO"; });
   useEffect(function(){ if(semHO) c.d({type:"CP", op:"destino_add", nome:"CNPJ H&O · H&O Apps", tipo:"CNPJ", cnpjId:"HO"}); }, [semHO]);   // eslint-disable-line react-hooks/exhaustive-deps
+  // prestadores da família com dívida em aberto viram destino (18/11/2026)
+  var semPrestFam = c.edita && s.ff && (s.ff.prest||[]).some(function(pr){ return pr.ativo && !cp.destinos.some(function(d){ return nmRep(d.nome)===nmRep(pr.nome); }) && (s.ff.dividas||[]).some(function(y){ return y.prestId===pr.id && y.valor>0; }); });
+  useEffect(function(){ if(semPrestFam) c.d({type:"CP", op:"destinos_prest"}); }, [semPrestFam]);   // eslint-disable-line react-hooks/exhaustive-deps
   var limAlto = dp.limiteAlto || LIMITE_ALTO_PADRAO;
   // valor alto passa na frente da fila; depois, o mais antigo (24/10/2026)
   var fila = dp.pix.filter(function(x){ return x.status==="fila" && (orig==="todos" || x.origem===orig); }).sort(function(a, b){ var ra = a.origem==="rep", rb = b.origem==="rep"; if(ra!==rb) return ra ? -1 : 1; var ha = a.valor>=limAlto, hb = b.valor>=limAlto; if(ha!==hb) return ha ? -1 : 1; return a.recebidoEm-b.recebidoEm; });   // representante sempre na frente (Marcus, 04/11/2026)

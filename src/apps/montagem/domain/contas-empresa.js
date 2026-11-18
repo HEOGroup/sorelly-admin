@@ -165,9 +165,10 @@ function setPf(pf){
   var fn = {}; ((pf && pf.fornecedores) || []).forEach(function(f){ fn[f.id] = f; });
   // o DevMaster junta os Pix de um fornecedor num valor só e dá a baixa depois; por isso NÃO se compara pagamento a pagamento.
   // Regra: o Pix da equipe só conta DEPOIS da última baixa de Pix daquele fornecedor no DevMaster (o que o DevMaster já registrou, vale o DevMaster).
-  var ultima = {}; baseItens().forEach(function(i){ if(i.status==="pago" && i.nota==="sem" && i.baixa && i.baixa>(ultima[i.fornCanon]||"")) ultima[i.fornCanon] = i.baixa; });
+  var hojePf = (function(){ var d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); })();   // baixa com data futura na DevMaster não pode esconder os Pix de fornecedor (18/11/2026)
+  var ultima = {}; baseItens().forEach(function(i){ if(i.status==="pago" && i.nota==="sem" && i.baixa && i.baixa<=hojePf && i.baixa>(ultima[i.fornCanon]||"")) ultima[i.fornCanon] = i.baixa; });
   // o que vale é o DevMaster (22/10/2026, pedido do Marcus): nada do que veio da planilha/Pagamentos a fornecedores entra até a data da última baixa do DevMaster
-  var ultimaGeral = ""; baseItens().forEach(function(i){ if(i.status==="pago" && i.baixa && i.baixa>ultimaGeral) ultimaGeral = i.baixa; });
+  var ultimaGeral = ""; baseItens().forEach(function(i){ if(i.status==="pago" && i.baixa && i.baixa<=hojePf && i.baixa>ultimaGeral) ultimaGeral = i.baixa; });
   lanc.forEach(function(l){
     var f = fn[l.fornId]; if(!f || f.tipo==="prestador" || l.aguardaComp || !l.revendedora || l.revendedora==="—" || !(l.valor>0) || !l.data) return;
     var fd = fornDe("", f.nome), canon = fd ? fd[1] : f.nome;

@@ -47,6 +47,12 @@ function cpReduz(s, a){
   var cp = JSON.parse(JSON.stringify(s.cp)), por = a.por||"—", recusa = function(t){ return {patch:{}, msg:t}; }, ok = function(msg){ return {patch:{cp:cp}, msg:msg}; };
   var orient = function(id){ return cp.orientacoes.find(function(o){ return o.id===id; }); };
   switch(a.op){
+    // Prestadores da família com dívida em aberto viram destino do Direcionar (18/11/2026): o Lucas escolhe o prestador do sócio e o Pix abate a dívida. Lê s.ff; não repete nome que já existe.
+    case "destinos_prest": { var nmP = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }, nNovos = 0;
+      ((s.ff && s.ff.prest) || []).forEach(function(pr){ if(!pr.ativo || cp.destinos.some(function(d){ return nmP(d.nome)===nmP(pr.nome); })) return;
+        if(!((s.ff.dividas||[]).some(function(y){ return y.prestId===pr.id && y.valor>0; }))) return;
+        cp.destinos.push({id:uid("d"), nome:pr.nome, tipo:"PRESTADOR", cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true, prestFamId:pr.id, personaId:pr.responsavelId||""}); nNovos++; });
+      return nNovos ? ok(nNovos+" prestador(es) da família como destino") : recusa(""); }
     case "destino_add": { var nm = String(a.nome||"").trim(); if(!nm || !TIPOS_DESTINO[a.tipo]) return recusa("Informe o nome e o tipo."); cp.destinos.push({id:uid("d"), nome:nm, tipo:a.tipo, cnpjId:a.cnpjId||"", banco:a.banco||"", chavePix:a.chavePix||"", obs:a.obs||"", ativo:true}); return ok("Destino criado"); }
     case "func_set": { var nmf = String(a.nome||"").trim(); if(!nmf) return recusa("Informe o nome."); cp.func = cp.func||{}; cp.func[nmf] = Object.assign({chave:"", vinculo:""}, cp.func[nmf], a.patch||{}); return ok(a.novo ? "Prestador cadastrado" : undefined); }
     case "chave_set": { var idc = String(a.id||""); if(!idc) return recusa("Chave sem identificação."); cp.chaves = cp.chaves||{}; cp.chaves[idc] = Object.assign({}, cp.chaves[idc], a.base||{}, a.patch||{}); return ok(); }

@@ -295,6 +295,21 @@ function reducer(s, a){
           if(recK.filter(function(y){ return y.rep===x.rep; }).length >= ((s.cfg||{}).recusasBloqueio||2)) blK[x.rep] = true; }); });
         return Object.assign({}, s, {kn:Object.assign({}, s.kn, a.conteudo), novas:nvK}, novaRec ? {recusas:recK, bloqueioNovas:blK} : {});
       }
+      // Contas a pagar vindas do servidor (18/11/2026): baixas, CNPJ trocado, marca Empresa/Família, contas à mão e histórico.
+      // Na PRIMEIRA chegada neste navegador, o que só existia aqui é JUNTADO ao que veio (ninguém perde baixa) e segue para o servidor no próximo envio; depois disso vale o servidor.
+      if(a.chave==="cpe"){ var cA = s.cpe || {}, cS = a.conteudo || {}, cN = Object.assign({}, cA, cS);
+        if(!s.cpeSrv){ ["lanc", "baixas", "forn", "hist"].forEach(function(k){ if(!Array.isArray(cS[k])) return; var tem = {}; cS[k].forEach(function(x){ if(x && x.id!==undefined) tem[x.id] = 1; });
+            cN[k] = cS[k].concat((cA[k]||[]).map(function(x){ return k==="hist" && x && !x.id ? Object.assign({id:"h"+(x.ts||0)+"-"+String(x.acao||"").length+"-"+String(x.chave||"").slice(-12)}, x) : x; }).filter(function(x){ return x && x.id!==undefined && !tem[x.id]; })); });
+          if(cS.classe) cN.classe = Object.assign({}, cA.classe, cS.classe); }
+        return Object.assign({}, s, {cpe:cN, cpeSrv:true}); }
+      // Configuração do Direcionar vinda do servidor (18/11/2026): contas fixas das representantes, regras e valor fora do normal. Na primeira chegada, a conta fixa marcada À MÃO neste navegador não se perde para uma automática.
+      if(a.chave==="dpc"){ var dA = s.dp || Object.assign(dpDemo(), {pix:[]}), dS = a.conteudo || {}, dN = Object.assign({}, dA);
+        ["regras", "limiteAlto", "limite3000", "maqV"].forEach(function(k){ if(dS[k]!==undefined) dN[k] = dS[k]; });
+        if(dS.contasRep || dS.contasRepExtra){ var crS = Object.assign({}, dS.contasRep || dA.contasRep), cxS = Object.assign({}, dS.contasRepExtra || dA.contasRepExtra);
+          if(!s.dpcSrv) Object.keys(dA.contasRep||{}).forEach(function(rp){ var exL = (dA.contasRepExtra||{})[rp] || {}, exS = cxS[rp] || {};
+            if(!crS[rp] || (exS.auto && !exL.auto)){ crS[rp] = dA.contasRep[rp]; if((dA.contasRepExtra||{})[rp]) cxS[rp] = dA.contasRepExtra[rp]; else delete cxS[rp]; } });
+          dN.contasRep = crS; dN.contasRepExtra = cxS; }
+        return Object.assign({}, s, {dp:dN, dpcSrv:true}); }
       if(a.chave==="fd"){ var pFd = {}; ["faturamentoDiario", "contasPagasDiario", "fatHoje", "fechaMes", "metaMensal", "contasPagar", "contasPagarEm", "metaPct"].forEach(function(k){ if(a.conteudo && a.conteudo[k]!==undefined) pFd[k] = a.conteudo[k]; }); return aplicaFdFixos(Object.assign({}, s, pFd)); }   // faturamento e contas pagas por dia vindos do servidor (cópia antiga: volta aos valores fixos de state/fd-patches.js)
       if(a.chave==="sc") return a.conteudo && a.conteudo.saldosContas ? Object.assign({}, s, {saldosContas:a.conteudo.saldosContas}) : s;   // saldos das contas bancárias vindos do servidor
       if(a.chave==="lst"){   // listagens de retirada e os kits delas vindos do servidor (05/11/2026): as duas listas entram inteiras, não se misturam com as do navegador
@@ -401,6 +416,11 @@ function reducer(s, a){
             itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:new Date(pFo.confirmadoEm||Date.now()).toISOString().slice(0, 10), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
           if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
+      // 18/11/2026 (Marcus): Pix confirmado para um PRESTADOR DA FAMÍLIA vira repasse no Financeiro familiar sozinho e abate a dívida dele (conta corrente). Reabrir retira.
+      if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
+        if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId) return;
+          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:new Date(pFa.confirmadoEm||Date.now()).toISOString().slice(0, 10), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
+      if(a.op==="reabre" && sDp.ff){ var rF2 = ffReduz(sDp, {op:"repasse_dir_desfaz", id:a.id}); if(rF2.patch && rF2.patch.ff) sDp = Object.assign({}, sDp, {ff:rF2.patch.ff}); }
       if(a.op==="confirma") sDp = sincCompFornecedor(sDp);   // o comprovante já pode estar anexado (representante ou funcionária)
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)
     case "FF": { var rFf = ffReduz(s, a); return com(s, rFf.patch, rFf.msg); }

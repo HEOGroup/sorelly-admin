@@ -523,3 +523,29 @@ O pagamento pega o comprovante sozinho, conta como pago e entra em Contas a paga
 **Limites conhecidos:** destino sem fornecedor de NOME igual no cadastro de Pagamentos a fornecedores não gera pagamento. Testado no navegador na porta 3000 com pedido falso (limpo depois); o comprovante do atendimento interno e o da representante foram testados só no reducer, em memória.
 
 **Erro que NÃO se repete (Marcus, 17/11/2026):** quem anexa o comprovante é a representante ou a funcionária do atendimento interno, nunca o Direcionar nem o Financeiro.
+
+## 18/11/2026 — Dívidas de prestadores da família: Contas a pagar e Direcionar (regra do Marcus, construída; v0.21.17)
+**Regra:** a dívida com um prestador da família (Greicy de cada sócio, Rebel Mode, 68 Gang) é uma CONTA CORRENTE: fica aberta e cada Pix que entra liquida uma parte. Ela aparece em Contas a pagar, por sócio, com data de pagamento.
+
+| Ponto | Como é |
+|---|---|
+| Onde aparece | Financeiro › Contas a pagar, visão Família ou Junto (só quem tem a autorização da família). Uma linha por dívida, Dono = sócio responsável |
+| Vencimento | O prazo gravado na dívida (Financeiro familiar › Prestadores). Sem prazo: último dia do mês de hoje. Greicy: 31/12/2026 (gravado nas 3 dívidas) |
+| Valor da linha | O que AINDA FALTA, depois dos repasses. Quitada vira Paga, com a data do repasse que quitou |
+| Direcionar | O prestador da família com dívida em aberto vira destino (mesmo nome do cadastro). O Lucas escolhe o prestador do sócio certo |
+| Pix confirmado no Direcionar | Vira repasse no Financeiro familiar sozinho, no sócio responsável, e abate a dívida. Reabrir retira. Confirmar duas vezes não duplica |
+| Pix de representante | Por enquanto o Lucas ainda lança à mão no Financeiro familiar |
+| Comprovante | Não trava o repasse da família (a trava do comprovante vale só para fornecedor) |
+
+**Código:** `domain/financeiro-familiar.js` (`itensDividasPrestadores`, `prazoDaDivida`, ops `repasse_dir` e `repasse_dir_desfaz`); `domain/controle-pagamentos.js` (op `destinos_prest`); `state/reducer.js` (caso `DP`); `pages/ContasPagarLista.js`; `pages/DirecionarPix.js`. Prestador da família NÃO entra na sugestão "prestador menor" do Direcionar. Teste: `node scripts/testar-pix-prestador-familia.mjs` (12 verificações).
+- **Contas a pagar, ordem por vencimento (18/11/2026, Marcus: "deveria aparecer sempre pelo vencimento"):** a lista JÁ ordena pelo vencimento (sem vencimento, pela emissão). O que parecia fora de ordem eram 2 títulos de representante com ano errado no DevMaster (0226 e 2006) e grupos com um título sem data. Agora o ano errado sai inteiro com Situação "Data errada" e o grupo mostra o menor vencimento que existe. O ERRO DE DIGITAÇÃO continua na DevMaster: corrigir lá. Dados da DevMaster atualizam ao abrir o sistema e a cada 10 minutos (cache do servidor também de 10 min).
+
+## 18/11/2026 — Contas a pagar e Direcionar: o que era só do navegador foi para o servidor (v0.21.17)
+- **Problema (vistoria de 18/11/2026):** `s.cpe` (baixas dadas no sistema, CNPJ trocado, marca Empresa/Família, contas à mão, histórico) e a configuração do Direcionar (`s.dp.contasRep`, `contasRepExtra`, `regras`, `limiteAlto`) não estavam na lista de sincronia. Cada pessoa só via o que ela mesma lançava.
+- **Feito:** dois módulos novos em `lib/sync-modulos.js`: `cpe` (o próprio `s.cpe`; o histórico ganha um id por linha em `fatiaCpe`) e `dpc` (só as chaves de configuração de `s.dp`; a fila de pedidos segue no módulo `pag`). Permissão no servidor: Financeiro e Diretoria (`src/server/permissoes.js`). Gravação por diferença, como os outros módulos.
+- **Primeira chegada em cada navegador:** o que só existia ali é JUNTADO ao que veio do servidor (baixa, conta à mão, histórico; conta fixa marcada à mão vence a automática) e sobe no envio seguinte. Depois disso vale o servidor (marcas `cpeSrv` e `dpcSrv` no estado). Sem isso, uma baixa desfeita por outra pessoa voltaria.
+- **Carga inicial:** a primeira gravação de um módulo só a Diretoria faz (regra do servidor). Até a Diretoria abrir a versão nova, os outros seguem como antes.
+- **Cópia de segurança:** a cópia diária do navegador (`lib/copia-navegador.js`) guarda o `cpe` antigo de cada pessoa até a véspera; serve para recuperar se faltar algo.
+- **Outros acertos:** `ateNomes` do Direcionar (cortava na letra s); baixa com data futura na DevMaster não entra no corte dos Pix de fornecedor (`contas-empresa.js › setPf`).
+- **Teste:** `node scripts/testar-sync-contas-a-pagar.mjs` (18 verificações).
+- **Ainda só no navegador (não mexido):** `s.fiscal`, `s.contasCnpj`, `s.cnpjs`, `s.emp`, `s.datasPag`, `s.dinheiroFluxo`, `s.fatDia`.

@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.17", data:"2026-11-18", titulo:"Financeiro: baixas e regras no servidor, dívidas de prestadores da família e datas erradas", itens:[
+  {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"As baixas dadas no sistema, a troca de CNPJ, a marca Empresa ou Família, as contas lançadas à mão e o histórico passaram a ficar no servidor. Antes cada pessoa só via o que ela mesma lançava. Na primeira vez, o que estava só em um computador é juntado ao que já está no servidor."},
+  {tipo:"correção", area:"Financeiro → Direcionar", txt:"As contas fixas das representantes, as regras e o valor fora do normal também passaram a ficar no servidor. O nome do pedido aberto deixou de ser cortado na letra s."},
+  {tipo:"novo", area:"Financeiro → Contas a pagar (Família)", txt:"As dívidas dos prestadores da família (Greicy de cada sócio, Rebel Mode, 68 Gang) aparecem como linhas, com o sócio dono, vencimento no prazo gravado (sem prazo, no último dia do mês) e o valor que ainda falta. Cada Pix que entra liquida a dívida; quitada vira Paga."},
+  {tipo:"novo", area:"Financeiro → Direcionar", txt:"O prestador da família com dívida em aberto vira destino. Pix confirmado para ele vira repasse no Financeiro familiar sozinho e abate a dívida (reabrir o Pix retira; confirmar duas vezes não duplica). Pix de representante o Lucas continua lançando à mão por enquanto."},
+  {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"Vencimento com ano errado no DevMaster (0226 e 2006) aparece com o ano inteiro e a Situação Data errada. O grupo de representante mostra o menor vencimento que existe. Baixa com data futura na DevMaster não esconde mais os Pix de fornecedor."}
+ ]},
  {v:"0.21.16", data:"2026-11-18", titulo:"Preferências do kit: só a Diretoria edita o formulário do app", itens:[
   {tipo:"melhoria", area:"Representantes & Kits › Preferências do kit › Formulário do app", txt:"O formulário passa a ser o que o app da revendedora mostra (o admin antigo repassa o que este sistema serve). Como no admin antigo, só a Diretoria cria, edita, liga, desliga, reordena e exclui blocos; os demais veem o formulário com o aviso. O servidor também descarta essa mudança de quem não é da Diretoria."},
  ]},

@@ -121,7 +121,7 @@ function sugerir(pix, ctx){
     }
     else if(r.n===4 && pix.valor>3000){ add(dest("Pontual"), "Pix acima de R$ 3.000 vai para Pontual ou Point."+detPontual(pix, ctx.pontual), null, 4); add(dest("Point"), "Alternativa para Pix acima de R$ 3.000.", null, 4); if(opcoes.length>antes) estado = "usada"; }
     else if(r.n===5 && temGetnet && pix.valor>750){ add(dest("Pontual"), "Cartão Getnet na empresa e Pix acima de R$ 750: mesmo fornecedor da maquininha."+detPontual(pix, ctx.pontual), null, 5); if(opcoes.length>antes) estado = "usada"; }
-    else if(r.n===6 && pix.valor<750){ porTipo("PRESTADOR").forEach(function(d){ add(d, "Pix abaixo de R$ 750: prestador menor.", null, 6); }); if(opcoes.length>antes) estado = "usada"; }
+    else if(r.n===6 && pix.valor<750){ porTipo("PRESTADOR").filter(function(d){ return !d.prestFamId; }).forEach(function(d){ add(d, "Pix abaixo de R$ 750: prestador menor.", null, 6); }); if(opcoes.length>antes) estado = "usada"; }
     else if(r.n===7 && urg.length){ var c = urg[0], d7 = dest("CNPJ "+c.id); var fr = function(x){ return "CNPJ "+x.id+": "+((x.hoje+x.amanha)>0 ? "vencem "+brl(x.hoje+x.amanha)+" hoje e amanhã" : "nada vence hoje e amanhã")+"; disponível "+(x.disp<0 ? "−"+brl(-x.disp) : brl(x.disp))+"."; };
       add(d7, fr(c), null, 7); if(urg[1]) add(dest("CNPJ "+urg[1].id), fr(urg[1]), null, 7); if(opcoes.length>antes) estado = "usada"; }
     resumo.push({n:r.n, texto:txt, estado:estado});

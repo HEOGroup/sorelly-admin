@@ -23,6 +23,8 @@ export const SETORES_DO_MODULO = {
   mod: [],   // Marketing › Modelos (veio das Encomendas em 12/11/2026): Diretoria e as pessoas de PESSOAS_DO_MODULO (Castilho); a tela também confere a autorização modelos_ver
   tp: ["marketing"],   // Marketing › Tráfego pago (05/11/2026): investimento em anúncios, leads e cadastradas do Diego; só Marketing e Diretoria
   rc: ["*"],   // quem é Kit 100% Prata (12/11/2026): todo mundo logado lê (atendimento, agendamento, representantes) e a marcação vale igual em todos os computadores
+  cpe: ["financeiro"],   // Contas a pagar (18/11/2026): baixas dadas no sistema, CNPJ trocado, marca Empresa/Família, contas lançadas à mão e histórico; Financeiro e Diretoria
+  dpc: ["financeiro"],   // configuração do Direcionar (18/11/2026): contas fixas das representantes, regras e valor fora do normal
   sc: ["financeiro"],   // saldos das contas bancárias (Financeiro › Contas bancárias): compartilhados entre quem lança (Nayale, Marcus), 28/10/2026
   es: ["financeiro"],   // Estoque Sorelly (Financeiro, 09/11/2026): posição mensal do estoque de peças, números altos; só Financeiro e Diretoria
   fx: ["financeiro"],   // Fiscal (Financeiro, 09/11/2026): notas de entrada, saídas e contas por CNPJ, carregados do admin antigo; só Financeiro e Diretoria

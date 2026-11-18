@@ -10,7 +10,7 @@ import { MenuMulti } from "@/apps/montagem/components/padrao-fin";
 import { temAutorizacao } from "@/apps/montagem/domain/autorizacoes";
 import { chamar } from "@/apps/montagem/lib/api";
 import { FILIAIS, anosCarregados, definirHistorico, ehFam, filtrar, historicoItens, meses, setBaixas, setClasse, setLancamentos, setPf, temDados } from "@/apps/montagem/domain/contas-empresa";
-import { hojeIso, hojeYm, nomeMes, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
+import { hojeIso, hojeYm, itensDividasPrestadores, nomeMes, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { PagamentoConta } from "@/apps/montagem/components/pagamento-conta";
 import { BKC } from "@/apps/montagem/lib/format";
@@ -21,7 +21,9 @@ import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var r2 = function(n){ return Math.round((n||0)*100)/100; };
 var soma = function(l){ return r2(l.reduce(function(t, i){ return t+i.valor; }, 0)); };
-var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+iso.slice(2,4) : "—"; };
+// Data errada no DevMaster (18/11/2026, Marcus: "que ordem é essa"): vencimento com ano 0226 ou 2006 (erro de digitação) ia para o topo escrito como 21/11/26. Agora o ano sai inteiro e a Situação diz "Data errada".
+var anoErrado = function(iso){ var a = parseInt(String(iso || "").slice(0, 4), 10); return !!iso && (a<2020 || a>2100); };
+var dm = function(iso){ return iso ? iso.slice(8,10)+"/"+iso.slice(5,7)+"/"+(anoErrado(iso) ? iso.slice(0,4) : iso.slice(2,4)) : "—"; };
 // CONTAS DA FAMÍLIA lançadas no Admin (módulo ff) como linhas da lista (Marcus, 16/11/2026: uma tela só, duas origens). SÓ LEITURA: o módulo da Família não é mexido; clicar leva para o Financeiro familiar.
 function itensFamiliaAdmin(s){
   var ff = s.ff; if(!ff || !ff.contas) return [];
@@ -69,7 +71,7 @@ function marcarPagasDm(lista){
 var PES_RX = [["Marcus", /\bmarcus\b/], ["Anamaria", /\banamaria\b/], ["Marco Antonio", /\bmarco\b/], ["Ana Beatriz", /\bana beatriz\b|\banabeatriz\b/]];
 var pessoaTxt = function(i){ if(i.rateioTxt) return i.rateioTxt; if(!(i.ff || ehFam(i))) return ""; var t = String(i.nome+" "+(i.natNome || "")).normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase(), a = PES_RX.filter(function(r){ return r[1].test(t); }); return a.length===1 ? a[0][0] : ""; };
 var TEXTO_BUSCA = new WeakMap();   // texto de busca de cada conta, guardado (a busca fica rápida)
-var sitDe = function(i){ return i.status==="pago" ? "Pago" : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
+var sitDe = function(i){ return i.status==="pago" ? "Pago" : anoErrado(i.venc) ? "Data errada" : i.atraso>0 ? "Atrasada · "+i.atraso+" dias" : "A pagar"; };
 var numDe = function(i){ return ((i.pref||"")+" "+(i.num||"")).trim() || "—"; };
 var cnpjDe = function(id){ return CNPJS0.filter(function(c){ return c.id===id; })[0] || null; };
 var cnpjTxt = function(id){ var c = cnpjDe(id); return c && c.cnpj ? c.cnpj : (id==="fora" ? "Por fora" : id==="fam" ? "Família" : c ? c.nome : id); };
@@ -165,7 +167,7 @@ function TelaContas(props){
   var verFam = temAutorizacao("financeiro_familia", s.usuario), quem = verFam ? quemSel : "empresa";   // quem não tem a autorização só vê a empresa; as linhas da Família nem aparecem (Marcus, 16/11/2026)
   if(!temDados()) return e("p",{className:"rounded-lg border border-border px-4 py-6 text-center text-[13px] text-foreground"}, "Sem contas da empresa neste computador.");
   var buscaTudo = String(busca || "").trim()!=="";   // com algo digitado na busca, procura em TUDO (Empresa, Família e DevMaster), qualquer que seja o botão marcado
-  var todas = filtrar("", "", "", "", "", "").concat(historicoItens()).filter(function(i){ return quem==="junto" || buscaTudo || (quem==="familia" ? ehFam(i) : !ehFam(i)); }).concat(verFam && (quem!=="empresa" || buscaTudo) ? itensFamiliaAdmin(s) : []), maximo = {};
+  var todas = filtrar("", "", "", "", "", "").concat(historicoItens()).filter(function(i){ return quem==="junto" || buscaTudo || (quem==="familia" ? ehFam(i) : !ehFam(i)); }).concat(verFam && (quem!=="empresa" || buscaTudo) ? itensFamiliaAdmin(s).concat(itensDividasPrestadores(s.ff, hojeIso())) : []), maximo = {};
   if(verFam && (quem!=="empresa" || buscaTudo)) todas = marcarPagasDm(juntarDuplicadas(todas));
   todas.forEach(function(i){ if(!soNumero(i.parc)) return; var k = chaveTitulo(i), n0 = parseInt(i.parc, 10); if(n0>(maximo[k]||0)) maximo[k] = n0; });
   var hoje0 = hojeIso(), ABERTO = escopo!=="pagas", PAGO = escopo!=="apagar", DESC = escopo==="pagas";   // escopo: A pagar, Pagas ou Todas, na MESMA tela (Marcus, 12/11/2026)
@@ -199,9 +201,9 @@ function TelaContas(props){
     if(its.length===1){ linhas.push(linha(i)); return; }
     if(feitos[k]) return;
     feitos[k] = 1;
-    var ap = i.status==="apagar", op = !!grAb[k], nats = [], venc = its.map(function(x){ return x.venc || ""; }).sort()[0], atr = Math.max.apply(null, its.map(function(x){ return x.atraso || 0; }));
+    var ap = i.status==="apagar", op = !!grAb[k], nats = [], venc = its.map(function(x){ return x.venc || ""; }).filter(Boolean).sort()[0] || "", atr = Math.max.apply(null, its.map(function(x){ return anoErrado(x.venc) ? 0 : (x.atraso || 0); })), errada = its.some(function(x){ return anoErrado(x.venc); });
     its.forEach(function(x){ if(nats.indexOf(x.natNome)<0) nats.push(x.natNome); });
-    linhas.push({id:"g|"+k, grupo:true, k:k, its:its, fil:i.filial, nome:(op ? "▾ " : "▸ ")+i.nome, venc:dm(venc), pago:dm(i.baixa), cnpj:cnpjTxt(i.filial), num:its.length+" títulos", parc:"—", nat:nats.join(" · "), nota:its.every(function(x){ return x.nota==="sem"; }) ? "Sem nota" : "Com nota", valor:soma(its), orig:r2(its.reduce(function(t0, x){ return t0+(x.valorTitulo==null ? x.valor : x.valorTitulo); }, 0)), emis:dm(its.map(function(x){ return x.emissao || ""; }).sort()[0]), setor:"Representantes", cod:its[0].nat || "—", sit:ap ? (atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago", abrir:op ? "Fechar" : "Abrir", acao:"", ap:ap, atr:atr});
+    linhas.push({id:"g|"+k, grupo:true, k:k, its:its, fil:i.filial, nome:(op ? "▾ " : "▸ ")+i.nome, venc:dm(venc), pago:dm(i.baixa), cnpj:cnpjTxt(i.filial), num:its.length+" títulos", parc:"—", nat:nats.join(" · "), nota:its.every(function(x){ return x.nota==="sem"; }) ? "Sem nota" : "Com nota", valor:soma(its), orig:r2(its.reduce(function(t0, x){ return t0+(x.valorTitulo==null ? x.valor : x.valorTitulo); }, 0)), emis:dm(its.map(function(x){ return x.emissao || ""; }).sort()[0]), setor:"Representantes", cod:its[0].nat || "—", sit:ap ? (errada ? "Data errada" : atr>0 ? "Atrasada · "+atr+" dias" : "A pagar") : "Pago", abrir:op ? "Fechar" : "Abrir", acao:"", ap:ap, atr:atr});
     if(op) its.forEach(function(x){ linhas.push(linha(x, true)); });
   });
   var corSit = function(l){ var ap = l.grupo ? l.ap : l.it.status==="apagar", atr = l.grupo ? l.atr : l.it.atraso; return ap && atr>0 ? "text-warning" : !ap ? "text-success" : ""; };
@@ -249,7 +251,7 @@ function TelaContas(props){
   var corDia = function(l){ return l.sit.indexOf("Atrasadas")===0 ? "text-warning" : l.sit==="Pago" ? "text-success" : ""; };
   var colsDia = [{k:"dia", t:per.modo==="anos" ? "Ano" : per.modo==="meses" ? "Mês" : escopo==="pagas" ? "Pago em" : escopo==="apagar" ? "Vence" : "Data", cor:corDia}, {k:"sit", t:"Situação", cor:corDia}, {k:"qtd", t:escopo==="pagas" ? "Pagamentos" : "Contas"}].concat(FILIAIS.map(function(f){ return {k:"c"+f[0], t:f[0]==="fora" ? "Por fora" : f[1], fmt:BKC}; }), [{k:"total", t:"Total", fmt:BKC}, {k:"acum", t:"Acumulado", fmt:BKC}]);   // os CNPJs vêm ANTES do Total e do Acumulado (Marcus, 12/11/2026)
   if(quem!=="empresa") colsDia.splice(colsDia.length-1, 0, {k:"cfam", t:"Família", fmt:BKC});   // coluna Família no Total por dia (antes do Acumulado)
-  var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } if(l.it && l.it.ff){ cx.dispatch({type:"ABA", aba:"ffcontas"}); return; } setAberta(l.it); };
+  var aoClicar = function(l){ if(l.grupo){ var o = Object.assign({}, grAb); o[l.k] = !grAb[l.k]; setGrAb(o); return; } if(l.it && l.it.ff){ cx.dispatch({type:"ABA", aba:l.it.ffAba || "ffcontas"}); return; } setAberta(l.it); };
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     aberta && e(PagamentoConta,{key:aberta.id, s:s, item:aberta, lista:ls, podePagar:podePagar, fechar:function(){ setAberta(null); }, ir:function(x){ if(x) setAberta(x); }, salvar:function(b){ cx.dispatch({type:"CPE_BAIXA", baixas:[b]}); setAberta(null); }, desfazer:function(id){ cx.dispatch({type:"CPE_BAIXA_DESFAZ", id:id, por:s.usuario}); setAberta(null); }, excluir:function(id){ cx.dispatch({type:"CPE_LANC_DEL", id:id, por:s.usuario}); setAberta(null); }, trocarFilial:function(it, f){ cx.dispatch({type:"CPE_FILIAL", chave:it.chave, filial:f, por:s.usuario, desc:it.nome, valor:it.valor}); setAberta(null); }}),
     e(BlocoPainel,{titulo:escopo==="apagar" ? "Contas a pagar" : escopo==="pagas" ? "Contas pagas" : "Contas a pagar e pagas", compacto:true},

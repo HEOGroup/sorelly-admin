@@ -109,3 +109,18 @@ O pagamento pega o comprovante sozinho, conta como pago e entra em Contas a paga
 **Limites conhecidos:** destino sem fornecedor de NOME igual no cadastro de Pagamentos a fornecedores não gera pagamento. Testado no navegador na porta 3000 com pedido falso (limpo depois); o comprovante do atendimento interno e o da representante foram testados só no reducer, em memória.
 
 **Erro que NÃO se repete (Marcus, 17/11/2026):** quem anexa o comprovante é a representante ou a funcionária do atendimento interno, nunca o Direcionar nem o Financeiro.
+
+## 18/11/2026 — Dívidas de prestadores da família: Contas a pagar e Direcionar (regra do Marcus, construída; v0.21.17)
+**Regra:** a dívida com um prestador da família (Greicy de cada sócio, Rebel Mode, 68 Gang) é uma CONTA CORRENTE: fica aberta e cada Pix que entra liquida uma parte. Ela aparece em Contas a pagar, por sócio, com data de pagamento.
+
+| Ponto | Como é |
+|---|---|
+| Onde aparece | Financeiro › Contas a pagar, visão Família ou Junto (só quem tem a autorização da família). Uma linha por dívida, Dono = sócio responsável |
+| Vencimento | O prazo gravado na dívida (Financeiro familiar › Prestadores). Sem prazo: último dia do mês de hoje. Greicy: 31/12/2026 (gravado nas 3 dívidas) |
+| Valor da linha | O que AINDA FALTA, depois dos repasses. Quitada vira Paga, com a data do repasse que quitou |
+| Direcionar | O prestador da família com dívida em aberto vira destino (mesmo nome do cadastro). O Lucas escolhe o prestador do sócio certo |
+| Pix confirmado no Direcionar | Vira repasse no Financeiro familiar sozinho, no sócio responsável, e abate a dívida. Reabrir retira. Confirmar duas vezes não duplica |
+| Pix de representante | Por enquanto o Lucas ainda lança à mão no Financeiro familiar |
+| Comprovante | Não trava o repasse da família (a trava do comprovante vale só para fornecedor) |
+
+**Código:** `domain/financeiro-familiar.js` (`itensDividasPrestadores`, `prazoDaDivida`, ops `repasse_dir` e `repasse_dir_desfaz`); `domain/controle-pagamentos.js` (op `destinos_prest`); `state/reducer.js` (caso `DP`); `pages/ContasPagarLista.js`; `pages/DirecionarPix.js`. Prestador da família NÃO entra na sugestão "prestador menor" do Direcionar. Teste: `node scripts/testar-pix-prestador-familia.mjs` (12 verificações).
