@@ -424,7 +424,7 @@ function mensagemSolicitacao(config, so, link){
 // mensagens prontas (geradas das regras; a diretoria pode trocar o texto, que fica em config.mensagens[chave])
 var MENSAGENS = [
   ["setor", "Regras do setor"], ["representantes", "Regras para as representantes"], ["fora_top50", "Comunicado: fora do Top 50"], ["recusa", "Recusa de reposição"],
-  ["link_pedido", "Link do pedido da revendedora"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
+  ["link_pedido", "Link do pedido da revendedora"], ["link_pecas", "Peças encontradas: aviso com o link"], ["taxa_aceite", "Taxa: pergunta antes de separar"], ["taxa_pix", "Aviso da taxa e chave Pix"], ["atendimento", "Atendimento: sem áudio"], ["ida_empresa", "Fluxo da ida na empresa"], ["avaliacao", "Avaliação da reposição"],
   ["sem_atendimento", "Sem atendimento no setor"], ["pecas_reservadas", "Peças reservadas para o próximo kit"], ["pecas_luxo", "Peças luxo: média abaixo do mínimo"]];
 function tabelaValoresTexto(c){
   var v = (c.valores||[]).slice().sort(function(a, b){ return a.de-b.de; });
@@ -455,6 +455,7 @@ function mensagemPadrao(config, k){
   if(k==="fora_top50") return ["📢 *COMUNICADO*", "", "O setor de *encomendas e reposições* foi *encerrado*.", "", "Não atendemos mais pedidos de *reposição*.", "",
     "As *encomendas* devem ser preenchidas *no aplicativo*, *somente para o novo kit*.", "", "Atendemos somente por *mensagem escrita*. Não enviamos nem ouvimos áudios.", "", "Obrigado pela compreensão. 💛"].join("\n");
   if(k==="recusa") return ["Prezada revendedora, informamos que não foi possível atender à sua solicitação de reposição.", "", "Atendemos somente por *mensagem escrita*. Aguarde o retorno da nossa equipe para novas orientações."].join("\n");
+  if(k==="link_pecas") return ["Oi, {nome}! 💛", "", "Encontramos peças para o seu pedido! 🎉", "", "Abra o link, veja a foto de cada peça e marque *Quero* ou *Não quero*:", "", "{link}", "", "Assim a gente já separa certinho para você. 🙏"].join("\n");
   if(k==="link_pedido") return ["Oi, {nome}! 💛", "", "Para pedir a sua reposição, preencha o formulário no link abaixo: é só colocar as fotos das peças e escolher dourado, prata ou os dois.", "", "{link}", "", "O link é só seu e vale por *48 horas*. Depois disso ele expira e a gente gera outro. 🙏"].join("\n");
   if(k==="taxa_aceite") return ["Oi, {nome}! 💛", "", "Antes de separar as suas peças, preciso te avisar: a reposição entregue pelo nosso entregador tem uma taxa de *"+R(r.taxa)+"*.", "",
     "A taxa só é cobrada *depois* que as peças forem separadas. Se separarmos e enviarmos para você, o valor é pago por Pix antes da entrega.", "",
@@ -564,8 +565,8 @@ function erReduz(s, a){
     case "ped_criar_link": {
       var Lk = a.pedido || {}; if(!trim(Lk.revendedora)) return recusa("Informe a revendedora.");
       if(a.linkId && er.pedidos.some(function(x){ return x.linkId===a.linkId; })) return ok("Pedido do link já estava no funil");
-      var fotosL = (a.fotos || []).filter(function(f){ return f && /^an_[a-z0-9]{6,40}$/.test(String(f.key || "")); }).slice(0, 20);
-      var textosL = (a.textos || []).filter(function(t){ return t && trim(t.obs); }).slice(0, 12);
+      var fotosL = (a.fotos || []).filter(function(f){ return f && /^an_[a-z0-9]{6,40}$/.test(String(f.key || "")); }).slice(0, 10);
+      var textosL = (a.textos || []).filter(function(t){ return t && trim(t.obs); }).slice(0, Math.max(0, 10-fotosL.length));   // no máximo 10 peças por pedido
       if(!fotosL.length && !textosL.length) return recusa("O pedido do link veio sem fotos e sem descrição.");
       var ehEncL = Lk.tipo==="encomenda", capL = function(c){ return c ? c.charAt(0).toUpperCase()+c.slice(1) : ""; };
       var descL = ehEncL ? (textosL.length ? trim(textosL[0].obs) : (fotosL[0] && trim(fotosL[0].nota)) || "Encomenda pelo link") : "";
@@ -652,6 +653,7 @@ function erReduz(s, a){
     case "ped_dados": {
       var pd = ped1(); if(!pd) return recusa("Pedido não encontrado.");
       if(trim(a.cod)) pd.cod = trim(a.cod).slice(0, 20);
+      if(trim(a.linkId) && !pd.linkId) pd.linkId = trim(a.linkId).slice(0, 80);
       if(trim(a.cidade)) pd.cidade = trim(a.cidade).slice(0, 80);
       if(trim(a.telefone)) pd.telefone = trim(a.telefone).slice(0, 30);
       if(trim(a.representante) && !trim(pd.representante)) pd.representante = trim(a.representante).slice(0, 120);

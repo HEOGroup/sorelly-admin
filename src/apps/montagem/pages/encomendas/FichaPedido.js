@@ -11,7 +11,7 @@ import { baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { baixarBlob, gerarPdfPedido } from "@/apps/montagem/lib/pdf-pedido";
 import { Foto } from "@/apps/montagem/pages/encomendas/Atencao";
 import { avancarPedido } from "@/apps/montagem/pages/encomendas/Quadro";
-import { copiar, copiarDepois } from "@/apps/montagem/pages/encomendas/visual";
+import { baseLink, copiar, copiarDepois } from "@/apps/montagem/pages/encomendas/visual";
 import { e, useEffect, useRef, useState } from "@/shared/react";
 
 var EQUIPE = ["Agatha", "Elen", "Eduarda Gabriela"];
@@ -236,6 +236,14 @@ function FichaPedido(p){
     document.addEventListener("paste", cola); document.addEventListener("keydown", esc);
     return function(){ document.removeEventListener("paste", cola); document.removeEventListener("keydown", esc); };
   }, []);   // eslint-disable-line react-hooks/exhaustive-deps
+  // resposta da revendedora às peças publicadas no link dela (18/11/2026): confere ao abrir e a cada 20 segundos
+  var linkRef = x ? x.linkId : "";
+  useEffect(function(){
+    if(!linkRef || !apiAtiva()) return undefined; var vivo = true;
+    var ler = function(){ chamar("GET", "/encomendas/link/retorno?ids="+encodeURIComponent(linkRef)).then(function(j){ if(vivo) set("ret", j[linkRef] || null); }, function(){}); };
+    ler(); var iv = setInterval(ler, 20000);
+    return function(){ vivo = false; clearInterval(iv); };
+  }, [linkRef]);   // eslint-disable-line react-hooks/exhaustive-deps
   // preenche sozinho código, cidade, telefone, média das 3 últimas vendas e o valor máximo da reposição (DevMaster) quando o pedido ainda não tem
   var faltaDado = !!x && (!x.cod || !x.cidade || !x.telefone || x.media3m==null);
   useEffect(function(){
@@ -256,13 +264,21 @@ function FichaPedido(p){
   var taxaTxt = x.taxaIsenta ? "Isenta" : x.taxa>0 ? formatarReais(x.taxa)+(x.comprovante ? " · paga" : " · sem comprovante") : "Sem taxa";
   var taxaCor = x.taxaIsenta || x.comprovante ? "text-success" : x.taxa>0 ? "text-[#fbbf24]" : "";
   var compacto = !fotos.length && !(x.pecas || []).length;   // pedido novo: a revendedora é quem preenche pelo link; aqui só se manda a mensagem
+  // publica as peças encontradas no link da revendedora e copia a mensagem para ela ver e dar o OK
+  var enviarPecas = function(){
+    if(v.pub) return; set("pub", true); set("lkErro", "");
+    var pecas = (x.pecas || []).map(function(y){ return {cod:y.cod, desc:y.desc, preco:y.preco, anexo:y.anexo || ""}; });
+    var idP = x.linkId ? Promise.resolve(x.linkId) : chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:x.taxaIsenta ? 0 : cfg.reposicao.taxa}).then(function(j){ ref.current.exec("ped_dados", {id:x.id, linkId:j.id}); return j.id; });
+    var texto = idP.then(function(id){ return chamar("POST", "/encomendas/link/publicar", {linkId:id, pecas:pecas}).then(function(){ return mensagemTexto(cfg, "link_pecas").split("{nome}").join(primeiro).split("{link}").join(baseLink()+"/pedido/"+id); }); });
+    copiarDepois(texto).then(function(){ set("pub", false); set("pubOk", true); }, function(err){ set("pub", false); set("lkErro", err && err.message ? err.message : "Não consegui publicar as peças."); });
+  };
   var copiarMsg = function(){
     set("lk", true); set("lkErro", "");
     var direitos = acessoReposicao(cfg, revPorNome(E.er, x.revendedora), x.media3m);   // retirar na empresa só para quem tem direito
     var texto = chamar("POST", "/encomendas/link", {nome:x.revendedora, cod:x.cod || "", representante:x.representante || "", telefone:x.telefone || "", cidade:x.cidade || "", media:x.media3m, taxa:x.taxaIsenta ? 0 : cfg.reposicao.taxa, empresa:direitos.canais.indexOf("empresa")>=0}).then(function(j){
-      return mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(window.location.origin+"/pedido/"+j.id);
+      return mensagemTexto(cfg, "link_pedido").split("{nome}").join(primeiro).split("{link}").join(baseLink()+"/pedido/"+j.id);
     });
-    copiarDepois(texto).then(function(){ set("lk", false); set("lkOk", true); if(/^(localhost|127.)/.test(window.location.hostname)) set("lkErro", "Atenção: você está no computador local. Este link só abre aqui. Gere pelo sistema online para mandar à cliente."); }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
+    copiarDepois(texto).then(function(){ set("lk", false); set("lkOk", true); }, function(err){ set("lk", false); set("lkErro", err && err.message ? err.message : "Não consegui gerar o link."); });
   };
 
   // ESQUERDA FIXA (Marcus, 17/11/2026, estilo C): revendedora com foto pequena ao lado dos dados; embaixo Andamento e Ações
@@ -307,7 +323,14 @@ function FichaPedido(p){
   var itens = x.itens || [];
 
   var pecasBloco = e(PecasSeparadas,{x:x, edita:edita, fotos:fotos, sug:v.sug || {}, aceitarSug:function(cod){ var g = (v.sug || {})[cod]; if(g) ligar(cod, g.key); set("sug", Object.assign({}, v.sug, (function(){ var o = {}; o[cod] = undefined; return o; })())); }, ligando:v.ligando || "", setLigando:function(c){ set("ligando", c); }, enviarFoto:enviarPecaFoto, exec:function(op, a){ return ref.current.exec(op, a); }});
-  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, pecasBloco);
+  var ret = v.ret && v.ret.retorno ? v.ret.retorno : null;
+  var respBloco = ret ? e(Caixa,{key:"rr", t:"Resposta da revendedora"},
+    e("div",{className:"flex flex-col gap-1 text-[13px]"},
+      e("p",null, e("b",{className:"text-[#bbf7d0]"}, "Quer: "), (ret.quer || []).length ? ret.quer.join(", ") : "nenhuma"),
+      e("p",null, e("b",null, "Não quer: "), (ret.nao || []).length ? ret.nao.join(", ") : "nenhuma"),
+      ret.obs && e("p",null, e("b",null, "Recado: "), ret.obs),
+      e("p",{className:"text-[11px]"}, "Respondeu em "+formatarDataHora(ret.em)))) : (v.ret ? e("p",{key:"rp", className:"text-[11px]"}, "Peças publicadas no link. Aguardando a resposta da revendedora.") : null);
+  var colMeio = e("div",{key:"m", className:"flex min-w-0 flex-col gap-2"}, respBloco, pecasBloco);
 
   // NO TOPO (fixo): o que ela pediu em texto (uma linha por item) e as fotos que ela mandou, com botões para aumentar ou diminuir
   var TAMANHOS = [56, 80, 112, 160, 220], iz = v.zoom===undefined ? 3 : v.zoom, lado = TAMANHOS[iz];
@@ -372,6 +395,7 @@ function FichaPedido(p){
           entrega && (x.status==="condicional" || x.status==="concluido") && e("button",{type:"button", onClick:function(){ copiar(mensagemTexto(cfg, "avaliacao").split("{nome}").join(primeiro)); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20"}, "Copiar avaliação"),
           !compacto && entrega && (x.status==="novo" || x.status==="aceite") && e("button",{type:"button", disabled:!!v.lk, title:"Gera o link só dela (vale 48 horas) e copia a mensagem para mandar", onClick:copiarMsg, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, v.lk ? "Gerando link" : "Copiar mensagem"),
           v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
+          (x.pecas || []).length>0 && !fim && e("button",{type:"button", disabled:!!v.pub, title:"Publica as peças encontradas no link da revendedora e copia a mensagem para ela ver e dar o OK", onClick:enviarPecas, className:btn+"!border-[#E8B84B] !bg-[#E8B84B]/20 !text-[#F5E7BE] disabled:opacity-50"}, v.pub ? "Publicando" : v.pubOk ? "Mensagem copiada ✓ (peças publicadas)" : "Enviar peças para ela ver"),
           !compacto && e("button",{type:"button", disabled:!x.telefone, title:x.telefone ? "Copia "+x.telefone : "Telefone ainda não encontrado", onClick:function(){ copiar(x.telefone); }, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, "Copiar telefone"),
           v.lkErro && e("span",{className:"text-[11px] font-bold text-[var(--negativo)]"}, v.lkErro),
           !compacto && e("button",{type:"button", disabled:!!v.pdf, onClick:baixarPdf, className:btn+"border-white/40 bg-white/10 hover:bg-white/20 disabled:opacity-50"}, v.pdf ? "Montando PDF" : "Baixar PDF"),

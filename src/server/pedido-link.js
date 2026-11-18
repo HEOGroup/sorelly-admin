@@ -5,9 +5,10 @@
 import { randomBytes } from "node:crypto";
 import { consulta } from "./db.js";
 import { garantirTabelaAnexo, chaveAnexoValida, urlAnexoValida } from "./anexos.js";
+import { fotoDaPeca } from "./separar-pecas.js";
 
 export const HORAS_VALIDADE = 48;
-export const MAX_FOTOS_LINK = 12;
+export const MAX_FOTOS_LINK = 10;   // máximo de peças por pedido (Marcus, 18/11/2026)
 const COR = ["dourado", "prata", "os dois"];
 
 let pronta = null;
@@ -15,7 +16,7 @@ export function garantirTabelaLink() {
   if (!pronta) pronta = consulta(`create table if not exists sorelly.pedido_link (
     id text primary key, revendedora text not null, cod text, representante text, telefone text, cidade text, media numeric, taxa numeric not null default 0,
     criado_por text, criado_em timestamptz not null default now(), expira_em timestamptz not null,
-    status text not null default 'aberto', enviado_em timestamptz, dados jsonb, importado_em timestamptz, importado_por text, uf text)`).then(() => consulta("alter table sorelly.pedido_link add column if not exists uf text")).then(() => consulta("alter table sorelly.pedido_link add column if not exists empresa boolean not null default false")).catch((e) => { pronta = null; throw e; });
+    status text not null default 'aberto', enviado_em timestamptz, dados jsonb, importado_em timestamptz, importado_por text, uf text)`).then(() => consulta("alter table sorelly.pedido_link add column if not exists uf text")).then(() => consulta("alter table sorelly.pedido_link add column if not exists empresa boolean not null default false")).then(() => consulta("alter table sorelly.pedido_link add column if not exists publicadas jsonb, add column if not exists retorno jsonb, add column if not exists publicado_em timestamptz")).catch((e) => { pronta = null; throw e; });
   return pronta;
 }
 
@@ -39,11 +40,60 @@ export async function criarLink({ nome, cod, representante, telefone, cidade, uf
 export async function lerLink(id) {
   if (!codigoValido(id)) return null;
   await garantirTabelaLink();
-  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const r = (await consulta("select id, revendedora, taxa, uf, empresa, status, expira_em, enviado_em, publicadas, retorno, (expira_em < now()) as vencido from sorelly.pedido_link where id = $1", [id])).rows[0];
   if (!r) return null;
-  const estado = r.status !== "aberto" ? "enviado" : r.vencido ? "expirado" : "aberto";
+  const temPecas = Array.isArray(r.publicadas) && r.publicadas.length > 0;
+  const estado = temPecas ? (r.vencido ? "expirado" : "acompanhar") : r.status !== "aberto" ? "enviado" : r.vencido ? "expirado" : "aberto";
+  const acompanhar = temPecas && !r.vencido ? { pecas: r.publicadas.map((x) => ({ cod: x.cod, desc: x.desc || "", preco: x.preco == null ? null : Number(x.preco) })), retorno: r.retorno || null } : null;
   const forcaEncomenda = !!(r.uf && r.uf !== "PR");   // outro estado: só encomenda (vai no próximo kit)
-  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda };
+  return { id: r.id, primeiroNome: String(r.revendedora).trim().split(/\s+/)[0], taxa: Number(r.taxa) || 0, estado, expiraEm: r.expira_em, forcaEncomenda, podeEmpresa: r.empresa === true && !forcaEncomenda, acompanhar };
+}
+
+// ---------- peças encontradas pelo setor, para a revendedora aprovar no MESMO link (18/11/2026, Marcus) ----------
+// A funcionária publica as peças separadas (código, descrição, preço e, quando a DevMaster não tem foto, a foto dela). A revendedora abre o link, vê as fotos e marca o que quer.
+const CODIGO_PECA = /^[A-Z0-9]{2,20}$/;
+/** Lado do sistema: guarda as peças que a revendedora vai ver e estende a validade do link em 5 dias. */
+export async function publicarPecas(id, pecas) {
+  if (!codigoValido(id)) throw Object.assign(new Error("Link inválido."), { statusCode: 400 });
+  await garantirTabelaLink();
+  const lista = (Array.isArray(pecas) ? pecas : []).slice(0, 120).map((x) => ({
+    cod: String((x && x.cod) || "").trim().toUpperCase().replace(/[^A-Z0-9]/g, ""), desc: String((x && x.desc) || "").trim().slice(0, 160),
+    preco: x && Number(x.preco) > 0 ? Math.round(Number(x.preco) * 100) / 100 : null, anexo: x && chaveAnexoValida(x.anexo) ? x.anexo : "" })).filter((x) => CODIGO_PECA.test(x.cod));
+  if (!lista.length) throw Object.assign(new Error("Nenhuma peça para publicar."), { statusCode: 400 });
+  const r = await consulta("update sorelly.pedido_link set publicadas = $2, publicado_em = now(), retorno = null, expira_em = greatest(expira_em, now() + interval '120 hours') where id = $1 returning id", [id, JSON.stringify(lista)]);
+  if (!r.rows.length) throw Object.assign(new Error("Link não encontrado."), { statusCode: 404 });
+  return lista.length;
+}
+/** Lado do sistema: resposta da revendedora para cada link pedido. */
+export async function retornos(ids) {
+  await garantirTabelaLink();
+  const lista = (Array.isArray(ids) ? ids : []).filter(codigoValido).slice(0, 30);
+  if (!lista.length) return {};
+  const r = await consulta("select id, retorno, publicado_em from sorelly.pedido_link where id = any($1) and publicadas is not null", [lista]);
+  const o = {}; r.rows.forEach((x) => { o[x.id] = { retorno: x.retorno || null, publicadoEm: x.publicado_em }; }); return o;
+}
+/** Lado público: a revendedora diz quais peças quer. Vale a última resposta. */
+export async function aprovarPecas(id, { quer, obs }) {
+  const l = await lerLink(id);
+  if (!l) throw Object.assign(new Error("Link não encontrado."), { statusCode: 404 });
+  if (l.estado !== "acompanhar") throw Object.assign(new Error(l.estado === "expirado" ? "Este link expirou." : "Ainda não há peças para você ver."), { statusCode: 410 });
+  const todas = l.acompanhar.pecas.map((p) => p.cod), sim = (Array.isArray(quer) ? quer : []).map((c) => String(c || "").toUpperCase()).filter((c) => todas.includes(c));
+  const retorno = { em: new Date().toISOString(), quer: Array.from(new Set(sim)), nao: todas.filter((c) => !sim.includes(c)), obs: String(obs || "").trim().slice(0, 300) };
+  await consulta("update sorelly.pedido_link set retorno = $2 where id = $1", [id, JSON.stringify(retorno)]);
+  return retorno;
+}
+/** Lado público: foto de uma peça publicada (a da funcionária ou a da DevMaster). Só serve peça que está na lista do link. */
+export async function fotoPublicaDaPeca(id, cod) {
+  if (!codigoValido(id)) return null;
+  await garantirTabelaLink();
+  const r = (await consulta("select publicadas from sorelly.pedido_link where id = $1", [id])).rows[0];
+  const p = r && Array.isArray(r.publicadas) ? r.publicadas.find((x) => x.cod === String(cod || "").toUpperCase()) : null;
+  if (!p) return null;
+  let url = "";
+  if (p.anexo) { await garantirTabelaAnexo(); const a = (await consulta("select url from sorelly.anexo_modulo where id = $1 and modulo = 'er'", [p.anexo])).rows[0]; url = a ? a.url : ""; }
+  if (!url) { const f = await fotoDaPeca(p.cod); url = f ? f.url : ""; }
+  const m = /^data:(image[/][a-z0-9.+-]+);base64,(.+)$/i.exec(url);
+  return m ? { mime: m[1], bytes: Buffer.from(m[2], "base64") } : null;
 }
 
 /** Guarda UMA foto do link (a página manda uma por vez, já reduzida). */
@@ -70,7 +120,8 @@ export async function enviarPedido(id, { tipo, fotos, textos, obs, aceite, entre
   const lista = (Array.isArray(fotos) ? fotos : []).filter((f) => f && chaveAnexoValida(f.key)).slice(0, MAX_FOTOS_LINK);
   const donas = lista.length ? new Set((await consulta("select id from sorelly.anexo_modulo where por = $1 and id = any($2)", ["link:" + id, lista.map((f) => f.key)])).rows.map((x) => x.id)) : new Set();
   const limpas = lista.filter((f) => donas.has(f.key)).map((f) => ({ key: f.key, cor: COR.includes(f.cor) ? f.cor : "", obs: String(f.obs || "").trim().slice(0, 160) }));
-  const soTexto = (Array.isArray(textos) ? textos : []).slice(0, 12).map((t) => ({ cor: COR.includes(t && t.cor) ? t.cor : "", obs: String((t && t.obs) || "").trim().slice(0, 160) })).filter((t) => t.obs);
+  const soTexto = (Array.isArray(textos) ? textos : []).slice(0, MAX_FOTOS_LINK).map((t) => ({ cor: COR.includes(t && t.cor) ? t.cor : "", obs: String((t && t.obs) || "").trim().slice(0, 160) })).filter((t) => t.obs);
+  if (limpas.length + soTexto.length > MAX_FOTOS_LINK) throw Object.assign(new Error("Dados inválidos: cada pedido tem no máximo " + MAX_FOTOS_LINK + " peças."), { statusCode: 400 });
   if (!limpas.length && !soTexto.length) throw Object.assign(new Error("Dados inválidos: mande ao menos uma foto ou uma descrição."), { statusCode: 400 });
   const tp = l.forcaEncomenda || tipo === "encomenda" ? "encomenda" : "reposicao";
   if (!aceite) throw Object.assign(new Error("Dados inválidos: é preciso aceitar as condições."), { statusCode: 400 });

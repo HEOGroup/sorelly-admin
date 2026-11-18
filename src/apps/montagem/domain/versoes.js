@@ -3,6 +3,10 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.18", data:"2026-11-18", titulo:"Link do pedido: peças encontradas com Quero ou Não quero, 10 peças no máximo, endereço online", itens:[
+  {tipo:"novo", area:"Encomendas e reposições → ficha e link", txt:"Botão Enviar peças para ela ver: publica as peças separadas no mesmo link (foto da DevMaster ou da funcionária) e copia a mensagem. A revendedora marca Quero ou Não quero e a resposta aparece na ficha."},
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Máximo de 10 peças por pedido. Links sempre com o endereço online (abrem no celular). Topo da página com a logo mais baixa e o título Pedido de peças."}
+ ]},
  {v:"0.21.17", data:"2026-11-18", titulo:"Financeiro: baixas e regras no servidor, dívidas de prestadores da família e datas erradas", itens:[
   {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"As baixas dadas no sistema, a troca de CNPJ, a marca Empresa ou Família, as contas lançadas à mão e o histórico passaram a ficar no servidor. Antes cada pessoa só via o que ela mesma lançava. Na primeira vez, o que estava só em um computador é juntado ao que já está no servidor."},
   {tipo:"correção", area:"Financeiro → Direcionar", txt:"As contas fixas das representantes, as regras e o valor fora do normal também passaram a ficar no servidor. O nome do pedido aberto deixou de ser cortado na letra s."},

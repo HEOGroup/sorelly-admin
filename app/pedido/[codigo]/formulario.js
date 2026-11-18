@@ -8,7 +8,7 @@ import { useEffect, useRef, useState } from "react";
 
 const CORES = [["dourado", "Dourado"], ["prata", "Prata"], ["os dois", "Os dois"]];
 const HORARIOS = [["manhã (8h às 12h)", "Manhã", "8h às 12h"], ["tarde (13h às 18h)", "Tarde", "13h às 18h"], ["qualquer horário", "Qualquer", "no horário comercial"]];
-const MAX = 12;
+const MAX = 10;   // regra do Marcus (18/11/2026): no máximo 10 peças por pedido
 const reais = (n) => "R$ " + Number(n || 0).toFixed(2).replace(".", ",");
 const quando = (iso) => { try { return new Date(iso).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" }); } catch (x) { return ""; } };
 
@@ -36,13 +36,14 @@ async function chamar(metodo, caminho, corpo) {
   return j;
 }
 
-const Tela = ({ passo, total, children }) => (
-  <main className="min-h-screen overflow-x-hidden px-3 py-3 text-white sm:px-4 sm:py-6" style={{ background: "linear-gradient(180deg,#1d2c4d 0%,#0f1117 45%)" }}>
+const Tela = ({ passo, total, etapa, children }) => (
+  <main className="min-h-screen overflow-x-hidden px-3 pb-6 pt-[max(2.25rem,env(safe-area-inset-top))] text-white sm:px-4 sm:pt-10" style={{ background: "linear-gradient(180deg,#1d2c4d 0%,#0f1117 45%)" }}>
     <div className="mx-auto flex w-full min-w-0 max-w-[560px] flex-col gap-2.5 sm:gap-4">
       <header className="text-center">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src="/logo-sorelly.png" alt="Sorelly Joias" className="mx-auto h-14 w-auto sm:mb-1 sm:h-24" />
-        <p className="text-[13px]">Reposições e Encomendas{passo ? " · passo " + passo + " de " + total : ""}</p>
+        <img src="/logo-sorelly.png" alt="Sorelly Joias" className="mx-auto mb-1 h-16 w-auto sm:h-24" />
+        <h1 className="text-[18px] font-bold leading-tight">Pedido de peças</h1>
+        <p className="mt-0.5 text-[14px]">{passo ? "Passo " + passo + " de " + total + (etapa ? " · " + etapa : "") : etapa || "Reposição e encomenda"}</p>
         {passo ? <div className="mx-auto mt-2 flex w-40 gap-1" aria-hidden>{Array.from({ length: total }).map((_, i) => <span key={i} className={"h-1 flex-1 rounded-full " + (i < passo ? "bg-[#E8B84B]" : "bg-white/25")} />)}</div> : null}
       </header>
       {children}
@@ -51,7 +52,7 @@ const Tela = ({ passo, total, children }) => (
 );
 const Aviso = ({ titulo, texto }) => (
   <section className="rounded-xl border border-white/30 bg-white/[.08] p-5 text-center">
-    <h1 className="text-[16px] font-bold">{titulo}</h1>
+    <h2 className="text-[16px] font-bold">{titulo}</h2>
     <p className="mt-2 text-[13px] leading-snug">{texto}</p>
   </section>
 );
@@ -73,6 +74,53 @@ const Campo = ({ rotulo, children }) => (<label className="flex flex-col gap-1">
 const ENTRADA = "h-11 w-full rounded-lg border border-white/40 bg-white/10 px-3 text-[16px] text-white placeholder:text-white/60 [&:-webkit-autofill]:shadow-[inset_0_0_0_100px_#34476f] [&:-webkit-autofill]:[-webkit-text-fill-color:#fff]";
 const BTN = "h-11 rounded-xl bg-[#E8B84B] text-[16px] font-bold text-[#14233f] disabled:opacity-40";
 const VOLTAR = "h-11 rounded-xl border border-white/40 bg-white/10 text-[15px] font-bold";
+
+// PEÇAS QUE O SETOR ENCONTROU (18/11/2026, Marcus): a revendedora volta ao MESMO link, vê a foto de cada peça e marca se quer ou não
+function Acompanhar({ info, codigo }) {
+  const pecas = info.acompanhar.pecas, ret = info.acompanhar.retorno;
+  const [escolha, setEscolha] = useState(() => { const o = {}; if (ret) { (ret.quer || []).forEach((c) => { o[c] = "sim"; }); (ret.nao || []).forEach((c) => { o[c] = "nao"; }); } return o; });
+  const [obs, setObs] = useState(ret ? ret.obs || "" : ""), [enviando, setEnviando] = useState(false), [feito, setFeito] = useState(!!ret), [erro, setErro] = useState("");
+  const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length;
+  const enviar = async () => {
+    setErro(""); setEnviando(true);
+    try { await chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/ok", { quer: pecas.filter((p) => escolha[p.cod] === "sim").map((p) => p.cod), obs }); setFeito(true); }
+    catch (x) { setErro(x.message); } finally { setEnviando(false); }
+  };
+  const marca = (cod, v) => { setEscolha({ ...escolha, [cod]: v }); setFeito(false); };
+  return (
+    <Tela etapa="Peças que encontramos">
+      <section className="rounded-xl border border-white/30 bg-white/[.08] p-3">
+        <h2 className="text-[16px] font-bold">Oi, {info.primeiroNome}! 💛</h2>
+        <p className="mt-1 text-[13px] leading-snug">A equipe encontrou estas peças para o seu pedido. Veja cada foto e marque <b>Quero</b> ou <b>Não quero</b>. Depois toque em <b>Enviar minha resposta</b>.</p>
+      </section>
+      <div className="flex flex-col gap-2.5">
+        {pecas.map((p, n) => (
+          <section key={p.cod} className={"overflow-hidden rounded-xl border-2 " + (escolha[p.cod] === "sim" ? "border-[#4ade80]/70 bg-[#4ade80]/[.08]" : escolha[p.cod] === "nao" ? "border-white/20 bg-white/[.04]" : "border-white/30 bg-white/[.08]")}>
+            <div className="bg-white/[.06] p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={"Peça " + (n + 1)} className="mx-auto block max-h-[260px] w-auto max-w-full rounded-lg object-contain" onError={(ev) => { ev.currentTarget.style.display = "none"; }} />
+            </div>
+            <div className="flex flex-col gap-2 p-2.5">
+              <p className="break-words text-[14px] font-bold">Peça {n + 1}{p.desc ? " · " + p.desc : ""}</p>
+              {p.preco != null && <p className="text-[13px]">{reais(p.preco)}</p>}
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={"Peça " + (n + 1)}>
+                <button type="button" role="radio" aria-checked={escolha[p.cod] === "sim"} onClick={() => marca(p.cod, "sim")} className={"h-11 rounded-lg border text-[14px] font-bold " + (escolha[p.cod] === "sim" ? "border-[#4ade80] bg-[#4ade80] text-[#0b2a16]" : "border-white/40 bg-white/10")}>Quero</button>
+                <button type="button" role="radio" aria-checked={escolha[p.cod] === "nao"} onClick={() => marca(p.cod, "nao")} className={"h-11 rounded-lg border text-[14px] font-bold " + (escolha[p.cod] === "nao" ? "border-white bg-white/25" : "border-white/40 bg-white/10")}>Não quero</button>
+              </div>
+            </div>
+          </section>
+        ))}
+      </div>
+      <section className="flex flex-col gap-2.5 rounded-xl border border-white/30 bg-white/[.08] p-3">
+        <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => { setObs(ev.target.value); setFeito(false); }} placeholder="Quer avisar algo? (opcional)" className="w-full rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-[16px] placeholder:text-white/60" />
+        {erro && <p className="text-[14px] font-bold text-[#fecaca]">{erro}</p>}
+        {feito ? <p className="text-center text-[14px] font-bold text-[#bbf7d0]">Resposta enviada ✓ Você marcou {querN} de {pecas.length}. Pode mudar e enviar de novo.</p>
+          : faltam > 0 && <p className="text-center text-[13px]">Falta marcar {faltam} {faltam === 1 ? "peça" : "peças"}.</p>}
+        <button type="button" disabled={faltam > 0 || enviando} onClick={enviar} className={BTN}>{enviando ? "Enviando" : feito ? "Enviar de novo" : "Enviar minha resposta"}</button>
+      </section>
+    </Tela>
+  );
+}
 
 export default function Formulario({ codigo }) {
   const [info, setInfo] = useState(null), [falha, setFalha] = useState(""), [passo, setPasso] = useState(1);
@@ -129,7 +177,8 @@ export default function Formulario({ codigo }) {
   if (falha) return <Tela><Aviso titulo="Não consegui abrir" texto="Tente de novo em instantes." /></Tela>;
   if (!info) return <Tela><Aviso titulo="Carregando" texto="Um instante." /></Tela>;
   if (feito) return <Tela><Aviso titulo={"Pedido enviado, " + info.primeiroNome + "! 💛"} texto={empresa ? "Recebemos o seu pedido. A equipe separa as peças e confirma o seu horário por mensagem escrita. Você retira na empresa, sem taxa de entrega." : rep ? "Recebemos o seu pedido. A equipe separa as peças e te avisa por mensagem escrita para você fazer o Pix da taxa. Depois do Pix, o pedido sai para entrega." : "Recebemos a sua encomenda. As peças vão junto com o seu próximo kit. A equipe retorna por mensagem escrita."} /></Tela>;
-  if (info.estado === "enviado") return <Tela><Aviso titulo="Este pedido já foi enviado" texto="A equipe já recebeu. Se precisar pedir de novo, peça um novo link ao setor." /></Tela>;
+  if (info.estado === "acompanhar") return <Acompanhar info={info} codigo={codigo} />;
+  if (info.estado === "enviado") return <Tela><Aviso titulo="Este pedido já foi enviado" texto="A equipe já recebeu e está procurando as peças. Quando encontrar, a gente te avisa por mensagem e as peças aparecem neste mesmo link, para você ver e dar o OK." /></Tela>;
   if (info.estado === "expirado") return <Tela><Aviso titulo="Este link expirou" texto="O link vale por 48 horas. Peça um novo link ao setor de Reposições e Encomendas." /></Tela>;
 
   // ---------- PASSO 1: condições (cada uma pede o OK da revendedora) ----------
@@ -153,9 +202,9 @@ export default function Formulario({ codigo }) {
   const todosLidos = !!lidos.geral;
 
   if (passo === 1) return (
-    <Tela passo={1} total={total}>
+    <Tela passo={1} total={total} etapa="Condições">
       <section className="rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
-        <h1 className="text-[16px] font-bold">Oi, {info.primeiroNome}! 💛</h1>
+        <h2 className="text-[16px] font-bold">Oi, {info.primeiroNome}! 💛</h2>
         <p className="mt-2 text-[13px] leading-snug">Este setor foi criado <b>para ajudar você, revendedora</b>: para você nunca ficar sem a peça que a sua cliente quer, na hora em que ela quer comprar. Peça por aqui que a gente separa para você.</p>
       </section>
 
@@ -198,9 +247,9 @@ export default function Formulario({ codigo }) {
 
   // ---------- PASSO 2 (retirada na empresa): dia e hora ----------
   if (empresa && passo === 2) return (
-    <Tela passo={2} total={3}>
+    <Tela passo={2} total={3} etapa="Retirada na empresa">
       <section className="flex flex-col gap-3 rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
-        <h1 className="text-[15px] font-bold">Quando você vem retirar?</h1>
+        <h2 className="text-[15px] font-bold">Quando você vem retirar?</h2>
         <p className="text-[13px] leading-snug">Escolha o dia e a hora. A equipe <b>confirma o seu horário por mensagem escrita</b>.</p>
         <Campo rotulo="Dia *"><input type="date" min={hoje} value={ret.dia} onChange={(ev) => setRet({ ...ret, dia: ev.target.value })} className={ENTRADA} /></Campo>
         <Campo rotulo="Hora *">
@@ -220,9 +269,9 @@ export default function Formulario({ codigo }) {
 
   // ---------- PASSO 2: entrega (só reposição) ----------
   if (rep && passo === 2) return (
-    <Tela passo={2} total={3}>
+    <Tela passo={2} total={3} etapa="Entrega">
       <section className="flex flex-col gap-3 rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
-        <h1 className="text-[15px] font-bold">Onde e quando entregar?</h1>
+        <h2 className="text-[15px] font-bold">Onde e quando entregar?</h2>
         <p className="text-[13px] leading-snug">Informe o endereço e os melhores horários para o entregador te encontrar.</p>
         <Campo rotulo="Rua e número *"><input type="text" autoComplete="street-address" value={ent.rua} maxLength={120} onChange={(ev) => setEnt({ ...ent, rua: ev.target.value })} placeholder="Ex.: Rua das Flores, 123" className={ENTRADA} /></Campo>
         <div className="grid grid-cols-2 gap-2">
@@ -253,10 +302,10 @@ export default function Formulario({ codigo }) {
 
   // ---------- PASSO FINAL: as peças ----------
   return (
-    <Tela passo={total} total={total}>
+    <Tela passo={total} total={total} etapa="Peças">
       <section className="rounded-xl border border-white/30 bg-white/[.08] p-3 sm:p-4">
-        <h1 className="text-[15px] font-bold">Quais peças você quer?</h1>
-        <p className="mt-1 text-[13px] leading-snug">Coloque a foto de cada peça, ou descreva a peça. Em cada uma, toque em <b>dourado</b>, <b>prata</b> ou <b>os dois</b>.</p>
+        <h2 className="text-[15px] font-bold">Quais peças você quer?</h2>
+        <p className="mt-1 text-[13px] leading-snug">Coloque a foto de cada peça, ou descreva a peça. Em cada uma, toque em <b>dourado</b>, <b>prata</b> ou <b>os dois</b>. Cada pedido tem no <b>máximo {MAX} peças</b> ({itens.length} de {MAX}).</p>
       </section>
 
       <div className="flex flex-col gap-3">

@@ -15,6 +15,11 @@ function useEr(){
   var exec = function(op, dados){ var a = Object.assign({type:"ER", op:op, por:por}, dados||{}); var r = erReduz(s, a); d(a); return !!(r.patch && r.patch.er); };
   return {s:s, er:s.er, cfg:s.er.config, por:por, pode:podeConfigurar(s.usuario), exec:exec};
 }
+// endereço público para o link da cliente (18/11/2026, Marcus: o link feito no computador local não abria no celular). No computador local ou na rede de casa, vale o endereço do sistema online; no sistema online vale o próprio endereço.
+var URL_PUBLICA = "https://sorelly-admin.vercel.app";
+function baseLink(){
+  try{ var h = window.location.hostname; if(/^(localhost|127[.]|192[.]168[.]|10[.]|0[.]0[.]0[.]0)/.test(h)) return URL_PUBLICA; return window.location.origin; }catch(x){ return URL_PUBLICA; }
+}
 function copiaAntiga(t){
   try{ var a = document.createElement("textarea"); a.value = t; a.setAttribute("readonly", ""); a.style.position = "fixed"; a.style.opacity = "0"; document.body.appendChild(a); a.select(); var ok = document.execCommand("copy"); a.remove(); return !!ok; }catch(x){ return false; }
 }
@@ -49,4 +54,4 @@ function Escolha(p){
     return e("button",{key:o[0], type:"button", onClick:function(){ p.set(o[0]); }, className:"rounded-lg px-3 py-1.5 text-[12.5px] font-bold ring-1 transition "+(on ? "text-white" : "bg-muted/40 text-white/85 ring-white/15 hover:bg-white/10"),
       style:on ? {background:"linear-gradient(135deg,"+TURQ+"66,"+TURQ+"22)", boxShadow:"inset 0 0 0 1px "+TURQ+"cc"} : undefined}, o[1]); }));
 }
-export { TURQ, useEr, copiar, copiarDepois, Bt, BtMini, Painel, Escolha };
+export { TURQ, useEr, copiar, copiarDepois, baseLink, Bt, BtMini, Painel, Escolha };

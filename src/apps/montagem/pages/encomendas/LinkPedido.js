@@ -5,7 +5,7 @@
 import { Botao } from "@/apps/montagem/components/padrao-fin";
 import { acessoReposicao, formatarDataHora, formatarReais, mensagemTexto, revPorNome } from "@/apps/montagem/domain/encomendas";
 import { apiAtiva, chamar } from "@/apps/montagem/lib/api";
-import { copiar } from "@/apps/montagem/pages/encomendas/visual";
+import { baseLink, copiar } from "@/apps/montagem/pages/encomendas/visual";
 import { e, useEffect, useState } from "@/shared/react";
 
 var semAcento = function(t){ return String(t || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim(); };
@@ -40,7 +40,7 @@ function LinkPedido(p){
       st[1](function(o){ return Object.assign({}, o, {id:j.id, gerando:false, validade:ate.toLocaleDateString("pt-BR", {day:"2-digit", month:"2-digit"})+" às "+ate.toLocaleTimeString("pt-BR", {hour:"2-digit", minute:"2-digit"})}); }); carregarLinks();
     }, function(x){ st[1](function(o){ return Object.assign({}, o, {gerando:false, msg:x && x.message ? x.message : "Não consegui gerar o link."}); }); });
   };
-  var url = f.id ? window.location.origin+"/pedido/"+f.id : "";
+  var url = f.id ? baseLink()+"/pedido/"+f.id : "";
   var primeiro = String(nome).trim().split(" ")[0];
   var novo = function(){ st[1](function(o){ return Object.assign({}, o, {busca:"", rev:null, id:"", validade:"", msg:""}); }); };
 
