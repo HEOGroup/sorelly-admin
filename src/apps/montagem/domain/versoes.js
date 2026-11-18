@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.10", data:"2026-11-18", titulo:"Link do pedido: peças com OK e Fechar solicitação", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Na página da revendedora, cada peça abre com fundo claro e foto menor, ganha o botão OK e vira uma linha curta com Editar. Depois do OK vêm + Nova peça ou Fechar solicitação; link isento tem um só Estou de acordo com tudo e assino."}
+ ]},
  {v:"0.21.9", data:"2026-11-18", titulo:"Encomendas: nova solicitação por link, dados automáticos, bipagem de envio", itens:[
   {tipo:"novo", area:"Atendimento interno → Bipagem de envio", txt:"A bipadora digita a revendedora e o sistema mostra as encomendas abertas do setor Encomendas. Com encomenda, o OK só vale com a conferência de que as peças separadas vão junto com o kit. Cada OK fica registrado."},
   {tipo:"novo", area:"Encomendas e reposições → ficha do pedido", txt:"A ficha puxa da DevMaster código, cidade, telefone e média das 3 últimas vendas e mostra o valor máximo da reposição. Botões Copiar telefone e Copiar mensagem; pedido novo abre num bloco menor, só para mandar a mensagem."},

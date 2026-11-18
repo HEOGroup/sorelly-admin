@@ -255,57 +255,81 @@ export default function Formulario({ codigo }) {
       </section>
 
       <div className="flex flex-col gap-3">
-        {itens.map((i, n) => (
-          <section key={i.id} className="overflow-hidden rounded-xl border border-white/25 bg-black/30">
-            {i.texto ? (
-              <div className="flex items-center justify-between bg-white/[.07] px-3 py-2">
-                <span className="text-[13px] font-bold">Peça {n + 1} (só descrição)</span>
+        {itens.map((i, n) => {
+          const pronta = !!i.cor && (i.texto ? !!i.obs.trim() : !!i.key && !i.erro && !i.subindo);
+          const rotuloCor = (CORES.find(([v]) => v === i.cor) || ["", ""])[1];
+          // peça já confirmada com OK: linha curta (foto pequena, cor, descrição), com Editar e ×
+          if (i.ok) {
+            return (
+              <section key={i.id} className="flex items-center gap-3 rounded-xl border border-[#4ade80]/50 bg-[#4ade80]/[.08] p-2.5">
+                {i.texto ? <span className="grid size-14 shrink-0 place-items-center rounded-lg bg-white/10 text-[20px]" aria-hidden>✎</span> : (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={i.url} alt={"Foto " + (n + 1)} className="size-14 shrink-0 rounded-lg object-cover" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="text-[14px] font-bold">Peça {n + 1} · {rotuloCor} ✓</p>
+                  <p className="break-words text-[13px] leading-snug">{i.obs.trim() || "Sem descrição"}</p>
+                </div>
+                <button type="button" onClick={() => mudar(i.id, { ok: false })} className="h-9 shrink-0 rounded-lg border border-white/40 bg-white/10 px-3 text-[13px] font-bold">Editar</button>
+                <button type="button" aria-label="Tirar esta peça" onClick={() => setItens((l) => l.filter((x) => x.id !== i.id))} className="grid size-9 shrink-0 place-items-center rounded-lg text-[16px] font-bold">×</button>
+              </section>
+            );
+          }
+          // peça aberta: fundo claro, foto menor, cor, descrição e o OK
+          return (
+            <section key={i.id} className="overflow-hidden rounded-xl border-2 border-[#E8B84B]/70 bg-white/[.10]">
+              <div className="flex items-center justify-between bg-white/[.10] px-3 py-1.5">
+                <span className="text-[13px] font-bold">{i.texto ? "Peça " + (n + 1) + " · só descrição" : "Peça " + (n + 1) + " · foto"}</span>
                 <button type="button" aria-label="Tirar esta peça" onClick={() => setItens((l) => l.filter((x) => x.id !== i.id))} className="grid size-9 place-items-center rounded text-[16px] font-bold">×</button>
               </div>
-            ) : (
-              <div className="relative bg-black">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={i.url} alt={"Foto " + (n + 1)} className="mx-auto block max-h-[320px] w-auto max-w-full object-contain" />
-                <span className="absolute left-2 top-2 rounded bg-black/75 px-1.5 py-0.5 text-[12px] font-bold">Foto {n + 1}</span>
-                <button type="button" aria-label="Tirar esta foto" onClick={() => setItens((l) => l.filter((x) => x.id !== i.id))} className="absolute right-2 top-2 grid size-9 place-items-center rounded bg-black/80 text-[16px] font-bold">×</button>
+              {!i.texto && (
+                <div className="bg-white/[.06] p-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={i.url} alt={"Foto " + (n + 1)} className="mx-auto block max-h-[200px] w-auto max-w-full rounded-lg object-contain" />
+                </div>
+              )}
+              <div className="flex flex-col gap-2 p-3">
+                {i.subindo && <p className="text-[13px]">Enviando a foto</p>}
+                {i.erro && <p className="text-[13px] font-bold text-[#fecaca]">{i.erro} Tire a foto e coloque de novo.</p>}
+                <p className="text-[13px] font-bold">Qual cor?</p>
+                <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Cor">
+                  {CORES.map(([v, t]) => (
+                    <button key={v} type="button" role="radio" aria-checked={i.cor === v} onClick={() => mudar(i.id, { cor: v })}
+                      className={"h-10 rounded-lg border text-[14px] font-bold " + (i.cor === v ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/40 bg-white/10")}>{t}</button>
+                  ))}
+                </div>
+                <textarea value={i.obs} maxLength={160} rows={2} onChange={(ev) => mudar(i.id, { obs: ev.target.value })}
+                  placeholder={i.texto ? "Descreva a peça. Ex.: cordão baiano de prata mais grosso" : "Descreva o que você quer (opcional). Ex.: mais largo, tamanho 18, 2 unidades"}
+                  className="w-full rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-[16px] leading-snug placeholder:text-white/60" />
+                <button type="button" disabled={!pronta} onClick={() => mudar(i.id, { ok: true })} className={BTN}>OK, peça pronta</button>
+                {!pronta && <p className="text-center text-[12px]">{i.texto && !i.obs.trim() ? "Descreva a peça e escolha a cor para dar o OK." : "Escolha a cor para dar o OK."}</p>}
               </div>
-            )}
-            <div className="flex flex-col gap-2 p-3">
-              {i.subindo && <p className="text-[13px]">Enviando a foto</p>}
-              {i.erro && <p className="text-[13px] font-bold text-[#fecaca]">{i.erro} Tire a foto e coloque de novo.</p>}
-              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Cor">
-                {CORES.map(([v, t]) => (
-                  <button key={v} type="button" role="radio" aria-checked={i.cor === v} onClick={() => mudar(i.id, { cor: v })}
-                    className={"h-11 rounded-lg border text-[14px] font-bold " + (i.cor === v ? "border-[#E8B84B] bg-[#E8B84B] text-[#14233f]" : "border-white/30 bg-white/5")}>{t}</button>
-                ))}
-              </div>
-              <textarea value={i.obs} maxLength={160} rows={2} onChange={(ev) => mudar(i.id, { obs: ev.target.value })}
-                placeholder={i.texto ? "Descreva a peça. Ex.: cordão baiano de prata mais grosso" : "Descreva o que você quer (opcional). Ex.: mais largo, tamanho 18, 2 unidades"}
-                className="w-full rounded-lg border border-white/30 bg-black/40 px-3 py-2 text-[16px] leading-snug placeholder:text-white/50" />
-            </div>
-          </section>
-        ))}
+            </section>
+          );
+        })}
       </div>
 
-      {itens.length < MAX && (
+      {/* nenhuma peça aberta: nova peça ou fechar a solicitação */}
+      {!itens.some((i) => !i.ok) && itens.length < MAX && (
         <div className="grid grid-cols-2 gap-2">
           <label className="flex h-14 cursor-pointer items-center justify-center rounded-xl border-2 border-dashed border-[#E8B84B]/70 bg-[#E8B84B]/10 px-2 text-center text-[14px] font-bold text-[#F5E7BE]">
-            + {itens.some((i) => !i.texto) ? "Outra foto" : "Adicionar fotos"}
+            + {itens.length ? "Nova peça (foto)" : "Adicionar fotos"}
             <input ref={campo} type="file" accept="image/*" multiple className="hidden" onChange={(ev) => adicionar(ev.target.files)} />
           </label>
-          <button type="button" onClick={semFoto} className="flex h-14 items-center justify-center rounded-xl border-2 border-dashed border-white/40 bg-white/5 px-2 text-center text-[14px] font-bold">+ Descrever peça sem foto</button>
+          <button type="button" onClick={semFoto} className="flex h-14 items-center justify-center rounded-xl border-2 border-dashed border-white/50 bg-white/10 px-2 text-center text-[14px] font-bold">+ Nova peça sem foto</button>
         </div>
       )}
 
-      <section className="flex flex-col gap-3 rounded-xl border border-white/25 bg-black/30 p-3">
-        <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => setObs(ev.target.value)} placeholder="Algo mais que a gente precisa saber? (opcional)" className="w-full rounded-lg border border-white/30 bg-black/40 px-3 py-2 text-[16px] placeholder:text-white/50" />
-        {erro && <p className="text-[14px] font-bold text-[#fecaca]">{erro}</p>}
-        {falta && <p className="text-[13px]">{falta}</p>}
-        <div className="grid grid-cols-[1fr_2fr] gap-2">
-          <button type="button" onClick={() => setPasso(rep ? 2 : 1)} className={VOLTAR}>Voltar</button>
-          <button type="button" disabled={!!falta || enviando} onClick={enviar} className={BTN}>{enviando ? "Enviando" : "Enviar pedido"}</button>
-        </div>
-      </section>
+      {itens.length > 0 && !itens.some((i) => !i.ok) && (
+        <section className="flex flex-col gap-3 rounded-xl border border-white/30 bg-white/[.08] p-3">
+          <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => setObs(ev.target.value)} placeholder="Algo mais que a gente precisa saber? (opcional)" className="w-full rounded-lg border border-white/40 bg-white/10 px-3 py-2 text-[16px] placeholder:text-white/60" />
+          {erro && <p className="text-[14px] font-bold text-[#fecaca]">{erro}</p>}
+          {falta && <p className="text-[13px]">{falta}</p>}
+          <button type="button" disabled={!!falta || enviando} onClick={enviar} className={BTN}>{enviando ? "Enviando" : "Fechar solicitação"}</button>
+        </section>
+      )}
+      {itens.some((i) => !i.ok) && <p className="text-center text-[13px]">Dê o OK na peça aberta para continuar.</p>}
+      {!itens.length && <button type="button" onClick={() => setPasso(rep ? 2 : 1)} className={VOLTAR}>Voltar</button>}
     </Tela>
   );
 }
