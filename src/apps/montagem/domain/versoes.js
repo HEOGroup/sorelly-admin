@@ -3,6 +3,12 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.12", data:"2026-11-18", titulo:"Fila de montagem e Preferências do kit migradas do admin antigo", itens:[
+  {tipo:"novo", area:"Representantes & Kits › Montagem › Fila de montagem", txt:"Tela nova, trazida do admin antigo: todas as revendedoras do app com o resumo das preferências do kit, pendentes primeiro (Já montado = montagem concluída depois da última atualização das preferências). Em cima, os kits das listagens abertas (montando agora e os próximos). Clicar na revendedora abre a área de montar: preferências bloco a bloco lidas na hora do app, OK por bloco, modo compacto, Iniciar montagem com cronômetro, lembrete depois de 2 minutos e Concluir montagem (quem montou, valor do kit, início, término e se usou as preferências). Embaixo, os últimos registros e o botão Análise geral."},
+  {tipo:"novo", area:"Representantes & Kits › Acompanhamento › Produtividade da montagem", txt:"Bônus por produtividade da equipe (manhã 8h às 12h e tarde 13h às 17h, kit normal e especial, meta, base e extra por kit, fator da avaliação das representantes), Regras do bônus e Equipe da montagem, com os mesmos números do admin antigo."},
+  {tipo:"novo", area:"Representantes & Kits › Preferências do kit", txt:"O formulário do app passa a ser servido por este sistema em /api/kit/preferences, no mesmo formato do admin antigo (conferido campo a campo). O Já montado das revendedoras usa os registros reais de montagem, e o setor Montagem passa a ler as preferências do app."},
+  {tipo:"melhoria", area:"Representantes & Kits › Fila de montagem", txt:"A montadora registra a montagem sem ver valor; a supervisão completa o valor do kit na lista de registros (Definir valor)."},
+ ]},
  {v:"0.21.11", data:"2026-11-18", titulo:"Link do pedido: um só Li e estou de acordo, logo e versão de celular", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Em todo link há um só Li e estou de acordo no fim e o botão Assinar e continuar. Logo da Sorelly no topo, campos claros e iguais, página compacta para o celular sem rolar para o lado. A Nova solicitação mostra a taxa escolhida depois de gerar o link."}
  ]},

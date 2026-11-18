@@ -3,7 +3,13 @@
 Uma linha por decisão, em ordem de data (mais novas em cima). Serve para lembrar **por que** o sistema é como é e para o Claude (e os desenvolvedores) fazerem do jeito dele sem perguntar de novo.
 Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela também está em `design/PADRAO-VISUAL.md`; regras de negócio em `CLAUDE.md` (raiz do projeto), nos `CLAUDE.md` das pastas e em `negocio/`.
 
-
+## 18/11/2026 (Kits: Fila de montagem e Preferências do kit saem do admin antigo)
+- **Pedido do Leonardo:** trazer do admin antigo (sorelly-admin) tudo de Preferências do kit e da Fila de montagem, servidor e telas, no padrão visual deste sistema e funcionando igual.
+- **Formulário do app:** este sistema serve `GET /api/kit/preferences` (público, mesmo formato `{version, blocks}` do antigo, só blocos ativos e na ordem). Os blocos são os do módulo `pk` (Formulário do app). O app só passa a ler daqui quando o backend do app tiver `kit` em `ADMIN_NOVO_MODULOS` e o celular apontar `EXPO_PUBLIC_KIT_API_URL` para este sistema (novo build).
+- **Fila de montagem** (`/representantes-kits/fila-de-montagem`) e **Produtividade da montagem** (`/representantes-kits/produtividade-da-montagem`): mesmas regras do antigo. Tabelas `sorelly.montagem_kit_registro`, `montagem_staff` e `montagem_bonus_config` no mesmo formato do antigo; cópia dos dados por `scripts/migrar-montagem-admin-antigo.mjs`.
+- **Diferença do antigo (regra deste sistema):** a montadora não vê dinheiro. Ela registra sem valor e a supervisão completa em Definir valor. Equipe e regras do bônus: só a Diretoria muda (igual ao antigo).
+- **Já montado** considera também os kits montados nas Listagens deste sistema (revendedora do app).
+- **Fator da avaliação do bônus:** lê `sorelly.avaliacao*`. Enquanto as avaliações não forem trazidas do antigo (`--avaliacoes` no script), o fator vale 1 (sem desconto).
 
 ## 18/11/2026 (RH › Salário e bônus, confirmações do Marcus)
 - **Sábado conta como dia útil** no 5º dia útil (confirmado). Em Salário e bônus: adiantamento no dia 20 e salário no 5º dia útil.

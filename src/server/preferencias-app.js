@@ -16,27 +16,99 @@ function config() {
   return { base, chave };
 }
 
-// GET com até 3 novas tentativas (o app responde 429 ou 5xx de vez em quando)
-async function ler(rota, tentativa = 0) {
+// GET com até 3 novas tentativas (o app responde 429 ou 5xx de vez em quando). 404 não tenta de novo (revendedora que não existe).
+export async function lerApp(rota, tentativa = 0) {
   const { base, chave } = config();
   try {
     const r = await fetch(base + rota, { headers: { Authorization: "Bearer " + chave, "X-App-Version": "3.5.0", Accept: "application/json" }, signal: AbortSignal.timeout(30000) });
+    if (r.status === 404) throw Object.assign(new Error("Revendedora não encontrada no app."), { statusCode: 404 });
     if (!r.ok) throw new Error("o app respondeu " + r.status);
     return await r.json();
   } catch (x) {
-    if (tentativa < 3) { await new Promise((z) => setTimeout(z, 800 * (tentativa + 1))); return ler(rota, tentativa + 1); }
+    if (x && x.statusCode === 404) throw x;
+    if (tentativa < 3) { await new Promise((z) => setTimeout(z, 800 * (tentativa + 1))); return lerApp(rota, tentativa + 1); }
     throw Object.assign(new Error("O app não respondeu: " + (x && x.message)), { statusCode: 503 });
   }
 }
+const ler = lerApp;
 
-async function garantirTabela() {
+// 18/11/2026 (Fila de montagem, migrada do admin antigo): a lista guarda também telefone, categorias respondidas e ouro/prata que o próprio app calcula.
+export async function garantirTabela() {
   if (G.__sorellyPrefAppTabela) return;
   await consulta(`create table if not exists sorelly.preferencia_app (
     id int primary key, nome text not null default '', cidade text not null default '', estado text not null default '',
     tem_prefs boolean not null default false, atualizado_em timestamptz, observacoes text not null default '', respostas jsonb not null default '{}'::jsonb,
     lido_em timestamptz not null default now())`);
+  await consulta(`alter table sorelly.preferencia_app add column if not exists telefone text not null default '',
+    add column if not exists categorias int not null default 0, add column if not exists ouro numeric, add column if not exists prata numeric`);
   await consulta("create table if not exists sorelly.preferencia_app_estado (id int primary key, concluida_em timestamptz, total int)");
   G.__sorellyPrefAppTabela = true;
+}
+
+// item da lista do app -> colunas guardadas (resumoGeral[0] = ouro/prata da revendedora, como o admin antigo mostrava)
+const resumoDe = (x) => { const p = x.preferencias || {}, m = (p.resumoGeral || [])[0] || null; return { tel: x.telefone || "", cat: Number(p.categoriasRespondidas) || 0, ouro: m ? Number(m.ouro) : null, prata: m ? Number(m.prata) : null }; };
+
+// grava a lista (nome, região, telefone, resumo) de um lote de revendedoras do app; as respostas ficam como estão
+async function gravarLista(l) {
+  for (let k = 0; k < l.length; k += 500) {
+    const p = l.slice(k, k + 500), r = p.map(resumoDe);
+    await consulta(`insert into sorelly.preferencia_app (id, nome, cidade, estado, tem_prefs, telefone, categorias, ouro, prata)
+      select * from unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::boolean[], $6::text[], $7::int[], $8::numeric[], $9::numeric[])
+      on conflict (id) do update set nome = excluded.nome, cidade = excluded.cidade, estado = excluded.estado, tem_prefs = excluded.tem_prefs,
+        telefone = excluded.telefone, categorias = excluded.categorias, ouro = excluded.ouro, prata = excluded.prata, lido_em = now()`,
+    [p.map((x) => x.id), p.map((x) => x.nome || ""), p.map((x) => (x.regiao && x.regiao.cidade) || ""), p.map((x) => (x.regiao && x.regiao.estado) || ""), p.map((x) => !!(x.preferencias && x.preferencias.temPreferencias)),
+      r.map((x) => x.tel), r.map((x) => x.cat), r.map((x) => x.ouro), r.map((x) => x.prata)]);
+  }
+}
+
+// grava as respostas lidas agora (detalhe de cada revendedora: data da atualização, observações e respostas por bloco)
+async function gravarRespostas(itens) {
+  for (let k = 0; k < itens.length; k += 200) {
+    const l = itens.slice(k, k + 200);
+    await consulta(`update sorelly.preferencia_app t set atualizado_em = v.quando, observacoes = v.obs, respostas = v.resp::jsonb, tem_prefs = v.quando is not null
+      from unnest($1::int[], $2::timestamptz[], $3::text[], $4::text[]) as v(id, quando, obs, resp) where t.id = v.id`,
+    [l.map((x) => x.id), l.map((x) => (x.preferencias || {}).atualizadoEm || null), l.map((x) => (x.preferencias || {}).observations || ""), l.map((x) => JSON.stringify((x.preferencias || {}).answers || {}))]);
+  }
+}
+
+// Detalhe de UMA revendedora lido agora do app (janela de montar): atualiza a cópia guardada para a Fila e a Análise ficarem iguais.
+export async function guardarDetalhe(d) {
+  if (!d || d.id == null) return;
+  await garantirTabela();
+  const p = d.preferencias || {};
+  await gravarLista([{ id: d.id, nome: d.nome, telefone: d.telefone, regiao: d.regiao, preferencias: { temPreferencias: !!p.temPreferencias, categoriasRespondidas: p.categoriasRespondidas, resumoGeral: p.resumoGeral } }]);
+  await gravarRespostas([d]);
+}
+
+// LEITURA RÁPIDA (Fila de montagem): o app ordena por "atualizado por último"; lê página por página só até achar uma página sem novidade.
+// Assim quem salvou as preferências agora aparece na Fila em segundos, sem reler as 3 mil revendedoras.
+const RAPIDA_A_CADA = 2 * 60 * 1000;
+export async function sincronizarRecentes({ forcar = false } = {}) {
+  const s = estado();
+  if (s.rodando || s.rapida) return;
+  if (!forcar && s.rapidaEm && Date.now() - s.rapidaEm < RAPIDA_A_CADA) return;
+  s.rapida = true;
+  try {
+    await garantirTabela();
+    const guardado = new Map((await consulta("select id, atualizado_em from sorelly.preferencia_app where atualizado_em is not null")).rows.map((x) => [x.id, new Date(x.atualizado_em).getTime()]));
+    const novos = [];
+    for (let pag = 1; pag <= 30; pag++) {
+      const j = await ler("/revendedoras/kit-preferences?page=" + pag + "&pageSize=100&orderBy=atualizadoEm&order=desc");
+      const lista = (j.data || []).filter((x) => x.preferencias && x.preferencias.atualizadoEm);
+      const mudou = lista.filter((x) => guardado.get(x.id) !== new Date(x.preferencias.atualizadoEm).getTime());
+      novos.push(...mudou);
+      if (!mudou.length || lista.length < (j.data || []).length || pag >= (j.totalPages || 1)) break;   // página sem novidade, ou já chegou em quem não tem preferências
+    }
+    if (novos.length) {
+      await gravarLista(novos);
+      const det = [];
+      for (const x of novos.slice(0, 200)) { try { det.push(await ler("/revendedoras/kit-preferences/" + x.id)); } catch (e) { /* a próxima leitura tenta de novo */ } }
+      await gravarRespostas(det);
+    }
+    s.rapidaEm = Date.now();
+  } catch (x) {
+    s.rapidaEm = Date.now() - RAPIDA_A_CADA + 30000;   // app fora do ar: tenta de novo em 30 s
+  } finally { s.rapida = false; }
 }
 
 // Lê a lista inteira e depois só as respostas de quem é novo ou atualizou. Nunca roda duas vezes ao mesmo tempo.
@@ -60,22 +132,10 @@ export async function sincronizarPreferencias() {
       while (fila.length) { const x = fila.shift(); try { detalhes.set(x.id, await ler("/revendedoras/kit-preferences/" + x.id)); } catch (e) { s.erro = "Algumas respostas não vieram; a próxima leitura tenta de novo."; } s.feitos++; }
     }));
     s.etapa = "Guardando no banco";
-    // 1) quem existe no app (nome e região; as respostas já guardadas ficam como estão)
-    for (let k = 0; k < lista.length; k += 500) {
-      const l = lista.slice(k, k + 500);
-      await consulta(`insert into sorelly.preferencia_app (id, nome, cidade, estado, tem_prefs)
-        select * from unnest($1::int[], $2::text[], $3::text[], $4::text[], $5::boolean[])
-        on conflict (id) do update set nome = excluded.nome, cidade = excluded.cidade, estado = excluded.estado, tem_prefs = excluded.tem_prefs, lido_em = now()`,
-      [l.map((x) => x.id), l.map((x) => x.nome || ""), l.map((x) => (x.regiao && x.regiao.cidade) || ""), l.map((x) => (x.regiao && x.regiao.estado) || ""), l.map((x) => !!x.preferencias.temPreferencias)]);
-    }
+    // 1) quem existe no app (nome, região, telefone e resumo; as respostas já guardadas ficam como estão)
+    await gravarLista(lista);
     // 2) respostas lidas agora (data da atualização, observações e respostas por bloco)
-    const novos = lista.filter((x) => detalhes.has(x.id));
-    for (let k = 0; k < novos.length; k += 200) {
-      const l = novos.slice(k, k + 200);
-      await consulta(`update sorelly.preferencia_app t set atualizado_em = v.quando, observacoes = v.obs, respostas = v.resp::jsonb
-        from unnest($1::int[], $2::timestamptz[], $3::text[], $4::text[]) as v(id, quando, obs, resp) where t.id = v.id`,
-      [l.map((x) => x.id), l.map((x) => x.preferencias.atualizadoEm), l.map((x) => (detalhes.get(x.id).preferencias || {}).observations || ""), l.map((x) => JSON.stringify((detalhes.get(x.id).preferencias || {}).answers || {}))]);
-    }
+    await gravarRespostas(lista.filter((x) => detalhes.has(x.id)).map((x) => ({ id: x.id, preferencias: Object.assign({}, detalhes.get(x.id).preferencias || {}, { atualizadoEm: x.preferencias.atualizadoEm }) })));
     const n = await consulta("select count(*)::int as n from sorelly.preferencia_app");
     await consulta("insert into sorelly.preferencia_app_estado (id, concluida_em, total) values (1, now(), $1) on conflict (id) do update set concluida_em = now(), total = $1", [n.rows[0].n]);
     s.concluidaEm = Date.now(); s.etapa = "";
@@ -111,7 +171,11 @@ export async function dadosPreferencias() {
   try { const l = await listaRevendedoras(); kit = new Map(); l.itens.filter((i) => (i.conds || []).some((c) => !SEM_KIT.includes(c.t))).forEach((i) => { if (!kit.has(norm(i.nome))) kit.set(norm(i.nome), i); }); } catch (x) { kit = null; }   // DevMaster fora do ar: mostra todas, avisando
   const mapa = (x) => { const k = kit && kit.get(norm(x.nome)); return { x, k }; };
   const todas = r.rows.map(mapa), vistas = kit ? todas.filter((a) => a.k) : todas;
+  // "Já montado" (18/11/2026): última montagem de cada revendedora (Fila de montagem e Listagens), no horário de São Paulo
+  let registros = [];
+  try { const { ultimasMontagens } = await import("./montagem-kit.js"); registros = [...(await ultimasMontagens()).entries()].map(([id, em]) => ({ id: "m" + id, revendedoraId: id, concluidoEm: sp(em) })); } catch (x) { registros = []; }
   return {
+    registros,
     status: { rodando: s.rodando, etapa: s.etapa, feitos: s.feitos, total: s.total, erro: s.erro, concluidaEm: s.concluidaEm || null },
     total: r.rows.length,                                   // todas as revendedoras do app
     semFiltro: !kit,                                        // true = a DevMaster não respondeu, nada foi filtrado

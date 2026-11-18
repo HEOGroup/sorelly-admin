@@ -37,7 +37,8 @@ function AbaPreferenciasKit(){
   var app = useDadosApp(), dados = app.dados, rodando = !!(dados && dados.status && dados.status.rodando);
   var sApp = useMemo(function(){
     if(!dados || !dados.revendedoras || !dados.revendedoras.length) return null;
-    var pk = Object.assign({}, s.pk, {deApp:true, registros:(s.pk && s.pk.registros) || [], revendedoras:dados.revendedoras.map(function(r){ return Object.assign({telefone:"", email:"", criadoEm:""}, r, r.preferencias ? {preferencias:Object.assign({versaoConfig:s.pk.config.versao}, r.preferencias)} : {}); })});
+    // registros = última montagem de cada revendedora (Fila de montagem e Listagens, 18/11/2026), para o "Já montado"
+    var pk = Object.assign({}, s.pk, {deApp:true, registros:dados.registros || (s.pk && s.pk.registros) || [], revendedoras:dados.revendedoras.map(function(r){ return Object.assign({telefone:"", email:"", criadoEm:""}, r, r.preferencias ? {preferencias:Object.assign({versaoConfig:s.pk.config.versao}, r.preferencias)} : {}); })});
     return Object.assign({}, s, {pk:pk, kits:[], revInternas:[]});   // sem as listagens de demonstração: só as do app
   }, [dados, s]);
   var sub = !apiAtiva() ? "Sem servidor ligado: mostrando só os dados deste navegador."
