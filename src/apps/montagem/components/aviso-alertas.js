@@ -25,11 +25,12 @@ function AvisoAlertas(p){
   useEffect(function(){
     var r = ref.current;
     if(r.usuario!==s.usuario){ r.usuario = s.usuario; r.n = null; }          // trocou de usuário: avisa de novo o que está pendente para ele
-    if(nt.admin && pend.length>0 && (r.n===null || pend.length>r.n)) tocarAlerta();
-    r.n = pend.length;
-  }, [pend.length, s.usuario, nt.admin]);
-  var vis = pend.filter(function(a){ return !ocultos[a.id]; });
-  if(!vis.length || !nt.admin) return null;
+    var criticos = pend.filter(function(a){ return a.critico; }).length;   // alerta crítico (ex.: nova denúncia, 18/11/2026) aparece e toca mesmo com as notificações do admin desligadas
+    if((nt.admin ? pend.length : criticos)>0 && (r.n===null || (nt.admin ? pend.length : criticos)>r.n)) tocarAlerta();
+    r.n = nt.admin ? pend.length : criticos;
+  }, [pend.length, s.usuario, nt.admin]);   // eslint-disable-line react-hooks/exhaustive-deps
+  var vis = pend.filter(function(a){ return !ocultos[a.id] && (nt.admin || a.critico); });
+  if(!vis.length) return null;
   return e("div",{className:"fixed bottom-32 left-5 z-50 flex w-80 flex-col gap-2"}, vis.slice(0,3).map(function(a){
     var lido = function(){ d({type:"ALERTA_LIDO", id:a.id, usuario:s.usuario}); };
     return e("div",{key:a.id, role:"alert", className:"flex items-start gap-3 rounded-xl border border-destructive/60 bg-popover p-3.5 shadow-2xl ring-1 ring-black/40", style:a.cor ? {borderColor:a.cor, boxShadow:"0 0 0 2px "+a.cor+"66"} : undefined},

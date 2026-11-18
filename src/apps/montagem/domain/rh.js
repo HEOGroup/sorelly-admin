@@ -5,6 +5,7 @@ import { globLocal } from "@/lib/glob-local";
 // A lista de colaboradores é a lista de funcionários CLT de domain/pessoas.js (sócios e PJ não entram no controle de presença); o RH completa o cadastro (admissão, escala, salário...).
 import { funcionarios, REPRESENTANTES } from "@/apps/montagem/domain/pessoas";
 import { fichaCfg, fichaDe } from "@/apps/montagem/domain/rh-ficha";
+import { nr1Op } from "@/apps/montagem/domain/nr1";
 
 var CODIGOS = [["P","Presença","#22C55E"], ["F","Falta sem justificativa","#EF4444"], ["AJ","Falta com aviso","#F59E0B"], ["AT","Atestado","#A855F7"], ["FE","Férias","#3B82F6"], ["FO","Folga","#94A3B8"], ["AF","Afastamento","#EC4899"]];
 var AUSENTES = ["F","AJ","AT","AF"];
@@ -354,6 +355,8 @@ function rhReduz(s, a){
     case "neg_joia_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.joias = (rh.negoc.joias||[]).filter(function(x){ return x.id!==a.id; }); return ok("Combinado em joias removido"); }
     case "neg_pessoa_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.pessoas = rh.negoc.pessoas.filter(function(x){ return x.id!==a.id; }); return ok("Negociação removida"); }
     // configurador: listas simples (escalas, planos, tiposAdv, motivosAdv, tiposHE, feriados)
+    // Segurança do trabalho (NR-1, 17/11/2026): regra em domain/nr1.js
+    case "nr1_set": case "nr1_nota": case "nr1_anexo_add": case "nr1_anexo_del": case "nr1_cnpj": case "nr1_at_add": case "nr1_at_set": case "nr1_at_del": { var rn = nr1Op(rh, a, por, novoId); return rn.erro ? recusa(rn.erro) : ok(rn.msg); }
     case "cfg_add": { var li = cfg[a.lista]; if(!li) return recusa("Lista desconhecida."); li.push(Object.assign({id:novoId(a.lista.slice(0,2)+"-")}, a.item)); return ok("Adicionado"); }
     case "cfg_set": { var l2 = cfg[a.lista]; var it = l2 && l2.find(function(x){ return x.id===a.id; }); if(!it) return recusa("Item não encontrado."); Object.assign(it, a.patch); return ok(); }
     case "cfg_del": { var l3 = cfg[a.lista]; if(!l3) return recusa("Lista desconhecida.");

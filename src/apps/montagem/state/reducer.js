@@ -41,6 +41,7 @@ import { mkReduz } from "@/apps/montagem/domain/marketing";
 import { tpReduz } from "@/apps/montagem/domain/trafego";
 import { modReduz } from "@/apps/montagem/domain/modelas";
 import { jpReduz } from "@/apps/montagem/domain/joias-pagamento";
+import { sgReduz } from "@/apps/montagem/domain/seguranca-docs";
 import { mrReduz } from "@/apps/montagem/domain/relatorio-marketing";
 import { inadDoServidor, inadReduz } from "@/apps/montagem/domain/inadimplencia";
 import { fcReduz } from "@/apps/montagem/domain/fotos-catalogo";
@@ -269,6 +270,7 @@ function reducer(s, a){
     }
     case "SYNC_MODULO": {
       if(a.chave==="mr") return Object.assign({}, s, {mr:Object.assign({}, s.mr, a.conteudo)});   // Marketing › Relatório diário: o servidor manda só o que mudou; aqui só junta
+      if(a.chave==="sg") return Object.assign({}, s, {sg:Object.assign({}, s.sg, a.conteudo)});   // PGR e PCMSO: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="jp") return Object.assign({}, s, {jp:Object.assign({}, s.jp, a.conteudo)});   // Pagamento em joias: o servidor manda só o que mudou; aqui só junta
       if(a.chave==="mod") return Object.assign({}, s, {mod:Object.assign({}, s.mod, a.conteudo)});   // Modelos: o servidor manda só as chaves que mudaram; aqui só junta (passar por "migrar" apagava o resto e regravava sem parar, 12/11/2026)
       if(a.chave==="revdia"){
@@ -358,6 +360,7 @@ function reducer(s, a){
     case "FC": { var rFc = fcReduz(s, a); if(a.op==="dm_sync" && !rFc.msg) return Object.assign({}, s, rFc.patch); return com(s, rFc.patch, rFc.msg); }   // Marketing › Fotos de catálogo (fotografar, editar e subir na DevMaster)
     case "TP": { var rTp = tpReduz(s, a); return com(s, rTp.patch, rTp.msg); }   // Tráfego pago (Google Ads e Meta Ads: investimento, leads, aprovadas, cadastradas, criativos)
     case "MR": { var rMr = mrReduz(s, a); return com(s, rMr.patch, rMr.msg); }   // Marketing › Relatório diário
+    case "SG": { var rSg = sgReduz(s, a); return com(s, rSg.patch, rSg.msg); }   // RH › PGR e PCMSO por CNPJ (17/11/2026)
     case "JP": { var rJp = jpReduz(s, a); return com(s, rJp.patch, rJp.msg); }   // RH › Pagamento em joias
     case "MOD": { var rMod = modReduz(s, a); return com(s, rMod.patch, rMod.msg); }   // Encomendas › Modelos (cadastro particular do Marcus)
     case "MK": { var rMk = mkReduz(s, a); return com(s, rMk.patch, rMk.msg); }   // Marketing (Mural de Criativos, Divulgação, Erros em Produtos)
@@ -1107,7 +1110,7 @@ function reducer(s, a){
     case "AVISO_CFG": return com(s, {avisosCfg:Object.assign({}, s.avisosCfg||{}, {[a.tipo]:a.ids})});
     case "ALERTA_ADD": {
       if((s.alertas||[]).some(function(x){ return x.chave===a.chave; })) return s;
-      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, dados:a.dados||null, cor:a.cor||null, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
+      return com(s, {alertas:[{id:"AL"+agora, tipo:a.tipo, chave:a.chave, ref:a.ref||null, titulo:a.titulo||"", texto:a.texto, para:a.para || destinosDe(s, a.tipo), aba:a.aba||null, dados:a.dados||null, cor:a.cor||null, critico:!!a.critico, ts:agora, lidoPor:[]}].concat(s.alertas||[]).slice(0,200)});
     }
     case "ALERTA_LIDO": return com(s, {alertas:(s.alertas||[]).map(function(x){ return x.id!==a.id ? x : Object.assign({}, x, {lidoPor:(x.lidoPor||[]).concat([a.usuario])}); })});
     // agendar uma revendedora interna cria (ou atualiza) o atendimento dela na agenda da Atendimento Sorelly

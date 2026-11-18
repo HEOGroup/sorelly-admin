@@ -34,6 +34,7 @@ import { mkDemo, mkMigrar } from "@/apps/montagem/domain/marketing";
 import { tpMigrar } from "@/apps/montagem/domain/trafego";
 import { modMigrar } from "@/apps/montagem/domain/modelas";
 import { jpMigrar } from "@/apps/montagem/domain/joias-pagamento";
+import { sgMigrar } from "@/apps/montagem/domain/seguranca-docs";
 import { mrMigrar } from "@/apps/montagem/domain/relatorio-marketing";
 import { inadMigrar, inadVazio } from "@/apps/montagem/domain/inadimplencia";
 import { fcDemo, fcMigrar } from "@/apps/montagem/domain/fotos-catalogo";
@@ -497,6 +498,7 @@ function inicial(){
     s.mk = mkMigrar(s.mk);   // Marketing: cria vazio ou completa campos novos
     s.fc = fcMigrar(s.fc);   // Fotos de catálogo: cria vazio (ou com o histórico local) ou completa campos novos
     s.inad = inadMigrar(s.inad);   // Inadimplência: cria vazio ou completa campos novos
+    s.sg = sgMigrar(s.sg);   // PGR e PCMSO por CNPJ (17/11/2026): cria vazio
     s.jp = jpMigrar(s.jp);   // RH › Pagamento em joias (17/11/2026): cria vazio
     s.mr = mrMigrar(s.mr);   // Marketing › Relatório diário (17/11/2026): cria com as atividades de partida
     s.mod = modMigrar(s.mod);   // Encomendas › Modelos: cria vazio (ou com os dados reais locais)

@@ -90,6 +90,8 @@ var MENU_RH = [
   M("Visão geral","rhvisao"),
   {nome:"Presença", itens:[M("Presença diária","rhpresenca"), M("Relatório diário","rhrelatorio")]},
   {nome:"Colaboradores", itens:[M("Colaboradores","rhcolab")]},
+  M("Segurança do trabalho","rhseg"),
+  M("Canal de denúncias","denuncias"),   // só Marcus e Maria (RH): o menu esconde para as demais pessoas e o servidor confere
   {nome:"Contratos", itens:[
     {nome:"Pessoas", itens:[M("Representantes","rhcrep"), M("Funcionários (CLT)","rhcfunc"), M("Terceiros","rhcterc")]},
     {nome:"Empresa", itens:[M("Crédito bancário","rhccred"), M("Aluguéis","rhcalug"), M("Consórcios","rhcconsor")]},
@@ -245,6 +247,8 @@ var SETORES = [
     {nome:"Visão geral", telas:[T("rhvisao","Visão geral do RH")]},
     {nome:"Presença", telas:[T("rhpresenca","Presença diária"), T("rhrelatorio","Relatório diário")]},
     {nome:"Colaboradores", telas:[T("rhcolab","Colaboradores")]},
+    {nome:"Segurança do trabalho", telas:[T("rhseg","Segurança do trabalho")]},
+    {nome:"Canal de denúncias", telas:[T("denuncias","Canal de denúncias")]},
     {nome:"Contratos", telas:[T("rhcrep","Representantes"), T("rhcfunc","Funcionários (CLT)"), T("rhcterc","Terceiros"), T("rhcmarcus","Particulares do Marcus"), T("rhccred","Crédito bancário"), T("rhcalug","Aluguéis"), T("rhcconsor","Consórcios"), T("rhcmodelos","Modelos de contrato")]},
     {nome:"Pessoas", telas:[T("pessoas","Funcionários e representantes"), T("equipes","Equipes"), T("acessos","Acessos e autorizações")]},
     {nome:"Configurador", telas:[T("rhconfig","Configurador do RH")]}]},
@@ -279,6 +283,8 @@ var SETORES = [
     {nome:"Marketing", telas:[T("marketing","Marketing"), T("fotoscat","Fotos de catálogo"), T("relmkt","Relatório diário"), B("Campanhas"), T("trafego","Tráfego pago"), T("criativos","Criativos"), T("modelos","Modelos")]}]},
   // Regras (05/11/2026, Marcus): setor próprio, todos os funcionários veem; só o Guia resumido e o Guia da revendedora em PDF (saiu de Cadastro de revendedoras → Folders)
   {id:"regrasguias", nome:"Regras", ic:"book", cor:"#E8B84B", direto:T("regrasguias","Regras")},
+  // PGR e PCMSO (17/11/2026, Maria e Marcus): aba só para os documentos de segurança; todo colaborador abre, e vê só os do próprio CNPJ
+  {id:"segdocs", nome:"PGR e PCMSO", ic:"escudo", cor:"#3B82F6", direto:T("segdocs","PGR e PCMSO")},
   // Aulas do setor (02/11/2026): ÚLTIMO item do menu; cada pessoa vê só os cursos do próprio setor (domain/aulas.js)
   {id:"aulas", nome:"Aulas do setor", ic:"book", cor:"#14B8A6", direto:T("aulas","Aulas do setor")}
 ];

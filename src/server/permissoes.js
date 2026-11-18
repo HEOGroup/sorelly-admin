@@ -16,6 +16,7 @@ export const SETORES_DO_MODULO = {
   pk: ["montagem", "cadastro"], pr: ["producao", "montagem"], ex: ["encomendas", "montagem", "agendamento"], cpc: ["pecas"],   // agendamento dá baixa quando o expositor volta (09/11/2026); cpc = Cadastro de peças (a chave estava dentro do comentário e ficou sem efeito)
   mk: ["marketing"], gr: ["garantia"],
   fc: ["marketing"],   // Marketing › Fotos de catálogo (10/11/2026): controle das fotos das peças novas; só Marketing e Diretoria
+  sg: ["*"],   // PGR e PCMSO por CNPJ (17/11/2026): todo colaborador logado lê e abre os documentos; a tela mostra só os do CNPJ de cada um, e só RH e diretoria anexam (autorização sg_gerir)
   jp: ["rh", "pecas"],   // RH › Pagamento em joias (17/11/2026): RH e cadastro de peças (separa as joias); a Diretoria abre tudo; quem autoriza é a autorização joias_autoriza
   mr: ["marketing"],   // Marketing › Relatório diário (17/11/2026): só Marketing e Diretoria
   mod: [],   // Marketing › Modelos (veio das Encomendas em 12/11/2026): Diretoria e as pessoas de PESSOAS_DO_MODULO (Castilho); a tela também confere a autorização modelos_ver

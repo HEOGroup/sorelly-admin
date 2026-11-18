@@ -11,6 +11,11 @@ var VERSOES = [
  {v:"0.20.99", data:"2026-11-18", titulo:"Link do pedido: Li e estou de acordo", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Cada condição agora pede Li e estou de acordo, e o botão Estou de acordo com tudo e assino só libera com todas marcadas."}
  ]},
+ {v:"0.20.100", data:"2026-11-18", titulo:"RH: NR-1 (acompanhamento, PGR e PCMSO por CNPJ e canal de denúncias)", itens:[
+  {tipo:"novo", area:"RH → Segurança do trabalho", txt:"Acompanhamento do plano de ação da NR-1 que a Maria alinhou com o técnico: 8 ações com responsável, prazo, situação, documentos anexados e histórico; responsável por CNPJ para CIPA e incêndios; atividades para a equipe com botão Copiar mensagem. Só RH e diretoria."},
+  {tipo:"novo", area:"PGR e PCMSO", txt:"Aba própria, aberta a todo colaborador, com o PGR e o PCMSO do CNPJ dele (cada um vê só os do seu CNPJ). RH e diretoria veem os 4 CNPJs e anexam, trocam e tiram os documentos. Arquivos ficam no servidor."},
+  {tipo:"novo", area:"Canal de denúncias", txt:"Formulário público em /canal-de-etica, sem login, com identificação opcional e protocolo; não guarda IP nem aparelho. As denúncias chegam em RH → Canal de denúncias (Marcus lê as gerais e a Maria lê as que envolvem a direção, conferido no servidor). Alerta crítico de denúncia nova, consulta pública do andamento pelo protocolo com a resposta do RH, e campo escondido anti-robô."}
+ ]},
  {v:"0.20.98", data:"2026-11-18", titulo:"Pix para fornecedor: comprovante da representante também libera o pagamento", itens:[
   {tipo:"correção", area:"Financeiro → Direcionar", txt:"O comprovante que a representante anexa na calculadora de acerto agora também libera o pagamento do fornecedor, antes ou depois de o Lucas direcionar. Antes só valia o comprovante da funcionária no atendimento interno."}
  ]},
