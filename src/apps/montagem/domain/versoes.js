@@ -3,6 +3,11 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.0", data:"2026-11-18", titulo:"Lançamento de pagamentos: saldo pago a mais com aviso na linha e botão para passar", itens:[
+  {tipo:"correção", area:"Financeiro → Lançamento de pagamentos", txt:"Data quitada não mostra mais o aviso de atraso ao lado de Quitado."},
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Pix pago a mais numa data passa sozinho para a próxima parcela em aberto do fornecedor (crédito −X na data e +X na seguinte). As linhas mostram o saldo que passou para outra data e o que veio de outra data. Vale para datas de novembro/2026 em diante (quando o sistema começou a ser usado); datas anteriores ficam só com o aviso Pago a mais. Sem parcela em aberto depois, também só o aviso. Se um Pix da data de origem for estornado, a passagem é refeita sozinha."},
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"Saldo que falta (qualquer valor) só sai da data com aceite: na linha, Falta R$ X e o botão Passar para dd/mm (próxima data de pagamento do fornecedor, com confirmação); na janela Lançar pagamento, Manter em aberto ou Passar para dd/mm. Avisos na linha: Saldo de R$ X passou para / veio de."},
+  {tipo:"correção", area:"Financeiro → Lançamento de pagamentos", txt:"Pix dividido entre datas: estornar uma parte estorna as outras partes juntas (antes ficava uma parte solta)."}]},
  {v:"0.20.99", data:"2026-11-18", titulo:"Link do pedido: Li e estou de acordo", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Cada condição agora pede Li e estou de acordo, e o botão Estou de acordo com tudo e assino só libera com todas marcadas."}
  ]},

@@ -486,8 +486,11 @@ function cartoesLancamento(pf, mes){   // renderCards: grupos por fornecedor, co
       var pagoBruto = pagoJanela(pf, j.chave), pago = Math.min(pagoBruto, j.total), aberto = j.total-pago, n = dias(j.limite);
       var lancs = lancDaJanela(pf, j.chave), mq = mqAplicado(pf, j.chave);
       return {j:j, chave:j.chave, limite:j.limite, fim:j.fim, mes:j.mes, total:j.total, pagoBruto:pagoBruto, pago:pago, aberto:aberto, excesso:pagoBruto-pago, dias:n,
-        pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo:prazoTxt(j.limite),
-        lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : ""};
+        pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo: aberto<=0.005 ? "" : prazoTxt(j.limite),
+        lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : "",
+        passou:transfSaiu(pf, j.chave), veio:transfVeio(pf, j.chave), excPix: mq>0.005 ? 0 : r2(pagoBruto-pago), excAntigo: j.limite<PASSA_DESDE,
+        saldoSaiu:saldoSaiu(pf, j), saldoVeio:saldoVeio(pf, j),
+        saldoDst: pago>0.005 && aberto>0.005 ? destinoSaldo(pf, j.chave) : null};   // pagou parte: a tela oferece passar o que falta (só com aceite)
     });
     g.total = soma(g.js, function(j){ return j.total; });
     g.pago = soma(g.js, function(j){ return Math.min(pagoJanela(pf, j.chave), j.total); });
@@ -537,6 +540,49 @@ function lancDistribuir(pf, chave, valor){
   if(sobra){ var p0 = partes.find(function(x){ return x.chave===chave; }); if(p0) p0.valor = Math.round((p0.valor+sobra)*100)/100; else partes.unshift({chave:chave, limite:limite, valor:sobra}); }
   return {partes:partes, sobra:sobra, falta:Math.min(0, falta)};
 }
+// saldo passado entre datas (aviso na linha): lançamentos com deChave = parte que veio de outra data (Pix dividido ou saldo pago a mais)
+function somaPorChave(ls, campo){ var m = {}; ls.forEach(function(l){ m[l[campo]] = r2((m[l[campo]]||0)+l.valor); }); return Object.keys(m).sort().map(function(k){ return {chave:k, limite:k.split("|")[1], valor:m[k]}; }); }
+function transfVeio(pf, chave){ return somaPorChave(pf.lancamentos.filter(function(l){ return l.chave===chave && l.deChave && l.valor>0; }), "deChave"); }
+// saldo que faltou e passou para outra data (parcela com adiadaDe): de qual data saiu e em qual entrou
+function limiteDoVenc(pf, fid, venc){ var bs = blocosDoMes(pf, fid, venc.slice(0,7)), b = bs.find(function(x){ return venc<=x.fim; }) || bs[bs.length-1]; return b ? b.limite : venc; }
+function saldoVeio(pf, j){ return somaPorChave(j.itens.filter(function(l){ return l.p.adiadaDe; }).map(function(l){ return {de:j.fornId+"|"+limiteDoVenc(pf, j.fornId, l.p.adiadaDe), valor:l.p.valor}; }), "de"); }
+function saldoSaiu(pf, j){
+  var out = [];
+  janelasDoForn(pf, j.fornId).forEach(function(j2){ j2.itens.forEach(function(l){ if(l.p.adiadaDe && limiteDoVenc(pf, j.fornId, l.p.adiadaDe)===j.limite) out.push({para:j2.chave, valor:l.p.valor}); }); });
+  return somaPorChave(out, "para");
+}
+function transfSaiu(pf, chave){ return somaPorChave(pf.lancamentos.filter(function(l){ return l.deChave===chave && l.valor>0; }), "chave"); }
+// pago a mais numa data vai SOZINHO para as próximas datas em aberto do mesmo fornecedor (Lucas, 18/11/2026).
+// Cria um par de lançamentos "Crédito" (−X na data, +X na seguinte), ligados por par e marcados auto. Sem data em aberto depois: fica só o aviso.
+// Se a data de origem deixar de ter sobra (ex.: estornou um Pix), os pares automáticos dela são desfeitos e a conta é refeita.
+// Fora: Point (conta corrente) e datas com desconto da maquininha (a sobra se divide na aba Maquininha Banho).
+var PASSA_DESDE = "2026-11-01";   // o sistema começou a ser usado em novembro/2026: sobra de datas anteriores fica só com o aviso (Lucas, 18/11/2026)
+function passarExcessos(pf){
+  var dm = function(c){ var l = c.split("|")[1]; return l.slice(8,10)+"/"+l.slice(5,7); }, hoje = hojeIso(), mudou = false;
+  pf.fornecedores.forEach(function(f){
+    if(f.id===PT_FORN) return;
+    var js = janelasDoForn(pf, f.id);
+    // 1) desfaz pares automáticos de datas que ficaram devendo
+    js.forEach(function(j){
+      var pares = pf.lancamentos.filter(function(l){ return l.auto && l.chave===j.chave && l.paraChave; }).map(function(l){ return l.par; });
+      if(!pares.length || pagoJanela(pf, j.chave)>=j.total-0.005) return;
+      pf.lancamentos = pf.lancamentos.filter(function(l){ return pares.indexOf(l.par)<0; }); mudou = true; invalidar(pf);
+    });
+    // 2) passa a sobra de cada data (da mais antiga para a mais nova)
+    janelasDoForn(pf, f.id).forEach(function(j){
+      if(j.limite<PASSA_DESDE || mqAplicado(pf, j.chave)>0.005) return;
+      var exc = r2(pagoJanela(pf, j.chave)-j.total); if(exc<=0.005) return;
+      var dst = lancDistribuir(pf, j.chave, exc).partes.filter(function(pt){ return pt.chave!==j.chave; });
+      dst.forEach(function(pt){
+        var jx = janelaPorChave(pf, pt.chave), par = "t"+pf.seq.L, base = {fornId:f.id, data:hoje, conta:"Crédito", arqNome:"", arqTipo:"", arqData:"", conferido:true, conferidoEm:hoje, par:par, auto:true};
+        pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:j.chave, mes:j.mes, limite:j.limite, revendedora:"Saldo pago a mais → passou para "+dm(pt.chave), valor:-pt.valor, paraChave:pt.chave}, base));
+        pf.lancamentos.push(Object.assign({id:pf.seq.L++, chave:pt.chave, mes:jx ? jx.mes : pt.limite.slice(0,7), limite:pt.limite, revendedora:"Saldo pago a mais ← veio de "+dm(j.chave), valor:pt.valor, deChave:j.chave}, base));
+        mudou = true; invalidar(pf);
+      });
+    });
+  });
+  return mudou;
+}
 // saldo que falta numa data passa para a 1ª data do mês seguinte (Lucas, 17/11/2026): move/divide as parcelas Pix da data,
 // da mais nova para a mais antiga, sem mudar o total do pedido. Point fica fora (conta corrente com tela própria).
 function adiarDestino(pf, chave){   // {mes, venc, limite} da 1ª data do mês seguinte, ou null
@@ -550,8 +596,20 @@ function adiarDestino(pf, chave){   // {mes, venc, limite} da 1ª data do mês s
   var limite = alvo ? alvo.limite : venc;
   return limite>j.limite ? {mes:mes, venc:venc, limite:limite} : null;
 }
+// destino do saldo que falta (Lucas, 18/11/2026): a PRÓXIMA data de pagamento do fornecedor; sem data depois, a 1ª do mês seguinte
+function destinoSaldo(pf, chave){
+  var fid = parseInt(chave.split("|")[0]); if(fid===PT_FORN) return null;
+  var js = janelasDoForn(pf, fid), j = js.find(function(x){ return x.chave===chave; }); if(!j) return null;
+  var prox = js.filter(function(x){ return x.limite>j.limite; });
+  for(var i = 0; i<prox.length; i++){
+    var j2 = prox[i], venc = j2.fim; if(venc.slice(0,7)!==j2.mes) continue;
+    var bs = blocosDoMes(pf, fid, j2.mes), alvo = bs.find(function(b){ return venc<=b.fim; }) || bs[bs.length-1];
+    if(alvo && alvo.limite===j2.limite) return {mes:j2.mes, venc:venc, limite:j2.limite};
+  }
+  return adiarDestino(pf, chave);
+}
 function adiarSaldo(pf, chave, valor){   // muda o pf; devolve o destino ou null
-  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; }), dst = adiarDestino(pf, chave);
+  var fid = parseInt(chave.split("|")[0]), j = janelasDoForn(pf, fid).find(function(x){ return x.chave===chave; }), dst = destinoSaldo(pf, chave);
   var resto = r2(valor); if(!j || !dst || resto<=0.005) return null;
   j.itens.filter(eSem).sort(function(a,b){ return b.p.venc.localeCompare(a.p.venc); }).forEach(function(l){
     if(resto<=0.005) return;
@@ -998,7 +1056,7 @@ var DATA_OK = /^\d{4}-\d{2}-\d{2}$/;
 function pfReduz(s, a){
   var pf = JSON.parse(JSON.stringify(s.pf||pfVazio())), msgAviso = "";
   var recusa = function(t, confirmar){ return {patch:{}, msg:t, confirmar:!!confirmar}; };   // confirmar:true = repita com forcar:true se o usuário concordar
-  var ok = function(msg){ invalidar(pf); sincronizarTudo(pf); return {patch:{pf:pf}, msg:msg||"Salvo"}; };
+  var ok = function(msg){ invalidar(pf); passarExcessos(pf); invalidar(pf); sincronizarTudo(pf); return {patch:{pf:pf}, msg:msg||"Salvo"}; };
   var F = function(id){ return forn(pf, id); };
   var ped = function(id){ return pf.pedidos.find(function(p){ return p.id===id; }); };
   // número do próximo pedido sempre acima do maior já usado (12/11/2026): o "Novo mês" da Point usava ++seq e deixava o próximo pedido nascer com o mesmo número de um mês
@@ -1017,16 +1075,17 @@ function pfReduz(s, a){
       var dv = lancDistribuir(pf, a.chave, v);
       if(dv.sobra && !a.forcar) return recusa("O valor passou do total em "+brl(dv.sobra)+" e não há mais parcelas em aberto. Lançar mesmo assim?", true);
       // a parte que passa do que falta nesta data vai para as próximas datas em aberto (uma linha por data, mesmo Pix)
+      var parL = dv.partes.length>1 ? "p"+pf.seq.L : "";
       var feitos = dv.partes.map(function(pt){
         var jx = janelasDoForn(pf, fid).find(function(x){ return x.chave===pt.chave; });
         pf.lancamentos.push({id:pf.seq.L++, chave:pt.chave, fornId:fid, mes: jx ? jx.mes : a.data.slice(0,7), limite:pt.limite, data:a.data, revendedora:rev, valor:pt.valor, conta:String(a.conta||"").trim()||"—",
-          arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:"", pixTotal:dv.partes.length>1 ? v : undefined});
+          arqNome:a.arqNome||"", arqTipo:a.arqTipo||"", arqData:a.arqData||"", arqKey:a.arqKey||"", chavePix:String(a.chavePix||"").trim(), conferido:false, conferidoEm:"", pixTotal:dv.partes.length>1 ? v : undefined, par:parL||undefined, deChave:pt.chave!==a.chave ? a.chave : undefined});
         return pt;
       });
       var outras = feitos.filter(function(pt){ return pt.chave!==a.chave; });
       // pagou menos que o que falta: escolha "passar a diferença para o mês seguinte"
       var difA = r2(-dv.falta);
-      if(a.adiar && difA>0.005){ invalidar(pf); var dA = adiarSaldo(pf, a.chave, difA); if(!dA) return recusa("Não há data no mês seguinte para passar o saldo."); return ok("Pagamento lançado — "+brl(v)+" para "+rev+" · "+brl(difA)+" passou para "+dA.limite.slice(8,10)+"/"+dA.limite.slice(5,7)+(a.arqNome ? " · comprovante anexado" : "")); }
+      if(a.adiar && difA>0.005){ invalidar(pf); var dA = adiarSaldo(pf, a.chave, difA); if(!dA) return recusa("Não há próxima data de pagamento para passar o saldo."); return ok("Pagamento lançado — "+brl(v)+" para "+rev+" · "+brl(difA)+" passou para "+dA.limite.slice(8,10)+"/"+dA.limite.slice(5,7)+(a.arqNome ? " · comprovante anexado" : "")); }
       return ok("Pagamento lançado — "+brl(v)+" para "+rev+(outras.length ? " · "+outras.map(function(pt){ return brl(pt.valor)+" foi para "+pt.limite.slice(8,10)+"/"+pt.limite.slice(5,7); }).join(" · ") : "")+(dv.sobra ? " · passou do total em "+brl(dv.sobra) : "")+(a.arqNome ? " · comprovante anexado" : ""));
     }
     // Pix confirmado no Direcionar vira pagamento do fornecedor (17/11/2026). a.itens = [{origemPix (id#n, evita duplicar), fornId, valor, data, revendedora, conta, por}]
@@ -1047,7 +1106,14 @@ function pfReduz(s, a){
     case "lanc_comp": { var l3 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l3) return recusa("Pagamento não encontrado.");
       l3.arqNome = a.arqNome||""; l3.arqTipo = a.arqTipo||""; l3.arqKey = a.arqKey||""; l3.arqData = a.arqData || hojeIso(); if(l3.aguardaComp) l3.aguardaComp = false;
       return ok("Comprovante anexado — pagamento de "+brl(l3.valor)+" agora conta como pago"); }
+    case "saldo_passar": {   // só com o aceite de quem lança: o que falta numa data passa para a próxima data de pagamento
+      var jS = janelaPorChave(pf, a.chave); if(!jS) return recusa("Data não encontrada.");
+      var falS = r2(jS.total-pagoJanela(pf, a.chave)); if(falS<=0.005) return recusa("Esta data não tem saldo a pagar.");
+      var dS = adiarSaldo(pf, a.chave, falS); if(!dS) return recusa("Não há próxima data de pagamento para este fornecedor.");
+      return ok(brl(falS)+" passou para "+dS.limite.slice(8,10)+"/"+dS.limite.slice(5,7));
+    }
     case "lanc_del": { var l1 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l1) return recusa("Pagamento não encontrado.");
+      if(l1.par){ var nP = pf.lancamentos.filter(function(x){ return x.par===l1.par; }).length; pf.lancamentos = pf.lancamentos.filter(function(x){ return x.par!==l1.par; }); return ok(nP>1 ? "Estornado junto com as "+(nP-1)+" parte(s) ligada(s)" : "Pagamento estornado"); }
       pf.lancamentos = pf.lancamentos.filter(function(x){ return x.id!==a.id; }); return ok("Pagamento estornado"); }
     case "lanc_conferido": { var l2 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l2) return recusa("Pagamento não encontrado.");
       var novo = (a.conferido===undefined) ? !l2.conferido : !!a.conferido;
@@ -1343,7 +1409,7 @@ export {
   brl, nbr, dbr, dias, prazoTxt, ultDia, diaISO, addDias, addMeses, dataValida, mesLabel, mesCurto, mesAtual, mesMais, hojeIso, semanaAtual, invalidar,
   pfVazio, pfInicial, pfDeDados, forn, eSem, cicloDe, cicloLabel, cicloCor, blocosDoMes, temOverride, distribuir, chipClasse,
   calcJanelasDoForn, janelasDoForn, lancDaJanela, pagoPix, pagoJanela, janelaPorChave, sincronizarJanela, sincronizarForn, sincronizarTudo, semearLancamentos, statusJanela,
-  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, adiarDestino, lancExcedente, tokenAcerto,
+  contaForn, chipDesc, statusConta, mesesComLanc, resumoMes, mqRefTxt, cartoesLancamento, normBusca, buscaValor, buscaTxt, filtrarLancamentos, lancDistribuir, adiarDestino, destinoSaldo, lancExcedente, tokenAcerto,
   coletar, agregar, alertasDe, resumoAlertas, painelTotais, viewTempo, tabelaJanelas, viewMatriz, resumoNegociacao, parcelaSituacao, pedidosSemParcela, relacaoPorMes, pedidoDetalhe,
   dividirNF, gerarParcelas, expandirParcelas, saldoParcela, formasDoPedido, acertoPreset, acertoPresetAtivo, acertoResumo, cortesDoPreset, previewCiclo, limpaCortes,
   mqPassadasDoMes, mqSomaPassadas, mqBruto, mqParcela, mqMesesDesconto, mqDescontoNoMes, mqOrigensDoMes, mqBaixasDoMes, mqBaixado, mqLinhas, mqColunas, mqMesesSel, semearBaixasMq,

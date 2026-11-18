@@ -4,7 +4,7 @@
 // Contas e regras ficam em domain/pf.js; aqui só o desenho.
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
-import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, adiarDestino, janelaPorChave, lancDistribuir, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
+import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, lancDistribuir, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
 import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
 import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
@@ -82,6 +82,25 @@ function ListaPagamentos(p){
       ativo && e("p",{className:"py-2 text-center text-[13px] text-muted-foreground"}, "Nenhum pagamento encontrado com esse filtro."));
 }
 
+// ───────────── aviso na linha: saldo que passou para outra data, que veio de outra data, ou pago a mais ainda sem destino ─────────────
+function dm(chave){ var l = String(chave||"").split("|")[1]||""; return l.slice(8,10)+"/"+l.slice(5,7); }
+function AvisoSaldo(p){
+  var cd = p.cd, c = p.c, itens = [];
+  // pagou parte: o que falta só passa para a próxima data com o aceite de quem lança (senão continua em aberto)
+  if(cd.saldoDst) itens.push(e("span",{key:"falta", className:"inline-flex items-center gap-2 rounded-md bg-black/30 px-2 py-0.5 ring-1 ring-white/15"},
+    e("span",null, "Falta ", e("b",{style:{color:COR.red}}, brl(cd.aberto))),
+    c.edita && e("button",{type:"button", className:"rounded px-2 font-bold underline hover:brightness-125", onClick:function(){
+      if(window.confirm("Passar "+brl(cd.aberto)+" que falta em "+dbr(cd.limite)+" para somar na parcela de "+dbr(cd.saldoDst.limite)+"?")) op(c, "saldo_passar", {chave:cd.chave}); }}, "Passar para "+dbr(cd.saldoDst.limite))));
+  cd.passou.forEach(function(x){ itens.push(e("span",{key:"s"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
+  cd.saldoSaiu.forEach(function(x){ itens.push(e("span",{key:"ss"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-down-right", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " passou para "+dm(x.chave))); });
+  cd.saldoVeio.forEach(function(x){ itens.push(e("span",{key:"sv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#F59E0B]/15 px-2 py-0.5 ring-1 ring-[#F59E0B]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), "Saldo de ", e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
+  cd.veio.forEach(function(x){ itens.push(e("span",{key:"v"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
+  // a sobra (datas de novembro/2026 em diante) passa sozinha para a próxima parcela em aberto; antes disso fica só o aviso
+  if(cd.excPix>0.005) itens.push(e("span",{key:"exc", className:"inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 ring-1 ring-destructive/50"},
+    e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix)), cd.excAntigo ? "" : " · sem parcela em aberto depois desta data"));
+  return itens.length ? e("div",{className:"flex flex-wrap items-center justify-center gap-2 text-[13px]"}, itens) : null;
+}
+
 // ───────────── uma data de pagamento = uma linha da tabela do fornecedor (a lista de pagamentos abre embaixo dela) ─────────────
 function LinhaData(p){
   var cd = p.cd, c = p.c, aberto = p.abertos[cd.chave], ir = function(aba){ c.d({type:"ABA", aba:aba}); }, pode = c.edita;
@@ -89,7 +108,7 @@ function LinhaData(p){
   var linha = e("tr",{key:cd.chave, className:LINHA+" "+corLinha},
     p.forn && e(Td,{forte:true, className:"text-left"}, p.forn),
     e(Td,null, e("b",null, dbr(cd.limite)), e("div",{className:"text-[11px] font-normal leading-tight text-muted-foreground"}, "fecha "+dbr(cd.fim))),
-    e(Td,{className:"whitespace-normal!"}, e("div",{className:"flex flex-wrap items-center justify-center gap-1"}, e(Chip,{s:cd.status}), e(Chip,{s:cd.prazo}), cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" a conferir"))),
+    e(Td,{className:"whitespace-normal!"}, e("div",{className:"flex flex-wrap items-center justify-center gap-1"}, e(Chip,{s:cd.status}), cd.prazo && e(Chip,{s:cd.prazo}), cd.aguardando>0 && e(Chip,{cor:"orange"}, cd.aguardando+" a conferir"))),
     e(Td,{dinheiro:true, forte:true}, e("button",{type:"button", title:"Ver o detalhe das parcelas nas Negociações", onClick:function(){ ir("pfneg"); }, className:"hover:underline"}, brl(cd.total))),
     e(Td,{dinheiro:true, cor:"ok"}, brl(cd.pago)),
     e(Td,{dinheiro:true, forte:true, cor:cd.aberto>0.005 ? "ruim" : "ok"}, brl(cd.aberto)),
@@ -99,6 +118,7 @@ function LinhaData(p){
       e(Bt,{tipo:cd.aberto<=0.005 ? "ok" : "normal", ic:"link", titulo:cd.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor", onClick:function(){ p.enviar(cd.chave); }}),
       e(Bt,{ic:aberto ? "caret-up" : "caret-down", titulo:aberto ? "Ocultar pagamentos" : "Ver pagamentos lançados", onClick:function(){ p.alt(cd.chave); }}, String(cd.lancs.length)))));
   var extra = [];
+  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
   if(cd.mq>0.005 && !aberto) extra.push(e("tr",{key:cd.chave+"mq"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"},
     e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
       "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
@@ -132,7 +152,7 @@ function ModalLancar(p){
         outras.length ? e("div",null, "Pago a mais: ", outras.map(function(pt, i){ return e("span",{key:pt.chave}, (i ? " · " : ""), e("b",null, brl(pt.valor)), " vai para "+dbr(pt.limite)); })) : null,
         prev.sobra ? e("div",null, "Passou do total em ", e("b",null, brl(prev.sobra)), ". Não há mais parcelas em aberto.") : null);
   // pagou menos do que falta: manter o saldo em aberto nesta data ou passar a diferença para a 1ª data do mês seguinte
-  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos ? adiarDestino(c.pf, chave) : null;
+  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos ? destinoSaldo(c.pf, chave) : null;
   var escolhaSaldo = !dst ? null
     : e("div",{className:"flex flex-col items-center gap-1.5 rounded-lg bg-black/25 px-3 py-2 text-center text-[13px]"},
         e("div",null, "Falta ", e("b",{style:{color:COR.red}}, brl(difMenos)), " nesta data"),
