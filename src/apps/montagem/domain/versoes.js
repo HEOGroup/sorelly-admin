@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.22", data:"2026-11-18", titulo:"Link das peças encontradas: ordem fixa, limite embaixo e resposta peça a peça", itens:[
+  {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Peças sempre em ordem fixa (anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras). A barra de baixo mostra o limite liberado e o total que ela escolheu (não deixa passar do limite). O cartão muda de cor quando ela responde, a observação sai do campo e vira texto, e tocar de novo tira a marca. Ao enviar com peça sem resposta, a tela volta sozinha para a primeira que falta."}
+ ]},
  {v:"0.21.21", data:"2026-11-18", titulo:"Link do pedido: visual preto e dourado, peças em 2 por linha e barra com o total", itens:[
   {tipo:"melhoria", area:"Encomendas e reposições → Link do pedido", txt:"Página com fundo preto, blocos com degradê dourado subindo de baixo e botões dourados. Peças encontradas em 2 por linha, nome em letra normal e uma barra fixa embaixo com quantas peças ela quer, o total em R$ e o botão Enviar resposta. Cada peça encontrada tem um campo de observação da revendedora (aparece na ficha). O link mostra o limite liberado para ela (valor máximo por reposição e reposições por mês). Nomes das peças sem folheado e banhado, e topo com título em ouro. Página nova Valores de reposição (tabela por média de vendas, com a linha da revendedora em destaque), aberta por um atalho no limite dela."}
  ]},

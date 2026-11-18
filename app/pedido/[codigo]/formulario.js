@@ -60,7 +60,7 @@ const Aviso = ({ titulo, texto }) => (
   </section>
 );
 const Regra = ({ icone, titulo, children, lido, aoMarcar, semOk }) => (
-  <div className={"rounded-lg border p-2.5 sm:p-3 " + (lido ? "border-[#4ade80]/60 bg-[#4ade80]/[.07]" : "border-[#E8B84B]/35 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.20),rgba(0,0,0,0)_80%)]")}>
+  <div className={"rounded-lg border p-2.5 sm:p-3 " + (lido ? "border-[#E8B84B] bg-[#E8B84B]/[.10]" : "border-[#E8B84B]/35 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.20),rgba(0,0,0,0)_80%)]")}>
     <div className="flex gap-2.5">
       <span className="mt-0.5 text-[16px] leading-none" aria-hidden>{icone}</span>
       <div className="min-w-0 flex-1 break-words"><p className="text-[14px] font-bold">{titulo}</p><p className="mt-0.5 text-[13px] leading-snug">{children}</p></div>
@@ -79,63 +79,105 @@ const BTN = "h-11 rounded-xl bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[
 const VOLTAR = "h-11 rounded-xl border border-[#E8B84B]/60 bg-gradient-to-br from-[#6b5214] to-[#2b2208] text-[15px] font-bold text-[#F5E7BE]";
 
 // PEÇAS QUE O SETOR ENCONTROU (18/11/2026, Marcus): a revendedora volta ao MESMO link, vê a foto de cada peça e marca se quer ou não
+// ordem fixa das peças (Marcus, 18/11/2026: "sempre por ordem, anéis, brincos, pulseiras, nunca aleatório")
+const GRUPOS_PECA = [["aneis", "Anéis"], ["brincos", "Brincos"], ["pulseiras", "Pulseiras"], ["colares", "Colares"], ["chokers", "Chokers"], ["conjuntos", "Conjuntos"], ["tornozeleiras", "Tornozeleiras"], ["outras", "Outras peças"]];
+const grupoDaPeca = (desc) => {
+  const w = String(desc || "").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z]+/)[0] || "";
+  if (/^anel|^anei/.test(w)) return "aneis";
+  if (/^brinc|^trio|^duo|^argola/.test(w)) return "brincos";
+  if (/^pulseir/.test(w)) return "pulseiras";
+  if (/^colar|^pingente|^gargantilha/.test(w)) return "colares";
+  if (/^choker/.test(w)) return "chokers";
+  if (/^conjunto/.test(w)) return "conjuntos";
+  if (/^tornozel/.test(w)) return "tornozeleiras";
+  return "outras";
+};
+
+// PEÇAS QUE O SETOR ENCONTROU (18/11/2026, Marcus): a revendedora volta ao MESMO link, vê a foto de cada peça e marca se quer ou não
 function Acompanhar({ info, codigo }) {
-  const pecas = info.acompanhar.pecas, ret = info.acompanhar.retorno;
+  const ret = info.acompanhar.retorno, lim = info.limite && info.limite.max > 0 ? info.limite : null;
+  // peças em ordem fixa: anéis, brincos, pulseiras, colares, chokers, conjuntos, tornozeleiras, outras (dentro de cada grupo, a ordem do setor)
+  const pecas = info.acompanhar.pecas.map((p, i) => ({ ...p, _i: i })).sort((x, y) => GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(x.desc)) - GRUPOS_PECA.findIndex((g) => g[0] === grupoDaPeca(y.desc)) || x._i - y._i);
   const [escolha, setEscolha] = useState(() => { const o = {}; if (ret) { (ret.quer || []).forEach((c) => { o[c] = "sim"; }); (ret.nao || []).forEach((c) => { o[c] = "nao"; }); } return o; });
   const [obs, setObs] = useState(ret ? ret.obs || "" : ""), [enviando, setEnviando] = useState(false), [feito, setFeito] = useState(!!ret), [erro, setErro] = useState("");
-  const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length;
-  const [semFoto, setSemFoto] = useState({});
+  const [semFoto, setSemFoto] = useState({}), [piscar, setPiscar] = useState("");
   const [notas, setNotas] = useState(() => ({ ...((ret && ret.notas) || {}) }));
+  const faltam = pecas.filter((p) => !escolha[p.cod]).length, querN = pecas.filter((p) => escolha[p.cod] === "sim").length;
   const querTotal = pecas.reduce((t, p) => t + (escolha[p.cod] === "sim" ? Number(p.preco) || 0 : 0), 0);
+  const passou = !!lim && querTotal > lim.max + 0.001;
   const enviar = async () => {
-    setErro(""); setEnviando(true);
+    setErro("");
+    // ainda tem peça sem resposta: volta sozinho para a primeira que falta
+    const primeira = pecas.find((p) => !escolha[p.cod]);
+    if (primeira) {
+      const el = document.getElementById("peca-" + primeira.cod);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setPiscar(primeira.cod); setTimeout(() => setPiscar(""), 2200);
+      setErro("Falta responder esta peça (faltam " + faltam + "). Toque em Quero ou Não quero.");
+      return;
+    }
+    if (passou) { setErro("As peças que você quer passam do seu limite de " + reais(lim.max) + ". Tire alguma para enviar."); return; }
+    setEnviando(true);
     try { await chamar("POST", "/api/pedido-link/" + encodeURIComponent(codigo) + "/ok", { quer: pecas.filter((p) => escolha[p.cod] === "sim").map((p) => p.cod), obs, notas }); setFeito(true); }
     catch (x) { setErro(x.message); } finally { setEnviando(false); }
   };
-  const marca = (cod, v) => { setEscolha({ ...escolha, [cod]: v }); setFeito(false); };
+  // tocar de novo no mesmo botão tira a marca (e o campo de observação volta)
+  const marca = (cod, v) => { setEscolha((o) => { const n = { ...o }; if (n[cod] === v) delete n[cod]; else n[cod] = v; return n; }); setFeito(false); setErro(""); };
+  const cartao = (p) => {
+    const sim = escolha[p.cod] === "sim", nao = escolha[p.cod] === "nao", marcado = sim || nao, nota = (notas[p.cod] || "").trim();
+    return (
+      <div key={p.cod} id={"peca-" + p.cod} className={"rounded-2xl p-[1.5px] transition " + (piscar === p.cod ? "animate-pulse bg-[#f87171] " : sim ? "bg-gradient-to-br from-[#bbf7d0] via-[#4ade80] to-[#15803d] " : nao ? "bg-gradient-to-br from-[#fecaca] via-[#f87171] to-[#991b1b] " : "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#7a5a14] ")}>
+        <section className={"flex h-full flex-col overflow-hidden rounded-[15px] bg-black " + (sim ? "bg-[linear-gradient(to_top,rgba(74,222,128,.30),rgba(74,222,128,.08)_50%,rgba(0,0,0,0)_88%)]" : nao ? "bg-[linear-gradient(to_top,rgba(248,113,113,.30),rgba(248,113,113,.08)_50%,rgba(0,0,0,0)_88%)]" : "bg-[linear-gradient(to_top,rgba(232,184,75,.30),rgba(232,184,75,.08)_45%,rgba(0,0,0,0)_80%)]")}>
+          <div className="p-1.5 pb-0">
+            {semFoto[p.cod] ? <div className="grid aspect-square w-full place-items-center rounded-xl border border-[#E8B84B]/30 text-center text-[12px]">Foto em breve</div>
+              : <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={frasePeca(p.desc) || "Peça"} className={"mx-auto block aspect-square w-full rounded-xl object-contain " + (nao ? "opacity-70" : "")} onError={() => setSemFoto((o) => ({ ...o, [p.cod]: true }))} />}
+          </div>
+          <div className="flex flex-1 flex-col gap-1.5 p-2.5">
+            <p className="break-words text-[12px] font-bold leading-snug">{frasePeca(p.desc) || "Peça"}</p>
+            {p.preco != null && <p className="bg-gradient-to-r from-[#F5E7BE] to-[#E8B84B] bg-clip-text text-[14px] font-bold text-transparent">{reais(p.preco)}</p>}
+            {/* sem resposta: campo de observação. Com resposta: o campo sai e fica só o texto dela */}
+            {!marcado
+              ? <input type="text" value={notas[p.cod] || ""} maxLength={160} onChange={(ev) => { setNotas({ ...notas, [p.cod]: ev.target.value }); setFeito(false); }} placeholder="Observação (opcional)" aria-label={"Observação: " + (frasePeca(p.desc) || "peça")} className="h-9 w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-2.5 text-[13px] placeholder:text-white/50" />
+              : nota ? <p className="break-words rounded-lg bg-black/50 px-2 py-1 text-[12px] italic leading-snug">“{nota}”</p> : null}
+            <div className="mt-auto flex flex-col gap-1.5 pt-1" role="radiogroup" aria-label={frasePeca(p.desc) || "Peça"}>
+              <button type="button" role="radio" aria-checked={sim} onClick={() => marca(p.cod, "sim")} className={"h-10 rounded-xl text-[13px] font-bold shadow-md transition " + (sim ? "bg-gradient-to-br from-[#bbf7d0] via-[#4ade80] to-[#16a34a] text-[#052e16] ring-2 ring-white" : "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#B8892A] text-[#14233f] " + (nao ? "opacity-60" : "opacity-90"))}>{sim ? "✓ Quero · voltar" : "Quero"}</button>
+              <button type="button" role="radio" aria-checked={nao} onClick={() => marca(p.cod, "nao")} className={"h-9 rounded-xl border text-[12px] font-bold transition " + (nao ? "border-[#fecaca] bg-gradient-to-br from-[#f87171] to-[#b91c1c] text-white ring-2 ring-white/80" : "border-[#E8B84B]/50 bg-black/60")}>{nao ? "✕ Não quero · voltar" : "Não quero"}</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    );
+  };
   return (
     <Tela etapa="Peças que encontramos">
       <section className="rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
         <h2 className="text-[16px] font-bold">Oi, {info.primeiroNome}! 💛</h2>
-        <p className="mt-1 text-[13px] leading-snug">A equipe encontrou estas peças para o seu pedido. Veja cada foto e marque <b>Quero</b> ou <b>Não quero</b>. Depois toque em <b>Enviar minha resposta</b>.</p>
+        <p className="mt-1 text-[13px] leading-snug">A equipe encontrou estas peças para o seu pedido. Veja cada foto e marque <b>Quero</b> ou <b>Não quero</b>. Depois toque em <b>Enviar resposta</b>.</p>
+        {lim && <p className="mt-1.5 text-[13px] leading-snug">Seu limite: <b className="text-[#F5E7BE]">{reais(lim.max)}</b> por reposição. <a href={"/pedido/" + encodeURIComponent(codigo) + "/tabela"} target="_blank" rel="noopener" className="font-bold text-[#F5E7BE] underline">Ver a tabela de valores</a></p>}
       </section>
-      {/* duas peças por linha; cartão preto com borda dourada em degradê */}
-      <div className="grid grid-cols-2 gap-2.5">
-        {pecas.map((p, n) => {
-          const sim = escolha[p.cod] === "sim", nao = escolha[p.cod] === "nao";
-          return (
-            <div key={p.cod} className={"rounded-2xl bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#7a5a14] p-[1.5px] " + (nao ? "opacity-60" : "")}>
-              {/* um cartão só: fundo preto com o degradê de ouro subindo de baixo, foto, nome, preço e botões dentro dele */}
-              <section className="flex h-full flex-col overflow-hidden rounded-[15px] bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.45),rgba(232,184,75,.12)_45%,rgba(0,0,0,0)_80%)]">
-                <div className="p-1.5 pb-0">
-                  {semFoto[p.cod] ? <div className="grid aspect-square w-full place-items-center rounded-xl border border-[#E8B84B]/30 text-center text-[12px]">Foto em breve</div>
-                    : <img src={"/api/pedido-link/" + encodeURIComponent(codigo) + "/peca?cod=" + encodeURIComponent(p.cod)} alt={"Peça " + (n + 1)} className="mx-auto block aspect-square w-full rounded-xl object-contain" onError={() => setSemFoto((o) => ({ ...o, [p.cod]: true }))} />}
-                </div>
-                <div className="flex flex-1 flex-col gap-1.5 p-2.5">
-                  <p className="break-words text-[12px] font-bold leading-snug">{frasePeca(p.desc) || "Peça " + (n + 1)}</p>
-                  {p.preco != null && <p className="bg-gradient-to-r from-[#F5E7BE] to-[#E8B84B] bg-clip-text text-[14px] font-bold text-transparent">{reais(p.preco)}</p>}
-                  <input type="text" value={notas[p.cod] || ""} maxLength={160} onChange={(ev) => { setNotas({ ...notas, [p.cod]: ev.target.value }); setFeito(false); }} placeholder="Observação (opcional)" aria-label={"Observação da peça " + (n + 1)} className="h-9 w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-2.5 text-[13px] placeholder:text-white/50" />
-                  <div className="mt-auto flex flex-col gap-1.5 pt-1" role="radiogroup" aria-label={"Peça " + (n + 1)}>
-                    <button type="button" role="radio" aria-checked={sim} onClick={() => marca(p.cod, "sim")} className={"h-10 rounded-xl text-[13px] font-bold shadow-md transition " + (sim ? "bg-gradient-to-br from-[#FFF3C9] via-[#F0C555] to-[#B8892A] text-[#14233f] ring-2 ring-white/80" : "bg-gradient-to-br from-[#F5E7BE] via-[#E8B84B] to-[#B8892A] text-[#14233f] opacity-90")}>{sim ? "✓ Quero" : "Quero"}</button>
-                    <button type="button" role="radio" aria-checked={nao} onClick={() => marca(p.cod, "nao")} className={"h-9 rounded-xl border text-[12px] font-bold transition " + (nao ? "border-white bg-white/25" : "border-[#E8B84B]/50 bg-black/60")}>{nao ? "✕ Não quero" : "Não quero"}</button>
-                  </div>
-                </div>
-              </section>
-            </div>
-          );
-        })}
-      </div>
+      {GRUPOS_PECA.map(([id, nome]) => {
+        const lista = pecas.filter((p) => grupoDaPeca(p.desc) === id);
+        if (!lista.length) return null;
+        return (
+          <div key={id} className="flex flex-col gap-2">
+            <h3 className="text-[14px] font-bold text-[#F5E7BE]">{nome} <span className="text-[12px] font-normal text-white">· {lista.length} {lista.length === 1 ? "peça" : "peças"}</span></h3>
+            <div className="grid grid-cols-2 gap-2.5">{lista.map(cartao)}</div>
+          </div>
+        );
+      })}
       <section className="flex flex-col gap-2.5 rounded-xl border border-[#E8B84B]/55 bg-black bg-[linear-gradient(to_top,rgba(232,184,75,.32),rgba(0,0,0,0)_78%)] p-3">
-        <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => { setObs(ev.target.value); setFeito(false); }} placeholder="Quer avisar algo? (opcional)" className="w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-3 py-2 text-[16px] placeholder:text-white/60" />
-        {erro && <p className="text-[14px] font-bold text-[#fecaca]">{erro}</p>}
-        {feito ? <p className="text-center text-[14px] font-bold text-[#bbf7d0]">Resposta enviada ✓ Você marcou {querN} de {pecas.length}. Pode mudar e enviar de novo.</p>
-          : faltam > 0 && <p className="text-center text-[13px]">Falta marcar {faltam} {faltam === 1 ? "peça" : "peças"}.</p>}
+        <textarea value={obs} maxLength={300} rows={2} onChange={(ev) => { setObs(ev.target.value); setFeito(false); }} placeholder="Quer avisar algo? (opcional)" className="w-full rounded-lg border border-[#E8B84B]/40 bg-black/70 px-3 py-2 text-[13px] placeholder:text-white/60" />
+        {feito && !erro && <p className="text-center text-[14px] font-bold text-[#F5E7BE]">Resposta enviada ✓ Você marcou {querN} de {pecas.length}. Pode mudar e enviar de novo.</p>}
       </section>
-      <div className="h-20" aria-hidden />
+      <div className="h-24" aria-hidden />
       <div className="fixed inset-x-0 bottom-0 z-20 border-t border-[#E8B84B]/60 bg-black/95 px-3 pb-[max(.5rem,env(safe-area-inset-bottom))] pt-2">
-        <div className="mx-auto flex w-full max-w-[560px] items-center gap-3">
-          <p className="min-w-0 flex-1 text-[13px] leading-tight"><b>{querN}</b> {querN === 1 ? "peça" : "peças"} que você quer<br /><span className="text-[#F5E7BE]">{reais(querTotal)}</span> · marcadas {pecas.length - faltam} de {pecas.length}</p>
-          <button type="button" disabled={faltam > 0 || enviando} onClick={enviar} className={BTN + " shrink-0 px-4"}>{enviando ? "Enviando" : feito ? "Enviar de novo" : "Enviar resposta"}</button>
+        <div className="mx-auto flex w-full max-w-[560px] flex-col gap-1.5">
+          {erro && <p className="text-center text-[12px] font-bold text-[#fecaca]">{erro}</p>}
+          <div className="flex items-center gap-3">
+            <p className="min-w-0 flex-1 text-[12px] leading-tight"><b>{querN}</b> {querN === 1 ? "peça" : "peças"} que você quer · marcadas {pecas.length - faltam} de {pecas.length}<br />
+              <span className={passou ? "font-bold text-[#fecaca]" : "text-[#F5E7BE]"}>{reais(querTotal)}{lim ? " de " + reais(lim.max) + " liberados" : ""}</span></p>
+            <button type="button" disabled={enviando} onClick={enviar} className={BTN + " shrink-0 px-4"}>{enviando ? "Enviando" : feito ? "Enviar de novo" : "Enviar resposta"}</button>
+          </div>
         </div>
       </div>
     </Tela>
@@ -337,7 +379,7 @@ export default function Formulario({ codigo }) {
           // peça já confirmada com OK: linha curta (foto pequena, cor, descrição), com Editar e ×
           if (i.ok) {
             return (
-              <section key={i.id} className="flex items-center gap-3 rounded-xl border border-[#4ade80]/50 bg-[#4ade80]/[.08] p-2.5">
+              <section key={i.id} className="flex items-center gap-3 rounded-xl border border-[#E8B84B] bg-[#E8B84B]/[.14] p-2.5">
                 {i.texto ? <span className="grid size-14 shrink-0 place-items-center rounded-lg border border-[#E8B84B]/50 bg-black text-[20px]" aria-hidden>✎</span> : (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={i.url} alt={"Foto " + (n + 1)} className="size-14 shrink-0 rounded-lg object-cover" />
