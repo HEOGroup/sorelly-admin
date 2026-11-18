@@ -5,6 +5,9 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 
 
 
+## 17/11/2026 (RH › Salário e bônus)
+- Nova visão **Salário e bônus** em Colaboradores (só quem vê salário). Itens: salário base (vem do Cadastro), bônus, comissão, adicionais, benefícios, descontos e total do mês. Mês a mês, em `rh.pagamentos`. Entram à mão; ligar aos bônus dos setores (Agendamento, Produção, Metas) fica para depois. **Pagamentos separados (pedido do Marcus):** no mês escolhido, adiantamento no dia 20 e salário no 5º dia útil, cada um com data prevista, valor pago e dia pago. Dia útil = segunda a sábado, sem os feriados do Configurador do RH: o Financeiro mostra o salário pago no dia 06 em outubro e novembro de 2026, o que só bate com o sábado contando (A CONFIRMAR com o Marcus; Finados 02/11 está no Configurador como feriado). Botão **Puxar do Financeiro** (só quem lê as contas: diretoria e Financeiro): lê as contas pagas do mês na DevMaster por natureza (3.01.01.02 Salário, 3.01.01.12 e .21 Bônus, 3.01.01.01 Vale alimentação, 3.01.01.05 Vale transporte), casa o nome do título com o cadastro e só grava depois da prévia. Salário: baixas até o dia 15 = salário do 5º dia útil; depois = adiantamento. Em outubro e novembro/2026 NÃO apareceu adiantamento de dia 20 no Financeiro.
+
 ## 17/11/2026 (RH › Colaboradores, rodada 2)
 - Fichas fechadas por padrão: cada bloco tem o próprio Editar e Salvar/Cancelar (pedido do Marcus: "clica em editar e abre tudo" não serve). Campos das fichas azul clarinho e centralizados.
 - **Escala 42h é só ideia e sugestão, não está definida:** o Marcus quer alinhar antes. Telas e mensagem dizem "sugestão". Botão Copiar mensagem na ficha avisa a colaboradora da escala de hoje, da sugestão e do que muda.
