@@ -26,6 +26,10 @@
       "schedule": "*/10 * * * *"
     },
     {
+      "path": "/api/automatico/fotos-dm?antigas=1",
+      "schedule": "*/30 * * * *"
+    },
+    {
       "path": "/api/app-rep/sincronizar",
       "schedule": "* * * * *"
     }

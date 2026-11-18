@@ -43,8 +43,8 @@ export async function produtosRecentes({ dias = 60, forcar = false } = {}) {
 
 // Mesma regra da ação dm_sync da tela: código que não existe entra com a data de cadastro; foto já na DevMaster marca Foto, Editada e Sistema como "dm" (a Ana coloca a foto lá depois de editar).
 // Só grava as chaves que mudaram, com trava de versão (não pisa em quem está marcando uma etapa na tela ao mesmo tempo).
-// gravar:false = só simula (conta o que mudaria, sem gravar nada). antigas:false = não olha as peças com mais de 120 dias.
-export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = true } = {}) {
+// gravar:false = só simula (conta o que mudaria, sem gravar nada). antigas:true = também olha as peças com mais de 120 dias (leitura pesada de uns 30 mil produtos; roda à parte, a cada 30 minutos, em /api/automatico/fotos-dm?antigas=1).
+export async function sincronizarFotosDm({ dias = 120, gravar = true, antigas = false } = {}) {
   const dm = await produtosRecentes({ dias, forcar: true }), hoje = hojeBR();
   for (let tentativa = 0; tentativa < 4; tentativa++) {
     const r = await consulta("select conteudo, versao from sorelly.estado_modulo where modulo = 'fc'");
