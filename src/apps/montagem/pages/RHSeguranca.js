@@ -5,9 +5,9 @@
 // Não é aconselhamento jurídico: o que a NR-1 exige da Sorelly quem confirma é o técnico de Segurança do Trabalho e o contador.
 import { Pagina } from "@/apps/montagem/components/padrao";
 import { BlocoPainel, PADRAO_BLOCOS } from "@/apps/montagem/components/bloco-painel";
-import { CAMPO } from "@/apps/montagem/components/padrao-fin";
+import { CAMPO, Segmentado } from "@/apps/montagem/components/padrao-fin";
 import { TabelaPlanilha } from "@/apps/montagem/components/tabela-planilha";
-import { diaBr, nr1Estado, nr1EstadoAt, nr1Padrao, SITUACOES, SITUACOES_AT } from "@/apps/montagem/domain/nr1";
+import { diaBr, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Padrao, SITUACOES, SITUACOES_AT } from "@/apps/montagem/domain/nr1";
 import { colaboradoresRh } from "@/apps/montagem/domain/rh";
 import { nomeDe } from "@/apps/montagem/domain/equipe";
 import { abrirAnexo, enviarAnexo, lerArquivo } from "@/apps/montagem/lib/anexo";
@@ -71,7 +71,7 @@ function Ficha(p){
 
 // ATIVIDADES (17/11/2026): tarefas pequenas de cada ação, que o RH passa para as pessoas fazerem. Responsável vem do cadastro do RH; "Copiar mensagem" gera o texto para o WhatsApp.
 function Atividades(p){
-  var c = p.c, n = p.n, acoes = n.acoes, ats = n.atividades || nr1Padrao().atividades, nova = useState({acaoId:acoes[0].id, txt:""}), nv = nova[0];
+  var c = p.c, n = p.n, acoes = n.acoes, ats = nr1Atividades(n), nova = useState({acaoId:acoes[0].id, txt:""}), nv = nova[0];
   var nomes = colaboradoresRh(p.s).filter(function(x){ return x.status==="ATIVO"; }).map(function(x){ return x.nome; }).sort(function(a, b){ return a.localeCompare(b, "pt-BR"); });
   var tituloDe = function(id){ var a = acoes.find(function(x){ return x.id===id; }); return a ? a.n+" · "+a.titulo : "—"; };
   var salva = function(id, patch){ c.acao("nr1_at_set", {idAt:id, patch:patch}); };
@@ -97,9 +97,29 @@ function Atividades(p){
     faixa, e("div",{className:"min-h-0 flex-1"}, e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhuma atividade."})));
 }
 
+// FICHA POR PESSOA (18/11/2026): uma linha por colaborador ativo do cadastro do RH, com a data em que recebeu o EPI e a data em que assinou a ordem de serviço.
+// Data vazia = Pendente. Quem registrou e quando fica gravado (domain/nr1.js, op nr1_pessoa). Serve de prova da entrega e da assinatura.
+function FichaPessoas(p){
+  var c = p.c, fp = p.n.pessoas || {};
+  var lista = colaboradoresRh(p.s).filter(function(x){ return x.status==="ATIVO"; });
+  var marca = function(x, campo){ return fp[x.id] && fp[x.id][campo] ? fp[x.id][campo] : null; };
+  var linhas = lista.map(function(x){
+    var e1 = marca(x, "epi"), o1 = marca(x, "os"), ult = e1 && o1 ? (o1.em > e1.em ? o1 : e1) : (e1 || o1);
+    return {id:x.id, nome:x.nome, setor:x.setor || "—", cnpj:x.cnpj ? "CNPJ "+x.cnpj : "—", epi:e1 ? diaBr(e1.data) : "Pendente", os:o1 ? diaBr(o1.data) : "Pendente", reg:ult ? ult.por : "—", e1:e1, o1:o1};
+  });
+  var data = function(campo){ return function(v, l){ var m = campo==="epi" ? l.e1 : l.o1;
+    return e("input",{type:"date", value:m ? m.data : "", "aria-label":(campo==="epi" ? "Data do EPI de " : "Data da ordem de serviço de ")+l.nome, className:CAMPO+" w-auto text-center",
+      onChange:function(ev){ c.acao("nr1_pessoa", {id:l.id, campo:campo, data:ev.target.value}); }}); }; };
+  var cols = [{k:"nome", t:"Colaborador"}, {k:"setor", t:"Setor"}, {k:"cnpj", t:"CNPJ"}, {k:"epi", t:"EPI entregue em", render:data("epi")}, {k:"os", t:"Ordem de serviço assinada em", render:data("os")}, {k:"reg", t:"Registrado por"}];
+  var comEpi = lista.filter(function(x){ return marca(x, "epi"); }).length, comOs = lista.filter(function(x){ return marca(x, "os"); }).length;
+  return e(BlocoPainel,{titulo:"Ficha por pessoa", compacto:true, dir:"EPI "+comEpi+" de "+lista.length+" · Ordem de serviço "+comOs+" de "+lista.length},
+    e("div",{className:"min-h-0 flex-1"}, e(TabelaPlanilha,{cols:cols, linhas:linhas, chave:"id", grade:true, semContagem:true, semLimpar:true, vazio:"Nenhum colaborador ativo no cadastro do RH."})));
+}
+
 function AbaRhSeguranca(){
   var cx = use(), s = cx.state, d = cx.dispatch, n = (s.rh && s.rh.nr1) || nr1Padrao(), por = nomeDe(s.usuario), ab = useState(null), aberta = ab[0];
   var c = {d:d, acao:function(op, extra){ d(Object.assign({type:"RH", op:op, por:por}, extra)); }};
+  var vi = useState("plano"), vista = vi[0];
   var feitas = n.acoes.filter(function(a){ return a.situacao==="concluida"; }).length;
 
   var linhas = n.acoes.map(function(a){ var st = nr1Estado(a); return {id:a.id, n:String(a.n), titulo:a.titulo, fazer:a.fazer, resp:a.resp || "A definir", prazo:diaBr(a.prazo), sit:st.t, st:st, docs:String(a.anexos.length)}; });
@@ -118,16 +138,18 @@ function AbaRhSeguranca(){
 
   var topo = e("div",{className:"flex flex-nowrap items-center gap-2 overflow-x-auto rounded-lg border-2 border-[var(--bloco-titulo)] bg-[var(--bloco-titulo)] px-2 py-1 text-white"},
     e("h2",{className:"shrink-0 whitespace-nowrap text-[13px] font-bold uppercase"}, "Segurança do trabalho · NR-1"),
-    e("span",{className:"ml-auto whitespace-nowrap text-[13px] tabular-nums"}, feitas+" de "+n.acoes.length+" concluídas"));
+    e(Segmentado,{opcoes:[["plano", "Plano de ação"], ["pessoas", "Ficha por pessoa"]], atual:vista, onMudar:function(v){ vi[1](v); }}),
+    e("span",{className:"ml-auto whitespace-nowrap text-[13px] tabular-nums"}, vista==="plano" ? feitas+" de "+n.acoes.length+" concluídas" : ""));
   var ficha = aberta && n.acoes.find(function(a){ return a.id===aberta; });
 
   return e(Pagina,{className:PADRAO_BLOCOS+" -mx-2 -mb-2 -mt-5 md:-mx-3 md:-mb-3"},
     topo,
-    e(Bloco,{t:"Plano de ação", cols:cols, linhas:linhas, aoClicar:function(l){ ab[1](l.id); }, vazio:"Nenhuma ação."}),
-    e("div",{className:"grid grid-cols-1 gap-2 lg:grid-cols-2"},
+    vista=="pessoas" && e(FichaPessoas,{c:c, n:n, s:s}),
+    vista=="plano" && e(Bloco,{t:"Plano de ação", cols:cols, linhas:linhas, aoClicar:function(l){ ab[1](l.id); }, vazio:"Nenhuma ação."}),
+    vista=="plano" && e("div",{className:"grid grid-cols-1 gap-2 lg:grid-cols-2"},
       e(Bloco,{t:"Responsável por CNPJ", cols:colsCnpj, linhas:porCnpj, semFiltro:true, vazio:"Nenhum CNPJ."}),
       e(Bloco,{t:"Últimas movimentações", cols:colsMov, linhas:mov.slice(0, 8), vazio:"Nenhuma movimentação ainda."})),
-    e(Atividades,{c:c, n:n, s:s}),
+    vista=="plano" && e(Atividades,{c:c, n:n, s:s}),
     ficha && e(Ficha,{c:c, a:ficha, fechar:function(){ ab[1](null); }}));
 }
 

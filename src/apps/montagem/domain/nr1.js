@@ -21,15 +21,53 @@ function nr1Padrao(){
       a(7, "Prevenção de incêndios", "Verificar as sinalizações necessárias e o custo do treinamento; um responsável por CNPJ", PRAZO_PADRAO, "nao_iniciada", true),
       a(8, "Ergonomia", "Decidir se a empresa faz avaliação especializada (ergonomista) e levantar o custo de adequar móveis e estrutura", "")],
     cnpjs:CNPJS_NR1.map(function(c){ return {cnpj:c, cipa:"", incendio:""}; }),
-    atividades:atividadesPadrao()};
+    atV:ATV, atividades:atividadesPadrao(), pessoas:{}};
 }
 
 // Atividades: tarefas pequenas de cada ação, que o RH passa para as pessoas fazerem (Marcus, 17/11/2026). Começa com os passos da ação 1 (PGR e PCMSO).
 var SITUACOES_AT = [["pendente", "Pendente"], ["feita", "Feita"]];
+// ATV = versão da lista de atividades de partida: v1 = ação 1 (PGR e PCMSO), v2 = ação 2 (EPIs, 18/11/2026), v3 = ações 3 a 8 (18/11/2026). Estado salvo mais antigo ganha só as atividades novas, sem repetir nem trazer de volta as que foram tiradas.
+var ATV = 3;
 function atividadesPadrao(){
-  var t = function(i, txt){ return {id:"nr1-at-"+i, acaoId:"nr1-1", txt:txt, resp:"", prazo:"2026-11-20", situacao:"pendente", por:"", criadoEm:0}; };
-  return [t(1, "Receber o PGR do técnico de Segurança do Trabalho"), t(2, "Receber o PCMSO"), t(3, "Confirmar com o técnico se há um documento por CNPJ ou um só"),
-    t(4, "Anexar os arquivos na ação 1 desta tela"), t(5, "Definir o local de acesso a todos os colaboradores e avisar a equipe")];
+  var t = function(i, acao, v, txt, prazo){ return {id:"nr1-at-"+i, acaoId:acao, v:v, txt:txt, resp:"", prazo:prazo, situacao:"pendente", por:"", criadoEm:0}; };
+  return [
+    t(1, "nr1-1", 1, "Receber o PGR do técnico de Segurança do Trabalho", "2026-11-20"), t(2, "nr1-1", 1, "Receber o PCMSO", "2026-11-20"),
+    t(3, "nr1-1", 1, "Confirmar com o técnico se há um documento por CNPJ ou um só", "2026-11-20"), t(4, "nr1-1", 1, "Anexar os arquivos na ação 1 desta tela", "2026-11-20"),
+    t(5, "nr1-1", 1, "Definir o local de acesso a todos os colaboradores e avisar a equipe", "2026-11-20"),
+    t(6, "nr1-2", 2, "Pedir ao técnico a lista de EPIs exigidos no PGR, por função e por CNPJ", "2026-11-25"),
+    t(7, "nr1-2", 2, "Levantar quem precisa usar cada EPI (função e setor de cada colaborador)", "2026-11-27"),
+    t(8, "nr1-2", 2, "Conferir o CA (certificado de aprovação) de cada EPI no cadastro oficial e a validade", "2026-12-04"),
+    t(9, "nr1-2", 2, "Cotar e comprar os EPIs pelo Compras e estoque de material", "2026-12-08"),
+    t(10, "nr1-2", 2, "Entregar os EPIs e recolher a assinatura de recebimento de cada pessoa", "2026-12-15"),
+    t(11, "nr1-2", 2, "Orientar o uso e a guarda dos EPIs e arquivar as fichas assinadas", "2026-12-18"),
+    t(12, "nr1-3", 3, "Divulgar o link do canal para todos os colaboradores (WhatsApp e cartaz)", "2026-11-30"),
+    t(13, "nr1-3", 3, "Confirmar com o técnico e o contador se o formato do canal atende a NR-1", "2026-11-30"),
+    t(14, "nr1-4", 3, "Escolher as perguntas e o formato da primeira pesquisa de clima", "2026-12-04"),
+    t(15, "nr1-4", 3, "Aplicar a primeira pesquisa a todos os colaboradores", "2026-12-15"),
+    t(16, "nr1-4", 3, "Analisar o resultado por setor e definir o que melhorar", "2026-12-22"),
+    t(17, "nr1-4", 3, "Marcar a data da próxima aplicação (a cada 3 meses)", "2026-12-31"),
+    t(18, "nr1-5", 3, "Listar as funções da empresa por CNPJ", "2026-12-04"),
+    t(19, "nr1-5", 3, "Pedir ao técnico o modelo da ordem de serviço de cada função", "2026-12-08"),
+    t(20, "nr1-5", 3, "Gerar a ordem de serviço de cada função", "2026-12-12"),
+    t(21, "nr1-5", 3, "Colher a assinatura de cada colaborador (marcar na Ficha por pessoa)", "2026-12-18"),
+    t(22, "nr1-6", 3, "Levantar os cursos de CIPA disponíveis e os custos", "2026-12-08"),
+    t(23, "nr1-6", 3, "Confirmar com o técnico o que cada CNPJ precisa (CIPA ou designado)", "2026-12-12"),
+    t(24, "nr1-6", 3, "Definir um responsável por CNPJ (preencher na tabela Responsável por CNPJ)", "2026-12-12"),
+    t(25, "nr1-6", 3, "Matricular os responsáveis no curso", "2026-12-18"),
+    t(26, "nr1-7", 3, "Verificar as sinalizações necessárias em cada unidade", "2026-12-08"),
+    t(27, "nr1-7", 3, "Cotar o treinamento e a sinalização", "2026-12-12"),
+    t(28, "nr1-7", 3, "Definir um responsável por CNPJ (preencher na tabela Responsável por CNPJ)", "2026-12-12"),
+    t(29, "nr1-7", 3, "Contratar o treinamento e instalar a sinalização", "2026-12-18"),
+    t(30, "nr1-8", 3, "Decidir com a diretoria se a empresa contrata avaliação especializada (ergonomista)", "2026-12-12"),
+    t(31, "nr1-8", 3, "Pedir orçamento do ergonomista", ""),
+    t(32, "nr1-8", 3, "Levantar o custo de adequar móveis e estrutura", "")];
+}
+// lista que a tela mostra: o que está salvo (ou a de partida) mais as atividades de partida de versões novas que ainda não entraram
+function nr1Atividades(n){
+  var base = Array.isArray(n.atividades) ? n.atividades : null, padrao = atividadesPadrao();
+  if(!base) return padrao;
+  var atV = n.atV || 1, ids = {}; base.forEach(function(x){ ids[x.id] = 1; });
+  return base.concat(padrao.filter(function(x){ return (x.v || 1) > atV && !ids[x.id]; }));
 }
 function nr1EstadoAt(x, hoje){
   if(x.situacao==="feita") return {t:"Feita", cor:"ok"};
@@ -49,7 +87,7 @@ var diaBr = function(iso){ var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || ""); 
 // reducer: mexe em rh.nr1 (já copiado pelo rhReduz). Devolve {erro} ou {msg}.
 function nr1Op(rh, a, por, novoId){
   rh.nr1 = rh.nr1 || nr1Padrao();
-  if(!rh.nr1.atividades) rh.nr1.atividades = atividadesPadrao();   // estado salvo antes das atividades existirem
+  rh.nr1.atividades = nr1Atividades(rh.nr1); rh.nr1.atV = ATV; rh.nr1.pessoas = rh.nr1.pessoas || {};   // estado salvo antes das atividades (ou das novas) existirem
   var n = rh.nr1, ac = n.acoes.find(function(x){ return x.id===a.id; });
   var nota = function(x, txt){ x.hist.push({em:Date.now(), por:por, txt:txt}); };
   switch(a.op){
@@ -84,6 +122,14 @@ function nr1Op(rh, a, por, novoId){
       c[a.campo] = String(a.valor || "").trim();
       var alvo = n.acoes.find(function(x){ return x.n===(a.campo==="cipa" ? 6 : 7); }); if(alvo) nota(alvo, "CNPJ "+a.cnpj+": responsável "+(c[a.campo] || "removido"));
       return {msg:"Responsável salvo"}; }
+    // Ficha por pessoa (18/11/2026): EPI entregue e ordem de serviço assinada, uma data por pessoa. a.id = id do colaborador no cadastro do RH; a.campo = "epi" | "os"; a.data vazia = volta para Pendente.
+    case "nr1_pessoa": {
+      var pid = String(a.id || "").trim().slice(0, 80); if(!pid) return {erro:"Escolha a pessoa."};
+      if(["epi", "os"].indexOf(a.campo)<0) return {erro:"Campo inválido."};
+      var dt = String(a.data || ""); if(dt!=="" && !/^\d{4}-\d{2}-\d{2}$/.test(dt)) return {erro:"Data inválida."};
+      var fp = Object.assign({}, n.pessoas[pid]); if(dt) fp[a.campo] = {data:dt, por:por, em:Date.now()}; else delete fp[a.campo];
+      if(Object.keys(fp).length) n.pessoas[pid] = fp; else delete n.pessoas[pid];
+      return {msg:dt ? (a.campo==="epi" ? "EPI registrado" : "Ordem de serviço registrada") : "Registro retirado"}; }
     case "nr1_at_add": {
       var pai = n.acoes.find(function(x){ return x.id===a.acaoId; }), tx = String(a.txt || "").trim();
       if(!pai) return {erro:"Escolha a ação."}; if(!tx) return {erro:"Escreva a atividade."};
@@ -110,4 +156,4 @@ function nr1Op(rh, a, por, novoId){
 // quem abre o Canal de denúncias (pessoaId): Marcus (lê as gerais) e Maria Claudia, RH, 38 (lê as que envolvem a direção), decisão de 18/11/2026. O servidor confere a mesma lista (src/server/denuncias.js); aqui só esconde a tela.
 var PESSOAS_DENUNCIAS = [16, 38];
 
-export { PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };
+export { PESSOAS_DENUNCIAS, SITUACOES, SITUACOES_AT, CNPJS_NR1, nr1Padrao, nr1Atividades, nr1Estado, nr1EstadoAt, nr1Op, diaBr, hojeIso as hojeNr1 };

@@ -360,7 +360,7 @@ function rhReduz(s, a){
     case "neg_pessoa_del": { rh.negoc = rh.negoc || negocPadrao(); rh.negoc.pessoas = rh.negoc.pessoas.filter(function(x){ return x.id!==a.id; }); return ok("Negociação removida"); }
     // configurador: listas simples (escalas, planos, tiposAdv, motivosAdv, tiposHE, feriados)
     // Segurança do trabalho (NR-1, 17/11/2026): regra em domain/nr1.js
-    case "nr1_set": case "nr1_nota": case "nr1_anexo_add": case "nr1_anexo_del": case "nr1_cnpj": case "nr1_at_add": case "nr1_at_set": case "nr1_at_del": { var rn = nr1Op(rh, a, por, novoId); return rn.erro ? recusa(rn.erro) : ok(rn.msg); }
+    case "nr1_set": case "nr1_nota": case "nr1_anexo_add": case "nr1_anexo_del": case "nr1_cnpj": case "nr1_at_add": case "nr1_at_set": case "nr1_at_del": case "nr1_pessoa": { var rn = nr1Op(rh, a, por, novoId); return rn.erro ? recusa(rn.erro) : ok(rn.msg); }
     case "cfg_add": { var li = cfg[a.lista]; if(!li) return recusa("Lista desconhecida."); li.push(Object.assign({id:novoId(a.lista.slice(0,2)+"-")}, a.item)); return ok("Adicionado"); }
     case "cfg_set": { var l2 = cfg[a.lista]; var it = l2 && l2.find(function(x){ return x.id===a.id; }); if(!it) return recusa("Item não encontrado."); Object.assign(it, a.patch); return ok(); }
     case "cfg_del": { var l3 = cfg[a.lista]; if(!l3) return recusa("Lista desconhecida.");
