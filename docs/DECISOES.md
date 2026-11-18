@@ -2792,3 +2792,10 @@ Marcus (tudo com o Edson, do Office Graff, setor Material gráfico). Resumo; o d
 - **Conversa do pedido = o grupo do chat** (dois sentidos, sem cópia, sem ciclo). Mensagens antigas ficam no pedido com a marca "só no pedido".
 - **Destinatário pelo id:** pedido novo grava `solicitanteId` (pessoa do sistema); a mensagem vai para o contato do chat da conta ATIVA dessa pessoa (duas contas com contatos diferentes = não entrega). Pedido antigo: "Sem vínculo com o chat" e quem opera as Compras vincula a pessoa (op `pedido_vincular`). Nunca por nome parecido.
 - Teste: `scripts/testar-ajustes-compras.mjs` (46 verificações, banco simulado).
+
+## 18/11/2026 · Link de conferência do fornecedor: página pública do sistema (Lucas)
+- Problema: "alguns links simplesmente não funcionam". Causas: (1) o link usava `https://acertos.sorelly.com.br/f/`, endereço de EXEMPLO herdado do HTML antigo, que nunca existiu (nenhum link abria); (2) o código era criado na TELA: duas telas abertas criavam dois códigos para a mesma data e o segundo apagava o primeiro (ex.: Lucas Castilho 23/11, `dw04u9p4joz9` trocado por `j51y2nxqtss3` em 1 minuto); (3) a listagem da Maquininha nem guardava o código; (4) 46 comprovantes de novembro estavam só no navegador de quem lançou.
+- Agora: página pública e só leitura `/f/<código>` (acerto de uma data) e `/f/cartao/<código>` (cartão de um mês), servidas pelo próprio sistema (app/f, src/server/acerto-link.js). Comprovante em `/f/<código>/c/<id do Pix>`, só se o Pix for daquela data. Código errado = "Link não encontrado".
+- O código é criado SÓ no servidor (`POST /api/pf/link`), uma vez por data, e nunca troca. Código antigo que foi trocado é achado no histórico de gravações e continua abrindo.
+- "Ver como o fornecedor vê" abre o próprio link; "Baixar HTML" baixa a mesma página (lib/pf-extrato-html.js monta a página na tela e no servidor). A mensagem de WhatsApp usa o link do servidor.
+- Comprovante guardado só no navegador (`arqId`) sobe sozinho para o servidor quando o Lançamento de pagamentos é aberto naquele computador (operação `lanc_comp_srv`, só acrescenta `arqKey`).

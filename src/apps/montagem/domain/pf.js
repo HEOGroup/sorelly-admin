@@ -1121,6 +1121,12 @@ function pfReduz(s, a){
     case "lanc_comp": { var l3 = pf.lancamentos.find(function(x){ return x.id===a.id; }); if(!l3) return recusa("Pagamento não encontrado.");
       l3.arqNome = a.arqNome||""; l3.arqTipo = a.arqTipo||""; l3.arqKey = a.arqKey||""; l3.arqData = a.arqData || hojeIso(); if(l3.aguardaComp) l3.aguardaComp = false;
       return ok("Comprovante anexado — pagamento de "+brl(l3.valor)+" agora conta como pago"); }
+    // comprovante que estava SÓ no navegador de quem lançou (arqId) sobe para o servidor (18/11/2026): assim o link do fornecedor mostra.
+    // Só acrescenta a cópia do servidor (arqKey); não muda valor nem conferência. a.itens = [{id, arqKey}]
+    case "lanc_comp_srv": { var nS = 0;
+      (a.itens||[]).forEach(function(it){ var lS = pf.lancamentos.find(function(x){ return x.id===it.id; }); if(!lS || lS.arqKey || !lS.arqId || !/^an_[a-z0-9]{6,40}$/.test(it.arqKey||"")) return; lS.arqKey = it.arqKey; nS++; });
+      if(!nS) return recusa("");
+      return ok(nS+" comprovante(s) guardado(s) neste computador agora estão no servidor"); }
     case "saldo_passar": {   // só com o aceite de quem lança: o que falta numa data passa para a próxima data de pagamento
       var jS = janelaPorChave(pf, a.chave); if(!jS) return recusa("Data não encontrada.");
       var falS = r2(jS.total-pagoJanela(pf, a.chave)); if(falS<=0.005) return recusa("Esta data não tem saldo a pagar.");

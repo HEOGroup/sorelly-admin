@@ -5,15 +5,15 @@
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { CAMPOS_BUSCA, cartoesLancamento, filtrarLancamentos, hojeIso, destinoSaldo, janelaPorChave, janelasDoForn, ajustaExcesso, mesAtual, mesLabel, mesMais, mesesComLanc, pagoJanela } from "@/apps/montagem/domain/pf";
-import { apagarArquivo, baixarArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
+import { apagarArquivo, baixarArquivo, obterArquivo, salvarArquivo } from "@/apps/montagem/lib/arquivos";
 import { abrirAnexo, enviarAnexo, lerArquivo as lerAnexo } from "@/apps/montagem/lib/anexo";
-import { copiar, linkDoAcerto, montarExtrato, msgWhatsApp, nomeArquivoExtrato, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
+import { copiar, msgWhatsApp, nomeArquivoExtrato, useLinkConferencia, useMesLanc } from "@/apps/montagem/pages/pf/extrato";
 import { Dinheiro, Faixa, Indicador, LINHA, Mosaico, Pagina, Tab, Td } from "@/apps/montagem/components/padrao";
 import { COR, Campo, Chip, Modal, Sel, Txt, aviso, brl, dbr, mut, op, usePf } from "@/apps/montagem/pages/pf/ui";
 import { PageHead } from "@/apps/montagem/ui/page";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { Segmentado } from "@/apps/montagem/components/padrao-fin";
-import { e, useState } from "@/shared/react";
+import { e, useEffect, useState } from "@/shared/react";
 
 // botão pequeno com texto (tipos: normal, forte, ok, conf, perigo)
 var BT = {normal:"bg-muted/50 hover:bg-white/15", forte:"bg-[#3B82F6] text-black hover:bg-[#FBBF24]", ok:"bg-[#22C55E]/25 text-[#4ADE80] ring-1 ring-[#22C55E]/50 hover:bg-[#22C55E]/35", conf:"bg-[#3B82F6]/25 text-[#93C5FD] ring-1 ring-[#3B82F6]/50 hover:bg-[#3B82F6]/35", perigo:"bg-destructive/20 text-destructive hover:bg-destructive/30"};
@@ -233,19 +233,24 @@ function ModalAcerto(p){
   var c = p.c, pf = c.pf, chave = p.chave, parte = chave.split("|"), f = pf.fornecedores.find(function(x){ return x.id===parseInt(parte[0]); }), j = janelaPorChave(pf, chave);
   var cd = cartoesLancamento(pf, j ? j.mes : mesAtual()).grupos.reduce(function(a, g){ return a || g.cards.find(function(k){ return k.chave===chave; }); }, null);
   var ms = useState(""), msg = ms[0], setMsg = ms[1];
-  var total = j ? j.total : 0, pago = Math.min(pagoJanela(pf, chave), total), falta = total-pago, ls = cd ? cd.lancs : [], comComp = ls.filter(function(l){ return l.arqId || l.arqData; }).length;
-  var link = linkDoAcerto(pf, chave);
-  var abrir = function(){ var w = window.open("", "_blank"); montarExtrato(pf, chave).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})); if(w) w.location.href = u; else window.open(u, "_blank"); setTimeout(function(){ URL.revokeObjectURL(u); }, 60000); }); };
-  var baixar = function(){ montarExtrato(pf, chave).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})), a = document.createElement("a"); a.href = u; a.download = nomeArquivoExtrato(pf, chave); document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500); aviso(c, "Arquivo do acerto baixado"); }); };
+  var total = j ? j.total : 0, pago = Math.min(pagoJanela(pf, chave), total), falta = total-pago, ls = cd ? cd.lancs : [], comComp = ls.filter(function(l){ return l.arqId || l.arqKey || l.arqData; }).length;
+  var lk = useLinkConferencia(pf, chave), link = lk.link;
+  // Ver e Baixar usam a MESMA página do link público (18/11/2026): o que se vê aqui é o que o fornecedor vê
+  var abrir = function(){ if(!link) return aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta"); window.open(link, "_blank", "noopener"); };
+  var baixar = function(){
+    if(!link) return aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta");
+    fetch(link).then(function(r){ if(!r.ok) throw new Error(); return r.text(); }).then(function(h){ var u = URL.createObjectURL(new Blob([h],{type:"text/html"})), a = document.createElement("a"); a.href = u; a.download = nomeArquivoExtrato(pf, chave); document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); }, 1500); },
+      function(){ aviso(c, "Não consegui baixar a página do acerto. Tente de novo.", "alerta"); });
+  };
   return e(Modal,{t:"Enviar acerto ao fornecedor", fechar:p.fechar,
     sub:e("span",null, (f ? f.nome : "")+" · acerto de ", e("b",null, dbr(parte[1])), " — "+ls.length+" Pix, "+comComp+" com comprovante · ", falta>0.005 ? e("b",{style:{color:COR.red}}, brl(falta)+" ainda em aberto") : e("b",{style:{color:COR.green}}, "quitado"))},
     falta>0.005 && e("div",{className:"flex items-start gap-2 rounded-xl border border-[#3B82F6]/50 bg-[#3B82F6]/10 px-4 py-2.5 text-[13.5px] font-medium"}, e(Ph,{n:"warning", s:18}), "Este acerto ainda não está quitado — o fornecedor verá os Pix já enviados e o saldo em aberto."),
     e(Campo,{rot:"Link de conferência (somente leitura)"},
-      e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link, "aria-label":"Link de conferência", className:INPUT+" h-10! min-w-0 flex-1", onFocus:function(ev){ ev.target.select(); }}),
+      e("div",{className:"flex gap-2"}, e("input",{readOnly:true, value:link || (lk.erro ? "Não consegui gerar o link: "+lk.erro : "Gerando o link…"), "aria-label":"Link de conferência", className:INPUT+" h-8! min-w-0 flex-1 text-[13px]!", onFocus:function(ev){ ev.target.select(); }}),
         e(Bt,{ic:"copy", onClick:function(){ copiar(link).then(function(){ aviso(c, "Link copiado"); }); }}, "Copiar"))),
     e("div",{className:"flex flex-wrap gap-2"},
       e(Bt,{ic:"eye", onClick:abrir}, "Ver como o fornecedor vê"), e(Bt,{ic:"download-simple", onClick:baixar}, "Baixar HTML"),
-      e(Bt,{ic:"chat-circle-dots", onClick:function(){ setMsg(msgWhatsApp(pf, chave)); }}, "Gerar mensagem"),
+      e(Bt,{ic:"chat-circle-dots", onClick:function(){ setMsg(msgWhatsApp(pf, chave, link)); }}, "Gerar mensagem"),
       msg && e(Bt,{tipo:"ok", ic:"copy", onClick:function(){ copiar(msg).then(function(){ aviso(c, "Mensagem copiada"); }); }}, "Copiar mensagem")),
     msg && e("textarea",{rows:10, value:msg, "aria-label":"Mensagem de WhatsApp", className:INPUT+" h-auto! py-2 text-[13px]", onChange:function(ev){ setMsg(ev.target.value); }}),
     e("p",{className:"text-[12px] text-muted-foreground"}, "A página mostra só o fechamento desta data — total do período, cada Pix e os comprovantes. Não dá acesso a nenhuma outra informação do sistema."),
@@ -279,6 +284,7 @@ function Consolidado(p){
 }
 
 // ───────────── a tela ─────────────
+var COMP_TENTADOS = {};   // id do Pix → já tentou subir o comprovante nesta sessão
 function AbaPfLanc(){
   var c = usePf(), pf = c.pf, mm = useMesLanc(), mes = mm[0], setMes = mm[1];
   var sa = useState({}), abertos = sa[0], setAbertos = sa[1], sf = useState({}), filtros = sf[0], setFiltros = sf[1];
@@ -288,7 +294,21 @@ function AbaPfLanc(){
   var setFiltro = function(k, f){ var n = Object.assign({}, filtros); n[k] = f; setFiltros(n); };
   var lancar = function(k){ setModalLanc(k); };
   var fecharLanc = function(k){ setModalLanc(null); if(k){ var n = Object.assign({}, abertos); n[k] = true; setAbertos(n); } };
-  var enviar = function(k){ op(c, "token_acerto", {chave:k}); setModalAcerto(k); };
+  var enviar = function(k){ setModalAcerto(k); };   // o link é pedido ao servidor dentro da janela (18/11/2026)
+  // comprovantes antigos guardados SÓ neste navegador sobem para o servidor (18/11/2026), um por vez, uma vez por sessão: o link do fornecedor passa a mostrá-los
+  useEffect(function(){
+    if(!c.edita) return;
+    var fila = pf.lancamentos.filter(function(l){ return l.arqId && !l.arqKey && !COMP_TENTADOS[l.id]; }); if(!fila.length) return;
+    var feitos = [], p = Promise.resolve();
+    fila.forEach(function(l){ COMP_TENTADOS[l.id] = true; p = p.then(function(){
+      return obterArquivo(l.arqId).then(function(blob){
+        if(!blob) return null;
+        var arq = new File([blob], l.arqNome || "comprovante", {type:blob.type || l.arqTipo || ""});
+        return lerAnexo(arq).then(function(a){ return enviarAnexo("pf", a); }).then(function(sv){ feitos.push({id:l.id, arqKey:sv.key}); });
+      }).catch(function(){ return null; });
+    }); });
+    p.then(function(){ if(feitos.length) op(c, "lanc_comp_srv", {itens:feitos}); });
+  }, [pf.lancamentos.length]);   // eslint-disable-line react-hooks/exhaustive-deps
   var bloco = function(g){ return e(BlocoForn,{key:g.f.id, g:g, c:c, abertos:abertos, filtros:filtros, setFiltro:setFiltro, alt:alt, lancar:lancar, enviar:enviar}); };
   return e(Pagina,null,
     e(PageHead,{t:"Lançamento de Pagamentos", sub:"Pix (sem NF) do mês, por fornecedor e data de acerto"},

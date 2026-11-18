@@ -6,7 +6,8 @@ import { BlocoBarra } from "@/apps/montagem/components/equipe-blocos";
 import { Ph } from "@/apps/montagem/components/chat/chat-ui";
 import { FORN_CATS, MQ_MAQUINAS, diaISO, hojeIso, mesAtual, mesCurto, mesLabel, mesMais, mqBaixado, mqBaixasDoMes, mqBruto, mqCandidatas, mqColunas, mqDescontoNoMes, mqDisponivel, mqDistribuicao, mqDistribuido, mqEhAuto, mqLinhas, mqManualNaJanela, mqMesesDesconto, mqMesesSel, mqOrdinal, mqOrigensDoMes, mqParcela, mqPassadasDoMes, mqPreviewDist, mqPreviewFech, mqSobra, mqSomaPassadas, pagoPix, excedenteJanela, janelaPorChave, pfReduz, ultDia } from "@/apps/montagem/domain/pf";
 import { Campo, Chip, COR, Modal, Sel, Txt, aviso, brl, dbr, fmtN, op, th, TD, usePf } from "@/apps/montagem/pages/pf/ui";
-import { abrirHtml, baixarHtml, copiar, htmlListagemMq, mqeGrupos, mqeLink, mqeMensagem, mqeNomeArq } from "@/apps/montagem/pages/pf/mq-extrato";
+import { baixarHtml, chaveMq, copiar, htmlListagemMq, mqeGrupos, mqeMensagem, mqeNomeArq } from "@/apps/montagem/pages/pf/mq-extrato";
+import { useLinkConferencia } from "@/apps/montagem/pages/pf/extrato";
 import { INPUT, MONO } from "@/apps/montagem/ui/input";
 import { Dinheiro } from "@/apps/montagem/components/padrao";
 import { e, useState } from "@/shared/react";
@@ -154,7 +155,7 @@ function ModalEnvio(p){
   if(meses.indexOf(mes)<0) meses = meses.concat([mes]).sort();
   var usadas = mqeGrupos(pf, mes, "").map(function(g){ return g.maq; }), maq = usadas.indexOf(maq0)>=0 ? maq0 : "";
   var gs = mqeGrupos(pf, mes, maq), tot = gs.reduce(function(s, g){ return s+g.total; }, 0), n = gs.reduce(function(s, g){ return s+g.itens.length; }, 0);
-  var fn = pf.fornecedores.find(function(x){ return x.id===pf.mqFornId; }), link = mqeLink(pf, mes, maq);
+  var fn = pf.fornecedores.find(function(x){ return x.id===pf.mqFornId; }), lk = useLinkConferencia(pf, chaveMq(pf, mes, maq)), link = lk.link;   // o código do link é criado no servidor e nunca troca (18/11/2026)
   var trocaMes = function(v){ setMes(v); setMsg(null); }, trocaMaq = function(v){ setMaq(v); setMsg(null); };
   var separados = function(){
     var todos = mqeGrupos(pf, mes, ""); if(!todos.length){ aviso(c, "Nenhuma passada neste mês"); return; }
@@ -167,13 +168,13 @@ function ModalEnvio(p){
       e(Campo,{rot:"Maquininha"}, e(Sel,{value:maq, label:"Maquininha", className:"w-full", onChange:trocaMaq}, e("option",{value:""}, "Todas (separadas por maquininha)"), usadas.map(function(m){ return e("option",{key:m, value:m}, m); })))),
     e("div",{className:"flex flex-col gap-1.5"}, gs.length ? gs.map(function(g){ return e(Linha,{key:g.maq, l:[e("span",{key:"a"}, g.maq), e("span",{key:"b", className:"text-white/70"}, "· "+g.itens.length+" passada(s)")], cor:"#fff", v:brl(g.total)}); }) : e("span",{className:"text-[13px] text-white/80"}, "Nenhuma passada lançada neste mês.")),
     e(Campo,{rot:"Link de conferência (somente leitura)"}, e("div",{className:"flex gap-2"},
-      e("input",{value:link, readOnly:true, "aria-label":"Link de conferência", className:INPUT+" h-10! min-w-0 flex-1"}),
+      e("input",{value:link || (lk.erro ? "Não consegui gerar o link: "+lk.erro : "Gerando o link…"), readOnly:true, "aria-label":"Link de conferência", className:INPUT+" h-8! min-w-0 flex-1 text-[13px]!"}),
       e("button",{type:"button", onClick:function(){ copiar(link, function(){ aviso(c, "Link copiado"); }); }, className:BTN}, e(Ph,{n:"copy", s:15}), "Copiar"))),
     e("div",{className:"flex flex-wrap gap-2"},
-      e("button",{type:"button", onClick:function(){ abrirHtml(htmlListagemMq(pf, mes, maq)); }, className:BTN}, e(Ph,{n:"eye", s:15}), "Ver como o fornecedor vê"),
+      e("button",{type:"button", onClick:function(){ if(link) window.open(link, "_blank", "noopener"); else aviso(c, "O link ainda está sendo gerado. Tente de novo.", "alerta"); }, className:BTN}, e(Ph,{n:"eye", s:15}), "Ver como o fornecedor vê"),
       e("button",{type:"button", onClick:function(){ baixarHtml(htmlListagemMq(pf, mes, maq), mqeNomeArq(pf, mes, maq)); aviso(c, "Listagem baixada"); }, className:BTN}, e(Ph,{n:"download-simple", s:15}), "Baixar HTML"),
       e("button",{type:"button", onClick:separados, className:BTN}, e(Ph,{n:"download-simple", s:15}), "Um HTML por maquininha"),
-      e("button",{type:"button", onClick:function(){ setMsg(mqeMensagem(pf, mes, maq)); }, className:BTN}, e(Ph,{n:"chat-circle-text", s:15}), "Gerar mensagem"),
+      e("button",{type:"button", onClick:function(){ setMsg(mqeMensagem(pf, mes, maq, link)); }, className:BTN}, e(Ph,{n:"chat-circle-text", s:15}), "Gerar mensagem"),
       msg!=null && e("button",{type:"button", onClick:function(){ copiar(msg, function(){ aviso(c, "Mensagem copiada"); }); }, className:BTN}, e(Ph,{n:"copy", s:15}), "Copiar mensagem")),
     msg!=null && e("textarea",{value:msg, rows:10, onChange:function(ev){ setMsg(ev.target.value); }, "aria-label":"Mensagem", className:INPUT+" h-auto! w-full py-2"}),
     e("p",{className:HINT}, "A página mostra só as passadas do mês escolhido, separadas por maquininha, com subtotal de cada uma e o total geral. Não dá acesso a nenhuma outra informação do sistema."),
