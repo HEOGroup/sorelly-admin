@@ -97,7 +97,8 @@ function AvisoSaldo(p){
   cd.veio.forEach(function(x){ itens.push(e("span",{key:"v"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"arrow-bend-up-left", s:13}), e("b",null, brl(x.valor)), " veio de "+dm(x.chave))); });
   // pago a mais (novembro/2026 em diante): a dívida da data sobe sozinha com o ajuste "Diferença enviada a mais" das Negociações
   if(cd.ajuste>0.005) itens.push(e("button",{type:"button", key:"aj", title:"Ver o ajuste nas Negociações", onClick:function(){ c.d({type:"ABA", aba:"pfneg"}); }, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50 hover:brightness-125"},
-    e(Ph,{n:"plus-circle", s:13}), "Diferença enviada a mais: ", e("b",null, brl(cd.ajuste)), " · somada à dívida"));
+    e(Ph,{n:"plus-circle", s:13}), "Diferença enviada a mais: ", e("b",null, brl(cd.ajuste)), " · somada à dívida"+(cd.descSaiu.length ? " · descontada em "+cd.descSaiu.map(function(x){ return dm(x.chave); }).join(", ") : "")));
+  cd.descVeio.forEach(function(x){ itens.push(e("span",{key:"dv"+x.chave, className:"inline-flex items-center gap-1 rounded-md bg-[#3B82F6]/15 px-2 py-0.5 ring-1 ring-[#3B82F6]/50"}, e(Ph,{n:"minus-circle", s:13}), "Desconto de ", e("b",null, brl(x.valor)), " · enviado a mais em "+dm(x.chave))); });
   // antes de novembro/2026 (ou com maquininha): fica só o aviso
   if(cd.excPix>0.005) itens.push(e("span",{key:"exc", className:"inline-flex items-center gap-1 rounded-md bg-destructive/15 px-2 py-0.5 ring-1 ring-destructive/50"},
     e(Ph,{n:"warning", s:13}), "Pago a mais: ", e("b",null, brl(cd.excPix))));
@@ -121,7 +122,7 @@ function LinhaData(p){
       e(Bt,{tipo:cd.aberto<=0.005 ? "ok" : "normal", ic:"link", titulo:cd.aberto<=0.005 ? "Enviar acerto ao fornecedor" : "Link do fornecedor", onClick:function(){ p.enviar(cd.chave); }}),
       e(Bt,{ic:aberto ? "caret-up" : "caret-down", titulo:aberto ? "Ocultar pagamentos" : "Ver pagamentos lançados", onClick:function(){ p.alt(cd.chave); }}, String(cd.lancs.length)))));
   var extra = [];
-  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.ajuste>0.005 || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
+  if(cd.passou.length || cd.veio.length || cd.excPix>0.005 || cd.ajuste>0.005 || cd.descVeio.length || cd.saldoDst || cd.saldoSaiu.length || cd.saldoVeio.length) extra.push(e("tr",{key:cd.chave+"sd"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"}, e(AvisoSaldo,{cd:cd, c:c}))));
   if(cd.mq>0.005 && !aberto) extra.push(e("tr",{key:cd.chave+"mq"}, e("td",{colSpan:p.forn ? 8 : 7, className:"px-2 pb-1.5 text-center"},
     e("button",{type:"button", title:"Ver na aba Maquininha Banho", onClick:function(){ ir("pfmaq"); }, className:"inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[11.5px] hover:brightness-125 "+(cd.excesso>0.005 ? "bg-[#3B82F6]/15 ring-1 ring-[#3B82F6]/50" : "bg-[#06B6D4]/10 ring-1 ring-[#06B6D4]/40")},
       "💳 desconto da maquininha ", e("b",null, brl(cd.mq)), e("span",{className:"text-muted-foreground"}, cd.mqRef+(cd.excesso>0.005 ? " · sobra "+brl(cd.excesso)+" — clique para dividir" : ""))))));
@@ -155,7 +156,7 @@ function ModalLancar(p){
         ajusta ? e("div",null, "Diferença enviada a mais: ", e("b",null, brl(excV)), ". A dívida desta data sobe de "+brl(j ? j.total : 0)+" para ", e("b",null, brl((j ? j.total : 0)+excV)), ".")
           : e("div",null, "Passou do total em ", e("b",null, brl(excV)), ". Fica só o aviso na linha."));
   // pagou menos do que falta: manter o saldo em aberto nesta data ou passar a diferença para a 1ª data do mês seguinte
-  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos ? destinoSaldo(c.pf, chave) : null;
+  var difMenos = vNum>0.005 && aberto-vNum>0.005 ? Math.round((aberto-vNum)*100)/100 : 0, dst = difMenos && j && j.limite<hojeIso() ? destinoSaldo(c.pf, chave) : null;   // só depois de vencida
   var escolhaSaldo = !dst ? null
     : e("div",{className:"flex flex-col items-center gap-1.5 rounded-lg bg-black/25 px-3 py-2 text-center text-[13px]"},
         e("div",null, "Falta ", e("b",{style:{color:COR.red}}, brl(difMenos)), " nesta data"),

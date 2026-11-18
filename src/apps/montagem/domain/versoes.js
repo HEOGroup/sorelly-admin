@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.4", data:"2026-11-18", titulo:"Lançamento de pagamentos: diferença enviada a mais descontada na próxima data", itens:[
+  {tipo:"melhoria", area:"Financeiro → Lançamento de pagamentos", txt:"O ajuste \"Diferença enviada a mais\" agora sobe a dívida da data paga a mais e DESCONTA o mesmo valor da próxima data do fornecedor que ainda tem saldo em aberto (ex.: +R$ 100,00 em 20/11 e −R$ 100,00 em 20/12; a soma das dívidas não muda). Avisos na linha: \"descontada em dd/mm\" e \"Desconto de R$ X · enviado a mais em dd/mm\". O botão \"Passar para dd/mm\" (saldo que falta) só aparece depois que a data vence."}
+ ]},
  {v:"0.21.4", data:"2026-11-18", titulo:"Compras: análise financeira entre Solicitada e Liberada", itens:[
   {tipo:"melhoria", area:"Materiais e estoque → Compras", txt:"Na solicitação, o campo CNPJ pagador virou Formas de pagamento disponíveis (várias ao mesmo tempo): Cartão (juros, parcelas, taxa), Boleto (parcelas e prazos 30/60/90 contados da nota, da entrega ou do pedido), Pix, Pix REV e Dinheiro. Sem NF libera só Dinheiro e Pix REV."},
   {tipo:"novo", area:"Materiais e estoque → Compras", txt:"Nova etapa Análise financeira: o financeiro escolhe o CNPJ pagador e a forma entre as que o fornecedor aceita, com parcelas, juros, vencimento ou prazo (ex.: 30 dias após a nota). Pode dividir entre formas; a soma precisa fechar com o total. Salvar análise guarda sem liberar; Liberar para compra confere tudo. O cartão mostra Falta definir CNPJ, Falta definir pagamento ou Pronto para liberar."},

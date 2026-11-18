@@ -370,7 +370,7 @@ function janelaPorChave(pf, chave){
 }
 function sincronizarJanela(pf, j){   // muda o pf: marca/desmarca as parcelas da janela conforme o total lançado, por ordem de vencimento
   var saldo = pagoJanela(pf, j.chave);
-  j.itens.slice().sort(function(a,b){ return a.p.venc.localeCompare(b.p.venc); }).forEach(function(l){
+  j.itens.slice().sort(function(a,b){ return (a.p.valor<0)!==(b.p.valor<0) ? (a.p.valor<0 ? -1 : 1) : a.p.venc.localeCompare(b.p.venc); }).forEach(function(l){
     var cobre = saldo >= l.p.valor-0.005;
     if(cobre) saldo -= l.p.valor;
     if(cobre && l.p.status!=="Pago") l.p.status = "Pago";
@@ -489,8 +489,8 @@ function cartoesLancamento(pf, mes){   // renderCards: grupos por fornecedor, co
         pct: j.total>0 ? pago/j.total*100 : 0, situacao: aberto<=0.005 ? "" : (n<0 ? "late" : (n<=7 ? "soon" : "")), status:statusJanela(j, pago), prazo: aberto<=0.005 ? "" : prazoTxt(j.limite),
         lancs:lancs, aguardando:lancs.filter(function(l){ return !l.conferido; }).length, mq:mq, mqRef: mq>0.005 ? mqRefTxt(pf, j.chave) : "",
         passou:transfSaiu(pf, j.chave), veio:transfVeio(pf, j.chave), excPix: mq>0.005 ? 0 : r2(pagoBruto-pago), excAntigo: j.limite<PASSA_DESDE,
-        saldoSaiu:saldoSaiu(pf, j), saldoVeio:saldoVeio(pf, j), ajuste:(ajusteDaChave(pf, j.chave)||{total:0}).total,
-        saldoDst: pago>0.005 && aberto>0.005 ? destinoSaldo(pf, j.chave) : null};   // pagou parte: a tela oferece passar o que falta (só com aceite)
+        saldoSaiu:saldoSaiu(pf, j), saldoVeio:saldoVeio(pf, j), ajuste:ajusteValor(ajusteDaChave(pf, j.chave)), descSaiu:descontoSaiu(pf, j), descVeio:descontoVeio(pf, j),
+        saldoDst: pago>0.005 && aberto>0.005 && n<0 ? destinoSaldo(pf, j.chave) : null};   // só depois de vencida (Lucas, 18/11/2026)   // pagou parte: a tela oferece passar o que falta (só com aceite)
     });
     g.total = soma(g.js, function(j){ return j.total; });
     g.pago = soma(g.js, function(j){ return Math.min(pagoJanela(pf, j.chave), j.total); });
@@ -552,42 +552,56 @@ function saldoSaiu(pf, j){
   return somaPorChave(out, "para");
 }
 function transfSaiu(pf, chave){ return somaPorChave(pf.lancamentos.filter(function(l){ return l.deChave===chave && l.valor>0; }), "chave"); }
-// pago a mais numa data (de novembro/2026 em diante) AUMENTA A DÍVIDA DA PRÓPRIA DATA (Lucas, 18/11/2026; troca a regra de passar para a próxima parcela).
-// Vira um ajuste automático nas Negociações, "Diferença enviada a mais", com uma parcela Pix na mesma data. O valor acompanha o pago:
-// estornou um Pix, o ajuste diminui ou sai; entrou parcela nova na data, o ajuste diminui.
+// pago a mais numa data (de novembro/2026 em diante) AUMENTA A DÍVIDA DA PRÓPRIA DATA e a mesma diferença SAI DA PRÓXIMA (Lucas, 18/11/2026).
+// Vira um ajuste automático nas Negociações, "Diferença enviada a mais": uma parcela Pix de +X na data e parcela(s) de −X nas datas seguintes
+// do fornecedor que ainda têm saldo em aberto (por ordem de data; o total do ajuste fica zero). Sem data seguinte em aberto, fica só o +X.
+// O ajuste é refeito a cada ação: estornou um Pix ou entrou parcela nova, o ajuste diminui ou sai.
 // Fora: Point (conta corrente) e datas com desconto da maquininha (a sobra se divide na aba Maquininha Banho). Datas antes de novembro/2026: só o aviso.
 var PASSA_DESDE = "2026-11-01";   // o sistema começou a ser usado em novembro/2026 (Lucas, 18/11/2026)
 var AJUSTE_NOME = "Diferença enviada a mais";
 function ajusteDaChave(pf, chave){ return pf.pedidos.find(function(pd){ return pd.ajusteChave===chave; }) || null; }
+function ajusteValor(pd){ return pd ? r2(pd.parcelas.filter(function(p){ return p.valor>0; }).reduce(function(s, p){ return s+p.valor; }, 0)) : 0; }
 function ajustaExcesso(pf, chave){ var l = String(chave).split("|"); return +l[0]!==PT_FORN && l[1]>=PASSA_DESDE && !(mqAplicado(pf, chave)>0.005); }
+// desconto que uma data recebeu de ajustes de datas anteriores: [{chave (de onde veio), limite, valor}]
+function descontoVeio(pf, j){ var out = []; j.itens.forEach(function(l){ if(l.pd.ajusteChave && l.pd.ajusteChave!==j.chave && l.p.valor<0) out.push({chave:l.pd.ajusteChave, valor:-l.p.valor}); }); return somaPorChave(out, "chave"); }
+function descontoSaiu(pf, j){ var aj = ajusteDaChave(pf, j.chave), fid = j.fornId, out = []; if(!aj) return [];
+  janelasDoForn(pf, fid).forEach(function(k){ k.itens.forEach(function(l){ if(l.pd===aj && l.p.valor<0) out.push({chave:k.chave, valor:-l.p.valor}); }); });
+  return somaPorChave(out, "chave"); }
 function ajustarExcessos(pf){
-  var mudou = false, vistos = {}, dbr = function(d){ return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); };
+  var vencDe = function(j){ return j.itens.filter(function(l){ return eSem(l) && !l.pd.ajusteChave; }).reduce(function(m, l){ return l.p.venc>m ? l.p.venc : m; }, "") || j.fim; };
+  var dbr = function(d){ return d.slice(8,10)+"/"+d.slice(5,7)+"/"+d.slice(0,4); };
+  var antes = JSON.stringify(pf.pedidos.filter(function(pd){ return pd.ajusteChave; }));
   // regra anterior (18/11/2026): os pares "Saldo pago a mais → passou para" saem; a sobra volta para a data de origem e vira ajuste
   var n0 = pf.lancamentos.length;
   pf.lancamentos = pf.lancamentos.filter(function(l){ return !(l.auto && (l.paraChave || l.deChave)); });
-  if(pf.lancamentos.length!==n0){ mudou = true; invalidar(pf); }
+  var mudou = pf.lancamentos.length!==n0;
+  // tira os ajustes, refaz a conta do zero e devolve com o mesmo id (o histórico não muda à toa)
+  var velhos = {}; pf.pedidos.forEach(function(pd){ if(pd.ajusteChave) velhos[pd.ajusteChave] = pd; });
+  pf.pedidos = pf.pedidos.filter(function(pd){ return !pd.ajusteChave; }); invalidar(pf);
+  var novos = [];
   pf.fornecedores.forEach(function(f){
     if(f.id===PT_FORN) return;
-    janelasDoForn(pf, f.id).forEach(function(j){
-      vistos[j.chave] = true;
-      var aj = ajusteDaChave(pf, j.chave), v0 = aj ? r2(aj.total) : 0;
-      var exc = ajustaExcesso(pf, j.chave) ? r2(pagoJanela(pf, j.chave)-(j.total-v0)) : 0;
-      if(exc<=0.005){ if(aj){ pf.pedidos = pf.pedidos.filter(function(pd){ return pd!==aj; }); mudou = true; } return; }
-      if(aj && Math.abs(exc-v0)<0.005) return;
-      var desc = "Ajuste automático: os pagamentos da data "+dbr(j.limite)+" passaram do total. A dívida da data subiu "+brl(exc)+".";
-      if(aj){ aj.total = exc; aj.semNF = exc; aj.descricao = desc; aj.parcelas[0].valor = exc; mudou = true; return; }
-      var venc = j.itens.filter(eSem).reduce(function(m, l){ return l.p.venc>m ? l.p.venc : m; }, "") || j.fim;
-      pf.pedidos.push({id:pf.seq.P++, fornId:f.id, numero:AJUSTE_NOME, data:venc, total:exc, nfTipo:"sem", comNF:0, semNF:exc, cnpj:"Sem NF", nfNum:"", descricao:desc,
-        limite:j.limite, pixMin:0, ajusteChave:j.chave, auto:true, parcelas:[{forma:"pix_revendedora", venc:venc, valor:exc, conta:"—", status:"Pendente"}]});
-      mudou = true;
+    var js = janelasDoForn(pf, f.id), desc = {};   // desc[chave] = desconto que a data já recebeu de ajustes anteriores
+    var totalDe = function(j){ return r2(j.total-(desc[j.chave]||0)); }, abertoDe = function(j){ return r2(Math.max(0, totalDe(j)-pagoJanela(pf, j.chave))); };
+    js.forEach(function(j){
+      if(!ajustaExcesso(pf, j.chave)) return;
+      var exc = r2(pagoJanela(pf, j.chave)-totalDe(j)); if(exc<=0.005) return;
+      var parcelas = [{forma:"pix_revendedora", venc:vencDe(j), valor:exc, conta:"—", status:"Pendente"}], resto = exc, para = [];
+      js.forEach(function(k){
+        if(resto<=0.005 || k.limite<=j.limite || mqAplicado(pf, k.chave)>0.005) return;
+        var v = r2(Math.min(resto, abertoDe(k))); if(v<=0.005) return;
+        parcelas.push({forma:"pix_revendedora", venc:vencDe(k), valor:-v, conta:"—", status:"Pendente"});
+        desc[k.chave] = r2((desc[k.chave]||0)+v); resto = r2(resto-v); para.push(brl(v)+" descontado em "+dbr(k.limite));
+      });
+      var pd = velhos[j.chave] || {id:pf.seq.P++};
+      Object.assign(pd, {fornId:f.id, numero:AJUSTE_NOME, data:parcelas[0].venc, total:r2(exc-(exc-resto)), nfTipo:"sem", comNF:0, semNF:r2(exc-(exc-resto)), cnpj:"Sem NF", nfNum:"",
+        descricao:"Ajuste automático: os pagamentos da data "+dbr(j.limite)+" passaram do total em "+brl(exc)+". A dívida da data subiu "+brl(exc)+(para.length ? "; "+para.join("; ") : "; não há data seguinte em aberto para descontar")+".",
+        limite:j.limite, pixMin:0, ajusteChave:j.chave, auto:true, parcelas:parcelas});
+      novos.push(pd);
     });
-    invalidar(pf);
   });
-  // ajuste cuja data não existe mais (mudaram as datas do mês): sai
-  var n1 = pf.pedidos.length;
-  pf.pedidos = pf.pedidos.filter(function(pd){ return !pd.ajusteChave || vistos[pd.ajusteChave]; });
-  if(pf.pedidos.length!==n1){ mudou = true; invalidar(pf); }
-  return mudou;
+  pf.pedidos = pf.pedidos.concat(novos); invalidar(pf);
+  return mudou || JSON.stringify(novos)!==antes;
 }
 // saldo que falta numa data passa para a 1ª data do mês seguinte (Lucas, 17/11/2026): move/divide as parcelas Pix da data,
 // da mais nova para a mais antiga, sem mudar o total do pedido. Point fica fora (conta corrente com tela própria).

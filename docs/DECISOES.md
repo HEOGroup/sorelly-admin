@@ -2746,3 +2746,9 @@ Documento único reescrito: `docs/negocio/REGRA-CANCELAMENTO-E-REMARCACAO.md`. D
 - Depois de liberada: trocar fornecedor, CNPJ, forma ou passar do total pede motivo e volta para a Análise financeira (a decisão anterior fica no histórico). Já comprada: registra **divergência**, nada é desfeito. Compra efetuada com valor maior que o liberado também vira divergência.
 - Pedidos antigos mantêm o CNPJ e mostram "Não informado" nas formas; a etapa deles não muda (os que estavam em "Aguard. CNPJ" ou "Aguard. conta" aparecem na Análise financeira).
 - Regras em `domain/compras-estoque.js`; teste `scripts/testar-aprovacao-compras.mjs` (36 verificações).
+
+## 18/11/2026 · Lançamento de pagamentos: diferença enviada a mais descontada na próxima data; Passar só vencida (Lucas)
+- **Desconto na próxima data:** "ao ajustar o total da parcela, seja ajustado o total da próxima, desconta essa diferença ajustada na outra" (ex.: +100 na parcela atual, −100 na próxima). O ajuste automático "Diferença enviada a mais" (`ajustarExcessos`, domain/pf.js) leva uma parcela +X na data paga a mais e parcela(s) −X nas datas seguintes do mesmo fornecedor que ainda têm saldo em aberto, por ordem de data (sem data em aberto depois: fica só o +X). O total do ajuste fica zero; a soma das dívidas do fornecedor não muda. Desconto entra primeiro na conta da data (`sincronizarJanela`). O ajuste é refeito do zero a cada ação, com o mesmo id.
+- Hoje: Office Graf +R$ 70,90 em 15/11 e −R$ 70,90 em 30/11 (dívida R$ 6.162,30); Lucas Castilho +R$ 15,60 em 10/11 e −R$ 15,60 em 23/11 (dívida R$ 2.484,40).
+- **"Passar para dd/mm" (saldo que falta) só aparece depois que a data vence** (na linha e na janela de lançar).
+- **Confraternização:** fica o Pix de R$ 290,70 em novembro (lançamento 1550, 30/11); sai o lançamento 1553 (R$ 290,70 em 31/12, mesmo comprovante). Pedido do Lucas.
