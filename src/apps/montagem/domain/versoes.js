@@ -3,6 +3,9 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.6", data:"2026-11-18", titulo:"Direcionar: Pagamentos da Família", itens:[
+  {tipo:"correção", area:"Financeiro › Pagamentos › Direcionar", txt:"A aba Família mostrava só 2 dívidas de prestadores, uma de agosto, e os botões Falta, Todos do mês e Família tinham saído do bloco dos fornecedores. Agora a Família tem bloco próprio, Pagamentos da Família (só para quem abre o Financeiro familiar), com as contas da casa não pagas do mês anterior e do mês atual, até o fim deste mês (pró-labore fora), mais as dívidas de prestadores do mesmo período. Parcelas mais velhas e dos meses seguintes ficam no Financeiro familiar."},
+ ]},
  {v:"0.20.105", data:"2026-11-18", titulo:"Conta de representante: só vê o que é dela", itens:[
   {tipo:"novo", area:"Acessos", txt:"Conta de REPRESENTANTE (código do vendedor na conta): o servidor entrega listagens, kits e acertos só dela, abre só os módulos rpo, rpf, inicio e rc, recusa gravação em /api/estado e recusa qualquer outra rota. No navegador o menu fica só com Início e as telas dela. Criar conta: scripts/criar-conta-representante.mjs. Primeira conta: Vanessa (9S)."}]},
  {v:"0.21.6", data:"2026-11-18", titulo:"PIX revendedoras: editar o PIX antes da conferência", itens:[

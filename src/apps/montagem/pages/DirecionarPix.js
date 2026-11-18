@@ -18,7 +18,7 @@ import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
 import { descontoCartao, fornecedoresDoMesPf, geradoEm } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
-import { ACESSO_FF, baixaDividas, diasEntre } from "@/apps/montagem/domain/financeiro-familiar";
+import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
 import { BKC } from "@/apps/montagem/lib/format";
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
@@ -107,15 +107,22 @@ function contextoCnpj(s){
 }
 
 // Dívidas da família com PRAZO e saldo em aberto (Financeiro familiar, aba Prestadores). Só quem abre o Financeiro familiar vê (sócios). O destino é o prestador de mesmo nome em Controle de pagamentos.
+// Aba Família (12/11/2026, chamado do Marcus: "da família tudo errado"): mostrava só 2 dívidas de prestadores, uma delas de agosto. Agora traz o que a família tem a pagar: as CONTAS da casa não pagas do mês atual e do mês anterior (Financeiro familiar, fora pró-labore) mais as dívidas de prestadores com prazo no mesmo período (até o fim do mês atual: as parcelas dos próximos meses ficam no Financeiro familiar). Parcela mais velha fica no Financeiro familiar (muitas são de importação, pagas sem baixa).
 function dividasDaFamilia(ff, cp, hoje){
-  var out = [];
+  var out = [], ate = String(hoje).slice(0, 7)+"-31", desde = String(hoje).slice(0, 7);
+  var a0 = desde.split("-").map(Number), t = a0[0]*12+a0[1]-2; desde = Math.floor(t/12)+"-"+String(t%12+1).padStart(2, "0")+"-01";   // 1º dia do mês anterior
+  var destDe = function(nome, tipos){ return (cp.destinos||[]).filter(function(z){ return z.ativo && tipos.indexOf(z.tipo)>=0 && nmRep(z.nome)===nmRep(nome); })[0]; };
   (ff.dividas||[]).forEach(function(d){
-    if(!(d.valor>0) || !d.prazo) return;
+    if(!(d.valor>0) || !d.prazo || d.prazo<desde || d.prazo>ate) return;
     var pr = (ff.prest||[]).find(function(x){ return x.id===d.prestId; }); if(!pr || !pr.ativo) return;
     var bx = baixaDividas(ff, d.prestId).porId[d.id], falta = bx ? bx.falta : 0; if(!(falta>0.005)) return;
-    var dest = (cp.destinos||[]).filter(function(z){ return z.ativo && (z.tipo==="PRESTADOR" || z.tipo==="FAMILIA") && nmRep(z.nome)===nmRep(pr.nome); })[0];
+    var dest = destDe(pr.nome, ["PRESTADOR", "FAMILIA"]);
     out.push({id:d.id, nome:pr.nome, titulo:d.titulo || d.descricao || d.codigo || "", falta:r2(falta), prazo:d.prazo, dias:diasEntre(hoje, d.prazo), destinoId:dest ? dest.id : ""}); });
-  return out.sort(function(a, b){ return a.prazo.localeCompare(b.prazo); });
+  parcelasDe(ff, {}, hoje).forEach(function(x){
+    if(x.status==="PAGO" || !(x.restante>0.005) || x.venc<desde || x.venc>ate || x.conta.categoria==="PRO_LABORE") return;
+    var pes = (ff.personas||[]).find(function(p){ return p.id===x.conta.personaId; }), dest = pes ? destDe(pes.nome, ["FAMILIA"]) : null;
+    out.push({id:"cf"+x.chave, nome:x.conta.descricao, titulo:pes ? pes.nome : "", falta:r2(x.restante), prazo:x.venc, dias:diasEntre(hoje, x.venc), destinoId:dest ? dest.id : ""}); });
+  return out.sort(function(a, b){ return a.prazo.localeCompare(b.prazo) || b.falta-a.falta; });
 }
 
 function AbaDirecionar(){
@@ -410,6 +417,7 @@ function AbaDirecionar(){
     !c.edita && e("span",{className:"px-2 text-[13px] text-foreground"}, "Só quem direciona Pix confirma. Você pode ver."),
     pedido,
     e("div",{className:"grid grid-cols-1 items-stretch gap-1.5 min-[1280px]:grid-cols-3"}, blocoVendas, blocoNegativas, blocoContas),
+    veFam && e("div",{className:"grid grid-cols-1 items-stretch gap-1.5"}, Painel("Pagamentos da Família", "", "", "#f5c14b", e("div",{className:"flex flex-1 flex-col"}, tabelaFam))),   // bloco da Família (12/11/2026): os botões Falta/Todos do mês/Família saíram do bloco dos fornecedores, então a Família ganhou bloco próprio, só para quem abre o Financeiro familiar
     // ── feitos
     feitos.length>0 && (function(){
       // DIRECIONADOS no padrão (Marcus, 12/11/2026): só o título, uma linha por destino, revendedora (4 primeiros nomes), conta escrita pela regra única e Reabrir pequeno, só até o pagamento ser conferido

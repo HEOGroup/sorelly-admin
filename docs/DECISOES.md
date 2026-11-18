@@ -95,6 +95,9 @@ Regra: toda decisão nova entra aqui no mesmo dia. O que virou regra de tela tam
 ## 13/11/2026 (Inadimplência fora do Financeiro)
 - **Marcus: "essas telas de inadimplência não têm nada a ver, pode excluir".** Saíram do menu do Financeiro `inadfin` e `inadimp`. A cobrança mora no setor **Inadimplência** (Amanda; 7 telas, `MENU_INAD`). Arquivos e rotas antigas continuam no código, só saíram do menu. Pendente: decidir se Cobrança de funcionários e Inadimplência dos representantes vão para o setor.
 
+## 18/11/2026 (Direcionar: Pagamentos da Família)
+- Pedido do Marcus: arrumar a aba Família do Direcionar (mostrava só 2 dívidas de prestador, uma de agosto). Os botões Falta, Todos do mês e Família saíram do bloco dos fornecedores na reorganização de 12/11, então a Família virou um bloco próprio, Pagamentos da Família, só para quem abre o Financeiro familiar. Mostra as contas da casa não pagas do mês anterior e do mês atual (até o fim deste mês, sem pró-labore) e as dívidas de prestadores do mesmo período. Parcelas mais antigas (muitas importadas, pagas sem baixa) e dos meses seguintes ficam no Financeiro familiar.
+
 ## 12/11/2026 (Chamados: blocos 1 a 4, acessos e Direcionar ao vivo)
 - **Acesso da Hellen às Compras (chamado):** ela só via os pedidos dela porque não tinha papel em Compras. Agora tem o papel LOGISTICA (vê o quadro inteiro, registra recebimento e entrega) e as capacidades CONTAGEM e COMPRA no Estoque de material (módulo `ce`, `acessos.compras[55]` e `acessos.estoque[55]`). NÃO aprova nem efetua compra: isso fica com a autorização `compra_aprova`. Gravado direto no banco, com cópia `bkp_20261112_ce_hellen`.
 - **Premiação e Configurações da Produção só para consulta (Maria Claudia):** nova autorização `producao_ver` (padrão pessoa 38). Vê meta, faixas e bônus; não edita, não adiciona, não apaga (`usePr` devolve `leitura` e o `exec` recusa). O gate `admin` continua sendo da diretoria.
