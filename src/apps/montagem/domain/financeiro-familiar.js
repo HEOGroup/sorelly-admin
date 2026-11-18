@@ -108,8 +108,8 @@ function itensDividasPrestadores(ff, hj){
   var pers = {}; (ff.personas || []).forEach(function(p){ pers[p.id] = p.nome; });
   hj = hj || hojeIso(); var out = [];
   ff.prest.forEach(function(pr){
-    if(!pr.ativo) return;
     var bx = baixaDividas(ff, pr.id);
+    if(!pr.ativo && !(bx.falta>0.005)) return;   // prestador desativado com dívida em aberto continua aparecendo
     (bx.lista || []).forEach(function(d){
       var b = bx.porId[d.id]; if(!b) return;
       var falta = Math.round((b.falta || 0)*100)/100, quitada = falta<=0.005, venc = prazoDaDivida(d, hj), ult = quitada ? (b.fechouEm || d.data) : "";
@@ -258,6 +258,9 @@ function ffReduz(s, a){
     // Pix confirmado no Direcionar para um prestador da família (18/11/2026): vira repasse sozinho (abate a dívida). Chave origemDirecionar = id do Pix#n: não duplica; reabrir o Pix retira.
     case "repasse_dir": { if(!a.origemDirecionar) return recusa("Pix sem identificação."); if(ff.repasses.some(function(x){ return x.origemDirecionar===a.origemDirecionar; })) return recusa("");
       var pxd = ff.prest.find(function(x){ return x.id===a.prestId; }), vd = r2(a.valor); if(!pxd || !(vd>0)) return recusa("");
+      // o mesmo Pix já lançado à mão (mesmo prestador, valor, dia e quem pagou) não conta duas vezes (revisão de 18/11/2026)
+      var nmO = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }, dtD = a.data||hojeIso();
+      if(ff.repasses.some(function(x){ return x.prestId===pxd.id && !x.origemDirecionar && Math.abs(x.valor-vd)<0.005 && x.data===dtD && nmO(x.origem)===nmO(a.origem) && nmO(a.origem)!=="" && nmO(a.origem)!=="pix revendedora"; })) return recusa("");
       ff.repasses.push({id:uid("rp"), prestId:pxd.id, valor:vd, data:a.data||hojeIso(), origem:String(a.origem||"").trim()||"PIX revendedora", forma:"PIX", conta:a.contaTxt||"", chavePixDestino:pxd.chavePix||"", origemPixPersonaId:pxd.responsavelId||"", socioId:"", divId:"", origemDirecionar:a.origemDirecionar});
       return ok("Pix do Direcionar lançado como repasse", "Prestadores", "Repasse do Direcionar", pxd.nome, money(vd)); }
     case "repasse_dir_desfaz": { var antesR = ff.repasses.length; ff.repasses = ff.repasses.filter(function(x){ return !(x.origemDirecionar && x.origemDirecionar.indexOf(a.id+"#")===0); }); if(ff.repasses.length===antesR) return recusa(""); return ok("Repasse do Direcionar retirado"); }

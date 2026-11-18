@@ -49,9 +49,11 @@ function cpReduz(s, a){
   switch(a.op){
     // Prestadores da família com dívida em aberto viram destino do Direcionar (18/11/2026): o Lucas escolhe o prestador do sócio e o Pix abate a dívida. Lê s.ff; não repete nome que já existe.
     case "destinos_prest": { var nmP = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim(); }, nNovos = 0;
-      ((s.ff && s.ff.prest) || []).forEach(function(pr){ if(!pr.ativo || cp.destinos.some(function(d){ return nmP(d.nome)===nmP(pr.nome); })) return;
+      ((s.ff && s.ff.prest) || []).forEach(function(pr){ if(!pr.ativo) return;
         if(!((s.ff.dividas||[]).some(function(y){ return y.prestId===pr.id && y.valor>0; }))) return;
-        cp.destinos.push({id:uid("d"), nome:pr.nome, tipo:"PRESTADOR", cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true, prestFamId:pr.id, personaId:pr.responsavelId||""}); nNovos++; });
+        var ja = cp.destinos.find(function(d){ return nmP(d.nome)===nmP(pr.nome); });
+        if(ja){ if(!ja.prestFamId && ja.tipo==="PRESTADOR"){ ja.prestFamId = pr.id; if(!ja.personaId) ja.personaId = pr.responsavelId||""; nNovos++; } return; }   // destino de mesmo nome já existia sem a ligação: só liga
+        cp.destinos.push({id:"dpf-"+pr.id, nome:pr.nome, tipo:"PRESTADOR", cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true, prestFamId:pr.id, personaId:pr.responsavelId||""}); nNovos++; });
       return nNovos ? ok(nNovos+" prestador(es) da família como destino") : recusa(""); }
     case "destino_add": { var nm = String(a.nome||"").trim(); if(!nm || !TIPOS_DESTINO[a.tipo]) return recusa("Informe o nome e o tipo."); cp.destinos.push({id:uid("d"), nome:nm, tipo:a.tipo, cnpjId:a.cnpjId||"", banco:a.banco||"", chavePix:a.chavePix||"", obs:a.obs||"", ativo:true}); return ok("Destino criado"); }
     case "func_set": { var nmf = String(a.nome||"").trim(); if(!nmf) return recusa("Informe o nome."); cp.func = cp.func||{}; cp.func[nmf] = Object.assign({chave:"", vinculo:""}, cp.func[nmf], a.patch||{}); return ok(a.novo ? "Prestador cadastrado" : undefined); }

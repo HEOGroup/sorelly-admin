@@ -51,4 +51,21 @@ t("reabrir o Pix devolve o saldo", it.find(x => x.id==="ffd|d1").status==="apaga
 const dir = await jiti.import("@/apps/montagem/domain/direcionar-pix");
 const sug = dir.sugerir({id:"x", origem:"interno", valor:100, pagos:[]}, {cp:s.cp, regras:dir.REGRAS0, cnpjs:[], regrasPx:[]});
 t("sugestão não oferece prestador da família", !sug.opcoes.some(o => /Prestador (Alfa|Beta)/.test(o.nome)));
+// 7) revisão de 18/11/2026: só Pix abate; destino de mesmo nome só é ligado; Pix já lançado à mão não conta duas vezes; destino com id fixo
+{
+  const hojeLocal = (() => { const d = new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); })();
+  let r = Object.assign({}, s, {ff: JSON.parse(JSON.stringify(s.ff))});
+  const dB = r.cp.destinos.find(d => d.nome==="Prestador Beta");
+  t("destino com id fixo por prestador", dA.id==="dpf-pr1" && dB && dB.id==="dpf-pr2", dA.id+" "+(dB && dB.id));
+  r = Object.assign({}, r, {dp: Object.assign({}, r.dp, {pix:[{id:"PL1", origem:"interno", quem:"TESTE LINK", valor:80, pagos:[], divisoes:[{destinoId:dA.id, valor:80, via:"link"}], status:"fila", forma:"link"}]})});
+  const n0 = r.ff.repasses.length; r = reducer(r, {type:"DP", op:"confirma", id:"PL1", por:"Teste"});
+  t("Pix em link/maquininha não abate a dívida", r.ff.repasses.length===n0);
+  r = Object.assign({}, r, {ff: Object.assign({}, r.ff, {repasses:r.ff.repasses.concat([{id:"rpMANUAL", prestId:"pr1", valor:90, data:hojeLocal, origem:"TESTE MANUAL", forma:"PIX", conta:"", chavePixDestino:"", origemPixPersonaId:"p1"}])}), dp: Object.assign({}, r.dp, {pix:[{id:"PM1", origem:"interno", quem:"TESTE MANUAL", valor:90, pagos:[], divisoes:[{destinoId:dA.id, valor:90}], status:"fila", forma:"pix"}]})});
+  const n1 = r.ff.repasses.length; r = reducer(r, {type:"DP", op:"confirma", id:"PM1", por:"Teste"});
+  t("Pix já lançado à mão não conta duas vezes", r.ff.repasses.length===n1, r.ff.repasses.length+" x "+n1);
+  r = Object.assign({}, r, {cp: Object.assign({}, r.cp, {destinos:r.cp.destinos.map(d => d.id==="dpf-pr2" ? {id:"dANTIGO", nome:"Prestador Beta", tipo:"PRESTADOR", cnpjId:"", banco:"", chavePix:"", obs:"", ativo:true} : d)})});
+  r = reducer(r, {type:"CP", op:"destinos_prest"});
+  const dx = r.cp.destinos.find(d => d.nome==="Prestador Beta");
+  t("destino de mesmo nome sem ligação só é ligado (não duplica)", dx && dx.prestFamId==="pr2" && r.cp.destinos.filter(d => d.nome==="Prestador Beta").length===1, JSON.stringify(dx));
+}
 console.log(ok+" ok, "+falha+" falha"); process.exit(falha ? 1 : 0);

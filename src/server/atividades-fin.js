@@ -14,12 +14,13 @@ export const podeVerAtividadesFin = (eu) => !!eu && eu.pessoaId != null && LEITO
 const TTL = 10 * 60 * 1000, G = globalThis;
 const r2 = (n) => Math.round((Number(n) || 0) * 100) / 100;
 const TIPOS = { REC: "Baixa de recebimento", PAG: "Baixa de pagamento", ESS: "Estorno de pagamento", ESE: "Estorno de recebimento", SAN: "Transferência (saída)", SUP: "Transferência (entrada)", DEP: "Depósito", SAQ: "Saque", CHD: "Cheque devolvido", CRN: "Cheque renegociado" };
-const isoLocal = (d) => d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
-const diaMenos = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return isoLocal(d); };
+// dia de São Paulo (a Vercel roda em UTC: às 21h daqui o servidor já estava no dia seguinte)
+const isoSp = (d) => new Intl.DateTimeFormat("en-CA", { timeZone: "America/Sao_Paulo", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
+const diaMenos = (n) => isoSp(new Date(Date.now() - n * 86400000));
 
 async function montar(dias) {
   const de = diaMenos(dias - 1), de60 = diaMenos(60);
-  const [movs, usuarios, contas, titulos, extrato, semVenc, anoErr, pagoSaldo] = await Promise.all([
+  const [movs, usuarios, contas, titulos, extrato, semVenc, anoErrBaixo, pagoSaldo, anoErrAlto] = await Promise.all([
     dm.todasAsPaginas("dmabf", { filtro: { abf_data: { gte: de + "T00:00:00" } }, campos: ["abf_usumov", "abf_tipodoc", "abf_valorreais", "abf_data"] }),
     dm.todasAsPaginas("dmzzx", { campos: ["zzx_codigo", "zzx_nome"] }),
     dm.todasAsPaginas("dmaap", { campos: ["aap_codigo", "aap_conta", "aap_nome"] }),
@@ -28,7 +29,9 @@ async function montar(dias) {
     dm.todasAsPaginas("dmabe", { filtro: { abe_situacao: { in: ["A", "P"] }, abe_vencimento: { nulo: true } }, campos: ["abe_numero"] }),
     dm.todasAsPaginas("dmabe", { filtro: { abe_situacao: { in: ["A", "P"] }, abe_vencimento: { lt: "2020-01-01" } }, campos: ["abe_numero"] }),
     dm.todasAsPaginas("dmabe", { filtro: { abe_situacao: "B", abe_saldo: { gt: 0 } }, campos: ["abe_numero"] }),
+    dm.todasAsPaginas("dmabe", { filtro: { abe_situacao: { in: ["A", "P"] }, abe_vencimento: { gt: "2100-12-31" } }, campos: ["abe_numero"] }),
   ]);
+  const anoErr = [...anoErrBaixo, ...anoErrAlto];   // mesma regra da tela: antes de 2020 ou depois de 2100
   const nomeUsu = new Map(usuarios.map((u) => [u.zzx_codigo, String(u.zzx_nome || "").trim()]));
   const nomeConta = new Map(contas.map((c) => [c.aap_codigo + "|" + String(c.aap_conta || "").trim(), String(c.aap_nome || "").trim()]));
 

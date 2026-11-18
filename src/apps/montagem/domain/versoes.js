@@ -3,6 +3,13 @@
 // Regra: quem mexer no sistema (pessoa ou Claude) acrescenta uma entrada NO TOPO ao terminar. Aparece em Tecnologia → Versões.
 // area = módulo/tela principal; tipo = "novo" | "melhoria" | "correção".
 var VERSOES = [
+ {v:"0.21.24", data:"2026-11-18", titulo:"Financeiro: correções da revisão (Pix, comprovante, família e Atividades)", itens:[
+  {tipo:"correção", area:"Financeiro → Direcionar", txt:"O bloco Pagamentos da Família passa a mostrar também Rebel Mode, 68 Gang e Show Banca (sem prazo gravado vale o fim do mês, igual ao Contas a pagar)."},
+  {tipo:"correção", area:"Financeiro → Pix do Direcionar", txt:"Comprovante anexado por outra pessoa (funcionária ou representante) agora libera o pagamento do fornecedor também quando chega pelo servidor. Pix em link ou maquininha não abate mais a dívida de prestador. Pix já lançado à mão no Financeiro familiar não conta duas vezes. Prestador da família cujo destino já existia com o mesmo nome só é ligado, sem duplicar. A data do Pix confirmado à noite não pula para o dia seguinte."},
+  {tipo:"correção", area:"Financeiro → Contas a pagar", txt:"Dívida de prestador da família não é mais confundida com título da DevMaster e continua aparecendo se o prestador for desativado com saldo em aberto."},
+  {tipo:"correção", area:"Financeiro → Atividades", txt:"A tela Hoje não fica vazia das 21h à meia-noite (usa a data de São Paulo); datas com ano acima de 2100 também contam como data errada; as atividades do Financeiro familiar mostram o nome de quem fez."},
+  {tipo:"correção", area:"Tecnologia → Versões", txt:"A entrada 0.21.20 estava sem o fechamento e quebrava a leitura da lista de versões."}
+ ]},
  {v:"0.21.23", data:"2026-11-18", titulo:"Acesso Estoque de materiais e Kits com quantidades", itens:[
   {tipo:"novo", area:"RH › Acessos", txt:"Novo grupo de acesso \"Estoque de materiais\": abre só as duas telas de Estoque (Materiais e estoque e Material gráfico). Primeira pessoa: Geovana."},
   {tipo:"melhoria", area:"Material gráfico › Kits", txt:"Kits em linhas com a foto inteira, o que vem dentro (item e quantidade) e kits prontos (32 e 13, informados pela Amanda em 18/11/2026)."}]},
@@ -16,6 +23,7 @@ var VERSOES = [
  ]},
  {v:"0.21.20", data:"2026-11-18", titulo:"Financeiro: aba Atividades (só o Marcus)", itens:[
   {tipo:"novo", area:"Financeiro → Atividades", txt:"Tela nova, que só o Marcus abre. Mostra a rotina do Financeiro (cada atividade, a última vez, quem fez e se está em dia), tudo o que cada pessoa fez por dia e o que há para corrigir. Junta a DevMaster (baixas, estornos, transferências, títulos lançados e extratos importados) e o Sorelly Admin (Pix direcionados, baixas no Contas a pagar, saldos das contas e Financeiro familiar). Escolha Hoje, 7 dias ou 30 dias."}
+ ]},
  {v:"0.21.19", data:"2026-11-18", titulo:"Correção: foto das peças na DevMaster volta a funcionar no sistema online", itens:[
   {tipo:"correção", area:"Encomendas e reposições → peças", txt:"A leitura da foto de uma peça na DevMaster tinha ficado de fora da publicação anterior. Sem ela, a ficha do pedido e o link da revendedora não mostravam a foto das peças no sistema online. Corrigido."}
  ]},

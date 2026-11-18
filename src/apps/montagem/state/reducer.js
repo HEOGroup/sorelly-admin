@@ -113,6 +113,8 @@ function sincCompFornecedor(s){
     if(r.patch && r.patch.pf) sx = Object.assign({}, sx, {pf:r.patch.pf}); });
   return sx;
 }
+// data LOCAL (dia no relógio de quem confirmou): toISOString() usa UTC e jogava o Pix das 21h para o dia seguinte (revisão de 18/11/2026)
+function dataLocalDe(ts){ var d = new Date(ts || Date.now()); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2, "0")+"-"+String(d.getDate()).padStart(2, "0"); }
 function reducer(s, a){
   var k, agora = Date.now();
   switch(a.type){
@@ -340,7 +342,7 @@ function reducer(s, a){
         var poe = function(lista, it, id, frente){ var ix = lista.findIndex(function(x){ return x.id===id; }); if(it===null){ if(ix>=0) lista.splice(ix, 1); } else if(ix>=0) lista[ix] = it; else if(frente) lista.unshift(it); else lista.push(it); };
         Object.keys(a.conteudo||{}).forEach(function(k){ var v = a.conteudo[k];
           if(k.indexOf("lf_")===0) poe(lfP, v, k.slice(3), true); else if(k.indexOf("dp_")===0) poe(pixP, v, k.slice(3), false); else if(k.indexOf("kp_")===0) poe(kitsP, v, k.slice(3), false); });   // kp_ = pedido de kit novo (11/11/2026)
-        dpP.pix = pixP; dpP.kits = kitsP; return Object.assign({}, s, {lancFin:lfP, dp:dpP}); }
+        dpP.pix = pixP; dpP.kits = kitsP; return sincCompFornecedor(Object.assign({}, s, {lancFin:lfP, dp:dpP})); }   // o comprovante anexado por OUTRA pessoa chega aqui: libera o pagamento do fornecedor (revisão de 18/11/2026)
       if(a.chave==="ri"){ var pRi = {}; if(a.conteudo && a.conteudo.revInternas) pRi.revInternas = a.conteudo.revInternas; if(a.conteudo && a.conteudo.comissaoFunc) pRi.comissaoFunc = a.conteudo.comissaoFunc; return Object.keys(pRi).length ? Object.assign({}, s, pRi) : s; }   // revendedoras do atendimento interno vindas do servidor
       if(a.chave==="fatdia" && a.conteudo && a.conteudo.diario){
         var fdm = Object.assign({}, s.faturamentoDiario);
@@ -413,13 +415,13 @@ function reducer(s, a){
             var fo = fornDoDestino(sDp.pf, dest.nome); if(!fo) return;
             var lfFo = null; if(pFo.pid && pFo.kitId) lfFo = {repId:idPedidoRep(pFo.kitId), pid:pFo.pid};   // representante: o comprovante vem da calculadora de acerto (lancFin do acerto, linha do pagamento)
             if(pFo.internoId && d.parte){ var nP = parseInt(String(d.parte).split("#")[1]), liP = (pFo.linhas||[])[nP], kP = (pFo.divisoes||[]).filter(function(z){ return z.parte===d.parte; }).indexOf(d); if(liP!=null && kP>=0) lfFo = {internoId:pFo.internoId, li:liP, k:kP}; }   // onde o comprovante do atendimento interno vai aparecer
-            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:new Date(pFo.confirmadoEm||Date.now()).toISOString().slice(0, 10), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
+            itFo.push({origemPix:pFo.id+"#"+n, lf:lfFo, fornId:fo.id, valor:d.valor, data:dataLocalDe(pFo.confirmadoEm), revendedora:pFo.quem||pFo.repOrigem||"", conta:d.conta||"", por:pFo.confirmadoPor||""}); });
           if(itFo.length){ var rPx2 = pfReduz(sDp, {op:"pix_dir", itens:itFo}); if(rPx2.patch && rPx2.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx2.patch.pf}); } } }
       if(a.op==="reabre" && sDp.pf){ var rPx3 = pfReduz(sDp, {op:"pix_dir_desfaz", id:a.id}); if(rPx3.patch && rPx3.patch.pf) sDp = Object.assign({}, sDp, {pf:rPx3.patch.pf}); }
       // 18/11/2026 (Marcus): Pix confirmado para um PRESTADOR DA FAMÍLIA vira repasse no Financeiro familiar sozinho e abate a dívida dele (conta corrente). Reabrir retira.
       if(a.op==="confirma" && rDp.patch.dp && sDp.ff){ var pFa = rDp.patch.dp.pix.find(function(x){ return x.id===a.id; });
-        if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId) return;
-          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:new Date(pFa.confirmadoEm||Date.now()).toISOString().slice(0, 10), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
+        if(pFa && pFa.status==="direcionado"){ (pFa.divisoes||[]).forEach(function(d, n){ var dst = ((s.cp && s.cp.destinos) || []).find(function(z){ return z.id===d.destinoId; }); if(!dst || !dst.prestFamId || (d.via && d.via!=="pix")) return;   // só Pix abate a dívida: link e maquininha não
+          var rF = ffReduz(sDp, {op:"repasse_dir", origemDirecionar:pFa.id+"#"+n, prestId:dst.prestFamId, valor:d.valor, data:dataLocalDe(pFa.confirmadoEm), origem:pFa.quem||pFa.repOrigem||"PIX revendedora", contaTxt:dst.nome}); if(rF.patch && rF.patch.ff) sDp = Object.assign({}, sDp, {ff:rF.patch.ff}); }); } }
       if(a.op==="reabre" && sDp.ff){ var rF2 = ffReduz(sDp, {op:"repasse_dir_desfaz", id:a.id}); if(rF2.patch && rF2.patch.ff) sDp = Object.assign({}, sDp, {ff:rF2.patch.ff}); }
       if(a.op==="confirma") sDp = sincCompFornecedor(sDp);   // o comprovante já pode estar anexado (representante ou funcionária)
       return sDp; }   // Direcionar Pix (Financeiro → Contas → Pagamentos)

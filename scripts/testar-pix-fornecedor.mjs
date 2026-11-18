@@ -68,4 +68,13 @@ if(dest){
   const lb = b.pf.lancamentos.find(l => l.origemPix==="RB#0");
   t("representante: anexou na calculadora, libera o pagamento", lb && !lb.aguardaComp && lb.arqNome==="d.pdf", JSON.stringify(lb));
 }
+// revisão de 18/11/2026: o comprovante anexado por OUTRA pessoa chega pelo servidor (módulo pag) e libera o pagamento do fornecedor
+if(dest){
+  let c = Object.assign({}, s, {lancFin:[{id:"LFS", internoId:"IS1", linhas:[{tipo:"pagamento", forma:"pix", valor:40, partes:[{descricao:"x", valor:40, comprovante:null, ok:false}]}]}], dp: Object.assign({}, s.dp, {pix:[{id:"PS1", origem:"interno", internoId:"IS1", quem:"TESTE SYNC", valor:40, partes:[{forma:"pix", valor:40}], linhas:[0], pagos:[], divisoes:[{destinoId:dest.id, valor:40, parte:"pix#0"}], status:"fila", forma:"pix"}], regras:[]})});
+  c = reducer(c, {type:"DP", op:"confirma", id:"PS1", por:"Teste"});
+  t("sync: nasce aguardando", c.pf.lancamentos.find(l => l.origemPix==="PS1#0").aguardaComp===true);
+  c = reducer(c, {type:"SYNC_MODULO", chave:"pag", conteudo:{lf_LFS:{id:"LFS", internoId:"IS1", linhas:[{tipo:"pagamento", forma:"pix", valor:40, partes:[{descricao:"x", valor:40, comprovante:{nome:"outra-pessoa.jpg", url:"data:image/jpeg;base64,AAAA"}, ok:false}]}]}}});
+  const ls = c.pf.lancamentos.find(l => l.origemPix==="PS1#0");
+  t("sync: comprovante anexado por outra pessoa chega pelo servidor e libera", ls && !ls.aguardaComp && ls.arqNome==="outra-pessoa.jpg", JSON.stringify(ls));
+}
 console.log(ok+" ok, "+falha+" falha"); process.exit(falha ? 1 : 0);

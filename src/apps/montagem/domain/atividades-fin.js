@@ -30,7 +30,7 @@ function linhasDoAdmin(s, de){
     g.n++; g.valor = r2(g.valor+(Number(valor) || 0)); if(hora && (!g.de || hora<g.de)) g.de = hora; if(hora && hora>g.ate) g.ate = hora; };
   ((s.dp && s.dp.pix) || []).forEach(function(x){ if(x.status!=="direcionado" || !x.confirmadoEm || x.demo) return; poe(isoDe(new Date(x.confirmadoEm)), String(x.confirmadoPor || "—"), "Pix direcionado", x.valor, horaDe(x.confirmadoEm)); });
   ((s.cpe && s.cpe.hist) || []).forEach(function(h){ if(!h.ts) return; poe(isoDe(new Date(h.ts)), nomeDe(h.por) || "—", "Contas a pagar: "+String(h.acao || "ação").toLowerCase(), h.valor, horaDe(h.ts)); });
-  ((s.ff && s.ff.hist) || []).forEach(function(h){ if(!h.em) return; poe(isoDe(new Date(h.em)), nomeDe(h.por) || "—", "Financeiro familiar: "+String(h.area || "ação").toLowerCase(), 0, horaDe(h.em)); });
+  ((s.ff && s.ff.hist) || []).forEach(function(h){ if(!h.em) return; poe(isoDe(new Date(h.em)), (typeof h.por==="string" && h.por && isNaN(Number(h.por)) ? h.por : nomeDe(h.por)) || "—", "Financeiro familiar: "+String(h.area || "ação").toLowerCase(), 0, horaDe(h.em)); });
   return Object.keys(grupos).map(function(k){ return grupos[k]; });
 }
 // dias em que os saldos das contas foram lançados (Contas bancárias): dia com pelo menos um saldo preenchido

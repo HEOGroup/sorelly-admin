@@ -18,7 +18,7 @@ import { PedidosKit } from "@/apps/montagem/pages/dp/PedidosKit";
 import { descontoCartao, fornecedoresDoMesPf, geradoEm, prestadoresAbertosPf } from "@/apps/montagem/domain/pf-mes";
 import { vinculoDeRep } from "@/apps/montagem/domain/link-pagamento";
 import { nomeDe, podeConferirPag, podeFinanceiro } from "@/apps/montagem/domain/equipe";
-import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe } from "@/apps/montagem/domain/financeiro-familiar";
+import { ACESSO_FF, baixaDividas, diasEntre, parcelasDe, prazoDaDivida } from "@/apps/montagem/domain/financeiro-familiar";
 import { dataReferencia, posicaoEm } from "@/apps/montagem/domain/saldos-contas";
 import { BKC } from "@/apps/montagem/lib/format";
 import { SeletorConta } from "@/apps/montagem/components/seletor-conta";
@@ -113,11 +113,12 @@ function dividasDaFamilia(ff, cp, hoje){
   var a0 = desde.split("-").map(Number), t = a0[0]*12+a0[1]-2; desde = Math.floor(t/12)+"-"+String(t%12+1).padStart(2, "0")+"-01";   // 1º dia do mês anterior
   var destDe = function(nome, tipos){ return (cp.destinos||[]).filter(function(z){ return z.ativo && tipos.indexOf(z.tipo)>=0 && nmRep(z.nome)===nmRep(nome); })[0]; };
   (ff.dividas||[]).forEach(function(d){
-    if(!(d.valor>0) || !d.prazo || d.prazo<desde || d.prazo>ate) return;
+    var prz = prazoDaDivida(d, hoje);   // sem prazo gravado vale o fim do mês, igual ao Contas a pagar
+    if(!(d.valor>0) || prz<desde || prz>ate) return;
     var pr = (ff.prest||[]).find(function(x){ return x.id===d.prestId; }); if(!pr || !pr.ativo) return;
     var bx = baixaDividas(ff, d.prestId).porId[d.id], falta = bx ? bx.falta : 0; if(!(falta>0.005)) return;
     var dest = destDe(pr.nome, ["PRESTADOR", "FAMILIA"]);
-    out.push({id:d.id, nome:pr.nome, titulo:d.titulo || d.descricao || d.codigo || "", falta:r2(falta), prazo:d.prazo, dias:diasEntre(hoje, d.prazo), destinoId:dest ? dest.id : ""}); });
+    out.push({id:d.id, nome:pr.nome, titulo:d.titulo || d.descricao || d.codigo || "", falta:r2(falta), prazo:prz, dias:diasEntre(hoje, prz), destinoId:dest ? dest.id : ""}); });
   parcelasDe(ff, {}, hoje).forEach(function(x){
     if(x.status==="PAGO" || !(x.restante>0.005) || x.venc<desde || x.venc>ate || x.conta.categoria==="PRO_LABORE") return;
     var pes = (ff.personas||[]).find(function(p){ return p.id===x.conta.personaId; }), dest = pes ? destDe(pes.nome, ["FAMILIA"]) : null;
@@ -135,7 +136,7 @@ function AbaDirecionar(){
   var semHO = c.edita && !cp.destinos.some(function(d){ return d.cnpjId==="HO"; });
   useEffect(function(){ if(semHO) c.d({type:"CP", op:"destino_add", nome:"CNPJ H&O · H&O Apps", tipo:"CNPJ", cnpjId:"HO"}); }, [semHO]);   // eslint-disable-line react-hooks/exhaustive-deps
   // prestadores da família com dívida em aberto viram destino (18/11/2026)
-  var semPrestFam = c.edita && s.ff && (s.ff.prest||[]).some(function(pr){ return pr.ativo && !cp.destinos.some(function(d){ return nmRep(d.nome)===nmRep(pr.nome); }) && (s.ff.dividas||[]).some(function(y){ return y.prestId===pr.id && y.valor>0; }); });
+  var semPrestFam = c.edita && s.ff && (s.ff.prest||[]).some(function(pr){ if(!pr.ativo || !(s.ff.dividas||[]).some(function(y){ return y.prestId===pr.id && y.valor>0; })) return false; var ja = cp.destinos.find(function(d){ return nmRep(d.nome)===nmRep(pr.nome); }); return !ja || (ja.tipo==="PRESTADOR" && !ja.prestFamId); });
   useEffect(function(){ if(semPrestFam) c.d({type:"CP", op:"destinos_prest"}); }, [semPrestFam]);   // eslint-disable-line react-hooks/exhaustive-deps
   var limAlto = dp.limiteAlto || LIMITE_ALTO_PADRAO;
   // valor alto passa na frente da fila; depois, o mais antigo (24/10/2026)

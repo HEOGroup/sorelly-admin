@@ -39,7 +39,7 @@ function itensFamiliaAdmin(s){
 function juntarDuplicadas(lista){
   var chave = function(i){ return i.status+"|"+r2(i.valor).toFixed(2)+"|"+String(i.venc || "").slice(0, 7); };
   var porAdmin = {}, porDm = {};
-  lista.forEach(function(i){ if(i.ff){ (porAdmin[chave(i)] = porAdmin[chave(i)] || []).push(i); } else if(ehFam(i) && !i.manual && !i.bx && i.venc){ (porDm[chave(i)] = porDm[chave(i)] || []).push(i); } });
+  lista.forEach(function(i){ if(i.ffAba) return; if(i.ff){ (porAdmin[chave(i)] = porAdmin[chave(i)] || []).push(i); } else if(ehFam(i) && !i.manual && !i.bx && i.venc){ (porDm[chave(i)] = porDm[chave(i)] || []).push(i); } });
   var some = {}, par = {};
   Object.keys(porDm).forEach(function(k){ var a = porAdmin[k], d = porDm[k]; if(a && a.length===1 && d.length===1){ some[d[0].id] = true; par[a[0].id] = d[0]; } });
   // 2ª rodada (Marcus, 16/11/2026): onde sobrou mais de uma candidata, junta só se o DIA do vencimento é o mesmo, o nome tem palavra em comum e SÓ UMA candidata cumpre isso (nome igual desempata)
@@ -60,7 +60,7 @@ function marcarPagasDm(lista){
   var pagasDm = lista.filter(function(i){ return !i.ff && !i.manual && !i.bx && i.status==="pago" && i.baixa; }), usadas = {}, par = {}, porValor = {};
   pagasDm.forEach(function(d){ var k = r2(d.valor).toFixed(2); (porValor[k] = porValor[k] || []).push(d); });
   lista.forEach(function(a){
-    if(!a.ff || a.status!=="apagar" || a.tambemDm || !a.venc) return;
+    if(!a.ff || a.ffAba || a.status!=="apagar" || a.tambemDm || !a.venc) return;   // dívida de prestador (ffd|) não é conta da casa: não casa com título da DevMaster
     var w = pals(a.nome);
     var c = (porValor[r2(a.valor).toFixed(2)] || []).filter(function(d){ return !usadas[d.id] && Math.abs(d.valor-a.valor)<0.005 && dias(d.baixa, a.venc)<=20 && pals(d.nome+" "+(d.natNome || "")).some(function(k){ return w.indexOf(k)>=0; }); });
     if(c.length){ c.sort(function(x, y){ return dias(x.baixa, a.venc)-dias(y.baixa, a.venc); }); usadas[c[0].id] = true; par[a.id] = c[0]; }
